@@ -1,0 +1,12 @@
+StructuredGridImage_Form.o: \
+  VariableManagement.o \
+  Display.o \
+  GridImageBasics.o \
+  StructuredGridImage_Form.f90
+
+StructuredGridImages.o:\
+  StructuredGridImage_Form.o \
+  StructuredGridImages.f90
+
+StructuredGridImages.a: $(STRUCTURED_GRID_IMAGES)
+	ar r StructuredGridImages.a $(STRUCTURED_GRID_IMAGES)

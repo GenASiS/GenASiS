@@ -1,0 +1,67 @@
+DB_TableOfContentsType_Silo_C.o: \
+  DB_TableOfContentsType_Silo_C.f90
+
+DB_PointMeshType_Silo_C.o: \
+  DB_PointMeshType_Silo_C.f90
+
+DB_MeshVariableType_Silo_C.o: \
+  DB_MeshVariableType_Silo_C.f90
+
+DB_QuadMeshType_Silo_C.o: \
+  DB_QuadMeshType_Silo_C.f90
+
+DB_QuadVariableType_Silo_C.o: \
+  DB_QuadVariableType_Silo_C.f90
+
+DB_UnstructuredMeshType_Silo_C.o: \
+  DB_UnstructuredMeshType_Silo_C.f90
+
+DB_UnstructuredVariableType_Silo_C.o: \
+  DB_UnstructuredVariableType_Silo_C.f90
+
+GridImageStream_Template.o: \
+  VariableManagement.o \
+  Display.o \
+  MessagePassing.o \
+  FileSystemBasics.o \
+  GridImageStream_Template.f90
+
+GridImageStream_Form.o: \
+  VariableManagement.o \
+  Display.o \
+  MessagePassing.o \
+  FileSystemBasics.o \
+  DB_TableOfContentsType_Silo_C.o \
+  GridImageStream_Template.o \
+  GridImageStream_Form.f90
+
+GridImage_Template.o: \
+  VariableManagement.o \
+  Display.o \
+  GridImageStream_Template.o \
+  GridImage_Template.f90
+
+GridImageSilo_Template.o: \
+  VariableManagement.o \
+  Display.o \
+  GridImageStream_Form.o \
+  DB_QuadMeshType_Silo_C.o \
+  GridImage_Template.o \
+  GridImageSilo_Template.f90
+
+GridImageBasics.o: \
+  DB_TableOfContentsType_Silo_C.o \
+  DB_PointMeshType_Silo_C.o \
+  DB_MeshVariableType_Silo_C.o \
+  DB_QuadMeshType_Silo_C.o \
+  DB_QuadVariableType_Silo_C.o \
+  DB_UnstructuredMeshType_Silo_C.o \
+  DB_UnstructuredVariableType_Silo_C.o \
+  GridImageStream_Template.o \
+  GridImageStream_Form.o \
+  GridImage_Template.o \
+  GridImageSilo_Template.o \
+  GridImageBasics.f90
+
+GridImageBasics.a: $(GRID_IMAGE_BASICS)
+	ar r GridImageBasics.a $(GRID_IMAGE_BASICS)

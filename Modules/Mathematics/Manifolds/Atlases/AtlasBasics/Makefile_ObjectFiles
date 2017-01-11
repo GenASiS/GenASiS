@@ -1,0 +1,6 @@
+ATLAS_BASICS = \
+  AtlasBasics.o \
+  FieldAtlas_Template.o \
+  AtlasHeader_Form.o \
+  Connectivity_Form.o \
+  ATLAS_Singleton.o

@@ -1,0 +1,40 @@
+ConsoleHeader_Form.o: \
+  VariableManagement.o \
+  ConsoleHeader_Form.f90
+
+CONSOLE_Singleton.o: \
+  VariableManagement.o \
+  ConsoleHeader_Form.o \
+  CONSOLE_Singleton.f90
+
+Show_Command.o: \
+  VariableManagement.o \
+  CONSOLE_Singleton.o \
+  Show_Command.f90
+
+ShowInteger.o: \
+  VariableManagement.o \
+  Show_Command.o \
+  ShowInteger.f90
+
+ShowCharacter.o: \
+  VariableManagement.o \
+  Show_Command.o \
+  ShowCharacter.f90
+
+ShowMessage.o: \
+  VariableManagement.o \
+  Show_Command.o \
+  ShowMessage.f90
+
+Display.o: \
+  ConsoleHeader_Form.o \
+  CONSOLE_Singleton.o \
+  ShowInteger.o \
+  ShowCharacter.o \
+  ShowMessage.o \
+  Show_Command.o \
+  Display.f90
+
+Display.a: $(DISPLAY)
+	ar r Display.a $(DISPLAY)

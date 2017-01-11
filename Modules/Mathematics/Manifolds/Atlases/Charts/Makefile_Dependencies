@@ -1,0 +1,10 @@
+include $(PATH_CHART_BASICS)/Makefile_Dependencies
+include $(PATH_SINGLE_LEVEL_CHARTS)/Makefile_Dependencies
+
+Charts.o: \
+  ChartBasics.o \
+  SingleLevelCharts.o \
+  Charts.f90
+
+Charts.a: $(CHARTS)
+	ar r Charts.a $(CHARTS)

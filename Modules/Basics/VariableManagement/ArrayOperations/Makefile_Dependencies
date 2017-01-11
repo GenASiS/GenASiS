@@ -1,0 +1,26 @@
+Clear_Command.o: \
+  Specifiers.o \
+  Clear_Command.f90
+
+Copy_Command.o: \
+  Specifiers.o \
+  Clear_Command.o \
+  Copy_Command.f90
+
+Sort_Command.o: \
+  Specifiers.o \
+  Sort_Command.f90
+
+Search_Command.o: \
+  Specifiers.o \
+  Search_Command.f90
+
+ArrayOperations.o: \
+  Clear_Command.o \
+  Copy_Command.o \
+  Sort_Command.o \
+  Search_Command.o \
+  ArrayOperations.f90
+
+ArrayOperations.a: $(ARRAY_OPERATIONS)
+	ar r ArrayOperations.a $(ARRAY_OPERATIONS)

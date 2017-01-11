@@ -1,0 +1,56 @@
+PATH_GENASIS = ../../../../..
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+all: ConsoleHeader_Form_Test CONSOLE_Singleton_Test Show_Command_Test
+
+ConsoleHeader_Form_Test: VariableManagement.a ConsoleHeader_Form_Test.o
+	$(LINK) $(FLAGS) -o ConsoleHeader_Form_Test_$(MACHINE) \
+          ConsoleHeader_Form_Test.o ConsoleHeader_Form.o \
+          VariableManagement.a
+
+CONSOLE_Singleton_Test: VariableManagement.a CONSOLE_Singleton_Test.o
+	$(LINK) $(FLAGS) -o CONSOLE_Singleton_Test_$(MACHINE) \
+          CONSOLE_Singleton_Test.o ShowMessage.o ShowCharacter.o \
+          ShowInteger.o Show_Command.o CONSOLE_Singleton.o \
+          ConsoleHeader_Form.o \
+          VariableManagement.a
+
+Show_Command_Test: VariableManagement.a Show_Command_Test.o
+	$(LINK) $(FLAGS) -o Show_Command_Test_$(MACHINE)\
+          Show_Command_Test.o ShowMessage.o ShowCharacter.o \
+          ShowInteger.o Show_Command.o CONSOLE_Singleton.o \
+          ConsoleHeader_Form.o \
+          VariableManagement.a
+
+clean:
+	rm -f *.o *.a *.mod *.ld
+
+clobber: clean
+	rm -f ConsoleHeader_Form_Test_*
+	rm -f CONSOLE_Singleton_Test_*
+	rm -f Show_Command_Test_*
+
+include $(PATH_VARIABLE_MANAGEMENT)/Makefile_Dependencies
+include $(PATH_DISPLAY)/Makefile_Dependencies
+
+ConsoleHeader_Form_Test.o: \
+  ConsoleHeader_Form.o \
+  ConsoleHeader_Form_Test.f90
+
+CONSOLE_Singleton_Test.o: \
+  VariableManagement.o \
+  CONSOLE_Singleton.o \
+  ShowInteger.o \
+  ShowCharacter.o \
+  ShowMessage.o \
+  CONSOLE_Singleton_Test.f90
+
+Show_Command_Test.o: \
+  VariableManagement.o \
+  CONSOLE_Singleton.o \
+  Show_Command.o \
+  ShowInteger.o \
+  ShowCharacter.o \
+  ShowMessage.o \
+  Show_Command_Test.f90

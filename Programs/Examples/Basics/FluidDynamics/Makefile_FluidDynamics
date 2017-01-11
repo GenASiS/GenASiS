@@ -1,0 +1,117 @@
+PATH_GENASIS = ../../../../..
+
+all: SineWaveAdvection SawtoothWaveAdvection RiemannProblem
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+FLUID = \
+  PolytropicFluid_Form.o \
+  PressurelessFluid_Form.o \
+  ConservationLawEvolution_Template.o \
+  ConservationLawStep_Form.o \
+  ConservedFields_Template.o \
+  DistributedMesh_Form.o
+
+SineWaveAdvection: Basics.a Fluid.a SineWaveAdvection.o
+	$(LINK) $(FLAGS) \
+          -o SineWaveAdvection_$(MACHINE) \
+          SineWaveAdvection.o SineWaveAdvection_Form.o \
+          PlaneWaveAdvection_Template.o \
+          Fluid.a Basics.a $(LIBRARIES)
+
+SawtoothWaveAdvection: Basics.a Fluid.a SawtoothWaveAdvection.o
+	$(LINK) $(FLAGS) \
+          -o SawtoothWaveAdvection_$(MACHINE) \
+          SawtoothWaveAdvection.o SawtoothWaveAdvection_Form.o \
+          PlaneWaveAdvection_Template.o \
+          Fluid.a Basics.a $(LIBRARIES)
+
+RiemannProblem: Basics.a Fluid.a RiemannProblem.o
+	$(LINK) $(FLAGS) \
+          -o RiemannProblem_$(MACHINE) \
+          RiemannProblem.o RiemannProblem_Form.o \
+          Fluid.a Basics.a $(LIBRARIES)
+
+clean:
+	rm -f *.o *.mod *.ld
+
+clobber: clean
+	rm -f SineWaveAdvection_*
+	rm -f SawtoothWaveAdvection_*
+	rm -f RiemannProblem_*
+
+include $(PATH_BASICS)/Makefile_Dependencies
+
+DistributedMesh_Form.o: \
+  Basics.o \
+  DistributedMesh_Form.f90
+
+ConservedFields_Template.o: \
+  Basics.o \
+  DistributedMesh_Form.o \
+  ConservedFields_Template.f90
+
+ConservationLawStep_Form.o: \
+  Basics.o \
+  ConservedFields_Template.o \
+  ConservationLawStep_Form.f90
+
+ConservationLawEvolution_Template.o: \
+  Basics.o \
+  DistributedMesh_Form.o \
+  ConservedFields_Template.o \
+  ConservationLawStep_Form.o \
+  ConservationLawEvolution_Template.f90
+
+PressurelessFluid_Form.o: \
+  Basics.o \
+  DistributedMesh_Form.o \
+  ConservedFields_Template.o \
+  ConservationLawStep_Form.o \
+  PressurelessFluid_Form.f90
+
+PolytropicFluid_Form.o: \
+  Basics.o \
+  DistributedMesh_Form.o \
+  PressurelessFluid_Form.o \
+  PolytropicFluid_Form.f90
+
+Fluid.a: $(FLUID)
+	ar r Fluid.a $(FLUID)
+
+PlaneWaveAdvection_Template.o: \
+  Basics.o \
+  ConservationLawEvolution_Template.o \
+  PressurelessFluid_Form.o \
+  PlaneWaveAdvection_Template.f90
+
+SineWaveAdvection_Form.o: \
+  Basics.o \
+  PlaneWaveAdvection_Template.o \
+  SineWaveAdvection_Form.f90
+
+SineWaveAdvection.o: \
+  Basics.o \
+  SineWaveAdvection_Form.o \
+  SineWaveAdvection.f90
+
+SawtoothWaveAdvection_Form.o: \
+  Basics.o \
+  PlaneWaveAdvection_Template.o \
+  SawtoothWaveAdvection_Form.f90
+
+SawtoothWaveAdvection.o: \
+  Basics.o \
+  SawtoothWaveAdvection_Form.o \
+  SawtoothWaveAdvection.f90
+
+RiemannProblem_Form.o: \
+  Basics.o \
+  PolytropicFluid_Form.o \
+  ConservationLawEvolution_Template.o \
+  RiemannProblem_Form.f90
+
+RiemannProblem.o: \
+  Basics.o \
+  RiemannProblem_Form.o \
+  RiemannProblem.f90

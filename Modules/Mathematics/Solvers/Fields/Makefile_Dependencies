@@ -1,0 +1,28 @@
+Current_Template.o: \
+  Basics.o \
+  Manifolds.o \
+  Current_Template.f90
+
+Tally_C__Form.o: \
+  Basics.o \
+  Manifolds.o \
+  Operations.o \
+  Current_Template.o \
+  Tally_C__Form.f90
+
+Current_ASC__Template.o: \
+  Basics.o \
+  Manifolds.o \
+  Current_Template.o \
+  Tally_C__Form.o \
+  Current_ASC__Template.f90
+
+Fields.o: \
+  Current_Template.o \
+  Tally_C__Form.o \
+  Current_ASC__Template.o \
+  Fields.f90
+
+Fields.a: $(FIELDS)
+	ar r Fields.a $(FIELDS)
+

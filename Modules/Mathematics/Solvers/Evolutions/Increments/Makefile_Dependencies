@@ -1,0 +1,13 @@
+IncrementDivergence_FV__Form.o: \
+  Basics.o \
+  Manifolds.o \
+  Operations.o \
+  Fields.o \
+  IncrementDivergence_FV__Form.f90
+
+Increments.o: \
+  IncrementDivergence_FV__Form.o \
+  Increments.f90
+
+Increments.a: $(INCREMENTS)
+	ar r Increments.a $(INCREMENTS)

@@ -1,0 +1,10 @@
+PATH_BASICS      = $(PATH_MODULES)/Basics
+PATH_MATHEMATICS = $(PATH_MODULES)/Mathematics
+
+include $(PATH_BASICS)/Makefile_Path
+include $(PATH_MATHEMATICS)/Makefile_Path
+
+VPATH_MODULES = \
+  $(VPATH_BASICS):\
+  $(VPATH_MATHEMATICS)
+

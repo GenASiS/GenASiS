@@ -1,0 +1,12 @@
+PATH_BUILD = $(PATH_GENASIS)/Build
+
+include $(PATH_BUILD)/Makefile_Path
+include $(PATH_BUILD)/Makefile_ObjectFiles
+include $(PATH_BUILD)/Machines/Makefile_$(MACHINE)
+
+INCLUDE = \
+  $(INCLUDE_SILO) $(INCLUDE_HDF5) $(INCLUDE_PETSC) $(INCLUDE_FFTW)
+LIBRARIES = \
+  $(LIBRARY_SILO) $(LIBRARY_HDF5) $(LIBRARY_PETSC) $(LIBRARY_FFTW)
+
+include $(PATH_BUILD)/Makefile_Patterns

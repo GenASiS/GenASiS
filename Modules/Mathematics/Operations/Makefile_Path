@@ -1,0 +1,9 @@
+PATH_ALGEBRA        = $(PATH_OPERATIONS)/Algebra
+PATH_CALCULUS       = $(PATH_OPERATIONS)/Calculus
+
+include $(PATH_CALCULUS)/Makefile_Path
+
+VPATH_OPERATIONS = \
+  $(PATH_ALGEBRA):\
+  $(VPATH_CALCULUS):\
+  $(PATH_OPERATIONS)

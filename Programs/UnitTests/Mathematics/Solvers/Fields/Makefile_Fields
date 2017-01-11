@@ -1,0 +1,44 @@
+PATH_GENASIS = ../../../../../..
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+all: ProtoCurrent_Form_Test DensityWave_Form_Test
+
+ProtoCurrent_Form_Test: Basics.a Manifolds.a ProtoCurrent_Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o ProtoCurrent_Form_Test_$(MACHINE) \
+          ProtoCurrent_Form_Test.o ProtoCurrent_Form.o Current_Template.o \
+          Manifolds.a Basics.a $(LIBRARIES)
+
+DensityWave_Form_Test: Basics.a Manifolds.a Operations.a \
+  DensityWave_Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o DensityWave_Form_Test_$(MACHINE) \
+          DensityWave_Form_Test.o DensityWave_Form.o \
+          ProtoCurrent_ASC__Form.o ProtoCurrent_CSL__Form.o \
+          ProtoCurrent_Form.o Current_ASC__Template.o Tally_C__Form.o \
+          Current_Template.o \
+          Operations.a Manifolds.a Basics.a $(LIBRARIES)
+
+clean:
+	rm -f *.o *.a *.mod *.ld
+
+clobber: clean
+	rm -f ProtoCurrent_Form_Test_*
+	rm -f DensityWave_Form_Test_*
+
+include $(PATH_BASICS)/Makefile_Dependencies
+include $(PATH_MANIFOLDS)/Makefile_Dependencies
+include $(PATH_OPERATIONS)/Makefile_Dependencies
+include $(PATH_FIELDS)/Makefile_Dependencies
+include ../Makefile_Dependencies
+
+ProtoCurrent_Form_Test.o: \
+  Basics.o \
+  ProtoCurrent_Form.o \
+  ProtoCurrent_Form_Test.f90
+
+DensityWave_Form_Test.o: \
+  Basics.o \
+  DensityWave_Form.o \
+  DensityWave_Form_Test.f90

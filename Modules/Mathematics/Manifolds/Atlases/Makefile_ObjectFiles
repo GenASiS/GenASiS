@@ -1,0 +1,9 @@
+include $(PATH_INTERCHARTS)/Makefile_ObjectFiles
+include $(PATH_CHARTS)/Makefile_ObjectFiles
+include $(PATH_ATLAS_BASICS)/Makefile_ObjectFiles
+
+ATLASES = \
+  Atlases.o \
+  $(INTERCHARTS) \
+  $(CHARTS) \
+  $(ATLAS_BASICS)

@@ -1,0 +1,4 @@
+INTEGRALS = \
+  Integrals.o \
+  SurfaceIntegral_Form.o \
+  VolumeIntegral_Form.o

@@ -1,0 +1,37 @@
+ChartStream_SL__Form.o: \
+  Basics.o \
+  AtlasBasics.o \
+  ChartBasics.o \
+  GeometryFlat_CSL__Form.o \
+  ChartStream_SL__Form.f90
+
+Chart_SL__Template.o: \
+  Basics.o \
+  AtlasBasics.o \
+  ChartBasics.o \
+  ChartStream_SL__Form.o \
+  Chart_SL__Template.f90
+
+Chart_SLL__Form.o: \
+  Basics.o \
+  AtlasBasics.o \
+  ChartBasics.o \
+  Chart_SL__Template.o \
+  Chart_SLL__Form.f90
+
+Chart_SLD__Form.o: \
+  Basics.o \
+  AtlasBasics.o \
+  ChartBasics.o \
+  Chart_SL__Template.o \
+  Chart_SLD__Form.f90
+
+SingleLevelCharts.o: \
+  ChartStream_SL__Form.o \
+  Chart_SL__Template.o \
+  Chart_SLL__Form.o \
+  Chart_SLD__Form.o \
+  SingleLevelCharts.f90
+
+SingleLevelCharts.a: $(SINGLE_LEVEL_CHARTS)
+	ar r SingleLevelCharts.a $(SINGLE_LEVEL_CHARTS)

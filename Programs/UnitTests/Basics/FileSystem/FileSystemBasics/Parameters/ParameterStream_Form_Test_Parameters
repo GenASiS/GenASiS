@@ -1,0 +1,32 @@
+!-- Scalars
+String=Hello World
+Real=100.0
+RealUnit=200.0~MILLISECOND
+MeasuredValue=300.0~CENTIMETER
+Integer=3
+Logical=true
+
+#-- Arrays
+StringArray_1=Lorem, ipsum, dolor, sit, amet
+StringArray_2=The,quick,brown,fox,jumps,over,the,lazy,dog
+StringArray_3=These,are,the,voyages,of,the,starship,enterprise
+
+RealArray_1=1000.0
+RealArray_2=2000.,3000.
+RealArray_3=4000.,5000.,6000.
+
+RealUnitArray_1=1000.0~PARSEC
+RealUnitArray_2=2000.,3000.~AMPERE
+RealUnitArray_3=4000.~TESLA,5000.~GAUSS,6000.
+
+MeasuredValueArray_1=1000.0~PARSEC
+MeasuredValueArray_2=2000.,3000.~AMPERE
+MeasuredValueArray_3=4000.~TESLA,5000.~GAUSS,6000.
+
+IntegerArray_1=10
+IntegerArray_2=20,30
+IntegerArray_3=40,50,60
+
+LogicalArray_1=T,T,T,T,T
+LogicalArray_2=False,False,False,False,False,False
+LogicalArray_3=True,False,F,T,True,False

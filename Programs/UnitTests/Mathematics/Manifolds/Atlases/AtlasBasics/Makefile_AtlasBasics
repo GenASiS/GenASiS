@@ -1,0 +1,55 @@
+PATH_GENASIS = ../../../../../../..
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+all: \
+  ATLAS_Singleton_Test Connectivity_Form_Test AtlasHeader_Form_Test
+
+runtests: all
+	${PATH_GENASIS}/Workflow/RunJobMultiple.sh 8 1  
+
+ATLAS_Singleton_Test: Basics.a ATLAS_Singleton_Test.o
+	$(LINK) $(FLAGS) \
+          -o ATLAS_Singleton_Test_$(MACHINE) \
+          ATLAS_Singleton_Test.o ATLAS_Singleton.o \
+          Basics.a $(LIBRARIES)
+
+Connectivity_Form_Test: Basics.a Connectivity_Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Connectivity_Form_Test_$(MACHINE) \
+          Connectivity_Form_Test.o Connectivity_Form.o \
+          Basics.a $(LIBRARIES)
+
+AtlasHeader_Form_Test: Basics.a AtlasHeader_Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o AtlasHeader_Form_Test_$(MACHINE) \
+          AtlasHeader_Form_Test.o AtlasHeader_Form.o Connectivity_Form.o \
+          ATLAS_Singleton.o \
+          Basics.a $(LIBRARIES)
+
+clean:
+	rm -f *.o *.a *.mod *.ld
+
+clobber: clean
+	rm -f ATLAS_Singleton_Test_*
+	rm -f Connectivity_Form_Test_*
+	rm -f AtlasHeader_Form_Test_*
+
+include $(PATH_BASICS)/Makefile_Dependencies
+include $(PATH_ATLAS_BASICS)/Makefile_Dependencies
+
+ATLAS_Singleton_Test.o: \
+  Basics.o \
+  ATLAS_Singleton.o \
+  ATLAS_Singleton_Test.f90
+
+Connectivity_Form_Test.o: \
+  Basics.o \
+  Connectivity_Form.o \
+  Connectivity_Form_Test.f90
+
+AtlasHeader_Form_Test.o: \
+  Basics.o \
+  AtlasHeader_Form.o \
+  AtlasHeader_Form_Test.f90
+

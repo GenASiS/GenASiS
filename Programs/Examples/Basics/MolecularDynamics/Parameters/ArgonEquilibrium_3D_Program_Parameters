@@ -1,0 +1,6 @@
+ParticleMass=39.95~ATOMIC_MASS_UNIT
+EnergyParameter=1.032e-2~ELECTRON_VOLT
+LengthParameter=3.405~ANGSTROM
+NumberDensity=7.599e-3~NUMBER_DENSITY_ANGSTROM
+TargetTemperature=359.4~KELVIN
+

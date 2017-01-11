@@ -1,0 +1,64 @@
+PATH_GENASIS = ../../../../../..
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+all: \
+  Clear_Command_Test Copy_Command_Test Sort_Command_Test Search_Command_Test
+
+Clear_Command_Test: Specifiers.a Clear_Command_Test.o
+	$(LINK) $(FLAGS) \
+          -o Clear_Command_Test_$(MACHINE) \
+          Clear_Command_Test.o Clear_Command.o \
+          Specifiers.a $(LIBRARIES)
+
+Copy_Command_Test: Specifiers.a Copy_Command_Test.o
+	$(LINK) $(FLAGS) \
+          -o Copy_Command_Test_$(MACHINE) \
+          Copy_Command_Test.o Copy_Command.o Clear_Command.o \
+          Specifiers.a $(LIBRARIES)
+
+Sort_Command_Test: Specifiers.a Sort_Command_Test.o
+	$(LINK) $(FLAGS) \
+          -o Sort_Command_Test_$(MACHINE) \
+          Sort_Command_Test.o Sort_Command.o \
+          Specifiers.a $(LIBRARIES) 
+
+Search_Command_Test: Specifiers.a Search_Command_Test.o
+	$(LINK) $(FLAGS) \
+          -o Search_Command_Test_$(MACHINE) \
+          Search_Command_Test.o Search_Command.o Sort_Command.o \
+          Specifiers.a $(LIBRARIES)
+
+clean:
+	rm -f *.o *.a *.mod *.ld
+
+clobber: clean
+	rm -f Clear_Command_Test_*
+	rm -f Copy_Command_Test_*
+	rm -f Sort_Command_Test_*
+	rm -f Search_Command_Test_*
+
+include $(PATH_SPECIFIERS)/Makefile_Dependencies
+include $(PATH_ARRAY_OPERATIONS)/Makefile_Dependencies
+
+Clear_Command_Test.o: \
+  Specifiers.o \
+  Clear_Command.o \
+  Clear_Command_Test.f90
+
+Copy_Command_Test.o: \
+  Specifiers.o \
+  Clear_Command.o \
+  Copy_Command.o \
+  Copy_Command_Test.f90
+
+Sort_Command_Test.o: \
+  Specifiers.o \
+  Sort_Command.o \
+  Sort_Command_Test.f90
+
+Search_Command_Test.o: \
+  Specifiers.o \
+  Sort_Command.o \
+  Search_Command.o \
+  Search_Command_Test.f90

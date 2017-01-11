@@ -1,0 +1,41 @@
+PATH_GENASIS = ../../../../../..
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+all: \
+  Communicator_Form_Test PortalHeader_Form_Test
+
+Communicator_Form_Test: VariableManagement.a Display.a Communicator_Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Communicator_Form_Test_$(MACHINE) \
+          Communicator_Form_Test.o Communicator_Form.o \
+	  Display.a VariableManagement.a
+
+PortalHeader_Form_Test: VariableManagement.a Display.a PortalHeader_Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o PortalHeader_Form_Test_$(MACHINE) \
+	  PortalHeader_Form_Test.o PortalHeader_Form.o \
+          Communicator_Form.o \
+	  Display.a VariableManagement.a
+
+clean:
+	rm -f *.o *.a *.mod *.ld
+
+clobber: clean
+	rm -f Communicator_Form_Test_*
+	rm -f PortalHeader_Form_Test_*
+
+include $(PATH_VARIABLE_MANAGEMENT)/Makefile_Dependencies
+include $(PATH_DISPLAY)/Makefile_Dependencies
+include $(PATH_MESSAGE_PASSING_BASICS)/Makefile_Dependencies
+
+Communicator_Form_Test.o: \
+  Display.o \
+  Communicator_Form.o \
+  Communicator_Form_Test.f90
+
+PortalHeader_Form_Test.o: \
+  Display.o \
+  Communicator_Form.o \
+  PortalHeader_Form.o \
+  PortalHeader_Form_Test.f90

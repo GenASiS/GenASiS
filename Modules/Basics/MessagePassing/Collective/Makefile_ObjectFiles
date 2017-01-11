@@ -1,0 +1,8 @@
+COLLECTIVE = \
+  Collective.o \
+  CollectiveOperation_C__Form.o \
+  CollectiveOperation_R__Form.o \
+  CollectiveOperation_BI__Form.o \
+  CollectiveOperation_I__Form.o \
+  CollectiveOperation_Template.o \
+  REDUCTION_Singleton.o

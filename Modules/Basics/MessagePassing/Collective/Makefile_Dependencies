@@ -1,0 +1,52 @@
+ REDUCTION_Singleton.o: \
+   VariableManagement.o \
+   REDUCTION_Singleton.f90
+
+CollectiveOperation_Template.o: \
+  VariableManagement.o \
+  MessagePassingBasics.o \
+  CollectiveOperation_Template.f90
+
+CollectiveOperation_I__Form.o: \
+  VariableManagement.o \
+  Display.o \
+  MessagePassingBasics.o \
+  PointToPoint.o \
+  CollectiveOperation_Template.o \
+  CollectiveOperation_I__Form.f90
+
+CollectiveOperation_BI__Form.o: \
+  VariableManagement.o \
+  Display.o \
+  MessagePassingBasics.o \
+  PointToPoint.o \
+  CollectiveOperation_Template.o \
+  CollectiveOperation_BI__Form.f90
+
+CollectiveOperation_R__Form.o: \
+  VariableManagement.o \
+  Display.o \
+  MessagePassingBasics.o \
+  PointToPoint.o \
+  CollectiveOperation_Template.o \
+  CollectiveOperation_R__Form.f90
+
+CollectiveOperation_C__Form.o: \
+  VariableManagement.o \
+  Display.o \
+  MessagePassingBasics.o \
+  PointToPoint.o \
+  CollectiveOperation_Template.o \
+  CollectiveOperation_C__Form.f90
+
+Collective.o: \
+  REDUCTION_Singleton.o \
+  CollectiveOperation_Template.o \
+  CollectiveOperation_I__Form.o \
+  CollectiveOperation_BI__Form.o \
+  CollectiveOperation_R__Form.o \
+  CollectiveOperation_C__Form.o \
+  Collective.f90
+
+Collective.a: $(COLLECTIVE)
+	ar r Collective.a $(COLLECTIVE)

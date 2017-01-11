@@ -1,0 +1,3 @@
+PROTO_INCREMENTS = \
+  ProtoIncrements.o \
+  DensityWaveIncrement_Form.o

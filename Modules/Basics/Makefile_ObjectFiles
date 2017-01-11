@@ -1,0 +1,13 @@
+include $(PATH_RUNTIME)/Makefile_ObjectFiles
+include $(PATH_FILE_SYSTEM)/Makefile_ObjectFiles
+include $(PATH_MESSAGE_PASSING)/Makefile_ObjectFiles
+include $(PATH_DISPLAY)/Makefile_ObjectFiles
+include $(PATH_VARIABLE_MANAGEMENT)/Makefile_ObjectFiles
+
+BASICS = \
+  Basics.o \
+  $(RUNTIME) \
+  $(FILE_SYSTEM) \
+  $(MESSAGE_PASSING) \
+  $(DISPLAY) \
+  $(VARIABLE_MANAGEMENT)

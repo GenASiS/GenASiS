@@ -1,0 +1,100 @@
+PATH_GENASIS = ../../../../..
+
+all: ArgonEquilibrium ClusterFormation
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+PARTICLES = \
+  ParticleDynamics_Template.o \
+  DistributedParticles_Form.o \
+  Particles_Form.o \
+  NormalRandomNumber_Function.o
+
+ArgonEquilibrium: Basics.a Particles.a ArgonEquilibrium.o
+	$(LINK) $(FLAGS) \
+          -o ArgonEquilibrium_$(MACHINE) \
+          ArgonEquilibrium.o LennardJonesDynamics_Form.o \
+          LatticeDynamics_Template.o LatticeParticles_Form.o \
+          Particles.a Basics.a $(LIBRARIES)
+
+ClusterFormation: Basics.a Particles.a ClusterFormation.o
+	$(LINK) $(FLAGS) \
+          -o ClusterFormation_$(MACHINE) \
+          ClusterFormation.o GravitationalDynamics_Form.o \
+          ClusterDynamics_Template.o ClusterParticles_Form.o \
+          Particles.a Basics.a $(LIBRARIES)
+
+clean:
+	rm -f *.o *.mod *.ld
+
+clobber: clean
+	rm -f ArgonEquilibrium_*
+	rm -f ClusterFormation_*
+
+include $(PATH_BASICS)/Makefile_Dependencies
+
+NormalRandomNumber_Function.o: \
+  Basics.o \
+  NormalRandomNumber_Function.f90
+
+Particles_Form.o: \
+  Basics.o \
+  Particles_Form.f90
+
+DistributedParticles_Form.o: \
+  Basics.o \
+  Particles_Form.o \
+  DistributedParticles_Form.f90
+
+ParticleDynamics_Template.o: \
+  Basics.o \
+  DistributedParticles_Form.o \
+  ParticleDynamics_Template.f90
+
+Particles.a: $(PARTICLES)
+	ar r Particles.a $(PARTICLES)
+
+LatticeParticles_Form.o: \
+  Basics.o \
+  NormalRandomNumber_Function.o \
+  DistributedParticles_Form.o \
+  LatticeParticles_Form.f90
+
+ClusterParticles_Form.o: \
+  Basics.o \
+  NormalRandomNumber_Function.o \
+  DistributedParticles_Form.o \
+  ClusterParticles_Form.f90
+
+LatticeDynamics_Template.o: \
+  Basics.o \
+  ParticleDynamics_Template.o \
+  LatticeParticles_Form.o \
+  LatticeDynamics_Template.f90
+
+ClusterDynamics_Template.o: \
+  Basics.o \
+  ParticleDynamics_Template.o \
+  ClusterParticles_Form.o \
+  ClusterDynamics_Template.f90
+
+LennardJonesDynamics_Form.o: \
+  Basics.o \
+  LatticeDynamics_Template.o \
+  LennardJonesDynamics_Form.f90
+
+GravitationalDynamics_Form.o: \
+  Basics.o \
+  ClusterParticles_Form.o \
+  ClusterDynamics_Template.o \
+  GravitationalDynamics_Form.f90
+
+ArgonEquilibrium.o: \
+  Basics.o \
+  LennardJonesDynamics_Form.o \
+  ArgonEquilibrium.f90
+
+ClusterFormation.o: \
+  Basics.o \
+  GravitationalDynamics_Form.o \
+  ClusterFormation.f90

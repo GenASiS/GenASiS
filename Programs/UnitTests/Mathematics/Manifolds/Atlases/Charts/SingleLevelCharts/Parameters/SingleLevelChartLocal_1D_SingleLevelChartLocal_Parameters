@@ -1,0 +1,5 @@
+nCells=20
+nGhostLayers=0
+Spacing=COMPACTIFIED
+Scale=3.0
+CoordinateSystem=SPHERICAL

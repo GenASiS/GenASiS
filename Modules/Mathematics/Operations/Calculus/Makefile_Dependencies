@@ -1,0 +1,10 @@
+include $(PATH_DERIVATIVES)/Makefile_Dependencies
+include $(PATH_INTEGRALS)/Makefile_Dependencies
+
+Calculus.o: \
+  Derivatives.o \
+  Integrals.o \
+  Calculus.f90
+
+Calculus.a: $(CALCULUS)
+	ar r Calculus.a $(CALCULUS)

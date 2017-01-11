@@ -1,0 +1,14 @@
+DensityWaveIncrement_Form.o: \
+  Basics.o \
+  Manifolds.o \
+  Fields.o \
+  ProtoFields.o \
+  IncrementDivergence_FV__Form.o \
+  DensityWaveIncrement_Form.f90
+
+ProtoIncrements.o: \
+  DensityWaveIncrement_Form.o \
+  ProtoIncrements.f90
+
+ProtoIncrements.a: $(PROTO_INCREMENTS)
+	ar r ProtoIncrements.a $(PROTO_INCREMENTS)

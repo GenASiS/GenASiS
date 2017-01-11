@@ -1,0 +1,37 @@
+Field_ASC__Template.o: \
+  Basics.o \
+  AtlasBasics.o \
+  Charts.o \
+  Field_ASC__Template.f90
+
+Atlas_SC__Template.o: \
+  Basics.o \
+  AtlasBasics.o \
+  Charts.o \
+  Field_ASC__Template.o \
+  Atlas_SC__Template.f90
+
+GeometryFlat_ASC__Form.o: \
+  Basics.o \
+  AtlasBasics.o \
+  Charts.o \
+  Field_ASC__Template.o \
+  Atlas_SC__Template.o \
+  GeometryFlat_ASC__Form.f90
+
+Atlas_SC__Form.o: \
+  Basics.o \
+  Charts.o \
+  Atlas_SC__Template.o \
+  GeometryFlat_ASC__Form.o \
+  Atlas_SC__Form.f90
+
+Intercharts.o: \
+  Field_ASC__Template.o \
+  Atlas_SC__Template.o \
+  GeometryFlat_ASC__Form.o \
+  Atlas_SC__Form.o \
+  Intercharts.f90
+
+Intercharts.a: $(INTERCHARTS)
+	ar r Intercharts.a $(INTERCHARTS)

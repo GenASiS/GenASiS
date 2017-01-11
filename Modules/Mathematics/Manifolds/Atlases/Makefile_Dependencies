@@ -1,0 +1,12 @@
+include $(PATH_ATLAS_BASICS)/Makefile_Dependencies
+include $(PATH_CHARTS)/Makefile_Dependencies
+include $(PATH_INTERCHARTS)/Makefile_Dependencies
+
+Atlases.o: \
+  AtlasBasics.o \
+  Charts.o \
+  Intercharts.o \
+  Atlases.f90
+
+Atlases.a: $(ATLASES)
+	ar r Atlases.a $(ATLASES)

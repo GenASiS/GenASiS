@@ -1,0 +1,34 @@
+PATH_GENASIS = ../../../../../..
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+all: GridImageStream_Form_Test
+
+GridImageStream_Form_Test: VariableManagement.a Display.a MessagePassing.a \
+  FileSystemBasics.a GridImageStream_Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o GridImageStream_Form_Test_$(MACHINE) \
+          GridImageStream_Form_Test.o GridImageStream_Form.o \
+          GridImageStream_Template.o DB_TableOfContentsType_Silo_C.o \
+          FileSystemBasics.a MessagePassing.a Display.a VariableManagement.a \
+          $(LIBRARIES)
+
+clean:
+	rm -f *.o *.a *.mod *.ld
+
+clobber: clean
+	rm -f GridImageStream_Form_Test_*
+
+include $(PATH_VARIABLE_MANAGEMENT)/Makefile_Dependencies
+include $(PATH_DISPLAY)/Makefile_Dependencies
+include $(PATH_MESSAGE_PASSING)/Makefile_Dependencies
+include $(PATH_FILE_SYSTEM_BASICS)/Makefile_Dependencies
+include $(PATH_GRID_IMAGE_BASICS)/Makefile_Dependencies
+
+GridImageStream_Form_Test.o: \
+  VariableManagement.o \
+  Display.o \
+  MessagePassing.o \
+  GridImageStream_Template.o \
+  GridImageStream_Form.o \
+  GridImageStream_Form_Test.f90

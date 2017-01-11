@@ -1,0 +1,15 @@
+Add_Command.o: \
+  Basics.o \
+  Add_Command.f90
+
+MultiplyAdd_Command.o: \
+  Basics.o \
+  MultiplyAdd_Command.f90
+
+Algebra.o: \
+  Add_Command.o \
+  MultiplyAdd_Command.o \
+  Algebra.f90
+
+Algebra.a: $(ALGEBRA)
+	ar r Algebra.a $(ALGEBRA)

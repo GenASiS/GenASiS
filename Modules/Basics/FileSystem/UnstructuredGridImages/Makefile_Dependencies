@@ -1,0 +1,12 @@
+UnstructuredGridImage_Form.o: \
+  VariableManagement.o \
+  Display.o \
+  GridImageBasics.o \
+  UnstructuredGridImage_Form.f90
+
+UnstructuredGridImages.o: \
+  UnstructuredGridImage_Form.o \
+  UnstructuredGridImages.f90
+
+UnstructuredGridImages.a: $(UNSTRUCTURED_GRID_IMAGES)
+	ar r UnstructuredGridImages.a $(UNSTRUCTURED_GRID_IMAGES)

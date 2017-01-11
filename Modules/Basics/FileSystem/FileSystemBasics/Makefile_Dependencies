@@ -1,0 +1,37 @@
+DelayFileAccess_Command.o: \
+  VariableManagement.o \
+  DelayFileAccess_Command.f90
+
+ReadLabelValue_Command.o: \
+  VariableManagement.o \
+  ReadLabelValue_Command.f90
+
+FindParameter_Command.o: \
+  VariableManagement.o \
+  Display.o \
+  ReadLabelValue_Command.o \
+  FindParameter_Command.f90
+
+ParameterStream_Form.o: \
+  VariableManagement.o \
+  Display.o \
+  DelayFileAccess_Command.o \
+  FindParameter_Command.o \
+  ParameterStream_Form.f90
+
+TableStream_Form.o: \
+  VariableManagement.o \
+  Display.o \
+  DelayFileAccess_Command.o \
+  TableStream_Form.f90
+
+FileSystemBasics.o: \
+  DelayFileAccess_Command.o \
+  ReadLabelValue_Command.o \
+  FindParameter_Command.o \
+  ParameterStream_Form.o \
+  TableStream_Form.o \
+  FileSystemBasics.f90
+
+FileSystemBasics.a: $(FILE_SYSTEM_BASICS)
+	ar r FileSystemBasics.a $(FILE_SYSTEM_BASICS)

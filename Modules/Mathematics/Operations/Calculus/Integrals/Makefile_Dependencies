@@ -1,0 +1,17 @@
+VolumeIntegral_Form.o: \
+  Basics.o \
+  Manifolds.o \
+  VolumeIntegral_Form.f90
+
+SurfaceIntegral_Form.o: \
+  Basics.o \
+  Manifolds.o \
+  SurfaceIntegral_Form.f90
+
+Integrals.o: \
+  VolumeIntegral_Form.o \
+  SurfaceIntegral_Form.o \
+  Integrals.f90
+
+Integrals.a: $(INTEGRALS)
+	ar r Integrals.a $(INTEGRALS)

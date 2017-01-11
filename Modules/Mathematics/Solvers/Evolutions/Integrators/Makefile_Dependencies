@@ -1,0 +1,35 @@
+Integrator_Template.o: \
+  Basics.o \
+  Manifolds.o \
+  Integrator_Template.f90
+
+TimeSeries_Form.o: \
+  Basics.o \
+  Integrator_Template.o \
+  TimeSeries_Form.f90
+
+TimeSeries_C__Form.o: \
+  Basics.o \
+  Fields.o \
+  Integrator_Template.o \
+  TimeSeries_Form.o \
+  TimeSeries_C__Form.f90
+
+Integrator_C__Template.o: \
+  Basics.o \
+  Manifolds.o \
+  Fields.o \
+  Steps.o \
+  Integrator_Template.o \
+  TimeSeries_C__Form.o \
+  Integrator_C__Template.f90
+
+Integrators.o: \
+  Integrator_Template.o \
+  TimeSeries_Form.o \
+  TimeSeries_C__Form.o \
+  Integrator_C__Template.o \
+  Integrators.f90
+
+Integrators.a: $(INTEGRATORS)
+	ar r Integrators.a $(INTEGRATORS)

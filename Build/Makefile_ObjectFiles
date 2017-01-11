@@ -1,0 +1,4 @@
+include $(PATH_MODULES)/Makefile_ObjectFiles
+
+OBJECTS = \
+  $(MODULES)

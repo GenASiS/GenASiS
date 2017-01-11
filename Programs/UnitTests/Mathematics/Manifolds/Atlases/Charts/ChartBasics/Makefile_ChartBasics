@@ -1,0 +1,45 @@
+PATH_GENASIS = ../../../../../../../..
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+all: \
+  ChartHeader_SL__Form_Test GeometryFlat_Form_Test 
+
+runtests: all
+	${PATH_GENASIS}/Workflow/RunJobMultiple.sh 8 1
+
+ChartHeader_SL__Form_Test: Basics.a AtlasBasics.a ChartHeader_SL__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o ChartHeader_SL__Form_Test_$(MACHINE) \
+          ChartHeader_SL__Form_Test.o ChartHeader_SL__Form.o \
+          Field_CSL__Template.o FieldChart_Template.o Chart_Template.o \
+          AtlasBasics.a Basics.a $(LIBRARIES)
+
+GeometryFlat_Form_Test: Basics.a AtlasBasics.a GeometryFlat_Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o GeometryFlat_Form_Test_$(MACHINE) \
+          GeometryFlat_Form.o GeometryFlat_Form_Test.o Chart_Template.o \
+          AtlasBasics.a Basics.a $(LIBRARIES)
+
+clean:
+	rm -f *.o *.a *.mod *.ld
+
+clobber: clean
+	rm -f ChartHeader_SL__Form_Test_*
+	rm -f GeometryFlat_Form_Test_*
+
+include $(PATH_BASICS)/Makefile_Dependencies
+include $(PATH_ATLAS_BASICS)/Makefile_Dependencies
+include $(PATH_CHART_BASICS)/Makefile_Dependencies
+
+ChartHeader_SL__Form_Test.o: \
+  Basics.o \
+  AtlasBasics.o \
+  ChartHeader_SL__Form.o \
+  ChartHeader_SL__Form_Test.f90
+
+GeometryFlat_Form_Test.o: \
+  Basics.o \
+  Chart_Template.o \
+  GeometryFlat_Form.o \
+  GeometryFlat_Form_Test.f90

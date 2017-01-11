@@ -1,0 +1,28 @@
+ATLAS_Singleton.o: \
+  Basics.o \
+  ATLAS_Singleton.f90
+
+Connectivity_Form.o: \
+  Basics.o \
+  Connectivity_Form.f90
+
+AtlasHeader_Form.o: \
+  Basics.o \
+  ATLAS_Singleton.o \
+  Connectivity_Form.o \
+  AtlasHeader_Form.f90
+
+FieldAtlas_Template.o: \
+  Basics.o \
+  AtlasHeader_Form.o \
+  FieldAtlas_Template.f90
+
+AtlasBasics.o: \
+  ATLAS_Singleton.o \
+  Connectivity_Form.o \
+  AtlasHeader_Form.o \
+  FieldAtlas_Template.o \
+  AtlasBasics.f90
+
+AtlasBasics.a: $(ATLAS_BASICS)
+	ar r AtlasBasics.a $(ATLAS_BASICS)

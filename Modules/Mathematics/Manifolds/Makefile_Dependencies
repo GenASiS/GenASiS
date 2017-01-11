@@ -1,0 +1,8 @@
+include $(PATH_ATLASES)/Makefile_Dependencies
+
+Manifolds.o: \
+  Atlases.o \
+  Manifolds.f90
+
+Manifolds.a: $(MANIFOLDS)
+	ar r Manifolds.a $(MANIFOLDS)

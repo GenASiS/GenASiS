@@ -1,0 +1,9 @@
+PATH_FIELDS     = $(PATH_SOLVERS)/Fields
+PATH_EVOLUTIONS = $(PATH_SOLVERS)/Evolutions
+
+include $(PATH_EVOLUTIONS)/Makefile_Path
+
+VPATH_SOLVERS = \
+  $(PATH_FIELDS):\
+  $(VPATH_EVOLUTIONS):\
+  $(PATH_SOLVERS)

@@ -1,0 +1,17 @@
+Communicator_Form.o: \
+  VariableManagement.o \
+  Display.o \
+  Communicator_Form.f90
+
+PortalHeader_Form.o: \
+  VariableManagement.o \
+  Display.o \
+  PortalHeader_Form.f90
+
+MessagePassingBasics.o: \
+  Communicator_Form.o \
+  PortalHeader_Form.o \
+  MessagePassingBasics.f90
+
+MessagePassingBasics.a: $(MESSAGE_PASSING_BASICS)
+	ar r MessagePassingBasics.a $(MESSAGE_PASSING_BASICS)

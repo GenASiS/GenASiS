@@ -1,0 +1,12 @@
+include $(PATH_MESSAGE_PASSING_BASICS)/Makefile_Dependencies
+include $(PATH_POINT_TO_POINT)/Makefile_Dependencies
+include $(PATH_COLLECTIVE)/Makefile_Dependencies
+
+MessagePassing.o: \
+  MessagePassingBasics.o \
+  PointToPoint.o \
+  Collective.o \
+  MessagePassing.f90
+
+MessagePassing.a: $(MESSAGE_PASSING)
+	ar r MessagePassing.a $(MESSAGE_PASSING)

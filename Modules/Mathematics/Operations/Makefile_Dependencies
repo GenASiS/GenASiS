@@ -1,0 +1,10 @@
+include $(PATH_ALGEBRA)/Makefile_Dependencies
+include $(PATH_CALCULUS)/Makefile_Dependencies
+
+Operations.o: \
+  Algebra.o \
+  Calculus.o \
+  Operations.f90
+
+Operations.a: $(OPERATIONS)
+	ar r Operations.a $(OPERATIONS)

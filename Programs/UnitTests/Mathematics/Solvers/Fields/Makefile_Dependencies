@@ -1,0 +1,37 @@
+ProtoCurrent_Form.o: \
+  Basics.o \
+  Manifolds.o \
+  Current_Template.o \
+  ProtoCurrent_Form.f90
+
+ProtoCurrent_CSL__Form.o: \
+  Basics.o \
+  Manifolds.o \
+  ProtoCurrent_Form.o \
+  ProtoCurrent_CSL__Form.f90
+
+ProtoCurrent_ASC__Form.o: \
+  Basics.o \
+  Manifolds.o \
+  Current_ASC__Template.o \
+  ProtoCurrent_Form.o \
+  ProtoCurrent_CSL__Form.o \
+  ProtoCurrent_ASC__Form.f90
+
+DensityWave_Form.o: \
+  Basics.o \
+  Manifolds.o \
+  ProtoCurrent_Form.o \
+  ProtoCurrent_ASC__Form.o \
+  DensityWave_Form.f90
+
+ProtoFields.o: \
+  Fields.o \
+  ProtoCurrent_Form.o \
+  ProtoCurrent_CSL__Form.o \
+  ProtoCurrent_ASC__Form.o \
+  DensityWave_Form.o \
+  ProtoFields.f90
+
+ProtoFields.a: $(PROTO_FIELDS)
+	ar r ProtoFields.a $(PROTO_FIELDS)

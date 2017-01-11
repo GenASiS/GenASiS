@@ -1,0 +1,6 @@
+PROTO_FIELDS = \
+  ProtoFields.o \
+  DensityWave_Form.o \
+  ProtoCurrent_ASC__Form.o \
+  ProtoCurrent_CSL__Form.o \
+  ProtoCurrent_Form.o

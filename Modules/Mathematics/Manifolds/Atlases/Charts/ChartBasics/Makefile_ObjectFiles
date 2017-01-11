@@ -1,0 +1,8 @@
+CHART_BASICS = \
+  ChartBasics.o \
+  GeometryFlat_CSL__Form.o \
+  GeometryFlat_Form.o \
+  ChartHeader_SL__Form.o \
+  Field_CSL__Template.o \
+  FieldChart_Template.o \
+  Chart_Template.o

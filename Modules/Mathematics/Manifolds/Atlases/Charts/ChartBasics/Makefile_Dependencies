@@ -1,0 +1,45 @@
+Chart_Template.o: \
+  Basics.o \
+  AtlasBasics.o \
+  Chart_Template.f90
+
+FieldChart_Template.o: \
+  Basics.o \
+  Chart_Template.o \
+  FieldChart_Template.f90
+
+Field_CSL__Template.o: \
+  Basics.o \
+  Chart_Template.o \
+  FieldChart_Template.o \
+  Field_CSL__Template.f90
+
+ChartHeader_SL__Form.o: \
+  Basics.o \
+  AtlasBasics.o \
+  Chart_Template.o \
+  Field_CSL__Template.o \
+  ChartHeader_SL__Form.f90
+
+GeometryFlat_Form.o: \
+  Basics.o \
+  GeometryFlat_Form.f90
+
+GeometryFlat_CSL__Form.o: \
+  Basics.o \
+  ChartHeader_SL__Form.o \
+  GeometryFlat_Form.o \
+  Field_CSL__Template.o \
+  GeometryFlat_CSL__Form.f90
+
+ChartBasics.o: \
+  Chart_Template.o \
+  FieldChart_Template.o \
+  Field_CSL__Template.o \
+  ChartHeader_SL__Form.o \
+  GeometryFlat_Form.o \
+  GeometryFlat_CSL__Form.o \
+  ChartBasics.f90
+
+ChartBasics.a: $(CHART_BASICS)
+	ar r ChartBasics.a $(CHART_BASICS)

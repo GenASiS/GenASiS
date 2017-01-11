@@ -1,0 +1,18 @@
+Difference_Form.o: \
+  Basics.o \
+  Manifolds.o \
+  Difference_Form.f90
+
+Gradient_Form.o: \
+  Basics.o \
+  Manifolds.o \
+  Difference_Form.o \
+  Gradient_Form.f90
+
+Derivatives.o: \
+  Difference_Form.o \
+  Gradient_Form.o \
+  Derivatives.f90
+
+Derivatives.a: $(DERIVATIVES)
+	ar r Derivatives.a $(DERIVATIVES)

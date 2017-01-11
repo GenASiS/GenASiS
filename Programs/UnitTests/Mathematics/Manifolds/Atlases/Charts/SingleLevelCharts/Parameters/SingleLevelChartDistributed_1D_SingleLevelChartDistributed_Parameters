@@ -1,0 +1,6 @@
+nCells=256
+MinCoordinate=0.0~KILOMETER
+MaxCoordinate=5000.0~KILOMETER
+Spacing=GEOMETRIC
+Ratio=1.07
+CoordinateSystem=SPHERICAL

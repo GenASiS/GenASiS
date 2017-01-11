@@ -1,0 +1,49 @@
+InitializeRandomSeed_Command.o: \
+  VariableManagement.o \
+  Display.o \
+  MessagePassing.o \
+  FileSystem.o \
+  InitializeRandomSeed_Command.f90
+
+CommandLineOptions_Form.o: \
+  VariableManagement.o \
+  FileSystem.o \
+  CommandLineOptions_Form.f90
+
+WallTime_Function.o: \
+  VariableManagement.o \
+  WallTime_Function.f90
+
+Timer_Form.o: \
+  VariableManagement.o \
+  Display.o \
+  WallTime_Function.o \
+  Timer_Form.f90
+
+GetMemoryUsage_Command.o: \
+  VariableManagement.o \
+  Display.o \
+  MessagePassing.o \
+  GetMemoryUsage_Command.f90
+
+PROGRAM_HEADER_Singleton.o: \
+  VariableManagement.o \
+  Display.o \
+  MessagePassing.o \
+  FileSystem.o \
+  Timer_Form.o \
+  GetMemoryUsage_Command.o \
+  CommandLineOptions_Form.o \
+  PROGRAM_HEADER_Singleton.f90
+
+Runtime.o: \
+  WallTime_Function.o \
+  Timer_Form.o \
+  GetMemoryUsage_Command.o \
+  InitializeRandomSeed_Command.o \
+  CommandLineOptions_Form.o \
+  PROGRAM_HEADER_Singleton.o \
+  Runtime.f90
+
+Runtime.a: $(RUNTIME)
+	ar r Runtime.a $(RUNTIME)

@@ -1,0 +1,12 @@
+include $(PATH_MANIFOLDS)/Makefile_Dependencies
+include $(PATH_OPERATIONS)/Makefile_Dependencies
+include $(PATH_SOLVERS)/Makefile_Dependencies
+
+Mathematics.o: \
+  Manifolds.o \
+  Operations.o \
+  Solvers.o \
+  Mathematics.f90
+
+Mathematics.a: $(MATHEMATICS)
+	ar r Mathematics.a $(MATHEMATICS)

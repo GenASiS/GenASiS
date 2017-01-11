@@ -1,0 +1,16 @@
+# Makefile for Cray (XT5, XE/XK, XC90) with Cray Compiling Environment (CCE)
+# If PrgEnv-cray is not the default, use "module swap" to PrgEnv-cray
+
+FORTRAN_COMPILE      = ftn -c
+FORTRAN_BOUND_CHECK  = -R bcp
+FORTRAN_DEBUG        = -hdevelop -hfp0 -K trap=fp
+FORTRAN_OPTIMIZE     = #-- use default (no flag) optimization
+FORTRAN_PROFILE      = 
+
+LINK = ftn
+
+#-- Silo library may be  automatically included & linked by 
+#-- "module load silo" if provided, otherwise, manually put include and 
+#-- link line flag &  location below
+INCLUDE_SILO = 
+LIBRARY_SILO = 

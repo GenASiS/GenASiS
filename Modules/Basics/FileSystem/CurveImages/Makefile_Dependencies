@@ -1,0 +1,13 @@
+CurveImage_Form.o: \
+  VariableManagement.o \
+  Display.o \
+  MessagePassing.o \
+  GridImageBasics.o \
+  CurveImage_Form.f90
+
+CurveImages.o: \
+  CurveImage_Form.o \
+  CurveImages.f90
+
+CurveImages.a: $(CURVE_IMAGES)
+	ar r CurveImages.a $(CURVE_IMAGES)

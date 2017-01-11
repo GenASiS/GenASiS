@@ -1,0 +1,7 @@
+ifneq ($(PURPOSE),DEBUG)
+	#-- undefine bound checking for non-debug compilation
+	FORTRAN_BOUND_CHECK = 
+endif
+
+%.o : %.f90
+	$(FORTRAN_COMPILE) $(DEFINES) $(FFLAGS) $(FORTRAN_BOUND_CHECK) $(INCLUDE) $<

@@ -1,0 +1,15 @@
+include $(PATH_POINT_GRID_IMAGES)/Makefile_ObjectFiles
+include $(PATH_UNSTRUCTURED_GRID_IMAGES)/Makefile_ObjectFiles
+include $(PATH_STRUCTURED_GRID_IMAGES)/Makefile_ObjectFiles
+include $(PATH_CURVE_IMAGES)/Makefile_ObjectFiles
+include $(PATH_GRID_IMAGE_BASICS)/Makefile_ObjectFiles
+include $(PATH_FILE_SYSTEM_BASICS)/Makefile_ObjectFiles
+
+FILE_SYSTEM = \
+  FileSystem.o \
+  $(POINT_GRID_IMAGES) \
+  $(UNSTRUCTURED_GRID_IMAGES) \
+  $(STRUCTURED_GRID_IMAGES) \
+  $(CURVE_IMAGES) \
+  $(GRID_IMAGE_BASICS) \
+  $(FILE_SYSTEM_BASICS)

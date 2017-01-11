@@ -1,0 +1,16 @@
+include $(PATH_VARIABLE_MANAGEMENT)/Makefile_Dependencies
+include $(PATH_DISPLAY)/Makefile_Dependencies
+include $(PATH_MESSAGE_PASSING)/Makefile_Dependencies
+include $(PATH_FILE_SYSTEM)/Makefile_Dependencies
+include $(PATH_RUNTIME)/Makefile_Dependencies
+
+Basics.o: \
+  VariableManagement.o \
+  Display.o \
+  MessagePassing.o \
+  FileSystem.o \
+  Runtime.o \
+  Basics.f90
+
+Basics.a: $(BASICS)
+	ar r Basics.a $(BASICS)

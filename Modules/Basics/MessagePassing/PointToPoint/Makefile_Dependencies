@@ -1,0 +1,166 @@
+Message_Template.o: \
+  VariableManagement.o \
+  MessagePassingBasics.o \
+  Message_Template.f90
+
+Message_I__Form.o: \
+  VariableManagement.o \
+  MessagePassingBasics.o \
+  Message_Template.o \
+  Message_I__Form.f90
+
+Message_BI__Form.o: \
+  VariableManagement.o \
+  MessagePassingBasics.o \
+  Message_Template.o \
+  Message_BI__Form.f90
+
+Message_R__Form.o: \
+  VariableManagement.o \
+  MessagePassingBasics.o \
+  Message_Template.o \
+  Message_R__Form.f90
+
+Message_C__Form.o: \
+  VariableManagement.o \
+  MessagePassingBasics.o \
+  Message_Template.o \
+  Message_C__Form.f90
+
+MessageIncoming_I__Form.o: \
+  VariableManagement.o \
+  Message_I__Form.o \
+  MessageIncoming_I__Form.f90
+
+MessageIncoming_BI__Form.o: \
+  VariableManagement.o \
+  Message_BI__Form.o \
+  MessageIncoming_BI__Form.f90
+
+MessageIncoming_R__Form.o: \
+  VariableManagement.o \
+  Message_R__Form.o \
+  MessageIncoming_R__Form.f90
+
+MessageIncoming_C__Form.o: \
+  VariableManagement.o \
+  Message_C__Form.o \
+  MessageIncoming_C__Form.f90
+
+MessageOutgoing_I__Form.o: \
+  VariableManagement.o \
+  Message_I__Form.o \
+  MessageOutgoing_I__Form.f90
+
+MessageOutgoing_BI__Form.o: \
+  VariableManagement.o \
+  Message_BI__Form.o \
+  MessageOutgoing_BI__Form.f90
+
+MessageOutgoing_R__Form.o: \
+  VariableManagement.o \
+  Message_R__Form.o \
+  MessageOutgoing_R__Form.f90
+
+MessageOutgoing_C__Form.o: \
+  VariableManagement.o \
+  Message_C__Form.o \
+  MessageOutgoing_C__Form.f90
+
+Message_1D__Template.o: \
+  VariableManagement.o \
+  Message_Template.o \
+  Message_1D__Template.f90
+
+MessageIncoming_1D_I__Form.o: \
+  VariableManagement.o \
+  MessagePassingBasics.o \
+  Message_Template.o \
+  MessageIncoming_I__Form.o \
+  Message_1D__Template.o \
+  MessageIncoming_1D_I__Form.f90
+
+MessageIncoming_1D_BI__Form.o: \
+  VariableManagement.o \
+  MessagePassingBasics.o \
+  Message_Template.o \
+  MessageIncoming_BI__Form.o \
+  Message_1D__Template.o \
+  MessageIncoming_1D_BI__Form.f90
+
+MessageIncoming_1D_R__Form.o: \
+  VariableManagement.o \
+  MessagePassingBasics.o \
+  Message_Template.o \
+  MessageIncoming_R__Form.o \
+  Message_1D__Template.o \
+  MessageIncoming_1D_R__Form.f90
+
+MessageIncoming_1D_C__Form.o: \
+  VariableManagement.o \
+  MessagePassingBasics.o \
+  Message_Template.o \
+  MessageIncoming_C__Form.o \
+  Message_1D__Template.o \
+  MessageIncoming_1D_C__Form.f90
+
+MessageOutgoing_1D_I__Form.o: \
+  VariableManagement.o \
+  MessagePassingBasics.o \
+  Message_Template.o \
+  MessageOutgoing_I__Form.o \
+  Message_1D__Template.o \
+  MessageOutgoing_1D_I__Form.f90
+
+MessageOutgoing_1D_BI__Form.o: \
+  VariableManagement.o \
+  MessagePassingBasics.o \
+  Message_Template.o \
+  MessageOutgoing_BI__Form.o \
+  Message_1D__Template.o \
+  MessageOutgoing_1D_BI__Form.f90
+
+MessageOutgoing_1D_R__Form.o: \
+  VariableManagement.o \
+  MessagePassingBasics.o \
+  Message_Template.o \
+  MessageOutgoing_R__Form.o \
+  Message_1D__Template.o \
+  MessageOutgoing_1D_R__Form.f90
+
+MessageOutgoing_1D_C__Form.o: \
+  VariableManagement.o \
+  MessagePassingBasics.o \
+  Message_Template.o \
+  MessageOutgoing_C__Form.o \
+  Message_1D__Template.o \
+  MessageOutgoing_1D_C__Form.f90
+
+PointToPoint.o: \
+  Message_Template.o \
+  Message_I__Form.o \
+  Message_BI__Form.o \
+  Message_R__Form.o \
+  Message_C__Form.o \
+  MessageIncoming_I__Form.o \
+  MessageIncoming_BI__Form.o \
+  MessageIncoming_R__Form.o \
+  MessageIncoming_C__Form.o \
+  MessageOutgoing_I__Form.o \
+  MessageOutgoing_BI__Form.o \
+  MessageOutgoing_R__Form.o \
+  MessageOutgoing_C__Form.o \
+  Message_1D__Template.o \
+  MessageIncoming_1D_I__Form.o \
+  MessageIncoming_1D_BI__Form.o \
+  MessageIncoming_1D_R__Form.o \
+  MessageIncoming_1D_C__Form.o \
+  MessageOutgoing_1D_I__Form.o \
+  MessageOutgoing_1D_BI__Form.o \
+  MessageOutgoing_1D_R__Form.o \
+  MessageOutgoing_1D_C__Form.o \
+  PointToPoint.f90
+
+PointToPoint.a: $(POINT_TO_POINT)
+	ar r PointToPoint.a $(POINT_TO_POINT)
+

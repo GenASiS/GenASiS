@@ -1,0 +1,5 @@
+PATH_MODULES     = $(PATH_GENASIS)/Modules
+
+include $(PATH_MODULES)/Makefile_Path
+
+VPATH = ../:$(VPATH_MODULES)

@@ -1,0 +1,24 @@
+POINT_TO_POINT = \
+  PointToPoint.o \
+  MessageOutgoing_1D_C__Form.o \
+  MessageOutgoing_1D_R__Form.o \
+  MessageOutgoing_1D_BI__Form.o \
+  MessageOutgoing_1D_I__Form.o \
+  MessageIncoming_1D_C__Form.o \
+  MessageIncoming_1D_R__Form.o \
+  MessageIncoming_1D_BI__Form.o \
+  MessageIncoming_1D_I__Form.o \
+  Message_1D__Template.o \
+  MessageOutgoing_C__Form.o \
+  MessageOutgoing_R__Form.o \
+  MessageOutgoing_BI__Form.o \
+  MessageOutgoing_I__Form.o \
+  MessageIncoming_C__Form.o \
+  MessageIncoming_R__Form.o \
+  MessageIncoming_BI__Form.o \
+  MessageIncoming_I__Form.o \
+  Message_C__Form.o \
+  Message_R__Form.o \
+  Message_BI__Form.o \
+  Message_I__Form.o \
+  Message_Template.o

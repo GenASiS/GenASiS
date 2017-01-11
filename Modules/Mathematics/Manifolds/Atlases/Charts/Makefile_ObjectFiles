@@ -1,0 +1,7 @@
+include $(PATH_SINGLE_LEVEL_CHARTS)/Makefile_ObjectFiles
+include $(PATH_CHART_BASICS)/Makefile_ObjectFiles
+
+CHARTS = \
+  Charts.o \
+  $(SINGLE_LEVEL_CHARTS) \
+  $(CHART_BASICS)
