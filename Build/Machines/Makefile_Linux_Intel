@@ -10,5 +10,5 @@ FORTRAN_PROFILE      =
 LINK = mpiifort -qopenmp
 
 #-- Silo library include and link line flag and location
-INCLUDE_SILO = -I/usr/local/silo/4.10/intel/include
-LIBRARY_SILO = -L/usr/local/silo/4.10/intel/lib -lsilo
+INCLUDE_SILO = #-I/usr/local/silo/4.10/intel/include
+LIBRARY_SILO = #-L/usr/local/silo/4.10/intel/lib -lsilo
