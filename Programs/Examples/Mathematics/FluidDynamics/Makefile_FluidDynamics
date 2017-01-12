@@ -10,48 +10,50 @@ FLUID = \
   Fluid_CSL__Form.o \
   Tally_F_P__Form.o \
   Tally_F_D__Form.o \
+  Fluid_P_MHN__Form.o \
   Fluid_P_P__Form.o \
   Fluid_P__Template.o \
   Fluid_D__Form.o
 
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MATHEMATICS)/Makefile_Dependencies
+include $(PATH_THIRD_PARTY)/Makefile_Dependencies
 
 SineWave: Basics.a Mathematics.a Fluid.a SineWave.o
 	$(LINK) $(FFLAGS) \
           -o SineWave_$(MACHINE) \
           SineWave.o SineWave_Form.o PlaneWave_Template.o \
-          Fluid.a Mathematics.a Basics.a $(LIBRARIES)
+          Fluid.a Mathematics.a Basics.a $(THIRD_PARTY) $(LIBRARIES)
 
 SawtoothWave: Basics.a Mathematics.a Fluid.a SawtoothWave.o
 	$(LINK) $(FFLAGS) \
           -o SawtoothWave_$(MACHINE) \
           SawtoothWave.o SawtoothWave_Form.o PlaneWave_Template.o \
-          Fluid.a Mathematics.a Basics.a $(LIBRARIES)
+          Fluid.a Mathematics.a Basics.a $(THIRD_PARTY) $(LIBRARIES)
 
 RiemannProblem: Basics.a Mathematics.a Fluid.a RiemannProblem.o
 	$(LINK) $(FFLAGS) \
           -o RiemannProblem_$(MACHINE) \
           RiemannProblem.o RiemannProblem_Form.o \
-          Fluid.a Mathematics.a Basics.a $(LIBRARIES)
+          Fluid.a Mathematics.a Basics.a $(THIRD_PARTY) $(LIBRARIES)
 
 RayleighTaylor: Basics.a Mathematics.a Fluid.a RayleighTaylor.o
 	$(LINK) $(FFLAGS) \
           -o RayleighTaylor_$(MACHINE) \
           RayleighTaylor.o RayleighTaylor_Form.o Tally_RT__Form.o \
-          Fluid.a Mathematics.a Basics.a $(LIBRARIES)
+          Fluid.a Mathematics.a Basics.a $(THIRD_PARTY) $(LIBRARIES)
 
 SedovTaylor: Basics.a Mathematics.a Fluid.a SedovTaylor.o
 	$(LINK) $(FFLAGS) \
           -o SedovTaylor_$(MACHINE) \
           SedovTaylor.o SedovTaylor_Form.o \
-          Fluid.a Mathematics.a Basics.a $(LIBRARIES)
+          Fluid.a Mathematics.a Basics.a $(THIRD_PARTY) $(LIBRARIES)
 
 FishboneMoncrief: Basics.a Mathematics.a Fluid.a FishboneMoncrief.o
 	$(LINK) $(FFLAGS) \
           -o FishboneMoncrief_$(MACHINE) \
           FishboneMoncrief.o FishboneMoncrief_Form.o Tally_FM__Form.o \
-          Fluid.a Mathematics.a Basics.a $(LIBRARIES)
+          Fluid.a Mathematics.a Basics.a $(THIRD_PARTY) $(LIBRARIES)
 
 clean:
 	rm -f *.o *.a *.mod *.ld
@@ -81,6 +83,13 @@ Fluid_P_P__Form.o: \
   Fluid_P__Template.o \
   Fluid_P_P__Form.f90
 
+Fluid_P_MHN__Form.o: \
+  nuc_eos.a \
+  Basics.o \
+  Mathematics.o \
+  Fluid_P__Template.o \
+  Fluid_P_MHN__Form.f90
+
 Tally_F_D__Form.o: \
   Basics.o \
   Mathematics.o \
@@ -99,6 +108,7 @@ Fluid_CSL__Form.o: \
   Mathematics.o \
   Fluid_D__Form.o \
   Fluid_P_P__Form.o \
+  Fluid_P_MHN__Form.o \
   Fluid_CSL__Form.f90
 
 Fluid_ASC__Form.o: \
@@ -106,6 +116,7 @@ Fluid_ASC__Form.o: \
   Mathematics.o \
   Fluid_D__Form.o \
   Fluid_P_P__Form.o \
+  Fluid_P_MHN__Form.o \
   Fluid_CSL__Form.o \
   Tally_F_D__Form.o \
   Tally_F_P__Form.o \

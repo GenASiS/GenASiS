@@ -6,6 +6,7 @@ module Fluid_CSL__Form
   use Mathematics
   use Fluid_D__Form
   use Fluid_P_P__Form
+  use Fluid_P_MHN__Form
 
   implicit none
   private
@@ -27,6 +28,8 @@ module Fluid_CSL__Form
       Fluid_D
     procedure, public, pass :: &
       Fluid_P_P
+    procedure, public, pass :: &
+      Fluid_P_MHN
     final :: &
       Finalize
     procedure, private, pass :: &
@@ -117,6 +120,27 @@ contains
   end function Fluid_P_P
 
 
+  function Fluid_P_MHN ( FC ) result ( F )
+
+    class ( Fluid_CSL_Form ), intent ( in ), target :: &
+      FC
+    class ( Fluid_P_MHN_Form ), pointer :: &
+      F
+      
+    class ( VariableGroupForm ), pointer :: &
+      Field
+
+    F => null ( )
+
+    Field => FC % Field
+    select type ( Field )
+    class is ( Fluid_P_MHN_Form )
+    F => Field
+    end select !-- Field
+
+  end function Fluid_P_MHN
+
+
   impure elemental subroutine Finalize ( FC )
 
     type ( Fluid_CSL_Form ), intent ( inout ) :: &
@@ -154,6 +178,16 @@ contains
                ( FC % VelocityUnit, FC % MassDensityUnit, &
                  FC % EnergyDensityUnit, FC % TemperatureUnit, FC % nValues, &
                  NameOption = NameOption )
+        call F % SetOutput ( FC % FieldOutput )
+      end select !-- F
+    case ( 'MEAN_HEAVY_NUCLEUS' )
+      allocate ( Fluid_P_MHN_Form :: FC % Field )
+      select type ( F => FC % Field )
+      type is ( Fluid_P_MHN_Form )
+        call F % Initialize &
+               ( FC % VelocityUnit, FC % MassDensityUnit, &
+                 FC % EnergyDensityUnit, FC % NumberDensityUnit, &
+                 FC % TemperatureUnit, FC % nValues, NameOption = NameOption )
         call F % SetOutput ( FC % FieldOutput )
       end select !-- F
     case default

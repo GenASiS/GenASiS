@@ -6,6 +6,7 @@ module Fluid_ASC__Form
   use Mathematics
   use Fluid_D__Form
   use Fluid_P_P__Form
+  use Fluid_P_MHN__Form
   use Fluid_CSL__Form
   use Tally_F_D__Form
   use Tally_F_P__Form
@@ -34,6 +35,10 @@ module Fluid_ASC__Form
       Fluid_P_P_CSL
     generic, public :: &
       Fluid_P_P => Fluid_P_P_CSL
+    procedure, private, pass :: &
+      Fluid_P_MHN_CSL
+    generic, public :: &
+      Fluid_P_MHN => Fluid_P_MHN_CSL
     final :: &
       Finalize
     procedure, public, pass :: &
@@ -104,7 +109,7 @@ contains
           allocate &
             ( Tally_F_D_Form :: FA % TallyBoundaryGlobal ( iB ) % Element )
         end do !-- iB
-      case ( 'POLYTROPIC' )
+      case ( 'POLYTROPIC', 'MEAN_HEAVY_NUCLEUS' )
         allocate ( Tally_F_P_Form :: FA % TallyInterior )
         allocate ( Tally_F_P_Form :: FA % TallyTotal )
         allocate ( Tally_F_P_Form :: FA % TallyChange )
@@ -211,6 +216,26 @@ contains
     end select !-- FC
 
   end function Fluid_P_P_CSL
+
+
+  function Fluid_P_MHN_CSL ( FA ) result ( F )
+
+    class ( Fluid_ASC_Form ), intent ( in ) :: &
+      FA
+    class ( Fluid_P_MHN_Form ), pointer :: &
+      F
+
+    select type ( FC => FA % Chart )
+    class is ( Fluid_CSL_Form )
+      F => FC % Fluid_P_MHN ( )
+    class default
+      call Show ( 'Fluid Chart type not recognized', CONSOLE % ERROR )
+      call Show ( 'Fluid_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Fluid_P_P_CSL', 'function', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- FC
+
+  end function Fluid_P_MHN_CSL
 
 
   impure elemental subroutine Finalize ( FA )
