@@ -1,0 +1,4 @@
+include $(PATH_OCONNOR_OTT)/Makefile_ObjectFiles
+
+THIRD_PARTY = \
+  $(OCONNOR_OTT)
