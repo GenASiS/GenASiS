@@ -47,6 +47,8 @@ module Fluid_P_MHN__Form
       Apply_EOS_MHN_T_Kernel
     procedure, public, nopass :: &
       Apply_EOS_MHN_E_Kernel
+    procedure, public, nopass :: &
+      ResetTemperature
   end type Fluid_P_MHN_Form
 
     private :: &
@@ -287,6 +289,7 @@ contains
       oValueOption
 
     integer ( KDI ) :: &
+      iV, &
       oV, &  !-- oValue
       nV     !-- nValues
       
@@ -339,7 +342,7 @@ contains
         DE    => FV ( oV + 1 : oV + nV, C % CONSERVED_ELECTRON_DENSITY ), &
         YE    => FV ( oV + 1 : oV + nV, C % ELECTRON_FRACTION ) )
 
-    T = C % Value ( :, C % TEMPERATURE )
+    call C % ResetTemperature ( C % Value ( :, C % TEMPERATURE ), T )
 
     call C % ComputeBaryonMassKernel ( M )
     call C % ComputeDensityMomentumKernel &
@@ -548,25 +551,26 @@ contains
 
     !-- Historical Oak Ridge Shift, accounting for nuclear binding energy
     OR_Shift = 8.9_KDR * UNIT % MEV / AMU
-      
-    do iV = 1 , size ( P )
-       if ( N ( iV ) == 0.0_KDR ) cycle 
-        N_Temp   = N ( iV ) / UNIT % MASS_DENSITY_CGS
-        T_Temp   = T ( iV ) / UNIT % MEV 
-        E ( iV ) = ( ( E ( iV ) / N ( iV ) ) - OR_Shift ) &
-                     / ( UNIT % ERG / UNIT % GRAM )
-        P ( iV ) = P ( iV ) / UNIT % BARYE
+    
+    !$OMP parallel do private ( iV ) 
+    do iV = 1, nValues
+      if ( N ( iV ) == 0.0_KDR ) cycle 
+      N_Temp   = N ( iV ) / UNIT % MASS_DENSITY_CGS
+      T_Temp   = T ( iV ) / UNIT % MEV 
+      E ( iV ) = ( ( E ( iV ) / N ( iV ) ) - OR_Shift ) &
+                   / ( UNIT % ERG / UNIT % GRAM )
+      P ( iV ) = P ( iV ) / UNIT % BARYE
       call nuc_eos_short &
              ( N_Temp, T_Temp, YE ( iV ), E ( iV ), P ( iV ), SB ( iV ), &
                cs2, dedt, dpderho, dpdrhoe, munu, &
                keytemp, keyerr, rfeps )
-      call nuc_eos_one ( N_Temp, T_Temp, YE ( iV ), Gamma ( iV ), 19)      
+      call nuc_eos_one ( N_Temp, T_Temp, YE ( iV ), Gamma ( iV ), 19 )      
+      P ( iV ) = P ( iV ) * UNIT % BARYE
+      E ( iV ) = E ( iV ) * UNIT % ERG / UNIT % GRAM + OR_Shift
+      E ( iV ) = E ( iV ) * N ( iV )
     end do
+    !$OMP end parallel do
     
-    P = P * UNIT % BARYE
-    E = E * UNIT % ERG / UNIT % GRAM + OR_Shift
-    E = E * N
-
   end subroutine Apply_EOS_MHN_T_Kernel
   
 
@@ -618,30 +622,48 @@ contains
     
     !-- Historical Oak Ridge Shift, accounting for nuclear binding energy
     OR_Shift = 8.9_KDR * UNIT % MEV / AMU
-      
-    do iV = 1 , size ( P )
-       if ( N ( iV ) == 0.0_KDR ) cycle 
-        N_Temp   = N ( iV ) / UNIT % MASS_DENSITY_CGS
-        E_Temp   = ( ( E ( iV ) / N ( iV ) ) - OR_Shift ) &
-                   / ( UNIT % ERG / UNIT % GRAM )
-        P ( iV ) = P ( iV ) / UNIT % BARYE
-        T ( iV ) = T ( iV ) / UNIT % MEV
-!call Show ( iV, '>>> iV' )
-!call Show ( [ N_Temp, E_Temp, P ( iV ), T ( iV ), YE ( iV ), NE ( iV ) ], &
-!              '>>> rho, E, P, T, YE, NE before' )
+
+    !$OMP parallel do private ( iV ) 
+    do iV = 1, nValues
+      if ( N ( iV ) == 0.0_KDR ) cycle 
+      N_Temp   = N ( iV ) / UNIT % MASS_DENSITY_CGS
+      E_Temp   = ( ( E ( iV ) / N ( iV ) ) - OR_Shift ) &
+                 / ( UNIT % ERG / UNIT % GRAM )
+      P ( iV ) = P ( iV ) / UNIT % BARYE
+      T ( iV ) = T ( iV ) / UNIT % MEV
       call nuc_eos_short &
              ( N_Temp, T ( iV ), YE ( iV ), E_temp, P ( iV ), SB ( iV ), &
                cs2, dedt, dpderho, dpdrhoe, munu, &
                keytemp, keyerr, rfeps )
-!call Show ( [ N_Temp, E_Temp, P ( iV ), T ( iV ), YE ( iV ), NE ( iV ) ], &
-!              '>>> rho, E, P, T, YE, NE after' )
-      call nuc_eos_one ( N_Temp, T ( iV ), YE ( iV ), Gamma ( iV ), 19) 
+      call nuc_eos_one ( N_Temp, T ( iV ), YE ( iV ), Gamma ( iV ), 19 ) 
+      P ( iV ) = P ( iV ) * UNIT % BARYE
+      T ( iV ) = T ( iV ) * UNIT % MEV
     end do
+    !$OMP end parallel do
     
-    P = P * UNIT % BARYE
-    T = T * UNIT % MEV
-
   end subroutine Apply_EOS_MHN_E_Kernel
+
+
+  subroutine ResetTemperature ( T_Value, T )
+
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      T_Value
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      T
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+
+    nValues = size ( T )
+
+    !$OMP parallel do private ( iV ) 
+    do iV = 1, nValues
+      T ( iV )  =  T_Value ( iV )
+    end do
+    !$OMP end parallel do
+
+  end subroutine ResetTemperature
 
 
   subroutine InitializeBasics &
