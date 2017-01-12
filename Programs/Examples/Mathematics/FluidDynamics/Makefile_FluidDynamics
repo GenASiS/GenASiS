@@ -1,7 +1,7 @@
 PATH_GENASIS = ../../../../..
 
 all: SineWave SawtoothWave RiemannProblem RayleighTaylor \
-     SedovTaylor FishboneMoncrief
+     SedovTaylor FishboneMoncrief WoosleyHeger_07
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
@@ -55,6 +55,12 @@ FishboneMoncrief: Basics.a Mathematics.a Fluid.a FishboneMoncrief.o
           FishboneMoncrief.o FishboneMoncrief_Form.o Tally_FM__Form.o \
           Fluid.a Mathematics.a Basics.a $(THIRD_PARTY) $(LIBRARIES)
 
+WoosleyHeger_07: Basics.a Mathematics.a Fluid.a WoosleyHeger_07.o
+	$(LINK) $(FFLAGS) \
+          -o WoosleyHeger_07_$(MACHINE) \
+          WoosleyHeger_07.o WoosleyHeger_07__Form.o \
+          Fluid.a Mathematics.a Basics.a $(THIRD_PARTY) $(LIBRARIES)
+
 clean:
 	rm -f *.o *.a *.mod *.ld
 
@@ -65,6 +71,7 @@ clobber: clean
 	rm -f RayleighTaylor_*
 	rm -f SedovTaylor_*
 	rm -f FishboneMoncrief_*
+	rm -f WoosleyHeger_07_*
 
 Fluid_D__Form.o: \
   Basics.o \
@@ -217,3 +224,17 @@ FishboneMoncrief.o: \
   Basics.o \
   FishboneMoncrief_Form.o \
   FishboneMoncrief.f90
+
+WoosleyHeger_07__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_P__Template.o \
+  Fluid_P_MHN__Form.o \
+  Fluid_ASC__Form.o \
+  Tally_F_P__Form.o \
+  WoosleyHeger_07__Form.f90
+
+WoosleyHeger_07.o: \
+  Basics.o \
+  WoosleyHeger_07__Form.o \
+  WoosleyHeger_07.f90
