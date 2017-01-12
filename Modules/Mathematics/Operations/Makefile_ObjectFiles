@@ -1,7 +1,9 @@
 include $(PATH_CALCULUS)/Makefile_ObjectFiles
+include $(PATH_INTERPOLATIONS)/Makefile_ObjectFiles
 include $(PATH_ALGEBRA)/Makefile_ObjectFiles
 
 OPERATIONS = \
   Operations.o \
   $(CALCULUS) \
+  $(INTERPOLATIONS) \
   $(ALGEBRA)
