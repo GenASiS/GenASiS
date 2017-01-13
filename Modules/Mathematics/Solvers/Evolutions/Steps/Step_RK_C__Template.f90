@@ -1,5 +1,3 @@
-!-- Step_RK_C is a template for a RungeKutta time step of a conserved current.
-
 module Step_RK_C__Template
 
   !-- Step_RungeKutta_Current_Template
@@ -29,6 +27,8 @@ module Step_RK_C__Template
       Current => null ( )
     type ( IncrementDivergence_FV_Form ), allocatable :: &
       IncrementDivergence
+    type ( IncrementDampingForm ), allocatable :: &
+      IncrementDamping
     procedure ( AS ), pointer, pass :: &
       ApplySources => null ( ) 
     procedure ( AR ), pointer, pass :: &
@@ -105,6 +105,11 @@ contains
 
     allocate ( S % IncrementDivergence )
     associate ( ID => S % IncrementDivergence )
+    call ID % Initialize ( S % Name )
+    end associate !-- ID
+
+    allocate ( S % IncrementDamping )
+    associate ( ID => S % IncrementDamping )
     call ID % Initialize ( S % Name )
     end associate !-- ID
 
@@ -224,6 +229,8 @@ contains
 
     integer ( KDI ) :: &
       iF  !-- iField
+    type ( VariableGroupForm ), allocatable :: &
+      DC  !-- DampingCoefficient
     class ( GeometryFlatForm ), pointer :: &
       G
 
@@ -267,6 +274,17 @@ contains
     !-- Other explicit sources
     if ( associated ( S % ApplySources ) ) &
       call S % ApplySources ( K, C, TimeStep )
+
+    !-- Relaxation
+    if ( associated ( S % ApplyRelaxation ) ) then
+      associate ( ID => S % IncrementDamping )
+      allocate ( DC )
+      call DC % Initialize ( shape ( K % Value ), ClearOption = .true. )
+      call S % ApplyRelaxation ( K, DC, C, TimeStep )
+      call ID % Compute ( K, C, K, DC, TimeStep )
+      deallocate ( DC )
+      end associate !-- iD
+    end if
 
     select type ( Grid => S % Grid )
     class is ( Chart_SLD_Form )
