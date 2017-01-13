@@ -31,8 +31,6 @@ module Step_RK_C__Template
       IncrementDivergence
     procedure ( AS ), pointer, pass :: &
       ApplySources => null ( ) 
-    procedure ( AR ), pointer, pass :: &
-      ApplyRelaxation => null ( )
   contains
     procedure, public, pass :: &
       InitializeTemplate_C
@@ -64,22 +62,6 @@ module Step_RK_C__Template
         TimeStep
     end subroutine AS
 
-    subroutine AR ( S, IncrementExplicit, DampingCoefficient, Current, &
-                    TimeStep )
-      use Basics
-      use Fields
-      import Step_RK_C_Template
-      class ( Step_RK_C_Template ), intent ( in ) :: &
-        S
-      type ( VariableGroupForm ), intent ( inout ) :: &
-        IncrementExplicit, &
-        DampingCoefficient
-      class ( CurrentTemplate ), intent ( in ) :: &
-        Current
-      real ( KDR ), intent ( in ) :: &
-        TimeStep
-    end subroutine AR
-    
   end interface
 
 contains
