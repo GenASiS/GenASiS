@@ -1,0 +1,222 @@
+PATH_GENASIS = ../../../../..
+
+all:  SineWaveStreaming SineWaveDiffusion #EATest HomogeneousSphereTest \
+#      HomogeneousCylinderTest LineSourceTest
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+# VPATH := ../../FluidDynamics:$(VPATH)
+
+# include ../../FluidDynamics/Makefile_ObjectFiles
+
+RADIATION_MOMENTS = \
+  RadiationMoments_ASC__Form.o \
+  RadiationMoments_CSL__Form.o \
+  RadiationMoments_Form.o \
+  Interactions_ASC__Form.o \
+  Interactions_CSL__Form.o \
+  Interactions_C__Form.o \
+  Interactions_Template.o
+
+SineWaveStreaming: Basics.a Mathematics.a RadiationMoments.a \
+  SineWaveStreaming.o
+	$(LINK) $(FFLAGS) \
+          -o SineWaveStreaming_$(MACHINE) \
+          SineWaveStreaming.o SineWaveStreaming_Form.o \
+          PlaneWaveStreaming_Template.o \
+          RadiationMoments.a Mathematics.a Basics.a \
+          $(LIBRARIES)
+
+SineWaveDiffusion: Basics.a Mathematics.a RadiationMoments.a \
+  SineWaveDiffusion.o
+	$(LINK) $(FFLAGS) \
+          -o SineWaveDiffusion_$(MACHINE) \
+          SineWaveDiffusion.o SineWaveDiffusion_Form.o \
+          RadiationMoments.a Mathematics.a Basics.a \
+          $(LIBRARIES)
+
+# EATest: EA_Test.o
+# 	$(LINK) $(FFLAGS) \
+#           -o EATest_$(MACHINE) \
+#           $(BASICS) $(MANIFOLDS) $(OPERATIONS) ConservedFields_Template.o \
+#           ConservedFieldsChart_Template.o ConservedFieldsAtlas_Template.o \
+#           ConservationLawSolver_Form.o ConservationLawEvolution_Template.o \
+#           GreyMoments_Form.o UpdateExplicit_GM__Form.o  \
+# 	  UpdateImplicit_GM__Form.o GreyMomentsSolver_Form.o\
+#           GreyMomentsChart_Form.o GreyMomentsAtlas_Form.o \
+#           GreyMomentsEvolution_Template.o EA_Test_Form.o \
+#           EA_Test.o \
+#           $(LIBRARIES)
+
+# HomogeneousSphereTest: HomogeneousSphere_Test.o
+# 	$(LINK) $(FFLAGS) \
+#           -o HomogeneousSphereTest_$(MACHINE) \
+#           $(BASICS) $(MANIFOLDS) $(OPERATIONS) ConservedFields_Template.o \
+#           ConservedFieldsChart_Template.o ConservedFieldsAtlas_Template.o \
+#           ConservationLawSolver_Form.o ConservationLawEvolution_Template.o \
+#           GreyMoments_Form.o UpdateExplicit_GM__Form.o  \
+# 	  UpdateImplicit_GM__Form.o GreyMomentsSolver_Form.o\
+#           GreyMomentsChart_Form.o GreyMomentsAtlas_Form.o \
+#           GreyMomentsEvolution_Template.o HomogeneousSphere_Test_Form.o \
+#           HomogeneousSphere_Test.o \
+#           $(LIBRARIES)
+
+# HomogeneousCylinderTest: HomogeneousCylinder_Test.o
+# 	$(LINK) $(FFLAGS) \
+#           -o HomogeneousCylinderTest_$(MACHINE) \
+#           $(BASICS) $(MANIFOLDS) $(OPERATIONS) ConservedFields_Template.o \
+#           ConservedFieldsChart_Template.o ConservedFieldsAtlas_Template.o \
+#           ConservationLawSolver_Form.o ConservationLawEvolution_Template.o \
+#           GreyMoments_Form.o UpdateExplicit_GM__Form.o  \
+# 	  UpdateImplicit_GM__Form.o GreyMomentsSolver_Form.o\
+#           GreyMomentsChart_Form.o GreyMomentsAtlas_Form.o \
+#           GreyMomentsEvolution_Template.o HomogeneousCylinder_Test_Form.o \
+#           HomogeneousCylinder_Test.o \
+#           $(LIBRARIES)
+
+# LineSourceTest: LineSource_Test.o
+# 	$(LINK) $(FFLAGS) \
+#           -o LineSourceTest_$(MACHINE) \
+#           $(BASICS) $(MANIFOLDS) $(OPERATIONS) ConservedFields_Template.o \
+#           ConservedFieldsChart_Template.o ConservedFieldsAtlas_Template.o \
+#           ConservationLawSolver_Form.o ConservationLawEvolution_Template.o \
+#           GreyMoments_Form.o UpdateExplicit_GM__Form.o  \
+# 	  UpdateImplicit_GM__Form.o GreyMomentsSolver_Form.o\
+#           GreyMomentsChart_Form.o GreyMomentsAtlas_Form.o \
+#           GreyMomentsEvolution_LSTAnalyticSolution_Template.o LineSource_Test_Form.o \
+#           LineSource_Test.o \
+#           $(LIBRARIES)
+
+include $(PATH_BASICS)/Makefile_Dependencies
+include $(PATH_MATHEMATICS)/Makefile_Dependencies
+# include ../../FluidDynamics/Makefile_Dependencies
+# #include ../Makefile_Dependencies
+
+clean:
+	rm -f *.o *.a *.mod *.ld
+
+clobber: clean
+	rm -f SineWaveStreaming_*
+	rm -f SineWaveDiffusion_*
+
+Interactions_Template.o: \
+  Basics.o \
+  Mathematics.o \
+  Interactions_Template.f90
+
+Interactions_C__Form.o: \
+  Basics.o \
+  Interactions_Template.o \
+  Interactions_C__Form.f90
+
+Interactions_CSL__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Interactions_Template.o \
+  Interactions_C__Form.o \
+  Interactions_CSL__Form.f90
+
+Interactions_ASC__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Interactions_CSL__Form.o \
+  Interactions_ASC__Form.f90
+
+RadiationMoments_Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Interactions_Template.o \
+  RadiationMoments_Form.f90
+
+RadiationMoments_CSL__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Interactions_Template.o \
+  Interactions_CSL__Form.o \
+  RadiationMoments_Form.o \
+  RadiationMoments_CSL__Form.f90
+
+RadiationMoments_ASC__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Interactions_CSL__Form.o \
+  Interactions_ASC__Form.o \
+  RadiationMoments_Form.o \
+  RadiationMoments_CSL__Form.o \
+  RadiationMoments_ASC__Form.f90
+
+RadiationMoments.a: $(RADIATION_MOMENTS)
+	ar r RadiationMoments.a $(RADIATION_MOMENTS)
+
+PlaneWaveStreaming_Template.o: \
+  Basics.o \
+  Mathematics.o \
+  RadiationMoments_Form.o \
+  RadiationMoments_ASC__Form.o \
+  PlaneWaveStreaming_Template.f90
+
+SineWaveStreaming_Form.o: \
+  Basics.o \
+  PlaneWaveStreaming_Template.o \
+  SineWaveStreaming_Form.f90
+
+SineWaveStreaming.o: \
+  Basics.o \
+  SineWaveStreaming_Form.o \
+  SineWaveStreaming.f90
+
+SineWaveDiffusion_Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Interactions_Template.o \
+  Interactions_ASC__Form.o \
+  RadiationMoments_Form.o \
+  RadiationMoments_ASC__Form.o \
+  SineWaveDiffusion_Form.f90
+
+SineWaveDiffusion.o: \
+  Basics.o \
+  SineWaveDiffusion_Form.o \
+  SineWaveDiffusion.f90
+
+# HomogenousSphere_Test_Form.o: \
+#   Basics.o \
+#   Manifolds.o \
+#   GreyMoments_Form.o \
+#   GreyMomentsChart_Form.o \
+#   GreyMomentsAtlas_Form.o \
+#   ConservationLawEvolution_Template.o \
+#   HomogeneousSphere_Test_Form.f90
+
+# HomogeneousSphere_Test.o: \
+#   Basics.o \
+#   HomogeneousSphere_Test_Form.o \
+#   HomogeneousSphere_Test.f90
+
+# HomogenousCylinder_Test_Form.o: \
+#   Basics.o \
+#   Manifolds.o \
+#   GreyMoments_Form.o \
+#   GreyMomentsChart_Form.o \
+#   GreyMomentsAtlas_Form.o \
+#   ConservationLawEvolution_Template.o \
+#   HomogeneousCylinder_Test_Form.f90
+
+# HomogeneousCylinder_Test.o: \
+#   Basics.o \
+#   HomogeneousCylinder_Test_Form.o \
+#   HomogeneousCylinder_Test.f90
+
+# LineSource_Test_Form.o: \
+#   Basics.o \
+#   Manifolds.o \
+#   GreyMoments_Form.o \
+#   GreyMomentsChart_Form.o \
+#   GreyMomentsAtlas_Form.o \
+#   GreyMomentsEvolution_LSTAnalyticSolution_Template.o \
+#   LineSource_Test_Form.f90
+
+# LineSource_Test.o: \
+#   Basics.o \
+#   LineSource_Test_Form.o \
+#   LineSource_Test.f90
