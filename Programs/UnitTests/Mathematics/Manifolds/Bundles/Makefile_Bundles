@@ -1,0 +1,29 @@
+PATH_GENASIS = ../../../../../..
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+all: Bundle_SLL_ASC_CSLD__Form_Test
+
+Bundle_SLL_ASC_CSLD__Form_Test: Bundle_SLL_ASC_CSLD__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Bundle_SLL_ASC_CSLD__Form_Test_$(MACHINE) \
+          $(BASICS) $(ATLASES) BundleHeader_Form.o FieldBundle_Template.o \
+          FibersWritten_CSL__Form.o Field_BSLL_ASC_CSLD__Template.o \
+          Bundle_SLL_ASC_CSLD__Form.o Bundle_SLL_ASC_CSLD__Form_Test.o \
+          $(LIBRARIES)
+
+clean:
+	rm -f *.o *.mod *.ld
+
+clobber: clean
+	rm -f Bundle_SLL_ASC_CSLD__Form_Test_*
+
+include $(PATH_BASICS)/Makefile_Dependencies
+include $(PATH_ATLASES)/Makefile_Dependencies
+include $(PATH_BUNDLES)/Makefile_Dependencies
+
+Bundle_SLL_ASC_CSLD__Form_Test.o: \
+  Basics.o \
+  Atlases.o \
+  Bundle_SLL_ASC_CSLD__Form.o \
+  Bundle_SLL_ASC_CSLD__Form_Test.f90
