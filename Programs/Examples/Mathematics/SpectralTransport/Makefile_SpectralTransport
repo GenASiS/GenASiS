@@ -1,0 +1,26 @@
+PATH_GENASIS = ../../../../..
+
+all: Thermalization
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+Thermalization: Basics.a Mathematics.a \
+  SineWaveStreaming.o
+	$(LINK) $(FFLAGS) \
+          -o Thermalization_$(MACHINE) \
+          Thermalization.o Thermalization_Form.o \
+          Mathematics.a Basics.a $(LIBRARIES)
+
+include $(PATH_BASICS)/Makefile_Dependencies
+include $(PATH_MATHEMATICS)/Makefile_Dependencies
+
+clean:
+	rm -f *.o *.a *.mod *.ld
+
+clobber: clean
+	rm -f Thermalization_*
+
+Thermalization_Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Thermalization_Form.f90
