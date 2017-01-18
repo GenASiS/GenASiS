@@ -8,7 +8,8 @@ Thermalization: Basics.a Mathematics.a \
   SineWaveStreaming.o
 	$(LINK) $(FFLAGS) \
           -o Thermalization_$(MACHINE) \
-          Thermalization.o Thermalization_Form.o \
+          Thermalization.o Thermalization_Form.o Matter_CSL__Form.o \
+          Matter_Form.o \
           Mathematics.a Basics.a $(LIBRARIES)
 
 include $(PATH_BASICS)/Makefile_Dependencies
@@ -20,7 +21,26 @@ clean:
 clobber: clean
 	rm -f Thermalization_*
 
+Matter_Form.o: \
+  Basics.o \
+  Matter_Form.f90
+
+Matter_CSL__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Matter_Form.o \
+  Matter_CSL__Form.f90
+
+Matter_ASC__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Matter_Form.o \
+  Matter_CSL__Form.o \
+  Matter_ASC__Form.f90
+
 Thermalization_Form.o: \
   Basics.o \
   Mathematics.o \
+  Matter_Form.o \
+  Matter_ASC__Form.o \
   Thermalization_Form.f90
