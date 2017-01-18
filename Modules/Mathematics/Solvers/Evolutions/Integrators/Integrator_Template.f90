@@ -41,6 +41,8 @@ module Integrator_Template
       PositionSpace
     class ( GeometryFlat_ASC_Form ), allocatable :: &
       Geometry_ASC
+    class ( BundleHeaderForm ), allocatable :: &
+      MomentumSpace
     procedure ( SR ), pointer :: &
       SetReference => null ( )
   contains
@@ -51,7 +53,7 @@ module Integrator_Template
     procedure, public, pass :: &  !-- 1
       FinalizeTemplate
     procedure, private, pass :: &  !-- 2
-      OpenStreams_PS
+      OpenStreams
     procedure, private, pass :: &  !-- 2
       AdministerCheckpoint
 !-- FIXME: Intel compiler fails to recognize concrete overriding in
@@ -81,8 +83,6 @@ module Integrator_Template
       SetWriteTimeInterval
     procedure, public, pass :: &  !-- 3
       ComputeNewTime
-    procedure, public, pass :: &  !-- 4
-      Write_PS
     procedure, public, pass :: &
       ComputeTimeStep
 !-- See FIXME above
@@ -187,7 +187,7 @@ contains
       call PROGRAM_HEADER % Abort ( )
     end if
 
-    call I % OpenStreams_PS ( )
+    call I % OpenStreams ( )
 
     I % iCycle = 0
     I % nRampCycles = 1
@@ -262,6 +262,8 @@ contains
     class ( IntegratorTemplate ), intent ( inout ) :: &
       I
 
+    if ( allocated ( I % MomentumSpace ) ) &
+      deallocate ( I % MomentumSpace ) 
     if ( allocated ( I % Geometry_ASC ) ) &
       deallocate ( I % Geometry_ASC )
     if ( allocated ( I % PositionSpace ) ) &
@@ -279,7 +281,7 @@ contains
   end subroutine FinalizeTemplate
 
 
-  subroutine OpenStreams_PS ( I )
+  subroutine OpenStreams ( I )
 
     class ( IntegratorTemplate ), intent ( inout ) :: &
       I
@@ -301,18 +303,35 @@ contains
     VerboseStream = .false.
     call PROGRAM_HEADER % GetParameter ( VerboseStream, 'VerboseStream' )
 
+    associate ( iS => 1 )  !-- iStream
+
     select type ( PS => I % PositionSpace )
     class is ( Atlas_SC_Form )
-
-    associate ( iS => 1 )  !-- iStream
-    call PS % OpenStream &
-           ( GIS, 'Time', iStream = iS, VerboseOption = VerboseStream )
-    end associate !-- iS
-
+      call PS % OpenStream &
+             ( GIS, 'Time', iStream = iS, VerboseOption = VerboseStream )
+    class default
+      call Show ( 'Atlas type not found', CONSOLE % ERROR )
+      call Show ( 'Integrator_Template', 'module', CONSOLE % ERROR )
+      call Show ( 'OpenStreams', 'subroutine', CONSOLE % ERROR ) 
+      call PROGRAM_HEADER % Abort ( )
     end select !-- PS
+
+    if ( allocated ( I % MomentumSpace ) ) then
+      select type ( MS => I % MomentumSpace )
+      class is ( Bundle_SLL_ASC_CSLD_Form )
+        call MS % OpenStream ( GIS, iStream = iS )
+      class default
+        call Show ( 'Bundle type not found', CONSOLE % ERROR )
+        call Show ( 'Integrator_Template', 'module', CONSOLE % ERROR )
+        call Show ( 'OpenStreams', 'subroutine', CONSOLE % ERROR ) 
+        call PROGRAM_HEADER % Abort ( )
+      end select !-- MS
+    end if !-- MomentumSpace
+
+    end associate !-- iS
     end associate !-- GIS
 
-  end subroutine OpenStreams_PS
+  end subroutine OpenStreams
 
 
   subroutine AdministerCheckpoint ( I, ComputeChangeOption )
@@ -391,7 +410,44 @@ contains
       ( Timer => PROGRAM_HEADER % Timer ( I % iTimerWrite ) )
     call Timer % Start ( )
 
-    call I % Write_PS ( )
+    if ( allocated ( I % MomentumSpace ) ) then
+      select type ( MS => I % MomentumSpace )
+      class is ( Bundle_SLL_ASC_CSLD_Form )
+        call MS % MarkFibersWritten ( )
+      end select !-- MS
+    end if !-- MomentumSpace
+
+    associate &
+      ( GIS => I % GridImageStream, &
+        iS  => 1 )  !-- iStream
+    call GIS % Open ( GIS % ACCESS_CREATE )
+
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
+      call PS % Write &
+             ( iStream = iS, TimeOption = I % Time / I % TimeUnit, &
+               CycleNumberOption = I % iCycle )
+    class default
+      call Show ( 'Atlas type not found', CONSOLE % ERROR )
+      call Show ( 'Integrator_Template', 'module', CONSOLE % ERROR )
+      call Show ( 'Write', 'subroutine', CONSOLE % ERROR ) 
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- PS
+
+    if ( allocated ( I % MomentumSpace ) ) then
+      select type ( MS => I % MomentumSpace )
+      class is ( Bundle_SLL_ASC_CSLD_Form )
+        call MS % Write ( iStream = iS )
+      class default
+        call Show ( 'Bundle type not found', CONSOLE % ERROR )
+        call Show ( 'Integrator_Template', 'module', CONSOLE % ERROR )
+        call Show ( 'Write', 'subroutine', CONSOLE % ERROR ) 
+        call PROGRAM_HEADER % Abort ( )
+      end select !-- MS
+    end if !-- MomentumSpace
+
+    call GIS % Close ( )
+    end associate !-- GIS, etc.
 
     call Timer % Stop ( )
     end associate !-- Timer
@@ -478,29 +534,6 @@ contains
     end associate !-- Timer
 
   end subroutine ComputeNewTime
-
-
-  subroutine Write_PS ( I )
-
-    class ( IntegratorTemplate ), intent ( inout ) :: &
-      I
-
-    associate &
-      ( GIS => I % GridImageStream, &
-        iS  => 1 )  !-- iStream
-    select type ( PS => I % PositionSpace )
-    class is ( Atlas_SC_Form )
-
-    call GIS % Open ( GIS % ACCESS_CREATE )
-    call PS % Write &
-           ( iStream = iS, TimeOption = I % Time / I % TimeUnit, &
-             CycleNumberOption = I % iCycle )
-    call GIS % Close ( )
-
-    end select !-- PS
-    end associate !-- GIS, etc.
-
-  end subroutine Write_PS
 
 
   subroutine ComputeTimeStep ( I, TimeStep )
