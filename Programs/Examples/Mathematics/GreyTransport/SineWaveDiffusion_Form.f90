@@ -86,7 +86,8 @@ contains
     allocate ( SWD % Interactions_ASC )
     associate ( IA => SWD % Interactions_ASC )
     call IA % Initialize &
-               ( PS, EquilibriumDensityOption = EquilibriumDensity, &
+               ( PS, 'CONSTANT', &
+                 EquilibriumDensityOption = EquilibriumDensity, &
                  EffectiveOpacityOption = EffectiveOpacity, &
                  TransportOpacityOption = TransportOpacity )
 
