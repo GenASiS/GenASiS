@@ -4,6 +4,7 @@ module Thermalization_Form
   use Mathematics
   use Matter_Form
   use Matter_ASC__Form
+  use Interactions_BSLL_ASC_CSLD__Form
   use RadiationMoments_BSLL_ASC_CSLD__Form
 
   implicit none
@@ -12,6 +13,8 @@ module Thermalization_Form
   type, public, extends ( IntegratorTemplate ) :: ThermalizationForm
     type ( Matter_ASC_Form ), allocatable :: &
       Matter_ASC
+    type ( Interactions_BSLL_ASC_CSLD_Form ), allocatable :: &
+      Interactions_BSLL_ASC_CSLD
     type ( RadiationMoments_BSLL_ASC_CSLD_Form ), allocatable :: &
       RadiationMoments_BSLL_ASC_CSLD
   contains
@@ -106,6 +109,13 @@ contains
              ChemicalPotentialUnitOption = UNIT % MEV )
     call SetMatter ( T )
     end associate !-- MA
+
+    !-- Interactions
+
+    allocate ( T % Interactions_BSLL_ASC_CSLD )
+    associate ( IB => T % Interactions_BSLL_ASC_CSLD )
+    call IB % Initialize ( MS, 'MATTER' )
+    end associate !-- IB
 
     !-- Radiation
 
