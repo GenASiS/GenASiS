@@ -65,7 +65,8 @@ contains
 !    integer ( KDI ) :: &
 !      iB  !-- iBoundary
 
-    RMA % Type = 'a RadiationMoments_ASC'
+    if ( RMA % Type == '' ) &
+      RMA % Type = 'a RadiationMoments_ASC'
     RMA % RadiationMomentsType = RadiationMomentsType
 
     if ( present ( EnergyDensityUnitOption ) ) &

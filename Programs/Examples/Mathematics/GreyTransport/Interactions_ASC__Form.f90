@@ -27,13 +27,16 @@ contains
 
 
   subroutine Initialize &
-               ( IA, A, NameOutputOption, EquilibriumDensityOption, &
-                 EffectiveOpacityOption, TransportOpacityOption )
+               ( IA, A, InteractionsType, NameOutputOption, &
+                 EquilibriumDensityOption, EffectiveOpacityOption, &
+                 TransportOpacityOption )
 
     class ( Interactions_ASC_Form ), intent ( inout ) :: &
       IA
     class ( Atlas_SC_Template ), intent ( in ), target :: &
       A
+    character ( * ), intent ( in ) :: &
+      InteractionsType
     character ( * ), intent ( in ), optional :: &
       NameOutputOption
     real ( KDR ), intent ( in ), optional :: &
@@ -43,9 +46,7 @@ contains
 
     if ( IA % Type == '' ) &
       IA % Type = 'an Interactions_ASC'
-
-    if ( IA % InteractionsType == '' ) &
-      IA % InteractionsType = 'CONSTANT'    
+    IA % InteractionsType = InteractionsType    
 
     if ( present ( EquilibriumDensityOption ) ) &
       IA % EquilibriumDensity  =  EquilibriumDensityOption
@@ -91,7 +92,8 @@ contains
       select case ( trim ( FA % InteractionsType ) )
       case ( 'CONSTANT' )
         call FC % Initialize &
-               ( C, nValues, NameOutputOption = NameOutputOption, &
+               ( C, FA % InteractionsType, nValues, &
+                 NameOutputOption = NameOutputOption, &
                  EquilibriumDensityOption = FA % EquilibriumDensity, &
                  EffectiveOpacityOption   = FA % EffectiveOpacity, &
                  TransportOpacityOption   = FA % TransportOpacity )

@@ -28,13 +28,16 @@ contains
 
 
   subroutine Initialize &
-               ( IC, C, nValues, NameOutputOption, EquilibriumDensityOption, &
-                 EffectiveOpacityOption, TransportOpacityOption )
+               ( IC, C, InteractionsType, nValues, NameOutputOption, &
+                 EquilibriumDensityOption, EffectiveOpacityOption, &
+                 TransportOpacityOption )
 
     class ( Interactions_CSL_Form ), intent ( inout ) :: &
       IC
     class ( ChartHeader_SL_Form ), intent ( in ), target :: &
       C
+    character ( * ), intent ( in ) :: &
+      InteractionsType
     integer ( KDI ), intent ( in ) :: &
       nValues
     character ( * ), intent ( in ), optional :: &
@@ -46,9 +49,7 @@ contains
 
     if ( IC % Type == '' ) &
       IC % Type = 'an Interactions_CSL'
-
-    if ( IC % InteractionsType == '' ) &
-      IC % InteractionsType = 'CONSTANT'    
+    IC % InteractionsType = InteractionsType    
 
     if ( present ( EquilibriumDensityOption ) ) &
       IC % EquilibriumDensity  =  EquilibriumDensityOption

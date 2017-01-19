@@ -531,7 +531,8 @@ contains
       oP, &  !-- oPrimitive
       oC     !-- oConserved
 
-    if ( RM % Type == '' ) RM % Type = 'RadiationMoments'
+    if ( RM % Type == '' ) &
+      RM % Type = 'RadiationMoments'
 
     Name = 'RadiationMoments'
     if ( present ( NameOption ) ) Name = NameOption
