@@ -4,6 +4,7 @@ module Thermalization_Form
   use Mathematics
   use Matter_Form
   use Matter_ASC__Form
+  use RadiationMoments_BSLL_ASC_CSLD__Form
 
   implicit none
   private
@@ -11,6 +12,8 @@ module Thermalization_Form
   type, public, extends ( IntegratorTemplate ) :: ThermalizationForm
     type ( Matter_ASC_Form ), allocatable :: &
       Matter_ASC
+    type ( RadiationMoments_BSLL_ASC_CSLD_Form ), allocatable :: &
+      RadiationMoments_BSLL_ASC_CSLD
   contains
     procedure, public, pass :: &
       Initialize
@@ -19,7 +22,8 @@ module Thermalization_Form
   end type ThermalizationForm
 
     private :: &
-      SetMatter
+      SetMatter, &
+      SetRadiation
 
     real ( KDR ), private, parameter :: &
       T_Scale_MeV = 3.0_KDR, &
@@ -103,6 +107,13 @@ contains
     call SetMatter ( T )
     end associate !-- MA
 
+    !-- Radiation
+
+    allocate ( T % RadiationMoments_BSLL_ASC_CSLD )
+    associate ( RMB => T % RadiationMoments_BSLL_ASC_CSLD )
+    call RMB % Initialize ( MS, 'GENERIC' )
+    end associate !-- RMB
+
     !-- Cleanup
 
     end select !-- MS
@@ -116,6 +127,8 @@ contains
     type ( ThermalizationForm ), intent ( inout ) :: &
       T
 
+    if ( allocated ( T % RadiationMoments_BSLL_ASC_CSLD ) ) &
+      deallocate ( T % RadiationMoments_BSLL_ASC_CSLD )
     if ( allocated ( T % Matter_ASC ) ) &
       deallocate ( T % Matter_ASC )
 
@@ -185,6 +198,16 @@ contains
     nullify ( G, M )
 
   end subroutine SetMatter
+
+
+  subroutine SetRadiation ( T )
+
+    class ( ThermalizationForm ), intent ( inout ) :: &
+      T
+
+    call InitializeRandomSeed ( PROGRAM_HEADER % Communicator )
+
+  end subroutine SetRadiation
 
 
 end module Thermalization_Form
