@@ -31,8 +31,8 @@ module Bundle_SLL_ASC_CSLD__Form
       Fiber
     type ( FibersWritten_CSL_Form ), allocatable :: &
       FibersWritten
-    type ( Field_BSLL_ASC_CSLD_Pointer ), dimension ( : ), allocatable :: &
-      Field
+!    type ( Field_BSLL_ASC_CSLD_Pointer ), dimension ( : ), allocatable :: &
+!      Field
   contains
     procedure, public, pass :: &
       Initialize
@@ -121,7 +121,7 @@ contains
       call PROGRAM_HEADER % Abort ( )
     end select !-- AB
 
-    allocate ( B % Field ( ATLAS % MAX_FIELDS ) )
+!    allocate ( B % Field ( ATLAS % MAX_FIELDS ) )
 
   end subroutine Initialize
 
@@ -493,8 +493,8 @@ contains
     type ( Bundle_SLL_ASC_CSLD_Form ), intent ( inout ) :: &
       B
 
-    if ( allocated ( B % Field ) ) &
-      deallocate ( B % Field )
+!    if ( allocated ( B % Field ) ) &
+!      deallocate ( B % Field )
     if ( allocated ( B % FibersWritten ) ) &
       deallocate ( B % FibersWritten )
     if ( allocated ( B % Fiber ) ) &
