@@ -40,12 +40,9 @@ Matter_ASC__Form.o: \
   Matter_CSL__Form.o \
   Matter_ASC__Form.f90
 
-Interactions_BSLL_ASC_CSLD__Form.o: \
+SetFermiDiracSpectrum_Command.o: \
   Basics.o \
-  Mathematics.o \
-  Interactions_Template.o \
-  Interactions_ASC__Form.o \
-  Interactions_BSLL_ASC_CSLD__Form.f90
+  SetFermiDiracSpectrum_Command.f90
 
 RadiationMoments_BSLL_ASC_CSLD__Form.o: \
   Basics.o \
@@ -54,11 +51,19 @@ RadiationMoments_BSLL_ASC_CSLD__Form.o: \
   RadiationMoments_ASC__Form.o \
   RadiationMoments_BSLL_ASC_CSLD__Form.f90
 
+Interactions_BSLL_ASC_CSLD__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Interactions_Template.o \
+  Interactions_ASC__Form.o \
+  Interactions_BSLL_ASC_CSLD__Form.f90
+
 Thermalization_Form.o: \
   Basics.o \
   Mathematics.o \
   Matter_Form.o \
   Matter_ASC__Form.o \
-  Interactions_BSLL_ASC_CSLD__Form.o \
+  SetFermiDiracSpectrum_Command.o \
   RadiationMoments_BSLL_ASC_CSLD__Form.o \
+  Interactions_BSLL_ASC_CSLD__Form.o \
   Thermalization_Form.f90
