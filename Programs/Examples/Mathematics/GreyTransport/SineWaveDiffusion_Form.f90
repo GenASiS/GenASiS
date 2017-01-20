@@ -82,6 +82,13 @@ contains
     call PS % SetGeometry ( GA )
     end associate !-- GA
 
+    !-- RadiationMoments ( Generic )
+
+    allocate ( RadiationMoments_ASC_Form :: SWD % Current_ASC )
+    select type ( RMA => SWD % Current_ASC )  !-- FluidAtlas
+    class is ( RadiationMoments_ASC_Form )
+    call RMA % Initialize ( PS, 'GENERIC' )
+
     !-- Interactions
     allocate ( SWD % Interactions_ASC )
     associate ( IA => SWD % Interactions_ASC )
@@ -90,13 +97,6 @@ contains
                  EquilibriumDensityOption = EquilibriumDensity, &
                  EffectiveOpacityOption = EffectiveOpacity, &
                  TransportOpacityOption = TransportOpacity )
-
-    !-- RadiationMoments ( Generic )
-
-    allocate ( RadiationMoments_ASC_Form :: SWD % Current_ASC )
-    select type ( RMA => SWD % Current_ASC )  !-- FluidAtlas
-    class is ( RadiationMoments_ASC_Form )
-    call RMA % Initialize ( PS, 'GENERIC' )
     call RMA % SetInteractions ( IA )
 
     !-- Step
@@ -131,8 +131,8 @@ contains
 
     !-- Cleanup
 
-    end select !-- RMA
     end associate !-- IA
+    end select !-- RMA
     end select !-- PS
     nullify ( RM )
 

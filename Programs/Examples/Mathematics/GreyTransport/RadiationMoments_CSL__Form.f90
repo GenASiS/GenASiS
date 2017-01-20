@@ -5,7 +5,6 @@ module RadiationMoments_CSL__Form
   use Basics
   use Mathematics
   use Interactions_Template
-  use Interactions_CSL__Form
   use RadiationMoments_Form
 
   implicit none
@@ -18,7 +17,7 @@ module RadiationMoments_CSL__Form
       VelocityUnit
     character ( LDF ) :: &
       RadiationMomentsType = ''
-    class ( Interactions_CSL_Form ), pointer :: &
+    class ( Field_CSL_Template ), pointer :: &
       Interactions_CSL => null ( )
   contains
     procedure, public, pass :: &
@@ -93,7 +92,7 @@ contains
 
     class ( RadiationMoments_CSL_Form ), intent ( inout ) :: &
       RMC
-    class ( Interactions_CSL_Form ), intent ( in ), target :: &
+    class ( Field_CSL_Template ), intent ( in ), target :: &
       IC
 
     class ( RadiationMomentsForm ), pointer :: &

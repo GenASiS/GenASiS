@@ -3,6 +3,26 @@ Interactions_Template.o: \
   Mathematics.o \
   Interactions_Template.f90
 
+RadiationMoments_Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Interactions_Template.o \
+  RadiationMoments_Form.f90
+
+RadiationMoments_CSL__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Interactions_Template.o \
+  RadiationMoments_Form.o \
+  RadiationMoments_CSL__Form.f90
+
+RadiationMoments_ASC__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  RadiationMoments_Form.o \
+  RadiationMoments_CSL__Form.o \
+  RadiationMoments_ASC__Form.f90
+
 Interactions_C__Form.o: \
   Basics.o \
   Interactions_Template.o \
@@ -20,29 +40,6 @@ Interactions_ASC__Form.o: \
   Mathematics.o \
   Interactions_CSL__Form.o \
   Interactions_ASC__Form.f90
-
-RadiationMoments_Form.o: \
-  Basics.o \
-  Mathematics.o \
-  Interactions_Template.o \
-  RadiationMoments_Form.f90
-
-RadiationMoments_CSL__Form.o: \
-  Basics.o \
-  Mathematics.o \
-  Interactions_Template.o \
-  Interactions_CSL__Form.o \
-  RadiationMoments_Form.o \
-  RadiationMoments_CSL__Form.f90
-
-RadiationMoments_ASC__Form.o: \
-  Basics.o \
-  Mathematics.o \
-  Interactions_CSL__Form.o \
-  Interactions_ASC__Form.o \
-  RadiationMoments_Form.o \
-  RadiationMoments_CSL__Form.o \
-  RadiationMoments_ASC__Form.f90
 
 GreyMoments.a: $(GREY_MOMENTS)
 	ar r GreyMoments.a $(GREY_MOMENTS)

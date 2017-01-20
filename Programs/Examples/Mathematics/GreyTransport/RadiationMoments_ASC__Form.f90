@@ -4,8 +4,6 @@ module RadiationMoments_ASC__Form
 
   use Basics
   use Mathematics
-  use Interactions_CSL__Form
-  use Interactions_ASC__Form
   use RadiationMoments_Form
   use RadiationMoments_CSL__Form
 
@@ -20,7 +18,7 @@ module RadiationMoments_ASC__Form
         VelocityUnit
       character ( LDF ) :: &
         RadiationMomentsType = ''
-      class ( Interactions_ASC_Form ), pointer :: &
+      class ( Field_ASC_Template ), pointer :: &
         Interactions_ASC => null ( )
   contains
     procedure, public, pass :: &
@@ -177,7 +175,7 @@ contains
 
     class ( RadiationMoments_ASC_Form ), intent ( inout ) :: &
       RMA
-    class ( Interactions_ASC_Form ), intent ( in ), target :: &
+    class ( Field_ASC_Template ), intent ( in ), target :: &
       IA
 
     RMA % Interactions_ASC => IA
@@ -186,7 +184,7 @@ contains
     class is ( RadiationMoments_CSL_Form )
 
     select type ( IC => IA % Chart )
-    class is ( Interactions_CSL_Form )
+    class is ( Field_CSL_Template )
     call RMC % SetInteractions ( IC )
     end select !-- I
 
