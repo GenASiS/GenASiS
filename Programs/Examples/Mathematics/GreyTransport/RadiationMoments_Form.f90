@@ -1082,7 +1082,7 @@ contains
                  I % Value ( :, I % EQUILIBRIUM_DENSITY ), &
                  I % Value ( :, I % EFFECTIVE_OPACITY ), &
                  I % Value ( :, I % TRANSPORT_OPACITY ), &
-                 TimeStep )
+                 TimeStep, CONSTANT % SPEED_OF_LIGHT )
 
     end associate !-- I
     end select !-- Grid
@@ -1093,7 +1093,7 @@ contains
 
   subroutine ApplyRelaxationKernel &
                ( KV_E, DCV_E, DCV_S_1, DCV_S_2, DCV_S_3, IsProperCell, &
-                 ED, EO, TO, dT )
+                 ED, EO, TO, dT, c )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       KV_E, &
@@ -1108,7 +1108,8 @@ contains
       EO, &
       TO
     real ( KDR ), intent ( in ) :: &
-      dT
+      dT, &
+      c
 
     integer ( KDI ) :: &
       iV, &
@@ -1120,11 +1121,11 @@ contains
     do iV = 1, nV
       if ( .not. IsProperCell ( iV ) ) &
         cycle
-      KV_E    ( iV )  =  KV_E ( iV )  +  EO ( iV ) * ED ( iV ) * dT
-      DCV_E   ( iV )  =  EO ( iV )
-      DCV_S_1 ( iV )  =  TO ( iV )
-      DCV_S_2 ( iV )  =  TO ( iV )
-      DCV_S_3 ( iV )  =  TO ( iV )
+      KV_E    ( iV )  =  KV_E ( iV )  +  c * EO ( iV ) * ED ( iV ) * dT
+      DCV_E   ( iV )  =  c * EO ( iV )
+      DCV_S_1 ( iV )  =  c * TO ( iV )
+      DCV_S_2 ( iV )  =  c * TO ( iV )
+      DCV_S_3 ( iV )  =  c * TO ( iV )
     end do
     !$OMP end parallel do
 
