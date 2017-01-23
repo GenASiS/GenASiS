@@ -434,6 +434,9 @@ contains
       call PROGRAM_HEADER % Abort ( )
     end select !-- PS
 
+    !-- Base's GIS must be closed before call to Bundle % Write ( ).
+    call GIS % Close ( )
+
     if ( allocated ( I % MomentumSpace ) ) then
       select type ( MS => I % MomentumSpace )
       class is ( Bundle_SLL_ASC_CSLD_Form )
@@ -446,7 +449,6 @@ contains
       end select !-- MS
     end if !-- MomentumSpace
 
-    call GIS % Close ( )
     end associate !-- GIS, etc.
 
     call Timer % Stop ( )
