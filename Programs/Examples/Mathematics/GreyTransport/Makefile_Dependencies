@@ -23,24 +23,24 @@ RadiationMoments_ASC__Form.o: \
   RadiationMoments_CSL__Form.o \
   RadiationMoments_ASC__Form.f90
 
-Interactions_C__Form.o: \
+Interactions_F__Form.o: \
   Basics.o \
   Interactions_Template.o \
-  Interactions_C__Form.f90
+  Interactions_F__Form.f90
 
 Interactions_CSL__Form.o: \
   Basics.o \
   Mathematics.o \
   Interactions_Template.o \
-  Interactions_C__Form.o \
+  Interactions_F__Form.o \
   Interactions_CSL__Form.f90
 
 Interactions_ASC__Form.o: \
   Basics.o \
   Mathematics.o \
+  Interactions_F__Form.o \
   Interactions_CSL__Form.o \
   Interactions_ASC__Form.f90
 
 GreyMoments.a: $(GREY_MOMENTS)
 	ar r GreyMoments.a $(GREY_MOMENTS)
-

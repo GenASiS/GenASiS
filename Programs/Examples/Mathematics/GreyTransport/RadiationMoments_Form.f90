@@ -127,6 +127,8 @@ contains
 
     RM % Interactions => Interactions
 
+    call RM % Interactions % Compute ( )
+
   end subroutine SetInteractions
 
 

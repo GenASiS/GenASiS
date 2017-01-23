@@ -113,9 +113,10 @@ SineWaveDiffusion_Form.o: \
   Basics.o \
   Mathematics.o \
   Interactions_Template.o \
-  Interactions_ASC__Form.o \
   RadiationMoments_Form.o \
   RadiationMoments_ASC__Form.o \
+  Interactions_F__Form.o \
+  Interactions_ASC__Form.o \
   SineWaveDiffusion_Form.f90
 
 SineWaveDiffusion.o: \
