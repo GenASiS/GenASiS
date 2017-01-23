@@ -16,11 +16,14 @@ module Bundle_SLL_ASC_CSLD__Form
 
   type, public, extends ( BundleHeaderForm ) :: Bundle_SLL_ASC_CSLD_Form
     integer ( KDI ) :: &
-      nBaseValues, &
-      nFibers, &
-      sFibersWrite
+      nBaseValues   = 0, &
+      nEnergyValues = 0, &
+      nFibers       = 0, &
+      sFibersWrite  = 0
     integer ( KDI ), dimension ( : ), allocatable :: &
       iaBaseCell
+    real ( KDR ), dimension ( : ), allocatable :: &
+      Energy
     class ( Chart_SLD_Form ), pointer :: &
       Base_CSLD => null ( )
     class ( Atlas_SC_Form ), pointer :: &
@@ -155,6 +158,8 @@ contains
       iF, &   !-- iFiber
       iCN, &  !-- iCellNumber
       iCell, jCell, kCell
+    class ( GeometryFlatForm ), pointer :: &
+      GF
 
     associate ( FM => B % FiberMaster )
     call FM % CreateChart &
@@ -164,9 +169,9 @@ contains
              nCellsOption, nGhostLayersOption, nDimensionsOption )
 
     allocate ( B % Geometry )
-    associate ( GF => B % Geometry )
-    call GF % Initialize ( FM )
-    call FM % SetGeometry ( GF )
+    associate ( GAF => B % Geometry )
+    call GAF % Initialize ( FM )
+    call FM % SetGeometry ( GAF )
 
     allocate ( B % Fiber )
     associate ( F => B % Fiber )
@@ -176,13 +181,24 @@ contains
       allocate ( F % Atlas ( iF ) % Element )
       associate ( FA => F % Atlas ( iF ) % Element )
       call FA % Initialize ( FM )
-      call FA % SetGeometry ( GF )
+      call FA % SetGeometry ( GAF )
       end associate !-- FA
     end do !-- iF
+
+    GF => B % GeometryFiber ( )
+    if ( trim ( GF % CoordinateSystem ) == 'SPHERICAL' ) then
+      associate ( Energy => GF % Value ( :, GF % CENTER ( 1 ) ) )
+      B % nEnergyValues = size ( Energy )
+      allocate ( B % Energy ( B % nEnergyValues ) )
+      B % Energy = Energy
+      end associate !-- Energy
+    end if !-- momentum space spherical coordinates
 
     end associate !-- F
     end associate !-- GF
     end associate !-- FM
+
+    !-- Base cell index
 
     allocate ( B % iaBaseCell ( B % nFibers ) )
     associate ( CB => B % Base_CSLD )
@@ -205,6 +221,8 @@ contains
       end do !-- jCell
     end do !-- kCell
     end associate !-- CB
+
+    nullify ( GF )
 
   end subroutine CreateChart
 
