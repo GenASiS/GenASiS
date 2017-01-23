@@ -2,8 +2,10 @@ module Thermalization_Form
 
   use Basics
   use Mathematics
+  use RadiationMoments_Form
   use Matter_Form
   use Matter_ASC__Form
+  use SetFermiDiracSpectrum_Command
   use Interactions_BSLL_ASC_CSLD__Form
   use RadiationMoments_BSLL_ASC_CSLD__Form
 
@@ -107,25 +109,35 @@ contains
     call MA % Initialize &
            ( PS, TemperatureUnitOption = UNIT % MEV, &
              ChemicalPotentialUnitOption = UNIT % MEV )
-    call SetMatter ( T )
     end associate !-- MA
-
-    !-- Interactions
-
-    allocate ( T % Interactions_BSLL_ASC_CSLD )
-    associate ( IB => T % Interactions_BSLL_ASC_CSLD )
-    call IB % Initialize ( MS, 'MATTER' )
-    end associate !-- IB
 
     !-- Radiation
 
     allocate ( T % RadiationMoments_BSLL_ASC_CSLD )
     associate ( RMB => T % RadiationMoments_BSLL_ASC_CSLD )
     call RMB % Initialize ( MS, 'GENERIC' )
-    end associate !-- RMB
+
+    !-- Interactions
+
+    allocate ( T % Interactions_BSLL_ASC_CSLD )
+    associate ( IB => T % Interactions_BSLL_ASC_CSLD )
+    call IB % Initialize ( MS, 'FIXED' )
+    call RMB % SetInteractions ( IB )
+    end associate !-- IB
+
+    !-- Initial conditions
+
+    call SetMatter ( T )
+    call SetRadiation ( T )
+
+    !-- Initialize template
+
+    call T % InitializeTemplate &
+           ( Name, FinishTimeOption = 0.0_KDR )
 
     !-- Cleanup
 
+    end associate !-- RMB
     end select !-- MS
     end select !-- PS
 
@@ -215,7 +227,48 @@ contains
     class ( ThermalizationForm ), intent ( inout ) :: &
       T
 
+    integer ( KDI ) :: &
+      iF!, &  !-- iFiber
+!      iE     !-- iEnergy  
+!    real ( KDR ) :: &
+!      Amplitude, &
+!      Perturbation
+    class ( RadiationMomentsForm ), pointer :: &
+      RM
+    class ( MatterForm ), pointer :: &
+      M
+
+    select type ( MS => T % MomentumSpace )
+    class is ( Bundle_SLL_ASC_CSLD_Form )
+
+    M => T % Matter_ASC % Matter ( )
+
+    associate ( RMB => T % RadiationMoments_BSLL_ASC_CSLD )
+
     call InitializeRandomSeed ( PROGRAM_HEADER % Communicator )
+
+    do iF = 1, MS % nFibers
+      associate ( iBC => MS % iaBaseCell ( iF ) )
+      RM => RMB % RadiationMomentsFiber ( iF )
+      associate &
+        ( J   => RM % Value ( :, RM % COMOVING_ENERGY_DENSITY ), &
+          H_1 => RM % Value ( :, RM % COMOVING_MOMENTUM_DENSITY_U ( 1 ) ), &
+          H_2 => RM % Value ( :, RM % COMOVING_MOMENTUM_DENSITY_U ( 2 ) ), &
+          H_3 => RM % Value ( :, RM % COMOVING_MOMENTUM_DENSITY_U ( 3 ) ), &
+          T   => M % Value ( iBC, M % TEMPERATURE ), &
+          Mu  => M % Value ( iBC, M % CHEMICAL_POTENTIAL ), &
+          E   => MS % Energy )
+
+      call SetFermiDiracSpectrum ( E, T, Mu, J )
+
+      end associate !-- J, etc.
+      end associate !-- iBC
+    end do !-- iF
+
+    end associate !-- RMB
+    end select !-- MS
+
+    nullify ( M, RM )
 
   end subroutine SetRadiation
 

@@ -19,9 +19,15 @@ module RadiationMoments_BSLL_ASC_CSLD__Form
         VelocityUnit
       character ( LDF ) :: &
         RadiationType = ''
+      class ( Field_BSLL_ASC_CSLD_Template ), pointer :: &
+        Interactions_BSLL_ASC_CSLD => null ( )
   contains
     procedure, public, pass :: &
       Initialize
+    procedure, public, pass :: &
+      RadiationMomentsFiber
+    procedure, public, pass :: &
+      SetInteractions
     procedure, public, pass :: &
       SetField
   end type RadiationMoments_BSLL_ASC_CSLD_Form
@@ -110,6 +116,52 @@ contains
     ! nullify ( GF )
 
   end subroutine Initialize
+
+
+  function RadiationMomentsFiber ( RMB, iFiber ) result ( RMF )
+
+    class ( RadiationMoments_BSLL_ASC_CSLD_Form ), intent ( in ) :: &
+      RMB
+    integer ( KDI ), intent ( in ) :: &
+      iFiber
+    class ( RadiationMomentsForm ), pointer :: &
+      RMF
+
+    associate ( RMA => RMB % Fiber % Atlas ( iFiber ) % Element )
+    select type ( RMC => RMA % Chart )
+    class is ( Field_CSL_Template )   
+
+    select type ( RM => RMC % Field )
+    class is ( RadiationMomentsForm )
+      RMF => RM
+    end select !-- RM
+
+    end select !-- RMC
+    end associate !-- RMA
+
+  end function RadiationMomentsFiber
+
+
+  subroutine SetInteractions ( RMB, IB )
+
+    class ( RadiationMoments_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
+      RMB
+    class ( Field_BSLL_ASC_CSLD_Template ), intent ( in ), target :: &
+      IB
+
+    RMB % Interactions_BSLL_ASC_CSLD => IB
+
+    ! select type ( RMA => RMB % Chart )
+    ! class is ( RadiationMoments_ASC_Form )
+
+    ! select type ( IC => IA % Chart )
+    ! class is ( Field_CSL_Template )
+    ! call RMC % SetInteractions ( IC )
+    ! end select !-- I
+
+    ! end select !-- RMA
+
+  end subroutine SetInteractions
 
 
   subroutine SetField ( FB, NameOutputOption )
