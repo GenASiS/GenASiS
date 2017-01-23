@@ -89,17 +89,17 @@ contains
     select case ( CoordinateSystem )
       case ( 'CYLINDRICAL' )
         associate ( Pi => CONSTANT % PI )
-          MinCoordinate = [ - MaxRadius, -1.0_KDR, 0.0_KDR ]
+          MinCoordinate = [     0.0_KDR, -1.0_KDR, 0.0_KDR ]
           MaxCoordinate = [ + MaxRadius, + 1.0_KDR, 2.0_KDR * Pi]
          ! MinCoordinate = [   0.0_KDR, 0.0_KDR, - MaxRadius ]
          ! MaxCoordinate = [ MaxRadius, 2.0_KDR * Pi, + MaxRadius]
         end associate !-- Pi
         call PS % SetBoundaryConditionsFace &
-               ( [ 'OUTFLOW', 'OUTFLOW' ], iDimension = 1 )
-        call PS % SetBoundaryConditionsFace &
-               ( [ 'OUTFLOW', 'OUTFLOW' ], iDimension = 2 )
+               ( [ 'REFLECTING', 'OUTFLOW   ' ], iDimension = 1 )
+       ! call PS % SetBoundaryConditionsFace &
+       !        ( [ 'OUTFLOW', 'OUTFLOW' ], iDimension = 2 )
         
-        nCells = [ 128, 128, 1 ]
+        nCells = [ 128, 1, 1 ]
         call PROGRAM_HEADER % GetParameter ( nCells, 'nCells' )
       case ( 'CARTESIAN' )
        ! MinCoordinate = [ - MaxRadius, - MaxRadius, 0.0_KDR ]
@@ -156,7 +156,7 @@ contains
     select type ( S => LS % Step )
     class is ( Step_RK2_C_Form )
     call S % Initialize ( Name )
-    S % ApplyRelaxation  =>  ApplyRelaxation_Interactions
+   ! S % ApplyRelaxation  =>  ApplyRelaxation_Interactions
     S % ApplySources  => ApplySourcesCurvilinear_RadiationMoments
     end select !-- S
 
@@ -355,8 +355,8 @@ contains
     if ( isInitial ) then
       !$OMP parallel do private ( iV )
       do iV = 1, nValues
-        J ( iV )  =  max ( 1.0_KDR / ( 2.0_KDR * w ** 2 ) * &
-                       exp ( - R ( iV ) ** 2 / ( 2 * w ** 2 ) ), &
+        J ( iV )  = max ( 1.0_KDR / ( 2.0_KDR * w ** 2 ) * &
+                          exp ( - R ( iV ) ** 2 / ( 2 * w ** 2 ) ), &
                           10.0_KDR **(-4)  )
 
         HX ( iV )  =  0.0_KDR
