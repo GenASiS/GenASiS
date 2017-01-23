@@ -38,7 +38,8 @@ module SineWaveDiffusion_Form
     real ( KDR ), private :: &
       EquilibriumDensity, &
       EffectiveOpacity, &
-      TransportOpacity
+      TransportOpacity, &
+      TimeScale
 
 contains
 
@@ -61,13 +62,15 @@ contains
     EquilibriumDensity = 1.0_KDR
     EffectiveOpacity   = 0.0_KDR
     TransportOpacity   = 1.0e3_KDR
-
     call PROGRAM_HEADER % GetParameter &
            ( EquilibriumDensity, 'EquilibriumDensity' )
     call PROGRAM_HEADER % GetParameter &
            ( EffectiveOpacity, 'EffectiveOpacity' )
     call PROGRAM_HEADER % GetParameter &
            ( TransportOpacity, 'TransportOpacity' )
+
+    TimeScale  =  3.0_KDR * ( TransportOpacity - EffectiveOpacity ) &
+                  /  CONSTANT % SPEED_OF_LIGHT
 
     !-- PositionSpace
 
@@ -131,7 +134,7 @@ contains
     !-- Initialize template
 
     call SWD % InitializeTemplate_C &
-           ( Name, FinishTimeOption  =  3.0_KDR * TransportOpacity )
+           ( Name, FinishTimeOption  =  TimeScale )
 
     !-- Cleanup
 
@@ -218,14 +221,14 @@ contains
     G => PS % Geometry ( )
 
     call SetRadiationKernel &
-           ( X  = G % Value ( :, G % CENTER ( 1 ) ), &
-             T  = Time, &
-             TO = TransportOpacity, &
-             Pi = CONSTANT % PI, &
-             J  = RM % Value ( :, RM % COMOVING_ENERGY_DENSITY ), &
-             HX = RM % Value ( :, RM % COMOVING_MOMENTUM_DENSITY_U ( 1 ) ), &
-             HY = RM % Value ( :, RM % COMOVING_MOMENTUM_DENSITY_U ( 2 ) ), &
-             HZ = RM % Value ( :, RM % COMOVING_MOMENTUM_DENSITY_U ( 3 ) ) )
+           ( X   = G % Value ( :, G % CENTER ( 1 ) ), &
+             T   = Time, &
+             Tau = TimeScale, &
+             Pi  = CONSTANT % PI, &
+             J   = RM % Value ( :, RM % COMOVING_ENERGY_DENSITY ), &
+             HX  = RM % Value ( :, RM % COMOVING_MOMENTUM_DENSITY_U ( 1 ) ), &
+             HY  = RM % Value ( :, RM % COMOVING_MOMENTUM_DENSITY_U ( 2 ) ), &
+             HZ  = RM % Value ( :, RM % COMOVING_MOMENTUM_DENSITY_U ( 3 ) ) )
 
     call RM % ComputeFromPrimitive ( G )
 
@@ -279,13 +282,13 @@ contains
   end subroutine SetReference
 
 
-  subroutine SetRadiationKernel ( X, T, TO, Pi, J, HX, HY, HZ )
+  subroutine SetRadiationKernel ( X, T, Tau, Pi, J, HX, HY, HZ )
 
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       X
     real ( KDR ), intent ( in ) :: &
       T, &
-      TO, &
+      Tau, &
       Pi
     real ( KDR ), dimension ( : ), intent ( out ) :: &
       J, &
@@ -302,12 +305,12 @@ contains
 
       J ( iV )  =  3.0_KDR  *  sqrt ( 4.0_KDR * Pi )  &
                    * ( 1.0_KDR  &
-                       +  exp ( - Pi ** 2 / 9.0_KDR * T / ( 3.0_KDR * TO ) ) &
+                       +  exp ( - Pi ** 2 / 9.0_KDR * T / Tau ) &
                         *  sin ( Pi * X ( iV ) / 3.0_KDR ) )
 
-      HX ( iV )  =  - 1.0_KDR / ( 3.0_KDR * TO ) &
+      HX ( iV )  =  - 1.0_KDR / Tau &
                       *  sqrt ( 4.0_KDR  *  Pi ** 3 )  &
-                      *  exp ( - Pi ** 2 / 9.0_KDR  *  T / ( 3.0_KDR * TO ) ) &
+                      *  exp ( - Pi ** 2 / 9.0_KDR  *  T / Tau ) &
                         *  cos ( Pi * X ( iV ) / 3.0_KDR )
 
       HY ( iV )  =  0.0_KDR
