@@ -96,12 +96,9 @@ contains
 
     select type ( FC => FA % Chart )
     class is ( Interactions_CSL_Form )
-      select case ( trim ( FA % InteractionsType ) )
-      case ( 'FIXED' )
-        call FC % Initialize &
-               ( C, FA % InteractionsType, nValues, &
-                 NameOutputOption = NameOutputOption )
-      end select !-- InteractionsType
+      call FC % Initialize &
+             ( C, FA % InteractionsType, nValues, &
+               NameOutputOption = NameOutputOption )
     end select !-- FC
 
     call A % AddField ( FA )
