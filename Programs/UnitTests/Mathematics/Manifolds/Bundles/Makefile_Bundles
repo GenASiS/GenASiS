@@ -4,13 +4,14 @@ include $(PATH_GENASIS)/Build/Makefile_Build
 
 all: Bundle_SLL_ASC_CSLD__Form_Test
 
-Bundle_SLL_ASC_CSLD__Form_Test: Bundle_SLL_ASC_CSLD__Form_Test.o
+Bundle_SLL_ASC_CSLD__Form_Test: Basics.a Atlases.a \
+  Bundle_SLL_ASC_CSLD__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Bundle_SLL_ASC_CSLD__Form_Test_$(MACHINE) \
-          $(BASICS) $(ATLASES) BundleHeader_Form.o FieldBundle_Template.o \
-          FibersWritten_CSL__Form.o Field_BSLL_ASC_CSLD__Template.o \
-          Bundle_SLL_ASC_CSLD__Form.o Bundle_SLL_ASC_CSLD__Form_Test.o \
-          $(LIBRARIES)
+          Bundle_SLL_ASC_CSLD__Form_Test.o Bundle_SLL_ASC_CSLD__Form.o \
+          Field_BSLL_ASC_CSLD__Template.o FibersWritten_CSL__Form.o \
+          FieldBundle_Template.o BundleHeader_Form.o \
+          Atlases.a Basics.a $(LIBRARIES)
 
 clean:
 	rm -f *.o *.mod *.ld
