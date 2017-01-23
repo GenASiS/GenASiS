@@ -3,9 +3,10 @@ module SineWaveDiffusion_Form
   use Basics
   use Mathematics
   use Interactions_Template
-  use Interactions_ASC__Form
   use RadiationMoments_Form
   use RadiationMoments_ASC__Form
+  use Interactions_F__Form
+  use Interactions_ASC__Form
 
   implicit none
   private
@@ -27,10 +28,12 @@ module SineWaveDiffusion_Form
 
     private :: &
       SetRadiation, &
+      SetInteractions, &
       SetReference
 
       private :: &
-        SetRadiationKernel
+        SetRadiationKernel, &
+        SetInteractionsKernel
 
     real ( KDR ), private :: &
       EquilibriumDensity, &
@@ -49,6 +52,8 @@ contains
 
     class ( RadiationMomentsForm ), pointer :: &
       RM
+    class ( Interactions_F_Form ), pointer :: &
+      I
 
     if ( SWD % Type == '' ) &
       SWD % Type = 'a SineWaveDiffusion' 
@@ -90,13 +95,10 @@ contains
     call RMA % Initialize ( PS, 'GENERIC' )
 
     !-- Interactions
+
     allocate ( SWD % Interactions_ASC )
     associate ( IA => SWD % Interactions_ASC )
-    call IA % Initialize &
-               ( PS, 'CONSTANT', &
-                 EquilibriumDensityOption = EquilibriumDensity, &
-                 EffectiveOpacityOption = EffectiveOpacity, &
-                 TransportOpacityOption = TransportOpacity )
+    call IA % Initialize ( PS, 'FIXED' )
     call RMA % SetInteractions ( IA )
 
     !-- Step
@@ -123,6 +125,9 @@ contains
     RM => RMA % RadiationMoments ( )
     call SetRadiation ( SWD, RM, Time = 0.0_KDR )
 
+    I => IA % Interactions_F ( )
+    call SetInteractions ( I )
+
     !-- Initialize template
 
     call SWD % InitializeTemplate_C &
@@ -134,7 +139,7 @@ contains
     end associate !-- IA
     end select !-- RMA
     end select !-- PS
-    nullify ( RM )
+    nullify ( RM, I )
 
   end subroutine Initialize
 
@@ -231,6 +236,19 @@ contains
   end subroutine SetRadiation
 
 
+  subroutine SetInteractions ( I )
+
+    class ( Interactions_F_Form ), intent ( inout ) :: &
+      I
+
+    call SetInteractionsKernel &
+           ( I % Value ( :, I % EQUILIBRIUM_DENSITY ), &
+             I % Value ( :, I % EFFECTIVE_OPACITY ), &
+             I % Value ( :, I % TRANSPORT_OPACITY ) )
+
+  end subroutine SetInteractions
+
+
   subroutine SetReference ( SWD )
 
     class ( IntegratorTemplate ), intent ( in ) :: &
@@ -300,6 +318,30 @@ contains
     !$OMP end parallel do
 
   end subroutine SetRadiationKernel
+
+
+  subroutine SetInteractionsKernel ( EDV, EOV, TOV )
+
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      EDV, &
+      EOV, &
+      TOV
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+
+    nValues  =  size ( EDV )
+
+    !$OMP parallel do private ( iV ) 
+    do iV = 1, nValues
+      EDV ( iV )  =  EquilibriumDensity
+      EOV ( iV )  =  EffectiveOpacity
+      TOV ( iV )  =  TransportOpacity
+    end do !-- iV
+    !$OMP end parallel do
+
+  end subroutine SetInteractionsKernel
 
 
 end module SineWaveDiffusion_Form
