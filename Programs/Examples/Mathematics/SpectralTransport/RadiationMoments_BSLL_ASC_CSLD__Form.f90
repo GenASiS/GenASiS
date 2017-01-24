@@ -16,7 +16,9 @@ module RadiationMoments_BSLL_ASC_CSLD__Form
         MomentumUnit, &
         AngularMomentumUnit
       type ( MeasuredValueForm ), dimension ( 3 ) :: &
-        VelocityUnit
+        Velocity_U_Unit, &
+        MomentumDensity_U_Unit, &
+        MomentumDensity_D_Unit
       character ( LDF ) :: &
         RadiationType = ''
       class ( Field_BSLL_ASC_CSLD_Template ), pointer :: &
@@ -36,9 +38,11 @@ contains
 
 
   subroutine Initialize &
-               ( RMB, B, RadiationType, NameOutputOption, VelocityUnitOption, &
-                 EnergyDensityUnitOption, EnergyUnitOption, &
-                 MomentumUnitOption, AngularMomentumUnitOption )
+               ( RMB, B, RadiationType, NameOutputOption, &
+                 Velocity_U_UnitOption, MomentumDensity_U_UnitOption, &
+                 MomentumDensity_D_UnitOption, EnergyDensityUnitOption, &
+                 EnergyUnitOption, MomentumUnitOption, &
+                 AngularMomentumUnitOption )
 
     class ( RadiationMoments_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
       RMB
@@ -49,7 +53,9 @@ contains
     character ( * ), intent ( in ), optional :: &
       NameOutputOption
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ), optional :: &
-      VelocityUnitOption
+      Velocity_U_UnitOption, &
+      MomentumDensity_U_UnitOption, &
+      MomentumDensity_D_UnitOption
     type ( MeasuredValueForm ), intent ( in ), optional :: &
       EnergyDensityUnitOption, &
       EnergyUnitOption, &
@@ -65,8 +71,13 @@ contains
 
     if ( present ( EnergyDensityUnitOption ) ) &
       RMB % EnergyDensityUnit = EnergyDensityUnitOption
-    if ( present ( VelocityUnitOption ) ) &
-      RMB % VelocityUnit = VelocityUnitOption
+    if ( present ( Velocity_U_UnitOption ) ) &
+      RMB % Velocity_U_Unit = Velocity_U_UnitOption
+    if ( present ( MomentumDensity_U_UnitOption ) ) &
+      RMB % MomentumDensity_U_Unit = MomentumDensity_U_UnitOption
+    if ( present ( MomentumDensity_D_UnitOption ) ) &
+      RMB % MomentumDensity_D_Unit = MomentumDensity_D_UnitOption
+
     if ( present ( EnergyUnitOption ) ) &
       RMB % EnergyUnit = EnergyUnitOption
     if ( present ( MomentumUnitOption ) ) &
@@ -191,7 +202,9 @@ contains
 
       call RMA % Initialize &
              ( AF, FB % RadiationType, NameOutputOption = NameOutputOption, &
-               VelocityUnitOption = FB % VelocityUnit, &
+               Velocity_U_UnitOption = FB % Velocity_U_Unit, &
+               MomentumDensity_U_UnitOption = FB % MomentumDensity_U_Unit, &
+               MomentumDensity_D_UnitOption = FB % MomentumDensity_D_Unit, &
                EnergyDensityUnitOption = FB % EnergyDensityUnit, &
                EnergyUnitOption = FB % EnergyUnit, &
                MomentumUnitOption = FB % MomentumUnit, &

@@ -14,7 +14,9 @@ module RadiationMoments_CSL__Form
     type ( MeasuredValueForm ) :: &
       EnergyDensityUnit
     type ( MeasuredValueForm ), dimension ( 3 ) :: &
-      VelocityUnit
+      Velocity_U_Unit, &
+      MomentumDensity_U_Unit, &
+      MomentumDensity_D_Unit
     character ( LDF ) :: &
       RadiationMomentsType = ''
     class ( Field_CSL_Template ), pointer :: &
@@ -36,7 +38,8 @@ contains
 
 
   subroutine Initialize &
-               ( RMC, C, RadiationMomentsType, VelocityUnit, &
+               ( RMC, C, RadiationMomentsType, Velocity_U_Unit, &
+                 MomentumDensity_U_Unit, MomentumDensity_D_Unit, &
                  EnergyDensityUnit, nValues, NameOutputOption )
 
     class ( RadiationMoments_CSL_Form ), intent ( inout ) :: &
@@ -46,7 +49,9 @@ contains
     character ( * ), intent ( in ) :: &
       RadiationMomentsType
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
-      VelocityUnit
+      Velocity_U_Unit, &
+      MomentumDensity_U_Unit, &
+      MomentumDensity_D_Unit
     type ( MeasuredValueForm ), intent ( in ) :: &
       EnergyDensityUnit
     integer ( KDI ), intent ( in ) :: &
@@ -58,8 +63,10 @@ contains
       RMC % Type = 'a Fluid_CSL'
     RMC % RadiationMomentsType = RadiationMomentsType
 
-    RMC % EnergyDensityUnit = EnergyDensityUnit
-    RMC % VelocityUnit      = VelocityUnit
+    RMC % EnergyDensityUnit      = EnergyDensityUnit
+    RMC % Velocity_U_Unit        = Velocity_U_Unit
+    RMC % MomentumDensity_U_Unit = MomentumDensity_U_Unit
+    RMC % MomentumDensity_D_Unit = MomentumDensity_D_Unit
 
     call RMC % InitializeTemplate_CSL &
            ( C, nValues, NameOutputOption = NameOutputOption )
@@ -138,8 +145,9 @@ contains
       select type ( RM => FC % Field )
       type is ( RadiationMomentsForm )
         call RM % Initialize &
-               ( FC % VelocityUnit, FC % EnergyDensityUnit, FC % nValues, &
-                 NameOption = NameOption )
+               ( FC % Velocity_U_Unit, FC % MomentumDensity_U_Unit, &
+                 FC % MomentumDensity_D_Unit, FC % EnergyDensityUnit, &
+                 FC % nValues, NameOption = NameOption )
         call RM % SetOutput ( FC % FieldOutput )
       end select !-- RM
     case default

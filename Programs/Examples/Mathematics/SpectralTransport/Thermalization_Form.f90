@@ -49,6 +49,8 @@ contains
       nEnergyCells
     real ( KDR ), dimension ( 3 ) :: &
       Scale
+    type ( MeasuredValueForm ) :: &
+      EnergyDensityUnit
     type ( MeasuredValueForm ), dimension ( 3 ) :: &
       CoordinateUnit
     character ( LDL ), dimension ( 3 ) :: &
@@ -91,7 +93,7 @@ contains
     Spacing = ''
     Spacing ( 1 ) = 'COMPACTIFIED'
 
-    nEnergyCells = 8
+    nEnergyCells = 20
     call PROGRAM_HEADER % GetParameter ( nEnergyCells, 'nEnergyCells' )
 
     call MS % CreateChart &
@@ -113,9 +115,12 @@ contains
 
     !-- Radiation
 
+    EnergyDensityUnit  =  UNIT % MEV / UNIT % HBAR_C ** 3
+
     allocate ( T % RadiationMoments_BSLL_ASC_CSLD )
     associate ( RMB => T % RadiationMoments_BSLL_ASC_CSLD )
-    call RMB % Initialize ( MS, 'GENERIC' )
+    call RMB % Initialize &
+           ( MS, 'GENERIC', EnergyDensityUnitOption = EnergyDensityUnit )
 
     !-- Interactions
 

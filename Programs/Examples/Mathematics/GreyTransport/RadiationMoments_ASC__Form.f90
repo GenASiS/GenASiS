@@ -10,16 +10,17 @@ module RadiationMoments_ASC__Form
   implicit none
   private
   
-  type, public, extends ( Current_ASC_Template ) :: &
-    RadiationMoments_ASC_Form
-      type ( MeasuredValueForm ) :: &
-        EnergyDensityUnit
-      type ( MeasuredValueForm ), dimension ( 3 ) :: &
-        VelocityUnit
-      character ( LDF ) :: &
-        RadiationMomentsType = ''
-      class ( Field_ASC_Template ), pointer :: &
-        Interactions_ASC => null ( )
+  type, public, extends ( Current_ASC_Template ) :: RadiationMoments_ASC_Form
+    type ( MeasuredValueForm ) :: &
+      EnergyDensityUnit
+    type ( MeasuredValueForm ), dimension ( 3 ) :: &
+      Velocity_U_Unit, &
+      MomentumDensity_U_Unit, &
+      MomentumDensity_D_Unit
+    character ( LDF ) :: &
+      RadiationMomentsType = ''
+    class ( Field_ASC_Template ), pointer :: &
+      Interactions_ASC => null ( )
   contains
     procedure, public, pass :: &
       Initialize
@@ -40,7 +41,8 @@ contains
 
   subroutine Initialize &
                ( RMA, A, RadiationMomentsType, NameOutputOption, &
-                 VelocityUnitOption, EnergyDensityUnitOption, &
+                 Velocity_U_UnitOption, MomentumDensity_U_UnitOption, &
+                 MomentumDensity_D_UnitOption, EnergyDensityUnitOption, &
                  EnergyUnitOption, MomentumUnitOption, &
                  AngularMomentumUnitOption )
 
@@ -53,7 +55,9 @@ contains
     character ( * ), intent ( in ), optional :: &
       NameOutputOption
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ), optional :: &
-      VelocityUnitOption
+      Velocity_U_UnitOption, &
+      MomentumDensity_U_UnitOption, &
+      MomentumDensity_D_UnitOption
     type ( MeasuredValueForm ), intent ( in ), optional :: &
       EnergyDensityUnitOption, &
       EnergyUnitOption, &
@@ -69,8 +73,12 @@ contains
 
     if ( present ( EnergyDensityUnitOption ) ) &
       RMA % EnergyDensityUnit = EnergyDensityUnitOption
-    if ( present ( VelocityUnitOption ) ) &
-      RMA % VelocityUnit = VelocityUnitOption
+    if ( present ( Velocity_U_UnitOption ) ) &
+      RMA % Velocity_U_Unit = Velocity_U_UnitOption
+    if ( present ( MomentumDensity_U_UnitOption ) ) &
+      RMA % MomentumDensity_U_Unit = MomentumDensity_U_UnitOption
+    if ( present ( MomentumDensity_D_UnitOption ) ) &
+      RMA % MomentumDensity_D_Unit = MomentumDensity_D_UnitOption
 
 !-- If there is a tally for RM
 !    call RMA % InitializeTemplate_ASC &
@@ -224,7 +232,8 @@ contains
     select type ( FC => FA % Chart )
     class is ( RadiationMoments_CSL_Form )
       call FC % Initialize &
-             ( C, FA % RadiationMomentsType, FA % VelocityUnit, &
+             ( C, FA % RadiationMomentsType, FA % Velocity_U_Unit, &
+               FC % MomentumDensity_U_Unit, FC % MomentumDensity_D_Unit, &
                FA % EnergyDensityUnit, nValues, &
                NameOutputOption = NameOutputOption )
     end select !-- FC
