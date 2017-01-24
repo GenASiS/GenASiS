@@ -21,7 +21,8 @@ module Bundle_SLL_ASC_CSLD__Form
       nFibers       = 0, &
       sFibersWrite  = 0
     integer ( KDI ), dimension ( : ), allocatable :: &
-      iaBaseCell
+      iaBaseCell, &
+      iaBaseCellLabel
     real ( KDR ), dimension ( : ), allocatable :: &
       Energy
     class ( Chart_SLD_Form ), pointer :: &
@@ -155,9 +156,12 @@ contains
       nDimensionsOption
 
     integer ( KDI ) :: &
-      iF, &   !-- iFiber
-      iCN, &  !-- iCellNumber
+      iF, &    !-- iFiber
+      iCN, &   !-- iCellNumber
+      iCNL, &  !-- iCellNumberLabel
       iCell, jCell, kCell
+    integer ( KDI ), dimension ( 3 ) :: &
+      iaCell
     class ( GeometryFlatForm ), pointer :: &
       GF
 
@@ -201,21 +205,35 @@ contains
     !-- Base cell index
 
     allocate ( B % iaBaseCell ( B % nFibers ) )
+    allocate ( B % iaBaseCellLabel ( B % nFibers ) )
     associate ( CB => B % Base_CSLD )
 
-    iCN = 0
-    iF  = 0
+    iCN  = 0
+    iCNL = 0
+    iF   = 0
     do kCell = CB % iaFirst ( 3 ), CB % iaLast ( 3 )
       do jCell = CB % iaFirst ( 2 ), CB % iaLast ( 2 )
         do iCell = CB % iaFirst ( 1 ), CB % iaLast ( 1 )
 
+          iaCell = [ iCell, jCell, kCell ]
+
           iCN = iCN + 1
 
-          if ( any ( [ iCell, jCell, kCell ] < 1 ) ) cycle 
-          if ( any ( [ iCell, jCell, kCell ] > CB % nCellsBrick ) ) cycle 
+          !-- Only proper and ghost (not exterior) cells are written
+          if ( .not. any ( CB % iaBrick == 1 .and. iaCell < 1 ) &
+               .and. .not. any ( CB % iaBrick == CB % nBricks &
+                                 .and. iaCell > CB % nCellsBrick ) ) &
+          then
+            iCNL = iCNL + 1
+          end if
+
+          !-- Only proper cells are fibers
+          if ( any ( iaCell < 1 ) ) cycle
+          if ( any ( iaCell > CB % nCellsBrick ) ) cycle 
               
           iF = iF + 1
-          B % iaBaseCell ( iF ) = iCN
+          B % iaBaseCell      ( iF ) = iCN
+          B % iaBaseCellLabel ( iF ) = iCNL
               
         end do !-- iCell
       end do !-- jCell
@@ -459,8 +477,8 @@ contains
     call GIS_Bundle % Open ( GIS_Bundle % ACCESS_CREATE )
 
     associate &
-      ( iaBC => B % iaBaseCell, &
-        nF   => B % nFibers )
+      ( iaBCL => B % iaBaseCellLabel, &
+        nF    => B % nFibers )
 
     sF = B % sFibersWrite
     if ( AllFibers ) &
@@ -468,7 +486,7 @@ contains
 
     do iF = 1, nF, sF              
 
-      write ( CellNumber, fmt = '(a1,i7.7)' ) '_', iaBC ( iF )
+      write ( CellNumber, fmt = '(a1,i7.7)' ) '_', iaBCL ( iF )
       Directory &
         = 'Fiber' // CellNumber // '/'
       call Show ( Directory, 'Directory', CONSOLE % INFO_3 )
@@ -519,6 +537,8 @@ contains
       deallocate ( B % Fiber )
     if ( allocated ( B % Geometry ) ) &
       deallocate ( B % Geometry )
+    if ( allocated ( B % iaBaseCellLabel ) ) &
+      deallocate ( B % iaBaseCellLabel )
     if ( allocated ( B % iaBaseCell ) ) &
       deallocate ( B % iaBaseCell )
 
