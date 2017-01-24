@@ -35,8 +35,6 @@ module Bundle_SLL_ASC_CSLD__Form
       Fiber
     type ( FibersWritten_CSL_Form ), allocatable :: &
       FibersWritten
-!    type ( Field_BSLL_ASC_CSLD_Pointer ), dimension ( : ), allocatable :: &
-!      Field
   contains
     procedure, public, pass :: &
       Initialize
@@ -46,8 +44,6 @@ module Bundle_SLL_ASC_CSLD__Form
       GeometryFiber
     procedure, public, pass :: &
       AtlasFiber
-!    procedure, public, pass :: &
-!      AddField
     procedure, public, pass :: &
       LoadSection
     procedure, public, pass :: &
@@ -124,8 +120,6 @@ contains
       call Show ( 'Initialize', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- AB
-
-!    allocate ( B % Field ( ATLAS % MAX_FIELDS ) )
 
   end subroutine Initialize
 
@@ -272,34 +266,6 @@ contains
     AF => B % Fiber % Atlas ( iFiber ) % Element 
 
   end function AtlasFiber
-
-
-  ! subroutine AddField ( B, FB )
-
-  !   class ( Bundle_SLL_ASC_CSLD_Form ), intent ( inout ) :: &
-  !     B
-  !   class ( Field_BSLL_ASC_CSLD_Template ), intent ( in ), target :: &
-  !     FB
-
-  !   integer ( KDI ) :: &
-  !     iF  !-- iFiber
-  !   class ( Atlas_SC_Form ), pointer :: &
-  !     AF
-  !   class ( Field_ASC_Template ), pointer :: &
-  !     FF
-
-  !   B % nFields = B % nFields + 1
-  !   B % Field ( B % nFields ) % Pointer => FB
-
-  !   ! do iF = 1, B % nFibers
-  !   !   AF => B % AtlasFiber ( iF )
-  !   !   FF => B % FieldFiber ( B % nFields, iF )
-  !   !   call AF % AddField ( FF )
-  !   ! end do !-- iF
-
-  !   nullify ( FF, AF )
-
-  ! end subroutine AddField
 
 
   subroutine LoadSection ( B, Section, Field, iFC )
@@ -529,8 +495,6 @@ contains
     type ( Bundle_SLL_ASC_CSLD_Form ), intent ( inout ) :: &
       B
 
-!    if ( allocated ( B % Field ) ) &
-!      deallocate ( B % Field )
     if ( allocated ( B % FibersWritten ) ) &
       deallocate ( B % FibersWritten )
     if ( allocated ( B % Fiber ) ) &
