@@ -17,14 +17,11 @@ module Bundle_SLL_ASC_CSLD__Form
   type, public, extends ( BundleHeaderForm ) :: Bundle_SLL_ASC_CSLD_Form
     integer ( KDI ) :: &
       nBaseValues   = 0, &
-      nEnergyValues = 0, &
       nFibers       = 0, &
       sFibersWrite  = 0
     integer ( KDI ), dimension ( : ), allocatable :: &
       iaBaseCell, &
       iaBaseCellLabel
-    real ( KDR ), dimension ( : ), allocatable :: &
-      Energy
     class ( Chart_SLD_Form ), pointer :: &
       Base_CSLD => null ( )
     class ( Atlas_SC_Form ), pointer :: &
@@ -183,17 +180,8 @@ contains
       end associate !-- FA
     end do !-- iF
 
-    GF => B % GeometryFiber ( )
-    if ( trim ( GF % CoordinateSystem ) == 'SPHERICAL' ) then
-      associate ( Energy => GF % Value ( :, GF % CENTER ( 1 ) ) )
-      B % nEnergyValues = size ( Energy )
-      allocate ( B % Energy ( B % nEnergyValues ) )
-      B % Energy = Energy
-      end associate !-- Energy
-    end if !-- momentum space spherical coordinates
-
     end associate !-- F
-    end associate !-- GF
+    end associate !-- GAF
     end associate !-- FM
 
     !-- Base cell index
