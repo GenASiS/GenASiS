@@ -233,22 +233,28 @@ contains
       T
 
     integer ( KDI ) :: &
-      iF!, &  !-- iFiber
-!      iE     !-- iEnergy  
-!    real ( KDR ) :: &
-!      Amplitude, &
-!      Perturbation
+      iF, &  !-- iFiber
+      iE     !-- iEnergy  
+    real ( KDR ) :: &
+      Amplitude, &
+      Perturbation
     class ( RadiationMomentsForm ), pointer :: &
       RM
+    class ( GeometryFlatForm ), pointer :: &
+      G
+    type ( RadiationMomentsForm ), allocatable :: &
+      RS  !-- RadiationSection
     class ( MatterForm ), pointer :: &
       M
+
+    associate ( RMB => T % RadiationMoments_BSLL_ASC_CSLD )
 
     select type ( MS => T % MomentumSpace )
     class is ( Bundle_SLL_ASC_CSLD_Form )
 
-    M => T % Matter_ASC % Matter ( )
+    !-- Initialize primitive spectra in momentum space
 
-    associate ( RMB => T % RadiationMoments_BSLL_ASC_CSLD )
+    M => T % Matter_ASC % Matter ( )
 
     call InitializeRandomSeed ( PROGRAM_HEADER % Communicator )
 
@@ -262,18 +268,59 @@ contains
           H_3 => RM % Value ( :, RM % COMOVING_MOMENTUM_DENSITY_U ( 3 ) ), &
           T   => M % Value ( iBC, M % TEMPERATURE ), &
           Mu  => M % Value ( iBC, M % CHEMICAL_POTENTIAL ), &
-          E   => MS % Energy )
+          E   => RMB % Energy )
 
       call SetFermiDiracSpectrum ( E, T, Mu, J )
+
+      Amplitude = 0.9_KDR
+      do iE = 1, RMB % nEnergyValues
+
+        call random_number ( Perturbation )
+        Perturbation = Amplitude * 2.0_KDR * ( Perturbation - 0.5_KDR ) 
+        J ( iE ) = ( 1.0_KDR + Perturbation )  *  J ( iE )
+
+        call random_number ( Perturbation )
+        Perturbation &
+          = 0.01_KDR * J ( iE ) * 2.0_KDR * ( Perturbation - 0.5_KDR ) 
+        H_1 ( iE ) = Perturbation
+
+        call random_number ( Perturbation )
+        Perturbation &
+          = 0.01_KDR * J ( iE ) * 2.0_KDR * ( Perturbation - 0.5_KDR ) 
+        H_2 ( iE ) = Perturbation
+
+        call random_number ( Perturbation )
+        Perturbation &
+          = 0.01_KDR * J ( iE ) * 2.0_KDR * ( Perturbation - 0.5_KDR ) 
+        H_3 ( iE ) = Perturbation
+
+      end do !-- iE
 
       end associate !-- J, etc.
       end associate !-- iBC
     end do !-- iF
 
-    end associate !-- RMB
-    end select !-- MS
+    !-- Switch to position space to compute from primitive
 
-    nullify ( M, RM )
+    G => MS % Base_CSLD % Geometry ( )
+
+    allocate ( RS )
+    call RS % Initialize &
+           ( RMB % Velocity_U_Unit, RMB % MomentumDensity_U_Unit, &
+             RMB % MomentumDensity_D_Unit, RMB % EnergyDensityUnit, &
+             G % nValues, ClearOption = .true. )
+
+    do iE = 1, RMB % nEnergyValues
+      call MS % LoadSection ( RS, RMB, iE )
+      call RS % ComputeFromPrimitive ( G )
+      call MS % StoreSection ( RMB, RS, iE )
+    end do !-- iE
+
+    !-- Cleanup
+
+    end select !-- MS
+    end associate !-- RMB
+    nullify ( G, M, RM )
 
   end subroutine SetRadiation
 
