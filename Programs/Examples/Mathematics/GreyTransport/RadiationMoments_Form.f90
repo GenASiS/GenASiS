@@ -68,14 +68,17 @@ contains
 
 
   subroutine InitializeAllocate_RM &
-               ( RM, VelocityUnit, EnergyDensityUnit, nValues, &
+               ( RM, Velocity_U_Unit, MomentumDensity_U_Unit, &
+                 MomentumDensity_D_Unit, EnergyDensityUnit, nValues, &
                  VariableOption, VectorOption, NameOption, ClearOption, &
                  UnitOption, VectorIndicesOption )
 
     class ( RadiationMomentsForm ), intent ( inout ) :: &
       RM
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
-      VelocityUnit
+      Velocity_U_Unit, &
+      MomentumDensity_U_Unit, &
+      MomentumDensity_D_Unit
     type ( MeasuredValueForm ), intent ( in ) :: &
       EnergyDensityUnit
     integer ( KDI ), intent ( in ) :: &
@@ -107,10 +110,12 @@ contains
              VariableOption, VectorOption, NameOption, UnitOption, &
              VectorIndicesOption )
 
-    call SetUnits ( VariableUnit, RM, VelocityUnit, EnergyDensityUnit )
+    call SetUnits &
+           ( VariableUnit, RM, MomentumDensity_U_Unit, &
+             MomentumDensity_D_Unit, EnergyDensityUnit )
 
     call RM % InitializeTemplate &
-           ( VelocityUnit, nValues, VariableOption = Variable, &
+           ( Velocity_U_Unit, nValues, VariableOption = Variable, &
              VectorOption = Vector, NameOption = Name, &
              ClearOption = ClearOption, UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndices )
@@ -638,14 +643,17 @@ contains
   end subroutine InitializeBasics
 
 
-  subroutine SetUnits ( VariableUnit, RM, VelocityUnit, EnergyDensityUnit )
+  subroutine SetUnits &
+               ( VariableUnit, RM, MomentumDensity_U_Unit, &
+                 MomentumDensity_D_Unit, EnergyDensityUnit )
 
     type ( MeasuredValueForm ), dimension ( : ), intent ( inout ) :: &
       VariableUnit
     class ( RadiationMomentsForm ), intent ( in ) :: &
       RM
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
-      VelocityUnit
+      MomentumDensity_U_Unit, &
+      MomentumDensity_D_Unit
     type ( MeasuredValueForm ), intent ( in ) :: &
       EnergyDensityUnit
 
@@ -657,9 +665,9 @@ contains
 
     do iD = 1, 3
       VariableUnit ( RM % COMOVING_MOMENTUM_DENSITY_U ( iD ) ) &
-        = EnergyDensityUnit / VelocityUnit ( iD )
+        = MomentumDensity_U_Unit ( iD )
       VariableUnit ( RM % CONSERVED_MOMENTUM_DENSITY_D ( iD ) ) &
-        = EnergyDensityUnit / VelocityUnit ( iD )      
+        = MomentumDensity_D_Unit ( iD )      
     end do
 
     VariableUnit ( RM % VARIABLE_EDDINGTON_FACTOR ) = UNIT % IDENTITY
