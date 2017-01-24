@@ -10,6 +10,10 @@ module RadiationMoments_BSLL_ASC_CSLD__Form
 
   type, public, extends ( Field_BSLL_ASC_CSLD_Template ) :: &
     RadiationMoments_BSLL_ASC_CSLD_Form
+      integer ( KDI ) :: &
+        nEnergyValues = 0
+      real ( KDR ), dimension ( : ), allocatable :: &
+        Energy
       type ( MeasuredValueForm ) :: &
         EnergyDensityUnit, &
         EnergyUnit, &
@@ -62,8 +66,8 @@ contains
       MomentumUnitOption, &
       AngularMomentumUnitOption
 
-    ! class ( GeometryFlatForm ), pointer :: &
-    !   GF
+    class ( GeometryFlatForm ), pointer :: &
+      GF
 
     if ( RMB % Type == '' ) &
       RMB % Type = 'a RadiationMoments_BSLL_ASC_CSLD'
@@ -97,12 +101,12 @@ contains
     ! allocate ( RMB % iaBaseCell ( size ( B % iaBaseCell ) ) )
     ! RMB % iaBaseCell = B % iaBaseCell
 
-    ! GF => B % GeometryFiber ( )
-    ! associate ( Energy => GF % Value ( :, GF % CENTER ( 1 ) ) )
-    ! RMB % nEnergyValues = size ( Energy )
-    ! allocate ( RMB % Energy ( RMB % nEnergyValues ) )
-    ! RMB % Energy = Energy
-    ! end associate !-- Energy
+    GF => B % GeometryFiber ( )
+    associate ( Energy => GF % Value ( :, GF % CENTER ( 1 ) ) )
+    RMB % nEnergyValues = size ( Energy )
+    allocate ( RMB % Energy ( RMB % nEnergyValues ) )
+    RMB % Energy = Energy
+    end associate !-- Energy
 
     ! RMB % EnergyUnit = GF % Unit ( GF % CENTER ( 1 ) )
 
@@ -124,7 +128,7 @@ contains
     call RMB % InitializeTemplate_BSLL &
            ( B, NameOutputOption = NameOutputOption )
 
-    ! nullify ( GF )
+    nullify ( GF )
 
   end subroutine Initialize
 
@@ -162,17 +166,30 @@ contains
 
     RMB % Interactions_BSLL_ASC_CSLD => IB
 
-    ! select type ( RMA => RMB % Chart )
-    ! class is ( RadiationMoments_ASC_Form )
+    !select type ( RMA => RMB % Chart )
+    !class is ( RadiationMoments_ASC_Form )
 
     ! select type ( IC => IA % Chart )
     ! class is ( Field_CSL_Template )
     ! call RMC % SetInteractions ( IC )
     ! end select !-- I
 
-    ! end select !-- RMA
+    !end select !-- RMA
 
   end subroutine SetInteractions
+
+
+  impure elemental subroutine Finalize ( RMB )
+
+    type ( RadiationMoments_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
+      RMB
+
+    if ( allocated ( RMB % Energy ) ) &
+      deallocate ( RMB % Energy )
+
+    call RMB % FinalizeTemplate ( )
+
+  end subroutine Finalize
 
 
   subroutine SetField ( FB, NameOutputOption )
