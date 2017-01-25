@@ -22,6 +22,8 @@ module Bundle_SLL_ASC_CSLD__Form
     integer ( KDI ), dimension ( : ), allocatable :: &
       iaBaseCell, &
       iaBaseCellLabel
+    class ( Chart_SLL_Form ), pointer :: &
+      Fiber_CSLL => null ( )
     class ( Chart_SLD_Form ), pointer :: &
       Base_CSLD => null ( )
     class ( Atlas_SC_Form ), pointer :: &
@@ -183,6 +185,11 @@ contains
     end associate !-- F
     end associate !-- GAF
     end associate !-- FM
+
+    select type ( CF => B % FiberMaster % Chart )
+    class is ( Chart_SLL_Form )
+      B % Fiber_CSLL => CF
+    end select !-- CF
 
     !-- Base cell index
 
@@ -496,6 +503,7 @@ contains
 
     nullify ( B % Base_ASC )
     nullify ( B % Base_CSLD )
+    nullify ( B % Fiber_CSLL )
 
   end subroutine Finalize
 
