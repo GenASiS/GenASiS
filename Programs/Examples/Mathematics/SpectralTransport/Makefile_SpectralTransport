@@ -63,7 +63,7 @@ RadiationMoments_BSLL_ASC_CSLD__Form.o: \
 Interactions_BSLL_ASC_CSLD__Form.o: \
   Basics.o \
   Mathematics.o \
-  Interactions_Template.o \
+  Interactions_F__Form.o \
   Interactions_ASC__Form.o \
   Interactions_BSLL_ASC_CSLD__Form.f90
 
@@ -74,6 +74,7 @@ Thermalization_Form.o: \
   Basics.o \
   Mathematics.o \
   RadiationMoments_Form.o \
+  Interactions_F__Form.o \
   Matter_Form.o \
   Matter_ASC__Form.o \
   SetFermiDiracSpectrum_Command.o \

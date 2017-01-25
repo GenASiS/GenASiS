@@ -9,6 +9,9 @@ module Interactions_ASC__Form
   private
 
   type, public, extends ( Field_ASC_Template ) :: Interactions_ASC_Form
+    type ( MeasuredValueForm ) :: &
+      LengthUnit, &
+      EnergyDensityUnit
     character ( LDL ) :: &
       InteractionsType = ''
   contains
@@ -27,7 +30,9 @@ module Interactions_ASC__Form
 contains
 
 
-  subroutine Initialize ( IA, A, InteractionsType, NameOutputOption )
+  subroutine Initialize &
+               ( IA, A, InteractionsType, NameOutputOption, LengthUnitOption, &
+                 EnergyDensityUnitOption )
 
     class ( Interactions_ASC_Form ), intent ( inout ) :: &
       IA
@@ -37,10 +42,18 @@ contains
       InteractionsType
     character ( * ), intent ( in ), optional :: &
       NameOutputOption
+    type ( MeasuredValueForm ), intent ( in ), optional :: &
+      LengthUnitOption, &
+      EnergyDensityUnitOption
 
     if ( IA % Type == '' ) &
       IA % Type = 'an Interactions_ASC'
     IA % InteractionsType = InteractionsType    
+
+    if ( present ( LengthUnitOption ) ) &
+      IA % LengthUnit = LengthUnitOption
+    if ( present ( EnergyDensityUnitOption ) ) &
+      IA % EnergyDensityUnit = EnergyDensityUnitOption
 
     call IA % InitializeTemplate_ASC &
            ( A, NameOutputOption = NameOutputOption )
@@ -97,7 +110,8 @@ contains
     select type ( FC => FA % Chart )
     class is ( Interactions_CSL_Form )
       call FC % Initialize &
-             ( C, FA % InteractionsType, nValues, &
+             ( C, FA % InteractionsType, FA % LengthUnit, &
+               FA % EnergyDensityUnit, nValues, &
                NameOutputOption = NameOutputOption )
     end select !-- FC
 

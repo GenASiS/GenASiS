@@ -24,10 +24,14 @@ contains
 
 
   subroutine InitializeAllocate_F &
-               ( I, nValues, NameOption, ClearOption, UnitOption )
+               ( I, LengthUnit, EnergyDensityUnit, nValues, NameOption, &
+                 ClearOption, UnitOption )
 
     class ( Interactions_F_Form ), intent ( inout ) :: &
       I
+    type ( MeasuredValueForm ), intent ( in ) :: &
+      LengthUnit, &
+      EnergyDensityUnit
     integer ( KDI ), intent ( in ) :: &
       nValues
     character ( * ), intent ( in ), optional :: &
@@ -40,7 +44,9 @@ contains
     if ( I % Type == '' ) &
       I % Type = 'an Interactions_F'
 
-    call I % InitializeTemplate ( nValues, NameOption, ClearOption, UnitOption )
+    call I % InitializeTemplate &
+           ( LengthUnit, EnergyDensityUnit, nValues, NameOption, &
+             ClearOption, UnitOption )
 
   end subroutine InitializeAllocate_F
 

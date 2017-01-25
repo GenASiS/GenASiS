@@ -2,7 +2,7 @@ module Interactions_BSLL_ASC_CSLD__Form
 
   use Basics
   use Mathematics
-  use Interactions_Template
+  use Interactions_F__Form
   use Interactions_ASC__Form
 
   implicit none
@@ -10,11 +10,18 @@ module Interactions_BSLL_ASC_CSLD__Form
 
   type, public, extends ( Field_BSLL_ASC_CSLD_Template ) :: &
     Interactions_BSLL_ASC_CSLD_Form
+      type ( MeasuredValueForm ) :: &
+        LengthUnit, &
+        EnergyDensityUnit
       character ( LDF ) :: &
         InteractionsType = ''
   contains
     procedure, public, pass :: &
       Initialize
+    procedure, public, pass :: &
+      InteractionsFiber_F
+    final :: &
+      Finalize
     procedure, public, pass :: &
       SetField
   end type Interactions_BSLL_ASC_CSLD_Form
@@ -22,7 +29,9 @@ module Interactions_BSLL_ASC_CSLD__Form
 contains
 
 
-  subroutine Initialize ( IB, B, InteractionsType, NameOutputOption )
+  subroutine Initialize &
+               ( IB, B, InteractionsType, NameOutputOption, LengthUnitOption, &
+                 EnergyDensityUnitOption )
 
     class ( Interactions_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
       IB
@@ -32,6 +41,9 @@ contains
       InteractionsType
     character ( * ), intent ( in ), optional :: &
       NameOutputOption
+    type ( MeasuredValueForm ), intent ( in ), optional :: &
+      LengthUnitOption, &
+      EnergyDensityUnitOption
 
     ! class ( GeometryFlatForm ), pointer :: &
     !   GF
@@ -76,12 +88,51 @@ contains
     !   call PROGRAM_HEADER % Abort ( )
     ! end select !-- B
 
+    if ( present ( LengthUnitOption ) ) &
+      IB % LengthUnit = LengthUnitOption
+    if ( present ( EnergyDensityUnitOption ) ) &
+      IB % EnergyDensityUnit = EnergyDensityUnitOption
+
     call IB % InitializeTemplate_BSLL &
            ( B, NameOutputOption = NameOutputOption )
 
     ! nullify ( GF )
 
   end subroutine Initialize
+
+
+  function InteractionsFiber_F ( IB, iFiber ) result ( IF )
+
+    class ( Interactions_BSLL_ASC_CSLD_Form ), intent ( in ) :: &
+      IB
+    integer ( KDI ), intent ( in ) :: &
+      iFiber
+    class ( Interactions_F_Form ), pointer :: &
+      IF
+
+    associate ( IA => IB % Fiber % Atlas ( iFiber ) % Element )
+    select type ( IC => IA % Chart )
+    class is ( Field_CSL_Template )   
+
+    select type ( I => IC % Field )
+    class is ( Interactions_F_Form )
+      IF => I
+    end select !-- I
+
+    end select !-- IC
+    end associate !-- IA
+
+  end function InteractionsFiber_F
+
+
+  impure elemental subroutine Finalize ( IB )
+
+    type ( Interactions_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
+      IB
+
+    call IB % FinalizeTemplate ( )
+
+  end subroutine Finalize
 
 
   subroutine SetField ( FB, NameOutputOption )
@@ -110,7 +161,10 @@ contains
       class is ( Atlas_SC_Form )
 
       call IA % Initialize &
-             ( AF, FB % InteractionsType, NameOutputOption = NameOutputOption )
+             ( AF, FB % InteractionsType, &
+               NameOutputOption = NameOutputOption, & 
+               LengthUnitOption = FB % LengthUnit, &
+               EnergyDensityUnitOption = FB % EnergyDensityUnit )
 
       end select !-- AF
       end select !-- IA

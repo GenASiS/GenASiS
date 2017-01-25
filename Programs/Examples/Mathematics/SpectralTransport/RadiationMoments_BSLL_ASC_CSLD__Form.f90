@@ -34,6 +34,8 @@ module RadiationMoments_BSLL_ASC_CSLD__Form
       RadiationMomentsFiber
     procedure, public, pass :: &
       SetInteractions
+    final :: &
+      Finalize
     procedure, public, pass :: &
       SetField
   end type RadiationMoments_BSLL_ASC_CSLD_Form
@@ -164,17 +166,27 @@ contains
     class ( Field_BSLL_ASC_CSLD_Template ), intent ( in ), target :: &
       IB
 
+    integer ( KDI ) :: &
+      iF  !-- iFiber
+
     RMB % Interactions_BSLL_ASC_CSLD => IB
 
-    !select type ( RMA => RMB % Chart )
-    !class is ( RadiationMoments_ASC_Form )
+    select type ( MS => RMB % Bundle )
+    class is ( Bundle_SLL_ASC_CSLD_Form )
 
-    ! select type ( IC => IA % Chart )
-    ! class is ( Field_CSL_Template )
-    ! call RMC % SetInteractions ( IC )
-    ! end select !-- I
+    do iF = 1, MS % nFibers
+      select type ( RMA => RMB % Fiber % Atlas ( iF ) % Element )
+      class is ( RadiationMoments_ASC_Form )
 
-    !end select !-- RMA
+      select type ( IA => IB % Fiber % Atlas ( iF ) % Element )
+      class is ( Field_ASC_Template )
+      call RMA % SetInteractions ( IA )
+      end select !-- I
+
+      end select !-- RMA
+    end do !-- iF
+
+    end select !-- MS
 
   end subroutine SetInteractions
 
