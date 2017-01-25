@@ -132,8 +132,6 @@ contains
 
     RM % Interactions => Interactions
 
-    call RM % Interactions % Compute ( )
-
   end subroutine SetInteractions
 
 
@@ -407,10 +405,6 @@ contains
     call ComputeVariableEddingtonFactor &
            ( VEF, J, H_1, H_2, H_3, M_DD_22, M_DD_33 )
 
-    if ( associated ( C % Value, Value_C ) &
-         .and. associated ( C % Interactions ) ) &
-      call C % Interactions % Compute ( )
-
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
     end associate !-- RMV, etc.
@@ -487,10 +481,6 @@ contains
              M_UU_22, M_UU_33, CONSTANT % SPEED_OF_LIGHT )
     call ComputeVariableEddingtonFactor &
            ( VEF, J, H_1, H_2, H_3, M_DD_22, M_DD_33 )
-
-    if ( associated ( C % Value, Value ) &
-         .and. associated ( C % Interactions ) ) &
-      call C % Interactions % Compute ( )
 
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
