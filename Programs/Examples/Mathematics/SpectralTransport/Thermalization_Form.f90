@@ -3,6 +3,7 @@ module Thermalization_Form
   use Basics
   use Mathematics
   use RadiationMoments_Form
+  use RadiationMoments_ASC__Form
   use Interactions_F__Form
   use Matter_Form
   use Matter_ASC__Form
@@ -14,6 +15,10 @@ module Thermalization_Form
   private
 
   type, public, extends ( IntegratorTemplate ) :: ThermalizationForm
+    type ( RadiationMoments_ASC_Form ), allocatable :: &
+      Grey_ASC, &
+      Reference_ASC, &
+      Difference_ASC
     type ( Matter_ASC_Form ), allocatable :: &
       Matter_ASC
     type ( RadiationMoments_BSLL_ASC_CSLD_Form ), allocatable :: &
@@ -30,7 +35,8 @@ module Thermalization_Form
     private :: &
       SetMatter, &
       SetRadiation, &
-      SetInteractions
+      SetInteractions, &
+      SetReference
 
     real ( KDR ), private :: &
       TemperatureMin, &
@@ -149,6 +155,19 @@ contains
     call RMB % SetInteractions ( IB )
     end associate !-- IB
 
+    !-- Diagnostics
+
+    EnergyDensityUnit  =  UNIT % MEV ** 4 / UNIT % HBAR_C ** 3
+
+    allocate ( T % Reference_ASC )
+!    allocate ( SWD % Difference )
+    call T % Reference_ASC % Initialize &
+           ( PS, 'GENERIC', NameOutputOption = 'Reference', &
+             EnergyDensityUnitOption = EnergyDensityUnit )
+!    call SWD % Difference % Initialize &
+!           ( PS, 'GENERIC', NameOutputOption = 'Difference' )
+    T % SetReference => SetReference
+
     !-- Initial conditions
 
     call SetMatter ( T )
@@ -180,6 +199,8 @@ contains
       deallocate ( T % RadiationMoments_BSLL_ASC_CSLD )
     if ( allocated ( T % Matter_ASC ) ) &
       deallocate ( T % Matter_ASC )
+    if ( allocated ( T % Reference_ASC ) ) &
+      deallocate ( T % Reference_ASC )
 
     call T % FinalizeTemplate ( )
 
@@ -394,6 +415,53 @@ contains
     nullify ( M, I )
 
   end subroutine SetInteractions
+
+
+  subroutine SetReference ( T )
+
+    class ( IntegratorTemplate ), intent ( in ) :: &
+      T
+
+    integer ( KDI ) :: &
+      iV  !-- iValue
+    class ( RadiationMomentsForm ), pointer :: &
+      !RM, &
+      RM_R!, &  !-- RM_Reference
+      !RM_D     !-- RM_Difference
+    class ( MatterForm ), pointer :: &
+      M
+
+    select type ( T )
+    class is ( ThermalizationForm )
+
+    RM_R => T % Reference_ASC % RadiationMoments ( )
+
+    M => T % Matter_ASC % Matter ( )
+
+    associate &
+      ( J_Eq   => RM_R % Value ( :, RM_R % COMOVING_ENERGY_DENSITY ), &
+        T      => M % Value ( :, M % TEMPERATURE ), &
+        Mu     => M % Value ( :, M % CHEMICAL_POTENTIAL ), &
+        kB     => CONSTANT % BOLTZMANN, &
+        hBar_c => CONSTANT % PLANCK_REDUCED * CONSTANT % SPEED_OF_LIGHT, &
+        Pi     => CONSTANT % PI )
+
+    do iV = 1, RM_R % nValues
+      if ( Mu ( iV ) == 0.0_KDR .and. T ( iV ) > 0.0_KDR ) then
+        J_Eq ( iV ) &
+          = ( 7.0_KDR / 8.0_KDR ) * ( Pi ** 2 / 30.0_KDR ) / ( hBar_c ** 3 ) &
+            * ( kB * T ( iV ) ) ** 4
+      else
+        J_Eq ( iV ) = huge ( 0.0_KDR )
+      end if
+    end do !-- iV
+
+    end associate !-- J_Eq, etc.
+    end select !-- T
+
+    nullify ( M, RM_R )
+
+  end subroutine SetReference
 
 
 end module Thermalization_Form

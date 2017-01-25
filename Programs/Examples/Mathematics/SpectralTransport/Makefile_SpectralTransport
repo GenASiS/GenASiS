@@ -74,6 +74,7 @@ Thermalization_Form.o: \
   Basics.o \
   Mathematics.o \
   RadiationMoments_Form.o \
+  RadiationMoments_ASC__Form.o \
   Interactions_F__Form.o \
   Matter_Form.o \
   Matter_ASC__Form.o \
