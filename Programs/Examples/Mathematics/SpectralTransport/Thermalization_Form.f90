@@ -3,11 +3,12 @@ module Thermalization_Form
   use Basics
   use Mathematics
   use RadiationMoments_Form
+  use Interactions_F__Form
   use Matter_Form
   use Matter_ASC__Form
   use SetFermiDiracSpectrum_Command
-  use Interactions_BSLL_ASC_CSLD__Form
   use RadiationMoments_BSLL_ASC_CSLD__Form
+  use Interactions_BSLL_ASC_CSLD__Form
 
   implicit none
   private
@@ -15,10 +16,10 @@ module Thermalization_Form
   type, public, extends ( IntegratorTemplate ) :: ThermalizationForm
     type ( Matter_ASC_Form ), allocatable :: &
       Matter_ASC
-    type ( Interactions_BSLL_ASC_CSLD_Form ), allocatable :: &
-      Interactions_BSLL_ASC_CSLD
     type ( RadiationMoments_BSLL_ASC_CSLD_Form ), allocatable :: &
       RadiationMoments_BSLL_ASC_CSLD
+    type ( Interactions_BSLL_ASC_CSLD_Form ), allocatable :: &
+      Interactions_BSLL_ASC_CSLD
   contains
     procedure, public, pass :: &
       Initialize
@@ -28,12 +29,15 @@ module Thermalization_Form
 
     private :: &
       SetMatter, &
-      SetRadiation
+      SetRadiation, &
+      SetInteractions
 
-    real ( KDR ), private, parameter :: &
-      T_Scale_MeV = 3.0_KDR, &
-      T_Min_MeV = 0.1_KDR, &
-      T_Max_MeV = 10.0_KDR
+    real ( KDR ), private :: &
+      TemperatureMin, &
+      TemperatureMax, &
+      EnergyScale, &
+      EffectiveOpacity, &
+      TransportOpacity
 
 contains
 
@@ -59,6 +63,20 @@ contains
     if ( T % Type == '' ) &
       T % Type = 'a Thermalization'
 
+    TemperatureMin  =   0.1_KDR  *  UNIT % MEV
+    TemperatureMax  =  10.0_KDR  *  UNIT % MEV
+    EnergyScale     =   3.0_KDR  *  UNIT % MEV
+    call PROGRAM_HEADER % GetParameter ( TemperatureMin, 'TemperatureMin' )
+    call PROGRAM_HEADER % GetParameter ( TemperatureMax, 'TemperatureMax' )
+    call PROGRAM_HEADER % GetParameter ( EnergyScale, 'EnergyScale' )
+
+    EffectiveOpacity = 1.0_KDR
+    TransportOpacity = 1.1_KDR
+    call PROGRAM_HEADER % GetParameter &
+           ( EffectiveOpacity, 'EffectiveOpacity' )
+    call PROGRAM_HEADER % GetParameter &
+           ( TransportOpacity, 'TransportOpacity' )
+    
     !-- PositionSpace
 
     allocate ( Atlas_SC_Form :: T % PositionSpace )
@@ -85,7 +103,7 @@ contains
            ( [ 'REFLECTING', 'REFLECTING' ], iDimension = 1 )
 
     Scale = 0.0_KDR
-    Scale ( 1 ) = T_Scale_MeV * UNIT % MEV
+    Scale ( 1 ) = EnergyScale
 
     CoordinateUnit = UNIT % IDENTITY
     CoordinateUnit ( 1 ) = UNIT % MEV
@@ -126,7 +144,8 @@ contains
 
     allocate ( T % Interactions_BSLL_ASC_CSLD )
     associate ( IB => T % Interactions_BSLL_ASC_CSLD )
-    call IB % Initialize ( MS, 'FIXED' )
+    call IB % Initialize &
+           ( MS, 'FIXED', EnergyDensityUnitOption = EnergyDensityUnit )
     call RMB % SetInteractions ( IB )
     end associate !-- IB
 
@@ -134,6 +153,7 @@ contains
 
     call SetMatter ( T )
     call SetRadiation ( T )
+    call SetInteractions ( T )
 
     !-- Initialize template
 
@@ -154,6 +174,8 @@ contains
     type ( ThermalizationForm ), intent ( inout ) :: &
       T
 
+    if ( allocated ( T % Interactions_BSLL_ASC_CSLD ) ) &
+      deallocate ( T % Interactions_BSLL_ASC_CSLD )
     if ( allocated ( T % RadiationMoments_BSLL_ASC_CSLD ) ) &
       deallocate ( T % RadiationMoments_BSLL_ASC_CSLD )
     if ( allocated ( T % Matter_ASC ) ) &
@@ -208,8 +230,8 @@ contains
     R_Min = CO % Incoming % Value ( 1 )
     R_Max = 1.0_KDR / CO % Incoming % Value ( 2 )
 
-    T_Min = T_Min_MeV * UNIT % MEV
-    T_Max = T_Max_MeV * UNIT % MEV
+    T_Min = TemperatureMin
+    T_Max = TemperatureMax
 
 !    Temperature &
 !      = T_Max  -  ( T_Max - T_Min ) / ( R_Max - R_Min ) * ( R - R_Min )
@@ -323,6 +345,55 @@ contains
     nullify ( G, M, RM )
 
   end subroutine SetRadiation
+
+
+  subroutine SetInteractions ( T )
+
+    class ( ThermalizationForm ), intent ( inout ) :: &
+      T
+
+    class ( Interactions_F_Form ), pointer :: &
+      I
+    class ( MatterForm ), pointer :: &
+      M
+
+    integer ( KDI ) :: &
+      iF  !-- iFiber
+
+    associate &
+      ( IB => T % Interactions_BSLL_ASC_CSLD, &
+        RMB => T % RadiationMoments_BSLL_ASC_CSLD )
+
+    select type ( MS => T % MomentumSpace )
+    class is ( Bundle_SLL_ASC_CSLD_Form )
+
+    M => T % Matter_ASC % Matter ( )
+
+    do iF = 1, MS % nFibers
+      associate ( iBC => MS % iaBaseCell ( iF ) )
+      I => IB % InteractionsFiber_F ( iF )
+      associate &
+        ( J_Eq  => I % Value ( :, I % EQUILIBRIUM_DENSITY ), &
+          Chi   => I % Value ( :, I % EFFECTIVE_OPACITY ), &
+          Kappa => I % Value ( :, I % TRANSPORT_OPACITY ), &
+          T     => M % Value ( iBC, M % TEMPERATURE ), &
+          Mu    => M % Value ( iBC, M % CHEMICAL_POTENTIAL ), &
+          E     => RMB % Energy )
+
+      call SetFermiDiracSpectrum ( E, T, Mu, J_Eq )
+
+      Chi   = EffectiveOpacity
+      Kappa = TransportOpacity
+
+      end associate !-- J_Eq, etc.
+      end associate !-- iBC
+    end do !-- iF
+
+    end select !-- MS
+    end associate !-- IB, etc.
+    nullify ( M, I )
+
+  end subroutine SetInteractions
 
 
 end module Thermalization_Form

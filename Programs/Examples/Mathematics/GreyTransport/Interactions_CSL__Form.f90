@@ -9,6 +9,9 @@ module Interactions_CSL__Form
   private
 
   type, public, extends ( Field_CSL_Template ) :: Interactions_CSL_Form
+    type ( MeasuredValueForm ) :: &
+      LengthUnit, &
+      EnergyDensityUnit
     character ( LDL ) :: &
       InteractionsType = ''
   contains
@@ -25,7 +28,9 @@ module Interactions_CSL__Form
 contains
 
 
-  subroutine Initialize ( IC, C, InteractionsType, nValues, NameOutputOption )
+  subroutine Initialize &
+               ( IC, C, InteractionsType, LengthUnit, EnergyDensityUnit, &
+                 nValues, NameOutputOption )
 
     class ( Interactions_CSL_Form ), intent ( inout ) :: &
       IC
@@ -33,6 +38,9 @@ contains
       C
     character ( * ), intent ( in ) :: &
       InteractionsType
+    type ( MeasuredValueForm ), intent ( in ) :: &
+      LengthUnit, &
+      EnergyDensityUnit
     integer ( KDI ), intent ( in ) :: &
       nValues
     character ( * ), intent ( in ), optional :: &
@@ -41,6 +49,9 @@ contains
     if ( IC % Type == '' ) &
       IC % Type = 'an Interactions_CSL'
     IC % InteractionsType = InteractionsType    
+
+    IC % LengthUnit        = LengthUnit
+    IC % EnergyDensityUnit = EnergyDensityUnit
 
     call IC % InitializeTemplate_CSL &
            ( C, nValues, NameOutputOption = NameOutputOption )
@@ -93,7 +104,9 @@ contains
       allocate ( Interactions_F_Form :: FC % Field )
       select type ( I => FC % Field )
       type is ( Interactions_F_Form )
-        call I % Initialize ( FC % nValues, NameOption = NameOption )
+        call I % Initialize &
+               ( FC % LengthUnit, FC % EnergyDensityUnit, FC % nValues, &
+                 NameOption = NameOption )
         call I % SetOutput ( FC % FieldOutput )
       end select !-- RM
     case default
