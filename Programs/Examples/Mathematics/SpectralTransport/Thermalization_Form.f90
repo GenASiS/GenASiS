@@ -16,9 +16,9 @@ module Thermalization_Form
 
   type, public, extends ( IntegratorTemplate ) :: ThermalizationForm
     type ( RadiationMoments_ASC_Form ), allocatable :: &
-      Grey_ASC, &
       Reference_ASC, &
-      Difference_ASC
+      Computed_ASC, &
+      FractionalDifference_ASC
     type ( Matter_ASC_Form ), allocatable :: &
       Matter_ASC
     type ( RadiationMoments_BSLL_ASC_CSLD_Form ), allocatable :: &
@@ -160,12 +160,16 @@ contains
     EnergyDensityUnit  =  UNIT % MEV ** 4 / UNIT % HBAR_C ** 3
 
     allocate ( T % Reference_ASC )
-!    allocate ( SWD % Difference )
+    allocate ( T % Computed_ASC )
+    allocate ( T % FractionalDifference_ASC )
     call T % Reference_ASC % Initialize &
            ( PS, 'GENERIC', NameOutputOption = 'Reference', &
              EnergyDensityUnitOption = EnergyDensityUnit )
-!    call SWD % Difference % Initialize &
-!           ( PS, 'GENERIC', NameOutputOption = 'Difference' )
+    call T % Computed_ASC % Initialize &
+           ( PS, 'GENERIC', NameOutputOption = 'Computed', &
+             EnergyDensityUnitOption = EnergyDensityUnit )
+    call T % FractionalDifference_ASC % Initialize &
+           ( PS, 'GENERIC', NameOutputOption = 'FractionalDifference' )
     T % SetReference => SetReference
 
     !-- Initial conditions
@@ -199,6 +203,10 @@ contains
       deallocate ( T % RadiationMoments_BSLL_ASC_CSLD )
     if ( allocated ( T % Matter_ASC ) ) &
       deallocate ( T % Matter_ASC )
+    if ( allocated ( T % FractionalDifference_ASC ) ) &
+      deallocate ( T % FractionalDifference_ASC )
+    if ( allocated ( T % Computed_ASC ) ) &
+      deallocate ( T % Computed_ASC )
     if ( allocated ( T % Reference_ASC ) ) &
       deallocate ( T % Reference_ASC )
 
@@ -423,23 +431,38 @@ contains
       T
 
     integer ( KDI ) :: &
-      iV  !-- iValue
+      iV, &  !-- iValue
+      iF     !-- iFiber
+    type ( Real_1D_Form ), dimension ( : ), allocatable :: &
+      Integrand
+    type ( VolumeIntegralForm ) :: &
+      VI
     class ( RadiationMomentsForm ), pointer :: &
-      !RM, &
-      RM_R!, &  !-- RM_Reference
-      !RM_D     !-- RM_Difference
+      RM, &
+      RM_R, &  !-- RM_Reference
+      RM_C, &  !-- RM_Computed
+      RM_FD    !-- RM_FractionalDifference
     class ( MatterForm ), pointer :: &
       M
 
     select type ( T )
     class is ( ThermalizationForm )
 
-    RM_R => T % Reference_ASC % RadiationMoments ( )
+    select type ( MS => T % MomentumSpace )
+    class is ( Bundle_SLL_ASC_CSLD_Form )
+
+    associate ( RMB => T % RadiationMoments_BSLL_ASC_CSLD )
+
+    RM_R  => T % Reference_ASC % RadiationMoments ( )
+    RM_C  => T % Computed_ASC % RadiationMoments ( )
+    RM_FD => T % FractionalDifference_ASC % RadiationMoments ( )
 
     M => T % Matter_ASC % Matter ( )
 
+    !-- Reference blackbody
+
     associate &
-      ( J_Eq   => RM_R % Value ( :, RM_R % COMOVING_ENERGY_DENSITY ), &
+      ( J_R    => RM_R % Value ( :, RM_R % COMOVING_ENERGY_DENSITY ), &
         T      => M % Value ( :, M % TEMPERATURE ), &
         Mu     => M % Value ( :, M % CHEMICAL_POTENTIAL ), &
         kB     => CONSTANT % BOLTZMANN, &
@@ -448,18 +471,44 @@ contains
 
     do iV = 1, RM_R % nValues
       if ( Mu ( iV ) == 0.0_KDR .and. T ( iV ) > 0.0_KDR ) then
-        J_Eq ( iV ) &
-          = ( 7.0_KDR / 8.0_KDR ) * ( Pi ** 2 / 30.0_KDR ) / ( hBar_c ** 3 ) &
-            * ( kB * T ( iV ) ) ** 4
+        J_R ( iV )  =  ( 7.0_KDR / 8.0_KDR )  *  ( Pi ** 2 / 30.0_KDR )  &
+                       /  ( hBar_c ** 3 )  *  ( kB * T ( iV ) ) ** 4
       else
-        J_Eq ( iV ) = huge ( 0.0_KDR )
+        J_R ( iV ) = huge ( 0.0_KDR )
       end if
     end do !-- iV
 
+    !-- Integrated spectrum and difference
+
+    associate &
+      ( J_C  => RM_C  % Value ( :, RM_C  % COMOVING_ENERGY_DENSITY ), &
+        J_FD => RM_FD % Value ( :, RM_FD % COMOVING_ENERGY_DENSITY ), &
+        CF   => MS % Fiber_CSLL )
+
+    do iF = 1, MS % nFibers
+      RM => RMB % RadiationMomentsFiber ( iF )
+      associate ( iBC => MS % iaBaseCell ( iF ) )
+
+      associate ( J => RM % Value ( :, RM % COMOVING_ENERGY_DENSITY ) )
+      allocate ( Integrand ( 1 ) )
+      call Integrand ( 1 ) % Initialize ( size ( J ) )
+      Integrand ( 1 ) % Value = J
+      call VI % Compute ( CF, Integrand, J_C ( iBC : iBC ) )
+      deallocate ( Integrand )
+      end associate !-- J
+
+      J_FD ( iBC )  =  ( J_C ( iBC )  -  J_R ( iBC ) )  /  J_R ( iBC )
+
+      end associate !-- iBC
+    end do !-- iF
+
+    end associate !-- J_C, etc.
     end associate !-- J_Eq, etc.
+    end associate !-- RMB
+    end select !-- MS
     end select !-- T
 
-    nullify ( M, RM_R )
+    nullify ( M, RM, RM_R, RM_C, RM_FD )
 
   end subroutine SetReference
 
