@@ -41,16 +41,22 @@ module Current_Template
       ComputeFromPrimitiveSelf
     procedure, private, pass ( C ) :: &
       ComputeFromPrimitiveOther
+    procedure, private, pass :: &
+      ComputeFromPrimitiveSelectGeometry
     generic, public :: &
       ComputeFromPrimitive &
-        => ComputeFromPrimitiveSelf, ComputeFromPrimitiveOther
+        => ComputeFromPrimitiveSelf, ComputeFromPrimitiveOther, &
+           ComputeFromPrimitiveSelectGeometry
     procedure, private, pass :: &
       ComputeFromConservedSelf
     procedure, private, pass ( C ) :: &
       ComputeFromConservedOther
+    procedure, private, pass :: &
+      ComputeFromConservedSelectGeometry
     generic, public :: &
       ComputeFromConserved &
-        => ComputeFromConservedSelf, ComputeFromConservedOther
+        => ComputeFromConservedSelf, ComputeFromConservedOther, &
+           ComputeFromConservedSelectGeometry
     procedure ( CRF ), public, pass ( C ), deferred :: &
       ComputeRawFluxes
     procedure, public, pass ( C ) :: &
@@ -226,6 +232,36 @@ contains
   end subroutine ComputeFromPrimitiveOther
 
 
+  subroutine ComputeFromPrimitiveSelectGeometry &
+               ( C, iGeometryValue, G, nValuesOption, oValueOption )
+
+    !-- Violating argument position for iGeometryValue to distinguish
+    !   overloaded interface
+
+    class ( CurrentTemplate ), intent ( inout ) :: &
+      C
+    integer ( KDI ), intent ( in ) :: &
+      iGeometryValue
+    class ( GeometryFlatForm ), intent ( in ) :: &
+      G
+    integer ( KDI ), intent ( in ), optional :: &
+      nValuesOption, &
+      oValueOption
+
+    associate &
+      ( nV => C % nValues, &
+        iV => iGeometryValue, &
+        iD => 1 )
+
+    call C % ComputeFromPrimitiveCommon &
+           ( C % Value, G, spread ( G % Value ( iV, : ), iD, nV ), &
+             nValuesOption, oValueOption )
+    
+    end associate !-- nV, etc.
+
+  end subroutine ComputeFromPrimitiveSelectGeometry
+
+
   subroutine ComputeFromConservedSelf ( C, G, nValuesOption, oValueOption )
 
     class ( CurrentTemplate ), intent ( inout ) :: &
@@ -261,6 +297,36 @@ contains
            ( Value_C, G, Value_G, nValuesOption, oValueOption )
     
   end subroutine ComputeFromConservedOther
+
+
+  subroutine ComputeFromConservedSelectGeometry &
+               ( C, iGeometryValue, G, nValuesOption, oValueOption )
+
+    !-- Violating argument position for iGeometryValue to distinguish
+    !   overloaded interface
+
+    class ( CurrentTemplate ), intent ( inout ) :: &
+      C
+    integer ( KDI ), intent ( in ) :: &
+      iGeometryValue
+    class ( GeometryFlatForm ), intent ( in ) :: &
+      G
+    integer ( KDI ), intent ( in ), optional :: &
+      nValuesOption, &
+      oValueOption
+
+    associate &
+      ( nV => C % nValues, &
+        iV => iGeometryValue, &
+        iD => 1 )
+
+    call C % ComputeFromConservedCommon &
+           ( C % Value, G, spread ( G % Value ( iV, : ), iD, nV ), &
+             nValuesOption, oValueOption )
+    
+    end associate !-- nV, etc.
+
+  end subroutine ComputeFromConservedSelectGeometry
 
 
   subroutine ComputeRiemannSolverInput &
