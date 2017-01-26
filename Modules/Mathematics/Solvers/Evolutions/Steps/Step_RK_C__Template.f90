@@ -286,14 +286,16 @@ contains
       end associate !-- iD
     end if
 
-    select type ( Grid => S % Grid )
-    class is ( Chart_SLD_Form )
-      associate ( TimerGhost => PROGRAM_HEADER % Timer ( S % iTimerGhost ) )
-      call TimerGhost % Start ( )
-      call Grid % ExchangeGhostData ( K )
-      call TimerGhost % Stop ( )
-      end associate !-- TimerGhost
-    end select !-- Grid
+    if ( associated ( S % ApplyDivergence ) ) then
+      select type ( Grid => S % Grid )
+      class is ( Chart_SLD_Form )
+        associate ( TimerGhost => PROGRAM_HEADER % Timer ( S % iTimerGhost ) )
+        call TimerGhost % Start ( )
+        call Grid % ExchangeGhostData ( K )
+        call TimerGhost % Stop ( )
+        end associate !-- TimerGhost
+      end select !-- Grid
+    end if !-- ApplyDivergence
 
     end associate !-- C, etc.
 
