@@ -243,14 +243,16 @@ contains
 
 
   subroutine ComputeFromConservedCommon &
-               ( C, G, Value, nValuesOption, oValueOption )
+               ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
 
+    real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
+      Value_C
     class ( ProtoCurrentForm ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
-      Value
+    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+      Value_G
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
@@ -260,8 +262,8 @@ contains
       nV     !-- nValues
       
     associate &
-      ( FV  => Value, &
-        GV => G % Value )
+      ( FV => Value_C, &
+        GV => Value_G )
 
     if ( present ( oValueOption ) ) then
       oV = oValueOption
