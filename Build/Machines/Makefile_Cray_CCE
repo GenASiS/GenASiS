@@ -4,7 +4,8 @@
 FORTRAN_COMPILE      = ftn -c
 FORTRAN_BOUND_CHECK  = -R bcp
 FORTRAN_DEBUG        = -hdevelop -hfp0 -K trap=fp
-FORTRAN_OPTIMIZE     = #-- use default (no flag) optimization
+FORTRAN_OPTIMIZE     = -Oipa2 #-- Default optimization (O2) but with lower ipa
+                              #   level (defaupt ipa3 causes issue)
 FORTRAN_PROFILE      = 
 
 LINK = ftn
