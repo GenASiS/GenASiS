@@ -120,13 +120,13 @@ contains
       oValueOption
 
     call C % ComputeFromConservedCommon &
-           ( G, C % Value, nValuesOption, oValueOption )
+           ( C % Value, G, G % Value, nValuesOption, oValueOption )
     
   end subroutine ComputeFromConservedSelf
 
 
   subroutine ComputeFromConservedOther &
-               ( Value_C, C, G, nValuesOption, oValueOption )
+               ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
 
     !-- FIXME: Intel compiler does not recognize inheritance from Fluid_D in
     !          extensions of this template
@@ -137,12 +137,14 @@ contains
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
+    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+      Value_G
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
 
     call C % ComputeFromConservedCommon &
-           ( G, Value_C, nValuesOption, oValueOption )
+           ( Value_C, G, Value_G, nValuesOption, oValueOption )
     
   end subroutine ComputeFromConservedOther
 
