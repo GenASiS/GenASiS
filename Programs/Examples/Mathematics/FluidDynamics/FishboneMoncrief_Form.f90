@@ -166,7 +166,9 @@ contains
 
     TimeUnit = UNIT % SECOND
 
-    VelocityUnit       =  CoordinateUnit / TimeUnit 
+    VelocityUnit ( 1 ) =  CoordinateUnit ( 1 ) / TimeUnit 
+    VelocityUnit ( 2 ) =  CoordinateUnit ( 2 ) / TimeUnit
+    VelocityUnit ( 3 ) =  CoordinateUnit ( 3 ) / TimeUnit
     MassDensityUnit    =  UNIT % MASS_DENSITY_CGS
     EnergyDensityUnit  =  UNIT % MASS_DENSITY_CGS  &
                           *  UNIT % SPEED_OF_LIGHT ** 2
