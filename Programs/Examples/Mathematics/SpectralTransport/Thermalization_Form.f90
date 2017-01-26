@@ -15,6 +15,8 @@ module Thermalization_Form
   private
 
   type, public, extends ( IntegratorTemplate ) :: ThermalizationForm
+    class ( Step_RK_C_Template ), allocatable :: &
+      Step
     type ( RadiationMoments_ASC_Form ), allocatable :: &
       Reference_ASC, &
       Computed_ASC, &
@@ -30,20 +32,26 @@ module Thermalization_Form
       Initialize
     final :: &
       Finalize  
+    procedure, private, pass :: &
+      ComputeCycle
+    procedure, private, pass :: &
+      ComputeTimeStepLocal
   end type ThermalizationForm
 
     private :: &
       SetMatter, &
       SetRadiation, &
       SetInteractions, &
-      SetReference
+      SetReference, &
+      ComputeCycle_BSLL_ASC_CSLD
 
     real ( KDR ), private :: &
       TemperatureMin, &
       TemperatureMax, &
       EnergyScale, &
       EffectiveOpacity, &
-      TransportOpacity
+      TransportOpacity, &
+      TimeScale
 
 contains
 
@@ -82,6 +90,12 @@ contains
            ( EffectiveOpacity, 'EffectiveOpacity' )
     call PROGRAM_HEADER % GetParameter &
            ( TransportOpacity, 'TransportOpacity' )
+
+    associate &
+      ( c     => CONSTANT % SPEED_OF_LIGHT, &
+        Kappa => TransportOpacity )
+    TimeScale  =  1.0 / ( c * Kappa )
+    end associate !-- c, etc.
     
     !-- PositionSpace
 
@@ -155,6 +169,16 @@ contains
     call RMB % SetInteractions ( IB )
     end associate !-- IB
 
+    !-- Step
+
+    allocate ( Step_RK2_C_Form :: T % Step )
+    select type ( S => T % Step )
+    class is ( Step_RK2_C_Form )
+    call S % Initialize ( Name )
+    S % ApplyDivergence  =>  null ( )
+    S % ApplyRelaxation  =>  ApplyRelaxation_Interactions
+    end select !-- S
+
     !-- Diagnostics
 
     EnergyDensityUnit  =  UNIT % MEV ** 4 / UNIT % HBAR_C ** 3
@@ -181,7 +205,7 @@ contains
     !-- Initialize template
 
     call T % InitializeTemplate &
-           ( Name, FinishTimeOption = 0.0_KDR )
+           ( Name, FinishTimeOption = 10.0_KDR * TimeScale )
 
     !-- Cleanup
 
@@ -209,10 +233,43 @@ contains
       deallocate ( T % Computed_ASC )
     if ( allocated ( T % Reference_ASC ) ) &
       deallocate ( T % Reference_ASC )
+    if ( allocated ( T % Step ) ) &
+      deallocate ( T % Step )
 
     call T % FinalizeTemplate ( )
 
   end subroutine Finalize
+
+
+  subroutine ComputeCycle ( I )
+
+    class ( ThermalizationForm ), intent ( inout ) :: &
+      I
+
+    associate ( Timer => PROGRAM_HEADER % Timer ( I % iTimerComputeCycle ) )
+    call Timer % Start ( )
+
+    select type ( MS => I % MomentumSpace )
+    class is ( Bundle_SLL_ASC_CSLD_Form )
+      call ComputeCycle_BSLL_ASC_CSLD ( I, MS )
+    end select !-- MS
+
+    call Timer % Stop ( )
+    end associate !-- Timer
+
+  end subroutine ComputeCycle
+
+
+  subroutine ComputeTimeStepLocal ( I, TimeStep )
+
+    class ( ThermalizationForm ), intent ( in ) :: &
+      I
+    real ( KDR ), intent ( inout ) :: &
+      TimeStep
+
+    TimeStep = 0.01_KDR * TimeScale
+
+  end subroutine ComputeTimeStepLocal
 
 
   subroutine SetMatter ( T )
@@ -303,8 +360,7 @@ contains
     select type ( MS => T % MomentumSpace )
     class is ( Bundle_SLL_ASC_CSLD_Form )
 
-    !-- Initialize primitive spectra in momentum space
-
+    G => MS % Base_CSLD % Geometry ( )
     M => T % Matter_ASC % Matter ( )
 
     call InitializeRandomSeed ( PROGRAM_HEADER % Communicator )
@@ -344,28 +400,14 @@ contains
         Perturbation &
           = 0.01_KDR * J ( iE ) * 2.0_KDR * ( Perturbation - 0.5_KDR ) 
         H_3 ( iE ) = Perturbation
-
+        
       end do !-- iE
+
+      call RM % ComputeFromPrimitive ( iBC, G )
 
       end associate !-- J, etc.
       end associate !-- iBC
     end do !-- iF
-
-    !-- Switch to position space to compute from primitive
-
-    G => MS % Base_CSLD % Geometry ( )
-
-    allocate ( RS )
-    call RS % Initialize &
-           ( RMB % Velocity_U_Unit, RMB % MomentumDensity_U_Unit, &
-             RMB % MomentumDensity_D_Unit, RMB % EnergyDensityUnit, &
-             G % nValues, ClearOption = .true. )
-
-    do iE = 1, RMB % nEnergyValues
-      call MS % LoadSection ( RS, RMB, iE )
-      call RS % ComputeFromPrimitive ( G )
-      call MS % StoreSection ( RMB, RS, iE )
-    end do !-- iE
 
     !-- Cleanup
 
@@ -511,6 +553,52 @@ contains
     nullify ( M, RM, RM_R, RM_C, RM_FD )
 
   end subroutine SetReference
+
+
+  subroutine ComputeCycle_BSLL_ASC_CSLD ( T, MS )
+
+    class ( ThermalizationForm ), intent ( inout ) :: &
+      T
+    class ( Bundle_SLL_ASC_CSLD_Form ), intent ( inout ) :: &
+      MS
+
+    integer ( KDI ) :: &
+      iF     !-- iFiber
+    real ( KDR ) :: &
+      TimeNew
+    class ( GeometryFlatForm ), pointer :: &
+      G
+    class ( RadiationMomentsForm ), pointer :: &
+      RM
+
+    call T % ComputeNewTime ( TimeNew )
+
+    associate &
+      ( S   => T % Step, &
+        RMB => T % RadiationMoments_BSLL_ASC_CSLD, &
+        CF  => MS % Fiber_CSLL, &
+        TimeStep => TimeNew - T % Time )    
+
+    G => MS % Base_CSLD % Geometry ( )
+
+    do iF = 1, MS % nFibers
+      associate ( iBC => MS % iaBaseCell ( iF ) )
+      RM => RMB % RadiationMomentsFiber ( iF )
+      call S % Compute &
+             ( RM, CF, T % Time, TimeStep, GeometryOption = G, &
+               iGeometryValueOption = iBC )
+      end associate !-- iBC
+    end do !-- iF
+
+    T % iCycle = T % iCycle + 1
+    T % Time = T % Time + TimeStep
+    if ( T % Time == T % WriteTime ) &
+      T % IsCheckpointTime = .true.
+
+    end associate !-- S, etc.
+    nullify ( G, RM )
+
+  end subroutine ComputeCycle_BSLL_ASC_CSLD
 
 
 end module Thermalization_Form
