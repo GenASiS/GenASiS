@@ -29,6 +29,8 @@ module Step_RK_C__Template
       IncrementDivergence
     type ( IncrementDampingForm ), allocatable :: &
       IncrementDamping
+    procedure ( ApplyDivergence ), pointer, pass :: &
+      ApplyDivergence => ApplyDivergence
     procedure ( AS ), pointer, pass :: &
       ApplySources => null ( ) 
     procedure ( AR ), pointer, pass :: &
@@ -266,10 +268,8 @@ contains
     call Clear ( K % Value )
 
     !-- Divergence
-    associate ( ID => S % IncrementDivergence )
-    call ID % Set ( Weight_RK = S % B ( iStage ) )
-    call ID % Compute ( K, S % Grid, C, TimeStep )
-    end associate !-- ID
+    if ( associated ( S % ApplyDivergence ) ) &
+      call S % ApplyDivergence ( K, C, TimeStep, iStage )
 
     !-- Other explicit sources
     if ( associated ( S % ApplySources ) ) &
@@ -379,6 +379,27 @@ contains
       deallocate ( S % dLogVolumeJacobian_dX )
         
   end subroutine ClearDivergence
+
+
+  subroutine ApplyDivergence ( S, Increment, Current, TimeStep, iStage )
+
+    class ( Step_RK_C_Template ), intent ( inout ) :: &
+      S
+    type ( VariableGroupForm ), intent ( inout ) :: &
+      Increment
+    class ( CurrentTemplate ), intent ( in ) :: &
+      Current
+    real ( KDR ), intent ( in ) :: &
+      TimeStep
+    integer ( KDI ), intent ( in ) :: &
+      iStage
+
+    associate ( ID => S % IncrementDivergence )
+    call ID % Set ( Weight_RK = S % B ( iStage ) )
+    call ID % Compute ( Increment, S % Grid, Current, TimeStep )
+    end associate !-- ID
+
+  end subroutine ApplyDivergence
 
 
 end module Step_RK_C__Template
