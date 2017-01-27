@@ -4,7 +4,7 @@ all: Thermalization
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-VPATH := ../../GreyTransport:$(VPATH)
+VPATH := $(VPATH):../../GreyTransport
 include ../../GreyTransport/Makefile_ObjectFiles
 
 SPECTRAL_MOMENTS = \
@@ -87,3 +87,9 @@ Thermalization.o: \
   Basics.o \
   Thermalization_Form.o \
   Thermalization.f90
+
+PlaneWaveStreaming_Template.o: \
+  Basics.o \
+  Mathematics.o \
+  RadiationMoments_BSLL_ASC_CSLD__Form.o \
+  PlaneWaveStreaming_Template.f90
