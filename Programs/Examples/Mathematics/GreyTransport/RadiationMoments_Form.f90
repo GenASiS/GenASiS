@@ -1026,7 +1026,7 @@ contains
                          *  TO ( iV, jV, kV ),  &
                          tiny ( 0.0_KDR ) )
 
-          DF_I_E ( iV, jV, kV )  =  min ( 1.0_KDR, min ( DF_L, DF_R ) )
+          DF_I_E ( iV, jV, kV )  =  min ( 1.0_KDR, max ( DF_L, DF_R ) )
 
         end do !-- iV
       end do !-- jV
