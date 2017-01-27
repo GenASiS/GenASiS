@@ -32,7 +32,9 @@ if ApplicationName[-2:] == '3D':
 elif ApplicationName[-2:] == '2D':
   AddPlot("Pseudocolor", "Chart_01/Fluid/ComovingDensity", 1, 1)
   
-  if not ("RayleighTaylor" in ApplicationName): 
+  if not ("RayleighTaylor" in ApplicationName) \
+     and not ("SedovTaylor" in ApplicationName) \
+     and not ("FishboneMoncrief" in ApplicationName): 
     AddOperator("Elevate", 1)
     ElevateAtts = ElevateAttributes()
     ElevateAtts.useXYLimits = 1
@@ -65,7 +67,33 @@ elif ApplicationName[-2:] == '2D':
     View3DAtts.axis3DScales = (1, 1, 1)
     View3DAtts.shear = (0, 0, 1)
     SetView3D(View3DAtts)
-  
+
+  if ("FishboneMoncrief" in ApplicationName):
+    AddOperator("Transform", 1)
+    TA = TransformAttributes ( )
+    TA.transformType = TA.Coordinate
+    TA.inputCoordSys = TA.Spherical
+    TA.outputCoordSys = TA.Cartesian
+    SetOperatorOptions(TA, 1)
+    
+    AddOperator("Project", 1)
+    PA = ProjectAttributes ( )
+    PA.projectionType = PA.XZCartesian
+    SetOperatorOptions(PA, 1)
+
+    p = PseudocolorAttributes ( )
+    p.scaling = p.Log
+    p.min, p.minFlag = 10.0, 1
+    p.max, p.maxFlag = 1.e12, 1
+    p.colorTableName = "bluehot"
+    SetPlotOptions(p)
+
+    DrawPlots()
+           
+    View2DAtts = GetView2D()
+    View2DAtts.fullFrameActivationMode = View2DAtts.Off
+    SetView2D(View2DAtts)
+    
   DrawPlots()
   
 elif ApplicationName[-2:] == '1D':
