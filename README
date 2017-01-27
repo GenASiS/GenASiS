@@ -19,14 +19,28 @@ type:
 
 > export GENASIS_MACHINE=Linux_GNU
 
+In most common computing environments with a generic MPI library, the fluid
+dynamics programs described in the accompanying paper can then be built and 
+executed. For instance, these commands build all the examples:
+
+> cd Programs/Examples/Mathematics/FluidDynamics/Executables
+> make PURPOSE=OPTIMIZE all
+
+
+The first few of these are run (here with 8 MPI processes) with the commands 
+> export OMP_NUM_THREADS=1
+> mpirun -np 8 ./SineWave_Linux_GNU nCells=128,128,128
+> mpirun -np 8 ./SawtoothWave_Linux_GNU nCells=128,128,128 nWavelengths=2,2,2
+> mpirun -np 8 ./RiemannProblem_Linux_GNU nCells=128,128,128 FinishTime=0.25
+
 In most common computing environments with a generic MPI library, the
 fluid dynamics example programs (described in the accompanying paper) can then
 be built and executed (here with 8 MPI processes) with the following commands:
 
-> cd Programs/Examples/Basics/FluidDynamics/Executables
+> cd Programs/Examples/Mathematics/FluidDynamics/Executables
 > make PURPOSE=OPTIMIZE all
-> mpirun -np 8 ./SineWaveAdvection_Linux_GNU nCells=128,128,128
-> mpirun -np 8 ./SawtoothWaveAdvection_Linux_GNU nCells=128,128,128 \
+> mpirun -np 8 ./SineWave_Linux_GNU nCells=128,128,128
+> mpirun -np 8 ./SawtoothWave_Linux_GNU nCells=128,128,128 \
 nWavelengths=2,2,2
 > mpirun -np 8 ./RiemannProblem_Linux_GNU nCells=128,128,128 \
 FinishTime=0.25
@@ -47,10 +61,16 @@ FinishTime=0.25
 > mpirun -np 4 ./RiemannProblem_Linux_GNU nCells=128,128 Dimensionality=2D \
 FinishTime=0.25
 
-where the 'Dimensionality' option here is only used as an appendix to the 
-name of the output file (it should be consistent with the number of 
-elements given to nCells, which the program uses to determine the 
-desired dimensionality of the mesh).
+The "Dimensionality" option is also used as an appendix to the name of
+the output file and it shall be consistent with the number of elements given
+to "nCells" to determine the desired dimensionality of the mesh.
+
+In the above examples we explicitly set the number of OpenMP threads with
+the environmental variable OMP_NUM_THREADS. It is imperative to
+do so since the default number of threads varies among different compilers
+if this environmental variable is not set. When running with more than one
+OpenMP thread per MPI task, one must take care so that thread placement on
+the processors is set correctly to avoid unintended resource contention.
  
 By default the output files are written in the directory "Output"
 that resides on the same level as the "Executables" directory, but
@@ -64,48 +84,30 @@ which is the program name appended with the "Dimensionality" string. Assuming
 the executable "visit" is available, the visualization script can be called, 
 for example, as the follows:
 
-> cd Programs/Examples/Basics/FluidDynamics/Output
-> visit -cli -s ../PlaneWaveAdvection.visit.py SineWaveAdvection_3D
-> visit -cli -s ../PlaneWaveAdvection.visit.py SawtoothWaveAdvection_2D
-> visit -cli -s ../PlaneWaveAdvection.visit.py RiemannProblem_1D
+> cd Programs/Examples/Mathematics/FluidDynamics/Output
+> visit -cli -s ../FluidDynamics.visit.py SineWave_3D
+> visit -cli -s ../FluidDynamics.visit.py RiemannProblem_2D
+> visit -cli -s ../FluidDynamics.visit.py RayleighTaylor_2D
 
-The molecular dynamics programs described in the accompanying paper can be 
-built and executed in a manner similar to those in FluidDynamics. The 
-directory MolecularDynamics is also found under Programs/Examples/Basics.
-A blanket "make all" command in the Executables subdirectory compiles both 
-ArgonEquilibrium and ClusterFormation}. For both programs, all results 
-presented in the accompanying paper were obtained with parameters 
-nSteps=10000 and nWrite=1000. Various numbers of particles and processes 
-used for different runs are mentioned in the accompanying paper. In the case 
-of ClusterFormation, the number of particles is directly specified by a 
-parameter nParticles. For ArgonEquilibrium a parameter nUnitCellsRoot is 
-used instead; the number of particles is 4 * ( nUnitCellsRoot ** 3 ). Thus 
-the values 8, 12, 16, and 20 for nUnitCellsRoot correspond to 2048, 6912,
-16384, and 32000 particles respectively. Specification of the number density
-and temperature parameters for different phases of argon is discussed in the
-accompanying paper.
-
-Unit test programs exercising individual GenASIS classes can similarly be
+Unit test programs exercising individual GenASiS classes can similarly be
 built and executed inside the "Executables" directory of each leaf
 division of the code under "Programs/UnitTests". For example, the following 
 commands build and execute the unit test programs for classes in the 
-"Runtime" division:
+"Fields" division:
 
-> cd Programs/UnitTests/Basics/Runtime/Executables
+> cd Programs/UnitTests/Mathematics/Solvers/Fields/Executables
 > make all
 > mpirun -np 1 [program_name]
 
 This blanket "make all" builds all the unit test targets in the Makefile
-fragment Programs/Basics/Runtime/Makefile_Runtime. Individual targets of
-course also can be built.
+fragment Programs/UnitTests/Mathematics/Solvers/Fields/Makefile_Fields. 
+Individual targets of course also can be built.
 
-GenASiS Basics Version 2 has been tested with the following compilers: GNU
-Fortran compiler (gfortran, part of GCC) version 6.1.0, Intel Fortran 16.0.03,
+GenASiS Mathematics has been tested with the following compilers: GNU
+Fortran compiler (gfortran, part of GCC) version 6.2.0, Intel Fortran 16,
 and Cray Compiler Environment version 8.5.3. Newer versions
-of these compilers are likely to work as well. GenASiS Basics is written in 
-full compliance with the Fortran 2003 standard (with the addition of a couple
-of minor new features of Fortan 2008, including the "impure" attribute and
-finding a new unit number in the "open" statement) to enhance portability.
+of these compilers are likely to work as well. GenASiS Mathematics is written 
+in full compliance with the Fortran 2003 standard to enhance portability.
 
 Authors:
 Christian Cardall (cardallcy@ornl.gov)
