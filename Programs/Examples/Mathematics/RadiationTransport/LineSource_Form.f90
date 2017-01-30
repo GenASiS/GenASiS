@@ -82,8 +82,20 @@ contains
 
     MaxRadius = 1.5_KDR
     call PROGRAM_HEADER % GetParameter ( MaxRadius, 'MaxRadius' )
+    
+    select case ( PS % nDimensions )
+      case ( 1 )
+        CoordinateSystem = 'CYLINDRICAL'
+      case ( 2 ) 
+         CoordinateSystem = 'CARTESIAN'
+      case DEFAULT
+        call show ( PS % nDimensions, 'nDimensions' )
+        call Show ( 'Dimensionality not supported', CONSOLE % ERROR )
+        call Show ( 'LineSource_Form', 'module', CONSOLE % ERROR )
+        call Show ( 'Initialize', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+    end select
 
-    CoordinateSystem = 'CYLINDRICAL'
     call PROGRAM_HEADER % GetParameter ( CoordinateSystem, 'CoordinateSystem' )
 
     select case ( CoordinateSystem )
@@ -91,21 +103,15 @@ contains
         associate ( Pi => CONSTANT % PI )
           MinCoordinate = [     0.0_KDR, -1.0_KDR, 0.0_KDR ]
           MaxCoordinate = [ + MaxRadius, + 1.0_KDR, 2.0_KDR * Pi]
-         ! MinCoordinate = [   0.0_KDR, 0.0_KDR, - MaxRadius ]
-         ! MaxCoordinate = [ MaxRadius, 2.0_KDR * Pi, + MaxRadius]
         end associate !-- Pi
         call PS % SetBoundaryConditionsFace &
                ( [ 'REFLECTING', 'OUTFLOW   ' ], iDimension = 1 )
-       ! call PS % SetBoundaryConditionsFace &
-       !        ( [ 'OUTFLOW', 'OUTFLOW' ], iDimension = 2 )
-        
         nCells = [ 128, 1, 1 ]
+        
         call PROGRAM_HEADER % GetParameter ( nCells, 'nCells' )
       case ( 'CARTESIAN' )
-       ! MinCoordinate = [ - MaxRadius, - MaxRadius, 0.0_KDR ]
-       ! MaxCoordinate = [ + MaxRadius, + MaxRadius, 0.0_KDR ]
-         MinCoordinate = [   0.0_KDR, 0.0_KDR, - MaxRadius ]
-         MaxCoordinate = [ MaxRadius, 2.0_KDR * CONSTANT % PI, + MaxRadius]
+        MinCoordinate = [ - MaxRadius, - MaxRadius, 0.0_KDR ]
+        MaxCoordinate = [ + MaxRadius, + MaxRadius, 0.0_KDR ]
         call PS % SetBoundaryConditionsFace &
                ( [ 'OUTFLOW', 'OUTFLOW' ], iDimension = 1 )
         call PS % SetBoundaryConditionsFace &
@@ -156,7 +162,6 @@ contains
     select type ( S => LS % Step )
     class is ( Step_RK2_C_Form )
     call S % Initialize ( Name )
-   ! S % ApplyRelaxation  =>  ApplyRelaxation_Interactions
     S % ApplySources  => ApplySourcesCurvilinear_RadiationMoments
     end select !-- S
 
@@ -273,12 +278,12 @@ contains
 
       associate &
         ( X =>  G % Value ( :, G % CENTER ( 1 ) ), &
-          Z =>  G % Value ( :, G % CENTER ( 2 ) ) )
+          YZ =>  G % Value ( :, G % CENTER ( 2 ) ) )
 
-      R = sqrt ( X ** 2 + Z ** 2 )
+      R = sqrt ( X ** 2 + YZ ** 2 )
         
       call SetRadiationKernel &
-             ( X, &
+             ( R, &
                Time, &
                isInitial, &
                J  = RM % Value ( :, RM % COMOVING_ENERGY_DENSITY ), &
