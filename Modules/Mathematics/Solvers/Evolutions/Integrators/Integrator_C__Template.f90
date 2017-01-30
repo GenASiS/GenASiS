@@ -39,6 +39,8 @@ module Integrator_C__Template
       WriteTimeSeries
     procedure, private, pass :: &
       ComputeTimeStepLocal
+    procedure, public, nopass :: &
+      ComputeTimeStepKernel_CSL
   end type Integrator_C_Template
 
     private :: &
@@ -46,9 +48,6 @@ module Integrator_C__Template
 
       private :: &
         ComputeCycle_ASC_CSL
-
-      private :: &
-        ComputeTimeStepKernel_CSL
 
 contains
 
@@ -239,7 +238,7 @@ contains
     G => CSL % Geometry ( )
     C => CA % Current ( )
     
-    call ComputeTimeStepKernel_CSL &
+    call I % ComputeTimeStepKernel_CSL &
            ( CSL % IsProperCell, &
              C % Value ( :, C % FAST_EIGENSPEED_PLUS ( 1 ) ), &
              C % Value ( :, C % FAST_EIGENSPEED_PLUS ( 2 ) ), &

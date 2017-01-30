@@ -11,7 +11,7 @@ module ATLAS_Singleton
     integer ( KDI ) :: &
       MAX_DIMENSIONS = 3, &
       MAX_CHARTS     = 8, &
-      MAX_FIELDS     = 8, &
+      MAX_FIELDS     = 16, &
       MAX_STREAMS    = 8
   end type AtlasSingleton
 
