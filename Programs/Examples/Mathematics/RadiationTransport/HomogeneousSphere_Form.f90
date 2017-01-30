@@ -242,8 +242,6 @@ contains
     call HS % Reference % Initialize &
            ( PS, 'GENERIC', NameOutputOption = 'Reference' )
     call HS % Difference % Initialize &
-           ( PS, 'GENERIC', NameOutputOption = 'Reference' )
-    call HS % Difference % Initialize &
            ( PS, 'GENERIC', NameOutputOption = 'Difference' )
     HS % SetReference => SetReference
 
@@ -294,7 +292,9 @@ contains
       HS
     
     real ( KDR ) :: &
-      L1       
+      L1_J, &
+      L1_FF, &
+      L1_VEF
     class ( RadiationMomentsForm ), pointer :: &
       RM         
     type ( CollectiveOperation_R_Form ) :: &
@@ -308,21 +308,35 @@ contains
     RM => HS % Difference % RadiationMoments ( )
     
     associate &
-      ( Difference => RM % Value ( :, RM % COMOVING_ENERGY_DENSITY ) )
-    call CO % Initialize ( PS % Communicator, [ 2 ], [ 2 ] )
-    CO % Outgoing % Value ( 1 ) = sum ( abs ( Difference ), &
+      ( Difference_J   => RM % Value ( :, RM % COMOVING_ENERGY_DENSITY ), &
+        Difference_FF  => RM % Value ( :, RM % FLUX_FACTOR ), &
+        Difference_VEF => RM % Value ( :, RM % VARIABLE_EDDINGTON_FACTOR ) )
+    call CO % Initialize ( PS % Communicator, [ 4 ], [ 4 ] )
+    CO % Outgoing % Value ( 1 ) = sum ( abs ( Difference_J ), &
                                         mask = C % IsProperCell )
-    CO % Outgoing % Value ( 2 ) = C % nProperCells
+    CO % Outgoing % Value ( 2 ) = sum ( abs ( Difference_FF ), &
+                                        mask = C % IsProperCell )
+    CO % Outgoing % Value ( 3 ) = sum ( abs ( Difference_VEF ), &
+                                        mask = C % IsProperCell )
+    CO % Outgoing % Value ( 4 ) = C % nProperCells
     call CO % Reduce ( REDUCTION % SUM )
-    end associate !-- Difference
+    end associate !-- Difference_J, etc.
     
     associate &
-      ( DifferenceSum => CO % Incoming % Value ( 1 ), &
-        nValues => CO % Incoming % Value ( 2 ) )
-    L1 = DifferenceSum / nValues
+      ( DifferenceSum_J   => CO % Incoming % Value ( 1 ), &
+        DifferenceSum_FF  => CO % Incoming % Value ( 2 ), &
+        DifferenceSum_VEF => CO % Incoming % Value ( 3 ), &
+        nValues => CO % Incoming % Value ( 4 ) )
+    L1_J   = DifferenceSum_J   / nValues
+    L1_FF  = DifferenceSum_FF  / nValues
+    L1_VEF = DifferenceSum_VEF / nValues
     end associate
 
-    call Show ( L1, '*** L1 error', nLeadingLinesOption = 2, &
+    call Show ( L1_J, '*** L1_J error', nLeadingLinesOption = 2, &
+                nTrailingLinesOption = 2 )
+    call Show ( L1_FF, '*** L1_FF error', nLeadingLinesOption = 2, &
+                nTrailingLinesOption = 2 )
+    call Show ( L1_VEF, '*** L1_VEF error', nLeadingLinesOption = 2, &
                 nTrailingLinesOption = 2 )
 
     end select !-- C
