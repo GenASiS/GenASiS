@@ -252,7 +252,7 @@ contains
 
   subroutine SetReference ( PW )
 
-    class ( IntegratorTemplate ), intent ( in ) :: &
+    class ( IntegratorTemplate ), intent ( inout ) :: &
       PW
 
     class ( Fluid_D_Form ), pointer :: &

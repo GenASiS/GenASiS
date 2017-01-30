@@ -253,7 +253,7 @@ contains
 
   subroutine SetReference ( PWS )
 
-    class ( IntegratorTemplate ), intent ( in ) :: &
+    class ( IntegratorTemplate ), intent ( inout ) :: &
       PWS
 
     class ( RadiationMomentsForm ), pointer :: &
