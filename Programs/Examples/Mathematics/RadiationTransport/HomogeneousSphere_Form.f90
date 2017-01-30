@@ -21,16 +21,29 @@ module HomogeneousSphere_Form
   contains
     procedure, public, pass :: &
       Initialize
+    procedure, public, pass :: &
+      ComputeError
     final :: &
       Finalize
   end type HomogeneousSphereForm
 
     private :: &
-      SetRadiation
+      SetRadiation, &
+      SetReference
 
       private :: &
         SetRadiationKernel
 
+      integer ( KDI ), private, parameter :: &
+      iRADIUS_TS                     = 1, &  !-- must match the profile file columns
+      iCOMOVING_ENERGY_DENSITY_TS    = 2, &
+      iFLUX_FACTOR_TS                = 3, &
+      iVARIABLE_EDDINGTON_FACTOR_TS  = 4
+    integer ( KDI ), private, parameter :: &
+      iCOMOVING_ENERGY_DENSITY_SI      = 1, & !-- spline interpolation
+      iFLUX_FACTOR_SI                  = 2, & 
+      iVARIABLE_EDDINGTON_FACTOR_SI    = 3
+      
       real ( KDR ), private :: &
       EquilibriumDensity, &
       EffectiveOpacity, &
@@ -48,8 +61,13 @@ contains
 
     class ( RadiationMomentsForm ), pointer :: &
       RM
+    class ( GeometryFlatForm ), pointer :: &
+      G
+    type ( SplineInterpolationForm ), dimension ( 3 ) :: &
+      SI
     integer ( KDI ) :: &
-      nCellsRadius
+      nCellsRadius, &
+      iV
     integer ( KDI ), dimension ( 3 ) :: &
       nCells
     real ( KDR ), dimension ( 3 ) :: &
@@ -63,15 +81,17 @@ contains
     if ( HS % Type == '' ) &
       HS % Type = 'a HomogeneousSphere'
 
-    EquilibriumDensity = 1.0_KDR
-    EffectiveOpacity   = 5.0_KDR
-    TransportOpacity   = EffectiveOpacity
+    EquilibriumDensity = 10.0_KDR
+    EffectiveOpacity   = 250.0_KDR
 
     call PROGRAM_HEADER % GetParameter &
            ( EquilibriumDensity, 'EquilibriumDensity' )
     call PROGRAM_HEADER % GetParameter &
            ( EffectiveOpacity, 'EffectiveOpacity' )
-    call PROGRAM_HEADER % GetParameter &
+
+    TransportOpacity   = EffectiveOpacity
+
+     call PROGRAM_HEADER % GetParameter &
            ( TransportOpacity, 'TransportOpacity' )
 
     !-- PositionSpace
@@ -81,13 +101,13 @@ contains
     class is ( Atlas_SC_Form )
     call PS % Initialize ( Name, PROGRAM_HEADER % Communicator )
 
-    MaxRadius = 7.0_KDR
+    MaxRadius = 5.0_KDR
     call PROGRAM_HEADER % GetParameter ( MaxRadius, 'MaxRadius' )
 
     CoordinateSystem = 'CARTESIAN'
     call PROGRAM_HEADER % GetParameter ( CoordinateSystem, 'CoordinateSystem' )
 
-    nCellsRadius = 64
+    nCellsRadius = 100
     call PROGRAM_HEADER % GetParameter ( nCellsRadius, 'nCellsRadius' )
 
     select case ( CoordinateSystem )
@@ -192,7 +212,7 @@ contains
 
     call SetInteractions &
            ( HS, CoordinateSystem, EquilibriumDensity, EffectiveOpacity, &
-             TransportOpacity, RM, ED, EO, TO )
+             TransportOpacity, ED, EO, TO )
     end associate !-- ED, etc.
     end select !-- I
     end select !-- IC
@@ -200,7 +220,7 @@ contains
     !-- RadiationMoments ( Generic )
 
     allocate ( RadiationMoments_ASC_Form :: HS % Current_ASC )
-    select type ( RMA => HS % Current_ASC )  !-- FluidAtlas
+    select type ( RMA => HS % Current_ASC )  !-- RadiationMoments Atlas
     class is ( RadiationMoments_ASC_Form )
     call RMA % Initialize ( PS, 'GENERIC' )
     call RMA % SetInteractions ( IA )
@@ -215,6 +235,40 @@ contains
     S % ApplySources  => ApplySourcesCurvilinear_RadiationMoments
     end select !-- S
     
+     !-- Diagnostics
+
+    allocate ( HS % Reference )
+    allocate ( HS % Difference )
+    call HS % Reference % Initialize &
+           ( PS, 'GENERIC', NameOutputOption = 'Reference' )
+    call HS % Difference % Initialize &
+           ( PS, 'GENERIC', NameOutputOption = 'Reference' )
+    call HS % Difference % Initialize &
+           ( PS, 'GENERIC', NameOutputOption = 'Difference' )
+    HS % SetReference => SetReference
+
+    call PrepareInterpolation ( SI )
+    RM => HS % Reference % RadiationMoments ( )
+    G => PS % Geometry ( )
+    associate &
+      ( J   => RM % Value ( :, RM % COMOVING_ENERGY_DENSITY ), &
+        FF  => RM % Value ( :, RM % FLUX_FACTOR ), &
+        VEF => RM % Value ( :, RM % VARIABLE_EDDINGTON_FACTOR ), &
+        R   => G % Value ( :, G % CENTER ( 1 ) ) )
+
+      do iV = 1, size ( J )
+
+        call SI ( iCOMOVING_ENERGY_DENSITY_SI ) &
+                % Evaluate ( R ( iV ), J ( iV ) )
+        call SI ( iFLUX_FACTOR_SI ) &
+                % Evaluate ( R ( iV ), FF ( iV ) ) 
+        call SI ( iVARIABLE_EDDINGTON_FACTOR_SI ) &
+                % Evaluate ( R ( iV ), VEF ( iV ) ) 
+
+      end do
+      
+      end associate !-- J, etc.  
+      nullify ( G, RM )
     !-- Initial conditions
     
     RM => RMA % RadiationMoments ( )
@@ -222,7 +276,7 @@ contains
     
     !-- Initialize template
     
-    call HS % InitializeTemplate_C ( Name, FinishTimeOption = 25.0_KDR )
+    call HS % InitializeTemplate_C ( Name, FinishTimeOption = 15.0_KDR )
     
     !-- Cleanup
            
@@ -233,6 +287,48 @@ contains
     
   end subroutine Initialize 
 
+
+  subroutine ComputeError ( HS )
+
+    class ( HomogeneousSphereForm ), intent ( in ) :: &
+      HS
+    
+    real ( KDR ) :: &
+      L1       
+    class ( RadiationMomentsForm ), pointer :: &
+      RM         
+    type ( CollectiveOperation_R_Form ) :: &
+      CO
+
+    select type ( PS => HS % PositionSpace )
+    class is ( Atlas_SC_Form ) 
+    select type ( C => PS % Chart )
+    class is ( Chart_SL_Template )
+    
+    RM => HS % Difference % RadiationMoments ( )
+    
+    associate &
+      ( Difference => RM % Value ( :, RM % COMOVING_ENERGY_DENSITY ) )
+    call CO % Initialize ( PS % Communicator, [ 2 ], [ 2 ] )
+    CO % Outgoing % Value ( 1 ) = sum ( abs ( Difference ), &
+                                        mask = C % IsProperCell )
+    CO % Outgoing % Value ( 2 ) = C % nProperCells
+    call CO % Reduce ( REDUCTION % SUM )
+    end associate !-- Difference
+    
+    associate &
+      ( DifferenceSum => CO % Incoming % Value ( 1 ), &
+        nValues => CO % Incoming % Value ( 2 ) )
+    L1 = DifferenceSum / nValues
+    end associate
+
+    call Show ( L1, '*** L1 error', nLeadingLinesOption = 2, &
+                nTrailingLinesOption = 2 )
+
+    end select !-- C
+    end select !-- PS
+
+  end subroutine ComputeError
 
   impure elemental subroutine Finalize ( HS )
 
@@ -256,9 +352,13 @@ contains
     class ( RadiationMomentsForm ), intent ( inout ) :: &
       RM
     
+    type ( SplineInterpolationForm ), dimension ( 1 ) :: &
+      SI
     class ( GeometryFlatForm ), pointer :: &
       G
-
+    integer :: &
+      iV
+    
     select type ( PS => HS % PositionSpace )
       class is ( Atlas_SC_Form )
       G => PS % Geometry ( )
@@ -268,16 +368,17 @@ contains
                HX = RM % Value ( :, RM % COMOVING_MOMENTUM_DENSITY_U ( 1 ) ), &
                HY = RM % Value ( :, RM % COMOVING_MOMENTUM_DENSITY_U ( 2 ) ), &
                HZ = RM % Value ( :, RM % COMOVING_MOMENTUM_DENSITY_U ( 3 ) ) )
- 
+      
       call RM % ComputeFromPrimitive ( G )
       end select !-- PS
+      nullify ( G )
 
   end subroutine SetRadiation
 
 
   subroutine SetInteractions &
                ( HS, CoordinateSystem, EquilibriumDensity, EffectiveOpacity, &
-                 TransportOpacity, RM, ED, EO, TO )
+                 TransportOpacity, ED, EO, TO )
     class ( HomogeneousSphereForm ), intent ( in ) :: &
       HS
     character ( LDL ), intent ( in ) :: &
@@ -286,8 +387,6 @@ contains
       EquilibriumDensity,&
       EffectiveOpacity, &
       TransportOpacity
-    class ( RadiationMomentsForm ), intent ( inout ) :: &
-      RM
     real ( KDR ), dimension ( : ), intent ( out ) :: &
       ED, &
       EO, &
@@ -363,6 +462,36 @@ contains
   end subroutine SetInteractions
 
 
+  subroutine SetReference ( HS )
+
+    class ( IntegratorTemplate ), intent ( in ) :: &
+      HS
+
+    class ( RadiationMomentsForm ), pointer :: &
+      RM, &
+      RM_R, &  !-- RM_Reference
+      RM_D     !-- RM_Difference
+
+    select type ( HS )
+    class is ( HomogeneousSphereForm )
+
+    select type ( RMA => HS % Current_ASC )
+    class is ( RadiationMoments_ASC_Form )
+    RM => RMA % RadiationMoments ( )
+    end select !-- RMA
+
+    RM_R => HS % Reference % RadiationMoments ( )
+
+    RM_D => HS % Difference % RadiationMoments ( )
+!    RM_D % Value  =  RM % Value  -  RM_R % Value
+    call MultiplyAdd ( RM % Value, RM_R % Value, -1.0_KDR, RM_D % Value )
+
+    end select !-- HS
+    nullify ( RM, RM_R, RM_D )
+
+  end subroutine SetReference
+
+
   subroutine SetRadiationKernel ( J, HX, HY, HZ )
 
     real ( KDR ), dimension ( : ), intent ( out ) :: &
@@ -387,5 +516,121 @@ contains
 
   end subroutine SetRadiationKernel
 
+
+  subroutine PrepareInterpolation ( SI )
+
+    type ( SplineInterpolationForm ), dimension ( 3 ), intent ( inout ) :: &
+      SI
+
+    integer ( KDI ) :: &
+      iV
+    real ( KDR ) :: &
+      Slope_J, &
+      Slope_FF, &
+      Slope_VEF
+    real ( KDR ), dimension ( : ), allocatable :: &
+      RC, &   !-- RadiusCenter
+      dRC, &  !-- WidthCenter
+      Radius, &
+      ComovingEnergyDensity, &
+      FluxFactor, &
+      VariableEddingtonFactor
+    real ( KDR ), dimension ( :, : ), allocatable :: &
+      Profile
+    character ( LDF ) :: &
+      Path, &
+      Filename
+    type ( TableStreamForm ) :: &
+      TS
+
+    Path = '../Parameters/'
+    Filename = 'Oconnor_Abdikamalov.curve'
+    
+    call PROGRAM_HEADER % GetParameter &
+           ( Filename, 'Filename' )
+
+    call TS % Initialize &
+           ( Filename, PROGRAM_HEADER % Communicator % Rank, &
+             PathOption = Path )
+    call TS % Read ( Profile, oRowOption = 1 )
+
+    !-- Set "edge" values
+
+    associate &
+      (   R   => Profile ( :, iRADIUS_TS ), &                      !-- cell outter edge
+          J   => Profile ( :, iCOMOVING_ENERGY_DENSITY_TS ), &     !-- cell center 
+          FF  => Profile ( :, iFLUX_FACTOR_TS ), &                 !-- cell center
+          VEF => Profile ( :, iVARIABLE_EDDINGTON_FACTOR_TS ), &   !-- cell center
+          nProfile => size ( Profile, dim = 1 ) )
+
+    allocate ( Radius ( nProfile + 1 ) )
+    allocate ( dRC ( nProfile ) )
+    allocate ( RC ( nProfile ) )
+    Radius ( 1 )          =  0.0_KDR
+    do iV = 2, nProfile + 1
+      Radius  ( iV )  =  R ( iV - 1 )
+      dRC ( iV - 1 )  =  Radius ( iV )  -  Radius ( iV - 1 )
+      RC  ( iV - 1 )  =  Radius ( iV - 1 )  +  0.5_KDR * dRC ( iV - 1 )
+    end do
+
+    allocate ( ComovingEnergyDensity ( nProfile + 1 ) )
+    allocate ( FluxFactor ( nProfile + 1 ) )
+    allocate ( VariableEddingtonFactor ( nProfile + 1 ) )
+
+    !-- First edge extrapolated
+    Slope_J      =  ( J ( 2 )  -  J ( 1 ) )  &
+                    /  ( 0.5_KDR * ( dRC ( 1 )  +  dRC ( 2 ) ) )
+    Slope_FF     =  ( FF ( 2 )  -  FF ( 1 ) )  &
+                    /  ( 0.5_KDR * ( dRC ( 1 )  +  dRC ( 2 ) ) )
+    Slope_VEF    =  ( VEF ( 2 )  -  VEF ( 1 ) )  &
+                    /  ( 0.5_KDR * ( dRC ( 1 )  +  dRC ( 2 ) ) )
+
+    ComovingEnergyDensity ( 1 )    =  J ( 1 )  &
+                                  +  Slope_J   * ( Radius ( 1 )  -  RC ( 1 ) )
+    FluxFactor ( 1 )               =  FF ( 1 )  &
+                                  +  Slope_FF   * ( Radius ( 1 )  -  RC ( 1 ) )
+    VariableEddingtonFactor ( 1 )  =  VEF ( 1 )  &
+                                  +  Slope_VEF   * ( Radius ( 1 )  -  RC ( 1 ) )
+
+    do iV = 2, nProfile + 1
+
+      if ( iV <= nProfile ) then
+        Slope_J      =  ( J ( iV )  - J ( iV - 1 ) )  &
+                        /  ( 0.5_KDR * ( dRC ( iV - 1 )  +  dRC ( iV ) ) )
+        Slope_FF     =  ( FF ( iV )  -  FF ( iV - 1 ) )  &
+                        /  ( 0.5_KDR * ( dRC ( 1 )  +  dRC ( 2 ) ) )
+        Slope_VEF    =  ( VEF ( iV )  -  VEF ( iV - 1 ) )  &
+                        /  ( 0.5_KDR * ( dRC ( 1 )  +  dRC ( 2 ) ) )
+      else
+        !-- Last edge extrapolated with same slope
+      end if
+
+      ComovingEnergyDensity ( iV )  &
+        =  J   ( iV - 1 )  +  Slope_J * ( Radius ( iV )  -  RC ( iV - 1 ) )
+      FluxFactor ( iV ) &
+        =  FF ( iV - 1 ) +  Slope_FF   * ( Radius ( iV )  -  RC ( iV - 1 ) )
+      VariableEddingtonFactor ( iV )  &
+           =  VEF ( iV -1 ) +  Slope_VEF   * ( Radius ( iV )  -  RC ( iV - 1 ) )
+    end do
+
+    end associate !-- R, etc.
+
+    call Show ( 'First few values' )
+    call Show ( Profile ( 1 : 5, iRADIUS_TS ), 'RadiusTable' )
+    call Show ( Radius ( 1 : 5 ), 'RadiusEdge' )
+    call Show ( Profile ( 1 : 5, iCOMOVING_ENERGY_DENSITY_TS ), &
+                'ComovingEnergyDensityTable' )
+    call Show ( ComovingEnergyDensity ( 1 : 5 ), 'ComovingEnergyDensityEdge' )
+
+    !-- SplineInterpolation initialization
+
+    call SI ( iCOMOVING_ENERGY_DENSITY_SI ) % Initialize &
+           ( Radius, ComovingEnergyDensity, VerbosityOption = CONSOLE % INFO_3 )
+    call SI ( iFLUX_FACTOR_SI ) % Initialize &
+           ( Radius, FluxFactor, VerbosityOption = CONSOLE % INFO_3 )
+    call SI ( iVARIABLE_EDDINGTON_FACTOR_SI ) % Initialize &
+           ( Radius, VariableEddingtonFactor, VerbosityOption = CONSOLE % INFO_3 )
+
+  end subroutine PrepareInterpolation
 
 end module HomogeneousSphere_Form
