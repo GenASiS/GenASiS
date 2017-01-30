@@ -60,7 +60,7 @@ contains
       NameOutputOption
 
     if ( RMC % Type == '' ) &
-      RMC % Type = 'a Fluid_CSL'
+      RMC % Type = 'a RadiationMoments_CSL'
     RMC % RadiationMomentsType = RadiationMomentsType
 
     RMC % EnergyDensityUnit      = EnergyDensityUnit

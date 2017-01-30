@@ -350,8 +350,6 @@ contains
       RM
     class ( GeometryFlatForm ), pointer :: &
       G
-    type ( RadiationMomentsForm ), allocatable :: &
-      RS  !-- RadiationSection
     class ( MatterForm ), pointer :: &
       M
 
@@ -408,8 +406,6 @@ contains
       end associate !-- J, etc.
       end associate !-- iBC
     end do !-- iF
-
-    !-- Cleanup
 
     end select !-- MS
     end associate !-- RMB
@@ -469,7 +465,7 @@ contains
 
   subroutine SetReference ( T )
 
-    class ( IntegratorTemplate ), intent ( in ) :: &
+    class ( IntegratorTemplate ), intent ( inout ) :: &
       T
 
     integer ( KDI ) :: &
