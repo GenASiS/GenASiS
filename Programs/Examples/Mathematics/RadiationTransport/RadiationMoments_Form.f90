@@ -10,7 +10,7 @@ module RadiationMoments_Form
     integer ( KDI ), private, parameter :: &
       N_PRIMITIVE_RM = 4, &
       N_CONSERVED_RM = 4, &
-      N_FIELDS_RM    = 9, &
+      N_FIELDS_RM    = 10, &
       N_VECTORS_RM   = 2
 
   type, public, extends ( CurrentTemplate ) :: RadiationMomentsForm
@@ -21,6 +21,7 @@ module RadiationMoments_Form
       N_VECTORS_RM              = N_VECTORS_RM, &
       COMOVING_ENERGY_DENSITY   = 0, &
       CONSERVED_ENERGY_DENSITY  = 0, &
+      FLUX_FACTOR               = 0, &
       VARIABLE_EDDINGTON_FACTOR = 0
     integer ( KDI ), dimension ( 3 ) :: &
       COMOVING_MOMENTUM_DENSITY_U  = 0, &
@@ -311,7 +312,9 @@ contains
     call VectorIndices ( 1 ) % Initialize ( RM % COMOVING_MOMENTUM_DENSITY_U )
     call Output % Initialize &
            ( RM, iaSelectedOption = [ RM % COMOVING_ENERGY_DENSITY, &
-                                      RM % COMOVING_MOMENTUM_DENSITY_U ], &
+                                      RM % COMOVING_MOMENTUM_DENSITY_U, &
+                                      RM % FLUX_FACTOR, &
+                                      RM % VARIABLE_EDDINGTON_FACTOR ], &
              VectorOption = [ 'ComovingMomentumDensity        ' ], &
              VectorIndicesOption = VectorIndices )
 
@@ -391,6 +394,7 @@ contains
                      C % CONSERVED_MOMENTUM_DENSITY_D ( 2 ) ), &
         S_3 => RMV ( oV + 1 : oV + nV, &
                      C % CONSERVED_MOMENTUM_DENSITY_D ( 3 ) ), &
+        FF  => RMV ( oV + 1 : oV + nV, C % FLUX_FACTOR ), &
         VEF => RMV ( oV + 1 : oV + nV, C % VARIABLE_EDDINGTON_FACTOR ) )
 
     call ComputeConservedEnergyMomentum &
@@ -399,7 +403,7 @@ contains
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, J, H_1, H_2, H_3, &
              M_UU_22, M_UU_33, CONSTANT % SPEED_OF_LIGHT )
     call ComputeVariableEddingtonFactor &
-           ( VEF, J, H_1, H_2, H_3, M_DD_22, M_DD_33 )
+           ( VEF, FF, J, H_1, H_2, H_3, M_DD_22, M_DD_33 )
 
     if ( associated ( C % Value, Value_C ) &
          .and. associated ( C % Interactions ) ) &
@@ -471,6 +475,7 @@ contains
                      C % CONSERVED_MOMENTUM_DENSITY_D ( 2 ) ), &
         S_3 => RMV ( oV + 1 : oV + nV, &
                      C % CONSERVED_MOMENTUM_DENSITY_D ( 3 ) ), &
+        FF  => RMV ( oV + 1 : oV + nV, C % FLUX_FACTOR ), &
         VEF => RMV ( oV + 1 : oV + nV, C % VARIABLE_EDDINGTON_FACTOR ) )
 
     call ComputePrimitiveEnergyMomentum &
@@ -480,7 +485,7 @@ contains
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, J, H_1, H_2, H_3, &
              M_UU_22, M_UU_33, CONSTANT % SPEED_OF_LIGHT )
     call ComputeVariableEddingtonFactor &
-           ( VEF, J, H_1, H_2, H_3, M_DD_22, M_DD_33 )
+           ( VEF, FF, J, H_1, H_2, H_3, M_DD_22, M_DD_33 )
 
     if ( associated ( C % Value, Value ) &
          .and. associated ( C % Interactions ) ) &
@@ -543,11 +548,12 @@ contains
     if ( RM % N_FIELDS == 0 ) &
       RM % N_FIELDS = oF + RM % N_FIELDS_RM
 
-    RM % COMOVING_ENERGY_DENSITY    = oF + 1
-    RM % CONSERVED_ENERGY_DENSITY   = oF + 2
+    RM % COMOVING_ENERGY_DENSITY      = oF + 1
+    RM % CONSERVED_ENERGY_DENSITY     = oF + 2
     RM % COMOVING_MOMENTUM_DENSITY_U  = oF + [ 3, 4, 5 ]
     RM % CONSERVED_MOMENTUM_DENSITY_D = oF + [ 6, 7, 8 ]
-    RM % VARIABLE_EDDINGTON_FACTOR  = oF + 9
+    RM % FLUX_FACTOR                  = oF + 9
+    RM % VARIABLE_EDDINGTON_FACTOR    = oF + 10
 
     !-- variable names 
 
@@ -568,7 +574,8 @@ contains
           'ConservedMomentumDensity_1     ', &
           'ConservedMomentumDensity_2     ', &
           'ConservedMomentumDensity_3     ', &
-          'VariableEddingtonFactor        ' ]
+          'FluxFactor                     ', &
+          'VariableEddingtonFactor        ']
           
     !-- units
     
@@ -666,7 +673,8 @@ contains
 
 
   subroutine ComputeConservedEnergyMomentum &
-               ( E, S_1, S_2, S_3, J, H_1, H_2, H_3, M_DD_22, M_DD_33 )
+               ( E, S_1, S_2, S_3, J, H_1, H_2, H_3, &
+                 M_DD_22, M_DD_33 )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       E, &
@@ -828,10 +836,11 @@ contains
 
 
   subroutine ComputeVariableEddingtonFactor &
-               ( VEF, J, H_1, H_2, H_3, M_DD_22, M_DD_33 )
+               ( VEF, FF, J, H_1, H_2, H_3, M_DD_22, M_DD_33 )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      VEF
+      VEF, &
+      FF
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       J, &
       H_1, H_2, H_3, &
@@ -841,8 +850,7 @@ contains
       iV, &
       nValues
     real ( KDR ), dimension ( size ( VEF ) ) :: &
-      H, &
-      Q
+      H
 
     nValues = size ( VEF )
 
@@ -857,9 +865,9 @@ contains
     !$OMP parallel do private ( iV )
     do iV = 1, nValues
       if ( H ( iV )  <=  J ( iV ) ) then
-        Q ( iV )  =  H ( iV )  /  max ( J ( iV ), tiny ( 0.0_KDR ) )
+        FF ( iV )  =  H ( iV )  /  max ( J ( iV ), tiny ( 0.0_KDR ) )
       else
-        Q ( iV )  =  1.0_KDR
+        FF ( iV )  =  1.0_KDR
       end if
     end do
     !$OMP end parallel do
@@ -869,8 +877,8 @@ contains
       VEF ( iV )  &
         =  1.0_KDR / 3.0_KDR &
            + 2.0_KDR / 3.0_KDR &
-             * ( Q ( iV ) ** 2  /  5.0_KDR  &
-                 * ( 3.0_KDR  -  Q ( iV )  +  3.0_KDR  *  Q ( iV ) ** 2 ) )
+             * ( FF ( iV ) ** 2  /  5.0_KDR  &
+                 * ( 3.0_KDR  -  FF ( iV )  +  3.0_KDR  *  FF ( iV ) ** 2 ) )
     end do
     !$OMP end parallel do
 
