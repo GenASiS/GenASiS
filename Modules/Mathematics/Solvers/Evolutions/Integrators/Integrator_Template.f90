@@ -96,7 +96,7 @@ module Integrator_Template
 
     subroutine SR ( I )
       import IntegratorTemplate
-      class ( IntegratorTemplate ), intent ( in ) :: &
+      class ( IntegratorTemplate ), intent ( inout ) :: &
         I
     end subroutine SR
 

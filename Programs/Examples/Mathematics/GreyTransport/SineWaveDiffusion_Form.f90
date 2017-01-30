@@ -253,7 +253,7 @@ contains
 
   subroutine SetReference ( SWD )
 
-    class ( IntegratorTemplate ), intent ( in ) :: &
+    class ( IntegratorTemplate ), intent ( inout ) :: &
       SWD
 
     class ( RadiationMomentsForm ), pointer :: &
