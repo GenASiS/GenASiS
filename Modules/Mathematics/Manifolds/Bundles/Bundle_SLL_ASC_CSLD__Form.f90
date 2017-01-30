@@ -43,9 +43,9 @@ module Bundle_SLL_ASC_CSLD__Form
       GeometryFiber
     procedure, public, pass :: &
       AtlasFiber
-    procedure, public, pass :: &
+    procedure, public, pass ( B ) :: &
       LoadSection
-    procedure, public, pass :: &
+    procedure, public, pass ( B ) :: &
       StoreSection
     procedure, public, pass :: &
       OpenStream
@@ -263,12 +263,12 @@ contains
   end function AtlasFiber
 
 
-  subroutine LoadSection ( B, Section, Field, iFC )
+  subroutine LoadSection ( Section, B, Field, iFC )
 
-    class ( Bundle_SLL_ASC_CSLD_Form ), intent ( inout ) :: &
-      B
     class ( VariableGroupForm ), intent ( inout ) :: &
       Section
+    class ( Bundle_SLL_ASC_CSLD_Form ), intent ( in ) :: &
+      B
     class ( Field_BSLL_ASC_CSLD_Template ), intent ( in ) :: &
       Field
     integer ( KDI ), intent ( in ) :: &
@@ -297,12 +297,12 @@ contains
   end subroutine LoadSection
 
 
-  subroutine StoreSection ( B, Field, Section, iFC )
+  subroutine StoreSection ( Field, B, Section, iFC )
 
-    class ( Bundle_SLL_ASC_CSLD_Form ), intent ( inout ) :: &
-      B
     class ( Field_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
       Field
+    class ( Bundle_SLL_ASC_CSLD_Form ), intent ( in ) :: &
+      B
     class ( VariableGroupForm ), intent ( in ) :: &
       Section
     integer ( KDI ), intent ( in ) :: &
