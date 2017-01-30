@@ -14,6 +14,7 @@ program HomogeneousSphere
   allocate ( HS )
   call HS % Initialize ( PROGRAM_HEADER % Name )
   call HS % Evolve ( )
+  call HS % ComputeError ( ) 
   deallocate ( HS )
 
   deallocate ( PROGRAM_HEADER )
