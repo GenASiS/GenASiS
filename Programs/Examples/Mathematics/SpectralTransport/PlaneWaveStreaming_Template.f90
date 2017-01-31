@@ -68,6 +68,8 @@ contains
     integer ( KDI ) :: &
       iE, &  !-- iEnergy
       nEnergyCells
+    integer ( KDI ), dimension ( 3 ) :: &
+      nCellsPosition
     real ( KDR ) :: &
       Period
     character ( 1 + 2 ) :: &
@@ -82,7 +84,11 @@ contains
     select type ( PS => PWS % PositionSpace )
     class is ( Atlas_SC_Form )
     call PS % Initialize ( Name, PROGRAM_HEADER % Communicator )
-    call PS % CreateChart ( )
+
+    nCellsPosition = [ 128, 128, 128 ]
+    call PROGRAM_HEADER % GetParameter ( nCellsPosition, 'nCellsPosition' )
+
+    call PS % CreateChart ( nCellsOption = nCellsPosition )
 
     !-- Geometry of PositionSpace
 
@@ -145,7 +151,7 @@ contains
 
     !-- Initialize template
 
-    call PWS % InitializeTemplate ( Name, FinishTimeOption = Period )
+    call PWS % InitializeTemplate_C ( Name, FinishTimeOption = Period )
 
     !-- Cleanup
 
@@ -368,9 +374,10 @@ contains
 
     associate &
       ( RMB => PWS % RadiationMoments_BSLL_ASC_CSLD, &
+        CB  => MS % Base_CSLD, &
         TimeStep => TimeNew - PWS % Time )    
 
-    G => MS % Base_CSLD % Geometry ( )
+    G => CB % Geometry ( )
 
     allocate ( RadiationSection )
     associate ( RS => RadiationSection )
@@ -380,8 +387,8 @@ contains
              G % nValues, ClearOption = .true. )
 
     do iE = 1, RMB % nEnergyValues
-      call MS % LoadSection ( RS, RMB, iE )
-      call S % Compute ( RS, MS % Base_CSLD, PWS % Time, TimeStep )
+      call MS % LoadSection ( RS, RMB, iE, GhostExchangeOption = .true. )
+      call S % Compute ( RS, CB, PWS % Time, TimeStep )
       call MS % StoreSection ( RMB, RS, iE )
     end do !-- iF
 
