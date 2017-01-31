@@ -199,7 +199,7 @@ contains
       IgnorabilityOption
     logical ( KDL ), intent ( out ), optional :: &
       SuccessOption
-    
+
     call FindParameter &
            ( Value, CLO % Option, 'command line', Name, nValuesOption, &
              IgnorabilityOption, SuccessOption )
@@ -217,8 +217,9 @@ contains
       Value
     character ( * ), intent ( in ) :: &
       Name
-    type ( MeasuredValueForm ), dimension ( : ), intent ( inout ), optional :: &
-      InputUnitOption
+    type ( MeasuredValueForm ), dimension ( : ), intent ( inout ), &
+      optional :: &
+        InputUnitOption
     integer ( KDI ), intent ( inout ), optional :: &
       nValuesOption
     integer ( KDI ), intent ( in ), optional :: &
