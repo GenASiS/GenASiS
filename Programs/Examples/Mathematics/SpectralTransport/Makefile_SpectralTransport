@@ -16,14 +16,14 @@ SPECTRAL_MOMENTS = \
   Matter_Form.o 
 
 Thermalization: Basics.a Mathematics.a GreyMoments.a SpectralMoments.a \
-  Thermalization_Form.o Thermalization.o
+  Thermalization.o
 	$(LINK) $(FFLAGS) \
           -o Thermalization_$(MACHINE) \
           Thermalization.o Thermalization_Form.o \
           SpectralMoments.a GreyMoments.a Mathematics.a Basics.a \
           $(LIBRARIES)
 
-SineWaveStreaming: Basics.a Mathematics.a GreyMoments.a \
+SineWaveStreaming: Basics.a Mathematics.a GreyMoments.a SpectralMoments.a \
   SineWaveStreaming.o
 	$(LINK) $(FFLAGS) \
           -o SineWaveStreaming_$(MACHINE) \
