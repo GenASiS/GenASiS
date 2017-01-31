@@ -119,7 +119,8 @@ contains
   end subroutine InitializeTemplate_C
 
 
-  subroutine Compute ( S, Current, Grid, Time, TimeStep )
+  subroutine Compute &
+               ( S, Current, Grid, Time, TimeStep, UseLimiterParameterOption )
 
     class ( Step_RK_C_Template ), intent ( inout ) :: &
       S
@@ -130,6 +131,8 @@ contains
     real ( KDR ), intent ( in ) :: &
       Time, &
       TimeStep
+    logical ( KDL ), intent ( in ), optional :: &
+      UseLimiterParameterOption
 
     integer ( KDI ) :: &
       iF  !-- iField
@@ -170,7 +173,7 @@ contains
       end associate !-- CV, etc.
     end do !-- iF
 
-    call S % SetDivergence ( )
+    call S % SetDivergence ( UseLimiterParameterOption )
     call S % ComputeTemplate ( Solution, Time, TimeStep )
 
     do iF = 1, C % N_CONSERVED
@@ -305,16 +308,21 @@ contains
   end subroutine ComputeIncrement
 
 
-  subroutine SetDivergence ( S )
+  subroutine SetDivergence ( S, UseLimiterParameterOption )
 
     class ( Step_RK_C_Template ), intent ( inout ) :: &
       S
+    logical ( KDL ), intent ( in ), optional :: &
+      UseLimiterParameterOption
 
     integer ( KDI ) :: &
       iD, jD, kD, &  !-- iDimension
       iF      !-- iField
     integer ( KDI ), dimension ( 3 ) :: &
       nSurface
+
+    if ( present ( UseLimiterParameterOption ) ) &
+      call S % IncrementDivergence % Set ( UseLimiterParameterOption )
 
     select type ( Grid => S % Grid)
     class is ( Chart_SLD_Form )

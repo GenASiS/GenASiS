@@ -125,7 +125,8 @@ contains
     !-- Initialize template
 
     call SWD % InitializeTemplate_C &
-           ( Name, FinishTimeOption  =  3.0_KDR * TransportOpacity )
+           ( Name, UseLimiterParameterOption = .false., &
+             FinishTimeOption  =  3.0_KDR * TransportOpacity )
 
     !-- Cleanup
 
