@@ -101,11 +101,25 @@ contains
     class is ( Atlas_SC_Form )
     call PS % Initialize ( Name, PROGRAM_HEADER % Communicator )
 
+    select case ( PS % nDimensions )
+      case ( 1 )
+        CoordinateSystem = 'SPHERICAL'
+      case ( 2 ) 
+         CoordinateSystem = 'CYLINDRICAL'
+      case ( 3 )
+         CoordinateSystem = 'CARTESIAN'
+      case DEFAULT
+        call show ( PS % nDimensions, 'nDimensions' )
+        call Show ( 'Dimensionality not supported', CONSOLE % ERROR )
+        call Show ( 'Homogeneous_Form', 'module', CONSOLE % ERROR )
+        call Show ( 'Initialize', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+    end select
+    
+    call PROGRAM_HEADER % GetParameter ( CoordinateSystem, 'CoordinateSystem' )
+
     MaxRadius = 5.0_KDR
     call PROGRAM_HEADER % GetParameter ( MaxRadius, 'MaxRadius' )
-
-    CoordinateSystem = 'CARTESIAN'
-    call PROGRAM_HEADER % GetParameter ( CoordinateSystem, 'CoordinateSystem' )
 
     nCellsRadius = 100
     call PROGRAM_HEADER % GetParameter ( nCellsRadius, 'nCellsRadius' )
@@ -274,7 +288,7 @@ contains
     
     !-- Initialize template
     
-    call HS % InitializeTemplate_C ( Name, FinishTimeOption = 15.0_KDR )
+    call HS % InitializeTemplate_C ( Name, UseLinFinishTimeOption = 15.0_KDR )
     
     !-- Cleanup
            
