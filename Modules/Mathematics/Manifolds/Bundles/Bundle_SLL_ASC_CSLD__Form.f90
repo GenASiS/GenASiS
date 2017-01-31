@@ -263,7 +263,7 @@ contains
   end function AtlasFiber
 
 
-  subroutine LoadSection ( Section, B, Field, iFC )
+  subroutine LoadSection ( Section, B, Field, iFC, GhostExchangeOption )
 
     class ( VariableGroupForm ), intent ( inout ) :: &
       Section
@@ -273,12 +273,20 @@ contains
       Field
     integer ( KDI ), intent ( in ) :: &
       iFC  !-- iFiberCell
+    logical ( KDL ), intent ( in ), optional :: &
+      GhostExchangeOption
 
     integer ( KDI ) :: &
       iF, &  !-- iFiber
       iV     !-- iVariable
+    logical ( KDL ) :: &
+      GhostExchange
     class ( VariableGroupForm ), pointer :: &
       F
+
+    GhostExchange = .false.
+    if ( present ( GhostExchangeOption ) ) &
+      GhostExchange = GhostExchangeOption
 
     do iF = 1, B % nFibers
 
@@ -291,6 +299,12 @@ contains
       end associate !-- iBC
 
     end do !-- iF
+
+    if ( GhostExchange ) then
+      associate ( CB => B % Base_CSLD )
+      call CB % ExchangeGhostData ( Section )
+      end associate
+    end if
 
     nullify ( F )
 
