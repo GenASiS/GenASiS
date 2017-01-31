@@ -33,6 +33,7 @@ module IncrementDivergence_FV__Form
       LimiterParameter, &
       Weight_RK = - huge ( 0.0_KDR ) !-- RungeKutta weight
     logical ( KDL ) :: &
+      UseLimiterParameter = .true., &
       UseIncrementStream = .false.
     character ( LDF ) :: &
       Name = ''
@@ -51,13 +52,16 @@ module IncrementDivergence_FV__Form
     procedure, public, pass :: &
       Initialize
     procedure, private, pass :: &
+      SetLimiterParameter
+    procedure, private, pass :: &
       SetBoundaryFluence_CSL
     procedure, private, pass :: &
       Set_dLog_VJ
     procedure, private, pass :: &
       Set_Weight_RK
     generic, public :: &
-      Set => SetBoundaryFluence_CSL, Set_dLog_VJ, Set_Weight_RK
+      Set => SetLimiterParameter, SetBoundaryFluence_CSL, Set_dLog_VJ, &
+             Set_Weight_RK
     procedure, private, pass :: &
       Clear_CSL
     generic, public :: &
@@ -162,6 +166,18 @@ contains
   end subroutine Initialize
 
 
+  subroutine SetLimiterParameter ( I, UseLimiterParameter )
+
+    class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
+      I
+    logical ( KDL ), intent ( in ) :: &
+      UseLimiterParameter
+
+    I % UseLimiterParameter = UseLimiterParameter
+
+  end subroutine SetLimiterParameter
+
+
   subroutine SetBoundaryFluence_CSL ( I, BoundaryFluence_CSL )
 
     class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
@@ -207,6 +223,8 @@ contains
     I % dLogVolumeJacobian_dX => null ( )
 
     I % Weight_RK =  - huge ( 1.0_KDR )
+
+    I % UseLimiterParameter = .true.
 
   end subroutine Clear_CSL
 
@@ -647,7 +665,12 @@ contains
     call Timer_G % Start ( )
     allocate ( Gradient_C )
     call Gradient_C % Initialize ( P, 'Primitive' )
-    call Gradient_C % Compute ( CSL, iDimension, I % LimiterParameter )
+    if ( I % UseLimiterParameter ) then
+      call Gradient_C % Compute &
+             ( CSL, iDimension, LimiterParameterOption = I % LimiterParameter )
+    else
+      call Gradient_C % Compute ( CSL, iDimension )
+    end if
     call Timer_G % Stop
     end associate !-- Timer_G  
 

@@ -18,6 +18,8 @@ module Integrator_C__Template
     Integrator_C_Template
       real ( KDR ) :: &
         CourantFactor
+      logical ( KDL ) :: &
+        UseLimiterParameter
       class ( Current_ASC_Template ), allocatable :: &
         Current_ASC
       class ( Step_RK_Template ), allocatable :: &
@@ -54,12 +56,15 @@ contains
 
 
   subroutine InitializeTemplate_C &
-               ( I, Name, TimeUnitOption, FinishTimeOption, nWriteOption )
+               ( I, Name, UseLimiterParameterOption, TimeUnitOption, &
+                 FinishTimeOption, nWriteOption )
 
     class ( Integrator_C_Template ), intent ( inout ) :: &
       I
     character ( * ), intent ( in )  :: &
       Name
+    logical ( KDL ), intent ( in ), optional :: &
+      UseLimiterParameterOption
     type ( MeasuredValueForm ), intent ( in ), optional :: &
       TimeUnitOption
     real ( KDR ), intent ( in ), optional :: &
@@ -94,6 +99,12 @@ contains
     I % CourantFactor = 0.7
     call PROGRAM_HEADER % GetParameter &
            ( I % CourantFactor, 'CourantFactor' )
+
+    I % UseLimiterParameter = .true.
+    if ( present ( UseLimiterParameterOption ) ) &
+      I % UseLimiterParameter = UseLimiterParameterOption
+    call PROGRAM_HEADER % GetParameter &
+           ( I % UseLimiterParameter, 'UseLimiterParameter' )
 
     call I % InitializeTemplate &
            ( Name, TimeUnitOption, FinishTimeOption, nWriteOption )
@@ -307,7 +318,9 @@ contains
     call I % ComputeNewTime ( TimeNew )
     associate ( TimeStep => TimeNew - I % Time )    
 
-    call S % Compute ( C, CSL, I % Time, TimeStep )
+    call S % Compute &
+           ( C, CSL, I % Time, TimeStep, &
+             UseLimiterParameterOption = I % UseLimiterParameter )
 
     I % iCycle = I % iCycle + 1
     I % Time = I % Time + TimeStep
