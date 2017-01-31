@@ -91,7 +91,7 @@ contains
       ED, &
       EO, &
       TO
-    real ( KDR ), dimension ( : ), intent ( out ) :: &
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
       EDV, &
       EOV, &
       TOV
@@ -104,9 +104,9 @@ contains
 
     !$OMP parallel do private ( iV ) 
     do iV = 1, nValues
-      EDV ( iV )  =  ED
-      EOV ( iV )  =  EO
-      TOV ( iV )  =  TO
+      EDV ( iV )  =  EDV ( iV ) ! ED
+      EOV ( iV )  =  EOV ( iV ) ! EO
+      TOV ( iV )  =  TOV ( iV ) ! TO
     end do !-- iV
     !$OMP end parallel do
 
