@@ -21,6 +21,8 @@ module PlaneWaveStreaming_Template
     procedure, public, pass :: &
       InitializeTemplate_PWS
     procedure, public, pass :: &
+      ComputeError
+    procedure, public, pass :: &
       FinalizeTemplate_PWS
     procedure ( Waveform ), private, pass, deferred :: &
       Waveform
@@ -160,6 +162,62 @@ contains
     end select !-- PS
 
   end subroutine InitializeTemplate_PWS
+
+
+  subroutine ComputeError ( PWS )
+
+    class ( PlaneWaveStreamingTemplate ), intent ( in ) :: &
+      PWS
+    
+    integer ( KDI ) :: &
+      iE  !-- iEnergy
+    real ( KDR ) :: &
+      L1
+    type ( CollectiveOperation_R_Form ), allocatable :: &
+      CO
+    class ( RadiationMomentsForm ), pointer :: &
+      RS_D     !-- RM_Difference
+
+    select type ( PS => PWS % PositionSpace )
+    class is ( Atlas_SC_Form )
+    select type ( CB => PS % Chart )
+    class is ( Chart_SL_Template )
+
+    associate ( RMB => PWS % RadiationMoments_BSLL_ASC_CSLD )
+
+    do iE = 1, RMB % nEnergyValues
+      associate ( RSA_D => PWS % Difference_ASC ( iE ) )
+      RS_D => RSA_D % RadiationMoments ( )
+      allocate ( CO )
+
+      associate &
+        ( Difference => RS_D % Value ( :, RS_D % COMOVING_ENERGY_DENSITY ) )
+      call CO % Initialize ( PS % Communicator, [ 2 ], [ 2 ] )
+      CO % Outgoing % Value ( 1 ) = sum ( abs ( Difference ), &
+                                          mask = CB % IsProperCell )
+      CO % Outgoing % Value ( 2 ) = CB % nProperCells
+      call CO % Reduce ( REDUCTION % SUM )
+      end associate !-- Difference
+
+      associate &
+        ( DifferenceSum => CO % Incoming % Value ( 1 ), &
+          nValues => CO % Incoming % Value ( 2 ) )
+      L1 = DifferenceSum / nValues
+      end associate 
+
+      call Show ( iE, '*** iEnergyBin', nLeadingLinesOption  = 2 ) 
+      call Show ( L1, '*** L1 error',   nTrailingLinesOption = 2 )
+
+      deallocate ( CO )
+      end associate !-- RSA_D
+    end do !-- iE
+
+    end associate !-- RMB
+    end select !-- CB
+    end select !-- PS
+    nullify ( RS_D )
+
+  end subroutine ComputeError
 
 
   subroutine FinalizeTemplate_PWS ( PWS )

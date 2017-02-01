@@ -15,7 +15,7 @@ program SineWaveStreaming
   allocate ( SWS )
   call SWS % Initialize ( PROGRAM_HEADER % Name )
   call SWS % Evolve ( )
-!  call SWS % ComputeError ( )
+  call SWS % ComputeError ( )
   deallocate ( SWS )
 
   deallocate ( PROGRAM_HEADER )
