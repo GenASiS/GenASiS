@@ -111,7 +111,7 @@ contains
       case DEFAULT
         call show ( PS % nDimensions, 'nDimensions' )
         call Show ( 'Dimensionality not supported', CONSOLE % ERROR )
-        call Show ( 'Homogeneous_Form', 'module', CONSOLE % ERROR )
+        call Show ( 'HomogeneousSphere_Form', 'module', CONSOLE % ERROR )
         call Show ( 'Initialize', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
     end select
@@ -262,6 +262,8 @@ contains
     call PrepareInterpolation ( SI )
     RM => HS % Reference % RadiationMoments ( )
     G => PS % Geometry ( )
+    select type ( Grid => PS % Chart )
+    class is ( Chart_SL_Template )
     associate &
       ( J   => RM % Value ( :, RM % COMOVING_ENERGY_DENSITY ), &
         FF  => RM % Value ( :, RM % FLUX_FACTOR ), &
@@ -269,7 +271,7 @@ contains
         R   => G % Value ( :, G % CENTER ( 1 ) ) )
 
       do iV = 1, size ( J )
-
+        if ( .not. Grid % IsProperCell ( iV ) ) cycle
         call SI ( iCOMOVING_ENERGY_DENSITY_SI ) &
                 % Evaluate ( R ( iV ), J ( iV ) )
         call SI ( iFLUX_FACTOR_SI ) &
@@ -279,8 +281,8 @@ contains
 
       end do
       
-      end associate !-- J, etc.  
-      nullify ( G, RM )
+      end associate !-- J, etc. 
+      end select !
     !-- Initial conditions
     
     RM => RMA % RadiationMoments ( )
@@ -288,14 +290,14 @@ contains
     
     !-- Initialize template
     
-    call HS % InitializeTemplate_C ( Name, UseLinFinishTimeOption = 15.0_KDR )
+    call HS % InitializeTemplate_C ( Name, FinishTimeOption = 15.0_KDR )
     
     !-- Cleanup
            
     end select !-- RMA
     end associate !-- IA
     end select !-- PS
-    nullify ( RM )
+    nullify ( G, RM )
     
   end subroutine Initialize 
 
