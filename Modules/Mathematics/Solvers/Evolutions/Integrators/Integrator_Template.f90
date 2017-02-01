@@ -440,7 +440,9 @@ contains
     if ( allocated ( I % MomentumSpace ) ) then
       select type ( MS => I % MomentumSpace )
       class is ( Bundle_SLL_ASC_CSLD_Form )
-        call MS % Write ( iStream = iS )
+        call MS % Write &
+               ( iStream = iS, TimeOption = I % Time / I % TimeUnit, &
+                 CycleNumberOption = I % iCycle )
       class default
         call Show ( 'Bundle type not found', CONSOLE % ERROR )
         call Show ( 'Integrator_Template', 'module', CONSOLE % ERROR )

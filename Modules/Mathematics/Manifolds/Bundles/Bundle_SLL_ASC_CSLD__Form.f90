@@ -423,7 +423,8 @@ contains
   end subroutine MarkFibersWritten
 
 
-  subroutine Write ( B, iStream, AllFibersOption )
+  subroutine Write ( B, iStream, AllFibersOption, TimeOption, &
+                     CycleNumberOption )
 
     class ( Bundle_SLL_ASC_CSLD_Form ), intent ( inout ) :: &
       B
@@ -431,6 +432,10 @@ contains
       iStream
     logical ( KDL ), intent ( in ), optional :: &
       AllFibersOption
+    type ( MeasuredValueForm ), intent ( in ), optional :: &
+      TimeOption
+    integer ( KDI ), intent ( in ), optional :: &
+      CycleNumberOption
 
     integer ( KDI ) :: &
       iF, &   !-- iFiber
@@ -469,7 +474,9 @@ contains
 
       AF => B % AtlasFiber ( iF ) 
       call AF % OpenStream ( GIS_Bundle, '', iStream = iStream ) 
-      call AF % Write ( iStream = iStream, DirectoryOption = Directory )
+      call AF % Write &
+             ( iStream = iStream, DirectoryOption = Directory, &
+               TimeOption = TimeOption, CycleNumberOption = CycleNumberOption )
       call AF % CloseStreams ( ) 
 
     end do !-- iF
