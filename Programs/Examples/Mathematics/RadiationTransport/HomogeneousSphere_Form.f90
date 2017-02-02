@@ -282,7 +282,7 @@ contains
       end do
       
       end associate !-- J, etc. 
-      end select !
+      end select !-- Grid
     !-- Initial conditions
     
     RM => RMA % RadiationMoments ( )
@@ -382,8 +382,6 @@ contains
     class ( RadiationMomentsForm ), intent ( inout ) :: &
       RM
     
-    type ( SplineInterpolationForm ), dimension ( 1 ) :: &
-      SI
     class ( GeometryFlatForm ), pointer :: &
       G
     integer :: &
