@@ -38,10 +38,14 @@ contains
 
 
   subroutine InitializeTemplate &
-               ( I, nValues, NameOption, ClearOption, UnitOption )
+               ( I, LengthUnit, EnergyDensityUnit, nValues, NameOption, &
+                 ClearOption, UnitOption )
 
     class ( InteractionsTemplate ), intent ( inout ) :: &
       I
+    type ( MeasuredValueForm ), intent ( in ) :: &
+      LengthUnit, &
+      EnergyDensityUnit
     integer ( KDI ), intent ( in ) :: &
       nValues
     character ( * ), intent ( in ), optional :: &
@@ -55,6 +59,8 @@ contains
       Name 
     logical ( KDL ) :: &
       Clear
+    type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
+      VariableUnit
 
     if ( I % Type == '' ) &
       I % Type = 'an Interactions'
@@ -70,12 +76,18 @@ contains
     Clear = .true.
     if ( present ( ClearOption ) ) Clear = ClearOption
 
+    allocate ( VariableUnit ( I % N_FIELDS ) )
+    VariableUnit ( I % EQUILIBRIUM_DENSITY ) = EnergyDensityUnit
+    VariableUnit ( I % EFFECTIVE_OPACITY )   = LengthUnit ** (-1)
+    VariableUnit ( I % TRANSPORT_OPACITY )   = LengthUnit ** (-1)
+
     call I % VariableGroupForm % Initialize &
            ( [ nValues, I % N_FIELDS ], &
              VariableOption = [ 'EquilibriumDensity', &
                                 'EffectiveOpacity  ', &
                                 'TransportOpacity  ' ], &
-             NameOption = Name, ClearOption = Clear, UnitOption = UnitOption )
+             NameOption = Name, ClearOption = Clear, &
+             UnitOption = VariableUnit )
 
   end subroutine InitializeTemplate
 

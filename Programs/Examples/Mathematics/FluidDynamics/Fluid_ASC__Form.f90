@@ -78,7 +78,8 @@ contains
     integer ( KDI ) :: &
       iB  !-- iBoundary
 
-    FA % Type = 'a Fluid_ASC'
+    if ( FA % Type == '' ) &
+      FA % Type = 'a Fluid_ASC'
     FA % FluidType = FluidType
 
     if ( present ( MassDensityUnitOption ) ) &

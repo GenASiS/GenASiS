@@ -68,14 +68,17 @@ contains
 
 
   subroutine InitializeAllocate_RM &
-               ( RM, VelocityUnit, EnergyDensityUnit, nValues, &
+               ( RM, Velocity_U_Unit, MomentumDensity_U_Unit, &
+                 MomentumDensity_D_Unit, EnergyDensityUnit, nValues, &
                  VariableOption, VectorOption, NameOption, ClearOption, &
                  UnitOption, VectorIndicesOption )
 
     class ( RadiationMomentsForm ), intent ( inout ) :: &
       RM
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
-      VelocityUnit
+      Velocity_U_Unit, &
+      MomentumDensity_U_Unit, &
+      MomentumDensity_D_Unit
     type ( MeasuredValueForm ), intent ( in ) :: &
       EnergyDensityUnit
     integer ( KDI ), intent ( in ) :: &
@@ -107,10 +110,12 @@ contains
              VariableOption, VectorOption, NameOption, UnitOption, &
              VectorIndicesOption )
 
-    call SetUnits ( VariableUnit, RM, VelocityUnit, EnergyDensityUnit )
+    call SetUnits &
+           ( VariableUnit, RM, MomentumDensity_U_Unit, &
+             MomentumDensity_D_Unit, EnergyDensityUnit )
 
     call RM % InitializeTemplate &
-           ( VelocityUnit, nValues, VariableOption = Variable, &
+           ( Velocity_U_Unit, nValues, VariableOption = Variable, &
              VectorOption = Vector, NameOption = Name, &
              ClearOption = ClearOption, UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndices )
@@ -400,10 +405,6 @@ contains
     call ComputeVariableEddingtonFactor &
            ( VEF, J, H_1, H_2, H_3, M_DD_22, M_DD_33 )
 
-    if ( associated ( C % Value, Value_C ) &
-         .and. associated ( C % Interactions ) ) &
-      call C % Interactions % Compute ( )
-
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
     end associate !-- RMV, etc.
@@ -412,14 +413,16 @@ contains
 
 
   subroutine ComputeFromConservedCommon &
-               ( C, G, Value, nValuesOption, oValueOption )
+               ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
 
+    real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
+      Value_C
     class ( RadiationMomentsForm ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
-      Value
+    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+      Value_G
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
@@ -429,8 +432,8 @@ contains
       nV     !-- nValues
       
     associate &
-      ( RMV => Value, &
-        GV  => G % Value )
+      ( RMV => Value_C, &
+        GV  => Value_G )
 
     if ( present ( oValueOption ) ) then
       oV = oValueOption
@@ -481,10 +484,6 @@ contains
     call ComputeVariableEddingtonFactor &
            ( VEF, J, H_1, H_2, H_3, M_DD_22, M_DD_33 )
 
-    if ( associated ( C % Value, Value ) &
-         .and. associated ( C % Interactions ) ) &
-      call C % Interactions % Compute ( )
-
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
     end associate !-- RMV, etc.
@@ -531,7 +530,8 @@ contains
       oP, &  !-- oPrimitive
       oC     !-- oConserved
 
-    if ( RM % Type == '' ) RM % Type = 'RadiationMoments'
+    if ( RM % Type == '' ) &
+      RM % Type = 'RadiationMoments'
 
     Name = 'RadiationMoments'
     if ( present ( NameOption ) ) Name = NameOption
@@ -635,14 +635,17 @@ contains
   end subroutine InitializeBasics
 
 
-  subroutine SetUnits ( VariableUnit, RM, VelocityUnit, EnergyDensityUnit )
+  subroutine SetUnits &
+               ( VariableUnit, RM, MomentumDensity_U_Unit, &
+                 MomentumDensity_D_Unit, EnergyDensityUnit )
 
     type ( MeasuredValueForm ), dimension ( : ), intent ( inout ) :: &
       VariableUnit
     class ( RadiationMomentsForm ), intent ( in ) :: &
       RM
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
-      VelocityUnit
+      MomentumDensity_U_Unit, &
+      MomentumDensity_D_Unit
     type ( MeasuredValueForm ), intent ( in ) :: &
       EnergyDensityUnit
 
@@ -654,9 +657,9 @@ contains
 
     do iD = 1, 3
       VariableUnit ( RM % COMOVING_MOMENTUM_DENSITY_U ( iD ) ) &
-        = EnergyDensityUnit / VelocityUnit ( iD )
+        = MomentumDensity_U_Unit ( iD )
       VariableUnit ( RM % CONSERVED_MOMENTUM_DENSITY_D ( iD ) ) &
-        = EnergyDensityUnit / VelocityUnit ( iD )      
+        = MomentumDensity_D_Unit ( iD )      
     end do
 
     VariableUnit ( RM % VARIABLE_EDDINGTON_FACTOR ) = UNIT % IDENTITY
@@ -1079,7 +1082,7 @@ contains
                  I % Value ( :, I % EQUILIBRIUM_DENSITY ), &
                  I % Value ( :, I % EFFECTIVE_OPACITY ), &
                  I % Value ( :, I % TRANSPORT_OPACITY ), &
-                 TimeStep )
+                 TimeStep, CONSTANT % SPEED_OF_LIGHT )
 
     end associate !-- I
     end select !-- Grid
@@ -1090,7 +1093,7 @@ contains
 
   subroutine ApplyRelaxationKernel &
                ( KV_E, DCV_E, DCV_S_1, DCV_S_2, DCV_S_3, IsProperCell, &
-                 ED, EO, TO, dT )
+                 ED, EO, TO, dT, c )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       KV_E, &
@@ -1105,7 +1108,8 @@ contains
       EO, &
       TO
     real ( KDR ), intent ( in ) :: &
-      dT
+      dT, &
+      c
 
     integer ( KDI ) :: &
       iV, &
@@ -1117,11 +1121,11 @@ contains
     do iV = 1, nV
       if ( .not. IsProperCell ( iV ) ) &
         cycle
-      KV_E    ( iV )  =  KV_E ( iV )  +  EO ( iV ) * ED ( iV ) * dT
-      DCV_E   ( iV )  =  EO ( iV )
-      DCV_S_1 ( iV )  =  TO ( iV )
-      DCV_S_2 ( iV )  =  TO ( iV )
-      DCV_S_3 ( iV )  =  TO ( iV )
+      KV_E    ( iV )  =  KV_E ( iV )  +  c * EO ( iV ) * ED ( iV ) * dT
+      DCV_E   ( iV )  =  c * EO ( iV )
+      DCV_S_1 ( iV )  =  c * TO ( iV )
+      DCV_S_2 ( iV )  =  c * TO ( iV )
+      DCV_S_3 ( iV )  =  c * TO ( iV )
     end do
     !$OMP end parallel do
 

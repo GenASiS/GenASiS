@@ -41,6 +41,8 @@ module Integrator_C__Template
       WriteTimeSeries
     procedure, private, pass :: &
       ComputeTimeStepLocal
+    procedure, public, nopass :: &
+      ComputeTimeStepKernel_CSL
   end type Integrator_C_Template
 
     private :: &
@@ -48,9 +50,6 @@ module Integrator_C__Template
 
       private :: &
         ComputeCycle_ASC_CSL
-
-      private :: &
-        ComputeTimeStepKernel_CSL
 
 contains
 
@@ -81,11 +80,10 @@ contains
     end if
 
     if ( .not. allocated ( I % Current_ASC ) ) then
-      call Show ( 'Current must be allocated by an extension', &
-                  CONSOLE % ERROR )
-      call Show ( 'Integrator_C__Template', 'module', CONSOLE % ERROR )
-      call Show ( 'InitializeTemplate_C', 'subroutine', CONSOLE % ERROR )
-      call PROGRAM_HEADER % Abort ( )
+      call Show ( 'Current not allocated by an extension', &
+                  CONSOLE % WARNING )
+      call Show ( 'Integrator_C__Template', 'module', CONSOLE % WARNING )
+      call Show ( 'InitializeTemplate_C', 'subroutine', CONSOLE % WARNING )
     end if
 
     if ( .not. allocated ( I % Step ) ) then
@@ -109,15 +107,17 @@ contains
     call I % InitializeTemplate &
            ( Name, TimeUnitOption, FinishTimeOption, nWriteOption )
 
-    allocate ( I % TimeSeries )
-    associate &
-      ( TS => I % TimeSeries, &
-        CA => I % Current_ASC )
-    call TS % Initialize &
-           ( I, CA % TallyInterior, &
-             CA % TallyBoundaryGlobal ( 1 ) % Element, &
-             CA % TallyTotal, CA % TallyChange )
-    end associate !-- TS, etc.
+    if ( allocated ( I % Current_ASC ) ) then
+      allocate ( I % TimeSeries )
+      associate &
+        ( TS => I % TimeSeries, &
+          CA => I % Current_ASC )
+      call TS % Initialize &
+             ( I, CA % TallyInterior, &
+               CA % TallyBoundaryGlobal ( 1 ) % Element, &
+               CA % TallyTotal, CA % TallyChange )
+      end associate !-- TS, etc.
+    end if
 
   end subroutine InitializeTemplate_C
 
@@ -165,6 +165,9 @@ contains
     logical ( KDL ), intent ( in ), optional :: &
       ComputeChangeOption
 
+    if ( .not. allocated ( I % Current_ASC ) ) &
+      return
+
     associate ( Timer => PROGRAM_HEADER % Timer ( I % iTimerComputeTally ) )
     call Timer % Start ( )
 
@@ -191,6 +194,9 @@ contains
       iT  !-- iTimer
     real ( KDR ) :: &
       ReconstructionImbalance
+
+    if ( .not. allocated ( I % TimeSeries ) ) &
+      return
 
     call I % TimeSeries % Record ( MaxTime, MinTime, MeanTime )
 
@@ -222,6 +228,9 @@ contains
     class ( Integrator_C_Template ), intent ( inout ) :: &
       I
 
+    if ( .not. allocated ( I % TimeSeries ) ) &
+      return
+
     call I % TimeSeries % Write ( )
 
   end subroutine WriteTimeSeries
@@ -250,7 +259,7 @@ contains
     G => CSL % Geometry ( )
     C => CA % Current ( )
     
-    call ComputeTimeStepKernel_CSL &
+    call I % ComputeTimeStepKernel_CSL &
            ( CSL % IsProperCell, &
              C % Value ( :, C % FAST_EIGENSPEED_PLUS ( 1 ) ), &
              C % Value ( :, C % FAST_EIGENSPEED_PLUS ( 2 ) ), &

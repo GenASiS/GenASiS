@@ -16,11 +16,14 @@ module Step_RK_C__Template
 
   type, public, extends ( Step_RK_Template ), abstract :: Step_RK_C_Template
     integer ( KDI ) :: &
-      iTimerGhost
+      iTimerGhost, &
+      iGeometryValue
     type ( Real_1D_Form ), dimension ( : ), allocatable :: &
       dLogVolumeJacobian_dX
     type ( Real_3D_Form ), dimension ( :, : ), allocatable :: &
       BoundaryFluence_CSL
+    class ( GeometryFlatForm ), pointer :: &
+      Geometry
     class ( * ), pointer :: &
       Grid => null ( )
     class ( CurrentTemplate ), pointer :: &
@@ -29,6 +32,8 @@ module Step_RK_C__Template
       IncrementDivergence
     type ( IncrementDampingForm ), allocatable :: &
       IncrementDamping
+    procedure ( ApplyDivergence ), pointer, pass :: &
+      ApplyDivergence => ApplyDivergence
     procedure ( AS ), pointer, pass :: &
       ApplySources => null ( ) 
     procedure ( AR ), pointer, pass :: &
@@ -120,7 +125,8 @@ contains
 
 
   subroutine Compute &
-               ( S, Current, Grid, Time, TimeStep, UseLimiterParameterOption )
+               ( S, Current, Grid, Time, TimeStep, GeometryOption, &
+                 UseLimiterParameterOption, iGeometryValueOption )
 
     class ( Step_RK_C_Template ), intent ( inout ) :: &
       S
@@ -131,8 +137,12 @@ contains
     real ( KDR ), intent ( in ) :: &
       Time, &
       TimeStep
+    class ( GeometryFlatForm ), intent ( in ), target, optional :: &
+      GeometryOption
     logical ( KDL ), intent ( in ), optional :: &
       UseLimiterParameterOption
+    integer ( KDI ), intent ( in ), optional :: &
+      iGeometryValueOption
 
     integer ( KDI ) :: &
       iF  !-- iField
@@ -147,22 +157,17 @@ contains
 
     S % Current => Current
     S % Grid => Grid
+    if ( present ( GeometryOption ) .and. present ( iGeometryValueOption ) ) &
+    then
+      S % Geometry => GeometryOption
+      S % iGeometryValue = iGeometryValueOption
+    end if
 
     associate &
       ( C   => Current, &
         iaC => Current % iaConserved, &
         nE  => Current % N_CONSERVED, &  !-- nEquations
         nV  => Current % nValues )
-
-    select type ( Grid )
-    class is ( Chart_SL_Template )
-      G => Grid % Geometry ( )
-    class default
-      call Show ( 'Grid type not found', CONSOLE % ERROR )
-      call Show ( 'Step_RK_C__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'Compute', 'subroutine', CONSOLE % ERROR ) 
-      call PROGRAM_HEADER % Abort ( )
-    end select !-- Grid
 
     call Solution % Initialize ( [ nV, nE ] )
     do iF = 1, C % N_CONSERVED
@@ -173,7 +178,9 @@ contains
       end associate !-- CV, etc.
     end do !-- iF
 
-    call S % SetDivergence ( UseLimiterParameterOption )
+    if ( associated ( S % ApplyDivergence ) ) &
+      call S % SetDivergence ( UseLimiterParameterOption )
+
     call S % ComputeTemplate ( Solution, Time, TimeStep )
 
     do iF = 1, C % N_CONSERVED
@@ -183,14 +190,30 @@ contains
       call Copy ( SV, CV )
       end associate !-- YV, etc.
     end do !-- iF
-    call C % ComputeFromConserved ( G )
 
-    call S % ClearDivergence ( )
+    if ( associated ( S % Geometry ) ) then
+      call C % ComputeFromConserved ( S % iGeometryValue, S % Geometry )
+    else
+      select type ( Grid )
+      class is ( Chart_SL_Template )
+        G => Grid % Geometry ( )
+      class default
+        call Show ( 'Grid type not found', CONSOLE % ERROR )
+        call Show ( 'Step_RK_C__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'Compute', 'subroutine', CONSOLE % ERROR ) 
+        call PROGRAM_HEADER % Abort ( )
+      end select !-- Grid
+      call C % ComputeFromConserved ( G )
+    end if
+
+    if ( associated ( S % ApplyDivergence ) ) &
+      call S % ClearDivergence ( )
 
     end associate !-- C, etc.
 
     nullify ( S % Grid )
     nullify ( S % Current )
+    nullify ( S % Geometry )
 
     call Timer % Stop ( )
     end associate !-- Timer
@@ -245,17 +268,8 @@ contains
       ( C   => S % Current, &
         iaC => S % Current % iaConserved )
 
-    select type ( Grid => S % Grid )
-    class is ( Chart_SL_Template )
-      G => Grid % Geometry ( )
-    class default
-      call Show ( 'Grid type not found', CONSOLE % ERROR )
-      call Show ( 'Step_RK_C__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'ComputeIncrement', 'subroutine', CONSOLE % ERROR ) 
-      call PROGRAM_HEADER % Abort ( )
-    end select !-- Grid
-
     if ( iStage > 1 ) then
+
       do iF = 1, C % N_CONSERVED
         associate &
           ( YV => Y % Value ( :, iF ), &
@@ -263,16 +277,29 @@ contains
         call Copy ( YV, CV )
         end associate !-- YV, etc.
       end do !-- iF
-      call C % ComputeFromConserved ( G )
-    end if
+
+      if ( associated ( S % Geometry ) ) then
+        call C % ComputeFromConserved ( S % iGeometryValue, S % Geometry )
+      else
+        select type ( Grid => S % Grid )
+        class is ( Chart_SL_Template )
+          G => Grid % Geometry ( )
+        class default
+          call Show ( 'Grid type not found', CONSOLE % ERROR )
+          call Show ( 'Step_RK_C__Form', 'module', CONSOLE % ERROR )
+          call Show ( 'ComputeIncrement', 'subroutine', CONSOLE % ERROR ) 
+          call PROGRAM_HEADER % Abort ( )
+        end select !-- Grid
+        call C % ComputeFromConserved ( G )
+      end if
+
+    end if !-- iStage > 1
 
     call Clear ( K % Value )
 
     !-- Divergence
-    associate ( ID => S % IncrementDivergence )
-    call ID % Set ( Weight_RK = S % B ( iStage ) )
-    call ID % Compute ( K, S % Grid, C, TimeStep )
-    end associate !-- ID
+    if ( associated ( S % ApplyDivergence ) ) &
+      call S % ApplyDivergence ( K, C, TimeStep, iStage )
 
     !-- Other explicit sources
     if ( associated ( S % ApplySources ) ) &
@@ -289,14 +316,16 @@ contains
       end associate !-- iD
     end if
 
-    select type ( Grid => S % Grid )
-    class is ( Chart_SLD_Form )
-      associate ( TimerGhost => PROGRAM_HEADER % Timer ( S % iTimerGhost ) )
-      call TimerGhost % Start ( )
-      call Grid % ExchangeGhostData ( K )
-      call TimerGhost % Stop ( )
-      end associate !-- TimerGhost
-    end select !-- Grid
+    if ( associated ( S % ApplyDivergence ) ) then
+      select type ( Grid => S % Grid )
+      class is ( Chart_SLD_Form )
+        associate ( TimerGhost => PROGRAM_HEADER % Timer ( S % iTimerGhost ) )
+        call TimerGhost % Start ( )
+        call Grid % ExchangeGhostData ( K )
+        call TimerGhost % Stop ( )
+        end associate !-- TimerGhost
+      end select !-- Grid
+    end if !-- ApplyDivergence
 
     end associate !-- C, etc.
 
@@ -387,6 +416,27 @@ contains
       deallocate ( S % dLogVolumeJacobian_dX )
         
   end subroutine ClearDivergence
+
+
+  subroutine ApplyDivergence ( S, Increment, Current, TimeStep, iStage )
+
+    class ( Step_RK_C_Template ), intent ( inout ) :: &
+      S
+    type ( VariableGroupForm ), intent ( inout ) :: &
+      Increment
+    class ( CurrentTemplate ), intent ( in ) :: &
+      Current
+    real ( KDR ), intent ( in ) :: &
+      TimeStep
+    integer ( KDI ), intent ( in ) :: &
+      iStage
+
+    associate ( ID => S % IncrementDivergence )
+    call ID % Set ( Weight_RK = S % B ( iStage ) )
+    call ID % Compute ( Increment, S % Grid, Current, TimeStep )
+    end associate !-- ID
+
+  end subroutine ApplyDivergence
 
 
 end module Step_RK_C__Template

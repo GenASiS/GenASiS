@@ -4,24 +4,23 @@ module RadiationMoments_ASC__Form
 
   use Basics
   use Mathematics
-  use Interactions_CSL__Form
-  use Interactions_ASC__Form
   use RadiationMoments_Form
   use RadiationMoments_CSL__Form
 
   implicit none
   private
   
-  type, public, extends ( Current_ASC_Template ) :: &
-    RadiationMoments_ASC_Form
-      type ( MeasuredValueForm ) :: &
-        EnergyDensityUnit
-      type ( MeasuredValueForm ), dimension ( 3 ) :: &
-        VelocityUnit
-      character ( LDF ) :: &
-        RadiationMomentsType = ''
-      class ( Interactions_ASC_Form ), pointer :: &
-        Interactions_ASC => null ( )
+  type, public, extends ( Current_ASC_Template ) :: RadiationMoments_ASC_Form
+    type ( MeasuredValueForm ) :: &
+      EnergyDensityUnit
+    type ( MeasuredValueForm ), dimension ( 3 ) :: &
+      Velocity_U_Unit, &
+      MomentumDensity_U_Unit, &
+      MomentumDensity_D_Unit
+    character ( LDF ) :: &
+      RadiationMomentsType = ''
+    class ( Field_ASC_Template ), pointer :: &
+      Interactions_ASC => null ( )
   contains
     procedure, public, pass :: &
       Initialize
@@ -42,7 +41,8 @@ contains
 
   subroutine Initialize &
                ( RMA, A, RadiationMomentsType, NameOutputOption, &
-                 VelocityUnitOption, EnergyDensityUnitOption, &
+                 Velocity_U_UnitOption, MomentumDensity_U_UnitOption, &
+                 MomentumDensity_D_UnitOption, EnergyDensityUnitOption, &
                  EnergyUnitOption, MomentumUnitOption, &
                  AngularMomentumUnitOption )
 
@@ -55,7 +55,9 @@ contains
     character ( * ), intent ( in ), optional :: &
       NameOutputOption
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ), optional :: &
-      VelocityUnitOption
+      Velocity_U_UnitOption, &
+      MomentumDensity_U_UnitOption, &
+      MomentumDensity_D_UnitOption
     type ( MeasuredValueForm ), intent ( in ), optional :: &
       EnergyDensityUnitOption, &
       EnergyUnitOption, &
@@ -65,13 +67,18 @@ contains
 !    integer ( KDI ) :: &
 !      iB  !-- iBoundary
 
-    RMA % Type = 'a RadiationMoments_ASC'
+    if ( RMA % Type == '' ) &
+      RMA % Type = 'a RadiationMoments_ASC'
     RMA % RadiationMomentsType = RadiationMomentsType
 
     if ( present ( EnergyDensityUnitOption ) ) &
       RMA % EnergyDensityUnit = EnergyDensityUnitOption
-    if ( present ( VelocityUnitOption ) ) &
-      RMA % VelocityUnit = VelocityUnitOption
+    if ( present ( Velocity_U_UnitOption ) ) &
+      RMA % Velocity_U_Unit = Velocity_U_UnitOption
+    if ( present ( MomentumDensity_U_UnitOption ) ) &
+      RMA % MomentumDensity_U_Unit = MomentumDensity_U_UnitOption
+    if ( present ( MomentumDensity_D_UnitOption ) ) &
+      RMA % MomentumDensity_D_Unit = MomentumDensity_D_UnitOption
 
 !-- If there is a tally for RM
 !    call RMA % InitializeTemplate_ASC &
@@ -176,7 +183,7 @@ contains
 
     class ( RadiationMoments_ASC_Form ), intent ( inout ) :: &
       RMA
-    class ( Interactions_ASC_Form ), intent ( in ), target :: &
+    class ( Field_ASC_Template ), intent ( in ), target :: &
       IA
 
     RMA % Interactions_ASC => IA
@@ -185,7 +192,7 @@ contains
     class is ( RadiationMoments_CSL_Form )
 
     select type ( IC => IA % Chart )
-    class is ( Interactions_CSL_Form )
+    class is ( Field_CSL_Template )
     call RMC % SetInteractions ( IC )
     end select !-- I
 
@@ -225,7 +232,8 @@ contains
     select type ( FC => FA % Chart )
     class is ( RadiationMoments_CSL_Form )
       call FC % Initialize &
-             ( C, FA % RadiationMomentsType, FA % VelocityUnit, &
+             ( C, FA % RadiationMomentsType, FA % Velocity_U_Unit, &
+               FC % MomentumDensity_U_Unit, FC % MomentumDensity_D_Unit, &
                FA % EnergyDensityUnit, nValues, &
                NameOutputOption = NameOutputOption )
     end select !-- FC

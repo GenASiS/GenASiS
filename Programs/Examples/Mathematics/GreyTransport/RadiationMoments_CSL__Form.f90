@@ -5,7 +5,6 @@ module RadiationMoments_CSL__Form
   use Basics
   use Mathematics
   use Interactions_Template
-  use Interactions_CSL__Form
   use RadiationMoments_Form
 
   implicit none
@@ -15,10 +14,12 @@ module RadiationMoments_CSL__Form
     type ( MeasuredValueForm ) :: &
       EnergyDensityUnit
     type ( MeasuredValueForm ), dimension ( 3 ) :: &
-      VelocityUnit
+      Velocity_U_Unit, &
+      MomentumDensity_U_Unit, &
+      MomentumDensity_D_Unit
     character ( LDF ) :: &
       RadiationMomentsType = ''
-    class ( Interactions_CSL_Form ), pointer :: &
+    class ( Field_CSL_Template ), pointer :: &
       Interactions_CSL => null ( )
   contains
     procedure, public, pass :: &
@@ -37,7 +38,8 @@ contains
 
 
   subroutine Initialize &
-               ( RMC, C, RadiationMomentsType, VelocityUnit, &
+               ( RMC, C, RadiationMomentsType, Velocity_U_Unit, &
+                 MomentumDensity_U_Unit, MomentumDensity_D_Unit, &
                  EnergyDensityUnit, nValues, NameOutputOption )
 
     class ( RadiationMoments_CSL_Form ), intent ( inout ) :: &
@@ -47,7 +49,9 @@ contains
     character ( * ), intent ( in ) :: &
       RadiationMomentsType
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
-      VelocityUnit
+      Velocity_U_Unit, &
+      MomentumDensity_U_Unit, &
+      MomentumDensity_D_Unit
     type ( MeasuredValueForm ), intent ( in ) :: &
       EnergyDensityUnit
     integer ( KDI ), intent ( in ) :: &
@@ -56,11 +60,13 @@ contains
       NameOutputOption
 
     if ( RMC % Type == '' ) &
-      RMC % Type = 'a Fluid_CSL'
+      RMC % Type = 'a RadiationMoments_CSL'
     RMC % RadiationMomentsType = RadiationMomentsType
 
-    RMC % EnergyDensityUnit = EnergyDensityUnit
-    RMC % VelocityUnit      = VelocityUnit
+    RMC % EnergyDensityUnit      = EnergyDensityUnit
+    RMC % Velocity_U_Unit        = Velocity_U_Unit
+    RMC % MomentumDensity_U_Unit = MomentumDensity_U_Unit
+    RMC % MomentumDensity_D_Unit = MomentumDensity_D_Unit
 
     call RMC % InitializeTemplate_CSL &
            ( C, nValues, NameOutputOption = NameOutputOption )
@@ -93,7 +99,7 @@ contains
 
     class ( RadiationMoments_CSL_Form ), intent ( inout ) :: &
       RMC
-    class ( Interactions_CSL_Form ), intent ( in ), target :: &
+    class ( Field_CSL_Template ), intent ( in ), target :: &
       IC
 
     class ( RadiationMomentsForm ), pointer :: &
@@ -139,8 +145,9 @@ contains
       select type ( RM => FC % Field )
       type is ( RadiationMomentsForm )
         call RM % Initialize &
-               ( FC % VelocityUnit, FC % EnergyDensityUnit, FC % nValues, &
-                 NameOption = NameOption )
+               ( FC % Velocity_U_Unit, FC % MomentumDensity_U_Unit, &
+                 FC % MomentumDensity_D_Unit, FC % EnergyDensityUnit, &
+                 FC % nValues, NameOption = NameOption )
         call RM % SetOutput ( FC % FieldOutput )
       end select !-- RM
     case default

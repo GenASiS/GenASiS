@@ -282,7 +282,7 @@ contains
                 C % IGNORABILITY )
     call Show ( C % MaxCoordinate, C % CoordinateUnit, 'MaxCoordinate', &
                 C % IGNORABILITY )
-    call Show ( C % CoordinateUnit, 'CoordinateUnit' )
+    call Show ( C % CoordinateUnit, 'CoordinateUnit', C % IGNORABILITY )
 
     call Show ( C % Spacing, 'Spacing', C % IGNORABILITY )
 

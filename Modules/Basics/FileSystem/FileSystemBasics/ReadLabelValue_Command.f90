@@ -350,7 +350,7 @@ contains
     
     !-- Read values
     oChar = 0
-    do iV = 1, nValues
+    do iV = 1, min ( size ( Value ), nValues )
       
       Marker = index ( JoinedValue ( oChar + 1 : ), DELIMITER_ARRAY )
       
@@ -446,10 +446,10 @@ contains
     end do
 
     if ( present ( nValuesOption ) ) nValuesOption = nValues
-    
+
     !-- Read values
     oChar = 0
-    do iV = 1, nValues
+    do iV = 1, min ( size ( Value ), nValues )
       
       Marker = index ( JoinedValue ( oChar + 1 : ), DELIMITER_ARRAY )
       
@@ -563,7 +563,7 @@ contains
     
     !-- Read values
     oChar = 0
-    do iV = 1, nValues
+    do iV = 1, min ( size ( Value ), nValues )
       
       Marker = index ( JoinedValue ( oChar + 1 : ), DELIMITER_ARRAY )
       
@@ -670,7 +670,7 @@ contains
     
     !-- Read values
     oChar = 0
-    do iV = 1, nValues
+    do iV = 1, min ( size ( Value ), nValues )
       
       Marker = index ( JoinedValue ( oChar + 1 : ), DELIMITER_ARRAY )
       
@@ -762,7 +762,7 @@ contains
     
     !-- Read values
     oChar = 0
-    do iV = 1, nValues
+    do iV = 1, min ( size ( Value ), nValues )
       
       Marker = index ( JoinedValue ( oChar + 1 : ), DELIMITER_ARRAY )
       

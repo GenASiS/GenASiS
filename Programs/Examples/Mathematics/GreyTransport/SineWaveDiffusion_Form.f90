@@ -3,9 +3,10 @@ module SineWaveDiffusion_Form
   use Basics
   use Mathematics
   use Interactions_Template
-  use Interactions_ASC__Form
   use RadiationMoments_Form
   use RadiationMoments_ASC__Form
+  use Interactions_F__Form
+  use Interactions_ASC__Form
 
   implicit none
   private
@@ -27,15 +28,18 @@ module SineWaveDiffusion_Form
 
     private :: &
       SetRadiation, &
+      SetInteractions, &
       SetReference
 
       private :: &
-        SetRadiationKernel
+        SetRadiationKernel, &
+        SetInteractionsKernel
 
     real ( KDR ), private :: &
       EquilibriumDensity, &
       EffectiveOpacity, &
-      TransportOpacity
+      TransportOpacity, &
+      TimeScale
 
 contains
 
@@ -49,6 +53,8 @@ contains
 
     class ( RadiationMomentsForm ), pointer :: &
       RM
+    class ( Interactions_F_Form ), pointer :: &
+      I
 
     if ( SWD % Type == '' ) &
       SWD % Type = 'a SineWaveDiffusion' 
@@ -56,13 +62,15 @@ contains
     EquilibriumDensity = 1.0_KDR
     EffectiveOpacity   = 0.0_KDR
     TransportOpacity   = 1.0e3_KDR
-
     call PROGRAM_HEADER % GetParameter &
            ( EquilibriumDensity, 'EquilibriumDensity' )
     call PROGRAM_HEADER % GetParameter &
            ( EffectiveOpacity, 'EffectiveOpacity' )
     call PROGRAM_HEADER % GetParameter &
            ( TransportOpacity, 'TransportOpacity' )
+
+    TimeScale  =  3.0_KDR * ( TransportOpacity - EffectiveOpacity ) &
+                  /  CONSTANT % SPEED_OF_LIGHT
 
     !-- PositionSpace
 
@@ -82,20 +90,18 @@ contains
     call PS % SetGeometry ( GA )
     end associate !-- GA
 
-    !-- Interactions
-    allocate ( SWD % Interactions_ASC )
-    associate ( IA => SWD % Interactions_ASC )
-    call IA % Initialize &
-               ( PS, EquilibriumDensityOption = EquilibriumDensity, &
-                 EffectiveOpacityOption = EffectiveOpacity, &
-                 TransportOpacityOption = TransportOpacity )
-
     !-- RadiationMoments ( Generic )
 
     allocate ( RadiationMoments_ASC_Form :: SWD % Current_ASC )
     select type ( RMA => SWD % Current_ASC )  !-- FluidAtlas
     class is ( RadiationMoments_ASC_Form )
     call RMA % Initialize ( PS, 'GENERIC' )
+
+    !-- Interactions
+
+    allocate ( SWD % Interactions_ASC )
+    associate ( IA => SWD % Interactions_ASC )
+    call IA % Initialize ( PS, 'FIXED' )
     call RMA % SetInteractions ( IA )
 
     !-- Step
@@ -122,18 +128,21 @@ contains
     RM => RMA % RadiationMoments ( )
     call SetRadiation ( SWD, RM, Time = 0.0_KDR )
 
+    I => IA % Interactions_F ( )
+    call SetInteractions ( I )
+
     !-- Initialize template
 
     call SWD % InitializeTemplate_C &
            ( Name, UseLimiterParameterOption = .false., &
-             FinishTimeOption  =  3.0_KDR * TransportOpacity )
+             FinishTimeOption  =  TimeScale )
 
     !-- Cleanup
 
-    end select !-- RMA
     end associate !-- IA
+    end select !-- RMA
     end select !-- PS
-    nullify ( RM )
+    nullify ( RM, I )
 
   end subroutine Initialize
 
@@ -213,14 +222,14 @@ contains
     G => PS % Geometry ( )
 
     call SetRadiationKernel &
-           ( X  = G % Value ( :, G % CENTER ( 1 ) ), &
-             T  = Time, &
-             TO = TransportOpacity, &
-             Pi = CONSTANT % PI, &
-             J  = RM % Value ( :, RM % COMOVING_ENERGY_DENSITY ), &
-             HX = RM % Value ( :, RM % COMOVING_MOMENTUM_DENSITY_U ( 1 ) ), &
-             HY = RM % Value ( :, RM % COMOVING_MOMENTUM_DENSITY_U ( 2 ) ), &
-             HZ = RM % Value ( :, RM % COMOVING_MOMENTUM_DENSITY_U ( 3 ) ) )
+           ( X   = G % Value ( :, G % CENTER ( 1 ) ), &
+             T   = Time, &
+             Tau = TimeScale, &
+             Pi  = CONSTANT % PI, &
+             J   = RM % Value ( :, RM % COMOVING_ENERGY_DENSITY ), &
+             HX  = RM % Value ( :, RM % COMOVING_MOMENTUM_DENSITY_U ( 1 ) ), &
+             HY  = RM % Value ( :, RM % COMOVING_MOMENTUM_DENSITY_U ( 2 ) ), &
+             HZ  = RM % Value ( :, RM % COMOVING_MOMENTUM_DENSITY_U ( 3 ) ) )
 
     call RM % ComputeFromPrimitive ( G )
 
@@ -230,9 +239,22 @@ contains
   end subroutine SetRadiation
 
 
+  subroutine SetInteractions ( I )
+
+    class ( Interactions_F_Form ), intent ( inout ) :: &
+      I
+
+    call SetInteractionsKernel &
+           ( I % Value ( :, I % EQUILIBRIUM_DENSITY ), &
+             I % Value ( :, I % EFFECTIVE_OPACITY ), &
+             I % Value ( :, I % TRANSPORT_OPACITY ) )
+
+  end subroutine SetInteractions
+
+
   subroutine SetReference ( SWD )
 
-    class ( IntegratorTemplate ), intent ( in ) :: &
+    class ( IntegratorTemplate ), intent ( inout ) :: &
       SWD
 
     class ( RadiationMomentsForm ), pointer :: &
@@ -261,13 +283,13 @@ contains
   end subroutine SetReference
 
 
-  subroutine SetRadiationKernel ( X, T, TO, Pi, J, HX, HY, HZ )
+  subroutine SetRadiationKernel ( X, T, Tau, Pi, J, HX, HY, HZ )
 
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       X
     real ( KDR ), intent ( in ) :: &
       T, &
-      TO, &
+      Tau, &
       Pi
     real ( KDR ), dimension ( : ), intent ( out ) :: &
       J, &
@@ -284,12 +306,12 @@ contains
 
       J ( iV )  =  3.0_KDR  *  sqrt ( 4.0_KDR * Pi )  &
                    * ( 1.0_KDR  &
-                       +  exp ( - Pi ** 2 / 9.0_KDR * T / ( 3.0_KDR * TO ) ) &
+                       +  exp ( - Pi ** 2 / 9.0_KDR * T / Tau ) &
                         *  sin ( Pi * X ( iV ) / 3.0_KDR ) )
 
-      HX ( iV )  =  - 1.0_KDR / ( 3.0_KDR * TO ) &
+      HX ( iV )  =  - 1.0_KDR / Tau &
                       *  sqrt ( 4.0_KDR  *  Pi ** 3 )  &
-                      *  exp ( - Pi ** 2 / 9.0_KDR  *  T / ( 3.0_KDR * TO ) ) &
+                      *  exp ( - Pi ** 2 / 9.0_KDR  *  T / Tau ) &
                         *  cos ( Pi * X ( iV ) / 3.0_KDR )
 
       HY ( iV )  =  0.0_KDR
@@ -299,6 +321,30 @@ contains
     !$OMP end parallel do
 
   end subroutine SetRadiationKernel
+
+
+  subroutine SetInteractionsKernel ( EDV, EOV, TOV )
+
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      EDV, &
+      EOV, &
+      TOV
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+
+    nValues  =  size ( EDV )
+
+    !$OMP parallel do private ( iV ) 
+    do iV = 1, nValues
+      EDV ( iV )  =  EquilibriumDensity
+      EOV ( iV )  =  EffectiveOpacity
+      TOV ( iV )  =  TransportOpacity
+    end do !-- iV
+    !$OMP end parallel do
+
+  end subroutine SetInteractionsKernel
 
 
 end module SineWaveDiffusion_Form

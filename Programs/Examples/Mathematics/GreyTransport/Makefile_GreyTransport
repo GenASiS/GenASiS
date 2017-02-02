@@ -9,30 +9,23 @@ include $(PATH_GENASIS)/Build/Makefile_Build
 
 # include ../../FluidDynamics/Makefile_ObjectFiles
 
-RADIATION_MOMENTS = \
-  RadiationMoments_ASC__Form.o \
-  RadiationMoments_CSL__Form.o \
-  RadiationMoments_Form.o \
-  Interactions_ASC__Form.o \
-  Interactions_CSL__Form.o \
-  Interactions_C__Form.o \
-  Interactions_Template.o
+include ../Makefile_ObjectFiles
 
-SineWaveStreaming: Basics.a Mathematics.a RadiationMoments.a \
+SineWaveStreaming: Basics.a Mathematics.a GreyMoments.a \
   SineWaveStreaming.o
 	$(LINK) $(FFLAGS) \
           -o SineWaveStreaming_$(MACHINE) \
           SineWaveStreaming.o SineWaveStreaming_Form.o \
           PlaneWaveStreaming_Template.o \
-          RadiationMoments.a Mathematics.a Basics.a \
+          GreyMoments.a Mathematics.a Basics.a \
           $(LIBRARIES)
 
-SineWaveDiffusion: Basics.a Mathematics.a RadiationMoments.a \
+SineWaveDiffusion: Basics.a Mathematics.a GreyMoments.a \
   SineWaveDiffusion.o
 	$(LINK) $(FFLAGS) \
           -o SineWaveDiffusion_$(MACHINE) \
           SineWaveDiffusion.o SineWaveDiffusion_Form.o \
-          RadiationMoments.a Mathematics.a Basics.a \
+          GreyMoments.a Mathematics.a Basics.a \
           $(LIBRARIES)
 
 # EATest: EA_Test.o
@@ -90,7 +83,7 @@ SineWaveDiffusion: Basics.a Mathematics.a RadiationMoments.a \
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MATHEMATICS)/Makefile_Dependencies
 # include ../../FluidDynamics/Makefile_Dependencies
-# #include ../Makefile_Dependencies
+include ../Makefile_Dependencies
 
 clean:
 	rm -f *.o *.a *.mod *.ld
@@ -98,55 +91,6 @@ clean:
 clobber: clean
 	rm -f SineWaveStreaming_*
 	rm -f SineWaveDiffusion_*
-
-Interactions_Template.o: \
-  Basics.o \
-  Mathematics.o \
-  Interactions_Template.f90
-
-Interactions_C__Form.o: \
-  Basics.o \
-  Interactions_Template.o \
-  Interactions_C__Form.f90
-
-Interactions_CSL__Form.o: \
-  Basics.o \
-  Mathematics.o \
-  Interactions_Template.o \
-  Interactions_C__Form.o \
-  Interactions_CSL__Form.f90
-
-Interactions_ASC__Form.o: \
-  Basics.o \
-  Mathematics.o \
-  Interactions_CSL__Form.o \
-  Interactions_ASC__Form.f90
-
-RadiationMoments_Form.o: \
-  Basics.o \
-  Mathematics.o \
-  Interactions_Template.o \
-  RadiationMoments_Form.f90
-
-RadiationMoments_CSL__Form.o: \
-  Basics.o \
-  Mathematics.o \
-  Interactions_Template.o \
-  Interactions_CSL__Form.o \
-  RadiationMoments_Form.o \
-  RadiationMoments_CSL__Form.f90
-
-RadiationMoments_ASC__Form.o: \
-  Basics.o \
-  Mathematics.o \
-  Interactions_CSL__Form.o \
-  Interactions_ASC__Form.o \
-  RadiationMoments_Form.o \
-  RadiationMoments_CSL__Form.o \
-  RadiationMoments_ASC__Form.f90
-
-RadiationMoments.a: $(RADIATION_MOMENTS)
-	ar r RadiationMoments.a $(RADIATION_MOMENTS)
 
 PlaneWaveStreaming_Template.o: \
   Basics.o \
@@ -169,9 +113,10 @@ SineWaveDiffusion_Form.o: \
   Basics.o \
   Mathematics.o \
   Interactions_Template.o \
-  Interactions_ASC__Form.o \
   RadiationMoments_Form.o \
   RadiationMoments_ASC__Form.o \
+  Interactions_F__Form.o \
+  Interactions_ASC__Form.o \
   SineWaveDiffusion_Form.f90
 
 SineWaveDiffusion.o: \

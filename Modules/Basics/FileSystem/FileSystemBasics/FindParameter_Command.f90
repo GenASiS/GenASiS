@@ -378,6 +378,12 @@ contains
     if ( present ( SuccessOption ) ) SuccessOption = Success
 
     if ( Success ) then
+      if ( nValues > size ( Value ) ) then
+        call Show ( 'Ignoring extra input values', CONSOLE % WARNING )
+        call Show ( size ( Value ), 'nValues requested', CONSOLE % WARNING )
+        call Show ( nValues, 'nValues input', CONSOLE % WARNING )
+        nValues = size ( Value )
+      end if
       Value ( : nValues ) = Scratch ( : nValues )
       call Show ( 'Parameter ' // trim ( Name ) // ' found', Ignorability )
       call Show ( Source, 'Source', Ignorability )
@@ -440,6 +446,12 @@ contains
     if ( present ( SuccessOption ) ) SuccessOption = Success
 
     if ( Success ) then
+      if ( nValues > size ( Value ) ) then
+        call Show ( 'Ignoring extra input values', CONSOLE % WARNING )
+        call Show ( size ( Value ), 'nValues requested', CONSOLE % WARNING )
+        call Show ( nValues, 'nValues input', CONSOLE % WARNING )
+        nValues = size ( Value )
+      end if
       Value ( : nValues ) = Scratch ( : nValues )
       call Show ( 'Parameter ' // trim ( Name ) // ' found', Ignorability )
       call Show ( Source, 'Source', Ignorability )
@@ -514,6 +526,12 @@ contains
     if ( present ( SuccessOption ) ) SuccessOption = Success
 
     if ( Success ) then
+      if ( nValues > size ( Value ) ) then
+        call Show ( 'Ignoring extra input values', CONSOLE % WARNING )
+        call Show ( size ( Value ), 'nValues requested', CONSOLE % WARNING )
+        call Show ( nValues, 'nValues input', CONSOLE % WARNING )
+        nValues = size ( Value )
+      end if
       Value ( : nValues ) = Scratch ( : nValues )
       call Show ( 'Parameter ' // trim ( Name ) // ' found', Ignorability )
       call Show ( Source, 'Source', Ignorability )
@@ -583,6 +601,12 @@ contains
     if ( present ( SuccessOption ) ) SuccessOption = Success
 
     if ( Success ) then
+      if ( nValues > size ( Value ) ) then
+        call Show ( 'Ignoring extra input values', CONSOLE % WARNING )
+        call Show ( size ( Value ), 'nValues requested', CONSOLE % WARNING )
+        call Show ( nValues, 'nValues input', CONSOLE % WARNING )
+        nValues = size ( Value )
+      end if
       Value ( : nValues ) = Scratch ( : nValues )
       call Show ( 'Parameter ' // trim ( Name ) // ' found', Ignorability )
       call Show ( Source, 'Source', Ignorability )
@@ -640,6 +664,12 @@ contains
     if ( present ( SuccessOption ) ) SuccessOption = Success
 
     if ( Success ) then
+      if ( nValues > size ( Value ) ) then
+        call Show ( 'Ignoring extra input values', CONSOLE % WARNING )
+        call Show ( size ( Value ), 'nValues requested', CONSOLE % WARNING )
+        call Show ( nValues, 'nValues input', CONSOLE % WARNING )
+        nValues = size ( Value )
+      end if
       Value ( : nValues ) = Scratch ( : nValues )
       call Show ( 'Parameter ' // trim ( Name ) // ' found', Ignorability )
       call Show ( Source, 'Source', Ignorability )
