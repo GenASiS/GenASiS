@@ -379,6 +379,7 @@ contains
       !$OMP end parallel do
     end select !-- nDimensions
 
+    TimeStepInverse = max ( tiny ( 0.0_KDR ), TimeStepInverse )
     TimeStep = min ( TimeStep, 1.0_KDR / TimeStepInverse )
 
   end subroutine ComputeTimeStepKernel_CSL
