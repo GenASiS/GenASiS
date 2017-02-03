@@ -41,6 +41,7 @@ clean:
 
 clobber: clean
 	rm -f Thermalization_*
+	rm -f SineWaveStreaming_*
 
 Matter_Form.o: \
   Basics.o \
