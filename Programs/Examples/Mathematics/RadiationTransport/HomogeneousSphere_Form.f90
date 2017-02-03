@@ -74,9 +74,12 @@ contains
       MinCoordinate, &
       MaxCoordinate
     real ( KDR ) :: &
-      MaxRadius
+      MaxRadius, &
+      SofteningParameter
     character ( LDL ) :: &
       CoordinateSystem
+    logical ( KDL ) :: &
+      IsHardSphere
 
     if ( HS % Type == '' ) &
       HS % Type = 'a HomogeneousSphere'
@@ -91,8 +94,16 @@ contains
 
     TransportOpacity   = EffectiveOpacity
 
-     call PROGRAM_HEADER % GetParameter &
+    call PROGRAM_HEADER % GetParameter &
            ( TransportOpacity, 'TransportOpacity' )
+
+     IsHardSphere = .true. 
+     call PROGRAM_HEADER % GetParameter &
+           ( IsHardSphere, 'IsHardSphere' )
+
+     SofteningParameter=50.0
+     call PROGRAM_HEADER % GetParameter &
+           ( SofteningParameter, 'SofteningParameter' )
 
     !-- PositionSpace
 
@@ -225,8 +236,9 @@ contains
         TO => I % Value ( :, I % TRANSPORT_OPACITY ) )
 
     call SetInteractions &
-           ( HS, CoordinateSystem, EquilibriumDensity, EffectiveOpacity, &
-             TransportOpacity, ED, EO, TO )
+           ( HS, CoordinateSystem, IsHardSphere, EquilibriumDensity, &
+             EffectiveOpacity, TransportOpacity, SofteningParameter, &
+             ED, EO, TO )
     end associate !-- ED, etc.
     end select !-- I
     end select !-- IC
@@ -405,16 +417,20 @@ contains
 
 
   subroutine SetInteractions &
-               ( HS, CoordinateSystem, EquilibriumDensity, EffectiveOpacity, &
-                 TransportOpacity, ED, EO, TO )
+               ( HS, CoordinateSystem, IsHardSphere, EquilibriumDensity, &
+                 EffectiveOpacity, TransportOpacity, SofteningFactor, &
+                 ED, EO, TO )
     class ( HomogeneousSphereForm ), intent ( in ) :: &
       HS
     character ( LDL ), intent ( in ) :: &
       CoordinateSystem
+    logical ( KDL ), intent ( in ) :: &
+      IsHardSphere
     real ( KDR ), intent ( in ) :: &
       EquilibriumDensity,&
       EffectiveOpacity, &
-      TransportOpacity
+      TransportOpacity, &
+      SofteningFactor
     real ( KDR ), dimension ( : ), intent ( out ) :: &
       ED, &
       EO, &
@@ -472,19 +488,32 @@ contains
           call PROGRAM_HEADER % Abort ( )
         end select !-- CoordinateSystem
 
-        !$OMP parallel do private ( iV )
-        do iV = 1, nValues
-          if ( R ( iV ) < 1.0_KDR ) then
-            ED ( iV ) = EquilibriumDensity
-            EO ( iV ) = EffectiveOpacity 
-            TO ( iV ) = TransportOpacity 
-          else 
-            ED ( iV ) = 0.0_KDR
-            EO ( iV ) = 0.0_KDR
-            TO ( iV ) = 0.0_KDR 
-          end if
-        end do !-- iV
-        !$OMP end parallel do
+        if ( IsHardSphere ) then
+          !$OMP parallel do private ( iV )
+          do iV = 1, nValues
+            if ( R ( iV ) < 1.0_KDR ) then
+              ED ( iV ) = EquilibriumDensity
+              EO ( iV ) = EffectiveOpacity 
+              TO ( iV ) = TransportOpacity 
+            else 
+              ED ( iV ) = 0.0_KDR
+              EO ( iV ) = 0.0_KDR
+              TO ( iV ) = 0.0_KDR 
+            end if
+          end do !-- iV
+          !$OMP end parallel do
+        else 
+          !$OMP parallel do private ( iV )
+          do iV = 1, nValues
+            ED ( iV ) = EquilibriumDensity &
+                        / ( 1.0_KDR + R ( iV ) ** SofteningFactor )
+            EO ( iV ) = EffectiveOpacity &
+                        / ( 1.0_KDR + R ( iV ) ** SofteningFactor )
+            TO ( iV ) = TransportOpacity &
+                        / ( 1.0_KDR + R ( iV ) ** SofteningFactor )
+          end do !-- iV
+          !$OMP end parallel do
+        end if
       end select !-- PS
 
   end subroutine SetInteractions
