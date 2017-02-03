@@ -40,6 +40,14 @@ module Current_ASC__Template
       FinalizeTemplate_ASC_C
   end type Current_ASC_Template
 
+  type, public :: Current_ASC_ElementForm
+    class ( Current_ASC_Template ), allocatable :: &
+      Element
+  contains
+    final :: &
+      FinalizeElement
+  end type Current_ASC_ElementForm
+
 contains
 
 
@@ -240,6 +248,17 @@ contains
     call CA % FinalizeTemplate_ASC ( )
 
   end subroutine FinalizeTemplate_ASC_C
+
+
+  impure elemental subroutine FinalizeElement ( CAE )
+    
+    type ( Current_ASC_ElementForm ), intent ( inout ) :: &
+      CAE
+
+    if ( allocated ( CAE % Element ) ) &
+      deallocate ( CAE % Element )
+
+  end subroutine FinalizeElement
 
 
 end module Current_ASC__Template
