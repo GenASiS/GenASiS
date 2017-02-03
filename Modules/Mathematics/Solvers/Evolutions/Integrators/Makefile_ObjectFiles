@@ -1,5 +1,6 @@
 INTEGRATORS = \
   Integrators.o \
+  Integrator_C_1D__Template.o \
   Integrator_C__Template.o \
   TimeSeries_C__Form.o \
   TimeSeries_Form.o \

@@ -24,11 +24,18 @@ Integrator_C__Template.o: \
   TimeSeries_C__Form.o \
   Integrator_C__Template.f90
 
+Integrator_C_1D__Template.o: \
+  Basics.o \
+  Fields.o \
+  Integrator_C__Template.o \
+  Integrator_C_1D__Template.f90
+
 Integrators.o: \
   Integrator_Template.o \
   TimeSeries_Form.o \
   TimeSeries_C__Form.o \
   Integrator_C__Template.o \
+  Integrator_C_1D__Template.o \
   Integrators.f90
 
 Integrators.a: $(INTEGRATORS)
