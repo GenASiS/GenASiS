@@ -184,6 +184,12 @@ HomogeneousSphere.o: \
   HomogeneousSphere_Form.o \
   HomogeneousSphere.f90
 
+MarshakWave_Form.o: \
+  Basics.o \
+  Mathematics.o \
+  RadiationMoments_ASC__Form.o \
+  MarshakWave_Form.f90
+
 # HomogenousSphere_Test_Form.o: \
 #   Basics.o \
 #   Manifolds.o \

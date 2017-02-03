@@ -93,7 +93,7 @@ contains
     !-- RadiationMoments ( Generic )
 
     allocate ( RadiationMoments_ASC_Form :: SWD % Current_ASC )
-    select type ( RMA => SWD % Current_ASC )  !-- FluidAtlas
+    select type ( RMA => SWD % Current_ASC )  !-- RadiationMomentsAtlas
     class is ( RadiationMoments_ASC_Form )
     call RMA % Initialize ( PS, 'GENERIC' )
 
