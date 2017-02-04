@@ -1,0 +1,58 @@
+Fluid_D__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_D__Form.f90
+
+Fluid_P__Template.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_D__Form.o \
+  Fluid_P__Template.f90
+
+Fluid_P_P__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_P__Template.o \
+  Fluid_P_P__Form.f90
+
+Fluid_P_MHN__Form.o: \
+  nuc_eos.a \
+  Basics.o \
+  Mathematics.o \
+  Fluid_P__Template.o \
+  Fluid_P_MHN__Form.f90
+
+Tally_F_D__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_D__Form.o \
+  Tally_F_D__Form.f90
+
+Tally_F_P__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_P__Template.o \
+  Tally_F_D__Form.o \
+  Tally_F_P__Form.f90
+
+Fluid_CSL__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_D__Form.o \
+  Fluid_P_P__Form.o \
+  Fluid_P_MHN__Form.o \
+  Fluid_CSL__Form.f90
+
+Fluid_ASC__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_D__Form.o \
+  Fluid_P_P__Form.o \
+  Fluid_P_MHN__Form.o \
+  Fluid_CSL__Form.o \
+  Tally_F_D__Form.o \
+  Tally_F_P__Form.o \
+  Fluid_ASC__Form.f90
+
+Fluid.a: $(FLUID)
+	ar r Fluid.a $(FLUID)
