@@ -15,6 +15,12 @@ Fluid_P_P__Form.o: \
   Fluid_P__Template.o \
   Fluid_P_P__Form.f90
 
+Fluid_P_NR__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_P__Template.o \
+  Fluid_P_NR__Form.f90
+
 Fluid_P_MHN__Form.o: \
   nuc_eos.a \
   Basics.o \

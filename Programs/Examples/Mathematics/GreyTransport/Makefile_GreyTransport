@@ -5,10 +5,8 @@ all:  SineWaveStreaming SineWaveDiffusion LineSource  HomogeneousSphere
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-# VPATH := ../../FluidDynamics:$(VPATH)
-
-# include ../../FluidDynamics/Makefile_ObjectFiles
-
+VPATH := $(VPATH):../../FluidDynamics
+include ../../FluidDynamics/Makefile_ObjectFiles
 include ../Makefile_ObjectFiles
 
 SineWaveStreaming: Basics.a Mathematics.a GreyMoments.a \
@@ -114,7 +112,7 @@ HomogeneousSphere: Basics.a Mathematics.a RadiationMoments.a \
 
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MATHEMATICS)/Makefile_Dependencies
-# include ../../FluidDynamics/Makefile_Dependencies
+include ../../FluidDynamics/Makefile_Dependencies
 include ../Makefile_Dependencies
 
 clean:
@@ -187,6 +185,7 @@ HomogeneousSphere.o: \
 MarshakWave_Form.o: \
   Basics.o \
   Mathematics.o \
+  Fluid_P_NR__Form.o \
   RadiationMoments_ASC__Form.o \
   MarshakWave_Form.f90
 
