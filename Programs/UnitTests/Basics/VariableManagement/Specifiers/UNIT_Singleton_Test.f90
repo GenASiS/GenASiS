@@ -75,6 +75,11 @@ program UNIT_Singleton_Test
   print*, 'Temperature Units'
   print*, 'KELVIN              ', UNIT % KELVIN
 
+  print*
+  print*, 'Entropy per baryon Units'
+  print*, 'BOLTZMANN           ', UNIT % BOLTZMANN
+
+  print*
   print*, 'Magnetic Current Units'
   print*, 'AMPERE              ', UNIT % AMPERE
 

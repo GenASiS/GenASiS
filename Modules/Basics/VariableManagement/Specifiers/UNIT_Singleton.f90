@@ -52,6 +52,8 @@ module UNIT_Singleton
       BARYE
     type ( MeasuredValueForm ) :: &  !-- Temperature
       KELVIN
+    type ( MeasuredValueForm ) :: &  !-- Entropy per baryon
+      BOLTZMANN
     type ( MeasuredValueForm ) :: &  !-- Magnetic current
       AMPERE
     type ( MeasuredValueForm ) :: &  !-- Magnetic field
@@ -146,6 +148,9 @@ contains
     call U % KELVIN % Initialize &
            ( C % BOLTZMANN_MKS / C % BOLTZMANN * U % KILOGRAM &
              * U % METER**2 / U % SECOND ** 2, 'K' )
+
+    !-- Entropy per baryon
+    call U % BOLTZMANN % Initialize ( 'k_B', '', C % BOLTZMANN )
 
     !-- Magnetic current
     call U % AMPERE % Initialize &
@@ -242,6 +247,8 @@ contains
       Result = UNIT % BARYE
     case ( 'KELVIN' )
       Result = UNIT % KELVIN
+    case ( 'BOLTZMANN' )
+      Result = UNIT % BOLTZMANN
     case ( 'AMPERE' )
       Result = UNIT % AMPERE
     case ( 'TESLA' )
