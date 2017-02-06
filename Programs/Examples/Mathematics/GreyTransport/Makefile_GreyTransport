@@ -56,7 +56,12 @@ HomogeneousSphere: Basics.a Mathematics.a RadiationMoments.a \
           RadiationMoments.a Mathematics.a Basics.a \
           $(LIBRARIES)
 
-MarshakWave: Basics.a Mathematics.a Fluid.a GreyMoments.a MarshakWave_Form.o
+MarshakWave: Basics.a Mathematics.a Fluid.a GreyMoments.a MarshakWave.o
+	$(LINK) $(FFLAGS) \
+          -o MarshakWave_$(MACHINE) \
+          MarshakWave.o MarshakWave_Form.o \
+          GreyMoments.a Fluid.a Mathematics.a Basics.a \
+          $(THIRD_PARTY) $(LIBRARIES)
 
 # EATest: EA_Test.o
 # 	$(LINK) $(FFLAGS) \
@@ -186,9 +191,15 @@ HomogeneousSphere.o: \
 MarshakWave_Form.o: \
   Basics.o \
   Mathematics.o \
+  Fluid_P_NR__Form.o \
   Fluid_ASC__Form.o \
   RadiationMoments_ASC__Form.o \
   MarshakWave_Form.f90
+
+MarshakWave.o: \
+  Basics.o \
+  MarshakWave_Form.o \
+  MarshakWave.f90
 
 # HomogenousSphere_Test_Form.o: \
 #   Basics.o \
