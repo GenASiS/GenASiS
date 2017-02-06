@@ -460,7 +460,7 @@ contains
     VariableUnit ( F % SOUND_SPEED )        = VelocityUnit ( 1 )
     VariableUnit ( F % MACH_NUMBER )        = UNIT % IDENTITY
     VariableUnit ( F % TEMPERATURE )        = TemperatureUnit
-    VariableUnit ( F % ENTROPY_PER_BARYON ) = UNIT % IDENTITY
+    VariableUnit ( F % ENTROPY_PER_BARYON ) = UNIT % BOLTZMANN
 
   end subroutine SetUnits
 

@@ -98,6 +98,9 @@ contains
              ClearOption = ClearOption, UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndicesOption )
 
+    !-- Non-standard entropy unit
+    F % Unit ( F % ENTROPY_PER_BARYON )  =  UNIT % IDENTITY
+
   end subroutine InitializeAllocate_P_P
 
 
