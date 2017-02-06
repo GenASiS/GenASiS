@@ -37,6 +37,10 @@ module Fluid_ASC__Form
     generic, public :: &
       Fluid_P_P => Fluid_P_P_CSL
     procedure, private, pass :: &
+      Fluid_P_NR_CSL
+    generic, public :: &
+      Fluid_P_NR => Fluid_P_NR_CSL
+    procedure, private, pass :: &
       Fluid_P_MHN_CSL
     generic, public :: &
       Fluid_P_MHN => Fluid_P_MHN_CSL
