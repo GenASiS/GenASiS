@@ -6,6 +6,7 @@ module Fluid_CSL__Form
   use Mathematics
   use Fluid_D__Form
   use Fluid_P_P__Form
+  use Fluid_P_NR__Form
   use Fluid_P_MHN__Form
 
   implicit none
@@ -28,6 +29,8 @@ module Fluid_CSL__Form
       Fluid_D
     procedure, public, pass :: &
       Fluid_P_P
+    procedure, public, pass :: &
+      Fluid_P_NR
     procedure, public, pass :: &
       Fluid_P_MHN
     final :: &
@@ -120,6 +123,27 @@ contains
   end function Fluid_P_P
 
 
+  function Fluid_P_NR ( FC ) result ( F )
+
+    class ( Fluid_CSL_Form ), intent ( in ), target :: &
+      FC
+    class ( Fluid_P_NR_Form ), pointer :: &
+      F
+      
+    class ( VariableGroupForm ), pointer :: &
+      Field
+
+    F => null ( )
+
+    Field => FC % Field
+    select type ( Field )
+    class is ( Fluid_P_NR_Form )
+    F => Field
+    end select !-- Field
+
+  end function Fluid_P_NR
+
+
   function Fluid_P_MHN ( FC ) result ( F )
 
     class ( Fluid_CSL_Form ), intent ( in ), target :: &
@@ -174,6 +198,16 @@ contains
       allocate ( Fluid_P_P_Form :: FC % Field )
       select type ( F => FC % Field )
       type is ( Fluid_P_P_Form )
+        call F % Initialize &
+               ( FC % VelocityUnit, FC % MassDensityUnit, &
+                 FC % EnergyDensityUnit, FC % TemperatureUnit, FC % nValues, &
+                 NameOption = NameOption )
+        call F % SetOutput ( FC % FieldOutput )
+      end select !-- F
+    case ( 'NON_RELATIVISTIC' )
+      allocate ( Fluid_P_NR_Form :: FC % Field )
+      select type ( F => FC % Field )
+      type is ( Fluid_P_NR_Form )
         call F % Initialize &
                ( FC % VelocityUnit, FC % MassDensityUnit, &
                  FC % EnergyDensityUnit, FC % TemperatureUnit, FC % nValues, &

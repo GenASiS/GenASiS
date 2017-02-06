@@ -6,6 +6,7 @@ module Fluid_ASC__Form
   use Mathematics
   use Fluid_D__Form
   use Fluid_P_P__Form
+  use Fluid_P_NR__Form
   use Fluid_P_MHN__Form
   use Fluid_CSL__Form
   use Tally_F_D__Form
@@ -110,7 +111,7 @@ contains
           allocate &
             ( Tally_F_D_Form :: FA % TallyBoundaryGlobal ( iB ) % Element )
         end do !-- iB
-      case ( 'POLYTROPIC', 'MEAN_HEAVY_NUCLEUS' )
+      case ( 'POLYTROPIC', 'NON_RELATIVISTIC', 'MEAN_HEAVY_NUCLEUS' )
         allocate ( Tally_F_P_Form :: FA % TallyInterior )
         allocate ( Tally_F_P_Form :: FA % TallyTotal )
         allocate ( Tally_F_P_Form :: FA % TallyChange )
@@ -219,6 +220,26 @@ contains
   end function Fluid_P_P_CSL
 
 
+  function Fluid_P_NR_CSL ( FA ) result ( F )
+
+    class ( Fluid_ASC_Form ), intent ( in ) :: &
+      FA
+    class ( Fluid_P_NR_Form ), pointer :: &
+      F
+
+    select type ( FC => FA % Chart )
+    class is ( Fluid_CSL_Form )
+      F => FC % Fluid_P_NR ( )
+    class default
+      call Show ( 'Fluid Chart type not recognized', CONSOLE % ERROR )
+      call Show ( 'Fluid_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Fluid_P_NR_CSL', 'function', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- FC
+
+  end function Fluid_P_NR_CSL
+
+
   function Fluid_P_MHN_CSL ( FA ) result ( F )
 
     class ( Fluid_ASC_Form ), intent ( in ) :: &
@@ -232,7 +253,7 @@ contains
     class default
       call Show ( 'Fluid Chart type not recognized', CONSOLE % ERROR )
       call Show ( 'Fluid_ASC__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'Fluid_P_P_CSL', 'function', CONSOLE % ERROR )
+      call Show ( 'Fluid_P_MHN_CSL', 'function', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- FC
 
