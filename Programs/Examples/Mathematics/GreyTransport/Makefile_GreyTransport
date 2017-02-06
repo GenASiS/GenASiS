@@ -9,8 +9,7 @@ VPATH := $(VPATH):../../FluidDynamics
 include ../../FluidDynamics/Makefile_ObjectFiles
 include ../Makefile_ObjectFiles
 
-SineWaveStreaming: Basics.a Mathematics.a GreyMoments.a \
-  SineWaveStreaming.o
+SineWaveStreaming: Basics.a Mathematics.a GreyMoments.a SineWaveStreaming.o
 	$(LINK) $(FFLAGS) \
           -o SineWaveStreaming_$(MACHINE) \
           SineWaveStreaming.o SineWaveStreaming_Form.o \
@@ -18,8 +17,7 @@ SineWaveStreaming: Basics.a Mathematics.a GreyMoments.a \
           GreyMoments.a Mathematics.a Basics.a \
           $(LIBRARIES)
 
-SineWaveDiffusion: Basics.a Mathematics.a GreyMoments.a \
-  SineWaveDiffusion.o
+SineWaveDiffusion: Basics.a Mathematics.a GreyMoments.a SineWaveDiffusion.o
 	$(LINK) $(FFLAGS) \
           -o SineWaveDiffusion_$(MACHINE) \
           SineWaveDiffusion.o SineWaveDiffusion_Form.o \
@@ -57,6 +55,8 @@ HomogeneousSphere: Basics.a Mathematics.a RadiationMoments.a \
           HomogeneousSphere.o HomogeneousSphere_Form.o \
           RadiationMoments.a Mathematics.a Basics.a \
           $(LIBRARIES)
+
+MarshakWave: Basics.a Mathematics.a Fluid.a GreyMoments.a MarshakWave_Form.o
 
 # EATest: EA_Test.o
 # 	$(LINK) $(FFLAGS) \
@@ -112,6 +112,7 @@ HomogeneousSphere: Basics.a Mathematics.a RadiationMoments.a \
 
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MATHEMATICS)/Makefile_Dependencies
+include $(PATH_THIRD_PARTY)/Makefile_Dependencies
 include ../../FluidDynamics/Makefile_Dependencies
 include ../Makefile_Dependencies
 
@@ -185,7 +186,7 @@ HomogeneousSphere.o: \
 MarshakWave_Form.o: \
   Basics.o \
   Mathematics.o \
-  Fluid_P_NR__Form.o \
+  Fluid_ASC__Form.o \
   RadiationMoments_ASC__Form.o \
   MarshakWave_Form.f90
 
