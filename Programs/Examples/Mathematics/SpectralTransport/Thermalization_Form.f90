@@ -503,14 +503,12 @@ contains
       ( J_R    => RM_R % Value ( :, RM_R % COMOVING_ENERGY_DENSITY ), &
         T      => M % Value ( :, M % TEMPERATURE ), &
         Mu     => M % Value ( :, M % CHEMICAL_POTENTIAL ), &
-        kB     => CONSTANT % BOLTZMANN, &
-        hBar_c => CONSTANT % PLANCK_REDUCED * CONSTANT % SPEED_OF_LIGHT, &
-        Pi     => CONSTANT % PI )
+        a      => CONSTANT % RADIATION )
 
     do iV = 1, RM_R % nValues
       if ( Mu ( iV ) == 0.0_KDR .and. T ( iV ) > 0.0_KDR ) then
-        J_R ( iV )  =  ( 7.0_KDR / 8.0_KDR )  *  ( Pi ** 2 / 30.0_KDR )  &
-                       /  ( hBar_c ** 3 )  *  ( kB * T ( iV ) ) ** 4
+        J_R ( iV )  =  ( 7.0_KDR / 8.0_KDR )  *  ( a / 2.0_KDR )  &
+                       *  T ( iV ) ** 4
       else
         J_R ( iV ) = huge ( 0.0_KDR )
       end if

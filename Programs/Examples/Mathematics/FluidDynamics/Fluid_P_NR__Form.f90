@@ -273,8 +273,8 @@ contains
     call F % Apply_EOS_NR_T_Kernel &
            ( P, Gamma, SB, E, M, N, T, F % AdiabaticIndex, &
              F % MeanMolecularWeight, F % FiducialBaryonDensity, &
-             F % FiducialTemperature, UNIT % ATOMIC_MASS_UNIT, &
-             UNIT % BOLTZMANN )
+             F % FiducialTemperature, CONSTANT % ATOMIC_MASS_UNIT, &
+             CONSTANT % BOLTZMANN )
     call F % ComputeEigenspeedsFluidKernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, MN, &
              M, N, V_1, V_2, V_3, S_1, S_2, S_3, P, Gamma, M_UU_22, M_UU_33 )
@@ -359,8 +359,8 @@ contains
     call C % Apply_EOS_NR_E_Kernel &
            ( P, Gamma, SB, T, M, N, E, C % AdiabaticIndex, &
              C % MeanMolecularWeight, C % FiducialBaryonDensity, &
-             C % FiducialTemperature, UNIT % ATOMIC_MASS_UNIT, &
-             UNIT % BOLTZMANN )
+             C % FiducialTemperature, CONSTANT % ATOMIC_MASS_UNIT, &
+             CONSTANT % BOLTZMANN )
     call C % ComputeEigenspeedsFluidKernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, MN, &
              M, N, V_1, V_2, V_3, S_1, S_2, S_3, P, Gamma, M_UU_22, M_UU_33 )
@@ -443,8 +443,8 @@ contains
     call C % Apply_EOS_NR_E_Kernel &
            ( P, Gamma, SB, T, M, N, E, C % AdiabaticIndex, &
              C % MeanMolecularWeight, C % FiducialBaryonDensity, &
-             C % FiducialTemperature, UNIT % ATOMIC_MASS_UNIT, &
-             UNIT % BOLTZMANN )
+             C % FiducialTemperature, CONSTANT % ATOMIC_MASS_UNIT, &
+             CONSTANT % BOLTZMANN )
     call C % ComputeEigenspeedsFluidKernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, MN, &
              M, N, V_1, V_2, V_3, S_1, S_2, S_3, P, Gamma, M_UU_22, M_UU_33 )
@@ -472,8 +472,7 @@ contains
       Gamma_0, &
       Mu_0, &
       N_0, &
-      T_0
-    type ( MeasuredValueForm ), intent ( in ) :: &
+      T_0, &
       AMU, &
       k_B
 
@@ -534,8 +533,7 @@ contains
       Gamma_0, &
       Mu_0, &
       N_0, &
-      T_0
-    type ( MeasuredValueForm ), intent ( in ) :: &
+      T_0, &
       AMU, &
       k_B
 

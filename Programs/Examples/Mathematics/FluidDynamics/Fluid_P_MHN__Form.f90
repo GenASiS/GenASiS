@@ -254,14 +254,14 @@ contains
 
     call F % ComputeBaryonMassKernel ( M )
     call F % Apply_EOS_MHN_T_Kernel &
-           ( P, E, Gamma, SB, YE, M, N, T, NE, UNIT % ATOMIC_MASS_UNIT )
+           ( P, E, Gamma, SB, YE, M, N, T, NE, CONSTANT % ATOMIC_MASS_UNIT )
     call F % ComputeDensityMomentumKernel &
            ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
     call F % ComputeConservedEnergyKernel &
            ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
     call F % ComputeConservedElectronKernel ( DE, NE )
     call F % Apply_EOS_MHN_E_Kernel &
-           ( P, T, Gamma, SB, YE, M, N, E, NE, UNIT % ATOMIC_MASS_UNIT )
+           ( P, T, Gamma, SB, YE, M, N, E, NE, CONSTANT % ATOMIC_MASS_UNIT )
     call F % ComputeEigenspeedsFluidKernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, MN, &
              M, N, V_1, V_2, V_3, S_1, S_2, S_3, P, Gamma, M_UU_22, M_UU_33 )
@@ -351,7 +351,7 @@ contains
            ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
     call C % ComputeConservedElectronKernel ( DE, NE )
     call C % Apply_EOS_MHN_E_Kernel &
-           ( P, T, Gamma, SB, YE, M, N, E, NE, UNIT % ATOMIC_MASS_UNIT )
+           ( P, T, Gamma, SB, YE, M, N, E, NE, CONSTANT % ATOMIC_MASS_UNIT )
     call C % ComputeEigenspeedsFluidKernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, MN, &
              M, N, V_1, V_2, V_3, S_1, S_2, S_3, P, Gamma, M_UU_22, M_UU_33 )
@@ -436,7 +436,7 @@ contains
            ( E, G, M, N, V_1, V_2, V_3, S_1, S_2, S_3 )
     call C % ComputeComovingElectronKernel ( NE, DE )
     call C % Apply_EOS_MHN_E_Kernel &
-           ( P, T, Gamma, SB, YE, M, N, E, NE, UNIT % ATOMIC_MASS_UNIT )
+           ( P, T, Gamma, SB, YE, M, N, E, NE, CONSTANT % ATOMIC_MASS_UNIT )
     call C % ComputeEigenspeedsFluidKernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, MN, &
              M, N, V_1, V_2, V_3, S_1, S_2, S_3, P, Gamma, M_UU_22, M_UU_33 )
@@ -518,7 +518,7 @@ contains
       N, &
       T, &
       NE
-    type ( MeasuredValueForm ), intent ( in ) :: &
+    real ( KDR ), intent ( in ) :: &
       AMU
 
     integer ( KDI ) :: &
@@ -589,7 +589,7 @@ contains
       N, &
       E, &
       NE
-    type ( MeasuredValueForm ), intent ( in ) :: &
+    real ( KDR ), intent ( in ) :: &
       AMU
 
     integer ( KDI ) :: &
