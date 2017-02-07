@@ -1,5 +1,6 @@
 module Interactions_F__Form
 
+  !-- Interactions_Fixed__Form
   !-- Compute does nothing, leaving interactions as set at initialization.
   
   use Basics
@@ -12,10 +13,10 @@ module Interactions_F__Form
   contains
     procedure, private, pass :: &
       InitializeAllocate_F
-    procedure, public, pass :: &
-      Compute
     generic, public :: &
       Initialize => InitializeAllocate_F
+    procedure, public, pass :: &
+      Compute
     final :: &
       Finalize
   end type Interactions_F_Form

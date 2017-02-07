@@ -28,17 +28,25 @@ Interactions_F__Form.o: \
   Interactions_Template.o \
   Interactions_F__Form.f90
 
+Interactions_BE_G__Form.o: \
+  Basics.o \
+  Fluid_P__Template.o \
+  Interactions_Template.o \
+  Interactions_BE_G__Form.f90
+
 Interactions_CSL__Form.o: \
   Basics.o \
   Mathematics.o \
   Interactions_Template.o \
   Interactions_F__Form.o \
+  Interactions_BE_G__Form.o \
   Interactions_CSL__Form.f90
 
 Interactions_ASC__Form.o: \
   Basics.o \
   Mathematics.o \
   Interactions_F__Form.o \
+  Interactions_BE_G__Form.o \
   Interactions_CSL__Form.o \
   Interactions_ASC__Form.f90
 

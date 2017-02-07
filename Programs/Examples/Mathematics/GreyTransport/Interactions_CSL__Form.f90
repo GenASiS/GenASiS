@@ -4,6 +4,7 @@ module Interactions_CSL__Form
   use Mathematics
   use Interactions_Template
   use Interactions_F__Form
+  use Interactions_BE_G__Form
 
   implicit none
   private
@@ -19,6 +20,8 @@ module Interactions_CSL__Form
       Initialize
     procedure, public, pass :: &
       Interactions_F
+    procedure, public, pass :: &
+      Interactions_BE_G
     final :: &
       Finalize
     procedure, private, pass :: &
@@ -80,6 +83,27 @@ contains
   end function Interactions_F
 
 
+  function Interactions_BE_G ( IC ) result ( I )
+
+    class ( Interactions_CSL_Form ), intent ( in ), target :: &
+      IC
+    class ( Interactions_BE_G_Form ), pointer :: &
+      I
+      
+    class ( VariableGroupForm ), pointer :: &
+      Field
+
+    I => null ( )
+
+    Field => IC % Field
+    select type ( Field )
+    class is ( Interactions_BE_G_Form )
+    I => Field
+    end select !-- Field
+
+  end function Interactions_BE_G
+
+
   impure elemental subroutine Finalize ( IC )
 
     type ( Interactions_CSL_Form ), intent ( inout ) :: &
@@ -104,6 +128,15 @@ contains
       allocate ( Interactions_F_Form :: FC % Field )
       select type ( I => FC % Field )
       type is ( Interactions_F_Form )
+        call I % Initialize &
+               ( FC % LengthUnit, FC % EnergyDensityUnit, FC % nValues, &
+                 NameOption = NameOption )
+        call I % SetOutput ( FC % FieldOutput )
+      end select !-- RM
+    case ( 'BOSE_EINSTEIN_GREY' )
+      allocate ( Interactions_BE_G_Form :: FC % Field )
+      select type ( I => FC % Field )
+      type is ( Interactions_BE_G_Form )
         call I % Initialize &
                ( FC % LengthUnit, FC % EnergyDensityUnit, FC % nValues, &
                  NameOption = NameOption )

@@ -6,6 +6,8 @@ module MarshakWave_Form
   use Fluid_ASC__Form
   use RadiationMoments_Form
   use RadiationMoments_ASC__Form
+  use Interactions_BE_G__Form
+  use Interactions_ASC__Form
 
   implicit none
   private
@@ -14,6 +16,8 @@ module MarshakWave_Form
     integer ( KDI ) :: &
       RADIATION = 1, &
       FLUID     = 2         
+    type ( Interactions_ASC_Form ), allocatable :: &
+      Interactions_ASC
   contains
     procedure, public, pass :: &
       Initialize
@@ -22,14 +26,16 @@ module MarshakWave_Form
   end type MarshakWaveForm
 
     private :: &
+      SetRadiation, &
       SetFluid, &
-      SetRadiation
+      SetInteractions
 
     real ( KDR ), private :: &
       AdiabaticIndex, &
       MassDensity, &
       Temperature, &
-      TemperatureInner
+      TemperatureInner, &
+      SpecificOpacity
     real ( KDR ), dimension ( 3 ), private :: &
       MinCoordinate, &
       MaxCoordinate
@@ -68,22 +74,26 @@ contains
       ( Gamma => AdiabaticIndex, &
         N_0   => MassDensity, &
         T_0   => Temperature, &
-        T_I   => TemperatureInner )
+        T_I   => TemperatureInner, &
+        Kappa => SpecificOpacity )
 
     Gamma  =  1.4_KDR
     N_0    =  1.0e-3_KDR  *  UNIT % MASS_DENSITY_CGS
     T_0    =  3.0e2_KDR   *  UNIT % KELVIN
     T_I    =  1.0e3_KDR   *  UNIT % KELVIN
+    Kappa  =  1.0e3_KDR   *  UNIT % CENTIMETER ** 2 / UNIT % GRAM
     call PROGRAM_HEADER % GetParameter ( Gamma, 'AdiabaticIndex' )
     call PROGRAM_HEADER % GetParameter ( N_0,   'MassDensity' )
     call PROGRAM_HEADER % GetParameter ( T_0,   'Temperature' )
     call PROGRAM_HEADER % GetParameter ( T_I,   'TemperatureInner' )
+    call PROGRAM_HEADER % GetParameter ( Kappa, 'SpecificOpacity' )
 
     call Show ( 'MarshakWave parameters' )
     call Show ( Gamma, 'Gamma' )
     call Show ( N_0, UNIT % MASS_DENSITY_CGS, 'N_0' )
     call Show ( T_0, UNIT % KELVIN, 'T_0' )
     call Show ( T_I, UNIT % KELVIN, 'T_I' )
+    call Show ( Kappa, UNIT % CENTIMETER ** 2 / UNIT % GRAM, 'Kappa' )
 
     end associate !-- Gamma, etc.
 
@@ -148,9 +158,9 @@ contains
     allocate &
       ( RadiationMoments_ASC_Form :: &
           MW % Current_ASC_1D ( MW % RADIATION ) % Element )
-    select type ( RMA => MW % Current_ASC_1D ( MW % RADIATION ) % Element )
+    select type ( RA => MW % Current_ASC_1D ( MW % RADIATION ) % Element )
     class is ( RadiationMoments_ASC_Form )
-    call RMA % Initialize &
+    call RA % Initialize &
            ( PS, 'GENERIC', EnergyDensityUnitOption = EnergyDensityUnit )
 
     !-- Fluid
@@ -168,10 +178,21 @@ contains
              MomentumUnitOption = MomentumUnit, &
              AngularMomentumUnitOption = AngularMomentumUnit )
 
+    !-- Interactions
+
+    allocate ( MW % Interactions_ASC )
+    associate ( IA => MW % Interactions_ASC )
+    call IA % Initialize &
+           ( PS, 'BOSE_EINSTEIN_GREY', &
+             LengthUnitOption = CoordinateUnit ( 1 ), &
+             EnergyDensityUnitOption = EnergyDensityUnit )
+    call RA % SetInteractions ( IA )
+
     !-- Initial conditions
 
-    call SetFluid ( MW )
     call SetRadiation ( MW )
+    call SetFluid ( MW )
+    call SetInteractions ( MW )
 
     !-- Initialize template
 
@@ -182,11 +203,9 @@ contains
 
     !-- Cleanup
 
-!    call MW % ComputeTally ( ComputeChangeOption = .false. )
-!    call MW % Write ( )
-
+    end associate !-- IA
     end select !-- FA
-    end select !-- RMA
+    end select !-- RA
     end select !-- PS
 
   end subroutine Initialize
@@ -197,9 +216,66 @@ contains
     type ( MarshakWaveForm ), intent ( inout ) :: &
       MW
 
+    if ( allocated ( MW % Interactions_ASC) ) &
+      deallocate ( MW % Interactions_ASC )
+
     call MW % FinalizeTemplate_C_1D ( )
 
   end subroutine Finalize
+
+
+  subroutine SetRadiation ( MW )
+
+    type ( MarshakWaveForm ), intent ( inout ) :: &
+      MW
+
+    class ( GeometryFlatForm ), pointer :: &
+      G
+    class ( RadiationMomentsForm ), pointer :: &
+      R
+
+    associate &
+      ( T_0 => Temperature, &
+        T_I => TemperatureInner )
+
+    select type ( RA => MW % Current_ASC_1D ( MW % RADIATION ) % Element )
+    class is ( RadiationMoments_ASC_Form )
+    R => RA % RadiationMoments ( )
+
+    select type ( PS => MW % PositionSpace )
+    class is ( Atlas_SC_Form )
+    G => PS % Geometry ( )
+
+    associate &
+      (   J => R % Value ( :, R % COMOVING_ENERGY_DENSITY ), &
+        H_1 => R % Value ( :, R % COMOVING_MOMENTUM_DENSITY_U ( 1 ) ), &
+        H_2 => R % Value ( :, R % COMOVING_MOMENTUM_DENSITY_U ( 2 ) ), &
+        H_3 => R % Value ( :, R % COMOVING_MOMENTUM_DENSITY_U ( 3 ) ), &
+          X => G % Value ( :, G % CENTER ( 1 ) ), &
+          Y => G % Value ( :, G % CENTER ( 2 ) ), &
+          Z => G % Value ( :, G % CENTER ( 3 ) ), &
+          a => CONSTANT % RADIATION )
+
+    J  =  a  *  T_0 ** 4
+
+    H_1  =  0.0_KDR
+    H_2  =  0.0_KDR
+    H_3  =  0.0_KDR
+
+    where ( X < MinCoordinate ( 1 ) .or. Y < MinCoordinate ( 2 ) &
+            .or. Z < MinCoordinate ( 3 ) )
+      J  =  a  *  T_I ** 4
+    end where
+
+    call R % ComputeFromPrimitive ( G )
+
+    end associate !-- J, etc.
+    end select !-- PS
+    end select !-- RA
+    end associate !-- T_0
+    nullify ( R, G )
+
+  end subroutine SetRadiation
 
 
   subroutine SetFluid ( MW )
@@ -254,60 +330,31 @@ contains
   end subroutine SetFluid
 
 
-  subroutine SetRadiation ( MW )
+  subroutine SetInteractions ( MW )
 
     type ( MarshakWaveForm ), intent ( inout ) :: &
       MW
 
-    class ( GeometryFlatForm ), pointer :: &
-      G
-    class ( RadiationMomentsForm ), pointer :: &
-      R
+    class ( Fluid_P_NR_Form ), pointer :: &
+      F
+    class ( Interactions_BE_G_Form ), pointer :: &
+      I
 
-    associate &
-      ( T_0 => Temperature, &
-        T_I => TemperatureInner )
+    associate ( IA => MW % Interactions_ASC )
 
-    select type ( RA => MW % Current_ASC_1D ( MW % RADIATION ) % Element )
-    class is ( RadiationMoments_ASC_Form )
-    R => RA % RadiationMoments ( )
+    select type ( FA => MW % Current_ASC_1D ( MW % FLUID ) % Element )
+    class is ( Fluid_ASC_Form )
+    F => FA % Fluid_P_NR ( )
 
-    select type ( PS => MW % PositionSpace )
-    class is ( Atlas_SC_Form )
-    G => PS % Geometry ( )
+    I => IA % Interactions_BE_G ( )
+    call I % Set ( F, SpecificOpacity )
+    call I % Compute ( )
 
-    associate &
-      (   J => R % Value ( :, R % COMOVING_ENERGY_DENSITY ), &
-        H_1 => R % Value ( :, R % COMOVING_MOMENTUM_DENSITY_U ( 1 ) ), &
-        H_2 => R % Value ( :, R % COMOVING_MOMENTUM_DENSITY_U ( 2 ) ), &
-        H_3 => R % Value ( :, R % COMOVING_MOMENTUM_DENSITY_U ( 3 ) ), &
-          X => G % Value ( :, G % CENTER ( 1 ) ), &
-          Y => G % Value ( :, G % CENTER ( 2 ) ), &
-          Z => G % Value ( :, G % CENTER ( 3 ) ), &
-          a => CONSTANT % RADIATION )
+    end select !-- FA
+    end associate !-- IA
+    nullify ( F, I )
 
-    J  =  a  *  T_0 ** 4
-
-    H_1  =  0.0_KDR
-    H_2  =  0.0_KDR
-    H_3  =  0.0_KDR
-
-    where ( X < MinCoordinate ( 1 ) .or. Y < MinCoordinate ( 2 ) &
-            .or. Z < MinCoordinate ( 3 ) )
-      J  =  a  *  T_I ** 4
-    end where
-
-    call R % ComputeFromPrimitive ( G )
-
-    call Show ( J, R % Unit ( R % COMOVING_ENERGY_DENSITY ), '>>> J' )
-
-    end associate !-- J, etc.
-    end select !-- PS
-    end select !-- RA
-    end associate !-- T_0
-    nullify ( R, G )
-
-  end subroutine SetRadiation
+  end subroutine SetInteractions
 
 
 end module MarshakWave_Form

@@ -1,7 +1,7 @@
 PATH_GENASIS = ../../../../..
 
-all:  SineWaveStreaming SineWaveDiffusion LineSource  HomogeneousSphere
-#      HomogeneousCylinderTest LineSourceTest
+all:  SineWaveStreaming SineWaveDiffusion LineSource HomogeneousSphere \
+      MarshakWave 
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
@@ -17,12 +17,13 @@ SineWaveStreaming: Basics.a Mathematics.a GreyMoments.a SineWaveStreaming.o
           GreyMoments.a Mathematics.a Basics.a \
           $(LIBRARIES)
 
-SineWaveDiffusion: Basics.a Mathematics.a GreyMoments.a SineWaveDiffusion.o
+SineWaveDiffusion: Basics.a Mathematics.a Fluid.a GreyMoments.a \
+  SineWaveDiffusion.o
 	$(LINK) $(FFLAGS) \
           -o SineWaveDiffusion_$(MACHINE) \
           SineWaveDiffusion.o SineWaveDiffusion_Form.o \
-          GreyMoments.a Mathematics.a Basics.a \
-          $(LIBRARIES)
+          GreyMoments.a Fluid.a Mathematics.a Basics.a \
+          $(THIRD_PARTY) $(LIBRARIES)
 
 LineSource: Basics.a Mathematics.a RadiationMoments.a \
   LineSource.o
@@ -195,6 +196,8 @@ MarshakWave_Form.o: \
   Fluid_ASC__Form.o \
   RadiationMoments_Form.o \
   RadiationMoments_ASC__Form.o \
+  Interactions_BE_G__Form.o \
+  Interactions_ASC__Form.o \
   MarshakWave_Form.f90
 
 MarshakWave.o: \

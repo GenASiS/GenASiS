@@ -199,6 +199,8 @@ contains
       deallocate ( SWD % Difference )
     if ( allocated ( SWD % Reference ) ) &
       deallocate ( SWD % Reference )
+    if ( allocated ( SWD % Interactions_ASC) ) &
+      deallocate ( SWD % Interactions_ASC )
 
     call SWD % FinalizeTemplate_C ( )
 
