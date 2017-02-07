@@ -213,19 +213,20 @@ contains
   
     !-- Display
 
-    call CA % TallyInterior % Show ( 'Interior Fluid Tally' )
+    call CA % TallyInterior % Show &
+           ( 'Interior Tally ' // trim ( CA % Name ) )
 
     BoundaryLoop: do iB = 1, A % nBoundaries
       call CA % TallyBoundaryGlobal ( iB ) % Element % Show &
              ( 'Boundary ' // trim ( A % BoundaryName ( iB ) ) &
-             // ' Fluid Tally', CONSOLE % INFO_2 )
+             // ' Tally ' // trim ( CA % Name ), CONSOLE % INFO_2 )
     end do BoundaryLoop
 
-    call CA % TallyTotal % Show ( 'Total Fluid Tally' )
+    call CA % TallyTotal % Show ( 'Total Tally ' // trim ( CA % Name ) )
 
     if ( ComputeChange ) then
       call CA % TallyChange % Show &
-             ( 'Change in Total Fluid Tally' )
+             ( 'Change in Total Tally ' // trim ( CA % Name ) )
     end if
 
     end associate !-- nI
