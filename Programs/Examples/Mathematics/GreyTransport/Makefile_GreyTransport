@@ -193,6 +193,7 @@ MarshakWave_Form.o: \
   Mathematics.o \
   Fluid_P_NR__Form.o \
   Fluid_ASC__Form.o \
+  RadiationMoments_Form.o \
   RadiationMoments_ASC__Form.o \
   MarshakWave_Form.f90
 
