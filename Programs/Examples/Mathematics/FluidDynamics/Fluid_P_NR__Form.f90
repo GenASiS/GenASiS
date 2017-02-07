@@ -266,15 +266,15 @@ contains
         T     => FV ( oV + 1 : oV + nV, F % TEMPERATURE ) )
 
     call F % ComputeBaryonMassKernel ( M )
-    call F % ComputeDensityMomentumKernel &
-           ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
-    call F % ComputeConservedEnergyKernel &
-           ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
     call F % Apply_EOS_NR_T_Kernel &
            ( P, Gamma, SB, E, M, N, T, F % AdiabaticIndex, &
              F % MeanMolecularWeight, F % FiducialBaryonDensity, &
              F % FiducialTemperature, CONSTANT % ATOMIC_MASS_UNIT, &
              CONSTANT % BOLTZMANN )
+    call F % ComputeDensityMomentumKernel &
+           ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
+    call F % ComputeConservedEnergyKernel &
+           ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
     call F % ComputeEigenspeedsFluidKernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, MN, &
              M, N, V_1, V_2, V_3, S_1, S_2, S_3, P, Gamma, M_UU_22, M_UU_33 )
