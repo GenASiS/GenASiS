@@ -23,7 +23,19 @@ module CONSTANT_Singleton
       !   http://pdg.lbl.gov/2016/reviews
       !          /rpp2016-rev-astrophysical-constants.pdf
       ASTRONOMICAL_UNIT_MKS = 1.49597870700e+11_KDR, &
-      SOLAR_MASS_MKS        = 1.98848e+30_KDR
+      SOLAR_MASS_MKS        = 1.98848e+30_KDR, &
+      !-- GenASiS ( geometrized; meter = 1 )
+      SPEED_OF_LIGHT   = 1.0_KDR, &
+      PERMEABILITY     = 1.0_KDR, &
+      GRAVITATIONAL    = 1.0_KDR, &
+      BOLTZMANN        = 1.0_KDR, &
+      PLANCK_REDUCED   = PLANCK_REDUCED_MKS * GRAVITATIONAL_MKS &
+                           / SPEED_OF_LIGHT_MKS ** 3, &
+      ATOMIC_MASS_UNIT = 1.0e-3 * GRAVITATIONAL_MKS &
+                           / ( SPEED_OF_LIGHT_MKS ** 2  *  AVOGADRO_MKS ), &
+      RADIATION        = Pi ** 2  /  15.0_KDR  &
+                         *  BOLTZMANN ** 4  &
+                         /  ( PLANCK_REDUCED * SPEED_OF_LIGHT ) ** 3
 
   type, public :: ConstantSingleton
     real ( KDR ) :: &
@@ -41,12 +53,13 @@ module CONSTANT_Singleton
       ASTRONOMICAL_UNIT_MKS = ASTRONOMICAL_UNIT_MKS, &
       SOLAR_MASS_MKS        = SOLAR_MASS_MKS, &
       !-- GenASiS
-      SPEED_OF_LIGHT = 1.0_KDR, &
-      PERMEABILITY   = 1.0_KDR, &
-      GRAVITATIONAL  = 1.0_KDR, &
-      BOLTZMANN      = 1.0_KDR, &
-      PLANCK_REDUCED = PLANCK_REDUCED_MKS * GRAVITATIONAL_MKS &
-                       / SPEED_OF_LIGHT_MKS ** 3
+      SPEED_OF_LIGHT   = SPEED_OF_LIGHT, &
+      PERMEABILITY     = PERMEABILITY, &
+      GRAVITATIONAL    = GRAVITATIONAL, &
+      BOLTZMANN        = BOLTZMANN, &
+      PLANCK_REDUCED   = PLANCK_REDUCED, &
+      ATOMIC_MASS_UNIT = ATOMIC_MASS_UNIT, &
+      RADIATION        = RADIATION
   end type ConstantSingleton
   
   type ( ConstantSingleton ), public, parameter :: &

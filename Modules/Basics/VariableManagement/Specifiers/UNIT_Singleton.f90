@@ -104,8 +104,7 @@ contains
     call U % RADIAN % Initialize ( UNIT % IDENTITY, 'rad' )
 
     !-- Time
-    call U % SECOND % Initialize &
-           ( C % SPEED_OF_LIGHT_MKS / C % SPEED_OF_LIGHT * U % METER, 's' )
+    call U % SECOND % Initialize ( C % SPEED_OF_LIGHT_MKS * U % METER, 's' )
     call U % MILLISECOND % Initialize ( 1.0e-3_KDR * U % SECOND, 'ms' )
     call U % FEMTOSECOND % Initialize ( 1.0e-15_KDR * U % SECOND, 'fs' )
 
@@ -115,8 +114,7 @@ contains
     
     !-- Mass
     call U % KILOGRAM % Initialize &
-           ( C % GRAVITATIONAL_MKS / C % GRAVITATIONAL &
-             * U % METER ** 3 / U % SECOND ** 2, 'kg' )
+           ( C % GRAVITATIONAL_MKS * U % METER ** 3 / U % SECOND ** 2, 'kg' )
     call U % GRAM % Initialize ( 1.0e-3_KDR * U % KILOGRAM, 'g' )
     call U % ATOMIC_MASS_UNIT % Initialize &
            ( 1.0_KDR / C % AVOGADRO_MKS * U % GRAM, 'amu' )
@@ -124,7 +122,8 @@ contains
            ( C % SOLAR_MASS_MKS * U % KILOGRAM, 'M_sun' )
            
     !-- Speed
-    call U % SPEED_OF_LIGHT % Initialize ( 'c', '', C % SPEED_OF_LIGHT )
+    call U % SPEED_OF_LIGHT % Initialize &
+           ( C % SPEED_OF_LIGHT_MKS * U % METER / U % SECOND, 'c' )
 
     !-- Energy
     call U % JOULE % Initialize &
@@ -146,16 +145,16 @@ contains
 
     !-- Temperature
     call U % KELVIN % Initialize &
-           ( C % BOLTZMANN_MKS / C % BOLTZMANN * U % KILOGRAM &
-             * U % METER**2 / U % SECOND ** 2, 'K' )
+           ( C % BOLTZMANN_MKS * U % KILOGRAM &
+             * U % METER ** 2  /  U % SECOND ** 2, 'K' )
 
     !-- Entropy per baryon
-    call U % BOLTZMANN % Initialize ( 'k_B', '', C % BOLTZMANN )
+    call U % BOLTZMANN % Initialize &
+           ( C % BOLTZMANN_MKS * U % JOULE / U % KELVIN, 'k_B' )
 
     !-- Magnetic current
     call U % AMPERE % Initialize &
-           ( ( ( C % PERMEABILITY_MKS / C % PERMEABILITY ) &
-               * U % NEWTON ) ** 0.5_KDR , 'A' )
+           ( ( C % PERMEABILITY_MKS * U % NEWTON ) ** 0.5_KDR , 'A' )
 
     !-- Magnetic field
     call U % TESLA % Initialize &
@@ -172,7 +171,8 @@ contains
 
     !-- Energy/length conversion
     call U % HBAR_C % Initialize &
-           ( '(hBar_c)', 'm^2', C % PLANCK_REDUCED * C % SPEED_OF_LIGHT )  
+           ( C % PLANCK_REDUCED_MKS * U % JOULE * U % SECOND &
+             * C % SPEED_OF_LIGHT_MKS * U % METER / U % SECOND, '(hBar_c)' )  
 
     !-- Computer resources
     call U % KILOBYTE % Initialize ( 'kB', 'kB', 1.0_KDR )
