@@ -25,10 +25,12 @@ program CONSTANT_Singleton_Test
 
   print*
   print*, 'GenASiS Constants'
-  print*, 'SPEED_OF_LIGHT = ', CONSTANT % SPEED_OF_LIGHT
-  print*, 'PERMEABILITY   = ', CONSTANT % PERMEABILITY
-  print*, 'GRAVITATIONAL  = ', CONSTANT % GRAVITATIONAL
-  print*, 'BOLTZMANN      = ', CONSTANT % BOLTZMANN
-  print*, 'PLANCK_REDUCED = ', CONSTANT % PLANCK_REDUCED
+  print*, 'SPEED_OF_LIGHT   = ', CONSTANT % SPEED_OF_LIGHT
+  print*, 'PERMEABILITY     = ', CONSTANT % PERMEABILITY
+  print*, 'GRAVITATIONAL    = ', CONSTANT % GRAVITATIONAL
+  print*, 'BOLTZMANN        = ', CONSTANT % BOLTZMANN
+  print*, 'PLANCK_REDUCED   = ', CONSTANT % PLANCK_REDUCED
+  print*, 'ATOMIC_MASS_UNIT = ', CONSTANT % ATOMIC_MASS_UNIT
+  print*, 'RADIATION        = ', CONSTANT % RADIATION
 
 end program CONSTANT_Singleton_Test
