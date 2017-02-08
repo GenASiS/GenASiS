@@ -26,6 +26,7 @@ Integrator_C__Template.o: \
 
 Integrator_C_1D__Template.o: \
   Basics.o \
+  Manifolds.o \
   Fields.o \
   Integrator_C__Template.o \
   Integrator_C_1D__Template.f90

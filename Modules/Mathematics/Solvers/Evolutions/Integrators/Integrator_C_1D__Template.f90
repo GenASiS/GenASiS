@@ -6,6 +6,7 @@ module Integrator_C_1D__Template
   !-- Integrator_Current_1D__Template
 
   use Basics
+  use Manifolds
   use Fields
   use Integrator_C__Template
 
@@ -23,6 +24,8 @@ module Integrator_C_1D__Template
       FinalizeTemplate_C_1D
     procedure, private, pass :: &  !-- 3
       ComputeTally
+    procedure, private, pass :: &
+      ComputeTimeStepLocal
   end type Integrator_C_1D_Template
 
 contains
@@ -67,6 +70,61 @@ contains
     end associate !-- Timer
 
   end subroutine ComputeTally
+
+
+  subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
+
+    class ( Integrator_C_1D_Template ), intent ( in ) :: &
+      I
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      TimeStepCandidate
+
+    integer ( KDI ) :: &
+      iC  !-- iCurrent
+    class ( GeometryFlatForm ), pointer :: &
+      G
+    class ( CurrentTemplate ), pointer :: &
+      C
+
+    if ( .not. allocated ( I % Current_ASC_1D ) ) &
+      return
+
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
+
+    select type ( CSL => PS % Chart )
+    class is ( Chart_SL_Template )
+
+    G => CSL % Geometry ( )
+
+    do iC = 1, I % N_CURRENTS
+      associate ( CA => I % Current_ASC_1D ( iC ) % Element )
+      C => CA % Current ( )
+
+      call I % ComputeTimeStepKernel_CSL &
+             ( CSL % IsProperCell, &
+               C % Value ( :, C % FAST_EIGENSPEED_PLUS ( 1 ) ), &
+               C % Value ( :, C % FAST_EIGENSPEED_PLUS ( 2 ) ), &
+               C % Value ( :, C % FAST_EIGENSPEED_PLUS ( 3 ) ), &
+               C % Value ( :, C % FAST_EIGENSPEED_MINUS ( 1 ) ), &
+               C % Value ( :, C % FAST_EIGENSPEED_MINUS ( 2 ) ), &
+               C % Value ( :, C % FAST_EIGENSPEED_MINUS ( 3 ) ), &
+               G % Value ( :, G % WIDTH ( 1 ) ), &
+               G % Value ( :, G % WIDTH ( 2 ) ), & 
+               G % Value ( :, G % WIDTH ( 3 ) ), &
+               CSL % nDimensions, TimeStepCandidate ( iC ) )
+
+      end associate !-- CA
+    end do !-- iC
+
+    end select !-- CSL
+    end select !-- PS
+
+    TimeStepCandidate = I % CourantFactor * TimeStepCandidate
+
+    nullify ( C, G )
+
+  end subroutine ComputeTimeStepLocal
 
 
 end module Integrator_C_1D__Template

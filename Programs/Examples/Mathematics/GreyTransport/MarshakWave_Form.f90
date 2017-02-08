@@ -53,7 +53,8 @@ contains
     integer ( KDI ) :: &
       iD  !-- iDimension
     real ( KDR ) :: &
-      FinishTime
+      FinishTime, &
+TimeStep
     type ( MeasuredValueForm ) :: &
       TimeUnit, &
       MassDensityUnit, &
@@ -133,6 +134,9 @@ contains
 
     MW % N_CURRENTS = 2
     allocate ( MW % Current_ASC_1D ( MW % N_CURRENTS ) )
+    allocate ( MW % TimeStepLabel ( MW % N_CURRENTS ) )
+    MW % TimeStepLabel ( MW % RADIATION ) = 'Radiation'
+    MW % TimeStepLabel ( MW % FLUID )     = 'Fluid'
 
     TimeUnit = UNIT % SECOND
 
@@ -205,8 +209,10 @@ contains
 
     FinishTime  =  1.36e-7_KDR  *  UNIT % SECOND
  
-    call MW % InitializeTemplate &
+    call MW % InitializeTemplate_C &
            ( Name, TimeUnitOption = TimeUnit, FinishTimeOption = 0.0_KDR )
+
+    call MW % ComputeTimeStep ( TimeStep )
 
     !-- Cleanup
 

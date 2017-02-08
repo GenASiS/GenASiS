@@ -88,10 +88,9 @@ contains
 
     if ( .not. allocated ( I % Step ) ) then
       call Show ( 'Step must be allocated by an extension', &
-                  CONSOLE % ERROR )
-      call Show ( 'Integrator_C__Template', 'module', CONSOLE % ERROR )
-      call Show ( 'InitializeTemplate_C', 'subroutine', CONSOLE % ERROR )
-      call PROGRAM_HEADER % Abort ( )
+                  CONSOLE % WARNING )
+      call Show ( 'Integrator_C__Template', 'module', CONSOLE % WARNING )
+      call Show ( 'InitializeTemplate_C', 'subroutine', CONSOLE % WARNING )
     end if
 
     I % CourantFactor = 0.7
@@ -236,12 +235,12 @@ contains
   end subroutine WriteTimeSeries
 
 
-  subroutine ComputeTimeStepLocal ( I, TimeStep )
+  subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
 
     class ( Integrator_C_Template ), intent ( in ) :: &
       I
-    real ( KDR ), intent ( inout ) :: &
-      TimeStep
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      TimeStepCandidate
 
     class ( GeometryFlatForm ), pointer :: &
       G
@@ -270,13 +269,13 @@ contains
              G % Value ( :, G % WIDTH ( 1 ) ), &
              G % Value ( :, G % WIDTH ( 2 ) ), & 
              G % Value ( :, G % WIDTH ( 3 ) ), &
-             CSL % nDimensions, TimeStep )
+             CSL % nDimensions, TimeStepCandidate ( 1 ) )
 
     end associate !-- CA
     end select !-- CSL
     end select !-- PS
 
-    TimeStep = I % CourantFactor * TimeStep
+    TimeStepCandidate ( 1 ) = I % CourantFactor * TimeStepCandidate ( 1 )
 
     nullify ( C, G )
 

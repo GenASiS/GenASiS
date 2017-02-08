@@ -18,7 +18,8 @@ module Integrator_Template
       iTimerComputeNewTime = 0, &
       iCycle, &
       nRampCycles, &
-      nWrite
+      nWrite, &
+      nTimeStepCandidates
     real ( KDR ) :: &
       StartTime, &
       FinishTime, &
@@ -28,6 +29,8 @@ module Integrator_Template
     logical ( KDL ) :: &
       IsCheckpointTime, &
       NoWrite
+    character ( LDL ), dimension ( : ), allocatable :: &
+      TimeStepLabel
     type ( MeasuredValueForm ) :: &
       TimeUnit
     character ( LDF ) :: &
@@ -130,13 +133,13 @@ module Integrator_Template
 !    end subroutine RTS
 
 !-- See FIXME above
-!    subroutine CTSL ( I, TimeStep )
+!    subroutine CTSL ( I, TimeStepCandidate )
 !      use Basics
 !      import IntegratorTemplate
 !      class ( IntegratorTemplate ), intent ( in ) :: &
 !        I
-!      real ( KDR ), intent ( inout ) :: &
-!        TimeStep
+!      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+!        TimeStepCandidate
 !    end subroutine CTSL
 
   end interface
@@ -213,6 +216,12 @@ contains
     I % NoWrite = .false.
     call PROGRAM_HEADER % GetParameter ( I % NoWrite, 'NoWrite' )
 
+    if ( .not. allocated ( I % TimeStepLabel ) ) then
+      allocate ( I % TimeStepLabel ( 1 ) )
+      I % TimeStepLabel ( 1 ) = 'Physical TimeStep'
+    end if
+    I % nTimeStepCandidates = size ( I % TimeStepLabel )
+
     call PROGRAM_HEADER % AddTimer &
            ( 'AdministerCheckpoint', I % iTimerAdministerCheckpoint )
     call PROGRAM_HEADER % AddTimer &
@@ -270,6 +279,8 @@ contains
       deallocate ( I % PositionSpace ) 
     if ( allocated ( I % GridImageStream ) ) &
       deallocate ( I % GridImageStream )
+    if ( allocated ( I % TimeStepLabel ) ) &
+      deallocate ( I % TimeStepLabel )
 
     nullify ( I % Communicator )
 
@@ -547,23 +558,34 @@ contains
     real ( KDR ), intent ( out ) :: &
       TimeStep
 
+    integer ( KDI ) :: &
+      iTSC  !-- iTimeStepCandidate
     real ( KDR ) :: &
       RampFactor
+    real ( KDR ), dimension ( I % nTimeStepCandidates ) :: &
+      TimeStepCandidate
     type ( CollectiveOperation_R_Form ) :: &
       CO
 
-    TimeStep = huge ( 0.0_KDR )
+    TimeStepCandidate = huge ( 0.0_KDR )
 
-    call I % ComputeTimeStepLocal ( TimeStep )
+    call I % ComputeTimeStepLocal ( TimeStepCandidate )
 
     call CO % Initialize &
-           ( I % Communicator, nOutgoing = [ 1 ], nIncoming = [ 1 ] )
-    CO % Outgoing % Value ( 1 ) = TimeStep
+           ( I % Communicator, nOutgoing = [ I % nTimeStepCandidates ], &
+             nIncoming = [ I % nTimeStepCandidates ] )
+    CO % Outgoing % Value = TimeStepCandidate
 
     call CO % Reduce ( REDUCTION % MIN )
 
-    TimeStep = CO % Incoming % Value ( 1 )
-    call Show ( TimeStep, I % TimeUnit, 'Physical TimeStep', I % IGNORABILITY )
+    TimeStepCandidate = CO % Incoming % Value
+    do iTSC = 1, I % nTimeStepCandidates
+      call Show ( TimeStepCandidate ( iTSC ), I % TimeUnit, &
+                  trim ( I % TimeStepLabel ( iTSC ) ) // ' TimeStep', &
+                  I % IGNORABILITY )
+    end do !-- iTSC
+
+    TimeStep = minval ( TimeStepCandidate )
 
     RampFactor &
       = min ( real ( I % iCycle + 1, KDR ) / I % nRampCycles, 1.0_KDR )
@@ -577,11 +599,11 @@ contains
 
 
 !-- See FIXME above
-  subroutine ComputeTimeStepLocal ( I, TimeStep )
+  subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
     class ( IntegratorTemplate ), intent ( in ) :: &
       I
-    real ( KDR ), intent ( inout ) :: &
-      TimeStep
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      TimeStepCandidate
   end subroutine ComputeTimeStepLocal
 
 
