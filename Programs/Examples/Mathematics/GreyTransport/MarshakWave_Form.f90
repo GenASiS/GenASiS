@@ -53,6 +53,10 @@ contains
     integer ( KDI ) :: &
       iD  !-- iDimension
     real ( KDR ) :: &
+      BoxLength, &
+      MeanFreePath, &
+      OpticalDepth, &
+      DiffusionTime, &
       FinishTime, &
 TimeStep
     type ( MeasuredValueForm ) :: &
@@ -74,22 +78,33 @@ TimeStep
       MW % Type = 'a MarshakWave' 
 
     associate &
-      ( Gamma => AdiabaticIndex, &
-        N_0   => MassDensity, &
-        T_0   => Temperature, &
-        T_I   => TemperatureInner, &
-        Kappa => SpecificOpacity )
+      ( L      => BoxLength, &
+        Gamma  => AdiabaticIndex, &
+        N_0    => MassDensity, &
+        T_0    => Temperature, &
+        T_I    => TemperatureInner, &
+        Kappa  => SpecificOpacity, &
+        Lambda => MeanFreePath, &
+        Tau    => OpticalDepth, &
+        t_Diff => DiffusionTime, &
+        c      => CONSTANT % SPEED_OF_LIGHT )
 
+    L      =  20.0_KDR    *  UNIT % CENTIMETER
     Gamma  =  1.4_KDR
     N_0    =  1.0e-3_KDR  *  UNIT % MASS_DENSITY_CGS
     T_0    =  3.0e2_KDR   *  UNIT % KELVIN
     T_I    =  1.0e3_KDR   *  UNIT % KELVIN
     Kappa  =  1.0e3_KDR   *  UNIT % CENTIMETER ** 2 / UNIT % GRAM
+    call PROGRAM_HEADER % GetParameter ( L, 'BoxLength' )
     call PROGRAM_HEADER % GetParameter ( Gamma, 'AdiabaticIndex' )
     call PROGRAM_HEADER % GetParameter ( N_0,   'MassDensity' )
     call PROGRAM_HEADER % GetParameter ( T_0,   'Temperature' )
     call PROGRAM_HEADER % GetParameter ( T_I,   'TemperatureInner' )
     call PROGRAM_HEADER % GetParameter ( Kappa, 'SpecificOpacity' )
+
+    Lambda  =  1.0_KDR / ( N_0 * Kappa )
+    Tau     =  L / Lambda
+    t_Diff  =  L ** 2 / ( c * Lambda )
 
     call Show ( 'MarshakWave parameters' )
     call Show ( Gamma, 'Gamma' )
@@ -97,8 +112,11 @@ TimeStep
     call Show ( T_0, UNIT % KELVIN, 'T_0' )
     call Show ( T_I, UNIT % KELVIN, 'T_I' )
     call Show ( Kappa, UNIT % CENTIMETER ** 2 / UNIT % GRAM, 'Kappa' )
+    call Show ( Lambda, UNIT % CENTIMETER, 'Lambda' )
+    call Show ( Tau, UNIT % IDENTITY, 'Tau' )
+    call Show ( t_Diff, UNIT % SECOND, 't_Diff' )
 
-    end associate !-- Gamma, etc.
+    end associate !-- L, etc.
 
     !-- PositionSpace
 
@@ -114,8 +132,8 @@ TimeStep
 
     CoordinateUnit  =  UNIT % CENTIMETER
 
-    MinCoordinate  =   0.0_KDR  *  UNIT % CENTIMETER
-    MaxCoordinate  =  20.0_KDR  *  UNIT % CENTIMETER
+    MinCoordinate  =  0.0_KDR
+    MaxCoordinate  =  BoxLength
 
     call PS % CreateChart &
            ( CoordinateUnitOption = CoordinateUnit, &
