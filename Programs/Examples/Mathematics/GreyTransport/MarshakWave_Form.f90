@@ -65,7 +65,9 @@ contains
       AngularMomentumUnit
     type ( MeasuredValueForm ), dimension ( 3 ) :: &
       CoordinateUnit, &
-      VelocityUnit
+      VelocityUnit, &
+      MomentumDensity_U_Unit, &
+      MomentumDensity_D_Unit
 
     if ( MW % Type == '' ) &
       MW % Type = 'a MarshakWave' 
@@ -134,13 +136,15 @@ contains
 
     TimeUnit = UNIT % SECOND
 
-    VelocityUnit ( 1 ) =  CoordinateUnit ( 1 ) / TimeUnit 
-    VelocityUnit ( 2 ) =  CoordinateUnit ( 2 ) / TimeUnit
-    VelocityUnit ( 3 ) =  CoordinateUnit ( 3 ) / TimeUnit
-    MassDensityUnit    =  UNIT % MASS_DENSITY_CGS
-    EnergyDensityUnit  =  UNIT % MASS_DENSITY_CGS  &
-                          *  UNIT % SPEED_OF_LIGHT ** 2
-    TemperatureUnit    =  UNIT % KELVIN
+    VelocityUnit ( 1 )     =  CoordinateUnit ( 1 ) / TimeUnit 
+    VelocityUnit ( 2 )     =  CoordinateUnit ( 2 ) / TimeUnit
+    VelocityUnit ( 3 )     =  CoordinateUnit ( 3 ) / TimeUnit
+    MassDensityUnit        =  UNIT % MASS_DENSITY_CGS
+    EnergyDensityUnit      =  UNIT % MASS_DENSITY_CGS  &
+                              *  UNIT % SPEED_OF_LIGHT ** 2
+    MomentumDensity_U_Unit = EnergyDensityUnit / UNIT % SPEED_OF_LIGHT
+    MomentumDensity_D_Unit = EnergyDensityUnit / UNIT % SPEED_OF_LIGHT
+    TemperatureUnit        =  UNIT % KELVIN
 
     MassUnit  =  MassDensityUnit  *  CoordinateUnit ( 1 )
     if ( PS % nDimensions > 1 ) &
@@ -161,7 +165,10 @@ contains
     select type ( RA => MW % Current_ASC_1D ( MW % RADIATION ) % Element )
     class is ( RadiationMoments_ASC_Form )
     call RA % Initialize &
-           ( PS, 'GENERIC', EnergyDensityUnitOption = EnergyDensityUnit )
+           ( PS, 'GENERIC', &
+             MomentumDensity_U_UnitOption = MomentumDensity_U_Unit, &
+             MomentumDensity_D_UnitOption = MomentumDensity_D_Unit, &
+             EnergyDensityUnitOption = EnergyDensityUnit )
 
     !-- Fluid
 

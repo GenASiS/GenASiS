@@ -233,7 +233,7 @@ contains
     class is ( RadiationMoments_CSL_Form )
       call FC % Initialize &
              ( C, FA % RadiationMomentsType, FA % Velocity_U_Unit, &
-               FC % MomentumDensity_U_Unit, FC % MomentumDensity_D_Unit, &
+               FA % MomentumDensity_U_Unit, FA % MomentumDensity_D_Unit, &
                FA % EnergyDensityUnit, nValues, &
                NameOutputOption = NameOutputOption )
     end select !-- FC

@@ -66,9 +66,7 @@ module Tally_C__Form
 contains
 
 
-  subroutine InitializeConserved &
-               ( T, C, A, ConservedVariableOption, ConservedUnitOption, &
-                 CoordinateUnitOption )
+  subroutine InitializeConserved ( T, C, A, VariableOption, UnitOption )
 
     class ( Tally_C_Form ), intent ( inout ) :: &
       T
@@ -77,16 +75,17 @@ contains
     class ( AtlasHeaderForm ), intent ( in ) :: &
       A
     character ( * ), dimension ( : ), intent ( in ), optional :: &
-      ConservedVariableOption
+      VariableOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
-      ConservedUnitOption, &
-      CoordinateUnitOption
+      UnitOption
 
     integer ( KDI ) :: &
       iF, &  !-- iField
       iD     !-- iDimension
     type ( MeasuredValueForm ) :: &
       VolumeUnit
+    class ( GeometryFlatForm ), pointer :: &
+      G
 
     if ( T % N_INTEGRALS == 0 ) &
       T % N_INTEGRALS = C % N_CONSERVED
@@ -99,8 +98,8 @@ contains
     if ( .not. allocated ( T % Variable ) ) &
       allocate ( T % Variable ( T % N_INTEGRALS ) )
 
-    if ( present ( ConservedVariableOption ) ) then
-      T % Variable ( 1 : C % N_CONSERVED ) = ConservedVariableOption
+    if ( present ( VariableOption ) ) then
+      T % Variable ( 1 : C % N_CONSERVED ) = VariableOption
     else
       associate ( iaC => C % iaConserved )
       do iF = 1, C % N_CONSERVED
@@ -113,15 +112,20 @@ contains
     if ( .not. allocated ( T % Unit ) ) &
       allocate ( T % Unit ( T % N_INTEGRALS ) )    
 
-    if ( present ( ConservedUnitOption ) ) then
+    if ( present ( UnitOption ) ) then
 
-      T % Unit ( 1 : C % N_CONSERVED ) = ConservedUnitOption
+      T % Unit ( 1 : C % N_CONSERVED ) = UnitOption
 
-    else if ( present ( CoordinateUnitOption ) ) then
+    else 
 
-      VolumeUnit = UNIT % IDENTITY
+      select type ( A )
+      class is ( Atlas_SC_Form )
+      associate ( CoordinateUnit => A % Chart % CoordinateUnit )   
+      G => A % Geometry ( )
+
+      VolumeUnit = G % Unit ( G % VOLUME_JACOBIAN )
       do iD = 1, 3
-        VolumeUnit = VolumeUnit * CoordinateUnitOption ( iD )
+        VolumeUnit = VolumeUnit * CoordinateUnit ( iD )
       end do !-- iD
 
       associate ( iaC => C % iaConserved )
@@ -131,9 +135,14 @@ contains
       end do !-- iF
       end associate !-- iaC
 
+      end associate !-- CoordinateUnit
+      end select !-- A
+
     end if 
 
     call T % SelectVariables ( A )
+
+    nullify ( G )
 
   end subroutine InitializeConserved
 
