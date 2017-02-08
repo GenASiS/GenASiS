@@ -35,7 +35,8 @@ module MarshakWave_Form
       MassDensity, &
       Temperature, &
       TemperatureInner, &
-      SpecificOpacity
+      SpecificOpacity, &
+      SoundSpeed
     real ( KDR ), dimension ( 3 ), private :: &
       MinCoordinate, &
       MaxCoordinate
@@ -56,6 +57,7 @@ contains
       BoxLength, &
       MeanFreePath, &
       OpticalDepth, &
+      DynamicalTime, &
       DiffusionTime, &
       FinishTime, &
 TimeStep
@@ -83,11 +85,7 @@ TimeStep
         N_0    => MassDensity, &
         T_0    => Temperature, &
         T_I    => TemperatureInner, &
-        Kappa  => SpecificOpacity, &
-        Lambda => MeanFreePath, &
-        Tau    => OpticalDepth, &
-        t_Diff => DiffusionTime, &
-        c      => CONSTANT % SPEED_OF_LIGHT )
+        Kappa  => SpecificOpacity )
 
     L      =  20.0_KDR    *  UNIT % CENTIMETER
     Gamma  =  1.4_KDR
@@ -95,28 +93,13 @@ TimeStep
     T_0    =  3.0e2_KDR   *  UNIT % KELVIN
     T_I    =  1.0e3_KDR   *  UNIT % KELVIN
     Kappa  =  1.0e3_KDR   *  UNIT % CENTIMETER ** 2 / UNIT % GRAM
-    call PROGRAM_HEADER % GetParameter ( L, 'BoxLength' )
+
+    call PROGRAM_HEADER % GetParameter ( L,     'BoxLength' )
     call PROGRAM_HEADER % GetParameter ( Gamma, 'AdiabaticIndex' )
     call PROGRAM_HEADER % GetParameter ( N_0,   'MassDensity' )
     call PROGRAM_HEADER % GetParameter ( T_0,   'Temperature' )
     call PROGRAM_HEADER % GetParameter ( T_I,   'TemperatureInner' )
     call PROGRAM_HEADER % GetParameter ( Kappa, 'SpecificOpacity' )
-
-    Lambda  =  1.0_KDR / ( N_0 * Kappa )
-    Tau     =  L / Lambda
-    t_Diff  =  L ** 2 / ( c * Lambda )
-
-    call Show ( 'MarshakWave parameters' )
-    call Show ( Gamma, 'Gamma' )
-    call Show ( N_0, UNIT % MASS_DENSITY_CGS, 'N_0' )
-    call Show ( T_0, UNIT % KELVIN, 'T_0' )
-    call Show ( T_I, UNIT % KELVIN, 'T_I' )
-    call Show ( Kappa, UNIT % CENTIMETER ** 2 / UNIT % GRAM, 'Kappa' )
-    call Show ( Lambda, UNIT % CENTIMETER, 'Lambda' )
-    call Show ( Tau, UNIT % IDENTITY, 'Tau' )
-    call Show ( t_Diff, UNIT % SECOND, 't_Diff' )
-
-    end associate !-- L, etc.
 
     !-- PositionSpace
 
@@ -223,6 +206,34 @@ TimeStep
     call SetFluid ( MW )
     call SetInteractions ( MW )
 
+    associate &
+      ( c_s    => SoundSpeed, &
+        t_Dyn  => DynamicalTime, &
+        Lambda => MeanFreePath, &
+        Tau    => OpticalDepth, &
+        t_Diff => DiffusionTime, &
+        c      => CONSTANT % SPEED_OF_LIGHT )
+
+    t_Dyn   =  L / c_s
+
+    Lambda  =  1.0_KDR / ( N_0 * Kappa )
+    Tau     =  L / Lambda
+    t_Diff  =  L * Tau / c
+
+    call Show ( 'MarshakWave parameters' )
+    call Show ( Gamma, 'Gamma' )
+    call Show ( N_0, UNIT % MASS_DENSITY_CGS, 'N_0' )
+    call Show ( T_0, UNIT % KELVIN, 'T_0' )
+    call Show ( c_s, UNIT % SPEED_OF_LIGHT, 'c_s' )
+    call Show ( t_Dyn, UNIT % SECOND, 't_Dyn' )
+    call Show ( T_I, UNIT % KELVIN, 'T_I' )
+    call Show ( Kappa, UNIT % CENTIMETER ** 2 / UNIT % GRAM, 'Kappa' )
+    call Show ( Lambda, UNIT % CENTIMETER, 'Lambda' )
+    call Show ( Tau, UNIT % IDENTITY, 'Tau' )
+    call Show ( t_Diff, UNIT % SECOND, 't_Diff' )
+
+    end associate !-- c_s, etc.
+
     !-- Initialize template
 
     FinishTime  =  1.36e-7_KDR  *  UNIT % SECOND
@@ -238,6 +249,7 @@ TimeStep
     end select !-- FA
     end select !-- RA
     end select !-- PS
+    end associate !-- L, etc.
 
   end subroutine Initialize
 
@@ -341,7 +353,8 @@ TimeStep
         V_1 => F % Value ( :, F % VELOCITY_U ( 1 ) ), &
         V_2 => F % Value ( :, F % VELOCITY_U ( 2 ) ), &
         V_3 => F % Value ( :, F % VELOCITY_U ( 3 ) ), &
-          T => F % Value ( :, F % TEMPERATURE ) )
+          T => F % Value ( :, F % TEMPERATURE ), &
+        C_S => F % Value ( :, F % SOUND_SPEED ) )
 
     N  =  N_0
     T  =  T_0
@@ -351,6 +364,8 @@ TimeStep
     V_3  =  0.0_KDR
 
     call F % ComputeFromPrimitiveTemperature ( G )
+
+    SoundSpeed = maxval ( C_S )
 
     end associate !-- N, etc.
     end select !-- PS
