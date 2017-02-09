@@ -14,20 +14,37 @@ module Step_RK_C__Template
   implicit none
   private
 
+  type, private :: ApplyDivergencePointer
+    procedure ( ApplyDivergence ), pointer, nopass :: &
+      Pointer => null ( )
+  end type ApplyDivergencePointer
+
+  type, private :: ApplySourcesPointer
+    procedure ( AS ), pointer, nopass :: &
+      Pointer => null ( )
+  end type ApplySourcesPointer
+
+  type, private :: ApplyRelaxationPointer
+    procedure ( AR ), pointer, nopass :: &
+      Pointer => null ( )
+  end type ApplyRelaxationPointer
+
   type, public, extends ( Step_RK_Template ), abstract :: Step_RK_C_Template
     integer ( KDI ) :: &
       iTimerGhost, &
       iGeometryValue
     type ( Real_1D_Form ), dimension ( : ), allocatable :: &
       dLogVolumeJacobian_dX
-    type ( Real_3D_Form ), dimension ( :, : ), allocatable :: &
+    type ( Real_3D_2D_Form ), dimension ( : ), allocatable :: &
       BoundaryFluence_CSL
+    logical ( KDL ), dimension ( : ), allocatable :: &
+      UseLimiterParameter
     class ( GeometryFlatForm ), pointer :: &
       Geometry
     class ( * ), pointer :: &
       Grid => null ( )
-    class ( CurrentTemplate ), pointer :: &
-      Current => null ( )
+    type ( CurrentPointerForm ), dimension ( : ), pointer :: &
+      Current_1D => null ( )
     type ( IncrementDivergence_FV_Form ), allocatable :: &
       IncrementDivergence
     type ( IncrementDampingForm ), allocatable :: &
@@ -38,11 +55,21 @@ module Step_RK_C__Template
       ApplySources => null ( ) 
     procedure ( AR ), pointer, pass :: &
       ApplyRelaxation => null ( )
+    type ( ApplyDivergencePointer ), dimension ( : ), allocatable :: &
+      ApplyDivergence_1D
+    type ( ApplySourcesPointer ), dimension ( : ), allocatable :: &
+      ApplySources_1D
+    type ( ApplyRelaxationPointer ), dimension ( : ), allocatable :: &
+      ApplyRelaxation_1D
   contains
     procedure, public, pass :: &
       InitializeTemplate_C
-    procedure, public, pass :: &
-      Compute
+    procedure, private, pass :: &
+      Compute_0D
+    procedure, private, pass :: &
+      Compute_1D
+    generic, public :: &
+      Compute => Compute_0D, Compute_1D
     procedure, public, pass :: &
       FinalizeTemplate_C
     procedure, private, pass :: &
@@ -124,7 +151,7 @@ contains
   end subroutine InitializeTemplate_C
 
 
-  subroutine Compute &
+  subroutine Compute_0D &
                ( S, Current, Grid, Time, TimeStep, GeometryOption, &
                  UseLimiterParameterOption, iGeometryValueOption )
 
@@ -144,9 +171,65 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       iGeometryValueOption
 
+    logical ( KDL ), dimension ( 1 ) :: &
+      UseLimiterParameter
+    type ( CurrentPointerForm ), dimension ( 1 ) :: &
+      Current_1D
+
+    UseLimiterParameter = .true.
+    if ( present ( UseLimiterParameterOption ) ) &
+      UseLimiterParameter = UseLimiterParameterOption
+
+    Current_1D ( 1 ) % Pointer => Current
+
+    allocate ( S % ApplyDivergence_1D ( 1 ) )
+    allocate ( S % ApplySources_1D ( 1 ) )
+    allocate ( S % ApplyRelaxation_1D ( 1 ) )
+    S % ApplyDivergence_1D ( 1 ) % Pointer => S % ApplyDivergence
+    S % ApplySources_1D ( 1 )    % Pointer => S % ApplySources
+    S % ApplyRelaxation_1D ( 1 ) % Pointer => S % ApplyRelaxation
+
+    call S % Compute_1D &
+           ( Current_1D, Grid, Time, TimeStep, &
+             GeometryOption = GeometryOption, &
+             UseLimiterParameterOption = UseLimiterParameter, &
+             iGeometryValueOption = iGeometryValueOption )
+
+    deallocate ( S % ApplyRelaxation_1D )
+    deallocate ( S % ApplySources_1D )
+    deallocate ( S % ApplyDivergence_1D )
+
+  end subroutine Compute_0D
+
+
+  subroutine Compute_1D &
+               ( S, Current_1D, Grid, Time, TimeStep, GeometryOption, &
+                 UseLimiterParameterOption, iGeometryValueOption )
+
+    class ( Step_RK_C_Template ), intent ( inout ) :: &
+      S
+    type ( CurrentPointerForm ), dimension ( : ), intent ( inout ), &
+      target :: &
+        Current_1D
+    class ( * ), intent ( inout ), target :: &
+      Grid
+    real ( KDR ), intent ( in ) :: &
+      Time, &
+      TimeStep
+    class ( GeometryFlatForm ), intent ( in ), target, optional :: &
+      GeometryOption
+    logical ( KDL ), intent ( in ), dimension ( : ), optional :: &
+      UseLimiterParameterOption
+    integer ( KDI ), intent ( in ), optional :: &
+      iGeometryValueOption
+
     integer ( KDI ) :: &
-      iF  !-- iField
-    type ( VariableGroupForm ) :: &
+      iF, &  !-- iField
+      iG     !-- iGroup
+    integer ( KDI ), dimension ( size ( Current_1D ) ) :: &
+      nValues, &
+      nEquations
+    type ( VariableGroupForm ), dimension ( size ( Current_1D ) ) :: &
       Solution
     class ( GeometryFlatForm ), pointer :: &
       G
@@ -155,70 +238,89 @@ contains
       ( Timer => PROGRAM_HEADER % Timer ( S % iTimerComputeStep ) )
     call Timer % Start ( )
 
-    S % Current => Current
+    S % Current_1D => Current_1D
     S % Grid => Grid
+
+    associate ( nGroups => size ( Current_1D ) )
+
     if ( present ( GeometryOption ) .and. present ( iGeometryValueOption ) ) &
     then
       S % Geometry => GeometryOption
       S % iGeometryValue = iGeometryValueOption
     end if
 
-    associate &
-      ( C   => Current, &
-        iaC => Current % iaConserved, &
-        nE  => Current % N_CONSERVED, &  !-- nEquations
-        nV  => Current % nValues )
+    !-- Allocate Solution and initialize from Current_1D
 
-    call Solution % Initialize ( [ nV, nE ] )
-    do iF = 1, C % N_CONSERVED
+    do iG = 1, nGroups
       associate &
-        ( CV => C % Value ( :, iaC ( iF ) ), &
-          SV => Solution % Value ( :, iF ) )
-      call Copy ( CV, SV )
-      end associate !-- CV, etc.
-    end do !-- iF
+        ( C   => Current_1D ( iG ) % Pointer )
+      associate &
+        ( iaC => C % iaConserved, &
+          nE  => C % N_CONSERVED, &  !-- nEquations
+          nV  => C % nValues )
 
-    if ( associated ( S % ApplyDivergence ) ) &
-      call S % SetDivergence ( UseLimiterParameterOption )
+      call Solution ( iG ) % Initialize ( [ nV, nE ] )
+      do iF = 1, C % N_CONSERVED
+        associate &
+          ( CV => C % Value ( :, iaC ( iF ) ), &
+            SV => Solution ( iG ) % Value ( :, iF ) )
+        call Copy ( CV, SV )
+        end associate !-- CV, etc.
+      end do !-- iF
 
+      end associate !-- iaC, etc.
+      end associate !-- C, etc.
+    end do !-- iG
+
+    !-- Compute Solution
+
+    call S % SetDivergence ( UseLimiterParameterOption )
     call S % ComputeTemplate ( Solution, Time, TimeStep )
+    call S % ClearDivergence ( )
 
-    do iF = 1, C % N_CONSERVED
-      associate &
-        ( SV => Solution % Value ( :, iF ), &
-          CV => C % Value ( :, iaC ( iF ) ) )
-      call Copy ( SV, CV )
-      end associate !-- YV, etc.
-    end do !-- iF
+    !-- Copy Solution to Current_1D
 
-    if ( associated ( S % Geometry ) ) then
-      call C % ComputeFromConserved ( S % iGeometryValue, S % Geometry )
-    else
-      select type ( Grid )
-      class is ( Chart_SL_Template )
-        G => Grid % Geometry ( )
-      class default
-        call Show ( 'Grid type not found', CONSOLE % ERROR )
-        call Show ( 'Step_RK_C__Form', 'module', CONSOLE % ERROR )
-        call Show ( 'Compute', 'subroutine', CONSOLE % ERROR ) 
-        call PROGRAM_HEADER % Abort ( )
-      end select !-- Grid
-      call C % ComputeFromConserved ( G )
-    end if
+    do iG = 1, nGroups
+      associate ( C => Current_1D ( iG ) % Pointer )
+      associate ( iaC => C % iaConserved )
 
-    if ( associated ( S % ApplyDivergence ) ) &
-      call S % ClearDivergence ( )
+      do iF = 1, C % N_CONSERVED
+        associate &
+          ( SV => Solution ( iG ) % Value ( :, iF ), &
+            CV => C % Value ( :, iaC ( iF ) ) )
+        call Copy ( SV, CV )
+        end associate !-- YV, etc.
+      end do !-- iF
 
-    end associate !-- C, etc.
+      if ( associated ( S % Geometry ) ) then
+        call C % ComputeFromConserved ( S % iGeometryValue, S % Geometry )
+      else
+        select type ( Grid )
+        class is ( Chart_SL_Template )
+          G => Grid % Geometry ( )
+        class default
+          call Show ( 'Grid type not found', CONSOLE % ERROR )
+          call Show ( 'Step_RK_C__Form', 'module', CONSOLE % ERROR )
+          call Show ( 'Compute', 'subroutine', CONSOLE % ERROR ) 
+          call PROGRAM_HEADER % Abort ( )
+        end select !-- Grid
+        call C % ComputeFromConserved ( G )
+      end if
+
+      end associate !-- iaC
+      end associate !-- C
+    end do !-- iG
+
+    end associate !-- nGroups
 
     nullify ( S % Grid )
-    nullify ( S % Current )
+    nullify ( S % Current_1D )
     nullify ( S % Geometry )
 
     call Timer % Stop ( )
     end associate !-- Timer
 
-  end subroutine Compute
+  end subroutine Compute_1D
 
 
   impure elemental subroutine FinalizeTemplate_C ( S )
@@ -231,7 +333,7 @@ contains
     if ( allocated ( S % BoundaryFluence_CSL ) ) &
       deallocate ( S % BoundaryFluence_CSL )
 
-    nullify ( S % Current )
+    nullify ( S % Current_1D )
     nullify ( S % Grid )
 
     call S % FinalizeTemplate ( )
@@ -239,19 +341,20 @@ contains
   end subroutine FinalizeTemplate_C
 
 
-  subroutine ComputeIncrement ( S, K, Y, Time, TimeStep, iStage )
+  subroutine ComputeIncrement ( S, K, Y, Time, TimeStep, iStage, iGroup )
 
     class ( Step_RK_C_Template ), intent ( inout ) :: &
       S
-    type ( VariableGroupForm ), intent ( inout ) :: &
+    type ( VariableGroupForm ), dimension ( :, : ), intent ( inout ) :: &
       K
-    type ( VariableGroupForm ), intent ( in ) :: &
+    type ( VariableGroupForm ), dimension ( : ), intent ( in ) :: &
       Y
     real ( KDR ), intent ( in ) :: &
       Time, &
       TimeStep
     integer ( KDI ), intent ( in ) :: &
-      iStage
+      iStage, &
+      iGroup
 
     integer ( KDI ) :: &
       iF  !-- iField
@@ -265,14 +368,14 @@ contains
     call Timer % Start ( )
 
     associate &
-      ( C   => S % Current, &
-        iaC => S % Current % iaConserved )
+      ( C   => S % Current_1D ( iGroup ) % Pointer, &
+        iaC => S % Current_1D ( iGroup ) % Pointer % iaConserved )
 
     if ( iStage > 1 ) then
 
       do iF = 1, C % N_CONSERVED
         associate &
-          ( YV => Y % Value ( :, iF ), &
+          ( YV => Y ( iGroup ) % Value ( :, iF ), &
             CV => C % Value ( :, iaC ( iF ) ) )
         call Copy ( YV, CV )
         end associate !-- YV, etc.
@@ -295,23 +398,27 @@ contains
 
     end if !-- iStage > 1
 
-    call Clear ( K % Value )
+    associate ( KG => K ( iGroup, iStage ) )
+
+    call Clear ( KG % Value )
 
     !-- Divergence
-    if ( associated ( S % ApplyDivergence ) ) &
-      call S % ApplyDivergence ( K, C, TimeStep, iStage )
+    if ( associated ( S % ApplyDivergence_1D ( iGroup ) % Pointer ) ) &
+      call S % ApplyDivergence_1D ( iGroup ) % Pointer &
+             ( S, KG, C, TimeStep, iStage, iGroup )
 
     !-- Other explicit sources
-    if ( associated ( S % ApplySources ) ) &
-      call S % ApplySources ( K, C, TimeStep )
+    if ( associated ( S % ApplySources_1D ( iGroup ) % Pointer ) ) &
+      call S % ApplySources_1D ( iGroup ) % Pointer ( S, KG, C, TimeStep )
 
     !-- Relaxation
-    if ( associated ( S % ApplyRelaxation ) ) then
+    if ( associated ( S % ApplyRelaxation_1D ( iGroup ) % Pointer ) ) then
       associate ( ID => S % IncrementDamping )
       allocate ( DC )
-      call DC % Initialize ( shape ( K % Value ), ClearOption = .true. )
-      call S % ApplyRelaxation ( K, DC, C, TimeStep )
-      call ID % Compute ( K, C, K, DC, TimeStep )
+      call DC % Initialize ( shape ( KG % Value ), ClearOption = .true. )
+      call S % ApplyRelaxation_1D ( iGroup ) % Pointer &
+             ( S, KG, DC, C, TimeStep )
+      call ID % Compute ( KG, C, KG, DC, TimeStep )
       deallocate ( DC )
       end associate !-- iD
     end if
@@ -321,12 +428,13 @@ contains
       class is ( Chart_SLD_Form )
         associate ( TimerGhost => PROGRAM_HEADER % Timer ( S % iTimerGhost ) )
         call TimerGhost % Start ( )
-        call Grid % ExchangeGhostData ( K )
+        call Grid % ExchangeGhostData ( KG )
         call TimerGhost % Stop ( )
         end associate !-- TimerGhost
       end select !-- Grid
     end if !-- ApplyDivergence
 
+    end associate !-- KG
     end associate !-- C, etc.
 
     call Timer % Stop ( )
@@ -341,49 +449,57 @@ contains
 
     class ( Step_RK_C_Template ), intent ( inout ) :: &
       S
-    logical ( KDL ), intent ( in ), optional :: &
+    logical ( KDL ), intent ( in ), dimension ( : ), optional :: &
       UseLimiterParameterOption
 
     integer ( KDI ) :: &
       iD, jD, kD, &  !-- iDimension
-      iF      !-- iField
+      iF, &  !-- iField
+      iG     !-- iGroup
     integer ( KDI ), dimension ( 3 ) :: &
       nSurface
 
-    if ( present ( UseLimiterParameterOption ) ) &
-      call S % IncrementDivergence % Set ( UseLimiterParameterOption )
+    associate ( nGroups => size ( S % Current_1D ) )
 
-    select type ( Grid => S % Grid)
+    allocate ( S % UseLimiterParameter ( nGroups ) )
+    S % UseLimiterParameter = .true.
+    if ( present ( UseLimiterParameterOption ) ) &
+      S % UseLimiterParameter = UseLimiterParameterOption
+
+    select type ( Grid => S % Grid )
     class is ( Chart_SLD_Form )
 
       if ( allocated ( S % BoundaryFluence_CSL ) ) &
         deallocate ( S % BoundaryFluence_CSL )
+      allocate ( S % BoundaryFluence_CSL ( nGroups ) )
 
-      associate &
-        ( C => Grid % Atlas % Connectivity, &
-          nDimensions => Grid % nDimensions, &
-          nConserved => S % Current % N_CONSERVED )
-      allocate &
-        ( S % BoundaryFluence_CSL ( nConserved, C % nFaces ) )
-      do iD = 1, nDimensions
-        jD = mod ( iD, 3 ) + 1
-        kD = mod ( jD, 3 ) + 1
-        nSurface ( iD ) = 1
-        nSurface ( jD ) = Grid % nCellsBrick ( jD ) 
-        nSurface ( kD ) = Grid % nCellsBrick ( kD )
-        do iF = 1, S % Current % N_CONSERVED
-          call S % BoundaryFluence_CSL ( iF, C % iaInner ( iD ) ) &
-                 % Initialize ( nSurface, ClearOption = .true. )
-          call S % BoundaryFluence_CSL ( iF, C % iaOuter ( iD ) ) &
-                 % Initialize ( nSurface, ClearOption = .true. )
-        end do !-- iF
-      end do !-- iD
-      end associate !-- C, etc.
+      do iG = 1, nGroups
+        associate &
+          ( C => Grid % Atlas % Connectivity, &
+            nDimensions => Grid % nDimensions, &
+            nConserved  => S % Current_1D ( iG ) % Pointer % N_CONSERVED, &
+            BF => S % BoundaryFluence_CSL ( iG ) )
+        call BF % Initialize ( [ nConserved, C % nFaces ] )
+        do iD = 1, nDimensions
+          jD = mod ( iD, 3 ) + 1
+          kD = mod ( jD, 3 ) + 1
+          nSurface ( iD ) = 1
+          nSurface ( jD ) = Grid % nCellsBrick ( jD ) 
+          nSurface ( kD ) = Grid % nCellsBrick ( kD )
+          do iF = 1, nConserved
+            call BF % Array ( iF, C % iaInner ( iD ) ) &
+                   % Initialize ( nSurface, ClearOption = .true. )
+            call BF % Array ( iF, C % iaOuter ( iD ) ) &
+                   % Initialize ( nSurface, ClearOption = .true. )
+          end do !-- iF
+        end do !-- iD
+        end associate !-- C, etc.
 
-      call S % IncrementDivergence % Set ( S % BoundaryFluence_CSL )
+      end do !-- iG
 
-      if ( trim ( Grid % CoordinateSystem ) == 'SPHERICAL' &
-           .or. trim ( Grid % CoordinateSystem ) == 'CYLINDRICAL' ) then
+      if ( ( trim ( Grid % CoordinateSystem ) == 'SPHERICAL' &
+             .or. trim ( Grid % CoordinateSystem ) == 'CYLINDRICAL' ) ) &
+      then
 
         associate ( nValues => Grid % Geometry_CSL % nValues )
         allocate ( S % dLogVolumeJacobian_dX ( 2 ) )
@@ -402,6 +518,8 @@ contains
       call PROGRAM_HEADER % Abort ( )
     end select !-- Grid
 
+    end associate !-- nGroups
+
   end subroutine SetDivergence
 
 
@@ -410,15 +528,16 @@ contains
     class ( Step_RK_C_Template ), intent ( inout ) :: &
       S
 
-    call S % IncrementDivergence % Clear ( )
-
     if ( allocated ( S % dLogVolumeJacobian_dX ) ) &
       deallocate ( S % dLogVolumeJacobian_dX )
         
+    deallocate ( S % UseLimiterParameter )
+
   end subroutine ClearDivergence
 
 
-  subroutine ApplyDivergence ( S, Increment, Current, TimeStep, iStage )
+  subroutine ApplyDivergence &
+               ( S, Increment, Current, TimeStep, iStage, iGroup )
 
     class ( Step_RK_C_Template ), intent ( inout ) :: &
       S
@@ -429,11 +548,15 @@ contains
     real ( KDR ), intent ( in ) :: &
       TimeStep
     integer ( KDI ), intent ( in ) :: &
-      iStage
+      iStage, &
+      iGroup
 
     associate ( ID => S % IncrementDivergence )
+    call ID % Set ( S % UseLimiterParameter ( iGroup ) )
+    call ID % Set ( S % BoundaryFluence_CSL ( iGroup ) % Array )
     call ID % Set ( Weight_RK = S % B ( iStage ) )
     call ID % Compute ( Increment, S % Grid, Current, TimeStep )
+    call ID % Clear ( )
     end associate !-- ID
 
   end subroutine ApplyDivergence

@@ -132,6 +132,11 @@ module Current_Template
 
   end interface
 
+  type, public :: CurrentPointerForm
+    class ( CurrentTemplate ), pointer :: &
+      Pointer => null ( )
+  end type CurrentPointerForm
+
     private :: &
       InitializeBasics, &
       SetUnits, &

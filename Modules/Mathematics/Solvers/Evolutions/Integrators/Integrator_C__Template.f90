@@ -335,7 +335,7 @@ contains
     if ( I % Time == I % WriteTime ) &
       I % IsCheckpointTime = .true.
 
-    call CA % AccumulateBoundaryTally ( S % BoundaryFluence_CSL )
+    call CA % AccumulateBoundaryTally ( S % BoundaryFluence_CSL ( 1 ) % Array )
 
     end associate !-- TimeStep
     end select !-- C

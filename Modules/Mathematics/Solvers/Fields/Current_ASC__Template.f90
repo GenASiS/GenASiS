@@ -241,7 +241,7 @@ contains
   end subroutine ComputeTally
   
   
-  subroutine FinalizeTemplate_ASC_C ( CA )
+  impure elemental subroutine FinalizeTemplate_ASC_C ( CA )
 
     class ( Current_ASC_Template ), intent ( inout ) :: &
       CA
