@@ -60,7 +60,8 @@ contains
       Name
 
     class ( RadiationMomentsForm ), pointer :: &
-      RM
+      RM, &
+      RM_R
     class ( GeometryFlatForm ), pointer :: &
       G
     type ( SplineInterpolationForm ), dimension ( 3 ) :: &
@@ -73,6 +74,8 @@ contains
     real ( KDR ), dimension ( 3 ) :: &
       MinCoordinate, &
       MaxCoordinate
+    real ( KDR ), dimension ( : ), allocatable :: &
+      Radius
     real ( KDR ) :: &
       MaxRadius, &
       SofteningParameter
@@ -272,24 +275,62 @@ contains
     HS % SetReference => SetReference
 
     call PrepareInterpolation ( SI )
-    RM => HS % Reference % RadiationMoments ( )
+    RM_R => HS % Reference % RadiationMoments ( )
     G => PS % Geometry ( )
     select type ( Grid => PS % Chart )
     class is ( Chart_SL_Template )
+    allocate ( Radius ( G % nValues ) )
     associate &
-      ( J   => RM % Value ( :, RM % COMOVING_ENERGY_DENSITY ), &
-        FF  => RM % Value ( :, RM % FLUX_FACTOR ), &
-        VEF => RM % Value ( :, RM % VARIABLE_EDDINGTON_FACTOR ), &
-        R   => G % Value ( :, G % CENTER ( 1 ) ) )
+      ( J   => RM_R % Value ( :, RM_R % COMOVING_ENERGY_DENSITY ), &
+        FF  => RM_R % Value ( :, RM_R % FLUX_FACTOR ), &
+        VEF => RM_R % Value ( :, RM_R % VARIABLE_EDDINGTON_FACTOR ) )
+
+    select case ( CoordinateSystem )
+       select case ( CoordinateSystem ) 
+        case ( 'CARTESIAN' )
+          associate &
+            ( X =>  G % Value ( :, G % CENTER ( 1 ) ), &
+              Y =>  G % Value ( :, G % CENTER ( 2 ) ), &
+              Z =>  G % Value ( :, G % CENTER ( 3 ) ) )
+  
+          !$OMP parallel do private ( iV )
+          do iV = 1, nValues
+            Radius ( iV ) = sqrt ( X ( iV ) ** 2 + Y ( iV ) ** 2 + Z ( iV ) ** 2 )
+          end do !-- iV
+          !$OMP end parallel do
+          end associate !-- X, etc.
+        case ( 'CYLINDRICAL' )
+          associate &
+            ( Rho =>  G % Value ( :, G % CENTER ( 1 ) ), &
+              Z   =>  G % Value ( :, G % CENTER ( 2 ) ) )
+          !$OMP parallel do private ( iV )
+          do iV = 1, nValues
+            Radius ( iV ) = sqrt ( ( Rho ( iV ) ** 2 + Z ( iV ) ** 2 ) )
+          end do !-- iV
+          !$OMP end parallel do
+          end associate !-- Rho, etc. 
+        case ( 'SPHERICAL' )
+          !$OMP parallel do private ( iV )
+          do iV = 1, nValues
+            Radius ( iV ) = G % Value ( iV, G % CENTER ( 1 ) )
+          end do !-- iV
+          !$OMP end parallel do
+        case DEFAULT
+          call show ( CoordinateSystem, 'CoordinateSystem' )
+          call Show ( 'Coordinate System not implemented', CONSOLE % ERROR )
+          call Show ( 'HomogeneousSphere_Form', 'module', CONSOLE % ERROR )
+          call Show ( 'Initialize', 'subroutine', CONSOLE % ERROR )
+          call PROGRAM_HEADER % Abort ( )
+        end select !-- CoordinateSystem
 
       do iV = 1, size ( J )
         if ( .not. Grid % IsProperCell ( iV ) ) cycle
         call SI ( iCOMOVING_ENERGY_DENSITY_SI ) &
-                % Evaluate ( R ( iV ), J ( iV ) )
+                % Evaluate ( Radius ( iV ), J ( iV ) )
         call SI ( iFLUX_FACTOR_SI ) &
-                % Evaluate ( R ( iV ), FF ( iV ) ) 
+                % Evaluate ( Radius ( iV ), FF ( iV ) ) 
         call SI ( iVARIABLE_EDDINGTON_FACTOR_SI ) &
-                % Evaluate ( R ( iV ), VEF ( iV ) ) 
+                % Evaluate ( Radius ( iV ), VEF ( iV ) ) 
 
       end do
       
@@ -309,7 +350,7 @@ contains
     end select !-- RMA
     end associate !-- IA
     end select !-- PS
-    nullify ( G, RM )
+    nullify ( G, RM, RM_R )
     
   end subroutine Initialize 
 
@@ -519,11 +560,17 @@ contains
   end subroutine SetInteractions
 
 
-  subroutine SetReference ( HS )
+  subroutine SetReference ( HS, CoordinateSystem )
 
     class ( IntegratorTemplate ), intent ( in ) :: &
       HS
+    character ( LDL ), intent ( in ) :: &
+      CoordinateSystem
 
+    class ( GeometryFlatForm ), pointer :: &
+      G
+    real ( KDR ), allocatable, dimension ( : ) :: &
+      R
     class ( RadiationMomentsForm ), pointer :: &
       RM, &
       RM_R, &  !-- RM_Reference
@@ -538,7 +585,6 @@ contains
     end select !-- RMA
 
     RM_R => HS % Reference % RadiationMoments ( )
-
     RM_D => HS % Difference % RadiationMoments ( )
 !    RM_D % Value  =  RM % Value  -  RM_R % Value
     call MultiplyAdd ( RM % Value, RM_R % Value, -1.0_KDR, RM_D % Value )
