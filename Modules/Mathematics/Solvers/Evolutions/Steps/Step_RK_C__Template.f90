@@ -14,20 +14,20 @@ module Step_RK_C__Template
   implicit none
   private
 
-  type, private :: ApplyDivergencePointer
-    procedure ( ApplyDivergence ), pointer, nopass :: &
-      Pointer => null ( )
-  end type ApplyDivergencePointer
+    type, private :: ApplyDivergencePointer
+      procedure ( ApplyDivergence ), pointer, nopass :: &
+        Pointer => ApplyDivergence
+    end type ApplyDivergencePointer
 
-  type, private :: ApplySourcesPointer
-    procedure ( AS ), pointer, nopass :: &
-      Pointer => null ( )
-  end type ApplySourcesPointer
+    type, private :: ApplySourcesPointer
+      procedure ( AS ), pointer, nopass :: &
+        Pointer => null ( )
+    end type ApplySourcesPointer
 
-  type, private :: ApplyRelaxationPointer
-    procedure ( AR ), pointer, nopass :: &
-      Pointer => null ( )
-  end type ApplyRelaxationPointer
+    type, private :: ApplyRelaxationPointer
+      procedure ( AR ), pointer, nopass :: &
+        Pointer => null ( )
+    end type ApplyRelaxationPointer
 
   type, public, extends ( Step_RK_Template ), abstract :: Step_RK_C_Template
     integer ( KDI ) :: &
@@ -248,6 +248,13 @@ contains
       S % Geometry => GeometryOption
       S % iGeometryValue = iGeometryValueOption
     end if
+
+    if ( .not. allocated ( S % ApplyDivergence_1D ) ) &
+      allocate ( S % ApplyDivergence_1D ( nGroups ) )
+    if ( .not. allocated ( S % ApplySources_1D ) ) &
+      allocate ( S % ApplySources_1D ( nGroups ) )
+    if ( .not. allocated ( S % ApplyRelaxation_1D ) ) &
+      allocate ( S % ApplyRelaxation_1D ( nGroups ) )
 
     !-- Allocate Solution and initialize from Current_1D
 
