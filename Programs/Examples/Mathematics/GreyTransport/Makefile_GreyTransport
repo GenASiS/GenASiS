@@ -44,6 +44,22 @@ HomogeneousSphere: Basics.a Mathematics.a RadiationMoments.a \
           RadiationMoments.a Mathematics.a Basics.a \
           $(LIBRARIES)
 
+LineSource: Basics.a Mathematics.a RadiationMoments.a \
+  LineSource.o
+	$(LINK) $(FFLAGS) \
+          -o LineSource_$(MACHINE) \
+          LineSource.o LineSource_Form.o \
+          RadiationMoments.a Mathematics.a Basics.a \
+          $(LIBRARIES)
+
+HomogeneousSphere: Basics.a Mathematics.a RadiationMoments.a \
+  HomogeneousSphere.o
+	$(LINK) $(FFLAGS) \
+          -o HomogeneousSphere_$(MACHINE) \
+          HomogeneousSphere.o HomogeneousSphere_Form.o \
+          RadiationMoments.a Mathematics.a Basics.a \
+          $(LIBRARIES)
+
 # EATest: EA_Test.o
 # 	$(LINK) $(FFLAGS) \
 #           -o EATest_$(MACHINE) \
