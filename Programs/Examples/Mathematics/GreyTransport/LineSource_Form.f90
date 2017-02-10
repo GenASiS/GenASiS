@@ -141,12 +141,9 @@ contains
     end associate !-- GA
 
     !-- Interactions
-    allocate ( LS % Interactions_ASC )
-    associate ( IA => LS % Interactions_ASC )
-    call IA % Initialize &
-               ( PS, EquilibriumDensityOption = EquilibriumDensity, &
-                 EffectiveOpacityOption = EffectiveOpacity, &
-                 TransportOpacityOption = TransportOpacity )
+   ! allocate ( LS % Interactions_ASC )
+   ! associate ( IA => LS % Interactions_ASC )
+   ! call IA % Initialize ( PS, 'FIXED' )
 
     !-- RadiationMoments ( Generic )
 
@@ -154,7 +151,7 @@ contains
     select type ( RMA => LS % Current_ASC )  !-- FluidAtlas
     class is ( RadiationMoments_ASC_Form )
     call RMA % Initialize ( PS, 'GENERIC' )
-    call RMA % SetInteractions ( IA )
+   ! call RMA % SetInteractions ( IA )
 
     !-- Step
 
@@ -188,7 +185,7 @@ contains
     !-- Cleanup
            
     end select !-- RMA
-    end associate !-- IA
+    !end associate !-- IA
     end select !-- PS
     nullify ( RM )
     
@@ -305,7 +302,7 @@ contains
 
   subroutine SetReference ( LS )
 
-    class ( IntegratorTemplate ), intent ( in ) :: &
+    class ( IntegratorTemplate ), intent ( inout ) :: &
       LS
 
     class ( RadiationMomentsForm ), pointer :: &
