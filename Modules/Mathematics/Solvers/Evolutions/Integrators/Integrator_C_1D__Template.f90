@@ -8,6 +8,7 @@ module Integrator_C_1D__Template
   use Basics
   use Manifolds
   use Fields
+  use Steps
   use Integrator_C__Template
 
   implicit none
@@ -25,8 +26,13 @@ module Integrator_C_1D__Template
     procedure, private, pass :: &  !-- 3
       ComputeTally
     procedure, private, pass :: &
+      ComputeCycle_ASC
+    procedure, private, pass :: &
       ComputeTimeStepLocal
   end type Integrator_C_1D_Template
+
+      private :: &
+        ComputeCycle_ASC_CSL
 
 contains
 
@@ -70,6 +76,26 @@ contains
     end associate !-- Timer
 
   end subroutine ComputeTally
+
+
+  subroutine ComputeCycle_ASC ( I, PS )
+
+    class ( Integrator_C_1D_Template ), intent ( inout ) :: &
+      I
+    class ( Atlas_SC_Form ), intent ( inout ) :: &
+      PS
+
+    select type ( Chart => PS % Chart )
+    class is ( Chart_SLD_Form )
+      call ComputeCycle_ASC_CSL ( I, I % Current_ASC_1D, Chart )
+    class default
+      call Show ( 'Chart type not found', CONSOLE % ERROR )
+      call Show ( 'Integrator_C__Template', 'module', CONSOLE % ERROR )
+      call Show ( 'ComputeCycle_ASC', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- C
+
+  end subroutine ComputeCycle_ASC
 
 
   subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
@@ -125,6 +151,54 @@ contains
     nullify ( C, G )
 
   end subroutine ComputeTimeStepLocal
+
+
+  subroutine ComputeCycle_ASC_CSL ( I, CA_1D, CSL )
+
+    class ( Integrator_C_1D_Template ), intent ( inout ) :: &
+      I
+    type ( Current_ASC_ElementForm ), dimension ( : ), intent ( in ) :: &
+      CA_1D
+    class ( Chart_SLD_Form ), intent ( inout ) :: &
+      CSL
+
+    integer ( KDI ) :: &
+      iC  !-- iCurrent
+    real ( KDR ) :: &
+      TimeNew
+    type ( CurrentPointerForm ), dimension ( I % N_CURRENTS ) :: &
+      C_1D
+
+    select type ( S => I % Step )
+    class is ( Step_RK_C_Template )
+
+    do iC = 1, I % N_CURRENTS
+      associate ( CA => I % Current_ASC_1D ( iC ) % Element )
+      C_1D ( iC ) % Pointer => CA % Current ( )
+      end associate !-- CA
+    end do !-- iC
+
+    call I % ComputeNewTime ( TimeNew )
+    associate ( TimeStep => TimeNew - I % Time )    
+
+    call S % Compute ( C_1D, CSL, I % Time, TimeStep )
+
+    I % iCycle = I % iCycle + 1
+    I % Time = I % Time + TimeStep
+    if ( I % Time == I % WriteTime ) &
+      I % IsCheckpointTime = .true.
+
+    do iC = 1, I % N_CURRENTS
+      associate ( CA => I % Current_ASC_1D ( iC ) % Element )
+      call CA % AccumulateBoundaryTally &
+             ( S % BoundaryFluence_CSL ( iC ) % Array )
+      end associate !-- CA
+    end do !-- iC
+
+    end associate !-- TimeStep
+    end select !-- S
+
+  end subroutine ComputeCycle_ASC_CSL
 
 
 end module Integrator_C_1D__Template

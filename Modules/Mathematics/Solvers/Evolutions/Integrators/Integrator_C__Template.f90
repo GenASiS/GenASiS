@@ -40,13 +40,12 @@ module Integrator_C__Template
     procedure, private, pass :: &  !-- 3
       WriteTimeSeries
     procedure, private, pass :: &
+      ComputeCycle_ASC
+    procedure, private, pass :: &
       ComputeTimeStepLocal
     procedure, public, nopass :: &
       ComputeTimeStepKernel_CSL
   end type Integrator_C_Template
-
-    private :: &
-      ComputeCycle_ASC
 
       private :: &
         ComputeCycle_ASC_CSL
@@ -148,7 +147,7 @@ contains
 
     select type ( PS => I % PositionSpace )
     class is ( Atlas_SC_Form )
-      call ComputeCycle_ASC ( I, PS )
+      call I % ComputeCycle_ASC ( PS )
     end select
 
     call Timer % Stop ( )
@@ -235,6 +234,26 @@ contains
   end subroutine WriteTimeSeries
 
 
+  subroutine ComputeCycle_ASC ( I, PS )
+
+    class ( Integrator_C_Template ), intent ( inout ) :: &
+      I
+    class ( Atlas_SC_Form ), intent ( inout ) :: &
+      PS
+
+    select type ( Chart => PS % Chart )
+    class is ( Chart_SLD_Form )
+      call ComputeCycle_ASC_CSL ( I, I % Current_ASC, Chart )
+    class default
+      call Show ( 'Chart type not found', CONSOLE % ERROR )
+      call Show ( 'Integrator_C__Template', 'module', CONSOLE % ERROR )
+      call Show ( 'ComputeCycle_ASC', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- C
+
+  end subroutine ComputeCycle_ASC
+
+
   subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
 
     class ( Integrator_C_Template ), intent ( in ) :: &
@@ -280,26 +299,6 @@ contains
     nullify ( C, G )
 
   end subroutine ComputeTimeStepLocal
-
-
-  subroutine ComputeCycle_ASC ( I, PS )
-
-    class ( Integrator_C_Template ), intent ( inout ) :: &
-      I
-    class ( Atlas_SC_Form ), intent ( inout ) :: &
-      PS
-
-    select type ( Chart => PS % Chart )
-    class is ( Chart_SLD_Form )
-      call ComputeCycle_ASC_CSL ( I, I % Current_ASC, Chart )
-    class default
-      call Show ( 'Chart type not found', CONSOLE % ERROR )
-      call Show ( 'Integrator_C__Template', 'module', CONSOLE % ERROR )
-      call Show ( 'ComputeCycle_ASC', 'subroutine', CONSOLE % ERROR )
-      call PROGRAM_HEADER % Abort ( )
-    end select !-- C
-
-  end subroutine ComputeCycle_ASC
 
 
   subroutine ComputeCycle_ASC_CSL ( I, CA, CSL )
