@@ -43,6 +43,8 @@ module MarshakWave_Form
     real ( KDR ), dimension ( 3 ), private :: &
       MinCoordinate, &
       MaxCoordinate
+    type ( VariableGroupForm ), pointer :: &
+      RadiationIncrement => null ( )
     class ( RadiationMomentsForm ), pointer :: &
       Radiation => null ( )
     class ( Interactions_BE_G_Form ), pointer :: &
@@ -437,7 +439,7 @@ contains
 
     class ( Step_RK_C_Template ), intent ( in ) :: &
       S
-    type ( VariableGroupForm ), intent ( inout ) :: &
+    type ( VariableGroupForm ), intent ( inout ), target :: &
       Increment
     class ( CurrentTemplate ), intent ( in ) :: &
       Radiation
@@ -445,9 +447,11 @@ contains
       TimeStep
 
     !-- No sources applied here; just an occasion to compute interactions
-    !   to be used in relaxation.
+    !   to be used in relaxation, and set a pointer to the Radiation increment.
 
     call Interactions % Compute ( )
+
+    RadiationIncrement => Increment 
 
   end subroutine ApplySources_Radiation
 
@@ -456,7 +460,7 @@ contains
 
     class ( Step_RK_C_Template ), intent ( in ) :: &
       S
-    type ( VariableGroupForm ), intent ( inout ) :: &
+    type ( VariableGroupForm ), intent ( inout ), target :: &
       Increment
     class ( CurrentTemplate ), intent ( in ) :: &
       Fluid
@@ -464,12 +468,11 @@ contains
       TimeStep
 
     integer ( KDI ) :: &
-      iEnergy
+      iEnergy_F, &
+      iEnergy_R
 
     select type ( F => Fluid )
     class is ( Fluid_P_NR_Form )
-
-    call Search ( F % iaConserved, F % CONSERVED_ENERGY, iEnergy )
 
     select type ( Grid => S % Grid )
     class is ( Chart_SL_Template )
@@ -478,12 +481,16 @@ contains
       ( I => Interactions, &
         R => Radiation )
 
+    call Search ( F % iaConserved, F % CONSERVED_ENERGY, iEnergy_F )
+    call Search ( R % iaConserved, R % CONSERVED_ENERGY_DENSITY, iEnergy_R )
+
     call ApplySourcesKernel &
-           ( Increment % Value ( :, iEnergy ), &
+           ( Increment % Value ( :, iEnergy_F ), &
              Grid % IsProperCell, &
              I % Value ( :, I % EFFECTIVE_OPACITY ), &
              I % Value ( :, I % EQUILIBRIUM_DENSITY ), &
              R % Value ( :, R % COMOVING_ENERGY_DENSITY ), &
+             RadiationIncrement % Value ( :, iEnergy_R ), &
              CONSTANT % SPEED_OF_LIGHT, TimeStep ) 
 
     end associate !-- I, etc.
@@ -494,7 +501,7 @@ contains
 
   
   subroutine ApplySourcesKernel &
-               ( KV_E, IsProperCell, EO, ED, E, c, dT )
+               ( KV_E, IsProperCell, EO, ED, E, dE, c, dT )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       KV_E   
@@ -503,7 +510,8 @@ contains
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       EO, &
       ED, &
-      E
+      E, &
+      dE
     real ( KDR ) :: &
       c, &
       dT
@@ -519,7 +527,8 @@ contains
       if ( .not. IsProperCell ( iV ) ) &
         cycle
       KV_E ( iV )  &
-        =  KV_E ( iV )  -  c * dT  *  EO ( iV )  *  ( ED ( iV )  -  E ( iV ) ) 
+        =  KV_E ( iV )  -  c * dT  *  EO ( iV )  &
+                           *  ( ED ( iV )  -  ( E ( iV ) + dE ( iV ) ) ) 
     end do
     !$OMP end parallel do
 
