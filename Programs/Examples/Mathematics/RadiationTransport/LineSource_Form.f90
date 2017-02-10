@@ -277,10 +277,10 @@ contains
       allocate ( R ( size ( G % Value ( :, G % CENTER ( 1 ) ) ) ) )
 
       associate &
-        ( X =>  G % Value ( :, G % CENTER ( 1 ) ), &
+        ( XR =>  G % Value ( :, G % CENTER ( 1 ) ), &
           YZ =>  G % Value ( :, G % CENTER ( 2 ) ) )
 
-      R = sqrt ( X ** 2 + YZ ** 2 )
+      R = sqrt ( XR ** 2 + YZ ** 2 )
         
       call SetRadiationKernel &
              ( R, &
