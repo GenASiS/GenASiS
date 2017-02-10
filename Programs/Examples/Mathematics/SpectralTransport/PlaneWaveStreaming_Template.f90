@@ -258,12 +258,12 @@ contains
   end subroutine ComputeCycle
 
 
-  subroutine ComputeTimeStepLocal ( I, TimeStep )
+  subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
 
     class ( PlaneWaveStreamingTemplate ), intent ( in ) :: &
       I
-    real ( KDR ), intent ( inout ) :: &
-      TimeStep
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      TimeStepCandidate
 
     integer ( KDI ) :: &
       iE     !-- iEnergy
@@ -299,10 +299,10 @@ contains
                G % Value ( :, G % WIDTH ( 1 ) ), &
                G % Value ( :, G % WIDTH ( 2 ) ), & 
                G % Value ( :, G % WIDTH ( 3 ) ), &
-               MS % Base_CSLD % nDimensions, TimeStep )
+               MS % Base_CSLD % nDimensions, TimeStepCandidate ( 1 ) )
     end do !-- iE
 
-    TimeStep = I % CourantFactor * TimeStep
+    TimeStepCandidate ( 1 ) = I % CourantFactor * TimeStepCandidate ( 1 )
 
     end associate !-- RS
     end select !-- MS

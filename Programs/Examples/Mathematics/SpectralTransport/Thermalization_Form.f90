@@ -260,14 +260,14 @@ contains
   end subroutine ComputeCycle
 
 
-  subroutine ComputeTimeStepLocal ( I, TimeStep )
+  subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
 
     class ( ThermalizationForm ), intent ( in ) :: &
       I
-    real ( KDR ), intent ( inout ) :: &
-      TimeStep
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      TimeStepCandidate
 
-    TimeStep = 0.01_KDR * TimeScale
+    TimeStepCandidate ( 1 ) = 0.01_KDR * TimeScale
 
   end subroutine ComputeTimeStepLocal
 

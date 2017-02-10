@@ -4,7 +4,8 @@ all: Thermalization SineWaveStreaming
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-VPATH := $(VPATH):../../GreyTransport
+VPATH := $(VPATH):../../FluidDynamics:../../GreyTransport
+include ../../FluidDynamics/Makefile_ObjectFiles
 include ../../GreyTransport/Makefile_ObjectFiles
 
 SPECTRAL_MOMENTS = \
@@ -15,13 +16,13 @@ SPECTRAL_MOMENTS = \
   Matter_CSL__Form.o \
   Matter_Form.o 
 
-Thermalization: Basics.a Mathematics.a GreyMoments.a SpectralMoments.a \
-  Thermalization.o
+Thermalization: Basics.a Mathematics.a Fluid.a GreyMoments.a \
+  SpectralMoments.a Thermalization.o
 	$(LINK) $(FFLAGS) \
           -o Thermalization_$(MACHINE) \
           Thermalization.o Thermalization_Form.o \
-          SpectralMoments.a GreyMoments.a Mathematics.a Basics.a \
-          $(LIBRARIES)
+          SpectralMoments.a GreyMoments.a Fluid.a Mathematics.a Basics.a \
+          $(THIRD_PARTY) $(LIBRARIES)
 
 SineWaveStreaming: Basics.a Mathematics.a GreyMoments.a SpectralMoments.a \
   SineWaveStreaming.o
@@ -34,6 +35,8 @@ SineWaveStreaming: Basics.a Mathematics.a GreyMoments.a SpectralMoments.a \
 
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MATHEMATICS)/Makefile_Dependencies
+include $(PATH_THIRD_PARTY)/Makefile_Dependencies
+include ../../FluidDynamics/Makefile_Dependencies
 include ../../GreyTransport/Makefile_Dependencies
 
 clean:
