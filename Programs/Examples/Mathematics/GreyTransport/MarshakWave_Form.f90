@@ -28,7 +28,10 @@ module MarshakWave_Form
     private :: &
       SetRadiation, &
       SetFluid, &
-      SetInteractions
+      SetInteractions, &
+      ApplySources_Radiation, &
+      ApplySources_Fluid, &
+      ApplySourcesKernel
 
     real ( KDR ), private :: &
       AdiabaticIndex, &
@@ -40,6 +43,10 @@ module MarshakWave_Form
     real ( KDR ), dimension ( 3 ), private :: &
       MinCoordinate, &
       MaxCoordinate
+    class ( RadiationMomentsForm ), pointer :: &
+      Radiation => null ( )
+    class ( Interactions_BE_G_Form ), pointer :: &
+      Interactions => null ( )
 
 contains
 
@@ -59,8 +66,7 @@ contains
       OpticalDepth, &
       DynamicalTime, &
       DiffusionTime, &
-      FinishTime, &
-TimeStep
+      FinishTime
     type ( MeasuredValueForm ) :: &
       TimeUnit, &
       MassDensityUnit, &
@@ -200,6 +206,25 @@ TimeStep
              EnergyDensityUnitOption = EnergyDensityUnit )
     call RA % SetInteractions ( IA )
 
+    !-- Step
+
+    allocate ( Step_RK2_C_Form :: MW % Step )
+    select type ( S => MW % Step )
+    class is ( Step_RK2_C_Form )
+
+    call S % Initialize ( Name )
+
+    allocate ( S % ApplySources_1D ( MW % N_CURRENTS ) )
+    allocate ( S % ApplyRelaxation_1D ( MW % N_CURRENTS ) )
+    S % ApplySources_1D ( MW % RADIATION ) % Pointer &
+      =>  ApplySources_Radiation
+    S % ApplySources_1D ( MW % FLUID ) % Pointer &
+      =>  ApplySources_Fluid
+    S % ApplyRelaxation_1D ( MW % RADIATION ) % Pointer &
+      =>  ApplyRelaxation_Interactions
+
+    end select !-- S
+
     !-- Initial conditions
 
     call SetRadiation ( MW )
@@ -239,9 +264,7 @@ TimeStep
     FinishTime  =  1.36e-7_KDR  *  UNIT % SECOND
  
     call MW % InitializeTemplate_C &
-           ( Name, TimeUnitOption = TimeUnit, FinishTimeOption = 0.0_KDR )
-
-    call MW % ComputeTimeStep ( TimeStep )
+           ( Name, TimeUnitOption = TimeUnit, FinishTimeOption = FinishTime )
 
     !-- Cleanup
 
@@ -312,6 +335,9 @@ TimeStep
 
     call R % ComputeFromPrimitive ( G )
 
+    !-- Module variable for accessibility in ApplySources_Fluid below
+    Radiation => RA % RadiationMoments ( )
+
     end associate !-- J, etc.
     end select !-- PS
     end select !-- RA
@@ -347,6 +373,7 @@ TimeStep
     call F % SetAdiabaticIndex ( Gamma )
     call F % SetFiducialBaryonDensity ( N_0 )
     call F % SetFiducialTemperature ( T_0 )
+    call F % SetMeanMolecularWeight ( 2.08e8_KDR )
 
     associate &
       (   N => F % Value ( :, F % COMOVING_DENSITY ), &
@@ -396,11 +423,107 @@ TimeStep
     call I % Set ( F, SpecificOpacity )
     call I % Compute ( )
 
+    !-- Module variable for accessibility in ApplySources_Fluid below
+    Interactions => IA % Interactions_BE_G ( )
+
     end select !-- FA
     end associate !-- IA
     nullify ( F, I )
 
   end subroutine SetInteractions
+
+
+  subroutine ApplySources_Radiation ( S, Increment, Radiation, TimeStep )
+
+    class ( Step_RK_C_Template ), intent ( in ) :: &
+      S
+    type ( VariableGroupForm ), intent ( inout ) :: &
+      Increment
+    class ( CurrentTemplate ), intent ( in ) :: &
+      Radiation
+    real ( KDR ), intent ( in ) :: &
+      TimeStep
+
+    !-- No sources applied here; just an occasion to compute interactions
+    !   to be used in relaxation.
+
+    call Interactions % Compute ( )
+
+  end subroutine ApplySources_Radiation
+
+  
+  subroutine ApplySources_Fluid ( S, Increment, Fluid, TimeStep )
+
+    class ( Step_RK_C_Template ), intent ( in ) :: &
+      S
+    type ( VariableGroupForm ), intent ( inout ) :: &
+      Increment
+    class ( CurrentTemplate ), intent ( in ) :: &
+      Fluid
+    real ( KDR ), intent ( in ) :: &
+      TimeStep
+
+    integer ( KDI ) :: &
+      iEnergy
+
+    select type ( F => Fluid )
+    class is ( Fluid_P_NR_Form )
+
+    call Search ( F % iaConserved, F % CONSERVED_ENERGY, iEnergy )
+
+    select type ( Grid => S % Grid )
+    class is ( Chart_SL_Template )
+
+    associate &
+      ( I => Interactions, &
+        R => Radiation )
+
+    call ApplySourcesKernel &
+           ( Increment % Value ( :, iEnergy ), &
+             Grid % IsProperCell, &
+             I % Value ( :, I % EFFECTIVE_OPACITY ), &
+             I % Value ( :, I % EQUILIBRIUM_DENSITY ), &
+             R % Value ( :, R % COMOVING_ENERGY_DENSITY ), &
+             CONSTANT % SPEED_OF_LIGHT, TimeStep ) 
+
+    end associate !-- I, etc.
+    end select !-- Grid
+    end select !-- F
+
+  end subroutine ApplySources_Fluid
+
+  
+  subroutine ApplySourcesKernel &
+               ( KV_E, IsProperCell, EO, ED, E, c, dT )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      KV_E   
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      IsProperCell
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      EO, &
+      ED, &
+      E
+    real ( KDR ) :: &
+      c, &
+      dT
+
+    integer ( KDI ) :: &
+      iV, &
+      nV
+
+    nV = size ( KV_E )
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nV
+      if ( .not. IsProperCell ( iV ) ) &
+        cycle
+      KV_E ( iV )  &
+        =  KV_E ( iV )  -  c * dT  *  EO ( iV )  *  ( ED ( iV )  -  E ( iV ) ) 
+    end do
+    !$OMP end parallel do
+
+  end subroutine ApplySourcesKernel
 
 
 end module MarshakWave_Form
