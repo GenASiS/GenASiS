@@ -88,7 +88,7 @@ module Step_RK_C__Template
       import Step_RK_C_Template
       class ( Step_RK_C_Template ), intent ( in ) :: &
         S
-      type ( VariableGroupForm ), intent ( inout ) :: &
+      type ( VariableGroupForm ), intent ( inout ), target :: &
         Increment
       class ( CurrentTemplate ), intent ( in ) :: &
         Current
