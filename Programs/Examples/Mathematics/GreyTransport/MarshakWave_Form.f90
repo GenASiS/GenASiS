@@ -482,7 +482,9 @@ contains
 
     integer ( KDI ) :: &
       iEnergy_F, &
-      iEnergy_R
+      iEnergy_R, &
+      iMomentum_1_F, &
+      iMomentum_1_R
 
     select type ( F => Fluid )
     class is ( Fluid_P_NR_Form )
@@ -495,15 +497,23 @@ contains
         R => Radiation )
 
     call Search ( F % iaConserved, F % CONSERVED_ENERGY, iEnergy_F )
+    call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 1 ), iMomentum_1_F )
     call Search ( R % iaConserved, R % CONSERVED_ENERGY_DENSITY, iEnergy_R )
+    call Search ( R % iaConserved, R % CONSERVED_MOMENTUM_DENSITY_D ( 1 ), &
+                  iMomentum_1_R )
 
+    !-- Taking shortcuts on conserved vs. comoving here
     call ApplySourcesKernel &
            ( Increment % Value ( :, iEnergy_F ), &
+             Increment % Value ( :, iMomentum_1_F ), &
              Grid % IsProperCell, &
-             I % Value ( :, I % EFFECTIVE_OPACITY ), &
              I % Value ( :, I % EQUILIBRIUM_DENSITY ), &
+             I % Value ( :, I % EFFECTIVE_OPACITY ), &
+             I % Value ( :, I % TRANSPORT_OPACITY ), &
              R % Value ( :, R % COMOVING_ENERGY_DENSITY ), &
              RadiationIncrement % Value ( :, iEnergy_R ), &
+             R % Value ( :, R % CONSERVED_MOMENTUM_DENSITY_D ( 1 ) ), &
+             RadiationIncrement % Value ( :, iMomentum_1_R ), &
              CONSTANT % SPEED_OF_LIGHT, TimeStep ) 
 
     end associate !-- I, etc.
@@ -514,17 +524,21 @@ contains
 
   
   subroutine ApplySourcesKernel &
-               ( KV_E, IsProperCell, EO, ED, E, dE, c, dT )
+               ( KVE, KVM_1, IsProperCell, ED, EO, TO, J, dJ, H, dH, c, dT )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      KV_E   
+      KVE, &
+      KVM_1
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       IsProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      EO, &
       ED, &
-      E, &
-      dE
+      EO, &
+      TO, &
+      J,  &
+      dJ, &
+      H,  &
+      dH
     real ( KDR ) :: &
       c, &
       dT
@@ -533,15 +547,17 @@ contains
       iV, &
       nV
 
-    nV = size ( KV_E )
+    nV = size ( KVE )
 
     !$OMP parallel do private ( iV )
     do iV = 1, nV
       if ( .not. IsProperCell ( iV ) ) &
         cycle
-      KV_E ( iV )  &
-        =  KV_E ( iV )  -  c * dT  *  EO ( iV )  &
-                           *  ( ED ( iV )  -  ( E ( iV ) + dE ( iV ) ) ) 
+      KVE ( iV )  &
+        =  KVE ( iV )  -  c * dT  *  EO ( iV )  &
+                          *  ( ED ( iV )  -  ( J ( iV ) + dJ ( iV ) ) ) 
+      KVM_1 ( iV )  &
+        =  KVM_1 ( iV )  +  c * dT  *  TO ( iV )  *  ( H ( iV ) + dH ( iV ) )
     end do
     !$OMP end parallel do
 
