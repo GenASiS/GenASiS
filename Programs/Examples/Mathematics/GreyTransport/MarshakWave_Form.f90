@@ -35,6 +35,8 @@ module MarshakWave_Form
 
     real ( KDR ), private :: &
       AdiabaticIndex, &
+      SpecificHeatCapacity, &
+      MeanMolecularWeight, &
       MassDensity, &
       Temperature, &
       TemperatureInner, &
@@ -90,6 +92,7 @@ contains
     associate &
       ( L      => BoxLength, &
         Gamma  => AdiabaticIndex, &
+        C_V    => SpecificHeatCapacity, &
         N_0    => MassDensity, &
         T_0    => Temperature, &
         T_I    => TemperatureInner, &
@@ -97,6 +100,7 @@ contains
 
     L      =  20.0_KDR    *  UNIT % CENTIMETER
     Gamma  =  1.4_KDR
+    C_V    =  1.0_KDR     *  UNIT % ERG / UNIT % KELVIN / UNIT % GRAM
     N_0    =  1.0e-3_KDR  *  UNIT % MASS_DENSITY_CGS
     T_0    =  3.0e2_KDR   *  UNIT % KELVIN
     T_I    =  1.0e3_KDR   *  UNIT % KELVIN
@@ -104,6 +108,7 @@ contains
 
     call PROGRAM_HEADER % GetParameter ( L,     'BoxLength' )
     call PROGRAM_HEADER % GetParameter ( Gamma, 'AdiabaticIndex' )
+    call PROGRAM_HEADER % GetParameter ( C_V,   'SpecificHeatCapacity' )
     call PROGRAM_HEADER % GetParameter ( N_0,   'MassDensity' )
     call PROGRAM_HEADER % GetParameter ( T_0,   'Temperature' )
     call PROGRAM_HEADER % GetParameter ( T_I,   'TemperatureInner' )
@@ -234,7 +239,8 @@ contains
     call SetInteractions ( MW )
 
     associate &
-      ( c_s    => SoundSpeed, &
+      ( Mu     => MeanMolecularWeight, & 
+        c_s    => SoundSpeed, &
         t_Dyn  => DynamicalTime, &
         Lambda => MeanFreePath, &
         Tau    => OpticalDepth, &
@@ -249,6 +255,8 @@ contains
 
     call Show ( 'MarshakWave parameters' )
     call Show ( Gamma, 'Gamma' )
+    call Show ( C_V, UNIT % ERG / UNIT % KELVIN / UNIT % GRAM, 'C_V' )
+    call Show ( Mu, 'Mu' )
     call Show ( N_0, UNIT % MASS_DENSITY_CGS, 'N_0' )
     call Show ( T_0, UNIT % KELVIN, 'T_0' )
     call Show ( c_s, UNIT % SPEED_OF_LIGHT, 'c_s' )
@@ -361,8 +369,11 @@ contains
 
     associate &
       ( Gamma => AdiabaticIndex, &
+        C_V   => SpecificHeatCapacity, &
         N_0   => MassDensity, &
-        T_0   => Temperature )
+        T_0   => Temperature, &
+        k_B   => CONSTANT % BOLTZMANN, &
+        m_b   => CONSTANT % ATOMIC_MASS_UNIT )
 
     select type ( FA => MW % Current_ASC_1D ( MW % FLUID ) % Element )
     class is ( Fluid_ASC_Form )
@@ -372,10 +383,12 @@ contains
     class is ( Atlas_SC_Form )
     G => PS % Geometry ( )
 
+    MeanMolecularWeight  =  k_B / ( ( Gamma - 1.0_KDR ) * C_V * m_b )
+
     call F % SetAdiabaticIndex ( Gamma )
     call F % SetFiducialBaryonDensity ( N_0 )
     call F % SetFiducialTemperature ( T_0 )
-    call F % SetMeanMolecularWeight ( 2.08e8_KDR )
+    call F % SetMeanMolecularWeight ( MeanMolecularWeight )
 
     associate &
       (   N => F % Value ( :, F % COMOVING_DENSITY ), &
