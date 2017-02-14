@@ -3,7 +3,7 @@ module HomogeneousSphere_Form
   use Basics
   use Mathematics
   use Interactions_Template
-  use Interactions_C__Form
+  use Interactions_F__Form
   use Interactions_CSL__Form
   use Interactions_ASC__Form
   use RadiationMoments_Form
@@ -29,7 +29,8 @@ module HomogeneousSphere_Form
 
     private :: &
       SetRadiation, &
-      SetReference
+      SetReference, &
+      SetRadius
 
       private :: &
         SetRadiationKernel
@@ -87,8 +88,8 @@ contains
     if ( HS % Type == '' ) &
       HS % Type = 'a HomogeneousSphere'
 
-    EquilibriumDensity = 10.0_KDR
-    EffectiveOpacity   = 250.0_KDR
+    EquilibriumDensity = 0.8_KDR
+    EffectiveOpacity   = 4.0_KDR
 
     call PROGRAM_HEADER % GetParameter &
            ( EquilibriumDensity, 'EquilibriumDensity' )
@@ -132,10 +133,10 @@ contains
     
     call PROGRAM_HEADER % GetParameter ( CoordinateSystem, 'CoordinateSystem' )
 
-    MaxRadius = 5.0_KDR
+    MaxRadius = 3.0_KDR
     call PROGRAM_HEADER % GetParameter ( MaxRadius, 'MaxRadius' )
 
-    nCellsRadius = 100
+    nCellsRadius = 512
     call PROGRAM_HEADER % GetParameter ( nCellsRadius, 'nCellsRadius' )
 
     select case ( CoordinateSystem )
@@ -148,7 +149,7 @@ contains
                ( [ 'OUTFLOW', 'OUTFLOW' ], iDimension = 2 )
         call PS % SetBoundaryConditionsFace &
                ( [ 'OUTFLOW', 'OUTFLOW' ], iDimension = 3 )
-         nCells = [ 32, 32, 32 ]
+         nCells = [ MaxRadius, MaxRadius, MaxRadius ]
         call PROGRAM_HEADER % GetParameter ( nCells, 'nCells' )
       case ( 'SPHERICAL' )
          associate ( Pi => CONSTANT % PI )
@@ -224,15 +225,12 @@ contains
     allocate ( HS % Interactions_ASC )
     associate ( IA => HS % Interactions_ASC )
     
-    call IA % Initialize &
-               ( PS, EquilibriumDensityOption = EquilibriumDensity, &
-                 EffectiveOpacityOption = EffectiveOpacity, &
-                 TransportOpacityOption = TransportOpacity )
+    call IA % Initialize ( PS, 'FIXED' )
     
     select type ( IC => IA % Chart )
     class is ( Interactions_CSL_Form )
     select type ( I => IC % Field )
-    class is ( Interactions_C_Form )
+    class is ( Interactions_F_Form )
     associate &
       ( ED => I % Value ( :, I % EQUILIBRIUM_DENSITY ), &
         EO => I % Value ( :, I % EFFECTIVE_OPACITY ), &
@@ -275,53 +273,18 @@ contains
     HS % SetReference => SetReference
 
     call PrepareInterpolation ( SI )
+
     RM_R => HS % Reference % RadiationMoments ( )
-    G => PS % Geometry ( )
+    
+    call SetRadius ( HS, CoordinateSystem, Radius )
+
     select type ( Grid => PS % Chart )
     class is ( Chart_SL_Template )
-    allocate ( Radius ( G % nValues ) )
+
     associate &
       ( J   => RM_R % Value ( :, RM_R % COMOVING_ENERGY_DENSITY ), &
         FF  => RM_R % Value ( :, RM_R % FLUX_FACTOR ), &
         VEF => RM_R % Value ( :, RM_R % VARIABLE_EDDINGTON_FACTOR ) )
-
-    select case ( CoordinateSystem )
-       select case ( CoordinateSystem ) 
-        case ( 'CARTESIAN' )
-          associate &
-            ( X =>  G % Value ( :, G % CENTER ( 1 ) ), &
-              Y =>  G % Value ( :, G % CENTER ( 2 ) ), &
-              Z =>  G % Value ( :, G % CENTER ( 3 ) ) )
-  
-          !$OMP parallel do private ( iV )
-          do iV = 1, nValues
-            Radius ( iV ) = sqrt ( X ( iV ) ** 2 + Y ( iV ) ** 2 + Z ( iV ) ** 2 )
-          end do !-- iV
-          !$OMP end parallel do
-          end associate !-- X, etc.
-        case ( 'CYLINDRICAL' )
-          associate &
-            ( Rho =>  G % Value ( :, G % CENTER ( 1 ) ), &
-              Z   =>  G % Value ( :, G % CENTER ( 2 ) ) )
-          !$OMP parallel do private ( iV )
-          do iV = 1, nValues
-            Radius ( iV ) = sqrt ( ( Rho ( iV ) ** 2 + Z ( iV ) ** 2 ) )
-          end do !-- iV
-          !$OMP end parallel do
-          end associate !-- Rho, etc. 
-        case ( 'SPHERICAL' )
-          !$OMP parallel do private ( iV )
-          do iV = 1, nValues
-            Radius ( iV ) = G % Value ( iV, G % CENTER ( 1 ) )
-          end do !-- iV
-          !$OMP end parallel do
-        case DEFAULT
-          call show ( CoordinateSystem, 'CoordinateSystem' )
-          call Show ( 'Coordinate System not implemented', CONSOLE % ERROR )
-          call Show ( 'HomogeneousSphere_Form', 'module', CONSOLE % ERROR )
-          call Show ( 'Initialize', 'subroutine', CONSOLE % ERROR )
-          call PROGRAM_HEADER % Abort ( )
-        end select !-- CoordinateSystem
 
       do iV = 1, size ( J )
         if ( .not. Grid % IsProperCell ( iV ) ) cycle
@@ -331,7 +294,6 @@ contains
                 % Evaluate ( Radius ( iV ), FF ( iV ) ) 
         call SI ( iVARIABLE_EDDINGTON_FACTOR_SI ) &
                 % Evaluate ( Radius ( iV ), VEF ( iV ) ) 
-
       end do
       
       end associate !-- J, etc. 
@@ -343,7 +305,8 @@ contains
     
     !-- Initialize template
     
-    call HS % InitializeTemplate_C ( Name, FinishTimeOption = 15.0_KDR )
+    call HS % InitializeTemplate_C ( Name, UseLimiterParameterOption=.false., &
+                                     FinishTimeOption = 15.0_KDR )
     
     !-- Cleanup
            
@@ -365,7 +328,7 @@ contains
       L1_FF, &
       L1_VEF
     class ( RadiationMomentsForm ), pointer :: &
-      RM         
+      RM_D         
     type ( CollectiveOperation_R_Form ) :: &
       CO
 
@@ -374,12 +337,12 @@ contains
     select type ( C => PS % Chart )
     class is ( Chart_SL_Template )
     
-    RM => HS % Difference % RadiationMoments ( )
+    RM_D => HS % Difference % RadiationMoments ( )
     
     associate &
-      ( Difference_J   => RM % Value ( :, RM % COMOVING_ENERGY_DENSITY ), &
-        Difference_FF  => RM % Value ( :, RM % FLUX_FACTOR ), &
-        Difference_VEF => RM % Value ( :, RM % VARIABLE_EDDINGTON_FACTOR ) )
+      ( Difference_J   => RM_D % Value ( :, RM_D % COMOVING_ENERGY_DENSITY ), &
+        Difference_FF  => RM_D % Value ( :, RM_D % FLUX_FACTOR ), &
+        Difference_VEF => RM_D % Value ( :, RM_D % VARIABLE_EDDINGTON_FACTOR ) )
     call CO % Initialize ( PS % Communicator, [ 4 ], [ 4 ] )
     CO % Outgoing % Value ( 1 ) = sum ( abs ( Difference_J ), &
                                         mask = C % IsProperCell )
@@ -490,6 +453,93 @@ contains
       G => PS % Geometry ( )
       
       nValues = size ( G % Value ( :, G % CENTER ( 1 ) ) )
+
+      call SetRadius ( HS, CoordinateSystem, R )
+      
+      if ( IsHardSphere ) then
+        !$OMP parallel do private ( iV )
+        do iV = 1, nValues
+          if ( R ( iV ) < 1.0_KDR ) then
+            ED ( iV ) = EquilibriumDensity
+            EO ( iV ) = EffectiveOpacity 
+            TO ( iV ) = TransportOpacity 
+          else 
+            ED ( iV ) = 0.0_KDR
+            EO ( iV ) = 0.0_KDR
+            TO ( iV ) = 0.0_KDR 
+          end if
+        end do !-- iV
+        !$OMP end parallel do
+      else 
+        !$OMP parallel do private ( iV )
+        do iV = 1, nValues
+          ED ( iV ) = EquilibriumDensity &
+                      / ( 1.0_KDR + R ( iV ) ** SofteningFactor )
+          EO ( iV ) = EffectiveOpacity &
+                      / ( 1.0_KDR + R ( iV ) ** SofteningFactor )
+          TO ( iV ) = TransportOpacity &
+                      / ( 1.0_KDR + R ( iV ) ** SofteningFactor )
+        end do !-- iV
+        !$OMP end parallel do
+      end if
+    end select !-- PS
+
+  end subroutine SetInteractions
+
+
+  subroutine SetReference ( HS )
+
+    class ( IntegratorTemplate ), intent ( inout ) :: &
+      HS
+
+    class ( GeometryFlatForm ), pointer :: &
+      G
+    real ( KDR ), allocatable, dimension ( : ) :: &
+      R
+    class ( RadiationMomentsForm ), pointer :: &
+      RM, &
+      RM_R, &  !-- RM_Reference
+      RM_D     !-- RM_Difference
+
+    select type ( HS )
+    class is ( HomogeneousSphereForm )
+       
+    select type ( RMA => HS % Current_ASC )  !-- RadiationMoments Atlas
+    class is ( RadiationMoments_ASC_Form )
+   
+    RM => RMA % RadiationMoments ( )
+    RM_R => HS % Reference % RadiationMoments ( )
+    RM_D => HS % Difference % RadiationMoments ( )
+!   RM_D % Value  =  RM % Value  -  RM_R % Value
+    call MultiplyAdd ( RM % Value, RM_R % Value, -1.0_KDR, RM_D % Value )
+
+    end select !-- RMA
+    end select !-- HS
+    nullify ( RM, RM_R, RM_D )
+
+  end subroutine SetReference
+
+
+  subroutine SetRadius ( HS, CoordinateSystem, R )
+
+    class ( HomogeneousSphereForm ), intent ( in ) :: &
+      HS
+    character ( LDL ), intent ( in ) :: &
+      CoordinateSystem
+    real ( KDR ), allocatable, dimension ( : ), intent ( out ) :: &
+      R
+
+    class ( GeometryFlatForm ), pointer :: &
+      G
+    integer ( KDI ) :: &
+     iV, & !-- iValue
+     nValues
+    
+    select type ( PS => HS % PositionSpace )
+      class is ( Atlas_SC_Form )
+      G => PS % Geometry ( )
+      
+      nValues = size ( G % Value ( :, G % CENTER ( 1 ) ) )
       allocate ( R ( nValues ) )
 
       select case ( CoordinateSystem ) 
@@ -525,74 +575,12 @@ contains
           call show ( CoordinateSystem, 'CoordinateSystem' )
           call Show ( 'Coordinate System not implemented', CONSOLE % ERROR )
           call Show ( 'HomogeneousSphere_Form', 'module', CONSOLE % ERROR )
-          call Show ( 'SetInteractions', 'subroutine', CONSOLE % ERROR )
+          call Show ( 'SetRadius', 'subroutine', CONSOLE % ERROR )
           call PROGRAM_HEADER % Abort ( )
         end select !-- CoordinateSystem
-
-        if ( IsHardSphere ) then
-          !$OMP parallel do private ( iV )
-          do iV = 1, nValues
-            if ( R ( iV ) < 1.0_KDR ) then
-              ED ( iV ) = EquilibriumDensity
-              EO ( iV ) = EffectiveOpacity 
-              TO ( iV ) = TransportOpacity 
-            else 
-              ED ( iV ) = 0.0_KDR
-              EO ( iV ) = 0.0_KDR
-              TO ( iV ) = 0.0_KDR 
-            end if
-          end do !-- iV
-          !$OMP end parallel do
-        else 
-          !$OMP parallel do private ( iV )
-          do iV = 1, nValues
-            ED ( iV ) = EquilibriumDensity &
-                        / ( 1.0_KDR + R ( iV ) ** SofteningFactor )
-            EO ( iV ) = EffectiveOpacity &
-                        / ( 1.0_KDR + R ( iV ) ** SofteningFactor )
-            TO ( iV ) = TransportOpacity &
-                        / ( 1.0_KDR + R ( iV ) ** SofteningFactor )
-          end do !-- iV
-          !$OMP end parallel do
-        end if
       end select !-- PS
 
-  end subroutine SetInteractions
-
-
-  subroutine SetReference ( HS, CoordinateSystem )
-
-    class ( IntegratorTemplate ), intent ( in ) :: &
-      HS
-    character ( LDL ), intent ( in ) :: &
-      CoordinateSystem
-
-    class ( GeometryFlatForm ), pointer :: &
-      G
-    real ( KDR ), allocatable, dimension ( : ) :: &
-      R
-    class ( RadiationMomentsForm ), pointer :: &
-      RM, &
-      RM_R, &  !-- RM_Reference
-      RM_D     !-- RM_Difference
-
-    select type ( HS )
-    class is ( HomogeneousSphereForm )
-
-    select type ( RMA => HS % Current_ASC )
-    class is ( RadiationMoments_ASC_Form )
-    RM => RMA % RadiationMoments ( )
-    end select !-- RMA
-
-    RM_R => HS % Reference % RadiationMoments ( )
-    RM_D => HS % Difference % RadiationMoments ( )
-!    RM_D % Value  =  RM % Value  -  RM_R % Value
-    call MultiplyAdd ( RM % Value, RM_R % Value, -1.0_KDR, RM_D % Value )
-
-    end select !-- HS
-    nullify ( RM, RM_R, RM_D )
-
-  end subroutine SetReference
+  end subroutine SetRadius
 
 
   subroutine SetRadiationKernel ( J, HX, HY, HZ )
@@ -647,7 +635,7 @@ contains
       TS
 
     Path = '../Parameters/'
-    Filename = 'Oconnor_Abdikamalov.curve'
+    Filename = 'Oconnor_Smit.curve'
     
     call PROGRAM_HEADER % GetParameter &
            ( Filename, 'Filename' )
