@@ -1,6 +1,6 @@
 PATH_GENASIS = ../../../../..
 
-all:  SineWaveStreaming SineWaveDiffusion #EATest HomogeneousSphereTest \
+all:  SineWaveStreaming SineWaveDiffusion LineSource  HomogeneousSphere
 #      HomogeneousCylinderTest LineSourceTest
 
 include $(PATH_GENASIS)/Build/Makefile_Build
@@ -26,6 +26,38 @@ SineWaveDiffusion: Basics.a Mathematics.a GreyMoments.a \
           -o SineWaveDiffusion_$(MACHINE) \
           SineWaveDiffusion.o SineWaveDiffusion_Form.o \
           GreyMoments.a Mathematics.a Basics.a \
+          $(LIBRARIES)
+
+LineSource: Basics.a Mathematics.a RadiationMoments.a \
+  LineSource.o
+	$(LINK) $(FFLAGS) \
+          -o LineSource_$(MACHINE) \
+          LineSource.o LineSource_Form.o \
+          RadiationMoments.a Mathematics.a Basics.a \
+          $(LIBRARIES)
+
+HomogeneousSphere: Basics.a Mathematics.a RadiationMoments.a \
+  HomogeneousSphere.o
+	$(LINK) $(FFLAGS) \
+          -o HomogeneousSphere_$(MACHINE) \
+          HomogeneousSphere.o HomogeneousSphere_Form.o \
+          RadiationMoments.a Mathematics.a Basics.a \
+          $(LIBRARIES)
+
+LineSource: Basics.a Mathematics.a RadiationMoments.a \
+  LineSource.o
+	$(LINK) $(FFLAGS) \
+          -o LineSource_$(MACHINE) \
+          LineSource.o LineSource_Form.o \
+          RadiationMoments.a Mathematics.a Basics.a \
+          $(LIBRARIES)
+
+HomogeneousSphere: Basics.a Mathematics.a RadiationMoments.a \
+  HomogeneousSphere.o
+	$(LINK) $(FFLAGS) \
+          -o HomogeneousSphere_$(MACHINE) \
+          HomogeneousSphere.o HomogeneousSphere_Form.o \
+          RadiationMoments.a Mathematics.a Basics.a \
           $(LIBRARIES)
 
 # EATest: EA_Test.o
@@ -123,6 +155,34 @@ SineWaveDiffusion.o: \
   Basics.o \
   SineWaveDiffusion_Form.o \
   SineWaveDiffusion.f90
+
+LineSource_Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Interactions_Template.o \
+  Interactions_ASC__Form.o \
+  RadiationMoments_Form.o \
+  RadiationMoments_ASC__Form.o \
+  LineSource_Form.f90
+
+LineSource.o: \
+  Basics.o \
+  LineSource_Form.o \
+  LineSource.f90
+
+HomogeneousSphere_Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Interactions_Template.o \
+  Interactions_ASC__Form.o \
+  RadiationMoments_Form.o \
+  RadiationMoments_ASC__Form.o \
+  HomogeneousSphere_Form.f90
+
+HomogeneousSphere.o: \
+  Basics.o \
+  HomogeneousSphere_Form.o \
+  HomogeneousSphere.f90
 
 # HomogenousSphere_Test_Form.o: \
 #   Basics.o \
