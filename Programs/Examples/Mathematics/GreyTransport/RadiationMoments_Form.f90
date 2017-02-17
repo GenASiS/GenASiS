@@ -8,10 +8,10 @@ module RadiationMoments_Form
   private
 
     integer ( KDI ), private, parameter :: &
-      N_PRIMITIVE_RM = 4, &
-      N_CONSERVED_RM = 4, &
-      N_FIELDS_RM    = 10, &
-      N_VECTORS_RM   = 2
+      N_PRIMITIVE_RM =  4, &
+      N_CONSERVED_RM =  4, &
+      N_FIELDS_RM    = 12, &
+      N_VECTORS_RM   =  2
 
   type, public, extends ( CurrentTemplate ) :: RadiationMomentsForm
     integer ( KDI ) :: &
@@ -22,7 +22,9 @@ module RadiationMoments_Form
       COMOVING_ENERGY_DENSITY   = 0, &
       CONSERVED_ENERGY_DENSITY  = 0, &
       FLUX_FACTOR               = 0, &
-      VARIABLE_EDDINGTON_FACTOR = 0
+      VARIABLE_EDDINGTON_FACTOR = 0, &
+      TEMPERATURE_PARAMETER     = 0, &
+      DEGENERACY_PARAMETER      = 0
     integer ( KDI ), dimension ( 3 ) :: &
       COMOVING_MOMENTUM_DENSITY_U  = 0, &
       CONSERVED_MOMENTUM_DENSITY_D = 0
@@ -47,6 +49,8 @@ module RadiationMoments_Form
       ComputeFromPrimitiveCommon
     procedure, public, pass ( C ) :: &
       ComputeFromConservedCommon
+    procedure, public, pass ( RM ) :: &
+      ComputeSpectralParameters      
   end type RadiationMomentsForm
 
     private :: &
@@ -71,9 +75,9 @@ contains
 
   subroutine InitializeAllocate_RM &
                ( RM, Velocity_U_Unit, MomentumDensity_U_Unit, &
-                 MomentumDensity_D_Unit, EnergyDensityUnit, nValues, &
-                 VariableOption, VectorOption, NameOption, ClearOption, &
-                 UnitOption, VectorIndicesOption )
+                 MomentumDensity_D_Unit, EnergyDensityUnit, TemperatureUnit, &
+                 nValues, VariableOption, VectorOption, NameOption, &
+                 ClearOption, UnitOption, VectorIndicesOption )
 
     class ( RadiationMomentsForm ), intent ( inout ) :: &
       RM
@@ -82,7 +86,8 @@ contains
       MomentumDensity_U_Unit, &
       MomentumDensity_D_Unit
     type ( MeasuredValueForm ), intent ( in ) :: &
-      EnergyDensityUnit
+      EnergyDensityUnit, &
+      TemperatureUnit
     integer ( KDI ), intent ( in ) :: &
       nValues
     character ( * ), dimension ( : ), intent ( in ), optional :: &
@@ -114,7 +119,7 @@ contains
 
     call SetUnits &
            ( VariableUnit, RM, MomentumDensity_U_Unit, &
-             MomentumDensity_D_Unit, EnergyDensityUnit )
+             MomentumDensity_D_Unit, EnergyDensityUnit, TemperatureUnit )
 
     call RM % InitializeTemplate &
            ( Velocity_U_Unit, nValues, VariableOption = Variable, &
@@ -319,7 +324,9 @@ contains
            ( RM, iaSelectedOption = [ RM % COMOVING_ENERGY_DENSITY, &
                                       RM % COMOVING_MOMENTUM_DENSITY_U, &
                                       RM % FLUX_FACTOR, &
-                                      RM % VARIABLE_EDDINGTON_FACTOR ], &
+                                      RM % VARIABLE_EDDINGTON_FACTOR, &
+                                      RM % TEMPERATURE_PARAMETER, &
+                                      RM % DEGENERACY_PARAMETER ], &
              VectorOption = [ 'ComovingMomentumDensity        ' ], &
              VectorIndicesOption = VectorIndices )
 
@@ -356,10 +363,11 @@ contains
     integer ( KDI ) :: &
       oV, &  !-- oValue
       nV     !-- nValues
+    real ( KDR ), dimension ( :, : ), pointer :: &
+      RMV
       
-    associate &
-      ( RMV => Value_C, &
-        GV => Value_G )
+    RMV => Value_C
+    associate ( GV => Value_G )
 
     if ( present ( oValueOption ) ) then
       oV = oValueOption
@@ -400,7 +408,9 @@ contains
         S_3 => RMV ( oV + 1 : oV + nV, &
                      C % CONSERVED_MOMENTUM_DENSITY_D ( 3 ) ), &
         FF  => RMV ( oV + 1 : oV + nV, C % FLUX_FACTOR ), &
-        VEF => RMV ( oV + 1 : oV + nV, C % VARIABLE_EDDINGTON_FACTOR ) )
+        VEF => RMV ( oV + 1 : oV + nV, C % VARIABLE_EDDINGTON_FACTOR ), &
+        T   => RMV ( oV + 1 : oV + nV, C % TEMPERATURE_PARAMETER ), &
+        Mu  => RMV ( oV + 1 : oV + nV, C % DEGENERACY_PARAMETER ) )
 
     call ComputeConservedEnergyMomentum &
            ( E, S_1, S_2, S_3, J, H_1, H_2, H_3, M_DD_22, M_DD_33 )
@@ -410,9 +420,13 @@ contains
     call ComputeVariableEddingtonFactor &
            ( VEF, FF, J, H_1, H_2, H_3, M_DD_22, M_DD_33 )
 
+    if ( associated ( RMV, C % Value ) ) &
+      call C % ComputeSpectralParameters ( T, Mu, J )
+
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
-    end associate !-- RMV, etc.
+    end associate !-- GV
+    nullify ( RMV )
 
   end subroutine ComputeFromPrimitiveCommon
 
@@ -435,10 +449,11 @@ contains
     integer ( KDI ) :: &
       oV, &  !-- oValue
       nV     !-- nValues
+    real ( KDR ), dimension ( :, : ), pointer :: &
+      RMV
       
-    associate &
-      ( RMV => Value_C, &
-        GV  => Value_G )
+    RMV => Value_C
+    associate ( GV => Value_G )
 
     if ( present ( oValueOption ) ) then
       oV = oValueOption
@@ -479,7 +494,9 @@ contains
         S_3 => RMV ( oV + 1 : oV + nV, &
                      C % CONSERVED_MOMENTUM_DENSITY_D ( 3 ) ), &
         FF  => RMV ( oV + 1 : oV + nV, C % FLUX_FACTOR ), &
-        VEF => RMV ( oV + 1 : oV + nV, C % VARIABLE_EDDINGTON_FACTOR ) )
+        VEF => RMV ( oV + 1 : oV + nV, C % VARIABLE_EDDINGTON_FACTOR ), &
+        T   => RMV ( oV + 1 : oV + nV, C % TEMPERATURE_PARAMETER ), &
+        Mu  => RMV ( oV + 1 : oV + nV, C % DEGENERACY_PARAMETER ) )
 
     call ComputePrimitiveEnergyMomentum &
            ( J, H_1, H_2, H_3, E, S_1, S_2, S_3, M_DD_22, M_DD_33, &
@@ -490,11 +507,28 @@ contains
     call ComputeVariableEddingtonFactor &
            ( VEF, FF, J, H_1, H_2, H_3, M_DD_22, M_DD_33 )
 
+    if ( associated ( RMV, C % Value ) ) &
+      call C % ComputeSpectralParameters ( T, Mu, J )
+
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
-    end associate !-- RMV, etc.
+    end associate !-- GV
+    nullify ( RMV )
 
   end subroutine ComputeFromConservedCommon
+
+
+  subroutine ComputeSpectralParameters ( T, Mu, RM, J )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      T, &
+      Mu
+    class ( RadiationMomentsForm ), intent ( in ) :: &
+      RM
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      J
+
+  end subroutine ComputeSpectralParameters
 
 
   subroutine InitializeBasics &
@@ -548,12 +582,14 @@ contains
     if ( RM % N_FIELDS == 0 ) &
       RM % N_FIELDS = oF + RM % N_FIELDS_RM
 
-    RM % COMOVING_ENERGY_DENSITY      = oF + 1
-    RM % CONSERVED_ENERGY_DENSITY     = oF + 2
-    RM % COMOVING_MOMENTUM_DENSITY_U  = oF + [ 3, 4, 5 ]
-    RM % CONSERVED_MOMENTUM_DENSITY_D = oF + [ 6, 7, 8 ]
-    RM % FLUX_FACTOR                  = oF + 9
-    RM % VARIABLE_EDDINGTON_FACTOR    = oF + 10
+    RM % COMOVING_ENERGY_DENSITY      =  oF +  1
+    RM % CONSERVED_ENERGY_DENSITY     =  oF +  2
+    RM % COMOVING_MOMENTUM_DENSITY_U  =  oF + [ 3, 4, 5 ]
+    RM % CONSERVED_MOMENTUM_DENSITY_D =  oF + [ 6, 7, 8 ]
+    RM % FLUX_FACTOR                  =  oF +  9
+    RM % VARIABLE_EDDINGTON_FACTOR    =  oF + 10
+    RM % TEMPERATURE_PARAMETER        =  oF + 11
+    RM % DEGENERACY_PARAMETER         =  oF + 12
 
     !-- variable names 
 
@@ -575,7 +611,9 @@ contains
           'ConservedMomentumDensity_2     ', &
           'ConservedMomentumDensity_3     ', &
           'FluxFactor                     ', &
-          'VariableEddingtonFactor        ']
+          'VariableEddingtonFactor        ', &
+          'TemperatureParameter           ', &
+          'DegeneracyParameter            ' ]
           
     !-- units
     
@@ -645,7 +683,7 @@ contains
 
   subroutine SetUnits &
                ( VariableUnit, RM, MomentumDensity_U_Unit, &
-                 MomentumDensity_D_Unit, EnergyDensityUnit )
+                 MomentumDensity_D_Unit, EnergyDensityUnit, TemperatureUnit )
 
     type ( MeasuredValueForm ), dimension ( : ), intent ( inout ) :: &
       VariableUnit
@@ -655,7 +693,8 @@ contains
       MomentumDensity_U_Unit, &
       MomentumDensity_D_Unit
     type ( MeasuredValueForm ), intent ( in ) :: &
-      EnergyDensityUnit
+      EnergyDensityUnit, &
+      TemperatureUnit
 
     integer ( KDI ) :: &
       iD
@@ -671,6 +710,7 @@ contains
     end do
 
     VariableUnit ( RM % VARIABLE_EDDINGTON_FACTOR ) = UNIT % IDENTITY
+    VariableUnit ( RM % TEMPERATURE_PARAMETER )     = TemperatureUnit
 
   end subroutine SetUnits
 

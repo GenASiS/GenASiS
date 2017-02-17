@@ -5,6 +5,7 @@ module RadiationMoments_ASC__Form
   use Basics
   use Mathematics
   use RadiationMoments_Form
+  use PhotonMoments_Form
   use RadiationMoments_CSL__Form
 
   implicit none
@@ -12,7 +13,8 @@ module RadiationMoments_ASC__Form
   
   type, public, extends ( Current_ASC_Template ) :: RadiationMoments_ASC_Form
     type ( MeasuredValueForm ) :: &
-      EnergyDensityUnit
+      EnergyDensityUnit, &
+      TemperatureUnit
     type ( MeasuredValueForm ), dimension ( 3 ) :: &
       Velocity_U_Unit, &
       MomentumDensity_U_Unit, &
@@ -28,6 +30,10 @@ module RadiationMoments_ASC__Form
       RadiationMoments_CSL
     generic, public :: &
       RadiationMoments => RadiationMoments_CSL
+    procedure, private, pass :: &
+      PhotonMoments_CSL
+    generic, public :: &
+      PhotonMoments => PhotonMoments_CSL
     procedure, public, pass :: &
       SetInteractions
     final :: &
@@ -43,7 +49,7 @@ contains
                ( RMA, A, RadiationMomentsType, NameOutputOption, &
                  Velocity_U_UnitOption, MomentumDensity_U_UnitOption, &
                  MomentumDensity_D_UnitOption, EnergyDensityUnitOption, &
-                 EnergyUnitOption, MomentumUnitOption, &
+                 TemperatureUnitOption, EnergyUnitOption, MomentumUnitOption, &
                  AngularMomentumUnitOption )
 
     class ( RadiationMoments_ASC_Form ), intent ( inout ) :: &
@@ -60,6 +66,7 @@ contains
       MomentumDensity_D_UnitOption
     type ( MeasuredValueForm ), intent ( in ), optional :: &
       EnergyDensityUnitOption, &
+      TemperatureUnitOption, &
       EnergyUnitOption, &
       MomentumUnitOption, &
       AngularMomentumUnitOption
@@ -73,7 +80,9 @@ contains
 
     if ( present ( EnergyDensityUnitOption ) ) &
       RMA % EnergyDensityUnit = EnergyDensityUnitOption
-    if ( present ( Velocity_U_UnitOption ) ) &
+     if ( present ( TemperatureUnitOption ) ) &
+      RMA % TemperatureUnit = TemperatureUnitOption
+   if ( present ( Velocity_U_UnitOption ) ) &
       RMA % Velocity_U_Unit = Velocity_U_UnitOption
     if ( present ( MomentumDensity_U_UnitOption ) ) &
       RMA % MomentumDensity_U_Unit = MomentumDensity_U_UnitOption
@@ -179,6 +188,27 @@ contains
   end function RadiationMoments_CSL
 
 
+  function PhotonMoments_CSL ( RMA ) result ( PM )
+
+    class ( RadiationMoments_ASC_Form ), intent ( in ) :: &
+      RMA
+    class ( PhotonMomentsForm ), pointer :: &
+      PM
+
+    select type ( RMC => RMA % Chart )
+    class is ( RadiationMoments_CSL_Form )
+      PM => RMC % PhotonMoments ( )
+    class default
+      call Show ( 'RadiationMoments Chart type not recognized', &
+                  CONSOLE % ERROR )
+      call Show ( 'RadiationMoments_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'RadiationMoments_CSL', 'function', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- FC
+
+  end function PhotonMoments_CSL
+
+
   subroutine SetInteractions ( RMA, IA )
 
     class ( RadiationMoments_ASC_Form ), intent ( inout ) :: &
@@ -234,7 +264,7 @@ contains
       call FC % Initialize &
              ( C, FA % RadiationMomentsType, FA % Velocity_U_Unit, &
                FA % MomentumDensity_U_Unit, FA % MomentumDensity_D_Unit, &
-               FA % EnergyDensityUnit, nValues, &
+               FA % EnergyDensityUnit, FA % TemperatureUnit, nValues, &
                NameOutputOption = NameOutputOption )
     end select !-- FC
 

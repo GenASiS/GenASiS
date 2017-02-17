@@ -4,7 +4,7 @@ module MarshakWave_Form
   use Mathematics
   use Fluid_P_NR__Form
   use Fluid_ASC__Form
-  use RadiationMoments_Form
+  use PhotonMoments_Form
   use RadiationMoments_ASC__Form
   use Interactions_BE_G__Form
   use Interactions_ASC__Form
@@ -47,7 +47,7 @@ module MarshakWave_Form
       MaxCoordinate
     type ( VariableGroupForm ), pointer :: &
       RadiationIncrement => null ( )
-    class ( RadiationMomentsForm ), pointer :: &
+    class ( PhotonMomentsForm ), pointer :: &
       Radiation => null ( )
     class ( Interactions_BE_G_Form ), pointer :: &
       Interactions => null ( )
@@ -160,8 +160,8 @@ contains
     MassDensityUnit        =  UNIT % MASS_DENSITY_CGS
     EnergyDensityUnit      =  UNIT % MASS_DENSITY_CGS  &
                               *  UNIT % SPEED_OF_LIGHT ** 2
-    MomentumDensity_U_Unit = EnergyDensityUnit / UNIT % SPEED_OF_LIGHT
-    MomentumDensity_D_Unit = EnergyDensityUnit / UNIT % SPEED_OF_LIGHT
+    MomentumDensity_U_Unit =  EnergyDensityUnit / UNIT % SPEED_OF_LIGHT
+    MomentumDensity_D_Unit =  EnergyDensityUnit / UNIT % SPEED_OF_LIGHT
     TemperatureUnit        =  UNIT % KELVIN
 
     MassUnit  =  MassDensityUnit  *  CoordinateUnit ( 1 )
@@ -183,10 +183,11 @@ contains
     select type ( RA => MW % Current_ASC_1D ( MW % RADIATION ) % Element )
     class is ( RadiationMoments_ASC_Form )
     call RA % Initialize &
-           ( PS, 'GENERIC', &
+           ( PS, 'PHOTON', &
              MomentumDensity_U_UnitOption = MomentumDensity_U_Unit, &
              MomentumDensity_D_UnitOption = MomentumDensity_D_Unit, &
-             EnergyDensityUnitOption = EnergyDensityUnit )
+             EnergyDensityUnitOption = EnergyDensityUnit, &
+             TemperatureUnitOption = TemperatureUnit )
 
     !-- Fluid
 
@@ -307,7 +308,7 @@ contains
 
     class ( GeometryFlatForm ), pointer :: &
       G
-    class ( RadiationMomentsForm ), pointer :: &
+    class ( PhotonMomentsForm ), pointer :: &
       R
 
     associate &
@@ -316,7 +317,7 @@ contains
 
     select type ( RA => MW % Current_ASC_1D ( MW % RADIATION ) % Element )
     class is ( RadiationMoments_ASC_Form )
-    R => RA % RadiationMoments ( )
+    R => RA % PhotonMoments ( )
 
     select type ( PS => MW % PositionSpace )
     class is ( Atlas_SC_Form )
@@ -346,7 +347,7 @@ contains
     call R % ComputeFromPrimitive ( G )
 
     !-- Module variable for accessibility in ApplySources_Fluid below
-    Radiation => RA % RadiationMoments ( )
+    Radiation => RA % PhotonMoments ( )
 
     end associate !-- J, etc.
     end select !-- PS

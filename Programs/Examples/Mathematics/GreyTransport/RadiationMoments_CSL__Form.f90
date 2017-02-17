@@ -6,13 +6,15 @@ module RadiationMoments_CSL__Form
   use Mathematics
   use Interactions_Template
   use RadiationMoments_Form
+  use PhotonMoments_Form
 
   implicit none
   private
 
   type, public, extends ( Field_CSL_Template ) :: RadiationMoments_CSL_Form
     type ( MeasuredValueForm ) :: &
-      EnergyDensityUnit
+      EnergyDensityUnit, &
+      TemperatureUnit
     type ( MeasuredValueForm ), dimension ( 3 ) :: &
       Velocity_U_Unit, &
       MomentumDensity_U_Unit, &
@@ -27,6 +29,8 @@ module RadiationMoments_CSL__Form
     procedure, public, pass :: &
       RadiationMoments
     procedure, public, pass :: &
+      PhotonMoments
+    procedure, public, pass :: &
       SetInteractions
     final :: &
       Finalize
@@ -40,7 +44,7 @@ contains
   subroutine Initialize &
                ( RMC, C, RadiationMomentsType, Velocity_U_Unit, &
                  MomentumDensity_U_Unit, MomentumDensity_D_Unit, &
-                 EnergyDensityUnit, nValues, NameOutputOption )
+                 EnergyDensityUnit, TemperatureUnit, nValues, NameOutputOption )
 
     class ( RadiationMoments_CSL_Form ), intent ( inout ) :: &
       RMC
@@ -53,7 +57,8 @@ contains
       MomentumDensity_U_Unit, &
       MomentumDensity_D_Unit
     type ( MeasuredValueForm ), intent ( in ) :: &
-      EnergyDensityUnit
+      EnergyDensityUnit, &
+      TemperatureUnit
     integer ( KDI ), intent ( in ) :: &
       nValues
     character ( * ), intent ( in ), optional :: &
@@ -64,6 +69,7 @@ contains
     RMC % RadiationMomentsType = RadiationMomentsType
 
     RMC % EnergyDensityUnit      = EnergyDensityUnit
+    RMC % TemperatureUnit        = TemperatureUnit
     RMC % Velocity_U_Unit        = Velocity_U_Unit
     RMC % MomentumDensity_U_Unit = MomentumDensity_U_Unit
     RMC % MomentumDensity_D_Unit = MomentumDensity_D_Unit
@@ -93,6 +99,27 @@ contains
     end select !-- Field
 
   end function RadiationMoments
+
+
+  function PhotonMoments ( RMC ) result ( PM )
+
+    class ( RadiationMoments_CSL_Form ), intent ( in ), target :: &
+      RMC
+    class ( PhotonMomentsForm ), pointer :: &
+      PM
+      
+    class ( VariableGroupForm ), pointer :: &
+      Field
+
+    PM => null ( )
+
+    Field => RMC % Field
+    select type ( Field )
+    class is ( PhotonMomentsForm )
+    PM => Field
+    end select !-- Field
+
+  end function PhotonMoments
 
 
   subroutine SetInteractions ( RMC, IC )
@@ -147,7 +174,17 @@ contains
         call RM % Initialize &
                ( FC % Velocity_U_Unit, FC % MomentumDensity_U_Unit, &
                  FC % MomentumDensity_D_Unit, FC % EnergyDensityUnit, &
-                 FC % nValues, NameOption = NameOption )
+                 FC % TemperatureUnit, FC % nValues, NameOption = NameOption )
+        call RM % SetOutput ( FC % FieldOutput )
+      end select !-- RM
+    case ( 'PHOTON' )
+      allocate ( PhotonMomentsForm :: FC % Field )
+      select type ( RM => FC % Field )
+      type is ( PhotonMomentsForm )
+        call RM % Initialize &
+               ( FC % Velocity_U_Unit, FC % MomentumDensity_U_Unit, &
+                 FC % MomentumDensity_D_Unit, FC % EnergyDensityUnit, &
+                 FC % TemperatureUnit, FC % nValues, NameOption = NameOption )
         call RM % SetOutput ( FC % FieldOutput )
       end select !-- RM
     case default

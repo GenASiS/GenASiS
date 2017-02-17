@@ -9,17 +9,24 @@ RadiationMoments_Form.o: \
   Interactions_Template.o \
   RadiationMoments_Form.f90
 
+PhotonMoments_Form.o: \
+  Basics.o \
+  RadiationMoments_Form.o \
+  PhotonMoments_Form.f90
+
 RadiationMoments_CSL__Form.o: \
   Basics.o \
   Mathematics.o \
   Interactions_Template.o \
   RadiationMoments_Form.o \
+  PhotonMoments_Form.o \
   RadiationMoments_CSL__Form.f90
 
 RadiationMoments_ASC__Form.o: \
   Basics.o \
   Mathematics.o \
   RadiationMoments_Form.o \
+  PhotonMoments_Form.o \
   RadiationMoments_CSL__Form.o \
   RadiationMoments_ASC__Form.f90
 
