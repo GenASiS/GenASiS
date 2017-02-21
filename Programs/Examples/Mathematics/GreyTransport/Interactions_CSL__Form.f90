@@ -4,7 +4,7 @@ module Interactions_CSL__Form
   use Mathematics
   use Interactions_Template
   use Interactions_F__Form
-  use Interactions_BE_G__Form
+  use Interactions_P_G_C__Form
 
   implicit none
   private
@@ -21,7 +21,7 @@ module Interactions_CSL__Form
     procedure, public, pass :: &
       Interactions_F
     procedure, public, pass :: &
-      Interactions_BE_G
+      Interactions_P_G_C
     final :: &
       Finalize
     procedure, private, pass :: &
@@ -83,11 +83,11 @@ contains
   end function Interactions_F
 
 
-  function Interactions_BE_G ( IC ) result ( I )
+  function Interactions_P_G_C ( IC ) result ( I )
 
     class ( Interactions_CSL_Form ), intent ( in ), target :: &
       IC
-    class ( Interactions_BE_G_Form ), pointer :: &
+    class ( Interactions_P_G_C_Form ), pointer :: &
       I
       
     class ( VariableGroupForm ), pointer :: &
@@ -97,11 +97,11 @@ contains
 
     Field => IC % Field
     select type ( Field )
-    class is ( Interactions_BE_G_Form )
+    class is ( Interactions_P_G_C_Form )
     I => Field
     end select !-- Field
 
-  end function Interactions_BE_G
+  end function Interactions_P_G_C
 
 
   impure elemental subroutine Finalize ( IC )
@@ -133,10 +133,10 @@ contains
                  NameOption = NameOption )
         call I % SetOutput ( FC % FieldOutput )
       end select !-- RM
-    case ( 'BOSE_EINSTEIN_GREY' )
-      allocate ( Interactions_BE_G_Form :: FC % Field )
+    case ( 'PHOTONS_GREY_CONSTANT' )
+      allocate ( Interactions_P_G_C_Form :: FC % Field )
       select type ( I => FC % Field )
-      type is ( Interactions_BE_G_Form )
+      type is ( Interactions_P_G_C_Form )
         call I % Initialize &
                ( FC % LengthUnit, FC % EnergyDensityUnit, FC % nValues, &
                  NameOption = NameOption )

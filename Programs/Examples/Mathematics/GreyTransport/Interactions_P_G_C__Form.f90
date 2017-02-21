@@ -1,6 +1,6 @@
-module Interactions_BE_G__Form
+module Interactions_P_G_C__Form
 
-  !-- Interactions_BoseEinstein_Grey__Form
+  !-- Interactions_Photons_Grey_Constant__Form
   
   use Basics
   use Fluid_P__Template
@@ -9,23 +9,23 @@ module Interactions_BE_G__Form
   implicit none
   private
 
-  type, public, extends ( InteractionsTemplate ) :: Interactions_BE_G_Form
+  type, public, extends ( InteractionsTemplate ) :: Interactions_P_G_C_Form
     real ( KDR ) :: &
       SpecificOpacity
     class ( Fluid_P_Template ), pointer :: &
       Fluid => null ( )
   contains
     procedure, private, pass :: &
-      InitializeAllocate_BE_G
+      InitializeAllocate_P_G_C
     generic, public :: &
-      Initialize => InitializeAllocate_BE_G
+      Initialize => InitializeAllocate_P_G_C
     procedure, public, pass :: &
       Set
     procedure, public, pass :: &
       Compute
     final :: &
       Finalize
-  end type Interactions_BE_G_Form
+  end type Interactions_P_G_C_Form
 
     private :: &
       ComputeKernel
@@ -33,11 +33,11 @@ module Interactions_BE_G__Form
 contains
 
 
-  subroutine InitializeAllocate_BE_G &
+  subroutine InitializeAllocate_P_G_C &
                ( I, LengthUnit, EnergyDensityUnit, nValues, NameOption, &
                  ClearOption, UnitOption )
 
-    class ( Interactions_BE_G_Form ), intent ( inout ) :: &
+    class ( Interactions_P_G_C_Form ), intent ( inout ) :: &
       I
     type ( MeasuredValueForm ), intent ( in ) :: &
       LengthUnit, &
@@ -52,18 +52,18 @@ contains
       UnitOption
 
     if ( I % Type == '' ) &
-      I % Type = 'an Interactions_BE_G'
+      I % Type = 'an Interactions_P_G_C'
 
     call I % InitializeTemplate &
            ( LengthUnit, EnergyDensityUnit, nValues, NameOption, &
              ClearOption, UnitOption )
 
-  end subroutine InitializeAllocate_BE_G
+  end subroutine InitializeAllocate_P_G_C
 
 
   subroutine Set ( I, Fluid, SpecificOpacity )
 
-    class ( Interactions_BE_G_Form ), intent ( inout ) :: &
+    class ( Interactions_P_G_C_Form ), intent ( inout ) :: &
       I
     class ( Fluid_P_Template ), intent ( in ), target :: &
       Fluid
@@ -78,7 +78,7 @@ contains
 
   subroutine Compute ( I )
 
-    class ( Interactions_BE_G_Form ), intent ( inout ) :: &
+    class ( Interactions_P_G_C_Form ), intent ( inout ) :: &
       I
 
     associate ( F => I % Fluid )
@@ -97,7 +97,7 @@ contains
 
   impure elemental subroutine Finalize ( I )
 
-    type ( Interactions_BE_G_Form ), intent ( inout ) :: &
+    type ( Interactions_P_G_C_Form ), intent ( inout ) :: &
       I
 
     nullify ( I % Fluid )
@@ -138,4 +138,4 @@ contains
   end subroutine ComputeKernel
 
 
-end module Interactions_BE_G__Form
+end module Interactions_P_G_C__Form

@@ -196,7 +196,7 @@ MarshakWave_Form.o: \
   Fluid_ASC__Form.o \
   PhotonMoments_Form.o \
   RadiationMoments_ASC__Form.o \
-  Interactions_BE_G__Form.o \
+  Interactions_P_G_C__Form.o \
   Interactions_ASC__Form.o \
   MarshakWave_Form.f90
 

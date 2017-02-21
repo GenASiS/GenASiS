@@ -6,7 +6,7 @@ module MarshakWave_Form
   use Fluid_ASC__Form
   use PhotonMoments_Form
   use RadiationMoments_ASC__Form
-  use Interactions_BE_G__Form
+  use Interactions_P_G_C__Form
   use Interactions_ASC__Form
 
   implicit none
@@ -49,7 +49,7 @@ module MarshakWave_Form
       RadiationIncrement => null ( )
     class ( PhotonMomentsForm ), pointer :: &
       Radiation => null ( )
-    class ( Interactions_BE_G_Form ), pointer :: &
+    class ( Interactions_P_G_C_Form ), pointer :: &
       Interactions => null ( )
 
 contains
@@ -209,7 +209,7 @@ contains
     allocate ( MW % Interactions_ASC )
     associate ( IA => MW % Interactions_ASC )
     call IA % Initialize &
-           ( PS, 'BOSE_EINSTEIN_GREY', &
+           ( PS, 'PHOTONS_GREY_CONSTANT', &
              LengthUnitOption = CoordinateUnit ( 1 ), &
              EnergyDensityUnitOption = EnergyDensityUnit )
     call RA % SetInteractions ( IA )
@@ -426,7 +426,7 @@ contains
 
     class ( Fluid_P_NR_Form ), pointer :: &
       F
-    class ( Interactions_BE_G_Form ), pointer :: &
+    class ( Interactions_P_G_C_Form ), pointer :: &
       I
 
     associate ( IA => MW % Interactions_ASC )
@@ -435,12 +435,12 @@ contains
     class is ( Fluid_ASC_Form )
     F => FA % Fluid_P_NR ( )
 
-    I => IA % Interactions_BE_G ( )
+    I => IA % Interactions_P_G_C ( )
     call I % Set ( F, SpecificOpacity )
     call I % Compute ( )
 
     !-- Module variable for accessibility in ApplySources_Fluid below
-    Interactions => IA % Interactions_BE_G ( )
+    Interactions => IA % Interactions_P_G_C ( )
 
     end select !-- FA
     end associate !-- IA
