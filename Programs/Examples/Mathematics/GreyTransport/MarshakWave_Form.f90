@@ -1,14 +1,17 @@
 module MarshakWave_Form
 
+  !-- Vaytet et al. 2011
+
   use Basics
   use Mathematics
   use Fluid_P_NR__Form
   use Fluid_ASC__Form
   use PhotonMoments_Form
   use RadiationMoments_ASC__Form
-  use Interactions_P_G_C__Form
-  use Interactions_P_G_L__Form
-  use Interactions_P_G_T__Form
+  use Interactions_Template
+  use Interactions_MWV_1_G__Form
+  use Interactions_MWV_2_G__Form
+  use Interactions_MWV_3_G__Form
   use Interactions_ASC__Form
 
   implicit none
@@ -54,7 +57,7 @@ module MarshakWave_Form
       RadiationIncrement => null ( )
     class ( PhotonMomentsForm ), pointer :: &
       Radiation => null ( )
-    class ( Interactions_P_G_C_Form ), pointer :: &
+    class ( InteractionsTemplate ), pointer :: &
       Interactions => null ( )
 
 contains
@@ -119,11 +122,11 @@ contains
     call PROGRAM_HEADER % GetParameter ( T_I,   'TemperatureInner' )
     call PROGRAM_HEADER % GetParameter ( Kappa, 'SpecificOpacity' )
 
-    InteractionsType = 'PHOTONS_GREY_CONSTANT'
+    InteractionsType = 'MARSHAK_WAVE_VAYTET_1_GREY'
     call PROGRAM_HEADER % GetParameter ( InteractionsType, 'InteractionsType' )
 
     select case ( trim ( InteractionsType ) )
-    case ( 'PHOTONS_GREY_LINEAR', 'PHOTONS_GREY_TEMPERATURE' )
+    case ( 'MARSHAK_WAVE_VAYTET_2_GREY', 'MARSHAK_WAVE_VAYTET_3_GREY' )
       EnergyMax  =  0.620_KDR * UNIT % ELECTRON_VOLT
       call PROGRAM_HEADER % GetParameter ( EnergyMax, 'EnergyMax' )
     end select !-- InteractionsType
@@ -283,7 +286,7 @@ contains
     call Show ( t_Diff, UNIT % SECOND, 't_Diff' )
 
     select case ( trim ( InteractionsType ) )
-    case ( 'PHOTONS_GREY_LINEAR' )
+    case ( 'MARSHAK_WAVE_VAYTET_1_GREY', 'MARSHAK_WAVE_VAYTET_2_GREY' )
       call Show ( EnergyMax, UNIT % ELECTRON_VOLT, 'EnergyMax' )
     end select !-- InteractionsType
 
@@ -445,7 +448,7 @@ contains
 
     class ( Fluid_P_NR_Form ), pointer :: &
       F
-    class ( Interactions_P_G_C_Form ), pointer :: &
+    class ( InteractionsTemplate), pointer :: &
       I
 
     associate ( IA => MW % Interactions_ASC )
@@ -454,13 +457,13 @@ contains
     class is ( Fluid_ASC_Form )
     F => FA % Fluid_P_NR ( )
 
-    I => IA % Interactions_P_G_C ( )
+    I => IA % Interactions ( )
     select type ( I )
-    type is ( Interactions_P_G_C_Form )
+    type is ( Interactions_MWV_1_G_Form )
       call I % Set ( Radiation, F, SpecificOpacity )
-    type is ( Interactions_P_G_L_Form )
+    type is ( Interactions_MWV_2_G_Form )
       call I % Set ( Radiation, F, SpecificOpacity, EnergyMax )
-    type is ( Interactions_P_G_T_Form )
+    type is ( Interactions_MWV_3_G_Form )
       call I % Set ( Radiation, F, SpecificOpacity, EnergyMax, Temperature )
     class default
       call Show ( 'Interactions type not recognized', CONSOLE % ERROR )

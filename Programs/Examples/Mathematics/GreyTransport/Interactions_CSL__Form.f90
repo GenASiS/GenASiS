@@ -4,9 +4,9 @@ module Interactions_CSL__Form
   use Mathematics
   use Interactions_Template
   use Interactions_F__Form
-  use Interactions_P_G_C__Form
-  use Interactions_P_G_L__Form
-  use Interactions_P_G_T__Form
+  use Interactions_MWV_1_G__Form
+  use Interactions_MWV_2_G__Form
+  use Interactions_MWV_3_G__Form
 
   implicit none
   private
@@ -21,13 +21,9 @@ module Interactions_CSL__Form
     procedure, public, pass :: &
       Initialize
     procedure, public, pass :: &
+      Interactions
+    procedure, public, pass :: &
       Interactions_F
-    procedure, public, pass :: &
-      Interactions_P_G_C
-    procedure, public, pass :: &
-      Interactions_P_G_L
-    procedure, public, pass :: &
-      Interactions_P_G_T
     final :: &
       Finalize
     procedure, private, pass :: &
@@ -68,6 +64,27 @@ contains
   end subroutine Initialize
 
 
+  function Interactions ( IC ) result ( I )
+
+    class ( Interactions_CSL_Form ), intent ( in ), target :: &
+      IC
+    class ( InteractionsTemplate ), pointer :: &
+      I
+      
+    class ( VariableGroupForm ), pointer :: &
+      Field
+
+    I => null ( )
+
+    Field => IC % Field
+    select type ( Field )
+    class is ( InteractionsTemplate )
+    I => Field
+    end select !-- Field
+
+  end function Interactions
+
+
   function Interactions_F ( IC ) result ( I )
 
     class ( Interactions_CSL_Form ), intent ( in ), target :: &
@@ -87,69 +104,6 @@ contains
     end select !-- Field
 
   end function Interactions_F
-
-
-  function Interactions_P_G_C ( IC ) result ( I )
-
-    class ( Interactions_CSL_Form ), intent ( in ), target :: &
-      IC
-    class ( Interactions_P_G_C_Form ), pointer :: &
-      I
-      
-    class ( VariableGroupForm ), pointer :: &
-      Field
-
-    I => null ( )
-
-    Field => IC % Field
-    select type ( Field )
-    class is ( Interactions_P_G_C_Form )
-    I => Field
-    end select !-- Field
-
-  end function Interactions_P_G_C
-
-
-  function Interactions_P_G_L ( IC ) result ( I )
-
-    class ( Interactions_CSL_Form ), intent ( in ), target :: &
-      IC
-    class ( Interactions_P_G_L_Form ), pointer :: &
-      I
-      
-    class ( VariableGroupForm ), pointer :: &
-      Field
-
-    I => null ( )
-
-    Field => IC % Field
-    select type ( Field )
-    class is ( Interactions_P_G_L_Form )
-    I => Field
-    end select !-- Field
-
-  end function Interactions_P_G_L
-
-
-  function Interactions_P_G_T ( IC ) result ( I )
-
-    class ( Interactions_CSL_Form ), intent ( in ), target :: &
-      IC
-    class ( Interactions_P_G_T_Form ), pointer :: &
-      I
-      
-    class ( VariableGroupForm ), pointer :: &
-      Field
-
-    I => null ( )
-
-    Field => IC % Field
-    select type ( Field )
-    class is ( Interactions_P_G_T_Form )
-    I => Field
-    end select !-- Field
-
-  end function Interactions_P_G_T
 
 
   impure elemental subroutine Finalize ( IC )
@@ -181,28 +135,28 @@ contains
                  NameOption = NameOption )
         call I % SetOutput ( FC % FieldOutput )
       end select !-- RM
-    case ( 'PHOTONS_GREY_CONSTANT' )
-      allocate ( Interactions_P_G_C_Form :: FC % Field )
+    case ( 'MARSHAK_WAVE_VAYTET_1_GREY' )
+      allocate ( Interactions_MWV_1_G_Form :: FC % Field )
       select type ( I => FC % Field )
-      type is ( Interactions_P_G_C_Form )
+      type is ( Interactions_MWV_1_G_Form )
         call I % Initialize &
                ( FC % LengthUnit, FC % EnergyDensityUnit, FC % nValues, &
                  NameOption = NameOption )
         call I % SetOutput ( FC % FieldOutput )
       end select !-- RM
-    case ( 'PHOTONS_GREY_LINEAR' )
-      allocate ( Interactions_P_G_L_Form :: FC % Field )
+    case ( 'MARSHAK_WAVE_VAYTET_2_GREY' )
+      allocate ( Interactions_MWV_2_G_Form :: FC % Field )
       select type ( I => FC % Field )
-      type is ( Interactions_P_G_L_Form )
+      type is ( Interactions_MWV_2_G_Form )
         call I % Initialize &
                ( FC % LengthUnit, FC % EnergyDensityUnit, FC % nValues, &
                  NameOption = NameOption )
         call I % SetOutput ( FC % FieldOutput )
       end select !-- RM
-    case ( 'PHOTONS_GREY_TEMPERATURE' )
-      allocate ( Interactions_P_G_T_Form :: FC % Field )
+    case ( 'MARSHAK_WAVE_VAYTET_3_GREY' )
+      allocate ( Interactions_MWV_3_G_Form :: FC % Field )
       select type ( I => FC % Field )
-      type is ( Interactions_P_G_T_Form )
+      type is ( Interactions_MWV_3_G_Form )
         call I % Initialize &
                ( FC % LengthUnit, FC % EnergyDensityUnit, FC % nValues, &
                  NameOption = NameOption )

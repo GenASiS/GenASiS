@@ -2,10 +2,8 @@ module Interactions_ASC__Form
 
   use Basics
   use Mathematics
+  use Interactions_Template
   use Interactions_F__Form
-  use Interactions_P_G_C__Form
-  use Interactions_P_G_L__Form
-  use Interactions_P_G_T__Form
   use Interactions_CSL__Form
 
   implicit none
@@ -21,21 +19,13 @@ module Interactions_ASC__Form
     procedure, public, pass :: &
       Initialize
     procedure, private, pass :: &
+      Interactions_CSL
+    generic, public :: &
+      Interactions => Interactions_CSL
+    procedure, private, pass :: &
       Interactions_F_CSL
     generic, public :: &
       Interactions_F => Interactions_F_CSL
-    procedure, private, pass :: &
-      Interactions_P_G_C_CSL
-    generic, public :: &
-      Interactions_P_G_C => Interactions_P_G_C_CSL
-    procedure, private, pass :: &
-      Interactions_P_G_L_CSL
-    generic, public :: &
-      Interactions_P_G_L => Interactions_P_G_L_CSL
-    procedure, private, pass :: &
-      Interactions_P_G_T_CSL
-    generic, public :: &
-      Interactions_P_G_T => Interactions_P_G_T_CSL
     final :: &
       Finalize
     procedure, private, pass :: &
@@ -76,6 +66,26 @@ contains
   end subroutine Initialize
 
 
+  function Interactions_CSL ( IA ) result ( I )
+
+    class ( Interactions_ASC_Form ), intent ( in ) :: &
+      IA
+    class ( InteractionsTemplate ), pointer :: &
+      I
+
+    select type ( IC => IA % Chart )
+    class is ( Interactions_CSL_Form )
+      I => IC % Interactions ( )
+    class default
+      call Show ( 'Interactions Chart type not recognized', CONSOLE % ERROR )
+      call Show ( 'Interactions_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Interactions_CSL', 'function', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- IC
+
+  end function Interactions_CSL
+
+
   function Interactions_F_CSL ( IA ) result ( I )
 
     class ( Interactions_ASC_Form ), intent ( in ) :: &
@@ -94,66 +104,6 @@ contains
     end select !-- IC
 
   end function Interactions_F_CSL
-
-
-  function Interactions_P_G_C_CSL ( IA ) result ( I )
-
-    class ( Interactions_ASC_Form ), intent ( in ) :: &
-      IA
-    class ( Interactions_P_G_C_Form ), pointer :: &
-      I
-
-    select type ( IC => IA % Chart )
-    class is ( Interactions_CSL_Form )
-      I => IC % Interactions_P_G_C ( )
-    class default
-      call Show ( 'Interactions Chart type not recognized', CONSOLE % ERROR )
-      call Show ( 'Interactions_ASC__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'Interactions_P_G_C_CSL', 'function', CONSOLE % ERROR )
-      call PROGRAM_HEADER % Abort ( )
-    end select !-- IC
-
-  end function Interactions_P_G_C_CSL
-
-
-  function Interactions_P_G_L_CSL ( IA ) result ( I )
-
-    class ( Interactions_ASC_Form ), intent ( in ) :: &
-      IA
-    class ( Interactions_P_G_L_Form ), pointer :: &
-      I
-
-    select type ( IC => IA % Chart )
-    class is ( Interactions_CSL_Form )
-      I => IC % Interactions_P_G_L ( )
-    class default
-      call Show ( 'Interactions Chart type not recognized', CONSOLE % ERROR )
-      call Show ( 'Interactions_ASC__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'Interactions_P_G_L_CSL', 'function', CONSOLE % ERROR )
-      call PROGRAM_HEADER % Abort ( )
-    end select !-- IC
-
-  end function Interactions_P_G_L_CSL
-
-
-  function Interactions_P_G_T_CSL ( IA ) result ( I )
-
-    class ( Interactions_ASC_Form ), intent ( in ) :: &
-      IA
-    class ( Interactions_P_G_T_Form ), pointer :: &
-      I
-
-    select type ( IC => IA % Chart )
-    class is ( Interactions_CSL_Form )
-      I => IC % Interactions_P_G_T ( )
-    class default
-      call Show ( 'Interactions Chart type not recognized', CONSOLE % ERROR )
-      call Show ( 'Interactions_ASC__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'Interactions_P_G_T_CSL', 'function', CONSOLE % ERROR )
-      call PROGRAM_HEADER % Abort ( )
-    end select !-- IC
-
-  end function Interactions_P_G_T_CSL
 
 
   impure elemental subroutine Finalize ( IA )

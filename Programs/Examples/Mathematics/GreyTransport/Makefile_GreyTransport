@@ -128,6 +128,7 @@ clean:
 clobber: clean
 	rm -f SineWaveStreaming_*
 	rm -f SineWaveDiffusion_*
+	rm -f MarshakWave_*
 
 PlaneWaveStreaming_Template.o: \
   Basics.o \
@@ -196,9 +197,10 @@ MarshakWave_Form.o: \
   Fluid_ASC__Form.o \
   PhotonMoments_Form.o \
   RadiationMoments_ASC__Form.o \
-  Interactions_P_G_C__Form.o \
-  Interactions_P_G_L__Form.o \
-  Interactions_P_G_T__Form.o \
+  Interactions_Template.o \
+  Interactions_MWV_1_G__Form.o \
+  Interactions_MWV_2_G__Form.o \
+  Interactions_MWV_3_G__Form.o \
   Interactions_ASC__Form.o \
   MarshakWave_Form.f90
 

@@ -1,6 +1,6 @@
-module Interactions_P_G_C__Form
+module Interactions_MWV_1_G__Form
 
-  !-- Interactions_Photons_Grey_Constant__Form
+  !-- Interactions_MarshakWaveVaytet_1_Grey__Form, Vaytet et al. 2011
   
   use Basics
   use Fluid_P__Template
@@ -10,7 +10,7 @@ module Interactions_P_G_C__Form
   implicit none
   private
 
-  type, public, extends ( InteractionsTemplate ) :: Interactions_P_G_C_Form
+  type, public, extends ( InteractionsTemplate ) :: Interactions_MWV_1_G_Form
     real ( KDR ) :: &
       SpecificOpacity = 0.0_KDR
     class ( Fluid_P_Template ), pointer :: &
@@ -19,29 +19,29 @@ module Interactions_P_G_C__Form
       Radiation => null ( )
   contains
     procedure, private, pass :: &
-      InitializeAllocate_P_G_C
+      InitializeAllocate_MWV_1_G
     generic, public :: &
-      Initialize => InitializeAllocate_P_G_C
+      Initialize => InitializeAllocate_MWV_1_G
     procedure, private, pass :: &
-      Set_P_G_C
+      Set_MWV_1_G
     generic, public :: &
-      Set => Set_P_G_C
+      Set => Set_MWV_1_G
     procedure, public, pass :: &
       Compute
     final :: &
       Finalize
     procedure, private, pass ( I ) :: &
       ComputeKernel
-  end type Interactions_P_G_C_Form
+  end type Interactions_MWV_1_G_Form
 
 contains
 
 
-  subroutine InitializeAllocate_P_G_C &
+  subroutine InitializeAllocate_MWV_1_G &
                ( I, LengthUnit, EnergyDensityUnit, nValues, NameOption, &
                  ClearOption, UnitOption )
 
-    class ( Interactions_P_G_C_Form ), intent ( inout ) :: &
+    class ( Interactions_MWV_1_G_Form ), intent ( inout ) :: &
       I
     type ( MeasuredValueForm ), intent ( in ) :: &
       LengthUnit, &
@@ -56,18 +56,18 @@ contains
       UnitOption
 
     if ( I % Type == '' ) &
-      I % Type = 'an Interactions_P_G_C'
+      I % Type = 'an Interactions_MWV_1_G'
 
     call I % InitializeTemplate &
            ( LengthUnit, EnergyDensityUnit, nValues, NameOption, &
              ClearOption, UnitOption )
 
-  end subroutine InitializeAllocate_P_G_C
+  end subroutine InitializeAllocate_MWV_1_G
 
 
-  subroutine Set_P_G_C ( I, Radiation, Fluid, SpecificOpacity )
+  subroutine Set_MWV_1_G ( I, Radiation, Fluid, SpecificOpacity )
 
-    class ( Interactions_P_G_C_Form ), intent ( inout ) :: &
+    class ( Interactions_MWV_1_G_Form ), intent ( inout ) :: &
       I
     class ( PhotonMomentsForm ), intent ( in ), target :: &
       Radiation
@@ -80,12 +80,12 @@ contains
     I % Fluid            =>  Fluid
     I % Radiation        =>  Radiation
 
-  end subroutine Set_P_G_C
+  end subroutine Set_MWV_1_G
 
 
   subroutine Compute ( I )
 
-    class ( Interactions_P_G_C_Form ), intent ( inout ) :: &
+    class ( Interactions_MWV_1_G_Form ), intent ( inout ) :: &
       I
 
     associate &
@@ -106,7 +106,7 @@ contains
 
   impure elemental subroutine Finalize ( I )
 
-    type ( Interactions_P_G_C_Form ), intent ( inout ) :: &
+    type ( Interactions_MWV_1_G_Form ), intent ( inout ) :: &
       I
 
     nullify ( I % Fluid )
@@ -123,7 +123,7 @@ contains
       M, &
       N, &
       T
-    class ( Interactions_P_G_C_Form ), intent ( in ) :: &
+    class ( Interactions_MWV_1_G_Form ), intent ( in ) :: &
       I
     real ( KDR ), dimension ( : ), intent ( out ) :: &
       EDV, &
@@ -153,4 +153,4 @@ contains
   end subroutine ComputeKernel
 
 
-end module Interactions_P_G_C__Form
+end module Interactions_MWV_1_G__Form
