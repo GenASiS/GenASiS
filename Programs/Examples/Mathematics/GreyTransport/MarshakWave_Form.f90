@@ -8,6 +8,7 @@ module MarshakWave_Form
   use RadiationMoments_ASC__Form
   use Interactions_P_G_C__Form
   use Interactions_P_G_L__Form
+  use Interactions_P_G_T__Form
   use Interactions_ASC__Form
 
   implicit none
@@ -122,7 +123,7 @@ contains
     call PROGRAM_HEADER % GetParameter ( InteractionsType, 'InteractionsType' )
 
     select case ( trim ( InteractionsType ) )
-    case ( 'PHOTONS_GREY_LINEAR' )
+    case ( 'PHOTONS_GREY_LINEAR', 'PHOTONS_GREY_TEMPERATURE' )
       EnergyMax  =  0.620_KDR * UNIT % ELECTRON_VOLT
       call PROGRAM_HEADER % GetParameter ( EnergyMax, 'EnergyMax' )
     end select !-- InteractionsType
@@ -459,6 +460,8 @@ contains
       call I % Set ( Radiation, F, SpecificOpacity )
     type is ( Interactions_P_G_L_Form )
       call I % Set ( Radiation, F, SpecificOpacity, EnergyMax )
+    type is ( Interactions_P_G_T_Form )
+      call I % Set ( Radiation, F, SpecificOpacity, EnergyMax, Temperature )
     class default
       call Show ( 'Interactions type not recognized', CONSOLE % ERROR )
       call Show ( 'MarshakWave_Form', 'module', CONSOLE % ERROR )

@@ -1,6 +1,7 @@
 GREY_MOMENTS = \
   Interactions_ASC__Form.o \
   Interactions_CSL__Form.o \
+  Interactions_P_G_T__Form.o \
   Interactions_P_G_L__Form.o \
   Interactions_P_G_C__Form.o \
   Interactions_F__Form.o \
