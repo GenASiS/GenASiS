@@ -177,7 +177,7 @@ contains
                  FC % TemperatureUnit, FC % nValues, NameOption = NameOption )
         call RM % SetOutput ( FC % FieldOutput )
       end select !-- RM
-    case ( 'PHOTON' )
+    case ( 'PHOTONS' )
       allocate ( PhotonMomentsForm :: FC % Field )
       select type ( RM => FC % Field )
       type is ( PhotonMomentsForm )

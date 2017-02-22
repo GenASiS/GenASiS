@@ -38,8 +38,16 @@ Interactions_F__Form.o: \
 Interactions_P_G_C__Form.o: \
   Basics.o \
   Fluid_P__Template.o \
+  PhotonMoments_Form.o \
   Interactions_Template.o \
   Interactions_P_G_C__Form.f90
+
+Interactions_P_G_L__Form.o: \
+  Basics.o \
+  Fluid_P__Template.o \
+  PhotonMoments_Form.o \
+  Interactions_P_G_C__Form.o \
+  Interactions_P_G_L__Form.f90
 
 Interactions_CSL__Form.o: \
   Basics.o \
@@ -47,6 +55,7 @@ Interactions_CSL__Form.o: \
   Interactions_Template.o \
   Interactions_F__Form.o \
   Interactions_P_G_C__Form.o \
+  Interactions_P_G_L__Form.o \
   Interactions_CSL__Form.f90
 
 Interactions_ASC__Form.o: \
@@ -54,6 +63,7 @@ Interactions_ASC__Form.o: \
   Mathematics.o \
   Interactions_F__Form.o \
   Interactions_P_G_C__Form.o \
+  Interactions_P_G_L__Form.o \
   Interactions_CSL__Form.o \
   Interactions_ASC__Form.f90
 

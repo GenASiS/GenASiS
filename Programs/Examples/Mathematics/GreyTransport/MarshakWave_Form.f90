@@ -7,6 +7,7 @@ module MarshakWave_Form
   use PhotonMoments_Form
   use RadiationMoments_ASC__Form
   use Interactions_P_G_C__Form
+  use Interactions_P_G_L__Form
   use Interactions_ASC__Form
 
   implicit none
@@ -41,10 +42,13 @@ module MarshakWave_Form
       Temperature, &
       TemperatureInner, &
       SpecificOpacity, &
+      EnergyMax, &
       SoundSpeed
     real ( KDR ), dimension ( 3 ), private :: &
       MinCoordinate, &
       MaxCoordinate
+    character ( LDF ) :: &
+      InteractionsType
     type ( VariableGroupForm ), pointer :: &
       RadiationIncrement => null ( )
     class ( PhotonMomentsForm ), pointer :: &
@@ -113,6 +117,15 @@ contains
     call PROGRAM_HEADER % GetParameter ( T_0,   'Temperature' )
     call PROGRAM_HEADER % GetParameter ( T_I,   'TemperatureInner' )
     call PROGRAM_HEADER % GetParameter ( Kappa, 'SpecificOpacity' )
+
+    InteractionsType = 'PHOTONS_GREY_CONSTANT'
+    call PROGRAM_HEADER % GetParameter ( InteractionsType, 'InteractionsType' )
+
+    select case ( trim ( InteractionsType ) )
+    case ( 'PHOTONS_GREY_LINEAR' )
+      EnergyMax  =  0.620_KDR * UNIT % ELECTRON_VOLT
+      call PROGRAM_HEADER % GetParameter ( EnergyMax, 'EnergyMax' )
+    end select !-- InteractionsType
 
     !-- PositionSpace
 
@@ -183,7 +196,7 @@ contains
     select type ( RA => MW % Current_ASC_1D ( MW % RADIATION ) % Element )
     class is ( RadiationMoments_ASC_Form )
     call RA % Initialize &
-           ( PS, 'PHOTON', &
+           ( PS, 'PHOTONS', &
              MomentumDensity_U_UnitOption = MomentumDensity_U_Unit, &
              MomentumDensity_D_UnitOption = MomentumDensity_D_Unit, &
              EnergyDensityUnitOption = EnergyDensityUnit, &
@@ -209,7 +222,7 @@ contains
     allocate ( MW % Interactions_ASC )
     associate ( IA => MW % Interactions_ASC )
     call IA % Initialize &
-           ( PS, 'PHOTONS_GREY_CONSTANT', &
+           ( PS, InteractionsType, &
              LengthUnitOption = CoordinateUnit ( 1 ), &
              EnergyDensityUnitOption = EnergyDensityUnit )
     call RA % SetInteractions ( IA )
@@ -267,6 +280,11 @@ contains
     call Show ( Lambda, UNIT % CENTIMETER, 'Lambda' )
     call Show ( Tau, UNIT % IDENTITY, 'Tau' )
     call Show ( t_Diff, UNIT % SECOND, 't_Diff' )
+
+    select case ( trim ( InteractionsType ) )
+    case ( 'PHOTONS_GREY_LINEAR' )
+      call Show ( EnergyMax, UNIT % ELECTRON_VOLT, 'EnergyMax' )
+    end select !-- InteractionsType
 
     end associate !-- c_s, etc.
 
@@ -436,11 +454,22 @@ contains
     F => FA % Fluid_P_NR ( )
 
     I => IA % Interactions_P_G_C ( )
-    call I % Set ( F, SpecificOpacity )
+    select type ( I )
+    type is ( Interactions_P_G_C_Form )
+      call I % Set ( Radiation, F, SpecificOpacity )
+    type is ( Interactions_P_G_L_Form )
+      call I % Set ( Radiation, F, SpecificOpacity, EnergyMax )
+    class default
+      call Show ( 'Interactions type not recognized', CONSOLE % ERROR )
+      call Show ( 'MarshakWave_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'SetInteractions', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- I
+
     call I % Compute ( )
 
     !-- Module variable for accessibility in ApplySources_Fluid below
-    Interactions => IA % Interactions_P_G_C ( )
+    Interactions => I
 
     end select !-- FA
     end associate !-- IA

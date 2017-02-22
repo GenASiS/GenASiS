@@ -4,6 +4,7 @@ module Interactions_ASC__Form
   use Mathematics
   use Interactions_F__Form
   use Interactions_P_G_C__Form
+  use Interactions_P_G_L__Form
   use Interactions_CSL__Form
 
   implicit none
@@ -26,6 +27,10 @@ module Interactions_ASC__Form
       Interactions_P_G_C_CSL
     generic, public :: &
       Interactions_P_G_C => Interactions_P_G_C_CSL
+    procedure, private, pass :: &
+      Interactions_P_G_L_CSL
+    generic, public :: &
+      Interactions_P_G_L => Interactions_P_G_L_CSL
     final :: &
       Finalize
     procedure, private, pass :: &
@@ -104,6 +109,26 @@ contains
     end select !-- IC
 
   end function Interactions_P_G_C_CSL
+
+
+  function Interactions_P_G_L_CSL ( IA ) result ( I )
+
+    class ( Interactions_ASC_Form ), intent ( in ) :: &
+      IA
+    class ( Interactions_P_G_L_Form ), pointer :: &
+      I
+
+    select type ( IC => IA % Chart )
+    class is ( Interactions_CSL_Form )
+      I => IC % Interactions_P_G_L ( )
+    class default
+      call Show ( 'Interactions Chart type not recognized', CONSOLE % ERROR )
+      call Show ( 'Interactions_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Interactions_P_G_C_CSL', 'function', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- IC
+
+  end function Interactions_P_G_L_CSL
 
 
   impure elemental subroutine Finalize ( IA )

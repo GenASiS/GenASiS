@@ -5,6 +5,7 @@ module Interactions_CSL__Form
   use Interactions_Template
   use Interactions_F__Form
   use Interactions_P_G_C__Form
+  use Interactions_P_G_L__Form
 
   implicit none
   private
@@ -22,6 +23,8 @@ module Interactions_CSL__Form
       Interactions_F
     procedure, public, pass :: &
       Interactions_P_G_C
+    procedure, public, pass :: &
+      Interactions_P_G_L
     final :: &
       Finalize
     procedure, private, pass :: &
@@ -104,6 +107,27 @@ contains
   end function Interactions_P_G_C
 
 
+  function Interactions_P_G_L ( IC ) result ( I )
+
+    class ( Interactions_CSL_Form ), intent ( in ), target :: &
+      IC
+    class ( Interactions_P_G_L_Form ), pointer :: &
+      I
+      
+    class ( VariableGroupForm ), pointer :: &
+      Field
+
+    I => null ( )
+
+    Field => IC % Field
+    select type ( Field )
+    class is ( Interactions_P_G_L_Form )
+    I => Field
+    end select !-- Field
+
+  end function Interactions_P_G_L
+
+
   impure elemental subroutine Finalize ( IC )
 
     type ( Interactions_CSL_Form ), intent ( inout ) :: &
@@ -137,6 +161,15 @@ contains
       allocate ( Interactions_P_G_C_Form :: FC % Field )
       select type ( I => FC % Field )
       type is ( Interactions_P_G_C_Form )
+        call I % Initialize &
+               ( FC % LengthUnit, FC % EnergyDensityUnit, FC % nValues, &
+                 NameOption = NameOption )
+        call I % SetOutput ( FC % FieldOutput )
+      end select !-- RM
+    case ( 'PHOTONS_GREY_LINEAR' )
+      allocate ( Interactions_P_G_L_Form :: FC % Field )
+      select type ( I => FC % Field )
+      type is ( Interactions_P_G_L_Form )
         call I % Initialize &
                ( FC % LengthUnit, FC % EnergyDensityUnit, FC % nValues, &
                  NameOption = NameOption )
