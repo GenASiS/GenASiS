@@ -1,0 +1,21 @@
+PATH_GENASIS = ../../../../..
+
+all: GPU_AllToAll
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+GPU_AllToAll: GPU_AllToAll.o Basics.a 
+	$(LINK) $(FLAGS)  \
+          -o GPU_AllToAll_$(MACHINE) GPU_AllToAll.o Basics.a $(LIBRARIES)
+
+clean:
+	rm -f *.o *.mod *.ld *.a
+
+clobber: clean
+	rm -f GPU_AllToAll_*
+
+include $(PATH_BASICS)/Makefile_Dependencies
+
+GPU_AllToAll.o: \
+  Basics.o \
+  GPU_AllToAll.f90
