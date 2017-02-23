@@ -23,6 +23,10 @@ module ProtoCurrent_Form
       CONSERVED_DENSITY = 0
     integer ( KDI ), dimension ( 3 ) :: &
       VELOCITY = 0
+    real ( KDR ) :: &
+      Speed
+    real ( KDR ), dimension ( 3 ) :: &
+      Wavenumber
   contains
     procedure, public, pass :: &
       InitializeAllocate_PC
@@ -48,6 +52,7 @@ module ProtoCurrent_Form
 
     private :: &
       InitializeBasics, &
+      ComputeVelocityKernel, &
       ComputeRawFluxesKernel
 
 contains
@@ -230,6 +235,7 @@ contains
         V_3   => FV ( oV + 1 : oV + nV, C % VELOCITY ( 3 ) ), &
         D     => FV ( oV + 1 : oV + nV, C % CONSERVED_DENSITY ) )
 
+    call ComputeVelocityKernel ( V_1, V_2, V_3, C % Wavenumber, C % Speed )
     call C % ComputeConservedDensityKernel &
            ( D, N )
     call C % ComputeEigenspeedsKernel &
@@ -293,6 +299,7 @@ contains
         V_3   => FV ( oV + 1 : oV + nV, C % VELOCITY ( 3 ) ), &
         D     => FV ( oV + 1 : oV + nV, C % CONSERVED_DENSITY ) )
 
+    call ComputeVelocityKernel ( V_1, V_2, V_3, C % Wavenumber, C % Speed )
     call C % ComputeComovingDensityKernel &
            ( N, D )
     call C % ComputeEigenspeedsKernel &
@@ -480,6 +487,25 @@ contains
     FEM_3 = V_3
 
   end subroutine ComputeEigenspeedsKernel
+
+
+  subroutine ComputeVelocityKernel ( V_1, V_2, V_3, K, V )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      V_1, V_2, V_3
+    real ( KDR ), dimension ( 3 ), intent ( in ) :: &
+      K
+    real ( KDR ), intent ( in ) :: &
+      V
+
+    associate &
+      ( Abs_K => sqrt ( dot_product ( K, K ) ) )
+    V_1 = V * K ( 1 ) / Abs_K
+    V_2 = V * K ( 2 ) / Abs_K
+    V_3 = V * K ( 3 ) / Abs_K
+    end associate !-- Abs_K
+
+  end subroutine ComputeVelocityKernel
 
 
   subroutine ComputeRawFluxesKernel ( F_D, D, V_Dim )
