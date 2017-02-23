@@ -40,7 +40,7 @@ module Step_RK_C__Template
     logical ( KDL ), dimension ( : ), allocatable :: &
       UseLimiterParameter
     class ( GeometryFlatForm ), pointer :: &
-      Geometry
+      Geometry => null ( )
     class ( * ), pointer :: &
       Grid => null ( )
     type ( CurrentPointerForm ), dimension ( : ), pointer :: &
@@ -243,6 +243,7 @@ contains
 
     associate ( nGroups => size ( Current_1D ) )
 
+    S % Geometry => null ( )
     if ( present ( GeometryOption ) .and. present ( iGeometryValueOption ) ) &
     then
       S % Geometry => GeometryOption
