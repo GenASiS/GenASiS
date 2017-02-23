@@ -1,6 +1,5 @@
 Step_RK__Template.o: \
   Basics.o \
-  Operations.o \
   Step_RK__Template.f90
 
 Step_RK_C__Template.o: \

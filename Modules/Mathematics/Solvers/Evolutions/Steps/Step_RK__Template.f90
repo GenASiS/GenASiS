@@ -8,7 +8,6 @@ module Step_RK__Template
   !   tableau entries A, B, C
 
   use Basics
-  use Operations
 
   implicit none
   private
@@ -34,28 +33,57 @@ module Step_RK__Template
       ComputeTemplate
     procedure, public, pass :: &
       FinalizeTemplate
-    procedure ( CI ), private, pass, deferred :: &
-      ComputeIncrement
+    procedure ( II ), private, pass, deferred :: &
+      InitializeIntermediate
+    procedure ( II_A_iK ), private, pass, deferred :: &
+      IncrementIntermediate
+    procedure ( CS ), private, pass, deferred :: &
+      ComputeStage
+    procedure ( II_B_iS ), private, pass, deferred :: &
+      IncrementSolution
   end type Step_RK_Template
 
   abstract interface
 
-    subroutine CI ( S, K, Y, Time, TimeStep, iStage, iGroup )
+    subroutine II ( S )
+      import Step_RK_Template
+      class ( Step_RK_Template ), intent ( inout ) :: &
+        S
+    end subroutine II
+
+    subroutine II_A_iK ( S, A, iK )
       use Basics
       import Step_RK_Template
       class ( Step_RK_Template ), intent ( inout ) :: &
         S
-      type ( VariableGroupForm ), dimension ( :, : ), intent ( inout ) :: &
-        K
-      type ( VariableGroupForm ), dimension ( : ), intent ( in ) :: &
-        Y
+      real ( KDR ), intent ( in ) :: &
+        A
+      integer ( KDI ), intent ( in ) :: &
+        iK
+    end subroutine II_A_IK
+
+    subroutine CS ( S, Time, TimeStep, iStage )
+      use Basics
+      import Step_RK_Template
+      class ( Step_RK_Template ), intent ( inout ) :: &
+        S
       real ( KDR ), intent ( in ) :: &
         Time, &
         TimeStep
       integer ( KDI ), intent ( in ) :: &
-        iStage, &
-        iGroup
-    end subroutine CI
+        iStage
+    end subroutine CS
+
+    subroutine II_B_iS ( S, B, iS )
+      use Basics
+      import Step_RK_Template
+      class ( Step_RK_Template ), intent ( inout ) :: &
+        S
+      real ( KDR ), intent ( in ) :: &
+        B
+      integer ( KDI ), intent ( in ) :: &
+        iS
+    end subroutine II_B_IS
 
   end interface
 
@@ -117,83 +145,127 @@ contains
   end subroutine InitializeTemplate
 
 
-  subroutine ComputeTemplate ( S, Solution, Time, TimeStep )
+!   subroutine ComputeTemplate ( S, Solution, Time, TimeStep )
+
+!     class ( Step_RK_Template ), intent ( inout ) :: &
+!       S
+!     type ( VariableGroupForm ), dimension ( : ), intent ( inout ) :: &
+!       Solution
+!     real ( KDR ), intent ( in ) :: &
+!       Time, &
+!       TimeStep
+
+!     integer ( KDI ) :: &
+!       iS, &  !-- iStage
+!       iG, &  !-- iGroup
+!       iK     !-- iIncrement
+!     integer ( KDI ), dimension ( size ( Solution ) ) :: &
+!       nValues, &
+!       nEquations
+!     type ( VariableGroupForm ), dimension ( size ( Solution ) ) :: &
+!       Y  !-- Argument of right-hand side
+!     type ( VariableGroupForm ), &
+!       dimension ( size ( Solution ), S % nStages ) :: &
+!         K  !-- Increments
+
+!     associate ( nGroups => size ( Solution ) ) !-- nGroups
+
+!     do iG = 1, nGroups
+!       nEquations ( iG )  =  Solution ( iG ) % nVariables
+!       nValues    ( iG )  =  Solution ( iG ) % nValues
+!       call Y ( iG ) % Initialize ( [ nValues ( iG ), nEquations ( iG ) ] )
+!     end do !-- iG
+
+!     !-- Compute increments
+
+!     do iS = 1, S % nStages
+!       do iG = 1, nGroups
+
+!         call K ( iG, iS ) % Initialize &
+!                ( [ nValues ( iG ), nEquations ( iG ) ] )
+
+!         associate &
+!           ( YV => Y ( iG ) % Value, &
+!             SV => Solution ( iG ) % Value )
+
+!         YV = SV
+!         do iK = 1, iS - 1
+!           associate &
+!             ( KV => K ( iG, iK ) % Value, &
+!               A  => S % A ( iS ) % Value ( iK ) )
+
+! !         YV  =  YV  +  A * KV  
+!           call MultiplyAdd ( YV, KV, A )
+
+!           end associate !-- KV, etc.
+!         end do !-- iK
+
+!         call S % ComputeIncrement ( K, Y, Time, TimeStep, iS, iG ) 
+
+!         end associate !-- YV, etc.
+
+!       end do !-- iG
+!     end do !-- iS
+
+!     !-- Assemble increments
+
+!     do iS = 1, S % nStages
+!       do iG = 1, nGroups
+!         associate &
+!           ( SV => Solution ( iG ) % Value, &
+!             KV => K ( iG, iS ) % Value, &
+!             B  => S % B ( iS ) )
+! !       SV  =  SV  +  B * KV
+!         call MultiplyAdd ( SV, KV, B )
+!         end associate !-- SV, etc.
+!       end do !-- iG
+!     end do !-- iS
+
+!     end associate !-- nGroups
+
+!   end subroutine ComputeTemplate
+
+
+  subroutine ComputeTemplate ( S, Time, TimeStep )
 
     class ( Step_RK_Template ), intent ( inout ) :: &
       S
-    type ( VariableGroupForm ), dimension ( : ), intent ( inout ) :: &
-      Solution
     real ( KDR ), intent ( in ) :: &
       Time, &
       TimeStep
 
     integer ( KDI ) :: &
       iS, &  !-- iStage
-      iG, &  !-- iGroup
       iK     !-- iIncrement
-    integer ( KDI ), dimension ( size ( Solution ) ) :: &
-      nValues, &
-      nEquations
-    type ( VariableGroupForm ), dimension ( size ( Solution ) ) :: &
-      Y  !-- Argument of right-hand side
-    type ( VariableGroupForm ), &
-      dimension ( size ( Solution ), S % nStages ) :: &
-        K  !-- Increments
 
-    associate ( nGroups => size ( Solution ) ) !-- nGroups
+    !-- On entry, Solution = Y_N (old value)
 
-    do iG = 1, nGroups
-      nEquations ( iG )  =  Solution ( iG ) % nVariables
-      nValues    ( iG )  =  Solution ( iG ) % nValues
-      call Y ( iG ) % Initialize ( [ nValues ( iG ), nEquations ( iG ) ] )
-    end do !-- iG
-
-    !-- Compute increments
-
+    !-- Compute stages
     do iS = 1, S % nStages
-      do iG = 1, nGroups
 
-        call K ( iG, iS ) % Initialize &
-               ( [ nValues ( iG ), nEquations ( iG ) ] )
+      !-- Set Y  =  Solution
+      call S % InitializeIntermediate ( )
 
-        associate &
-          ( YV => Y ( iG ) % Value, &
-            SV => Solution ( iG ) % Value )
+      do iK = 1, iS - 1
+        associate ( A  =>  S % A ( iS ) % Value ( iK ) )
+        !-- Set Y  =  Y  +  A * K ( iK )
+        call S % IncrementIntermediate ( A, iK )
+        end associate !-- A
+      end do !-- iK
 
-        YV = SV
-        do iK = 1, iS - 1
-          associate &
-            ( KV => K ( iG, iK ) % Value, &
-              A  => S % A ( iS ) % Value ( iK ) )
+      call S % ComputeStage ( Time, TimeStep, iS )
 
-!         YV  =  YV  +  A * KV  
-          call MultiplyAdd ( YV, KV, A )
-
-          end associate !-- KV, etc.
-        end do !-- iK
-
-        call S % ComputeIncrement ( K, Y, Time, TimeStep, iS, iG ) 
-
-        end associate !-- YV, etc.
-
-      end do !-- iG
     end do !-- iS
 
-    !-- Assemble increments
-
+    !-- Assemble stages
     do iS = 1, S % nStages
-      do iG = 1, nGroups
-        associate &
-          ( SV => Solution ( iG ) % Value, &
-            KV => K ( iG, iS ) % Value, &
-            B  => S % B ( iS ) )
-!       SV  =  SV  +  B * KV
-        call MultiplyAdd ( SV, KV, B )
-        end associate !-- SV, etc.
-      end do !-- iG
+      associate ( B  =>  S % B ( iS ) )
+      !-- Set Solution  =  Solution  +  B * K ( iS )
+      call S % IncrementSolution ( B, iS )
+      end associate !-- B
     end do !-- iS
 
-    end associate !-- nGroups
+    !-- On exit, Solution  =  Y_(N+1) (new value)
 
   end subroutine ComputeTemplate
 
