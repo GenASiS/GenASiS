@@ -1,8 +1,8 @@
 !-- Integrator_C is a template for time evolution of a conserved current.
 
-module Integrator_C__Template
+module Integrator_C_ASC__Template
 
-  !-- Integrator_Current_Template
+  !-- Integrator_Current_AtlasSingleChart_Template
 
   use Basics
   use Manifolds
@@ -15,7 +15,7 @@ module Integrator_C__Template
   private
 
   type, public, extends ( IntegratorTemplate ), abstract :: &
-    Integrator_C_Template
+    Integrator_C_ASC_Template
       real ( KDR ) :: &
         CourantFactor
       logical ( KDL ) :: &
@@ -45,7 +45,7 @@ module Integrator_C__Template
       ComputeTimeStepLocal
     procedure, public, nopass :: &
       ComputeTimeStepKernel_CSL
-  end type Integrator_C_Template
+  end type Integrator_C_ASC_Template
 
       private :: &
         ComputeCycle_ASC_CSL
@@ -57,7 +57,7 @@ contains
                ( I, Name, UseLimiterParameterOption, TimeUnitOption, &
                  FinishTimeOption, nWriteOption )
 
-    class ( Integrator_C_Template ), intent ( inout ) :: &
+    class ( Integrator_C_ASC_Template ), intent ( inout ) :: &
       I
     character ( * ), intent ( in )  :: &
       Name
@@ -73,7 +73,7 @@ contains
     if ( .not. allocated ( I % PositionSpace ) ) then
       call Show ( 'PositionSpace must be allocated by an extension', &
                   CONSOLE % ERROR )
-      call Show ( 'Integrator_C__Template', 'module', CONSOLE % ERROR )
+      call Show ( 'Integrator_C_ASC__Template', 'module', CONSOLE % ERROR )
       call Show ( 'InitializeTemplate_C', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end if
@@ -81,14 +81,14 @@ contains
     if ( .not. allocated ( I % Current_ASC ) ) then
       call Show ( 'Current not allocated by an extension', &
                   CONSOLE % WARNING )
-      call Show ( 'Integrator_C__Template', 'module', CONSOLE % WARNING )
+      call Show ( 'Integrator_C_ASC__Template', 'module', CONSOLE % WARNING )
       call Show ( 'InitializeTemplate_C', 'subroutine', CONSOLE % WARNING )
     end if
 
     if ( .not. allocated ( I % Step ) ) then
       call Show ( 'Step must be allocated by an extension', &
                   CONSOLE % WARNING )
-      call Show ( 'Integrator_C__Template', 'module', CONSOLE % WARNING )
+      call Show ( 'Integrator_C_ASC__Template', 'module', CONSOLE % WARNING )
       call Show ( 'InitializeTemplate_C', 'subroutine', CONSOLE % WARNING )
     end if
 
@@ -122,7 +122,7 @@ contains
 
   subroutine FinalizeTemplate_C ( I )
 
-    class ( Integrator_C_Template ), intent ( inout ) :: &
+    class ( Integrator_C_ASC_Template ), intent ( inout ) :: &
       I
 
    if ( allocated ( I % TimeSeries ) ) &
@@ -139,7 +139,7 @@ contains
 
   subroutine ComputeCycle ( I )
 
-    class ( Integrator_C_Template ), intent ( inout ) :: &
+    class ( Integrator_C_ASC_Template ), intent ( inout ) :: &
       I
 
     associate ( Timer => PROGRAM_HEADER % Timer ( I % iTimerComputeCycle ) )
@@ -158,7 +158,7 @@ contains
 
   subroutine ComputeTally ( I, ComputeChangeOption )
 
-    class ( Integrator_C_Template ), intent ( inout ) :: &
+    class ( Integrator_C_ASC_Template ), intent ( inout ) :: &
       I
     logical ( KDL ), intent ( in ), optional :: &
       ComputeChangeOption
@@ -181,7 +181,7 @@ contains
 
   subroutine RecordTimeSeries ( I, MaxTime, MinTime, MeanTime )
 
-    class ( Integrator_C_Template ), intent ( inout ) :: &
+    class ( Integrator_C_ASC_Template ), intent ( inout ) :: &
       I
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       MaxTime, &
@@ -213,7 +213,7 @@ contains
     call Show ( ReconstructionImbalance, 'ReconstructionImbalance' )
     if ( ReconstructionImbalance > 0.5_KDR .and. MaxTime ( iT ) > 10.0 ) then
       call Show ( 'ReconstructionBalance > 0.5', CONSOLE % ERROR )
-      call Show ( 'Integrator_C__Template', 'module', CONSOLE % ERROR )
+      call Show ( 'Integrator_C_ASC__Template', 'module', CONSOLE % ERROR )
       call Show ( 'RecordTimeSeries', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end if
@@ -223,7 +223,7 @@ contains
 
   subroutine WriteTimeSeries ( I )
 
-    class ( Integrator_C_Template ), intent ( inout ) :: &
+    class ( Integrator_C_ASC_Template ), intent ( inout ) :: &
       I
 
     if ( .not. allocated ( I % TimeSeries ) ) &
@@ -236,7 +236,7 @@ contains
 
   subroutine ComputeCycle_ASC ( I, PS )
 
-    class ( Integrator_C_Template ), intent ( inout ) :: &
+    class ( Integrator_C_ASC_Template ), intent ( inout ) :: &
       I
     class ( Atlas_SC_Form ), intent ( inout ) :: &
       PS
@@ -246,7 +246,7 @@ contains
       call ComputeCycle_ASC_CSL ( I, I % Current_ASC, Chart )
     class default
       call Show ( 'Chart type not found', CONSOLE % ERROR )
-      call Show ( 'Integrator_C__Template', 'module', CONSOLE % ERROR )
+      call Show ( 'Integrator_C_ASC__Template', 'module', CONSOLE % ERROR )
       call Show ( 'ComputeCycle_ASC', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- C
@@ -256,7 +256,7 @@ contains
 
   subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
 
-    class ( Integrator_C_Template ), intent ( in ) :: &
+    class ( Integrator_C_ASC_Template ), intent ( in ) :: &
       I
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       TimeStepCandidate
@@ -303,7 +303,7 @@ contains
 
   subroutine ComputeCycle_ASC_CSL ( I, CA, CSL )
 
-    class ( Integrator_C_Template ), intent ( inout ) :: &
+    class ( Integrator_C_ASC_Template ), intent ( inout ) :: &
       I
     class ( Current_ASC_Template ), intent ( inout ) :: &
       CA
@@ -314,19 +314,13 @@ contains
       TimeNew
 
     select type ( S => I % Step )
-    class is ( Step_RK_C_Template )
-
-    select type ( FC => CA % Chart )
-    class is ( Field_CSL_Template )
-
-    select type ( C => FC % Field )
-    class is ( CurrentTemplate )
+    class is ( Step_RK_C_ASC_Template )
 
     call I % ComputeNewTime ( TimeNew )
     associate ( TimeStep => TimeNew - I % Time )    
 
     call S % Compute &
-           ( C, CSL, I % Time, TimeStep, &
+           ( CA, CSL, I % Time, TimeStep, &
              UseLimiterParameterOption = I % UseLimiterParameter )
 
     I % iCycle = I % iCycle + 1
@@ -334,11 +328,9 @@ contains
     if ( I % Time == I % WriteTime ) &
       I % IsCheckpointTime = .true.
 
-    call CA % AccumulateBoundaryTally ( S % BoundaryFluence_CSL ( 1 ) % Array )
+    call CA % AccumulateBoundaryTally ( S % BoundaryFluence_CSL_C )
 
     end associate !-- TimeStep
-    end select !-- C
-    end select !-- FC
     end select !-- S
 
   end subroutine ComputeCycle_ASC_CSL
@@ -405,4 +397,4 @@ contains
   end subroutine ComputeTimeStepKernel_CSL
 
 
-end module Integrator_C__Template
+end module Integrator_C_ASC__Template

@@ -4,22 +4,23 @@ module DensityWaveIntegrator_Form
   use Manifolds
   use Steps
   use Integrator_Template
-  use Integrator_C__Template
+  use Integrator_C_ASC__Template
   use ProtoFields
 
   implicit none
   private
 
-  type, public, extends ( Integrator_C_Template ) :: DensityWaveIntegratorForm
-    real ( KDR ) :: &
-      Offset, &
-      Amplitude, &
-      Speed
-    real ( KDR ), dimension ( 3 ) :: &
-      Wavenumber
-    type ( ProtoCurrent_ASC_Form ), allocatable :: &
-      Reference, &
-      Difference
+  type, public, extends ( Integrator_C_ASC_Template ) :: &
+    DensityWaveIntegratorForm
+      real ( KDR ) :: &
+        Offset, &
+        Amplitude, &
+        Speed
+      real ( KDR ), dimension ( 3 ) :: &
+        Wavenumber
+      type ( ProtoCurrent_ASC_Form ), allocatable :: &
+        Reference, &
+        Difference
   contains
     procedure, public, pass :: &
       Initialize
@@ -79,9 +80,9 @@ contains
 
     !-- Step
 
-    allocate ( Step_RK2_C_Form :: DW % Step )
+    allocate ( Step_RK2_C_ASC_Form :: DW % Step )
     select type ( S => DW % Step )
-    class is ( Step_RK2_C_Form )
+    class is ( Step_RK2_C_ASC_Form )
     call S % Initialize ( Name )
     end select !-- Step
 
@@ -238,10 +239,13 @@ contains
     class is ( Atlas_SC_Form )
     G => PS % Geometry ( )
 
+    PC % Speed      = DW % Speed
+    PC % Wavenumber = DW % Wavenumber
+    
     associate &
-      ( K     => DW % Wavenumber, &
-        Abs_K => sqrt ( dot_product ( DW % Wavenumber, DW % Wavenumber ) ), &
-        V     => DW % Speed, &
+      ( K     => PC % Wavenumber, &
+        Abs_K => sqrt ( dot_product ( PC % Wavenumber, PC % Wavenumber ) ), &
+        V     => PC % Speed, &
         T     => Time, &
         X     => G % Value ( :, G % CENTER ( 1 ) ), &
         Y     => G % Value ( :, G % CENTER ( 2 ) ), &
@@ -272,7 +276,7 @@ contains
 
   subroutine SetReference ( DW )
 
-    class ( IntegratorTemplate ), intent ( in ) :: &
+    class ( IntegratorTemplate ), intent ( inout ) :: &
       DW
 
     class ( ProtoCurrentForm ), pointer :: &
