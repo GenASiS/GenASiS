@@ -79,9 +79,7 @@ contains
 
     nWavelengths = 0
     nWavelengths ( 1 : A % nDimensions ) = 1
-!    Period = 1.0_KDR
     call PROGRAM_HEADER % GetParameter ( nWavelengths, 'nWavelengths' )
-!    call PROGRAM_HEADER % GetParameter ( Period, 'Period' )
 
     DW % Offset    = 2.0_KDR
     DW % Amplitude = 1.0_KDR
