@@ -14,6 +14,8 @@ module Current_ASC__Template
 
   type, public, extends ( Field_ASC_Template ), abstract :: &
     Current_ASC_Template
+      class ( Atlas_SC_Form ), pointer :: &
+        Atlas_SC => null ( )
       class ( Tally_C_Form ), allocatable :: &
         TallyInterior, &
         TallyTotal, &
@@ -55,7 +57,7 @@ contains
 
     class ( Current_ASC_Template ), intent ( inout ) :: &
       CA
-    class ( AtlasHeaderForm ), intent ( in ), target :: &
+    class ( Atlas_SC_Form ), intent ( in ), target :: &
       A
     character ( * ), intent ( in ), optional :: &
       NameOutputOption
@@ -67,6 +69,8 @@ contains
 
     call CA % InitializeTemplate_ASC &
            ( A, NameOutputOption = NameOutputOption )
+
+    CA % Atlas_SC => A
 
     if ( .not. allocated ( CA % TallyInterior ) ) then
 
@@ -118,7 +122,7 @@ contains
       end select
     class default
       call Show ( 'Current type not recognized', CONSOLE % ERROR )
-      call Show ( 'Current_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Current_ASC__Template', 'module', CONSOLE % ERROR )
       call Show ( 'Current_CSL', 'function', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- CC
@@ -245,6 +249,8 @@ contains
 
     class ( Current_ASC_Template ), intent ( inout ) :: &
       CA
+
+    nullify ( CA % Atlas_SC )
 
     call CA % FinalizeTemplate_ASC ( )
 

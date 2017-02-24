@@ -62,8 +62,7 @@ contains
 
     call S % Initialize ( Name )
 
-    call S % Compute &
-           ( DW % ProtoCurrent, DW % Atlas % Chart, DW % Time, TimeStep ) 
+    call S % Compute ( DW % ProtoCurrent, DW % Time, TimeStep ) 
     call DW % ProtoCurrent % ComputeTally ( )
     call DW % Write ( )
 

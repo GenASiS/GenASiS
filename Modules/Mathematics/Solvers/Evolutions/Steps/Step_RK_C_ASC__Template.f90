@@ -378,15 +378,12 @@ contains
 
 
   subroutine Compute_C &
-               ( S, Current_ASC, Grid, Time, TimeStep, &
-                 UseLimiterParameterOption )
+               ( S, Current_ASC, Time, TimeStep, UseLimiterParameterOption )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
     class ( Current_ASC_Template ), intent ( inout ), target :: &
       Current_ASC
-    class ( * ), intent ( in ), target :: &
-      Grid
     real ( KDR ), intent ( in ) :: &
       Time, &
       TimeStep
@@ -401,7 +398,16 @@ contains
     if ( present ( UseLimiterParameterOption ) ) &
       S % UseLimiterParameter_C = UseLimiterParameterOption
 
-    S % Grid      => Grid
+    select type ( Chart => Current_ASC % Atlas_SC % Chart )
+    class is ( Chart_SL_Template )
+      S % Grid => Chart
+    class default
+      call Show ( 'Chart type not found', CONSOLE % ERROR )
+      call Show ( 'Step_RK_C_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Compute_C', 'subroutine', CONSOLE % ERROR ) 
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- Chart
+
     S % Current_C => Current_ASC % Current ( )
     call AllocateStorage ( S, S % Current_C )
     call S % LoadSolution ( S % Solution_C, S % Current_C )

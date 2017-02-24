@@ -320,7 +320,7 @@ contains
     associate ( TimeStep => TimeNew - I % Time )    
 
     call S % Compute &
-           ( CA, CSL, I % Time, TimeStep, &
+           ( CA, I % Time, TimeStep, &
              UseLimiterParameterOption = I % UseLimiterParameter )
 
     I % iCycle = I % iCycle + 1
