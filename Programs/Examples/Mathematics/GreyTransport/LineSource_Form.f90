@@ -10,7 +10,7 @@ module LineSource_Form
   implicit none
   private
 
-  type, public, extends ( Integrator_C_Template ) :: LineSourceForm
+  type, public, extends ( Integrator_C_ASC_Template ) :: LineSourceForm
     type ( Interactions_ASC_Form ), allocatable :: &
       Interactions_ASC
     type ( RadiationMoments_ASC_Form ), allocatable :: &
@@ -155,9 +155,9 @@ contains
 
     !-- Step
 
-    allocate ( Step_RK2_C_Form :: LS % Step )
+    allocate ( Step_RK2_C_ASC_Form :: LS % Step )
     select type ( S => LS % Step )
-    class is ( Step_RK2_C_Form )
+    class is ( Step_RK2_C_ASC_Form )
     call S % Initialize ( Name )
     S % ApplySources  => ApplySourcesCurvilinear_RadiationMoments
     end select !-- S

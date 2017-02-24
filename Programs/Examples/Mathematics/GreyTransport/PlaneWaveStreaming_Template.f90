@@ -8,7 +8,7 @@ module PlaneWaveStreaming_Template
   implicit none
   private
 
-  type, public, extends ( Integrator_C_Template ), abstract :: &
+  type, public, extends ( Integrator_C_ASC_Template ), abstract :: &
     PlaneWaveStreamingTemplate
       real ( KDR ) :: &
         Speed
@@ -93,9 +93,9 @@ contains
 
     !-- Step
 
-    allocate ( Step_RK2_C_Form :: PWS % Step )
+    allocate ( Step_RK2_C_ASC_Form :: PWS % Step )
     select type ( S => PWS % Step )
-    class is ( Step_RK2_C_Form )
+    class is ( Step_RK2_C_ASC_Form )
     call S % Initialize ( Name )
     end select !-- S
 

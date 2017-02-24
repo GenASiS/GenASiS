@@ -11,7 +11,7 @@ module SineWaveDiffusion_Form
   implicit none
   private
 
-  type, public, extends ( Integrator_C_Template ) :: SineWaveDiffusionForm
+  type, public, extends ( Integrator_C_ASC_Template ) :: SineWaveDiffusionForm
     type ( Interactions_ASC_Form ), allocatable :: &
       Interactions_ASC
     type ( RadiationMoments_ASC_Form ), allocatable :: &
@@ -106,9 +106,9 @@ contains
 
     !-- Step
 
-    allocate ( Step_RK2_C_Form :: SWD % Step )
+    allocate ( Step_RK2_C_ASC_Form :: SWD % Step )
     select type ( S => SWD % Step )
-    class is ( Step_RK2_C_Form )
+    class is ( Step_RK2_C_ASC_Form )
     call S % Initialize ( Name )
     S % ApplyRelaxation  =>  ApplyRelaxation_Interactions
     end select !-- S

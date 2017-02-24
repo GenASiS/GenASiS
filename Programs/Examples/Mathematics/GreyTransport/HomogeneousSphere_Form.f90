@@ -12,7 +12,7 @@ module HomogeneousSphere_Form
   implicit none
   private
 
-  type, public, extends ( Integrator_C_Template ) :: HomogeneousSphereForm
+  type, public, extends ( Integrator_C_ASC_Template ) :: HomogeneousSphereForm
     type ( Interactions_ASC_Form ), allocatable :: &
       Interactions_ASC
     type ( RadiationMoments_ASC_Form ), allocatable :: &
@@ -136,7 +136,7 @@ contains
     MaxRadius = 3.0_KDR
     call PROGRAM_HEADER % GetParameter ( MaxRadius, 'MaxRadius' )
 
-    nCellsRadius = 512
+    nCellsRadius = 64
     call PROGRAM_HEADER % GetParameter ( nCellsRadius, 'nCellsRadius' )
 
     select case ( CoordinateSystem )
@@ -254,9 +254,9 @@ contains
 
     !-- Step
 
-    allocate ( Step_RK2_C_Form :: HS % Step )
+    allocate ( Step_RK2_C_ASC_Form :: HS % Step )
     select type ( S => HS % Step )
-    class is ( Step_RK2_C_Form )
+    class is ( Step_RK2_C_ASC_Form )
     call S % Initialize ( Name )
     S % ApplyRelaxation  =>  ApplyRelaxation_Interactions
     S % ApplySources  => ApplySourcesCurvilinear_RadiationMoments
