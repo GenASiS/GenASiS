@@ -8,7 +8,7 @@ module RiemannProblem_Form
   implicit none
   private
   
-  type, public, extends ( Integrator_C_Template ) :: RiemannProblemForm
+  type, public, extends ( Integrator_C_ASC_Template ) :: RiemannProblemForm
   contains
     procedure, public, pass :: &
       Initialize
@@ -85,9 +85,9 @@ contains
 
     !-- Step
 
-    allocate ( Step_RK2_C_Form :: RP % Step )
+    allocate ( Step_RK2_C_ASC_Form :: RP % Step )
     select type ( S => RP % Step )
-    class is ( Step_RK2_C_Form )
+    class is ( Step_RK2_C_ASC_Form )
     call S % Initialize ( Name )
     end select !-- S
 

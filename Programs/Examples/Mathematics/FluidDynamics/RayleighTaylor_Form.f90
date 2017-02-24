@@ -9,7 +9,7 @@ module RayleighTaylor_Form
   implicit none
   private
   
-  type, public, extends ( Integrator_C_Template ) :: RayleighTaylorForm
+  type, public, extends ( Integrator_C_ASC_Template ) :: RayleighTaylorForm
   contains
     procedure, public, pass :: &
       Initialize
@@ -89,9 +89,9 @@ contains
 
     !-- Step
 
-    allocate ( Step_RK2_C_Form :: RT % Step )
+    allocate ( Step_RK2_C_ASC_Form :: RT % Step )
     select type ( S => RT % Step )
-    class is ( Step_RK2_C_Form )
+    class is ( Step_RK2_C_ASC_Form )
     call S % Initialize ( Name )
     S % ApplySources => ApplySources
     end select !-- S
@@ -218,7 +218,7 @@ contains
   
   subroutine ApplySources ( S, Increment, Fluid, TimeStep )
 
-    class ( Step_RK_C_Template ), intent ( in ) :: &
+    class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
       S
     type ( VariableGroupForm ), intent ( inout ), target :: &
       Increment

@@ -9,7 +9,7 @@ module SedovTaylor_Form
   implicit none
   private
 
-  type, public, extends ( Integrator_C_Template ) :: SedovTaylorForm
+  type, public, extends ( Integrator_C_ASC_Template ) :: SedovTaylorForm
   contains
     procedure, public, pass :: &
       Initialize
@@ -145,9 +145,9 @@ contains
 
     !-- Step
 
-    allocate ( Step_RK2_C_Form :: ST % Step )
+    allocate ( Step_RK2_C_ASC_Form :: ST % Step )
     select type ( S => ST % Step )
-    class is ( Step_RK2_C_Form )
+    class is ( Step_RK2_C_ASC_Form )
     call S % Initialize ( Name )
     S % ApplySources => ApplySourcesCurvilinear_Fluid_P
     end select !-- S
