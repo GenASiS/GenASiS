@@ -5,6 +5,7 @@ Step_RK__Template.o: \
 Step_RK_C__Template.o: \
   Basics.o \
   Manifolds.o \
+  Operations.o \
   Fields.o \
   Increments.o \
   Step_RK__Template.o \

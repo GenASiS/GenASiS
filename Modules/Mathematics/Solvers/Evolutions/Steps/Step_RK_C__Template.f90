@@ -7,6 +7,7 @@ module Step_RK_C__Template
 
   use Basics
   use Manifolds
+  use Operations
   use Fields
   use Increments
   use Step_RK__Template
@@ -39,6 +40,8 @@ module Step_RK_C__Template
 !       BoundaryFluence_CSL
     type ( Real_3D_Form ), dimension ( :, : ), allocatable :: &
       BoundaryFluence_CSL_C
+    logical ( KDL ) :: &
+      UseLimiterParameter_C
 !     logical ( KDL ), dimension ( : ), allocatable :: &
 !       UseLimiterParameter
     type ( VariableGroupForm ), allocatable :: &
@@ -50,18 +53,20 @@ module Step_RK_C__Template
 !       Geometry => null ( )
     class ( * ), pointer :: &
       Grid => null ( )
+    class ( CurrentTemplate ), pointer :: &
+      Current_C => null ( )
 !     type ( CurrentPointerForm ), dimension ( : ), pointer :: &
 !       Current_1D => null ( )
     type ( IncrementDivergence_FV_Form ), allocatable :: &
       IncrementDivergence
     type ( IncrementDampingForm ), allocatable :: &
       IncrementDamping
-!     procedure ( ApplyDivergence ), pointer, pass :: &
-!       ApplyDivergence => ApplyDivergence
-!     procedure ( AS ), pointer, pass :: &
-!       ApplySources => null ( ) 
-!     procedure ( AR ), pointer, pass :: &
-!       ApplyRelaxation => null ( )
+    procedure ( ApplyDivergence ), pointer, pass :: &
+      ApplyDivergence => ApplyDivergence
+    procedure ( AS ), pointer, pass :: &
+      ApplySources => null ( ) 
+    procedure ( AR ), pointer, pass :: &
+      ApplyRelaxation => null ( )
 !     type ( ApplyDivergencePointer ), dimension ( : ), allocatable :: &
 !       ApplyDivergence_1D
 !     type ( ApplySourcesPointer ), dimension ( : ), allocatable :: &
@@ -87,6 +92,10 @@ module Step_RK_C__Template
       InitializeIntermediate
     procedure, private, pass :: &
       IncrementIntermediate
+    procedure, private, pass :: &
+      ComputeStage
+    procedure, private, pass :: &
+      IncrementSolution
     procedure, private, nopass :: &
       LoadSolution_C
     generic, public :: &
@@ -101,45 +110,47 @@ module Step_RK_C__Template
 !       SetDivergence
 !     procedure, public, pass :: &
 !       ClearDivergence
+    procedure, public, pass :: &
+      ComputeStage_C
     procedure, private, pass :: &
       AllocateBoundaryFluence_CSL
     generic, public :: &
       AllocateBoundaryFluence => AllocateBoundaryFluence_CSL
   end type Step_RK_C_Template
 
-!   abstract interface 
+  abstract interface 
 
-!     subroutine AS ( S, Increment, Current, TimeStep )
-!       use Basics
-!       use Fields
-!       import Step_RK_C_Template
-!       class ( Step_RK_C_Template ), intent ( in ) :: &
-!         S
-!       type ( VariableGroupForm ), intent ( inout ), target :: &
-!         Increment
-!       class ( CurrentTemplate ), intent ( in ) :: &
-!         Current
-!       real ( KDR ), intent ( in ) :: &
-!         TimeStep
-!     end subroutine AS
+    subroutine AS ( S, Increment, Current, TimeStep )
+      use Basics
+      use Fields
+      import Step_RK_C_Template
+      class ( Step_RK_C_Template ), intent ( in ) :: &
+        S
+      type ( VariableGroupForm ), intent ( inout ), target :: &
+        Increment
+      class ( CurrentTemplate ), intent ( in ) :: &
+        Current
+      real ( KDR ), intent ( in ) :: &
+        TimeStep
+    end subroutine AS
 
-!     subroutine AR ( S, IncrementExplicit, DampingCoefficient, Current, &
-!                     TimeStep )
-!       use Basics
-!       use Fields
-!       import Step_RK_C_Template
-!       class ( Step_RK_C_Template ), intent ( in ) :: &
-!         S
-!       type ( VariableGroupForm ), intent ( inout ) :: &
-!         IncrementExplicit, &
-!         DampingCoefficient
-!       class ( CurrentTemplate ), intent ( in ) :: &
-!         Current
-!       real ( KDR ), intent ( in ) :: &
-!         TimeStep
-!     end subroutine AR
+    subroutine AR ( S, IncrementExplicit, DampingCoefficient, Current, &
+                    TimeStep )
+      use Basics
+      use Fields
+      import Step_RK_C_Template
+      class ( Step_RK_C_Template ), intent ( in ) :: &
+        S
+      type ( VariableGroupForm ), intent ( inout ) :: &
+        IncrementExplicit, &
+        DampingCoefficient
+      class ( CurrentTemplate ), intent ( in ) :: &
+        Current
+      real ( KDR ), intent ( in ) :: &
+        TimeStep
+    end subroutine AR
     
-!   end interface
+  end interface
 
     private :: &
       AllocateStorage, &
@@ -367,7 +378,7 @@ contains
 
     class ( Step_RK_C_Template ), intent ( inout ) :: &
       S
-    class ( CurrentTemplate ), intent ( inout ) :: &
+    class ( CurrentTemplate ), intent ( inout ), target :: &
       Current
     class ( * ), intent ( in ), target :: &
       Grid
@@ -381,17 +392,21 @@ contains
       ( Timer => PROGRAM_HEADER % Timer ( S % iTimerComputeStep ) )
     call Timer % Start ( )
 
-    S % Grid => Grid
+    S % UseLimiterParameter_C = .true.
+    if ( present ( UseLimiterParameterOption ) ) &
+      S % UseLimiterParameter_C = UseLimiterParameterOption
+
+    S % Grid      => Grid
+    S % Current_C => Current
     call AllocateStorage ( S, Current )
     call S % LoadSolution ( S % Solution_C, Current )
 
-!     call S % SetDivergence ( UseLimiterParameterOption )
     call S % ComputeTemplate ( Time, TimeStep )
-!     call S % ClearDivergence ( )
 
     call S % StoreSolution ( Current, S % Solution_C )
     call DeallocateStorage ( S )
-    S % Grid => null ( )
+    S % Current_C => null ( )
+    S % Grid      => null ( )
 
     call Timer % Stop ( )
     end associate !-- Timer
@@ -408,10 +423,6 @@ contains
       deallocate ( S % IncrementDamping )
     if ( allocated ( S % IncrementDivergence ) ) &
       deallocate ( S % IncrementDivergence )
-!     if ( allocated ( S % BoundaryFluence_CSL ) ) &
-!       deallocate ( S % BoundaryFluence_CSL )
-
-!     nullify ( S % Current_1D )
 
     call S % FinalizeTemplate ( )
 
@@ -423,7 +434,13 @@ contains
     class ( Step_RK_C_Template ), intent ( inout ) :: &
       S
 
-    call Copy ( S % Solution_C % Value, S % Y_C % Value )
+    associate &
+      ( SV => S % Solution_C % Value, &
+        YV => S % Y_C % Value )
+
+    call Copy ( SV, YV )
+
+    end associate !-- SV, etc.
 
   end subroutine InitializeIntermediate
 
@@ -437,9 +454,66 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iK
 
-    call MultiplyAdd ( S % Y_C % Value, S % K_C ( iK ) % Value, A )
+    associate &
+      ( YV => S % Y_C % Value, &
+        KV => S % K_C ( iK ) % Value )
+
+    call MultiplyAdd ( YV, KV, A )
+
+    end associate !-- YV, etc.
 
   end subroutine IncrementIntermediate
+
+
+  subroutine ComputeStage ( S, Time, TimeStep, iStage )
+
+    class ( Step_RK_C_Template ), intent ( inout ) :: &
+      S
+    real ( KDR ), intent ( in ) :: &
+      Time, &
+      TimeStep
+    integer ( KDI ), intent ( in ) :: &
+      iStage
+
+    associate &
+      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerComputeIncrement ) )
+    call Timer % Start ( )
+
+    associate &
+      ( C  => S % Current_C, &
+        K  => S % K_C ( iStage ), &
+        BF => S % BoundaryFluence_CSL_C, &
+        Y  => S % Y_C )
+
+    call S % ComputeStage_C &
+           ( C, K, BF, Y, S % UseLimiterParameter_C, TimeStep, iStage )
+
+    end associate !-- C, etc.
+
+    call Timer % Stop ( )
+    end associate !-- Timer
+
+  end subroutine ComputeStage
+
+
+  subroutine IncrementSolution ( S, B, iS )
+
+    class ( Step_RK_C_Template ), intent ( inout ) :: &
+      S
+    real ( KDR ), intent ( in ) :: &
+      B
+    integer ( KDI ), intent ( in ) :: &
+      iS
+
+    associate &
+      ( SV => S % Solution_C % Value, &
+        KV => S % K_C ( iS ) % Value )
+
+    call MultiplyAdd ( SV, KV, B )
+
+    end associate !-- SV, etc.
+
+  end subroutine IncrementSolution
 
 
   subroutine LoadSolution_C ( Solution_C, C )
@@ -700,30 +774,66 @@ contains
 !   end subroutine ClearDivergence
 
 
-!   subroutine ApplyDivergence &
-!                ( S, Increment, Current, TimeStep, iStage, iGroup )
+  subroutine ComputeStage_C &
+               ( S, C, K, BF, Y, UseLimiterParameter, TimeStep, iStage )
 
-!     class ( Step_RK_C_Template ), intent ( inout ) :: &
-!       S
-!     type ( VariableGroupForm ), intent ( inout ) :: &
-!       Increment
-!     class ( CurrentTemplate ), intent ( in ) :: &
-!       Current
-!     real ( KDR ), intent ( in ) :: &
-!       TimeStep
-!     integer ( KDI ), intent ( in ) :: &
-!       iStage, &
-!       iGroup
+    class ( Step_RK_C_Template ), intent ( inout ) :: &
+      S
+    class ( CurrentTemplate ), intent ( inout ) :: &
+      C
+    type ( VariableGroupForm ), intent ( inout ) :: &
+      K
+    type ( Real_3D_Form ), dimension ( :, : ), intent ( inout ) :: &
+      BF
+    type ( VariableGroupForm ), intent ( in ) :: &
+      Y
+    logical ( KDL ), intent ( in ) :: &
+      UseLimiterParameter
+    real ( KDR ), intent ( in ) :: &
+      TimeStep
+    integer ( KDI ), intent ( in ) :: &
+      iStage
 
-!     associate ( ID => S % IncrementDivergence )
-!     call ID % Set ( S % UseLimiterParameter ( iGroup ) )
-!     call ID % Set ( S % BoundaryFluence_CSL ( iGroup ) % Array )
-!     call ID % Set ( Weight_RK = S % B ( iStage ) )
-!     call ID % Compute ( Increment, S % Grid, Current, TimeStep )
-!     call ID % Clear ( )
-!     end associate !-- ID
+    type ( VariableGroupForm ), allocatable :: &
+      DC  !-- DampingCoefficient
 
-!   end subroutine ApplyDivergence
+    if ( iStage > 1 ) &
+      call S % StoreSolution ( C, Y )
+
+    call Clear ( K % Value )
+
+    !-- Divergence
+    if ( associated ( S % ApplyDivergence ) ) &
+      call S % ApplyDivergence &
+             ( K, BF, C, UseLimiterParameter, TimeStep, iStage )
+
+    !-- Other explicit sources
+    if ( associated ( S % ApplySources ) ) &
+      call S % ApplySources ( K, C, TimeStep )
+
+    !-- Relaxation
+    if ( associated ( S % ApplyRelaxation ) ) then
+      associate ( ID => S % IncrementDamping )
+      allocate ( DC )
+      call DC % Initialize ( shape ( K % Value ), ClearOption = .true. )
+      call S % ApplyRelaxation ( K, DC, C, TimeStep )
+      call ID % Compute ( K, C, K, DC, TimeStep )
+      deallocate ( DC )
+      end associate !-- iD
+    end if
+
+    if ( associated ( S % ApplyDivergence ) ) then
+      select type ( Grid => S % Grid )
+      class is ( Chart_SLD_Form )
+        associate ( TimerGhost => PROGRAM_HEADER % Timer ( S % iTimerGhost ) )
+        call TimerGhost % Start ( )
+        call Grid % ExchangeGhostData ( K )
+        call TimerGhost % Stop ( )
+        end associate !-- TimerGhost
+      end select !-- Grid
+    end if !-- ApplyDivergence
+
+  end subroutine ComputeStage_C
 
 
   subroutine AllocateBoundaryFluence_CSL ( S, CSL, nEquations, BF )
@@ -775,6 +885,37 @@ contains
   end subroutine AllocateBoundaryFluence_CSL
 
 
+  subroutine ApplyDivergence &
+               ( S, Increment, BoundaryFluence_CSL, Current, &
+                 UseLimiterParameter, TimeStep, iStage )
+
+    class ( Step_RK_C_Template ), intent ( inout ) :: &
+      S
+    type ( VariableGroupForm ), intent ( inout ) :: &
+      Increment
+    type ( Real_3D_Form ), dimension ( :, : ), intent ( inout ) :: &
+      BoundaryFluence_CSL
+    class ( CurrentTemplate ), intent ( in ) :: &
+      Current
+    logical ( KDL ), intent ( in ) :: &
+      UseLimiterParameter
+    real ( KDR ), intent ( in ) :: &
+      TimeStep
+    integer ( KDI ), intent ( in ) :: &
+      iStage
+
+    associate ( ID => S % IncrementDivergence )
+    call ID % Set ( UseLimiterParameter )
+    call ID % Set ( BoundaryFluence_CSL )
+    call ID % Set ( S % dLogVolumeJacobian_dX )
+    call ID % Set ( Weight_RK = S % B ( iStage ) )
+    call ID % Compute ( Increment, S % Grid, Current, TimeStep )
+    call ID % Clear ( )
+    end associate !-- ID
+
+  end subroutine ApplyDivergence
+
+
   subroutine AllocateStorage ( S, C )
 
     class ( Step_RK_C_Template ), intent ( inout ) :: &
@@ -807,7 +948,6 @@ contains
         allocate ( S % dLogVolumeJacobian_dX ( 2 ) )
         call S % dLogVolumeJacobian_dX ( 1 ) % Initialize ( nV )
         call S % dLogVolumeJacobian_dX ( 2 ) % Initialize ( nV )
-        call S % IncrementDivergence % Set ( S % dLogVolumeJacobian_dX )
       end if
 
       call S % AllocateBoundaryFluence ( Grid, nE, S % BoundaryFluence_CSL_C )

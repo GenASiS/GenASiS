@@ -39,7 +39,7 @@ module Step_RK__Template
       IncrementIntermediate
     procedure ( CS ), private, pass, deferred :: &
       ComputeStage
-    procedure ( II_B_iS ), private, pass, deferred :: &
+    procedure ( IS_B_iS ), private, pass, deferred :: &
       IncrementSolution
   end type Step_RK_Template
 
@@ -60,7 +60,7 @@ module Step_RK__Template
         A
       integer ( KDI ), intent ( in ) :: &
         iK
-    end subroutine II_A_IK
+    end subroutine II_A_iK
 
     subroutine CS ( S, Time, TimeStep, iStage )
       use Basics
@@ -74,7 +74,7 @@ module Step_RK__Template
         iStage
     end subroutine CS
 
-    subroutine II_B_iS ( S, B, iS )
+    subroutine IS_B_iS ( S, B, iS )
       use Basics
       import Step_RK_Template
       class ( Step_RK_Template ), intent ( inout ) :: &
@@ -83,7 +83,7 @@ module Step_RK__Template
         B
       integer ( KDI ), intent ( in ) :: &
         iS
-    end subroutine II_B_IS
+    end subroutine IS_B_iS
 
   end interface
 
