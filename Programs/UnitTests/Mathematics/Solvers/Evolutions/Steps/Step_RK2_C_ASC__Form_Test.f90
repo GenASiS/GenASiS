@@ -1,4 +1,4 @@
-program Step_RK2_C__Form_Test
+program Step_RK2_C_ASC__Form_Test
 
   use Basics
   use DensityWaveStep_Form
@@ -9,7 +9,7 @@ program Step_RK2_C__Form_Test
     DW
 
   allocate ( PROGRAM_HEADER )
-  call PROGRAM_HEADER % Initialize ( 'Step_RK2_C__Form_Test' )
+  call PROGRAM_HEADER % Initialize ( 'Step_RK2_C_ASC__Form_Test' )
     
   allocate ( DW )
   call DW % Initialize ( PROGRAM_HEADER % Name )
@@ -17,4 +17,4 @@ program Step_RK2_C__Form_Test
 
   deallocate ( PROGRAM_HEADER )
 
-end program Step_RK2_C__Form_Test
+end program Step_RK2_C_ASC__Form_Test

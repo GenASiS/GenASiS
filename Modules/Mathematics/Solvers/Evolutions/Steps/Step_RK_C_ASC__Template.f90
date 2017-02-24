@@ -1,6 +1,9 @@
-module Step_RK_C__Template
+!-- Step_RK_C_ASC is a template for a RungeKutta time step of a
+!   conserved current.
 
-  !-- Step_RungeKutta_Current_Template
+module Step_RK_C_ASC__Template
+
+  !-- Step_RungeKutta_Current_AtlasSingleChart_Template
 
   !-- See Wikipedia "Runge-Kutta methods" for explanation of Butcher 
   !   tableau entries A, B, C
@@ -30,7 +33,7 @@ module Step_RK_C__Template
 !         Pointer => null ( )
 !     end type ApplyRelaxationPointer
 
-  type, public, extends ( Step_RK_Template ), abstract :: Step_RK_C_Template
+  type, public, extends ( Step_RK_Template ), abstract :: Step_RK_C_ASC_Template
     integer ( KDI ) :: &
       iTimerGhost!, &
 !       iGeometryValue
@@ -116,15 +119,15 @@ module Step_RK_C__Template
       AllocateBoundaryFluence_CSL
     generic, public :: &
       AllocateBoundaryFluence => AllocateBoundaryFluence_CSL
-  end type Step_RK_C_Template
+  end type Step_RK_C_ASC_Template
 
   abstract interface 
 
     subroutine AS ( S, Increment, Current, TimeStep )
       use Basics
       use Fields
-      import Step_RK_C_Template
-      class ( Step_RK_C_Template ), intent ( in ) :: &
+      import Step_RK_C_ASC_Template
+      class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
         S
       type ( VariableGroupForm ), intent ( inout ), target :: &
         Increment
@@ -138,8 +141,8 @@ module Step_RK_C__Template
                     TimeStep )
       use Basics
       use Fields
-      import Step_RK_C_Template
-      class ( Step_RK_C_Template ), intent ( in ) :: &
+      import Step_RK_C_ASC_Template
+      class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
         S
       type ( VariableGroupForm ), intent ( inout ) :: &
         IncrementExplicit, &
@@ -161,7 +164,7 @@ contains
 
   subroutine InitializeTemplate_C ( S, NameSuffix, A, B, C )
 
-    class ( Step_RK_C_Template ), intent ( inout ) :: &
+    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
     character ( * ), intent ( in ) :: &
       NameSuffix
@@ -197,7 +200,7 @@ contains
 !                ( S, Current, Grid, Time, TimeStep, GeometryOption, &
 !                  UseLimiterParameterOption, iGeometryValueOption )
 
-!     class ( Step_RK_C_Template ), intent ( inout ) :: &
+!     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
 !       S
 !     class ( CurrentTemplate ), intent ( inout ), target :: &
 !       Current
@@ -248,7 +251,7 @@ contains
 !                ( S, Current_1D, Grid, Time, TimeStep, GeometryOption, &
 !                  UseLimiterParameterOption, iGeometryValueOption )
 
-!     class ( Step_RK_C_Template ), intent ( inout ) :: &
+!     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
 !       S
 !     type ( CurrentPointerForm ), dimension ( : ), intent ( inout ), &
 !       target :: &
@@ -350,7 +353,7 @@ contains
 !           G => Grid % Geometry ( )
 !         class default
 !           call Show ( 'Grid type not found', CONSOLE % ERROR )
-!           call Show ( 'Step_RK_C__Form', 'module', CONSOLE % ERROR )
+!           call Show ( 'Step_RK_C_ASC__Form', 'module', CONSOLE % ERROR )
 !           call Show ( 'Compute', 'subroutine', CONSOLE % ERROR ) 
 !           call PROGRAM_HEADER % Abort ( )
 !         end select !-- Grid
@@ -374,12 +377,13 @@ contains
 
 
   subroutine Compute_C &
-               ( S, Current, Grid, Time, TimeStep, UseLimiterParameterOption )
+               ( S, Current_ASC, Grid, Time, TimeStep, &
+                 UseLimiterParameterOption )
 
-    class ( Step_RK_C_Template ), intent ( inout ) :: &
+    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
-    class ( CurrentTemplate ), intent ( inout ), target :: &
-      Current
+    class ( Current_ASC_Template ), intent ( inout ), target :: &
+      Current_ASC
     class ( * ), intent ( in ), target :: &
       Grid
     real ( KDR ), intent ( in ) :: &
@@ -397,13 +401,13 @@ contains
       S % UseLimiterParameter_C = UseLimiterParameterOption
 
     S % Grid      => Grid
-    S % Current_C => Current
-    call AllocateStorage ( S, Current )
-    call S % LoadSolution ( S % Solution_C, Current )
+    S % Current_C => Current_ASC % Current ( )
+    call AllocateStorage ( S, S % Current_C )
+    call S % LoadSolution ( S % Solution_C, S % Current_C )
 
     call S % ComputeTemplate ( Time, TimeStep )
 
-    call S % StoreSolution ( Current, S % Solution_C )
+    call S % StoreSolution ( S % Current_C, S % Solution_C )
     call DeallocateStorage ( S )
     S % Current_C => null ( )
     S % Grid      => null ( )
@@ -416,7 +420,7 @@ contains
 
   impure elemental subroutine FinalizeTemplate_C ( S )
 
-    class ( Step_RK_C_Template ), intent ( inout ) :: &
+    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
 
     if ( allocated ( S % IncrementDamping ) ) &
@@ -431,7 +435,7 @@ contains
 
   subroutine InitializeIntermediate ( S )
 
-    class ( Step_RK_C_Template ), intent ( inout ) :: &
+    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
 
     associate &
@@ -447,7 +451,7 @@ contains
 
   subroutine IncrementIntermediate ( S, A, iK )
 
-    class ( Step_RK_C_Template ), intent ( inout ) :: &
+    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
     real ( KDR ), intent ( in ) :: &
       A
@@ -467,7 +471,7 @@ contains
 
   subroutine ComputeStage ( S, Time, TimeStep, iStage )
 
-    class ( Step_RK_C_Template ), intent ( inout ) :: &
+    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
     real ( KDR ), intent ( in ) :: &
       Time, &
@@ -498,7 +502,7 @@ contains
 
   subroutine IncrementSolution ( S, B, iS )
 
-    class ( Step_RK_C_Template ), intent ( inout ) :: &
+    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
     real ( KDR ), intent ( in ) :: &
       B
@@ -543,7 +547,7 @@ contains
 
     class ( CurrentTemplate ), intent ( inout ) :: &
       C
-    class ( Step_RK_C_Template ), intent ( in ) :: &
+    class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
       S
     type ( VariableGroupForm ), intent ( in ) :: &
       Solution_C
@@ -568,7 +572,7 @@ contains
       G => Grid % Geometry ( )
     class default
       call Show ( 'Grid type not found', CONSOLE % ERROR )
-      call Show ( 'Step_RK_C__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Step_RK_C_ASC__Form', 'module', CONSOLE % ERROR )
       call Show ( 'StoreSolution_C', 'subroutine', CONSOLE % ERROR ) 
       call PROGRAM_HEADER % Abort ( )
     end select !-- Grid
@@ -581,7 +585,7 @@ contains
 
 !   subroutine ComputeIncrement ( S, K, Y, Time, TimeStep, iStage, iGroup )
 
-!     class ( Step_RK_C_Template ), intent ( inout ) :: &
+!     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
 !       S
 !     type ( VariableGroupForm ), dimension ( :, : ), intent ( inout ) :: &
 !       K
@@ -627,7 +631,7 @@ contains
 !           G => Grid % Geometry ( )
 !         class default
 !           call Show ( 'Grid type not found', CONSOLE % ERROR )
-!           call Show ( 'Step_RK_C__Form', 'module', CONSOLE % ERROR )
+!           call Show ( 'Step_RK_C_ASC__Form', 'module', CONSOLE % ERROR )
 !           call Show ( 'ComputeIncrement', 'subroutine', CONSOLE % ERROR ) 
 !           call PROGRAM_HEADER % Abort ( )
 !         end select !-- Grid
@@ -685,7 +689,7 @@ contains
 
 !   subroutine SetDivergence ( S, UseLimiterParameterOption )
 
-!     class ( Step_RK_C_Template ), intent ( inout ) :: &
+!     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
 !       S
 !     logical ( KDL ), intent ( in ), dimension ( : ), optional :: &
 !       UseLimiterParameterOption
@@ -751,7 +755,7 @@ contains
 
 !     class default
 !       call Show ( 'Grid type not recognized', CONSOLE % ERROR )
-!       call Show ( 'Step_RK_C__Template', 'module', CONSOLE % ERROR )
+!       call Show ( 'Step_RK_C_ASC__Template', 'module', CONSOLE % ERROR )
 !       call Show ( 'SetDivergence', 'subroutine', CONSOLE % ERROR ) 
 !       call PROGRAM_HEADER % Abort ( )
 !     end select !-- Grid
@@ -763,7 +767,7 @@ contains
 
 !   subroutine ClearDivergence ( S )
 
-!     class ( Step_RK_C_Template ), intent ( inout ) :: &
+!     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
 !       S
 
 !     if ( allocated ( S % dLogVolumeJacobian_dX ) ) &
@@ -777,7 +781,7 @@ contains
   subroutine ComputeStage_C &
                ( S, C, K, BF, Y, UseLimiterParameter, TimeStep, iStage )
 
-    class ( Step_RK_C_Template ), intent ( inout ) :: &
+    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
     class ( CurrentTemplate ), intent ( inout ) :: &
       C
@@ -838,7 +842,7 @@ contains
 
   subroutine AllocateBoundaryFluence_CSL ( S, CSL, nEquations, BF )
 
-    class ( Step_RK_C_Template ), intent ( in ) :: &
+    class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
       S
     class ( Chart_SL_Template ), intent ( in ) :: &
       CSL
@@ -889,7 +893,7 @@ contains
                ( S, Increment, BoundaryFluence_CSL, Current, &
                  UseLimiterParameter, TimeStep, iStage )
 
-    class ( Step_RK_C_Template ), intent ( inout ) :: &
+    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
     type ( VariableGroupForm ), intent ( inout ) :: &
       Increment
@@ -918,7 +922,7 @@ contains
 
   subroutine AllocateStorage ( S, C )
 
-    class ( Step_RK_C_Template ), intent ( inout ) :: &
+    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
     class ( CurrentTemplate ), intent ( in ) :: &
       C
@@ -954,7 +958,7 @@ contains
 
     class default
       call Show ( 'Grid type not recognized', CONSOLE % ERROR )
-      call Show ( 'Step_RK_C__Template', 'module', CONSOLE % ERROR )
+      call Show ( 'Step_RK_C_ASC__Template', 'module', CONSOLE % ERROR )
       call Show ( 'AllocateStorage', 'subroutine', CONSOLE % ERROR ) 
       call PROGRAM_HEADER % Abort ( )
     end select !-- Grid
@@ -966,7 +970,7 @@ contains
 
   subroutine DeallocateStorage ( S )
 
-    class ( Step_RK_C_Template ), intent ( inout ) :: &
+    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
 
     !-- BoundaryFluence not deallocated here
@@ -983,4 +987,4 @@ contains
   end subroutine DeallocateStorage
 
 
-end module Step_RK_C__Template
+end module Step_RK_C_ASC__Template

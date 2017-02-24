@@ -3,13 +3,13 @@ module DensityWaveStep_Form
   use Basics
   use ProtoFields
   use ProtoIncrements
-  use Step_RK2_C__Form
+  use Step_RK2_C_ASC__Form
 
   implicit none
   private
 
   type, public, extends ( DensityWaveIncrementForm ) :: DensityWaveStepForm
-    type ( Step_RK2_C_Form ), allocatable :: &
+    type ( Step_RK2_C_ASC_Form ), allocatable :: &
       Step
   contains
     procedure, public, pass :: &
@@ -31,8 +31,6 @@ contains
     real ( KDR ) :: &
       CourantFactor, &
       TimeStep
-    class ( ProtoCurrentForm ), pointer :: &
-      PC
 
     !-- Initialize parent
 
@@ -41,10 +39,6 @@ contains
     call DW % Write ( )
 
     !-- Initialize values needed for Step
-
-    associate ( PCA => DW % ProtoCurrent )
-    PC => PCA % ProtoCurrent ( )
-    end associate !-- PCA
 
     select case ( DW % Atlas % nDimensions )
     case ( 1 )
@@ -68,12 +62,12 @@ contains
 
     call S % Initialize ( Name )
 
-    call S % Compute ( PC, DW % Atlas % Chart, DW % Time, TimeStep ) 
+    call S % Compute &
+           ( DW % ProtoCurrent, DW % Atlas % Chart, DW % Time, TimeStep ) 
     call DW % ProtoCurrent % ComputeTally ( )
     call DW % Write ( )
 
     end associate !-- S
-    nullify ( PC )
 
   end subroutine Initialize
 

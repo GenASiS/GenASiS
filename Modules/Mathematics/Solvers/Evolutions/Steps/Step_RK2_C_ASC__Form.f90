@@ -1,33 +1,33 @@
-!-- Step_RK2_C implements a second-order RungeKutta time step of a
+!-- Step_RK2_C_ASC implements a second-order RungeKutta time step of a
 !   conserved current.
 
-module Step_RK2_C__Form
+module Step_RK2_C_ASC__Form
 
-  !-- Step_RungeKuttaSecondOrder_Current_Form
+  !-- Step_RungeKuttaSecondOrder_Current_AtlasSingleChart_Form
 
   !-- See Wikipedia "Runge-Kutta methods" for explanation of Butcher 
   !   tableau entries A, B, C
 
   use Basics
-  use Step_RK_C__Template
+  use Step_RK_C_ASC__Template
 
   implicit none
   private
 
-  type, public, extends ( Step_RK_C_Template ) :: Step_RK2_C_Form
+  type, public, extends ( Step_RK_C_ASC_Template ) :: Step_RK2_C_ASC_Form
   contains
     procedure, public, pass :: &
       Initialize
     final :: &
       Finalize
-  end type Step_RK2_C_Form
+  end type Step_RK2_C_ASC_Form
 
 contains
 
 
   subroutine Initialize ( S, NameSuffix )
 
-    class ( Step_RK2_C_Form ), intent ( inout ) :: &
+    class ( Step_RK2_C_ASC_Form ), intent ( inout ) :: &
       S
     character ( * ), intent ( in ) :: &
       NameSuffix
@@ -57,7 +57,7 @@ contains
 
   impure elemental subroutine Finalize ( S )
 
-    type ( Step_RK2_C_Form ), intent ( inout ) :: &
+    type ( Step_RK2_C_ASC_Form ), intent ( inout ) :: &
       S
 
     call S % FinalizeTemplate_C ( )
@@ -65,4 +65,4 @@ contains
   end subroutine Finalize
 
 
-end module Step_RK2_C__Form
+end module Step_RK2_C_ASC__Form
