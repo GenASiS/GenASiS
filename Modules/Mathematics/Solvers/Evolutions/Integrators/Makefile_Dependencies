@@ -37,8 +37,8 @@ Integrators.o: \
   TimeSeries_Form.o \
   TimeSeries_C__Form.o \
   Integrator_C_ASC__Template.o \
-  Integrator_C_1D__Template.o \
   Integrators.f90
+#  Integrator_C_1D__Template.o \
 
 Integrators.a: $(INTEGRATORS)
 	ar r Integrators.a $(INTEGRATORS)
