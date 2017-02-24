@@ -33,49 +33,50 @@ module Step_RK_C_ASC__Template
 !         Pointer => null ( )
 !     end type ApplyRelaxationPointer
 
-  type, public, extends ( Step_RK_Template ), abstract :: Step_RK_C_ASC_Template
-    integer ( KDI ) :: &
-      iTimerGhost!, &
-!       iGeometryValue
-    type ( Real_1D_Form ), dimension ( : ), allocatable :: &
-      dLogVolumeJacobian_dX
-!     type ( Real_3D_2D_Form ), dimension ( : ), allocatable :: &
-!       BoundaryFluence_CSL
-    type ( Real_3D_Form ), dimension ( :, : ), allocatable :: &
-      BoundaryFluence_CSL_C
-    logical ( KDL ) :: &
-      UseLimiterParameter_C
-!     logical ( KDL ), dimension ( : ), allocatable :: &
-!       UseLimiterParameter
-    type ( VariableGroupForm ), allocatable :: &
-      Solution_C, &
-      Y_C
-    type ( VariableGroupForm ), dimension ( : ), allocatable :: &
-      K_C
-!     class ( GeometryFlatForm ), pointer :: &
-!       Geometry => null ( )
-    class ( * ), pointer :: &
-      Grid => null ( )
-    class ( CurrentTemplate ), pointer :: &
-      Current_C => null ( )
-!     type ( CurrentPointerForm ), dimension ( : ), pointer :: &
-!       Current_1D => null ( )
-    type ( IncrementDivergence_FV_Form ), allocatable :: &
-      IncrementDivergence
-    type ( IncrementDampingForm ), allocatable :: &
-      IncrementDamping
-    procedure ( ApplyDivergence ), pointer, pass :: &
-      ApplyDivergence => ApplyDivergence
-    procedure ( AS ), pointer, pass :: &
-      ApplySources => null ( ) 
-    procedure ( AR ), pointer, pass :: &
-      ApplyRelaxation => null ( )
-!     type ( ApplyDivergencePointer ), dimension ( : ), allocatable :: &
-!       ApplyDivergence_1D
-!     type ( ApplySourcesPointer ), dimension ( : ), allocatable :: &
-!       ApplySources_1D
-!     type ( ApplyRelaxationPointer ), dimension ( : ), allocatable :: &
-!       ApplyRelaxation_1D
+  type, public, extends ( Step_RK_Template ), abstract :: &
+    Step_RK_C_ASC_Template
+      integer ( KDI ) :: &
+        iTimerGhost!, &
+!         iGeometryValue
+      type ( Real_1D_Form ), dimension ( : ), allocatable :: &
+        dLogVolumeJacobian_dX
+!       type ( Real_3D_2D_Form ), dimension ( : ), allocatable :: &
+!         BoundaryFluence_CSL
+      type ( Real_3D_Form ), dimension ( :, : ), allocatable :: &
+        BoundaryFluence_CSL_C
+      logical ( KDL ) :: &
+        UseLimiterParameter_C
+!       logical ( KDL ), dimension ( : ), allocatable :: &
+!         UseLimiterParameter
+      type ( VariableGroupForm ), allocatable :: &
+        Solution_C, &
+        Y_C
+      type ( VariableGroupForm ), dimension ( : ), allocatable :: &
+        K_C
+!       class ( GeometryFlatForm ), pointer :: &
+!         Geometry => null ( )
+      class ( * ), pointer :: &
+        Grid => null ( )
+      class ( CurrentTemplate ), pointer :: &
+        Current_C => null ( )
+!       type ( CurrentPointerForm ), dimension ( : ), pointer :: &
+!         Current_1D => null ( )
+      type ( IncrementDivergence_FV_Form ), allocatable :: &
+        IncrementDivergence
+      type ( IncrementDampingForm ), allocatable :: &
+        IncrementDamping
+      procedure ( ApplyDivergence ), pointer, pass :: &
+        ApplyDivergence => ApplyDivergence
+      procedure ( AS ), pointer, pass :: &
+        ApplySources => null ( ) 
+      procedure ( AR ), pointer, pass :: &
+        ApplyRelaxation => null ( )
+!       type ( ApplyDivergencePointer ), dimension ( : ), allocatable :: &
+!         ApplyDivergence_1D
+!       type ( ApplySourcesPointer ), dimension ( : ), allocatable :: &
+!         ApplySources_1D
+!       type ( ApplyRelaxationPointer ), dimension ( : ), allocatable :: &
+!         ApplyRelaxation_1D
   contains
     procedure, public, pass :: &
       InitializeTemplate_C
@@ -176,7 +177,7 @@ contains
       C
 
     if ( S % Type == '' ) &
-      S % Type = 'a Step_RK_C' 
+      S % Type = 'a Step_RK_C_ASC' 
 
     call S % InitializeTemplate ( NameSuffix, A, B, C )
 
