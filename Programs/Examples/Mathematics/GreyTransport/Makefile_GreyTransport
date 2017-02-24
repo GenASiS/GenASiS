@@ -41,80 +41,12 @@ HomogeneousSphere: Basics.a Mathematics.a RadiationMoments.a \
           RadiationMoments.a Mathematics.a Basics.a \
           $(LIBRARIES)
 
-LineSource: Basics.a Mathematics.a RadiationMoments.a \
-  LineSource.o
-	$(LINK) $(FFLAGS) \
-          -o LineSource_$(MACHINE) \
-          LineSource.o LineSource_Form.o \
-          RadiationMoments.a Mathematics.a Basics.a \
-          $(LIBRARIES)
-
-HomogeneousSphere: Basics.a Mathematics.a RadiationMoments.a \
-  HomogeneousSphere.o
-	$(LINK) $(FFLAGS) \
-          -o HomogeneousSphere_$(MACHINE) \
-          HomogeneousSphere.o HomogeneousSphere_Form.o \
-          RadiationMoments.a Mathematics.a Basics.a \
-          $(LIBRARIES)
-
 MarshakWave: Basics.a Mathematics.a Fluid.a GreyMoments.a MarshakWave.o
 	$(LINK) $(FFLAGS) \
           -o MarshakWave_$(MACHINE) \
           MarshakWave.o MarshakWave_Form.o \
           GreyMoments.a Fluid.a Mathematics.a Basics.a \
           $(THIRD_PARTY) $(LIBRARIES)
-
-# EATest: EA_Test.o
-# 	$(LINK) $(FFLAGS) \
-#           -o EATest_$(MACHINE) \
-#           $(BASICS) $(MANIFOLDS) $(OPERATIONS) ConservedFields_Template.o \
-#           ConservedFieldsChart_Template.o ConservedFieldsAtlas_Template.o \
-#           ConservationLawSolver_Form.o ConservationLawEvolution_Template.o \
-#           GreyMoments_Form.o UpdateExplicit_GM__Form.o  \
-# 	  UpdateImplicit_GM__Form.o GreyMomentsSolver_Form.o\
-#           GreyMomentsChart_Form.o GreyMomentsAtlas_Form.o \
-#           GreyMomentsEvolution_Template.o EA_Test_Form.o \
-#           EA_Test.o \
-#           $(LIBRARIES)
-
-# HomogeneousSphereTest: HomogeneousSphere_Test.o
-# 	$(LINK) $(FFLAGS) \
-#           -o HomogeneousSphereTest_$(MACHINE) \
-#           $(BASICS) $(MANIFOLDS) $(OPERATIONS) ConservedFields_Template.o \
-#           ConservedFieldsChart_Template.o ConservedFieldsAtlas_Template.o \
-#           ConservationLawSolver_Form.o ConservationLawEvolution_Template.o \
-#           GreyMoments_Form.o UpdateExplicit_GM__Form.o  \
-# 	  UpdateImplicit_GM__Form.o GreyMomentsSolver_Form.o\
-#           GreyMomentsChart_Form.o GreyMomentsAtlas_Form.o \
-#           GreyMomentsEvolution_Template.o HomogeneousSphere_Test_Form.o \
-#           HomogeneousSphere_Test.o \
-#           $(LIBRARIES)
-
-# HomogeneousCylinderTest: HomogeneousCylinder_Test.o
-# 	$(LINK) $(FFLAGS) \
-#           -o HomogeneousCylinderTest_$(MACHINE) \
-#           $(BASICS) $(MANIFOLDS) $(OPERATIONS) ConservedFields_Template.o \
-#           ConservedFieldsChart_Template.o ConservedFieldsAtlas_Template.o \
-#           ConservationLawSolver_Form.o ConservationLawEvolution_Template.o \
-#           GreyMoments_Form.o UpdateExplicit_GM__Form.o  \
-# 	  UpdateImplicit_GM__Form.o GreyMomentsSolver_Form.o\
-#           GreyMomentsChart_Form.o GreyMomentsAtlas_Form.o \
-#           GreyMomentsEvolution_Template.o HomogeneousCylinder_Test_Form.o \
-#           HomogeneousCylinder_Test.o \
-#           $(LIBRARIES)
-
-# LineSourceTest: LineSource_Test.o
-# 	$(LINK) $(FFLAGS) \
-#           -o LineSourceTest_$(MACHINE) \
-#           $(BASICS) $(MANIFOLDS) $(OPERATIONS) ConservedFields_Template.o \
-#           ConservedFieldsChart_Template.o ConservedFieldsAtlas_Template.o \
-#           ConservationLawSolver_Form.o ConservationLawEvolution_Template.o \
-#           GreyMoments_Form.o UpdateExplicit_GM__Form.o  \
-# 	  UpdateImplicit_GM__Form.o GreyMomentsSolver_Form.o\
-#           GreyMomentsChart_Form.o GreyMomentsAtlas_Form.o \
-#           GreyMomentsEvolution_LSTAnalyticSolution_Template.o LineSource_Test_Form.o \
-#           LineSource_Test.o \
-#           $(LIBRARIES)
 
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MATHEMATICS)/Makefile_Dependencies
@@ -209,44 +141,3 @@ MarshakWave.o: \
   MarshakWave_Form.o \
   MarshakWave.f90
 
-# HomogenousSphere_Test_Form.o: \
-#   Basics.o \
-#   Manifolds.o \
-#   GreyMoments_Form.o \
-#   GreyMomentsChart_Form.o \
-#   GreyMomentsAtlas_Form.o \
-#   ConservationLawEvolution_Template.o \
-#   HomogeneousSphere_Test_Form.f90
-
-# HomogeneousSphere_Test.o: \
-#   Basics.o \
-#   HomogeneousSphere_Test_Form.o \
-#   HomogeneousSphere_Test.f90
-
-# HomogenousCylinder_Test_Form.o: \
-#   Basics.o \
-#   Manifolds.o \
-#   GreyMoments_Form.o \
-#   GreyMomentsChart_Form.o \
-#   GreyMomentsAtlas_Form.o \
-#   ConservationLawEvolution_Template.o \
-#   HomogeneousCylinder_Test_Form.f90
-
-# HomogeneousCylinder_Test.o: \
-#   Basics.o \
-#   HomogeneousCylinder_Test_Form.o \
-#   HomogeneousCylinder_Test.f90
-
-# LineSource_Test_Form.o: \
-#   Basics.o \
-#   Manifolds.o \
-#   GreyMoments_Form.o \
-#   GreyMomentsChart_Form.o \
-#   GreyMomentsAtlas_Form.o \
-#   GreyMomentsEvolution_LSTAnalyticSolution_Template.o \
-#   LineSource_Test_Form.f90
-
-# LineSource_Test.o: \
-#   Basics.o \
-#   LineSource_Test_Form.o \
-#   LineSource_Test.f90
