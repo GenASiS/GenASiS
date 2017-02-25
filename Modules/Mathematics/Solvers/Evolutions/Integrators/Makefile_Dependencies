@@ -15,28 +15,28 @@ TimeSeries_C__Form.o: \
   TimeSeries_Form.o \
   TimeSeries_C__Form.f90
 
-Integrator_C_ASC__Template.o: \
+Integrator_C_PS__Template.o: \
   Basics.o \
   Manifolds.o \
   Fields.o \
   Steps.o \
   Integrator_Template.o \
   TimeSeries_C__Form.o \
-  Integrator_C_ASC__Template.f90
+  Integrator_C_PS__Template.f90
 
 Integrator_C_1D__Template.o: \
   Basics.o \
   Manifolds.o \
   Fields.o \
   Steps.o \
-  Integrator_C_ASC__Template.o \
+  Integrator_C_PS__Template.o \
   Integrator_C_1D__Template.f90
 
 Integrators.o: \
   Integrator_Template.o \
   TimeSeries_Form.o \
   TimeSeries_C__Form.o \
-  Integrator_C_ASC__Template.o \
+  Integrator_C_PS__Template.o \
   Integrators.f90
 #  Integrator_C_1D__Template.o \
 

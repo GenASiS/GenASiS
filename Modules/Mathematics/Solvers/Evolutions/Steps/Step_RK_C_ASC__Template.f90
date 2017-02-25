@@ -79,7 +79,7 @@ module Step_RK_C_ASC__Template
 !         ApplyRelaxation_1D
   contains
     procedure, public, pass :: &
-      InitializeTemplate_C
+      InitializeTemplate_C_ASC
 !     procedure, private, pass :: &
 !       Compute_0D
 !     procedure, private, pass :: &
@@ -87,11 +87,11 @@ module Step_RK_C_ASC__Template
 !     generic, public :: &
 !       Compute => Compute_0D, Compute_1D
     procedure, private, pass :: &
-      Compute_C
+      Compute_C_ASC
     generic, public :: &
-      Compute => Compute_C
+      Compute => Compute_C_ASC
     procedure, public, pass :: &
-      FinalizeTemplate_C
+      FinalizeTemplate_C_ASC
     procedure, private, pass :: &
       InitializeIntermediate
     procedure, private, pass :: &
@@ -163,7 +163,7 @@ module Step_RK_C_ASC__Template
 contains
 
 
-  subroutine InitializeTemplate_C ( S, NameSuffix, A, B, C )
+  subroutine InitializeTemplate_C_ASC ( S, NameSuffix, A, B, C )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
@@ -194,7 +194,7 @@ contains
     call PROGRAM_HEADER % AddTimer &
            ( 'GhostIncrement', S % iTimerGhost )
 
-  end subroutine InitializeTemplate_C
+  end subroutine InitializeTemplate_C_ASC
 
 
 !   subroutine Compute_0D &
@@ -377,7 +377,7 @@ contains
 !   end subroutine Compute_1D
 
 
-  subroutine Compute_C &
+  subroutine Compute_C_ASC &
                ( S, Current_ASC, Time, TimeStep, UseLimiterParameterOption )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
@@ -422,10 +422,10 @@ contains
     call Timer % Stop ( )
     end associate !-- Timer
 
-  end subroutine Compute_C
+  end subroutine Compute_C_ASC
 
 
-  impure elemental subroutine FinalizeTemplate_C ( S )
+  impure elemental subroutine FinalizeTemplate_C_ASC ( S )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
@@ -437,7 +437,7 @@ contains
 
     call S % FinalizeTemplate ( )
 
-  end subroutine FinalizeTemplate_C
+  end subroutine FinalizeTemplate_C_ASC
 
 
   subroutine InitializeIntermediate ( S )

@@ -4,13 +4,13 @@ module DensityWaveIntegrator_Form
   use Manifolds
   use Steps
   use Integrator_Template
-  use Integrator_C_ASC__Template
+  use Integrator_C_PS__Template
   use ProtoFields
 
   implicit none
   private
 
-  type, public, extends ( Integrator_C_ASC_Template ) :: &
+  type, public, extends ( Integrator_C_PS_Template ) :: &
     DensityWaveIntegratorForm
       real ( KDR ) :: &
         Offset, &
@@ -134,7 +134,7 @@ contains
 
     !-- Initialize template
 
-    call DW % InitializeTemplate_C &
+    call DW % InitializeTemplate_C_PS &
            ( Name, FinishTimeOption = nPeriods * Period )
 
     !-- Cleanup
@@ -198,7 +198,7 @@ contains
     if ( allocated ( DW % Reference ) ) &
       deallocate ( DW % Reference )
 
-    call DW % FinalizeTemplate_C
+    call DW % FinalizeTemplate_C_PS ( )
 
   end subroutine Finalize
 

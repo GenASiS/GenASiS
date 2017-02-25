@@ -50,7 +50,7 @@ contains
 
     C ( 2 ) = 1.0_KDR
     
-    call S % InitializeTemplate_C ( NameSuffix, A, B, C )
+    call S % InitializeTemplate_C_ASC ( NameSuffix, A, B, C )
 
   end subroutine Initialize
 
@@ -60,7 +60,7 @@ contains
     type ( Step_RK2_C_ASC_Form ), intent ( inout ) :: &
       S
 
-    call S % FinalizeTemplate_C ( )
+    call S % FinalizeTemplate_C_ASC ( )
 
   end subroutine Finalize
 

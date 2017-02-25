@@ -19,19 +19,19 @@ module Step_RK_C_ASC_1D__Template
     Step_RK_C_ASC_1D_Template
   contains
     procedure, public, pass :: &
-      InitializeTemplate_C_1D
+      InitializeTemplate_C_ASC_1D
     procedure, private, pass :: &
-      Compute_C_1D
+      Compute_C_ASC_1D
     generic, public :: &
-      Compute => Compute_C_1D
+      Compute => Compute_C_ASC_1D
     procedure, public, pass :: &
-      FinalizeTemplate_C_1D
+      FinalizeTemplate_C_ASC_1D
   end type Step_RK_C_ASC_1D_Template
 
 contains
 
 
-  subroutine InitializeTemplate_C_1D ( S, NameSuffix, A, B, C )
+  subroutine InitializeTemplate_C_ASC_1D ( S, NameSuffix, A, B, C )
 
     class ( Step_RK_C_ASC_1D_Template ), intent ( inout ) :: &
       S
@@ -47,12 +47,12 @@ contains
     if ( S % Type == '' ) &
       S % Type = 'a Step_RK_C_ASC_1D' 
 
-    call S % InitializeTemplate_C ( NameSuffix, A, B, C )
+    call S % InitializeTemplate_C_ASC ( NameSuffix, A, B, C )
 
-  end subroutine InitializeTemplate_C_1D
+  end subroutine InitializeTemplate_C_ASC_1D
 
 
-  subroutine Compute_C_1D &
+  subroutine Compute_C_ASC_1D &
                ( S, Current_ASC_1D, Grid, Time, TimeStep, &
                  UseLimiterParameterOption )
 
@@ -92,17 +92,17 @@ contains
     call Timer % Stop ( )
     end associate !-- Timer
 
-  end subroutine Compute_C_1D
+  end subroutine Compute_C_ASC_1D
 
 
-  impure elemental subroutine FinalizeTemplate_C_1D ( S )
+  impure elemental subroutine FinalizeTemplate_C_ASC_1D ( S )
 
     class ( Step_RK_C_ASC_1D_Template ), intent ( inout ) :: &
       S
 
-    call S % FinalizeTemplate_C ( )
+    call S % FinalizeTemplate_C_ASC ( )
 
-  end subroutine FinalizeTemplate_C_1D
+  end subroutine FinalizeTemplate_C_ASC_1D
 
 
 end module Step_RK_C_ASC_1D__Template
