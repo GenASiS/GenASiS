@@ -77,7 +77,7 @@ contains
     end if
 
     if ( .not. allocated ( I % Current_ASC ) ) then
-      call Show ( 'Current not allocated by an extension', &
+      call Show ( 'Current_ASC not allocated by an extension', &
                   CONSOLE % WARNING )
       call Show ( 'Integrator_C_PS__Template', 'module', CONSOLE % WARNING )
       call Show ( 'InitializeTemplate_C_PS', 'subroutine', CONSOLE % WARNING )

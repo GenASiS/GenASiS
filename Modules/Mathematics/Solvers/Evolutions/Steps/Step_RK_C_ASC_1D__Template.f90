@@ -105,7 +105,8 @@ contains
 
 
   subroutine Compute_C_ASC_1D &
-               ( S, Current_ASC_1D, Time, TimeStep, UseLimiterParameterOption )
+               ( S, Current_ASC_1D, Time, TimeStep, &
+                 UseLimiterParameter_1D_Option )
 
     class ( Step_RK_C_ASC_1D_Template ), intent ( inout ) :: &
       S
@@ -116,7 +117,7 @@ contains
       Time, &
       TimeStep
     logical ( KDL ), dimension ( : ), intent ( in ), optional :: &
-      UseLimiterParameterOption
+      UseLimiterParameter_1D_Option
 
     integer ( KDI ) :: &
       iC  !-- iCurrent
@@ -127,8 +128,8 @@ contains
 
     allocate ( S % UseLimiterParameter_C_1D ( S % nCurrents ) )
     S % UseLimiterParameter_C_1D = .true.
-    if ( present ( UseLimiterParameterOption ) ) &
-      S % UseLimiterParameter_C_1D = UseLimiterParameterOption
+    if ( present ( UseLimiterParameter_1D_Option ) ) &
+      S % UseLimiterParameter_C_1D = UseLimiterParameter_1D_Option
 
     select type ( Chart => Current_ASC_1D ( 1 ) % Element % Atlas_SC % Chart )
     class is ( Chart_SL_Template )
