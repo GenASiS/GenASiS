@@ -26,9 +26,9 @@ module Step_RK_C_ASC__Template
       type ( Real_1D_Form ), dimension ( : ), allocatable :: &
         dLogVolumeJacobian_dX
       type ( Real_3D_Form ), dimension ( :, : ), allocatable :: &
-        BoundaryFluence_CSL_C
+        BoundaryFluence_CSL
       logical ( KDL ) :: &
-        UseLimiterParameter_C
+        UseLimiterParameter
       type ( VariableGroupForm ), allocatable :: &
         Solution, &
         Y
@@ -333,9 +333,9 @@ contains
       ( Timer => PROGRAM_HEADER % Timer ( S % iTimerComputeStep ) )
     call Timer % Start ( )
 
-    S % UseLimiterParameter_C = .true.
+    S % UseLimiterParameter = .true.
     if ( present ( UseLimiterParameterOption ) ) &
-      S % UseLimiterParameter_C = UseLimiterParameterOption
+      S % UseLimiterParameter = UseLimiterParameterOption
 
     select type ( Chart => Current_ASC % Atlas_SC % Chart )
     class is ( Chart_SL_Template )
@@ -432,9 +432,9 @@ contains
     associate &
       ( C   => S % Current, &
         K   => S % K ( iStage ), &
-        BF  => S % BoundaryFluence_CSL_C, &
+        BF  => S % BoundaryFluence_CSL, &
         Y   => S % Y, &
-        ULP => S % UseLimiterParameter_C )
+        ULP => S % UseLimiterParameter )
 
     call S % ComputeStage_C &
            ( C, K, BF, Y, ULP, TimeStep, iStage )
@@ -952,7 +952,7 @@ contains
     class is ( Chart_SL_Template )
 
       call S % AllocateBoundaryFluence &
-             ( Grid, S % Current % N_CONSERVED, S % BoundaryFluence_CSL_C )
+             ( Grid, S % Current % N_CONSERVED, S % BoundaryFluence_CSL )
 
       CoordinateSystem = Grid % CoordinateSystem
 

@@ -258,7 +258,7 @@ contains
              ( CA, I % Time, TimeStep, &
                UseLimiterParameterOption = I % UseLimiterParameter )
 
-      call CA % AccumulateBoundaryTally ( S % BoundaryFluence_CSL_C )
+      call CA % AccumulateBoundaryTally ( S % BoundaryFluence_CSL )
 
     class default
       call Show ( 'Chart type not found', CONSOLE % ERROR )

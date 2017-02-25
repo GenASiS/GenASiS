@@ -21,9 +21,9 @@ module Step_RK_C_ASC_1D__Template
       integer ( KDI ) :: &
         nCurrents = 0
       type ( Real_3D_2D_Form ), dimension ( : ), allocatable :: &
-        BoundaryFluence_CSL_C_1D
+        BoundaryFluence_CSL_1D
       logical ( KDL ), dimension ( : ), allocatable :: &
-        UseLimiterParameter_C_1D
+        UseLimiterParameter_1D
       type ( VariableGroupForm ), dimension ( : ), allocatable :: &
         Solution_1D, &
         Y_1D
@@ -126,10 +126,10 @@ contains
       ( Timer => PROGRAM_HEADER % Timer ( S % iTimerComputeStep ) )
     call Timer % Start ( )
 
-    allocate ( S % UseLimiterParameter_C_1D ( S % nCurrents ) )
-    S % UseLimiterParameter_C_1D = .true.
+    allocate ( S % UseLimiterParameter_1D ( S % nCurrents ) )
+    S % UseLimiterParameter_1D = .true.
     if ( present ( UseLimiterParameter_1D_Option ) ) &
-      S % UseLimiterParameter_C_1D = UseLimiterParameter_1D_Option
+      S % UseLimiterParameter_1D = UseLimiterParameter_1D_Option
 
     select type ( Chart => Current_ASC_1D ( 1 ) % Element % Atlas_SC % Chart )
     class is ( Chart_SL_Template )
@@ -160,7 +160,7 @@ contains
 
     deallocate ( S % Current_1D )
     nullify ( S % Grid )
-    deallocate ( S % UseLimiterParameter_C_1D )
+    deallocate ( S % UseLimiterParameter_1D )
     S % nCurrents = 0
 
     call Timer % Stop ( )
@@ -253,9 +253,9 @@ contains
       associate &
         ( C  => S % Current_1D ( iC ) % Pointer, &
           K  => S % K_1D ( iC, iStage ), &
-          BF => S % BoundaryFluence_CSL_C_1D ( iC ) % Array, &
+          BF => S % BoundaryFluence_CSL_1D ( iC ) % Array, &
           Y  => S % Y_1D ( iC ), &
-          ULP => S % UseLimiterParameter_C_1D ( iC ) )
+          ULP => S % UseLimiterParameter_1D ( iC ) )
 
       S % ApplyDivergence => S % ApplyDivergence_1D ( iC ) % Pointer
       S % ApplySources    => S % ApplySources_1D    ( iC ) % Pointer
@@ -403,14 +403,14 @@ contains
     select type ( Grid => S % Grid )
     class is ( Chart_SL_Template )
 
-      if ( allocated ( S % BoundaryFluence_CSL_C_1D ) ) &
-        deallocate ( S % BoundaryFluence_CSL_C_1D )
-      allocate ( S % BoundaryFluence_CSL_C_1D ( S % nCurrents ) )
+      if ( allocated ( S % BoundaryFluence_CSL_1D ) ) &
+        deallocate ( S % BoundaryFluence_CSL_1D )
+      allocate ( S % BoundaryFluence_CSL_1D ( S % nCurrents ) )
 
       do iC = 1, S % nCurrents
         call S % AllocateBoundaryFluence &
                ( Grid, S % Current_1D ( iC ) % Pointer % N_CONSERVED, &
-                 S % BoundaryFluence_CSL_C_1D ( iC ) % Array )
+                 S % BoundaryFluence_CSL_1D ( iC ) % Array )
       end do !-- iC
 
       CoordinateSystem = Grid % CoordinateSystem

@@ -160,7 +160,7 @@ contains
       do iC = 1, I % N_CURRENTS
         associate ( CA => CA_1D ( iC ) % Element )
         call CA % AccumulateBoundaryTally &
-               ( S % BoundaryFluence_CSL_C_1D ( iC ) % Array )
+               ( S % BoundaryFluence_CSL_1D ( iC ) % Array )
         end associate !-- CA
     end do !-- iC
 

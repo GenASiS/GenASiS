@@ -40,7 +40,7 @@ contains
       B
 
     if ( S % Type == '' ) &
-      S % Type = 'a Step_RK2_C' 
+      S % Type = 'a Step_RK2_C_ASC' 
 
     call Clear ( A )
     A ( 2, 1 ) = 1.0_KDR
