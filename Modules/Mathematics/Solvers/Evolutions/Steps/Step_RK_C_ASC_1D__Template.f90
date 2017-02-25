@@ -31,6 +31,12 @@ module Step_RK_C_ASC_1D__Template
         K_1D
       type ( CurrentPointerForm ), dimension ( : ), allocatable :: &
         Current_1D
+      type ( ApplyDivergence_C_Pointer ), dimension ( : ), allocatable :: &
+        ApplyDivergence_1D
+      type ( ApplySources_C_Pointer ), dimension ( : ), allocatable :: &
+        ApplySources_1D
+      type ( ApplyRelaxation_C_Pointer ), dimension ( : ), allocatable :: &
+        ApplyRelaxation_1D
   contains
     procedure, public, pass :: &
       InitializeTemplate_C_ASC_1D
@@ -40,6 +46,14 @@ module Step_RK_C_ASC_1D__Template
       Compute => Compute_C_ASC_1D
     procedure, public, pass :: &
       FinalizeTemplate_C_ASC_1D
+    procedure, private, pass :: &
+      InitializeIntermediate
+    procedure, private, pass :: &
+      IncrementIntermediate
+    procedure, private, pass :: &
+      ComputeStage
+    procedure, private, pass :: &
+      IncrementSolution
     procedure, private, pass ( S ) :: &
       LoadSolution_C_1D
     generic, public :: &
@@ -61,7 +75,7 @@ module Step_RK_C_ASC_1D__Template
 contains
 
 
-  subroutine InitializeTemplate_C_ASC_1D ( S, NameSuffix, A, B, C )
+  subroutine InitializeTemplate_C_ASC_1D ( S, NameSuffix, A, B, C, nCurrents )
 
     class ( Step_RK_C_ASC_1D_Template ), intent ( inout ) :: &
       S
@@ -73,11 +87,19 @@ contains
       B
     real ( KDR ), dimension ( 2 : ), intent ( in ) :: &
       C
+    integer ( KDI ), intent ( in ) :: &
+      nCurrents
 
     if ( S % Type == '' ) &
       S % Type = 'a Step_RK_C_ASC_1D' 
 
     call S % InitializeTemplate_C_ASC ( NameSuffix, A, B, C )
+
+    S % nCurrents = nCurrents
+
+    allocate ( S % ApplyDivergence_1D ( S % nCurrents ) )
+    allocate ( S % ApplySources_1D ( S % nCurrents ) )
+    allocate ( S % ApplyRelaxation_1D ( S % nCurrents ) )
 
   end subroutine InitializeTemplate_C_ASC_1D
 
@@ -102,8 +124,6 @@ contains
     associate &
       ( Timer => PROGRAM_HEADER % Timer ( S % iTimerComputeStep ) )
     call Timer % Start ( )
-
-    S % nCurrents = size ( Current_ASC_1D )
 
     allocate ( S % UseLimiterParameter_C_1D ( S % nCurrents ) )
     S % UseLimiterParameter_C_1D = .true.
@@ -132,7 +152,7 @@ contains
     call AllocateStorage ( S )
     call S % LoadSolution ( S % Solution_1D, S % Current_1D )
 
-    ! call S % ComputeTemplate ( Time, TimeStep )
+    call S % ComputeTemplate ( Time, TimeStep )
 
     call S % StoreSolution ( S % Current_1D, S % Solution_1D )
     call DeallocateStorage ( S )
@@ -153,9 +173,132 @@ contains
     class ( Step_RK_C_ASC_1D_Template ), intent ( inout ) :: &
       S
 
+    if ( allocated ( S % ApplyRelaxation_1D ) ) &
+      deallocate ( S % ApplyRelaxation_1D )
+    if ( allocated ( S % ApplySources_1D ) ) &
+      deallocate ( S % ApplySources_1D )
+    if ( allocated ( S % ApplyDivergence_1D ) ) &
+      deallocate ( S % ApplyDivergence_1D )
+
     call S % FinalizeTemplate_C_ASC ( )
 
   end subroutine FinalizeTemplate_C_ASC_1D
+
+
+  subroutine InitializeIntermediate ( S )
+
+    class ( Step_RK_C_ASC_1D_Template ), intent ( inout ) :: &
+      S
+
+    integer ( KDI ) :: &
+      iC  !-- iCurrent
+
+    do iC = 1, S % nCurrents
+      associate &
+        ( SV => S % Solution_1D ( iC ) % Value, &
+          YV => S % Y_1D ( iC ) % Value )
+
+      call Copy ( SV, YV )
+
+      end associate !-- SV, etc.
+    end do !-- iC
+
+  end subroutine InitializeIntermediate
+
+
+  subroutine IncrementIntermediate ( S, A, iK )
+
+    class ( Step_RK_C_ASC_1D_Template ), intent ( inout ) :: &
+      S
+    real ( KDR ), intent ( in ) :: &
+      A
+    integer ( KDI ), intent ( in ) :: &
+      iK
+
+    integer ( KDI ) :: &
+      iC  !-- iCurrent
+
+    do iC = 1, S % nCurrents
+      associate &
+        ( YV => S % Y_1D ( iC ) % Value, &
+          KV => S % K_1D ( iC, iK ) % Value )
+
+      call MultiplyAdd ( YV, KV, A )
+
+      end associate !-- YV, etc.
+    end do !-- iC
+
+  end subroutine IncrementIntermediate
+
+
+  subroutine ComputeStage ( S, Time, TimeStep, iStage )
+
+    class ( Step_RK_C_ASC_1D_Template ), intent ( inout ) :: &
+      S
+    real ( KDR ), intent ( in ) :: &
+      Time, &
+      TimeStep
+    integer ( KDI ), intent ( in ) :: &
+      iStage
+
+    integer ( KDI ) :: &
+      iC  !-- iCurrent
+
+    associate &
+      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerComputeIncrement ) )
+    call Timer % Start ( )
+
+    do iC = 1, S % nCurrents
+      associate &
+        ( C  => S % Current_1D ( iC ) % Pointer, &
+          K  => S % K_1D ( iC, iStage ), &
+          BF => S % BoundaryFluence_CSL_C_1D ( iC ) % Array, &
+          Y  => S % Y_1D ( iC ), &
+          ULP => S % UseLimiterParameter_C_1D ( iC ) )
+
+      S % ApplyDivergence => S % ApplyDivergence_1D ( iC ) % Pointer
+      S % ApplySources    => S % ApplySources_1D    ( iC ) % Pointer
+      S % ApplyRelaxation => S % ApplyRelaxation_1D ( iC ) % Pointer
+
+      call S % ComputeStage_C &
+             ( C, K, BF, Y, ULP, TimeStep, iStage )
+
+      S % ApplyRelaxation => null ( )
+      S % ApplySources    => null ( )
+      S % ApplyDivergence => null ( )
+
+      end associate !-- C, etc.
+    end do !-- iC
+
+    call Timer % Stop ( )
+    end associate !-- Timer
+
+  end subroutine ComputeStage
+
+
+  subroutine IncrementSolution ( S, B, iS )
+
+    class ( Step_RK_C_ASC_1D_Template ), intent ( inout ) :: &
+      S
+    real ( KDR ), intent ( in ) :: &
+      B
+    integer ( KDI ), intent ( in ) :: &
+      iS
+
+    integer ( KDI ) :: &
+      iC  !-- iCurrent
+
+    do iC = 1, S % nCurrents
+      associate &
+        ( SV => S % Solution_1D ( iC ) % Value, &
+          KV => S % K_1D ( iC, iS ) % Value )
+
+      call MultiplyAdd ( SV, KV, B )
+
+      end associate !-- SV, etc.
+    end do !-- iC
+
+  end subroutine IncrementSolution
 
 
   subroutine LoadSolution_C_1D ( Solution_1D, S, Current_1D )

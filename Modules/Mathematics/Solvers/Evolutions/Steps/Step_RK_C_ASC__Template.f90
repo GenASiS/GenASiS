@@ -18,21 +18,6 @@ module Step_RK_C_ASC__Template
   implicit none
   private
 
-!     type, private :: ApplyDivergencePointer
-!       procedure ( ApplyDivergence ), pointer, nopass :: &
-!         Pointer => ApplyDivergence
-!     end type ApplyDivergencePointer
-
-!     type, private :: ApplySourcesPointer
-!       procedure ( AS ), pointer, nopass :: &
-!         Pointer => null ( )
-!     end type ApplySourcesPointer
-
-!     type, private :: ApplyRelaxationPointer
-!       procedure ( AR ), pointer, nopass :: &
-!         Pointer => null ( )
-!     end type ApplyRelaxationPointer
-
   type, public, extends ( Step_RK_Template ), abstract :: &
     Step_RK_C_ASC_Template
       integer ( KDI ) :: &
@@ -65,12 +50,6 @@ module Step_RK_C_ASC__Template
         ApplySources => null ( ) 
       procedure ( AR ), pointer, pass :: &
         ApplyRelaxation => null ( )
-!       type ( ApplyDivergencePointer ), dimension ( : ), allocatable :: &
-!         ApplyDivergence_1D
-!       type ( ApplySourcesPointer ), dimension ( : ), allocatable :: &
-!         ApplySources_1D
-!       type ( ApplyRelaxationPointer ), dimension ( : ), allocatable :: &
-!         ApplyRelaxation_1D
   contains
     procedure, public, pass :: &
       InitializeTemplate_C_ASC
@@ -117,6 +96,21 @@ module Step_RK_C_ASC__Template
     procedure, public, pass :: &
       DeallocateMetricDerivatives
   end type Step_RK_C_ASC_Template
+
+  type, public :: ApplyDivergence_C_Pointer
+    procedure ( ApplyDivergence ), pointer, nopass :: &
+      Pointer => ApplyDivergence
+  end type ApplyDivergence_C_Pointer
+
+  type, public :: ApplySources_C_Pointer
+    procedure ( AS ), pointer, nopass :: &
+      Pointer => null ( )
+  end type ApplySources_C_Pointer
+
+  type, public :: ApplyRelaxation_C_Pointer
+    procedure ( AR ), pointer, nopass :: &
+      Pointer => null ( )
+  end type ApplyRelaxation_C_Pointer
 
   abstract interface 
 
@@ -436,13 +430,14 @@ contains
     call Timer % Start ( )
 
     associate &
-      ( C  => S % Current, &
-        K  => S % K ( iStage ), &
-        BF => S % BoundaryFluence_CSL_C, &
-        Y  => S % Y )
+      ( C   => S % Current, &
+        K   => S % K ( iStage ), &
+        BF  => S % BoundaryFluence_CSL_C, &
+        Y   => S % Y, &
+        ULP => S % UseLimiterParameter_C )
 
     call S % ComputeStage_C &
-           ( C, K, BF, Y, S % UseLimiterParameter_C, TimeStep, iStage )
+           ( C, K, BF, Y, ULP, TimeStep, iStage )
 
     end associate !-- C, etc.
 
