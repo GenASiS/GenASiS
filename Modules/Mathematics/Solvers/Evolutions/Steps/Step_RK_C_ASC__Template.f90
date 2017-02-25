@@ -58,7 +58,7 @@ module Step_RK_C_ASC__Template
       class ( * ), pointer :: &
         Grid => null ( )
       class ( CurrentTemplate ), pointer :: &
-        Current_C => null ( )
+        Current => null ( )
 !       type ( CurrentPointerForm ), dimension ( : ), pointer :: &
 !         Current_1D => null ( )
       type ( IncrementDivergence_FV_Form ), allocatable :: &
@@ -416,16 +416,16 @@ contains
       call PROGRAM_HEADER % Abort ( )
     end select !-- Chart
 
-    S % Current_C => Current_ASC % Current ( )
+    S % Current => Current_ASC % Current ( )
     call AllocateStorage ( S )
-    call S % LoadSolution ( S % Solution_C, S % Current_C )
+    call S % LoadSolution ( S % Solution_C, S % Current )
 
     call S % ComputeTemplate ( Time, TimeStep )
 
-    call S % StoreSolution ( S % Current_C, S % Solution_C )
+    call S % StoreSolution ( S % Current, S % Solution_C )
     call DeallocateStorage ( S )
-    S % Current_C => null ( )
-    S % Grid      => null ( )
+    S % Current => null ( )
+    S % Grid    => null ( )
 
     call Timer % Stop ( )
     end associate !-- Timer
@@ -499,7 +499,7 @@ contains
     call Timer % Start ( )
 
     associate &
-      ( C  => S % Current_C, &
+      ( C  => S % Current, &
         K  => S % K_C ( iStage ), &
         BF => S % BoundaryFluence_CSL_C, &
         Y  => S % Y_C )
@@ -863,20 +863,21 @@ contains
     integer ( KDI ) :: &
       iS  !-- iStage
 
-    associate &
-      ( nE  => S % Current_C % N_CONSERVED, &  !-- nEquations
-        nV  => S % Current_C % nValues )
-
     allocate ( S % Solution_C )
     allocate ( S % Y_C )
     allocate ( S % K_C ( S % nStages ) )
-    call S % Solution_C % Initialize ( [ nV, nE ] )
-    call S % Y_C % Initialize ( [ nV, nE ] )
+
+    associate &
+      ( nEquations => S % Current % N_CONSERVED, &
+        nValues    => S % Current % nValues )
+
+    call S % Solution_C % Initialize ( [ nValues, nEquations ] )
+    call S % Y_C % Initialize ( [ nValues, nEquations ] )
     do iS = 1, S % nStages
-      call S % K_C ( iS ) % Initialize ( [ nV, nE ] )
+      call S % K_C ( iS ) % Initialize ( [ nValues, nEquations ] )
     end do !-- iS
 
-    end associate !-- nE, etc.
+    end associate !-- nEquations, etc.
 
   end subroutine Allocate_RK_C
 
@@ -1019,7 +1020,7 @@ contains
     class is ( Chart_SL_Template )
 
       call S % AllocateBoundaryFluence &
-             ( Grid, S % Current_C % N_CONSERVED, S % BoundaryFluence_CSL_C )
+             ( Grid, S % Current % N_CONSERVED, S % BoundaryFluence_CSL_C )
 
       CoordinateSystem = Grid % CoordinateSystem
 
@@ -1031,7 +1032,7 @@ contains
     end select !-- Grid
 
     call S % AllocateMetricDerivatives &
-           ( CoordinateSystem, S % Current_C % nValues )
+           ( CoordinateSystem, S % Current % nValues )
 
   end subroutine AllocateStorage
 

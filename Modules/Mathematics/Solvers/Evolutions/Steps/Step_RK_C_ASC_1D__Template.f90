@@ -9,6 +9,7 @@ module Step_RK_C_ASC_1D__Template
   !   tableau entries A, B, C
 
   use Basics
+  use Manifolds
   use Fields
   use Step_RK_C_ASC__Template
 
@@ -17,6 +18,19 @@ module Step_RK_C_ASC_1D__Template
 
   type, public, extends ( Step_RK_C_ASC_Template ), abstract :: &
     Step_RK_C_ASC_1D_Template
+      integer ( KDI ) :: &
+        nCurrents = 0
+      type ( Real_3D_2D_Form ), dimension ( : ), allocatable :: &
+        BoundaryFluence_CSL_C_1D
+      logical ( KDL ), dimension ( : ), allocatable :: &
+        UseLimiterParameter_C_1D
+      type ( VariableGroupForm ), dimension ( : ), allocatable :: &
+        Solution_C_1D, &
+        Y_C_1D
+      type ( VariableGroupForm ), dimension ( :, : ), allocatable :: &
+        K_C_1D
+      type ( CurrentPointerForm ), dimension ( : ), allocatable :: &
+        Current_1D
   contains
     procedure, public, pass :: &
       InitializeTemplate_C_ASC_1D
@@ -26,7 +40,15 @@ module Step_RK_C_ASC_1D__Template
       Compute => Compute_C_ASC_1D
     procedure, public, pass :: &
       FinalizeTemplate_C_ASC_1D
+    procedure, public, pass :: &
+      Allocate_RK_C_1D
+    procedure, public, pass :: &
+      Deallocate_RK_C_1D
   end type Step_RK_C_ASC_1D_Template
+
+    private :: &
+      AllocateStorage, &
+      DeallocateStorage
 
 contains
 
@@ -53,41 +75,64 @@ contains
 
 
   subroutine Compute_C_ASC_1D &
-               ( S, Current_ASC_1D, Grid, Time, TimeStep, &
-                 UseLimiterParameterOption )
+               ( S, Current_ASC_1D, Time, TimeStep, UseLimiterParameterOption )
 
     class ( Step_RK_C_ASC_1D_Template ), intent ( inout ) :: &
       S
     class ( Current_ASC_ElementForm ), dimension ( : ), intent ( inout ), &
       target :: &
         Current_ASC_1D
-    class ( * ), intent ( in ), target :: &
-      Grid
     real ( KDR ), intent ( in ) :: &
       Time, &
       TimeStep
     logical ( KDL ), dimension ( : ), intent ( in ), optional :: &
       UseLimiterParameterOption
 
+    integer ( KDI ) :: &
+      iC  !-- iCurrent
+
     associate &
       ( Timer => PROGRAM_HEADER % Timer ( S % iTimerComputeStep ) )
     call Timer % Start ( )
 
-    ! S % UseLimiterParameter_C = .true.
-    ! if ( present ( UseLimiterParameterOption ) ) &
-    !   S % UseLimiterParameter_C = UseLimiterParameterOption
+    S % nCurrents = size ( Current_ASC_1D )
 
-    ! S % Grid      => Grid
-    ! S % Current_C => Current_ASC % Current ( )
-    ! call AllocateStorage ( S, S % Current_C )
+    allocate ( S % UseLimiterParameter_C_1D ( S % nCurrents ) )
+    S % UseLimiterParameter_C_1D = .true.
+    if ( present ( UseLimiterParameterOption ) ) &
+      S % UseLimiterParameter_C_1D = UseLimiterParameterOption
+
+    select type ( Chart => Current_ASC_1D ( 1 ) % Element % Atlas_SC % Chart )
+    class is ( Chart_SL_Template )
+
+      S % Grid => Chart
+
+      allocate ( S % Current_1D ( S % nCurrents ) )
+      do iC = 1, S % nCurrents
+        associate ( CA => Current_ASC_1D ( iC ) % Element )
+        S % Current_1D ( iC ) % Pointer => CA % Current ( )
+        end associate !-- CA
+      end do !-- iC
+
+    class default
+      call Show ( 'Chart type not found', CONSOLE % ERROR )
+      call Show ( 'Step_RK_C_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Compute_C_ASC_1D', 'subroutine', CONSOLE % ERROR ) 
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- Chart
+
+    call AllocateStorage ( S )
     ! call S % LoadSolution ( S % Solution_C, S % Current_C )
 
     ! call S % ComputeTemplate ( Time, TimeStep )
 
     ! call S % StoreSolution ( S % Current_C, S % Solution_C )
-    ! call DeallocateStorage ( S )
-    ! S % Current_C => null ( )
-    ! S % Grid      => null ( )
+    call DeallocateStorage ( S )
+
+    deallocate ( S % Current_1D )
+    nullify ( S % Grid )
+    deallocate ( S % UseLimiterParameter_C_1D )
+    S % nCurrents = 0
 
     call Timer % Stop ( )
     end associate !-- Timer
@@ -103,6 +148,106 @@ contains
     call S % FinalizeTemplate_C_ASC ( )
 
   end subroutine FinalizeTemplate_C_ASC_1D
+
+
+  subroutine Allocate_RK_C_1D ( S )
+
+    class ( Step_RK_C_ASC_1D_Template ), intent ( inout ) :: &
+      S
+
+    integer ( KDI ) :: &
+      iC, &  !-- iCurrent
+      iS     !-- iStage
+
+
+    allocate ( S % Solution_C_1D ( S % nCurrents ) )
+    allocate ( S % Y_C_1D ( S % nCurrents ) )
+    allocate ( S % K_C_1D ( S % nCurrents, S % nStages ) )
+
+    do iC = 1, S % nStages
+      associate &
+        ( nEquations => S % Current_1D ( iC ) % Pointer % N_CONSERVED, &
+          nValues    => S % Current_1D ( iC ) % Pointer % nValues )
+
+      call S % Solution_C_1D ( iC ) % Initialize ( [ nValues, nEquations ] )
+      call S % Y_C_1D ( iC ) % Initialize ( [ nValues, nEquations ] )
+      do iS = 1, S % nStages
+        call S % K_C_1D ( iC, iS ) % Initialize ( [ nValues, nEquations ] )
+      end do !-- iS
+
+      end associate !-- nEquations, etc.
+    end do
+
+  end subroutine Allocate_RK_C_1D
+
+
+  subroutine Deallocate_RK_C_1D ( S )
+
+    class ( Step_RK_C_ASC_1D_Template ), intent ( inout ) :: &
+      S
+
+    if ( allocated ( S % K_C_1D ) ) &
+      deallocate ( S % K_C_1D )
+    if ( allocated ( S % Y_C_1D ) ) &
+      deallocate ( S % Y_C_1D )
+    if ( allocated ( S % Solution_C_1D ) ) &
+      deallocate ( S % Solution_C_1D )
+      
+  end subroutine Deallocate_RK_C_1D
+
+
+  subroutine AllocateStorage ( S )
+
+    class ( Step_RK_C_ASC_1D_Template ), intent ( inout ) :: &
+      S
+
+    integer ( KDI ) :: &
+      iC
+    character ( LDL ) :: &
+      CoordinateSystem
+
+    call S % Allocate_RK_C_1D ( )
+
+    select type ( Grid => S % Grid )
+    class is ( Chart_SL_Template )
+
+      if ( allocated ( S % BoundaryFluence_CSL_C_1D ) ) &
+        deallocate ( S % BoundaryFluence_CSL_C_1D )
+      allocate ( S % BoundaryFluence_CSL_C_1D ( S % nCurrents ) )
+
+      do iC = 1, S % nCurrents
+        call S % AllocateBoundaryFluence &
+               ( Grid, S % Current_1D ( iC ) % Pointer % N_CONSERVED, &
+                 S % BoundaryFluence_CSL_C_1D ( iC ) % Array )
+      end do !-- iC
+
+      CoordinateSystem = Grid % CoordinateSystem
+
+    class default
+      call Show ( 'Grid type not recognized', CONSOLE % ERROR )
+      call Show ( 'Step_RK_C_ASC__Template', 'module', CONSOLE % ERROR )
+      call Show ( 'AllocateStorage', 'subroutine', CONSOLE % ERROR ) 
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- Grid
+
+    call S % AllocateMetricDerivatives &
+           ( CoordinateSystem, S % Current_1D ( 1 ) % Pointer % nValues )
+
+  end subroutine AllocateStorage
+
+
+  subroutine DeallocateStorage ( S )
+
+    class ( Step_RK_C_ASC_1D_Template ), intent ( inout ) :: &
+      S
+
+    !-- BoundaryFluence not deallocated here, but instead upon reallocation,
+    !   so that its values remain available after Step % Compute
+
+    call S % DeallocateMetricDerivatives ( )
+    call S % Deallocate_RK_C_1D ( )
+
+  end subroutine DeallocateStorage
 
 
 end module Step_RK_C_ASC_1D__Template

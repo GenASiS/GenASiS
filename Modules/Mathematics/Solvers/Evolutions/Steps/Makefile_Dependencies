@@ -13,6 +13,7 @@ Step_RK_C_ASC__Template.o: \
 
 Step_RK_C_ASC_1D__Template.o: \
   Basics.o \
+  Manifolds.o \
   Fields.o \
   Step_RK_C_ASC__Template.o \
   Step_RK_C_ASC_1D__Template.f90
