@@ -116,10 +116,18 @@ module Step_RK_C_ASC__Template
 !       ClearDivergence
     procedure, public, pass :: &
       ComputeStage_C
-    procedure, private, pass :: &
+    procedure, public, pass :: &
+      Allocate_RK_C
+    procedure, public, pass :: &
+      Deallocate_RK_C
+    procedure, private, nopass :: &
       AllocateBoundaryFluence_CSL
     generic, public :: &
       AllocateBoundaryFluence => AllocateBoundaryFluence_CSL
+    procedure, public, pass :: &
+      AllocateMetricDerivatives
+    procedure, public, pass :: &
+      DeallocateMetricDerivatives
   end type Step_RK_C_ASC_Template
 
   abstract interface 
@@ -404,12 +412,12 @@ contains
     class default
       call Show ( 'Chart type not found', CONSOLE % ERROR )
       call Show ( 'Step_RK_C_ASC__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'Compute_C', 'subroutine', CONSOLE % ERROR ) 
+      call Show ( 'Compute_C_ASC', 'subroutine', CONSOLE % ERROR ) 
       call PROGRAM_HEADER % Abort ( )
     end select !-- Chart
 
     S % Current_C => Current_ASC % Current ( )
-    call AllocateStorage ( S, S % Current_C )
+    call AllocateStorage ( S )
     call S % LoadSolution ( S % Solution_C, S % Current_C )
 
     call S % ComputeTemplate ( Time, TimeStep )
@@ -847,10 +855,49 @@ contains
   end subroutine ComputeStage_C
 
 
-  subroutine AllocateBoundaryFluence_CSL ( S, CSL, nEquations, BF )
+  subroutine Allocate_RK_C ( S )
 
-    class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
+    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
+
+    integer ( KDI ) :: &
+      iS  !-- iStage
+
+    associate &
+      ( nE  => S % Current_C % N_CONSERVED, &  !-- nEquations
+        nV  => S % Current_C % nValues )
+
+    allocate ( S % Solution_C )
+    allocate ( S % Y_C )
+    allocate ( S % K_C ( S % nStages ) )
+    call S % Solution_C % Initialize ( [ nV, nE ] )
+    call S % Y_C % Initialize ( [ nV, nE ] )
+    do iS = 1, S % nStages
+      call S % K_C ( iS ) % Initialize ( [ nV, nE ] )
+    end do !-- iS
+
+    end associate !-- nE, etc.
+
+  end subroutine Allocate_RK_C
+
+
+  subroutine Deallocate_RK_C ( S )
+
+    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
+      S
+
+    if ( allocated ( S % K_C ) ) &
+      deallocate ( S % K_C )
+    if ( allocated ( S % Y_C ) ) &
+      deallocate ( S % Y_C )
+    if ( allocated ( S % Solution_C ) ) &
+      deallocate ( S % Solution_C )
+      
+  end subroutine Deallocate_RK_C
+
+
+  subroutine AllocateBoundaryFluence_CSL ( CSL, nEquations, BF )
+
     class ( Chart_SL_Template ), intent ( in ) :: &
       CSL
     integer ( KDI ), intent ( in ) :: &
@@ -896,6 +943,37 @@ contains
   end subroutine AllocateBoundaryFluence_CSL
 
 
+  subroutine AllocateMetricDerivatives ( S, CoordinateSystem, nValues )
+
+    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
+      S
+    character ( * ), intent ( in ) :: &
+      CoordinateSystem
+    integer ( KDI ), intent ( in ) :: &
+      nValues
+
+    if ( ( trim ( CoordinateSystem ) == 'SPHERICAL' &
+           .or. trim ( CoordinateSystem ) == 'CYLINDRICAL' ) ) &
+    then
+      allocate ( S % dLogVolumeJacobian_dX ( 2 ) )
+      call S % dLogVolumeJacobian_dX ( 1 ) % Initialize ( nValues )
+      call S % dLogVolumeJacobian_dX ( 2 ) % Initialize ( nValues )
+    end if
+
+  end subroutine AllocateMetricDerivatives
+
+
+  subroutine DeallocateMetricDerivatives ( S )
+
+    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
+      S
+
+    if ( allocated ( S % dLogVolumeJacobian_dX ) ) &
+      deallocate ( S % dLogVolumeJacobian_dX )
+
+  end subroutine DeallocateMetricDerivatives
+
+
   subroutine ApplyDivergence &
                ( S, Increment, BoundaryFluence_CSL, Current, &
                  UseLimiterParameter, TimeStep, iStage )
@@ -927,41 +1005,23 @@ contains
   end subroutine ApplyDivergence
 
 
-  subroutine AllocateStorage ( S, C )
+  subroutine AllocateStorage ( S )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
-    class ( CurrentTemplate ), intent ( in ) :: &
-      C
 
-    integer ( KDI ) :: &
-      iS  !-- iStage
+    character ( LDL ) :: &
+      CoordinateSystem
 
-    associate &
-      ( nE  => C % N_CONSERVED, &  !-- nEquations
-        nV  => C % nValues )
-
-    allocate ( S % Solution_C )
-    allocate ( S % Y_C )
-    allocate ( S % K_C ( S % nStages ) )
-    call S % Solution_C % Initialize ( [ nV, nE ] )
-    call S % Y_C % Initialize ( [ nV, nE ] )
-    do iS = 1, S % nStages
-      call S % K_C ( iS ) % Initialize ( [ nV, nE ] )
-    end do !-- iS
+    call S % Allocate_RK_C ( )
 
     select type ( Grid => S % Grid )
     class is ( Chart_SL_Template )
 
-      if ( ( trim ( Grid % CoordinateSystem ) == 'SPHERICAL' &
-             .or. trim ( Grid % CoordinateSystem ) == 'CYLINDRICAL' ) ) &
-      then
-        allocate ( S % dLogVolumeJacobian_dX ( 2 ) )
-        call S % dLogVolumeJacobian_dX ( 1 ) % Initialize ( nV )
-        call S % dLogVolumeJacobian_dX ( 2 ) % Initialize ( nV )
-      end if
+      call S % AllocateBoundaryFluence &
+             ( Grid, S % Current_C % N_CONSERVED, S % BoundaryFluence_CSL_C )
 
-      call S % AllocateBoundaryFluence ( Grid, nE, S % BoundaryFluence_CSL_C )
+      CoordinateSystem = Grid % CoordinateSystem
 
     class default
       call Show ( 'Grid type not recognized', CONSOLE % ERROR )
@@ -970,7 +1030,8 @@ contains
       call PROGRAM_HEADER % Abort ( )
     end select !-- Grid
 
-    end associate !-- nE, etc.
+    call S % AllocateMetricDerivatives &
+           ( CoordinateSystem, S % Current_C % nValues )
 
   end subroutine AllocateStorage
 
@@ -980,17 +1041,12 @@ contains
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
 
-    !-- BoundaryFluence not deallocated here
+    !-- BoundaryFluence not deallocated here, but instead upon reallocation,
+    !   so that its values remain available after Step % Compute
 
-    if ( allocated ( S % dLogVolumeJacobian_dX ) ) &
-      deallocate ( S % dLogVolumeJacobian_dX )
-    if ( allocated ( S % K_C ) ) &
-      deallocate ( S % K_C )
-    if ( allocated ( S % Y_C ) ) &
-      deallocate ( S % Y_C )
-    if ( allocated ( S % Solution_C ) ) &
-      deallocate ( S % Solution_C )
-      
+    call S % DeallocateMetricDerivatives ( )
+    call S % Deallocate_RK_C ( )
+
   end subroutine DeallocateStorage
 
 
