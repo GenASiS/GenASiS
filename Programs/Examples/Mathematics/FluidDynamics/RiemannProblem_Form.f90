@@ -8,7 +8,7 @@ module RiemannProblem_Form
   implicit none
   private
   
-  type, public, extends ( Integrator_C_ASC_Template ) :: RiemannProblemForm
+  type, public, extends ( Integrator_C_PS_Template ) :: RiemannProblemForm
   contains
     procedure, public, pass :: &
       Initialize
@@ -182,7 +182,7 @@ contains
     !-- Set fluid and initialize Integrator template
 
     call SetFluid ( RP )
-    call RP % InitializeTemplate_C ( Name )
+    call RP % InitializeTemplate_C_PS ( Name )
     
     !-- Cleanup
 
@@ -196,7 +196,7 @@ contains
     type ( RiemannProblemForm ), intent ( inout ) :: &
       RP
 
-    call RP % FinalizeTemplate_C ( )
+    call RP % FinalizeTemplate_C_PS ( )
 
   end subroutine Finalize
 

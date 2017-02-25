@@ -10,7 +10,7 @@ module FishboneMoncrief_Form
   implicit none
   private
 
-  type, public, extends ( Integrator_C_ASC_Template ) :: FishboneMoncriefForm
+  type, public, extends ( Integrator_C_PS_Template ) :: FishboneMoncriefForm
   contains
     procedure, public, pass :: &
       Initialize
@@ -216,7 +216,7 @@ contains
     FinishTime = 1.0e-3_KDR * UNIT % SECOND
 
     call SetFluid ( FM )
-    call FM % InitializeTemplate_C &
+    call FM % InitializeTemplate_C_PS &
            ( Name, TimeUnitOption = TimeUnit, FinishTimeOption = FinishTime )
 
     !-- Cleanup
@@ -231,7 +231,7 @@ contains
     type ( FishboneMoncriefForm ), intent ( inout ) :: &
       FM
 
-    call FM % FinalizeTemplate_C ( )
+    call FM % FinalizeTemplate_C_PS ( )
 
   end subroutine Finalize
 

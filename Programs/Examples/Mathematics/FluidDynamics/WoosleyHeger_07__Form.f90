@@ -10,7 +10,7 @@ module WoosleyHeger_07__Form
   implicit none
   private
 
-  type, public, extends ( Integrator_C_ASC_Template ) :: WoosleyHeger_07_Form
+  type, public, extends ( Integrator_C_PS_Template ) :: WoosleyHeger_07_Form
   contains
     procedure, public, pass :: &
       Initialize
@@ -208,7 +208,7 @@ contains
     FinishTime = 2.0_KDR * UNIT % SECOND
 
     call SetFluid ( WH )
-    call WH % InitializeTemplate_C &
+    call WH % InitializeTemplate_C_PS &
            ( Name, TimeUnitOption = TimeUnit, FinishTimeOption = FinishTime, &
              nWriteOption = 30 )
 
@@ -315,7 +315,7 @@ contains
     type ( WoosleyHeger_07_Form ), intent ( inout ) :: &
       WH
 
-    call WH % FinalizeTemplate_C ( )
+    call WH % FinalizeTemplate_C_PS ( )
 
   end subroutine Finalize
 

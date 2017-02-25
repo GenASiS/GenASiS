@@ -9,7 +9,7 @@ module SedovTaylor_Form
   implicit none
   private
 
-  type, public, extends ( Integrator_C_ASC_Template ) :: SedovTaylorForm
+  type, public, extends ( Integrator_C_PS_Template ) :: SedovTaylorForm
   contains
     procedure, public, pass :: &
       Initialize
@@ -155,7 +155,7 @@ contains
     !-- Set fluid and initialize Integrator template
 
     call SetFluid ( ST )
-    call ST % InitializeTemplate_C ( Name, FinishTimeOption = FinishTime )
+    call ST % InitializeTemplate_C_PS ( Name, FinishTimeOption = FinishTime )
 
     !-- Cleanup
 
@@ -169,7 +169,7 @@ contains
     type ( SedovTaylorForm ), intent ( inout ) :: &
       ST
 
-    call ST % FinalizeTemplate_C ( )
+    call ST % FinalizeTemplate_C_PS ( )
 
   end subroutine Finalize
 

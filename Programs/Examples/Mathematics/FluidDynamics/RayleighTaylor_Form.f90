@@ -9,7 +9,7 @@ module RayleighTaylor_Form
   implicit none
   private
   
-  type, public, extends ( Integrator_C_ASC_Template ) :: RayleighTaylorForm
+  type, public, extends ( Integrator_C_PS_Template ) :: RayleighTaylorForm
   contains
     procedure, public, pass :: &
       Initialize
@@ -112,7 +112,7 @@ contains
     !-- Set fluid and initialize template
 
     call SetFluid ( RT )
-    call RT % InitializeTemplate_C ( Name, FinishTimeOption = 8.5_KDR )
+    call RT % InitializeTemplate_C_PS ( Name, FinishTimeOption = 8.5_KDR )
     
     !-- Cleanup
 
@@ -126,7 +126,7 @@ contains
     type ( RayleighTaylorForm ), intent ( inout ) :: &
       RT
 
-    call RT % FinalizeTemplate_C ( )
+    call RT % FinalizeTemplate_C_PS ( )
 
   end subroutine Finalize
 

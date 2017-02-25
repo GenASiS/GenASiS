@@ -8,7 +8,7 @@ module PlaneWave_Template
   implicit none
   private
 
-  type, public, extends ( Integrator_C_ASC_Template ), abstract :: &
+  type, public, extends ( Integrator_C_PS_Template ), abstract :: &
     PlaneWaveTemplate
       real ( KDR ) :: &
         Speed
@@ -144,7 +144,7 @@ contains
 
     !-- Initialize template
 
-    call PW % InitializeTemplate_C &
+    call PW % InitializeTemplate_C_PS &
            ( Name, FinishTimeOption = nPeriods * Period )
 
     !-- Cleanup
@@ -208,7 +208,7 @@ contains
     if ( allocated ( PW % Reference ) ) &
       deallocate ( PW % Reference )
 
-    call PW % FinalizeTemplate_C
+    call PW % FinalizeTemplate_C_PS
 
   end subroutine FinalizeTemplate_PW
 
