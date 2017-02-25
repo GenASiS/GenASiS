@@ -11,7 +11,7 @@ module SineWaveDiffusion_Form
   implicit none
   private
 
-  type, public, extends ( Integrator_C_ASC_Template ) :: SineWaveDiffusionForm
+  type, public, extends ( Integrator_C_PS_Template ) :: SineWaveDiffusionForm
     type ( Interactions_ASC_Form ), allocatable :: &
       Interactions_ASC
     type ( RadiationMoments_ASC_Form ), allocatable :: &
@@ -133,7 +133,7 @@ contains
 
     !-- Initialize template
 
-    call SWD % InitializeTemplate_C &
+    call SWD % InitializeTemplate_C_PS &
            ( Name, UseLimiterParameterOption = .false., &
              FinishTimeOption  =  TimeScale )
 
@@ -202,7 +202,7 @@ contains
     if ( allocated ( SWD % Interactions_ASC) ) &
       deallocate ( SWD % Interactions_ASC )
 
-    call SWD % FinalizeTemplate_C ( )
+    call SWD % FinalizeTemplate_C_PS ( )
 
   end subroutine Finalize
 

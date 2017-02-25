@@ -12,7 +12,7 @@ module HomogeneousSphere_Form
   implicit none
   private
 
-  type, public, extends ( Integrator_C_ASC_Template ) :: HomogeneousSphereForm
+  type, public, extends ( Integrator_C_PS_Template ) :: HomogeneousSphereForm
     type ( Interactions_ASC_Form ), allocatable :: &
       Interactions_ASC
     type ( RadiationMoments_ASC_Form ), allocatable :: &
@@ -305,8 +305,9 @@ contains
     
     !-- Initialize template
     
-    call HS % InitializeTemplate_C ( Name, UseLimiterParameterOption=.false., &
-                                     FinishTimeOption = 15.0_KDR )
+    call HS % InitializeTemplate_C_PS &
+           ( Name, UseLimiterParameterOption = .false., &
+             FinishTimeOption = 15.0_KDR )
     
     !-- Cleanup
            
@@ -376,6 +377,7 @@ contains
 
   end subroutine ComputeError
 
+
   impure elemental subroutine Finalize ( HS )
 
     type ( HomogeneousSphereForm ), intent ( inout ) :: &
@@ -386,7 +388,7 @@ contains
     if ( allocated ( HS % Reference ) ) &
       deallocate ( HS % Reference )
 
-    call HS % FinalizeTemplate_C ( )
+    call HS % FinalizeTemplate_C_PS ( )
 
   end subroutine Finalize
 

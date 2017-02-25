@@ -8,7 +8,7 @@ module PlaneWaveStreaming_Template
   implicit none
   private
 
-  type, public, extends ( Integrator_C_ASC_Template ), abstract :: &
+  type, public, extends ( Integrator_C_PS_Template ), abstract :: &
     PlaneWaveStreamingTemplate
       real ( KDR ) :: &
         Speed
@@ -144,7 +144,7 @@ contains
 
     !-- Initialize template
 
-    call PWS % InitializeTemplate_C &
+    call PWS % InitializeTemplate_C_PS &
            ( Name, FinishTimeOption = nPeriods * Period )
 
     !-- Cleanup
@@ -209,7 +209,7 @@ contains
     if ( allocated ( PWS % Reference ) ) &
       deallocate ( PWS % Reference )
 
-    call PWS % FinalizeTemplate_C ( )
+    call PWS % FinalizeTemplate_C_PS ( )
 
   end subroutine FinalizeTemplate_PWS
 

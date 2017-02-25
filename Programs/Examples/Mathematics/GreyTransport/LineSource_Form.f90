@@ -10,7 +10,7 @@ module LineSource_Form
   implicit none
   private
 
-  type, public, extends ( Integrator_C_ASC_Template ) :: LineSourceForm
+  type, public, extends ( Integrator_C_PS_Template ) :: LineSourceForm
     type ( Interactions_ASC_Form ), allocatable :: &
       Interactions_ASC
     type ( RadiationMoments_ASC_Form ), allocatable :: &
@@ -180,7 +180,7 @@ contains
     
     !-- Initialize template
     
-    call LS % InitializeTemplate_C ( Name )
+    call LS % InitializeTemplate_C_PS ( Name )
     
     !-- Cleanup
            
@@ -190,6 +190,7 @@ contains
     nullify ( RM )
     
   end subroutine Initialize 
+
 
   subroutine ComputeError ( LS )
 
@@ -244,7 +245,7 @@ contains
     if ( allocated ( LS % Reference ) ) &
       deallocate ( LS % Reference )
 
-    call LS % FinalizeTemplate_C ( )
+    call LS % FinalizeTemplate_C_PS ( )
 
   end subroutine Finalize
 
