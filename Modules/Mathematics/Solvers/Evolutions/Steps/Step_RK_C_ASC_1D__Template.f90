@@ -25,10 +25,10 @@ module Step_RK_C_ASC_1D__Template
       logical ( KDL ), dimension ( : ), allocatable :: &
         UseLimiterParameter_C_1D
       type ( VariableGroupForm ), dimension ( : ), allocatable :: &
-        Solution_C_1D, &
-        Y_C_1D
+        Solution_1D, &
+        Y_1D
       type ( VariableGroupForm ), dimension ( :, : ), allocatable :: &
-        K_C_1D
+        K_1D
       type ( CurrentPointerForm ), dimension ( : ), allocatable :: &
         Current_1D
   contains
@@ -40,6 +40,14 @@ module Step_RK_C_ASC_1D__Template
       Compute => Compute_C_ASC_1D
     procedure, public, pass :: &
       FinalizeTemplate_C_ASC_1D
+    procedure, private, pass ( S ) :: &
+      LoadSolution_C_1D
+    generic, public :: &
+      LoadSolution => LoadSolution_C_1D
+    procedure, private, pass ( S ) :: &
+      StoreSolution_C_1D
+    generic, public :: &
+      StoreSolution => StoreSolution_C_1D
     procedure, public, pass :: &
       Allocate_RK_C_1D
     procedure, public, pass :: &
@@ -122,11 +130,11 @@ contains
     end select !-- Chart
 
     call AllocateStorage ( S )
-    ! call S % LoadSolution ( S % Solution_C, S % Current_C )
+    call S % LoadSolution ( S % Solution_1D, S % Current_1D )
 
     ! call S % ComputeTemplate ( Time, TimeStep )
 
-    ! call S % StoreSolution ( S % Current_C, S % Solution_C )
+    call S % StoreSolution ( S % Current_1D, S % Solution_1D )
     call DeallocateStorage ( S )
 
     deallocate ( S % Current_1D )
@@ -150,6 +158,46 @@ contains
   end subroutine FinalizeTemplate_C_ASC_1D
 
 
+  subroutine LoadSolution_C_1D ( Solution_1D, S, Current_1D )
+
+    type ( VariableGroupForm ), dimension ( : ), intent ( inout ) :: &
+      Solution_1D
+    class ( Step_RK_C_ASC_1D_Template ), intent ( in ) :: &
+      S
+    type ( CurrentPointerForm ), dimension ( : ), intent ( in ) :: &
+      Current_1D
+
+    integer ( KDI ) :: &
+      iC  !-- iCurrent
+
+    do iC = 1, size ( Current_1D )
+      call S % LoadSolution &
+             ( Solution_1D ( iC ), Current_1D ( iC ) % Pointer )
+    end do !-- iC
+
+  end subroutine LoadSolution_C_1D
+
+
+  subroutine StoreSolution_C_1D ( Current_1D, S, Solution_1D )
+
+    type ( CurrentPointerForm ), dimension ( : ), intent ( in ) :: &
+      Current_1D
+    class ( Step_RK_C_ASC_1D_Template ), intent ( in ) :: &
+      S
+    type ( VariableGroupForm ), dimension ( : ), intent ( inout ) :: &
+      Solution_1D
+
+    integer ( KDI ) :: &
+      iC  !-- iCurrent
+
+    do iC = 1, size ( Current_1D )
+      call S % StoreSolution &
+             ( Current_1D ( iC ) % Pointer, Solution_1D ( iC ) )
+    end do !-- iC
+
+  end subroutine StoreSolution_C_1D
+
+
   subroutine Allocate_RK_C_1D ( S )
 
     class ( Step_RK_C_ASC_1D_Template ), intent ( inout ) :: &
@@ -160,19 +208,19 @@ contains
       iS     !-- iStage
 
 
-    allocate ( S % Solution_C_1D ( S % nCurrents ) )
-    allocate ( S % Y_C_1D ( S % nCurrents ) )
-    allocate ( S % K_C_1D ( S % nCurrents, S % nStages ) )
+    allocate ( S % Solution_1D ( S % nCurrents ) )
+    allocate ( S % Y_1D ( S % nCurrents ) )
+    allocate ( S % K_1D ( S % nCurrents, S % nStages ) )
 
     do iC = 1, S % nStages
       associate &
         ( nEquations => S % Current_1D ( iC ) % Pointer % N_CONSERVED, &
           nValues    => S % Current_1D ( iC ) % Pointer % nValues )
 
-      call S % Solution_C_1D ( iC ) % Initialize ( [ nValues, nEquations ] )
-      call S % Y_C_1D ( iC ) % Initialize ( [ nValues, nEquations ] )
+      call S % Solution_1D ( iC ) % Initialize ( [ nValues, nEquations ] )
+      call S % Y_1D ( iC ) % Initialize ( [ nValues, nEquations ] )
       do iS = 1, S % nStages
-        call S % K_C_1D ( iC, iS ) % Initialize ( [ nValues, nEquations ] )
+        call S % K_1D ( iC, iS ) % Initialize ( [ nValues, nEquations ] )
       end do !-- iS
 
       end associate !-- nEquations, etc.
@@ -186,12 +234,12 @@ contains
     class ( Step_RK_C_ASC_1D_Template ), intent ( inout ) :: &
       S
 
-    if ( allocated ( S % K_C_1D ) ) &
-      deallocate ( S % K_C_1D )
-    if ( allocated ( S % Y_C_1D ) ) &
-      deallocate ( S % Y_C_1D )
-    if ( allocated ( S % Solution_C_1D ) ) &
-      deallocate ( S % Solution_C_1D )
+    if ( allocated ( S % K_1D ) ) &
+      deallocate ( S % K_1D )
+    if ( allocated ( S % Y_1D ) ) &
+      deallocate ( S % Y_1D )
+    if ( allocated ( S % Solution_1D ) ) &
+      deallocate ( S % Solution_1D )
       
   end subroutine Deallocate_RK_C_1D
 

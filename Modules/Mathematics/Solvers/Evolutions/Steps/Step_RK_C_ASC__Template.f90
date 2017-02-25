@@ -40,27 +40,21 @@ module Step_RK_C_ASC__Template
 !         iGeometryValue
       type ( Real_1D_Form ), dimension ( : ), allocatable :: &
         dLogVolumeJacobian_dX
-!       type ( Real_3D_2D_Form ), dimension ( : ), allocatable :: &
-!         BoundaryFluence_CSL
       type ( Real_3D_Form ), dimension ( :, : ), allocatable :: &
         BoundaryFluence_CSL_C
       logical ( KDL ) :: &
         UseLimiterParameter_C
-!       logical ( KDL ), dimension ( : ), allocatable :: &
-!         UseLimiterParameter
       type ( VariableGroupForm ), allocatable :: &
-        Solution_C, &
-        Y_C
+        Solution, &
+        Y
       type ( VariableGroupForm ), dimension ( : ), allocatable :: &
-        K_C
+        K
 !       class ( GeometryFlatForm ), pointer :: &
 !         Geometry => null ( )
       class ( * ), pointer :: &
         Grid => null ( )
       class ( CurrentTemplate ), pointer :: &
         Current => null ( )
-!       type ( CurrentPointerForm ), dimension ( : ), pointer :: &
-!         Current_1D => null ( )
       type ( IncrementDivergence_FV_Form ), allocatable :: &
         IncrementDivergence
       type ( IncrementDampingForm ), allocatable :: &
@@ -80,12 +74,6 @@ module Step_RK_C_ASC__Template
   contains
     procedure, public, pass :: &
       InitializeTemplate_C_ASC
-!     procedure, private, pass :: &
-!       Compute_0D
-!     procedure, private, pass :: &
-!       Compute_1D
-!     generic, public :: &
-!       Compute => Compute_0D, Compute_1D
     procedure, private, pass :: &
       Compute_C_ASC
     generic, public :: &
@@ -203,57 +191,6 @@ contains
            ( 'GhostIncrement', S % iTimerGhost )
 
   end subroutine InitializeTemplate_C_ASC
-
-
-!   subroutine Compute_0D &
-!                ( S, Current, Grid, Time, TimeStep, GeometryOption, &
-!                  UseLimiterParameterOption, iGeometryValueOption )
-
-!     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
-!       S
-!     class ( CurrentTemplate ), intent ( inout ), target :: &
-!       Current
-!     class ( * ), intent ( inout ), target :: &
-!       Grid
-!     real ( KDR ), intent ( in ) :: &
-!       Time, &
-!       TimeStep
-!     class ( GeometryFlatForm ), intent ( in ), target, optional :: &
-!       GeometryOption
-!     logical ( KDL ), intent ( in ), optional :: &
-!       UseLimiterParameterOption
-!     integer ( KDI ), intent ( in ), optional :: &
-!       iGeometryValueOption
-
-!     logical ( KDL ), dimension ( 1 ) :: &
-!       UseLimiterParameter
-!     type ( CurrentPointerForm ), dimension ( 1 ) :: &
-!       Current_1D
-
-!     UseLimiterParameter = .true.
-!     if ( present ( UseLimiterParameterOption ) ) &
-!       UseLimiterParameter = UseLimiterParameterOption
-
-!     Current_1D ( 1 ) % Pointer => Current
-
-!     allocate ( S % ApplyDivergence_1D ( 1 ) )
-!     allocate ( S % ApplySources_1D ( 1 ) )
-!     allocate ( S % ApplyRelaxation_1D ( 1 ) )
-!     S % ApplyDivergence_1D ( 1 ) % Pointer => S % ApplyDivergence
-!     S % ApplySources_1D ( 1 )    % Pointer => S % ApplySources
-!     S % ApplyRelaxation_1D ( 1 ) % Pointer => S % ApplyRelaxation
-
-!     call S % Compute_1D &
-!            ( Current_1D, Grid, Time, TimeStep, &
-!              GeometryOption = GeometryOption, &
-!              UseLimiterParameterOption = UseLimiterParameter, &
-!              iGeometryValueOption = iGeometryValueOption )
-
-!     deallocate ( S % ApplyRelaxation_1D )
-!     deallocate ( S % ApplySources_1D )
-!     deallocate ( S % ApplyDivergence_1D )
-
-!   end subroutine Compute_0D
 
 
 !   subroutine Compute_1D &
@@ -418,11 +355,11 @@ contains
 
     S % Current => Current_ASC % Current ( )
     call AllocateStorage ( S )
-    call S % LoadSolution ( S % Solution_C, S % Current )
+    call S % LoadSolution ( S % Solution, S % Current )
 
     call S % ComputeTemplate ( Time, TimeStep )
 
-    call S % StoreSolution ( S % Current, S % Solution_C )
+    call S % StoreSolution ( S % Current, S % Solution )
     call DeallocateStorage ( S )
     S % Current => null ( )
     S % Grid    => null ( )
@@ -454,8 +391,8 @@ contains
       S
 
     associate &
-      ( SV => S % Solution_C % Value, &
-        YV => S % Y_C % Value )
+      ( SV => S % Solution % Value, &
+        YV => S % Y % Value )
 
     call Copy ( SV, YV )
 
@@ -474,8 +411,8 @@ contains
       iK
 
     associate &
-      ( YV => S % Y_C % Value, &
-        KV => S % K_C ( iK ) % Value )
+      ( YV => S % Y % Value, &
+        KV => S % K ( iK ) % Value )
 
     call MultiplyAdd ( YV, KV, A )
 
@@ -500,9 +437,9 @@ contains
 
     associate &
       ( C  => S % Current, &
-        K  => S % K_C ( iStage ), &
+        K  => S % K ( iStage ), &
         BF => S % BoundaryFluence_CSL_C, &
-        Y  => S % Y_C )
+        Y  => S % Y )
 
     call S % ComputeStage_C &
            ( C, K, BF, Y, S % UseLimiterParameter_C, TimeStep, iStage )
@@ -525,8 +462,8 @@ contains
       iS
 
     associate &
-      ( SV => S % Solution_C % Value, &
-        KV => S % K_C ( iS ) % Value )
+      ( SV => S % Solution % Value, &
+        KV => S % K ( iS ) % Value )
 
     call MultiplyAdd ( SV, KV, B )
 
@@ -535,21 +472,21 @@ contains
   end subroutine IncrementSolution
 
 
-  subroutine LoadSolution_C ( Solution_C, C )
+  subroutine LoadSolution_C ( Solution, Current )
 
     type ( VariableGroupForm ), intent ( inout ) :: &
-      Solution_C
+      Solution
     class ( CurrentTemplate ), intent ( in ) :: &
-      C
+      Current
 
     integer ( KDI ) :: &
       iF  !-- iField
 
-    associate ( iaC => C % iaConserved )
-    do iF = 1, C % N_CONSERVED
+    associate ( iaC => Current % iaConserved )
+    do iF = 1, Current % N_CONSERVED
       associate &
-        ( CV => C % Value ( :, iaC ( iF ) ), &
-          SV => Solution_C % Value ( :, iF ) )
+        ( CV => Current % Value ( :, iaC ( iF ) ), &
+          SV => Solution % Value ( :, iF ) )
       call Copy ( CV, SV )
       end associate !-- CV, etc.
     end do !-- iF
@@ -558,25 +495,25 @@ contains
   end subroutine LoadSolution_C
 
 
-  subroutine StoreSolution_C ( C, S, Solution_C )
+  subroutine StoreSolution_C ( Current, S, Solution )
 
     class ( CurrentTemplate ), intent ( inout ) :: &
-      C
+      Current
     class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
       S
     type ( VariableGroupForm ), intent ( in ) :: &
-      Solution_C
+      Solution
 
     integer ( KDI ) :: &
       iF  !-- iField
     class ( GeometryFlatForm ), pointer :: &
       G
 
-    associate ( iaC => C % iaConserved )
-    do iF = 1, C % N_CONSERVED
+    associate ( iaC => Current % iaConserved )
+    do iF = 1, Current % N_CONSERVED
       associate &
-        ( SV => Solution_C % Value ( :, iF ), &
-          CV => C % Value ( :, iaC ( iF ) ) )
+        ( SV => Solution % Value ( :, iF ), &
+          CV => Current % Value ( :, iaC ( iF ) ) )
       call Copy ( SV, CV )
       end associate !-- YV, etc.
     end do !-- iF
@@ -591,7 +528,7 @@ contains
       call Show ( 'StoreSolution_C', 'subroutine', CONSOLE % ERROR ) 
       call PROGRAM_HEADER % Abort ( )
     end select !-- Grid
-    call C % ComputeFromConserved ( G )
+    call Current % ComputeFromConserved ( G )
 
     nullify ( G )
     
@@ -863,18 +800,18 @@ contains
     integer ( KDI ) :: &
       iS  !-- iStage
 
-    allocate ( S % Solution_C )
-    allocate ( S % Y_C )
-    allocate ( S % K_C ( S % nStages ) )
+    allocate ( S % Solution )
+    allocate ( S % Y )
+    allocate ( S % K ( S % nStages ) )
 
     associate &
       ( nEquations => S % Current % N_CONSERVED, &
         nValues    => S % Current % nValues )
 
-    call S % Solution_C % Initialize ( [ nValues, nEquations ] )
-    call S % Y_C % Initialize ( [ nValues, nEquations ] )
+    call S % Solution % Initialize ( [ nValues, nEquations ] )
+    call S % Y % Initialize ( [ nValues, nEquations ] )
     do iS = 1, S % nStages
-      call S % K_C ( iS ) % Initialize ( [ nValues, nEquations ] )
+      call S % K ( iS ) % Initialize ( [ nValues, nEquations ] )
     end do !-- iS
 
     end associate !-- nEquations, etc.
@@ -887,12 +824,12 @@ contains
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
 
-    if ( allocated ( S % K_C ) ) &
-      deallocate ( S % K_C )
-    if ( allocated ( S % Y_C ) ) &
-      deallocate ( S % Y_C )
-    if ( allocated ( S % Solution_C ) ) &
-      deallocate ( S % Solution_C )
+    if ( allocated ( S % K ) ) &
+      deallocate ( S % K )
+    if ( allocated ( S % Y ) ) &
+      deallocate ( S % Y )
+    if ( allocated ( S % Solution ) ) &
+      deallocate ( S % Solution )
       
   end subroutine Deallocate_RK_C
 
