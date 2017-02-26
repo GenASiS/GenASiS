@@ -12,7 +12,6 @@ module PlaneWaveStreaming_Template
   type, public, extends ( Integrator_C_1D_Template ), abstract :: &
     PlaneWaveStreamingTemplate
       type ( RadiationMoments_ASC_Form ), dimension ( : ), allocatable :: &
-        Reference_ASC, &
         Difference_ASC        
       type ( RadiationMoments_BSLL_ASC_CSLD_Form ), allocatable :: &
         RadiationMoments_BSLL_ASC_CSLD
@@ -150,7 +149,6 @@ contains
 
     !-- Diagnostics
 
-    allocate ( PWS % Reference_ASC ( RMB % nEnergyValues ) )
     allocate ( PWS % Difference_ASC ( RMB % nEnergyValues ) )
     do iE = 1, RMB % nEnergyValues
       write ( EnergyNumber, fmt = '(a1,i2.2)' ) '_', iE
@@ -358,13 +356,15 @@ contains
     end select !-- RSA
 
     do iE = 2, RMB % nEnergyValues
-      select type ( RSA => PWS % Current_ASC_1D ( 1 ) % Element )
+      select type ( RSA => PWS % Current_ASC_1D ( iE ) % Element )
       class is ( RadiationMoments_ASC_Form )
         RS => RSA % RadiationMoments ( )
         call SetWave ( PWS, RS, MS % Base_CSLD, Time, nWavelengths = iE )
         call MS % StoreSection ( RMB, RS, iE )
       end select !-- RSA
     end do !-- iE
+
+    call RMB % LoadSections ( )
 
     end select !-- MS
     end associate !-- RMB

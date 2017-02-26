@@ -20,11 +20,11 @@ module Field_BSLL_ASC_CSLD__Template
         Fiber
   contains
     procedure, public, pass :: &
-      InitializeTemplate_BSLL
+      InitializeTemplate_BSLL_ASC_CSLD
     procedure, public, pass :: &
       FieldFiber
     procedure, public, pass :: &
-      FinalizeTemplate_BSLL
+      FinalizeTemplate_BSLL_ASC_CSLD
     procedure ( SF ), private, pass, deferred :: &
       SetField
   end type Field_BSLL_ASC_CSLD_Template
@@ -47,7 +47,7 @@ module Field_BSLL_ASC_CSLD__Template
 contains
 
 
-  subroutine InitializeTemplate_BSLL ( FB, B, NameOutputOption )
+  subroutine InitializeTemplate_BSLL_ASC_CSLD ( FB, B, NameOutputOption )
 
     class ( Field_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
       FB
@@ -64,7 +64,7 @@ contains
       call FB % SetField ( NameOutputOption = FB % NameOutput )
     end if
 
-  end subroutine InitializeTemplate_BSLL
+  end subroutine InitializeTemplate_BSLL_ASC_CSLD
 
 
   function FieldFiber ( FB, iFiber ) result ( FF )
@@ -91,7 +91,7 @@ contains
   end function FieldFiber
 
 
-  impure elemental subroutine FinalizeTemplate_BSLL ( FB )
+  impure elemental subroutine FinalizeTemplate_BSLL_ASC_CSLD ( FB )
 
     class ( Field_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
       FB
@@ -101,7 +101,7 @@ contains
 
     call FB % FinalizeTemplate ( )
 
-  end subroutine FinalizeTemplate_BSLL
+  end subroutine FinalizeTemplate_BSLL_ASC_CSLD
 
 
 end module Field_BSLL_ASC_CSLD__Template

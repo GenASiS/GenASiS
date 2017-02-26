@@ -93,7 +93,7 @@ contains
     if ( present ( EnergyDensityUnitOption ) ) &
       IB % EnergyDensityUnit = EnergyDensityUnitOption
 
-    call IB % InitializeTemplate_BSLL &
+    call IB % InitializeTemplate_BSLL_ASC_CSLD &
            ( B, NameOutputOption = NameOutputOption )
 
     ! nullify ( GF )
@@ -130,7 +130,7 @@ contains
     type ( Interactions_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
       IB
 
-    call IB % FinalizeTemplate ( )
+    call IB % FinalizeTemplate_BSLL_ASC_CSLD ( )
 
   end subroutine Finalize
 

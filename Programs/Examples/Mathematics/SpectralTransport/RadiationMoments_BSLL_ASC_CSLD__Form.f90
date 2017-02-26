@@ -8,7 +8,7 @@ module RadiationMoments_BSLL_ASC_CSLD__Form
   implicit none
   private
 
-  type, public, extends ( Field_BSLL_ASC_CSLD_Template ) :: &
+  type, public, extends ( Current_BSLL_ASC_CSLD_Template ) :: &
     RadiationMoments_BSLL_ASC_CSLD_Form
       integer ( KDI ) :: &
         nEnergyValues = 0
@@ -68,6 +68,10 @@ contains
       MomentumUnitOption, &
       AngularMomentumUnitOption
 
+    integer ( KDI ) :: &
+      iE  !-- iEnergy
+    character ( 1 + 2 ) :: &
+      EnergyNumber
     class ( GeometryFlatForm ), pointer :: &
       GF
 
@@ -127,8 +131,21 @@ contains
     !   call PROGRAM_HEADER % Abort ( )
     ! end select !-- B
 
-    call RMB % InitializeTemplate_BSLL &
+    call RMB % InitializeTemplate_BSLL_ASC_CSLD_C &
            ( B, NameOutputOption = NameOutputOption )
+
+    allocate ( RMB % Section_ASC ( RMB % nEnergyValues ) )
+    do iE = 1, RMB % nEnergyValues
+      write ( EnergyNumber, fmt = '(a1,i2.2)' ) '_', iE
+      allocate &
+        ( RadiationMoments_ASC_Form :: RMB % Section_ASC ( iE ) % Element )
+      select type ( RA => RMB % Section_ASC ( iE ) % Element )
+      class is ( RadiationMoments_ASC_Form )
+        call RA % Initialize &
+               ( B % Base_ASC, RadiationType, &
+                 NameOutputOption = trim ( RMB % Name ) // EnergyNumber )
+      end select !-- RA
+    end do !-- iE
 
     nullify ( GF )
 
@@ -199,7 +216,7 @@ contains
     if ( allocated ( RMB % Energy ) ) &
       deallocate ( RMB % Energy )
 
-    call RMB % FinalizeTemplate ( )
+    call RMB % FinalizeTemplate_BSLL_ASC_CSLD_C ( )
 
   end subroutine Finalize
 

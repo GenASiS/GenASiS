@@ -3,7 +3,8 @@
 
 module Step_RK_C_BSLL_ASC_CSLD_C_ASC__Template
 
-  !-- Step_RungeKutta_Current_AtlasSingleChart_1D_Template
+  !-- Step_RungeKutta_Current_BundleSingleLevelDistributed_AtlasSingleChart
+  !   _ChartSingleLevelDistributed_Template
 
   !-- See Wikipedia "Runge-Kutta methods" for explanation of Butcher 
   !   tableau entries A, B, C
@@ -54,6 +55,16 @@ contains
     call S % InitializeTemplate_C_ASC ( NameSuffix, A, B, C )
 
   end subroutine InitializeTemplate_C_BSLL_ASC_CSLD_C_ASC
+
+
+  impure elemental subroutine FinalizeTemplate_C_BSLL_ASC_CSLD_C_ASC ( S )
+
+    class ( Step_RK_C_BSLL_ASC_CSLD_C_ASC_Template ), intent ( inout ) :: &
+      S
+
+    call S % FinalizeTemplate_C_ASC ( )
+
+  end subroutine FinalizeTemplate_C_BSLL_ASC_CSLD_C_ASC
 
 
 end module Step_RK_C_BSLL_ASC_CSLD_C_ASC__Template
