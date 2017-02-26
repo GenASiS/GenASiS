@@ -75,6 +75,8 @@ contains
 
     call S % InitializeTemplate_C_ASC ( NameSuffix, A, B, C )
 
+    S % ApplyDivergenceFiber % Pointer => null ( )
+
   end subroutine InitializeTemplate_C_BSLL_ASC_CSLD_C_ASC
 
 

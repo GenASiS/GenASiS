@@ -251,18 +251,19 @@ contains
 
     do iC = 1, S % nCurrents
       associate &
-        ( C  => S % Current_1D ( iC ) % Pointer, &
-          K  => S % K_1D ( iC, iStage ), &
-          BF => S % BoundaryFluence_CSL_1D ( iC ) % Array, &
-          Y  => S % Y_1D ( iC ), &
-          ULP => S % UseLimiterParameter_1D ( iC ) )
+        ( C    => S % Current_1D ( iC ) % Pointer, &
+          Grid => S % Grid, &
+          K    => S % K_1D ( iC, iStage ), &
+          BF   => S % BoundaryFluence_CSL_1D ( iC ) % Array, &
+          Y    => S % Y_1D ( iC ), &
+          ULP  => S % UseLimiterParameter_1D ( iC ) )
 
       S % ApplyDivergence_C => S % ApplyDivergence_1D ( iC ) % Pointer
       S % ApplySources_C    => S % ApplySources_1D    ( iC ) % Pointer
       S % ApplyRelaxation_C => S % ApplyRelaxation_1D ( iC ) % Pointer
 
       call S % ComputeStage_C &
-             ( C, K, BF, Y, ULP, TimeStep, iStage )
+             ( C, Grid, K, BF, Y, ULP, TimeStep, iStage )
 
       S % ApplyRelaxation_C => null ( )
       S % ApplySources_C    => null ( )

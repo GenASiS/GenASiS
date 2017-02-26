@@ -437,18 +437,19 @@ contains
     call Timer % Start ( )
 
     associate &
-      ( C   => S % Current, &
-        K   => S % K ( iStage ), &
-        BF  => S % BoundaryFluence_CSL, &
-        Y   => S % Y, &
-        ULP => S % UseLimiterParameter )
+      ( C    => S % Current, &
+        Grid => S % Grid, &
+        K    => S % K ( iStage ), &
+        BF   => S % BoundaryFluence_CSL, &
+        Y    => S % Y, &
+        ULP  => S % UseLimiterParameter )
 
     S % ApplyDivergence_C => S % ApplyDivergence % Pointer
     S % ApplySources_C    => S % ApplySources    % Pointer
     S % ApplyRelaxation_C => S % ApplyRelaxation % Pointer
 
     call S % ComputeStage_C &
-           ( C, K, BF, Y, ULP, TimeStep, iStage )
+           ( C, Grid, K, BF, Y, ULP, TimeStep, iStage )
 
     S % ApplyRelaxation_C => null ( )
     S % ApplySources_C    => null ( )
@@ -741,12 +742,14 @@ contains
 
 
   subroutine ComputeStage_C &
-               ( S, C, K, BF, Y, UseLimiterParameter, TimeStep, iStage )
+               ( S, C, Grid, K, BF, Y, UseLimiterParameter, TimeStep, iStage )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
     class ( CurrentTemplate ), intent ( inout ) :: &
       C
+    class ( * ), intent ( inout ) :: &
+      Grid
     type ( VariableGroupForm ), intent ( inout ) :: &
       K
     type ( Real_3D_Form ), dimension ( :, : ), intent ( inout ) :: &
@@ -771,7 +774,7 @@ contains
     !-- Divergence
     if ( associated ( S % ApplyDivergence_C ) ) &
       call S % ApplyDivergence_C &
-             ( K, BF, C, UseLimiterParameter, TimeStep, iStage )
+             ( Grid, K, BF, C, UseLimiterParameter, TimeStep, iStage )
 
     !-- Other explicit sources
     if ( associated ( S % ApplySources_C ) ) &
@@ -789,7 +792,7 @@ contains
     end if
 
     if ( associated ( S % ApplyDivergence_C ) ) then
-      select type ( Grid => S % Grid )
+      select type ( Grid )
       class is ( Chart_SLD_Form )
         associate ( TimerGhost => PROGRAM_HEADER % Timer ( S % iTimerGhost ) )
         call TimerGhost % Start ( )
@@ -968,11 +971,13 @@ contains
 
 
   subroutine ApplyDivergence_C &
-               ( S, Increment, BoundaryFluence_CSL, Current, &
+               ( S, Grid, Increment, BoundaryFluence_CSL, Current, &
                  UseLimiterParameter, TimeStep, iStage )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
+    class ( * ), intent ( inout ) :: &
+      Grid
     type ( VariableGroupForm ), intent ( inout ) :: &
       Increment
     type ( Real_3D_Form ), dimension ( :, : ), intent ( inout ) :: &
@@ -991,7 +996,7 @@ contains
     call ID % Set ( BoundaryFluence_CSL )
     call ID % Set ( S % dLogVolumeJacobian_dX )
     call ID % Set ( Weight_RK = S % B ( iStage ) )
-    call ID % Compute ( Increment, S % Grid, Current, TimeStep )
+    call ID % Compute ( Increment, Grid, Current, TimeStep )
     call ID % Clear ( )
     end associate !-- ID
 
