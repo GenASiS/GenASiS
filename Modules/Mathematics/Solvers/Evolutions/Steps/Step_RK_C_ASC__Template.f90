@@ -353,8 +353,8 @@ contains
       call Show ( 'Compute_C_ASC', 'subroutine', CONSOLE % ERROR ) 
       call PROGRAM_HEADER % Abort ( )
     end select !-- Chart
-
     S % Current => Current_ASC % Current ( )
+
     call AllocateStorage ( S )
     call S % LoadSolution ( S % Solution, S % Current )
 

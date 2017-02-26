@@ -146,7 +146,7 @@ contains
 
     class default
       call Show ( 'Chart type not found', CONSOLE % ERROR )
-      call Show ( 'Step_RK_C_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Step_RK_C_ASC_1D__Form', 'module', CONSOLE % ERROR )
       call Show ( 'Compute_C_ASC_1D', 'subroutine', CONSOLE % ERROR ) 
       call PROGRAM_HEADER % Abort ( )
     end select !-- Chart

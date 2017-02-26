@@ -16,6 +16,8 @@ module Current_BSLL_ASC_CSLD__Template
 
   type, public, extends ( Field_BSLL_ASC_CSLD_Template ), abstract :: &
     Current_BSLL_ASC_CSLD_Template
+      integer ( KDI ) :: &
+        nSections
       class ( Bundle_SLL_ASC_CSLD_Form ), pointer :: &
         Bundle_SLL_ASC_CSLD => null ( )
       type ( Current_ASC_ElementForm ), dimension ( : ), allocatable :: &
@@ -46,6 +48,8 @@ contains
     call CB % InitializeTemplate_BSLL_ASC_CSLD &
            ( B, NameOutputOption = NameOutputOption )
 
+    CB % nSections = B % nFibers
+
     CB % Bundle_SLL_ASC_CSLD => B
 
   end subroutine InitializeTemplate_BSLL_ASC_CSLD_C
@@ -63,7 +67,7 @@ contains
 
     associate ( B => CB % Bundle_SLL_ASC_CSLD )
 
-    do iS = 1, B % nFibers
+    do iS = 1, CB % nSections
       associate ( CA => CB % Section_ASC ( iS ) % Element )
       C => CA % Current ( )
       call B % LoadSection ( C, CB, iS, GhostExchangeOption = .true. )
@@ -88,7 +92,7 @@ contains
 
     associate ( B => CB % Bundle_SLL_ASC_CSLD )
 
-    do iS = 1, B % nFibers
+    do iS = 1, CB % nSections
       associate ( CA => CB % Section_ASC ( iS ) % Element )
       C => CA % Current ( )
       call B % StoreSection ( CB, C, iS )
