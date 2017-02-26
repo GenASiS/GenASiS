@@ -18,6 +18,21 @@ module Step_RK_C_ASC__Template
   implicit none
   private
 
+  type, public :: ApplyDivergence_C_Pointer
+    procedure ( ApplyDivergence_C ), pointer, nopass :: &
+      Pointer => ApplyDivergence_C
+  end type ApplyDivergence_C_Pointer
+
+  type, public :: ApplySources_C_Pointer
+    procedure ( AS ), pointer, nopass :: &
+      Pointer => null ( )
+  end type ApplySources_C_Pointer
+
+  type, public :: ApplyRelaxation_C_Pointer
+    procedure ( AR ), pointer, nopass :: &
+      Pointer => null ( )
+  end type ApplyRelaxation_C_Pointer
+
   type, public, extends ( Step_RK_Template ), abstract :: &
     Step_RK_C_ASC_Template
       integer ( KDI ) :: &
@@ -44,12 +59,18 @@ module Step_RK_C_ASC__Template
         IncrementDivergence
       type ( IncrementDampingForm ), allocatable :: &
         IncrementDamping
-      procedure ( ApplyDivergence ), pointer, pass :: &
-        ApplyDivergence => ApplyDivergence
+      procedure ( ApplyDivergence_C ), pointer, pass :: &
+        ApplyDivergence_C => null ( )
       procedure ( AS ), pointer, pass :: &
-        ApplySources => null ( ) 
+        ApplySources_C => null ( ) 
       procedure ( AR ), pointer, pass :: &
-        ApplyRelaxation => null ( )
+        ApplyRelaxation_C => null ( )
+      type ( ApplyDivergence_C_Pointer ) :: &
+        ApplyDivergence
+      type ( ApplySources_C_Pointer ) :: &
+        ApplySources
+      type ( ApplyRelaxation_C_Pointer ) :: &
+        ApplyRelaxation
   contains
     procedure, public, pass :: &
       InitializeTemplate_C_ASC
@@ -97,21 +118,6 @@ module Step_RK_C_ASC__Template
       DeallocateMetricDerivatives
   end type Step_RK_C_ASC_Template
 
-  type, public :: ApplyDivergence_C_Pointer
-    procedure ( ApplyDivergence ), pointer, nopass :: &
-      Pointer => ApplyDivergence
-  end type ApplyDivergence_C_Pointer
-
-  type, public :: ApplySources_C_Pointer
-    procedure ( AS ), pointer, nopass :: &
-      Pointer => null ( )
-  end type ApplySources_C_Pointer
-
-  type, public :: ApplyRelaxation_C_Pointer
-    procedure ( AR ), pointer, nopass :: &
-      Pointer => null ( )
-  end type ApplyRelaxation_C_Pointer
-
   abstract interface 
 
     subroutine AS ( S, Increment, Current, TimeStep )
@@ -148,7 +154,8 @@ module Step_RK_C_ASC__Template
 
     private :: &
       AllocateStorage, &
-      DeallocateStorage
+      DeallocateStorage, &
+      ApplyDivergence_C
 
 contains
 
@@ -436,8 +443,16 @@ contains
         Y   => S % Y, &
         ULP => S % UseLimiterParameter )
 
+    S % ApplyDivergence_C => S % ApplyDivergence % Pointer
+    S % ApplySources_C    => S % ApplySources    % Pointer
+    S % ApplyRelaxation_C => S % ApplyRelaxation % Pointer
+
     call S % ComputeStage_C &
            ( C, K, BF, Y, ULP, TimeStep, iStage )
+
+    S % ApplyRelaxation_C => null ( )
+    S % ApplySources_C    => null ( )
+    S % ApplyDivergence_C => null ( )
 
     end associate !-- C, etc.
 
@@ -754,26 +769,26 @@ contains
     call Clear ( K % Value )
 
     !-- Divergence
-    if ( associated ( S % ApplyDivergence ) ) &
-      call S % ApplyDivergence &
+    if ( associated ( S % ApplyDivergence_C ) ) &
+      call S % ApplyDivergence_C &
              ( K, BF, C, UseLimiterParameter, TimeStep, iStage )
 
     !-- Other explicit sources
-    if ( associated ( S % ApplySources ) ) &
-      call S % ApplySources ( K, C, TimeStep )
+    if ( associated ( S % ApplySources_C ) ) &
+      call S % ApplySources_C ( K, C, TimeStep )
 
     !-- Relaxation
-    if ( associated ( S % ApplyRelaxation ) ) then
+    if ( associated ( S % ApplyRelaxation_C ) ) then
       associate ( ID => S % IncrementDamping )
       allocate ( DC )
       call DC % Initialize ( shape ( K % Value ), ClearOption = .true. )
-      call S % ApplyRelaxation ( K, DC, C, TimeStep )
+      call S % ApplyRelaxation_C ( K, DC, C, TimeStep )
       call ID % Compute ( K, C, K, DC, TimeStep )
       deallocate ( DC )
       end associate !-- iD
     end if
 
-    if ( associated ( S % ApplyDivergence ) ) then
+    if ( associated ( S % ApplyDivergence_C ) ) then
       select type ( Grid => S % Grid )
       class is ( Chart_SLD_Form )
         associate ( TimerGhost => PROGRAM_HEADER % Timer ( S % iTimerGhost ) )
@@ -907,37 +922,6 @@ contains
   end subroutine DeallocateMetricDerivatives
 
 
-  subroutine ApplyDivergence &
-               ( S, Increment, BoundaryFluence_CSL, Current, &
-                 UseLimiterParameter, TimeStep, iStage )
-
-    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
-      S
-    type ( VariableGroupForm ), intent ( inout ) :: &
-      Increment
-    type ( Real_3D_Form ), dimension ( :, : ), intent ( inout ) :: &
-      BoundaryFluence_CSL
-    class ( CurrentTemplate ), intent ( in ) :: &
-      Current
-    logical ( KDL ), intent ( in ) :: &
-      UseLimiterParameter
-    real ( KDR ), intent ( in ) :: &
-      TimeStep
-    integer ( KDI ), intent ( in ) :: &
-      iStage
-
-    associate ( ID => S % IncrementDivergence )
-    call ID % Set ( UseLimiterParameter )
-    call ID % Set ( BoundaryFluence_CSL )
-    call ID % Set ( S % dLogVolumeJacobian_dX )
-    call ID % Set ( Weight_RK = S % B ( iStage ) )
-    call ID % Compute ( Increment, S % Grid, Current, TimeStep )
-    call ID % Clear ( )
-    end associate !-- ID
-
-  end subroutine ApplyDivergence
-
-
   subroutine AllocateStorage ( S )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
@@ -981,6 +965,37 @@ contains
     call S % Deallocate_RK_C ( )
 
   end subroutine DeallocateStorage
+
+
+  subroutine ApplyDivergence_C &
+               ( S, Increment, BoundaryFluence_CSL, Current, &
+                 UseLimiterParameter, TimeStep, iStage )
+
+    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
+      S
+    type ( VariableGroupForm ), intent ( inout ) :: &
+      Increment
+    type ( Real_3D_Form ), dimension ( :, : ), intent ( inout ) :: &
+      BoundaryFluence_CSL
+    class ( CurrentTemplate ), intent ( in ) :: &
+      Current
+    logical ( KDL ), intent ( in ) :: &
+      UseLimiterParameter
+    real ( KDR ), intent ( in ) :: &
+      TimeStep
+    integer ( KDI ), intent ( in ) :: &
+      iStage
+
+    associate ( ID => S % IncrementDivergence )
+    call ID % Set ( UseLimiterParameter )
+    call ID % Set ( BoundaryFluence_CSL )
+    call ID % Set ( S % dLogVolumeJacobian_dX )
+    call ID % Set ( Weight_RK = S % B ( iStage ) )
+    call ID % Compute ( Increment, S % Grid, Current, TimeStep )
+    call ID % Clear ( )
+    end associate !-- ID
+
+  end subroutine ApplyDivergence_C
 
 
 end module Step_RK_C_ASC__Template

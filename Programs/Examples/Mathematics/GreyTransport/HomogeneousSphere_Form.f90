@@ -258,8 +258,8 @@ contains
     select type ( S => HS % Step )
     class is ( Step_RK2_C_ASC_Form )
     call S % Initialize ( Name )
-    S % ApplyRelaxation  =>  ApplyRelaxation_Interactions
-    S % ApplySources  => ApplySourcesCurvilinear_RadiationMoments
+    S % ApplySources % Pointer    => ApplySourcesCurvilinear_RadiationMoments
+    S % ApplyRelaxation % Pointer => ApplyRelaxation_Interactions
     end select !-- S
     
      !-- Diagnostics

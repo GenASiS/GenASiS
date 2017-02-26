@@ -159,7 +159,7 @@ contains
     select type ( S => LS % Step )
     class is ( Step_RK2_C_ASC_Form )
     call S % Initialize ( Name )
-    S % ApplySources  => ApplySourcesCurvilinear_RadiationMoments
+    S % ApplySources % Pointer => ApplySourcesCurvilinear_RadiationMoments
     end select !-- S
 
     !-- Diagnostics

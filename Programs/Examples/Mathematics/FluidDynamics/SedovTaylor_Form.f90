@@ -149,7 +149,7 @@ contains
     select type ( S => ST % Step )
     class is ( Step_RK2_C_ASC_Form )
     call S % Initialize ( Name )
-    S % ApplySources => ApplySourcesCurvilinear_Fluid_P
+    S % ApplySources % Pointer => ApplySourcesCurvilinear_Fluid_P
     end select !-- S
 
     !-- Set fluid and initialize Integrator template

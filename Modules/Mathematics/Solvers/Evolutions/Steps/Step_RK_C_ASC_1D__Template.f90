@@ -257,16 +257,16 @@ contains
           Y  => S % Y_1D ( iC ), &
           ULP => S % UseLimiterParameter_1D ( iC ) )
 
-      S % ApplyDivergence => S % ApplyDivergence_1D ( iC ) % Pointer
-      S % ApplySources    => S % ApplySources_1D    ( iC ) % Pointer
-      S % ApplyRelaxation => S % ApplyRelaxation_1D ( iC ) % Pointer
+      S % ApplyDivergence_C => S % ApplyDivergence_1D ( iC ) % Pointer
+      S % ApplySources_C    => S % ApplySources_1D    ( iC ) % Pointer
+      S % ApplyRelaxation_C => S % ApplyRelaxation_1D ( iC ) % Pointer
 
       call S % ComputeStage_C &
              ( C, K, BF, Y, ULP, TimeStep, iStage )
 
-      S % ApplyRelaxation => null ( )
-      S % ApplySources    => null ( )
-      S % ApplyDivergence => null ( )
+      S % ApplyRelaxation_C => null ( )
+      S % ApplySources_C    => null ( )
+      S % ApplyDivergence_C => null ( )
 
       end associate !-- C, etc.
     end do !-- iC

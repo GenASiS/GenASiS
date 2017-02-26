@@ -110,7 +110,7 @@ contains
     select type ( S => SWD % Step )
     class is ( Step_RK2_C_ASC_Form )
     call S % Initialize ( Name )
-    S % ApplyRelaxation  =>  ApplyRelaxation_Interactions
+    S % ApplyRelaxation % Pointer => ApplyRelaxation_Interactions
     end select !-- S
 
     !-- Diagnostics

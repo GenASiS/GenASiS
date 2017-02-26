@@ -200,7 +200,7 @@ contains
     select type ( S => WH % Step )
     class is ( Step_RK2_C_ASC_Form )
     call S % Initialize ( Name )
-    S % ApplySources => ApplySources
+    S % ApplySources % Pointer => ApplySources
     end select !-- S
 
     !-- Set fluid and initialize Integrator template
