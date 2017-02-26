@@ -17,7 +17,7 @@ module MarshakWave_Form
   implicit none
   private
 
-  type, public, extends ( Integrator_C_1D_Template ) :: MarshakWaveForm
+  type, public, extends ( Integrator_C_1D_PS_Template ) :: MarshakWaveForm
     integer ( KDI ) :: &
       RADIATION = 1, &
       FLUID     = 2         
@@ -79,6 +79,8 @@ contains
       DynamicalTime, &
       DiffusionTime, &
       FinishTime
+    logical ( KDL ), dimension ( 2 ) :: &
+      UseLimiterParameter_1D
     type ( MeasuredValueForm ) :: &
       TimeUnit, &
       MassDensityUnit, &
@@ -169,6 +171,9 @@ contains
     MW % TimeStepLabel ( MW % RADIATION ) = 'Radiation'
     MW % TimeStepLabel ( MW % FLUID )     = 'Fluid'
 
+    UseLimiterParameter_1D ( MW % RADIATION ) = .false.
+    UseLimiterParameter_1D ( MW % FLUID ) = .true.
+
     TimeUnit = UNIT % SECOND
 
     VelocityUnit ( 1 )     =  CoordinateUnit ( 1 ) / TimeUnit 
@@ -233,14 +238,12 @@ contains
 
     !-- Step
 
-    allocate ( Step_RK2_C_Form :: MW % Step )
+    allocate ( Step_RK2_C_ASC_1D_Form :: MW % Step )
     select type ( S => MW % Step )
-    class is ( Step_RK2_C_Form )
+    class is ( Step_RK2_C_ASC_1D_Form )
 
-    call S % Initialize ( Name )
+    call S % Initialize ( Name, MW % N_CURRENTS )
 
-    allocate ( S % ApplySources_1D ( MW % N_CURRENTS ) )
-    allocate ( S % ApplyRelaxation_1D ( MW % N_CURRENTS ) )
     S % ApplySources_1D ( MW % RADIATION ) % Pointer &
       =>  ApplySources_Radiation
     S % ApplySources_1D ( MW % FLUID ) % Pointer &
@@ -296,8 +299,9 @@ contains
 
     FinishTime  =  1.36e-7_KDR  *  UNIT % SECOND
  
-    call MW % InitializeTemplate_C &
-           ( Name, TimeUnitOption = TimeUnit, FinishTimeOption = FinishTime )
+    call MW % InitializeTemplate_C_1D_PS &
+           ( Name, UseLimiterParameter_1D_Option = UseLimiterParameter_1D, &
+             TimeUnitOption = TimeUnit, FinishTimeOption = FinishTime )
 
     !-- Cleanup
 
@@ -318,7 +322,7 @@ contains
     if ( allocated ( MW % Interactions_ASC) ) &
       deallocate ( MW % Interactions_ASC )
 
-    call MW % FinalizeTemplate_C_1D ( )
+    call MW % FinalizeTemplate_C_1D_PS ( )
 
   end subroutine Finalize
 
@@ -486,7 +490,7 @@ contains
 
   subroutine ApplySources_Radiation ( S, Increment, Radiation, TimeStep )
 
-    class ( Step_RK_C_Template ), intent ( in ) :: &
+    class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
       S
     type ( VariableGroupForm ), intent ( inout ), target :: &
       Increment
@@ -507,7 +511,7 @@ contains
   
   subroutine ApplySources_Fluid ( S, Increment, Fluid, TimeStep )
 
-    class ( Step_RK_C_Template ), intent ( in ) :: &
+    class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
       S
     type ( VariableGroupForm ), intent ( inout ), target :: &
       Increment

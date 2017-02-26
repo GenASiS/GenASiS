@@ -10,6 +10,7 @@ module Step_RK_C_ASC_1D__Template
 
   use Basics
   use Manifolds
+  use Operations
   use Fields
   use Step_RK_C_ASC__Template
 
@@ -161,7 +162,6 @@ contains
     deallocate ( S % Current_1D )
     nullify ( S % Grid )
     deallocate ( S % UseLimiterParameter_1D )
-    S % nCurrents = 0
 
     call Timer % Stop ( )
     end associate !-- Timer

@@ -162,7 +162,7 @@ contains
         call CA % AccumulateBoundaryTally &
                ( S % BoundaryFluence_CSL_1D ( iC ) % Array )
         end associate !-- CA
-    end do !-- iC
+      end do !-- iC
 
     class default
       call Show ( 'Chart type not found', CONSOLE % ERROR )
