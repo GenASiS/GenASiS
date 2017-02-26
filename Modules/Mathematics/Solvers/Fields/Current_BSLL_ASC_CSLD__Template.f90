@@ -16,106 +16,64 @@ module Current_BSLL_ASC_CSLD__Template
 
   type, public, extends ( Field_BSLL_ASC_CSLD_Template ), abstract :: &
     Current_BSLL_ASC_CSLD_Template
-      integer ( KDI ) :: &
-        nSections
-      class ( Bundle_SLL_ASC_CSLD_Form ), pointer :: &
-        Bundle_SLL_ASC_CSLD => null ( )
-      type ( Current_ASC_ElementForm ), dimension ( : ), allocatable :: &
-        Section_ASC
   contains
     procedure, public, pass :: &
-      InitializeTemplate_BSLL_ASC_CSLD_C
+      CurrentFiber
     procedure, public, pass :: &
-      LoadSections
-    procedure, public, pass :: &
-      StoreSections
-    procedure, public, pass :: &
-      FinalizeTemplate_BSLL_ASC_CSLD_C
+      CurrentSection
   end type Current_BSLL_ASC_CSLD_Template
 
 contains
 
 
-  subroutine InitializeTemplate_BSLL_ASC_CSLD_C ( CB, B, NameOutputOption )
+  function CurrentFiber ( CB, iFiber ) result ( CF )
 
-    class ( Current_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
+    class ( Current_BSLL_ASC_CSLD_Template ), intent ( in ), target :: &
       CB
-    class ( Bundle_SLL_ASC_CSLD_Form ), intent ( in ), target :: &
-      B
-    character ( * ), intent ( in ), optional :: &
-      NameOutputOption
-
-    call CB % InitializeTemplate_BSLL_ASC_CSLD &
-           ( B, NameOutputOption = NameOutputOption )
-
-    CB % nSections = B % nFibers
-
-    CB % Bundle_SLL_ASC_CSLD => B
-
-  end subroutine InitializeTemplate_BSLL_ASC_CSLD_C
-
-
-  subroutine LoadSections ( CB )
-
-    class ( Current_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
-      CB
-
-    integer ( KDI ) :: &
-      iS
+    integer ( KDI ), intent ( in ) :: &
+      iFiber
     class ( CurrentTemplate ), pointer :: &
-      C
+      CF
 
-    associate ( B => CB % Bundle_SLL_ASC_CSLD )
+    class ( VariableGroupForm ), pointer :: &
+      F
 
-    do iS = 1, CB % nSections
-      associate ( CA => CB % Section_ASC ( iS ) % Element )
-      C => CA % Current ( )
-      call B % LoadSection ( C, CB, iS, GhostExchangeOption = .true. )
-      end associate !-- CA
-    end do !-- iS
+    CF => null ( )
 
-    end associate !-- B
-    nullify ( C )
+    F => CB % FieldFiber ( iFiber )
+    select type ( F )
+    class is ( CurrentTemplate )
+      CF => F 
+    end select !-- F
 
-  end subroutine LoadSections
+    nullify ( F )
+
+  end function CurrentFiber
 
 
-  subroutine StoreSections ( CB )
+  function CurrentSection ( CB, iSection ) result ( CS )
 
-    class ( Current_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
+    class ( Current_BSLL_ASC_CSLD_Template ), intent ( in ), target :: &
       CB
-
-    integer ( KDI ) :: &
-      iS
+    integer ( KDI ), intent ( in ) :: &
+      iSection
     class ( CurrentTemplate ), pointer :: &
-      C
+      CS
 
-    associate ( B => CB % Bundle_SLL_ASC_CSLD )
+    class ( VariableGroupForm ), pointer :: &
+      F
 
-    do iS = 1, CB % nSections
-      associate ( CA => CB % Section_ASC ( iS ) % Element )
-      C => CA % Current ( )
-      call B % StoreSection ( CB, C, iS )
-      end associate !-- CA
-    end do !-- iS
+    CS => null ( )
 
-    end associate !-- B
-    nullify ( C )
+    F => CB % FieldSection ( iSection )
+    select type ( F )
+    class is ( CurrentTemplate )
+      CS => F 
+    end select !-- F
 
-  end subroutine StoreSections
+    nullify ( F )
 
-
-  impure elemental subroutine FinalizeTemplate_BSLL_ASC_CSLD_C ( CB )
-
-    class ( Current_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
-      CB
-
-    if ( allocated ( CB % Section_ASC ) ) &
-      deallocate ( CB % Section_ASC )
-
-    call CB % FinalizeTemplate_BSLL_ASC_CSLD ( )
-
-  end subroutine FinalizeTemplate_BSLL_ASC_CSLD_C
+  end function CurrentSection
 
 
 end module Current_BSLL_ASC_CSLD__Template

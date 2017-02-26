@@ -9,7 +9,6 @@ module Bundle_SLL_ASC_CSLD__Form
   use Atlases
   use BundleHeader_Form
   use FibersWritten_CSL__Form
-  use Field_BSLL_ASC_CSLD__Template
 
   implicit none
   private
@@ -18,6 +17,7 @@ module Bundle_SLL_ASC_CSLD__Form
     integer ( KDI ) :: &
       nBaseValues   = 0, &
       nFibers       = 0, &
+      nSections     = 0, &
       sFibersWrite  = 0
     integer ( KDI ), dimension ( : ), allocatable :: &
       iaBaseCell, &
@@ -43,10 +43,6 @@ module Bundle_SLL_ASC_CSLD__Form
       GeometryFiber
     procedure, public, pass :: &
       AtlasFiber
-    procedure, public, pass ( B ) :: &
-      LoadSection
-    procedure, public, pass ( B ) :: &
-      StoreSection
     procedure, public, pass :: &
       OpenStream
     procedure, public, pass :: &
@@ -71,9 +67,6 @@ contains
     character ( * ), intent ( in )  :: &
       NameBase
       
-    class ( ChartTemplate ), pointer :: &
-      CB
-
     if ( B % Type == '' ) &
       B % Type = 'a Bundle_SLL_ASC_CSLD' 
 
@@ -83,9 +76,8 @@ contains
     class is ( Atlas_SC_Form )
 
       B % Base_ASC => AB
-      CB => AB % Chart
       
-      select type ( CB )
+      select type ( CB => AB % Chart )
       class is ( Chart_SLD_Form )
 
         B % Base_CSLD   => CB
@@ -189,6 +181,8 @@ contains
     select type ( CF => B % FiberMaster % Chart )
     class is ( Chart_SLL_Form )
       B % Fiber_CSLL => CF
+      B % nSections  =  CF % nProperCells
+      call Show ( B % nSections, 'nSections', B % IGNORABILITY )
     end select !-- CF
 
     !-- Base cell index
@@ -261,88 +255,6 @@ contains
     AF => B % Fiber % Atlas ( iFiber ) % Element 
 
   end function AtlasFiber
-
-
-  subroutine LoadSection ( Section, B, Field, iFC, GhostExchangeOption )
-
-    class ( VariableGroupForm ), intent ( inout ) :: &
-      Section
-    class ( Bundle_SLL_ASC_CSLD_Form ), intent ( in ) :: &
-      B
-    class ( Field_BSLL_ASC_CSLD_Template ), intent ( in ) :: &
-      Field
-    integer ( KDI ), intent ( in ) :: &
-      iFC  !-- iFiberCell
-    logical ( KDL ), intent ( in ), optional :: &
-      GhostExchangeOption
-
-    integer ( KDI ) :: &
-      iF, &  !-- iFiber
-      iV     !-- iVariable
-    logical ( KDL ) :: &
-      GhostExchange
-    class ( VariableGroupForm ), pointer :: &
-      F
-
-    GhostExchange = .false.
-    if ( present ( GhostExchangeOption ) ) &
-      GhostExchange = GhostExchangeOption
-
-    do iF = 1, B % nFibers
-
-      F => Field % FieldFiber ( iF )
-
-      associate ( iBC => B % iaBaseCell ( iF ) )
-      do iV = 1, F % nVariables
-        Section % Value ( iBC, iV ) = F % Value ( iFC, iV )
-      end do 
-      end associate !-- iBC
-
-    end do !-- iF
-
-    if ( GhostExchange ) then
-      associate ( CB => B % Base_CSLD )
-      call CB % ExchangeGhostData ( Section )
-      end associate
-    end if
-
-    nullify ( F )
-
-  end subroutine LoadSection
-
-
-  subroutine StoreSection ( Field, B, Section, iFC )
-
-    class ( Field_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
-      Field
-    class ( Bundle_SLL_ASC_CSLD_Form ), intent ( in ) :: &
-      B
-    class ( VariableGroupForm ), intent ( in ) :: &
-      Section
-    integer ( KDI ), intent ( in ) :: &
-      iFC  !-- iFiberCell
-
-    integer ( KDI ) :: &
-      iF, &  !-- iFiber
-      iV     !-- iVariable
-    class ( VariableGroupForm ), pointer :: &
-      F
-
-    do iF = 1, B % nFibers
-
-      F => Field % FieldFiber ( iF )
-
-      associate ( iBC => B % iaBaseCell ( iF ) )
-      do iV = 1, F % nVariables
-        F % Value ( iFC, iV ) = Section % Value ( iBC, iV )
-      end do 
-      end associate !-- iBC
-
-    end do !-- iF
-
-    nullify ( F )
-
-  end subroutine StoreSection
 
 
   subroutine OpenStream ( B, GIS_Base, iStream )

@@ -131,7 +131,7 @@ contains
     !   call PROGRAM_HEADER % Abort ( )
     ! end select !-- B
 
-    call RMB % InitializeTemplate_BSLL_ASC_CSLD_C &
+    call RMB % InitializeTemplate_BSLL_ASC_CSLD &
            ( B, NameOutputOption = NameOutputOption )
 
     allocate ( RMB % Section_ASC ( RMB % nEnergyValues ) )
@@ -216,7 +216,7 @@ contains
     if ( allocated ( RMB % Energy ) ) &
       deallocate ( RMB % Energy )
 
-    call RMB % FinalizeTemplate_BSLL_ASC_CSLD_C ( )
+    call RMB % FinalizeTemplate_BSLL_ASC_CSLD ( )
 
   end subroutine Finalize
 

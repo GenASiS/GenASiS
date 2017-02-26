@@ -7,6 +7,7 @@ module Field_BSLL_ASC_CSLD__Template
   use Atlases
   use BundleHeader_Form
   use FieldBundle_Template
+  use Bundle_SLL_ASC_CSLD__Form
 
   !-- Field_BundleSingleLevelLocal_AtlasSingleChart_ChartSingleLevelDistributed
   !   _Template
@@ -16,13 +17,30 @@ module Field_BSLL_ASC_CSLD__Template
 
   type, public, extends ( FieldBundleTemplate ), abstract :: &
     Field_BSLL_ASC_CSLD_Template
+      integer ( KDI ) :: &
+        nFibers   = 0, &
+        nSections = 0
+      class ( Bundle_SLL_ASC_CSLD_Form ), pointer :: &
+        Bundle_SLL_ASC_CSLD => null ( )
       class ( Field_ASC_1D_Form ), allocatable :: &
         Fiber
+      class ( Field_ASC_1D_Form ), allocatable :: &
+        Section
   contains
     procedure, public, pass :: &
       InitializeTemplate_BSLL_ASC_CSLD
     procedure, public, pass :: &
+      LoadSections
+    procedure, public, pass :: &
+      StoreSections
+    procedure, public, pass :: &
+      LoadSection
+    procedure, public, pass :: &
+      StoreSection
+    procedure, public, pass :: &
       FieldFiber
+    procedure, public, pass :: &
+      FieldSection
     procedure, public, pass :: &
       FinalizeTemplate_BSLL_ASC_CSLD
     procedure ( SF ), private, pass, deferred :: &
@@ -51,12 +69,16 @@ contains
 
     class ( Field_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
       FB
-    class ( BundleHeaderForm ), intent ( in ), target :: &
+    class ( Bundle_SLL_ASC_CSLD_Form ), intent ( in ), target :: &
       B
     character ( * ), intent ( in ), optional :: &
       NameOutputOption
 
     call FB % InitializeTemplate ( B, NameOutputOption = NameOutputOption )
+
+    FB % Bundle_SLL_ASC_CSLD => B
+    FB % nFibers   = B % nFibers
+    FB % nSections = B % nSections
 
     if ( FB % NameOutput == '' ) then
       call FB % SetField ( )
@@ -65,6 +87,122 @@ contains
     end if
 
   end subroutine InitializeTemplate_BSLL_ASC_CSLD
+
+
+  subroutine LoadSections ( FB, GhostExchangeOption )
+
+    class ( Field_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
+      FB
+    logical ( KDL ), intent ( in ), optional :: &
+      GhostExchangeOption
+
+    integer ( KDI ) :: &
+      iS
+
+    do iS = 1, FB % nSections
+      call FB % LoadSection ( iS, GhostExchangeOption )
+    end do !-- iS
+
+  end subroutine LoadSections
+
+
+  subroutine StoreSections ( FB )
+
+    class ( Field_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
+      FB
+
+    integer ( KDI ) :: &
+      iS
+
+    do iS = 1, FB % nSections
+      call FB % StoreSection ( iS )
+    end do !-- iS
+
+  end subroutine StoreSections
+
+
+  subroutine LoadSection ( FB, iFC, GhostExchangeOption )
+
+    class ( Field_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
+      FB
+    integer ( KDI ), intent ( in ) :: &
+      iFC  !-- iFiberCell
+    logical ( KDL ), intent ( in ), optional :: &
+      GhostExchangeOption
+
+    integer ( KDI ) :: &
+      iF, &  !-- iFiber
+      iV     !-- iVariable
+    logical ( KDL ) :: &
+      GhostExchange
+    class ( VariableGroupForm ), pointer :: &
+      FF, &
+      FS
+
+    GhostExchange = .true.
+    if ( present ( GhostExchangeOption ) ) &
+      GhostExchange = GhostExchangeOption
+
+    associate ( B => FB % Bundle_SLL_ASC_CSLD )
+
+    do iF = 1, FB % nFibers
+
+      FF => FB % FieldFiber ( iF )
+      FS => FB % FieldSection ( iFC )
+
+      associate ( iBC => B % iaBaseCell ( iF ) )
+      do iV = 1, FF % nVariables
+        FS % Value ( iBC, iV ) = FF % Value ( iFC, iV )
+      end do 
+      end associate !-- iBC
+
+    end do !-- iF
+
+    if ( GhostExchange ) then
+      associate ( CB => B % Base_CSLD )
+      call CB % ExchangeGhostData ( FS )
+      end associate
+    end if
+
+    end associate !-- B
+    nullify ( FF, FS )
+
+  end subroutine LoadSection
+
+
+  subroutine StoreSection ( FB, iFC )
+
+    class ( Field_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
+      FB
+    integer ( KDI ), intent ( in ) :: &
+      iFC  !-- iFiberCell
+
+    integer ( KDI ) :: &
+      iF, &  !-- iFiber
+      iV     !-- iVariable
+    class ( VariableGroupForm ), pointer :: &
+      FF, &
+      FS
+
+    associate ( B => FB % Bundle_SLL_ASC_CSLD )
+
+    do iF = 1, FB % nFibers
+
+      FF => FB % FieldFiber ( iF )
+      FS => FB % FieldSection ( iFC )
+
+      associate ( iBC => B % iaBaseCell ( iF ) )
+      do iV = 1, FS % nVariables
+        FF % Value ( iFC, iV ) = FS % Value ( iBC, iV )
+      end do 
+      end associate !-- iBC
+
+    end do !-- iF
+
+    end associate !-- B
+    nullify ( FF, FS )
+
+  end subroutine StoreSection
 
 
   function FieldFiber ( FB, iFiber ) result ( FF )
@@ -91,11 +229,39 @@ contains
   end function FieldFiber
 
 
+  function FieldSection ( FB, iSection ) result ( FS )
+
+    class ( Field_BSLL_ASC_CSLD_Template ), intent ( in ), target :: &
+      FB
+    integer ( KDI ), intent ( in ) :: &
+      iSection
+    class ( VariableGroupForm ), pointer :: &
+      FS
+    
+    class ( FieldChartTemplate ), pointer :: &
+      FC 
+    
+    associate ( FA => FB % Section % Atlas ( iSection ) % Element )
+    
+    FC => FA % Chart
+    select type ( FC )
+    class is ( Field_CSL_Template )   
+      FS => FC % Field 
+    end select !-- FC
+    end associate !-- FA
+
+  end function FieldSection
+
+
   impure elemental subroutine FinalizeTemplate_BSLL_ASC_CSLD ( FB )
 
     class ( Field_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
       FB
 
+    nullify ( FB % Bundle_SLL_ASC_CSLD )
+
+    if ( allocated ( FB % Section ) ) &
+      deallocate ( FB % Section )
     if ( allocated ( FB % Fiber ) ) &
       deallocate ( FB % Fiber )
 

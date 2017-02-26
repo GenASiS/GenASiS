@@ -126,29 +126,23 @@ contains
 
     associate &
       ( CB => Current_BSLL_ASC_CSLD, &
-        B  => Current_BSLL_ASC_CSLD % Bundle_SLL_ASC_CSLD )
+         B => Current_BSLL_ASC_CSLD % Bundle_SLL_ASC_CSLD )
 
     S % nFibers   =  B % nFibers
     S % GridFiber => B % Fiber_CSLL
     allocate ( S % CurrentFiber_1D ( S % nFibers ) )
     do iF = 1, S % nFibers
-      select type ( CA => CB % Fiber % Atlas ( iF ) % Element )
-      class is ( Current_ASC_Template )
-        S % CurrentFiber_1D ( iF ) % Pointer => CA % Current ( )
-      end select !-- CA
+      S % CurrentFiber_1D ( iF ) % Pointer => CB % CurrentFiber ( iF )
     end do !-- iF
 
-    S % nSections   =  CB % nSections
-    S % GridSection => B  % Base_CSLD
+    S % nSections   =  B % nSections
+    S % GridSection => B % Base_CSLD
     allocate ( S % CurrentSection_1D ( S % nSections ) )
     do iS = 1, S % nSections
-      associate &
-        ( CA => CB % Section_ASC ( iS ) % Element )
-      S % CurrentSection_1D ( iS ) % Pointer => CA % Current ( )
-      end associate !-- CA
+      S % CurrentSection_1D ( iS ) % Pointer => CB % CurrentSection ( iS )
     end do !-- iS
 
-    end associate !-- CurrentBundle, etc.
+    end associate !-- CB
 
     ! call AllocateStorage ( S )
     ! call S % LoadSolution ( S % Solution_1D, S % Current_1D )
