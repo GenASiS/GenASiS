@@ -68,10 +68,6 @@ contains
       MomentumUnitOption, &
       AngularMomentumUnitOption
 
-    integer ( KDI ) :: &
-      iE  !-- iEnergy
-    character ( 1 + 2 ) :: &
-      EnergyNumber
     class ( GeometryFlatForm ), pointer :: &
       GF
 
@@ -133,19 +129,6 @@ contains
 
     call RMB % InitializeTemplate_BSLL_ASC_CSLD &
            ( B, NameOutputOption = NameOutputOption )
-
-    allocate ( RMB % Section_ASC ( RMB % nEnergyValues ) )
-    do iE = 1, RMB % nEnergyValues
-      write ( EnergyNumber, fmt = '(a1,i2.2)' ) '_', iE
-      allocate &
-        ( RadiationMoments_ASC_Form :: RMB % Section_ASC ( iE ) % Element )
-      select type ( RA => RMB % Section_ASC ( iE ) % Element )
-      class is ( RadiationMoments_ASC_Form )
-        call RA % Initialize &
-               ( B % Base_ASC, RadiationType, &
-                 NameOutputOption = trim ( RMB % Name ) // EnergyNumber )
-      end select !-- RA
-    end do !-- iE
 
     nullify ( GF )
 
@@ -229,16 +212,20 @@ contains
       NameOutputOption
 
     integer ( KDI ) :: &
-      iF  !-- iFiber
+      iF, &  !-- iFiber
+      iE     !-- iEnergy
+    character ( 1 + 2 ) :: &
+      EnergyNumber
 
-    select type ( B => FB % Bundle )
-    class is ( Bundle_SLL_ASC_CSLD_Form )
+    associate ( B => FB % Bundle_SLL_ASC_CSLD )
+
+    !-- Fibers
 
     allocate ( FB % Fiber )
     associate ( FBF => FB % Fiber )
-    call FBF % Initialize ( B % nFibers )
+    call FBF % Initialize ( FB % nFibers )
 
-    do iF = 1, B % nFibers
+    do iF = 1, FB % nFibers
       allocate ( RadiationMoments_ASC_Form :: FBF % Atlas ( iF ) % Element )
       select type ( RMA => FBF % Atlas ( iF ) % Element )
       class is ( RadiationMoments_ASC_Form )
@@ -259,9 +246,36 @@ contains
       end select !-- AF
       end select !-- RMA
     end do !-- iF
-    
+
     end associate !-- FBF
-    end select !-- B
+
+    !-- Sections
+
+    allocate ( FB % Section )
+    associate ( FBS => FB % Section )
+    call FBS % Initialize ( FB % nSections )
+
+    do iE = 1, FB % nEnergyValues
+      write ( EnergyNumber, fmt = '(a1,i2.2)' ) '_', iE
+      allocate ( RadiationMoments_ASC_Form :: FBS % Atlas ( iE ) % Element )
+      select type ( RMA => FBS % Atlas ( iE ) % Element )
+      class is ( RadiationMoments_ASC_Form )
+        call RMA % Initialize &
+               ( B % Base_ASC, FB % RadiationType, &
+                 NameOutputOption = trim ( FB % Name ) // EnergyNumber, &
+                 Velocity_U_UnitOption = FB % Velocity_U_Unit, &
+                 MomentumDensity_U_UnitOption = FB % MomentumDensity_U_Unit, &
+                 MomentumDensity_D_UnitOption = FB % MomentumDensity_D_Unit, &
+                 EnergyDensityUnitOption = FB % EnergyDensityUnit, &
+                 EnergyUnitOption = FB % EnergyUnit, &
+                 MomentumUnitOption = FB % MomentumUnit, &
+                 AngularMomentumUnitOption = FB % AngularMomentumUnit )
+      end select !-- RMA
+    end do !-- iE
+
+    end associate !-- FBF
+
+    end associate !-- B
 
   end subroutine SetField
 
