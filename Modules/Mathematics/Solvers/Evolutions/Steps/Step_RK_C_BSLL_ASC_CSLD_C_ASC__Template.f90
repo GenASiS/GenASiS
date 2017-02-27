@@ -24,24 +24,30 @@ module Step_RK_C_BSLL_ASC_CSLD_C_ASC__Template
       integer ( KDI ) :: &
         nFibers   = 0, &
         nSections = 0
+      type ( Real_3D_2D_Form ), dimension ( : ), allocatable :: &
+        BoundaryFluence_CSL_S
       logical ( KDL ) :: &
         UseLimiterParameterSection
+      type ( Storage_BSLL_ASC_CSLD_Form ), allocatable :: &
+        Solution_BSLL_ASC_CSLD, &
+        Y_BSLL_ASC_CSLD
+      type ( Storage_BSLL_ASC_CSLD_Form ), dimension ( : ), allocatable :: &
+        K_BSLL_ASC_CSLD
       class ( Chart_SLL_Form ), pointer :: &
-        GridFiber => null ( )
+        Grid_F => null ( )
       class ( Chart_SLD_Form ), pointer :: &
-        GridSection => null ( )
-      type ( CurrentPointerForm ), dimension ( : ), allocatable :: &
-        CurrentFiber_1D, &
-        CurrentSection_1D
+        Grid_S => null ( )
+      class ( Current_BSLL_ASC_CSLD_Template ), pointer :: &
+        Current_BSLL_ASC_CSLD => null ( )
       type ( ApplyDivergence_C_Pointer ) :: &
-        ApplyDivergenceFiber, &
-        ApplyDivergenceSection
+        ApplyDivergence_F, &
+        ApplyDivergence_S
       type ( ApplySources_C_Pointer ) :: &
-        ApplySourcesFiber, &
-        ApplySourcesSection
+        ApplySources_F, &
+        ApplySources_S
       type ( ApplyRelaxation_C_Pointer ) :: &
-        ApplyRelaxationFiber, &
-        ApplyRelaxationSection
+        ApplyRelaxation_F, &
+        ApplyRelaxation_S
   contains
     procedure, public, pass :: &
       InitializeTemplate_C_BSLL_ASC_CSLD_C_ASC
@@ -51,7 +57,15 @@ module Step_RK_C_BSLL_ASC_CSLD_C_ASC__Template
       Compute => Compute_C_ASC_1D
     procedure, public, pass :: &
       FinalizeTemplate_C_BSLL_ASC_CSLD_C_ASC
+    procedure, public, pass :: &
+      Allocate_RK_C_BSLL_ASC_CSLD
+    procedure, public, pass :: &
+      Deallocate_RK_C_BSLL_ASC_CSLD
   end type Step_RK_C_BSLL_ASC_CSLD_C_ASC_Template
+
+    private :: &
+      AllocateStorage, &
+      DeallocateStorage
 
 contains
 
@@ -75,7 +89,7 @@ contains
 
     call S % InitializeTemplate_C_ASC ( NameSuffix, A, B, C )
 
-    S % ApplyDivergenceFiber % Pointer => null ( )
+    S % ApplyDivergence_F % Pointer => null ( )
 
   end subroutine InitializeTemplate_C_BSLL_ASC_CSLD_C_ASC
 
@@ -126,25 +140,14 @@ contains
     end select !-- Chart
     S % Current => Current_ASC % Current ( )
 
-    associate &
-      ( CB => Current_BSLL_ASC_CSLD, &
-         B => Current_BSLL_ASC_CSLD % Bundle_SLL_ASC_CSLD )
-
+    associate ( B => Current_BSLL_ASC_CSLD % Bundle_SLL_ASC_CSLD )
     S % nFibers   =  B % nFibers
-    S % GridFiber => B % Fiber_CSLL
-    allocate ( S % CurrentFiber_1D ( S % nFibers ) )
-    do iF = 1, S % nFibers
-      S % CurrentFiber_1D ( iF ) % Pointer => CB % CurrentFiber ( iF )
-    end do !-- iF
+    S % nSections =  B % nSections
+    S % Grid_F    => B % Fiber_CSLL
+    S % Grid_S    => B % Base_CSLD
+    end associate !-- B
 
-    S % nSections   =  B % nSections
-    S % GridSection => B % Base_CSLD
-    allocate ( S % CurrentSection_1D ( S % nSections ) )
-    do iS = 1, S % nSections
-      S % CurrentSection_1D ( iS ) % Pointer => CB % CurrentSection ( iS )
-    end do !-- iS
-
-    end associate !-- CB
+    S % Current_BSLL_ASC_CSLD => Current_BSLL_ASC_CSLD
 
     ! call AllocateStorage ( S )
     ! call S % LoadSolution ( S % Solution_1D, S % Current_1D )
@@ -154,12 +157,10 @@ contains
     ! call S % StoreSolution ( S % Current_1D, S % Solution_1D )
     ! call DeallocateStorage ( S )
 
-    deallocate ( S % CurrentSection_1D )
-    nullify ( S % GridSection )
+    S % Current_BSLL_ASC_CSLD => null ( )    
+    S % Grid_S => null ( )
+    S % Grid_F => null ( )
     S % nSections = 0
-
-    deallocate ( S % CurrentSection_1D )
-    nullify ( S % GridSection )
     S % nFibers =  0
 
     S % Current => null ( )
@@ -179,6 +180,116 @@ contains
     call S % FinalizeTemplate_C_ASC ( )
 
   end subroutine FinalizeTemplate_C_BSLL_ASC_CSLD_C_ASC
+
+
+  subroutine Allocate_RK_C_BSLL_ASC_CSLD ( S )
+
+    class ( Step_RK_C_BSLL_ASC_CSLD_C_ASC_Template ), intent ( inout ) :: &
+      S
+
+    integer ( KDI ) :: &
+      iS     !-- iStage
+    class ( CurrentTemplate ), pointer :: &
+      Current
+
+    allocate ( S % Solution_BSLL_ASC_CSLD )
+    allocate ( S % Y_BSLL_ASC_CSLD )
+    allocate ( S % K_BSLL_ASC_CSLD ( S % nStages ) )
+
+    Current => S % Current_BSLL_ASC_CSLD % CurrentFiber ( 1 )
+    associate &
+      ( B => S % Current_BSLL_ASC_CSLD % Bundle_SLL_ASC_CSLD, &
+        nEquations => Current % N_CONSERVED )
+
+    call S % Solution_BSLL_ASC_CSLD % Initialize ( B, nEquations )
+    call S % Y_BSLL_ASC_CSLD % Initialize ( B, nEquations )
+    do iS = 1, S % nStages
+      call S % K_BSLL_ASC_CSLD ( iS ) % Initialize ( B, nEquations )
+    end do !-- iS
+
+    end associate !-- B, etc.
+    nullify ( Current )
+
+  end subroutine Allocate_RK_C_BSLL_ASC_CSLD
+
+
+  subroutine Deallocate_RK_C_BSLL_ASC_CSLD ( S )
+
+    class ( Step_RK_C_BSLL_ASC_CSLD_C_ASC_Template ), intent ( inout ) :: &
+      S
+
+    if ( allocated ( S % K_BSLL_ASC_CSLD ) ) &
+      deallocate ( S % K_BSLL_ASC_CSLD )
+    if ( allocated ( S % Y_BSLL_ASC_CSLD ) ) &
+      deallocate ( S % Y_BSLL_ASC_CSLD )
+    if ( allocated ( S % Solution_BSLL_ASC_CSLD ) ) &
+      deallocate ( S % Solution_BSLL_ASC_CSLD )
+      
+  end subroutine Deallocate_RK_C_BSLL_ASC_CSLD
+
+
+  subroutine AllocateStorage ( S )
+
+    class ( Step_RK_C_BSLL_ASC_CSLD_C_ASC_Template ), intent ( inout ) :: &
+      S
+
+    integer ( KDI ) :: &
+      iS  !-- iSection
+    character ( LDL ) :: &
+      CoordinateSystem
+    class ( CurrentTemplate ), pointer :: &
+      Current_S
+
+    call S % Allocate_RK_C ( )
+    call S % Allocate_RK_C_BSLL_ASC_CSLD ( )
+
+    select type ( Grid => S % Grid )
+    class is ( Chart_SL_Template )
+
+      call S % AllocateBoundaryFluence &
+             ( Grid, S % Current % N_CONSERVED, S % BoundaryFluence_CSL )
+
+      if ( allocated ( S % BoundaryFluence_CSL_S ) ) &
+        deallocate ( S % BoundaryFluence_CSL_S )
+      allocate ( S % BoundaryFluence_CSL_S ( S % nSections ) )
+
+      do iS = 1, S % nSections
+        Current_S => S % Current_BSLL_ASC_CSLD % CurrentSection ( iS )
+        call S % AllocateBoundaryFluence &
+               ( Grid, Current_S % N_CONSERVED, &
+                 S % BoundaryFluence_CSL_S ( iS ) % Array )
+      end do !-- iC
+
+      CoordinateSystem = Grid % CoordinateSystem
+
+    class default
+      call Show ( 'Grid type not recognized', CONSOLE % ERROR )
+      call Show ( 'Step_RK_C_ASC__Template', 'module', CONSOLE % ERROR )
+      call Show ( 'AllocateStorage', 'subroutine', CONSOLE % ERROR ) 
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- Grid
+
+    call S % AllocateMetricDerivatives &
+           ( CoordinateSystem, S % Current % nValues )
+
+    nullify ( Current_S )
+
+  end subroutine AllocateStorage
+
+
+  subroutine DeallocateStorage ( S )
+
+    class ( Step_RK_C_BSLL_ASC_CSLD_C_ASC_Template ), intent ( inout ) :: &
+      S
+
+    !-- BoundaryFluence not deallocated here, but instead upon reallocation,
+    !   so that its values remain available after Step % Compute
+
+    call S % DeallocateMetricDerivatives ( )
+    call S % Deallocate_RK_C_BSLL_ASC_CSLD ( )
+    call S % Deallocate_RK_C ( )
+
+  end subroutine DeallocateStorage
 
 
 end module Step_RK_C_BSLL_ASC_CSLD_C_ASC__Template
