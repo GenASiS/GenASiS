@@ -109,6 +109,8 @@ module Step_RK_C_ASC__Template
     procedure, public, pass :: &
       ComputeStage_C
     procedure, public, pass :: &
+      IncrementSolution_C
+    procedure, public, pass :: &
       Allocate_RK_C
     procedure, public, pass :: &
       Deallocate_RK_C
@@ -464,13 +466,7 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iS
 
-    associate &
-      ( SV => S % Solution % Value, &
-        KV => S % K ( iS ) % Value )
-
-    call MultiplyAdd ( SV, KV, B )
-
-    end associate !-- SV, etc.
+    call S % IncrementSolution_C ( B, iS )
 
   end subroutine IncrementSolution
 
@@ -741,9 +737,7 @@ contains
     associate &
       ( SV => S % Solution % Value, &
         YV => S % Y % Value )
-
     call Copy ( SV, YV )
-
     end associate !-- SV, etc.
 
   end subroutine InitializeIntermediate_C
@@ -761,9 +755,7 @@ contains
     associate &
       ( YV => S % Y % Value, &
         KV => S % K ( iK ) % Value )
-
     call MultiplyAdd ( YV, KV, A )
-
     end associate !-- YV, etc.
 
   end subroutine IncrementIntermediate_C
@@ -831,6 +823,24 @@ contains
     end if !-- ApplyDivergence
 
   end subroutine ComputeStage_C
+
+
+  subroutine IncrementSolution_C ( S, B, iS )
+
+    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
+      S
+    real ( KDR ), intent ( in ) :: &
+      B
+    integer ( KDI ), intent ( in ) :: &
+      iS
+
+    associate &
+      ( SV => S % Solution % Value, &
+        KV => S % K ( iS ) % Value )
+    call MultiplyAdd ( SV, KV, B )
+    end associate !-- SV, etc.
+
+  end subroutine IncrementSolution_C
 
 
   subroutine Allocate_RK_C ( S )

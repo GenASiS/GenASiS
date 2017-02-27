@@ -198,9 +198,7 @@ contains
       associate &
         ( SV => S % Solution_1D ( iC ) % Value, &
           YV => S % Y_1D ( iC ) % Value )
-
       call Copy ( SV, YV )
-
       end associate !-- SV, etc.
     end do !-- iC
 
@@ -223,9 +221,7 @@ contains
       associate &
         ( YV => S % Y_1D ( iC ) % Value, &
           KV => S % K_1D ( iC, iK ) % Value )
-
       call MultiplyAdd ( YV, KV, A )
-
       end associate !-- YV, etc.
     end do !-- iC
 
@@ -294,9 +290,7 @@ contains
       associate &
         ( SV => S % Solution_1D ( iC ) % Value, &
           KV => S % K_1D ( iC, iS ) % Value )
-
       call MultiplyAdd ( SV, KV, B )
-
       end associate !-- SV, etc.
     end do !-- iC
 

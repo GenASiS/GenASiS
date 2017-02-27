@@ -61,6 +61,10 @@ module Step_RK_C_BSLL_ASC_CSLD_C_ASC__Template
       InitializeIntermediate
     procedure, private, pass :: &
       IncrementIntermediate
+    procedure, private, pass :: &
+      IncrementSolution
+!    procedure, private, pass :: &
+!      ComputeStage
     procedure, private, pass ( S ) :: &
       LoadSolution_C_BSLL_ASC_CSLD
     generic, public :: &
@@ -77,6 +81,8 @@ module Step_RK_C_BSLL_ASC_CSLD_C_ASC__Template
       InitializeIntermediate_C_BSLL_ASC_CSLD
     procedure, public, pass :: &
       IncrementIntermediate_C_BSLL_ASC_CSLD
+    procedure, public, pass :: &
+      IncrementSolution_C_BSLL_ASC_CSLD
     procedure, public, pass :: &
       Allocate_RK_C_BSLL_ASC_CSLD
     procedure, public, pass :: &
@@ -232,6 +238,21 @@ contains
   end subroutine IncrementIntermediate
 
 
+  subroutine IncrementSolution ( S, B, iS )
+
+    class ( Step_RK_C_BSLL_ASC_CSLD_C_ASC_Template ), intent ( inout ) :: &
+      S
+    real ( KDR ), intent ( in ) :: &
+      B
+    integer ( KDI ), intent ( in ) :: &
+      iS
+
+    call S % IncrementSolution_C_BSLL_ASC_CSLD ( B, iS )
+    call S % IncrementSolution_C ( B, iS )
+
+  end subroutine IncrementSolution
+
+
   subroutine LoadSolution_C_BSLL_ASC_CSLD &
                ( Solution_BSLL_ASC_CSLD, S, Current_BSLL_ASC_CSLD )
 
@@ -254,12 +275,14 @@ contains
       ( CB => Current_BSLL_ASC_CSLD, &
         SB => Solution_BSLL_ASC_CSLD )
 
+    !-- Fibers need Solution when assembling solution from stages
     do iF = 1, S % nFibers
       Current  => CB % CurrentFiber ( iF )
       Solution => SB % FieldFiber ( iF )
       call S % LoadSolution ( Solution, Current )
     end do !-- iC
 
+    !-- Sections need Solution when assembling intermediate state 
     do iS = 1, S % nSections
       Current  => CB % CurrentSection ( iS )
       Solution => SB % FieldSection ( iS )
@@ -283,8 +306,7 @@ contains
       Solution_BSLL_ASC_CSLD
 
     integer ( KDI ) :: &
-      iF, &  !-- iFiber
-      iS     !-- iSection
+      iF  !-- iFiber
     class ( VariableGroupForm ), pointer :: &
       Solution
     class ( CurrentTemplate ), pointer :: &
@@ -295,6 +317,7 @@ contains
         SB => Solution_BSLL_ASC_CSLD )
     associate ( B => CB % Bundle_SLL_ASC_CSLD )
 
+    !-- New Solution fibers must be stored to Current fibers
     do iF = 1, S % nFibers
       associate ( iBC => B % iaBaseCell ( iF ) )
       Current  => CB % CurrentFiber ( iF )
@@ -303,11 +326,8 @@ contains
       end associate !-- iBC
     end do !-- iC
 
-    do iS = 1, S % nSections
-      Current  => CB % CurrentSection ( iS )
-      Solution => SB % FieldSection ( iS )
-      call S % StoreSolution ( Current, Solution )
-    end do !-- iC
+    !-- Current fibers must be loaded to Current sections
+    call CB % LoadSections ( )
 
     end associate !-- B
     end associate !-- CB
@@ -369,7 +389,6 @@ contains
         YB => S % Y_BSLL_ASC_CSLD )
 
     !-- Only need sections for this
-
     do iS = 1, S % nSections
       Solution => SB % FieldSection ( iS )
       Y => YB % FieldSection ( iS )
@@ -377,6 +396,8 @@ contains
     end do !-- iS
 
     end associate !-- SB, etc.
+
+    nullify ( Solution, Y )
 
   end subroutine InitializeIntermediate_C_BSLL_ASC_CSLD
 
@@ -401,7 +422,6 @@ contains
         KB => S % K_BSLL_ASC_CSLD ( iK ) )
 
     !-- Only need sections for this
-
     do iS = 1, S % nSections
       Y => YB % FieldSection ( iS )
       K => KB % FieldSection ( iS )
@@ -410,7 +430,42 @@ contains
 
     end associate !-- YB, etc.
 
+    nullify ( Y, K )
+
   end subroutine IncrementIntermediate_C_BSLL_ASC_CSLD
+
+
+  subroutine IncrementSolution_C_BSLL_ASC_CSLD ( S, B, iS )
+
+    class ( Step_RK_C_BSLL_ASC_CSLD_C_ASC_Template ), intent ( inout ) :: &
+      S
+    real ( KDR ), intent ( in ) :: &
+      B
+    integer ( KDI ), intent ( in ) :: &
+      iS
+
+    integer ( KDI ) :: &
+      iF  !-- iFibers
+    class ( VariableGroupForm ), pointer :: &
+      Solution, &
+      K
+
+    associate &
+      ( SB => S % Solution_BSLL_ASC_CSLD, &
+        KB => S % K_BSLL_ASC_CSLD ( iS ) )
+
+    !-- Only need fibers for this
+    do iF = 1, S % nFibers
+      Solution => SB % FieldFiber ( iF )
+      K => KB % FieldFiber ( iF )
+      call MultiplyAdd ( Solution % Value, K % Value, B )
+    end do !-- iF
+
+    end associate !-- SB, etc.
+
+    nullify ( Solution, K )
+
+  end subroutine IncrementSolution_C_BSLL_ASC_CSLD
 
 
   subroutine Allocate_RK_C_BSLL_ASC_CSLD ( S )
