@@ -28,12 +28,20 @@ Field_BSLL_ASC_CSLD__Template.o: \
   Bundle_SLL_ASC_CSLD__Form.o \
   Field_BSLL_ASC_CSLD__Template.f90
 
+Storage_BSLL_ASC_CSLD__Form.o: \
+  Basics.o \
+  Atlases.o \
+  Bundle_SLL_ASC_CSLD__Form.o \
+  Field_BSLL_ASC_CSLD__Template.o \
+  Storage_BSLL_ASC_CSLD__Form.f90
+
 Bundles.o: \
   BundleHeader_Form.o \
   FieldBundle_Template.o \
   FibersWritten_CSL__Form.o \
   Bundle_SLL_ASC_CSLD__Form.o \
   Field_BSLL_ASC_CSLD__Template.o \
+  Storage_BSLL_ASC_CSLD__Form.o \
   Bundles.f90
 
 Bundles.a: $(BUNDLES)
