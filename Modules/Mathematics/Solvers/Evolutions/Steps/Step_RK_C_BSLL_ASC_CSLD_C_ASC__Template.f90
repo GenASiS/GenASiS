@@ -57,6 +57,8 @@ module Step_RK_C_BSLL_ASC_CSLD_C_ASC__Template
       Compute => Compute_C_ASC_1D
     procedure, public, pass :: &
       FinalizeTemplate_C_BSLL_ASC_CSLD_C_ASC
+    procedure, private, pass :: &
+      InitializeIntermediate
     procedure, private, pass ( S ) :: &
       LoadSolution_C_BSLL_ASC_CSLD
     generic, public :: &
@@ -69,6 +71,8 @@ module Step_RK_C_BSLL_ASC_CSLD_C_ASC__Template
       StoreSolution_C_F
     generic, public :: &
       StoreSolution => StoreSolution_C_F
+    procedure, public, pass :: &
+      InitializeIntermediate_C_BSLL_ASC_CSLD
     procedure, public, pass :: &
       Allocate_RK_C_BSLL_ASC_CSLD
     procedure, public, pass :: &
@@ -198,6 +202,17 @@ contains
   end subroutine FinalizeTemplate_C_BSLL_ASC_CSLD_C_ASC
 
 
+  subroutine InitializeIntermediate ( S )
+
+    class ( Step_RK_C_BSLL_ASC_CSLD_C_ASC_Template ), intent ( inout ) :: &
+      S
+
+    call S % InitializeIntermediate_C_BSLL_ASC_CSLD ( )
+    call S % InitializeIntermediate_C ( )
+
+  end subroutine InitializeIntermediate
+
+
   subroutine LoadSolution_C_BSLL_ASC_CSLD &
                ( Solution_BSLL_ASC_CSLD, S, Current_BSLL_ASC_CSLD )
 
@@ -317,6 +332,33 @@ contains
     nullify ( G_S )
     
   end subroutine StoreSolution_C_F
+
+
+  subroutine InitializeIntermediate_C_BSLL_ASC_CSLD ( S )
+
+    class ( Step_RK_C_BSLL_ASC_CSLD_C_ASC_Template ), intent ( inout ) :: &
+      S
+
+    integer ( KDI ) :: &
+      iF, &  !-- iFiber
+      iS     !-- iSection
+    class ( VariableGroupForm ), pointer :: &
+      Solution, &
+      Y
+
+    associate &
+      ( SB => S % Solution_BSLL_ASC_CSLD, &
+        YB => S % Y_BSLL_ASC_CSLD )
+
+    do iF = 1, S % nFibers
+      Solution => SB % FieldFiber ( iF )
+      Y => YB % FieldFiber ( iF )
+      call Copy ( Solution % Value, Y % Value )
+    end do !-- iF
+
+    end associate !-- SB, etc.
+
+  end subroutine InitializeIntermediate_C_BSLL_ASC_CSLD
 
 
   subroutine Allocate_RK_C_BSLL_ASC_CSLD ( S )

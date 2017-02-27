@@ -103,6 +103,8 @@ module Step_RK_C_ASC__Template
 !     procedure, public, pass :: &
 !       ClearDivergence
     procedure, public, pass :: &
+      InitializeIntermediate_C
+    procedure, public, pass :: &
       ComputeStage_C
     procedure, public, pass :: &
       Allocate_RK_C
@@ -391,13 +393,7 @@ contains
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
 
-    associate &
-      ( SV => S % Solution % Value, &
-        YV => S % Y % Value )
-
-    call Copy ( SV, YV )
-
-    end associate !-- SV, etc.
+    call S % InitializeIntermediate_C ( )
 
   end subroutine InitializeIntermediate
 
@@ -739,6 +735,22 @@ contains
 !     deallocate ( S % UseLimiterParameter )
 
 !   end subroutine ClearDivergence
+
+
+  subroutine InitializeIntermediate_C ( S )
+
+    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
+      S
+
+    associate &
+      ( SV => S % Solution % Value, &
+        YV => S % Y % Value )
+
+    call Copy ( SV, YV )
+
+    end associate !-- SV, etc.
+
+  end subroutine InitializeIntermediate_C
 
 
   subroutine ComputeStage_C &
