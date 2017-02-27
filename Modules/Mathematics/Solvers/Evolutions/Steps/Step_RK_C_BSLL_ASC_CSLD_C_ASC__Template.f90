@@ -340,7 +340,6 @@ contains
       S
 
     integer ( KDI ) :: &
-      iF, &  !-- iFiber
       iS     !-- iSection
     class ( VariableGroupForm ), pointer :: &
       Solution, &
@@ -350,9 +349,9 @@ contains
       ( SB => S % Solution_BSLL_ASC_CSLD, &
         YB => S % Y_BSLL_ASC_CSLD )
 
-    do iF = 1, S % nFibers
-      Solution => SB % FieldFiber ( iF )
-      Y => YB % FieldFiber ( iF )
+    do iF = 1, S % nSections
+      Solution => SB % FieldSection ( iF )
+      Y => YB % FieldSection ( iF )
       call Copy ( Solution % Value, Y % Value )
     end do !-- iF
 
