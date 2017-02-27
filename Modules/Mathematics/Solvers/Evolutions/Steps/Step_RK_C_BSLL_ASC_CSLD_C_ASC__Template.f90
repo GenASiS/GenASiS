@@ -57,6 +57,18 @@ module Step_RK_C_BSLL_ASC_CSLD_C_ASC__Template
       Compute => Compute_C_ASC_1D
     procedure, public, pass :: &
       FinalizeTemplate_C_BSLL_ASC_CSLD_C_ASC
+    procedure, private, pass ( S ) :: &
+      LoadSolution_C_BSLL_ASC_CSLD
+    generic, public :: &
+      LoadSolution => LoadSolution_C_BSLL_ASC_CSLD
+    procedure, private, pass ( S ) :: &
+      StoreSolution_C_BSLL_ASC_CSLD
+    generic, public :: &
+      StoreSolution => StoreSolution_C_BSLL_ASC_CSLD
+    procedure, private, pass ( S ) :: &
+      StoreSolution_C_F
+    generic, public :: &
+      StoreSolution => StoreSolution_C_F
     procedure, public, pass :: &
       Allocate_RK_C_BSLL_ASC_CSLD
     procedure, public, pass :: &
@@ -149,13 +161,17 @@ contains
 
     S % Current_BSLL_ASC_CSLD => Current_BSLL_ASC_CSLD
 
-    ! call AllocateStorage ( S )
-    ! call S % LoadSolution ( S % Solution_1D, S % Current_1D )
+    call AllocateStorage ( S )
+    call S % LoadSolution ( S % Solution, S % Current )
+    call S % LoadSolution ( S % Solution_BSLL_ASC_CSLD, &
+                            S % Current_BSLL_ASC_CSLD )
 
     ! call S % ComputeTemplate ( Time, TimeStep )
 
-    ! call S % StoreSolution ( S % Current_1D, S % Solution_1D )
-    ! call DeallocateStorage ( S )
+    call S % StoreSolution ( S % Current, S % Solution )
+    call S % StoreSolution ( S % Current_BSLL_ASC_CSLD, &
+                             S % Solution_BSLL_ASC_CSLD )
+    call DeallocateStorage ( S )
 
     S % Current_BSLL_ASC_CSLD => null ( )    
     S % Grid_S => null ( )
@@ -180,6 +196,127 @@ contains
     call S % FinalizeTemplate_C_ASC ( )
 
   end subroutine FinalizeTemplate_C_BSLL_ASC_CSLD_C_ASC
+
+
+  subroutine LoadSolution_C_BSLL_ASC_CSLD &
+               ( Solution_BSLL_ASC_CSLD, S, Current_BSLL_ASC_CSLD )
+
+    type ( Storage_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
+      Solution_BSLL_ASC_CSLD
+    class ( Step_RK_C_BSLL_ASC_CSLD_C_ASC_Template ), intent ( in ) :: &
+      S
+    class ( Current_BSLL_ASC_CSLD_Template ), intent ( in ) :: &
+      Current_BSLL_ASC_CSLD
+
+    integer ( KDI ) :: &
+      iF, &  !-- iFiber
+      iS     !-- iSection
+    class ( VariableGroupForm ), pointer :: &
+      Solution
+    class ( CurrentTemplate ), pointer :: &
+      Current
+
+    associate &
+      ( CB => Current_BSLL_ASC_CSLD, &
+        SB => Solution_BSLL_ASC_CSLD )
+
+    do iF = 1, S % nFibers
+      Current  => CB % CurrentFiber ( iF )
+      Solution => SB % FieldFiber ( iF )
+      call S % LoadSolution ( Solution, Current )
+    end do !-- iC
+
+    do iS = 1, S % nSections
+      Current  => CB % CurrentSection ( iS )
+      Solution => SB % FieldSection ( iS )
+      call S % LoadSolution ( Solution, Current )
+    end do !-- iC
+
+    end associate !-- CB
+    nullify ( Current )
+
+  end subroutine LoadSolution_C_BSLL_ASC_CSLD
+
+
+  subroutine StoreSolution_C_BSLL_ASC_CSLD &
+               ( Current_BSLL_ASC_CSLD, S, Solution_BSLL_ASC_CSLD )
+
+    class ( Current_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
+      Current_BSLL_ASC_CSLD
+    class ( Step_RK_C_BSLL_ASC_CSLD_C_ASC_Template ), intent ( in ) :: &
+      S
+    type ( Storage_BSLL_ASC_CSLD_Form ), intent ( in ) :: &
+      Solution_BSLL_ASC_CSLD
+
+    integer ( KDI ) :: &
+      iF, &  !-- iFiber
+      iS     !-- iSection
+    class ( VariableGroupForm ), pointer :: &
+      Solution
+    class ( CurrentTemplate ), pointer :: &
+      Current
+
+    associate &
+      ( CB => Current_BSLL_ASC_CSLD, &
+        SB => Solution_BSLL_ASC_CSLD )
+    associate ( B => CB % Bundle_SLL_ASC_CSLD )
+
+    do iF = 1, S % nFibers
+      associate ( iBC => B % iaBaseCell ( iF ) )
+      Current  => CB % CurrentFiber ( iF )
+      Solution => SB % FieldFiber ( iF )
+      call S % StoreSolution ( Current, Solution, S % Grid_S, iBC )
+      end associate !-- iBC
+    end do !-- iC
+
+    do iS = 1, S % nSections
+      Current  => CB % CurrentSection ( iS )
+      Solution => SB % FieldSection ( iS )
+      call S % StoreSolution ( Current, Solution )
+    end do !-- iC
+
+    end associate !-- B
+    end associate !-- CB
+    nullify ( Current )
+
+  end subroutine StoreSolution_C_BSLL_ASC_CSLD
+
+
+  subroutine StoreSolution_C_F ( Current, S, Solution, Grid_S, iCell_S )
+
+    class ( CurrentTemplate ), intent ( inout ) :: &
+      Current
+    class ( Step_RK_C_BSLL_ASC_CSLD_C_ASC_Template ), intent ( in ) :: &
+      S
+    type ( VariableGroupForm ), intent ( in ) :: &
+      Solution
+    class ( Chart_SLD_Form ), intent ( in ) :: &
+      Grid_S
+    integer ( KDI ), intent ( in ) :: &
+      iCell_S
+
+    integer ( KDI ) :: &
+      iF  !-- iField
+    class ( GeometryFlatForm ), pointer :: &
+      G_S
+
+    associate ( iaC => Current % iaConserved )
+    do iF = 1, Current % N_CONSERVED
+      associate &
+        ( SV => Solution % Value ( :, iF ), &
+          CV => Current % Value ( :, iaC ( iF ) ) )
+      call Copy ( SV, CV )
+      end associate !-- YV, etc.
+    end do !-- iF
+    end associate !-- iaC
+
+    G_S => Grid_S % Geometry ( )
+
+    call Current % ComputeFromConserved ( iCell_S, G_S )
+
+    nullify ( G_S )
+    
+  end subroutine StoreSolution_C_F
 
 
   subroutine Allocate_RK_C_BSLL_ASC_CSLD ( S )
