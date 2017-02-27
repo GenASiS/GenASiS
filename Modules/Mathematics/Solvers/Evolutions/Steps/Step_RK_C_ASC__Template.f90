@@ -105,6 +105,8 @@ module Step_RK_C_ASC__Template
     procedure, public, pass :: &
       InitializeIntermediate_C
     procedure, public, pass :: &
+      IncrementIntermediate_C
+    procedure, public, pass :: &
       ComputeStage_C
     procedure, public, pass :: &
       Allocate_RK_C
@@ -407,13 +409,7 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iK
 
-    associate &
-      ( YV => S % Y % Value, &
-        KV => S % K ( iK ) % Value )
-
-    call MultiplyAdd ( YV, KV, A )
-
-    end associate !-- YV, etc.
+    call S % IncrementIntermediate_C  ( A, iK )
 
   end subroutine IncrementIntermediate
 
@@ -751,6 +747,26 @@ contains
     end associate !-- SV, etc.
 
   end subroutine InitializeIntermediate_C
+
+
+  subroutine IncrementIntermediate_C ( S, A, iK )
+
+    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
+      S
+    real ( KDR ), intent ( in ) :: &
+      A
+    integer ( KDI ), intent ( in ) :: &
+      iK
+
+    associate &
+      ( YV => S % Y % Value, &
+        KV => S % K ( iK ) % Value )
+
+    call MultiplyAdd ( YV, KV, A )
+
+    end associate !-- YV, etc.
+
+  end subroutine IncrementIntermediate_C
 
 
   subroutine ComputeStage_C &

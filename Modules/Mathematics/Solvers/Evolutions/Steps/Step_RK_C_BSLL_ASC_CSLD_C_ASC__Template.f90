@@ -59,6 +59,8 @@ module Step_RK_C_BSLL_ASC_CSLD_C_ASC__Template
       FinalizeTemplate_C_BSLL_ASC_CSLD_C_ASC
     procedure, private, pass :: &
       InitializeIntermediate
+    procedure, private, pass :: &
+      IncrementIntermediate
     procedure, private, pass ( S ) :: &
       LoadSolution_C_BSLL_ASC_CSLD
     generic, public :: &
@@ -73,6 +75,8 @@ module Step_RK_C_BSLL_ASC_CSLD_C_ASC__Template
       StoreSolution => StoreSolution_C_F
     procedure, public, pass :: &
       InitializeIntermediate_C_BSLL_ASC_CSLD
+    procedure, public, pass :: &
+      IncrementIntermediate_C_BSLL_ASC_CSLD
     procedure, public, pass :: &
       Allocate_RK_C_BSLL_ASC_CSLD
     procedure, public, pass :: &
@@ -213,6 +217,21 @@ contains
   end subroutine InitializeIntermediate
 
 
+  subroutine IncrementIntermediate ( S, A, iK )
+
+    class ( Step_RK_C_BSLL_ASC_CSLD_C_ASC_Template ), intent ( inout ) :: &
+      S
+    real ( KDR ), intent ( in ) :: &
+      A
+    integer ( KDI ), intent ( in ) :: &
+      iK
+
+    call S % IncrementIntermediate_C_BSLL_ASC_CSLD ( A, iK )
+    call S % IncrementIntermediate_C ( A, iK )
+
+  end subroutine IncrementIntermediate
+
+
   subroutine LoadSolution_C_BSLL_ASC_CSLD &
                ( Solution_BSLL_ASC_CSLD, S, Current_BSLL_ASC_CSLD )
 
@@ -349,15 +368,49 @@ contains
       ( SB => S % Solution_BSLL_ASC_CSLD, &
         YB => S % Y_BSLL_ASC_CSLD )
 
-    do iF = 1, S % nSections
-      Solution => SB % FieldSection ( iF )
-      Y => YB % FieldSection ( iF )
+    !-- Only need sections for this
+
+    do iS = 1, S % nSections
+      Solution => SB % FieldSection ( iS )
+      Y => YB % FieldSection ( iS )
       call Copy ( Solution % Value, Y % Value )
-    end do !-- iF
+    end do !-- iS
 
     end associate !-- SB, etc.
 
   end subroutine InitializeIntermediate_C_BSLL_ASC_CSLD
+
+
+  subroutine IncrementIntermediate_C_BSLL_ASC_CSLD ( S, A, iK )
+
+    class ( Step_RK_C_BSLL_ASC_CSLD_C_ASC_Template ), intent ( inout ) :: &
+      S
+    real ( KDR ), intent ( in ) :: &
+      A
+    integer ( KDI ), intent ( in ) :: &
+      iK
+
+    integer ( KDI ) :: &
+      iS     !-- iSection
+    class ( VariableGroupForm ), pointer :: &
+      Y, &
+      K
+
+    associate &
+      ( YB => S % Y_BSLL_ASC_CSLD, &
+        KB => S % K_BSLL_ASC_CSLD ( iK ) )
+
+    !-- Only need sections for this
+
+    do iS = 1, S % nSections
+      Y => YB % FieldSection ( iS )
+      K => KB % FieldSection ( iS )
+      call MultiplyAdd ( Y % Value, K % Value, A )
+    end do !-- iS
+
+    end associate !-- YB, etc.
+
+  end subroutine IncrementIntermediate_C_BSLL_ASC_CSLD
 
 
   subroutine Allocate_RK_C_BSLL_ASC_CSLD ( S )
