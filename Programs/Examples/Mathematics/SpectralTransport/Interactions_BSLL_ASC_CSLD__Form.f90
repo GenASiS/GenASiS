@@ -22,7 +22,7 @@ module Interactions_BSLL_ASC_CSLD__Form
       InteractionsFiber_F
     final :: &
       Finalize
-    procedure, public, pass :: &
+    procedure, private, pass :: &
       SetField
   end type Interactions_BSLL_ASC_CSLD_Form
 

@@ -46,7 +46,7 @@ module Fluid_ASC__Form
       Fluid_P_MHN => Fluid_P_MHN_CSL
     final :: &
       Finalize
-    procedure, public, pass :: &
+    procedure, private, pass :: &
       SetField
   end type Fluid_ASC_Form
 

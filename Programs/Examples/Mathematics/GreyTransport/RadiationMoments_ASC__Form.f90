@@ -38,7 +38,7 @@ module RadiationMoments_ASC__Form
       SetInteractions
     final :: &
       Finalize
-    procedure, public, pass :: &
+    procedure, private, pass :: &
       SetField
   end type RadiationMoments_ASC_Form
 

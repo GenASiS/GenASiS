@@ -36,7 +36,7 @@ module RadiationMoments_BSLL_ASC_CSLD__Form
       SetInteractions
     final :: &
       Finalize
-    procedure, public, pass :: &
+    procedure, private, pass :: &
       SetField
   end type RadiationMoments_BSLL_ASC_CSLD_Form
 
