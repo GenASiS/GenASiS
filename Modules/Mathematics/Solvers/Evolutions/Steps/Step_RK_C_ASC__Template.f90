@@ -438,12 +438,16 @@ contains
         Y    => S % Y, &
         ULP  => S % UseLimiterParameter )
 
+    if ( iStage > 1 ) &
+      call S % StoreSolution ( C, Y )
+
+    call Clear ( K % Value )
+
     S % ApplyDivergence_C => S % ApplyDivergence % Pointer
     S % ApplySources_C    => S % ApplySources    % Pointer
     S % ApplyRelaxation_C => S % ApplyRelaxation % Pointer
 
-    call S % ComputeStage_C &
-           ( C, Grid, K, BF, Y, ULP, TimeStep, iStage )
+    call S % ComputeStage_C ( C, Grid, K, BF, ULP, TimeStep, iStage )
 
     S % ApplyRelaxation_C => null ( )
     S % ApplySources_C    => null ( )
@@ -762,7 +766,7 @@ contains
 
 
   subroutine ComputeStage_C &
-               ( S, C, Grid, K, BF, Y, UseLimiterParameter, TimeStep, iStage )
+               ( S, C, Grid, K, BF, UseLimiterParameter, TimeStep, iStage )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
@@ -774,8 +778,6 @@ contains
       K
     type ( Real_3D_Form ), dimension ( :, : ), intent ( inout ) :: &
       BF
-    type ( VariableGroupForm ), intent ( in ) :: &
-      Y
     logical ( KDL ), intent ( in ) :: &
       UseLimiterParameter
     real ( KDR ), intent ( in ) :: &
@@ -785,11 +787,6 @@ contains
 
     type ( VariableGroupForm ), allocatable :: &
       DC  !-- DampingCoefficient
-
-    if ( iStage > 1 ) &
-      call S % StoreSolution ( C, Y )
-
-    call Clear ( K % Value )
 
     !-- Divergence
     if ( associated ( S % ApplyDivergence_C ) ) &

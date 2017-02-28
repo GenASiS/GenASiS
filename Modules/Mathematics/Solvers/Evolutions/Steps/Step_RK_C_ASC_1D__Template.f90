@@ -254,12 +254,16 @@ contains
           Y    => S % Y_1D ( iC ), &
           ULP  => S % UseLimiterParameter_1D ( iC ) )
 
+      if ( iStage > 1 ) &
+        call S % StoreSolution ( C, Y )
+
+      call Clear ( K % Value )
+
       S % ApplyDivergence_C => S % ApplyDivergence_1D ( iC ) % Pointer
       S % ApplySources_C    => S % ApplySources_1D    ( iC ) % Pointer
       S % ApplyRelaxation_C => S % ApplyRelaxation_1D ( iC ) % Pointer
 
-      call S % ComputeStage_C &
-             ( C, Grid, K, BF, Y, ULP, TimeStep, iStage )
+      call S % ComputeStage_C ( C, Grid, K, BF, ULP, TimeStep, iStage )
 
       S % ApplyRelaxation_C => null ( )
       S % ApplySources_C    => null ( )

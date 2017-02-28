@@ -255,56 +255,9 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iStage
 
-    ! integer ( KDI ) :: &
-    !   iC  !-- iCurrent
-
     associate &
       ( Timer => PROGRAM_HEADER % Timer ( S % iTimerComputeIncrement ) )
     call Timer % Start ( )
-
-    !-- Compute C_BSLL_ASC_CSLD
-
-      !-- Store Y to C sections
-      !-- Store Y to C fibers
-
-      !-- Clear K sections
-
-      !-- ApplyDivergence to sections
-      !-- ApplySources to sections
-      !-- ApplyRelaxation to sections (currently expected null)
-      
-      !-- Store K to fibers
-
-      !-- ApplyDivergence to fibers (currently expected null)
-      !-- ApplySources to fibers (currently expected null )
-      !-- ApplyRelaxation to fibers
-
-      !-- Load K to sections
-
-
-
-    ! do iC = 1, S % nCurrents
-    !   associate &
-    !     ( C    => S % Current_1D ( iC ) % Pointer, &
-    !       Grid => S % Grid, &
-    !       K    => S % K_1D ( iC, iStage ), &
-    !       BF   => S % BoundaryFluence_CSL_1D ( iC ) % Array, &
-    !       Y    => S % Y_1D ( iC ), &
-    !       ULP  => S % UseLimiterParameter_1D ( iC ) )
-
-    !   S % ApplyDivergence_C => S % ApplyDivergence_1D ( iC ) % Pointer
-    !   S % ApplySources_C    => S % ApplySources_1D    ( iC ) % Pointer
-    !   S % ApplyRelaxation_C => S % ApplyRelaxation_1D ( iC ) % Pointer
-
-    !   call S % ComputeStage_C &
-    !          ( C, Grid, K, BF, Y, ULP, TimeStep, iStage )
-
-    !   S % ApplyRelaxation_C => null ( )
-    !   S % ApplySources_C    => null ( )
-    !   S % ApplyDivergence_C => null ( )
-
-    !   end associate !-- C, etc.
-    ! end do !-- iC
 
     call Timer % Stop ( )
     end associate !-- Timer
@@ -422,6 +375,107 @@ contains
     nullify ( KS )
 
   end subroutine IncrementIntermediate_C_BSLL_ASC_CSLD
+
+
+  subroutine ComputeStage_BSLL_ASC_CSLD &
+               ( S, C_BSLL_ASC_CSLD, K_BSLL_ASC_CSLD, BF_CSL_S, &
+                 Y_BSLL_ASC_CSLD_S, TimeStep, iStage )
+
+    class ( Step_RK_C_BSLL_ASC_CSLD_C_ASC_Template ), intent ( inout ) :: &
+      S
+    class ( Current_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
+      C_BSLL_ASC_CSLD
+    type ( Storage_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
+      K_BSLL_ASC_CSLD
+    type ( Real_3D_2D_Form ), dimension ( : ), intent ( inout ) :: &
+      BF_CSL_S
+    type ( VariableGroupForm ), dimension ( : ), intent ( in ) :: &
+      Y_BSLL_ASC_CSLD_S
+    real ( KDR ), intent ( in ) :: &
+      TimeStep
+    integer ( KDI ), intent ( in ) :: &
+      iStage
+    
+    integer ( KDI ) :: &
+      iS  !-- iSection
+    type ( VariableGroupForm ), pointer :: &
+      K
+    class ( CurrentTemplate ), pointer :: &
+      C
+
+    associate &
+      ( CB => C_BSLL_ASC_CSLD, &
+        KB => K_BSLL_ASC_CSLD )
+
+    if ( iStage > 1 ) &
+      call S % StoreSolution ( C_BSLL_ASC_CSLD, Y_BSLL_ASC_CSLD_S )
+
+    !-- Sections
+
+    do iS = 1, S % nSections
+
+      K => KB % FieldSection ( iS )
+      call Clear ( K % Value )
+
+      C => CB % CurrentSection ( iS )
+
+      associate &
+        ( Grid => S % Grid, &
+          BF   => BF_CSL_S ( iS ) % Array, &
+          ULP  => S % UseLimiterParameter_S )
+
+      S % ApplyDivergence_C => S % ApplyDivergence_S % Pointer
+      S % ApplySources_C    => S % ApplySources_S    % Pointer
+      S % ApplyRelaxation_C => S % ApplyRelaxation_S % Pointer
+
+      call S % ComputeStage_C &
+             ( C, Grid, K, BF, ULP, TimeStep, iStage )
+
+      S % ApplyRelaxation_C => null ( )
+      S % ApplySources_C    => null ( )
+      S % ApplyDivergence_C => null ( )
+
+      end associate !-- Grid, etc.
+
+    end do !-- iS
+
+      !-- Store K to fibers
+
+      !-- ApplyDivergence to fibers (currently expected null)
+      !-- ApplySources to fibers (currently expected null )
+      !-- ApplyRelaxation to fibers
+
+      !-- Load K to sections
+
+
+
+    ! do iC = 1, S % nCurrents
+    !   associate &
+    !     ( C    => S % Current_1D ( iC ) % Pointer, &
+    !       Grid => S % Grid, &
+    !       K    => S % K_1D ( iC, iStage ), &
+    !       BF   => S % BoundaryFluence_CSL_1D ( iC ) % Array, &
+    !       Y    => S % Y_1D ( iC ), &
+    !       ULP  => S % UseLimiterParameter_1D ( iC ) )
+
+    !   S % ApplyDivergence_C => S % ApplyDivergence_1D ( iC ) % Pointer
+    !   S % ApplySources_C    => S % ApplySources_1D    ( iC ) % Pointer
+    !   S % ApplyRelaxation_C => S % ApplyRelaxation_1D ( iC ) % Pointer
+
+    !   call S % ComputeStage_C &
+    !          ( C, Grid, K, BF, Y, ULP, TimeStep, iStage )
+
+    !   S % ApplyRelaxation_C => null ( )
+    !   S % ApplySources_C    => null ( )
+    !   S % ApplyDivergence_C => null ( )
+
+    !   end associate !-- C, etc.
+    ! end do !-- iC
+
+    end associate !-- CB, etc.
+    nullify ( K, C )
+
+  end subroutine ComputeStage_BSLL_ASC_CSLD
 
 
   subroutine IncrementSolution_C_BSLL_ASC_CSLD ( S, B, iStage )
