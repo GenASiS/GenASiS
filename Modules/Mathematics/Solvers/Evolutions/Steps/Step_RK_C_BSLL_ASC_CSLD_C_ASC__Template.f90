@@ -27,16 +27,14 @@ module Step_RK_C_BSLL_ASC_CSLD_C_ASC__Template
       type ( Real_3D_2D_Form ), dimension ( : ), allocatable :: &
         BoundaryFluence_CSL_S
       logical ( KDL ) :: &
-        UseLimiterParameterSection
-      type ( Storage_BSLL_ASC_CSLD_Form ), allocatable :: &
-        Solution_BSLL_ASC_CSLD, &
-        Y_BSLL_ASC_CSLD
+        UseLimiterParameter_S
+      type ( VariableGroupForm ), dimension ( : ), allocatable :: &
+        Solution_BSLL_ASC_CSLD_S, &
+        Y_BSLL_ASC_CSLD_S
       type ( Storage_BSLL_ASC_CSLD_Form ), dimension ( : ), allocatable :: &
         K_BSLL_ASC_CSLD
       class ( Chart_SLL_Form ), pointer :: &
         Grid_F => null ( )
-      class ( Chart_SLD_Form ), pointer :: &
-        Grid_S => null ( )
       class ( Current_BSLL_ASC_CSLD_Template ), pointer :: &
         Current_BSLL_ASC_CSLD => null ( )
       type ( ApplyDivergence_C_Pointer ) :: &
@@ -63,8 +61,8 @@ module Step_RK_C_BSLL_ASC_CSLD_C_ASC__Template
       IncrementIntermediate
     procedure, private, pass :: &
       IncrementSolution
-!    procedure, private, pass :: &
-!      ComputeStage
+    procedure, private, pass :: &
+      ComputeStage
     procedure, private, pass ( S ) :: &
       LoadSolution_C_BSLL_ASC_CSLD
     generic, public :: &
@@ -73,10 +71,6 @@ module Step_RK_C_BSLL_ASC_CSLD_C_ASC__Template
       StoreSolution_C_BSLL_ASC_CSLD
     generic, public :: &
       StoreSolution => StoreSolution_C_BSLL_ASC_CSLD
-    procedure, private, pass ( S ) :: &
-      StoreSolution_C_F
-    generic, public :: &
-      StoreSolution => StoreSolution_C_F
     procedure, public, pass :: &
       InitializeIntermediate_C_BSLL_ASC_CSLD
     procedure, public, pass :: &
@@ -122,7 +116,7 @@ contains
 
   subroutine Compute_C_BSLL_ASC_CSLD_C_ASC &
                ( S, Current_BSLL_ASC_CSLD, Current_ASC, Time, TimeStep, &
-                 UseLimiterParameterSectionOption, UseLimiterParameterOption )
+                 UseLimiterParameter_S_Option, UseLimiterParameterOption )
 
     class ( Step_RK_C_BSLL_ASC_CSLD_C_ASC_Template ), intent ( inout ) :: &
       S
@@ -135,7 +129,7 @@ contains
       Time, &
       TimeStep
     logical ( KDL ), intent ( in ), optional :: &
-      UseLimiterParameterSectionOption
+      UseLimiterParameter_S_Option
     logical ( KDL ), intent ( in ), optional :: &
       UseLimiterParameterOption
 
@@ -151,9 +145,9 @@ contains
     if ( present ( UseLimiterParameterOption ) ) &
       S % UseLimiterParameter = UseLimiterParameterOption
 
-    S % UseLimiterParameterSection = .true.
-    if ( present ( UseLimiterParameterSectionOption ) ) &
-      S % UseLimiterParameterSection = UseLimiterParameterSectionOption
+    S % UseLimiterParameter_S = .true.
+    if ( present ( UseLimiterParameter_S_Option ) ) &
+      S % UseLimiterParameter_S = UseLimiterParameter_S_Option
 
     select type ( Chart => Current_ASC % Atlas_SC % Chart )
     class is ( Chart_SL_Template )
@@ -170,25 +164,23 @@ contains
     S % nFibers   =  B % nFibers
     S % nSections =  B % nSections
     S % Grid_F    => B % Fiber_CSLL
-    S % Grid_S    => B % Base_CSLD
     end associate !-- B
 
     S % Current_BSLL_ASC_CSLD => Current_BSLL_ASC_CSLD
 
     call AllocateStorage ( S )
     call S % LoadSolution ( S % Solution, S % Current )
-    call S % LoadSolution ( S % Solution_BSLL_ASC_CSLD, &
+    call S % LoadSolution ( S % Solution_BSLL_ASC_CSLD_S, &
                             S % Current_BSLL_ASC_CSLD )
 
-    ! call S % ComputeTemplate ( Time, TimeStep )
+    call S % ComputeTemplate ( Time, TimeStep )
 
     call S % StoreSolution ( S % Current, S % Solution )
     call S % StoreSolution ( S % Current_BSLL_ASC_CSLD, &
-                             S % Solution_BSLL_ASC_CSLD )
+                             S % Solution_BSLL_ASC_CSLD_S )
     call DeallocateStorage ( S )
 
     S % Current_BSLL_ASC_CSLD => null ( )    
-    S % Grid_S => null ( )
     S % Grid_F => null ( )
     S % nSections = 0
     S % nFibers =  0
@@ -253,41 +245,96 @@ contains
   end subroutine IncrementSolution
 
 
-  subroutine LoadSolution_C_BSLL_ASC_CSLD &
-               ( Solution_BSLL_ASC_CSLD, S, Current_BSLL_ASC_CSLD )
+  subroutine ComputeStage ( S, Time, TimeStep, iStage )
 
-    type ( Storage_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
-      Solution_BSLL_ASC_CSLD
+    class ( Step_RK_C_BSLL_ASC_CSLD_C_ASC_Template ), intent ( inout ) :: &
+      S
+    real ( KDR ), intent ( in ) :: &
+      Time, &
+      TimeStep
+    integer ( KDI ), intent ( in ) :: &
+      iStage
+
+    ! integer ( KDI ) :: &
+    !   iC  !-- iCurrent
+
+    associate &
+      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerComputeIncrement ) )
+    call Timer % Start ( )
+
+    !-- Compute C_BSLL_ASC_CSLD
+
+      !-- Store Y to C sections
+      !-- Store Y to C fibers
+
+      !-- Clear K sections
+
+      !-- ApplyDivergence to sections
+      !-- ApplySources to sections
+      !-- ApplyRelaxation to sections (currently expected null)
+      
+      !-- Store K to fibers
+
+      !-- ApplyDivergence to fibers (currently expected null)
+      !-- ApplySources to fibers (currently expected null )
+      !-- ApplyRelaxation to fibers
+
+      !-- Load K to sections
+
+
+
+    ! do iC = 1, S % nCurrents
+    !   associate &
+    !     ( C    => S % Current_1D ( iC ) % Pointer, &
+    !       Grid => S % Grid, &
+    !       K    => S % K_1D ( iC, iStage ), &
+    !       BF   => S % BoundaryFluence_CSL_1D ( iC ) % Array, &
+    !       Y    => S % Y_1D ( iC ), &
+    !       ULP  => S % UseLimiterParameter_1D ( iC ) )
+
+    !   S % ApplyDivergence_C => S % ApplyDivergence_1D ( iC ) % Pointer
+    !   S % ApplySources_C    => S % ApplySources_1D    ( iC ) % Pointer
+    !   S % ApplyRelaxation_C => S % ApplyRelaxation_1D ( iC ) % Pointer
+
+    !   call S % ComputeStage_C &
+    !          ( C, Grid, K, BF, Y, ULP, TimeStep, iStage )
+
+    !   S % ApplyRelaxation_C => null ( )
+    !   S % ApplySources_C    => null ( )
+    !   S % ApplyDivergence_C => null ( )
+
+    !   end associate !-- C, etc.
+    ! end do !-- iC
+
+    call Timer % Stop ( )
+    end associate !-- Timer
+
+  end subroutine ComputeStage
+
+
+  subroutine LoadSolution_C_BSLL_ASC_CSLD &
+               ( Solution_BSLL_ASC_CSLD_S, S, Current_BSLL_ASC_CSLD )
+
+    type ( VariableGroupForm ), dimension ( : ), intent ( inout ) :: &
+      Solution_BSLL_ASC_CSLD_S
     class ( Step_RK_C_BSLL_ASC_CSLD_C_ASC_Template ), intent ( in ) :: &
       S
     class ( Current_BSLL_ASC_CSLD_Template ), intent ( in ) :: &
       Current_BSLL_ASC_CSLD
 
     integer ( KDI ) :: &
-      iF, &  !-- iFiber
       iS     !-- iSection
-    class ( VariableGroupForm ), pointer :: &
-      Solution
     class ( CurrentTemplate ), pointer :: &
       Current
 
-    associate &
-      ( CB => Current_BSLL_ASC_CSLD, &
-        SB => Solution_BSLL_ASC_CSLD )
+    associate ( CB => Current_BSLL_ASC_CSLD )
 
-    !-- Fibers need Solution when assembling solution from stages
-    do iF = 1, S % nFibers
-      Current  => CB % CurrentFiber ( iF )
-      Solution => SB % FieldFiber ( iF )
-      call S % LoadSolution ( Solution, Current )
-    end do !-- iC
-
-    !-- Sections need Solution when assembling intermediate state 
     do iS = 1, S % nSections
-      Current  => CB % CurrentSection ( iS )
-      Solution => SB % FieldSection ( iS )
+      associate ( Solution => Solution_BSLL_ASC_CSLD_S ( iS ) )
+      Current => CB % CurrentSection ( iS )
       call S % LoadSolution ( Solution, Current )
-    end do !-- iC
+      end associate !-- Solution
+    end do !-- iS
 
     end associate !-- CB
     nullify ( Current )
@@ -296,81 +343,37 @@ contains
 
 
   subroutine StoreSolution_C_BSLL_ASC_CSLD &
-               ( Current_BSLL_ASC_CSLD, S, Solution_BSLL_ASC_CSLD )
+               ( Current_BSLL_ASC_CSLD, S, Solution_BSLL_ASC_CSLD_S )
 
     class ( Current_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
       Current_BSLL_ASC_CSLD
     class ( Step_RK_C_BSLL_ASC_CSLD_C_ASC_Template ), intent ( in ) :: &
       S
-    type ( Storage_BSLL_ASC_CSLD_Form ), intent ( in ) :: &
-      Solution_BSLL_ASC_CSLD
+    type ( VariableGroupForm ), dimension ( : ), intent ( in ) :: &
+      Solution_BSLL_ASC_CSLD_S
 
     integer ( KDI ) :: &
-      iF  !-- iFiber
+      iS     !-- iSection
     class ( VariableGroupForm ), pointer :: &
       Solution
     class ( CurrentTemplate ), pointer :: &
       Current
 
-    associate &
-      ( CB => Current_BSLL_ASC_CSLD, &
-        SB => Solution_BSLL_ASC_CSLD )
-    associate ( B => CB % Bundle_SLL_ASC_CSLD )
+    associate ( CB => Current_BSLL_ASC_CSLD )
 
-    !-- New Solution fibers must be stored to Current fibers
-    do iF = 1, S % nFibers
-      associate ( iBC => B % iaBaseCell ( iF ) )
-      Current  => CB % CurrentFiber ( iF )
-      Solution => SB % FieldFiber ( iF )
-      call S % StoreSolution ( Current, Solution, S % Grid_S, iBC )
-      end associate !-- iBC
-    end do !-- iC
+    do iS = 1, S % nSections
+      associate ( Solution => Solution_BSLL_ASC_CSLD_S ( iS ) )
+      Current  => CB % CurrentSection ( iS )
+      call S % StoreSolution ( Current, Solution )
+      end associate !-- Solution
+    end do !-- iS
 
-    !-- Current fibers must be loaded to Current sections
-    call CB % LoadSections ( )
+    call CB % StoreSections ( )
 
-    end associate !-- B
     end associate !-- CB
     nullify ( Current )
 
   end subroutine StoreSolution_C_BSLL_ASC_CSLD
-
-
-  subroutine StoreSolution_C_F ( Current, S, Solution, Grid_S, iCell_S )
-
-    class ( CurrentTemplate ), intent ( inout ) :: &
-      Current
-    class ( Step_RK_C_BSLL_ASC_CSLD_C_ASC_Template ), intent ( in ) :: &
-      S
-    type ( VariableGroupForm ), intent ( in ) :: &
-      Solution
-    class ( Chart_SLD_Form ), intent ( in ) :: &
-      Grid_S
-    integer ( KDI ), intent ( in ) :: &
-      iCell_S
-
-    integer ( KDI ) :: &
-      iF  !-- iField
-    class ( GeometryFlatForm ), pointer :: &
-      G_S
-
-    associate ( iaC => Current % iaConserved )
-    do iF = 1, Current % N_CONSERVED
-      associate &
-        ( SV => Solution % Value ( :, iF ), &
-          CV => Current % Value ( :, iaC ( iF ) ) )
-      call Copy ( SV, CV )
-      end associate !-- YV, etc.
-    end do !-- iF
-    end associate !-- iaC
-
-    G_S => Grid_S % Geometry ( )
-
-    call Current % ComputeFromConserved ( iCell_S, G_S )
-
-    nullify ( G_S )
-    
-  end subroutine StoreSolution_C_F
 
 
   subroutine InitializeIntermediate_C_BSLL_ASC_CSLD ( S )
@@ -379,25 +382,15 @@ contains
       S
 
     integer ( KDI ) :: &
-      iS     !-- iSection
-    class ( VariableGroupForm ), pointer :: &
-      Solution, &
-      Y
+      iS  !-- iSection
 
-    associate &
-      ( SB => S % Solution_BSLL_ASC_CSLD, &
-        YB => S % Y_BSLL_ASC_CSLD )
-
-    !-- Only need sections for this
     do iS = 1, S % nSections
-      Solution => SB % FieldSection ( iS )
-      Y => YB % FieldSection ( iS )
-      call Copy ( Solution % Value, Y % Value )
+      associate &
+        ( SV => S % Solution_BSLL_ASC_CSLD_S ( iS ) % Value, &
+          YV => S % Y_BSLL_ASC_CSLD_S ( iS ) % Value )
+      call Copy ( SV, YV )
+      end associate !-- SV, etc.
     end do !-- iS
-
-    end associate !-- SB, etc.
-
-    nullify ( Solution, Y )
 
   end subroutine InitializeIntermediate_C_BSLL_ASC_CSLD
 
@@ -412,58 +405,51 @@ contains
       iK
 
     integer ( KDI ) :: &
-      iS     !-- iSection
-    class ( VariableGroupForm ), pointer :: &
-      Y, &
-      K
+      iS  !-- iSection
+    type ( VariableGroupForm ), pointer :: &
+      KS
 
-    associate &
-      ( YB => S % Y_BSLL_ASC_CSLD, &
-        KB => S % K_BSLL_ASC_CSLD ( iK ) )
+    associate ( KB => S % K_BSLL_ASC_CSLD ( iK ) )
 
-    !-- Only need sections for this
     do iS = 1, S % nSections
-      Y => YB % FieldSection ( iS )
-      K => KB % FieldSection ( iS )
-      call MultiplyAdd ( Y % Value, K % Value, A )
+      associate ( YS => S % Y_BSLL_ASC_CSLD_S ( iS ) )
+      KS => KB % FieldSection ( iS )
+      call MultiplyAdd ( YS % Value, KS % Value, A )
+      end associate !-- YS
     end do !-- iS
 
-    end associate !-- YB, etc.
-
-    nullify ( Y, K )
+    end associate !-- KB
+    nullify ( KS )
 
   end subroutine IncrementIntermediate_C_BSLL_ASC_CSLD
 
 
-  subroutine IncrementSolution_C_BSLL_ASC_CSLD ( S, B, iS )
+  subroutine IncrementSolution_C_BSLL_ASC_CSLD ( S, B, iStage )
 
     class ( Step_RK_C_BSLL_ASC_CSLD_C_ASC_Template ), intent ( inout ) :: &
       S
     real ( KDR ), intent ( in ) :: &
       B
     integer ( KDI ), intent ( in ) :: &
-      iS
+      iStage
 
     integer ( KDI ) :: &
-      iF  !-- iFibers
-    class ( VariableGroupForm ), pointer :: &
-      Solution, &
-      K
+      iS  !-- iSection
+    type ( VariableGroupForm ), pointer :: &
+      KS
 
-    associate &
-      ( SB => S % Solution_BSLL_ASC_CSLD, &
-        KB => S % K_BSLL_ASC_CSLD ( iS ) )
+    associate ( KB => S % K_BSLL_ASC_CSLD ( iStage ) )
 
-    !-- Only need fibers for this
-    do iF = 1, S % nFibers
-      Solution => SB % FieldFiber ( iF )
-      K => KB % FieldFiber ( iF )
-      call MultiplyAdd ( Solution % Value, K % Value, B )
-    end do !-- iF
+    do iS = 1, S % nSections
+      associate ( Solution => S % Solution_BSLL_ASC_CSLD_S ( iS ) )
+      KS => KB % FieldSection ( iS )
+      call MultiplyAdd ( Solution % Value, KS % Value, B )
+      end associate !-- Solution
+    end do !-- iS
 
-    end associate !-- SB, etc.
+    end associate !-- KB
 
-    nullify ( Solution, K )
+    nullify ( KS )
 
   end subroutine IncrementSolution_C_BSLL_ASC_CSLD
 
@@ -474,24 +460,31 @@ contains
       S
 
     integer ( KDI ) :: &
-      iS     !-- iStage
+      iStage, &
+      iSection
     class ( CurrentTemplate ), pointer :: &
       Current
 
-    allocate ( S % Solution_BSLL_ASC_CSLD )
-    allocate ( S % Y_BSLL_ASC_CSLD )
+    allocate ( S % Solution_BSLL_ASC_CSLD_S ( S % nSections ) )
+    allocate ( S % Y_BSLL_ASC_CSLD_S ( S % nSections ) )
     allocate ( S % K_BSLL_ASC_CSLD ( S % nStages ) )
 
-    Current => S % Current_BSLL_ASC_CSLD % CurrentFiber ( 1 )
+    Current => S % Current_BSLL_ASC_CSLD % CurrentSection ( 1 )
     associate &
       ( B => S % Current_BSLL_ASC_CSLD % Bundle_SLL_ASC_CSLD, &
-        nEquations => Current % N_CONSERVED )
+        nEquations => Current % N_CONSERVED, &
+        nValues    => Current % nValues )
 
-    call S % Solution_BSLL_ASC_CSLD % Initialize ( B, nEquations )
-    call S % Y_BSLL_ASC_CSLD % Initialize ( B, nEquations )
-    do iS = 1, S % nStages
-      call S % K_BSLL_ASC_CSLD ( iS ) % Initialize ( B, nEquations )
-    end do !-- iS
+    do iSection = 1, S % nSections
+      call S % Solution_BSLL_ASC_CSLD_S ( iSection ) &
+             % Initialize ( [ nValues, nEquations ] )
+      call S % Y_BSLL_ASC_CSLD_S ( iSection ) &
+             % Initialize ( [ nValues, nEquations ] )
+    end do !-- iSection
+
+    do iStage = 1, S % nStages
+      call S % K_BSLL_ASC_CSLD ( iSection ) % Initialize ( B, nEquations )
+    end do !-- iStage
 
     end associate !-- B, etc.
     nullify ( Current )
@@ -506,10 +499,10 @@ contains
 
     if ( allocated ( S % K_BSLL_ASC_CSLD ) ) &
       deallocate ( S % K_BSLL_ASC_CSLD )
-    if ( allocated ( S % Y_BSLL_ASC_CSLD ) ) &
-      deallocate ( S % Y_BSLL_ASC_CSLD )
-    if ( allocated ( S % Solution_BSLL_ASC_CSLD ) ) &
-      deallocate ( S % Solution_BSLL_ASC_CSLD )
+    if ( allocated ( S % Y_BSLL_ASC_CSLD_S ) ) &
+      deallocate ( S % Y_BSLL_ASC_CSLD_S )
+    if ( allocated ( S % Solution_BSLL_ASC_CSLD_S ) ) &
+      deallocate ( S % Solution_BSLL_ASC_CSLD_S )
       
   end subroutine Deallocate_RK_C_BSLL_ASC_CSLD
 
