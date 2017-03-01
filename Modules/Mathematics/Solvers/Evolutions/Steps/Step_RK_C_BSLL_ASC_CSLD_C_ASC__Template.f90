@@ -1,10 +1,10 @@
 !-- Step_RK_C_BSLL_ASC_CSLD_C_ASC is a template for a RungeKutta time step of
-!   one conserved current on a bundle and another on a base space.
+!   one conserved current on a bundle and another on its base space.
 
 module Step_RK_C_BSLL_ASC_CSLD_C_ASC__Template
 
   !-- Step_RungeKutta_Current_BundleSingleLevelDistributed_AtlasSingleChart
-  !   _ChartSingleLevelDistributed_Template
+  !   _ChartSingleLevelDistributed_Chart_AtlasSingleChart_Template
 
   !-- See Wikipedia "Runge-Kutta methods" for explanation of Butcher 
   !   tableau entries A, B, C
