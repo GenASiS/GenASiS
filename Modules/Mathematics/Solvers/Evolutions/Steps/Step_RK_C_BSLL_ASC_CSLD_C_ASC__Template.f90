@@ -548,7 +548,7 @@ contains
     end do !-- iSection
 
     do iStage = 1, S % nStages
-      call S % K_BSLL_ASC_CSLD ( iSection ) % Initialize ( B, nEquations )
+      call S % K_BSLL_ASC_CSLD ( iStage ) % Initialize ( B, nEquations )
     end do !-- iStage
 
     end associate !-- B, etc.

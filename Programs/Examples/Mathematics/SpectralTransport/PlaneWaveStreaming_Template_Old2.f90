@@ -2,7 +2,6 @@ module PlaneWaveStreaming_Template
 
   use Basics
   use Mathematics
-  use Fluid_ASC__Form
   use RadiationMoments_Form
   use RadiationMoments_ASC__Form
   use RadiationMoments_BSLL_ASC_CSLD__Form
@@ -10,11 +9,12 @@ module PlaneWaveStreaming_Template
   implicit none
   private
 
-  type, public, extends ( Integrator_C_MS_C_PS_Template ), abstract :: &
+  type, public, extends ( Integrator_C_1D_Template ), abstract :: &
     PlaneWaveStreamingTemplate
       type ( RadiationMoments_ASC_Form ), dimension ( : ), allocatable :: &
-        Reference_ASC, &
         Difference_ASC        
+      type ( RadiationMoments_BSLL_ASC_CSLD_Form ), allocatable :: &
+        RadiationMoments_BSLL_ASC_CSLD
   contains 
     procedure, public, pass :: &
       InitializeTemplate_PWS
@@ -24,6 +24,8 @@ module PlaneWaveStreaming_Template
       FinalizeTemplate_PWS
     procedure ( Waveform ), private, pass, deferred :: &
       Waveform
+    procedure, private, pass :: &
+      ComputeCycle
   end type PlaneWaveStreamingTemplate
 
   abstract interface
@@ -42,7 +44,8 @@ module PlaneWaveStreaming_Template
 
     private :: &
       SetReference, &
-      SetRadiation
+      SetRadiation, &
+      ComputeCycle_BSLL_ASC_CSLD
 
       private :: &
         SetWave
@@ -112,38 +115,40 @@ contains
 
     !-- Prepare for Currents
 
-    allocate ( PWS % TimeStepLabel ( 2 ) )
-    PWS % TimeStepLabel ( 1 ) = 'Radiation'
-    PWS % TimeStepLabel ( 2 ) = 'Fluid'
+    PWS % N_CURRENTS = nEnergyCells
+    allocate ( PWS % Current_ASC_1D ( PWS % N_CURRENTS ) )
+    allocate ( PWS % TimeStepLabel ( PWS % N_CURRENTS ) )
 
     !-- Radiation
 
-    allocate ( RadiationMoments_BSLL_ASC_CSLD_Form :: &
-               PWS % Current_BSLL_ASC_CSLD )
-    select type ( RMB => PWS % Current_BSLL_ASC_CSLD )
-    type is ( RadiationMoments_BSLL_ASC_CSLD_Form )
+    allocate ( PWS % RadiationMoments_BSLL_ASC_CSLD )
+    associate ( RMB => PWS % RadiationMoments_BSLL_ASC_CSLD )
     call RMB % Initialize ( MS, 'GENERIC' )
 
-    !-- Fluid ( This doesn't do anything, just a Step interface placeholder )
-
-    allocate ( Fluid_ASC_Form :: PWS % Current_ASC )
-    select type ( FA => PWS % Current_ASC )
-    class is ( Fluid_ASC_Form )
-    call FA % Initialize ( PS, 'NON_RELATIVISTIC' )
-    end select !-- FA
+    do iE = 1, RMB % nEnergyValues
+      write ( EnergyNumber, fmt = '(a1,i2.2)' ) '_', iE
+      allocate &
+        ( RadiationMoments_ASC_Form :: &
+            PWS % Current_ASC_1D ( iE ) % Element )
+      select type ( RSA => PWS % Current_ASC_1D ( iE ) % Element )
+      class is ( RadiationMoments_ASC_Form )
+        call RSA % Initialize &
+               ( PS, 'GENERIC', &
+                 NameOutputOption = 'Radiation' // EnergyNumber )
+      end select !-- RSA
+      PWS % TimeStepLabel ( iE ) = 'Radiation' // EnergyNumber 
+    end do !-- iE
 
     !-- Step
 
-    allocate ( Step_RK2_C_BSLL_ASC_CSLD_C_ASC_Form :: PWS % Step )
+    allocate ( Step_RK2_C_Form :: PWS % Step )
     select type ( S => PWS % Step )
-    class is ( Step_RK2_C_BSLL_ASC_CSLD_C_ASC_Form )
+    class is ( Step_RK2_C_Form )
     call S % Initialize ( Name )
-    S % ApplyDivergence % Pointer => null ( )  !-- Disable fluid evolution
     end select !-- S
 
     !-- Diagnostics
 
-    allocate ( PWS % Reference_ASC ( RMB % nEnergyValues ) )
     allocate ( PWS % Difference_ASC ( RMB % nEnergyValues ) )
     do iE = 1, RMB % nEnergyValues
       write ( EnergyNumber, fmt = '(a1,i2.2)' ) '_', iE
@@ -162,11 +167,11 @@ contains
 
     !-- Initialize template
 
-    call PWS % InitializeTemplate_C_MS_C_PS ( Name, FinishTimeOption = Period )
+    call PWS % InitializeTemplate_C ( Name, FinishTimeOption = Period )
 
     !-- Cleanup
 
-    end select !-- RMB
+    end associate !-- RMB
     end select !-- MS
     end select !-- PS
 
@@ -192,8 +197,7 @@ contains
     select type ( CB => PS % Chart )
     class is ( Chart_SL_Template )
 
-    select type ( RMB => PWS % Current_BSLL_ASC_CSLD )
-    type is ( RadiationMoments_BSLL_ASC_CSLD_Form )
+    associate ( RMB => PWS % RadiationMoments_BSLL_ASC_CSLD )
 
     do iE = 1, RMB % nEnergyValues
       associate ( RSA_D => PWS % Difference_ASC ( iE ) )
@@ -222,7 +226,7 @@ contains
       end associate !-- RSA_D
     end do !-- iE
 
-    end select !-- RMB
+    end associate !-- RMB
     end select !-- CB
     end select !-- PS
     nullify ( RS_D )
@@ -239,10 +243,31 @@ contains
       deallocate ( PWS % Difference_ASC )
     if ( allocated ( PWS % Reference_ASC ) ) &
       deallocate ( PWS % Reference_ASC )
+    if ( allocated ( PWS % RadiationMoments_BSLL_ASC_CSLD ) ) &
+      deallocate ( PWS % RadiationMoments_BSLL_ASC_CSLD )
 
-    call PWS % FinalizeTemplate_C_MS_C_PS ( )
+    call PWS % FinalizeTemplate_C_1D ( )
 
   end subroutine FinalizeTemplate_PWS
+
+
+  subroutine ComputeCycle ( I )
+
+    class ( PlaneWaveStreamingTemplate ), intent ( inout ) :: &
+      I
+
+    associate ( Timer => PROGRAM_HEADER % Timer ( I % iTimerComputeCycle ) )
+    call Timer % Start ( )
+
+    select type ( MS => I % MomentumSpace )
+    class is ( Bundle_SLL_ASC_CSLD_Form )
+      call ComputeCycle_BSLL_ASC_CSLD ( I, MS )
+    end select !-- MS
+
+    call Timer % Stop ( )
+    end associate !-- Timer
+
+  end subroutine ComputeCycle
 
 
   subroutine SetReference ( PWS )
@@ -263,11 +288,10 @@ contains
     select type ( MS => PWS % MomentumSpace )
     class is ( Bundle_SLL_ASC_CSLD_Form )
 
-    select type ( RMB => PWS % Current_BSLL_ASC_CSLD )
-    type is ( RadiationMoments_BSLL_ASC_CSLD_Form )
+    associate ( RMB => PWS % RadiationMoments_BSLL_ASC_CSLD )
 
     do iE = 1, RMB % nEnergyValues
-      select type ( RSA => RMB % Section % Atlas ( iE ) % Element )
+      select type ( RSA => PWS % Current_ASC_1D ( iE ) % Element )
       class is ( RadiationMoments_ASC_Form )
       associate &
         ( RSA_R => PWS % Reference_ASC ( iE ), &
@@ -276,17 +300,21 @@ contains
       RS_R => RSA_R % RadiationMoments ( )
       RS_D => RSA_D % RadiationMoments ( )
 
+      !-- Computed
+      call MS % LoadSection ( RS, RMB, iE )
+
       !-- Reference
-      call SetWave ( PWS, RS_R, MS % Base_CSLD, PWS % Time, nWavelengths = iE )
+      call SetWave &
+             ( PWS, RS_R, MS % Base_CSLD, PWS % Time, nWavelengths = iE )
 
       !-- Difference
- !    RS_D % Value  =  RS % Value  -  RS_R % Value
+! !    RS_D % Value  =  RS % Value  -  RS_R % Value
       call MultiplyAdd ( RS % Value, RS_R % Value, -1.0_KDR, RS_D % Value )
       end associate !-- RSA_R, etc.
       end select !-- RSA
     end do !-- iE
 
-    end select !-- RMB
+    end associate !-- RMB
     end select !-- MS
     end select !-- PWS
     nullify ( RS, RS_R, RS_D )
@@ -310,8 +338,7 @@ contains
     class ( RadiationMomentsForm ), pointer :: &
       RS
 
-    select type ( RMB => PWS % Current_BSLL_ASC_CSLD )
-    type is ( RadiationMoments_BSLL_ASC_CSLD_Form )
+    associate ( RMB => PWS % RadiationMoments_BSLL_ASC_CSLD )
 
     select type ( MS => PWS % MomentumSpace )
     class is ( Bundle_SLL_ASC_CSLD_Form )
@@ -319,28 +346,98 @@ contains
     G => MS % Base_CSLD % Geometry ( )
 
     iE = 1
-    select type ( RSA => RMB % Section % Atlas ( 1 ) % Element )
+    select type ( RSA => PWS % Current_ASC_1D ( 1 ) % Element )
     class is ( RadiationMoments_ASC_Form )
       RS => RSA % RadiationMoments ( )
-      call SetWave ( PWS, RS, MS % Base_CSLD, Time, nWavelengths = iE, &
-                     PeriodOption = Period )
+      call SetWave &
+             ( PWS, RS, MS % Base_CSLD, Time, nWavelengths = iE, &
+               PeriodOption = Period )
+      call MS % StoreSection ( RMB, RS, iE )
     end select !-- RSA
 
     do iE = 2, RMB % nEnergyValues
-      select type ( RSA => RMB % Section % Atlas ( iE ) % Element )
+      select type ( RSA => PWS % Current_ASC_1D ( iE ) % Element )
       class is ( RadiationMoments_ASC_Form )
         RS => RSA % RadiationMoments ( )
         call SetWave ( PWS, RS, MS % Base_CSLD, Time, nWavelengths = iE )
+        call MS % StoreSection ( RMB, RS, iE )
       end select !-- RSA
     end do !-- iE
 
-    call RMB % StoreSections ( )
+    call RMB % LoadSections ( )
 
     end select !-- MS
-    end select !-- RMB
+    end associate !-- RMB
     nullify ( G, RS )
 
   end subroutine SetRadiation
+
+
+  subroutine ComputeCycle_BSLL_ASC_CSLD ( PWS, MS )
+
+    class ( PlaneWaveStreamingTemplate ), intent ( inout ) :: &
+      PWS
+    class ( Bundle_SLL_ASC_CSLD_Form ), intent ( inout ) :: &
+      MS
+
+    integer ( KDI ) :: &
+      iE, &  !-- iEnergy
+      iC     !-- iCurrent
+    real ( KDR ) :: &
+      TimeNew
+    type ( CurrentPointerForm ), dimension ( PWS % N_CURRENTS ) :: &
+      C_1D
+    class ( RadiationMomentsForm ), pointer :: &
+      RS
+
+    select type ( S => PWS % Step )
+    class is ( Step_RK_C_Template )
+
+    call PWS % ComputeNewTime ( TimeNew )
+
+    associate &
+      ( RMB => PWS % RadiationMoments_BSLL_ASC_CSLD, &
+        CB  => MS % Base_CSLD, &
+        TimeStep => TimeNew - PWS % Time )    
+
+    do iE = 1, RMB % nEnergyValues
+      select type ( RSA => PWS % Current_ASC_1D ( iE ) % Element )
+      class is ( RadiationMoments_ASC_Form )
+        RS => RSA % RadiationMoments ( )
+        call MS % LoadSection ( RS, RMB, iE, GhostExchangeOption = .true. )
+        associate ( CA => PWS % Current_ASC_1D ( iE ) % Element )
+          C_1D ( iE ) % Pointer => CA % Current ( )
+        end associate !-- CA
+      end select !-- RSA
+    end do !-- iF
+
+    call S % Compute ( C_1D, CB, PWS % Time, TimeStep )
+
+    do iE = 1, RMB % nEnergyValues
+      select type ( RSA => PWS % Current_ASC_1D ( iE ) % Element )
+      class is ( RadiationMoments_ASC_Form )
+        RS => RSA % RadiationMoments ( )
+        call MS % StoreSection ( RMB, RS, iE )
+      end select !-- RSA
+    end do !-- iF
+
+    PWS % iCycle = PWS % iCycle + 1
+    PWS % Time = PWS % Time + TimeStep
+    if ( PWS % Time == PWS % WriteTime ) &
+      PWS % IsCheckpointTime = .true.
+
+    do iC = 1, PWS % N_CURRENTS
+      associate ( CA => PWS % Current_ASC_1D ( iC ) % Element )
+      call CA % AccumulateBoundaryTally &
+             ( S % BoundaryFluence_CSL ( iC ) % Array )
+      end associate !-- CA
+    end do !-- iC
+
+    end associate !-- RMB, etc.
+    end select !-- S
+    nullify ( RS )
+
+  end subroutine ComputeCycle_BSLL_ASC_CSLD
 
 
   subroutine SetWave ( PWS, RS, PSC, Time, nWavelengths, PeriodOption )

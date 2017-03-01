@@ -1,6 +1,6 @@
 PATH_GENASIS = ../../../../..
 
-all: Thermalization SineWaveStreaming
+all: SineWaveStreaming Thermalization
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
@@ -16,6 +16,15 @@ SPECTRAL_MOMENTS = \
   Matter_CSL__Form.o \
   Matter_Form.o 
 
+SineWaveStreaming: Basics.a Mathematics.a Fluid.a GreyMoments.a \
+  SpectralMoments.a SineWaveStreaming.o
+	$(LINK) $(FFLAGS) \
+          -o SineWaveStreaming_$(MACHINE) \
+          SineWaveStreaming.o SineWaveStreaming_Form.o \
+          PlaneWaveStreaming_Template.o \
+          SpectralMoments.a GreyMoments.a Fluid.a Mathematics.a Basics.a \
+          $(THIRD_PARTY) $(LIBRARIES)
+
 Thermalization: Basics.a Mathematics.a Fluid.a GreyMoments.a \
   SpectralMoments.a Thermalization.o
 	$(LINK) $(FFLAGS) \
@@ -23,15 +32,6 @@ Thermalization: Basics.a Mathematics.a Fluid.a GreyMoments.a \
           Thermalization.o Thermalization_Form.o \
           SpectralMoments.a GreyMoments.a Fluid.a Mathematics.a Basics.a \
           $(THIRD_PARTY) $(LIBRARIES)
-
-SineWaveStreaming: Basics.a Mathematics.a GreyMoments.a SpectralMoments.a \
-  SineWaveStreaming.o
-	$(LINK) $(FFLAGS) \
-          -o SineWaveStreaming_$(MACHINE) \
-          SineWaveStreaming.o SineWaveStreaming_Form.o \
-          PlaneWaveStreaming_Template.o \
-          SpectralMoments.a GreyMoments.a Mathematics.a Basics.a \
-          $(LIBRARIES)
 
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MATHEMATICS)/Makefile_Dependencies
@@ -43,8 +43,8 @@ clean:
 	rm -f *.o *.a *.mod *.ld
 
 clobber: clean
-	rm -f Thermalization_*
 	rm -f SineWaveStreaming_*
+	rm -f Thermalization_*
 
 Matter_Form.o: \
   Basics.o \
@@ -84,24 +84,6 @@ Interactions_BSLL_ASC_CSLD__Form.o: \
 SpectralMoments.a: $(SPECTRAL_MOMENTS)
 	ar r SpectralMoments.a $(SPECTRAL_MOMENTS)
 
-Thermalization_Form.o: \
-  Basics.o \
-  Mathematics.o \
-  RadiationMoments_Form.o \
-  RadiationMoments_ASC__Form.o \
-  Interactions_F__Form.o \
-  Matter_Form.o \
-  Matter_ASC__Form.o \
-  SetFermiDiracSpectrum_Command.o \
-  RadiationMoments_BSLL_ASC_CSLD__Form.o \
-  Interactions_BSLL_ASC_CSLD__Form.o \
-  Thermalization_Form.f90
-
-Thermalization.o: \
-  Basics.o \
-  Thermalization_Form.o \
-  Thermalization.f90
-
 PlaneWaveStreaming_Template.o: \
   Basics.o \
   Mathematics.o \
@@ -119,3 +101,21 @@ SineWaveStreaming.o: \
   Basics.o \
   SineWaveStreaming_Form.o \
   SineWaveStreaming.f90
+
+Thermalization_Form.o: \
+  Basics.o \
+  Mathematics.o \
+  RadiationMoments_Form.o \
+  RadiationMoments_ASC__Form.o \
+  Interactions_F__Form.o \
+  Matter_Form.o \
+  Matter_ASC__Form.o \
+  SetFermiDiracSpectrum_Command.o \
+  RadiationMoments_BSLL_ASC_CSLD__Form.o \
+  Interactions_BSLL_ASC_CSLD__Form.o \
+  Thermalization_Form.f90
+
+Thermalization.o: \
+  Basics.o \
+  Thermalization_Form.o \
+  Thermalization.f90
