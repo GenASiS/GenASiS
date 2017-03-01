@@ -89,13 +89,6 @@ contains
     if ( present ( MomentumDensity_D_UnitOption ) ) &
       RMA % MomentumDensity_D_Unit = MomentumDensity_D_UnitOption
 
-!-- If there is a tally for RM
-!    call RMA % InitializeTemplate_ASC &
-!           ( A, NameOutputOption = NameOutputOption )
-
-    call RMA % InitializeTemplate_ASC_C &
-           ( A, NameOutputOption = NameOutputOption )
-
     ! if ( .not. allocated ( RMA % TallyInterior ) ) then
     !   select case ( trim ( RadiationMomentsType ) )
     !   case ( 'DUST' )
@@ -163,6 +156,9 @@ contains
     !              AngularMomentumUnitOption = AngularMomentumUnitOption )
     !   end select !-- TB
     ! end do !-- iB
+
+    call RMA % InitializeTemplate_ASC_C &
+           ( A, NameOutputOption = NameOutputOption )
 
   end subroutine Initialize
 

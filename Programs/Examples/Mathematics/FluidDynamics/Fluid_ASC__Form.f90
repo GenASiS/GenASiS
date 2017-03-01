@@ -98,9 +98,6 @@ contains
     if ( present ( VelocityUnitOption ) ) &
       FA % VelocityUnit = VelocityUnitOption
 
-    call FA % InitializeTemplate_ASC &
-           ( A, NameOutputOption = NameOutputOption )
-
     if ( .not. allocated ( FA % TallyInterior ) ) then
       select case ( trim ( FluidType ) )
       case ( 'DUST' )
@@ -180,6 +177,9 @@ contains
                  AngularMomentumUnitOption = AngularMomentumUnitOption )
       end select !-- TB
     end do !-- iB
+
+    call FA % InitializeTemplate_ASC_C &
+           ( A, NameOutputOption = NameOutputOption )
 
   end subroutine Initialize
 
