@@ -27,7 +27,8 @@ module Step_RK_C_BSLL_ASC_CSLD_C_ASC__Template
       type ( Real_3D_2D_Form ), dimension ( : ), allocatable :: &
         BoundaryFluence_CSL_S
       logical ( KDL ) :: &
-        UseLimiterParameter_S
+        UseLimiterParameter_S, &
+        UseLimiterParameter_F
       type ( VariableGroupForm ), dimension ( : ), allocatable :: &
         Solution_BSLL_ASC_CSLD_S, &
         Y_BSLL_ASC_CSLD_S
@@ -76,6 +77,8 @@ module Step_RK_C_BSLL_ASC_CSLD_C_ASC__Template
     procedure, public, pass :: &
       IncrementIntermediate_C_BSLL_ASC_CSLD
     procedure, public, pass :: &
+      ComputeStage_C_BSLL_ASC_CSLD
+    procedure, public, pass :: &
       IncrementSolution_C_BSLL_ASC_CSLD
     procedure, public, pass :: &
       Allocate_RK_C_BSLL_ASC_CSLD
@@ -116,7 +119,8 @@ contains
 
   subroutine Compute_C_BSLL_ASC_CSLD_C_ASC &
                ( S, Current_BSLL_ASC_CSLD, Current_ASC, Time, TimeStep, &
-                 UseLimiterParameter_S_Option, UseLimiterParameterOption )
+                 UseLimiterParameter_S_Option, UseLimiterParameter_F_Option, &
+                 UseLimiterParameterOption )
 
     class ( Step_RK_C_BSLL_ASC_CSLD_C_ASC_Template ), intent ( inout ) :: &
       S
@@ -129,7 +133,8 @@ contains
       Time, &
       TimeStep
     logical ( KDL ), intent ( in ), optional :: &
-      UseLimiterParameter_S_Option
+      UseLimiterParameter_S_Option, &
+      UseLimiterParameter_F_Option
     logical ( KDL ), intent ( in ), optional :: &
       UseLimiterParameterOption
 
@@ -148,6 +153,10 @@ contains
     S % UseLimiterParameter_S = .true.
     if ( present ( UseLimiterParameter_S_Option ) ) &
       S % UseLimiterParameter_S = UseLimiterParameter_S_Option
+
+    S % UseLimiterParameter_F = .true.
+    if ( present ( UseLimiterParameter_F_Option ) ) &
+      S % UseLimiterParameter_F = UseLimiterParameter_F_Option
 
     select type ( Chart => Current_ASC % Atlas_SC % Chart )
     class is ( Chart_SL_Template )
@@ -258,6 +267,12 @@ contains
     associate &
       ( Timer => PROGRAM_HEADER % Timer ( S % iTimerComputeIncrement ) )
     call Timer % Start ( )
+
+    call S % ComputeStage_C_BSLL_ASC_CSLD &
+      ( S % Current_BSLL_ASC_CSLD, S % K_BSLL_ASC_CSLD ( iStage ), &
+        S % BoundaryFluence_CSL_S, S % Y_BSLL_ASC_CSLD_S, TimeStep, iStage )
+
+    call S % ComputeStage_C_ASC ( TimeStep, iStage )
 
     call Timer % Stop ( )
     end associate !-- Timer
@@ -377,7 +392,7 @@ contains
   end subroutine IncrementIntermediate_C_BSLL_ASC_CSLD
 
 
-  subroutine ComputeStage_BSLL_ASC_CSLD &
+  subroutine ComputeStage_C_BSLL_ASC_CSLD &
                ( S, C_BSLL_ASC_CSLD, K_BSLL_ASC_CSLD, BF_CSL_S, &
                  Y_BSLL_ASC_CSLD_S, TimeStep, iStage )
 
@@ -397,7 +412,8 @@ contains
       iStage
     
     integer ( KDI ) :: &
-      iS  !-- iSection
+      iS, &  !-- iSection
+      iF     !-- iFiber
     type ( VariableGroupForm ), pointer :: &
       K
     class ( CurrentTemplate ), pointer :: &
@@ -429,7 +445,7 @@ contains
       S % ApplyRelaxation_C => S % ApplyRelaxation_S % Pointer
 
       call S % ComputeStage_C &
-             ( C, Grid, K, BF, ULP, TimeStep, iStage )
+             ( C, Grid, K, ULP, TimeStep, iStage, BF_Option = BF )
 
       S % ApplyRelaxation_C => null ( )
       S % ApplySources_C    => null ( )
@@ -439,43 +455,40 @@ contains
 
     end do !-- iS
 
-      !-- Store K to fibers
+    !-- Store K to fibers
+    call KB % StoreSections ( )
 
-      !-- ApplyDivergence to fibers (currently expected null)
-      !-- ApplySources to fibers (currently expected null )
-      !-- ApplyRelaxation to fibers
+    !-- Fibers
 
-      !-- Load K to sections
+    do iF = 1, S % nFibers
 
+      C => CB % CurrentFiber ( iF )
 
+      associate &
+        ( Grid => S % Grid_F, &
+          ULP  => S % UseLimiterParameter_F )
 
-    ! do iC = 1, S % nCurrents
-    !   associate &
-    !     ( C    => S % Current_1D ( iC ) % Pointer, &
-    !       Grid => S % Grid, &
-    !       K    => S % K_1D ( iC, iStage ), &
-    !       BF   => S % BoundaryFluence_CSL_1D ( iC ) % Array, &
-    !       Y    => S % Y_1D ( iC ), &
-    !       ULP  => S % UseLimiterParameter_1D ( iC ) )
+      S % ApplyDivergence_C => S % ApplyDivergence_F % Pointer
+      S % ApplySources_C    => S % ApplySources_F    % Pointer
+      S % ApplyRelaxation_C => S % ApplyRelaxation_F % Pointer
 
-    !   S % ApplyDivergence_C => S % ApplyDivergence_1D ( iC ) % Pointer
-    !   S % ApplySources_C    => S % ApplySources_1D    ( iC ) % Pointer
-    !   S % ApplyRelaxation_C => S % ApplyRelaxation_1D ( iC ) % Pointer
+      call S % ComputeStage_C ( C, Grid, K, ULP, TimeStep, iStage )
 
-    !   call S % ComputeStage_C &
-    !          ( C, Grid, K, BF, Y, ULP, TimeStep, iStage )
+      S % ApplyRelaxation_C => null ( )
+      S % ApplySources_C    => null ( )
+      S % ApplyDivergence_C => null ( )
 
-    !   S % ApplyRelaxation_C => null ( )
-    !   S % ApplySources_C    => null ( )
-    !   S % ApplyDivergence_C => null ( )
+      end associate !-- Grid, etc.
 
-    !   end associate !-- C, etc.
-    ! end do !-- iC
+    end do !-- iF
+
+    !-- Load K to sections
+    call KB % LoadSections ( )
 
     end associate !-- CB, etc.
     nullify ( K, C )
 
-  end subroutine ComputeStage_BSLL_ASC_CSLD
+  end subroutine ComputeStage_C_BSLL_ASC_CSLD
 
 
   subroutine IncrementSolution_C_BSLL_ASC_CSLD ( S, B, iStage )

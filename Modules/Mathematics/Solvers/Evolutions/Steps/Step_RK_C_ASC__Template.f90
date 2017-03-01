@@ -86,6 +86,8 @@ module Step_RK_C_ASC__Template
       IncrementIntermediate
     procedure, private, pass :: &
       ComputeStage
+    procedure, public, pass :: &
+      ComputeStage_C_ASC
     procedure, private, pass :: &
       IncrementSolution
     procedure, private, nopass :: &
@@ -430,6 +432,23 @@ contains
       ( Timer => PROGRAM_HEADER % Timer ( S % iTimerComputeIncrement ) )
     call Timer % Start ( )
 
+    call S % ComputeStage_C_ASC ( TimeStep, iStage )
+
+    call Timer % Stop ( )
+    end associate !-- Timer
+
+  end subroutine ComputeStage
+
+
+  subroutine ComputeStage_C_ASC ( S, TimeStep, iStage )
+
+    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
+      S
+    real ( KDR ), intent ( in ) :: &
+      TimeStep
+    integer ( KDI ), intent ( in ) :: &
+      iStage
+
     associate &
       ( C    => S % Current, &
         Grid => S % Grid, &
@@ -447,7 +466,8 @@ contains
     S % ApplySources_C    => S % ApplySources    % Pointer
     S % ApplyRelaxation_C => S % ApplyRelaxation % Pointer
 
-    call S % ComputeStage_C ( C, Grid, K, BF, ULP, TimeStep, iStage )
+    call S % ComputeStage_C &
+           ( C, Grid, K, ULP, TimeStep, iStage, BF_Option = BF )
 
     S % ApplyRelaxation_C => null ( )
     S % ApplySources_C    => null ( )
@@ -455,10 +475,7 @@ contains
 
     end associate !-- C, etc.
 
-    call Timer % Stop ( )
-    end associate !-- Timer
-
-  end subroutine ComputeStage
+  end subroutine ComputeStage_C_ASC
 
 
   subroutine IncrementSolution ( S, B, iS )
@@ -766,7 +783,8 @@ contains
 
 
   subroutine ComputeStage_C &
-               ( S, C, Grid, K, BF, UseLimiterParameter, TimeStep, iStage )
+               ( S, C, Grid, K, UseLimiterParameter, TimeStep, iStage, &
+                 BF_Option )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
@@ -776,14 +794,14 @@ contains
       Grid
     type ( VariableGroupForm ), intent ( inout ) :: &
       K
-    type ( Real_3D_Form ), dimension ( :, : ), intent ( inout ) :: &
-      BF
     logical ( KDL ), intent ( in ) :: &
       UseLimiterParameter
     real ( KDR ), intent ( in ) :: &
       TimeStep
     integer ( KDI ), intent ( in ) :: &
       iStage
+    type ( Real_3D_Form ), dimension ( :, : ), intent ( inout ), optional :: &
+      BF_Option
 
     type ( VariableGroupForm ), allocatable :: &
       DC  !-- DampingCoefficient
@@ -791,7 +809,7 @@ contains
     !-- Divergence
     if ( associated ( S % ApplyDivergence_C ) ) &
       call S % ApplyDivergence_C &
-             ( Grid, K, BF, C, UseLimiterParameter, TimeStep, iStage )
+             ( Grid, K, C, UseLimiterParameter, TimeStep, iStage, BF_Option )
 
     !-- Other explicit sources
     if ( associated ( S % ApplySources_C ) ) &
@@ -1006,8 +1024,8 @@ contains
 
 
   subroutine ApplyDivergence_C &
-               ( S, Grid, Increment, BoundaryFluence_CSL, Current, &
-                 UseLimiterParameter, TimeStep, iStage )
+               ( S, Grid, Increment, Current, UseLimiterParameter, TimeStep, &
+                 iStage, BoundaryFluence_CSL_Option )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
@@ -1015,8 +1033,6 @@ contains
       Grid
     type ( VariableGroupForm ), intent ( inout ) :: &
       Increment
-    type ( Real_3D_Form ), dimension ( :, : ), intent ( inout ) :: &
-      BoundaryFluence_CSL
     class ( CurrentTemplate ), intent ( in ) :: &
       Current
     logical ( KDL ), intent ( in ) :: &
@@ -1025,12 +1041,18 @@ contains
       TimeStep
     integer ( KDI ), intent ( in ) :: &
       iStage
+    type ( Real_3D_Form ), dimension ( :, : ), intent ( inout ), optional :: &
+      BoundaryFluence_CSL_Option
 
     associate ( ID => S % IncrementDivergence )
     call ID % Set ( UseLimiterParameter )
-    call ID % Set ( BoundaryFluence_CSL )
     call ID % Set ( S % dLogVolumeJacobian_dX )
     call ID % Set ( Weight_RK = S % B ( iStage ) )
+    if ( present ( BoundaryFluence_CSL_Option ) ) then
+      call ID % Set ( BoundaryFluence_CSL_Option )
+    else
+      nullify ( ID % BoundaryFluence_CSL )
+    end if
     call ID % Compute ( Increment, Grid, Current, TimeStep )
     call ID % Clear ( )
     end associate !-- ID

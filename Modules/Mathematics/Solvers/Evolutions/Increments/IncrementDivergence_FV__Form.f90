@@ -258,7 +258,7 @@ contains
     call PrepareOutput ( I, Grid, C )
 
     select type ( Grid )
-    class is ( Chart_SLD_Form )
+    class is ( Chart_SL_Template )
       nDimensions = Grid % nDimensions
       G => Grid % Geometry ( )
     class default
@@ -290,7 +290,7 @@ contains
         call Show ( iD, '>>> iDimension' )
 
       select type ( Grid )
-      class is ( Chart_SLD_Form )
+      class is ( Chart_SL_Template )
         call ComputeReconstruction &
                ( I, C_IL, C_IR, G_I, C, Grid, iD )
         call ComputeFluxes &
@@ -742,7 +742,7 @@ contains
     type ( VariableGroupForm ), intent ( in ) :: &
       Flux_I, &
       G_I
-    class ( Chart_SLD_Form ), intent ( in ) :: &
+    class ( Chart_SL_Template ), intent ( in ) :: &
       CSL
     real ( KDR ), intent ( in ) :: &
       TimeStep
@@ -785,9 +785,10 @@ contains
       call ComputeIncrement_CSL_Kernel &
              ( dU, F_I, VJ_I, VJ, dX, TimeStep, iDimension, &
                CSL % nGhostLayers ( iDimension ) )
-      call RecordBoundaryFluence_CSL &
-             ( I % BoundaryFluence_CSL, CSL, F_I, VJ_I, I % Weight_RK, &
-               TimeStep, iDimension, iF )
+      if ( associated ( I % BoundaryFluence_CSL ) ) &
+        call RecordBoundaryFluence_CSL &
+               ( I % BoundaryFluence_CSL, CSL, F_I, VJ_I, I % Weight_RK, &
+                 TimeStep, iDimension, iF )
     end do !-- iF
 
     nullify ( G )
@@ -1028,7 +1029,7 @@ contains
 
     type ( Real_3D_Form ), dimension ( :, : ), intent ( inout ) :: &
       BF
-    type ( Chart_SLD_Form ), intent ( in ) :: &
+    class ( Chart_SL_Template ), intent ( in ) :: &
       CSL
     real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
       F_I, &
@@ -1041,11 +1042,26 @@ contains
       iC     !-- iConserved
 
     integer ( KDI ) :: &
-      jD, kD   !-- jDimension, kDimension
+      jD, kD, &   !-- jDimension, kDimension
+      nCells
     integer ( KDI ), dimension ( 3 ) :: &
       oB, & !-- oBoundary
       nB    !-- nBoundary
-    
+    logical ( KDL ) :: &
+      RecordInner, &
+      RecordOuter
+
+    select type ( CSL )
+    class is ( Chart_SLL_Form )
+      RecordInner = .true.
+      RecordOuter = .true.
+      nCells = CSL % nCells ( iD )
+    class is ( Chart_SLD_Form )
+      RecordInner = ( CSL % iaBrick ( iD ) == 1 )
+      RecordOuter = ( CSL % iaBrick ( iD ) == CSL % nBricks ( iD ) )
+      nCells = CSL % nCellsBrick ( iD )
+    end select !-- CSL
+
     jD = mod ( iD, 3 ) + 1
     kD = mod ( jD, 3 ) + 1
     
@@ -1053,7 +1069,7 @@ contains
     nB ( jD ) = CSL % nCellsBrick ( jD )
     nB ( kD ) = CSL % nCellsBrick ( kD )
 
-    if ( CSL % iaBrick ( iD ) == 1 ) then
+    if ( RecordInner ) then
       associate ( iCI => CSL % Atlas % Connectivity % iaInner ( iD ) )
       associate ( BF_Inner => BF ( iC, iCI ) % Value )
       oB = CSL % nGhostLayers
@@ -1063,11 +1079,11 @@ contains
       end associate !-- iCI
     end if !-- iaBrick ( iD ) == 1
 
-    if ( CSL % iaBrick ( iD ) == CSL % nBricks ( iD ) ) then
+    if ( RecordOuter ) then
       associate ( iCO => CSL % Atlas % Connectivity % iaOuter ( iD ) )
       associate ( BF_Outer => BF ( iC, iCO ) % Value )
       oB        = CSL % nGhostLayers
-      oB ( iD ) =  oB ( iD ) + CSL % nCellsBrick ( iD )
+      oB ( iD ) =  oB ( iD ) + nCells
       call RecordBoundaryFluence_CSL_Kernel &
              ( BF_Outer, F_I, VJ_I, Weight_RK * dT, nB, oB )
       end associate !-- BF_Outer

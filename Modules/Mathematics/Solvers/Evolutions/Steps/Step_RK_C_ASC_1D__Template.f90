@@ -263,7 +263,8 @@ contains
       S % ApplySources_C    => S % ApplySources_1D    ( iC ) % Pointer
       S % ApplyRelaxation_C => S % ApplyRelaxation_1D ( iC ) % Pointer
 
-      call S % ComputeStage_C ( C, Grid, K, BF, ULP, TimeStep, iStage )
+      call S % ComputeStage_C &
+             ( C, Grid, K, ULP, TimeStep, iStage, BF_Option = BF )
 
       S % ApplyRelaxation_C => null ( )
       S % ApplySources_C    => null ( )
