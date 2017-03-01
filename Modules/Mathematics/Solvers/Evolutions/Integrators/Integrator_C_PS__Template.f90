@@ -280,7 +280,7 @@ contains
 
   subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
 
-    class ( Integrator_C_PS_Template ), intent ( in ) :: &
+    class ( Integrator_C_PS_Template ), intent ( in ), target :: &
       I
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       TimeStepCandidate

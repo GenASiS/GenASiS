@@ -136,7 +136,7 @@ module Integrator_Template
 !    subroutine CTSL ( I, TimeStepCandidate )
 !      use Basics
 !      import IntegratorTemplate
-!      class ( IntegratorTemplate ), intent ( in ) :: &
+!      class ( IntegratorTemplate ), intent ( in ), target :: &
 !        I
 !      real ( KDR ), dimension ( : ), intent ( inout ) :: &
 !        TimeStepCandidate
@@ -600,7 +600,7 @@ contains
 
 !-- See FIXME above
   subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
-    class ( IntegratorTemplate ), intent ( in ) :: &
+    class ( IntegratorTemplate ), intent ( in ), target :: &
       I
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       TimeStepCandidate

@@ -165,9 +165,9 @@ contains
 
     !-- Prepare for Currents
 
-    MW % N_CURRENTS = 2
-    allocate ( MW % Current_ASC_1D ( MW % N_CURRENTS ) )
-    allocate ( MW % TimeStepLabel ( MW % N_CURRENTS ) )
+    MW % N_CURRENTS_PS = 2
+    allocate ( MW % Current_ASC_1D ( MW % N_CURRENTS_PS ) )
+    allocate ( MW % TimeStepLabel ( MW % N_CURRENTS_PS ) )
     MW % TimeStepLabel ( MW % RADIATION ) = 'Radiation'
     MW % TimeStepLabel ( MW % FLUID )     = 'Fluid'
 
@@ -242,7 +242,7 @@ contains
     select type ( S => MW % Step )
     class is ( Step_RK2_C_ASC_1D_Form )
 
-    call S % Initialize ( Name, MW % N_CURRENTS )
+    call S % Initialize ( Name, MW % N_CURRENTS_PS )
 
     S % ApplySources_1D ( MW % RADIATION ) % Pointer &
       =>  ApplySources_Radiation
