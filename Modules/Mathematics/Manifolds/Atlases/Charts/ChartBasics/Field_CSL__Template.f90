@@ -27,7 +27,8 @@ module Field_CSL__Template
 contains
 
 
-  subroutine InitializeTemplate_CSL ( FC, C, NameShort, nValues )
+  subroutine InitializeTemplate_CSL &
+               ( FC, C, NameShort, nValues, IgnorabilityOption )
 
     class ( Field_CSL_Template ), intent ( inout ) :: &
       FC
@@ -37,13 +38,15 @@ contains
       NameShort
     integer ( KDI ), intent ( in ) :: &
       nValues
+    integer ( KDL ), intent ( in ), optional :: &
+      IgnorabilityOption
 
     if ( FC % Type == '' ) &
       FC % Type = 'a Field_CSL' 
 
     FC % nValues = nValues
 
-    call FC % InitializeTemplate ( C, NameShort )
+    call FC % InitializeTemplate ( C, NameShort, IgnorabilityOption )
 
   end subroutine InitializeTemplate_CSL
 

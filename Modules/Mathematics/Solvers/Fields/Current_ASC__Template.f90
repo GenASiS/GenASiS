@@ -53,7 +53,7 @@ module Current_ASC__Template
 contains
 
 
-  subroutine InitializeTemplate_ASC_C ( CA, A, NameShort )
+  subroutine InitializeTemplate_ASC_C ( CA, A, NameShort, IgnorabilityOption )
 
     class ( Current_ASC_Template ), intent ( inout ) :: &
       CA
@@ -61,13 +61,15 @@ contains
       A
     character ( * ), intent ( in ) :: &
       NameShort
+    integer ( KDL ), intent ( in ), optional :: &
+      IgnorabilityOption
 
     integer ( KDI ) :: &
       iB  !-- iBoundary
     class ( CurrentTemplate ), pointer :: &
       C
 
-    call CA % InitializeTemplate_ASC ( A, NameShort )
+    call CA % InitializeTemplate_ASC ( A, NameShort, IgnorabilityOption )
 
     CA % Atlas_SC => A
 

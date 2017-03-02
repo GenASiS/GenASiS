@@ -106,7 +106,7 @@ contains
       class is ( Storage_ASC_Form )
         call SA % Initialize &
                ( B % Base_ASC, trim ( FB % NameShort ) // SectionNumber, &
-                 FB % nFields ) 
+                 FB % nFields, IgnorabilityOption = CONSOLE % INFO_5 ) 
       end select !-- SA
     end do !-- iS
 

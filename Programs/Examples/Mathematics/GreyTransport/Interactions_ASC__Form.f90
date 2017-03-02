@@ -37,7 +37,7 @@ contains
 
   subroutine Initialize &
                ( IA, A, InteractionsType, NameShortOption, LengthUnitOption, &
-                 EnergyDensityUnitOption )
+                 EnergyDensityUnitOption, IgnorabilityOption )
 
     class ( Interactions_ASC_Form ), intent ( inout ) :: &
       IA
@@ -50,6 +50,8 @@ contains
     type ( MeasuredValueForm ), intent ( in ), optional :: &
       LengthUnitOption, &
       EnergyDensityUnitOption
+    integer ( KDL ), intent ( in ), optional :: &
+      IgnorabilityOption
 
     character ( LDL ) :: &
       NameShort
@@ -67,7 +69,7 @@ contains
     if ( present ( NameShortOption ) ) &
       NameShort = NameShortOption
 
-    call IA % InitializeTemplate_ASC ( A, NameShort )
+    call IA % InitializeTemplate_ASC ( A, NameShort, IgnorabilityOption )
 
   end subroutine Initialize
 
@@ -140,7 +142,8 @@ contains
     class is ( Interactions_CSL_Form )
       call FC % Initialize &
              ( C, FA % NameShort, FA % InteractionsType, FA % LengthUnit, &
-               FA % EnergyDensityUnit, nValues )
+               FA % EnergyDensityUnit, nValues, &
+               IgnorabilityOption = FA % IGNORABILITY + 1 )
     end select !-- FC
 
     call A % AddField ( FA )

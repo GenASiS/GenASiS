@@ -29,7 +29,7 @@ module Storage_ASC__Form
 contains
 
 
-  subroutine Initialize ( SA, A, NameShort, nFields )
+  subroutine Initialize ( SA, A, NameShort, nFields, IgnorabilityOption )
 
     class ( Storage_ASC_Form ), intent ( inout ) :: &
       SA
@@ -39,6 +39,8 @@ contains
       NameShort
     integer ( KDI ), intent ( in ) :: &
       nFields
+    integer ( KDL ), intent ( in ), optional :: &
+      IgnorabilityOption
 
     if ( SA % Type == '' ) &
       SA % Type = 'a Storage_ASC' 
@@ -46,7 +48,7 @@ contains
     SA % nFields  =  nFields
     SA % Atlas_SC => A
 
-    call SA % InitializeTemplate_ASC ( A, NameShort )
+    call SA % InitializeTemplate_ASC ( A, NameShort, IgnorabilityOption )
 
   end subroutine Initialize
 
@@ -76,7 +78,9 @@ contains
       select type ( SC => FA % Chart )
       class is ( Storage_CSL_Form )
         associate ( nValues => C % nProperCells + C % nGhostCells )
-        call SC % Initialize ( C, FA % NameShort, FA % nFields, nValues )
+        call SC % Initialize &
+                    ( C, FA % NameShort, FA % nFields, nValues, &
+                      IgnorabilityOption = FA % IGNORABILITY + 1 )
         end associate !-- nValues
       end select !-- GC
 

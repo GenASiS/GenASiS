@@ -44,7 +44,8 @@ contains
   subroutine Initialize &
                ( RMC, C, NameShort, RadiationMomentsType, Velocity_U_Unit, &
                  MomentumDensity_U_Unit, MomentumDensity_D_Unit, &
-                 EnergyDensityUnit, TemperatureUnit, nValues )
+                 EnergyDensityUnit, TemperatureUnit, nValues, &
+                 IgnorabilityOption )
 
     class ( RadiationMoments_CSL_Form ), intent ( inout ) :: &
       RMC
@@ -62,6 +63,8 @@ contains
       TemperatureUnit
     integer ( KDI ), intent ( in ) :: &
       nValues
+    integer ( KDL ), intent ( in ), optional :: &
+      IgnorabilityOption
 
     if ( RMC % Type == '' ) &
       RMC % Type = 'a RadiationMoments_CSL'
@@ -73,7 +76,8 @@ contains
     RMC % MomentumDensity_U_Unit = MomentumDensity_U_Unit
     RMC % MomentumDensity_D_Unit = MomentumDensity_D_Unit
 
-    call RMC % InitializeTemplate_CSL ( C, NameShort, nValues )
+    call RMC % InitializeTemplate_CSL &
+           ( C, NameShort, nValues, IgnorabilityOption )
 
   end subroutine Initialize
 

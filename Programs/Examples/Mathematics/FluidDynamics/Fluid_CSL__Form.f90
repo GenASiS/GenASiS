@@ -45,7 +45,7 @@ contains
   subroutine Initialize &
                ( FC, C, NameShort, FluidType, VelocityUnit, MassDensityUnit, &
                  EnergyDensityUnit, NumberDensityUnit, TemperatureUnit, &
-                 nValues )
+                 nValues, IgnorabilityOption )
 
     class ( Fluid_CSL_Form ), intent ( inout ) :: &
       FC
@@ -63,6 +63,8 @@ contains
       TemperatureUnit
     integer ( KDI ), intent ( in ) :: &
       nValues
+    integer ( KDL ), intent ( in ), optional :: &
+      IgnorabilityOption
 
     if ( FC % Type == '' ) &
       FC % Type = 'a Fluid_CSL'
@@ -74,7 +76,8 @@ contains
     FC % TemperatureUnit   = TemperatureUnit
     FC % VelocityUnit      = VelocityUnit
 
-    call FC % InitializeTemplate_CSL ( C, NameShort, nValues )
+    call FC % InitializeTemplate_CSL &
+           ( C, NameShort, nValues, IgnorabilityOption )
 
   end subroutine Initialize
 

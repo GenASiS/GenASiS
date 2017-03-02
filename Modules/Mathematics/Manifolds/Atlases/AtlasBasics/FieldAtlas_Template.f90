@@ -60,7 +60,7 @@ module FieldAtlas_Template
 contains
 
 
-  subroutine InitializeTemplate ( FA, A, NameShort )
+  subroutine InitializeTemplate ( FA, A, NameShort, IgnorabilityOption )
 
     class ( FieldAtlasTemplate ), intent ( inout ) :: &
       FA
@@ -68,8 +68,12 @@ contains
       A
     character ( * ), intent ( in ) :: &
       NameShort
+    integer ( KDL ), intent ( in ), optional :: &
+      IgnorabilityOption
 
     FA % IGNORABILITY = A % IGNORABILITY
+    if ( present ( IgnorabilityOption ) ) &
+      FA % IGNORABILITY = IgnorabilityOption
 
     if ( FA % Type == '' ) &
       FA % Type = 'a FieldAtlas' 

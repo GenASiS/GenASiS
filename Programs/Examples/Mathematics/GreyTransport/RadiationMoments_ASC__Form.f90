@@ -50,7 +50,7 @@ contains
                  Velocity_U_UnitOption, MomentumDensity_U_UnitOption, &
                  MomentumDensity_D_UnitOption, EnergyDensityUnitOption, &
                  TemperatureUnitOption, EnergyUnitOption, MomentumUnitOption, &
-                 AngularMomentumUnitOption )
+                 AngularMomentumUnitOption, IgnorabilityOption )
 
     class ( RadiationMoments_ASC_Form ), intent ( inout ) :: &
       RMA
@@ -70,6 +70,8 @@ contains
       EnergyUnitOption, &
       MomentumUnitOption, &
       AngularMomentumUnitOption
+    integer ( KDL ), intent ( in ), optional :: &
+      IgnorabilityOption
 
 !    integer ( KDI ) :: &
 !      iB  !-- iBoundary
@@ -163,7 +165,7 @@ contains
     if ( present ( NameShortOption ) ) &
       NameShort = NameShortOption
 
-    call RMA % InitializeTemplate_ASC_C ( A, NameShort )
+    call RMA % InitializeTemplate_ASC_C ( A, NameShort, IgnorabilityOption )
 
   end subroutine Initialize
 
@@ -264,7 +266,8 @@ contains
              ( C, FA % NameShort, FA % RadiationMomentsType, &
                FA % Velocity_U_Unit, FA % MomentumDensity_U_Unit, &
                FA % MomentumDensity_D_Unit, FA % EnergyDensityUnit, &
-               FA % TemperatureUnit, nValues )
+               FA % TemperatureUnit, nValues, &
+               IgnorabilityOption = FA % IGNORABILITY + 1 )
     end select !-- FC
 
     call A % AddField ( FA )

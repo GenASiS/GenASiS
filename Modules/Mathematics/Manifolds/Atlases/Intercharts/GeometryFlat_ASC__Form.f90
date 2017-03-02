@@ -28,7 +28,7 @@ module GeometryFlat_ASC__Form
 contains
 
 
-  subroutine Initialize ( GA, A, NameShortOption )
+  subroutine Initialize ( GA, A, NameShortOption, IgnorabilityOption )
 
     class ( GeometryFlat_ASC_Form ), intent ( inout ) :: &
       GA
@@ -36,6 +36,8 @@ contains
       A
     character ( * ), intent ( in ), optional :: &
       NameShortOption
+    integer ( KDL ), intent ( in ), optional :: &
+      IgnorabilityOption
 
     character ( LDL ) :: &
       NameShort
@@ -50,7 +52,7 @@ contains
     if ( present ( NameShortOption ) ) &
       NameShort = NameShortOption
 
-    call GA % InitializeTemplate_ASC ( A, NameShort )
+    call GA % InitializeTemplate_ASC ( A, NameShort, IgnorabilityOption )
 
   end subroutine Initialize
 
@@ -85,7 +87,9 @@ contains
           select type ( GC => FA % Chart )
           class is ( GeometryFlat_CSL_Form )
             associate ( nValues => C % nProperCells + C % nGhostCells )
-            call GC % Initialize ( C, FA % NameShort, nValues )
+            call GC % Initialize &
+                   ( C, FA % NameShort, nValues, &
+                     IgnorabilityOption = FA % IGNORABILITY + 1 )
             end associate !-- nValues
           end select !-- GC
 

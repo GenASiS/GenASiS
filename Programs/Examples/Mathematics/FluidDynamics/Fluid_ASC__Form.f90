@@ -58,7 +58,7 @@ contains
                  MassDensityUnitOption, EnergyDensityUnitOption, &
                  NumberDensityUnitOption, TemperatureUnitOption, &
                  MassUnitOption, EnergyUnitOption, MomentumUnitOption, &
-                 AngularMomentumUnitOption )
+                 AngularMomentumUnitOption, IgnorabilityOption )
 
     class ( Fluid_ASC_Form ), intent ( inout ) :: &
       FA
@@ -79,6 +79,8 @@ contains
       EnergyUnitOption, &
       MomentumUnitOption, &
       AngularMomentumUnitOption
+    integer ( KDL ), intent ( in ), optional :: &
+      IgnorabilityOption
 
     integer ( KDI ) :: &
       iB  !-- iBoundary
@@ -184,7 +186,7 @@ contains
     if ( present ( NameShortOption ) ) &
       NameShort = NameShortOption
 
-    call FA % InitializeTemplate_ASC_C ( A, NameShort )
+    call FA % InitializeTemplate_ASC_C ( A, NameShort, IgnorabilityOption )
 
   end subroutine Initialize
 
@@ -298,7 +300,8 @@ contains
       call FC % Initialize &
              ( C, FA % NameShort, FA % FluidType, FA % VelocityUnit, &
                FA % MassDensityUnit, FA % EnergyDensityUnit, &
-               FA % NumberDensityUnit, FA % TemperatureUnit, nValues )
+               FA % NumberDensityUnit, FA % TemperatureUnit, nValues, &
+               IgnorabilityOption = FA % IGNORABILITY + 1 )
     end select !-- FC
 
     call A % AddField ( FA )

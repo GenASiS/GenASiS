@@ -271,7 +271,8 @@ contains
                  EnergyDensityUnitOption = FB % EnergyDensityUnit, &
                  EnergyUnitOption = FB % EnergyUnit, &
                  MomentumUnitOption = FB % MomentumUnit, &
-                 AngularMomentumUnitOption = FB % AngularMomentumUnit )
+                 AngularMomentumUnitOption = FB % AngularMomentumUnit, &
+                 IgnorabilityOption = CONSOLE % INFO_5 )
       end select !-- RMA
     end do !-- iE
 

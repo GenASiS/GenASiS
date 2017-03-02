@@ -35,7 +35,7 @@ contains
 
   subroutine Initialize &
                ( IC, C, NameShort, InteractionsType, LengthUnit, &
-                 EnergyDensityUnit, nValues )
+                 EnergyDensityUnit, nValues, IgnorabilityOption )
 
     class ( Interactions_CSL_Form ), intent ( inout ) :: &
       IC
@@ -49,6 +49,8 @@ contains
       EnergyDensityUnit
     integer ( KDI ), intent ( in ) :: &
       nValues
+    integer ( KDL ), intent ( in ), optional :: &
+      IgnorabilityOption
 
     if ( IC % Type == '' ) &
       IC % Type = 'an Interactions_CSL'
@@ -57,7 +59,8 @@ contains
     IC % LengthUnit        = LengthUnit
     IC % EnergyDensityUnit = EnergyDensityUnit
 
-    call IC % InitializeTemplate_CSL ( C, NameShort, nValues )
+    call IC % InitializeTemplate_CSL &
+           ( C, NameShort, nValues, IgnorabilityOption )
 
   end subroutine Initialize
 

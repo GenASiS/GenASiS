@@ -111,7 +111,7 @@ contains
     class ( AtlasHeaderForm ), intent ( in ), target :: &
       A_Source
 
-    A % IGNORABILITY         =  CONSOLE % INFO_7  !-- NOT COPIED!
+    A % IGNORABILITY         =  CONSOLE % INFO_5  !-- NOT COPIED!
     A % nDimensions          =  A_Source % nDimensions
     A % nBoundaries          =  A_Source % nBoundaries
     A % IsDistributed        =  A_Source % IsDistributed

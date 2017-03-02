@@ -28,7 +28,8 @@ module Storage_CSL__Form
 contains
 
 
-  subroutine Initialize ( SC, C, NameShort, nFields, nValues )
+  subroutine Initialize &
+               ( SC, C, NameShort, nFields, nValues, IgnorabilityOption )
 
     class ( Storage_CSL_Form ), intent ( inout ) :: &
       SC
@@ -39,6 +40,8 @@ contains
     integer ( KDI ), intent ( in ) :: &
       nFields, &
       nValues
+    integer ( KDL ), intent ( in ), optional :: &
+      IgnorabilityOption
 
     if ( SC % Type == '' ) &
       SC % Type = 'a Storage_CSL' 
@@ -46,7 +49,8 @@ contains
     SC % nFields  =  nFields
     SC % Chart_SL => C
 
-    call SC % InitializeTemplate_CSL ( C, NameShort, nValues )
+    call SC % InitializeTemplate_CSL &
+           ( C, NameShort, nValues, IgnorabilityOption )
 
   end subroutine Initialize
 

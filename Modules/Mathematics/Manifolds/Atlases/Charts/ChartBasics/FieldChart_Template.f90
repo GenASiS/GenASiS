@@ -42,7 +42,7 @@ module FieldChart_Template
 contains
 
 
-  subroutine InitializeTemplate ( FC, C, NameShort )
+  subroutine InitializeTemplate ( FC, C, NameShort, IgnorabilityOption )
 
     class ( FieldChartTemplate ), intent ( inout ) :: &
       FC
@@ -50,8 +50,12 @@ contains
       C
     character ( * ), intent ( in ), optional :: &
       NameShort
+    integer ( KDL ), intent ( in ), optional :: &
+      IgnorabilityOption
 
     FC % IGNORABILITY = C % IGNORABILITY
+    if ( present ( IgnorabilityOption ) ) &
+      FC % IGNORABILITY = IgnorabilityOption
 
     if ( FC % Type == '' ) &
       FC % Type = 'a FieldChart' 

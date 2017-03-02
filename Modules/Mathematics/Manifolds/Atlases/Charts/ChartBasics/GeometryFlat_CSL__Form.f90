@@ -25,7 +25,7 @@ module GeometryFlat_CSL__Form
 contains
 
 
-  subroutine Initialize ( GC, C, NameShort, nValues )
+  subroutine Initialize ( GC, C, NameShort, nValues, IgnorabilityOption )
 
     class ( GeometryFlat_CSL_Form ), intent ( inout ) :: &
       GC
@@ -35,6 +35,8 @@ contains
       NameShort
     integer ( KDI ), intent ( in ) :: &
       nValues
+    integer ( KDL ), intent ( in ), optional :: &
+      IgnorabilityOption
 
     if ( GC % Type == '' ) &
       GC % Type = 'a GeometryFlat_CSL'
@@ -42,7 +44,8 @@ contains
     if ( GC % GeometryType == '' ) &
       GC % GeometryType = 'FLAT'    
 
-    call GC % InitializeTemplate_CSL ( C, NameShort, nValues )
+    call GC % InitializeTemplate_CSL &
+           ( C, NameShort, nValues, IgnorabilityOption )
 
   end subroutine Initialize
 
