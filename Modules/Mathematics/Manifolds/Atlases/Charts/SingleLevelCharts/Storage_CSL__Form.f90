@@ -28,17 +28,17 @@ module Storage_CSL__Form
 contains
 
 
-  subroutine Initialize ( SC, C, nFields, nValues, NameOutputOption )
+  subroutine Initialize ( SC, C, NameShort, nFields, nValues )
 
     class ( Storage_CSL_Form ), intent ( inout ) :: &
       SC
     class ( Chart_SL_Template ), intent ( in ), target :: &
       C
+    character ( * ), intent ( in ) :: &
+      NameShort
     integer ( KDI ), intent ( in ) :: &
       nFields, &
       nValues
-    character ( * ), intent ( in ), optional :: &
-      NameOutputOption
 
     if ( SC % Type == '' ) &
       SC % Type = 'a Storage_CSL' 
@@ -46,7 +46,7 @@ contains
     SC % nFields  =  nFields
     SC % Chart_SL => C
 
-    call SC % InitializeTemplate_CSL ( C, nValues, NameOutputOption )
+    call SC % InitializeTemplate_CSL ( C, NameShort, nValues )
 
   end subroutine Initialize
 
@@ -63,17 +63,15 @@ contains
   end subroutine Finalize
 
 
-  subroutine SetField ( FC, NameOption )
+  subroutine SetField ( FC )
 
     class ( Storage_CSL_Form ), intent ( inout ) :: &
       FC
-    character ( * ), intent ( in ), optional :: &
-      NameOption
 
     allocate ( FC % Field )
 
     call FC % Field % Initialize &
-           ( [ FC % nValues, FC % nFields ], NameOption = NameOption )
+           ( [ FC % nValues, FC % nFields ], NameOption = FC % NameShort )
 
   end subroutine SetField
 

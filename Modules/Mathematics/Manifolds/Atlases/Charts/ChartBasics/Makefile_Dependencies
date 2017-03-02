@@ -18,6 +18,7 @@ ChartHeader_SL__Form.o: \
   Basics.o \
   AtlasBasics.o \
   Chart_Template.o \
+  FieldChart_Template.o \
   Field_CSL__Template.o \
   ChartHeader_SL__Form.f90
 

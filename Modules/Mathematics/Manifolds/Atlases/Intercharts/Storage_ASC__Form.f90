@@ -76,8 +76,7 @@ contains
       select type ( SC => FA % Chart )
       class is ( Storage_CSL_Form )
         associate ( nValues => C % nProperCells + C % nGhostCells )
-        call SC % Initialize &
-               ( C, FA % nFields, nValues, NameOutputOption = FA % NameShort )
+        call SC % Initialize ( C, FA % NameShort, FA % nFields, nValues )
         end associate !-- nValues
       end select !-- GC
 

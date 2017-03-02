@@ -7,6 +7,7 @@ module ChartHeader_SL__Form
   use Basics
   use AtlasBasics
   use Chart_Template
+  use FieldChart_Template
   use Field_CSL__Template
 
   implicit none
@@ -27,7 +28,7 @@ module ChartHeader_SL__Form
       nGhostLayers => null ( )
     logical ( KDL ), dimension ( : ), pointer :: &
       IsProperCell => null ( )
-    type ( Field_CSL_Pointer ), dimension ( : ), allocatable :: &
+    type ( FieldChartPointer ), dimension ( : ), allocatable :: &
       Field
   contains
     procedure, private, pass :: &

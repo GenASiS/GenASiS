@@ -261,10 +261,10 @@ contains
     select type ( FC => FA % Chart )
     class is ( RadiationMoments_CSL_Form )
       call FC % Initialize &
-             ( C, FA % RadiationMomentsType, FA % Velocity_U_Unit, &
-               FA % MomentumDensity_U_Unit, FA % MomentumDensity_D_Unit, &
-               FA % EnergyDensityUnit, FA % TemperatureUnit, nValues, &
-               NameOutputOption = FA % NameShort )
+             ( C, FA % NameShort, FA % RadiationMomentsType, &
+               FA % Velocity_U_Unit, FA % MomentumDensity_U_Unit, &
+               FA % MomentumDensity_D_Unit, FA % EnergyDensityUnit, &
+               FA % TemperatureUnit, nValues )
     end select !-- FC
 
     call A % AddField ( FA )

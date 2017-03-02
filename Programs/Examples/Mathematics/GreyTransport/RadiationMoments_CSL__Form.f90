@@ -42,15 +42,16 @@ contains
 
 
   subroutine Initialize &
-               ( RMC, C, RadiationMomentsType, Velocity_U_Unit, &
+               ( RMC, C, NameShort, RadiationMomentsType, Velocity_U_Unit, &
                  MomentumDensity_U_Unit, MomentumDensity_D_Unit, &
-                 EnergyDensityUnit, TemperatureUnit, nValues, NameOutputOption )
+                 EnergyDensityUnit, TemperatureUnit, nValues )
 
     class ( RadiationMoments_CSL_Form ), intent ( inout ) :: &
       RMC
     class ( ChartTemplate ), intent ( in ) :: &
       C
     character ( * ), intent ( in ) :: &
+      NameShort, &
       RadiationMomentsType
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
       Velocity_U_Unit, &
@@ -61,8 +62,6 @@ contains
       TemperatureUnit
     integer ( KDI ), intent ( in ) :: &
       nValues
-    character ( * ), intent ( in ), optional :: &
-      NameOutputOption
 
     if ( RMC % Type == '' ) &
       RMC % Type = 'a RadiationMoments_CSL'
@@ -74,8 +73,7 @@ contains
     RMC % MomentumDensity_U_Unit = MomentumDensity_U_Unit
     RMC % MomentumDensity_D_Unit = MomentumDensity_D_Unit
 
-    call RMC % InitializeTemplate_CSL &
-           ( C, nValues, NameOutputOption = NameOutputOption )
+    call RMC % InitializeTemplate_CSL ( C, NameShort, nValues )
 
   end subroutine Initialize
 
@@ -157,12 +155,10 @@ contains
   end subroutine Finalize
 
 
-  subroutine SetField ( FC, NameOption )
+  subroutine SetField ( FC )
 
     class ( RadiationMoments_CSL_Form ), intent ( inout ) :: &
       FC
-    character ( * ), intent ( in ), optional :: &
-      NameOption
 
     allocate ( FC % FieldOutput )
 
@@ -174,7 +170,8 @@ contains
         call RM % Initialize &
                ( FC % Velocity_U_Unit, FC % MomentumDensity_U_Unit, &
                  FC % MomentumDensity_D_Unit, FC % EnergyDensityUnit, &
-                 FC % TemperatureUnit, FC % nValues, NameOption = NameOption )
+                 FC % TemperatureUnit, FC % nValues, &
+                 NameOption = FC % NameShort )
         call RM % SetOutput ( FC % FieldOutput )
       end select !-- RM
     case ( 'PHOTONS' )
@@ -184,7 +181,8 @@ contains
         call RM % Initialize &
                ( FC % Velocity_U_Unit, FC % MomentumDensity_U_Unit, &
                  FC % MomentumDensity_D_Unit, FC % EnergyDensityUnit, &
-                 FC % TemperatureUnit, FC % nValues, NameOption = NameOption )
+                 FC % TemperatureUnit, FC % nValues, &
+                 NameOption = FC % NameShort )
         call RM % SetOutput ( FC % FieldOutput )
       end select !-- RM
     case default

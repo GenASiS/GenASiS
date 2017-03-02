@@ -14,7 +14,7 @@ module FieldChart_Template
     character ( LDF ) :: &
       Name = '', &
       Type = '', &
-      NameOutput = ''
+      NameShort = ''
     class ( ChartTemplate ), pointer :: &
       Chart => null ( )
   contains
@@ -22,40 +22,51 @@ module FieldChart_Template
       InitializeTemplate
     procedure, public, pass :: &
       FinalizeTemplate
+    procedure ( SF ), private, pass, deferred :: &
+      SetField
   end type FieldChartTemplate
+
+    abstract interface 
+      subroutine SF ( FC )
+        import FieldChartTemplate
+        class ( FieldChartTemplate ), intent ( inout ) :: &
+          FC
+      end subroutine
+    end interface
+
+  type, public :: FieldChartPointer
+    class ( FieldChartTemplate ), pointer :: &
+      Pointer => null ( )
+  end type FieldChartPointer
 
 contains
 
 
-  subroutine InitializeTemplate ( FC, C, NameOutputOption )
+  subroutine InitializeTemplate ( FC, C, NameShort )
 
     class ( FieldChartTemplate ), intent ( inout ) :: &
       FC
     class ( ChartTemplate ), intent ( in ), target :: &
       C
     character ( * ), intent ( in ), optional :: &
-      NameOutputOption
-
-    character ( LDL ), dimension ( : ), allocatable :: &
-      TypeWord
+      NameShort
 
     FC % IGNORABILITY = C % IGNORABILITY
 
     if ( FC % Type == '' ) &
       FC % Type = 'a FieldChart' 
 
-    call Split ( FC % Type, ' ', TypeWord )
-    FC % Name = trim ( TypeWord ( 2 ) ) // '_' // trim ( C % Name ) 
+    FC % Name = trim ( NameShort ) // '_' // trim ( C % Name ) 
 
     call Show ( 'Initializing ' // trim ( FC % Type ), FC % IGNORABILITY )
     call Show ( FC % Name, 'Name', FC % IGNORABILITY )
    
-    if ( present ( NameOutputOption ) ) then
-      FC % NameOutput = NameOutputOption
-      call Show ( FC % NameOutput, 'NameOutput', FC % IGNORABILITY )
-    end if
+    FC % NameShort = NameShort
+    call Show ( FC % NameShort, 'NameShort', FC % IGNORABILITY )
 
     FC % Chart => C
+
+    call FC % SetField ( )
 
   end subroutine InitializeTemplate
 

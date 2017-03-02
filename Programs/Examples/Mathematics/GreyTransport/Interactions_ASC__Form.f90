@@ -139,9 +139,8 @@ contains
     select type ( FC => FA % Chart )
     class is ( Interactions_CSL_Form )
       call FC % Initialize &
-             ( C, FA % InteractionsType, FA % LengthUnit, &
-               FA % EnergyDensityUnit, nValues, &
-               NameOutputOption = FA % NameShort )
+             ( C, FA % NameShort, FA % InteractionsType, FA % LengthUnit, &
+               FA % EnergyDensityUnit, nValues )
     end select !-- FC
 
     call A % AddField ( FA )

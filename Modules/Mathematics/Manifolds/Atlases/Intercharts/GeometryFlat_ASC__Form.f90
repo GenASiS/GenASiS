@@ -85,8 +85,7 @@ contains
           select type ( GC => FA % Chart )
           class is ( GeometryFlat_CSL_Form )
             associate ( nValues => C % nProperCells + C % nGhostCells )
-            call GC % Initialize &
-                   ( C, nValues, NameOutputOption = FA % NameShort )
+            call GC % Initialize ( C, FA % NameShort, nValues )
             end associate !-- nValues
           end select !-- GC
 

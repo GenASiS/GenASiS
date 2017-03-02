@@ -296,10 +296,9 @@ contains
     select type ( FC => FA % Chart )
     class is ( Fluid_CSL_Form )
       call FC % Initialize &
-             ( C, FA % FluidType, FA % VelocityUnit, FA % MassDensityUnit, &
-               FA % EnergyDensityUnit, FA % NumberDensityUnit, &
-               FA % TemperatureUnit, nValues, &
-               NameOutputOption = FA % NameShort )
+             ( C, FA % NameShort, FA % FluidType, FA % VelocityUnit, &
+               FA % MassDensityUnit, FA % EnergyDensityUnit, &
+               FA % NumberDensityUnit, FA % TemperatureUnit, nValues )
     end select !-- FC
 
     call A % AddField ( FA )

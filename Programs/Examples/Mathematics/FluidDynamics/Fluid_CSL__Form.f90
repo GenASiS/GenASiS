@@ -43,15 +43,16 @@ contains
 
 
   subroutine Initialize &
-               ( FC, C, FluidType, VelocityUnit, MassDensityUnit, &
+               ( FC, C, NameShort, FluidType, VelocityUnit, MassDensityUnit, &
                  EnergyDensityUnit, NumberDensityUnit, TemperatureUnit, &
-                 nValues, NameOutputOption )
+                 nValues )
 
     class ( Fluid_CSL_Form ), intent ( inout ) :: &
       FC
     class ( ChartTemplate ), intent ( in ) :: &
       C
     character ( * ), intent ( in ) :: &
+      NameShort, &
       FluidType
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
       VelocityUnit
@@ -62,8 +63,6 @@ contains
       TemperatureUnit
     integer ( KDI ), intent ( in ) :: &
       nValues
-    character ( * ), intent ( in ), optional :: &
-      NameOutputOption
 
     if ( FC % Type == '' ) &
       FC % Type = 'a Fluid_CSL'
@@ -75,8 +74,7 @@ contains
     FC % TemperatureUnit   = TemperatureUnit
     FC % VelocityUnit      = VelocityUnit
 
-    call FC % InitializeTemplate_CSL &
-           ( C, nValues, NameOutputOption = NameOutputOption )
+    call FC % InitializeTemplate_CSL ( C, NameShort, nValues )
 
   end subroutine Initialize
 
@@ -175,12 +173,10 @@ contains
   end subroutine Finalize
 
 
-  subroutine SetField ( FC, NameOption )
+  subroutine SetField ( FC )
 
     class ( Fluid_CSL_Form ), intent ( inout ) :: &
       FC
-    character ( * ), intent ( in ), optional :: &
-      NameOption
 
     allocate ( FC % FieldOutput )
 
@@ -191,7 +187,7 @@ contains
       type is ( Fluid_D_Form )
         call F % Initialize &
                ( FC % VelocityUnit, FC % MassDensityUnit, FC % nValues, &
-                 NameOption = NameOption )
+                 NameOption = FC % NameShort )
         call F % SetOutput ( FC % FieldOutput )
       end select !-- F
     case ( 'POLYTROPIC' )
@@ -201,7 +197,7 @@ contains
         call F % Initialize &
                ( FC % VelocityUnit, FC % MassDensityUnit, &
                  FC % EnergyDensityUnit, FC % TemperatureUnit, FC % nValues, &
-                 NameOption = NameOption )
+                 NameOption = FC % NameShort )
         call F % SetOutput ( FC % FieldOutput )
       end select !-- F
     case ( 'NON_RELATIVISTIC' )
@@ -211,7 +207,7 @@ contains
         call F % Initialize &
                ( FC % VelocityUnit, FC % MassDensityUnit, &
                  FC % EnergyDensityUnit, FC % TemperatureUnit, FC % nValues, &
-                 NameOption = NameOption )
+                 NameOption = FC % NameShort )
         call F % SetOutput ( FC % FieldOutput )
       end select !-- F
     case ( 'MEAN_HEAVY_NUCLEUS' )
@@ -221,7 +217,8 @@ contains
         call F % Initialize &
                ( FC % VelocityUnit, FC % MassDensityUnit, &
                  FC % EnergyDensityUnit, FC % NumberDensityUnit, &
-                 FC % TemperatureUnit, FC % nValues, NameOption = NameOption )
+                 FC % TemperatureUnit, FC % nValues, &
+                 NameOption = FC % NameShort )
         call F % SetOutput ( FC % FieldOutput )
       end select !-- F
     case default

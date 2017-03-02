@@ -64,7 +64,7 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       nWriteOption
 
-    if ( .not. allocated ( I % Current_ASC_1D ) ) then
+    if ( .not. allocated ( I % Current_BSLL_ASC_CSLD ) ) then
       call Show ( 'Current_BSLL_ASC_CSLD not allocated by an extension', &
                   CONSOLE % WARNING )
       call Show ( 'Integrator_C_MS_C_PS__Template', 'module', &

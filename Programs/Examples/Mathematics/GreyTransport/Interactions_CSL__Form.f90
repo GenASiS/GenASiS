@@ -34,22 +34,21 @@ contains
 
 
   subroutine Initialize &
-               ( IC, C, InteractionsType, LengthUnit, EnergyDensityUnit, &
-                 nValues, NameOutputOption )
+               ( IC, C, NameShort, InteractionsType, LengthUnit, &
+                 EnergyDensityUnit, nValues )
 
     class ( Interactions_CSL_Form ), intent ( inout ) :: &
       IC
     class ( ChartHeader_SL_Form ), intent ( in ), target :: &
       C
     character ( * ), intent ( in ) :: &
+      NameShort, &
       InteractionsType
     type ( MeasuredValueForm ), intent ( in ) :: &
       LengthUnit, &
       EnergyDensityUnit
     integer ( KDI ), intent ( in ) :: &
       nValues
-    character ( * ), intent ( in ), optional :: &
-      NameOutputOption
 
     if ( IC % Type == '' ) &
       IC % Type = 'an Interactions_CSL'
@@ -58,8 +57,7 @@ contains
     IC % LengthUnit        = LengthUnit
     IC % EnergyDensityUnit = EnergyDensityUnit
 
-    call IC % InitializeTemplate_CSL &
-           ( C, nValues, NameOutputOption = NameOutputOption )
+    call IC % InitializeTemplate_CSL ( C, NameShort, nValues )
 
   end subroutine Initialize
 
@@ -116,12 +114,10 @@ contains
   end subroutine Finalize
 
 
-  subroutine SetField ( FC, NameOption )
+  subroutine SetField ( FC )
 
     class ( Interactions_CSL_Form ), intent ( inout ) :: &
       FC
-    character ( * ), intent ( in ), optional :: &
-      NameOption
 
     allocate ( FC % FieldOutput )
 
@@ -132,7 +128,7 @@ contains
       type is ( Interactions_F_Form )
         call I % Initialize &
                ( FC % LengthUnit, FC % EnergyDensityUnit, FC % nValues, &
-                 NameOption = NameOption )
+                 NameOption = FC % NameShort )
         call I % SetOutput ( FC % FieldOutput )
       end select !-- RM
     case ( 'MARSHAK_WAVE_VAYTET_1_GREY' )
@@ -141,7 +137,7 @@ contains
       type is ( Interactions_MWV_1_G_Form )
         call I % Initialize &
                ( FC % LengthUnit, FC % EnergyDensityUnit, FC % nValues, &
-                 NameOption = NameOption )
+                 NameOption = FC % NameShort )
         call I % SetOutput ( FC % FieldOutput )
       end select !-- RM
     case ( 'MARSHAK_WAVE_VAYTET_2_GREY' )
@@ -150,7 +146,7 @@ contains
       type is ( Interactions_MWV_2_G_Form )
         call I % Initialize &
                ( FC % LengthUnit, FC % EnergyDensityUnit, FC % nValues, &
-                 NameOption = NameOption )
+                 NameOption = FC % NameShort )
         call I % SetOutput ( FC % FieldOutput )
       end select !-- RM
     case ( 'MARSHAK_WAVE_VAYTET_3_GREY' )
@@ -159,7 +155,7 @@ contains
       type is ( Interactions_MWV_3_G_Form )
         call I % Initialize &
                ( FC % LengthUnit, FC % EnergyDensityUnit, FC % nValues, &
-                 NameOption = NameOption )
+                 NameOption = FC % NameShort )
         call I % SetOutput ( FC % FieldOutput )
       end select !-- RM
     case default

@@ -23,7 +23,7 @@ module FibersWritten_CSL__Form
 contains
 
 
-  subroutine Initialize ( FWC, C, nValues, NameOutputOption )
+  subroutine Initialize ( FWC, C, nValues )
 
     class ( FibersWritten_CSL_Form ), intent ( inout ) :: &
       FWC
@@ -31,14 +31,11 @@ contains
       C
     integer ( KDI ), intent ( in ) :: &
       nValues
-    character ( * ), intent ( in ), optional :: &
-      NameOutputOption
  
     if ( FWC % Type == '' ) &
       FWC % Type = 'a FibersWritten_CSL'
 
-    call FWC % InitializeTemplate_CSL &
-           ( C, nValues, NameOutputOption = NameOutputOption )
+    call FWC % InitializeTemplate_CSL ( C, 'FibersWritten', nValues )
 
   end subroutine Initialize
 
@@ -53,12 +50,10 @@ contains
   end subroutine Finalize
 
 
-  subroutine SetField ( FC, NameOption )
+  subroutine SetField ( FC )
 
     class ( FibersWritten_CSL_Form ), intent ( inout ) :: &
       FC
-    character ( * ), intent ( in ), optional :: &
-      NameOption
 
     allocate &
       ( FC % Field, &
@@ -69,7 +64,7 @@ contains
 
     call FW % Initialize &
            ( [ FC % nValues, 1 ], VariableOption = [ 'Flag' ], &
-             NameOption = 'FibersWritten', ClearOption = .true. )
+             NameOption = FC % NameShort, ClearOption = .true. )
     call FWO % Initialize ( FW )
 
     end associate !-- FW, FWO
