@@ -262,7 +262,7 @@ contains
       class is ( RadiationMoments_ASC_Form )
         call RMA % Initialize &
                ( B % Base_ASC, FB % RadiationType, &
-                 NameOutputOption = trim ( FB % Name ) // EnergyNumber, &
+                 NameOutputOption = 'Radiation' // EnergyNumber, &
                  Velocity_U_UnitOption = FB % Velocity_U_Unit, &
                  MomentumDensity_U_UnitOption = FB % MomentumDensity_U_Unit, &
                  MomentumDensity_D_UnitOption = FB % MomentumDensity_D_Unit, &

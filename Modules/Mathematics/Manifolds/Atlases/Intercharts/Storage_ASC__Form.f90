@@ -40,6 +40,9 @@ contains
     character ( * ), intent ( in ), optional :: &
       NameOutputOption
 
+    if ( SA % Type == '' ) &
+      SA % Type = 'a Storage_ASC' 
+
     SA % nFields  =  nFields
     SA % Atlas_SC => A
 

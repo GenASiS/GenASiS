@@ -240,7 +240,7 @@ contains
     
     class ( FieldChartTemplate ), pointer :: &
       FC 
-    
+
     associate ( FA => FB % Section % Atlas ( iSection ) % Element )
     
     FC => FA % Chart

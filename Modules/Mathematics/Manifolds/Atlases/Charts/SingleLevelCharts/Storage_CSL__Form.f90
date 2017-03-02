@@ -40,6 +40,9 @@ contains
     character ( * ), intent ( in ), optional :: &
       NameOutputOption
 
+    if ( SC % Type == '' ) &
+      SC % Type = 'a Storage_CSL' 
+
     SC % nFields  =  nFields
     SC % Chart_SL => C
 

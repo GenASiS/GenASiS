@@ -41,9 +41,13 @@ contains
     character ( * ), intent ( in ), optional :: &
       NameOutputOption
 
+    if ( SB % Type == '' ) &
+      SB % Type = 'a Storage_BSLL_ASC_CSLD' 
+
     SB % nFields = nFields
 
-    call SB % InitializeTemplate ( B, NameOutputOption = NameOutputOption )
+    call SB % InitializeTemplate_BSLL_ASC_CSLD &
+           ( B, NameOutputOption = NameOutputOption )
 
   end subroutine Initialize
 
