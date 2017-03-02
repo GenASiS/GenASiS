@@ -365,14 +365,14 @@ contains
     associate ( PPN => C % PortalPreviousNext )
     call PPN % Initialize ( Source_PN, Target_PN, nCells, nCells )
     call PPN % Show ( 'DistributedMesh PortalPreviousNext', &
-                      C % IGNORABILITY + 1 )
+                      C % IGNORABILITY + 2 )
     end associate !-- PPN
 
     allocate ( C % PortalNextPrevious )
     associate ( PNP => C % PortalNextPrevious )
     call PNP % Initialize ( Source_NP, Target_NP, nCells, nCells )
     call PNP % Show ( 'DistributedMesh PortalNextPrevious', &
-                      C % IGNORABILITY + 1 )
+                      C % IGNORABILITY + 2 )
     end associate !-- PNP
 
     end associate !-- nB

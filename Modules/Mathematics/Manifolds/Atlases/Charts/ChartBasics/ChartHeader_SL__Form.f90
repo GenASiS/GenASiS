@@ -292,17 +292,14 @@ contains
     C % nCells ( : nD ) = 32
     if ( present ( nCellsOption ) ) &
       C % nCells ( : nD ) = nCellsOption ( : nD )
-    call PROGRAM_HEADER % GetParameter &
-           ( C % nCells ( : nD ), 'nCells', &
-             ParameterStreamOption = C % ParameterStream )
+    call PROGRAM_HEADER % GetParameter ( C % nCells ( : nD ), 'nCells' )
 
     C % nGhostLayers = 0
     C % nGhostLayers ( : nD ) = 2
     if ( present ( nGhostLayersOption ) ) &
       C % nGhostLayers ( : nD ) = nGhostLayersOption ( : nD )
     call PROGRAM_HEADER % GetParameter &
-           ( C % nGhostLayers ( : nD ), 'nGhostLayers', &
-             ParameterStreamOption = C % ParameterStream )
+           ( C % nGhostLayers ( : nD ), 'nGhostLayers' )
 
     end associate !-- nD
 
