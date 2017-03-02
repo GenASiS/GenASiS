@@ -56,7 +56,7 @@ contains
     integer ( KDI ) :: &
       Scratch
 
-    Ignorability = CONSOLE % INFO_3
+    Ignorability = CONSOLE % INFO_4
     if ( present ( IgnorabilityOption ) ) Ignorability = IgnorabilityOption
 
     Success = .false.

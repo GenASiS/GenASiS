@@ -168,6 +168,7 @@ contains
     call CONSOLE % SetVerbosity ( Verbosity )
 
     PH % MaxThreads = OMP_GET_MAX_THREADS ( )
+    call Show ( 'OpenMP MAX_THREADS', CONSOLE % INFO_1 )
     call Show ( PH % MaxThreads, 'MaxThreads', CONSOLE % INFO_1 )
     
     allocate ( PH % Timer ( MAX_TIMERS ) )
@@ -212,7 +213,7 @@ contains
     type ( ParameterStreamForm ), pointer :: &
       PS
 
-    Ignorability = CONSOLE % INFO_3
+    Ignorability = CONSOLE % INFO_4
     if ( present ( IgnorabilityOption ) ) Ignorability = IgnorabilityOption
 
     if ( present ( ParameterStreamOption ) ) then
@@ -223,15 +224,14 @@ contains
 
     associate ( CLO => PROGRAM_HEADER % CommandLineOptions )
 
-    call Show &
-           ( 'Parameter ' // trim ( Name ) // ' default value', &
-             Ignorability )
+    call Show ( 'Parameter ' // trim ( Name ) // ' default value', &
+                Ignorability )
     call Show ( Value, Name, Ignorability )
     call PS % Read &
-           ( Value, Name, IgnorabilityOption = IgnorabilityOption, &
+           ( Value, Name, IgnorabilityOption = Ignorability, &
              SuccessOption = Success_PS )
     call CLO % Read &
-           ( Value, Name, IgnorabilityOption = IgnorabilityOption, &
+           ( Value, Name, IgnorabilityOption = Ignorability, &
              SuccessOption = Success_CLO )
     if ( present ( SuccessOption ) ) &
       SuccessOption = Success_PS .or. Success_CLO
@@ -268,7 +268,7 @@ contains
     type ( ParameterStreamForm ), pointer :: &
       PS
 
-    Ignorability = CONSOLE % INFO_3
+    Ignorability = CONSOLE % INFO_4
     if ( present ( IgnorabilityOption ) ) Ignorability = IgnorabilityOption
 
     if ( present ( ParameterStreamOption ) ) then
@@ -279,17 +279,16 @@ contains
 
     associate ( CLO => PROGRAM_HEADER % CommandLineOptions )
 
-    call Show &
-           ( 'Parameter ' // trim ( Name ) // ' default value', &
-             Ignorability )
+    call Show ( 'Parameter ' // trim ( Name ) // ' default value', &
+                Ignorability )
     call Show ( Value, Name, Ignorability )
     call PS % Read &
            ( Value, Name, InputUnitOption = InputUnitOption, &
-             IgnorabilityOption = IgnorabilityOption, &
+             IgnorabilityOption = Ignorability, &
              SuccessOption = Success_PS )
     call CLO % Read &
            ( Value, Name, InputUnitOption = InputUnitOption, &
-             IgnorabilityOption = IgnorabilityOption, &
+             IgnorabilityOption = Ignorability, &
              SuccessOption = Success_CLO )
     if ( present ( SuccessOption ) ) &
       SuccessOption = Success_PS .or. Success_CLO
@@ -328,7 +327,7 @@ contains
     type ( ParameterStreamForm ), pointer :: &
       PS
 
-    Ignorability = CONSOLE % INFO_3
+    Ignorability = CONSOLE % INFO_4
     if ( present ( IgnorabilityOption ) ) Ignorability = IgnorabilityOption
 
     if ( present ( ParameterStreamOption ) ) then
@@ -339,17 +338,16 @@ contains
 
     associate ( CLO => PROGRAM_HEADER % CommandLineOptions )
 
-    call Show &
-           ( 'Parameter ' // trim ( Name ) // ' default value', &
-             Ignorability )
+    call Show ( 'Parameter ' // trim ( Name ) // ' default value', &
+                Ignorability )
     call Show ( Value, Name, Ignorability )
     call PS % Read &
            ( Value, Name, InputUnitOption = InputUnitOption, &
-             IgnorabilityOption = IgnorabilityOption, &
+             IgnorabilityOption = Ignorability, &
              ConvertOption = ConvertOption, SuccessOption = Success_PS )
     call CLO % Read &
            ( Value, Name, InputUnitOption = InputUnitOption, &
-             IgnorabilityOption = IgnorabilityOption, &
+             IgnorabilityOption = Ignorability, &
              ConvertOption = ConvertOption, SuccessOption = Success_CLO )
     if ( present ( SuccessOption ) ) &
       SuccessOption = Success_PS .or. Success_CLO
@@ -384,7 +382,7 @@ contains
     type ( ParameterStreamForm ), pointer :: &
       PS
 
-    Ignorability = CONSOLE % INFO_3
+    Ignorability = CONSOLE % INFO_4
     if ( present ( IgnorabilityOption ) ) Ignorability = IgnorabilityOption
 
     if ( present ( ParameterStreamOption ) ) then
@@ -395,15 +393,14 @@ contains
 
     associate ( CLO => PROGRAM_HEADER % CommandLineOptions )
 
-    call Show &
-           ( 'Parameter ' // trim ( Name ) // ' default value', &
-             Ignorability )
+    call Show ( 'Parameter ' // trim ( Name ) // ' default value', &
+                Ignorability )
     call Show ( Value, Name, Ignorability )
     call PS % Read &
-           ( Value, Name, IgnorabilityOption = IgnorabilityOption, &
+           ( Value, Name, IgnorabilityOption = Ignorability, &
              SuccessOption = Success_PS )
     call CLO % Read &
-           ( Value, Name, IgnorabilityOption = IgnorabilityOption, &
+           ( Value, Name, IgnorabilityOption = Ignorability, &
              SuccessOption = Success_CLO )
     if ( present ( SuccessOption ) ) &
       SuccessOption = Success_PS .or. Success_CLO
@@ -438,7 +435,7 @@ contains
     type ( ParameterStreamForm ), pointer :: &
       PS
 
-    Ignorability = CONSOLE % INFO_3
+    Ignorability = CONSOLE % INFO_4
     if ( present ( IgnorabilityOption ) ) Ignorability = IgnorabilityOption
 
     if ( present ( ParameterStreamOption ) ) then
@@ -449,15 +446,14 @@ contains
 
     associate ( CLO => PROGRAM_HEADER % CommandLineOptions )
 
-    call Show &
-           ( 'Parameter ' // trim ( Name ) // ' default value', &
-             Ignorability )
+    call Show ( 'Parameter ' // trim ( Name ) // ' default value', &
+                Ignorability )
     call Show ( Value, Name, Ignorability )
     call PS % Read &
-           ( Value, Name, IgnorabilityOption = IgnorabilityOption, &
+           ( Value, Name, IgnorabilityOption = Ignorability, &
              SuccessOption = Success_PS )
     call CLO % Read &
-           ( Value, Name, IgnorabilityOption = IgnorabilityOption, &
+           ( Value, Name, IgnorabilityOption = Ignorability, &
              SuccessOption = Success_CLO )
     if ( present ( SuccessOption ) ) &
       SuccessOption = Success_PS .or. Success_CLO
@@ -494,7 +490,7 @@ contains
     type ( ParameterStreamForm ), pointer :: &
       PS
 
-    Ignorability = CONSOLE % INFO_3
+    Ignorability = CONSOLE % INFO_4
     if ( present ( IgnorabilityOption ) ) Ignorability = IgnorabilityOption
 
     if ( present ( ParameterStreamOption ) ) then
@@ -505,15 +501,14 @@ contains
 
     associate ( CLO => PROGRAM_HEADER % CommandLineOptions )
 
-    call Show &
-           ( 'Parameter ' // trim ( Name ) // ' default value', &
-             Ignorability )
+    call Show ( 'Parameter ' // trim ( Name ) // ' default value', &
+                Ignorability )
     call Show ( Value, Name, Ignorability )
     call PS % Read &
-           ( Value, Name, IgnorabilityOption = IgnorabilityOption, &
+           ( Value, Name, IgnorabilityOption = Ignorability, &
              SuccessOption = Success_PS, nValuesOption = nValuesOption )
     call CLO % Read &
-           ( Value, Name, IgnorabilityOption = IgnorabilityOption, &
+           ( Value, Name, IgnorabilityOption = Ignorability, &
              SuccessOption = Success_CLO, nValuesOption = nValuesOption )
     if ( present ( SuccessOption ) ) &
       SuccessOption = Success_PS .or. Success_CLO
@@ -552,7 +547,7 @@ contains
     type ( ParameterStreamForm ), pointer :: &
       PS
 
-    Ignorability = CONSOLE % INFO_3
+    Ignorability = CONSOLE % INFO_4
     if ( present ( IgnorabilityOption ) ) Ignorability = IgnorabilityOption
 
     if ( present ( ParameterStreamOption ) ) then
@@ -563,17 +558,16 @@ contains
 
     associate ( CLO => PROGRAM_HEADER % CommandLineOptions )
 
-    call Show &
-           ( 'Parameter ' // trim ( Name ) // ' default value', &
-             Ignorability )
+    call Show ( 'Parameter ' // trim ( Name ) // ' default value', &
+                Ignorability )
     call Show ( Value, Name, Ignorability )
     call PS % Read &
            ( Value, Name, InputUnitOption = InputUnitOption, &
-             IgnorabilityOption = IgnorabilityOption, &
+             IgnorabilityOption = Ignorability, &
              SuccessOption = Success_PS, nValuesOption = nValuesOption )
     call CLO % Read &
            ( Value, Name, InputUnitOption = InputUnitOption, &
-             IgnorabilityOption = IgnorabilityOption, &
+             IgnorabilityOption = Ignorability, &
              SuccessOption = Success_CLO, nValuesOption = nValuesOption )
     if ( present ( SuccessOption ) ) &
       SuccessOption = Success_PS .or. Success_CLO
@@ -612,7 +606,7 @@ contains
     type ( ParameterStreamForm ), pointer :: &
       PS
 
-    Ignorability = CONSOLE % INFO_3
+    Ignorability = CONSOLE % INFO_4
     if ( present ( IgnorabilityOption ) ) Ignorability = IgnorabilityOption
 
     if ( present ( ParameterStreamOption ) ) then
@@ -623,17 +617,16 @@ contains
 
     associate ( CLO => PROGRAM_HEADER % CommandLineOptions )
 
-    call Show &
-           ( 'Parameter ' // trim ( Name ) // ' default value', &
-             Ignorability )
+    call Show ( 'Parameter ' // trim ( Name ) // ' default value', &
+                Ignorability )
     call Show ( Value, Name, Ignorability )
     call PS % Read &
            ( Value, Name, InputUnitOption = InputUnitOption, &
-             IgnorabilityOption = IgnorabilityOption, &
+             IgnorabilityOption = Ignorability, &
              SuccessOption = Success_PS, nValuesOption = nValuesOption )
     call CLO % Read &
            ( Value, Name, InputUnitOption = InputUnitOption, &
-             IgnorabilityOption = IgnorabilityOption, &
+             IgnorabilityOption = Ignorability, &
              SuccessOption = Success_CLO, nValuesOption = nValuesOption )
     if ( present ( SuccessOption ) ) &
       SuccessOption = Success_PS .or. Success_CLO
@@ -670,7 +663,7 @@ contains
     type ( ParameterStreamForm ), pointer :: &
       PS
 
-    Ignorability = CONSOLE % INFO_3
+    Ignorability = CONSOLE % INFO_4
     if ( present ( IgnorabilityOption ) ) Ignorability = IgnorabilityOption
 
     if ( present ( ParameterStreamOption ) ) then
@@ -681,15 +674,14 @@ contains
 
     associate ( CLO => PROGRAM_HEADER % CommandLineOptions )
 
-    call Show &
-           ( 'Parameter ' // trim ( Name ) // ' default value', &
-             Ignorability )
+    call Show ( 'Parameter ' // trim ( Name ) // ' default value', &
+                Ignorability )
     call Show ( Value, Name, Ignorability )
     call PS % Read &
-           ( Value, Name, IgnorabilityOption = IgnorabilityOption, &
+           ( Value, Name, IgnorabilityOption = Ignorability, &
              SuccessOption = Success_PS, nValuesOption = nValuesOption )
     call CLO % Read &
-           ( Value, Name, IgnorabilityOption = IgnorabilityOption, &
+           ( Value, Name, IgnorabilityOption = Ignorability, &
              SuccessOption = Success_CLO, nValuesOption = nValuesOption )
     if ( present ( SuccessOption ) ) &
       SuccessOption = Success_PS .or. Success_CLO
@@ -726,7 +718,7 @@ contains
     type ( ParameterStreamForm ), pointer :: &
       PS
 
-    Ignorability = CONSOLE % INFO_3
+    Ignorability = CONSOLE % INFO_4
     if ( present ( IgnorabilityOption ) ) Ignorability = IgnorabilityOption
 
     if ( present ( ParameterStreamOption ) ) then
@@ -737,15 +729,14 @@ contains
 
     associate ( CLO => PROGRAM_HEADER % CommandLineOptions )
 
-    call Show &
-           ( 'Parameter ' // trim ( Name ) // ' default value', &
-             Ignorability )
+    call Show ( 'Parameter ' // trim ( Name ) // ' default value', &
+                Ignorability )
     call Show ( Value, Name, Ignorability )
     call PS % Read &
-           ( Value, Name, IgnorabilityOption = IgnorabilityOption, &
+           ( Value, Name, IgnorabilityOption = Ignorability, &
              SuccessOption = Success_PS, nValuesOption = nValuesOption )
     call CLO % Read &
-           ( Value, Name, IgnorabilityOption = IgnorabilityOption, &
+           ( Value, Name, IgnorabilityOption = Ignorability, &
              SuccessOption = Success_CLO, nValuesOption = nValuesOption )
     if ( present ( SuccessOption ) ) &
       SuccessOption = Success_PS .or. Success_CLO
