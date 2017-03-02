@@ -384,7 +384,7 @@ contains
       if ( K ( iV ) > 0.0_KDR ) then
         SB ( iV )  =    log ( K ( iV ) / K0 ) / ( Gamma_0 - 1.0_KDR )
       else
-        SB ( iV )  =  - huge ( 1.0_KDR )
+        SB ( iV )  =  - 0.1 * huge ( 1.0_KDR )
       end if
     end do !-- iV
     !$OMP end parallel do
