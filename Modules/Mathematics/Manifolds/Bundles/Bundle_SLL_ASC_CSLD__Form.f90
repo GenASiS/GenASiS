@@ -18,6 +18,7 @@ module Bundle_SLL_ASC_CSLD__Form
       nBaseValues   = 0, &
       nFibers       = 0, &
       nSections     = 0, &
+      nFibersWrite  = 0, &
       sFibersWrite  = 0
     integer ( KDI ), dimension ( : ), allocatable :: &
       iaBaseCell, &
@@ -51,6 +52,8 @@ module Bundle_SLL_ASC_CSLD__Form
       Write
     procedure, public, pass :: &
       CloseStreams
+    procedure, private, pass :: &
+      ShowHeader
     final :: &
       Finalize
   end type Bundle_SLL_ASC_CSLD_Form
@@ -58,19 +61,19 @@ module Bundle_SLL_ASC_CSLD__Form
 contains
 
 
-  subroutine Initialize ( B, Base, NameBase )
+  subroutine Initialize ( B, Base, Name )
 
     class ( Bundle_SLL_ASC_CSLD_Form ), intent ( inout ) :: &
       B
     class ( AtlasHeaderForm ), intent ( inout ), target :: &
       Base
     character ( * ), intent ( in )  :: &
-      NameBase
+      Name
       
     if ( B % Type == '' ) &
       B % Type = 'a Bundle_SLL_ASC_CSLD' 
 
-    call B % BundleHeaderForm % Initialize ( Base, NameBase )
+    call B % BundleHeaderForm % Initialize ( Base, Name )
 
     select type ( AB => Base )
     class is ( Atlas_SC_Form )
@@ -84,14 +87,12 @@ contains
         B % nBaseValues =  CB % nProperCells + CB % nGhostCells
         B % nFibers     =  CB % nProperCells
 
+        B % nFibersWrite = 5
+        call PROGRAM_HEADER % GetParameter ( B % nFibersWrite, 'nFibersWrite' )
+
         B % sFibersWrite = B % nFibers / B % nFibersWrite
         if ( mod ( B % nFibers, B % nFibersWrite ) > 0 ) &
           B % sFibersWrite = B % sFibersWrite + 1
-
-        call Show ( B % nBaseValues, 'nBaseValues', B % IGNORABILITY )
-        call Show ( B % nFibers, 'nFibers', B % IGNORABILITY )
-        call Show ( B % nFibersWrite, 'nFibersWrite', B % IGNORABILITY )
-        call Show ( B % sFibersWrite, 'sFibersWrite', B % IGNORABILITY )
 
         allocate ( B % FibersWritten )
         associate ( FW => B % FibersWritten )
@@ -160,6 +161,9 @@ contains
     allocate ( B % Geometry )
     associate ( GAF => B % Geometry )
     call GAF % Initialize ( FM )
+
+    call B % Show ( )
+
     call FM % SetGeometry ( GAF )
 
     allocate ( B % Fiber )
@@ -416,6 +420,22 @@ contains
       deallocate ( B % GridImageStream )
 
   end subroutine CloseStreams
+
+
+  subroutine ShowHeader ( B )
+
+    class ( Bundle_SLL_ASC_CSLD_Form ), intent ( inout ) :: &
+      B
+
+    call B % BundleHeaderForm % Show ( )
+
+    call Show ( B % nBaseValues, 'nBaseValues', B % IGNORABILITY )
+    call Show ( B % nFibers, 'nFibers', B % IGNORABILITY )
+    call Show ( B % nSections, 'nSections', B % IGNORABILITY )
+    call Show ( B % nFibersWrite, 'nFibersWrite', B % IGNORABILITY )
+    call Show ( B % sFibersWrite, 'sFibersWrite', B % IGNORABILITY )
+
+  end subroutine ShowHeader
 
 
   subroutine Finalize ( B )

@@ -15,7 +15,7 @@ module Atlas_SC__Template
   type, public, extends ( AtlasHeaderForm ), abstract :: Atlas_SC_Template
     class ( ChartTemplate ), allocatable :: &
       Chart
-    type ( Field_ASC_Pointer ), dimension ( : ), allocatable :: &
+    type ( FieldAtlasPointer ), dimension ( : ), allocatable :: &
       Field
   contains
     procedure, private, pass :: &

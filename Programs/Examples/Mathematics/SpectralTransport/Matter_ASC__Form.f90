@@ -31,7 +31,7 @@ contains
 
 
   subroutine Initialize &
-               ( MA, A, NameOutputOption, TemperatureUnitOption, &
+               ( MA, A, NameShortOption, TemperatureUnitOption, &
                  ChemicalPotentialUnitOption )
 
     class ( Matter_ASC_Form ), intent ( inout ) :: &

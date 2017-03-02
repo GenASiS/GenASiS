@@ -36,7 +36,7 @@ contains
 
 
   subroutine Initialize &
-               ( IA, A, InteractionsType, NameOutputOption, LengthUnitOption, &
+               ( IA, A, InteractionsType, NameShortOption, LengthUnitOption, &
                  EnergyDensityUnitOption )
 
     class ( Interactions_ASC_Form ), intent ( inout ) :: &
@@ -46,10 +46,13 @@ contains
     character ( * ), intent ( in ) :: &
       InteractionsType
     character ( * ), intent ( in ), optional :: &
-      NameOutputOption
+      NameShortOption
     type ( MeasuredValueForm ), intent ( in ), optional :: &
       LengthUnitOption, &
       EnergyDensityUnitOption
+
+    character ( LDL ) :: &
+      NameShort
 
     if ( IA % Type == '' ) &
       IA % Type = 'an Interactions_ASC'
@@ -60,8 +63,11 @@ contains
     if ( present ( EnergyDensityUnitOption ) ) &
       IA % EnergyDensityUnit = EnergyDensityUnitOption
 
-    call IA % InitializeTemplate_ASC &
-           ( A, NameOutputOption = NameOutputOption )
+    NameShort = 'Interactions'
+    if ( present ( NameShortOption ) ) &
+      NameShort = NameShortOption
+
+    call IA % InitializeTemplate_ASC ( A, NameShort )
 
   end subroutine Initialize
 
@@ -116,12 +122,10 @@ contains
   end subroutine Finalize
 
 
-  subroutine SetField ( FA, NameOutputOption )
+  subroutine SetField ( FA )
 
     class ( Interactions_ASC_Form ), intent ( inout ) :: &
       FA
-    character ( * ), intent ( in ), optional :: &
-      NameOutputOption
 
     select type ( A => FA % Atlas )
     class is ( Atlas_SC_Template )
@@ -137,7 +141,7 @@ contains
       call FC % Initialize &
              ( C, FA % InteractionsType, FA % LengthUnit, &
                FA % EnergyDensityUnit, nValues, &
-               NameOutputOption = NameOutputOption )
+               NameOutputOption = FA % NameShort )
     end select !-- FC
 
     call A % AddField ( FA )

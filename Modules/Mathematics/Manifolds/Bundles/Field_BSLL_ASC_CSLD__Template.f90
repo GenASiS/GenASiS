@@ -22,9 +22,9 @@ module Field_BSLL_ASC_CSLD__Template
         nSections = 0
       class ( Bundle_SLL_ASC_CSLD_Form ), pointer :: &
         Bundle_SLL_ASC_CSLD => null ( )
-      class ( Field_ASC_1D_Form ), allocatable :: &
+      class ( FieldAtlas_1D_Form ), allocatable :: &
         Fiber
-      class ( Field_ASC_1D_Form ), allocatable :: &
+      class ( FieldAtlas_1D_Form ), allocatable :: &
         Section
   contains
     procedure, public, pass :: &
@@ -43,19 +43,7 @@ module Field_BSLL_ASC_CSLD__Template
       FieldSection
     procedure, public, pass :: &
       FinalizeTemplate_BSLL_ASC_CSLD
-    procedure ( SF ), private, pass, deferred :: &
-      SetField
   end type Field_BSLL_ASC_CSLD_Template
-
-    abstract interface 
-      subroutine SF ( FB, NameOutputOption )
-        import Field_BSLL_ASC_CSLD_Template
-        class ( Field_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
-          FB
-        character ( * ), intent ( in ), optional :: &
-          NameOutputOption
-      end subroutine
-    end interface
 
   type, public :: Field_BSLL_ASC_CSLD_Pointer
     class ( Field_BSLL_ASC_CSLD_Template ), pointer :: &
@@ -65,26 +53,20 @@ module Field_BSLL_ASC_CSLD__Template
 contains
 
 
-  subroutine InitializeTemplate_BSLL_ASC_CSLD ( FB, B, NameOutputOption )
+  subroutine InitializeTemplate_BSLL_ASC_CSLD ( FB, B, NameShort )
 
     class ( Field_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
       FB
     class ( Bundle_SLL_ASC_CSLD_Form ), intent ( in ), target :: &
       B
-    character ( * ), intent ( in ), optional :: &
-      NameOutputOption
-
-    call FB % InitializeTemplate ( B, NameOutputOption = NameOutputOption )
+    character ( * ), intent ( in ) :: &
+      NameShort
 
     FB % Bundle_SLL_ASC_CSLD => B
     FB % nFibers   = B % nFibers
     FB % nSections = B % nSections
 
-    if ( FB % NameOutput == '' ) then
-      call FB % SetField ( )
-    else
-      call FB % SetField ( NameOutputOption = FB % NameOutput )
-    end if
+    call FB % InitializeTemplate ( B, NameShort )
 
   end subroutine InitializeTemplate_BSLL_ASC_CSLD
 
@@ -217,14 +199,14 @@ contains
     class ( FieldChartTemplate ), pointer :: &
       FC 
     
-    associate ( FA => FB % Fiber % Atlas ( iFiber ) % Element )
-    
-    FC => FA % Chart
-    select type ( FC )
-    class is ( Field_CSL_Template )   
-      FF => FC % Field 
-    end select !-- FC
-    end associate !-- FA
+    select type ( FA => FB % Fiber % Atlas ( iFiber ) % Element )
+    class is ( Field_ASC_Template ) 
+      FC => FA % Chart
+      select type ( FC )
+      class is ( Field_CSL_Template )   
+        FF => FC % Field 
+      end select !-- FC
+    end select !-- FA
 
   end function FieldFiber
 
@@ -241,14 +223,14 @@ contains
     class ( FieldChartTemplate ), pointer :: &
       FC 
 
-    associate ( FA => FB % Section % Atlas ( iSection ) % Element )
-    
-    FC => FA % Chart
-    select type ( FC )
-    class is ( Field_CSL_Template )   
-      FS => FC % Field 
-    end select !-- FC
-    end associate !-- FA
+    select type ( FA => FB % Section % Atlas ( iSection ) % Element )
+    class is ( Field_ASC_Template )
+      FC => FA % Chart
+      select type ( FC )
+      class is ( Field_CSL_Template )   
+        FS => FC % Field 
+      end select !-- FC
+    end select !-- FA
 
   end function FieldSection
 

@@ -44,7 +44,7 @@ contains
 
 
   subroutine Initialize &
-               ( RMB, B, RadiationType, NameOutputOption, &
+               ( RMB, B, RadiationType, NameShortOption, &
                  Velocity_U_UnitOption, MomentumDensity_U_UnitOption, &
                  MomentumDensity_D_UnitOption, EnergyDensityUnitOption, &
                  EnergyUnitOption, MomentumUnitOption, &
@@ -57,7 +57,7 @@ contains
     character ( * ), intent ( in )  :: &
       RadiationType
     character ( * ), intent ( in ), optional :: &
-      NameOutputOption
+      NameShortOption
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ), optional :: &
       Velocity_U_UnitOption, &
       MomentumDensity_U_UnitOption, &
@@ -68,6 +68,8 @@ contains
       MomentumUnitOption, &
       AngularMomentumUnitOption
 
+    character ( LDL ) :: &
+      NameShort
     class ( GeometryFlatForm ), pointer :: &
       GF
 
@@ -127,8 +129,11 @@ contains
     !   call PROGRAM_HEADER % Abort ( )
     ! end select !-- B
 
-    call RMB % InitializeTemplate_BSLL_ASC_CSLD &
-           ( B, NameOutputOption = NameOutputOption )
+    NameShort = 'RadiationMoments'
+    if ( present ( NameShortOption ) ) &
+      NameShort = NameShortOption
+
+    call RMB % InitializeTemplate_BSLL_ASC_CSLD ( B, NameShort )
 
     nullify ( GF )
 
@@ -144,17 +149,16 @@ contains
     class ( RadiationMomentsForm ), pointer :: &
       RMF
 
-    associate ( RMA => RMB % Fiber % Atlas ( iFiber ) % Element )
-    select type ( RMC => RMA % Chart )
-    class is ( Field_CSL_Template )   
-
-    select type ( RM => RMC % Field )
-    class is ( RadiationMomentsForm )
-      RMF => RM
-    end select !-- RM
-
-    end select !-- RMC
-    end associate !-- RMA
+    select type ( RMA => RMB % Fiber % Atlas ( iFiber ) % Element )
+    class is ( Field_ASC_Template )
+      select type ( RMC => RMA % Chart )
+      class is ( Field_CSL_Template )   
+        select type ( RM => RMC % Field )
+        class is ( RadiationMomentsForm )
+          RMF => RM
+        end select !-- RM
+      end select !-- RMC
+    end select !-- RMA
 
   end function RadiationMomentsFiber
 
@@ -204,12 +208,10 @@ contains
   end subroutine Finalize
 
 
-  subroutine SetField ( FB, NameOutputOption )
+  subroutine SetField ( FB )
 
     class ( RadiationMoments_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
       FB
-    character ( * ), intent ( in ), optional :: &
-      NameOutputOption
 
     integer ( KDI ) :: &
       iF, &  !-- iFiber
@@ -234,7 +236,7 @@ contains
       class is ( Atlas_SC_Form )
 
       call RMA % Initialize &
-             ( AF, FB % RadiationType, NameOutputOption = NameOutputOption, &
+             ( AF, FB % RadiationType, NameShortOption = FB % NameShort, &
                Velocity_U_UnitOption = FB % Velocity_U_Unit, &
                MomentumDensity_U_UnitOption = FB % MomentumDensity_U_Unit, &
                MomentumDensity_D_UnitOption = FB % MomentumDensity_D_Unit, &
@@ -262,7 +264,7 @@ contains
       class is ( RadiationMoments_ASC_Form )
         call RMA % Initialize &
                ( B % Base_ASC, FB % RadiationType, &
-                 NameOutputOption = 'Radiation' // EnergyNumber, &
+                 NameShortOption = trim ( FB % NameShort ) // EnergyNumber, &
                  Velocity_U_UnitOption = FB % Velocity_U_Unit, &
                  MomentumDensity_U_UnitOption = FB % MomentumDensity_U_Unit, &
                  MomentumDensity_D_UnitOption = FB % MomentumDensity_D_Unit, &

@@ -30,7 +30,7 @@ contains
 
 
   subroutine Initialize &
-               ( IB, B, InteractionsType, NameOutputOption, LengthUnitOption, &
+               ( IB, B, InteractionsType, NameShortOption, LengthUnitOption, &
                  EnergyDensityUnitOption )
 
     class ( Interactions_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
@@ -40,11 +40,13 @@ contains
     character ( * ), intent ( in )  :: &
       InteractionsType
     character ( * ), intent ( in ), optional :: &
-      NameOutputOption
+      NameShortOption
     type ( MeasuredValueForm ), intent ( in ), optional :: &
       LengthUnitOption, &
       EnergyDensityUnitOption
 
+    character ( LDL ) :: &
+      NameShort
     ! class ( GeometryFlatForm ), pointer :: &
     !   GF
 
@@ -93,8 +95,11 @@ contains
     if ( present ( EnergyDensityUnitOption ) ) &
       IB % EnergyDensityUnit = EnergyDensityUnitOption
 
-    call IB % InitializeTemplate_BSLL_ASC_CSLD &
-           ( B, NameOutputOption = NameOutputOption )
+    NameShort = 'Interactions'
+    if ( present ( NameShortOption ) ) &
+      NameShort = NameShortOption
+
+    call IB % InitializeTemplate_BSLL_ASC_CSLD ( B, NameShort )
 
     ! nullify ( GF )
 
@@ -110,17 +115,16 @@ contains
     class ( Interactions_F_Form ), pointer :: &
       IF
 
-    associate ( IA => IB % Fiber % Atlas ( iFiber ) % Element )
-    select type ( IC => IA % Chart )
-    class is ( Field_CSL_Template )   
-
-    select type ( I => IC % Field )
-    class is ( Interactions_F_Form )
-      IF => I
-    end select !-- I
-
-    end select !-- IC
-    end associate !-- IA
+    select type ( IA => IB % Fiber % Atlas ( iFiber ) % Element )
+    class is ( Field_ASC_Template )
+      select type ( IC => IA % Chart )
+      class is ( Field_CSL_Template )   
+        select type ( I => IC % Field )
+        class is ( Interactions_F_Form )
+          IF => I
+        end select !-- I
+      end select !-- IC
+    end select !-- IA
 
   end function InteractionsFiber_F
 
@@ -135,12 +139,10 @@ contains
   end subroutine Finalize
 
 
-  subroutine SetField ( FB, NameOutputOption )
+  subroutine SetField ( FB )
 
     class ( Interactions_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
       FB
-    character ( * ), intent ( in ), optional :: &
-      NameOutputOption
 
     integer ( KDI ) :: &
       iF  !-- iFiber
@@ -162,7 +164,7 @@ contains
 
       call IA % Initialize &
              ( AF, FB % InteractionsType, &
-               NameOutputOption = NameOutputOption, & 
+               NameShortOption = FB % NameShort, & 
                LengthUnitOption = FB % LengthUnit, &
                EnergyDensityUnitOption = FB % EnergyDensityUnit )
 

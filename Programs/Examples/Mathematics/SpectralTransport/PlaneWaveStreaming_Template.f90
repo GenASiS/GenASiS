@@ -98,7 +98,7 @@ contains
     allocate ( Bundle_SLL_ASC_CSLD_Form :: PWS % MomentumSpace )
     select type ( MS => PWS % MomentumSpace )
     class is ( Bundle_SLL_ASC_CSLD_Form )
-    call MS % Initialize ( PS, Name )
+    call MS % Initialize ( PS, 'MomentumSpace' )
     call MS % SetBoundaryConditionsFace &
            ( [ 'REFLECTING', 'REFLECTING' ], iDimension = 1 )
 
@@ -149,10 +149,10 @@ contains
       write ( EnergyNumber, fmt = '(a1,i2.2)' ) '_', iE
       call PWS % Reference_ASC ( iE ) % Initialize &
              ( PS, 'GENERIC', &
-               NameOutputOption = 'Reference' // EnergyNumber )
+               NameShortOption = 'Reference' // EnergyNumber )
       call PWS % Difference_ASC ( iE ) % Initialize &
              ( PS, 'GENERIC', &
-               NameOutputOption = 'Difference' // EnergyNumber )
+               NameShortOption = 'Difference' // EnergyNumber )
     end do !-- iE
     PWS % SetReference => SetReference
 

@@ -30,24 +30,23 @@ module Storage_BSLL_ASC_CSLD__Form
 contains
 
 
-  subroutine Initialize ( SB, B, nFields, NameOutputOption )
+  subroutine Initialize ( SB, B, NameShort, nFields )
 
     class ( Storage_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
       SB
     class ( Bundle_SLL_ASC_CSLD_Form ), intent ( in ), target :: &
       B
+    character ( * ), intent ( in ) :: &
+      NameShort
     integer ( KDI ), intent ( in ) :: &
       nFields
-    character ( * ), intent ( in ), optional :: &
-      NameOutputOption
 
     if ( SB % Type == '' ) &
       SB % Type = 'a Storage_BSLL_ASC_CSLD' 
 
     SB % nFields = nFields
 
-    call SB % InitializeTemplate_BSLL_ASC_CSLD &
-           ( B, NameOutputOption = NameOutputOption )
+    call SB % InitializeTemplate_BSLL_ASC_CSLD ( B, NameShort )
 
   end subroutine Initialize
 
@@ -62,16 +61,16 @@ contains
   end subroutine Finalize
 
 
-  subroutine SetField ( FB, NameOutputOption )
+  subroutine SetField ( FB )
 
     class ( Storage_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
       FB
-    character ( * ), intent ( in ), optional :: &
-      NameOutputOption
 
     integer ( KDI ) :: &
       iF, &  !-- iFiber
       iS     !-- iSection
+    character ( 1 + 2 ) :: &
+      SectionNumber
 
     associate ( B => FB % Bundle_SLL_ASC_CSLD )
 
@@ -87,7 +86,7 @@ contains
       class is ( Storage_ASC_Form )
         select type ( AF => B % Fiber % Atlas ( iF ) % Element )
         class is ( Atlas_SC_Form )
-          call SA % Initialize ( AF, FB % nFields )
+          call SA % Initialize ( AF, FB % NameShort, FB % nFields )
         end select !-- AF
       end select !-- SA
     end do !-- iF
@@ -101,10 +100,13 @@ contains
     call FBS % Initialize ( FB % nSections )
 
     do iS = 1, FB % nSections
+      write ( SectionNumber, fmt = '(a1,i2.2)' ) '_', iS
       allocate ( Storage_ASC_Form :: FBS % Atlas ( iS ) % Element )
       select type ( SA => FBS % Atlas ( iS ) % Element )
       class is ( Storage_ASC_Form )
-        call SA % Initialize ( B % Base_ASC, FB % nFields ) 
+        call SA % Initialize &
+               ( B % Base_ASC, trim ( FB % NameShort ) // SectionNumber, &
+                 FB % nFields ) 
       end select !-- SA
     end do !-- iS
 

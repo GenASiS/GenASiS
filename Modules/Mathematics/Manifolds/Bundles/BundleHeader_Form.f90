@@ -11,8 +11,7 @@ module BundleHeader_Form
   type, public :: BundleHeaderForm
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
-      nFields = 0, &
-      nFibersWrite
+      nFields = 0
     character ( LDF ) :: &
       Type = '', &
       Name = ''
@@ -27,6 +26,10 @@ module BundleHeader_Form
       Initialize
     procedure, public, pass :: &
       SetBoundaryConditionsFace
+    procedure, private, pass :: &
+      ShowHeader
+    generic, public :: &
+      Show => ShowHeader
     final :: &
       Finalize
   end type BundleHeaderForm
@@ -34,25 +37,21 @@ module BundleHeader_Form
 contains
 
 
-  subroutine Initialize ( B, Base, NameBase )
+  subroutine Initialize ( B, Base, Name )
 
     class ( BundleHeaderForm ), intent ( inout ) :: &
       B
     class ( AtlasHeaderForm ), intent ( inout ), target :: &
       Base
     character ( * ), intent ( in )  :: &
-      NameBase
-
-    character ( LDL ), dimension ( : ), allocatable :: &
-      TypeWord
+      Name
 
     B % IGNORABILITY = CONSOLE % INFO_1
 
     if ( B % Type == '' ) &
       B % Type = 'a Bundle' 
 
-    call Split ( B % Type, ' ', TypeWord )
-    B % Name = trim ( NameBase ) // '_' // trim ( TypeWord ( 2 ) )
+    B % Name = Name
 
     call Show ( 'Initializing ' // trim ( B % Type ), B % IGNORABILITY )
     call Show ( B % Name, 'Name', B % IGNORABILITY )
@@ -61,9 +60,6 @@ contains
 
     allocate ( B % FiberMaster )
     call B % FiberMaster % Initialize ( B % Name, iDimensionalityOption = 2 )
-
-    B % nFibersWrite = 5
-    call PROGRAM_HEADER % GetParameter ( B % nFibersWrite, 'nFibersWrite' )
 
     allocate ( B % GridImageStream ( ATLAS % MAX_STREAMS ) )
 
@@ -83,6 +79,22 @@ contains
            ( BoundaryCondition, iDimension )
 
   end subroutine SetBoundaryConditionsFace
+
+
+  subroutine ShowHeader ( B )
+
+    class ( BundleHeaderForm ), intent ( inout ) :: &
+      B
+
+    character ( LDL ), dimension ( : ), allocatable :: &
+      TypeWord
+
+    call Split ( B % Type, ' ', TypeWord )
+    call Show ( trim ( TypeWord ( 2 ) ) // ' Parameters', B % IGNORABILITY )
+    call Show ( B % Name, 'Name', B % IGNORABILITY )
+    call Show ( B % Base % Name, 'Base', B % IGNORABILITY )
+
+  end subroutine ShowHeader
 
 
   impure elemental subroutine Finalize ( B )

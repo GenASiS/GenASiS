@@ -54,7 +54,7 @@ contains
 
 
   subroutine Initialize &
-               ( FA, A, FluidType, NameOutputOption, VelocityUnitOption, &
+               ( FA, A, FluidType, NameShortOption, VelocityUnitOption, &
                  MassDensityUnitOption, EnergyDensityUnitOption, &
                  NumberDensityUnitOption, TemperatureUnitOption, &
                  MassUnitOption, EnergyUnitOption, MomentumUnitOption, &
@@ -67,7 +67,7 @@ contains
     character ( * ), intent ( in ) :: &
       FluidType
     character ( * ), intent ( in ), optional :: &
-      NameOutputOption
+      NameShortOption
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ), optional :: &
       VelocityUnitOption
     type ( MeasuredValueForm ), intent ( in ), optional :: &
@@ -82,6 +82,8 @@ contains
 
     integer ( KDI ) :: &
       iB  !-- iBoundary
+    character ( LDL ) :: &
+      NameShort
 
     if ( FA % Type == '' ) &
       FA % Type = 'a Fluid_ASC'
@@ -178,8 +180,11 @@ contains
       end select !-- TB
     end do !-- iB
 
-    call FA % InitializeTemplate_ASC_C &
-           ( A, NameOutputOption = NameOutputOption )
+    NameShort = 'Fluid'
+    if ( present ( NameShortOption ) ) &
+      NameShort = NameShortOption
+
+    call FA % InitializeTemplate_ASC_C ( A, NameShort )
 
   end subroutine Initialize
 
@@ -274,12 +279,10 @@ contains
   end subroutine Finalize
 
 
-  subroutine SetField ( FA, NameOutputOption )
+  subroutine SetField ( FA )
 
     class ( Fluid_ASC_Form ), intent ( inout ) :: &
       FA
-    character ( * ), intent ( in ), optional :: &
-      NameOutputOption
 
     select type ( A => FA % Atlas )
     class is ( Atlas_SC_Template )
@@ -296,7 +299,7 @@ contains
              ( C, FA % FluidType, FA % VelocityUnit, FA % MassDensityUnit, &
                FA % EnergyDensityUnit, FA % NumberDensityUnit, &
                FA % TemperatureUnit, nValues, &
-               NameOutputOption = NameOutputOption )
+               NameOutputOption = FA % NameShort )
     end select !-- FC
 
     call A % AddField ( FA )

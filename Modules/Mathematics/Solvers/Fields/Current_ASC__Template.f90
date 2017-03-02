@@ -53,22 +53,21 @@ module Current_ASC__Template
 contains
 
 
-  subroutine InitializeTemplate_ASC_C ( CA, A, NameOutputOption )
+  subroutine InitializeTemplate_ASC_C ( CA, A, NameShort )
 
     class ( Current_ASC_Template ), intent ( inout ) :: &
       CA
     class ( Atlas_SC_Form ), intent ( in ), target :: &
       A
-    character ( * ), intent ( in ), optional :: &
-      NameOutputOption
+    character ( * ), intent ( in ) :: &
+      NameShort
 
     integer ( KDI ) :: &
       iB  !-- iBoundary
     class ( CurrentTemplate ), pointer :: &
       C
 
-    call CA % InitializeTemplate_ASC &
-           ( A, NameOutputOption = NameOutputOption )
+    call CA % InitializeTemplate_ASC ( A, NameShort )
 
     CA % Atlas_SC => A
 

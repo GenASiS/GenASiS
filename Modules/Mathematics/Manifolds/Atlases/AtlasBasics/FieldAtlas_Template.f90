@@ -14,7 +14,7 @@ module FieldAtlas_Template
     character ( LDF ) :: &
       Name = '', &
       Type = '', &
-      NameOutput = ''
+      NameShort = ''
     class ( AtlasHeaderForm ), pointer :: &
       Atlas => null ( )
   contains
@@ -22,40 +22,69 @@ module FieldAtlas_Template
       InitializeTemplate
     procedure, public, pass :: &
       FinalizeTemplate
+    procedure ( SF ), private, pass, deferred :: &
+      SetField
   end type FieldAtlasTemplate
+
+    abstract interface 
+      subroutine SF ( FA )
+        import FieldAtlasTemplate
+        class ( FieldAtlasTemplate ), intent ( inout ) :: &
+          FA
+      end subroutine
+    end interface
+
+  type, public :: FieldAtlasPointer
+    class ( FieldAtlasTemplate ), pointer :: &
+      Pointer => null ( )
+  end type FieldAtlasPointer
+
+  type, public :: FieldAtlasElement
+    class ( FieldAtlasTemplate ), allocatable :: &
+      Element
+  contains
+    final :: &
+      FinalizeElement
+  end type FieldAtlasElement
+
+  type, public :: FieldAtlas_1D_Form
+    type ( FieldAtlasElement ), dimension ( : ), allocatable :: &
+      Atlas
+  contains
+    procedure, public, pass :: &
+      Initialize => Initialize_1D
+    final :: &
+      Finalize_1D
+  end type FieldAtlas_1D_Form
 
 contains
 
 
-  subroutine InitializeTemplate ( FA, A, NameOutputOption )
+  subroutine InitializeTemplate ( FA, A, NameShort )
 
     class ( FieldAtlasTemplate ), intent ( inout ) :: &
       FA
     class ( AtlasHeaderForm ), intent ( in ), target :: &
       A
-    character ( * ), intent ( in ), optional :: &
-      NameOutputOption
-
-    character ( LDL ), dimension ( : ), allocatable :: &
-      TypeWord
+    character ( * ), intent ( in ) :: &
+      NameShort
 
     FA % IGNORABILITY = A % IGNORABILITY
 
     if ( FA % Type == '' ) &
       FA % Type = 'a FieldAtlas' 
 
-    call Split ( FA % Type, ' ', TypeWord )
-    FA % Name = trim ( TypeWord ( 2 ) ) // '_' // trim ( A % Name ) 
+    FA % Name = trim ( NameShort ) // '_' // trim ( A % Name ) 
 
     call Show ( 'Initializing ' // trim ( FA % Type ), FA % IGNORABILITY )
     call Show ( FA % Name, 'Name', FA % IGNORABILITY )
    
-    if ( present ( NameOutputOption ) ) then
-      FA % NameOutput = NameOutputOption
-      call Show ( FA % NameOutput, 'NameOutput', FA % IGNORABILITY )
-    end if
+    FA % NameShort = NameShort
+    call Show ( FA % NameShort, 'NameShort', FA % IGNORABILITY )
 
     FA % Atlas => A
+
+    call FA % SetField ( )
 
   end subroutine InitializeTemplate
 
@@ -71,6 +100,40 @@ contains
     call Show ( FA % Name, 'Name', FA % IGNORABILITY )
    
   end subroutine FinalizeTemplate
+
+
+  impure elemental subroutine FinalizeElement ( FAE )
+    
+    type ( FieldAtlasElement ), intent ( inout ) :: &
+      FAE
+
+    if ( allocated ( FAE % Element ) ) &
+      deallocate ( FAE % Element )
+
+  end subroutine FinalizeElement
+
+
+  subroutine Initialize_1D ( FA_1D, nElements )
+
+    class ( FieldAtlas_1D_Form ), intent ( inout ) :: &
+      FA_1D
+    integer ( KDI ), intent ( in ) :: &
+      nElements
+
+    allocate ( FA_1D % Atlas ( nElements ) )
+
+  end subroutine Initialize_1D
+
+
+  impure elemental subroutine Finalize_1D ( FA_1D )
+
+    type ( FieldAtlas_1D_Form ), intent ( inout ) :: &
+      FA_1D
+    
+    if ( allocated ( FA_1D % Atlas ) ) &
+      deallocate ( FA_1D % Atlas )
+
+  end subroutine Finalize_1D
 
 
 end module FieldAtlas_Template

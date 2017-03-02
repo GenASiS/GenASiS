@@ -46,7 +46,7 @@ contains
 
 
   subroutine Initialize &
-               ( RMA, A, RadiationMomentsType, NameOutputOption, &
+               ( RMA, A, RadiationMomentsType, NameShortOption, &
                  Velocity_U_UnitOption, MomentumDensity_U_UnitOption, &
                  MomentumDensity_D_UnitOption, EnergyDensityUnitOption, &
                  TemperatureUnitOption, EnergyUnitOption, MomentumUnitOption, &
@@ -59,7 +59,7 @@ contains
     character ( * ), intent ( in ) :: &
       RadiationMomentsType
     character ( * ), intent ( in ), optional :: &
-      NameOutputOption
+      NameShortOption
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ), optional :: &
       Velocity_U_UnitOption, &
       MomentumDensity_U_UnitOption, &
@@ -73,6 +73,8 @@ contains
 
 !    integer ( KDI ) :: &
 !      iB  !-- iBoundary
+    character ( LDL ) :: &
+      NameShort
 
     if ( RMA % Type == '' ) &
       RMA % Type = 'a RadiationMoments_ASC'
@@ -157,8 +159,11 @@ contains
     !   end select !-- TB
     ! end do !-- iB
 
-    call RMA % InitializeTemplate_ASC_C &
-           ( A, NameOutputOption = NameOutputOption )
+    NameShort = 'RadiationMoments'
+    if ( present ( NameShortOption ) ) &
+      NameShort = NameShortOption
+
+    call RMA % InitializeTemplate_ASC_C ( A, NameShort )
 
   end subroutine Initialize
 
@@ -239,12 +244,10 @@ contains
   end subroutine Finalize
 
 
-  subroutine SetField ( FA, NameOutputOption )
+  subroutine SetField ( FA )
 
     class ( RadiationMoments_ASC_Form ), intent ( inout ) :: &
       FA
-    character ( * ), intent ( in ), optional :: &
-      NameOutputOption
 
     select type ( A => FA % Atlas )
     class is ( Atlas_SC_Template )
@@ -261,7 +264,7 @@ contains
              ( C, FA % RadiationMomentsType, FA % Velocity_U_Unit, &
                FA % MomentumDensity_U_Unit, FA % MomentumDensity_D_Unit, &
                FA % EnergyDensityUnit, FA % TemperatureUnit, nValues, &
-               NameOutputOption = NameOutputOption )
+               NameOutputOption = FA % NameShort )
     end select !-- FC
 
     call A % AddField ( FA )

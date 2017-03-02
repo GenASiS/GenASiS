@@ -12,9 +12,9 @@ SPECTRAL_MOMENTS = \
   Interactions_BSLL_ASC_CSLD__Form.o \
   RadiationMoments_BSLL_ASC_CSLD__Form.o \
   SetFermiDiracSpectrum_Command.o \
-  Matter_ASC__Form.o \
-  Matter_CSL__Form.o \
-  Matter_Form.o 
+#  Matter_ASC__Form.o \
+#  Matter_CSL__Form.o \
+#  Matter_Form.o 
 
 SineWaveStreaming: Basics.a Mathematics.a Fluid.a GreyMoments.a \
   SpectralMoments.a SineWaveStreaming.o
@@ -46,22 +46,22 @@ clobber: clean
 	rm -f SineWaveStreaming_*
 	rm -f Thermalization_*
 
-Matter_Form.o: \
-  Basics.o \
-  Matter_Form.f90
+# Matter_Form.o: \
+#   Basics.o \
+#   Matter_Form.f90
 
-Matter_CSL__Form.o: \
-  Basics.o \
-  Mathematics.o \
-  Matter_Form.o \
-  Matter_CSL__Form.f90
+# Matter_CSL__Form.o: \
+#   Basics.o \
+#   Mathematics.o \
+#   Matter_Form.o \
+#   Matter_CSL__Form.f90
 
-Matter_ASC__Form.o: \
-  Basics.o \
-  Mathematics.o \
-  Matter_Form.o \
-  Matter_CSL__Form.o \
-  Matter_ASC__Form.f90
+# Matter_ASC__Form.o: \
+#   Basics.o \
+#   Mathematics.o \
+#   Matter_Form.o \
+#   Matter_CSL__Form.o \
+#   Matter_ASC__Form.f90
 
 SetFermiDiracSpectrum_Command.o: \
   Basics.o \

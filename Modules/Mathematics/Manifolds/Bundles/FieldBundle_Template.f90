@@ -14,7 +14,7 @@ module FieldBundle_Template
     character ( LDF ) :: &
       Name = '', &
       Type = '', &
-      NameOutput = ''
+      NameShort = ''
     class ( BundleHeaderForm ), pointer :: &
       Bundle => null ( )
   contains
@@ -22,7 +22,17 @@ module FieldBundle_Template
       InitializeTemplate
     procedure, public, pass :: &
       FinalizeTemplate
+    procedure ( SF ), private, pass, deferred :: &
+      SetField
   end type FieldBundleTemplate
+
+    abstract interface 
+      subroutine SF ( FB )
+        import FieldBundleTemplate
+        class ( FieldBundleTemplate ), intent ( inout ) :: &
+          FB
+      end subroutine
+    end interface
 
   ! type, public :: FieldBundleElementForm
   !   class ( FieldBundleTemplate ), allocatable :: &
@@ -35,35 +45,31 @@ module FieldBundle_Template
 contains
 
 
-  subroutine InitializeTemplate ( FB, B, NameOutputOption )
+  subroutine InitializeTemplate ( FB, B, NameShort )
 
     class ( FieldBundleTemplate ), intent ( inout ) :: &
       FB
     class ( BundleHeaderForm ), intent ( in ), target :: &
       B
-    character ( * ), intent ( in ), optional :: &
-      NameOutputOption
-
-    character ( LDL ), dimension ( : ), allocatable :: &
-      TypeWord
+    character ( * ), intent ( in ) :: &
+      NameShort
 
     FB % IGNORABILITY = B % IGNORABILITY
 
     if ( FB % Type == '' ) &
       FB % Type = 'a FieldBundle' 
 
-    call Split ( FB % Type, ' ', TypeWord )
-    FB % Name = trim ( B % Name ) // '_' // trim ( TypeWord ( 2 ) ) 
+    FB % Name = trim ( NameShort ) // '_' // B % Name 
 
     call Show ( 'Initializing ' // trim ( FB % Type ), FB % IGNORABILITY )
     call Show ( FB % Name, 'Name', FB % IGNORABILITY )
    
-    if ( present ( NameOutputOption ) ) then
-      FB % NameOutput = NameOutputOption
-      call Show ( FB % NameOutput, 'NameOutput', FB % IGNORABILITY )
-    end if
+    FB % NameShort = NameShort
+    call Show ( FB % NameShort, 'NameShort', FB % IGNORABILITY )
 
     FB % Bundle => B
+
+    call FB % SetField ( )
 
   end subroutine InitializeTemplate
 
