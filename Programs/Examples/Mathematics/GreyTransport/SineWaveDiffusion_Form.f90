@@ -77,7 +77,7 @@ contains
     allocate ( Atlas_SC_Form :: SWD % PositionSpace )
     select type ( PS => SWD % PositionSpace )
     class is ( Atlas_SC_Form )
-    call PS % Initialize ( Name, PROGRAM_HEADER % Communicator )
+    call PS % Initialize ( 'PositionSpace', PROGRAM_HEADER % Communicator )
     call PS % CreateChart &
            ( MinCoordinateOption = [ -3.0_KDR, 0.0_KDR, 0.0_KDR ], &
              MaxCoordinateOption = [ +3.0_KDR, 0.0_KDR, 0.0_KDR ] )

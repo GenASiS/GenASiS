@@ -71,7 +71,7 @@ contains
     allocate ( Atlas_SC_Form :: ST % PositionSpace )
     select type ( PS => ST % PositionSpace )
     class is ( Atlas_SC_Form )
-    call PS % Initialize ( Name, PROGRAM_HEADER % Communicator )
+    call PS % Initialize ( 'PositionSpace', PROGRAM_HEADER % Communicator )
 
     nCellsRadius = 64
     call PROGRAM_HEADER % GetParameter ( nCellsRadius, 'nCellsRadius' )

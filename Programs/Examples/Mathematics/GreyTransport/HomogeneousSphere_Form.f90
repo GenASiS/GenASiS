@@ -114,7 +114,7 @@ contains
     allocate ( Atlas_SC_Form :: HS % PositionSpace )
     select type ( PS => HS % PositionSpace )
     class is ( Atlas_SC_Form )
-    call PS % Initialize ( Name, PROGRAM_HEADER % Communicator )
+    call PS % Initialize ( 'PositionSpace', PROGRAM_HEADER % Communicator )
 
     select case ( PS % nDimensions )
       case ( 1 )

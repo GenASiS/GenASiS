@@ -147,7 +147,7 @@ contains
         call Show &
                ( 'Dimensionality not specified, defaulting to 3D', &
                  CONSOLE % WARNING )
-        call Show ( PH % Dimensionality, 'Dimensionality' )
+        call Show ( PH % Dimensionality, 'Dimensionality', CONSOLE % INFO_1 )
       end if
       PH % Name = trim ( Name ) // '_' // trim ( PH % Dimensionality )
     else

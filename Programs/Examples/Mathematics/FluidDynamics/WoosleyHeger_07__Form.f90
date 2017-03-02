@@ -92,7 +92,7 @@ contains
     allocate ( Atlas_SC_Form :: WH % PositionSpace )
     select type ( PS => WH % PositionSpace )
     class is ( Atlas_SC_Form )
-    call PS % Initialize ( Name, PROGRAM_HEADER % Communicator )
+    call PS % Initialize ( 'PositionSpace', PROGRAM_HEADER % Communicator )
 
     nCells = [ 448, 1, 1 ]
     call PROGRAM_HEADER % GetParameter ( nCells, 'nCells' )

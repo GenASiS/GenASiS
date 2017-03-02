@@ -73,7 +73,7 @@ contains
     allocate ( Atlas_SC_Form :: PWS % PositionSpace )
     select type ( PS => PWS % PositionSpace )
     class is ( Atlas_SC_Form )
-    call PS % Initialize ( Name, PROGRAM_HEADER % Communicator )
+    call PS % Initialize ( 'PositionSpace', PROGRAM_HEADER % Communicator )
     call PS % CreateChart ( )
 
     !-- Geometry of PositionSpace

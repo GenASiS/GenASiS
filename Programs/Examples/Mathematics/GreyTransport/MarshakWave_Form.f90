@@ -138,7 +138,7 @@ contains
     allocate ( Atlas_SC_Form :: MW % PositionSpace )
     select type ( PS => MW % PositionSpace )
     class is ( Atlas_SC_Form )
-    call PS % Initialize ( Name, PROGRAM_HEADER % Communicator )
+    call PS % Initialize ( 'PositionSpace', PROGRAM_HEADER % Communicator )
 
     do iD = 1, PS % nDimensions
       call PS % SetBoundaryConditionsFace &

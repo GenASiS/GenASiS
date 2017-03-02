@@ -48,7 +48,7 @@ contains
     allocate ( Atlas_SC_Form :: RT % PositionSpace )
     select type ( PS => RT % PositionSpace )
     class is ( Atlas_SC_Form )
-    call PS % Initialize ( Name, PROGRAM_HEADER % Communicator )
+    call PS % Initialize ( 'PositionSpace', PROGRAM_HEADER % Communicator )
 
     call PS % SetBoundaryConditionsFace &
            ( [ 'PERIODIC', 'PERIODIC' ], iDimension = 1 )
