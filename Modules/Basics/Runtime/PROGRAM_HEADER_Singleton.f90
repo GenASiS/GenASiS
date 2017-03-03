@@ -765,18 +765,18 @@ contains
 
     call PH % Timer ( Handle ) % Initialize ( Name )
 
-    call Show ( 'Adding a Timer', CONSOLE % INFO_1 )
-    call Show ( PH % Timer ( Handle ) % Name, 'Name' )
+    call Show ( 'Adding a Timer', CONSOLE % INFO_2 )
+    call Show ( PH % Timer ( Handle ) % Name, 'Name', CONSOLE % INFO_2 )
 
   end subroutine AddTimer
 
 
   subroutine ShowStatistics &
-               ( Verbosity, CommunicatorOption, MaxTimeOption, MinTimeOption, &
-                 MeanTimeOption )
+               ( Ignorability, CommunicatorOption, MaxTimeOption, &
+                 MinTimeOption, MeanTimeOption )
   
     integer ( KDI ), intent ( in ) :: &
-      Verbosity
+      Ignorability
     type ( CommunicatorForm ), intent ( in ), optional :: &
       CommunicatorOption
     real ( KDR ), dimension ( : ), intent ( out ), optional :: &
@@ -796,21 +796,20 @@ contains
     type ( ProgramHeaderSingleton ), pointer :: &
       PH
       
-    if ( Verbosity > CONSOLE % Verbosity ) return
-
     PH => PROGRAM_HEADER 
       
-    call Show ( 'Runtime statistics', Verbosity )
+    call Show ( 'Runtime statistics', Ignorability )
 
     call ReadTimers &
-           ( Verbosity, CommunicatorOption, MaxTimeOption, MinTimeOption, &
+           ( Ignorability, CommunicatorOption, MaxTimeOption, MinTimeOption, &
              MeanTimeOption )
 
-    call Show ( 'Program memory usage', Verbosity )
+    call Show ( 'Program memory usage', Ignorability )
     
     if ( present ( CommunicatorOption ) ) then
       call GetMemoryUsage &
-             ( HighWaterMark, ResidentSetSize, CommunicatorOption, &
+             ( HighWaterMark, ResidentSetSize, Ignorability, &
+               C_Option        = CommunicatorOption, &
                Max_HWM_Option  = MaxHighWaterMark, &
                Min_HWM_Option  = MinHighWaterMark, &
                Mean_HWM_Option = MeanHighWaterMark, &
@@ -819,27 +818,27 @@ contains
                Mean_RSS_Option = MeanResidentSetSize )
     else
       call GetMemoryUsage &
-             ( HighWaterMark, ResidentSetSize )
+             ( HighWaterMark, ResidentSetSize, Ignorability )
     end if
     
-    call Show ( HighWaterMark, 'This process HWM', Verbosity )
-    call Show ( ResidentSetSize, 'This process RSS', Verbosity )
+    call Show ( HighWaterMark, 'This process HWM', Ignorability + 1 )
+    call Show ( ResidentSetSize, 'This process RSS', Ignorability + 1 )
     
     if ( present ( CommunicatorOption ) ) then
       
       call Show ( MaxHighWaterMark, 'Across processes max HWM', &
-                  Verbosity )
+                  Ignorability )
       call Show ( MinHighWaterMark, 'Across processes min HWM', &
-                  Verbosity )
+                  Ignorability + 1 )
       call Show ( MeanHighWaterMark, 'Across processes mean HWM', &
-                  Verbosity )
+                  Ignorability + 1 )
       
       call Show ( MaxResidentSetSize, 'Across processes max RSS', &
-                  Verbosity )
+                  Ignorability )
       call Show ( MinResidentSetSize, 'Across processes min RSS', &
-                  Verbosity )
+                  Ignorability + 1 )
       call Show ( MeanResidentSetSize, 'Across processes mean RSS', &
-                  Verbosity )
+                  Ignorability + 1 )
     
     end if
     
@@ -887,11 +886,11 @@ contains
   
 
   subroutine ReadTimers &
-               ( Verbosity, CommunicatorOption, MaxTimeOption, MinTimeOption, &
-                 MeanTimeOption )
+               ( Ignorability, CommunicatorOption, MaxTimeOption, &
+                 MinTimeOption, MeanTimeOption )
 
     integer ( KDI ), intent ( in ) :: &
-      Verbosity
+      Ignorability
     type ( CommunicatorForm ), intent ( in ), optional :: &
       CommunicatorOption
     real ( KDR ), dimension ( : ), intent ( out ), optional :: &
@@ -914,19 +913,19 @@ contains
    
     PH => PROGRAM_HEADER 
 
-    call Show ( 'Running timer intervals', Verbosity )
+    call Show ( 'Running timer intervals', Ignorability + 2 )
     Running = .false.
     do iT = 1, PH % nTimers
       if ( PH % Timer ( iT ) % Running ) then
         Running ( iT ) = .true.
         call PH % Timer ( iT ) % Stop ( )
-        call PH % Timer ( iT ) % ShowInterval ( Verbosity )
+        call PH % Timer ( iT ) % ShowInterval ( Ignorability + 2 )
       end if
     end do
 
-    call Show ( 'This process timers', Verbosity )
+    call Show ( 'This process timers', Ignorability + 1 )
     do iT = 1, PH % nTimers
-      call PH % Timer ( iT ) % ShowTotal ( Verbosity )
+      call PH % Timer ( iT ) % ShowTotal ( Ignorability + 1 )
     end do !-- iT
 
     if ( present ( CommunicatorOption ) ) then
@@ -943,32 +942,32 @@ contains
         CO % Outgoing % Value ( iT ) = PH % Timer ( iT ) % TotalTime
       end do !-- iT
 
-      call Show ( 'Max timers', Verbosity )
+      call Show ( 'Max timers', Ignorability )
       call CO % Reduce ( REDUCTION % MAX )
       do iT = 1, PH % nTimers
         call MaxTimer ( iT ) % TotalTime % Initialize &
                ( 's', CO % Incoming % Value ( iT ) )
-        call MaxTimer ( iT ) % ShowTotal ( Verbosity )
+        call MaxTimer ( iT ) % ShowTotal ( Ignorability )
         if ( present ( MaxTimeOption ) ) &
           MaxTimeOption ( iT ) = MaxTimer ( iT ) % TotalTime
       end do !-- iT
       
-      call Show ( 'Min timers', Verbosity )
+      call Show ( 'Min timers', Ignorability + 1 )
       call CO % Reduce ( REDUCTION % MIN )
       do iT = 1, PH % nTimers
         call MinTimer ( iT ) % TotalTime % Initialize &
                ( 's', CO % Incoming % Value ( iT ) )
-        call MinTimer ( iT ) % ShowTotal ( Verbosity )
+        call MinTimer ( iT ) % ShowTotal ( Ignorability + 1 )
         if ( present ( MinTimeOption ) ) &
           MinTimeOption ( iT ) = MinTimer ( iT ) % TotalTime
       end do !-- iT
       
-      call Show ( 'Mean timers', Verbosity )
+      call Show ( 'Mean timers', Ignorability + 1 )
       call CO % Reduce ( REDUCTION % SUM )
       do iT = 1, PH % nTimers
         call MeanTimer ( iT ) % TotalTime % Initialize &
                ( 's', CO % Incoming % Value ( iT ) / CommunicatorOption % Size )
-        call MeanTimer ( iT ) % ShowTotal ( Verbosity )
+        call MeanTimer ( iT ) % ShowTotal ( Ignorability + 1 )
         if ( present ( MeanTimeOption ) ) &
           MeanTimeOption ( iT ) = MeanTimer ( iT ) % TotalTime
       end do !-- iT

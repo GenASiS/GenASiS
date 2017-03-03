@@ -366,7 +366,7 @@ contains
       call I % SetReference ( )
     call I % Write ( )
     call PROGRAM_HEADER % ShowStatistics &
-           ( I % IGNORABILITY, &
+           ( I % IGNORABILITY + 2, &
              CommunicatorOption = PROGRAM_HEADER % Communicator, &
              MaxTimeOption = MaxTime, MinTimeOption = MinTime, &
              MeanTimeOption = MeanTime )

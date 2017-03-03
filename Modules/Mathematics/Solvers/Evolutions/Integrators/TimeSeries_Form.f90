@@ -238,7 +238,8 @@ contains
     SBV ( iV, TS % CYCLE ) = I % iCycle
 
     call GetMemoryUsage &
-           ( Memory_HWM, Memory_RSS, PROGRAM_HEADER % Communicator, &
+           ( Memory_HWM, Memory_RSS, TS % IGNORABILITY, &
+             PROGRAM_HEADER % Communicator, &
              Max_HWM_Option  = Memory_Max_HWM, &
              Min_HWM_Option  = Memory_Min_HWM, &
              Mean_HWM_Option = Memory_Mean_HWM, &
