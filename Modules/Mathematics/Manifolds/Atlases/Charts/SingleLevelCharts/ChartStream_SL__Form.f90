@@ -63,7 +63,7 @@ contains
     character ( * ), intent ( in ) :: &
       Name
 
-    CS % IGNORABILITY = CONSOLE % INFO_3
+    CS % IGNORABILITY = CONSOLE % INFO_4
     CS % Name = Name
 
     call Show ( 'Initializing a ChartStream_SL', CS % IGNORABILITY )

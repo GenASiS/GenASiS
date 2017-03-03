@@ -66,8 +66,6 @@ contains
     type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
       SeriesUnit
     character ( LDL ), dimension ( : ), allocatable :: &
-      TypeWord
-    character ( LDL ), dimension ( : ), allocatable :: &
       SeriesName
 
     TS % IGNORABILITY = CONSOLE % INFO_2
@@ -75,8 +73,7 @@ contains
     if ( TS % Type == '' ) &
       TS % Type = 'a TimeSeries' 
 
-    call Split ( TS % Type, ' ', TypeWord )
-    TS % Name = trim ( TypeWord ( 2 ) ) // '_' // trim ( I % Name ) 
+    TS % Name = 'TimeSeries_' // trim ( I % Name ) 
 
     call Show ( 'Initializing ' // trim ( TS % Type ), TS % IGNORABILITY )
     call Show ( TS % Name, 'Name', TS % IGNORABILITY )

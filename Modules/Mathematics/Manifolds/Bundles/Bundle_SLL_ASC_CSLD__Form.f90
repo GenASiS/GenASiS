@@ -285,13 +285,18 @@ contains
 
     write ( BlockNumber, fmt = '(a1,i7.7)' ) '_', &
       GIS_Base % Communicator % Rank
+!    BundleDirectory &
+!      = trim ( GIS_Base % WorkingDirectory ) // trim ( GIS_Base % Name ) &
+!        // '_Bundle_MeshBlock' // trim ( BlockNumber ) // '/' 
     BundleDirectory &
-      = trim ( GIS_Base % WorkingDirectory ) // trim ( GIS_Base % Name ) &
-        // '_Bundle_MeshBlock' // trim ( BlockNumber ) // '/' 
+      = trim ( GIS_Base % WorkingDirectory ) // 'Bundle_MeshBlock' &
+        // trim ( BlockNumber ) // '/' 
+!    BundleName &
+!      = trim ( GIS_Base % Name ) // '_Bundle_MeshBlock' // trim ( BlockNumber )
     BundleName &
-      = trim ( GIS_Base % Name ) // '_Bundle_MeshBlock' // trim ( BlockNumber )
-    call Show ( BundleDirectory, 'BundleDirectory' )
-    call Show ( BundleName, 'BundleName' )
+      = trim ( GIS_Base % Name ) // '_Bundle'
+!    call Show ( BundleDirectory, 'BundleDirectory' )
+!    call Show ( BundleName, 'BundleName' )
 
     associate ( GIS_Bundle => B % GridImageStream ( iStream ) )
     call GIS_Bundle % Initialize &
@@ -385,8 +390,8 @@ contains
       write ( CellNumber, fmt = '(a1,i7.7)' ) '_', iaBCL ( iF )
       Directory &
         = 'Fiber' // CellNumber // '/'
-      call Show ( Directory, 'Directory', CONSOLE % INFO_3 )
-      call Show ( iF, 'iFiber', CONSOLE % INFO_3 )
+!      call Show ( Directory, 'Directory', CONSOLE % INFO_3 )
+!      call Show ( iF, 'iFiber', CONSOLE % INFO_3 )
 
       AF => B % AtlasFiber ( iF ) 
       call AF % OpenStream ( GIS_Bundle, '', iStream = iStream ) 
