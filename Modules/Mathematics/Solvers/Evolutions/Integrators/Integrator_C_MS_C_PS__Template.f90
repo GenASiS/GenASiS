@@ -131,9 +131,6 @@ contains
     logical ( KDL ), intent ( in ), optional :: &
       ComputeChangeOption
 
-    integer ( KDI ) :: &
-      iS  !-- iSection
-
     if ( .not. allocated ( I % Current_BSLL_ASC_CSLD ) ) &
       return
 
@@ -144,13 +141,7 @@ contains
       ( CB => I % Current_BSLL_ASC_CSLD, &
         CA => I % Current_ASC )
 
-    do iS = 1, CB % nSections
-      select type ( CBA => CB % Section % Atlas ( iS ) % Element )
-      class is ( Current_ASC_Template )
-      call CBA % ComputeTally ( ComputeChangeOption = ComputeChangeOption )
-      end select !-- CBA
-    end do !-- iS
-
+    call CB % ComputeTally ( ComputeChangeOption = ComputeChangeOption )
     call CA % ComputeTally ( ComputeChangeOption = ComputeChangeOption )
 
     end associate !-- CB, etc.

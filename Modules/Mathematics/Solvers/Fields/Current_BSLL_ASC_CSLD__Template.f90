@@ -21,6 +21,10 @@ module Current_BSLL_ASC_CSLD__Template
       CurrentFiber
     procedure, public, pass :: &
       CurrentSection
+    procedure, public, pass :: &
+      ComputeTally
+    procedure, public, pass :: &
+      ComputeTallySections
   end type Current_BSLL_ASC_CSLD_Template
 
 contains
@@ -74,6 +78,38 @@ contains
     nullify ( F )
 
   end function CurrentSection
+
+
+  subroutine ComputeTally ( CB, ComputeChangeOption )
+    
+    class ( Current_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
+      CB
+    logical ( KDL ), intent ( in ), optional :: &
+      ComputeChangeOption
+
+    call CB % ComputeTallySections ( ComputeChangeOption )
+
+  end subroutine ComputeTally
+
+
+  subroutine ComputeTallySections ( CB, ComputeChangeOption )
+    
+    class ( Current_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
+      CB
+    logical ( KDL ), intent ( in ), optional :: &
+      ComputeChangeOption
+
+    integer ( KDI ) :: &
+      iS  !-- iSection
+
+    do iS = 1, CB % nSections
+      select type ( CBA => CB % Section % Atlas ( iS ) % Element )
+      class is ( Current_ASC_Template )
+      call CBA % ComputeTally ( ComputeChangeOption = ComputeChangeOption )
+      end select !-- CBA
+    end do !-- iS
+
+  end subroutine ComputeTallySections
 
 
 end module Current_BSLL_ASC_CSLD__Template

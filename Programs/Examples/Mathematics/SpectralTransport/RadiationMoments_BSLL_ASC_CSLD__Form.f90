@@ -25,6 +25,8 @@ module RadiationMoments_BSLL_ASC_CSLD__Form
         MomentumDensity_D_Unit
       character ( LDF ) :: &
         RadiationType = ''
+      class ( RadiationMoments_ASC_Form ), allocatable :: &
+        EnergyIntegral
       class ( Field_BSLL_ASC_CSLD_Template ), pointer :: &
         Interactions_BSLL_ASC_CSLD => null ( )
   contains
@@ -33,12 +35,17 @@ module RadiationMoments_BSLL_ASC_CSLD__Form
     procedure, public, pass :: &
       RadiationMomentsFiber
     procedure, public, pass :: &
+      ComputeTally
+    procedure, public, pass :: &
       SetInteractions
     final :: &
       Finalize
     procedure, private, pass :: &
       SetField
   end type RadiationMoments_BSLL_ASC_CSLD_Form
+
+    private :: &
+      ComputeEnergyIntegral
 
 contains
 
@@ -138,6 +145,21 @@ contains
     nullify ( GF )
 
   end subroutine Initialize
+
+
+  subroutine ComputeTally ( CB, ComputeChangeOption )
+
+    class ( RadiationMoments_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
+      CB
+    logical ( KDL ), intent ( in ), optional :: &
+      ComputeChangeOption
+
+!    call CB % ComputeTallySections ( ComputeChangeOption )
+
+    call ComputeEnergyIntegral ( CB )
+    call CB % EnergyIntegral % ComputeTally ( ComputeChangeOption )
+
+  end subroutine ComputeTally
 
 
   function RadiationMomentsFiber ( RMB, iFiber ) result ( RMF )
@@ -276,11 +298,79 @@ contains
       end select !-- RMA
     end do !-- iE
 
-    end associate !-- FBF
+    end associate !-- FBS
+
+    !-- EnergyIntegral
+
+    allocate ( FB % EnergyIntegral )
+    associate ( EI => FB % EnergyIntegral )
+      call EI % Initialize &
+             ( B % Base_ASC, FB % RadiationType, &
+               NameShortOption = trim ( FB % NameShort ) // '_Integral' )
+    end associate !-- EI
 
     end associate !-- B
 
   end subroutine SetField
+
+
+  subroutine ComputeEnergyIntegral ( RMB )
+
+    type ( RadiationMoments_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
+      RMB
+
+    integer ( KDI ) :: &
+      iC, &  !-- iConserved
+      iF     !-- iFiber
+    real ( KDR ), dimension ( : ), allocatable :: &
+      Integral
+    type ( Real_1D_Form ), dimension ( : ), allocatable :: &
+      Integrand
+    class ( GeometryFlatForm ), pointer :: &
+      G
+    type ( VolumeIntegralForm ) :: &
+      VI
+    class ( RadiationMomentsForm ), pointer :: &
+      RMEI, &
+      RMF
+
+    associate ( MS => RMB % Bundle_SLL_ASC_CSLD )
+
+    RMEI => RMB % EnergyIntegral % RadiationMoments ( )
+    G    => MS % Base_CSLD % Geometry ( )
+
+    allocate ( Integral  ( RMEI % N_CONSERVED ) )
+    allocate ( Integrand ( RMEI % N_CONSERVED ) )
+    do iC = 1, RMEI % N_CONSERVED
+      call Integrand ( iC ) % Initialize ( RMB % nEnergyValues )
+    end do !-- iC
+
+    do iF = 1, MS % nFibers
+      associate &
+        ( iaC => RMEI % iaConserved, &
+          iBC => MS % iaBaseCell ( iF ), &
+          CF  => MS % Fiber_CSLL )
+
+      RMF => RMB % RadiationMomentsFiber ( iF )
+      do iC = 1, RMF % N_CONSERVED
+        Integrand ( iC ) % Value = RMF % Value ( :, iaC ( iC ) )
+      end do !-- iC
+
+      call VI % Compute ( CF, Integrand, Integral )
+
+      do iC = 1, RMEI % N_CONSERVED
+        RMEI % Value ( iBC, iaC ( iC ) ) = Integral ( iC ) 
+      end do !-- iC
+      
+      end associate !-- iaC, etc.
+    end do !-- iF
+
+    call RMEI % ComputeFromConserved ( G )
+
+    end associate !-- MS
+    nullify ( G, RMEI, RMF )
+    
+  end subroutine ComputeEnergyIntegral
 
 
 end module RadiationMoments_BSLL_ASC_CSLD__Form

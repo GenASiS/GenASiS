@@ -106,16 +106,13 @@ contains
 
     integer ( KDI ) :: &
       iS  !-- iStage
-    character ( LDL ), dimension ( : ), allocatable :: &
-      TypeWord
 
     S % IGNORABILITY = CONSOLE % INFO_3
 
     if ( S % Type == '' ) &
       S % Type = 'a Step_RK' 
 
-    call Split ( S % Type, ' ', TypeWord )
-    S % Name = trim ( TypeWord ( 2 ) ) // '_' // trim ( NameSuffix ) 
+    S % Name = 'Step_' // trim ( NameSuffix ) 
 
     call Show ( 'Initializing ' // trim ( S % Type ), S % IGNORABILITY )
     call Show ( S % Name, 'Name', S % IGNORABILITY )

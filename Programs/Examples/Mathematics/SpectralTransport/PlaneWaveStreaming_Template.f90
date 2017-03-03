@@ -149,10 +149,12 @@ contains
       write ( EnergyNumber, fmt = '(a1,i2.2)' ) '_', iE
       call PWS % Reference_ASC ( iE ) % Initialize &
              ( PS, 'GENERIC', &
-               NameShortOption = 'Reference' // EnergyNumber )
+               NameShortOption = 'Reference' // EnergyNumber, &
+               IgnorabilityOption = CONSOLE % INFO_5 )
       call PWS % Difference_ASC ( iE ) % Initialize &
              ( PS, 'GENERIC', &
-               NameShortOption = 'Difference' // EnergyNumber )
+               NameShortOption = 'Difference' // EnergyNumber, &
+               IgnorabilityOption = CONSOLE % INFO_5 )
     end do !-- iE
     PWS % SetReference => SetReference
 
