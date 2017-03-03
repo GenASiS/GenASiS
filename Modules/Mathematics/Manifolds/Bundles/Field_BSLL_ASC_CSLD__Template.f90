@@ -53,7 +53,8 @@ module Field_BSLL_ASC_CSLD__Template
 contains
 
 
-  subroutine InitializeTemplate_BSLL_ASC_CSLD ( FB, B, NameShort )
+  subroutine InitializeTemplate_BSLL_ASC_CSLD &
+               ( FB, B, NameShort, IgnorabilityOption )
 
     class ( Field_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
       FB
@@ -61,12 +62,14 @@ contains
       B
     character ( * ), intent ( in ) :: &
       NameShort
+    integer ( KDL ), intent ( in ), optional :: &
+      IgnorabilityOption
 
     FB % Bundle_SLL_ASC_CSLD => B
     FB % nFibers   = B % nFibers
     FB % nSections = B % nSections
 
-    call FB % InitializeTemplate ( B, NameShort )
+    call FB % InitializeTemplate ( B, NameShort, IgnorabilityOption )
 
   end subroutine InitializeTemplate_BSLL_ASC_CSLD
 

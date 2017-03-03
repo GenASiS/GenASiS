@@ -451,7 +451,7 @@ contains
   
       if ( C % nFaces > 0 ) then
           do iD = 1, A % nDimensions
-            call Show ( iD, 'Faces perpendicular to iDimension', &
+            call Show ( iD, 'Faces, iDimension', &
                         A % IGNORABILITY )
             associate &
               ( iaI => C % iaInner ( iD ), &

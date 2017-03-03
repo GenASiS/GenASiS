@@ -133,6 +133,19 @@ contains
 
     call CLO % Initialize ( )
 
+    Verbosity = CONSOLE % LABEL ( CONSOLE % Verbosity ) 
+    call CLO % Read ( Verbosity, 'Verbosity', CONSOLE % INFO_1 )
+    call CONSOLE % SetVerbosity ( Verbosity )
+
+    DisplayRank  = CONSOLE % DisplayRank
+    call CLO % Read ( DisplayRank, 'DisplayRank', CONSOLE % INFO_1 )
+    call PH % Communicator % Synchronize ( )
+    call CONSOLE % SetDisplayRank ( DisplayRank )
+
+    PH % MaxThreads = OMP_GET_MAX_THREADS ( )
+    call Show ( 'OpenMP MAX_THREADS', CONSOLE % INFO_1 )
+    call Show ( PH % MaxThreads, 'MaxThreads', CONSOLE % INFO_1 )
+    
     if ( AppendDimensionality ) then
       if ( present ( DimensionalityOption ) ) &
         PH % Dimensionality = DimensionalityOption
@@ -144,9 +157,8 @@ contains
            .and. .not. DimensionalityFound ) &
       then
         PH % Dimensionality = '3D'
-        call Show &
-               ( 'Dimensionality not specified, defaulting to 3D', &
-                 CONSOLE % WARNING )
+        call Show ( 'Dimensionality not specified, defaulting to 3D', &
+                    CONSOLE % INFO_1 )
         call Show ( PH % Dimensionality, 'Dimensionality', CONSOLE % INFO_1 )
       end if
       PH % Name = trim ( Name ) // '_' // trim ( PH % Dimensionality )
@@ -158,19 +170,6 @@ contains
     call PH % ParameterStream % Initialize &
            ( Filename, PH % Communicator % Rank )
 
-    DisplayRank  = CONSOLE % DisplayRank
-    call PH % GetParameter ( DisplayRank, 'DisplayRank' )
-    call PH % Communicator % Synchronize ( )
-    call CONSOLE % SetDisplayRank ( DisplayRank )
-
-    Verbosity = CONSOLE % LABEL ( CONSOLE % Verbosity ) 
-    call PH % GetParameter ( Verbosity, 'Verbosity' )
-    call CONSOLE % SetVerbosity ( Verbosity )
-
-    PH % MaxThreads = OMP_GET_MAX_THREADS ( )
-    call Show ( 'OpenMP MAX_THREADS', CONSOLE % INFO_1 )
-    call Show ( PH % MaxThreads, 'MaxThreads', CONSOLE % INFO_1 )
-    
     allocate ( PH % Timer ( MAX_TIMERS ) )
     call PH % AddTimer ( 'Execution', PH % ExecutionTimeHandle )
     call PH % Timer ( PH % ExecutionTimeHandle ) % Start ( )
@@ -180,7 +179,6 @@ contains
 
     call Show ( 'Starting the Program', CONSOLE % INFO_1 ) 
     call Show ( PH % Name, 'Name', CONSOLE % INFO_1 ) 
-    call Show ( PH % MaxThreads, 'MaxThreads', CONSOLE % INFO_1 )
 
     end associate  !-- P, CLO 
 
@@ -798,7 +796,7 @@ contains
       
     PH => PROGRAM_HEADER 
       
-    call Show ( 'Runtime statistics', Ignorability )
+    call Show ( 'Program timing', Ignorability )
 
     call ReadTimers &
            ( Ignorability, CommunicatorOption, MaxTimeOption, MinTimeOption, &

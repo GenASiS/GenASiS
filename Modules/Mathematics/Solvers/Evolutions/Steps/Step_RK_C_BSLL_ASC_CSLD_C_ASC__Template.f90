@@ -527,6 +527,8 @@ contains
     integer ( KDI ) :: &
       iStage, &
       iSection
+    character ( 1 + 1 ) :: &
+      StageNumber
     class ( CurrentTemplate ), pointer :: &
       Current
 
@@ -548,8 +550,10 @@ contains
     end do !-- iSection
 
     do iStage = 1, S % nStages
+      write ( StageNumber, fmt = '(a1,i1.1)' ) '_', iStage
       call S % K_BSLL_ASC_CSLD ( iStage ) % Initialize &
-             ( B, 'RK_Increment', nEquations )
+             ( B, 'RK_Increment' // StageNumber, nEquations, &
+               IgnorabilityOption = CONSOLE % INFO_4 )
     end do !-- iStage
 
     end associate !-- B, etc.

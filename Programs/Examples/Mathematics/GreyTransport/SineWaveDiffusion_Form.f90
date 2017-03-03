@@ -56,9 +56,6 @@ contains
     class ( Interactions_F_Form ), pointer :: &
       I
 
-    if ( SWD % Type == '' ) &
-      SWD % Type = 'a SineWaveDiffusion' 
-
     EquilibriumDensity = 1.0_KDR
     EffectiveOpacity   = 0.0_KDR
     TransportOpacity   = 1.0e3_KDR

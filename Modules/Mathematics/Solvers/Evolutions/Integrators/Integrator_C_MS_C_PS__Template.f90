@@ -64,6 +64,9 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       nWriteOption
 
+    if ( I % Type == '' ) &
+      I % Type = 'an Integrator_C_MS_C_PS'
+
     if ( .not. allocated ( I % Current_BSLL_ASC_CSLD ) ) then
       call Show ( 'Current_BSLL_ASC_CSLD not allocated by an extension', &
                   CONSOLE % WARNING )
@@ -124,12 +127,14 @@ contains
   end subroutine ComputeCycle
 
 
-  subroutine ComputeTally ( I, ComputeChangeOption )
+  subroutine ComputeTally ( I, ComputeChangeOption, IgnorabilityOption )
 
     class ( Integrator_C_MS_C_PS_Template ), intent ( inout ) :: &
       I
     logical ( KDL ), intent ( in ), optional :: &
       ComputeChangeOption
+    integer ( KDI ), intent ( in ), optional :: &
+      IgnorabilityOption
 
     if ( .not. allocated ( I % Current_BSLL_ASC_CSLD ) ) &
       return
@@ -141,8 +146,12 @@ contains
       ( CB => I % Current_BSLL_ASC_CSLD, &
         CA => I % Current_ASC )
 
-    call CB % ComputeTally ( ComputeChangeOption = ComputeChangeOption )
-    call CA % ComputeTally ( ComputeChangeOption = ComputeChangeOption )
+    call CB % ComputeTally &
+           ( ComputeChangeOption = ComputeChangeOption, &
+             IgnorabilityOption  = IgnorabilityOption )
+    call CA % ComputeTally &
+           ( ComputeChangeOption = ComputeChangeOption, &
+             IgnorabilityOption  = IgnorabilityOption )
 
     end associate !-- CB, etc.
 

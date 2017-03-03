@@ -107,7 +107,7 @@ contains
     integer ( KDI ) :: &
       iS  !-- iStage
 
-    S % IGNORABILITY = CONSOLE % INFO_3
+    S % IGNORABILITY = CONSOLE % INFO_1
 
     if ( S % Type == '' ) &
       S % Type = 'a Step_RK' 

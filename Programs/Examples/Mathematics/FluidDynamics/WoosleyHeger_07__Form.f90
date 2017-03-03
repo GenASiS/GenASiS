@@ -84,9 +84,6 @@ contains
     character ( LDL ), dimension ( 3 ) :: &
       Spacing
 
-    if ( WH % Type == '' ) &
-      WH % Type = 'a WoosleyHeger' 
-
     !-- PositionSpace
 
     allocate ( Atlas_SC_Form :: WH % PositionSpace )

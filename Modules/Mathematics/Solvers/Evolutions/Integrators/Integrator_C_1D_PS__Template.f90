@@ -55,6 +55,9 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       nWriteOption
 
+    if ( I % Type == '' ) &
+      I % Type = 'an Integrator_C_1D_PS'
+
     if ( I % N_CURRENTS_PS <= 0 ) then
       call Show ( 'I % N_CURRENTS_PS not set to a positive integer', &
                   CONSOLE % WARNING )
@@ -101,12 +104,14 @@ contains
   end subroutine FinalizeTemplate_C_1D_PS
 
 
-  subroutine ComputeTally ( I, ComputeChangeOption )
+  subroutine ComputeTally ( I, ComputeChangeOption, IgnorabilityOption )
 
     class ( Integrator_C_1D_PS_Template ), intent ( inout ) :: &
       I
     logical ( KDL ), intent ( in ), optional :: &
       ComputeChangeOption
+    integer ( KDI ), intent ( in ), optional :: &
+      IgnorabilityOption
 
     integer ( KDI ) :: &
       iC  !-- iCurrent
@@ -119,7 +124,9 @@ contains
 
     do iC = 1, I % N_CURRENTS_PS
       associate ( CA => I % Current_ASC_1D ( iC ) % Element )
-      call CA % ComputeTally ( ComputeChangeOption = ComputeChangeOption )
+      call CA % ComputeTally &
+             ( ComputeChangeOption = ComputeChangeOption, &
+               IgnorabilityOption = IgnorabilityOption )
       end associate !-- CA
     end do !-- iC
 

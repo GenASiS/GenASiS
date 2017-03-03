@@ -30,7 +30,7 @@ module Storage_BSLL_ASC_CSLD__Form
 contains
 
 
-  subroutine Initialize ( SB, B, NameShort, nFields )
+  subroutine Initialize ( SB, B, NameShort, nFields, IgnorabilityOption )
 
     class ( Storage_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
       SB
@@ -40,13 +40,16 @@ contains
       NameShort
     integer ( KDI ), intent ( in ) :: &
       nFields
+    integer ( KDL ), intent ( in ), optional :: &
+      IgnorabilityOption
 
     if ( SB % Type == '' ) &
       SB % Type = 'a Storage_BSLL_ASC_CSLD' 
 
     SB % nFields = nFields
 
-    call SB % InitializeTemplate_BSLL_ASC_CSLD ( B, NameShort )
+    call SB % InitializeTemplate_BSLL_ASC_CSLD &
+           ( B, NameShort, IgnorabilityOption )
 
   end subroutine Initialize
 

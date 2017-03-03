@@ -29,9 +29,6 @@ contains
     character ( * ), intent ( in )  :: &
       Name
 
-    if ( SW % Type == '' ) &
-      SW % Type = 'a SawtoothWave' 
-
     SW % Offset    = 2.0_KDR
     SW % Amplitude = 1.0_KDR
     call PROGRAM_HEADER % GetParameter ( SW % Offset, 'Offset' )

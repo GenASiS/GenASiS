@@ -74,9 +74,6 @@ contains
     character ( LDL ), dimension ( 3 ) :: &
       Spacing
 
-    if ( T % Type == '' ) &
-      T % Type = 'a Thermalization'
-
     TemperatureMin  =   0.1_KDR  *  UNIT % MEV
     TemperatureMax  =  10.0_KDR  *  UNIT % MEV
     EnergyScale     =   3.0_KDR  *  UNIT % MEV

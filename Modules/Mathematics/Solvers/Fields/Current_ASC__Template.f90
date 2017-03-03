@@ -151,12 +151,14 @@ contains
   end subroutine AccumulateBoundaryTally_CSL
 
 
-  subroutine ComputeTally ( CA, ComputeChangeOption )
+  subroutine ComputeTally ( CA, ComputeChangeOption, IgnorabilityOption )
     
     class ( Current_ASC_Template ), intent ( inout ) :: &
       CA
     logical ( KDL ), intent ( in ), optional :: &
       ComputeChangeOption
+    integer ( KDI ), intent ( in ), optional :: &
+      IgnorabilityOption
     
     integer ( KDI ) :: &
       iB  !-- iBoundary
@@ -219,19 +221,21 @@ contains
     !-- Display
 
     call CA % TallyInterior % Show &
-           ( 'Interior Tally ' // trim ( CA % Name ) )
+           ( 'Interior Tally ' // trim ( CA % Name ), IgnorabilityOption )
 
     BoundaryLoop: do iB = 1, A % nBoundaries
       call CA % TallyBoundaryGlobal ( iB ) % Element % Show &
              ( 'Boundary ' // trim ( A % BoundaryName ( iB ) ) &
-             // ' Tally ' // trim ( CA % Name ), CONSOLE % INFO_2 )
+             // ' Tally ' // trim ( CA % Name ), IgnorabilityOption )
     end do BoundaryLoop
 
-    call CA % TallyTotal % Show ( 'Total Tally ' // trim ( CA % Name ) )
+    call CA % TallyTotal % Show &
+           ( 'Total Tally ' // trim ( CA % Name ), IgnorabilityOption )
 
     if ( ComputeChange ) then
       call CA % TallyChange % Show &
-             ( 'Change in Total Tally ' // trim ( CA % Name ) )
+             ( 'Change in Total Tally ' // trim ( CA % Name ), &
+               IgnorabilityOption )
     end if
 
     end associate !-- nI

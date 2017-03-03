@@ -30,9 +30,6 @@ contains
     character ( * ), intent ( in )  :: &
       Name
 
-    if ( SWS % Type == '' ) &
-      SWS % Type = 'a SineWaveStreaming' 
-
     SWS % Offset    = 2.0_KDR
     SWS % Amplitude = 1.0_KDR
     call PROGRAM_HEADER % GetParameter ( SWS % Offset, 'Offset' )

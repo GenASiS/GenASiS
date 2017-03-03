@@ -291,7 +291,7 @@ contains
       iLine, &
       Ignorability
     
-    Ignorability = CONSOLE % INFO_2
+    Ignorability = CONSOLE % INFO_3
     if ( present ( IgnorabilityOption ) ) Ignorability = IgnorabilityOption
     
     if ( Ignorability > CONSOLE % WARNING ) then

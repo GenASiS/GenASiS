@@ -49,9 +49,6 @@ contains
     character ( LDL ) :: &
       CoordinateSystem
 
-    if ( ST % Type == '' ) &
-      ST % Type = 'a SedovTaylor' 
-
     MaxRadius        = 0.35_KDR
     AdiabaticIndex   = 1.4_KDR
     Density          = 1.0_KDR

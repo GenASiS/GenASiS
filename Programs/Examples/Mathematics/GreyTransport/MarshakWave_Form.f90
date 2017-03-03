@@ -96,9 +96,6 @@ contains
       MomentumDensity_U_Unit, &
       MomentumDensity_D_Unit
 
-    if ( MW % Type == '' ) &
-      MW % Type = 'a MarshakWave' 
-
     associate &
       ( L      => BoxLength, &
         Gamma  => AdiabaticIndex, &

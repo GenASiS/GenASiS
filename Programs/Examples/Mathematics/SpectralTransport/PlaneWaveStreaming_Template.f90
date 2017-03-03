@@ -70,9 +70,6 @@ contains
     character ( 1 + 2 ) :: &
       EnergyNumber
 
-    if ( PWS % Type == '' ) &
-      PWS % Type = 'a PlaneWaveStreaming'
-
     !-- PositionSpace
 
     allocate ( Atlas_SC_Form :: PWS % PositionSpace )
@@ -311,6 +308,8 @@ contains
       G
     class ( RadiationMomentsForm ), pointer :: &
       RS
+
+    call Show ( 'Setting SineWaveStreaming initial conditions' )
 
     select type ( RMB => PWS % Current_BSLL_ASC_CSLD )
     type is ( RadiationMoments_BSLL_ASC_CSLD_Form )

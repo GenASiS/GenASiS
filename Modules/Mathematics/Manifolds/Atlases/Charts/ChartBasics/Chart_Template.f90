@@ -112,7 +112,7 @@ contains
     character ( 2 ) :: &
       ChartNumber
 
-    C % IGNORABILITY = Atlas % IGNORABILITY + 1
+    C % IGNORABILITY = Atlas % IGNORABILITY
     C % iChart = iChart
     C % Atlas => Atlas
 

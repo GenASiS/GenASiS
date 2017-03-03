@@ -68,6 +68,9 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       nWriteOption
 
+    if ( I % Type == '' ) &
+      I % Type = 'an Integrator_C_PS'
+
     if ( .not. allocated ( I % PositionSpace ) ) then
       call Show ( 'PositionSpace must be allocated by an extension', &
                   CONSOLE % ERROR )
@@ -154,12 +157,14 @@ contains
   end subroutine ComputeCycle
 
 
-  subroutine ComputeTally ( I, ComputeChangeOption )
+  subroutine ComputeTally ( I, ComputeChangeOption, IgnorabilityOption )
 
     class ( Integrator_C_PS_Template ), intent ( inout ) :: &
       I
     logical ( KDL ), intent ( in ), optional :: &
       ComputeChangeOption
+    integer ( KDI ), intent ( in ), optional :: &
+      IgnorabilityOption
 
     if ( .not. allocated ( I % Current_ASC ) ) &
       return
@@ -168,7 +173,9 @@ contains
     call Timer % Start ( )
 
     associate ( CA => I % Current_ASC )
-    call CA % ComputeTally ( ComputeChangeOption = ComputeChangeOption )
+    call CA % ComputeTally &
+           ( ComputeChangeOption = ComputeChangeOption, &
+             IgnorabilityOption = IgnorabilityOption )
     end associate !-- CA
 
     call Timer % Stop ( )
@@ -208,7 +215,8 @@ contains
 
     ReconstructionImbalance &
       = ( MaxTime ( iT ) - MinTime ( iT ) ) / MinTime ( iT )
-    call Show ( ReconstructionImbalance, 'ReconstructionImbalance' )
+    call Show ( ReconstructionImbalance, 'ReconstructionImbalance', &
+                I % IGNORABILITY + 2 )
     if ( ReconstructionImbalance > 0.5_KDR .and. MaxTime ( iT ) > 10.0 ) then
       call Show ( 'ReconstructionBalance > 0.5', CONSOLE % ERROR )
       call Show ( 'Integrator_C_PS__Template', 'module', CONSOLE % ERROR )

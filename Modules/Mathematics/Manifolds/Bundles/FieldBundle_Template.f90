@@ -45,7 +45,7 @@ module FieldBundle_Template
 contains
 
 
-  subroutine InitializeTemplate ( FB, B, NameShort )
+  subroutine InitializeTemplate ( FB, B, NameShort, IgnorabilityOption )
 
     class ( FieldBundleTemplate ), intent ( inout ) :: &
       FB
@@ -53,8 +53,12 @@ contains
       B
     character ( * ), intent ( in ) :: &
       NameShort
+    integer ( KDL ), intent ( in ), optional :: &
+      IgnorabilityOption
 
     FB % IGNORABILITY = B % IGNORABILITY
+    if ( present ( IgnorabilityOption ) ) &
+      FB % IGNORABILITY = IgnorabilityOption
 
     if ( FB % Type == '' ) &
       FB % Type = 'a FieldBundle' 

@@ -80,24 +80,29 @@ contains
   end function CurrentSection
 
 
-  subroutine ComputeTally ( CB, ComputeChangeOption )
+  subroutine ComputeTally ( CB, ComputeChangeOption, IgnorabilityOption )
     
     class ( Current_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
       CB
     logical ( KDL ), intent ( in ), optional :: &
       ComputeChangeOption
+    integer ( KDI ), intent ( in ), optional :: &
+      IgnorabilityOption
 
     call CB % ComputeTallySections ( ComputeChangeOption )
 
   end subroutine ComputeTally
 
 
-  subroutine ComputeTallySections ( CB, ComputeChangeOption )
+  subroutine ComputeTallySections &
+               ( CB, ComputeChangeOption, IgnorabilityOption )
     
     class ( Current_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
       CB
     logical ( KDL ), intent ( in ), optional :: &
       ComputeChangeOption
+    integer ( KDI ), intent ( in ), optional :: &
+      IgnorabilityOption
 
     integer ( KDI ) :: &
       iS  !-- iSection
@@ -105,7 +110,9 @@ contains
     do iS = 1, CB % nSections
       select type ( CBA => CB % Section % Atlas ( iS ) % Element )
       class is ( Current_ASC_Template )
-      call CBA % ComputeTally ( ComputeChangeOption = ComputeChangeOption )
+      call CBA % ComputeTally &
+             ( ComputeChangeOption = ComputeChangeOption, &
+               IgnorabilityOption  = IgnorabilityOption )
       end select !-- CBA
     end do !-- iS
 

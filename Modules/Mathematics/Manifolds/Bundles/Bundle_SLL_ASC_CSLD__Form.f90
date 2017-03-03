@@ -162,6 +162,12 @@ contains
     associate ( GAF => B % Geometry )
     call GAF % Initialize ( FM )
 
+    select type ( CF => B % FiberMaster % Chart )
+    class is ( Chart_SLL_Form )
+      B % Fiber_CSLL => CF
+      B % nSections  =  CF % nProperCells
+    end select !-- CF
+
     call B % Show ( )
 
     call FM % SetGeometry ( GAF )
@@ -181,13 +187,6 @@ contains
     end associate !-- F
     end associate !-- GAF
     end associate !-- FM
-
-    select type ( CF => B % FiberMaster % Chart )
-    class is ( Chart_SLL_Form )
-      B % Fiber_CSLL => CF
-      B % nSections  =  CF % nProperCells
-      call Show ( B % nSections, 'nSections', B % IGNORABILITY )
-    end select !-- CF
 
     !-- Base cell index
 

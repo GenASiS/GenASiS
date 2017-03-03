@@ -59,9 +59,6 @@ contains
     character ( LDL ) :: &
       CoordinateSystem
 
-    if ( LS % Type == '' ) &
-      LS % Type = 'a LineSource'
-
     EquilibriumDensity = 0.0_KDR
     EffectiveOpacity   = 0.0_KDR
     TransportOpacity   = 0.0_KDR

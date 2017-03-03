@@ -139,8 +139,8 @@ contains
     if ( present ( DescriptionOption ) ) &
       GIS % lDescription = len_trim ( DescriptionOption )
 
-    GIS % Number       = -1
-    GIS % AccessMode   = ACCESS_MODE_UNOPENED
+    GIS % Number          = -1
+    GIS % AccessMode      = ACCESS_MODE_UNOPENED
     GIS % MeshBlockHandle = HANDLE_UNDEFINED
     GIS % MultiMeshHandle = HANDLE_UNDEFINED
 
@@ -153,7 +153,7 @@ contains
     GIS % WorkingDirectory = '../Output/'
     if ( present ( WorkingDirectoryOption ) ) &
       GIS % WorkingDirectory = WorkingDirectoryOption
-    call Show ( GIS % WorkingDirectory, 'WorkingDirectory' )
+    call Show ( GIS % WorkingDirectory, 'WorkingDirectory', GIS % IGNORABILITY )
       
     if ( present ( CommunicatorOption ) ) then
       GIS % nBlocks = CommunicatorOption % Size

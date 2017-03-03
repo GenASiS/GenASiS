@@ -85,9 +85,6 @@ contains
     logical ( KDL ) :: &
       IsHardSphere
 
-    if ( HS % Type == '' ) &
-      HS % Type = 'a HomogeneousSphere'
-
     EquilibriumDensity = 0.8_KDR
     EffectiveOpacity   = 4.0_KDR
 

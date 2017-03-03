@@ -50,9 +50,6 @@ contains
       Normal, &
       UnitNormal
 
-    if ( RP % Type == '' ) &
-      RP % Type = 'a RiemannProblem' 
-
     !-- PositionSpace
 
     allocate ( Atlas_SC_Form :: RP % PositionSpace )

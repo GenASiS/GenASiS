@@ -40,9 +40,6 @@ contains
     integer ( KDI ) :: &
       iB  !-- iBoundary
 
-    if ( RT % Type == '' ) &
-      RT % Type = 'a RayleighTaylor' 
-
     !-- PositionSpace
 
     allocate ( Atlas_SC_Form :: RT % PositionSpace )

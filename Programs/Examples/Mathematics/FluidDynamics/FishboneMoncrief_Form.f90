@@ -70,9 +70,6 @@ contains
     character ( LDL ), dimension ( 3 ) :: &
       Spacing
 
-    if ( FM % Type == '' ) &
-      FM % Type = 'a FishboneMoncrief' 
-
     associate &
       ( Kappa  => AngularMomentumParameter, &  !-- Between 1 and 2
         M      => CentralMass, &

@@ -17,6 +17,7 @@ module Integrator_Template
       iTimerWrite = 0, &
       iTimerComputeNewTime = 0, &
       iCycle, &
+      iCheckpoint, &
       nRampCycles, &
       nWrite, &
       nTimeStepCandidates
@@ -111,13 +112,15 @@ module Integrator_Template
 !    end subroutine CC
 
 !-- See FIXME above
-!    subroutine CT ( I, ComputeChangeOption )
+!    subroutine CT ( I, ComputeChangeOption, IgnorabilityOption )
 !      use Basics
 !      import IntegratorTemplate
 !      class ( IntegratorTemplate ), intent ( inout ) :: &
 !        I
 !      logical ( KDL ), intent ( in ), optional :: &
 !        ComputeChangeOption      
+!      integer ( KDI ), intent ( in ), optional :: &
+!        IgnorabilityOption
 !    end subroutine CT
 
 !-- See FIXME above
@@ -193,6 +196,7 @@ contains
     call I % OpenStreams ( )
 
     I % iCycle = 0
+    I % iCheckpoint = 0
     I % nRampCycles = 1
     call PROGRAM_HEADER % GetParameter ( I % nRampCycles, 'nRampCycles' )
 
@@ -249,14 +253,13 @@ contains
 
     do while ( I % Time < I % FinishTime )
 
-      call Show ( 'Computing a cycle', I % IGNORABILITY )
-      call Show ( I % Name, 'Name', I % IGNORABILITY )
+      call Show ( 'Computing a cycle', I % IGNORABILITY + 1 )
 
       call I % ComputeCycle ( )
 
-      call Show ( 'Cycle computed', I % IGNORABILITY )
-      call Show ( I % iCycle, 'iCycle', I % IGNORABILITY )
-      call Show ( I % Time, I % TimeUnit, 'Time', I % IGNORABILITY )
+      call Show ( 'Cycle computed', I % IGNORABILITY + 1 )
+      call Show ( I % iCycle, 'iCycle', I % IGNORABILITY + 1 )
+      call Show ( I % Time, I % TimeUnit, 'Time', I % IGNORABILITY + 1 )
 
       if ( I % IsCheckpointTime ) &
         call I % AdministerCheckpoint ( )
@@ -352,6 +355,8 @@ contains
     logical ( KDL ), intent ( in ), optional :: &
       ComputeChangeOption
 
+    integer ( KDI ) :: &
+      TallyIgnorability
     real ( KDR ), dimension ( PROGRAM_HEADER % nTimers ) :: &
       MaxTime, &
       MinTime, &
@@ -361,7 +366,35 @@ contains
       ( Timer => PROGRAM_HEADER % Timer ( I % iTimerAdministerCheckpoint ) )
     call Timer % Start ( )
 
-    call I % ComputeTally ( ComputeChangeOption = ComputeChangeOption )
+    TallyIgnorability = I % IGNORABILITY + 2
+
+    I % IsCheckpointTime = .false.
+    if ( I % Time < I % FinishTime ) then
+      if ( I % Time > I % StartTime ) then
+        call Show ( 'Checkpoint reached', I % IGNORABILITY )
+      else
+        TallyIgnorability = CONSOLE % INFO_1
+      end if
+      call I % SetWriteTimeInterval ( )
+      I % WriteTime &
+        = min ( I % Time + I % WriteTimeInterval, I % FinishTime )
+      call Show ( I % WriteTimeInterval, I % TimeUnit, 'WriteTimeInterval', &
+                  I % IGNORABILITY + 1 )
+      call Show ( I % WriteTime, I % TimeUnit, 'Next WriteTime', &
+                  I % IGNORABILITY + 1 )
+    else 
+      call Show ( 'FinishTime reached', I % IGNORABILITY )
+      call I % WriteTimeSeries ( )
+      TallyIgnorability = CONSOLE % INFO_1
+    end if
+
+    call Show ( I % iCheckpoint, 'iCheckpoint', I % IGNORABILITY )
+    call Show ( I % iCycle, 'iCycle', I % IGNORABILITY )
+    call Show ( I % Time, I % TimeUnit, 'Time', I % IGNORABILITY )
+
+    call I % ComputeTally &
+           ( ComputeChangeOption = ComputeChangeOption, &
+             IgnorabilityOption  = TallyIgnorability )
     if ( associated ( I % SetReference ) ) &
       call I % SetReference ( )
     call I % Write ( )
@@ -372,21 +405,7 @@ contains
              MeanTimeOption = MeanTime )
     call I % RecordTimeSeries ( MaxTime, MinTime, MeanTime )
 
-    I % IsCheckpointTime = .false.
-    if ( I % Time < I % FinishTime ) then
-      call I % SetWriteTimeInterval ( )
-      I % WriteTime &
-        = min ( I % Time + I % WriteTimeInterval, I % FinishTime )
-      call Show ( I % WriteTimeInterval, I % TimeUnit, 'WriteTimeInterval', &
-                  I % IGNORABILITY )
-      call Show ( I % WriteTime, I % TimeUnit, 'Next WriteTime', &
-                  I % IGNORABILITY )
-    else 
-      call Show ( 'FinishTime reached', I % IGNORABILITY )
-      call Show ( I % iCycle, 'iCycle', I % IGNORABILITY )
-      call Show ( I % Time, I % TimeUnit, 'Time', I % IGNORABILITY )
-      call I % WriteTimeSeries ( )
-    end if
+    I % iCheckpoint = I % iCheckpoint + 1
 
     call Timer % Stop ( )
     end associate !-- Timer
@@ -402,11 +421,13 @@ contains
 
 
 !-- See FIXME above
-  subroutine ComputeTally ( I, ComputeChangeOption )
+  subroutine ComputeTally ( I, ComputeChangeOption, IgnorabilityOption )
     class ( IntegratorTemplate ), intent ( inout ) :: &
       I
     logical ( KDL ), intent ( in ), optional :: &
       ComputeChangeOption      
+    integer ( KDI ), intent ( in ), optional :: &
+      IgnorabilityOption
   end subroutine ComputeTally
 
 
@@ -515,8 +536,8 @@ contains
       ( Timer => PROGRAM_HEADER % Timer ( I % iTimerComputeNewTime ) )
     call Timer % Start ( )
 
-    call Show ( 'Computing TimeNew', I % IGNORABILITY )
-    call Show ( I % Name, 'Name', I % IGNORABILITY )
+!    call Show ( 'Computing TimeNew', I % IGNORABILITY )
+!    call Show ( I % Name, 'Name', I % IGNORABILITY )
 
     ! associate ( CFC => I % ConservedFields % Chart ( 1 ) % Element )
     ! select type ( C => I % Atlas % Chart ( 1 ) % Element )
@@ -532,16 +553,16 @@ contains
 !    associate ( C => I % Atlas % Chart ( 1 ) % Element )
 
     if ( I % Time + TimeStep > I % WriteTime ) then
-      call Show ( 'WriteTime encountered', I % IGNORABILITY ) 
+      call Show ( 'WriteTime encountered', I % IGNORABILITY + 1 ) 
 !      if ( present ( HoldCheckpointSolveOption ) ) &
 !        HoldCheckpointSolveOption ( 2 : C % nLevels ) = .true.
       TimeStep = I % WriteTime - I % Time
       call Show ( TimeStep, I % TimeUnit, 'Modified TimeStep', &
-                  I % IGNORABILITY )
+                  I % IGNORABILITY + 1 )
     end if
 
     TimeNew = I % Time + TimeStep
-    call Show ( TimeNew, I % TimeUnit, 'TimeNew', I % IGNORABILITY )
+    call Show ( TimeNew, I % TimeUnit, 'TimeNew', I % IGNORABILITY + 1 )
 
 !    end associate !-- C
 
@@ -582,7 +603,7 @@ contains
     do iTSC = 1, I % nTimeStepCandidates
       call Show ( TimeStepCandidate ( iTSC ), I % TimeUnit, &
                   trim ( I % TimeStepLabel ( iTSC ) ) // ' TimeStep', &
-                  I % IGNORABILITY )
+                  I % IGNORABILITY + 1 )
     end do !-- iTSC
 
     TimeStep = minval ( TimeStepCandidate )
@@ -592,7 +613,8 @@ contains
     if ( RampFactor < 1.0_KDR ) then
       TimeStep &
         = RampFactor * TimeStep
-      call Show ( TimeStep, I % TimeUnit, 'Ramped TimeStep', I % IGNORABILITY )
+      call Show ( TimeStep, I % TimeUnit, 'Ramped TimeStep', &
+                  I % IGNORABILITY + 1 )
     end if
 
   end subroutine ComputeTimeStep

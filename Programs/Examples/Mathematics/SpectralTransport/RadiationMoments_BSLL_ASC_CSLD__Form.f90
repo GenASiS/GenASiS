@@ -147,17 +147,23 @@ contains
   end subroutine Initialize
 
 
-  subroutine ComputeTally ( CB, ComputeChangeOption )
+  subroutine ComputeTally ( CB, ComputeChangeOption, IgnorabilityOption )
 
     class ( RadiationMoments_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
       CB
     logical ( KDL ), intent ( in ), optional :: &
       ComputeChangeOption
+    integer ( KDI ), intent ( in ), optional :: &
+      IgnorabilityOption
 
-!    call CB % ComputeTallySections ( ComputeChangeOption )
+!    call CB % ComputeTallySections &
+!           ( ComputeChangeOption = ComputeChangeOption, &
+!             IgnorabilityOption  = IgnorabilityOption )
 
     call ComputeEnergyIntegral ( CB )
-    call CB % EnergyIntegral % ComputeTally ( ComputeChangeOption )
+    call CB % EnergyIntegral % ComputeTally &
+           ( ComputeChangeOption = ComputeChangeOption, &
+             IgnorabilityOption  = IgnorabilityOption )
 
   end subroutine ComputeTally
 
