@@ -9,6 +9,7 @@ module Step_RK2_C_ASC_1D__Form
   !   tableau entries A, B, C
 
   use Basics
+  use Fields
   use Step_RK_C_ASC_1D__Template
 
   implicit none
@@ -25,10 +26,12 @@ module Step_RK2_C_ASC_1D__Form
 contains
 
 
-  subroutine Initialize ( S, NameSuffix, nCurrents )
+  subroutine Initialize ( S, Current_ASC_1D, NameSuffix, nCurrents )
 
     class ( Step_RK2_C_ASC_1D_Form ), intent ( inout ) :: &
       S
+    class ( Current_ASC_ElementForm ), dimension ( : ), intent ( in ) :: &
+      Current_ASC_1D
     character ( * ), intent ( in ) :: &
       NameSuffix
     integer ( KDI ), intent ( in ) :: &
@@ -52,7 +55,8 @@ contains
 
     C ( 2 ) = 1.0_KDR
     
-    call S % InitializeTemplate_C_ASC_1D ( NameSuffix, A, B, C, nCurrents )
+    call S % InitializeTemplate_C_ASC_1D &
+           ( Current_ASC_1D, NameSuffix, A, B, C, nCurrents )
 
   end subroutine Initialize
 

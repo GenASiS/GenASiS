@@ -16,14 +16,15 @@ module IncrementDivergence_FV__Form
   type, public :: IncrementDivergence_FV_Form
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
+      iTimerIncrementDivergence, &
       iTimerReconstruction, &
-!      iTimerReconstruction_CSL, &
-      iTimerFromPrimitive, &
-!      iTimerBoundary, &
-      iTimerGradient, &
-      iTimerReconstructionKernel, &
       iTimerFluxes, &
       iTimerIncrement, &
+! !      iTimerReconstruction_CSL, &
+!       iTimerFromPrimitive, &
+! !      iTimerBoundary, &
+!       iTimerGradient, &
+!       iTimerReconstructionKernel, &
       iStream
     integer ( KDI ) :: &
       ALPHA_PLUS  = 1, &
@@ -48,6 +49,8 @@ module IncrementDivergence_FV__Form
       Output
     type ( GridImageStreamForm ), allocatable :: &
       GridImageStream
+    class ( ChartTemplate ), pointer :: &
+      Chart => null ( )
   contains
     procedure, public, pass :: &
       Initialize
@@ -105,43 +108,50 @@ module IncrementDivergence_FV__Form
 contains
 
 
-  subroutine Initialize ( I, NameSuffix )
+  subroutine Initialize ( I, Chart )
 
     class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
       I
-    character ( * ), intent ( in ) :: &
-      NameSuffix
+    class ( ChartTemplate ), intent ( in ), target :: &
+      Chart
 
     character ( LDF ) :: &
       OutputDirectory
 
-    I % IGNORABILITY = CONSOLE % INFO_4
-    I % Name = 'IncrementDivergence_FV_' // trim ( NameSuffix )
+    I % IGNORABILITY = Chart % IGNORABILITY
+    I % Name = 'IncrementDivergence_FV'
 
     call Show ( 'Initializing an IncrementDivergence_FV', I % IGNORABILITY )
     call Show ( I % Name, 'Name', I % IGNORABILITY )
+
+    I % Chart => Chart
 
     I % LimiterParameter = 1.4_KDR
     call PROGRAM_HEADER % GetParameter &
            ( I % LimiterParameter, 'LimiterParameter' )
 
-    call PROGRAM_HEADER % AddTimer &
-           ( 'ComputeReconstruction', I % iTimerReconstruction )
-    ! call PROGRAM_HEADER % AddTimer &
-    !        ( 'ComputeReconstruction_CSL', I % iTimerReconstruction_CSL )
-    call PROGRAM_HEADER % AddTimer &
-           ( 'ComputeFromPrimitive', I % iTimerFromPrimitive )
-    ! call PROGRAM_HEADER % AddTimer &
-    !        ( 'ApplyBoundary', I % iTimerBoundary )
-    call PROGRAM_HEADER % AddTimer &
-           ( 'Gradient', I % iTimerGradient )
-    call PROGRAM_HEADER % AddTimer &
-           ( 'ReconstructionKernel', I % iTimerReconstructionKernel )
+    call Show ( I % Chart % Name, 'Chart', I % IGNORABILITY )
+    call Show ( I % LimiterParameter, 'LimiterParameter', I % IGNORABILITY )
 
     call PROGRAM_HEADER % AddTimer &
-           ( 'ComputeFluxes', I % iTimerFluxes )
+           ( 'IncrementDivergence', I % iTimerIncrementDivergence )
     call PROGRAM_HEADER % AddTimer &
-           ( 'ApplyFluxes', I % iTimerIncrement )
+           ( '_Reconstruction', I % iTimerReconstruction )
+    call PROGRAM_HEADER % AddTimer &
+           ( '_Fluxes', I % iTimerFluxes )
+    call PROGRAM_HEADER % AddTimer &
+           ( '_Increment', I % iTimerIncrement )
+
+    ! ! call PROGRAM_HEADER % AddTimer &
+    ! !        ( 'ComputeReconstruction_CSL', I % iTimerReconstruction_CSL )
+    ! call PROGRAM_HEADER % AddTimer &
+    !        ( 'ComputeFromPrimitive', I % iTimerFromPrimitive )
+    ! ! call PROGRAM_HEADER % AddTimer &
+    ! !        ( 'ApplyBoundary', I % iTimerBoundary )
+    ! call PROGRAM_HEADER % AddTimer &
+    !        ( 'Gradient', I % iTimerGradient )
+    ! call PROGRAM_HEADER % AddTimer &
+    !        ( 'ReconstructionKernel', I % iTimerReconstructionKernel )
 
     I % UseIncrementStream = .false.
     call PROGRAM_HEADER % GetParameter &
@@ -229,14 +239,12 @@ contains
   end subroutine Clear_CSL
 
 
-  subroutine Compute ( I, Increment, Grid, C, TimeStep )
+  subroutine Compute ( I, Increment, C, TimeStep )
 
     class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
       I
     type ( VariableGroupForm ), intent ( inout ) :: &
       Increment  !-- Assume Increment is already cleared!
-    class ( * ), intent ( inout ), target :: &
-      Grid
     class ( CurrentTemplate ), intent ( in ) :: &
       C
     real ( KDR ), intent ( in ) :: &
@@ -252,15 +260,19 @@ contains
     class ( GeometryFlatForm ), pointer :: &
       G
 
+    associate &
+      ( Timer => PROGRAM_HEADER % Timer ( I % iTimerIncrementDivergence ) )
+    call Timer % Start ( )
+
     if ( I % UseIncrementStream ) &
       call Show ( '>>> Entering Increment % Compute' )
 
-    call PrepareOutput ( I, Grid, C )
+    call PrepareOutput ( I, I % Chart, C )
 
-    select type ( Grid )
+    select type ( Chart => I % Chart )
     class is ( Chart_SL_Template )
-      nDimensions = Grid % nDimensions
-      G => Grid % Geometry ( )
+      nDimensions = Chart % nDimensions
+      G => Chart % Geometry ( )
     class default
       call Show ( 'Grid type not found', CONSOLE % ERROR )
       call Show ( 'IncrementDivergence_FV__Form', 'module', CONSOLE % ERROR )
@@ -289,14 +301,14 @@ contains
       if ( I % UseIncrementStream ) &
         call Show ( iD, '>>> iDimension' )
 
-      select type ( Grid )
+      call ComputeReconstruction &
+             ( I, C_IL, C_IR, G_I, C, I % Chart, iD )
+      call ComputeFluxes &
+             ( I, F_I, C, I % Chart, G, C_IL, C_IR, G_I, iD )
+      select type ( Chart => I % Chart )
       class is ( Chart_SL_Template )
-        call ComputeReconstruction &
-               ( I, C_IL, C_IR, G_I, C, Grid, iD )
-        call ComputeFluxes &
-               ( I, F_I, C, Grid, G, C_IL, C_IR, G_I, iD )
         call ComputeIncrement_CSL &
-               ( I, Increment, C, F_I, G_I, Grid, TimeStep, iD )
+               ( I, Increment, C, F_I, G_I, Chart, TimeStep, iD )
       end select !-- Grid
 
       if ( I % UseIncrementStream ) then
@@ -304,7 +316,7 @@ contains
                     I % Output ( iCURRENT ) % Value )
         call Copy ( Increment % Value, &
                     I % Output ( iINCREMENT ) % Value )
-        call WriteOutput ( I, Grid )
+        call WriteOutput ( I, I % Chart )
       end if
 
     end do !-- iD
@@ -313,6 +325,9 @@ contains
 
     if ( I % UseIncrementStream ) &
       call Show ( '>>> Leaving Increment % Compute' )
+
+    call Timer % Stop ( )
+    end associate !-- Timer
 
   end subroutine Compute
 
@@ -331,7 +346,8 @@ contains
 
     call Show ( 'Finalizing an IncrementDivergence_FV', I % IGNORABILITY )
     call Show ( I % Name, 'Name', I % IGNORABILITY )
-
+    call Show ( I % Chart % Name, 'Chart', I % IGNORABILITY )
+    
   end subroutine Finalize
 
 
@@ -517,13 +533,13 @@ contains
              ( I, C_IL, C_IR, C, P, G_I, Grid, iDimension )
     end select !-- Grid
 
-    associate &
-      ( Timer_FP => PROGRAM_HEADER % Timer ( I % iTimerFromPrimitive ) )
-    call Timer_FP % Start ( )
+!    associate &
+!      ( Timer_FP => PROGRAM_HEADER % Timer ( I % iTimerFromPrimitive ) )
+!    call Timer_FP % Start ( )
     call C % ComputeFromPrimitive ( C_IL % Value, G, G_I % Value )
     call C % ComputeFromPrimitive ( C_IR % Value, G, G_I % Value )
-    call Timer_FP % Stop ( )
-    end associate !-- Timer_FP
+!    call Timer_FP % Stop ( )
+!    end associate !-- Timer_FP
 
     end associate !-- iaI, iaO
 
@@ -661,8 +677,8 @@ contains
 !      ( Timer => PROGRAM_HEADER % Timer ( I % iTimerReconstruction_CSL ) )
 !    call Timer % Start ( )
 
-    associate ( Timer_G => PROGRAM_HEADER % Timer ( I % iTimerGradient ) )
-    call Timer_G % Start ( )
+!    associate ( Timer_G => PROGRAM_HEADER % Timer ( I % iTimerGradient ) )
+!    call Timer_G % Start ( )
     allocate ( Gradient_C )
     call Gradient_C % Initialize ( P, 'Primitive' )
     if ( I % UseLimiterParameter ) then
@@ -671,8 +687,8 @@ contains
     else
       call Gradient_C % Compute ( CSL, iDimension )
     end if
-    call Timer_G % Stop
-    end associate !-- Timer_G  
+!    call Timer_G % Stop
+!    end associate !-- Timer_G  
 
     G => CSL % Geometry ( )
     call CSL % SetVariablePointer &
@@ -680,9 +696,9 @@ contains
 
     !-- Reconstruct Current
 
-    associate ( Timer_RK => PROGRAM_HEADER % Timer &
-                              ( I % iTimerReconstructionKernel ) )
-    call Timer_RK % Start ( )
+!    associate ( Timer_RK => PROGRAM_HEADER % Timer &
+!                              ( I % iTimerReconstructionKernel ) )
+!    call Timer_RK % Start ( )
 
     associate ( iaP => C % iaPrimitive )
     do iF = 1, C % N_PRIMITIVE
@@ -700,8 +716,8 @@ contains
     end do !-- iF
     end associate !-- iaP
 
-    call Timer_RK % Stop
-    end associate !-- Timer_RK
+!    call Timer_RK % Stop
+!    end associate !-- Timer_RK
 
     deallocate ( Gradient_C )
 

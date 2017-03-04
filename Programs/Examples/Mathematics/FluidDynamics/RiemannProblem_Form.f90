@@ -78,14 +78,13 @@ contains
     select type ( FA => RP % Current_ASC )
     class is ( Fluid_ASC_Form )
     call FA % Initialize ( PS, 'POLYTROPIC' )
-    end select !-- FA
 
     !-- Step
 
     allocate ( Step_RK2_C_ASC_Form :: RP % Step )
     select type ( S => RP % Step )
     class is ( Step_RK2_C_ASC_Form )
-    call S % Initialize ( Name )
+    call S % Initialize ( FA, Name )
     end select !-- S
 
     !-- Problem definition
@@ -183,6 +182,7 @@ contains
     
     !-- Cleanup
 
+    end select !-- FA
     end select !-- PS
 
   end subroutine Initialize

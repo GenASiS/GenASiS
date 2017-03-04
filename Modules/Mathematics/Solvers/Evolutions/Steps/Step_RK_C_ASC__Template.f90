@@ -168,10 +168,12 @@ module Step_RK_C_ASC__Template
 contains
 
 
-  subroutine InitializeTemplate_C_ASC ( S, NameSuffix, A, B, C )
+  subroutine InitializeTemplate_C_ASC ( S, Current_ASC, NameSuffix, A, B, C )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
+    class ( Current_ASC_Template ), intent ( in ), target :: &
+      Current_ASC
     character ( * ), intent ( in ) :: &
       NameSuffix
     real ( KDR ), dimension ( 2 : , : ), intent ( in ) :: &
@@ -186,9 +188,13 @@ contains
 
     call S % InitializeTemplate ( NameSuffix, A, B, C )
 
+    S % Current => Current_ASC % Current ( )
+
+    associate ( Chart => Current_ASC % Atlas_SC % Chart )
+
     allocate ( S % IncrementDivergence )
     associate ( ID => S % IncrementDivergence )
-    call ID % Initialize ( S % Name )
+    call ID % Initialize ( Chart )
     end associate !-- ID
 
     allocate ( S % IncrementDamping )
@@ -198,6 +204,8 @@ contains
 
     call PROGRAM_HEADER % AddTimer &
            ( 'GhostIncrement', S % iTimerGhost )
+
+    end associate !-- Chart
 
   end subroutine InitializeTemplate_C_ASC
 
@@ -1067,7 +1075,7 @@ contains
     else
       nullify ( ID % BoundaryFluence_CSL )
     end if
-    call ID % Compute ( Increment, Grid, Current, TimeStep )
+    call ID % Compute ( Increment, Current, TimeStep )
     call ID % Clear ( )
     end associate !-- ID
 

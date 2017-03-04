@@ -76,10 +76,14 @@ module Step_RK_C_ASC_1D__Template
 contains
 
 
-  subroutine InitializeTemplate_C_ASC_1D ( S, NameSuffix, A, B, C, nCurrents )
+  subroutine InitializeTemplate_C_ASC_1D &
+               ( S, Current_ASC_1D, NameSuffix, A, B, C, nCurrents )
 
     class ( Step_RK_C_ASC_1D_Template ), intent ( inout ) :: &
       S
+    class ( Current_ASC_ElementForm ), dimension ( : ), intent ( in ), &
+      target :: &
+        Current_ASC_1D
     character ( * ), intent ( in ) :: &
       NameSuffix
     real ( KDR ), dimension ( 2 : , : ), intent ( in ) :: &
@@ -94,7 +98,26 @@ contains
     if ( S % Type == '' ) &
       S % Type = 'a Step_RK_C_ASC_1D' 
 
-    call S % InitializeTemplate_C_ASC ( NameSuffix, A, B, C )
+    call S % InitializeTemplate ( NameSuffix, A, B, C )
+
+!    S % Current => Current_ASC % Current ( )
+
+    associate ( Chart => Current_ASC_1D ( 1 ) % Element % Atlas_SC % Chart )
+
+    allocate ( S % IncrementDivergence )
+    associate ( ID => S % IncrementDivergence )
+    call ID % Initialize ( Chart )
+    end associate !-- ID
+
+    allocate ( S % IncrementDamping )
+    associate ( ID => S % IncrementDamping )
+    call ID % Initialize ( S % Name )
+    end associate !-- ID
+
+    call PROGRAM_HEADER % AddTimer &
+           ( 'GhostIncrement', S % iTimerGhost )
+
+    end associate !-- Chart
 
     S % nCurrents = nCurrents
 

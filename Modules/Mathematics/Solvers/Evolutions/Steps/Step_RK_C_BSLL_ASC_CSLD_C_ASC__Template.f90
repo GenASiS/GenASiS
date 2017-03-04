@@ -94,10 +94,14 @@ contains
 
 
   subroutine InitializeTemplate_C_BSLL_ASC_CSLD_C_ASC &
-               ( S, NameSuffix, A, B, C )
+               ( S, Current_BSLL_ASC_CSLD, Current_ASC, NameSuffix, A, B, C )
 
     class ( Step_RK_C_BSLL_ASC_CSLD_C_ASC_Template ), intent ( inout ) :: &
       S
+    class ( Current_BSLL_ASC_CSLD_Template ), intent ( in ), target :: &
+      Current_BSLL_ASC_CSLD
+    class ( Current_ASC_Template ), intent ( in ), target :: &
+      Current_ASC
     character ( * ), intent ( in ) :: &
       NameSuffix
     real ( KDR ), dimension ( 2 : , : ), intent ( in ) :: &
@@ -110,7 +114,26 @@ contains
     if ( S % Type == '' ) &
       S % Type = 'a Step_RK_C_BSLL_ASC_CSLD_C_ASC' 
 
-    call S % InitializeTemplate_C_ASC ( NameSuffix, A, B, C )
+    call S % InitializeTemplate ( NameSuffix, A, B, C )
+
+!    S % Current => Current_ASC % Current ( )
+
+    associate ( Chart => Current_ASC % Atlas_SC % Chart )
+
+    allocate ( S % IncrementDivergence )
+    associate ( ID => S % IncrementDivergence )
+    call ID % Initialize ( Chart )
+    end associate !-- ID
+
+    allocate ( S % IncrementDamping )
+    associate ( ID => S % IncrementDamping )
+    call ID % Initialize ( S % Name )
+    end associate !-- ID
+
+    call PROGRAM_HEADER % AddTimer &
+           ( 'GhostIncrement', S % iTimerGhost )
+
+    end associate !-- Chart
 
     S % ApplyDivergence_F % Pointer => null ( )
 
