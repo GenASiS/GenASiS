@@ -267,7 +267,7 @@ contains
                FA % Velocity_U_Unit, FA % MomentumDensity_U_Unit, &
                FA % MomentumDensity_D_Unit, FA % EnergyDensityUnit, &
                FA % TemperatureUnit, nValues, &
-               IgnorabilityOption = FA % IGNORABILITY + 1 )
+               IgnorabilityOption = FA % IGNORABILITY )
     end select !-- FC
 
     call A % AddField ( FA )

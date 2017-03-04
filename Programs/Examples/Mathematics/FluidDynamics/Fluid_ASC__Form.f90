@@ -301,7 +301,7 @@ contains
              ( C, FA % NameShort, FA % FluidType, FA % VelocityUnit, &
                FA % MassDensityUnit, FA % EnergyDensityUnit, &
                FA % NumberDensityUnit, FA % TemperatureUnit, nValues, &
-               IgnorabilityOption = FA % IGNORABILITY + 1 )
+               IgnorabilityOption = FA % IGNORABILITY )
     end select !-- FC
 
     call A % AddField ( FA )

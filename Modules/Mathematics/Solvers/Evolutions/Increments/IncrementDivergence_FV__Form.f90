@@ -51,6 +51,8 @@ module IncrementDivergence_FV__Form
       GridImageStream
     class ( ChartTemplate ), pointer :: &
       Chart => null ( )
+    class ( FieldChartTemplate ), pointer :: &
+      CurrentChart => null ( )
   contains
     procedure, public, pass :: &
       Initialize
@@ -108,29 +110,28 @@ module IncrementDivergence_FV__Form
 contains
 
 
-  subroutine Initialize ( I, Chart )
+  subroutine Initialize ( I, CurrentChart )
 
     class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
       I
-    class ( ChartTemplate ), intent ( in ), target :: &
-      Chart
+    class ( FieldChartTemplate ), intent ( in ), target :: &
+      CurrentChart
 
     character ( LDF ) :: &
       OutputDirectory
 
-    I % IGNORABILITY = Chart % IGNORABILITY
-    I % Name = 'IncrementDivergence_FV'
+    I % IGNORABILITY = CurrentChart % IGNORABILITY
+    I % Name = 'IncrementDivergence_' // trim ( CurrentChart % Name )
 
     call Show ( 'Initializing an IncrementDivergence_FV', I % IGNORABILITY )
     call Show ( I % Name, 'Name', I % IGNORABILITY )
 
-    I % Chart => Chart
+    I % CurrentChart => CurrentChart
+    I % Chart        => CurrentChart % Chart
 
     I % LimiterParameter = 1.4_KDR
     call PROGRAM_HEADER % GetParameter &
            ( I % LimiterParameter, 'LimiterParameter' )
-
-    call Show ( I % Chart % Name, 'Chart', I % IGNORABILITY )
     call Show ( I % LimiterParameter, 'LimiterParameter', I % IGNORABILITY )
 
     call PROGRAM_HEADER % AddTimer &
@@ -342,11 +343,13 @@ contains
     if ( allocated ( I % Output ) ) &
       deallocate ( I % Output )
 
+    nullify ( I % CurrentChart )
+    nullify ( I % Chart )
+
     if ( I % Name == '' ) return
 
     call Show ( 'Finalizing an IncrementDivergence_FV', I % IGNORABILITY )
     call Show ( I % Name, 'Name', I % IGNORABILITY )
-    call Show ( I % Chart % Name, 'Chart', I % IGNORABILITY )
     
   end subroutine Finalize
 

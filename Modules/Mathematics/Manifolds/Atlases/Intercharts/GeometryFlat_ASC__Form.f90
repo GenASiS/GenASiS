@@ -89,7 +89,7 @@ contains
             associate ( nValues => C % nProperCells + C % nGhostCells )
             call GC % Initialize &
                    ( C, FA % NameShort, nValues, &
-                     IgnorabilityOption = FA % IGNORABILITY + 1 )
+                     IgnorabilityOption = FA % IGNORABILITY )
             end associate !-- nValues
           end select !-- GC
 

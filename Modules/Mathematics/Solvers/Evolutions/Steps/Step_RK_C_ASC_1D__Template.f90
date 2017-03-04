@@ -12,6 +12,7 @@ module Step_RK_C_ASC_1D__Template
   use Manifolds
   use Operations
   use Fields
+  use Increments
   use Step_RK_C_ASC__Template
 
   implicit none
@@ -32,6 +33,8 @@ module Step_RK_C_ASC_1D__Template
         K_1D
       type ( CurrentPointerForm ), dimension ( : ), allocatable :: &
         Current_1D
+      type ( IncrementDivergence_FV_Form ), dimension ( : ), allocatable :: &
+        IncrementDivergence_1D
       type ( ApplyDivergence_C_Pointer ), dimension ( : ), allocatable :: &
         ApplyDivergence_1D
       type ( ApplySources_C_Pointer ), dimension ( : ), allocatable :: &
@@ -95,19 +98,24 @@ contains
     integer ( KDI ), intent ( in ) :: &
       nCurrents
 
+    integer ( KDI ) :: &
+      iC
+
     if ( S % Type == '' ) &
       S % Type = 'a Step_RK_C_ASC_1D' 
 
     call S % InitializeTemplate ( NameSuffix, A, B, C )
 
+    S % nCurrents = nCurrents
+
 !    S % Current => Current_ASC % Current ( )
 
-    associate ( Chart => Current_ASC_1D ( 1 ) % Element % Atlas_SC % Chart )
-
-    allocate ( S % IncrementDivergence )
-    associate ( ID => S % IncrementDivergence )
-    call ID % Initialize ( Chart )
-    end associate !-- ID
+    allocate ( S % IncrementDivergence_1D ( S % nCurrents ) )
+    do iC = 1, S % nCurrents
+      associate ( ID => S % IncrementDivergence_1D ( iC ) )
+      call ID % Initialize ( Current_ASC_1D ( iC ) % Element % Chart )
+      end associate !-- ID
+    end do !-- iC
 
     allocate ( S % IncrementDamping )
     associate ( ID => S % IncrementDamping )
@@ -116,10 +124,6 @@ contains
 
     call PROGRAM_HEADER % AddTimer &
            ( 'GhostIncrement', S % iTimerGhost )
-
-    end associate !-- Chart
-
-    S % nCurrents = nCurrents
 
     allocate ( S % ApplyDivergence_1D ( S % nCurrents ) )
     allocate ( S % ApplySources_1D ( S % nCurrents ) )

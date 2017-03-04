@@ -143,7 +143,7 @@ contains
       call FC % Initialize &
              ( C, FA % NameShort, FA % InteractionsType, FA % LengthUnit, &
                FA % EnergyDensityUnit, nValues, &
-               IgnorabilityOption = FA % IGNORABILITY + 1 )
+               IgnorabilityOption = FA % IGNORABILITY )
     end select !-- FC
 
     call A % AddField ( FA )

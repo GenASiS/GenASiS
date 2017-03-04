@@ -190,11 +190,9 @@ contains
 
     S % Current => Current_ASC % Current ( )
 
-    associate ( Chart => Current_ASC % Atlas_SC % Chart )
-
     allocate ( S % IncrementDivergence )
     associate ( ID => S % IncrementDivergence )
-    call ID % Initialize ( Chart )
+    call ID % Initialize ( Current_ASC % Chart )
     end associate !-- ID
 
     allocate ( S % IncrementDamping )
@@ -204,8 +202,6 @@ contains
 
     call PROGRAM_HEADER % AddTimer &
            ( 'GhostIncrement', S % iTimerGhost )
-
-    end associate !-- Chart
 
   end subroutine InitializeTemplate_C_ASC
 
