@@ -242,7 +242,7 @@ contains
       iC  !-- iCurrent
 
     associate &
-      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerComputeIncrement ) )
+      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerComputeStage ) )
     call Timer % Start ( )
 
     do iC = 1, S % nCurrents
@@ -398,6 +398,10 @@ contains
     character ( LDL ) :: &
       CoordinateSystem
 
+    associate &
+      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerAllocateStep ) )
+    call Timer % Start ( )
+
     call S % Allocate_RK_C_1D ( )
 
     select type ( Grid => S % Grid )
@@ -425,6 +429,9 @@ contains
     call S % AllocateMetricDerivatives &
            ( CoordinateSystem, S % Current_1D ( 1 ) % Pointer % nValues )
 
+    call Timer % Stop ( )
+    end associate !-- Timer
+
   end subroutine AllocateStorage
 
 
@@ -433,11 +440,18 @@ contains
     class ( Step_RK_C_ASC_1D_Template ), intent ( inout ) :: &
       S
 
+    associate &
+      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerAllocateStep ) )
+    call Timer % Start ( )
+
     !-- BoundaryFluence not deallocated here, but instead upon reallocation,
     !   so that its values remain available after Step % Compute
 
     call S % DeallocateMetricDerivatives ( )
     call S % Deallocate_RK_C_1D ( )
+
+    call Timer % Stop ( )
+    end associate !-- Timer
 
   end subroutine DeallocateStorage
 

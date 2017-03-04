@@ -263,7 +263,7 @@ contains
       iStage
 
     associate &
-      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerComputeIncrement ) )
+      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerComputeStage ) )
     call Timer % Start ( )
 
     call S % ComputeStage_C_BSLL_ASC_CSLD &
@@ -589,6 +589,10 @@ contains
     class ( CurrentTemplate ), pointer :: &
       Current_S
 
+    associate &
+      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerAllocateStep ) )
+    call Timer % Start ( )
+
     call S % Allocate_RK_C ( )
     call S % Allocate_RK_C_BSLL_ASC_CSLD ( )
 
@@ -623,6 +627,9 @@ contains
 
     nullify ( Current_S )
 
+    call Timer % Stop ( )
+    end associate !-- Timer
+
   end subroutine AllocateStorage
 
 
@@ -631,12 +638,19 @@ contains
     class ( Step_RK_C_BSLL_ASC_CSLD_C_ASC_Template ), intent ( inout ) :: &
       S
 
+    associate &
+      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerAllocateStep ) )
+    call Timer % Start ( )
+
     !-- BoundaryFluence not deallocated here, but instead upon reallocation,
     !   so that its values remain available after Step % Compute
 
     call S % DeallocateMetricDerivatives ( )
     call S % Deallocate_RK_C_BSLL_ASC_CSLD ( )
     call S % Deallocate_RK_C ( )
+
+    call Timer % Stop ( )
+    end associate !-- Timer
 
   end subroutine DeallocateStorage
 
