@@ -46,8 +46,8 @@ contains
 
   subroutine InitializeTemplate_C_MS_C_PS &
                ( I, Name, UseLimiterParameter_S_Option, &
-                 UseLimiterParameter_F_Option, UseLimiterParameterOption, &
-                 TimeUnitOption, FinishTimeOption, nWriteOption )
+                 UseLimiterParameter_F_Option, TimeUnitOption, &
+                 FinishTimeOption, nWriteOption )
 
     class ( Integrator_C_MS_C_PS_Template ), intent ( inout ) :: &
       I
@@ -55,8 +55,7 @@ contains
       Name
     logical ( KDL ), intent ( in ), optional :: &
       UseLimiterParameter_S_Option, &
-      UseLimiterParameter_F_Option, &
-      UseLimiterParameterOption
+      UseLimiterParameter_F_Option
     type ( MeasuredValueForm ), intent ( in ), optional :: &
       TimeUnitOption
     real ( KDR ), intent ( in ), optional :: &
@@ -77,8 +76,7 @@ contains
     end if
 
     call I % InitializeTemplate_C_PS &
-           ( Name, UseLimiterParameterOption = UseLimiterParameterOption, &
-             TimeUnitOption = TimeUnitOption, &
+           ( Name, TimeUnitOption = TimeUnitOption, &
              FinishTimeOption = FinishTimeOption, nWriteOption = nWriteOption )
 
     I % UseLimiterParameter_S = .false.
@@ -186,8 +184,7 @@ contains
     call S % Compute &
            ( CB, CA, I % Time, TimeStep, &
              UseLimiterParameter_S_Option = I % UseLimiterParameter_S, &
-             UseLimiterParameter_F_Option = I % UseLimiterParameter_F, &
-             UseLimiterParameterOption    = I % UseLimiterParameter )
+             UseLimiterParameter_F_Option = I % UseLimiterParameter_F )
 
     do iS = 1, CB % nSections
       select type ( CBA => CB % Section % Atlas ( iS ) % Element )

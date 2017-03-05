@@ -19,8 +19,6 @@ module Integrator_C_PS__Template
     Integrator_C_PS_Template
       real ( KDR ) :: &
         CourantFactor
-      logical ( KDL ) :: &
-        UseLimiterParameter
       class ( Current_ASC_Template ), allocatable :: &
         Current_ASC
       class ( Step_RK_Template ), allocatable :: &
@@ -52,15 +50,12 @@ contains
 
 
   subroutine InitializeTemplate_C_PS &
-               ( I, Name, UseLimiterParameterOption, TimeUnitOption, &
-                 FinishTimeOption, nWriteOption )
+               ( I, Name, TimeUnitOption, FinishTimeOption, nWriteOption )
 
     class ( Integrator_C_PS_Template ), intent ( inout ) :: &
       I
     character ( * ), intent ( in )  :: &
       Name
-    logical ( KDL ), intent ( in ), optional :: &
-      UseLimiterParameterOption
     type ( MeasuredValueForm ), intent ( in ), optional :: &
       TimeUnitOption
     real ( KDR ), intent ( in ), optional :: &
@@ -96,12 +91,6 @@ contains
     I % CourantFactor = 0.7
     call PROGRAM_HEADER % GetParameter &
            ( I % CourantFactor, 'CourantFactor' )
-
-    I % UseLimiterParameter = .true.
-    if ( present ( UseLimiterParameterOption ) ) &
-      I % UseLimiterParameter = UseLimiterParameterOption
-    call PROGRAM_HEADER % GetParameter &
-           ( I % UseLimiterParameter, 'UseLimiterParameter' )
 
     call I % InitializeTemplate &
            ( Name, TimeUnitOption, FinishTimeOption, nWriteOption )
@@ -262,10 +251,7 @@ contains
     select type ( Chart => PS % Chart )
     class is ( Chart_SLD_Form )
 
-      call S % Compute &
-             ( CA, I % Time, TimeStep, &
-               UseLimiterParameterOption = I % UseLimiterParameter )
-
+      call S % Compute ( I % Time, TimeStep )
       call CA % AccumulateBoundaryTally ( S % BoundaryFluence_CSL )
 
     class default

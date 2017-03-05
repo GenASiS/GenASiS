@@ -74,6 +74,8 @@ module Step_RK_C_ASC__Template
   contains
     procedure, public, pass :: &
       InitializeTemplate_C_ASC
+    procedure, public, pass :: &
+      AllocateStorage
     procedure, private, pass :: &
       Compute_C_ASC
     generic, public :: &
@@ -120,6 +122,12 @@ module Step_RK_C_ASC__Template
       AllocateBoundaryFluence_CSL
     generic, public :: &
       AllocateBoundaryFluence => AllocateBoundaryFluence_CSL
+    procedure, private, nopass :: &
+      ClearBoundaryFluence_CSL
+    generic, public :: &
+      ClearBoundaryFluence => ClearBoundaryFluence_CSL
+    procedure, public, pass :: &
+      DeallocateBoundaryFluence_CSL
     procedure, public, pass :: &
       AllocateMetricDerivatives
     procedure, public, pass :: &
@@ -161,14 +169,15 @@ module Step_RK_C_ASC__Template
   end interface
 
     private :: &
-      AllocateStorage, &
       DeallocateStorage, &
       ApplyDivergence_C
 
 contains
 
 
-  subroutine InitializeTemplate_C_ASC ( S, Current_ASC, NameSuffix, A, B, C )
+  subroutine InitializeTemplate_C_ASC &
+               ( S, Current_ASC, NameSuffix, A, B, C, &
+                 UseLimiterParameterOption )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
@@ -182,11 +191,27 @@ contains
       B
     real ( KDR ), dimension ( 2 : ), intent ( in ) :: &
       C
+    logical ( KDL ), intent ( in ), optional :: &
+      UseLimiterParameterOption
 
     if ( S % Type == '' ) &
       S % Type = 'a Step_RK_C_ASC' 
 
     call S % InitializeTemplate ( NameSuffix, A, B, C )
+
+    S % UseLimiterParameter = .true.
+    if ( present ( UseLimiterParameterOption ) ) &
+      S % UseLimiterParameter = UseLimiterParameterOption
+
+    select type ( Chart => Current_ASC % Atlas_SC % Chart )
+    class is ( Chart_SL_Template )
+      S % Grid => Chart
+    class default
+      call Show ( 'Chart type not found', CONSOLE % ERROR )
+      call Show ( 'Step_RK_C_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'InitializeTemplate_C_ASC', 'subroutine', CONSOLE % ERROR ) 
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- Chart
 
     S % Current => Current_ASC % Current ( )
 
@@ -203,7 +228,49 @@ contains
     call PROGRAM_HEADER % AddTimer &
            ( 'GhostIncrement', S % iTimerGhost )
 
+    call S % AllocateStorage ( )
+
   end subroutine InitializeTemplate_C_ASC
+
+
+  subroutine AllocateStorage ( S )
+
+    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
+      S
+
+    character ( LDL ) :: &
+      CoordinateSystem
+
+    associate &
+      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerAllocateStep ) )
+    call Timer % Start ( )
+
+    call DeallocateStorage ( S )
+
+    call S % Allocate_RK_C ( )
+
+    select type ( Grid => S % Grid )
+    class is ( Chart_SL_Template )
+
+      call S % AllocateBoundaryFluence &
+             ( Grid, S % Current % N_CONSERVED, S % BoundaryFluence_CSL )
+
+      CoordinateSystem = Grid % CoordinateSystem
+
+    class default
+      call Show ( 'Grid type not recognized', CONSOLE % ERROR )
+      call Show ( 'Step_RK_C_ASC__Template', 'module', CONSOLE % ERROR )
+      call Show ( 'AllocateStorage', 'subroutine', CONSOLE % ERROR ) 
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- Grid
+
+    call S % AllocateMetricDerivatives &
+           ( CoordinateSystem, S % Current % nValues )
+
+    call Timer % Stop ( )
+    end associate !-- Timer
+
+  end subroutine AllocateStorage
 
 
 !   subroutine Compute_1D &
@@ -335,47 +402,22 @@ contains
 !   end subroutine Compute_1D
 
 
-  subroutine Compute_C_ASC &
-               ( S, Current_ASC, Time, TimeStep, UseLimiterParameterOption )
+  subroutine Compute_C_ASC ( S, Time, TimeStep )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
-    class ( Current_ASC_Template ), intent ( inout ), target :: &
-      Current_ASC
     real ( KDR ), intent ( in ) :: &
       Time, &
       TimeStep
-    logical ( KDL ), intent ( in ), optional :: &
-      UseLimiterParameterOption
 
     associate &
       ( Timer => PROGRAM_HEADER % Timer ( S % iTimerComputeStep ) )
     call Timer % Start ( )
 
-    S % UseLimiterParameter = .true.
-    if ( present ( UseLimiterParameterOption ) ) &
-      S % UseLimiterParameter = UseLimiterParameterOption
-
-    select type ( Chart => Current_ASC % Atlas_SC % Chart )
-    class is ( Chart_SL_Template )
-      S % Grid => Chart
-    class default
-      call Show ( 'Chart type not found', CONSOLE % ERROR )
-      call Show ( 'Step_RK_C_ASC__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'Compute_C_ASC', 'subroutine', CONSOLE % ERROR ) 
-      call PROGRAM_HEADER % Abort ( )
-    end select !-- Chart
-    S % Current => Current_ASC % Current ( )
-
-    call AllocateStorage ( S )
+    call S % ClearBoundaryFluence ( S % BoundaryFluence_CSL )
     call S % LoadSolution ( S % Solution, S % Current )
-
     call S % ComputeTemplate ( Time, TimeStep )
-
     call S % StoreSolution ( S % Current, S % Solution )
-    call DeallocateStorage ( S )
-    S % Current => null ( )
-    S % Grid    => null ( )
 
     call Timer % Stop ( )
     end associate !-- Timer
@@ -387,6 +429,8 @@ contains
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
+
+    call DeallocateStorage ( S )
 
     if ( allocated ( S % IncrementDamping ) ) &
       deallocate ( S % IncrementDamping )
@@ -923,8 +967,6 @@ contains
         ( C => CSL % Atlas % Connectivity, &
           nDimensions => CSL % nDimensions )
 
-      if ( allocated ( BF ) ) &
-        deallocate ( BF )
       allocate ( BF ( nEquations, C % nFaces ) )
 
       do iD = 1, nDimensions
@@ -951,6 +993,35 @@ contains
   end subroutine AllocateBoundaryFluence_CSL
 
 
+  subroutine ClearBoundaryFluence_CSL ( BF )
+
+    type ( Real_3D_Form ), dimension ( :, : ), intent ( inout ) :: &
+      BF
+
+    integer ( KDI ) :: &
+      iE, &  !-- iEquation
+      iC     !-- iConnectivity
+
+    do iC = 1, size ( BF, dim = 2 )
+      do iE = 1, size ( BF, dim = 1 )
+        call Clear ( BF ( iE, iC ) % Value )
+      end do !-- iE
+    end do !-- iC
+
+  end subroutine ClearBoundaryFluence_CSL
+
+
+  subroutine DeallocateBoundaryFluence_CSL ( S )
+
+    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
+      S
+
+    if ( allocated ( S % BoundaryFluence_CSL ) ) &
+      deallocate ( S % BoundaryFluence_CSL )
+    
+  end subroutine DeallocateBoundaryFluence_CSL
+
+  
   subroutine AllocateMetricDerivatives ( S, CoordinateSystem, nValues )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
@@ -982,44 +1053,6 @@ contains
   end subroutine DeallocateMetricDerivatives
 
 
-  subroutine AllocateStorage ( S )
-
-    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
-      S
-
-    character ( LDL ) :: &
-      CoordinateSystem
-
-    associate &
-      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerAllocateStep ) )
-    call Timer % Start ( )
-
-    call S % Allocate_RK_C ( )
-
-    select type ( Grid => S % Grid )
-    class is ( Chart_SL_Template )
-
-      call S % AllocateBoundaryFluence &
-             ( Grid, S % Current % N_CONSERVED, S % BoundaryFluence_CSL )
-
-      CoordinateSystem = Grid % CoordinateSystem
-
-    class default
-      call Show ( 'Grid type not recognized', CONSOLE % ERROR )
-      call Show ( 'Step_RK_C_ASC__Template', 'module', CONSOLE % ERROR )
-      call Show ( 'AllocateStorage', 'subroutine', CONSOLE % ERROR ) 
-      call PROGRAM_HEADER % Abort ( )
-    end select !-- Grid
-
-    call S % AllocateMetricDerivatives &
-           ( CoordinateSystem, S % Current % nValues )
-
-    call Timer % Stop ( )
-    end associate !-- Timer
-
-  end subroutine AllocateStorage
-
-
   subroutine DeallocateStorage ( S )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
@@ -1029,9 +1062,7 @@ contains
       ( Timer => PROGRAM_HEADER % Timer ( S % iTimerAllocateStep ) )
     call Timer % Start ( )
 
-    !-- BoundaryFluence not deallocated here, but instead upon reallocation,
-    !   so that its values remain available after Step % Compute
-
+    call S % DeallocateBoundaryFluence_CSL ( )
     call S % DeallocateMetricDerivatives ( )
     call S % Deallocate_RK_C ( )
 
