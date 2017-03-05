@@ -269,7 +269,6 @@ contains
         ( C     => S % Current_1D ( iC ) % Pointer, &
           Chart => S % Chart, &
           K     => S % K_1D ( iC, iStage ), &
-          BF    => S % BoundaryFluence_CSL_1D ( iC ) % Array, &
           Y     => S % Y_1D ( iC ) )
 
       if ( iStage > 1 ) &
@@ -282,8 +281,7 @@ contains
       S % ApplyRelaxation_C => S % ApplyRelaxation_1D ( iC ) % Pointer
 
       call S % ComputeStage_C &
-             ( S % IncrementDivergence_C, C, Chart, K, TimeStep, iStage, &
-               BF_Option = BF )
+             ( S % IncrementDivergence_C, C, Chart, K, TimeStep, iStage )
 
       S % ApplyRelaxation_C => null ( )
       S % ApplySources_C    => null ( )

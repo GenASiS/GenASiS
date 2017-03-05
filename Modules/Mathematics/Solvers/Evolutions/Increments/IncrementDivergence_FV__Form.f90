@@ -70,13 +70,9 @@ module IncrementDivergence_FV__Form
     procedure, public, pass :: &
       AllocateStorage
     procedure, private, pass :: &
-      SetBoundaryFluence_CSL
-    procedure, private, pass :: &
       Set_dLog_VJ
-    procedure, private, pass :: &
-      Set_Weight_RK
     generic, public :: &
-      Set => SetBoundaryFluence_CSL, Set_dLog_VJ, Set_Weight_RK
+      Set => Set_dLog_VJ
     procedure, private, pass :: &
       Clear_CSL
     generic, public :: &
@@ -121,7 +117,8 @@ module IncrementDivergence_FV__Form
 contains
 
 
-  subroutine Initialize ( I, CurrentChart, UseLimiterOption )
+  subroutine Initialize &
+               ( I, CurrentChart, UseLimiterOption, BoundaryFluence_CSL_Option )
 
     class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
       I
@@ -129,6 +126,9 @@ contains
       CurrentChart
     logical ( KDL ), intent ( in ), optional :: &
       UseLimiterOption
+    type ( Real_3D_Form ), dimension ( :, : ), intent ( in ), target, &
+      optional :: &
+        BoundaryFluence_CSL_Option
 
     character ( LDF ) :: &
       OutputDirectory
@@ -153,6 +153,9 @@ contains
     call Show ( I % UseLimiter, 'UseLimiter', I % IGNORABILITY )
     if ( I % UseLimiter ) &
       call Show ( I % LimiterParameter, 'LimiterParameter', I % IGNORABILITY )
+
+    if ( present ( BoundaryFluence_CSL_Option ) ) &
+      I % BoundaryFluence_CSL => BoundaryFluence_CSL_Option
 
     call PROGRAM_HEADER % AddTimer &
            ( 'IncrementDivergence', I % iTimerIncrementDivergence )
@@ -283,18 +286,6 @@ contains
   end subroutine AllocateStorage
 
 
-  subroutine SetLimiterParameter ( I, UseLimiter )
-
-    class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
-      I
-    logical ( KDL ), intent ( in ) :: &
-      UseLimiter
-
-    I % UseLimiter = UseLimiter
-
-  end subroutine SetLimiterParameter
-
-
   subroutine SetBoundaryFluence_CSL ( I, BoundaryFluence_CSL )
 
     class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
@@ -319,34 +310,17 @@ contains
   end subroutine Set_dLog_VJ
 
 
-  subroutine Set_Weight_RK ( I, Weight_RK )
-
-    class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
-      I
-    real ( KDR ), intent ( in ) :: &
-      Weight_RK
-
-    I % Weight_RK = Weight_RK
-
-  end subroutine Set_Weight_RK
-
-
   subroutine Clear_CSL ( I )
 
     class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
       I
 
-    I % BoundaryFluence_CSL   => null ( )
     I % dLogVolumeJacobian_dX => null ( )
-
-    I % Weight_RK =  - huge ( 1.0_KDR )
-
-    I % UseLimiter = .true.
 
   end subroutine Clear_CSL
 
 
-  subroutine Compute ( I, Increment, TimeStep )
+  subroutine Compute ( I, Increment, TimeStep, Weight_RK )
 
     class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
       I
@@ -354,6 +328,8 @@ contains
       Increment  !-- Assume Increment is already cleared!
     real ( KDR ), intent ( in ) :: &
       TimeStep
+    real ( KDR ), intent ( in ) :: &
+      Weight_RK
 
     integer ( KDI ) :: &
       iD  !-- iDimension
@@ -368,6 +344,8 @@ contains
     call PrepareOutput ( I )
 
     !-- Assume Increment is already cleared!
+
+    I % Weight_RK = Weight_RK
 
     do iD = 1, I % Chart % nDimensions
 

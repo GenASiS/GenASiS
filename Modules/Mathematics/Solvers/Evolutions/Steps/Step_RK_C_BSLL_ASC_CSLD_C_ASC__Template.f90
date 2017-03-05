@@ -446,8 +446,7 @@ contains
       S % ApplyRelaxation_C => S % ApplyRelaxation_S % Pointer
 
       call S % ComputeStage_C &
-             ( S % IncrementDivergence_C, C, Chart, K, TimeStep, iStage, &
-               BF_Option = BF )
+             ( S % IncrementDivergence_C, C, Chart, K, TimeStep, iStage )
 
       S % ApplyRelaxation_C => null ( )
       S % ApplySources_C    => null ( )

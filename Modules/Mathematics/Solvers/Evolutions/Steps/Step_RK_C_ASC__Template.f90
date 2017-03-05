@@ -211,11 +211,26 @@ contains
     S % Current_ASC => Current_ASC
     S % Current     => Current_ASC % Current ( )
 
+    call S % AllocateStorage ( )
+
+    !-- IncrementDivergence_C
+
     allocate ( S % IncrementDivergence_C )
     associate ( ID => S % IncrementDivergence_C )
-    call ID % Initialize ( Current_ASC % Chart, UseLimiterOption )
+    select type ( Chart => Current_ASC % Atlas_SC % Chart )
+    class is ( Chart_SL_Template )
+      call ID % Initialize &
+             ( Current_ASC % Chart, UseLimiterOption, &
+               BoundaryFluence_CSL_Option = S % BoundaryFluence_CSL )
+    class default
+      call Show ( 'Chart type not found', CONSOLE % ERROR )
+      call Show ( 'Step_RK_C_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'InitializeTemplate_C_ASC', 'subroutine', CONSOLE % ERROR ) 
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- Chart
     end associate !-- ID
 
+    !-- IncrementDamping
     allocate ( S % IncrementDamping )
     associate ( ID => S % IncrementDamping )
     call ID % Initialize ( S % Name )
@@ -223,8 +238,6 @@ contains
 
     call PROGRAM_HEADER % AddTimer &
            ( 'GhostIncrement', S % iTimerGhost )
-
-    call S % AllocateStorage ( )
 
   end subroutine InitializeTemplate_C_ASC
 
@@ -503,7 +516,6 @@ contains
       ( C     => S % Current, &
         Chart => S % Chart, &
         K     => S % K ( iStage ), &
-        BF    => S % BoundaryFluence_CSL, &
         Y     => S % Y )
 
     if ( iStage > 1 ) &
@@ -516,8 +528,7 @@ contains
     S % ApplyRelaxation_C => S % ApplyRelaxation % Pointer
 
     call S % ComputeStage_C &
-           ( S % IncrementDivergence_C, C, S % Chart, K, TimeStep, iStage, &
-             BF_Option = BF )
+           ( S % IncrementDivergence_C, C, S % Chart, K, TimeStep, iStage )
 
     S % ApplyRelaxation_C => null ( )
     S % ApplySources_C    => null ( )
@@ -832,9 +843,7 @@ contains
   end subroutine IncrementIntermediate_C
 
 
-  subroutine ComputeStage_C &
-               ( S, ID, C, Chart, K, TimeStep, iStage, &
-                 BF_Option )
+  subroutine ComputeStage_C ( S, ID, C, Chart, K, TimeStep, iStage )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
@@ -850,15 +859,13 @@ contains
       TimeStep
     integer ( KDI ), intent ( in ) :: &
       iStage
-    type ( Real_3D_Form ), dimension ( :, : ), intent ( inout ), optional :: &
-      BF_Option
 
     type ( VariableGroupForm ), allocatable :: &
       DC  !-- DampingCoefficient
 
     !-- Divergence
     if ( associated ( S % ApplyDivergence_C ) ) &
-      call S % ApplyDivergence_C ( ID, K, TimeStep, iStage, BF_Option )
+      call S % ApplyDivergence_C ( ID, K, TimeStep, iStage )
 
     !-- Other explicit sources
     if ( associated ( S % ApplySources_C ) ) &
@@ -1073,9 +1080,7 @@ contains
   end subroutine DeallocateStorage
 
 
-  subroutine ApplyDivergence_C &
-               ( S, ID, Increment, TimeStep, iStage, &
-                 BoundaryFluence_CSL_Option )
+  subroutine ApplyDivergence_C ( S, ID, Increment, TimeStep, iStage )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
@@ -1087,17 +1092,9 @@ contains
       TimeStep
     integer ( KDI ), intent ( in ) :: &
       iStage
-    type ( Real_3D_Form ), dimension ( :, : ), intent ( inout ), optional :: &
-      BoundaryFluence_CSL_Option
 
     call ID % Set ( S % dLogVolumeJacobian_dX )
-    call ID % Set ( Weight_RK = S % B ( iStage ) )
-    if ( present ( BoundaryFluence_CSL_Option ) ) then
-      call ID % Set ( BoundaryFluence_CSL_Option )
-    else
-      nullify ( ID % BoundaryFluence_CSL )
-    end if
-    call ID % Compute ( Increment, TimeStep )
+    call ID % Compute ( Increment, TimeStep, Weight_RK = S % B ( iStage ) )
     call ID % Clear ( )
 
   end subroutine ApplyDivergence_C
