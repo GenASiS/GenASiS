@@ -35,8 +35,8 @@ module IncrementDivergence_FV__Form
       LimiterParameter, &
       Weight_RK = - huge ( 0.0_KDR ) !-- RungeKutta weight
     logical ( KDL ) :: &
-      UseLimiterParameter = .true., &
-      UseIncrementStream = .false.
+      UseLimiter, &
+      UseIncrementStream
     character ( LDF ) :: &
       Name = ''
     type ( Real_1D_Form ), dimension ( : ), pointer :: &
@@ -70,16 +70,13 @@ module IncrementDivergence_FV__Form
     procedure, public, pass :: &
       AllocateStorage
     procedure, private, pass :: &
-      SetLimiterParameter
-    procedure, private, pass :: &
       SetBoundaryFluence_CSL
     procedure, private, pass :: &
       Set_dLog_VJ
     procedure, private, pass :: &
       Set_Weight_RK
     generic, public :: &
-      Set => SetLimiterParameter, SetBoundaryFluence_CSL, Set_dLog_VJ, &
-             Set_Weight_RK
+      Set => SetBoundaryFluence_CSL, Set_dLog_VJ, Set_Weight_RK
     procedure, private, pass :: &
       Clear_CSL
     generic, public :: &
@@ -124,12 +121,14 @@ module IncrementDivergence_FV__Form
 contains
 
 
-  subroutine Initialize ( I, CurrentChart )
+  subroutine Initialize ( I, CurrentChart, UseLimiterOption )
 
     class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
       I
     class ( FieldChartTemplate ), intent ( in ), target :: &
       CurrentChart
+    logical ( KDL ), intent ( in ), optional :: &
+      UseLimiterOption
 
     character ( LDF ) :: &
       OutputDirectory
@@ -143,10 +142,17 @@ contains
     I % CurrentChart => CurrentChart
     I % Chart        => CurrentChart % Chart
 
+    I % UseLimiter = .true.
+    if ( present ( UseLimiterOption ) ) &
+      I % UseLimiter = UseLimiterOption
+
     I % LimiterParameter = 1.4_KDR
     call PROGRAM_HEADER % GetParameter &
            ( I % LimiterParameter, 'LimiterParameter' )
-    call Show ( I % LimiterParameter, 'LimiterParameter', I % IGNORABILITY )
+
+    call Show ( I % UseLimiter, 'UseLimiter', I % IGNORABILITY )
+    if ( I % UseLimiter ) &
+      call Show ( I % LimiterParameter, 'LimiterParameter', I % IGNORABILITY )
 
     call PROGRAM_HEADER % AddTimer &
            ( 'IncrementDivergence', I % iTimerIncrementDivergence )
@@ -277,14 +283,14 @@ contains
   end subroutine AllocateStorage
 
 
-  subroutine SetLimiterParameter ( I, UseLimiterParameter )
+  subroutine SetLimiterParameter ( I, UseLimiter )
 
     class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
       I
     logical ( KDL ), intent ( in ) :: &
-      UseLimiterParameter
+      UseLimiter
 
-    I % UseLimiterParameter = UseLimiterParameter
+    I % UseLimiter = UseLimiter
 
   end subroutine SetLimiterParameter
 
@@ -335,7 +341,7 @@ contains
 
     I % Weight_RK =  - huge ( 1.0_KDR )
 
-    I % UseLimiterParameter = .true.
+    I % UseLimiter = .true.
 
   end subroutine Clear_CSL
 
@@ -729,7 +735,7 @@ contains
 
 !    associate ( Timer_G => PROGRAM_HEADER % Timer ( I % iTimerGradient ) )
 !    call Timer_G % Start ( )
-    if ( I % UseLimiterParameter ) then
+    if ( I % UseLimiter ) then
       call Grad % Compute &
              ( CSL, P, iDimension, &
                LimiterParameterOption = I % LimiterParameter )

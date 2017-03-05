@@ -42,8 +42,6 @@ module Step_RK_C_ASC__Template
         dLogVolumeJacobian_dX
       type ( Real_3D_Form ), dimension ( :, : ), allocatable :: &
         BoundaryFluence_CSL
-      logical ( KDL ) :: &
-        UseLimiterParameter
       type ( VariableGroupForm ), allocatable :: &
         Solution, &
         Y
@@ -176,8 +174,7 @@ contains
 
 
   subroutine InitializeTemplate_C_ASC &
-               ( S, Current_ASC, NameSuffix, A, B, C, &
-                 UseLimiterParameterOption )
+               ( S, Current_ASC, NameSuffix, A, B, C, UseLimiterOption )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
@@ -192,16 +189,12 @@ contains
     real ( KDR ), dimension ( 2 : ), intent ( in ) :: &
       C
     logical ( KDL ), intent ( in ), optional :: &
-      UseLimiterParameterOption
+      UseLimiterOption
 
     if ( S % Type == '' ) &
       S % Type = 'a Step_RK_C_ASC' 
 
     call S % InitializeTemplate ( NameSuffix, A, B, C )
-
-    S % UseLimiterParameter = .true.
-    if ( present ( UseLimiterParameterOption ) ) &
-      S % UseLimiterParameter = UseLimiterParameterOption
 
     select type ( Chart => Current_ASC % Atlas_SC % Chart )
     class is ( Chart_SL_Template )
@@ -217,7 +210,7 @@ contains
 
     allocate ( S % IncrementDivergence )
     associate ( ID => S % IncrementDivergence )
-    call ID % Initialize ( Current_ASC % Chart )
+    call ID % Initialize ( Current_ASC % Chart, UseLimiterOption )
     end associate !-- ID
 
     allocate ( S % IncrementDamping )
@@ -502,8 +495,7 @@ contains
         Grid => S % Grid, &
         K    => S % K ( iStage ), &
         BF   => S % BoundaryFluence_CSL, &
-        Y    => S % Y, &
-        ULP  => S % UseLimiterParameter )
+        Y    => S % Y )
 
     if ( iStage > 1 ) &
       call S % StoreSolution ( C, Y )
@@ -515,7 +507,7 @@ contains
     S % ApplyRelaxation_C => S % ApplyRelaxation % Pointer
 
     call S % ComputeStage_C &
-           ( C, Grid, K, ULP, TimeStep, iStage, BF_Option = BF )
+           ( C, Grid, K, TimeStep, iStage, BF_Option = BF )
 
     S % ApplyRelaxation_C => null ( )
     S % ApplySources_C    => null ( )
@@ -830,9 +822,7 @@ contains
   end subroutine IncrementIntermediate_C
 
 
-  subroutine ComputeStage_C &
-               ( S, C, Grid, K, UseLimiterParameter, TimeStep, iStage, &
-                 BF_Option )
+  subroutine ComputeStage_C ( S, C, Grid, K, TimeStep, iStage, BF_Option )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
@@ -842,8 +832,6 @@ contains
       Grid
     type ( VariableGroupForm ), intent ( inout ) :: &
       K
-    logical ( KDL ), intent ( in ) :: &
-      UseLimiterParameter
     real ( KDR ), intent ( in ) :: &
       TimeStep
     integer ( KDI ), intent ( in ) :: &
@@ -856,8 +844,7 @@ contains
 
     !-- Divergence
     if ( associated ( S % ApplyDivergence_C ) ) &
-      call S % ApplyDivergence_C &
-             ( Grid, K, C, UseLimiterParameter, TimeStep, iStage, BF_Option )
+      call S % ApplyDivergence_C ( Grid, K, C, TimeStep, iStage, BF_Option )
 
     !-- Other explicit sources
     if ( associated ( S % ApplySources_C ) ) &
@@ -1073,8 +1060,8 @@ contains
 
 
   subroutine ApplyDivergence_C &
-               ( S, Grid, Increment, Current, UseLimiterParameter, TimeStep, &
-                 iStage, BoundaryFluence_CSL_Option )
+               ( S, Grid, Increment, Current, TimeStep, iStage, &
+                 BoundaryFluence_CSL_Option )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
@@ -1084,8 +1071,6 @@ contains
       Increment
     class ( CurrentTemplate ), intent ( in ) :: &
       Current
-    logical ( KDL ), intent ( in ) :: &
-      UseLimiterParameter
     real ( KDR ), intent ( in ) :: &
       TimeStep
     integer ( KDI ), intent ( in ) :: &
@@ -1094,7 +1079,6 @@ contains
       BoundaryFluence_CSL_Option
 
     associate ( ID => S % IncrementDivergence )
-    call ID % Set ( UseLimiterParameter )
     call ID % Set ( S % dLogVolumeJacobian_dX )
     call ID % Set ( Weight_RK = S % B ( iStage ) )
     if ( present ( BoundaryFluence_CSL_Option ) ) then

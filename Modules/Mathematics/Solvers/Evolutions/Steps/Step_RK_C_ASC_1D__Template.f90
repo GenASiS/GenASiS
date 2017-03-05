@@ -24,8 +24,6 @@ module Step_RK_C_ASC_1D__Template
         nCurrents = 0
       type ( Real_3D_2D_Form ), dimension ( : ), allocatable :: &
         BoundaryFluence_CSL_1D
-      logical ( KDL ), dimension ( : ), allocatable :: &
-        UseLimiterParameter_1D
       type ( VariableGroupForm ), dimension ( : ), allocatable :: &
         Solution_1D, &
         Y_1D
@@ -154,11 +152,6 @@ contains
       ( Timer => PROGRAM_HEADER % Timer ( S % iTimerComputeStep ) )
     call Timer % Start ( )
 
-    allocate ( S % UseLimiterParameter_1D ( S % nCurrents ) )
-    S % UseLimiterParameter_1D = .true.
-    if ( present ( UseLimiterParameter_1D_Option ) ) &
-      S % UseLimiterParameter_1D = UseLimiterParameter_1D_Option
-
     select type ( Chart => Current_ASC_1D ( 1 ) % Element % Atlas_SC % Chart )
     class is ( Chart_SL_Template )
 
@@ -188,7 +181,6 @@ contains
 
     deallocate ( S % Current_1D )
     nullify ( S % Grid )
-    deallocate ( S % UseLimiterParameter_1D )
 
     call Timer % Stop ( )
     end associate !-- Timer
@@ -278,8 +270,7 @@ contains
           Grid => S % Grid, &
           K    => S % K_1D ( iC, iStage ), &
           BF   => S % BoundaryFluence_CSL_1D ( iC ) % Array, &
-          Y    => S % Y_1D ( iC ), &
-          ULP  => S % UseLimiterParameter_1D ( iC ) )
+          Y    => S % Y_1D ( iC ) )
 
       if ( iStage > 1 ) &
         call S % StoreSolution ( C, Y )
@@ -291,7 +282,7 @@ contains
       S % ApplyRelaxation_C => S % ApplyRelaxation_1D ( iC ) % Pointer
 
       call S % ComputeStage_C &
-             ( C, Grid, K, ULP, TimeStep, iStage, BF_Option = BF )
+             ( C, Grid, K, TimeStep, iStage, BF_Option = BF )
 
       S % ApplyRelaxation_C => null ( )
       S % ApplySources_C    => null ( )

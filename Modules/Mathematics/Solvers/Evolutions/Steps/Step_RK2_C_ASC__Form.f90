@@ -26,7 +26,7 @@ module Step_RK2_C_ASC__Form
 contains
 
 
-  subroutine Initialize ( S, Current_ASC, NameSuffix )
+  subroutine Initialize ( S, Current_ASC, NameSuffix, UseLimiterOption )
 
     class ( Step_RK2_C_ASC_Form ), intent ( inout ) :: &
       S
@@ -34,6 +34,8 @@ contains
       Current_ASC
     character ( * ), intent ( in ) :: &
       NameSuffix
+    logical ( KDL ), intent ( in ), optional :: &
+      UseLimiterOption
 
     real ( KDR ), dimension ( 2 : 2, 1 : 1 ) :: &
       A
@@ -53,7 +55,8 @@ contains
 
     C ( 2 ) = 1.0_KDR
     
-    call S % InitializeTemplate_C_ASC ( Current_ASC, NameSuffix, A, B, C )
+    call S % InitializeTemplate_C_ASC &
+           ( Current_ASC, NameSuffix, A, B, C, UseLimiterOption )
 
   end subroutine Initialize
 

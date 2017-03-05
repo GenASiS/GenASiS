@@ -26,9 +26,6 @@ module Step_RK_C_BSLL_ASC_CSLD_C_ASC__Template
         nSections = 0
       type ( Real_3D_2D_Form ), dimension ( : ), allocatable :: &
         BoundaryFluence_CSL_S
-      logical ( KDL ) :: &
-        UseLimiterParameter_S, &
-        UseLimiterParameter_F
       type ( VariableGroupForm ), dimension ( : ), allocatable :: &
         Solution_BSLL_ASC_CSLD_S, &
         Y_BSLL_ASC_CSLD_S
@@ -162,18 +159,6 @@ contains
     associate &
       ( Timer => PROGRAM_HEADER % Timer ( S % iTimerComputeStep ) )
     call Timer % Start ( )
-
-    S % UseLimiterParameter = .true.
-    if ( present ( UseLimiterParameterOption ) ) &
-      S % UseLimiterParameter = UseLimiterParameterOption
-
-    S % UseLimiterParameter_S = .true.
-    if ( present ( UseLimiterParameter_S_Option ) ) &
-      S % UseLimiterParameter_S = UseLimiterParameter_S_Option
-
-    S % UseLimiterParameter_F = .true.
-    if ( present ( UseLimiterParameter_F_Option ) ) &
-      S % UseLimiterParameter_F = UseLimiterParameter_F_Option
 
     select type ( Chart => Current_ASC % Atlas_SC % Chart )
     class is ( Chart_SL_Template )
@@ -454,15 +439,13 @@ contains
 
       associate &
         ( Grid => S % Grid, &
-          BF   => BF_CSL_S ( iS ) % Array, &
-          ULP  => S % UseLimiterParameter_S )
+          BF   => BF_CSL_S ( iS ) % Array )
 
       S % ApplyDivergence_C => S % ApplyDivergence_S % Pointer
       S % ApplySources_C    => S % ApplySources_S    % Pointer
       S % ApplyRelaxation_C => S % ApplyRelaxation_S % Pointer
 
-      call S % ComputeStage_C &
-             ( C, Grid, K, ULP, TimeStep, iStage, BF_Option = BF )
+      call S % ComputeStage_C ( C, Grid, K, TimeStep, iStage, BF_Option = BF )
 
       S % ApplyRelaxation_C => null ( )
       S % ApplySources_C    => null ( )
@@ -481,15 +464,13 @@ contains
 
       C => CB % CurrentFiber ( iF )
 
-      associate &
-        ( Grid => S % Grid_F, &
-          ULP  => S % UseLimiterParameter_F )
+      associate ( Grid => S % Grid_F )
 
       S % ApplyDivergence_C => S % ApplyDivergence_F % Pointer
       S % ApplySources_C    => S % ApplySources_F    % Pointer
       S % ApplyRelaxation_C => S % ApplyRelaxation_F % Pointer
 
-      call S % ComputeStage_C ( C, Grid, K, ULP, TimeStep, iStage )
+      call S % ComputeStage_C ( C, Grid, K, TimeStep, iStage )
 
       S % ApplyRelaxation_C => null ( )
       S % ApplySources_C    => null ( )
