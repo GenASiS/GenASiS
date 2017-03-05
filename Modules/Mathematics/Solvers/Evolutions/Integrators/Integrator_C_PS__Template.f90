@@ -252,7 +252,6 @@ contains
     class is ( Chart_SLD_Form )
 
       call S % Compute ( I % Time, TimeStep )
-      call CA % AccumulateBoundaryTally ( S % BoundaryFluence_CSL )
 
     class default
       call Show ( 'Chart type not found', CONSOLE % ERROR )

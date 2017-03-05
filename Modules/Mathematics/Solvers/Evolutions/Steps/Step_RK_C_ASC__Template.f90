@@ -53,6 +53,8 @@ module Step_RK_C_ASC__Template
         Grid => null ( )
       class ( CurrentTemplate ), pointer :: &
         Current => null ( )
+      class ( Current_ASC_Template ), pointer :: &
+        Current_ASC => null ( )
       type ( IncrementDivergence_FV_Form ), allocatable :: &
         IncrementDivergence
       type ( IncrementDampingForm ), allocatable :: &
@@ -206,7 +208,8 @@ contains
       call PROGRAM_HEADER % Abort ( )
     end select !-- Chart
 
-    S % Current => Current_ASC % Current ( )
+    S % Current_ASC => Current_ASC
+    S % Current     => Current_ASC % Current ( )
 
     allocate ( S % IncrementDivergence )
     associate ( ID => S % IncrementDivergence )
@@ -407,10 +410,15 @@ contains
       ( Timer => PROGRAM_HEADER % Timer ( S % iTimerComputeStep ) )
     call Timer % Start ( )
 
-    call S % ClearBoundaryFluence ( S % BoundaryFluence_CSL )
+    if ( allocated ( S % BoundaryFluence_CSL ) ) &
+      call S % ClearBoundaryFluence ( S % BoundaryFluence_CSL )
+
     call S % LoadSolution ( S % Solution, S % Current )
     call S % ComputeTemplate ( Time, TimeStep )
     call S % StoreSolution ( S % Current, S % Solution )
+
+    if ( allocated ( S % BoundaryFluence_CSL ) ) &
+      call S % Current_ASC % AccumulateBoundaryTally ( S % BoundaryFluence_CSL )
 
     call Timer % Stop ( )
     end associate !-- Timer
@@ -429,6 +437,9 @@ contains
       deallocate ( S % IncrementDamping )
     if ( allocated ( S % IncrementDivergence ) ) &
       deallocate ( S % IncrementDivergence )
+
+    nullify ( S % Current )
+    nullify ( S % Current_ASC )
 
     call S % FinalizeTemplate ( )
 
