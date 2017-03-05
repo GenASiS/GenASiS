@@ -115,8 +115,8 @@ contains
 
 !    S % Current => Current_ASC % Current ( )
 
-    allocate ( S % IncrementDivergence )
-    associate ( ID => S % IncrementDivergence )
+    allocate ( S % IncrementDivergence_C )
+    associate ( ID => S % IncrementDivergence_C )
     call ID % Initialize ( Current_ASC % Chart )
     end associate !-- ID
 
@@ -162,7 +162,7 @@ contains
 
     select type ( Chart => Current_ASC % Atlas_SC % Chart )
     class is ( Chart_SL_Template )
-      S % Grid => Chart
+      S % Chart => Chart
     class default
       call Show ( 'Chart type not found', CONSOLE % ERROR )
       call Show ( 'Step_RK_C_ASC__Form', 'module', CONSOLE % ERROR )
@@ -197,7 +197,7 @@ contains
     S % nFibers =  0
 
     S % Current => null ( )
-    S % Grid    => null ( )
+    S % Chart   => null ( )
 
     call Timer % Stop ( )
     end associate !-- Timer
@@ -438,14 +438,16 @@ contains
       C => CB % CurrentSection ( iS )
 
       associate &
-        ( Grid => S % Grid, &
-          BF   => BF_CSL_S ( iS ) % Array )
+        ( Chart => S % Chart, &
+          BF    => BF_CSL_S ( iS ) % Array )
 
       S % ApplyDivergence_C => S % ApplyDivergence_S % Pointer
       S % ApplySources_C    => S % ApplySources_S    % Pointer
       S % ApplyRelaxation_C => S % ApplyRelaxation_S % Pointer
 
-      call S % ComputeStage_C ( C, Grid, K, TimeStep, iStage, BF_Option = BF )
+      call S % ComputeStage_C &
+             ( S % IncrementDivergence_C, C, Chart, K, TimeStep, iStage, &
+               BF_Option = BF )
 
       S % ApplyRelaxation_C => null ( )
       S % ApplySources_C    => null ( )
@@ -470,7 +472,7 @@ contains
       S % ApplySources_C    => S % ApplySources_F    % Pointer
       S % ApplyRelaxation_C => S % ApplyRelaxation_F % Pointer
 
-      call S % ComputeStage_C ( C, Grid, K, TimeStep, iStage )
+!      call S % ComputeStage_C ( C, Grid, K, TimeStep, iStage )
 
       S % ApplyRelaxation_C => null ( )
       S % ApplySources_C    => null ( )
@@ -596,11 +598,11 @@ contains
     call S % Allocate_RK_C ( )
     call S % Allocate_RK_C_BSLL_ASC_CSLD ( )
 
-    select type ( Grid => S % Grid )
+    select type ( Chart => S % Chart )
     class is ( Chart_SL_Template )
 
       call S % AllocateBoundaryFluence &
-             ( Grid, S % Current % N_CONSERVED, S % BoundaryFluence_CSL )
+             ( Chart, S % Current % N_CONSERVED, S % BoundaryFluence_CSL )
 
       if ( allocated ( S % BoundaryFluence_CSL_S ) ) &
         deallocate ( S % BoundaryFluence_CSL_S )
@@ -609,11 +611,9 @@ contains
       do iS = 1, S % nSections
         Current_S => S % Current_BSLL_ASC_CSLD % CurrentSection ( iS )
         call S % AllocateBoundaryFluence &
-               ( Grid, Current_S % N_CONSERVED, &
+               ( Chart, Current_S % N_CONSERVED, &
                  S % BoundaryFluence_CSL_S ( iS ) % Array )
       end do !-- iC
-
-      CoordinateSystem = Grid % CoordinateSystem
 
     class default
       call Show ( 'Grid type not recognized', CONSOLE % ERROR )
@@ -623,7 +623,7 @@ contains
     end select !-- Grid
 
     call S % AllocateMetricDerivatives &
-           ( CoordinateSystem, S % Current % nValues )
+           ( S % Chart % CoordinateSystem, S % Current % nValues )
 
     nullify ( Current_S )
 

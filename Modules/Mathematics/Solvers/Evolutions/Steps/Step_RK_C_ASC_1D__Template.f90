@@ -155,7 +155,7 @@ contains
     select type ( Chart => Current_ASC_1D ( 1 ) % Element % Atlas_SC % Chart )
     class is ( Chart_SL_Template )
 
-      S % Grid => Chart
+      S % Chart => Chart
 
       allocate ( S % Current_1D ( S % nCurrents ) )
       do iC = 1, S % nCurrents
@@ -180,7 +180,7 @@ contains
     call DeallocateStorage ( S )
 
     deallocate ( S % Current_1D )
-    nullify ( S % Grid )
+    nullify ( S % Chart )
 
     call Timer % Stop ( )
     end associate !-- Timer
@@ -266,11 +266,11 @@ contains
 
     do iC = 1, S % nCurrents
       associate &
-        ( C    => S % Current_1D ( iC ) % Pointer, &
-          Grid => S % Grid, &
-          K    => S % K_1D ( iC, iStage ), &
-          BF   => S % BoundaryFluence_CSL_1D ( iC ) % Array, &
-          Y    => S % Y_1D ( iC ) )
+        ( C     => S % Current_1D ( iC ) % Pointer, &
+          Chart => S % Chart, &
+          K     => S % K_1D ( iC, iStage ), &
+          BF    => S % BoundaryFluence_CSL_1D ( iC ) % Array, &
+          Y     => S % Y_1D ( iC ) )
 
       if ( iStage > 1 ) &
         call S % StoreSolution ( C, Y )
@@ -282,7 +282,8 @@ contains
       S % ApplyRelaxation_C => S % ApplyRelaxation_1D ( iC ) % Pointer
 
       call S % ComputeStage_C &
-             ( C, Grid, K, TimeStep, iStage, BF_Option = BF )
+             ( S % IncrementDivergence_C, C, Chart, K, TimeStep, iStage, &
+               BF_Option = BF )
 
       S % ApplyRelaxation_C => null ( )
       S % ApplySources_C    => null ( )
@@ -422,7 +423,7 @@ contains
 
     call S % Allocate_RK_C_1D ( )
 
-    select type ( Grid => S % Grid )
+    select type ( Chart => S % Chart )
     class is ( Chart_SL_Template )
 
       if ( allocated ( S % BoundaryFluence_CSL_1D ) ) &
@@ -431,11 +432,9 @@ contains
 
       do iC = 1, S % nCurrents
         call S % AllocateBoundaryFluence &
-               ( Grid, S % Current_1D ( iC ) % Pointer % N_CONSERVED, &
+               ( Chart, S % Current_1D ( iC ) % Pointer % N_CONSERVED, &
                  S % BoundaryFluence_CSL_1D ( iC ) % Array )
       end do !-- iC
-
-      CoordinateSystem = Grid % CoordinateSystem
 
     class default
       call Show ( 'Grid type not recognized', CONSOLE % ERROR )
@@ -445,7 +444,8 @@ contains
     end select !-- Grid
 
     call S % AllocateMetricDerivatives &
-           ( CoordinateSystem, S % Current_1D ( 1 ) % Pointer % nValues )
+           ( S % Chart % CoordinateSystem, &
+             S % Current_1D ( 1 ) % Pointer % nValues )
 
     call Timer % Stop ( )
     end associate !-- Timer

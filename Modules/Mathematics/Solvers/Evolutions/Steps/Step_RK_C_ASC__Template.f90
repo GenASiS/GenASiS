@@ -49,14 +49,14 @@ module Step_RK_C_ASC__Template
         K
 !       class ( GeometryFlatForm ), pointer :: &
 !         Geometry => null ( )
-      class ( * ), pointer :: &
-        Grid => null ( )
+      class ( ChartTemplate ), pointer :: &
+        Chart => null ( )
       class ( CurrentTemplate ), pointer :: &
         Current => null ( )
       class ( Current_ASC_Template ), pointer :: &
         Current_ASC => null ( )
       type ( IncrementDivergence_FV_Form ), allocatable :: &
-        IncrementDivergence
+        IncrementDivergence_C
       type ( IncrementDampingForm ), allocatable :: &
         IncrementDamping
       procedure ( ApplyDivergence_C ), pointer, pass :: &
@@ -200,7 +200,7 @@ contains
 
     select type ( Chart => Current_ASC % Atlas_SC % Chart )
     class is ( Chart_SL_Template )
-      S % Grid => Chart
+      S % Chart => Chart
     class default
       call Show ( 'Chart type not found', CONSOLE % ERROR )
       call Show ( 'Step_RK_C_ASC__Form', 'module', CONSOLE % ERROR )
@@ -211,8 +211,8 @@ contains
     S % Current_ASC => Current_ASC
     S % Current     => Current_ASC % Current ( )
 
-    allocate ( S % IncrementDivergence )
-    associate ( ID => S % IncrementDivergence )
+    allocate ( S % IncrementDivergence_C )
+    associate ( ID => S % IncrementDivergence_C )
     call ID % Initialize ( Current_ASC % Chart, UseLimiterOption )
     end associate !-- ID
 
@@ -245,13 +245,11 @@ contains
 
     call S % Allocate_RK_C ( )
 
-    select type ( Grid => S % Grid )
+    select type ( Chart => S % Chart )
     class is ( Chart_SL_Template )
 
       call S % AllocateBoundaryFluence &
-             ( Grid, S % Current % N_CONSERVED, S % BoundaryFluence_CSL )
-
-      CoordinateSystem = Grid % CoordinateSystem
+             ( Chart, S % Current % N_CONSERVED, S % BoundaryFluence_CSL )
 
     class default
       call Show ( 'Grid type not recognized', CONSOLE % ERROR )
@@ -261,7 +259,7 @@ contains
     end select !-- Grid
 
     call S % AllocateMetricDerivatives &
-           ( CoordinateSystem, S % Current % nValues )
+           ( S % Chart % CoordinateSystem, S % Current % nValues )
 
     call Timer % Stop ( )
     end associate !-- Timer
@@ -435,8 +433,8 @@ contains
 
     if ( allocated ( S % IncrementDamping ) ) &
       deallocate ( S % IncrementDamping )
-    if ( allocated ( S % IncrementDivergence ) ) &
-      deallocate ( S % IncrementDivergence )
+    if ( allocated ( S % IncrementDivergence_C ) ) &
+      deallocate ( S % IncrementDivergence_C )
 
     nullify ( S % Current )
     nullify ( S % Current_ASC )
@@ -502,11 +500,11 @@ contains
       iStage
 
     associate &
-      ( C    => S % Current, &
-        Grid => S % Grid, &
-        K    => S % K ( iStage ), &
-        BF   => S % BoundaryFluence_CSL, &
-        Y    => S % Y )
+      ( C     => S % Current, &
+        Chart => S % Chart, &
+        K     => S % K ( iStage ), &
+        BF    => S % BoundaryFluence_CSL, &
+        Y     => S % Y )
 
     if ( iStage > 1 ) &
       call S % StoreSolution ( C, Y )
@@ -518,7 +516,8 @@ contains
     S % ApplyRelaxation_C => S % ApplyRelaxation % Pointer
 
     call S % ComputeStage_C &
-           ( C, Grid, K, TimeStep, iStage, BF_Option = BF )
+           ( S % IncrementDivergence_C, C, S % Chart, K, TimeStep, iStage, &
+             BF_Option = BF )
 
     S % ApplyRelaxation_C => null ( )
     S % ApplySources_C    => null ( )
@@ -590,9 +589,9 @@ contains
     end do !-- iF
     end associate !-- iaC
 
-    select type ( Grid => S % Grid )
+    select type ( Chart => S % Chart )
     class is ( Chart_SL_Template )
-      G => Grid % Geometry ( )
+      G => Chart % Geometry ( )
     class default
       call Show ( 'Grid type not found', CONSOLE % ERROR )
       call Show ( 'Step_RK_C_ASC__Form', 'module', CONSOLE % ERROR )
@@ -833,14 +832,18 @@ contains
   end subroutine IncrementIntermediate_C
 
 
-  subroutine ComputeStage_C ( S, C, Grid, K, TimeStep, iStage, BF_Option )
+  subroutine ComputeStage_C &
+               ( S, ID, C, Chart, K, TimeStep, iStage, &
+                 BF_Option )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
+    type ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
+      ID    
     class ( CurrentTemplate ), intent ( inout ) :: &
       C
-    class ( * ), intent ( inout ) :: &
-      Grid
+    class ( ChartTemplate ), intent ( inout ) :: &
+      Chart
     type ( VariableGroupForm ), intent ( inout ) :: &
       K
     real ( KDR ), intent ( in ) :: &
@@ -855,7 +858,7 @@ contains
 
     !-- Divergence
     if ( associated ( S % ApplyDivergence_C ) ) &
-      call S % ApplyDivergence_C ( Grid, K, C, TimeStep, iStage, BF_Option )
+      call S % ApplyDivergence_C ( ID, K, TimeStep, iStage, BF_Option )
 
     !-- Other explicit sources
     if ( associated ( S % ApplySources_C ) ) &
@@ -873,11 +876,11 @@ contains
     end if
 
     if ( associated ( S % ApplyDivergence_C ) ) then
-      select type ( Grid )
+      select type ( Chart )
       class is ( Chart_SLD_Form )
         associate ( TimerGhost => PROGRAM_HEADER % Timer ( S % iTimerGhost ) )
         call TimerGhost % Start ( )
-        call Grid % ExchangeGhostData ( K )
+        call Chart % ExchangeGhostData ( K )
         call TimerGhost % Stop ( )
         end associate !-- TimerGhost
       end select !-- Grid
@@ -1071,17 +1074,15 @@ contains
 
 
   subroutine ApplyDivergence_C &
-               ( S, Grid, Increment, Current, TimeStep, iStage, &
+               ( S, ID, Increment, TimeStep, iStage, &
                  BoundaryFluence_CSL_Option )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
-    class ( * ), intent ( inout ) :: &
-      Grid
+    type ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
+      ID
     type ( VariableGroupForm ), intent ( inout ) :: &
       Increment
-    class ( CurrentTemplate ), intent ( in ) :: &
-      Current
     real ( KDR ), intent ( in ) :: &
       TimeStep
     integer ( KDI ), intent ( in ) :: &
@@ -1089,7 +1090,6 @@ contains
     type ( Real_3D_Form ), dimension ( :, : ), intent ( inout ), optional :: &
       BoundaryFluence_CSL_Option
 
-    associate ( ID => S % IncrementDivergence )
     call ID % Set ( S % dLogVolumeJacobian_dX )
     call ID % Set ( Weight_RK = S % B ( iStage ) )
     if ( present ( BoundaryFluence_CSL_Option ) ) then
@@ -1099,7 +1099,6 @@ contains
     end if
     call ID % Compute ( Increment, TimeStep )
     call ID % Clear ( )
-    end associate !-- ID
 
   end subroutine ApplyDivergence_C
 

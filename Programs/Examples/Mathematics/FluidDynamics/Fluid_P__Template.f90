@@ -512,16 +512,16 @@ contains
     call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 1 ), iMomentum_1 )
     call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 2 ), iMomentum_2 )
 
-    select type ( Grid => S % Grid )
+    select type ( Chart => S % Chart )
     class is ( Chart_SL_Template )
 
-    if ( trim ( Grid % CoordinateSystem ) == 'CARTESIAN' ) &
+    if ( trim ( Chart % CoordinateSystem ) == 'CARTESIAN' ) &
       return
 
     call ApplySourcesCurvilinearKernel &
            ( Increment % Value ( :, iMomentum_1 ), &
              Increment % Value ( :, iMomentum_2 ), &
-             Grid % CoordinateSystem, Grid % IsProperCell, &
+             Chart % CoordinateSystem, Chart % IsProperCell, &
              F % Value ( :, F % PRESSURE ), &
              F % Value ( :, F % MOMENTUM_DENSITY_D ( 2 ) ), &
              F % Value ( :, F % MOMENTUM_DENSITY_D ( 3 ) ), &
@@ -529,10 +529,10 @@ contains
              F % Value ( :, F % VELOCITY_U ( 3 ) ), &
              S % dLogVolumeJacobian_dX ( 1 ) % Value, &
              S % dLogVolumeJacobian_dX ( 2 ) % Value, &
-             TimeStep, Grid % nDimensions )
+             TimeStep, Chart % nDimensions )
 
     class default
-      call Show ( 'Grid type not found', CONSOLE % ERROR )
+      call Show ( 'Chart type not found', CONSOLE % ERROR )
       call Show ( 'Fluid_P__Template', 'module', CONSOLE % ERROR )
       call Show ( 'ApplySourcesCurvilinear', 'subroutine', CONSOLE % ERROR ) 
       call PROGRAM_HEADER % Abort ( )
