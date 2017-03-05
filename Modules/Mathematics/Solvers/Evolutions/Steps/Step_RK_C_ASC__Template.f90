@@ -221,7 +221,8 @@ contains
     class is ( Chart_SL_Template )
       call ID % Initialize &
              ( Current_ASC % Chart, UseLimiterOption, &
-               BoundaryFluence_CSL_Option = S % BoundaryFluence_CSL )
+               BoundaryFluence_CSL_Option = S % BoundaryFluence_CSL, &
+               dLogVolumeJacobian_dX_Option = S % dLogVolumeJacobian_dX )
     class default
       call Show ( 'Chart type not found', CONSOLE % ERROR )
       call Show ( 'Step_RK_C_ASC__Form', 'module', CONSOLE % ERROR )
@@ -1093,9 +1094,7 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iStage
 
-    call ID % Set ( S % dLogVolumeJacobian_dX )
     call ID % Compute ( Increment, TimeStep, Weight_RK = S % B ( iStage ) )
-    call ID % Clear ( )
 
   end subroutine ApplyDivergence_C
 

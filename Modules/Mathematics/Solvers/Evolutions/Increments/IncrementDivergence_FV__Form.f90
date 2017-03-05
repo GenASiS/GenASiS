@@ -69,14 +69,6 @@ module IncrementDivergence_FV__Form
       Initialize
     procedure, public, pass :: &
       AllocateStorage
-    procedure, private, pass :: &
-      Set_dLog_VJ
-    generic, public :: &
-      Set => Set_dLog_VJ
-    procedure, private, pass :: &
-      Clear_CSL
-    generic, public :: &
-      Clear => Clear_CSL
     procedure, public, pass :: &
       Compute
     final :: &
@@ -118,7 +110,8 @@ contains
 
 
   subroutine Initialize &
-               ( I, CurrentChart, UseLimiterOption, BoundaryFluence_CSL_Option )
+               ( I, CurrentChart, UseLimiterOption, &
+                 BoundaryFluence_CSL_Option, dLogVolumeJacobian_dX_Option )
 
     class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
       I
@@ -129,6 +122,8 @@ contains
     type ( Real_3D_Form ), dimension ( :, : ), intent ( in ), target, &
       optional :: &
         BoundaryFluence_CSL_Option
+    type ( Real_1D_Form ), dimension ( : ), intent ( in ), target, optional :: &
+      dLogVolumeJacobian_dX_Option
 
     character ( LDF ) :: &
       OutputDirectory
@@ -156,6 +151,9 @@ contains
 
     if ( present ( BoundaryFluence_CSL_Option ) ) &
       I % BoundaryFluence_CSL => BoundaryFluence_CSL_Option
+
+    if ( present ( dLogVolumeJacobian_dX_Option ) ) &
+      I % dLogVolumeJacobian_dX => dLogVolumeJacobian_dX_Option
 
     call PROGRAM_HEADER % AddTimer &
            ( 'IncrementDivergence', I % iTimerIncrementDivergence )
@@ -284,40 +282,6 @@ contains
            ( 'Primitive', [ nValues, I % Current % N_PRIMITIVE ] )
 
   end subroutine AllocateStorage
-
-
-  subroutine SetBoundaryFluence_CSL ( I, BoundaryFluence_CSL )
-
-    class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
-      I
-    type ( Real_3D_Form ), dimension ( :, : ), intent ( in ), target :: &
-      BoundaryFluence_CSL
-
-    I % BoundaryFluence_CSL => BoundaryFluence_CSL
-
-  end subroutine SetBoundaryFluence_CSL
-
-
-  subroutine Set_dLog_VJ ( I, dLogVolumeJacobian_dX )
-
-    class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
-      I
-    type ( Real_1D_Form ), dimension ( : ), intent ( in ), target :: &
-      dLogVolumeJacobian_dX
-
-    I % dLogVolumeJacobian_dX => dLogVolumeJacobian_dX
-
-  end subroutine Set_dLog_VJ
-
-
-  subroutine Clear_CSL ( I )
-
-    class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
-      I
-
-    I % dLogVolumeJacobian_dX => null ( )
-
-  end subroutine Clear_CSL
 
 
   subroutine Compute ( I, Increment, TimeStep, Weight_RK )
