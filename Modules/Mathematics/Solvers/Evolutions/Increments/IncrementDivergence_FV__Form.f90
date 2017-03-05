@@ -60,6 +60,8 @@ module IncrementDivergence_FV__Form
       CurrentChart => null ( )
     class ( GeometryFlatForm ), pointer :: &
       Geometry => null ( )
+    type ( GradientForm ), allocatable :: &
+      GradientPrimitive
     class ( CurrentTemplate ), pointer :: &
       Current => null ( )
   contains
@@ -253,6 +255,10 @@ contains
     allocate ( I % Flux_I )
     call I % Flux_I % Initialize &
            ( [ nValues, I % Current % N_CONSERVED ], ClearOption = .true. )
+
+    allocate ( I % GradientPrimitive )
+    call I % GradientPrimitive % Initialize &
+           ( 'Primitive', [ nValues, I % Current % N_PRIMITIVE ] )
 
   end subroutine AllocateStorage
 
@@ -520,6 +526,8 @@ contains
     class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
       I
 
+    if ( allocated ( I % GradientPrimitive ) ) &
+      deallocate ( I % GradientPrimitive )
     if ( allocated ( I % Flux_I ) ) &
       deallocate ( I % Flux_I )
     if ( allocated ( I % Current_IR ) ) &
@@ -701,7 +709,7 @@ contains
 
   subroutine ComputeReconstruction_CSL ( I, P, CSL, iDimension )
 
-    class ( IncrementDivergence_FV_Form ), intent ( in ) :: &
+    class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
       I
     type ( VariableGroupForm ), intent ( in ) :: &
       P
@@ -720,8 +728,6 @@ contains
       V_IR, &
       V_I, &
       dLVdX
-    type ( GradientForm ), allocatable :: &
-      Gradient_C
 
     associate &
       ( Timer => PROGRAM_HEADER % Timer ( I % iTimerReconstruction_CSL ) )
@@ -729,6 +735,7 @@ contains
 
     associate &
       ( C    => I % Current, &
+        Grad => I % GradientPrimitive, &
         G    => I % Geometry, &
         C_IL => I % Current_IL, &
         C_IR => I % Current_IR, &
@@ -736,13 +743,12 @@ contains
 
 !    associate ( Timer_G => PROGRAM_HEADER % Timer ( I % iTimerGradient ) )
 !    call Timer_G % Start ( )
-    allocate ( Gradient_C )
-    call Gradient_C % Initialize ( P, 'Primitive' )
     if ( I % UseLimiterParameter ) then
-      call Gradient_C % Compute &
-             ( CSL, iDimension, LimiterParameterOption = I % LimiterParameter )
+      call Grad % Compute &
+             ( CSL, P, iDimension, &
+               LimiterParameterOption = I % LimiterParameter )
     else
-      call Gradient_C % Compute ( CSL, iDimension )
+      call Grad % Compute ( CSL, P, iDimension )
     end if
 !    call Timer_G % Stop
 !    end associate !-- Timer_G  
@@ -762,7 +768,7 @@ contains
       call CSL % SetVariablePointer &
              ( C % Value ( :, iaP ( iF ) ), V )
       call CSL % SetVariablePointer &
-             ( Gradient_C % Output % Value ( :, iF ), dVdX )
+             ( Grad % Output % Value ( :, iF ), dVdX )
       call CSL % SetVariablePointer &
              ( C_IL % Value ( :, iaP ( iF ) ), V_IL )
       call CSL % SetVariablePointer &
@@ -775,8 +781,6 @@ contains
 
 !    call Timer_RK % Stop
 !    end associate !-- Timer_RK
-
-    deallocate ( Gradient_C )
 
     !-- VolumeJacobian derivative
 

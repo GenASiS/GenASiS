@@ -16,8 +16,10 @@ module Gradient_Form
     character ( LDF ) :: &
       Name = ''
     type ( VariableGroupForm ), allocatable :: &
-      Input, &
       Output
+    type ( DifferenceForm ), allocatable :: &
+      CoordinateDifference, &
+      VariableDifference
   contains
     procedure, public, pass :: &
       Initialize
@@ -35,21 +37,14 @@ module Gradient_Form
 contains
 
 
-  subroutine Initialize ( G, Input, Name )
+  subroutine Initialize ( G, Name, ValueShape )
 
     class ( GradientForm ), intent ( inout ) :: &
       G
-    class ( VariableGroupForm ), intent ( in ) :: &
-      Input
     character ( * ), intent ( in ) :: &
       Name
-
-    integer ( KDI ) :: &
-      iS  !-- iSelected
-    character ( LDL ) :: &
-      GradName
-    character ( LDL ), dimension ( : ), allocatable :: &
-      Variable
+    integer ( KDI ), dimension ( 2 ), intent ( in ) :: &
+      ValueShape
 
     G % IGNORABILITY = CONSOLE % INFO_4
     G % Name = Name
@@ -57,35 +52,28 @@ contains
     call Show ( 'Initializing a Gradient', G % IGNORABILITY )
     call Show ( trim ( G % Name ), 'Name', G % IGNORABILITY )
 
-    allocate &
-      ( G % Input, &
-        G % Output )
-    associate &
-      ( I  => G % Input, &
-        GO => G % Output )
+    allocate ( G % Output )
+    call G % Output % Initialize ( ValueShape )
 
-    call I % Initialize ( Input )
-
-    allocate ( Variable ( I % nVariables ) )
-    Variable = [ ( I % Variable ( I % iaSelected ( iS ) ), &
-                   iS = 1, I % nVariables ) ]
-
-    GradName = 'Grad_' // trim ( I % Name )
-    call GO % Initialize &
-           ( [ I % nValues, I % nVariables ], VariableOption = Variable, &
-             NameOption = GradName )!, ClearOption = .true. )
-
-    end associate !-- I, etc.
+    allocate ( G % CoordinateDifference )
+    allocate ( G % VariableDifference )
+    call G % CoordinateDifference % Initialize &
+           ( 'CoordinateDifference', [ ValueShape ( 1 ), 1 ] )
+    call G % VariableDifference % Initialize &
+           ( 'VariableDifference', ValueShape )
 
   end subroutine Initialize
 
 
-  subroutine ComputeChart_SL ( G, CSL, iDimension, LimiterParameterOption )
+  subroutine ComputeChart_SL &
+               ( G, CSL, Input, iDimension, LimiterParameterOption )
 
     class ( GradientForm ), intent ( inout ) :: &
       G
     class ( Chart_SL_Template ), intent ( in ) :: &
       CSL
+    class ( VariableGroupForm ), intent ( in ) :: &
+      Input
     integer ( KDI ), intent ( in ) :: &
       iDimension
     real ( KDR ), intent ( in ), optional :: &
@@ -101,39 +89,32 @@ contains
       Coordinate
     class ( GeometryFlatForm ), pointer :: &
       Gmtry
-    type ( DifferenceForm ), allocatable :: &
-      VariableDifference, &
-      CoordinateDifference
 
     call Show ( 'Computing a Gradient', G % IGNORABILITY )
     call Show ( trim ( G % Name ), 'Name', G % IGNORABILITY )
 
-    allocate ( VariableDifference )
-    allocate ( CoordinateDifference )
     associate &
-      ( VD => VariableDifference, &
-        CD => CoordinateDifference )
-
-    !-- Variable difference
-
-    call VD % Initialize ( G % Input, 'VariableDifference' )
-    call VD % Compute ( CSL, iDimension )
+      ( CD => G % CoordinateDifference, &
+        VD => G % VariableDifference )
 
     !-- Coordinate difference
 
     Gmtry => CSL % Geometry ( )
     allocate ( Coordinate )
-    call Coordinate % Initialize ( Gmtry, iaSelectedOption = Gmtry % CENTER )
+    call Coordinate % Initialize &
+           ( Gmtry, iaSelectedOption = [ Gmtry % CENTER ( iDimension ) ] )
 
-    call CD % Initialize ( Coordinate, 'CoordinateDifference' )
-    call CD % Compute ( CSL, iDimension )
+    call CD % Compute ( CSL, Coordinate, iDimension )
+
+    !-- Variable difference
+
+    call VD % Compute ( CSL, Input, iDimension )
 
     !-- Compute gradient
 
-    call CSL % SetVariablePointer &
-           ( CD % OutputInner %  Value ( :, iDimension ), dX_I )
+    call CSL % SetVariablePointer ( CD % OutputInner % Value ( :, 1 ), dX_I )
 
-    do iV = 1, G % Input % nVariables
+    do iV = 1, Input % nVariables
       call CSL % SetVariablePointer &
              ( VD % OutputInner %  Value ( :, iV ), dV_I )
       call CSL % SetVariablePointer &
@@ -154,8 +135,12 @@ contains
     type ( GradientForm ), intent ( inout ) :: &
       G
 
-    if ( allocated ( G % Output ) ) deallocate ( G % Output )
-    if ( allocated ( G % Input ) ) deallocate ( G % Input )
+    if ( allocated ( G % VariableDifference ) ) &
+      deallocate ( G % VariableDifference )
+    if ( allocated ( G % CoordinateDifference ) ) &
+      deallocate ( G % CoordinateDifference )
+    if ( allocated ( G % Output ) ) &
+      deallocate ( G % Output )
 
     call Show ( 'Finalizing a Gradient', G % IGNORABILITY )
     call Show ( trim ( G % Name ), 'Name', G % IGNORABILITY )
