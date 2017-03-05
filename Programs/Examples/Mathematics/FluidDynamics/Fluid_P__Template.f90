@@ -583,7 +583,6 @@ contains
       !$OMP end parallel do
 
     case ( 'SPHERICAL' )
-
       !$OMP parallel do private ( iV )
       do iV = 1, nV
         if ( .not. IsProperCell ( iV ) ) &

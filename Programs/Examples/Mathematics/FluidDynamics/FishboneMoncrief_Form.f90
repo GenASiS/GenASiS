@@ -197,14 +197,13 @@ contains
              MassUnitOption = MassUnit, EnergyUnitOption = EnergyUnit, &
              MomentumUnitOption = MomentumUnit, &
              AngularMomentumUnitOption = AngularMomentumUnit )
-    end select !-- FA
 
     !-- Step
 
     allocate ( Step_RK2_C_ASC_Form :: FM % Step )
     select type ( S => FM % Step )
     class is ( Step_RK2_C_ASC_Form )
-    call S % Initialize ( Name )
+    call S % Initialize ( FA, Name )
     S % ApplySources % Pointer => ApplySources
     end select !-- S
 
@@ -218,6 +217,7 @@ contains
 
     !-- Cleanup
 
+    end select !-- FA
     end select !-- PS
 
   end subroutine Initialize
@@ -379,15 +379,15 @@ contains
     call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 1 ), iMomentum_1 )
     call Search ( F % iaConserved, F % CONSERVED_ENERGY, iEnergy )
 
-    select type ( Grid => S % Grid )
+    select type ( Chart => S % Chart )
     class is ( Chart_SL_Template )
 
-    G => Grid % Geometry ( )
+    G => Chart % Geometry ( )
 
     call ApplySourcesKernel &
            ( Increment % Value ( :, iMomentum_1 ), &
              Increment % Value ( :, iEnergy ), &
-             Grid % IsProperCell, &
+             Chart % IsProperCell, &
              F % Value ( :, F % COMOVING_DENSITY ), &
              F % Value ( :, F % VELOCITY_U ( 1 ) ), &
              G % Value ( :, G % CENTER ( 1 ) ), &

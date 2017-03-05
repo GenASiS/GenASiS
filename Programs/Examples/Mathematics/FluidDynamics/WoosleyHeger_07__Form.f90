@@ -189,14 +189,13 @@ contains
              MassUnitOption = MassUnit, EnergyUnitOption = EnergyUnit, &
              MomentumUnitOption = MomentumUnit, &
              AngularMomentumUnitOption = AngularMomentumUnit )
-    end select !-- FA
 
     !-- Step
 
     allocate ( Step_RK2_C_ASC_Form :: WH % Step )
     select type ( S => WH % Step )
     class is ( Step_RK2_C_ASC_Form )
-    call S % Initialize ( Name )
+    call S % Initialize ( FA, Name )
     S % ApplySources % Pointer => ApplySources
     end select !-- S
 
@@ -211,6 +210,7 @@ contains
 
     !-- Cleanup
 
+    end select !-- FA
     end select !-- PS
 
   end subroutine Initialize
@@ -413,46 +413,46 @@ contains
     call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 1 ), iMomentum_1 )
     call Search ( F % iaConserved, F % CONSERVED_ENERGY, iEnergy )
 
-    select type ( Grid => S % Grid )
+    select type ( Chart => S % Chart )
     class is ( Chart_SLD_Form )
 
-    G => Grid % Geometry ( )
+    G => Chart % Geometry ( )
 
-    allocate ( M ( 0 : Grid % nCells ( 1 ) ) )  !-- edges
+    allocate ( M ( 0 : Chart % nCells ( 1 ) ) )  !-- edges
 
     call ComputeEnclosedMass &
-           ( Grid, F % Value ( :, F % CONSERVED_DENSITY ), &
+           ( Chart, F % Value ( :, F % CONSERVED_DENSITY ), &
              G % Value ( :, G % VOLUME_JACOBIAN ), &
              G % VALUE ( :, G % WIDTH ( 1 ) ), &
              M )
 
     ! call Show ( M, UNIT % SOLAR_MASS, '>>> M' )
 
-    call Grid % SetVariablePointer &
+    call Chart % SetVariablePointer &
            ( Increment % Value ( :, iMomentum_1 ), KV_M_1 )
-    call Grid % SetVariablePointer &
+    call Chart % SetVariablePointer &
            ( Increment % Value ( :, iEnergy ), KV_E )
-    call Grid % SetVariablePointer &
+    call Chart % SetVariablePointer &
            ( F % Value ( :, F % CONSERVED_DENSITY ), D )
-    call Grid % SetVariablePointer &
+    call Chart % SetVariablePointer &
            ( F % Value ( :, F % VELOCITY_U ( 1 ) ), V_1 )
-    call Grid % SetVariablePointer &
+    call Chart % SetVariablePointer &
            ( G % Value ( :, G % CENTER ( 1 ) ), R )
     call ApplySourcesKernel &
            ( KV_M_1, KV_E, M, D, V_1, R, CONSTANT % GRAVITATIONAL, TimeStep, &
-             oV = Grid % nGhostLayers, &
-             oVM = ( Grid % iaBrick ( 1 ) - 1 ) * Grid % nCellsBrick ( 1 ) &
-                   -  Grid % nGhostLayers ( 1 ) )
+             oV = Chart % nGhostLayers, &
+             oVM = ( Chart % iaBrick ( 1 ) - 1 ) * Chart % nCellsBrick ( 1 ) &
+                   -  Chart % nGhostLayers ( 1 ) )
     ! call ApplySourcesKernel &
     !        ( Increment % Value ( :, iMomentum_1 ), &
     !          Increment % Value ( :, iEnergy ), &
-    !          Grid % IsProperCell, M, &
+    !          Chart % IsProperCell, M, &
     !          F % Value ( :, F % CONSERVED_DENSITY ), &
     !          F % Value ( :, F % VELOCITY_U ( 1 ) ), &
     !          G % Value ( :, G % CENTER ( 1 ) ), &
     !          CONSTANT % GRAVITATIONAL, TimeStep ) 
 
-    end select !-- Grid
+    end select !-- Chart
     end select !-- F
 
     nullify ( KV_M_1, KV_E, D, V_1, R, G )

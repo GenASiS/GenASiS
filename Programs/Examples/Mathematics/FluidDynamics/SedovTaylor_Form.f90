@@ -138,14 +138,13 @@ contains
     select type ( FA => ST % Current_ASC )
     class is ( Fluid_ASC_Form )
     call FA % Initialize ( PS, 'POLYTROPIC' )
-    end select !-- FA
 
     !-- Step
 
     allocate ( Step_RK2_C_ASC_Form :: ST % Step )
     select type ( S => ST % Step )
     class is ( Step_RK2_C_ASC_Form )
-    call S % Initialize ( Name )
+    call S % Initialize ( FA, Name )
     S % ApplySources % Pointer => ApplySourcesCurvilinear_Fluid_P
     end select !-- S
 
@@ -156,6 +155,7 @@ contains
 
     !-- Cleanup
 
+    end select !-- FA
     end select !-- PS
 
   end subroutine Initialize

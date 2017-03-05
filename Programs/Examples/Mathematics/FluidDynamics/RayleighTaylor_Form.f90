@@ -82,14 +82,13 @@ contains
     end do !-- iB
        
     call FA % Initialize ( PS, 'POLYTROPIC' )
-    end select !-- FA
 
     !-- Step
 
     allocate ( Step_RK2_C_ASC_Form :: RT % Step )
     select type ( S => RT % Step )
     class is ( Step_RK2_C_ASC_Form )
-    call S % Initialize ( Name )
+    call S % Initialize ( FA, Name )
     S % ApplySources % Pointer => ApplySources
     end select !-- S
 
@@ -113,6 +112,7 @@ contains
     
     !-- Cleanup
 
+    end select !-- FA
     end select !-- PS
 
   end subroutine Initialize
