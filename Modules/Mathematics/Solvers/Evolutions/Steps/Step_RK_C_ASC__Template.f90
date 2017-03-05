@@ -1071,7 +1071,7 @@ contains
     else
       nullify ( ID % BoundaryFluence_CSL )
     end if
-    call ID % Compute ( Increment, Current, TimeStep )
+    call ID % Compute ( Increment, TimeStep )
     call ID % Clear ( )
     end associate !-- ID
 

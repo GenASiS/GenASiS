@@ -45,6 +45,10 @@ module IncrementDivergence_FV__Form
     type ( VariableGroupForm ), allocatable :: &
       ModifiedSpeeds_I, &  !-- ModifiedSpeed_Inner
       DiffusionFactor_I
+    type ( VariableGroupForm ), allocatable :: &
+      Geometry_I, &              !-- Geometry_Inner
+      Current_IL, Current_IR, &  !-- Current_InnerLeft, Current_InnerRight
+      Flux_I                     !-- Flux_Inner
     type ( VariableGroupForm ), dimension ( : ), allocatable :: &
       Output
     type ( GridImageStreamForm ), allocatable :: &
@@ -53,9 +57,15 @@ module IncrementDivergence_FV__Form
       Chart => null ( )
     class ( FieldChartTemplate ), pointer :: &
       CurrentChart => null ( )
+    class ( GeometryFlatForm ), pointer :: &
+      Geometry => null ( )
+    class ( CurrentTemplate ), pointer :: &
+      Current => null ( )
   contains
     procedure, public, pass :: &
       Initialize
+    procedure, public, pass :: &
+      AllocateStorage
     procedure, private, pass :: &
       SetLimiterParameter
     procedure, private, pass :: &
@@ -80,6 +90,7 @@ module IncrementDivergence_FV__Form
     private :: &
       PrepareOutput, &
       WriteOutput, &
+      DeallocateStorage, &
       ComputeReconstruction, &
       ComputeFluxes
 
@@ -174,7 +185,71 @@ contains
 
     end if
 
+    call I % AllocateStorage ( )
+
   end subroutine Initialize
+
+
+  subroutine AllocateStorage ( I )
+
+    class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
+      I
+
+    integer ( KDI ) :: &
+      nValues
+
+    call DeallocateStorage ( I )
+
+    select type ( Chart => I % Chart )
+    class is ( Chart_SL_Template )
+      I % Geometry => Chart % Geometry ( )
+    class default
+      call Show ( 'Chart type not found', CONSOLE % ERROR )
+      call Show ( 'IncrementDivergence_FV__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'AllocateStorage', 'subroutine', CONSOLE % ERROR ) 
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- Chart
+
+    select type ( CurrentChart => I % CurrentChart )
+    class is ( Field_CSL_Template )
+
+      select type ( Current => CurrentChart % Field )
+      class is ( CurrentTemplate )
+        I % Current => Current
+        nValues = Current % nValues
+      class default
+        call Show ( 'Field is not a Current', CONSOLE % ERROR )
+        call Show ( 'IncrementDivergence_FV__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'AllocateStorage', 'subroutine', CONSOLE % ERROR ) 
+        call PROGRAM_HEADER % Abort ( )
+      end select !-- Current
+
+    class default
+      call Show ( 'CurrentChart type not found', CONSOLE % ERROR )
+      call Show ( 'IncrementDivergence_FV__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'AllocateStorage', 'subroutine', CONSOLE % ERROR ) 
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- Chart
+
+    allocate ( I % Geometry_I )
+    call I % Geometry_I % Initialize &
+           ( [ nValues, I % Geometry % nVariables ], ClearOption = .true. )
+
+    allocate ( I % Current_IL, I % Current_IR )
+    call I % Current_IL % Initialize &
+           ( [ nValues, I % Current % nVariables ], &
+             VectorIndicesOption = I % Current % VectorIndices, &
+             ClearOption = .true. )
+    call I % Current_IR % Initialize &
+           ( [ nValues, I % Current % nVariables ], &
+             VectorIndicesOption = I % Current % VectorIndices, &
+             ClearOption = .true. )
+
+    allocate ( I % Flux_I )
+    call I % Flux_I % Initialize &
+           ( [ nValues, I % Current % N_CONSERVED ], ClearOption = .true. )
+
+  end subroutine AllocateStorage
 
 
   subroutine SetLimiterParameter ( I, UseLimiterParameter )
@@ -240,26 +315,17 @@ contains
   end subroutine Clear_CSL
 
 
-  subroutine Compute ( I, Increment, C, TimeStep )
+  subroutine Compute ( I, Increment, TimeStep )
 
     class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
       I
     type ( VariableGroupForm ), intent ( inout ) :: &
       Increment  !-- Assume Increment is already cleared!
-    class ( CurrentTemplate ), intent ( in ) :: &
-      C
     real ( KDR ), intent ( in ) :: &
       TimeStep
 
     integer ( KDI ) :: &
-      iD, &  !-- iDimension
-      nDimensions
-    type ( VariableGroupForm ), allocatable :: &
-      G_I, &         !-- Geometry_Inner
-      C_IL, C_IR, &  !-- Current_InnerLeft, Current_InnerRight
-      F_I            !-- Flux_Inner
-    class ( GeometryFlatForm ), pointer :: &
-      G
+      iD  !-- iDimension
 
     associate &
       ( Timer => PROGRAM_HEADER % Timer ( I % iTimerIncrementDivergence ) )
@@ -268,36 +334,19 @@ contains
     if ( I % UseIncrementStream ) &
       call Show ( '>>> Entering Increment % Compute' )
 
-    call PrepareOutput ( I, I % Chart, C )
-
-    select type ( Chart => I % Chart )
-    class is ( Chart_SL_Template )
-      nDimensions = Chart % nDimensions
-      G => Chart % Geometry ( )
-    class default
-      call Show ( 'Grid type not found', CONSOLE % ERROR )
-      call Show ( 'IncrementDivergence_FV__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'Compute', 'subroutine', CONSOLE % ERROR ) 
-      call PROGRAM_HEADER % Abort ( )
-    end select !-- Grid
-
-    allocate ( G_I )
-    call G_I % Initialize ( [ G % nValues, G % nVariables ] )
-
-    allocate ( C_IL, C_IR )
-    call C_IL % Initialize &
-           ( [ C % nValues, C % nVariables ], &
-             VectorIndicesOption = C % VectorIndices, ClearOption = .true. )
-    call C_IR % Initialize &
-           ( [ C % nValues, C % nVariables ], &
-             VectorIndicesOption = C % VectorIndices, ClearOption = .true. )
-
-    allocate ( F_I )
-    call F_I % Initialize ( [ C % nValues, C % N_CONSERVED ] )
+    call PrepareOutput ( I )
 
     !-- Assume Increment is already cleared!
 
-    do iD = 1, nDimensions
+    associate &
+      ( C    => I % Current, &
+        G    => I % Geometry, &
+        C_IL => I % Current_IL, &
+        C_IR => I % Current_IR, &
+        F_I  => I % Flux_I, &
+        G_I  => I % Geometry_I )
+
+    do iD = 1, I % Chart % nDimensions
 
       if ( I % UseIncrementStream ) &
         call Show ( iD, '>>> iDimension' )
@@ -322,7 +371,7 @@ contains
 
     end do !-- iD
 
-    nullify ( G )
+    end associate !-- C, etc.
 
     if ( I % UseIncrementStream ) &
       call Show ( '>>> Leaving Increment % Compute' )
@@ -338,11 +387,15 @@ contains
     type ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
       I
 
+    call DeallocateStorage ( I )
+
     if ( allocated ( I % GridImageStream ) ) &
       deallocate ( I % GridImageStream )
     if ( allocated ( I % Output ) ) &
       deallocate ( I % Output )
 
+    nullify ( I % Current )
+    nullify ( I % Geometry )
     nullify ( I % CurrentChart )
     nullify ( I % Chart )
 
@@ -354,14 +407,10 @@ contains
   end subroutine Finalize
 
 
-  subroutine PrepareOutput ( I, Grid, C )
+  subroutine PrepareOutput ( I )
 
     type ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
       I
-    class ( * ), intent ( inout ) :: &
-      Grid
-    class ( CurrentTemplate ), intent ( in ) :: &
-      C
 
     integer ( KDI ) :: &
       iF, &  !-- iField
@@ -374,6 +423,8 @@ contains
       return
     if ( allocated ( I % Output ) ) &
       return
+
+    associate ( C => I % Current )
 
     allocate ( I % Output ( nOUTPUT ) )
 
@@ -406,21 +457,23 @@ contains
            ( [ C % nValues, C % N_CONSERVED ], &
              VariableOption = ConservedVariable, NameOption = 'Update' )
 
+    end associate !-- C
+
     !-- Open stream
 
-    select type ( Grid )
+    select type ( Chart => I % Chart )
     class is ( Chart_SL_Template )
-      if ( .not. allocated ( Grid % Stream ( I % iStream ) % Element ) ) &
+      if ( .not. allocated ( Chart % Stream ( I % iStream ) % Element ) ) &
       then 
-        call Grid % OpenStream &
+        call Chart % OpenStream &
                ( I % GridImageStream, 'Increment', I % iStream )
         do iFG = 1, nOUTPUT
-          call Grid % AddFieldImage &
+          call Chart % AddFieldImage &
                  ( I % Output ( iFG ), I % iStream )
         end do !-- iFG
       end if !-- allocated stream
     class default
-      call Show ( 'Grid type not found', CONSOLE % ERROR )
+      call Show ( 'Chart type not found', CONSOLE % ERROR )
       call Show ( 'IncrementDivergence_FV__Form', 'module', CONSOLE % ERROR )
       call Show ( 'PrepareOutput', 'subroutine', CONSOLE % ERROR ) 
       call PROGRAM_HEADER % Abort ( )        
@@ -456,6 +509,23 @@ contains
     end associate !-- GIS
 
   end subroutine WriteOutput
+
+
+  subroutine DeallocateStorage ( I )
+
+    class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
+      I
+
+    if ( allocated ( I % Flux_I ) ) &
+      deallocate ( I % Flux_I )
+    if ( allocated ( I % Current_IR ) ) &
+      deallocate ( I % Current_IR )
+    if ( allocated ( I % Current_IL ) ) &
+      deallocate ( I % Current_IL )
+    if ( allocated ( I % Geometry_I ) ) &
+      deallocate ( I % Geometry_I )
+
+  end subroutine DeallocateStorage
 
 
   subroutine ComputeReconstruction &
