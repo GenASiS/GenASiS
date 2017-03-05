@@ -18,11 +18,12 @@ module IncrementDivergence_FV__Form
       IGNORABILITY = 0, &
       iTimerIncrementDivergence, &
       iTimerReconstruction, &
+      iTimerReconstruction_G, &
+      iTimerBoundary, &
+      iTimerReconstruction_CSL, &
+      iTimerFromPrimitive, &
       iTimerFluxes, &
       iTimerIncrement, &
-! !      iTimerReconstruction_CSL, &
-!       iTimerFromPrimitive, &
-! !      iTimerBoundary, &
 !       iTimerGradient, &
 !       iTimerReconstructionKernel, &
       iStream
@@ -150,16 +151,20 @@ contains
     call PROGRAM_HEADER % AddTimer &
            ( '_Reconstruction', I % iTimerReconstruction )
     call PROGRAM_HEADER % AddTimer &
+           ( '__Reconstruction_G', I % iTimerReconstruction_G )
+    call PROGRAM_HEADER % AddTimer &
+           ( '__Boundary', I % iTimerBoundary )
+    call PROGRAM_HEADER % AddTimer &
+           ( '__Reconstruction_CSL', I % iTimerReconstruction_CSL )
+    call PROGRAM_HEADER % AddTimer &
+           ( '__FromPrimitive', I % iTimerFromPrimitive )
+    call PROGRAM_HEADER % AddTimer &
            ( '_Fluxes', I % iTimerFluxes )
     call PROGRAM_HEADER % AddTimer &
            ( '_Increment', I % iTimerIncrement )
 
     ! ! call PROGRAM_HEADER % AddTimer &
     ! !        ( 'ComputeReconstruction_CSL', I % iTimerReconstruction_CSL )
-    ! call PROGRAM_HEADER % AddTimer &
-    !        ( 'ComputeFromPrimitive', I % iTimerFromPrimitive )
-    ! ! call PROGRAM_HEADER % AddTimer &
-    ! !        ( 'ApplyBoundary', I % iTimerBoundary )
     ! call PROGRAM_HEADER % AddTimer &
     !        ( 'Gradient', I % iTimerGradient )
     ! call PROGRAM_HEADER % AddTimer &
@@ -351,8 +356,7 @@ contains
       if ( I % UseIncrementStream ) &
         call Show ( iD, '>>> iDimension' )
 
-      call ComputeReconstruction &
-             ( I, C_IL, C_IR, G_I, C, I % Chart, iD )
+      call ComputeReconstruction ( I, iD )
       call ComputeFluxes &
              ( I, F_I, C, I % Chart, G, C_IL, C_IR, G_I, iD )
       select type ( Chart => I % Chart )
@@ -528,18 +532,10 @@ contains
   end subroutine DeallocateStorage
 
 
-  subroutine ComputeReconstruction &
-               ( I, C_IL, C_IR, G_I, C, Grid, iDimension )
+  subroutine ComputeReconstruction ( I, iDimension )
 
     class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
       I
-    type ( VariableGroupForm ), intent ( inout ) :: &
-      C_IL, C_IR, &  !-- Current
-      G_I           !-- VolumeJacobian
-    class ( CurrentTemplate ), intent ( in ) :: &
-      C
-    class ( * ), intent ( in ), target :: &
-      Grid
     integer ( KDI ), intent ( in ) :: &
       iDimension
 
@@ -547,81 +543,70 @@ contains
       iDD_22, iDD_33, &
       iUU_22, iUU_33, &
       nDimensions
-    type ( VariableGroupForm ), allocatable :: &
-      P, &
-      P_IL, &  !-- Primitive_InnerLeft
-      P_IR     !-- Primitive_InnerRight
-    class ( AtlasHeaderForm ), pointer :: &
-      A
-    class ( GeometryFlatForm ), pointer :: &
-      G
+    type ( VariableGroupForm ) :: &
+      P
 
     associate &
       ( Timer => PROGRAM_HEADER % Timer ( I % iTimerReconstruction ) )
     call Timer % Start ( )
 
-    select type ( Grid )
-    class is ( Chart_SL_Template )
-      nDimensions = Grid % nDimensions
-      A => Grid % Atlas
-      G => Grid % Geometry ( )
-    class default
-      call Show ( 'Grid type not found', CONSOLE % ERROR )
-      call Show ( 'IncrementDivergence_FV__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'ComputeReconstruction', 'subroutine', CONSOLE % ERROR ) 
-      call PROGRAM_HEADER % Abort ( )
-    end select !-- Grid
+    associate &
+      ( C    => I % Current, &
+        A    => I % Chart % Atlas, &
+        G    => I % Geometry, &
+        C_IL => I % Current_IL, &
+        C_IR => I % Current_IR, &
+        G_I  => I % Geometry_I )
 
+    associate &
+      ( Timer_G => PROGRAM_HEADER % Timer ( I % iTimerReconstruction_G ) )    
+    call Timer_G % Start ( )
     call G % ComputeReconstruction ( G_I, nDimensions, iDimension )
+    call Timer_G % Stop
+    end associate !-- Timer_G
 
-    allocate ( P )
-    allocate ( P_IL )
-    allocate ( P_IR )
     call P % Initialize ( C, iaSelectedOption = C % iaPrimitive )
-    call P_IL % Initialize ( C_IL, iaSelectedOption = C % iaPrimitive )
-    call P_IR % Initialize ( C_IR, iaSelectedOption = C % iaPrimitive )
 
     associate &
       ( iaI => A % Connectivity % iaInner ( iDimension ), &
         iaO => A % Connectivity % iaOuter ( iDimension ) )
 
-!    associate &
-!      ( Timer_B => PROGRAM_HEADER % Timer ( I % iTimerBoundary ) )
-    
-!    call Timer_B % Start ( )
+    associate &
+      ( Timer_B => PROGRAM_HEADER % Timer ( I % iTimerBoundary ) )    
+    call Timer_B % Start ( )
     select type ( A )
     class is ( Atlas_SC_Template )
       call A % ApplyBoundaryConditions ( P, iDimension, iaI )
       call A % ApplyBoundaryConditions ( P, iDimension, iaO )
     class default
       call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
-      call Show ( 'Update_CF_E__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'IncrementDivergence_FV__Form', 'module', CONSOLE % ERROR )
       call Show ( 'ComputeReconstruction', 'subroutine', CONSOLE % ERROR )
     end select !-- A
-!    call Timer_B % Stop
+    call Timer_B % Stop
+    end associate !-- Timer_B
 
-    select type ( Grid )
+    select type ( Chart => I % Chart )
     class is ( Chart_SL_Template )
-      call ComputeReconstruction_CSL &
-             ( I, C_IL, C_IR, C, P, G_I, Grid, iDimension )
+      call ComputeReconstruction_CSL ( I, P, Chart, iDimension )
     end select !-- Grid
 
-!    associate &
-!      ( Timer_FP => PROGRAM_HEADER % Timer ( I % iTimerFromPrimitive ) )
-!    call Timer_FP % Start ( )
+    associate &
+      ( Timer_FP => PROGRAM_HEADER % Timer ( I % iTimerFromPrimitive ) )
+    call Timer_FP % Start ( )
     call C % ComputeFromPrimitive ( C_IL % Value, G, G_I % Value )
     call C % ComputeFromPrimitive ( C_IR % Value, G, G_I % Value )
-!    call Timer_FP % Stop ( )
-!    end associate !-- Timer_FP
+    call Timer_FP % Stop ( )
+    end associate !-- Timer_FP
 
     end associate !-- iaI, iaO
-
-    nullify ( A, G )
 
     if ( I % UseIncrementStream ) then
       call Copy ( C_IL % Value, I % Output ( iCURRENT_IL ) % Value )
       call Copy ( C_IR % Value, I % Output ( iCURRENT_IR ) % Value )
     end if
+
+    end associate !-- C, etc.
 
     call Timer % Stop ( )
     end associate !-- Timer
@@ -714,18 +699,12 @@ contains
   end subroutine ComputeFluxes
 
 
-  subroutine ComputeReconstruction_CSL &
-               ( I, C_IL, C_IR, C, P, G_I, CSL, iDimension )
+  subroutine ComputeReconstruction_CSL ( I, P, CSL, iDimension )
 
     class ( IncrementDivergence_FV_Form ), intent ( in ) :: &
       I
-    type ( VariableGroupForm ), intent ( inout ) :: &
-      C_IL, C_IR  !-- Current
-    class ( CurrentTemplate ), intent ( in ) :: &
-      C
     type ( VariableGroupForm ), intent ( in ) :: &
-      P, &
-      G_I
+      P
     class ( Chart_SL_Template ), intent ( in ) :: &
       CSL
     integer ( KDI ), intent ( in ) :: &
@@ -741,14 +720,19 @@ contains
       V_IR, &
       V_I, &
       dLVdX
-    class ( GeometryFlatForm ), pointer :: &
-      G
     type ( GradientForm ), allocatable :: &
       Gradient_C
 
-!    associate &
-!      ( Timer => PROGRAM_HEADER % Timer ( I % iTimerReconstruction_CSL ) )
-!    call Timer % Start ( )
+    associate &
+      ( Timer => PROGRAM_HEADER % Timer ( I % iTimerReconstruction_CSL ) )
+    call Timer % Start ( )
+
+    associate &
+      ( C    => I % Current, &
+        G    => I % Geometry, &
+        C_IL => I % Current_IL, &
+        C_IR => I % Current_IR, &
+        G_I  => I % Geometry_I )
 
 !    associate ( Timer_G => PROGRAM_HEADER % Timer ( I % iTimerGradient ) )
 !    call Timer_G % Start ( )
@@ -811,10 +795,12 @@ contains
       end if
     end if
 
-    nullify ( G, V, dVdX, dX, V_IL, V_IR, V_I, dLVdX )
+    nullify ( V, dVdX, dX, V_IL, V_IR, V_I, dLVdX )
 
-!    call Timer % Stop
-!    end associate !-- Timer
+    end associate !-- C, etc.
+
+    call Timer % Stop
+    end associate !-- Timer
   
   end subroutine ComputeReconstruction_CSL
 
