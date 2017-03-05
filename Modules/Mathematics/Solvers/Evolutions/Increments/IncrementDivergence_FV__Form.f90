@@ -503,8 +503,7 @@ contains
 
     integer ( KDI ) :: &
       iDD_22, iDD_33, &
-      iUU_22, iUU_33, &
-      nDimensions
+      iUU_22, iUU_33
     type ( VariableGroupForm ) :: &
       P
 
@@ -523,7 +522,7 @@ contains
     associate &
       ( Timer_G => PROGRAM_HEADER % Timer ( I % iTimerReconstruction_G ) )    
     call Timer_G % Start ( )
-    call G % ComputeReconstruction ( G_I, nDimensions, iDimension )
+    call G % ComputeReconstruction ( G_I, I % Chart % nDimensions, iDimension )
     call Timer_G % Stop
     end associate !-- Timer_G
 
