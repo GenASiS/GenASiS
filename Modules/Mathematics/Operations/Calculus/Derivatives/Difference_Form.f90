@@ -49,7 +49,7 @@ contains
     call Show ( trim ( D % Name ), 'Name', D % IGNORABILITY )
 
     allocate ( D % OutputInner )
-    call D % OutputInner % Initialize ( ValueShape )
+    call D % OutputInner % Initialize ( ValueShape, ClearOption = .true. )
 
   end subroutine Initialize
 

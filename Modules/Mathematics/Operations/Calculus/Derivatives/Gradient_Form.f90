@@ -53,7 +53,7 @@ contains
     call Show ( trim ( G % Name ), 'Name', G % IGNORABILITY )
 
     allocate ( G % Output )
-    call G % Output % Initialize ( ValueShape )
+    call G % Output % Initialize ( ValueShape, ClearOption = .true. )
 
     allocate ( G % CoordinateDifference )
     allocate ( G % VariableDifference )

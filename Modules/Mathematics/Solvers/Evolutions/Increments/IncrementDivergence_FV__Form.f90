@@ -44,11 +44,11 @@ module IncrementDivergence_FV__Form
     type ( Real_3D_Form ), dimension ( :, : ), pointer :: &
       BoundaryFluence_CSL => null ( )
     type ( VariableGroupForm ), allocatable :: &
-      ModifiedSpeeds_I, &  !-- ModifiedSpeed_Inner
-      DiffusionFactor_I
-    type ( VariableGroupForm ), allocatable :: &
       Geometry_I, &              !-- Geometry_Inner
       Current_IL, Current_IR, &  !-- Current_InnerLeft, Current_InnerRight
+      ModifiedSpeeds_I, &        !-- ModifiedSpeeds_Inner
+      DiffusionFactor_I, &       !-- DiffusionFactor_Inner
+      Flux_IL, Flux_IR, &        !-- Flux_InnerLeft, Flux_InnerRight
       Flux_I                     !-- Flux_Inner
     type ( VariableGroupForm ), dimension ( : ), allocatable :: &
       Output
@@ -252,6 +252,20 @@ contains
              VectorIndicesOption = I % Current % VectorIndices, &
              ClearOption = .true. )
 
+    allocate ( I % ModifiedSpeeds_I )
+    call I % ModifiedSpeeds_I % Initialize &
+           ( [ nValues, I % N_MODIFIED_SPEEDS ], ClearOption = .true. )
+
+    allocate ( I % DiffusionFactor_I )
+    call I % DiffusionFactor_I % Initialize &
+           ( [ nValues, I % Current % N_CONSERVED ], ClearOption = .true. )
+
+    allocate ( I % Flux_IL, I % Flux_IR )
+    call I % Flux_IL % Initialize &
+           ( [ nValues, I % Current % N_CONSERVED ], ClearOption = .true. )
+    call I % Flux_IR % Initialize &
+           ( [ nValues, I % Current % N_CONSERVED ], ClearOption = .true. )
+
     allocate ( I % Flux_I )
     call I % Flux_I % Initialize &
            ( [ nValues, I % Current % N_CONSERVED ], ClearOption = .true. )
@@ -349,30 +363,20 @@ contains
 
     !-- Assume Increment is already cleared!
 
-    associate &
-      ( C    => I % Current, &
-        G    => I % Geometry, &
-        C_IL => I % Current_IL, &
-        C_IR => I % Current_IR, &
-        F_I  => I % Flux_I, &
-        G_I  => I % Geometry_I )
-
     do iD = 1, I % Chart % nDimensions
 
       if ( I % UseIncrementStream ) &
         call Show ( iD, '>>> iDimension' )
 
       call ComputeReconstruction ( I, iD )
-      call ComputeFluxes &
-             ( I, F_I, C, I % Chart, G, C_IL, C_IR, G_I, iD )
+      call ComputeFluxes ( I, iD )
       select type ( Chart => I % Chart )
       class is ( Chart_SL_Template )
-        call ComputeIncrement_CSL &
-               ( I, Increment, C, F_I, G_I, Chart, TimeStep, iD )
+        call ComputeIncrement_CSL ( I, Increment, Chart, TimeStep, iD )
       end select !-- Grid
 
       if ( I % UseIncrementStream ) then
-        call Copy ( C % Value, &
+        call Copy ( I % Current % Value, &
                     I % Output ( iCURRENT ) % Value )
         call Copy ( Increment % Value, &
                     I % Output ( iINCREMENT ) % Value )
@@ -380,8 +384,6 @@ contains
       end if
 
     end do !-- iD
-
-    end associate !-- C, etc.
 
     if ( I % UseIncrementStream ) &
       call Show ( '>>> Leaving Increment % Compute' )
@@ -528,6 +530,10 @@ contains
 
     if ( allocated ( I % GradientPrimitive ) ) &
       deallocate ( I % GradientPrimitive )
+    if ( allocated ( I % DiffusionFactor_I ) ) &
+      deallocate ( I % DiffusionFactor_I )
+    if ( allocated ( I % ModifiedSpeeds_I ) ) &
+      deallocate ( I % ModifiedSpeeds_I )
     if ( allocated ( I % Flux_I ) ) &
       deallocate ( I % Flux_I )
     if ( allocated ( I % Current_IR ) ) &
@@ -622,84 +628,64 @@ contains
   end subroutine ComputeReconstruction
 
 
-  subroutine ComputeFluxes &
-               ( I, Flux_I, C, Grid, G, C_IL, C_IR, G_I, iDimension )
+  subroutine ComputeFluxes ( I, iDimension )
 
     class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
       I
-    type ( VariableGroupForm ), intent ( inout ) :: &
-      Flux_I
-    class ( CurrentTemplate ), intent ( in ) :: &
-      C
-    class ( * ), intent ( in ) :: &
-      Grid
-    class ( GeometryFlatForm ), intent ( in ) :: &
-      G
-    type ( VariableGroupForm ), intent ( in ) :: &
-      C_IL, C_IR, &  !-- ConservedFields
-      G_I            !-- Geometry
     integer ( KDI ), intent ( in ) :: &
       iDimension
 
     integer ( KDI ) :: &
       iF  !-- iField
-    type ( VariableGroupForm ), allocatable :: &
-      Flux_IL, &
-      Flux_IR
 
     associate &
       ( Timer => PROGRAM_HEADER % Timer ( I % iTimerFluxes ) )
     call Timer % Start ( )
 
-    allocate ( I % ModifiedSpeeds_I )
-    call I % ModifiedSpeeds_I % Initialize &
-           ( [ C % nValues, I % N_MODIFIED_SPEEDS ] )!, ClearOption = .true. )
-
-    allocate ( I % DiffusionFactor_I )
-    call I % DiffusionFactor_I % Initialize &
-           ( [ C % nValues, C % N_CONSERVED ] )!, ClearOption = .true. )
-
-    allocate ( Flux_IL, Flux_IR )
-    call Flux_IL % Initialize &
-           ( [ C % nValues, C % N_CONSERVED ] )!, ClearOption = .true. )
-    call Flux_IR % Initialize &
-           ( [ C % nValues, C % N_CONSERVED ] )!, ClearOption = .true. )
+    associate &
+      ( C    => I % Current, &
+        G    => I % Geometry, &
+        C_IL => I % Current_IL, &
+        C_IR => I % Current_IR, &
+        F_I  => I % Flux_I, &
+        F_IL => I % Flux_IL, &
+        F_IR => I % Flux_IR, &
+        DF_I => I % DiffusionFactor_I, &
+        MS_I => I % ModifiedSpeeds_I, &
+        G_I  => I % Geometry_I )
 
     call C % ComputeRiemannSolverInput &
-           ( I, I % DiffusionFactor_I, &
-             I % ModifiedSpeeds_I % Value ( :, I % ALPHA_PLUS ), &
-             I % ModifiedSpeeds_I % Value ( :, I % ALPHA_MINUS ), &
-             Grid, C_IL, C_IR, iDimension )
+           ( I, DF_I, &
+             MS_I % Value ( :, I % ALPHA_PLUS ), &
+             MS_I % Value ( :, I % ALPHA_MINUS ), &
+             I % Chart, C_IL, C_IR, iDimension )
 
     call C % ComputeRawFluxes &
-           ( Flux_IL % Value, G, C_IL % Value, G_I % Value, iDimension )
+           ( F_IL % Value, G, C_IL % Value, G_I % Value, iDimension )
     call C % ComputeRawFluxes &
-           ( Flux_IR % Value, G, C_IR % Value, G_I % Value, iDimension )
-
-!    call Clear ( Flux_I % Value )
+           ( F_IR % Value, G, C_IR % Value, G_I % Value, iDimension )
 
     associate ( iaC => C % iaConserved )    
     do iF = 1, C % N_CONSERVED
       call ComputeFluxesKernel &
-             ( Flux_IL % Value ( :, iF ), &
-               Flux_IR % Value ( :, iF ), &
+             ( F_IL % Value ( :, iF ), &
+               F_IR % Value ( :, iF ), &
                C_IL % Value ( :, iaC ( iF ) ), &
                C_IR % Value ( :, iaC ( iF ) ), &
-               I % ModifiedSpeeds_I % Value ( :, I % ALPHA_PLUS ), &
-               I % ModifiedSpeeds_I % Value ( :, I % ALPHA_MINUS ), &
-               I % DiffusionFactor_I % Value ( :, iF ), &
-               Flux_I % Value ( :, iF ) )
+               MS_I % Value ( :, I % ALPHA_PLUS ), &
+               MS_I % Value ( :, I % ALPHA_MINUS ), &
+               DF_I % Value ( :, iF ), &
+               F_I % Value ( :, iF ) )
     end do !-- iF
     end associate !-- iaC
 
     if ( I % UseIncrementStream ) then
-      call Copy ( Flux_IL % Value, I % Output ( iFLUX_IL ) % Value )
-      call Copy ( Flux_IR % Value, I % Output ( iFLUX_IR ) % Value )
-      call Copy ( Flux_I % Value, I % Output ( iFLUX_I ) % Value )
+      call Copy ( F_IL % Value, I % Output ( iFLUX_IL ) % Value )
+      call Copy ( F_IR % Value, I % Output ( iFLUX_IR ) % Value )
+      call Copy ( F_I % Value, I % Output ( iFLUX_I ) % Value )
     end if
 
-    deallocate ( I % DiffusionFactor_I )
-    deallocate ( I % ModifiedSpeeds_I )
+    end associate !-- C, etc.
 
     call Timer % Stop ( )
     end associate !-- Timer
@@ -810,17 +796,12 @@ contains
 
 
   subroutine ComputeIncrement_CSL &
-               ( I, Increment, C, Flux_I, G_I, CSL, TimeStep, iDimension )
+               ( I, Increment, CSL, TimeStep, iDimension )
 
     class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
       I
     type ( VariableGroupForm ), intent ( inout ) :: &
       Increment
-    class ( CurrentTemplate ), intent ( in ) :: &
-      C
-    type ( VariableGroupForm ), intent ( in ) :: &
-      Flux_I, &
-      G_I
     class ( Chart_SL_Template ), intent ( in ) :: &
       CSL
     real ( KDR ), intent ( in ) :: &
@@ -836,14 +817,16 @@ contains
       VJ_I, &
       VJ, &
       dX
-    class ( GeometryFlatForm ), pointer :: &
-      G
 
     associate &
       ( Timer => PROGRAM_HEADER % Timer ( I % iTimerIncrement ) )
     call Timer % Start ( )
 
-    G => CSL % Geometry ( )
+    associate &
+      ( C    => I % Current, &
+        G    => I % Geometry, &
+        G_I  => I % Geometry_I )
+
     call CSL % SetVariablePointer &
            ( G % Value ( :, G % WIDTH ( iDimension ) ), dX )
     call CSL % SetVariablePointer &
@@ -860,7 +843,7 @@ contains
 
     do iF = 1, C % N_CONSERVED
       call CSL % SetVariablePointer ( Increment % Value ( :, iF ), dU )
-      call CSL % SetVariablePointer ( Flux_I % Value ( :, iF ), F_I )
+      call CSL % SetVariablePointer ( I % Flux_I % Value ( :, iF ), F_I )
       call ComputeIncrement_CSL_Kernel &
              ( dU, F_I, VJ_I, VJ, dX, TimeStep, iDimension, &
                CSL % nGhostLayers ( iDimension ) )
@@ -870,7 +853,7 @@ contains
                  TimeStep, iDimension, iF )
     end do !-- iF
 
-    nullify ( G )
+    end associate !-- C, etc.
     nullify ( dU, F_I, VJ_I, VJ, dX )
 
     call Timer % Stop ( )
