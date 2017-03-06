@@ -601,7 +601,8 @@ contains
     class is ( Chart_SL_Template )
 
       call S % AllocateBoundaryFluence &
-             ( S % BoundaryFluence_CSL, Chart, S % Current % N_CONSERVED )
+             ( S % IncrementDivergence_C, Chart, S % Current % N_CONSERVED, &
+               S % BoundaryFluence_CSL )
 
       if ( allocated ( S % BoundaryFluence_CSL_S ) ) &
         deallocate ( S % BoundaryFluence_CSL_S )
@@ -610,8 +611,9 @@ contains
       do iS = 1, S % nSections
         Current_S => S % Current_BSLL_ASC_CSLD % CurrentSection ( iS )
         call S % AllocateBoundaryFluence &
-               ( S % BoundaryFluence_CSL_S ( iS ) % Array, &
-                 Chart, Current_S % N_CONSERVED )
+               ( S % IncrementDivergence_C, &
+                 Chart, Current_S % N_CONSERVED, &
+                 S % BoundaryFluence_CSL_S ( iS ) % Array )
       end do !-- iC
 
     class default
@@ -622,7 +624,7 @@ contains
     end select !-- Grid
 
     call S % AllocateMetricDerivatives &
-           ( S % Chart % CoordinateSystem, S % Current % nValues )
+           ( S % IncrementDivergence_C, S % Current % nValues )
 
     nullify ( Current_S )
 

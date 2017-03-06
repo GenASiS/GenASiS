@@ -36,7 +36,8 @@ module IncrementDivergence_FV__Form
       Weight_RK = - huge ( 0.0_KDR ) !-- RungeKutta weight
     logical ( KDL ) :: &
       UseLimiter, &
-      UseIncrementStream
+      UseIncrementStream, &
+      Allocated
     character ( LDF ) :: &
       Name = ''
     type ( Real_1D_Form ), dimension ( : ), pointer :: &
@@ -67,8 +68,20 @@ module IncrementDivergence_FV__Form
   contains
     procedure, public, pass :: &
       Initialize
+    procedure, private, pass :: &
+      SetBoundaryFluence_CSL
+    generic, public :: &
+      SetBoundaryFluence => SetBoundaryFluence_CSL
     procedure, public, pass :: &
-      AllocateStorage
+      ClearBoundaryFluence
+    procedure, private, pass :: &
+      SetMetricDerivativesFlat
+    generic, public :: &
+      SetMetricDerivatives => SetMetricDerivativesFlat
+    procedure, public, pass :: &
+      ClearMetricDerivatives
+    procedure, public, pass :: &
+      DeallocateStorage
     procedure, public, pass :: &
       Compute
     final :: &
@@ -109,9 +122,7 @@ module IncrementDivergence_FV__Form
 contains
 
 
-  subroutine Initialize &
-               ( I, CurrentChart, UseLimiterOption, &
-                 BoundaryFluence_CSL_Option, dLogVolumeJacobian_dX_Option )
+  subroutine Initialize ( I, CurrentChart, UseLimiterOption )
 
     class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
       I
@@ -119,11 +130,6 @@ contains
       CurrentChart
     logical ( KDL ), intent ( in ), optional :: &
       UseLimiterOption
-    type ( Real_3D_Form ), dimension ( :, : ), intent ( in ), target, &
-      optional :: &
-        BoundaryFluence_CSL_Option
-    type ( Real_1D_Form ), dimension ( : ), intent ( in ), target, optional :: &
-      dLogVolumeJacobian_dX_Option
 
     character ( LDF ) :: &
       OutputDirectory
@@ -148,12 +154,6 @@ contains
     call Show ( I % UseLimiter, 'UseLimiter', I % IGNORABILITY )
     if ( I % UseLimiter ) &
       call Show ( I % LimiterParameter, 'LimiterParameter', I % IGNORABILITY )
-
-    if ( present ( BoundaryFluence_CSL_Option ) ) &
-      I % BoundaryFluence_CSL => BoundaryFluence_CSL_Option
-
-    if ( present ( dLogVolumeJacobian_dX_Option ) ) &
-      I % dLogVolumeJacobian_dX => dLogVolumeJacobian_dX_Option
 
     call PROGRAM_HEADER % AddTimer &
            ( 'IncrementDivergence', I % iTimerIncrementDivergence )
@@ -199,89 +199,78 @@ contains
 
     end if
 
-    call I % AllocateStorage ( )
+    I % Allocated = .false.
 
   end subroutine Initialize
 
 
-  subroutine AllocateStorage ( I )
+  subroutine SetBoundaryFluence_CSL ( I, BoundaryFluence_CSL )
+
+    class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
+      I
+    type ( Real_3D_Form ), dimension ( :, : ), intent ( in ), target :: &
+        BoundaryFluence_CSL
+
+    I % BoundaryFluence_CSL => BoundaryFluence_CSL
+
+  end subroutine SetBoundaryFluence_CSL
+
+
+  subroutine ClearBoundaryFluence ( I )
 
     class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
       I
 
-    integer ( KDI ) :: &
-      nValues
+    nullify ( I % BoundaryFluence_CSL )
 
-    call DeallocateStorage ( I )
+  end subroutine ClearBoundaryFluence
 
-    select type ( Chart => I % Chart )
-    class is ( Chart_SL_Template )
-      I % Geometry => Chart % Geometry ( )
-    class default
-      call Show ( 'Chart type not found', CONSOLE % ERROR )
-      call Show ( 'IncrementDivergence_FV__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'AllocateStorage', 'subroutine', CONSOLE % ERROR ) 
-      call PROGRAM_HEADER % Abort ( )
-    end select !-- Chart
 
-    select type ( CurrentChart => I % CurrentChart )
-    class is ( Field_CSL_Template )
+  subroutine SetMetricDerivativesFlat ( I, dLogVolumeJacobian_dX )
 
-      select type ( Current => CurrentChart % Field )
-      class is ( CurrentTemplate )
-        I % Current => Current
-        nValues = Current % nValues
-      class default
-        call Show ( 'Field is not a Current', CONSOLE % ERROR )
-        call Show ( 'IncrementDivergence_FV__Form', 'module', CONSOLE % ERROR )
-        call Show ( 'AllocateStorage', 'subroutine', CONSOLE % ERROR ) 
-        call PROGRAM_HEADER % Abort ( )
-      end select !-- Current
+    class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
+      I
+    type ( Real_1D_Form ), dimension ( : ), intent ( in ), target :: &
+      dLogVolumeJacobian_dX
 
-    class default
-      call Show ( 'CurrentChart type not found', CONSOLE % ERROR )
-      call Show ( 'IncrementDivergence_FV__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'AllocateStorage', 'subroutine', CONSOLE % ERROR ) 
-      call PROGRAM_HEADER % Abort ( )
-    end select !-- Chart
+    I % dLogVolumeJacobian_dX => dLogVolumeJacobian_dX
 
-    allocate ( I % Geometry_I )
-    call I % Geometry_I % Initialize &
-           ( [ nValues, I % Geometry % nVariables ], ClearOption = .true. )
+  end subroutine SetMetricDerivativesFlat
 
-    allocate ( I % Current_IL, I % Current_IR )
-    call I % Current_IL % Initialize &
-           ( [ nValues, I % Current % nVariables ], &
-             VectorIndicesOption = I % Current % VectorIndices, &
-             ClearOption = .true. )
-    call I % Current_IR % Initialize &
-           ( [ nValues, I % Current % nVariables ], &
-             VectorIndicesOption = I % Current % VectorIndices, &
-             ClearOption = .true. )
 
-    allocate ( I % ModifiedSpeeds_I )
-    call I % ModifiedSpeeds_I % Initialize &
-           ( [ nValues, I % N_MODIFIED_SPEEDS ], ClearOption = .true. )
+  subroutine ClearMetricDerivatives ( I )
 
-    allocate ( I % DiffusionFactor_I )
-    call I % DiffusionFactor_I % Initialize &
-           ( [ nValues, I % Current % N_CONSERVED ], ClearOption = .true. )
+    class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
+      I
 
-    allocate ( I % Flux_IL, I % Flux_IR )
-    call I % Flux_IL % Initialize &
-           ( [ nValues, I % Current % N_CONSERVED ], ClearOption = .true. )
-    call I % Flux_IR % Initialize &
-           ( [ nValues, I % Current % N_CONSERVED ], ClearOption = .true. )
+    nullify ( I % dLogVolumeJacobian_dX ) 
 
-    allocate ( I % Flux_I )
-    call I % Flux_I % Initialize &
-           ( [ nValues, I % Current % N_CONSERVED ], ClearOption = .true. )
+  end subroutine ClearMetricDerivatives
 
-    allocate ( I % GradientPrimitive )
-    call I % GradientPrimitive % Initialize &
-           ( 'Primitive', [ nValues, I % Current % N_PRIMITIVE ] )
 
-  end subroutine AllocateStorage
+  subroutine DeallocateStorage ( I )
+
+    class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
+      I
+
+    I % Allocated = .false.
+
+    if ( allocated ( I % GradientPrimitive ) ) &
+      deallocate ( I % GradientPrimitive )
+    if ( allocated ( I % DiffusionFactor_I ) ) &
+      deallocate ( I % DiffusionFactor_I )
+    if ( allocated ( I % ModifiedSpeeds_I ) ) &
+      deallocate ( I % ModifiedSpeeds_I )
+    if ( allocated ( I % Flux_I ) ) &
+      deallocate ( I % Flux_I )
+    if ( allocated ( I % Current_IR ) ) &
+      deallocate ( I % Current_IR )
+    if ( allocated ( I % Current_IL ) ) &
+      deallocate ( I % Current_IL )
+    if ( allocated ( I % Geometry_I ) ) &
+      deallocate ( I % Geometry_I )
+
+  end subroutine DeallocateStorage
 
 
   subroutine Compute ( I, Increment, TimeStep, Weight_RK )
@@ -301,6 +290,9 @@ contains
     associate &
       ( Timer => PROGRAM_HEADER % Timer ( I % iTimerIncrementDivergence ) )
     call Timer % Start ( )
+
+    if ( .not. I % Allocated ) &
+      call AllocateStorage ( I )
 
     if ( I % UseIncrementStream ) &
       call Show ( '>>> Entering Increment % Compute' )
@@ -471,27 +463,84 @@ contains
   end subroutine WriteOutput
 
 
-  subroutine DeallocateStorage ( I )
+  subroutine AllocateStorage ( I )
 
     class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
       I
 
-    if ( allocated ( I % GradientPrimitive ) ) &
-      deallocate ( I % GradientPrimitive )
-    if ( allocated ( I % DiffusionFactor_I ) ) &
-      deallocate ( I % DiffusionFactor_I )
-    if ( allocated ( I % ModifiedSpeeds_I ) ) &
-      deallocate ( I % ModifiedSpeeds_I )
-    if ( allocated ( I % Flux_I ) ) &
-      deallocate ( I % Flux_I )
-    if ( allocated ( I % Current_IR ) ) &
-      deallocate ( I % Current_IR )
-    if ( allocated ( I % Current_IL ) ) &
-      deallocate ( I % Current_IL )
-    if ( allocated ( I % Geometry_I ) ) &
-      deallocate ( I % Geometry_I )
+    integer ( KDI ) :: &
+      nValues
 
-  end subroutine DeallocateStorage
+    I % Allocated = .true.
+
+    select type ( Chart => I % Chart )
+    class is ( Chart_SL_Template )
+      I % Geometry => Chart % Geometry ( )
+    class default
+      call Show ( 'Chart type not found', CONSOLE % ERROR )
+      call Show ( 'IncrementDivergence_FV__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'AllocateStorage', 'subroutine', CONSOLE % ERROR ) 
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- Chart
+
+    select type ( CurrentChart => I % CurrentChart )
+    class is ( Field_CSL_Template )
+
+      select type ( Current => CurrentChart % Field )
+      class is ( CurrentTemplate )
+        I % Current => Current
+        nValues = Current % nValues
+      class default
+        call Show ( 'Field is not a Current', CONSOLE % ERROR )
+        call Show ( 'IncrementDivergence_FV__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'AllocateStorage', 'subroutine', CONSOLE % ERROR ) 
+        call PROGRAM_HEADER % Abort ( )
+      end select !-- Current
+
+    class default
+      call Show ( 'CurrentChart type not found', CONSOLE % ERROR )
+      call Show ( 'IncrementDivergence_FV__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'AllocateStorage', 'subroutine', CONSOLE % ERROR ) 
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- Chart
+
+    allocate ( I % Geometry_I )
+    call I % Geometry_I % Initialize &
+           ( [ nValues, I % Geometry % nVariables ], ClearOption = .true. )
+
+    allocate ( I % Current_IL, I % Current_IR )
+    call I % Current_IL % Initialize &
+           ( [ nValues, I % Current % nVariables ], &
+             VectorIndicesOption = I % Current % VectorIndices, &
+             ClearOption = .true. )
+    call I % Current_IR % Initialize &
+           ( [ nValues, I % Current % nVariables ], &
+             VectorIndicesOption = I % Current % VectorIndices, &
+             ClearOption = .true. )
+
+    allocate ( I % ModifiedSpeeds_I )
+    call I % ModifiedSpeeds_I % Initialize &
+           ( [ nValues, I % N_MODIFIED_SPEEDS ], ClearOption = .true. )
+
+    allocate ( I % DiffusionFactor_I )
+    call I % DiffusionFactor_I % Initialize &
+           ( [ nValues, I % Current % N_CONSERVED ], ClearOption = .true. )
+
+    allocate ( I % Flux_IL, I % Flux_IR )
+    call I % Flux_IL % Initialize &
+           ( [ nValues, I % Current % N_CONSERVED ], ClearOption = .true. )
+    call I % Flux_IR % Initialize &
+           ( [ nValues, I % Current % N_CONSERVED ], ClearOption = .true. )
+
+    allocate ( I % Flux_I )
+    call I % Flux_I % Initialize &
+           ( [ nValues, I % Current % N_CONSERVED ], ClearOption = .true. )
+
+    allocate ( I % GradientPrimitive )
+    call I % GradientPrimitive % Initialize &
+           ( 'Primitive', [ nValues, I % Current % N_PRIMITIVE ] )
+
+  end subroutine AllocateStorage
 
 
   subroutine ComputeReconstruction ( I, iDimension )

@@ -430,8 +430,9 @@ contains
 
       do iC = 1, S % nCurrents
         call S % AllocateBoundaryFluence &
-               ( S % BoundaryFluence_CSL_1D ( iC ) % Array, &
-                 Chart, S % Current_1D ( iC ) % Pointer % N_CONSERVED )
+               ( S % IncrementDivergence_C, Chart, &
+                 S % Current_1D ( iC ) % Pointer % N_CONSERVED, &
+                 S % BoundaryFluence_CSL_1D ( iC ) % Array )
       end do !-- iC
 
     class default
@@ -442,7 +443,7 @@ contains
     end select !-- Grid
 
     call S % AllocateMetricDerivatives &
-           ( S % Chart % CoordinateSystem, &
+           ( S % IncrementDivergence_C, &
              S % Current_1D ( 1 ) % Pointer % nValues )
 
     call Timer % Stop ( )
