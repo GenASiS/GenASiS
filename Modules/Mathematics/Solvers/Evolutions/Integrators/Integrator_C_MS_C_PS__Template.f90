@@ -111,16 +111,16 @@ contains
     class ( Integrator_C_MS_C_PS_Template ), intent ( inout ) :: &
       I
 
-    associate ( Timer => PROGRAM_HEADER % Timer ( I % iTimerComputeCycle ) )
-    call Timer % Start ( )
+!    associate ( Timer => PROGRAM_HEADER % Timer ( I % iTimerComputeCycle ) )
+!    call Timer % Start ( )
 
     select type ( MS => I % MomentumSpace )
     class is ( Bundle_SLL_ASC_CSLD_Form )
       call I % ComputeCycle_BSLL_ASC_CSLD ( MS )
     end select
 
-    call Timer % Stop ( )
-    end associate !-- Timer
+!    call Timer % Stop ( )
+!    end associate !-- Timer
 
   end subroutine ComputeCycle
 
@@ -137,8 +137,8 @@ contains
     if ( .not. allocated ( I % Current_BSLL_ASC_CSLD ) ) &
       return
 
-    associate ( Timer => PROGRAM_HEADER % Timer ( I % iTimerComputeTally ) )
-    call Timer % Start ( )
+!    associate ( Timer => PROGRAM_HEADER % Timer ( I % iTimerComputeTally ) )
+!    call Timer % Start ( )
 
     associate &
       ( CB => I % Current_BSLL_ASC_CSLD, &
@@ -153,8 +153,8 @@ contains
 
     end associate !-- CB, etc.
 
-    call Timer % Stop ( )
-    end associate !-- Timer
+!    call Timer % Stop ( )
+!    end associate !-- Timer
 
   end subroutine ComputeTally
 

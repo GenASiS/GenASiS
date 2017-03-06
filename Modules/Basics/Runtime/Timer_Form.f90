@@ -8,6 +8,8 @@ module Timer_Form
   private
 
   type, public :: TimerForm
+    integer ( KDI ) :: &
+      Level
     type ( MeasuredValueForm ) :: &
       StartTime, &
       StopTime, &
@@ -18,8 +20,12 @@ module Timer_Form
     character ( LDL ) :: &
       Name = ''
   contains
-    procedure, public, pass :: &
-      Initialize
+    procedure, private, pass :: &
+      InitializeNameLevel
+    procedure, private, pass :: &
+      InitializeClone
+    generic, public :: &
+      Initialize => InitializeNameLevel, InitializeClone
     procedure, public, pass :: &
       Start
     procedure, public, pass :: &
@@ -30,24 +36,48 @@ module Timer_Form
       ShowTotal
   end type TimerForm
 
+    character ( 8 ), private, parameter :: &
+      Suffix = '::::::::'
+    
 contains
 
 
-  subroutine Initialize ( T, Name )
+  subroutine InitializeNameLevel ( T, Name, Level )
 
     class ( TimerForm ), intent ( inout ) :: &
       T
     character ( * ), intent ( in ) :: &
       Name
+    integer ( KDI ), intent ( in ) :: &
+      Level
 
-    T % Name = Name
+    T % Name  = Name
+    T % Level = Level
 
     call T % StartTime % Initialize ( 's', 0.0_KDR )
     call T % StopTime % Initialize ( 's', 0.0_KDR )
     call T % TimeInterval % Initialize ( 's', 0.0_KDR )
     call T % TotalTime % Initialize ( 's', 0.0_KDR )
 
-  end subroutine Initialize
+  end subroutine InitializeNameLevel
+
+
+  subroutine InitializeClone ( T, T_Target )
+
+    class ( TimerForm ), intent ( inout ) :: &
+      T
+    class ( TimerForm ), intent ( in ) :: &
+      T_Target
+
+    T % Name  = T_Target % Name
+    T % Level = T_Target % Level
+
+    call T % StartTime % Initialize ( 's', 0.0_KDR )
+    call T % StopTime % Initialize ( 's', 0.0_KDR )
+    call T % TimeInterval % Initialize ( 's', 0.0_KDR )
+    call T % TotalTime % Initialize ( 's', 0.0_KDR )
+
+  end subroutine InitializeClone
 
 
   subroutine Start ( T )
@@ -96,7 +126,8 @@ contains
     Ignorability = CONSOLE % INFO_2
     if ( present ( IgnorabilityOption ) ) Ignorability = IgnorabilityOption
 
-    call Show ( T % TimeInterval, trim ( T % Name ) // ' TimeInterval', &
+    call Show ( T % TimeInterval, &
+                trim ( T % Name ) // ' Interval ' // Suffix ( 1 : T % Level ), &
                 Ignorability )
 
   end subroutine ShowInterval
@@ -117,7 +148,8 @@ contains
     Ignorability = CONSOLE % INFO_2
     if ( present ( IgnorabilityOption ) ) Ignorability = IgnorabilityOption
 
-    call Show ( T % TotalTime, trim ( T % Name ) // ' TotalTime', &
+    call Show ( T % TotalTime, &
+                trim ( T % Name ) // ' ' // Suffix ( 1 : T % Level ), &
                 Ignorability )
 
   end subroutine ShowTotal

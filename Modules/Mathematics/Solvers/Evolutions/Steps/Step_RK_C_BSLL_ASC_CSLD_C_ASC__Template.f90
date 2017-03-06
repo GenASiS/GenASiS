@@ -125,8 +125,8 @@ contains
     call ID % Initialize ( S % Name )
     end associate !-- ID
 
-    call PROGRAM_HEADER % AddTimer &
-           ( 'GhostIncrement', S % iTimerGhost )
+!    call PROGRAM_HEADER % AddTimer &
+!           ( 'GhostIncrement', S % iTimerGhost )
 
     S % ApplyDivergence_F % Pointer => null ( )
 
@@ -156,9 +156,9 @@ contains
       iF, &  !-- iFiber
       iS     !-- iSection
 
-    associate &
-      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerComputeStep ) )
-    call Timer % Start ( )
+!    associate &
+!      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerComputeStep ) )
+!    call Timer % Start ( )
 
     select type ( Chart => Current_ASC % Atlas_SC % Chart )
     class is ( Chart_SL_Template )
@@ -199,8 +199,8 @@ contains
     S % Current => null ( )
     S % Chart   => null ( )
 
-    call Timer % Stop ( )
-    end associate !-- Timer
+!    call Timer % Stop ( )
+!    end associate !-- Timer
 
   end subroutine Compute_C_BSLL_ASC_CSLD_C_ASC
 
@@ -266,9 +266,9 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iStage
 
-    associate &
-      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerComputeStage ) )
-    call Timer % Start ( )
+!    associate &
+!      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerComputeStage ) )
+!    call Timer % Start ( )
 
     call S % ComputeStage_C_BSLL_ASC_CSLD &
       ( S % Current_BSLL_ASC_CSLD, S % K_BSLL_ASC_CSLD ( iStage ), &
@@ -276,8 +276,8 @@ contains
 
     call S % ComputeStage_C_ASC ( TimeStep, iStage )
 
-    call Timer % Stop ( )
-    end associate !-- Timer
+!    call Timer % Stop ( )
+!    end associate !-- Timer
 
   end subroutine ComputeStage
 
@@ -590,9 +590,9 @@ contains
     class ( CurrentTemplate ), pointer :: &
       Current_S
 
-    associate &
-      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerAllocateStep ) )
-    call Timer % Start ( )
+!    associate &
+!      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerAllocateStep ) )
+!    call Timer % Start ( )
 
     call S % Allocate_RK_C ( )
     call S % Allocate_RK_C_BSLL_ASC_CSLD ( )
@@ -628,8 +628,8 @@ contains
 
     nullify ( Current_S )
 
-    call Timer % Stop ( )
-    end associate !-- Timer
+!    call Timer % Stop ( )
+!    end associate !-- Timer
 
   end subroutine AllocateStorage
 
@@ -639,9 +639,9 @@ contains
     class ( Step_RK_C_BSLL_ASC_CSLD_C_ASC_Template ), intent ( inout ) :: &
       S
 
-    associate &
-      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerAllocateStep ) )
-    call Timer % Start ( )
+!    associate &
+!      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerAllocateStep ) )
+!    call Timer % Start ( )
 
     !-- BoundaryFluence not deallocated here, but instead upon reallocation,
     !   so that its values remain available after Step % Compute
@@ -650,8 +650,8 @@ contains
     call S % Deallocate_RK_C_BSLL_ASC_CSLD ( )
     call S % Deallocate_RK_C ( )
 
-    call Timer % Stop ( )
-    end associate !-- Timer
+!    call Timer % Stop ( )
+!    end associate !-- Timer
 
   end subroutine DeallocateStorage
 

@@ -132,16 +132,18 @@ contains
     class ( Integrator_C_PS_Template ), intent ( inout ) :: &
       I
 
-    associate ( Timer => PROGRAM_HEADER % Timer ( I % iTimerComputeCycle ) )
-    call Timer % Start ( )
+    type ( TimerForm ), pointer :: &
+      Timer
+
+    Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerComputeCycle )
+    if ( associated ( Timer ) ) call Timer % Start ( )
 
     select type ( PS => I % PositionSpace )
     class is ( Atlas_SC_Form )
       call I % ComputeCycle_ASC ( PS )
     end select
 
-    call Timer % Stop ( )
-    end associate !-- Timer
+    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine ComputeCycle
 
@@ -155,11 +157,14 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
+    type ( TimerForm ), pointer :: &
+      Timer
+
     if ( .not. allocated ( I % Current_ASC ) ) &
       return
 
-    associate ( Timer => PROGRAM_HEADER % Timer ( I % iTimerComputeTally ) )
-    call Timer % Start ( )
+    Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerComputeTally )
+    if ( associated ( Timer ) ) call Timer % Start ( )
 
     associate ( CA => I % Current_ASC )
     call CA % ComputeTally &
@@ -167,8 +172,7 @@ contains
              IgnorabilityOption = IgnorabilityOption )
     end associate !-- CA
 
-    call Timer % Stop ( )
-    end associate !-- Timer
+    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine ComputeTally
 

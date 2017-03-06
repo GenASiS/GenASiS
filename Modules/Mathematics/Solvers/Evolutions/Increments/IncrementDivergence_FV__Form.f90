@@ -16,16 +16,16 @@ module IncrementDivergence_FV__Form
   type, public :: IncrementDivergence_FV_Form
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
-      iTimerIncrementDivergence, &
-      iTimerReconstruction, &
-      iTimerReconstruction_G, &
-      iTimerBoundary, &
-      iTimerReconstruction_CSL, &
-      iTimerFromPrimitive, &
-      iTimerFluxes, &
-      iTimerIncrement, &
-!       iTimerGradient, &
-!       iTimerReconstructionKernel, &
+!       iTimerIncrementDivergence, &
+!       iTimerReconstruction, &
+!       iTimerReconstruction_G, &
+!       iTimerBoundary, &
+!       iTimerReconstruction_CSL, &
+!       iTimerFromPrimitive, &
+!       iTimerFluxes, &
+!       iTimerIncrement, &
+! !       iTimerGradient, &
+! !       iTimerReconstructionKernel, &
       iStream
     integer ( KDI ) :: &
       ALPHA_PLUS  = 1, &
@@ -155,22 +155,22 @@ contains
     if ( I % UseLimiter ) &
       call Show ( I % LimiterParameter, 'LimiterParameter', I % IGNORABILITY )
 
-    call PROGRAM_HEADER % AddTimer &
-           ( 'IncrementDivergence', I % iTimerIncrementDivergence )
-    call PROGRAM_HEADER % AddTimer &
-           ( '_Reconstruction', I % iTimerReconstruction )
-    call PROGRAM_HEADER % AddTimer &
-           ( '__Reconstruction_G', I % iTimerReconstruction_G )
-    call PROGRAM_HEADER % AddTimer &
-           ( '__Boundary', I % iTimerBoundary )
-    call PROGRAM_HEADER % AddTimer &
-           ( '__Reconstruction_CSL', I % iTimerReconstruction_CSL )
-    call PROGRAM_HEADER % AddTimer &
-           ( '__FromPrimitive', I % iTimerFromPrimitive )
-    call PROGRAM_HEADER % AddTimer &
-           ( '_Fluxes', I % iTimerFluxes )
-    call PROGRAM_HEADER % AddTimer &
-           ( '_Increment', I % iTimerIncrement )
+    ! call PROGRAM_HEADER % AddTimer &
+    !        ( 'IncrementDivergence', I % iTimerIncrementDivergence )
+    ! call PROGRAM_HEADER % AddTimer &
+    !        ( '_Reconstruction', I % iTimerReconstruction )
+    ! call PROGRAM_HEADER % AddTimer &
+    !        ( '__Reconstruction_G', I % iTimerReconstruction_G )
+    ! call PROGRAM_HEADER % AddTimer &
+    !        ( '__Boundary', I % iTimerBoundary )
+    ! call PROGRAM_HEADER % AddTimer &
+    !        ( '__Reconstruction_CSL', I % iTimerReconstruction_CSL )
+    ! call PROGRAM_HEADER % AddTimer &
+    !        ( '__FromPrimitive', I % iTimerFromPrimitive )
+    ! call PROGRAM_HEADER % AddTimer &
+    !        ( '_Fluxes', I % iTimerFluxes )
+    ! call PROGRAM_HEADER % AddTimer &
+    !        ( '_Increment', I % iTimerIncrement )
 
     ! ! call PROGRAM_HEADER % AddTimer &
     ! !        ( 'ComputeReconstruction_CSL', I % iTimerReconstruction_CSL )
@@ -287,9 +287,9 @@ contains
     integer ( KDI ) :: &
       iD  !-- iDimension
 
-    associate &
-      ( Timer => PROGRAM_HEADER % Timer ( I % iTimerIncrementDivergence ) )
-    call Timer % Start ( )
+!    associate &
+!      ( Timer => PROGRAM_HEADER % Timer ( I % iTimerIncrementDivergence ) )
+!    call Timer % Start ( )
 
     if ( .not. I % Allocated ) &
       call AllocateStorage ( I )
@@ -328,8 +328,8 @@ contains
     if ( I % UseIncrementStream ) &
       call Show ( '>>> Leaving Increment % Compute' )
 
-    call Timer % Stop ( )
-    end associate !-- Timer
+!    call Timer % Stop ( )
+!    end associate !-- Timer
 
   end subroutine Compute
 
@@ -556,9 +556,9 @@ contains
     type ( VariableGroupForm ) :: &
       P
 
-    associate &
-      ( Timer => PROGRAM_HEADER % Timer ( I % iTimerReconstruction ) )
-    call Timer % Start ( )
+!    associate &
+!      ( Timer => PROGRAM_HEADER % Timer ( I % iTimerReconstruction ) )
+!    call Timer % Start ( )
 
     associate &
       ( C    => I % Current, &
@@ -568,12 +568,12 @@ contains
         C_IR => I % Current_IR, &
         G_I  => I % Geometry_I )
 
-    associate &
-      ( Timer_G => PROGRAM_HEADER % Timer ( I % iTimerReconstruction_G ) )    
-    call Timer_G % Start ( )
+!    associate &
+!      ( Timer_G => PROGRAM_HEADER % Timer ( I % iTimerReconstruction_G ) )    
+!    call Timer_G % Start ( )
     call G % ComputeReconstruction ( G_I, I % Chart % nDimensions, iDimension )
-    call Timer_G % Stop
-    end associate !-- Timer_G
+!    call Timer_G % Stop
+!    end associate !-- Timer_G
 
     call P % Initialize ( C, iaSelectedOption = C % iaPrimitive )
 
@@ -581,9 +581,9 @@ contains
       ( iaI => A % Connectivity % iaInner ( iDimension ), &
         iaO => A % Connectivity % iaOuter ( iDimension ) )
 
-    associate &
-      ( Timer_B => PROGRAM_HEADER % Timer ( I % iTimerBoundary ) )    
-    call Timer_B % Start ( )
+!    associate &
+!      ( Timer_B => PROGRAM_HEADER % Timer ( I % iTimerBoundary ) )    
+!    call Timer_B % Start ( )
     select type ( A )
     class is ( Atlas_SC_Template )
       call A % ApplyBoundaryConditions ( P, iDimension, iaI )
@@ -593,21 +593,21 @@ contains
       call Show ( 'IncrementDivergence_FV__Form', 'module', CONSOLE % ERROR )
       call Show ( 'ComputeReconstruction', 'subroutine', CONSOLE % ERROR )
     end select !-- A
-    call Timer_B % Stop
-    end associate !-- Timer_B
+!    call Timer_B % Stop
+!    end associate !-- Timer_B
 
     select type ( Chart => I % Chart )
     class is ( Chart_SL_Template )
       call ComputeReconstruction_CSL ( I, P, Chart, iDimension )
     end select !-- Grid
 
-    associate &
-      ( Timer_FP => PROGRAM_HEADER % Timer ( I % iTimerFromPrimitive ) )
-    call Timer_FP % Start ( )
+ !   associate &
+ !     ( Timer_FP => PROGRAM_HEADER % Timer ( I % iTimerFromPrimitive ) )
+ !   call Timer_FP % Start ( )
     call C % ComputeFromPrimitive ( C_IL % Value, G, G_I % Value )
     call C % ComputeFromPrimitive ( C_IR % Value, G, G_I % Value )
-    call Timer_FP % Stop ( )
-    end associate !-- Timer_FP
+!    call Timer_FP % Stop ( )
+!    end associate !-- Timer_FP
 
     end associate !-- iaI, iaO
 
@@ -618,8 +618,8 @@ contains
 
     end associate !-- C, etc.
 
-    call Timer % Stop ( )
-    end associate !-- Timer
+!    call Timer % Stop ( )
+!    end associate !-- Timer
 
   end subroutine ComputeReconstruction
 
@@ -634,9 +634,9 @@ contains
     integer ( KDI ) :: &
       iF  !-- iField
 
-    associate &
-      ( Timer => PROGRAM_HEADER % Timer ( I % iTimerFluxes ) )
-    call Timer % Start ( )
+!    associate &
+!      ( Timer => PROGRAM_HEADER % Timer ( I % iTimerFluxes ) )
+!    call Timer % Start ( )
 
     associate &
       ( C    => I % Current, &
@@ -683,8 +683,8 @@ contains
 
     end associate !-- C, etc.
 
-    call Timer % Stop ( )
-    end associate !-- Timer
+!    call Timer % Stop ( )
+!    end associate !-- Timer
 
   end subroutine ComputeFluxes
 
@@ -711,9 +711,9 @@ contains
       V_I, &
       dLVdX
 
-    associate &
-      ( Timer => PROGRAM_HEADER % Timer ( I % iTimerReconstruction_CSL ) )
-    call Timer % Start ( )
+!    associate &
+!      ( Timer => PROGRAM_HEADER % Timer ( I % iTimerReconstruction_CSL ) )
+!    call Timer % Start ( )
 
     associate &
       ( C    => I % Current, &
@@ -785,8 +785,8 @@ contains
 
     end associate !-- C, etc.
 
-    call Timer % Stop
-    end associate !-- Timer
+!    call Timer % Stop
+!    end associate !-- Timer
   
   end subroutine ComputeReconstruction_CSL
 
@@ -814,9 +814,9 @@ contains
       VJ, &
       dX
 
-    associate &
-      ( Timer => PROGRAM_HEADER % Timer ( I % iTimerIncrement ) )
-    call Timer % Start ( )
+!    associate &
+!      ( Timer => PROGRAM_HEADER % Timer ( I % iTimerIncrement ) )
+!    call Timer % Start ( )
 
     associate &
       ( C    => I % Current, &
@@ -852,8 +852,8 @@ contains
     end associate !-- C, etc.
     nullify ( dU, F_I, VJ_I, VJ, dX )
 
-    call Timer % Stop ( )
-    end associate !-- Timer
+!    call Timer % Stop ( )
+!    end associate !-- Timer
 
   end subroutine ComputeIncrement_CSL
 

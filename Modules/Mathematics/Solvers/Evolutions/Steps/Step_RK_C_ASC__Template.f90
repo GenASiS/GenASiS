@@ -35,8 +35,8 @@ module Step_RK_C_ASC__Template
 
   type, public, extends ( Step_RK_Template ), abstract :: &
     Step_RK_C_ASC_Template
-      integer ( KDI ) :: &
-        iTimerGhost!, &
+!      integer ( KDI ) :: &
+!        iTimerGhost!, &
 !         iGeometryValue
       type ( Real_1D_Form ), dimension ( : ), allocatable :: &
         dLogVolumeJacobian_dX
@@ -231,8 +231,8 @@ contains
     call ID % Initialize ( S % Name )
     end associate !-- ID
 
-    call PROGRAM_HEADER % AddTimer &
-           ( 'GhostIncrement', S % iTimerGhost )
+!    call PROGRAM_HEADER % AddTimer &
+!           ( 'GhostIncrement', S % iTimerGhost )
 
   end subroutine InitializeTemplate_C_ASC
 
@@ -242,9 +242,9 @@ contains
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
 
-    associate &
-      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerAllocateStep ) )
-    call Timer % Start ( )
+!    associate &
+!      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerAllocateStep ) )
+!    call Timer % Start ( )
 
     S % Allocated = .false.
 
@@ -253,8 +253,8 @@ contains
     call S % DeallocateMetricDerivatives ( )
     call S % Deallocate_RK_C ( )
 
-    call Timer % Stop ( )
-    end associate !-- Timer
+!    call Timer % Stop ( )
+!    end associate !-- Timer
 
   end subroutine DeallocateStorage
 
@@ -396,9 +396,9 @@ contains
       Time, &
       TimeStep
 
-    associate &
-      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerComputeStep ) )
-    call Timer % Start ( )
+!    associate &
+!      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerComputeStep ) )
+!    call Timer % Start ( )
 
     if ( .not. S % Allocated ) &
       call AllocateStorage ( S )
@@ -413,8 +413,8 @@ contains
     if ( allocated ( S % BoundaryFluence_CSL ) ) &
       call S % Current_ASC % AccumulateBoundaryTally ( S % BoundaryFluence_CSL )
 
-    call Timer % Stop ( )
-    end associate !-- Timer
+!    call Timer % Stop ( )
+!    end associate !-- Timer
 
   end subroutine Compute_C_ASC
 
@@ -473,14 +473,14 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iStage
 
-    associate &
-      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerComputeStage ) )
-    call Timer % Start ( )
+!    associate &
+!      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerComputeStage ) )
+!    call Timer % Start ( )
 
     call S % ComputeStage_C_ASC ( TimeStep, iStage )
 
-    call Timer % Stop ( )
-    end associate !-- Timer
+!    call Timer % Stop ( )
+!    end associate !-- Timer
 
   end subroutine ComputeStage
 
@@ -867,11 +867,11 @@ contains
     if ( associated ( S % ApplyDivergence_C ) ) then
       select type ( Chart )
       class is ( Chart_SLD_Form )
-        associate ( TimerGhost => PROGRAM_HEADER % Timer ( S % iTimerGhost ) )
-        call TimerGhost % Start ( )
+!        associate ( TimerGhost => PROGRAM_HEADER % Timer ( S % iTimerGhost ) )
+!        call TimerGhost % Start ( )
         call Chart % ExchangeGhostData ( K )
-        call TimerGhost % Stop ( )
-        end associate !-- TimerGhost
+!        call TimerGhost % Stop ( )
+!        end associate !-- TimerGhost
       end select !-- Grid
     end if !-- ApplyDivergence
 
@@ -1062,9 +1062,9 @@ contains
     character ( LDL ) :: &
       CoordinateSystem
 
-    associate &
-      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerAllocateStep ) )
-    call Timer % Start ( )
+!    associate &
+!      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerAllocateStep ) )
+!    call Timer % Start ( )
 
     S % Allocated = .true.
 
@@ -1084,9 +1084,8 @@ contains
       call PROGRAM_HEADER % Abort ( )
     end select !-- Grid
 
-
-    call Timer % Stop ( )
-    end associate !-- Timer
+!    call Timer % Stop ( )
+!    end associate !-- Timer
 
   end subroutine AllocateStorage
 

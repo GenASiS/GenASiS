@@ -11,11 +11,12 @@ module Integrator_Template
   type, public, abstract :: IntegratorTemplate
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
-      iTimerAdministerCheckpoint = 0, &
+      iTimerEvolve = 0, &
       iTimerComputeCycle = 0, &
+      iTimerComputeNewTime = 0, &
+      iTimerAdministerCheckpoint = 0, &
       iTimerComputeTally = 0, &
       iTimerWrite = 0, &
-      iTimerComputeNewTime = 0, &
       iCycle, &
       iCheckpoint, &
       nRampCycles, &
@@ -58,6 +59,8 @@ module Integrator_Template
       FinalizeTemplate
     procedure, private, pass :: &  !-- 2
       OpenStreams
+    procedure, public, pass :: &  !-- 2
+      InitializeTimers
     procedure, private, pass :: &  !-- 2
       AdministerCheckpoint
 !-- FIXME: Intel compiler fails to recognize concrete overriding in
@@ -226,17 +229,6 @@ contains
     end if
     I % nTimeStepCandidates = size ( I % TimeStepLabel )
 
-    call PROGRAM_HEADER % AddTimer &
-           ( 'AdministerCheckpoint', I % iTimerAdministerCheckpoint )
-    call PROGRAM_HEADER % AddTimer &
-           ( 'ComputeCycle', I % iTimerComputeCycle )
-    call PROGRAM_HEADER % AddTimer &
-           ( 'ComputeTally', I % iTimerComputeTally )
-    call PROGRAM_HEADER % AddTimer &
-           ( 'Write', I % iTimerWrite )
-    call PROGRAM_HEADER % AddTimer &
-           ( 'ComputeNewTime', I % iTimerComputeNewTime )
-
   end subroutine InitializeTemplate
 
 
@@ -245,6 +237,14 @@ contains
     class ( IntegratorTemplate ), intent ( inout ) :: &
       I
 
+    type ( TimerForm ), pointer :: &
+      Timer
+
+    call I % InitializeTimers ( )
+
+    Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerEvolve )
+    if ( associated ( Timer ) ) call Timer % Start ( )   
+
     call Show ( 'Starting evolution', I % IGNORABILITY )
     call Show ( I % Name, 'Name', I % IGNORABILITY )
 
@@ -252,7 +252,6 @@ contains
     call I % AdministerCheckpoint ( ComputeChangeOption = .false. )
 
     do while ( I % Time < I % FinishTime )
-
       call Show ( 'Computing a cycle', I % IGNORABILITY + 1 )
 
       call I % ComputeCycle ( )
@@ -265,6 +264,8 @@ contains
         call I % AdministerCheckpoint ( )
 
     end do !-- Time < FinishTime 
+
+    if ( associated ( Timer ) ) call Timer % Stop ( )   
 
   end subroutine Evolve
 
@@ -348,6 +349,43 @@ contains
   end subroutine OpenStreams
 
 
+  subroutine InitializeTimers ( I )
+
+    class ( IntegratorTemplate ), intent ( inout ) :: &
+      I
+
+    integer ( KDI ) :: &
+      BaseLevel
+
+    BaseLevel = 0
+
+    if ( I % iTimerEvolve > 0  &
+         .or.  BaseLevel > PROGRAM_HEADER % TimerLevel ) &
+      return
+
+    call PROGRAM_HEADER % AddTimer &
+           ( 'Evolve', I % iTimerEvolve, Level = BaseLevel )
+
+    call PROGRAM_HEADER % AddTimer &
+           ( 'ComputeCycle', I % iTimerComputeCycle, &
+             Level = BaseLevel + 1 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'ComputeNewTime', I % iTimerComputeNewTime, &
+             Level = BaseLevel + 2 )
+
+    call PROGRAM_HEADER % AddTimer &
+           ( 'AdministerCheckpoint', I % iTimerAdministerCheckpoint, &
+             Level = BaseLevel + 1 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'ComputeTally', I % iTimerComputeTally, &
+             Level = BaseLevel + 2 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'Write', I % iTimerWrite, &
+             Level = BaseLevel + 2 )
+
+  end subroutine InitializeTimers
+
+
   subroutine AdministerCheckpoint ( I, ComputeChangeOption )
 
     class ( IntegratorTemplate ), intent ( inout ) :: &
@@ -361,10 +399,11 @@ contains
       MaxTime, &
       MinTime, &
       MeanTime
+    type ( TimerForm ), pointer :: &
+      Timer
 
-    associate &
-      ( Timer => PROGRAM_HEADER % Timer ( I % iTimerAdministerCheckpoint ) )
-    call Timer % Start ( )
+    Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerAdministerCheckpoint )
+    if ( associated ( Timer ) ) call Timer % Start ( )   
 
     TallyIgnorability = I % IGNORABILITY + 2
 
@@ -407,8 +446,7 @@ contains
 
     I % iCheckpoint = I % iCheckpoint + 1
 
-    call Timer % Stop ( )
-    end associate !-- Timer
+    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine AdministerCheckpoint
 
@@ -436,11 +474,13 @@ contains
     class ( IntegratorTemplate ), intent ( inout ) :: &
       I
 
+    type ( TimerForm ), pointer :: &
+      Timer
+
     if ( I % NoWrite ) return
 
-    associate &
-      ( Timer => PROGRAM_HEADER % Timer ( I % iTimerWrite ) )
-    call Timer % Start ( )
+    Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerWrite )
+    if ( associated ( Timer ) ) call Timer % Start ( )
 
     if ( allocated ( I % MomentumSpace ) ) then
       select type ( MS => I % MomentumSpace )
@@ -485,8 +525,7 @@ contains
 
     end associate !-- GIS, etc.
 
-    call Timer % Stop ( )
-    end associate !-- Timer
+    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine Write
 
@@ -531,10 +570,11 @@ contains
 
     real ( KDR ) :: &
       TimeStep
+    type ( TimerForm ), pointer :: &
+      Timer
 
-    associate &
-      ( Timer => PROGRAM_HEADER % Timer ( I % iTimerComputeNewTime ) )
-    call Timer % Start ( )
+    Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerComputeNewTime )
+    if ( associated ( Timer ) ) call Timer % Start ( )
 
 !    call Show ( 'Computing TimeNew', I % IGNORABILITY )
 !    call Show ( I % Name, 'Name', I % IGNORABILITY )
@@ -566,8 +606,7 @@ contains
 
 !    end associate !-- C
 
-    call Timer % Stop ( )
-    end associate !-- Timer
+    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine ComputeNewTime
 

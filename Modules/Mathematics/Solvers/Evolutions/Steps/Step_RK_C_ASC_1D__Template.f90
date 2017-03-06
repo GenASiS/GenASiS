@@ -120,8 +120,8 @@ contains
     call ID % Initialize ( S % Name )
     end associate !-- ID
 
-    call PROGRAM_HEADER % AddTimer &
-           ( 'GhostIncrement', S % iTimerGhost )
+!    call PROGRAM_HEADER % AddTimer &
+!           ( 'GhostIncrement', S % iTimerGhost )
 
     allocate ( S % ApplyDivergence_1D ( S % nCurrents ) )
     allocate ( S % ApplySources_1D ( S % nCurrents ) )
@@ -148,9 +148,9 @@ contains
     integer ( KDI ) :: &
       iC  !-- iCurrent
 
-    associate &
-      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerComputeStep ) )
-    call Timer % Start ( )
+!    associate &
+!      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerComputeStep ) )
+!    call Timer % Start ( )
 
     select type ( Chart => Current_ASC_1D ( 1 ) % Element % Atlas_SC % Chart )
     class is ( Chart_SL_Template )
@@ -182,8 +182,8 @@ contains
     deallocate ( S % Current_1D )
     nullify ( S % Chart )
 
-    call Timer % Stop ( )
-    end associate !-- Timer
+!    call Timer % Stop ( )
+!    end associate !-- Timer
 
   end subroutine Compute_C_ASC_1D
 
@@ -260,9 +260,9 @@ contains
     integer ( KDI ) :: &
       iC  !-- iCurrent
 
-    associate &
-      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerComputeStage ) )
-    call Timer % Start ( )
+!    associate &
+!      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerComputeStage ) )
+!    call Timer % Start ( )
 
     do iC = 1, S % nCurrents
       associate &
@@ -290,8 +290,8 @@ contains
       end associate !-- C, etc.
     end do !-- iC
 
-    call Timer % Stop ( )
-    end associate !-- Timer
+!    call Timer % Stop ( )
+!    end associate !-- Timer
 
   end subroutine ComputeStage
 
@@ -415,9 +415,9 @@ contains
     character ( LDL ) :: &
       CoordinateSystem
 
-    associate &
-      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerAllocateStep ) )
-    call Timer % Start ( )
+!    associate &
+!      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerAllocateStep ) )
+!    call Timer % Start ( )
 
     call S % Allocate_RK_C_1D ( )
 
@@ -446,8 +446,8 @@ contains
            ( S % IncrementDivergence_C, &
              S % Current_1D ( 1 ) % Pointer % nValues )
 
-    call Timer % Stop ( )
-    end associate !-- Timer
+!    call Timer % Stop ( )
+!    end associate !-- Timer
 
   end subroutine AllocateStorage
 
@@ -457,9 +457,9 @@ contains
     class ( Step_RK_C_ASC_1D_Template ), intent ( inout ) :: &
       S
 
-    associate &
-      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerAllocateStep ) )
-    call Timer % Start ( )
+!    associate &
+!      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerAllocateStep ) )
+!    call Timer % Start ( )
 
     !-- BoundaryFluence not deallocated here, but instead upon reallocation,
     !   so that its values remain available after Step % Compute
@@ -467,8 +467,8 @@ contains
     call S % DeallocateMetricDerivatives ( )
     call S % Deallocate_RK_C_1D ( )
 
-    call Timer % Stop ( )
-    end associate !-- Timer
+!    call Timer % Stop ( )
+!    end associate !-- Timer
 
   end subroutine DeallocateStorage
 

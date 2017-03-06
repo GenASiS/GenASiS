@@ -24,6 +24,7 @@ module PROGRAM_HEADER_Singleton
     integer ( KDI ) :: &
       nTimers = 0, &
       MaxThreads = 0, &
+      TimerLevel = 0, &
       ExecutionTimeHandle
     character ( LDL ) :: &
       Dimensionality = ''
@@ -70,6 +71,8 @@ module PROGRAM_HEADER_Singleton
            GetParameter_1D_Character
     procedure, public, nopass :: &
       AddTimer
+    procedure, public, nopass :: &
+      TimerPointer
     procedure, public, nopass :: &
       ShowStatistics
     procedure, public, nopass :: &
@@ -171,9 +174,15 @@ contains
            ( Filename, PH % Communicator % Rank )
 
     allocate ( PH % Timer ( MAX_TIMERS ) )
-    call PH % AddTimer ( 'Execution', PH % ExecutionTimeHandle )
-    call PH % Timer ( PH % ExecutionTimeHandle ) % Start ( )
     
+    PH % TimerLevel = 3
+    call PROGRAM_HEADER % GetParameter ( PH % TimerLevel, 'TimerLevel' )
+    call Show ( PH % TimerLevel, 'TimerLevel', CONSOLE % INFO_1 )
+
+    call PH % AddTimer &
+           ( 'Execution', Level = 0, Handle = PH % ExecutionTimeHandle )
+    call PH % Timer ( PH % ExecutionTimeHandle ) % Start ( )
+
 !    call Show ( 'Initializing PETSc', CONSOLE % INFO_1)
 !    call PETSCINITIALIZE ( PETSC_NULL_CHARACTER, Error )
 
@@ -746,27 +755,47 @@ contains
   end subroutine GetParameter_1D_Character
 
 
-  subroutine AddTimer ( Name, Handle )
+  subroutine AddTimer ( Name, Handle, Level )
 
     character ( * ), intent ( in ) :: &
       Name
-    integer ( KDI ), intent ( out ) :: &
+    integer ( KDI ), intent ( inout ) :: &
       Handle
+    integer ( KDI ), intent ( in ) :: &
+      Level    
 
     type ( ProgramHeaderSingleton ), pointer :: &
       PH
     
     PH => PROGRAM_HEADER 
       
+    if ( Level > PH % TimerLevel ) &
+      return
+
     PH % nTimers = PH % nTimers + 1
     Handle = PH % nTimers
 
-    call PH % Timer ( Handle ) % Initialize ( Name )
+    call PH % Timer ( Handle ) % Initialize ( Name, Level )
 
     call Show ( 'Adding a Timer', CONSOLE % INFO_2 )
     call Show ( PH % Timer ( Handle ) % Name, 'Name', CONSOLE % INFO_2 )
 
   end subroutine AddTimer
+
+
+  function TimerPointer ( Handle ) result ( TP )
+
+    integer ( KDI ), intent ( in ) :: &
+      Handle
+    type ( TimerForm ), pointer :: &
+      TP
+
+    TP => null ( )
+
+    if ( Handle > 0 ) &
+      TP => PROGRAM_HEADER % Timer ( Handle )
+
+  end function TimerPointer
 
 
   subroutine ShowStatistics &
@@ -934,18 +963,18 @@ contains
                RootOption = CONSOLE % DisplayRank )
 
       do iT = 1, PH % nTimers
-        call MaxTimer ( iT ) % Initialize ( PH % Timer ( iT ) % Name )
-        call MinTimer ( iT ) % Initialize ( PH % Timer ( iT ) % Name )
-        call MeanTimer ( iT ) % Initialize ( PH % Timer ( iT ) % Name )
+        call MaxTimer ( iT ) % Initialize ( PH % Timer ( iT ) )
+        call MinTimer ( iT ) % Initialize ( PH % Timer ( iT ) )
+        call MeanTimer ( iT ) % Initialize ( PH % Timer ( iT ) )
         CO % Outgoing % Value ( iT ) = PH % Timer ( iT ) % TotalTime
       end do !-- iT
 
-      call Show ( 'Max timers', Ignorability )
+      call Show ( 'Max timers', Ignorability + 1 )
       call CO % Reduce ( REDUCTION % MAX )
       do iT = 1, PH % nTimers
         call MaxTimer ( iT ) % TotalTime % Initialize &
                ( 's', CO % Incoming % Value ( iT ) )
-        call MaxTimer ( iT ) % ShowTotal ( Ignorability )
+        call MaxTimer ( iT ) % ShowTotal ( Ignorability + 1 )
         if ( present ( MaxTimeOption ) ) &
           MaxTimeOption ( iT ) = MaxTimer ( iT ) % TotalTime
       end do !-- iT
@@ -960,12 +989,12 @@ contains
           MinTimeOption ( iT ) = MinTimer ( iT ) % TotalTime
       end do !-- iT
       
-      call Show ( 'Mean timers', Ignorability + 1 )
+      call Show ( 'Mean timers', Ignorability )
       call CO % Reduce ( REDUCTION % SUM )
       do iT = 1, PH % nTimers
         call MeanTimer ( iT ) % TotalTime % Initialize &
                ( 's', CO % Incoming % Value ( iT ) / CommunicatorOption % Size )
-        call MeanTimer ( iT ) % ShowTotal ( Ignorability + 1 )
+        call MeanTimer ( iT ) % ShowTotal ( Ignorability )
         if ( present ( MeanTimeOption ) ) &
           MeanTimeOption ( iT ) = MeanTimer ( iT ) % TotalTime
       end do !-- iT

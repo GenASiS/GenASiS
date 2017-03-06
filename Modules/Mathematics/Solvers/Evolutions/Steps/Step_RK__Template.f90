@@ -15,9 +15,9 @@ module Step_RK__Template
   type, public, abstract :: Step_RK_Template
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
-      iTimerComputeStep = 0, &
-      iTimerAllocateStep = 0, &
-      iTimerComputeStage = 0, &
+      ! iTimerComputeStep = 0, &
+      ! iTimerAllocateStep = 0, &
+      ! iTimerComputeStage = 0, &
       nStages
     real ( KDR ), dimension ( : ), allocatable :: &
       C, & 
@@ -135,12 +135,12 @@ contains
 
     end associate !-- nS
 
-    call PROGRAM_HEADER % AddTimer &
-           ( 'ComputeStep', S % iTimerComputeStep )
-    call PROGRAM_HEADER % AddTimer &
-           ( 'AllocateStep', S % iTimerAllocateStep )
-    call PROGRAM_HEADER % AddTimer &
-           ( 'ComputeStage', S % iTimerComputeStage )
+    ! call PROGRAM_HEADER % AddTimer &
+    !        ( 'ComputeStep', S % iTimerComputeStep )
+    ! call PROGRAM_HEADER % AddTimer &
+    !        ( 'AllocateStep', S % iTimerAllocateStep )
+    ! call PROGRAM_HEADER % AddTimer &
+    !        ( 'ComputeStage', S % iTimerComputeStage )
 
   end subroutine InitializeTemplate
 

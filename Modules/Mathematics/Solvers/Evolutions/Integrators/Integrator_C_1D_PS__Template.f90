@@ -119,8 +119,8 @@ contains
     if ( .not. allocated ( I % Current_ASC_1D ) ) &
       return
 
-    associate ( Timer => PROGRAM_HEADER % Timer ( I % iTimerComputeTally ) )
-    call Timer % Start ( )
+!    associate ( Timer => PROGRAM_HEADER % Timer ( I % iTimerComputeTally ) )
+!    call Timer % Start ( )
 
     do iC = 1, I % N_CURRENTS_PS
       associate ( CA => I % Current_ASC_1D ( iC ) % Element )
@@ -130,8 +130,8 @@ contains
       end associate !-- CA
     end do !-- iC
 
-    call Timer % Stop ( )
-    end associate !-- Timer
+!    call Timer % Stop ( )
+!    end associate !-- Timer
 
   end subroutine ComputeTally
 
