@@ -601,7 +601,7 @@ contains
     class is ( Chart_SL_Template )
 
       call S % AllocateBoundaryFluence &
-             ( Chart, S % Current % N_CONSERVED, S % BoundaryFluence_CSL )
+             ( S % BoundaryFluence_CSL, Chart, S % Current % N_CONSERVED )
 
       if ( allocated ( S % BoundaryFluence_CSL_S ) ) &
         deallocate ( S % BoundaryFluence_CSL_S )
@@ -610,8 +610,8 @@ contains
       do iS = 1, S % nSections
         Current_S => S % Current_BSLL_ASC_CSLD % CurrentSection ( iS )
         call S % AllocateBoundaryFluence &
-               ( Chart, Current_S % N_CONSERVED, &
-                 S % BoundaryFluence_CSL_S ( iS ) % Array )
+               ( S % BoundaryFluence_CSL_S ( iS ) % Array, &
+                 Chart, Current_S % N_CONSERVED )
       end do !-- iC
 
     class default

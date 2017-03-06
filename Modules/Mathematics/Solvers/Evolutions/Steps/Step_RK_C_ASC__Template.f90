@@ -42,6 +42,8 @@ module Step_RK_C_ASC__Template
         dLogVolumeJacobian_dX
       type ( Real_3D_Form ), dimension ( :, : ), allocatable :: &
         BoundaryFluence_CSL
+      logical ( KDL ) :: &
+        UseLimiter
       type ( VariableGroupForm ), allocatable :: &
         Solution, &
         Y
@@ -75,7 +77,7 @@ module Step_RK_C_ASC__Template
     procedure, public, pass :: &
       InitializeTemplate_C_ASC
     procedure, public, pass :: &
-      AllocateStorage
+      DeallocateStorage
     procedure, private, pass :: &
       Compute_C_ASC
     generic, public :: &
@@ -132,6 +134,10 @@ module Step_RK_C_ASC__Template
       AllocateMetricDerivatives
     procedure, public, pass :: &
       DeallocateMetricDerivatives
+    procedure, public, pass :: &
+      AllocateIncrements_C
+    procedure, public, pass :: &
+      DeallocateIncrements_C
   end type Step_RK_C_ASC_Template
 
   abstract interface 
@@ -169,7 +175,7 @@ module Step_RK_C_ASC__Template
   end interface
 
     private :: &
-      DeallocateStorage, &
+      AllocateStorage, &
       ApplyDivergence_C
 
 contains
@@ -211,31 +217,9 @@ contains
     S % Current_ASC => Current_ASC
     S % Current     => Current_ASC % Current ( )
 
-    call S % AllocateStorage ( )
-
-    !-- IncrementDivergence_C
-
-    allocate ( S % IncrementDivergence_C )
-    associate ( ID => S % IncrementDivergence_C )
-    select type ( Chart => Current_ASC % Atlas_SC % Chart )
-    class is ( Chart_SL_Template )
-      call ID % Initialize &
-             ( Current_ASC % Chart, UseLimiterOption, &
-               BoundaryFluence_CSL_Option = S % BoundaryFluence_CSL, &
-               dLogVolumeJacobian_dX_Option = S % dLogVolumeJacobian_dX )
-    class default
-      call Show ( 'Chart type not found', CONSOLE % ERROR )
-      call Show ( 'Step_RK_C_ASC__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'InitializeTemplate_C_ASC', 'subroutine', CONSOLE % ERROR ) 
-      call PROGRAM_HEADER % Abort ( )
-    end select !-- Chart
-    end associate !-- ID
-
-    !-- IncrementDamping
-    allocate ( S % IncrementDamping )
-    associate ( ID => S % IncrementDamping )
-    call ID % Initialize ( S % Name )
-    end associate !-- ID
+    S % UseLimiter = .true.
+    if ( present ( UseLimiterOption ) ) &
+      S % UseLimiter = UseLimiterOption
 
     call PROGRAM_HEADER % AddTimer &
            ( 'GhostIncrement', S % iTimerGhost )
@@ -243,42 +227,24 @@ contains
   end subroutine InitializeTemplate_C_ASC
 
 
-  subroutine AllocateStorage ( S )
+  subroutine DeallocateStorage ( S )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
-
-    character ( LDL ) :: &
-      CoordinateSystem
 
     associate &
       ( Timer => PROGRAM_HEADER % Timer ( S % iTimerAllocateStep ) )
     call Timer % Start ( )
 
-    call DeallocateStorage ( S )
-
-    call S % Allocate_RK_C ( )
-
-    select type ( Chart => S % Chart )
-    class is ( Chart_SL_Template )
-
-      call S % AllocateBoundaryFluence &
-             ( Chart, S % Current % N_CONSERVED, S % BoundaryFluence_CSL )
-
-    class default
-      call Show ( 'Grid type not recognized', CONSOLE % ERROR )
-      call Show ( 'Step_RK_C_ASC__Template', 'module', CONSOLE % ERROR )
-      call Show ( 'AllocateStorage', 'subroutine', CONSOLE % ERROR ) 
-      call PROGRAM_HEADER % Abort ( )
-    end select !-- Grid
-
-    call S % AllocateMetricDerivatives &
-           ( S % Chart % CoordinateSystem, S % Current % nValues )
+    call S % DeallocateIncrements_C ( )
+    call S % DeallocateBoundaryFluence_CSL ( )
+    call S % DeallocateMetricDerivatives ( )
+    call S % Deallocate_RK_C ( )
 
     call Timer % Stop ( )
     end associate !-- Timer
 
-  end subroutine AllocateStorage
+  end subroutine DeallocateStorage
 
 
 !   subroutine Compute_1D &
@@ -422,6 +388,8 @@ contains
       ( Timer => PROGRAM_HEADER % Timer ( S % iTimerComputeStep ) )
     call Timer % Start ( )
 
+    call AllocateStorage ( S )
+
     if ( allocated ( S % BoundaryFluence_CSL ) ) &
       call S % ClearBoundaryFluence ( S % BoundaryFluence_CSL )
 
@@ -444,11 +412,6 @@ contains
       S
 
     call DeallocateStorage ( S )
-
-    if ( allocated ( S % IncrementDamping ) ) &
-      deallocate ( S % IncrementDamping )
-    if ( allocated ( S % IncrementDivergence_C ) ) &
-      deallocate ( S % IncrementDivergence_C )
 
     nullify ( S % Current )
     nullify ( S % Current_ASC )
@@ -923,6 +886,10 @@ contains
     integer ( KDI ) :: &
       iS  !-- iStage
 
+    if ( allocated ( S % Solution ) .and. allocated ( S % Y ) &
+         .and. allocated ( S % K ) ) &
+      return
+
     allocate ( S % Solution )
     allocate ( S % Y )
     allocate ( S % K ( S % nStages ) )
@@ -957,14 +924,15 @@ contains
   end subroutine Deallocate_RK_C
 
 
-  subroutine AllocateBoundaryFluence_CSL ( CSL, nEquations, BF )
+  subroutine AllocateBoundaryFluence_CSL ( BF, CSL, nEquations )
 
+    type ( Real_3D_Form ), dimension ( :, : ), intent ( inout ), &
+      allocatable :: &
+        BF
     class ( Chart_SL_Template ), intent ( in ) :: &
       CSL
     integer ( KDI ), intent ( in ) :: &
       nEquations
-    type ( Real_3D_Form ), dimension ( :, : ), intent ( out ), allocatable :: &
-      BF
 
     integer ( KDI ) :: &
       iD, jD, kD, &  !-- iDimension
@@ -972,32 +940,35 @@ contains
     integer ( KDI ), dimension ( 3 ) :: &
       nSurface
 
-      associate &
-        ( C => CSL % Atlas % Connectivity, &
-          nDimensions => CSL % nDimensions )
+    if ( allocated ( BF ) ) &
+      return
 
-      allocate ( BF ( nEquations, C % nFaces ) )
+    associate &
+      ( C => CSL % Atlas % Connectivity, &
+        nDimensions => CSL % nDimensions )
 
-      do iD = 1, nDimensions
-        jD = mod ( iD, 3 ) + 1
-        kD = mod ( jD, 3 ) + 1
-        nSurface ( iD ) = 1
-        select type ( CSL )
-        class is ( Chart_SLL_Form )
-          nSurface ( jD ) = CSL % nCells ( jD ) 
-          nSurface ( kD ) = CSL % nCells ( kD )
-        class is ( Chart_SLD_Form )
-          nSurface ( jD ) = CSL % nCellsBrick ( jD ) 
-          nSurface ( kD ) = CSL % nCellsBrick ( kD )
-        end select !-- CSL
-        do iE = 1, nEquations
-          call BF ( iE, C % iaInner ( iD ) ) &
-                 % Initialize ( nSurface, ClearOption = .true. )
-          call BF ( iE, C % iaOuter ( iD ) ) &
-                 % Initialize ( nSurface, ClearOption = .true. )
-        end do !-- iE
-      end do !-- iD
-      end associate !-- C, etc.
+    allocate ( BF ( nEquations, C % nFaces ) )
+
+    do iD = 1, nDimensions
+      jD = mod ( iD, 3 ) + 1
+      kD = mod ( jD, 3 ) + 1
+      nSurface ( iD ) = 1
+      select type ( CSL )
+      class is ( Chart_SLL_Form )
+        nSurface ( jD ) = CSL % nCells ( jD ) 
+        nSurface ( kD ) = CSL % nCells ( kD )
+      class is ( Chart_SLD_Form )
+        nSurface ( jD ) = CSL % nCellsBrick ( jD ) 
+        nSurface ( kD ) = CSL % nCellsBrick ( kD )
+      end select !-- CSL
+      do iE = 1, nEquations
+        call BF ( iE, C % iaInner ( iD ) ) &
+               % Initialize ( nSurface, ClearOption = .true. )
+        call BF ( iE, C % iaOuter ( iD ) ) &
+               % Initialize ( nSurface, ClearOption = .true. )
+      end do !-- iE
+    end do !-- iD
+    end associate !-- C, etc.
 
   end subroutine AllocateBoundaryFluence_CSL
 
@@ -1040,6 +1011,9 @@ contains
     integer ( KDI ), intent ( in ) :: &
       nValues
 
+    if ( allocated ( S % dLogVolumeJacobian_dX ) ) &
+      return
+
     if ( ( trim ( CoordinateSystem ) == 'SPHERICAL' &
            .or. trim ( CoordinateSystem ) == 'CYLINDRICAL' ) ) &
     then
@@ -1062,23 +1036,89 @@ contains
   end subroutine DeallocateMetricDerivatives
 
 
-  subroutine DeallocateStorage ( S )
+  subroutine AllocateIncrements_C ( S )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
+
+    if ( allocated ( S % IncrementDivergence_C ) &
+         .and. allocated ( S % IncrementDamping ) ) &
+      return
+
+    !-- IncrementDivergence_C
+
+    allocate ( S % IncrementDivergence_C )
+    associate ( ID => S % IncrementDivergence_C )
+    select type ( Chart => S % Chart )
+    class is ( Chart_SL_Template )
+      call ID % Initialize &
+             ( S % Current_ASC % Chart, S % UseLimiter, &
+               BoundaryFluence_CSL_Option = S % BoundaryFluence_CSL, &
+               dLogVolumeJacobian_dX_Option = S % dLogVolumeJacobian_dX )
+    class default
+      call Show ( 'Chart type not found', CONSOLE % ERROR )
+      call Show ( 'Step_RK_C_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'InitializeTemplate_C_ASC', 'subroutine', CONSOLE % ERROR ) 
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- Chart
+    end associate !-- ID
+
+    !-- IncrementDamping
+    allocate ( S % IncrementDamping )
+    associate ( ID => S % IncrementDamping )
+    call ID % Initialize ( S % Name )
+    end associate !-- ID
+
+  end subroutine AllocateIncrements_C
+
+
+  subroutine DeallocateIncrements_C ( S )
+
+    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
+      S
+
+    if ( allocated ( S % IncrementDamping ) ) &
+      deallocate ( S % IncrementDamping )
+    if ( allocated ( S % IncrementDivergence_C ) ) &
+      deallocate ( S % IncrementDivergence_C )
+
+  end subroutine DeallocateIncrements_C
+
+
+  subroutine AllocateStorage ( S )
+
+    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
+      S
+
+    character ( LDL ) :: &
+      CoordinateSystem
 
     associate &
       ( Timer => PROGRAM_HEADER % Timer ( S % iTimerAllocateStep ) )
     call Timer % Start ( )
 
-    call S % DeallocateBoundaryFluence_CSL ( )
-    call S % DeallocateMetricDerivatives ( )
-    call S % Deallocate_RK_C ( )
+    call S % Allocate_RK_C ( )
+
+    select type ( Chart => S % Chart )
+    class is ( Chart_SL_Template )
+      call S % AllocateBoundaryFluence &
+             ( S % BoundaryFluence_CSL, Chart, S % Current % N_CONSERVED )
+    class default
+      call Show ( 'Grid type not recognized', CONSOLE % ERROR )
+      call Show ( 'Step_RK_C_ASC__Template', 'module', CONSOLE % ERROR )
+      call Show ( 'AllocateStorage', 'subroutine', CONSOLE % ERROR ) 
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- Grid
+
+    call S % AllocateMetricDerivatives &
+           ( S % Chart % CoordinateSystem, S % Current % nValues )
+
+    call S % AllocateIncrements_C ( )
 
     call Timer % Stop ( )
     end associate !-- Timer
 
-  end subroutine DeallocateStorage
+  end subroutine AllocateStorage
 
 
   subroutine ApplyDivergence_C ( S, ID, Increment, TimeStep, iStage )

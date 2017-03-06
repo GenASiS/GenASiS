@@ -430,8 +430,8 @@ contains
 
       do iC = 1, S % nCurrents
         call S % AllocateBoundaryFluence &
-               ( Chart, S % Current_1D ( iC ) % Pointer % N_CONSERVED, &
-                 S % BoundaryFluence_CSL_1D ( iC ) % Array )
+               ( S % BoundaryFluence_CSL_1D ( iC ) % Array, &
+                 Chart, S % Current_1D ( iC ) % Pointer % N_CONSERVED )
       end do !-- iC
 
     class default
