@@ -95,7 +95,7 @@ module Step_RK_C_ASC__Template
       ComputeStage_C_ASC
     procedure, private, pass :: &
       IncrementSolution
-    procedure, private, nopass :: &
+    procedure, private, pass ( S ) :: &
       LoadSolution_C
     generic, public :: &
       LoadSolution => LoadSolution_C
@@ -396,9 +396,11 @@ contains
       Time, &
       TimeStep
 
-!    associate &
-!      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerComputeStep ) )
-!    call Timer % Start ( )
+    type ( TimerForm ), pointer :: &
+      Timer
+
+    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerComputeStep )
+    if ( associated ( Timer ) ) call Timer % Start ( )
 
     if ( .not. S % Allocated ) &
       call AllocateStorage ( S )
@@ -408,13 +410,13 @@ contains
 
     call S % LoadSolution ( S % Solution, S % Current )
     call S % ComputeTemplate ( Time, TimeStep )
-    call S % StoreSolution ( S % Current, S % Solution )
+    call S % StoreSolution ( S % Current, S % Solution, FinalOption = .true. )
 
     if ( allocated ( S % BoundaryFluence_CSL ) ) &
-      call S % Current_ASC % AccumulateBoundaryTally ( S % BoundaryFluence_CSL )
+      call S % Current_ASC % AccumulateBoundaryTally &
+             ( S % BoundaryFluence_CSL )
 
-!    call Timer % Stop ( )
-!    end associate !-- Timer
+    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine Compute_C_ASC
 
@@ -444,7 +446,15 @@ contains
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
 
+    type ( TimerForm ), pointer :: &
+      Timer
+
+    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerInitializeIntermediate )
+    if ( associated ( Timer ) ) call Timer % Start ( )
+
     call S % InitializeIntermediate_C ( )
+
+    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine InitializeIntermediate
 
@@ -458,7 +468,15 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iK
 
+    type ( TimerForm ), pointer :: &
+      Timer
+
+    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerIncrementIntermediate )
+    if ( associated ( Timer ) ) call Timer % Start ( )
+
     call S % IncrementIntermediate_C  ( A, iK )
+
+    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine IncrementIntermediate
 
@@ -473,14 +491,15 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iStage
 
-!    associate &
-!      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerComputeStage ) )
-!    call Timer % Start ( )
+    type ( TimerForm ), pointer :: &
+      Timer
+
+    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerComputeStage )
+    if ( associated ( Timer ) ) call Timer % Start ( )
 
     call S % ComputeStage_C_ASC ( TimeStep, iStage )
 
-!    call Timer % Stop ( )
-!    end associate !-- Timer
+    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine ComputeStage
 
@@ -530,20 +549,35 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iS
 
+    type ( TimerForm ), pointer :: &
+      Timer
+
+    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerIncrementSolution )
+    if ( associated ( Timer ) ) call Timer % Start ( )
+
     call S % IncrementSolution_C ( B, iS )
+
+    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine IncrementSolution
 
 
-  subroutine LoadSolution_C ( Solution, Current )
+  subroutine LoadSolution_C ( Solution, S, Current )
 
     type ( VariableGroupForm ), intent ( inout ) :: &
       Solution
+    class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
+      S
     class ( CurrentTemplate ), intent ( in ) :: &
       Current
 
     integer ( KDI ) :: &
       iF  !-- iField
+    type ( TimerForm ), pointer :: &
+      Timer
+
+    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerLoadSolutionInitial )
+    if ( associated ( Timer ) ) call Timer % Start ( )
 
     associate ( iaC => Current % iaConserved )
     do iF = 1, Current % N_CONSERVED
@@ -555,10 +589,12 @@ contains
     end do !-- iF
     end associate !-- iaC
 
+    if ( associated ( Timer ) ) call Timer % Stop ( )
+
   end subroutine LoadSolution_C
 
 
-  subroutine StoreSolution_C ( Current, S, Solution )
+  subroutine StoreSolution_C ( Current, S, Solution, FinalOption )
 
     class ( CurrentTemplate ), intent ( inout ) :: &
       Current
@@ -566,11 +602,23 @@ contains
       S
     type ( VariableGroupForm ), intent ( in ) :: &
       Solution
+    logical ( KDL ), intent ( in ), optional :: &
+      FinalOption
 
     integer ( KDI ) :: &
       iF  !-- iField
     class ( GeometryFlatForm ), pointer :: &
       G
+    type ( TimerForm ), pointer :: &
+      Timer
+
+    Timer => null ( )
+    if ( present ( FinalOption ) ) then
+      if ( FinalOption ) &
+        Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerStoreSolutionFinal )
+    end if
+
+    if ( associated ( Timer ) ) call Timer % Start ( )
 
     associate ( iaC => Current % iaConserved )
     do iF = 1, Current % N_CONSERVED
@@ -595,6 +643,8 @@ contains
 
     nullify ( G )
     
+    if ( associated ( Timer ) ) call Timer % Stop ( )
+
   end subroutine StoreSolution_C
 
 

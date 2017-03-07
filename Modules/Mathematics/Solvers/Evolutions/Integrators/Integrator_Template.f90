@@ -4,6 +4,7 @@ module Integrator_Template
 
   use Basics
   use Manifolds
+  use Steps
 
   implicit none
   private
@@ -48,6 +49,8 @@ module Integrator_Template
       Geometry_ASC
     class ( BundleHeaderForm ), allocatable :: &
       MomentumSpace
+    class ( Step_RK_Template ), allocatable :: &
+      Step
     procedure ( SR ), pointer :: &
       SetReference => null ( )
   contains
@@ -229,6 +232,13 @@ contains
     end if
     I % nTimeStepCandidates = size ( I % TimeStepLabel )
 
+    if ( .not. allocated ( I % Step ) ) then
+      call Show ( 'Step must be allocated by an extension', &
+                  CONSOLE % WARNING )
+      call Show ( 'Integrator_Template', 'module', CONSOLE % WARNING )
+      call Show ( 'InitializeTemplate', 'subroutine', CONSOLE % WARNING )
+    end if
+
   end subroutine InitializeTemplate
 
 
@@ -275,6 +285,8 @@ contains
     class ( IntegratorTemplate ), intent ( inout ) :: &
       I
 
+    if ( allocated ( I % Step ) ) &
+      deallocate ( I % Step )
     if ( allocated ( I % MomentumSpace ) ) &
       deallocate ( I % MomentumSpace ) 
     if ( allocated ( I % Geometry_ASC ) ) &
@@ -372,6 +384,7 @@ contains
     call PROGRAM_HEADER % AddTimer &
            ( 'ComputeNewTime', I % iTimerComputeNewTime, &
              Level = BaseLevel + 2 )
+    call I % Step % InitializeTimers ( BaseLevel + 2 )
 
     call PROGRAM_HEADER % AddTimer &
            ( 'AdministerCheckpoint', I % iTimerAdministerCheckpoint, &

@@ -21,8 +21,6 @@ module Integrator_C_PS__Template
         CourantFactor
       class ( Current_ASC_Template ), allocatable :: &
         Current_ASC
-      class ( Step_RK_Template ), allocatable :: &
-        Step
       class ( TimeSeries_C_Form ), allocatable :: &
         TimeSeries
   contains
@@ -81,13 +79,6 @@ contains
       call Show ( 'InitializeTemplate_C_PS', 'subroutine', CONSOLE % WARNING )
     end if
 
-    if ( .not. allocated ( I % Step ) ) then
-      call Show ( 'Step must be allocated by an extension', &
-                  CONSOLE % WARNING )
-      call Show ( 'Integrator_C_PS__Template', 'module', CONSOLE % WARNING )
-      call Show ( 'InitializeTemplate_C_PS', 'subroutine', CONSOLE % WARNING )
-    end if
-
     I % CourantFactor = 0.7
     call PROGRAM_HEADER % GetParameter &
            ( I % CourantFactor, 'CourantFactor' )
@@ -117,8 +108,6 @@ contains
 
    if ( allocated ( I % TimeSeries ) ) &
      deallocate ( I % TimeSeries )
-   if ( allocated ( I % Step ) ) &
-     deallocate ( I % Step )
    if ( allocated ( I % Current_ASC ) ) &
      deallocate ( I % Current_ASC )
 

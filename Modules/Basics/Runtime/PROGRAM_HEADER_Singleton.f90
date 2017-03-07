@@ -927,6 +927,8 @@ contains
       
     integer ( KDI ) :: &
       iT
+    real ( KDR ) :: &
+      ExecutionTime
     logical ( KDL ), dimension ( MAX_TIMERS ) :: &
       Running
     type ( CollectiveOperation_R_Form ) :: &
@@ -994,7 +996,13 @@ contains
       do iT = 1, PH % nTimers
         call MeanTimer ( iT ) % TotalTime % Initialize &
                ( 's', CO % Incoming % Value ( iT ) / CommunicatorOption % Size )
-        call MeanTimer ( iT ) % ShowTotal ( Ignorability )
+        if ( iT == 1 ) &
+          ExecutionTime = MeanTimer ( iT ) % TotalTime
+        if ( MeanTimer ( iT ) % TotalTime / ExecutionTime >= 0.3_KDR ) then
+          call MeanTimer ( iT ) % ShowTotal ( Ignorability )
+        else
+          call MeanTimer ( iT ) % ShowTotal ( Ignorability + 1 )
+        end if
         if ( present ( MeanTimeOption ) ) &
           MeanTimeOption ( iT ) = MeanTimer ( iT ) % TotalTime
       end do !-- iT
