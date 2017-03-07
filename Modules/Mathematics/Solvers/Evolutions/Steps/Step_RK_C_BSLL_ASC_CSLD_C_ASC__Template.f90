@@ -646,7 +646,7 @@ contains
     !-- BoundaryFluence not deallocated here, but instead upon reallocation,
     !   so that its values remain available after Step % Compute
 
-    call S % DeallocateMetricDerivatives ( )
+    call S % DeallocateMetricDerivatives ( S % IncrementDivergence_C )
     call S % Deallocate_RK_C_BSLL_ASC_CSLD ( )
     call S % Deallocate_RK_C ( )
 

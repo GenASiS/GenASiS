@@ -58,6 +58,8 @@ module Step_RK_C_ASC__Template
         Current => null ( )
       class ( Current_ASC_Template ), pointer :: &
         Current_ASC => null ( )
+      type ( StorageDivergenceForm ), allocatable :: &
+        StorageDivergence
       type ( IncrementDivergence_FV_Form ), allocatable :: &
         IncrementDivergence_C
       type ( IncrementDampingForm ), allocatable :: &
@@ -121,6 +123,10 @@ module Step_RK_C_ASC__Template
       Allocate_RK_C
     procedure, public, pass :: &
       Deallocate_RK_C
+    procedure, public, pass :: &
+      AllocateStorageDivergence
+    procedure, public, pass :: &
+      DeallocateStorageDivergence
     procedure, private, nopass :: &
       AllocateBoundaryFluence_CSL
     generic, public :: &
@@ -129,7 +135,7 @@ module Step_RK_C_ASC__Template
       ClearBoundaryFluence_CSL
     generic, public :: &
       ClearBoundaryFluence => ClearBoundaryFluence_CSL
-    procedure, public, pass :: &
+    procedure, public, nopass :: &
       DeallocateBoundaryFluence_CSL
     procedure, public, pass :: &
       AllocateMetricDerivatives
@@ -242,19 +248,14 @@ contains
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
 
-!    associate &
-!      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerAllocateStep ) )
-!    call Timer % Start ( )
-
     S % Allocated = .false.
 
-    call S % IncrementDivergence_C % DeallocateStorage ( )
-    call S % DeallocateBoundaryFluence_CSL ( )
-    call S % DeallocateMetricDerivatives ( )
+    associate ( ID => S % IncrementDivergence_C )
+    call S % DeallocateStorageDivergence  ( ID )
+    call S % DeallocateBoundaryFluence_CSL ( ID, S % BoundaryFluence_CSL )
+    call S % DeallocateMetricDerivatives ( ID )
     call S % Deallocate_RK_C ( )
-
-!    call Timer % Stop ( )
-!    end associate !-- Timer
+    end associate !-- ID
 
   end subroutine DeallocateStorage
 
@@ -988,6 +989,44 @@ contains
   end subroutine Deallocate_RK_C
 
 
+  subroutine AllocateStorageDivergence &
+               ( S, ID, nCurrent, nConserved, nPrimitive, nGeometry, nValues )
+
+    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
+      S
+    class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
+      ID    
+    integer ( KDI ), intent ( in ) :: &
+      nCurrent, &
+      nConserved, &
+      nPrimitive, &
+      nGeometry, &
+      nValues
+
+    allocate ( S % StorageDivergence )
+    call S % StorageDivergence % Initialize &
+           ( nCurrent, nConserved, nPrimitive, ID % N_MODIFIED_SPEEDS, &
+             nGeometry, nValues )
+    call ID % SetStorage ( S % StorageDivergence )
+
+  end subroutine AllocateStorageDivergence
+
+
+  subroutine DeallocateStorageDivergence ( S, ID )
+
+    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
+      S
+    class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
+      ID
+
+    call ID % ClearStorage ( )
+
+    if ( allocated ( S % StorageDivergence ) ) &
+      deallocate ( S % StorageDivergence )
+
+  end subroutine DeallocateStorageDivergence
+
+
   subroutine AllocateBoundaryFluence_CSL &
                ( IncrementDivergence, CSL, nEquations, BF )
 
@@ -1057,15 +1096,18 @@ contains
   end subroutine ClearBoundaryFluence_CSL
 
 
-  subroutine DeallocateBoundaryFluence_CSL ( S )
+  subroutine DeallocateBoundaryFluence_CSL ( ID, BF )
 
-    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
-      S
+    class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
+      ID
+    type ( Real_3D_Form ), dimension ( :, : ), intent ( inout ), &
+      allocatable :: &
+        BF
+ 
+    call ID % ClearBoundaryFluence ( )
 
-    call S % IncrementDivergence_C % ClearBoundaryFluence ( )
-
-    if ( allocated ( S % BoundaryFluence_CSL ) ) &
-      deallocate ( S % BoundaryFluence_CSL )
+    if ( allocated ( BF ) ) &
+      deallocate ( BF )
     
   end subroutine DeallocateBoundaryFluence_CSL
 
@@ -1091,12 +1133,14 @@ contains
   end subroutine AllocateMetricDerivatives
 
 
-  subroutine DeallocateMetricDerivatives ( S )
+  subroutine DeallocateMetricDerivatives ( S, ID )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
+    class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
+      ID
 
-    call S % IncrementDivergence_C % ClearMetricDerivatives ( )
+    call ID % ClearMetricDerivatives ( )
 
     if ( allocated ( S % dLogVolumeJacobian_dX ) ) &
       deallocate ( S % dLogVolumeJacobian_dX )
@@ -1111,10 +1155,8 @@ contains
 
     character ( LDL ) :: &
       CoordinateSystem
-
-!    associate &
-!      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerAllocateStep ) )
-!    call Timer % Start ( )
+    class ( GeometryFlatForm ), pointer :: &
+      G
 
     S % Allocated = .true.
 
@@ -1122,20 +1164,30 @@ contains
 
     select type ( Chart => S % Chart )
     class is ( Chart_SL_Template )
+
+      G => Chart % Geometry ( )
+      associate &
+        ( ID => S % IncrementDivergence_C, &
+          C => S % Current )
+
+      call S % AllocateStorageDivergence &
+             ( ID, C % nVariables, C % N_CONSERVED, C % N_PRIMITIVE, &
+               G % nVariables, C % nValues )      
+
       call S % AllocateBoundaryFluence &
-             ( S % IncrementDivergence_C, Chart, S % Current % N_CONSERVED, &
-               S % BoundaryFluence_CSL )
-    call S % AllocateMetricDerivatives &
-           ( S % IncrementDivergence_C, S % Current % nValues )
+             ( ID, Chart, C % N_CONSERVED, S % BoundaryFluence_CSL )
+
+      call S % AllocateMetricDerivatives ( ID, C % nValues )
+
+      end associate !-- ID, etc.
+      nullify ( G )
+
     class default
       call Show ( 'Grid type not recognized', CONSOLE % ERROR )
       call Show ( 'Step_RK_C_ASC__Template', 'module', CONSOLE % ERROR )
       call Show ( 'AllocateStorage', 'subroutine', CONSOLE % ERROR ) 
       call PROGRAM_HEADER % Abort ( )
     end select !-- Grid
-
-!    call Timer % Stop ( )
-!    end associate !-- Timer
 
   end subroutine AllocateStorage
 
