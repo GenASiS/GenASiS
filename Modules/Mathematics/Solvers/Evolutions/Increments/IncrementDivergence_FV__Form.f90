@@ -17,14 +17,10 @@ module IncrementDivergence_FV__Form
   type, public :: IncrementDivergence_FV_Form
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
-!       iTimerIncrementDivergence, &
-!       iTimerReconstruction, &
 !       iTimerReconstruction_G, &
 !       iTimerBoundary, &
 !       iTimerReconstruction_CSL, &
 !       iTimerFromPrimitive, &
-!       iTimerFluxes, &
-!       iTimerIncrement, &
 ! !       iTimerGradient, &
 ! !       iTimerReconstructionKernel, &
       iStream
@@ -151,10 +147,6 @@ contains
       call Show ( I % LimiterParameter, 'LimiterParameter', I % IGNORABILITY )
 
     ! call PROGRAM_HEADER % AddTimer &
-    !        ( 'IncrementDivergence', I % iTimerIncrementDivergence )
-    ! call PROGRAM_HEADER % AddTimer &
-    !        ( '_Reconstruction', I % iTimerReconstruction )
-    ! call PROGRAM_HEADER % AddTimer &
     !        ( '__Reconstruction_G', I % iTimerReconstruction_G )
     ! call PROGRAM_HEADER % AddTimer &
     !        ( '__Boundary', I % iTimerBoundary )
@@ -162,10 +154,6 @@ contains
     !        ( '__Reconstruction_CSL', I % iTimerReconstruction_CSL )
     ! call PROGRAM_HEADER % AddTimer &
     !        ( '__FromPrimitive', I % iTimerFromPrimitive )
-    ! call PROGRAM_HEADER % AddTimer &
-    !        ( '_Fluxes', I % iTimerFluxes )
-    ! call PROGRAM_HEADER % AddTimer &
-    !        ( '_Increment', I % iTimerIncrement )
 
     ! ! call PROGRAM_HEADER % AddTimer &
     ! !        ( 'ComputeReconstruction_CSL', I % iTimerReconstruction_CSL )
@@ -276,10 +264,11 @@ contains
 
     integer ( KDI ) :: &
       iD  !-- iDimension
+    type ( TimerForm ), pointer :: &
+      Timer
 
-!    associate &
-!      ( Timer => PROGRAM_HEADER % Timer ( I % iTimerIncrementDivergence ) )
-!    call Timer % Start ( )
+    Timer => PROGRAM_HEADER % TimerPointer ( I % Storage % iTimerDivergence )
+    if ( associated ( Timer ) ) call Timer % Start ( )
 
     call SetCurrent ( I )
 
@@ -317,8 +306,7 @@ contains
     if ( I % UseIncrementStream ) &
       call Show ( '>>> Leaving Increment % Compute' )
 
-!    call Timer % Stop ( )
-!    end associate !-- Timer
+    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine Compute
 
@@ -502,10 +490,12 @@ contains
       iUU_22, iUU_33
     type ( VariableGroupForm ) :: &
       P
+    type ( TimerForm ), pointer :: &
+      Timer
 
-!    associate &
-!      ( Timer => PROGRAM_HEADER % Timer ( I % iTimerReconstruction ) )
-!    call Timer % Start ( )
+    Timer => PROGRAM_HEADER % TimerPointer &
+               ( I % Storage % iTimerReconstruction )
+    if ( associated ( Timer ) ) call Timer % Start ( )
 
     associate &
       ( C    => I % Current, &
@@ -565,8 +555,7 @@ contains
 
     end associate !-- C, etc.
 
-!    call Timer % Stop ( )
-!    end associate !-- Timer
+    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine ComputeReconstruction
 
@@ -580,10 +569,11 @@ contains
 
     integer ( KDI ) :: &
       iF  !-- iField
+    type ( TimerForm ), pointer :: &
+      Timer
 
-!    associate &
-!      ( Timer => PROGRAM_HEADER % Timer ( I % iTimerFluxes ) )
-!    call Timer % Start ( )
+    Timer => PROGRAM_HEADER % TimerPointer ( I % Storage % iTimerFluxes )
+    if ( associated ( Timer ) ) call Timer % Start ( )
 
     associate &
       ( C    => I % Current, &
@@ -630,8 +620,7 @@ contains
 
     end associate !-- C, etc.
 
-!    call Timer % Stop ( )
-!    end associate !-- Timer
+    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine ComputeFluxes
 
@@ -760,10 +749,11 @@ contains
       VJ_I, &
       VJ, &
       dX
+    type ( TimerForm ), pointer :: &
+      Timer
 
-!    associate &
-!      ( Timer => PROGRAM_HEADER % Timer ( I % iTimerIncrement ) )
-!    call Timer % Start ( )
+    Timer => PROGRAM_HEADER % TimerPointer ( I % Storage % iTimerIncrement )
+    if ( associated ( Timer ) ) call Timer % Start ( )
 
     associate &
       ( C    => I % Current, &
@@ -801,8 +791,7 @@ contains
     end associate !-- C, etc.
     nullify ( dU, F_I, VJ_I, VJ, dX )
 
-!    call Timer % Stop ( )
-!    end associate !-- Timer
+    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine ComputeIncrement_CSL
 

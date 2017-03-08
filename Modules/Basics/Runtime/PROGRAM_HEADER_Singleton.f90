@@ -26,6 +26,8 @@ module PROGRAM_HEADER_Singleton
       MaxThreads = 0, &
       TimerLevel = 0, &
       ExecutionTimeHandle
+    real ( KDR ) :: &
+      TimerDisplayFraction
     character ( LDL ) :: &
       Dimensionality = ''
     character ( LDF ) :: &
@@ -175,9 +177,15 @@ contains
 
     allocate ( PH % Timer ( MAX_TIMERS ) )
     
-    PH % TimerLevel = 3
+    PH % TimerLevel = 8
     call PROGRAM_HEADER % GetParameter ( PH % TimerLevel, 'TimerLevel' )
     call Show ( PH % TimerLevel, 'TimerLevel', CONSOLE % INFO_1 )
+
+    PH % TimerDisplayFraction = 0.1_KDR
+    call PROGRAM_HEADER % GetParameter &
+           ( PH % TimerDisplayFraction, 'TimerDisplayFraction' )
+    call Show ( PH % TimerDisplayFraction, 'TimerDisplayFraction', &
+                CONSOLE % INFO_1 )
 
     call PH % AddTimer &
            ( 'Execution', Level = 0, Handle = PH % ExecutionTimeHandle )
@@ -995,10 +1003,13 @@ contains
       call CO % Reduce ( REDUCTION % SUM )
       do iT = 1, PH % nTimers
         call MeanTimer ( iT ) % TotalTime % Initialize &
-               ( 's', CO % Incoming % Value ( iT ) / CommunicatorOption % Size )
+               ( 's', CO % Incoming % Value ( iT ) &
+                      / CommunicatorOption % Size )
         if ( iT == 1 ) &
           ExecutionTime = MeanTimer ( iT ) % TotalTime
-        if ( MeanTimer ( iT ) % TotalTime / ExecutionTime >= 0.3_KDR ) then
+        if ( MeanTimer ( iT ) % TotalTime / ExecutionTime &
+             >= PH % TimerDisplayFraction ) &
+        then
           call MeanTimer ( iT ) % ShowTotal ( Ignorability )
         else
           call MeanTimer ( iT ) % ShowTotal ( Ignorability + 1 )

@@ -9,6 +9,11 @@ module StorageDivergence_Form
   private
 
   type, public :: StorageDivergenceForm
+    integer ( KDI ) :: &
+      iTimerDivergence     = 0, &
+      iTimerReconstruction = 0, &
+      iTimerFluxes         = 0, &
+      iTimerIncrement      = 0
     type ( VariableGroupForm ), allocatable :: &
       Geometry_I, &              !-- Geometry_Inner
       Current_IL, Current_IR, &  !-- Current_InnerLeft, Current_InnerRight
@@ -20,7 +25,11 @@ module StorageDivergence_Form
       GradientPrimitive
   contains
     procedure, public, pass :: &
-      Initialize
+      InitializeTimers
+    procedure, public, pass :: &
+      Allocate
+    procedure, public, pass :: &
+      Deallocate
     final :: &
       Finalize
   end type StorageDivergenceForm
@@ -28,7 +37,34 @@ module StorageDivergence_Form
 contains
 
 
-  subroutine Initialize &
+  subroutine InitializeTimers ( SD, BaseLevel )
+
+    class ( StorageDivergenceForm ), intent ( inout ) :: &
+      SD
+    integer ( KDI ), intent ( in ) :: &
+      BaseLevel
+
+    if ( SD % iTimerDivergence > 0  &
+         .or.  BaseLevel > PROGRAM_HEADER % TimerLevel ) &
+      return
+
+    call PROGRAM_HEADER % AddTimer &
+           ( 'Divergence', SD % iTimerDivergence, &
+             Level = BaseLevel )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'Reconstruction', SD % iTimerReconstruction, &
+               Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'Fluxes', SD % iTimerFluxes, &
+               Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'Increment', SD % iTimerIncrement, &
+               Level = BaseLevel + 1 )
+
+  end subroutine InitializeTimers
+
+
+  subroutine Allocate &
               ( SD, nCurrent, nConserved, nPrimitive, nModifiedSpeeds, &
                 nGeometry, nValues )
 
@@ -74,12 +110,12 @@ contains
     call SD % GradientPrimitive % Initialize &
            ( 'Primitive', [ nValues, nPrimitive ] )
 
-  end subroutine Initialize
+  end subroutine Allocate
 
 
-  subroutine Finalize ( SD )
+  subroutine Deallocate ( SD )
 
-    type ( StorageDivergenceForm ), intent ( inout ) :: &
+    class ( StorageDivergenceForm ), intent ( inout ) :: &
       SD
 
     if ( allocated ( SD % GradientPrimitive ) ) &
@@ -96,6 +132,16 @@ contains
       deallocate ( SD % Current_IL )
     if ( allocated ( SD % Geometry_I ) ) &
       deallocate ( SD % Geometry_I )
+
+  end subroutine Deallocate
+
+
+  subroutine Finalize ( SD )
+
+    type ( StorageDivergenceForm ), intent ( inout ) :: &
+      SD
+
+    call SD % Deallocate ( )
 
   end subroutine Finalize
 

@@ -35,8 +35,11 @@ module Step_RK_C_ASC__Template
 
   type, public, extends ( Step_RK_Template ), abstract :: &
     Step_RK_C_ASC_Template
-!      integer ( KDI ) :: &
-!        iTimerGhost!, &
+      integer ( KDI ) :: &
+        iTimerLoadInitial       = 0, &
+        iTimerStoreIntermediate = 0, & 
+        iTimerGhost             = 0, &
+        iTimerStoreFinal        = 0!, &
 !         iGeometryValue
       type ( Real_1D_Form ), dimension ( : ), allocatable :: &
         dLogVolumeJacobian_dX
@@ -79,6 +82,8 @@ module Step_RK_C_ASC__Template
   contains
     procedure, public, pass :: &
       InitializeTemplate_C_ASC
+    procedure, public, pass :: &
+      InitializeTimers
     procedure, public, pass :: &
       DeallocateStorage
     procedure, private, pass :: &
@@ -230,6 +235,8 @@ contains
     associate ( ID => S % IncrementDivergence_C )
     call ID % Initialize &
            ( S % Current_ASC % Chart, S % UseLimiter )
+    allocate ( S % StorageDivergence )
+    call ID % SetStorage ( S % StorageDivergence )
     end associate !-- ID
 
     allocate ( S % IncrementDamping )
@@ -237,10 +244,54 @@ contains
     call ID % Initialize ( S % Name )
     end associate !-- ID
 
-!    call PROGRAM_HEADER % AddTimer &
-!           ( 'GhostIncrement', S % iTimerGhost )
-
   end subroutine InitializeTemplate_C_ASC
+
+
+  subroutine InitializeTimers ( S, BaseLevel )
+
+    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
+      S
+    integer ( KDI ), intent ( in ) :: &
+      BaseLevel
+
+    if ( S % iTimerStep > 0  &
+         .or.  BaseLevel > PROGRAM_HEADER % TimerLevel ) &
+      return
+
+    call PROGRAM_HEADER % AddTimer &
+           ( 'Step', S % iTimerStep, &
+             Level = BaseLevel )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'LoadInitial', S % iTimerLoadInitial, &
+             Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'Template', S % iTimerTemplate, &
+               Level = BaseLevel + 1 )
+        call PROGRAM_HEADER % AddTimer &
+               ( 'InitializeIntermediate', S % iTimerInitializeIntermediate, &
+                 Level = BaseLevel + 2 )
+        call PROGRAM_HEADER % AddTimer &
+               ( 'IncrementIntermediate', S % iTimerIncrementIntermediate, &
+                 Level = BaseLevel + 2 )
+        call PROGRAM_HEADER % AddTimer &
+               ( 'Stage', S % iTimerStage, &
+                 Level = BaseLevel + 2 )
+          call PROGRAM_HEADER % AddTimer &
+                 ( 'StoreIntermediate', S % iTimerStoreIntermediate, &
+                   Level = BaseLevel + 3 )
+          call S % StorageDivergence % InitializeTimers &
+                 ( BaseLevel + 3 )
+          call PROGRAM_HEADER % AddTimer &
+                 ( 'GhostIncrement', S % iTimerGhost, &
+                   Level = BaseLevel + 3 )
+        call PROGRAM_HEADER % AddTimer &
+               ( 'IncrementSolution', S % iTimerIncrementSolution, &
+                 Level = BaseLevel + 2 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'StoreFinal', S % iTimerStoreFinal, &
+               Level = BaseLevel + 1 )
+
+  end subroutine InitializeTimers
 
 
   subroutine DeallocateStorage ( S )
@@ -400,7 +451,7 @@ contains
     type ( TimerForm ), pointer :: &
       Timer
 
-    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerComputeStep )
+    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerStep )
     if ( associated ( Timer ) ) call Timer % Start ( )
 
     if ( .not. S % Allocated ) &
@@ -495,7 +546,7 @@ contains
     type ( TimerForm ), pointer :: &
       Timer
 
-    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerComputeStage )
+    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerStage )
     if ( associated ( Timer ) ) call Timer % Start ( )
 
     call S % ComputeStage_C_ASC ( TimeStep, iStage )
@@ -521,7 +572,7 @@ contains
         Y     => S % Y )
 
     if ( iStage > 1 ) &
-      call S % StoreSolution ( C, Y )
+      call S % StoreSolution ( C, Y, IntermediateOption = .true. )
 
     call Clear ( K % Value )
 
@@ -577,7 +628,7 @@ contains
     type ( TimerForm ), pointer :: &
       Timer
 
-    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerLoadSolutionInitial )
+    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerLoadInitial )
     if ( associated ( Timer ) ) call Timer % Start ( )
 
     associate ( iaC => Current % iaConserved )
@@ -595,7 +646,8 @@ contains
   end subroutine LoadSolution_C
 
 
-  subroutine StoreSolution_C ( Current, S, Solution, FinalOption )
+  subroutine StoreSolution_C &
+               ( Current, S, Solution, IntermediateOption, FinalOption )
 
     class ( CurrentTemplate ), intent ( inout ) :: &
       Current
@@ -603,6 +655,8 @@ contains
       S
     type ( VariableGroupForm ), intent ( in ) :: &
       Solution
+    logical ( KDL ), intent ( in ), optional :: &
+      IntermediateOption
     logical ( KDL ), intent ( in ), optional :: &
       FinalOption
 
@@ -616,7 +670,10 @@ contains
     Timer => null ( )
     if ( present ( FinalOption ) ) then
       if ( FinalOption ) &
-        Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerStoreSolutionFinal )
+        Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerStoreFinal )
+    else if ( present ( IntermediateOption ) ) then
+      if ( IntermediateOption ) &
+        Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerStoreIntermediate )
     end if
 
     if ( associated ( Timer ) ) call Timer % Start ( )
@@ -895,6 +952,8 @@ contains
 
     type ( VariableGroupForm ), allocatable :: &
       DC  !-- DampingCoefficient
+    type ( TimerForm ), pointer :: &
+      TimerGhost
 
     !-- Divergence
     if ( associated ( S % ApplyDivergence_C ) ) &
@@ -918,13 +977,12 @@ contains
     if ( associated ( S % ApplyDivergence_C ) ) then
       select type ( Chart )
       class is ( Chart_SLD_Form )
-!        associate ( TimerGhost => PROGRAM_HEADER % Timer ( S % iTimerGhost ) )
-!        call TimerGhost % Start ( )
+        TimerGhost => PROGRAM_HEADER % TimerPointer ( S % iTimerGhost )
+        if ( associated ( TimerGhost ) ) call TimerGhost % Start ( )
         call Chart % ExchangeGhostData ( K )
-!        call TimerGhost % Stop ( )
-!        end associate !-- TimerGhost
+        if ( associated ( TimerGhost ) ) call TimerGhost % Stop ( )
       end select !-- Grid
-    end if !-- ApplyDivergence
+    end if !-- ApplyDivergence_C
 
   end subroutine ComputeStage_C
 
@@ -1003,11 +1061,9 @@ contains
       nGeometry, &
       nValues
 
-    allocate ( S % StorageDivergence )
-    call S % StorageDivergence % Initialize &
+    call S % StorageDivergence % Allocate &
            ( nCurrent, nConserved, nPrimitive, ID % N_MODIFIED_SPEEDS, &
              nGeometry, nValues )
-    call ID % SetStorage ( S % StorageDivergence )
 
   end subroutine AllocateStorageDivergence
 

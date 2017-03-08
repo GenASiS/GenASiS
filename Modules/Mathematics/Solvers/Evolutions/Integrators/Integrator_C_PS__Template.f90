@@ -124,7 +124,7 @@ contains
     type ( TimerForm ), pointer :: &
       Timer
 
-    Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerComputeCycle )
+    Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerCycle )
     if ( associated ( Timer ) ) call Timer % Start ( )
 
     select type ( PS => I % PositionSpace )
@@ -152,7 +152,7 @@ contains
     if ( .not. allocated ( I % Current_ASC ) ) &
       return
 
-    Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerComputeTally )
+    Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerTally )
     if ( associated ( Timer ) ) call Timer % Start ( )
 
     associate ( CA => I % Current_ASC )

@@ -15,14 +15,12 @@ module Step_RK__Template
   type, public, abstract :: Step_RK_Template
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
-      iTimerComputeStep = 0, &
-      iTimerLoadSolutionInitial = 0, &
-      iTimerComputeTemplate = 0, &
+      iTimerStep = 0, &
+      iTimerTemplate = 0, &
       iTimerInitializeIntermediate = 0, &
       iTimerIncrementIntermediate = 0, &
-      iTimerComputeStage = 0, &
+      iTimerStage = 0, &
       iTimerIncrementSolution = 0, &
-      iTimerStoreSolutionFinal = 0, &
       nStages
     real ( KDR ), dimension ( : ), allocatable :: &
       C, & 
@@ -152,37 +150,28 @@ contains
     integer ( KDI ), intent ( in ) :: &
       BaseLevel
 
-    if ( S % iTimerComputeStep > 0  &
+    if ( S % iTimerStep > 0  &
          .or.  BaseLevel > PROGRAM_HEADER % TimerLevel ) &
       return
 
     call PROGRAM_HEADER % AddTimer &
-           ( 'ComputeStep', S % iTimerComputeStep, &
+           ( 'Step', S % iTimerStep, &
              Level = BaseLevel )
-
-    call PROGRAM_HEADER % AddTimer &
-           ( 'LoadSolutionInitial', S % iTimerLoadSolutionInitial, &
-             Level = BaseLevel + 1 )
-
-    call PROGRAM_HEADER % AddTimer &
-           ( 'ComputeTemplate', S % iTimerComputeTemplate, &
-             Level = BaseLevel + 1 )
-    call PROGRAM_HEADER % AddTimer &
-           ( 'InitializeIntermediate', S % iTimerInitializeIntermediate, &
-             Level = BaseLevel + 2 )
-    call PROGRAM_HEADER % AddTimer &
-           ( 'IncrementIntermediate', S % iTimerIncrementIntermediate, &
-             Level = BaseLevel + 2 )
-    call PROGRAM_HEADER % AddTimer &
-           ( 'ComputeStage', S % iTimerComputeStage, &
-             Level = BaseLevel + 2 )
-    call PROGRAM_HEADER % AddTimer &
-           ( 'IncrementSolution', S % iTimerIncrementSolution, &
-             Level = BaseLevel + 2 )
-
-    call PROGRAM_HEADER % AddTimer &
-           ( 'StoreSolutionFinal', S % iTimerStoreSolutionFinal, &
-             Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'ComputeTemplate', S % iTimerTemplate, &
+               Level = BaseLevel + 1 )
+        call PROGRAM_HEADER % AddTimer &
+               ( 'InitializeIntermediate', S % iTimerInitializeIntermediate, &
+                 Level = BaseLevel + 2 )
+        call PROGRAM_HEADER % AddTimer &
+               ( 'IncrementIntermediate', S % iTimerIncrementIntermediate, &
+                 Level = BaseLevel + 2 )
+        call PROGRAM_HEADER % AddTimer &
+               ( 'ComputeStage', S % iTimerStage, &
+                 Level = BaseLevel + 2 )
+        call PROGRAM_HEADER % AddTimer &
+               ( 'IncrementSolution', S % iTimerIncrementSolution, &
+                 Level = BaseLevel + 2 )
 
   end subroutine InitializeTimers
 
@@ -282,7 +271,7 @@ contains
     type ( TimerForm ), pointer :: &
       Timer
 
-    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerComputeTemplate )
+    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerTemplate )
     if ( associated ( Timer ) ) call Timer % Start ( )
 
     !-- On entry, Solution = Y_N (old value)

@@ -13,10 +13,10 @@ module Integrator_Template
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
       iTimerEvolve = 0, &
-      iTimerComputeCycle = 0, &
-      iTimerComputeNewTime = 0, &
-      iTimerAdministerCheckpoint = 0, &
-      iTimerComputeTally = 0, &
+      iTimerCycle = 0, &
+      iTimerNewTime = 0, &
+      iTimerCheckpoint = 0, &
+      iTimerTally = 0, &
       iTimerWrite = 0, &
       iCycle, &
       iCheckpoint, &
@@ -377,24 +377,22 @@ contains
 
     call PROGRAM_HEADER % AddTimer &
            ( 'Evolve', I % iTimerEvolve, Level = BaseLevel )
-
-    call PROGRAM_HEADER % AddTimer &
-           ( 'ComputeCycle', I % iTimerComputeCycle, &
-             Level = BaseLevel + 1 )
-    call PROGRAM_HEADER % AddTimer &
-           ( 'ComputeNewTime', I % iTimerComputeNewTime, &
-             Level = BaseLevel + 2 )
-    call I % Step % InitializeTimers ( BaseLevel + 2 )
-
-    call PROGRAM_HEADER % AddTimer &
-           ( 'AdministerCheckpoint', I % iTimerAdministerCheckpoint, &
-             Level = BaseLevel + 1 )
-    call PROGRAM_HEADER % AddTimer &
-           ( 'ComputeTally', I % iTimerComputeTally, &
-             Level = BaseLevel + 2 )
-    call PROGRAM_HEADER % AddTimer &
-           ( 'Write', I % iTimerWrite, &
-             Level = BaseLevel + 2 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'Cycle', I % iTimerCycle, &
+               Level = BaseLevel + 1 )
+        call PROGRAM_HEADER % AddTimer &
+             ( 'NewTime', I % iTimerNewTime, &
+               Level = BaseLevel + 2 )
+        call I % Step % InitializeTimers ( BaseLevel + 2 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'Checkpoint', I % iTimerCheckpoint, &
+               Level = BaseLevel + 1 )
+        call PROGRAM_HEADER % AddTimer &
+               ( 'Tally', I % iTimerTally, &
+                 Level = BaseLevel + 2 )
+        call PROGRAM_HEADER % AddTimer &
+               ( 'Write', I % iTimerWrite, &
+                 Level = BaseLevel + 2 )
 
   end subroutine InitializeTimers
 
@@ -415,7 +413,7 @@ contains
     type ( TimerForm ), pointer :: &
       Timer
 
-    Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerAdministerCheckpoint )
+    Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerCheckpoint )
     if ( associated ( Timer ) ) call Timer % Start ( )   
 
     TallyIgnorability = I % IGNORABILITY + 2
@@ -586,7 +584,7 @@ contains
     type ( TimerForm ), pointer :: &
       Timer
 
-    Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerComputeNewTime )
+    Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerNewTime )
     if ( associated ( Timer ) ) call Timer % Start ( )
 
 !    call Show ( 'Computing TimeNew', I % IGNORABILITY )
