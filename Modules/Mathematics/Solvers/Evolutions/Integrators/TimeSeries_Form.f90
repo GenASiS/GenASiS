@@ -286,6 +286,7 @@ contains
         CI => TS % CurveImage )
 
     call GIS % Open ( GIS % ACCESS_CREATE, SeriesOption = .false. )
+    call CI % ClearGrid ( )
     call CI % SetGrid  &
            ( Directory = 'TimeSeries', &
              NodeCoordinate = SB % Value ( 1 : TS % iTime, TS % TIME ), &

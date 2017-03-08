@@ -37,7 +37,8 @@ module Step_RK_C_ASC__Template
     Step_RK_C_ASC_Template
       integer ( KDI ) :: &
         iTimerLoadInitial       = 0, &
-        iTimerStoreIntermediate = 0, & 
+        iTimerStoreIntermediate = 0, &
+        iTimerSources           = 0, &
         iTimerGhost             = 0, &
         iTimerStoreFinal        = 0!, &
 !         iGeometryValue
@@ -281,6 +282,9 @@ contains
                    Level = BaseLevel + 3 )
           call S % StorageDivergence % InitializeTimers &
                  ( BaseLevel + 3 )
+          call PROGRAM_HEADER % AddTimer &
+                 ( 'Sources', S % iTimerSources, &
+                   Level = BaseLevel + 3 )
           call PROGRAM_HEADER % AddTimer &
                  ( 'GhostIncrement', S % iTimerGhost, &
                    Level = BaseLevel + 3 )

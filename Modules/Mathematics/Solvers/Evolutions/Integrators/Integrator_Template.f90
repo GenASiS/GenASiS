@@ -22,7 +22,8 @@ module Integrator_Template
       iCheckpoint, &
       nRampCycles, &
       nWrite, &
-      nTimeStepCandidates
+      nTimeStepCandidates, &
+      CheckpointDisplayInterval
     real ( KDR ) :: &
       StartTime, &
       FinishTime, &
@@ -223,6 +224,10 @@ contains
       I % nWrite = nWriteOption
     call PROGRAM_HEADER % GetParameter ( I % nWrite, 'nWrite' )
 
+    I % CheckpointDisplayInterval = 100
+    call PROGRAM_HEADER % GetParameter &
+           ( I % CheckpointDisplayInterval, 'CheckpointDisplayInterval' )
+
     I % NoWrite = .false.
     call PROGRAM_HEADER % GetParameter ( I % NoWrite, 'NoWrite' )
 
@@ -405,7 +410,10 @@ contains
       ComputeChangeOption
 
     integer ( KDI ) :: &
-      TallyIgnorability
+      TallyIgnorability, &
+      StatisticsIgnorability
+    logical ( KDL ) :: &
+      WriteTimeSeries
     real ( KDR ), dimension ( PROGRAM_HEADER % nTimers ) :: &
       MaxTime, &
       MinTime, &
@@ -416,44 +424,50 @@ contains
     Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerCheckpoint )
     if ( associated ( Timer ) ) call Timer % Start ( )   
 
-    TallyIgnorability = I % IGNORABILITY + 2
-
-    I % IsCheckpointTime = .false.
-    if ( I % Time < I % FinishTime ) then
-      if ( I % Time > I % StartTime ) then
-        call Show ( 'Checkpoint reached', I % IGNORABILITY )
-      else
-        TallyIgnorability = CONSOLE % INFO_1
-      end if
-      call I % SetWriteTimeInterval ( )
-      I % WriteTime &
-        = min ( I % Time + I % WriteTimeInterval, I % FinishTime )
-      call Show ( I % WriteTimeInterval, I % TimeUnit, 'WriteTimeInterval', &
-                  I % IGNORABILITY + 1 )
-      call Show ( I % WriteTime, I % TimeUnit, 'Next WriteTime', &
-                  I % IGNORABILITY + 1 )
-    else 
-      call Show ( 'FinishTime reached', I % IGNORABILITY )
-      call I % WriteTimeSeries ( )
-      TallyIgnorability = CONSOLE % INFO_1
-    end if
-
+    call Show ( 'Checkpoint reached', I % IGNORABILITY )
     call Show ( I % iCheckpoint, 'iCheckpoint', I % IGNORABILITY )
     call Show ( I % iCycle, 'iCycle', I % IGNORABILITY )
     call Show ( I % Time, I % TimeUnit, 'Time', I % IGNORABILITY )
 
+    if ( I % Time > I % StartTime .and. I % Time < I % FinishTime &
+         .and. mod ( I % iCheckpoint, I % CheckpointDisplayInterval ) > 0 ) &
+    then
+      TallyIgnorability      = I % IGNORABILITY + 2
+      StatisticsIgnorability = I % IGNORABILITY + 2
+      WriteTimeSeries        = .false.
+    else
+      TallyIgnorability      = CONSOLE % INFO_1
+      StatisticsIgnorability = CONSOLE % INFO_1
+      WriteTimeSeries        = .true.
+    end if
     call I % ComputeTally &
            ( ComputeChangeOption = ComputeChangeOption, &
              IgnorabilityOption  = TallyIgnorability )
+
     if ( associated ( I % SetReference ) ) &
       call I % SetReference ( )
     call I % Write ( )
     call PROGRAM_HEADER % ShowStatistics &
-           ( I % IGNORABILITY + 2, &
+           ( StatisticsIgnorability, &
              CommunicatorOption = PROGRAM_HEADER % Communicator, &
              MaxTimeOption = MaxTime, MinTimeOption = MinTime, &
              MeanTimeOption = MeanTime )
     call I % RecordTimeSeries ( MaxTime, MinTime, MeanTime )
+    if ( WriteTimeSeries ) &
+      call I % WriteTimeSeries ( )
+
+    I % IsCheckpointTime = .false.
+    if ( I % Time < I % FinishTime ) then
+      call I % SetWriteTimeInterval ( )
+      I % WriteTime &
+        = min ( I % Time + I % WriteTimeInterval, I % FinishTime )
+      call Show ( I % WriteTimeInterval, I % TimeUnit, 'WriteTimeInterval', &
+                  I % IGNORABILITY )
+      call Show ( I % WriteTime, I % TimeUnit, 'Next WriteTime', &
+                  I % IGNORABILITY + 1 )
+    else 
+      call Show ( 'FinishTime reached', I % IGNORABILITY )
+    end if
 
     I % iCheckpoint = I % iCheckpoint + 1
 

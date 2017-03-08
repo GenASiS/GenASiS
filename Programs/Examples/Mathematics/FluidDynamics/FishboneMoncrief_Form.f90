@@ -370,6 +370,11 @@ contains
       iEnergy
     class ( GeometryFlatForm ), pointer :: &
       G
+    type ( TimerForm ), pointer :: &
+      Timer
+
+    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerSources )
+    if ( associated ( Timer ) ) call Timer % Start ( )
 
     call ApplySourcesCurvilinear_Fluid_P ( S, Increment, Fluid, TimeStep )
 
@@ -397,6 +402,8 @@ contains
     end select !-- F
 
     nullify ( G )
+
+    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine ApplySources
 

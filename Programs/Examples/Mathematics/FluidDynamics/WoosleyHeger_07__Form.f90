@@ -54,10 +54,12 @@ contains
       Name
 
     integer ( KDI ) :: &
-      nEqual
+      nCellsCore, &
+      nCellsRadius
     integer ( KDI ), dimension ( 3 ) :: &
       nCells
     real ( KDR ) :: &
+      RadiusCore, &
       RadiusMax, &
       CellRatio, &
       FinishTime
@@ -90,9 +92,6 @@ contains
     select type ( PS => WH % PositionSpace )
     class is ( Atlas_SC_Form )
     call PS % Initialize ( 'PositionSpace', PROGRAM_HEADER % Communicator )
-
-    nCells = [ 448, 1, 1 ]
-    call PROGRAM_HEADER % GetParameter ( nCells, 'nCells' )
 
     CoordinateSystem = 'SPHERICAL'
     CoordinateUnit   = [ UNIT % KILOMETER, UNIT % RADIAN, UNIT % RADIAN ]
@@ -132,13 +131,31 @@ contains
     Spacing        =  'EQUAL'
     Spacing ( 1 )  =  'PROPORTIONAL'
     
+    RadiusCore = 24.0_KDR  *  UNIT % KILOMETER
+    call PROGRAM_HEADER % GetParameter ( RadiusCore, 'RadiusCore' )
+
+    nCellsCore = 32  !-- Number of central cells with equal spacing
+    call PROGRAM_HEADER % GetParameter ( nCellsCore, 'nCellsCore' )
+
+    nCellsRadius = 7 * nCellsCore
+    call PROGRAM_HEADER % GetParameter ( nCellsRadius, 'nCellsRadius' )
+
+    call Show ( 'Mesh core parameters' )
+    call Show ( RadiusCore, UNIT % KILOMETER, 'RadiusCore' )
+    call Show ( nCellsCore, 'nCellsCore' )
+    call Show ( RadiusCore / nCellsCore, UNIT % KILOMETER, 'CellWidthCore' )
+
     Ratio        =  0.0_KDR
-    Ratio ( 1 )  =  CONSTANT % PI / 192
+    Ratio ( 1 )  =  CONSTANT % PI / ( 3 * nCellsCore )  !-- dTheta
 
     Scale        =  0.0_KDR
-    Scale ( 1 )  =  24.0_KDR  *  UNIT % KILOMETER
+    Scale ( 1 )  =  RadiusCore
 
-    nEqual = 64
+    nCells = [ nCellsRadius, 1, 1 ]
+    if ( PS % nDimensions > 1 ) &
+      nCells ( 2 ) = 3 * nCellsCore
+    if ( PS % nDimensions > 2 ) &
+      nCells ( 3 ) = 2 * nCells ( 2 )
 
     call PS % CreateChart &
            ( SpacingOption = Spacing, &
@@ -149,7 +166,7 @@ contains
              RatioOption = Ratio, &
              ScaleOption = Scale, &
              nCellsOption = nCells, &
-             nEqualOption = nEqual )
+             nEqualOption = nCellsCore )
 
     !-- Geometry of PositionSpace
 
@@ -404,6 +421,11 @@ contains
       R
     class ( GeometryFlatForm ), pointer :: &
       G
+    type ( TimerForm ), pointer :: &
+      Timer
+
+    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerSources )
+    if ( associated ( Timer ) ) call Timer % Start ( )
 
     call ApplySourcesCurvilinear_Fluid_P ( S, Increment, Fluid, TimeStep )
 
@@ -456,6 +478,8 @@ contains
     end select !-- F
 
     nullify ( KV_M_1, KV_E, D, V_1, R, G )
+
+    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine ApplySources
 

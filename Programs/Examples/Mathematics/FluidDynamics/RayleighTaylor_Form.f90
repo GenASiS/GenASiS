@@ -55,7 +55,7 @@ contains
     call PS % CreateChart &
            ( MinCoordinateOption = [ -0.25_KDR, -0.75_KDR ], &
              MaxCoordinateOption = [ +0.25_KDR, +0.75_KDR ], &
-             nCellsOption = [ 128, 384 ] )
+             nCellsOption = [ 64, 192 ] )
 
     !-- Geometry of PositionSpace
 
@@ -227,6 +227,11 @@ contains
     integer ( KDI ) :: &
       iMomentum_2, &
       iEnergy   
+    type ( TimerForm ), pointer :: &
+      Timer
+
+    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerSources )
+    if ( associated ( Timer ) ) call Timer % Start ( )
 
     select type ( F => Fluid )
     class is ( Fluid_P_P_Form )
@@ -247,7 +252,9 @@ contains
 
     end associate !-- KVM, etc.
     end select !-- F
-    
+
+    if ( associated ( Timer ) ) call Timer % Stop ( )
+
   end subroutine ApplySources
 
   

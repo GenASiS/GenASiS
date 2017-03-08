@@ -505,6 +505,11 @@ contains
     integer ( KDI ) :: &
       iMomentum_1, &
       iMomentum_2
+    type ( TimerForm ), pointer :: &
+      Timer
+
+    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerSources )
+    if ( associated ( Timer ) ) call Timer % Start ( )
 
     select type ( F => Fluid )
     class is ( Fluid_P_Template )
@@ -539,7 +544,9 @@ contains
     end select !-- Grid
 
     end select !-- F
-    
+
+    if ( associated ( Timer ) ) call Timer % Stop ( )
+
   end subroutine ApplySourcesCurvilinear_Fluid_P
 
 
