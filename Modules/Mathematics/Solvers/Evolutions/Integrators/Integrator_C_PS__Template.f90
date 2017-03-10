@@ -85,6 +85,7 @@ contains
 
     call I % InitializeTemplate &
            ( Name, TimeUnitOption, FinishTimeOption, nWriteOption )
+    call Show ( I % CourantFactor, 'CourantFactor', I % IGNORABILITY )
 
     if ( allocated ( I % Current_ASC ) ) then
       allocate ( I % TimeSeries )
