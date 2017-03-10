@@ -6,6 +6,8 @@ module WoosleyHeger_07__Form
   use Fluid_P_MHN__Form
   use Fluid_ASC__Form
   use Tally_F_P__Form
+  use Diagnostics_WH07__Form
+  use Diagnostics_WH07_ASC__Form
 
   implicit none
   private
@@ -43,6 +45,11 @@ module WoosleyHeger_07__Form
       iSPECIFIC_ENERGY_SI   = 4, &
       iELECTRON_FRACTION_SI = 5
 
+    integer ( KDI ), private :: &
+      iStage = 0
+    type ( Diagnostics_WH07_ASC_Form ), dimension ( : ), allocatable :: &
+      Diagnostics_ASC
+
 contains
 
 
@@ -54,6 +61,7 @@ contains
       Name
 
     integer ( KDI ) :: &
+      iS,  & !-- iStage
       nCellsCore, &
       nCellsRadius
     integer ( KDI ), dimension ( 3 ) :: &
@@ -81,6 +89,8 @@ contains
     type ( MeasuredValueForm ), dimension ( 3 ) :: &
       CoordinateUnit, &
       VelocityUnit
+    character ( 1 + 2 ) :: &
+      StageNumber
     character ( LDL ) :: &
       CoordinateSystem
     character ( LDL ), dimension ( 3 ) :: &
@@ -131,13 +141,13 @@ contains
     Spacing        =  'EQUAL'
     Spacing ( 1 )  =  'PROPORTIONAL'
     
-    RadiusCore = 24.0_KDR  *  UNIT % KILOMETER
+    RadiusCore = 12.0_KDR  *  UNIT % KILOMETER
     call PROGRAM_HEADER % GetParameter ( RadiusCore, 'RadiusCore' )
 
     nCellsCore = 32  !-- Number of central cells with equal spacing
     call PROGRAM_HEADER % GetParameter ( nCellsCore, 'nCellsCore' )
 
-    nCellsRadius = 7 * nCellsCore
+    nCellsRadius = 8 * nCellsCore
     call PROGRAM_HEADER % GetParameter ( nCellsRadius, 'nCellsRadius' )
 
     call Show ( 'Mesh core parameters' )
@@ -214,7 +224,16 @@ contains
     class is ( Step_RK2_C_ASC_Form )
     call S % Initialize ( FA, Name )
     S % ApplySources % Pointer => ApplySources
-    end select !-- S
+
+    !-- Diagnostics
+
+    allocate ( Diagnostics_ASC ( S % nStages ) )
+    do iS = 1, S % nStages
+      write ( StageNumber, fmt = '(a1,i2.2)' ) '_', iS
+      associate ( DA => Diagnostics_ASC ( iS ) )
+      call DA % Initialize ( PS, 'Diagnostics' // StageNumber )
+      end associate !-- DA
+    end do !-- iS
 
     !-- Set fluid and initialize Integrator template
 
@@ -227,6 +246,7 @@ contains
 
     !-- Cleanup
 
+    end select !-- S
     end select !-- FA
     end select !-- PS
 
@@ -412,15 +432,26 @@ contains
       iMomentum_1, &
       iEnergy
     real ( KDR ), dimension ( : ), allocatable :: &
-      M
+      M, &
+      Phi
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       KV_M_1, &
       KV_E, &
+      F_G_M, &
+      F_G_Phi, &
+      F_G_Phi_VJ, &
       D, &
       V_1, &
-      R
+      R, &
+      dR, &
+      VJ, &
+      VJ_I
+    type ( VariableGroupForm ) :: &
+      G_I  !-- GeometryInner
     class ( GeometryFlatForm ), pointer :: &
       G
+    class ( Diagnostics_WH07_Form ), pointer :: &
+      D_WH
     type ( TimerForm ), pointer :: &
       Timer
 
@@ -440,28 +471,55 @@ contains
 
     G => Chart % Geometry ( )
 
-    allocate ( M ( 0 : Chart % nCells ( 1 ) ) )  !-- edges
+    allocate ( M   ( 0 : Chart % nCells ( 1 ) ) )  !-- edges
+    allocate ( Phi ( 0 : Chart % nCells ( 1 ) ) )  !-- edges
 
     call ComputeEnclosedMass &
            ( Chart, F % Value ( :, F % CONSERVED_DENSITY ), &
              G % Value ( :, G % VOLUME_JACOBIAN ), &
-             G % VALUE ( :, G % WIDTH ( 1 ) ), &
-             M )
+             G % VALUE ( :, G % CENTER ( 1 ) ), &
+             G % VALUE ( :, G % WIDTH ( 1 ) ), CONSTANT % GRAVITATIONAL, &
+             M, Phi )
 
-    ! call Show ( M, UNIT % SOLAR_MASS, '>>> M' )
+!    call Show ( M, UNIT % SOLAR_MASS, '>>> M' )
+!    call Show ( Phi, UNIT % SPEED_OF_LIGHT ** (-2), '>>> Phi' )
+    
+    call G_I % Initialize ( shape ( G % Value ) )
+    call G % ComputeReconstruction ( G_I, Chart % nDimensions, iDimension = 1 )
+
+    iStage = mod ( iStage, S % nStages ) + 1
+    D_WH => Diagnostics_ASC ( iStage ) % Diagnostics_WH07 ( )
+    associate &
+      ( DV_F_P => D_WH % Value ( :, D_WH % PRESSURE_FORCE ), &
+        DV_F_N => D_WH % Value ( :, D_WH % NET_FORCE ) )
+
+    DV_F_P = Increment % Value ( :, iMomentum_1 ) / TimeStep
 
     call Chart % SetVariablePointer &
            ( Increment % Value ( :, iMomentum_1 ), KV_M_1 )
     call Chart % SetVariablePointer &
            ( Increment % Value ( :, iEnergy ), KV_E )
     call Chart % SetVariablePointer &
+           ( D_WH % Value ( :, D_WH % GRAVITATIONAL_FORCE_M ), F_G_M )
+    call Chart % SetVariablePointer &
+           ( D_WH % Value ( :, D_WH % GRAVITATIONAL_FORCE_PHI ), F_G_PHI )
+    call Chart % SetVariablePointer &
+           ( D_WH % Value ( :, D_WH % GRAVITATIONAL_FORCE_PHI_VJ ), F_G_PHI_VJ )
+    call Chart % SetVariablePointer &
            ( F % Value ( :, F % CONSERVED_DENSITY ), D )
     call Chart % SetVariablePointer &
            ( F % Value ( :, F % VELOCITY_U ( 1 ) ), V_1 )
     call Chart % SetVariablePointer &
            ( G % Value ( :, G % CENTER ( 1 ) ), R )
+    call Chart % SetVariablePointer &
+           ( G % Value ( :, G % WIDTH ( 1 ) ), dR )
+    call Chart % SetVariablePointer &
+           ( G % Value ( :, G % VOLUME_JACOBIAN ), VJ )
+    call Chart % SetVariablePointer &
+           ( G_I % Value ( :, G % VOLUME_JACOBIAN ), VJ_I )
     call ApplySourcesKernel &
-           ( KV_M_1, KV_E, M, D, V_1, R, CONSTANT % GRAVITATIONAL, TimeStep, &
+           ( KV_M_1, KV_E, F_G_M, F_G_Phi, F_G_Phi_VJ, M, Phi, &
+             D, V_1, R, dR, VJ, VJ_I, CONSTANT % GRAVITATIONAL, TimeStep, &
              oV = Chart % nGhostLayers, &
              oVM = ( Chart % iaBrick ( 1 ) - 1 ) * Chart % nCellsBrick ( 1 ) &
                    -  Chart % nGhostLayers ( 1 ) )
@@ -474,10 +532,13 @@ contains
     !          G % Value ( :, G % CENTER ( 1 ) ), &
     !          CONSTANT % GRAVITATIONAL, TimeStep ) 
 
+    DV_F_N = Increment % Value ( :, iMomentum_1 ) / TimeStep
+
+    end associate !-- DV_F_P, etc.
     end select !-- Chart
     end select !-- F
 
-    nullify ( KV_M_1, KV_E, D, V_1, R, G )
+    nullify ( KV_M_1, KV_E, F_G_M, F_G_Phi, F_G_Phi_VJ, D, V_1, R, G, D_WH )
 
     if ( associated ( Timer ) ) call Timer % Stop ( )
 
@@ -634,22 +695,33 @@ contains
   end subroutine PrepareInterpolation
 
 
-  subroutine ComputeEnclosedMass ( C, D, VJ, dR, M )
+  subroutine ComputeEnclosedMass ( C, D, VJ, R, dR, G, M, Phi )
 
     class ( Chart_SLD_Form ), intent ( in ) :: &
       C
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       D, &
       VJ, &
+      R, &
       dR
+    real ( KDR ), intent ( in ) :: &
+      G
     real ( KDR ), dimension ( 0 : ), intent ( out ) :: &
-      M
+      M, &
+      Phi
 
     integer ( KDI ) :: &
       iV
+    real ( KDR ) :: &
+      R_Last
+    real ( KDR ), dimension ( 0 : size ( M ) - 1 ) :: &
+      SHI, &  !-- SolidHarmonicIrregular
+              !-- Enclosed mass M is SolidHarmonicRegular
+      R_I     !-- R_Inner
     real ( KDR ), dimension ( size ( M ( 1 : ) ) ) :: &
       D_Ave, &
-      dV
+      dV, &
+      R_C  !-- R_Center
     type ( CollectiveOperation_R_Form ) :: &
       CO
 
@@ -663,11 +735,21 @@ contains
 
       CO % Outgoing % Value = pack ( D, mask = C % IsProperCell )
       call CO % Gather ( )
-      D_Ave = CO % Incoming % Value
+      D_Ave  =  CO % Incoming % Value
 
       CO % Outgoing % Value = pack ( VJ * dR, mask = C % IsProperCell )
       call CO % Gather ( )
-      dV = CO % Incoming % Value
+      dV  =  CO % Incoming % Value
+
+      CO % Outgoing % Value = pack ( R, mask = C % IsProperCell )
+      call CO % Gather ( )
+      R_C  =  CO % Incoming % Value
+
+      CO % Outgoing % Value = pack ( dR, mask = C % IsProperCell )
+      call CO % Gather ( )
+      R_I    =  R_C  -  0.5_KDR  *  CO % Incoming % Value
+      R_Last =  R_C ( size ( R_C ) )  &
+                +  0.5_KDR  *  CO % Incoming % Value ( size ( R_C ) )
 
     case default
       call Show ( 'Dimensionality not implemented', CONSOLE % ERROR )
@@ -684,21 +766,44 @@ contains
       M ( iV )  =  M ( iV - 1 )  +  D_Ave ( iV ) * dV ( iV )
     end do !-- iV
 
+    SHI ( size ( SHI ) - 1 )  =  0.0_KDR
+!call Show ( size ( SHI ) - 1, '>>> size ( SHI ) - 1' )
+    do iV = size ( SHI ) - 2, 0, -1
+!call Show ( iV, '>>> iV' )
+      SHI ( iV )  =  SHI ( iV + 1 )  &
+                     +  D_Ave ( iV + 1 ) / R_C ( iV + 1 ) * dV ( iV + 1 )  
+    end do !-- iV
+!call Show ( SHI, 'SHI' )
+
+    Phi ( 0 )  =  - SHI ( 0 )
+    do iV  =  1, size ( Phi ) - 2
+      Phi ( iV )  =  - G * ( M ( iV ) / R_I ( iV )  +  SHI ( iV ) )
+    end do !-- iV
+    Phi ( size ( Phi ) - 1 )  =  - G * M ( size ( Phi ) - 1 ) / R_Last  
+
   end subroutine ComputeEnclosedMass
 
 
   subroutine ApplySourcesKernel &
-               ( KV_M_1, KV_E, M, D, V_1, R, G, dT, oV, oVM )
+               ( KV_M_1, KV_E, F_G_M, F_G_Phi, F_G_Phi_VJ, M, Phi, &
+                 D, V_1, R, dR, VJ, VJ_I, G, dT, oV, oVM )
 
     real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
       KV_M_1, &
-      KV_E   
+      KV_E, &   
+      F_G_M, &
+      F_G_Phi, &
+      F_G_Phi_VJ
     real ( KDR ), dimension ( 0 : ), intent ( in ) :: &
-      M
+      M, &
+      Phi
     real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
       D, &
       V_1, &
-      R
+      R, &
+      dR, &
+      VJ, &
+      VJ_I
     real ( KDR ) :: &
       G, &
       dT
@@ -713,9 +818,9 @@ contains
       lV, uV, &
       nV
     real ( KDR ) :: &
-      M_C  !-- M_Center
-    real ( KDR ), dimension ( :, :, : ), allocatable :: &
-      F_1
+      M_C, &  !-- M_Center
+      dPhi, &
+      VJ_Ave
 
     lV = 1
     where ( shape ( D ) > 1 )
@@ -728,7 +833,6 @@ contains
     end where
 
     nV = shape ( D )
-    allocate ( F_1 ( nV ( 1 ), nV ( 2 ), nV ( 3 ) ) )
     
     !$OMP parallel do private ( iV, jV, kV )
     do kV = lV ( 3 ), uV ( 3 ) 
@@ -738,9 +842,24 @@ contains
 ! call Show ( iV, '>>> iV' )
 ! call Show ( oVM + iV - 1, '>>> oVM + iV - 1' )
 ! call Show ( oVM + iV, '>>> oVM + iV' )
+
           M_C  =  0.5_KDR * ( M ( oVM + iV - 1 )  +  M ( oVM + iV ) )
-          F_1 ( iV, jV, kV )  =  - G * M_C * D ( iV, jV, kV )  &
-                                   /  R ( iV, jV, kV ) ** 2
+          F_G_M ( iV, jV, kV )  =  - G * M_C * D ( iV, jV, kV )  &
+                                     /  R ( iV, jV, kV ) ** 2
+
+          dPhi  =  Phi ( oVM + iV )  -  Phi ( oVM + iV - 1 )
+          F_G_Phi ( iV, jV, kV )  =  - D ( iV, jV, kV )  *  dPhi  &
+                                       /  dR ( iV, jV, kV )
+
+          VJ_Ave  =  0.5_KDR * ( VJ_I ( iV, jV, kV ) &
+                                 +  VJ_I ( iV + 1, jV, kV ) )
+          F_G_Phi_VJ ( iV, jV, kV )  &
+            =  F_G_Phi ( iV, jV, kV )  *  VJ_Ave  /  VJ ( iV, jV, kV )
+
+!call Show ( iV, '>>> iV' )
+!call show ( [ F_G_M ( iV, jV, kV ), F_G_Phi ( iV, jV, kV ), &
+!              F_G_Phi_VJ ( iV, jV, kV ) ], &
+!            '>>> F_G_M, F_G_Phi, F_G_Phi_VJ' )
         end do
       end do
     end do
@@ -751,10 +870,10 @@ contains
       do jV = lV ( 2 ), uV ( 2 )
         do iV = lV ( 1 ), uV ( 1 )
           KV_M_1 ( iV, jV, kV )  &
-            =  KV_M_1 ( iV, jV, kV )  +  dT * F_1 ( iV, jV, kV )
+            =  KV_M_1 ( iV, jV, kV )  +  dT * F_G_Phi_VJ ( iV, jV, kV )
           KV_E ( iV, jV, kV )  &
             =  KV_E ( iV, jV, kV )  &
-               +  dT * F_1 ( iV, jV, kV ) * V_1 ( iV, jV, kV ) 
+               +  dT * F_G_Phi_VJ ( iV, jV, kV ) * V_1 ( iV, jV, kV ) 
         end do
       end do
     end do
