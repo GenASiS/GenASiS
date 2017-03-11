@@ -47,6 +47,7 @@ module Fluid_P__Template
     private :: &
       InitializeBasics, &
       SetUnits, &
+      ComputeCenterSpeed, &
       ComputeRawFluxesTemplate_P_Kernel
 
   public :: &
@@ -204,7 +205,7 @@ contains
         F_G     => RawFlux ( oV + 1 : oV + nV, iEnergy ), &
         G       => Value_C ( oV + 1 : oV + nV, C % CONSERVED_ENERGY ), &
         P       => Value_C ( oV + 1 : oV + nV, C % PRESSURE ), &
-        V_Dim   => Value_C ( oV + 1 : oV + nV, C % VELOCITY_U ( iDimension ) ) )
+        V_Dim   => Value_C ( oV + 1 : oV + nV, C % VELOCITY_U ( iDimension ) ))
 
     call ComputeRawFluxesTemplate_P_Kernel ( F_S_Dim, F_G, G, P, V_Dim )
 
@@ -232,6 +233,15 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iDimension
 
+    integer ( KDI ) :: &
+      iV
+    real ( KDR ), dimension ( : ), allocatable, target :: &
+      M_UU_11
+    real ( KDR ), dimension ( : ), pointer :: &
+      M_UU
+    class ( GeometryFlatForm ), pointer :: &
+      G
+
     select type ( I => Increment )
     class is ( IncrementDivergence_FV_Form )
 
@@ -248,6 +258,48 @@ contains
                ( SolverSpeeds_I, DiffusionFactor_I, Grid, C_IL, C_IR, &
                  iDimension )
 
+        select type ( Grid )
+        class is ( Chart_SL_Template )
+          G => Grid % Geometry ( )
+        class default
+          call Show ( 'Grid type not recognized', CONSOLE % ERROR )
+          call Show ( 'Fluid_P__Template', 'module', CONSOLE % ERROR )
+          call Show ( 'ComputeRiemannSolverInput', 'subroutine', &
+                      CONSOLE % ERROR )
+          call PROGRAM_HEADER % Abort ( )
+        end select !-- Grid
+
+        select case ( iDimension )
+        case ( 1 )
+          allocate ( M_UU_11 ( C % nValues ) )
+          !$OMP parallel do private ( iV )
+          do iV = 1, C % nValues
+            M_UU_11 ( iV )  =  1.0_KDR
+          end do !-- iV
+          !$OMP end parallel do
+          M_UU => M_UU_11
+        case ( 2 )
+          M_UU => G % Value ( :, G % METRIC_UU_22 )
+        case ( 3 )
+          M_UU => G % Value ( :, G % METRIC_UU_33 )
+        end select !-- iDimension
+
+        call ComputeCenterSpeed &
+               ( SolverSpeeds_I % Value ( :, C % ALPHA_CENTER ), &
+                 C_IL % Value ( :, C % BARYON_MASS ), &
+                 C_IR % Value ( :, C % BARYON_MASS ), &
+                 C_IL % Value ( :, C % CONSERVED_DENSITY ), &
+                 C_IR % Value ( :, C % CONSERVED_DENSITY ), &
+                 C_IL % Value ( :, C % MOMENTUM_DENSITY_D ( iDimension ) ), &
+                 C_IR % Value ( :, C % MOMENTUM_DENSITY_D ( iDimension ) ), &
+                 C_IL % Value ( :, C % VELOCITY_U ( iDimension ) ), &
+                 C_IR % Value ( :, C % VELOCITY_U ( iDimension ) ), &
+                 C_IL % Value ( :, C % PRESSURE ), &
+                 C_IR % Value ( :, C % PRESSURE ), &
+                 SolverSpeeds_I % Value ( :, C % ALPHA_PLUS ), &
+                 SolverSpeeds_I % Value ( :, C % ALPHA_MINUS ), &
+                 M_UU )
+
       end select !-- RiemannSolverType
 
     class default
@@ -256,6 +308,8 @@ contains
       call Show ( 'ComputeRiemannSolverInput', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- Increment
+
+    nullify ( M_UU, G )
 
   end subroutine ComputeRiemannSolverInput
 
@@ -512,6 +566,55 @@ contains
     VariableUnit ( F % ENTROPY_PER_BARYON ) = UNIT % BOLTZMANN
 
   end subroutine SetUnits
+
+
+  subroutine ComputeCenterSpeed &
+               ( AC_I, M_IL, M_IR, D_IL, D_IR, S_IL, S_IR, V_IL, V_IR, &
+                 P_IL, P_IR, AP_I, AM_I, M_UU )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      AC_I
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      M_IL, M_IR, &
+      D_IL, D_IR, &
+      S_IL, S_IR, &
+      V_IL, V_IR, &
+      P_IL, P_IR, &
+      AP_I, &
+      AM_I, &
+      M_UU
+      
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+    real ( KDR ) :: &
+      AV_IL, AV_IR, &
+      Denominator
+
+    nValues = size ( AC_I )
+
+    !$OMP parallel do private ( iV ) 
+    do iV = 1, nValues
+
+      AV_IL  =  AM_I ( iV )  +  V_IL ( iV )
+      AV_IR  =  AP_I ( iV )  -  V_IR ( iV )
+ 
+      Denominator  =     M_IL ( iV ) * D_IL ( iV ) * AV_IL &
+                      +  M_IR ( iV ) * D_IR ( iV ) * AV_IR
+
+      if ( Denominator /= 0.0_KDR ) then
+        AC_I ( iV )  =  M_UU ( iV ) &
+                        * ( S_IL ( iV ) * AV_IL  +  S_IR ( iV ) * AV_IR  &
+                            +  P_IR ( iV ) - P_IL ( iV ) ) &
+                        / Denominator
+      else
+        AC_I ( iV )  =  0.0_KDR
+      end if
+
+    end do !-- iV
+    !$OMP end parallel do
+
+  end subroutine ComputeCenterSpeed
 
 
   subroutine ComputeRawFluxesTemplate_P_Kernel ( F_S_Dim, F_G, G, P, V_Dim )

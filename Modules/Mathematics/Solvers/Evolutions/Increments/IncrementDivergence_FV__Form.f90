@@ -142,6 +142,8 @@ contains
     I % UseLimiter = .true.
     if ( present ( UseLimiterOption ) ) &
       I % UseLimiter = UseLimiterOption
+    call PROGRAM_HEADER % GetParameter &
+           ( I % UseLimiter, 'UseLimiter' )
 
     I % LimiterParameter = 1.4_KDR
     if ( present ( LimiterParameterOption ) ) &
