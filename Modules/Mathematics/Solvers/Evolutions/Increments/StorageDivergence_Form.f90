@@ -17,7 +17,7 @@ module StorageDivergence_Form
     type ( VariableGroupForm ), allocatable :: &
       Geometry_I, &              !-- Geometry_Inner
       Current_IL, Current_IR, &  !-- Current_InnerLeft, Current_InnerRight
-      ModifiedSpeeds_I, &        !-- ModifiedSpeeds_Inner
+      SolverSpeeds_I, &          !-- SolverSpeeds_Inner
       DiffusionFactor_I, &       !-- DiffusionFactor_Inner
       Flux_IL, Flux_IR, &        !-- Flux_InnerLeft, Flux_InnerRight
       Flux_I                     !-- Flux_Inner
@@ -65,7 +65,7 @@ contains
 
 
   subroutine Allocate &
-              ( SD, nCurrent, nConserved, nPrimitive, nModifiedSpeeds, &
+              ( SD, nCurrent, nConserved, nPrimitive, nSolverSpeeds, &
                 nGeometry, nValues )
 
     class ( StorageDivergenceForm ), intent ( inout ) :: &
@@ -74,7 +74,7 @@ contains
       nCurrent, &
       nConserved, &
       nPrimitive, &
-      nModifiedSpeeds, &
+      nSolverSpeeds, &
       nGeometry, &
       nValues
 
@@ -88,9 +88,9 @@ contains
     call SD % Current_IR % Initialize &
            ( [ nValues, nCurrent ], ClearOption = .true. )
 
-    allocate ( SD % ModifiedSpeeds_I )
-    call SD % ModifiedSpeeds_I % Initialize &
-           ( [ nValues, nModifiedSpeeds ], ClearOption = .true. )
+    allocate ( SD % SolverSpeeds_I )
+    call SD % SolverSpeeds_I % Initialize &
+           ( [ nValues, nSolverSpeeds ], ClearOption = .true. )
 
     allocate ( SD % DiffusionFactor_I )
     call SD % DiffusionFactor_I % Initialize &
@@ -122,8 +122,8 @@ contains
       deallocate ( SD % GradientPrimitive )
     if ( allocated ( SD % DiffusionFactor_I ) ) &
       deallocate ( SD % DiffusionFactor_I )
-    if ( allocated ( SD % ModifiedSpeeds_I ) ) &
-      deallocate ( SD % ModifiedSpeeds_I )
+    if ( allocated ( SD % SolverSpeeds_I ) ) &
+      deallocate ( SD % SolverSpeeds_I )
     if ( allocated ( SD % Flux_I ) ) &
       deallocate ( SD % Flux_I )
     if ( allocated ( SD % Current_IR ) ) &

@@ -25,9 +25,7 @@ module IncrementDivergence_FV__Form
 ! !       iTimerReconstructionKernel, &
       iStream
     integer ( KDI ) :: &
-      ALPHA_PLUS  = 1, &
-      ALPHA_MINUS = 2, &
-      N_MODIFIED_SPEEDS = 2
+      nSolverSpeeds
     real ( KDR ) :: &
       LimiterParameter, &
       Weight_RK = - huge ( 0.0_KDR ) !-- RungeKutta weight
@@ -35,7 +33,8 @@ module IncrementDivergence_FV__Form
       UseLimiter, &
       UseIncrementStream
     character ( LDF ) :: &
-      Name = ''
+      Name = '', &
+      RiemannSolverType = ''
     type ( Real_1D_Form ), dimension ( : ), pointer :: &
       dLogVolumeJacobian_dX => null ( )
     type ( Real_3D_Form ), dimension ( :, : ), pointer :: &
@@ -113,14 +112,20 @@ module IncrementDivergence_FV__Form
 contains
 
 
-  subroutine Initialize ( I, CurrentChart, UseLimiterOption )
+  subroutine Initialize &
+               ( I, CurrentChart, RiemannSolverTypeOption, UseLimiterOption, &
+                 LimiterParameterOption )
 
     class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
       I
     class ( FieldChartTemplate ), intent ( in ), target :: &
       CurrentChart
+    character ( * ), intent ( in ), optional :: &
+      RiemannSolverTypeOption
     logical ( KDL ), intent ( in ), optional :: &
       UseLimiterOption
+    real ( KDR ), intent ( in ), optional :: &
+      LimiterParameterOption
 
     character ( LDF ) :: &
       OutputDirectory
@@ -139,12 +144,28 @@ contains
       I % UseLimiter = UseLimiterOption
 
     I % LimiterParameter = 1.4_KDR
+    if ( present ( LimiterParameterOption ) ) &
+      I % LimiterParameter = LimiterParameterOption
     call PROGRAM_HEADER % GetParameter &
            ( I % LimiterParameter, 'LimiterParameter' )
+
+    I % RiemannSolverType = 'HLL'
+    if ( present ( RiemannSolverTypeOption ) ) &
+      I % RiemannSolverType = RiemannSolverTypeOption
+    call PROGRAM_HEADER % GetParameter &
+           ( I % RiemannSolverType, 'RiemannSolverType' )
+    select case ( trim ( I % RiemannSolverType ) )
+    case ( 'HLL' )
+      I % nSolverSpeeds = 2
+    case ( 'HLLC' )
+      I % nSolverSpeeds = 3
+    end select !-- RiemannSolverType
 
     call Show ( I % UseLimiter, 'UseLimiter', I % IGNORABILITY )
     if ( I % UseLimiter ) &
       call Show ( I % LimiterParameter, 'LimiterParameter', I % IGNORABILITY )
+    
+    call Show ( I % RiemannSolverType, 'RiemannSolverType', I % IGNORABILITY )
 
     ! call PROGRAM_HEADER % AddTimer &
     !        ( '__Reconstruction_G', I % iTimerReconstruction_G )
@@ -584,14 +605,11 @@ contains
         F_IL => I % Storage % Flux_IL, &
         F_IR => I % Storage % Flux_IR, &
         DF_I => I % Storage % DiffusionFactor_I, &
-        MS_I => I % Storage % ModifiedSpeeds_I, &
+        SS_I => I % Storage % SolverSpeeds_I, &
         G_I  => I % Storage % Geometry_I )
 
     call C % ComputeRiemannSolverInput &
-           ( I, DF_I, &
-             MS_I % Value ( :, I % ALPHA_PLUS ), &
-             MS_I % Value ( :, I % ALPHA_MINUS ), &
-             I % Chart, C_IL, C_IR, iDimension )
+           ( I, SS_I, DF_I, I % Chart, C_IL, C_IR, iDimension )
 
     call C % ComputeRawFluxes &
            ( F_IL % Value, G, C_IL % Value, G_I % Value, iDimension )
@@ -605,8 +623,8 @@ contains
                F_IR % Value ( :, iF ), &
                C_IL % Value ( :, iaC ( iF ) ), &
                C_IR % Value ( :, iaC ( iF ) ), &
-               MS_I % Value ( :, I % ALPHA_PLUS ), &
-               MS_I % Value ( :, I % ALPHA_MINUS ), &
+               SS_I % Value ( :, C % ALPHA_PLUS ), &
+               SS_I % Value ( :, C % ALPHA_MINUS ), &
                DF_I % Value ( :, iF ), &
                F_I % Value ( :, iF ) )
     end do !-- iF

@@ -34,6 +34,8 @@ module Fluid_P__Template
       InitializeTemplate_P
     procedure, public, pass ( C ) :: &
       ComputeRawFluxesTemplate_P
+    procedure, public, pass ( C ) :: &
+      ComputeRiemannSolverInput
     procedure, public, nopass :: &
       ComputeConservedEnergyKernel
     procedure, public, nopass :: &
@@ -210,6 +212,53 @@ contains
 
   end subroutine ComputeRawFluxesTemplate_P
   
+
+  subroutine ComputeRiemannSolverInput &
+               ( Increment, SolverSpeeds_I, DiffusionFactor_I, C, Grid, &
+                 C_IL, C_IR, iDimension )
+    
+    class ( * ), intent ( inout ) :: &
+      Increment
+    type ( VariableGroupForm ), intent ( inout ) :: &
+      SolverSpeeds_I, &
+      DiffusionFactor_I
+    class ( Fluid_P_Template ), intent ( in ) :: &
+      C
+    class ( * ), intent ( in ) :: &
+      Grid
+    type ( VariableGroupForm ), intent ( in ) :: &
+      C_IL, &
+      C_IR
+    integer ( KDI ), intent ( in ) :: &
+      iDimension
+
+    select type ( I => Increment )
+    class is ( IncrementDivergence_FV_Form )
+
+      select case ( trim ( I % RiemannSolverType ) )
+      case ( 'HLL' )
+
+        call C % ComputeRiemannSolverInput_HLL &
+               ( SolverSpeeds_I, DiffusionFactor_I, Grid, C_IL, C_IR, &
+                 iDimension )
+
+      case ( 'HLLC' )
+
+        call C % ComputeRiemannSolverInput_HLL &
+               ( SolverSpeeds_I, DiffusionFactor_I, Grid, C_IL, C_IR, &
+                 iDimension )
+
+      end select !-- RiemannSolverType
+
+    class default
+      call Show ( 'Increment type not recognized', CONSOLE % ERROR )
+      call Show ( 'Fluid_P__Template', 'module', CONSOLE % ERROR )
+      call Show ( 'ComputeRiemannSolverInput', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- Increment
+
+  end subroutine ComputeRiemannSolverInput
+
 
   subroutine ComputeConservedEnergyKernel &
                ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )

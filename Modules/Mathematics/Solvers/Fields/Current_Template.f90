@@ -29,6 +29,10 @@ module Current_Template
     integer ( KDI ), dimension ( 3 ) :: &
       FAST_EIGENSPEED_PLUS  = 0, &
       FAST_EIGENSPEED_MINUS = 0
+    integer ( KDI ) :: &  !-- Indices in SolverSpeed storage
+      ALPHA_PLUS   = 1, &
+      ALPHA_MINUS  = 2, &
+      ALPHA_CENTER = 3
     integer ( KDI ), dimension ( : ), allocatable :: &
       iaPrimitive, &
       iaConserved
@@ -61,14 +65,16 @@ module Current_Template
       ComputeRawFluxes
     procedure, public, pass ( C ) :: &
       ComputeRiemannSolverInput
-    procedure, public, pass ( C ) :: &
-      ComputeDiffusionFactor
     procedure, public, pass :: &
       FinalizeTemplate
     procedure ( CFPC ), public, pass ( C ), deferred :: &
       ComputeFromPrimitiveCommon
     procedure ( CFCC ), public, pass ( C ), deferred :: &
       ComputeFromConservedCommon
+    procedure, public, pass ( C ) :: &
+      ComputeRiemannSolverInput_HLL
+    procedure, public, pass ( C ) :: &
+      ComputeDiffusionFactor
     procedure, public, nopass :: &
       SetDiffusionFactorUnity
   end type CurrentTemplate
@@ -140,7 +146,7 @@ module Current_Template
     private :: &
       InitializeBasics, &
       SetUnits, &
-      ComputeRiemannSolverInputKernel
+      ComputeSolverSpeeds_HLL
 
 contains
 
@@ -335,16 +341,14 @@ contains
 
 
   subroutine ComputeRiemannSolverInput &
-               ( Increment, DiffusionFactor_I, AlphaPlus_I, AlphaMinus_I, &
+               ( Increment, SolverSpeeds_I, DiffusionFactor_I, &
                  C, Grid, C_IL, C_IR, iDimension )
     
     class ( * ), intent ( inout ) :: &
       Increment
     type ( VariableGroupForm ), intent ( inout ) :: &
+      SolverSpeeds_I, &
       DiffusionFactor_I
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      AlphaPlus_I, &
-      AlphaMinus_I
     class ( CurrentTemplate ), intent ( in ) :: &
       C
     class ( * ), intent ( in ) :: &
@@ -355,32 +359,10 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iDimension
     
-    call ComputeRiemannSolverInputKernel &
-           ( AlphaPlus_I, AlphaMinus_I, &
-             C_IL % Value ( :, C % FAST_EIGENSPEED_PLUS ( iDimension ) ), &
-             C_IR % Value ( :, C % FAST_EIGENSPEED_PLUS ( iDimension ) ), &
-             C_IL % Value ( :, C % FAST_EIGENSPEED_MINUS ( iDimension ) ), &
-             C_IR % Value ( :, C % FAST_EIGENSPEED_MINUS ( iDimension ) ) )
-
-    call C % ComputeDiffusionFactor ( DiffusionFactor_I, Grid, iDimension )
+    call C % ComputeRiemannSolverInput_HLL &
+           ( SolverSpeeds_I, DiffusionFactor_I, Grid, C_IL, C_IR, iDimension )
 
   end subroutine ComputeRiemannSolverInput
-
-
-  subroutine ComputeDiffusionFactor ( DF_I, Grid, C, iDimension )
-
-    type ( VariableGroupForm ), intent ( inout ) :: &
-      DF_I
-    class ( * ), intent ( in ), target :: &
-      Grid
-    class ( CurrentTemplate ), intent ( in ) :: &
-      C
-    integer ( KDI ), intent ( in ) :: &
-      iDimension
-
-    call C % SetDiffusionFactorUnity ( DF_I % Value )
-
-  end subroutine ComputeDiffusionFactor
 
 
   impure elemental subroutine FinalizeTemplate ( C )
@@ -397,6 +379,52 @@ contains
     call Show ( C % Name, 'Name', C % IGNORABILITY )
    
   end subroutine FinalizeTemplate
+
+
+  subroutine ComputeRiemannSolverInput_HLL &
+               ( SolverSpeeds_I, DiffusionFactor_I, C, Grid, C_IL, C_IR, &
+                 iDimension )
+    
+    type ( VariableGroupForm ), intent ( inout ) :: &
+      SolverSpeeds_I, &
+      DiffusionFactor_I
+    class ( CurrentTemplate ), intent ( in ) :: &
+      C
+    class ( * ), intent ( in ) :: &
+      Grid
+    type ( VariableGroupForm ), intent ( in ) :: &
+      C_IL, &
+      C_IR
+    integer ( KDI ), intent ( in ) :: &
+      iDimension
+    
+    call ComputeSolverSpeeds_HLL &
+           ( SolverSpeeds_I % Value ( :, C % ALPHA_PLUS ), &
+             SolverSpeeds_I % Value ( :, C % ALPHA_MINUS ), &
+             C_IL % Value ( :, C % FAST_EIGENSPEED_PLUS ( iDimension ) ), &
+             C_IR % Value ( :, C % FAST_EIGENSPEED_PLUS ( iDimension ) ), &
+             C_IL % Value ( :, C % FAST_EIGENSPEED_MINUS ( iDimension ) ), &
+             C_IR % Value ( :, C % FAST_EIGENSPEED_MINUS ( iDimension ) ) )
+
+    call C % ComputeDiffusionFactor ( DiffusionFactor_I, Grid, iDimension )
+
+  end subroutine ComputeRiemannSolverInput_HLL
+
+
+  subroutine ComputeDiffusionFactor ( DF_I, Grid, C, iDimension )
+
+    type ( VariableGroupForm ), intent ( inout ) :: &
+      DF_I
+    class ( * ), intent ( in ), target :: &
+      Grid
+    class ( CurrentTemplate ), intent ( in ) :: &
+      C
+    integer ( KDI ), intent ( in ) :: &
+      iDimension
+
+    call C % SetDiffusionFactorUnity ( DF_I % Value )
+
+  end subroutine ComputeDiffusionFactor
 
 
   subroutine SetDiffusionFactorUnity ( DFV_I )
@@ -574,7 +602,7 @@ contains
   end subroutine SetUnits
 
 
-  subroutine ComputeRiemannSolverInputKernel &
+  subroutine ComputeSolverSpeeds_HLL &
                ( AP_I, AM_I, LP_IL, LP_IR, LM_IL, LM_IR )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -597,7 +625,7 @@ contains
     end do !-- iV
     !$OMP end parallel do
 
-  end subroutine ComputeRiemannSolverInputKernel
+  end subroutine ComputeSolverSpeeds_HLL
 
 
 end module Current_Template

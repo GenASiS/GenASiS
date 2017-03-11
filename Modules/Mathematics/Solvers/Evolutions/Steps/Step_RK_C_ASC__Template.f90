@@ -235,7 +235,7 @@ contains
     allocate ( S % IncrementDivergence_C )
     associate ( ID => S % IncrementDivergence_C )
     call ID % Initialize &
-           ( S % Current_ASC % Chart, S % UseLimiter )
+           ( S % Current_ASC % Chart, UseLimiterOption = S % UseLimiter )
     allocate ( S % StorageDivergence )
     call ID % SetStorage ( S % StorageDivergence )
     end associate !-- ID
@@ -1066,7 +1066,7 @@ contains
       nValues
 
     call S % StorageDivergence % Allocate &
-           ( nCurrent, nConserved, nPrimitive, ID % N_MODIFIED_SPEEDS, &
+           ( nCurrent, nConserved, nPrimitive, ID % nSolverSpeeds, &
              nGeometry, nValues )
 
   end subroutine AllocateStorageDivergence
