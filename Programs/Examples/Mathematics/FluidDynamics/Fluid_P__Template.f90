@@ -33,9 +33,9 @@ module Fluid_P__Template
     procedure, public, pass :: &
       InitializeTemplate_P
     procedure, public, pass ( C ) :: &
-      ComputeRawFluxesTemplate_P
+      ComputeFluxes
     procedure, public, pass ( C ) :: &
-      ComputeRiemannSolverInput
+      ComputeRawFluxesTemplate_P
     procedure, public, nopass :: &
       ComputeConservedEnergyKernel
     procedure, public, nopass :: &
@@ -48,6 +48,7 @@ module Fluid_P__Template
       InitializeBasics, &
       SetUnits, &
       ComputeCenterSpeed, &
+      ComputeCenterState, &
       ComputeRawFluxesTemplate_P_Kernel
 
   public :: &
@@ -109,47 +110,144 @@ contains
   end subroutine InitializeTemplate_P
 
 
-  subroutine ComputeFromConservedSelf ( C, G, nValuesOption, oValueOption )
+  ! subroutine ComputeFromConservedSelf ( C, G, nValuesOption, oValueOption )
 
-    !-- FIXME: Intel compiler does not recognize inheritance from Fluid_D in
-    !          extensions of this template
+  !   !-- FIXME: Intel compiler does not recognize inheritance from Fluid_D in
+  !   !          extensions of this template
 
-    class ( Fluid_P_Template ), intent ( inout ) :: &
-      C
-    class ( GeometryFlatForm ), intent ( in ) :: &
-      G
-    integer ( KDI ), intent ( in ), optional :: &
-      nValuesOption, &
-      oValueOption
+  !   class ( Fluid_P_Template ), intent ( inout ) :: &
+  !     C
+  !   class ( GeometryFlatForm ), intent ( in ) :: &
+  !     G
+  !   integer ( KDI ), intent ( in ), optional :: &
+  !     nValuesOption, &
+  !     oValueOption
 
-    call C % ComputeFromConservedCommon &
-           ( C % Value, G, G % Value, nValuesOption, oValueOption )
+  !   call C % ComputeFromConservedCommon &
+  !          ( C % Value, G, G % Value, nValuesOption, oValueOption )
     
-  end subroutine ComputeFromConservedSelf
+  ! end subroutine ComputeFromConservedSelf
 
 
-  subroutine ComputeFromConservedOther &
-               ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
+  ! subroutine ComputeFromConservedOther &
+  !              ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
 
-    !-- FIXME: Intel compiler does not recognize inheritance from Fluid_D in
-    !          extensions of this template
+  !   !-- FIXME: Intel compiler does not recognize inheritance from Fluid_D in
+  !   !          extensions of this template
 
-    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
-      Value_C
+  !   real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+  !     Value_C
+  !   class ( Fluid_P_Template ), intent ( in ) :: &
+  !     C
+  !   class ( GeometryFlatForm ), intent ( in ) :: &
+  !     G
+  !   real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+  !     Value_G
+  !   integer ( KDI ), intent ( in ), optional :: &
+  !     nValuesOption, &
+  !     oValueOption
+
+  !   call C % ComputeFromConservedCommon &
+  !          ( Value_C, G, Value_G, nValuesOption, oValueOption )
+    
+  ! end subroutine ComputeFromConservedOther
+
+
+  subroutine ComputeFluxes &
+               ( Increment, F_I, F_IL, F_IR, SS_I, DF_I, C, Grid, G, &
+                 C_IL, C_IR, G_I, iDimension )
+
+    class ( * ), intent ( inout ) :: &
+      Increment
+    type ( VariableGroupForm ), intent ( inout ) :: &
+      F_I, &
+      F_IL, F_IR, &
+      SS_I, &
+      DF_I
     class ( Fluid_P_Template ), intent ( in ) :: &
       C
+    class ( * ), intent ( in ), target :: &
+      Grid
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_G
-    integer ( KDI ), intent ( in ), optional :: &
-      nValuesOption, &
-      oValueOption
+    type ( VariableGroupForm ), intent ( in ) :: &
+      C_IL, C_IR, &
+      G_I
+    integer ( KDI ), intent ( in ) :: &
+      iDimension
 
-    call C % ComputeFromConservedCommon &
-           ( Value_C, G, Value_G, nValuesOption, oValueOption )
-    
-  end subroutine ComputeFromConservedOther
+    integer ( KDI ) :: &
+      iV, &
+      iDensity, &
+      iMomentum
+    real ( KDR ), dimension ( : ), allocatable, target :: &
+      M_UU_11
+    real ( KDR ), dimension ( : ), pointer :: &
+      M_UU
+
+    select type ( I => Increment )
+    class is ( IncrementDivergence_FV_Form )
+
+      select case ( trim ( I % RiemannSolverType ) )
+      case ( 'HLL' )
+
+        call C % ComputeFluxes_HLL &
+               ( Increment, F_I, F_IL, F_IR, SS_I, DF_I, Grid, G, &
+                 C_IL, C_IR, G_I, iDimension )
+
+      case ( 'HLLC' )
+
+        call C % ComputeFluxes_HLL &
+               ( Increment, F_I, F_IL, F_IR, SS_I, DF_I, Grid, G, &
+                 C_IL, C_IR, G_I, iDimension )
+
+        select case ( iDimension )
+        case ( 1 )
+          allocate ( M_UU_11 ( C % nValues ) )
+          !$OMP parallel do private ( iV )
+          do iV = 1, C % nValues
+            M_UU_11 ( iV )  =  1.0_KDR
+          end do !-- iV
+          !$OMP end parallel do
+          M_UU => M_UU_11
+        case ( 2 )
+          M_UU => G_I % Value ( :, G % METRIC_UU_22 )
+        case ( 3 )
+          M_UU => G_I % Value ( :, G % METRIC_UU_33 )
+        end select !-- iDimension
+
+        call Search &
+               ( C % iaConserved, C % CONSERVED_DENSITY, &
+                 iDensity )
+        call Search &
+               ( C % iaConserved, C % MOMENTUM_DENSITY_D ( iDimension ), &
+                 iMomentum )
+        call ComputeCenterSpeed &
+               ( SS_I % Value ( :, C % ALPHA_CENTER ), &
+                 F_IL % Value ( :, iDensity ), &
+                 F_IR % Value ( :, iDensity ), &
+                 F_IL % Value ( :, iMomentum ), &
+                 F_IR % Value ( :, iMomentum ), &
+                 C_IL % Value ( :, C % CONSERVED_DENSITY ), &
+                 C_IR % Value ( :, C % CONSERVED_DENSITY ), &
+                 C_IL % Value ( :, C % MOMENTUM_DENSITY_D ( iDimension ) ), &
+                 C_IR % Value ( :, C % MOMENTUM_DENSITY_D ( iDimension ) ), &
+                 SS_I % Value ( :, C % ALPHA_PLUS ), &
+                 SS_I % Value ( :, C % ALPHA_MINUS ), &
+                 M_UU )
+
+      end select !-- RiemannSolverType
+
+    class default
+      call Show ( 'Increment type not recognized', CONSOLE % ERROR )
+      call Show ( 'Fluid_P__Template', 'module', CONSOLE % ERROR )
+      call Show ( 'ComputeRiemannSolverInput', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- Increment
+
+    nullify ( M_UU )
+
+  end subroutine ComputeFluxes
 
 
   subroutine ComputeRawFluxesTemplate_P &
@@ -213,106 +311,6 @@ contains
 
   end subroutine ComputeRawFluxesTemplate_P
   
-
-  subroutine ComputeRiemannSolverInput &
-               ( Increment, SolverSpeeds_I, DiffusionFactor_I, C, Grid, &
-                 C_IL, C_IR, iDimension )
-    
-    class ( * ), intent ( inout ) :: &
-      Increment
-    type ( VariableGroupForm ), intent ( inout ) :: &
-      SolverSpeeds_I, &
-      DiffusionFactor_I
-    class ( Fluid_P_Template ), intent ( in ) :: &
-      C
-    class ( * ), intent ( in ) :: &
-      Grid
-    type ( VariableGroupForm ), intent ( in ) :: &
-      C_IL, &
-      C_IR
-    integer ( KDI ), intent ( in ) :: &
-      iDimension
-
-    integer ( KDI ) :: &
-      iV
-    real ( KDR ), dimension ( : ), allocatable, target :: &
-      M_UU_11
-    real ( KDR ), dimension ( : ), pointer :: &
-      M_UU
-    class ( GeometryFlatForm ), pointer :: &
-      G
-
-    select type ( I => Increment )
-    class is ( IncrementDivergence_FV_Form )
-
-      select case ( trim ( I % RiemannSolverType ) )
-      case ( 'HLL' )
-
-        call C % ComputeRiemannSolverInput_HLL &
-               ( SolverSpeeds_I, DiffusionFactor_I, Grid, C_IL, C_IR, &
-                 iDimension )
-
-      case ( 'HLLC' )
-
-        call C % ComputeRiemannSolverInput_HLL &
-               ( SolverSpeeds_I, DiffusionFactor_I, Grid, C_IL, C_IR, &
-                 iDimension )
-
-        select type ( Grid )
-        class is ( Chart_SL_Template )
-          G => Grid % Geometry ( )
-        class default
-          call Show ( 'Grid type not recognized', CONSOLE % ERROR )
-          call Show ( 'Fluid_P__Template', 'module', CONSOLE % ERROR )
-          call Show ( 'ComputeRiemannSolverInput', 'subroutine', &
-                      CONSOLE % ERROR )
-          call PROGRAM_HEADER % Abort ( )
-        end select !-- Grid
-
-        select case ( iDimension )
-        case ( 1 )
-          allocate ( M_UU_11 ( C % nValues ) )
-          !$OMP parallel do private ( iV )
-          do iV = 1, C % nValues
-            M_UU_11 ( iV )  =  1.0_KDR
-          end do !-- iV
-          !$OMP end parallel do
-          M_UU => M_UU_11
-        case ( 2 )
-          M_UU => G % Value ( :, G % METRIC_UU_22 )
-        case ( 3 )
-          M_UU => G % Value ( :, G % METRIC_UU_33 )
-        end select !-- iDimension
-
-        call ComputeCenterSpeed &
-               ( SolverSpeeds_I % Value ( :, C % ALPHA_CENTER ), &
-                 C_IL % Value ( :, C % BARYON_MASS ), &
-                 C_IR % Value ( :, C % BARYON_MASS ), &
-                 C_IL % Value ( :, C % CONSERVED_DENSITY ), &
-                 C_IR % Value ( :, C % CONSERVED_DENSITY ), &
-                 C_IL % Value ( :, C % MOMENTUM_DENSITY_D ( iDimension ) ), &
-                 C_IR % Value ( :, C % MOMENTUM_DENSITY_D ( iDimension ) ), &
-                 C_IL % Value ( :, C % VELOCITY_U ( iDimension ) ), &
-                 C_IR % Value ( :, C % VELOCITY_U ( iDimension ) ), &
-                 C_IL % Value ( :, C % PRESSURE ), &
-                 C_IR % Value ( :, C % PRESSURE ), &
-                 SolverSpeeds_I % Value ( :, C % ALPHA_PLUS ), &
-                 SolverSpeeds_I % Value ( :, C % ALPHA_MINUS ), &
-                 M_UU )
-
-      end select !-- RiemannSolverType
-
-    class default
-      call Show ( 'Increment type not recognized', CONSOLE % ERROR )
-      call Show ( 'Fluid_P__Template', 'module', CONSOLE % ERROR )
-      call Show ( 'ComputeRiemannSolverInput', 'subroutine', CONSOLE % ERROR )
-      call PROGRAM_HEADER % Abort ( )
-    end select !-- Increment
-
-    nullify ( M_UU, G )
-
-  end subroutine ComputeRiemannSolverInput
-
 
   subroutine ComputeConservedEnergyKernel &
                ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
@@ -569,52 +567,58 @@ contains
 
 
   subroutine ComputeCenterSpeed &
-               ( AC_I, M_IL, M_IR, D_IL, D_IR, S_IL, S_IR, V_IL, V_IR, &
-                 P_IL, P_IR, AP_I, AM_I, M_UU )
+               ( AC_I, F_D_IL, F_D_IR, F_S_IL, F_S_IR, D_IL, D_IR, &
+                 S_IL, S_IR, AP_I, AM_I, M_UU )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       AC_I
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      M_IL, M_IR, &
+      F_D_IL, F_D_IR, &
+      F_S_IL, F_S_IR, &
       D_IL, D_IR, &
       S_IL, S_IR, &
-      V_IL, V_IR, &
-      P_IL, P_IR, &
       AP_I, &
       AM_I, &
       M_UU
-      
+
     integer ( KDI ) :: &
       iV, &
       nValues
-    real ( KDR ) :: &
-      AV_IL, AV_IR, &
-      Denominator
 
     nValues = size ( AC_I )
 
     !$OMP parallel do private ( iV ) 
     do iV = 1, nValues
-
-      AV_IL  =  AM_I ( iV )  +  V_IL ( iV )
-      AV_IR  =  AP_I ( iV )  -  V_IR ( iV )
- 
-      Denominator  =     M_IL ( iV ) * D_IL ( iV ) * AV_IL &
-                      +  M_IR ( iV ) * D_IR ( iV ) * AV_IR
-
-      if ( Denominator /= 0.0_KDR ) then
-        AC_I ( iV )  =  M_UU ( iV ) &
-                        * ( S_IL ( iV ) * AV_IL  +  S_IR ( iV ) * AV_IR  &
-                            +  P_IR ( iV ) - P_IL ( iV ) ) &
-                        / Denominator
-      else
-        AC_I ( iV )  =  0.0_KDR
-      end if
-
+      AC_I ( iV )  &
+        =  M_UU ( iV ) &
+           * ( AP_I ( iV ) * S_IR ( iV )  +  AM_I ( iV ) * S_IL ( iV ) &
+               -  F_S_IR ( iV )  +  F_S_IL ( iV ) ) &
+           / max ( AP_I ( iV ) * D_IR ( iV )  +  AM_I ( iV ) * D_IL ( iV ) &
+                   -  F_D_IR ( iV )  +  F_D_IL ( iV ), &
+                   tiny ( 0.0_KDR ) )
     end do !-- iV
     !$OMP end parallel do
 
   end subroutine ComputeCenterSpeed
+
+
+  subroutine ComputeCenterState &
+               ( V_1_IC, V_2_IC, V_3_IC, V_Dim_IC, D_IC, S_1_IC, S_2_IC, &
+                 S_3_IC, G_IC, P_IC )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      V_1_IC, &
+      V_2_IC, &
+      V_3_IC, &
+      V_Dim_IC, &
+      D_IC, &
+      S_1_IC, &
+      S_2_IC, &
+      S_3_IC, &
+      G_IC, &
+      P_IC
+
+  end subroutine ComputeCenterState
 
 
   subroutine ComputeRawFluxesTemplate_P_Kernel ( F_S_Dim, F_G, G, P, V_Dim )

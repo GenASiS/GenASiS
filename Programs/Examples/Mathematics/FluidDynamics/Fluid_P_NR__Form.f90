@@ -40,8 +40,6 @@ module Fluid_P_NR__Form
       SetFiducialBaryonDensity
     procedure, public, pass :: &
       SetFiducialTemperature
-    procedure, public, pass ( C ) :: &
-      ComputeRawFluxes
     procedure, public, pass :: &
       SetOutput
     procedure, public, pass :: & 
@@ -50,6 +48,8 @@ module Fluid_P_NR__Form
       ComputeFromPrimitiveCommon
     procedure, public, pass ( C ) :: &
       ComputeFromConservedCommon
+    procedure, public, pass ( C ) :: &
+      ComputeRawFluxes
     procedure, public, nopass :: &
       Apply_EOS_NR_T_Kernel
     procedure, public, nopass :: &
@@ -154,32 +154,6 @@ contains
     F % FiducialTemperature = FiducialTemperature
 
   end subroutine SetFiducialTemperature
-
-
-  subroutine ComputeRawFluxes &
-               ( RawFlux, C, G, Value_C, Value_G, iDimension, &
-                 nValuesOption, oValueOption )
-    
-    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
-      RawFlux
-    class ( Fluid_P_NR_Form ), intent ( in ) :: &
-      C
-    class ( GeometryFlatForm ), intent ( in ) :: &
-      G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_C, &
-      Value_G
-    integer ( KDI ), intent ( in ) :: &
-      iDimension
-    integer ( KDI ), intent ( in ), optional :: &
-      nValuesOption, &
-      oValueOption
-
-    call C % ComputeRawFluxesTemplate_P &
-           ( RawFlux, G, Value_C, Value_G, iDimension, nValuesOption, &
-             oValueOption )
-
-  end subroutine ComputeRawFluxes
 
 
   subroutine SetOutput ( F, Output )
@@ -454,6 +428,32 @@ contains
     end associate !-- FV, etc.
     
   end subroutine ComputeFromConservedCommon
+
+
+  subroutine ComputeRawFluxes &
+               ( RawFlux, C, G, Value_C, Value_G, iDimension, &
+                 nValuesOption, oValueOption )
+    
+    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+      RawFlux
+    class ( Fluid_P_NR_Form ), intent ( in ) :: &
+      C
+    class ( GeometryFlatForm ), intent ( in ) :: &
+      G
+    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+      Value_C, &
+      Value_G
+    integer ( KDI ), intent ( in ) :: &
+      iDimension
+    integer ( KDI ), intent ( in ), optional :: &
+      nValuesOption, &
+      oValueOption
+
+    call C % ComputeRawFluxesTemplate_P &
+           ( RawFlux, G, Value_C, Value_G, iDimension, nValuesOption, &
+             oValueOption )
+
+  end subroutine ComputeRawFluxes
 
 
   subroutine Apply_EOS_NR_T_Kernel &

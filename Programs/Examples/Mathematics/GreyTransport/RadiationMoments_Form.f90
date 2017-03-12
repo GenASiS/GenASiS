@@ -37,10 +37,6 @@ module RadiationMoments_Form
       Initialize => InitializeAllocate_RM
     procedure, public, pass :: &
       SetInteractions
-    procedure, public, pass ( C ) :: &
-      ComputeRawFluxes
-    procedure, public, pass ( C ) :: &
-      ComputeDiffusionFactor
     procedure, public, pass :: &
       SetOutput
     final :: &
@@ -49,6 +45,10 @@ module RadiationMoments_Form
       ComputeFromPrimitiveCommon
     procedure, public, pass ( C ) :: &
       ComputeFromConservedCommon
+    procedure, public, pass ( C ) :: &
+      ComputeRawFluxes
+    procedure, public, pass ( C ) :: &
+      ComputeDiffusionFactor_HLL
     procedure, public, pass ( RM ) :: &
       ComputeSpectralParameters      
   end type RadiationMomentsForm
@@ -61,7 +61,7 @@ module RadiationMoments_Form
       ComputeEigenspeeds, &
       ComputeVariableEddingtonFactor, &
       ComputeRawFluxesKernel, &
-      ComputeDiffusionFactor_CSL
+      ComputeDiffusionFactor_HLL_CSL
 
   public :: &
     ApplyRelaxation_Interactions, &
@@ -140,173 +140,6 @@ contains
     RM % Interactions => Interactions
 
   end subroutine SetInteractions
-
-
-  subroutine ComputeRawFluxes &
-               ( RawFlux, C, G, Value_C, Value_G, iDimension, &
-                 nValuesOption, oValueOption )
-    
-    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
-      RawFlux
-    class ( RadiationMomentsForm ), intent ( in ) :: &
-      C
-    class ( GeometryFlatForm ), intent ( in ) :: &
-      G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_C, &
-      Value_G
-    integer ( KDI ), intent ( in ) :: &
-      iDimension
-    integer ( KDI ), intent ( in ), optional :: &
-      nValuesOption, &
-      oValueOption
-
-    integer ( KDI ) :: &
-      iEnergy
-    integer ( KDI ), dimension ( 3 ) :: &
-      iMomentum
-    integer ( KDI ) :: &
-      oV, &  !-- oValue
-      nV     !-- nValues
-      
-    if ( present ( oValueOption ) ) then
-      oV = oValueOption
-    else
-      oV = 0
-    end if
-
-    if ( present ( nValuesOption ) ) then
-      nV = nValuesOption
-    else
-      nV = size ( Value_C, dim = 1 )
-    end if
-    
-    call Search &
-           ( C % iaConserved, C % CONSERVED_ENERGY_DENSITY, iEnergy )
-    call Search &
-           ( C % iaConserved, C % CONSERVED_MOMENTUM_DENSITY_D ( 1 ), &
-             iMomentum ( 1 ) )
-    call Search &
-           ( C % iaConserved, C % CONSERVED_MOMENTUM_DENSITY_D ( 2 ), &
-             iMomentum ( 2 ) )
-    call Search &
-           ( C % iaConserved, C % CONSERVED_MOMENTUM_DENSITY_D ( 3 ), &
-             iMomentum ( 3 ) )
-    
-    associate &
-      ( M_DD_22 => Value_G ( oV + 1 : oV + nV, G % METRIC_DD_22 ), &
-        M_DD_33 => Value_G ( oV + 1 : oV + nV, G % METRIC_DD_33 ) )
-    associate &
-      ( F_E   => RawFlux ( oV + 1 : oV + nV, iEnergy ), &
-        F_S_1 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 1 ) ), &
-        F_S_2 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 2 ) ), &
-        F_S_3 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 3 ) ), &
-        F_S_Dim => RawFlux ( oV + 1 : oV + nV, iMomentum ( iDimension ) ), & 
-        J     => Value_C ( oV + 1 : oV + nV, C % COMOVING_ENERGY_DENSITY ), &
-        H_1   => Value_C ( oV + 1 : oV + nV, &
-                         C % COMOVING_MOMENTUM_DENSITY_U ( 1 ) ), &
-        H_2   => Value_C ( oV + 1 : oV + nV, &
-                         C % COMOVING_MOMENTUM_DENSITY_U ( 2 ) ), &
-        H_3   => Value_C ( oV + 1 : oV + nV, &
-                         C % COMOVING_MOMENTUM_DENSITY_U ( 3 ) ), &
-        H_Dim => Value_C ( oV + 1 : oV + nV, &
-                         C % COMOVING_MOMENTUM_DENSITY_U ( iDimension ) ), &
-        VEF => Value_C ( oV + 1 : oV + nV, C % VARIABLE_EDDINGTON_FACTOR ) )
-
-    call ComputeRawFluxesKernel &
-           ( F_E, F_S_1, F_S_2, F_S_3, F_S_Dim, J, H_1, H_2, H_3, H_Dim, VEF, &
-             M_DD_22, M_DD_33 )
-
-    end associate !-- F_E, etc.
-    end associate !-- M_DD_33, etc.
-
-  end subroutine ComputeRawFluxes
-  
-
-  subroutine ComputeDiffusionFactor ( DF_I, Grid, C, iDimension )
-
-    type ( VariableGroupForm ), intent ( inout ) :: &
-      DF_I
-    class ( * ), intent ( in ), target :: &
-      Grid
-    class ( RadiationMomentsForm ), intent ( in ) :: &
-      C
-    integer ( KDI ), intent ( in ) :: &
-      iDimension
-
-    integer ( KDI ) :: &
-      iV
-    real ( KDR ), dimension ( : ), allocatable :: &
-      M_DD_11
-    real ( KDR ), dimension ( :, :, : ), pointer :: &
-      dX, &
-      M_DD, &
-      TO, &
-      VEF, &
-      DF_I_E
-    class ( GeometryFlatForm ), pointer :: &
-      G
-
-    call C % SetDiffusionFactorUnity ( DF_I % Value )
-
-    if ( .not. associated ( C % Interactions ) ) &
-      return
-
-    select type ( Grid )
-    class is ( Chart_SL_Template )
-
-      G => Grid % Geometry ( )
-
-      call Grid % SetVariablePointer &
-             ( G % Value ( :, G % WIDTH ( iDimension ) ), dX )
-
-      select case ( iDimension )
-      case ( 1 )
-        allocate ( M_DD_11 ( C % nValues ) )
-        !$OMP parallel do private ( iV )
-        do iV = 1, C % nValues
-          M_DD_11 ( iV )  =  1.0_KDR
-        end do !-- iV
-        !$OMP end parallel do
-        call Grid % SetVariablePointer ( M_DD_11, M_DD )
-      case ( 2 )
-        call Grid % SetVariablePointer &
-               ( G % Value ( :, G % METRIC_DD_22 ), M_DD )
-      case ( 3 )
-        call Grid % SetVariablePointer &
-               ( G % Value ( :, G % METRIC_DD_33 ), M_DD )
-      end select !-- iDimension
-
-      associate ( I => C % Interactions )
-      call Grid % SetVariablePointer &
-             ( I % Value ( :, I % TRANSPORT_OPACITY ), TO )
-      end associate !-- I
-
-      call Grid % SetVariablePointer &
-             ( C % Value ( :, C % VARIABLE_EDDINGTON_FACTOR ), VEF )
-      call Grid % SetVariablePointer &
-             ( DF_I % Value ( :, 1 ), DF_I_E )
-
-      call ComputeDiffusionFactor_CSL &
-             ( DF_I_E, VEF, TO, M_DD, dX, iDimension, &
-               Grid % nGhostLayers ( iDimension ) )
-
-      select case ( iDimension )
-      case ( 1 )
-        deallocate ( M_DD_11 ) 
-      end select !-- iDimension
-
-    class default
-      call Show ( 'Grid type not found', CONSOLE % ERROR )
-      call Show ( 'RadiationMoments_Form', 'module', CONSOLE % ERROR )
-      call Show ( 'ComputeDiffusionFactor', 'subroutine', CONSOLE % ERROR ) 
-      call PROGRAM_HEADER % Abort ( )
-    end select !-- Grid
-
-    nullify ( G )
-    nullify ( dX, M_DD, TO, VEF, DF_I_E )
-
-  end subroutine ComputeDiffusionFactor
 
 
   subroutine SetOutput ( RM, Output )
@@ -516,6 +349,173 @@ contains
     nullify ( RMV )
 
   end subroutine ComputeFromConservedCommon
+
+
+  subroutine ComputeRawFluxes &
+               ( RawFlux, C, G, Value_C, Value_G, iDimension, &
+                 nValuesOption, oValueOption )
+    
+    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+      RawFlux
+    class ( RadiationMomentsForm ), intent ( in ) :: &
+      C
+    class ( GeometryFlatForm ), intent ( in ) :: &
+      G
+    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+      Value_C, &
+      Value_G
+    integer ( KDI ), intent ( in ) :: &
+      iDimension
+    integer ( KDI ), intent ( in ), optional :: &
+      nValuesOption, &
+      oValueOption
+
+    integer ( KDI ) :: &
+      iEnergy
+    integer ( KDI ), dimension ( 3 ) :: &
+      iMomentum
+    integer ( KDI ) :: &
+      oV, &  !-- oValue
+      nV     !-- nValues
+      
+    if ( present ( oValueOption ) ) then
+      oV = oValueOption
+    else
+      oV = 0
+    end if
+
+    if ( present ( nValuesOption ) ) then
+      nV = nValuesOption
+    else
+      nV = size ( Value_C, dim = 1 )
+    end if
+    
+    call Search &
+           ( C % iaConserved, C % CONSERVED_ENERGY_DENSITY, iEnergy )
+    call Search &
+           ( C % iaConserved, C % CONSERVED_MOMENTUM_DENSITY_D ( 1 ), &
+             iMomentum ( 1 ) )
+    call Search &
+           ( C % iaConserved, C % CONSERVED_MOMENTUM_DENSITY_D ( 2 ), &
+             iMomentum ( 2 ) )
+    call Search &
+           ( C % iaConserved, C % CONSERVED_MOMENTUM_DENSITY_D ( 3 ), &
+             iMomentum ( 3 ) )
+    
+    associate &
+      ( M_DD_22 => Value_G ( oV + 1 : oV + nV, G % METRIC_DD_22 ), &
+        M_DD_33 => Value_G ( oV + 1 : oV + nV, G % METRIC_DD_33 ) )
+    associate &
+      ( F_E   => RawFlux ( oV + 1 : oV + nV, iEnergy ), &
+        F_S_1 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 1 ) ), &
+        F_S_2 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 2 ) ), &
+        F_S_3 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 3 ) ), &
+        F_S_Dim => RawFlux ( oV + 1 : oV + nV, iMomentum ( iDimension ) ), & 
+        J     => Value_C ( oV + 1 : oV + nV, C % COMOVING_ENERGY_DENSITY ), &
+        H_1   => Value_C ( oV + 1 : oV + nV, &
+                         C % COMOVING_MOMENTUM_DENSITY_U ( 1 ) ), &
+        H_2   => Value_C ( oV + 1 : oV + nV, &
+                         C % COMOVING_MOMENTUM_DENSITY_U ( 2 ) ), &
+        H_3   => Value_C ( oV + 1 : oV + nV, &
+                         C % COMOVING_MOMENTUM_DENSITY_U ( 3 ) ), &
+        H_Dim => Value_C ( oV + 1 : oV + nV, &
+                         C % COMOVING_MOMENTUM_DENSITY_U ( iDimension ) ), &
+        VEF => Value_C ( oV + 1 : oV + nV, C % VARIABLE_EDDINGTON_FACTOR ) )
+
+    call ComputeRawFluxesKernel &
+           ( F_E, F_S_1, F_S_2, F_S_3, F_S_Dim, J, H_1, H_2, H_3, H_Dim, VEF, &
+             M_DD_22, M_DD_33 )
+
+    end associate !-- F_E, etc.
+    end associate !-- M_DD_33, etc.
+
+  end subroutine ComputeRawFluxes
+  
+
+  subroutine ComputeDiffusionFactor_HLL ( DF_I, Grid, C, iDimension )
+
+    type ( VariableGroupForm ), intent ( inout ) :: &
+      DF_I
+    class ( * ), intent ( in ), target :: &
+      Grid
+    class ( RadiationMomentsForm ), intent ( in ) :: &
+      C
+    integer ( KDI ), intent ( in ) :: &
+      iDimension
+
+    integer ( KDI ) :: &
+      iV
+    real ( KDR ), dimension ( : ), allocatable :: &
+      M_DD_11
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+      dX, &
+      M_DD, &
+      TO, &
+      VEF, &
+      DF_I_E
+    class ( GeometryFlatForm ), pointer :: &
+      G
+
+    call C % SetDiffusionFactorUnity ( DF_I % Value )
+
+    if ( .not. associated ( C % Interactions ) ) &
+      return
+
+    select type ( Grid )
+    class is ( Chart_SL_Template )
+
+      G => Grid % Geometry ( )
+
+      call Grid % SetVariablePointer &
+             ( G % Value ( :, G % WIDTH ( iDimension ) ), dX )
+
+      select case ( iDimension )
+      case ( 1 )
+        allocate ( M_DD_11 ( C % nValues ) )
+        !$OMP parallel do private ( iV )
+        do iV = 1, C % nValues
+          M_DD_11 ( iV )  =  1.0_KDR
+        end do !-- iV
+        !$OMP end parallel do
+        call Grid % SetVariablePointer ( M_DD_11, M_DD )
+      case ( 2 )
+        call Grid % SetVariablePointer &
+               ( G % Value ( :, G % METRIC_DD_22 ), M_DD )
+      case ( 3 )
+        call Grid % SetVariablePointer &
+               ( G % Value ( :, G % METRIC_DD_33 ), M_DD )
+      end select !-- iDimension
+
+      associate ( I => C % Interactions )
+      call Grid % SetVariablePointer &
+             ( I % Value ( :, I % TRANSPORT_OPACITY ), TO )
+      end associate !-- I
+
+      call Grid % SetVariablePointer &
+             ( C % Value ( :, C % VARIABLE_EDDINGTON_FACTOR ), VEF )
+      call Grid % SetVariablePointer &
+             ( DF_I % Value ( :, 1 ), DF_I_E )
+
+      call ComputeDiffusionFactor_HLL_CSL &
+             ( DF_I_E, VEF, TO, M_DD, dX, iDimension, &
+               Grid % nGhostLayers ( iDimension ) )
+
+      select case ( iDimension )
+      case ( 1 )
+        deallocate ( M_DD_11 ) 
+      end select !-- iDimension
+
+    class default
+      call Show ( 'Grid type not found', CONSOLE % ERROR )
+      call Show ( 'RadiationMoments_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'ComputeDiffusionFactor_HLL', 'subroutine', CONSOLE % ERROR ) 
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- Grid
+
+    nullify ( G )
+    nullify ( dX, M_DD, TO, VEF, DF_I_E )
+
+  end subroutine ComputeDiffusionFactor_HLL
 
 
   subroutine ComputeSpectralParameters ( T, Mu, RM, J )
@@ -986,38 +986,8 @@ contains
   end subroutine ComputeRawFluxesKernel
 
 
-  ! subroutine ComputeDiffusionFactorKernel &
-  !      ( DF_E, DF_F_1, DF_F_2, DF_F_3, dX, &
-  !        VEF_L, VEF_R, Chi_L, Chi_R, Sigma_L, Sigma_R )
-    
-  !   real ( KDR ), dimension ( : ), intent ( inout ) :: &
-  !     DF_E, &
-  !     DF_F_1, DF_F_2, DF_F_3
-  !   real ( KDR ), dimension ( : ), intent ( in ) :: &
-  !     dX, &
-  !     VEF_L, VEF_R, &
-  !     Chi_L, CHI_R, &
-  !     Sigma_L, Sigma_R
-
-  !   real ( KDR ), dimension ( size ( DF_E ) ) :: &
-  !     DF_E_L, DF_E_R
-    
-  !   DF_E_L   =  VEF_L / max ( dX * ( Sigma_L + Chi_L ), tiny ( 0.0_KDR ) ) 
-    
-  !   DF_E_R   =  VEF_R / max ( dX * ( Sigma_R + Chi_R ), tiny ( 0.0_KDR ) )
-    
-  !   DF_E   = min ( DF_E_L, DF_E_R )
-  !        ! = max ( DF_E_L, DF_E_R )
-  !        ! = ( DF_E_L + DF_E_R ) / 2
-  !   DF_E   = min ( 1.0_KDR, DF_E )
-  !   DF_F_1 = 1.0_KDR
-  !   DF_F_2 = 1.0_KDR
-  !   DF_F_3 = 1.0_KDR
-
-  ! end subroutine ComputeDiffusionFactorKernel
-  
-
-  subroutine ComputeDiffusionFactor_CSL ( DF_I_E, VEF, TO, M_DD, dX, iD, oV )
+  subroutine ComputeDiffusionFactor_HLL_CSL &
+               ( DF_I_E, VEF, TO, M_DD, dX, iD, oV )
 
     real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
       DF_I_E
@@ -1081,7 +1051,7 @@ contains
     end do !-- kV
     !$OMP end parallel do
       
-  end subroutine ComputeDiffusionFactor_CSL
+  end subroutine ComputeDiffusionFactor_HLL_CSL
 
 
   subroutine ApplyRelaxation_Interactions &

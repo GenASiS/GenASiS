@@ -29,8 +29,6 @@ module Fluid_P_MHN__Form
       InitializeAllocate_P_MHN
     generic, public :: &
       Initialize => InitializeAllocate_P_MHN
-    procedure, public, pass ( C ) :: &
-      ComputeRawFluxes
     procedure, public, pass :: &
       SetOutput
     procedure, public, pass :: & 
@@ -39,6 +37,8 @@ module Fluid_P_MHN__Form
       ComputeFromPrimitiveCommon
     procedure, public, pass ( C ) :: &
       ComputeFromConservedCommon
+    procedure, public, pass ( C ) :: &
+      ComputeRawFluxes
     procedure, public, nopass :: &
       ComputeConservedElectronKernel
     procedure, public, nopass :: &
@@ -110,61 +110,6 @@ contains
            ( '../Parameters/LS220_234r_136t_50y_analmu_20091212_SVNr26.h5' )
 
   end subroutine InitializeAllocate_P_MHN
-
-
-  subroutine ComputeRawFluxes &
-               ( RawFlux, C, G, Value_C, Value_G, iDimension, &
-                 nValuesOption, oValueOption )
-    
-    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
-      RawFlux
-    class ( Fluid_P_MHN_Form ), intent ( in ) :: &
-      C
-    class ( GeometryFlatForm ), intent ( in ) :: &
-      G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_C, &
-      Value_G
-    integer ( KDI ), intent ( in ) :: &
-      iDimension
-    integer ( KDI ), intent ( in ), optional :: &
-      nValuesOption, &
-      oValueOption
-
-    integer ( KDI ) :: &
-      iElectron
-    integer ( KDI ) :: &
-      oV, &  !-- oValue
-      nV     !-- nValues
-
-    call C % ComputeRawFluxesTemplate_P &
-           ( RawFlux, G, Value_C, Value_G, iDimension, nValuesOption, &
-             oValueOption )
-
-    if ( present ( oValueOption ) ) then
-      oV = oValueOption
-    else
-      oV = 0
-    end if
-
-    if ( present ( nValuesOption ) ) then
-      nV = nValuesOption
-    else
-      nV = size ( Value_C, dim = 1 )
-    end if
-
-    call Search ( C % iaConserved, C % CONSERVED_ELECTRON_DENSITY, iElectron )
-
-    associate &
-      ( F_DE  => RawFlux ( oV + 1 : oV + nV, iElectron ), &
-        DE    => Value_C ( oV + 1 : oV + nV, C % CONSERVED_ELECTRON_DENSITY ), &
-        V_Dim => Value_C ( oV + 1 : oV + nV, C % VELOCITY_U ( iDimension ) ) )
-
-    call ComputeRawFluxesKernel ( F_DE, DE, V_Dim )
-
-    end associate !-- F_DE, etc.
-
-  end subroutine ComputeRawFluxes
 
 
   subroutine SetOutput ( F, Output )
@@ -446,6 +391,61 @@ contains
     end associate !-- FV, etc.
     
   end subroutine ComputeFromConservedCommon
+
+
+  subroutine ComputeRawFluxes &
+               ( RawFlux, C, G, Value_C, Value_G, iDimension, &
+                 nValuesOption, oValueOption )
+    
+    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+      RawFlux
+    class ( Fluid_P_MHN_Form ), intent ( in ) :: &
+      C
+    class ( GeometryFlatForm ), intent ( in ) :: &
+      G
+    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+      Value_C, &
+      Value_G
+    integer ( KDI ), intent ( in ) :: &
+      iDimension
+    integer ( KDI ), intent ( in ), optional :: &
+      nValuesOption, &
+      oValueOption
+
+    integer ( KDI ) :: &
+      iElectron
+    integer ( KDI ) :: &
+      oV, &  !-- oValue
+      nV     !-- nValues
+
+    call C % ComputeRawFluxesTemplate_P &
+           ( RawFlux, G, Value_C, Value_G, iDimension, nValuesOption, &
+             oValueOption )
+
+    if ( present ( oValueOption ) ) then
+      oV = oValueOption
+    else
+      oV = 0
+    end if
+
+    if ( present ( nValuesOption ) ) then
+      nV = nValuesOption
+    else
+      nV = size ( Value_C, dim = 1 )
+    end if
+
+    call Search ( C % iaConserved, C % CONSERVED_ELECTRON_DENSITY, iElectron )
+
+    associate &
+      ( F_DE  => RawFlux ( oV + 1 : oV + nV, iElectron ), &
+        DE    => Value_C ( oV + 1 : oV + nV, C % CONSERVED_ELECTRON_DENSITY ), &
+        V_Dim => Value_C ( oV + 1 : oV + nV, C % VELOCITY_U ( iDimension ) ) )
+
+    call ComputeRawFluxesKernel ( F_DE, DE, V_Dim )
+
+    end associate !-- F_DE, etc.
+
+  end subroutine ComputeRawFluxes
 
 
   subroutine ComputeConservedElectronKernel ( DE, NE )

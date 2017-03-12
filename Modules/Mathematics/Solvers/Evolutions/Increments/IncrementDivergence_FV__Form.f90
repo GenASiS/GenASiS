@@ -92,7 +92,6 @@ module IncrementDivergence_FV__Form
         private :: &
           ComputeReconstruction_CSL_Kernel, &
           ComputeLogDerivative_CSL_Kernel, &
-          ComputeFluxesKernel, &
           ComputeIncrement_CSL_Kernel, &
           RecordBoundaryFluence_CSL
 
@@ -590,8 +589,6 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iDimension
 
-    integer ( KDI ) :: &
-      iF  !-- iField
     type ( TimerForm ), pointer :: &
       Timer
 
@@ -610,27 +607,9 @@ contains
         SS_I => I % Storage % SolverSpeeds_I, &
         G_I  => I % Storage % Geometry_I )
 
-    call C % ComputeRiemannSolverInput &
-           ( I, SS_I, DF_I, I % Chart, C_IL, C_IR, iDimension )
-
-    call C % ComputeRawFluxes &
-           ( F_IL % Value, G, C_IL % Value, G_I % Value, iDimension )
-    call C % ComputeRawFluxes &
-           ( F_IR % Value, G, C_IR % Value, G_I % Value, iDimension )
-
-    associate ( iaC => C % iaConserved )    
-    do iF = 1, C % N_CONSERVED
-      call ComputeFluxesKernel &
-             ( F_IL % Value ( :, iF ), &
-               F_IR % Value ( :, iF ), &
-               C_IL % Value ( :, iaC ( iF ) ), &
-               C_IR % Value ( :, iaC ( iF ) ), &
-               SS_I % Value ( :, C % ALPHA_PLUS ), &
-               SS_I % Value ( :, C % ALPHA_MINUS ), &
-               DF_I % Value ( :, iF ), &
-               F_I % Value ( :, iF ) )
-    end do !-- iF
-    end associate !-- iaC
+    call C % ComputeFluxes &
+           ( I, F_I, F_IL, F_IR, SS_I, DF_I, I % Chart, G, C_IL, C_IR, G_I, &
+             iDimension )
 
     if ( I % UseIncrementStream ) then
       call Copy ( F_IL % Value, I % Output ( iFLUX_IL ) % Value )
@@ -939,42 +918,6 @@ contains
     !$OMP end parallel do
     
   end subroutine ComputeLogDerivative_CSL_Kernel
-
-
-  subroutine ComputeFluxesKernel &
-               ( F_IL, F_IR, U_IL, U_IR, AP_I, AM_I, DF_I, F_I )
-
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      F_IL, F_IR, &
-      U_IL, U_IR, &
-      AP_I, &
-      AM_I, &
-      DF_I
-    real ( KDR ), dimension ( : ), intent ( out ) :: &
-      F_I
-
-    integer ( KDI ) :: &
-      iV, &
-      nV  
-
-    nV = size ( F_I )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nV
-      if ( AP_I ( iV ) + AM_I ( iV ) > 0.0_KDR ) then
-        F_I ( iV ) &
-          =  (    AP_I ( iV ) * F_IL ( iV ) &
-               +  AM_I ( iV ) * F_IR ( iV ) &
-               -  DF_I ( iV ) * AP_I ( iV ) * AM_I ( iV ) &
-                  * ( U_IR ( iV ) - U_IL ( iV ) ) ) &
-             /  ( AP_I ( iV ) + AM_I ( iV ) )
-      else
-        F_I ( iV ) = 0.0_KDR
-      end if
-    end do
-    !$OMP end parallel do
-
-  end subroutine ComputeFluxesKernel
 
 
   subroutine ComputeIncrement_CSL_Kernel &

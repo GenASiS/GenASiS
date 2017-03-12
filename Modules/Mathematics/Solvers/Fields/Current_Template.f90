@@ -61,10 +61,8 @@ module Current_Template
       ComputeFromConserved &
         => ComputeFromConservedSelf, ComputeFromConservedOther, &
            ComputeFromConservedSelectGeometry
-    procedure ( CRF ), public, pass ( C ), deferred :: &
-      ComputeRawFluxes
     procedure, public, pass ( C ) :: &
-      ComputeRiemannSolverInput
+      ComputeFluxes
     procedure, public, pass :: &
       FinalizeTemplate
     procedure ( CFPC ), public, pass ( C ), deferred :: &
@@ -72,36 +70,19 @@ module Current_Template
     procedure ( CFCC ), public, pass ( C ), deferred :: &
       ComputeFromConservedCommon
     procedure, public, pass ( C ) :: &
-      ComputeRiemannSolverInput_HLL
+      ComputeFluxes_HLL
+    procedure ( CRF ), public, pass ( C ), deferred :: &
+      ComputeRawFluxes
+    procedure, public, nopass :: &
+      ComputeSolverSpeeds_HLL
     procedure, public, pass ( C ) :: &
-      ComputeDiffusionFactor
+      ComputeDiffusionFactor_HLL
     procedure, public, nopass :: &
       SetDiffusionFactorUnity
   end type CurrentTemplate
 
   abstract interface
 
-    subroutine CRF ( RawFlux, C, G, Value_C, Value_G, iDimension, &
-                     nValuesOption, oValueOption )
-      use Basics
-      use Manifolds
-      import CurrentTemplate
-      real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
-        RawFlux
-      class ( CurrentTemplate ), intent ( in ) :: &
-        C
-      class ( GeometryFlatForm ), intent ( in ) :: &
-        G
-      real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-        Value_C, &
-        Value_G
-      integer ( KDI ), intent ( in ) :: &
-        iDimension
-      integer ( KDI ), intent ( in ), optional :: &
-        nValuesOption, &
-        oValueOption
-    end subroutine CRF
-    
     subroutine CFPC ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
       use Basics
       use Manifolds
@@ -136,6 +117,27 @@ module Current_Template
         oValueOption
     end subroutine CFCC
 
+    subroutine CRF ( RawFlux, C, G, Value_C, Value_G, iDimension, &
+                     nValuesOption, oValueOption )
+      use Basics
+      use Manifolds
+      import CurrentTemplate
+      real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+        RawFlux
+      class ( CurrentTemplate ), intent ( in ) :: &
+        C
+      class ( GeometryFlatForm ), intent ( in ) :: &
+        G
+      real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+        Value_C, &
+        Value_G
+      integer ( KDI ), intent ( in ) :: &
+        iDimension
+      integer ( KDI ), intent ( in ), optional :: &
+        nValuesOption, &
+        oValueOption
+    end subroutine CRF
+    
   end interface
 
   type, public :: CurrentPointerForm
@@ -146,7 +148,7 @@ module Current_Template
     private :: &
       InitializeBasics, &
       SetUnits, &
-      ComputeSolverSpeeds_HLL
+      ComputeFluxes_HLL_Kernel
 
 contains
 
@@ -340,29 +342,34 @@ contains
   end subroutine ComputeFromConservedSelectGeometry
 
 
-  subroutine ComputeRiemannSolverInput &
-               ( Increment, SolverSpeeds_I, DiffusionFactor_I, &
-                 C, Grid, C_IL, C_IR, iDimension )
-    
+  subroutine ComputeFluxes &
+               ( Increment, F_I, F_IL, F_IR, SS_I, DF_I, C, Grid, G, &
+                 C_IL, C_IR, G_I, iDimension )
+
     class ( * ), intent ( inout ) :: &
       Increment
     type ( VariableGroupForm ), intent ( inout ) :: &
-      SolverSpeeds_I, &
-      DiffusionFactor_I
+      F_I, &
+      F_IL, F_IR, &
+      SS_I, &
+      DF_I
     class ( CurrentTemplate ), intent ( in ) :: &
       C
-    class ( * ), intent ( in ) :: &
+    class ( * ), intent ( in ), target :: &
       Grid
+    class ( GeometryFlatForm ), intent ( in ) :: &
+      G
     type ( VariableGroupForm ), intent ( in ) :: &
-      C_IL, &
-      C_IR
+      C_IL, C_IR, &
+      G_I
     integer ( KDI ), intent ( in ) :: &
       iDimension
-    
-    call C % ComputeRiemannSolverInput_HLL &
-           ( SolverSpeeds_I, DiffusionFactor_I, Grid, C_IL, C_IR, iDimension )
 
-  end subroutine ComputeRiemannSolverInput
+    call C % ComputeFluxes_HLL &
+           ( Increment, F_I, F_IL, F_IR, SS_I, DF_I, Grid, G, C_IL, C_IR, &
+             G_I, iDimension )
+
+  end subroutine ComputeFluxes
 
 
   impure elemental subroutine FinalizeTemplate ( C )
@@ -381,37 +388,91 @@ contains
   end subroutine FinalizeTemplate
 
 
-  subroutine ComputeRiemannSolverInput_HLL &
-               ( SolverSpeeds_I, DiffusionFactor_I, C, Grid, C_IL, C_IR, &
-                 iDimension )
-    
+  subroutine ComputeFluxes_HLL &
+               ( Increment, F_I, F_IL, F_IR, SS_I, DF_I, C, Grid, G, &
+                 C_IL, C_IR, G_I, iDimension )
+
+    class ( * ), intent ( inout ) :: &
+      Increment
     type ( VariableGroupForm ), intent ( inout ) :: &
-      SolverSpeeds_I, &
-      DiffusionFactor_I
+      F_I, &
+      F_IL, F_IR, &
+      SS_I, &
+      DF_I
     class ( CurrentTemplate ), intent ( in ) :: &
       C
-    class ( * ), intent ( in ) :: &
+    class ( * ), intent ( in ), target :: &
       Grid
+    class ( GeometryFlatForm ), intent ( in ) :: &
+      G
     type ( VariableGroupForm ), intent ( in ) :: &
-      C_IL, &
-      C_IR
+      C_IL, C_IR, &
+      G_I
     integer ( KDI ), intent ( in ) :: &
       iDimension
-    
-    call ComputeSolverSpeeds_HLL &
-           ( SolverSpeeds_I % Value ( :, C % ALPHA_PLUS ), &
-             SolverSpeeds_I % Value ( :, C % ALPHA_MINUS ), &
+
+    integer ( KDI ) :: &
+      iF  !-- iField
+
+    call C % ComputeRawFluxes &
+           ( F_IL % Value, G, C_IL % Value, G_I % Value, iDimension )
+    call C % ComputeRawFluxes &
+           ( F_IR % Value, G, C_IR % Value, G_I % Value, iDimension )
+
+    call C % ComputeSolverSpeeds_HLL &
+           ( SS_I % Value ( :, C % ALPHA_PLUS ), &
+             SS_I % Value ( :, C % ALPHA_MINUS ), &
              C_IL % Value ( :, C % FAST_EIGENSPEED_PLUS ( iDimension ) ), &
              C_IR % Value ( :, C % FAST_EIGENSPEED_PLUS ( iDimension ) ), &
              C_IL % Value ( :, C % FAST_EIGENSPEED_MINUS ( iDimension ) ), &
              C_IR % Value ( :, C % FAST_EIGENSPEED_MINUS ( iDimension ) ) )
 
-    call C % ComputeDiffusionFactor ( DiffusionFactor_I, Grid, iDimension )
+    call C % ComputeDiffusionFactor_HLL ( DF_I, Grid, iDimension )
 
-  end subroutine ComputeRiemannSolverInput_HLL
+    associate ( iaC => C % iaConserved )    
+    do iF = 1, C % N_CONSERVED
+      call ComputeFluxes_HLL_Kernel &
+             ( F_IL % Value ( :, iF ), &
+               F_IR % Value ( :, iF ), &
+               C_IL % Value ( :, iaC ( iF ) ), &
+               C_IR % Value ( :, iaC ( iF ) ), &
+               SS_I % Value ( :, C % ALPHA_PLUS ), &
+               SS_I % Value ( :, C % ALPHA_MINUS ), &
+               DF_I % Value ( :, iF ), &
+               F_I % Value ( :, iF ) )
+    end do !-- iF
+    end associate !-- iaC
+
+  end subroutine ComputeFluxes_HLL
 
 
-  subroutine ComputeDiffusionFactor ( DF_I, Grid, C, iDimension )
+  subroutine ComputeSolverSpeeds_HLL &
+               ( AP_I, AM_I, LP_IL, LP_IR, LM_IL, LM_IR )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      AP_I, &
+      AM_I
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      LP_IL, LP_IR, &
+      LM_IL, LM_IR
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+
+    nValues = size ( AP_I )
+
+    !$OMP parallel do private ( iV ) 
+    do iV = 1, nValues
+      AP_I ( iV ) = max ( 0.0_KDR, + LP_IL ( iV ), + LP_IR ( iV ) )
+      AM_I ( iV ) = max ( 0.0_KDR, - LM_IL ( iV ), - LM_IR ( iV ) )
+    end do !-- iV
+    !$OMP end parallel do
+
+  end subroutine ComputeSolverSpeeds_HLL
+
+
+  subroutine ComputeDiffusionFactor_HLL ( DF_I, Grid, C, iDimension )
 
     type ( VariableGroupForm ), intent ( inout ) :: &
       DF_I
@@ -424,7 +485,7 @@ contains
 
     call C % SetDiffusionFactorUnity ( DF_I % Value )
 
-  end subroutine ComputeDiffusionFactor
+  end subroutine ComputeDiffusionFactor_HLL
 
 
   subroutine SetDiffusionFactorUnity ( DFV_I )
@@ -602,30 +663,40 @@ contains
   end subroutine SetUnits
 
 
-  subroutine ComputeSolverSpeeds_HLL &
-               ( AP_I, AM_I, LP_IL, LP_IR, LM_IL, LM_IR )
+  subroutine ComputeFluxes_HLL_Kernel &
+               ( F_IL, F_IR, U_IL, U_IR, AP_I, AM_I, DF_I, F_I )
 
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      AP_I, &
-      AM_I
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      LP_IL, LP_IR, &
-      LM_IL, LM_IR
+      F_IL, F_IR, &
+      U_IL, U_IR, &
+      AP_I, &
+      AM_I, &
+      DF_I
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      F_I
 
     integer ( KDI ) :: &
       iV, &
-      nValues
+      nV  
 
-    nValues = size ( AP_I )
+    nV = size ( F_I )
 
-    !$OMP parallel do private ( iV ) 
-    do iV = 1, nValues
-      AP_I ( iV ) = max ( 0.0_KDR, + LP_IL ( iV ), + LP_IR ( iV ) )
-      AM_I ( iV ) = max ( 0.0_KDR, - LM_IL ( iV ), - LM_IR ( iV ) )
-    end do !-- iV
+    !$OMP parallel do private ( iV )
+    do iV = 1, nV
+      if ( AP_I ( iV ) + AM_I ( iV ) > 0.0_KDR ) then
+        F_I ( iV ) &
+          =  (    AP_I ( iV ) * F_IL ( iV ) &
+               +  AM_I ( iV ) * F_IR ( iV ) &
+               -  DF_I ( iV ) * AP_I ( iV ) * AM_I ( iV ) &
+                  * ( U_IR ( iV ) - U_IL ( iV ) ) ) &
+             /  ( AP_I ( iV ) + AM_I ( iV ) )
+      else
+        F_I ( iV ) = 0.0_KDR
+      end if
+    end do
     !$OMP end parallel do
 
-  end subroutine ComputeSolverSpeeds_HLL
+  end subroutine ComputeFluxes_HLL_Kernel
 
 
 end module Current_Template

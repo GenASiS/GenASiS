@@ -31,8 +31,6 @@ module Fluid_D__Form
       InitializeAllocate_D
     generic, public :: &
       Initialize => InitializeAllocate_D
-    procedure, public, pass ( C ) :: &
-      ComputeRawFluxes
     procedure, public, pass :: &
       SetOutput
     final :: &
@@ -41,6 +39,8 @@ module Fluid_D__Form
       ComputeFromPrimitiveCommon
     procedure, public, pass ( C ) :: &
       ComputeFromConservedCommon
+    procedure, public, pass ( C ) :: &
+      ComputeRawFluxes
     procedure, public, nopass :: &
       ComputeBaryonMassKernel
     procedure, public, nopass :: &
@@ -117,73 +117,6 @@ contains
   end subroutine InitializeAllocate_D
   
 
-  subroutine ComputeRawFluxes &
-               ( RawFlux, C, G, Value_C, Value_G, iDimension, &
-                 nValuesOption, oValueOption )
-    
-    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
-      RawFlux
-    class ( Fluid_D_Form ), intent ( in ) :: &
-      C
-    class ( GeometryFlatForm ), intent ( in ) :: &
-      G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_C, &
-      Value_G
-    integer ( KDI ), intent ( in ) :: &
-      iDimension
-    integer ( KDI ), intent ( in ), optional :: &
-      nValuesOption, &
-      oValueOption
-
-    integer ( KDI ) :: &
-      iDensity
-    integer ( KDI ), dimension ( 3 ) :: &
-      iMomentum
-    integer ( KDI ) :: &
-      oV, &  !-- oValue
-      nV     !-- nValues
-      
-    if ( present ( oValueOption ) ) then
-      oV = oValueOption
-    else
-      oV = 0
-    end if
-
-    if ( present ( nValuesOption ) ) then
-      nV = nValuesOption
-    else
-      nV = size ( Value_C, dim = 1 )
-    end if
-    
-    call Search &
-           ( C % iaConserved, C % CONSERVED_DENSITY, iDensity )
-    call Search &
-           ( C % iaConserved, C % MOMENTUM_DENSITY_D ( 1 ), iMomentum ( 1 ) )
-    call Search &
-           ( C % iaConserved, C % MOMENTUM_DENSITY_D ( 2 ), iMomentum ( 2 ) )
-    call Search &
-           ( C % iaConserved, C % MOMENTUM_DENSITY_D ( 3 ), iMomentum ( 3 ) )
-    
-    associate &
-      ( F_D   => RawFlux ( oV + 1 : oV + nV, iDensity ), &
-        F_S_1 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 1 ) ), &
-        F_S_2 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 2 ) ), &
-        F_S_3 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 3 ) ), &
-        D     => Value_C ( oV + 1 : oV + nV, C % CONSERVED_DENSITY ), &
-        S_1   => Value_C ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 1 ) ), &
-        S_2   => Value_C ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 2 ) ), &
-        S_3   => Value_C ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 3 ) ), &
-        V_Dim => Value_C ( oV + 1 : oV + nV, C % VELOCITY_U ( iDimension ) ) )
-
-    call ComputeRawFluxesKernel &
-           ( F_D, F_S_1, F_S_2, F_S_3, D, S_1, S_2, S_3, V_Dim )
-
-    end associate !-- F_D, etc.
-
-  end subroutine ComputeRawFluxes
-  
-  
   subroutine SetOutput ( F, Output )
 
     class ( Fluid_D_Form ), intent ( in ) :: &
@@ -351,6 +284,73 @@ contains
   end subroutine ComputeFromConservedCommon
 
 
+  subroutine ComputeRawFluxes &
+               ( RawFlux, C, G, Value_C, Value_G, iDimension, &
+                 nValuesOption, oValueOption )
+    
+    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+      RawFlux
+    class ( Fluid_D_Form ), intent ( in ) :: &
+      C
+    class ( GeometryFlatForm ), intent ( in ) :: &
+      G
+    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+      Value_C, &
+      Value_G
+    integer ( KDI ), intent ( in ) :: &
+      iDimension
+    integer ( KDI ), intent ( in ), optional :: &
+      nValuesOption, &
+      oValueOption
+
+    integer ( KDI ) :: &
+      iDensity
+    integer ( KDI ), dimension ( 3 ) :: &
+      iMomentum
+    integer ( KDI ) :: &
+      oV, &  !-- oValue
+      nV     !-- nValues
+      
+    if ( present ( oValueOption ) ) then
+      oV = oValueOption
+    else
+      oV = 0
+    end if
+
+    if ( present ( nValuesOption ) ) then
+      nV = nValuesOption
+    else
+      nV = size ( Value_C, dim = 1 )
+    end if
+    
+    call Search &
+           ( C % iaConserved, C % CONSERVED_DENSITY, iDensity )
+    call Search &
+           ( C % iaConserved, C % MOMENTUM_DENSITY_D ( 1 ), iMomentum ( 1 ) )
+    call Search &
+           ( C % iaConserved, C % MOMENTUM_DENSITY_D ( 2 ), iMomentum ( 2 ) )
+    call Search &
+           ( C % iaConserved, C % MOMENTUM_DENSITY_D ( 3 ), iMomentum ( 3 ) )
+    
+    associate &
+      ( F_D   => RawFlux ( oV + 1 : oV + nV, iDensity ), &
+        F_S_1 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 1 ) ), &
+        F_S_2 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 2 ) ), &
+        F_S_3 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 3 ) ), &
+        D     => Value_C ( oV + 1 : oV + nV, C % CONSERVED_DENSITY ), &
+        S_1   => Value_C ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 1 ) ), &
+        S_2   => Value_C ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 2 ) ), &
+        S_3   => Value_C ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 3 ) ), &
+        V_Dim => Value_C ( oV + 1 : oV + nV, C % VELOCITY_U ( iDimension ) ) )
+
+    call ComputeRawFluxesKernel &
+           ( F_D, F_S_1, F_S_2, F_S_3, D, S_1, S_2, S_3, V_Dim )
+
+    end associate !-- F_D, etc.
+
+  end subroutine ComputeRawFluxes
+  
+  
   subroutine ComputeBaryonMassKernel ( M )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
