@@ -683,16 +683,12 @@ contains
 
     !$OMP parallel do private ( iV )
     do iV = 1, nV
-      if ( AP_I ( iV ) + AM_I ( iV ) > 0.0_KDR ) then
-        F_I ( iV ) &
-          =  (    AP_I ( iV ) * F_IL ( iV ) &
-               +  AM_I ( iV ) * F_IR ( iV ) &
-               -  DF_I ( iV ) * AP_I ( iV ) * AM_I ( iV ) &
-                  * ( U_IR ( iV ) - U_IL ( iV ) ) ) &
-             /  ( AP_I ( iV ) + AM_I ( iV ) )
-      else
-        F_I ( iV ) = 0.0_KDR
-      end if
+      F_I ( iV ) &
+        =  (    AP_I ( iV ) * F_IL ( iV ) &
+             +  AM_I ( iV ) * F_IR ( iV ) &
+             -  DF_I ( iV ) * AP_I ( iV ) * AM_I ( iV ) &
+                * ( U_IR ( iV ) - U_IL ( iV ) ) ) &
+           /  max ( AP_I ( iV ) + AM_I ( iV ), tiny ( 0.0_KDR ) )
     end do
     !$OMP end parallel do
 
