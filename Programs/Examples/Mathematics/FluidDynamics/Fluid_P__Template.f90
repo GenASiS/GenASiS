@@ -49,6 +49,7 @@ module Fluid_P__Template
       SetUnits, &
       ComputeCenterSpeed, &
       ComputeCenterStates, &
+      ComputeFluxes_HLLC, &
       ComputeRawFluxesTemplate_P_Kernel
 
   public :: &
@@ -177,7 +178,8 @@ contains
       iDimension
 
     integer ( KDI ) :: &
-      iV, &
+      iV, &  !-- iValue
+      iF, &  !-- iField
       iDensity, &
       iMomentum
     real ( KDR ), dimension ( : ), allocatable, target :: &
@@ -190,114 +192,134 @@ contains
     select type ( I => Increment )
     class is ( IncrementDivergence_FV_Form )
 
-      select case ( trim ( I % RiemannSolverType ) )
-      case ( 'HLL' )
+    select case ( trim ( I % RiemannSolverType ) )
+    case ( 'HLL' )
 
-        call C % ComputeFluxes_HLL &
-               ( Increment, F_I, F_IL, F_IR, SS_I, DF_I, Grid, G, &
-                 C_IL, C_IR, G_I, iDimension )
+      call C % ComputeFluxes_HLL &
+             ( Increment, F_I, F_IL, F_IR, SS_I, DF_I, Grid, G, &
+               C_IL, C_IR, G_I, iDimension )
 
-      case ( 'HLLC' )
+    case ( 'HLLC' )
 
-        call C % ComputeFluxes_HLL &
-               ( Increment, F_I, F_IL, F_IR, SS_I, DF_I, Grid, G, &
-                 C_IL, C_IR, G_I, iDimension )
+      call C % ComputeFluxes_HLL &
+             ( Increment, F_I, F_IL, F_IR, SS_I, DF_I, Grid, G, &
+               C_IL, C_IR, G_I, iDimension )
 
-        select case ( iDimension )
-        case ( 1 )
-          allocate ( M_UU_11 ( C % nValues ), M_DD_11 ( C % nValues ) )
-          !$OMP parallel do private ( iV )
-          do iV = 1, C % nValues
-            M_UU_11 ( iV )  =  1.0_KDR
-            M_DD_11 ( iV )  =  1.0_KDR
-          end do !-- iV
-          !$OMP end parallel do
-          M_UU => M_UU_11
-          M_DD => M_DD_11
-        case ( 2 )
-          M_UU => G_I % Value ( :, G % METRIC_UU_22 )
-          M_DD => G_I % Value ( :, G % METRIC_DD_22 )
-        case ( 3 )
-          M_UU => G_I % Value ( :, G % METRIC_UU_33 )
-          M_DD => G_I % Value ( :, G % METRIC_DD_33 )
-        end select !-- iDimension
+      select case ( iDimension )
+      case ( 1 )
+        allocate ( M_UU_11 ( C % nValues ), M_DD_11 ( C % nValues ) )
+        !$OMP parallel do private ( iV )
+        do iV = 1, C % nValues
+          M_UU_11 ( iV )  =  1.0_KDR
+          M_DD_11 ( iV )  =  1.0_KDR
+        end do !-- iV
+        !$OMP end parallel do
+        M_UU => M_UU_11
+        M_DD => M_DD_11
+      case ( 2 )
+        M_UU => G_I % Value ( :, G % METRIC_UU_22 )
+        M_DD => G_I % Value ( :, G % METRIC_DD_22 )
+      case ( 3 )
+        M_UU => G_I % Value ( :, G % METRIC_UU_33 )
+        M_DD => G_I % Value ( :, G % METRIC_DD_33 )
+      end select !-- iDimension
 
-        call Search &
-               ( C % iaConserved, C % CONSERVED_DENSITY, &
-                 iDensity )
-        call Search &
-               ( C % iaConserved, C % MOMENTUM_DENSITY_D ( iDimension ), &
-                 iMomentum )
-        call ComputeCenterSpeed &
-               ( SS_I % Value ( :, C % ALPHA_CENTER ), &
-                 F_IL % Value ( :, iDensity ), &
-                 F_IR % Value ( :, iDensity ), &
-                 F_IL % Value ( :, iMomentum ), &
-                 F_IR % Value ( :, iMomentum ), &
-                 C_IL % Value ( :, C % CONSERVED_DENSITY ), &
-                 C_IR % Value ( :, C % CONSERVED_DENSITY ), &
-                 C_IL % Value ( :, C % MOMENTUM_DENSITY_D ( iDimension ) ), &
-                 C_IR % Value ( :, C % MOMENTUM_DENSITY_D ( iDimension ) ), &
+      call Search &
+             ( C % iaConserved, C % CONSERVED_DENSITY, &
+               iDensity )
+      call Search &
+             ( C % iaConserved, C % MOMENTUM_DENSITY_D ( iDimension ), &
+               iMomentum )
+      call ComputeCenterSpeed &
+             ( SS_I % Value ( :, C % ALPHA_CENTER ), &
+               F_IL % Value ( :, iDensity ), &
+               F_IR % Value ( :, iDensity ), &
+               F_IL % Value ( :, iMomentum ), &
+               F_IR % Value ( :, iMomentum ), &
+               C_IL % Value ( :, C % CONSERVED_DENSITY ), &
+               C_IR % Value ( :, C % CONSERVED_DENSITY ), &
+               C_IL % Value ( :, C % MOMENTUM_DENSITY_D ( iDimension ) ), &
+               C_IR % Value ( :, C % MOMENTUM_DENSITY_D ( iDimension ) ), &
+               SS_I % Value ( :, C % ALPHA_PLUS ), &
+               SS_I % Value ( :, C % ALPHA_MINUS ), &
+               M_UU )
+
+      associate &
+        ( C_ICL => I % Storage % Current_ICL, &
+          C_ICR => I % Storage % Current_ICR, &
+             iD => iDimension )
+
+      call ComputeCenterStates &
+             ( C_ICL % Value ( :, C % VELOCITY_U ( 1 ) ), &
+               C_ICR % Value ( :, C % VELOCITY_U ( 1 ) ), &
+               C_ICL % Value ( :, C % VELOCITY_U ( 2 ) ), &
+               C_ICR % Value ( :, C % VELOCITY_U ( 2 ) ), &
+               C_ICL % Value ( :, C % VELOCITY_U ( 3 ) ), &
+               C_ICR % Value ( :, C % VELOCITY_U ( 3 ) ), &
+               C_ICL % Value ( :, C % VELOCITY_U ( iD ) ), &
+               C_ICR % Value ( :, C % VELOCITY_U ( iD ) ), &
+               C_ICL % Value ( :, C % CONSERVED_DENSITY ), &
+               C_ICR % Value ( :, C % CONSERVED_DENSITY ), &
+               C_ICL % Value ( :, C % MOMENTUM_DENSITY_D ( 1 ) ), &
+               C_ICR % Value ( :, C % MOMENTUM_DENSITY_D ( 1 ) ), &
+               C_ICL % Value ( :, C % MOMENTUM_DENSITY_D ( 2 ) ), &
+               C_ICR % Value ( :, C % MOMENTUM_DENSITY_D ( 2 ) ), &
+               C_ICL % Value ( :, C % MOMENTUM_DENSITY_D ( 3 ) ), &
+               C_ICR % Value ( :, C % MOMENTUM_DENSITY_D ( 3 ) ), &
+               C_ICL % Value ( :, C % MOMENTUM_DENSITY_D ( iD ) ), &
+               C_ICR % Value ( :, C % MOMENTUM_DENSITY_D ( iD ) ), &
+               C_ICL % Value ( :, C % CONSERVED_ENERGY ), &
+               C_ICR % Value ( :, C % CONSERVED_ENERGY ), &
+               C_ICL % Value ( :, C % PRESSURE ), &
+               C_ICR % Value ( :, C % PRESSURE ), &
+               C_IL % Value ( :, C % VELOCITY_U ( 1 ) ), &
+               C_IR % Value ( :, C % VELOCITY_U ( 1 ) ), &
+               C_IL % Value ( :, C % VELOCITY_U ( 2 ) ), &
+               C_IR % Value ( :, C % VELOCITY_U ( 2 ) ), &
+               C_IL % Value ( :, C % VELOCITY_U ( 3 ) ), &
+               C_IR % Value ( :, C % VELOCITY_U ( 3 ) ), &
+               C_IL % Value ( :, C % VELOCITY_U ( iD ) ), &
+               C_IR % Value ( :, C % VELOCITY_U ( iD ) ), &
+               C_IL % Value ( :, C % CONSERVED_DENSITY ), &
+               C_IR % Value ( :, C % CONSERVED_DENSITY ), &
+               C_IL % Value ( :, C % MOMENTUM_DENSITY_D ( 1 ) ), &
+               C_IR % Value ( :, C % MOMENTUM_DENSITY_D ( 1 ) ), &
+               C_IL % Value ( :, C % MOMENTUM_DENSITY_D ( 2 ) ), &
+               C_IR % Value ( :, C % MOMENTUM_DENSITY_D ( 2 ) ), &
+               C_IL % Value ( :, C % MOMENTUM_DENSITY_D ( 3 ) ), &
+               C_IR % Value ( :, C % MOMENTUM_DENSITY_D ( 3 ) ), &
+               C_IL % Value ( :, C % MOMENTUM_DENSITY_D ( iD ) ), &
+               C_IR % Value ( :, C % MOMENTUM_DENSITY_D ( iD ) ), &
+               C_IL % Value ( :, C % CONSERVED_ENERGY ), &
+               C_IR % Value ( :, C % CONSERVED_ENERGY ), &
+               C_IL % Value ( :, C % PRESSURE ), &
+               C_IR % Value ( :, C % PRESSURE ), &
+               SS_I % Value ( :, C % ALPHA_PLUS ), &
+               SS_I % Value ( :, C % ALPHA_MINUS ), &
+               SS_I % Value ( :, C % ALPHA_CENTER ), &
+               M_DD )
+
+      !-- Overwrite F_IL and F_IR with F_ICL and F_ICR
+      call C % ComputeRawFluxes &
+             ( F_IL % Value, G, C_ICL % Value, G_I % Value, iDimension )
+      call C % ComputeRawFluxes &
+             ( F_IR % Value, G, C_ICR % Value, G_I % Value, iDimension )
+
+      associate ( iaC => C % iaConserved )    
+      do iF = 1, C % N_CONSERVED
+        call ComputeFluxes_HLLC &
+               ( F_I  % Value ( :, iF ), &
+                 F_IL % Value ( :, iF ), &
+                 F_IR % Value ( :, iF ), &
                  SS_I % Value ( :, C % ALPHA_PLUS ), &
                  SS_I % Value ( :, C % ALPHA_MINUS ), &
-                 M_UU )
+                 SS_I % Value ( :, C % ALPHA_CENTER ) )
+      end do !-- iF
+      end associate !-- iaC
 
-        associate &
-          ( C_ICL => I % Storage % Current_ICL, &
-            C_ICR => I % Storage % Current_ICR, &
-               iD => iDimension )
-        call ComputeCenterStates &
-               ( C_ICL % Value ( :, C % VELOCITY_U ( 1 ) ), &
-                 C_ICR % Value ( :, C % VELOCITY_U ( 1 ) ), &
-                 C_ICL % Value ( :, C % VELOCITY_U ( 2 ) ), &
-                 C_ICR % Value ( :, C % VELOCITY_U ( 2 ) ), &
-                 C_ICL % Value ( :, C % VELOCITY_U ( 3 ) ), &
-                 C_ICR % Value ( :, C % VELOCITY_U ( 3 ) ), &
-                 C_ICL % Value ( :, C % VELOCITY_U ( iD ) ), &
-                 C_ICR % Value ( :, C % VELOCITY_U ( iD ) ), &
-                 C_ICL % Value ( :, C % CONSERVED_DENSITY ), &
-                 C_ICR % Value ( :, C % CONSERVED_DENSITY ), &
-                 C_ICL % Value ( :, C % MOMENTUM_DENSITY_D ( 1 ) ), &
-                 C_ICR % Value ( :, C % MOMENTUM_DENSITY_D ( 1 ) ), &
-                 C_ICL % Value ( :, C % MOMENTUM_DENSITY_D ( 2 ) ), &
-                 C_ICR % Value ( :, C % MOMENTUM_DENSITY_D ( 2 ) ), &
-                 C_ICL % Value ( :, C % MOMENTUM_DENSITY_D ( 3 ) ), &
-                 C_ICR % Value ( :, C % MOMENTUM_DENSITY_D ( 3 ) ), &
-                 C_ICL % Value ( :, C % MOMENTUM_DENSITY_D ( iD ) ), &
-                 C_ICR % Value ( :, C % MOMENTUM_DENSITY_D ( iD ) ), &
-                 C_ICL % Value ( :, C % CONSERVED_ENERGY ), &
-                 C_ICR % Value ( :, C % CONSERVED_ENERGY ), &
-                 C_ICL % Value ( :, C % PRESSURE ), &
-                 C_ICR % Value ( :, C % PRESSURE ), &
-                 C_IL % Value ( :, C % VELOCITY_U ( 1 ) ), &
-                 C_IR % Value ( :, C % VELOCITY_U ( 1 ) ), &
-                 C_IL % Value ( :, C % VELOCITY_U ( 2 ) ), &
-                 C_IR % Value ( :, C % VELOCITY_U ( 2 ) ), &
-                 C_IL % Value ( :, C % VELOCITY_U ( 3 ) ), &
-                 C_IR % Value ( :, C % VELOCITY_U ( 3 ) ), &
-                 C_IL % Value ( :, C % VELOCITY_U ( iD ) ), &
-                 C_IR % Value ( :, C % VELOCITY_U ( iD ) ), &
-                 C_IL % Value ( :, C % CONSERVED_DENSITY ), &
-                 C_IR % Value ( :, C % CONSERVED_DENSITY ), &
-                 C_IL % Value ( :, C % MOMENTUM_DENSITY_D ( 1 ) ), &
-                 C_IR % Value ( :, C % MOMENTUM_DENSITY_D ( 1 ) ), &
-                 C_IL % Value ( :, C % MOMENTUM_DENSITY_D ( 2 ) ), &
-                 C_IR % Value ( :, C % MOMENTUM_DENSITY_D ( 2 ) ), &
-                 C_IL % Value ( :, C % MOMENTUM_DENSITY_D ( 3 ) ), &
-                 C_IR % Value ( :, C % MOMENTUM_DENSITY_D ( 3 ) ), &
-                 C_IL % Value ( :, C % MOMENTUM_DENSITY_D ( iD ) ), &
-                 C_IR % Value ( :, C % MOMENTUM_DENSITY_D ( iD ) ), &
-                 C_IL % Value ( :, C % CONSERVED_ENERGY ), &
-                 C_IR % Value ( :, C % CONSERVED_ENERGY ), &
-                 C_IL % Value ( :, C % PRESSURE ), &
-                 C_IR % Value ( :, C % PRESSURE ), &
-                 SS_I % Value ( :, C % ALPHA_PLUS ), &
-                 SS_I % Value ( :, C % ALPHA_MINUS ), &
-                 SS_I % Value ( :, C % ALPHA_CENTER ), &
-                 M_DD )
-        end associate !-- C_ICL, etc.
+      end associate !-- C_ICL, etc.
 
-      end select !-- RiemannSolverType
+    end select !-- RiemannSolverType
 
     class default
       call Show ( 'Increment type not recognized', CONSOLE % ERROR )
@@ -749,8 +771,8 @@ contains
 
       P_ICL ( iV )  =  P_IL ( iV )  +  S_Dim_IL  ( iV ) * AM_VL &
                                     -  S_Dim_ICL ( iV ) * AM_AC
-      P_ICR ( iV )  =  P_IR ( iV )  +  S_Dim_IR  ( iV ) * AP_VR &
-                                    -  S_Dim_ICR ( iV ) * AP_AC
+      P_ICR ( iV )  =  P_IR ( iV )  -  S_Dim_IR  ( iV ) * AP_VR &
+                                    +  S_Dim_ICR ( iV ) * AP_AC
 
       G_ICL ( iV )  =  ( G_IL ( iV ) * AM_VL &
                          +  V_Dim_IL ( iV ) * P_IL ( iV ) &
@@ -765,6 +787,41 @@ contains
     !$OMP end parallel do
 
   end subroutine ComputeCenterStates
+
+
+  subroutine ComputeFluxes_HLLC ( F_I, F_ICL, F_ICR, AP_I, AM_I, AC_I )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      F_I
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      F_ICL, F_ICR, &
+      AP_I, &
+      AM_I, &
+      AC_I
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+    
+    nValues = size ( F_I )
+
+    !$OMP parallel do private ( iV ) 
+    do iV = 1, nValues
+      if ( AP_I ( iV ) /= 0.0_KDR .and. AM_I ( iV ) /= 0.0_KDR ) then
+        !-- Use the appropriate center state flux
+        if ( AC_I ( iV ) >= 0.0_KDR ) then
+          F_I ( iV )  =  F_ICL ( iV )
+        else !-- AC < 0
+          F_I ( iV )  =  F_ICR ( iV )
+        end if !-- AC >= 0
+      else
+        !-- Keep previously computed HLL flux which is upwind if
+        !   AlphaPlus or AlphaMinus is zero.
+      end if !-- AP and AM == 0
+    end do !-- iV
+    !$OMP end parallel do
+
+  end subroutine ComputeFluxes_HLLC
 
 
   subroutine ComputeRawFluxesTemplate_P_Kernel ( F_S_Dim, F_G, G, P, V_Dim )
