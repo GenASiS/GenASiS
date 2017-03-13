@@ -35,7 +35,11 @@ module Fluid_P__Template
     procedure, public, pass ( C ) :: &
       ComputeFluxes
     procedure, public, pass ( C ) :: &
+      ComputeCenterStates
+    procedure, public, pass ( C ) :: &
       ComputeRawFluxesTemplate_P
+    procedure, public, pass ( C ) :: &
+      ComputeCenterStatesTemplate_P
     procedure, public, nopass :: &
       ComputeConservedEnergyKernel
     procedure, public, nopass :: &
@@ -47,9 +51,9 @@ module Fluid_P__Template
     private :: &
       InitializeBasics, &
       SetUnits, &
-      ComputeCenterSpeed, &
-      ComputeCenterStates, &
-      ComputeFluxes_HLLC, &
+      ComputeCenterSpeedKernel, &
+      ComputeCenterStatesKernel, &
+      ComputeFluxes_HLLC_Kernel, &
       ComputeRawFluxesTemplate_P_Kernel
 
   public :: &
@@ -230,7 +234,7 @@ contains
       call Search &
              ( C % iaConserved, C % MOMENTUM_DENSITY_D ( iDimension ), &
                iMomentum )
-      call ComputeCenterSpeed &
+      call ComputeCenterSpeedKernel &
              ( SS_I % Value ( :, C % ALPHA_CENTER ), &
                F_IL % Value ( :, iDensity ), &
                F_IR % Value ( :, iDensity ), &
@@ -246,58 +250,10 @@ contains
 
       associate &
         ( C_ICL => I % Storage % Current_ICL, &
-          C_ICR => I % Storage % Current_ICR, &
-             iD => iDimension )
+          C_ICR => I % Storage % Current_ICR )
 
-      call ComputeCenterStates &
-             ( C_ICL % Value ( :, C % VELOCITY_U ( 1 ) ), &
-               C_ICR % Value ( :, C % VELOCITY_U ( 1 ) ), &
-               C_ICL % Value ( :, C % VELOCITY_U ( 2 ) ), &
-               C_ICR % Value ( :, C % VELOCITY_U ( 2 ) ), &
-               C_ICL % Value ( :, C % VELOCITY_U ( 3 ) ), &
-               C_ICR % Value ( :, C % VELOCITY_U ( 3 ) ), &
-               C_ICL % Value ( :, C % VELOCITY_U ( iD ) ), &
-               C_ICR % Value ( :, C % VELOCITY_U ( iD ) ), &
-               C_ICL % Value ( :, C % CONSERVED_DENSITY ), &
-               C_ICR % Value ( :, C % CONSERVED_DENSITY ), &
-               C_ICL % Value ( :, C % MOMENTUM_DENSITY_D ( 1 ) ), &
-               C_ICR % Value ( :, C % MOMENTUM_DENSITY_D ( 1 ) ), &
-               C_ICL % Value ( :, C % MOMENTUM_DENSITY_D ( 2 ) ), &
-               C_ICR % Value ( :, C % MOMENTUM_DENSITY_D ( 2 ) ), &
-               C_ICL % Value ( :, C % MOMENTUM_DENSITY_D ( 3 ) ), &
-               C_ICR % Value ( :, C % MOMENTUM_DENSITY_D ( 3 ) ), &
-               C_ICL % Value ( :, C % MOMENTUM_DENSITY_D ( iD ) ), &
-               C_ICR % Value ( :, C % MOMENTUM_DENSITY_D ( iD ) ), &
-               C_ICL % Value ( :, C % CONSERVED_ENERGY ), &
-               C_ICR % Value ( :, C % CONSERVED_ENERGY ), &
-               C_ICL % Value ( :, C % PRESSURE ), &
-               C_ICR % Value ( :, C % PRESSURE ), &
-               C_IL % Value ( :, C % VELOCITY_U ( 1 ) ), &
-               C_IR % Value ( :, C % VELOCITY_U ( 1 ) ), &
-               C_IL % Value ( :, C % VELOCITY_U ( 2 ) ), &
-               C_IR % Value ( :, C % VELOCITY_U ( 2 ) ), &
-               C_IL % Value ( :, C % VELOCITY_U ( 3 ) ), &
-               C_IR % Value ( :, C % VELOCITY_U ( 3 ) ), &
-               C_IL % Value ( :, C % VELOCITY_U ( iD ) ), &
-               C_IR % Value ( :, C % VELOCITY_U ( iD ) ), &
-               C_IL % Value ( :, C % CONSERVED_DENSITY ), &
-               C_IR % Value ( :, C % CONSERVED_DENSITY ), &
-               C_IL % Value ( :, C % MOMENTUM_DENSITY_D ( 1 ) ), &
-               C_IR % Value ( :, C % MOMENTUM_DENSITY_D ( 1 ) ), &
-               C_IL % Value ( :, C % MOMENTUM_DENSITY_D ( 2 ) ), &
-               C_IR % Value ( :, C % MOMENTUM_DENSITY_D ( 2 ) ), &
-               C_IL % Value ( :, C % MOMENTUM_DENSITY_D ( 3 ) ), &
-               C_IR % Value ( :, C % MOMENTUM_DENSITY_D ( 3 ) ), &
-               C_IL % Value ( :, C % MOMENTUM_DENSITY_D ( iD ) ), &
-               C_IR % Value ( :, C % MOMENTUM_DENSITY_D ( iD ) ), &
-               C_IL % Value ( :, C % CONSERVED_ENERGY ), &
-               C_IR % Value ( :, C % CONSERVED_ENERGY ), &
-               C_IL % Value ( :, C % PRESSURE ), &
-               C_IR % Value ( :, C % PRESSURE ), &
-               SS_I % Value ( :, C % ALPHA_PLUS ), &
-               SS_I % Value ( :, C % ALPHA_MINUS ), &
-               SS_I % Value ( :, C % ALPHA_CENTER ), &
-               M_DD )
+      call C % ComputeCenterStates &
+             ( C_ICL, C_ICR, C_IL, C_IR, SS_I, M_DD, iDimension )
 
       !-- Overwrite F_IL and F_IR with F_ICL and F_ICR
       call C % ComputeRawFluxes &
@@ -307,7 +263,7 @@ contains
 
       associate ( iaC => C % iaConserved )    
       do iF = 1, C % N_CONSERVED
-        call ComputeFluxes_HLLC &
+        call ComputeFluxes_HLLC_Kernel &
                ( F_I  % Value ( :, iF ), &
                  F_IL % Value ( :, iF ), &
                  F_IR % Value ( :, iF ), &
@@ -331,6 +287,27 @@ contains
     nullify ( M_UU, M_DD )
 
   end subroutine ComputeFluxes
+
+
+  subroutine ComputeCenterStates &
+               ( C_ICL, C_ICR, C, C_IL, C_IR, SS_I, M_DD, iD )
+
+    type ( VariableGroupForm ), intent ( inout ) :: &
+      C_ICL, C_ICR
+    class ( Fluid_P_Template ), intent ( in ) :: &
+      C
+    type ( VariableGroupForm ), intent ( in ) :: &
+      C_IL, C_IR, &
+      SS_I
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      M_DD
+    integer ( KDI ), intent ( in ) :: &
+      iD
+
+    call C % ComputeCenterStatesTemplate_P &
+           ( C_ICL, C_ICR, C_IL, C_IR, SS_I, M_DD, iD )
+
+  end subroutine ComputeCenterStates
 
 
   subroutine ComputeRawFluxesTemplate_P &
@@ -394,6 +371,74 @@ contains
 
   end subroutine ComputeRawFluxesTemplate_P
   
+
+  subroutine ComputeCenterStatesTemplate_P &
+               ( C_ICL, C_ICR, C, C_IL, C_IR, SS_I, M_DD, iD )
+
+    type ( VariableGroupForm ), intent ( inout ) :: &
+      C_ICL, C_ICR
+    class ( Fluid_P_Template ), intent ( in ) :: &
+      C
+    type ( VariableGroupForm ), intent ( in ) :: &
+      C_IL, C_IR, &
+      SS_I
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      M_DD
+    integer ( KDI ), intent ( in ) :: &
+      iD
+
+    call ComputeCenterStatesKernel &
+           ( C_ICL % Value ( :, C % VELOCITY_U ( 1 ) ), &
+             C_ICR % Value ( :, C % VELOCITY_U ( 1 ) ), &
+             C_ICL % Value ( :, C % VELOCITY_U ( 2 ) ), &
+             C_ICR % Value ( :, C % VELOCITY_U ( 2 ) ), &
+             C_ICL % Value ( :, C % VELOCITY_U ( 3 ) ), &
+             C_ICR % Value ( :, C % VELOCITY_U ( 3 ) ), &
+             C_ICL % Value ( :, C % VELOCITY_U ( iD ) ), &
+             C_ICR % Value ( :, C % VELOCITY_U ( iD ) ), &
+             C_ICL % Value ( :, C % CONSERVED_DENSITY ), &
+             C_ICR % Value ( :, C % CONSERVED_DENSITY ), &
+             C_ICL % Value ( :, C % MOMENTUM_DENSITY_D ( 1 ) ), &
+             C_ICR % Value ( :, C % MOMENTUM_DENSITY_D ( 1 ) ), &
+             C_ICL % Value ( :, C % MOMENTUM_DENSITY_D ( 2 ) ), &
+             C_ICR % Value ( :, C % MOMENTUM_DENSITY_D ( 2 ) ), &
+             C_ICL % Value ( :, C % MOMENTUM_DENSITY_D ( 3 ) ), &
+             C_ICR % Value ( :, C % MOMENTUM_DENSITY_D ( 3 ) ), &
+             C_ICL % Value ( :, C % MOMENTUM_DENSITY_D ( iD ) ), &
+             C_ICR % Value ( :, C % MOMENTUM_DENSITY_D ( iD ) ), &
+             C_ICL % Value ( :, C % CONSERVED_ENERGY ), &
+             C_ICR % Value ( :, C % CONSERVED_ENERGY ), &
+             C_ICL % Value ( :, C % PRESSURE ), &
+             C_ICR % Value ( :, C % PRESSURE ), &
+             C_IL % Value ( :, C % VELOCITY_U ( 1 ) ), &
+             C_IR % Value ( :, C % VELOCITY_U ( 1 ) ), &
+             C_IL % Value ( :, C % VELOCITY_U ( 2 ) ), &
+             C_IR % Value ( :, C % VELOCITY_U ( 2 ) ), &
+             C_IL % Value ( :, C % VELOCITY_U ( 3 ) ), &
+             C_IR % Value ( :, C % VELOCITY_U ( 3 ) ), &
+             C_IL % Value ( :, C % VELOCITY_U ( iD ) ), &
+             C_IR % Value ( :, C % VELOCITY_U ( iD ) ), &
+             C_IL % Value ( :, C % CONSERVED_DENSITY ), &
+             C_IR % Value ( :, C % CONSERVED_DENSITY ), &
+             C_IL % Value ( :, C % MOMENTUM_DENSITY_D ( 1 ) ), &
+             C_IR % Value ( :, C % MOMENTUM_DENSITY_D ( 1 ) ), &
+             C_IL % Value ( :, C % MOMENTUM_DENSITY_D ( 2 ) ), &
+             C_IR % Value ( :, C % MOMENTUM_DENSITY_D ( 2 ) ), &
+             C_IL % Value ( :, C % MOMENTUM_DENSITY_D ( 3 ) ), &
+             C_IR % Value ( :, C % MOMENTUM_DENSITY_D ( 3 ) ), &
+             C_IL % Value ( :, C % MOMENTUM_DENSITY_D ( iD ) ), &
+             C_IR % Value ( :, C % MOMENTUM_DENSITY_D ( iD ) ), &
+             C_IL % Value ( :, C % CONSERVED_ENERGY ), &
+             C_IR % Value ( :, C % CONSERVED_ENERGY ), &
+             C_IL % Value ( :, C % PRESSURE ), &
+             C_IR % Value ( :, C % PRESSURE ), &
+             SS_I % Value ( :, C % ALPHA_PLUS ), &
+             SS_I % Value ( :, C % ALPHA_MINUS ), &
+             SS_I % Value ( :, C % ALPHA_CENTER ), &
+             M_DD )
+
+  end subroutine ComputeCenterStatesTemplate_P
+
 
   subroutine ComputeConservedEnergyKernel &
                ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
@@ -649,7 +694,7 @@ contains
   end subroutine SetUnits
 
 
-  subroutine ComputeCenterSpeed &
+  subroutine ComputeCenterSpeedKernel &
                ( AC_I, F_D_IL, F_D_IR, F_S_IL, F_S_IR, D_IL, D_IR, &
                  S_IL, S_IR, AP_I, AM_I, M_UU )
 
@@ -682,10 +727,10 @@ contains
     end do !-- iV
     !$OMP end parallel do
 
-  end subroutine ComputeCenterSpeed
+  end subroutine ComputeCenterSpeedKernel
 
 
-  subroutine ComputeCenterStates &
+  subroutine ComputeCenterStatesKernel &
                ( V_1_ICL, V_1_ICR, V_2_ICL, V_2_ICR, V_3_ICL, V_3_ICR, &
                  V_Dim_ICL, V_Dim_ICR, D_ICL, D_ICR, S_1_ICL, S_1_ICR, &
                  S_2_ICL, S_2_ICR, S_3_ICL, S_3_ICR, S_Dim_ICL, S_Dim_ICR, &
@@ -786,10 +831,10 @@ contains
     end do !-- iV
     !$OMP end parallel do
 
-  end subroutine ComputeCenterStates
+  end subroutine ComputeCenterStatesKernel
 
 
-  subroutine ComputeFluxes_HLLC ( F_I, F_ICL, F_ICR, AP_I, AM_I, AC_I )
+  subroutine ComputeFluxes_HLLC_Kernel ( F_I, F_ICL, F_ICR, AP_I, AM_I, AC_I )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       F_I
@@ -814,14 +859,14 @@ contains
         else !-- AC < 0
           F_I ( iV )  =  F_ICR ( iV )
         end if !-- AC >= 0
-      else
+      else  !-- AP or AM == 0
         !-- Keep previously computed HLL flux which is upwind if
         !   AlphaPlus or AlphaMinus is zero.
-      end if !-- AP and AM == 0
+      end if !-- AP and AM /= 0
     end do !-- iV
     !$OMP end parallel do
 
-  end subroutine ComputeFluxes_HLLC
+  end subroutine ComputeFluxes_HLLC_Kernel
 
 
   subroutine ComputeRawFluxesTemplate_P_Kernel ( F_S_Dim, F_G, G, P, V_Dim )

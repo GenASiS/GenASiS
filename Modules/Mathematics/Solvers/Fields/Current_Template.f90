@@ -73,8 +73,6 @@ module Current_Template
       ComputeFluxes_HLL
     procedure ( CRF ), public, pass ( C ), deferred :: &
       ComputeRawFluxes
-    procedure, public, nopass :: &
-      ComputeSolverSpeeds_HLL
     procedure, public, pass ( C ) :: &
       ComputeDiffusionFactor_HLL
     procedure, public, nopass :: &
@@ -148,6 +146,7 @@ module Current_Template
     private :: &
       InitializeBasics, &
       SetUnits, &
+      ComputeSolverSpeeds_HLL_Kernel, &
       ComputeFluxes_HLL_Kernel
 
 contains
@@ -419,7 +418,7 @@ contains
     call C % ComputeRawFluxes &
            ( F_IR % Value, G, C_IR % Value, G_I % Value, iDimension )
 
-    call C % ComputeSolverSpeeds_HLL &
+    call ComputeSolverSpeeds_HLL_Kernel &
            ( SS_I % Value ( :, C % ALPHA_PLUS ), &
              SS_I % Value ( :, C % ALPHA_MINUS ), &
              C_IL % Value ( :, C % FAST_EIGENSPEED_PLUS ( iDimension ) ), &
@@ -444,32 +443,6 @@ contains
     end associate !-- iaC
 
   end subroutine ComputeFluxes_HLL
-
-
-  subroutine ComputeSolverSpeeds_HLL &
-               ( AP_I, AM_I, LP_IL, LP_IR, LM_IL, LM_IR )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      AP_I, &
-      AM_I
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      LP_IL, LP_IR, &
-      LM_IL, LM_IR
-
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-
-    nValues = size ( AP_I )
-
-    !$OMP parallel do private ( iV ) 
-    do iV = 1, nValues
-      AP_I ( iV ) = max ( 0.0_KDR, + LP_IL ( iV ), + LP_IR ( iV ) )
-      AM_I ( iV ) = max ( 0.0_KDR, - LM_IL ( iV ), - LM_IR ( iV ) )
-    end do !-- iV
-    !$OMP end parallel do
-
-  end subroutine ComputeSolverSpeeds_HLL
 
 
   subroutine ComputeDiffusionFactor_HLL ( DF_I, Grid, C, iDimension )
@@ -661,6 +634,32 @@ contains
     end do
 
   end subroutine SetUnits
+
+
+  subroutine ComputeSolverSpeeds_HLL_Kernel &
+               ( AP_I, AM_I, LP_IL, LP_IR, LM_IL, LM_IR )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      AP_I, &
+      AM_I
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      LP_IL, LP_IR, &
+      LM_IL, LM_IR
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+
+    nValues = size ( AP_I )
+
+    !$OMP parallel do private ( iV ) 
+    do iV = 1, nValues
+      AP_I ( iV ) = max ( 0.0_KDR, + LP_IL ( iV ), + LP_IR ( iV ) )
+      AM_I ( iV ) = max ( 0.0_KDR, - LM_IL ( iV ), - LM_IR ( iV ) )
+    end do !-- iV
+    !$OMP end parallel do
+
+  end subroutine ComputeSolverSpeeds_HLL_Kernel
 
 
   subroutine ComputeFluxes_HLL_Kernel &
