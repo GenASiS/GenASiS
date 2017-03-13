@@ -39,6 +39,8 @@ module Fluid_P_MHN__Form
       ComputeFromConservedCommon
     procedure, public, pass ( C ) :: &
       ComputeRawFluxes
+    procedure, public, pass ( C ) :: &
+      ComputeCenterStates
     procedure, public, nopass :: &
       ComputeConservedElectronKernel
     procedure, public, nopass :: &
@@ -54,7 +56,8 @@ module Fluid_P_MHN__Form
     private :: &
       InitializeBasics, &
       SetUnits, &
-      ComputeRawFluxesKernel
+      ComputeRawFluxesKernel, &
+      ComputeCenterStatesKernel
 
 contains
 
@@ -448,6 +451,38 @@ contains
   end subroutine ComputeRawFluxes
 
 
+  subroutine ComputeCenterStates &
+               ( C_ICL, C_ICR, C, C_IL, C_IR, SS_I, M_DD, iD )
+
+    type ( VariableGroupForm ), intent ( inout ) :: &
+      C_ICL, C_ICR
+    class ( Fluid_P_MHN_Form ), intent ( in ) :: &
+      C
+    type ( VariableGroupForm ), intent ( in ) :: &
+      C_IL, C_IR, &
+      SS_I
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      M_DD
+    integer ( KDI ), intent ( in ) :: &
+      iD
+
+    call C % ComputeCenterStatesTemplate_P &
+           ( C_ICL, C_ICR, C_IL, C_IR, SS_I, M_DD, iD )
+
+    call ComputeCenterStatesKernel &
+           ( C_ICL % Value ( :, C % CONSERVED_ELECTRON_DENSITY ), &
+             C_ICR % Value ( :, C % CONSERVED_ELECTRON_DENSITY ), &
+             C_IL % Value ( :, C % CONSERVED_ELECTRON_DENSITY ), &
+             C_IR % Value ( :, C % CONSERVED_ELECTRON_DENSITY ), &
+             C_IL % Value ( :, C % VELOCITY_U ( iD ) ), &
+             C_IR % Value ( :, C % VELOCITY_U ( iD ) ), &
+             SS_I % Value ( :, C % ALPHA_PLUS ), &
+             SS_I % Value ( :, C % ALPHA_MINUS ), &
+             SS_I % Value ( :, C % ALPHA_CENTER ) )
+
+  end subroutine ComputeCenterStates
+
+
   subroutine ComputeConservedElectronKernel ( DE, NE )
  	 
     real ( KDR ), dimension ( : ), intent ( inout ) :: & 	 	 
@@ -799,6 +834,48 @@ contains
     !$OMP end parallel do
 
   end subroutine ComputeRawFluxesKernel
+
+
+  subroutine ComputeCenterStatesKernel &
+               ( DE_ICL, DE_ICR, DE_IL, DE_IR, V_Dim_IL, V_Dim_IR, &
+                 AP_I, AM_I, AC_I )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      DE_ICL, DE_ICR
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      DE_IL, DE_IR, &
+      V_Dim_IL, V_Dim_IR, &
+      AP_I, &
+      AM_I, &
+      AC_I
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+    real ( KDR ) :: &
+      AM_VL, &
+      AM_AC, &
+      AP_VR, &
+      AP_AC
+
+    nValues = size ( AC_I )
+
+    !$OMP parallel do private ( iV ) 
+    do iV = 1, nValues
+
+      AM_VL  =  AM_I ( iV )  +  V_Dim_IL ( iV )
+      AM_AC  =  AM_I ( iV )  +  AC_I ( iV )
+
+      AP_VR  =  AP_I ( iV )  -  V_Dim_IR ( iV )
+      AP_AC  =  AP_I ( iV )  -  AC_I ( iV )
+
+      DE_ICL ( iV )  =  DE_IL ( iV ) * AM_VL / max ( AM_AC, tiny ( 0.0_KDR ) )
+      DE_ICR ( iV )  =  DE_IR ( iV ) * AP_VR / max ( AP_AC, tiny ( 0.0_KDR ) )
+
+    end do !-- iV
+    !$OMP end parallel do
+
+  end subroutine ComputeCenterStatesKernel
 
 
 end module Fluid_P_MHN__Form
