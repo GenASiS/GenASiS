@@ -1068,6 +1068,8 @@ contains
     call S % StorageDivergence % Allocate &
            ( nCurrent, nConserved, nPrimitive, ID % nSolverSpeeds, &
              nGeometry, nValues )
+    if ( trim ( ID % RiemannSolverType ) == 'HLLC' ) &
+      call S % StorageDivergence % Allocate_HLLC ( nCurrent, nValues )
 
   end subroutine AllocateStorageDivergence
 

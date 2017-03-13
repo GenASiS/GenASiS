@@ -20,7 +20,8 @@ module StorageDivergence_Form
       SolverSpeeds_I, &          !-- SolverSpeeds_Inner
       DiffusionFactor_I, &       !-- DiffusionFactor_Inner
       Flux_IL, Flux_IR, &        !-- Flux_InnerLeft, Flux_InnerRight
-      Flux_I                     !-- Flux_Inner
+      Flux_I, &                  !-- Flux_Inner
+      Current_ICL, Current_ICR   !-- Current_InnerCenterLeft, _InnerCenterRight
     type ( GradientForm ), allocatable :: &
       GradientPrimitive
   contains
@@ -28,6 +29,8 @@ module StorageDivergence_Form
       InitializeTimers
     procedure, public, pass :: &
       Allocate
+    procedure, public, pass :: &
+      Allocate_HLLC
     procedure, public, pass :: &
       Deallocate
     final :: &
@@ -113,6 +116,23 @@ contains
   end subroutine Allocate
 
 
+  subroutine Allocate_HLLC ( SD, nCurrent, nValues )
+
+    class ( StorageDivergenceForm ), intent ( inout ) :: &
+      SD
+    integer ( KDI ), intent ( in ) :: &
+      nCurrent, &
+      nValues
+
+    allocate ( SD % Current_ICL, SD % Current_ICR )
+    call SD % Current_ICL % Initialize &
+           ( [ nValues, nCurrent ], ClearOption = .true. )
+    call SD % Current_ICR % Initialize &
+           ( [ nValues, nCurrent ], ClearOption = .true. )
+
+  end subroutine Allocate_HLLC
+
+
   subroutine Deallocate ( SD )
 
     class ( StorageDivergenceForm ), intent ( inout ) :: &
@@ -124,6 +144,10 @@ contains
       deallocate ( SD % DiffusionFactor_I )
     if ( allocated ( SD % SolverSpeeds_I ) ) &
       deallocate ( SD % SolverSpeeds_I )
+    if ( allocated ( SD % Current_ICR ) ) &
+      deallocate ( SD % Current_ICR )
+    if ( allocated ( SD % Current_ICL ) ) &
+      deallocate ( SD % Current_ICL )
     if ( allocated ( SD % Flux_I ) ) &
       deallocate ( SD % Flux_I )
     if ( allocated ( SD % Current_IR ) ) &
