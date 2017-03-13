@@ -440,6 +440,8 @@ contains
       F_G_M, &
       F_G_Phi, &
       F_G_Phi_VJ, &
+      Phi_C, &
+      F_G_Phi_C, &
       D, &
       V_1, &
       R, &
@@ -474,7 +476,7 @@ contains
     allocate ( M   ( 0 : Chart % nCells ( 1 ) ) )  !-- edges
     allocate ( Phi ( 0 : Chart % nCells ( 1 ) ) )  !-- edges
 
-    call ComputeEnclosedMass &
+    call ComputeGravitationalPotential &
            ( Chart, F % Value ( :, F % CONSERVED_DENSITY ), &
              G % Value ( :, G % VOLUME_JACOBIAN ), &
              G % VALUE ( :, G % CENTER ( 1 ) ), &
@@ -502,9 +504,13 @@ contains
     call Chart % SetVariablePointer &
            ( D_WH % Value ( :, D_WH % GRAVITATIONAL_FORCE_M ), F_G_M )
     call Chart % SetVariablePointer &
-           ( D_WH % Value ( :, D_WH % GRAVITATIONAL_FORCE_PHI ), F_G_PHI )
+           ( D_WH % Value ( :, D_WH % GRAVITATIONAL_FORCE_PHI ), F_G_Phi )
     call Chart % SetVariablePointer &
-           ( D_WH % Value ( :, D_WH % GRAVITATIONAL_FORCE_PHI_VJ ), F_G_PHI_VJ )
+           ( D_WH % Value ( :, D_WH % GRAVITATIONAL_FORCE_PHI_VJ ), F_G_Phi_VJ)
+    call Chart % SetVariablePointer &
+           ( D_WH % Value ( :, D_WH % GRAVITATIONAL_POTENTIAL_C ), Phi_C )
+    call Chart % SetVariablePointer &
+           ( D_WH % Value ( :, D_WH % GRAVITATIONAL_FORCE_PHI_C ), F_G_Phi_C )
     call Chart % SetVariablePointer &
            ( F % Value ( :, F % CONSERVED_DENSITY ), D )
     call Chart % SetVariablePointer &
@@ -518,8 +524,9 @@ contains
     call Chart % SetVariablePointer &
            ( G_I % Value ( :, G % VOLUME_JACOBIAN ), VJ_I )
     call ApplySourcesKernel &
-           ( KV_M_1, KV_E, F_G_M, F_G_Phi, F_G_Phi_VJ, M, Phi, &
-             D, V_1, R, dR, VJ, VJ_I, CONSTANT % GRAVITATIONAL, TimeStep, &
+           ( KV_M_1, KV_E, F_G_M, F_G_Phi, F_G_Phi_VJ, Phi_C, F_G_Phi_C, &
+             Chart, M, Phi, D, V_1, R, dR, VJ, VJ_I, &
+             CONSTANT % GRAVITATIONAL, TimeStep, &
              oV = Chart % nGhostLayers, &
              oVM = ( Chart % iaBrick ( 1 ) - 1 ) * Chart % nCellsBrick ( 1 ) &
                    -  Chart % nGhostLayers ( 1 ) )
@@ -538,7 +545,8 @@ contains
     end select !-- Chart
     end select !-- F
 
-    nullify ( KV_M_1, KV_E, F_G_M, F_G_Phi, F_G_Phi_VJ, D, V_1, R, G, D_WH )
+    nullify ( KV_M_1, KV_E, F_G_M, F_G_Phi, F_G_Phi_VJ, Phi_C, F_G_Phi_C, &
+              D, V_1, R, G, D_WH )
 
     if ( associated ( Timer ) ) call Timer % Stop ( )
 
@@ -695,7 +703,8 @@ contains
   end subroutine PrepareInterpolation
 
 
-  subroutine ComputeEnclosedMass ( C, D, VJ, R, dR, G, M, Phi )
+  subroutine ComputeGravitationalPotential &
+               ( C, D, VJ, R, dR, G, M, Phi )
 
     class ( Chart_SLD_Form ), intent ( in ) :: &
       C
@@ -754,7 +763,8 @@ contains
     case default
       call Show ( 'Dimensionality not implemented', CONSOLE % ERROR )
       call Show ( 'WoosleyHeger_07_Form', 'module', CONSOLE % ERROR )
-      call Show ( 'ComputeEnclosedMass', 'subroutine', CONSOLE % ERROR )
+      call Show ( 'ComputeGravitationalPotential', 'subroutine', &
+                  CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- nDimensions
 
@@ -781,19 +791,23 @@ contains
     end do !-- iV
     Phi ( size ( Phi ) - 1 )  =  - G * M ( size ( Phi ) - 1 ) / R_Last  
 
-  end subroutine ComputeEnclosedMass
+  end subroutine ComputeGravitationalPotential
 
 
   subroutine ApplySourcesKernel &
-               ( KV_M_1, KV_E, F_G_M, F_G_Phi, F_G_Phi_VJ, M, Phi, &
-                 D, V_1, R, dR, VJ, VJ_I, G, dT, oV, oVM )
+               ( KV_M_1, KV_E, F_G_M, F_G_Phi, F_G_Phi_VJ, Phi_C, F_G_Phi_C, &
+                 Chart, M, Phi, D, V_1, R, dR, VJ, VJ_I, G, dT, oV, oVM )
 
     real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
       KV_M_1, &
       KV_E, &   
       F_G_M, &
       F_G_Phi, &
-      F_G_Phi_VJ
+      F_G_Phi_VJ, &
+      Phi_C, &
+      F_G_Phi_C
+    class ( Chart_SLD_Form ), intent ( in ) :: &
+      Chart
     real ( KDR ), dimension ( 0 : ), intent ( in ) :: &
       M, &
       Phi
@@ -820,7 +834,8 @@ contains
     real ( KDR ) :: &
       M_C, &  !-- M_Center
       dPhi, &
-      VJ_Ave
+      VJ_Ave, &
+      dPhi_dR_C
 
     lV = 1
     where ( shape ( D ) > 1 )
@@ -834,6 +849,50 @@ contains
 
     nV = shape ( D )
     
+    !-- Cell-centered Phi
+    !$OMP parallel do private ( iV, jV, kV )
+    do kV = lV ( 3 ), uV ( 3 ) 
+      do jV = lV ( 2 ), uV ( 2 )
+        do iV = lV ( 1 ), uV ( 1 )
+          Phi_C ( iV, jV, kV )  &
+            =  0.5_KDR * ( Phi ( oVM + iV - 1 )  +  Phi ( oVM + iV ) )
+        end do
+      end do
+    end do
+    !$OMP end parallel do
+
+    !-- Radial boundary and ghost values of cell-centered Phi 
+    !$OMP parallel do private ( iV, jV, kV )
+    do kV = lV ( 3 ), uV ( 3 ) 
+      do jV = lV ( 2 ), uV ( 2 )
+
+        iV = lV ( 1 ) - 1
+        if ( Chart % iaBrick ( 1 ) == 1 ) then 
+          !-- inner boundary: vanishing gradient
+          Phi_C ( iV, jV, kV )  =  Phi_C ( iV + 1, jV, kV )
+        else
+          !-- ghost cell, interior value
+          Phi_C ( iV, jV, kV ) &
+            =  0.5_KDR * ( Phi ( oVM + iV - 1 )  +  Phi ( oVM + iV ) )
+        end if
+       
+        iV = uV ( 1 ) + 1
+        if ( Chart % iaBrick ( 1 ) == Chart % nBricks ( 1 ) ) then
+          !-- outer boundary: M / r
+          Phi_C ( iV, jV, kV ) &
+            =  Phi_C ( iV - 1, jV, kV )  *  R ( iV - 1, jV, kV ) &
+                                         /  R ( iV, jV, kV )
+        else
+          !-- ghost cell, interior value
+          Phi_C ( iV, jV, kV ) &
+            =  0.5_KDR * ( Phi ( oVM + iV - 1 )  +  Phi ( oVM + iV ) )
+        end if
+
+      end do
+    end do
+    !$OMP end parallel do
+
+
     !$OMP parallel do private ( iV, jV, kV )
     do kV = lV ( 3 ), uV ( 3 ) 
       do jV = lV ( 2 ), uV ( 2 )
@@ -856,6 +915,13 @@ contains
           F_G_Phi_VJ ( iV, jV, kV )  &
             =  F_G_Phi ( iV, jV, kV )  *  VJ_Ave  /  VJ ( iV, jV, kV )
 
+          dPhi_dR_C  &
+            =  ( Phi_C ( iV + 1, jV, kV )  -  Phi_C ( iV - 1, jV, kV ) ) &
+               / ( R ( iV + 1, jV, kV )  -  R ( iV - 1, jV, kV ) )
+
+          F_G_Phi_C ( iV, jV, kV ) &
+            =  - D ( iV, jV, kV )  *  dPhi_dR_C
+
 !call Show ( iV, '>>> iV' )
 !call show ( [ F_G_M ( iV, jV, kV ), F_G_Phi ( iV, jV, kV ), &
 !              F_G_Phi_VJ ( iV, jV, kV ) ], &
@@ -870,10 +936,10 @@ contains
       do jV = lV ( 2 ), uV ( 2 )
         do iV = lV ( 1 ), uV ( 1 )
           KV_M_1 ( iV, jV, kV )  &
-            =  KV_M_1 ( iV, jV, kV )  +  dT * F_G_Phi_VJ ( iV, jV, kV )
+            =  KV_M_1 ( iV, jV, kV )  +  dT * F_G_Phi_C ( iV, jV, kV )
           KV_E ( iV, jV, kV )  &
             =  KV_E ( iV, jV, kV )  &
-               +  dT * F_G_Phi_VJ ( iV, jV, kV ) * V_1 ( iV, jV, kV ) 
+               +  dT * F_G_Phi_C ( iV, jV, kV ) * V_1 ( iV, jV, kV ) 
         end do
       end do
     end do
