@@ -47,6 +47,9 @@ module WoosleyHeger_07__Form
 
     integer ( KDI ), private :: &
       iStage = 0
+    real ( KDR ), dimension ( : ), allocatable :: &
+      EnclosedMass, &
+      Potential
     type ( Diagnostics_WH07_ASC_Form ), dimension ( : ), allocatable :: &
       Diagnostics_ASC
 
@@ -431,9 +434,6 @@ contains
     integer ( KDI ) :: &
       iMomentum_1, &
       iEnergy
-    real ( KDR ), dimension ( : ), allocatable :: &
-      M, &
-      Phi
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       KV_M_1, &
       KV_E, &
@@ -474,15 +474,20 @@ contains
 
     G => Chart % Geometry ( )
 
-    allocate ( M   ( 0 : Chart % nCells ( 1 ) ) )  !-- edges
-    allocate ( Phi ( 0 : Chart % nCells ( 1 ) ) )  !-- edges
+    iStage = mod ( iStage, S % nStages ) + 1
 
-    call ComputeGravitationalPotential &
-           ( Chart, F % Value ( :, F % CONSERVED_DENSITY ), &
-             G % Value ( :, G % VOLUME_JACOBIAN ), &
-             G % VALUE ( :, G % CENTER ( 1 ) ), &
-             G % VALUE ( :, G % WIDTH ( 1 ) ), CONSTANT % GRAVITATIONAL, &
-             M, Phi )
+    if ( .not. allocated ( EnclosedMass ) ) then
+      allocate ( EnclosedMass ( 0 : Chart % nCells ( 1 ) ) )  !-- edges
+      allocate ( Potential ( 0 : Chart % nCells ( 1 ) ) )  !-- edges
+    end if
+
+    if ( iStage == 1 ) &
+      call ComputeGravitationalPotential &
+             ( Chart, F % Value ( :, F % CONSERVED_DENSITY ), &
+               G % Value ( :, G % VOLUME_JACOBIAN ), &
+               G % VALUE ( :, G % CENTER ( 1 ) ), &
+               G % VALUE ( :, G % WIDTH ( 1 ) ), CONSTANT % GRAVITATIONAL, &
+               EnclosedMass, Potential )
 
 !    call Show ( M, UNIT % SOLAR_MASS, '>>> M' )
 !    call Show ( Phi, UNIT % SPEED_OF_LIGHT ** (-2), '>>> Phi' )
@@ -490,7 +495,6 @@ contains
     call G_I % Initialize ( shape ( G % Value ) )
     call G % ComputeReconstruction ( G_I, Chart % nDimensions, iDimension = 1 )
 
-    iStage = mod ( iStage, S % nStages ) + 1
     D_WH => Diagnostics_ASC ( iStage ) % Diagnostics_WH07 ( )
     associate &
       ( DV_F_P => D_WH % Value ( :, D_WH % PRESSURE_FORCE ), &
@@ -529,8 +533,8 @@ contains
            ( S % dLogVolumeJacobian_dX ( 1 ) % Value, dLVJ_dX1 )
     call ApplySourcesKernel &
            ( KV_M_1, KV_E, F_G_M, F_G_Phi, F_G_Phi_VJ, Phi_C, F_G_Phi_C, &
-             Chart, M, Phi, D, V_1, R, dR, VJ, VJ_I, dLVJ_dX1, &
-             CONSTANT % GRAVITATIONAL, TimeStep, &
+             Chart, EnclosedMass, Potential, D, V_1, R, dR, VJ, VJ_I, &
+             dLVJ_dX1, CONSTANT % GRAVITATIONAL, TimeStep, &
              oV = Chart % nGhostLayers, &
              oVM = ( Chart % iaBrick ( 1 ) - 1 ) * Chart % nCellsBrick ( 1 ) &
                    -  Chart % nGhostLayers ( 1 ) )
