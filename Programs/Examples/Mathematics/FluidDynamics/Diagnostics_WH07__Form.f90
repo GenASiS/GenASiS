@@ -7,14 +7,15 @@ module Diagnostics_WH07__Form
 
   type, public, extends ( VariableGroupForm ) :: Diagnostics_WH07_Form
     integer ( KDI ) :: &
-      N_FIELDS = 7, &
+      N_FIELDS = 8, &
       PRESSURE_FORCE             = 1, &
       GRAVITATIONAL_POTENTIAL_C  = 2, &
       GRAVITATIONAL_FORCE_M      = 3, &
       GRAVITATIONAL_FORCE_PHI    = 4, &
       GRAVITATIONAL_FORCE_PHI_VJ = 5, &
       GRAVITATIONAL_FORCE_PHI_C  = 6, &
-      NET_FORCE                  = 7
+      NET_FORCE                  = 7, &
+      NET_POWER                  = 8
   contains
     procedure, public, pass :: &
       Initialize_D
@@ -44,7 +45,8 @@ contains
                                 'GravitationalForce_Phi   ', &
                                 'GravitationalForce_Phi_VJ', &
                                 'GravitationalForce_Phi_C ', &
-                                'NetForce                 ' ], &
+                                'NetForce                 ', &
+                                'NetPower                 ' ], &
              NameOption = Name, ClearOption = .true. )
 
   end subroutine Initialize_D

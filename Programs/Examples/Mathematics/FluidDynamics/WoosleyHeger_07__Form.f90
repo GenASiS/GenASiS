@@ -447,7 +447,8 @@ contains
       R, &
       dR, &
       VJ, &
-      VJ_I
+      VJ_I, &
+      dLVJ_dX1
     type ( VariableGroupForm ) :: &
       G_I  !-- GeometryInner
     class ( GeometryFlatForm ), pointer :: &
@@ -493,7 +494,8 @@ contains
     D_WH => Diagnostics_ASC ( iStage ) % Diagnostics_WH07 ( )
     associate &
       ( DV_F_P => D_WH % Value ( :, D_WH % PRESSURE_FORCE ), &
-        DV_F_N => D_WH % Value ( :, D_WH % NET_FORCE ) )
+        DV_F_N => D_WH % Value ( :, D_WH % NET_FORCE ), &
+        DV_P_N => D_WH % Value ( :, D_WH % NET_POWER ) )
 
     DV_F_P = Increment % Value ( :, iMomentum_1 ) / TimeStep
 
@@ -523,9 +525,11 @@ contains
            ( G % Value ( :, G % VOLUME_JACOBIAN ), VJ )
     call Chart % SetVariablePointer &
            ( G_I % Value ( :, G % VOLUME_JACOBIAN ), VJ_I )
+    call Chart % SetVariablePointer &
+           ( S % dLogVolumeJacobian_dX ( 1 ) % Value, dLVJ_dX1 )
     call ApplySourcesKernel &
            ( KV_M_1, KV_E, F_G_M, F_G_Phi, F_G_Phi_VJ, Phi_C, F_G_Phi_C, &
-             Chart, M, Phi, D, V_1, R, dR, VJ, VJ_I, &
+             Chart, M, Phi, D, V_1, R, dR, VJ, VJ_I, dLVJ_dX1, &
              CONSTANT % GRAVITATIONAL, TimeStep, &
              oV = Chart % nGhostLayers, &
              oVM = ( Chart % iaBrick ( 1 ) - 1 ) * Chart % nCellsBrick ( 1 ) &
@@ -540,6 +544,7 @@ contains
     !          CONSTANT % GRAVITATIONAL, TimeStep ) 
 
     DV_F_N = Increment % Value ( :, iMomentum_1 ) / TimeStep
+    DV_P_N = Increment % Value ( :, iEnergy ) / TimeStep
 
     end associate !-- DV_F_P, etc.
     end select !-- Chart
@@ -796,7 +801,8 @@ contains
 
   subroutine ApplySourcesKernel &
                ( KV_M_1, KV_E, F_G_M, F_G_Phi, F_G_Phi_VJ, Phi_C, F_G_Phi_C, &
-                 Chart, M, Phi, D, V_1, R, dR, VJ, VJ_I, G, dT, oV, oVM )
+                 Chart, M, Phi, D, V_1, R, dR, VJ, VJ_I, dLVJ_dX1, &
+                 G, dT, oV, oVM )
 
     real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
       KV_M_1, &
@@ -817,7 +823,8 @@ contains
       R, &
       dR, &
       VJ, &
-      VJ_I
+      VJ_I, &
+      dLVJ_dX1
     real ( KDR ) :: &
       G, &
       dT
@@ -835,7 +842,9 @@ contains
       M_C, &  !-- M_Center
       dPhi, &
       VJ_Ave, &
-      dPhi_dR_C
+      dPhi_dR_C, &
+      DivPhi, &
+      dPhi_dR_Div
 
     lV = 1
     where ( shape ( D ) > 1 )
@@ -906,21 +915,29 @@ contains
           F_G_M ( iV, jV, kV )  =  - G * M_C * D ( iV, jV, kV )  &
                                      /  R ( iV, jV, kV ) ** 2
 
-          dPhi  =  Phi ( oVM + iV )  -  Phi ( oVM + iV - 1 )
-          F_G_Phi ( iV, jV, kV )  =  - D ( iV, jV, kV )  *  dPhi  &
-                                       /  dR ( iV, jV, kV )
+          ! dPhi  =  Phi ( oVM + iV )  -  Phi ( oVM + iV - 1 )
+          ! F_G_Phi ( iV, jV, kV )  =  - D ( iV, jV, kV )  *  dPhi  &
+          !                              /  dR ( iV, jV, kV )
 
-          VJ_Ave  =  0.5_KDR * ( VJ_I ( iV, jV, kV ) &
-                                 +  VJ_I ( iV + 1, jV, kV ) )
-          F_G_Phi_VJ ( iV, jV, kV )  &
-            =  F_G_Phi ( iV, jV, kV )  *  VJ_Ave  /  VJ ( iV, jV, kV )
+          ! VJ_Ave  =  0.5_KDR * ( VJ_I ( iV, jV, kV ) &
+          !                        +  VJ_I ( iV + 1, jV, kV ) )
+          ! F_G_Phi_VJ ( iV, jV, kV )  &
+          !   =  F_G_Phi ( iV, jV, kV )  *  VJ_Ave  /  VJ ( iV, jV, kV )
+
+          DivPhi  =  (    VJ_I ( iV + 1, jV, kV ) * Phi ( oVM + iV ) &
+                       -  VJ_I ( iV, jV, kV ) * Phi ( oVM + iV - 1 ) ) &
+                     / ( VJ ( iV, jV, kV )  *  dR ( iV, jV, kV ) )
+
+          dPhi_dR_Div  &
+            =  DivPhi  -  dLVJ_dX1 ( iV, jV, kV ) * Phi_C ( iV, jV, kV )
+
+          F_G_Phi_VJ ( iV, jV, kV )  =  - D ( iV, jV, kV )  *  dPhi_dR_Div
 
           dPhi_dR_C  &
             =  ( Phi_C ( iV + 1, jV, kV )  -  Phi_C ( iV - 1, jV, kV ) ) &
                / ( R ( iV + 1, jV, kV )  -  R ( iV - 1, jV, kV ) )
 
-          F_G_Phi_C ( iV, jV, kV ) &
-            =  - D ( iV, jV, kV )  *  dPhi_dR_C
+          F_G_Phi_C ( iV, jV, kV )  =  - D ( iV, jV, kV )  *  dPhi_dR_C
 
 !call Show ( iV, '>>> iV' )
 !call show ( [ F_G_M ( iV, jV, kV ), F_G_Phi ( iV, jV, kV ), &
@@ -936,10 +953,10 @@ contains
       do jV = lV ( 2 ), uV ( 2 )
         do iV = lV ( 1 ), uV ( 1 )
           KV_M_1 ( iV, jV, kV )  &
-            =  KV_M_1 ( iV, jV, kV )  +  dT * F_G_Phi_C ( iV, jV, kV )
+            =  KV_M_1 ( iV, jV, kV )  +  dT * F_G_Phi_VJ ( iV, jV, kV )
           KV_E ( iV, jV, kV )  &
             =  KV_E ( iV, jV, kV )  &
-               +  dT * F_G_Phi_C ( iV, jV, kV ) * V_1 ( iV, jV, kV ) 
+               +  dT * F_G_Phi_VJ ( iV, jV, kV ) * V_1 ( iV, jV, kV ) 
         end do
       end do
     end do
