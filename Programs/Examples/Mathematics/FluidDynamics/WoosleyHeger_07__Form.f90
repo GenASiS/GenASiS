@@ -432,8 +432,12 @@ contains
       TimeStep
 
     integer ( KDI ) :: &
+!iV, &
       iMomentum_1, &
       iEnergy
+! real ( KDR ), dimension ( Increment % nValues ) :: &
+!   Force, &
+!   Power
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       KV_M_1, &
       KV_E, &
@@ -464,7 +468,7 @@ contains
     call ApplySourcesCurvilinear_Fluid_P ( S, Increment, Fluid, TimeStep )
 
     select type ( F => Fluid )
-    class is ( Fluid_P_Template )
+    class is ( Fluid_P_MHN_Form )
 
     call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 1 ), iMomentum_1 )
     call Search ( F % iaConserved, F % CONSERVED_ENERGY, iEnergy )
@@ -499,7 +503,8 @@ contains
     associate &
       ( DV_F_P => D_WH % Value ( :, D_WH % PRESSURE_FORCE ), &
         DV_F_N => D_WH % Value ( :, D_WH % NET_FORCE ), &
-        DV_P_N => D_WH % Value ( :, D_WH % NET_POWER ) )
+        DV_P_N => D_WH % Value ( :, D_WH % NET_POWER ), &
+        PT     => F % Value ( :, F % PHASE_TRANSITION ) )
 
     DV_F_P = Increment % Value ( :, iMomentum_1 ) / TimeStep
 
@@ -546,6 +551,18 @@ contains
     !          F % Value ( :, F % VELOCITY_U ( 1 ) ), &
     !          G % Value ( :, G % CENTER ( 1 ) ), &
     !          CONSTANT % GRAVITATIONAL, TimeStep ) 
+
+! call Chart % ExchangeGhostData ( Increment )
+! Force  =  Increment % Value ( :, iMomentum_1 )
+! Power  =  Increment % Value ( :, iEnergy )
+! do iV = 2, Increment % nValues - 1
+!   if ( PT ( iV ) > 0.0_KDR .and. iV > 20 ) then
+!     Increment % Value ( iV, iMomentum_1 ) &
+!       =  ( Force ( iV - 1 ) + Force ( iV + 1 ) ) / 2.0_KDR
+!     Increment % Value ( iV, iEnergy ) &
+!       =  ( Power ( iV - 1 ) + Power ( iV + 1 ) ) / 2.0_KDR
+!   end if
+! end do !-- iV
 
     DV_F_N = Increment % Value ( :, iMomentum_1 ) / TimeStep
     DV_P_N = Increment % Value ( :, iEnergy ) / TimeStep

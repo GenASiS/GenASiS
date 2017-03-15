@@ -12,7 +12,7 @@ module Fluid_P_MHN__Form
     integer ( KDI ), private, parameter :: &
       N_PRIMITIVE_MEAN_HEAVY_NUCLEUS = 1, &
       N_CONSERVED_MEAN_HEAVY_NUCLEUS = 1, &
-      N_FIELDS_MEAN_HEAVY_NUCLEUS    = 3, &
+      N_FIELDS_MEAN_HEAVY_NUCLEUS    = 4, &
       N_VECTORS_MEAN_HEAVY_NUCLEUS   = 0
 
   type, public, extends ( Fluid_P_Template ) :: Fluid_P_MHN_Form
@@ -23,7 +23,8 @@ module Fluid_P_MHN__Form
       N_VECTORS_MEAN_HEAVY_NUCLEUS   = N_VECTORS_MEAN_HEAVY_NUCLEUS, &
       COMOVING_ELECTRON_DENSITY      = 0, &
       CONSERVED_ELECTRON_DENSITY     = 0, &
-      ELECTRON_FRACTION              = 0
+      ELECTRON_FRACTION              = 0, &
+      PHASE_TRANSITION               = 0
   contains
     procedure, public, pass :: &
       InitializeAllocate_P_MHN
@@ -132,7 +133,8 @@ contains
            ( F, iaSelectedOption &
                   = [ F % COMOVING_DENSITY, F % VELOCITY_U, F % PRESSURE, &
                       F % SOUND_SPEED, F % MACH_NUMBER, F % TEMPERATURE, &
-                      F % ENTROPY_PER_BARYON, F % ELECTRON_FRACTION ], &
+                      F % ENTROPY_PER_BARYON, F % ELECTRON_FRACTION, &
+                      F % ADIABATIC_INDEX, F % PHASE_TRANSITION ], &
              VectorOption = [ 'Velocity                       ' ], &
              VectorIndicesOption = VectorIndices )
 
@@ -200,18 +202,21 @@ contains
         SB    => FV ( oV + 1 : oV + nV, F % ENTROPY_PER_BARYON ), &
         NE    => FV ( oV + 1 : oV + nV, F % COMOVING_ELECTRON_DENSITY ), &
         DE    => FV ( oV + 1 : oV + nV, F % CONSERVED_ELECTRON_DENSITY ), &
-        YE    => FV ( oV + 1 : oV + nV, F % ELECTRON_FRACTION ) )
+        YE    => FV ( oV + 1 : oV + nV, F % ELECTRON_FRACTION ), &
+        PT    => FV ( oV + 1 : oV + nV, F % PHASE_TRANSITION ) )
 
     call F % ComputeBaryonMassKernel ( M )
     call F % Apply_EOS_MHN_T_Kernel &
-           ( P, E, Gamma, SB, YE, M, N, T, NE, CONSTANT % ATOMIC_MASS_UNIT )
+           ( P, E, Gamma, SB, YE, PT, M, N, T, NE, &
+             CONSTANT % ATOMIC_MASS_UNIT )
     call F % ComputeDensityMomentumKernel &
            ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
     call F % ComputeConservedEnergyKernel &
            ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
     call F % ComputeConservedElectronKernel ( DE, NE )
     call F % Apply_EOS_MHN_E_Kernel &
-           ( P, T, Gamma, SB, YE, M, N, E, NE, CONSTANT % ATOMIC_MASS_UNIT )
+           ( P, T, Gamma, SB, YE, PT, M, N, E, NE, &
+             CONSTANT % ATOMIC_MASS_UNIT )
     call F % ComputeEigenspeedsFluidKernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, MN, &
              M, N, V_1, V_2, V_3, S_1, S_2, S_3, P, Gamma, M_UU_22, M_UU_33 )
@@ -290,7 +295,8 @@ contains
         SB    => FV ( oV + 1 : oV + nV, C % ENTROPY_PER_BARYON ), &
         NE    => FV ( oV + 1 : oV + nV, C % COMOVING_ELECTRON_DENSITY ), &
         DE    => FV ( oV + 1 : oV + nV, C % CONSERVED_ELECTRON_DENSITY ), &
-        YE    => FV ( oV + 1 : oV + nV, C % ELECTRON_FRACTION ) )
+        YE    => FV ( oV + 1 : oV + nV, C % ELECTRON_FRACTION ), &
+        PT    => FV ( oV + 1 : oV + nV, C % PHASE_TRANSITION ) )
 
     call C % ResetTemperature ( C % Value ( :, C % TEMPERATURE ), T )
 
@@ -301,7 +307,8 @@ contains
            ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
     call C % ComputeConservedElectronKernel ( DE, NE )
     call C % Apply_EOS_MHN_E_Kernel &
-           ( P, T, Gamma, SB, YE, M, N, E, NE, CONSTANT % ATOMIC_MASS_UNIT )
+           ( P, T, Gamma, SB, YE, PT, M, N, E, NE, &
+             CONSTANT % ATOMIC_MASS_UNIT )
     call C % ComputeEigenspeedsFluidKernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, MN, &
              M, N, V_1, V_2, V_3, S_1, S_2, S_3, P, Gamma, M_UU_22, M_UU_33 )
@@ -377,7 +384,8 @@ contains
         SB    => FV ( oV + 1 : oV + nV, C % ENTROPY_PER_BARYON ), &
         NE    => FV ( oV + 1 : oV + nV, C % COMOVING_ELECTRON_DENSITY ), &
         DE    => FV ( oV + 1 : oV + nV, C % CONSERVED_ELECTRON_DENSITY ), &
-        YE    => FV ( oV + 1 : oV + nV, C % ELECTRON_FRACTION ) )
+        YE    => FV ( oV + 1 : oV + nV, C % ELECTRON_FRACTION ), &
+        PT    => FV ( oV + 1 : oV + nV, C % PHASE_TRANSITION ) )
 
     call C % ComputeBaryonMassKernel ( M )
     call C % ComputeDensityVelocityKernel &
@@ -386,7 +394,8 @@ contains
            ( E, G, M, N, V_1, V_2, V_3, S_1, S_2, S_3 )
     call C % ComputeComovingElectronKernel ( NE, DE )
     call C % Apply_EOS_MHN_E_Kernel &
-           ( P, T, Gamma, SB, YE, M, N, E, NE, CONSTANT % ATOMIC_MASS_UNIT )
+           ( P, T, Gamma, SB, YE, PT, M, N, E, NE, &
+             CONSTANT % ATOMIC_MASS_UNIT )
     call C % ComputeEigenspeedsFluidKernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, MN, &
              M, N, V_1, V_2, V_3, S_1, S_2, S_3, P, Gamma, M_UU_22, M_UU_33 )
@@ -542,14 +551,15 @@ contains
   
   
   subroutine Apply_EOS_MHN_T_Kernel &
-        ( P, E, Gamma, SB, YE, M, N, T, NE, AMU )
+        ( P, E, Gamma, SB, YE, PT, M, N, T, NE, AMU )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       P, &
       E, &
       Gamma, &
       SB, &
-      YE
+      YE, &
+      PT
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       M, &
       N, &
@@ -607,21 +617,27 @@ contains
       P ( iV ) = P ( iV ) * UNIT % BARYE
       E ( iV ) = E ( iV ) * UNIT % ERG / UNIT % GRAM + OR_Shift
       E ( iV ) = E ( iV ) * N ( iV )
-      Gamma ( iV ) = max ( Gamma ( iV ), 1.1_KDR )
+      if ( Gamma ( iV ) < 1.0_KDR ) then
+        PT ( iV ) = 1.0_KDR
+      else
+        PT ( iV ) = 0.0_KDR
+      end if
     end do
     !$OMP end parallel do
     
   end subroutine Apply_EOS_MHN_T_Kernel
   
 
-  subroutine Apply_EOS_MHN_E_Kernel ( P, T, Gamma, SB, YE, M, N, E, NE, AMU )
+  subroutine Apply_EOS_MHN_E_Kernel &
+               ( P, T, Gamma, SB, YE, PT, M, N, E, NE, AMU )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       P, &
       T, &
       Gamma, &
       SB, &
-      YE
+      YE, &
+      PT
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       M, &
       N, &
@@ -678,7 +694,11 @@ contains
       call nuc_eos_one ( N_Temp, T ( iV ), YE ( iV ), Gamma ( iV ), 19 )
       P ( iV ) = P ( iV ) * UNIT % BARYE
       T ( iV ) = T ( iV ) * UNIT % MEV
-      Gamma ( iV ) = max ( Gamma ( iV ), 1.1_KDR )
+      if ( Gamma ( iV ) < 1.0_KDR ) then
+        PT ( iV ) = 1.0_KDR
+      else
+        PT ( iV ) = 0.0_KDR
+      end if
     end do
     !$OMP end parallel do
     
@@ -742,6 +762,7 @@ contains
     F % COMOVING_ELECTRON_DENSITY  = oF + 1
     F % CONSERVED_ELECTRON_DENSITY = oF + 2
     F % ELECTRON_FRACTION          = oF + 3
+    F % PHASE_TRANSITION           = oF + 4
 
     !-- variable names 
 
@@ -756,7 +777,8 @@ contains
     Variable ( oF + 1 : oF + F % N_FIELDS_MEAN_HEAVY_NUCLEUS ) &
       = [ 'ComovingElectronDensity        ', &
           'ConservedElectronDensity       ', &
-          'ElectronFraction               ' ]
+          'ElectronFraction               ', &
+          'PhaseTransition                ' ]
     
     !-- units
 
