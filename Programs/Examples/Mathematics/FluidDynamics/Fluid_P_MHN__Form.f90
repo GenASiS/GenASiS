@@ -111,6 +111,8 @@ contains
 
     call READTABLE &
            ( '../Parameters/LS220_234r_136t_50y_analmu_20091212_SVNr26.h5' )
+!    call READTABLE &
+!           ( '../Parameters/HShenEOS_rho220_temp180_ye65_version_1.1_20120817.h5' )
 
   end subroutine InitializeAllocate_P_MHN
 
@@ -605,6 +607,7 @@ contains
       P ( iV ) = P ( iV ) * UNIT % BARYE
       E ( iV ) = E ( iV ) * UNIT % ERG / UNIT % GRAM + OR_Shift
       E ( iV ) = E ( iV ) * N ( iV )
+      Gamma ( iV ) = max ( Gamma ( iV ), 1.1_KDR )
     end do
     !$OMP end parallel do
     
@@ -672,9 +675,10 @@ contains
              ( N_Temp, T ( iV ), YE ( iV ), E_temp, P ( iV ), SB ( iV ), &
                cs2, dedt, dpderho, dpdrhoe, munu, &
                keytemp, keyerr, rfeps )
-      call nuc_eos_one ( N_Temp, T ( iV ), YE ( iV ), Gamma ( iV ), 19 ) 
+      call nuc_eos_one ( N_Temp, T ( iV ), YE ( iV ), Gamma ( iV ), 19 )
       P ( iV ) = P ( iV ) * UNIT % BARYE
       T ( iV ) = T ( iV ) * UNIT % MEV
+      Gamma ( iV ) = max ( Gamma ( iV ), 1.1_KDR )
     end do
     !$OMP end parallel do
     

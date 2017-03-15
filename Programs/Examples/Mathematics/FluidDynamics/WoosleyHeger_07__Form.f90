@@ -481,7 +481,7 @@ contains
       allocate ( Potential ( 0 : Chart % nCells ( 1 ) ) )  !-- edges
     end if
 
-    if ( iStage == 1 ) &
+!    if ( iStage == 1 ) &
       call ComputeGravitationalPotential &
              ( Chart, F % Value ( :, F % CONSERVED_DENSITY ), &
                G % Value ( :, G % VOLUME_JACOBIAN ), &
@@ -957,10 +957,10 @@ contains
       do jV = lV ( 2 ), uV ( 2 )
         do iV = lV ( 1 ), uV ( 1 )
           KV_M_1 ( iV, jV, kV )  &
-            =  KV_M_1 ( iV, jV, kV )  +  dT * F_G_Phi_VJ ( iV, jV, kV )
+            =  KV_M_1 ( iV, jV, kV )  +  dT * F_G_Phi_C ( iV, jV, kV )
           KV_E ( iV, jV, kV )  &
             =  KV_E ( iV, jV, kV )  &
-               +  dT * F_G_Phi_VJ ( iV, jV, kV ) * V_1 ( iV, jV, kV ) 
+               +  dT * F_G_Phi_C ( iV, jV, kV ) * V_1 ( iV, jV, kV ) 
         end do
       end do
     end do
