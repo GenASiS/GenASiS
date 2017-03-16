@@ -1053,8 +1053,8 @@ contains
       oIndex = oIndexOption
 
     print '(a35)', trim ( Description )
-    do i = oIndex + 1, oIndex + size ( Character )
-      write ( IndexLabel, fmt = '( i7 )' ) i
+    do i = 1, size ( Character )
+      write ( IndexLabel, fmt = '( i7 )' ) oIndex + i
       print & 
         '(a40,a)', '( ' // trim ( adjustl ( IndexLabel ) ) // ' ) =  ', &
         trim ( Character ( i ) )
