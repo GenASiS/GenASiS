@@ -1018,7 +1018,7 @@ contains
   subroutine ShowCharacter_1D &
                ( Character, Description, IgnorabilityOption, &
                  DisplayRankOption, nLeadingLinesOption, &
-                 nTrailingLinesOption )
+                 nTrailingLinesOption, oIndexOption )
 
     !-- Convention on argument order violated because the Character being
     !   "Show"n is more important than the Description.
@@ -1031,10 +1031,12 @@ contains
       IgnorabilityOption, &
       DisplayRankOption, &
       nLeadingLinesOption, &
-      nTrailingLinesOption
+      nTrailingLinesOption, &
+      oIndexOption
 
     integer ( KDI ) :: &
-      i
+      i, &
+      oIndex
     logical ( KDL ) :: &
       AbortShow
     character ( LDN ) :: &
@@ -1046,8 +1048,12 @@ contains
 
     if ( AbortShow ) return
 
+    oIndex = 0
+    if ( present ( oIndexOption ) ) &
+      oIndex = oIndexOption
+
     print '(a35)', trim ( Description )
-    do i = 1, size ( Character )
+    do i = oIndex + 1, oIndex + size ( Character )
       write ( IndexLabel, fmt = '( i7 )' ) i
       print & 
         '(a40,a)', '( ' // trim ( adjustl ( IndexLabel ) ) // ' ) =  ', &
