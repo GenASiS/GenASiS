@@ -969,8 +969,7 @@ contains
 
       call CO % Initialize &
              ( CommunicatorOption, &
-               nOutgoing = [ PH % nTimers ], nIncoming = [ PH % nTimers ], &
-               RootOption = CONSOLE % DisplayRank )
+               nOutgoing = [ PH % nTimers ], nIncoming = [ PH % nTimers ] )
 
       do iT = 1, PH % nTimers
         call MaxTimer ( iT ) % Initialize ( PH % Timer ( iT ) )
