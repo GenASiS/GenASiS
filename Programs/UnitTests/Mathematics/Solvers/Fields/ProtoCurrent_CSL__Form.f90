@@ -87,6 +87,7 @@ contains
     class is ( ProtoCurrentForm )
       call PC % Initialize &
              ( FC % VelocityUnit, FC % nValues, NameOption = FC % NameShort )
+      call PC % SetPrimitiveConserved ( )
       call PC % SetOutput ( FC % FieldOutput )
     end select !-- F
 
