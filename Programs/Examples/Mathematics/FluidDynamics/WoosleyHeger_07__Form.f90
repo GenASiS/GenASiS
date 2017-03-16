@@ -746,9 +746,9 @@ contains
       Phi
 
     integer ( KDI ) :: &
-      iV
-    real ( KDR ) :: &
-      R_Last
+      iV, &
+      lV, &
+      uV
     real ( KDR ), dimension ( 0 : size ( M ) - 1 ) :: &
       SHI, &  !-- SolidHarmonicIrregular
               !-- Enclosed mass M is SolidHarmonicRegular
@@ -782,9 +782,11 @@ contains
 
       CO % Outgoing % Value = pack ( dR, mask = C % IsProperCell )
       call CO % Gather ( )
-      R_I    =  R_C  -  0.5_KDR  *  CO % Incoming % Value
-      R_Last =  R_C ( size ( R_C ) )  &
-                +  0.5_KDR  *  CO % Incoming % Value ( size ( R_C ) )
+      lV = 0
+      uV = size ( M ) - 1
+      R_I ( lV : uV - 1 )   =  R_C  -  0.5_KDR  *  CO % Incoming % Value
+      R_I ( uV ) =  R_C ( size ( R_C ) )  &
+                    +  0.5_KDR  *  CO % Incoming % Value ( size ( R_C ) )
 
     case default
       call Show ( 'Dimensionality not implemented', CONSOLE % ERROR )
@@ -812,10 +814,9 @@ contains
 !call Show ( SHI, 'SHI' )
 
     Phi ( 0 )  =  - SHI ( 0 )
-    do iV  =  1, size ( Phi ) - 2
+    do iV  =  1, size ( Phi ) - 1
       Phi ( iV )  =  - G * ( M ( iV ) / R_I ( iV )  +  SHI ( iV ) )
     end do !-- iV
-    Phi ( size ( Phi ) - 1 )  =  - G * M ( size ( Phi ) - 1 ) / R_Last  
 
   end subroutine ComputeGravitationalPotential
 
