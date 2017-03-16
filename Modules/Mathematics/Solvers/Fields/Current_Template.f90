@@ -41,6 +41,8 @@ module Current_Template
   contains
     procedure, public, pass :: &
       InitializeTemplate
+    procedure ( SPC ), public, pass, deferred :: &
+      SetPrimitiveConserved
     procedure, private, pass :: &
       ComputeFromPrimitiveSelf
     procedure, private, pass ( C ) :: &
@@ -80,6 +82,15 @@ module Current_Template
   end type CurrentTemplate
 
   abstract interface
+
+    subroutine SPC ( C, IgnorabilityOption )
+      use Basics
+      import CurrentTemplate
+      class ( CurrentTemplate ), intent ( inout ) :: &
+        C
+      integer ( KDI ), intent ( in ), optional :: &
+        IgnorabilityOption
+    end subroutine SPC
 
     subroutine CFPC ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
       use Basics
@@ -516,11 +527,7 @@ contains
       VectorIndicesOption
 
     integer ( KDI ) :: &
-      iV, &  !-- iVector
-      iF  !-- iField
-    character ( LDF ), dimension ( : ), allocatable :: &
-      PrimitiveName, &
-      ConservedName
+      iV  !-- iVector
 
     if ( C % Type == '' ) &
       C % Type = 'a Current'
@@ -599,20 +606,6 @@ contains
     call VectorIndices ( 1 ) % Initialize ( C % FAST_EIGENSPEED_PLUS )
     call VectorIndices ( 2 ) % Initialize ( C % FAST_EIGENSPEED_MINUS )
 
-    !-- show primitive, conserved
-
-    allocate ( PrimitiveName ( C % N_PRIMITIVE ) )
-    do iF = 1, C % N_PRIMITIVE
-      PrimitiveName ( iF ) = Variable ( C % iaPrimitive ( iF ) )
-    end do !-- iF
-    call Show ( PrimitiveName, 'Primitive', C % IGNORABILITY )
- 
-    allocate ( ConservedName ( C % N_CONSERVED ) )
-    do iF = 1, C % N_CONSERVED
-      ConservedName ( iF ) = Variable ( C % iaConserved ( iF ) )
-    end do !-- iF
-    call Show ( ConservedName, 'Conserved', C % IGNORABILITY )
- 
   end subroutine InitializeBasics
 
 

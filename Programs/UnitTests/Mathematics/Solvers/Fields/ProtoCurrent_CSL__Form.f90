@@ -24,22 +24,24 @@ module ProtoCurrent_CSL__Form
 contains
 
 
-  subroutine Initialize ( PCC, C, nValues, NameOutputOption )
+  subroutine Initialize ( PCC, C, NameShort, nValues, IgnorabilityOption )
 
     class ( ProtoCurrent_CSL_Form ), intent ( inout ) :: &
       PCC
     class ( ChartTemplate ), intent ( in ) :: &
       C
+    character ( * ), intent ( in ) :: &
+      NameShort
     integer ( KDI ), intent ( in ) :: &
       nValues
-    character ( * ), intent ( in ), optional :: &
-      NameOutputOption
+    integer ( KDL ), intent ( in ), optional :: &
+      IgnorabilityOption
 
     if ( PCC % Type == '' ) &
       PCC % Type = 'a ProtoCurrent_CSL'
 
     call PCC % InitializeTemplate_CSL &
-           ( C, nValues, NameOutputOption = NameOutputOption )
+           ( C, NameShort, nValues, IgnorabilityOption )
 
   end subroutine Initialize
 
@@ -73,12 +75,10 @@ contains
   end subroutine Finalize
 
 
-  subroutine SetField ( FC, NameOption )
+  subroutine SetField ( FC )
 
     class ( ProtoCurrent_CSL_Form ), intent ( inout ) :: &
       FC
-    character ( * ), intent ( in ), optional :: &
-      NameOption
 
     allocate ( ProtoCurrentForm :: FC % Field )
     allocate ( FC % FieldOutput )
@@ -86,7 +86,8 @@ contains
     select type ( PC => FC % Field )
     class is ( ProtoCurrentForm )
       call PC % Initialize &
-             ( FC % VelocityUnit, FC % nValues, NameOption = NameOption )
+             ( FC % VelocityUnit, FC % nValues, NameOption = FC % NameShort )
+      call PC % SetPrimitiveConserved ( FC % Chart % Ignorability )
       call PC % SetOutput ( FC % FieldOutput )
     end select !-- F
 

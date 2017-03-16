@@ -32,6 +32,8 @@ module ProtoCurrent_Form
       InitializeAllocate_PC
     generic, public :: &
       Initialize => InitializeAllocate_PC
+    procedure, public, pass :: &
+      SetPrimitiveConserved
     procedure, public, pass ( C ) :: &
       ComputeRawFluxes
     procedure, public, pass :: &
@@ -103,6 +105,57 @@ contains
 
   end subroutine InitializeAllocate_PC
   
+
+  subroutine SetPrimitiveConserved ( C, IgnorabilityOption )
+
+    class ( ProtoCurrentForm ), intent ( inout ) :: &
+      C
+    integer ( KDI ), intent ( in ), optional :: &
+      IgnorabilityOption
+
+    integer ( KDI ) :: &
+      iF, &  !-- iField
+      oP, &  !-- oPrimitive
+      oC, &  !-- oConserved
+      Ignorability
+    character ( LDL ), dimension ( C % N_PRIMITIVE_PC ) :: &
+      PrimitiveName
+    character ( LDL ), dimension ( C % N_CONSERVED_PC ) :: &
+      ConservedName
+
+    Ignorability = C % IGNORABILITY
+    if ( present ( IgnorabilityOption ) ) &
+      Ignorability = IgnorabilityOption
+
+    oP = C % N_PRIMITIVE_TEMPLATE
+    oC = C % N_CONSERVED_TEMPLATE
+
+    if ( .not. allocated ( C % iaPrimitive ) ) then
+      C % N_PRIMITIVE = oP + C % N_PRIMITIVE_PC
+      allocate ( C % iaPrimitive ( C % N_PRIMITIVE ) )
+    end if
+    C % iaPrimitive ( oP + 1 : oP + C % N_PRIMITIVE_PC ) &
+      = [ C % COMOVING_DENSITY ]
+    do iF = 1, C % N_PRIMITIVE_PC
+      PrimitiveName ( iF )  =  C % Variable ( C % iaPrimitive ( oP + iF ) )
+    end do
+    call Show ( PrimitiveName, 'Adding primitive variables', &
+                Ignorability, oIndexOption = oP )
+
+    if ( .not. allocated ( C % iaConserved ) ) then
+      C % N_CONSERVED = oC + C % N_CONSERVED_PC
+      allocate ( C % iaConserved ( C % N_CONSERVED ) )
+    end if
+    C % iaConserved ( oC + 1 : oC + C % N_CONSERVED_PC ) &
+      = [ C % CONSERVED_DENSITY ]
+    do iF = 1, C % N_CONSERVED_PC
+      ConservedName ( iF )  =  C % Variable ( C % iaConserved ( oC + iF ) )
+    end do
+    call Show ( ConservedName, 'Adding conserved variables', &
+                Ignorability, oIndexOption = oC )
+    
+  end subroutine SetPrimitiveConserved
+
 
   subroutine ComputeRawFluxes &
                ( RawFlux, C, G, Value_C, Value_G, iDimension, &
@@ -347,8 +400,6 @@ contains
     integer ( KDI ) :: &
       oF, &  !-- oField
       oV, &  !-- oVector
-      oP, &  !-- oPrimitive
-      oC, &  !-- oConserved
       iV     !-- iVector
 
     if ( PC % Type == '' ) &
@@ -424,25 +475,6 @@ contains
 
     call VectorIndices ( oV + 1 ) % Initialize ( PC % VELOCITY )
 
-    !-- select primitive, conserved
-
-    oP = PC % N_PRIMITIVE_TEMPLATE
-    oC = PC % N_CONSERVED_TEMPLATE
-
-    if ( .not. allocated ( PC % iaPrimitive ) ) then
-      PC % N_PRIMITIVE = oP + PC % N_PRIMITIVE_PC
-      allocate ( PC % iaPrimitive ( PC % N_PRIMITIVE ) )
-    end if
-    PC % iaPrimitive ( oP + 1 : oP + PC % N_PRIMITIVE_PC ) &
-      = [ PC % COMOVING_DENSITY ]
-
-    if ( .not. allocated ( PC % iaConserved ) ) then
-      PC % N_CONSERVED = oC + PC % N_CONSERVED_PC
-      allocate ( PC % iaConserved ( PC % N_CONSERVED ) )
-    end if
-    PC % iaConserved ( oC + 1 : oC + PC % N_CONSERVED_PC ) &
-      = [ PC % CONSERVED_DENSITY ]
-    
   end subroutine InitializeBasics
 
 
