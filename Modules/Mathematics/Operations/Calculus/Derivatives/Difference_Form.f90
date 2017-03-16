@@ -71,9 +71,9 @@ contains
       V, &
       dV_I
 
-    call Show ( 'Computing a Difference', D % IGNORABILITY )
-    call Show ( trim ( D % Name ), 'Name', D % IGNORABILITY )
-    call Show ( iDimension, 'iDimension', D % IGNORABILITY )
+    call Show ( 'Computing Difference', D % IGNORABILITY + 1 )
+    call Show ( trim ( D % Name ), 'Name', D % IGNORABILITY + 1 )
+    call Show ( iDimension, 'iDimension', D % IGNORABILITY + 1 )
 
     associate &
       ( I  => Input, &

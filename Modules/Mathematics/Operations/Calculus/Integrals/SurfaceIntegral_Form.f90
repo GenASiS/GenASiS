@@ -61,7 +61,7 @@ contains
     Reduce = .true.
     if ( present ( ReduceOption ) ) Reduce = ReduceOption
 
-    Ignorability = CONSOLE % INFO_4
+    Ignorability = CONSOLE % INFO_5
     if ( present ( IgnorabilityOption ) ) Ignorability = IgnorabilityOption
 
     associate &

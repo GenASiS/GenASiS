@@ -90,8 +90,9 @@ contains
     class ( GeometryFlatForm ), pointer :: &
       Gmtry
 
-    call Show ( 'Computing a Gradient', G % IGNORABILITY )
-    call Show ( trim ( G % Name ), 'Name', G % IGNORABILITY )
+    call Show ( 'Computing Gradient', G % IGNORABILITY + 1 )
+    call Show ( trim ( G % Name ), 'Name', G % IGNORABILITY + 1 )
+    call Show ( iDimension, 'iDimension', G % IGNORABILITY + 1 )
 
     associate &
       ( CD => G % CoordinateDifference, &
