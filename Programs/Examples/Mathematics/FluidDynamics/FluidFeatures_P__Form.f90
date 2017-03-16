@@ -3,6 +3,9 @@ module FluidFeatures_P__Form
   !-- FluidFeatures_Perfect__Form
 
   use Basics
+  use Mathematics
+  use FluidFeatures_Template
+  use Fluid_P__Template
 
   implicit none
   private
@@ -11,27 +14,22 @@ module FluidFeatures_P__Form
       N_FIELDS_PERFECT  = 6, &
       N_VECTORS_PERFECT = 2
 
-  type, public, extends ( VariableGroupForm ) :: FluidFeatures_P_Form
+  type, public, extends ( FluidFeaturesTemplate ) :: FluidFeatures_P_Form
     integer ( KDI ) :: &
-      IGNORABILITY      = 0, &
       N_FIELDS_PERFECT  = N_FIELDS_PERFECT, &
-      N_VECTORS_PERFECT = N_VECTORS_PERFECT, &
-      N_FIELDS          = 0, &
-      N_VECTORS         = 0
+      N_VECTORS_PERFECT = N_VECTORS_PERFECT
     integer ( KDI ), dimension ( 3 ) :: &
       SHOCK_I   = 0, &
       CONTACT_I = 0
     real ( KDR ) :: &
       ShockThreshold
-    character ( LDL ) :: &
-      Type = ''
-    class ( * ), pointer :: &
-      Grid => null ( )
   contains
     procedure, public, pass :: &
       InitializeAllocate_P
     generic, public :: &
       Initialize => InitializeAllocate_P
+    procedure, public, pass :: &
+      Detect
     final :: &
       Finalize
     procedure, public, pass :: &
@@ -39,19 +37,22 @@ module FluidFeatures_P__Form
   end type FluidFeatures_P_Form
 
     private :: &
-      InitializeBasics
+      InitializeBasics, &
+      Detect_CSL
 
 contains
 
 
   subroutine InitializeAllocate_P &
-               ( FF, Grid, ShockThreshold, nValues, VariableOption, &
+               ( FF, Fluid, Grid, ShockThreshold, nValues, VariableOption, &
                  VectorOption, NameOption, ClearOption, UnitOption, &
                  VectorIndicesOption )
 
     class ( FluidFeatures_P_Form ), intent ( inout ) :: &
       FF
-    class ( * ), intent ( in ), target :: &
+    class ( VariableGroupForm ), intent ( in ) :: &
+      Fluid
+    class ( * ), intent ( in ) :: &
       Grid
     real ( KDR ), intent ( in ) :: &
       ShockThreshold
@@ -79,23 +80,65 @@ contains
     character ( LDL ), dimension ( : ), allocatable :: &
       Variable, &
       Vector
-    logical ( KDL ) :: &
-      Clear
 
-    Clear = .true.
-    if ( present ( ClearOption ) ) Clear = ClearOption
+    call InitializeBasics &
+           ( FF, Variable, Vector, Name, VariableUnit, VectorIndices, &
+             VariableOption, VectorOption, NameOption, UnitOption, &
+             VectorIndicesOption )
 
-    call FF % VariableGroupForm % Initialize &
-           ( [ nValues, FF % N_FIELDS ], &
-             VariableOption = Variable, VectorOption = Vector, &
-             NameOption = Name, ClearOption = Clear, &
-             UnitOption = VariableUnit, &
+    call FF % InitializeTemplate &
+           ( Fluid, Grid, nValues, VariableOption = Variable, &
+             VectorOption = Vector, NameOption = Name, &
+             ClearOption = ClearOption, UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndices )
 
     FF % ShockThreshold = ShockThreshold
-    FF % Grid => Grid
 
   end subroutine InitializeAllocate_P
+
+
+  subroutine Detect ( FF )
+
+    class ( FluidFeatures_P_Form ), intent ( inout ) :: &
+      FF
+
+    integer ( KDI ) :: &
+      iD
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+      S_I_iD, &
+      P, &
+      V_iD
+
+    select type ( F => FF % Fluid )
+    class is ( Fluid_P_Template )
+
+    select type ( Grid => FF % Grid )
+    class is ( Chart_SL_Template )
+
+      call Grid % SetVariablePointer &
+             ( F % Value ( :, F % PRESSURE ), P )
+      do iD = 1, Grid % nDimensions
+        call Grid % SetVariablePointer &
+               ( F % Value ( :, F % VELOCITY_U ( iD ) ), V_iD )
+        call Grid % SetVariablePointer &
+               ( FF % Value ( :, FF % SHOCK_I ( iD ) ), S_I_iD )
+        call Detect_CSL &
+               ( S_I_iD, Grid, P, V_iD, FF % ShockThreshold, iD, &
+                 Grid % nGhostLayers ( iD ) )
+      end do
+
+    class default
+      call Show ( 'Grid type not recognized', CONSOLE % ERROR )
+      call Show ( 'Fluid_P__Template', 'module', CONSOLE % ERROR )
+      call Show ( 'DetectFeaturesTemplate_P', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- Grid
+
+    end select !-- F
+
+    nullify ( S_I_iD, P, V_iD )
+
+  end subroutine Detect
 
 
   impure elemental subroutine Finalize ( FF )
@@ -103,8 +146,7 @@ contains
     type ( FluidFeatures_P_Form ), intent ( inout ) :: &
       FF
 
-    call Show ( 'Finalizing ' // trim ( FF % Type ), FF % IGNORABILITY )
-    call Show ( FF % Name, 'Name', FF % IGNORABILITY )
+    call FF % FinalizeTemplate ( )
    
   end subroutine Finalize
 
@@ -235,6 +277,81 @@ contains
     call VectorIndices ( 2 ) % Initialize ( FF % CONTACT_I )
 
   end subroutine InitializeBasics
+
+
+  subroutine Detect_CSL ( S_I_iD, CSL, P, V_iD, ST, iD, oV )
+
+    real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
+      S_I_iD
+    class ( Chart_SL_Template ), intent ( in ) :: &
+      CSL
+    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+      P, &
+      V_iD
+    real ( KDR ), intent ( in ) :: &
+      ST
+    integer ( KDI ), intent ( in ) :: &
+      iD, &
+      oV
+
+    integer ( KDI ) :: &
+      iV, jV, kV
+    integer ( KDI ), dimension ( 3 ) :: &
+      iaS, &
+      iaVS, &
+      lV, uV
+    real ( KDR ) :: &
+      dP, &
+      P_Min, &
+      dLnP, &
+      dV_iD, &
+      SqrtTiny
+
+    lV = 1
+    where ( shape ( P ) > 1 )
+      lV = oV + 1
+    end where
+    
+    uV = 1
+    where ( shape ( P ) > 1 )
+      uV = shape ( P ) - oV
+    end where
+    uV ( iD ) = size ( P, dim = iD ) - oV + 1 
+      
+    iaS = 0
+    iaS ( iD ) = -1
+      
+    SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
+
+    !$OMP parallel do private ( iV, jV, kV, iaVS )
+    do kV = lV ( 3 ), uV ( 3 ) 
+      do jV = lV ( 2 ), uV ( 2 )
+        do iV = lV ( 1 ), uV ( 1 )
+
+          iaVS = [ iV, jV, kV ] + iaS
+
+          dP  =  abs ( P ( iV, jV, kV )  &
+                       -  P ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ) )
+          P_Min  =  max ( min ( P ( iV, jV, kV ), &
+                                P ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ) ), &
+                          SqrtTiny )
+          dLnP  =  dP / P_Min
+
+          dV_iD  =  V_iD ( iV, jV, kV ) &
+                    -  V_iD ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) )
+ 
+          if ( dLnP > ST .and. dV_iD >= 0.0_KDR ) then
+            S_I_iD ( iV, jV, kV )  =  1.0_KDR
+          else
+            S_I_iD ( iV, jV, kV )  =  0.0_KDR
+          end if
+
+        end do !-- iV
+      end do !-- jV
+    end do !-- kV
+    !$OMP end parallel do
+      
+  end subroutine Detect_CSL
 
 
 end module FluidFeatures_P__Form

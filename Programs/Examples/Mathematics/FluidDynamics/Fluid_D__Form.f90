@@ -4,6 +4,7 @@ module Fluid_D__Form
 
   use Basics
   use Mathematics
+  use FluidFeatures_Template
 
   implicit none
   private
@@ -26,6 +27,8 @@ module Fluid_D__Form
     integer ( KDI ), dimension ( 3 ) :: &
       VELOCITY_U         = 0, &
       MOMENTUM_DENSITY_D = 0
+    class ( FluidFeaturesTemplate ), pointer :: &
+      Features => null ( )
   contains
     procedure, public, pass :: &
       InitializeAllocate_D
@@ -35,6 +38,8 @@ module Fluid_D__Form
       SetPrimitiveConserved
     procedure, public, pass :: &
       SetOutput
+    procedure, public, pass :: &
+      SetFeatures
     final :: &
       Finalize
     procedure, public, pass ( C ) :: &
@@ -181,6 +186,18 @@ contains
              VectorIndicesOption = VectorIndices )
 
   end subroutine SetOutput
+
+
+  subroutine SetFeatures ( F, Features )
+
+    class ( Fluid_D_Form ), intent ( inout ) :: &
+      F
+    class ( FluidFeaturesTemplate ), intent ( in ), target :: &
+      Features
+
+    F % Features => Features
+
+  end subroutine SetFeatures
 
 
   impure elemental subroutine Finalize ( F )
