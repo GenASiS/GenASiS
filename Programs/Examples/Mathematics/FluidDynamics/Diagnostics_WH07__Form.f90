@@ -52,14 +52,14 @@ contains
   end subroutine Initialize_D
 
 
-  subroutine SetOutput ( I, Output )
+  subroutine SetOutput ( D, Output )
 
     class ( Diagnostics_WH07_Form ), intent ( inout ) :: &
-      I
+      D
     type ( VariableGroupForm ), intent ( inout ) :: &
       Output
 
-    call Output % Initialize ( I )
+    call Output % Initialize ( D )
 
   end subroutine SetOutput
 

@@ -8,6 +8,7 @@ module Fluid_CSL__Form
   use Fluid_P_P__Form
   use Fluid_P_NR__Form
   use Fluid_P_MHN__Form
+!  use FluidFeatures_CSL__Form
 
   implicit none
   private
@@ -22,6 +23,8 @@ module Fluid_CSL__Form
       VelocityUnit
     character ( LDF ) :: &
       FluidType = ''
+!    class ( FluidFeatures_CSL_Form ), pointer :: &
+!      Features_CSL => null ( )
   contains
     procedure, public, pass :: &
       Initialize
@@ -33,6 +36,8 @@ module Fluid_CSL__Form
       Fluid_P_NR
     procedure, public, pass :: &
       Fluid_P_MHN
+!    procedure, public, pass :: &
+!      SetFeatures
     final :: &
       Finalize
     procedure, private, pass :: &
@@ -164,6 +169,29 @@ contains
     end select !-- Field
 
   end function Fluid_P_MHN
+
+
+  ! subroutine SetFeatures ( FC, FFC )
+
+  !   class ( Fluid_CSL_Form ), intent ( inout ) :: &
+  !     FC
+  !   class ( Field_CSL_Template ), intent ( in ), target :: &
+  !     FFC
+
+  !   class ( Fluid_P_Template ), pointer :: &
+  !     F
+
+  !   FC % Features_CSL => FFC
+
+  !   F => RMC % Fluid_P_P ( )
+  !   select type ( FF => FFC % Field )
+  !   class is ( InteractionsTemplate )
+  !   call F % SetInteractions ( FF )
+  !   end select !-- FF
+
+  !   nullify ( F )
+
+  ! end subroutine SetFeatures
 
 
   impure elemental subroutine Finalize ( FC )

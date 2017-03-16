@@ -1,5 +1,7 @@
 module FluidFeatures_P__Form
 
+  !-- FluidFeatures_Perfect__Form
+
   use Basics
 
   implicit none
@@ -32,6 +34,8 @@ module FluidFeatures_P__Form
       Initialize => InitializeAllocate_P
     final :: &
       Finalize
+    procedure, public, pass :: &
+      SetOutput
   end type FluidFeatures_P_Form
 
     private :: &
@@ -47,7 +51,7 @@ contains
 
     class ( FluidFeatures_P_Form ), intent ( inout ) :: &
       FF
-    class ( * ), intent ( in ), pointer :: &
+    class ( * ), intent ( in ), target :: &
       Grid
     real ( KDR ), intent ( in ) :: &
       ShockThreshold
@@ -94,7 +98,7 @@ contains
   end subroutine InitializeAllocate_P
 
 
-  subroutine Finalize ( FF )
+  impure elemental subroutine Finalize ( FF )
 
     type ( FluidFeatures_P_Form ), intent ( inout ) :: &
       FF
@@ -103,6 +107,18 @@ contains
     call Show ( FF % Name, 'Name', FF % IGNORABILITY )
    
   end subroutine Finalize
+
+
+  subroutine SetOutput ( FF, Output )
+
+    class ( FluidFeatures_P_Form ), intent ( inout ) :: &
+      FF
+    type ( VariableGroupForm ), intent ( inout ) :: &
+      Output
+
+    call Output % Initialize ( FF )
+
+  end subroutine SetOutput
 
 
   subroutine InitializeBasics &
