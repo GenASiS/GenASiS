@@ -7,4 +7,5 @@ FLUID = \
   Fluid_P_NR__Form.o \
   Fluid_P_P__Form.o \
   Fluid_P__Template.o \
+  FluidFeatures_P__Form.o \
   Fluid_D__Form.o

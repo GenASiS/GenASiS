@@ -3,10 +3,15 @@ Fluid_D__Form.o: \
   Mathematics.o \
   Fluid_D__Form.f90
 
+FluidFeatures_P__Form.o: \
+  Basics.o \
+  FluidFeatures_P__Form.f90
+
 Fluid_P__Template.o: \
   Basics.o \
   Mathematics.o \
   Fluid_D__Form.o \
+  FluidFeatures_P__Form.o \
   Fluid_P__Template.f90
 
 Fluid_P_P__Form.o: \

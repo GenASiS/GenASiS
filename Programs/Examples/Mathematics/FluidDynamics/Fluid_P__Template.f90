@@ -5,6 +5,7 @@ module Fluid_P__Template
   use Basics
   use Mathematics
   use Fluid_D__Form
+  use FluidFeatures_P__Form
   
   implicit none
   private
@@ -29,11 +30,15 @@ module Fluid_P__Template
       MACH_NUMBER         = 0, &
       TEMPERATURE         = 0, &
       ENTROPY_PER_BARYON  = 0
+    class ( FluidFeatures_P_Form ), pointer :: &
+      Features => null ( )
   contains
     procedure, public, pass :: &
       InitializeTemplate_P
     procedure, public, pass :: &
       SetPrimitiveConservedTemplate_P
+    procedure, public, pass :: &
+      SetFeatures
     procedure, public, pass ( C ) :: &
       ComputeFluxes
     procedure, public, pass ( C ) :: &
@@ -42,6 +47,8 @@ module Fluid_P__Template
       ComputeRawFluxesTemplate_P
     procedure, public, pass ( C ) :: &
       ComputeCenterStatesTemplate_P
+    procedure, public, pass :: &
+      DetectFeaturesTemplate_P
     procedure, public, nopass :: &
       ComputeConservedEnergyKernel
     procedure, public, nopass :: &
@@ -56,7 +63,8 @@ module Fluid_P__Template
       ComputeCenterSpeedKernel, &
       ComputeCenterStatesKernel, &
       ComputeFluxes_HLLC_Kernel, &
-      ComputeRawFluxesTemplate_P_Kernel
+      ComputeRawFluxesTemplate_P_Kernel, &
+      DetectFeaturesTemplate_P_CSL
 
   public :: &
     ApplySourcesCurvilinear_Fluid_P
@@ -162,6 +170,18 @@ contains
     call C % Fluid_D_Form % SetPrimitiveConserved ( )
 
   end subroutine SetPrimitiveConservedTemplate_P
+
+
+  subroutine SetFeatures ( F, Features )
+
+    class ( Fluid_P_Template ), intent ( inout ) :: &
+      F
+    class ( FluidFeatures_P_Form ), intent ( in ), target :: &
+      Features
+
+    F % Features => Features
+
+  end subroutine SetFeatures
 
 
   ! subroutine ComputeFromConservedSelf ( C, G, nValuesOption, oValueOption )
@@ -487,6 +507,49 @@ contains
              M_DD )
 
   end subroutine ComputeCenterStatesTemplate_P
+
+
+  subroutine DetectFeaturesTemplate_P ( F )
+
+    class ( Fluid_P_Template ), intent ( inout ) :: &
+      F
+
+    integer ( KDI ) :: &
+      iD
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+      S_I_iD, &
+      P, &
+      V_iD
+
+    associate ( FF => F % Features )
+
+    select type ( Grid => FF % Grid )
+    class is ( Chart_SL_Template )
+
+      call Grid % SetVariablePointer &
+             ( F % Value ( :, F % PRESSURE ), P )
+      do iD = 1, Grid % nDimensions
+        call Grid % SetVariablePointer &
+               ( F % Value ( :, F % VELOCITY_U ( iD ) ), V_iD )
+        call Grid % SetVariablePointer &
+               ( FF % Value ( :, FF % SHOCK_I ( iD ) ), S_I_iD )
+        call DetectFeaturesTemplate_P_CSL &
+               ( S_I_iD, Grid, P, V_iD, FF % ShockThreshold, iD, &
+                 Grid % nGhostLayers ( iD ) )
+      end do
+
+    class default
+      call Show ( 'Grid type not recognized', CONSOLE % ERROR )
+      call Show ( 'Fluid_P__Template', 'module', CONSOLE % ERROR )
+      call Show ( 'DetectFeaturesTemplate_P', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- Grid
+
+    end associate !-- FF
+
+    nullify ( S_I_iD, P, V_iD )
+
+  end subroutine DetectFeaturesTemplate_P
 
 
   subroutine ComputeConservedEnergyKernel &
@@ -946,6 +1009,81 @@ contains
     !$OMP end parallel do
 
   end subroutine ComputeRawFluxesTemplate_P_Kernel
+
+
+  subroutine DetectFeaturesTemplate_P_CSL ( S_I_iD, CSL, P, V_iD, ST, iD, oV )
+
+    real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
+      S_I_iD
+    class ( Chart_SL_Template ), intent ( in ) :: &
+      CSL
+    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+      P, &
+      V_iD
+    real ( KDR ), intent ( in ) :: &
+      ST
+    integer ( KDI ), intent ( in ) :: &
+      iD, &
+      oV
+
+    integer ( KDI ) :: &
+      iV, jV, kV
+    integer ( KDI ), dimension ( 3 ) :: &
+      iaS, &
+      iaVS, &
+      lV, uV
+    real ( KDR ) :: &
+      dP, &
+      P_Min, &
+      dLnP, &
+      dV_iD, &
+      SqrtTiny
+
+    lV = 1
+    where ( shape ( P ) > 1 )
+      lV = oV + 1
+    end where
+    
+    uV = 1
+    where ( shape ( P ) > 1 )
+      uV = shape ( P ) - oV
+    end where
+    uV ( iD ) = size ( P, dim = iD ) - oV + 1 
+      
+    iaS = 0
+    iaS ( iD ) = -1
+      
+    SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
+
+    !$OMP parallel do private ( iV, jV, kV, iaVS )
+    do kV = lV ( 3 ), uV ( 3 ) 
+      do jV = lV ( 2 ), uV ( 2 )
+        do iV = lV ( 1 ), uV ( 1 )
+
+          iaVS = [ iV, jV, kV ] + iaS
+
+          dP  =  abs ( P ( iV, jV, kV )  &
+                       -  P ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ) )
+          P_Min  =  max ( min ( P ( iV, jV, kV ), &
+                                P ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ) ), &
+                          SqrtTiny )
+          dLnP  =  dP / P_Min
+
+          dV_iD  =  V_iD ( iV, jV, kV ) &
+                    -  V_iD ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) )
+ 
+          if ( dLnP > ST .and. dV_iD >= 0.0_KDR ) then
+            S_I_iD ( iV, jV, kV )  =  1.0_KDR
+          else
+            S_I_iD ( iV, jV, kV )  =  0.0_KDR
+          end if
+
+        end do !-- iV
+      end do !-- jV
+    end do !-- kV
+    !$OMP end parallel do
+      
+  end subroutine DetectFeaturesTemplate_P_CSL
 
 
   subroutine ApplySourcesCurvilinear_Fluid_P ( S, Increment, Fluid, TimeStep )
