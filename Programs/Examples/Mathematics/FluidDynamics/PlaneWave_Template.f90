@@ -104,9 +104,11 @@ contains
     allocate ( PW % Reference )
     allocate ( PW % Difference )
     call PW % Reference % Initialize &
-           ( PS, 'DUST', NameShortOption = 'Reference' )
+           ( PS, 'DUST', NameShortOption = 'Reference', &
+             IgnorabilityOption = CONSOLE % INFO_2 )
     call PW % Difference % Initialize &
-           ( PS, 'DUST', NameShortOption = 'Difference' )
+           ( PS, 'DUST', NameShortOption = 'Difference', &
+             IgnorabilityOption = CONSOLE % INFO_2 )
     PW % SetReference => SetReference
 
     !-- Initial conditions

@@ -191,6 +191,7 @@ contains
         call F % Initialize &
                ( FC % VelocityUnit, FC % MassDensityUnit, FC % nValues, &
                  NameOption = FC % NameShort )
+        call F % SetPrimitiveConserved ( )
         call F % SetOutput ( FC % FieldOutput )
       end select !-- F
     case ( 'POLYTROPIC' )
@@ -201,6 +202,7 @@ contains
                ( FC % VelocityUnit, FC % MassDensityUnit, &
                  FC % EnergyDensityUnit, FC % TemperatureUnit, FC % nValues, &
                  NameOption = FC % NameShort )
+        call F % SetPrimitiveConserved ( )
         call F % SetOutput ( FC % FieldOutput )
       end select !-- F
     case ( 'NON_RELATIVISTIC' )
@@ -211,6 +213,7 @@ contains
                ( FC % VelocityUnit, FC % MassDensityUnit, &
                  FC % EnergyDensityUnit, FC % TemperatureUnit, FC % nValues, &
                  NameOption = FC % NameShort )
+        call F % SetPrimitiveConserved ( )
         call F % SetOutput ( FC % FieldOutput )
       end select !-- F
     case ( 'MEAN_HEAVY_NUCLEUS' )
@@ -222,6 +225,7 @@ contains
                  FC % EnergyDensityUnit, FC % NumberDensityUnit, &
                  FC % TemperatureUnit, FC % nValues, &
                  NameOption = FC % NameShort )
+        call F % SetPrimitiveConserved ( )
         call F % SetOutput ( FC % FieldOutput )
       end select !-- F
     case default

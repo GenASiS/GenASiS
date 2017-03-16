@@ -32,6 +32,8 @@ module Fluid_D__Form
     generic, public :: &
       Initialize => InitializeAllocate_D
     procedure, public, pass :: &
+      SetPrimitiveConserved
+    procedure, public, pass :: &
       SetOutput
     final :: &
       Finalize
@@ -116,6 +118,52 @@ contains
 
   end subroutine InitializeAllocate_D
   
+
+  subroutine SetPrimitiveConserved ( C )
+
+    class ( Fluid_D_Form ), intent ( inout ) :: &
+      C
+
+    integer ( KDI ) :: &
+      iF, &  !-- iField
+      oP, &  !-- oPrimitive
+      oC, &  !-- oConserved
+      Ignorability
+    character ( LDL ), dimension ( C % N_PRIMITIVE_DUST ) :: &
+      PrimitiveName
+    character ( LDL ), dimension ( C % N_CONSERVED_DUST ) :: &
+      ConservedName
+
+    oP = C % N_PRIMITIVE_TEMPLATE
+    oC = C % N_CONSERVED_TEMPLATE
+
+    if ( .not. allocated ( C % iaPrimitive ) ) then
+      C % N_PRIMITIVE = oP + C % N_PRIMITIVE_DUST
+      allocate ( C % iaPrimitive ( C % N_PRIMITIVE ) )
+    end if
+    C % iaPrimitive ( oP + 1 : oP + C % N_PRIMITIVE_DUST ) &
+      = [ C % COMOVING_DENSITY, C % VELOCITY_U ]
+
+    if ( .not. allocated ( C % iaConserved ) ) then
+      C % N_CONSERVED = oC + C % N_CONSERVED_DUST
+      allocate ( C % iaConserved ( C % N_CONSERVED ) )
+    end if
+    C % iaConserved ( oC + 1 : oC + C % N_CONSERVED_DUST ) &
+      = [ C % CONSERVED_DENSITY, C % MOMENTUM_DENSITY_D ]
+    
+    do iF = 1, C % N_PRIMITIVE_DUST
+      PrimitiveName ( iF )  =  C % Variable ( C % iaPrimitive ( oP + iF ) )
+    end do
+    do iF = 1, C % N_CONSERVED_DUST
+      ConservedName ( iF )  =  C % Variable ( C % iaConserved ( oC + iF ) )
+    end do
+    call Show ( PrimitiveName, 'Adding primitive variables', &
+                C % IGNORABILITY, oIndexOption = oP )
+    call Show ( ConservedName, 'Adding conserved variables', &
+                C % IGNORABILITY, oIndexOption = oC )
+    
+  end subroutine SetPrimitiveConserved
+
 
   subroutine SetOutput ( F, Output )
 
@@ -516,9 +564,7 @@ contains
     integer ( KDI ) :: &
       iV, &  !-- iVector
       oF, &  !-- oField
-      oV, &  !-- oVector
-      oP, &  !-- oPrimitive
-      oC     !-- oConserved
+      oV     !-- oVector
 
     if ( F % Type == '' ) &
       F % Type = 'a Fluid_D'
@@ -601,25 +647,6 @@ contains
     call VectorIndices ( oV + 1 ) % Initialize ( F % VELOCITY_U )
     call VectorIndices ( oV + 2 ) % Initialize ( F % MOMENTUM_DENSITY_D )
 
-    !-- select primitive, conserved
-
-    oP = F % N_PRIMITIVE_TEMPLATE
-    oC = F % N_CONSERVED_TEMPLATE
-
-    if ( .not. allocated ( F % iaPrimitive ) ) then
-      F % N_PRIMITIVE = oP + F % N_PRIMITIVE_DUST
-      allocate ( F % iaPrimitive ( F % N_PRIMITIVE ) )
-    end if
-    F % iaPrimitive ( oP + 1 : oP + F % N_PRIMITIVE_DUST ) &
-      = [ F % COMOVING_DENSITY, F % VELOCITY_U ]
-
-    if ( .not. allocated ( F % iaConserved ) ) then
-      F % N_CONSERVED = oC + F % N_CONSERVED_DUST
-      allocate ( F % iaConserved ( F % N_CONSERVED ) )
-    end if
-    F % iaConserved ( oC + 1 : oC + F % N_CONSERVED_DUST ) &
-      = [ F % CONSERVED_DENSITY, F % MOMENTUM_DENSITY_D ]
-    
   end subroutine InitializeBasics
 
 
