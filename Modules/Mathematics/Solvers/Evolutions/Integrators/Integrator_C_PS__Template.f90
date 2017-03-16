@@ -79,7 +79,7 @@ contains
       call Show ( 'InitializeTemplate_C_PS', 'subroutine', CONSOLE % WARNING )
     end if
 
-    I % CourantFactor = 0.7
+    I % CourantFactor = 0.9
     call PROGRAM_HEADER % GetParameter &
            ( I % CourantFactor, 'CourantFactor' )
 
