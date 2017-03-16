@@ -71,6 +71,9 @@ contains
 
     call CA % InitializeTemplate_ASC ( A, NameShort, IgnorabilityOption )
 
+    C => CA % Current ( )
+    call C % ShowPrimitiveConserved ( CA % IGNORABILITY )
+
     CA % Atlas_SC => A
 
     if ( .not. allocated ( CA % TallyInterior ) ) then
@@ -85,7 +88,6 @@ contains
         allocate ( CA % TallyBoundaryGlobal ( iB ) % Element )
       end do !-- iB
 
-      C => CA % Current ( )
       call CA % TallyInterior % Initialize ( C, A )
       call CA % TallyTotal % Initialize ( C, A )
       call CA % TallyChange % Initialize ( C, A )

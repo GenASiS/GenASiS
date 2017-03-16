@@ -103,15 +103,15 @@ contains
              ClearOption = ClearOption, UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndices )
 
+    call PC % SetPrimitiveConserved ( )
+
   end subroutine InitializeAllocate_PC
   
 
-  subroutine SetPrimitiveConserved ( C, IgnorabilityOption )
+  subroutine SetPrimitiveConserved ( C )
 
     class ( ProtoCurrentForm ), intent ( inout ) :: &
       C
-    integer ( KDI ), intent ( in ), optional :: &
-      IgnorabilityOption
 
     integer ( KDI ) :: &
       iF, &  !-- iField
@@ -123,10 +123,6 @@ contains
     character ( LDL ), dimension ( C % N_CONSERVED_PC ) :: &
       ConservedName
 
-    Ignorability = C % IGNORABILITY
-    if ( present ( IgnorabilityOption ) ) &
-      Ignorability = IgnorabilityOption
-
     oP = C % N_PRIMITIVE_TEMPLATE
     oC = C % N_CONSERVED_TEMPLATE
 
@@ -136,11 +132,6 @@ contains
     end if
     C % iaPrimitive ( oP + 1 : oP + C % N_PRIMITIVE_PC ) &
       = [ C % COMOVING_DENSITY ]
-    do iF = 1, C % N_PRIMITIVE_PC
-      PrimitiveName ( iF )  =  C % Variable ( C % iaPrimitive ( oP + iF ) )
-    end do
-    call Show ( PrimitiveName, 'Adding primitive variables', &
-                Ignorability, oIndexOption = oP )
 
     if ( .not. allocated ( C % iaConserved ) ) then
       C % N_CONSERVED = oC + C % N_CONSERVED_PC
@@ -148,11 +139,17 @@ contains
     end if
     C % iaConserved ( oC + 1 : oC + C % N_CONSERVED_PC ) &
       = [ C % CONSERVED_DENSITY ]
+
+    do iF = 1, C % N_PRIMITIVE_PC
+      PrimitiveName ( iF )  =  C % Variable ( C % iaPrimitive ( oP + iF ) )
+    end do
     do iF = 1, C % N_CONSERVED_PC
       ConservedName ( iF )  =  C % Variable ( C % iaConserved ( oC + iF ) )
     end do
+    call Show ( PrimitiveName, 'Adding primitive variables', &
+                C % IGNORABILITY, oIndexOption = oP )
     call Show ( ConservedName, 'Adding conserved variables', &
-                Ignorability, oIndexOption = oC )
+                C % IGNORABILITY, oIndexOption = oC )
     
   end subroutine SetPrimitiveConserved
 

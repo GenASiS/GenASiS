@@ -21,7 +21,7 @@ program ProtoCurrent_Form_Test
 
   allocate ( PC )
   call PC % Initialize ( VelocityUnit, nValues = 8 )
-  call PC % SetPrimitiveConserved ( CONSOLE % INFO_1 )
+  call PC % ShowPrimitiveConserved ( CONSOLE % INFO_1 )
 
   call Show ( 'ProtoCurrent variables' )
   call Show ( PC % Name, 'Name' )

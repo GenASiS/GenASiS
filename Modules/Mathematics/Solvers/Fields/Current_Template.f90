@@ -43,6 +43,8 @@ module Current_Template
       InitializeTemplate
     procedure ( SPC ), public, pass, deferred :: &
       SetPrimitiveConserved
+    procedure, public, pass :: &
+      ShowPrimitiveConserved
     procedure, private, pass :: &
       ComputeFromPrimitiveSelf
     procedure, private, pass ( C ) :: &
@@ -83,13 +85,10 @@ module Current_Template
 
   abstract interface
 
-    subroutine SPC ( C, IgnorabilityOption )
-      use Basics
+    subroutine SPC ( C )
       import CurrentTemplate
       class ( CurrentTemplate ), intent ( inout ) :: &
         C
-      integer ( KDI ), intent ( in ), optional :: &
-        IgnorabilityOption
     end subroutine SPC
 
     subroutine CFPC ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
@@ -216,6 +215,37 @@ contains
              VectorIndicesOption = VectorIndices )
 
   end subroutine InitializeTemplate
+
+
+  subroutine ShowPrimitiveConserved ( C, IgnorabilityOption )
+
+    class ( CurrentTemplate ), intent ( in ) :: &
+      C
+    integer ( KDI ), intent ( in ), optional :: &
+      IgnorabilityOption
+
+    integer ( KDI ) :: &
+      iF, &  !-- iField
+      Ignorability
+    character ( LDL ), dimension ( C % N_PRIMITIVE ) :: &
+      PrimitiveName
+    character ( LDL ), dimension ( C % N_CONSERVED ) :: &
+      ConservedName
+
+    Ignorability = C % IGNORABILITY
+    if ( present ( IgnorabilityOption ) ) &
+      Ignorability = IgnorabilityOption
+
+    do iF = 1, C % N_PRIMITIVE
+      PrimitiveName ( iF )  =  C % Variable ( C % iaPrimitive ( iF ) )
+    end do
+    do iF = 1, C % N_CONSERVED
+      ConservedName ( iF )  =  C % Variable ( C % iaConserved ( iF ) )
+    end do
+    call Show ( PrimitiveName, 'Primitive variables', Ignorability )
+    call Show ( ConservedName, 'Conserved variables', Ignorability )
+    
+  end subroutine ShowPrimitiveConserved
 
 
   subroutine ComputeFromPrimitiveSelf ( C, G, nValuesOption, oValueOption )
