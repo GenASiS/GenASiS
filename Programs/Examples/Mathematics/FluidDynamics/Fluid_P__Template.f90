@@ -10,7 +10,7 @@ module Fluid_P__Template
   private
 
     integer ( KDI ), private, parameter :: &
-      N_PRIMITIVE_PERFECT = 1, &
+      N_PRIMITIVE_PERFECT = 0, &
       N_CONSERVED_PERFECT = 1, &
       N_FIELDS_PERFECT    = 8, &
       N_VECTORS_PERFECT   = 0
@@ -32,6 +32,8 @@ module Fluid_P__Template
   contains
     procedure, public, pass :: &
       InitializeTemplate_P
+    procedure, public, pass :: &
+      SetPrimitiveConservedTemplate_P
     procedure, public, pass ( C ) :: &
       ComputeFluxes
     procedure, public, pass ( C ) :: &
@@ -113,6 +115,53 @@ contains
              VectorIndicesOption = VectorIndicesOption )
 
   end subroutine InitializeTemplate_P
+
+
+  subroutine SetPrimitiveConservedTemplate_P ( C )
+
+    class ( Fluid_P_Template ), intent ( inout ) :: &
+      C
+
+    integer ( KDI ) :: &
+      iF, &  !-- iField
+      oP, &  !-- oPrimitive
+      oC     !-- oConserved
+    character ( LDL ), dimension ( C % N_PRIMITIVE_PERFECT ) :: &
+      PrimitiveName
+    character ( LDL ), dimension ( C % N_CONSERVED_PERFECT ) :: &
+      ConservedName
+
+    oP = C % N_PRIMITIVE_TEMPLATE + C % N_PRIMITIVE_DUST
+    oC = C % N_CONSERVED_TEMPLATE + C % N_CONSERVED_DUST
+
+    if ( .not. allocated ( C % iaPrimitive ) ) then
+      C % N_PRIMITIVE = oP + C % N_PRIMITIVE_PERFECT
+      allocate ( C % iaPrimitive ( C % N_PRIMITIVE ) )
+    end if
+!    C % iaPrimitive ( oP + 1 : oP + C % N_PRIMITIVE_PERFECT ) &
+!      = [ ]
+
+    if ( .not. allocated ( C % iaConserved ) ) then
+      C % N_CONSERVED = oC + C % N_CONSERVED_PERFECT
+      allocate ( C % iaConserved ( C % N_CONSERVED ) )
+    end if
+    C % iaConserved ( oC + 1 : oC + C % N_CONSERVED_PERFECT ) &
+      = [ C % CONSERVED_ENERGY ]
+    
+    do iF = 1, C % N_PRIMITIVE_PERFECT
+      PrimitiveName ( iF )  =  C % Variable ( C % iaPrimitive ( oP + iF ) )
+    end do
+    do iF = 1, C % N_CONSERVED_PERFECT
+      ConservedName ( iF )  =  C % Variable ( C % iaConserved ( oC + iF ) )
+    end do
+    call Show ( PrimitiveName, 'Adding primitive variables', &
+                C % IGNORABILITY, oIndexOption = oP )
+    call Show ( ConservedName, 'Adding conserved variables', &
+                C % IGNORABILITY, oIndexOption = oC )
+    
+    call C % Fluid_D_Form % SetPrimitiveConserved ( )
+
+  end subroutine SetPrimitiveConservedTemplate_P
 
 
   ! subroutine ComputeFromConservedSelf ( C, G, nValuesOption, oValueOption )
@@ -335,7 +384,7 @@ contains
     integer ( KDI ) :: &
       oV, &  !-- oValue
       nV     !-- nValues
-      
+
     call C % Fluid_D_Form % ComputeRawFluxes &
            ( RawFlux, G, Value_C, Value_G, iDimension, nValuesOption, &
              oValueOption )
@@ -599,7 +648,8 @@ contains
     !-- variable indices
 
     oF = F % N_FIELDS_TEMPLATE + F % N_FIELDS_DUST
-    if ( F % N_FIELDS == 0 ) F % N_FIELDS = oF + F % N_FIELDS_PERFECT
+    if ( F % N_FIELDS == 0 ) &
+      F % N_FIELDS = oF + F % N_FIELDS_PERFECT
 
     F % INTERNAL_ENERGY    = oF + 1
     F % CONSERVED_ENERGY   = oF + 2
@@ -645,25 +695,6 @@ contains
     oV = F % N_VECTORS_TEMPLATE + F % N_VECTORS_DUST
     if ( F % N_VECTORS == 0 ) F % N_VECTORS = oV + F % N_VECTORS_PERFECT
 
-    !-- select primitive, conserved
-
-    oP = F % N_PRIMITIVE_TEMPLATE + F % N_PRIMITIVE_DUST
-    oC = F % N_CONSERVED_TEMPLATE + F % N_CONSERVED_DUST
-
-    if ( .not. allocated ( F % iaPrimitive ) ) then
-      F % N_PRIMITIVE = oP + F % N_PRIMITIVE_PERFECT
-      allocate ( F % iaPrimitive ( F % N_PRIMITIVE ) )
-    end if
-    F % iaPrimitive ( oP + 1 : oP + F % N_PRIMITIVE_PERFECT ) &
-      = [ F % INTERNAL_ENERGY ]
-
-    if ( .not. allocated ( F % iaConserved ) ) then
-      F % N_CONSERVED = oC + F % N_CONSERVED_PERFECT
-      allocate ( F % iaConserved ( F % N_CONSERVED ) )
-    end if
-    F % iaConserved ( oC + 1 : oC + F % N_CONSERVED_PERFECT ) &
-      = [ F % CONSERVED_ENERGY ]
-    
   end subroutine InitializeBasics
   
   
@@ -712,18 +743,31 @@ contains
     integer ( KDI ) :: &
       iV, &
       nValues
+    real ( KDR ) :: &
+      D_Numerator, &
+      S_Numerator, &
+      D_Numerator_Inv
 
     nValues = size ( AC_I )
 
     !$OMP parallel do private ( iV ) 
     do iV = 1, nValues
+
+      D_Numerator &
+        =  AP_I ( iV ) * D_IR ( iV )  +  AM_I ( iV ) * D_IL ( iV ) &
+           -  F_D_IR ( iV )  +  F_D_IL ( iV )
+
+      S_Numerator &
+        =  AP_I ( iV ) * S_IR ( iV )  +  AM_I ( iV ) * S_IL ( iV ) &
+           -  F_S_IR ( iV )  +  F_S_IL ( iV )
+
+      D_Numerator_Inv  &
+        =  max ( D_Numerator, 0.0_KDR )  &
+           /  max ( D_Numerator ** 2, tiny ( 0.0_KDR ) )
+
       AC_I ( iV )  &
-        =  M_UU ( iV ) &
-           * ( AP_I ( iV ) * S_IR ( iV )  +  AM_I ( iV ) * S_IL ( iV ) &
-               -  F_S_IR ( iV )  +  F_S_IL ( iV ) ) &
-           / max ( AP_I ( iV ) * D_IR ( iV )  +  AM_I ( iV ) * D_IL ( iV ) &
-                   -  F_D_IR ( iV )  +  F_D_IL ( iV ), &
-                   tiny ( 0.0_KDR ) )
+        =  M_UU ( iV )  *  S_Numerator  *  D_Numerator_Inv
+
     end do !-- iV
     !$OMP end parallel do
 
@@ -776,10 +820,15 @@ contains
     real ( KDR ) :: &
       AM_VL, &
       AM_AC, &
+      AM_AC_Inv, &
       AP_VR, &
-      AP_AC
+      AP_AC, &
+      AP_AC_Inv, &
+      SqrtTiny
 
     nValues = size ( AC_I )
+
+    SqrtTiny = sqrt ( tiny ( 0.0_KDR ) )
 
     !$OMP parallel do private ( iV ) 
     do iV = 1, nValues
@@ -796,14 +845,18 @@ contains
       V_Dim_ICL ( iV )  =  AC_I ( iV )
       V_Dim_ICR ( iV )  =  AC_I ( iV )
 
-      AM_VL  =  AM_I ( iV )  +  V_Dim_IL ( iV )
-      AM_AC  =  AM_I ( iV )  +  AC_I ( iV )
+      AM_VL     =  AM_I ( iV )  +  V_Dim_IL ( iV )
+      AM_AC     =  AM_I ( iV )  +  AC_I ( iV )
+      AM_AC_Inv =  1.0_KDR &
+                   / sign ( max ( abs ( AM_AC ), SqrtTiny ), AM_AC )
 
-      AP_VR  =  AP_I ( iV )  -  V_Dim_IR ( iV )
-      AP_AC  =  AP_I ( iV )  -  AC_I ( iV )
+      AP_VR     =  AP_I ( iV )  -  V_Dim_IR ( iV )
+      AP_AC     =  AP_I ( iV )  -  AC_I ( iV )
+      AP_AC_Inv =  1.0_KDR &
+                   / sign ( max ( abs ( AP_AC ), SqrtTiny ), AP_AC )
 
-      D_ICL ( iV )  =  D_IL ( iV ) * AM_VL / max ( AM_AC, tiny ( 0.0_KDR ) )
-      D_ICR ( iV )  =  D_IR ( iV ) * AP_VR / max ( AP_AC, tiny ( 0.0_KDR ) )
+      D_ICL ( iV )  =  D_IL ( iV ) * AM_VL * AM_AC_Inv
+      D_ICR ( iV )  =  D_IR ( iV ) * AP_VR * AP_AC_Inv
 
       S_1_ICL ( iV )  =  M_DD ( iV )  *  D_ICL ( iV )  *  V_1_ICL ( iV )
       S_1_ICR ( iV )  =  M_DD ( iV )  *  D_ICR ( iV )  *  V_1_ICR ( iV )
@@ -822,11 +875,11 @@ contains
       G_ICL ( iV )  =  ( G_IL ( iV ) * AM_VL &
                          +  V_Dim_IL ( iV ) * P_IL ( iV ) &
                          -  AC_I ( iV ) * P_ICL ( iV ) ) &
-                       / max ( AM_AC, tiny ( 0.0_KDR ) )
+                       * AM_AC_Inv
       G_ICR ( iV )  =  ( G_IR ( iV ) * AP_VR &
                          -  V_Dim_IR ( iV ) * P_IR ( iV ) &
                          +  AC_I ( iV ) * P_ICR ( iV ) ) &
-                       / max ( AP_AC, tiny ( 0.0_KDR ) )
+                       * AP_AC_Inv
 
     end do !-- iV
     !$OMP end parallel do

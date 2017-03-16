@@ -127,8 +127,7 @@ contains
     integer ( KDI ) :: &
       iF, &  !-- iField
       oP, &  !-- oPrimitive
-      oC, &  !-- oConserved
-      Ignorability
+      oC     !-- oConserved
     character ( LDL ), dimension ( C % N_PRIMITIVE_DUST ) :: &
       PrimitiveName
     character ( LDL ), dimension ( C % N_CONSERVED_DUST ) :: &
