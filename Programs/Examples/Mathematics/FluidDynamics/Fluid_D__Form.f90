@@ -635,7 +635,8 @@ contains
     !-- vectors
 
     oV = F % N_VECTORS_TEMPLATE
-    if ( F % N_VECTORS == 0 ) F % N_VECTORS = oV + F % N_VECTORS_DUST
+    if ( F % N_VECTORS == 0 ) &
+      F % N_VECTORS = oV + F % N_VECTORS_DUST
 
     if ( present ( VectorOption ) ) then
       allocate ( Vector ( size ( VectorOption ) ) )

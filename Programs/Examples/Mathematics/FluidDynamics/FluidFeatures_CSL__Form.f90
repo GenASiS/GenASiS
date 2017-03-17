@@ -19,10 +19,10 @@ module FluidFeatures_CSL__Form
   contains
     procedure, public, pass :: &
       Initialize
-    procedure, private, pass :: &
-      SetField
     final :: &
       Finalize
+    procedure, private, pass :: &
+      SetField
   end type FluidFeatures_CSL_Form
 
 contains
@@ -63,6 +63,8 @@ contains
 
     type ( FluidFeatures_CSL_Form ), intent ( inout ) :: &
       FFC
+
+    nullify ( FFC % Fluid_CSL )
 
     call FFC % FinalizeTemplate ( )
 

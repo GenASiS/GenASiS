@@ -608,7 +608,8 @@ contains
     
     !-- vectors
 
-    if ( C % N_VECTORS == 0 ) C % N_VECTORS = C % N_VECTORS_TEMPLATE
+    if ( C % N_VECTORS == 0 ) &
+      C % N_VECTORS = C % N_VECTORS_TEMPLATE
 
     if ( present ( VectorOption ) ) then
       allocate ( Vector ( size ( VectorOption ) ) )

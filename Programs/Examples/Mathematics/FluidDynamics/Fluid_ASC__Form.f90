@@ -8,9 +8,11 @@ module Fluid_ASC__Form
   use Fluid_P_P__Form
   use Fluid_P_NR__Form
   use Fluid_P_MHN__Form
-  use Fluid_CSL__Form
   use Tally_F_D__Form
   use Tally_F_P__Form
+  use FluidFeatures_CSL__Form
+  use FluidFeatures_ASC__Form
+  use Fluid_CSL__Form
   
   implicit none
   private
@@ -25,6 +27,8 @@ module Fluid_ASC__Form
       VelocityUnit
     character ( LDF ) :: &
       FluidType = ''
+    type ( FluidFeatures_ASC_Form ), allocatable :: &
+      Features_ASC
   contains
     procedure, public, pass :: &
       Initialize
@@ -58,7 +62,8 @@ contains
                  MassDensityUnitOption, EnergyDensityUnitOption, &
                  NumberDensityUnitOption, TemperatureUnitOption, &
                  MassUnitOption, EnergyUnitOption, MomentumUnitOption, &
-                 AngularMomentumUnitOption, IgnorabilityOption )
+                 AngularMomentumUnitOption, ShockThresholdOption, &
+                 IgnorabilityOption )
 
     class ( Fluid_ASC_Form ), intent ( inout ) :: &
       FA
@@ -79,6 +84,8 @@ contains
       EnergyUnitOption, &
       MomentumUnitOption, &
       AngularMomentumUnitOption
+    real ( KDR ), intent ( in ), optional :: &
+      ShockThresholdOption
     integer ( KDL ), intent ( in ), optional :: &
       IgnorabilityOption
 
@@ -188,6 +195,22 @@ contains
 
     call FA % InitializeTemplate_ASC_C ( A, NameShort, IgnorabilityOption )
 
+    allocate ( FA % Features_ASC )
+    associate ( FFA => FA % Features_ASC )
+    call FFA % Initialize &
+           ( FA, FA % FluidType, &
+             NameShortOption = trim ( NameShort ) // '_Features', &
+             ShockThresholdOption = ShockThresholdOption, &
+             IgnorabilityOption = IgnorabilityOption )
+    select type ( FFC => FFA % Chart )
+    class is ( FluidFeatures_CSL_Form )
+      select type ( FC => FA % Chart )
+      class is ( Fluid_CSL_Form )
+        call FC % SetFeatures ( FFC )
+      end select !-- FF
+    end select !-- FFC
+    end associate !-- FFA
+
   end subroutine Initialize
 
 
@@ -275,6 +298,9 @@ contains
 
     type ( Fluid_ASC_Form ), intent ( inout ) :: &
       FA
+
+    if ( allocated ( FA % Features_ASC ) ) &
+      deallocate ( FA % Features_ASC )
 
     call FA % FinalizeTemplate_ASC_C ( )
 

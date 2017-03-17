@@ -11,16 +11,15 @@ module FluidFeatures_P__Form
   private
 
     integer ( KDI ), private, parameter :: &
-      N_FIELDS_PERFECT  = 6, &
-      N_VECTORS_PERFECT = 2
+      N_FIELDS_PERFECT  = 3, &
+      N_VECTORS_PERFECT = 0
 
   type, public, extends ( FluidFeaturesTemplate ) :: FluidFeatures_P_Form
     integer ( KDI ) :: &
       N_FIELDS_PERFECT  = N_FIELDS_PERFECT, &
       N_VECTORS_PERFECT = N_VECTORS_PERFECT
     integer ( KDI ), dimension ( 3 ) :: &
-      SHOCK_I   = 0, &
-      CONTACT_I = 0
+      SHOCK_I   = 0
     real ( KDR ) :: &
       ShockThreshold
   contains
@@ -71,26 +70,19 @@ contains
       optional :: &
         VectorIndicesOption
 
-    type ( Integer_1D_Form ), dimension ( : ), allocatable :: &
-      VectorIndices
     type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
       VariableUnit
-    character ( LDF ) :: &
-      Name 
     character ( LDL ), dimension ( : ), allocatable :: &
-      Variable, &
-      Vector
+      Variable
 
     call InitializeBasics &
-           ( FF, Variable, Vector, Name, VariableUnit, VectorIndices, &
-             VariableOption, VectorOption, NameOption, UnitOption, &
-             VectorIndicesOption )
+           ( FF, Variable, VariableUnit, VariableOption, UnitOption )
 
     call FF % InitializeTemplate &
            ( Fluid, Grid, nValues, VariableOption = Variable, &
-             VectorOption = Vector, NameOption = Name, &
+             VectorOption = VectorOption, NameOption = NameOption, &
              ClearOption = ClearOption, UnitOption = VariableUnit, &
-             VectorIndicesOption = VectorIndices )
+             VectorIndicesOption = VectorIndicesOption )
 
     FF % ShockThreshold = ShockThreshold
 
@@ -164,58 +156,36 @@ contains
 
 
   subroutine InitializeBasics &
-               ( FF, Variable, Vector, Name, VariableUnit, VectorIndices, &
-                 VariableOption, VectorOption, NameOption, &
-                 VariableUnitOption, VectorIndicesOption )
+               ( FF, Variable, VariableUnit, VariableOption, &
+                 VariableUnitOption )
 
     class ( FluidFeatures_P_Form ), intent ( inout ) :: &
       FF
     character ( LDL ), dimension ( : ), allocatable, intent ( out ) :: &
-      Variable, &
-      Vector
-    character ( LDF ), intent ( out ) :: &
-      Name
+      Variable
     type ( MeasuredValueForm ), dimension ( : ), allocatable, &
       intent ( out ) :: &
         VariableUnit
-    !-- FIXME: intent(out) here caused ICE with Intel Compiler 15
-    !          Temporarily set to intent(inout)
-    !type ( Integer_1D_Form ), dimension ( : ), allocatable, &
-    !  intent ( out ) :: &
-    type ( Integer_1D_Form ), dimension ( : ), allocatable, &
-      intent ( inout ) :: &
-        VectorIndices
     character ( * ), dimension ( : ), intent ( in ), optional :: &
-      VariableOption, &
-      VectorOption
-    character ( * ), intent ( in ), optional :: &
-      NameOption
+      VariableOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       VariableUnitOption
-    type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional :: &
-      VectorIndicesOption
 
     integer ( KDI ) :: &
-      iV  !-- iVector
+      iV, &  !-- iVector
+      oF, &  !-- oField
+      oV     !-- oVector
 
     if ( FF % Type == '' ) &
       FF % Type = 'a FluidFeatures_P'
 
-    Name = 'FluidFeatures'
-    if ( present ( NameOption ) ) &
-      Name = NameOption
-
-    FF % IGNORABILITY = CONSOLE % INFO_4 
-    call Show ( 'Initializing ' // trim ( FF % Type ), FF % IGNORABILITY )
-    call Show ( Name, 'Name', FF % IGNORABILITY )
-
     !-- variable indices
 
+    oF = FF % N_FIELDS_TEMPLATE
     if ( FF % N_FIELDS == 0 ) &
-      FF % N_FIELDS = FF % N_FIELDS_PERFECT
+      FF % N_FIELDS = oF + FF % N_FIELDS_PERFECT
 
-    FF % SHOCK_I   = [ 1, 2, 3 ]
-    FF % CONTACT_I = [ 4, 5, 6 ]
+    FF % SHOCK_I  =  oF + [ 1, 2, 3 ]
 
     !-- variable names 
 
@@ -227,13 +197,10 @@ contains
       Variable = ''
     end if
 
-    Variable ( 1 : FF % N_FIELDS_PERFECT ) &
+    Variable ( oF + 1 : oF + FF % N_FIELDS_PERFECT ) &
       = [ 'Shock_I_1  ', &
           'Shock_I_2  ', &
-          'Shock_I_3  ', &
-          'Contact_I_1', &
-          'Contact_I_2', &
-          'Contact_I_3' ]
+          'Shock_I_3  ' ]
           
     !-- units
     
@@ -247,34 +214,9 @@ contains
     
     !-- vectors
 
+    oV = FF % N_VECTORS_TEMPLATE
     if ( FF % N_VECTORS == 0 ) &
-      FF % N_VECTORS = FF % N_VECTORS_PERFECT
-
-    if ( present ( VectorOption ) ) then
-      allocate ( Vector ( size ( VectorOption ) ) )
-      Vector = VectorOption
-    else
-      allocate ( Vector ( FF % N_VECTORS ) )
-      Vector = ''
-    end if
-
-    Vector ( 1 : FF % N_VECTORS_PERFECT ) &
-      = [ 'Shock_I  ', &
-          'Contact_I' ]
-
-    !-- vector indices
-
-    if ( present ( VectorIndicesOption ) ) then
-      allocate ( VectorIndices ( size ( VectorIndicesOption ) ) )
-      do iV = FF % N_VECTORS_PERFECT + 1, size ( VectorIndices )
-        call VectorIndices ( iV ) % Initialize ( VectorIndicesOption ( iV ) )
-      end do
-    else
-      allocate ( VectorIndices ( FF % N_VECTORS ) )
-    end if
-
-    call VectorIndices ( 1 ) % Initialize ( FF % SHOCK_I )
-    call VectorIndices ( 2 ) % Initialize ( FF % CONTACT_I )
+      FF % N_VECTORS = oV + FF % N_VECTORS_PERFECT
 
   end subroutine InitializeBasics
 
@@ -323,6 +265,8 @@ contains
       
     SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
 
+    call Clear ( S_I_iD )
+
     !$OMP parallel do private ( iV, jV, kV, iaVS )
     do kV = lV ( 3 ), uV ( 3 ) 
       do jV = lV ( 2 ), uV ( 2 )
@@ -340,11 +284,8 @@ contains
           dV_iD  =  V_iD ( iV, jV, kV ) &
                     -  V_iD ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) )
  
-          if ( dLnP > ST .and. dV_iD >= 0.0_KDR ) then
+          if ( dLnP > ST .and. dV_iD <= 0.0_KDR ) &
             S_I_iD ( iV, jV, kV )  =  1.0_KDR
-          else
-            S_I_iD ( iV, jV, kV )  =  0.0_KDR
-          end if
 
         end do !-- iV
       end do !-- jV

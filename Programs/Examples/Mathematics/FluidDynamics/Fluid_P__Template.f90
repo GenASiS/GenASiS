@@ -693,7 +693,8 @@ contains
     !-- vectors
 
     oV = F % N_VECTORS_TEMPLATE + F % N_VECTORS_DUST
-    if ( F % N_VECTORS == 0 ) F % N_VECTORS = oV + F % N_VECTORS_PERFECT
+    if ( F % N_VECTORS == 0 ) &
+      F % N_VECTORS = oV + F % N_VECTORS_PERFECT
 
   end subroutine InitializeBasics
   

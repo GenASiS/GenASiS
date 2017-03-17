@@ -37,8 +37,8 @@ module Fluid_CSL__Form
       Fluid_P_NR
     procedure, public, pass :: &
       Fluid_P_MHN
-!    procedure, public, pass :: &
-!      SetFeatures
+    procedure, public, pass :: &
+      SetFeatures
     final :: &
       Finalize
     procedure, private, pass :: &
