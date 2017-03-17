@@ -11,16 +11,17 @@ module FluidFeatures_P__Form
   private
 
     integer ( KDI ), private, parameter :: &
-      N_FIELDS_PERFECT  = 4, &
+      N_FIELDS_PERFECT  = 7, &
       N_VECTORS_PERFECT = 0
 
   type, public, extends ( FluidFeaturesTemplate ) :: FluidFeatures_P_Form
     integer ( KDI ) :: &
       N_FIELDS_PERFECT  = N_FIELDS_PERFECT, &
       N_VECTORS_PERFECT = N_VECTORS_PERFECT, &
-      SHOCK = 0
+      SHOCK             = 0
     integer ( KDI ), dimension ( 3 ) :: &
-      SHOCK_I = 0
+      SHOCK_I          = 0, &
+      DIFFUSIVE_FLUX_I = 0
     real ( KDR ) :: &
       ShockThreshold
   contains
@@ -96,10 +97,12 @@ contains
       FF
 
     integer ( KDI ) :: &
-      iD
+      iD, jD, kD
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       S, &
       S_I_iD, &
+      DF_I_jD, &
+      DF_I_kD, &
       P, &
       V_iD
 
@@ -110,18 +113,33 @@ contains
     class is ( Chart_SL_Template )
 
       call Grid % SetVariablePointer &
-             ( F % Value ( :, F % PRESSURE ), P )
-      call Grid % SetVariablePointer &
              ( FF % Value ( :, FF % SHOCK ), S )
       call Clear ( S )
+
+      call Grid % SetVariablePointer &
+             ( F % Value ( :, F % PRESSURE ), P )
+
       do iD = 1, Grid % nDimensions
-        call Grid % SetVariablePointer &
-               ( F % Value ( :, F % VELOCITY_U ( iD ) ), V_iD )
+
+        jD = mod ( iD, 3 ) + 1
+        kD = mod ( jD, 3 ) + 1
+
         call Grid % SetVariablePointer &
                ( FF % Value ( :, FF % SHOCK_I ( iD ) ), S_I_iD )
+        call Grid % SetVariablePointer &
+               ( FF % Value ( :, FF % DIFFUSIVE_FLUX_I ( jD ) ), DF_I_jD )
+        call Grid % SetVariablePointer &
+               ( FF % Value ( :, FF % DIFFUSIVE_FLUX_I ( kD ) ), DF_I_kD )
         call Clear ( S_I_iD )
+        call Clear ( DF_I_jD )
+        call Clear ( DF_I_kD )
+
+        call Grid % SetVariablePointer &
+               ( F % Value ( :, F % VELOCITY_U ( iD ) ), V_iD )
+
         call Detect_CSL &
-               ( S, S_I_iD, Grid, P, V_iD, FF % ShockThreshold, iD, &
+               ( S, S_I_iD, DF_I_jD, DF_I_kD, Grid, P, V_iD, &
+                 FF % ShockThreshold, iD, jD, kD, &
                  Grid % nGhostLayers ( iD ) )
       end do
 
@@ -156,7 +174,8 @@ contains
     type ( VariableGroupForm ), intent ( inout ) :: &
       Output
 
-    call Output % Initialize ( FF, iaSelectedOption = [ FF % SHOCK ] )
+    call Output % Initialize &
+           ( FF, iaSelectedOption = [ FF % SHOCK, FF % DIFFUSIVE_FLUX_I ] )
 
   end subroutine SetOutput
 
@@ -191,8 +210,9 @@ contains
     if ( FF % N_FIELDS == 0 ) &
       FF % N_FIELDS = oF + FF % N_FIELDS_PERFECT
 
-    FF % SHOCK    =  oF + 1
-    FF % SHOCK_I  =  oF + [ 2, 3, 4 ]
+    FF % SHOCK             =  oF + 1
+    FF % SHOCK_I           =  oF + [ 2, 3, 4 ]
+    FF % DIFFUSIVE_FLUX_I  =  oF + [ 5, 6, 7 ]
 
     !-- variable names 
 
@@ -205,10 +225,13 @@ contains
     end if
 
     Variable ( oF + 1 : oF + FF % N_FIELDS_PERFECT ) &
-      = [ 'Shock    ', &
-          'Shock_I_1', &
-          'Shock_I_2', &
-          'Shock_I_3' ]
+      = [ 'Shock            ', &
+          'Shock_I_1        ', &
+          'Shock_I_2        ', &
+          'Shock_I_3        ', &
+          'DiffusiveFlux_I_1', &
+          'DiffusiveFlux_I_2', &
+          'DiffusiveFlux_I_3' ]
           
     !-- units
     
@@ -229,11 +252,15 @@ contains
   end subroutine InitializeBasics
 
 
-  subroutine Detect_CSL ( S, S_I_iD, CSL, P, V_iD, ST, iD, oV )
+  subroutine Detect_CSL &
+               ( S, S_I_iD, DF_I_jD, DF_I_kD, CSL, P, V_iD, ST, &
+                 iD, jD, kD, oV )
 
     real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
       S, &
-      S_I_iD
+      S_I_iD, &
+      DF_I_jD, &
+      DF_I_kD
     class ( Chart_SL_Template ), intent ( in ) :: &
       CSL
     real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
@@ -242,14 +269,14 @@ contains
     real ( KDR ), intent ( in ) :: &
       ST
     integer ( KDI ), intent ( in ) :: &
-      iD, &
+      iD, jD, kD, &
       oV
 
     integer ( KDI ) :: &
       iV, jV, kV
     integer ( KDI ), dimension ( 3 ) :: &
-      iaS, &
-      iaVS, &
+      iaS_i, iaS_j, iaS_k, &
+      iaV_i, iaV_j, iaV_ij, iaV_k, iaV_ik, &
       lV, uV
     real ( KDR ) :: &
       dP, &
@@ -269,35 +296,71 @@ contains
     end where
     uV ( iD ) = size ( P, dim = iD ) - oV + 1 
       
-    iaS = 0
-    iaS ( iD ) = -1
+    iaS_i = 0
+    iaS_i ( iD ) = -1
       
+    iaS_j = 0
+    if ( size ( P, dim = jD ) > 1 ) &
+      iaS_j ( jD ) = +1
+
+    iaS_k = 0
+    if ( size ( P, dim = kD ) > 1 ) &
+      iaS_k ( kD ) = +1
+
     SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
 
-    !$OMP parallel do private ( iV, jV, kV, iaVS )
+    !$OMP parallel do &
+    !$OMP   private ( iV, jV, kV, iaV_i, iaV_j, iaV_ij, iaV_k, iaV_ik )
     do kV = lV ( 3 ), uV ( 3 ) 
       do jV = lV ( 2 ), uV ( 2 )
         do iV = lV ( 1 ), uV ( 1 )
 
-          iaVS = [ iV, jV, kV ] + iaS
+          iaV_i  = [ iV, jV, kV ] + iaS_i
+          iaV_j  = [ iV, jV, kV ] + iaS_j
+          iaV_ij = [ iV, jV, kV ] + iaS_i + iaS_j
+          iaV_k  = [ iV, jV, kV ] + iaS_k
+          iaV_ik = [ iV, jV, kV ] + iaS_i + iaS_k
 
           dP  =  abs ( P ( iV, jV, kV )  &
-                       -  P ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ) )
+                       -  P ( iaV_i ( 1 ), iaV_i ( 2 ), iaV_i ( 3 ) ) )
           P_Min  =  max ( min ( P ( iV, jV, kV ), &
-                                P ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ) ), &
+                                P ( iaV_i ( 1 ), iaV_i ( 2 ), iaV_i ( 3 ) ) ), &
                           SqrtTiny )
           dLnP  =  dP / P_Min
 
           dV_iD  =  V_iD ( iV, jV, kV ) &
-                    -  V_iD ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) )
+                    -  V_iD ( iaV_i ( 1 ), iaV_i ( 2 ), iaV_i ( 3 ) )
  
           if ( dLnP > ST .and. dV_iD <= 0.0_KDR ) then
+
             S_I_iD ( iV, jV, kV )  &
               =  1.0_KDR
             S ( iV, jV, kV )  &
               =  S ( iV, jV, kV )  +  1.0_KDR
-            S ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) )  &
-              =  S ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ) + 1.0_KDR
+            S ( iaV_i ( 1 ), iaV_i ( 2 ), iaV_i ( 3 ) )  &
+              =  S ( iaV_i ( 1 ), iaV_i ( 2 ), iaV_i ( 3 ) )  +  1.0_KDR
+
+            !-- Use diffuse flux in transverse directions, on both sides of 
+            !   the shock
+
+            DF_I_jD ( iV, jV, kV ) &
+              =  1.0_KDR
+            DF_I_jD ( iaV_i ( 1 ), iaV_i ( 2 ), iaV_i ( 3 ) ) &
+              =  1.0_KDR
+            DF_I_jD ( iaV_j ( 1 ), iaV_j ( 2 ), iaV_j ( 3 ) ) &
+              =  1.0_KDR
+            DF_I_jD ( iaV_ij ( 1 ), iaV_ij ( 2 ), iaV_ij ( 3 ) ) &
+              =  1.0_KDR
+
+            DF_I_kD ( iV, jV, kV ) &
+              =  1.0_KDR
+            DF_I_kD ( iaV_i ( 1 ), iaV_i ( 2 ), iaV_i ( 3 ) ) &
+              =  1.0_KDR
+            DF_I_kD ( iaV_k ( 1 ), iaV_k ( 2 ), iaV_k ( 3 ) ) &
+              =  1.0_KDR
+            DF_I_kD ( iaV_ik ( 1 ), iaV_ik ( 2 ), iaV_ik ( 3 ) ) &
+              =  1.0_KDR
+
           end if
 
         end do !-- iV
