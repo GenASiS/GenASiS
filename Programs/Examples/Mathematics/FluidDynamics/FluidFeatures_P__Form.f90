@@ -11,17 +11,16 @@ module FluidFeatures_P__Form
   private
 
     integer ( KDI ), private, parameter :: &
-      N_FIELDS_PERFECT  = 7, &
+      N_FIELDS_PERFECT  = 4, &
       N_VECTORS_PERFECT = 0
 
   type, public, extends ( FluidFeaturesTemplate ) :: FluidFeatures_P_Form
     integer ( KDI ) :: &
       N_FIELDS_PERFECT  = N_FIELDS_PERFECT, &
       N_VECTORS_PERFECT = N_VECTORS_PERFECT, &
-      SHOCK             = 0
+      SHOCK = 0
     integer ( KDI ), dimension ( 3 ) :: &
-      SHOCK_I          = 0, &
-      DIFFUSIVE_FLUX_I = 0
+      SHOCK_I = 0
     real ( KDR ) :: &
       ShockThreshold
   contains
@@ -210,9 +209,8 @@ contains
     if ( FF % N_FIELDS == 0 ) &
       FF % N_FIELDS = oF + FF % N_FIELDS_PERFECT
 
-    FF % SHOCK             =  oF + 1
-    FF % SHOCK_I           =  oF + [ 2, 3, 4 ]
-    FF % DIFFUSIVE_FLUX_I  =  oF + [ 5, 6, 7 ]
+    FF % SHOCK    =  oF + 1
+    FF % SHOCK_I  =  oF + [ 2, 3, 4 ]
 
     !-- variable names 
 
@@ -225,13 +223,10 @@ contains
     end if
 
     Variable ( oF + 1 : oF + FF % N_FIELDS_PERFECT ) &
-      = [ 'Shock            ', &
-          'Shock_I_1        ', &
-          'Shock_I_2        ', &
-          'Shock_I_3        ', &
-          'DiffusiveFlux_I_1', &
-          'DiffusiveFlux_I_2', &
-          'DiffusiveFlux_I_3' ]
+      = [ 'Shock    ', &
+          'Shock_I_1', &
+          'Shock_I_2', &
+          'Shock_I_3' ]
           
     !-- units
     

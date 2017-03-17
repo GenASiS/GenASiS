@@ -12,6 +12,7 @@ Fluid_D__Form.o: \
 Fluid_P__Template.o: \
   Basics.o \
   Mathematics.o \
+  FluidFeatures_Template.o \
   Fluid_D__Form.o \
   Fluid_P__Template.f90
 

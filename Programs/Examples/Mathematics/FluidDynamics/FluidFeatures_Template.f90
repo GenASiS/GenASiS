@@ -7,7 +7,7 @@ module FluidFeatures_Template
   private
 
     integer ( KDI ), private, parameter :: &
-      N_FIELDS_TEMPLATE  = 0, &
+      N_FIELDS_TEMPLATE  = 3, &
       N_VECTORS_TEMPLATE = 0
 
   type, public, extends ( VariableGroupForm ), abstract :: &
@@ -18,6 +18,8 @@ module FluidFeatures_Template
         N_VECTORS_TEMPLATE = N_VECTORS_TEMPLATE, &
         N_FIELDS          = 0, &
         N_VECTORS         = 0
+      integer ( KDI ), dimension ( 3 ) :: &
+        DIFFUSIVE_FLUX_I = 0
       character ( LDL ) :: &
         Type = ''
       class ( * ), pointer :: &
@@ -72,21 +74,27 @@ contains
       optional :: &
         VectorIndicesOption
 
+    type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
+      VariableUnit
     character ( LDF ) :: &
       Name 
+    character ( LDL ), dimension ( : ), allocatable :: &
+      Variable
     logical ( KDL ) :: &
       Clear
 
-    call InitializeBasics ( FF, Name, NameOption )
+    call InitializeBasics &
+           ( FF, Variable, Name, VariableUnit, VariableOption, &
+             NameOption, UnitOption )
 
     Clear = .true.
     if ( present ( ClearOption ) ) Clear = ClearOption
 
     call FF % VariableGroupForm % Initialize &
            ( [ nValues, FF % N_FIELDS ], &
-             VariableOption = VariableOption, VectorOption = VectorOption, &
+             VariableOption = Variable, VectorOption = VectorOption, &
              NameOption = Name, ClearOption = Clear, &
-             UnitOption = UnitOption, &
+             UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndicesOption )
 
     FF % Grid  => Grid
@@ -109,14 +117,25 @@ contains
   end subroutine FinalizeTemplate
 
 
-  subroutine InitializeBasics ( FF, Name, NameOption )
+  subroutine InitializeBasics &
+               ( FF, Variable, Name, VariableUnit, VariableOption, &
+                 NameOption, VariableUnitOption )
 
     class ( FluidFeaturesTemplate ), intent ( inout ) :: &
       FF
+    character ( LDL ), dimension ( : ), allocatable, intent ( out ) :: &
+      Variable
     character ( LDF ), intent ( out ) :: &
       Name
+    type ( MeasuredValueForm ), dimension ( : ), allocatable, &
+      intent ( out ) :: &
+        VariableUnit
+    character ( * ), dimension ( : ), intent ( in ), optional :: &
+      VariableOption
     character ( * ), intent ( in ), optional :: &
       NameOption
+    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+      VariableUnitOption
 
     if ( FF % Type == '' ) &
       FF % Type = 'a FluidFeatures'
@@ -128,6 +147,43 @@ contains
     FF % IGNORABILITY = CONSOLE % INFO_4 
     call Show ( 'Initializing ' // trim ( FF % Type ), FF % IGNORABILITY )
     call Show ( Name, 'Name', FF % IGNORABILITY )
+
+    !-- variable indices
+
+    if ( FF % N_FIELDS == 0 ) &
+      FF % N_FIELDS = FF % N_FIELDS_TEMPLATE
+
+    FF % DIFFUSIVE_FLUX_I  =  [ 1, 2, 3 ]
+
+    !-- variable names 
+
+    if ( present ( VariableOption ) ) then
+      allocate ( Variable ( size ( VariableOption ) ) )
+      Variable = VariableOption
+    else
+      allocate ( Variable ( FF % N_FIELDS ) )
+      Variable = ''
+    end if
+
+    Variable ( 1 : FF % N_FIELDS_TEMPLATE ) &
+      = [ 'DiffusiveFlux_I_1', &
+          'DiffusiveFlux_I_2', &
+          'DiffusiveFlux_I_3' ]
+          
+    !-- units
+    
+    if ( present ( VariableUnitOption ) ) then
+      allocate ( VariableUnit ( size ( VariableUnitOption ) ) )
+      VariableUnit = VariableUnitOption
+    else
+      allocate ( VariableUnit ( FF % N_FIELDS ) )
+      VariableUnit = UNIT % IDENTITY
+    end if
+    
+    !-- vectors
+
+    if ( FF % N_VECTORS == 0 ) &
+      FF % N_VECTORS = FF % N_VECTORS_TEMPLATE
 
   end subroutine InitializeBasics
 

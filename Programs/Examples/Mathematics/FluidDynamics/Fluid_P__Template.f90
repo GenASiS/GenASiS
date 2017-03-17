@@ -5,6 +5,7 @@ module Fluid_P__Template
   use Basics
   use Mathematics
   use Fluid_D__Form
+  use FluidFeatures_Template
   
   implicit none
   private
@@ -310,7 +311,8 @@ contains
       call C % ComputeRawFluxes &
              ( F_IR % Value, G, C_ICR % Value, G_I % Value, iDimension )
 
-      associate ( iaC => C % iaConserved )    
+      select type ( FF => C % Features )
+      class is ( FluidFeaturesTemplate )
       do iF = 1, C % N_CONSERVED
         call ComputeFluxes_HLLC_Kernel &
                ( F_I  % Value ( :, iF ), &
@@ -318,9 +320,10 @@ contains
                  F_IR % Value ( :, iF ), &
                  SS_I % Value ( :, C % ALPHA_PLUS ), &
                  SS_I % Value ( :, C % ALPHA_MINUS ), &
-                 SS_I % Value ( :, C % ALPHA_CENTER ) )
+                 SS_I % Value ( :, C % ALPHA_CENTER ), &
+                 FF   % Value ( :, FF % DIFFUSIVE_FLUX_I ( iDimension ) ) )
       end do !-- iF
-      end associate !-- iaC
+      end select !-- FF
 
       end associate !-- C_ICL, etc.
 
@@ -888,7 +891,8 @@ contains
   end subroutine ComputeCenterStatesKernel
 
 
-  subroutine ComputeFluxes_HLLC_Kernel ( F_I, F_ICL, F_ICR, AP_I, AM_I, AC_I )
+  subroutine ComputeFluxes_HLLC_Kernel &
+               ( F_I, F_ICL, F_ICR, AP_I, AM_I, AC_I, DF_I )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       F_I
@@ -896,7 +900,8 @@ contains
       F_ICL, F_ICR, &
       AP_I, &
       AM_I, &
-      AC_I
+      AC_I, &
+      DF_I
 
     integer ( KDI ) :: &
       iV, &
@@ -906,6 +911,11 @@ contains
 
     !$OMP parallel do private ( iV ) 
     do iV = 1, nValues
+
+      !-- If flagged for diffusive flux, leave HLL flux in place
+      if ( DF_I ( iV ) > 0.0_KDR ) &
+        cycle
+
       if ( AP_I ( iV ) /= 0.0_KDR .and. AM_I ( iV ) /= 0.0_KDR ) then
         !-- Use the appropriate center state flux
         if ( AC_I ( iV ) >= 0.0_KDR ) then
@@ -914,9 +924,9 @@ contains
           F_I ( iV )  =  F_ICR ( iV )
         end if !-- AC >= 0
       else  !-- AP or AM == 0
-        !-- Keep previously computed HLL flux which is upwind if
-        !   AlphaPlus or AlphaMinus is zero.
+        !-- Leave HLL flux in place (which is upwind in this case)
       end if !-- AP and AM /= 0
+
     end do !-- iV
     !$OMP end parallel do
 
