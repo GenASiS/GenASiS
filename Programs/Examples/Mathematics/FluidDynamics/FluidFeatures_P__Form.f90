@@ -11,15 +11,16 @@ module FluidFeatures_P__Form
   private
 
     integer ( KDI ), private, parameter :: &
-      N_FIELDS_PERFECT  = 3, &
+      N_FIELDS_PERFECT  = 4, &
       N_VECTORS_PERFECT = 0
 
   type, public, extends ( FluidFeaturesTemplate ) :: FluidFeatures_P_Form
     integer ( KDI ) :: &
       N_FIELDS_PERFECT  = N_FIELDS_PERFECT, &
-      N_VECTORS_PERFECT = N_VECTORS_PERFECT
+      N_VECTORS_PERFECT = N_VECTORS_PERFECT, &
+      SHOCK = 0
     integer ( KDI ), dimension ( 3 ) :: &
-      SHOCK_I   = 0
+      SHOCK_I = 0
     real ( KDR ) :: &
       ShockThreshold
   contains
@@ -97,6 +98,7 @@ contains
     integer ( KDI ) :: &
       iD
     real ( KDR ), dimension ( :, :, : ), pointer :: &
+      S, &
       S_I_iD, &
       P, &
       V_iD
@@ -109,13 +111,17 @@ contains
 
       call Grid % SetVariablePointer &
              ( F % Value ( :, F % PRESSURE ), P )
+      call Grid % SetVariablePointer &
+             ( FF % Value ( :, FF % SHOCK ), S )
+      call Clear ( S )
       do iD = 1, Grid % nDimensions
         call Grid % SetVariablePointer &
                ( F % Value ( :, F % VELOCITY_U ( iD ) ), V_iD )
         call Grid % SetVariablePointer &
                ( FF % Value ( :, FF % SHOCK_I ( iD ) ), S_I_iD )
+        call Clear ( S_I_iD )
         call Detect_CSL &
-               ( S_I_iD, Grid, P, V_iD, FF % ShockThreshold, iD, &
+               ( S, S_I_iD, Grid, P, V_iD, FF % ShockThreshold, iD, &
                  Grid % nGhostLayers ( iD ) )
       end do
 
@@ -150,7 +156,7 @@ contains
     type ( VariableGroupForm ), intent ( inout ) :: &
       Output
 
-    call Output % Initialize ( FF )
+    call Output % Initialize ( FF, iaSelectedOption = [ FF % SHOCK ] )
 
   end subroutine SetOutput
 
@@ -185,7 +191,8 @@ contains
     if ( FF % N_FIELDS == 0 ) &
       FF % N_FIELDS = oF + FF % N_FIELDS_PERFECT
 
-    FF % SHOCK_I  =  oF + [ 1, 2, 3 ]
+    FF % SHOCK    =  oF + 1
+    FF % SHOCK_I  =  oF + [ 2, 3, 4 ]
 
     !-- variable names 
 
@@ -198,9 +205,10 @@ contains
     end if
 
     Variable ( oF + 1 : oF + FF % N_FIELDS_PERFECT ) &
-      = [ 'Shock_I_1  ', &
-          'Shock_I_2  ', &
-          'Shock_I_3  ' ]
+      = [ 'Shock    ', &
+          'Shock_I_1', &
+          'Shock_I_2', &
+          'Shock_I_3' ]
           
     !-- units
     
@@ -221,9 +229,10 @@ contains
   end subroutine InitializeBasics
 
 
-  subroutine Detect_CSL ( S_I_iD, CSL, P, V_iD, ST, iD, oV )
+  subroutine Detect_CSL ( S, S_I_iD, CSL, P, V_iD, ST, iD, oV )
 
     real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
+      S, &
       S_I_iD
     class ( Chart_SL_Template ), intent ( in ) :: &
       CSL
@@ -265,8 +274,6 @@ contains
       
     SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
 
-    call Clear ( S_I_iD )
-
     !$OMP parallel do private ( iV, jV, kV, iaVS )
     do kV = lV ( 3 ), uV ( 3 ) 
       do jV = lV ( 2 ), uV ( 2 )
@@ -284,8 +291,14 @@ contains
           dV_iD  =  V_iD ( iV, jV, kV ) &
                     -  V_iD ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) )
  
-          if ( dLnP > ST .and. dV_iD <= 0.0_KDR ) &
-            S_I_iD ( iV, jV, kV )  =  1.0_KDR
+          if ( dLnP > ST .and. dV_iD <= 0.0_KDR ) then
+            S_I_iD ( iV, jV, kV )  &
+              =  1.0_KDR
+            S ( iV, jV, kV )  &
+              =  S ( iV, jV, kV )  +  1.0_KDR
+            S ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) )  &
+              =  S ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ) + 1.0_KDR
+          end if
 
         end do !-- iV
       end do !-- jV
