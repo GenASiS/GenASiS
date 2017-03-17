@@ -38,7 +38,10 @@ module FluidFeatures_P__Form
 
     private :: &
       InitializeBasics, &
-      Detect_CSL
+      DetectShocks_CSL
+
+      private :: &
+        DetectShocks_CSL_Kernel
 
 contains
 
@@ -95,52 +98,13 @@ contains
     class ( FluidFeatures_P_Form ), intent ( inout ) :: &
       FF
 
-    integer ( KDI ) :: &
-      iD, jD, kD
-    real ( KDR ), dimension ( :, :, : ), pointer :: &
-      S, &
-      S_I_iD, &
-      DF_I_jD, &
-      DF_I_kD, &
-      P, &
-      V_iD
-
     select type ( F => FF % Fluid )
     class is ( Fluid_P_Template )
 
     select type ( Grid => FF % Grid )
     class is ( Chart_SL_Template )
 
-      call Grid % SetVariablePointer &
-             ( FF % Value ( :, FF % SHOCK ), S )
-      call Clear ( S )
-
-      call Grid % SetVariablePointer &
-             ( F % Value ( :, F % PRESSURE ), P )
-
-      do iD = 1, Grid % nDimensions
-
-        jD = mod ( iD, 3 ) + 1
-        kD = mod ( jD, 3 ) + 1
-
-        call Grid % SetVariablePointer &
-               ( FF % Value ( :, FF % SHOCK_I ( iD ) ), S_I_iD )
-        call Grid % SetVariablePointer &
-               ( FF % Value ( :, FF % DIFFUSIVE_FLUX_I ( jD ) ), DF_I_jD )
-        call Grid % SetVariablePointer &
-               ( FF % Value ( :, FF % DIFFUSIVE_FLUX_I ( kD ) ), DF_I_kD )
-        call Clear ( S_I_iD )
-        call Clear ( DF_I_jD )
-        call Clear ( DF_I_kD )
-
-        call Grid % SetVariablePointer &
-               ( F % Value ( :, F % VELOCITY_U ( iD ) ), V_iD )
-
-        call Detect_CSL &
-               ( S, S_I_iD, DF_I_jD, DF_I_kD, Grid, P, V_iD, &
-                 FF % ShockThreshold, iD, jD, kD, &
-                 Grid % nGhostLayers ( iD ) )
-      end do
+      call DetectShocks_CSL ( FF, F, Grid )
 
     class default
       call Show ( 'Grid type not recognized', CONSOLE % ERROR )
@@ -150,8 +114,6 @@ contains
     end select !-- Grid
 
     end select !-- F
-
-    nullify ( S_I_iD, P, V_iD )
 
   end subroutine Detect
 
@@ -247,7 +209,63 @@ contains
   end subroutine InitializeBasics
 
 
-  subroutine Detect_CSL &
+  subroutine DetectShocks_CSL ( FF, F, CSL )
+
+    class ( FluidFeatures_P_Form ), intent ( inout ) :: &
+      FF
+    class ( Fluid_P_Template ), intent ( in ) :: &
+      F
+    class ( Chart_SL_Template ), intent ( in ) :: &
+      CSL
+
+    integer ( KDI ) :: &
+      iD, jD, kD
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+      S, &
+      S_I_iD, &
+      DF_I_jD, &
+      DF_I_kD, &
+      P, &
+      V_iD
+
+    call CSL % SetVariablePointer &
+           ( FF % Value ( :, FF % SHOCK ), S )
+    call Clear ( S )
+
+    call CSL % SetVariablePointer &
+           ( F % Value ( :, F % PRESSURE ), P )
+
+    do iD = 1, CSL % nDimensions
+
+      jD = mod ( iD, 3 ) + 1
+      kD = mod ( jD, 3 ) + 1
+
+      call CSL % SetVariablePointer &
+             ( FF % Value ( :, FF % SHOCK_I ( iD ) ), S_I_iD )
+      call CSL % SetVariablePointer &
+             ( FF % Value ( :, FF % DIFFUSIVE_FLUX_I ( jD ) ), DF_I_jD )
+      call CSL % SetVariablePointer &
+             ( FF % Value ( :, FF % DIFFUSIVE_FLUX_I ( kD ) ), DF_I_kD )
+      call Clear ( S_I_iD )
+      call Clear ( DF_I_jD )
+      call Clear ( DF_I_kD )
+
+      call CSL % SetVariablePointer &
+             ( F % Value ( :, F % VELOCITY_U ( iD ) ), V_iD )
+
+      call DetectShocks_CSL_Kernel &
+             ( S, S_I_iD, DF_I_jD, DF_I_kD, CSL, P, V_iD, &
+               FF % ShockThreshold, iD, jD, kD, &
+               CSL % nGhostLayers ( iD ) )
+
+    end do !-- iD
+
+    nullify ( S_I_iD, P, V_iD )
+
+  end subroutine DetectShocks_CSL
+
+
+  subroutine DetectShocks_CSL_Kernel &
                ( S, S_I_iD, DF_I_jD, DF_I_kD, CSL, P, V_iD, ST, &
                  iD, jD, kD, oV )
 
@@ -363,7 +381,7 @@ contains
     end do !-- kV
     !$OMP end parallel do
       
-  end subroutine Detect_CSL
+  end subroutine DetectShocks_CSL_Kernel
 
 
 end module FluidFeatures_P__Form
