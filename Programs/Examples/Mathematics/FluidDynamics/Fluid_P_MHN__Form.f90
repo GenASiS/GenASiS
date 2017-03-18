@@ -463,7 +463,7 @@ contains
 
 
   subroutine ComputeCenterStates &
-               ( C_ICL, C_ICR, C, C_IL, C_IR, SS_I, M_DD, iD )
+               ( C_ICL, C_ICR, C, C_IL, C_IR, SS_I, M_DD_22, M_DD_33, iD )
 
     type ( VariableGroupForm ), intent ( inout ) :: &
       C_ICL, C_ICR
@@ -473,12 +473,12 @@ contains
       C_IL, C_IR, &
       SS_I
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      M_DD
+      M_DD_22, M_DD_33
     integer ( KDI ), intent ( in ) :: &
       iD
 
     call C % ComputeCenterStatesTemplate_P &
-           ( C_ICL, C_ICR, C_IL, C_IR, SS_I, M_DD, iD )
+           ( C_ICL, C_ICR, C_IL, C_IR, SS_I, M_DD_22, M_DD_33, iD )
 
     call ComputeCenterStatesKernel &
            ( C_ICL % Value ( :, C % CONSERVED_ELECTRON_DENSITY ), &

@@ -237,11 +237,11 @@ contains
       iDensity, &
       iMomentum
     real ( KDR ), dimension ( : ), allocatable, target :: &
-      M_UU_11, &
-      M_DD_11
+      M_UU_11
     real ( KDR ), dimension ( : ), pointer :: &
       M_UU, &
-      M_DD
+      M_DD_22, &
+      M_DD_33
 
     select type ( I => Increment )
     class is ( IncrementDivergence_FV_Form )
@@ -261,22 +261,21 @@ contains
 
       select case ( iDimension )
       case ( 1 )
-        allocate ( M_UU_11 ( C % nValues ), M_DD_11 ( C % nValues ) )
+        allocate ( M_UU_11 ( C % nValues ) )
         !$OMP parallel do private ( iV )
         do iV = 1, C % nValues
           M_UU_11 ( iV )  =  1.0_KDR
-          M_DD_11 ( iV )  =  1.0_KDR
         end do !-- iV
         !$OMP end parallel do
         M_UU => M_UU_11
-        M_DD => M_DD_11
       case ( 2 )
         M_UU => G_I % Value ( :, G % METRIC_UU_22 )
-        M_DD => G_I % Value ( :, G % METRIC_DD_22 )
       case ( 3 )
         M_UU => G_I % Value ( :, G % METRIC_UU_33 )
-        M_DD => G_I % Value ( :, G % METRIC_DD_33 )
       end select !-- iDimension
+
+      M_DD_22 => G_I % Value ( :, G % METRIC_DD_22 )
+      M_DD_33 => G_I % Value ( :, G % METRIC_DD_33 )
 
       call Search &
              ( C % iaConserved, C % CONSERVED_DENSITY, &
@@ -303,7 +302,7 @@ contains
           C_ICR => I % Storage % Current_ICR )
 
       call C % ComputeCenterStates &
-             ( C_ICL, C_ICR, C_IL, C_IR, SS_I, M_DD, iDimension )
+             ( C_ICL, C_ICR, C_IL, C_IR, SS_I, M_DD_22, M_DD_33, iDimension )
 
       !-- Overwrite F_IL and F_IR with F_ICL and F_ICR
       call C % ComputeRawFluxes &
@@ -336,13 +335,13 @@ contains
       call PROGRAM_HEADER % Abort ( )
     end select !-- Increment
 
-    nullify ( M_UU, M_DD )
+    nullify ( M_UU, M_DD_22, M_DD_33 )
 
   end subroutine ComputeFluxes
 
 
   subroutine ComputeCenterStates &
-               ( C_ICL, C_ICR, C, C_IL, C_IR, SS_I, M_DD, iD )
+               ( C_ICL, C_ICR, C, C_IL, C_IR, SS_I, M_DD_22, M_DD_33, iD )
 
     type ( VariableGroupForm ), intent ( inout ) :: &
       C_ICL, C_ICR
@@ -352,12 +351,12 @@ contains
       C_IL, C_IR, &
       SS_I
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      M_DD
+      M_DD_22, M_DD_33
     integer ( KDI ), intent ( in ) :: &
       iD
 
     call C % ComputeCenterStatesTemplate_P &
-           ( C_ICL, C_ICR, C_IL, C_IR, SS_I, M_DD, iD )
+           ( C_ICL, C_ICR, C_IL, C_IR, SS_I, M_DD_22, M_DD_33, iD )
 
   end subroutine ComputeCenterStates
 
@@ -425,7 +424,7 @@ contains
   
 
   subroutine ComputeCenterStatesTemplate_P &
-               ( C_ICL, C_ICR, C, C_IL, C_IR, SS_I, M_DD, iD )
+               ( C_ICL, C_ICR, C, C_IL, C_IR, SS_I, M_DD_22, M_DD_33, iD )
 
     type ( VariableGroupForm ), intent ( inout ) :: &
       C_ICL, C_ICR
@@ -435,7 +434,7 @@ contains
       C_IL, C_IR, &
       SS_I
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      M_DD
+      M_DD_22, M_DD_33
     integer ( KDI ), intent ( in ) :: &
       iD
 
@@ -487,7 +486,7 @@ contains
              SS_I % Value ( :, C % ALPHA_PLUS ), &
              SS_I % Value ( :, C % ALPHA_MINUS ), &
              SS_I % Value ( :, C % ALPHA_CENTER ), &
-             M_DD )
+             M_DD_22, M_DD_33 )
 
   end subroutine ComputeCenterStatesTemplate_P
 
@@ -787,7 +786,7 @@ contains
                  V_Dim_IL, V_Dim_IR, D_IL, D_IR, S_1_IL, S_1_IR, &
                  S_2_IL, S_2_IR, S_3_IL, S_3_IR, S_Dim_IL, S_Dim_IR, &
                  G_IL, G_IR, P_IL, P_IR, &
-                 AP_I, AM_I, AC_I, M_DD )
+                 AP_I, AM_I, AC_I, M_DD_22, M_DD_33 )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       V_1_ICL, V_1_ICR, &
@@ -816,7 +815,7 @@ contains
       AP_I, &
       AM_I, &
       AC_I, &
-      M_DD
+      M_DD_22, M_DD_33
 
     integer ( KDI ) :: &
       iV, &
@@ -862,14 +861,14 @@ contains
       D_ICL ( iV )  =  D_IL ( iV ) * AM_VL * AM_AC_Inv
       D_ICR ( iV )  =  D_IR ( iV ) * AP_VR * AP_AC_Inv
 
-      S_1_ICL ( iV )  =  M_DD ( iV )  *  D_ICL ( iV )  *  V_1_ICL ( iV )
-      S_1_ICR ( iV )  =  M_DD ( iV )  *  D_ICR ( iV )  *  V_1_ICR ( iV )
+      S_1_ICL ( iV )  =  D_ICL ( iV )  *  V_1_ICL ( iV )
+      S_1_ICR ( iV )  =  D_ICR ( iV )  *  V_1_ICR ( iV )
 
-      S_2_ICL ( iV )  =  M_DD ( iV )  *  D_ICL ( iV )  *  V_2_ICL ( iV )
-      S_2_ICR ( iV )  =  M_DD ( iV )  *  D_ICR ( iV )  *  V_2_ICR ( iV )
+      S_2_ICL ( iV )  =  M_DD_22 ( iV )  *  D_ICL ( iV )  *  V_2_ICL ( iV )
+      S_2_ICR ( iV )  =  M_DD_22 ( iV )  *  D_ICR ( iV )  *  V_2_ICR ( iV )
 
-      S_3_ICL ( iV )  =  M_DD ( iV )  *  D_ICL ( iV )  *  V_3_ICL ( iV )
-      S_3_ICR ( iV )  =  M_DD ( iV )  *  D_ICR ( iV )  *  V_3_ICR ( iV )
+      S_3_ICL ( iV )  =  M_DD_33 ( iV )  *  D_ICL ( iV )  *  V_3_ICL ( iV )
+      S_3_ICR ( iV )  =  M_DD_33 ( iV )  *  D_ICR ( iV )  *  V_3_ICR ( iV )
 
       P_ICL ( iV )  =  P_IL ( iV )  +  S_Dim_IL  ( iV ) * AM_VL &
                                     -  S_Dim_ICL ( iV ) * AM_AC
