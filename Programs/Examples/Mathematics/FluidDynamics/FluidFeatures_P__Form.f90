@@ -11,18 +11,20 @@ module FluidFeatures_P__Form
   private
 
     integer ( KDI ), private, parameter :: &
-      N_FIELDS_PERFECT  = 4, &
+      N_FIELDS_PERFECT  = 5, &
       N_VECTORS_PERFECT = 0
 
   type, public, extends ( FluidFeaturesTemplate ) :: FluidFeatures_P_Form
     integer ( KDI ) :: &
       N_FIELDS_PERFECT  = N_FIELDS_PERFECT, &
       N_VECTORS_PERFECT = N_VECTORS_PERFECT, &
-      SHOCK = 0
+      SHOCK             = 0, &
+      TRIVIAL_DENSITY   = 0
     integer ( KDI ), dimension ( 3 ) :: &
       SHOCK_I = 0
     real ( KDR ) :: &
-      ShockThreshold
+      ShockThreshold, &
+      TrivialDensity
   contains
     procedure, public, pass :: &
       InitializeAllocate_P
@@ -38,18 +40,20 @@ module FluidFeatures_P__Form
 
     private :: &
       InitializeBasics, &
-      DetectShocks_CSL
+      DetectShocks_CSL, &
+      DetectTrivialDensity_CSL
 
       private :: &
-        DetectShocks_CSL_Kernel
+        DetectShocks_CSL_Kernel, &
+        DetectTrivialDensity_CSL_Kernel
 
 contains
 
 
   subroutine InitializeAllocate_P &
-               ( FF, Fluid, Grid, ShockThreshold, nValues, VariableOption, &
-                 VectorOption, NameOption, ClearOption, UnitOption, &
-                 VectorIndicesOption )
+               ( FF, Fluid, Grid, ShockThreshold, TrivialDensity, nValues, &
+                 VariableOption, VectorOption, NameOption, ClearOption, &
+                 UnitOption, VectorIndicesOption )
 
     class ( FluidFeatures_P_Form ), intent ( inout ) :: &
       FF
@@ -58,7 +62,8 @@ contains
     class ( * ), intent ( in ) :: &
       Grid
     real ( KDR ), intent ( in ) :: &
-      ShockThreshold
+      ShockThreshold, &
+      TrivialDensity
     integer ( KDI ), intent ( in ) :: &
       nValues
     character ( * ), dimension ( : ), intent ( in ), optional :: &
@@ -89,6 +94,7 @@ contains
              VectorIndicesOption = VectorIndicesOption )
 
     FF % ShockThreshold = ShockThreshold
+    FF % TrivialDensity = TrivialDensity
 
   end subroutine InitializeAllocate_P
 
@@ -98,6 +104,8 @@ contains
     class ( FluidFeatures_P_Form ), intent ( inout ) :: &
       FF
 
+    call Clear ( FF % Value )
+
     select type ( F => FF % Fluid )
     class is ( Fluid_P_Template )
 
@@ -105,6 +113,7 @@ contains
     class is ( Chart_SL_Template )
 
       call DetectShocks_CSL ( FF, F, Grid )
+      call DetectTrivialDensity_CSL ( FF, F, Grid )
 
     class default
       call Show ( 'Grid type not recognized', CONSOLE % ERROR )
@@ -171,8 +180,9 @@ contains
     if ( FF % N_FIELDS == 0 ) &
       FF % N_FIELDS = oF + FF % N_FIELDS_PERFECT
 
-    FF % SHOCK    =  oF + 1
-    FF % SHOCK_I  =  oF + [ 2, 3, 4 ]
+    FF % SHOCK            =  oF + 1
+    FF % TRIVIAL_DENSITY  =  oF + 2
+    FF % SHOCK_I          =  oF + [ 3, 4, 5 ]
 
     !-- variable names 
 
@@ -185,10 +195,11 @@ contains
     end if
 
     Variable ( oF + 1 : oF + FF % N_FIELDS_PERFECT ) &
-      = [ 'Shock    ', &
-          'Shock_I_1', &
-          'Shock_I_2', &
-          'Shock_I_3' ]
+      = [ 'Shock         ', &
+          'TrivialDensity', &
+          'Shock_I_1     ', &
+          'Shock_I_2     ', &
+          'Shock_I_3     ' ]
           
     !-- units
     
@@ -221,16 +232,15 @@ contains
     integer ( KDI ) :: &
       iD, jD, kD
     real ( KDR ), dimension ( :, :, : ), pointer :: &
-      S, &
-      S_I_iD, &
       DF_I_jD, &
       DF_I_kD, &
+      S, &
+      S_I_iD, &
       P, &
       V_iD
 
     call CSL % SetVariablePointer &
            ( FF % Value ( :, FF % SHOCK ), S )
-    call Clear ( S )
 
     call CSL % SetVariablePointer &
            ( F % Value ( :, F % PRESSURE ), P )
@@ -241,14 +251,11 @@ contains
       kD = mod ( jD, 3 ) + 1
 
       call CSL % SetVariablePointer &
-             ( FF % Value ( :, FF % SHOCK_I ( iD ) ), S_I_iD )
-      call CSL % SetVariablePointer &
              ( FF % Value ( :, FF % DIFFUSIVE_FLUX_I ( jD ) ), DF_I_jD )
       call CSL % SetVariablePointer &
              ( FF % Value ( :, FF % DIFFUSIVE_FLUX_I ( kD ) ), DF_I_kD )
-      call Clear ( S_I_iD )
-      call Clear ( DF_I_jD )
-      call Clear ( DF_I_kD )
+      call CSL % SetVariablePointer &
+             ( FF % Value ( :, FF % SHOCK_I ( iD ) ), S_I_iD )
 
       call CSL % SetVariablePointer &
              ( F % Value ( :, F % VELOCITY_U ( iD ) ), V_iD )
@@ -263,6 +270,46 @@ contains
     nullify ( S_I_iD, P, V_iD )
 
   end subroutine DetectShocks_CSL
+
+
+  subroutine DetectTrivialDensity_CSL ( FF, F, CSL )
+
+    class ( FluidFeatures_P_Form ), intent ( inout ) :: &
+      FF
+    class ( Fluid_P_Template ), intent ( in ) :: &
+      F
+    class ( Chart_SL_Template ), intent ( in ) :: &
+      CSL
+
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+      DF_I_1, &
+      DF_I_2, &
+      DF_I_3, &
+      TD, &
+      D
+
+    if ( FF % TrivialDensity == 0.0_KDR ) &
+      return
+
+    call CSL % SetVariablePointer &
+           ( FF % Value ( :, FF % DIFFUSIVE_FLUX_I ( 1 ) ), DF_I_1 )
+    call CSL % SetVariablePointer &
+           ( FF % Value ( :, FF % DIFFUSIVE_FLUX_I ( 2 ) ), DF_I_2 )
+    call CSL % SetVariablePointer &
+           ( FF % Value ( :, FF % DIFFUSIVE_FLUX_I ( 3 ) ), DF_I_3 )
+
+    call CSL % SetVariablePointer &
+           ( FF % Value ( :, FF % TRIVIAL_DENSITY ), TD )
+    call Clear ( TD )
+    
+    call CSL % SetVariablePointer &
+           ( F % Value ( :, F % CONSERVED_DENSITY ), D )
+
+    call DetectTrivialDensity_CSL_Kernel &
+           ( TD, DF_I_1, DF_I_2, DF_I_3, CSL, D, &
+             FF % TrivialDensity, CSL % nGhostLayers, CSL % nDimensions )
+
+  end subroutine DetectTrivialDensity_CSL
 
 
   subroutine DetectShocks_CSL_Kernel &
@@ -313,11 +360,11 @@ contains
     iaS_i ( iD ) = -1
       
     iaS_j = 0
-    if ( size ( P, dim = jD ) > 1 ) &
+    if ( size ( S, dim = jD ) > 1 ) &
       iaS_j ( jD ) = +1
 
     iaS_k = 0
-    if ( size ( P, dim = kD ) > 1 ) &
+    if ( size ( S, dim = kD ) > 1 ) &
       iaS_k ( kD ) = +1
 
     SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
@@ -337,7 +384,7 @@ contains
           dP  =  abs ( P ( iV, jV, kV )  &
                        -  P ( iaV_i ( 1 ), iaV_i ( 2 ), iaV_i ( 3 ) ) )
           P_Min  =  max ( min ( P ( iV, jV, kV ), &
-                                P ( iaV_i ( 1 ), iaV_i ( 2 ), iaV_i ( 3 ) ) ), &
+                                P ( iaV_i ( 1 ), iaV_i ( 2 ), iaV_i ( 3 ) )), &
                           SqrtTiny )
           dLnP  =  dP / P_Min
 
@@ -382,6 +429,71 @@ contains
     !$OMP end parallel do
       
   end subroutine DetectShocks_CSL_Kernel
+
+
+  subroutine DetectTrivialDensity_CSL_Kernel &
+               ( TD, DF_I_1, DF_I_2, DF_I_3, CSL, D, TDT, oV, nD )
+
+    real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
+      TD, &
+      DF_I_1, &
+      DF_I_2, &
+      DF_I_3
+    class ( Chart_SL_Template ), intent ( in ) :: &
+      CSL
+    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+      D
+    real ( KDR ), intent ( in ) :: &
+      TDT
+    integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
+      oV
+    integer ( KDI ), intent ( in ) :: &
+      nD
+
+    integer ( KDI ) :: &
+      iV, jV, kV
+    integer ( KDI ), dimension ( 3 ) :: &
+      lV, uV
+
+    lV = 1
+    where ( shape ( TD ) > 1 )
+      lV = oV + 1
+    end where
+    
+    uV = 1
+    where ( shape ( TD ) > 1 )
+      uV = shape ( TD ) - oV
+    end where
+
+    !$OMP parallel do private ( iV, jV, kV )
+    do kV = lV ( 3 ), uV ( 3 ) 
+      do jV = lV ( 2 ), uV ( 2 )
+        do iV = lV ( 1 ), uV ( 1 )
+
+          if ( D ( iV, jV, kV ) >= TDT ) &
+            cycle
+
+          TD ( iV, jV, kV ) = 1.0_KDR
+
+          DF_I_1 ( iV,     jV, kV )  =  1.0_KDR
+          DF_I_1 ( iV + 1, jV, kV )  =  1.0_KDR
+
+          if ( nD > 1 ) then
+            DF_I_2 ( iV,     jV, kV )  =  1.0_KDR
+            DF_I_2 ( iV, jV + 1, kV )  =  1.0_KDR
+          end if
+
+          if ( nD > 2 ) then
+            DF_I_3 ( iV, jV, kV     )  =  1.0_KDR
+            DF_I_3 ( iV, jV, kV + 1 )  =  1.0_KDR
+          end if
+
+        end do !-- iV
+      end do !-- jV
+    end do !-- kV
+    !$OMP end parallel do
+      
+  end subroutine DetectTrivialDensity_CSL_Kernel
 
 
 end module FluidFeatures_P__Form

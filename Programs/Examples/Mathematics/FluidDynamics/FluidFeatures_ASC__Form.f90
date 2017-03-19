@@ -11,7 +11,8 @@ module FluidFeatures_ASC__Form
 
   type, public, extends ( Field_ASC_Template ) :: FluidFeatures_ASC_Form
     real ( KDR ) :: &
-      ShockThreshold
+      ShockThreshold, &
+      TrivialDensity
     character ( LDF ) :: &
       FluidType = ''
     class ( Field_ASC_Template ), pointer :: &
@@ -30,7 +31,8 @@ contains
 
   subroutine Initialize &
                ( FFA, Fluid_ASC, FluidType, NameShortOption, &
-                 ShockThresholdOption, IgnorabilityOption )
+                 ShockThresholdOption, TrivialDensityOption, &
+                 IgnorabilityOption )
 
     class ( FluidFeatures_ASC_Form ), intent ( inout ) :: &
       FFA
@@ -41,7 +43,8 @@ contains
     character ( * ), intent ( in ), optional :: &
       NameShortOption
     real ( KDR ), intent ( in ), optional :: &
-      ShockThresholdOption
+      ShockThresholdOption, &
+      TrivialDensityOption
     integer ( KDL ), intent ( in ), optional :: &
       IgnorabilityOption
 
@@ -59,6 +62,12 @@ contains
       FFA % ShockThreshold = ShockThresholdOption
     call PROGRAM_HEADER % GetParameter &
            ( FFA % ShockThreshold, 'ShockThreshold' ) 
+
+    FFA % TrivialDensity = 0.0_KDR
+    if ( present ( TrivialDensityOption ) ) &
+      FFA % TrivialDensity = TrivialDensityOption
+    call PROGRAM_HEADER % GetParameter &
+           ( FFA % TrivialDensity, 'TrivialDensity' ) 
 
     FFA % Fluid_ASC => Fluid_ASC
 
@@ -105,7 +114,8 @@ contains
     class is ( FluidFeatures_CSL_Form )
       call FFC % Initialize &
              ( FC, FA % NameShort, FA % FluidType, FA % ShockThreshold, &
-               nValues, IgnorabilityOption = FA % IGNORABILITY )
+               FA % TrivialDensity, nValues, &
+               IgnorabilityOption = FA % IGNORABILITY )
     end select !-- FFC
 
     call A % AddField ( FA )

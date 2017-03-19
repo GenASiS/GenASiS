@@ -11,7 +11,8 @@ module FluidFeatures_CSL__Form
 
   type, public, extends ( Field_CSL_Template ) :: FluidFeatures_CSL_Form
     real ( KDR ) :: &
-      ShockThreshold
+      ShockThreshold, &
+      TrivialDensity
     character ( LDF ) :: &
       FluidType = ''
     class ( Field_CSL_Template ), pointer :: &
@@ -30,7 +31,7 @@ contains
 
   subroutine Initialize &
                ( FFC, Fluid_CSL, NameShort, FluidType, ShockThreshold, &
-                 nValues, IgnorabilityOption )
+                 TrivialDensity, nValues, IgnorabilityOption )
 
     class ( FluidFeatures_CSL_Form ), intent ( inout ) :: &
       FFC
@@ -40,7 +41,8 @@ contains
       NameShort, &
       FluidType
     real ( KDR ), intent ( in ) :: &
-      ShockThreshold
+      ShockThreshold, &
+      TrivialDensity
     integer ( KDI ), intent ( in ) :: &
       nValues
     integer ( KDL ), intent ( in ), optional :: &
@@ -51,6 +53,7 @@ contains
     FFC % FluidType = FluidType
 
     FFC % ShockThreshold = ShockThreshold
+    FFC % TrivialDensity = TrivialDensity
     FFC % Fluid_CSL => Fluid_CSL
 
     call FFC % InitializeTemplate_CSL &
@@ -85,7 +88,8 @@ contains
       type is ( FluidFeatures_P_Form )
         call FF % Initialize &
                ( FC % Fluid_CSL % Field, FC % Chart, FC % ShockThreshold, &
-                 FC % nValues, NameOption = FC % NameShort )
+                 FC % TrivialDensity, FC % nValues, &
+                 NameOption = FC % NameShort )
         call FF % SetOutput ( FC % FieldOutput )
       end select !-- F
     case default
