@@ -10,7 +10,7 @@ module Fluid_P_MHN__Form
   private
 
     integer ( KDI ), private, parameter :: &
-      N_PRIMITIVE_MEAN_HEAVY_NUCLEUS = 2, &
+      N_PRIMITIVE_MEAN_HEAVY_NUCLEUS = 3, &
       N_CONSERVED_MEAN_HEAVY_NUCLEUS = 1, &
       N_FIELDS_MEAN_HEAVY_NUCLEUS    = 4, &
       N_VECTORS_MEAN_HEAVY_NUCLEUS   = 0
@@ -146,7 +146,7 @@ contains
       allocate ( C % iaPrimitive ( C % N_PRIMITIVE ) )
     end if
     C % iaPrimitive ( oP + 1 : oP + C % N_PRIMITIVE_MEAN_HEAVY_NUCLEUS ) &
-      = [ C % INTERNAL_ENERGY, C % COMOVING_ELECTRON_DENSITY ]
+      = [ C % INTERNAL_ENERGY, C % TEMPERATURE, C % COMOVING_ELECTRON_DENSITY ]
 
     if ( .not. allocated ( C % iaConserved ) ) then
       C % N_CONSERVED = oC + C % N_CONSERVED_MEAN_HEAVY_NUCLEUS
@@ -351,7 +351,7 @@ contains
         YE    => FV ( oV + 1 : oV + nV, C % ELECTRON_FRACTION ), &
         PT    => FV ( oV + 1 : oV + nV, C % PHASE_TRANSITION ) )
 
-    call C % ResetTemperature ( C % Value ( :, C % TEMPERATURE ), T )
+!    call C % ResetTemperature ( C % Value ( :, C % TEMPERATURE ), T )
 
     call C % ComputeBaryonMassKernel ( M )
     call C % ComputeDensityMomentumKernel &
