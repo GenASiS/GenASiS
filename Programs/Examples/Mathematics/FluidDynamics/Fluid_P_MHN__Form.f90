@@ -34,8 +34,6 @@ module Fluid_P_MHN__Form
       SetPrimitiveConserved
     procedure, public, pass :: &
       SetOutput
-    procedure, public, pass :: & 
-      ComputeFromProfile
     procedure, public, pass ( C ) :: &
       ComputeFromPrimitiveCommon
     procedure, public, pass ( C ) :: &
@@ -192,93 +190,6 @@ contains
   end subroutine SetOutput
   
   
-  subroutine ComputeFromProfile ( F, G, nValuesOption, oValueOption ) 
-
-    class ( Fluid_P_MHN_Form  ), intent ( inout ) :: &
-      F
-    class ( GeometryFlatForm ), intent ( in ) :: &
-      G
-    integer ( KDI ), intent ( in ), optional :: &
-      nValuesOption, &
-      oValueOption
-    
-    integer ( KDI ) :: &
-      oV, &  !-- oValue
-      nV     !-- nValues
-      
-    associate &
-      ( FV => F % Value, &
-        GV => G % Value )
-
-    if ( present ( oValueOption ) ) then
-      oV = oValueOption
-    else
-      oV = 0
-    end if
-
-    if ( present ( nValuesOption ) ) then
-      nV = nValuesOption
-    else
-      nV = size ( FV, dim = 1 )
-    end if
-
-    associate &
-      ( M_DD_22 => GV ( oV + 1 : oV + nV, G % METRIC_DD_22 ), &
-        M_DD_33 => GV ( oV + 1 : oV + nV, G % METRIC_DD_33 ), &
-        M_UU_22 => GV ( oV + 1 : oV + nV, G % METRIC_UU_22 ), &
-        M_UU_33 => GV ( oV + 1 : oV + nV, G % METRIC_UU_33 ) )
-    associate &
-      ( FEP_1 => FV ( oV + 1 : oV + nV, F % FAST_EIGENSPEED_PLUS ( 1 ) ), &
-        FEP_2 => FV ( oV + 1 : oV + nV, F % FAST_EIGENSPEED_PLUS ( 2 ) ), &
-        FEP_3 => FV ( oV + 1 : oV + nV, F % FAST_EIGENSPEED_PLUS ( 3 ) ), &
-        FEM_1 => FV ( oV + 1 : oV + nV, F % FAST_EIGENSPEED_MINUS ( 1 ) ), &
-        FEM_2 => FV ( oV + 1 : oV + nV, F % FAST_EIGENSPEED_MINUS ( 2 ) ), &
-        FEM_3 => FV ( oV + 1 : oV + nV, F % FAST_EIGENSPEED_MINUS ( 3 ) ), &
-        M     => FV ( oV + 1 : oV + nV, F % BARYON_MASS ), &
-        N     => FV ( oV + 1 : oV + nV, F % COMOVING_DENSITY ), &
-        V_1   => FV ( oV + 1 : oV + nV, F % VELOCITY_U ( 1 ) ), &
-        V_2   => FV ( oV + 1 : oV + nV, F % VELOCITY_U ( 2 ) ), &
-        V_3   => FV ( oV + 1 : oV + nV, F % VELOCITY_U ( 3 ) ), &
-        D     => FV ( oV + 1 : oV + nV, F % CONSERVED_DENSITY ), &
-        S_1   => FV ( oV + 1 : oV + nV, F % MOMENTUM_DENSITY_D ( 1 ) ), &
-        S_2   => FV ( oV + 1 : oV + nV, F % MOMENTUM_DENSITY_D ( 2 ) ), &
-        S_3   => FV ( oV + 1 : oV + nV, F % MOMENTUM_DENSITY_D ( 3 ) ), &
-        E     => FV ( oV + 1 : oV + nV, F % INTERNAL_ENERGY ), &
-        G     => FV ( oV + 1 : oV + nV, F % CONSERVED_ENERGY ), &
-        P     => FV ( oV + 1 : oV + nV, F % PRESSURE ), &
-        Gamma => FV ( oV + 1 : oV + nV, F % ADIABATIC_INDEX ), &
-        CS    => FV ( oV + 1 : oV + nV, F % SOUND_SPEED ), &
-        MN    => FV ( oV + 1 : oV + nV, F % MACH_NUMBER ), &
-        T     => FV ( oV + 1 : oV + nV, F % TEMPERATURE ), &
-        SB    => FV ( oV + 1 : oV + nV, F % ENTROPY_PER_BARYON ), &
-        NE    => FV ( oV + 1 : oV + nV, F % COMOVING_ELECTRON_DENSITY ), &
-        DE    => FV ( oV + 1 : oV + nV, F % CONSERVED_ELECTRON_DENSITY ), &
-        YE    => FV ( oV + 1 : oV + nV, F % ELECTRON_FRACTION ), &
-        PT    => FV ( oV + 1 : oV + nV, F % PHASE_TRANSITION ) )
-
-    call F % ComputeBaryonMassKernel ( M )
-    call F % Apply_EOS_MHN_T_Kernel &
-           ( P, E, Gamma, SB, YE, PT, M, N, T, NE, &
-             CONSTANT % ATOMIC_MASS_UNIT )
-    call F % ComputeDensityMomentumKernel &
-           ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
-    call F % ComputeConservedEnergyKernel &
-           ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
-    call F % ComputeConservedElectronKernel ( DE, NE )
-    call F % Apply_EOS_MHN_E_Kernel &
-           ( P, T, Gamma, SB, YE, PT, M, N, E, NE, &
-             CONSTANT % ATOMIC_MASS_UNIT )
-    call F % ComputeEigenspeedsFluidKernel &
-           ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, MN, &
-             M, N, V_1, V_2, V_3, S_1, S_2, S_3, P, Gamma, M_UU_22, M_UU_33 )
-
-    end associate !-- FEP_1, etc.
-    end associate !-- M_DD_22, etc.
-    end associate !-- FV, etc.
-    
-  end subroutine ComputeFromProfile
-
-
   subroutine ComputeFromPrimitiveCommon &
                ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
 

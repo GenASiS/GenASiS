@@ -412,7 +412,7 @@ contains
     V_2 = 0.0_KDR
     V_3 = 0.0_KDR
 
-    call F % ComputeFromProfile ( G )
+    call F % ComputeFromPrimitive ( G )
 
     end associate !-- N, etc.
     end select !-- PS
@@ -660,7 +660,7 @@ contains
     Density          ( 1 )  =  N ( 1 )  &
                                +  Slope_N   * ( Radius ( 1 )  -  RC ( 1 ) )
     Temperature      ( 1 )  =  T ( 1 )  &
-                               +  Slope_N   * ( Radius ( 1 )  -  RC ( 1 ) )
+                               +  Slope_T   * ( Radius ( 1 )  -  RC ( 1 ) )
     SpecificEnergy   ( 1 )  =  SE ( 1 )  &
                                +  Slope_SE  * ( Radius ( 1 )  -  RC ( 1 ) )
     ElectronFraction ( 1 )  =  Y_E ( 1 )  &
@@ -702,7 +702,7 @@ contains
     call Show ( Profile ( 1 : 5, iDENSITY_TS ), 'DensityTable' )
     call Show ( Density ( 1 : 5 ), 'DensityEdge' )
     call Show ( Profile ( 1 : 5, iTEMPERATURE_TS ), 'TemperatureTable' )
-    call Show ( Density ( 1 : 5 ), 'TemperatureEdge' )
+    call Show ( Temperature ( 1 : 5 ), 'TemperatureEdge' )
     call Show ( Profile ( 1 : 5, iSPECIFIC_ENERGY_TS ), 'SpecificEnergyTable' )
     call Show ( SpecificEnergy ( 1 : 5 ), 'SpecificEnergyEdge' )
     call Show ( Profile ( 1 : 5, iELECTRON_FRACTION_TS ), &
