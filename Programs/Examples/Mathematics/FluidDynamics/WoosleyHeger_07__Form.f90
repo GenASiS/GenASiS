@@ -16,8 +16,8 @@ module WoosleyHeger_07__Form
   contains
     procedure, public, pass :: &
       Initialize
-    procedure, private, pass :: &  !-- 3
-      SetWriteTimeInterval
+!    procedure, private, pass :: &  !-- 3
+!      SetWriteTimeInterval
     final :: &
       Finalize  
   end type WoosleyHeger_07_Form

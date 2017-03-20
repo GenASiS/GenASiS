@@ -10,7 +10,7 @@ module Fluid_P_MHN__Form
   private
 
     integer ( KDI ), private, parameter :: &
-      N_PRIMITIVE_MEAN_HEAVY_NUCLEUS = 1, &
+      N_PRIMITIVE_MEAN_HEAVY_NUCLEUS = 2, &
       N_CONSERVED_MEAN_HEAVY_NUCLEUS = 1, &
       N_FIELDS_MEAN_HEAVY_NUCLEUS    = 4, &
       N_VECTORS_MEAN_HEAVY_NUCLEUS   = 0
@@ -30,6 +30,8 @@ module Fluid_P_MHN__Form
       InitializeAllocate_P_MHN
     generic, public :: &
       Initialize => InitializeAllocate_P_MHN
+    procedure, public, pass :: &
+      SetPrimitiveConserved
     procedure, public, pass :: &
       SetOutput
     procedure, public, pass :: & 
@@ -116,6 +118,57 @@ contains
 !           ( '../Parameters/HShenEOS_rho220_temp180_ye65_version_1.1_20120817.h5' )
 
   end subroutine InitializeAllocate_P_MHN
+
+
+  subroutine SetPrimitiveConserved ( C )
+
+    class ( Fluid_P_MHN_Form ), intent ( inout ) :: &
+      C
+
+    integer ( KDI ) :: &
+      iF, &  !-- iField
+      oP, &  !-- oPrimitive
+      oC     !-- oConserved
+    character ( LDL ), dimension ( C % N_PRIMITIVE_MEAN_HEAVY_NUCLEUS ) :: &
+      PrimitiveName
+    character ( LDL ), dimension ( C % N_CONSERVED_MEAN_HEAVY_NUCLEUS ) :: &
+      ConservedName
+
+    !-- select primitive, conserved
+
+    oP = C % N_PRIMITIVE_TEMPLATE + C % N_PRIMITIVE_DUST &
+         + C % N_PRIMITIVE_PERFECT
+    oC = C % N_CONSERVED_TEMPLATE + C % N_CONSERVED_DUST &
+         + C % N_CONSERVED_PERFECT
+
+    if ( .not. allocated ( C % iaPrimitive ) ) then
+      C % N_PRIMITIVE = oP + C % N_PRIMITIVE_MEAN_HEAVY_NUCLEUS
+      allocate ( C % iaPrimitive ( C % N_PRIMITIVE ) )
+    end if
+    C % iaPrimitive ( oP + 1 : oP + C % N_PRIMITIVE_MEAN_HEAVY_NUCLEUS ) &
+      = [ C % INTERNAL_ENERGY, C % COMOVING_ELECTRON_DENSITY ]
+
+    if ( .not. allocated ( C % iaConserved ) ) then
+      C % N_CONSERVED = oC + C % N_CONSERVED_MEAN_HEAVY_NUCLEUS
+      allocate ( C % iaConserved ( C % N_CONSERVED ) )
+    end if
+    C % iaConserved ( oC + 1 : oC + C % N_CONSERVED_MEAN_HEAVY_NUCLEUS ) &
+      = [ C % CONSERVED_ELECTRON_DENSITY ]
+    
+    do iF = 1, C % N_PRIMITIVE_MEAN_HEAVY_NUCLEUS
+      PrimitiveName ( iF )  =  C % Variable ( C % iaPrimitive ( oP + iF ) )
+    end do
+    do iF = 1, C % N_CONSERVED_MEAN_HEAVY_NUCLEUS
+      ConservedName ( iF )  =  C % Variable ( C % iaConserved ( oC + iF ) )
+    end do
+    call Show ( PrimitiveName, 'Adding primitive variables', &
+                C % IGNORABILITY, oIndexOption = oP )
+    call Show ( ConservedName, 'Adding conserved variables', &
+                C % IGNORABILITY, oIndexOption = oC )
+
+    call C % SetPrimitiveConservedTemplate_P ( )
+
+  end subroutine SetPrimitiveConserved
 
 
   subroutine SetOutput ( F, Output )
@@ -798,27 +851,6 @@ contains
     if ( F % N_VECTORS == 0 ) F % N_VECTORS &
       = oV + F % N_VECTORS_MEAN_HEAVY_NUCLEUS
 
-    !-- select primitive, conserved
-
-    oP = F % N_PRIMITIVE_TEMPLATE + F % N_PRIMITIVE_DUST &
-         + F % N_PRIMITIVE_PERFECT
-    oC = F % N_CONSERVED_TEMPLATE + F % N_CONSERVED_DUST &
-         + F % N_CONSERVED_PERFECT
-
-    if ( .not. allocated ( F % iaPrimitive ) ) then
-      F % N_PRIMITIVE = oP + F % N_PRIMITIVE_MEAN_HEAVY_NUCLEUS
-      allocate ( F % iaPrimitive ( F % N_PRIMITIVE ) )
-    end if
-    F % iaPrimitive ( oP + 1 : oP + F % N_PRIMITIVE_MEAN_HEAVY_NUCLEUS ) &
-      = [ F % COMOVING_ELECTRON_DENSITY ]
-
-    if ( .not. allocated ( F % iaConserved ) ) then
-      F % N_CONSERVED = oC + F % N_CONSERVED_MEAN_HEAVY_NUCLEUS
-      allocate ( F % iaConserved ( F % N_CONSERVED ) )
-    end if
-    F % iaConserved ( oC + 1 : oC + F % N_CONSERVED_MEAN_HEAVY_NUCLEUS ) &
-      = [ F % CONSERVED_ELECTRON_DENSITY ]
-    
   end subroutine InitializeBasics
 
 
