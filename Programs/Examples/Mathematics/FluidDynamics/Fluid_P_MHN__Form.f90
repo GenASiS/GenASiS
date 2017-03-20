@@ -10,7 +10,7 @@ module Fluid_P_MHN__Form
   private
 
     integer ( KDI ), private, parameter :: &
-      N_PRIMITIVE_MEAN_HEAVY_NUCLEUS = 3, &
+      N_PRIMITIVE_MEAN_HEAVY_NUCLEUS = 2, &
       N_CONSERVED_MEAN_HEAVY_NUCLEUS = 1, &
       N_FIELDS_MEAN_HEAVY_NUCLEUS    = 4, &
       N_VECTORS_MEAN_HEAVY_NUCLEUS   = 0
@@ -52,8 +52,6 @@ module Fluid_P_MHN__Form
       Apply_EOS_MHN_T_Kernel
     procedure, public, nopass :: &
       Apply_EOS_MHN_E_Kernel
-    procedure, public, nopass :: &
-      ResetTemperature
   end type Fluid_P_MHN_Form
 
     private :: &
@@ -146,7 +144,7 @@ contains
       allocate ( C % iaPrimitive ( C % N_PRIMITIVE ) )
     end if
     C % iaPrimitive ( oP + 1 : oP + C % N_PRIMITIVE_MEAN_HEAVY_NUCLEUS ) &
-      = [ C % INTERNAL_ENERGY, C % TEMPERATURE, C % COMOVING_ELECTRON_DENSITY ]
+      = [ C % TEMPERATURE, C % COMOVING_ELECTRON_DENSITY ]
 
     if ( .not. allocated ( C % iaConserved ) ) then
       C % N_CONSERVED = oC + C % N_CONSERVED_MEAN_HEAVY_NUCLEUS
@@ -351,17 +349,15 @@ contains
         YE    => FV ( oV + 1 : oV + nV, C % ELECTRON_FRACTION ), &
         PT    => FV ( oV + 1 : oV + nV, C % PHASE_TRANSITION ) )
 
-!    call C % ResetTemperature ( C % Value ( :, C % TEMPERATURE ), T )
-
     call C % ComputeBaryonMassKernel ( M )
+    call C % Apply_EOS_MHN_T_Kernel &
+           ( P, E, Gamma, SB, YE, PT, M, N, T, NE, &
+             CONSTANT % ATOMIC_MASS_UNIT )
     call C % ComputeDensityMomentumKernel &
            ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
     call C % ComputeConservedEnergyKernel &
            ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
     call C % ComputeConservedElectronKernel ( DE, NE )
-    call C % Apply_EOS_MHN_E_Kernel &
-           ( P, T, Gamma, SB, YE, PT, M, N, E, NE, &
-             CONSTANT % ATOMIC_MASS_UNIT )
     call C % ComputeEigenspeedsFluidKernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, MN, &
              M, N, V_1, V_2, V_3, S_1, S_2, S_3, P, Gamma, M_UU_22, M_UU_33 )
@@ -756,28 +752,6 @@ contains
     !$OMP end parallel do
     
   end subroutine Apply_EOS_MHN_E_Kernel
-
-
-  subroutine ResetTemperature ( T_Value, T )
-
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      T_Value
-    real ( KDR ), dimension ( : ), intent ( out ) :: &
-      T
-
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-
-    nValues = size ( T )
-
-    !$OMP parallel do private ( iV ) 
-    do iV = 1, nValues
-      T ( iV )  =  T_Value ( iV )
-    end do
-    !$OMP end parallel do
-
-  end subroutine ResetTemperature
 
 
   subroutine InitializeBasics &
