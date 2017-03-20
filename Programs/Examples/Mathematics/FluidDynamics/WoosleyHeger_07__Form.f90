@@ -16,8 +16,8 @@ module WoosleyHeger_07__Form
   contains
     procedure, public, pass :: &
       Initialize
-!    procedure, private, pass :: &  !-- 3
-!      SetWriteTimeInterval
+    procedure, private, pass :: &  !-- 3
+      SetWriteTimeInterval
     final :: &
       Finalize  
   end type WoosleyHeger_07_Form
@@ -73,7 +73,8 @@ contains
       RadiusCore, &
       RadiusMax, &
       CellRatio, &
-      FinishTime
+      FinishTime, &
+      CourantFactor
     real ( KDR ), dimension ( 3 ) :: &
       MinCoordinate, &
       MaxCoordinate, &
@@ -240,12 +241,13 @@ contains
 
     !-- Set fluid and initialize Integrator template
 
-    FinishTime = 2.0_KDR * UNIT % SECOND
+    FinishTime    = 1.0_KDR * UNIT % SECOND
+    CourantFactor = 0.7_KDR
 
     call SetFluid ( WH )
     call WH % InitializeTemplate_C_PS &
            ( Name, TimeUnitOption = TimeUnit, FinishTimeOption = FinishTime, &
-             nWriteOption = 30 )
+             CourantFactorOption = CourantFactor, nWriteOption = 30 )
 
     !-- Cleanup
 

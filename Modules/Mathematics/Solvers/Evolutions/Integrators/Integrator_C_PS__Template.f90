@@ -48,7 +48,8 @@ contains
 
 
   subroutine InitializeTemplate_C_PS &
-               ( I, Name, TimeUnitOption, FinishTimeOption, nWriteOption )
+               ( I, Name, TimeUnitOption, FinishTimeOption, &
+                 CourantFactorOption, nWriteOption )
 
     class ( Integrator_C_PS_Template ), intent ( inout ) :: &
       I
@@ -57,7 +58,8 @@ contains
     type ( MeasuredValueForm ), intent ( in ), optional :: &
       TimeUnitOption
     real ( KDR ), intent ( in ), optional :: &
-      FinishTimeOption
+      FinishTimeOption, &
+      CourantFactorOption
     integer ( KDI ), intent ( in ), optional :: &
       nWriteOption
 
@@ -80,6 +82,8 @@ contains
     end if
 
     I % CourantFactor = 0.9
+    if ( present ( CourantFactorOption ) ) &
+      I % CourantFactor = CourantFactorOption
     call PROGRAM_HEADER % GetParameter &
            ( I % CourantFactor, 'CourantFactor' )
 
