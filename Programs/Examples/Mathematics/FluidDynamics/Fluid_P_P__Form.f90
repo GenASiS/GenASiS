@@ -193,8 +193,7 @@ contains
     call Output % Initialize &
            ( F, iaSelectedOption &
                   = [ F % COMOVING_DENSITY, F % VELOCITY_U, F % PRESSURE, &
-                      F % SOUND_SPEED, F % MACH_NUMBER, &
-                      F % ENTROPY_PER_BARYON ], &
+                      F % MACH_NUMBER, F % ENTROPY_PER_BARYON ], &
              VectorOption = [ 'Velocity                       ' ], &
              VectorIndicesOption = VectorIndices )
 

@@ -84,7 +84,6 @@ contains
       TimeUnit, &
       MassDensityUnit, &
       EnergyDensityUnit, &
-      NumberDensityUnit, &
       TemperatureUnit, &
       MassUnit, &
       EnergyUnit, &
@@ -198,7 +197,6 @@ contains
     MassDensityUnit    =  UNIT % MASS_DENSITY_CGS
     EnergyDensityUnit  =  UNIT % MASS_DENSITY_CGS  &
                             *  UNIT % SPEED_OF_LIGHT ** 2
-    NumberDensityUnit  =  UNIT % FEMTOMETER ** ( -3 )
     TemperatureUnit    =  UNIT % MEV
 
     MassUnit             =  UNIT % SOLAR_MASS
@@ -215,7 +213,6 @@ contains
            ( PS, 'MEAN_HEAVY_NUCLEUS', VelocityUnitOption = VelocityUnit, &
              MassDensityUnitOption = MassDensityUnit, &
              EnergyDensityUnitOption = EnergyDensityUnit, &
-             NumberDensityUnitOption = NumberDensityUnit, &
              TemperatureUnitOption   = TemperatureUnit, &
              MassUnitOption = MassUnit, EnergyUnitOption = EnergyUnit, &
              MomentumUnitOption = MomentumUnit, &
@@ -326,7 +323,8 @@ contains
     TimeScaleDensityAve &
       =  ( CONSTANT % GRAVITATIONAL  *  DensityAve ) ** ( -0.5_KDR )
 
-    I % WriteTimeInterval  =  TimeScaleDensityAve  /  I % nWrite
+    I % WriteTimeInterval  &
+      =  min ( TimeScaleDensityAve, TimeScaleVelocityMax )  /  I % nWrite
 
     call Show ( 'Time Scales', I % IGNORABILITY )
     call Show ( VelocityMax, Grid % CoordinateUnit ( 1 ) / I % TimeUnit, &
@@ -392,7 +390,6 @@ contains
           V_2 => F % Value ( :, F % VELOCITY_U ( 2 ) ), &
           V_3 => F % Value ( :, F % VELOCITY_U ( 3 ) ), &
             E => F % Value ( :, F % INTERNAL_ENERGY ), &
-          N_E => F % Value ( :, F % COMOVING_ELECTRON_DENSITY ), &
           Y_E => F % Value ( :, F % ELECTRON_FRACTION ), &
             R => G % Value ( :, G % CENTER ( 1 ) ) )
 
@@ -405,7 +402,6 @@ contains
       call SI ( iELECTRON_FRACTION_SI ) % Evaluate ( R ( iV ), Y_E ( iV ) ) 
 
       E   ( iV )  =  SE  *  N ( iV )
-      N_E ( iV )  =  Y_E ( iV )  *  N ( iV ) / UNIT % ATOMIC_MASS_UNIT
 
     end do
 
@@ -505,8 +501,7 @@ contains
     associate &
       ( DV_F_P => D_WH % Value ( :, D_WH % PRESSURE_FORCE ), &
         DV_F_N => D_WH % Value ( :, D_WH % NET_FORCE ), &
-        DV_P_N => D_WH % Value ( :, D_WH % NET_POWER ), &
-        PT     => F % Value ( :, F % PHASE_TRANSITION ) )
+        DV_P_N => D_WH % Value ( :, D_WH % NET_POWER ) )
 
     DV_F_P = Increment % Value ( :, iMomentum_1 ) / TimeStep
 

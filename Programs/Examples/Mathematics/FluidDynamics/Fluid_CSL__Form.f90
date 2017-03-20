@@ -18,7 +18,6 @@ module Fluid_CSL__Form
     type ( MeasuredValueForm ) :: &
       MassDensityUnit, &
       EnergyDensityUnit, &
-      NumberDensityUnit, &
       TemperatureUnit
     type ( MeasuredValueForm ), dimension ( 3 ) :: &
       VelocityUnit
@@ -50,8 +49,8 @@ contains
 
   subroutine Initialize &
                ( FC, C, NameShort, FluidType, VelocityUnit, MassDensityUnit, &
-                 EnergyDensityUnit, NumberDensityUnit, TemperatureUnit, &
-                 nValues, IgnorabilityOption )
+                 EnergyDensityUnit, TemperatureUnit, nValues, &
+                 IgnorabilityOption )
 
     class ( Fluid_CSL_Form ), intent ( inout ) :: &
       FC
@@ -65,7 +64,6 @@ contains
     type ( MeasuredValueForm ), intent ( in ) :: &
       MassDensityUnit, &
       EnergyDensityUnit, &
-      NumberDensityUnit, &
       TemperatureUnit
     integer ( KDI ), intent ( in ) :: &
       nValues
@@ -78,7 +76,6 @@ contains
 
     FC % MassDensityUnit   = MassDensityUnit
     FC % EnergyDensityUnit = EnergyDensityUnit
-    FC % NumberDensityUnit = NumberDensityUnit
     FC % TemperatureUnit   = TemperatureUnit
     FC % VelocityUnit      = VelocityUnit
 
@@ -251,8 +248,7 @@ contains
       type is ( Fluid_P_MHN_Form )
         call F % Initialize &
                ( FC % VelocityUnit, FC % MassDensityUnit, &
-                 FC % EnergyDensityUnit, FC % NumberDensityUnit, &
-                 FC % TemperatureUnit, FC % nValues, &
+                 FC % EnergyDensityUnit, FC % TemperatureUnit, FC % nValues, &
                  NameOption = FC % NameShort )
         call F % SetPrimitiveConserved ( )
         call F % SetOutput ( FC % FieldOutput )

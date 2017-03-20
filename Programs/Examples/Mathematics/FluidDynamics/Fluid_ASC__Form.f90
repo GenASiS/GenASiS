@@ -21,7 +21,6 @@ module Fluid_ASC__Form
     type ( MeasuredValueForm ) :: &
       MassDensityUnit, &
       EnergyDensityUnit, &
-      NumberDensityUnit, &
       TemperatureUnit
     type ( MeasuredValueForm ), dimension ( 3 ) :: &
       VelocityUnit
@@ -60,10 +59,9 @@ contains
   subroutine Initialize &
                ( FA, A, FluidType, NameShortOption, VelocityUnitOption, &
                  MassDensityUnitOption, EnergyDensityUnitOption, &
-                 NumberDensityUnitOption, TemperatureUnitOption, &
-                 MassUnitOption, EnergyUnitOption, MomentumUnitOption, &
-                 AngularMomentumUnitOption, ShockThresholdOption, &
-                 IgnorabilityOption )
+                 TemperatureUnitOption, MassUnitOption, EnergyUnitOption, &
+                 MomentumUnitOption, AngularMomentumUnitOption, &
+                 ShockThresholdOption, IgnorabilityOption )
 
     class ( Fluid_ASC_Form ), intent ( inout ) :: &
       FA
@@ -78,7 +76,6 @@ contains
     type ( MeasuredValueForm ), intent ( in ), optional :: &
       MassDensityUnitOption, &
       EnergyDensityUnitOption, &
-      NumberDensityUnitOption, &
       TemperatureUnitOption, &
       MassUnitOption, &
       EnergyUnitOption, &
@@ -102,8 +99,6 @@ contains
       FA % MassDensityUnit = MassDensityUnitOption
     if ( present ( EnergyDensityUnitOption ) ) &
       FA % EnergyDensityUnit = EnergyDensityUnitOption
-    if ( present ( NumberDensityUnitOption ) ) &
-      FA % NumberDensityUnit = NumberDensityUnitOption
     if ( present ( TemperatureUnitOption ) ) &
       FA % TemperatureUnit = TemperatureUnitOption
     if ( present ( VelocityUnitOption ) ) &
@@ -326,7 +321,7 @@ contains
       call FC % Initialize &
              ( C, FA % NameShort, FA % FluidType, FA % VelocityUnit, &
                FA % MassDensityUnit, FA % EnergyDensityUnit, &
-               FA % NumberDensityUnit, FA % TemperatureUnit, nValues, &
+               FA % TemperatureUnit, nValues, &
                IgnorabilityOption = FA % IGNORABILITY )
     end select !-- FC
 
