@@ -12,7 +12,7 @@ module FluidFeatures_ASC__Form
   type, public, extends ( Field_ASC_Template ) :: FluidFeatures_ASC_Form
     real ( KDR ) :: &
       ShockThreshold, &
-      TrivialDensity
+      PhaseTransitionThreshold
     character ( LDF ) :: &
       FluidType = ''
     class ( Field_ASC_Template ), pointer :: &
@@ -31,7 +31,7 @@ contains
 
   subroutine Initialize &
                ( FFA, Fluid_ASC, FluidType, NameShortOption, &
-                 ShockThresholdOption, TrivialDensityOption, &
+                 ShockThresholdOption, PhaseTransitionThresholdOption, &
                  IgnorabilityOption )
 
     class ( FluidFeatures_ASC_Form ), intent ( inout ) :: &
@@ -44,7 +44,7 @@ contains
       NameShortOption
     real ( KDR ), intent ( in ), optional :: &
       ShockThresholdOption, &
-      TrivialDensityOption
+      PhaseTransitionThresholdOption
     integer ( KDL ), intent ( in ), optional :: &
       IgnorabilityOption
 
@@ -63,11 +63,16 @@ contains
     call PROGRAM_HEADER % GetParameter &
            ( FFA % ShockThreshold, 'ShockThreshold' ) 
 
-    FFA % TrivialDensity = 0.0_KDR
-    if ( present ( TrivialDensityOption ) ) &
-      FFA % TrivialDensity = TrivialDensityOption
+    select case ( trim ( FluidType ) )
+    case ( 'MEAN_HEAVY_NUCLEUS' )
+      FFA % PhaseTransitionThreshold = 0.05_KDR
+    case default
+      FFA % PhaseTransitionThreshold = 0.0_KDR       
+    end select
+    if ( present ( PhaseTransitionThresholdOption ) ) &
+      FFA % PhaseTransitionThreshold = PhaseTransitionThresholdOption
     call PROGRAM_HEADER % GetParameter &
-           ( FFA % TrivialDensity, 'TrivialDensity' ) 
+           ( FFA % PhaseTransitionThreshold, 'PhaseTransitionThreshold' ) 
 
     FFA % Fluid_ASC => Fluid_ASC
 
@@ -77,6 +82,10 @@ contains
 
     call FFA % InitializeTemplate_ASC &
            ( Fluid_ASC % Atlas, NameShort, IgnorabilityOption )
+
+    call Show ( FFA % ShockThreshold, 'ShockThreshold', FFA % IGNORABILITY )
+    call Show ( FFA % PhaseTransitionThreshold, 'PhaseTransitionThreshold', &
+                FFA % IGNORABILITY )
 
   end subroutine Initialize
 
@@ -114,7 +123,7 @@ contains
     class is ( FluidFeatures_CSL_Form )
       call FFC % Initialize &
              ( FC, FA % NameShort, FA % FluidType, FA % ShockThreshold, &
-               FA % TrivialDensity, nValues, &
+               FA % PhaseTransitionThreshold, nValues, &
                IgnorabilityOption = FA % IGNORABILITY )
     end select !-- FFC
 

@@ -287,6 +287,9 @@ contains
     end associate !-- M_DD_22, etc.
     end associate !-- FV, etc.
     
+    if ( associated ( C % Value, Value_C ) ) &
+      call C % Features % Detect ( )
+
   end subroutine ComputeFromPrimitiveCommon
 
 
@@ -373,6 +376,9 @@ contains
     end associate !-- M_UU_22, etc.
     end associate !-- FV, etc.
     
+    if ( associated ( C % Value, Value_C ) ) &
+      call C % Features % Detect ( )
+
   end subroutine ComputeFromConservedCommon
 
 
