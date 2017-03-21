@@ -538,9 +538,7 @@ contains
 
             DF_I_iD ( iV, jV, kV ) &
               =  1.0_KDR
-            DF_I_iD ( iaV_i ( 1 ), iaV_i ( 2 ), iaV_i ( 3 ) ) &
-              =  1.0_KDR
-
+ 
             DF_I_jD ( iV, jV, kV ) &
               =  1.0_KDR
             DF_I_jD ( iaV_i ( 1 ), iaV_i ( 2 ), iaV_i ( 3 ) ) &
