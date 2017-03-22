@@ -850,13 +850,17 @@ contains
 
       AM_VL     =  AM_I ( iV )  +  V_Dim_IL ( iV )
       AM_AC     =  AM_I ( iV )  +  AC_I ( iV )
+!      AM_AC_Inv =  1.0_KDR &
+!                   / sign ( max ( abs ( AM_AC ), SqrtTiny ), AM_AC )
       AM_AC_Inv =  1.0_KDR &
-                   / sign ( max ( abs ( AM_AC ), SqrtTiny ), AM_AC )
+                   / max ( abs ( AM_AC ), SqrtTiny )
 
       AP_VR     =  AP_I ( iV )  -  V_Dim_IR ( iV )
       AP_AC     =  AP_I ( iV )  -  AC_I ( iV )
+!      AP_AC_Inv =  1.0_KDR &
+!                   / sign ( max ( abs ( AP_AC ), SqrtTiny ), AP_AC )
       AP_AC_Inv =  1.0_KDR &
-                   / sign ( max ( abs ( AP_AC ), SqrtTiny ), AP_AC )
+                   / max ( abs ( AP_AC ), SqrtTiny )
 
       D_ICL ( iV )  =  D_IL ( iV ) * AM_VL * AM_AC_Inv
       D_ICR ( iV )  =  D_IR ( iV ) * AP_VR * AP_AC_Inv
