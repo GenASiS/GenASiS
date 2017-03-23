@@ -66,7 +66,9 @@ contains
     integer ( KDI ) :: &
       iS,  & !-- iStage
       nCellsCore, &
-      nCellsRadius
+      nCellsRadius, &
+      nCellsPolar, &
+      nCellsAzimuthal
     integer ( KDI ), dimension ( 3 ) :: &
       nCells
     real ( KDR ) :: &
@@ -144,14 +146,17 @@ contains
     Spacing        =  'EQUAL'
     Spacing ( 1 )  =  'PROPORTIONAL'
     
-    RadiusCore = 12.0_KDR  *  UNIT % KILOMETER
+    RadiusCore = 40.0_KDR  *  UNIT % KILOMETER
     call PROGRAM_HEADER % GetParameter ( RadiusCore, 'RadiusCore' )
 
-    nCellsCore = 32  !-- Number of central cells with equal spacing
+    nCellsCore = 384  !-- Number of central cells with equal spacing
     call PROGRAM_HEADER % GetParameter ( nCellsCore, 'nCellsCore' )
 
-    nCellsRadius = 8 * nCellsCore
+    nCellsRadius = 6.5 * nCellsCore  !-- Aiming for roughly 10,000 km
     call PROGRAM_HEADER % GetParameter ( nCellsRadius, 'nCellsRadius' )
+
+    nCellsPolar     = 3 * nCellsCore
+    nCellsAzimuthal = 2 * nCellsPolar
 
     call Show ( 'Mesh core parameters' )
     call Show ( RadiusCore, UNIT % KILOMETER, 'RadiusCore' )
@@ -159,16 +164,16 @@ contains
     call Show ( RadiusCore / nCellsCore, UNIT % KILOMETER, 'CellWidthCore' )
 
     Ratio        =  0.0_KDR
-    Ratio ( 1 )  =  CONSTANT % PI / ( 3 * nCellsCore )  !-- dTheta
+    Ratio ( 1 )  =  CONSTANT % PI / nCellsPolar  !-- dTheta
 
     Scale        =  0.0_KDR
     Scale ( 1 )  =  RadiusCore
 
     nCells = [ nCellsRadius, 1, 1 ]
     if ( PS % nDimensions > 1 ) &
-      nCells ( 2 ) = 3 * nCellsCore
+      nCells ( 2 ) = nCellsPolar
     if ( PS % nDimensions > 2 ) &
-      nCells ( 3 ) = 2 * nCells ( 2 )
+      nCells ( 3 ) = nCellsAzimuthal
 
     call PS % CreateChart &
            ( SpacingOption = Spacing, &
@@ -241,10 +246,13 @@ contains
     FinishTime    = 1.0_KDR * UNIT % SECOND
     CourantFactor = 0.7_KDR
 
+call Show ( '>>> 0' )
     call SetFluid ( WH )
+call Show ( '>>> 1' )
     call WH % InitializeTemplate_C_PS &
            ( Name, TimeUnitOption = TimeUnit, FinishTimeOption = FinishTime, &
              CourantFactorOption = CourantFactor, nWriteOption = 30 )
+call Show ( '>>> 2' )
 
     !-- Cleanup
 
