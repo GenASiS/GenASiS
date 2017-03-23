@@ -15,14 +15,19 @@ module Fluid_CSL__Form
   private
 
   type, public, extends ( Field_CSL_Template ) :: Fluid_CSL_Form
+    real ( KDR ) :: &
+      LimiterParameter
     type ( MeasuredValueForm ) :: &
       MassDensityUnit, &
       EnergyDensityUnit, &
       TemperatureUnit
     type ( MeasuredValueForm ), dimension ( 3 ) :: &
       VelocityUnit
+    logical ( KDL ) :: &
+      UseLimiter
     character ( LDF ) :: &
-      FluidType = ''
+      FluidType = '', &
+      RiemannSolverType = ''
     class ( FluidFeatures_CSL_Form ), pointer :: &
       Features_CSL => null ( )
   contains
@@ -48,8 +53,9 @@ contains
 
 
   subroutine Initialize &
-               ( FC, C, NameShort, FluidType, VelocityUnit, MassDensityUnit, &
-                 EnergyDensityUnit, TemperatureUnit, nValues, &
+               ( FC, C, NameShort, FluidType, RiemannSolverType, UseLimiter, &
+                 VelocityUnit, MassDensityUnit, EnergyDensityUnit, &
+                 TemperatureUnit, LimiterParameter, nValues, &
                  IgnorabilityOption )
 
     class ( Fluid_CSL_Form ), intent ( inout ) :: &
@@ -58,13 +64,18 @@ contains
       C
     character ( * ), intent ( in ) :: &
       NameShort, &
-      FluidType
+      FluidType, &
+      RiemannSolverType
+    logical ( KDL ), intent ( in ) :: &
+      UseLimiter
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
       VelocityUnit
     type ( MeasuredValueForm ), intent ( in ) :: &
       MassDensityUnit, &
       EnergyDensityUnit, &
       TemperatureUnit
+    real ( KDR ), intent ( in ) :: &
+      LimiterParameter
     integer ( KDI ), intent ( in ) :: &
       nValues
     integer ( KDL ), intent ( in ), optional :: &
@@ -72,7 +83,10 @@ contains
 
     if ( FC % Type == '' ) &
       FC % Type = 'a Fluid_CSL'
-    FC % FluidType = FluidType
+    FC % FluidType         = FluidType
+    FC % RiemannSolverType = RiemannSolverType
+    FC % UseLimiter        = UseLimiter
+    FC % LimiterParameter  = LimiterParameter
 
     FC % MassDensityUnit   = MassDensityUnit
     FC % EnergyDensityUnit = EnergyDensityUnit
@@ -215,7 +229,8 @@ contains
       select type ( F => FC % Field )
       type is ( Fluid_D_Form )
         call F % Initialize &
-               ( FC % VelocityUnit, FC % MassDensityUnit, FC % nValues, &
+               ( FC % RiemannSolverType, FC % UseLimiter, FC % VelocityUnit, &
+                 FC % MassDensityUnit, FC % LimiterParameter, FC % nValues, &
                  NameOption = FC % NameShort )
         call F % SetPrimitiveConserved ( )
         call F % SetOutput ( FC % FieldOutput )
@@ -225,8 +240,9 @@ contains
       select type ( F => FC % Field )
       type is ( Fluid_P_P_Form )
         call F % Initialize &
-               ( FC % VelocityUnit, FC % MassDensityUnit, &
-                 FC % EnergyDensityUnit, FC % TemperatureUnit, FC % nValues, &
+               ( FC % RiemannSolverType, FC % UseLimiter, FC % VelocityUnit, &
+                 FC % MassDensityUnit, FC % EnergyDensityUnit, &
+                 FC % TemperatureUnit, FC % LimiterParameter, FC % nValues, &
                  NameOption = FC % NameShort )
         call F % SetPrimitiveConserved ( )
         call F % SetOutput ( FC % FieldOutput )
@@ -236,8 +252,9 @@ contains
       select type ( F => FC % Field )
       type is ( Fluid_P_NR_Form )
         call F % Initialize &
-               ( FC % VelocityUnit, FC % MassDensityUnit, &
-                 FC % EnergyDensityUnit, FC % TemperatureUnit, FC % nValues, &
+               ( FC % RiemannSolverType, FC % UseLimiter, FC % VelocityUnit, &
+                 FC % MassDensityUnit, FC % EnergyDensityUnit, &
+                 FC % TemperatureUnit, FC % LimiterParameter, FC % nValues, &
                  NameOption = FC % NameShort )
         call F % SetPrimitiveConserved ( )
         call F % SetOutput ( FC % FieldOutput )
@@ -247,8 +264,9 @@ contains
       select type ( F => FC % Field )
       type is ( Fluid_P_MHN_Form )
         call F % Initialize &
-               ( FC % VelocityUnit, FC % MassDensityUnit, &
-                 FC % EnergyDensityUnit, FC % TemperatureUnit, FC % nValues, &
+               ( FC % RiemannSolverType, FC % UseLimiter, FC % VelocityUnit, &
+                 FC % MassDensityUnit, FC % EnergyDensityUnit, &
+                 FC % TemperatureUnit, FC % LimiterParameter, FC % nValues, &
                  NameOption = FC % NameShort )
         call F % SetPrimitiveConserved ( )
         call F % SetOutput ( FC % FieldOutput )

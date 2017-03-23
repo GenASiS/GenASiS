@@ -73,16 +73,23 @@ contains
 
 
   subroutine InitializeAllocate_D &
-               ( F, VelocityUnit, MassDensityUnit, nValues, VariableOption, &
+               ( F, RiemannSolverType, UseLimiter, VelocityUnit, &
+                 MassDensityUnit, LimiterParameter, nValues, VariableOption, &
                  VectorOption, NameOption, ClearOption, UnitOption, &
                  VectorIndicesOption )
 
     class ( Fluid_D_Form ), intent ( inout ) :: &
       F
+    character ( * ), intent ( in ) :: &
+      RiemannSolverType
+    logical ( KDL ), intent ( in ) :: &
+      UseLimiter
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
       VelocityUnit
     type ( MeasuredValueForm ), intent ( in ) :: &
       MassDensityUnit
+    real ( KDR ), intent ( in ) :: &
+      LimiterParameter
     integer ( KDI ), intent ( in ) :: &
       nValues
     character ( * ), dimension ( : ), intent ( in ), optional :: &
@@ -116,10 +123,10 @@ contains
     call SetUnits ( VariableUnit, F, VelocityUnit, MassDensityUnit )
 
     call F % InitializeTemplate &
-           ( VelocityUnit, nValues, VariableOption = Variable, &
-             VectorOption = Vector, NameOption = Name, &
-             ClearOption = ClearOption, UnitOption = VariableUnit, &
-             VectorIndicesOption = VectorIndices )
+           ( RiemannSolverType, UseLimiter, VelocityUnit, LimiterParameter, &
+             nValues, VariableOption = Variable, VectorOption = Vector, &
+             NameOption = Name, ClearOption = ClearOption, &
+             UnitOption = VariableUnit, VectorIndicesOption = VectorIndices )
 
   end subroutine InitializeAllocate_D
   

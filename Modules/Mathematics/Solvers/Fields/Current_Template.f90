@@ -30,14 +30,20 @@ module Current_Template
       FAST_EIGENSPEED_PLUS  = 0, &
       FAST_EIGENSPEED_MINUS = 0
     integer ( KDI ) :: &  !-- Indices in SolverSpeed storage
-      ALPHA_PLUS   = 1, &
-      ALPHA_MINUS  = 2, &
-      ALPHA_CENTER = 3
+      ALPHA_PLUS      = 1, &
+      ALPHA_MINUS     = 2, &
+      ALPHA_CENTER    = 3, &
+      N_SOLVER_SPEEDS = 3
     integer ( KDI ), dimension ( : ), allocatable :: &
       iaPrimitive, &
       iaConserved
+    real ( KDR ) :: &
+      LimiterParameter
+    logical ( KDL ) :: &
+      UseLimiter
     character ( LDL ) :: &
-      Type = ''
+      Type = '', &
+      RiemannSolverType = ''
   contains
     procedure, public, pass :: &
       InitializeTemplate
@@ -163,13 +169,20 @@ contains
 
 
   subroutine InitializeTemplate &
-               ( C, VelocityUnit, nValues, VariableOption, VectorOption, &
+               ( C, RiemannSolverType, UseLimiter, VelocityUnit, &
+                 LimiterParameter, nValues, VariableOption, VectorOption, &
                  NameOption, ClearOption, UnitOption, VectorIndicesOption )
 
     class ( CurrentTemplate ), intent ( inout ) :: &
       C
+    character ( * ), intent ( in ) :: &
+      RiemannSolverType
+    logical ( KDL ), intent ( in ) :: &
+      UseLimiter
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
       VelocityUnit
+    real ( KDR ), intent ( in ) :: &
+      LimiterParameter
     integer ( KDI ), intent ( in ) :: &
       nValues
     character ( * ), dimension ( : ), intent ( in ), optional :: &
@@ -213,6 +226,14 @@ contains
              NameOption = Name, ClearOption = Clear, &
              UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndices )
+
+    C % RiemannSolverType = RiemannSolverType
+    C % UseLimiter        = UseLimiter
+    C % LimiterParameter  = LimiterParameter
+    call Show ( C % RiemannSolverType, 'RiemannSolverType', C % IGNORABILITY )
+    call Show ( C % UseLimiter, 'UseLimiter', C % IGNORABILITY )
+    if ( C % UseLimiter ) &
+      call Show ( C % LimiterParameter, 'LimiterParameter', C % IGNORABILITY )
 
   end subroutine InitializeTemplate
 

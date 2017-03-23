@@ -63,18 +63,25 @@ contains
 
 
   subroutine InitializeAllocate_P_NR &
-               ( F, VelocityUnit, MassDensityUnit, EnergyDensityUnit, &
-                 TemperatureUnit, nValues, VariableOption, VectorOption, &
+               ( F, RiemannSolverType, UseLimiter, VelocityUnit, &
+                 MassDensityUnit, EnergyDensityUnit, TemperatureUnit, &
+                 LimiterParameter, nValues, VariableOption, VectorOption, &
                  NameOption, ClearOption, UnitOption, VectorIndicesOption )
 
     class ( Fluid_P_NR_Form ), intent ( inout ) :: &
       F
+    character ( * ), intent ( in ) :: &
+      RiemannSolverType
+    logical ( KDL ), intent ( in ) :: &
+      UseLimiter
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
       VelocityUnit
     type ( MeasuredValueForm ), intent ( in ) :: &
       MassDensityUnit, &
       EnergyDensityUnit, &
       TemperatureUnit
+    real ( KDR ), intent ( in ) :: &
+      LimiterParameter
     integer ( KDI ), intent ( in ) :: &
       nValues
     character ( * ), dimension ( : ), intent ( in ), optional :: &
@@ -99,10 +106,11 @@ contains
            ( F, Variable, VariableUnit, VariableOption, UnitOption )
 
     call F % InitializeTemplate_P &
-           ( VelocityUnit, MassDensityUnit, EnergyDensityUnit, &
-             TemperatureUnit, nValues, VariableOption = Variable, &
-             VectorOption = VectorOption, NameOption = NameOption, &
-             ClearOption = ClearOption, UnitOption = VariableUnit, &
+           ( RiemannSolverType, UseLimiter, VelocityUnit, MassDensityUnit, &
+             EnergyDensityUnit, TemperatureUnit, LimiterParameter, nValues, &
+             VariableOption = Variable, VectorOption = VectorOption, &
+             NameOption = NameOption, ClearOption = ClearOption, &
+             UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndicesOption )
 
   end subroutine InitializeAllocate_P_NR

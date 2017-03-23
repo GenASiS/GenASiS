@@ -18,14 +18,19 @@ module Fluid_ASC__Form
   private
   
   type, public, extends ( Current_ASC_Template ) :: Fluid_ASC_Form
+    real ( KDR ) :: &
+      LimiterParameter
     type ( MeasuredValueForm ) :: &
       MassDensityUnit, &
       EnergyDensityUnit, &
       TemperatureUnit
     type ( MeasuredValueForm ), dimension ( 3 ) :: &
       VelocityUnit
+    logical ( KDL ) :: &
+      UseLimiter
     character ( LDF ) :: &
-      FluidType = ''
+      FluidType         = '', &
+      RiemannSolverType = ''
     type ( FluidFeatures_ASC_Form ), allocatable :: &
       Features_ASC
   contains
@@ -57,10 +62,11 @@ contains
 
 
   subroutine Initialize &
-               ( FA, A, FluidType, NameShortOption, VelocityUnitOption, &
-                 MassDensityUnitOption, EnergyDensityUnitOption, &
-                 TemperatureUnitOption, MassUnitOption, EnergyUnitOption, &
-                 MomentumUnitOption, AngularMomentumUnitOption, &
+               ( FA, A, FluidType, NameShortOption, RiemannSolverTypeOption, &
+                 UseLimiterOption, VelocityUnitOption, MassDensityUnitOption, &
+                 EnergyDensityUnitOption, TemperatureUnitOption, &
+                 MassUnitOption, EnergyUnitOption, MomentumUnitOption, &
+                 AngularMomentumUnitOption, LimiterParameterOption, &
                  ShockThresholdOption, IgnorabilityOption )
 
     class ( Fluid_ASC_Form ), intent ( inout ) :: &
@@ -70,7 +76,10 @@ contains
     character ( * ), intent ( in ) :: &
       FluidType
     character ( * ), intent ( in ), optional :: &
-      NameShortOption
+      NameShortOption, &
+      RiemannSolverTypeOption
+    logical ( KDL ), intent ( in ), optional :: &
+      UseLimiterOption
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ), optional :: &
       VelocityUnitOption
     type ( MeasuredValueForm ), intent ( in ), optional :: &
@@ -82,6 +91,7 @@ contains
       MomentumUnitOption, &
       AngularMomentumUnitOption
     real ( KDR ), intent ( in ), optional :: &
+      LimiterParameterOption, &
       ShockThresholdOption
     integer ( KDL ), intent ( in ), optional :: &
       IgnorabilityOption
@@ -94,6 +104,24 @@ contains
     if ( FA % Type == '' ) &
       FA % Type = 'a Fluid_ASC'
     FA % FluidType = FluidType
+
+    FA % RiemannSolverType = 'HLLC'
+    if ( present ( RiemannSolverTypeOption ) ) &
+      FA % RiemannSolverType = RiemannSolverTypeOption
+    call PROGRAM_HEADER % GetParameter &
+           ( FA % RiemannSolverType, 'RiemannSolverType' )
+
+    FA % UseLimiter = .true.
+    if ( present ( UseLimiterOption ) ) &
+      FA % UseLimiter = UseLimiterOption
+    call PROGRAM_HEADER % GetParameter &
+           ( FA % UseLimiter, 'UseLimiter' )
+
+    FA % LimiterParameter = 1.4_KDR
+    if ( present ( LimiterParameterOption ) ) &
+      FA % LimiterParameter = LimiterParameterOption
+    call PROGRAM_HEADER % GetParameter &
+           ( FA % LimiterParameter, 'LimiterParameter' )
 
     if ( present ( MassDensityUnitOption ) ) &
       FA % MassDensityUnit = MassDensityUnitOption
@@ -189,6 +217,12 @@ contains
       NameShort = NameShortOption
 
     call FA % InitializeTemplate_ASC_C ( A, NameShort, IgnorabilityOption )
+
+    call Show ( FA % FluidType, 'FluidType', FA % IGNORABILITY )
+    call Show ( FA % RiemannSolverType, 'RiemannSolverType', &
+                FA % IGNORABILITY )
+    call Show ( FA % UseLimiter, 'UseLimiter', FA % IGNORABILITY )
+    call Show ( FA % LimiterParameter, 'LimiterParameter', FA % IGNORABILITY )
 
     allocate ( FA % Features_ASC )
     associate ( FFA => FA % Features_ASC )
@@ -319,9 +353,10 @@ contains
     select type ( FC => FA % Chart )
     class is ( Fluid_CSL_Form )
       call FC % Initialize &
-             ( C, FA % NameShort, FA % FluidType, FA % VelocityUnit, &
-               FA % MassDensityUnit, FA % EnergyDensityUnit, &
-               FA % TemperatureUnit, nValues, &
+             ( C, FA % NameShort, FA % FluidType, FA % RiemannSolverType, &
+               FA % UseLimiter, FA % VelocityUnit, FA % MassDensityUnit, &
+               FA % EnergyDensityUnit, FA % TemperatureUnit, &
+               FA % LimiterParameter, nValues, &
                IgnorabilityOption = FA % IGNORABILITY )
     end select !-- FC
 

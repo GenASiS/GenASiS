@@ -69,18 +69,26 @@ contains
 
 
   subroutine InitializeTemplate_P &
-               ( F, VelocityUnit, MassDensityUnit, EnergyDensityUnit, &
-                 TemperatureUnit, nValues, VariableOption, VectorOption, &
-                 NameOption, ClearOption, UnitOption, VectorIndicesOption )
+               ( F, RiemannSolverType, UseLimiter, VelocityUnit, &
+                 MassDensityUnit, EnergyDensityUnit, &
+                 TemperatureUnit, LimiterParameter, nValues, VariableOption, &
+                 VectorOption, NameOption, ClearOption, UnitOption, &
+                 VectorIndicesOption )
 
     class ( Fluid_P_Template ), intent ( inout ) :: &
       F
+    character ( * ), intent ( in ) :: &
+      RiemannSolverType
+    logical ( KDL ), intent ( in ) :: &
+      UseLimiter
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
       VelocityUnit
     type ( MeasuredValueForm ), intent ( in ) :: &
       MassDensityUnit, &
       EnergyDensityUnit, &
       TemperatureUnit
+    real ( KDR ), intent ( in ) :: &
+      LimiterParameter
     integer ( KDI ), intent ( in ) :: &
       nValues
     character ( * ), dimension ( : ), intent ( in ), optional :: &
@@ -109,10 +117,10 @@ contains
              EnergyDensityUnit, TemperatureUnit )
 
     call F % Fluid_D_Form % Initialize &
-           ( VelocityUnit, MassDensityUnit, nValues, &
-             VariableOption = Variable, VectorOption = VectorOption, &
-             NameOption = NameOption, ClearOption = ClearOption, &
-             UnitOption = VariableUnit, &
+           ( RiemannSolverType, UseLimiter, VelocityUnit, MassDensityUnit, &
+             LimiterParameter, nValues, VariableOption = Variable, &
+             VectorOption = VectorOption, NameOption = NameOption, &
+             ClearOption = ClearOption, UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndicesOption )
 
   end subroutine InitializeTemplate_P
@@ -246,7 +254,7 @@ contains
     select type ( I => Increment )
     class is ( IncrementDivergence_FV_Form )
 
-    select case ( trim ( I % RiemannSolverType ) )
+    select case ( trim ( C % RiemannSolverType ) )
     case ( 'HLL' )
 
       call C % ComputeFluxes_HLL &

@@ -24,17 +24,12 @@ module IncrementDivergence_FV__Form
 ! !       iTimerGradient, &
 ! !       iTimerReconstructionKernel, &
       iStream
-    integer ( KDI ) :: &
-      nSolverSpeeds
     real ( KDR ) :: &
-      LimiterParameter, &
       Weight_RK = - huge ( 0.0_KDR ) !-- RungeKutta weight
     logical ( KDL ) :: &
-      UseLimiter, &
       UseIncrementStream
     character ( LDF ) :: &
-      Name = '', &
-      RiemannSolverType = ''
+      Name = ''
     type ( Real_1D_Form ), dimension ( : ), pointer :: &
       dLogVolumeJacobian_dX => null ( )
     type ( Real_3D_Form ), dimension ( :, : ), pointer :: &
@@ -111,20 +106,12 @@ module IncrementDivergence_FV__Form
 contains
 
 
-  subroutine Initialize &
-               ( I, CurrentChart, RiemannSolverTypeOption, UseLimiterOption, &
-                 LimiterParameterOption )
+  subroutine Initialize ( I, CurrentChart )
 
     class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
       I
     class ( FieldChartTemplate ), intent ( in ), target :: &
       CurrentChart
-    character ( * ), intent ( in ), optional :: &
-      RiemannSolverTypeOption
-    logical ( KDL ), intent ( in ), optional :: &
-      UseLimiterOption
-    real ( KDR ), intent ( in ), optional :: &
-      LimiterParameterOption
 
     character ( LDF ) :: &
       OutputDirectory
@@ -137,36 +124,6 @@ contains
 
     I % CurrentChart => CurrentChart
     I % Chart        => CurrentChart % Chart
-
-    I % UseLimiter = .true.
-    if ( present ( UseLimiterOption ) ) &
-      I % UseLimiter = UseLimiterOption
-    call PROGRAM_HEADER % GetParameter &
-           ( I % UseLimiter, 'UseLimiter' )
-
-    I % LimiterParameter = 1.4_KDR
-    if ( present ( LimiterParameterOption ) ) &
-      I % LimiterParameter = LimiterParameterOption
-    call PROGRAM_HEADER % GetParameter &
-           ( I % LimiterParameter, 'LimiterParameter' )
-
-    I % RiemannSolverType = 'HLL'
-    if ( present ( RiemannSolverTypeOption ) ) &
-      I % RiemannSolverType = RiemannSolverTypeOption
-    call PROGRAM_HEADER % GetParameter &
-           ( I % RiemannSolverType, 'RiemannSolverType' )
-    select case ( trim ( I % RiemannSolverType ) )
-    case ( 'HLL' )
-      I % nSolverSpeeds = 2
-    case ( 'HLLC' )
-      I % nSolverSpeeds = 3
-    end select !-- RiemannSolverType
-
-    call Show ( I % UseLimiter, 'UseLimiter', I % IGNORABILITY )
-    if ( I % UseLimiter ) &
-      call Show ( I % LimiterParameter, 'LimiterParameter', I % IGNORABILITY )
-    
-    call Show ( I % RiemannSolverType, 'RiemannSolverType', I % IGNORABILITY )
 
     ! call PROGRAM_HEADER % AddTimer &
     !        ( '__Reconstruction_G', I % iTimerReconstruction_G )
@@ -666,10 +623,10 @@ contains
 
 !    associate ( Timer_G => PROGRAM_HEADER % Timer ( I % iTimerGradient ) )
 !    call Timer_G % Start ( )
-    if ( I % UseLimiter ) then
+    if ( C % UseLimiter ) then
       call Grad % Compute &
              ( CSL, P, iDimension, &
-               LimiterParameterOption = I % LimiterParameter )
+               LimiterParameterOption = C % LimiterParameter )
     else
       call Grad % Compute ( CSL, P, iDimension )
     end if

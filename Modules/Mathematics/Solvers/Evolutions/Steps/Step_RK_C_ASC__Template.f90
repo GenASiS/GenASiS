@@ -47,7 +47,6 @@ module Step_RK_C_ASC__Template
       type ( Real_3D_Form ), dimension ( :, : ), allocatable :: &
         BoundaryFluence_CSL
       logical ( KDL ) :: &
-        UseLimiter, &
         Allocated
       type ( VariableGroupForm ), allocatable :: &
         Solution, &
@@ -190,8 +189,7 @@ module Step_RK_C_ASC__Template
 contains
 
 
-  subroutine InitializeTemplate_C_ASC &
-               ( S, Current_ASC, NameSuffix, A, B, C, UseLimiterOption )
+  subroutine InitializeTemplate_C_ASC ( S, Current_ASC, NameSuffix, A, B, C )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
@@ -205,8 +203,6 @@ contains
       B
     real ( KDR ), dimension ( 2 : ), intent ( in ) :: &
       C
-    logical ( KDL ), intent ( in ), optional :: &
-      UseLimiterOption
 
     if ( S % Type == '' ) &
       S % Type = 'a Step_RK_C_ASC' 
@@ -226,16 +222,11 @@ contains
     S % Current_ASC => Current_ASC
     S % Current     => Current_ASC % Current ( )
 
-    S % UseLimiter = .true.
-    if ( present ( UseLimiterOption ) ) &
-      S % UseLimiter = UseLimiterOption
-
     S % Allocated = .false.
 
     allocate ( S % IncrementDivergence_C )
     associate ( ID => S % IncrementDivergence_C )
-    call ID % Initialize &
-           ( S % Current_ASC % Chart, UseLimiterOption = S % UseLimiter )
+    call ID % Initialize ( S % Current_ASC % Chart )
     allocate ( S % StorageDivergence )
     call ID % SetStorage ( S % StorageDivergence )
     end associate !-- ID
@@ -1051,25 +1042,21 @@ contains
   end subroutine Deallocate_RK_C
 
 
-  subroutine AllocateStorageDivergence &
-               ( S, ID, nCurrent, nConserved, nPrimitive, nGeometry, nValues )
+  subroutine AllocateStorageDivergence ( S, C, G )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
-    class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
-      ID    
-    integer ( KDI ), intent ( in ) :: &
-      nCurrent, &
-      nConserved, &
-      nPrimitive, &
-      nGeometry, &
-      nValues
+    class ( CurrentTemplate ), intent ( in ) :: &
+      C
+    class ( GeometryFlatForm ), intent ( in ) :: &
+      G
 
     call S % StorageDivergence % Allocate &
-           ( nCurrent, nConserved, nPrimitive, ID % nSolverSpeeds, &
-             nGeometry, nValues )
-    if ( trim ( ID % RiemannSolverType ) == 'HLLC' ) &
-      call S % StorageDivergence % Allocate_HLLC ( nCurrent, nValues )
+           ( C % nVariables, C % N_CONSERVED, C % N_PRIMITIVE, &
+             C % N_SOLVER_SPEEDS, G % nVariables, C % nValues )
+    if ( trim ( C % RiemannSolverType ) == 'HLLC' ) &
+      call S % StorageDivergence % Allocate_HLLC &
+             ( C % nVariables, C % nValues )
 
   end subroutine AllocateStorageDivergence
 
@@ -1232,9 +1219,7 @@ contains
         ( ID => S % IncrementDivergence_C, &
           C => S % Current )
 
-      call S % AllocateStorageDivergence &
-             ( ID, C % nVariables, C % N_CONSERVED, C % N_PRIMITIVE, &
-               G % nVariables, C % nValues )      
+      call S % AllocateStorageDivergence ( C, G )      
 
       call S % AllocateBoundaryFluence &
              ( ID, Chart, C % N_CONSERVED, S % BoundaryFluence_CSL )

@@ -98,7 +98,9 @@ contains
              VectorIndicesOption )
 
     call PC % InitializeTemplate &
-           ( VelocityUnit, nValues, VariableOption = Variable, &
+           ( RiemannSolverType = 'HLL', UseLimiter = .true., &
+             VelocityUnit = VelocityUnit, LimiterParameter = 2.0_KDR, &
+             nValues = nValues, VariableOption = Variable, &
              VectorOption = Vector, NameOption = Name, &
              ClearOption = ClearOption, UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndices )
