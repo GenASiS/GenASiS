@@ -31,8 +31,9 @@ contains
 
 
   subroutine Initialize &
-               ( FFA, Fluid_ASC, FluidType, NameShortOption, &
-                 ShockThresholdOption, PhaseTransitionThresholdOption, &
+               ( FFA, Fluid_ASC, FluidType, RiemannSolverType, &
+                 NameShortOption, ShockThresholdOption, &
+                 PhaseTransitionThresholdOption, &
                  TemperatureJumpThresholdOption, IgnorabilityOption )
 
     class ( FluidFeatures_ASC_Form ), intent ( inout ) :: &
@@ -40,7 +41,8 @@ contains
     class ( Field_ASC_Template ), intent ( in ), target :: &
       Fluid_ASC
     character ( * ), intent ( in ) :: &
-      FluidType
+      FluidType, &
+      RiemannSolverType
     character ( * ), intent ( in ), optional :: &
       NameShortOption
     real ( KDR ), intent ( in ), optional :: &
@@ -67,10 +69,13 @@ contains
 
     FFA % PhaseTransitionThreshold = 0.0_KDR
     FFA % TemperatureJumpThreshold = 0.0_KDR
-    select case ( trim ( FluidType ) )
-    case ( 'MEAN_HEAVY_NUCLEUS' )
-      FFA % PhaseTransitionThreshold = 0.05_KDR
-      FFA % TemperatureJumpThreshold = 0.05_KDR
+    select case ( trim ( RiemannSolverType ) )
+    case ( 'HLLC' )
+      select case ( trim ( FluidType ) )
+      case ( 'MEAN_HEAVY_NUCLEUS' )
+        FFA % PhaseTransitionThreshold = 0.05_KDR
+        FFA % TemperatureJumpThreshold = 0.05_KDR
+      end select
     end select
     if ( present ( PhaseTransitionThresholdOption ) ) &
       FFA % PhaseTransitionThreshold = PhaseTransitionThresholdOption

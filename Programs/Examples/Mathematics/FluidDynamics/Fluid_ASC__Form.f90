@@ -227,7 +227,7 @@ contains
     allocate ( FA % Features_ASC )
     associate ( FFA => FA % Features_ASC )
     call FFA % Initialize &
-           ( FA, FA % FluidType, &
+           ( FA, FA % FluidType, FA % RiemannSolverType, &
              NameShortOption = trim ( NameShort ) // '_Features', &
              ShockThresholdOption = ShockThresholdOption, &
              IgnorabilityOption = IgnorabilityOption )

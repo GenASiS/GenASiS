@@ -215,7 +215,9 @@ contains
     class is ( Fluid_ASC_Form )
 
     call FA % Initialize &
-           ( PS, 'MEAN_HEAVY_NUCLEUS', VelocityUnitOption = VelocityUnit, &
+           ( PS, 'MEAN_HEAVY_NUCLEUS', &
+             RiemannSolverTypeOption = 'HLL', &
+             VelocityUnitOption = VelocityUnit, &
              MassDensityUnitOption = MassDensityUnit, &
              EnergyDensityUnitOption = EnergyDensityUnit, &
              TemperatureUnitOption   = TemperatureUnit, &
