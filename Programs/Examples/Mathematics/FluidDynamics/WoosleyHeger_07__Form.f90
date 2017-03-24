@@ -393,7 +393,6 @@ contains
     associate &
       (     N => F % Value ( :, F % COMOVING_DENSITY ), &
             T => F % Value ( :, F % TEMPERATURE ), &
-          T_2 => F % Value ( :, F % TEMPERATURE_2 ), &
           V_1 => F % Value ( :, F % VELOCITY_U ( 1 ) ), &
           V_2 => F % Value ( :, F % VELOCITY_U ( 2 ) ), &
           V_3 => F % Value ( :, F % VELOCITY_U ( 3 ) ), &
@@ -410,7 +409,6 @@ contains
       call SI ( iELECTRON_FRACTION_SI ) % Evaluate ( R ( iV ), Y_E ( iV ) ) 
 
       E ( iV )  =  SE  *  N ( iV )
-      T_2 ( iV )  =  T ( iV )
 
     end do
 

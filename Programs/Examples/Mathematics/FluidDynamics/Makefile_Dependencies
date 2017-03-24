@@ -16,6 +16,13 @@ Fluid_P__Template.o: \
   Fluid_D__Form.o \
   Fluid_P__Template.f90
 
+FluidFeatures_P__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  FluidFeatures_Template.o \
+  Fluid_P__Template.o \
+  FluidFeatures_P__Form.f90
+
 Fluid_P_P__Form.o: \
   Basics.o \
   Mathematics.o \
@@ -33,14 +40,8 @@ Fluid_P_MHN__Form.o: \
   Basics.o \
   Mathematics.o \
   Fluid_P__Template.o \
+  FluidFeatures_P__Form.o \
   Fluid_P_MHN__Form.f90
-
-FluidFeatures_P__Form.o: \
-  Basics.o \
-  Mathematics.o \
-  FluidFeatures_Template.o \
-  Fluid_P__Template.o \
-  FluidFeatures_P__Form.f90
 
 # FluidFeatures_P_MHN__Form.o: \
 #   Basics.o \
