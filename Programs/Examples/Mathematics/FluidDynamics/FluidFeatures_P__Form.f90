@@ -113,6 +113,9 @@ contains
     class ( FluidFeatures_P_Form ), intent ( inout ) :: &
       FF
 
+    type ( VariableGroupForm ) :: &
+      VG_Shock
+
     call Clear ( FF % Value )
 
     select type ( F => FF % Fluid )
@@ -124,6 +127,12 @@ contains
       call DetectShocks_CSL ( FF, F, Grid )
       call DetectPhaseTransition_CSL ( FF, F, Grid )
       call DetectTemperatureJump_CSL ( FF, F, Grid )
+
+      select type ( Grid_SLD => FF % Grid )
+      class is ( Chart_SLD_Form )
+        call VG_Shock % Initialize ( FF, iaSelectedOption = [ FF % SHOCK ] )
+        call Grid_SLD % ExchangeGhostData ( VG_Shock )
+      end select
 
     class default
       call Show ( 'Grid type not recognized', CONSOLE % ERROR )

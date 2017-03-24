@@ -626,7 +626,8 @@ contains
       iV, &
       nValues, &
       keytemp, &
-      keyerr
+      keyerr, &
+      Rank
     real ( KDR ) :: &
       rfeps
     real ( KDR ) :: &
@@ -654,10 +655,16 @@ contains
                cs2, dedt, dpderho, dpdrhoe, munu, &
                keytemp, keyerr, rfeps )
       if ( keyerr /= 0 ) then
-        call Show ( 'EOS error', CONSOLE % WARNING )
-        call Show ( 'Fluid_P_MHN__Form', 'module', CONSOLE % WARNING )
-        call Show ( 'Apply_EOS_MHN_T_Kernel', 'subroutine', CONSOLE % WARNING )
-        call Show ( iV, 'iV', CONSOLE % WARNING )
+        Rank = PROGRAM_HEADER % Communicator % Rank
+        call Show ( 'EOS error', CONSOLE % WARNING, &
+                    DisplayRankOption = Rank )
+        call Show ( 'Fluid_P_MHN__Form', 'module', CONSOLE % WARNING, &
+                    DisplayRankOption = Rank )
+        call Show ( 'Apply_EOS_MHN_T_Kernel', 'subroutine', &
+                    CONSOLE % WARNING, DisplayRankOption = Rank )
+        call Show ( Rank, 'Rank', DisplayRankOption = Rank )
+        call Show ( iV, 'iV', CONSOLE % WARNING, &
+                    DisplayRankOption = Rank )
       end if
       call nuc_eos_one ( N_Temp, T_Temp, YE ( iV ), Gamma ( iV ), 19 )      
       P ( iV ) = P ( iV ) * Pressure_CGS
