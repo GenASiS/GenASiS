@@ -11,24 +11,18 @@ module FluidFeatures_P__Form
   private
 
     integer ( KDI ), private, parameter :: &
-      N_FIELDS_PERFECT  = 12, &
+      N_FIELDS_PERFECT  = 4, &
       N_VECTORS_PERFECT = 0
 
   type, public, extends ( FluidFeaturesTemplate ) :: FluidFeatures_P_Form
     integer ( KDI ) :: &
       N_FIELDS_PERFECT  = N_FIELDS_PERFECT, &
       N_VECTORS_PERFECT = N_VECTORS_PERFECT, &
-      SHOCK             = 0, &
-      PHASE_TRANSITION  = 0, &
-      TEMPERATURE_JUMP  = 0
+      SHOCK = 0
     integer ( KDI ), dimension ( 3 ) :: &
-      SHOCK_I            = 0, &
-      PHASE_TRANSITION_I = 0, &
-      TEMPERATURE_JUMP_I = 0
+      SHOCK_I = 0
     real ( KDR ) :: &
-      ShockThreshold, &
-      PhaseTransitionThreshold, &
-      TemperatureJumpThreshold
+      ShockThreshold
   contains
     procedure, public, pass :: &
       InitializeAllocate_P
@@ -44,21 +38,16 @@ module FluidFeatures_P__Form
 
     private :: &
       InitializeBasics, &
-      DetectShocks_CSL, &
-      DetectPhaseTransition_CSL, &
-      DetectTemperatureJump_CSL
+      DetectShocks_CSL
 
       private :: &
-        DetectShocks_CSL_Kernel, &
-        DetectPhaseTransition_CSL_Kernel, &
-        DetectTemperatureJump_CSL_Kernel
+        DetectShocks_CSL_Kernel
 
 contains
 
 
   subroutine InitializeAllocate_P &
-               ( FF, Fluid, Grid, ShockThreshold, PhaseTransitionThreshold, &
-                 TemperatureJumpThreshold, nValues, VariableOption, &
+               ( FF, Fluid, Grid, ShockThreshold, nValues, VariableOption, &
                  VectorOption, NameOption, ClearOption, UnitOption, &
                  VectorIndicesOption )
 
@@ -69,9 +58,7 @@ contains
     class ( * ), intent ( in ) :: &
       Grid
     real ( KDR ), intent ( in ) :: &
-      ShockThreshold, &
-      PhaseTransitionThreshold, &
-      TemperatureJumpThreshold
+      ShockThreshold
     integer ( KDI ), intent ( in ) :: &
       nValues
     character ( * ), dimension ( : ), intent ( in ), optional :: &
@@ -101,9 +88,7 @@ contains
              ClearOption = ClearOption, UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndicesOption )
 
-    FF % ShockThreshold           = ShockThreshold
-    FF % PhaseTransitionThreshold = PhaseTransitionThreshold
-    FF % TemperatureJumpThreshold = TemperatureJumpThreshold
+    FF % ShockThreshold = ShockThreshold
 
   end subroutine InitializeAllocate_P
 
@@ -125,8 +110,6 @@ contains
     class is ( Chart_SL_Template )
 
       call DetectShocks_CSL ( FF, F, Grid )
-      call DetectPhaseTransition_CSL ( FF, F, Grid )
-      call DetectTemperatureJump_CSL ( FF, F, Grid )
 
       select type ( Grid_SLD => FF % Grid )
       class is ( Chart_SLD_Form )
@@ -164,10 +147,7 @@ contains
       Output
 
     call Output % Initialize &
-           ( FF, &
-             iaSelectedOption &
-               = [ FF % SHOCK, FF % PHASE_TRANSITION, FF % TEMPERATURE_JUMP, &
-                   FF % DIFFUSIVE_FLUX_I ] )
+           ( FF, iaSelectedOption = [ FF % SHOCK, FF % DIFFUSIVE_FLUX_I ] )
 
   end subroutine SetOutput
 
@@ -202,12 +182,8 @@ contains
     if ( FF % N_FIELDS == 0 ) &
       FF % N_FIELDS = oF + FF % N_FIELDS_PERFECT
 
-    FF % SHOCK               =  oF + 1
-    FF % PHASE_TRANSITION    =  oF + 2
-    FF % TEMPERATURE_JUMP    =  oF + 3
-    FF % SHOCK_I             =  oF + [  4,  5,  6 ]
-    FF % PHASE_TRANSITION_I  =  oF + [  7,  8,  9 ]
-    FF % TEMPERATURE_JUMP_I  =  oF + [ 10, 11, 12 ]
+    FF % SHOCK    =  oF + 1
+    FF % SHOCK_I  =  oF + [ 2, 3, 4 ]
 
     !-- variable names 
 
@@ -221,17 +197,9 @@ contains
 
     Variable ( oF + 1 : oF + FF % N_FIELDS_PERFECT ) &
       = [ 'Shock              ', &
-          'PhaseTransition    ', &
-          'TemperatureJump    ', &
           'Shock_I_1          ', &
           'Shock_I_2          ', &
-          'Shock_I_3          ', &
-          'PhaseTransition_I_1', &
-          'PhaseTransition_I_2', &
-          'PhaseTransition_I_3', &
-          'TemperatureJump_I_1', &
-          'TemperatureJump_I_2', &
-          'TemperatureJump_I_3' ]
+          'Shock_I_3          ' ]
           
     !-- units
     
@@ -302,112 +270,6 @@ contains
     nullify ( S_I_iD, P, V_iD )
 
   end subroutine DetectShocks_CSL
-
-
-  subroutine DetectPhaseTransition_CSL ( FF, F, CSL )
-
-    class ( FluidFeatures_P_Form ), intent ( inout ) :: &
-      FF
-    class ( Fluid_P_Template ), intent ( in ) :: &
-      F
-    class ( Chart_SL_Template ), intent ( in ) :: &
-      CSL
-
-    integer ( KDI ) :: &
-      iD, jD, kD
-    real ( KDR ), dimension ( :, :, : ), pointer :: &
-      DF_I_iD, &
-      DF_I_jD, &
-      DF_I_kD, &
-      PT, &
-      PT_I_iD, &
-      Gamma
-
-    if ( FF % PhaseTransitionThreshold == 0.0_KDR ) &
-      return
-
-    call CSL % SetVariablePointer &
-           ( FF % Value ( :, FF % PHASE_TRANSITION ), PT )
-    call Clear ( PT )
-    
-    call CSL % SetVariablePointer &
-           ( F % Value ( :, F % ADIABATIC_INDEX ), Gamma )
-
-    do iD = 1, CSL % nDimensions
-
-      jD = mod ( iD, 3 ) + 1
-      kD = mod ( jD, 3 ) + 1
-
-      call CSL % SetVariablePointer &
-             ( FF % Value ( :, FF % DIFFUSIVE_FLUX_I ( iD ) ), DF_I_iD )
-      call CSL % SetVariablePointer &
-             ( FF % Value ( :, FF % DIFFUSIVE_FLUX_I ( jD ) ), DF_I_jD )
-      call CSL % SetVariablePointer &
-             ( FF % Value ( :, FF % DIFFUSIVE_FLUX_I ( kD ) ), DF_I_kD )
-      call CSL % SetVariablePointer &
-             ( FF % Value ( :, FF % PHASE_TRANSITION_I ( iD ) ), PT_I_iD )
-
-      call DetectPhaseTransition_CSL_Kernel &
-             ( PT, PT_I_iD, DF_I_iD, DF_I_jD, DF_I_kD, CSL, Gamma, &
-               FF % PhaseTransitionThreshold, iD, jD, kD, &
-               CSL % nGhostLayers ( iD ) )
-
-    end do !-- iD
-
-  end subroutine DetectPhaseTransition_CSL
-
-
-  subroutine DetectTemperatureJump_CSL ( FF, F, CSL )
-
-    class ( FluidFeatures_P_Form ), intent ( inout ) :: &
-      FF
-    class ( Fluid_P_Template ), intent ( in ) :: &
-      F
-    class ( Chart_SL_Template ), intent ( in ) :: &
-      CSL
-
-    integer ( KDI ) :: &
-      iD, jD, kD
-    real ( KDR ), dimension ( :, :, : ), pointer :: &
-      DF_I_iD, &
-      DF_I_jD, &
-      DF_I_kD, &
-      TJ, &
-      TJ_I_iD, &
-      T
-
-    if ( FF % TemperatureJumpThreshold == 0.0_KDR ) &
-      return
-
-    call CSL % SetVariablePointer &
-           ( FF % Value ( :, FF % TEMPERATURE_JUMP ), TJ )
-    call Clear ( TJ )
-    
-    call CSL % SetVariablePointer &
-           ( F % Value ( :, F % TEMPERATURE ), T )
-
-    do iD = 1, CSL % nDimensions
-
-      jD = mod ( iD, 3 ) + 1
-      kD = mod ( jD, 3 ) + 1
-
-      call CSL % SetVariablePointer &
-             ( FF % Value ( :, FF % DIFFUSIVE_FLUX_I ( iD ) ), DF_I_iD )
-      call CSL % SetVariablePointer &
-             ( FF % Value ( :, FF % DIFFUSIVE_FLUX_I ( jD ) ), DF_I_jD )
-      call CSL % SetVariablePointer &
-             ( FF % Value ( :, FF % DIFFUSIVE_FLUX_I ( kD ) ), DF_I_kD )
-      call CSL % SetVariablePointer &
-             ( FF % Value ( :, FF % PHASE_TRANSITION_I ( iD ) ), TJ_I_iD )
-
-      call DetectTemperatureJump_CSL_Kernel &
-             ( TJ, TJ_I_iD, DF_I_iD, DF_I_jD, DF_I_kD, CSL, T, &
-               FF % TemperatureJumpThreshold, iD, jD, kD, &
-               CSL % nGhostLayers ( iD ) )
-
-    end do !-- iD
-
-  end subroutine DetectTemperatureJump_CSL
 
 
   subroutine DetectShocks_CSL_Kernel &
@@ -527,241 +389,6 @@ contains
     !$OMP end parallel do
       
   end subroutine DetectShocks_CSL_Kernel
-
-
-  subroutine DetectPhaseTransition_CSL_Kernel &
-               ( PT, PT_I_iD, DF_I_iD, DF_I_jD, DF_I_kD, CSL, Gamma, PTT, &
-                 iD, jD, kD, oV )
-
-    real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
-      PT, &
-      PT_I_iD, &
-      DF_I_iD, &
-      DF_I_jD, &
-      DF_I_kD
-    class ( Chart_SL_Template ), intent ( in ) :: &
-      CSL
-    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
-      Gamma
-    real ( KDR ), intent ( in ) :: &
-      PTT
-    integer ( KDI ), intent ( in ) :: &
-      iD, jD, kD, &
-      oV
-
-    integer ( KDI ) :: &
-      iV, jV, kV
-    integer ( KDI ), dimension ( 3 ) :: &
-      iaS_i, iaS_j, iaS_k, &
-      iaV_i, iaV_j, iaV_ij, iaV_k, iaV_ik, &
-      lV, uV
-    real ( KDR ) :: &
-      dGamma, &
-      Gamma_Min, &
-      dLnGamma, &
-      SqrtTiny
-
-    lV = 1
-    where ( shape ( PT ) > 1 )
-      lV = oV + 1
-    end where
-    
-    uV = 1
-    where ( shape ( PT ) > 1 )
-      uV = shape ( PT ) - oV
-    end where
-    uV ( iD ) = size ( PT, dim = iD ) - oV + 1 
-
-    iaS_i = 0
-    iaS_i ( iD ) = -1
-      
-    iaS_j = 0
-    if ( size ( PT, dim = jD ) > 1 ) &
-      iaS_j ( jD ) = +1
-
-    iaS_k = 0
-    if ( size ( PT, dim = kD ) > 1 ) &
-      iaS_k ( kD ) = +1
-
-    SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
-
-    !$OMP parallel do private ( iV, jV, kV )
-    do kV = lV ( 3 ), uV ( 3 ) 
-      do jV = lV ( 2 ), uV ( 2 )
-        do iV = lV ( 1 ), uV ( 1 )
-
-          iaV_i  = [ iV, jV, kV ] + iaS_i
-          iaV_j  = [ iV, jV, kV ] + iaS_j
-          iaV_ij = [ iV, jV, kV ] + iaS_i + iaS_j
-          iaV_k  = [ iV, jV, kV ] + iaS_k
-          iaV_ik = [ iV, jV, kV ] + iaS_i + iaS_k
-
-          dGamma  =  abs ( Gamma ( iV, jV, kV )  &
-                           -  Gamma ( iaV_i ( 1 ), iaV_i ( 2 ), iaV_i ( 3 ) ) )
-          Gamma_Min  =  max ( min ( Gamma ( iV, jV, kV ), &
-                                    Gamma ( iaV_i ( 1 ), iaV_i ( 2 ), &
-                                            iaV_i ( 3 ) ) ), &
-                              SqrtTiny )
-          dLnGamma  =  dGamma / Gamma_Min
-
-          if ( dLnGamma > PTT ) then
-
-            PT_I_iD ( iV, jV, kV )  &
-              =  1.0_KDR
-            PT ( iV, jV, kV )  &
-              =  PT ( iV, jV, kV )  +  1.0_KDR
-            PT ( iaV_i ( 1 ), iaV_i ( 2 ), iaV_i ( 3 ) )  &
-              =  PT ( iaV_i ( 1 ), iaV_i ( 2 ), iaV_i ( 3 ) )  +  1.0_KDR
-
-            !-- Use diffuse flux all directions, on both sides of 
-            !   the interface shock
-
-            DF_I_iD ( iV, jV, kV ) &
-              =  1.0_KDR
- 
-            DF_I_jD ( iV, jV, kV ) &
-              =  1.0_KDR
-            DF_I_jD ( iaV_i ( 1 ), iaV_i ( 2 ), iaV_i ( 3 ) ) &
-              =  1.0_KDR
-            DF_I_jD ( iaV_j ( 1 ), iaV_j ( 2 ), iaV_j ( 3 ) ) &
-              =  1.0_KDR
-            DF_I_jD ( iaV_ij ( 1 ), iaV_ij ( 2 ), iaV_ij ( 3 ) ) &
-              =  1.0_KDR
-
-            DF_I_kD ( iV, jV, kV ) &
-              =  1.0_KDR
-            DF_I_kD ( iaV_i ( 1 ), iaV_i ( 2 ), iaV_i ( 3 ) ) &
-              =  1.0_KDR
-            DF_I_kD ( iaV_k ( 1 ), iaV_k ( 2 ), iaV_k ( 3 ) ) &
-              =  1.0_KDR
-            DF_I_kD ( iaV_ik ( 1 ), iaV_ik ( 2 ), iaV_ik ( 3 ) ) &
-              =  1.0_KDR
-
-          end if
-
-        end do !-- iV
-      end do !-- jV
-    end do !-- kV
-    !$OMP end parallel do
-      
-  end subroutine DetectPhaseTransition_CSL_Kernel
-
-
-  subroutine DetectTemperatureJump_CSL_Kernel &
-               ( TJ, TJ_I_iD, DF_I_iD, DF_I_jD, DF_I_kD, CSL, T, TJT, &
-                 iD, jD, kD, oV )
-
-    real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
-      TJ, &
-      TJ_I_iD, &
-      DF_I_iD, &
-      DF_I_jD, &
-      DF_I_kD
-    class ( Chart_SL_Template ), intent ( in ) :: &
-      CSL
-    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
-      T
-    real ( KDR ), intent ( in ) :: &
-      TJT
-    integer ( KDI ), intent ( in ) :: &
-      iD, jD, kD, &
-      oV
-
-    integer ( KDI ) :: &
-      iV, jV, kV
-    integer ( KDI ), dimension ( 3 ) :: &
-      iaS_i, iaS_j, iaS_k, &
-      iaV_i, iaV_j, iaV_ij, iaV_k, iaV_ik, &
-      lV, uV
-    real ( KDR ) :: &
-      dT, &
-      T_Min, &
-      dLnT, &
-      SqrtTiny
-
-    lV = 1
-    where ( shape ( TJ ) > 1 )
-      lV = oV + 1
-    end where
-    
-    uV = 1
-    where ( shape ( TJ ) > 1 )
-      uV = shape ( TJ ) - oV
-    end where
-    uV ( iD ) = size ( TJ, dim = iD ) - oV + 1 
-
-    iaS_i = 0
-    iaS_i ( iD ) = -1
-      
-    iaS_j = 0
-    if ( size ( TJ, dim = jD ) > 1 ) &
-      iaS_j ( jD ) = +1
-
-    iaS_k = 0
-    if ( size ( TJ, dim = kD ) > 1 ) &
-      iaS_k ( kD ) = +1
-
-    SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
-
-    !$OMP parallel do private ( iV, jV, kV )
-    do kV = lV ( 3 ), uV ( 3 ) 
-      do jV = lV ( 2 ), uV ( 2 )
-        do iV = lV ( 1 ), uV ( 1 )
-
-          iaV_i  = [ iV, jV, kV ] + iaS_i
-          iaV_j  = [ iV, jV, kV ] + iaS_j
-          iaV_ij = [ iV, jV, kV ] + iaS_i + iaS_j
-          iaV_k  = [ iV, jV, kV ] + iaS_k
-          iaV_ik = [ iV, jV, kV ] + iaS_i + iaS_k
-
-          dT  =  abs ( T ( iV, jV, kV )  &
-                           -  T ( iaV_i ( 1 ), iaV_i ( 2 ), iaV_i ( 3 ) ) )
-          T_Min  =  max ( min ( T ( iV, jV, kV ), &
-                                T ( iaV_i ( 1 ), iaV_i ( 2 ), iaV_i ( 3 ) ) ), &
-                                SqrtTiny )
-          dLnT  =  dT / T_Min
-
-          if ( dLnT > TJT ) then
-
-            TJ_I_iD ( iV, jV, kV )  &
-              =  1.0_KDR
-            TJ ( iV, jV, kV )  &
-              =  TJ ( iV, jV, kV )  +  1.0_KDR
-            TJ ( iaV_i ( 1 ), iaV_i ( 2 ), iaV_i ( 3 ) )  &
-              =  TJ ( iaV_i ( 1 ), iaV_i ( 2 ), iaV_i ( 3 ) )  +  1.0_KDR
-
-            !-- Use diffuse flux all directions, on both sides of 
-            !   the interface shock
-
-            DF_I_iD ( iV, jV, kV ) &
-              =  1.0_KDR
- 
-            DF_I_jD ( iV, jV, kV ) &
-              =  1.0_KDR
-            DF_I_jD ( iaV_i ( 1 ), iaV_i ( 2 ), iaV_i ( 3 ) ) &
-              =  1.0_KDR
-            DF_I_jD ( iaV_j ( 1 ), iaV_j ( 2 ), iaV_j ( 3 ) ) &
-              =  1.0_KDR
-            DF_I_jD ( iaV_ij ( 1 ), iaV_ij ( 2 ), iaV_ij ( 3 ) ) &
-              =  1.0_KDR
-
-            DF_I_kD ( iV, jV, kV ) &
-              =  1.0_KDR
-            DF_I_kD ( iaV_i ( 1 ), iaV_i ( 2 ), iaV_i ( 3 ) ) &
-              =  1.0_KDR
-            DF_I_kD ( iaV_k ( 1 ), iaV_k ( 2 ), iaV_k ( 3 ) ) &
-              =  1.0_KDR
-            DF_I_kD ( iaV_ik ( 1 ), iaV_ik ( 2 ), iaV_ik ( 3 ) ) &
-              =  1.0_KDR
-
-          end if
-
-        end do !-- iV
-      end do !-- jV
-    end do !-- kV
-    !$OMP end parallel do
-      
-  end subroutine DetectTemperatureJump_CSL_Kernel
 
 
 end module FluidFeatures_P__Form

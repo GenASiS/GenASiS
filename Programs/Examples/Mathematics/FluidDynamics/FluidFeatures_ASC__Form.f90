@@ -11,9 +11,7 @@ module FluidFeatures_ASC__Form
 
   type, public, extends ( Field_ASC_Template ) :: FluidFeatures_ASC_Form
     real ( KDR ) :: &
-      ShockThreshold, &
-      PhaseTransitionThreshold, &
-      TemperatureJumpThreshold
+      ShockThreshold
     character ( LDF ) :: &
       FluidType = ''
     class ( Field_ASC_Template ), pointer :: &
@@ -32,9 +30,7 @@ contains
 
   subroutine Initialize &
                ( FFA, Fluid_ASC, FluidType, RiemannSolverType, &
-                 NameShortOption, ShockThresholdOption, &
-                 PhaseTransitionThresholdOption, &
-                 TemperatureJumpThresholdOption, IgnorabilityOption )
+                 NameShortOption, ShockThresholdOption, IgnorabilityOption )
 
     class ( FluidFeatures_ASC_Form ), intent ( inout ) :: &
       FFA
@@ -46,9 +42,7 @@ contains
     character ( * ), intent ( in ), optional :: &
       NameShortOption
     real ( KDR ), intent ( in ), optional :: &
-      ShockThresholdOption, &
-      PhaseTransitionThresholdOption, &
-      TemperatureJumpThresholdOption
+      ShockThresholdOption
     integer ( KDL ), intent ( in ), optional :: &
       IgnorabilityOption
 
@@ -67,25 +61,6 @@ contains
     call PROGRAM_HEADER % GetParameter &
            ( FFA % ShockThreshold, 'ShockThreshold' ) 
 
-    FFA % PhaseTransitionThreshold = 0.0_KDR
-    FFA % TemperatureJumpThreshold = 0.0_KDR
-    select case ( trim ( RiemannSolverType ) )
-    case ( 'HLLC' )
-      select case ( trim ( FluidType ) )
-      case ( 'MEAN_HEAVY_NUCLEUS' )
-        FFA % PhaseTransitionThreshold = 0.05_KDR
-        FFA % TemperatureJumpThreshold = 0.05_KDR
-      end select
-    end select
-    if ( present ( PhaseTransitionThresholdOption ) ) &
-      FFA % PhaseTransitionThreshold = PhaseTransitionThresholdOption
-    if ( present ( TemperatureJumpThresholdOption ) ) &
-      FFA % TemperatureJumpThreshold = TemperatureJumpThresholdOption
-    call PROGRAM_HEADER % GetParameter &
-           ( FFA % PhaseTransitionThreshold, 'PhaseTransitionThreshold' ) 
-    call PROGRAM_HEADER % GetParameter &
-           ( FFA % TemperatureJumpThreshold, 'TemperatureJumpThreshold' ) 
-
     FFA % Fluid_ASC => Fluid_ASC
 
     NameShort = 'FluidFeatures'
@@ -96,10 +71,6 @@ contains
            ( Fluid_ASC % Atlas, NameShort, IgnorabilityOption )
 
     call Show ( FFA % ShockThreshold, 'ShockThreshold', FFA % IGNORABILITY )
-    call Show ( FFA % PhaseTransitionThreshold, 'PhaseTransitionThreshold', &
-                FFA % IGNORABILITY )
-    call Show ( FFA % TemperatureJumpThreshold, 'TemperatureJumpThreshold', &
-                FFA % IGNORABILITY )
 
   end subroutine Initialize
 
@@ -137,7 +108,6 @@ contains
     class is ( FluidFeatures_CSL_Form )
       call FFC % Initialize &
              ( FC, FA % NameShort, FA % FluidType, FA % ShockThreshold, &
-               FA % PhaseTransitionThreshold, FA % TemperatureJumpThreshold, &
                nValues, IgnorabilityOption = FA % IGNORABILITY )
     end select !-- FFC
 
