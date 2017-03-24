@@ -10,9 +10,9 @@ module Fluid_P_MHN__Form
   private
 
     integer ( KDI ), private, parameter :: &
-      N_PRIMITIVE_MEAN_HEAVY_NUCLEUS = 2, &
-      N_CONSERVED_MEAN_HEAVY_NUCLEUS = 1, &
-      N_FIELDS_MEAN_HEAVY_NUCLEUS    = 2, &
+      N_PRIMITIVE_MEAN_HEAVY_NUCLEUS = 3, &
+      N_CONSERVED_MEAN_HEAVY_NUCLEUS = 2, &
+      N_FIELDS_MEAN_HEAVY_NUCLEUS    = 5, &
       N_VECTORS_MEAN_HEAVY_NUCLEUS   = 0
 
   type, public, extends ( Fluid_P_Template ) :: Fluid_P_MHN_Form
@@ -22,7 +22,10 @@ module Fluid_P_MHN__Form
       N_FIELDS_MEAN_HEAVY_NUCLEUS    = N_FIELDS_MEAN_HEAVY_NUCLEUS, &
       N_VECTORS_MEAN_HEAVY_NUCLEUS   = N_VECTORS_MEAN_HEAVY_NUCLEUS, &
       ELECTRON_FRACTION              = 0, &
-      CONSERVED_PROTON_DENSITY       = 0
+      CONSERVED_PROTON_DENSITY       = 0, &
+      ENTROPY_PER_BARYON_2           = 0, &
+      TEMPERATURE_2                  = 0, &
+      CONSERVED_ENTROPY              = 0
   contains
     procedure, public, pass :: &
       InitializeAllocate_P_MHN
@@ -43,7 +46,11 @@ module Fluid_P_MHN__Form
     procedure, public, nopass :: &
       ComputeConservedProtonKernel
     procedure, public, nopass :: &
+      ComputeConservedEntropyKernel
+    procedure, public, nopass :: &
       ComputeElectronFractionKernel
+    procedure, public, nopass :: &
+      ComputeEntropyPerBaryonKernel
     procedure, public, nopass :: &
       Apply_EOS_MHN_T_Kernel
     procedure, public, nopass :: &
@@ -110,7 +117,7 @@ contains
     call InitializeBasics &
            ( F, Variable, VariableUnit, VariableOption, UnitOption )
 
-    call SetUnits ( VariableUnit, F, MassDensityUnit )
+    call SetUnits ( VariableUnit, F, MassDensityUnit, TemperatureUnit )
 
     call F % InitializeTemplate_P &
            ( RiemannSolverType, UseLimiter, VelocityUnit, MassDensityUnit, &
@@ -162,14 +169,14 @@ contains
       allocate ( C % iaPrimitive ( C % N_PRIMITIVE ) )
     end if
     C % iaPrimitive ( oP + 1 : oP + C % N_PRIMITIVE_MEAN_HEAVY_NUCLEUS ) &
-      = [ C % TEMPERATURE, C % ELECTRON_FRACTION ]
+      = [ C % TEMPERATURE, C % ELECTRON_FRACTION, C % TEMPERATURE_2 ]
 
     if ( .not. allocated ( C % iaConserved ) ) then
       C % N_CONSERVED = oC + C % N_CONSERVED_MEAN_HEAVY_NUCLEUS
       allocate ( C % iaConserved ( C % N_CONSERVED ) )
     end if
     C % iaConserved ( oC + 1 : oC + C % N_CONSERVED_MEAN_HEAVY_NUCLEUS ) &
-      = [ C % CONSERVED_PROTON_DENSITY ]
+      = [ C % CONSERVED_PROTON_DENSITY, C % CONSERVED_ENTROPY ]
     
     do iF = 1, C % N_PRIMITIVE_MEAN_HEAVY_NUCLEUS
       PrimitiveName ( iF )  =  C % Variable ( C % iaPrimitive ( oP + iF ) )
@@ -275,18 +282,23 @@ contains
         T     => FV ( oV + 1 : oV + nV, C % TEMPERATURE ), &
         SB    => FV ( oV + 1 : oV + nV, C % ENTROPY_PER_BARYON ), &
         DP    => FV ( oV + 1 : oV + nV, C % CONSERVED_PROTON_DENSITY ), &
-        YE    => FV ( oV + 1 : oV + nV, C % ELECTRON_FRACTION ) )
+        YE    => FV ( oV + 1 : oV + nV, C % ELECTRON_FRACTION ), &
+        T_2   => FV ( oV + 1 : oV + nV, C % TEMPERATURE_2 ), &
+        SB_2  => FV ( oV + 1 : oV + nV, C % ENTROPY_PER_BARYON_2 ), &
+        DS    => FV ( oV + 1 : oV + nV, C % CONSERVED_ENTROPY ) )
 
     call C % ComputeBaryonMassKernel &
            ( M )
     call C % Apply_EOS_MHN_T_Kernel &
-           ( P, E, Gamma, SB, M, N, T, YE )
+           ( P, E, Gamma, SB, SB_2, M, N, T, T_2, YE )
     call C % ComputeDensityMomentumKernel &
            ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
     call C % ComputeConservedEnergyKernel &
            ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
     call C % ComputeConservedProtonKernel &
            ( DP, N, YE )
+    call C % ComputeConservedProtonKernel &
+           ( DS, N, SB_2 )
     call C % ComputeEigenspeedsFluidKernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, MN, &
              M, N, V_1, V_2, V_3, S_1, S_2, S_3, P, Gamma, M_UU_22, M_UU_33 )
@@ -364,7 +376,10 @@ contains
         T     => FV ( oV + 1 : oV + nV, C % TEMPERATURE ), &
         SB    => FV ( oV + 1 : oV + nV, C % ENTROPY_PER_BARYON ), &
         DP    => FV ( oV + 1 : oV + nV, C % CONSERVED_PROTON_DENSITY ), &
-        YE    => FV ( oV + 1 : oV + nV, C % ELECTRON_FRACTION ) )
+        YE    => FV ( oV + 1 : oV + nV, C % ELECTRON_FRACTION ), &
+        T_2   => FV ( oV + 1 : oV + nV, C % TEMPERATURE_2 ), &
+        SB_2  => FV ( oV + 1 : oV + nV, C % ENTROPY_PER_BARYON_2 ), &
+        DS    => FV ( oV + 1 : oV + nV, C % CONSERVED_ENTROPY ) )
 
     call C % ComputeBaryonMassKernel &
            ( M )
@@ -374,8 +389,10 @@ contains
            ( E, G, M, N, V_1, V_2, V_3, S_1, S_2, S_3 )
     call C % ComputeElectronFractionKernel &
            ( YE, DP, N )
+    call C % ComputeEntropyPerBaryonKernel &
+           ( SB_2, DS, N )
     call C % Apply_EOS_MHN_E_Kernel &
-           ( P, T, Gamma, SB, M, N, E, YE )
+           ( P, T, T_2, Gamma, SB, SB_2, M, N, E, YE )
     call C % ComputeEigenspeedsFluidKernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, MN, &
              M, N, V_1, V_2, V_3, S_1, S_2, S_3, P, Gamma, M_UU_22, M_UU_33 )
@@ -410,7 +427,8 @@ contains
       oValueOption
 
     integer ( KDI ) :: &
-      iProton
+      iProton, &
+      iEntropy
     integer ( KDI ) :: &
       oV, &  !-- oValue
       nV     !-- nValues
@@ -432,13 +450,16 @@ contains
     end if
 
     call Search ( C % iaConserved, C % CONSERVED_PROTON_DENSITY, iProton )
+    call Search ( C % iaConserved, C % CONSERVED_ENTROPY, iEntropy )
 
     associate &
       ( F_DP  => RawFlux ( oV + 1 : oV + nV, iProton ), &
+        F_DS  => RawFlux ( oV + 1 : oV + nV, iEntropy ), &
         DP    => Value_C ( oV + 1 : oV + nV, C % CONSERVED_PROTON_DENSITY ), &
+        DS    => Value_C ( oV + 1 : oV + nV, C % CONSERVED_ENTROPY ), &
         V_Dim => Value_C ( oV + 1 : oV + nV, C % VELOCITY_U ( iDimension ) ) )
 
-    call ComputeRawFluxesKernel ( F_DP, DP, V_Dim )
+    call ComputeRawFluxesKernel ( F_DP, F_DS, DP, DS, V_Dim )
 
     end associate !-- F_DE, etc.
 
@@ -500,6 +521,29 @@ contains
   end subroutine ComputeConservedProtonKernel
 
 
+  subroutine ComputeConservedEntropyKernel ( DS, N, SB )
+ 	 
+    real ( KDR ), dimension ( : ), intent ( inout ) :: & 	 	 
+      DS
+    real ( KDR ), dimension ( : ), intent ( in ) :: & 	 	 
+      N, &
+      SB 	 	 
+ 	 	 
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+
+    nValues = size ( DS )
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nValues
+      DS ( iV )  =  SB ( iV )  *  N ( iV )
+    end do !-- iV
+    !$OMP end parallel do
+
+  end subroutine ComputeConservedEntropyKernel
+
+
   subroutine ComputeElectronFractionKernel ( YE, DP, N )
  	 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -534,17 +578,46 @@ contains
   end subroutine ComputeElectronFractionKernel
   
   
-  subroutine Apply_EOS_MHN_T_Kernel ( P, E, Gamma, SB, M, N, T, YE )
+  subroutine ComputeEntropyPerBaryonKernel ( SB, DS, N )
+ 	 
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      SB, &
+      DS
+    real ( KDR ), dimension ( : ), intent ( in ) :: & 	 	 
+      N 	 	 
+ 	 	 
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+
+    nValues = size ( SB )
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nValues
+      if ( N ( iV ) > 0.0_KDR ) then
+        SB ( iV ) = DS ( iV ) / N ( iV )
+      else
+        SB ( iV ) = 0.0_KDR
+      end if
+    end do !-- iV
+    !$OMP end parallel do
+
+  end subroutine ComputeEntropyPerBaryonKernel
+  
+  
+  subroutine Apply_EOS_MHN_T_Kernel ( P, E, Gamma, SB, SB_2, M, N, T, T_2, YE )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       P, &
       E, &
       Gamma, &
-      SB
+      SB, &
+      SB_2
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       M, &
       N, &
       T, &
+      T_2, &
       YE
 
     integer ( KDI ) :: &
@@ -557,6 +630,7 @@ contains
     real ( KDR ) :: &
       N_Temp, &
       T_Temp, &
+      T_Temp_2, &
       cs2, dedt, dpderho, dpdrhoe, munu
 
     nValues = size ( P )
@@ -571,9 +645,14 @@ contains
       if ( N ( iV ) == 0.0_KDR ) cycle 
       N_Temp   = M ( iV ) * N ( iV ) / MassDensity_CGS
       T_Temp   = T ( iV ) / MeV
+      T_Temp_2 = T_2 ( iV ) / MeV
       E ( iV ) = ( E ( iV ) / ( M ( iV ) * N ( iV ) )  -  OR_Shift ) &
                  / SpecificEnergy_CGS
       P ( iV ) = P ( iV ) / Pressure_CGS
+      call nuc_eos_short &
+             ( N_Temp, T_Temp_2, YE ( iV ), E ( iV ), P ( iV ), SB_2 ( iV ), &
+               cs2, dedt, dpderho, dpdrhoe, munu, &
+               keytemp, keyerr, rfeps )
       call nuc_eos_short &
              ( N_Temp, T_Temp, YE ( iV ), E ( iV ), P ( iV ), SB ( iV ), &
                cs2, dedt, dpderho, dpdrhoe, munu, &
@@ -594,13 +673,15 @@ contains
   end subroutine Apply_EOS_MHN_T_Kernel
   
 
-  subroutine Apply_EOS_MHN_E_Kernel ( P, T, Gamma, SB, M, N, E, YE )
+  subroutine Apply_EOS_MHN_E_Kernel ( P, T, T_2, Gamma, SB, SB_2, M, N, E, YE )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       P, &
       T, &
+      T_2, &
       Gamma, &
-      SB
+      SB, &
+      SB_2
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       M, &
       N, &
@@ -611,12 +692,14 @@ contains
       iV, &
       nValues, &
       keytemp, &
+      keytemp_s, &
       keyerr
     real ( KDR ) :: &
       rfeps
     real ( KDR ) :: &
       N_Temp, &
       E_Temp, &
+      E_Temp_2, &
       cs2, dedt, dpderho, dpdrhoe, munu
 
     nValues = size ( P )
@@ -625,6 +708,7 @@ contains
 
     rfeps = 1.0e-9_KDR
     keytemp = 0_KDI
+    keytemp_s = 2_KDI
     
     !$OMP parallel do private ( iV ) 
     do iV = 1, nValues
@@ -634,8 +718,13 @@ contains
                  / SpecificEnergy_CGS
       P ( iV ) = P ( iV ) / Pressure_CGS
       T ( iV ) = T ( iV ) / MeV
+      T_2 ( iV ) = T_2 ( iV ) / MeV
       call nuc_eos_short &
-             ( N_Temp, T ( iV ), YE ( iV ), E_temp, P ( iV ), SB ( iV ), &
+             ( N_Temp, T_2 ( iV ), YE ( iV ), E_Temp_2, P ( iV ), SB_2 ( iV ), &
+               cs2, dedt, dpderho, dpdrhoe, munu, &
+               keytemp_s, keyerr, rfeps )
+      call nuc_eos_short &
+             ( N_Temp, T ( iV ), YE ( iV ), E_Temp, P ( iV ), SB ( iV ), &
                cs2, dedt, dpderho, dpdrhoe, munu, &
                keytemp, keyerr, rfeps )
       if ( keyerr /= 0 ) then
@@ -647,6 +736,7 @@ contains
       call nuc_eos_one ( N_Temp, T ( iV ), YE ( iV ), Gamma ( iV ), 19 )
       P ( iV ) = P ( iV ) * Pressure_CGS
       T ( iV ) = T ( iV ) * MeV
+      T_2 ( iV ) = T_2 ( iV ) * MeV
     end do
     !$OMP end parallel do
     
@@ -687,6 +777,9 @@ contains
 
     F % ELECTRON_FRACTION        = oF + 1
     F % CONSERVED_PROTON_DENSITY = oF + 2
+    F % TEMPERATURE_2            = oF + 3
+    F % ENTROPY_PER_BARYON_2     = oF + 4
+    F % CONSERVED_ENTROPY        = oF + 5
 
     !-- variable names 
 
@@ -700,7 +793,10 @@ contains
 
     Variable ( oF + 1 : oF + F % N_FIELDS_MEAN_HEAVY_NUCLEUS ) &
       = [ 'ElectronFraction      ', &
-          'ConservedProtonDensity' ]
+          'ConservedProtonDensity', &
+          'Temperature_2         ', &
+          'EntropyPerBaryon_2    ', &
+          'ConservedEntropy      ' ]
     
     !-- units
 
@@ -723,38 +819,46 @@ contains
   end subroutine InitializeBasics
 
 
-  subroutine SetUnits ( VariableUnit, F, MassDensityUnit )
+  subroutine SetUnits ( VariableUnit, F, MassDensityUnit, TemperatureUnit )
 
     type ( MeasuredValueForm ), dimension ( : ), intent ( inout ) :: &
       VariableUnit
     class ( Fluid_P_MHN_Form ), intent ( in ) :: &
       F
     type ( MeasuredValueForm ), intent ( in ) :: &
-      MassDensityUnit
+      MassDensityUnit, &
+      TemperatureUnit
 
     VariableUnit ( F % CONSERVED_PROTON_DENSITY ) &
       = MassDensityUnit
+    VariableUnit ( F % TEMPERATURE_2 ) &
+      = TemperatureUnit
+    VariableUnit ( F % ENTROPY_PER_BARYON_2 ) &
+      = UNIT % BOLTZMANN
 
   end subroutine SetUnits
 
 
-  subroutine ComputeRawFluxesKernel ( F_DE, DE, V_Dim )
+  subroutine ComputeRawFluxesKernel ( F_DP, F_DS, DP, DS, V_Dim )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      F_DE
+      F_DP, &
+      F_DS
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      DE, &
+      DP, &
+      DS, &
       V_Dim
     
     integer ( KDI ) :: &
       iV, &
       nValues
 
-    nValues = size ( F_DE )
+    nValues = size ( F_DP )
 
     !$OMP parallel do private ( iV ) 
     do iV = 1, nValues
-      F_DE ( iV )  =  DE ( iV )  *  V_Dim ( iV ) 
+      F_DP ( iV )  =  DP ( iV )  *  V_Dim ( iV ) 
+      F_DS ( iV )  =  DS ( iV )  *  V_Dim ( iV ) 
     end do !-- iV
     !$OMP end parallel do
 

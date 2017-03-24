@@ -248,13 +248,10 @@ contains
     FinishTime    = 1.0_KDR * UNIT % SECOND
     CourantFactor = 0.7_KDR
 
-call Show ( '>>> 0' )
     call SetFluid ( WH )
-call Show ( '>>> 1' )
     call WH % InitializeTemplate_C_PS &
            ( Name, TimeUnitOption = TimeUnit, FinishTimeOption = FinishTime, &
              CourantFactorOption = CourantFactor, nWriteOption = 30 )
-call Show ( '>>> 2' )
 
     !-- Cleanup
 
@@ -396,6 +393,7 @@ call Show ( '>>> 2' )
     associate &
       (     N => F % Value ( :, F % COMOVING_DENSITY ), &
             T => F % Value ( :, F % TEMPERATURE ), &
+          T_2 => F % Value ( :, F % TEMPERATURE_2 ), &
           V_1 => F % Value ( :, F % VELOCITY_U ( 1 ) ), &
           V_2 => F % Value ( :, F % VELOCITY_U ( 2 ) ), &
           V_3 => F % Value ( :, F % VELOCITY_U ( 3 ) ), &
@@ -411,7 +409,8 @@ call Show ( '>>> 2' )
       call SI ( iSPECIFIC_ENERGY_SI ) % Evaluate ( R ( iV ), SE ) 
       call SI ( iELECTRON_FRACTION_SI ) % Evaluate ( R ( iV ), Y_E ( iV ) ) 
 
-      E   ( iV )  =  SE  *  N ( iV )
+      E ( iV )  =  SE  *  N ( iV )
+      T_2 ( iV )  =  T ( iV )
 
     end do
 
