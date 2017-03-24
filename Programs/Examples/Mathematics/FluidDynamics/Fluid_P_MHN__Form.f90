@@ -491,8 +491,12 @@ contains
     call ComputeCenterStatesKernel &
            ( C_ICL % Value ( :, C % CONSERVED_PROTON_DENSITY ), &
              C_ICR % Value ( :, C % CONSERVED_PROTON_DENSITY ), &
+             C_ICL % Value ( :, C % CONSERVED_ENTROPY ), &
+             C_ICR % Value ( :, C % CONSERVED_ENTROPY ), &
              C_IL % Value ( :, C % CONSERVED_PROTON_DENSITY ), &
              C_IR % Value ( :, C % CONSERVED_PROTON_DENSITY ), &
+             C_IL % Value ( :, C % CONSERVED_ENTROPY ), &
+             C_IR % Value ( :, C % CONSERVED_ENTROPY ), &
              C_IL % Value ( :, C % VELOCITY_U ( iD ) ), &
              C_IR % Value ( :, C % VELOCITY_U ( iD ) ), &
              SS_I % Value ( :, C % ALPHA_PLUS ), &
@@ -867,13 +871,15 @@ contains
 
 
   subroutine ComputeCenterStatesKernel &
-               ( DP_ICL, DP_ICR, DP_IL, DP_IR, V_Dim_IL, V_Dim_IR, &
-                 AP_I, AM_I, AC_I )
+               ( DP_ICL, DP_ICR, DS_ICL, DS_ICR, DP_IL, DP_IR, DS_IL, DS_IR, &
+                 V_Dim_IL, V_Dim_IR, AP_I, AM_I, AC_I )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      DP_ICL, DP_ICR
+      DP_ICL, DP_ICR, &
+      DS_ICL, DS_ICR
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       DP_IL, DP_IR, &
+      DS_IL, DS_IR, &
       V_Dim_IL, V_Dim_IR, &
       AP_I, &
       AM_I, &
@@ -910,6 +916,9 @@ contains
 
       DP_ICL ( iV )  =  DP_IL ( iV ) * AM_VL * AM_AC_Inv
       DP_ICR ( iV )  =  DP_IR ( iV ) * AP_VR * AP_AC_Inv
+
+      DS_ICL ( iV )  =  DS_IL ( iV ) * AM_VL * AM_AC_Inv
+      DS_ICR ( iV )  =  DS_IR ( iV ) * AP_VR * AP_AC_Inv
 
     end do !-- iV
     !$OMP end parallel do
