@@ -149,7 +149,7 @@ contains
     RadiusCore = 40.0_KDR  *  UNIT % KILOMETER
     call PROGRAM_HEADER % GetParameter ( RadiusCore, 'RadiusCore' )
 
-    nCellsCore = 384  !-- Number of central cells with equal spacing
+    nCellsCore = 128  !-- Number of central cells with equal spacing
     call PROGRAM_HEADER % GetParameter ( nCellsCore, 'nCellsCore' )
 
     nCellsRadius = 6.5 * nCellsCore  !-- Aiming for roughly 10,000 km
@@ -216,7 +216,6 @@ contains
 
     call FA % Initialize &
            ( PS, 'MEAN_HEAVY_NUCLEUS', &
-             RiemannSolverTypeOption = 'HLL', &
              VelocityUnitOption = VelocityUnit, &
              MassDensityUnitOption = MassDensityUnit, &
              EnergyDensityUnitOption = EnergyDensityUnit, &
