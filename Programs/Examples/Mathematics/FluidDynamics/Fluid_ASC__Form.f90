@@ -10,6 +10,7 @@ module Fluid_ASC__Form
   use Fluid_P_MHN__Form
   use Tally_F_D__Form
   use Tally_F_P__Form
+  use Tally_F_P_MHN__Form
   use FluidFeatures_CSL__Form
   use FluidFeatures_ASC__Form
   use Fluid_CSL__Form
@@ -151,7 +152,7 @@ contains
           allocate &
             ( Tally_F_D_Form :: FA % TallyBoundaryGlobal ( iB ) % Element )
         end do !-- iB
-      case ( 'POLYTROPIC', 'NON_RELATIVISTIC', 'MEAN_HEAVY_NUCLEUS' )
+      case ( 'POLYTROPIC', 'NON_RELATIVISTIC' )
         allocate ( Tally_F_P_Form :: FA % TallyInterior )
         allocate ( Tally_F_P_Form :: FA % TallyTotal )
         allocate ( Tally_F_P_Form :: FA % TallyChange )
@@ -162,6 +163,18 @@ contains
             ( Tally_F_P_Form :: FA % TallyBoundaryLocal  ( iB ) % Element )
           allocate &
             ( Tally_F_P_Form :: FA % TallyBoundaryGlobal ( iB ) % Element )
+        end do !-- iB
+      case ( 'MEAN_HEAVY_NUCLEUS' )
+        allocate ( Tally_F_P_MHN_Form :: FA % TallyInterior )
+        allocate ( Tally_F_P_MHN_Form :: FA % TallyTotal )
+        allocate ( Tally_F_P_MHN_Form :: FA % TallyChange )
+        allocate ( FA % TallyBoundaryLocal  ( A % nBoundaries ) )
+        allocate ( FA % TallyBoundaryGlobal ( A % nBoundaries ) )
+        do iB = 1, A % nBoundaries
+          allocate &
+            ( Tally_F_P_MHN_Form :: FA % TallyBoundaryLocal  ( iB ) % Element )
+          allocate &
+            ( Tally_F_P_MHN_Form :: FA % TallyBoundaryGlobal ( iB ) % Element )
         end do !-- iB
       case default
         call Show ( 'FluidType not recognized', CONSOLE % ERROR )

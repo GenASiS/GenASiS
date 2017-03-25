@@ -56,6 +56,12 @@ Tally_F_P__Form.o: \
   Tally_F_D__Form.o \
   Tally_F_P__Form.f90
 
+Tally_F_P_MHN__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Tally_F_P__Form.o \
+  Tally_F_P_MHN__Form.f90
+
 FluidFeatures_CSL__Form.o: \
   Basics.o \
   Mathematics.o \
@@ -88,6 +94,7 @@ Fluid_ASC__Form.o: \
   Fluid_P_MHN__Form.o \
   Tally_F_D__Form.o \
   Tally_F_P__Form.o \
+  Tally_F_P_MHN__Form.o \
   FluidFeatures_CSL__Form.o \
   FluidFeatures_ASC__Form.o \
   Fluid_CSL__Form.o \
