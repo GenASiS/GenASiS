@@ -137,7 +137,7 @@ contains
     allocate ( Fluid_ASC_Form :: ST % Current_ASC )
     select type ( FA => ST % Current_ASC )
     class is ( Fluid_ASC_Form )
-    call FA % Initialize ( PS, 'POLYTROPIC', LimiterParameterOption = 1.6_KDR )
+    call FA % Initialize ( PS, 'POLYTROPIC' )
 
     !-- Step
 
