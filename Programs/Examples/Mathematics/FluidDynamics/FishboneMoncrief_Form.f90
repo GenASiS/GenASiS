@@ -196,7 +196,8 @@ contains
              EnergyDensityUnitOption = EnergyDensityUnit, &
              MassUnitOption = MassUnit, EnergyUnitOption = EnergyUnit, &
              MomentumUnitOption = MomentumUnit, &
-             AngularMomentumUnitOption = AngularMomentumUnit )
+             AngularMomentumUnitOption = AngularMomentumUnit, &
+             LimiterParameterOption = 1.8_KDR )
 
     !-- Step
 

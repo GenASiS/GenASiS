@@ -105,7 +105,12 @@ contains
       FA % Type = 'a Fluid_ASC'
     FA % FluidType = FluidType
 
-    FA % RiemannSolverType = 'HLLC'
+    select case ( trim ( FA % FluidType ) )
+    case ( 'DUST' )
+      FA % RiemannSolverType = 'HLL'
+    case default
+      FA % RiemannSolverType = 'HLLC'
+    end select
     if ( present ( RiemannSolverTypeOption ) ) &
       FA % RiemannSolverType = RiemannSolverTypeOption
     call PROGRAM_HEADER % GetParameter &
@@ -224,21 +229,23 @@ contains
     call Show ( FA % UseLimiter, 'UseLimiter', FA % IGNORABILITY )
     call Show ( FA % LimiterParameter, 'LimiterParameter', FA % IGNORABILITY )
 
-    allocate ( FA % Features_ASC )
-    associate ( FFA => FA % Features_ASC )
-    call FFA % Initialize &
-           ( FA, FA % FluidType, FA % RiemannSolverType, &
-             NameShortOption = trim ( NameShort ) // '_Features', &
-             ShockThresholdOption = ShockThresholdOption, &
-             IgnorabilityOption = IgnorabilityOption )
-    select type ( FFC => FFA % Chart )
-    class is ( FluidFeatures_CSL_Form )
-      select type ( FC => FA % Chart )
-      class is ( Fluid_CSL_Form )
-        call FC % SetFeatures ( FFC )
-      end select !-- FF
-    end select !-- FFC
-    end associate !-- FFA
+    if ( trim ( FA % FluidType ) /= 'DUST' ) then
+      allocate ( FA % Features_ASC )
+      associate ( FFA => FA % Features_ASC )
+      call FFA % Initialize &
+             ( FA, FA % FluidType, FA % RiemannSolverType, &
+               NameShortOption = trim ( NameShort ) // '_Features', &
+               ShockThresholdOption = ShockThresholdOption, &
+               IgnorabilityOption = IgnorabilityOption )
+      select type ( FFC => FFA % Chart )
+      class is ( FluidFeatures_CSL_Form )
+        select type ( FC => FA % Chart )
+        class is ( Fluid_CSL_Form )
+          call FC % SetFeatures ( FFC )
+        end select !-- FF
+      end select !-- FFC
+      end associate !-- FFA
+    end if !-- not DUST
 
   end subroutine Initialize
 
