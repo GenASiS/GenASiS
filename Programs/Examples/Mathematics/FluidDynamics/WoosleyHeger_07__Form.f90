@@ -657,7 +657,7 @@ contains
       Potential_C ( iV )  &
         =  0.5_KDR * ( Potential ( oVM + iV - 1 )  +  Potential ( oVM + iV ) )
     end do
-    Potential_C ( nV + 1 )  =  Potential ( oVM + nV )
+    Potential_C ( oV + nV + 1 )  =  Potential ( oVM + oV + nV )
 
     end select !-- Chart
     end select !-- PS
