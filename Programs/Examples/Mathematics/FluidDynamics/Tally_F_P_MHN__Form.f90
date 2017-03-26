@@ -17,11 +17,17 @@ module Tally_F_P_MHN__Form
     integer ( KDI ) :: &
       N_INTEGRALS_MEAN_HEAVY_NUCLEUS = N_INTEGRALS_MEAN_HEAVY_NUCLEUS, &
       PROTON_NUMBER = 0
+    real ( KDR ), dimension ( : ), pointer :: &
+      GravitationalPotential => null ( )
+    procedure ( ), pointer, nopass :: &
+      ComputeGravitationalPotential => null ( )
   contains
     procedure, public, pass :: &
       InitializeFluid
     procedure, public, pass :: &
       SelectVariables
+    procedure, public, pass :: &
+      SetGravitationalPotential
     final :: &
       Finalize
     procedure, public, pass :: &
@@ -40,7 +46,7 @@ contains
     
     class ( Tally_F_P_MHN_Form ), intent ( inout ) :: &
       T
-    class ( AtlasHeaderForm ), intent ( in ) :: &
+    class ( AtlasHeaderForm ), intent ( in ), target :: &
       A
     type ( MeasuredValueForm ), intent ( in ), optional :: &
       MassUnitOption, &
@@ -73,6 +79,8 @@ contains
     end if
 
     call T % SelectVariables ( A )
+
+    T % Atlas => A
 
   end subroutine InitializeFluid
 
@@ -130,6 +138,18 @@ contains
   end subroutine SelectVariables
   
 
+  subroutine SetGravitationalPotential ( T, Phi )
+
+    class ( Tally_F_P_MHN_Form ), intent ( inout ) :: &
+      T
+    real ( KDR ), dimension ( : ), intent ( in ), target :: &
+      Phi
+
+    T % GravitationalPotential  =>  Phi
+
+  end subroutine SetGravitationalPotential
+
+
   impure elemental subroutine Finalize ( T )
   
     type ( Tally_F_P_MHN_Form ), intent ( inout ) :: &
@@ -164,12 +184,22 @@ contains
     call T % Tally_F_P_Form &
            % ComputeInteriorIntegrandGalilean ( Integrand, C, G, nDimensions )
 
-    associate ( DP => C % Value ( :, C % CONSERVED_PROTON_DENSITY ) )
+    call T % ComputeGravitationalPotential ( C, T % Atlas, G )
 
+    associate &
+      ( D   => C % Value ( :, C % CONSERVED_DENSITY ), &
+        DP  => C % Value ( :, C % CONSERVED_PROTON_DENSITY ), &
+        CE  => C % Value ( :, C % CONSERVED_ENERGY ), &
+        Phi => T % GravitationalPotential )
+    
     do iS = 1, T % nSelected
       iI = T % iaSelected ( iS )
       if ( iI == T % PROTON_NUMBER ) then
         call Copy ( DP, Integrand ( iS ) % Value )
+      else if ( iI == T % GRAVITATIONAL_ENERGY ) then
+        Integrand ( iS ) % Value  =  0.5_KDR * D * Phi
+      else if ( iI == T % TOTAL_ENERGY ) then
+        Integrand ( iS ) % Value  =  CE  +  0.5_KDR * D * Phi
       end if !-- iI
     end do !-- iS
 
@@ -199,8 +229,12 @@ contains
       iF, &   !-- iFace
       iS, &   !-- iSelected
       iI, &   !-- iIntegral
+      iC, &   !-- iConnectivity
+      iD, &   !-- iDimension
       iFluence, &
-      iProton
+      iProton, &
+      iDensity, &
+      iEnergy
 
     select type ( C )
     class is ( Fluid_P_MHN_Form )
@@ -211,9 +245,14 @@ contains
     do iFluence = 1, C % N_CONSERVED
       if ( C % iaConserved ( iFluence ) == C % CONSERVED_PROTON_DENSITY ) &
         iProton = iFluence
+      if ( C % iaConserved ( iFluence ) == C % CONSERVED_DENSITY ) &
+        iDensity = iFluence
+      if ( C % iaConserved ( iFluence ) == C % CONSERVED_ENERGY ) &
+        iEnergy = iFluence
     end do !-- iFluence
 
     associate ( Cnnct => CSL % Atlas % Connectivity )
+
     do iF = 1, Cnnct % nFaces
       associate ( CE => BoundaryFluence ( iProton, iF ) % Value )
       do iS = 1, T % nSelected
@@ -224,6 +263,25 @@ contains
       end do !-- iS
       end associate !-- CE
     end do !-- iF
+
+    !-- outer radial boundary, assume 1D
+    iD  =  1
+    iC  =  Cnnct % iaOuter ( iD )
+    associate &
+      ( D   => BoundaryFluence ( iDensity, iC ) % Value ( 1, 1, 1 ), &
+        CE  => BoundaryFluence ( iEnergy, iC ) % Value ( 1, 1, 1 ), &
+        Phi => T % GravitationalPotential ( C % nValues - 1 ) )
+    do iS = 1, T % nSelected
+      iI = T % iaSelected ( iS )
+      if ( iI == T % GRAVITATIONAL_ENERGY ) then
+        Integrand ( iS, iC ) % Value ( 1, 1, 1 ) =  D * Phi
+      else if ( iI == T % TOTAL_ENERGY ) then
+        Integrand ( iS, iC ) % Value ( 1, 1, 1 ) =  CE  +  D * Phi 
+      end if !-- iI
+    end do !-- iS
+
+    end associate !-- D, etc.
+
     end associate !-- Cnnct
 
     end select !-- C

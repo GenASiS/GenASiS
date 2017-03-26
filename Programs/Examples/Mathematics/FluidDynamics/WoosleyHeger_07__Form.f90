@@ -5,7 +5,7 @@ module WoosleyHeger_07__Form
   use Fluid_P__Template
   use Fluid_P_MHN__Form
   use Fluid_ASC__Form
-  use Tally_F_P__Form
+  use Tally_F_P_MHN__Form
   use Diagnostics_WH07__Form
   use Diagnostics_WH07_ASC__Form
 
@@ -24,10 +24,12 @@ module WoosleyHeger_07__Form
 
     private :: &
       SetFluid, &
-      ApplySources
+      ApplySources, &
+      ComputeGravitationalPotential
 
       private :: &
         PrepareInterpolation, &
+        ComputeGravitationalPotentialKernel, &
         ApplySourcesKernel, &
         LocalMax
 
@@ -49,7 +51,8 @@ module WoosleyHeger_07__Form
       iStage = 0
     real ( KDR ), dimension ( : ), allocatable :: &
       EnclosedMass, &
-      Potential
+      Potential, &
+      Potential_C
     type ( Diagnostics_WH07_ASC_Form ), dimension ( : ), allocatable :: &
       Diagnostics_ASC
 
@@ -320,7 +323,7 @@ contains
     deallocate ( CO )
 
     select type ( TI => FA % TallyInterior )
-    class is ( Tally_F_P_Form )
+    class is ( Tally_F_P_MHN_Form )
     DensityAve  =  TI % Value ( TI % BARYON_NUMBER ) / VelocityMaxRadius ** 3 
     end select !-- TI
 
@@ -369,7 +372,8 @@ contains
       WH
 
     integer ( KDI ) :: &
-      iV  !-- iValue
+      iV, &  !-- iValue
+      iB     !-- iBoundary
     real ( KDR ) :: &
       SE  !-- SpecificEnergy
     type ( SplineInterpolationForm ), dimension ( 5 ) :: &
@@ -415,6 +419,44 @@ contains
     V_3 = 0.0_KDR
 
     call F % ComputeFromPrimitive ( G )
+
+    !-- Gravitational potential storage
+
+    select type ( Chart => PS % Chart )
+    class is ( Chart_SLD_Form )
+      allocate ( EnclosedMass ( 0 : Chart % nCells ( 1 ) ) )  !-- global edges
+      allocate ( Potential ( 0 : Chart % nCells ( 1 ) ) )  !-- global edges
+      allocate ( Potential_C ( G % nValues ) )  !-- local centers
+    end select !-- Chart
+
+    !-- Tally
+
+    select type ( TI => FA % TallyInterior )
+    class is ( Tally_F_P_MHN_Form )
+      call TI % SetGravitationalPotential ( Potential_C )
+      TI % ComputeGravitationalPotential => ComputeGravitationalPotential
+    end select !-- TI
+    
+    select type ( TT => FA % TallyTotal )
+    class is ( Tally_F_P_MHN_Form )
+      call TT % SetGravitationalPotential ( Potential_C )
+    end select !-- TT
+    
+    select type ( TC => FA % TallyChange )
+    class is ( Tally_F_P_MHN_Form )
+      call TC % SetGravitationalPotential ( Potential_C )
+    end select !-- TC
+    
+    do iB = 1, size ( FA % TallyBoundaryLocal )
+      select type ( TB => FA % TallyBoundaryLocal ( iB ) % Element )
+      class is ( Tally_F_P_MHN_Form )
+        call TB % SetGravitationalPotential ( Potential_C )
+      end select !-- TB
+      select type ( TB => FA % TallyBoundaryGlobal ( iB ) % Element )
+      class is ( Tally_F_P_MHN_Form )
+        call TB % SetGravitationalPotential ( Potential_C )
+      end select !-- TB
+    end do !-- iB
 
     end associate !-- N, etc.
     end select !-- PS
@@ -484,18 +526,8 @@ contains
 
     iStage = mod ( iStage, S % nStages ) + 1
 
-    if ( .not. allocated ( EnclosedMass ) ) then
-      allocate ( EnclosedMass ( 0 : Chart % nCells ( 1 ) ) )  !-- edges
-      allocate ( Potential ( 0 : Chart % nCells ( 1 ) ) )  !-- edges
-    end if
-
 !    if ( iStage == 1 ) &
-      call ComputeGravitationalPotential &
-             ( Chart, F % Value ( :, F % CONSERVED_DENSITY ), &
-               G % Value ( :, G % VOLUME_JACOBIAN ), &
-               G % VALUE ( :, G % CENTER ( 1 ) ), &
-               G % VALUE ( :, G % WIDTH ( 1 ) ), CONSTANT % GRAVITATIONAL, &
-               EnclosedMass, Potential )
+      call ComputeGravitationalPotential ( F, Chart % Atlas, G )
 
 !    call Show ( M, UNIT % SOLAR_MASS, '>>> M' )
 !    call Show ( Phi, UNIT % SPEED_OF_LIGHT ** (-2), '>>> Phi' )
@@ -581,7 +613,59 @@ contains
 
   end subroutine ApplySources
 
-  
+
+  subroutine ComputeGravitationalPotential ( F, PS, G )
+
+    class ( CurrentTemplate ), intent ( in ) :: &
+      F
+    class ( AtlasHeaderForm ), intent ( in ) :: &
+      PS
+    type ( GeometryFlatForm ), intent ( in ) :: &
+      G
+
+    integer ( KDI ) :: &
+      iV, &
+      oV, &
+      oVM, &
+      nV
+
+    select type ( F )
+    class is ( Fluid_P_MHN_Form )
+
+    select type ( PS )
+    class is ( Atlas_SC_Form )
+
+    select type ( Chart => PS % Chart )
+    class is ( Chart_SLD_Form )
+
+    call ComputeGravitationalPotentialKernel &
+           ( Chart, F % Value ( :, F % CONSERVED_DENSITY ), &
+             G % Value ( :, G % VOLUME_JACOBIAN ), &
+             G % VALUE ( :, G % CENTER ( 1 ) ), &
+             G % VALUE ( :, G % WIDTH ( 1 ) ), CONSTANT % GRAVITATIONAL, &
+             EnclosedMass, Potential )
+
+    !-- 1D
+
+    call Clear ( Potential_C )
+
+    oV   =  Chart % nGhostLayers ( 1 )
+    nV   =  Chart % nCellsBrick ( 1 )
+    oVM  =  ( Chart % iaBrick ( 1 ) - 1 ) * Chart % nCellsBrick ( 1 ) &
+            -  Chart % nGhostLayers ( 1 )
+    do iV = oV + 1, oV + nV
+      Potential_C ( iV )  &
+        =  0.5_KDR * ( Potential ( oVM + iV - 1 )  +  Potential ( oVM + iV ) )
+    end do
+    Potential_C ( nV + 1 )  =  Potential ( oVM + nV )
+
+    end select !-- Chart
+    end select !-- PS
+    end select !-- F
+
+  end subroutine ComputeGravitationalPotential
+
+
   subroutine PrepareInterpolation ( SI )
 
     type ( SplineInterpolationForm ), dimension ( 5 ), intent ( inout ) :: &
@@ -732,7 +816,7 @@ contains
   end subroutine PrepareInterpolation
 
 
-  subroutine ComputeGravitationalPotential &
+  subroutine ComputeGravitationalPotentialKernel &
                ( C, D, VJ, R, dR, G, M, Phi )
 
     class ( Chart_SLD_Form ), intent ( in ) :: &
@@ -794,7 +878,7 @@ contains
     case default
       call Show ( 'Dimensionality not implemented', CONSOLE % ERROR )
       call Show ( 'WoosleyHeger_07_Form', 'module', CONSOLE % ERROR )
-      call Show ( 'ComputeGravitationalPotential', 'subroutine', &
+      call Show ( 'ComputeGravitationalPotentialKernel', 'subroutine', &
                   CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- nDimensions
@@ -821,7 +905,7 @@ contains
       Phi ( iV )  =  - G * ( M ( iV ) / R_I ( iV )  +  SHI ( iV ) )
     end do !-- iV
 
-  end subroutine ComputeGravitationalPotential
+  end subroutine ComputeGravitationalPotentialKernel
 
 
   subroutine ApplySourcesKernel &

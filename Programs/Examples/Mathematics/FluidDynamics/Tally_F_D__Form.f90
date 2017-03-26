@@ -60,7 +60,7 @@ contains
     
     class ( Tally_F_D_Form ), intent ( inout ) :: &
       T
-    class ( AtlasHeaderForm ), intent ( in ) :: &
+    class ( AtlasHeaderForm ), intent ( in ), target :: &
       A
     type ( MeasuredValueForm ), intent ( in ), optional :: &
       MassUnitOption, &
@@ -120,6 +120,8 @@ contains
     end if
     
     call T % SelectVariables ( A )
+
+    T % Atlas => A
 
   end subroutine InitializeFluid
   

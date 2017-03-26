@@ -239,6 +239,8 @@ contains
     type ( FishboneMoncriefForm ), intent ( inout ) :: &
       FM
 
+    integer ( KDI ) :: &
+      iB  !-- iBoundary
     real ( KDR ) :: &
       EnthalpyMax, &
       PolytropicParameter
@@ -248,9 +250,6 @@ contains
       G
     class ( Fluid_P_P_Form ), pointer :: &
       F
-
-    integer ( KDI ) :: &
-      iB  !-- iBoundary
 
     associate &
       ( Kappa => AngularMomentumParameter, &
@@ -322,17 +321,17 @@ contains
 
     select type ( TI => FA % TallyInterior )
     class is ( Tally_FM_Form )
-       call TI % SetCentralMass ( M )
+      call TI % SetCentralMass ( M )
     end select !-- TI
     
     select type ( TT => FA % TallyTotal )
     class is ( Tally_FM_Form )
-       call TT % SetCentralMass ( M )
+      call TT % SetCentralMass ( M )
     end select !-- TT
     
     select type ( TC => FA % TallyChange )
     class is ( Tally_FM_Form )
-       call TC % SetCentralMass ( M )
+      call TC % SetCentralMass ( M )
     end select !-- TC
     
     do iB = 1, size ( FA % TallyBoundaryLocal )

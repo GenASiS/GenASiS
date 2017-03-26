@@ -26,6 +26,8 @@ module Tally_C__Form
       Variable
     type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
       Unit
+    class ( AtlasHeaderForm ), pointer :: &
+      Atlas => null ( )
   contains
     procedure, private, pass :: &
       InitializeConserved
@@ -72,7 +74,7 @@ contains
       T
     class ( CurrentTemplate ), intent ( in ) :: &
       C
-    class ( AtlasHeaderForm ), intent ( in ) :: &
+    class ( AtlasHeaderForm ), intent ( in ), target :: &
       A
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       VariableOption
@@ -141,6 +143,8 @@ contains
     end if 
 
     call T % SelectVariables ( A )
+
+    T % Atlas => A
 
     nullify ( G )
 
