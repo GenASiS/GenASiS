@@ -36,6 +36,8 @@ module RadiationMoments_Form
     generic, public :: &
       Initialize => InitializeAllocate_RM
     procedure, public, pass :: &
+      SetPrimitiveConserved
+    procedure, public, pass :: &
       SetInteractions
     procedure, public, pass :: &
       SetOutput
@@ -74,13 +76,18 @@ contains
 
 
   subroutine InitializeAllocate_RM &
-               ( RM, Velocity_U_Unit, MomentumDensity_U_Unit, &
-                 MomentumDensity_D_Unit, EnergyDensityUnit, TemperatureUnit, &
+               ( RM, RiemannSolverType, UseLimiter, Velocity_U_Unit, &
+                 MomentumDensity_U_Unit, MomentumDensity_D_Unit, &
+                 EnergyDensityUnit, TemperatureUnit, LimiterParameter, &
                  nValues, VariableOption, VectorOption, NameOption, &
                  ClearOption, UnitOption, VectorIndicesOption )
 
     class ( RadiationMomentsForm ), intent ( inout ) :: &
       RM
+    character ( * ), intent ( in ) :: &
+      RiemannSolverType
+    logical ( KDL ), intent ( in ) :: &
+      UseLimiter
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
       Velocity_U_Unit, &
       MomentumDensity_U_Unit, &
@@ -88,6 +95,8 @@ contains
     type ( MeasuredValueForm ), intent ( in ) :: &
       EnergyDensityUnit, &
       TemperatureUnit
+    real ( KDR ), intent ( in ) :: &
+      LimiterParameter
     integer ( KDI ), intent ( in ) :: &
       nValues
     character ( * ), dimension ( : ), intent ( in ), optional :: &
@@ -122,12 +131,57 @@ contains
              MomentumDensity_D_Unit, EnergyDensityUnit, TemperatureUnit )
 
     call RM % InitializeTemplate &
-           ( Velocity_U_Unit, nValues, VariableOption = Variable, &
-             VectorOption = Vector, NameOption = Name, &
-             ClearOption = ClearOption, UnitOption = VariableUnit, &
-             VectorIndicesOption = VectorIndices )
+           ( RiemannSolverType, UseLimiter, Velocity_U_Unit, LimiterParameter, &
+             nValues, VariableOption = Variable, VectorOption = Vector, &
+             NameOption = Name, ClearOption = ClearOption, &
+             UnitOption = VariableUnit, VectorIndicesOption = VectorIndices )
     
   end subroutine InitializeAllocate_RM
+
+
+  subroutine SetPrimitiveConserved ( C )
+
+    class ( RadiationMomentsForm ), intent ( inout ) :: &
+      C
+
+    integer ( KDI ) :: &
+      iF, &  !-- iField
+      oP, &  !-- oPrimitive
+      oC     !-- oConserved
+    character ( LDL ), dimension ( C % N_PRIMITIVE_RM ) :: &
+      PrimitiveName
+    character ( LDL ), dimension ( C % N_CONSERVED_RM ) :: &
+      ConservedName
+
+    oP = C % N_PRIMITIVE_TEMPLATE
+    oC = C % N_CONSERVED_TEMPLATE
+
+    if ( .not. allocated ( C % iaPrimitive ) ) then
+      C % N_PRIMITIVE = oP + C % N_PRIMITIVE_RM
+      allocate ( C % iaPrimitive ( C % N_PRIMITIVE ) )
+    end if
+    C % iaPrimitive ( oP + 1 : oP + C % N_PRIMITIVE_RM ) &
+      = [ C % COMOVING_ENERGY_DENSITY, C % COMOVING_MOMENTUM_DENSITY_U ]
+
+    if ( .not. allocated ( C % iaConserved ) ) then
+      C % N_CONSERVED = oC + C % N_CONSERVED_RM
+      allocate ( C % iaConserved ( C % N_CONSERVED ) )
+    end if
+    C % iaConserved ( oC + 1 : oC + C % N_CONSERVED_RM ) &
+      = [ C % CONSERVED_ENERGY_DENSITY, C % CONSERVED_MOMENTUM_DENSITY_D ]
+    
+    do iF = 1, C % N_PRIMITIVE_RM
+      PrimitiveName ( iF )  =  C % Variable ( C % iaPrimitive ( oP + iF ) )
+    end do
+    do iF = 1, C % N_CONSERVED_RM
+      ConservedName ( iF )  =  C % Variable ( C % iaConserved ( oC + iF ) )
+    end do
+    call Show ( PrimitiveName, 'Adding primitive variables', &
+                C % IGNORABILITY, oIndexOption = oP )
+    call Show ( ConservedName, 'Adding conserved variables', &
+                C % IGNORABILITY, oIndexOption = oC )
+    
+  end subroutine SetPrimitiveConserved
 
 
   subroutine SetInteractions ( RM, Interactions )
@@ -659,25 +713,6 @@ contains
     call VectorIndices ( oV + 2 ) % Initialize &
            ( RM % CONSERVED_MOMENTUM_DENSITY_D )
 
-    !-- select primitive, conserved
-
-    oP = RM % N_PRIMITIVE_TEMPLATE
-    oC = RM % N_CONSERVED_TEMPLATE
-
-    if ( .not. allocated ( RM % iaPrimitive ) ) then
-      RM % N_PRIMITIVE = oP + RM % N_PRIMITIVE_RM
-      allocate ( RM % iaPrimitive ( RM % N_PRIMITIVE ) )
-    end if
-    RM % iaPrimitive ( oP + 1 : oP + RM % N_PRIMITIVE_RM ) &
-      = [ RM % COMOVING_ENERGY_DENSITY, RM % COMOVING_MOMENTUM_DENSITY_U ]
-
-    if ( .not. allocated ( RM % iaConserved ) ) then
-      RM % N_CONSERVED = oC + RM % N_CONSERVED_RM
-      allocate ( RM % iaConserved ( RM % N_CONSERVED ) )
-    end if
-    RM % iaConserved ( oC + 1 : oC + RM % N_CONSERVED_RM ) &
-      = [ RM % CONSERVED_ENERGY_DENSITY, RM % CONSERVED_MOMENTUM_DENSITY_D ]
-    
   end subroutine InitializeBasics
 
 
@@ -1086,7 +1121,7 @@ contains
     call Search ( RM % iaConserved, RM % CONSERVED_MOMENTUM_DENSITY_D ( 3 ), &
                   iMomentum_3 )
 
-    select type ( Grid => S % Grid )
+    select type ( Chart => S % Chart )
     class is ( Chart_SL_Template )
 
     associate ( I => RM % Interactions )
@@ -1097,14 +1132,14 @@ contains
                  DampingCoefficient % Value ( :, iMomentum_1 ), &
                  DampingCoefficient % Value ( :, iMomentum_2 ), &
                  DampingCoefficient % Value ( :, iMomentum_3 ), &
-                 Grid % IsProperCell, &
+                 Chart % IsProperCell, &
                  I % Value ( :, I % EQUILIBRIUM_DENSITY ), &
                  I % Value ( :, I % EFFECTIVE_OPACITY ), &
                  I % Value ( :, I % TRANSPORT_OPACITY ), &
                  TimeStep, CONSTANT % SPEED_OF_LIGHT )
 
     end associate !-- I
-    end select !-- Grid
+    end select !-- Chart
     end select !-- RM
     
   end subroutine ApplyRelaxation_Interactions
@@ -1138,13 +1173,13 @@ contains
            ( RM % iaConserved, &
              RM % CONSERVED_MOMENTUM_DENSITY_D ( 2 ), iMomentum_2 )
 
-    select type ( Grid => S % Grid )
+    select type ( Chart => S % Chart )
     class is ( Chart_SL_Template )
 
-    if ( trim ( Grid % CoordinateSystem ) == 'CARTESIAN' ) &
+    if ( trim ( Chart % CoordinateSystem ) == 'CARTESIAN' ) &
       return
 
-    G => Grid % Geometry ( )
+    G => Chart % Geometry ( )
     
     associate &
       ( M_DD_22 => G % Value ( :, G % METRIC_DD_22 ), &
@@ -1153,7 +1188,7 @@ contains
     call ApplySourcesCurvilinearKernel &
            ( Increment % Value ( :, iMomentum_1 ), &
              Increment % Value ( :, iMomentum_2 ), &
-             Grid % CoordinateSystem, Grid % IsProperCell, &
+             Chart % CoordinateSystem, Chart % IsProperCell, &
              RM % Value ( :, RM % COMOVING_ENERGY_DENSITY ), &
              RM % Value ( :, RM % COMOVING_MOMENTUM_DENSITY_U ( 1 ) ), &
              RM % Value ( :, RM % COMOVING_MOMENTUM_DENSITY_U ( 2 ) ), &
@@ -1162,15 +1197,15 @@ contains
              M_DD_22, M_DD_33, &
              S % dLogVolumeJacobian_dX ( 1 ) % Value, &
              S % dLogVolumeJacobian_dX ( 2 ) % Value, &
-             TimeStep, Grid % nDimensions, G % Value ( :, G % CENTER ( 1 ) ) )
+             TimeStep, Chart % nDimensions, G % Value ( :, G % CENTER ( 1 ) ) )
 
     end associate !-- M_DD_22, etc.
     class default
-      call Show ( 'Grid type not found', CONSOLE % ERROR )
+      call Show ( 'Chart type not found', CONSOLE % ERROR )
       call Show ( 'RadiationMoments_Form', 'module', CONSOLE % ERROR )
       call Show ( 'ApplySourcesCurvilinear', 'subroutine', CONSOLE % ERROR ) 
       call PROGRAM_HEADER % Abort ( )
-    end select !-- Grid
+    end select !-- Chart
 
     end select !-- RM
     

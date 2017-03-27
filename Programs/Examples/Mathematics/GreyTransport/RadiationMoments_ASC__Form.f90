@@ -12,6 +12,8 @@ module RadiationMoments_ASC__Form
   private
   
   type, public, extends ( Current_ASC_Template ) :: RadiationMoments_ASC_Form
+    real ( KDR ) :: &
+      LimiterParameter
     type ( MeasuredValueForm ) :: &
       EnergyDensityUnit, &
       TemperatureUnit
@@ -19,8 +21,11 @@ module RadiationMoments_ASC__Form
       Velocity_U_Unit, &
       MomentumDensity_U_Unit, &
       MomentumDensity_D_Unit
+    logical ( KDL ) :: &
+      UseLimiter
     character ( LDF ) :: &
-      RadiationMomentsType = ''
+      RadiationMomentsType = '', &
+      RiemannSolverType = ''
     class ( Field_ASC_Template ), pointer :: &
       Interactions_ASC => null ( )
   contains
@@ -47,10 +52,12 @@ contains
 
   subroutine Initialize &
                ( RMA, A, RadiationMomentsType, NameShortOption, &
+                 RiemannSolverTypeOption, UseLimiterOption, &
                  Velocity_U_UnitOption, MomentumDensity_U_UnitOption, &
                  MomentumDensity_D_UnitOption, EnergyDensityUnitOption, &
                  TemperatureUnitOption, EnergyUnitOption, MomentumUnitOption, &
-                 AngularMomentumUnitOption, IgnorabilityOption )
+                 AngularMomentumUnitOption, LimiterParameterOption, &
+                 IgnorabilityOption )
 
     class ( RadiationMoments_ASC_Form ), intent ( inout ) :: &
       RMA
@@ -59,7 +66,10 @@ contains
     character ( * ), intent ( in ) :: &
       RadiationMomentsType
     character ( * ), intent ( in ), optional :: &
-      NameShortOption
+      NameShortOption, &
+      RiemannSolverTypeOption
+    logical ( KDL ), intent ( in ), optional :: &
+      UseLimiterOption
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ), optional :: &
       Velocity_U_UnitOption, &
       MomentumDensity_U_UnitOption, &
@@ -70,6 +80,8 @@ contains
       EnergyUnitOption, &
       MomentumUnitOption, &
       AngularMomentumUnitOption
+    real ( KDR ), intent ( in ), optional :: &
+      LimiterParameterOption
     integer ( KDL ), intent ( in ), optional :: &
       IgnorabilityOption
 
@@ -81,6 +93,24 @@ contains
     if ( RMA % Type == '' ) &
       RMA % Type = 'a RadiationMoments_ASC'
     RMA % RadiationMomentsType = RadiationMomentsType
+
+    RMA % RiemannSolverType = 'HLL'
+    if ( present ( RiemannSolverTypeOption ) ) &
+      RMA % RiemannSolverType = RiemannSolverTypeOption
+    call PROGRAM_HEADER % GetParameter &
+           ( RMA % RiemannSolverType, 'RiemannSolverType' )
+
+    RMA % UseLimiter = .false.
+    if ( present ( UseLimiterOption ) ) &
+      RMA % UseLimiter = UseLimiterOption
+    call PROGRAM_HEADER % GetParameter &
+           ( RMA % UseLimiter, 'UseLimiter' )
+
+    RMA % LimiterParameter = 2.0_KDR
+    if ( present ( LimiterParameterOption ) ) &
+      RMA % LimiterParameter = LimiterParameterOption
+    call PROGRAM_HEADER % GetParameter &
+           ( RMA % LimiterParameter, 'LimiterParameter' )
 
     if ( present ( EnergyDensityUnitOption ) ) &
       RMA % EnergyDensityUnit = EnergyDensityUnitOption
@@ -166,6 +196,13 @@ contains
       NameShort = NameShortOption
 
     call RMA % InitializeTemplate_ASC_C ( A, NameShort, IgnorabilityOption )
+
+    call Show ( RMA % RadiationMomentsType, 'RadiationMomentsType', &
+                RMA % IGNORABILITY )
+    call Show ( RMA % RiemannSolverType, 'RiemannSolverType', &
+                RMA % IGNORABILITY )
+    call Show ( RMA % UseLimiter, 'UseLimiter', RMA % IGNORABILITY )
+    call Show ( RMA % LimiterParameter, 'LimiterParameter', RMA % IGNORABILITY )
 
   end subroutine Initialize
 
@@ -264,9 +301,10 @@ contains
     class is ( RadiationMoments_CSL_Form )
       call FC % Initialize &
              ( C, FA % NameShort, FA % RadiationMomentsType, &
-               FA % Velocity_U_Unit, FA % MomentumDensity_U_Unit, &
-               FA % MomentumDensity_D_Unit, FA % EnergyDensityUnit, &
-               FA % TemperatureUnit, nValues, &
+               FA % RiemannSolverType, FA % UseLimiter, FA % Velocity_U_Unit, &
+               FA % MomentumDensity_U_Unit, FA % MomentumDensity_D_Unit, &
+               FA % EnergyDensityUnit, FA % TemperatureUnit, &
+               FA % LimiterParameter, nValues, &
                IgnorabilityOption = FA % IGNORABILITY )
     end select !-- FC
 

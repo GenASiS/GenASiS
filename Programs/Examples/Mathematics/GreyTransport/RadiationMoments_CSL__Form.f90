@@ -12,6 +12,8 @@ module RadiationMoments_CSL__Form
   private
 
   type, public, extends ( Field_CSL_Template ) :: RadiationMoments_CSL_Form
+    real ( KDR ) :: &
+      LimiterParameter
     type ( MeasuredValueForm ) :: &
       EnergyDensityUnit, &
       TemperatureUnit
@@ -19,8 +21,11 @@ module RadiationMoments_CSL__Form
       Velocity_U_Unit, &
       MomentumDensity_U_Unit, &
       MomentumDensity_D_Unit
+    logical ( KDL ) :: &
+      UseLimiter
     character ( LDF ) :: &
-      RadiationMomentsType = ''
+      RadiationMomentsType = '', &
+      RiemannSolverType = ''
     class ( Field_CSL_Template ), pointer :: &
       Interactions_CSL => null ( )
   contains
@@ -42,10 +47,10 @@ contains
 
 
   subroutine Initialize &
-               ( RMC, C, NameShort, RadiationMomentsType, Velocity_U_Unit, &
-                 MomentumDensity_U_Unit, MomentumDensity_D_Unit, &
-                 EnergyDensityUnit, TemperatureUnit, nValues, &
-                 IgnorabilityOption )
+               ( RMC, C, NameShort, RadiationMomentsType, RiemannSolverType, &
+                 UseLimiter, Velocity_U_Unit, MomentumDensity_U_Unit, &
+                 MomentumDensity_D_Unit, EnergyDensityUnit, TemperatureUnit, &
+                 LimiterParameter, nValues, IgnorabilityOption )
 
     class ( RadiationMoments_CSL_Form ), intent ( inout ) :: &
       RMC
@@ -53,7 +58,10 @@ contains
       C
     character ( * ), intent ( in ) :: &
       NameShort, &
-      RadiationMomentsType
+      RadiationMomentsType, &
+      RiemannSolverType
+    logical ( KDL ), intent ( in ) :: &
+      UseLimiter
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
       Velocity_U_Unit, &
       MomentumDensity_U_Unit, &
@@ -61,6 +69,8 @@ contains
     type ( MeasuredValueForm ), intent ( in ) :: &
       EnergyDensityUnit, &
       TemperatureUnit
+    real ( KDR ), intent ( in ) :: &
+      LimiterParameter
     integer ( KDI ), intent ( in ) :: &
       nValues
     integer ( KDL ), intent ( in ), optional :: &
@@ -69,6 +79,9 @@ contains
     if ( RMC % Type == '' ) &
       RMC % Type = 'a RadiationMoments_CSL'
     RMC % RadiationMomentsType = RadiationMomentsType
+    RMC % RiemannSolverType    = RiemannSolverType
+    RMC % UseLimiter           = UseLimiter
+    RMC % LimiterParameter     = LimiterParameter
 
     RMC % EnergyDensityUnit      = EnergyDensityUnit
     RMC % TemperatureUnit        = TemperatureUnit
@@ -172,10 +185,12 @@ contains
       select type ( RM => FC % Field )
       type is ( RadiationMomentsForm )
         call RM % Initialize &
-               ( FC % Velocity_U_Unit, FC % MomentumDensity_U_Unit, &
+               ( FC % RiemannSolverType, FC % UseLimiter, &
+                 FC % Velocity_U_Unit, FC % MomentumDensity_U_Unit, &
                  FC % MomentumDensity_D_Unit, FC % EnergyDensityUnit, &
-                 FC % TemperatureUnit, FC % nValues, &
+                 FC % TemperatureUnit, FC % LimiterParameter, FC % nValues, &
                  NameOption = FC % NameShort )
+        call RM % SetPrimitiveConserved ( )
         call RM % SetOutput ( FC % FieldOutput )
       end select !-- RM
     case ( 'PHOTONS' )
@@ -183,10 +198,12 @@ contains
       select type ( RM => FC % Field )
       type is ( PhotonMomentsForm )
         call RM % Initialize &
-               ( FC % Velocity_U_Unit, FC % MomentumDensity_U_Unit, &
+               ( FC % RiemannSolverType, FC % UseLimiter, &
+                 FC % Velocity_U_Unit, FC % MomentumDensity_U_Unit, &
                  FC % MomentumDensity_D_Unit, FC % EnergyDensityUnit, &
-                 FC % TemperatureUnit, FC % nValues, &
+                 FC % TemperatureUnit, FC % LimiterParameter, FC % nValues, &
                  NameOption = FC % NameShort )
+        call RM % SetPrimitiveConserved ( )
         call RM % SetOutput ( FC % FieldOutput )
       end select !-- RM
     case default

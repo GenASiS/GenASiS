@@ -96,7 +96,7 @@ contains
     allocate ( Step_RK2_C_ASC_Form :: PWS % Step )
     select type ( S => PWS % Step )
     class is ( Step_RK2_C_ASC_Form )
-    call S % Initialize ( Name )
+    call S % Initialize ( RMA, Name )
     end select !-- S
 
     !-- Diagnostics
@@ -104,9 +104,11 @@ contains
     allocate ( PWS % Reference )
     allocate ( PWS % Difference )
     call PWS % Reference % Initialize &
-           ( PS, 'GENERIC', NameOutputOption = 'Reference' )
+           ( PS, 'GENERIC', NameShortOption = 'Reference', &
+             IgnorabilityOption = CONSOLE % INFO_2 )
     call PWS % Difference % Initialize &
-           ( PS, 'GENERIC', NameOutputOption = 'Difference' )
+           ( PS, 'GENERIC', NameShortOption = 'Difference', &
+             IgnorabilityOption = CONSOLE % INFO_2 )
     PWS % SetReference => SetReference
 
     !-- Initial conditions
