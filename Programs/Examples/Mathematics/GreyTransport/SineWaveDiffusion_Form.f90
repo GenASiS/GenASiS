@@ -106,7 +106,7 @@ contains
     allocate ( Step_RK2_C_ASC_Form :: SWD % Step )
     select type ( S => SWD % Step )
     class is ( Step_RK2_C_ASC_Form )
-    call S % Initialize ( Name )
+    call S % Initialize ( RMA, Name )
     S % ApplyRelaxation % Pointer => ApplyRelaxation_Interactions
     end select !-- S
 
@@ -115,9 +115,11 @@ contains
     allocate ( SWD % Reference )
     allocate ( SWD % Difference )
     call SWD % Reference % Initialize &
-           ( PS, 'GENERIC', NameOutputOption = 'Reference' )
+           ( PS, 'GENERIC', NameShortOption = 'Reference', &
+             IgnorabilityOption = CONSOLE % INFO_2 )
     call SWD % Difference % Initialize &
-           ( PS, 'GENERIC', NameOutputOption = 'Difference' )
+           ( PS, 'GENERIC', NameShortOption = 'Difference', &
+             IgnorabilityOption = CONSOLE % INFO_2 )
     SWD % SetReference => SetReference
 
     !-- Initial conditions
@@ -131,8 +133,7 @@ contains
     !-- Initialize template
 
     call SWD % InitializeTemplate_C_PS &
-           ( Name, UseLimiterParameterOption = .false., &
-             FinishTimeOption  =  TimeScale )
+           ( Name, FinishTimeOption  =  TimeScale )
 
     !-- Cleanup
 

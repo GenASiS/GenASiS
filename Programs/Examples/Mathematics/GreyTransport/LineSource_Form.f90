@@ -155,7 +155,7 @@ contains
     allocate ( Step_RK2_C_ASC_Form :: LS % Step )
     select type ( S => LS % Step )
     class is ( Step_RK2_C_ASC_Form )
-    call S % Initialize ( Name )
+    call S % Initialize ( RMA, Name )
     S % ApplySources % Pointer => ApplySourcesCurvilinear_RadiationMoments
     end select !-- S
 
@@ -164,9 +164,11 @@ contains
     allocate ( LS % Reference )
     allocate ( LS % Difference )
     call LS % Reference % Initialize &
-           ( PS, 'GENERIC', NameOutputOption = 'Reference' )
+           ( PS, 'GENERIC', NameShortOption = 'Reference', &
+             IgnorabilityOption = CONSOLE % INFO_2 )
     call LS % Difference % Initialize &
-           ( PS, 'GENERIC', NameOutputOption = 'Difference' )
+           ( PS, 'GENERIC', NameShortOption = 'Difference', &
+             IgnorabilityOption = CONSOLE % INFO_2 )
     LS % SetReference => SetReference
     
     !-- Initial conditions

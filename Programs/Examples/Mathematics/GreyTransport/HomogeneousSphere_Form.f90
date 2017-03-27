@@ -146,7 +146,7 @@ contains
                ( [ 'OUTFLOW', 'OUTFLOW' ], iDimension = 2 )
         call PS % SetBoundaryConditionsFace &
                ( [ 'OUTFLOW', 'OUTFLOW' ], iDimension = 3 )
-         nCells = [ MaxRadius, MaxRadius, MaxRadius ]
+         nCells = [ 32, 32, 32 ]
         call PROGRAM_HEADER % GetParameter ( nCells, 'nCells' )
       case ( 'SPHERICAL' )
          associate ( Pi => CONSTANT % PI )
@@ -254,7 +254,7 @@ contains
     allocate ( Step_RK2_C_ASC_Form :: HS % Step )
     select type ( S => HS % Step )
     class is ( Step_RK2_C_ASC_Form )
-    call S % Initialize ( Name )
+    call S % Initialize ( RMA, Name )
     S % ApplySources % Pointer    => ApplySourcesCurvilinear_RadiationMoments
     S % ApplyRelaxation % Pointer => ApplyRelaxation_Interactions
     end select !-- S
@@ -264,9 +264,11 @@ contains
     allocate ( HS % Reference )
     allocate ( HS % Difference )
     call HS % Reference % Initialize &
-           ( PS, 'GENERIC', NameOutputOption = 'Reference' )
+           ( PS, 'GENERIC', NameShortOption = 'Reference', &
+             IgnorabilityOption = CONSOLE % INFO_2 )
     call HS % Difference % Initialize &
-           ( PS, 'GENERIC', NameOutputOption = 'Difference' )
+           ( PS, 'GENERIC', NameShortOption = 'Difference', &
+             IgnorabilityOption = CONSOLE % INFO_2 )
     HS % SetReference => SetReference
 
     call PrepareInterpolation ( SI )
@@ -302,9 +304,7 @@ contains
     
     !-- Initialize template
     
-    call HS % InitializeTemplate_C_PS &
-           ( Name, UseLimiterParameterOption = .false., &
-             FinishTimeOption = 15.0_KDR )
+    call HS % InitializeTemplate_C_PS ( Name, FinishTimeOption = 15.0_KDR )
     
     !-- Cleanup
            
