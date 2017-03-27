@@ -627,8 +627,9 @@ contains
     if ( RM % Type == '' ) &
       RM % Type = 'RadiationMoments'
 
-    Name = 'RadiationMoments'
-    if ( present ( NameOption ) ) Name = NameOption
+    Name = 'Radiation'
+    if ( present ( NameOption ) ) &
+      Name = NameOption
 
     !-- variable indices
 

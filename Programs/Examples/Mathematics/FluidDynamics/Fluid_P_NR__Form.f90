@@ -10,7 +10,7 @@ module Fluid_P_NR__Form
   private
 
     integer ( KDI ), private, parameter :: &
-      N_PRIMITIVE_NON_RELATIVISTIC = 0, &
+      N_PRIMITIVE_NON_RELATIVISTIC = 1, &
       N_CONSERVED_NON_RELATIVISTIC = 0, &
       N_FIELDS_NON_RELATIVISTIC    = 1, &
       N_VECTORS_NON_RELATIVISTIC   = 0
@@ -32,6 +32,8 @@ module Fluid_P_NR__Form
       InitializeAllocate_P_NR
     generic, public :: &
       Initialize => InitializeAllocate_P_NR
+    procedure, public, pass :: &
+      SetPrimitiveConserved
     procedure, public, pass :: &
       SetAdiabaticIndex
     procedure, public, pass :: &
@@ -114,6 +116,46 @@ contains
              VectorIndicesOption = VectorIndicesOption )
 
   end subroutine InitializeAllocate_P_NR
+
+
+  subroutine SetPrimitiveConserved ( C )
+
+    class ( Fluid_P_NR_Form ), intent ( inout ) :: &
+      C
+
+    integer ( KDI ) :: &
+      iF, &  !-- iField
+      oP, &  !-- oPrimitive
+      oC     !-- oConserved
+    character ( LDL ), dimension ( C % N_PRIMITIVE_NON_RELATIVISTIC ) :: &
+      PrimitiveName
+    character ( LDL ), dimension ( C % N_CONSERVED_NON_RELATIVISTIC ) :: &
+      ConservedName
+
+    !-- select primitive, conserved
+
+    oP = C % N_PRIMITIVE_TEMPLATE + C % N_PRIMITIVE_DUST &
+         + C % N_PRIMITIVE_PERFECT
+    oC = C % N_CONSERVED_TEMPLATE + C % N_CONSERVED_DUST &
+         + C % N_CONSERVED_PERFECT
+
+    if ( .not. allocated ( C % iaPrimitive ) ) then
+      C % N_PRIMITIVE = oP + C % N_PRIMITIVE_NON_RELATIVISTIC
+      allocate ( C % iaPrimitive ( C % N_PRIMITIVE ) )
+    end if
+    C % iaPrimitive ( oP + 1 : oP + C % N_PRIMITIVE_NON_RELATIVISTIC ) &
+      = [ C % INTERNAL_ENERGY ]
+
+    if ( .not. allocated ( C % iaConserved ) ) then
+      C % N_CONSERVED = oC + C % N_CONSERVED_NON_RELATIVISTIC
+      allocate ( C % iaConserved ( C % N_CONSERVED ) )
+    end if
+!    C % iaConserved ( oC + 1 : oC + C % N_CONSERVED_NON_RELATIVISTIC ) &
+!      = [ ]
+    
+    call C % SetPrimitiveConservedTemplate_P ( )
+
+  end subroutine SetPrimitiveConserved
 
 
   subroutine SetAdiabaticIndex ( F, AdiabaticIndex )
@@ -651,27 +693,6 @@ contains
     if ( F % N_VECTORS == 0 ) &
       F % N_VECTORS = oV + F % N_VECTORS_NON_RELATIVISTIC
 
-    !-- select primitive, conserved
-
-    oP = F % N_PRIMITIVE_TEMPLATE + F % N_PRIMITIVE_DUST &
-         + F % N_PRIMITIVE_PERFECT
-    oC = F % N_CONSERVED_TEMPLATE + F % N_CONSERVED_DUST &
-         + F % N_CONSERVED_PERFECT
-
-    if ( .not. allocated ( F % iaPrimitive ) ) then
-      F % N_PRIMITIVE = oP + F % N_PRIMITIVE_NON_RELATIVISTIC
-      allocate ( F % iaPrimitive ( F % N_PRIMITIVE ) )
-    end if
-!    F % iaPrimitive ( oP + 1 : oP + F % N_PRIMITIVE_NON_RELATIVISTIC ) &
-!      = [ ]
-
-    if ( .not. allocated ( F % iaConserved ) ) then
-      F % N_CONSERVED = oC + F % N_CONSERVED_NON_RELATIVISTIC
-      allocate ( F % iaConserved ( F % N_CONSERVED ) )
-    end if
-!    F % iaConserved ( oC + 1 : oC + F % N_CONSERVED_NON_RELATIVISTIC ) &
-!      = [ ]
-    
   end subroutine InitializeBasics
   
     

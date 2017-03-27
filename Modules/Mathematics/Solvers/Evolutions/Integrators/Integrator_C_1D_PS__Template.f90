@@ -72,7 +72,8 @@ contains
 
     call I % InitializeTemplate_C_PS &
            ( Name, TimeUnitOption = TimeUnitOption, &
-             FinishTimeOption = FinishTimeOption, nWriteOption = nWriteOption )
+             FinishTimeOption = FinishTimeOption, &
+             nWriteOption = nWriteOption )
 
   end subroutine InitializeTemplate_C_1D_PS
 

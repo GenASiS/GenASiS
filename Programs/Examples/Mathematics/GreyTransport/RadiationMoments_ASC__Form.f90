@@ -191,7 +191,7 @@ contains
     !   end select !-- TB
     ! end do !-- iB
 
-    NameShort = 'RadiationMoments'
+    NameShort = 'Radiation'
     if ( present ( NameShortOption ) ) &
       NameShort = NameShortOption
 

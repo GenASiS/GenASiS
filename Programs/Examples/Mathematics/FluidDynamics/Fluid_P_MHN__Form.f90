@@ -156,8 +156,6 @@ contains
     character ( LDL ), dimension ( C % N_CONSERVED_MEAN_HEAVY_NUCLEUS ) :: &
       ConservedName
 
-    !-- select primitive, conserved
-
     oP = C % N_PRIMITIVE_TEMPLATE + C % N_PRIMITIVE_DUST &
          + C % N_PRIMITIVE_PERFECT
     oC = C % N_CONSERVED_TEMPLATE + C % N_CONSERVED_DUST &

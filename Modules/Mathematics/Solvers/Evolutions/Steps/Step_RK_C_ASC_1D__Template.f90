@@ -53,6 +53,8 @@ module Step_RK_C_ASC_1D__Template
     procedure, public, pass :: &
       FinalizeTemplate_C_ASC_1D
     procedure, private, pass :: &
+      InitializeTimersDivergence
+    procedure, private, pass :: &
       InitializeIntermediate
     procedure, private, pass :: &
       IncrementIntermediate
@@ -81,7 +83,7 @@ contains
 
 
   subroutine InitializeTemplate_C_ASC_1D &
-               ( S, Current_ASC_1D, NameSuffix, A, B, C, nCurrents )
+               ( S, Current_ASC_1D, NameSuffix, A, B, C )
 
     class ( Step_RK_C_ASC_1D_Template ), intent ( inout ) :: &
       S
@@ -96,8 +98,6 @@ contains
       B
     real ( KDR ), dimension ( 2 : ), intent ( in ) :: &
       C
-    integer ( KDI ), intent ( in ) :: &
-      nCurrents
 
     integer ( KDI ) :: &
       iC
@@ -109,6 +109,7 @@ contains
 
     S % Current_ASC_1D => Current_ASC_1D
     S % nCurrents = size ( Current_ASC_1D )
+    call Show ( S % nCurrents, 'nCurrents' )
 
     select type ( Chart => Current_ASC_1D ( 1 ) % Element % Atlas_SC % Chart )
     class is ( Chart_SL_Template )
@@ -249,6 +250,27 @@ contains
   end subroutine FinalizeTemplate_C_ASC_1D
 
 
+  subroutine InitializeTimersDivergence ( S, BaseLevel )
+
+    class ( Step_RK_C_ASC_1D_Template ), intent ( inout ) :: &
+      S
+    integer ( KDI ), intent ( in ) :: &
+      BaseLevel
+
+    integer ( KDI ) :: &
+      iC  !-- iCurrent
+
+    do iC = 1, S % nCurrents
+      associate &
+        ( SD => S % StorageDivergence_1D ( iC ), &
+          C  => S % Current_1D ( iC ) % Pointer )
+      call SD % InitializeTimers ( C % Name, BaseLevel )
+      end associate !-- SD, etc.
+    end do
+
+  end subroutine InitializeTimersDivergence
+
+
   subroutine InitializeIntermediate ( S )
 
     class ( Step_RK_C_ASC_1D_Template ), intent ( inout ) :: &
@@ -256,6 +278,12 @@ contains
 
     integer ( KDI ) :: &
       iC  !-- iCurrent
+    type ( TimerForm ), pointer :: &
+      Timer
+
+    Timer => PROGRAM_HEADER % TimerPointer &
+               ( S % iTimerInitializeIntermediate )
+    if ( associated ( Timer ) ) call Timer % Start ( )
 
     do iC = 1, S % nCurrents
       associate &
@@ -264,6 +292,8 @@ contains
       call Copy ( SV, YV )
       end associate !-- SV, etc.
     end do !-- iC
+
+    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine InitializeIntermediate
 
@@ -279,6 +309,11 @@ contains
 
     integer ( KDI ) :: &
       iC  !-- iCurrent
+    type ( TimerForm ), pointer :: &
+      Timer
+
+    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerIncrementIntermediate )
+    if ( associated ( Timer ) ) call Timer % Start ( )
 
     do iC = 1, S % nCurrents
       associate &
@@ -287,6 +322,8 @@ contains
       call MultiplyAdd ( YV, KV, A )
       end associate !-- YV, etc.
     end do !-- iC
+
+    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine IncrementIntermediate
 
@@ -303,10 +340,11 @@ contains
 
     integer ( KDI ) :: &
       iC  !-- iCurrent
+    type ( TimerForm ), pointer :: &
+      Timer
 
-!    associate &
-!      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerComputeStage ) )
-!    call Timer % Start ( )
+    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerStage )
+    if ( associated ( Timer ) ) call Timer % Start ( )
 
     do iC = 1, S % nCurrents
       associate &
@@ -325,7 +363,8 @@ contains
       S % ApplyRelaxation_C => S % ApplyRelaxation_1D ( iC ) % Pointer
 
       call S % ComputeStage_C &
-             ( S % IncrementDivergence_C, C, Chart, K, TimeStep, iStage )
+             ( S % IncrementDivergence_1D ( iC ), C, Chart, K, TimeStep, &
+               iStage )
 
       S % ApplyRelaxation_C => null ( )
       S % ApplySources_C    => null ( )
@@ -334,8 +373,7 @@ contains
       end associate !-- C, etc.
     end do !-- iC
 
-!    call Timer % Stop ( )
-!    end associate !-- Timer
+    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine ComputeStage
 
@@ -351,6 +389,11 @@ contains
 
     integer ( KDI ) :: &
       iC  !-- iCurrent
+    type ( TimerForm ), pointer :: &
+      Timer
+
+    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerIncrementSolution )
+    if ( associated ( Timer ) ) call Timer % Start ( )
 
     do iC = 1, S % nCurrents
       associate &
@@ -359,6 +402,8 @@ contains
       call MultiplyAdd ( SV, KV, B )
       end associate !-- SV, etc.
     end do !-- iC
+
+    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine IncrementSolution
 

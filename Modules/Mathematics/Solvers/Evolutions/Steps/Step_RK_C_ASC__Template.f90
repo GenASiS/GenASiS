@@ -91,6 +91,8 @@ module Step_RK_C_ASC__Template
     procedure, public, pass :: &
       FinalizeTemplate_C_ASC
     procedure, private, pass :: &
+      InitializeTimersDivergence
+    procedure, private, pass :: &
       InitializeIntermediate
     procedure, private, pass :: &
       IncrementIntermediate
@@ -269,7 +271,7 @@ contains
           call PROGRAM_HEADER % AddTimer &
                  ( 'StoreIntermediate', S % iTimerStoreIntermediate, &
                    Level = BaseLevel + 3 )
-          call S % StorageDivergence_C % InitializeTimers &
+          call S % InitializeTimersDivergence &
                  ( BaseLevel + 3 )
           call PROGRAM_HEADER % AddTimer &
                  ( 'Sources', S % iTimerSources, &
@@ -294,14 +296,16 @@ contains
 
     S % Allocated = .false.
 
-    associate &
-      ( ID => S % IncrementDivergence_C, &
-        SD => S % StorageDivergence_C )
-    call S % DeallocateMetricDerivatives ( ID )
-    call S % DeallocateBoundaryFluence_CSL ( ID, S % BoundaryFluence_CSL )
-    call S % DeallocateStorageDivergence  ( SD )
-    call S % Deallocate_RK_C ( )
-    end associate !-- ID, etc.
+    if ( allocated ( S % IncrementDivergence_C ) ) then
+      associate &
+        ( ID => S % IncrementDivergence_C, &
+          SD => S % StorageDivergence_C )
+      call S % DeallocateMetricDerivatives ( ID )
+      call S % DeallocateBoundaryFluence_CSL ( ID, S % BoundaryFluence_CSL )
+      call S % DeallocateStorageDivergence  ( SD )
+      call S % Deallocate_RK_C ( )
+      end associate !-- ID, etc.
+    end if
 
   end subroutine DeallocateStorage
 
@@ -488,6 +492,22 @@ contains
     call S % FinalizeTemplate ( )
 
   end subroutine FinalizeTemplate_C_ASC
+
+
+  subroutine InitializeTimersDivergence ( S, BaseLevel )
+
+    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
+      S
+    integer ( KDI ), intent ( in ) :: &
+      BaseLevel
+
+    associate &
+      ( SD => S % StorageDivergence_C, &
+        C  => S % Current )
+    call SD % InitializeTimers ( C % Name, BaseLevel )
+    end associate !-- SD, etc.
+
+  end subroutine InitializeTimersDivergence
 
 
   subroutine InitializeIntermediate ( S )

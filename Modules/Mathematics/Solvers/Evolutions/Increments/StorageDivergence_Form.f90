@@ -40,10 +40,12 @@ module StorageDivergence_Form
 contains
 
 
-  subroutine InitializeTimers ( SD, BaseLevel )
+  subroutine InitializeTimers ( SD, NameSuffix, BaseLevel )
 
     class ( StorageDivergenceForm ), intent ( inout ) :: &
       SD
+    character ( * ), intent ( in ) :: &
+      NameSuffix
     integer ( KDI ), intent ( in ) :: &
       BaseLevel
 
@@ -52,16 +54,16 @@ contains
       return
 
     call PROGRAM_HEADER % AddTimer &
-           ( 'Divergence', SD % iTimerDivergence, &
+           ( 'Divergence_' // NameSuffix, SD % iTimerDivergence, &
              Level = BaseLevel )
       call PROGRAM_HEADER % AddTimer &
-             ( 'Reconstruction', SD % iTimerReconstruction, &
+             ( 'Reconstruction_' // NameSuffix, SD % iTimerReconstruction, &
                Level = BaseLevel + 1 )
       call PROGRAM_HEADER % AddTimer &
-             ( 'Fluxes', SD % iTimerFluxes, &
+             ( 'Fluxes_' // NameSuffix, SD % iTimerFluxes, &
                Level = BaseLevel + 1 )
       call PROGRAM_HEADER % AddTimer &
-             ( 'Increment', SD % iTimerIncrement, &
+             ( 'Increment_' // NameSuffix, SD % iTimerIncrement, &
                Level = BaseLevel + 1 )
 
   end subroutine InitializeTimers

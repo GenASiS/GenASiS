@@ -79,8 +79,6 @@ contains
       DynamicalTime, &
       DiffusionTime, &
       FinishTime
-    logical ( KDL ), dimension ( 2 ) :: &
-      UseLimiterParameter_1D
     type ( MeasuredValueForm ) :: &
       TimeUnit, &
       MassDensityUnit, &
@@ -168,9 +166,6 @@ contains
     MW % TimeStepLabel ( MW % RADIATION ) = 'Radiation'
     MW % TimeStepLabel ( MW % FLUID )     = 'Fluid'
 
-    UseLimiterParameter_1D ( MW % RADIATION ) = .false.
-    UseLimiterParameter_1D ( MW % FLUID ) = .true.
-
     TimeUnit = UNIT % SECOND
 
     VelocityUnit ( 1 )     =  CoordinateUnit ( 1 ) / TimeUnit 
@@ -239,7 +234,7 @@ contains
     select type ( S => MW % Step )
     class is ( Step_RK2_C_ASC_1D_Form )
 
-    call S % Initialize ( Name, MW % N_CURRENTS_PS )
+    call S % Initialize ( MW % Current_ASC_1D, Name )
 
     S % ApplySources_1D ( MW % RADIATION ) % Pointer &
       =>  ApplySources_Radiation
@@ -295,10 +290,9 @@ contains
     !-- Initialize template
 
     FinishTime  =  1.36e-7_KDR  *  UNIT % SECOND
- 
+
     call MW % InitializeTemplate_C_1D_PS &
-           ( Name, UseLimiterParameter_1D_Option = UseLimiterParameter_1D, &
-             TimeUnitOption = TimeUnit, FinishTimeOption = FinishTime )
+           ( Name, TimeUnitOption = TimeUnit, FinishTimeOption = FinishTime )
 
     !-- Cleanup
 
@@ -526,7 +520,7 @@ contains
     select type ( F => Fluid )
     class is ( Fluid_P_NR_Form )
 
-    select type ( Grid => S % Grid )
+    select type ( Chart => S % Chart )
     class is ( Chart_SL_Template )
 
     associate &
@@ -543,7 +537,7 @@ contains
     call ApplySourcesKernel &
            ( Increment % Value ( :, iEnergy_F ), &
              Increment % Value ( :, iMomentum_1_F ), &
-             Grid % IsProperCell, &
+             Chart % IsProperCell, &
              I % Value ( :, I % EQUILIBRIUM_DENSITY ), &
              I % Value ( :, I % EFFECTIVE_OPACITY ), &
              I % Value ( :, I % TRANSPORT_OPACITY ), &
@@ -554,7 +548,7 @@ contains
              CONSTANT % SPEED_OF_LIGHT, TimeStep ) 
 
     end associate !-- I, etc.
-    end select !-- Grid
+    end select !-- Chart
     end select !-- F
 
   end subroutine ApplySources_Fluid

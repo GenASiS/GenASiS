@@ -244,8 +244,8 @@ contains
       call Show ( 'InitializeTemplate', 'subroutine', CONSOLE % WARNING )
     end if
 
-    call Show ( I % StartTime, 'StartTime', I % IGNORABILITY )
-    call Show ( I % FinishTime, 'FinishTime', I % IGNORABILITY )
+    call Show ( I % StartTime, I % TimeUnit, 'StartTime', I % IGNORABILITY )
+    call Show ( I % FinishTime, I % TimeUnit, 'FinishTime', I % IGNORABILITY )
     call Show ( I % nRampCycles, 'nRampCycles', I % IGNORABILITY )
     call Show ( I % nWrite, 'nWrite', I % IGNORABILITY )
     call Show ( I % CheckpointDisplayInterval, 'CheckpointDisplayInterval', &

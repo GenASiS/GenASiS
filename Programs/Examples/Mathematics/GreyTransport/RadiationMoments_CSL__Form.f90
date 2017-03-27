@@ -195,17 +195,17 @@ contains
       end select !-- RM
     case ( 'PHOTONS' )
       allocate ( PhotonMomentsForm :: FC % Field )
-      select type ( RM => FC % Field )
+      select type ( PM => FC % Field )
       type is ( PhotonMomentsForm )
-        call RM % Initialize &
+        call PM % Initialize &
                ( FC % RiemannSolverType, FC % UseLimiter, &
                  FC % Velocity_U_Unit, FC % MomentumDensity_U_Unit, &
                  FC % MomentumDensity_D_Unit, FC % EnergyDensityUnit, &
                  FC % TemperatureUnit, FC % LimiterParameter, FC % nValues, &
                  NameOption = FC % NameShort )
-        call RM % SetPrimitiveConserved ( )
-        call RM % SetOutput ( FC % FieldOutput )
-      end select !-- RM
+        call PM % SetPrimitiveConserved ( )
+        call PM % SetOutput ( FC % FieldOutput )
+      end select !-- PM
     case default
       call Show ( 'RadiationMomentsType not recognized', CONSOLE % ERROR )
       call Show ( FC % RadiationMomentsType, 'RadiationMomentsType', &
