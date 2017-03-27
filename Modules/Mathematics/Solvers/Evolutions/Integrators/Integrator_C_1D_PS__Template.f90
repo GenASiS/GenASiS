@@ -18,8 +18,6 @@ module Integrator_C_1D_PS__Template
     Integrator_C_1D_PS_Template
       integer ( KDI ) :: &
         N_CURRENTS_PS = 0
-      logical ( KDL ), dimension ( : ), allocatable :: &
-        UseLimiterParameter_1D
       type ( Current_ASC_ElementForm ), dimension ( : ), allocatable :: &
         Current_ASC_1D
   contains
@@ -39,15 +37,12 @@ contains
 
 
   subroutine InitializeTemplate_C_1D_PS &
-               ( I, Name, UseLimiterParameter_1D_Option, TimeUnitOption, &
-                 FinishTimeOption, nWriteOption )
+               ( I, Name, TimeUnitOption, FinishTimeOption, nWriteOption )
 
     class ( Integrator_C_1D_PS_Template ), intent ( inout ) :: &
       I
     character ( * ), intent ( in )  :: &
       Name
-    logical ( KDL ), dimension ( : ), intent ( in ), optional :: &
-      UseLimiterParameter_1D_Option
     type ( MeasuredValueForm ), intent ( in ), optional :: &
       TimeUnitOption
     real ( KDR ), intent ( in ), optional :: &
@@ -79,13 +74,6 @@ contains
            ( Name, TimeUnitOption = TimeUnitOption, &
              FinishTimeOption = FinishTimeOption, nWriteOption = nWriteOption )
 
-    allocate ( I % UseLimiterParameter_1D ( I % N_CURRENTS_PS ) )
-    I % UseLimiterParameter_1D = .true.
-    if ( present ( UseLimiterParameter_1D_Option ) ) &
-      I % UseLimiterParameter_1D = UseLimiterParameter_1D_Option
-    call PROGRAM_HEADER % GetParameter &
-           ( I % UseLimiterParameter_1D, 'UseLimiterParameter_1D' )
-
   end subroutine InitializeTemplate_C_1D_PS
 
 
@@ -96,8 +84,6 @@ contains
 
     if ( allocated ( I % Current_ASC_1D ) ) &
       deallocate ( I % Current_ASC_1D )
-    if ( allocated ( I % UseLimiterParameter_1D ) ) &
-      deallocate ( I % UseLimiterParameter_1D )
    
     call I % FinalizeTemplate_C_PS ( )
 
@@ -143,8 +129,6 @@ contains
     class ( Atlas_SC_Form ), intent ( inout ) :: &
       PS
 
-    integer ( KDI ) :: &
-      iC  !-- iCurrent
     real ( KDR ) :: &
       TimeNew
 
@@ -160,17 +144,7 @@ contains
     select type ( Chart => PS % Chart )
     class is ( Chart_SLD_Form )
 
-      call S % Compute &
-             ( CA_1D, I % Time, TimeStep, &
-               UseLimiterParameter_1D_Option &
-                 = I % UseLimiterParameter_1D )
-
-      do iC = 1, I % N_CURRENTS_PS
-        associate ( CA => CA_1D ( iC ) % Element )
-        call CA % AccumulateBoundaryTally &
-               ( S % BoundaryFluence_CSL_1D ( iC ) % Array )
-        end associate !-- CA
-      end do !-- iC
+      call S % Compute ( I % Time, TimeStep )
 
     class default
       call Show ( 'Chart type not found', CONSOLE % ERROR )

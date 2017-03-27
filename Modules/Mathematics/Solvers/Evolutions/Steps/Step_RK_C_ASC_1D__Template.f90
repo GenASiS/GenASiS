@@ -31,6 +31,10 @@ module Step_RK_C_ASC_1D__Template
         K_1D
       type ( CurrentPointerForm ), dimension ( : ), allocatable :: &
         Current_1D
+      class ( Current_ASC_ElementForm ), dimension ( : ), pointer :: &
+        Current_ASC_1D => null ( )
+      type ( StorageDivergenceForm ), dimension ( : ), allocatable :: &
+        StorageDivergence_1D
       type ( IncrementDivergence_FV_Form ), dimension ( : ), allocatable :: &
         IncrementDivergence_1D
       type ( ApplyDivergence_C_Pointer ), dimension ( : ), allocatable :: &
@@ -42,10 +46,10 @@ module Step_RK_C_ASC_1D__Template
   contains
     procedure, public, pass :: &
       InitializeTemplate_C_ASC_1D
-    procedure, private, pass :: &
-      Compute_C_ASC_1D
-    generic, public :: &
-      Compute => Compute_C_ASC_1D
+    procedure, public, pass :: &
+      DeallocateStorage
+    procedure, public, pass :: &
+      Compute
     procedure, public, pass :: &
       FinalizeTemplate_C_ASC_1D
     procedure, private, pass :: &
@@ -71,8 +75,7 @@ module Step_RK_C_ASC_1D__Template
   end type Step_RK_C_ASC_1D_Template
 
     private :: &
-      AllocateStorage, &
-      DeallocateStorage
+      AllocateStorage
 
 contains
 
@@ -104,53 +107,8 @@ contains
 
     call S % InitializeTemplate ( NameSuffix, A, B, C )
 
-    S % nCurrents = nCurrents
-
-!    S % Current => Current_ASC % Current ( )
-
-    allocate ( S % IncrementDivergence_1D ( S % nCurrents ) )
-    do iC = 1, S % nCurrents
-      associate ( ID => S % IncrementDivergence_1D ( iC ) )
-      call ID % Initialize ( Current_ASC_1D ( iC ) % Element % Chart )
-      end associate !-- ID
-    end do !-- iC
-
-    allocate ( S % IncrementDamping )
-    associate ( ID => S % IncrementDamping )
-    call ID % Initialize ( S % Name )
-    end associate !-- ID
-
-!    call PROGRAM_HEADER % AddTimer &
-!           ( 'GhostIncrement', S % iTimerGhost )
-
-    allocate ( S % ApplyDivergence_1D ( S % nCurrents ) )
-    allocate ( S % ApplySources_1D ( S % nCurrents ) )
-    allocate ( S % ApplyRelaxation_1D ( S % nCurrents ) )
-
-  end subroutine InitializeTemplate_C_ASC_1D
-
-
-  subroutine Compute_C_ASC_1D &
-               ( S, Current_ASC_1D, Time, TimeStep, &
-                 UseLimiterParameter_1D_Option )
-
-    class ( Step_RK_C_ASC_1D_Template ), intent ( inout ) :: &
-      S
-    class ( Current_ASC_ElementForm ), dimension ( : ), intent ( inout ), &
-      target :: &
-        Current_ASC_1D
-    real ( KDR ), intent ( in ) :: &
-      Time, &
-      TimeStep
-    logical ( KDL ), dimension ( : ), intent ( in ), optional :: &
-      UseLimiterParameter_1D_Option
-
-    integer ( KDI ) :: &
-      iC  !-- iCurrent
-
-!    associate &
-!      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerComputeStep ) )
-!    call Timer % Start ( )
+    S % Current_ASC_1D => Current_ASC_1D
+    S % nCurrents = size ( Current_ASC_1D )
 
     select type ( Chart => Current_ASC_1D ( 1 ) % Element % Atlas_SC % Chart )
     class is ( Chart_SL_Template )
@@ -167,25 +125,101 @@ contains
     class default
       call Show ( 'Chart type not found', CONSOLE % ERROR )
       call Show ( 'Step_RK_C_ASC_1D__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'Compute_C_ASC_1D', 'subroutine', CONSOLE % ERROR ) 
+      call Show ( 'InitializeTemplate_C_ASC_1D', 'subroutine', &
+                  CONSOLE % ERROR ) 
       call PROGRAM_HEADER % Abort ( )
     end select !-- Chart
 
-    call AllocateStorage ( S )
+    S % Allocated = .false.
+
+    allocate ( S % StorageDivergence_1D ( S % nCurrents ) )
+    allocate ( S % IncrementDivergence_1D ( S % nCurrents ) )
+    do iC = 1, S % nCurrents
+      associate ( ID => S % IncrementDivergence_1D ( iC ) )
+      call ID % Initialize ( Current_ASC_1D ( iC ) % Element % Chart )
+      call ID % SetStorage ( S % StorageDivergence_1D ( iC ) )
+      end associate !-- ID
+    end do !-- iC
+
+    allocate ( S % IncrementDamping )
+    associate ( ID => S % IncrementDamping )
+    call ID % Initialize ( S % Name )
+    end associate !-- ID
+
+    allocate ( S % ApplyDivergence_1D ( S % nCurrents ) )
+    allocate ( S % ApplySources_1D ( S % nCurrents ) )
+    allocate ( S % ApplyRelaxation_1D ( S % nCurrents ) )
+
+  end subroutine InitializeTemplate_C_ASC_1D
+
+
+  subroutine DeallocateStorage ( S )
+
+    class ( Step_RK_C_ASC_1D_Template ), intent ( inout ) :: &
+      S
+
+    integer ( KDI ) :: &
+      iC  !-- iCurrent
+
+    S % Allocated = .false.
+
+    call S % DeallocateMetricDerivatives ( S % IncrementDivergence_1D ( 1 ) )
+
+    do iC = 1, S % nCurrents
+      associate &
+        ( ID => S % IncrementDivergence_1D ( iC ), &
+          SD => S % StorageDivergence_1D ( iC ) )
+      call S % DeallocateBoundaryFluence_CSL &
+             ( ID, S % BoundaryFluence_CSL_1D ( iC ) % Array )
+      call S % DeallocateStorageDivergence ( SD )
+      end associate !-- ID
+    end do !-- iC
+
+    call S % Deallocate_RK_C_1D ( )
+
+  end subroutine DeallocateStorage
+
+
+  subroutine Compute ( S, Time, TimeStep )
+
+    class ( Step_RK_C_ASC_1D_Template ), intent ( inout ) :: &
+      S
+    real ( KDR ), intent ( in ) :: &
+      Time, &
+      TimeStep
+
+    integer ( KDI ) :: &
+      iC  !-- iCurrent
+    type ( TimerForm ), pointer :: &
+      Timer
+
+    Timer => PROGRAM_HEADER % Timer ( S % iTimerStep )
+    if ( associated ( Timer ) ) call Timer % Start ( )
+
+    if ( .not. S % Allocated ) &
+      call AllocateStorage ( S )
+
+    do iC = 1, S % nCurrents
+      if ( allocated ( S % BoundaryFluence_CSL_1D ) ) &
+        call S % ClearBoundaryFluence &
+               ( S % BoundaryFluence_CSL_1D ( iC ) % Array )
+    end do !-- iC
+
     call S % LoadSolution ( S % Solution_1D, S % Current_1D )
-
     call S % ComputeTemplate ( Time, TimeStep )
-
     call S % StoreSolution ( S % Current_1D, S % Solution_1D )
-    call DeallocateStorage ( S )
 
-    deallocate ( S % Current_1D )
-    nullify ( S % Chart )
+    do iC = 1, S % nCurrents
+      associate ( CA => S % Current_ASC_1D ( iC ) % Element )
+      if ( allocated ( S % BoundaryFluence_CSL_1D ) ) &
+        call CA % AccumulateBoundaryTally &
+               ( S % BoundaryFluence_CSL_1D ( iC ) % Array )
+      end associate !-- CA
+    end do !-- iC
 
-!    call Timer % Stop ( )
-!    end associate !-- Timer
+    if ( associated ( Timer ) ) call Timer % Stop ( )
 
-  end subroutine Compute_C_ASC_1D
+  end subroutine Compute
 
 
   impure elemental subroutine FinalizeTemplate_C_ASC_1D ( S )
@@ -193,12 +227,22 @@ contains
     class ( Step_RK_C_ASC_1D_Template ), intent ( inout ) :: &
       S
 
+    call DeallocateStorage ( S )
+
     if ( allocated ( S % ApplyRelaxation_1D ) ) &
       deallocate ( S % ApplyRelaxation_1D )
     if ( allocated ( S % ApplySources_1D ) ) &
       deallocate ( S % ApplySources_1D )
     if ( allocated ( S % ApplyDivergence_1D ) ) &
       deallocate ( S % ApplyDivergence_1D )
+    if ( allocated ( S % IncrementDivergence_1D ) ) &
+      deallocate ( S % IncrementDivergence_1D )
+    if ( allocated ( S % StorageDivergence_1D ) ) &
+      deallocate ( S % StorageDivergence_1D )
+    if ( allocated ( S % Current_1D ) ) &
+      deallocate ( S % Current_1D )
+
+    nullify ( S % Current_ASC_1D )
 
     call S % FinalizeTemplate_C_ASC ( )
 
@@ -412,28 +456,40 @@ contains
 
     integer ( KDI ) :: &
       iC
-    character ( LDL ) :: &
-      CoordinateSystem
+    class ( GeometryFlatForm ), pointer :: &
+      G
 
-!    associate &
-!      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerAllocateStep ) )
-!    call Timer % Start ( )
+    S % Allocated = .true.
 
     call S % Allocate_RK_C_1D ( )
 
     select type ( Chart => S % Chart )
     class is ( Chart_SL_Template )
 
-      if ( allocated ( S % BoundaryFluence_CSL_1D ) ) &
-        deallocate ( S % BoundaryFluence_CSL_1D )
+      G => Chart % Geometry ( )
+
       allocate ( S % BoundaryFluence_CSL_1D ( S % nCurrents ) )
 
       do iC = 1, S % nCurrents
+        associate &
+          ( ID => S % IncrementDivergence_1D ( iC ), &
+            SD => S % StorageDivergence_1D ( iC ), &
+            C  => S % Current_1D ( iC ) % Pointer )
+
+        call S % AllocateStorageDivergence ( SD, C, G )
+
         call S % AllocateBoundaryFluence &
-               ( S % IncrementDivergence_C, Chart, &
-                 S % Current_1D ( iC ) % Pointer % N_CONSERVED, &
+               ( ID, Chart, C % N_CONSERVED, &
                  S % BoundaryFluence_CSL_1D ( iC ) % Array )
+
+        end associate !-- ID, etc.
       end do !-- iC
+
+      call S % AllocateMetricDerivatives &
+             ( S % IncrementDivergence_1D ( 1 ), &
+               S % Current_1D ( 1 ) % Pointer % nValues )
+
+      nullify ( G )
 
     class default
       call Show ( 'Grid type not recognized', CONSOLE % ERROR )
@@ -442,35 +498,7 @@ contains
       call PROGRAM_HEADER % Abort ( )
     end select !-- Grid
 
-    call S % AllocateMetricDerivatives &
-           ( S % IncrementDivergence_C, &
-             S % Current_1D ( 1 ) % Pointer % nValues )
-
-!    call Timer % Stop ( )
-!    end associate !-- Timer
-
   end subroutine AllocateStorage
-
-
-  subroutine DeallocateStorage ( S )
-
-    class ( Step_RK_C_ASC_1D_Template ), intent ( inout ) :: &
-      S
-
-!    associate &
-!      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerAllocateStep ) )
-!    call Timer % Start ( )
-
-    !-- BoundaryFluence not deallocated here, but instead upon reallocation,
-    !   so that its values remain available after Step % Compute
-
-    call S % DeallocateMetricDerivatives ( S % IncrementDivergence_C )
-    call S % Deallocate_RK_C_1D ( )
-
-!    call Timer % Stop ( )
-!    end associate !-- Timer
-
-  end subroutine DeallocateStorage
 
 
 end module Step_RK_C_ASC_1D__Template

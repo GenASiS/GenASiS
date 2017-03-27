@@ -47,10 +47,8 @@ module Step_RK_C_BSLL_ASC_CSLD_C_ASC__Template
   contains
     procedure, public, pass :: &
       InitializeTemplate_C_BSLL_ASC_CSLD_C_ASC
-    procedure, private, pass :: &
-      Compute_C_BSLL_ASC_CSLD_C_ASC
-    generic, public :: &
-      Compute => Compute_C_BSLL_ASC_CSLD_C_ASC
+    procedure, public, pass :: &
+      Compute
     procedure, public, pass :: &
       FinalizeTemplate_C_BSLL_ASC_CSLD_C_ASC
     procedure, private, pass :: &
@@ -125,59 +123,46 @@ contains
     call ID % Initialize ( S % Name )
     end associate !-- ID
 
-!    call PROGRAM_HEADER % AddTimer &
-!           ( 'GhostIncrement', S % iTimerGhost )
-
     S % ApplyDivergence_F % Pointer => null ( )
 
   end subroutine InitializeTemplate_C_BSLL_ASC_CSLD_C_ASC
 
 
-  subroutine Compute_C_BSLL_ASC_CSLD_C_ASC &
-               ( S, Current_BSLL_ASC_CSLD, Current_ASC, Time, TimeStep, &
-                 UseLimiterParameter_S_Option, UseLimiterParameter_F_Option, &
-                 UseLimiterParameterOption )
+  subroutine Compute ( S, Time, TimeStep )
 
     class ( Step_RK_C_BSLL_ASC_CSLD_C_ASC_Template ), intent ( inout ) :: &
       S
-    class ( Current_BSLL_ASC_CSLD_Template ), intent ( inout ), target :: &
-      Current_BSLL_ASC_CSLD
-    class ( Current_ASC_Template ), intent ( inout ), target :: &
-      Current_ASC
     real ( KDR ), intent ( in ) :: &
       Time, &
       TimeStep
-    logical ( KDL ), intent ( in ), optional :: &
-      UseLimiterParameter_S_Option, &
-      UseLimiterParameter_F_Option, &
-      UseLimiterParameterOption
 
     integer ( KDI ) :: &
       iF, &  !-- iFiber
       iS     !-- iSection
+    type ( TimerForm ), pointer :: &
+      Timer
 
-!    associate &
-!      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerComputeStep ) )
-!    call Timer % Start ( )
+    Timer => PROGRAM_HEADER % Timer ( S % iTimerStep )
+    if ( associated ( Timer ) ) call Timer % Start ( )
 
-    select type ( Chart => Current_ASC % Atlas_SC % Chart )
-    class is ( Chart_SL_Template )
-      S % Chart => Chart
-    class default
-      call Show ( 'Chart type not found', CONSOLE % ERROR )
-      call Show ( 'Step_RK_C_ASC__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'Compute_C_ASC', 'subroutine', CONSOLE % ERROR ) 
-      call PROGRAM_HEADER % Abort ( )
-    end select !-- Chart
-    S % Current => Current_ASC % Current ( )
+    ! select type ( Chart => Current_ASC % Atlas_SC % Chart )
+    ! class is ( Chart_SL_Template )
+    !   S % Chart => Chart
+    ! class default
+    !   call Show ( 'Chart type not found', CONSOLE % ERROR )
+    !   call Show ( 'Step_RK_C_ASC__Form', 'module', CONSOLE % ERROR )
+    !   call Show ( 'Compute_C_ASC', 'subroutine', CONSOLE % ERROR ) 
+    !   call PROGRAM_HEADER % Abort ( )
+    ! end select !-- Chart
+    ! S % Current => Current_ASC % Current ( )
 
-    associate ( B => Current_BSLL_ASC_CSLD % Bundle_SLL_ASC_CSLD )
-    S % nFibers   =  B % nFibers
-    S % nSections =  B % nSections
-    S % Grid_F    => B % Fiber_CSLL
-    end associate !-- B
+    ! associate ( B => Current_BSLL_ASC_CSLD % Bundle_SLL_ASC_CSLD )
+    ! S % nFibers   =  B % nFibers
+    ! S % nSections =  B % nSections
+    ! S % Grid_F    => B % Fiber_CSLL
+    ! end associate !-- B
 
-    S % Current_BSLL_ASC_CSLD => Current_BSLL_ASC_CSLD
+    ! S % Current_BSLL_ASC_CSLD => Current_BSLL_ASC_CSLD
 
     call AllocateStorage ( S )
     call S % LoadSolution ( S % Solution, S % Current )
@@ -191,18 +176,33 @@ contains
                              S % Solution_BSLL_ASC_CSLD_S )
     call DeallocateStorage ( S )
 
-    S % Current_BSLL_ASC_CSLD => null ( )    
-    S % Grid_F => null ( )
-    S % nSections = 0
-    S % nFibers =  0
+    ! S % Current_BSLL_ASC_CSLD => null ( )    
+    ! S % Grid_F => null ( )
+    ! S % nSections = 0
+    ! S % nFibers =  0
 
-    S % Current => null ( )
-    S % Chart   => null ( )
+    ! S % Current => null ( )
+    ! S % Chart   => null ( )
 
-!    call Timer % Stop ( )
-!    end associate !-- Timer
+    associate &
+      ( CB => S % Current_BSLL_ASC_CSLD, &
+        CA => S % Current_ASC )
 
-  end subroutine Compute_C_BSLL_ASC_CSLD_C_ASC
+    do iS = 1, CB % nSections
+      select type ( CBA => CB % Section % Atlas ( iS ) % Element )
+      class is ( Current_ASC_Template )
+        call CBA % AccumulateBoundaryTally &
+               ( S % BoundaryFluence_CSL_S ( iS ) % Array )
+      end select !-- CBA
+    end do !-- iS
+
+    call CA % AccumulateBoundaryTally ( S % BoundaryFluence_CSL )
+
+    end associate !-- CB, etc.
+
+    if ( associated ( Timer ) ) call Timer % Stop ( )
+
+  end subroutine Compute
 
 
   impure elemental subroutine FinalizeTemplate_C_BSLL_ASC_CSLD_C_ASC ( S )

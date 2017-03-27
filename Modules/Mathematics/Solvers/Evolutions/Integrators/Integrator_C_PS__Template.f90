@@ -242,9 +242,7 @@ contains
     select type ( S => I % Step )
     class is ( Step_RK_C_ASC_Template )
 
-    associate &
-      ( CA => I % Current_ASC, &
-        TimeStep => TimeNew - I % Time )    
+    associate ( TimeStep => TimeNew - I % Time )    
 
     select type ( Chart => PS % Chart )
     class is ( Chart_SLD_Form )
@@ -263,7 +261,7 @@ contains
     if ( I % Time == I % WriteTime ) &
       I % IsCheckpointTime = .true.
 
-    end associate !-- CA, etc.
+    end associate !-- TimeStep
     end select !-- S
 
   end subroutine ComputeCycle_ASC

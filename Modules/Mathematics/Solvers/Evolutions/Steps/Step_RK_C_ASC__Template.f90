@@ -62,7 +62,7 @@ module Step_RK_C_ASC__Template
       class ( Current_ASC_Template ), pointer :: &
         Current_ASC => null ( )
       type ( StorageDivergenceForm ), allocatable :: &
-        StorageDivergence
+        StorageDivergence_C
       type ( IncrementDivergence_FV_Form ), allocatable :: &
         IncrementDivergence_C
       type ( IncrementDampingForm ), allocatable :: &
@@ -86,10 +86,8 @@ module Step_RK_C_ASC__Template
       InitializeTimers
     procedure, public, pass :: &
       DeallocateStorage
-    procedure, private, pass :: &
-      Compute_C_ASC
-    generic, public :: &
-      Compute => Compute_C_ASC
+    procedure, public, pass :: &
+      Compute
     procedure, public, pass :: &
       FinalizeTemplate_C_ASC
     procedure, private, pass :: &
@@ -128,9 +126,9 @@ module Step_RK_C_ASC__Template
       Allocate_RK_C
     procedure, public, pass :: &
       Deallocate_RK_C
-    procedure, public, pass :: &
+    procedure, public, nopass :: &
       AllocateStorageDivergence
-    procedure, public, pass :: &
+    procedure, public, nopass :: &
       DeallocateStorageDivergence
     procedure, private, nopass :: &
       AllocateBoundaryFluence_CSL
@@ -224,11 +222,11 @@ contains
 
     S % Allocated = .false.
 
+    allocate ( S % StorageDivergence_C )
     allocate ( S % IncrementDivergence_C )
     associate ( ID => S % IncrementDivergence_C )
     call ID % Initialize ( S % Current_ASC % Chart )
-    allocate ( S % StorageDivergence )
-    call ID % SetStorage ( S % StorageDivergence )
+    call ID % SetStorage ( S % StorageDivergence_C )
     end associate !-- ID
 
     allocate ( S % IncrementDamping )
@@ -271,7 +269,7 @@ contains
           call PROGRAM_HEADER % AddTimer &
                  ( 'StoreIntermediate', S % iTimerStoreIntermediate, &
                    Level = BaseLevel + 3 )
-          call S % StorageDivergence % InitializeTimers &
+          call S % StorageDivergence_C % InitializeTimers &
                  ( BaseLevel + 3 )
           call PROGRAM_HEADER % AddTimer &
                  ( 'Sources', S % iTimerSources, &
@@ -296,12 +294,14 @@ contains
 
     S % Allocated = .false.
 
-    associate ( ID => S % IncrementDivergence_C )
-    call S % DeallocateStorageDivergence  ( ID )
-    call S % DeallocateBoundaryFluence_CSL ( ID, S % BoundaryFluence_CSL )
+    associate &
+      ( ID => S % IncrementDivergence_C, &
+        SD => S % StorageDivergence_C )
     call S % DeallocateMetricDerivatives ( ID )
+    call S % DeallocateBoundaryFluence_CSL ( ID, S % BoundaryFluence_CSL )
+    call S % DeallocateStorageDivergence  ( SD )
     call S % Deallocate_RK_C ( )
-    end associate !-- ID
+    end associate !-- ID, etc.
 
   end subroutine DeallocateStorage
 
@@ -435,7 +435,7 @@ contains
 !   end subroutine Compute_1D
 
 
-  subroutine Compute_C_ASC ( S, Time, TimeStep )
+  subroutine Compute ( S, Time, TimeStep )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
@@ -465,7 +465,7 @@ contains
 
     if ( associated ( Timer ) ) call Timer % Stop ( )
 
-  end subroutine Compute_C_ASC
+  end subroutine Compute
 
 
   impure elemental subroutine FinalizeTemplate_C_ASC ( S )
@@ -479,6 +479,8 @@ contains
       deallocate ( S % IncrementDamping )
     if ( allocated ( S % IncrementDivergence_C ) ) &
       deallocate ( S % IncrementDivergence_C )
+    if ( allocated ( S % StorageDivergence_C ) ) &
+      deallocate ( S % StorageDivergence_C )
 
     nullify ( S % Current )
     nullify ( S % Current_ASC )
@@ -496,7 +498,8 @@ contains
     type ( TimerForm ), pointer :: &
       Timer
 
-    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerInitializeIntermediate )
+    Timer => PROGRAM_HEADER % TimerPointer &
+               ( S % iTimerInitializeIntermediate )
     if ( associated ( Timer ) ) call Timer % Start ( )
 
     call S % InitializeIntermediate_C ( )
@@ -1042,36 +1045,30 @@ contains
   end subroutine Deallocate_RK_C
 
 
-  subroutine AllocateStorageDivergence ( S, C, G )
+  subroutine AllocateStorageDivergence ( SD, C, G )
 
-    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
-      S
+    type ( StorageDivergenceForm ), intent ( inout ) :: &
+      SD
     class ( CurrentTemplate ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
 
-    call S % StorageDivergence % Allocate &
+    call SD % Allocate &
            ( C % nVariables, C % N_CONSERVED, C % N_PRIMITIVE, &
              C % N_SOLVER_SPEEDS, G % nVariables, C % nValues )
     if ( trim ( C % RiemannSolverType ) == 'HLLC' ) &
-      call S % StorageDivergence % Allocate_HLLC &
-             ( C % nVariables, C % nValues )
+      call SD % Allocate_HLLC ( C % nVariables, C % nValues )
 
   end subroutine AllocateStorageDivergence
 
 
-  subroutine DeallocateStorageDivergence ( S, ID )
+  subroutine DeallocateStorageDivergence ( SD )
 
-    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
-      S
-    class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
-      ID
+    type ( StorageDivergenceForm ), intent ( inout ) :: &
+      SD
 
-    call ID % ClearStorage ( )
-
-    if ( allocated ( S % StorageDivergence ) ) &
-      deallocate ( S % StorageDivergence )
+    call SD % Deallocate ( )
 
   end subroutine DeallocateStorageDivergence
 
@@ -1202,8 +1199,6 @@ contains
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
 
-    character ( LDL ) :: &
-      CoordinateSystem
     class ( GeometryFlatForm ), pointer :: &
       G
 
@@ -1217,9 +1212,10 @@ contains
       G => Chart % Geometry ( )
       associate &
         ( ID => S % IncrementDivergence_C, &
-          C => S % Current )
+          SD => S % StorageDivergence_C, &
+          C  => S % Current )
 
-      call S % AllocateStorageDivergence ( C, G )      
+      call S % AllocateStorageDivergence ( SD, C, G )
 
       call S % AllocateBoundaryFluence &
              ( ID, Chart, C % N_CONSERVED, S % BoundaryFluence_CSL )

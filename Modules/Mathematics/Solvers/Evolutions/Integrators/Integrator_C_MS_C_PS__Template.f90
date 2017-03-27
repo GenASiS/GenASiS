@@ -176,32 +176,16 @@ contains
     select type ( S => I % Step )
     class is ( Step_RK_C_BSLL_ASC_CSLD_C_ASC_Template )
 
-    associate &
-      ( CB => I % Current_BSLL_ASC_CSLD, &
-        CA => I % Current_ASC, &
-        TimeStep => TimeNew - I % Time )    
+    associate ( TimeStep => TimeNew - I % Time )    
 
-    call S % Compute &
-           ( CB, CA, I % Time, TimeStep, &
-             UseLimiterParameter_S_Option = I % UseLimiterParameter_S, &
-             UseLimiterParameter_F_Option = I % UseLimiterParameter_F )
-
-    do iS = 1, CB % nSections
-      select type ( CBA => CB % Section % Atlas ( iS ) % Element )
-      class is ( Current_ASC_Template )
-        call CBA % AccumulateBoundaryTally &
-               ( S % BoundaryFluence_CSL_S ( iS ) % Array )
-      end select !-- CBA
-    end do !-- iS
-
-    call CA % AccumulateBoundaryTally ( S % BoundaryFluence_CSL )
+    call S % Compute ( I % Time, TimeStep )
 
     I % iCycle = I % iCycle + 1
     I % Time = I % Time + TimeStep
     if ( I % Time == I % WriteTime ) &
       I % IsCheckpointTime = .true.
 
-    end associate !-- CB, etc.
+    end associate !-- TimeStep
     end select !-- S
 
   end subroutine ComputeCycle_BSLL_ASC_CSLD
