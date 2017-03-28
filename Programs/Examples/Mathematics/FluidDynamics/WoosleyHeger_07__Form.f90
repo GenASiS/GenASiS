@@ -152,7 +152,7 @@ contains
     RadiusCore = 40.0_KDR  *  UNIT % KILOMETER
     call PROGRAM_HEADER % GetParameter ( RadiusCore, 'RadiusCore' )
 
-    nCellsCore = 128  !-- Number of central cells with equal spacing
+    nCellsCore = 32  !-- Number of central cells with equal spacing
     call PROGRAM_HEADER % GetParameter ( nCellsCore, 'nCellsCore' )
 
     nCellsRadius = 6.5 * nCellsCore  !-- Aiming for roughly 10,000 km
@@ -225,7 +225,8 @@ contains
              TemperatureUnitOption   = TemperatureUnit, &
              MassUnitOption = MassUnit, EnergyUnitOption = EnergyUnit, &
              MomentumUnitOption = MomentumUnit, &
-             AngularMomentumUnitOption = AngularMomentumUnit )
+             AngularMomentumUnitOption = AngularMomentumUnit, &
+             ShockThresholdOption = 1.0_KDR )
 
     !-- Step
 
