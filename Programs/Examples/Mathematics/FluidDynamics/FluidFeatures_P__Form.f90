@@ -304,17 +304,31 @@ contains
       dLnP, &
       dV_iD, &
       SqrtTiny
+    logical ( KDL ) :: &
+      InnerBoundary, &
+      OuterBoundary
+
+    InnerBoundary = .true.
+    OuterBoundary = .true.
+    select type ( CSL )
+    class is ( Chart_SLD_Form )
+      InnerBoundary  =  ( CSL % iaBrick ( iD ) == 1 )
+      OuterBoundary  =  ( CSL % iaBrick ( iD ) == CSL % nBricks ( iD ) )
+    end select !-- CSL
 
     lV = 1
     where ( shape ( S ) > 1 )
       lV = oV + 1
     end where
+    if ( InnerBoundary ) &  !-- Don't detect shocks at boundary
+      lV ( iD )  =  lV ( iD ) + 1  
     
     uV = 1
     where ( shape ( S ) > 1 )
       uV = shape ( S ) - oV
     end where
-    uV ( iD ) = size ( S, dim = iD ) - oV + 1 
+    if ( .not. OuterBoundary ) &  !-- Don't detect shocks at boundary
+      uV ( iD ) = size ( S, dim = iD ) - oV + 1 
       
     iaS_i = 0
     iaS_i ( iD ) = -1
