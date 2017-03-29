@@ -13,7 +13,7 @@ module Fluid_P_MHN__Form
     integer ( KDI ), private, parameter :: &
       N_PRIMITIVE_MEAN_HEAVY_NUCLEUS = 2, &
       N_CONSERVED_MEAN_HEAVY_NUCLEUS = 2, &
-      N_FIELDS_MEAN_HEAVY_NUCLEUS    = 3, &
+      N_FIELDS_MEAN_HEAVY_NUCLEUS    = 7, &
       N_VECTORS_MEAN_HEAVY_NUCLEUS   = 0
 
   type, public, extends ( Fluid_P_Template ) :: Fluid_P_MHN_Form
@@ -24,7 +24,11 @@ module Fluid_P_MHN__Form
       N_VECTORS_MEAN_HEAVY_NUCLEUS   = N_VECTORS_MEAN_HEAVY_NUCLEUS, &
       ELECTRON_FRACTION              = 0, &
       CONSERVED_PROTON_DENSITY       = 0, &
-      CONSERVED_ENTROPY              = 0
+      CONSERVED_ENTROPY              = 0, &
+      MASS_FRACTION_PROTON           = 0, &
+      MASS_FRACTION_NEUTRON          = 0, &
+      MASS_FRACTION_ALPHA            = 0, &
+      MASS_FRACTION_HEAVY            = 0
   contains
     procedure, public, pass :: &
       InitializeAllocate_P_MHN
@@ -206,7 +210,9 @@ contains
            ( F, iaSelectedOption &
                   = [ F % COMOVING_DENSITY, F % VELOCITY_U, F % PRESSURE, &
                       F % MACH_NUMBER, F % TEMPERATURE, &
-                      F % ENTROPY_PER_BARYON, F % ELECTRON_FRACTION ], &
+                      F % ENTROPY_PER_BARYON, F % ELECTRON_FRACTION, &
+                      F % MASS_FRACTION_PROTON, F % MASS_FRACTION_NEUTRON, &
+                      F % MASS_FRACTION_ALPHA, F % MASS_FRACTION_HEAVY ], &
              VectorOption = [ 'Velocity                       ' ], &
              VectorIndicesOption = VectorIndices )
 
@@ -280,12 +286,16 @@ contains
         SB    => FV ( oV + 1 : oV + nV, C % ENTROPY_PER_BARYON ), &
         DP    => FV ( oV + 1 : oV + nV, C % CONSERVED_PROTON_DENSITY ), &
         YE    => FV ( oV + 1 : oV + nV, C % ELECTRON_FRACTION ), &
-        DS    => FV ( oV + 1 : oV + nV, C % CONSERVED_ENTROPY ) )
+        DS    => FV ( oV + 1 : oV + nV, C % CONSERVED_ENTROPY ), &
+        X_P   => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_PROTON ), &
+        X_N   => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_NEUTRON ), &
+        X_He  => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_ALPHA ), &
+        X_A   => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_HEAVY ) )
 
     call C % ComputeBaryonMassKernel &
            ( M )
     call C % Apply_EOS_MHN_T_Kernel &
-           ( P, E, Gamma, SB, M, N, T, YE )
+           ( P, E, Gamma, SB, X_P, X_N, X_He, X_A, M, N, T, YE )
     call C % ComputeDensityMomentumKernel &
            ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
     call C % ComputeConservedEnergyKernel &
@@ -376,6 +386,10 @@ contains
         DP    => FV ( oV + 1 : oV + nV, C % CONSERVED_PROTON_DENSITY ), &
         YE    => FV ( oV + 1 : oV + nV, C % ELECTRON_FRACTION ), &
         DS    => FV ( oV + 1 : oV + nV, C % CONSERVED_ENTROPY ), &
+        X_P   => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_PROTON ), &
+        X_N   => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_NEUTRON ), &
+        X_He  => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_ALPHA ), &
+        X_A   => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_HEAVY ), &
         Shock => FF % Value ( oV + 1 : oV + nV, FF % SHOCK ) )
 
     call C % ComputeBaryonMassKernel &
@@ -389,7 +403,7 @@ contains
     call C % ComputeEntropyPerBaryonKernel &
            ( SB, DS, N )
     call C % Apply_EOS_MHN_SB_E_Kernel &
-           ( P, T, Gamma, E, SB, M, N, YE, Shock )
+           ( P, T, Gamma, E, SB, X_P, X_N, X_He, X_A, M, N, YE, Shock )
     call C % ComputeConservedEnergyKernel &   !-- For E computed from SB
            ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E ) 
     call C % ComputeConservedEntropyKernel &  !-- For SB computed from E
@@ -611,13 +625,15 @@ contains
   end subroutine ComputeEntropyPerBaryonKernel
   
   
-  subroutine Apply_EOS_MHN_T_Kernel ( P, E, Gamma, SB, M, N, T, YE )
+  subroutine Apply_EOS_MHN_T_Kernel &
+               ( P, E, Gamma, SB, X_P, X_N, X_He, X_A, M, N, T, YE )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       P, &
       E, &
       Gamma, &
-      SB
+      SB, &
+      X_P, X_N, X_He, X_A
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       M, &
       N, &
@@ -635,7 +651,9 @@ contains
     real ( KDR ) :: &
       N_Temp, &
       T_Temp, &
-      cs2, dedt, dpderho, dpdrhoe, munu
+!      cs2, dedt, dpderho, dpdrhoe, munu
+      cs2, dedt, dpderho, dpdrhoe, xa, xh, xn, xp, abar, zbar, mu_e, mu_n, &
+      mu_p, mu_hat
 
     nValues = size ( P )
 
@@ -652,10 +670,15 @@ contains
       E ( iV ) = ( E ( iV ) / ( M ( iV ) * N ( iV ) )  -  OR_Shift ) &
                  / SpecificEnergy_CGS
       P ( iV ) = P ( iV ) / Pressure_CGS
-      call nuc_eos_short &
+      ! call nuc_eos_short &
+      !        ( N_Temp, T_Temp, YE ( iV ), E ( iV ), P ( iV ), SB ( iV ), &
+      !          cs2, dedt, dpderho, dpdrhoe, munu, &
+      !          keytemp, keyerr, rfeps )
+      call nuc_eos_full &
              ( N_Temp, T_Temp, YE ( iV ), E ( iV ), P ( iV ), SB ( iV ), &
-               cs2, dedt, dpderho, dpdrhoe, munu, &
-               keytemp, keyerr, rfeps )
+               cs2, dedt, dpderho, dpdrhoe, X_He ( iV ), X_A ( iV ), &
+               X_N ( iV ), X_P ( iV ), abar, zbar, mu_e, &
+               mu_n, mu_p, mu_hat, keytemp, keyerr, rfeps )
       if ( keyerr /= 0 ) then
         Rank = PROGRAM_HEADER % Communicator % Rank
         call Show ( 'EOS error', CONSOLE % WARNING, &
@@ -678,14 +701,16 @@ contains
   end subroutine Apply_EOS_MHN_T_Kernel
   
 
-  subroutine Apply_EOS_MHN_SB_E_Kernel ( P, T, Gamma, E, SB, M, N, YE, Shock )
+  subroutine Apply_EOS_MHN_SB_E_Kernel &
+               ( P, T, Gamma, E, SB, X_P, X_N, X_He, X_A, M, N, YE, Shock )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       P, &
       T, &
       Gamma, &
       E, &
-      SB
+      SB, &
+      X_P, X_N, X_He, X_A
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       M, &
       N, &
@@ -703,7 +728,9 @@ contains
       rfeps
     real ( KDR ) :: &
       N_Temp, &
-      cs2, dedt, dpderho, dpdrhoe, munu
+!      cs2, dedt, dpderho, dpdrhoe, munu
+      cs2, dedt, dpderho, dpdrhoe, xa, xh, xn, xp, abar, zbar, mu_e, mu_n, &
+      mu_p, mu_hat
 
     nValues = size ( P )
 
@@ -722,15 +749,25 @@ contains
       P ( iV ) = P ( iV ) / Pressure_CGS
       T ( iV ) = T ( iV ) / MeV
       if ( Shock ( iV ) > 0.0_KDR ) then
-        call nuc_eos_short &
+        ! call nuc_eos_short &
+        !        ( N_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), SB ( iV ), &
+        !          cs2, dedt, dpderho, dpdrhoe, munu, &
+        !          keytemp_e, keyerr, rfeps )
+        call nuc_eos_full &
                ( N_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), SB ( iV ), &
-                 cs2, dedt, dpderho, dpdrhoe, munu, &
-                 keytemp_e, keyerr, rfeps )
+                 cs2, dedt, dpderho, dpdrhoe, X_He ( iV ), X_A ( iV ), &
+                 X_N ( iV ), X_P ( iV ), abar, zbar, &
+                 mu_e, mu_n, mu_p, mu_hat, keytemp_e, keyerr, rfeps )
       else !-- not Shock
-        call nuc_eos_short &
+        ! call nuc_eos_short &
+        !        ( N_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), SB ( iV ), &
+        !         cs2, dedt, dpderho, dpdrhoe, munu, &
+        !         keytemp_s, keyerr, rfeps )
+        call nuc_eos_full &
                ( N_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), SB ( iV ), &
-                cs2, dedt, dpderho, dpdrhoe, munu, &
-                keytemp_s, keyerr, rfeps )
+                 cs2, dedt, dpderho, dpdrhoe, X_He ( iV ), X_A ( iV ), &
+                 X_N ( iV ), X_P ( iV ), abar, zbar, &
+                 mu_e, mu_n, mu_p, mu_hat, keytemp_s, keyerr, rfeps )
       end if !-- Shock
       if ( keyerr /= 0 ) then
         Rank = PROGRAM_HEADER % Communicator % Rank
@@ -790,6 +827,10 @@ contains
     F % ELECTRON_FRACTION        = oF + 1
     F % CONSERVED_PROTON_DENSITY = oF + 2
     F % CONSERVED_ENTROPY        = oF + 3
+    F % MASS_FRACTION_PROTON     = oF + 4
+    F % MASS_FRACTION_NEUTRON    = oF + 5
+    F % MASS_FRACTION_ALPHA      = oF + 6
+    F % MASS_FRACTION_HEAVY      = oF + 7
 
     !-- variable names 
 
@@ -804,7 +845,11 @@ contains
     Variable ( oF + 1 : oF + F % N_FIELDS_MEAN_HEAVY_NUCLEUS ) &
       = [ 'ElectronFraction      ', &
           'ConservedProtonDensity', &
-          'ConservedEntropy      ' ]
+          'ConservedEntropy      ', &
+          'MassFractionProton    ', &
+          'MassFractionNeutron   ', &
+          'MassFractionAlpha     ', &
+          'MassFractionHeavy     ' ]
     
     !-- units
 
