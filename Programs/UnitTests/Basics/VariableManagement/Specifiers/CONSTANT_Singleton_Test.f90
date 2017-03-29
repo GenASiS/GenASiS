@@ -5,32 +5,21 @@ program CONSTANT_Singleton_Test
   implicit none
 
   print*
-  print*, 'Mathematical Constants'
-  print*, 'PI = ', CONSTANT % PI
-
-  print*
-  print*, 'Physical Constants'  
-  print*, 'SPEED_OF_LIGHT_MKS = ', CONSTANT % SPEED_OF_LIGHT_MKS
-  print*, 'PLANCK_REDUCED_MKS = ', CONSTANT % PLANCK_REDUCED_MKS
-  print*, 'PERMEABILITY_MKS   = ', CONSTANT % PERMEABILITY_MKS
-  print*, 'GRAVITATIONAL_MKS  = ', CONSTANT % GRAVITATIONAL_MKS
-  print*, 'AVOGADRO_MKS       = ', CONSTANT % AVOGADRO_MKS
-  print*, 'BOLTZMANN_MKS      = ', CONSTANT % BOLTZMANN_MKS
-  print*, 'ELECTRON_VOLT_MKS  = ', CONSTANT % ELECTRON_VOLT_MKS
-
-  print*
-  print*, 'Astrophysical Constants'
-  print*, 'ASTRONOMICAL_UNIT_MKS = ', CONSTANT % ASTRONOMICAL_UNIT_MKS
-  print*, 'SOLAR_MASS_MKS        = ', CONSTANT % SOLAR_MASS_MKS
-
-  print*
-  print*, 'GenASiS Constants'
-  print*, 'SPEED_OF_LIGHT   = ', CONSTANT % SPEED_OF_LIGHT
-  print*, 'PERMEABILITY     = ', CONSTANT % PERMEABILITY
-  print*, 'GRAVITATIONAL    = ', CONSTANT % GRAVITATIONAL
-  print*, 'BOLTZMANN        = ', CONSTANT % BOLTZMANN
-  print*, 'PLANCK_REDUCED   = ', CONSTANT % PLANCK_REDUCED
-  print*, 'ATOMIC_MASS_UNIT = ', CONSTANT % ATOMIC_MASS_UNIT
-  print*, 'RADIATION        = ', CONSTANT % RADIATION
+  print*, 'PI                = ', CONSTANT % PI
+  print*, 'SPEED_OF_LIGHT    = ', CONSTANT % SPEED_OF_LIGHT
+  print*, 'PERMEABILITY      = ', CONSTANT % PERMEABILITY
+  print*, 'GRAVITATIONAL     = ', CONSTANT % GRAVITATIONAL
+  print*, 'BOLTZMANN         = ', CONSTANT % BOLTZMANN
+  print*, 'METER             = ', CONSTANT % METER
+  print*, 'SECOND            = ', CONSTANT % SECOND
+  print*, 'KILOGRAM          = ', CONSTANT % KILOGRAM
+  print*, 'KELVIN            = ', CONSTANT % KELVIN
+  print*, 'AMPERE            = ', CONSTANT % AMPERE
+  print*, 'ELECTRON_VOLT     = ', CONSTANT % ELECTRON_VOLT
+  print*, 'PLANCK_REDUCED    = ', CONSTANT % PLANCK_REDUCED
+  print*, 'RADIATION         = ', CONSTANT % RADIATION
+  print*, 'ATOMIC_MASS_UNIT  = ', CONSTANT % ATOMIC_MASS_UNIT
+  print*, 'ASTRONOMICAL_UNIT = ', CONSTANT % ASTRONOMICAL_UNIT
+  print*, 'SOLAR_MASS        = ', CONSTANT % SOLAR_MASS
 
 end program CONSTANT_Singleton_Test

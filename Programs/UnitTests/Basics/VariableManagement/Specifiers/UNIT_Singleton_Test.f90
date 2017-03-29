@@ -22,7 +22,8 @@ program UNIT_Singleton_Test
   print*, 'METER               ', UNIT % METER      
   print*, 'CENTIMETER          ', UNIT % CENTIMETER 
   print*, 'FEMTOMETER          ', UNIT % FEMTOMETER 
-  print*, 'KILOMETER           ', UNIT % KILOMETER  
+  print*, 'KILOMETER           ', UNIT % KILOMETER
+  print*, 'ASTRONOMICAL_UNIT   ', UNIT % ASTRONOMICAL_UNIT  
   print*, 'PARSEC              ', UNIT % PARSEC     
   print*, 'GIGAPARSEC          ', UNIT % GIGAPARSEC
   print*, 'ANGSTROM            ', UNIT % ANGSTROM

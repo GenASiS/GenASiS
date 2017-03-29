@@ -19,6 +19,7 @@ module UNIT_Singleton
       CENTIMETER, &
       FEMTOMETER, &
       KILOMETER, &
+      ASTRONOMICAL_UNIT, &
       PARSEC, &
       GIGAPARSEC, &
       ANGSTROM
@@ -89,13 +90,16 @@ contains
     call U % IDENTITY % Initialize ( '', '', 1.0_KDR )
     
     !-- Length
-    call U % METER % Initialize ( 'm', 'm', 1.0_KDR )
+    call U % METER % Initialize ( 'm', 'm', C % METER )
     call U % CENTIMETER % Initialize ( 1.0e-2_KDR * U % METER, 'cm' )
     call U % FEMTOMETER % Initialize ( 1.0e-15_KDR * U % METER, 'fm' )
     call U % KILOMETER % Initialize  ( 1.0e+3_KDR * U % METER, 'km' )
+    call U % ASTRONOMICAL_UNIT % Initialize &
+           ( 'AU', 'm', C % ASTRONOMICAL_UNIT )
     call U % PARSEC % Initialize &
-           ( ( C % ASTRONOMICAL_UNIT_MKS * U % METER ) &
-             / tan ( 2.0_KDR * C % PI / ( 360.0_KDR * 60.0_KDR * 60.0_KDR ) ), &
+           ( U % ASTRONOMICAL_UNIT &
+             / tan ( 2.0_KDR * C % PI &
+                     / ( 360.0_KDR * 60.0_KDR * 60.0_KDR ) ), &
             'pc' )
     call U % GIGAPARSEC % Initialize ( 1.0e+9_KDR * U % PARSEC, 'Gpc' )
     call U % ANGSTROM % Initialize  ( 1.0e-10_KDR * U % METER, 'A' )
@@ -104,7 +108,7 @@ contains
     call U % RADIAN % Initialize ( UNIT % IDENTITY, 'rad' )
 
     !-- Time
-    call U % SECOND % Initialize ( C % SPEED_OF_LIGHT_MKS * U % METER, 's' )
+    call U % SECOND % Initialize ( 's', 'm', C % SECOND )
     call U % MILLISECOND % Initialize ( 1.0e-3_KDR * U % SECOND, 'ms' )
     call U % FEMTOSECOND % Initialize ( 1.0e-15_KDR * U % SECOND, 'fs' )
 
@@ -113,17 +117,13 @@ contains
     call U % KILOHERTZ % Initialize ( 1.0e+3_KDR * U % HERTZ, 'kHz' )
     
     !-- Mass
-    call U % KILOGRAM % Initialize &
-           ( C % GRAVITATIONAL_MKS * U % METER ** 3 / U % SECOND ** 2, 'kg' )
+    call U % KILOGRAM % Initialize ( 'kg', 'm', C % KILOGRAM )
     call U % GRAM % Initialize ( 1.0e-3_KDR * U % KILOGRAM, 'g' )
-    call U % ATOMIC_MASS_UNIT % Initialize &
-           ( 1.0_KDR / C % AVOGADRO_MKS * U % GRAM, 'amu' )
-    call U % SOLAR_MASS % Initialize &
-           ( C % SOLAR_MASS_MKS * U % KILOGRAM, 'M_sun' )
+    call U % ATOMIC_MASS_UNIT % Initialize ( 'amu', 'm', C % ATOMIC_MASS_UNIT )
+    call U % SOLAR_MASS % Initialize ( 'M_Sun', 'm', C % SOLAR_MASS )
            
     !-- Speed
-    call U % SPEED_OF_LIGHT % Initialize &
-           ( C % SPEED_OF_LIGHT_MKS * U % METER / U % SECOND, 'c' )
+    call U % SPEED_OF_LIGHT % Initialize ( 'c', '', C % SPEED_OF_LIGHT )
 
     !-- Energy
     call U % JOULE % Initialize &
@@ -131,8 +131,7 @@ contains
     call U % ERG % Initialize &
            ( U % GRAM * ( U % CENTIMETER / U % SECOND ) ** 2, 'erg' )
     call U % BETHE % Initialize ( 1.0e51_KDR * U % ERG, 'Bethe' )
-    call U % ELECTRON_VOLT % Initialize &
-           ( C % ELECTRON_VOLT_MKS * U % JOULE, 'eV' )
+    call U % ELECTRON_VOLT % Initialize ( 'eV', 'm', C % ELECTRON_VOLT )
     call U % MEV % Initialize ( 1.0e6_KDR * U % ELECTRON_VOLT, 'MeV' )
 
     !-- Force
@@ -144,17 +143,13 @@ contains
     call U % BARYE  % Initialize ( U % DYNE / U % CENTIMETER ** 2, 'Ba' )
 
     !-- Temperature
-    call U % KELVIN % Initialize &
-           ( C % BOLTZMANN_MKS * U % KILOGRAM &
-             * U % METER ** 2  /  U % SECOND ** 2, 'K' )
+    call U % KELVIN % Initialize ( 'K', 'm', C % KELVIN )
 
     !-- Entropy per baryon
-    call U % BOLTZMANN % Initialize &
-           ( C % BOLTZMANN_MKS * U % JOULE / U % KELVIN, 'k_B' )
+    call U % BOLTZMANN % Initialize ( 'k_B', '', C % BOLTZMANN )
 
     !-- Magnetic current
-    call U % AMPERE % Initialize &
-           ( ( C % PERMEABILITY_MKS * U % NEWTON ) ** 0.5_KDR , 'A' )
+    call U % AMPERE % Initialize ( 'A', '', C % AMPERE )
 
     !-- Magnetic field
     call U % TESLA % Initialize &
@@ -171,8 +166,7 @@ contains
 
     !-- Energy/length conversion
     call U % HBAR_C % Initialize &
-           ( C % PLANCK_REDUCED_MKS * U % JOULE * U % SECOND &
-             * C % SPEED_OF_LIGHT_MKS * U % METER / U % SECOND, '(hBar_c)' )  
+           ( '(hBar_c)', 'm^2', C % PLANCK_REDUCED * C % SPEED_OF_LIGHT )
 
     !-- Computer resources
     call U % KILOBYTE % Initialize ( 'kB', 'kB', 1.0_KDR )
@@ -199,6 +193,8 @@ contains
       Result = UNIT % FEMTOMETER
     case ( 'KILOMETER' )
       Result = UNIT % KILOMETER
+    case ( 'ASTRONOMICAL_UNIT' )
+      Result = UNIT % ASTRONOMICAL_UNIT
     case ( 'PARSEC' )   
       Result = UNIT % PARSEC
     case ( 'GIGAPARSEC' )  
