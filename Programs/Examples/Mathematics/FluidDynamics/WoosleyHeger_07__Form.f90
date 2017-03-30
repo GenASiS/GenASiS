@@ -357,7 +357,7 @@ contains
   end subroutine SetWriteTimeInterval
 
 
-  subroutine Finalize ( WH )
+  impure elemental subroutine Finalize ( WH )
 
     type ( WoosleyHeger_07_Form ), intent ( inout ) :: &
       WH

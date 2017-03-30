@@ -194,3 +194,15 @@ WoosleyHeger_07.o: \
   Basics.o \
   WoosleyHeger_07__Form.o \
   WoosleyHeger_07.f90
+
+WoosleyHeger_07_Header_Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_ASC__Form.o \
+  WoosleyHeger_07_Header_Form.f90
+
+WoosleyHeger_07_A__Form.o: \
+  Mathematics.o \
+  Fluid_ASC__Form.o \
+  WoosleyHeger_07_Header_Form.o \
+  WoosleyHeger_07_A__Form.f90
