@@ -31,8 +31,10 @@ module Fluid_P_MHN__Form
       MASS_FRACTION_HEAVY            = 0, &
       HEAVY_ATOMIC_NUMBER            = 0, &
       HEAVY_MASS_NUMBER              = 0, &
-      CHEMICAL_POTENTIAL_N_P         = 0, &
-      CHEMICAL_POTENTIAL_E           = 0
+      CHEMICAL_POTENTIAL_N_P         = 0, &  !-- a.k.a. mu_hat. Includes 
+                                             !   m_n - m_p. (mu_n and mu_p both
+                                             !   measured with respect to m_n.)
+      CHEMICAL_POTENTIAL_E           = 0     !-- Includes m_e.
   contains
     procedure, public, pass :: &
       InitializeAllocate_P_MHN
