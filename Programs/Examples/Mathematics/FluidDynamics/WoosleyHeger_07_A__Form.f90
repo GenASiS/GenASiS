@@ -44,8 +44,17 @@ contains
 
     call WHH % InitializeFluid ( FA )
 
+    !-- Step
+
+    allocate ( Step_RK2_C_ASC_Form :: WH % Step )
+    select type ( S => WH % Step )
+    class is ( Step_RK2_C_ASC_Form )
+    call S % Initialize ( FA, Name )
+    S % ApplySources % Pointer => ApplySourcesGravity
+
     !-- Cleanup
 
+    end select !-- S
     end select !-- FA
     end associate !-- WHH
 

@@ -198,6 +198,8 @@ WoosleyHeger_07.o: \
 WoosleyHeger_07_Header_Form.o: \
   Basics.o \
   Mathematics.o \
+  Fluid_P__Template.o \
+  Fluid_P_MHN__Form.o \
   Fluid_ASC__Form.o \
   WoosleyHeger_07_Header_Form.f90
 
