@@ -202,6 +202,11 @@ contains
     C % nFields = C % nFields + 1
     C % Field ( C % nFields ) % Pointer => FC
 
+    call Show ( 'Adding a field', C % IGNORABILITY + 2 )
+    call Show ( C % Name, 'Chart', C % IGNORABILITY + 2 )
+    call Show ( FC % Name, 'Field', C % IGNORABILITY + 2 )
+    call Show ( C % nFields, 'nFields', C % IGNORABILITY + 2 )
+
   end subroutine AddField
 
 

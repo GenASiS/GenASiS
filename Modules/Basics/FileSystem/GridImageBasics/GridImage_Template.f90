@@ -11,7 +11,7 @@ module GridImage_Template
   private
   
   integer, private, parameter :: &
-    MAX_VARIABLE_GROUPS = 16 
+    MAX_VARIABLE_GROUPS = 32 
 
   type, public, abstract :: GridImageTemplate
     integer ( KDI ) :: &
