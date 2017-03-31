@@ -13,6 +13,7 @@ module Step_RK_C_BSLL_ASC_CSLD_C_ASC__Template
   use Manifolds
   use Operations
   use Fields
+  use Increments
   use Step_RK_C_ASC__Template
   use Step_RK_C_ASC_1D__Template
 
@@ -33,8 +34,14 @@ module Step_RK_C_BSLL_ASC_CSLD_C_ASC__Template
         K_BSLL_ASC_CSLD
       class ( Chart_SLL_Form ), pointer :: &
         Grid_F => null ( )
+      class ( Bundle_SLL_ASC_CSLD_Form ), pointer :: &
+        Bundle_SLL_ASC_CSLD => null ( )
       class ( Current_BSLL_ASC_CSLD_Template ), pointer :: &
         Current_BSLL_ASC_CSLD => null ( )
+      type ( StorageDivergenceForm ), allocatable :: &
+        StorageDivergence_S
+      type ( IncrementDivergence_FV_Form ), dimension ( : ), allocatable :: &
+        IncrementDivergence_S
       type ( ApplyDivergence_C_Pointer ) :: &
         ApplyDivergence_S, &
         ApplyDivergence_F
@@ -48,6 +55,8 @@ module Step_RK_C_BSLL_ASC_CSLD_C_ASC__Template
     procedure, public, pass :: &
       InitializeTemplate_C_BSLL_ASC_CSLD_C_ASC
     procedure, public, pass :: &
+      DeallocateStorage
+    procedure, public, pass :: &
       Compute
     procedure, public, pass :: &
       FinalizeTemplate_C_BSLL_ASC_CSLD_C_ASC
@@ -56,9 +65,9 @@ module Step_RK_C_BSLL_ASC_CSLD_C_ASC__Template
     procedure, private, pass :: &
       IncrementIntermediate
     procedure, private, pass :: &
-      IncrementSolution
-    procedure, private, pass :: &
       ComputeStage
+    procedure, private, pass :: &
+      IncrementSolution
     procedure, private, pass ( S ) :: &
       LoadSolution_C_BSLL_ASC_CSLD
     generic, public :: &
@@ -82,8 +91,7 @@ module Step_RK_C_BSLL_ASC_CSLD_C_ASC__Template
   end type Step_RK_C_BSLL_ASC_CSLD_C_ASC_Template
 
     private :: &
-      AllocateStorage, &
-      DeallocateStorage
+      AllocateStorage
 
 contains
 
@@ -106,17 +114,62 @@ contains
     real ( KDR ), dimension ( 2 : ), intent ( in ) :: &
       C
 
+    integer ( KDI ) :: &
+      iS  !-- iSection
+
     if ( S % Type == '' ) &
       S % Type = 'a Step_RK_C_BSLL_ASC_CSLD_C_ASC' 
 
     call S % InitializeTemplate ( NameSuffix, A, B, C )
 
-!    S % Current => Current_ASC % Current ( )
+    select type ( Chart => Current_ASC % Atlas_SC % Chart )
+    class is ( Chart_SL_Template )
+      S % Chart => Chart
+    class default
+      call Show ( 'Chart type not found', CONSOLE % ERROR )
+      call Show ( 'Step_RK_C_BSLL_ASC_CSLD_C_ASC__Template', 'module', &
+                  CONSOLE % ERROR )
+      call Show ( 'InitializeTemplate_C_BSLL_ASC_CSLD_C_ASC', 'subroutine', &
+                  CONSOLE % ERROR ) 
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- Chart
 
+    S % Current_ASC => Current_ASC
+    S % Current     => Current_ASC % Current ( )
+
+    S % Bundle_SLL_ASC_CSLD   =>  Current_BSLL_ASC_CSLD % Bundle_SLL_ASC_CSLD
+    S % Current_BSLL_ASC_CSLD =>  Current_BSLL_ASC_CSLD
+
+    associate ( B => S % Bundle_SLL_ASC_CSLD )
+    S % nFibers   =  B % nFibers
+    S % nSections =  B % nSections
+    S % Grid_F    => B % Fiber_CSLL
+    end associate !-- B
+    call Show ( S % nFibers,   'nFibers',   S % IGNORABILITY )
+    call Show ( S % nSections, 'nSections', S % IGNORABILITY )
+
+    S % Allocated = .false.
+
+    allocate ( S % StorageDivergence_C )
     allocate ( S % IncrementDivergence_C )
     associate ( ID => S % IncrementDivergence_C )
-    call ID % Initialize ( Current_ASC % Chart )
+    call ID % Initialize ( S % Current_ASC % Chart )
+    call ID % SetStorage ( S % StorageDivergence_C )
     end associate !-- ID
+
+    allocate ( S % StorageDivergence_S )
+    allocate ( S % IncrementDivergence_S ( S % nSections ) )
+    associate ( CB => S % Current_BSLL_ASC_CSLD )
+    do iS = 1, S % nSections
+      associate ( ID => S % IncrementDivergence_S ( iS ) )
+      select type ( CA => CB % Section % Atlas ( iS ) % Element )
+      class is ( Current_ASC_Template )
+        call ID % Initialize ( CA % Chart )
+        call ID % SetStorage ( S % StorageDivergence_S )
+      end select !-- CA
+      end associate !-- ID
+    end do !-- iS
+    end associate !-- CB
 
     allocate ( S % IncrementDamping )
     associate ( ID => S % IncrementDamping )
@@ -128,6 +181,44 @@ contains
   end subroutine InitializeTemplate_C_BSLL_ASC_CSLD_C_ASC
 
 
+  subroutine DeallocateStorage ( S )
+
+    class ( Step_RK_C_BSLL_ASC_CSLD_C_ASC_Template ), intent ( inout ) :: &
+      S
+
+    integer ( KDI ) :: &
+      iS  !-- iSection
+
+    S % Allocated = .false.
+
+    if ( .not. allocated ( S % IncrementDivergence_S ) ) &
+      return
+
+    associate ( SD => S % StorageDivergence_S )
+    call S % DeallocateStorageDivergence ( SD )
+    end associate !-- SD
+
+    do iS = 1, S % nSections
+      associate ( ID => S % IncrementDivergence_S ( iS ) )
+      call S % DeallocateBoundaryFluence_CSL &
+             ( ID, S % BoundaryFluence_CSL_S ( iS ) % Array )
+      end associate !-- ID
+    end do !-- iS
+
+    call S % Deallocate_RK_C_BSLL_ASC_CSLD ( )
+
+    associate &
+      ( ID => S % IncrementDivergence_C, &
+        SD => S % StorageDivergence_C )
+    call S % DeallocateMetricDerivatives ( ID )
+    call S % DeallocateBoundaryFluence_CSL ( ID, S % BoundaryFluence_CSL )
+    call S % DeallocateStorageDivergence ( SD )
+    call S % Deallocate_RK_C ( )
+    end associate !-- ID, etc.
+
+  end subroutine DeallocateStorage
+
+
   subroutine Compute ( S, Time, TimeStep )
 
     class ( Step_RK_C_BSLL_ASC_CSLD_C_ASC_Template ), intent ( inout ) :: &
@@ -137,7 +228,6 @@ contains
       TimeStep
 
     integer ( KDI ) :: &
-      iF, &  !-- iFiber
       iS     !-- iSection
     type ( TimerForm ), pointer :: &
       Timer
@@ -145,26 +235,15 @@ contains
     Timer => PROGRAM_HEADER % Timer ( S % iTimerStep )
     if ( associated ( Timer ) ) call Timer % Start ( )
 
-    ! select type ( Chart => Current_ASC % Atlas_SC % Chart )
-    ! class is ( Chart_SL_Template )
-    !   S % Chart => Chart
-    ! class default
-    !   call Show ( 'Chart type not found', CONSOLE % ERROR )
-    !   call Show ( 'Step_RK_C_ASC__Form', 'module', CONSOLE % ERROR )
-    !   call Show ( 'Compute_C_ASC', 'subroutine', CONSOLE % ERROR ) 
-    !   call PROGRAM_HEADER % Abort ( )
-    ! end select !-- Chart
-    ! S % Current => Current_ASC % Current ( )
+    if ( .not. S % Allocated ) &
+      call AllocateStorage ( S )
 
-    ! associate ( B => Current_BSLL_ASC_CSLD % Bundle_SLL_ASC_CSLD )
-    ! S % nFibers   =  B % nFibers
-    ! S % nSections =  B % nSections
-    ! S % Grid_F    => B % Fiber_CSLL
-    ! end associate !-- B
+    do iS = 1, S % nSections
+      if ( allocated ( S % BoundaryFluence_CSL_S ) ) &
+        call S % ClearBoundaryFluence &
+               ( S % BoundaryFluence_CSL_S ( iS ) % Array )
+    end do !-- iS
 
-    ! S % Current_BSLL_ASC_CSLD => Current_BSLL_ASC_CSLD
-
-    call AllocateStorage ( S )
     call S % LoadSolution ( S % Solution, S % Current )
     call S % LoadSolution ( S % Solution_BSLL_ASC_CSLD_S, &
                             S % Current_BSLL_ASC_CSLD )
@@ -174,21 +253,12 @@ contains
     call S % StoreSolution ( S % Current, S % Solution )
     call S % StoreSolution ( S % Current_BSLL_ASC_CSLD, &
                              S % Solution_BSLL_ASC_CSLD_S )
-    call DeallocateStorage ( S )
-
-    ! S % Current_BSLL_ASC_CSLD => null ( )    
-    ! S % Grid_F => null ( )
-    ! S % nSections = 0
-    ! S % nFibers =  0
-
-    ! S % Current => null ( )
-    ! S % Chart   => null ( )
 
     associate &
       ( CB => S % Current_BSLL_ASC_CSLD, &
         CA => S % Current_ASC )
 
-    do iS = 1, CB % nSections
+    do iS = 1, S % nSections
       select type ( CBA => CB % Section % Atlas ( iS ) % Element )
       class is ( Current_ASC_Template )
         call CBA % AccumulateBoundaryTally &
@@ -210,7 +280,14 @@ contains
     class ( Step_RK_C_BSLL_ASC_CSLD_C_ASC_Template ), intent ( inout ) :: &
       S
 
-    call S % FinalizeTemplate_C_ASC ( )
+    call DeallocateStorage ( S )
+
+    if ( allocated ( S % IncrementDivergence_S ) ) &
+      deallocate ( S % IncrementDivergence_S )
+    if ( allocated ( S % StorageDivergence_S ) ) &
+      deallocate ( S % StorageDivergence_S )
+
+    call S % FinalizeTemplate_C_ASC_1D ( )
 
   end subroutine FinalizeTemplate_C_BSLL_ASC_CSLD_C_ASC
 
@@ -220,8 +297,17 @@ contains
     class ( Step_RK_C_BSLL_ASC_CSLD_C_ASC_Template ), intent ( inout ) :: &
       S
 
+    type ( TimerForm ), pointer :: &
+      Timer
+
+    Timer => PROGRAM_HEADER % TimerPointer &
+               ( S % iTimerInitializeIntermediate )
+    if ( associated ( Timer ) ) call Timer % Start ( )
+
     call S % InitializeIntermediate_C_BSLL_ASC_CSLD ( )
     call S % InitializeIntermediate_C ( )
+
+    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine InitializeIntermediate
 
@@ -235,25 +321,18 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iK
 
+    type ( TimerForm ), pointer :: &
+      Timer
+
+    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerIncrementIntermediate )
+    if ( associated ( Timer ) ) call Timer % Start ( )
+
     call S % IncrementIntermediate_C_BSLL_ASC_CSLD ( A, iK )
     call S % IncrementIntermediate_C ( A, iK )
 
+    if ( associated ( Timer ) ) call Timer % Stop ( )
+
   end subroutine IncrementIntermediate
-
-
-  subroutine IncrementSolution ( S, B, iS )
-
-    class ( Step_RK_C_BSLL_ASC_CSLD_C_ASC_Template ), intent ( inout ) :: &
-      S
-    real ( KDR ), intent ( in ) :: &
-      B
-    integer ( KDI ), intent ( in ) :: &
-      iS
-
-    call S % IncrementSolution_C_BSLL_ASC_CSLD ( B, iS )
-    call S % IncrementSolution_C ( B, iS )
-
-  end subroutine IncrementSolution
 
 
   subroutine ComputeStage ( S, Time, TimeStep, iStage )
@@ -266,9 +345,11 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iStage
 
-!    associate &
-!      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerComputeStage ) )
-!    call Timer % Start ( )
+    type ( TimerForm ), pointer :: &
+      Timer
+
+    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerStage )
+    if ( associated ( Timer ) ) call Timer % Start ( )
 
     call S % ComputeStage_C_BSLL_ASC_CSLD &
       ( S % Current_BSLL_ASC_CSLD, S % K_BSLL_ASC_CSLD ( iStage ), &
@@ -276,10 +357,32 @@ contains
 
     call S % ComputeStage_C_ASC ( TimeStep, iStage )
 
-!    call Timer % Stop ( )
-!    end associate !-- Timer
+    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine ComputeStage
+
+
+  subroutine IncrementSolution ( S, B, iS )
+
+    class ( Step_RK_C_BSLL_ASC_CSLD_C_ASC_Template ), intent ( inout ) :: &
+      S
+    real ( KDR ), intent ( in ) :: &
+      B
+    integer ( KDI ), intent ( in ) :: &
+      iS
+
+    type ( TimerForm ), pointer :: &
+      Timer
+
+    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerIncrementSolution )
+    if ( associated ( Timer ) ) call Timer % Start ( )
+
+    call S % IncrementSolution_C_BSLL_ASC_CSLD ( B, iS )
+    call S % IncrementSolution_C ( B, iS )
+
+    if ( associated ( Timer ) ) call Timer % Stop ( )
+
+  end subroutine IncrementSolution
 
 
   subroutine LoadSolution_C_BSLL_ASC_CSLD &
@@ -446,7 +549,8 @@ contains
       S % ApplyRelaxation_C => S % ApplyRelaxation_S % Pointer
 
       call S % ComputeStage_C &
-             ( S % IncrementDivergence_C, C, Chart, K, TimeStep, iStage )
+             ( S % IncrementDivergence_S ( iS ), C, Chart, K, TimeStep, &
+               iStage )
 
       S % ApplyRelaxation_C => null ( )
       S % ApplySources_C    => null ( )
@@ -585,14 +689,12 @@ contains
 
     integer ( KDI ) :: &
       iS  !-- iSection
-    character ( LDL ) :: &
-      CoordinateSystem
     class ( CurrentTemplate ), pointer :: &
       Current_S
+    class ( GeometryFlatForm ), pointer :: &
+      G
 
-!    associate &
-!      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerAllocateStep ) )
-!    call Timer % Start ( )
+    S % Allocated = .true.
 
     call S % Allocate_RK_C ( )
     call S % Allocate_RK_C_BSLL_ASC_CSLD ( )
@@ -600,25 +702,50 @@ contains
     select type ( Chart => S % Chart )
     class is ( Chart_SL_Template )
 
-      call S % AllocateBoundaryFluence &
-             ( S % IncrementDivergence_C, Chart, S % Current % N_CONSERVED, &
-               S % BoundaryFluence_CSL )
+      G => Chart % Geometry ( )
 
-      if ( allocated ( S % BoundaryFluence_CSL_S ) ) &
-        deallocate ( S % BoundaryFluence_CSL_S )
+      !-- Current_ASC
+
+      associate &
+        ( ID => S % IncrementDivergence_C, &
+          SD => S % StorageDivergence_C, &
+          C  => S % Current )
+
+      call S % AllocateStorageDivergence ( SD, C, G )
+
+      call S % AllocateBoundaryFluence &
+             ( ID, Chart, C % N_CONSERVED, S % BoundaryFluence_CSL )
+
+      call S % AllocateMetricDerivatives ( ID, C % nValues )
+
+      end associate !-- ID, etc.
+
+      !-- Current_BSLL_ASC_CSLD
+
       allocate ( S % BoundaryFluence_CSL_S ( S % nSections ) )
 
+      associate ( SD => S % StorageDivergence_S )
+
+      Current_S => S % Current_BSLL_ASC_CSLD % CurrentSection ( 1 )
+      call S % AllocateStorageDivergence ( SD, Current_S, G )
+
       do iS = 1, S % nSections
+        associate ( ID => S % IncrementDivergence_S ( iS ) )
         Current_S => S % Current_BSLL_ASC_CSLD % CurrentSection ( iS )
         call S % AllocateBoundaryFluence &
-               ( S % IncrementDivergence_C, &
-                 Chart, Current_S % N_CONSERVED, &
+               ( ID, Chart, Current_S % N_CONSERVED, &
                  S % BoundaryFluence_CSL_S ( iS ) % Array )
-      end do !-- iC
+        end associate !-- ID, etc.
+      end do !-- iS
+
+      end associate !-- SD
+
+      nullify ( G )
 
     class default
       call Show ( 'Grid type not recognized', CONSOLE % ERROR )
-      call Show ( 'Step_RK_C_ASC__Template', 'module', CONSOLE % ERROR )
+      call Show ( 'Step_RK_C_BSLL_ASC_CSLD__Template', 'module', &
+                  CONSOLE % ERROR )
       call Show ( 'AllocateStorage', 'subroutine', CONSOLE % ERROR ) 
       call PROGRAM_HEADER % Abort ( )
     end select !-- Grid
@@ -628,32 +755,7 @@ contains
 
     nullify ( Current_S )
 
-!    call Timer % Stop ( )
-!    end associate !-- Timer
-
   end subroutine AllocateStorage
-
-
-  subroutine DeallocateStorage ( S )
-
-    class ( Step_RK_C_BSLL_ASC_CSLD_C_ASC_Template ), intent ( inout ) :: &
-      S
-
-!    associate &
-!      ( Timer => PROGRAM_HEADER % Timer ( S % iTimerAllocateStep ) )
-!    call Timer % Start ( )
-
-    !-- BoundaryFluence not deallocated here, but instead upon reallocation,
-    !   so that its values remain available after Step % Compute
-
-    call S % DeallocateMetricDerivatives ( S % IncrementDivergence_C )
-    call S % Deallocate_RK_C_BSLL_ASC_CSLD ( )
-    call S % Deallocate_RK_C ( )
-
-!    call Timer % Stop ( )
-!    end associate !-- Timer
-
-  end subroutine DeallocateStorage
 
 
 end module Step_RK_C_BSLL_ASC_CSLD_C_ASC__Template

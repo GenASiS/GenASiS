@@ -127,14 +127,13 @@ contains
     select type ( FA => PWS % Current_ASC )
     class is ( Fluid_ASC_Form )
     call FA % Initialize ( PS, 'NON_RELATIVISTIC' )
-    end select !-- FA
 
     !-- Step
 
     allocate ( Step_RK2_C_BSLL_ASC_CSLD_C_ASC_Form :: PWS % Step )
     select type ( S => PWS % Step )
     class is ( Step_RK2_C_BSLL_ASC_CSLD_C_ASC_Form )
-    call S % Initialize ( Name )
+    call S % Initialize ( RMB, FA, Name )
     S % ApplyDivergence % Pointer => null ( )  !-- Disable fluid evolution
     end select !-- S
 
@@ -161,10 +160,12 @@ contains
 
     !-- Initialize template
 
-    call PWS % InitializeTemplate_C_MS_C_PS ( Name, FinishTimeOption = Period )
+    call PWS % InitializeTemplate_C_MS_C_PS &
+           ( Name, FinishTimeOption = Period )
 
     !-- Cleanup
 
+    end select !-- FA
     end select !-- RMB
     end select !-- MS
     end select !-- PS

@@ -214,7 +214,7 @@ contains
       S % Chart => Chart
     class default
       call Show ( 'Chart type not found', CONSOLE % ERROR )
-      call Show ( 'Step_RK_C_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Step_RK_C_ASC__Template', 'module', CONSOLE % ERROR )
       call Show ( 'InitializeTemplate_C_ASC', 'subroutine', CONSOLE % ERROR ) 
       call PROGRAM_HEADER % Abort ( )
     end select !-- Chart
@@ -296,16 +296,17 @@ contains
 
     S % Allocated = .false.
 
-    if ( allocated ( S % IncrementDivergence_C ) ) then
-      associate &
-        ( ID => S % IncrementDivergence_C, &
-          SD => S % StorageDivergence_C )
-      call S % DeallocateMetricDerivatives ( ID )
-      call S % DeallocateBoundaryFluence_CSL ( ID, S % BoundaryFluence_CSL )
-      call S % DeallocateStorageDivergence  ( SD )
-      call S % Deallocate_RK_C ( )
-      end associate !-- ID, etc.
-    end if
+    if ( .not. allocated ( S % IncrementDivergence_C ) ) &
+      return
+
+    associate &
+      ( ID => S % IncrementDivergence_C, &
+        SD => S % StorageDivergence_C )
+    call S % DeallocateMetricDerivatives ( ID )
+    call S % DeallocateBoundaryFluence_CSL ( ID, S % BoundaryFluence_CSL )
+    call S % DeallocateStorageDivergence ( SD )
+    call S % Deallocate_RK_C ( )
+    end associate !-- ID, etc.
 
   end subroutine DeallocateStorage
 

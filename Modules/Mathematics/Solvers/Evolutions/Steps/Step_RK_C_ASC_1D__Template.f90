@@ -100,7 +100,7 @@ contains
       C
 
     integer ( KDI ) :: &
-      iC
+      iC  !-- iCurrent
 
     if ( S % Type == '' ) &
       S % Type = 'a Step_RK_C_ASC_1D' 
@@ -109,7 +109,7 @@ contains
 
     S % Current_ASC_1D => Current_ASC_1D
     S % nCurrents = size ( Current_ASC_1D )
-    call Show ( S % nCurrents, 'nCurrents' )
+    call Show ( S % nCurrents, 'nCurrents', S % IGNORABILITY )
 
     select type ( Chart => Current_ASC_1D ( 1 ) % Element % Atlas_SC % Chart )
     class is ( Chart_SL_Template )
@@ -125,7 +125,7 @@ contains
 
     class default
       call Show ( 'Chart type not found', CONSOLE % ERROR )
-      call Show ( 'Step_RK_C_ASC_1D__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Step_RK_C_ASC_1D__Template', 'module', CONSOLE % ERROR )
       call Show ( 'InitializeTemplate_C_ASC_1D', 'subroutine', &
                   CONSOLE % ERROR ) 
       call PROGRAM_HEADER % Abort ( )
@@ -163,6 +163,9 @@ contains
       iC  !-- iCurrent
 
     S % Allocated = .false.
+
+    if ( .not. allocated ( S % IncrementDivergence_1D ) ) &
+      return
 
     call S % DeallocateMetricDerivatives ( S % IncrementDivergence_1D ( 1 ) )
 
