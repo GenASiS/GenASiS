@@ -1,7 +1,7 @@
 PATH_GENASIS = ../../../../..
 
 all: SineWave SawtoothWave RiemannProblem RayleighTaylor \
-     SedovTaylor FishboneMoncrief WoosleyHeger_07
+     SedovTaylor FishboneMoncrief WoosleyHeger_07 WoosleyHeger_07_A
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
@@ -50,6 +50,13 @@ WoosleyHeger_07: Basics.a Mathematics.a Fluid.a Diagnostics_WH07__Form.o \
           WoosleyHeger_07.o WoosleyHeger_07__Form.o \
           Diagnostics_WH07_ASC__Form.o Diagnostics_WH07_CSL__Form.o \
           Diagnostics_WH07__Form.o \
+          Fluid.a Mathematics.a Basics.a $(THIRD_PARTY) $(LIBRARIES)
+
+WoosleyHeger_07_A: Basics.a Mathematics.a Fluid.a WoosleyHeger_07_A.o
+	$(LINK) $(FFLAGS) \
+          -o WoosleyHeger_07_A_$(MACHINE) \
+          WoosleyHeger_07_A.o WoosleyHeger_07_A__Form.o \
+          WoosleyHeger_07_Header_Form.o \
           Fluid.a Mathematics.a Basics.a $(THIRD_PARTY) $(LIBRARIES)
 
 include $(PATH_BASICS)/Makefile_Dependencies
@@ -209,3 +216,8 @@ WoosleyHeger_07_A__Form.o: \
   Fluid_ASC__Form.o \
   WoosleyHeger_07_Header_Form.o \
   WoosleyHeger_07_A__Form.f90
+
+WoosleyHeger_07_A.o: \
+  Basics.o \
+  WoosleyHeger_07_A__Form.o \
+  WoosleyHeger_07_A.f90

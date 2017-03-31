@@ -270,7 +270,8 @@ contains
     associate &
       ( D   => BoundaryFluence ( iDensity, iC ) % Value ( 1, 1, 1 ), &
         CE  => BoundaryFluence ( iEnergy, iC ) % Value ( 1, 1, 1 ), &
-        Phi => T % GravitationalPotential ( C % nValues - 1 ) )
+        Phi => 0.5_KDR * ( T % GravitationalPotential ( C % nValues - 1 ) &
+                           + T % GravitationalPotential ( C % nValues - 2 ) ) )
     do iS = 1, T % nSelected
       iI = T % iaSelected ( iS )
       if ( iI == T % GRAVITATIONAL_ENERGY ) then

@@ -11,6 +11,11 @@ module WoosleyHeger_07_Header_Form
   private
 
   type, public :: WoosleyHeger_07_HeaderForm
+    integer ( KDI ) :: &
+      nWrite
+    real ( KDR ) :: &
+      FinishTime, &
+      CourantFactor
     type ( MeasuredValueForm ) :: &
       TimeUnit, &
       MassDensityUnit, &
@@ -34,10 +39,15 @@ module WoosleyHeger_07_Header_Form
       InitializeFluid
     procedure, public, pass :: &
       SetFluid
+    procedure, public, pass :: &
+      SetIntegratorParameters
+    procedure, public, pass :: &
+      SetWriteTimeInterval
   end type WoosleyHeger_07_HeaderForm
 
     private :: &
-      PrepareInterpolation
+      PrepareInterpolation, &
+      LocalMax
 
     integer ( KDI ), private, parameter :: &
       iRADIUS_TS            = 2, &  !-- must match the profile file columns
@@ -62,8 +72,7 @@ module WoosleyHeger_07_Header_Form
 
       private :: &
         ComputeGravityEdge, &
-        ComputeGravityCenter!, &
-  !     LocalMax
+        ComputeGravityCenter
 
     real ( KDR ), dimension ( : ), allocatable, private :: &
       Potential, &    !-- Edge
@@ -178,8 +187,6 @@ contains
     call PS % SetGeometry ( GA )
     end associate !-- GA
 
-    WHH % TimeUnit = UNIT % SECOND
-
     end select !-- PS
 
   end subroutine InitializePositionSpace
@@ -193,6 +200,8 @@ contains
       FA
 
     WHH % Fluid_ASC => FA
+
+    WHH % TimeUnit = UNIT % SECOND
 
     WHH % VelocityUnit       =  WHH % CoordinateUnit  /  WHH % TimeUnit 
     WHH % MassDensityUnit    =  UNIT % MASS_DENSITY_CGS
@@ -323,6 +332,112 @@ contains
     nullify ( F, G )
 
   end subroutine SetFluid
+
+
+  subroutine SetIntegratorParameters ( WHH )
+
+    class ( WoosleyHeger_07_HeaderForm ), intent ( inout ) :: &
+      WHH
+
+    WHH % FinishTime     =  1.0_KDR * UNIT % SECOND
+    WHH % CourantFactor  =  0.7_KDR
+    WHH % nWrite         =  30
+
+  end subroutine SetIntegratorParameters
+
+
+  subroutine SetWriteTimeInterval ( WHH )
+
+    class ( WoosleyHeger_07_HeaderForm ), intent ( in ) :: &
+      WHH
+
+    integer ( KDI ) :: &
+      iProcess, &
+      iRadius
+    real ( KDR ) :: &
+      VelocityMax, &
+      VelocityMaxRadius, &
+      DensityAve, &
+      TimeScaleDensityAve, &
+      TimeScaleVelocityMax
+    type ( CollectiveOperation_R_Form ), allocatable :: &
+      CO
+    class ( GeometryFlatForm ), pointer :: &
+      G
+    class ( Fluid_P_MHN_Form ), pointer :: &
+      F
+
+    associate ( I => WHH % Integrator )
+
+    associate ( FA => WHH % Fluid_ASC )
+    F => FA % Fluid_P_MHN ( )
+
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
+    G => PS % Geometry ( )
+
+    select type ( Chart => PS % Chart )
+    class is ( Chart_SL_Template )
+
+    associate ( C => PS % Communicator ) 
+
+    !-- Find max velocity
+    allocate ( CO )
+    call CO % Initialize ( C, nOutgoing = [ 1 ], nIncoming = [ C % Size ] )
+    CO % Outgoing % Value ( 1 ) &
+      =  LocalMax ( Chart % IsProperCell, &
+                    abs ( F % Value ( :, F % VELOCITY_U ( 1 ) ) ) ) 
+    call CO % Gather ( )
+    VelocityMax  =  maxval ( CO % Incoming % Value )
+    iProcess     =  maxloc ( CO % Incoming % Value, dim = 1 )  -  1
+    deallocate ( CO )
+
+    !-- Find radius of max velocity
+    allocate ( CO )
+    call CO % Initialize &
+           ( C, nOutgoing = [ 1 ], nIncoming = [ 1 ], RootOption = iProcess )
+    if ( C % Rank == iProcess ) then
+      iRadius  =  maxloc ( abs ( F % Value ( :, F % VELOCITY_U ( 1 ) ) ), &
+                           dim = 1 )
+      CO % Outgoing % Value ( 1 )  =  G % Value ( iRadius, G % CENTER ( 1 ) )
+    end if
+    call CO % Broadcast ( )
+    VelocityMaxRadius = CO % Incoming % Value ( 1 )
+    deallocate ( CO )
+
+    select type ( TI => FA % TallyInterior )
+    class is ( Tally_F_P_MHN_Form )
+    DensityAve  =  TI % Value ( TI % BARYON_NUMBER ) / VelocityMaxRadius ** 3 
+    end select !-- TI
+
+    TimeScaleVelocityMax &
+      =  VelocityMaxRadius  /  VelocityMax
+    TimeScaleDensityAve &
+      =  ( CONSTANT % GRAVITATIONAL  *  DensityAve ) ** ( -0.5_KDR )
+
+    I % WriteTimeInterval  &
+      =  min ( TimeScaleDensityAve, TimeScaleVelocityMax )  /  I % nWrite
+
+    call Show ( 'Time Scales', I % IGNORABILITY )
+    call Show ( VelocityMax, Chart % CoordinateUnit ( 1 ) / I % TimeUnit, &
+                'VelocityMax', I % IGNORABILITY )
+    call Show ( VelocityMaxRadius, Chart % CoordinateUnit ( 1 ), &
+                'VelocityMaxRadius', I % IGNORABILITY )
+    call Show ( DensityAve, FA % MassDensityUnit, 'DensityAve', &
+                I % IGNORABILITY )
+    call Show ( TimeScaleDensityAve, I % TimeUnit, 'TimeScaleDensityAve', &
+                I % IGNORABILITY )
+    call Show ( TimeScaleVelocityMax, I % TimeUnit, 'TimeScaleVelocityMax', &
+                I % IGNORABILITY )
+
+    end associate !-- C
+    end select !-- Chart
+    end select !-- PS
+    end associate !-- FA
+    end associate !-- I
+    nullify ( G, F )
+
+  end subroutine SetWriteTimeInterval
 
 
   subroutine PrepareInterpolation ( SI )
@@ -473,6 +588,30 @@ contains
            ( Radius, ElectronFraction, VerbosityOption = CONSOLE % INFO_3 )
 
   end subroutine PrepareInterpolation
+
+
+  function LocalMax ( IsProperCell, V ) result ( ML ) 
+
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      IsProperCell
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      V
+    real ( KDR ) :: &
+      ML
+
+    integer ( KDI ) :: &
+      iV
+
+    ML = - huge ( 0.0_KDR )
+    !$OMP parallel do private ( iV ) &
+    !$OMP reduction ( max : ML )
+    do iV = 1, size ( V )
+      if ( IsProperCell ( iV ) ) &
+        ML  =  max ( ML, V ( iV ) )
+    end do !-- iV
+    !$OMP end parallel do
+ 
+  end function LocalMax
 
 
   subroutine ApplySourcesGravity ( S, Increment, Fluid, TimeStep )
@@ -764,6 +903,10 @@ contains
     integer ( KDI ), dimension ( 3 ) :: &
       lV, uV
 
+    oV   =  C % nGhostLayers ( 1 )
+    oVM  =  ( C % iaBrick ( 1 ) - 1 ) * C % nCellsBrick ( 1 ) &
+            -  C % nGhostLayers ( 1 )
+
     lV = 1
     where ( shape ( Phi_C ) > 1 )
       lV = oV + 1
@@ -773,10 +916,6 @@ contains
     where ( shape ( Phi_C ) > 1 )
       uV = shape ( Phi_C ) - oV
     end where
-
-    oV   =  C % nGhostLayers ( 1 )
-    oVM  =  ( C % iaBrick ( 1 ) - 1 ) * C % nCellsBrick ( 1 ) &
-            -  C % nGhostLayers ( 1 )
 
     !-- Cell-centered Phi
     !$OMP parallel do private ( iV, jV, kV )
@@ -836,30 +975,6 @@ contains
     !$OMP end parallel do
 
   end subroutine ComputeGravityCenter
-
-
-!   function LocalMax ( IsProperCell, V ) result ( ML ) 
-
-!     logical ( KDL ), dimension ( : ), intent ( in ) :: &
-!       IsProperCell
-!     real ( KDR ), dimension ( : ), intent ( in ) :: &
-!       V
-!     real ( KDR ) :: &
-!       ML
-
-!     integer ( KDI ) :: &
-!       iV
-
-!     ML = - huge ( 0.0_KDR )
-!     !$OMP parallel do private ( iV ) &
-!     !$OMP reduction ( max : ML )
-!     do iV = 1, size ( V )
-!       if ( IsProperCell ( iV ) ) &
-!         ML  =  max ( ML, V ( iV ) )
-!     end do !-- iV
-!     !$OMP end parallel do
- 
-!   end function LocalMax
 
 
 end module WoosleyHeger_07_Header_Form

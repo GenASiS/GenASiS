@@ -15,6 +15,8 @@ module WoosleyHeger_07_A__Form
   contains
     procedure, public, pass :: &
       Initialize
+    procedure, public, pass :: &
+      SetWriteTimeInterval
     final :: &
       Finalize
   end type WoosleyHeger_07_A_Form
@@ -56,6 +58,16 @@ contains
 
     call WHH % SetFluid ( )
 
+    !-- Integrator
+
+    call WHH % SetIntegratorParameters ( )
+
+    call WH % InitializeTemplate_C_PS &
+           ( Name, TimeUnitOption = WHH % TimeUnit, &
+             FinishTimeOption = WHH % FinishTime, &
+             CourantFactorOption = WHH % CourantFactor, &
+             nWriteOption = WHH % nWrite )
+
     !-- Cleanup
 
     end select !-- S
@@ -63,6 +75,16 @@ contains
     end associate !-- WHH
 
   end subroutine Initialize
+
+
+  subroutine SetWriteTimeInterval ( I )
+
+    class ( WoosleyHeger_07_A_Form ), intent ( inout ) :: &
+      I
+
+    call I % Header % SetWriteTimeInterval ( )
+
+  end subroutine SetWriteTimeInterval
 
 
   impure elemental subroutine Finalize ( WH )
