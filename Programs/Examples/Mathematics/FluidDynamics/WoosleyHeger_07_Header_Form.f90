@@ -5,6 +5,7 @@ module WoosleyHeger_07_Header_Form
   use Fluid_P__Template
   use Fluid_P_MHN__Form
   use Fluid_ASC__Form
+  use Tally_F_P_MHN__Form
 
   implicit none
   private
@@ -31,17 +32,37 @@ module WoosleyHeger_07_Header_Form
       InitializePositionSpace
     procedure, public, pass :: &
       InitializeFluid
+    procedure, public, pass :: &
+      SetFluid
   end type WoosleyHeger_07_HeaderForm
 
+    private :: &
+      PrepareInterpolation
+
+    integer ( KDI ), private, parameter :: &
+      iRADIUS_TS            = 2, &  !-- must match the profile file columns
+      iRADIAL_VELOCITY_TS   = 3, &
+      iDENSITY_TS           = 4, &
+      iTEMPERATURE_TS       = 5, &
+      iSPECIFIC_ENERGY_TS   = 10, &
+      iELECTRON_FRACTION_TS = 11
+    integer ( KDI ), private, parameter :: &
+      iRADIAL_VELOCITY_SI   = 1, &  !-- spline interpolation
+      iDENSITY_SI           = 2, &
+      iTEMPERATURE_SI       = 3, &
+      iSPECIFIC_ENERGY_SI   = 4, &
+      iELECTRON_FRACTION_SI = 5
+
   public :: &
-    ApplySourcesGravity, &
-    ComputeGravity
+    ApplySourcesGravity
 
     private :: &
-  !     PrepareInterpolation, &
-      ComputeGravityEdge, &
-      ComputeGravityCenter, &
-      ApplySourcesKernel!, &
+      ComputeGravity, &
+      ApplySourcesKernel
+
+      private :: &
+        ComputeGravityEdge, &
+        ComputeGravityCenter!, &
   !     LocalMax
 
     real ( KDR ), dimension ( : ), allocatable, private :: &
@@ -205,6 +226,255 @@ contains
   end subroutine InitializeFluid
 
 
+  subroutine SetFluid ( WHH )
+
+    class ( WoosleyHeger_07_HeaderForm ), intent ( inout ) :: &
+      WHH
+
+    integer ( KDI ) :: &
+      iV, &  !-- iValue
+      iB     !-- iBoundary
+    real ( KDR ) :: &
+      SE  !-- SpecificEnergy
+    type ( SplineInterpolationForm ), dimension ( 5 ) :: &
+      SI
+    class ( GeometryFlatForm ), pointer :: &
+      G
+    class ( Fluid_P_MHN_Form ), pointer :: &
+      F
+
+    call PrepareInterpolation ( SI )
+
+    associate ( FA => WHH % Fluid_ASC )
+    F => FA % Fluid_P_MHN ( )
+
+    select type ( PS => WHH % Integrator % PositionSpace )
+    class is ( Atlas_SC_Form )
+    G => PS % Geometry ( )
+
+    associate &
+      (     N => F % Value ( :, F % COMOVING_DENSITY ), &
+            T => F % Value ( :, F % TEMPERATURE ), &
+          V_1 => F % Value ( :, F % VELOCITY_U ( 1 ) ), &
+          V_2 => F % Value ( :, F % VELOCITY_U ( 2 ) ), &
+          V_3 => F % Value ( :, F % VELOCITY_U ( 3 ) ), &
+            E => F % Value ( :, F % INTERNAL_ENERGY ), &
+          Y_E => F % Value ( :, F % ELECTRON_FRACTION ), &
+            R => G % Value ( :, G % CENTER ( 1 ) ) )
+
+    do iV = 1, size ( N )
+
+      call SI ( iDENSITY_SI ) % Evaluate ( R ( iV ), N ( iV ) ) 
+      call SI ( iTEMPERATURE_SI ) % Evaluate ( R ( iV ) , T ( iV ) ) 
+      call SI ( iRADIAL_VELOCITY_SI ) % Evaluate ( R ( iV ), V_1 ( iV ) ) 
+      call SI ( iSPECIFIC_ENERGY_SI ) % Evaluate ( R ( iV ), SE ) 
+      call SI ( iELECTRON_FRACTION_SI ) % Evaluate ( R ( iV ), Y_E ( iV ) ) 
+
+      E ( iV )  =  SE  *  N ( iV )
+
+    end do !-- iV
+
+    V_2 = 0.0_KDR
+    V_3 = 0.0_KDR
+
+    call F % ComputeFromPrimitive ( G )
+
+    !-- Gravitational potential storage
+
+    select type ( C => PS % Chart )
+    class is ( Chart_SLD_Form )
+      allocate ( Potential ( 0 : C % nCells ( 1 ) ) )  !-- global edges
+      allocate ( Potential_C ( G % nValues ) )  !-- local centers
+      allocate ( Acceleration_C ( G % nValues ) )  !-- local centers
+    end select !-- C
+
+    !-- Tally
+
+    select type ( TI => FA % TallyInterior )
+    class is ( Tally_F_P_MHN_Form )
+      call TI % SetGravitationalPotential ( Potential_C )
+      TI % ComputeGravitationalPotential => ComputeGravity
+    end select !-- TI
+    
+    select type ( TT => FA % TallyTotal )
+    class is ( Tally_F_P_MHN_Form )
+      call TT % SetGravitationalPotential ( Potential_C )
+    end select !-- TT
+    
+    select type ( TC => FA % TallyChange )
+    class is ( Tally_F_P_MHN_Form )
+      call TC % SetGravitationalPotential ( Potential_C )
+    end select !-- TC
+    
+    do iB = 1, size ( FA % TallyBoundaryLocal )
+      select type ( TB => FA % TallyBoundaryLocal ( iB ) % Element )
+      class is ( Tally_F_P_MHN_Form )
+        call TB % SetGravitationalPotential ( Potential_C )
+      end select !-- TB
+      select type ( TB => FA % TallyBoundaryGlobal ( iB ) % Element )
+      class is ( Tally_F_P_MHN_Form )
+        call TB % SetGravitationalPotential ( Potential_C )
+      end select !-- TB
+    end do !-- iB
+
+    end associate !-- N, etc.
+    end select !-- PS
+    end associate !-- FA
+    nullify ( F, G )
+
+  end subroutine SetFluid
+
+
+  subroutine PrepareInterpolation ( SI )
+
+    type ( SplineInterpolationForm ), dimension ( 5 ), intent ( inout ) :: &
+      SI
+
+    integer ( KDI ) :: &
+      iV
+    real ( KDR ) :: &
+      Slope_N, &
+      Slope_T, &
+      Slope_SE, &
+      Slope_Y_E
+    real ( KDR ), dimension ( : ), allocatable :: &
+      RC, &   !-- RadiusCenter
+      dRC, &  !-- WidthCenter
+      Radius, &
+      RadialVelocity, &
+      Density, &
+      Temperature, &
+      SpecificEnergy, &
+      ElectronFraction
+    real ( KDR ), dimension ( :, : ), allocatable :: &
+      Profile
+    character ( LDF ) :: &
+      Path, &
+      Filename
+    type ( TableStreamForm ) :: &
+      TS
+
+    Path = '../Parameters/'
+    Filename = 'WH07_S12_08.d.stripped'
+
+    call TS % Initialize &
+           ( Filename, PROGRAM_HEADER % Communicator % Rank, &
+             PathOption = Path )
+    call TS % Read ( Profile, oRowOption = 2 )
+
+    !-- Set "edge" values
+
+    associate &
+      (   R => Profile ( :, iRADIUS_TS ), &             !-- cell outer edge
+        V_R => Profile ( :, iRADIAL_VELOCITY_TS ), &    !-- cell outer edge
+          N => Profile ( :, iDENSITY_TS ), &            !-- cell center
+          T => Profile ( :, iTEMPERATURE_TS ), &        !-- cell center
+        Y_E => Profile ( :, iELECTRON_FRACTION_TS ), &  !-- cell center
+         SE => Profile ( :, iSPECIFIC_ENERGY_TS ), &    !-- cell center
+        nProfile => size ( Profile, dim = 1 ) )
+
+    allocate ( Radius ( nProfile + 1 ) )
+    allocate ( RadialVelocity ( nProfile + 1 ) )
+    allocate ( dRC ( nProfile ) )
+    allocate ( RC ( nProfile ) )
+    Radius ( 1 )          =  0.0_KDR
+    RadialVelocity ( 1 )  =  0.0_KDR
+    do iV = 2, nProfile + 1
+      Radius         ( iV )  =  R ( iV - 1 )
+      RadialVelocity ( iV )  =  V_R ( iV - 1 )
+      dRC ( iV - 1 )  =  Radius ( iV )  -  Radius ( iV - 1 )
+      RC  ( iV - 1 )  =  Radius ( iV - 1 )  +  0.5_KDR * dRC ( iV - 1 )
+    end do
+
+    allocate ( Density ( nProfile + 1 ) )
+    allocate ( Temperature ( nProfile + 1 ) )
+    allocate ( SpecificEnergy ( nProfile + 1 ) )
+    allocate ( ElectronFraction ( nProfile + 1 ) )
+
+    !-- First edge extrapolated
+    Slope_N    =  ( N ( 2 )  -  N ( 1 ) )  &
+                  /  ( 0.5_KDR * ( dRC ( 1 )  +  dRC ( 2 ) ) )
+    Slope_T    =  ( T ( 2 )  -  T ( 1 ) )  &
+                  /  ( 0.5_KDR * ( dRC ( 1 )  +  dRC ( 2 ) ) )
+    Slope_SE   =  ( SE ( 2 )  -  SE ( 1 ) )  &
+                  /  ( 0.5_KDR * ( dRC ( 1 )  +  dRC ( 2 ) ) )
+    Slope_Y_E  =  ( Y_E ( 2 )  -  Y_E ( 1 ) )  &
+                  /  ( 0.5_KDR * ( dRC ( 1 )  +  dRC ( 2 ) ) )
+
+    Density          ( 1 )  =  N ( 1 )  &
+                               +  Slope_N   * ( Radius ( 1 )  -  RC ( 1 ) )
+    Temperature      ( 1 )  =  T ( 1 )  &
+                               +  Slope_T   * ( Radius ( 1 )  -  RC ( 1 ) )
+    SpecificEnergy   ( 1 )  =  SE ( 1 )  &
+                               +  Slope_SE  * ( Radius ( 1 )  -  RC ( 1 ) )
+    ElectronFraction ( 1 )  =  Y_E ( 1 )  &
+                               +  Slope_Y_E * ( Radius ( 1 )  -  RC ( 1 ) )
+
+    do iV = 2, nProfile + 1
+
+      if ( iV <= nProfile ) then
+        Slope_N    =  ( N ( iV )  -  N ( iV - 1 ) )  &
+                      /  ( 0.5_KDR * ( dRC ( iV - 1 )  +  dRC ( iV ) ) )
+        Slope_T    =  ( T ( iV )  -  T ( iV - 1 ) )  &
+                      /  ( 0.5_KDR * ( dRC ( iV - 1 )  +  dRC ( iV ) ) )
+        Slope_SE   =  ( SE ( iV )  -  SE ( iV - 1 ) )  &
+                      /  ( 0.5_KDR * ( dRC ( iV - 1 )  +  dRC ( iV ) ) )
+        Slope_Y_E  =  ( Y_E ( iV )  -  Y_E ( iV - 1 ) )  &
+                      /  ( 0.5_KDR * ( dRC ( iV - 1 )  +  dRC ( iV ) ) )
+      else
+        !-- Last edge extrapolated with same slope
+      end if
+
+      Density ( iV )  &
+        =  N   ( iV - 1 )  +  Slope_N   * ( Radius ( iV )  -  RC ( iV - 1 ) )
+      Temperature ( iV )  &
+        =  T   ( iV - 1 )  +  Slope_T   * ( Radius ( iV )  -  RC ( iV - 1 ) )
+      SpecificEnergy ( iV )  &
+        =  SE  ( iV - 1 )  +  Slope_SE  * ( Radius ( iV )  -  RC ( iV - 1 ) )
+      ElectronFraction ( iV )  &
+        =  Y_E ( iV - 1 )  +  Slope_Y_E * ( Radius ( iV )  -  RC ( iV - 1 ) )
+
+    end do !-- iV
+
+    end associate !-- R, etc.
+
+    call Show ( 'First few values' )
+    call Show ( Profile ( 1 : 5, iRADIUS_TS ), 'RadiusTable' )
+    call Show ( Radius ( 1 : 5 ), 'RadiusEdge' )
+    call Show ( Profile ( 1 : 5, iRADIAL_VELOCITY_TS ), 'RadialVelocityTable' )
+    call Show ( RadialVelocity ( 1 : 5 ), 'RadialVelocityEdge' )
+    call Show ( Profile ( 1 : 5, iDENSITY_TS ), 'DensityTable' )
+    call Show ( Density ( 1 : 5 ), 'DensityEdge' )
+    call Show ( Profile ( 1 : 5, iTEMPERATURE_TS ), 'TemperatureTable' )
+    call Show ( Temperature ( 1 : 5 ), 'TemperatureEdge' )
+    call Show ( Profile ( 1 : 5, iSPECIFIC_ENERGY_TS ), 'SpecificEnergyTable' )
+    call Show ( SpecificEnergy ( 1 : 5 ), 'SpecificEnergyEdge' )
+    call Show ( Profile ( 1 : 5, iELECTRON_FRACTION_TS ), &
+                'ElectronFractionTable' )
+    call Show ( ElectronFraction ( 1 : 5 ), 'ElectronFractionEdge' )
+
+    Radius          =  Radius          *  UNIT % CENTIMETER
+    RadialVelocity  =  RadialVelocity  *  UNIT % CENTIMETER / UNIT % SECOND
+    Density         =  Density         *  UNIT % MASS_DENSITY_CGS
+    Temperature     =  Temperature     *  UNIT % KELVIN
+    SpecificEnergy  =  SpecificEnergy  *  UNIT % ERG / UNIT % GRAM
+
+    !-- SplineInterpolation initialization
+
+    call SI ( iRADIAL_VELOCITY_SI ) % Initialize &
+           ( Radius, RadialVelocity, VerbosityOption = CONSOLE % INFO_3 )
+    call SI ( iDENSITY_SI ) % Initialize &
+           ( Radius, Density, VerbosityOption = CONSOLE % INFO_3 )
+    call SI ( iTEMPERATURE_SI ) % Initialize &
+           ( Radius, Temperature, VerbosityOption = CONSOLE % INFO_3 )
+    call SI ( iSPECIFIC_ENERGY_SI ) % Initialize &
+           ( Radius, SpecificEnergy, VerbosityOption = CONSOLE % INFO_3 )
+    call SI ( iELECTRON_FRACTION_SI ) % Initialize &
+           ( Radius, ElectronFraction, VerbosityOption = CONSOLE % INFO_3 )
+
+  end subroutine PrepareInterpolation
+
+
   subroutine ApplySourcesGravity ( S, Increment, Fluid, TimeStep )
 
     class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
@@ -296,11 +566,11 @@ contains
     select type ( PS )
     class is ( Atlas_SC_Form )
 
-    select type ( Chart => PS % Chart )
+    select type ( C => PS % Chart )
     class is ( Chart_SLD_Form )
 
     call ComputeGravityEdge &
-           ( Chart, F % Value ( :, F % CONSERVED_DENSITY ), &
+           ( C, F % Value ( :, F % CONSERVED_DENSITY ), &
              G % Value ( :, G % VOLUME_JACOBIAN ), &
              G % VALUE ( :, G % CENTER ( 1 ) ), &
              G % VALUE ( :, G % WIDTH ( 1 ) ), CONSTANT % GRAVITATIONAL, &
@@ -308,11 +578,11 @@ contains
 
     call Clear ( Potential_C )
     call Clear ( Acceleration_C )
-    call Chart % SetVariablePointer ( Potential_C,    Phi_C )
-    call Chart % SetVariablePointer ( Acceleration_C, dPhi_dR_C )
-    call Chart % SetVariablePointer ( G % VALUE ( :, G % CENTER ( 1 ) ), R )
+    call C % SetVariablePointer ( Potential_C,    Phi_C )
+    call C % SetVariablePointer ( Acceleration_C, dPhi_dR_C )
+    call C % SetVariablePointer ( G % VALUE ( :, G % CENTER ( 1 ) ), R )
 
-    call ComputeGravityCenter ( Phi_C, dPhi_dR_C, Chart, R, Potential )
+    call ComputeGravityCenter ( Phi_C, dPhi_dR_C, C, R, Potential )
 
     ! !-- 1D
 
@@ -328,7 +598,7 @@ contains
     ! end do
     ! Potential_C ( oV + nV + 1 )  =  Potential ( oVM + oV + nV )
 
-    end select !-- Chart
+    end select !-- C
     end select !-- PS
     end select !-- F
 
@@ -337,154 +607,55 @@ contains
   end subroutine ComputeGravity
 
 
-!   subroutine PrepareInterpolation ( SI )
+  subroutine ApplySourcesKernel ( KV_M_1, KV_E, D, V_1, dPhi_dR, G, dT, oV )
 
-!     type ( SplineInterpolationForm ), dimension ( 5 ), intent ( inout ) :: &
-!       SI
+    real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
+      KV_M_1, &
+      KV_E
+    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+      D, &
+      V_1, &
+      dPhi_dR
+    real ( KDR ), intent ( in ) :: &
+      G, &
+      dT
+    integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
+      oV
 
-!     integer ( KDI ) :: &
-!       iV
-!     real ( KDR ) :: &
-!       Slope_N, &
-!       Slope_T, &
-!       Slope_SE, &
-!       Slope_Y_E
-!     real ( KDR ), dimension ( : ), allocatable :: &
-!       RC, &   !-- RadiusCenter
-!       dRC, &  !-- WidthCenter
-!       Radius, &
-!       RadialVelocity, &
-!       Density, &
-!       Temperature, &
-!       SpecificEnergy, &
-!       ElectronFraction
-!     real ( KDR ), dimension ( :, : ), allocatable :: &
-!       Profile
-!     character ( LDF ) :: &
-!       Path, &
-!       Filename
-!     type ( TableStreamForm ) :: &
-!       TS
+    integer ( KDI ) :: &
+      iV, jV, kV
+    integer ( KDI ), dimension ( 3 ) :: &
+      lV, uV
+    real ( KDR ) :: &
+      dPhi_dR_C
 
-!     Path = '../Parameters/'
-!     Filename = 'WH07_S12_08.d.stripped'
+    lV = 1
+    where ( shape ( D ) > 1 )
+      lV = oV + 1
+    end where
+    
+    uV = 1
+    where ( shape ( D ) > 1 )
+      uV = shape ( D ) - oV
+    end where
 
-!     call TS % Initialize &
-!            ( Filename, PROGRAM_HEADER % Communicator % Rank, &
-!              PathOption = Path )
-!     call TS % Read ( Profile, oRowOption = 2 )
+    !$OMP parallel do private ( iV, jV, kV )
+    do kV = lV ( 3 ), uV ( 3 ) 
+      do jV = lV ( 2 ), uV ( 2 )
+        do iV = lV ( 1 ), uV ( 1 )
+          KV_M_1 ( iV, jV, kV )  &
+            =  KV_M_1 ( iV, jV, kV )  &
+               -  dT  *  D ( iV, jV, kV )  *  dPhi_dR ( iV, jV, kV )
+          KV_E ( iV, jV, kV )  &
+            =  KV_E ( iV, jV, kV )  &
+               -  dT  *  D ( iV, jV, kV )  *  dPhi_dR ( iV, jV, kV ) &
+                      *  V_1 ( iV, jV, kV ) 
+        end do
+      end do
+    end do
+    !$OMP end parallel do
 
-!     !-- Set "edge" values
-
-!     associate &
-!       (   R => Profile ( :, iRADIUS_TS ), &             !-- cell outer edge
-!         V_R => Profile ( :, iRADIAL_VELOCITY_TS ), &    !-- cell outer edge
-!           N => Profile ( :, iDENSITY_TS ), &            !-- cell center
-!           T => Profile ( :, iTEMPERATURE_TS ), &        !-- cell center
-!         Y_E => Profile ( :, iELECTRON_FRACTION_TS ), &  !-- cell center
-!          SE => Profile ( :, iSPECIFIC_ENERGY_TS ), &    !-- cell center
-!         nProfile => size ( Profile, dim = 1 ) )
-
-!     allocate ( Radius ( nProfile + 1 ) )
-!     allocate ( RadialVelocity ( nProfile + 1 ) )
-!     allocate ( dRC ( nProfile ) )
-!     allocate ( RC ( nProfile ) )
-!     Radius ( 1 )          =  0.0_KDR
-!     RadialVelocity ( 1 )  =  0.0_KDR
-!     do iV = 2, nProfile + 1
-!       Radius         ( iV )  =  R ( iV - 1 )
-!       RadialVelocity ( iV )  =  V_R ( iV - 1 )
-!       dRC ( iV - 1 )  =  Radius ( iV )  -  Radius ( iV - 1 )
-!       RC  ( iV - 1 )  =  Radius ( iV - 1 )  +  0.5_KDR * dRC ( iV - 1 )
-!     end do
-
-!     allocate ( Density ( nProfile + 1 ) )
-!     allocate ( Temperature ( nProfile + 1 ) )
-!     allocate ( SpecificEnergy ( nProfile + 1 ) )
-!     allocate ( ElectronFraction ( nProfile + 1 ) )
-
-!     !-- First edge extrapolated
-!     Slope_N    =  ( N ( 2 )  -  N ( 1 ) )  &
-!                   /  ( 0.5_KDR * ( dRC ( 1 )  +  dRC ( 2 ) ) )
-!     Slope_T    =  ( T ( 2 )  -  T ( 1 ) )  &
-!                   /  ( 0.5_KDR * ( dRC ( 1 )  +  dRC ( 2 ) ) )
-!     Slope_SE   =  ( SE ( 2 )  -  SE ( 1 ) )  &
-!                   /  ( 0.5_KDR * ( dRC ( 1 )  +  dRC ( 2 ) ) )
-!     Slope_Y_E  =  ( Y_E ( 2 )  -  Y_E ( 1 ) )  &
-!                   /  ( 0.5_KDR * ( dRC ( 1 )  +  dRC ( 2 ) ) )
-
-!     Density          ( 1 )  =  N ( 1 )  &
-!                                +  Slope_N   * ( Radius ( 1 )  -  RC ( 1 ) )
-!     Temperature      ( 1 )  =  T ( 1 )  &
-!                                +  Slope_T   * ( Radius ( 1 )  -  RC ( 1 ) )
-!     SpecificEnergy   ( 1 )  =  SE ( 1 )  &
-!                                +  Slope_SE  * ( Radius ( 1 )  -  RC ( 1 ) )
-!     ElectronFraction ( 1 )  =  Y_E ( 1 )  &
-!                                +  Slope_Y_E * ( Radius ( 1 )  -  RC ( 1 ) )
-
-!     do iV = 2, nProfile + 1
-
-!       if ( iV <= nProfile ) then
-!         Slope_N    =  ( N ( iV )  -  N ( iV - 1 ) )  &
-!                       /  ( 0.5_KDR * ( dRC ( iV - 1 )  +  dRC ( iV ) ) )
-!         Slope_T    =  ( T ( iV )  -  T ( iV - 1 ) )  &
-!                       /  ( 0.5_KDR * ( dRC ( iV - 1 )  +  dRC ( iV ) ) )
-!         Slope_SE   =  ( SE ( iV )  -  SE ( iV - 1 ) )  &
-!                       /  ( 0.5_KDR * ( dRC ( iV - 1 )  +  dRC ( iV ) ) )
-!         Slope_Y_E  =  ( Y_E ( iV )  -  Y_E ( iV - 1 ) )  &
-!                       /  ( 0.5_KDR * ( dRC ( iV - 1 )  +  dRC ( iV ) ) )
-!       else
-!         !-- Last edge extrapolated with same slope
-!       end if
-
-!       Density ( iV )  &
-!         =  N   ( iV - 1 )  +  Slope_N   * ( Radius ( iV )  -  RC ( iV - 1 ) )
-!       Temperature ( iV )  &
-!         =  T   ( iV - 1 )  +  Slope_T   * ( Radius ( iV )  -  RC ( iV - 1 ) )
-!       SpecificEnergy ( iV )  &
-!         =  SE  ( iV - 1 )  +  Slope_SE  * ( Radius ( iV )  -  RC ( iV - 1 ) )
-!       ElectronFraction ( iV )  &
-!         =  Y_E ( iV - 1 )  +  Slope_Y_E * ( Radius ( iV )  -  RC ( iV - 1 ) )
-
-!     end do
-
-!     end associate !-- R, etc.
-
-!     call Show ( 'First few values' )
-!     call Show ( Profile ( 1 : 5, iRADIUS_TS ), 'RadiusTable' )
-!     call Show ( Radius ( 1 : 5 ), 'RadiusEdge' )
-!     call Show ( Profile ( 1 : 5, iRADIAL_VELOCITY_TS ), 'RadialVelocityTable' )
-!     call Show ( RadialVelocity ( 1 : 5 ), 'RadialVelocityEdge' )
-!     call Show ( Profile ( 1 : 5, iDENSITY_TS ), 'DensityTable' )
-!     call Show ( Density ( 1 : 5 ), 'DensityEdge' )
-!     call Show ( Profile ( 1 : 5, iTEMPERATURE_TS ), 'TemperatureTable' )
-!     call Show ( Temperature ( 1 : 5 ), 'TemperatureEdge' )
-!     call Show ( Profile ( 1 : 5, iSPECIFIC_ENERGY_TS ), 'SpecificEnergyTable' )
-!     call Show ( SpecificEnergy ( 1 : 5 ), 'SpecificEnergyEdge' )
-!     call Show ( Profile ( 1 : 5, iELECTRON_FRACTION_TS ), &
-!                 'ElectronFractionTable' )
-!     call Show ( ElectronFraction ( 1 : 5 ), 'ElectronFractionEdge' )
-
-!     Radius          =  Radius          *  UNIT % CENTIMETER
-!     RadialVelocity  =  RadialVelocity  *  UNIT % CENTIMETER / UNIT % SECOND
-!     Density         =  Density         *  UNIT % MASS_DENSITY_CGS
-!     Temperature     =  Temperature     *  UNIT % KELVIN
-!     SpecificEnergy  =  SpecificEnergy  *  UNIT % ERG / UNIT % GRAM
-
-!     !-- SplineInterpolation initialization
-
-!     call SI ( iRADIAL_VELOCITY_SI ) % Initialize &
-!            ( Radius, RadialVelocity, VerbosityOption = CONSOLE % INFO_3 )
-!     call SI ( iDENSITY_SI ) % Initialize &
-!            ( Radius, Density, VerbosityOption = CONSOLE % INFO_3 )
-!     call SI ( iTEMPERATURE_SI ) % Initialize &
-!            ( Radius, Temperature, VerbosityOption = CONSOLE % INFO_3 )
-!     call SI ( iSPECIFIC_ENERGY_SI ) % Initialize &
-!            ( Radius, SpecificEnergy, VerbosityOption = CONSOLE % INFO_3 )
-!     call SI ( iELECTRON_FRACTION_SI ) % Initialize &
-!            ( Radius, ElectronFraction, VerbosityOption = CONSOLE % INFO_3 )
-
-!   end subroutine PrepareInterpolation
+  end subroutine ApplySourcesKernel
 
 
   subroutine ComputeGravityEdge ( C, D, VJ, R, dR, G, Phi )
@@ -665,57 +836,6 @@ contains
     !$OMP end parallel do
 
   end subroutine ComputeGravityCenter
-
-
-  subroutine ApplySourcesKernel ( KV_M_1, KV_E, D, V_1, dPhi_dR, G, dT, oV )
-
-    real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
-      KV_M_1, &
-      KV_E
-    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
-      D, &
-      V_1, &
-      dPhi_dR
-    real ( KDR ), intent ( in ) :: &
-      G, &
-      dT
-    integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
-      oV
-
-    integer ( KDI ) :: &
-      iV, jV, kV
-    integer ( KDI ), dimension ( 3 ) :: &
-      lV, uV
-    real ( KDR ) :: &
-      dPhi_dR_C
-
-    lV = 1
-    where ( shape ( D ) > 1 )
-      lV = oV + 1
-    end where
-    
-    uV = 1
-    where ( shape ( D ) > 1 )
-      uV = shape ( D ) - oV
-    end where
-
-    !$OMP parallel do private ( iV, jV, kV )
-    do kV = lV ( 3 ), uV ( 3 ) 
-      do jV = lV ( 2 ), uV ( 2 )
-        do iV = lV ( 1 ), uV ( 1 )
-          KV_M_1 ( iV, jV, kV )  &
-            =  KV_M_1 ( iV, jV, kV )  &
-               -  dT  *  D ( iV, jV, kV )  *  dPhi_dR ( iV, jV, kV )
-          KV_E ( iV, jV, kV )  &
-            =  KV_E ( iV, jV, kV )  &
-               -  dT  *  D ( iV, jV, kV )  *  dPhi_dR ( iV, jV, kV ) &
-                      *  V_1 ( iV, jV, kV ) 
-        end do
-      end do
-    end do
-    !$OMP end parallel do
-
-  end subroutine ApplySourcesKernel
 
 
 !   function LocalMax ( IsProperCell, V ) result ( ML ) 

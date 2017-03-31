@@ -52,6 +52,10 @@ contains
     call S % Initialize ( FA, Name )
     S % ApplySources % Pointer => ApplySourcesGravity
 
+    !-- Initial Conditions
+
+    call WHH % SetFluid ( )
+
     !-- Cleanup
 
     end select !-- S

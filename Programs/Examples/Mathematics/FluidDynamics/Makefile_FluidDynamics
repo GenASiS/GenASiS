@@ -201,6 +201,7 @@ WoosleyHeger_07_Header_Form.o: \
   Fluid_P__Template.o \
   Fluid_P_MHN__Form.o \
   Fluid_ASC__Form.o \
+  Tally_F_P_MHN__Form.o \
   WoosleyHeger_07_Header_Form.f90
 
 WoosleyHeger_07_A__Form.o: \
