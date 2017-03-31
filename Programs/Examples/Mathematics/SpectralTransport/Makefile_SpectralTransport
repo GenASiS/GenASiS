@@ -107,13 +107,13 @@ Thermalization_Form.o: \
   Mathematics.o \
   RadiationMoments_Form.o \
   RadiationMoments_ASC__Form.o \
-  Interactions_F__Form.o \
-  Matter_Form.o \
-  Matter_ASC__Form.o \
-  SetFermiDiracSpectrum_Command.o \
-  RadiationMoments_BSLL_ASC_CSLD__Form.o \
-  Interactions_BSLL_ASC_CSLD__Form.o \
   Thermalization_Form.f90
+  # Interactions_F__Form.o \
+  # Matter_Form.o \
+  # Matter_ASC__Form.o \
+  # SetFermiDiracSpectrum_Command.o \
+  # RadiationMoments_BSLL_ASC_CSLD__Form.o \
+  # Interactions_BSLL_ASC_CSLD__Form.o \
 
 Thermalization.o: \
   Basics.o \

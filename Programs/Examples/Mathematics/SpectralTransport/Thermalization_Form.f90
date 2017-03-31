@@ -4,46 +4,40 @@ module Thermalization_Form
   use Mathematics
   use RadiationMoments_Form
   use RadiationMoments_ASC__Form
-  use Interactions_F__Form
-  use Matter_Form
-  use Matter_ASC__Form
-  use SetFermiDiracSpectrum_Command
-  use RadiationMoments_BSLL_ASC_CSLD__Form
+  ! use Interactions_F__Form
+  ! use Matter_Form
+  ! use Matter_ASC__Form
+  ! use SetFermiDiracSpectrum_Command
+  ! use RadiationMoments_BSLL_ASC_CSLD__Form
   use Interactions_BSLL_ASC_CSLD__Form
 
   implicit none
   private
 
-  type, public, extends ( IntegratorTemplate ) :: ThermalizationForm
-    class ( Step_RK_C_Template ), allocatable :: &
-      Step
-    type ( RadiationMoments_ASC_Form ), allocatable :: &
-      Reference_ASC, &
-      Computed_ASC, &
-      FractionalDifference_ASC
-    type ( Matter_ASC_Form ), allocatable :: &
-      Matter_ASC
-    type ( RadiationMoments_BSLL_ASC_CSLD_Form ), allocatable :: &
-      RadiationMoments_BSLL_ASC_CSLD
-    type ( Interactions_BSLL_ASC_CSLD_Form ), allocatable :: &
-      Interactions_BSLL_ASC_CSLD
+  type, public, extends ( Integrator_C_MS_C_PS_Template ) :: &
+    ThermalizationForm
+      type ( RadiationMoments_ASC_Form ), allocatable :: &
+        Reference_ASC, &
+        FractionalDifference_ASC
+      type ( Interactions_BSLL_ASC_CSLD_Form ), allocatable :: &
+        Interactions_BSLL_ASC_CSLD
   contains
     procedure, public, pass :: &
       Initialize
     final :: &
       Finalize  
-    procedure, private, pass :: &
-      ComputeCycle
-    procedure, private, pass :: &
-      ComputeTimeStepLocal
+  !   procedure, private, pass :: &
+  !     ComputeCycle
+  !   procedure, private, pass :: &
+  !     ComputeTimeStepLocal
   end type ThermalizationForm
 
-    private :: &
-      SetMatter, &
-      SetRadiation, &
-      SetInteractions, &
-      SetReference, &
-      ComputeCycle_BSLL_ASC_CSLD
+!     private :: &
+!       SetMatter, &
+!       SetRadiation, &
+!       SetInteractions, &
+!       SetReference, &
+!       ComputeCycle_BSLL_ASC_CSLD
 
     real ( KDR ), private :: &
       TemperatureMin, &
@@ -67,8 +61,8 @@ contains
       nEnergyCells
     real ( KDR ), dimension ( 3 ) :: &
       Scale
-    type ( MeasuredValueForm ) :: &
-      EnergyDensityUnit
+!     type ( MeasuredValueForm ) :: &
+!       EnergyDensityUnit
     type ( MeasuredValueForm ), dimension ( 3 ) :: &
       CoordinateUnit
     character ( LDL ), dimension ( 3 ) :: &
@@ -139,74 +133,74 @@ contains
              nCellsOption = [ nEnergyCells, 1, 1 ], &
              nGhostLayersOption = [ 0, 0, 0 ] )
 
-    !-- Matter
+!     !-- Matter
 
-    allocate ( T % Matter_ASC )
-    associate ( MA => T % Matter_ASC )
-    call MA % Initialize &
-           ( PS, TemperatureUnitOption = UNIT % MEV, &
-             ChemicalPotentialUnitOption = UNIT % MEV )
-    end associate !-- MA
+!     allocate ( T % Matter_ASC )
+!     associate ( MA => T % Matter_ASC )
+!     call MA % Initialize &
+!            ( PS, TemperatureUnitOption = UNIT % MEV, &
+!              ChemicalPotentialUnitOption = UNIT % MEV )
+!     end associate !-- MA
 
-    !-- Radiation
+!     !-- Radiation
 
-    EnergyDensityUnit  =  UNIT % MEV / UNIT % HBAR_C ** 3
+!     EnergyDensityUnit  =  UNIT % MEV / UNIT % HBAR_C ** 3
 
-    allocate ( T % RadiationMoments_BSLL_ASC_CSLD )
-    associate ( RMB => T % RadiationMoments_BSLL_ASC_CSLD )
-    call RMB % Initialize &
-           ( MS, 'GENERIC', EnergyDensityUnitOption = EnergyDensityUnit )
+!     allocate ( T % RadiationMoments_BSLL_ASC_CSLD )
+!     associate ( RMB => T % RadiationMoments_BSLL_ASC_CSLD )
+!     call RMB % Initialize &
+!            ( MS, 'GENERIC', EnergyDensityUnitOption = EnergyDensityUnit )
 
-    !-- Interactions
+!     !-- Interactions
 
-    allocate ( T % Interactions_BSLL_ASC_CSLD )
-    associate ( IB => T % Interactions_BSLL_ASC_CSLD )
-    call IB % Initialize &
-           ( MS, 'FIXED', EnergyDensityUnitOption = EnergyDensityUnit )
-    call RMB % SetInteractions ( IB )
-    end associate !-- IB
+!     allocate ( T % Interactions_BSLL_ASC_CSLD )
+!     associate ( IB => T % Interactions_BSLL_ASC_CSLD )
+!     call IB % Initialize &
+!            ( MS, 'FIXED', EnergyDensityUnitOption = EnergyDensityUnit )
+!     call RMB % SetInteractions ( IB )
+!     end associate !-- IB
 
-    !-- Step
+!     !-- Step
 
-    allocate ( Step_RK2_C_Form :: T % Step )
-    select type ( S => T % Step )
-    class is ( Step_RK2_C_Form )
-    call S % Initialize ( Name )
-    S % ApplyDivergence  =>  null ( )
-    S % ApplyRelaxation  =>  ApplyRelaxation_Interactions
-    end select !-- S
+!     allocate ( Step_RK2_C_Form :: T % Step )
+!     select type ( S => T % Step )
+!     class is ( Step_RK2_C_Form )
+!     call S % Initialize ( Name )
+!     S % ApplyDivergence  =>  null ( )
+!     S % ApplyRelaxation  =>  ApplyRelaxation_Interactions
+!     end select !-- S
 
-    !-- Diagnostics
+!     !-- Diagnostics
 
-    EnergyDensityUnit  =  UNIT % MEV ** 4 / UNIT % HBAR_C ** 3
+!     EnergyDensityUnit  =  UNIT % MEV ** 4 / UNIT % HBAR_C ** 3
 
-    allocate ( T % Reference_ASC )
-    allocate ( T % Computed_ASC )
-    allocate ( T % FractionalDifference_ASC )
-    call T % Reference_ASC % Initialize &
-           ( PS, 'GENERIC', NameOutputOption = 'Reference', &
-             EnergyDensityUnitOption = EnergyDensityUnit )
-    call T % Computed_ASC % Initialize &
-           ( PS, 'GENERIC', NameOutputOption = 'Computed', &
-             EnergyDensityUnitOption = EnergyDensityUnit )
-    call T % FractionalDifference_ASC % Initialize &
-           ( PS, 'GENERIC', NameOutputOption = 'FractionalDifference' )
-    T % SetReference => SetReference
+!     allocate ( T % Reference_ASC )
+!     allocate ( T % Computed_ASC )
+!     allocate ( T % FractionalDifference_ASC )
+!     call T % Reference_ASC % Initialize &
+!            ( PS, 'GENERIC', NameOutputOption = 'Reference', &
+!              EnergyDensityUnitOption = EnergyDensityUnit )
+!     call T % Computed_ASC % Initialize &
+!            ( PS, 'GENERIC', NameOutputOption = 'Computed', &
+!              EnergyDensityUnitOption = EnergyDensityUnit )
+!     call T % FractionalDifference_ASC % Initialize &
+!            ( PS, 'GENERIC', NameOutputOption = 'FractionalDifference' )
+!     T % SetReference => SetReference
 
-    !-- Initial conditions
+!     !-- Initial conditions
 
-    call SetMatter ( T )
-    call SetRadiation ( T )
-    call SetInteractions ( T )
+!     call SetMatter ( T )
+!     call SetRadiation ( T )
+!     call SetInteractions ( T )
 
-    !-- Initialize template
+!     !-- Initialize template
 
-    call T % InitializeTemplate &
-           ( Name, FinishTimeOption = 10.0_KDR * TimeScale )
+!     call T % InitializeTemplate &
+!            ( Name, FinishTimeOption = 10.0_KDR * TimeScale )
 
     !-- Cleanup
 
-    end associate !-- RMB
+!     end associate !-- RMB
     end select !-- MS
     end select !-- PS
 
@@ -220,376 +214,368 @@ contains
 
     if ( allocated ( T % Interactions_BSLL_ASC_CSLD ) ) &
       deallocate ( T % Interactions_BSLL_ASC_CSLD )
-    if ( allocated ( T % RadiationMoments_BSLL_ASC_CSLD ) ) &
-      deallocate ( T % RadiationMoments_BSLL_ASC_CSLD )
-    if ( allocated ( T % Matter_ASC ) ) &
-      deallocate ( T % Matter_ASC )
     if ( allocated ( T % FractionalDifference_ASC ) ) &
       deallocate ( T % FractionalDifference_ASC )
-    if ( allocated ( T % Computed_ASC ) ) &
-      deallocate ( T % Computed_ASC )
     if ( allocated ( T % Reference_ASC ) ) &
       deallocate ( T % Reference_ASC )
-    if ( allocated ( T % Step ) ) &
-      deallocate ( T % Step )
 
-    call T % FinalizeTemplate ( )
+    call T % FinalizeTemplate_C_MS_C_PS ( )
 
   end subroutine Finalize
 
 
-  subroutine ComputeCycle ( I )
+!   subroutine ComputeCycle ( I )
 
-    class ( ThermalizationForm ), intent ( inout ) :: &
-      I
+!     class ( ThermalizationForm ), intent ( inout ) :: &
+!       I
 
-    associate ( Timer => PROGRAM_HEADER % Timer ( I % iTimerComputeCycle ) )
-    call Timer % Start ( )
+!     associate ( Timer => PROGRAM_HEADER % Timer ( I % iTimerComputeCycle ) )
+!     call Timer % Start ( )
 
-    select type ( MS => I % MomentumSpace )
-    class is ( Bundle_SLL_ASC_CSLD_Form )
-      call ComputeCycle_BSLL_ASC_CSLD ( I, MS )
-    end select !-- MS
+!     select type ( MS => I % MomentumSpace )
+!     class is ( Bundle_SLL_ASC_CSLD_Form )
+!       call ComputeCycle_BSLL_ASC_CSLD ( I, MS )
+!     end select !-- MS
 
-    call Timer % Stop ( )
-    end associate !-- Timer
+!     call Timer % Stop ( )
+!     end associate !-- Timer
 
-  end subroutine ComputeCycle
-
-
-  subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
-
-    class ( ThermalizationForm ), intent ( in ) :: &
-      I
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      TimeStepCandidate
-
-    TimeStepCandidate ( 1 ) = 0.01_KDR * TimeScale
-
-  end subroutine ComputeTimeStepLocal
+!   end subroutine ComputeCycle
 
 
-  subroutine SetMatter ( T )
+!   subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
 
-    class ( ThermalizationForm ), intent ( inout ) :: &
-      T
+!     class ( ThermalizationForm ), intent ( in ) :: &
+!       I
+!     real ( KDR ), dimension ( : ), intent ( inout ) :: &
+!       TimeStepCandidate
 
-    real ( KDR ) :: &
-      R_Min, R_Max, &
-      T_Min, T_Max
-    type ( CollectiveOperation_R_Form ) :: &
-      CO
-    class ( GeometryFlatForm ), pointer :: &
-      G
-    class ( MatterForm ), pointer :: &
-      M
+!     TimeStepCandidate ( 1 ) = 0.01_KDR * TimeScale
 
-    M => T % Matter_ASC % Matter ( )
-
-    select type ( PS => T % PositionSpace )
-    class is ( Atlas_SC_Form )
-    G => PS % Geometry ( )
-
-    select type ( C => PS % Chart )
-    class is ( Chart_SL_Template )
-
-    associate &
-      ( R0 => ( C % MaxCoordinate + C % MinCoordinate ) / 2.0_KDR, &
-        L  => ( C % MaxCoordinate - C % MinCoordinate ), &
-        X  => G % Value ( :, G % CENTER ( 1 ) ), &
-        Y  => G % Value ( :, G % CENTER ( 2 ) ), &
-        Z  => G % Value ( :, G % CENTER ( 3 ) ), &
-        Temperature => M % Value ( :, M % TEMPERATURE ), &
-        ChemicalPotential => M % Value ( :, M % CHEMICAL_POTENTIAL ) )
-    associate &
-      ( R => sqrt ( ( X - R0 ( 1 ) ) ** 2  +  ( Y - R0 ( 2 ) ) ** 2 &
-                    +  ( Z - R0 ( 3 ) ) ** 2 ) )
-
-    call CO % Initialize ( PS % Communicator, [ 2 ], [ 2 ] )
-    CO % Outgoing % Value ( 1 ) = minval ( R )
-    CO % Outgoing % Value ( 2 ) = 1.0_KDR / maxval ( R )
-    call CO % Reduce ( REDUCTION % MIN )
-
-    R_Min = CO % Incoming % Value ( 1 )
-    R_Max = 1.0_KDR / CO % Incoming % Value ( 2 )
-
-    T_Min = TemperatureMin
-    T_Max = TemperatureMax
-
-!    Temperature &
-!      = T_Max  -  ( T_Max - T_Min ) / ( R_Max - R_Min ) * ( R - R_Min )
-    Temperature = T_Max * ( ( R_Min / R ) ** ( log10 ( T_Max / T_Min ) &
-                                               / log10 ( R_Max / R_Min ) ) )
-    ChemicalPotential = 0.0_KDR
-
-    end associate !-- R
-    end associate !-- R0, etc.
-    end select !-- C
-    end select !-- PS
-
-    nullify ( G, M )
-
-  end subroutine SetMatter
+!   end subroutine ComputeTimeStepLocal
 
 
-  subroutine SetRadiation ( T )
+!   subroutine SetMatter ( T )
 
-    class ( ThermalizationForm ), intent ( inout ) :: &
-      T
+!     class ( ThermalizationForm ), intent ( inout ) :: &
+!       T
 
-    integer ( KDI ) :: &
-      iF, &  !-- iFiber
-      iE     !-- iEnergy  
-    real ( KDR ) :: &
-      Amplitude, &
-      Perturbation
-    class ( RadiationMomentsForm ), pointer :: &
-      RM
-    class ( GeometryFlatForm ), pointer :: &
-      G
-    class ( MatterForm ), pointer :: &
-      M
+!     real ( KDR ) :: &
+!       R_Min, R_Max, &
+!       T_Min, T_Max
+!     type ( CollectiveOperation_R_Form ) :: &
+!       CO
+!     class ( GeometryFlatForm ), pointer :: &
+!       G
+!     class ( MatterForm ), pointer :: &
+!       M
 
-    associate ( RMB => T % RadiationMoments_BSLL_ASC_CSLD )
+!     M => T % Matter_ASC % Matter ( )
 
-    select type ( MS => T % MomentumSpace )
-    class is ( Bundle_SLL_ASC_CSLD_Form )
+!     select type ( PS => T % PositionSpace )
+!     class is ( Atlas_SC_Form )
+!     G => PS % Geometry ( )
 
-    G => MS % Base_CSLD % Geometry ( )
-    M => T % Matter_ASC % Matter ( )
+!     select type ( C => PS % Chart )
+!     class is ( Chart_SL_Template )
 
-    call InitializeRandomSeed ( PROGRAM_HEADER % Communicator )
+!     associate &
+!       ( R0 => ( C % MaxCoordinate + C % MinCoordinate ) / 2.0_KDR, &
+!         L  => ( C % MaxCoordinate - C % MinCoordinate ), &
+!         X  => G % Value ( :, G % CENTER ( 1 ) ), &
+!         Y  => G % Value ( :, G % CENTER ( 2 ) ), &
+!         Z  => G % Value ( :, G % CENTER ( 3 ) ), &
+!         Temperature => M % Value ( :, M % TEMPERATURE ), &
+!         ChemicalPotential => M % Value ( :, M % CHEMICAL_POTENTIAL ) )
+!     associate &
+!       ( R => sqrt ( ( X - R0 ( 1 ) ) ** 2  +  ( Y - R0 ( 2 ) ) ** 2 &
+!                     +  ( Z - R0 ( 3 ) ) ** 2 ) )
 
-    do iF = 1, MS % nFibers
-      associate ( iBC => MS % iaBaseCell ( iF ) )
-      RM => RMB % RadiationMomentsFiber ( iF )
-      associate &
-        ( J   => RM % Value ( :, RM % COMOVING_ENERGY_DENSITY ), &
-          H_1 => RM % Value ( :, RM % COMOVING_MOMENTUM_DENSITY_U ( 1 ) ), &
-          H_2 => RM % Value ( :, RM % COMOVING_MOMENTUM_DENSITY_U ( 2 ) ), &
-          H_3 => RM % Value ( :, RM % COMOVING_MOMENTUM_DENSITY_U ( 3 ) ), &
-          T   => M % Value ( iBC, M % TEMPERATURE ), &
-          Mu  => M % Value ( iBC, M % CHEMICAL_POTENTIAL ), &
-          E   => RMB % Energy )
+!     call CO % Initialize ( PS % Communicator, [ 2 ], [ 2 ] )
+!     CO % Outgoing % Value ( 1 ) = minval ( R )
+!     CO % Outgoing % Value ( 2 ) = 1.0_KDR / maxval ( R )
+!     call CO % Reduce ( REDUCTION % MIN )
 
-      call SetFermiDiracSpectrum ( E, T, Mu, J )
+!     R_Min = CO % Incoming % Value ( 1 )
+!     R_Max = 1.0_KDR / CO % Incoming % Value ( 2 )
 
-      Amplitude = 0.9_KDR
-      do iE = 1, RMB % nEnergyValues
+!     T_Min = TemperatureMin
+!     T_Max = TemperatureMax
 
-        call random_number ( Perturbation )
-        Perturbation = Amplitude * 2.0_KDR * ( Perturbation - 0.5_KDR ) 
-        J ( iE ) = ( 1.0_KDR + Perturbation )  *  J ( iE )
+! !    Temperature &
+! !      = T_Max  -  ( T_Max - T_Min ) / ( R_Max - R_Min ) * ( R - R_Min )
+!     Temperature = T_Max * ( ( R_Min / R ) ** ( log10 ( T_Max / T_Min ) &
+!                                                / log10 ( R_Max / R_Min ) ) )
+!     ChemicalPotential = 0.0_KDR
 
-        call random_number ( Perturbation )
-        Perturbation &
-          = 0.01_KDR * J ( iE ) * 2.0_KDR * ( Perturbation - 0.5_KDR ) 
-        H_1 ( iE ) = Perturbation
+!     end associate !-- R
+!     end associate !-- R0, etc.
+!     end select !-- C
+!     end select !-- PS
 
-        call random_number ( Perturbation )
-        Perturbation &
-          = 0.01_KDR * J ( iE ) * 2.0_KDR * ( Perturbation - 0.5_KDR ) 
-        H_2 ( iE ) = Perturbation
+!     nullify ( G, M )
 
-        call random_number ( Perturbation )
-        Perturbation &
-          = 0.01_KDR * J ( iE ) * 2.0_KDR * ( Perturbation - 0.5_KDR ) 
-        H_3 ( iE ) = Perturbation
+!   end subroutine SetMatter
+
+
+!   subroutine SetRadiation ( T )
+
+!     class ( ThermalizationForm ), intent ( inout ) :: &
+!       T
+
+!     integer ( KDI ) :: &
+!       iF, &  !-- iFiber
+!       iE     !-- iEnergy  
+!     real ( KDR ) :: &
+!       Amplitude, &
+!       Perturbation
+!     class ( RadiationMomentsForm ), pointer :: &
+!       RM
+!     class ( GeometryFlatForm ), pointer :: &
+!       G
+!     class ( MatterForm ), pointer :: &
+!       M
+
+!     associate ( RMB => T % RadiationMoments_BSLL_ASC_CSLD )
+
+!     select type ( MS => T % MomentumSpace )
+!     class is ( Bundle_SLL_ASC_CSLD_Form )
+
+!     G => MS % Base_CSLD % Geometry ( )
+!     M => T % Matter_ASC % Matter ( )
+
+!     call InitializeRandomSeed ( PROGRAM_HEADER % Communicator )
+
+!     do iF = 1, MS % nFibers
+!       associate ( iBC => MS % iaBaseCell ( iF ) )
+!       RM => RMB % RadiationMomentsFiber ( iF )
+!       associate &
+!         ( J   => RM % Value ( :, RM % COMOVING_ENERGY_DENSITY ), &
+!           H_1 => RM % Value ( :, RM % COMOVING_MOMENTUM_DENSITY_U ( 1 ) ), &
+!           H_2 => RM % Value ( :, RM % COMOVING_MOMENTUM_DENSITY_U ( 2 ) ), &
+!           H_3 => RM % Value ( :, RM % COMOVING_MOMENTUM_DENSITY_U ( 3 ) ), &
+!           T   => M % Value ( iBC, M % TEMPERATURE ), &
+!           Mu  => M % Value ( iBC, M % CHEMICAL_POTENTIAL ), &
+!           E   => RMB % Energy )
+
+!       call SetFermiDiracSpectrum ( E, T, Mu, J )
+
+!       Amplitude = 0.9_KDR
+!       do iE = 1, RMB % nEnergyValues
+
+!         call random_number ( Perturbation )
+!         Perturbation = Amplitude * 2.0_KDR * ( Perturbation - 0.5_KDR ) 
+!         J ( iE ) = ( 1.0_KDR + Perturbation )  *  J ( iE )
+
+!         call random_number ( Perturbation )
+!         Perturbation &
+!           = 0.01_KDR * J ( iE ) * 2.0_KDR * ( Perturbation - 0.5_KDR ) 
+!         H_1 ( iE ) = Perturbation
+
+!         call random_number ( Perturbation )
+!         Perturbation &
+!           = 0.01_KDR * J ( iE ) * 2.0_KDR * ( Perturbation - 0.5_KDR ) 
+!         H_2 ( iE ) = Perturbation
+
+!         call random_number ( Perturbation )
+!         Perturbation &
+!           = 0.01_KDR * J ( iE ) * 2.0_KDR * ( Perturbation - 0.5_KDR ) 
+!         H_3 ( iE ) = Perturbation
         
-      end do !-- iE
+!       end do !-- iE
 
-      call RM % ComputeFromPrimitive ( iBC, G )
+!       call RM % ComputeFromPrimitive ( iBC, G )
 
-      end associate !-- J, etc.
-      end associate !-- iBC
-    end do !-- iF
+!       end associate !-- J, etc.
+!       end associate !-- iBC
+!     end do !-- iF
 
-    end select !-- MS
-    end associate !-- RMB
-    nullify ( G, M, RM )
+!     end select !-- MS
+!     end associate !-- RMB
+!     nullify ( G, M, RM )
 
-  end subroutine SetRadiation
-
-
-  subroutine SetInteractions ( T )
-
-    class ( ThermalizationForm ), intent ( inout ) :: &
-      T
-
-    class ( Interactions_F_Form ), pointer :: &
-      I
-    class ( MatterForm ), pointer :: &
-      M
-
-    integer ( KDI ) :: &
-      iF  !-- iFiber
-
-    associate &
-      ( IB => T % Interactions_BSLL_ASC_CSLD, &
-        RMB => T % RadiationMoments_BSLL_ASC_CSLD )
-
-    select type ( MS => T % MomentumSpace )
-    class is ( Bundle_SLL_ASC_CSLD_Form )
-
-    M => T % Matter_ASC % Matter ( )
-
-    do iF = 1, MS % nFibers
-      associate ( iBC => MS % iaBaseCell ( iF ) )
-      I => IB % InteractionsFiber_F ( iF )
-      associate &
-        ( J_Eq  => I % Value ( :, I % EQUILIBRIUM_DENSITY ), &
-          Chi   => I % Value ( :, I % EFFECTIVE_OPACITY ), &
-          Kappa => I % Value ( :, I % TRANSPORT_OPACITY ), &
-          T     => M % Value ( iBC, M % TEMPERATURE ), &
-          Mu    => M % Value ( iBC, M % CHEMICAL_POTENTIAL ), &
-          E     => RMB % Energy )
-
-      call SetFermiDiracSpectrum ( E, T, Mu, J_Eq )
-
-      Chi   = EffectiveOpacity
-      Kappa = TransportOpacity
-
-      end associate !-- J_Eq, etc.
-      end associate !-- iBC
-    end do !-- iF
-
-    end select !-- MS
-    end associate !-- IB, etc.
-    nullify ( M, I )
-
-  end subroutine SetInteractions
+!   end subroutine SetRadiation
 
 
-  subroutine SetReference ( T )
+!   subroutine SetInteractions ( T )
 
-    class ( IntegratorTemplate ), intent ( inout ) :: &
-      T
+!     class ( ThermalizationForm ), intent ( inout ) :: &
+!       T
 
-    integer ( KDI ) :: &
-      iV, &  !-- iValue
-      iF     !-- iFiber
-    type ( Real_1D_Form ), dimension ( : ), allocatable :: &
-      Integrand
-    type ( VolumeIntegralForm ) :: &
-      VI
-    class ( RadiationMomentsForm ), pointer :: &
-      RM, &
-      RM_R, &  !-- RM_Reference
-      RM_C, &  !-- RM_Computed
-      RM_FD    !-- RM_FractionalDifference
-    class ( MatterForm ), pointer :: &
-      M
+!     class ( Interactions_F_Form ), pointer :: &
+!       I
+!     class ( MatterForm ), pointer :: &
+!       M
 
-    select type ( T )
-    class is ( ThermalizationForm )
+!     integer ( KDI ) :: &
+!       iF  !-- iFiber
 
-    select type ( MS => T % MomentumSpace )
-    class is ( Bundle_SLL_ASC_CSLD_Form )
+!     associate &
+!       ( IB => T % Interactions_BSLL_ASC_CSLD, &
+!         RMB => T % RadiationMoments_BSLL_ASC_CSLD )
 
-    associate ( RMB => T % RadiationMoments_BSLL_ASC_CSLD )
+!     select type ( MS => T % MomentumSpace )
+!     class is ( Bundle_SLL_ASC_CSLD_Form )
 
-    RM_R  => T % Reference_ASC % RadiationMoments ( )
-    RM_C  => T % Computed_ASC % RadiationMoments ( )
-    RM_FD => T % FractionalDifference_ASC % RadiationMoments ( )
+!     M => T % Matter_ASC % Matter ( )
 
-    M => T % Matter_ASC % Matter ( )
+!     do iF = 1, MS % nFibers
+!       associate ( iBC => MS % iaBaseCell ( iF ) )
+!       I => IB % InteractionsFiber_F ( iF )
+!       associate &
+!         ( J_Eq  => I % Value ( :, I % EQUILIBRIUM_DENSITY ), &
+!           Chi   => I % Value ( :, I % EFFECTIVE_OPACITY ), &
+!           Kappa => I % Value ( :, I % TRANSPORT_OPACITY ), &
+!           T     => M % Value ( iBC, M % TEMPERATURE ), &
+!           Mu    => M % Value ( iBC, M % CHEMICAL_POTENTIAL ), &
+!           E     => RMB % Energy )
 
-    !-- Reference blackbody
+!       call SetFermiDiracSpectrum ( E, T, Mu, J_Eq )
 
-    associate &
-      ( J_R    => RM_R % Value ( :, RM_R % COMOVING_ENERGY_DENSITY ), &
-        T      => M % Value ( :, M % TEMPERATURE ), &
-        Mu     => M % Value ( :, M % CHEMICAL_POTENTIAL ), &
-        a      => CONSTANT % RADIATION )
+!       Chi   = EffectiveOpacity
+!       Kappa = TransportOpacity
 
-    do iV = 1, RM_R % nValues
-      if ( Mu ( iV ) == 0.0_KDR .and. T ( iV ) > 0.0_KDR ) then
-        J_R ( iV )  =  ( 7.0_KDR / 8.0_KDR )  *  ( a / 2.0_KDR )  &
-                       *  T ( iV ) ** 4
-      else
-        J_R ( iV ) = huge ( 0.0_KDR )
-      end if
-    end do !-- iV
+!       end associate !-- J_Eq, etc.
+!       end associate !-- iBC
+!     end do !-- iF
 
-    !-- Integrated spectrum and difference
+!     end select !-- MS
+!     end associate !-- IB, etc.
+!     nullify ( M, I )
 
-    associate &
-      ( J_C  => RM_C  % Value ( :, RM_C  % COMOVING_ENERGY_DENSITY ), &
-        J_FD => RM_FD % Value ( :, RM_FD % COMOVING_ENERGY_DENSITY ), &
-        CF   => MS % Fiber_CSLL )
-
-    do iF = 1, MS % nFibers
-      RM => RMB % RadiationMomentsFiber ( iF )
-      associate ( iBC => MS % iaBaseCell ( iF ) )
-
-      associate ( J => RM % Value ( :, RM % COMOVING_ENERGY_DENSITY ) )
-      allocate ( Integrand ( 1 ) )
-      call Integrand ( 1 ) % Initialize ( size ( J ) )
-      Integrand ( 1 ) % Value = J
-      call VI % Compute ( CF, Integrand, J_C ( iBC : iBC ) )
-      deallocate ( Integrand )
-      end associate !-- J
-
-      J_FD ( iBC )  =  ( J_C ( iBC )  -  J_R ( iBC ) )  /  J_R ( iBC )
-
-      end associate !-- iBC
-    end do !-- iF
-
-    end associate !-- J_C, etc.
-    end associate !-- J_Eq, etc.
-    end associate !-- RMB
-    end select !-- MS
-    end select !-- T
-
-    nullify ( M, RM, RM_R, RM_C, RM_FD )
-
-  end subroutine SetReference
+!   end subroutine SetInteractions
 
 
-  subroutine ComputeCycle_BSLL_ASC_CSLD ( T, MS )
+!   subroutine SetReference ( T )
 
-    class ( ThermalizationForm ), intent ( inout ) :: &
-      T
-    class ( Bundle_SLL_ASC_CSLD_Form ), intent ( inout ) :: &
-      MS
+!     class ( IntegratorTemplate ), intent ( inout ) :: &
+!       T
 
-    integer ( KDI ) :: &
-      iF     !-- iFiber
-    real ( KDR ) :: &
-      TimeNew
-    class ( GeometryFlatForm ), pointer :: &
-      G
-    class ( RadiationMomentsForm ), pointer :: &
-      RM
+!     integer ( KDI ) :: &
+!       iV, &  !-- iValue
+!       iF     !-- iFiber
+!     type ( Real_1D_Form ), dimension ( : ), allocatable :: &
+!       Integrand
+!     type ( VolumeIntegralForm ) :: &
+!       VI
+!     class ( RadiationMomentsForm ), pointer :: &
+!       RM, &
+!       RM_R, &  !-- RM_Reference
+!       RM_C, &  !-- RM_Computed
+!       RM_FD    !-- RM_FractionalDifference
+!     class ( MatterForm ), pointer :: &
+!       M
 
-    call T % ComputeNewTime ( TimeNew )
+!     select type ( T )
+!     class is ( ThermalizationForm )
 
-    associate &
-      ( S   => T % Step, &
-        RMB => T % RadiationMoments_BSLL_ASC_CSLD, &
-        CF  => MS % Fiber_CSLL, &
-        TimeStep => TimeNew - T % Time )    
+!     select type ( MS => T % MomentumSpace )
+!     class is ( Bundle_SLL_ASC_CSLD_Form )
 
-    G => MS % Base_CSLD % Geometry ( )
+!     associate ( RMB => T % RadiationMoments_BSLL_ASC_CSLD )
 
-    do iF = 1, MS % nFibers
-      associate ( iBC => MS % iaBaseCell ( iF ) )
-      RM => RMB % RadiationMomentsFiber ( iF )
-      call S % Compute &
-             ( RM, CF, T % Time, TimeStep, GeometryOption = G, &
-               iGeometryValueOption = iBC )
-      end associate !-- iBC
-    end do !-- iF
+!     RM_R  => T % Reference_ASC % RadiationMoments ( )
+!     RM_C  => T % Computed_ASC % RadiationMoments ( )
+!     RM_FD => T % FractionalDifference_ASC % RadiationMoments ( )
 
-    T % iCycle = T % iCycle + 1
-    T % Time = T % Time + TimeStep
-    if ( T % Time == T % WriteTime ) &
-      T % IsCheckpointTime = .true.
+!     M => T % Matter_ASC % Matter ( )
 
-    end associate !-- S, etc.
-    nullify ( G, RM )
+!     !-- Reference blackbody
 
-  end subroutine ComputeCycle_BSLL_ASC_CSLD
+!     associate &
+!       ( J_R    => RM_R % Value ( :, RM_R % COMOVING_ENERGY_DENSITY ), &
+!         T      => M % Value ( :, M % TEMPERATURE ), &
+!         Mu     => M % Value ( :, M % CHEMICAL_POTENTIAL ), &
+!         a      => CONSTANT % RADIATION )
+
+!     do iV = 1, RM_R % nValues
+!       if ( Mu ( iV ) == 0.0_KDR .and. T ( iV ) > 0.0_KDR ) then
+!         J_R ( iV )  =  ( 7.0_KDR / 8.0_KDR )  *  ( a / 2.0_KDR )  &
+!                        *  T ( iV ) ** 4
+!       else
+!         J_R ( iV ) = huge ( 0.0_KDR )
+!       end if
+!     end do !-- iV
+
+!     !-- Integrated spectrum and difference
+
+!     associate &
+!       ( J_C  => RM_C  % Value ( :, RM_C  % COMOVING_ENERGY_DENSITY ), &
+!         J_FD => RM_FD % Value ( :, RM_FD % COMOVING_ENERGY_DENSITY ), &
+!         CF   => MS % Fiber_CSLL )
+
+!     do iF = 1, MS % nFibers
+!       RM => RMB % RadiationMomentsFiber ( iF )
+!       associate ( iBC => MS % iaBaseCell ( iF ) )
+
+!       associate ( J => RM % Value ( :, RM % COMOVING_ENERGY_DENSITY ) )
+!       allocate ( Integrand ( 1 ) )
+!       call Integrand ( 1 ) % Initialize ( size ( J ) )
+!       Integrand ( 1 ) % Value = J
+!       call VI % Compute ( CF, Integrand, J_C ( iBC : iBC ) )
+!       deallocate ( Integrand )
+!       end associate !-- J
+
+!       J_FD ( iBC )  =  ( J_C ( iBC )  -  J_R ( iBC ) )  /  J_R ( iBC )
+
+!       end associate !-- iBC
+!     end do !-- iF
+
+!     end associate !-- J_C, etc.
+!     end associate !-- J_Eq, etc.
+!     end associate !-- RMB
+!     end select !-- MS
+!     end select !-- T
+
+!     nullify ( M, RM, RM_R, RM_C, RM_FD )
+
+!   end subroutine SetReference
+
+
+!   subroutine ComputeCycle_BSLL_ASC_CSLD ( T, MS )
+
+!     class ( ThermalizationForm ), intent ( inout ) :: &
+!       T
+!     class ( Bundle_SLL_ASC_CSLD_Form ), intent ( inout ) :: &
+!       MS
+
+!     integer ( KDI ) :: &
+!       iF     !-- iFiber
+!     real ( KDR ) :: &
+!       TimeNew
+!     class ( GeometryFlatForm ), pointer :: &
+!       G
+!     class ( RadiationMomentsForm ), pointer :: &
+!       RM
+
+!     call T % ComputeNewTime ( TimeNew )
+
+!     associate &
+!       ( S   => T % Step, &
+!         RMB => T % RadiationMoments_BSLL_ASC_CSLD, &
+!         CF  => MS % Fiber_CSLL, &
+!         TimeStep => TimeNew - T % Time )    
+
+!     G => MS % Base_CSLD % Geometry ( )
+
+!     do iF = 1, MS % nFibers
+!       associate ( iBC => MS % iaBaseCell ( iF ) )
+!       RM => RMB % RadiationMomentsFiber ( iF )
+!       call S % Compute &
+!              ( RM, CF, T % Time, TimeStep, GeometryOption = G, &
+!                iGeometryValueOption = iBC )
+!       end associate !-- iBC
+!     end do !-- iF
+
+!     T % iCycle = T % iCycle + 1
+!     T % Time = T % Time + TimeStep
+!     if ( T % Time == T % WriteTime ) &
+!       T % IsCheckpointTime = .true.
+
+!     end associate !-- S, etc.
+!     nullify ( G, RM )
+
+!   end subroutine ComputeCycle_BSLL_ASC_CSLD
 
 
 end module Thermalization_Form
