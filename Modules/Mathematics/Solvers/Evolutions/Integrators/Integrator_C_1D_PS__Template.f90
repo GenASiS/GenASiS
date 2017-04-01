@@ -102,12 +102,14 @@ contains
 
     integer ( KDI ) :: &
       iC  !-- iCurrent
+    type ( TimerForm ), pointer :: &
+      Timer
 
     if ( .not. allocated ( I % Current_ASC_1D ) ) &
       return
 
-!    associate ( Timer => PROGRAM_HEADER % Timer ( I % iTimerComputeTally ) )
-!    call Timer % Start ( )
+    Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerTally )
+    if ( associated ( Timer ) ) call Timer % Start ( )
 
     do iC = 1, I % N_CURRENTS_PS
       associate ( CA => I % Current_ASC_1D ( iC ) % Element )
@@ -117,8 +119,7 @@ contains
       end associate !-- CA
     end do !-- iC
 
-!    call Timer % Stop ( )
-!    end associate !-- Timer
+    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine ComputeTally
 

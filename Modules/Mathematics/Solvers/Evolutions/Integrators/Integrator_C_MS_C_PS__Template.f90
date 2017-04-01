@@ -134,11 +134,14 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
+    type ( TimerForm ), pointer :: &
+      Timer
+
     if ( .not. allocated ( I % Current_BSLL_ASC_CSLD ) ) &
       return
 
-!    associate ( Timer => PROGRAM_HEADER % Timer ( I % iTimerComputeTally ) )
-!    call Timer % Start ( )
+    Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerTally )
+    if ( associated ( Timer ) ) call Timer % Start ( )
 
     associate &
       ( CB => I % Current_BSLL_ASC_CSLD, &
@@ -153,8 +156,7 @@ contains
 
     end associate !-- CB, etc.
 
-!    call Timer % Stop ( )
-!    end associate !-- Timer
+    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine ComputeTally
 

@@ -42,10 +42,9 @@ module RadiationMoments_BSLL_ASC_CSLD__Form
       Finalize
     procedure, private, pass :: &
       SetField
-  end type RadiationMoments_BSLL_ASC_CSLD_Form
-
-    private :: &
+    procedure, public, pass :: &
       ComputeEnergyIntegral
+  end type RadiationMoments_BSLL_ASC_CSLD_Form
 
 contains
 
@@ -160,7 +159,7 @@ contains
 !           ( ComputeChangeOption = ComputeChangeOption, &
 !             IgnorabilityOption  = IgnorabilityOption )
 
-    call ComputeEnergyIntegral ( CB )
+    call CB % ComputeEnergyIntegral ( )
     call CB % EnergyIntegral % ComputeTally &
            ( ComputeChangeOption = ComputeChangeOption, &
              IgnorabilityOption  = IgnorabilityOption )
@@ -322,7 +321,7 @@ contains
 
   subroutine ComputeEnergyIntegral ( RMB )
 
-    type ( RadiationMoments_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
+    class ( RadiationMoments_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
       RMB
 
     integer ( KDI ) :: &
