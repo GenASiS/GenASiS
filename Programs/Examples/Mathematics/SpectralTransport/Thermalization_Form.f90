@@ -7,7 +7,7 @@ module Thermalization_Form
   use RadiationMoments_Form
   use RadiationMoments_ASC__Form
   ! use Interactions_F__Form
-  ! use SetFermiDiracSpectrum_Command
+  use SetPlanckSpectrum_Command
   use RadiationMoments_BSLL_ASC_CSLD__Form
   use Interactions_BSLL_ASC_CSLD__Form
 
@@ -189,7 +189,7 @@ contains
     !-- Initial conditions
 
     call SetFluid ( T )
-!     call SetRadiation ( T )
+    call SetRadiation ( T )
 !     call SetInteractions ( T )
 
 !     !-- Initialize template
@@ -319,83 +319,87 @@ contains
   end subroutine SetFluid
 
 
-!   subroutine SetRadiation ( T )
+  subroutine SetRadiation ( T )
 
-!     class ( ThermalizationForm ), intent ( inout ) :: &
-!       T
+    class ( ThermalizationForm ), intent ( inout ) :: &
+      T
 
-!     integer ( KDI ) :: &
-!       iF, &  !-- iFiber
-!       iE     !-- iEnergy  
-!     real ( KDR ) :: &
-!       Amplitude, &
-!       Perturbation
-!     class ( RadiationMomentsForm ), pointer :: &
-!       RM
-!     class ( GeometryFlatForm ), pointer :: &
-!       G
-!     class ( MatterForm ), pointer :: &
-!       M
+    integer ( KDI ) :: &
+      iF, &  !-- iFiber
+      iE     !-- iEnergy  
+    real ( KDR ) :: &
+      Amplitude, &
+      Perturbation
+    class ( GeometryFlatForm ), pointer :: &
+      G
+    class ( Fluid_P_NR_Form ), pointer :: &
+      F
+    class ( RadiationMomentsForm ), pointer :: &
+      RM
 
-!     associate ( RMB => T % RadiationMoments_BSLL_ASC_CSLD )
+    select type ( MS => T % MomentumSpace )
+    class is ( Bundle_SLL_ASC_CSLD_Form )
+    G => MS % Base_CSLD % Geometry ( )
 
-!     select type ( MS => T % MomentumSpace )
-!     class is ( Bundle_SLL_ASC_CSLD_Form )
+    select type ( FA => T % Current_ASC )
+    class is ( Fluid_ASC_Form )
+    F => FA % Fluid_P_NR ( )
 
-!     G => MS % Base_CSLD % Geometry ( )
-!     M => T % Matter_ASC % Matter ( )
+    select type ( RMB => T % Current_BSLL_ASC_CSLD )
+    type is ( RadiationMoments_BSLL_ASC_CSLD_Form )
 
-!     call InitializeRandomSeed ( PROGRAM_HEADER % Communicator )
+    call InitializeRandomSeed ( PROGRAM_HEADER % Communicator )
 
-!     do iF = 1, MS % nFibers
-!       associate ( iBC => MS % iaBaseCell ( iF ) )
-!       RM => RMB % RadiationMomentsFiber ( iF )
-!       associate &
-!         ( J   => RM % Value ( :, RM % COMOVING_ENERGY_DENSITY ), &
-!           H_1 => RM % Value ( :, RM % COMOVING_MOMENTUM_DENSITY_U ( 1 ) ), &
-!           H_2 => RM % Value ( :, RM % COMOVING_MOMENTUM_DENSITY_U ( 2 ) ), &
-!           H_3 => RM % Value ( :, RM % COMOVING_MOMENTUM_DENSITY_U ( 3 ) ), &
-!           T   => M % Value ( iBC, M % TEMPERATURE ), &
-!           Mu  => M % Value ( iBC, M % CHEMICAL_POTENTIAL ), &
-!           E   => RMB % Energy )
+    do iF = 1, MS % nFibers
+      associate ( iBC => MS % iaBaseCell ( iF ) )
+      RM => RMB % RadiationMomentsFiber ( iF )
+      associate &
+        ( J   => RM % Value ( :, RM % COMOVING_ENERGY_DENSITY ), &
+          H_1 => RM % Value ( :, RM % COMOVING_MOMENTUM_DENSITY_U ( 1 ) ), &
+          H_2 => RM % Value ( :, RM % COMOVING_MOMENTUM_DENSITY_U ( 2 ) ), &
+          H_3 => RM % Value ( :, RM % COMOVING_MOMENTUM_DENSITY_U ( 3 ) ), &
+          T   => F % Value ( iBC, F % TEMPERATURE ), &
+          E   => RMB % Energy )
 
-!       call SetFermiDiracSpectrum ( E, T, Mu, J )
+      call SetPlanckSpectrum ( E, T, J )
 
-!       Amplitude = 0.9_KDR
-!       do iE = 1, RMB % nEnergyValues
+      Amplitude = 0.9_KDR
+      do iE = 1, RMB % nEnergyValues
 
-!         call random_number ( Perturbation )
-!         Perturbation = Amplitude * 2.0_KDR * ( Perturbation - 0.5_KDR ) 
-!         J ( iE ) = ( 1.0_KDR + Perturbation )  *  J ( iE )
+        call random_number ( Perturbation )
+        Perturbation = Amplitude * 2.0_KDR * ( Perturbation - 0.5_KDR ) 
+        J ( iE ) = ( 1.0_KDR + Perturbation )  *  J ( iE )
 
-!         call random_number ( Perturbation )
-!         Perturbation &
-!           = 0.01_KDR * J ( iE ) * 2.0_KDR * ( Perturbation - 0.5_KDR ) 
-!         H_1 ( iE ) = Perturbation
+        call random_number ( Perturbation )
+        Perturbation &
+          = 0.01_KDR * J ( iE ) * 2.0_KDR * ( Perturbation - 0.5_KDR ) 
+        H_1 ( iE ) = Perturbation
 
-!         call random_number ( Perturbation )
-!         Perturbation &
-!           = 0.01_KDR * J ( iE ) * 2.0_KDR * ( Perturbation - 0.5_KDR ) 
-!         H_2 ( iE ) = Perturbation
+        call random_number ( Perturbation )
+        Perturbation &
+          = 0.01_KDR * J ( iE ) * 2.0_KDR * ( Perturbation - 0.5_KDR ) 
+        H_2 ( iE ) = Perturbation
 
-!         call random_number ( Perturbation )
-!         Perturbation &
-!           = 0.01_KDR * J ( iE ) * 2.0_KDR * ( Perturbation - 0.5_KDR ) 
-!         H_3 ( iE ) = Perturbation
+        call random_number ( Perturbation )
+        Perturbation &
+          = 0.01_KDR * J ( iE ) * 2.0_KDR * ( Perturbation - 0.5_KDR ) 
+        H_3 ( iE ) = Perturbation
         
-!       end do !-- iE
+      end do !-- iE
 
-!       call RM % ComputeFromPrimitive ( iBC, G )
+      call RM % ComputeFromPrimitive ( iBC, G )
 
-!       end associate !-- J, etc.
-!       end associate !-- iBC
-!     end do !-- iF
+      end associate !-- J, etc.
+      end associate !-- iBC
+    end do !-- iF
 
-!     end select !-- MS
-!     end associate !-- RMB
-!     nullify ( G, M, RM )
+    end select !-- RMB
+    end select !-- FA
+    end select !-- MS
 
-!   end subroutine SetRadiation
+    nullify ( G, F, RM )
+
+  end subroutine SetRadiation
 
 
 !   subroutine SetInteractions ( T )
