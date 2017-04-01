@@ -2,13 +2,14 @@ module Thermalization_Form
 
   use Basics
   use Mathematics
+  use Fluid_ASC__Form
   use RadiationMoments_Form
   use RadiationMoments_ASC__Form
   ! use Interactions_F__Form
   ! use Matter_Form
   ! use Matter_ASC__Form
   ! use SetFermiDiracSpectrum_Command
-  ! use RadiationMoments_BSLL_ASC_CSLD__Form
+  use RadiationMoments_BSLL_ASC_CSLD__Form
   use Interactions_BSLL_ASC_CSLD__Form
 
   implicit none
@@ -61,8 +62,8 @@ contains
       nEnergyCells
     real ( KDR ), dimension ( 3 ) :: &
       Scale
-!     type ( MeasuredValueForm ) :: &
-!       EnergyDensityUnit
+    type ( MeasuredValueForm ) :: &
+      EnergyDensityUnit
     type ( MeasuredValueForm ), dimension ( 3 ) :: &
       CoordinateUnit
     character ( LDL ), dimension ( 3 ) :: &
@@ -133,42 +134,45 @@ contains
              nCellsOption = [ nEnergyCells, 1, 1 ], &
              nGhostLayersOption = [ 0, 0, 0 ] )
 
-!     !-- Matter
+    !-- Radiation
 
-!     allocate ( T % Matter_ASC )
-!     associate ( MA => T % Matter_ASC )
-!     call MA % Initialize &
-!            ( PS, TemperatureUnitOption = UNIT % MEV, &
-!              ChemicalPotentialUnitOption = UNIT % MEV )
-!     end associate !-- MA
+    EnergyDensityUnit  =  UNIT % MEV / UNIT % HBAR_C ** 3
 
-!     !-- Radiation
+    allocate ( RadiationMoments_BSLL_ASC_CSLD_Form :: &
+               T % Current_BSLL_ASC_CSLD )
+    select type ( RMB => T % Current_BSLL_ASC_CSLD )
+    type is ( RadiationMoments_BSLL_ASC_CSLD_Form )
+    call RMB % Initialize &
+           ( MS, 'GENERIC', EnergyDensityUnitOption = EnergyDensityUnit )
 
-!     EnergyDensityUnit  =  UNIT % MEV / UNIT % HBAR_C ** 3
+    !-- Fluid
 
-!     allocate ( T % RadiationMoments_BSLL_ASC_CSLD )
-!     associate ( RMB => T % RadiationMoments_BSLL_ASC_CSLD )
-!     call RMB % Initialize &
-!            ( MS, 'GENERIC', EnergyDensityUnitOption = EnergyDensityUnit )
+    allocate ( Fluid_ASC_Form :: T % Current_ASC )
+    select type ( FA => T % Current_ASC )
+    class is ( Fluid_ASC_Form )
+    call FA % Initialize &
+           ( PS, 'NON_RELATIVISTIC', TemperatureUnitOption = UNIT % MEV )
 
-!     !-- Interactions
+    !-- Interactions
 
-!     allocate ( T % Interactions_BSLL_ASC_CSLD )
-!     associate ( IB => T % Interactions_BSLL_ASC_CSLD )
-!     call IB % Initialize &
-!            ( MS, 'FIXED', EnergyDensityUnitOption = EnergyDensityUnit )
-!     call RMB % SetInteractions ( IB )
-!     end associate !-- IB
+    allocate ( T % Interactions_BSLL_ASC_CSLD )
+    associate ( IB => T % Interactions_BSLL_ASC_CSLD )
+    call IB % Initialize &
+           ( MS, 'FIXED', EnergyDensityUnitOption = EnergyDensityUnit )
+    call RMB % SetInteractions ( IB )
+    end associate !-- IB
 
-!     !-- Step
+    !-- Step
 
-!     allocate ( Step_RK2_C_Form :: T % Step )
-!     select type ( S => T % Step )
-!     class is ( Step_RK2_C_Form )
-!     call S % Initialize ( Name )
-!     S % ApplyDivergence  =>  null ( )
-!     S % ApplyRelaxation  =>  ApplyRelaxation_Interactions
-!     end select !-- S
+    allocate ( Step_RK2_C_BSLL_ASC_CSLD_C_ASC_Form :: T % Step )
+    select type ( S => T % Step )
+    class is ( Step_RK2_C_BSLL_ASC_CSLD_C_ASC_Form )
+    call S % Initialize ( RMB, FA, Name )
+    S % ApplyDivergence   % Pointer => null ( )  !-- Disable fluid evolution
+    S % ApplyDivergence_S % Pointer => null ( )  !-- Disable spatial 
+                                                 !   section evolution
+    S % ApplyRelaxation_F % Pointer => ApplyRelaxation_Interactions
+    end select !-- S
 
 !     !-- Diagnostics
 
@@ -200,7 +204,8 @@ contains
 
     !-- Cleanup
 
-!     end associate !-- RMB
+    end select !-- FA
+    end select !-- RMB
     end select !-- MS
     end select !-- PS
 

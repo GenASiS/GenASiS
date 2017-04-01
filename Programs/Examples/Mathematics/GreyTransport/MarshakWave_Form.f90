@@ -205,7 +205,8 @@ contains
 
     !-- Fluid
 
-    allocate ( Fluid_ASC_Form :: MW % Current_ASC_1D ( MW % FLUID ) % Element )
+    allocate &
+      ( Fluid_ASC_Form :: MW % Current_ASC_1D ( MW % FLUID ) % Element )
     select type ( FA => MW % Current_ASC_1D ( MW % FLUID ) % Element )
     class is ( Fluid_ASC_Form )
 

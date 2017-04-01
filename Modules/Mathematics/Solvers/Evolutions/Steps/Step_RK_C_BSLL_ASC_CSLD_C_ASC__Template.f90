@@ -33,7 +33,7 @@ module Step_RK_C_BSLL_ASC_CSLD_C_ASC__Template
       type ( Storage_BSLL_ASC_CSLD_Form ), dimension ( : ), allocatable :: &
         K_BSLL_ASC_CSLD
       class ( Chart_SLL_Form ), pointer :: &
-        Grid_F => null ( )
+        Chart_F => null ( )
       class ( Bundle_SLL_ASC_CSLD_Form ), pointer :: &
         Bundle_SLL_ASC_CSLD => null ( )
       class ( Current_BSLL_ASC_CSLD_Template ), pointer :: &
@@ -143,7 +143,7 @@ contains
     associate ( B => S % Bundle_SLL_ASC_CSLD )
     S % nFibers   =  B % nFibers
     S % nSections =  B % nSections
-    S % Grid_F    => B % Fiber_CSLL
+    S % Chart_F    => B % Fiber_CSLL
     end associate !-- B
     call Show ( S % nFibers,   'nFibers',   S % IGNORABILITY )
     call Show ( S % nSections, 'nSections', S % IGNORABILITY )
@@ -523,6 +523,8 @@ contains
       K
     class ( CurrentTemplate ), pointer :: &
       C
+    type ( IncrementDivergence_FV_Form ) :: &
+      ID_Dummy
 
     associate &
       ( CB => C_BSLL_ASC_CSLD, &
@@ -540,9 +542,7 @@ contains
 
       C => CB % CurrentSection ( iS )
 
-      associate &
-        ( Chart => S % Chart, &
-          BF    => BF_CSL_S ( iS ) % Array )
+      associate ( Chart => S % Chart )
 
       S % ApplyDivergence_C => S % ApplyDivergence_S % Pointer
       S % ApplySources_C    => S % ApplySources_S    % Pointer
@@ -556,7 +556,7 @@ contains
       S % ApplySources_C    => null ( )
       S % ApplyDivergence_C => null ( )
 
-      end associate !-- Grid, etc.
+      end associate !-- Chart
 
     end do !-- iS
 
@@ -567,21 +567,24 @@ contains
 
     do iF = 1, S % nFibers
 
+      K => KB % FieldFiber ( iF )
+      call Clear ( K % Value )
+
       C => CB % CurrentFiber ( iF )
 
-      associate ( Grid => S % Grid_F )
+      associate ( Chart => S % Chart_F )
 
       S % ApplyDivergence_C => S % ApplyDivergence_F % Pointer
       S % ApplySources_C    => S % ApplySources_F    % Pointer
       S % ApplyRelaxation_C => S % ApplyRelaxation_F % Pointer
 
-!      call S % ComputeStage_C ( C, Grid, K, TimeStep, iStage )
+      call S % ComputeStage_C ( ID_Dummy, C, Chart, K, TimeStep, iStage )
 
       S % ApplyRelaxation_C => null ( )
       S % ApplySources_C    => null ( )
       S % ApplyDivergence_C => null ( )
 
-      end associate !-- Grid, etc.
+      end associate !-- Chart
 
     end do !-- iF
 
