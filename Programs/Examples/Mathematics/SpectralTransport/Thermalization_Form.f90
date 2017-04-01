@@ -186,9 +186,9 @@ contains
            ( PS, 'GENERIC', NameShortOption = 'FractionalDifference' )
     T % SetReference => SetReference
 
-!     !-- Initial conditions
+    !-- Initial conditions
 
-!     call SetMatter ( T )
+    call SetFluid ( T )
 !     call SetRadiation ( T )
 !     call SetInteractions ( T )
 
@@ -255,67 +255,68 @@ contains
 !   end subroutine ComputeTimeStepLocal
 
 
-!   subroutine SetMatter ( T )
+  subroutine SetFluid ( T )
 
-!     class ( ThermalizationForm ), intent ( inout ) :: &
-!       T
+    class ( ThermalizationForm ), intent ( inout ) :: &
+      T
 
-!     real ( KDR ) :: &
-!       R_Min, R_Max, &
-!       T_Min, T_Max
-!     type ( CollectiveOperation_R_Form ) :: &
-!       CO
-!     class ( GeometryFlatForm ), pointer :: &
-!       G
-!     class ( MatterForm ), pointer :: &
-!       M
+    real ( KDR ) :: &
+      R_Min, R_Max, &
+      T_Min, T_Max
+    type ( CollectiveOperation_R_Form ) :: &
+      CO
+    class ( GeometryFlatForm ), pointer :: &
+      G
+    class ( Fluid_P_NR_Form ), pointer :: &
+      F
 
-!     M => T % Matter_ASC % Matter ( )
+    select type ( PS => T % PositionSpace )
+    class is ( Atlas_SC_Form )
+    G => PS % Geometry ( )
 
-!     select type ( PS => T % PositionSpace )
-!     class is ( Atlas_SC_Form )
-!     G => PS % Geometry ( )
+    select type ( FA => T % Current_ASC )
+    class is ( Fluid_ASC_Form )
+    F => FA % Fluid_P_NR ( )
 
-!     select type ( C => PS % Chart )
-!     class is ( Chart_SL_Template )
+    select type ( C => PS % Chart )
+    class is ( Chart_SL_Template )
 
-!     associate &
-!       ( R0 => ( C % MaxCoordinate + C % MinCoordinate ) / 2.0_KDR, &
-!         L  => ( C % MaxCoordinate - C % MinCoordinate ), &
-!         X  => G % Value ( :, G % CENTER ( 1 ) ), &
-!         Y  => G % Value ( :, G % CENTER ( 2 ) ), &
-!         Z  => G % Value ( :, G % CENTER ( 3 ) ), &
-!         Temperature => M % Value ( :, M % TEMPERATURE ), &
-!         ChemicalPotential => M % Value ( :, M % CHEMICAL_POTENTIAL ) )
-!     associate &
-!       ( R => sqrt ( ( X - R0 ( 1 ) ) ** 2  +  ( Y - R0 ( 2 ) ) ** 2 &
-!                     +  ( Z - R0 ( 3 ) ) ** 2 ) )
+    associate &
+      ( R0 => ( C % MaxCoordinate + C % MinCoordinate ) / 2.0_KDR, &
+        L  => ( C % MaxCoordinate - C % MinCoordinate ), &
+        X  => G % Value ( :, G % CENTER ( 1 ) ), &
+        Y  => G % Value ( :, G % CENTER ( 2 ) ), &
+        Z  => G % Value ( :, G % CENTER ( 3 ) ), &
+        Temperature => F % Value ( :, F % TEMPERATURE ) )
+    associate &
+      ( R => sqrt ( ( X - R0 ( 1 ) ) ** 2  +  ( Y - R0 ( 2 ) ) ** 2 &
+                    +  ( Z - R0 ( 3 ) ) ** 2 ) )
 
-!     call CO % Initialize ( PS % Communicator, [ 2 ], [ 2 ] )
-!     CO % Outgoing % Value ( 1 ) = minval ( R )
-!     CO % Outgoing % Value ( 2 ) = 1.0_KDR / maxval ( R )
-!     call CO % Reduce ( REDUCTION % MIN )
+    call CO % Initialize ( PS % Communicator, [ 2 ], [ 2 ] )
+    CO % Outgoing % Value ( 1 ) = minval ( R )
+    CO % Outgoing % Value ( 2 ) = 1.0_KDR / maxval ( R )
+    call CO % Reduce ( REDUCTION % MIN )
 
-!     R_Min = CO % Incoming % Value ( 1 )
-!     R_Max = 1.0_KDR / CO % Incoming % Value ( 2 )
+    R_Min = CO % Incoming % Value ( 1 )
+    R_Max = 1.0_KDR / CO % Incoming % Value ( 2 )
 
-!     T_Min = TemperatureMin
-!     T_Max = TemperatureMax
+    T_Min = TemperatureMin
+    T_Max = TemperatureMax
 
-! !    Temperature &
-! !      = T_Max  -  ( T_Max - T_Min ) / ( R_Max - R_Min ) * ( R - R_Min )
-!     Temperature = T_Max * ( ( R_Min / R ) ** ( log10 ( T_Max / T_Min ) &
-!                                                / log10 ( R_Max / R_Min ) ) )
-!     ChemicalPotential = 0.0_KDR
+!    Temperature &
+!      = T_Max  -  ( T_Max - T_Min ) / ( R_Max - R_Min ) * ( R - R_Min )
+    Temperature = T_Max * ( ( R_Min / R ) ** ( log10 ( T_Max / T_Min ) &
+                                               / log10 ( R_Max / R_Min ) ) )
 
-!     end associate !-- R
-!     end associate !-- R0, etc.
-!     end select !-- C
-!     end select !-- PS
+    end associate !-- R
+    end associate !-- R0, etc.
+    end select !-- C
+    end select !-- FA
+    end select !-- PS
 
-!     nullify ( G, M )
+    nullify ( G, F )
 
-!   end subroutine SetMatter
+  end subroutine SetFluid
 
 
 !   subroutine SetRadiation ( T )
@@ -476,7 +477,6 @@ contains
 
     select type ( FA => T % Current_ASC )
     class is ( Fluid_ASC_Form )
-
     F => FA % Fluid_P_NR ( )
 
     !-- Reference blackbody
