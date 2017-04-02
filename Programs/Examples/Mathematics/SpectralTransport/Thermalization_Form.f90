@@ -289,7 +289,11 @@ contains
         X  => G % Value ( :, G % CENTER ( 1 ) ), &
         Y  => G % Value ( :, G % CENTER ( 2 ) ), &
         Z  => G % Value ( :, G % CENTER ( 3 ) ), &
-        Temperature => F % Value ( :, F % TEMPERATURE ) )
+        Temperature => F % Value ( :, F % TEMPERATURE ), &
+        Density     => F % Value ( :, F % COMOVING_DENSITY ), &
+        Velocity_1  => F % Value ( :, F % VELOCITY_U ( 1 ) ), &
+        Velocity_2  => F % Value ( :, F % VELOCITY_U ( 2 ) ), &
+        Velocity_3  => F % Value ( :, F % VELOCITY_U ( 3 ) ) )
     associate &
       ( R => sqrt ( ( X - R0 ( 1 ) ) ** 2  +  ( Y - R0 ( 2 ) ) ** 2 &
                     +  ( Z - R0 ( 3 ) ) ** 2 ) )
@@ -309,6 +313,15 @@ contains
 !      = T_Max  -  ( T_Max - T_Min ) / ( R_Max - R_Min ) * ( R - R_Min )
     Temperature = T_Max * ( ( R_Min / R ) ** ( log10 ( T_Max / T_Min ) &
                                                / log10 ( R_Max / R_Min ) ) )
+
+    !-- Only temperature is relevant, but we need values for the following
+    !   to avoid temperature getting blitzed by ComputeFromConserved
+    Density    = 1.0_KDR
+    Velocity_1 = 0.0_KDR
+    Velocity_2 = 0.0_KDR
+    Velocity_3 = 0.0_KDR
+
+    call F % ComputeFromPrimitiveTemperature ( G )
 
     end associate !-- R
     end associate !-- R0, etc.
@@ -496,11 +509,7 @@ contains
         a    =>  CONSTANT % RADIATION )
 
     do iV = 1, RM_R % nValues
-      if ( T ( iV ) > 0.0_KDR ) then
-        J_R ( iV )  =  a  *  T ( iV ) ** 4
-      else
-        J_R ( iV ) = huge ( 0.0_KDR )
-      end if
+      J_R ( iV )  =  a  *  T ( iV ) ** 4
     end do !-- iV
 
     !-- Integrated spectrum and difference
@@ -513,7 +522,8 @@ contains
 
     do iF = 1, MS % nFibers
       associate ( iBC => MS % iaBaseCell ( iF ) )
-      J_FD ( iBC )  =  ( J_C ( iBC )  -  J_R ( iBC ) )  /  J_R ( iBC )
+      J_FD ( iBC )  =  ( J_C ( iBC )  -  J_R ( iBC ) )  &
+                       /  max ( J_R ( iBC ), tiny ( 0.0_KDR ) )
       end associate !-- iBC
     end do !-- iF
 
