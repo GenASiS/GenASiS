@@ -408,6 +408,8 @@ contains
       end associate !-- iBC
     end do !-- iF
 
+    call RMB % LoadSections ( )
+
     end select !-- RMB
     end select !-- FA
     end select !-- MS
