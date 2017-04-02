@@ -243,6 +243,8 @@ contains
     integer ( KDI ) :: &
       iF, &  !-- iFiber
       iE     !-- iEnergy
+    type ( MeasuredValueForm ) :: &
+      EnergyUnit
     character ( 1 + 2 ) :: &
       EnergyNumber
 
@@ -293,8 +295,10 @@ contains
                ( B % Base_ASC, FB % RadiationType, &
                  NameShortOption = trim ( FB % NameShort ) // EnergyNumber, &
                  Velocity_U_UnitOption = FB % Velocity_U_Unit, &
-                 MomentumDensity_U_UnitOption = FB % MomentumDensity_U_Unit, &
-                 MomentumDensity_D_UnitOption = FB % MomentumDensity_D_Unit, &
+                 MomentumDensity_U_UnitOption &
+                   = FB % MomentumDensity_U_Unit, &
+                 MomentumDensity_D_UnitOption &
+                   = FB % MomentumDensity_D_Unit, &
                  EnergyDensityUnitOption = FB % EnergyDensityUnit, &
                  EnergyUnitOption = FB % EnergyUnit, &
                  MomentumUnitOption = FB % MomentumUnit, &
@@ -307,11 +311,20 @@ contains
 
     !-- EnergyIntegral
 
+    associate ( AF => B % FiberMaster )
+    select type ( CF => AF % Chart )
+    class is ( Chart_SLL_Form )
+      EnergyUnit  =  CF % CoordinateUnit ( 1 )
+    end select !--CF
+    end associate !-- AF
+
     allocate ( FB % EnergyIntegral )
     associate ( EI => FB % EnergyIntegral )
       call EI % Initialize &
              ( B % Base_ASC, FB % RadiationType, &
-               NameShortOption = trim ( FB % NameShort ) // '_Integral' )
+               NameShortOption = trim ( FB % NameShort ) // '_Integral', &
+               EnergyDensityUnitOption &
+                 =  FB % EnergyDensityUnit * EnergyUnit ** 3 )
     end associate !-- EI
 
     end associate !-- B

@@ -95,11 +95,11 @@ Thermalization_Form.o: \
   Fluid_ASC__Form.o \
   RadiationMoments_Form.o \
   RadiationMoments_ASC__Form.o \
+  Interactions_F__Form.o \
   SetPlanckSpectrum_Command.o \
   RadiationMoments_BSLL_ASC_CSLD__Form.o \
   Interactions_BSLL_ASC_CSLD__Form.o \
   Thermalization_Form.f90
-  # Interactions_F__Form.o \
 
 Thermalization.o: \
   Basics.o \

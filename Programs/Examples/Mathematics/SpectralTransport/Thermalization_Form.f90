@@ -6,7 +6,7 @@ module Thermalization_Form
   use Fluid_ASC__Form
   use RadiationMoments_Form
   use RadiationMoments_ASC__Form
-  ! use Interactions_F__Form
+  use Interactions_F__Form
   use SetPlanckSpectrum_Command
   use RadiationMoments_BSLL_ASC_CSLD__Form
   use Interactions_BSLL_ASC_CSLD__Form
@@ -28,14 +28,14 @@ module Thermalization_Form
       Finalize  
   !   procedure, private, pass :: &
   !     ComputeCycle
-  !   procedure, private, pass :: &
-  !     ComputeTimeStepLocal
+    procedure, private, pass :: &
+      ComputeTimeStepLocal
   end type ThermalizationForm
 
     private :: &
-!       SetMatter, &
-!       SetRadiation, &
-!       SetInteractions, &
+      SetFluid, &
+      SetRadiation, &
+      SetInteractions, &
       SetReference!, &
 !       ComputeCycle_BSLL_ASC_CSLD
 
@@ -181,21 +181,23 @@ contains
     allocate ( T % FractionalDifference_ASC )
     call T % Reference_ASC % Initialize &
            ( PS, 'GENERIC', NameShortOption = 'Reference', &
-             EnergyDensityUnitOption = EnergyDensityUnit )
+             EnergyDensityUnitOption = EnergyDensityUnit, &
+             IgnorabilityOption = CONSOLE % INFO_2 )
     call T % FractionalDifference_ASC % Initialize &
-           ( PS, 'GENERIC', NameShortOption = 'FractionalDifference' )
+           ( PS, 'GENERIC', NameShortOption = 'FractionalDifference', &
+             IgnorabilityOption = CONSOLE % INFO_2 )
     T % SetReference => SetReference
 
     !-- Initial conditions
 
     call SetFluid ( T )
     call SetRadiation ( T )
-!     call SetInteractions ( T )
+    call SetInteractions ( T )
 
-!     !-- Initialize template
+    !-- Initialize template
 
-!     call T % InitializeTemplate &
-!            ( Name, FinishTimeOption = 10.0_KDR * TimeScale )
+    call T % InitializeTemplate_C_MS_C_PS &
+           ( Name, FinishTimeOption = 10.0_KDR * TimeScale )
 
     !-- Cleanup
 
@@ -243,16 +245,16 @@ contains
 !   end subroutine ComputeCycle
 
 
-!   subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
+  subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
 
-!     class ( ThermalizationForm ), intent ( in ) :: &
-!       I
-!     real ( KDR ), dimension ( : ), intent ( inout ) :: &
-!       TimeStepCandidate
+    class ( ThermalizationForm ), intent ( in ), target :: &
+      I
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      TimeStepCandidate
 
-!     TimeStepCandidate ( 1 ) = 0.01_KDR * TimeScale
+    TimeStepCandidate ( 1 ) = 0.01_KDR * TimeScale
 
-!   end subroutine ComputeTimeStepLocal
+  end subroutine ComputeTimeStepLocal
 
 
   subroutine SetFluid ( T )
@@ -402,53 +404,56 @@ contains
   end subroutine SetRadiation
 
 
-!   subroutine SetInteractions ( T )
+  subroutine SetInteractions ( T )
 
-!     class ( ThermalizationForm ), intent ( inout ) :: &
-!       T
+    class ( ThermalizationForm ), intent ( inout ) :: &
+      T
 
-!     class ( Interactions_F_Form ), pointer :: &
-!       I
-!     class ( MatterForm ), pointer :: &
-!       M
+    integer ( KDI ) :: &
+      iF  !-- iFiber
+    class ( Fluid_P_NR_Form ), pointer :: &
+      F
+    class ( Interactions_F_Form ), pointer :: &
+      I
 
-!     integer ( KDI ) :: &
-!       iF  !-- iFiber
+    select type ( MS => T % MomentumSpace )
+    class is ( Bundle_SLL_ASC_CSLD_Form )
 
-!     associate &
-!       ( IB => T % Interactions_BSLL_ASC_CSLD, &
-!         RMB => T % RadiationMoments_BSLL_ASC_CSLD )
+    select type ( FA => T % Current_ASC )
+    class is ( Fluid_ASC_Form )
+    F => FA % Fluid_P_NR ( )
 
-!     select type ( MS => T % MomentumSpace )
-!     class is ( Bundle_SLL_ASC_CSLD_Form )
+    select type ( RMB => T % Current_BSLL_ASC_CSLD )
+    type is ( RadiationMoments_BSLL_ASC_CSLD_Form )
 
-!     M => T % Matter_ASC % Matter ( )
+    associate ( IB => T % Interactions_BSLL_ASC_CSLD )
 
-!     do iF = 1, MS % nFibers
-!       associate ( iBC => MS % iaBaseCell ( iF ) )
-!       I => IB % InteractionsFiber_F ( iF )
-!       associate &
-!         ( J_Eq  => I % Value ( :, I % EQUILIBRIUM_DENSITY ), &
-!           Chi   => I % Value ( :, I % EFFECTIVE_OPACITY ), &
-!           Kappa => I % Value ( :, I % TRANSPORT_OPACITY ), &
-!           T     => M % Value ( iBC, M % TEMPERATURE ), &
-!           Mu    => M % Value ( iBC, M % CHEMICAL_POTENTIAL ), &
-!           E     => RMB % Energy )
+    do iF = 1, MS % nFibers
+      associate ( iBC => MS % iaBaseCell ( iF ) )
+      I => IB % InteractionsFiber_F ( iF )
+      associate &
+        ( J_Eq  => I % Value ( :, I % EQUILIBRIUM_DENSITY ), &
+          Chi   => I % Value ( :, I % EFFECTIVE_OPACITY ), &
+          Kappa => I % Value ( :, I % TRANSPORT_OPACITY ), &
+          T     => F % Value ( iBC, F % TEMPERATURE ), &
+          E     => RMB % Energy )
 
-!       call SetFermiDiracSpectrum ( E, T, Mu, J_Eq )
+      call SetPlanckSpectrum ( E, T, J_Eq )
 
-!       Chi   = EffectiveOpacity
-!       Kappa = TransportOpacity
+      Chi   = EffectiveOpacity
+      Kappa = TransportOpacity
 
-!       end associate !-- J_Eq, etc.
-!       end associate !-- iBC
-!     end do !-- iF
+      end associate !-- J_Eq, etc.
+      end associate !-- iBC
+    end do !-- iF
 
-!     end select !-- MS
-!     end associate !-- IB, etc.
-!     nullify ( M, I )
+    end associate !-- IB, etc.
+    end select !-- RMB
+    end select !-- FA
+    end select !-- MS
+    nullify ( F, I )
 
-!   end subroutine SetInteractions
+  end subroutine SetInteractions
 
 
   subroutine SetReference ( T )
