@@ -70,7 +70,7 @@ contains
 
     TemperatureMin  =   0.1_KDR  *  UNIT % MEV
     TemperatureMax  =  10.0_KDR  *  UNIT % MEV
-    EnergyScale     =   3.0_KDR  *  UNIT % MEV
+    EnergyScale     =   4.0_KDR  *  UNIT % MEV
     call PROGRAM_HEADER % GetParameter ( TemperatureMin, 'TemperatureMin' )
     call PROGRAM_HEADER % GetParameter ( TemperatureMax, 'TemperatureMax' )
     call PROGRAM_HEADER % GetParameter ( EnergyScale, 'EnergyScale' )

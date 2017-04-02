@@ -111,16 +111,18 @@ contains
     class ( Integrator_C_MS_C_PS_Template ), intent ( inout ) :: &
       I
 
-!    associate ( Timer => PROGRAM_HEADER % Timer ( I % iTimerComputeCycle ) )
-!    call Timer % Start ( )
+    type ( TimerForm ), pointer :: &
+      Timer
+
+    Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerCycle )
+    if ( associated ( Timer ) ) call Timer % Start ( )
 
     select type ( MS => I % MomentumSpace )
     class is ( Bundle_SLL_ASC_CSLD_Form )
       call I % ComputeCycle_BSLL_ASC_CSLD ( MS )
     end select
 
-!    call Timer % Stop ( )
-!    end associate !-- Timer
+    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine ComputeCycle
 

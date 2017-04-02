@@ -1091,7 +1091,7 @@ contains
 
 
   subroutine ApplyRelaxation_Interactions &
-               ( S, IncrementExplicit, DampingCoefficient, Current, &
+               ( S, IncrementExplicit, DampingCoefficient, Current, Chart, &
                  TimeStep )
 
     class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
@@ -1101,6 +1101,8 @@ contains
       DampingCoefficient
     class ( CurrentTemplate ), intent ( in ) :: &
       Current
+    class ( ChartTemplate ), intent ( in ) :: &
+      Chart
     real ( KDR ), intent ( in ) :: &
       TimeStep
 
@@ -1122,7 +1124,7 @@ contains
     call Search ( RM % iaConserved, RM % CONSERVED_MOMENTUM_DENSITY_D ( 3 ), &
                   iMomentum_3 )
 
-    select type ( Chart => S % Chart )
+    select type ( Chart )
     class is ( Chart_SL_Template )
 
     associate ( I => RM % Interactions )
@@ -1140,7 +1142,15 @@ contains
                  TimeStep, CONSTANT % SPEED_OF_LIGHT )
 
     end associate !-- I
+
+    class default
+      call Show ( 'Chart type not found', CONSOLE % ERROR )
+      call Show ( 'RadiationMoments_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'ApplyRelaxation_Interactions', 'subroutine', &
+                  CONSOLE % ERROR ) 
+      call PROGRAM_HEADER % Abort ( )
     end select !-- Chart
+
     end select !-- RM
     
   end subroutine ApplyRelaxation_Interactions
@@ -1204,7 +1214,8 @@ contains
     class default
       call Show ( 'Chart type not found', CONSOLE % ERROR )
       call Show ( 'RadiationMoments_Form', 'module', CONSOLE % ERROR )
-      call Show ( 'ApplySourcesCurvilinear', 'subroutine', CONSOLE % ERROR ) 
+      call Show ( 'ApplySourcesCurvilinear_RadiationMoments', 'subroutine', &
+                  CONSOLE % ERROR ) 
       call PROGRAM_HEADER % Abort ( )
     end select !-- Chart
 

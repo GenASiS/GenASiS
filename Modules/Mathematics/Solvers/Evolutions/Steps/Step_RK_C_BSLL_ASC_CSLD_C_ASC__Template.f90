@@ -568,7 +568,6 @@ contains
     do iF = 1, S % nFibers
 
       K => KB % FieldFiber ( iF )
-      call Clear ( K % Value )
 
       C => CB % CurrentFiber ( iF )
 
