@@ -12,15 +12,16 @@ module PhotonMoments_Form
 contains
 
 
-  subroutine ComputeSpectralParameters ( T, Mu, RM, J )
+  subroutine ComputeSpectralParameters ( T, Eta, RM, J, FF )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       T, &
-      Mu
+      Eta
     class ( PhotonMomentsForm ), intent ( in ) :: &
       RM
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      J
+      J, &
+      FF
 
     integer ( KDI ) :: &
       iV, &
@@ -34,8 +35,8 @@ contains
 
     !$OMP parallel do private ( iV )
     do iV = 1, nValues
-      T  ( iV )  =  ( J ( iV )  /  a ) ** ( 0.25_KDR )
-      Mu ( iV )  =  0.0_KDR
+      T  ( iV )   =  ( J ( iV )  /  a ) ** ( 0.25_KDR )
+      Eta ( iV )  =  0.0_KDR
     end do !-- iV
     !$OMP end parallel do
 

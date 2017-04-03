@@ -24,6 +24,8 @@ module Interactions_Template
       SetOutput
     procedure, public, pass :: &
       FinalizeTemplate
+    procedure, public, pass ( I ) :: &
+      ComputeDegeneracyParameter_EQ
   end type InteractionsTemplate
 
   abstract interface
@@ -116,6 +118,20 @@ contains
     call Show ( I % Name, 'Name', I % IGNORABILITY )
    
   end subroutine FinalizeTemplate
+
+
+  subroutine ComputeDegeneracyParameter_EQ ( Eta_EQ, I, C )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      Eta_EQ
+    class ( InteractionsTemplate ), intent ( in ) :: &
+      I
+    class ( CurrentTemplate ), intent ( in ) :: &
+      C
+
+    !-- Empty interface to be overridden later as needed
+
+  end subroutine ComputeDegeneracyParameter_EQ
 
 
 end module Interactions_Template

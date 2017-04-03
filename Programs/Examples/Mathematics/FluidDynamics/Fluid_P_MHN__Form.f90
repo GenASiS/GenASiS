@@ -420,7 +420,7 @@ contains
     call C % ComputeEntropyPerBaryonKernel &
            ( SB, DS, N )
     call C % Apply_EOS_MHN_SB_E_Kernel &
-           ( P, T, Gamma, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_e, &
+           ( P, T, Gamma, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
              M, N, YE, Shock )
     call C % ComputeConservedEnergyKernel &   !-- For E computed from SB
            ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E ) 
@@ -792,7 +792,7 @@ contains
                ( N_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), SB ( iV ), &
                  cs2, dedt, dpderho, dpdrhoe, X_He ( iV ), X_A ( iV ), &
                  X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), &
-                 MU_E ( iV ), mu_n, mu_p, MU_NP ( iV ), &
+                 Mu_E ( iV ), mu_n, mu_p, MU_NP ( iV ), &
                  keytemp_s, keyerr, rfeps )
       end if !-- Shock
       if ( keyerr /= 0 ) then
@@ -812,8 +812,8 @@ contains
       E ( iV )      =  E ( iV ) * M ( iV ) * N ( iV )
       P ( iV )      =  P ( iV ) * Pressure_CGS
       T ( iV )      =  T ( iV ) * MeV
-      MU_NP ( iV )  =  MU_NP ( iV ) * MeV
-      MU_E  ( iV )  =  MU_E ( iV ) * MeV
+      Mu_NP ( iV )  =  Mu_NP ( iV ) * MeV
+      Mu_E  ( iV )  =  Mu_E ( iV ) * MeV
     end do
     !$OMP end parallel do
     

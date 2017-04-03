@@ -10,7 +10,7 @@ module RadiationMoments_Form
     integer ( KDI ), private, parameter :: &
       N_PRIMITIVE_RM =  4, &
       N_CONSERVED_RM =  4, &
-      N_FIELDS_RM    = 12, &
+      N_FIELDS_RM    = 13, &
       N_VECTORS_RM   =  2
 
   type, public, extends ( CurrentTemplate ) :: RadiationMomentsForm
@@ -24,7 +24,8 @@ module RadiationMoments_Form
       FLUX_FACTOR               = 0, &
       VARIABLE_EDDINGTON_FACTOR = 0, &
       TEMPERATURE_PARAMETER     = 0, &
-      DEGENERACY_PARAMETER      = 0
+      DEGENERACY_PARAMETER      = 0, &
+      DEGENERACY_PARAMETER_EQ   = 0
     integer ( KDI ), dimension ( 3 ) :: &
       COMOVING_MOMENTUM_DENSITY_U  = 0, &
       CONSERVED_MOMENTUM_DENSITY_D = 0
@@ -213,7 +214,8 @@ contains
                                       RM % FLUX_FACTOR, &
                                       RM % VARIABLE_EDDINGTON_FACTOR, &
                                       RM % TEMPERATURE_PARAMETER, &
-                                      RM % DEGENERACY_PARAMETER ], &
+                                      RM % DEGENERACY_PARAMETER, &
+                                      RM % DEGENERACY_PARAMETER_EQ ], &
              VectorOption = [ 'ComovingMomentumDensity        ' ], &
              VectorIndicesOption = VectorIndices )
 
@@ -274,30 +276,31 @@ contains
         M_UU_22 => GV ( oV + 1 : oV + nV, G % METRIC_UU_22 ), &
         M_UU_33 => GV ( oV + 1 : oV + nV, G % METRIC_UU_33 ) )
     associate &
-      ( FEP_1 => RMV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_PLUS ( 1 ) ), &
-        FEP_2 => RMV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_PLUS ( 2 ) ), &
-        FEP_3 => RMV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_PLUS ( 3 ) ), &
-        FEM_1 => RMV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_MINUS ( 1 ) ), &
-        FEM_2 => RMV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_MINUS ( 2 ) ), &
-        FEM_3 => RMV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_MINUS ( 3 ) ), &
-        J     => RMV ( oV + 1 : oV + nV, C % COMOVING_ENERGY_DENSITY ), &
-        H_1 => RMV ( oV + 1 : oV + nV, &
-                     C % COMOVING_MOMENTUM_DENSITY_U ( 1 ) ), &
-        H_2 => RMV ( oV + 1 : oV + nV, &
-                     C % COMOVING_MOMENTUM_DENSITY_U ( 2 ) ), &
-        H_3 => RMV ( oV + 1 : oV + nV, &
-                     C % COMOVING_MOMENTUM_DENSITY_U ( 3 ) ), &
-        E   => RMV ( oV + 1 : oV + nV, C % CONSERVED_ENERGY_DENSITY ), &
-        S_1 => RMV ( oV + 1 : oV + nV, &
-                     C % CONSERVED_MOMENTUM_DENSITY_D ( 1 ) ), &
-        S_2 => RMV ( oV + 1 : oV + nV, &
-                     C % CONSERVED_MOMENTUM_DENSITY_D ( 2 ) ), &
-        S_3 => RMV ( oV + 1 : oV + nV, &
-                     C % CONSERVED_MOMENTUM_DENSITY_D ( 3 ) ), &
-        FF  => RMV ( oV + 1 : oV + nV, C % FLUX_FACTOR ), &
-        VEF => RMV ( oV + 1 : oV + nV, C % VARIABLE_EDDINGTON_FACTOR ), &
-        T   => RMV ( oV + 1 : oV + nV, C % TEMPERATURE_PARAMETER ), &
-        Mu  => RMV ( oV + 1 : oV + nV, C % DEGENERACY_PARAMETER ) )
+      ( FEP_1  => RMV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_PLUS ( 1 ) ), &
+        FEP_2  => RMV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_PLUS ( 2 ) ), &
+        FEP_3  => RMV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_PLUS ( 3 ) ), &
+        FEM_1  => RMV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_MINUS ( 1 ) ), &
+        FEM_2  => RMV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_MINUS ( 2 ) ), &
+        FEM_3  => RMV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_MINUS ( 3 ) ), &
+        J      => RMV ( oV + 1 : oV + nV, C % COMOVING_ENERGY_DENSITY ), &
+        H_1    => RMV ( oV + 1 : oV + nV, &
+                        C % COMOVING_MOMENTUM_DENSITY_U ( 1 ) ), &
+        H_2    => RMV ( oV + 1 : oV + nV, &
+                        C % COMOVING_MOMENTUM_DENSITY_U ( 2 ) ), &
+        H_3    => RMV ( oV + 1 : oV + nV, &
+                        C % COMOVING_MOMENTUM_DENSITY_U ( 3 ) ), &
+        E      => RMV ( oV + 1 : oV + nV, C % CONSERVED_ENERGY_DENSITY ), &
+        S_1    => RMV ( oV + 1 : oV + nV, &
+                        C % CONSERVED_MOMENTUM_DENSITY_D ( 1 ) ), &
+        S_2    => RMV ( oV + 1 : oV + nV, &
+                        C % CONSERVED_MOMENTUM_DENSITY_D ( 2 ) ), &
+        S_3    => RMV ( oV + 1 : oV + nV, &
+                        C % CONSERVED_MOMENTUM_DENSITY_D ( 3 ) ), &
+        FF     => RMV ( oV + 1 : oV + nV, C % FLUX_FACTOR ), &
+        VEF    => RMV ( oV + 1 : oV + nV, C % VARIABLE_EDDINGTON_FACTOR ), &
+        T      => RMV ( oV + 1 : oV + nV, C % TEMPERATURE_PARAMETER ), &
+        Eta    => RMV ( oV + 1 : oV + nV, C % DEGENERACY_PARAMETER ), &
+        Eta_EQ => RMV ( oV + 1 : oV + nV, C % DEGENERACY_PARAMETER_EQ ) )
 
     call ComputeConservedEnergyMomentum &
            ( E, S_1, S_2, S_3, J, H_1, H_2, H_3, M_DD_22, M_DD_33 )
@@ -307,8 +310,11 @@ contains
     call ComputeVariableEddingtonFactor &
            ( VEF, FF, J, H_1, H_2, H_3, M_DD_22, M_DD_33 )
 
-    if ( associated ( RMV, C % Value ) ) &
-      call C % ComputeSpectralParameters ( T, Mu, J )
+    if ( associated ( RMV, C % Value ) ) then
+      if ( associated ( C % Interactions ) ) &
+        call C % Interactions % ComputeDegeneracyParameter_EQ ( Eta_EQ, C )
+      call C % ComputeSpectralParameters ( T, Eta, J, FF )
+    end if
 
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
@@ -360,30 +366,31 @@ contains
         M_UU_22 => GV ( oV + 1 : oV + nV, G % METRIC_UU_22 ), &
         M_UU_33 => GV ( oV + 1 : oV + nV, G % METRIC_UU_33 ) )
     associate &
-      ( FEP_1 => RMV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_PLUS ( 1 ) ), &
-        FEP_2 => RMV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_PLUS ( 2 ) ), &
-        FEP_3 => RMV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_PLUS ( 3 ) ), &
-        FEM_1 => RMV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_MINUS ( 1 ) ), &
-        FEM_2 => RMV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_MINUS ( 2 ) ), &
-        FEM_3 => RMV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_MINUS ( 3 ) ), &
-        J   => RMV ( oV + 1 : oV + nV, C % COMOVING_ENERGY_DENSITY ), &
-        H_1 => RMV ( oV + 1 : oV + nV, &
-                     C % COMOVING_MOMENTUM_DENSITY_U ( 1 ) ), &
-        H_2 => RMV ( oV + 1 : oV + nV, &
-                     C % COMOVING_MOMENTUM_DENSITY_U ( 2 ) ), &
-        H_3 => RMV ( oV + 1 : oV + nV, &
-                     C % COMOVING_MOMENTUM_DENSITY_U ( 3 ) ), &
-        E   => RMV ( oV + 1 : oV + nV, C % CONSERVED_ENERGY_DENSITY ), &
-        S_1 => RMV ( oV + 1 : oV + nV, &
-                     C % CONSERVED_MOMENTUM_DENSITY_D ( 1 ) ), &
-        S_2 => RMV ( oV + 1 : oV + nV, &
-                     C % CONSERVED_MOMENTUM_DENSITY_D ( 2 ) ), &
-        S_3 => RMV ( oV + 1 : oV + nV, &
-                     C % CONSERVED_MOMENTUM_DENSITY_D ( 3 ) ), &
-        FF  => RMV ( oV + 1 : oV + nV, C % FLUX_FACTOR ), &
-        VEF => RMV ( oV + 1 : oV + nV, C % VARIABLE_EDDINGTON_FACTOR ), &
-        T   => RMV ( oV + 1 : oV + nV, C % TEMPERATURE_PARAMETER ), &
-        Mu  => RMV ( oV + 1 : oV + nV, C % DEGENERACY_PARAMETER ) )
+      ( FEP_1  => RMV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_PLUS ( 1 ) ), &
+        FEP_2  => RMV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_PLUS ( 2 ) ), &
+        FEP_3  => RMV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_PLUS ( 3 ) ), &
+        FEM_1  => RMV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_MINUS ( 1 ) ), &
+        FEM_2  => RMV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_MINUS ( 2 ) ), &
+        FEM_3  => RMV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_MINUS ( 3 ) ), &
+        J      => RMV ( oV + 1 : oV + nV, C % COMOVING_ENERGY_DENSITY ), &
+        H_1    => RMV ( oV + 1 : oV + nV, &
+                        C % COMOVING_MOMENTUM_DENSITY_U ( 1 ) ), &
+        H_2    => RMV ( oV + 1 : oV + nV, &
+                        C % COMOVING_MOMENTUM_DENSITY_U ( 2 ) ), &
+        H_3    => RMV ( oV + 1 : oV + nV, &
+                        C % COMOVING_MOMENTUM_DENSITY_U ( 3 ) ), &
+        E      => RMV ( oV + 1 : oV + nV, C % CONSERVED_ENERGY_DENSITY ), &
+        S_1    => RMV ( oV + 1 : oV + nV, &
+                        C % CONSERVED_MOMENTUM_DENSITY_D ( 1 ) ), &
+        S_2    => RMV ( oV + 1 : oV + nV, &
+                        C % CONSERVED_MOMENTUM_DENSITY_D ( 2 ) ), &
+        S_3    => RMV ( oV + 1 : oV + nV, &
+                        C % CONSERVED_MOMENTUM_DENSITY_D ( 3 ) ), &
+        FF     => RMV ( oV + 1 : oV + nV, C % FLUX_FACTOR ), &
+        VEF    => RMV ( oV + 1 : oV + nV, C % VARIABLE_EDDINGTON_FACTOR ), &
+        T      => RMV ( oV + 1 : oV + nV, C % TEMPERATURE_PARAMETER ), &
+        Eta    => RMV ( oV + 1 : oV + nV, C % DEGENERACY_PARAMETER ), &
+        Eta_EQ => RMV ( oV + 1 : oV + nV, C % DEGENERACY_PARAMETER_EQ ) )
 
     call ComputePrimitiveEnergyMomentum &
            ( J, H_1, H_2, H_3, E, S_1, S_2, S_3, M_DD_22, M_DD_33, &
@@ -394,8 +401,11 @@ contains
     call ComputeVariableEddingtonFactor &
            ( VEF, FF, J, H_1, H_2, H_3, M_DD_22, M_DD_33 )
 
-    if ( associated ( RMV, C % Value ) ) &
-      call C % ComputeSpectralParameters ( T, Mu, J )
+    if ( associated ( RMV, C % Value ) ) then
+      if ( associated ( C % Interactions ) ) &
+        call C % Interactions % ComputeDegeneracyParameter_EQ ( Eta_EQ, C )
+      call C % ComputeSpectralParameters ( T, Eta, J, FF )
+    end if
 
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
@@ -572,15 +582,18 @@ contains
   end subroutine ComputeDiffusionFactor_HLL
 
 
-  subroutine ComputeSpectralParameters ( T, Mu, RM, J )
+  subroutine ComputeSpectralParameters ( T, Eta, RM, J, FF )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       T, &
-      Mu
+      Eta
     class ( RadiationMomentsForm ), intent ( in ) :: &
       RM
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      J
+      J, &
+      FF
+
+    !-- Empty interface to be overridden later as needed
 
   end subroutine ComputeSpectralParameters
 
@@ -645,6 +658,7 @@ contains
     RM % VARIABLE_EDDINGTON_FACTOR    =  oF + 10
     RM % TEMPERATURE_PARAMETER        =  oF + 11
     RM % DEGENERACY_PARAMETER         =  oF + 12
+    RM % DEGENERACY_PARAMETER_EQ      =  oF + 13
 
     !-- variable names 
 
@@ -659,16 +673,17 @@ contains
     Variable ( oF + 1 : oF + RM % N_FIELDS_RM ) &
       = [ 'ComovingEnergyDensity          ', &
           'ConservedEnergyDensity         ', &
-          'ComovingMomentumDensity_1      ', &
-          'ComovingMomentumDensity_2      ', &
-          'ComovingMomentumDensity_3      ', &
-          'ConservedMomentumDensity_1     ', &
-          'ConservedMomentumDensity_2     ', &
-          'ConservedMomentumDensity_3     ', &
+          'ComovingMomentumDensity_U_1    ', &
+          'ComovingMomentumDensity_U_2    ', &
+          'ComovingMomentumDensity_U_3    ', &
+          'ConservedMomentumDensity_D_1   ', &
+          'ConservedMomentumDensity_D_2   ', &
+          'ConservedMomentumDensity_D_3   ', &
           'FluxFactor                     ', &
           'VariableEddingtonFactor        ', &
           'TemperatureParameter           ', &
-          'DegeneracyParameter            ' ]
+          'DegeneracyParameter            ', &
+          'DegeneracyParameter_EQ         ' ]
           
     !-- units
     
