@@ -12,17 +12,25 @@ module Interactions_NM_G_1__Form
   private
 
   type, public, extends ( InteractionsTemplate ) :: Interactions_NM_G_1_Form
-    real ( KDR ) :: &
-      SpecificOpacity = 0.0_KDR
     class ( Fluid_P_MHN_Form ), pointer :: &
       Fluid => null ( )
     class ( NeutrinoMomentsForm ), pointer :: &
-      Neutrino_E_Nu          => null ( ), &
-      Neutrino_E_NuBar       => null ( ), &
-      Neutrino_MuTau_NuNuBar => null ( )
+      Neutrinos_E_Nu          => null ( ), &
+      Neutrinos_E_NuBar       => null ( ), &
+      Neutrinos_MuTau_NuNuBar => null ( )
   contains
+    procedure, private, pass :: &
+      InitializeAllocate_NM_G_1
+    generic, public :: &
+      Initialize => InitializeAllocate_NM_G_1
+    procedure, private, pass :: &
+      Set_NM_G_1
+    generic, public :: &
+      Set => Set_NM_G_1
     procedure, public, pass :: &
       Compute
+    final :: &
+      Finalize
     procedure, public, pass ( I ) :: &
       ComputeDegeneracyParameter_EQ
   end type Interactions_NM_G_1_Form
@@ -33,12 +41,78 @@ module Interactions_NM_G_1__Form
 contains
 
 
+  subroutine InitializeAllocate_NM_G_1 &
+               ( I, LengthUnit, EnergyDensityUnit, nValues, NameOption, &
+                 ClearOption, UnitOption )
+
+    class ( Interactions_NM_G_1_Form ), intent ( inout ) :: &
+      I
+    type ( MeasuredValueForm ), intent ( in ) :: &
+      LengthUnit, &
+      EnergyDensityUnit
+    integer ( KDI ), intent ( in ) :: &
+      nValues
+    character ( * ), intent ( in ), optional :: &
+      NameOption
+    logical ( KDL ), intent ( in ), optional :: &
+      ClearOption
+    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+      UnitOption
+
+    if ( I % Type == '' ) &
+      I % Type = 'an Interactions_NM_G_1'
+
+    call I % InitializeTemplate &
+           ( LengthUnit, EnergyDensityUnit, nValues, NameOption, &
+             ClearOption, UnitOption )
+
+  end subroutine InitializeAllocate_NM_G_1
+
+
+  subroutine Set_NM_G_1 &
+               ( I, Neutrinos_E_Nu, Neutrinos_E_NuBar, &
+                 Neutrinos_MuTau_NuNuBar, Fluid )
+
+    class ( Interactions_NM_G_1_Form ), intent ( inout ) :: &
+      I
+    class ( NeutrinoMomentsForm ), intent ( in ), target :: &
+      Neutrinos_E_Nu, &
+      Neutrinos_E_NuBar, &
+      Neutrinos_MuTau_NuNuBar
+    class ( Fluid_P_MHN_Form ), intent ( in ), target :: &
+      Fluid
+
+    I % Fluid                    =>  Fluid
+    I % Neutrinos_E_Nu           =>  Neutrinos_E_Nu
+    I % Neutrinos_E_NuBar        =>  Neutrinos_E_NuBar
+    I % Neutrinos_MuTau_NuNuBar  =>  Neutrinos_MuTau_NuNuBar 
+
+  end subroutine Set_NM_G_1
+
+
   subroutine Compute ( I )
 
     class ( Interactions_NM_G_1_Form ), intent ( inout ) :: &
       I
 
+    !-- FIXME: fill in
+
   end subroutine Compute
+
+
+  impure elemental subroutine Finalize ( I )
+
+    type ( Interactions_NM_G_1_Form ), intent ( inout ) :: &
+      I
+
+    nullify ( I % Neutrinos_MuTau_NuNuBar )
+    nullify ( I % Neutrinos_E_NuBar )
+    nullify ( I % Neutrinos_E_Nu )
+    nullify ( I % Fluid )
+
+    call I % FinalizeTemplate ( )
+
+  end subroutine Finalize
 
 
   subroutine ComputeDegeneracyParameter_EQ ( Eta_EQ, I, C )
@@ -57,10 +131,10 @@ contains
             T =>  F % Value ( :, F % TEMPERATURE ) )
 
     select case ( trim ( C % Type ) )
-    case ( 'NEUTRINO_E_NU' )
+    case ( 'NEUTRINOS_E_NU' )
       call ComputeDegeneracyParameter_EQ_Kernel &
              ( Eta_EQ, Mu_E, Mu_NP, T, Sign = 1.0_KDR )
-    case ( 'NEUTRINO_E_NU_BAR' )
+    case ( 'NEUTRINOS_E_NU_BAR' )
       call ComputeDegeneracyParameter_EQ_Kernel &
              ( Eta_EQ, Mu_E, Mu_NP, T, Sign = -1.0_KDR )
     end select !-- NM % Type

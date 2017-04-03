@@ -109,6 +109,7 @@ contains
     type ( Interactions_MWV_1_G_Form ), intent ( inout ) :: &
       I
 
+    nullify ( I % Radiation )
     nullify ( I % Fluid )
 
     call I % FinalizeTemplate ( )

@@ -33,6 +33,7 @@ RadiationMoments_ASC__Form.o: \
   Mathematics.o \
   RadiationMoments_Form.o \
   PhotonMoments_Form.o \
+  NeutrinoMoments_Form.o \
   RadiationMoments_CSL__Form.o \
   RadiationMoments_ASC__Form.f90
 
