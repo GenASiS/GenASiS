@@ -47,6 +47,15 @@ MarshakWave: Basics.a Mathematics.a Fluid.a GreyMoments.a MarshakWave.o
           GreyMoments.a Fluid.a Mathematics.a Basics.a \
           $(THIRD_PARTY) $(LIBRARIES)
 
+WoosleyHeger_07_G: Basics.a Mathematics.a Fluid.a GreyMoments.a \
+  WoosleyHeger_07_G.o
+	$(LINK) $(FFLAGS) \
+          -o WoosleyHeger_07_G_$(MACHINE) \
+          WoosleyHeger_07_G.o WoosleyHeger_07_G__Form.o \
+          WoosleyHeger_07_Header_Form.o \
+          GreyMoments.a Fluid.a Mathematics.a Basics.a \
+          $(THIRD_PARTY) $(LIBRARIES)
+
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MATHEMATICS)/Makefile_Dependencies
 include $(PATH_THIRD_PARTY)/Makefile_Dependencies
@@ -62,6 +71,7 @@ clobber: clean
 	rm -f LineSource_*
 	rm -f HomogeneousSphere_*
 	rm -f MarshakWave_*
+	rm -f WoosleyHeger_07_*
 
 PlaneWaveStreaming_Template.o: \
   Basics.o \
@@ -142,3 +152,24 @@ MarshakWave.o: \
   MarshakWave_Form.o \
   MarshakWave.f90
 
+WoosleyHeger_07_Header_Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_P__Template.o \
+  Fluid_P_MHN__Form.o \
+  Fluid_ASC__Form.o \
+  Tally_F_P_MHN__Form.o \
+  WoosleyHeger_07_Header_Form.f90
+
+WoosleyHeger_07_G__Form.o: \
+  Mathematics.o \
+  Fluid_ASC__Form.o \
+  WoosleyHeger_07_Header_Form.o \
+  RadiationMoments_ASC__Form.o \
+  Interactions_ASC__Form.o \
+  WoosleyHeger_07_G__Form.f90
+
+WoosleyHeger_07_G.o: \
+  Basics.o \
+  WoosleyHeger_07_G__Form.o \
+  WoosleyHeger_07_G.f90

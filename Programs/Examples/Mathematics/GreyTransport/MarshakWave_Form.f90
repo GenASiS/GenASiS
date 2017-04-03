@@ -311,7 +311,7 @@ contains
     type ( MarshakWaveForm ), intent ( inout ) :: &
       MW
 
-    if ( allocated ( MW % Interactions_ASC) ) &
+    if ( allocated ( MW % Interactions_ASC ) ) &
       deallocate ( MW % Interactions_ASC )
 
     call MW % FinalizeTemplate_C_1D_PS ( )
