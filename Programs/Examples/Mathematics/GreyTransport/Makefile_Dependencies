@@ -39,11 +39,13 @@ RadiationMoments_ASC__Form.o: \
 
 Interactions_F__Form.o: \
   Basics.o \
+  Mathematics.o \
   Interactions_Template.o \
   Interactions_F__Form.f90
 
 Interactions_MWV_1_G__Form.o: \
   Basics.o \
+  Mathematics.o \
   Fluid_P__Template.o \
   PhotonMoments_Form.o \
   Interactions_Template.o \

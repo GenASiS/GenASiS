@@ -468,7 +468,7 @@ contains
       call PROGRAM_HEADER % Abort ( )
     end select !-- I
 
-    call I % Compute ( )
+    call I % Compute ( Radiation )
 
     !-- Module variable for accessibility in ApplySources_Fluid below
     Interactions => I
@@ -494,7 +494,7 @@ contains
     !-- No sources applied here; just an occasion to compute interactions
     !   to be used in relaxation, and set a pointer to the Radiation increment.
 
-    call Interactions % Compute ( )
+    call Interactions % Compute ( Radiation )
 
     RadiationIncrement => Increment 
 

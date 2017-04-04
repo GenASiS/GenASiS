@@ -29,10 +29,13 @@ module Interactions_Template
   end type InteractionsTemplate
 
   abstract interface
-    subroutine C ( I )
+    subroutine C ( I, Current )
+      use Mathematics
       import InteractionsTemplate
       class ( InteractionsTemplate ), intent ( inout ) :: &
         I
+      class ( CurrentTemplate ), intent ( in ) :: &
+        Current
     end subroutine C
   end interface
 

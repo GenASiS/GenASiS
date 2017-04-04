@@ -90,12 +90,31 @@ contains
   end subroutine Set_NM_G_1
 
 
-  subroutine Compute ( I )
+  subroutine Compute ( I, Current )
 
     class ( Interactions_NM_G_1_Form ), intent ( inout ) :: &
       I
+    class ( CurrentTemplate ), intent ( in ) :: &
+      Current
 
-    !-- FIXME: fill in
+    select case ( trim ( Current % Type ) )
+    case ( 'NEUTRINOS_E_NU' )
+
+      !-- Electron neutrino interactions
+
+    case ( 'NEUTRINOS_E_NU_BAR' )
+
+      !-- Electron antineutrino interactions
+
+    case ( 'NEUTRINOS_MU_TAU_NU_NU_BAR' )
+
+      !-- Mu and Tau neutrino and antineutrino interactions
+
+    case default
+      call Show ( 'Radiation Type not recognized', CONSOLE % ERROR )
+      call Show ( 'Interactions_NM_G_1__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )
+    end select !-- Radiation % Type
 
   end subroutine Compute
 

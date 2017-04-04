@@ -3,6 +3,7 @@ module Interactions_MWV_1_G__Form
   !-- Interactions_MarshakWaveVaytet_1_Grey__Form, Vaytet et al. 2011
   
   use Basics
+  use Mathematics
   use Fluid_P__Template
   use PhotonMoments_Form
   use Interactions_Template
@@ -83,10 +84,12 @@ contains
   end subroutine Set_MWV_1_G
 
 
-  subroutine Compute ( I )
+  subroutine Compute ( I, Current )
 
     class ( Interactions_MWV_1_G_Form ), intent ( inout ) :: &
       I
+    class ( CurrentTemplate ), intent ( in ) :: &
+      Current
 
     associate &
       ( R => I % Radiation, &

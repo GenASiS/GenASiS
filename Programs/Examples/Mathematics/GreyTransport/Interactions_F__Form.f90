@@ -4,6 +4,7 @@ module Interactions_F__Form
   !-- Compute does nothing, leaving interactions as set at initialization.
   
   use Basics
+  use Mathematics
   use Interactions_Template
 
   implicit none
@@ -52,10 +53,12 @@ contains
   end subroutine InitializeAllocate_F
 
 
-  subroutine Compute ( I )
+  subroutine Compute ( I, Current )
 
     class ( Interactions_F_Form ), intent ( inout ) :: &
       I
+    class ( CurrentTemplate ), intent ( in ) :: &
+      Current
 
     !-- Compute does nothing, leaving interactions as set at initialization.
   
