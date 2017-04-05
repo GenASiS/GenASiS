@@ -184,7 +184,8 @@ contains
 
     !$OMP parallel do private ( iV ) 
     do iV = 1, nValues
-      Eta_EQ ( iV )  =  Sign  *  ( Mu_E ( iV )  -  Mu_NP ( iV ) )  /  T ( iV )
+      Eta_EQ ( iV )  =  Sign  *  ( Mu_E ( iV )  -  Mu_NP ( iV ) )  &
+                        /  max ( T ( iV ), tiny ( 0.0_KDR ) )
     end do !-- iV
     !$OMP end parallel do
 

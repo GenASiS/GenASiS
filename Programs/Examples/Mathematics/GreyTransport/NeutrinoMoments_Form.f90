@@ -139,6 +139,7 @@ contains
       Eta ( iV )  =  Eta_EQ ( iV )  *  ( 1.0_KDR  -  FF ( iV ) ) &
                      +   Eta_Infty  *  FF ( iV )
 
+      Fermi_3 = 1.0_KDR
       !-- FIXME: call Compute Fermi_3
 
       T  ( iV )  =  ( J ( iV )  /  ( Factor * Fermi_3 ) ) ** ( 0.25_KDR )
