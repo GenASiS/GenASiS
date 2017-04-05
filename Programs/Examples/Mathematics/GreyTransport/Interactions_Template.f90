@@ -79,7 +79,8 @@ contains
     call Show ( Name, 'Name', I % IGNORABILITY )
 
     Clear = .true.
-    if ( present ( ClearOption ) ) Clear = ClearOption
+    if ( present ( ClearOption ) ) &
+      Clear = ClearOption
 
     allocate ( VariableUnit ( I % N_FIELDS ) )
     VariableUnit ( I % EQUILIBRIUM_DENSITY ) = EnergyDensityUnit
