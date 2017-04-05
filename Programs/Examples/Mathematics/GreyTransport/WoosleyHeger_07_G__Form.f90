@@ -2,12 +2,16 @@ module WoosleyHeger_07_G__Form
 
   !-- WoosleyHeger_07_Grey__Form
 
+  use Basics
   use Mathematics
+  use Fluid_P_MHN__Form
   use Fluid_ASC__Form
   use WoosleyHeger_07_Header_Form
   use RadiationMoments_Form
+  use NeutrinoMoments_Form
   use RadiationMoments_ASC__Form
   use Interactions_Template
+  use Interactions_NM_G_1__Form
   use Interactions_ASC__Form
 
   implicit none
@@ -27,6 +31,8 @@ module WoosleyHeger_07_G__Form
   contains
     procedure, public, pass :: &
       Initialize
+    procedure, public, pass :: &
+      SetWriteTimeInterval
     final :: &
       Finalize
   end type WoosleyHeger_07_G_Form
@@ -34,12 +40,20 @@ module WoosleyHeger_07_G__Form
     private :: &
       ApplySources_Radiation, &
       ApplySources_Fluid, &
-      ApplySourcesKernel
+      SetInteractions, &
+      SetRadiation
+
+      private :: &
+        ApplySourcesKernel           
 
     type ( VariableGroupForm ), private, pointer :: &
       Increment_E_Nu           => null ( ), &
       Increment_E_NuBar        => null ( ), &
       Increment_MuTau_Nu_NuBar => null ( )
+    class ( NeutrinoMomentsForm ), pointer :: &
+      Neutrinos_E_Nu          => null ( ), &
+      Neutrinos_E_NuBar       => null ( ), &
+      Neutrinos_MuTau_NuNuBar => null ( )
     class ( InteractionsTemplate ), private, pointer :: &
       Interactions => null ( )
 
@@ -72,14 +86,10 @@ contains
     WH % N_CURRENTS_PS = 4
     allocate ( WH % Current_ASC_1D ( WH % N_CURRENTS_PS ) )
     allocate ( WH % TimeStepLabel ( WH % N_CURRENTS_PS ) )
-    WH % TimeStepLabel ( WH % NEUTRINOS_E_NU ) &
-      = 'Neutrinos_E_Nu'
-    WH % TimeStepLabel ( WH % NEUTRINOS_E_NU_BAR ) &
-      = 'Neutrinos_E_NuBar'
-    WH % TimeStepLabel ( WH % NEUTRINOS_MU_TAU_NU_NU_BAR ) &
-      = 'Neutrinos_MuTau_NuNuBar'
-    WH % TimeStepLabel ( WH % FLUID ) &
-      = 'Fluid'
+    WH % TimeStepLabel ( WH % NEUTRINOS_E_NU ) = 'Nu_E'
+    WH % TimeStepLabel ( WH % NEUTRINOS_E_NU_BAR ) = 'NuBar_E'
+    WH % TimeStepLabel ( WH % NEUTRINOS_MU_TAU_NU_NU_BAR ) = 'Nu_X'
+    WH % TimeStepLabel ( WH % FLUID ) = 'Fluid'
 
     !-- FIXME: This does not account for curvilinear coordinates
     MomentumDensity_U_Unit  =  WHH % MomentumUnit
@@ -91,10 +101,10 @@ contains
       ( RadiationMoments_ASC_Form :: &
           WH % Current_ASC_1D ( WH % NEUTRINOS_E_NU ) % Element )
     select type ( RA_E => WH % Current_ASC_1D &
-                               ( WH % NEUTRINOS_E_NU ) % Element )
+                            ( WH % NEUTRINOS_E_NU ) % Element )
     class is ( RadiationMoments_ASC_Form )
     call RA_E % Initialize &
-           ( PS, 'NEUTRINOS_E_NU', NameShortOption = 'Neutrinos_E_Nu', &
+           ( PS, 'NEUTRINOS_E_NU', NameShortOption = 'Nu_E', &
              MomentumDensity_U_UnitOption = MomentumDensity_U_Unit, &
              MomentumDensity_D_UnitOption = MomentumDensity_D_Unit, &
              EnergyDensityUnitOption = WHH % EnergyDensityUnit, &
@@ -109,7 +119,7 @@ contains
                                 ( WH % NEUTRINOS_E_NU_BAR ) % Element )
     class is ( RadiationMoments_ASC_Form )
     call RA_E_BAR % Initialize &
-           ( PS, 'NEUTRINOS_E_NU_BAR', NameShortOption = 'Neutrinos_E_Nu_Bar', &
+           ( PS, 'NEUTRINOS_E_NU_BAR', NameShortOption = 'NuBar_E', &
              MomentumDensity_U_UnitOption = MomentumDensity_U_Unit, &
              MomentumDensity_D_UnitOption = MomentumDensity_D_Unit, &
              EnergyDensityUnitOption = WHH % EnergyDensityUnit, &
@@ -125,7 +135,7 @@ contains
     class is ( RadiationMoments_ASC_Form )
     call RA_MU_TAU % Initialize &
            ( PS, 'NEUTRINOS_MU_TAU_NU_NU_BAR', &
-             NameShortOption = 'Neutrinos_MuTau_NuNuBar', &
+             NameShortOption = 'Nu_X', &
              MomentumDensity_U_UnitOption = MomentumDensity_U_Unit, &
              MomentumDensity_D_UnitOption = MomentumDensity_D_Unit, &
              EnergyDensityUnitOption = WHH % EnergyDensityUnit, &
@@ -180,6 +190,22 @@ contains
 
     end select !-- S
 
+    !-- Initial conditions
+
+    call SetInteractions ( WH )
+    call WHH % SetFluid ( )
+    call SetRadiation ( WH )
+
+    !-- Integrator
+
+    call WHH % SetIntegratorParameters ( )
+
+    call WH % InitializeTemplate_C_1D_PS &
+           ( Name, TimeUnitOption = WHH % TimeUnit, &
+             FinishTimeOption = WHH % FinishTime, &
+             CourantFactorOption = WHH % CourantFactor, &
+             nWriteOption = WHH % nWrite )
+
     !-- Cleanup
 
     end select !-- RA_MU_TAU
@@ -189,6 +215,16 @@ contains
     end associate !-- WHH
 
   end subroutine Initialize
+
+
+  subroutine SetWriteTimeInterval ( I )
+
+    class ( WoosleyHeger_07_G_Form ), intent ( inout ) :: &
+      I
+
+    call I % Header % SetWriteTimeInterval ( )
+
+  end subroutine SetWriteTimeInterval
 
 
   impure elemental subroutine Finalize ( WH )
@@ -294,6 +330,87 @@ contains
   end subroutine ApplySources_Fluid
 
   
+  subroutine SetInteractions ( WH )
+
+    class ( WoosleyHeger_07_G_Form ), intent ( inout ) :: &
+      WH
+
+    class ( Fluid_P_MHN_Form ), pointer :: &
+      F
+    class ( InteractionsTemplate), pointer :: &
+      I
+
+    associate ( IA => WH % Interactions_ASC )
+
+    select type ( FA => WH % Current_ASC_1D ( WH % FLUID ) % Element )
+    class is ( Fluid_ASC_Form )
+    F => FA % Fluid_P_MHN ( )
+
+    I => IA % Interactions ( )
+    select type ( I )
+    type is ( Interactions_NM_G_1_Form )
+      call I % Set ( Neutrinos_E_Nu, Neutrinos_E_NuBar, &
+                     Neutrinos_MuTau_NuNuBar, F )
+    class default
+      call Show ( 'Interactions type not recognized', CONSOLE % ERROR )
+      call Show ( 'WoosleyHeger_07_G__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'SetInteractions', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- I
+
+    !-- Module variable for accessibility in ApplySources_Fluid
+    Interactions => I
+
+    end select !-- FA
+    end associate !-- IA
+    nullify ( F, I )
+
+  end subroutine SetInteractions
+
+
+  subroutine SetRadiation ( WH )
+
+    class ( WoosleyHeger_07_G_Form ), intent ( inout ) :: &
+      WH
+
+    class ( GeometryFlatForm ), pointer :: &
+      G
+
+    select type ( PS => WH % PositionSpace )
+    class is ( Atlas_SC_Form )
+    G => PS % Geometry ( )
+
+    select type ( RA_E => WH % Current_ASC_1D &
+                            ( WH % NEUTRINOS_E_NU ) % Element )
+    class is ( RadiationMoments_ASC_Form )
+
+    select type ( RA_E_BAR => WH % Current_ASC_1D &
+                                ( WH % NEUTRINOS_E_NU_BAR ) % Element )
+    class is ( RadiationMoments_ASC_Form )
+
+    select type ( RA_MU_TAU => WH % Current_ASC_1D &
+                                 ( WH % NEUTRINOS_MU_TAU_NU_NU_BAR ) % Element )
+    class is ( RadiationMoments_ASC_Form )
+
+    !-- Module variable for accessibility in ApplySources_Fluid
+    Neutrinos_E_Nu          =>  RA_E % NeutrinoMoments ( )
+    Neutrinos_E_NuBar       =>  RA_E_BAR % NeutrinoMoments ( )
+    Neutrinos_MuTau_NuNuBar =>  RA_MU_TAU % NeutrinoMoments ( )
+
+    !-- No initial radiation, but set eigenspeeds
+    call Neutrinos_E_Nu % ComputeFromPrimitive ( G )
+    call Neutrinos_E_NuBar % ComputeFromPrimitive ( G )
+    call Neutrinos_MuTau_NuNuBar % ComputeFromPrimitive ( G )
+
+    end select !-- RA_MU_TAU
+    end select !-- RA_E_BAR
+    end select !-- RA_E
+    end select !-- PS
+    nullify ( G )
+
+  end subroutine SetRadiation
+
+
   subroutine ApplySourcesKernel &
                ( KVE, KVM_1, IsProperCell, ED, EO, TO, J, dJ, H, dH, c, dT )
 

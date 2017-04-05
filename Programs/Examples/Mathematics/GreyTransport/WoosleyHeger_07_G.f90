@@ -16,7 +16,7 @@ program WoosleyHeger_07_G
 
   allocate ( FMT )
   call FMT % Initialize ( PROGRAM_HEADER % Name )
-!  call FMT % Evolve ( )
+  call FMT % Evolve ( )
   deallocate ( FMT )
 
   deallocate ( PROGRAM_HEADER )
