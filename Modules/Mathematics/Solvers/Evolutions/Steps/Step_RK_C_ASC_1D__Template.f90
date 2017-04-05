@@ -169,6 +169,9 @@ contains
 
     call S % DeallocateMetricDerivatives ( S % IncrementDivergence_1D ( 1 ) )
 
+    if ( .not. allocated ( S % BoundaryFluence_CSL_1D ) ) &
+      return
+
     do iC = 1, S % nCurrents
       associate &
         ( ID => S % IncrementDivergence_1D ( iC ), &
