@@ -18,7 +18,7 @@ module PROGRAM_HEADER_Singleton
   private
 
     integer ( KDI ), private, parameter :: &
-      MAX_TIMERS = 32
+      MAX_TIMERS = 128
 
   type, public :: ProgramHeaderSingleton
     integer ( KDI ) :: &
