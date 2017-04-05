@@ -1,7 +1,7 @@
 PATH_GENASIS = ../../../../..
 
 all:  SineWaveStreaming SineWaveDiffusion LineSource HomogeneousSphere \
-      MarshakWave 
+      MarshakWave WoosleyHeger_07_G
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
@@ -138,6 +138,7 @@ MarshakWave_Form.o: \
   Mathematics.o \
   Fluid_P_NR__Form.o \
   Fluid_ASC__Form.o \
+  RadiationMoments_Form.o \
   PhotonMoments_Form.o \
   RadiationMoments_ASC__Form.o \
   Interactions_Template.o \
@@ -165,6 +166,7 @@ WoosleyHeger_07_G__Form.o: \
   Mathematics.o \
   Fluid_ASC__Form.o \
   WoosleyHeger_07_Header_Form.o \
+  RadiationMoments_Form.o \
   RadiationMoments_ASC__Form.o \
   Interactions_Template.o \
   Interactions_ASC__Form.o \

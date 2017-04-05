@@ -5,6 +5,7 @@ module WoosleyHeger_07_G__Form
   use Mathematics
   use Fluid_ASC__Form
   use WoosleyHeger_07_Header_Form
+  use RadiationMoments_Form
   use RadiationMoments_ASC__Form
   use Interactions_Template
   use Interactions_ASC__Form
@@ -31,7 +32,9 @@ module WoosleyHeger_07_G__Form
   end type WoosleyHeger_07_G_Form
 
     private :: &
-      ApplySources_Radiation
+      ApplySources_Radiation, &
+      ApplySources_Fluid, &
+      ApplySourcesKernel
 
     type ( VariableGroupForm ), private, pointer :: &
       Increment_E_Nu           => null ( ), &
@@ -87,49 +90,46 @@ contains
     allocate &
       ( RadiationMoments_ASC_Form :: &
           WH % Current_ASC_1D ( WH % NEUTRINOS_E_NU ) % Element )
-    select type ( RA => WH % Current_ASC_1D &
-                          ( WH % NEUTRINOS_E_NU ) % Element )
+    select type ( RA_E => WH % Current_ASC_1D &
+                               ( WH % NEUTRINOS_E_NU ) % Element )
     class is ( RadiationMoments_ASC_Form )
-    call RA % Initialize &
+    call RA_E % Initialize &
            ( PS, 'NEUTRINOS_E_NU', NameShortOption = 'Neutrinos_E_Nu', &
              MomentumDensity_U_UnitOption = MomentumDensity_U_Unit, &
              MomentumDensity_D_UnitOption = MomentumDensity_D_Unit, &
              EnergyDensityUnitOption = WHH % EnergyDensityUnit, &
              TemperatureUnitOption = WHH % TemperatureUnit )
-    end select !-- RA
 
     !-- Electron Antineutrinos
 
     allocate &
       ( RadiationMoments_ASC_Form :: &
           WH % Current_ASC_1D ( WH % NEUTRINOS_E_NU_BAR ) % Element )
-    select type ( RA => WH % Current_ASC_1D &
-                          ( WH % NEUTRINOS_E_NU_BAR ) % Element )
+    select type ( RA_E_BAR => WH % Current_ASC_1D &
+                                ( WH % NEUTRINOS_E_NU_BAR ) % Element )
     class is ( RadiationMoments_ASC_Form )
-    call RA % Initialize &
+    call RA_E_BAR % Initialize &
            ( PS, 'NEUTRINOS_E_NU_BAR', NameShortOption = 'Neutrinos_E_Nu_Bar', &
              MomentumDensity_U_UnitOption = MomentumDensity_U_Unit, &
              MomentumDensity_D_UnitOption = MomentumDensity_D_Unit, &
              EnergyDensityUnitOption = WHH % EnergyDensityUnit, &
              TemperatureUnitOption = WHH % TemperatureUnit )
-    end select !-- RA
 
     !-- Mu and Tau Neutrinos and Antineutrinos
 
     allocate &
       ( RadiationMoments_ASC_Form :: &
           WH % Current_ASC_1D ( WH % NEUTRINOS_MU_TAU_NU_NU_BAR ) % Element )
-    select type ( RA => WH % Current_ASC_1D &
-                          ( WH % NEUTRINOS_MU_TAU_NU_NU_BAR ) % Element )
+    select type ( RA_MU_TAU => WH % Current_ASC_1D &
+                                 ( WH % NEUTRINOS_MU_TAU_NU_NU_BAR ) % Element )
     class is ( RadiationMoments_ASC_Form )
-    call RA % Initialize &
+    call RA_MU_TAU % Initialize &
            ( PS, 'NEUTRINOS_MU_TAU_NU_NU_BAR', &
              NameShortOption = 'Neutrinos_MuTau_NuNuBar', &
              MomentumDensity_U_UnitOption = MomentumDensity_U_Unit, &
              MomentumDensity_D_UnitOption = MomentumDensity_D_Unit, &
              EnergyDensityUnitOption = WHH % EnergyDensityUnit, &
              TemperatureUnitOption = WHH % TemperatureUnit )
-    end select !-- RA
 
     !-- Fluid
 
@@ -138,6 +138,19 @@ contains
     class is ( Fluid_ASC_Form )
     call WHH % InitializeFluid ( FA )
     end select !-- FA
+
+    !-- Interactions
+
+    allocate ( WH % Interactions_ASC )
+    associate ( IA => WH % Interactions_ASC )
+    call IA % Initialize &
+           ( PS, 'NEUTRINO_MOMENTS_GREY_1', &
+             LengthUnitOption = WHH % CoordinateUnit ( 1 ), &
+             EnergyDensityUnitOption = WHH % EnergyDensityUnit )
+    call RA_E % SetInteractions ( IA )
+    call RA_E_BAR % SetInteractions ( IA )
+    call RA_MU_TAU % SetInteractions ( IA )
+    end associate !-- IA
 
     !-- Step
 
@@ -149,19 +162,29 @@ contains
 
     S % ApplySources_1D ( WH % NEUTRINOS_E_NU ) % Pointer &
       =>  ApplySources_Radiation
+    S % ApplyRelaxation_1D ( WH % NEUTRINOS_E_NU ) % Pointer &
+      =>  ApplyRelaxation_Interactions
+
     S % ApplySources_1D ( WH % NEUTRINOS_E_NU_BAR ) % Pointer &
       =>  ApplySources_Radiation
+    S % ApplyRelaxation_1D ( WH % NEUTRINOS_E_NU_BAR ) % Pointer &
+      =>  ApplyRelaxation_Interactions
+
     S % ApplySources_1D ( WH % NEUTRINOS_MU_TAU_NU_NU_BAR ) % Pointer &
       =>  ApplySources_Radiation
-    ! S % ApplySources_1D ( WH % FLUID ) % Pointer &
-    !   =>  ApplySources_Fluid
-    ! S % ApplyRelaxation_1D ( WH % RADIATION ) % Pointer &
-    !   =>  ApplyRelaxation_Interactions
+    S % ApplyRelaxation_1D ( WH % NEUTRINOS_MU_TAU_NU_NU_BAR ) % Pointer &
+      =>  ApplyRelaxation_Interactions
+
+    S % ApplySources_1D ( WH % FLUID ) % Pointer &
+      =>  ApplySources_Fluid
 
     end select !-- S
 
     !-- Cleanup
 
+    end select !-- RA_MU_TAU
+    end select !-- RA_E_BAR
+    end select !-- RA_E
     end select !-- PS
     end associate !-- WHH
 
@@ -215,4 +238,101 @@ contains
   end subroutine ApplySources_Radiation
 
   
+  subroutine ApplySources_Fluid ( S, Increment, Fluid, TimeStep )
+
+    class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
+      S
+    type ( VariableGroupForm ), intent ( inout ), target :: &
+      Increment
+    class ( CurrentTemplate ), intent ( in ) :: &
+      Fluid
+    real ( KDR ), intent ( in ) :: &
+      TimeStep
+
+    ! integer ( KDI ) :: &
+    !   iEnergy_F, &
+    !   iEnergy_R, &
+    !   iMomentum_1_F, &
+    !   iMomentum_1_R
+
+    call ApplySourcesGravity ( S, Increment, Fluid, TimeStep )
+
+    ! select type ( F => Fluid )
+    ! class is ( Fluid_P_NR_Form )
+
+    ! select type ( Chart => S % Chart )
+    ! class is ( Chart_SL_Template )
+
+    ! associate &
+    !   ( I => Interactions, &
+    !     R => Radiation )
+
+    ! call Search ( F % iaConserved, F % CONSERVED_ENERGY, iEnergy_F )
+    ! call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 1 ), iMomentum_1_F )
+    ! call Search ( R % iaConserved, R % CONSERVED_ENERGY_DENSITY, iEnergy_R )
+    ! call Search ( R % iaConserved, R % CONSERVED_MOMENTUM_DENSITY_D ( 1 ), &
+    !               iMomentum_1_R )
+
+    ! !-- Taking shortcuts on conserved vs. comoving here
+    ! call ApplySourcesKernel &
+    !        ( Increment % Value ( :, iEnergy_F ), &
+    !          Increment % Value ( :, iMomentum_1_F ), &
+    !          Chart % IsProperCell, &
+    !          I % Value ( :, I % EQUILIBRIUM_DENSITY ), &
+    !          I % Value ( :, I % EFFECTIVE_OPACITY ), &
+    !          I % Value ( :, I % TRANSPORT_OPACITY ), &
+    !          R % Value ( :, R % COMOVING_ENERGY_DENSITY ), &
+    !          RadiationIncrement % Value ( :, iEnergy_R ), &
+    !          R % Value ( :, R % CONSERVED_MOMENTUM_DENSITY_D ( 1 ) ), &
+    !          RadiationIncrement % Value ( :, iMomentum_1_R ), &
+    !          CONSTANT % SPEED_OF_LIGHT, TimeStep ) 
+
+    ! end associate !-- I, etc.
+    ! end select !-- Chart
+    ! end select !-- F
+
+  end subroutine ApplySources_Fluid
+
+  
+  subroutine ApplySourcesKernel &
+               ( KVE, KVM_1, IsProperCell, ED, EO, TO, J, dJ, H, dH, c, dT )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      KVE, &
+      KVM_1
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      IsProperCell
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      ED, &
+      EO, &
+      TO, &
+      J,  &
+      dJ, &
+      H,  &
+      dH
+    real ( KDR ) :: &
+      c, &
+      dT
+
+    ! integer ( KDI ) :: &
+    !   iV, &
+    !   nV
+
+    ! nV = size ( KVE )
+
+    ! !$OMP parallel do private ( iV )
+    ! do iV = 1, nV
+    !   if ( .not. IsProperCell ( iV ) ) &
+    !     cycle
+    !   KVE ( iV )  &
+    !     =  KVE ( iV )  -  c * dT  *  EO ( iV )  &
+    !                       *  ( ED ( iV )  -  ( J ( iV ) + dJ ( iV ) ) ) 
+    !   KVM_1 ( iV )  &
+    !     =  KVM_1 ( iV )  +  c * dT  *  TO ( iV )  *  ( H ( iV ) + dH ( iV ) )
+    ! end do
+    ! !$OMP end parallel do
+
+  end subroutine ApplySourcesKernel
+
+
 end module WoosleyHeger_07_G__Form
