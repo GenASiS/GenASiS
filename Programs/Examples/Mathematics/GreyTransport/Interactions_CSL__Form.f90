@@ -7,6 +7,7 @@ module Interactions_CSL__Form
   use Interactions_MWV_1_G__Form
   use Interactions_MWV_2_G__Form
   use Interactions_MWV_3_G__Form
+  use Interactions_NM_G_1__Form
 
   implicit none
   private
@@ -133,7 +134,7 @@ contains
                ( FC % LengthUnit, FC % EnergyDensityUnit, FC % nValues, &
                  NameOption = FC % NameShort )
         call I % SetOutput ( FC % FieldOutput )
-      end select !-- RM
+      end select !-- I
     case ( 'MARSHAK_WAVE_VAYTET_1_GREY' )
       allocate ( Interactions_MWV_1_G_Form :: FC % Field )
       select type ( I => FC % Field )
@@ -142,7 +143,7 @@ contains
                ( FC % LengthUnit, FC % EnergyDensityUnit, FC % nValues, &
                  NameOption = FC % NameShort )
         call I % SetOutput ( FC % FieldOutput )
-      end select !-- RM
+      end select !-- I
     case ( 'MARSHAK_WAVE_VAYTET_2_GREY' )
       allocate ( Interactions_MWV_2_G_Form :: FC % Field )
       select type ( I => FC % Field )
@@ -151,7 +152,7 @@ contains
                ( FC % LengthUnit, FC % EnergyDensityUnit, FC % nValues, &
                  NameOption = FC % NameShort )
         call I % SetOutput ( FC % FieldOutput )
-      end select !-- RM
+      end select !-- I
     case ( 'MARSHAK_WAVE_VAYTET_3_GREY' )
       allocate ( Interactions_MWV_3_G_Form :: FC % Field )
       select type ( I => FC % Field )
@@ -160,7 +161,16 @@ contains
                ( FC % LengthUnit, FC % EnergyDensityUnit, FC % nValues, &
                  NameOption = FC % NameShort )
         call I % SetOutput ( FC % FieldOutput )
-      end select !-- RM
+      end select !-- I
+    case ( 'NEUTRINO_MOMENTS_GREY_1' )
+      allocate ( Interactions_NM_G_1_Form :: FC % Field )
+      select type ( I => FC % Field )
+      type is ( Interactions_NM_G_1_Form )
+        call I % Initialize &
+               ( FC % LengthUnit, FC % EnergyDensityUnit, FC % nValues, &
+                 NameOption = FC % NameShort )
+        call I % SetOutput ( FC % FieldOutput )
+      end select !-- I
     case default
       call Show ( 'InteractionsType not recognized', CONSOLE % ERROR )
       call Show ( FC % InteractionsType, 'InteractionsType', &

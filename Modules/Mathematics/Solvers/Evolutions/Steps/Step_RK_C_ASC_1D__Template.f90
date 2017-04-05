@@ -169,6 +169,9 @@ contains
 
     call S % DeallocateMetricDerivatives ( S % IncrementDivergence_1D ( 1 ) )
 
+    if ( .not. allocated ( S % BoundaryFluence_CSL_1D ) ) &
+      return
+
     do iC = 1, S % nCurrents
       associate &
         ( ID => S % IncrementDivergence_1D ( iC ), &
@@ -465,7 +468,7 @@ contains
     allocate ( S % Y_1D ( S % nCurrents ) )
     allocate ( S % K_1D ( S % nCurrents, S % nStages ) )
 
-    do iC = 1, S % nStages
+    do iC = 1, S % nCurrents
       associate &
         ( nEquations => S % Current_1D ( iC ) % Pointer % N_CONSERVED, &
           nValues    => S % Current_1D ( iC ) % Pointer % nValues )

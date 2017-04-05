@@ -1,7 +1,7 @@
 PATH_GENASIS = ../../../../..
 
 all:  SineWaveStreaming SineWaveDiffusion LineSource HomogeneousSphere \
-      MarshakWave 
+      MarshakWave WoosleyHeger_07_G
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
@@ -30,15 +30,15 @@ LineSource: Basics.a Mathematics.a Fluid.a GreyMoments.a LineSource.o
           -o LineSource_$(MACHINE) \
           LineSource.o LineSource_Form.o \
           GreyMoments.a Fluid.a Mathematics.a Basics.a \
-          $(LIBRARIES)
+          $(THIRD_PARTY) $(LIBRARIES)
 
 HomogeneousSphere: Basics.a Mathematics.a Fluid.a GreyMoments.a \
   HomogeneousSphere.o
 	$(LINK) $(FFLAGS) \
           -o HomogeneousSphere_$(MACHINE) \
           HomogeneousSphere.o HomogeneousSphere_Form.o \
-          GreyMoments.a Mathematics.a Fluid.a Basics.a \
-          $(LIBRARIES)
+          GreyMoments.a Fluid.a Mathematics.a Basics.a \
+          $(THIRD_PARTY) $(LIBRARIES)
 
 MarshakWave: Basics.a Mathematics.a Fluid.a GreyMoments.a MarshakWave.o
 	$(LINK) $(FFLAGS) \
@@ -138,6 +138,7 @@ MarshakWave_Form.o: \
   Mathematics.o \
   Fluid_P_NR__Form.o \
   Fluid_ASC__Form.o \
+  RadiationMoments_Form.o \
   PhotonMoments_Form.o \
   RadiationMoments_ASC__Form.o \
   Interactions_Template.o \
@@ -162,11 +163,16 @@ WoosleyHeger_07_Header_Form.o: \
   WoosleyHeger_07_Header_Form.f90
 
 WoosleyHeger_07_G__Form.o: \
+  Basics.o \
   Mathematics.o \
+  Fluid_P_MHN__Form.o \
   Fluid_ASC__Form.o \
   WoosleyHeger_07_Header_Form.o \
+  RadiationMoments_Form.o \
+  NeutrinoMoments_Form.o \
   RadiationMoments_ASC__Form.o \
   Interactions_Template.o \
+  Interactions_NM_G_1__Form.o \
   Interactions_ASC__Form.o \
   WoosleyHeger_07_G__Form.f90
 

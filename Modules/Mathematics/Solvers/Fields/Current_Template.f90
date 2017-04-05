@@ -218,7 +218,8 @@ contains
     call SetUnits ( VariableUnit, C, VelocityUnit )
 
     Clear = .true.
-    if ( present ( ClearOption ) ) Clear = ClearOption
+    if ( present ( ClearOption ) ) &
+      Clear = ClearOption
 
     call C % VariableGroupForm % Initialize &
            ( [ nValues, C % N_FIELDS ], &

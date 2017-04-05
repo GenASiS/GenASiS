@@ -6,6 +6,7 @@ module MarshakWave_Form
   use Mathematics
   use Fluid_P_NR__Form
   use Fluid_ASC__Form
+  use RadiationMoments_Form
   use PhotonMoments_Form
   use RadiationMoments_ASC__Form
   use Interactions_Template

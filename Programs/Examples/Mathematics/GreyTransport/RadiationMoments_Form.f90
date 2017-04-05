@@ -132,10 +132,11 @@ contains
              MomentumDensity_D_Unit, EnergyDensityUnit, TemperatureUnit )
 
     call RM % InitializeTemplate &
-           ( RiemannSolverType, UseLimiter, Velocity_U_Unit, LimiterParameter, &
-             nValues, VariableOption = Variable, VectorOption = Vector, &
-             NameOption = Name, ClearOption = ClearOption, &
-             UnitOption = VariableUnit, VectorIndicesOption = VectorIndices )
+           ( RiemannSolverType, UseLimiter, Velocity_U_Unit, &
+             LimiterParameter, nValues, VariableOption = Variable, &
+             VectorOption = Vector, NameOption = Name, &
+             ClearOption = ClearOption, UnitOption = VariableUnit, &
+             VectorIndicesOption = VectorIndices )
     
   end subroutine InitializeAllocate_RM
 
