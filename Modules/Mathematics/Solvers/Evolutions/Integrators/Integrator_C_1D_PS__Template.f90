@@ -37,7 +37,8 @@ contains
 
 
   subroutine InitializeTemplate_C_1D_PS &
-               ( I, Name, TimeUnitOption, FinishTimeOption, nWriteOption )
+               ( I, Name, TimeUnitOption, FinishTimeOption, &
+                 CourantFactorOption, nWriteOption )
 
     class ( Integrator_C_1D_PS_Template ), intent ( inout ) :: &
       I
@@ -46,7 +47,8 @@ contains
     type ( MeasuredValueForm ), intent ( in ), optional :: &
       TimeUnitOption
     real ( KDR ), intent ( in ), optional :: &
-      FinishTimeOption
+      FinishTimeOption, &
+      CourantFactorOption
     integer ( KDI ), intent ( in ), optional :: &
       nWriteOption
 
@@ -73,6 +75,7 @@ contains
     call I % InitializeTemplate_C_PS &
            ( Name, TimeUnitOption = TimeUnitOption, &
              FinishTimeOption = FinishTimeOption, &
+             CourantFactorOption = CourantFactorOption, &
              nWriteOption = nWriteOption )
 
   end subroutine InitializeTemplate_C_1D_PS
