@@ -468,7 +468,7 @@ contains
     allocate ( S % Y_1D ( S % nCurrents ) )
     allocate ( S % K_1D ( S % nCurrents, S % nStages ) )
 
-    do iC = 1, S % nStages
+    do iC = 1, S % nCurrents
       associate &
         ( nEquations => S % Current_1D ( iC ) % Pointer % N_CONSERVED, &
           nValues    => S % Current_1D ( iC ) % Pointer % nValues )
