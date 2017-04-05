@@ -118,7 +118,10 @@ contains
       nValues
     real ( KDR ) :: &
       Factor, &
-      Fermi_3
+      Fermi_3, &
+      fdeta, fdeta2, &
+      fdtheta, fdtheta2, &
+      fdetadtheta
 
     nValues = size ( T )
 
@@ -140,6 +143,9 @@ contains
                      +   Eta_Infty  *  FF ( iV )
 
       !-- FIXME: call Compute Fermi_3
+      call dfermi &
+           ( 3.0_KDR, Eta ( iV ), 0.0_KDR, Fermi_3, &
+            fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta)
 
       T  ( iV )  =  ( J ( iV )  /  ( Factor * Fermi_3 ) ) ** ( 0.25_KDR )
 
