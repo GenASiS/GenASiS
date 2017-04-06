@@ -42,8 +42,8 @@ contains
 
 
   subroutine InitializeAllocate_NM_G_1 &
-               ( I, LengthUnit, EnergyDensityUnit, nValues, NameOption, &
-                 ClearOption, UnitOption )
+               ( I, LengthUnit, EnergyDensityUnit, nValues, VariableOption, &
+                 NameOption, ClearOption, UnitOption )
 
     class ( Interactions_NM_G_1_Form ), intent ( inout ) :: &
       I
@@ -52,6 +52,8 @@ contains
       EnergyDensityUnit
     integer ( KDI ), intent ( in ) :: &
       nValues
+    character ( * ), dimension ( : ), intent ( in ), optional :: &
+      VariableOption
     character ( * ), intent ( in ), optional :: &
       NameOption
     logical ( KDL ), intent ( in ), optional :: &
@@ -63,8 +65,8 @@ contains
       I % Type = 'an Interactions_NM_G_1'
 
     call I % InitializeTemplate &
-           ( LengthUnit, EnergyDensityUnit, nValues, NameOption, &
-             ClearOption, UnitOption )
+           ( LengthUnit, EnergyDensityUnit, nValues, VariableOption, &
+             NameOption, ClearOption, UnitOption )
 
   end subroutine InitializeAllocate_NM_G_1
 

@@ -548,8 +548,8 @@ contains
 
   subroutine InitializeBasics &
                ( C, Variable, Vector, Name, VariableUnit, VectorIndices, &
-                 VariableOption, VectorOption, NameOption, VariableUnitOption, &
-                 VectorIndicesOption )
+                 VariableOption, VectorOption, NameOption, &
+                 VariableUnitOption, VectorIndicesOption )
 
     class ( CurrentTemplate ), intent ( inout ) :: &
       C

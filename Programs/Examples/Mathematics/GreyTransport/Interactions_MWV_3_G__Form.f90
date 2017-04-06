@@ -32,8 +32,8 @@ contains
 
 
   subroutine InitializeAllocate_MWV_3_G &
-               ( I, LengthUnit, EnergyDensityUnit, nValues, NameOption, &
-                 ClearOption, UnitOption )
+               ( I, LengthUnit, EnergyDensityUnit, nValues, VariableOption, &
+                 NameOption, ClearOption, UnitOption )
 
     class ( Interactions_MWV_3_G_Form ), intent ( inout ) :: &
       I
@@ -42,6 +42,8 @@ contains
       EnergyDensityUnit
     integer ( KDI ), intent ( in ) :: &
       nValues
+    character ( * ), dimension ( : ), intent ( in ), optional :: &
+      VariableOption
     character ( * ), intent ( in ), optional :: &
       NameOption
     logical ( KDL ), intent ( in ), optional :: &
@@ -53,8 +55,8 @@ contains
       I % Type = 'an Interactions_MWV_3_G'
 
     call I % InitializeTemplate &
-           ( LengthUnit, EnergyDensityUnit, nValues, NameOption, &
-             ClearOption, UnitOption )
+           ( LengthUnit, EnergyDensityUnit, nValues, VariableOption, &
+             NameOption, ClearOption, UnitOption )
 
   end subroutine InitializeAllocate_MWV_3_G
 
