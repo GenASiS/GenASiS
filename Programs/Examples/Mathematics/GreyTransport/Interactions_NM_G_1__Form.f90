@@ -11,7 +11,14 @@ module Interactions_NM_G_1__Form
   implicit none
   private
 
+      integer ( KDI ), private, parameter :: &
+        N_FIELDS_NM = 2
+
   type, public, extends ( InteractionsTemplate ) :: Interactions_NM_G_1_Form
+    integer ( KDI ) :: &
+      N_FIELDS_NM                = N_FIELDS_NM, &
+      EQUILIBRIUM_DENSITY_NUMBER = 0, &
+      EFFECTIVE_OPACITY_NUMBER   = 0
     class ( Fluid_P_MHN_Form ), pointer :: &
       Fluid => null ( )
     class ( NeutrinoMomentsForm ), pointer :: &
@@ -36,6 +43,7 @@ module Interactions_NM_G_1__Form
   end type Interactions_NM_G_1_Form
 
     private :: &
+      InitializeBasics, &
       ComputeDegeneracyParameter_EQ_Kernel
 
 contains
@@ -61,12 +69,20 @@ contains
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       UnitOption
 
-    if ( I % Type == '' ) &
-      I % Type = 'an Interactions_NM_G_1'
+    type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
+      VariableUnit
+    character ( LDL ), dimension ( : ), allocatable :: &
+      Variable
+    logical ( KDL ) :: &
+      Clear
+
+    call InitializeBasics &
+           ( I, Variable, VariableUnit, VariableOption, UnitOption )
 
     call I % InitializeTemplate &
-           ( LengthUnit, EnergyDensityUnit, nValues, VariableOption, &
-             NameOption, ClearOption, UnitOption )
+           ( LengthUnit, EnergyDensityUnit, nValues, &
+             VariableOption = Variable, NameOption = NameOption, &
+             ClearOption = ClearOption, UnitOption = VariableUnit )
 
   end subroutine InitializeAllocate_NM_G_1
 
@@ -164,6 +180,64 @@ contains
     end associate !-- F
 
   end subroutine ComputeDegeneracyParameter_EQ
+
+
+  subroutine InitializeBasics &
+               ( I, Variable, VariableUnit, VariableOption, &
+                 VariableUnitOption )
+
+    class ( Interactions_NM_G_1_Form ), intent ( inout ) :: &
+      I
+    character ( LDL ), dimension ( : ), allocatable, intent ( out ) :: &
+      Variable
+    type ( MeasuredValueForm ), dimension ( : ), allocatable, &
+      intent ( out ) :: &
+        VariableUnit
+    character ( * ), dimension ( : ), intent ( in ), optional :: &
+      VariableOption
+    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+      VariableUnitOption
+
+    integer ( KDI ) :: &
+      oF  !-- oField
+
+    if ( I % Type == '' ) &
+      I % Type = 'an Interactions_NM_G_1'
+
+    !-- variable indices
+
+    oF = I % N_FIELDS_TEMPLATE
+    if ( I % N_FIELDS == 0 ) &
+      I % N_FIELDS = oF + I % N_FIELDS_NM
+
+    I % EQUILIBRIUM_DENSITY_NUMBER = oF + 1
+    I % EFFECTIVE_OPACITY_NUMBER   = oF + 2
+
+    !-- variable names 
+
+    if ( present ( VariableOption ) ) then
+      allocate ( Variable ( size ( VariableOption ) ) )
+      Variable = VariableOption
+    else
+      allocate ( Variable ( I % N_FIELDS ) )
+      Variable = ''
+    end if
+
+    Variable ( oF + 1 : oF + I % N_FIELDS_NM ) &
+      = [ 'EquilibriumDensityNumber', &
+          'EffectiveOpacityNumber  ' ]
+          
+    !-- units
+    
+    if ( present ( VariableUnitOption ) ) then
+      allocate ( VariableUnit ( size ( VariableUnitOption ) ) )
+      VariableUnit = VariableUnitOption
+    else
+      allocate ( VariableUnit ( I % N_FIELDS ) )
+      VariableUnit = UNIT % IDENTITY
+    end if
+    
+  end subroutine InitializeBasics
 
 
   subroutine ComputeDegeneracyParameter_EQ_Kernel &
