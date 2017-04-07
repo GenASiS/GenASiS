@@ -6,13 +6,17 @@ module Interactions_Template
   implicit none
   private
 
+    integer ( KDI ), private, parameter :: &
+      N_FIELDS_TEMPLATE = 3
+
   type, public, extends ( VariableGroupForm ), abstract :: InteractionsTemplate
     integer ( KDI ) :: &
       IGNORABILITY        = 0, &
-      N_FIELDS            = 3, &
-      EQUILIBRIUM_DENSITY = 1, &
-      EFFECTIVE_OPACITY   = 2, &
-      TRANSPORT_OPACITY   = 3
+      N_FIELDS            = 0, &
+      N_FIELDS_TEMPLATE   = N_FIELDS_TEMPLATE, &
+      EQUILIBRIUM_DENSITY = 0, &
+      EFFECTIVE_OPACITY   = 0, &
+      TRANSPORT_OPACITY   = 0
     character ( LDL ) :: &
       Type = ''
   contains
@@ -39,12 +43,16 @@ module Interactions_Template
     end subroutine C
   end interface
 
+    private :: &
+      InitializeBasics, &
+      SetUnits
+
 contains
 
 
   subroutine InitializeTemplate &
-               ( I, LengthUnit, EnergyDensityUnit, nValues, NameOption, &
-                 ClearOption, UnitOption )
+               ( I, LengthUnit, EnergyDensityUnit, nValues, VariableOption, &
+                 NameOption, ClearOption, UnitOption )
 
     class ( InteractionsTemplate ), intent ( inout ) :: &
       I
@@ -53,6 +61,8 @@ contains
       EnergyDensityUnit
     integer ( KDI ), intent ( in ) :: &
       nValues
+    character ( * ), dimension ( : ), intent ( in ), optional :: &
+      VariableOption
     character ( * ), intent ( in ), optional :: &
       NameOption
     logical ( KDL ), intent ( in ), optional :: &
@@ -60,38 +70,27 @@ contains
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       UnitOption
 
-    character ( LDF ) :: &
-      Name 
-    logical ( KDL ) :: &
-      Clear
     type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
       VariableUnit
+    character ( LDF ) :: &
+      Name 
+    character ( LDL ), dimension ( : ), allocatable :: &
+      Variable
+    logical ( KDL ) :: &
+      Clear
 
-    if ( I % Type == '' ) &
-      I % Type = 'an Interactions'
+    call InitializeBasics &
+           ( I, Variable, Name, VariableUnit, VariableOption, NameOption, &
+             UnitOption )
 
-    Name = 'Interactions'
-    if ( present ( NameOption ) ) &
-      Name = NameOption
-
-    I % IGNORABILITY = CONSOLE % INFO_4 
-    call Show ( 'Initializing ' // trim ( I % Type ), I % IGNORABILITY )
-    call Show ( Name, 'Name', I % IGNORABILITY )
+    call SetUnits ( VariableUnit, I, LengthUnit, EnergyDensityUnit )
 
     Clear = .true.
     if ( present ( ClearOption ) ) &
       Clear = ClearOption
 
-    allocate ( VariableUnit ( I % N_FIELDS ) )
-    VariableUnit ( I % EQUILIBRIUM_DENSITY ) = EnergyDensityUnit
-    VariableUnit ( I % EFFECTIVE_OPACITY )   = LengthUnit ** (-1)
-    VariableUnit ( I % TRANSPORT_OPACITY )   = LengthUnit ** (-1)
-
     call I % VariableGroupForm % Initialize &
-           ( [ nValues, I % N_FIELDS ], &
-             VariableOption = [ 'EquilibriumDensity', &
-                                'EffectiveOpacity  ', &
-                                'TransportOpacity  ' ], &
+           ( [ nValues, I % N_FIELDS ], VariableOption = Variable, &
              NameOption = Name, ClearOption = Clear, &
              UnitOption = VariableUnit )
 
@@ -136,6 +135,91 @@ contains
     !-- Empty interface to be overridden later as needed
 
   end subroutine ComputeDegeneracyParameter_EQ
+
+
+  subroutine InitializeBasics &
+               ( I, Variable, Name, VariableUnit, VariableOption, &
+                 NameOption, VariableUnitOption )
+
+    class ( InteractionsTemplate ), intent ( inout ) :: &
+      I
+    character ( LDL ), dimension ( : ), allocatable, intent ( out ) :: &
+      Variable
+    character ( LDF ), intent ( out ) :: &
+      Name
+    type ( MeasuredValueForm ), dimension ( : ), allocatable, &
+      intent ( out ) :: &
+        VariableUnit
+    character ( * ), dimension ( : ), intent ( in ), optional :: &
+      VariableOption
+    character ( * ), intent ( in ), optional :: &
+      NameOption
+    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+      VariableUnitOption
+
+    if ( I % Type == '' ) &
+      I % Type = 'an Interactions'
+
+    Name = 'Interactions'
+    if ( present ( NameOption ) ) &
+      Name = NameOption
+
+    I % IGNORABILITY = CONSOLE % INFO_4 
+    call Show ( 'Initializing ' // trim ( I % Type ), I % IGNORABILITY )
+    call Show ( Name, 'Name', I % IGNORABILITY )
+
+    !-- variable indices
+
+    if ( I % N_FIELDS == 0 ) &
+      I % N_FIELDS = I % N_FIELDS_TEMPLATE
+
+    I % EQUILIBRIUM_DENSITY = 1
+    I % EFFECTIVE_OPACITY   = 2
+    I % TRANSPORT_OPACITY   = 3
+
+    !-- variable names 
+
+    if ( present ( VariableOption ) ) then
+      allocate ( Variable ( size ( VariableOption ) ) )
+      Variable = VariableOption
+    else
+      allocate ( Variable ( I % N_FIELDS ) )
+      Variable = ''
+    end if
+
+    Variable ( 1 : I % N_FIELDS_TEMPLATE ) &
+      = [ 'EquilibriumDensity', &
+          'EffectiveOpacity  ', &
+          'TransportOpacity  ' ]
+          
+    !-- units
+    
+    if ( present ( VariableUnitOption ) ) then
+      allocate ( VariableUnit ( size ( VariableUnitOption ) ) )
+      VariableUnit = VariableUnitOption
+    else
+      allocate ( VariableUnit ( I % N_FIELDS ) )
+      VariableUnit = UNIT % IDENTITY
+    end if
+    
+  end subroutine InitializeBasics
+
+
+  subroutine SetUnits ( VariableUnit, I, LengthUnit, EnergyDensityUnit )
+
+    type ( MeasuredValueForm ), dimension ( : ), intent ( inout ) :: &
+      VariableUnit
+    class ( InteractionsTemplate ), intent ( in ) :: &
+      I
+    type ( MeasuredValueForm ), intent ( in ) :: &
+      LengthUnit, &
+      EnergyDensityUnit
+
+    VariableUnit ( I % EQUILIBRIUM_DENSITY ) = EnergyDensityUnit
+    VariableUnit ( I % EFFECTIVE_OPACITY )   = LengthUnit ** (-1)
+    VariableUnit ( I % TRANSPORT_OPACITY )   = LengthUnit ** (-1)
+
+  end subroutine SetUnits
 
 
 end module Interactions_Template
