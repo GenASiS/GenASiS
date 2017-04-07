@@ -33,10 +33,15 @@ module Interactions_NM_G_1__Form
       Finalize
     procedure, public, pass ( I ) :: &
       ComputeDegeneracyParameter_EQ
+    procedure, private, pass :: &
+      Compute_E_Nu_Kernel
+    !procedure, private, pass :: &
+    !  Compute_E_NuBar_Kernel
   end type Interactions_NM_G_1_Form
 
     private :: &
       ComputeDegeneracyParameter_EQ_Kernel
+      
 
 contains
 
@@ -97,14 +102,47 @@ contains
     class ( CurrentTemplate ), intent ( in ) :: &
       Current
 
+    associate &
+      ( Nu_E     => I % Neutrinos_E_Nu, &
+        Nu_E_Bar => I % Neutrinos_E_NuBar, &
+        Nu_M_T   => I % Neutrinos_MuTau_NuNuBar, &
+        F        => I % Fluid )
+
     select case ( trim ( Current % Type ) )
     case ( 'NEUTRINOS_E_NU' )
-
+       
       !-- Electron neutrino interactions
+       
+       call I % Compute_E_Nu_Kernel &
+             ( Nu_E % Value ( :, Nu_E % TEMPERATURE_PARAMETER ), &
+               Nu_E % Value ( :, Nu_E % DEGENERACY_PARAMETER ), &
+               Nu_E % Value ( :, Nu_E % DEGENERACY_PARAMETER_EQ ), &
+               F % Value ( :, F % BARYON_MASS ), &
+               F % Value ( :, F % COMOVING_DENSITY ), &
+               F % Value ( :, F % MASS_FRACTION_NEUTRON ), &
+               F % Value ( :, F % MASS_FRACTION_PROTON ), &
+               F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
+               F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
+               F % Value ( :, F % TEMPERATURE ), &
+               I % Value ( :, I % EQUILIBRIUM_DENSITY ), &
+               I % Value ( :, I % EFFECTIVE_OPACITY ), &
+               I % Value ( :, I % TRANSPORT_OPACITY ) )
 
     case ( 'NEUTRINOS_E_NU_BAR' )
 
       !-- Electron antineutrino interactions
+
+      ! call I % Compute_E_NuBar_Kernel &
+      !       ( Nu_E % Value ( :, Nu_E % TEMPERATURE_PARAMETER ), &
+      !         Nu_E % Value ( :, Nu_E % DEGENERACY_PARAMETER ), &
+      !         F % Value ( :, F % BARYON_MASS ), &
+      !         F % Value ( :, F % COMOVING_DENSITY ), &
+      !         F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
+      !         F % Value ( :, F % CHEMICAL_POTENTIAL_E ), & ! Mu_e_+ = - Mu_e ?
+      !         F % Value ( :, F % TEMPERATURE ), &
+      !         I % Value ( :, I % EQUILIBRIUM_DENSITY ), &
+      !         I % Value ( :, I % EFFECTIVE_OPACITY ), &
+      !         I % Value ( :, I % TRANSPORT_OPACITY ) )
 
     case ( 'NEUTRINOS_MU_TAU_NU_NU_BAR' )
 
@@ -116,6 +154,8 @@ contains
       call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )
     end select !-- Radiation % Type
 
+    end associate !-- Nu_E, etc.
+    
   end subroutine Compute
 
 
@@ -162,6 +202,118 @@ contains
     end associate !-- F
 
   end subroutine ComputeDegeneracyParameter_EQ
+
+
+  subroutine Compute_E_Nu_Kernel &
+               ( I, TP, Eta_Nu, Eta_Nu_Eq, M, N, X_n, X_p, Mu_N_P, Mu_E, T, EDV, EOV, TOV )
+
+    class ( Interactions_NM_G_1_Form ), intent ( in ) :: &
+      I
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      TP, &
+      Eta_Nu, &
+      Eta_Nu_Eq, &
+      M, &
+      N, &
+      X_n, &
+      X_p, &
+      Mu_N_P, &
+      Mu_E, &
+      T
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      EDV, &
+      EOV, &
+      TOV
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+    real ( KDR ) :: &
+      k_b, &
+      E_Nu_Average, &
+      J_Factor, &
+      G_F, &
+      Chi_Factor, &
+      M_P, &
+      M_N, &
+      Q, &
+      amu, &
+      Beta_F, &
+      Eta_N_P, &
+      F_E, F_Nu_Eq, &
+      Chi_0, &
+      Fermi_2, Fermi_3, Fermi_4, Fermi_5, &
+      Fermi_2_Eq, Fermi_3_Eq, Fermi_4_Eq, Fermi_5_Eq, &
+      fdeta, fdeta2, &
+      fdtheta, fdtheta2, &
+      fdetadtheta, &
+      S, S_Eq
+      
+    nValues  =  size ( EDV )
+    
+    k_b = CONSTANT % BOLTZMANN 
+    
+    associate &
+      ( c      => CONSTANT % SPEED_OF_LIGHT, &
+        hBar   => CONSTANT % PLANCK_REDUCED, &
+        FourPi => 4.0_KDR * CONSTANT % PI, &
+        TwoPi  => 2.0_KDR * CONSTANT % PI )
+
+    J_Factor   =  FourPi  *  k_b ** 4  /  ( TwoPi * hBar * c ) ** 3
+    G_F        =  1.1663787e-5_KDR * ( hBar * c ) ** 3 * ( 1.0e3_KDR * UNIT % MEV ) ** ( -2 )
+    Chi_Factor = 2.0_KDR * G_F ** 2 / TwoPi * ( 3.0_KDR * 1.23_KDR ** 2 + 1.0_KDR ) / ( hbar * c ) ** 4 
+    
+    end associate !-- c, etc.
+    
+    M_P = 938.2720813_KDR * UNIT % MEV 
+    M_N = 939.5654133_KDR * UNIT % MEV
+    Q   = M_N - M_P
+    amu = CONSTANT % ATOMIC_MASS_UNIT
+
+    !$OMP parallel do private ( iV ) 
+    do iV = 1, nValues
+       
+      call dfermi &
+             ( 2.0_KDR, Eta_Nu ( iV ), 0.0_KDR, Fermi_2, &
+               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta)
+      call dfermi &
+             ( 3.0_KDR, Eta_Nu_Eq ( iV ), 0.0_KDR, Fermi_3_eq, &
+               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta)
+      call dfermi &
+             ( 3.0_KDR, Eta_Nu ( iV ), 0.0_KDR, Fermi_3, &
+               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta)
+      call dfermi &
+             ( 4.0_KDR, Eta_Nu_Eq ( iV ), 0.0_KDR, Fermi_4_eq, &
+               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta)
+      call dfermi &
+             ( 4.0_KDR, Eta_Nu ( iV ), 0.0_KDR, Fermi_4, &
+               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta)
+      call dfermi &
+             ( 5.0_KDR, Eta_Nu_Eq ( iV ), 0.0_KDR, Fermi_5_eq, &
+               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta)
+      call dfermi &
+             ( 5.0_KDR, Eta_Nu ( iV ), 0.0_KDR, Fermi_5, &
+               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta)
+
+      E_Nu_Average = k_B * TP ( iV ) * Fermi_3 / Fermi_2 
+      Beta_F    = 1.0_KDR / ( k_B * T ( iV ) )
+      Eta_N_P   = M ( iV ) * N ( iV ) * ( X_p ( iV ) - X_n ( iV ) ) / amu &
+                  / ( exp ( Beta_F * ( Q - Mu_N_P ( iV ) ) ) - 1.0_KDR )
+      F_E       = 1.0_KDR / ( exp ( Beta_F * ( E_Nu_Average + Q - Mu_E ( iV ) ) ) + 1.0_KDR )
+      F_Nu_Eq   = 1.0_KDR / ( exp ( Beta_F * E_Nu_Average - Eta_Nu_Eq ( iV ) ) + 1.0_KDR )
+      Chi_0     =  Chi_Factor * Eta_N_P * ( 1.0_KDR - F_e ) / ( 1.0_KDR - F_Nu_Eq )
+      
+
+      S = ( k_b * TP ( iV ) ) ** 2 * Fermi_5 / Fermi_3 
+      S_eq = ( k_b * T ( iV ) ) ** 2 * Fermi_5_eq / Fermi_3_eq
+      
+      EDV ( iV )  =  J_Factor *  T ( iV ) ** 4 * Fermi_3_eq * S_eq / S
+      EOV ( iV )  =  Chi_0 * S
+      TOV ( iV )  =  EOV ( iV )
+    end do !-- iV
+    !$OMP end parallel do
+
+  end subroutine Compute_E_Nu_Kernel
 
 
   subroutine ComputeDegeneracyParameter_EQ_Kernel &

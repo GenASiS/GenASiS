@@ -144,7 +144,7 @@ contains
 
       Fermi_3 = 1.0_KDR
       !-- FIXME: call Compute Fermi_3
-      call dfermi &
+      call DFERMI &
            ( 3.0_KDR, Eta ( iV ), 0.0_KDR, Fermi_3, &
             fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta)
 
