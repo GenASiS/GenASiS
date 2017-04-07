@@ -1,2 +1,1 @@
-FERMI_INTEGRATOR = \
-		 $(PATH_FERMI_INTEGRATOR)/fermi_dirac_quadrature.f90 
+TIMMES =  fermi_dirac_quadrature.o 
