@@ -27,15 +27,20 @@ module IncrementDamping_Form
 contains
 
 
-  subroutine Initialize ( I, NameSuffix )
+  subroutine Initialize ( I, NameSuffix, IgnorabilityOption )
 
     class ( IncrementDampingForm ), intent ( inout ) :: &
       I
     character ( * ), intent ( in ) :: &
       NameSuffix
+    integer ( KDI ), intent ( in ), optional :: &
+      IgnorabilityOption
 
-    I % IGNORABILITY = CONSOLE % INFO_4
-    I % Name = 'IncrementDamping' // trim ( NameSuffix )
+    I % IGNORABILITY = CONSOLE % INFO_1
+    if ( present ( IgnorabilityOption ) ) &
+      I % IGNORABILITY = IgnorabilityOption
+    
+    I % Name = 'IncrementDamping_' // trim ( NameSuffix )
 
     call Show ( 'Initializing an Increment_C_R', I % IGNORABILITY )
     call Show ( I % Name, 'Name', I % IGNORABILITY )
@@ -61,6 +66,9 @@ contains
 
     integer ( KDI ) :: &
       iF  !-- iField
+
+    call Show ( 'Computing an IncrementDamping', I % IGNORABILITY + 3 )
+    call Show ( I % Name, 'Name', I % IGNORABILITY + 3 )
 
     do iF = 1, C % N_CONSERVED
       call ComputeKernel &

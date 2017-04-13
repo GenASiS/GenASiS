@@ -203,6 +203,9 @@ contains
     type ( TimerForm ), pointer :: &
       Timer
 
+    call Show ( 'Computing a Step_RK_C_ASC_1D', S % IGNORABILITY + 2 )
+    call Show ( S % Name, 'Name', S % IGNORABILITY + 2 )
+
     Timer => PROGRAM_HEADER % Timer ( S % iTimerStep )
     if ( associated ( Timer ) ) call Timer % Start ( )
 

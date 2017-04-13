@@ -249,7 +249,8 @@ contains
     Timer => PROGRAM_HEADER % TimerPointer ( I % Storage % iTimerDivergence )
     if ( associated ( Timer ) ) call Timer % Start ( )
 
-    call Show ( 'Computing IncrementDivergence', I % IGNORABILITY + 2 )
+    call Show ( 'Computing an IncrementDivergence', I % IGNORABILITY + 3 )
+    call Show ( I % Name, 'Name', I % IGNORABILITY + 3 )
 
     if ( I % UseIncrementStream ) &
       call Show ( '>>> Entering Increment % Compute' )
@@ -478,7 +479,7 @@ contains
                ( I % Storage % iTimerReconstruction )
     if ( associated ( Timer ) ) call Timer % Start ( )
 
-    call Show ( 'Computing Reconstruction', I % IGNORABILITY + 3 )
+    call Show ( 'Computing Reconstruction', I % IGNORABILITY + 4 )
 
     associate &
       ( C    => I % Current, &
@@ -556,7 +557,7 @@ contains
     Timer => PROGRAM_HEADER % TimerPointer ( I % Storage % iTimerFluxes )
     if ( associated ( Timer ) ) call Timer % Start ( )
 
-    call Show ( 'Computing Fluxes', I % IGNORABILITY + 3 )
+    call Show ( 'Computing Fluxes', I % IGNORABILITY + 4 )
 
     associate &
       ( C    => I % Current, &
@@ -717,7 +718,7 @@ contains
     Timer => PROGRAM_HEADER % TimerPointer ( I % Storage % iTimerIncrement )
     if ( associated ( Timer ) ) call Timer % Start ( )
 
-    call Show ( 'Computing Increment', I % IGNORABILITY + 3 )
+    call Show ( 'Computing Increment', I % IGNORABILITY + 4 )
 
     associate &
       ( C    => I % Current, &
