@@ -644,6 +644,8 @@ contains
 
     call ApplySourcesCurvilinear_Fluid_P ( S, Increment, Fluid, TimeStep )
 
+    call Show ( 'ApplySources_Gravity', CONSOLE % INFO_4 )
+
     select type ( F => Fluid )
     class is ( Fluid_P_MHN_Form )
 

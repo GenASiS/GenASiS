@@ -987,6 +987,8 @@ contains
     type ( TimerForm ), pointer :: &
       Timer
 
+    call Show ( 'ApplySources_Curvilinear_Fluid_P', CONSOLE % INFO_4 )
+
     Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerSources )
     if ( associated ( Timer ) ) call Timer % Start ( )
 
