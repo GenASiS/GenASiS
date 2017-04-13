@@ -565,8 +565,24 @@ contains
     integer ( KDI ) :: &
       iV, &
       nV
+    real ( KDR ) :: &
+      AMU
 
     nV = size ( K_G )
+
+    AMU = CONSTANT % ATOMIC_MASS_UNIT
+
+!call Show ( K_G, '>>> K_G' )
+!call Show ( FS_R_G, '>>> FS_R_G' )
+
+!call Show ( K_S_1, '>>> K_S_1' )
+!call Show ( FS_R_S_1, '>>> FS_R_S_1' )
+
+!call Show ( K_DP, '>>> K_DP' )
+!call Show ( FS_R_DP, '>>> FS_R_DP' )
+
+!call Show ( K_DS, '>>> K_DS' )
+!call Show ( AMU * FS_R_G / T, '>>> FS_R_DS' )
 
     !$OMP parallel do private ( iV )
     do iV = 1, nV
@@ -577,7 +593,7 @@ contains
       K_S_2 ( iV )  =  K_S_2 ( iV )  +  FS_R_S_2 ( iV )
       K_S_3 ( iV )  =  K_S_3 ( iV )  +  FS_R_S_3 ( iV )
       K_DP ( iV )   =  K_DP ( iV )   +  FS_R_DP ( iV )
-      K_DS ( iV )   =  K_DS ( iV )   +  FS_R_G ( iV ) / T ( iV )
+      K_DS ( iV )   =  K_DS ( iV )   +  AMU * FS_R_G ( iV ) / T ( iV )
     end do
     !$OMP end parallel do
 
@@ -635,10 +651,10 @@ contains
 
 
   subroutine ComputeFluidSource_DP_Radiation_Kernel &
-               ( FS_R_NE, IsProperCell, EDN, EON, J, dJ, c, dT, Sign )
+               ( FS_R_DP, IsProperCell, EDN, EON, J, dJ, c, dT, Sign )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      FS_R_NE
+      FS_R_DP
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       IsProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
@@ -654,15 +670,19 @@ contains
     integer ( KDI ) :: &
       iV, &
       nV
+    real ( KDR ) :: &
+      AMU
 
-    nV = size ( FS_R_NE )
+    nV = size ( FS_R_DP )
+
+    AMU = CONSTANT % ATOMIC_MASS_UNIT
 
     !$OMP parallel do private ( iV )
     do iV = 1, nV
       if ( .not. IsProperCell ( iV ) ) &
         cycle
-      FS_R_NE ( iV )  &
-        =  FS_R_NE ( iV )  -  Sign * c * dT  *  EON ( iV )  &
+      FS_R_DP ( iV )  &
+        =  FS_R_DP ( iV )  -  Sign * c * dT * AMU  *  EON ( iV )  &
                               *  ( EDN ( iV )  -  ( J ( iV ) + dJ ( iV ) ) ) 
     end do
     !$OMP end parallel do
