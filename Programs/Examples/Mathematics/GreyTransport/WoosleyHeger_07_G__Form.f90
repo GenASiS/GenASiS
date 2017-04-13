@@ -38,7 +38,7 @@ module WoosleyHeger_07_G__Form
   end type WoosleyHeger_07_G_Form
 
     private :: &
-      SetInteractions, &
+      PrepareInteractions, &
       SetRadiation, &
       ApplySources_Radiation, &
       ApplySources_Fluid, &
@@ -160,6 +160,7 @@ contains
     call RA_E % SetInteractions ( IA )
     call RA_E_Bar % SetInteractions ( IA )
     call RA_MuTau % SetInteractions ( IA )
+    call PrepareInteractions ( WH )
     end associate !-- IA
 
     !-- Step
@@ -198,9 +199,8 @@ contains
 
     !-- Initial conditions
 
-    call SetInteractions ( WH )
-    call SetRadiation ( WH )
     call WHH % SetFluid ( )
+    call SetRadiation ( WH )
 
     !-- Integrator
 
@@ -248,7 +248,7 @@ contains
   end subroutine Finalize
 
 
-  subroutine SetInteractions ( WH )
+  subroutine PrepareInteractions ( WH )
 
     class ( WoosleyHeger_07_G_Form ), intent ( inout ) :: &
       WH
@@ -295,7 +295,7 @@ contains
     class default
       call Show ( 'Interactions type not recognized', CONSOLE % ERROR )
       call Show ( 'WoosleyHeger_07_G__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'SetInteractions', 'subroutine', CONSOLE % ERROR )
+      call Show ( 'PrepareInteractions', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- I
 
@@ -315,7 +315,7 @@ contains
     end associate !-- IA
     nullify ( F, R_E, R_E_Bar, R_MuTau, I )
 
-  end subroutine SetInteractions
+  end subroutine PrepareInteractions
 
 
   subroutine SetRadiation ( WH )
@@ -378,6 +378,8 @@ contains
     real ( KDR ), intent ( in ) :: &
       TimeStep
 
+    call Show ( 'ApplySources_Radiation', CONSOLE % INFO_4 )
+
     call ApplySourcesCurvilinear_RadiationMoments &
            ( S, Increment, Radiation, TimeStep )
 
@@ -405,6 +407,8 @@ contains
       iMomentum_3, &
       iProton, &
       iEntropy
+
+    call Show ( 'ApplySources_Fluid', CONSOLE % INFO_4 )
 
     call ApplySourcesGravity ( S, Increment, Fluid, TimeStep )
 
