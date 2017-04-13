@@ -120,6 +120,8 @@ contains
     class ( CurrentTemplate ), intent ( in ) :: &
       Current
 
+    call Show ( 'Computing Interactions', I % IGNORABILITY )
+
     associate &
       ( Nu_E     => I % Neutrinos_E_Nu, &
         NuBar_E => I % Neutrinos_E_NuBar, &
@@ -129,9 +131,9 @@ contains
     select case ( trim ( Current % Type ) )
     case ( 'NEUTRINOS_E_NU' )
        
-      !-- Electron neutrino interactions
+      call Show ( Nu_E % Name, 'Species', I % IGNORABILITY )
        
-       call I % Compute_E_Nu_N_Kernel &
+      call I % Compute_E_Nu_N_Kernel &
              ( Nu_E % Value ( :, Nu_E % TEMPERATURE_PARAMETER ), &
                Nu_E % Value ( :, Nu_E % DEGENERACY_PARAMETER ), &
                Nu_E % Value ( :, Nu_E % DEGENERACY_PARAMETER_EQ ), &
@@ -152,9 +154,9 @@ contains
 
     case ( 'NEUTRINOS_E_NU_BAR' )
 
-      !-- Electron antineutrino interactions
+      call Show ( NuBar_E % Name, 'Species', I % IGNORABILITY )
 
-       call I % Compute_E_NuBar_Kernel &
+      call I % Compute_E_NuBar_Kernel &
              ( NuBar_E % Value ( :, NuBar_E % TEMPERATURE_PARAMETER ), &
                NuBar_E % Value ( :, NuBar_E % DEGENERACY_PARAMETER ), &
                NuBar_E % Value ( :, NuBar_E % DEGENERACY_PARAMETER_EQ ), &
@@ -172,6 +174,8 @@ contains
                I % Value ( :, I % EFFECTIVE_OPACITY_NUMBER ) )
 
     case ( 'NEUTRINOS_MU_TAU_NU_NU_BAR' )
+
+      call Show ( Nu_M_T % Name, 'Species', I % IGNORABILITY )
 
       !-- Mu and Tau neutrino and antineutrino interactions
 
@@ -259,6 +263,7 @@ contains
       iV, &
       nValues
     real ( KDR ) :: &
+      Tiny_10, &
       k_b, &
       E_Nu_Average, &
       J_Factor, &
@@ -271,7 +276,7 @@ contains
       amu, &
       Beta_F, &
       Eta_N_P, &
-      F_E, F_Nu_EQ, &
+      One_Minus_F_E, One_Minus_F_Nu_EQ, &
       Chi_0, &
       Fermi_2, Fermi_3, Fermi_4, Fermi_5, &
       Fermi_2_EQ, Fermi_3_EQ, Fermi_4_EQ, Fermi_5_EQ, &
@@ -283,6 +288,8 @@ contains
       
     nValues  =  size ( EDV )
     
+    Tiny_10 = 1.0e10_KDR * tiny ( 0.0_KDR )
+
     k_b = CONSTANT % BOLTZMANN 
     
     associate &
@@ -309,6 +316,10 @@ contains
     !$OMP parallel do private ( iV ) 
     do iV = 1, nValues
        
+      if ( T ( iV ) == 0.0_KDR ) &
+        cycle
+
+!call Show ( iV, '>>> iV' )
       call dfermi &
              ( 2.0_KDR, Eta_Nu ( iV ), 0.0_KDR, Fermi_2, &
                fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
@@ -331,22 +342,23 @@ contains
              ( 5.0_KDR, Eta_Nu ( iV ), 0.0_KDR, Fermi_5, &
                fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
 
+!call Show ( '>>> 1' )
       E_Nu_Average = k_B * TP ( iV ) * Fermi_3 / Fermi_2 
       Beta_F    = 1.0_KDR / ( k_B * T ( iV ) )
       Eta_N_P   = M ( iV ) * N ( iV ) * ( X_p ( iV ) - X_n ( iV ) ) / amu &
                   / ( exp ( Beta_F * ( Q - Mu_N_P ( iV ) ) ) - 1.0_KDR )
-      F_E       = 1.0_KDR &
-                  / ( exp ( Beta_F * ( E_Nu_Average + Q - Mu_E ( iV ) ) ) &
+      !-- Use Fermi-Dirac identity 1 - f(x) = f(-x) to avoid precision loss 
+      One_Minus_F_E &
+        = 1.0_KDR / ( exp ( - Beta_F * ( E_Nu_Average + Q - Mu_E ( iV ) ) ) &
                       + 1.0_KDR )
-      F_Nu_EQ   = 1.0_KDR / ( exp ( Beta_F * E_Nu_Average - Eta_Nu_EQ ( iV ) ) &
-                              + 1.0_KDR )
-      Chi_0     = Chi_Factor * Eta_N_P * ( 1.0_KDR - F_e ) &
-                  / ( 1.0_KDR - F_Nu_EQ )
-      
+      One_Minus_F_Nu_EQ &
+        = 1.0_KDR / ( exp ( - Beta_F * E_Nu_Average + Eta_Nu_EQ ( iV ) ) &
+                      + 1.0_KDR )
+      Chi_0 = Chi_Factor * Eta_N_P * One_Minus_F_E / One_Minus_F_Nu_EQ
 
-      S      = ( k_b * TP ( iV ) ) ** 2 * Fermi_5 / Fermi_3 
+      S      = max ( ( k_b * TP ( iV ) ) ** 2 * Fermi_5 / Fermi_3, Tiny_10 ) 
       S_EQ   = ( k_b * T ( iV ) ) ** 2 * Fermi_5_EQ / Fermi_3_EQ
-      S_N    = ( k_b * TP ( iV ) ) * Fermi_4 / Fermi_3 
+      S_N    = max ( ( k_b * TP ( iV ) ) * Fermi_4 / Fermi_3, Tiny_10 ) 
       S_N_EQ = ( k_b * T ( iV ) ) * Fermi_4_EQ / Fermi_3_EQ
 
       EDV ( iV )  = J_Factor *  T ( iV ) ** 4 * Fermi_3_EQ * S_EQ / S
@@ -362,8 +374,8 @@ contains
 
 
   subroutine Compute_E_NuBar_Kernel &
-               ( I, TP, Eta_NuBar, Eta_NuBar_EQ, M, N, X_n, X_p, Mu_N_P, Mu_E, T, &
-                 EDV, EOV, TOV, EDNV, EONV )
+               ( I, TP, Eta_NuBar, Eta_NuBar_EQ, M, N, X_n, X_p, &
+                 Mu_N_P, Mu_E, T, EDV, EOV, TOV, EDNV, EONV )
 
     class ( Interactions_NM_G_1_Form ), intent ( in ) :: &
       I
@@ -389,6 +401,7 @@ contains
       iV, &
       nValues
     real ( KDR ) :: &
+      Tiny_10, &
       k_b, &
       E_NuBar_Average, &
       J_Factor, &
@@ -401,7 +414,7 @@ contains
       amu, &
       Beta_F, &
       Eta_P_N, &
-      F_E_Bar, F_NuBar_EQ, &
+      One_Minus_F_E_Bar, One_Minus_F_NuBar_EQ, &
       Chi_0, &
       Fermi_2, Fermi_3, Fermi_4, Fermi_5, &
       Fermi_2_EQ, Fermi_3_EQ, Fermi_4_EQ, Fermi_5_EQ, &
@@ -413,6 +426,8 @@ contains
       
     nValues  =  size ( EDV )
     
+    Tiny_10 = 1.0e10_KDR * tiny ( 0.0_KDR )
+
     k_b = CONSTANT % BOLTZMANN 
     
     associate &
@@ -439,6 +454,9 @@ contains
     !$OMP parallel do private ( iV ) 
     do iV = 1, nValues
        
+      if ( T ( iV ) == 0.0_KDR ) &
+        cycle
+
       call dfermi &
              ( 2.0_KDR, Eta_NuBar ( iV ), 0.0_KDR, Fermi_2, &
                fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta)
@@ -465,18 +483,20 @@ contains
       Beta_F    = 1.0_KDR / ( k_B * T ( iV ) )
       Eta_P_N   = M ( iV ) * N ( iV ) * ( X_n ( iV ) - X_p ( iV ) ) / amu &
                   / ( exp ( Beta_F * ( Mu_N_P ( iV ) - Q ) ) - 1.0_KDR )
-      F_E_Bar   = 1.0_KDR &
-                  / ( exp ( Beta_F * ( E_NuBar_Average - Q + Mu_E ( iV ) ) ) &
-                      + 1.0_KDR )
-      F_NuBar_EQ   = 1.0_KDR &
-                     / ( exp ( Beta_F * E_NuBar_Average - Eta_NuBar_EQ ( iV ) ) &
-                         + 1.0_KDR )
-      Chi_0     = Chi_Factor * Eta_P_N * ( 1.0_KDR - F_E_Bar ) &
-                  / ( 1.0_KDR - F_NuBar_EQ )
+      !-- Use Fermi-Dirac identity 1 - f(x) = f(-x) to avoid precision loss 
+      One_Minus_F_E_Bar &
+        = 1.0_KDR &
+          / ( exp ( - Beta_F * ( E_NuBar_Average - Q + Mu_E ( iV ) ) ) &
+              + 1.0_KDR )
+      One_Minus_F_NuBar_EQ &
+        = 1.0_KDR &
+          / ( exp ( - Beta_F * E_NuBar_Average + Eta_NuBar_EQ ( iV ) ) &
+              + 1.0_KDR )
+      Chi_0 = Chi_Factor * Eta_P_N * One_Minus_F_E_Bar / One_Minus_F_NuBar_EQ
 
-      S      = ( k_b * TP ( iV ) ) ** 2 * Fermi_5 / Fermi_3 
+      S      = max ( ( k_b * TP ( iV ) ) ** 2 * Fermi_5 / Fermi_3, Tiny_10 ) 
       S_EQ   = ( k_b * T ( iV ) ) ** 2 * Fermi_5_EQ / Fermi_3_EQ
-      S_N    = ( k_b * TP ( iV ) ) * Fermi_4 / Fermi_3 
+      S_N    = max ( ( k_b * TP ( iV ) ) * Fermi_4 / Fermi_3, Tiny_10 ) 
       S_N_EQ = ( k_b * T ( iV ) ) * Fermi_4_EQ / Fermi_3_EQ
 
       EDV ( iV )  = J_Factor *  T ( iV ) ** 4 * Fermi_3_EQ * S_EQ / S
