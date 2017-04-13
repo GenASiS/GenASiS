@@ -378,7 +378,6 @@ contains
     real ( KDR ), intent ( in ) :: &
       TimeStep
 
-!call Show ( '>>> ApplySources_Radiation' )
     call ApplySourcesCurvilinear_RadiationMoments &
            ( S, Increment, Radiation, TimeStep )
 
@@ -407,7 +406,6 @@ contains
       iProton, &
       iEntropy
 
-!call Show ( '>>> ApplySources_Fluid' )
     call ApplySourcesGravity ( S, Increment, Fluid, TimeStep )
 
     select type ( F => Fluid )
@@ -423,20 +421,6 @@ contains
     call Search ( F % iaConserved, F % CONSERVED_PROTON_DENSITY, iProton )
     call Search ( F % iaConserved, F % CONSERVED_ENTROPY, iEntropy )
 
-! call Show ( Increment % Value ( :, iEnergy ), '>>> K_G pre' )
-! call Show ( Increment % Value ( :, iMomentum_1 ), '>>> K_S_1 pre' )
-! call Show ( Increment % Value ( :, iMomentum_2 ), '>>> K_S_2 pre' )
-! call Show ( Increment % Value ( :, iMomentum_3 ), '>>> K_S_3 pre' )
-! call Show ( Increment % Value ( :, iProton ), '>>> K_DP pre' )
-! call Show ( Increment % Value ( :, iEntropy ), '>>> K_DS pre' )
-
-! call Show ( FluidSource_Radiation % Value ( :, iEnergy ), '>>> FS_G' )
-! call Show ( FluidSource_Radiation % Value ( :, iMomentum_1 ), '>>> FS_S_1' )
-! call Show ( FluidSource_Radiation % Value ( :, iMomentum_2 ), '>>> FS_S_2' )
-! call Show ( FluidSource_Radiation % Value ( :, iMomentum_3 ), '>>> FS_S_3' )
-! call Show ( FluidSource_Radiation % Value ( :, iProton ), '>>> FS_DP' )
-! call Show ( FluidSource_Radiation % Value ( :, iEntropy ), '>>> FS_DS' )
-
     call ApplySources_Fluid_Kernel &
            ( Increment % Value ( :, iEnergy ), &
              Increment % Value ( :, iMomentum_1 ), &
@@ -451,13 +435,6 @@ contains
              FluidSource_Radiation % Value ( :, iMomentum_3 ), &
              FluidSource_Radiation % Value ( :, iProton ), &
              F % Value ( :, F % TEMPERATURE ) )
-
-! call Show ( Increment % Value ( :, iEnergy ), '>>> K_G post' )
-! call Show ( Increment % Value ( :, iMomentum_1 ), '>>> K_S_1 post' )
-! call Show ( Increment % Value ( :, iMomentum_2 ), '>>> K_S_2 post' )
-! call Show ( Increment % Value ( :, iMomentum_3 ), '>>> K_S_3 post' )
-! call Show ( Increment % Value ( :, iProton ), '>>> K_DP post' )
-! call Show ( Increment % Value ( :, iEntropy ), '>>> K_DS post' )
 
     call Clear ( FluidSource_Radiation % Value )
 
@@ -489,7 +466,6 @@ contains
       iMomentum_2_R, &
       iMomentum_3_R
 
-!call Show ( '>>> ComputeFluidSource_Radiation' )
     select type ( R => Radiation )
     class is ( NeutrinoMomentsForm )
 

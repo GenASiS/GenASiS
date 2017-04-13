@@ -1309,20 +1309,21 @@ contains
       nV
     real ( KDR ) :: &
       K_22, &
-      K_33
-    real ( KDR ), dimension ( : ), allocatable :: &
+      K_33, &
+      Tiny10
+    real ( KDR ), dimension ( size ( KVM_1 ) ) :: &
       H
 
     nV = size ( KVM_1 )
 
-    allocate ( H ( size ( KVM_1 ) ) )
-    
+    Tiny10 = 1.0e10_KDR * tiny ( 0.0_KDR )
+
     !$OMP parallel do private ( iV )
     do iV = 1, nV
       H ( iV )  =  max ( sqrt ( H_1 ( iV ) ** 2  &
                                 +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
                                 +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 ), &
-                    tiny ( 0.0_KDR ) ) 
+                         Tiny10 )
     end do
     !$OMP end parallel do
    
@@ -1348,7 +1349,7 @@ contains
       !$OMP parallel do private ( iV )
       do iV = 1, nV
         if ( .not. IsProperCell ( iV ) ) cycle
-          
+
         K_22 &
           = 0.5_KDR * ( 1.0_KDR - VEF ( iV ) ) * J ( iV ) + 0.5_KDR &
             * ( 3 * VEF ( iV ) - 1.0_KDR ) * M_DD_22 ( iV ) &
