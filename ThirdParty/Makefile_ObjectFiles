@@ -1,4 +1,6 @@
 include $(PATH_OCONNOR_OTT)/Makefile_ObjectFiles
+include $(PATH_TIMMES)/Makefile_ObjectFiles
 
 THIRD_PARTY = \
-  $(OCONNOR_OTT)
+  $(OCONNOR_OTT) \
+  $(TIMMES)

@@ -1,0 +1,5 @@
+to compile and run
+
+% ifort test_fermi_dirac.f90  -o test_fermi_dirac.exe
+% ./test_fermi_dirac.exe 
+
