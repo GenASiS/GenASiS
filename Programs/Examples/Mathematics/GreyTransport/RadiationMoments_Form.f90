@@ -1190,6 +1190,8 @@ contains
     class ( GeometryFlatForm ), pointer :: &
       G
 
+    call Show ( 'ApplySourcesCurvilinear_RadiationMoments', CONSOLE % INFO_4 )
+
     select type ( RM => Current )
     class is ( RadiationMomentsForm )
 
