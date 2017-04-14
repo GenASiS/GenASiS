@@ -91,8 +91,8 @@ contains
     WH % TimeStepLabel ( WH % FLUID ) = 'Fluid'
 
     !-- FIXME: This does not account for curvilinear coordinates
-    MomentumDensity_U_Unit  =  WHH % MomentumUnit
-    MomentumDensity_D_Unit  =  WHH % MomentumUnit
+    MomentumDensity_U_Unit  =  WHH % EnergyDensityUnit / UNIT % SPEED_OF_LIGHT
+    MomentumDensity_D_Unit  =  WHH % EnergyDensityUnit / UNIT % SPEED_OF_LIGHT
 
     !-- Electron Neutrinos
 
