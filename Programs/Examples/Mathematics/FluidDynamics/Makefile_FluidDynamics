@@ -52,7 +52,8 @@ WoosleyHeger_07: Basics.a Mathematics.a Fluid.a Diagnostics_WH07__Form.o \
           Diagnostics_WH07__Form.o \
           Fluid.a Mathematics.a Basics.a $(THIRD_PARTY) $(LIBRARIES)
 
-WoosleyHeger_07_A: Basics.a Mathematics.a Fluid.a WoosleyHeger_07_A.o
+WoosleyHeger_07_A: fermi_dirac_quadrature.o Basics.a Mathematics.a Fluid.a \
+  WoosleyHeger_07_A.o
 	$(LINK) $(FFLAGS) \
           -o WoosleyHeger_07_A_$(MACHINE) \
           WoosleyHeger_07_A.o WoosleyHeger_07_A__Form.o \
