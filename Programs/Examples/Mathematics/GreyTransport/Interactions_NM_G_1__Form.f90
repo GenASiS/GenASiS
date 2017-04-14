@@ -345,8 +345,9 @@ contains
 !call Show ( '>>> 1' )
       E_Nu_Average = k_B * TP ( iV ) * Fermi_3 / Fermi_2 
       Beta_F    = 1.0_KDR / ( k_B * T ( iV ) )
-      Eta_N_P   = M ( iV ) * N ( iV ) * ( X_p ( iV ) - X_n ( iV ) ) / amu &
-                  / ( exp ( Beta_F * ( Q - Mu_N_P ( iV ) ) ) - 1.0_KDR )
+!      Eta_N_P   = M ( iV ) * N ( iV ) * ( X_p ( iV ) - X_n ( iV ) ) / amu &
+!                  / ( exp ( Beta_F * ( Q - Mu_N_P ( iV ) ) ) - 1.0_KDR )
+      Eta_N_P   = M ( iV ) * N ( iV ) * X_n ( iV ) / amu
       !-- Use Fermi-Dirac identity 1 - f(x) = f(-x) to avoid precision loss 
       One_Minus_F_E &
         = 1.0_KDR / ( exp ( - Beta_F * ( E_Nu_Average + Q - Mu_E ( iV ) ) ) &
@@ -481,8 +482,9 @@ contains
 
       E_NuBar_Average = k_B * TP ( iV ) * Fermi_3 / Fermi_2 
       Beta_F    = 1.0_KDR / ( k_B * T ( iV ) )
-      Eta_P_N   = M ( iV ) * N ( iV ) * ( X_n ( iV ) - X_p ( iV ) ) / amu &
-                  / ( exp ( Beta_F * ( Mu_N_P ( iV ) - Q ) ) - 1.0_KDR )
+!      Eta_P_N   = M ( iV ) * N ( iV ) * ( X_n ( iV ) - X_p ( iV ) ) / amu &
+!                  / ( exp ( Beta_F * ( Mu_N_P ( iV ) - Q ) ) - 1.0_KDR )
+      Eta_P_N   = M ( iV ) * N ( iV ) * X_p ( iV ) / amu
       !-- Use Fermi-Dirac identity 1 - f(x) = f(-x) to avoid precision loss 
       One_Minus_F_E_Bar &
         = 1.0_KDR &
