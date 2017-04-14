@@ -189,18 +189,6 @@ contains
 
     end select !-- PS
 
-  end subroutine InitializePositionSpace
-
-
-  subroutine InitializeFluid ( WHH, FA )
-
-    class ( WoosleyHeger_07_HeaderForm ), intent ( inout ) :: &
-      WHH
-    type ( Fluid_ASC_Form ), intent ( inout ), target :: &
-      FA
-
-    WHH % Fluid_ASC => FA
-
     WHH % TimeUnit = UNIT % SECOND
 
     WHH % VelocityUnit       =  WHH % CoordinateUnit  /  WHH % TimeUnit 
@@ -215,6 +203,18 @@ contains
     WHH % AngularMomentumUnit  =  WHH % CoordinateUnit ( 1 ) &
                                   *  WHH % MassUnit  *  UNIT % SPEED_OF_LIGHT
     
+  end subroutine InitializePositionSpace
+
+
+  subroutine InitializeFluid ( WHH, FA )
+
+    class ( WoosleyHeger_07_HeaderForm ), intent ( inout ) :: &
+      WHH
+    type ( Fluid_ASC_Form ), intent ( inout ), target :: &
+      FA
+
+    WHH % Fluid_ASC => FA
+
     select type ( PS => WHH % Integrator % PositionSpace )
     class is ( Atlas_SC_Form )
 
