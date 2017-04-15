@@ -8,12 +8,10 @@ module NeutrinoMoments_Form
 
   type, public, extends ( RadiationMomentsForm ) :: NeutrinoMomentsForm
     real ( KDR ) :: &
-      DegeneracyParameter_Infty = 0.0_KDR
+      DegeneracyInfinity
   contains
     procedure, public, pass :: &
       InitializeAllocate_NM
-    procedure, public, pass :: &
-      SetDegeneracyParameter_Infty
     procedure, public, pass ( RM ) :: &
       ComputeSpectralParameters      
   end type NeutrinoMomentsForm
@@ -25,8 +23,9 @@ contains
                ( NM, NeutrinoType, RiemannSolverType, UseLimiter, &
                  Velocity_U_Unit, MomentumDensity_U_Unit, &
                  MomentumDensity_D_Unit, EnergyDensityUnit, TemperatureUnit, &
-                 LimiterParameter, nValues, VariableOption, VectorOption, &
-                 NameOption, ClearOption, UnitOption, VectorIndicesOption )
+                 DegeneracyInfinity, LimiterParameter, nValues, &
+                 VariableOption, VectorOption, NameOption, ClearOption, &
+                 UnitOption, VectorIndicesOption )
 
     class ( NeutrinoMomentsForm ), intent ( inout ) :: &
       NM
@@ -43,6 +42,7 @@ contains
       EnergyDensityUnit, &
       TemperatureUnit
     real ( KDR ), intent ( in ) :: &
+      DegeneracyInfinity, &
       LimiterParameter
     integer ( KDI ), intent ( in ) :: &
       nValues
@@ -60,6 +60,8 @@ contains
 
     NM % Type = NeutrinoType
 
+    NM % DegeneracyInfinity = DegeneracyInfinity
+
     call NM % RadiationMomentsForm % Initialize &
            ( RiemannSolverType, UseLimiter, Velocity_U_Unit, &
              MomentumDensity_U_Unit, MomentumDensity_D_Unit, &
@@ -68,18 +70,6 @@ contains
              ClearOption, UnitOption, VectorIndicesOption )
 
   end subroutine InitializeAllocate_NM
-
-
-  subroutine SetDegeneracyParameter_Infty ( F, DegeneracyParameter_Infty )
-
-    class ( NeutrinoMomentsForm ), intent ( inout ) :: &
-      F
-    real ( KDR ), intent ( in ) :: &
-      DegeneracyParameter_Infty
-
-    F % DegeneracyParameter_Infty = DegeneracyParameter_Infty
-
-  end subroutine SetDegeneracyParameter_Infty
 
 
   subroutine ComputeSpectralParameters ( T, Eta, RM, J, FF )
@@ -95,7 +85,7 @@ contains
 
     call ComputeSpectralParametersKernel &
            ( T, Eta, J, FF, RM % Value ( :, RM % DEGENERACY_PARAMETER_EQ ), &
-             RM % DegeneracyParameter_Infty )
+             RM % DegeneracyInfinity )
 
   end subroutine ComputeSpectralParameters
 

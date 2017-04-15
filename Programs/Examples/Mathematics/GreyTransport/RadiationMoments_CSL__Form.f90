@@ -14,6 +14,7 @@ module RadiationMoments_CSL__Form
 
   type, public, extends ( Field_CSL_Template ) :: RadiationMoments_CSL_Form
     real ( KDR ) :: &
+      DegeneracyInfinity, &
       LimiterParameter
     type ( MeasuredValueForm ) :: &
       EnergyDensityUnit, &
@@ -53,7 +54,8 @@ contains
                ( RMC, C, NameShort, RadiationMomentsType, RiemannSolverType, &
                  UseLimiter, Velocity_U_Unit, MomentumDensity_U_Unit, &
                  MomentumDensity_D_Unit, EnergyDensityUnit, TemperatureUnit, &
-                 LimiterParameter, nValues, IgnorabilityOption )
+                 DegeneracyInfinity, LimiterParameter, nValues, &
+                 IgnorabilityOption )
 
     class ( RadiationMoments_CSL_Form ), intent ( inout ) :: &
       RMC
@@ -73,6 +75,7 @@ contains
       EnergyDensityUnit, &
       TemperatureUnit
     real ( KDR ), intent ( in ) :: &
+      DegeneracyInfinity, &
       LimiterParameter
     integer ( KDI ), intent ( in ) :: &
       nValues
@@ -84,6 +87,7 @@ contains
     RMC % RadiationMomentsType = RadiationMomentsType
     RMC % RiemannSolverType    = RiemannSolverType
     RMC % UseLimiter           = UseLimiter
+    RMC % DegeneracyInfinity   = DegeneracyInfinity
     RMC % LimiterParameter     = LimiterParameter
 
     RMC % EnergyDensityUnit      = EnergyDensityUnit
@@ -240,8 +244,8 @@ contains
                  FC % UseLimiter, FC % Velocity_U_Unit, &
                  FC % MomentumDensity_U_Unit, FC % MomentumDensity_D_Unit, &
                  FC % EnergyDensityUnit, FC % TemperatureUnit, &
-                 FC % LimiterParameter, FC % nValues, &
-                 NameOption = FC % NameShort )
+                 FC % DegeneracyInfinity, FC % LimiterParameter, &
+                 FC % nValues, NameOption = FC % NameShort )
         call NM % SetPrimitiveConserved ( )
         call NM % SetOutput ( FC % FieldOutput )
       end select !-- NM
