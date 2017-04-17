@@ -509,7 +509,8 @@ contains
                       + 1.0_KDR )
       F_Nu_EQ   = 1.0_KDR / ( exp ( Beta_F * E_Nu_Average - Eta_Nu_EQ ( iV ) ) &
                               + 1.0_KDR )
-      Chi_0     = Chi_Factor * N_A * N_p * N_h * F_e / ( 1.0_KDR - F_Nu_EQ )
+      Chi_0     = Chi_Factor * N_A * N_p * N_h * &
+                  ( 1.0_KDR - F_e ) / ( 1.0_KDR - F_Nu_EQ )
       
 
       S      = ( k_b * TP ( iV ) ) ** 2 * Fermi_5 / Fermi_3 
