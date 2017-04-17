@@ -495,7 +495,7 @@ contains
       end if
       
       if ( A ( iV ) - Z ( iV ) < 34 ) then
-        N_h = 6
+        N_h = 6.0_KDR
       else if ( A ( iV ) - Z ( iV ) < 40 ) then
         N_h = 40.0_KDR - ( A ( iV ) - Z ( iV ) )
       else if ( A ( iV ) - Z ( iV ) > 40 ) then
@@ -510,7 +510,8 @@ contains
       F_Nu_EQ   = 1.0_KDR / ( exp ( Beta_F * E_Nu_Average - Eta_Nu_EQ ( iV ) ) &
                               + 1.0_KDR )
       Chi_0     = Chi_Factor * N_A * N_p * N_h * &
-                  ( 1.0_KDR - F_e ) / ( 1.0_KDR - F_Nu_EQ )
+                  ( 1.0_KDR - F_e ) / ( 1.0_KDR - F_Nu_EQ ) &
+                  * exp ( Beta_f * ( Mu_N_P ( iV ) - Q ) )
       
 
       S      = ( k_b * TP ( iV ) ) ** 2 * Fermi_5 / Fermi_3 
