@@ -267,7 +267,6 @@ contains
       k_b, &
       E_Nu_Average, &
       J_Factor, &
-      N_Factor, &
       G_F, &
       Chi_Factor, &
       M_P, &
@@ -279,7 +278,7 @@ contains
       One_Minus_F_E, One_Minus_F_Nu_EQ, &
       Chi_0, &
       Fermi_2, Fermi_3, Fermi_4, Fermi_5, &
-      Fermi_2_EQ, Fermi_3_EQ, Fermi_4_EQ, Fermi_5_EQ, &
+      Fermi_3_EQ, Fermi_4_EQ, Fermi_5_EQ, &
       fdeta, fdeta2, &
       fdtheta, fdtheta2, &
       fdetadtheta, &
@@ -300,7 +299,6 @@ contains
         Pi     => CONSTANT % PI )
 
     J_Factor   = FourPi * k_b ** 4  /  ( TwoPi * hBar * c ) ** 3
-    N_Factor   = FourPi * k_b ** 3  /  ( TwoPi * hBar * c ) ** 3
     G_F        =  1.1663787e-5_KDR * ( hBar * c ) ** 3 &
                   * ( 1.0e3_KDR * UNIT % MEV ) ** ( -2 )
     Chi_Factor =  G_F ** 2 / Pi * ( 3.0_KDR * 1.23_KDR ** 2 + 1.0_KDR ) &
@@ -365,7 +363,7 @@ contains
       EDV ( iV )  = J_Factor *  T ( iV ) ** 4 * Fermi_3_EQ * S_EQ / S
       EOV ( iV )  = Chi_0 * S
       TOV ( iV )  = EOV ( iV )
-      EDNV ( iV ) = N_Factor *  T ( iV ) ** 3 * Fermi_2_EQ * S_N_EQ / S_N
+      EDNV ( iV ) = J_Factor *  T ( iV ) ** 4 * Fermi_3_EQ * S_N_EQ / S_N
       EONV ( iV ) = Chi_0 * S_N
     
     end do !-- iV
@@ -406,7 +404,6 @@ contains
       k_b, &
       E_NuBar_Average, &
       J_Factor, &
-      N_Factor, &
       G_F, &
       Chi_Factor, &
       M_P, &
@@ -418,7 +415,7 @@ contains
       One_Minus_F_E_Bar, One_Minus_F_NuBar_EQ, &
       Chi_0, &
       Fermi_2, Fermi_3, Fermi_4, Fermi_5, &
-      Fermi_2_EQ, Fermi_3_EQ, Fermi_4_EQ, Fermi_5_EQ, &
+      Fermi_3_EQ, Fermi_4_EQ, Fermi_5_EQ, &
       fdeta, fdeta2, &
       fdtheta, fdtheta2, &
       fdetadtheta, &
@@ -439,7 +436,6 @@ contains
         Pi     => CONSTANT % PI )
 
     J_Factor   = FourPi * k_b ** 4  /  ( TwoPi * hBar * c ) ** 3
-    N_Factor   = FourPi * k_b ** 3  /  ( TwoPi * hBar * c ) ** 3
     G_F        =  1.1663787e-5_KDR * ( hBar * c ) ** 3 &
                   * ( 1.0e3_KDR * UNIT % MEV ) ** ( -2 )
     Chi_Factor =  G_F ** 2 / Pi * ( 3.0_KDR * 1.23_KDR ** 2 + 1.0_KDR ) &
@@ -504,7 +500,7 @@ contains
       EDV ( iV )  = J_Factor *  T ( iV ) ** 4 * Fermi_3_EQ * S_EQ / S
       EOV ( iV )  = Chi_0 * S
       TOV ( iV )  = EOV ( iV )
-      EDNV ( iV ) = N_Factor *  T ( iV ) ** 3 * Fermi_2_EQ * S_N_EQ / S_N
+      EDNV ( iV ) = J_Factor *  T ( iV ) ** 4 * Fermi_3_EQ * S_N_EQ / S_N
       EONV ( iV ) = Chi_0 * S_N
 
     end do !-- iV
