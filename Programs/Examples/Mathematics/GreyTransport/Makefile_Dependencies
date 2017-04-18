@@ -15,7 +15,6 @@ PhotonMoments_Form.o: \
   PhotonMoments_Form.f90
 
 NeutrinoMoments_Form.o: \
-  fermi_dirac_quadrature.o \
   Basics.o \
   RadiationMoments_Form.o \
   NeutrinoMoments_Form.f90
@@ -45,7 +44,6 @@ Interactions_F__Form.o: \
   Interactions_F__Form.f90
 
 Interactions_MWV_1_G__Form.o: \
-  fermi_dirac_quadrature.o \
   Basics.o \
   Mathematics.o \
   Fluid_P__Template.o \

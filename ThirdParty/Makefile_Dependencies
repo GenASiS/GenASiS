@@ -1,1 +1,4 @@
 include $(PATH_OCONNOR_OTT)/Makefile
+
+ThirdParty.a: $(THIRD_PARTY)
+	ar r ThirdParty.a $(THIRD_PARTY)

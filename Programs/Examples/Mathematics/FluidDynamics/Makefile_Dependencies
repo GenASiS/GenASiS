@@ -36,7 +36,6 @@ Fluid_P_NR__Form.o: \
   Fluid_P_NR__Form.f90
 
 Fluid_P_MHN__Form.o: \
-  nuc_eos.a \
   Basics.o \
   Mathematics.o \
   Fluid_P__Template.o \

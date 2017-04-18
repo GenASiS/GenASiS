@@ -9,52 +9,55 @@ VPATH := $(VPATH):../../FluidDynamics
 include ../../FluidDynamics/Makefile_ObjectFiles
 include ../Makefile_ObjectFiles
 
-SineWaveStreaming: Basics.a Mathematics.a GreyMoments.a SineWaveStreaming.o
+SineWaveStreaming: ThirdParty.a Basics.a Mathematics.a GreyMoments.a \
+  SineWaveStreaming.o
 	$(LINK) $(FFLAGS) \
           -o SineWaveStreaming_$(MACHINE) \
           SineWaveStreaming.o SineWaveStreaming_Form.o \
           PlaneWaveStreaming_Template.o \
-          GreyMoments.a Mathematics.a Basics.a \
+          GreyMoments.a Mathematics.a Basics.a ThirdParty.a \
           $(LIBRARIES)
 
-SineWaveDiffusion: Basics.a Mathematics.a Fluid.a GreyMoments.a \
+SineWaveDiffusion: ThirdParty.a Basics.a Mathematics.a Fluid.a GreyMoments.a \
   SineWaveDiffusion.o
 	$(LINK) $(FFLAGS) \
           -o SineWaveDiffusion_$(MACHINE) \
           SineWaveDiffusion.o SineWaveDiffusion_Form.o \
-          GreyMoments.a Fluid.a Mathematics.a Basics.a \
-          $(THIRD_PARTY) $(LIBRARIES)
+          GreyMoments.a Fluid.a Mathematics.a Basics.a ThirdParty.a \
+          $(LIBRARIES)
 
-LineSource: Basics.a Mathematics.a Fluid.a GreyMoments.a LineSource.o
+LineSource: ThirdParty.a Basics.a Mathematics.a Fluid.a GreyMoments.a \
+  LineSource.o
 	$(LINK) $(FFLAGS) \
           -o LineSource_$(MACHINE) \
           LineSource.o LineSource_Form.o \
-          GreyMoments.a Fluid.a Mathematics.a Basics.a \
-          $(THIRD_PARTY) $(LIBRARIES)
+          GreyMoments.a Fluid.a Mathematics.a Basics.a ThirdParty.a \
+          $(LIBRARIES)
 
-HomogeneousSphere: Basics.a Mathematics.a Fluid.a GreyMoments.a \
+HomogeneousSphere: ThirdParty.a Basics.a Mathematics.a Fluid.a GreyMoments.a \
   HomogeneousSphere.o
 	$(LINK) $(FFLAGS) \
           -o HomogeneousSphere_$(MACHINE) \
           HomogeneousSphere.o HomogeneousSphere_Form.o \
-          GreyMoments.a Fluid.a Mathematics.a Basics.a \
-          $(THIRD_PARTY) $(LIBRARIES)
+          GreyMoments.a Fluid.a Mathematics.a Basics.a ThirdParty.a \
+          $(LIBRARIES)
 
-MarshakWave: Basics.a Mathematics.a Fluid.a GreyMoments.a MarshakWave.o
+MarshakWave: ThirdParty.a Basics.a Mathematics.a Fluid.a GreyMoments.a \
+  MarshakWave.o
 	$(LINK) $(FFLAGS) \
           -o MarshakWave_$(MACHINE) \
           MarshakWave.o MarshakWave_Form.o \
-          GreyMoments.a Fluid.a Mathematics.a Basics.a \
-          $(THIRD_PARTY) $(LIBRARIES)
+          GreyMoments.a Fluid.a Mathematics.a Basics.a ThirdParty.a \
+          $(LIBRARIES)
 
-WoosleyHeger_07_G: Basics.a Mathematics.a Fluid.a GreyMoments.a \
+WoosleyHeger_07_G: ThirdParty.a Basics.a Mathematics.a Fluid.a GreyMoments.a \
   WoosleyHeger_07_G.o
 	$(LINK) $(FFLAGS) \
           -o WoosleyHeger_07_G_$(MACHINE) \
           WoosleyHeger_07_G.o WoosleyHeger_07_G__Form.o \
           WoosleyHeger_07_Header_Form.o \
-          GreyMoments.a Fluid.a Mathematics.a Basics.a \
-          $(THIRD_PARTY) $(LIBRARIES)
+          GreyMoments.a Fluid.a Mathematics.a Basics.a ThirdParty.a \
+          $(LIBRARIES)
 
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MATHEMATICS)/Makefile_Dependencies

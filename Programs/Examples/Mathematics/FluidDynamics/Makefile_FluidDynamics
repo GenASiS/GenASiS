@@ -7,58 +7,58 @@ include $(PATH_GENASIS)/Build/Makefile_Build
 
 include ../Makefile_ObjectFiles
 
-SineWave: Basics.a Mathematics.a Fluid.a SineWave.o
+SineWave: ThirdParty.a Basics.a Mathematics.a Fluid.a SineWave.o
 	$(LINK) $(FFLAGS) \
           -o SineWave_$(MACHINE) \
           SineWave.o SineWave_Form.o PlaneWave_Template.o \
-          Fluid.a Mathematics.a Basics.a $(THIRD_PARTY) $(LIBRARIES)
+          Fluid.a Mathematics.a Basics.a ThirdParty.a $(LIBRARIES)
 
-SawtoothWave: Basics.a Mathematics.a Fluid.a SawtoothWave.o
+SawtoothWave: ThirdParty.a Basics.a Mathematics.a Fluid.a SawtoothWave.o
 	$(LINK) $(FFLAGS) \
           -o SawtoothWave_$(MACHINE) \
           SawtoothWave.o SawtoothWave_Form.o PlaneWave_Template.o \
-          Fluid.a Mathematics.a Basics.a $(THIRD_PARTY) $(LIBRARIES)
+          Fluid.a Mathematics.a Basics.a ThirdParty.a $(LIBRARIES)
 
-RiemannProblem: Basics.a Mathematics.a Fluid.a RiemannProblem.o
+RiemannProblem: ThirdParty.a Basics.a Mathematics.a Fluid.a RiemannProblem.o
 	$(LINK) $(FFLAGS) \
           -o RiemannProblem_$(MACHINE) \
           RiemannProblem.o RiemannProblem_Form.o \
-          Fluid.a Mathematics.a Basics.a $(THIRD_PARTY) $(LIBRARIES)
+          Fluid.a Mathematics.a Basics.a ThirdParty.a $(LIBRARIES)
 
-RayleighTaylor: Basics.a Mathematics.a Fluid.a RayleighTaylor.o
+RayleighTaylor: ThirdParty.a Basics.a Mathematics.a Fluid.a RayleighTaylor.o
 	$(LINK) $(FFLAGS) \
           -o RayleighTaylor_$(MACHINE) \
           RayleighTaylor.o RayleighTaylor_Form.o Tally_RT__Form.o \
-          Fluid.a Mathematics.a Basics.a $(THIRD_PARTY) $(LIBRARIES)
+          Fluid.a Mathematics.a Basics.a ThirdParty.a $(LIBRARIES)
 
-SedovTaylor: Basics.a Mathematics.a Fluid.a SedovTaylor.o
+SedovTaylor: ThirdParty.a Basics.a Mathematics.a Fluid.a SedovTaylor.o
 	$(LINK) $(FFLAGS) \
           -o SedovTaylor_$(MACHINE) \
           SedovTaylor.o SedovTaylor_Form.o \
-          Fluid.a Mathematics.a Basics.a $(THIRD_PARTY) $(LIBRARIES)
+          Fluid.a Mathematics.a Basics.a ThirdParty.a $(LIBRARIES)
 
-FishboneMoncrief: Basics.a Mathematics.a Fluid.a FishboneMoncrief.o
+FishboneMoncrief: ThirdParty.a Basics.a Mathematics.a Fluid.a FishboneMoncrief.o
 	$(LINK) $(FFLAGS) \
           -o FishboneMoncrief_$(MACHINE) \
           FishboneMoncrief.o FishboneMoncrief_Form.o Tally_FM__Form.o \
-          Fluid.a Mathematics.a Basics.a $(THIRD_PARTY) $(LIBRARIES)
+          Fluid.a Mathematics.a Basics.a ThirdParty.a $(LIBRARIES)
 
-WoosleyHeger_07: Basics.a Mathematics.a Fluid.a Diagnostics_WH07__Form.o \
-  WoosleyHeger_07.o
+WoosleyHeger_07: ThirdParty.a Basics.a Mathematics.a Fluid.a \
+  Diagnostics_WH07__Form.o WoosleyHeger_07.o
 	$(LINK) $(FFLAGS) \
           -o WoosleyHeger_07_$(MACHINE) \
           WoosleyHeger_07.o WoosleyHeger_07__Form.o \
           Diagnostics_WH07_ASC__Form.o Diagnostics_WH07_CSL__Form.o \
           Diagnostics_WH07__Form.o \
-          Fluid.a Mathematics.a Basics.a $(THIRD_PARTY) $(LIBRARIES)
+          Fluid.a Mathematics.a Basics.a ThirdParty.a $(LIBRARIES)
 
-WoosleyHeger_07_A: fermi_dirac_quadrature.o Basics.a Mathematics.a Fluid.a \
+WoosleyHeger_07_A: ThirdParty.a Basics.a Mathematics.a Fluid.a \
   WoosleyHeger_07_A.o
 	$(LINK) $(FFLAGS) \
           -o WoosleyHeger_07_A_$(MACHINE) \
           WoosleyHeger_07_A.o WoosleyHeger_07_A__Form.o \
           WoosleyHeger_07_Header_Form.o \
-          Fluid.a Mathematics.a Basics.a $(THIRD_PARTY) $(LIBRARIES)
+          Fluid.a Mathematics.a Basics.a ThirdParty.a $(LIBRARIES)
 
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MATHEMATICS)/Makefile_Dependencies

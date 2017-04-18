@@ -1,2 +1,4 @@
 OCONNOR_OTT = \
-  nuc_eos.a
+  $(OBJECTS) \
+  $(FOBJECTS)
+#  nuc_eos.a
