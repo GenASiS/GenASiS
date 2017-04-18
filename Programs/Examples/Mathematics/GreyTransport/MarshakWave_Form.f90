@@ -289,7 +289,7 @@ contains
     call Show ( t_Diff, UNIT % SECOND, 't_Diff' )
 
     select case ( trim ( InteractionsType ) )
-    case ( 'MARSHAK_WAVE_VAYTET_1_GREY', 'MARSHAK_WAVE_VAYTET_2_GREY' )
+    case ( 'MARSHAK_WAVE_VAYTET_2_GREY', 'MARSHAK_WAVE_VAYTET_3_GREY' )
       call Show ( EnergyMax, UNIT % ELECTRON_VOLT, 'EnergyMax' )
     end select !-- InteractionsType
 
@@ -597,7 +597,7 @@ contains
            ( FluidSource_Radiation % Value ( :, iEnergy_F ), &
              FluidSource_Radiation % Value ( :, iMomentum_1_F ), &
              Chart % IsProperCell, &
-             I % Value ( :, I % EQUILIBRIUM_DENSITY ), &
+             I % Value ( :, I % EMISSIVITY ), &
              I % Value ( :, I % EFFECTIVE_OPACITY ), &
              I % Value ( :, I % TRANSPORT_OPACITY ), &
              R % Value ( :, R % COMOVING_ENERGY_DENSITY ), &
@@ -644,7 +644,7 @@ contains
 
 
   subroutine ComputeFluidSource_Radiation_Kernel &
-               ( FS_R_G, FS_R_S_1, IsProperCell, ED, EO, TO, J, dJ, H, dH, &
+               ( FS_R_G, FS_R_S_1, IsProperCell, E, EO, TO, J, dJ, H, dH, &
                  c, dT )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -653,7 +653,7 @@ contains
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       IsProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      ED, &
+      E, &
       EO, &
       TO, &
       J,  &
@@ -675,11 +675,11 @@ contains
       if ( .not. IsProperCell ( iV ) ) &
         cycle
       FS_R_G ( iV )  &
-        =  FS_R_G ( iV )  -  c * dT  *  EO ( iV )  &
-                             *  ( ED ( iV )  -  ( J ( iV ) + dJ ( iV ) ) ) 
+        =  FS_R_G ( iV )  &
+           -  c * dT  *  ( E ( iV )  -  EO ( iV ) * ( J ( iV ) + dJ ( iV ) ) ) 
       FS_R_S_1 ( iV )  &
-        =  FS_R_S_1 ( iV )  +  c * dT  *  TO ( iV )  &
-                               *  ( H ( iV ) + dH ( iV ) )
+        =  FS_R_S_1 ( iV )  &
+           +  c * dT  *  TO ( iV )  *  ( H ( iV ) + dH ( iV ) )
     end do
     !$OMP end parallel do
 

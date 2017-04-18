@@ -14,7 +14,7 @@ module Interactions_Template
       IGNORABILITY        = 0, &
       N_FIELDS            = 0, &
       N_FIELDS_TEMPLATE   = N_FIELDS_TEMPLATE, &
-      EQUILIBRIUM_DENSITY = 0, &
+      EMISSIVITY          = 0, &
       EFFECTIVE_OPACITY   = 0, &
       TRANSPORT_OPACITY   = 0
     character ( LDL ) :: &
@@ -105,7 +105,7 @@ contains
       Output
 
     call Output % Initialize &
-           ( I, iaSelectedOption = [ I % EQUILIBRIUM_DENSITY, &
+           ( I, iaSelectedOption = [ I % EMISSIVITY, &
                                      I % EFFECTIVE_OPACITY, &
                                      I % TRANSPORT_OPACITY ] )
 
@@ -173,9 +173,9 @@ contains
     if ( I % N_FIELDS == 0 ) &
       I % N_FIELDS = I % N_FIELDS_TEMPLATE
 
-    I % EQUILIBRIUM_DENSITY = 1
-    I % EFFECTIVE_OPACITY   = 2
-    I % TRANSPORT_OPACITY   = 3
+    I % EMISSIVITY         =  1
+    I % EFFECTIVE_OPACITY  =  2
+    I % TRANSPORT_OPACITY  =  3
 
     !-- variable names 
 
@@ -188,9 +188,9 @@ contains
     end if
 
     Variable ( 1 : I % N_FIELDS_TEMPLATE ) &
-      = [ 'EquilibriumDensity', &
-          'EffectiveOpacity  ', &
-          'TransportOpacity  ' ]
+      = [ 'Emissivity      ', &
+          'EffectiveOpacity', &
+          'TransportOpacity' ]
           
     !-- units
     
@@ -215,9 +215,12 @@ contains
       LengthUnit, &
       EnergyDensityUnit
 
-    VariableUnit ( I % EQUILIBRIUM_DENSITY ) = EnergyDensityUnit
-    VariableUnit ( I % EFFECTIVE_OPACITY )   = LengthUnit ** (-1)
-    VariableUnit ( I % TRANSPORT_OPACITY )   = LengthUnit ** (-1)
+    VariableUnit ( I % EMISSIVITY ) &
+      =  EnergyDensityUnit  *  LengthUnit ** (-1)
+    VariableUnit ( I % EFFECTIVE_OPACITY ) &
+      =  LengthUnit ** (-1)
+    VariableUnit ( I % TRANSPORT_OPACITY ) &
+      =  LengthUnit ** (-1)
 
   end subroutine SetUnits
 

@@ -1152,7 +1152,7 @@ contains
                  DampingCoefficient % Value ( :, iMomentum_2 ), &
                  DampingCoefficient % Value ( :, iMomentum_3 ), &
                  Chart % IsProperCell, &
-                 I % Value ( :, I % EQUILIBRIUM_DENSITY ), &
+                 I % Value ( :, I % EMISSIVITY ), &
                  I % Value ( :, I % EFFECTIVE_OPACITY ), &
                  I % Value ( :, I % TRANSPORT_OPACITY ), &
                  TimeStep, CONSTANT % SPEED_OF_LIGHT )
@@ -1244,7 +1244,7 @@ contains
 
   subroutine ApplyRelaxationKernel &
                ( KV_E, DCV_E, DCV_S_1, DCV_S_2, DCV_S_3, IsProperCell, &
-                 ED, EO, TO, dT, c )
+                 E, EO, TO, dT, c )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       KV_E, &
@@ -1255,7 +1255,7 @@ contains
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       IsProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      ED, &
+      E, &
       EO, &
       TO
     real ( KDR ), intent ( in ) :: &
@@ -1272,7 +1272,7 @@ contains
     do iV = 1, nV
       if ( .not. IsProperCell ( iV ) ) &
         cycle
-      KV_E    ( iV )  =  KV_E ( iV )  +  c * EO ( iV ) * ED ( iV ) * dT
+      KV_E    ( iV )  =  KV_E ( iV )  +  c * E ( iV ) * dT
       DCV_E   ( iV )  =  c * EO ( iV )
       DCV_S_1 ( iV )  =  c * TO ( iV )
       DCV_S_2 ( iV )  =  c * TO ( iV )

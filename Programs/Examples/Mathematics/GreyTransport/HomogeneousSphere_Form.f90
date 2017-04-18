@@ -229,14 +229,14 @@ contains
     select type ( I => IC % Field )
     class is ( Interactions_F_Form )
     associate &
-      ( ED => I % Value ( :, I % EQUILIBRIUM_DENSITY ), &
+      ( E  => I % Value ( :, I % EMISSIVITY ), &
         EO => I % Value ( :, I % EFFECTIVE_OPACITY ), &
         TO => I % Value ( :, I % TRANSPORT_OPACITY ) )
 
     call SetInteractions &
            ( HS, CoordinateSystem, IsHardSphere, EquilibriumDensity, &
              EffectiveOpacity, TransportOpacity, SofteningParameter, &
-             ED, EO, TO )
+             E, EO, TO )
     end associate !-- ED, etc.
     end select !-- I
     end select !-- IC
@@ -422,7 +422,7 @@ contains
   subroutine SetInteractions &
                ( HS, CoordinateSystem, IsHardSphere, EquilibriumDensity, &
                  EffectiveOpacity, TransportOpacity, SofteningFactor, &
-                 ED, EO, TO )
+                 E, EO, TO )
     class ( HomogeneousSphereForm ), intent ( in ) :: &
       HS
     character ( LDL ), intent ( in ) :: &
@@ -435,7 +435,7 @@ contains
       TransportOpacity, &
       SofteningFactor
     real ( KDR ), dimension ( : ), intent ( out ) :: &
-      ED, &
+      E, &
       EO, &
       TO
 
@@ -459,11 +459,11 @@ contains
         !$OMP parallel do private ( iV )
         do iV = 1, nValues
           if ( R ( iV ) < 1.0_KDR ) then
-            ED ( iV ) = EquilibriumDensity
+            E  ( iV ) = EffectiveOpacity * EquilibriumDensity
             EO ( iV ) = EffectiveOpacity 
             TO ( iV ) = TransportOpacity 
           else 
-            ED ( iV ) = 0.0_KDR
+            E  ( iV ) = 0.0_KDR
             EO ( iV ) = 0.0_KDR
             TO ( iV ) = 0.0_KDR 
           end if
@@ -472,7 +472,7 @@ contains
       else 
         !$OMP parallel do private ( iV )
         do iV = 1, nValues
-          ED ( iV ) = EquilibriumDensity &
+          E  ( iV ) = EffectiveOpacity * EquilibriumDensity &
                       / ( 1.0_KDR + R ( iV ) ** SofteningFactor )
           EO ( iV ) = EffectiveOpacity &
                       / ( 1.0_KDR + R ( iV ) ** SofteningFactor )

@@ -101,7 +101,7 @@ contains
              F % Value ( :, F % BARYON_MASS ), &
              F % Value ( :, F % COMOVING_DENSITY ), &
              F % Value ( :, F % TEMPERATURE ), &
-             I % Value ( :, I % EQUILIBRIUM_DENSITY ), &
+             I % Value ( :, I % EMISSIVITY ), &
              I % Value ( :, I % EFFECTIVE_OPACITY ), &
              I % Value ( :, I % TRANSPORT_OPACITY ) )
     end associate !-- R, etc.
@@ -122,7 +122,7 @@ contains
   end subroutine Finalize
 
 
-  subroutine ComputeKernel ( TP, M, N, T, I, EDV, EOV, TOV )
+  subroutine ComputeKernel ( TP, M, N, T, I, EV, EOV, TOV )
 
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       TP, &
@@ -132,7 +132,7 @@ contains
     class ( Interactions_MWV_1_G_Form ), intent ( in ) :: &
       I
     real ( KDR ), dimension ( : ), intent ( out ) :: &
-      EDV, &
+      EV, &
       EOV, &
       TOV
 
@@ -146,11 +146,11 @@ contains
     a      =  CONSTANT % RADIATION
     Kappa  =  I % SpecificOpacity
 
-    nValues  =  size ( EDV )
+    nValues  =  size ( EV )
 
     !$OMP parallel do private ( iV ) 
     do iV = 1, nValues
-      EDV ( iV )  =  a  *  T ( iV ) ** 4
+      EV  ( iV )  =  Kappa  *  M ( iV )  *  N ( iV )  *  a  *  T ( iV ) ** 4
       EOV ( iV )  =  Kappa  *  M ( iV )  *  N ( iV ) 
       TOV ( iV )  =  EOV ( iV )
     end do !-- iV

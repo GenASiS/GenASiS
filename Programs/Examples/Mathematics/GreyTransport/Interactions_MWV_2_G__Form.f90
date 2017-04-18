@@ -90,7 +90,7 @@ contains
   end subroutine Finalize
 
 
-  subroutine ComputeKernel ( TP, M, N, T, I, EDV, EOV, TOV )
+  subroutine ComputeKernel ( TP, M, N, T, I, EV, EOV, TOV )
 
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       TP, &
@@ -100,7 +100,7 @@ contains
     class ( Interactions_MWV_2_G_Form ), intent ( in ) :: &
       I
     real ( KDR ), dimension ( : ), intent ( out ) :: &
-      EDV, &
+      EV, &
       EOV, &
       TOV
 
@@ -120,7 +120,7 @@ contains
     Kappa  =  I % SpecificOpacity
     E_Max  =  I % EnergyMax
 
-    nValues  =  size ( EDV )
+    nValues  =  size ( EV )
 
     !$OMP parallel do private ( iV, S, S_Eq ) 
     do iV = 1, nValues
@@ -128,7 +128,8 @@ contains
       S     =  1.0_KDR  -  PlanckRatio * k_B * TP ( iV ) / E_Max
       S_Eq  =  1.0_KDR  -  PlanckRatio * k_B *  T ( iV ) / E_Max
 
-      EDV ( iV )  =  a  *  T ( iV ) ** 4  *  S_Eq / S
+      EV  ( iV )  =  Kappa  *  M ( iV )  *  N ( iV )  *  S_Eq  &
+                     *  a  *  T ( iV ) ** 4
       EOV ( iV )  =  Kappa  *  M ( iV )  *  N ( iV )  *  S
       TOV ( iV )  =  EOV ( iV )
 
