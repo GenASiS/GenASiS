@@ -133,27 +133,27 @@ contains
     case ( 'NEUTRINOS_E_NU' )
        
       call Show ( Nu_E % Name, 'Species', I % IGNORABILITY )
-       
-      call I % Compute_E_Nu_N_Kernel &
-             ( Nu_E % Value ( :, Nu_E % TEMPERATURE_PARAMETER ), &
-               Nu_E % Value ( :, Nu_E % DEGENERACY_PARAMETER ), &
-               Nu_E % Value ( :, Nu_E % DEGENERACY_PARAMETER_EQ ), &
-               F % Value ( :, F % BARYON_MASS ), &
-               F % Value ( :, F % COMOVING_DENSITY ), &
-               F % Value ( :, F % MASS_FRACTION_NEUTRON ), &
-               F % Value ( :, F % MASS_FRACTION_PROTON ), &
-               F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
-               F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
-               F % Value ( :, F % TEMPERATURE ), &
-               I % Value ( :, I % EQUILIBRIUM_DENSITY ), &
-               I % Value ( :, I % EFFECTIVE_OPACITY ), &
-               I % Value ( :, I % TRANSPORT_OPACITY ), &
-               I % Value ( :, I % EQUILIBRIUM_DENSITY_NUMBER ), &
-               I % Value ( :, I % EFFECTIVE_OPACITY_NUMBER ) )
-       
-       !add Neutrino-Nuclei absorption
 
-       call I % Compute_E_Nu_Nuclei_Kernel &
+! call Show ( '>>> Free nucleons' )       
+!       call I % Compute_E_Nu_N_Kernel &
+!              ( Nu_E % Value ( :, Nu_E % TEMPERATURE_PARAMETER ), &
+!                Nu_E % Value ( :, Nu_E % DEGENERACY_PARAMETER ), &
+!                Nu_E % Value ( :, Nu_E % DEGENERACY_PARAMETER_EQ ), &
+!                F % Value ( :, F % BARYON_MASS ), &
+!                F % Value ( :, F % COMOVING_DENSITY ), &
+!                F % Value ( :, F % MASS_FRACTION_NEUTRON ), &
+!                F % Value ( :, F % MASS_FRACTION_PROTON ), &
+!                F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
+!                F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
+!                F % Value ( :, F % TEMPERATURE ), &
+!                I % Value ( :, I % EQUILIBRIUM_DENSITY ), &
+!                I % Value ( :, I % EFFECTIVE_OPACITY ), &
+!                I % Value ( :, I % TRANSPORT_OPACITY ), &
+!                I % Value ( :, I % EQUILIBRIUM_DENSITY_NUMBER ), &
+!                I % Value ( :, I % EFFECTIVE_OPACITY_NUMBER ) )
+       
+!call Show ( '>>> Nuclei' )       
+      call I % Compute_E_Nu_Nuclei_Kernel &
              ( Nu_E % Value ( :, Nu_E % TEMPERATURE_PARAMETER ), &
                Nu_E % Value ( :, Nu_E % DEGENERACY_PARAMETER ), &
                Nu_E % Value ( :, Nu_E % DEGENERACY_PARAMETER_EQ ), &
@@ -271,7 +271,7 @@ contains
       Mu_N_P, &
       Mu_E, &
       T
-    real ( KDR ), dimension ( : ), intent ( out ) :: &
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
       EDV, &
       EOV, &
       TOV, &
@@ -336,7 +336,7 @@ contains
       if ( T ( iV ) == 0.0_KDR ) &
         cycle
 
-!call Show ( iV, '>>> iV' )
+call Show ( iV, '>>> iV' )
       call dfermi &
              ( 2.0_KDR, Eta_Nu ( iV ), 0.0_KDR, Fermi_2, &
                fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
@@ -366,13 +366,22 @@ contains
 !                  / ( exp ( Beta_F * ( Q - Mu_N_P ( iV ) ) ) - 1.0_KDR )
       Eta_N_P   = M ( iV ) * N ( iV ) * X_n ( iV ) / amu
       !-- Use Fermi-Dirac identity 1 - f(x) = f(-x) to avoid precision loss 
+!      One_Minus_F_E &
+!        = 1.0_KDR / ( exp ( - Beta_F * ( E_Nu_Average + Q - Mu_E ( iV ) ) ) &
+!                      + 1.0_KDR )
       One_Minus_F_E &
-        = 1.0_KDR / ( exp ( - Beta_F * ( E_Nu_Average + Q - Mu_E ( iV ) ) ) &
+        = 1.0_KDR / ( exp ( - Beta_F * ( E_Nu_Average - Mu_E ( iV ) ) ) &
                       + 1.0_KDR )
       One_Minus_F_Nu_EQ &
         = 1.0_KDR / ( exp ( - Beta_F * E_Nu_Average + Eta_Nu_EQ ( iV ) ) &
                       + 1.0_KDR )
-      Chi_0 = Chi_Factor * Eta_N_P * One_Minus_F_E / One_Minus_F_Nu_EQ
+!      Chi_0 = Chi_Factor * Eta_N_P * One_Minus_F_E / One_Minus_F_Nu_EQ
+      Chi_0 = Chi_Factor * Eta_N_P * One_Minus_F_E
+call Show ( Chi_Factor, '>>> Chi_Factor' )
+call Show ( Eta_N_P, '>>> Eta_N_P' )
+call Show ( One_Minus_F_E, '>>> One_Minus_F_E' )      
+call Show ( One_Minus_F_Nu_EQ, '>>> One_Minus_F_Nu_EQ' )
+call Show ( exp ( - Eta_Nu_EQ ( iV ) ), '>>> exp ( -eta_nu_eq )' )
 
       S      = max ( ( k_b * TP ( iV ) ) ** 2 * Fermi_5 / Fermi_3, Tiny_10 ) 
       S_EQ   = ( k_b * T ( iV ) ) ** 2 * Fermi_5_EQ / Fermi_3_EQ
@@ -392,8 +401,8 @@ contains
 
 
   subroutine Compute_E_Nu_Nuclei_Kernel &
-               ( I, TP, Eta_Nu, Eta_Nu_EQ, M, N, X_heavy, Z, A, Mu_N_P, Mu_E, T, &
-                 EDV, EOV, TOV, EDNV, EONV )
+               ( I, TP, Eta_Nu, Eta_Nu_EQ, M, N, X_heavy, Z, A, Mu_N_P, Mu_E, &
+                 T, EDV, EOV, TOV, EDNV, EONV )
 
     class ( Interactions_NM_G_1_Form ), intent ( in ) :: &
       I
@@ -409,7 +418,7 @@ contains
       Mu_N_P, &
       Mu_E, &
       T
-    real ( KDR ), dimension ( : ), intent ( out ) :: &
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
       EDV, &
       EOV, &
       TOV, &
@@ -420,10 +429,10 @@ contains
       iV, &
       nValues
     real ( KDR ) :: &
+      Tiny_10, &
       k_b, &
       E_Nu_Average, &
       J_Factor, &
-      N_Factor, &
       G_F, &
       Chi_Factor, &
       M_P, &
@@ -434,7 +443,7 @@ contains
       N_h, &
       Beta_F, &
       N_A, &
-      F_E, F_Nu_EQ, &
+      One_Minus_F_E, One_Minus_F_Nu_EQ, &
       Chi_0, &
       Fermi_2, Fermi_3, Fermi_4, Fermi_5, &
       Fermi_2_EQ, Fermi_3_EQ, Fermi_4_EQ, Fermi_5_EQ, &
@@ -446,6 +455,8 @@ contains
       
     nValues  =  size ( EDV )
     
+    Tiny_10 = 1.0e10_KDR * tiny ( 0.0_KDR )
+
     k_b = CONSTANT % BOLTZMANN 
     
     associate &
@@ -456,7 +467,6 @@ contains
         Pi     => CONSTANT % PI )
 
     J_Factor   = FourPi * k_b ** 4  /  ( TwoPi * hBar * c ) ** 3
-    N_Factor   = FourPi * k_b ** 3  /  ( TwoPi * hBar * c ) ** 3
     G_F        =  1.1663787e-5_KDR * ( hBar * c ) ** 3 &
                   * ( 1.0e3_KDR * UNIT % MEV ) ** ( -2 )
     Chi_Factor =  G_F ** 2 / Pi * 1.23_KDR ** 2 * 2.0_KDR / 7.0_KDR &
@@ -471,6 +481,10 @@ contains
     !$OMP parallel do private ( iV ) 
     do iV = 1, nValues
        
+      if ( T ( iV ) == 0.0_KDR .or. A ( iV ) == 0.0_KDR ) &
+        cycle
+
+!call Show ( iV, '>>> iV' )
       call dfermi &
              ( 2.0_KDR, Eta_Nu ( iV ), 0.0_KDR, Fermi_2, &
                fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
@@ -494,6 +508,7 @@ contains
                fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
 
       E_Nu_Average = k_B * TP ( iV ) * Fermi_3 / Fermi_2 
+!call Show ( E_Nu_Average, '>>> E_Nu_Average' )
 
       Q   = Mu_N_P ( IV ) + 3.0_KDR * UNIT % MEV
 
@@ -513,31 +528,40 @@ contains
         N_h = 0.0_KDR
       end if
 
+!call Show ( Chi_Factor, '>>> Chi_Factor' )
+!call Show ( N_p, '>>> N_p' )
+!call Show ( N_h, '>>> N_h' )
       Beta_F    = 1.0_KDR / ( k_B * T ( iV ) )
-      N_A       = M ( iV ) * N ( iV ) *  X_heavy ( iV ) / amu 
-      F_E       = 1.0_KDR &
-                  / ( exp ( Beta_F * ( E_Nu_Average + Q - Mu_E ( iV ) ) ) &
+!call Show ( Beta_F, '>>> Beta_F' )
+!call Show ( A ( iV ), '>>> A' )
+      N_A       = M ( iV ) * N ( iV ) *  X_heavy ( iV ) / ( A ( iV ) * amu ) 
+      !-- Use Fermi-Dirac identity 1 - f(x) = f(-x) to avoid precision loss 
+!call Show ( N_A, '>>> N_A' )
+      One_Minus_F_E &
+        = 1.0_KDR / ( exp ( - Beta_F * ( E_Nu_Average + Q - Mu_E ( iV ) ) ) &
                       + 1.0_KDR )
-      F_Nu_EQ   = 1.0_KDR / ( exp ( Beta_F * E_Nu_Average - Eta_Nu_EQ ( iV ) ) &
-                              + 1.0_KDR )
-      Chi_0     = Chi_Factor * N_A * N_p * N_h * &
-                  ( 1.0_KDR - F_e ) / ( 1.0_KDR - F_Nu_EQ ) &
+!call Show ( One_Minus_F_E, '>>> One_Minus_F_E' )      
+      One_Minus_F_Nu_EQ &
+        = 1.0_KDR / ( exp ( - Beta_F * E_Nu_Average + Eta_Nu_EQ ( iV ) ) &
+                      + 1.0_KDR )
+!call Show ( One_Minus_F_Nu_EQ, '>>> One_Minus_F_Nu_EQ' )   
+!call Show ( exp ( Beta_f * ( Mu_N_P ( iV ) - Q ) ), '>>> exp' )   
+      Chi_0     = Chi_Factor * N_A * N_p * N_h &
+                  * One_Minus_F_E / One_Minus_F_Nu_EQ &
                   * exp ( Beta_f * ( Mu_N_P ( iV ) - Q ) )
-      
 
-      S      = ( k_b * TP ( iV ) ) ** 2 * Fermi_5 / Fermi_3 
+      S      = max ( ( k_b * TP ( iV ) ) ** 2 * Fermi_5 / Fermi_3, Tiny_10 ) 
       S_EQ   = ( k_b * T ( iV ) ) ** 2 * Fermi_5_EQ / Fermi_3_EQ
-      S_N    = ( k_b * TP ( iV ) ) * Fermi_4 / Fermi_3 
+      S_N    = max ( ( k_b * TP ( iV ) ) * Fermi_4 / Fermi_3, Tiny_10 ) 
       S_N_EQ = ( k_b * T ( iV ) ) * Fermi_4_EQ / Fermi_3_EQ
 
-      EDV ( iV )  = EDV ( iV ) + J_Factor *  T ( iV ) ** 4 &
-                    * Fermi_3_EQ * S_EQ / S
-      EOV ( iV )  = EOV ( iV ) + Chi_0 * S
+      EDV ( iV )  = J_Factor *  T ( iV ) ** 4 * Fermi_3_EQ * S_EQ / S
+      EOV ( iV )  = Chi_0 * S
       TOV ( iV )  = EOV ( iV )
-      EDNV ( iV ) = EDNV ( iV ) + N_Factor *  T ( iV ) ** 3 &
-                    * Fermi_2_EQ * S_N_EQ / S_N
-      EONV ( iV ) = EONV ( iV ) + Chi_0 * S_N
-    
+      EDNV ( iV ) = J_Factor *  T ( iV ) ** 4 * Fermi_3_EQ * S_N_EQ / S_N
+      EONV ( iV ) = Chi_0 * S_N
+!call Show ( EOV ( iV ) * EDV ( iV ), '>>> EOV * EDV' )    
+
     end do !-- iV
     !$OMP end parallel do
 
@@ -561,7 +585,7 @@ contains
       Mu_N_P, &
       Mu_E, &
       T
-    real ( KDR ), dimension ( : ), intent ( out ) :: &
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
       EDV, &
       EOV, &
       TOV, &
@@ -662,7 +686,8 @@ contains
         = 1.0_KDR &
           / ( exp ( - Beta_F * E_NuBar_Average + Eta_NuBar_EQ ( iV ) ) &
               + 1.0_KDR )
-      Chi_0 = Chi_Factor * Eta_P_N * One_Minus_F_E_Bar / One_Minus_F_NuBar_EQ
+!      Chi_0 = Chi_Factor * Eta_P_N * One_Minus_F_E_Bar / One_Minus_F_NuBar_EQ
+      Chi_0 = Chi_Factor * Eta_P_N * One_Minus_F_E_Bar
 
       S      = max ( ( k_b * TP ( iV ) ) ** 2 * Fermi_5 / Fermi_3, Tiny_10 ) 
       S_EQ   = ( k_b * T ( iV ) ) ** 2 * Fermi_5_EQ / Fermi_3_EQ
