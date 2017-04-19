@@ -16,9 +16,9 @@ module Interactions_NM_G_1__Form
 
   type, public, extends ( InteractionsTemplate ) :: Interactions_NM_G_1_Form
     integer ( KDI ) :: &
-      N_FIELDS_NM                = N_FIELDS_NM, &
-      EQUILIBRIUM_DENSITY_NUMBER = 0, &
-      EFFECTIVE_OPACITY_NUMBER   = 0
+      N_FIELDS_NM              = N_FIELDS_NM, &
+      EMISSIVITY_NUMBER        = 0, &
+      EFFECTIVE_OPACITY_NUMBER = 0
     class ( Fluid_P_MHN_Form ), pointer :: &
       Fluid => null ( )
     class ( NeutrinoMomentsForm ), pointer :: &
@@ -165,38 +165,50 @@ contains
                F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
                F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
                F % Value ( :, F % TEMPERATURE ), &
-               I % Value ( :, I % EQUILIBRIUM_DENSITY ), &
+               I % Value ( :, I % EMISSIVITY ), &
                I % Value ( :, I % EFFECTIVE_OPACITY ), &
                I % Value ( :, I % TRANSPORT_OPACITY ), &
-               I % Value ( :, I % EQUILIBRIUM_DENSITY_NUMBER ), &
+               I % Value ( :, I % EMISSIVITY_NUMBER ), &
                I % Value ( :, I % EFFECTIVE_OPACITY_NUMBER ) )
 
     case ( 'NEUTRINOS_E_NU_BAR' )
 
       call Show ( NuBar_E % Name, 'Species', I % IGNORABILITY )
 
-      call I % Compute_E_NuBar_Kernel &
-             ( NuBar_E % Value ( :, NuBar_E % TEMPERATURE_PARAMETER ), &
-               NuBar_E % Value ( :, NuBar_E % DEGENERACY_PARAMETER ), &
-               NuBar_E % Value ( :, NuBar_E % DEGENERACY_PARAMETER_EQ ), &
-               F % Value ( :, F % BARYON_MASS ), &
-               F % Value ( :, F % COMOVING_DENSITY ), &
-               F % Value ( :, F % MASS_FRACTION_NEUTRON ), &
-               F % Value ( :, F % MASS_FRACTION_PROTON ),&
-               F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
-               F % Value ( :, F % CHEMICAL_POTENTIAL_E ), & ! Mu_e_+ = - Mu_e 
-               F % Value ( :, F % TEMPERATURE ), &
-               I % Value ( :, I % EQUILIBRIUM_DENSITY ), &
-               I % Value ( :, I % EFFECTIVE_OPACITY ), &
-               I % Value ( :, I % TRANSPORT_OPACITY ), &
-               I % Value ( :, I % EQUILIBRIUM_DENSITY_NUMBER ), &
-               I % Value ( :, I % EFFECTIVE_OPACITY_NUMBER ) )
+call Clear ( I % Value ( :, I % EMISSIVITY ) )
+call Clear ( I % Value ( :, I % EFFECTIVE_OPACITY ) )
+call Clear ( I % Value ( :, I % TRANSPORT_OPACITY ) )
+call Clear ( I % Value ( :, I % EMISSIVITY_NUMBER ) )
+call Clear ( I % Value ( :, I % EFFECTIVE_OPACITY_NUMBER ) )
+
+      ! call I % Compute_E_NuBar_Kernel &
+      !        ( NuBar_E % Value ( :, NuBar_E % TEMPERATURE_PARAMETER ), &
+      !          NuBar_E % Value ( :, NuBar_E % DEGENERACY_PARAMETER ), &
+      !          NuBar_E % Value ( :, NuBar_E % DEGENERACY_PARAMETER_EQ ), &
+      !          F % Value ( :, F % BARYON_MASS ), &
+      !          F % Value ( :, F % COMOVING_DENSITY ), &
+      !          F % Value ( :, F % MASS_FRACTION_NEUTRON ), &
+      !          F % Value ( :, F % MASS_FRACTION_PROTON ),&
+      !          F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
+      !          F % Value ( :, F % CHEMICAL_POTENTIAL_E ), & ! Mu_e_+ = - Mu_e 
+      !          F % Value ( :, F % TEMPERATURE ), &
+      !          I % Value ( :, I % EMISSIVITY ), &
+      !          I % Value ( :, I % EFFECTIVE_OPACITY ), &
+      !          I % Value ( :, I % TRANSPORT_OPACITY ), &
+      !          I % Value ( :, I % EMISSIVITY_NUMBER ), &
+      !          I % Value ( :, I % EFFECTIVE_OPACITY_NUMBER ) )
 
     case ( 'NEUTRINOS_MU_TAU_NU_NU_BAR' )
 
       call Show ( Nu_M_T % Name, 'Species', I % IGNORABILITY )
 
       !-- Mu and Tau neutrino and antineutrino interactions
+
+call Clear ( I % Value ( :, I % EMISSIVITY ) )
+call Clear ( I % Value ( :, I % EFFECTIVE_OPACITY ) )
+call Clear ( I % Value ( :, I % TRANSPORT_OPACITY ) )
+call Clear ( I % Value ( :, I % EMISSIVITY_NUMBER ) )
+call Clear ( I % Value ( :, I % EFFECTIVE_OPACITY_NUMBER ) )
 
     case default
       call Show ( 'Radiation Type not recognized', CONSOLE % ERROR )
@@ -402,7 +414,7 @@ call Show ( exp ( - Eta_Nu_EQ ( iV ) ), '>>> exp ( -eta_nu_eq )' )
 
   subroutine Compute_E_Nu_Nuclei_Kernel &
                ( I, TP, Eta_Nu, Eta_Nu_EQ, M, N, X_heavy, Z, A, Mu_N_P, Mu_E, &
-                 T, EDV, EOV, TOV, EDNV, EONV )
+                 T, EV, EOV, TOV, ENV, EONV )
 
     class ( Interactions_NM_G_1_Form ), intent ( in ) :: &
       I
@@ -419,10 +431,10 @@ call Show ( exp ( - Eta_Nu_EQ ( iV ) ), '>>> exp ( -eta_nu_eq )' )
       Mu_E, &
       T
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      EDV, &
+      EV, &
       EOV, &
       TOV, &
-      EDNV, &
+      ENV, &
       EONV
 
     integer ( KDI ) :: &
@@ -430,7 +442,8 @@ call Show ( exp ( - Eta_Nu_EQ ( iV ) ), '>>> exp ( -eta_nu_eq )' )
       nValues
     real ( KDR ) :: &
       Tiny_10, &
-      k_b, &
+      TwoPi, EightPi, &
+      k_b, hBar_c, &
       E_Nu_Average, &
       J_Factor, &
       G_F, &
@@ -447,30 +460,31 @@ call Show ( exp ( - Eta_Nu_EQ ( iV ) ), '>>> exp ( -eta_nu_eq )' )
       Chi_0, &
       Fermi_2, Fermi_3, Fermi_4, Fermi_5, &
       Fermi_2_EQ, Fermi_3_EQ, Fermi_4_EQ, Fermi_5_EQ, &
+      Fermi_4_E, Fermi_5_E, &
       fdeta, fdeta2, &
       fdtheta, fdtheta2, &
       fdetadtheta, &
       S, S_EQ, &
       S_N, S_N_EQ
       
-    nValues  =  size ( EDV )
+    nValues  =  size ( EV )
     
-    Tiny_10 = 1.0e10_KDR * tiny ( 0.0_KDR )
+    Tiny_10  =  1.0e10_KDR * tiny ( 0.0_KDR )
+    TwoPi    =  2.0_KDR  *  CONSTANT % PI
+    EightPi  =  8.0_KDR  *  CONSTANT % PI
 
-    k_b = CONSTANT % BOLTZMANN 
-    
+    k_b     =  CONSTANT % BOLTZMANN 
+    hBar_c  =  CONSTANT % PLANCK_REDUCED  *  CONSTANT % SPEED_OF_LIGHT
+
     associate &
-      ( c      => CONSTANT % SPEED_OF_LIGHT, &
-        hBar   => CONSTANT % PLANCK_REDUCED, &
-        FourPi => 4.0_KDR * CONSTANT % PI, &
-        TwoPi  => 2.0_KDR * CONSTANT % PI, &
+      ( FourPi => 4.0_KDR * CONSTANT % PI, &
         Pi     => CONSTANT % PI )
 
-    J_Factor   = FourPi * k_b ** 4  /  ( TwoPi * hBar * c ) ** 3
-    G_F        =  1.1663787e-5_KDR * ( hBar * c ) ** 3 &
+    J_Factor   =  FourPi  /  ( TwoPi * hBar_c ) ** 3
+    G_F        =  1.1663787e-5_KDR * ( hBar_c ) ** 3 &
                   * ( 1.0e3_KDR * UNIT % MEV ) ** ( -2 )
     Chi_Factor =  G_F ** 2 / Pi * 1.23_KDR ** 2 * 2.0_KDR / 7.0_KDR &
-                  / ( hbar * c ) ** 4 
+                  / ( hbar_c ) ** 4 
     
     end associate !-- c, etc.
     
@@ -501,10 +515,16 @@ call Show ( exp ( - Eta_Nu_EQ ( iV ) ), '>>> exp ( -eta_nu_eq )' )
              ( 4.0_KDR, Eta_Nu ( iV ), 0.0_KDR, Fermi_4, &
                fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
       call dfermi &
+             ( 4.0_KDR, Mu_E ( iV ) / ( k_b * T ( iV ) ), 0.0_KDR, Fermi_4_E, &
+               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+      call dfermi &
              ( 5.0_KDR, Eta_Nu_EQ ( iV ), 0.0_KDR, Fermi_5_EQ, &
                fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
       call dfermi &
              ( 5.0_KDR, Eta_Nu ( iV ), 0.0_KDR, Fermi_5, &
+               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+      call dfermi &
+             ( 5.0_KDR, Mu_E ( iV ) / ( k_b * T ( iV ) ), 0.0_KDR, Fermi_5_E, &
                fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
 
       E_Nu_Average = k_B * TP ( iV ) * Fermi_3 / Fermi_2 
@@ -541,26 +561,37 @@ call Show ( exp ( - Eta_Nu_EQ ( iV ) ), '>>> exp ( -eta_nu_eq )' )
         = 1.0_KDR / ( exp ( - Beta_F * ( E_Nu_Average + Q - Mu_E ( iV ) ) ) &
                       + 1.0_KDR )
 !call Show ( One_Minus_F_E, '>>> One_Minus_F_E' )      
-      One_Minus_F_Nu_EQ &
-        = 1.0_KDR / ( exp ( - Beta_F * E_Nu_Average + Eta_Nu_EQ ( iV ) ) &
-                      + 1.0_KDR )
+!      One_Minus_F_Nu_EQ &
+!        = 1.0_KDR / ( exp ( - Beta_F * E_Nu_Average + Eta_Nu_EQ ( iV ) ) &
+!                      + 1.0_KDR )
 !call Show ( One_Minus_F_Nu_EQ, '>>> One_Minus_F_Nu_EQ' )   
 !call Show ( exp ( Beta_f * ( Mu_N_P ( iV ) - Q ) ), '>>> exp' )   
       Chi_0     = Chi_Factor * N_A * N_p * N_h &
-                  * One_Minus_F_E / One_Minus_F_Nu_EQ &
-                  * exp ( Beta_f * ( Mu_N_P ( iV ) - Q ) )
+                  * One_Minus_F_E * exp ( Beta_f * ( Mu_N_P ( iV ) - Q ) )
 
       S      = max ( ( k_b * TP ( iV ) ) ** 2 * Fermi_5 / Fermi_3, Tiny_10 ) 
-      S_EQ   = ( k_b * T ( iV ) ) ** 2 * Fermi_5_EQ / Fermi_3_EQ
+!      S_EQ   = ( k_b * T ( iV ) ) ** 2 * Fermi_5_EQ / Fermi_3_EQ
       S_N    = max ( ( k_b * TP ( iV ) ) * Fermi_4 / Fermi_3, Tiny_10 ) 
-      S_N_EQ = ( k_b * T ( iV ) ) * Fermi_4_EQ / Fermi_3_EQ
+!      S_N_EQ = ( k_b * T ( iV ) ) * Fermi_4_EQ / Fermi_3_EQ
 
-      EDV ( iV )  = J_Factor *  T ( iV ) ** 4 * Fermi_3_EQ * S_EQ / S
+!call Show ( ( k_b * T ( iV ) &
+!            / ( CONSTANT % PLANCK_REDUCED * CONSTANT % SPEED_OF_LIGHT ) ) **6, &
+!            '>>> ( k T / hBar c ) ** 6' )
+!call Show ( ( k_b * T ( iV ) ) ** 6, '>>> ( k T ) ** 6' )
+!call Show ( Fermi_5_E, '>>> Fermi_5_E' )
+      EV ( iV )   = Chi_Factor * N_A * N_p * N_h * EightPi &
+                    * ( k_b * T ( iV ) / ( TwoPi * hBar_c ) ) ** 3 &
+                    * ( k_b * T ( iV ) ) ** 3 * Fermi_5_E
+!call Show ( EV ( iV ), '>>> EV' )    
       EOV ( iV )  = Chi_0 * S
+!call Show ( EOV ( iV ), '>>> EOV' )    
       TOV ( iV )  = EOV ( iV )
-      EDNV ( iV ) = J_Factor *  T ( iV ) ** 4 * Fermi_3_EQ * S_N_EQ / S_N
+!call Show ( Fermi_4_E, '>>> Fermi_4_E' )
+      ENV ( iV )  = Chi_Factor * N_A * N_p * N_h * EightPi &
+                    * ( k_b * T ( iV ) / ( TwoPi * hBar_c ) ) ** 3 &
+                    * ( k_b * T ( iV ) ) ** 2 * Fermi_4_E
+!call Show ( amu * ENV ( iV ), '>>> amu * ENV' )    
       EONV ( iV ) = Chi_0 * S_N
-!call Show ( EOV ( iV ) * EDV ( iV ), '>>> EOV * EDV' )    
 
     end do !-- iV
     !$OMP end parallel do
@@ -734,8 +765,8 @@ call Show ( exp ( - Eta_Nu_EQ ( iV ) ), '>>> exp ( -eta_nu_eq )' )
     if ( I % N_FIELDS == 0 ) &
       I % N_FIELDS = oF + I % N_FIELDS_NM
 
-    I % EQUILIBRIUM_DENSITY_NUMBER = oF + 1
-    I % EFFECTIVE_OPACITY_NUMBER   = oF + 2
+    I % EMISSIVITY_NUMBER        = oF + 1
+    I % EFFECTIVE_OPACITY_NUMBER = oF + 2
 
     !-- variable names 
 
@@ -748,8 +779,8 @@ call Show ( exp ( - Eta_Nu_EQ ( iV ) ), '>>> exp ( -eta_nu_eq )' )
     end if
 
     Variable ( oF + 1 : oF + I % N_FIELDS_NM ) &
-      = [ 'EquilibriumDensityNumber', &
-          'EffectiveOpacityNumber  ' ]
+      = [ 'EmissivityNumber      ', &
+          'EffectiveOpacityNumber' ]
           
     !-- units
     

@@ -507,7 +507,7 @@ contains
              FluidSource_Radiation % Value ( :, iMomentum_2_F ), &
              FluidSource_Radiation % Value ( :, iMomentum_3_F ), &
              Chart % IsProperCell, &
-             I % Value ( :, I % EQUILIBRIUM_DENSITY ), &
+             I % Value ( :, I % EMISSIVITY ), &
              I % Value ( :, I % EFFECTIVE_OPACITY ), &
              I % Value ( :, I % TRANSPORT_OPACITY ), &
              R % Value ( :, R % COMOVING_ENERGY_DENSITY ), &
@@ -525,7 +525,7 @@ contains
       call ComputeFluidSource_DP_Radiation_Kernel &
              ( FluidSource_Radiation % Value ( :, iProton_F ), & 
                Chart % IsProperCell, &
-               I % Value ( :, I % EQUILIBRIUM_DENSITY_NUMBER ), &
+               I % Value ( :, I % EMISSIVITY_NUMBER ), &
                I % Value ( :, I % EFFECTIVE_OPACITY_NUMBER ), &
                R % Value ( :, R % COMOVING_ENERGY_DENSITY ), &
                Increment % Value ( :, iEnergy_R ), &
@@ -534,7 +534,7 @@ contains
       call ComputeFluidSource_DP_Radiation_Kernel &
              ( FluidSource_Radiation % Value ( :, iProton_F ), & 
                Chart % IsProperCell, &
-               I % Value ( :, I % EQUILIBRIUM_DENSITY_NUMBER ), &
+               I % Value ( :, I % EMISSIVITY_NUMBER ), &
                I % Value ( :, I % EFFECTIVE_OPACITY_NUMBER ), &
                R % Value ( :, R % COMOVING_ENERGY_DENSITY ), &
                Increment % Value ( :, iEnergy_R ), &
@@ -575,17 +575,17 @@ contains
 
     AMU = CONSTANT % ATOMIC_MASS_UNIT
 
-!call Show ( K_G, '>>> K_G' )
-!call Show ( FS_R_G, '>>> FS_R_G' )
+! call Show ( K_G, '>>> K_G' )
+! call Show ( FS_R_G, '>>> FS_R_G' )
 
-!call Show ( K_S_1, '>>> K_S_1' )
-!call Show ( FS_R_S_1, '>>> FS_R_S_1' )
+! call Show ( K_S_1, '>>> K_S_1' )
+! call Show ( FS_R_S_1, '>>> FS_R_S_1' )
 
-!call Show ( K_DP, '>>> K_DP' )
-!call Show ( FS_R_DP, '>>> FS_R_DP' )
+! call Show ( K_DP, '>>> K_DP' )
+! call Show ( FS_R_DP, '>>> FS_R_DP' )
 
-!call Show ( K_DS, '>>> K_DS' )
-!call Show ( AMU * FS_R_G / T, '>>> FS_R_DS' )
+! call Show ( K_DS, '>>> K_DS' )
+! call Show ( AMU * FS_R_G / T, '>>> FS_R_DS' )
 
     !$OMP parallel do private ( iV )
     do iV = 1, nV
@@ -605,7 +605,7 @@ contains
 
   subroutine ComputeFluidSource_G_S_Radiation_Kernel &
                ( FS_R_G, FS_R_S_1, FS_R_S_2, FS_R_S_3, IsProperCell, &
-                 ED, EO, TO, J, dJ, H_1, H_2, H_3, dH_1, dH_2, dH_3, &
+                 E, EO, TO, J, dJ, H_1, H_2, H_3, dH_1, dH_2, dH_3, &
                  c, dT )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -614,7 +614,7 @@ contains
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       IsProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      ED, &
+      E, &
       EO, &
       TO, &
       J,  &
@@ -631,13 +631,17 @@ contains
 
     nV = size ( FS_R_G )
 
+! call Show ( FS_R_G, '>>> FS_R_G' )
+! call Show ( E, '>>> E' )
+! call Show ( c * dT, '>>> c * dT' )
+
     !$OMP parallel do private ( iV )
     do iV = 1, nV
       if ( .not. IsProperCell ( iV ) ) &
         cycle
       FS_R_G ( iV )  &
-        =  FS_R_G ( iV )  -  c * dT  *  EO ( iV )  &
-                             *  ( ED ( iV )  -  ( J ( iV ) + dJ ( iV ) ) ) 
+        =  FS_R_G ( iV )  &
+           -  c * dT  *  ( E ( iV )  -  EO ( iV ) * ( J ( iV ) + dJ ( iV ) ) ) 
       FS_R_S_1 ( iV )  &
         =  FS_R_S_1 ( iV )  +  c * dT  *  TO ( iV )  &
                                *  ( H_1 ( iV ) + dH_1 ( iV ) )
@@ -654,14 +658,14 @@ contains
 
 
   subroutine ComputeFluidSource_DP_Radiation_Kernel &
-               ( FS_R_DP, IsProperCell, EDN, EON, J, dJ, c, dT, Sign )
+               ( FS_R_DP, IsProperCell, EN, EON, J, dJ, c, dT, Sign )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       FS_R_DP
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       IsProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      EDN, &
+      EN, &
       EON, &
       J,  &
       dJ
@@ -680,13 +684,18 @@ contains
 
     AMU = CONSTANT % ATOMIC_MASS_UNIT
 
+! call Show ( FS_R_DP, '>>> FS_R_DP' )
+! call Show ( AMU * EN, '>>> AMU * EN' )
+! call Show ( c * dT, '>>> c * dT' )
+
     !$OMP parallel do private ( iV )
     do iV = 1, nV
       if ( .not. IsProperCell ( iV ) ) &
         cycle
       FS_R_DP ( iV )  &
-        =  FS_R_DP ( iV )  -  Sign * c * dT * AMU  *  EON ( iV )  &
-                              *  ( EDN ( iV )  -  ( J ( iV ) + dJ ( iV ) ) ) 
+        =  FS_R_DP ( iV )  &
+           -  Sign * c * dT * AMU &
+              *  ( EN ( iV )  -  EON ( iV ) * ( J ( iV ) + dJ ( iV ) ) ) 
     end do
     !$OMP end parallel do
 

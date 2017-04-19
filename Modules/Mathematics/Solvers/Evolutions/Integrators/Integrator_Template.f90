@@ -282,6 +282,7 @@ contains
       call Show ( I % iCycle, 'iCycle', I % IGNORABILITY + 1 )
       call Show ( I % Time, I % TimeUnit, 'Time', I % IGNORABILITY + 1 )
 
+!call I % Write ( )
       if ( I % IsCheckpointTime ) &
         call I % AdministerCheckpoint ( )
 
