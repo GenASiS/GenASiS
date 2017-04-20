@@ -72,33 +72,41 @@ contains
   end subroutine InitializeAllocate_NM
 
 
-  subroutine ComputeSpectralParameters ( T, Eta, RM, J, FF )
+  subroutine ComputeSpectralParameters &
+               ( T, Eta, E_Ave, J_EQ, RM, J, FF, T_EQ, Eta_EQ )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       T, &
-      Eta
+      Eta, &
+      E_Ave, &
+      J_EQ
     class ( NeutrinoMomentsForm ), intent ( in ) :: &
       RM
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       J, &
-      FF
+      FF, &
+      T_EQ, &
+      Eta_EQ
 
     call ComputeSpectralParametersKernel &
-           ( T, Eta, J, FF, RM % Value ( :, RM % DEGENERACY_PARAMETER_EQ ), &
+           ( T, Eta, E_Ave, J_EQ, J, FF, T_EQ, Eta_EQ, &
              RM % DegeneracyInfinity )
 
   end subroutine ComputeSpectralParameters
 
 
   subroutine ComputeSpectralParametersKernel &
-               ( T, Eta, J, FF, Eta_EQ, Eta_Infty )
+               ( T, Eta, E_Ave, J_EQ, J, FF, T_EQ, Eta_EQ, Eta_Infty )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       T, &
-      Eta
+      Eta, &
+      E_Ave, &
+      J_EQ
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       J, &
       FF, &
+      T_EQ, &
       Eta_EQ
     real ( KDR ), intent ( in ) :: &
       Eta_Infty
@@ -107,17 +115,19 @@ contains
       iV, &
       nValues
     real ( KDR ) :: &
+      k, &
       Factor, &
-      Fermi_3, &
+      Fermi_2, Fermi_3, &
       fdeta, fdeta2, &
       fdtheta, fdtheta2, &
       fdetadtheta
 
     nValues = size ( T )
 
+    k = CONSTANT % BOLTZMANN
+
     associate &
-      ( k      => CONSTANT % BOLTZMANN, &
-        c      => CONSTANT % SPEED_OF_LIGHT, &
+      ( c      => CONSTANT % SPEED_OF_LIGHT, &
         hBar   => CONSTANT % PLANCK_REDUCED, &
         FourPi => 4.0_KDR * CONSTANT % PI, &
         TwoPi  => 2.0_KDR * CONSTANT % PI )
@@ -132,11 +142,16 @@ contains
       Eta ( iV )  =  Eta_EQ ( iV )  *  ( 1.0_KDR  -  FF ( iV ) ) &
                      +   Eta_Infty  *  FF ( iV )
 
-      call DFERMI &
-             ( 3.0_KDR, Eta ( iV ), 0.0_KDR, Fermi_3, &
-               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+      call DFERMI ( 2.0_KDR, Eta ( iV ), 0.0_KDR, Fermi_2, &
+                    fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+      call DFERMI ( 3.0_KDR, Eta ( iV ), 0.0_KDR, Fermi_3, &
+                    fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
 
-      T  ( iV )  =  ( J ( iV )  /  ( Factor * Fermi_3 ) ) ** ( 0.25_KDR )
+      T  ( iV )     =  ( J ( iV )  /  ( Factor * Fermi_3 ) ) ** ( 0.25_KDR )
+
+      E_Ave ( iV )  =  ( k * T ( iV ) ) * Fermi_3 / Fermi_2
+
+      J_EQ ( iV )   =  Factor  *  T_EQ ( iV ) ** 4  *  Fermi_3
 
     end do !-- iV
     !$OMP end parallel do

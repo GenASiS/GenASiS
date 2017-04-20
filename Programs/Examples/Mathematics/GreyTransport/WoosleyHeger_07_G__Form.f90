@@ -410,6 +410,15 @@ contains
       iMomentum_3, &
       iProton, &
       iEntropy
+integer ( KDI ) :: &
+ dG_G_maxloc, &
+ dDP_DP_maxloc, &
+ dDS_DS_maxloc
+real ( KDR ) :: &
+ dG_G_maxval, &
+ dDP_DP_maxval, &
+ dDS_DS_maxval, &
+ Threshold
 
     call Show ( 'ApplySources_Fluid', CONSOLE % INFO_4 )
 
@@ -443,6 +452,50 @@ contains
              FluidSource_Radiation % Value ( :, iProton ), &
              F % Value ( :, F % TEMPERATURE ) )
 
+Threshold = 1.0e-1_KDR
+dG_G_maxval &
+  = maxval ( abs ( Increment % Value ( :, iEnergy ) &
+                   /  F % Value ( :, F % CONSERVED_ENERGY ) ), &
+             mask = Chart % IsProperCell )
+dDP_DP_maxval &
+  = maxval ( abs ( Increment % Value ( :, iProton ) &
+                   /  F % Value ( :, F % CONSERVED_PROTON_DENSITY ) ), &
+             mask = Chart % IsProperCell )
+dDS_DS_maxval &
+  = maxval ( abs ( Increment % Value ( :, iEntropy ) &
+                   /  F % Value ( :, F % CONSERVED_ENTROPY ) ), &
+             mask = Chart % IsProperCell )
+if ( dG_G_maxval > Threshold ) then
+  dG_G_maxloc &
+    = maxloc ( abs ( Increment % Value ( :, iEnergy ) &
+                     /  F % Value ( :, F % CONSERVED_ENERGY ) ), &
+               dim = 1, mask = Chart % IsProperCell )
+  call Show ( dG_G_maxval, '>>> dG_G_maxval', CONSOLE % ERROR )
+  call Show ( dG_G_maxloc, '>>> dG_G_maxloc', CONSOLE % ERROR )
+  call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', &
+              CONSOLE % ERROR )
+end if
+if ( dDP_DP_maxval > Threshold ) then
+  dDP_DP_maxloc &
+    = maxloc ( abs ( Increment % Value ( :, iProton ) &
+                   /  F % Value ( :, F % CONSERVED_PROTON_DENSITY ) ), &
+               dim = 1, mask = Chart % IsProperCell )
+  call Show ( dDP_DP_maxval, '>>> dDP_DP_maxval', CONSOLE % ERROR )
+  call Show ( dDP_DP_maxloc, '>>> dDP_DP_maxloc', CONSOLE % ERROR )
+  call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', &
+              CONSOLE % ERROR )
+end if
+if ( dDS_DS_maxval > Threshold ) then
+  dDS_DS_maxloc &
+    = maxloc ( abs ( Increment % Value ( :, iEntropy ) &
+                   /  F % Value ( :, F % CONSERVED_ENTROPY ) ), &
+               dim = 1, mask = Chart % IsProperCell )
+  call Show ( dDS_DS_maxval, '>>> dDS_DS_maxval', CONSOLE % ERROR )
+  call Show ( dDS_DS_maxloc, '>>> dDS_DS_maxloc', CONSOLE % ERROR )
+  call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', &
+              CONSOLE % ERROR )
+end if
+ 
     call Clear ( FluidSource_Radiation % Value )
 
     end select !-- Chart

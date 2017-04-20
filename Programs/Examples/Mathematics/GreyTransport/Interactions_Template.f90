@@ -123,9 +123,10 @@ contains
   end subroutine FinalizeTemplate
 
 
-  subroutine ComputeDegeneracyParameter_EQ ( Eta_EQ, I, C )
+  subroutine ComputeDegeneracyParameter_EQ ( T_EQ, Eta_EQ, I, C )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      T_EQ, &
       Eta_EQ
     class ( InteractionsTemplate ), intent ( in ) :: &
       I

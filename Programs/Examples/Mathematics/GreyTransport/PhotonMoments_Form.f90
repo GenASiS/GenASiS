@@ -12,16 +12,21 @@ module PhotonMoments_Form
 contains
 
 
-  subroutine ComputeSpectralParameters ( T, Eta, RM, J, FF )
+  subroutine ComputeSpectralParameters &
+               ( T, Eta, E_Ave, J_EQ, RM, J, FF, T_EQ, Eta_EQ )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       T, &
-      Eta
+      Eta, &
+      E_Ave, &
+      J_EQ
     class ( PhotonMomentsForm ), intent ( in ) :: &
       RM
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       J, &
-      FF
+      FF, &
+      T_EQ, &
+      Eta_EQ
 
     integer ( KDI ) :: &
       iV, &

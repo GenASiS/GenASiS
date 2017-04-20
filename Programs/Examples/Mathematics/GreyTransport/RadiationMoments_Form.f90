@@ -10,7 +10,7 @@ module RadiationMoments_Form
     integer ( KDI ), private, parameter :: &
       N_PRIMITIVE_RM =  4, &
       N_CONSERVED_RM =  4, &
-      N_FIELDS_RM    = 13, &
+      N_FIELDS_RM    = 16, &
       N_VECTORS_RM   =  2
 
   type, public, extends ( CurrentTemplate ) :: RadiationMomentsForm
@@ -24,8 +24,11 @@ module RadiationMoments_Form
       FLUX_FACTOR               = 0, &
       VARIABLE_EDDINGTON_FACTOR = 0, &
       TEMPERATURE_PARAMETER     = 0, &
+      TEMPERATURE_PARAMETER_EQ  = 0, &
       DEGENERACY_PARAMETER      = 0, &
-      DEGENERACY_PARAMETER_EQ   = 0
+      DEGENERACY_PARAMETER_EQ   = 0, &
+      ENERGY_AVERAGE            = 0, &
+      ENERGY_DENSITY_EQ         = 0
     integer ( KDI ), dimension ( 3 ) :: &
       COMOVING_MOMENTUM_DENSITY_U  = 0, &
       CONSERVED_MOMENTUM_DENSITY_D = 0
@@ -215,8 +218,11 @@ contains
                                       RM % FLUX_FACTOR, &
                                       RM % VARIABLE_EDDINGTON_FACTOR, &
                                       RM % TEMPERATURE_PARAMETER, &
+                                      RM % TEMPERATURE_PARAMETER_EQ, &
                                       RM % DEGENERACY_PARAMETER, &
-                                      RM % DEGENERACY_PARAMETER_EQ ], &
+                                      RM % DEGENERACY_PARAMETER_EQ, &
+                                      RM % ENERGY_AVERAGE, &
+                                      RM % ENERGY_DENSITY_EQ ], &
              VectorOption = [ 'ComovingMomentumDensity        ' ], &
              VectorIndicesOption = VectorIndices )
 
@@ -300,8 +306,11 @@ contains
         FF     => RMV ( oV + 1 : oV + nV, C % FLUX_FACTOR ), &
         VEF    => RMV ( oV + 1 : oV + nV, C % VARIABLE_EDDINGTON_FACTOR ), &
         T      => RMV ( oV + 1 : oV + nV, C % TEMPERATURE_PARAMETER ), &
+        T_EQ   => RMV ( oV + 1 : oV + nV, C % TEMPERATURE_PARAMETER_EQ ), &
         Eta    => RMV ( oV + 1 : oV + nV, C % DEGENERACY_PARAMETER ), &
-        Eta_EQ => RMV ( oV + 1 : oV + nV, C % DEGENERACY_PARAMETER_EQ ) )
+        Eta_EQ => RMV ( oV + 1 : oV + nV, C % DEGENERACY_PARAMETER_EQ ), &
+        E_Ave  => RMV ( oV + 1 : oV + nV, C % ENERGY_AVERAGE ), &
+        J_EQ   => RMV ( oV + 1 : oV + nV, C % ENERGY_DENSITY_EQ ) )
 
     call ComputeConservedEnergyMomentum &
            ( E, S_1, S_2, S_3, J, H_1, H_2, H_3, M_DD_22, M_DD_33 )
@@ -313,8 +322,10 @@ contains
 
     if ( associated ( RMV, C % Value ) ) then
       if ( associated ( C % Interactions ) ) &
-        call C % Interactions % ComputeDegeneracyParameter_EQ ( Eta_EQ, C )
-      call C % ComputeSpectralParameters ( T, Eta, J, FF )
+        call C % Interactions % ComputeDegeneracyParameter_EQ &
+               ( T_EQ, Eta_EQ, C )
+      call C % ComputeSpectralParameters &
+             ( T, Eta, E_Ave, J_EQ, J, FF, T_EQ, Eta_EQ )
     end if
 
     end associate !-- FEP_1, etc.
@@ -390,8 +401,11 @@ contains
         FF     => RMV ( oV + 1 : oV + nV, C % FLUX_FACTOR ), &
         VEF    => RMV ( oV + 1 : oV + nV, C % VARIABLE_EDDINGTON_FACTOR ), &
         T      => RMV ( oV + 1 : oV + nV, C % TEMPERATURE_PARAMETER ), &
+        T_EQ   => RMV ( oV + 1 : oV + nV, C % TEMPERATURE_PARAMETER_EQ ), &
         Eta    => RMV ( oV + 1 : oV + nV, C % DEGENERACY_PARAMETER ), &
-        Eta_EQ => RMV ( oV + 1 : oV + nV, C % DEGENERACY_PARAMETER_EQ ) )
+        Eta_EQ => RMV ( oV + 1 : oV + nV, C % DEGENERACY_PARAMETER_EQ ), &
+        E_Ave  => RMV ( oV + 1 : oV + nV, C % ENERGY_AVERAGE ), &
+        J_EQ   => RMV ( oV + 1 : oV + nV, C % ENERGY_DENSITY_EQ ) )
 
     call ComputePrimitiveEnergyMomentum &
            ( J, H_1, H_2, H_3, E, S_1, S_2, S_3, M_DD_22, M_DD_33, &
@@ -404,8 +418,10 @@ contains
 
     if ( associated ( RMV, C % Value ) ) then
       if ( associated ( C % Interactions ) ) &
-        call C % Interactions % ComputeDegeneracyParameter_EQ ( Eta_EQ, C )
-      call C % ComputeSpectralParameters ( T, Eta, J, FF )
+        call C % Interactions % ComputeDegeneracyParameter_EQ &
+               ( T_EQ, Eta_EQ, C )
+      call C % ComputeSpectralParameters &
+             ( T, Eta, E_Ave, J_EQ, J, FF, T_EQ, Eta_EQ )
     end if
 
     end associate !-- FEP_1, etc.
@@ -583,16 +599,21 @@ contains
   end subroutine ComputeDiffusionFactor_HLL
 
 
-  subroutine ComputeSpectralParameters ( T, Eta, RM, J, FF )
+  subroutine ComputeSpectralParameters &
+               ( T, Eta, E_Ave, J_EQ, RM, J, FF, T_EQ, Eta_EQ )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       T, &
-      Eta
+      Eta, &
+      E_Ave, &
+      J_EQ
     class ( RadiationMomentsForm ), intent ( in ) :: &
       RM
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       J, &
-      FF
+      FF, &
+      T_EQ, &
+      Eta_EQ
 
     !-- Empty interface to be overridden later as needed
 
@@ -658,8 +679,11 @@ contains
     RM % FLUX_FACTOR                  =  oF +  9
     RM % VARIABLE_EDDINGTON_FACTOR    =  oF + 10
     RM % TEMPERATURE_PARAMETER        =  oF + 11
-    RM % DEGENERACY_PARAMETER         =  oF + 12
-    RM % DEGENERACY_PARAMETER_EQ      =  oF + 13
+    RM % TEMPERATURE_PARAMETER_EQ     =  oF + 12
+    RM % DEGENERACY_PARAMETER         =  oF + 13
+    RM % DEGENERACY_PARAMETER_EQ      =  oF + 14
+    RM % ENERGY_AVERAGE               =  oF + 15
+    RM % ENERGY_DENSITY_EQ            =  oF + 16
 
     !-- variable names 
 
@@ -683,8 +707,11 @@ contains
           'FluxFactor                     ', &
           'VariableEddingtonFactor        ', &
           'TemperatureParameter           ', &
+          'TemperatureParameter_EQ        ', &
           'DegeneracyParameter            ', &
-          'DegeneracyParameter_EQ         ' ]
+          'DegeneracyParameter_EQ         ', &
+          'EnergyAverage                  ', &
+          'EnergyDensity_EQ               ' ]
           
     !-- units
     
@@ -763,6 +790,9 @@ contains
 
     VariableUnit ( RM % VARIABLE_EDDINGTON_FACTOR ) = UNIT % IDENTITY
     VariableUnit ( RM % TEMPERATURE_PARAMETER )     = TemperatureUnit
+    VariableUnit ( RM % TEMPERATURE_PARAMETER_EQ )  = TemperatureUnit
+    VariableUnit ( RM % ENERGY_AVERAGE )            = TemperatureUnit
+    VariableUnit ( RM % ENERGY_DENSITY_EQ )         = EnergyDensityUnit
 
   end subroutine SetUnits
 
