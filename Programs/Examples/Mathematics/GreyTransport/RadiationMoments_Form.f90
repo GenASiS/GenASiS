@@ -10,7 +10,7 @@ module RadiationMoments_Form
     integer ( KDI ), private, parameter :: &
       N_PRIMITIVE_RM =  4, &
       N_CONSERVED_RM =  4, &
-      N_FIELDS_RM    = 16, &
+      N_FIELDS_RM    = 17, &
       N_VECTORS_RM   =  2
 
   type, public, extends ( CurrentTemplate ) :: RadiationMomentsForm
@@ -28,6 +28,7 @@ module RadiationMoments_Form
       DEGENERACY_PARAMETER      = 0, &
       DEGENERACY_PARAMETER_EQ   = 0, &
       ENERGY_AVERAGE            = 0, &
+      OCCUPANCY_AVERAGE         = 0, &
       ENERGY_DENSITY_EQ         = 0
     integer ( KDI ), dimension ( 3 ) :: &
       COMOVING_MOMENTUM_DENSITY_U  = 0, &
@@ -222,6 +223,7 @@ contains
                                       RM % DEGENERACY_PARAMETER, &
                                       RM % DEGENERACY_PARAMETER_EQ, &
                                       RM % ENERGY_AVERAGE, &
+                                      RM % OCCUPANCY_AVERAGE, &
                                       RM % ENERGY_DENSITY_EQ ], &
              VectorOption = [ 'ComovingMomentumDensity        ' ], &
              VectorIndicesOption = VectorIndices )
@@ -310,6 +312,7 @@ contains
         Eta    => RMV ( oV + 1 : oV + nV, C % DEGENERACY_PARAMETER ), &
         Eta_EQ => RMV ( oV + 1 : oV + nV, C % DEGENERACY_PARAMETER_EQ ), &
         E_Ave  => RMV ( oV + 1 : oV + nV, C % ENERGY_AVERAGE ), &
+        F_Ave  => RMV ( oV + 1 : oV + nV, C % OCCUPANCY_AVERAGE ), &
         J_EQ   => RMV ( oV + 1 : oV + nV, C % ENERGY_DENSITY_EQ ) )
 
     call ComputeConservedEnergyMomentum &
@@ -325,7 +328,7 @@ contains
         call C % Interactions % ComputeDegeneracyParameter_EQ &
                ( T_EQ, Eta_EQ, C )
       call C % ComputeSpectralParameters &
-             ( T, Eta, E_Ave, J_EQ, J, FF, T_EQ, Eta_EQ )
+             ( T, Eta, E_Ave, F_Ave, J_EQ, J, FF, T_EQ, Eta_EQ )
     end if
 
     end associate !-- FEP_1, etc.
@@ -405,6 +408,7 @@ contains
         Eta    => RMV ( oV + 1 : oV + nV, C % DEGENERACY_PARAMETER ), &
         Eta_EQ => RMV ( oV + 1 : oV + nV, C % DEGENERACY_PARAMETER_EQ ), &
         E_Ave  => RMV ( oV + 1 : oV + nV, C % ENERGY_AVERAGE ), &
+        F_Ave  => RMV ( oV + 1 : oV + nV, C % OCCUPANCY_AVERAGE ), &
         J_EQ   => RMV ( oV + 1 : oV + nV, C % ENERGY_DENSITY_EQ ) )
 
     call ComputePrimitiveEnergyMomentum &
@@ -421,7 +425,7 @@ contains
         call C % Interactions % ComputeDegeneracyParameter_EQ &
                ( T_EQ, Eta_EQ, C )
       call C % ComputeSpectralParameters &
-             ( T, Eta, E_Ave, J_EQ, J, FF, T_EQ, Eta_EQ )
+             ( T, Eta, E_Ave, F_Ave, J_EQ, J, FF, T_EQ, Eta_EQ )
     end if
 
     end associate !-- FEP_1, etc.
@@ -600,12 +604,13 @@ contains
 
 
   subroutine ComputeSpectralParameters &
-               ( T, Eta, E_Ave, J_EQ, RM, J, FF, T_EQ, Eta_EQ )
+               ( T, Eta, E_Ave, F_Ave, J_EQ, RM, J, FF, T_EQ, Eta_EQ )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       T, &
       Eta, &
       E_Ave, &
+      F_Ave, &
       J_EQ
     class ( RadiationMomentsForm ), intent ( in ) :: &
       RM
@@ -683,7 +688,8 @@ contains
     RM % DEGENERACY_PARAMETER         =  oF + 13
     RM % DEGENERACY_PARAMETER_EQ      =  oF + 14
     RM % ENERGY_AVERAGE               =  oF + 15
-    RM % ENERGY_DENSITY_EQ            =  oF + 16
+    RM % OCCUPANCY_AVERAGE            =  oF + 16
+    RM % ENERGY_DENSITY_EQ            =  oF + 17
 
     !-- variable names 
 
@@ -711,6 +717,7 @@ contains
           'DegeneracyParameter            ', &
           'DegeneracyParameter_EQ         ', &
           'EnergyAverage                  ', &
+          'OccupancyAverage               ', &
           'EnergyDensity_EQ               ' ]
           
     !-- units

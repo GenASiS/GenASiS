@@ -411,14 +411,18 @@ contains
       iProton, &
       iEntropy
 integer ( KDI ) :: &
- dG_G_maxloc, &
- dDP_DP_maxloc, &
- dDS_DS_maxloc
+  dG_G_maxloc, &
+  dDP_DP_maxloc, &
+  dDS_DS_maxloc
 real ( KDR ) :: &
- dG_G_maxval, &
- dDP_DP_maxval, &
- dDS_DS_maxval, &
- Threshold
+  dG_G_maxval, &
+  dDP_DP_maxval, &
+  dDS_DS_maxval, &
+  Threshold
+real ( KDR ), dimension ( Fluid % nValues ) :: &
+  dG_G, &
+  dDP_DP, &
+  dDS_DS
 
     call Show ( 'ApplySources_Fluid', CONSOLE % INFO_4 )
 
@@ -452,24 +456,25 @@ real ( KDR ) :: &
              FluidSource_Radiation % Value ( :, iProton ), &
              F % Value ( :, F % TEMPERATURE ) )
 
+dG_G   = Increment % Value ( :, iEnergy ) &
+         /  max ( abs ( F % Value ( :, F % CONSERVED_ENERGY ) ), &
+            tiny ( 0.0_KDR ) )
+dDP_DP = Increment % Value ( :, iProton ) &
+         /  max ( abs ( F % Value ( :, F % CONSERVED_PROTON_DENSITY ) ), &
+                  tiny ( 0.0_KDR ) )
+dDS_DS = Increment % Value ( :, iEntropy ) &
+         /  max ( abs ( F % Value ( :, F % CONSERVED_ENTROPY ) ), &
+                  tiny ( 0.0_KDR ) )
+!call Show ( dG_G, '>>> dG_G' )
+!call Show ( dDP_DP, '>>> dDP_DP' )
+!call Show ( dDS_DS, '>>> dDS_DS' )
+
 Threshold = 1.0e-1_KDR
-dG_G_maxval &
-  = maxval ( abs ( Increment % Value ( :, iEnergy ) &
-                   /  F % Value ( :, F % CONSERVED_ENERGY ) ), &
-             mask = Chart % IsProperCell )
-dDP_DP_maxval &
-  = maxval ( abs ( Increment % Value ( :, iProton ) &
-                   /  F % Value ( :, F % CONSERVED_PROTON_DENSITY ) ), &
-             mask = Chart % IsProperCell )
-dDS_DS_maxval &
-  = maxval ( abs ( Increment % Value ( :, iEntropy ) &
-                   /  F % Value ( :, F % CONSERVED_ENTROPY ) ), &
-             mask = Chart % IsProperCell )
+dG_G_maxval   = maxval ( abs ( dG_G ), mask = Chart % IsProperCell )
+dDP_DP_maxval = maxval ( abs ( dDP_DP ), mask = Chart % IsProperCell )
+dDS_DS_maxval = maxval ( abs ( dDS_DS ), mask = Chart % IsProperCell )
 if ( dG_G_maxval > Threshold ) then
-  dG_G_maxloc &
-    = maxloc ( abs ( Increment % Value ( :, iEnergy ) &
-                     /  F % Value ( :, F % CONSERVED_ENERGY ) ), &
-               dim = 1, mask = Chart % IsProperCell )
+  dG_G_maxloc = maxloc ( abs ( dG_G ), dim = 1, mask = Chart % IsProperCell )
   call Show ( dG_G_maxval, '>>> dG_G_maxval', CONSOLE % ERROR )
   call Show ( dG_G_maxloc, '>>> dG_G_maxloc', CONSOLE % ERROR )
   call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', &
@@ -477,9 +482,7 @@ if ( dG_G_maxval > Threshold ) then
 end if
 if ( dDP_DP_maxval > Threshold ) then
   dDP_DP_maxloc &
-    = maxloc ( abs ( Increment % Value ( :, iProton ) &
-                   /  F % Value ( :, F % CONSERVED_PROTON_DENSITY ) ), &
-               dim = 1, mask = Chart % IsProperCell )
+    = maxloc ( abs ( dDP_DP ), dim = 1, mask = Chart % IsProperCell )
   call Show ( dDP_DP_maxval, '>>> dDP_DP_maxval', CONSOLE % ERROR )
   call Show ( dDP_DP_maxloc, '>>> dDP_DP_maxloc', CONSOLE % ERROR )
   call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', &
@@ -487,9 +490,7 @@ if ( dDP_DP_maxval > Threshold ) then
 end if
 if ( dDS_DS_maxval > Threshold ) then
   dDS_DS_maxloc &
-    = maxloc ( abs ( Increment % Value ( :, iEntropy ) &
-                   /  F % Value ( :, F % CONSERVED_ENTROPY ) ), &
-               dim = 1, mask = Chart % IsProperCell )
+    = maxloc ( abs ( dDS_DS ), dim = 1, mask = Chart % IsProperCell )
   call Show ( dDS_DS_maxval, '>>> dDS_DS_maxval', CONSOLE % ERROR )
   call Show ( dDS_DS_maxloc, '>>> dDS_DS_maxloc', CONSOLE % ERROR )
   call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', &

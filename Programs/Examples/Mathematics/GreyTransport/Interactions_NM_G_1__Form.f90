@@ -450,12 +450,13 @@ call Show ( exp ( - Eta_Nu_EQ ( iV ) ), '>>> exp ( -eta_nu_eq )' )
       G_F, &
       Chi_Factor, &
       Q, &
+      E_Min, &
       amu, &
       N_p, &
       N_h, &
       Beta_F, &
       N_A, &
-      One_Minus_F_E, One_Minus_F_Nu_EQ, &
+      One_Minus_F_E, One_Minus_F_Nu, &
       Chi_0, &
       Fermi_3_Nu, Fermi_4_Nu, Fermi_5_Nu, &
       Fermi_2_E, Fermi_4_E, Fermi_5_E, &
@@ -489,11 +490,19 @@ call Show ( exp ( - Eta_Nu_EQ ( iV ) ), '>>> exp ( -eta_nu_eq )' )
 
     !$OMP parallel do private ( iV ) 
     do iV = 1, nValues
-       
+!call Show ( iV, '>>> iV' )
+        
       if ( T ( iV ) == 0.0_KDR .or. A ( iV ) == 0.0_KDR ) &
         cycle
 
-!call Show ( iV, '>>> iV' )
+      Q  =  Mu_N_P ( iV )  +  3.0_KDR * UNIT % MEV
+!call Show ( Q, UNIT % MEV, '>>> Q' )
+!call Show ( Mu_N_P ( iV ), UNIT % MEV, '>>> Mu_N_P' )
+
+      E_Min = 0.0_KDR
+      if ( Q < 0.0_KDR ) &
+        E_Min = abs ( Q )
+
       call dfermi &
              ( 3.0_KDR, Eta_Nu ( iV ), 0.0_KDR, Fermi_3_Nu, &
                fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
@@ -504,20 +513,17 @@ call Show ( exp ( - Eta_Nu_EQ ( iV ) ), '>>> exp ( -eta_nu_eq )' )
              ( 5.0_KDR, Eta_Nu ( iV ), 0.0_KDR, Fermi_5_Nu, &
                fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
       call dfermi &
-             ( 4.0_KDR, ( Mu_E ( iV ) - Q ) / ( k_b * T ( iV ) ), 0.0_KDR, &
-               Fermi_4_E, fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+             ( 4.0_KDR, ( Mu_E ( iV ) - ( Q + E_Min ) ) / ( k_b * T ( iV ) ), &
+               0.0_KDR, Fermi_4_E, fdeta, fdtheta, fdeta2, fdtheta2, &
+               fdetadtheta )
       call dfermi &
-             ( 5.0_KDR, ( Mu_E ( iV ) - Q ) / ( k_b * T ( iV ) ), 0.0_KDR, &
-               Fermi_5_E, fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+             ( 5.0_KDR, ( Mu_E ( iV ) - ( Q + E_Min ) ) / ( k_b * T ( iV ) ), &
+               0.0_KDR, Fermi_5_E, fdeta, fdtheta, fdeta2, fdtheta2, &
+               fdetadtheta )
 
-      Q  =  Mu_N_P ( IV )  +  3.0_KDR * UNIT % MEV
-! call Show ( Q, UNIT % MEV, '>>> Q' )
 ! call Show ( E_Nu_Ave ( iV ), UNIT % MEV, '>>> E_Nu' )
-! call Show ( Mu_E ( iV ), UNIT % MEV, '>>> Mu_E' )
-! call Show ( Fermi_4_E, '>>> Fermi_4_E' )
-! call Show ( Fermi_4_E_Q, '>>> Fermi_4_E_Q' )
-! call Show ( Fermi_5_E, '>>> Fermi_5_E' )
-! call Show ( Fermi_5_E_Q, '>>> Fermi_5_E_Q' )
+!call Show ( Mu_E ( iV ), UNIT % MEV, '>>> Mu_E' )
+!call Show ( Mu_E ( iV ) - Q, '>>> Mu_E - Q' )
 
       if ( Z ( iV ) < 20 ) then
         N_p = 0.0_KDR
@@ -548,10 +554,15 @@ call Show ( exp ( - Eta_Nu_EQ ( iV ) ), '>>> exp ( -eta_nu_eq )' )
         = 1.0_KDR &
           / ( exp ( - Beta_F * ( E_Nu_Ave ( iV ) + Q - Mu_E ( iV ) ) ) &
               + 1.0_KDR )
-!call Show ( One_Minus_F_E, '>>> One_Minus_F_E' )      
-!      One_Minus_F_Nu_EQ &
-!        = 1.0_KDR / ( exp ( - Beta_F * E_Nu_Average + Eta_Nu_EQ ( iV ) ) &
-!                      + 1.0_KDR )
+!call Show ( One_Minus_F_E, '>>> One_Minus_F_E' )    
+      if ( TP ( iV ) > 0.0_KDR ) then
+        One_Minus_F_Nu &
+          = 1.0_KDR / ( exp ( - E_Nu_Ave ( iV ) / ( k_b * TP ( iV ) ) &
+                              + Eta_Nu ( iV ) ) &
+                        + 1.0_KDR )
+      else 
+        One_Minus_F_Nu = 1.0_KDR
+      end if
 !call Show ( One_Minus_F_Nu_EQ, '>>> One_Minus_F_Nu_EQ' )   
 !call Show ( exp ( Beta_f * ( Mu_N_P ( iV ) - Q ) ), '>>> exp' )   
       Chi_0     = Chi_Factor * N_A * N_p * N_h &
@@ -560,14 +571,14 @@ call Show ( exp ( - Eta_Nu_EQ ( iV ) ), '>>> exp ( -eta_nu_eq )' )
       S = max ( ( k_b * TP ( iV ) ) ** 2 * Fermi_5_Nu / Fermi_3_Nu, Tiny_10) 
       S_N = max ( ( k_b * TP ( iV ) ) * Fermi_4_Nu / Fermi_3_Nu, Tiny_10 ) 
 
-!call Show ( ( k_b * T ( iV ) &
-!            / ( CONSTANT % PLANCK_REDUCED * CONSTANT % SPEED_OF_LIGHT ) ) **6, &
-!            '>>> ( k T / hBar c ) ** 6' )
-!call Show ( ( k_b * T ( iV ) ) ** 6, '>>> ( k T ) ** 6' )
+!call Show ( ( k_b * T ( iV ) / ( TwoPi * hBar_c ) ) ** 3, &
+!            '>>> ( kT/hBar_c ) **3 ' )
+!call Show ( ( k_b * T ( iV ) ) ** 3, '>>> ( kT ) **3 ' )
 !call Show ( Fermi_5_E, '>>> Fermi_5_E' )
       EV ( iV )   = Chi_Factor * N_A * N_p * N_h * EightPi &
                     * ( k_b * T ( iV ) / ( TwoPi * hBar_c ) ) ** 3 &
-                    * ( k_b * T ( iV ) ) ** 3 * Fermi_5_E
+                    * ( k_b * T ( iV ) ) ** 3 * Fermi_5_E !&
+!                    * One_Minus_F_Nu
 !call Show ( EV ( iV ), '>>> EV' )    
       EOV ( iV )  = Chi_0 * S
 !call Show ( EOV ( iV ), '>>> EOV' )    
@@ -575,7 +586,8 @@ call Show ( exp ( - Eta_Nu_EQ ( iV ) ), '>>> exp ( -eta_nu_eq )' )
 !call Show ( Fermi_4_E, '>>> Fermi_4_E' )
       ENV ( iV )  = Chi_Factor * N_A * N_p * N_h * EightPi &
                     * ( k_b * T ( iV ) / ( TwoPi * hBar_c ) ) ** 3 &
-                    * ( k_b * T ( iV ) ) ** 2 * Fermi_4_E
+                    * ( k_b * T ( iV ) ) ** 2 * Fermi_4_E &
+                    * One_Minus_F_Nu
 !call Show ( amu * ENV ( iV ), '>>> amu * ENV' )    
       EONV ( iV ) = Chi_0 * S_N
 

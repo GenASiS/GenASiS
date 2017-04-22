@@ -13,12 +13,13 @@ contains
 
 
   subroutine ComputeSpectralParameters &
-               ( T, Eta, E_Ave, J_EQ, RM, J, FF, T_EQ, Eta_EQ )
+               ( T, Eta, E_Ave, F_Ave, J_EQ, RM, J, FF, T_EQ, Eta_EQ )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       T, &
       Eta, &
       E_Ave, &
+      F_Ave, &
       J_EQ
     class ( PhotonMomentsForm ), intent ( in ) :: &
       RM

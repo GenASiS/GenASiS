@@ -16,6 +16,9 @@ module NeutrinoMoments_Form
       ComputeSpectralParameters      
   end type NeutrinoMomentsForm
 
+    private :: &
+      ComputeSpectralParametersKernel
+
 contains
 
 
@@ -73,12 +76,13 @@ contains
 
 
   subroutine ComputeSpectralParameters &
-               ( T, Eta, E_Ave, J_EQ, RM, J, FF, T_EQ, Eta_EQ )
+               ( T, Eta, E_Ave, F_Ave, J_EQ, RM, J, FF, T_EQ, Eta_EQ )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       T, &
       Eta, &
       E_Ave, &
+      F_Ave, &
       J_EQ
     class ( NeutrinoMomentsForm ), intent ( in ) :: &
       RM
@@ -89,19 +93,20 @@ contains
       Eta_EQ
 
     call ComputeSpectralParametersKernel &
-           ( T, Eta, E_Ave, J_EQ, J, FF, T_EQ, Eta_EQ, &
+           ( T, Eta, E_Ave, F_Ave, J_EQ, J, FF, T_EQ, Eta_EQ, &
              RM % DegeneracyInfinity )
 
   end subroutine ComputeSpectralParameters
 
 
   subroutine ComputeSpectralParametersKernel &
-               ( T, Eta, E_Ave, J_EQ, J, FF, T_EQ, Eta_EQ, Eta_Infty )
+               ( T, Eta, E_Ave, F_Ave, J_EQ, J, FF, T_EQ, Eta_EQ, Eta_Infty )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       T, &
       Eta, &
       E_Ave, &
+      F_Ave, &
       J_EQ
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       J, &
@@ -139,8 +144,10 @@ contains
     !$OMP parallel do private ( iV )
     do iV = 1, nValues
 
-      Eta ( iV )  =  Eta_EQ ( iV )  *  ( 1.0_KDR  -  FF ( iV ) ) &
-                     +   Eta_Infty  *  FF ( iV )
+!      Eta ( iV )  =  Eta_EQ ( iV )  *  ( 1.0_KDR  -  FF ( iV ) ) &
+!                     +   Eta_Infty  *  FF ( iV )
+
+      Eta ( iV ) = 0.0_KDR
 
       call DFERMI ( 2.0_KDR, Eta ( iV ), 0.0_KDR, Fermi_2, &
                     fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
@@ -153,6 +160,19 @@ contains
 
       J_EQ ( iV )   =  Factor  *  T_EQ ( iV ) ** 4  *  Fermi_3
 
+    end do !-- iV
+    !$OMP end parallel do
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nValues
+      if ( T ( iV ) > 0.0_KDR ) then
+        F_Ave ( iV )  &
+          =  1.0_KDR &
+             / ( exp ( E_Ave ( iV ) / ( k * T ( iV ) )  -  Eta ( iV ) ) &
+                 + 1.0_KDR )
+      else
+        F_Ave ( iV ) = 0.0_KDR
+      end if
     end do !-- iV
     !$OMP end parallel do
 
