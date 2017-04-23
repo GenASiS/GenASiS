@@ -114,6 +114,7 @@ contains
       k, &
       Factor, &
       Fermi_2, Fermi_3, &
+      Fermi_3_EQ, &
       fdeta, fdeta2, &
       fdtheta, fdtheta2, &
       fdetadtheta
@@ -141,12 +142,14 @@ contains
                     fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
       call DFERMI ( 3.0_KDR, Eta ( iV ), 0.0_KDR, Fermi_3, &
                     fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+      call DFERMI ( 3.0_KDR, Eta_EQ ( iV ), 0.0_KDR, Fermi_3_EQ, &
+                    fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
 
       T  ( iV )     =  ( J ( iV )  /  ( Factor * Fermi_3 ) ) ** ( 0.25_KDR )
 
       E_Ave ( iV )  =  ( k * T ( iV ) ) * Fermi_3 / Fermi_2
 
-      J_EQ ( iV )   =  Factor  *  T_EQ ( iV ) ** 4  *  Fermi_3
+      J_EQ ( iV )   =  Factor  *  T_EQ ( iV ) ** 4  *  Fermi_3_EQ
 
     end do !-- iV
     !$OMP end parallel do

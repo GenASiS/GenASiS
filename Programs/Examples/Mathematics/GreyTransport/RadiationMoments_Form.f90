@@ -15,21 +15,21 @@ module RadiationMoments_Form
 
   type, public, extends ( CurrentTemplate ) :: RadiationMomentsForm
     integer ( KDI ) :: &
-      N_PRIMITIVE_RM            = N_PRIMITIVE_RM, &
-      N_CONSERVED_RM            = N_CONSERVED_RM, &
-      N_FIELDS_RM               = N_FIELDS_RM, &
-      N_VECTORS_RM              = N_VECTORS_RM, &
-      COMOVING_ENERGY_DENSITY   = 0, &
-      CONSERVED_ENERGY_DENSITY  = 0, &
-      FLUX_FACTOR               = 0, &
-      VARIABLE_EDDINGTON_FACTOR = 0, &
-      TEMPERATURE_PARAMETER     = 0, &
-      TEMPERATURE_PARAMETER_EQ  = 0, &
-      DEGENERACY_PARAMETER      = 0, &
-      DEGENERACY_PARAMETER_EQ   = 0, &
-      ENERGY_AVERAGE            = 0, &
-      OCCUPANCY_AVERAGE         = 0, &
-      ENERGY_DENSITY_EQ         = 0
+      N_PRIMITIVE_RM             = N_PRIMITIVE_RM, &
+      N_CONSERVED_RM             = N_CONSERVED_RM, &
+      N_FIELDS_RM                = N_FIELDS_RM, &
+      N_VECTORS_RM               = N_VECTORS_RM, &
+      COMOVING_ENERGY_DENSITY    = 0, &
+      CONSERVED_ENERGY_DENSITY   = 0, &
+      FLUX_FACTOR                = 0, &
+      VARIABLE_EDDINGTON_FACTOR  = 0, &
+      TEMPERATURE_PARAMETER      = 0, &
+      TEMPERATURE_PARAMETER_EQ   = 0, &
+      DEGENERACY_PARAMETER       = 0, &
+      DEGENERACY_PARAMETER_EQ    = 0, &
+      ENERGY_AVERAGE             = 0, &
+      OCCUPANCY_AVERAGE          = 0, &
+      COMOVING_ENERGY_DENSITY_EQ = 0
     integer ( KDI ), dimension ( 3 ) :: &
       COMOVING_MOMENTUM_DENSITY_U  = 0, &
       CONSERVED_MOMENTUM_DENSITY_D = 0
@@ -224,7 +224,7 @@ contains
                                       RM % DEGENERACY_PARAMETER_EQ, &
                                       RM % ENERGY_AVERAGE, &
                                       RM % OCCUPANCY_AVERAGE, &
-                                      RM % ENERGY_DENSITY_EQ ], &
+                                      RM % COMOVING_ENERGY_DENSITY_EQ ], &
              VectorOption = [ 'ComovingMomentumDensity        ' ], &
              VectorIndicesOption = VectorIndices )
 
@@ -313,7 +313,7 @@ contains
         Eta_EQ => RMV ( oV + 1 : oV + nV, C % DEGENERACY_PARAMETER_EQ ), &
         E_Ave  => RMV ( oV + 1 : oV + nV, C % ENERGY_AVERAGE ), &
         F_Ave  => RMV ( oV + 1 : oV + nV, C % OCCUPANCY_AVERAGE ), &
-        J_EQ   => RMV ( oV + 1 : oV + nV, C % ENERGY_DENSITY_EQ ) )
+        J_EQ   => RMV ( oV + 1 : oV + nV, C % COMOVING_ENERGY_DENSITY_EQ ) )
 
     call ComputeConservedEnergyMomentum &
            ( E, S_1, S_2, S_3, J, H_1, H_2, H_3, M_DD_22, M_DD_33 )
@@ -409,7 +409,7 @@ contains
         Eta_EQ => RMV ( oV + 1 : oV + nV, C % DEGENERACY_PARAMETER_EQ ), &
         E_Ave  => RMV ( oV + 1 : oV + nV, C % ENERGY_AVERAGE ), &
         F_Ave  => RMV ( oV + 1 : oV + nV, C % OCCUPANCY_AVERAGE ), &
-        J_EQ   => RMV ( oV + 1 : oV + nV, C % ENERGY_DENSITY_EQ ) )
+        J_EQ   => RMV ( oV + 1 : oV + nV, C % COMOVING_ENERGY_DENSITY_EQ ) )
 
     call ComputePrimitiveEnergyMomentum &
            ( J, H_1, H_2, H_3, E, S_1, S_2, S_3, M_DD_22, M_DD_33, &
@@ -689,7 +689,7 @@ contains
     RM % DEGENERACY_PARAMETER_EQ      =  oF + 14
     RM % ENERGY_AVERAGE               =  oF + 15
     RM % OCCUPANCY_AVERAGE            =  oF + 16
-    RM % ENERGY_DENSITY_EQ            =  oF + 17
+    RM % COMOVING_ENERGY_DENSITY_EQ   =  oF + 17
 
     !-- variable names 
 
@@ -718,7 +718,7 @@ contains
           'DegeneracyParameter_EQ         ', &
           'EnergyAverage                  ', &
           'OccupancyAverage               ', &
-          'EnergyDensity_EQ               ' ]
+          'ComovingEnergyDensity_EQ       ' ]
           
     !-- units
     
@@ -795,11 +795,11 @@ contains
         = MomentumDensity_D_Unit ( iD )      
     end do
 
-    VariableUnit ( RM % VARIABLE_EDDINGTON_FACTOR ) = UNIT % IDENTITY
-    VariableUnit ( RM % TEMPERATURE_PARAMETER )     = TemperatureUnit
-    VariableUnit ( RM % TEMPERATURE_PARAMETER_EQ )  = TemperatureUnit
-    VariableUnit ( RM % ENERGY_AVERAGE )            = TemperatureUnit
-    VariableUnit ( RM % ENERGY_DENSITY_EQ )         = EnergyDensityUnit
+    VariableUnit ( RM % VARIABLE_EDDINGTON_FACTOR )  = UNIT % IDENTITY
+    VariableUnit ( RM % TEMPERATURE_PARAMETER )      = TemperatureUnit
+    VariableUnit ( RM % TEMPERATURE_PARAMETER_EQ )   = TemperatureUnit
+    VariableUnit ( RM % ENERGY_AVERAGE )             = TemperatureUnit
+    VariableUnit ( RM % COMOVING_ENERGY_DENSITY_EQ ) = EnergyDensityUnit
 
   end subroutine SetUnits
 
