@@ -7,8 +7,6 @@ module NeutrinoMoments_Form
   private
 
   type, public, extends ( RadiationMomentsForm ) :: NeutrinoMomentsForm
-    real ( KDR ) :: &
-      DegeneracyInfinity
   contains
     procedure, public, pass :: &
       InitializeAllocate_NM
@@ -26,9 +24,8 @@ contains
                ( NM, NeutrinoType, RiemannSolverType, UseLimiter, &
                  Velocity_U_Unit, MomentumDensity_U_Unit, &
                  MomentumDensity_D_Unit, EnergyDensityUnit, TemperatureUnit, &
-                 DegeneracyInfinity, LimiterParameter, nValues, &
-                 VariableOption, VectorOption, NameOption, ClearOption, &
-                 UnitOption, VectorIndicesOption )
+                 LimiterParameter, nValues, VariableOption, VectorOption, &
+                 NameOption, ClearOption, UnitOption, VectorIndicesOption )
 
     class ( NeutrinoMomentsForm ), intent ( inout ) :: &
       NM
@@ -45,7 +42,6 @@ contains
       EnergyDensityUnit, &
       TemperatureUnit
     real ( KDR ), intent ( in ) :: &
-      DegeneracyInfinity, &
       LimiterParameter
     integer ( KDI ), intent ( in ) :: &
       nValues
@@ -62,8 +58,6 @@ contains
       VectorIndicesOption
 
     NM % Type = NeutrinoType
-
-    NM % DegeneracyInfinity = DegeneracyInfinity
 
     call NM % RadiationMomentsForm % Initialize &
            ( RiemannSolverType, UseLimiter, Velocity_U_Unit, &
@@ -93,14 +87,13 @@ contains
       Eta_EQ
 
     call ComputeSpectralParametersKernel &
-           ( T, Eta, E_Ave, F_Ave, J_EQ, J, FF, T_EQ, Eta_EQ, &
-             RM % DegeneracyInfinity )
+           ( T, Eta, E_Ave, F_Ave, J_EQ, J, FF, T_EQ, Eta_EQ )
 
   end subroutine ComputeSpectralParameters
 
 
   subroutine ComputeSpectralParametersKernel &
-               ( T, Eta, E_Ave, F_Ave, J_EQ, J, FF, T_EQ, Eta_EQ, Eta_Infty )
+               ( T, Eta, E_Ave, F_Ave, J_EQ, J, FF, T_EQ, Eta_EQ )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       T, &
@@ -113,8 +106,6 @@ contains
       FF, &
       T_EQ, &
       Eta_EQ
-    real ( KDR ), intent ( in ) :: &
-      Eta_Infty
 
     integer ( KDI ) :: &
       iV, &
@@ -143,9 +134,6 @@ contains
 
     !$OMP parallel do private ( iV )
     do iV = 1, nValues
-
-!      Eta ( iV )  =  Eta_EQ ( iV )  *  ( 1.0_KDR  -  FF ( iV ) ) &
-!                     +   Eta_Infty  *  FF ( iV )
 
       Eta ( iV ) = 0.0_KDR
 

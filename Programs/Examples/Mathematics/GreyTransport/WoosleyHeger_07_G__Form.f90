@@ -107,8 +107,7 @@ contains
              MomentumDensity_U_UnitOption = MomentumDensity_U_Unit, &
              MomentumDensity_D_UnitOption = MomentumDensity_D_Unit, &
              EnergyDensityUnitOption = WHH % EnergyDensityUnit, &
-             TemperatureUnitOption = WHH % TemperatureUnit, &
-             DegeneracyInfinityOption = 3.0_KDR )
+             TemperatureUnitOption = WHH % TemperatureUnit )
 
     !-- Electron Antineutrinos
 
@@ -123,8 +122,7 @@ contains
              MomentumDensity_U_UnitOption = MomentumDensity_U_Unit, &
              MomentumDensity_D_UnitOption = MomentumDensity_D_Unit, &
              EnergyDensityUnitOption = WHH % EnergyDensityUnit, &
-             TemperatureUnitOption = WHH % TemperatureUnit, &
-             DegeneracyInfinityOption = 2.0_KDR )
+             TemperatureUnitOption = WHH % TemperatureUnit )
 
     !-- Mu and Tau Neutrinos and Antineutrinos
 
@@ -141,8 +139,7 @@ contains
              MomentumDensity_U_UnitOption = MomentumDensity_U_Unit, &
              MomentumDensity_D_UnitOption = MomentumDensity_D_Unit, &
              EnergyDensityUnitOption = WHH % EnergyDensityUnit, &
-             TemperatureUnitOption = WHH % TemperatureUnit, &
-             DegeneracyInfinityOption = 0.0_KDR )
+             TemperatureUnitOption = WHH % TemperatureUnit )
 
     !-- Fluid
 

@@ -14,7 +14,6 @@ module RadiationMoments_ASC__Form
   
   type, public, extends ( Current_ASC_Template ) :: RadiationMoments_ASC_Form
     real ( KDR ) :: &
-      DegeneracyInfinity, &
       LimiterParameter
     type ( MeasuredValueForm ) :: &
       EnergyDensityUnit, &
@@ -62,8 +61,8 @@ contains
                  Velocity_U_UnitOption, MomentumDensity_U_UnitOption, &
                  MomentumDensity_D_UnitOption, EnergyDensityUnitOption, &
                  TemperatureUnitOption, EnergyUnitOption, MomentumUnitOption, &
-                 AngularMomentumUnitOption, DegeneracyInfinityOption, &
-                 LimiterParameterOption, IgnorabilityOption )
+                 AngularMomentumUnitOption, LimiterParameterOption, &
+                 IgnorabilityOption )
 
     class ( RadiationMoments_ASC_Form ), intent ( inout ) :: &
       RMA
@@ -87,7 +86,6 @@ contains
       MomentumUnitOption, &
       AngularMomentumUnitOption
     real ( KDR ), intent ( in ), optional :: &
-      DegeneracyInfinityOption, &
       LimiterParameterOption
     integer ( KDL ), intent ( in ), optional :: &
       IgnorabilityOption
@@ -112,12 +110,6 @@ contains
       RMA % UseLimiter = UseLimiterOption
     call PROGRAM_HEADER % GetParameter &
            ( RMA % UseLimiter, 'UseLimiter' )
-
-    RMA % DegeneracyInfinity = 0.0_KDR
-    if ( present ( DegeneracyInfinityOption ) ) &
-      RMA % DegeneracyInfinity = DegeneracyInfinityOption
-    call PROGRAM_HEADER % GetParameter &
-           ( RMA % DegeneracyInfinity, 'DegeneracyInfinity' )
 
     RMA % LimiterParameter = 2.0_KDR
     if ( present ( LimiterParameterOption ) ) &
@@ -216,8 +208,6 @@ contains
                 RMA % IGNORABILITY )
     call Show ( RMA % UseLimiter, 'UseLimiter', RMA % IGNORABILITY )
     call Show ( RMA % LimiterParameter, 'LimiterParameter', &
-                RMA % IGNORABILITY )
-    call Show ( RMA % DegeneracyInfinity, 'DegeneracyInfinity', &
                 RMA % IGNORABILITY )
 
   end subroutine Initialize
@@ -341,7 +331,7 @@ contains
                FA % RiemannSolverType, FA % UseLimiter, FA % Velocity_U_Unit, &
                FA % MomentumDensity_U_Unit, FA % MomentumDensity_D_Unit, &
                FA % EnergyDensityUnit, FA % TemperatureUnit, &
-               FA % DegeneracyInfinity, FA % LimiterParameter, nValues, &
+               FA % LimiterParameter, nValues, &
                IgnorabilityOption = FA % IGNORABILITY )
     end select !-- FC
 
