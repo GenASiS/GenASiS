@@ -279,6 +279,9 @@ contains
     !-- Compute stages
     do iS = 1, S % nStages
 
+      call Show ( 'Computing a stage', S % IGNORABILITY + 2 )
+      call Show ( iS, 'iStage', S % IGNORABILITY + 2 )
+
       !-- Set Y  =  Solution
       call S % InitializeIntermediate ( )
 
