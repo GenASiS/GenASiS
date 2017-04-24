@@ -11,14 +11,12 @@ module Interactions_NM_G_1__Form
   implicit none
   private
 
-      integer ( KDI ), private, parameter :: &
-        N_FIELDS_NM = 2
+!    integer ( KDI ), private, parameter :: &
+!      N_FIELDS_NM = 0
 
   type, public, extends ( InteractionsTemplate ) :: Interactions_NM_G_1_Form
-    integer ( KDI ) :: &
-      N_FIELDS_NM              = N_FIELDS_NM, &
-      EMISSIVITY_NUMBER        = 0, &
-      EFFECTIVE_OPACITY_NUMBER = 0
+!    integer ( KDI ) :: &
+!      N_FIELDS_NM              = N_FIELDS_NM
     class ( Fluid_P_MHN_Form ), pointer :: &
       Fluid => null ( )
     class ( NeutrinoMomentsForm ), pointer :: &
@@ -549,20 +547,22 @@ call Show ( exp ( - Eta_Nu_EQ ( iV ) ), '>>> exp ( -eta_nu_eq )' )
 !call Show ( A ( iV ), '>>> A' )
       N_A       = M ( iV ) * N ( iV ) *  X_heavy ( iV ) / ( A ( iV ) * amu ) 
 !call Show ( N_A, '>>> N_A' )
+!call Show ( E_Nu_Ave ( iV ), '>>> E_Nu_Ave' )
       !-- Use Fermi-Dirac identity 1 - f(x) = f(-x) to avoid precision loss 
-      One_Minus_F_E &
-        = 1.0_KDR &
-          / ( exp ( - Beta_F * ( E_Nu_Ave ( iV ) + Q - Mu_E ( iV ) ) ) &
-              + 1.0_KDR )
+      One_Minus_F_E = 0.0_KDR
+!      One_Minus_F_E &
+!        = 1.0_KDR &
+!          / ( exp ( - Beta_F * ( E_Nu_Ave ( iV ) + Q - Mu_E ( iV ) ) ) &
+!              + 1.0_KDR )
 !call Show ( One_Minus_F_E, '>>> One_Minus_F_E' )    
-      if ( TP ( iV ) > 0.0_KDR ) then
-        One_Minus_F_Nu &
-          = 1.0_KDR / ( exp ( - E_Nu_Ave ( iV ) / ( k_b * TP ( iV ) ) &
-                              + Eta_Nu ( iV ) ) &
-                        + 1.0_KDR )
-      else 
+!      if ( TP ( iV ) > 0.0_KDR ) then
+!        One_Minus_F_Nu &
+!          = 1.0_KDR / ( exp ( - E_Nu_Ave ( iV ) / ( k_b * TP ( iV ) ) &
+!                              + Eta_Nu ( iV ) ) &
+!                        + 1.0_KDR )
+!      else 
         One_Minus_F_Nu = 1.0_KDR
-      end if
+!      end if
 !call Show ( One_Minus_F_Nu_EQ, '>>> One_Minus_F_Nu_EQ' )   
 !call Show ( exp ( Beta_f * ( Mu_N_P ( iV ) - Q ) ), '>>> exp' )   
       Chi_0     = Chi_Factor * N_A * N_p * N_h &
@@ -586,8 +586,8 @@ call Show ( exp ( - Eta_Nu_EQ ( iV ) ), '>>> exp ( -eta_nu_eq )' )
 !call Show ( Fermi_4_E, '>>> Fermi_4_E' )
       ENV ( iV )  = Chi_Factor * N_A * N_p * N_h * EightPi &
                     * ( k_b * T ( iV ) / ( TwoPi * hBar_c ) ) ** 3 &
-                    * ( k_b * T ( iV ) ) ** 2 * Fermi_4_E &
-                    * One_Minus_F_Nu
+                    * ( k_b * T ( iV ) ) ** 2 * Fermi_4_E !&
+!                    * One_Minus_F_Nu
 !call Show ( amu * ENV ( iV ), '>>> amu * ENV' )    
       EONV ( iV ) = Chi_0 * S_N
 
@@ -757,38 +757,38 @@ call Show ( exp ( - Eta_Nu_EQ ( iV ) ), '>>> exp ( -eta_nu_eq )' )
     if ( I % Type == '' ) &
       I % Type = 'an Interactions_NM_G_1'
 
-    !-- variable indices
+    ! !-- variable indices
 
-    oF = I % N_FIELDS_TEMPLATE
-    if ( I % N_FIELDS == 0 ) &
-      I % N_FIELDS = oF + I % N_FIELDS_NM
+    ! oF = I % N_FIELDS_TEMPLATE
+    ! if ( I % N_FIELDS == 0 ) &
+    !   I % N_FIELDS = oF + I % N_FIELDS_NM
 
-    I % EMISSIVITY_NUMBER        = oF + 1
-    I % EFFECTIVE_OPACITY_NUMBER = oF + 2
+    ! I % EMISSIVITY_NUMBER        = oF + 1
+    ! I % EFFECTIVE_OPACITY_NUMBER = oF + 2
 
-    !-- variable names 
+    ! !-- variable names 
 
-    if ( present ( VariableOption ) ) then
-      allocate ( Variable ( size ( VariableOption ) ) )
-      Variable = VariableOption
-    else
-      allocate ( Variable ( I % N_FIELDS ) )
-      Variable = ''
-    end if
+    ! if ( present ( VariableOption ) ) then
+    !   allocate ( Variable ( size ( VariableOption ) ) )
+    !   Variable = VariableOption
+    ! else
+    !   allocate ( Variable ( I % N_FIELDS ) )
+    !   Variable = ''
+    ! end if
 
-    Variable ( oF + 1 : oF + I % N_FIELDS_NM ) &
-      = [ 'EmissivityNumber      ', &
-          'EffectiveOpacityNumber' ]
+    ! Variable ( oF + 1 : oF + I % N_FIELDS_NM ) &
+    !   = [ 'EmissivityNumber      ', &
+    !       'EffectiveOpacityNumber' ]
           
-    !-- units
+    ! !-- units
     
-    if ( present ( VariableUnitOption ) ) then
-      allocate ( VariableUnit ( size ( VariableUnitOption ) ) )
-      VariableUnit = VariableUnitOption
-    else
-      allocate ( VariableUnit ( I % N_FIELDS ) )
-      VariableUnit = UNIT % IDENTITY
-    end if
+    ! if ( present ( VariableUnitOption ) ) then
+    !   allocate ( VariableUnit ( size ( VariableUnitOption ) ) )
+    !   VariableUnit = VariableUnitOption
+    ! else
+    !   allocate ( VariableUnit ( I % N_FIELDS ) )
+    !   VariableUnit = UNIT % IDENTITY
+    ! end if
     
   end subroutine InitializeBasics
 

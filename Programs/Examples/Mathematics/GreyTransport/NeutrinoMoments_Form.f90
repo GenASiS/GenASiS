@@ -70,7 +70,7 @@ contains
 
 
   subroutine ComputeSpectralParameters &
-               ( T, Eta, E_Ave, F_Ave, J_EQ, RM, J, FF, T_EQ, Eta_EQ )
+               ( T, Eta, E_Ave, F_Ave, J_EQ, RM, J, N, T_EQ, Eta_EQ )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       T, &
@@ -82,18 +82,18 @@ contains
       RM
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       J, &
-      FF, &
+      N, &
       T_EQ, &
       Eta_EQ
 
     call ComputeSpectralParametersKernel &
-           ( T, Eta, E_Ave, F_Ave, J_EQ, J, FF, T_EQ, Eta_EQ )
+           ( T, Eta, E_Ave, F_Ave, J_EQ, J, N, T_EQ, Eta_EQ )
 
   end subroutine ComputeSpectralParameters
 
 
   subroutine ComputeSpectralParametersKernel &
-               ( T, Eta, E_Ave, F_Ave, J_EQ, J, FF, T_EQ, Eta_EQ )
+               ( T, Eta, E_Ave, F_Ave, J_EQ, J, N, T_EQ, Eta_EQ )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       T, &
@@ -103,7 +103,7 @@ contains
       J_EQ
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       J, &
-      FF, &
+      N, &
       T_EQ, &
       Eta_EQ
 
@@ -113,7 +113,7 @@ contains
     real ( KDR ) :: &
       k, &
       Factor, &
-      Fermi_2, Fermi_3, &
+      Fermi_3, &
       Fermi_3_EQ, &
       fdeta, fdeta2, &
       fdtheta, fdtheta2, &
@@ -131,15 +131,18 @@ contains
 
     Factor  =  FourPi  *  k ** 4  /  ( TwoPi * hBar * c ) ** 3
 
-    end associate !-- k, etc.
+!    end associate !-- k, etc.
 
     !$OMP parallel do private ( iV )
     do iV = 1, nValues
 
-      Eta ( iV ) = 0.0_KDR
+      if ( N ( iV ) > 0.0_KDR ) then
+        Eta ( iV )  &
+          =  - 3 * log ( FourPi ** ( 1.0_KDR / 3.0_KDR ) &
+                         / ( TwoPi * hBar * c ) * ( J ( iV ) / 6.0_KDR ) &
+                         * ( 2.0_KDR / N ( iV ) ) ** ( 4.0_KDR / 3.0_KDR ) )
+      end if
 
-      call DFERMI ( 2.0_KDR, Eta ( iV ), 0.0_KDR, Fermi_2, &
-                    fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
       call DFERMI ( 3.0_KDR, Eta ( iV ), 0.0_KDR, Fermi_3, &
                     fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
       call DFERMI ( 3.0_KDR, Eta_EQ ( iV ), 0.0_KDR, Fermi_3_EQ, &
@@ -147,25 +150,31 @@ contains
 
       T  ( iV )     =  ( J ( iV )  /  ( Factor * Fermi_3 ) ) ** ( 0.25_KDR )
 
-      E_Ave ( iV )  =  ( k * T ( iV ) ) * Fermi_3 / Fermi_2
+      E_Ave ( iV )  =  J ( iV )  /  max ( N ( iV ), tiny ( 0.0_KDR ) )
 
       J_EQ ( iV )   =  Factor  *  T_EQ ( iV ) ** 4  *  Fermi_3_EQ
 
     end do !-- iV
     !$OMP end parallel do
 
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-      if ( T ( iV ) > 0.0_KDR ) then
-        F_Ave ( iV )  &
-          =  1.0_KDR &
-             / ( exp ( E_Ave ( iV ) / ( k * T ( iV ) )  -  Eta ( iV ) ) &
-                 + 1.0_KDR )
-      else
-        F_Ave ( iV ) = 0.0_KDR
-      end if
-    end do !-- iV
-    !$OMP end parallel do
+    end associate !-- k, etc.
+
+!call Show ( J, '>>> J' )
+!call Show ( N, '>>> N' )
+!call Show ( E_Ave, '>>> E_Ave' )
+
+    ! !$OMP parallel do private ( iV )
+    ! do iV = 1, nValues
+    !   if ( T ( iV ) > 0.0_KDR ) then
+    !     F_Ave ( iV )  &
+    !       =  1.0_KDR &
+    !          / ( exp ( E_Ave ( iV ) / ( k * T ( iV ) )  -  Eta ( iV ) ) &
+    !              + 1.0_KDR )
+    !   else
+    !     F_Ave ( iV ) = 0.0_KDR
+    !   end if
+    ! end do !-- iV
+    ! !$OMP end parallel do
 
   end subroutine ComputeSpectralParametersKernel
 

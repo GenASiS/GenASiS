@@ -13,7 +13,7 @@ contains
 
 
   subroutine ComputeSpectralParameters &
-               ( T, Eta, E_Ave, F_Ave, J_EQ, RM, J, FF, T_EQ, Eta_EQ )
+               ( T, Eta, E_Ave, F_Ave, J_EQ, RM, J, N, T_EQ, Eta_EQ )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       T, &
@@ -25,7 +25,7 @@ contains
       RM
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       J, &
-      FF, &
+      N, &
       T_EQ, &
       Eta_EQ
 
