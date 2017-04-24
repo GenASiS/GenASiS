@@ -168,7 +168,8 @@ contains
                I % Value ( :, I % EFFECTIVE_OPACITY ), &
                I % Value ( :, I % TRANSPORT_OPACITY ), &
                I % Value ( :, I % EMISSIVITY_NUMBER ), &
-               I % Value ( :, I % EFFECTIVE_OPACITY_NUMBER ) )
+               I % Value ( :, I % EFFECTIVE_OPACITY_NUMBER ), &
+               I % Value ( :, I % TRANSPORT_OPACITY_NUMBER ) )
 
     case ( 'NEUTRINOS_E_NU_BAR' )
 
@@ -179,6 +180,7 @@ call Clear ( I % Value ( :, I % EFFECTIVE_OPACITY ) )
 call Clear ( I % Value ( :, I % TRANSPORT_OPACITY ) )
 call Clear ( I % Value ( :, I % EMISSIVITY_NUMBER ) )
 call Clear ( I % Value ( :, I % EFFECTIVE_OPACITY_NUMBER ) )
+call Clear ( I % Value ( :, I % TRANSPORT_OPACITY_NUMBER ) )
 
       ! call I % Compute_E_NuBar_Kernel &
       !        ( NuBar_E % Value ( :, NuBar_E % TEMPERATURE_PARAMETER ), &
@@ -208,6 +210,7 @@ call Clear ( I % Value ( :, I % EFFECTIVE_OPACITY ) )
 call Clear ( I % Value ( :, I % TRANSPORT_OPACITY ) )
 call Clear ( I % Value ( :, I % EMISSIVITY_NUMBER ) )
 call Clear ( I % Value ( :, I % EFFECTIVE_OPACITY_NUMBER ) )
+call Clear ( I % Value ( :, I % TRANSPORT_OPACITY_NUMBER ) )
 
     case default
       call Show ( 'Radiation Type not recognized', CONSOLE % ERROR )
@@ -414,7 +417,7 @@ call Show ( exp ( - Eta_Nu_EQ ( iV ) ), '>>> exp ( -eta_nu_eq )' )
 
   subroutine Compute_E_Nu_Nuclei_Kernel &
                ( I, TP, Eta_Nu, Eta_Nu_EQ, E_Nu_Ave, M, N, X_heavy, Z, A, &
-                 Mu_N_P, Mu_E, T, EV, EOV, TOV, ENV, EONV )
+                 Mu_N_P, Mu_E, T, EV, EOV, TOV, ENV, EONV, TONV )
 
     class ( Interactions_NM_G_1_Form ), intent ( in ) :: &
       I
@@ -436,7 +439,8 @@ call Show ( exp ( - Eta_Nu_EQ ( iV ) ), '>>> exp ( -eta_nu_eq )' )
       EOV, &
       TOV, &
       ENV, &
-      EONV
+      EONV, &
+      TONV
 
     integer ( KDI ) :: &
       iV, &
@@ -456,7 +460,7 @@ call Show ( exp ( - Eta_Nu_EQ ( iV ) ), '>>> exp ( -eta_nu_eq )' )
       N_A, &
       One_Minus_F_E, One_Minus_F_Nu, &
       Chi_0, &
-      Fermi_3_Nu, Fermi_4_Nu, Fermi_5_Nu, &
+      Fermi_2_Nu, Fermi_3_Nu, Fermi_4_Nu, Fermi_5_Nu, &
       Fermi_2_E, Fermi_4_E, Fermi_5_E, &
       fdeta, fdeta2, &
       fdtheta, fdtheta2, &
@@ -501,6 +505,9 @@ call Show ( exp ( - Eta_Nu_EQ ( iV ) ), '>>> exp ( -eta_nu_eq )' )
       if ( Q < 0.0_KDR ) &
         E_Min = abs ( Q )
 
+      call dfermi &
+             ( 2.0_KDR, Eta_Nu ( iV ), 0.0_KDR, Fermi_2_Nu, &
+               fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
       call dfermi &
              ( 3.0_KDR, Eta_Nu ( iV ), 0.0_KDR, Fermi_3_Nu, &
                fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
@@ -569,7 +576,7 @@ call Show ( exp ( - Eta_Nu_EQ ( iV ) ), '>>> exp ( -eta_nu_eq )' )
                   * One_Minus_F_E * exp ( Beta_f * ( Mu_N_P ( iV ) - Q ) )
 
       S = max ( ( k_b * TP ( iV ) ) ** 2 * Fermi_5_Nu / Fermi_3_Nu, Tiny_10) 
-      S_N = max ( ( k_b * TP ( iV ) ) * Fermi_4_Nu / Fermi_3_Nu, Tiny_10 ) 
+      S_N = max ( ( k_b * TP ( iV ) ) ** 2 * Fermi_4_Nu / Fermi_2_Nu, Tiny_10 )
 
 !call Show ( ( k_b * T ( iV ) / ( TwoPi * hBar_c ) ) ** 3, &
 !            '>>> ( kT/hBar_c ) **3 ' )
@@ -590,6 +597,7 @@ call Show ( exp ( - Eta_Nu_EQ ( iV ) ), '>>> exp ( -eta_nu_eq )' )
 !                    * One_Minus_F_Nu
 !call Show ( amu * ENV ( iV ), '>>> amu * ENV' )    
       EONV ( iV ) = Chi_0 * S_N
+      TONV ( iV ) = EONV ( iV )
 
     end do !-- iV
     !$OMP end parallel do

@@ -112,7 +112,8 @@ contains
       nValues
     real ( KDR ) :: &
       k, &
-      Factor, &
+      Factor_Eta, &
+      Factor_T, &
       Fermi_3, &
       Fermi_3_EQ, &
       fdeta, fdeta2, &
@@ -129,17 +130,17 @@ contains
         FourPi => 4.0_KDR * CONSTANT % PI, &
         TwoPi  => 2.0_KDR * CONSTANT % PI )
 
-    Factor  =  FourPi  *  k ** 4  /  ( TwoPi * hBar * c ) ** 3
+    Factor_Eta =  FourPi ** ( 1.0_KDR / 3.0_KDR ) / ( TwoPi * hBar * c )
+    Factor_T   =  FourPi  *  k ** 4  /  ( TwoPi * hBar * c ) ** 3
 
-!    end associate !-- k, etc.
+    end associate !-- k, etc.
 
     !$OMP parallel do private ( iV )
     do iV = 1, nValues
 
       if ( N ( iV ) > 0.0_KDR ) then
         Eta ( iV )  &
-          =  - 3 * log ( FourPi ** ( 1.0_KDR / 3.0_KDR ) &
-                         / ( TwoPi * hBar * c ) * ( J ( iV ) / 6.0_KDR ) &
+          =  - 3 * log ( Factor_Eta * ( J ( iV ) / 6.0_KDR ) &
                          * ( 2.0_KDR / N ( iV ) ) ** ( 4.0_KDR / 3.0_KDR ) )
       end if
 
@@ -148,16 +149,14 @@ contains
       call DFERMI ( 3.0_KDR, Eta_EQ ( iV ), 0.0_KDR, Fermi_3_EQ, &
                     fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
 
-      T  ( iV )     =  ( J ( iV )  /  ( Factor * Fermi_3 ) ) ** ( 0.25_KDR )
+      T  ( iV )     =  ( J ( iV )  /  ( Factor_T * Fermi_3 ) ) ** ( 0.25_KDR )
 
       E_Ave ( iV )  =  J ( iV )  /  max ( N ( iV ), tiny ( 0.0_KDR ) )
 
-      J_EQ ( iV )   =  Factor  *  T_EQ ( iV ) ** 4  *  Fermi_3_EQ
+      J_EQ ( iV )   =  Factor_T  *  T_EQ ( iV ) ** 4  *  Fermi_3_EQ
 
     end do !-- iV
     !$OMP end parallel do
-
-    end associate !-- k, etc.
 
 !call Show ( J, '>>> J' )
 !call Show ( N, '>>> N' )

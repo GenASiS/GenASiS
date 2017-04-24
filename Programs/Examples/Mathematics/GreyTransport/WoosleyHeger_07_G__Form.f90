@@ -522,7 +522,8 @@ end if
       iEnergy_R, &
       iMomentum_1_R, &
       iMomentum_2_R, &
-      iMomentum_3_R
+      iMomentum_3_R, &
+      iNumber_R
 
     select type ( R => Radiation )
     class is ( NeutrinoMomentsForm )
@@ -549,6 +550,7 @@ end if
                   iMomentum_2_R )
     call Search ( R % iaConserved, R % CONSERVED_MOMENTUM_DENSITY_D ( 3 ), &
                   iMomentum_3_R )
+    call Search ( R % iaConserved, R % CONSERVED_NUMBER_DENSITY, iNumber_R )
 
     !-- Taking shortcuts on conserved vs. comoving here
 
@@ -578,8 +580,8 @@ end if
                Chart % IsProperCell, &
                I % Value ( :, I % EMISSIVITY_NUMBER ), &
                I % Value ( :, I % EFFECTIVE_OPACITY_NUMBER ), &
-               R % Value ( :, R % COMOVING_ENERGY_DENSITY ), &
-               Increment % Value ( :, iEnergy_R ), &
+               R % Value ( :, R % COMOVING_NUMBER_DENSITY ), &
+               Increment % Value ( :, iNumber_R ), &
                CONSTANT % SPEED_OF_LIGHT, TimeStep, Sign = +1.0_KDR )
     case ( 'NEUTRINOS_E_NU_BAR' )
       call ComputeFluidSource_DP_Radiation_Kernel &
@@ -587,8 +589,8 @@ end if
                Chart % IsProperCell, &
                I % Value ( :, I % EMISSIVITY_NUMBER ), &
                I % Value ( :, I % EFFECTIVE_OPACITY_NUMBER ), &
-               R % Value ( :, R % COMOVING_ENERGY_DENSITY ), &
-               Increment % Value ( :, iEnergy_R ), &
+               R % Value ( :, R % COMOVING_NUMBER_DENSITY ), &
+               Increment % Value ( :, iNumber_R ), &
                CONSTANT % SPEED_OF_LIGHT, TimeStep, Sign = -1.0_KDR )
     end select !-- Radiation % Type
 
@@ -709,7 +711,7 @@ end if
 
 
   subroutine ComputeFluidSource_DP_Radiation_Kernel &
-               ( FS_R_DP, IsProperCell, EN, EON, J, dJ, c, dT, Sign )
+               ( FS_R_DP, IsProperCell, EN, EON, JN, dJN, c, dT, Sign )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       FS_R_DP
@@ -718,8 +720,8 @@ end if
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       EN, &
       EON, &
-      J,  &
-      dJ
+      JN,  &
+      dJN
     real ( KDR ) :: &
       c, &
       dT, &
@@ -746,7 +748,7 @@ end if
       FS_R_DP ( iV )  &
         =  FS_R_DP ( iV )  &
            -  Sign * c * dT * AMU &
-              *  ( EN ( iV )  -  EON ( iV ) * ( J ( iV ) + dJ ( iV ) ) ) 
+              *  ( EN ( iV )  -  EON ( iV ) * ( JN ( iV ) + dJN ( iV ) ) ) 
     end do
     !$OMP end parallel do
 

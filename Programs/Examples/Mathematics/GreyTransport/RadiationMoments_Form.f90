@@ -8,10 +8,10 @@ module RadiationMoments_Form
   private
 
     integer ( KDI ), private, parameter :: &
-      N_PRIMITIVE_RM =  5, &
-      N_CONSERVED_RM =  5, &
-      N_FIELDS_RM    = 19, &
-      N_VECTORS_RM   =  2
+      N_PRIMITIVE_RM =  8, &
+      N_CONSERVED_RM =  8, &
+      N_FIELDS_RM    = 27, &
+      N_VECTORS_RM   =  4
 
   type, public, extends ( CurrentTemplate ) :: RadiationMomentsForm
     integer ( KDI ) :: &
@@ -25,6 +25,8 @@ module RadiationMoments_Form
       CONSERVED_NUMBER_DENSITY   = 0, &
       FLUX_FACTOR                = 0, &
       VARIABLE_EDDINGTON_FACTOR  = 0, &
+      FLUX_FACTOR_N              = 0, &
+      VARIABLE_EDDINGTON_FACTOR_N  = 0, &
       TEMPERATURE_PARAMETER      = 0, &
       TEMPERATURE_PARAMETER_EQ   = 0, &
       DEGENERACY_PARAMETER       = 0, &
@@ -34,7 +36,9 @@ module RadiationMoments_Form
       COMOVING_ENERGY_DENSITY_EQ = 0
     integer ( KDI ), dimension ( 3 ) :: &
       COMOVING_MOMENTUM_DENSITY_U  = 0, &
-      CONSERVED_MOMENTUM_DENSITY_D = 0
+      CONSERVED_MOMENTUM_DENSITY_D = 0, &
+      COMOVING_NUMBER_FLUX_U       = 0, &
+      CONSERVED_NUMBER_FLUX_D      = 0
     class ( InteractionsTemplate ), pointer :: &
       Interactions => null ( )
   contains
@@ -170,7 +174,7 @@ contains
     end if
     C % iaPrimitive ( oP + 1 : oP + C % N_PRIMITIVE_RM ) &
       = [ C % COMOVING_ENERGY_DENSITY, C % COMOVING_MOMENTUM_DENSITY_U, &
-          C % COMOVING_NUMBER_DENSITY ]
+          C % COMOVING_NUMBER_DENSITY, C % COMOVING_NUMBER_FLUX_U ]
 
     if ( .not. allocated ( C % iaConserved ) ) then
       C % N_CONSERVED = oC + C % N_CONSERVED_RM
@@ -178,7 +182,7 @@ contains
     end if
     C % iaConserved ( oC + 1 : oC + C % N_CONSERVED_RM ) &
       = [ C % CONSERVED_ENERGY_DENSITY, C % CONSERVED_MOMENTUM_DENSITY_D, &
-          C % CONSERVED_NUMBER_DENSITY ]
+          C % CONSERVED_NUMBER_DENSITY, C % CONSERVED_NUMBER_FLUX_D ]
     
     do iF = 1, C % N_PRIMITIVE_RM
       PrimitiveName ( iF )  =  C % Variable ( C % iaPrimitive ( oP + iF ) )
@@ -213,16 +217,20 @@ contains
     type ( VariableGroupForm ), intent ( inout ) :: &
       Output
 
-    type ( Integer_1D_Form ), dimension ( 1 ) :: &
+    type ( Integer_1D_Form ), dimension ( 2 ) :: &
       VectorIndices
 
     call VectorIndices ( 1 ) % Initialize ( RM % COMOVING_MOMENTUM_DENSITY_U )
+    call VectorIndices ( 2 ) % Initialize ( RM % COMOVING_NUMBER_FLUX_U )
     call Output % Initialize &
            ( RM, iaSelectedOption = [ RM % COMOVING_ENERGY_DENSITY, &
                                       RM % COMOVING_NUMBER_DENSITY, &
                                       RM % COMOVING_MOMENTUM_DENSITY_U, &
+                                      RM % COMOVING_NUMBER_FLUX_U, &
                                       RM % FLUX_FACTOR, &
                                       RM % VARIABLE_EDDINGTON_FACTOR, &
+                                      RM % FLUX_FACTOR_N, &
+                                      RM % VARIABLE_EDDINGTON_FACTOR_N, &
                                       RM % TEMPERATURE_PARAMETER, &
                                       RM % TEMPERATURE_PARAMETER_EQ, &
                                       RM % DEGENERACY_PARAMETER, &
@@ -230,7 +238,8 @@ contains
                                       RM % ENERGY_AVERAGE, &
                                       RM % OCCUPANCY_AVERAGE, &
                                       RM % COMOVING_ENERGY_DENSITY_EQ ], &
-             VectorOption = [ 'ComovingMomentumDensity        ' ], &
+             VectorOption = [ 'ComovingMomentumDensity        ', &
+                              'ComovingNumberFlux             ' ], &
              VectorIndicesOption = VectorIndices )
 
   end subroutine SetOutput
@@ -303,7 +312,13 @@ contains
                         C % COMOVING_MOMENTUM_DENSITY_U ( 2 ) ), &
         H_3    => RMV ( oV + 1 : oV + nV, &
                         C % COMOVING_MOMENTUM_DENSITY_U ( 3 ) ), &
-        N      => RMV ( oV + 1 : oV + nV, C % COMOVING_NUMBER_DENSITY ), &
+        JN     => RMV ( oV + 1 : oV + nV, C % COMOVING_NUMBER_DENSITY ), &
+        HN_1   => RMV ( oV + 1 : oV + nV, &
+                        C % COMOVING_NUMBER_FLUX_U ( 1 ) ), &
+        HN_2   => RMV ( oV + 1 : oV + nV, &
+                        C % COMOVING_NUMBER_FLUX_U ( 2 ) ), &
+        HN_3   => RMV ( oV + 1 : oV + nV, &
+                        C % COMOVING_NUMBER_FLUX_U ( 3 ) ), &
         E      => RMV ( oV + 1 : oV + nV, C % CONSERVED_ENERGY_DENSITY ), &
         S_1    => RMV ( oV + 1 : oV + nV, &
                         C % CONSERVED_MOMENTUM_DENSITY_D ( 1 ) ), &
@@ -311,9 +326,17 @@ contains
                         C % CONSERVED_MOMENTUM_DENSITY_D ( 2 ) ), &
         S_3    => RMV ( oV + 1 : oV + nV, &
                         C % CONSERVED_MOMENTUM_DENSITY_D ( 3 ) ), &
-        D      => RMV ( oV + 1 : oV + nV, C % CONSERVED_NUMBER_DENSITY ), &
+        EN     => RMV ( oV + 1 : oV + nV, C % CONSERVED_NUMBER_DENSITY ), &
+        SN_1   => RMV ( oV + 1 : oV + nV, &
+                        C % CONSERVED_NUMBER_FLUX_D ( 1 ) ), &
+        SN_2   => RMV ( oV + 1 : oV + nV, &
+                        C % CONSERVED_NUMBER_FLUX_D ( 2 ) ), &
+        SN_3   => RMV ( oV + 1 : oV + nV, &
+                        C % CONSERVED_NUMBER_FLUX_D ( 3 ) ), &
         FF     => RMV ( oV + 1 : oV + nV, C % FLUX_FACTOR ), &
         VEF    => RMV ( oV + 1 : oV + nV, C % VARIABLE_EDDINGTON_FACTOR ), &
+        FFN    => RMV ( oV + 1 : oV + nV, C % FLUX_FACTOR_N ), &
+        VEFN   => RMV ( oV + 1 : oV + nV, C % VARIABLE_EDDINGTON_FACTOR_N ), &
         T      => RMV ( oV + 1 : oV + nV, C % TEMPERATURE_PARAMETER ), &
         T_EQ   => RMV ( oV + 1 : oV + nV, C % TEMPERATURE_PARAMETER_EQ ), &
         Eta    => RMV ( oV + 1 : oV + nV, C % DEGENERACY_PARAMETER ), &
@@ -323,19 +346,23 @@ contains
         J_EQ   => RMV ( oV + 1 : oV + nV, C % COMOVING_ENERGY_DENSITY_EQ ) )
 
     call ComputeConservedEnergyMomentum &
-           ( E, S_1, S_2, S_3, D, J, H_1, H_2, H_3, N, M_DD_22, M_DD_33 )
+           ( E, S_1, S_2, S_3, J, H_1, H_2, H_3, M_DD_22, M_DD_33 )
+    call ComputeConservedEnergyMomentum &
+           ( EN, SN_1, SN_2, SN_3, JN, HN_1, HN_2, HN_3, M_DD_22, M_DD_33 )
     call ComputeEigenspeeds &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, J, H_1, H_2, H_3, &
              M_UU_22, M_UU_33, CONSTANT % SPEED_OF_LIGHT )
     call ComputeVariableEddingtonFactor &
            ( VEF, FF, J, H_1, H_2, H_3, M_DD_22, M_DD_33 )
+    call ComputeVariableEddingtonFactor &
+           ( VEFN, FFN, JN, HN_1, HN_2, HN_3, M_DD_22, M_DD_33 )
 
     if ( associated ( RMV, C % Value ) ) then
       if ( associated ( C % Interactions ) ) &
         call C % Interactions % ComputeDegeneracyParameter_EQ &
                ( T_EQ, Eta_EQ, C )
       call C % ComputeSpectralParameters &
-             ( T, Eta, E_Ave, F_Ave, J_EQ, J, N, T_EQ, Eta_EQ )
+             ( T, Eta, E_Ave, F_Ave, J_EQ, J, JN, T_EQ, Eta_EQ )
     end if
 
     end associate !-- FEP_1, etc.
@@ -401,7 +428,13 @@ contains
                         C % COMOVING_MOMENTUM_DENSITY_U ( 2 ) ), &
         H_3    => RMV ( oV + 1 : oV + nV, &
                         C % COMOVING_MOMENTUM_DENSITY_U ( 3 ) ), &
-        N      => RMV ( oV + 1 : oV + nV, C % COMOVING_NUMBER_DENSITY ), &
+        JN     => RMV ( oV + 1 : oV + nV, C % COMOVING_NUMBER_DENSITY ), &
+        HN_1   => RMV ( oV + 1 : oV + nV, &
+                        C % COMOVING_NUMBER_FLUX_U ( 1 ) ), &
+        HN_2   => RMV ( oV + 1 : oV + nV, &
+                        C % COMOVING_NUMBER_FLUX_U ( 2 ) ), &
+        HN_3   => RMV ( oV + 1 : oV + nV, &
+                        C % COMOVING_NUMBER_FLUX_U ( 3 ) ), &
         E      => RMV ( oV + 1 : oV + nV, C % CONSERVED_ENERGY_DENSITY ), &
         S_1    => RMV ( oV + 1 : oV + nV, &
                         C % CONSERVED_MOMENTUM_DENSITY_D ( 1 ) ), &
@@ -409,9 +442,17 @@ contains
                         C % CONSERVED_MOMENTUM_DENSITY_D ( 2 ) ), &
         S_3    => RMV ( oV + 1 : oV + nV, &
                         C % CONSERVED_MOMENTUM_DENSITY_D ( 3 ) ), &
-        D      => RMV ( oV + 1 : oV + nV, C % CONSERVED_NUMBER_DENSITY ), &
+        EN     => RMV ( oV + 1 : oV + nV, C % CONSERVED_NUMBER_DENSITY ), &
+        SN_1   => RMV ( oV + 1 : oV + nV, &
+                        C % CONSERVED_NUMBER_FLUX_D ( 1 ) ), &
+        SN_2   => RMV ( oV + 1 : oV + nV, &
+                        C % CONSERVED_NUMBER_FLUX_D ( 2 ) ), &
+        SN_3   => RMV ( oV + 1 : oV + nV, &
+                        C % CONSERVED_NUMBER_FLUX_D ( 3 ) ), &
         FF     => RMV ( oV + 1 : oV + nV, C % FLUX_FACTOR ), &
         VEF    => RMV ( oV + 1 : oV + nV, C % VARIABLE_EDDINGTON_FACTOR ), &
+        FFN    => RMV ( oV + 1 : oV + nV, C % FLUX_FACTOR_N ), &
+        VEFN   => RMV ( oV + 1 : oV + nV, C % VARIABLE_EDDINGTON_FACTOR_N ), &
         T      => RMV ( oV + 1 : oV + nV, C % TEMPERATURE_PARAMETER ), &
         T_EQ   => RMV ( oV + 1 : oV + nV, C % TEMPERATURE_PARAMETER_EQ ), &
         Eta    => RMV ( oV + 1 : oV + nV, C % DEGENERACY_PARAMETER ), &
@@ -421,20 +462,25 @@ contains
         J_EQ   => RMV ( oV + 1 : oV + nV, C % COMOVING_ENERGY_DENSITY_EQ ) )
 
     call ComputePrimitiveEnergyMomentum &
-           ( J, H_1, H_2, H_3, N, E, S_1, S_2, S_3, D, M_DD_22, M_DD_33, &
+           ( J, H_1, H_2, H_3, E, S_1, S_2, S_3, M_DD_22, M_DD_33, &
+             M_UU_22, M_UU_33 )
+    call ComputePrimitiveEnergyMomentum &
+           ( JN, HN_1, HN_2, HN_3, EN, SN_1, SN_2, SN_3, M_DD_22, M_DD_33, &
              M_UU_22, M_UU_33 )
     call ComputeEigenspeeds &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, J, H_1, H_2, H_3, &
              M_UU_22, M_UU_33, CONSTANT % SPEED_OF_LIGHT )
     call ComputeVariableEddingtonFactor &
            ( VEF, FF, J, H_1, H_2, H_3, M_DD_22, M_DD_33 )
+    call ComputeVariableEddingtonFactor &
+           ( VEFN, FFN, JN, HN_1, HN_2, HN_3, M_DD_22, M_DD_33 )
 
     if ( associated ( RMV, C % Value ) ) then
       if ( associated ( C % Interactions ) ) &
         call C % Interactions % ComputeDegeneracyParameter_EQ &
                ( T_EQ, Eta_EQ, C )
       call C % ComputeSpectralParameters &
-             ( T, Eta, E_Ave, F_Ave, J_EQ, J, N, T_EQ, Eta_EQ )
+             ( T, Eta, E_Ave, F_Ave, J_EQ, J, JN, T_EQ, Eta_EQ )
     end if
 
     end associate !-- FEP_1, etc.
@@ -468,7 +514,8 @@ contains
       iEnergy, &
       iNumber
     integer ( KDI ), dimension ( 3 ) :: &
-      iMomentum
+      iMomentum, &
+      iNumberFlux
     integer ( KDI ) :: &
       oV, &  !-- oValue
       nV     !-- nValues
@@ -498,6 +545,15 @@ contains
              iMomentum ( 3 ) )
     call Search &
            ( C % iaConserved, C % CONSERVED_NUMBER_DENSITY, iNumber )
+    call Search &
+           ( C % iaConserved, C % CONSERVED_NUMBER_FLUX_D ( 1 ), &
+             iNumberFlux ( 1 ) )
+    call Search &
+           ( C % iaConserved, C % CONSERVED_NUMBER_FLUX_D ( 2 ), &
+             iNumberFlux ( 2 ) )
+    call Search &
+           ( C % iaConserved, C % CONSERVED_NUMBER_FLUX_D ( 3 ), &
+             iNumberFlux ( 3 ) )
     
     associate &
       ( M_DD_22 => Value_G ( oV + 1 : oV + nV, G % METRIC_DD_22 ), &
@@ -508,7 +564,6 @@ contains
         F_S_2 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 2 ) ), &
         F_S_3 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 3 ) ), &
         F_S_Dim => RawFlux ( oV + 1 : oV + nV, iMomentum ( iDimension ) ), & 
-        F_N => RawFlux ( oV + 1 : oV + nV, iNumber ), &
         J     => Value_C ( oV + 1 : oV + nV, C % COMOVING_ENERGY_DENSITY ), &
         H_1   => Value_C ( oV + 1 : oV + nV, &
                          C % COMOVING_MOMENTUM_DENSITY_U ( 1 ) ), &
@@ -518,13 +573,32 @@ contains
                          C % COMOVING_MOMENTUM_DENSITY_U ( 3 ) ), &
         H_Dim => Value_C ( oV + 1 : oV + nV, &
                          C % COMOVING_MOMENTUM_DENSITY_U ( iDimension ) ), &
-        VEF => Value_C ( oV + 1 : oV + nV, C % VARIABLE_EDDINGTON_FACTOR ), &
-        E_Ave => Value_C ( oV + 1 : oV + nV, C % ENERGY_AVERAGE ) )
+        VEF => Value_C ( oV + 1 : oV + nV, C % VARIABLE_EDDINGTON_FACTOR ) )
+    associate &
+      ( F_EN   => RawFlux ( oV + 1 : oV + nV, iNumber ), &
+        F_SN_1 => RawFlux ( oV + 1 : oV + nV, iNumberFlux ( 1 ) ), &
+        F_SN_2 => RawFlux ( oV + 1 : oV + nV, iNumberFlux ( 2 ) ), &
+        F_SN_3 => RawFlux ( oV + 1 : oV + nV, iNumberFlux ( 3 ) ), &
+        F_SN_Dim => RawFlux ( oV + 1 : oV + nV, iNumberFlux ( iDimension ) ),& 
+        JN     => Value_C ( oV + 1 : oV + nV, C % COMOVING_NUMBER_DENSITY ), &
+        HN_1   => Value_C ( oV + 1 : oV + nV, &
+                         C % COMOVING_NUMBER_FLUX_U ( 1 ) ), &
+        HN_2   => Value_C ( oV + 1 : oV + nV, &
+                         C % COMOVING_NUMBER_FLUX_U ( 2 ) ), &
+        HN_3   => Value_C ( oV + 1 : oV + nV, &
+                         C % COMOVING_NUMBER_FLUX_U ( 3 ) ), &
+        HN_Dim => Value_C ( oV + 1 : oV + nV, &
+                         C % COMOVING_NUMBER_FLUX_U ( iDimension ) ), &
+        VEFN => Value_C ( oV + 1 : oV + nV, C % VARIABLE_EDDINGTON_FACTOR_N ) )
 
     call ComputeRawFluxesKernel &
-           ( F_E, F_S_1, F_S_2, F_S_3, F_S_Dim, F_N, J, H_1, H_2, H_3, H_Dim, &
-             VEF, E_Ave, M_DD_22, M_DD_33 )
+           ( F_E, F_S_1, F_S_2, F_S_3, F_S_Dim, J, H_1, H_2, H_3, H_Dim, &
+             VEF, M_DD_22, M_DD_33 )
+    call ComputeRawFluxesKernel &
+           ( F_EN, F_SN_1, F_SN_2, F_SN_3, F_SN_Dim, JN, HN_1, HN_2, HN_3, &
+             HN_Dim, VEFN, M_DD_22, M_DD_33 )
 
+    end associate !-- F_EN, etc.
     end associate !-- F_E, etc.
     end associate !-- M_DD_33, etc.
 
@@ -543,15 +617,17 @@ contains
       iDimension
 
     integer ( KDI ) :: &
-      iV
+      iV, &
+      iEnergy, &
+      iNumber
     real ( KDR ), dimension ( : ), allocatable :: &
       M_DD_11
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       dX, &
       M_DD, &
-      TO, &
-      VEF, &
-      DF_I_E
+      TO, TON, &
+      VEF, VEFN, &
+      DF_I_E, DF_I_EN
     class ( GeometryFlatForm ), pointer :: &
       G
 
@@ -588,15 +664,29 @@ contains
       associate ( I => C % Interactions )
       call Grid % SetVariablePointer &
              ( I % Value ( :, I % TRANSPORT_OPACITY ), TO )
+      call Grid % SetVariablePointer &
+             ( I % Value ( :, I % TRANSPORT_OPACITY_NUMBER ), TON )
       end associate !-- I
 
       call Grid % SetVariablePointer &
              ( C % Value ( :, C % VARIABLE_EDDINGTON_FACTOR ), VEF )
       call Grid % SetVariablePointer &
-             ( DF_I % Value ( :, 1 ), DF_I_E )
+             ( C % Value ( :, C % VARIABLE_EDDINGTON_FACTOR_N ), VEFN )
+
+      call Search ( C % iaConserved, C % CONSERVED_ENERGY_DENSITY, &
+                    iEnergy )
+      call Search ( C % iaConserved, C % CONSERVED_NUMBER_DENSITY, &
+                    iNumber )
+      call Grid % SetVariablePointer &
+             ( DF_I % Value ( :, iEnergy ), DF_I_E )
+      call Grid % SetVariablePointer &
+             ( DF_I % Value ( :, iNumber ), DF_I_EN )
 
       call ComputeDiffusionFactor_HLL_CSL &
              ( DF_I_E, VEF, TO, M_DD, dX, iDimension, &
+               Grid % nGhostLayers ( iDimension ) )
+      call ComputeDiffusionFactor_HLL_CSL &
+             ( DF_I_EN, VEFN, TON, M_DD, dX, iDimension, &
                Grid % nGhostLayers ( iDimension ) )
 
       select case ( iDimension )
@@ -612,7 +702,7 @@ contains
     end select !-- Grid
 
     nullify ( G )
-    nullify ( dX, M_DD, TO, VEF, DF_I_E )
+    nullify ( dX, M_DD, TO, TON, VEF, VEFN, DF_I_E, DF_I_EN )
 
   end subroutine ComputeDiffusionFactor_HLL
 
@@ -693,19 +783,23 @@ contains
 
     RM % COMOVING_ENERGY_DENSITY      =  oF +  1
     RM % CONSERVED_ENERGY_DENSITY     =  oF +  2
-    RM % COMOVING_NUMBER_DENSITY      =  oF +  3
-    RM % CONSERVED_NUMBER_DENSITY     =  oF +  4
-    RM % COMOVING_MOMENTUM_DENSITY_U  =  oF + [ 5, 6, 7 ]
-    RM % CONSERVED_MOMENTUM_DENSITY_D =  oF + [ 8, 9, 10 ]
-    RM % FLUX_FACTOR                  =  oF + 11
-    RM % VARIABLE_EDDINGTON_FACTOR    =  oF + 12
-    RM % TEMPERATURE_PARAMETER        =  oF + 13
-    RM % TEMPERATURE_PARAMETER_EQ     =  oF + 14
-    RM % DEGENERACY_PARAMETER         =  oF + 15
-    RM % DEGENERACY_PARAMETER_EQ      =  oF + 16
-    RM % ENERGY_AVERAGE               =  oF + 17
-    RM % OCCUPANCY_AVERAGE            =  oF + 18
-    RM % COMOVING_ENERGY_DENSITY_EQ   =  oF + 19
+    RM % COMOVING_MOMENTUM_DENSITY_U  =  oF + [ 3, 4, 5 ]
+    RM % CONSERVED_MOMENTUM_DENSITY_D =  oF + [ 6, 7, 8 ]
+    RM % COMOVING_NUMBER_DENSITY      =  oF +  9
+    RM % CONSERVED_NUMBER_DENSITY     =  oF + 10
+    RM % COMOVING_NUMBER_FLUX_U       =  oF + [ 11, 12, 13 ]
+    RM % CONSERVED_NUMBER_FLUX_D      =  oF + [ 14, 15, 16 ]
+    RM % FLUX_FACTOR                  =  oF + 17
+    RM % VARIABLE_EDDINGTON_FACTOR    =  oF + 18
+    RM % FLUX_FACTOR_N                =  oF + 19
+    RM % VARIABLE_EDDINGTON_FACTOR_N  =  oF + 20
+    RM % TEMPERATURE_PARAMETER        =  oF + 21
+    RM % TEMPERATURE_PARAMETER_EQ     =  oF + 22
+    RM % DEGENERACY_PARAMETER         =  oF + 23
+    RM % DEGENERACY_PARAMETER_EQ      =  oF + 24
+    RM % ENERGY_AVERAGE               =  oF + 25
+    RM % OCCUPANCY_AVERAGE            =  oF + 26
+    RM % COMOVING_ENERGY_DENSITY_EQ   =  oF + 27
 
     !-- variable names 
 
@@ -720,16 +814,24 @@ contains
     Variable ( oF + 1 : oF + RM % N_FIELDS_RM ) &
       = [ 'ComovingEnergyDensity          ', &
           'ConservedEnergyDensity         ', &
-          'ComovingNumberDensity          ', &
-          'ConservedNumberDensity         ', &
           'ComovingMomentumDensity_U_1    ', &
           'ComovingMomentumDensity_U_2    ', &
           'ComovingMomentumDensity_U_3    ', &
           'ConservedMomentumDensity_D_1   ', &
           'ConservedMomentumDensity_D_2   ', &
           'ConservedMomentumDensity_D_3   ', &
+          'ComovingNumberDensity          ', &
+          'ConservedNumberDensity         ', &
+          'ComovingNumberFlux_U_1         ', &
+          'ComovingNumberFlux_U_2         ', &
+          'ComovingNumberFlux_U_3         ', &
+          'ConservedNumberFlux_D_1        ', &
+          'ConservedNumberFlux_D_2        ', &
+          'ConservedNumberFlux_D_3        ', &
           'FluxFactor                     ', &
           'VariableEddingtonFactor        ', &
+          'FluxFactor_N                   ', &
+          'VariableEddingtonFactor_N      ', &
           'TemperatureParameter           ', &
           'TemperatureParameter_EQ        ', &
           'DegeneracyParameter            ', &
@@ -764,7 +866,9 @@ contains
 
     Vector ( oV + 1 : oV + RM % N_VECTORS_RM ) &
       = [ 'ComovingMomentumDensity        ', &
-          'ConservedMomentumDensity       ' ]
+          'ConservedMomentumDensity       ', &
+          'ComovingNumberFlux             ', &
+          'ConservedNumberFlux            ' ]
 
     !-- vector indices
 
@@ -781,6 +885,10 @@ contains
            ( RM % COMOVING_MOMENTUM_DENSITY_U )
     call VectorIndices ( oV + 2 ) % Initialize &
            ( RM % CONSERVED_MOMENTUM_DENSITY_D )
+    call VectorIndices ( oV + 3 ) % Initialize &
+           ( RM % COMOVING_NUMBER_FLUX_U )
+    call VectorIndices ( oV + 4 ) % Initialize &
+           ( RM % CONSERVED_NUMBER_FLUX_D )
 
   end subroutine InitializeBasics
 
@@ -816,6 +924,10 @@ contains
         = MomentumDensity_U_Unit ( iD )
       VariableUnit ( RM % CONSERVED_MOMENTUM_DENSITY_D ( iD ) ) &
         = MomentumDensity_D_Unit ( iD )      
+      VariableUnit ( RM % COMOVING_NUMBER_FLUX_U ( iD ) ) &
+        = MomentumDensity_U_Unit ( iD ) / TemperatureUnit
+      VariableUnit ( RM % CONSERVED_NUMBER_FLUX_D ( iD ) ) &
+        = MomentumDensity_D_Unit ( iD ) / TemperatureUnit     
     end do
 
     VariableUnit ( RM % VARIABLE_EDDINGTON_FACTOR )  = UNIT % IDENTITY
@@ -828,17 +940,15 @@ contains
 
 
   subroutine ComputeConservedEnergyMomentum &
-               ( E, S_1, S_2, S_3, D, J, H_1, H_2, H_3, N, &
+               ( E, S_1, S_2, S_3, J, H_1, H_2, H_3, &
                  M_DD_22, M_DD_33 )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       E, &
-      S_1, S_2, S_3, &
-      D
+      S_1, S_2, S_3
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       J, &
-      H_1, H_2, H_3, &
-      N
+      H_1, H_2, H_3
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       M_DD_22, M_DD_33
 
@@ -854,15 +964,12 @@ contains
     do iV = 1, nValues
       if ( J ( iV )  <  0.0_KDR ) &
         J ( iV )  =  0.0_KDR
-      if ( N ( iV )  <  0.0_KDR ) &
-        N ( iV )  =  0.0_KDR
     end do !-- iV
     !$OMP end parallel do
 
     !$OMP parallel do private ( iV )
     do iV = 1, nValues
       E ( iV )  =  J ( iV )
-      D ( iV )  =  N ( iV )
     end do !-- iV
     !$OMP end parallel do
 
@@ -896,17 +1003,15 @@ contains
 
 
   subroutine ComputePrimitiveEnergyMomentum &
-               ( J, H_1, H_2, H_3, N, E, S_1, S_2, S_3, D, M_DD_22, M_DD_33, &
+               ( J, H_1, H_2, H_3, E, S_1, S_2, S_3, M_DD_22, M_DD_33, &
                  M_UU_22, M_UU_33 )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       J, &
-      H_1, H_2, H_3, &
-      N
+      H_1, H_2, H_3
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       E, &
-      S_1, S_2, S_3, &
-      D
+      S_1, S_2, S_3
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       M_DD_22, M_DD_33, &
       M_UU_22, M_UU_33
@@ -956,17 +1061,6 @@ contains
         S_1 ( iV )  =  H_1 ( iV )
         S_2 ( iV )  =  M_DD_22 ( iV )  *  H_2 ( iV )
         S_3 ( iV )  =  M_DD_33 ( iV )  *  H_3 ( iV )
-      end if
-    end do !-- iV
-    !$OMP end parallel do
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-      if ( D ( iV )  >  0.0_KDR ) then
-        N ( iV )  =  D ( iV )
-      else
-        N ( iV )  =  0.0_KDR
-        D ( iV )  =  0.0_KDR
       end if
     end do !-- iV
     !$OMP end parallel do
@@ -1059,20 +1153,18 @@ contains
 
 
   subroutine ComputeRawFluxesKernel &
-               ( F_E, F_S_1, F_S_2, F_S_3, F_S_Dim, F_N, J, H_1, H_2, H_3, &
-                 H_Dim, VEF, E_Ave, M_DD_22, M_DD_33 )
+               ( F_E, F_S_1, F_S_2, F_S_3, F_S_Dim, J, H_1, H_2, H_3, &
+                 H_Dim, VEF, M_DD_22, M_DD_33 )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       F_E, &
       F_S_1, F_S_2, F_S_3, &
-      F_S_Dim, &
-      F_N
+      F_S_Dim
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       J, &
       H_1, H_2, H_3, &
       H_Dim, &
       VEF, &
-      E_Ave, &
       M_DD_22, M_DD_33
 
     integer ( KDI ) :: &
@@ -1111,18 +1203,8 @@ contains
 
       F_S_Dim ( iV )  =   F_S_Dim ( iV )  &
                           +  0.5_KDR * ( 1.0_KDR  -  VEF ( iV ) ) * J ( iV )
- 
-    end do !-- iV
-    !$OMP end parallel do
 
-    !$OMP parallel do private ( iV ) 
-    do iV = 1, nValues
-      if ( E_Ave ( iV ) > 0.0_KDR ) then
-        F_N ( iV )  =  H_Dim ( iV ) / E_Ave ( iV )
-      else
-        F_N ( iV )  =  0.0_KDR
-      end if
-    end do
+    end do !-- iV
     !$OMP end parallel do
 
   end subroutine ComputeRawFluxesKernel
@@ -1217,7 +1299,10 @@ contains
       iMomentum_1, &
       iMomentum_2, &
       iMomentum_3, &
-      iNumber
+      iNumber, &
+      iNumberFlux_1, &
+      iNumberFlux_2, &
+      iNumberFlux_3
 
     select type ( RM => Current )
     class is ( RadiationMomentsForm )
@@ -1232,6 +1317,12 @@ contains
                   iMomentum_3 )
     call Search ( RM % iaConserved, RM % CONSERVED_NUMBER_DENSITY, &
                   iNumber )
+    call Search ( RM % iaConserved, RM % CONSERVED_NUMBER_FLUX_D ( 1 ), &
+                  iNumberFlux_1 )
+    call Search ( RM % iaConserved, RM % CONSERVED_NUMBER_FLUX_D ( 2 ), &
+                  iNumberFlux_2 )
+    call Search ( RM % iaConserved, RM % CONSERVED_NUMBER_FLUX_D ( 3 ), &
+                  iNumberFlux_3 )
 
     select type ( Chart )
     class is ( Chart_SL_Template )
@@ -1244,14 +1335,21 @@ contains
              DampingCoefficient % Value ( :, iMomentum_1 ), &
              DampingCoefficient % Value ( :, iMomentum_2 ), &
              DampingCoefficient % Value ( :, iMomentum_3 ), &
-             IncrementExplicit % Value ( :, iNumber ), &
-             DampingCoefficient % Value ( :, iNumber ), &
              Chart % IsProperCell, &
              I % Value ( :, I % EMISSIVITY ), &
              I % Value ( :, I % EFFECTIVE_OPACITY ), &
              I % Value ( :, I % TRANSPORT_OPACITY ), &
+             TimeStep, CONSTANT % SPEED_OF_LIGHT )
+    call ApplyRelaxationKernel &
+           ( IncrementExplicit % Value ( :, iNumber ), &
+             DampingCoefficient % Value ( :, iNumber ), &
+             DampingCoefficient % Value ( :, iNumberFlux_1 ), &
+             DampingCoefficient % Value ( :, iNumberFlux_2 ), &
+             DampingCoefficient % Value ( :, iNumberFlux_3 ), &
+             Chart % IsProperCell, &
              I % Value ( :, I % EMISSIVITY_NUMBER ), &
              I % Value ( :, I % EFFECTIVE_OPACITY_NUMBER ), &
+             I % Value ( :, I % TRANSPORT_OPACITY_NUMBER ), &
              TimeStep, CONSTANT % SPEED_OF_LIGHT )
 
     end associate !-- I
@@ -1283,7 +1381,9 @@ contains
 
     integer ( KDI ) :: &
       iMomentum_1, &
-      iMomentum_2
+      iMomentum_2, &
+      iNumberFlux_1, &
+      iNumberFlux_2
     class ( GeometryFlatForm ), pointer :: &
       G
 
@@ -1298,6 +1398,12 @@ contains
     call Search &
            ( RM % iaConserved, &
              RM % CONSERVED_MOMENTUM_DENSITY_D ( 2 ), iMomentum_2 )
+    call Search &
+           ( RM % iaConserved, &
+             RM % CONSERVED_NUMBER_FLUX_D ( 1 ), iNumberFlux_1 )
+    call Search &
+           ( RM % iaConserved, &
+             RM % CONSERVED_NUMBER_FLUX_D ( 2 ), iNumberFlux_2 )
 
     select type ( Chart => S % Chart )
     class is ( Chart_SL_Template )
@@ -1324,6 +1430,19 @@ contains
              S % dLogVolumeJacobian_dX ( 1 ) % Value, &
              S % dLogVolumeJacobian_dX ( 2 ) % Value, &
              TimeStep, Chart % nDimensions, G % Value ( :, G % CENTER ( 1 ) ) )
+    call ApplySourcesCurvilinearKernel &
+           ( Increment % Value ( :, iNumberFlux_1 ), &
+             Increment % Value ( :, iNumberFlux_2 ), &
+             Chart % CoordinateSystem, Chart % IsProperCell, &
+             RM % Value ( :, RM % COMOVING_NUMBER_DENSITY ), &
+             RM % Value ( :, RM % COMOVING_NUMBER_FLUX_U ( 1 ) ), &
+             RM % Value ( :, RM % COMOVING_NUMBER_FLUX_U ( 2 ) ), &
+             RM % Value ( :, RM % COMOVING_NUMBER_FLUX_U ( 3 ) ), &
+             RM % Value ( :, RM % VARIABLE_EDDINGTON_FACTOR_N ), &
+             M_DD_22, M_DD_33, &
+             S % dLogVolumeJacobian_dX ( 1 ) % Value, &
+             S % dLogVolumeJacobian_dX ( 2 ) % Value, &
+             TimeStep, Chart % nDimensions, G % Value ( :, G % CENTER ( 1 ) ) )
 
     end associate !-- M_DD_22, etc.
     class default
@@ -1340,25 +1459,21 @@ contains
 
 
   subroutine ApplyRelaxationKernel &
-               ( KV_E, DCV_E, DCV_S_1, DCV_S_2, DCV_S_3, KV_N, DCV_N, &
-                 IsProperCell, E, EO, TO, EN, EON, dT, c )
+               ( KV_E, DCV_E, DCV_S_1, DCV_S_2, DCV_S_3, &
+                 IsProperCell, E, EO, TO, dT, c )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       KV_E, &
       DCV_E, &
       DCV_S_1, &
       DCV_S_2, &
-      DCV_S_3, &
-      KV_N, &
-      DCV_N
+      DCV_S_3
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       IsProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       E, &
       EO, &
-      TO, &
-      EN, &
-      EON
+      TO
     real ( KDR ), intent ( in ) :: &
       dT, &
       c
@@ -1380,9 +1495,6 @@ contains
       DCV_S_1 ( iV )  =  c * TO ( iV )
       DCV_S_2 ( iV )  =  c * TO ( iV )
       DCV_S_3 ( iV )  =  c * TO ( iV )
-
-      KV_N  ( iV )  =  KV_N ( iV )  +  c * EN ( iV ) * dT
-      DCV_N ( iV )  =  c * EON ( iV )
 
     end do
     !$OMP end parallel do
