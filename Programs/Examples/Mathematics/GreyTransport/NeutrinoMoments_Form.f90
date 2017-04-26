@@ -138,10 +138,12 @@ contains
     !$OMP parallel do private ( iV )
     do iV = 1, nValues
 
-      if ( N ( iV ) > 0.0_KDR ) then
+      if ( N ( iV ) > 0.0_KDR .and. J ( iV ) > 0.0_KDR ) then
         Eta ( iV )  &
           =  - 3 * log ( Factor_Eta * ( J ( iV ) / 6.0_KDR ) &
                          * ( 2.0_KDR / N ( iV ) ) ** ( 4.0_KDR / 3.0_KDR ) )
+      else
+        Eta ( iV )  =  0.0_KDR
       end if
 
       call DFERMI ( 3.0_KDR, Eta ( iV ), 0.0_KDR, Fermi_3, &
@@ -151,16 +153,16 @@ contains
 
       T  ( iV )     =  ( J ( iV )  /  ( Factor_T * Fermi_3 ) ) ** ( 0.25_KDR )
 
-      E_Ave ( iV )  =  J ( iV )  /  max ( N ( iV ), tiny ( 0.0_KDR ) )
+      if ( N ( iV ) > 0.0_KDR .and. J ( iV ) > 0.0_KDR ) then
+        E_Ave ( iV )  =  J ( iV )  /  N ( iV )
+      else
+        E_Ave ( iV )  =  0.0_KDR
+      end if
 
       J_EQ ( iV )   =  Factor_T  *  T_EQ ( iV ) ** 4  *  Fermi_3_EQ
 
     end do !-- iV
     !$OMP end parallel do
-
-!call Show ( J, '>>> J' )
-!call Show ( N, '>>> N' )
-!call Show ( E_Ave, '>>> E_Ave' )
 
     ! !$OMP parallel do private ( iV )
     ! do iV = 1, nValues

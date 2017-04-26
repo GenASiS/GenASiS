@@ -168,8 +168,7 @@ contains
                I % Value ( :, I % EFFECTIVE_OPACITY ), &
                I % Value ( :, I % TRANSPORT_OPACITY ), &
                I % Value ( :, I % EMISSIVITY_NUMBER ), &
-               I % Value ( :, I % EFFECTIVE_OPACITY_NUMBER ), &
-               I % Value ( :, I % TRANSPORT_OPACITY_NUMBER ) )
+               I % Value ( :, I % EFFECTIVE_OPACITY_NUMBER ) )
 
     case ( 'NEUTRINOS_E_NU_BAR' )
 
@@ -180,7 +179,6 @@ call Clear ( I % Value ( :, I % EFFECTIVE_OPACITY ) )
 call Clear ( I % Value ( :, I % TRANSPORT_OPACITY ) )
 call Clear ( I % Value ( :, I % EMISSIVITY_NUMBER ) )
 call Clear ( I % Value ( :, I % EFFECTIVE_OPACITY_NUMBER ) )
-call Clear ( I % Value ( :, I % TRANSPORT_OPACITY_NUMBER ) )
 
       ! call I % Compute_E_NuBar_Kernel &
       !        ( NuBar_E % Value ( :, NuBar_E % TEMPERATURE_PARAMETER ), &
@@ -210,7 +208,6 @@ call Clear ( I % Value ( :, I % EFFECTIVE_OPACITY ) )
 call Clear ( I % Value ( :, I % TRANSPORT_OPACITY ) )
 call Clear ( I % Value ( :, I % EMISSIVITY_NUMBER ) )
 call Clear ( I % Value ( :, I % EFFECTIVE_OPACITY_NUMBER ) )
-call Clear ( I % Value ( :, I % TRANSPORT_OPACITY_NUMBER ) )
 
     case default
       call Show ( 'Radiation Type not recognized', CONSOLE % ERROR )
@@ -417,7 +414,7 @@ call Show ( exp ( - Eta_Nu_EQ ( iV ) ), '>>> exp ( -eta_nu_eq )' )
 
   subroutine Compute_E_Nu_Nuclei_Kernel &
                ( I, TP, Eta_Nu, Eta_Nu_EQ, E_Nu_Ave, M, N, X_heavy, Z, A, &
-                 Mu_N_P, Mu_E, T, EV, EOV, TOV, ENV, EONV, TONV )
+                 Mu_N_P, Mu_E, T, EV, EOV, TOV, ENV, EONV )
 
     class ( Interactions_NM_G_1_Form ), intent ( in ) :: &
       I
@@ -439,8 +436,7 @@ call Show ( exp ( - Eta_Nu_EQ ( iV ) ), '>>> exp ( -eta_nu_eq )' )
       EOV, &
       TOV, &
       ENV, &
-      EONV, &
-      TONV
+      EONV
 
     integer ( KDI ) :: &
       iV, &
@@ -597,7 +593,6 @@ call Show ( exp ( - Eta_Nu_EQ ( iV ) ), '>>> exp ( -eta_nu_eq )' )
 !                    * One_Minus_F_Nu
 !call Show ( amu * ENV ( iV ), '>>> amu * ENV' )    
       EONV ( iV ) = Chi_0 * S_N
-      TONV ( iV ) = EONV ( iV )
 
     end do !-- iV
     !$OMP end parallel do

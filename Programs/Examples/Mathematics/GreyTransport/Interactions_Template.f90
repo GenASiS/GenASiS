@@ -7,7 +7,7 @@ module Interactions_Template
   private
 
     integer ( KDI ), private, parameter :: &
-      N_FIELDS_TEMPLATE = 6
+      N_FIELDS_TEMPLATE = 5
 
   type, public, extends ( VariableGroupForm ), abstract :: InteractionsTemplate
     integer ( KDI ) :: &
@@ -18,8 +18,7 @@ module Interactions_Template
       EFFECTIVE_OPACITY        = 0, &
       TRANSPORT_OPACITY        = 0, &
       EMISSIVITY_NUMBER        = 0, &
-      EFFECTIVE_OPACITY_NUMBER = 0, &
-      TRANSPORT_OPACITY_NUMBER = 0
+      EFFECTIVE_OPACITY_NUMBER = 0
     character ( LDL ) :: &
       Type = ''
   contains
@@ -182,7 +181,6 @@ contains
     I % TRANSPORT_OPACITY        =  3
     I % EMISSIVITY_NUMBER        =  4
     I % EFFECTIVE_OPACITY_NUMBER =  5
-    I % TRANSPORT_OPACITY_NUMBER =  6
 
     !-- variable names 
 
@@ -199,8 +197,7 @@ contains
           'EffectiveOpacity      ', &
           'TransportOpacity      ', &
           'EmissivityNumber      ', &
-          'EffectiveOpacityNumber', &
-          'TransportOpacityNumber' ]
+          'EffectiveOpacityNumber' ]
           
     !-- units
     
