@@ -2,6 +2,11 @@
 
 module CONSTANT_Singleton
 
+  !-- "Natural units" with Lorentz-Heaviside electron charge, MeV base
+  !     (hBar = c = k = \mu = MeV = 1)
+  !   https://en.wikipedia.org/wiki
+  !     /Natural_units#.22Natural_units.22_.28particle_physics_and_cosmology.29
+
   use KIND_DEFAULT_Singleton
   
   implicit none
@@ -10,20 +15,20 @@ module CONSTANT_Singleton
     real ( KDR ), private, parameter :: &
       !-- Mathematical
       PI  =  acos ( -1.0_KDR ), &
-      !-- Physical MKS
+      !-- Physical SI
       !   http://pdg.lbl.gov/2016/reviews/rpp2016-rev-phys-constants.pdf
-      SPEED_OF_LIGHT_MKS    =  2.99792458e+8_KDR, &
-      PLANCK_REDUCED_MKS    =  1.054571800e-34_KDR, &
-      ELECTRON_CHARGE_MKS   =  1.6021766208e-19_KDR, &
-      ATOMIC_MASS_UNIT_MKS  =  1.660539040e-27_KDR, &
-      PERMEABILITY_MKS      =  4.0e-7_KDR * PI, & 
-      GRAVITATIONAL_MKS     =  6.67408e-11_KDR, &
-      BOLTZMANN_MKS         =  1.38064852e-23_KDR, &
-      !-- Astrophysical MKS
+      SPEED_OF_LIGHT_SI    =  2.99792458e+8_KDR, &
+      PLANCK_REDUCED_SI    =  1.054571800e-34_KDR, &
+      ELECTRON_CHARGE_SI   =  1.6021766208e-19_KDR, &
+      ATOMIC_MASS_UNIT_SI  =  1.660539040e-27_KDR, &
+      PERMEABILITY_SI      =  4.0e-7_KDR * PI, & 
+      GRAVITATIONAL_SI     =  6.67408e-11_KDR, &
+      BOLTZMANN_SI         =  1.38064852e-23_KDR, &
+      !-- Astrophysical SI
       !   http://pdg.lbl.gov/2016/reviews
       !          /rpp2016-rev-astrophysical-constants.pdf
-      ASTRONOMICAL_UNIT_MKS = 1.49597870700e+11_KDR, &
-      SOLAR_MASS_MKS        = 1.98848e+30_KDR, &
+      ASTRONOMICAL_UNIT_SI = 1.49597870700e+11_KDR, &
+      SOLAR_MASS_SI        = 1.98848e+30_KDR, &
       !-- GenASiS Fundamental
       SPEED_OF_LIGHT  =  1.0_KDR, &
       PLANCK_REDUCED  =  1.0_KDR, &    
@@ -32,30 +37,29 @@ module CONSTANT_Singleton
       !-- GenASiS Metric
       MEGA_ELECTRON_VOLT  =  1.0_KDR, &
       JOULE               =  1.0e-6_KDR * MEGA_ELECTRON_VOLT &
-                             / ELECTRON_CHARGE_MKS, & 
-      SECOND              =  PLANCK_REDUCED * SPEED_OF_LIGHT &
-                             / ( PLANCK_REDUCED_MKS * SPEED_OF_LIGHT_MKS ) &
+                             / ELECTRON_CHARGE_SI, & 
+      SECOND              =  PLANCK_REDUCED / PLANCK_REDUCED_SI &
                              / JOULE, &
-      METER               =  SPEED_OF_LIGHT / SPEED_OF_LIGHT_MKS &
+      METER               =  SPEED_OF_LIGHT / SPEED_OF_LIGHT_SI &
                              * SECOND, &
       KILOGRAM            =  JOULE  *  SECOND ** 2  /  METER ** 2, &
-      AMPERE              =  sqrt ( ( PERMEABILITY_MKS / PERMEABILITY ) &
+      AMPERE              =  sqrt ( ( PERMEABILITY_SI / PERMEABILITY ) &
                                     *  KILOGRAM  *  METER  /  SECOND ** 2 ), &
-      KELVIN              =  BOLTZMANN_MKS / BOLTZMANN &
+      KELVIN              =  BOLTZMANN_SI / BOLTZMANN &
                              *  JOULE, &
       !-- GenASiS Derived
-      ELECTRON_CHARGE   =  ELECTRON_CHARGE_MKS &
+      ELECTRON_CHARGE   =  ELECTRON_CHARGE_SI &
                            *  AMPERE * SECOND, &
-      ATOMIC_MASS_UNIT  =  ATOMIC_MASS_UNIT_MKS &
+      ATOMIC_MASS_UNIT  =  ATOMIC_MASS_UNIT_SI &
                            *  KILOGRAM, &
-      GRAVITATIONAL     =  GRAVITATIONAL_MKS &
+      GRAVITATIONAL     =  GRAVITATIONAL_SI &
                            *  METER ** 3  /  KILOGRAM  /  SECOND ** 2, &
       STEFAN_BOLTZMANN  =  PI ** 2  /  60.0_KDR &
                            *  BOLTZMANN ** 4 &
                            /  ( PLANCK_REDUCED * SPEED_OF_LIGHT ) ** 3, &
-      ASTRONOMICAL_UNIT =  ASTRONOMICAL_UNIT_MKS &
+      ASTRONOMICAL_UNIT =  ASTRONOMICAL_UNIT_SI &
                            *  METER, &
-      SOLAR_MASS        =  SOLAR_MASS_MKS * KILOGRAM
+      SOLAR_MASS        =  SOLAR_MASS_SI * KILOGRAM
 
   type, public :: ConstantSingleton
     real ( KDR ) :: &
