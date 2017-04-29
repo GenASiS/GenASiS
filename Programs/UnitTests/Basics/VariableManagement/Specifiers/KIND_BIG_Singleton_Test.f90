@@ -40,6 +40,8 @@ program KIND_BIG_Singleton_Test
   character ( 80, kind = KBCH ) :: &
     Row
 
+  open ( OUTPUT_UNIT, encoding = 'UTF-8' )
+
   print *
   print *, 'KIND_BIG % INTEGER   = ', KIND_BIG % INTEGER
   print *, 'KIND_BIG % CHARACTER = ', KIND_BIG % CHARACTER
@@ -51,7 +53,6 @@ program KIND_BIG_Singleton_Test
   print *
   print *, 'huge ( 0_KBI ) = ', huge ( 0_KBI )
 
-  open ( output_unit, encoding = 'UTF-8' )
   do iB = 1, N_BLOCKS
 
     print *

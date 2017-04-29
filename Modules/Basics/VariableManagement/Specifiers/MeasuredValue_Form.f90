@@ -4,6 +4,7 @@
 module MeasuredValue_Form
   
   use KIND_DEFAULT_Singleton
+  use KIND_BIG_Singleton
   use LEN_DEFAULT_Singleton
   use Split_Command
   use Join_Command
@@ -14,9 +15,9 @@ module MeasuredValue_Form
   type, public :: MeasuredValueForm
     real ( KDR ) :: &
       Number = 1.0_KDR
-    character ( LDL ) :: &
+    character ( LDL, KBCH ) :: &
       Unit = ''
-    character ( LDL ) :: &
+    character ( LDL, KBCH ) :: &
       Label = '' !-- Actual unit name if this object is being used as a unit
   contains
     procedure, private, pass :: &
@@ -24,13 +25,18 @@ module MeasuredValue_Form
     procedure, private, pass :: &
       Initialize_MV_Label
     procedure, private, pass :: &
+      Initialize_MV_Label_KBCH
+    procedure, private, pass :: &
       Initialize_MV_From_MV
     procedure, private, pass :: &
       Initialize_MV_From_MV_Label
+    procedure, private, pass :: &
+      Initialize_MV_From_MV_Label_KBCH
     generic :: &
       Initialize &
-        => Initialize_MV, Initialize_MV_Label, Initialize_MV_From_MV, &
-           Initialize_MV_From_MV_Label
+        => Initialize_MV, Initialize_MV_Label, Initialize_MV_Label_KBCH, &
+           Initialize_MV_From_MV, Initialize_MV_From_MV_Label, &
+           Initialize_MV_From_MV_Label_KBCH
     procedure, private, pass :: &
       Addition_MV_MV
     procedure, private, pass :: &
@@ -228,6 +234,24 @@ contains
   end subroutine Initialize_MV_Label
   
   
+  subroutine Initialize_MV_Label_KBCH ( MV, Label, Unit, Number )
+    
+    class ( MeasuredValueForm ), intent ( inout ) :: &
+      MV
+    character ( *, KBCH ), intent ( in ) :: &
+      Label
+    character ( *, KDCH ), intent ( in ) :: &
+      Unit
+    real ( KDR ), intent ( in ) :: &
+      Number
+      
+    MV % Number = Number
+    MV % Unit   = Unit
+    MV % Label  = Label
+
+  end subroutine Initialize_MV_Label_KBCH
+  
+  
   subroutine Initialize_MV_From_MV ( MV_Target, MV_Source )
     
     class ( MeasuredValueForm ), intent ( inout ) :: &
@@ -256,6 +280,22 @@ contains
     MV_Target % Label  = Label
   
   end subroutine Initialize_MV_From_MV_Label
+  
+  
+  subroutine Initialize_MV_From_MV_Label_KBCH ( MV_Target, MV_Source, Label )
+    
+    class ( MeasuredValueForm ), intent ( inout ) :: &
+      MV_Target
+    type ( MeasuredValueForm ), intent ( in ) :: &
+      MV_Source
+    character ( *, KBCH ), intent ( in ) :: &
+      Label
+            
+    MV_Target % Number = MV_Source % Number
+    MV_Target % Unit   = MV_Source % Unit
+    MV_Target % Label  = Label
+  
+  end subroutine Initialize_MV_From_MV_Label_KBCH
   
   
   elemental function Addition_MV_MV ( Augend, Addend ) result ( A_MV_MV )
@@ -1211,10 +1251,10 @@ contains
 
   recursive function ProductUnit ( Unit_1, Unit_2 ) result ( P_U )
 
-    character ( * ), intent ( in ) :: &
+    character ( *, KBCH ), intent ( in ) :: &
       Unit_1, &
       Unit_2
-    character ( LDL ) :: &
+    character ( LDL, KBCH ) :: &
       P_U
 
     integer ( KDI ) :: &
@@ -1224,26 +1264,27 @@ contains
       Exponent_1, &
       Exponent_2, &
       Exponent
-    character ( LDL ) :: &
+    character ( LDL, KBCH ) :: &
       U_1, &
       U_2, &
       UnitBase_1, &
       UnitBase_2, &
       ExponentString
-    character ( LDL ), dimension ( : ), allocatable :: &
+    character ( LDL, KBCH ), dimension ( : ), allocatable :: &
       UnitPiece_1, &
       UnitPiece_2
   
-    P_U = ''
+    P_U = KBCH_''
 
-    if ( trim ( Unit_1 ) == '' .and. trim ( Unit_2 ) == '' ) return
+    if ( trim ( Unit_1 ) == KBCH_'' .and. trim ( Unit_2 ) == KBCH_'' ) &
+      return
 
-    call Split ( Unit_1, ' ', UnitPiece_1 )
-    call Split ( Unit_2, ' ', UnitPiece_2 )
+    call Split ( Unit_1, KBCH_' ', UnitPiece_1 )
+    call Split ( Unit_2, KBCH_' ', UnitPiece_2 )
     if ( size ( UnitPiece_1 ) > 1 .or. size ( UnitPiece_2 ) > 1 ) then
       do iU_1 = 1, size ( UnitPiece_1 )
         do iU_2 = 1, size ( UnitPiece_2 )
-          Caret = index ( UnitPiece_1 ( iU_1 ), '^' )
+          Caret = index ( UnitPiece_1 ( iU_1 ), KBCH_'^' )
           if ( Caret > 0 ) then
             UnitBase_1 = UnitPiece_1 ( iU_1 ) ( : Caret - 1 )
           else
@@ -1252,13 +1293,13 @@ contains
           if ( index ( UnitPiece_2 ( iU_2 ), trim ( UnitBase_1 ) ) > 0 ) then
             UnitPiece_1 ( iU_1 ) &
               = ProductUnit ( UnitPiece_1 ( iU_1 ), UnitPiece_2 ( iU_2 ) )
-            UnitPiece_2 ( iU_2 ) = ''
+            UnitPiece_2 ( iU_2 ) = KBCH_''
           end if
         end do !-- iU_2
       end do !-- iU_1
-      call Join ( UnitPiece_1, ' ', U_1 )
-      call Join ( UnitPiece_2, ' ', U_2 )
-      P_U = adjustl ( trim ( U_1 ) // ' ' // trim ( U_2 ) )
+      call Join ( UnitPiece_1, KBCH_' ', U_1 )
+      call Join ( UnitPiece_2, KBCH_' ', U_2 )
+      P_U = adjustl ( trim ( U_1 ) // KBCH_' ' // trim ( U_2 ) )
       return
     !   !-- Give up on this more complicated case
     !   P_U = adjustl ( trim ( Unit_1 ) // ' ' // trim ( Unit_2 ) )
@@ -1266,10 +1307,10 @@ contains
     end if
 
     !-- Analyze Unit_1
-    Caret = index ( Unit_1, '^' )     
+    Caret = index ( Unit_1, KBCH_'^' )     
     if ( Caret > 0 ) then
       UnitBase_1 = Unit_1 ( : Caret - 1 )
-      Dot = index ( Unit_1 ( Caret + 1 : ), '.' )
+      Dot = index ( Unit_1 ( Caret + 1 : ), KBCH_'.' )
       if ( Dot > 0 ) then
 !        print *, 'ERROR: Real exponents not implemented in Product_MV_MV'
 !        stop
@@ -1282,10 +1323,10 @@ contains
     end if
 
     !-- Analyze Unit_2
-    Caret = index ( Unit_2, '^' )     
+    Caret = index ( Unit_2, KBCH_'^' )     
     if ( Caret > 0 ) then
       UnitBase_2 = Unit_2 ( : Caret - 1 )
-      Dot = index ( Unit_2 ( Caret + 1 : ), '.' )
+      Dot = index ( Unit_2 ( Caret + 1 : ), KBCH_'.' )
       if ( Dot > 0 ) then
 !        print *, 'ERROR: Real exponents not implemented in Product_MV_MV'
 !        stop
@@ -1305,10 +1346,11 @@ contains
         P_U = trim ( UnitBase_1 )
       else 
         write ( ExponentString, fmt ='(i7)' ) Exponent
-        P_U = trim ( UnitBase_1 ) // '^' // trim ( adjustl ( ExponentString ) )
+        P_U = trim ( UnitBase_1 ) // KBCH_'^' &
+              // trim ( adjustl ( ExponentString ) )
       end if
     else
-      P_U = adjustl ( trim ( Unit_1 ) // ' ' // trim ( Unit_2 ) )
+      P_U = adjustl ( trim ( Unit_1 ) // KBCH_' ' // trim ( Unit_2 ) )
     end if
 
 ! print*, 'UnitBase_1 ', trim ( UnitBase_1 )
@@ -1322,11 +1364,11 @@ contains
 
   elemental function PowerUnitInteger ( Unit, Exponent ) result ( P_U )
 
-    character ( * ), intent ( in ) :: &
+    character ( *, KBCH ), intent ( in ) :: &
       Unit
     integer ( KDI ), intent ( in ) :: &
       Exponent
-    character ( LDL ) :: &
+    character ( LDL, KBCH ) :: &
       P_U
     
     integer ( KDI ) :: &
@@ -1336,25 +1378,26 @@ contains
       OldIntegerExponent
     real ( KDR ) :: &
       OldRealExponent
-    character ( LDL ) :: &
+    character ( LDL, KBCH ) :: &
       ExponentString, &
       Scratch
-    character ( LDL ), dimension ( : ), allocatable :: &
+    character ( LDL, KBCH ), dimension ( : ), allocatable :: &
       UnitPiece
       
-    P_U = ''
+    P_U = KBCH_''
 
-    if ( Unit == '' ) return
+    if ( Unit == KBCH_'' ) &
+      return
 
-    call Split ( Unit, ' ', UnitPiece )
+    call Split ( Unit, KBCH_' ', UnitPiece )
     
     do iU = 1, size ( UnitPiece )
 
       Scratch = UnitPiece ( iU )
-      Caret = index ( Scratch, '^' )
+      Caret = index ( Scratch, KBCH_'^' )
       
       if ( Caret > 0 ) then
-        Dot = index ( Scratch ( Caret + 1 : ), '.' )
+        Dot = index ( Scratch ( Caret + 1 : ), KBCH_'.' )
         if ( Dot > 0 ) then
           read ( Scratch ( Caret + 1 : ), fmt = '(f7.4)' ) OldRealExponent
           write &
@@ -1371,23 +1414,23 @@ contains
         if ( Exponent == 1 ) exit
         write ( ExponentString, fmt = '(i7)' ) Exponent
         UnitPiece ( iU ) = &
-          trim ( Scratch ) // '^' // trim ( adjustl ( ExponentString ) )
+          trim ( Scratch ) // KBCH_'^' // trim ( adjustl ( ExponentString ) )
       end if
 
     end do 
 
-    call Join ( UnitPiece, ' ', P_U )
+    call Join ( UnitPiece, KBCH_' ', P_U )
       
   end function PowerUnitInteger
 
 
   elemental function PowerUnitReal ( Unit, Exponent ) result ( P_U )
 
-    character ( * ), intent ( in ) :: &
+    character ( *, KBCH ), intent ( in ) :: &
       Unit
     real ( KDR ), intent ( in ) :: &
       Exponent
-    character ( LDL ) :: &
+    character ( LDL, KBCH ) :: &
       P_U
     
     integer ( KDI ) :: &
@@ -1397,25 +1440,25 @@ contains
       OldIntegerExponent
     real ( KDR ) :: &
       OldRealExponent
-    character ( LDL ) :: &
+    character ( LDL, KBCH ) :: &
       ExponentString, &
       Scratch
-    character ( LDL ), dimension ( : ), allocatable :: &
+    character ( LDL, KBCH ), dimension ( : ), allocatable :: &
       UnitPiece
       
-    P_U = ''
+    P_U = KBCH_''
 
-    if ( Unit == '' ) return
+    if ( Unit == KBCH_'' ) return
 
-    call Split ( Unit, ' ', UnitPiece )
+    call Split ( Unit, KBCH_' ', UnitPiece )
     
     do iU = 1, size ( UnitPiece )
 
       Scratch = UnitPiece ( iU )
-      Caret = index ( Scratch, '^' )
+      Caret = index ( Scratch, KBCH_'^' )
      
       if ( Caret > 0 ) then
-        Dot = index ( Scratch ( Caret + 1 : ), '.' )
+        Dot = index ( Scratch ( Caret + 1 : ), KBCH_'.' )
         if ( Dot > 0 ) then
           read ( Scratch ( Caret + 1 : ), fmt = '(f7.4)' ) OldRealExponent
           write &
@@ -1426,25 +1469,26 @@ contains
           write &
             ( ExponentString, fmt ='(f7.4)' ) ( OldIntegerExponent * Exponent )
         end if
-        if ( trim ( adjustl ( ExponentString ) ) == '1.0000' ) then
+        if ( trim ( adjustl ( ExponentString ) ) == KBCH_'1.0000' ) then
           UnitPiece ( iU ) = trim ( Scratch ( : Caret - 1 ) )
         else
           UnitPiece ( iU ) &
-            = trim ( Scratch ( : Caret ) ) // trim ( adjustl ( ExponentString ) )
+            = trim ( Scratch ( : Caret ) ) &
+              // trim ( adjustl ( ExponentString ) )
         end if
       else
         write ( ExponentString, fmt = '(f7.4)' ) Exponent
-        if ( trim ( adjustl ( ExponentString ) ) == '1.0000' ) then
+        if ( trim ( adjustl ( ExponentString ) ) == KBCH_'1.0000' ) then
           UnitPiece ( iU ) = trim ( Scratch )
         else
           UnitPiece ( iU ) = &
-            trim ( Scratch ) // '^' // trim ( adjustl ( ExponentString ) )
+            trim ( Scratch ) // KBCH_'^' // trim ( adjustl ( ExponentString ) )
         end if
       end if
 
     end do
     
-    call Join ( UnitPiece, ' ', P_U )
+    call Join ( UnitPiece, KBCH_' ', P_U )
       
   end function PowerUnitReal
 

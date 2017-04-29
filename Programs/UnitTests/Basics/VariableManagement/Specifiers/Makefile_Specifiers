@@ -84,6 +84,7 @@ KIND_DEFAULT_Singleton_Test.o: \
   KIND_DEFAULT_Singleton_Test.f90
 
 KIND_BIG_Singleton_Test.o: \
+  KIND_DEFAULT_Singleton.o \
   KIND_BIG_Singleton.o \
   KIND_BIG_Singleton_Test.f90
 
