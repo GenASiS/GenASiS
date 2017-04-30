@@ -85,21 +85,26 @@ module UNIT_Singleton
   
   type ( UnitSingleton ), public, protected, save, target :: &
     UNIT
-  
+
+    character ( 5, KBCH ) :: &
+      MeV_Minus_1 &
+        = KBCH_'MeV' // char ( int ( z'207B' ), KBCH ) &
+                     // char ( int ( z'00B9' ), KBCH )
+
 contains
 
   
   subroutine Initialize ( )
     
     associate ( U => UNIT )
-    
+
     !-- Identity
     call U % IDENTITY % Initialize &
            ( '', '', 1.0_KDR )
     
     !-- Length
     call U % METER % Initialize &
-           ( 'm', 'MeV^-1', C % METER )
+           ( 'm', MeV_Minus_1, C % METER )
     call U % CENTIMETER % Initialize &
            ( 1.0e-2_KDR * U % METER, 'cm' )
     call U % FEMTOMETER % Initialize &
@@ -107,9 +112,9 @@ contains
     call U % KILOMETER % Initialize &
            ( 1.0e+3_KDR * U % METER, 'km' )
     call U % ASTRONOMICAL_UNIT % Initialize &
-           ( 'au', 'MeV^-1', C % ASTRONOMICAL_UNIT )
+           ( 'au', MeV_Minus_1, C % ASTRONOMICAL_UNIT )
     call U % PARSEC % Initialize &
-           ( 'pc', 'MeV^-1', C % PARSEC )
+           ( 'pc', MeV_Minus_1, C % PARSEC )
     call U % GIGAPARSEC % Initialize &
            ( 1.0e+9_KDR * U % PARSEC, 'Gpc' )
     call U % ANGSTROM % Initialize &
@@ -128,7 +133,7 @@ contains
            
     !-- Time
     call U % SECOND % Initialize &
-           ( 's', 'MeV^-1', C % SECOND )
+           ( 's', MeV_Minus_1, C % SECOND )
     call U % MILLISECOND % Initialize &
            ( 1.0e-3_KDR * U % SECOND, 'ms' )
     call U % FEMTOSECOND % Initialize &

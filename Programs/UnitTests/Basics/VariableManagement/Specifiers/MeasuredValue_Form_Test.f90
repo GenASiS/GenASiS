@@ -1,5 +1,6 @@
 program MeasuredValue_Form_Test
 
+  use iso_fortran_env
   use KIND_DEFAULT_Singleton
   use MeasuredValue_Form
 
@@ -11,6 +12,8 @@ program MeasuredValue_Form_Test
     Length_1, &
     Length_2, &
     Time_1
+
+  open ( OUTPUT_UNIT, encoding = 'UTF-8' )
 
   print *
 
@@ -74,8 +77,11 @@ program MeasuredValue_Form_Test
   print *
   print *, '*** Exponentiation'
   print *
-  print *, 'Length_1 ** 2', Length_1 ** 2_KDI
-  print *, 'Length_1 ** 0.5 =', Length_1 ** 0.5_KDR
+  print *, 'Length_1 ** 2 =', Length_1 ** 2_KDI
+  print *, 'Length_1 ** (-3) =', Length_1 ** (-3_KDI)
+  print *, '( Length_1 ** 2 ) ** (-3)  =', &
+           ( Length_1 ** 2_KDI ) ** (-3_KDI)
+!  print *, 'Length_1 ** 0.5 =', Length_1 ** 0.5_KDR
 
   !-- Division
 
