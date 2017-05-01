@@ -4,6 +4,7 @@ include $(PATH_EVOLUTIONS)/Makefile_Dependencies
 Solvers.o: \
   Fields.o \
   Evolutions.o \
+  NonLinearEqns.o \
   Solvers.f90
 
 Solvers.a: $(SOLVERS)
