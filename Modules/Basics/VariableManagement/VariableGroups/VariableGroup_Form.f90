@@ -81,7 +81,7 @@ contains
       iVrbl
     logical ( KDL ) :: &
       ClearRequested
-    
+
     VG % nValues = ValueShape ( 1 )
     
     VG % nVariables = ValueShape ( 2 )

@@ -35,6 +35,7 @@ module Show_Command
     module procedure ShowLogical
     module procedure ShowLogical_1D
     module procedure ShowCharacter
+    module procedure ShowCharacter_KBCH
     module procedure ShowCharacterNoDescription
     module procedure ShowCharacter_1D
     module procedure ShowMeasuredValue
@@ -961,6 +962,37 @@ contains
     call EndShow ( nTrailingLinesOption )
 
   end subroutine ShowCharacter
+  
+  
+  subroutine ShowCharacter_KBCH &
+               ( Character, Description, IgnorabilityOption, &
+                 DisplayRankOption, nLeadingLinesOption, &
+                 nTrailingLinesOption )
+
+    character ( *, KBCH ), intent ( in ) :: &
+      Character
+    character ( * ), intent ( in ) :: &
+      Description
+    integer ( KDI ), intent ( in ), optional :: &
+      IgnorabilityOption, &
+      DisplayRankOption, &
+      nLeadingLinesOption, &
+      nTrailingLinesOption
+
+    logical( KDL ) :: &
+      AbortShow
+    
+    call PrepareShow &
+           ( AbortShow, IgnorabilityOption, DisplayRankOption, &
+             nLeadingLinesOption )
+
+    if ( AbortShow ) return
+
+    print '(a35,a,a)', trim ( Description ), '  =  ', trim ( Character )
+
+    call EndShow ( nTrailingLinesOption )
+
+  end subroutine ShowCharacter_KBCH
   
   
   subroutine ShowCharacterNoDescription &

@@ -128,7 +128,7 @@ contains
       Value = Scratch
       call Show ( 'Parameter ' // trim ( Name ) // ' found', Ignorability )
       call Show ( Source, 'Source', Ignorability )
-      if ( InputUnit % Label == '' ) then
+      if ( InputUnit % Label == KBCH_'' ) then
         call Show &
                ( Value, trim ( Name ) // ' ( dimensionless )', &
                  Ignorability )
@@ -203,7 +203,7 @@ contains
       Value = Scratch
       call Show ( 'Parameter ' // trim ( Name ) // ' found', Ignorability )
       call Show ( Source, 'Source', Ignorability )
-      if ( InputUnit % Label == '' ) then
+      if ( InputUnit % Label == KBCH_'' ) then
         call Show &
                ( Value, trim ( Name ) // ' ( dimensionless )', &
                  Ignorability )
@@ -455,7 +455,7 @@ contains
       Value ( : nValues ) = Scratch ( : nValues )
       call Show ( 'Parameter ' // trim ( Name ) // ' found', Ignorability )
       call Show ( Source, 'Source', Ignorability )
-      if ( all ( InputUnit ( : nValues ) % Label == '' ) ) then
+      if ( all ( InputUnit ( : nValues ) % Label == KBCH_'' ) ) then
         call Show &
                ( Value ( : nValues ), &
                  trim ( Name ) // ' ( dimensionless )', Ignorability )
@@ -535,7 +535,7 @@ contains
       Value ( : nValues ) = Scratch ( : nValues )
       call Show ( 'Parameter ' // trim ( Name ) // ' found', Ignorability )
       call Show ( Source, 'Source', Ignorability )
-      if ( all ( InputUnit ( : nValues ) % Label == '' ) ) then
+      if ( all ( InputUnit ( : nValues ) % Label == KBCH_'' ) ) then
         call Show &
                ( Value ( : nValues ), &
                  trim ( Name ) // ' ( dimensionless )', Ignorability )
