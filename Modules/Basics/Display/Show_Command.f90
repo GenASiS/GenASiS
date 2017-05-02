@@ -1096,15 +1096,15 @@ contains
 
     if ( AbortShow ) return
 
-    if ( MeasuredValue % Label == '' ) then
+    if ( MeasuredValue % Label == KBCH_'' ) then
 
       LenUnit = len_trim ( MeasuredValue % Unit ) + 1
       write ( PrintFormat, fmt = '(a18,i0,a1)' ) &
         '(a35,a3,es15.6e3,a', LenUnit, ')'
     
       print trim ( PrintFormat ), &
-        trim ( Description ), '  =', MeasuredValue % Number, &
-        ' ' // trim ( MeasuredValue % Unit )
+        trim ( Description ), KBCH_'  =', MeasuredValue % Number, &
+        KBCH_' ' // trim ( MeasuredValue % Unit )
     
     else
 
@@ -1115,9 +1115,9 @@ contains
         '(a35,a3,es15.6e3,a', LenUnit, ')'
       
       print trim ( PrintFormat ), &
-        trim ( Description ), '  =', MeasuredValue % Number, &
-        ' ' // trim ( MeasuredValue % Unit ) &
-        // ' ( ' // trim ( MeasuredValue % Label ) // ' )'
+        trim ( Description ), KBCH_'  =', MeasuredValue % Number, &
+        KBCH_' ' // trim ( MeasuredValue % Unit ) &
+        // KBCH_' ( ' // trim ( MeasuredValue % Label ) // KBCH_' )'
 
     end if
 
@@ -1179,7 +1179,7 @@ contains
       LenUnit
     logical ( KDL ) :: &
       AbortShow
-    character ( LDN ) :: &
+    character ( LDN, KBCH ) :: &
       IndexLabel
     character ( LDL ) :: &
       PrintFormat
@@ -1194,7 +1194,7 @@ contains
     
     do i = 1, size ( MeasuredValue )
 
-      if ( MeasuredValue ( i ) % Label == '' ) then
+      if ( MeasuredValue ( i ) % Label == KBCH_'' ) then
 
         LenUnit = len_trim ( MeasuredValue ( i ) % Unit ) + 1
         write ( PrintFormat, fmt = '(a18,i0,a1)' ) &
@@ -1203,9 +1203,9 @@ contains
         write ( IndexLabel, fmt = '( i7 )' ) i
         print &
           trim ( PrintFormat ), &
-          '( ' // trim ( adjustl ( IndexLabel ) ) // ' ) =', &
+          KBCH_'( ' // trim ( adjustl ( IndexLabel ) ) // KBCH_' ) =', &
           MeasuredValue ( i ) % Number, &
-          ' ' // trim ( MeasuredValue ( i ) % Unit )
+          KBCH_' ' // trim ( MeasuredValue ( i ) % Unit )
 
       else
 
@@ -1218,10 +1218,10 @@ contains
         write ( IndexLabel, fmt = '( i7 )' ) i
         print &
           trim ( PrintFormat ), &
-          '( ' // trim ( adjustl ( IndexLabel ) ) // ' ) =', &
+          KBCH_'( ' // trim ( adjustl ( IndexLabel ) ) // KBCH_' ) =', &
           MeasuredValue ( i ) % Number, &
-          ' ' // trim ( MeasuredValue ( i ) % Unit ) &
-          // ' ( ' // trim ( MeasuredValue ( i ) % Label ) // ' )'
+          KBCH_' ' // trim ( MeasuredValue ( i ) % Unit ) &
+          // KBCH_' ( ' // trim ( MeasuredValue ( i ) % Label ) // KBCH_' )'
 
       end if
     
