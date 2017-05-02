@@ -18,8 +18,8 @@ program Timer_Form_Test
   call C % Initialize ( )
   call CONSOLE % Initialize ( C % Rank )
 
-  call Timer ( 1 ) % Initialize ( 'TestTimer 1' )
-  call Timer ( 2 ) % Initialize ( 'TestTimer 2' )
+  call Timer ( 1 ) % Initialize ( 'TestTimer 1', Level = 1 )
+  call Timer ( 2 ) % Initialize ( 'TestTimer 2', Level = 1 )
 
   !-- Interval A1; Timer ( 1 )
 

@@ -53,7 +53,7 @@ program GetMemoryUsage_Command_Test
   
   call Show ( 'Getting memory usage', CONSOLE % INFO_1 )
   call GetMemoryUsage &
-         ( HighWaterMark, ResidentSetSize, C_Option = C, &
+         ( HighWaterMark, ResidentSetSize, CONSOLE % INFO_1, C_Option = C, &
            Max_HWM_Option = AcrossProcessesMaxHighWaterMark, &
            Min_HWM_Option = AcrossProcessesMinHighWaterMark, &
            Mean_HWM_Option = AcrossProcessesMeanHighWaterMark, &

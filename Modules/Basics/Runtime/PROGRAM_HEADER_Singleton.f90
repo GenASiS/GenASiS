@@ -4,6 +4,7 @@
 
 module PROGRAM_HEADER_Singleton
 
+  use ISO_FORTRAN_ENV
   use OMP_LIB
   use VariableManagement
   use Display
@@ -116,6 +117,8 @@ contains
     procedure ( ), pointer :: &
       Abort
       
+    open ( OUTPUT_UNIT, encoding = 'UTF-8' )
+
     AppendDimensionality = .true.
     if ( present ( AppendDimensionalityOption ) ) &
       AppendDimensionality = AppendDimensionalityOption
