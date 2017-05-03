@@ -142,12 +142,13 @@ contains
 !           ( '../Parameters/HShenEOS_rho220_temp180_ye65_version_1.1_20120817.h5' )
 
     !-- Historical Oak Ridge Shift, accounting for nuclear binding energy
-    OR_Shift = 8.9_KDR * UNIT % MEV / CONSTANT % ATOMIC_MASS_UNIT
+    OR_Shift = 8.9_KDR * UNIT % MEGA_ELECTRON_VOLT &
+               / CONSTANT % ATOMIC_MASS_UNIT
     
     MassDensity_CGS     =  UNIT % MASS_DENSITY_CGS
-    SpecificEnergy_CGS  =  UNIT % ERG / UNIT % GRAM
+    SpecificEnergy_CGS  =  UNIT % ERG  /  UNIT % GRAM
     Pressure_CGS        =  UNIT % BARYE
-    MeV                 =  UNIT % MEV
+    MeV                 =  UNIT % MEGA_ELECTRON_VOLT
 
   end subroutine InitializeAllocate_P_MHN
 
@@ -763,7 +764,7 @@ contains
     rfeps = 1.0e-9_KDR
     keytemp_e = 0_KDI
     keytemp_s = 2_KDI
-    
+
     !$OMP parallel do private ( iV ) 
     do iV = 1, nValues
       if ( N ( iV ) == 0.0_KDR ) cycle 

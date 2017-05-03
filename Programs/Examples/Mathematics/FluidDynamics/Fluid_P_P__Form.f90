@@ -532,8 +532,8 @@ contains
       MassDensityUnit, &
       EnergyDensityUnit
 
-    VariableUnit ( F % POLYTROPIC_PARAMETER ) &
-      = EnergyDensityUnit  /  MassDensityUnit ** F % AdiabaticIndex
+!    VariableUnit ( F % POLYTROPIC_PARAMETER ) &
+!      = EnergyDensityUnit  /  MassDensityUnit ** F % AdiabaticIndex
 
   end subroutine SetUnits
 

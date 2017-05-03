@@ -195,7 +195,7 @@ contains
     WHH % MassDensityUnit    =  UNIT % MASS_DENSITY_CGS
     WHH % EnergyDensityUnit  =  UNIT % MASS_DENSITY_CGS  &
                                 *  UNIT % SPEED_OF_LIGHT ** 2
-    WHH % TemperatureUnit    =  UNIT % MEV
+    WHH % TemperatureUnit    =  UNIT % MEGA_ELECTRON_VOLT
 
     WHH % MassUnit             =  UNIT % SOLAR_MASS
     WHH % EnergyUnit           =  WHH % MassUnit  *  UNIT % SPEED_OF_LIGHT ** 2
@@ -878,7 +878,7 @@ contains
     end do !-- iV
 !call Show ( SHI, 'SHI' )
 
-    Phi ( 0 )  =  - SHI ( 0 )
+    Phi ( 0 )  =  - G * SHI ( 0 )
     do iV  =  1, size ( Phi ) - 1
       Phi ( iV )  =  - G * ( SHR ( iV ) / R_I ( iV )  +  SHI ( iV ) )
     end do !-- iV

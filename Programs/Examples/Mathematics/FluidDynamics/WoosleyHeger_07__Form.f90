@@ -205,7 +205,7 @@ contains
     MassDensityUnit    =  UNIT % MASS_DENSITY_CGS
     EnergyDensityUnit  =  UNIT % MASS_DENSITY_CGS  &
                             *  UNIT % SPEED_OF_LIGHT ** 2
-    TemperatureUnit    =  UNIT % MEV
+    TemperatureUnit    =  UNIT % MEGA_ELECTRON_VOLT
 
     MassUnit             =  UNIT % SOLAR_MASS
     EnergyUnit           =  MassUnit  *  UNIT % SPEED_OF_LIGHT ** 2
@@ -901,7 +901,7 @@ contains
     end do !-- iV
 !call Show ( SHI, 'SHI' )
 
-    Phi ( 0 )  =  - SHI ( 0 )
+    Phi ( 0 )  =  - G * SHI ( 0 )
     do iV  =  1, size ( Phi ) - 1
       Phi ( iV )  =  - G * ( M ( iV ) / R_I ( iV )  +  SHI ( iV ) )
     end do !-- iV
