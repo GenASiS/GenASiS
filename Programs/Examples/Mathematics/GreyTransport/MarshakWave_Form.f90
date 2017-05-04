@@ -356,7 +356,7 @@ contains
           X => G % Value ( :, G % CENTER ( 1 ) ), &
           Y => G % Value ( :, G % CENTER ( 2 ) ), &
           Z => G % Value ( :, G % CENTER ( 3 ) ), &
-          a => CONSTANT % RADIATION )
+          a => 4.0_KDR * CONSTANT % STEFAN_BOLTZMANN )
 
     J  =  a  *  T_0 ** 4
 

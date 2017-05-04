@@ -331,14 +331,14 @@ call Clear ( I % Value ( :, I % EFFECTIVE_OPACITY_NUMBER ) )
 
     J_Factor   = FourPi * k_b ** 4  /  ( TwoPi * hBar * c ) ** 3
     G_F        =  1.1663787e-5_KDR * ( hBar * c ) ** 3 &
-                  * ( 1.0e3_KDR * UNIT % MEV ) ** ( -2 )
+                  * ( 1.0e3_KDR * UNIT % MEGA_ELECTRON_VOLT ) ** ( -2 )
     Chi_Factor =  G_F ** 2 / Pi * ( 3.0_KDR * 1.23_KDR ** 2 + 1.0_KDR ) &
                   / ( hbar * c ) ** 4 
     
     end associate !-- c, etc.
     
-    M_P = 938.2720813_KDR * UNIT % MEV 
-    M_N = 939.5654133_KDR * UNIT % MEV
+    M_P = 938.2720813_KDR * UNIT % MEGA_ELECTRON_VOLT
+    M_N = 939.5654133_KDR * UNIT % MEGA_ELECTRON_VOLT
     Q   = M_N - M_P
     amu = CONSTANT % ATOMIC_MASS_UNIT
 
@@ -478,7 +478,7 @@ call Show ( exp ( - Eta_Nu_EQ ( iV ) ), '>>> exp ( -eta_nu_eq )' )
         Pi     => CONSTANT % PI )
 
     G_F        =  1.1663787e-5_KDR * ( hBar_c ) ** 3 &
-                  * ( 1.0e3_KDR * UNIT % MEV ) ** ( -2 )
+                  * ( 1.0e3_KDR * UNIT % MEGA_ELECTRON_VOLT ) ** ( -2 )
     Chi_Factor =  G_F ** 2 / Pi * 1.23_KDR ** 2 * 2.0_KDR / 7.0_KDR &
                   / ( hbar_c ) ** 4 
     
@@ -493,7 +493,7 @@ call Show ( exp ( - Eta_Nu_EQ ( iV ) ), '>>> exp ( -eta_nu_eq )' )
       if ( T ( iV ) == 0.0_KDR .or. A ( iV ) == 0.0_KDR ) &
         cycle
 
-      Q  =  Mu_N_P ( iV )  +  3.0_KDR * UNIT % MEV
+      Q  =  Mu_N_P ( iV )  +  3.0_KDR * UNIT % MEGA_ELECTRON_VOLT
 !call Show ( Q, UNIT % MEV, '>>> Q' )
 !call Show ( Mu_N_P ( iV ), UNIT % MEV, '>>> Mu_N_P' )
 
@@ -665,14 +665,14 @@ call Show ( exp ( - Eta_Nu_EQ ( iV ) ), '>>> exp ( -eta_nu_eq )' )
 
     J_Factor   = FourPi * k_b ** 4  /  ( TwoPi * hBar * c ) ** 3
     G_F        =  1.1663787e-5_KDR * ( hBar * c ) ** 3 &
-                  * ( 1.0e3_KDR * UNIT % MEV ) ** ( -2 )
+                  * ( 1.0e3_KDR * UNIT % MEGA_ELECTRON_VOLT ) ** ( -2 )
     Chi_Factor =  G_F ** 2 / Pi * ( 3.0_KDR * 1.23_KDR ** 2 + 1.0_KDR ) &
                   / ( hbar * c ) ** 4 
     
     end associate !-- c, etc.
     
-    M_P = 938.2720813_KDR * UNIT % MEV 
-    M_N = 939.5654133_KDR * UNIT % MEV
+    M_P = 938.2720813_KDR * UNIT % MEGA_ELECTRON_VOLT 
+    M_N = 939.5654133_KDR * UNIT % MEGA_ELECTRON_VOLT
     Q   = M_N - M_P
     amu = CONSTANT % ATOMIC_MASS_UNIT
 

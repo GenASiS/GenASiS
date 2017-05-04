@@ -37,7 +37,7 @@ contains
 
     nValues = size ( T )
 
-    a = CONSTANT % RADIATION
+    a = 4.0_KDR * CONSTANT % STEFAN_BOLTZMANN
 
     !$OMP parallel do private ( iV )
     do iV = 1, nValues

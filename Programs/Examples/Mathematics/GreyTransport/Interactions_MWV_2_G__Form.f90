@@ -116,7 +116,7 @@ contains
       S_Eq
 
     k_B    =  CONSTANT % BOLTZMANN
-    a      =  CONSTANT % RADIATION
+    a      =  4.0_KDR * CONSTANT % STEFAN_BOLTZMANN
     Kappa  =  I % SpecificOpacity
     E_Max  =  I % EnergyMax
 

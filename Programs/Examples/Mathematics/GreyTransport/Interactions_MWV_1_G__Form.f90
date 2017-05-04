@@ -143,7 +143,7 @@ contains
       a, &
       Kappa
 
-    a      =  CONSTANT % RADIATION
+    a      =  4.0_KDR * CONSTANT % STEFAN_BOLTZMANN
     Kappa  =  I % SpecificOpacity
 
     nValues  =  size ( EV )
