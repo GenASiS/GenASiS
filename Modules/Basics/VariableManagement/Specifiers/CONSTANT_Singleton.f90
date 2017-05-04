@@ -17,20 +17,26 @@ module CONSTANT_Singleton
       PI  =  acos ( -1.0_KDR ), &
       !-- Physical SI
       !   http://pdg.lbl.gov/2016/reviews/rpp2016-rev-phys-constants.pdf
-      SPEED_OF_LIGHT_SI    =  2.99792458e+8_KDR, &
-      PLANCK_REDUCED_SI    =  1.054571800e-34_KDR, &
-      ELECTRON_CHARGE_SI   =  1.6021766208e-19_KDR, &
-      ATOMIC_MASS_UNIT_SI  =  1.660539040e-27_KDR, &
-      PERMEABILITY_SI      =  4.0e-7_KDR * PI, & 
-      GRAVITATIONAL_SI     =  6.67408e-11_KDR, &
-      AVOGADRO_SI          =  6.022140857e23_KDR, &
-      BOLTZMANN_SI         =  1.38064852e-23_KDR, &
+      SPEED_OF_LIGHT_SI     =  2.99792458e+8_KDR, &
+      PLANCK_REDUCED_SI     =  1.054571800e-34_KDR, &
+      ELECTRON_CHARGE_SI    =  1.6021766208e-19_KDR, &
+      ELECTRON_MASS_SI      =  9.10938356e-31_KDR, &
+      PROTON_MASS_SI        =  1.672621898e-27_KDR, &
+      ATOMIC_MASS_UNIT_SI   =  1.660539040e-27_KDR, &
+      PERMEABILITY_SI       =  4.0e-7_KDR * PI, & 
+      GRAVITATIONAL_SI      =  6.67408e-11_KDR, &
+      AVOGADRO_SI           =  6.022140857e23_KDR, &
+      BOLTZMANN_SI          =  1.38064852e-23_KDR, &
+      FERMI_HBAR_C_3_GEV_2  =  1.1663787e-5_KDR, &
       !-- Astrophysical SI
       !   http://pdg.lbl.gov/2016/reviews
       !          /rpp2016-rev-astrophysical-constants.pdf
-      ASTRONOMICAL_UNIT_SI = 1.49597870700e+11_KDR, &
-      PARSEC_SI            = 3.08567758149e+16_KDR, &
-      SOLAR_MASS_SI        = 1.98848e+30_KDR, &
+      ASTRONOMICAL_UNIT_SI =  1.49597870700e+11_KDR, &
+      PARSEC_SI            =  3.08567758149e+16_KDR, &
+      SOLAR_MASS_SI        =  1.98848e+30_KDR, &
+      !-- Particles (that are not in the PDG Physical Constants)  
+      !   http://www-pdg.lbl.gov/2016/tables/rpp2016-tab-baryons-N.pdf
+      NEUTRON_MASS_AMU     =  1.0086649159_KDR, &
       !-- GenASiS Fundamental
       SPEED_OF_LIGHT  =  1.0_KDR, &
       PLANCK_REDUCED  =  1.0_KDR, &    
@@ -53,6 +59,10 @@ module CONSTANT_Singleton
       !-- GenASiS Derived
       ELECTRON_CHARGE   =  ELECTRON_CHARGE_SI &
                            *  AMPERE * SECOND, &
+      ELECTRON_MASS     =  ELECTRON_MASS_SI &
+                           *  KILOGRAM, &
+      PROTON_MASS       =  PROTON_MASS_SI &
+                           *  KILOGRAM, &
       ATOMIC_MASS_UNIT  =  ATOMIC_MASS_UNIT_SI &
                            *  KILOGRAM, &
       GRAVITATIONAL     =  GRAVITATIONAL_SI &
@@ -60,11 +70,17 @@ module CONSTANT_Singleton
       STEFAN_BOLTZMANN  =  PI ** 2  /  60.0_KDR &
                            *  BOLTZMANN ** 4 &
                            /  ( PLANCK_REDUCED * SPEED_OF_LIGHT ) ** 3, &
+      FERMI_COUPLING    =  FERMI_HBAR_C_3_GEV_2 &
+                           *  ( PLANCK_REDUCED * SPEED_OF_LIGHT ) ** 3 &
+                           /  ( 1.0e3_KDR * MEGA_ELECTRON_VOLT ) ** 2, &
       ASTRONOMICAL_UNIT =  ASTRONOMICAL_UNIT_SI &
                            *  METER, &
       PARSEC            =  PARSEC_SI &
                            *  METER, &
-      SOLAR_MASS        =  SOLAR_MASS_SI * KILOGRAM
+      SOLAR_MASS        =  SOLAR_MASS_SI &
+                           *  KILOGRAM, &
+      NEUTRON_MASS      =  NEUTRON_MASS_AMU &
+                           *  ATOMIC_MASS_UNIT
 
   type, public :: ConstantSingleton
     real ( KDR ) :: &
@@ -82,15 +98,20 @@ module CONSTANT_Singleton
       SPEED_OF_LIGHT    =  SPEED_OF_LIGHT, &
       PLANCK_REDUCED    =  PLANCK_REDUCED, &
       ELECTRON_CHARGE   =  ELECTRON_CHARGE, &
+      ELECTRON_MASS     =  ELECTRON_MASS, &
+      PROTON_MASS       =  PROTON_MASS, &
       ATOMIC_MASS_UNIT  =  ATOMIC_MASS_UNIT, &
       PERMEABILITY      =  PERMEABILITY, &
       GRAVITATIONAL     =  GRAVITATIONAL, &
       BOLTZMANN         =  BOLTZMANN, &
       STEFAN_BOLTZMANN  =  STEFAN_BOLTZMANN, &
+      FERMI_COUPLING    =  FERMI_COUPLING, &
       !-- Astrophysical
       ASTRONOMICAL_UNIT  =  ASTRONOMICAL_UNIT, &
       PARSEC             =  PARSEC, &
-      SOLAR_MASS         =  SOLAR_MASS
+      SOLAR_MASS         =  SOLAR_MASS, &
+      !-- Particles (that are not in the PDG Physical Constants)
+      NEUTRON_MASS       =  NEUTRON_MASS
   end type ConstantSingleton
   
   type ( ConstantSingleton ), public, parameter :: &
