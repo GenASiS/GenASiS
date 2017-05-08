@@ -58,6 +58,8 @@ contains
 
     nullify ( PCSC % ProtoCurrent_CSL )
 
+    call PCSC % FinalizeTemplate ( )
+
   end subroutine Finalize
 
 
@@ -75,7 +77,7 @@ contains
     class is ( ProtoCurrentForm )
       call PCS % Initialize &
              ( PC, FC % Chart % CoordinateUnit ( 1 ), PC % iaConserved )
-!      call FF % SetOutput ( FC % FieldOutput )
+      call PCS % SetOutput ( FC % FieldOutput )
     end select !-- PC
     end select !-- PCS
 

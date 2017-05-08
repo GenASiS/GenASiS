@@ -23,6 +23,8 @@ module CurrentSources_Form
       Initialize => InitializeConserved
     final :: &
       Finalize
+    procedure, public, pass :: &
+      SetOutput
   end type CurrentSourcesForm
 
     private :: &
@@ -102,6 +104,18 @@ contains
     call Show ( CS % Name, 'Name', CS % IGNORABILITY )
    
   end subroutine Finalize
+
+
+  subroutine SetOutput ( CS, Output )
+
+    class ( CurrentSourcesForm ), intent ( inout ) :: &
+      CS
+    type ( VariableGroupForm ), intent ( inout ) :: &
+      Output
+
+    call Output % Initialize ( CS )
+
+  end subroutine SetOutput
 
 
   subroutine InitializeBasics &
