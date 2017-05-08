@@ -10,6 +10,8 @@ module ProtoCurrentSources_ASC__Form
   private
 
   type, public, extends ( Field_ASC_Template ) :: ProtoCurrentSources_ASC_Form
+    type ( MeasuredValueForm ) :: &
+      TimeUnit
     class ( Field_ASC_Template ), pointer :: &
       ProtoCurrent_ASC => null ( )
   contains
@@ -25,7 +27,8 @@ contains
 
 
   subroutine Initialize &
-               ( PCSA, ProtoCurrent_ASC, NameShortOption, IgnorabilityOption )
+               ( PCSA, ProtoCurrent_ASC, NameShortOption, TimeUnitOption, &
+                 IgnorabilityOption )
 
     class ( ProtoCurrentSources_ASC_Form ), intent ( inout ) :: &
       PCSA
@@ -33,6 +36,8 @@ contains
       ProtoCurrent_ASC
     character ( * ), intent ( in ), optional :: &
       NameShortOption
+    type ( MeasuredValueForm ), intent ( in ), optional :: &
+      TimeUnitOption
     integer ( KDL ), intent ( in ), optional :: &
       IgnorabilityOption
 
@@ -41,6 +46,9 @@ contains
 
     if ( PCSA % Type == '' ) &
       PCSA % Type = 'a ProtoCurrentSources_ASC'
+
+    if ( present ( TimeUnitOption ) ) &
+      PCSA % TimeUnit = TimeUnitOption
 
     PCSA % ProtoCurrent_ASC => ProtoCurrent_ASC
 
@@ -86,7 +94,7 @@ contains
     select type ( PCSC => FA % Chart )
     class is ( ProtoCurrentSources_CSL_Form )
       call PCSC % Initialize &
-             ( PCC, FA % NameShort, nValues, &
+             ( PCC, FA % NameShort, FA % TimeUnit, nValues, &
                IgnorabilityOption = FA % IGNORABILITY )
     end select !-- PCSC
 

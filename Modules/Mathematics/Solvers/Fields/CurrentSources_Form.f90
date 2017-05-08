@@ -35,7 +35,7 @@ contains
 
 
   subroutine InitializeConserved &
-               ( CS, Current, LengthUnit, iaConserved, VariableOption, &
+               ( CS, Current, TimeUnit, iaConserved, VariableOption, &
                  VectorOption, NameOption, ClearOption, UnitOption, &
                  VectorIndicesOption )
 
@@ -44,7 +44,7 @@ contains
     class ( VariableGroupForm ), intent ( in ) :: &
       Current
     type ( MeasuredValueForm ), intent ( in ) :: &
-      LengthUnit
+      TimeUnit
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
       iaConserved
     character ( * ), dimension ( : ), intent ( in ), optional :: &
@@ -80,7 +80,7 @@ contains
              NameOption, UnitOption, VectorIndicesOption )
 
     call SetUnits &
-           ( VariableUnit, CS, Current % Unit, iaConserved, LengthUnit )
+           ( VariableUnit, CS, Current % Unit, TimeUnit, iaConserved )
 
     Clear = .true.
     if ( present ( ClearOption ) ) Clear = ClearOption
@@ -231,8 +231,8 @@ contains
 
 
   subroutine SetUnits &
-               ( VariableUnit, CS, VariableUnitCurrent, iaConserved, &
-                 LengthUnit )
+               ( VariableUnit, CS, VariableUnitCurrent, TimeUnit, &
+                 iaConserved )
 
     type ( MeasuredValueForm ), dimension ( : ), intent ( inout ) :: &
       VariableUnit
@@ -240,17 +240,17 @@ contains
       CS
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ) :: &
       VariableUnitCurrent
+    type ( MeasuredValueForm ), intent ( in ) :: &
+      TimeUnit
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
       iaConserved
-    type ( MeasuredValueForm ), intent ( in ) :: &
-      LengthUnit
 
     integer ( KDI ) :: &
       iC  !-- iConserved
 
     do iC = 1, CS % N_FIELDS_CONSERVED
       VariableUnit ( iC )  &
-        =  VariableUnitCurrent ( iaConserved ( iC ) )  /  LengthUnit
+        =  VariableUnitCurrent ( iaConserved ( iC ) )  /  TimeUnit
     end do
 
   end subroutine SetUnits

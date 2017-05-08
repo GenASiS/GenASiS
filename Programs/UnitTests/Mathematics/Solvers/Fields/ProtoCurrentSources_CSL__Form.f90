@@ -11,6 +11,8 @@ module ProtoCurrentSources_CSL__Form
   private
 
   type, public, extends ( Field_CSL_Template ) :: ProtoCurrentSources_CSL_Form
+    type ( MeasuredValueForm ) :: &
+      TimeUnit
     class ( Field_CSL_Template ), pointer :: &
       ProtoCurrent_CSL => null ( )
   contains
@@ -26,7 +28,7 @@ contains
 
 
   subroutine Initialize &
-               ( PCSC, ProtoCurrent_CSL, NameShort, nValues, &
+               ( PCSC, ProtoCurrent_CSL, NameShort, TimeUnit, nValues, &
                  IgnorabilityOption )
 
     class ( ProtoCurrentSources_CSL_Form ), intent ( inout ) :: &
@@ -35,6 +37,8 @@ contains
       ProtoCurrent_CSL
     character ( * ), intent ( in ) :: &
       NameShort
+    type ( MeasuredValueForm ) :: &
+      TimeUnit
     integer ( KDI ), intent ( in ) :: &
       nValues
     integer ( KDL ), intent ( in ), optional :: &
@@ -42,6 +46,8 @@ contains
 
     if ( PCSC % Type == '' ) &
       PCSC % Type = 'a ProtoCurrentSources_CSL'
+
+    PCSC % TimeUnit = TimeUnit
 
     PCSC % ProtoCurrent_CSL => ProtoCurrent_CSL
 
@@ -76,7 +82,7 @@ contains
     select type ( PC => FC % ProtoCurrent_CSL % Field )
     class is ( ProtoCurrentForm )
       call PCS % Initialize &
-             ( PC, FC % Chart % CoordinateUnit ( 1 ), PC % iaConserved, &
+             ( PC, FC % TimeUnit, PC % iaConserved, &
                NameOption = FC % NameShort )
       call PCS % SetOutput ( FC % FieldOutput )
     end select !-- PC
