@@ -187,7 +187,8 @@ module Step_RK_C_ASC__Template
 
     private :: &
       AllocateStorage, &
-      ApplyDivergence_C
+      ApplyDivergence_C, &
+      RecordDivergence
 
 contains
 
@@ -977,6 +978,9 @@ contains
     type ( TimerForm ), pointer :: &
       TimerGhost
 
+    if ( iStage == 1 ) &
+      call Clear ( C % Sources % Value )
+
     !-- Divergence
     if ( associated ( S % ApplyDivergence_C ) ) &
       call S % ApplyDivergence_C ( ID, K, TimeStep, iStage )
@@ -1272,9 +1276,45 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iStage
 
+    integer ( KDI ) :: &
+      iC  !-- iConserved
+
     call ID % Compute ( Increment, TimeStep, Weight_RK = S % B ( iStage ) )
 
+    associate ( C => ID % Current )
+    do iC = 1, C % N_CONSERVED
+      call RecordDivergence &
+             ( C % Sources % Value ( :, iC ), Increment % Value ( :, iC ), &
+               TimeStep, Weight_RK = S % B ( iStage ) )
+    end do !-- iC
+    end associate !-- C
+
   end subroutine ApplyDivergence_C
+
+
+  subroutine RecordDivergence ( SDV, IDV, TimeStep, Weight_RK )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      SDV 
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      IDV 
+    real ( KDR ), intent ( in ) :: &
+      TimeStep, &
+      Weight_RK
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+
+    nValues = size ( SDV )
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nValues
+      SDV ( iV )  =  SDV ( iV )  +  Weight_RK  *  IDV ( iV )  /  TimeStep
+    end do !-- iV
+    !$OMP end parallel do
+
+  end subroutine RecordDivergence
 
 
 end module Step_RK_C_ASC__Template
