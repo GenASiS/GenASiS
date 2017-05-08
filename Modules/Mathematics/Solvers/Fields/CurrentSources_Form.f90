@@ -26,19 +26,23 @@ module CurrentSources_Form
   end type CurrentSourcesForm
 
     private :: &
-      InitializeBasics
+      InitializeBasics, &
+      SetUnits
 
 contains
 
 
   subroutine InitializeConserved &
-               ( CS, Current, iaConserved, VariableOption, VectorOption, &
-                 NameOption, ClearOption, UnitOption, VectorIndicesOption )
+               ( CS, Current, LengthUnit, iaConserved, VariableOption, &
+                 VectorOption, NameOption, ClearOption, UnitOption, &
+                 VectorIndicesOption )
 
     class ( CurrentSourcesForm ), intent ( inout ) :: &
       CS
     class ( VariableGroupForm ), intent ( in ) :: &
       Current
+    type ( MeasuredValueForm ), intent ( in ) :: &
+      LengthUnit
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
       iaConserved
     character ( * ), dimension ( : ), intent ( in ), optional :: &
@@ -63,13 +67,28 @@ contains
     character ( LDL ), dimension ( : ), allocatable :: &
       Variable, &
       Vector
-    ! logical ( KDL ) :: &
-    !   Clear
+    logical ( KDL ) :: &
+      Clear
+
+    CS % N_FIELDS_CONSERVED = size ( iaConserved )
 
     call InitializeBasics &
-           ( CS, Current % Variable, iaConserved, Variable, Vector, Name, &
-             VariableUnit, VectorIndices, VariableOption, VectorOption, &
-             NameOption, UnitOption, VectorIndicesOption )
+           ( CS, Current % Variable, Current % Name, iaConserved, Variable, &
+             Vector, Name, VariableUnit, VectorIndices, VariableOption, &
+             VectorOption, NameOption, UnitOption, VectorIndicesOption )
+
+    call SetUnits &
+           ( VariableUnit, CS, Current % Unit, iaConserved, LengthUnit )
+
+    Clear = .true.
+    if ( present ( ClearOption ) ) Clear = ClearOption
+
+    call CS % VariableGroupForm % Initialize &
+           ( [ Current % nValues, CS % N_FIELDS ], &
+             VariableOption = Variable, VectorOption = Vector, &
+             NameOption = Name, ClearOption = Clear, &
+             UnitOption = VariableUnit, &
+             VectorIndicesOption = VectorIndices )
 
   end subroutine InitializeConserved
 
@@ -86,14 +105,17 @@ contains
 
 
   subroutine InitializeBasics &
-               ( CS, VariableCurrent, iaConserved, Variable, Vector, Name, &
-                 VariableUnit, VectorIndices, VariableOption, VectorOption, &
-                 NameOption, VariableUnitOption, VectorIndicesOption )
+               ( CS, VariableCurrent, CurrentName, iaConserved, Variable, &
+                 Vector, Name, VariableUnit, VectorIndices, VariableOption, &
+                 VectorOption, NameOption, VariableUnitOption, &
+                 VectorIndicesOption )
 
     class ( CurrentSourcesForm ), intent ( inout ) :: &
       CS
     character ( LDL ), dimension ( : ), intent ( in ) :: &
       VariableCurrent
+    character ( * ), intent ( in ) :: &
+      CurrentName
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
       iaConserved
     character ( LDL ), dimension ( : ), allocatable, intent ( out ) :: &
@@ -128,7 +150,7 @@ contains
     if ( CS % Type == '' ) &
       CS % Type = 'a CurrentSources'
 
-    Name = 'CurrentSources'
+    Name = 'Sources_' // CurrentName
     if ( present ( NameOption ) ) &
       Name = NameOption
 
@@ -152,7 +174,7 @@ contains
     end if
 
     do iC = 1, CS % N_FIELDS_CONSERVED
-      Variable ( iC ) = VariableCurrent ( iaConserved ( iC ) )
+      Variable ( iC ) = 'Div_Flux_' // VariableCurrent ( iaConserved ( iC ) )
     end do !-- iC
           
     !-- units
@@ -195,6 +217,32 @@ contains
 !    call VectorIndices ( 1 ) % Initialize ( CS %  )
 
   end subroutine InitializeBasics
+
+
+  subroutine SetUnits &
+               ( VariableUnit, CS, VariableUnitCurrent, iaConserved, &
+                 LengthUnit )
+
+    type ( MeasuredValueForm ), dimension ( : ), intent ( inout ) :: &
+      VariableUnit
+    class ( CurrentSourcesForm ), intent ( in ) :: &
+      CS
+    type ( MeasuredValueForm ), dimension ( : ), intent ( in ) :: &
+      VariableUnitCurrent
+    integer ( KDI ), dimension ( : ), intent ( in ) :: &
+      iaConserved
+    type ( MeasuredValueForm ), intent ( in ) :: &
+      LengthUnit
+
+    integer ( KDI ) :: &
+      iC  !-- iConserved
+
+    do iC = 1, CS % N_FIELDS_CONSERVED
+      VariableUnit ( iC )  &
+        =  VariableUnitCurrent ( iaConserved ( iC ) )  /  LengthUnit
+    end do
+
+  end subroutine SetUnits
 
 
 end module CurrentSources_Form

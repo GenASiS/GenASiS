@@ -8,6 +8,7 @@ ProtoCurrent_Form_Test: Basics.a Manifolds.a ProtoCurrent_Form_Test.o
 	$(LINK) $(FLAGS) \
           -o ProtoCurrent_Form_Test_$(MACHINE) \
           ProtoCurrent_Form_Test.o ProtoCurrent_Form.o Current_Template.o \
+          CurrentSources_Form.o \
           Manifolds.a Basics.a $(LIBRARIES)
 
 DensityWave_Form_Test: Basics.a Manifolds.a Operations.a \
@@ -17,7 +18,7 @@ DensityWave_Form_Test: Basics.a Manifolds.a Operations.a \
           DensityWave_Form_Test.o DensityWave_Form.o \
           ProtoCurrent_ASC__Form.o ProtoCurrent_CSL__Form.o \
           ProtoCurrent_Form.o Current_ASC__Template.o Tally_C__Form.o \
-          Current_Template.o \
+          Current_Template.o CurrentSources_Form.o \
           Operations.a Manifolds.a Basics.a $(LIBRARIES)
 
 clean:
@@ -35,6 +36,7 @@ include ../Makefile_Dependencies
 
 ProtoCurrent_Form_Test.o: \
   Basics.o \
+  CurrentSources_Form.o \
   ProtoCurrent_Form.o \
   ProtoCurrent_Form_Test.f90
 
