@@ -3,4 +3,5 @@ PROTO_FIELDS = \
   DensityWave_Form.o \
   ProtoCurrent_ASC__Form.o \
   ProtoCurrent_CSL__Form.o \
+  ProtoCurrentSources_CSL__Form.o \
   ProtoCurrent_Form.o

@@ -4,6 +4,13 @@ ProtoCurrent_Form.o: \
   Current_Template.o \
   ProtoCurrent_Form.f90
 
+ProtoCurrentSources_CSL__Form.o: \
+  Basics.o \
+  Manifolds.o \
+  CurrentSources_Form.o \
+  ProtoCurrent_Form.o \
+  ProtoCurrentSources_CSL__Form.f90
+
 ProtoCurrent_CSL__Form.o: \
   Basics.o \
   Manifolds.o \
@@ -28,6 +35,7 @@ DensityWave_Form.o: \
 ProtoFields.o: \
   Fields.o \
   ProtoCurrent_Form.o \
+  ProtoCurrentSources_CSL__Form.o \
   ProtoCurrent_CSL__Form.o \
   ProtoCurrent_ASC__Form.o \
   DensityWave_Form.o \

@@ -93,7 +93,7 @@ contains
   end subroutine InitializeConserved
 
 
-  subroutine Finalize ( CS )
+  impure elemental subroutine Finalize ( CS )
 
     type ( CurrentSourcesForm ), intent ( inout ) :: &
       CS
