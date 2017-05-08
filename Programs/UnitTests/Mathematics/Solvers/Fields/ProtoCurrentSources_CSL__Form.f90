@@ -76,7 +76,8 @@ contains
     select type ( PC => FC % ProtoCurrent_CSL % Field )
     class is ( ProtoCurrentForm )
       call PCS % Initialize &
-             ( PC, FC % Chart % CoordinateUnit ( 1 ), PC % iaConserved )
+             ( PC, FC % Chart % CoordinateUnit ( 1 ), PC % iaConserved, &
+               NameOption = FC % NameShort )
       call PCS % SetOutput ( FC % FieldOutput )
     end select !-- PC
     end select !-- PCS
