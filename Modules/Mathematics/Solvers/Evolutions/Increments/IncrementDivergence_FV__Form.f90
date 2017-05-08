@@ -489,7 +489,7 @@ contains
         G_I  => I % Storage % Geometry_I )
 
 !    associate &
-!      ( Timer_G => PROGRAM_HEADER % Timer ( I % iTimerReconstruction_G ) )    
+!      ( Timer_G => PROGRAM_HEADER % Timer ( I % iTimerReconstruction_G ) )
 !    call Timer_G % Start ( )
     call G % ComputeReconstruction ( G_I, I % Chart % nDimensions, iDimension )
 !    call Timer_G % Stop
