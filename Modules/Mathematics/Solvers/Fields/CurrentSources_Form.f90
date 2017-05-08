@@ -75,9 +75,9 @@ contains
     CS % N_FIELDS_CONSERVED = size ( iaConserved )
 
     call InitializeBasics &
-           ( CS, Current % Variable, Current % Name, iaConserved, Variable, &
-             Vector, Name, VariableUnit, VectorIndices, VariableOption, &
-             VectorOption, NameOption, UnitOption, VectorIndicesOption )
+           ( CS, Current % Variable, iaConserved, Variable, Vector, Name, &
+             VariableUnit, VectorIndices, VariableOption, VectorOption, &
+             NameOption, UnitOption, VectorIndicesOption )
 
     call SetUnits &
            ( VariableUnit, CS, Current % Unit, iaConserved, LengthUnit )
@@ -119,17 +119,14 @@ contains
 
 
   subroutine InitializeBasics &
-               ( CS, VariableCurrent, CurrentName, iaConserved, Variable, &
-                 Vector, Name, VariableUnit, VectorIndices, VariableOption, &
-                 VectorOption, NameOption, VariableUnitOption, &
-                 VectorIndicesOption )
+               ( CS, VariableCurrent, iaConserved, Variable, Vector, Name, &
+                 VariableUnit, VectorIndices, VariableOption, VectorOption, &
+                 NameOption, VariableUnitOption, VectorIndicesOption )
 
     class ( CurrentSourcesForm ), intent ( inout ) :: &
       CS
     character ( LDL ), dimension ( : ), intent ( in ) :: &
       VariableCurrent
-    character ( * ), intent ( in ) :: &
-      CurrentName
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
       iaConserved
     character ( LDL ), dimension ( : ), allocatable, intent ( out ) :: &
@@ -164,7 +161,7 @@ contains
     if ( CS % Type == '' ) &
       CS % Type = 'a CurrentSources'
 
-    Name = 'Sources_' // CurrentName
+    Name = 'CurrentSources'
     if ( present ( NameOption ) ) &
       Name = NameOption
 

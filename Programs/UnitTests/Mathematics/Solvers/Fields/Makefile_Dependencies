@@ -20,7 +20,9 @@ ProtoCurrentSources_ASC__Form.o: \
 ProtoCurrent_CSL__Form.o: \
   Basics.o \
   Manifolds.o \
+  CurrentSources_Form.o \
   ProtoCurrent_Form.o \
+  ProtoCurrentSources_CSL__Form.o \
   ProtoCurrent_CSL__Form.f90
 
 ProtoCurrent_ASC__Form.o: \
@@ -28,6 +30,7 @@ ProtoCurrent_ASC__Form.o: \
   Manifolds.o \
   Current_ASC__Template.o \
   ProtoCurrent_Form.o \
+  ProtoCurrentSources_ASC__Form.o \
   ProtoCurrent_CSL__Form.o \
   ProtoCurrent_ASC__Form.f90
 
