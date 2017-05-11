@@ -11,6 +11,8 @@ module Fluid_ASC__Form
   use Tally_F_D__Form
   use Tally_F_P__Form
   use Tally_F_P_MHN__Form
+  use FluidSources_CSL__Form
+  use FluidSources_ASC__Form
   use FluidFeatures_CSL__Form
   use FluidFeatures_ASC__Form
   use Fluid_CSL__Form
@@ -32,6 +34,8 @@ module Fluid_ASC__Form
     character ( LDF ) :: &
       FluidType         = '', &
       RiemannSolverType = ''
+    type ( FluidSources_ASC_Form ), allocatable :: &
+      Sources_ASC
     type ( FluidFeatures_ASC_Form ), allocatable :: &
       Features_ASC
   contains
@@ -242,6 +246,24 @@ contains
     call Show ( FA % UseLimiter, 'UseLimiter', FA % IGNORABILITY )
     call Show ( FA % LimiterParameter, 'LimiterParameter', FA % IGNORABILITY )
 
+    !-- Sources
+
+    allocate ( FA % Sources_ASC )
+    associate ( FSA => FA % Sources_ASC )
+    call FSA % Initialize &
+           ( FA, NameShortOption = trim ( NameShort ) // '_Sources', &
+             IgnorabilityOption = IgnorabilityOption )
+    select type ( FSC => FSA % Chart )
+    class is ( FluidSources_CSL_Form )
+      select type ( F => FA % Chart )
+      class is ( Fluid_CSL_Form )
+        call F % SetSources ( FSC )
+      end select !-- F
+    end select !-- FSC
+    end associate !-- FSA
+
+    !-- Features
+
     if ( trim ( FA % FluidType ) /= 'DUST' ) then
       allocate ( FA % Features_ASC )
       associate ( FFA => FA % Features_ASC )
@@ -348,6 +370,8 @@ contains
     type ( Fluid_ASC_Form ), intent ( inout ) :: &
       FA
 
+    if ( allocated ( FA % Sources_ASC ) ) &
+      deallocate ( FA % Sources_ASC )
     if ( allocated ( FA % Features_ASC ) ) &
       deallocate ( FA % Features_ASC )
 

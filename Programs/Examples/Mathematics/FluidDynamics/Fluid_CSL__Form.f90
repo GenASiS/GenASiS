@@ -9,6 +9,8 @@ module Fluid_CSL__Form
   use Fluid_P_P__Form
   use Fluid_P_NR__Form
   use Fluid_P_MHN__Form
+  use FluidSources_Form
+  use FluidSources_CSL__Form
   use FluidFeatures_CSL__Form
 
   implicit none
@@ -28,6 +30,8 @@ module Fluid_CSL__Form
     character ( LDF ) :: &
       FluidType = '', &
       RiemannSolverType = ''
+    class ( FluidSources_CSL_Form ), pointer :: &
+      Sources_CSL => null ( )
     class ( FluidFeatures_CSL_Form ), pointer :: &
       Features_CSL => null ( )
   contains
@@ -41,6 +45,8 @@ module Fluid_CSL__Form
       Fluid_P_NR
     procedure, public, pass :: &
       Fluid_P_MHN
+    procedure, public, pass :: &
+      SetSources
     procedure, public, pass :: &
       SetFeatures
     final :: &
@@ -181,6 +187,29 @@ contains
     end select !-- Field
 
   end function Fluid_P_MHN
+
+
+  subroutine SetSources ( FC, FSC )
+
+    class ( Fluid_CSL_Form ), intent ( inout ) :: &
+      FC
+    class ( FluidSources_CSL_Form ), intent ( in ), target :: &
+      FSC
+
+    class ( Fluid_D_Form ), pointer :: &
+      F
+
+    FC % Sources_CSL => FSC
+
+    F => FC % Fluid_D ( )
+    select type ( FS => FSC % Field )
+    class is ( FluidSourcesForm )
+      call F % SetSources ( FS )
+    end select !-- FS
+
+    nullify ( F )
+
+  end subroutine SetSources
 
 
   subroutine SetFeatures ( FC, FFC )

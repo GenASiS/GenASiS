@@ -3,6 +3,9 @@ FLUID = \
   Fluid_CSL__Form.o \
   FluidFeatures_ASC__Form.o \
   FluidFeatures_CSL__Form.o \
+  FluidSources_ASC__Form.o \
+  FluidSources_CSL__Form.o \
+  FluidSources_Form.o \
   Tally_F_P_MHN__Form.o \
   Tally_F_P__Form.o \
   Tally_F_D__Form.o \

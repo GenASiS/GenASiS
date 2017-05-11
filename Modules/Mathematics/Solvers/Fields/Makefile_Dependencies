@@ -30,6 +30,7 @@ Current_BSLL_ASC_CSLD__Template.o: \
   Current_BSLL_ASC_CSLD__Template.f90
 
 Fields.o: \
+  CurrentSources_Form.o \
   Current_Template.o \
   Tally_C__Form.o \
   Current_ASC__Template.o \
