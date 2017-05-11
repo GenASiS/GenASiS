@@ -5,6 +5,7 @@ module FishboneMoncrief_Form
   use Fluid_P__Template
   use Fluid_P_P__Form
   use Fluid_ASC__Form
+  use ApplyCurvilinear_F__Command
   use Tally_FM__Form
 
   implicit none
@@ -354,7 +355,7 @@ contains
   end subroutine SetFluid
 
 
-  subroutine ApplySources ( S, Increment, Fluid, TimeStep )
+  subroutine ApplySources ( S, Increment, Fluid, TimeStep, iStage )
 
     class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
       S
@@ -364,6 +365,8 @@ contains
       Fluid
     real ( KDR ), intent ( in ) :: &
       TimeStep
+    integer ( KDI ), intent ( in ) :: &
+      iStage
 
     integer ( KDI ) :: &
       iMomentum_1, &
@@ -376,7 +379,7 @@ contains
     Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerSources )
     if ( associated ( Timer ) ) call Timer % Start ( )
 
-    call ApplySourcesCurvilinear_Fluid_P ( S, Increment, Fluid, TimeStep )
+    call ApplyCurvilinear_F ( S, Increment, Fluid, TimeStep, iStage )
 
     select type ( F => Fluid )
     class is ( Fluid_P_Template )

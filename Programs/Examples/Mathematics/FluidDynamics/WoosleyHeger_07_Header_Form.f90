@@ -5,6 +5,7 @@ module WoosleyHeger_07_Header_Form
   use Fluid_P__Template
   use Fluid_P_MHN__Form
   use Fluid_ASC__Form
+  use ApplyCurvilinear_F__Command
   use Tally_F_P_MHN__Form
 
   implicit none
@@ -64,7 +65,7 @@ module WoosleyHeger_07_Header_Form
       iELECTRON_FRACTION_SI = 5
 
   public :: &
-    ApplySourcesGravity
+    ApplyGravity
 
     private :: &
       ComputeGravity, &
@@ -614,7 +615,7 @@ contains
   end function LocalMax
 
 
-  subroutine ApplySourcesGravity ( S, Increment, Fluid, TimeStep )
+  subroutine ApplyGravity ( S, Increment, Fluid, TimeStep, iStage )
 
     class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
       S
@@ -624,6 +625,8 @@ contains
       Fluid
     real ( KDR ), intent ( in ) :: &
       TimeStep
+    integer ( KDI ), intent ( in ) :: &
+      iStage
 
     integer ( KDI ) :: &
       iMomentum_1, &
@@ -642,7 +645,7 @@ contains
     Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerSources )
     if ( associated ( Timer ) ) call Timer % Start ( )
 
-    call ApplySourcesCurvilinear_Fluid_P ( S, Increment, Fluid, TimeStep )
+    call ApplyCurvilinear_F ( S, Increment, Fluid, TimeStep, iStage )
 
     select type ( F => Fluid )
     class is ( Fluid_P_MHN_Form )
@@ -654,8 +657,6 @@ contains
     class is ( Chart_SLD_Form )
 
     G => Chart % Geometry ( )
-
-!     iStage = mod ( iStage, S % nStages ) + 1
 
 !    if ( iStage == 1 ) &
       call ComputeGravity ( F, Chart % Atlas, G )
@@ -682,7 +683,7 @@ contains
 
     if ( associated ( Timer ) ) call Timer % Stop ( )
 
-  end subroutine ApplySourcesGravity
+  end subroutine ApplyGravity
 
 
   subroutine ComputeGravity ( F, PS, G )

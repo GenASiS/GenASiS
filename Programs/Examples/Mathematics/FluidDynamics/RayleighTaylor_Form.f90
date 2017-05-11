@@ -213,7 +213,7 @@ contains
   end subroutine SetFluid
 
   
-  subroutine ApplySources ( S, Increment, Fluid, TimeStep )
+  subroutine ApplySources ( S, Increment, Fluid, TimeStep, iStage )
 
     class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
       S
@@ -223,6 +223,8 @@ contains
       Fluid
     real ( KDR ), intent ( in ) :: &
       TimeStep
+    integer ( KDI ), intent ( in ) :: &
+      iStage
 
     integer ( KDI ) :: &
       iMomentum_2, &

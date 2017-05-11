@@ -141,6 +141,7 @@ SedovTaylor_Form.o: \
   Fluid_P__Template.o \
   Fluid_P_P__Form.o \
   Fluid_ASC__Form.o \
+  ApplyCurvilinear_F__Command.o \
   SedovTaylor_Form.f90
 
 SedovTaylor.o: \
@@ -161,6 +162,7 @@ FishboneMoncrief_Form.o: \
   Fluid_P__Template.o \
   Fluid_P_P__Form.o \
   Fluid_ASC__Form.o \
+  ApplyCurvilinear_F__Command.o \
   Tally_FM__Form.o \
   FishboneMoncrief_Form.f90
 
@@ -192,6 +194,7 @@ WoosleyHeger_07__Form.o: \
   Fluid_P__Template.o \
   Fluid_P_MHN__Form.o \
   Fluid_ASC__Form.o \
+  ApplyCurvilinear_F__Command.o \
   Tally_F_P_MHN__Form.o \
   Diagnostics_WH07__Form.o \
   Diagnostics_WH07_ASC__Form.o \
@@ -208,6 +211,7 @@ WoosleyHeger_07_Header_Form.o: \
   Fluid_P__Template.o \
   Fluid_P_MHN__Form.o \
   Fluid_ASC__Form.o \
+  ApplyCurvilinear_F__Command.o \
   Tally_F_P_MHN__Form.o \
   WoosleyHeger_07_Header_Form.f90
 

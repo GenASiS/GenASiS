@@ -18,9 +18,9 @@ module CurrentSources_Form
       Type = ''
   contains
     procedure, private, pass :: &
-      InitializeConserved
+      InitializeAllocate_CS
     generic, public :: &
-      Initialize => InitializeConserved
+      Initialize => InitializeAllocate_CS
     final :: &
       Finalize
     procedure, public, pass :: &
@@ -34,7 +34,7 @@ module CurrentSources_Form
 contains
 
 
-  subroutine InitializeConserved &
+  subroutine InitializeAllocate_CS &
                ( CS, Current, TimeUnit, iaConserved, VariableOption, &
                  VectorOption, NameOption, ClearOption, UnitOption, &
                  VectorIndicesOption )
@@ -92,7 +92,7 @@ contains
              UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndices )
 
-  end subroutine InitializeConserved
+  end subroutine InitializeAllocate_CS
 
 
   impure elemental subroutine Finalize ( CS )

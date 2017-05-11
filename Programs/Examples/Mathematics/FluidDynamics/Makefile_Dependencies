@@ -65,6 +65,7 @@ Tally_F_P_MHN__Form.o: \
 FluidSources_Form.o: \
   Basics.o \
   Mathematics.o \
+  Fluid_D__Form.o \
   FluidSources_Form.f90
 
 FluidSources_CSL__Form.o: \
@@ -121,6 +122,14 @@ Fluid_ASC__Form.o: \
   FluidFeatures_ASC__Form.o \
   Fluid_CSL__Form.o \
   Fluid_ASC__Form.f90
+
+ApplyCurvilinear_F__Command.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_D__Form.o \
+  Fluid_P__Template.o \
+  FluidSources_Form.o \
+  ApplyCurvilinear_F__Command.f90
 
 Fluid.a: $(FLUID)
 	ar r Fluid.a $(FLUID)

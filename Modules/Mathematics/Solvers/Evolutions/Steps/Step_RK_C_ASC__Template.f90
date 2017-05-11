@@ -150,7 +150,7 @@ module Step_RK_C_ASC__Template
 
   abstract interface 
 
-    subroutine AS ( S, Increment, Current, TimeStep )
+    subroutine AS ( S, Increment, Current, TimeStep, iStage )
       use Basics
       use Fields
       import Step_RK_C_ASC_Template
@@ -162,6 +162,8 @@ module Step_RK_C_ASC__Template
         Current
       real ( KDR ), intent ( in ) :: &
         TimeStep
+      integer ( KDI ), intent ( in ) :: &
+        iStage
     end subroutine AS
 
     subroutine AR ( S, IncrementExplicit, DampingCoefficient, Current, Chart, &
@@ -987,7 +989,7 @@ contains
 
     !-- Other explicit sources
     if ( associated ( S % ApplySources_C ) ) &
-      call S % ApplySources_C ( K, C, TimeStep )
+      call S % ApplySources_C ( K, C, TimeStep, iStage )
 
     !-- Relaxation
     if ( associated ( S % ApplyRelaxation_C ) ) then

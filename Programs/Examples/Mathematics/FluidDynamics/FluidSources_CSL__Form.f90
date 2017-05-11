@@ -81,9 +81,7 @@ contains
     class is ( FluidSourcesForm )
     select type ( F => FC % Fluid_CSL % Field )
     class is ( Fluid_D_Form )
-      call FS % Initialize &
-             ( F, FC % TimeUnit, F % iaConserved, &
-               NameOption = FC % NameShort )
+      call FS % Initialize ( F, FC % TimeUnit, NameOption = FC % NameShort )
       call FS % SetOutput ( FC % FieldOutput )
     end select !-- F
     end select !-- FS
