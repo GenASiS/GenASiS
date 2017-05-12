@@ -8,15 +8,17 @@ module FluidSources_Form
   private
 
     integer ( KDI ), private, parameter :: &
-      N_FIELDS_FLUID  = 2, &
-      N_VECTORS_FLUID = 0
+      N_FIELDS_FLUID  = 7, &
+      N_VECTORS_FLUID = 3
 
   type, public, extends ( CurrentSourcesForm ) :: FluidSourcesForm
     integer ( KDI ) :: &
-      N_FIELDS_FLUID  = N_FIELDS_FLUID, &
-      N_VECTORS_FLUID = 0, &
-      CURVILINEAR_S_1 = 0, &
-      CURVILINEAR_S_2 = 0
+      N_FIELDS_FLUID       = N_FIELDS_FLUID, &
+      N_VECTORS_FLUID      = N_VECTORS_FLUID, &
+      GRAVITATIONAL_E = 0
+    integer ( KDI ), dimension ( 3 ) :: &
+      CURVILINEAR_S_D   = 0, &
+      GRAVITATIONAL_S_D = 0
   contains
     procedure, private, pass :: &
       InitializeAllocate_FS
@@ -67,7 +69,7 @@ contains
     FS % N_FIELDS_CONSERVED = F % N_CONSERVED
 
     call InitializeBasics &
-           ( FS, Variable, Vector, Name, VariableUnit, VectorIndices, &
+           ( FS, F, Variable, Vector, Name, VariableUnit, VectorIndices, &
              VariableOption, VectorOption, NameOption, UnitOption, &
              VectorIndicesOption )
 
@@ -83,12 +85,14 @@ contains
 
 
   subroutine InitializeBasics &
-               ( FS, Variable, Vector, Name, VariableUnit, VectorIndices, &
+               ( FS, F, Variable, Vector, Name, VariableUnit, VectorIndices, &
                  VariableOption, VectorOption, NameOption, &
                  VariableUnitOption, VectorIndicesOption )
 
     class ( FluidSourcesForm ), intent ( inout ) :: &
       FS
+    class ( Fluid_D_Form ), intent ( in ) :: &
+      F
     character ( LDL ), dimension ( : ), allocatable, intent ( out ) :: &
       Variable, &
       Vector
@@ -115,9 +119,13 @@ contains
       VectorIndicesOption
 
     integer ( KDI ) :: &
+      iD, &  !-- iDimension
       iV, &  !-- iVector
       oF, &  !-- oField
       oV     !-- oVector
+    integer ( KDI ), dimension ( 3 ) :: &
+      iMomentum
+
 
     if ( FS % Type == '' ) &
       FS % Type = 'a FluidSources'
@@ -132,8 +140,9 @@ contains
     if ( FS % N_FIELDS == 0 ) &
       FS % N_FIELDS = oF + FS % N_FIELDS_FLUID
 
-    FS % CURVILINEAR_S_1  =  oF + 1
-    FS % CURVILINEAR_S_2  =  oF + 2
+    FS % GRAVITATIONAL_E    =  oF + 1
+    FS % CURVILINEAR_S_D    =  oF + [ 2, 3, 4 ]
+    FS % GRAVITATIONAL_S_D  =  oF + [ 5, 6, 7 ]
 
     !-- variable names 
 
@@ -146,8 +155,13 @@ contains
     end if
 
     Variable ( oF + 1 : oF + FS % N_FIELDS_FLUID ) &
-      = [ 'Curvilinear_S_1', &
-          'Curvilinear_S_2' ]
+      = [ 'Gravitational_E    ', &
+          'Curvilinear_S_D_1  ', &
+          'Curvilinear_S_D_2  ', &
+          'Curvilinear_S_D_3  ', &
+          'Gravitational_S_D_1', &
+          'Gravitational_S_D_2', &
+          'Gravitational_S_D_3' ]
           
     !-- units
     
@@ -173,9 +187,10 @@ contains
       Vector = ''
     end if
 
-  !   Vector ( oV + 1 : oV + FS % N_VECTORS_DUST ) &
-  !     = [ 'Velocity                       ', &
-  !         'MomentumDensity                ' ]
+    Vector ( oV + 1 : oV + FS % N_VECTORS_FLUID ) &
+      = [ 'Div_F_S_D        ', &
+          'Curvilinear_S_D  ', &
+          'Gravitational_S_D' ]
 
     !-- vector indices
 
@@ -188,8 +203,14 @@ contains
       allocate ( VectorIndices ( FS % N_VECTORS ) )
     end if
 
-  !   call VectorIndices ( oV + 1 ) % Initialize ( FS % VELOCITY_U )
-  !   call VectorIndices ( oV + 2 ) % Initialize ( FS % MOMENTUM_DENSITY_D )
+    do iD = 1, 3
+      call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( iD ), &
+                    iMomentum ( iD ) )
+    end do
+
+    call VectorIndices ( oV + 1 ) % Initialize ( iMomentum )
+    call VectorIndices ( oV + 2 ) % Initialize ( FS % CURVILINEAR_S_D )
+    call VectorIndices ( oV + 3 ) % Initialize ( FS % GRAVITATIONAL_S_D )
 
   end subroutine InitializeBasics
 
@@ -206,16 +227,14 @@ contains
       TimeUnit
 
     integer ( KDI ) :: &
-      iMomentum_1, &
-      iMomentum_2
+      iD
 
-    call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 1 ), iMomentum_1 )
-    call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 2 ), iMomentum_2 )
-
-    VariableUnit ( FS % CURVILINEAR_S_1 )  &
-      =  F % Unit ( iMomentum_1 )  /  TimeUnit
-    VariableUnit ( FS % CURVILINEAR_S_2 )  &
-      =  F % Unit ( iMomentum_2 )  /  TimeUnit
+    do iD = 1, 3
+      VariableUnit ( FS % CURVILINEAR_S_D ( iD ) )  &
+        =  F % Unit ( F % MOMENTUM_DENSITY_D ( iD ) )  /  TimeUnit
+      VariableUnit ( FS % GRAVITATIONAL_S_D ( iD ) )  &
+        =  F % Unit ( F % MOMENTUM_DENSITY_D ( iD ) )  /  TimeUnit
+    end do
 
   end subroutine SetUnits
 

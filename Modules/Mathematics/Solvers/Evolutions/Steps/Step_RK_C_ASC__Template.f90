@@ -150,12 +150,14 @@ module Step_RK_C_ASC__Template
 
   abstract interface 
 
-    subroutine AS ( S, Increment, Current, TimeStep, iStage )
+    subroutine AS ( S, Sources, Increment, Current, TimeStep, iStage )
       use Basics
       use Fields
       import Step_RK_C_ASC_Template
       class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
         S
+      class ( CurrentSourcesForm ), intent ( inout ) :: &
+        Sources
       type ( VariableGroupForm ), intent ( inout ), target :: &
         Increment
       class ( CurrentTemplate ), intent ( in ) :: &
@@ -989,7 +991,7 @@ contains
 
     !-- Other explicit sources
     if ( associated ( S % ApplySources_C ) ) &
-      call S % ApplySources_C ( K, C, TimeStep, iStage )
+      call S % ApplySources_C ( C % Sources, K, C, TimeStep, iStage )
 
     !-- Relaxation
     if ( associated ( S % ApplyRelaxation_C ) ) then

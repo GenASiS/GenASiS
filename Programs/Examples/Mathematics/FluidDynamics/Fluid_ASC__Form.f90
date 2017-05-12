@@ -71,8 +71,9 @@ contains
                  UseLimiterOption, VelocityUnitOption, MassDensityUnitOption, &
                  EnergyDensityUnitOption, TemperatureUnitOption, &
                  MassUnitOption, EnergyUnitOption, MomentumUnitOption, &
-                 AngularMomentumUnitOption, LimiterParameterOption, &
-                 ShockThresholdOption, IgnorabilityOption )
+                 AngularMomentumUnitOption, TimeUnitOption, &
+                 LimiterParameterOption, ShockThresholdOption, &
+                 IgnorabilityOption )
 
     class ( Fluid_ASC_Form ), intent ( inout ) :: &
       FA
@@ -94,7 +95,8 @@ contains
       MassUnitOption, &
       EnergyUnitOption, &
       MomentumUnitOption, &
-      AngularMomentumUnitOption
+      AngularMomentumUnitOption, &
+      TimeUnitOption
     real ( KDR ), intent ( in ), optional :: &
       LimiterParameterOption, &
       ShockThresholdOption
@@ -252,6 +254,7 @@ contains
     associate ( FSA => FA % Sources_ASC )
     call FSA % Initialize &
            ( FA, NameShortOption = trim ( NameShort ) // '_Sources', &
+             TimeUnitOption = TimeUnitOption, &
              IgnorabilityOption = IgnorabilityOption )
     select type ( FSC => FSA % Chart )
     class is ( FluidSources_CSL_Form )

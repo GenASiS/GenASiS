@@ -4,6 +4,7 @@ module FishboneMoncrief_Form
   use Mathematics
   use Fluid_P__Template
   use Fluid_P_P__Form
+  use FluidSources_Form
   use Fluid_ASC__Form
   use ApplyCurvilinear_F__Command
   use Tally_FM__Form
@@ -198,6 +199,7 @@ contains
              MassUnitOption = MassUnit, EnergyUnitOption = EnergyUnit, &
              MomentumUnitOption = MomentumUnit, &
              AngularMomentumUnitOption = AngularMomentumUnit, &
+             TimeUnitOption = TimeUnit, &
              LimiterParameterOption = 1.8_KDR )
 
     !-- Step
@@ -355,10 +357,13 @@ contains
   end subroutine SetFluid
 
 
-  subroutine ApplySources ( S, Increment, Fluid, TimeStep, iStage )
+  subroutine ApplySources &
+               ( S, FluidSources, Increment, Fluid, TimeStep, iStage )
 
     class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
       S
+    class ( CurrentSourcesForm ), intent ( inout ) :: &
+      FluidSources
     type ( VariableGroupForm ), intent ( inout ), target :: &
       Increment
     class ( CurrentTemplate ), intent ( in ) :: &
@@ -379,13 +384,17 @@ contains
     Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerSources )
     if ( associated ( Timer ) ) call Timer % Start ( )
 
-    call ApplyCurvilinear_F ( S, Increment, Fluid, TimeStep, iStage )
+    call ApplyCurvilinear_F &
+           ( S, FluidSources, Increment, Fluid, TimeStep, iStage )
 
     select type ( F => Fluid )
     class is ( Fluid_P_Template )
 
     call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 1 ), iMomentum_1 )
     call Search ( F % iaConserved, F % CONSERVED_ENERGY, iEnergy )
+
+    select type ( FS => FluidSources )
+    class is ( FluidSourcesForm )
 
     select type ( Chart => S % Chart )
     class is ( Chart_SL_Template )
@@ -395,13 +404,17 @@ contains
     call ApplySourcesKernel &
            ( Increment % Value ( :, iMomentum_1 ), &
              Increment % Value ( :, iEnergy ), &
+             FS % Value ( :, FS % GRAVITATIONAL_S_D ( 1 ) ), &
+             FS % Value ( :, FS % GRAVITATIONAL_E ), &
              Chart % IsProperCell, &
              F % Value ( :, F % COMOVING_DENSITY ), &
              F % Value ( :, F % VELOCITY_U ( 1 ) ), &
              G % Value ( :, G % CENTER ( 1 ) ), &
-             CONSTANT % GRAVITATIONAL, CentralMass, TimeStep ) 
+             CONSTANT % GRAVITATIONAL, CentralMass, TimeStep, &
+             S % B ( iStage ) ) 
 
     end select !-- Grid
+    end select !-- FS
     end select !-- F
 
     nullify ( G )
@@ -412,11 +425,14 @@ contains
 
   
   subroutine ApplySourcesKernel &
-               ( KV_M_1, KV_E, IsProperCell, N, V_1, R, G, M, dT )
+               ( KV_M_1, KV_E, SV_M_1, SV_E, IsProperCell, N, V_1, R, G, M, &
+                 dT, Weight_RK )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       KV_M_1, &
-      KV_E   
+      KV_E, &
+      SV_M_1, &
+      SV_E
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       IsProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
@@ -426,7 +442,8 @@ contains
     real ( KDR ) :: &
       G, &
       M, &
-      dT
+      dT, &
+      Weight_RK
 
     integer ( KDI ) :: &
       iV, &
@@ -448,6 +465,8 @@ contains
         cycle
       KV_M_1 ( iV )  =  KV_M_1 ( iV )  +  dT * F_1 ( iV )
       KV_E   ( iV )  =  KV_E   ( iV )  +  dT * F_1 ( iV ) * V_1 ( iV ) 
+      SV_M_1 ( iV )  =  SV_M_1 ( iV )  +  F_1 ( iV ) * Weight_RK
+      SV_E   ( iV )  =  SV_E   ( iV )  +  F_1 ( iV ) * V_1 ( iV ) * Weight_RK 
     end do
     !$OMP end parallel do
 

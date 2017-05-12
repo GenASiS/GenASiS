@@ -19,10 +19,13 @@ module ApplyCurvilinear_F__Command
 contains
 
 
-  subroutine ApplyCurvilinear_F ( S, Increment, Fluid, TimeStep, iStage )
+  subroutine ApplyCurvilinear_F &
+               ( S, FluidSources, Increment, Fluid, TimeStep, iStage )
 
     class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
       S
+    class ( CurrentSourcesForm ), intent ( inout ) :: &
+      FluidSources
     type ( VariableGroupForm ), intent ( inout ), target :: &
       Increment
     class ( CurrentTemplate ), intent ( in ) :: &
@@ -47,7 +50,7 @@ contains
       call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 2 ), iMomentum_2 )
     end select !-- F
 
-    select type ( FS => Fluid % Sources )
+    select type ( FS => FluidSources )
     class is ( FluidSourcesForm )
 
     select type ( Chart => S % Chart )
@@ -61,8 +64,8 @@ contains
       call ApplyCurvilinear_F_D_Kernel &
              ( Increment % Value ( :, iMomentum_1 ), &
                Increment % Value ( :, iMomentum_2 ), &
-               FS % Value ( :, FS % CURVILINEAR_S_1 ), &
-               FS % Value ( :, FS % CURVILINEAR_S_2 ), &
+               FS % Value ( :, FS % CURVILINEAR_S_D ( 1 ) ), &
+               FS % Value ( :, FS % CURVILINEAR_S_D ( 2 ) ), &
                Chart % CoordinateSystem, Chart % IsProperCell, &
                F % Value ( :, F % MOMENTUM_DENSITY_D ( 2 ) ), &
                F % Value ( :, F % MOMENTUM_DENSITY_D ( 3 ) ), &
@@ -75,8 +78,8 @@ contains
       call ApplyCurvilinear_F_P_Kernel &
              ( Increment % Value ( :, iMomentum_1 ), &
                Increment % Value ( :, iMomentum_2 ), &
-               FS % Value ( :, FS % CURVILINEAR_S_1 ), &
-               FS % Value ( :, FS % CURVILINEAR_S_2 ), &
+               FS % Value ( :, FS % CURVILINEAR_S_D ( 1 ) ), &
+               FS % Value ( :, FS % CURVILINEAR_S_D ( 2 ) ), &
                Chart % CoordinateSystem, Chart % IsProperCell, &
                F % Value ( :, F % PRESSURE ), &
                F % Value ( :, F % MOMENTUM_DENSITY_D ( 2 ) ), &

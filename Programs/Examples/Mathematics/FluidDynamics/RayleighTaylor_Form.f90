@@ -3,6 +3,7 @@ module RayleighTaylor_Form
   use Basics
   use Mathematics
   use Fluid_P_P__Form
+  use FluidSources_Form
   use Fluid_ASC__Form
   use Tally_RT__Form
   
@@ -213,10 +214,13 @@ contains
   end subroutine SetFluid
 
   
-  subroutine ApplySources ( S, Increment, Fluid, TimeStep, iStage )
+  subroutine ApplySources &
+               ( S, FluidSources, Increment, Fluid, TimeStep, iStage )
 
     class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
       S
+    class ( CurrentSourcesForm ), intent ( inout ) :: &
+      FluidSources
     type ( VariableGroupForm ), intent ( inout ), target :: &
       Increment
     class ( CurrentTemplate ), intent ( in ) :: &
@@ -251,6 +255,16 @@ contains
     
     KVM  =  KVM  -  dT * N * A
     KVE  =  KVE  -  dT * N * A * VY
+
+    select type ( FS => FluidSources )
+    class is ( FluidSourcesForm )
+      associate &
+        ( SVM => FS % Value ( :, FS % GRAVITATIONAL_S_D ( 2 ) ), &
+          SVE => FS % Value ( :, FS % GRAVITATIONAL_E ) )
+      SVM  =  SVM  -  S % B ( iStage ) * N * A 
+      SVE  =  SVE  -  S % B ( iStage ) * N * A * VY 
+      end associate !-- SVM, etc.
+    end select !-- FS
 
     end associate !-- KVM, etc.
     end select !-- F
