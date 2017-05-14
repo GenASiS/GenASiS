@@ -14,6 +14,12 @@ PhotonMoments_Form.o: \
   RadiationMoments_Form.o \
   PhotonMoments_Form.f90
 
+RadiationMomentsSources_Form.o: \
+  Basics.o \
+  Mathematics.o \
+  RadiationMoments_Form.o \
+  RadiationMomentsSources_Form.f90
+
 RadiationMoments_CSL__Form.o: \
   Basics.o \
   Mathematics.o \
