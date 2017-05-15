@@ -168,14 +168,16 @@ module Step_RK_C_ASC__Template
         iStage
     end subroutine AS
 
-    subroutine AR ( S, IncrementExplicit, DampingCoefficient, Current, &
-                    Chart, TimeStep )
+    subroutine AR ( S, Sources, IncrementExplicit, DampingCoefficient, &
+                    Current, Chart, TimeStep, iStage )
       use Basics
       use Manifolds
       use Fields
       import Step_RK_C_ASC_Template
       class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
         S
+      class ( Sources_C_Form ), intent ( inout ) :: &
+        Sources
       type ( VariableGroupForm ), intent ( inout ) :: &
         IncrementExplicit, &
         DampingCoefficient
@@ -185,6 +187,8 @@ module Step_RK_C_ASC__Template
         Chart
       real ( KDR ), intent ( in ) :: &
         TimeStep
+      integer ( KDI ), intent ( in ) :: &
+        iStage
     end subroutine AR
     
   end interface
@@ -998,7 +1002,8 @@ contains
       associate ( ID => S % IncrementDamping )
       allocate ( DC )
       call DC % Initialize ( shape ( K % Value ), ClearOption = .true. )
-      call S % ApplyRelaxation_C ( K, DC, C, Chart, TimeStep )
+      call S % ApplyRelaxation_C &
+             ( C % Sources, K, DC, C, Chart, TimeStep, iStage )
       call ID % Compute ( K, C, K, DC, TimeStep )
       deallocate ( DC )
       end associate !-- iD

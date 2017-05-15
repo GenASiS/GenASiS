@@ -65,12 +65,6 @@ module RadiationMoments_Form
       ComputeRawFluxesKernel, &
       ComputeDiffusionFactor_HLL_CSL
 
-  public :: &
-    ApplyRelaxation_Interactions
-
-    private :: &
-      ApplyRelaxationKernel
-
 contains
 
 
@@ -1088,112 +1082,5 @@ contains
       
   end subroutine ComputeDiffusionFactor_HLL_CSL
 
-
-  subroutine ApplyRelaxation_Interactions &
-               ( S, IncrementExplicit, DampingCoefficient, Current, Chart, &
-                 TimeStep )
-
-    class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
-      S
-    type ( VariableGroupForm ), intent ( inout ) :: &
-      IncrementExplicit, &
-      DampingCoefficient
-    class ( CurrentTemplate ), intent ( in ) :: &
-      Current
-    class ( ChartTemplate ), intent ( in ) :: &
-      Chart
-    real ( KDR ), intent ( in ) :: &
-      TimeStep
-
-    integer ( KDI ) :: &
-      iEnergy, &
-      iMomentum_1, &
-      iMomentum_2, &
-      iMomentum_3
-
-    select type ( RM => Current )
-    class is ( RadiationMomentsForm )
-
-    call Search ( RM % iaConserved, RM % CONSERVED_ENERGY_DENSITY, &
-                  iEnergy )
-    call Search ( RM % iaConserved, RM % CONSERVED_MOMENTUM_DENSITY_D ( 1 ), &
-                  iMomentum_1 )
-    call Search ( RM % iaConserved, RM % CONSERVED_MOMENTUM_DENSITY_D ( 2 ), &
-                  iMomentum_2 )
-    call Search ( RM % iaConserved, RM % CONSERVED_MOMENTUM_DENSITY_D ( 3 ), &
-                  iMomentum_3 )
-
-    select type ( Chart )
-    class is ( Chart_SL_Template )
-
-    associate ( I => RM % Interactions )
-
-    call ApplyRelaxationKernel &
-               ( IncrementExplicit % Value ( :, iEnergy ), &
-                 DampingCoefficient % Value ( :, iEnergy ), &
-                 DampingCoefficient % Value ( :, iMomentum_1 ), &
-                 DampingCoefficient % Value ( :, iMomentum_2 ), &
-                 DampingCoefficient % Value ( :, iMomentum_3 ), &
-                 Chart % IsProperCell, &
-                 I % Value ( :, I % EQUILIBRIUM_DENSITY ), &
-                 I % Value ( :, I % EFFECTIVE_OPACITY ), &
-                 I % Value ( :, I % TRANSPORT_OPACITY ), &
-                 TimeStep, CONSTANT % SPEED_OF_LIGHT )
-
-    end associate !-- I
-
-    class default
-      call Show ( 'Chart type not found', CONSOLE % ERROR )
-      call Show ( 'RadiationMoments_Form', 'module', CONSOLE % ERROR )
-      call Show ( 'ApplyRelaxation_Interactions', 'subroutine', &
-                  CONSOLE % ERROR ) 
-      call PROGRAM_HEADER % Abort ( )
-    end select !-- Chart
-
-    end select !-- RM
-    
-  end subroutine ApplyRelaxation_Interactions
-    
-
-  subroutine ApplyRelaxationKernel &
-               ( KV_E, DCV_E, DCV_S_1, DCV_S_2, DCV_S_3, IsProperCell, &
-                 ED, EO, TO, dT, c )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      KV_E, &
-      DCV_E, &
-      DCV_S_1, &
-      DCV_S_2, &
-      DCV_S_3
-    logical ( KDL ), dimension ( : ), intent ( in ) :: &
-      IsProperCell
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      ED, &
-      EO, &
-      TO
-    real ( KDR ), intent ( in ) :: &
-      dT, &
-      c
-
-    integer ( KDI ) :: &
-      iV, &
-      nV
-
-    nV = size ( KV_E )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nV
-      if ( .not. IsProperCell ( iV ) ) &
-        cycle
-      KV_E    ( iV )  =  KV_E ( iV )  +  c * EO ( iV ) * ED ( iV ) * dT
-      DCV_E   ( iV )  =  c * EO ( iV )
-      DCV_S_1 ( iV )  =  c * TO ( iV )
-      DCV_S_2 ( iV )  =  c * TO ( iV )
-      DCV_S_3 ( iV )  =  c * TO ( iV )
-    end do
-    !$OMP end parallel do
-
-  end subroutine ApplyRelaxationKernel
-  
 
 end module RadiationMoments_Form

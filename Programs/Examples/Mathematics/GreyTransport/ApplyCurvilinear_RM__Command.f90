@@ -18,7 +18,8 @@ contains
 
 
   subroutine ApplyCurvilinear_RM &
-               ( S, Sources_RM, Increment, RadiationMoments, TimeStep, iStage )
+               ( S, Sources_RM, Increment, RadiationMoments, TimeStep, &
+                 iStage )
 
     class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
       S
