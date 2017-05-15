@@ -258,10 +258,10 @@ contains
              IgnorabilityOption = IgnorabilityOption )
     select type ( SFC => SFA % Chart )
     class is ( Sources_F_CSL_Form )
-      select type ( F => FA % Chart )
+      select type ( FC => FA % Chart )
       class is ( Fluid_CSL_Form )
-        call F % SetSources ( SFC )
-      end select !-- F
+        call FC % SetSources ( SFC )
+      end select !-- FC
     end select !-- SFC
     end associate !-- SFA
 

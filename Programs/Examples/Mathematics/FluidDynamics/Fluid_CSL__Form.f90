@@ -202,10 +202,10 @@ contains
     FC % Sources_CSL => SFC
 
     F => FC % Fluid_D ( )
-    select type ( FS => SFC % Field )
+    select type ( SF => SFC % Field )
     class is ( Sources_F_Form )
-      call F % SetSources ( FS )
-    end select !-- FS
+      call F % SetSources ( SF )
+    end select !-- SF
 
     nullify ( F )
 

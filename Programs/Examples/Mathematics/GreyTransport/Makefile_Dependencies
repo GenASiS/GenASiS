@@ -39,6 +39,8 @@ RadiationMoments_CSL__Form.o: \
   Interactions_Template.o \
   RadiationMoments_Form.o \
   PhotonMoments_Form.o \
+  Sources_RM__Form.o \
+  Sources_RM_CSL__Form.o \
   RadiationMoments_CSL__Form.f90
 
 RadiationMoments_ASC__Form.o: \
@@ -46,6 +48,8 @@ RadiationMoments_ASC__Form.o: \
   Mathematics.o \
   RadiationMoments_Form.o \
   PhotonMoments_Form.o \
+  Sources_RM_CSL__Form.o \
+  Sources_RM_ASC__Form.o \
   RadiationMoments_CSL__Form.o \
   RadiationMoments_ASC__Form.f90
 
