@@ -373,10 +373,10 @@ contains
     type ( Fluid_ASC_Form ), intent ( inout ) :: &
       FA
 
-    if ( allocated ( FA % Sources_ASC ) ) &
-      deallocate ( FA % Sources_ASC )
     if ( allocated ( FA % Features_ASC ) ) &
       deallocate ( FA % Features_ASC )
+    if ( allocated ( FA % Sources_ASC ) ) &
+      deallocate ( FA % Sources_ASC )
 
     call FA % FinalizeTemplate_ASC_C ( )
 

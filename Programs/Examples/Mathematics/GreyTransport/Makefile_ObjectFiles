@@ -5,6 +5,7 @@ GREY_MOMENTS = \
   Interactions_MWV_2_G__Form.o \
   Interactions_MWV_1_G__Form.o \
   Interactions_F__Form.o \
+  ApplyCurvilinear_RM__Command.o \
   RadiationMoments_ASC__Form.o \
   RadiationMoments_CSL__Form.o \
   Sources_RM_ASC__Form.o \
