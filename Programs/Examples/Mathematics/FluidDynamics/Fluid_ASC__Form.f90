@@ -11,8 +11,8 @@ module Fluid_ASC__Form
   use Tally_F_D__Form
   use Tally_F_P__Form
   use Tally_F_P_MHN__Form
-  use FluidSources_CSL__Form
-  use FluidSources_ASC__Form
+  use Sources_F_CSL__Form
+  use Sources_F_ASC__Form
   use FluidFeatures_CSL__Form
   use FluidFeatures_ASC__Form
   use Fluid_CSL__Form
@@ -34,7 +34,7 @@ module Fluid_ASC__Form
     character ( LDF ) :: &
       FluidType         = '', &
       RiemannSolverType = ''
-    type ( FluidSources_ASC_Form ), allocatable :: &
+    type ( Sources_F_ASC_Form ), allocatable :: &
       Sources_ASC
     type ( FluidFeatures_ASC_Form ), allocatable :: &
       Features_ASC
@@ -251,19 +251,19 @@ contains
     !-- Sources
 
     allocate ( FA % Sources_ASC )
-    associate ( FSA => FA % Sources_ASC )
-    call FSA % Initialize &
+    associate ( SFA => FA % Sources_ASC )
+    call SFA % Initialize &
            ( FA, NameShortOption = trim ( NameShort ) // '_Sources', &
              TimeUnitOption = TimeUnitOption, &
              IgnorabilityOption = IgnorabilityOption )
-    select type ( FSC => FSA % Chart )
-    class is ( FluidSources_CSL_Form )
+    select type ( SFC => SFA % Chart )
+    class is ( Sources_F_CSL_Form )
       select type ( F => FA % Chart )
       class is ( Fluid_CSL_Form )
-        call F % SetSources ( FSC )
+        call F % SetSources ( SFC )
       end select !-- F
-    end select !-- FSC
-    end associate !-- FSA
+    end select !-- SFC
+    end associate !-- SFA
 
     !-- Features
 

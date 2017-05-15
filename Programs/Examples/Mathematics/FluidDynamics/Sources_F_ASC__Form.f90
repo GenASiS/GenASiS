@@ -1,15 +1,15 @@
-module FluidSources_ASC__Form
+module Sources_F_ASC__Form
 
-  !-- FluidSources_AtlasSingleChart__Form
+  !-- Sources_F_AtlasSingleChart__Form
 
   use Basics
   use Mathematics
-  use FluidSources_CSL__Form
+  use Sources_F_CSL__Form
 
   implicit none
   private
 
-  type, public, extends ( Field_ASC_Template ) :: FluidSources_ASC_Form
+  type, public, extends ( Field_ASC_Template ) :: Sources_F_ASC_Form
     type ( MeasuredValueForm ) :: &
       TimeUnit
     class ( Field_ASC_Template ), pointer :: &
@@ -21,17 +21,17 @@ module FluidSources_ASC__Form
       Finalize
     procedure, private, pass :: &
       SetField
-  end type FluidSources_ASC_Form
+  end type Sources_F_ASC_Form
 
 contains
 
 
   subroutine Initialize &
-               ( FSA, Fluid_ASC, NameShortOption, TimeUnitOption, &
+               ( SFA, Fluid_ASC, NameShortOption, TimeUnitOption, &
                  IgnorabilityOption )
 
-    class ( FluidSources_ASC_Form ), intent ( inout ) :: &
-      FSA
+    class ( Sources_F_ASC_Form ), intent ( inout ) :: &
+      SFA
     class ( Field_ASC_Template ), intent ( in ), target :: &
       Fluid_ASC
     character ( * ), intent ( in ), optional :: &
@@ -44,39 +44,39 @@ contains
     character ( LDL ) :: &
       NameShort
 
-    if ( FSA % Type == '' ) &
-      FSA % Type = 'a FluidSources_ASC'
+    if ( SFA % Type == '' ) &
+      SFA % Type = 'a Sources_F_ASC'
 
     if ( present ( TimeUnitOption ) ) &
-      FSA % TimeUnit = TimeUnitOption
+      SFA % TimeUnit = TimeUnitOption
 
-    FSA % Fluid_ASC => Fluid_ASC
+    SFA % Fluid_ASC => Fluid_ASC
 
-    NameShort = 'FluidSources'
+    NameShort = 'Sources_F'
     if ( present ( NameShortOption ) ) &
       NameShort = NameShortOption
 
-    call FSA % InitializeTemplate_ASC &
+    call SFA % InitializeTemplate_ASC &
            ( Fluid_ASC % Atlas, NameShort, IgnorabilityOption )
 
   end subroutine Initialize
 
 
-  impure elemental subroutine Finalize ( FSA )
+  impure elemental subroutine Finalize ( SFA )
 
-    type ( FluidSources_ASC_Form ), intent ( inout ) :: &
-      FSA
+    type ( Sources_F_ASC_Form ), intent ( inout ) :: &
+      SFA
 
-    nullify ( FSA % Fluid_ASC )
+    nullify ( SFA % Fluid_ASC )
 
-    call FSA % FinalizeTemplate_ASC ( )
+    call SFA % FinalizeTemplate_ASC ( )
 
   end subroutine Finalize
 
 
   subroutine SetField ( FA )
 
-    class ( FluidSources_ASC_Form ), intent ( inout ) :: &
+    class ( Sources_F_ASC_Form ), intent ( inout ) :: &
       FA
 
     select type ( A => FA % Atlas )
@@ -89,14 +89,14 @@ contains
     select type ( FC => FA % Fluid_ASC % Chart )
     class is ( Field_CSL_Template )
 
-    allocate ( FluidSources_CSL_Form :: FA % Chart )
+    allocate ( Sources_F_CSL_Form :: FA % Chart )
 
-    select type ( FSC => FA % Chart )
-    class is ( FluidSources_CSL_Form )
-      call FSC % Initialize &
+    select type ( SFC => FA % Chart )
+    class is ( Sources_F_CSL_Form )
+      call SFC % Initialize &
              ( FC, FA % NameShort, FA % TimeUnit, nValues, &
                IgnorabilityOption = FA % IGNORABILITY )
-    end select !-- FSC
+    end select !-- SFC
 
     call A % AddField ( FA )
 
@@ -108,4 +108,4 @@ contains
   end subroutine SetField
 
 
-end module FluidSources_ASC__Form
+end module Sources_F_ASC__Form

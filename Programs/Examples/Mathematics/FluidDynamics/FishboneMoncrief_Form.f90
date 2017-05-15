@@ -4,7 +4,7 @@ module FishboneMoncrief_Form
   use Mathematics
   use Fluid_P__Template
   use Fluid_P_P__Form
-  use FluidSources_Form
+  use Sources_F__Form
   use Fluid_ASC__Form
   use ApplyCurvilinear_F__Command
   use Tally_FM__Form
@@ -358,12 +358,12 @@ contains
 
 
   subroutine ApplySources &
-               ( S, FluidSources, Increment, Fluid, TimeStep, iStage )
+               ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
 
     class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
       S
-    class ( CurrentSourcesForm ), intent ( inout ) :: &
-      FluidSources
+    class ( Sources_C_Form ), intent ( inout ) :: &
+      Sources_F
     type ( VariableGroupForm ), intent ( inout ), target :: &
       Increment
     class ( CurrentTemplate ), intent ( in ) :: &
@@ -385,7 +385,7 @@ contains
     if ( associated ( Timer ) ) call Timer % Start ( )
 
     call ApplyCurvilinear_F &
-           ( S, FluidSources, Increment, Fluid, TimeStep, iStage )
+           ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
 
     select type ( F => Fluid )
     class is ( Fluid_P_Template )
@@ -393,8 +393,8 @@ contains
     call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 1 ), iMomentum_1 )
     call Search ( F % iaConserved, F % CONSERVED_ENERGY, iEnergy )
 
-    select type ( FS => FluidSources )
-    class is ( FluidSourcesForm )
+    select type ( FS => Sources_F )
+    class is ( Sources_F_Form )
 
     select type ( Chart => S % Chart )
     class is ( Chart_SL_Template )

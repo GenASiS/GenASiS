@@ -5,7 +5,7 @@ module Current_Template
 
   use Basics
   use Manifolds
-  use CurrentSources_Form
+  use Sources_C__Form
 
   implicit none
   private
@@ -45,7 +45,7 @@ module Current_Template
     character ( LDL ) :: &
       Type = '', &
       RiemannSolverType = ''
-    class ( CurrentSourcesForm ), pointer :: &
+    class ( Sources_C_Form ), pointer :: &
       Sources => null ( )
   contains
     procedure, public, pass :: &
@@ -278,7 +278,7 @@ contains
 
     class ( CurrentTemplate ), intent ( inout ) :: &
       C
-    class ( CurrentSourcesForm ), intent ( in ), target :: &
+    class ( Sources_C_Form ), intent ( in ), target :: &
       Sources
 
     C % Sources => Sources

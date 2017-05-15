@@ -1,11 +1,11 @@
-CurrentSources_Form.o: \
+Sources_C__Form.o: \
   Basics.o \
-  CurrentSources_Form.f90
+  Sources_C__Form.f90
 
 Current_Template.o: \
   Basics.o \
   Manifolds.o \
-  CurrentSources_Form.o \
+  Sources_C__Form.o \
   Current_Template.f90
 
 Tally_C__Form.o: \
@@ -30,7 +30,7 @@ Current_BSLL_ASC_CSLD__Template.o: \
   Current_BSLL_ASC_CSLD__Template.f90
 
 Fields.o: \
-  CurrentSources_Form.o \
+  Sources_C__Form.o \
   Current_Template.o \
   Tally_C__Form.o \
   Current_ASC__Template.o \

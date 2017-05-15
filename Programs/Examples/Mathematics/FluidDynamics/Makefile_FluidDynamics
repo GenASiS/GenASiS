@@ -117,7 +117,7 @@ RayleighTaylor_Form.o: \
   Basics.o \
   Mathematics.o \
   Fluid_P_P__Form.o \
-  FluidSources_Form.o \
+  Sources_F__Form.o \
   Fluid_ASC__Form.o \
   Tally_RT__Form.o \
   RayleighTaylor_Form.f90
@@ -153,7 +153,7 @@ FishboneMoncrief_Form.o: \
   Mathematics.o \
   Fluid_P__Template.o \
   Fluid_P_P__Form.o \
-  FluidSources_Form.o \
+  Sources_F__Form.o \
   Fluid_ASC__Form.o \
   ApplyCurvilinear_F__Command.o \
   Tally_FM__Form.o \
@@ -169,7 +169,7 @@ WoosleyHeger_07_Header_Form.o: \
   Mathematics.o \
   Fluid_P__Template.o \
   Fluid_P_MHN__Form.o \
-  FluidSources_Form.o \
+  Sources_F__Form.o \
   Fluid_ASC__Form.o \
   ApplyCurvilinear_F__Command.o \
   Tally_F_P_MHN__Form.o \

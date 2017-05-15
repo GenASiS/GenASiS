@@ -156,7 +156,7 @@ module Step_RK_C_ASC__Template
       import Step_RK_C_ASC_Template
       class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
         S
-      class ( CurrentSourcesForm ), intent ( inout ) :: &
+      class ( Sources_C_Form ), intent ( inout ) :: &
         Sources
       type ( VariableGroupForm ), intent ( inout ), target :: &
         Increment
@@ -168,8 +168,8 @@ module Step_RK_C_ASC__Template
         iStage
     end subroutine AS
 
-    subroutine AR ( S, IncrementExplicit, DampingCoefficient, Current, Chart, &
-                    TimeStep )
+    subroutine AR ( S, IncrementExplicit, DampingCoefficient, Current, &
+                    Chart, TimeStep )
       use Basics
       use Manifolds
       use Fields

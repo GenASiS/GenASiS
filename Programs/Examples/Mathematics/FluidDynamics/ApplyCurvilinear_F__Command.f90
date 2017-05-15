@@ -4,7 +4,7 @@ module ApplyCurvilinear_F__Command
   use Mathematics
   use Fluid_D__Form
   use Fluid_P__Template
-  use FluidSources_Form
+  use Sources_F__Form
 
   implicit none
   private
@@ -20,12 +20,12 @@ contains
 
 
   subroutine ApplyCurvilinear_F &
-               ( S, FluidSources, Increment, Fluid, TimeStep, iStage )
+               ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
 
     class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
       S
-    class ( CurrentSourcesForm ), intent ( inout ) :: &
-      FluidSources
+    class ( Sources_C_Form ), intent ( inout ) :: &
+      Sources_F
     type ( VariableGroupForm ), intent ( inout ), target :: &
       Increment
     class ( CurrentTemplate ), intent ( in ) :: &
@@ -50,8 +50,8 @@ contains
       call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 2 ), iMomentum_2 )
     end select !-- F
 
-    select type ( FS => FluidSources )
-    class is ( FluidSourcesForm )
+    select type ( S_F => Sources_F )
+    class is ( Sources_F_Form )
 
     select type ( Chart => S % Chart )
     class is ( Chart_SL_Template )
@@ -64,8 +64,8 @@ contains
       call ApplyCurvilinear_F_D_Kernel &
              ( Increment % Value ( :, iMomentum_1 ), &
                Increment % Value ( :, iMomentum_2 ), &
-               FS % Value ( :, FS % CURVILINEAR_S_D ( 1 ) ), &
-               FS % Value ( :, FS % CURVILINEAR_S_D ( 2 ) ), &
+               S_F % Value ( :, S_F % CURVILINEAR_S_D ( 1 ) ), &
+               S_F % Value ( :, S_F % CURVILINEAR_S_D ( 2 ) ), &
                Chart % CoordinateSystem, Chart % IsProperCell, &
                F % Value ( :, F % MOMENTUM_DENSITY_D ( 2 ) ), &
                F % Value ( :, F % MOMENTUM_DENSITY_D ( 3 ) ), &
@@ -78,8 +78,8 @@ contains
       call ApplyCurvilinear_F_P_Kernel &
              ( Increment % Value ( :, iMomentum_1 ), &
                Increment % Value ( :, iMomentum_2 ), &
-               FS % Value ( :, FS % CURVILINEAR_S_D ( 1 ) ), &
-               FS % Value ( :, FS % CURVILINEAR_S_D ( 2 ) ), &
+               S_F % Value ( :, S_F % CURVILINEAR_S_D ( 1 ) ), &
+               S_F % Value ( :, S_F % CURVILINEAR_S_D ( 2 ) ), &
                Chart % CoordinateSystem, Chart % IsProperCell, &
                F % Value ( :, F % PRESSURE ), &
                F % Value ( :, F % MOMENTUM_DENSITY_D ( 2 ) ), &
@@ -98,7 +98,7 @@ contains
       call PROGRAM_HEADER % Abort ( )
     end select !-- Chart
 
-    end select !-- FS
+    end select !-- S_F
 
     if ( associated ( Timer ) ) call Timer % Stop ( )
 

@@ -1,31 +1,33 @@
-!-- CurrentSources contains sources for Currents.
+!-- Sources_C contains sources for Currents.
 
-module CurrentSources_Form
+module Sources_C__Form
+
+  !-- Sources_Current_Form
 
   use Basics
 
   implicit none
   private
 
-  type, public, extends ( VariableGroupForm ) :: CurrentSourcesForm
+  type, public, extends ( VariableGroupForm ) :: Sources_C_Form
     integer ( KDI ) :: &
       IGNORABILITY        = 0, &
-      N_FIELDS_CONSERVED  = 0, &
-      N_VECTORS_CONSERVED = 0, &
+      N_FIELDS_C  = 0, &
+      N_VECTORS_C = 0, &
       N_FIELDS            = 0, &
       N_VECTORS           = 0
     character ( LDL ) :: &
       Type = ''
   contains
     procedure, private, pass :: &
-      InitializeAllocate_CS
+      InitializeAllocate_SC
     generic, public :: &
-      Initialize => InitializeAllocate_CS
+      Initialize => InitializeAllocate_SC
     final :: &
       Finalize
     procedure, public, pass :: &
       SetOutput
-  end type CurrentSourcesForm
+  end type Sources_C_Form
 
     private :: &
       InitializeBasics, &
@@ -34,13 +36,13 @@ module CurrentSources_Form
 contains
 
 
-  subroutine InitializeAllocate_CS &
-               ( CS, Current, TimeUnit, iaConserved, VariableOption, &
+  subroutine InitializeAllocate_SC &
+               ( SC, Current, TimeUnit, iaConserved, VariableOption, &
                  VectorOption, NameOption, ClearOption, UnitOption, &
                  VectorIndicesOption )
 
-    class ( CurrentSourcesForm ), intent ( inout ) :: &
-      CS
+    class ( Sources_C_Form ), intent ( inout ) :: &
+      SC
     class ( VariableGroupForm ), intent ( in ) :: &
       Current
     type ( MeasuredValueForm ), intent ( in ) :: &
@@ -72,59 +74,59 @@ contains
     logical ( KDL ) :: &
       Clear
 
-    CS % N_FIELDS_CONSERVED = size ( iaConserved )
+    SC % N_FIELDS_C = size ( iaConserved )
 
     call InitializeBasics &
-           ( CS, Current % Variable, iaConserved, Variable, Vector, Name, &
+           ( SC, Current % Variable, iaConserved, Variable, Vector, Name, &
              VariableUnit, VectorIndices, VariableOption, VectorOption, &
              NameOption, UnitOption, VectorIndicesOption )
 
     call SetUnits &
-           ( VariableUnit, CS, Current % Unit, TimeUnit, iaConserved )
+           ( VariableUnit, SC, Current % Unit, TimeUnit, iaConserved )
 
     Clear = .true.
     if ( present ( ClearOption ) ) Clear = ClearOption
 
-    call CS % VariableGroupForm % Initialize &
-           ( [ Current % nValues, CS % N_FIELDS ], &
+    call SC % VariableGroupForm % Initialize &
+           ( [ Current % nValues, SC % N_FIELDS ], &
              VariableOption = Variable, VectorOption = Vector, &
              NameOption = Name, ClearOption = Clear, &
              UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndices )
 
-  end subroutine InitializeAllocate_CS
+  end subroutine InitializeAllocate_SC
 
 
-  impure elemental subroutine Finalize ( CS )
+  impure elemental subroutine Finalize ( SC )
 
-    type ( CurrentSourcesForm ), intent ( inout ) :: &
-      CS
+    type ( Sources_C_Form ), intent ( inout ) :: &
+      SC
 
-    call Show ( 'Finalizing ' // trim ( CS % Type ), CS % IGNORABILITY )
-    call Show ( CS % Name, 'Name', CS % IGNORABILITY )
+    call Show ( 'Finalizing ' // trim ( SC % Type ), SC % IGNORABILITY )
+    call Show ( SC % Name, 'Name', SC % IGNORABILITY )
    
   end subroutine Finalize
 
 
-  subroutine SetOutput ( CS, Output )
+  subroutine SetOutput ( SC, Output )
 
-    class ( CurrentSourcesForm ), intent ( inout ) :: &
-      CS
+    class ( Sources_C_Form ), intent ( inout ) :: &
+      SC
     type ( VariableGroupForm ), intent ( inout ) :: &
       Output
 
-    call Output % Initialize ( CS )
+    call Output % Initialize ( SC )
 
   end subroutine SetOutput
 
 
   subroutine InitializeBasics &
-               ( CS, VariableCurrent, iaConserved, Variable, Vector, Name, &
+               ( SC, VariableCurrent, iaConserved, Variable, Vector, Name, &
                  VariableUnit, VectorIndices, VariableOption, VectorOption, &
                  NameOption, VariableUnitOption, VectorIndicesOption )
 
-    class ( CurrentSourcesForm ), intent ( inout ) :: &
-      CS
+    class ( Sources_C_Form ), intent ( inout ) :: &
+      SC
     character ( LDL ), dimension ( : ), intent ( in ) :: &
       VariableCurrent
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
@@ -158,21 +160,21 @@ contains
       iC, &  !-- iConserved
       iV     !-- iVector
 
-    if ( CS % Type == '' ) &
-      CS % Type = 'a CurrentSources'
+    if ( SC % Type == '' ) &
+      SC % Type = 'a Sources_C'
 
-    Name = 'CurrentSources'
+    Name = 'Sources_C_'
     if ( present ( NameOption ) ) &
       Name = NameOption
 
-    CS % IGNORABILITY = CONSOLE % INFO_4 
-    call Show ( 'Initializing ' // trim ( CS % Type ), CS % IGNORABILITY )
-    call Show ( Name, 'Name', CS % IGNORABILITY )
+    SC % IGNORABILITY = CONSOLE % INFO_4 
+    call Show ( 'Initializing ' // trim ( SC % Type ), SC % IGNORABILITY )
+    call Show ( Name, 'Name', SC % IGNORABILITY )
 
     !-- variable indices
 
-    if ( CS % N_FIELDS == 0 ) &
-      CS % N_FIELDS = CS % N_FIELDS_CONSERVED
+    if ( SC % N_FIELDS == 0 ) &
+      SC % N_FIELDS = SC % N_FIELDS_C
 
     !-- variable names 
 
@@ -180,11 +182,11 @@ contains
       allocate ( Variable ( size ( VariableOption ) ) )
       Variable = VariableOption
     else
-      allocate ( Variable ( CS % N_FIELDS ) )
+      allocate ( Variable ( SC % N_FIELDS ) )
       Variable = ''
     end if
 
-    do iC = 1, CS % N_FIELDS_CONSERVED
+    do iC = 1, SC % N_FIELDS_C
       Variable ( iC ) = 'Div_Flux_' // VariableCurrent ( iaConserved ( iC ) )
     end do !-- iC
           
@@ -194,50 +196,50 @@ contains
       allocate ( VariableUnit ( size ( VariableUnitOption ) ) )
       VariableUnit = VariableUnitOption
     else
-      allocate ( VariableUnit ( CS % N_FIELDS ) )
+      allocate ( VariableUnit ( SC % N_FIELDS ) )
       VariableUnit = UNIT % IDENTITY
     end if
     
     !-- vectors
 
-    if ( CS % N_VECTORS == 0 ) &
-      CS % N_VECTORS = CS % N_VECTORS_CONSERVED
+    if ( SC % N_VECTORS == 0 ) &
+      SC % N_VECTORS = SC % N_VECTORS_C
 
     if ( present ( VectorOption ) ) then
       allocate ( Vector ( size ( VectorOption ) ) )
       Vector = VectorOption
     else
-      allocate ( Vector ( CS % N_VECTORS ) )
+      allocate ( Vector ( SC % N_VECTORS ) )
       Vector = ''
     end if
 
-!    Vector ( 1 : C % N_VECTORS_CONSERVED ) &
+!    Vector ( 1 : C % N_VECTORS_C ) &
 !      = [ '' ]
 
     !-- vector indices
 
     if ( present ( VectorIndicesOption ) ) then
       allocate ( VectorIndices ( size ( VectorIndicesOption ) ) )
-      do iV = CS % N_VECTORS_CONSERVED + 1, size ( VectorIndices )
+      do iV = SC % N_VECTORS_C + 1, size ( VectorIndices )
         call VectorIndices ( iV ) % Initialize ( VectorIndicesOption ( iV ) )
       end do
     else
-      allocate ( VectorIndices ( CS % N_VECTORS ) )
+      allocate ( VectorIndices ( SC % N_VECTORS ) )
     end if
 
-!    call VectorIndices ( 1 ) % Initialize ( CS %  )
+!    call VectorIndices ( 1 ) % Initialize ( S_C %  )
 
   end subroutine InitializeBasics
 
 
   subroutine SetUnits &
-               ( VariableUnit, CS, VariableUnitCurrent, TimeUnit, &
+               ( VariableUnit, SC, VariableUnitCurrent, TimeUnit, &
                  iaConserved )
 
     type ( MeasuredValueForm ), dimension ( : ), intent ( inout ) :: &
       VariableUnit
-    class ( CurrentSourcesForm ), intent ( in ) :: &
-      CS
+    class ( Sources_C_Form ), intent ( in ) :: &
+      SC
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ) :: &
       VariableUnitCurrent
     type ( MeasuredValueForm ), intent ( in ) :: &
@@ -248,7 +250,7 @@ contains
     integer ( KDI ) :: &
       iC  !-- iConserved
 
-    do iC = 1, CS % N_FIELDS_CONSERVED
+    do iC = 1, SC % N_FIELDS_C
       VariableUnit ( iC )  &
         =  VariableUnitCurrent ( iaConserved ( iC ) )  /  TimeUnit
     end do
@@ -256,4 +258,4 @@ contains
   end subroutine SetUnits
 
 
-end module CurrentSources_Form
+end module Sources_C__Form
