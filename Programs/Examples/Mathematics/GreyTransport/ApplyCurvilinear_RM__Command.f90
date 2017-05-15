@@ -69,7 +69,7 @@ contains
       ( M_DD_22 => G % Value ( :, G % METRIC_DD_22 ), &
         M_DD_33 => G % Value ( :, G % METRIC_DD_33 ) )
     
-    call ApplySourcesCurvilinearKernel &
+    call ApplyCurvilinear_RM_Kernel &
            ( Increment % Value ( :, iMomentum_1 ), &
              Increment % Value ( :, iMomentum_2 ), &
              SRM % Value ( :, SRM % CURVILINEAR_S_D ( 1 ) ), &
