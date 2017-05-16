@@ -650,18 +650,18 @@ contains
     end if
 
     Variable ( oF + 1 : oF + RM % N_FIELDS_RM ) &
-      = [ 'ComovingEnergyDensity          ', &
-          'ConservedEnergyDensity         ', &
-          'ComovingMomentumDensity_1      ', &
-          'ComovingMomentumDensity_2      ', &
-          'ComovingMomentumDensity_3      ', &
-          'ConservedMomentumDensity_1     ', &
-          'ConservedMomentumDensity_2     ', &
-          'ConservedMomentumDensity_3     ', &
-          'FluxFactor                     ', &
-          'VariableEddingtonFactor        ', &
-          'TemperatureParameter           ', &
-          'DegeneracyParameter            ' ]
+      = [ 'ComovingEnergy         ', &
+          'ConservedEnergy        ', &
+          'ComovingMomentum_U_1   ', &
+          'ComovingMomentum_U_2   ', &
+          'ComovingMomentum_U_3   ', &
+          'ConservedMomentum_D_1  ', &
+          'ConservedMomentum_D_2  ', &
+          'ConservedMomentum_D_3  ', &
+          'FluxFactor             ', &
+          'VariableEddingtonFactor', &
+          'TemperatureParameter   ', &
+          'DegeneracyParameter    ' ]
           
     !-- units
     
