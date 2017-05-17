@@ -68,14 +68,10 @@ contains
                DampingCoefficient % Value ( :, iMomentum_1 ), &
                DampingCoefficient % Value ( :, iMomentum_2 ), &
                DampingCoefficient % Value ( :, iMomentum_3 ), &
-               SRM % Value ( :, SRM % EMISSION_E ), &
-               SRM % Value ( :, SRM % EMISSION_S_D ( 1 ) ), &
-               SRM % Value ( :, SRM % EMISSION_S_D ( 2 ) ), &
-               SRM % Value ( :, SRM % EMISSION_S_D ( 3 ) ), &
-               SRM % Value ( :, SRM % ABSORPTION_E ), &
-               SRM % Value ( :, SRM % ABSORPTION_S_D ( 1 ) ), &
-               SRM % Value ( :, SRM % ABSORPTION_S_D ( 2 ) ), &
-               SRM % Value ( :, SRM % ABSORPTION_S_D ( 3 ) ), &
+               SRM % Value ( :, SRM % NET_EMISSION_E ), &
+               SRM % Value ( :, SRM % NET_EMISSION_S_D ( 1 ) ), &
+               SRM % Value ( :, SRM % NET_EMISSION_S_D ( 2 ) ), &
+               SRM % Value ( :, SRM % NET_EMISSION_S_D ( 3 ) ), &
                Chart % IsProperCell, &
                I % Value ( :, I % EQUILIBRIUM_DENSITY ), &
                I % Value ( :, I % EFFECTIVE_OPACITY ), &
@@ -103,15 +99,13 @@ contains
 
   subroutine ApplyRelaxation_RM_Kernel &
                ( KV_E, DCV_E, DCV_S_1, DCV_S_2, DCV_S_3, &
-                 SVE_E, SVE_S_1, SVE_S_2, SVE_S_3, &
-                 SVA_E, SVA_S_1, SVA_S_2, SVA_S_3, &
+                 SVNE_E, SVNE_S_1, SVNE_S_2, SVNE_S_3, &
                  IsProperCell, ED, EO, TO, E, S_1, S_2, S_3, dT, Weight_RK, c )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       KV_E, &
       DCV_E, DCV_S_1, DCV_S_2, DCV_S_3, &
-      SVE_E, SVE_S_1, SVE_S_2, SVE_S_3, &
-      SVA_E, SVA_S_1, SVA_S_2, SVA_S_3
+      SVNE_E, SVNE_S_1, SVNE_S_2, SVNE_S_3
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       IsProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
@@ -150,18 +144,18 @@ contains
       if ( .not. IsProperCell ( iV ) ) &
         cycle
 
-      SVE_E ( iV )  &
-        =  SVE_E ( iV )  +  Weight_RK * c * EO ( iV ) * ED ( iV )
-
       !-- Approximate since E, S_1, etc. do not include implicit update
-      SVA_E ( iV )  &
-        =  SVA_E ( iV )  -  Weight_RK * c * EO ( iV ) * E ( iV )
-      SVA_S_1 ( iV )  &
-        =  SVA_S_1 ( iV )  -  Weight_RK * c * TO ( iV ) * S_1 ( iV )
-      SVA_S_2 ( iV )  &
-        =  SVA_S_2 ( iV )  -  Weight_RK * c * TO ( iV ) * S_2 ( iV )
-      SVA_S_2 ( iV )  &
-        =  SVA_S_2 ( iV )  -  Weight_RK * c * TO ( iV ) * S_3 ( iV )
+
+      SVNE_E ( iV )  &
+        =  SVNE_E ( iV )  &
+           +  Weight_RK * c * EO ( iV ) * ( ED ( iV )  -  E ( iV ) )
+
+      SVNE_S_1 ( iV )  &
+        =  SVNE_S_1 ( iV )  -  Weight_RK * c * TO ( iV ) * S_1 ( iV )
+      SVNE_S_2 ( iV )  &
+        =  SVNE_S_2 ( iV )  -  Weight_RK * c * TO ( iV ) * S_2 ( iV )
+      SVNE_S_2 ( iV )  &
+        =  SVNE_S_2 ( iV )  -  Weight_RK * c * TO ( iV ) * S_3 ( iV )
 
     end do
     !$OMP end parallel do

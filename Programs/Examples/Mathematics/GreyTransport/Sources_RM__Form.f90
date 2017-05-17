@@ -8,19 +8,17 @@ module Sources_RM__Form
   private
 
     integer ( KDI ), private, parameter :: &
-      N_FIELDS_RM  = 11, &
-      N_VECTORS_RM =  4
+      N_FIELDS_RM  = 7, &
+      N_VECTORS_RM = 3
 
   type, public, extends ( Sources_C_Form ) :: Sources_RM_Form
     integer ( KDI ) :: &
-      N_FIELDS_RM  = N_FIELDS_RM, &
-      N_VECTORS_RM = N_VECTORS_RM, &
-      EMISSION_E   = 0, &
-      ABSORPTION_E = 0   
+      N_FIELDS_RM    = N_FIELDS_RM, &
+      N_VECTORS_RM   = N_VECTORS_RM, &
+      NET_EMISSION_E = 0   
     integer ( KDI ), dimension ( 3 ) :: &
-      CURVILINEAR_S_D = 0, &
-      EMISSION_S_D    = 0, &
-      ABSORPTION_S_D  = 0
+      CURVILINEAR_S_D  = 0, &
+      NET_EMISSION_S_D = 0
   contains
     procedure, private, pass :: &
       InitializeAllocate_SRM
@@ -153,11 +151,9 @@ contains
     if ( SRM % N_FIELDS == 0 ) &
       SRM % N_FIELDS = oF + SRM % N_FIELDS_RM
 
-    SRM % EMISSION_E       =  oF + 1
-    SRM % ABSORPTION_E     =  oF + 2
-    SRM % CURVILINEAR_S_D  =  oF + [ 3,  4,  5 ]
-    SRM % EMISSION_S_D     =  oF + [ 6,  7,  8 ]
-    SRM % ABSORPTION_S_D   =  oF + [ 9, 10, 11 ]
+    SRM % NET_EMISSION_E    =  oF + 1
+    SRM % CURVILINEAR_S_D   =  oF + [ 2, 3, 4 ]
+    SRM % NET_EMISSION_S_D  =  oF + [ 5, 6, 7 ]
 
     !-- variable names 
 
@@ -170,17 +166,13 @@ contains
     end if
 
     Variable ( oF + 1 : oF + SRM % N_FIELDS_RM ) &
-      = [ 'Emission_E       ', &
-          'Absorption_E     ', &
+      = [ 'NetEmission_E    ', &
           'Curvilinear_S_D_1', &
           'Curvilinear_S_D_2', &
           'Curvilinear_S_D_3', &
-          'Emission_S_D_1   ', &
-          'Emission_S_D_2   ', &
-          'Emission_S_D_3   ', &
-          'Absorption_S_D_1 ', &
-          'Absorption_S_D_2 ', &
-          'Absorption_S_D_3 ' ]
+          'NetEmission_S_D_1', &
+          'NetEmission_S_D_2', &
+          'NetEmission_S_D_3' ]
           
     !-- units
     
@@ -209,8 +201,7 @@ contains
     Vector ( oV + 1 : oV + SRM % N_VECTORS_RM ) &
       = [ 'Div_F_S_D      ', &
           'Curvilinear_S_D', &
-          'Emission_S_D   ', &
-          'Absorption_S_D ' ]
+          'NetEmission_S_D' ]
 
     !-- vector indices
 
@@ -231,8 +222,7 @@ contains
 
     call VectorIndices ( oV + 1 ) % Initialize ( iMomentum )
     call VectorIndices ( oV + 2 ) % Initialize ( SRM % CURVILINEAR_S_D )
-    call VectorIndices ( oV + 3 ) % Initialize ( SRM % EMISSION_S_D )
-    call VectorIndices ( oV + 4 ) % Initialize ( SRM % ABSORPTION_S_D )
+    call VectorIndices ( oV + 3 ) % Initialize ( SRM % NET_EMISSION_S_D )
 
   end subroutine InitializeBasics
 
@@ -251,17 +241,13 @@ contains
     integer ( KDI ) :: &
       iD
 
-    VariableUnit ( SRM % EMISSION_E )  &
-      =  RM % Unit ( RM % CONSERVED_ENERGY_DENSITY )  /  TimeUnit
-    VariableUnit ( SRM % ABSORPTION_E )  &
+    VariableUnit ( SRM % NET_EMISSION_E )  &
       =  RM % Unit ( RM % CONSERVED_ENERGY_DENSITY )  /  TimeUnit
 
     do iD = 1, 3
       VariableUnit ( SRM % CURVILINEAR_S_D ( iD ) )  &
         =  RM % Unit ( RM % CONSERVED_MOMENTUM_DENSITY_D ( iD ) )  /  TimeUnit
-      VariableUnit ( SRM % EMISSION_S_D ( iD ) )  &
-        =  RM % Unit ( RM % CONSERVED_MOMENTUM_DENSITY_D ( iD ) )  /  TimeUnit
-      VariableUnit ( SRM % ABSORPTION_S_D ( iD ) )  &
+      VariableUnit ( SRM % NET_EMISSION_S_D ( iD ) )  &
         =  RM % Unit ( RM % CONSERVED_MOMENTUM_DENSITY_D ( iD ) )  /  TimeUnit
     end do
 
