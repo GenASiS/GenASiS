@@ -8,6 +8,8 @@ module RadiationMoments_CSL__Form
   use RadiationMoments_Form
   use PhotonMoments_Form
   use NeutrinoMoments_Form
+  use Sources_RM__Form
+  use Sources_RM_CSL__Form
 
   implicit none
   private
@@ -27,6 +29,8 @@ module RadiationMoments_CSL__Form
     character ( LDF ) :: &
       RadiationMomentsType = '', &
       RiemannSolverType = ''
+    class ( Sources_RM_CSL_Form ), pointer :: &
+      Sources_CSL => null ( )
     class ( Field_CSL_Template ), pointer :: &
       Interactions_CSL => null ( )
   contains
@@ -38,6 +42,8 @@ module RadiationMoments_CSL__Form
       PhotonMoments
     procedure, public, pass :: &
       NeutrinoMoments
+    procedure, public, pass :: &
+      SetSources
     procedure, public, pass :: &
       SetInteractions
     final :: &
@@ -161,6 +167,29 @@ contains
   end function NeutrinoMoments
 
 
+  subroutine SetSources ( RMC, SRMC )
+
+    class ( RadiationMoments_CSL_Form ), intent ( inout ) :: &
+      RMC
+    class ( Sources_RM_CSL_Form ), intent ( in ), target :: &
+      SRMC
+
+    class ( RadiationMomentsForm ), pointer :: &
+      RM
+
+    RMC % Sources_CSL => SRMC
+
+    RM => RMC % RadiationMoments ( )
+    select type ( SRM => SRMC % Field )
+    class is ( Sources_RM_Form )
+      call RM % SetSources ( SRM )
+    end select !-- SRM
+
+    nullify ( RM )
+
+  end subroutine SetSources
+
+
   subroutine SetInteractions ( RMC, IC )
 
     class ( RadiationMoments_CSL_Form ), intent ( inout ) :: &
@@ -190,6 +219,7 @@ contains
       RMC
 
     nullify ( RMC % Interactions_CSL )
+    nullify ( RMC % Sources_CSL )
 
     call RMC % FinalizeTemplate ( )
 

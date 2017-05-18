@@ -5,6 +5,7 @@ module Current_Template
 
   use Basics
   use Manifolds
+  use Sources_C__Form
 
   implicit none
   private
@@ -44,6 +45,8 @@ module Current_Template
     character ( LDL ) :: &
       Type = '', &
       RiemannSolverType = ''
+    class ( Sources_C_Form ), pointer :: &
+      Sources => null ( )
   contains
     procedure, public, pass :: &
       InitializeTemplate
@@ -51,6 +54,8 @@ module Current_Template
       SetPrimitiveConserved
     procedure, public, pass :: &
       ShowPrimitiveConserved
+    procedure, public, pass :: &
+      SetSources
     procedure, private, pass :: &
       ComputeFromPrimitiveSelf
     procedure, private, pass ( C ) :: &
@@ -270,6 +275,18 @@ contains
   end subroutine ShowPrimitiveConserved
 
 
+  subroutine SetSources ( C, Sources )
+
+    class ( CurrentTemplate ), intent ( inout ) :: &
+      C
+    class ( Sources_C_Form ), intent ( in ), target :: &
+      Sources
+
+    C % Sources => Sources
+
+  end subroutine SetSources
+
+
   subroutine ComputeFromPrimitiveSelf ( C, G, nValuesOption, oValueOption )
 
     class ( CurrentTemplate ), intent ( inout ) :: &
@@ -438,6 +455,8 @@ contains
 
     class ( CurrentTemplate ), intent ( inout ) :: &
       C
+
+    nullify ( C % Sources )
 
     if ( allocated ( C % iaConserved ) ) &
       deallocate ( C % iaConserved )

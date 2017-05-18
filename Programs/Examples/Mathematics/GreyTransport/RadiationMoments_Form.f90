@@ -72,13 +72,6 @@ module RadiationMoments_Form
       ComputeRawFluxesKernel, &
       ComputeDiffusionFactor_HLL_CSL
 
-  public :: &
-    ApplyRelaxation_Interactions, &
-    ApplySourcesCurvilinear_RadiationMoments
-
-    private :: &
-      ApplyRelaxationKernel
-
 contains
 
 
@@ -726,25 +719,25 @@ contains
     end if
 
     Variable ( oF + 1 : oF + RM % N_FIELDS_RM ) &
-      = [ 'ComovingEnergyDensity          ', &
-          'ConservedEnergyDensity         ', &
-          'ComovingMomentumDensity_U_1    ', &
-          'ComovingMomentumDensity_U_2    ', &
-          'ComovingMomentumDensity_U_3    ', &
-          'ConservedMomentumDensity_D_1   ', &
-          'ConservedMomentumDensity_D_2   ', &
-          'ConservedMomentumDensity_D_3   ', &
-          'ComovingNumberDensity          ', &
-          'ConservedNumberDensity         ', &
-          'FluxFactor                     ', &
-          'VariableEddingtonFactor        ', &
-          'TemperatureParameter           ', &
-          'TemperatureParameter_EQ        ', &
-          'DegeneracyParameter            ', &
-          'DegeneracyParameter_EQ         ', &
-          'EnergyAverage                  ', &
-          'OccupancyAverage               ', &
-          'ComovingEnergyDensity_EQ       ' ]
+      = [ 'ComovingEnergy          ', &
+          'ConservedEnergy         ', &
+          'ComovingMomentum_U_1    ', &
+          'ComovingMomentum_U_2    ', &
+          'ComovingMomentum_U_3    ', &
+          'ConservedMomentum_D_1   ', &
+          'ConservedMomentum_D_2   ', &
+          'ConservedMomentum_D_3   ', &
+          'ComovingNumber          ', &
+          'ConservedNumber         ', &
+          'FluxFactor              ', &
+          'VariableEddingtonFactor ', &
+          'TemperatureParameter    ', &
+          'TemperatureParameter_EQ ', &
+          'DegeneracyParameter     ', &
+          'DegeneracyParameter_EQ  ', &
+          'EnergyAverage           ', &
+          'OccupancyAverage        ', &
+          'ComovingEnergyDensity_EQ' ]
           
     !-- units
     
@@ -1199,291 +1192,6 @@ contains
     !$OMP end parallel do
       
   end subroutine ComputeDiffusionFactor_HLL_CSL
-
-
-  subroutine ApplyRelaxation_Interactions &
-               ( S, IncrementExplicit, DampingCoefficient, Current, Chart, &
-                 TimeStep )
-
-    class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
-      S
-    type ( VariableGroupForm ), intent ( inout ) :: &
-      IncrementExplicit, &
-      DampingCoefficient
-    class ( CurrentTemplate ), intent ( in ) :: &
-      Current
-    class ( ChartTemplate ), intent ( in ) :: &
-      Chart
-    real ( KDR ), intent ( in ) :: &
-      TimeStep
-
-    integer ( KDI ) :: &
-      iEnergy, &
-      iMomentum_1, &
-      iMomentum_2, &
-      iMomentum_3, &
-      iNumber
-
-    select type ( RM => Current )
-    class is ( RadiationMomentsForm )
-
-    call Search ( RM % iaConserved, RM % CONSERVED_ENERGY_DENSITY, &
-                  iEnergy )
-    call Search ( RM % iaConserved, RM % CONSERVED_MOMENTUM_DENSITY_D ( 1 ), &
-                  iMomentum_1 )
-    call Search ( RM % iaConserved, RM % CONSERVED_MOMENTUM_DENSITY_D ( 2 ), &
-                  iMomentum_2 )
-    call Search ( RM % iaConserved, RM % CONSERVED_MOMENTUM_DENSITY_D ( 3 ), &
-                  iMomentum_3 )
-    call Search ( RM % iaConserved, RM % CONSERVED_NUMBER_DENSITY, &
-                  iNumber )
-
-    select type ( Chart )
-    class is ( Chart_SL_Template )
-
-    associate ( I => RM % Interactions )
-
-    call ApplyRelaxationKernel &
-           ( IncrementExplicit % Value ( :, iEnergy ), &
-             DampingCoefficient % Value ( :, iEnergy ), &
-             DampingCoefficient % Value ( :, iMomentum_1 ), &
-             DampingCoefficient % Value ( :, iMomentum_2 ), &
-             DampingCoefficient % Value ( :, iMomentum_3 ), &
-             IncrementExplicit % Value ( :, iNumber ), &
-             DampingCoefficient % Value ( :, iNumber ), &
-             Chart % IsProperCell, &
-             I % Value ( :, I % EMISSIVITY ), &
-             I % Value ( :, I % EFFECTIVE_OPACITY ), &
-             I % Value ( :, I % TRANSPORT_OPACITY ), &
-             I % Value ( :, I % EMISSIVITY_NUMBER ), &
-             I % Value ( :, I % EFFECTIVE_OPACITY_NUMBER ), &
-             TimeStep, CONSTANT % SPEED_OF_LIGHT )
-
-    end associate !-- I
-
-    class default
-      call Show ( 'Chart type not found', CONSOLE % ERROR )
-      call Show ( 'RadiationMoments_Form', 'module', CONSOLE % ERROR )
-      call Show ( 'ApplyRelaxation_Interactions', 'subroutine', &
-                  CONSOLE % ERROR ) 
-      call PROGRAM_HEADER % Abort ( )
-    end select !-- Chart
-
-    end select !-- RM
-    
-  end subroutine ApplyRelaxation_Interactions
-    
-
-  subroutine ApplySourcesCurvilinear_RadiationMoments &
-               ( S, Increment, Current, TimeStep )
-
-    class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
-      S
-    type ( VariableGroupForm ), intent ( inout ), target :: &
-      Increment
-    class ( CurrentTemplate ), intent ( in ) :: &
-      Current
-    real ( KDR ), intent ( in ) :: &
-      TimeStep
-
-    integer ( KDI ) :: &
-      iMomentum_1, &
-      iMomentum_2
-    class ( GeometryFlatForm ), pointer :: &
-      G
-
-    call Show ( 'ApplySourcesCurvilinear_RadiationMoments', CONSOLE % INFO_4 )
-
-    select type ( RM => Current )
-    class is ( RadiationMomentsForm )
-
-    call Search &
-           ( RM % iaConserved, &
-             RM % CONSERVED_MOMENTUM_DENSITY_D ( 1 ), iMomentum_1 )
-    call Search &
-           ( RM % iaConserved, &
-             RM % CONSERVED_MOMENTUM_DENSITY_D ( 2 ), iMomentum_2 )
-
-    select type ( Chart => S % Chart )
-    class is ( Chart_SL_Template )
-
-    if ( trim ( Chart % CoordinateSystem ) == 'CARTESIAN' ) &
-      return
-
-    G => Chart % Geometry ( )
-    
-    associate &
-      ( M_DD_22 => G % Value ( :, G % METRIC_DD_22 ), &
-        M_DD_33 => G % Value ( :, G % METRIC_DD_33 ) )
-    
-    call ApplySourcesCurvilinearKernel &
-           ( Increment % Value ( :, iMomentum_1 ), &
-             Increment % Value ( :, iMomentum_2 ), &
-             Chart % CoordinateSystem, Chart % IsProperCell, &
-             RM % Value ( :, RM % COMOVING_ENERGY_DENSITY ), &
-             RM % Value ( :, RM % COMOVING_MOMENTUM_DENSITY_U ( 1 ) ), &
-             RM % Value ( :, RM % COMOVING_MOMENTUM_DENSITY_U ( 2 ) ), &
-             RM % Value ( :, RM % COMOVING_MOMENTUM_DENSITY_U ( 3 ) ), &
-             RM % Value ( :, RM % VARIABLE_EDDINGTON_FACTOR ), &
-             M_DD_22, M_DD_33, &
-             S % dLogVolumeJacobian_dX ( 1 ) % Value, &
-             S % dLogVolumeJacobian_dX ( 2 ) % Value, &
-             TimeStep, Chart % nDimensions, G % Value ( :, G % CENTER ( 1 ) ) )
-
-    end associate !-- M_DD_22, etc.
-    class default
-      call Show ( 'Chart type not found', CONSOLE % ERROR )
-      call Show ( 'RadiationMoments_Form', 'module', CONSOLE % ERROR )
-      call Show ( 'ApplySourcesCurvilinear_RadiationMoments', 'subroutine', &
-                  CONSOLE % ERROR ) 
-      call PROGRAM_HEADER % Abort ( )
-    end select !-- Chart
-
-    end select !-- RM
-    
-  end subroutine ApplySourcesCurvilinear_RadiationMoments
-
-
-  subroutine ApplyRelaxationKernel &
-               ( KV_E, DCV_E, DCV_S_1, DCV_S_2, DCV_S_3, KV_D, DCV_D, &
-                 IsProperCell, E, EO, TO, EN, EON, dT, c )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      KV_E, &
-      DCV_E, &
-      DCV_S_1, &
-      DCV_S_2, &
-      DCV_S_3, &
-      KV_D, &
-      DCV_D
-    logical ( KDL ), dimension ( : ), intent ( in ) :: &
-      IsProperCell
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      E, &
-      EO, &
-      TO, &
-      EN, &
-      EON
-    real ( KDR ), intent ( in ) :: &
-      dT, &
-      c
-
-    integer ( KDI ) :: &
-      iV, &
-      nV
-
-    nV = size ( KV_E )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nV
-
-      if ( .not. IsProperCell ( iV ) ) &
-        cycle
-
-      KV_E    ( iV )  =  KV_E ( iV )  +  c * E ( iV ) * dT
-      DCV_E   ( iV )  =  c * EO ( iV )
-      DCV_S_1 ( iV )  =  c * TO ( iV )
-      DCV_S_2 ( iV )  =  c * TO ( iV )
-      DCV_S_3 ( iV )  =  c * TO ( iV )
-
-      KV_D    ( iV )  =  KV_D ( iV )  +  c * EN ( iV ) * dT
-      DCV_D   ( iV )  =  c * EON ( iV )
-
-    end do
-    !$OMP end parallel do
-
-  end subroutine ApplyRelaxationKernel
-  
-
-  subroutine ApplySourcesCurvilinearKernel &
-               ( KVM_1, KVM_2, CoordinateSystem, IsProperCell, &
-                 J, H_1, H_2, H_3, VEF, M_DD_22, M_DD_33, &
-                 dLVJ_dX1, dLVJ_dX2, dT, nDimensions, R )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      KVM_1, KVM_2
-    character ( * ), intent ( in ) :: &
-      CoordinateSystem
-    logical ( KDL ), dimension ( : ), intent ( in ) :: &
-      IsProperCell
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      J, &
-      H_1, H_2, H_3, &
-      VEF, & 
-      M_DD_22, M_DD_33, &
-      dLVJ_dX1, dLVJ_dX2, &
-      R
-    real ( KDR ), intent ( in ) :: &
-      dT
-    integer ( KDI ), intent ( in ) :: &
-      nDimensions
-
-    integer ( KDI ) :: &
-      iV, &
-      nV
-    real ( KDR ) :: &
-      K_22, &
-      K_33, &
-      Tiny10
-    real ( KDR ), dimension ( size ( KVM_1 ) ) :: &
-      H
-
-    nV = size ( KVM_1 )
-
-    Tiny10 = 1.0e10_KDR * tiny ( 0.0_KDR )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nV
-      H ( iV )  =  max ( sqrt ( H_1 ( iV ) ** 2  &
-                                +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
-                                +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 ), &
-                         Tiny10 )
-    end do
-    !$OMP end parallel do
-   
-    select case ( trim ( CoordinateSystem ) )
-    case ( 'CYLINDRICAL' )
-
-      !$OMP parallel do private ( iV )
-      do iV = 1, nV
-        if ( .not. IsProperCell ( iV ) ) cycle
-
-        K_33 &
-          = 0.5_KDR * ( 1.0_KDR - VEF ( iV ) ) * J ( iV )  + 0.5_KDR &
-            * ( 3 * VEF ( iV ) - 1.0_KDR ) * M_DD_33 ( iV ) &
-            *  H_3 ( iV ) ** 2 / H ( iV )
-
-        KVM_1 ( iV ) &
-          = KVM_1 ( iV ) + K_33 * dLVJ_dX1 ( iV ) * dT
-      end do
-      !$OMP end parallel do
-
-    case ( 'SPHERICAL' )
-
-      !$OMP parallel do private ( iV )
-      do iV = 1, nV
-        if ( .not. IsProperCell ( iV ) ) cycle
-
-        K_22 &
-          = 0.5_KDR * ( 1.0_KDR - VEF ( iV ) ) * J ( iV ) + 0.5_KDR &
-            * ( 3 * VEF ( iV ) - 1.0_KDR ) * M_DD_22 ( iV ) &
-            *  H_2 ( iV ) ** 2 / H ( iV )
-        K_33 &
-          = 0.5_KDR * ( 1.0_KDR - VEF ( iV ) ) * J ( iV ) + 0.5_KDR &
-            * ( 3 * VEF ( iV ) - 1.0_KDR ) * M_DD_33 ( iV ) &
-            *  H_3 ( iV ) ** 2 / H ( iV )
-
-        KVM_1 ( iV ) &
-          =  KVM_1 ( iV )  + 0.5_KDR * ( K_22 + K_33 ) * dLVJ_dX1 ( iV ) * dT
-        if ( nDimensions > 1 ) then
-          KVM_2 ( iV ) &
-            =  KVM_2 ( iV )  + K_33 * dLVJ_dX2 ( iV ) * dT
-        end if
-      end do
-      !$OMP end parallel do
-    end select !-- CoordinateSystem
-
-  end subroutine ApplySourcesCurvilinearKernel
 
 
 end module RadiationMoments_Form

@@ -11,6 +11,8 @@ module Fluid_ASC__Form
   use Tally_F_D__Form
   use Tally_F_P__Form
   use Tally_F_P_MHN__Form
+  use Sources_F_CSL__Form
+  use Sources_F_ASC__Form
   use FluidFeatures_CSL__Form
   use FluidFeatures_ASC__Form
   use Fluid_CSL__Form
@@ -32,6 +34,8 @@ module Fluid_ASC__Form
     character ( LDF ) :: &
       FluidType         = '', &
       RiemannSolverType = ''
+    type ( Sources_F_ASC_Form ), allocatable :: &
+      Sources_ASC
     type ( FluidFeatures_ASC_Form ), allocatable :: &
       Features_ASC
   contains
@@ -67,8 +71,9 @@ contains
                  UseLimiterOption, VelocityUnitOption, MassDensityUnitOption, &
                  EnergyDensityUnitOption, TemperatureUnitOption, &
                  MassUnitOption, EnergyUnitOption, MomentumUnitOption, &
-                 AngularMomentumUnitOption, LimiterParameterOption, &
-                 ShockThresholdOption, IgnorabilityOption )
+                 AngularMomentumUnitOption, TimeUnitOption, &
+                 LimiterParameterOption, ShockThresholdOption, &
+                 IgnorabilityOption )
 
     class ( Fluid_ASC_Form ), intent ( inout ) :: &
       FA
@@ -90,7 +95,8 @@ contains
       MassUnitOption, &
       EnergyUnitOption, &
       MomentumUnitOption, &
-      AngularMomentumUnitOption
+      AngularMomentumUnitOption, &
+      TimeUnitOption
     real ( KDR ), intent ( in ), optional :: &
       LimiterParameterOption, &
       ShockThresholdOption
@@ -242,6 +248,25 @@ contains
     call Show ( FA % UseLimiter, 'UseLimiter', FA % IGNORABILITY )
     call Show ( FA % LimiterParameter, 'LimiterParameter', FA % IGNORABILITY )
 
+    !-- Sources
+
+    allocate ( FA % Sources_ASC )
+    associate ( SFA => FA % Sources_ASC )
+    call SFA % Initialize &
+           ( FA, NameShortOption = trim ( NameShort ) // '_Sources', &
+             TimeUnitOption = TimeUnitOption, &
+             IgnorabilityOption = IgnorabilityOption )
+    select type ( SFC => SFA % Chart )
+    class is ( Sources_F_CSL_Form )
+      select type ( FC => FA % Chart )
+      class is ( Fluid_CSL_Form )
+        call FC % SetSources ( SFC )
+      end select !-- FC
+    end select !-- SFC
+    end associate !-- SFA
+
+    !-- Features
+
     if ( trim ( FA % FluidType ) /= 'DUST' ) then
       allocate ( FA % Features_ASC )
       associate ( FFA => FA % Features_ASC )
@@ -350,6 +375,8 @@ contains
 
     if ( allocated ( FA % Features_ASC ) ) &
       deallocate ( FA % Features_ASC )
+    if ( allocated ( FA % Sources_ASC ) ) &
+      deallocate ( FA % Sources_ASC )
 
     call FA % FinalizeTemplate_ASC_C ( )
 

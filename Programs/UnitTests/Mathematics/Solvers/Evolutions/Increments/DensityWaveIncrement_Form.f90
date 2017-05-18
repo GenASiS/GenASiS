@@ -4,6 +4,7 @@ module DensityWaveIncrement_Form
   use Manifolds
   use Fields
   use ProtoFields
+  use StorageDivergence_Form
   use IncrementDivergence_FV__Form
 
   implicit none
@@ -16,6 +17,8 @@ module DensityWaveIncrement_Form
       BoundaryFluence_CSL
     type ( VariableGroupForm ), allocatable :: &
       Increment_VG
+    type ( StorageDivergenceForm ), allocatable :: &
+      Storage
     type ( IncrementDivergence_FV_Form ), allocatable :: &
       Increment
   contains
@@ -50,6 +53,8 @@ contains
       TimeStep
     character ( LDL ), dimension ( : ), allocatable :: &
       ConservedVariable
+    class ( GeometryFlatForm ), pointer :: &
+      G
     class ( ProtoCurrentForm ), pointer :: &
       PC
 
@@ -65,6 +70,7 @@ contains
 
     select type ( C => DW % Atlas % Chart )
     class is ( Chart_SLD_Form )
+    G => C % Geometry ( )
 
     call DW % PrepareBoundaryFluence ( C, PC )
 
@@ -88,19 +94,32 @@ contains
 
     !-- Increment
 
+    allocate ( DW % Storage )
     allocate ( DW % Increment )
-    associate ( I => DW % Increment )
+    associate &
+      ( I => DW % Increment, &
+        S => DW % Storage, &
+        Weight_RK => 0.5_KDR )
 
-    call I % Initialize ( Name )
-    call I % Set ( DW % BoundaryFluence_CSL )
-    call I % Set ( Weight_RK = 0.5_KDR )
+    call S % Allocate &
+           ( PC % nVariables, PC % N_CONSERVED, PC % N_PRIMITIVE, &
+             PC % N_SOLVER_SPEEDS, G % nVariables, PC % nValues )
 
-    call I % Compute ( VG_Increment, C, PC, TimeStep )
+    call I % Initialize ( DW % ProtoCurrent % Chart )
+    call I % SetStorage ( DW % Storage )
+    call I % SetBoundaryFluence ( DW % BoundaryFluence_CSL )
+
+    call I % Compute ( VG_Increment, TimeStep, Weight_RK )
+
+    associate ( PCS => PC % Sources )
+    PCS % Value ( :, 1 : PCS % N_FIELDS_CONSERVED )  &
+      =  Weight_RK  *  VG_Increment % Value  /  TimeStep
+    end associate !-- PCS
 
     end associate !-- VG_Increment
-    end associate !-- I
+    end associate !-- I, etc.
     end select !-- C
-    nullify ( PC )
+    nullify ( PC, G )
 
   end subroutine Initialize
 
@@ -112,6 +131,8 @@ contains
 
     if ( allocated ( DW % Increment ) ) &
       deallocate ( DW % Increment )
+    if ( allocated ( DW % Storage ) ) &
+      deallocate ( DW % Storage )
     if ( allocated ( DW % Increment_VG ) ) &
       deallocate ( DW % Increment_VG )
     if ( allocated ( DW % BoundaryFluence_CSL ) ) &

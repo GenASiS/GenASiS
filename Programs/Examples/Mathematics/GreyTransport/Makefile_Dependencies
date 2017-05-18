@@ -19,6 +19,25 @@ NeutrinoMoments_Form.o: \
   RadiationMoments_Form.o \
   NeutrinoMoments_Form.f90
 
+Sources_RM__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  RadiationMoments_Form.o \
+  Sources_RM__Form.f90
+
+Sources_RM_CSL__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  RadiationMoments_Form.o \
+  Sources_RM__Form.o \
+  Sources_RM_CSL__Form.f90
+
+Sources_RM_ASC__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Sources_RM_CSL__Form.o \
+  Sources_RM_ASC__Form.f90
+
 RadiationMoments_CSL__Form.o: \
   Basics.o \
   Mathematics.o \
@@ -26,6 +45,8 @@ RadiationMoments_CSL__Form.o: \
   RadiationMoments_Form.o \
   PhotonMoments_Form.o \
   NeutrinoMoments_Form.o \
+  Sources_RM__Form.o \
+  Sources_RM_CSL__Form.o \
   RadiationMoments_CSL__Form.f90
 
 RadiationMoments_ASC__Form.o: \
@@ -34,8 +55,17 @@ RadiationMoments_ASC__Form.o: \
   RadiationMoments_Form.o \
   PhotonMoments_Form.o \
   NeutrinoMoments_Form.o \
+  Sources_RM_CSL__Form.o \
+  Sources_RM_ASC__Form.o \
   RadiationMoments_CSL__Form.o \
   RadiationMoments_ASC__Form.f90
+
+ApplyCurvilinear_RM__Command.o: \
+  Basics.o \
+  Mathematics.o \
+  RadiationMoments_Form.o \
+  Sources_RM__Form.o \
+  ApplyCurvilinear_RM__Command.f90
 
 Interactions_F__Form.o: \
   Basics.o \
@@ -90,6 +120,13 @@ Interactions_ASC__Form.o: \
   Interactions_F__Form.o \
   Interactions_CSL__Form.o \
   Interactions_ASC__Form.f90
+
+ApplyRelaxation_RM__Command.o: \
+  Basics.o \
+  Mathematics.o \
+  RadiationMoments_Form.o \
+  Sources_RM__Form.o \
+  ApplyRelaxation_RM__Command.f90
 
 GreyMoments.a: $(GREY_MOMENTS)
 	ar r GreyMoments.a $(GREY_MOMENTS)

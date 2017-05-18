@@ -2,7 +2,9 @@ module ProtoCurrent_CSL__Form
 
   use Basics
   use Manifolds
+  use CurrentSources_Form
   use ProtoCurrent_Form
+  use ProtoCurrentSources_CSL__Form
 
   implicit none
   private
@@ -10,11 +12,15 @@ module ProtoCurrent_CSL__Form
   type, public, extends ( Field_CSL_Template ) :: ProtoCurrent_CSL_Form
     type ( MeasuredValueForm ), dimension ( 3 ) :: &
       VelocityUnit    
+    class ( ProtoCurrentSources_CSL_Form ), pointer :: &
+      Sources_CSL => null ( )
   contains
     procedure, public, pass :: &
       Initialize
     procedure, public, pass :: &
       ProtoCurrent
+    procedure, public, pass :: &
+      SetSources
     final :: &
       Finalize
     procedure, private, pass :: &
@@ -65,10 +71,35 @@ contains
   end function ProtoCurrent
 
 
+  subroutine SetSources ( PCC, PCSC )
+
+    class ( ProtoCurrent_CSL_Form ), intent ( inout ) :: &
+      PCC
+    class ( ProtoCurrentSources_CSL_Form ), intent ( in ), target :: &
+      PCSC
+
+    class ( ProtoCurrentForm ), pointer :: &
+      PC
+
+    PCC % Sources_CSL => PCSC
+
+    PC => PCC % ProtoCurrent ( )
+    select type ( PCS => PCSC % Field )
+    class is ( CurrentSourcesForm )
+      call PC % SetSources ( PCS )
+    end select !-- FF
+
+    nullify ( PC )
+
+  end subroutine SetSources
+
+
   impure elemental subroutine Finalize ( PCC )
 
     type ( ProtoCurrent_CSL_Form ), intent ( inout ) :: &
       PCC
+
+    nullify ( PCC % Sources_CSL )
 
     call PCC % FinalizeTemplate ( )
 

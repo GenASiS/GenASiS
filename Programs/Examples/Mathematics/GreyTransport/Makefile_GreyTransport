@@ -101,6 +101,7 @@ SineWaveDiffusion_Form.o: \
   RadiationMoments_ASC__Form.o \
   Interactions_F__Form.o \
   Interactions_ASC__Form.o \
+  ApplyRelaxation_RM__Command.o \
   SineWaveDiffusion_Form.f90
 
 SineWaveDiffusion.o: \
@@ -115,6 +116,7 @@ LineSource_Form.o: \
   Interactions_ASC__Form.o \
   RadiationMoments_Form.o \
   RadiationMoments_ASC__Form.o \
+  ApplyCurvilinear_RM__Command.o \
   LineSource_Form.f90
 
 LineSource.o: \
@@ -129,6 +131,8 @@ HomogeneousSphere_Form.o: \
   Interactions_ASC__Form.o \
   RadiationMoments_Form.o \
   RadiationMoments_ASC__Form.o \
+  ApplyCurvilinear_RM__Command.o \
+  ApplyRelaxation_RM__Command.o \
   HomogeneousSphere_Form.f90
 
 HomogeneousSphere.o: \
@@ -149,6 +153,7 @@ MarshakWave_Form.o: \
   Interactions_MWV_2_G__Form.o \
   Interactions_MWV_3_G__Form.o \
   Interactions_ASC__Form.o \
+  ApplyRelaxation_RM__Command.o \
   MarshakWave_Form.f90
 
 MarshakWave.o: \

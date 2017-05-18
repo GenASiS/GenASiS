@@ -8,6 +8,8 @@ module HomogeneousSphere_Form
   use Interactions_ASC__Form
   use RadiationMoments_Form
   use RadiationMoments_ASC__Form
+  use ApplyCurvilinear_RM__Command
+  use ApplyRelaxation_RM__Command
 
   implicit none
   private
@@ -255,8 +257,8 @@ contains
     select type ( S => HS % Step )
     class is ( Step_RK2_C_ASC_Form )
     call S % Initialize ( RMA, Name )
-    S % ApplySources % Pointer    => ApplySourcesCurvilinear_RadiationMoments
-    S % ApplyRelaxation % Pointer => ApplyRelaxation_Interactions
+    S % ApplySources % Pointer    => ApplyCurvilinear_RM
+    S % ApplyRelaxation % Pointer => ApplyRelaxation_RM
     end select !-- S
     
      !-- Diagnostics

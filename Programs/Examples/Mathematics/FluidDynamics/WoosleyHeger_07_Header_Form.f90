@@ -4,7 +4,9 @@ module WoosleyHeger_07_Header_Form
   use Mathematics
   use Fluid_P__Template
   use Fluid_P_MHN__Form
+  use Sources_F__Form
   use Fluid_ASC__Form
+  use ApplyCurvilinear_F__Command
   use Tally_F_P_MHN__Form
 
   implicit none
@@ -64,7 +66,7 @@ module WoosleyHeger_07_Header_Form
       iELECTRON_FRACTION_SI = 5
 
   public :: &
-    ApplySourcesGravity
+    ApplyGravity
 
     private :: &
       ComputeGravity, &
@@ -228,6 +230,7 @@ contains
              EnergyUnitOption          = WHH % EnergyUnit, &
              MomentumUnitOption        = WHH % MomentumUnit, &
              AngularMomentumUnitOption = WHH % AngularMomentumUnit, &
+             TimeUnitOption            = WHH % TimeUnit, &
              ShockThresholdOption = 1.0_KDR )
 
     end select !-- PS
@@ -614,16 +617,21 @@ contains
   end function LocalMax
 
 
-  subroutine ApplySourcesGravity ( S, Increment, Fluid, TimeStep )
+  subroutine ApplyGravity &
+               ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
 
     class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
       S
+    class ( Sources_C_Form ), intent ( inout ) :: &
+      Sources_F
     type ( VariableGroupForm ), intent ( inout ), target :: &
       Increment
     class ( CurrentTemplate ), intent ( in ) :: &
       Fluid
     real ( KDR ), intent ( in ) :: &
       TimeStep
+    integer ( KDI ), intent ( in ) :: &
+      iStage
 
     integer ( KDI ) :: &
       iMomentum_1, &
@@ -631,6 +639,8 @@ contains
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       KV_M_1, &
       KV_E, &
+      SV_M_1, &
+      SV_E, &
       D, &
       V_1, &
       dPhi_dR
@@ -642,7 +652,8 @@ contains
     Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerSources )
     if ( associated ( Timer ) ) call Timer % Start ( )
 
-    call ApplySourcesCurvilinear_Fluid_P ( S, Increment, Fluid, TimeStep )
+    call ApplyCurvilinear_F &
+           ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
 
     call Show ( 'ApplySources_Gravity', CONSOLE % INFO_4 )
 
@@ -652,12 +663,13 @@ contains
     call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 1 ), iMomentum_1 )
     call Search ( F % iaConserved, F % CONSERVED_ENERGY, iEnergy )
 
+    select type ( FS => Sources_F )
+    class is ( Sources_F_Form )
+
     select type ( Chart => S % Chart )
     class is ( Chart_SLD_Form )
 
     G => Chart % Geometry ( )
-
-!     iStage = mod ( iStage, S % nStages ) + 1
 
 !    if ( iStage == 1 ) &
       call ComputeGravity ( F, Chart % Atlas, G )
@@ -667,6 +679,10 @@ contains
     call Chart % SetVariablePointer &
            ( Increment % Value ( :, iEnergy ), KV_E )
     call Chart % SetVariablePointer &
+           ( FS % Value ( :, FS % GRAVITATIONAL_S_D ( 1 ) ), SV_M_1 )
+    call Chart % SetVariablePointer &
+           ( FS % Value ( :, FS % GRAVITATIONAL_E ), SV_E )
+    call Chart % SetVariablePointer &
            ( F % Value ( :, F % CONSERVED_DENSITY ), D )
     call Chart % SetVariablePointer &
            ( F % Value ( :, F % VELOCITY_U ( 1 ) ), V_1 )
@@ -674,17 +690,19 @@ contains
            ( Acceleration_C, dPhi_dR )
 
     call ApplySourcesKernel &
-           ( KV_M_1, KV_E, D, V_1, dPhi_dR, CONSTANT % GRAVITATIONAL, &
-             TimeStep, oV = Chart % nGhostLayers )
+           ( KV_M_1, KV_E, SV_M_1, SV_E, D, V_1, dPhi_dR, &
+             CONSTANT % GRAVITATIONAL, TimeStep, S % B ( iStage ), &
+             oV = Chart % nGhostLayers )
 
     end select !-- Chart
+    end select !-- FS
     end select !-- F
 
-    nullify ( KV_M_1, KV_E, dPhi_dR, D, V_1 )
+    nullify ( KV_M_1, KV_E, SV_M_1, SV_E, dPhi_dR, D, V_1 )
 
     if ( associated ( Timer ) ) call Timer % Stop ( )
 
-  end subroutine ApplySourcesGravity
+  end subroutine ApplyGravity
 
 
   subroutine ComputeGravity ( F, PS, G )
@@ -748,18 +766,23 @@ contains
   end subroutine ComputeGravity
 
 
-  subroutine ApplySourcesKernel ( KV_M_1, KV_E, D, V_1, dPhi_dR, G, dT, oV )
+  subroutine ApplySourcesKernel &
+               ( KV_M_1, KV_E, SV_M_1, SV_E, D, V_1, dPhi_dR, G, dT, &
+                 Weight_RK, oV )
 
     real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
       KV_M_1, &
-      KV_E
+      KV_E, &
+      SV_M_1, &
+      SV_E
     real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
       D, &
       V_1, &
       dPhi_dR
     real ( KDR ), intent ( in ) :: &
       G, &
-      dT
+      dT, &
+      Weight_RK
     integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
       oV
 
@@ -791,6 +814,13 @@ contains
             =  KV_E ( iV, jV, kV )  &
                -  dT  *  D ( iV, jV, kV )  *  dPhi_dR ( iV, jV, kV ) &
                       *  V_1 ( iV, jV, kV ) 
+          SV_M_1 ( iV, jV, kV )  &
+            =  SV_M_1 ( iV, jV, kV )  &
+               -  D ( iV, jV, kV )  *  dPhi_dR ( iV, jV, kV )  *  Weight_RK
+          SV_E ( iV, jV, kV )  &
+            =  SV_E ( iV, jV, kV )  &
+               -  D ( iV, jV, kV )  *  dPhi_dR ( iV, jV, kV ) &
+                  *  V_1 ( iV, jV, kV )  *  Weight_RK
         end do
       end do
     end do

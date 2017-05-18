@@ -14,6 +14,7 @@ module MarshakWave_Form
   use Interactions_MWV_2_G__Form
   use Interactions_MWV_3_G__Form
   use Interactions_ASC__Form
+  use ApplyRelaxation_RM__Command
 
   implicit none
   private
@@ -247,7 +248,7 @@ contains
     S % ApplySources_1D ( MW % FLUID ) % Pointer &
       =>  ApplySources_Fluid
     S % ApplyRelaxation_1D ( MW % RADIATION ) % Pointer &
-      =>  ApplyRelaxation_Interactions
+      =>  ApplyRelaxation_RM
     S % HarvestIncrement_1D ( MW % RADIATION ) % Pointer &
       =>  ComputeFluidSource_Radiation
 
@@ -500,16 +501,21 @@ contains
   end subroutine SetInteractions
 
 
-  subroutine ApplySources_Radiation ( S, Increment, Radiation, TimeStep )
+  subroutine ApplySources_Radiation &
+               ( S, Sources_RM, Increment, Radiation, TimeStep, iStage )
 
     class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
       S
+    class ( Sources_C_Form ), intent ( inout ) :: &
+      Sources_RM
     type ( VariableGroupForm ), intent ( inout ), target :: &
       Increment
     class ( CurrentTemplate ), intent ( in ) :: &
       Radiation
     real ( KDR ), intent ( in ) :: &
       TimeStep
+    integer ( KDI ), intent ( in ) :: &
+      iStage
 
     !-- No sources applied here; just an occasion to compute interactions
     !   to be used in relaxation.
@@ -519,16 +525,21 @@ contains
   end subroutine ApplySources_Radiation
 
   
-  subroutine ApplySources_Fluid ( S, Increment, Fluid, TimeStep )
+  subroutine ApplySources_Fluid &
+               ( S, Sources_RM, Increment, Fluid, TimeStep, iStage )
 
     class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
       S
+    class ( Sources_C_Form ), intent ( inout ) :: &
+      Sources_RM
     type ( VariableGroupForm ), intent ( inout ), target :: &
       Increment
     class ( CurrentTemplate ), intent ( in ) :: &
       Fluid
     real ( KDR ), intent ( in ) :: &
       TimeStep
+    integer ( KDI ), intent ( in ) :: &
+      iStage
 
     integer ( KDI ) :: &
       iEnergy, &

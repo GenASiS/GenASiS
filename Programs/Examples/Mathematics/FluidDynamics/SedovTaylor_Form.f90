@@ -5,6 +5,7 @@ module SedovTaylor_Form
   use Fluid_P__Template
   use Fluid_P_P__Form
   use Fluid_ASC__Form
+  use ApplyCurvilinear_F__Command
 
   implicit none
   private
@@ -145,7 +146,7 @@ contains
     select type ( S => ST % Step )
     class is ( Step_RK2_C_ASC_Form )
     call S % Initialize ( FA, Name )
-    S % ApplySources % Pointer => ApplySourcesCurvilinear_Fluid_P
+    S % ApplySources % Pointer => ApplyCurvilinear_F
     end select !-- S
 
     !-- Set fluid and initialize Integrator template

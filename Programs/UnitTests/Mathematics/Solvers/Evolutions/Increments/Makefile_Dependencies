@@ -3,6 +3,7 @@ DensityWaveIncrement_Form.o: \
   Manifolds.o \
   Fields.o \
   ProtoFields.o \
+  StorageDivergence_Form.o \
   IncrementDivergence_FV__Form.o \
   DensityWaveIncrement_Form.f90
 

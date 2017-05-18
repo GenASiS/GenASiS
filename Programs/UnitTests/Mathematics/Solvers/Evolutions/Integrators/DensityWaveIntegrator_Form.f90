@@ -83,15 +83,15 @@ contains
     allocate ( Step_RK2_C_ASC_Form :: DW % Step )
     select type ( S => DW % Step )
     class is ( Step_RK2_C_ASC_Form )
-    call S % Initialize ( Name )
+    call S % Initialize ( PCA, Name )
     end select !-- Step
 
     !-- Diagnostics
 
     allocate ( DW % Reference )
     allocate ( DW % Difference )
-    call DW % Reference % Initialize ( PS, NameOutputOption = 'Reference' )
-    call DW % Difference % Initialize ( PS, NameOutputOption = 'Difference' )
+    call DW % Reference % Initialize ( PS, NameShortOption = 'Reference' )
+    call DW % Difference % Initialize ( PS, NameShortOption = 'Difference' )
     DW % SetReference => SetReference
 
     !-- Initial conditions

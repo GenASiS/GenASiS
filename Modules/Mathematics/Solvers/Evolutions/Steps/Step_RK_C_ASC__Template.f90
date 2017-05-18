@@ -159,28 +159,34 @@ module Step_RK_C_ASC__Template
 
   abstract interface 
 
-    subroutine AS ( S, Increment, Current, TimeStep )
+    subroutine AS ( S, Sources, Increment, Current, TimeStep, iStage )
       use Basics
       use Fields
       import Step_RK_C_ASC_Template
       class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
         S
+      class ( Sources_C_Form ), intent ( inout ) :: &
+        Sources
       type ( VariableGroupForm ), intent ( inout ), target :: &
         Increment
       class ( CurrentTemplate ), intent ( in ) :: &
         Current
       real ( KDR ), intent ( in ) :: &
         TimeStep
+      integer ( KDI ), intent ( in ) :: &
+        iStage
     end subroutine AS
 
-    subroutine AR ( S, IncrementExplicit, DampingCoefficient, Current, Chart, &
-                    TimeStep )
+    subroutine AR ( S, Sources, IncrementExplicit, DampingCoefficient, &
+                    Current, Chart, TimeStep, iStage )
       use Basics
       use Manifolds
       use Fields
       import Step_RK_C_ASC_Template
       class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
         S
+      class ( Sources_C_Form ), intent ( inout ) :: &
+        Sources
       type ( VariableGroupForm ), intent ( inout ) :: &
         IncrementExplicit, &
         DampingCoefficient
@@ -190,13 +196,16 @@ module Step_RK_C_ASC__Template
         Chart
       real ( KDR ), intent ( in ) :: &
         TimeStep
+      integer ( KDI ), intent ( in ) :: &
+        iStage
     end subroutine AR
     
   end interface
 
     private :: &
       AllocateStorage, &
-      ApplyDivergence_C
+      ApplyDivergence_C, &
+      RecordDivergence
 
 contains
 
@@ -989,20 +998,24 @@ contains
     type ( TimerForm ), pointer :: &
       TimerGhost
 
+    if ( iStage == 1 ) &
+      call Clear ( C % Sources % Value )
+
     !-- Divergence
     if ( associated ( S % ApplyDivergence_C ) ) &
       call S % ApplyDivergence_C ( ID, K, TimeStep, iStage )
 
     !-- Other explicit sources
     if ( associated ( S % ApplySources_C ) ) &
-      call S % ApplySources_C ( K, C, TimeStep )
+      call S % ApplySources_C ( C % Sources, K, C, TimeStep, iStage )
 
     !-- Relaxation
     if ( associated ( S % ApplyRelaxation_C ) ) then
       associate ( ID => S % IncrementDamping )
       allocate ( DC )
       call DC % Initialize ( shape ( K % Value ), ClearOption = .true. )
-      call S % ApplyRelaxation_C ( K, DC, C, Chart, TimeStep )
+      call S % ApplyRelaxation_C &
+             ( C % Sources, K, DC, C, Chart, TimeStep, iStage )
       call ID % Compute ( K, C, K, DC, TimeStep )
       deallocate ( DC )
       end associate !-- iD
@@ -1288,9 +1301,45 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iStage
 
+    integer ( KDI ) :: &
+      iC  !-- iConserved
+
     call ID % Compute ( Increment, TimeStep, Weight_RK = S % B ( iStage ) )
 
+    associate ( C => ID % Current )
+    do iC = 1, C % N_CONSERVED
+      call RecordDivergence &
+             ( C % Sources % Value ( :, iC ), Increment % Value ( :, iC ), &
+               TimeStep, Weight_RK = S % B ( iStage ) )
+    end do !-- iC
+    end associate !-- C
+
   end subroutine ApplyDivergence_C
+
+
+  subroutine RecordDivergence ( SDV, IDV, TimeStep, Weight_RK )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      SDV 
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      IDV 
+    real ( KDR ), intent ( in ) :: &
+      TimeStep, &
+      Weight_RK
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+
+    nValues = size ( SDV )
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nValues
+      SDV ( iV )  =  SDV ( iV )  +  Weight_RK  *  IDV ( iV )  /  TimeStep
+    end do !-- iV
+    !$OMP end parallel do
+
+  end subroutine RecordDivergence
 
 
 end module Step_RK_C_ASC__Template

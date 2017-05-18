@@ -61,6 +61,26 @@ Tally_F_P_MHN__Form.o: \
   Tally_F_P__Form.o \
   Tally_F_P_MHN__Form.f90
 
+Sources_F__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_D__Form.o \
+  Fluid_P__Template.o \
+  Sources_F__Form.f90
+
+Sources_F_CSL__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_D__Form.o \
+  Sources_F__Form.o \
+  Sources_F_CSL__Form.f90
+
+Sources_F_ASC__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Sources_F_CSL__Form.o \
+  Sources_F_ASC__Form.f90
+
 FluidFeatures_CSL__Form.o: \
   Basics.o \
   Mathematics.o \
@@ -81,7 +101,9 @@ Fluid_CSL__Form.o: \
   Fluid_P_P__Form.o \
   Fluid_P_NR__Form.o \
   Fluid_P_MHN__Form.o \
-  FluidFeatures_ASC__Form.o \
+  Sources_F__Form.o \
+  Sources_F_CSL__Form.o \
+  FluidFeatures_CSL__Form.o \
   Fluid_CSL__Form.f90
 
 Fluid_ASC__Form.o: \
@@ -94,10 +116,20 @@ Fluid_ASC__Form.o: \
   Tally_F_D__Form.o \
   Tally_F_P__Form.o \
   Tally_F_P_MHN__Form.o \
+  Sources_F_CSL__Form.o \
+  Sources_F_ASC__Form.o \
   FluidFeatures_CSL__Form.o \
   FluidFeatures_ASC__Form.o \
   Fluid_CSL__Form.o \
   Fluid_ASC__Form.f90
+
+ApplyCurvilinear_F__Command.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_D__Form.o \
+  Fluid_P__Template.o \
+  Sources_F__Form.o \
+  ApplyCurvilinear_F__Command.f90
 
 Fluid.a: $(FLUID)
 	ar r Fluid.a $(FLUID)

@@ -60,9 +60,9 @@ contains
     allocate ( DW % Step )
     associate ( S => DW % Step )
 
-    call S % Initialize ( Name )
+    call S % Initialize ( DW % ProtoCurrent, Name )
 
-    call S % Compute ( DW % ProtoCurrent, DW % Time, TimeStep ) 
+    call S % Compute ( DW % Time, TimeStep ) 
     call DW % ProtoCurrent % ComputeTally ( )
     call DW % Write ( )
 

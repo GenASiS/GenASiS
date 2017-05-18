@@ -52,7 +52,7 @@ contains
     select type ( S => WH % Step )
     class is ( Step_RK2_C_ASC_Form )
     call S % Initialize ( FA, Name )
-    S % ApplySources % Pointer => ApplySourcesGravity
+    S % ApplySources % Pointer => ApplyGravity
 
     !-- Initial Conditions
 

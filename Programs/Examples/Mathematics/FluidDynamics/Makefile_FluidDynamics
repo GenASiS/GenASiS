@@ -1,7 +1,7 @@
 PATH_GENASIS = ../../../../..
 
 all: SineWave SawtoothWave RiemannProblem RayleighTaylor \
-     SedovTaylor FishboneMoncrief WoosleyHeger_07 WoosleyHeger_07_A
+     SedovTaylor FishboneMoncrief WoosleyHeger_07_A
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
@@ -41,15 +41,6 @@ FishboneMoncrief: ThirdParty.a Basics.a Mathematics.a Fluid.a FishboneMoncrief.o
 	$(LINK) $(FFLAGS) \
           -o FishboneMoncrief_$(MACHINE) \
           FishboneMoncrief.o FishboneMoncrief_Form.o Tally_FM__Form.o \
-          Fluid.a Mathematics.a Basics.a ThirdParty.a $(LIBRARIES)
-
-WoosleyHeger_07: ThirdParty.a Basics.a Mathematics.a Fluid.a \
-  Diagnostics_WH07__Form.o WoosleyHeger_07.o
-	$(LINK) $(FFLAGS) \
-          -o WoosleyHeger_07_$(MACHINE) \
-          WoosleyHeger_07.o WoosleyHeger_07__Form.o \
-          Diagnostics_WH07_ASC__Form.o Diagnostics_WH07_CSL__Form.o \
-          Diagnostics_WH07__Form.o \
           Fluid.a Mathematics.a Basics.a ThirdParty.a $(LIBRARIES)
 
 WoosleyHeger_07_A: ThirdParty.a Basics.a Mathematics.a Fluid.a \
@@ -127,6 +118,7 @@ RayleighTaylor_Form.o: \
   Basics.o \
   Mathematics.o \
   Fluid_P_P__Form.o \
+  Sources_F__Form.o \
   Fluid_ASC__Form.o \
   Tally_RT__Form.o \
   RayleighTaylor_Form.f90
@@ -142,6 +134,7 @@ SedovTaylor_Form.o: \
   Fluid_P__Template.o \
   Fluid_P_P__Form.o \
   Fluid_ASC__Form.o \
+  ApplyCurvilinear_F__Command.o \
   SedovTaylor_Form.f90
 
 SedovTaylor.o: \
@@ -161,7 +154,9 @@ FishboneMoncrief_Form.o: \
   Mathematics.o \
   Fluid_P__Template.o \
   Fluid_P_P__Form.o \
+  Sources_F__Form.o \
   Fluid_ASC__Form.o \
+  ApplyCurvilinear_F__Command.o \
   Tally_FM__Form.o \
   FishboneMoncrief_Form.f90
 
@@ -170,45 +165,14 @@ FishboneMoncrief.o: \
   FishboneMoncrief_Form.o \
   FishboneMoncrief.f90
 
-Diagnostics_WH07__Form.o: \
-  Basics.o \
-  Diagnostics_WH07__Form.f90
-
-Diagnostics_WH07_CSL__Form.o: \
-  Basics.o \
-  Mathematics.o \
-  Diagnostics_WH07__Form.o \
-  Diagnostics_WH07_CSL__Form.f90
-
-Diagnostics_WH07_ASC__Form.o: \
-  Basics.o \
-  Mathematics.o \
-  Diagnostics_WH07__Form.o \
-  Diagnostics_WH07_CSL__Form.o \
-  Diagnostics_WH07_ASC__Form.f90
-
-WoosleyHeger_07__Form.o: \
-  Basics.o \
-  Mathematics.o \
-  Fluid_P__Template.o \
-  Fluid_P_MHN__Form.o \
-  Fluid_ASC__Form.o \
-  Tally_F_P_MHN__Form.o \
-  Diagnostics_WH07__Form.o \
-  Diagnostics_WH07_ASC__Form.o \
-  WoosleyHeger_07__Form.f90
-
-WoosleyHeger_07.o: \
-  Basics.o \
-  WoosleyHeger_07__Form.o \
-  WoosleyHeger_07.f90
-
 WoosleyHeger_07_Header_Form.o: \
   Basics.o \
   Mathematics.o \
   Fluid_P__Template.o \
   Fluid_P_MHN__Form.o \
+  Sources_F__Form.o \
   Fluid_ASC__Form.o \
+  ApplyCurvilinear_F__Command.o \
   Tally_F_P_MHN__Form.o \
   WoosleyHeger_07_Header_Form.f90
 

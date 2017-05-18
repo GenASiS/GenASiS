@@ -7,6 +7,8 @@ module RadiationMoments_ASC__Form
   use RadiationMoments_Form
   use PhotonMoments_Form
   use NeutrinoMoments_Form
+  use Sources_RM_CSL__Form
+  use Sources_RM_ASC__Form
   use RadiationMoments_CSL__Form
 
   implicit none
@@ -27,6 +29,8 @@ module RadiationMoments_ASC__Form
     character ( LDF ) :: &
       RadiationMomentsType = '', &
       RiemannSolverType = ''
+    type ( Sources_RM_ASC_Form ), allocatable :: &
+      Sources_ASC
     class ( Field_ASC_Template ), pointer :: &
       Interactions_ASC => null ( )
   contains
@@ -61,8 +65,8 @@ contains
                  Velocity_U_UnitOption, MomentumDensity_U_UnitOption, &
                  MomentumDensity_D_UnitOption, EnergyDensityUnitOption, &
                  TemperatureUnitOption, EnergyUnitOption, MomentumUnitOption, &
-                 AngularMomentumUnitOption, LimiterParameterOption, &
-                 IgnorabilityOption )
+                 AngularMomentumUnitOption, TimeUnitOption, &
+                 LimiterParameterOption, IgnorabilityOption )
 
     class ( RadiationMoments_ASC_Form ), intent ( inout ) :: &
       RMA
@@ -84,7 +88,8 @@ contains
       TemperatureUnitOption, &
       EnergyUnitOption, &
       MomentumUnitOption, &
-      AngularMomentumUnitOption
+      AngularMomentumUnitOption, &
+      TimeUnitOption
     real ( KDR ), intent ( in ), optional :: &
       LimiterParameterOption
     integer ( KDL ), intent ( in ), optional :: &
@@ -210,6 +215,23 @@ contains
     call Show ( RMA % LimiterParameter, 'LimiterParameter', &
                 RMA % IGNORABILITY )
 
+    !-- Sources
+
+    allocate ( RMA % Sources_ASC )
+    associate ( SRMA => RMA % Sources_ASC )
+    call SRMA % Initialize &
+           ( RMA, NameShortOption = trim ( NameShort ) // '_Sources', &
+             TimeUnitOption = TimeUnitOption, &
+             IgnorabilityOption = IgnorabilityOption )
+    select type ( SRMC => SRMA % Chart )
+    class is ( Sources_RM_CSL_Form )
+      select type ( RMC => RMA % Chart )
+      class is ( RadiationMoments_CSL_Form )
+        call RMC % SetSources ( SRMC )
+      end select !-- RMC
+    end select !-- SRMC
+    end associate !-- SRMA
+
   end subroutine Initialize
 
 
@@ -304,6 +326,9 @@ contains
       RMA
 
     nullify ( RMA % Interactions_ASC )
+
+    if ( allocated ( RMA % Sources_ASC ) ) &
+      deallocate ( RMA % Sources_ASC )
 
     call RMA % FinalizeTemplate_ASC_C ( )
 
