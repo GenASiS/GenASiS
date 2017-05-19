@@ -413,7 +413,7 @@ contains
     call ComputeEigenspeeds &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, J, H_1, H_2, H_3, &
              M_UU_22, M_UU_33, CONSTANT % SPEED_OF_LIGHT )
-    call ComputeVariableEddingtonFactor &
+    call ComputeMomentFactors &
            ( SF, FF, J, H_1, H_2, H_3, M_DD_22, M_DD_33 )
 
 !     if ( associated ( C % Interactions ) ) &
