@@ -68,11 +68,11 @@ contains
 
   subroutine Initialize &
                ( FA, A, FluidType, NameShortOption, RiemannSolverTypeOption, &
-                 UseLimiterOption, VelocityUnitOption, MassDensityUnitOption, &
-                 EnergyDensityUnitOption, TemperatureUnitOption, &
-                 MassUnitOption, EnergyUnitOption, MomentumUnitOption, &
-                 AngularMomentumUnitOption, TimeUnitOption, &
-                 LimiterParameterOption, ShockThresholdOption, &
+                 UseLimiterOption, AllocateSourcesOption, VelocityUnitOption, &
+                 MassDensityUnitOption, EnergyDensityUnitOption, &
+                 TemperatureUnitOption, MassUnitOption, EnergyUnitOption, &
+                 MomentumUnitOption, AngularMomentumUnitOption, &
+                 TimeUnitOption, LimiterParameterOption, ShockThresholdOption, &
                  IgnorabilityOption )
 
     class ( Fluid_ASC_Form ), intent ( inout ) :: &
@@ -85,7 +85,8 @@ contains
       NameShortOption, &
       RiemannSolverTypeOption
     logical ( KDL ), intent ( in ), optional :: &
-      UseLimiterOption
+      UseLimiterOption, &
+      AllocateSourcesOption
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ), optional :: &
       VelocityUnitOption
     type ( MeasuredValueForm ), intent ( in ), optional :: &
@@ -107,6 +108,8 @@ contains
       iB  !-- iBoundary
     character ( LDL ) :: &
       NameShort
+    logical ( KDL ) :: &
+      AllocateSources
 
     if ( FA % Type == '' ) &
       FA % Type = 'a Fluid_ASC'
@@ -250,20 +253,26 @@ contains
 
     !-- Sources
 
-    allocate ( FA % Sources_ASC )
-    associate ( SFA => FA % Sources_ASC )
-    call SFA % Initialize &
-           ( FA, NameShortOption = trim ( NameShort ) // '_Sources', &
-             TimeUnitOption = TimeUnitOption, &
-             IgnorabilityOption = IgnorabilityOption )
-    select type ( SFC => SFA % Chart )
-    class is ( Sources_F_CSL_Form )
-      select type ( FC => FA % Chart )
-      class is ( Fluid_CSL_Form )
-        call FC % SetSources ( SFC )
-      end select !-- FC
-    end select !-- SFC
-    end associate !-- SFA
+    AllocateSources = .true.
+    if ( present ( AllocateSourcesOption ) ) &
+      AllocateSources = AllocateSourcesOption
+
+    if ( AllocateSources ) then
+      allocate ( FA % Sources_ASC )
+      associate ( SFA => FA % Sources_ASC )
+      call SFA % Initialize &
+             ( FA, NameShortOption = trim ( NameShort ) // '_Sources', &
+               TimeUnitOption = TimeUnitOption, &
+               IgnorabilityOption = IgnorabilityOption )
+      select type ( SFC => SFA % Chart )
+      class is ( Sources_F_CSL_Form )
+        select type ( FC => FA % Chart )
+        class is ( Fluid_CSL_Form )
+          call FC % SetSources ( SFC )
+        end select !-- FC
+      end select !-- SFC
+      end associate !-- SFA
+    end if
 
     !-- Features
 

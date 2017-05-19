@@ -62,9 +62,10 @@ contains
   subroutine Initialize &
                ( RMA, A, RadiationMomentsType, NameShortOption, &
                  RiemannSolverTypeOption, UseLimiterOption, &
-                 Velocity_U_UnitOption, MomentumDensity_U_UnitOption, &
-                 MomentumDensity_D_UnitOption, EnergyDensityUnitOption, &
-                 TemperatureUnitOption, EnergyUnitOption, MomentumUnitOption, &
+                 AllocateSourcesOption, Velocity_U_UnitOption, &
+                 MomentumDensity_U_UnitOption, MomentumDensity_D_UnitOption, &
+                 EnergyDensityUnitOption, TemperatureUnitOption, &
+                 EnergyUnitOption, MomentumUnitOption, &
                  AngularMomentumUnitOption, TimeUnitOption, &
                  LimiterParameterOption, IgnorabilityOption )
 
@@ -78,7 +79,8 @@ contains
       NameShortOption, &
       RiemannSolverTypeOption
     logical ( KDL ), intent ( in ), optional :: &
-      UseLimiterOption
+      UseLimiterOption, &
+      AllocateSourcesOption
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ), optional :: &
       Velocity_U_UnitOption, &
       MomentumDensity_U_UnitOption, &
@@ -99,6 +101,8 @@ contains
 !      iB  !-- iBoundary
     character ( LDL ) :: &
       NameShort
+    logical ( KDL ) :: &
+      AllocateSources
 
     if ( RMA % Type == '' ) &
       RMA % Type = 'a RadiationMoments_ASC'
@@ -217,20 +221,26 @@ contains
 
     !-- Sources
 
-    allocate ( RMA % Sources_ASC )
-    associate ( SRMA => RMA % Sources_ASC )
-    call SRMA % Initialize &
-           ( RMA, NameShortOption = trim ( NameShort ) // '_Sources', &
-             TimeUnitOption = TimeUnitOption, &
-             IgnorabilityOption = IgnorabilityOption )
-    select type ( SRMC => SRMA % Chart )
-    class is ( Sources_RM_CSL_Form )
-      select type ( RMC => RMA % Chart )
-      class is ( RadiationMoments_CSL_Form )
-        call RMC % SetSources ( SRMC )
-      end select !-- RMC
-    end select !-- SRMC
-    end associate !-- SRMA
+    AllocateSources = .true.
+    if ( present ( AllocateSourcesOption ) ) &
+      AllocateSources = AllocateSourcesOption
+
+    if ( AllocateSources ) then
+      allocate ( RMA % Sources_ASC )
+      associate ( SRMA => RMA % Sources_ASC )
+      call SRMA % Initialize &
+             ( RMA, NameShortOption = trim ( NameShort ) // '_Sources', &
+               TimeUnitOption = TimeUnitOption, &
+               IgnorabilityOption = IgnorabilityOption )
+      select type ( SRMC => SRMA % Chart )
+      class is ( Sources_RM_CSL_Form )
+        select type ( RMC => RMA % Chart )
+        class is ( RadiationMoments_CSL_Form )
+          call RMC % SetSources ( SRMC )
+        end select !-- RMC
+      end select !-- SRMC
+      end associate !-- SRMA
+    end if
 
   end subroutine Initialize
 

@@ -105,9 +105,11 @@ contains
     allocate ( PWS % Difference )
     call PWS % Reference % Initialize &
            ( PS, 'GENERIC', NameShortOption = 'Reference', &
+             AllocateSourcesOption = .false., &
              IgnorabilityOption = CONSOLE % INFO_2 )
     call PWS % Difference % Initialize &
            ( PS, 'GENERIC', NameShortOption = 'Difference', &
+             AllocateSourcesOption = .false., &
              IgnorabilityOption = CONSOLE % INFO_2 )
     PWS % SetReference => SetReference
 
