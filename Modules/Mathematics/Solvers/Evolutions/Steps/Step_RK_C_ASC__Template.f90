@@ -34,7 +34,7 @@ module Step_RK_C_ASC__Template
   end type ApplyRelaxation_C_Pointer
 
   type, public :: HarvestIncrement_C_Pointer
-    procedure ( AS ), pointer, nopass :: &
+    procedure ( HI ), pointer, nopass :: &
       Pointer => null ( )
   end type HarvestIncrement_C_Pointer
 
@@ -78,7 +78,7 @@ module Step_RK_C_ASC__Template
         ApplySources_C => null ( ) 
       procedure ( AR ), pointer, pass :: &
         ApplyRelaxation_C => null ( )
-      procedure ( AS ), pointer, pass :: &
+      procedure ( HI ), pointer, pass :: &
         HarvestIncrement_C => null ( )
       type ( ApplyDivergence_C_Pointer ) :: &
         ApplyDivergence
@@ -200,6 +200,20 @@ module Step_RK_C_ASC__Template
         iStage
     end subroutine AR
     
+    subroutine HI ( S, Increment, Current, TimeStep )
+      use Basics
+      use Fields
+      import Step_RK_C_ASC_Template
+      class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
+        S
+      type ( VariableGroupForm ), intent ( inout ), target :: &
+        Increment
+      class ( CurrentTemplate ), intent ( in ) :: &
+        Current
+      real ( KDR ), intent ( in ) :: &
+        TimeStep
+    end subroutine HI
+
   end interface
 
     private :: &
