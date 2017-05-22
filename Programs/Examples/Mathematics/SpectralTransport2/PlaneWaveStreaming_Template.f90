@@ -146,10 +146,12 @@ contains
       call PWS % Reference_ASC ( iE ) % Initialize &
              ( PS, 'GENERIC', &
                NameShortOption = 'Reference' // EnergyNumber, &
+               AllocateSourcesOption = .false., &
                IgnorabilityOption = CONSOLE % INFO_5 )
       call PWS % Difference_ASC ( iE ) % Initialize &
              ( PS, 'GENERIC', &
                NameShortOption = 'Difference' // EnergyNumber, &
+               AllocateSourcesOption = .false., &
                IgnorabilityOption = CONSOLE % INFO_5 )
     end do !-- iE
     PWS % SetReference => SetReference
