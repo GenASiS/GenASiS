@@ -1,4 +1,8 @@
 GREY_MOMENTS = \
+  ApplyRelaxation_RM__Command.o \
+  Interactions_ASC__Form.o \
+  Interactions_CSL__Form.o \
+  Interactions_F__Form.o \
   RadiationMoments_ASC__Form.o \
   RadiationMoments_CSL__Form.o \
   Sources_RM_ASC__Form.o \
@@ -6,14 +10,10 @@ GREY_MOMENTS = \
   Sources_RM__Form.o \
   RadiationMoments_Form.o \
   Interactions_Template.o
-#  ApplyRelaxation_RM__Command.o \
-#  Interactions_ASC__Form.o \
-#  Interactions_CSL__Form.o \
 #  Interactions_NM_G_1__Form.o \
 #  Interactions_MWV_3_G__Form.o \
 #  Interactions_MWV_2_G__Form.o \
 #  Interactions_MWV_1_G__Form.o \
-#  Interactions_F__Form.o \
 #  ApplyCurvilinear_RM__Command.o \
 #  NeutrinoMoments_Form.o \
 #  PhotonMoments_Form.o \

@@ -107,11 +107,11 @@ Interactions_CSL__Form.o: \
   Mathematics.o \
   Interactions_Template.o \
   Interactions_F__Form.o \
-  Interactions_MWV_1_G__Form.o \
-  Interactions_MWV_2_G__Form.o \
-  Interactions_MWV_3_G__Form.o \
-  Interactions_NM_G_1__Form.o \
   Interactions_CSL__Form.f90
+#  Interactions_MWV_1_G__Form.o \
+#  Interactions_MWV_2_G__Form.o \
+#  Interactions_MWV_3_G__Form.o \
+#  Interactions_NM_G_1__Form.o \
 
 Interactions_ASC__Form.o: \
   Basics.o \
