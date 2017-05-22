@@ -15,5 +15,5 @@ GREY_MOMENTS = \
 #  Interactions_MWV_1_G__Form.o \
 #  Interactions_F__Form.o \
 #  ApplyCurvilinear_RM__Command.o \
-  NeutrinoMoments_Form.o \
-  PhotonMoments_Form.o \
+#  NeutrinoMoments_Form.o \
+#  PhotonMoments_Form.o \
