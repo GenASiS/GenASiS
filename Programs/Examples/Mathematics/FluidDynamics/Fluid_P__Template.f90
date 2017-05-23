@@ -642,9 +642,7 @@ contains
 
     integer ( KDI ) :: &
       oF, &  !-- oField
-      oV, &  !-- oVector
-      oP, &  !-- oPrimitive
-      oC     !-- oConserved
+      oV     !-- oVector
 
     if ( F % Type == '' ) &
       F % Type = 'Fluid_P'

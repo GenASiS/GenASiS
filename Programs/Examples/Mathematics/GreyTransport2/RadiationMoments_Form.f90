@@ -25,7 +25,6 @@ module RadiationMoments_Form
 !       CONSERVED_NUMBER_DENSITY   = 0, &
       FLUX_FACTOR        = 0, &
       STRESS_FACTOR      = 0, &
-!       TEMPERATURE_PARAMETER      = 0, &
 !       TEMPERATURE_PARAMETER_EQ   = 0, &
 !       DEGENERACY_PARAMETER       = 0, &
 !       DEGENERACY_PARAMETER_EQ    = 0, &
@@ -38,7 +37,7 @@ module RadiationMoments_Form
     class ( InteractionsTemplate ), pointer :: &
       Interactions => null ( )
   contains
-    procedure, public, pass :: &
+    procedure, private, pass :: &
       InitializeAllocate_RM
     generic, public :: &
       Initialize => InitializeAllocate_RM
@@ -78,7 +77,6 @@ contains
   subroutine InitializeAllocate_RM &
                ( RM, RiemannSolverType, UseLimiter, Velocity_U_Unit, &
                  MomentumDensity_U_Unit, MomentumDensity_D_Unit, &
-!                 EnergyDensityUnit, TemperatureUnit, LimiterParameter, &
                  EnergyDensityUnit, LimiterParameter, &
                  nValues, VariableOption, VectorOption, NameOption, &
                  ClearOption, UnitOption, VectorIndicesOption )
@@ -94,8 +92,7 @@ contains
       MomentumDensity_U_Unit, &
       MomentumDensity_D_Unit
     type ( MeasuredValueForm ), intent ( in ) :: &
-      EnergyDensityUnit!, &
-!      TemperatureUnit
+      EnergyDensityUnit
     real ( KDR ), intent ( in ) :: &
       LimiterParameter
     integer ( KDI ), intent ( in ) :: &
@@ -692,7 +689,6 @@ contains
 !     RM % CONSERVED_NUMBER_DENSITY     =  oF + 10
     RM % FLUX_FACTOR           =  oF +  9
     RM % STRESS_FACTOR         =  oF + 10
-!     RM % TEMPERATURE_PARAMETER        =  oF + 13
 !     RM % TEMPERATURE_PARAMETER_EQ     =  oF + 14
 !     RM % DEGENERACY_PARAMETER         =  oF + 15
 !     RM % DEGENERACY_PARAMETER_EQ      =  oF + 16
@@ -809,7 +805,6 @@ contains
         = MomentumDensity_D_Unit ( iD )      
     end do
 
-!     VariableUnit ( RM % TEMPERATURE_PARAMETER )      = TemperatureUnit
 !     VariableUnit ( RM % TEMPERATURE_PARAMETER_EQ )   = TemperatureUnit
 !     VariableUnit ( RM % ENERGY_AVERAGE )             = TemperatureUnit
     VariableUnit ( RM % COMOVING_ENERGY_EQ ) = EnergyDensityUnit
