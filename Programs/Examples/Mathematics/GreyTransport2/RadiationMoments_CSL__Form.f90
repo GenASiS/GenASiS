@@ -6,7 +6,7 @@ module RadiationMoments_CSL__Form
   use Mathematics
   use Interactions_Template
   use RadiationMoments_Form
-!  use PhotonMoments_Form
+  use PhotonMoments_G__Form
 !  use NeutrinoMoments_Form
   use Sources_RM__Form
   use Sources_RM_CSL__Form
@@ -247,19 +247,19 @@ contains
         call RM % SetPrimitiveConserved ( )
         call RM % SetOutput ( FC % FieldOutput )
       end select !-- RM
-    ! case ( 'PHOTONS' )
-    !   allocate ( PhotonMomentsForm :: FC % Field )
-    !   select type ( PM => FC % Field )
-    !   type is ( PhotonMomentsForm )
-    !     call PM % Initialize &
-    !            ( FC % RiemannSolverType, FC % UseLimiter, &
-    !              FC % Velocity_U_Unit, FC % MomentumDensity_U_Unit, &
-    !              FC % MomentumDensity_D_Unit, FC % EnergyDensityUnit, &
-    !              FC % TemperatureUnit, FC % LimiterParameter, FC % nValues, &
-    !              NameOption = FC % NameShort )
-    !     call PM % SetPrimitiveConserved ( )
-    !     call PM % SetOutput ( FC % FieldOutput )
-    !   end select !-- PM
+    case ( 'PHOTONS_GREY' )
+      allocate ( PhotonMoments_G_Form :: FC % Field )
+      select type ( PM => FC % Field )
+      type is ( PhotonMoments_G_Form )
+        call PM % Initialize &
+               ( FC % RiemannSolverType, FC % UseLimiter, &
+                 FC % Velocity_U_Unit, FC % MomentumDensity_U_Unit, &
+                 FC % MomentumDensity_D_Unit, FC % EnergyDensityUnit, &
+                 FC % TemperatureUnit, FC % LimiterParameter, FC % nValues, &
+                 NameOption = FC % NameShort )
+        call PM % SetPrimitiveConserved ( )
+        call PM % SetOutput ( FC % FieldOutput )
+      end select !-- PM
     ! case ( 'NEUTRINOS_E_NU', 'NEUTRINOS_E_NU_BAR', &
     !        'NEUTRINOS_MU_TAU_NU_NU_BAR' )
     !   allocate ( NeutrinoMomentsForm :: FC % Field )
