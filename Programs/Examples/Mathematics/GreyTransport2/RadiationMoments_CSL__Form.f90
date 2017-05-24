@@ -38,8 +38,8 @@ module RadiationMoments_CSL__Form
       Initialize
     procedure, public, pass :: &
       RadiationMoments
- !   procedure, public, pass :: &
- !     PhotonMoments
+    procedure, public, pass :: &
+      PhotonMoments_G
  !   procedure, public, pass :: &
  !     NeutrinoMoments
     procedure, public, pass :: &
@@ -125,25 +125,25 @@ contains
   end function RadiationMoments
 
 
-  ! function PhotonMoments ( RMC ) result ( PM )
+  function PhotonMoments_G ( RMC ) result ( PM )
 
-  !   class ( RadiationMoments_CSL_Form ), intent ( in ), target :: &
-  !     RMC
-  !   class ( PhotonMomentsForm ), pointer :: &
-  !     PM
+    class ( RadiationMoments_CSL_Form ), intent ( in ), target :: &
+      RMC
+    class ( PhotonMoments_G_Form ), pointer :: &
+      PM
       
-  !   class ( VariableGroupForm ), pointer :: &
-  !     Field
+    class ( VariableGroupForm ), pointer :: &
+      Field
 
-  !   PM => null ( )
+    PM => null ( )
 
-  !   Field => RMC % Field
-  !   select type ( Field )
-  !   class is ( PhotonMomentsForm )
-  !   PM => Field
-  !   end select !-- Field
+    Field => RMC % Field
+    select type ( Field )
+    class is ( PhotonMoments_G_Form )
+    PM => Field
+    end select !-- Field
 
-  ! end function PhotonMoments
+  end function PhotonMoments_G
 
 
   ! function NeutrinoMoments ( RMC ) result ( NM )

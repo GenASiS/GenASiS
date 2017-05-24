@@ -5,7 +5,7 @@ module RadiationMoments_ASC__Form
   use Basics
   use Mathematics
   use RadiationMoments_Form
-!  use PhotonMoments_Form
+  use PhotonMoments_G__Form
 !  use NeutrinoMoments_Form
   use Sources_RM_CSL__Form
   use Sources_RM_ASC__Form
@@ -40,10 +40,10 @@ module RadiationMoments_ASC__Form
       RadiationMoments_CSL
     generic, public :: &
       RadiationMoments => RadiationMoments_CSL
-    ! procedure, private, pass :: &
-    !   PhotonMoments_CSL
-    ! generic, public :: &
-    !   PhotonMoments => PhotonMoments_CSL
+    procedure, private, pass :: &
+      PhotonMoments_G_CSL
+    generic, public :: &
+      PhotonMoments_G => PhotonMoments_G_CSL
     ! procedure, private, pass :: &
     !   NeutrinoMoments_CSL
     ! generic, public :: &
@@ -266,25 +266,25 @@ contains
   end function RadiationMoments_CSL
 
 
-  ! function PhotonMoments_CSL ( RMA ) result ( PM )
+  function PhotonMoments_G_CSL ( RMA ) result ( PM )
 
-  !   class ( RadiationMoments_ASC_Form ), intent ( in ) :: &
-  !     RMA
-  !   class ( PhotonMomentsForm ), pointer :: &
-  !     PM
+    class ( RadiationMoments_ASC_Form ), intent ( in ) :: &
+      RMA
+    class ( PhotonMoments_G_Form ), pointer :: &
+      PM
 
-  !   select type ( RMC => RMA % Chart )
-  !   class is ( RadiationMoments_CSL_Form )
-  !     PM => RMC % PhotonMoments ( )
-  !   class default
-  !     call Show ( 'RadiationMoments Chart type not recognized', &
-  !                 CONSOLE % ERROR )
-  !     call Show ( 'RadiationMoments_ASC__Form', 'module', CONSOLE % ERROR )
-  !     call Show ( 'PhotonMoments_CSL', 'function', CONSOLE % ERROR )
-  !     call PROGRAM_HEADER % Abort ( )
-  !   end select !-- FC
+    select type ( RMC => RMA % Chart )
+    class is ( RadiationMoments_CSL_Form )
+      PM => RMC % PhotonMoments_G ( )
+    class default
+      call Show ( 'RadiationMoments Chart type not recognized', &
+                  CONSOLE % ERROR )
+      call Show ( 'RadiationMoments_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'PhotonMoments_G_CSL', 'function', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- FC
 
-  ! end function PhotonMoments_CSL
+  end function PhotonMoments_G_CSL
 
 
   ! function NeutrinoMoments_CSL ( RMA ) result ( NM )
