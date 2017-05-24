@@ -25,7 +25,6 @@ module RadiationMoments_Form
 !       CONSERVED_NUMBER_DENSITY   = 0, &
       FLUX_FACTOR        = 0, &
       STRESS_FACTOR      = 0, &
-!       TEMPERATURE_PARAMETER_EQ   = 0, &
 !       DEGENERACY_PARAMETER       = 0, &
 !       DEGENERACY_PARAMETER_EQ    = 0, &
 !       ENERGY_AVERAGE             = 0, &
@@ -301,13 +300,10 @@ contains
 !         D      => RMV ( oV + 1 : oV + nV, C % CONSERVED_NUMBER_DENSITY ), &
         FF    => RMV ( oV + 1 : oV + nV, C % FLUX_FACTOR ), &
         SF    => RMV ( oV + 1 : oV + nV, C % STRESS_FACTOR ) )!, &
-!         T      => RMV ( oV + 1 : oV + nV, C % TEMPERATURE_PARAMETER ), &
-!         T_EQ   => RMV ( oV + 1 : oV + nV, C % TEMPERATURE_PARAMETER_EQ ), &
 !         Eta    => RMV ( oV + 1 : oV + nV, C % DEGENERACY_PARAMETER ), &
 !         Eta_EQ => RMV ( oV + 1 : oV + nV, C % DEGENERACY_PARAMETER_EQ ), &
 !         E_Ave  => RMV ( oV + 1 : oV + nV, C % ENERGY_AVERAGE ), &
 !         F_Ave  => RMV ( oV + 1 : oV + nV, C % OCCUPANCY_AVERAGE ), &
-!         J_EQ   => RMV ( oV + 1 : oV + nV, C % COMOVING_ENERGY_DENSITY_EQ ) )
 
 !     call ComputeConservedEnergyMomentum &
 !            ( E, S_1, S_2, S_3, D, J, H_1, H_2, H_3, N, M_DD_22, M_DD_33 )
@@ -689,7 +685,6 @@ contains
 !     RM % CONSERVED_NUMBER_DENSITY     =  oF + 10
     RM % FLUX_FACTOR           =  oF +  9
     RM % STRESS_FACTOR         =  oF + 10
-!     RM % TEMPERATURE_PARAMETER_EQ     =  oF + 14
 !     RM % DEGENERACY_PARAMETER         =  oF + 15
 !     RM % DEGENERACY_PARAMETER_EQ      =  oF + 16
 !     RM % ENERGY_AVERAGE               =  oF + 17
@@ -719,8 +714,6 @@ contains
 !           'ConservedNumber         ', &
           'FluxFactor           ', &
           'StressFactor         ', &
-!           'TemperatureParameter    ', &
-!           'TemperatureParameter_EQ ', &
 !           'DegeneracyParameter     ', &
 !           'DegeneracyParameter_EQ  ', &
 !           'EnergyAverage           ', &
@@ -805,7 +798,6 @@ contains
         = MomentumDensity_D_Unit ( iD )      
     end do
 
-!     VariableUnit ( RM % TEMPERATURE_PARAMETER_EQ )   = TemperatureUnit
 !     VariableUnit ( RM % ENERGY_AVERAGE )             = TemperatureUnit
     VariableUnit ( RM % COMOVING_ENERGY_EQ ) = EnergyDensityUnit
 

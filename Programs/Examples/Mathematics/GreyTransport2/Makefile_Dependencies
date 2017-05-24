@@ -11,6 +11,7 @@ RadiationMoments_Form.o: \
 
 PhotonMoments_G__Form.o: \
   Basics.o \
+  Mathematics.o \
   RadiationMoments_Form.o \
   PhotonMoments_G__Form.f90
 

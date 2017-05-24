@@ -30,8 +30,10 @@ module Interactions_Template
       SetOutput
     procedure, public, pass :: &
       FinalizeTemplate
-!     procedure, public, pass ( I ) :: &
-!       ComputeDegeneracyParameter_EQ
+    procedure, private, pass ( I ) :: &
+      ComputeEquilibrium_T
+    generic, public :: &
+      ComputeEquilibriumParameters => ComputeEquilibrium_T
   end type InteractionsTemplate
 
   abstract interface
@@ -125,19 +127,18 @@ contains
   end subroutine FinalizeTemplate
 
 
-!   subroutine ComputeDegeneracyParameter_EQ ( T_EQ, Eta_EQ, I, C )
+  subroutine ComputeEquilibrium_T ( T_EQ, I, C )
 
-!     real ( KDR ), dimension ( : ), intent ( inout ) :: &
-!       T_EQ, &
-!       Eta_EQ
-!     class ( InteractionsTemplate ), intent ( in ) :: &
-!       I
-!     class ( CurrentTemplate ), intent ( in ) :: &
-!       C
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      T_EQ
+    class ( InteractionsTemplate ), intent ( in ) :: &
+      I
+    class ( CurrentTemplate ), intent ( in ) :: &
+      C
 
-!     !-- Empty interface to be overridden later as needed
+    !-- Empty interface to be overridden later as needed
 
-!   end subroutine ComputeDegeneracyParameter_EQ
+  end subroutine ComputeEquilibrium_T
 
 
   subroutine InitializeBasics &
