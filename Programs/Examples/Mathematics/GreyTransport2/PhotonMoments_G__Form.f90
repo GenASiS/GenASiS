@@ -28,6 +28,8 @@ module PhotonMoments_G__Form
       InitializeAllocate_PM
     generic, public :: &
       Initialize => InitializeAllocate_PM
+    procedure, public, pass :: &
+      SetOutput
     final :: &
       Finalize
     procedure, public, pass ( C ) :: &
@@ -103,6 +105,38 @@ contains
              VectorIndicesOption = VectorIndicesOption )
 
   end subroutine InitializeAllocate_PM
+
+
+  subroutine SetOutput ( RM, Output )
+
+    class ( PhotonMoments_G_Form ), intent ( inout ) :: &
+      RM
+    type ( VariableGroupForm ), intent ( inout ) :: &
+      Output
+
+    type ( Integer_1D_Form ), dimension ( 1 ) :: &
+      VectorIndices
+
+    call VectorIndices ( 1 ) % Initialize ( RM % COMOVING_MOMENTUM_U )
+
+    call Output % Initialize &
+           ( RM, iaSelectedOption = [ RM % COMOVING_ENERGY, &
+!                                       RM % COMOVING_NUMBER_DENSITY, &
+                                      RM % COMOVING_MOMENTUM_U, &
+                                      RM % FLUX_FACTOR, &
+                                      RM % STRESS_FACTOR, &
+                                      RM % TEMPERATURE_PARAMETER, &
+                                      RM % TEMPERATURE_PARAMETER_EQ, &
+!                                       RM % DEGENERACY_PARAMETER, &
+!                                       RM % DEGENERACY_PARAMETER_EQ, &
+!                                       RM % ENERGY_AVERAGE, &
+!                                       RM % OCCUPANCY_AVERAGE, &
+                                      RM % COMOVING_ENERGY_EQ ], &
+             VectorOption = [ 'ComovingMomentum_U' ], &
+!                               'ComovingNumberFlux             ' ], &
+             VectorIndicesOption = VectorIndices )
+
+  end subroutine SetOutput
 
 
   impure elemental subroutine Finalize ( PM )

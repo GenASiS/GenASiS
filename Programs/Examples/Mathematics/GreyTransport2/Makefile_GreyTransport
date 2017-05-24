@@ -146,7 +146,7 @@ MarshakWave_Form.o: \
   Fluid_P_NR__Form.o \
   Fluid_ASC__Form.o \
   RadiationMoments_Form.o \
-  PhotonMoments_Form.o \
+  PhotonMoments_G__Form.o \
   RadiationMoments_ASC__Form.o \
   Interactions_Template.o \
   Interactions_MWV_1_G__Form.o \

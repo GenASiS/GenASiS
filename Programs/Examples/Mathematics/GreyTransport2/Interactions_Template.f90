@@ -26,14 +26,14 @@ module Interactions_Template
       InitializeTemplate
     procedure ( C ), public, pass, deferred :: &
       Compute
-    procedure, public, pass :: &
-      SetOutput
-    procedure, public, pass :: &
-      FinalizeTemplate
     procedure, private, pass ( I ) :: &
       ComputeEquilibrium_T
     generic, public :: &
       ComputeEquilibriumParameters => ComputeEquilibrium_T
+    procedure, public, pass :: &
+      SetOutput
+    procedure, public, pass :: &
+      FinalizeTemplate
   end type InteractionsTemplate
 
   abstract interface
@@ -101,6 +101,20 @@ contains
   end subroutine InitializeTemplate
 
 
+  subroutine ComputeEquilibrium_T ( T_EQ, I, C )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      T_EQ
+    class ( InteractionsTemplate ), intent ( in ) :: &
+      I
+    class ( CurrentTemplate ), intent ( in ) :: &
+      C
+
+    !-- Empty interface to be overridden later as needed
+
+  end subroutine ComputeEquilibrium_T
+
+
   subroutine SetOutput ( I, Output )
 
     class ( InteractionsTemplate ), intent ( inout ) :: &
@@ -125,20 +139,6 @@ contains
     call Show ( I % Name, 'Name', I % IGNORABILITY )
    
   end subroutine FinalizeTemplate
-
-
-  subroutine ComputeEquilibrium_T ( T_EQ, I, C )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      T_EQ
-    class ( InteractionsTemplate ), intent ( in ) :: &
-      I
-    class ( CurrentTemplate ), intent ( in ) :: &
-      C
-
-    !-- Empty interface to be overridden later as needed
-
-  end subroutine ComputeEquilibrium_T
 
 
   subroutine InitializeBasics &

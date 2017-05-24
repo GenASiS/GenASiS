@@ -29,6 +29,8 @@ module Interactions_MWV_1_G__Form
       Set => Set_MWV_1_G
     procedure, public, pass :: &
       Compute
+    procedure, private, pass ( I ) :: &
+      ComputeEquilibrium_T
     final :: &
       Finalize
     procedure, private, pass ( I ) :: &
@@ -107,6 +109,29 @@ contains
     end associate !-- R, etc.
 
   end subroutine Compute
+
+
+  subroutine ComputeEquilibrium_T ( T_EQ, I, C )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      T_EQ
+    class ( Interactions_MWV_1_G_Form ), intent ( in ) :: &
+      I
+    class ( CurrentTemplate ), intent ( in ) :: &
+      C
+
+    if ( .not.associated ( I % Radiation ) &
+         .or. .not.associated ( I % Fluid ) ) &
+      return
+
+    associate &
+      ( R => I % Radiation, &
+        F => I % Fluid )
+    call Copy ( F % Value ( :, F % TEMPERATURE ), &
+                R % Value ( :, R % TEMPERATURE_PARAMETER_EQ ) )
+    end associate !-- R, etc.
+
+  end subroutine ComputeEquilibrium_T
 
 
   impure elemental subroutine Finalize ( I )
