@@ -28,8 +28,8 @@ module NeutrinoMoments_G__Form
       ENERGY_AVERAGE          = 0, &
       OCCUPANCY_AVERAGE       = 0
   contains
-    procedure, private, pass :: &
-      InitializeAllocate_PM
+    procedure, public, pass :: &
+      InitializeAllocate_NM
     procedure, public, pass :: &
       SetPrimitiveConserved
     procedure, public, pass :: &
@@ -60,16 +60,17 @@ module NeutrinoMoments_G__Form
 contains
 
 
-  subroutine InitializeAllocate_PM &
-               ( PM, RiemannSolverType, UseLimiter, Velocity_U_Unit, &
-                 MomentumDensity_U_Unit, MomentumDensity_D_Unit, &
-                 EnergyDensityUnit, TemperatureUnit, LimiterParameter, &
-                 nValues, VariableOption, VectorOption, NameOption, &
-                 ClearOption, UnitOption, VectorIndicesOption )
+  subroutine InitializeAllocate_NM &
+               ( NM, NeutrinoType, RiemannSolverType, UseLimiter, &
+                 Velocity_U_Unit, MomentumDensity_U_Unit, &
+                 MomentumDensity_D_Unit, EnergyDensityUnit, TemperatureUnit, &
+                 LimiterParameter, nValues, VariableOption, VectorOption, &
+                 NameOption, ClearOption, UnitOption, VectorIndicesOption )
 
     class ( NeutrinoMoments_G_Form ), intent ( inout ) :: &
-      PM
+      NM
     character ( * ), intent ( in ) :: &
+      NeutrinoType, &
       RiemannSolverType
     logical ( KDL ), intent ( in ) :: &
       UseLimiter
@@ -101,12 +102,14 @@ contains
     type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
       VariableUnit
 
+    NM % Type = NeutrinoType
+
     call InitializeBasics &
-           ( PM, Variable, VariableUnit, VariableOption, UnitOption )
+           ( NM, Variable, VariableUnit, VariableOption, UnitOption )
 
-    call SetUnits ( VariableUnit, PM, EnergyDensityUnit, TemperatureUnit )
+    call SetUnits ( VariableUnit, NM, EnergyDensityUnit, TemperatureUnit )
 
-    call PM % PhotonMoments_G_Form % Initialize &
+    call NM % PhotonMoments_G_Form % Initialize &
            ( RiemannSolverType, UseLimiter, Velocity_U_Unit, &
              MomentumDensity_U_Unit, MomentumDensity_D_Unit, &
              EnergyDensityUnit, TemperatureUnit, LimiterParameter, &
@@ -115,7 +118,7 @@ contains
              UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndicesOption )
 
-  end subroutine InitializeAllocate_PM
+  end subroutine InitializeAllocate_NM
 
 
   subroutine SetPrimitiveConserved ( C )
