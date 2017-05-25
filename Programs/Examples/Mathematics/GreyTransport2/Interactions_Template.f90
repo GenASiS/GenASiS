@@ -202,10 +202,11 @@ contains
       I % N_FIELDS = I % N_FIELDS_TEMPLATE
 
     I % EMISSIVITY_J  =  1
-    I % OPACITY_J     =  2
-    I % OPACITY_H     =  3
-    I % EMISSIVITY_N  =  4
-    I % OPACITY_N     =  5
+    I % EMISSIVITY_H  =  2
+    I % EMISSIVITY_N  =  3
+    I % OPACITY_J     =  4
+    I % OPACITY_H     =  5
+    I % OPACITY_N     =  6
 
     !-- variable names 
 
@@ -219,9 +220,10 @@ contains
 
     Variable ( 1 : I % N_FIELDS_TEMPLATE ) &
       = [ 'Emissivity_J', &
+          'Emissivity_H', &
+          'Emissivity_N', &
           'Opacity_J   ', &
           'Opacity_H   ', &
-          'Emissivity_N', &
           'Opacity_N   ' ]
           
     !-- units
