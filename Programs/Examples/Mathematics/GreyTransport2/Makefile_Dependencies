@@ -15,10 +15,10 @@ PhotonMoments_G__Form.o: \
   RadiationMoments_Form.o \
   PhotonMoments_G__Form.f90
 
-NeutrinoMoments_Form.o: \
+NeutrinoMoments_G__Form.o: \
   Basics.o \
-  RadiationMoments_Form.o \
-  NeutrinoMoments_Form.f90
+  PhotonMoments_G__Form.o \
+  NeutrinoMoments_G__Form.f90
 
 Sources_RM__Form.o: \
   Basics.o \

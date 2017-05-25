@@ -21,14 +21,8 @@ module RadiationMoments_Form
       N_VECTORS_RM       = N_VECTORS_RM, &
       COMOVING_ENERGY    = 0, &
       CONSERVED_ENERGY   = 0, &
-!       COMOVING_NUMBER_DENSITY    = 0, &
-!       CONSERVED_NUMBER_DENSITY   = 0, &
       FLUX_FACTOR        = 0, &
       STRESS_FACTOR      = 0, &
-!       DEGENERACY_PARAMETER       = 0, &
-!       DEGENERACY_PARAMETER_EQ    = 0, &
-!       ENERGY_AVERAGE             = 0, &
-!       OCCUPANCY_AVERAGE          = 0, &
       COMOVING_ENERGY_EQ = 0
     integer ( KDI ), dimension ( 3 ) :: &
       COMOVING_MOMENTUM_U  = 0, &
@@ -56,8 +50,6 @@ module RadiationMoments_Form
       ComputeRawFluxes
     procedure, public, pass ( C ) :: &
       ComputeDiffusionFactor_HLL
-!     procedure, public, pass ( RM ) :: &
-!       ComputeSpectralParameters      
   end type RadiationMomentsForm
 
     private :: &
@@ -125,7 +117,7 @@ contains
 
     call SetUnits &
            ( VariableUnit, RM, MomentumDensity_U_Unit, &
-             MomentumDensity_D_Unit, EnergyDensityUnit )!, TemperatureUnit )
+             MomentumDensity_D_Unit, EnergyDensityUnit )
 
     call RM % InitializeTemplate &
            ( RiemannSolverType, UseLimiter, Velocity_U_Unit, &
@@ -159,16 +151,14 @@ contains
       allocate ( C % iaPrimitive ( C % N_PRIMITIVE ) )
     end if
     C % iaPrimitive ( oP + 1 : oP + C % N_PRIMITIVE_RM ) &
-      = [ C % COMOVING_ENERGY, C % COMOVING_MOMENTUM_U ]!, &
-!           C % COMOVING_NUMBER_DENSITY ]
+      = [ C % COMOVING_ENERGY, C % COMOVING_MOMENTUM_U ]
 
     if ( .not. allocated ( C % iaConserved ) ) then
       C % N_CONSERVED = oC + C % N_CONSERVED_RM
       allocate ( C % iaConserved ( C % N_CONSERVED ) )
     end if
     C % iaConserved ( oC + 1 : oC + C % N_CONSERVED_RM ) &
-      = [ C % CONSERVED_ENERGY, C % CONSERVED_MOMENTUM_D ]!, &
-!           C % CONSERVED_NUMBER_DENSITY ]
+      = [ C % CONSERVED_ENERGY, C % CONSERVED_MOMENTUM_D ]
     
     do iF = 1, C % N_PRIMITIVE_RM
       PrimitiveName ( iF )  =  C % Variable ( C % iaPrimitive ( oP + iF ) )
@@ -288,17 +278,9 @@ contains
         S_1   => RMV ( oV + 1 : oV + nV, C % CONSERVED_MOMENTUM_D ( 1 ) ), &
         S_2   => RMV ( oV + 1 : oV + nV, C % CONSERVED_MOMENTUM_D ( 2 ) ), &
         S_3   => RMV ( oV + 1 : oV + nV, C % CONSERVED_MOMENTUM_D ( 3 ) ), &
-!         N      => RMV ( oV + 1 : oV + nV, C % COMOVING_NUMBER_DENSITY ), &
-!         D      => RMV ( oV + 1 : oV + nV, C % CONSERVED_NUMBER_DENSITY ), &
         FF    => RMV ( oV + 1 : oV + nV, C % FLUX_FACTOR ), &
-        SF    => RMV ( oV + 1 : oV + nV, C % STRESS_FACTOR ) )!, &
-!         Eta    => RMV ( oV + 1 : oV + nV, C % DEGENERACY_PARAMETER ), &
-!         Eta_EQ => RMV ( oV + 1 : oV + nV, C % DEGENERACY_PARAMETER_EQ ), &
-!         E_Ave  => RMV ( oV + 1 : oV + nV, C % ENERGY_AVERAGE ), &
-!         F_Ave  => RMV ( oV + 1 : oV + nV, C % OCCUPANCY_AVERAGE ), &
+        SF    => RMV ( oV + 1 : oV + nV, C % STRESS_FACTOR ) )
 
-!     call ComputeConservedEnergyMomentum &
-!            ( E, S_1, S_2, S_3, D, J, H_1, H_2, H_3, N, M_DD_22, M_DD_33 )
     call ComputeConservedEnergyMomentum &
            ( E, S_1, S_2, S_3, J, H_1, H_2, H_3, M_DD_22, M_DD_33 )
     call ComputeEigenspeeds &
@@ -306,12 +288,6 @@ contains
              M_UU_22, M_UU_33, CONSTANT % SPEED_OF_LIGHT )
     call ComputeMomentFactors &
            ( SF, FF, J, H_1, H_2, H_3, M_DD_22, M_DD_33 )
-
-!     if ( associated ( C % Interactions ) ) &
-!       call C % Interactions % ComputeDegeneracyParameter_EQ &
-!              ( T_EQ, Eta_EQ, C )
-!     call C % ComputeSpectralParameters &
-!            ( T, Eta, E_Ave, F_Ave, J_EQ, J, N, T_EQ, Eta_EQ )
 
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
@@ -377,21 +353,9 @@ contains
         S_1   => RMV ( oV + 1 : oV + nV, C % CONSERVED_MOMENTUM_D ( 1 ) ), &
         S_2   => RMV ( oV + 1 : oV + nV, C % CONSERVED_MOMENTUM_D ( 2 ) ), &
         S_3   => RMV ( oV + 1 : oV + nV, C % CONSERVED_MOMENTUM_D ( 3 ) ), &
-!         N      => RMV ( oV + 1 : oV + nV, C % COMOVING_NUMBER_DENSITY ), &
-!         D      => RMV ( oV + 1 : oV + nV, C % CONSERVED_NUMBER_DENSITY ), &
         FF    => RMV ( oV + 1 : oV + nV, C % FLUX_FACTOR ), &
         SF    => RMV ( oV + 1 : oV + nV, C % STRESS_FACTOR ) )
-!         T      => RMV ( oV + 1 : oV + nV, C % TEMPERATURE_PARAMETER ), &
-!         T_EQ   => RMV ( oV + 1 : oV + nV, C % TEMPERATURE_PARAMETER_EQ ), &
-!         Eta    => RMV ( oV + 1 : oV + nV, C % DEGENERACY_PARAMETER ), &
-!         Eta_EQ => RMV ( oV + 1 : oV + nV, C % DEGENERACY_PARAMETER_EQ ), &
-!         E_Ave  => RMV ( oV + 1 : oV + nV, C % ENERGY_AVERAGE ), &
-!         F_Ave  => RMV ( oV + 1 : oV + nV, C % OCCUPANCY_AVERAGE ), &
-!         J_EQ   => RMV ( oV + 1 : oV + nV, C % COMOVING_ENERGY_DENSITY_EQ ) )
 
-!     call ComputePrimitiveEnergyMomentum &
-!            ( J, H_1, H_2, H_3, N, E, S_1, S_2, S_3, D, M_DD_22, M_DD_33, &
-!              M_UU_22, M_UU_33 )
     call ComputeComovingEnergyMomentum &
            ( J, H_1, H_2, H_3, E, S_1, S_2, S_3, M_DD_22, M_DD_33, &
              M_UU_22, M_UU_33 )
@@ -400,12 +364,6 @@ contains
              M_UU_22, M_UU_33, CONSTANT % SPEED_OF_LIGHT )
     call ComputeMomentFactors &
            ( SF, FF, J, H_1, H_2, H_3, M_DD_22, M_DD_33 )
-
-!     if ( associated ( C % Interactions ) ) &
-!       call C % Interactions % ComputeDegeneracyParameter_EQ &
-!              ( T_EQ, Eta_EQ, C )
-!     call C % ComputeSpectralParameters &
-!            ( T, Eta, E_Ave, F_Ave, J_EQ, J, N, T_EQ, Eta_EQ )
 
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
@@ -435,8 +393,7 @@ contains
       oValueOption
 
     integer ( KDI ) :: &
-      iEnergy!, &
-!       iNumber
+      iEnergy
     integer ( KDI ), dimension ( 3 ) :: &
       iMomentum
     integer ( KDI ) :: &
@@ -463,8 +420,6 @@ contains
            ( C % iaConserved, C % CONSERVED_MOMENTUM_D ( 2 ), iMomentum ( 2 ) )
     call Search &
            ( C % iaConserved, C % CONSERVED_MOMENTUM_D ( 3 ), iMomentum ( 3 ) )
-!     call Search &
-!            ( C % iaConserved, C % CONSERVED_NUMBER_DENSITY, iNumber )
     
     associate &
       ( M_DD_22 => Value_G ( oV + 1 : oV + nV, G % METRIC_DD_22 ), &
@@ -475,20 +430,14 @@ contains
         F_S_2 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 2 ) ), &
         F_S_3 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 3 ) ), &
         F_S_Dim => RawFlux ( oV + 1 : oV + nV, iMomentum ( iDimension ) ), & 
-!         F_D   => RawFlux ( oV + 1 : oV + nV, iNumber ), &
         J   => Value_C ( oV + 1 : oV + nV, C % COMOVING_ENERGY ), &
         H_1 => Value_C ( oV + 1 : oV + nV, C % COMOVING_MOMENTUM_U ( 1 ) ), &
         H_2 => Value_C ( oV + 1 : oV + nV, C % COMOVING_MOMENTUM_U ( 2 ) ), &
         H_3 => Value_C ( oV + 1 : oV + nV, C % COMOVING_MOMENTUM_U ( 3 ) ), &
         H_Dim => Value_C ( oV + 1 : oV + nV, &
                            C % COMOVING_MOMENTUM_U ( iDimension ) ), &
-!         N     => Value_C ( oV + 1 : oV + nV, C % COMOVING_NUMBER_DENSITY ), &
-        SF => Value_C ( oV + 1 : oV + nV, C % STRESS_FACTOR ) )!, &
-!         E_Ave => Value_C ( oV + 1 : oV + nV, C % ENERGY_AVERAGE ) )
+        SF => Value_C ( oV + 1 : oV + nV, C % STRESS_FACTOR ) )
 
-!     call ComputeRawFluxesKernel &
-!            ( F_E, F_S_1, F_S_2, F_S_3, F_S_Dim, F_D, J, H_1, H_2, H_3, H_Dim, &
-!              VEF, E_Ave, M_DD_22, M_DD_33 )
     call ComputeRawFluxesKernel &
            ( F_E, F_S_1, F_S_2, F_S_3, F_S_Dim, J, H_1, H_2, H_3, H_Dim, &
              SF, M_DD_22, M_DD_33 )
@@ -512,8 +461,7 @@ contains
 
     integer ( KDI ) :: &
       iV, &
-      iEnergy!, &
-!       iNumber
+      iEnergy
     real ( KDR ), dimension ( : ), allocatable :: &
       M_DD_11
     real ( KDR ), dimension ( :, :, : ), pointer :: &
@@ -521,8 +469,7 @@ contains
       M_DD, &
       TO, &
       SF, &
-      DF_I_E!, &
-!       DF_I_D
+      DF_I_E
     class ( GeometryFlatForm ), pointer :: &
       G
 
@@ -565,16 +512,9 @@ contains
              ( C % Value ( :, C % STRESS_FACTOR ), SF )
 
       call Search ( C % iaConserved, C % CONSERVED_ENERGY, iEnergy )
-!       call Search ( C % iaConserved, C % CONSERVED_NUMBER_DENSITY, &
-!                     iNumber )
       call Grid % SetVariablePointer &
              ( DF_I % Value ( :, iEnergy ), DF_I_E )
-!       call Grid % SetVariablePointer &
-!              ( DF_I % Value ( :, iNumber ), DF_I_D )
 
-!       call ComputeDiffusionFactor_HLL_CSL &
-!              ( DF_I_E, DF_I_D, VEF, TO, M_DD, dX, iDimension, &
-!                Grid % nGhostLayers ( iDimension ) )
       call ComputeDiffusionFactor_HLL_CSL &
              ( DF_I_E, SF, TO, M_DD, dX, iDimension, &
                Grid % nGhostLayers ( iDimension ) )
@@ -595,28 +535,6 @@ contains
     nullify ( dX, M_DD, TO, SF, DF_I_E )
 
   end subroutine ComputeDiffusionFactor_HLL
-
-
-!   subroutine ComputeSpectralParameters &
-!                ( T, Eta, E_Ave, F_Ave, J_EQ, RM, J, N, T_EQ, Eta_EQ )
-
-!     real ( KDR ), dimension ( : ), intent ( inout ) :: &
-!       T, &
-!       Eta, &
-!       E_Ave, &
-!       F_Ave, &
-!       J_EQ
-!     class ( RadiationMomentsForm ), intent ( in ) :: &
-!       RM
-!     real ( KDR ), dimension ( : ), intent ( in ) :: &
-!       J, &
-!       N, &
-!       T_EQ, &
-!       Eta_EQ
-
-!     !-- Empty interface to be overridden later as needed
-
-!   end subroutine ComputeSpectralParameters
 
 
   subroutine InitializeBasics &
@@ -673,14 +591,8 @@ contains
     RM % CONSERVED_ENERGY      =  oF +  2
     RM % COMOVING_MOMENTUM_U   =  oF + [ 3, 4, 5 ]
     RM % CONSERVED_MOMENTUM_D  =  oF + [ 6, 7, 8 ]
-!     RM % COMOVING_NUMBER_DENSITY      =  oF +  9
-!     RM % CONSERVED_NUMBER_DENSITY     =  oF + 10
     RM % FLUX_FACTOR           =  oF +  9
     RM % STRESS_FACTOR         =  oF + 10
-!     RM % DEGENERACY_PARAMETER         =  oF + 15
-!     RM % DEGENERACY_PARAMETER_EQ      =  oF + 16
-!     RM % ENERGY_AVERAGE               =  oF + 17
-!     RM % OCCUPANCY_AVERAGE            =  oF + 18
     RM % COMOVING_ENERGY_EQ    =  oF + 11
 
     !-- variable names 
@@ -702,14 +614,8 @@ contains
           'ConservedMomentum_D_1', &
           'ConservedMomentum_D_2', &
           'ConservedMomentum_D_3', &
-!           'ComovingNumber          ', &
-!           'ConservedNumber         ', &
           'FluxFactor           ', &
           'StressFactor         ', &
-!           'DegeneracyParameter     ', &
-!           'DegeneracyParameter_EQ  ', &
-!           'EnergyAverage           ', &
-!           'OccupancyAverage        ', &
           'ComovingEnergy_EQ    ' ]
           
     !-- units
@@ -759,7 +665,7 @@ contains
 
   subroutine SetUnits &
                ( VariableUnit, RM, MomentumDensity_U_Unit, &
-                 MomentumDensity_D_Unit, EnergyDensityUnit )!, TemperatureUnit )
+                 MomentumDensity_D_Unit, EnergyDensityUnit )
 
     type ( MeasuredValueForm ), dimension ( : ), intent ( inout ) :: &
       VariableUnit
@@ -769,19 +675,13 @@ contains
       MomentumDensity_U_Unit, &
       MomentumDensity_D_Unit
     type ( MeasuredValueForm ), intent ( in ) :: &
-      EnergyDensityUnit!, &
-!      TemperatureUnit
+      EnergyDensityUnit
 
     integer ( KDI ) :: &
       iD
 
     VariableUnit ( RM % COMOVING_ENERGY )  = EnergyDensityUnit
     VariableUnit ( RM % CONSERVED_ENERGY ) = EnergyDensityUnit
-
-!     VariableUnit ( RM % COMOVING_NUMBER_DENSITY )  &
-!       = EnergyDensityUnit / TemperatureUnit
-!     VariableUnit ( RM % CONSERVED_NUMBER_DENSITY ) &
-!       = EnergyDensityUnit / TemperatureUnit
 
     do iD = 1, 3
       VariableUnit ( RM % COMOVING_MOMENTUM_U ( iD ) ) &
@@ -790,25 +690,20 @@ contains
         = MomentumDensity_D_Unit ( iD )      
     end do
 
-!     VariableUnit ( RM % ENERGY_AVERAGE )             = TemperatureUnit
     VariableUnit ( RM % COMOVING_ENERGY_EQ ) = EnergyDensityUnit
 
   end subroutine SetUnits
 
 
   subroutine ComputeConservedEnergyMomentum &
-!               ( E, S_1, S_2, S_3, D, J, H_1, H_2, H_3, N, &
-!                 M_DD_22, M_DD_33 )
                ( E, S_1, S_2, S_3, J, H_1, H_2, H_3, M_DD_22, M_DD_33 )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       E, &
-      S_1, S_2, S_3!, &
-!      D
+      S_1, S_2, S_3
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       J, &
-      H_1, H_2, H_3!, &
-!      N
+      H_1, H_2, H_3
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       M_DD_22, M_DD_33
 
@@ -824,15 +719,12 @@ contains
     do iV = 1, nValues
       if ( J ( iV )  <  0.0_KDR ) &
         J ( iV )  =  0.0_KDR
-!      if ( N ( iV )  <  0.0_KDR ) &
-!        N ( iV )  =  0.0_KDR
     end do !-- iV
     !$OMP end parallel do
 
     !$OMP parallel do private ( iV )
     do iV = 1, nValues
       E ( iV )  =  J ( iV )
-!       D ( iV )  =  N ( iV )
     end do !-- iV
     !$OMP end parallel do
 
@@ -866,19 +758,15 @@ contains
 
 
   subroutine ComputeComovingEnergyMomentum &
-!                ( J, H_1, H_2, H_3, N, E, S_1, S_2, S_3, D, M_DD_22, M_DD_33, &
-!                  M_UU_22, M_UU_33 )
                ( J, H_1, H_2, H_3, E, S_1, S_2, S_3, M_DD_22, M_DD_33, &
                  M_UU_22, M_UU_33 )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       J, &
-      H_1, H_2, H_3!, &
-!       N
+      H_1, H_2, H_3
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       E, &
-      S_1, S_2, S_3!, &
-!       D
+      S_1, S_2, S_3
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       M_DD_22, M_DD_33, &
       M_UU_22, M_UU_33
@@ -908,12 +796,6 @@ contains
         S_2 ( iV ) = 0.0_KDR
         S_3 ( iV ) = 0.0_KDR
       end if
-!       if ( D ( iV )  >  0.0_KDR ) then
-!         N ( iV )  =  D ( iV )
-!       else
-!         N ( iV )  =  0.0_KDR
-!         D ( iV )  =  0.0_KDR
-!       end if
     end do !-- iV
     !$OMP end parallel do
 
@@ -1026,22 +908,18 @@ contains
 
 
   subroutine ComputeRawFluxesKernel &
-!               ( F_E, F_S_1, F_S_2, F_S_3, F_S_Dim, F_D, J, H_1, H_2, H_3, &
-!                  H_Dim, SF, E_Ave, M_DD_22, M_DD_33 )
                ( F_E, F_S_1, F_S_2, F_S_3, F_S_Dim, J, H_1, H_2, H_3, &
                  H_Dim, SF, M_DD_22, M_DD_33 )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       F_E, &
       F_S_1, F_S_2, F_S_3, &
-      F_S_Dim!, &
-!       F_D
+      F_S_Dim
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       J, &
       H_1, H_2, H_3, &
       H_Dim, &
       SF, &
-!       E_Ave, &
       M_DD_22, M_DD_33
 
     integer ( KDI ) :: &
@@ -1084,26 +962,14 @@ contains
     end do !-- iV
     !$OMP end parallel do
 
-!     !$OMP parallel do private ( iV ) 
-!     do iV = 1, nValues
-!       if ( E_Ave ( iV ) > 0.0_KDR ) then
-!         F_D ( iV )  =  H_Dim ( iV ) / E_Ave ( iV )
-!       else
-!         F_D ( iV )  =  0.0_KDR
-!       end if
-!     end do !-- iV
-!     !$OMP end parallel do
-
   end subroutine ComputeRawFluxesKernel
 
 
   subroutine ComputeDiffusionFactor_HLL_CSL &
-!                ( DF_I_E, DF_I_D, SF, TO, M_DD, dX, iD, oV )
                ( DF_I_E, SF, TO, M_DD, dX, iD, oV )
 
     real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
-      DF_I_E!, &
-!       DF_I_D
+      DF_I_E
     real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
       SF, &
       TO, &
@@ -1158,7 +1024,6 @@ contains
                          tiny ( 0.0_KDR ) )
 
           DF_I_E ( iV, jV, kV )  =  min ( 1.0_KDR, max ( DF_L, DF_R ) )
-!           DF_I_D ( iV, jV, kV )  =  min ( 1.0_KDR, max ( DF_L, DF_R ) )
 
         end do !-- iV
       end do !-- jV

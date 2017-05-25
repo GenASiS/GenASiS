@@ -121,19 +121,13 @@ contains
 
     call Output % Initialize &
            ( RM, iaSelectedOption = [ RM % COMOVING_ENERGY, &
-!                                       RM % COMOVING_NUMBER_DENSITY, &
                                       RM % COMOVING_MOMENTUM_U, &
                                       RM % FLUX_FACTOR, &
                                       RM % STRESS_FACTOR, &
                                       RM % TEMPERATURE_PARAMETER, &
                                       RM % TEMPERATURE_PARAMETER_EQ, &
-!                                       RM % DEGENERACY_PARAMETER, &
-!                                       RM % DEGENERACY_PARAMETER_EQ, &
-!                                       RM % ENERGY_AVERAGE, &
-!                                       RM % OCCUPANCY_AVERAGE, &
                                       RM % COMOVING_ENERGY_EQ ], &
              VectorOption = [ 'ComovingMomentum_U' ], &
-!                               'ComovingNumberFlux             ' ], &
              VectorIndicesOption = VectorIndices )
 
   end subroutine SetOutput

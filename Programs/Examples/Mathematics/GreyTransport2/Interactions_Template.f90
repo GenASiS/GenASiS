@@ -28,8 +28,11 @@ module Interactions_Template
       Compute
     procedure, private, pass ( I ) :: &
       ComputeEquilibrium_T
+    procedure, private, pass ( I ) :: &
+      ComputeEquilibrium_T_Eta
     generic, public :: &
-      ComputeEquilibriumParameters => ComputeEquilibrium_T
+      ComputeEquilibriumParameters &
+        => ComputeEquilibrium_T, ComputeEquilibrium_T_Eta
     procedure, public, pass :: &
       SetOutput
     procedure, public, pass :: &
@@ -113,6 +116,21 @@ contains
     !-- Empty interface to be overridden later as needed
 
   end subroutine ComputeEquilibrium_T
+
+
+  subroutine ComputeEquilibrium_T_Eta ( T_EQ, Eta_EQ, I, C )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      T_EQ, &
+      Eta_EQ
+    class ( InteractionsTemplate ), intent ( in ) :: &
+      I
+    class ( CurrentTemplate ), intent ( in ) :: &
+      C
+
+    !-- Empty interface to be overridden later as needed
+
+  end subroutine ComputeEquilibrium_T_Eta
 
 
   subroutine SetOutput ( I, Output )
