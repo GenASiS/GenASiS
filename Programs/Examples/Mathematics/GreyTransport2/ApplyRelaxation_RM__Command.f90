@@ -73,9 +73,9 @@ contains
                SRM % Value ( :, SRM % NET_EMISSION_S_D ( 2 ) ), &
                SRM % Value ( :, SRM % NET_EMISSION_S_D ( 3 ) ), &
                Chart % IsProperCell, &
-               I % Value ( :, I % EMISSIVITY ), &
-               I % Value ( :, I % EFFECTIVE_OPACITY ), &
-               I % Value ( :, I % TRANSPORT_OPACITY ), &
+               I % Value ( :, I % EMISSIVITY_J ), &
+               I % Value ( :, I % OPACITY_J ), &
+               I % Value ( :, I % OPACITY_H ), &
                RM % Value ( :, RM % CONSERVED_ENERGY ), &
                RM % Value ( :, RM % CONSERVED_MOMENTUM_D ( 1 ) ), &
                RM % Value ( :, RM % CONSERVED_MOMENTUM_D ( 2 ) ), &
@@ -100,7 +100,8 @@ contains
   subroutine ApplyRelaxation_RM_Kernel &
                ( KV_E, DCV_E, DCV_S_1, DCV_S_2, DCV_S_3, &
                  SVNE_E, SVNE_S_1, SVNE_S_2, SVNE_S_3, &
-                 IsProperCell, EM, EO, TO, E, S_1, S_2, S_3, dT, Weight_RK, c )
+                 IsProperCell, Xi_J, Chi_J, Chi_H, E, S_1, S_2, S_3, &
+                 dT, Weight_RK, c )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       KV_E, &
@@ -109,9 +110,9 @@ contains
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       IsProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      EM, &
-      EO, &
-      TO, &
+      Xi_J, &
+      Chi_J, &
+      Chi_H, &
       E, &
       S_1, S_2, S_3
     real ( KDR ), intent ( in ) :: &
@@ -130,11 +131,11 @@ contains
       if ( .not. IsProperCell ( iV ) ) &
         cycle
 
-      KV_E    ( iV )  =  KV_E ( iV )  +  c * EM ( iV ) * dT
-      DCV_E   ( iV )  =  c * EO ( iV )
-      DCV_S_1 ( iV )  =  c * TO ( iV )
-      DCV_S_2 ( iV )  =  c * TO ( iV )
-      DCV_S_3 ( iV )  =  c * TO ( iV )
+      KV_E    ( iV )  =  KV_E ( iV )  +  c * Xi_J ( iV ) * dT
+      DCV_E   ( iV )  =  c * Chi_J ( iV )
+      DCV_S_1 ( iV )  =  c * Chi_H ( iV )
+      DCV_S_2 ( iV )  =  c * Chi_H ( iV )
+      DCV_S_3 ( iV )  =  c * Chi_H ( iV )
 
     end do
     !$OMP end parallel do
@@ -148,14 +149,14 @@ contains
 
       SVNE_E ( iV )  &
         =  SVNE_E ( iV )  &
-           +  Weight_RK * c * ( EM ( iV )  -  EO ( iV ) * E ( iV ) )
+           +  Weight_RK * c * ( Xi_J ( iV )  -  Chi_J ( iV ) * E ( iV ) )
 
       SVNE_S_1 ( iV )  &
-        =  SVNE_S_1 ( iV )  -  Weight_RK * c * TO ( iV ) * S_1 ( iV )
+        =  SVNE_S_1 ( iV )  -  Weight_RK * c * Chi_H ( iV ) * S_1 ( iV )
       SVNE_S_2 ( iV )  &
-        =  SVNE_S_2 ( iV )  -  Weight_RK * c * TO ( iV ) * S_2 ( iV )
+        =  SVNE_S_2 ( iV )  -  Weight_RK * c * Chi_H ( iV ) * S_2 ( iV )
       SVNE_S_2 ( iV )  &
-        =  SVNE_S_2 ( iV )  -  Weight_RK * c * TO ( iV ) * S_3 ( iV )
+        =  SVNE_S_2 ( iV )  -  Weight_RK * c * Chi_H ( iV ) * S_3 ( iV )
 
     end do
     !$OMP end parallel do

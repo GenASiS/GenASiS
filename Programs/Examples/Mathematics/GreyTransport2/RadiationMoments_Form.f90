@@ -505,7 +505,7 @@ contains
 
       associate ( I => C % Interactions )
       call Grid % SetVariablePointer &
-             ( I % Value ( :, I % TRANSPORT_OPACITY ), TO )
+             ( I % Value ( :, I % OPACITY_H ), TO )
       end associate !-- I
 
       call Grid % SetVariablePointer &

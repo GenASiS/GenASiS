@@ -32,14 +32,15 @@ contains
 
 
   subroutine InitializeAllocate_MWV_3_G &
-               ( I, LengthUnit, EnergyDensityUnit, nValues, VariableOption, &
-                 NameOption, ClearOption, UnitOption )
+               ( I, LengthUnit, EnergyDensityUnit, TemperatureUnit, nValues, &
+                 VariableOption, NameOption, ClearOption, UnitOption )
 
     class ( Interactions_MWV_3_G_Form ), intent ( inout ) :: &
       I
     type ( MeasuredValueForm ), intent ( in ) :: &
       LengthUnit, &
-      EnergyDensityUnit
+      EnergyDensityUnit, &
+      TemperatureUnit
     integer ( KDI ), intent ( in ) :: &
       nValues
     character ( * ), dimension ( : ), intent ( in ), optional :: &
@@ -55,8 +56,8 @@ contains
       I % Type = 'an Interactions_MWV_3_G'
 
     call I % InitializeTemplate &
-           ( LengthUnit, EnergyDensityUnit, nValues, VariableOption, &
-             NameOption, ClearOption, UnitOption )
+           ( LengthUnit, EnergyDensityUnit, TemperatureUnit, nValues, &
+             VariableOption, NameOption, ClearOption, UnitOption )
 
   end subroutine InitializeAllocate_MWV_3_G
 
@@ -93,7 +94,7 @@ contains
   end subroutine Finalize
 
 
-  subroutine ComputeKernel ( TP, M, N, T, I, EV, EOV, TOV )
+  subroutine ComputeKernel ( TP, M, N, T, I, Xi_J, Chi_J, Chi_H )
 
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       TP, &
@@ -103,9 +104,9 @@ contains
     class ( Interactions_MWV_3_G_Form ), intent ( in ) :: &
       I
     real ( KDR ), dimension ( : ), intent ( out ) :: &
-      EV, &
-      EOV, &
-      TOV
+      Xi_J, &
+      Chi_J, &
+      Chi_H
 
     integer ( KDI ) :: &
       iV, &
@@ -125,7 +126,7 @@ contains
     E_Max  =  I % EnergyMax
     T_0    =  I % TemperatureScale
 
-    nValues  =  size ( EV )
+    nValues  =  size ( Xi_J )
 
     !$OMP parallel do private ( iV, S, S_Eq ) 
     do iV = 1, nValues
@@ -133,12 +134,12 @@ contains
       S     =  1.0_KDR  -  PlanckRatio * k_B * TP ( iV ) / E_Max
       S_Eq  =  1.0_KDR  -  PlanckRatio * k_B *  T ( iV ) / E_Max
 
-      EV  ( iV )  =  Kappa  *  M ( iV )  *  N ( iV )  &
-                     *  ( T ( iV ) / T_0 ) ** 1.5_KDR  *  S_Eq &
-                     *  a  *  T ( iV ) ** 4
-      EOV ( iV )  =  Kappa  *  M ( iV )  *  N ( iV )  &
-                     *  ( T ( iV ) / T_0 ) ** 1.5_KDR  *  S
-      TOV ( iV )  =  EOV ( iV )
+      Xi_J  ( iV )  =  Kappa  *  M ( iV )  *  N ( iV )  &
+                       *  ( T ( iV ) / T_0 ) ** 1.5_KDR  *  S_Eq &
+                       *  a  *  T ( iV ) ** 4
+      Chi_J ( iV )  =  Kappa  *  M ( iV )  *  N ( iV )  &
+                       *  ( T ( iV ) / T_0 ) ** 1.5_KDR  *  S
+      Chi_H ( iV )  =  Chi_J ( iV )
 
     end do !-- iV
     !$OMP end parallel do

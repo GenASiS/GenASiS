@@ -96,12 +96,12 @@ Interactions_MWV_3_G__Form.o: \
   Interactions_MWV_2_G__Form.o \
   Interactions_MWV_3_G__Form.f90
 
-Interactions_NM_G_1__Form.o: \
+Interactions_NM_1_G__Form.o: \
   Basics.o \
   Mathematics.o \
   Fluid_P_MHN__Form.o \
-  NeutrinoMoments_Form.o \
-  Interactions_NM_G_1__Form.f90
+  NeutrinoMoments_G__Form.o \
+  Interactions_NM_1_G__Form.f90
 
 Interactions_CSL__Form.o: \
   Basics.o \

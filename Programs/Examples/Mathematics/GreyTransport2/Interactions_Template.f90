@@ -7,18 +7,19 @@ module Interactions_Template
   private
 
     integer ( KDI ), private, parameter :: &
-      N_FIELDS_TEMPLATE = 3
+      N_FIELDS_TEMPLATE = 6
 
   type, public, extends ( VariableGroupForm ), abstract :: InteractionsTemplate
     integer ( KDI ) :: &
-      IGNORABILITY             = 0, &
-      N_FIELDS                 = 0, &
-      N_FIELDS_TEMPLATE        = N_FIELDS_TEMPLATE, &
-      EMISSIVITY               = 0, &
-      EFFECTIVE_OPACITY        = 0, &
-      TRANSPORT_OPACITY        = 0!, &
-!       EMISSIVITY_NUMBER        = 0, &
-!       EFFECTIVE_OPACITY_NUMBER = 0
+      IGNORABILITY      = 0, &
+      N_FIELDS          = 0, &
+      N_FIELDS_TEMPLATE = N_FIELDS_TEMPLATE, &
+      EMISSIVITY_J      = 0, &
+      EMISSIVITY_H      = 0, &
+      EMISSIVITY_N      = 0, &
+      OPACITY_J         = 0, &
+      OPACITY_H         = 0, &
+      OPACITY_N         = 0
     character ( LDL ) :: &
       Type = ''
   contains
@@ -58,14 +59,15 @@ contains
 
 
   subroutine InitializeTemplate &
-               ( I, LengthUnit, EnergyDensityUnit, nValues, VariableOption, &
-                 NameOption, ClearOption, UnitOption )
+               ( I, LengthUnit, EnergyDensityUnit, TemperatureUnit, nValues, &
+                 VariableOption, NameOption, ClearOption, UnitOption )
 
     class ( InteractionsTemplate ), intent ( inout ) :: &
       I
     type ( MeasuredValueForm ), intent ( in ) :: &
       LengthUnit, &
-      EnergyDensityUnit
+      EnergyDensityUnit, &
+      TemperatureUnit
     integer ( KDI ), intent ( in ) :: &
       nValues
     character ( * ), dimension ( : ), intent ( in ), optional :: &
@@ -90,7 +92,8 @@ contains
            ( I, Variable, Name, VariableUnit, VariableOption, NameOption, &
              UnitOption )
 
-    call SetUnits ( VariableUnit, I, LengthUnit, EnergyDensityUnit )
+    call SetUnits &
+           ( VariableUnit, I, LengthUnit, EnergyDensityUnit, TemperatureUnit )
 
     Clear = .true.
     if ( present ( ClearOption ) ) &
@@ -141,9 +144,12 @@ contains
       Output
 
     call Output % Initialize &
-           ( I, iaSelectedOption = [ I % EMISSIVITY, &
-                                     I % EFFECTIVE_OPACITY, &
-                                     I % TRANSPORT_OPACITY ] )
+           ( I, iaSelectedOption = [ I % EMISSIVITY_J, &
+                                     I % EMISSIVITY_H, &
+                                     I % EMISSIVITY_N, &
+                                     I % OPACITY_J, &
+                                     I % OPACITY_H, &
+                                     I % OPACITY_N ] )
 
   end subroutine SetOutput
 
@@ -195,11 +201,11 @@ contains
     if ( I % N_FIELDS == 0 ) &
       I % N_FIELDS = I % N_FIELDS_TEMPLATE
 
-    I % EMISSIVITY               =  1
-    I % EFFECTIVE_OPACITY        =  2
-    I % TRANSPORT_OPACITY        =  3
-!     I % EMISSIVITY_NUMBER        =  4
-!     I % EFFECTIVE_OPACITY_NUMBER =  5
+    I % EMISSIVITY_J  =  1
+    I % OPACITY_J     =  2
+    I % OPACITY_H     =  3
+    I % EMISSIVITY_N  =  4
+    I % OPACITY_N     =  5
 
     !-- variable names 
 
@@ -212,11 +218,11 @@ contains
     end if
 
     Variable ( 1 : I % N_FIELDS_TEMPLATE ) &
-      = [ 'Emissivity      ', &
-          'EffectiveOpacity', &
-          'TransportOpacity' ]
-!           'EmissivityNumber      ', &
-!           'EffectiveOpacityNumber' ]
+      = [ 'Emissivity_J', &
+          'Opacity_J   ', &
+          'Opacity_H   ', &
+          'Emissivity_N', &
+          'Opacity_N   ' ]
           
     !-- units
     
@@ -231,7 +237,9 @@ contains
   end subroutine InitializeBasics
 
 
-  subroutine SetUnits ( VariableUnit, I, LengthUnit, EnergyDensityUnit )
+  subroutine SetUnits &
+               ( VariableUnit, I, LengthUnit, EnergyDensityUnit, &
+                 TemperatureUnit )
 
     type ( MeasuredValueForm ), dimension ( : ), intent ( inout ) :: &
       VariableUnit
@@ -239,13 +247,20 @@ contains
       I
     type ( MeasuredValueForm ), intent ( in ) :: &
       LengthUnit, &
-      EnergyDensityUnit
+      EnergyDensityUnit, &
+      TemperatureUnit
 
-    VariableUnit ( I % EMISSIVITY ) &
-      =  EnergyDensityUnit / LengthUnit ** (-1)
-    VariableUnit ( I % EFFECTIVE_OPACITY ) &
+    VariableUnit ( I % EMISSIVITY_J ) &
+      =  EnergyDensityUnit  *  LengthUnit ** (-1)
+    VariableUnit ( I % EMISSIVITY_H ) &
+      =  EnergyDensityUnit  *  LengthUnit ** (-1)
+    VariableUnit ( I % EMISSIVITY_N ) &
+      =  EnergyDensityUnit  *  TemperatureUnit ** (-1)  *  LengthUnit ** (-1)
+    VariableUnit ( I % OPACITY_J ) &
       =  LengthUnit ** (-1)
-    VariableUnit ( I % TRANSPORT_OPACITY ) &
+    VariableUnit ( I % OPACITY_H ) &
+      =  LengthUnit ** (-1)
+    VariableUnit ( I % OPACITY_N ) &
       =  LengthUnit ** (-1)
 
   end subroutine SetUnits

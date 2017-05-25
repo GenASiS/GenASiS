@@ -608,9 +608,9 @@ contains
            ( FluidSource_Radiation % Value ( :, iEnergy_F ), &
              FluidSource_Radiation % Value ( :, iMomentum_1_F ), &
              Chart % IsProperCell, &
-             I % Value ( :, I % EMISSIVITY ), &
-             I % Value ( :, I % EFFECTIVE_OPACITY ), &
-             I % Value ( :, I % TRANSPORT_OPACITY ), &
+             I % Value ( :, I % EMISSIVITY_H ), &
+             I % Value ( :, I % OPACITY_J ), &
+             I % Value ( :, I % OPACITY_H ), &
              R % Value ( :, R % COMOVING_ENERGY ), &
              Increment % Value ( :, iEnergy_R ), &
              R % Value ( :, R % CONSERVED_MOMENTUM_D ( 1 ) ), &
@@ -655,8 +655,8 @@ contains
 
 
   subroutine ComputeFluidSource_Radiation_Kernel &
-               ( FS_R_G, FS_R_S_1, IsProperCell, E, EO, TO, J, dJ, H, dH, &
-                 c, dT )
+               ( FS_R_G, FS_R_S_1, IsProperCell, Xi_J, Chi_J, Chi_H, &
+                 J, dJ, H, dH, c, dT )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       FS_R_G, &
@@ -664,9 +664,9 @@ contains
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       IsProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      E, &
-      EO, &
-      TO, &
+      Xi_J, &
+      Chi_J, &
+      Chi_H, &
       J,  &
       dJ, &
       H,  &
@@ -687,10 +687,11 @@ contains
         cycle
       FS_R_G ( iV )  &
         =  FS_R_G ( iV )  &
-           -  c * dT  *  ( E ( iV )  -  EO ( iV ) * ( J ( iV ) + dJ ( iV ) ) ) 
+           -  c * dT  *  ( Xi_J ( iV )  &
+                           -  Chi_J ( iV ) * ( J ( iV ) + dJ ( iV ) ) ) 
       FS_R_S_1 ( iV )  &
         =  FS_R_S_1 ( iV )  &
-           +  c * dT  *  TO ( iV )  *  ( H ( iV ) + dH ( iV ) )
+           +  c * dT  *  Chi_H ( iV )  *  ( H ( iV ) + dH ( iV ) )
     end do
     !$OMP end parallel do
 

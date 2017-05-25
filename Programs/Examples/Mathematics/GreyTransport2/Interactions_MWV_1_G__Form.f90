@@ -41,14 +41,15 @@ contains
 
 
   subroutine InitializeAllocate_MWV_1_G &
-               ( I, LengthUnit, EnergyDensityUnit, nValues, VariableOption, &
-                 NameOption, ClearOption, UnitOption )
+               ( I, LengthUnit, EnergyDensityUnit, TemperatureUnit, nValues, &
+                 VariableOption, NameOption, ClearOption, UnitOption )
 
     class ( Interactions_MWV_1_G_Form ), intent ( inout ) :: &
       I
     type ( MeasuredValueForm ), intent ( in ) :: &
       LengthUnit, &
-      EnergyDensityUnit
+      EnergyDensityUnit, &
+      TemperatureUnit
     integer ( KDI ), intent ( in ) :: &
       nValues
     character ( * ), dimension ( : ), intent ( in ), optional :: &
@@ -64,8 +65,8 @@ contains
       I % Type = 'an Interactions_MWV_1_G'
 
     call I % InitializeTemplate &
-           ( LengthUnit, EnergyDensityUnit, nValues, VariableOption, &
-             NameOption, ClearOption, UnitOption )
+           ( LengthUnit, EnergyDensityUnit, TemperatureUnit, nValues, &
+             VariableOption, NameOption, ClearOption, UnitOption )
 
   end subroutine InitializeAllocate_MWV_1_G
 
@@ -103,9 +104,9 @@ contains
              F % Value ( :, F % BARYON_MASS ), &
              F % Value ( :, F % COMOVING_DENSITY ), &
              F % Value ( :, F % TEMPERATURE ), &
-             I % Value ( :, I % EMISSIVITY ), &
-             I % Value ( :, I % EFFECTIVE_OPACITY ), &
-             I % Value ( :, I % TRANSPORT_OPACITY ) )
+             I % Value ( :, I % EMISSIVITY_J ), &
+             I % Value ( :, I % OPACITY_J ), &
+             I % Value ( :, I % OPACITY_H ) )
     end associate !-- R, etc.
 
   end subroutine Compute
@@ -147,7 +148,7 @@ contains
   end subroutine Finalize
 
 
-  subroutine ComputeKernel ( TP, M, N, T, I, EV, EOV, TOV )
+  subroutine ComputeKernel ( TP, M, N, T, I, Xi_J, Chi_J, Chi_H )
 
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       TP, &
@@ -157,9 +158,9 @@ contains
     class ( Interactions_MWV_1_G_Form ), intent ( in ) :: &
       I
     real ( KDR ), dimension ( : ), intent ( out ) :: &
-      EV, &
-      EOV, &
-      TOV
+      Xi_J, &
+      Chi_J, &
+      Chi_H
 
     integer ( KDI ) :: &
       iV, &
@@ -171,13 +172,13 @@ contains
     a      =  4.0_KDR  *  CONSTANT % STEFAN_BOLTZMANN
     Kappa  =  I % SpecificOpacity
 
-    nValues  =  size ( EV )
+    nValues  =  size ( Xi_J )
 
     !$OMP parallel do private ( iV ) 
     do iV = 1, nValues
-      EV  ( iV )  =  Kappa  *  M ( iV )  *  N ( iV )  *  a  *  T ( iV ) ** 4
-      EOV ( iV )  =  Kappa  *  M ( iV )  *  N ( iV ) 
-      TOV ( iV )  =  EOV ( iV )
+      Xi_J  ( iV )  =  Kappa  *  M ( iV )  *  N ( iV )  *  a  *  T ( iV ) ** 4
+      Chi_J ( iV )  =  Kappa  *  M ( iV )  *  N ( iV ) 
+      Chi_H ( iV )  =  Chi_J ( iV )
     end do !-- iV
     !$OMP end parallel do
 

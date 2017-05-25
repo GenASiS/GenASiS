@@ -15,7 +15,8 @@ module Interactions_CSL__Form
   type, public, extends ( Field_CSL_Template ) :: Interactions_CSL_Form
     type ( MeasuredValueForm ) :: &
       LengthUnit, &
-      EnergyDensityUnit
+      EnergyDensityUnit, &
+      TemperatureUnit
     character ( LDL ) :: &
       InteractionsType = ''
   contains
@@ -36,7 +37,8 @@ contains
 
   subroutine Initialize &
                ( IC, C, NameShort, InteractionsType, LengthUnit, &
-                 EnergyDensityUnit, nValues, IgnorabilityOption )
+                 EnergyDensityUnit, TemperatureUnit, nValues, &
+                 IgnorabilityOption )
 
     class ( Interactions_CSL_Form ), intent ( inout ) :: &
       IC
@@ -47,7 +49,8 @@ contains
       InteractionsType
     type ( MeasuredValueForm ), intent ( in ) :: &
       LengthUnit, &
-      EnergyDensityUnit
+      EnergyDensityUnit, &
+      TemperatureUnit
     integer ( KDI ), intent ( in ) :: &
       nValues
     integer ( KDL ), intent ( in ), optional :: &
@@ -59,6 +62,7 @@ contains
 
     IC % LengthUnit        = LengthUnit
     IC % EnergyDensityUnit = EnergyDensityUnit
+    IC % TemperatureUnit   = TemperatureUnit
 
     call IC % InitializeTemplate_CSL &
            ( C, NameShort, nValues, IgnorabilityOption )
@@ -131,7 +135,8 @@ contains
       select type ( I => FC % Field )
       type is ( Interactions_F_Form )
         call I % Initialize &
-               ( FC % LengthUnit, FC % EnergyDensityUnit, FC % nValues, &
+               ( FC % LengthUnit, FC % EnergyDensityUnit, &
+                 FC % TemperatureUnit, FC % nValues, &
                  NameOption = FC % NameShort )
         call I % SetOutput ( FC % FieldOutput )
       end select !-- I
@@ -140,7 +145,8 @@ contains
       select type ( I => FC % Field )
       type is ( Interactions_MWV_1_G_Form )
         call I % Initialize &
-               ( FC % LengthUnit, FC % EnergyDensityUnit, FC % nValues, &
+               ( FC % LengthUnit, FC % EnergyDensityUnit, &
+                 FC % TemperatureUnit, FC % nValues, &
                  NameOption = FC % NameShort )
         call I % SetOutput ( FC % FieldOutput )
       end select !-- I
@@ -149,7 +155,8 @@ contains
       select type ( I => FC % Field )
       type is ( Interactions_MWV_2_G_Form )
         call I % Initialize &
-               ( FC % LengthUnit, FC % EnergyDensityUnit, FC % nValues, &
+               ( FC % LengthUnit, FC % EnergyDensityUnit, &
+                 FC % TemperatureUnit, FC % nValues, &
                  NameOption = FC % NameShort )
         call I % SetOutput ( FC % FieldOutput )
       end select !-- I
@@ -158,7 +165,8 @@ contains
       select type ( I => FC % Field )
       type is ( Interactions_MWV_3_G_Form )
         call I % Initialize &
-               ( FC % LengthUnit, FC % EnergyDensityUnit, FC % nValues, &
+               ( FC % LengthUnit, FC % EnergyDensityUnit, &
+                 FC % TemperatureUnit, FC % nValues, &
                  NameOption = FC % NameShort )
         call I % SetOutput ( FC % FieldOutput )
       end select !-- I

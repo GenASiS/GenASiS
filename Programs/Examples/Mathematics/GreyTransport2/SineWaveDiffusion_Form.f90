@@ -248,9 +248,9 @@ contains
       I
 
     call SetInteractionsKernel &
-           ( I % Value ( :, I % EMISSIVITY ), &
-             I % Value ( :, I % EFFECTIVE_OPACITY ), &
-             I % Value ( :, I % TRANSPORT_OPACITY ) )
+           ( I % Value ( :, I % EMISSIVITY_J ), &
+             I % Value ( :, I % OPACITY_J ), &
+             I % Value ( :, I % OPACITY_H ) )
 
   end subroutine SetInteractions
 
@@ -326,24 +326,24 @@ contains
   end subroutine SetRadiationKernel
 
 
-  subroutine SetInteractionsKernel ( EV, EOV, TOV )
+  subroutine SetInteractionsKernel ( Xi_J, Chi_J, Chi_H )
 
     real ( KDR ), dimension ( : ), intent ( out ) :: &
-      EV, &
-      EOV, &
-      TOV
+      Xi_J, &
+      Chi_J, &
+      Chi_H
 
     integer ( KDI ) :: &
       iV, &
       nValues
 
-    nValues  =  size ( EV )
+    nValues  =  size ( Xi_J )
 
     !$OMP parallel do private ( iV ) 
     do iV = 1, nValues
-      EV ( iV )   =  EffectiveOpacity * EquilibriumDensity
-      EOV ( iV )  =  EffectiveOpacity
-      TOV ( iV )  =  TransportOpacity
+      Xi_J ( iV )   =  EffectiveOpacity * EquilibriumDensity
+      Chi_J ( iV )  =  EffectiveOpacity
+      Chi_H ( iV )  =  TransportOpacity
     end do !-- iV
     !$OMP end parallel do
 

@@ -231,15 +231,15 @@ contains
     select type ( I => IC % Field )
     class is ( Interactions_F_Form )
     associate &
-      ( E  => I % Value ( :, I % EMISSIVITY ), &
-        EO => I % Value ( :, I % EFFECTIVE_OPACITY ), &
-        TO => I % Value ( :, I % TRANSPORT_OPACITY ) )
+      ( Xi_J  => I % Value ( :, I % EMISSIVITY_J ), &
+        Chi_J => I % Value ( :, I % OPACITY_J ), &
+        Chi_H => I % Value ( :, I % OPACITY_H ) )
 
     call SetInteractions &
            ( HS, CoordinateSystem, IsHardSphere, EquilibriumDensity, &
              EffectiveOpacity, TransportOpacity, SofteningParameter, &
-             E, EO, TO )
-    end associate !-- ED, etc.
+             Xi_J, Chi_J, Chi_H )
+    end associate !-- Xi_J, etc.
     end select !-- I
     end select !-- IC
 
@@ -437,7 +437,7 @@ contains
   subroutine SetInteractions &
                ( HS, CoordinateSystem, IsHardSphere, EquilibriumDensity, &
                  EffectiveOpacity, TransportOpacity, SofteningFactor, &
-                 E, EO, TO )
+                 Xi_J, Chi_J, Chi_H )
 
     class ( HomogeneousSphereForm ), intent ( in ) :: &
       HS
@@ -451,9 +451,9 @@ contains
       TransportOpacity, &
       SofteningFactor
     real ( KDR ), dimension ( : ), intent ( out ) :: &
-      E, &
-      EO, &
-      TO
+      Xi_J, &
+      Chi_J, &
+      Chi_H
 
     class ( GeometryFlatForm ), pointer :: &
       G
@@ -475,24 +475,24 @@ contains
         !$OMP parallel do private ( iV )
         do iV = 1, nValues
           if ( R ( iV ) < 1.0_KDR ) then
-            E  ( iV ) = EffectiveOpacity * EquilibriumDensity
-            EO ( iV ) = EffectiveOpacity 
-            TO ( iV ) = TransportOpacity 
+            Xi_J  ( iV ) = EffectiveOpacity * EquilibriumDensity
+            Chi_J ( iV ) = EffectiveOpacity 
+            Chi_H ( iV ) = TransportOpacity 
           else 
-            E  ( iV ) = 0.0_KDR
-            EO ( iV ) = 0.0_KDR
-            TO ( iV ) = 0.0_KDR 
+            Xi_J  ( iV ) = 0.0_KDR
+            Chi_J ( iV ) = 0.0_KDR
+            Chi_H ( iV ) = 0.0_KDR 
           end if
         end do !-- iV
         !$OMP end parallel do
       else 
         !$OMP parallel do private ( iV )
         do iV = 1, nValues
-          E  ( iV ) = EffectiveOpacity * EquilibriumDensity &
-                      / ( 1.0_KDR + R ( iV ) ** SofteningFactor )
-          EO ( iV ) = EffectiveOpacity &
-                      / ( 1.0_KDR + R ( iV ) ** SofteningFactor )
-          TO ( iV ) = TransportOpacity &
+          Xi_J  ( iV ) = EffectiveOpacity * EquilibriumDensity &
+                         / ( 1.0_KDR + R ( iV ) ** SofteningFactor )
+          Chi_J ( iV ) = EffectiveOpacity &
+                         / ( 1.0_KDR + R ( iV ) ** SofteningFactor )
+          Chi_H ( iV ) = TransportOpacity &
                       / ( 1.0_KDR + R ( iV ) ** SofteningFactor )
         end do !-- iV
         !$OMP end parallel do
@@ -670,11 +670,11 @@ contains
     !-- Set "edge" values
 
     associate &
-      (   R   => Profile ( :, iRADIUS_TS ), &           !-- cell outer edge
-          J   => Profile ( :, iCOMOVING_ENERGY_TS ), &  !-- cell center 
-          FF  => Profile ( :, iFLUX_FACTOR_TS ), &      !-- cell center
-          SF => Profile ( :, iSTRESS_FACTOR_TS ), &     !-- cell center
-          nProfile => size ( Profile, dim = 1 ) )
+      ( R  => Profile ( :, iRADIUS_TS ), &           !-- cell outer edge
+        J  => Profile ( :, iCOMOVING_ENERGY_TS ), &  !-- cell center 
+        FF => Profile ( :, iFLUX_FACTOR_TS ), &      !-- cell center
+        SF => Profile ( :, iSTRESS_FACTOR_TS ), &     !-- cell center
+        nProfile => size ( Profile, dim = 1 ) )
 
     allocate ( Radius ( nProfile + 1 ) )
     allocate ( dRC ( nProfile ) )

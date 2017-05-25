@@ -12,7 +12,8 @@ module Interactions_ASC__Form
   type, public, extends ( Field_ASC_Template ) :: Interactions_ASC_Form
     type ( MeasuredValueForm ) :: &
       LengthUnit, &
-      EnergyDensityUnit
+      EnergyDensityUnit, &
+      TemperatureUnit
     character ( LDL ) :: &
       InteractionsType = ''
   contains
@@ -37,7 +38,8 @@ contains
 
   subroutine Initialize &
                ( IA, A, InteractionsType, NameShortOption, LengthUnitOption, &
-                 EnergyDensityUnitOption, IgnorabilityOption )
+                 EnergyDensityUnitOption, TemperatureUnitOption, &
+                 IgnorabilityOption )
 
     class ( Interactions_ASC_Form ), intent ( inout ) :: &
       IA
@@ -49,7 +51,8 @@ contains
       NameShortOption
     type ( MeasuredValueForm ), intent ( in ), optional :: &
       LengthUnitOption, &
-      EnergyDensityUnitOption
+      EnergyDensityUnitOption, &
+      TemperatureUnitOption
     integer ( KDL ), intent ( in ), optional :: &
       IgnorabilityOption
 
@@ -64,6 +67,8 @@ contains
       IA % LengthUnit = LengthUnitOption
     if ( present ( EnergyDensityUnitOption ) ) &
       IA % EnergyDensityUnit = EnergyDensityUnitOption
+    if ( present ( TemperatureUnitOption ) ) &
+      IA % TemperatureUnit = TemperatureUnitOption
 
     NameShort = 'Interactions'
     if ( present ( NameShortOption ) ) &
@@ -142,7 +147,7 @@ contains
     class is ( Interactions_CSL_Form )
       call FC % Initialize &
              ( C, FA % NameShort, FA % InteractionsType, FA % LengthUnit, &
-               FA % EnergyDensityUnit, nValues, &
+               FA % EnergyDensityUnit, FA % TemperatureUnit, nValues, &
                IgnorabilityOption = FA % IGNORABILITY )
     end select !-- FC
 
