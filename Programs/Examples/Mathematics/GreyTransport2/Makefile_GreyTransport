@@ -177,11 +177,13 @@ WoosleyHeger_07_G__Form.o: \
   Fluid_ASC__Form.o \
   WoosleyHeger_07_Header_Form.o \
   RadiationMoments_Form.o \
-  NeutrinoMoments_Form.o \
+  NeutrinoMoments_G__Form.o \
   RadiationMoments_ASC__Form.o \
+  ApplyCurvilinear_RM__Command.o \
   Interactions_Template.o \
-  Interactions_NM_G_1__Form.o \
+  Interactions_NM_1_G__Form.o \
   Interactions_ASC__Form.o \
+  ApplyRelaxation_RM__Command.o \
   WoosleyHeger_07_G__Form.f90
 
 WoosleyHeger_07_G.o: \
