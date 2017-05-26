@@ -31,12 +31,13 @@ module CONSTANT_Singleton
       !-- Astrophysical SI
       !   http://pdg.lbl.gov/2016/reviews
       !          /rpp2016-rev-astrophysical-constants.pdf
-      ASTRONOMICAL_UNIT_SI =  1.49597870700e+11_KDR, &
-      PARSEC_SI            =  3.08567758149e+16_KDR, &
-      SOLAR_MASS_SI        =  1.98848e+30_KDR, &
+      ASTRONOMICAL_UNIT_SI  =  1.49597870700e+11_KDR, &
+      PARSEC_SI             =  3.08567758149e+16_KDR, &
+      SOLAR_MASS_SI         =  1.98848e+30_KDR, &
       !-- Particles (that are not in the PDG Physical Constants)  
       !   http://www-pdg.lbl.gov/2016/tables/rpp2016-tab-baryons-N.pdf
-      NEUTRON_MASS_AMU     =  1.0086649159_KDR, &
+      NEUTRON_MASS_AMU        =   1.0086649159_KDR, &
+      NEUTRON_AXIAL_COUPLING  =  -1.2723_KDR, &
       !-- GenASiS Fundamental
       SPEED_OF_LIGHT  =  1.0_KDR, &
       PLANCK_REDUCED  =  1.0_KDR, &    
@@ -111,7 +112,8 @@ module CONSTANT_Singleton
       PARSEC             =  PARSEC, &
       SOLAR_MASS         =  SOLAR_MASS, &
       !-- Particles (that are not in the PDG Physical Constants)
-      NEUTRON_MASS       =  NEUTRON_MASS
+      NEUTRON_MASS            =  NEUTRON_MASS, &
+      NEUTRON_AXIAL_COUPLING  =  NEUTRON_AXIAL_COUPLING
   end type ConstantSingleton
   
   type ( ConstantSingleton ), public, parameter :: &
