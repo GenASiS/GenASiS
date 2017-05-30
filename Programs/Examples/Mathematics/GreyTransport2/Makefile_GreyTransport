@@ -183,7 +183,7 @@ WoosleyHeger_07_G__Form.o: \
   Interactions_Template.o \
   Interactions_NM_1_G__Form.o \
   Interactions_ASC__Form.o \
-  ApplyRelaxation_RM__Command.o \
+  ApplyRelaxation_NM_G__Command.o \
   WoosleyHeger_07_G__Form.f90
 
 WoosleyHeger_07_G.o: \

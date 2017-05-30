@@ -262,7 +262,7 @@ contains
     call ComputeConservedNumber ( D, N )
 
     if ( associated ( C % Interactions ) ) &
-      call C % Interactions % ComputeEquilibriumParameters ( T_EQ, C )
+      call C % Interactions % ComputeEquilibriumParameters ( T_EQ, Eta_EQ, C )
     call C % ComputeSpectralParameters &
            ( T, Eta, E_Ave, F_Ave, J_EQ, J, N, T_EQ, Eta_EQ )
 
@@ -325,7 +325,7 @@ contains
     call ComputeComovingNumber ( N, D )
 
     if ( associated ( C % Interactions ) ) &
-      call C % Interactions % ComputeEquilibriumParameters ( T_EQ, C )
+      call C % Interactions % ComputeEquilibriumParameters ( T_EQ, Eta_EQ, C )
     call C % ComputeSpectralParameters &
            ( T, Eta, E_Ave, F_Ave, J_EQ, J, N, T_EQ, Eta_EQ )
 

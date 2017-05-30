@@ -129,5 +129,12 @@ ApplyRelaxation_RM__Command.o: \
   Sources_RM__Form.o \
   ApplyRelaxation_RM__Command.f90
 
+ApplyRelaxation_NM_G__Command.o: \
+  Basics.o \
+  Mathematics.o \
+  NeutrinoMoments_G__Form.o \
+  ApplyRelaxation_RM__Command.o \
+  ApplyRelaxation_NM_G__Command.f90
+
 GreyMoments.a: $(GREY_MOMENTS)
 	ar r GreyMoments.a $(GREY_MOMENTS)

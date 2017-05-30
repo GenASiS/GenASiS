@@ -233,6 +233,8 @@ contains
       fdtheta, fdtheta2, &
       fdetadtheta
 
+    nValues  =  size ( Xi_J )
+    
     Factor  =  4 / TwoPi ** 3  *  G_F ** 2  *  ( 1  +  3 * g_A ** 2 )
     Q       =  m_n - m_p
 
@@ -242,10 +244,10 @@ contains
     !$OMP             fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta ) 
     do iV = 1, nValues
 
+!call Show ( iV, '>>> iV' )
+
       if ( T ( iV ) == 0.0_KDR ) &
         cycle
-
-!call Show ( iV, '>>> iV' )
 
       N_p  =  M ( iV )  *  N ( iV )  *  X_p ( iV )  /  AMU
       N_n  =  M ( iV )  *  N ( iV )  *  X_n ( iV )  /  AMU

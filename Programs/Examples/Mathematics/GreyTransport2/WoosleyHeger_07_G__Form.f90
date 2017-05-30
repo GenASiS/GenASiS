@@ -14,7 +14,7 @@ module WoosleyHeger_07_G__Form
   use Interactions_Template
   use Interactions_NM_1_G__Form
   use Interactions_ASC__Form
-  use ApplyRelaxation_RM__Command
+  use ApplyRelaxation_NM_G__Command
 
   implicit none
   private
@@ -176,21 +176,21 @@ contains
     S % ApplySources_1D ( WH % NEUTRINOS_E_NU ) % Pointer &
       =>  ApplySources_Radiation
     S % ApplyRelaxation_1D ( WH % NEUTRINOS_E_NU ) % Pointer &
-      =>  ApplyRelaxation_RM
+      =>  ApplyRelaxation_NM_G
     S % HarvestIncrement_1D ( WH % NEUTRINOS_E_NU ) % Pointer &
       =>  ComputeFluidSource_Radiation
 
     S % ApplySources_1D ( WH % NEUTRINOS_E_NU_BAR ) % Pointer &
       =>  ApplySources_Radiation
     S % ApplyRelaxation_1D ( WH % NEUTRINOS_E_NU_BAR ) % Pointer &
-      =>  ApplyRelaxation_RM
+      =>  ApplyRelaxation_NM_G
     S % HarvestIncrement_1D ( WH % NEUTRINOS_E_NU_BAR ) % Pointer &
       =>  ComputeFluidSource_Radiation
 
     S % ApplySources_1D ( WH % NEUTRINOS_MU_TAU_NU_NU_BAR ) % Pointer &
       =>  ApplySources_Radiation
     S % ApplyRelaxation_1D ( WH % NEUTRINOS_MU_TAU_NU_NU_BAR ) % Pointer &
-      =>  ApplyRelaxation_RM
+      =>  ApplyRelaxation_NM_G
     S % HarvestIncrement_1D ( WH % NEUTRINOS_MU_TAU_NU_NU_BAR ) % Pointer &
       =>  ComputeFluidSource_Radiation
 
