@@ -466,7 +466,7 @@ contains
           =  - 3.0_KDR  * log ( Factor_Eta  *  J ( iV ) &
                                 *  N ( iV ) ** ( - 4.0_KDR / 3.0_KDR ) )
       else
-        Eta ( iV )  =  0.0_KDR
+        Eta ( iV )  =  log ( tiny ( 0.0_KDR ) )  *  10.0_KDR
       end if
 
       call DFERMI ( 3.0_KDR, Eta ( iV ), 0.0_KDR, Fermi_3, &
