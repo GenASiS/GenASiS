@@ -463,7 +463,9 @@ real ( KDR ), dimension ( Fluid % nValues ) :: &
              FluidSource_Radiation % Value ( :, iMomentum_2 ), &
              FluidSource_Radiation % Value ( :, iMomentum_3 ), &
              FluidSource_Radiation % Value ( :, iProton ), &
-             F % Value ( :, F % TEMPERATURE ) )
+             F % Value ( :, F % TEMPERATURE ), &
+             F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
+             F % Value ( :, F % CHEMICAL_POTENTIAL_E ) )
 
 dG_G   = Increment % Value ( :, iEnergy ) &
          /  max ( abs ( F % Value ( :, F % CONSERVED_ENERGY ) ), &
@@ -615,7 +617,7 @@ end if
 
   subroutine ApplySources_Fluid_Kernel &
                ( K_G, K_S_1, K_S_2, K_S_3, K_DP, K_DS, IsProperCell, FS_R_G, &
-                 FS_R_S_1, FS_R_S_2, FS_R_S_3, FS_R_DP, T )
+                 FS_R_S_1, FS_R_S_2, FS_R_S_3, FS_R_DP, T, Mu_n_p, Mu_e )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       K_G, &
@@ -628,7 +630,8 @@ end if
       FS_R_G, &
       FS_R_S_1, FS_R_S_2, FS_R_S_3, &
       FS_R_DP, &
-      T
+      T, &
+      Mu_n_p, Mu_e
 
     integer ( KDI ) :: &
       iV, &
@@ -661,7 +664,14 @@ end if
       K_S_2 ( iV )  =  K_S_2 ( iV )  +  FS_R_S_2 ( iV )
       K_S_3 ( iV )  =  K_S_3 ( iV )  +  FS_R_S_3 ( iV )
       K_DP ( iV )   =  K_DP ( iV )   +  FS_R_DP ( iV )
-      K_DS ( iV )   =  K_DS ( iV )   +  AMU * FS_R_G ( iV ) / T ( iV )
+
+      K_DS ( iV )   &
+        =  K_DS ( iV )   &
+           +  ( AMU * FS_R_G ( iV ) &
+                -  ( Mu_e ( iV )  -  Mu_n_p ( iV ) )  &
+                   *  FS_R_DP ( iV ) ) &
+              /  T ( iV )
+
     end do
     !$OMP end parallel do
 
