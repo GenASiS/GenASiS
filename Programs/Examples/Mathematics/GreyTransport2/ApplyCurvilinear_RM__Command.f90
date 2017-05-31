@@ -143,23 +143,26 @@ contains
     
     !$OMP parallel do private ( iV )
     do iV = 1, nV
-      H ( iV )  =  max ( sqrt ( H_1 ( iV ) ** 2  &
+      H ( iV )  =  sqrt ( H_1 ( iV ) ** 2  &
                                 +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
-                                +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 ), &
-                    tiny ( 0.0_KDR ) ) 
+                                +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 ) 
     end do
     !$OMP end parallel do
    
     select case ( trim ( CoordinateSystem ) )
     case ( 'CYLINDRICAL' )
 
-      !$OMP parallel do private ( iV )
+      !$OMP parallel do private ( iV, K_33 )
       do iV = 1, nV
         if ( .not. IsProperCell ( iV ) ) cycle
 
-        K_33  =  0.5_KDR * ( 1.0_KDR - SF ( iV ) ) * J ( iV )  + 0.5_KDR &
-                 * ( 3 * SF ( iV ) - 1.0_KDR ) * M_DD_33 ( iV ) &
-                 *  H_3 ( iV ) ** 2 / H ( iV )
+        if ( H ( iV ) > 0.0_KDR ) then
+          K_33  =  0.5_KDR * ( 1.0_KDR - SF ( iV ) ) * J ( iV ) &
+                   + 0.5_KDR * ( 3 * SF ( iV ) - 1.0_KDR ) * M_DD_33 ( iV ) &
+                     *  H_3 ( iV ) ** 2 / H ( iV )
+        else
+          K_33  =  0.5_KDR * ( 1.0_KDR - SF ( iV ) ) * J ( iV )
+        end if
 
         KVM_1 ( iV )  =  KVM_1 ( iV )  +  K_33 * dLVJ_dX1 ( iV ) * dT
         SVM_1 ( iV )  =  SVM_1 ( iV )  +  Weight_RK * K_33 * dLVJ_dX1 ( iV )
@@ -168,18 +171,21 @@ contains
 
     case ( 'SPHERICAL' )
 
-      !$OMP parallel do private ( iV )
+      !$OMP parallel do private ( iV, K_22, K_33 )
       do iV = 1, nV
         if ( .not. IsProperCell ( iV ) ) cycle
           
-        K_22 &
-          = 0.5_KDR * ( 1.0_KDR - SF ( iV ) ) * J ( iV ) + 0.5_KDR &
-            * ( 3 * SF ( iV ) - 1.0_KDR ) * M_DD_22 ( iV ) &
-            *  H_2 ( iV ) ** 2 / H ( iV )
-        K_33 &
-          = 0.5_KDR * ( 1.0_KDR - SF ( iV ) ) * J ( iV ) + 0.5_KDR &
-            * ( 3 * SF ( iV ) - 1.0_KDR ) * M_DD_33 ( iV ) &
-            *  H_3 ( iV ) ** 2 / H ( iV )
+        if ( H ( iV ) > 0.0_KDR ) then
+          K_22  =  0.5_KDR * ( 1.0_KDR - SF ( iV ) ) * J ( iV ) &
+                   + 0.5_KDR * ( 3 * SF ( iV ) - 1.0_KDR ) * M_DD_22 ( iV ) &
+                     *  H_2 ( iV ) ** 2 / H ( iV )
+          K_33  =  0.5_KDR * ( 1.0_KDR - SF ( iV ) ) * J ( iV ) &
+                   + 0.5_KDR * ( 3 * SF ( iV ) - 1.0_KDR ) * M_DD_33 ( iV ) &
+                     *  H_3 ( iV ) ** 2 / H ( iV )
+        else
+          K_22  =  0.5_KDR * ( 1.0_KDR - SF ( iV ) ) * J ( iV )
+          K_33  =  0.5_KDR * ( 1.0_KDR - SF ( iV ) ) * J ( iV )
+        end if
 
         KVM_1 ( iV ) &
           =  KVM_1 ( iV )  +  0.5_KDR * ( K_22 + K_33 ) * dLVJ_dX1 ( iV ) * dT

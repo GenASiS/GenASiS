@@ -653,7 +653,8 @@ end if
 ! call Show ( FS_R_DP, '>>> FS_R_DP' )
 
 ! call Show ( K_DS, '>>> K_DS' )
-! call Show ( AMU * FS_R_G / T, '>>> FS_R_DS' )
+! call Show ( AMU * FS_R_G / T, '>>> FS_R_DS_G' )
+! call Show ( - ( Mu_e  -  Mu_n_p ) * FS_R_DP / T, '>>> FS_R_DS_DP' )
 
     !$OMP parallel do private ( iV )
     do iV = 1, nV
