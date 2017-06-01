@@ -130,6 +130,7 @@ contains
       Current
 
     call Show ( 'Computing Interactions', I % IGNORABILITY )
+    call Show ( Current % Name, 'Species', I % IGNORABILITY )
 
     call Clear ( I % Value ( :, I % EMISSIVITY_J ) )
     call Clear ( I % Value ( :, I % EMISSIVITY_H ) )
@@ -138,26 +139,28 @@ contains
     call Clear ( I % Value ( :, I % OPACITY_H ) )
     call Clear ( I % Value ( :, I % OPACITY_N ) )
 
-    associate &
-      ( Nu_E    => I % Neutrinos_E_Nu, &
-        NuBar_E => I % Neutrinos_E_NuBar, &
-        Nu_X    => I % Neutrinos_MuTau_NuNuBar, &
-        F       => I % Fluid )
+    select type ( NM => Current )
+    class is ( NeutrinoMoments_G_Form )
+
+    associate ( F  =>  I % Fluid )
 
     select case ( trim ( Current % Type ) )
     case ( 'NEUTRINOS_E_NU' )
        
-      call Show ( Nu_E % Name, 'Species', I % IGNORABILITY )
-
       call I % Compute_NuE_N &
              ( I % Value ( :, I % EMISSIVITY_J ), &
                I % Value ( :, I % EMISSIVITY_N ), &
+               I % Value ( :, I % OPACITY_J ), &
+               I % Value ( :, I % OPACITY_H ), &
+               I % Value ( :, I % OPACITY_N ), &
                F % Value ( :, F % BARYON_MASS ), &
                F % Value ( :, F % COMOVING_DENSITY ), &
                F % Value ( :, F % TEMPERATURE ), &
                F % Value ( :, F % MASS_FRACTION_PROTON ), &
                F % Value ( :, F % MASS_FRACTION_NEUTRON ), &
-               F % Value ( :, F % CHEMICAL_POTENTIAL_E ) )
+               F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
+               NM % Value ( :, NM % TEMPERATURE_PARAMETER ), &
+               NM % Value ( :, NM % DEGENERACY_PARAMETER ) )
 
 !    case default
 !      call Show ( 'Radiation Type not recognized', CONSOLE % ERROR )
@@ -165,7 +168,8 @@ contains
 !      call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )
     end select !-- Radiation % Type
 
-    end associate !-- Nu_E, etc.
+    end associate !-- F
+    end select !-- NM
     
   end subroutine Compute
 
@@ -249,43 +253,48 @@ contains
   end subroutine ComputeEquilibrium_T_Eta
 
 
-  subroutine Compute_NuE_N ( Xi_J, Xi_N, M, N, T, X_P, X_N, Mu_E )
+  subroutine Compute_NuE_N &
+               ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, M, N, T, X_p, X_n, Mu_E, &
+                 T_nu, Eta_nu )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      Xi_J, Xi_N
+      Xi_J, Xi_N, &
+      Chi_J, Chi_H, Chi_N
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       M, &
       N, &
       T, &
-      X_p, &
-      X_n, &
-      Mu_E
+      X_p, X_n, &
+      Mu_e, &
+      T_nu, &
+      Eta_nu
 
     integer ( KDI ) :: &
       iV, &
       nValues
     real ( KDR ) :: &
-      Factor, &
+      Factor_Chi, Factor_Xi, &
       Q, &
       N_p, N_n, &
-      Eta_E_Q, &
-      Fermi_2_E, Fermi_3_E, Fermi_4_E, Fermi_5_E, &
+      Eta_e_Q, &
+      Fermi_2_e, Fermi_3_e, Fermi_4_e, Fermi_5_e, &
+      Fermi_2_Nu, Fermi_3_Nu, Fermi_4_Nu, Fermi_5_Nu, &
       fdeta, fdeta2, &
       fdtheta, fdtheta2, &
       fdetadtheta
 
     nValues  =  size ( Xi_J )
     
-    Factor  =  4 / TwoPi ** 3  *  G_F ** 2  *  ( 1  +  3 * g_A ** 2 )
-    Q       =  m_n - m_p
+    Factor_Chi  =  G_F ** 2  /  Pi  *  ( 1  +  3 * g_A ** 2 )
+     Factor_Xi  =  FourPi / TwoPi ** 3  *  Factor_Chi
+             Q  =  m_n - m_p
 
     !$OMP parallel do &
-    !$OMP   private ( iV, N_P, N_N, Eta_E_Q, &
-    !$OMP             Fermi_2_E, Fermi_3_E, Fermi_4_E, Fermi_5_E, &
+    !$OMP   private ( iV, N_p, N_n, Eta_e_Q, &
+    !$OMP             Fermi_2_e, Fermi_3_e, Fermi_4_e, Fermi_5_e, &
+    !$OMP             Fermi_2_Nu, Fermi_3_Nu, Fermi_4_Nu, Fermi_5_Nu, &
     !$OMP             fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta ) 
     do iV = 1, nValues
-
-!call Show ( iV, '>>> iV' )
 
       if ( T ( iV ) == 0.0_KDR ) &
         cycle
@@ -293,30 +302,66 @@ contains
       N_p  =  M ( iV )  *  N ( iV )  *  X_p ( iV )  /  AMU
       N_n  =  M ( iV )  *  N ( iV )  *  X_n ( iV )  /  AMU
 
-      Eta_E_Q  =  ( Mu_E ( iV )  -  Q )  /  T ( iV )
+      Eta_e_Q  =  ( Mu_e ( iV )  -  Q )  /  T ( iV )
 
-      call DFERMI ( 2.0_KDR, Eta_E_Q, 0.0_KDR, Fermi_2_E, &
+      call DFERMI ( 2.0_KDR, Eta_e_Q, 0.0_KDR, Fermi_2_e, &
                     fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
-      call DFERMI ( 3.0_KDR, Eta_E_Q, 0.0_KDR, Fermi_3_E, &
+      call DFERMI ( 3.0_KDR, Eta_e_Q, 0.0_KDR, Fermi_3_e, &
                     fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
-      call DFERMI ( 4.0_KDR, Eta_E_Q, 0.0_KDR, Fermi_4_E, &
+      call DFERMI ( 4.0_KDR, Eta_e_Q, 0.0_KDR, Fermi_4_e, &
                     fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
-      call DFERMI ( 5.0_KDR, Eta_E_Q, 0.0_KDR, Fermi_5_E, &
+      call DFERMI ( 5.0_KDR, Eta_e_Q, 0.0_KDR, Fermi_5_e, &
+                    fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+
+      call DFERMI ( 2.0_KDR, Eta_nu ( iV ), 0.0_KDR, Fermi_2_nu, &
+                    fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+      call DFERMI ( 3.0_KDR, Eta_nu ( iV ), 0.0_KDR, Fermi_3_nu, &
+                    fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+      call DFERMI ( 4.0_KDR, Eta_nu ( iV ), 0.0_KDR, Fermi_4_nu, &
+                    fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+      call DFERMI ( 5.0_KDR, Eta_nu ( iV ), 0.0_KDR, Fermi_5_nu, &
                     fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
 
       Xi_J ( iV )  &
         =  Xi_J ( iV )  &
-           +  Factor  *  N_p  *  T ( iV ) ** 4 &
-              *  (    T ( iV ) ** 2     *  Fermi_5_E  &
-                   +  2 * Q * T ( iV )  *  Fermi_4_E  &
-                   +  Q ** 2            *  Fermi_3_E )
+           +  Factor_Xi  *  N_p  *  T ( iV ) ** 4 &
+              *  (    T ( iV ) ** 2     *  Fermi_5_e  &
+                   +  2 * Q * T ( iV )  *  Fermi_4_e  &
+                   +  Q ** 2            *  Fermi_3_e )
 
       Xi_N ( iV )  &
         =  Xi_N ( iV )  &
-           +  Factor  *  N_p  *  T ( iV ) ** 3 &
-              *  (    T ( iV ) ** 2     *  Fermi_4_E  &
-                   +  2 * Q * T ( iV )  *  Fermi_3_E  &
-                   +  Q ** 2            *  Fermi_2_E )
+           +  Factor_Xi  *  N_p  *  T ( iV ) ** 3 &
+              *  (    T ( iV ) ** 2     *  Fermi_4_e  &
+                   +  2 * Q * T ( iV )  *  Fermi_3_e  &
+                   +  Q ** 2            *  Fermi_2_e )
+
+      if ( Fermi_3_nu > 0.0_KDR ) then
+
+        Chi_J ( iV )  &
+          =  Chi_J ( iV )  &
+             +  Factor_Chi  *  N_n  /  Fermi_3_nu &
+                *  (    T_nu ( iV ) ** 2     *  Fermi_5_nu  &
+                     +  2 * Q * T_nu ( iV )  *  Fermi_4_nu  &
+                     +  Q ** 2               *  Fermi_3_nu )
+
+        Chi_H ( iV )  &
+          =  Chi_H ( iV )  &
+             +  Factor_Chi  *  N_n  /  Fermi_3_nu &
+                *  (    T_nu ( iV ) ** 2     *  Fermi_5_nu  &
+                     +  2 * Q * T_nu ( iV )  *  Fermi_4_nu  &
+                     +  Q ** 2               *  Fermi_3_nu )
+
+      end if
+     
+      if ( Fermi_2_nu > 0.0_KDR ) then
+        Chi_N ( iV )  &
+          =  Chi_N ( iV )  &
+             +  Factor_Chi  *  N_n  /  Fermi_2_nu &
+                *  (    T_nu ( iV ) ** 2     *  Fermi_4_nu  &
+                     +  2 * Q * T_nu ( iV )  *  Fermi_3_nu  &
+                     +  Q ** 2               *  Fermi_2_nu )
+      end if
 
     end do !-- iV
     !$OMP end parallel do
@@ -384,6 +429,9 @@ contains
     
     !$OMP parallel do private ( iV, Ratio )
     do iV = 1, nValues
+
+      if ( E ( iV ) == 0.0_KDR ) &
+        cycle
 
       Ratio  =  ( Xi_J ( iV )  -  Chi_J ( iV ) * J ( iV ) ) * dT  /  E ( iV )
 
