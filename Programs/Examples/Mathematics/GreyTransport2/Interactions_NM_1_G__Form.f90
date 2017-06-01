@@ -12,6 +12,8 @@ module Interactions_NM_1_G__Form
   private
 
   type, public, extends ( InteractionsTemplate ) :: Interactions_NM_1_G_Form
+    real ( KDR ) :: &
+      RegulationParameter = 0.01_KDR
     class ( Fluid_P_MHN_Form ), pointer :: &
       Fluid => null ( )
     class ( NeutrinoMoments_G_Form ), pointer :: &
@@ -29,6 +31,8 @@ module Interactions_NM_1_G__Form
       Set => Set_NM_1_G
     procedure, public, pass :: &
       Compute
+    procedure, public, pass :: &
+      Regulate
     final :: &
       Finalize
     procedure, private, pass ( I ) :: &
@@ -42,10 +46,13 @@ module Interactions_NM_1_G__Form
   end type Interactions_NM_1_G_Form
 
     private :: &
-      ComputeEquilibrium_T_Eta_Kernel
+      ComputeEquilibrium_T_Eta_Kernel, &
+      RegulateKernel
 
     real ( KDR ), private :: &
+      Pi, &
       TwoPi, &
+      FourPi, &
       AMU, &
       m_n, m_p, &
       G_F, &
@@ -82,12 +89,14 @@ contains
            ( LengthUnit, EnergyDensityUnit, TemperatureUnit, nValues, &
              VariableOption, NameOption, ClearOption, UnitOption )
 
-    TwoPi  =  2.0_KDR * CONSTANT % PI
-    AMU    =  CONSTANT % ATOMIC_MASS_UNIT
-    m_n    =  CONSTANT % NEUTRON_MASS
-    m_p    =  CONSTANT % PROTON_MASS
-    G_F    =  CONSTANT % FERMI_COUPLING
-    g_A    =  CONSTANT % NEUTRON_AXIAL_COUPLING
+    Pi      =  CONSTANT % PI
+    TwoPi   =  2.0_KDR * CONSTANT % PI
+    FourPi  =  4.0_KDR * CONSTANT % PI
+    AMU     =  CONSTANT % ATOMIC_MASS_UNIT
+    m_n     =  CONSTANT % NEUTRON_MASS
+    m_p     =  CONSTANT % PROTON_MASS
+    G_F     =  CONSTANT % FERMI_COUPLING
+    g_A     =  CONSTANT % NEUTRON_AXIAL_COUPLING
 
   end subroutine InitializeAllocate_NM_1_G
 
@@ -161,6 +170,39 @@ contains
   end subroutine Compute
 
 
+  subroutine Regulate ( I, Current, dT )
+
+    class ( Interactions_NM_1_G_Form ), intent ( inout ) :: &
+      I
+    class ( CurrentTemplate ), intent ( in ) :: &
+      Current
+    real ( KDR ), intent ( in ) :: &
+      dT
+
+    call Show ( 'Regulating Interactions', I % IGNORABILITY )
+
+    select type ( NM => Current )
+    class is ( NeutrinoMoments_G_Form )
+
+    associate ( F => I % Fluid )
+
+    call RegulateKernel &
+           ( I % Value ( :, I % EMISSIVITY_J ), &
+             I % Value ( :, I % EMISSIVITY_H ), &
+             I % Value ( :, I % EMISSIVITY_N ), &
+             I % Value ( :, I % OPACITY_J ), &
+             I % Value ( :, I % OPACITY_H ), &
+             I % Value ( :, I % OPACITY_N ), &
+             NM % Value ( :, NM % COMOVING_ENERGY ), &
+             F % Value ( :, F % INTERNAL_ENERGY ), &
+             I % RegulationParameter, dT )
+
+    end associate !-- F
+    end select !-- NM
+
+  end subroutine Regulate
+
+
   impure elemental subroutine Finalize ( I )
 
     type ( Interactions_NM_1_G_Form ), intent ( inout ) :: &
@@ -210,8 +252,7 @@ contains
   subroutine Compute_NuE_N ( Xi_J, Xi_N, M, N, T, X_P, X_N, Mu_E )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      Xi_J, &
-      Xi_N
+      Xi_J, Xi_N
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       M, &
       N, &
@@ -318,6 +359,50 @@ contains
     !$OMP end parallel do
 
   end subroutine ComputeEquilibrium_T_Eta_Kernel
+
+
+  subroutine RegulateKernel &
+               ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, J, E, R, dT )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      Xi_J, Xi_H, Xi_N, &
+      Chi_J, Chi_H, Chi_N
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      J, &
+      E
+    real ( KDR ), intent ( in ) :: &
+      R, &
+      dT
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+    real ( KDR ) :: &
+      Ratio  
+
+    nValues  =  size ( Xi_J )
+    
+    !$OMP parallel do private ( iV, Ratio )
+    do iV = 1, nValues
+
+      Ratio  =  ( Xi_J ( iV )  -  Chi_J ( iV ) * J ( iV ) ) * dT  /  E ( iV )
+
+      if ( Ratio > R ) then
+         Xi_J ( iV )  =  R / Ratio  *   Xi_J ( iV )
+         Xi_H ( iV )  =  R / Ratio  *   Xi_H ( iV )
+         Xi_N ( iV )  =  R / Ratio  *   Xi_N ( iV )
+        Chi_J ( iV )  =  R / Ratio  *  Chi_J ( iV )
+        Chi_H ( iV )  =  R / Ratio  *  Chi_H ( iV )
+        Chi_N ( iV )  =  R / Ratio  *  Chi_N ( iV )
+call Show ( '>>> Regulating Interactions', CONSOLE % ERROR )
+call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', CONSOLE % ERROR )
+call Show ( iV, '>>> iV', CONSOLE % ERROR )
+call Show ( R / Ratio, '>>> RegulationFactor', CONSOLE % ERROR )
+      end if
+    end do !-- iV
+    !$OMP end parallel do
+
+  end subroutine RegulateKernel
 
 
 end module Interactions_NM_1_G__Form

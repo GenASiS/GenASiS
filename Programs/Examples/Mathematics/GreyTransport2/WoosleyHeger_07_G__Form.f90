@@ -392,6 +392,7 @@ contains
 
     !-- An occasion to compute the interactions to be used in relaxation
     call Interactions % Compute ( Radiation )
+    call Interactions % Regulate ( Radiation, TimeStep )
 
   end subroutine ApplySources_Radiation
 
