@@ -1,7 +1,9 @@
 include $(PATH_EVOLUTIONS)/Makefile_ObjectFiles
 include $(PATH_FIELDS)/Makefile_ObjectFiles
+include $(PATH_NONLINEAREQNS)/Makefile_ObjectFiles
 
 SOLVERS = \
   Solvers.o \
   $(EVOLUTIONS) \
-  $(FIELDS)
+  $(FIELDS) \
+  $(NONLINEAREQNS)

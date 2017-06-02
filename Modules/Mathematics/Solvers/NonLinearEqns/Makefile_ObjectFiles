@@ -1,2 +1,3 @@
 NONLINEAREQNS = \
+  NonLinearEqns.o \
   RootFinding_Form.o 

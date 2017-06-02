@@ -20,7 +20,7 @@ contains
       Result
       
     select type ( P => Parameters )
-    type is ( ArrayReal_1D_Form )
+    type is ( Real_1D_Form )
       call Show ( P % Value, 'Parameters', CONSOLE % INFO_7 )  
     end select
     
@@ -36,7 +36,7 @@ end module MySinusoidalFunction_Module
 program RootFinding_Form_Test
 
   use Basics
-  use RootFinding_Form
+  use NonLinearEqns
   use MySinusoidalFunction_Module
   
   implicit none
@@ -59,7 +59,7 @@ program RootFinding_Form_Test
     Root
   procedure ( FunctionEvaluatorInterface ), pointer :: &
     FunctionEvaluator => null ( )
-  type ( ArrayReal_1D_Form ) :: &
+  type ( Real_1D_Form ) :: &
     Parameters
   type ( RootFindingForm ) :: &
     RF

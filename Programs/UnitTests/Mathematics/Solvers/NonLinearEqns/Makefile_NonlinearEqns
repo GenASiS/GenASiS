@@ -1,0 +1,29 @@
+PATH_GENASIS = ../../../../../..
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+all: RootFinding_Form_Test
+
+RootFinding_Form_Test: Basics.a NonLinearEqns.a RootFinding_Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o RootFinding_Form_Test_$(MACHINE) \
+          RootFinding_Form_Test.o \
+	  Basics.a NonLinearEqns.a $(LIBRARIES)
+
+clean:
+	rm -f *.o *.a *.mod *.ld
+
+clobber: clean
+	rm -f RootFindding_Form_Test_*
+
+include $(PATH_BASICS)/Makefile_Dependencies
+include $(PATH_MANIFOLDS)/Makefile_Dependencies
+include $(PATH_OPERATIONS)/Makefile_Dependencies
+include $(PATH_FIELDS)/Makefile_Dependencies
+include $(PATH_NONLINEAREQNS)/Makefile_Dependencies
+#include ../Makefile_Dependencies
+
+Root_Form_Test.o: \
+  Basics.o \
+  NonLinearEqns.o \
+  RootFinding_Form_Test.f90

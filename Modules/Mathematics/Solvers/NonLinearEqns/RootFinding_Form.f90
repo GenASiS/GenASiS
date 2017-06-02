@@ -30,8 +30,10 @@ module RootFinding_Form
       SolveBrent
     procedure, private, pass :: &
       SolveSecant
+    procedure, private, pass :: &
+      SolveNewtonRaphson
     generic :: &
-      Solve => SolveBrent, SolveSecant
+      Solve => SolveBrent, SolveSecant, SolveNewtonRaphson
     final :: &
       Finalize
   end type RootFindingForm
@@ -240,6 +242,113 @@ contains
     
   end subroutine SolveSecant
   
+  
+  subroutine SolveNewtonRaphson ( RF, FunctionDerivativeEvaluator, Interval, Root )
+    
+    !-- Newton-Raphson Method, based on Numerical Recipes in
+    !   Fortran (1992) routine "rtsafe" 
+  
+    class ( RootFindingForm ), intent ( inout ) :: &
+      RF
+    procedure ( ZeroFunctionEvaluatorInterface ), intent ( in ), pointer :: &
+      FunctionDerivativeEvaluator
+    real(KDR), dimension ( 2 ), intent ( in ) :: &
+      Interval
+    real(KDR), intent ( out ) :: &
+      Root
+      
+    integer ( KDI ) :: &
+      iIteration
+    real ( KDR ) :: &
+      x1, x2, xacc, &
+      df, dx, dxold, f, fh, fl, temp, xh, xl
+
+    RF % FunctionDerivativeEvaluator => FunctionDerivativeEvaluator
+    
+    xacc = RF % RequestedAccuracy ! epsilon ( 1.0_KDR )  * 1.0e1_KDR
+    
+    x1 = Interval(1)
+    x2 = Interval(2)
+
+    !call Function(Parameters, x1, fl)
+    !call Derivative(Parameters, x1, df)
+    !call Function(Parameters, x2, fh)
+    !call Derivative(Parameters, x2, df)
+    
+    call RF % FunctionEvaluator ( RF % FunctionParameters, x1, fl )
+    call RF % FunctionDerivativeEvaluator ( RF % FunctionParameters, x1, df ) 
+    call RF % FunctionEvaluator ( RF % FunctionParameters, x2, fh )
+    call RF % FunctionDerivativeEvaluator ( RF % FunctionParameters, x2, df ) 
+    
+    if ( ( fl > 0.0_KDR .and. fh > 0.0_KDR ) &
+         .or. ( fl < 0.0_KDR .and. fh < 0.0_KDR ) ) then
+      call Show &
+             ( 'Invalid interval was given as arguments', RF % IGNORABILITY )
+      call Show ( 'RootFindingForm', 'Class', RF % IGNORABILITY )
+      call Show ( 'Solve', 'Method', RF % IGNORABILITY )
+      call Show ( Interval, 'Interval', RF % IGNORABILITY )
+      RF % Success = .false.
+      return
+    end if
+   
+    !if(present(SuccessOption)) SuccessOption = .true.
+    
+    if ( fl == 0.0_KDR ) then
+      Root=x1
+      return
+    else if ( fh == 0.0_KDR ) then
+      Root=x2
+      return
+    else if ( fl < 0.0_KDR ) then
+      xl=x1
+      xh=x2
+    else
+      xh=x1
+      xl=x2
+    endif
+    Root  = 0.5_KDR * ( x1 + x2 )
+    dxold = abs ( x2 - x1 )
+    dx    = dxold
+    
+    !call Function(Parameters, Root, f)
+    !call Derivative(Parameters, Root, df)
+
+    call RF % FunctionEvaluator ( RF % FunctionParameters, Root, f )
+    call RF % FunctionDerivativeEvaluator ( RF % FunctionParameters, Root, df ) 
+    
+    do iIteration = 1, RF % MaximumIteration
+      if ( ( ( Root-xh ) * df - f ) * ( ( Root - xl ) * df - f ) > 0.0_KDR &
+           .or. abs ( 2.0_KDR * f ) > abs ( dxold * df ) ) then
+        dxold = dx
+        dx    = 0.5_KDR * ( xh - xl )
+        Root  = xl + dx
+        if ( xl == Root ) return
+      else
+        dxold = dx
+        dx    = f/df
+        temp  = Root
+        Root  = Root - dx
+        if ( temp == Root )return
+      endif
+      if ( abs ( dx ) < xacc ) return
+      call RF % FunctionEvaluator ( RF % FunctionParameters, Root, f )
+      call RF % FunctionDerivativeEvaluator ( RF % FunctionParameters, Root, df ) 
+      if ( f < 0.0_KDR ) then
+        xl = Root
+      else
+        xh = Root
+      endif
+    end do
+    
+    call Show('FindRoot exceeded maximum iterations', RF % IGNORABILITY )
+    call Show( &
+           'FindRoot could not find root to the specified accuracy', &
+           RF % IGNORABILITY )
+
+     RF % Success = .false.
+
+  end subroutine SolveNewtonRaphson
+
   
   Subroutine Finalize ( RF )
   
