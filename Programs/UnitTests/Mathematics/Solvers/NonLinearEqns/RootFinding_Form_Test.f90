@@ -6,6 +6,7 @@ module MySinusoidalFunction_Module
   private
 
   public :: MySinusoidalFunction
+  public :: MySinusoidalDerivativeFunction
 
 contains
 
@@ -29,6 +30,27 @@ contains
     call Show ( [ Input, Result ], 'sin Input - Result', CONSOLE % INFO_7 )
   
   end subroutine MySinusoidalFunction
+
+  
+  subroutine MySinusoidalDerivativeFunction ( Parameters, Input, Result )
+
+    class ( * ), intent ( in ) :: &
+      Parameters
+    real ( KDR ), intent ( in ) :: &
+      Input
+    real ( KDR ), intent ( out ) :: &
+      Result
+      
+    select type ( P => Parameters )
+    type is ( Real_1D_Form )
+      call Show ( P % Value, 'Parameters', CONSOLE % INFO_7 )  
+    end select
+    
+    Result = cos ( Input )
+    
+    call Show ( [ Input, Result ], 'sin Input - Result', CONSOLE % INFO_7 )
+  
+  end subroutine MySinusoidalDerivativeFunction
 
 end module MySinusoidalFunction_Module
 
@@ -58,7 +80,8 @@ program RootFinding_Form_Test
   real ( KDR ) :: &
     Root
   procedure ( FunctionEvaluatorInterface ), pointer :: &
-    FunctionEvaluator => null ( )
+    FunctionEvaluator => null ( ), &
+    FunctionDerivativeEvaluator => null ( )
   type ( Real_1D_Form ) :: &
     Parameters
   type ( RootFindingForm ) :: &
@@ -69,6 +92,7 @@ program RootFinding_Form_Test
          ( 'RootFinding_Form_Test', AppendDimensionalityOption = .false. )
   
   FunctionEvaluator => MySinusoidalFunction
+  FunctionDerivativeEvaluator => MySinusoidalDerivativeFunction
   
   call Parameters % Initialize ( 10 )
   Parameters % Value = [ ( acos ( -1.0_KDR ) * iValue, iValue = 1, 10 ) ]
@@ -94,6 +118,18 @@ program RootFinding_Form_Test
   
   if ( RF % Success ) then
     call Show ( 'Secant Method' )
+    call Show ( Root, 'Root' )
+    call Show ( RF % nIterations, 'nIterations' )
+  end if
+
+  Root = huge ( 0.0_KDR )
+  !-- solve with newton-raphson method
+  call RF % Solve &
+              ( FunctionDerivativeEvaluator, [ 1.5_KDR * acos ( - 1.0_KDR ), &
+                  2.5_KDR * acos ( - 1.0_KDR ) ], Root )
+  
+  if ( RF % Success ) then
+    call Show ( 'Newton Raphson Method' )
     call Show ( Root, 'Root' )
     call Show ( RF % nIterations, 'nIterations' )
   end if
