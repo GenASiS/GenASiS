@@ -162,7 +162,8 @@ contains
                F % Value ( :, F % MASS_FRACTION_NEUTRON ), &
                F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
                NM % Value ( :, NM % TEMPERATURE_PARAMETER ), &
-               NM % Value ( :, NM % DEGENERACY_PARAMETER ) )
+               NM % Value ( :, NM % DEGENERACY_PARAMETER ), &
+               F % Value ( :, F % ELECTRON_FRACTION ) )
 
     case ( 'NEUTRINOS_E_NU_BAR' )
 
@@ -179,7 +180,8 @@ contains
                F % Value ( :, F % MASS_FRACTION_NEUTRON ), &
                F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
                NM % Value ( :, NM % TEMPERATURE_PARAMETER ), &
-               NM % Value ( :, NM % DEGENERACY_PARAMETER ) )
+               NM % Value ( :, NM % DEGENERACY_PARAMETER ), &
+               F % Value ( :, F % ELECTRON_FRACTION ) )
 
 !    case default
 !      call Show ( 'Radiation Type not recognized', CONSOLE % ERROR )
@@ -274,7 +276,7 @@ contains
 
   subroutine Compute_NuE_N &
                ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, M, N, T, X_p, X_n, Mu_e, &
-                 T_nu, Eta_nu )
+                 T_nu, Eta_nu, Y_e )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       Xi_J, Xi_N, &
@@ -286,7 +288,8 @@ contains
       X_p, X_n, &
       Mu_e, &
       T_nu, &
-      Eta_nu
+      Eta_nu, &
+      Y_e
 
     integer ( KDI ) :: &
       iV, &
@@ -340,6 +343,8 @@ contains
       call DFERMI ( 5.0_KDR, Eta_nu ( iV ), 0.0_KDR, Fermi_5_nu, &
                     fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
 
+if ( Y_e ( iV ) > 0.2_KDR ) then
+
       Xi_J ( iV )  &
         =  Xi_J ( iV )  &
            +  Factor_Xi  *  N_p  *  T ( iV ) ** 4 &
@@ -353,6 +358,17 @@ contains
               *  (    T ( iV ) ** 2     *  Fermi_4_e_Q  &
                    +  2 * Q * T ( iV )  *  Fermi_3_e_Q  &
                    +  Q ** 2            *  Fermi_2_e_Q )
+
+else
+  if ( iV > 2 ) then 
+call Show ( '>>> Preventing Y_e < 0.2', CONSOLE % ERROR )
+call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', CONSOLE % ERROR )
+call Show ( iV, '>>> iV', CONSOLE % ERROR )
+call Show ( 'Compute_NuE_N', '>>> Subroutine', CONSOLE % ERROR )
+  end if
+end if
+
+if ( Y_e ( iV ) < 0.51_KDR ) then
 
       if ( Fermi_3_nu > 0.0_KDR ) then
 
@@ -381,6 +397,13 @@ contains
                      +  Q ** 2               *  Fermi_2_nu )
       end if
 
+else 
+call Show ( '>>> Preventing Y_e > 0.51', CONSOLE % ERROR )
+call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', CONSOLE % ERROR )
+call Show ( iV, '>>> iV', CONSOLE % ERROR )
+call Show ( 'Compute_NuE_N', '>>> Subroutine', CONSOLE % ERROR )
+end if
+
     end do !-- iV
     !$OMP end parallel do
 
@@ -389,7 +412,7 @@ contains
 
   subroutine Compute_NuBarE_N &
                ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, M, N, T, X_p, X_n, Mu_e, &
-                 T_nu, Eta_nu )
+                 T_nu, Eta_nu, Y_e )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       Xi_J, Xi_N, &
@@ -401,7 +424,8 @@ contains
       X_p, X_n, &
       Mu_e, &
       T_nu, &
-      Eta_nu
+      Eta_nu, &
+      Y_e
 
     integer ( KDI ) :: &
       iV, &
@@ -464,6 +488,8 @@ contains
       call DFERMI ( 3.0_KDR, Eta_nu ( iV ), 0.0_KDR, Fermi_3_nu, &
                     fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
 
+if ( Y_e ( iV ) < 0.51_KDR ) then
+
       Xi_J ( iV )  &
         =  Xi_J ( iV )  &
            +  Factor_Xi  *  N_n  *  T ( iV ) ** 3 &
@@ -478,6 +504,15 @@ contains
               *  (    T ( iV ) ** 2     *  Fermi_4_e  &
                    +  2 * Q * T ( iV )  *  Fermi_3_e  &
                    +  Q ** 2            *  Fermi_2_e )
+
+else 
+call Show ( '>>> Preventing Y_e > 0.51', CONSOLE % ERROR )
+call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', CONSOLE % ERROR )
+call Show ( iV, '>>> iV', CONSOLE % ERROR )
+call Show ( 'Compute_NuBarE_N', '>>> Subroutine', CONSOLE % ERROR )
+end if
+
+if ( Y_e ( iV ) > 0.2_KDR ) then
 
       if ( T_nu ( iV ) * Fermi_3_nu > 0.0_KDR ) then
 
@@ -507,6 +542,15 @@ contains
                      +  2 * Q * T_nu ( iV )  *  Fermi_3_nu_Q  &
                      +  Q ** 2               *  Fermi_2_nu_Q )
       end if
+
+else 
+  if ( iV > 2 ) then
+call Show ( '>>> Preventing Y_e < 0.2', CONSOLE % ERROR )
+call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', CONSOLE % ERROR )
+call Show ( iV, '>>> iV', CONSOLE % ERROR )
+call Show ( 'Compute_NuBarE_N', '>>> Subroutine', CONSOLE % ERROR )
+  end if
+end if
 
     end do !-- iV
     !$OMP end parallel do
