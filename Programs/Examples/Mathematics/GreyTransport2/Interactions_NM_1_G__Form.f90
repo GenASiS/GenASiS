@@ -38,9 +38,11 @@ module Interactions_NM_1_G__Form
     procedure, private, pass ( I ) :: &
       ComputeEquilibrium_T_Eta
     procedure, public, nopass :: &
-      Compute_NuE_N
+      Compute_NuE_N_EA
     procedure, public, nopass :: &
-      Compute_NuBarE_N
+      Compute_NuBarE_N_EA
+    procedure, public, nopass :: &
+      Compute_Nu_N_A_S
     ! procedure, public, pass :: &
     !   Compute_E_Nu_Nuclei_Kernel
     ! procedure, public, pass :: &
@@ -52,13 +54,15 @@ module Interactions_NM_1_G__Form
       RegulateKernel
 
     real ( KDR ), private :: &
-      Pi, &
-      TwoPi, &
-      FourPi, &
-      AMU, &
-      m_n, m_p, &
-      G_F, &
-      g_A
+      Pi             =  CONSTANT % PI, &
+      TwoPi          =  2.0_KDR * CONSTANT % PI, &
+      FourPi         =  4.0_KDR * CONSTANT % PI, &
+      AMU            =  CONSTANT % ATOMIC_MASS_UNIT, &
+      m_n            =  CONSTANT % NEUTRON_MASS, &
+      m_p            =  CONSTANT % PROTON_MASS, &
+      G_F            =  CONSTANT % FERMI_COUPLING, &
+      Sin_2_Theta_W  =  CONSTANT % SIN_2_WEINBERG, &
+      g_A            =  CONSTANT % NEUTRON_AXIAL_COUPLING
 
 contains
 
@@ -90,15 +94,6 @@ contains
     call I % InitializeTemplate &
            ( LengthUnit, EnergyDensityUnit, TemperatureUnit, nValues, &
              VariableOption, NameOption, ClearOption, UnitOption )
-
-    Pi      =  CONSTANT % PI
-    TwoPi   =  2.0_KDR * CONSTANT % PI
-    FourPi  =  4.0_KDR * CONSTANT % PI
-    AMU     =  CONSTANT % ATOMIC_MASS_UNIT
-    m_n     =  CONSTANT % NEUTRON_MASS
-    m_p     =  CONSTANT % PROTON_MASS
-    G_F     =  CONSTANT % FERMI_COUPLING
-    g_A     =  CONSTANT % NEUTRON_AXIAL_COUPLING
 
   end subroutine InitializeAllocate_NM_1_G
 
@@ -149,7 +144,7 @@ contains
     select case ( trim ( Current % Type ) )
     case ( 'NEUTRINOS_E_NU' )
        
-      call I % Compute_NuE_N &
+      call I % Compute_NuE_N_EA &
              ( I % Value ( :, I % EMISSIVITY_J ), &
                I % Value ( :, I % EMISSIVITY_N ), &
                I % Value ( :, I % OPACITY_J ), &
@@ -164,10 +159,22 @@ contains
                NM % Value ( :, NM % TEMPERATURE_PARAMETER ), &
                NM % Value ( :, NM % DEGENERACY_PARAMETER ), &
                F % Value ( :, F % ELECTRON_FRACTION ) )
+
+      call I % Compute_Nu_N_A_S &
+             ( I % Value ( :, I % OPACITY_H ), &
+               F % Value ( :, F % BARYON_MASS ), &
+               F % Value ( :, F % COMOVING_DENSITY ), &
+               F % Value ( :, F % MASS_FRACTION_PROTON ), &
+               F % Value ( :, F % MASS_FRACTION_NEUTRON ), &
+               F % Value ( :, F % MASS_FRACTION_HEAVY ), &
+               F % Value ( :, F % HEAVY_ATOMIC_NUMBER ), &
+               F % Value ( :, F % HEAVY_MASS_NUMBER ), &
+               NM % Value ( :, NM % TEMPERATURE_PARAMETER ), &
+               NM % Value ( :, NM % DEGENERACY_PARAMETER ) )
 
     case ( 'NEUTRINOS_E_NU_BAR' )
 
-      call I % Compute_NuBarE_N &
+      call I % Compute_NuBarE_N_EA &
              ( I % Value ( :, I % EMISSIVITY_J ), &
                I % Value ( :, I % EMISSIVITY_N ), &
                I % Value ( :, I % OPACITY_J ), &
@@ -182,6 +189,18 @@ contains
                NM % Value ( :, NM % TEMPERATURE_PARAMETER ), &
                NM % Value ( :, NM % DEGENERACY_PARAMETER ), &
                F % Value ( :, F % ELECTRON_FRACTION ) )
+
+      call I % Compute_Nu_N_A_S &
+             ( I % Value ( :, I % OPACITY_H ), &
+               F % Value ( :, F % BARYON_MASS ), &
+               F % Value ( :, F % COMOVING_DENSITY ), &
+               F % Value ( :, F % MASS_FRACTION_PROTON ), &
+               F % Value ( :, F % MASS_FRACTION_NEUTRON ), &
+               F % Value ( :, F % MASS_FRACTION_HEAVY ), &
+               F % Value ( :, F % HEAVY_ATOMIC_NUMBER ), &
+               F % Value ( :, F % HEAVY_MASS_NUMBER ), &
+               NM % Value ( :, NM % TEMPERATURE_PARAMETER ), &
+               NM % Value ( :, NM % DEGENERACY_PARAMETER ) )
 
 !    case default
 !      call Show ( 'Radiation Type not recognized', CONSOLE % ERROR )
@@ -274,7 +293,7 @@ contains
   end subroutine ComputeEquilibrium_T_Eta
 
 
-  subroutine Compute_NuE_N &
+  subroutine Compute_NuE_N_EA &
                ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, M, N, T, X_p, X_n, Mu_e, &
                  T_nu, Eta_nu, Y_e )
 
@@ -300,7 +319,7 @@ contains
       N_p, N_n, &
       Eta_e_Q, &
       Fermi_2_e_Q, Fermi_3_e_Q, Fermi_4_e_Q, Fermi_5_e_Q, &
-      Fermi_2_Nu, Fermi_3_Nu, Fermi_4_Nu, Fermi_5_Nu, &
+      Fermi_2_nu, Fermi_3_nu, Fermi_4_nu, Fermi_5_nu, &
       fdeta, fdeta2, &
       fdtheta, fdtheta2, &
       fdetadtheta
@@ -407,10 +426,10 @@ end if
     end do !-- iV
     !$OMP end parallel do
 
-  end subroutine Compute_NuE_N
+  end subroutine Compute_NuE_N_EA
 
 
-  subroutine Compute_NuBarE_N &
+  subroutine Compute_NuBarE_N_EA &
                ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, M, N, T, X_p, X_n, Mu_e, &
                  T_nu, Eta_nu, Y_e )
 
@@ -437,8 +456,8 @@ end if
       Eta_e, &
       Eta_nu_Q, &
       Fermi_2_e, Fermi_3_e, Fermi_4_e, Fermi_5_e, &
-      Fermi_2_Nu_Q, Fermi_3_Nu_Q, Fermi_4_Nu_Q, Fermi_5_Nu_Q, &
-      Fermi_2_Nu, Fermi_3_Nu, &
+      Fermi_2_nu_Q, Fermi_3_nu_Q, Fermi_4_nu_Q, Fermi_5_nu_Q, &
+      Fermi_2_nu, Fermi_3_nu, &
       fdeta, fdeta2, &
       fdtheta, fdtheta2, &
       fdetadtheta
@@ -555,7 +574,73 @@ end if
     end do !-- iV
     !$OMP end parallel do
 
-  end subroutine Compute_NuBarE_N
+  end subroutine Compute_NuBarE_N_EA
+
+
+  subroutine Compute_Nu_N_A_S ( Chi_H, M, N, X_p, X_n, X_A, Z, A, T_nu, Eta_nu )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      Chi_H
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      M, &
+      N, &
+      X_p, X_n, X_A, &
+      Z, A, &
+      T_nu, &
+      Eta_nu
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+    real ( KDR ) :: &
+      Factor_n, Factor_p, Factor_A, &
+      N_p, N_n, N_A, &
+      Fermi_3_nu, Fermi_5_nu, &
+      fdeta, fdeta2, &
+      fdtheta, fdtheta2, &
+      fdetadtheta
+
+    nValues  =  size ( Chi_H )
+    
+    Factor_p  =  2  *  G_F ** 2  /  3 * Pi  &
+                 *  ( ( 2 * Sin_2_Theta_W  -  1. / 2. ) ** 2 &
+                      +  5. / 4. * g_A ** 2 )
+
+    Factor_n  =  2  *  G_F ** 2  /  3 * Pi  &
+                 *  ( 1. / 4.  +  5. / 4. * g_A ** 2 )
+
+    !$OMP parallel do &
+    !$OMP   private ( iV, Factor_A, N_p, N_n, N_A, Fermi_3_nu, Fermi_5_nu, &
+    !$OMP             fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta ) 
+    do iV = 1, nValues
+
+      Factor_A  =  2  *  G_F ** 2  /  3 * Pi  &
+                   *  ( Z ( iV ) / A ( iV )  *  ( 1  -  2 * Sin_2_Theta_W ) &
+                        -  1. / 2. ) ** 2  &
+                   *  A ( iV ) ** 2
+
+      N_p  =  M ( iV )  *  N ( iV )  *  X_p ( iV )  /  AMU
+      N_n  =  M ( iV )  *  N ( iV )  *  X_n ( iV )  /  AMU
+      N_A  =  M ( iV )  *  N ( iV )  *  X_A ( iV )  /  ( A ( iV ) * AMU )
+
+      call DFERMI ( 3.0_KDR, Eta_nu ( iV ), 0.0_KDR, Fermi_3_nu, &
+                    fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+      call DFERMI ( 5.0_KDR, Eta_nu ( iV ), 0.0_KDR, Fermi_5_nu, &
+                    fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+
+      if ( Fermi_3_nu > 0.0_KDR ) then
+
+        Chi_H ( iV )  &
+          =  Chi_H ( iV )  &
+             +  ( Factor_p * N_p  +  Factor_n * N_n  +  Factor_A * N_A )  &
+                *  T_nu ( iV ) ** 2  *  Fermi_5_nu / Fermi_3_nu 
+
+      end if
+     
+    end do !-- iV
+    !$OMP end parallel do
+
+  end subroutine Compute_Nu_N_A_S
 
 
   subroutine ComputeEquilibrium_T_Eta_Kernel &
@@ -622,7 +707,8 @@ end if
       if ( E ( iV ) == 0.0_KDR ) &
         cycle
 
-      Ratio  =  ( Xi_J ( iV )  -  Chi_J ( iV ) * J ( iV ) ) * dT  /  E ( iV )
+      Ratio  =  abs ( Xi_J ( iV )  -  Chi_J ( iV ) * J ( iV ) ) * dT  &
+                /  E ( iV )
 
       if ( Ratio > R ) then
          Xi_J ( iV )  =  R / Ratio  *   Xi_J ( iV )

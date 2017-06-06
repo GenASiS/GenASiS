@@ -28,6 +28,7 @@ module CONSTANT_Singleton
       AVOGADRO_SI           =  6.022140857e23_KDR, &
       BOLTZMANN_SI          =  1.38064852e-23_KDR, &
       FERMI_HBAR_C_3_GEV_2  =  1.1663787e-5_KDR, &
+      SIN_2_WEINBERG        =  0.23129, &
       !-- Astrophysical SI
       !   http://pdg.lbl.gov/2016/reviews
       !          /rpp2016-rev-astrophysical-constants.pdf
@@ -107,6 +108,7 @@ module CONSTANT_Singleton
       BOLTZMANN         =  BOLTZMANN, &
       STEFAN_BOLTZMANN  =  STEFAN_BOLTZMANN, &
       FERMI_COUPLING    =  FERMI_COUPLING, &
+      SIN_2_WEINBERG    =  SIN_2_WEINBERG, &
       !-- Astrophysical
       ASTRONOMICAL_UNIT  =  ASTRONOMICAL_UNIT, &
       PARSEC             =  PARSEC, &
