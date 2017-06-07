@@ -13,7 +13,7 @@ module Interactions_NM_1_G__Form
 
   type, public, extends ( InteractionsTemplate ) :: Interactions_NM_1_G_Form
     real ( KDR ) :: &
-      RegulationParameter = 0.001_KDR
+      RegulationParameter = 0.01_KDR
     class ( Fluid_P_MHN_Form ), pointer :: &
       Fluid => null ( )
     class ( NeutrinoMoments_G_Form ), pointer :: &
