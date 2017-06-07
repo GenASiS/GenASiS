@@ -4,40 +4,40 @@ include $(PATH_GENASIS)/Build/Makefile_Build
 
 all: RootFinding_Form_Test GreyDegeneracySolver_Test
 
-RootFinding_Form_Test: Basics.a NonLinearEqns.a RootFinding_Form_Test.o
+RootFinding_Form_Test: Basics.a NonlinearEquations.a RootFinding_Form_Test.o
 	$(LINK) $(FLAGS) \
           -o RootFinding_Form_Test_$(MACHINE) \
           RootFinding_Form_Test.o \
-	  Basics.a NonLinearEqns.a $(LIBRARIES)
+	  NonlinearEquations.a Basics.a $(LIBRARIES)
 
-GreyDegeneracySolver_Test: Basics.a NonLinearEqns.a ThirdParty.a \
+GreyDegeneracySolver_Test: ThirdParty.a Basics.a NonlinearEquations.a \
 	GreyDegeneracySolver_Test.o
 	$(LINK) $(FLAGS) \
           -o GreyDegeneracySolver_Test_$(MACHINE) \
           GreyDegeneracySolver_Test.o \
-	  Basics.a NonLinearEqns.a ThirdParty.a \
-	  $(THIRD_PARTY) $(LIBRARIES)
+	  NonlinearEquations.a Basics.a ThirdParty.a \
+	  $(LIBRARIES)
 
 clean:
 	rm -f *.o *.a *.mod *.ld
 
 clobber: clean
-	rm -f RootFindding_Form_Test_*
+	rm -f RootFinding_Form_Test_*
 
+include $(PATH_THIRD_PARTY)/Makefile_Dependencies
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MANIFOLDS)/Makefile_Dependencies
 include $(PATH_OPERATIONS)/Makefile_Dependencies
 include $(PATH_FIELDS)/Makefile_Dependencies
-include $(PATH_NONLINEAREQNS)/Makefile_Dependencies
-include $(PATH_THIRD_PARTY)/Makefile_Dependencies
+include $(PATH_NONLINEAR_EQUATIONS)/Makefile_Dependencies
 #include ../Makefile_Dependencies
 
-Root_Form_Test.o: \
+RootFinding_Form_Test.o: \
   Basics.o \
-  NonLinearEqns.o \
+  NonlinearEquations.o \
   RootFinding_Form_Test.f90
 
 GreyDegeneracySolver_Test.o: \
   Basics.o \
-  NonLinearEqns.o \
+  NonlinearEquations.o \
   GreyDegeneracySolver_Test.f90

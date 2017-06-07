@@ -58,7 +58,7 @@ end module MySinusoidalFunction_Module
 program RootFinding_Form_Test
 
   use Basics
-  use NonLinearEqns
+  use NonlinearEquations
   use MySinusoidalFunction_Module
   
   implicit none
@@ -97,41 +97,44 @@ program RootFinding_Form_Test
   call Parameters % Initialize ( 10 )
   Parameters % Value = [ ( acos ( -1.0_KDR ) * iValue, iValue = 1, 10 ) ]
   
-  call RF % Initialize ( Parameters, FunctionEvaluator, 0.5_KDR )
+  call RF % Initialize ( Parameters, FunctionEvaluator )
   
   !-- solve with brent method
   call RF % Solve &
               ( [ 1.5_KDR * acos ( - 1.0_KDR ), &
-                  2.5_KDR * acos ( - 1.0_KDR ) ], Root )
+                  2.6_KDR * acos ( - 1.0_KDR ) ], Root )
   
   if ( RF % Success ) then
     call Show ( 'Brent Method' )
     call Show ( Root, 'Root' )
     call Show ( RF % nIterations, 'nIterations' )
+    call Show ( RF % SolutionAccuracy, 'SolutionAccuracy' )
   end if
   
   Root = huge ( 0.0_KDR )
   !-- solve with secant method
   call RF % Solve &
               ( 1.5_KDR * acos ( - 1.0_KDR ), &
-                2.5_KDR * acos ( - 1.0_KDR ), Root )
+                2.6_KDR * acos ( - 1.0_KDR ), Root )
   
   if ( RF % Success ) then
     call Show ( 'Secant Method' )
     call Show ( Root, 'Root' )
     call Show ( RF % nIterations, 'nIterations' )
+    call Show ( RF % SolutionAccuracy, 'SolutionAccuracy' )
   end if
 
   Root = huge ( 0.0_KDR )
   !-- solve with newton-raphson method
   call RF % Solve &
               ( FunctionDerivativeEvaluator, [ 1.5_KDR * acos ( - 1.0_KDR ), &
-                  2.5_KDR * acos ( - 1.0_KDR ) ], Root )
+                  2.6_KDR * acos ( - 1.0_KDR ) ], Root )
   
   if ( RF % Success ) then
     call Show ( 'Newton Raphson Method' )
     call Show ( Root, 'Root' )
     call Show ( RF % nIterations, 'nIterations' )
+    call Show ( RF % SolutionAccuracy, 'SolutionAccuracy' )
   end if
 
   deallocate ( PROGRAM_HEADER )

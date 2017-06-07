@@ -79,7 +79,7 @@ end module MyFunction_Module
 program GreyDegeneracySolver_Test
 
   use Basics
-  use NonLinearEqns
+  use NonlinearEquations
   use MyFunction_Module
 
   implicit none
@@ -100,20 +100,21 @@ program GreyDegeneracySolver_Test
   integer ( KDI ) :: &
     iValue    
   real ( KDR ) :: &
+    DensityFactor, &
     Root, &
     T, &
     Eta, &
-    J, &
-    N
+    J, J_B, &
+    N, N_B
   procedure ( FunctionEvaluatorInterface ), pointer :: &
     FunctionEvaluator => null ( ), &
     FunctionDerivativeEvaluator => null ( )
   real ( KDR ) :: &
     Parameters, &
     Fermi_2, Fermi_3, &
-      fdeta, fdeta2, &
-      fdtheta, fdtheta2, &
-      fdetadtheta
+    fdeta, fdeta2, &
+    fdtheta, fdtheta2, &
+    fdetadtheta
   type ( RootFindingForm ) :: &
     RF
 
@@ -124,71 +125,89 @@ program GreyDegeneracySolver_Test
   FunctionEvaluator => FunctionWrapper
   FunctionDerivativeEvaluator => DerivativeFunctionWrapper
 
-  T = 0.1_KDR
-  Eta = -1.0_KDR
+  DensityFactor  &
+    =  4.0_KDR * CONSTANT % PI  /  ( 2.0_KDR * CONSTANT % PI ) ** 3
 
-  N =  CONSTANT % PI  ** ( - 2.0_KDR ) * exp ( Eta ) * T ** 3.0_KDR
+  T = 1.0_KDR
+  Eta = -10.0_KDR
 
-  J =  3.0_KDR * CONSTANT % PI ** ( 2.0_KDR / 3.0_KDR ) &
-       * exp ( - Eta / 3.0_KDR ) * N ** ( 4.0_KDR / 3.0_KDR )
+  call DFERMI ( 2.0_KDR, Eta, 0.0_KDR, Fermi_2, &
+                fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+  call DFERMI ( 3.0_KDR, Eta, 0.0_KDR, Fermi_3, &
+                fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta ) 
+
+  N  =  DensityFactor  *  T ** 3  *  Fermi_2
+  J  =  DensityFactor  *  T ** 4  *  Fermi_3
+
+  N_B  =  DensityFactor  *  T ** 3  *  2 * exp ( Eta )
+  J_B  =  DensityFactor  *  T ** 4  *  6 * exp ( Eta )
 
   call Show ( N, 'N' )
   call Show ( J, 'J' )
+  call Show ( N_B, 'N_B' )
+  call Show ( J_B, 'J_B' )
 
   Parameters = J / N ** ( 4.0_KDR / 3.0_KDR )
 
-  call RF % Initialize ( Parameters, FunctionEvaluator, 1.0e-10_KDR )
+  call RF % Initialize ( Parameters, FunctionEvaluator )
 
   !-- solve with brent method
-  call RF % Solve ( [ 9.0_KDR, 11.0_KDR ], Root )
+  call RF % Solve ( [ -11.0_KDR, -9.0_KDR ], Root )
   
   if ( RF % Success ) then
-   call dfermi &
-          ( 2.0_KDR, Root, 0.0_KDR, Fermi_2, &
-            fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
-    call dfermi &
-           ( 3.0_KDR, Root, 0.0_KDR, Fermi_3, &
-             fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta)
     call Show ( 'Brent Method' )
     call Show ( Root, 'Eta' )
+    call DFERMI ( 2.0_KDR, Root, 0.0_KDR, Fermi_2, &
+                  fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+    call DFERMI ( 3.0_KDR, Root, 0.0_KDR, Fermi_3, &
+                  fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta ) 
     call Show ( J / N * Fermi_2 / Fermi_3, 'T')
     call Show ( RF % nIterations, 'nIterations' )
+    call Show ( RF % SolutionAccuracy, 'SolutionAccuracy' )
+    call Show ( -3 * log ( CONSTANT % Pi ** ( - 2. / 3. )  / 3. &
+                           *  J  /  N ** ( 4. / 3. ) ), 'Eta_B' )
+  else
+    call Show ( 'Brent Method FAIL' )
   end if
   
   Root = huge ( 0.0_KDR )
   !-- solve with secant method
-  call RF % Solve ( 9.0_KDR, 11.0_KDR, Root )
+  call RF % Solve ( -11.0_KDR, -9.0_KDR, Root )
   
   if ( RF % Success ) then
-    call dfermi &
-          ( 2.0_KDR, Root, 0.0_KDR, Fermi_2, &
-            fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
-    call dfermi &
-           ( 3.0_KDR, Root, 0.0_KDR, Fermi_3, &
-             fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta) 
     call Show ( 'Secant Method' )
     call Show ( Root, 'Eta' )
+    call DFERMI ( 2.0_KDR, Root, 0.0_KDR, Fermi_2, &
+                  fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+    call DFERMI ( 3.0_KDR, Root, 0.0_KDR, Fermi_3, &
+                  fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta ) 
     call Show ( J / N * Fermi_2 / Fermi_3, 'T')
     call Show ( RF % nIterations, 'nIterations' )
+    call Show ( RF % SolutionAccuracy, 'SolutionAccuracy' )
+    call Show ( -3 * log ( CONSTANT % Pi ** ( - 2. / 3. )  / 3. &
+                           *  J  /  N ** ( 4. / 3. ) ), 'Eta_B' )
   end if
 
   Root = huge ( 0.0_KDR )
   !-- solve with newton-raphson method
   call RF % Solve &
               ( FunctionDerivativeEvaluator, &
-                 [ 9.0_KDR, 11.0_KDR ], Root )
+                 [ -11.0_KDR, -9.0_KDR ], Root )
   
   if ( RF % Success ) then
-    call dfermi &
-          ( 2.0_KDR, Root, 0.0_KDR, Fermi_2, &
-            fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
-    call dfermi &
-           ( 3.0_KDR, Root, 0.0_KDR, Fermi_3, &
-             fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta)
     call Show ( 'Newton Raphson Method' )
     call Show ( Root, 'Eta' )
+    call DFERMI ( 2.0_KDR, Root, 0.0_KDR, Fermi_2, &
+                  fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+    call DFERMI ( 3.0_KDR, Root, 0.0_KDR, Fermi_3, &
+                  fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta ) 
     call Show ( J / N * Fermi_2 / Fermi_3, 'T')
     call Show ( RF % nIterations, 'nIterations' )
+    call Show ( RF % SolutionAccuracy, 'SolutionAccuracy' )
+    call Show ( -3 * log ( CONSTANT % Pi ** ( - 2. / 3. )  / 3. &
+                           *  J  /  N ** ( 4. / 3. ) ), 'Eta_B' )
+  else
+    call Show ( 'Newton Raphson FAIL' )
   end if
 
   deallocate ( PROGRAM_HEADER )

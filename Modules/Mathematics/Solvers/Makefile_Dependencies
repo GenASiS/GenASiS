@@ -1,11 +1,11 @@
+include $(PATH_NONLINEAR_EQUATIONS)/Makefile_Dependencies
 include $(PATH_FIELDS)/Makefile_Dependencies
 include $(PATH_EVOLUTIONS)/Makefile_Dependencies
-include $(PATH_NONLINEAREQNS)/Makefile_Dependencies
 
 Solvers.o: \
+  NonlinearEquations.o \
   Fields.o \
   Evolutions.o \
-  NonLinearEqns.o \
   Solvers.f90
 
 Solvers.a: $(SOLVERS)
