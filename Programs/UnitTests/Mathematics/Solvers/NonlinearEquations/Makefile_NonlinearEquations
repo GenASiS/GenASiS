@@ -23,6 +23,7 @@ clean:
 
 clobber: clean
 	rm -f RootFinding_Form_Test_*
+	rm -f GreyDegeneracySolver_Test_*
 
 include $(PATH_THIRD_PARTY)/Makefile_Dependencies
 include $(PATH_BASICS)/Makefile_Dependencies
