@@ -317,12 +317,14 @@ contains
       Factor_Chi, Factor_Xi, &
       Q, &
       N_p, N_n, &
-      Eta_e_Q, &
+      Eta_e, Eta_e_Q, &
+      Fermi_2_e, Fermi_3_e, &
       Fermi_2_e_Q, Fermi_3_e_Q, Fermi_4_e_Q, Fermi_5_e_Q, &
       Fermi_2_nu, Fermi_3_nu, Fermi_4_nu, Fermi_5_nu, &
       fdeta, fdeta2, &
       fdtheta, fdtheta2, &
-      fdetadtheta
+      fdetadtheta, &
+      OneMinus_F_e, OneMinus_F_nu
 
     nValues  =  size ( Xi_J )
     
@@ -331,10 +333,12 @@ contains
              Q  =  m_n - m_p
 
     !$OMP parallel do &
-    !$OMP   private ( iV, N_p, N_n, Eta_e_Q, &
+    !$OMP   private ( iV, N_p, N_n, Eta_e, Eta_e_Q, &
     !$OMP             Fermi_2_e_Q, Fermi_3_e_Q, Fermi_4_e_Q, Fermi_5_e_Q, &
+    !$OMP             Fermi_2_e, Fermi_3_e, &
     !$OMP             Fermi_2_nu, Fermi_3_nu, Fermi_4_nu, Fermi_5_nu, &
-    !$OMP             fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta ) 
+    !$OMP             fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta, &
+    !$OMP             OneMinus_F_e, OneMinus_F_nu ) 
     do iV = 1, nValues
 
       if ( T ( iV ) == 0.0_KDR ) &
@@ -343,7 +347,14 @@ contains
       N_p  =  M ( iV )  *  N ( iV )  *  X_p ( iV )  /  AMU
       N_n  =  M ( iV )  *  N ( iV )  *  X_n ( iV )  /  AMU
 
+      Eta_e    =  Mu_e ( iV )  /  T ( iV )
       Eta_e_Q  =  ( Mu_e ( iV )  -  Q )  /  T ( iV )
+
+      call DFERMI ( 2.0_KDR, Eta_e, 0.0_KDR, Fermi_2_e, &
+                    fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+      call DFERMI ( 3.0_KDR, Eta_e, 0.0_KDR, Fermi_3_e, &
+                    fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+
       call DFERMI ( 2.0_KDR, Eta_e_Q, 0.0_KDR, Fermi_2_e_Q, &
                     fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
       call DFERMI ( 3.0_KDR, Eta_e_Q, 0.0_KDR, Fermi_3_e_Q, &
@@ -362,6 +373,15 @@ contains
       call DFERMI ( 5.0_KDR, Eta_nu ( iV ), 0.0_KDR, Fermi_5_nu, &
                     fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
 
+      OneMinus_F_e   =  1.0_KDR
+      OneMinus_F_nu  =  1.0_KDR
+      ! if ( Fermi_2_e > 0.0_KDR ) &
+      !   OneMinus_F_e  &
+      !     =  1. / ( exp ( Eta_e  -  Fermi_3_e / Fermi_2_e )  +  1. )
+      ! if ( Fermi_2_nu > 0.0_KDR ) &
+      !   OneMinus_F_nu  &
+      !     =  1. / ( exp ( Eta_nu ( iV )  -  Fermi_3_nu / Fermi_2_nu )  +  1. )
+
 if ( Y_e ( iV ) > 0.2_KDR ) then
 
       Xi_J ( iV )  &
@@ -369,14 +389,16 @@ if ( Y_e ( iV ) > 0.2_KDR ) then
            +  Factor_Xi  *  N_p  *  T ( iV ) ** 4 &
               *  (    T ( iV ) ** 2     *  Fermi_5_e_Q  &
                    +  2 * Q * T ( iV )  *  Fermi_4_e_Q  &
-                   +  Q ** 2            *  Fermi_3_e_Q )
+                   +  Q ** 2            *  Fermi_3_e_Q )  &
+              *  OneMinus_F_nu
 
       Xi_N ( iV )  &
         =  Xi_N ( iV )  &
            +  Factor_Xi  *  N_p  *  T ( iV ) ** 3 &
               *  (    T ( iV ) ** 2     *  Fermi_4_e_Q  &
                    +  2 * Q * T ( iV )  *  Fermi_3_e_Q  &
-                   +  Q ** 2            *  Fermi_2_e_Q )
+                   +  Q ** 2            *  Fermi_2_e_Q )  &
+              *  OneMinus_F_nu
 
 else
   if ( iV > 2 ) then 
@@ -389,21 +411,23 @@ end if
 
 if ( Y_e ( iV ) < 0.51_KDR ) then
 
-      if ( Fermi_3_nu > 0.0_KDR ) then
+      if ( Fermi_2_nu > 0.0_KDR .and. Fermi_3_nu > 0.0_KDR ) then
 
         Chi_J ( iV )  &
           =  Chi_J ( iV )  &
              +  Factor_Chi  *  N_n  /  Fermi_3_nu &
                 *  (    T_nu ( iV ) ** 2     *  Fermi_5_nu  &
                      +  2 * Q * T_nu ( iV )  *  Fermi_4_nu  &
-                     +  Q ** 2               *  Fermi_3_nu )
+                     +  Q ** 2               *  Fermi_3_nu )  &
+                *  OneMinus_F_e
 
         Chi_H ( iV )  &
           =  Chi_H ( iV )  &
              +  Factor_Chi  *  N_n  /  Fermi_3_nu &
                 *  (    T_nu ( iV ) ** 2     *  Fermi_5_nu  &
                      +  2 * Q * T_nu ( iV )  *  Fermi_4_nu  &
-                     +  Q ** 2               *  Fermi_3_nu )
+                     +  Q ** 2               *  Fermi_3_nu )  &
+                *  OneMinus_F_e
 
       end if
      
@@ -413,7 +437,8 @@ if ( Y_e ( iV ) < 0.51_KDR ) then
              +  Factor_Chi  *  N_n  /  Fermi_2_nu &
                 *  (    T_nu ( iV ) ** 2     *  Fermi_4_nu  &
                      +  2 * Q * T_nu ( iV )  *  Fermi_3_nu  &
-                     +  Q ** 2               *  Fermi_2_nu )
+                     +  Q ** 2               *  Fermi_2_nu )  &
+                *  OneMinus_F_e
       end if
 
 else 
@@ -460,7 +485,8 @@ end if
       Fermi_2_nu, Fermi_3_nu, &
       fdeta, fdeta2, &
       fdtheta, fdtheta2, &
-      fdetadtheta
+      fdetadtheta, &
+      OneMinus_F_e, OneMinus_F_nu
 
     nValues  =  size ( Xi_J )
     
@@ -473,7 +499,8 @@ end if
     !$OMP             Fermi_2_e, Fermi_3_e, Fermi_4_e, Fermi_5_e, &
     !$OMP             Fermi_2_nu_Q, Fermi_3_nu_Q, Fermi_4_nu_Q, Fermi_5_nu_Q, &
     !$OMP             Fermi_2_nu, Fermi_3_nu, &
-    !$OMP             fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta ) 
+    !$OMP             fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta, & 
+    !$OMP             OneMinus_F_e, OneMinus_F_nu ) 
     do iV = 1, nValues
 
       if ( T ( iV ) == 0.0_KDR ) &
@@ -507,6 +534,15 @@ end if
       call DFERMI ( 3.0_KDR, Eta_nu ( iV ), 0.0_KDR, Fermi_3_nu, &
                     fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
 
+      OneMinus_F_e   =  1.0_KDR
+      OneMinus_F_nu  =  1.0_KDR
+      ! if ( Fermi_2_e > 0.0_KDR ) &
+      !   OneMinus_F_e  &
+      !     =  1. / ( exp ( - Eta_e  -  Fermi_3_e / Fermi_2_e )  +  1. )
+      ! if ( Fermi_2_nu > 0.0_KDR ) &
+      !   OneMinus_F_nu  &
+      !     =  1. / ( exp ( Eta_nu ( iV )  -  Fermi_3_nu / Fermi_2_nu )  +  1. )
+
 if ( Y_e ( iV ) < 0.51_KDR ) then
 
       Xi_J ( iV )  &
@@ -515,14 +551,16 @@ if ( Y_e ( iV ) < 0.51_KDR ) then
               *  (    T ( iV ) ** 3              *  Fermi_5_e  &
                    +  3  *  Q  *  T ( iV ) ** 2  *  Fermi_4_e  &
                    +  3  *  Q ** 2  *  T ( iV )  *  Fermi_3_e  &
-                   +  Q ** 3                     *  Fermi_2_e )
+                   +  Q ** 3                     *  Fermi_2_e )  &
+              *  OneMinus_F_nu
 
       Xi_N ( iV )  &
         =  Xi_N ( iV )  &
            +  Factor_Xi  *  N_n  *  T ( iV ) ** 3 &
               *  (    T ( iV ) ** 2     *  Fermi_4_e  &
                    +  2 * Q * T ( iV )  *  Fermi_3_e  &
-                   +  Q ** 2            *  Fermi_2_e )
+                   +  Q ** 2            *  Fermi_2_e )  &
+              *  OneMinus_F_nu
 
 else 
 call Show ( '>>> Preventing Y_e > 0.51', CONSOLE % ERROR )
@@ -541,7 +579,8 @@ if ( Y_e ( iV ) > 0.2_KDR ) then
                 *  (    T_nu ( iV ) ** 3              *  Fermi_5_nu_Q  &
                      +  3  *  Q  *  T_nu ( iV ) ** 2  *  Fermi_4_nu_Q  &
                      +  3  *  Q ** 2  *  T_nu ( iV )  *  Fermi_3_nu_Q  &
-                     +  Q ** 3                        *  Fermi_2_nu_Q )
+                     +  Q ** 3                        *  Fermi_2_nu_Q )  &
+                *  OneMinus_F_e
 
         Chi_H ( iV )  &
           =  Chi_H ( iV )  &
@@ -549,7 +588,8 @@ if ( Y_e ( iV ) > 0.2_KDR ) then
                 *  (    T_nu ( iV ) ** 3              *  Fermi_5_nu_Q  &
                      +  3  *  Q  *  T_nu ( iV ) ** 2  *  Fermi_4_nu_Q  &
                      +  3  *  Q ** 2  *  T_nu ( iV )  *  Fermi_3_nu_Q  &
-                     +  Q ** 3                        *  Fermi_2_nu_Q )
+                     +  Q ** 3                        *  Fermi_2_nu_Q )  &
+                *  OneMinus_F_e
 
       end if
      
@@ -559,7 +599,8 @@ if ( Y_e ( iV ) > 0.2_KDR ) then
              +  Factor_Chi  *  N_p  /  ( T_nu ( iV )  *  Fermi_2_nu )  &
                 *  (    T_nu ( iV ) ** 2     *  Fermi_4_nu_Q  &
                      +  2 * Q * T_nu ( iV )  *  Fermi_3_nu_Q  &
-                     +  Q ** 2               *  Fermi_2_nu_Q )
+                     +  Q ** 2               *  Fermi_2_nu_Q )  &
+                *  OneMinus_F_e
       end if
 
 else 
