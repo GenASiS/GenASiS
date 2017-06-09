@@ -9,7 +9,7 @@ module RootFinding_Form
     integer ( KDI ), private :: &
       IGNORABILITY
     integer ( KDI ) :: &
-      MaximumIteration = 100, &
+      MaximumIteration = 20, &
       nIterations      = 0
     real ( KDR ) :: &
       RequestedAccuracy = 1.0e-8_KDR, &
