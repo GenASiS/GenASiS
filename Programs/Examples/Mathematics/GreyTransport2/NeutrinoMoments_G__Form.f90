@@ -55,7 +55,8 @@ module NeutrinoMoments_G__Form
       SetUnits, &
       ComputeConservedNumber, &
       ComputeComovingNumber, &
-      ComputeRawFluxesKernel
+      ComputeRawFluxesKernel, &
+      DegeneracyEquation
 
 contains
 
@@ -441,30 +442,71 @@ contains
       iV, &
       nValues
     real ( KDR ) :: &
+      MomentRatio, &
       Factor_Eta, &
       Factor_T, &
+      Eta_B, &  !-- Eta_Boltzmann
       Fermi_3, Fermi_3_EQ, &
       fdeta, fdeta2, &
       fdtheta, fdtheta2, &
       fdetadtheta
+    type ( RootFindingForm ) :: &
+      RF
+    procedure ( ZeroFunctionEvaluatorInterface ), pointer :: &
+      ZeroFunction
+
+    ZeroFunction => DegeneracyEquation
+    call RF % Initialize ( MomentRatio, ZeroFunction )
 
     nValues = size ( T )
 
     associate &
-      ( TwoPi  => 2.0_KDR * CONSTANT % PI, &
+      ( Pi     => CONSTANT % Pi, &
+        TwoPi  => 2.0_KDR * CONSTANT % PI, &
         FourPi => 4.0_KDR * CONSTANT % PI )
 
-    Factor_Eta  =  TwoPi ** ( - 1.0_KDR / 3.0_KDR )
+    Factor_Eta  =  Pi ** ( - 2.0_KDR / 3.0_KDR )  /  3.0_KDR
     Factor_T    =  FourPi  /  TwoPi ** 3
 
-    !$OMP parallel do private ( iV, Fermi_3, fdeta, fdeta2, &
+!call Show ( minval ( pack ( J / N ** (4./3.), mask = N > 0.0_KDR ) ), '>>> min MomentRatio' )
+
+    !$OMP parallel do private ( iV, Eta_B, Fermi_3, fdeta, fdeta2, &
     !$OMP                       fdtheta, fdtheta2, fdetadtheta )
     do iV = 1, nValues
 
+!call Show ( iV, '>>> iV' )
+!call Show ( N ( iV ) ** ( 4./3. ), '>>> N^(4/3)' )
+!call Show ( J ( iV ), '>>> J' )
       if ( N ( iV ) > 0.0_KDR .and. J ( iV ) > 0.0_KDR ) then
-        Eta ( iV )  &
-          =  - 3.0_KDR  * log ( Factor_Eta  *  J ( iV ) &
-                                *  N ( iV ) ** ( - 4.0_KDR / 3.0_KDR ) )
+        MomentRatio  =  J ( iV )  *  N ( iV ) ** ( - 4.0_KDR / 3.0_KDR )
+        Eta_B  =  - 3.0_KDR  * log ( Factor_Eta  *  MomentRatio )
+!call Show ( MomentRatio, '>>> MomentRatio' )
+!call Show ( Eta_B, '>>> Eta_B' )
+        if ( Eta_B < -10.0_KDR ) then
+          Eta ( iV )  =  Eta_B
+!call Show ( '>>> Eta = Eta_B' )
+        else
+!call Show ( Eta ( iV ), '>>> Eta pre' )
+!          call RF % Solve ( Eta ( iV ), 1.1 * Eta ( iV ), Eta ( iV ) )
+          call RF % Solve ( Eta ( iV ), 0.99 * Eta ( iV ), Eta ( iV ) )
+!call Show ( RF % Success, '>>> Success' )
+!call Show ( RF % SolutionAccuracy, '>>> SolutionAccuracy' )
+!call Show ( RF % nIterations, '>>> nIterations' )
+          if ( .not. RF % Success ) then
+call Show ( '>>> Eta fail', CONSOLE % ERROR )
+call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', CONSOLE % ERROR )
+call Show ( iV, '>>> iV', CONSOLE % ERROR )
+call Show ( J ( iV ), '>>> J', CONSOLE % ERROR )
+call Show ( N ( iV ), '>>> N', CONSOLE % ERROR )
+call Show ( MomentRatio, '>>> MomentRatio', CONSOLE % ERROR )
+call Show ( Eta ( iV ), '>>> Eta', CONSOLE % ERROR )
+call Show ( RF % SolutionAccuracy, '>>> SolutionAccuracy', CONSOLE % ERROR )
+call Show ( Eta_B, '>>> Falling back to Eta_B', CONSOLE % ERROR )
+            Eta ( iV )  =  Eta_B
+!call PROGRAM_HEADER % Abort ( )
+          end if
+        end if
+!call Show ( Eta ( iV ), '>>> Eta post' )
       else
         Eta ( iV )  =  log ( tiny ( 0.0_KDR ) )  *  10.0_KDR
       end if
@@ -671,4 +713,39 @@ contains
   end subroutine ComputeRawFluxesKernel
 
 
+  subroutine DegeneracyEquation ( Parameters, Input, Result )
+
+    class ( * ), intent ( in ) :: &
+      Parameters
+    real ( KDR ), intent ( in ) :: &
+      Input
+    real ( KDR ), intent ( out ) :: &
+      Result
+
+    real ( KDR ) :: &
+      Pi, &
+      Fermi_2, Fermi_3, &
+      fdeta, fdeta2, &
+      fdtheta, fdtheta2, &
+      fdetadtheta
+
+    Pi  =  CONSTANT % PI
+
+    call DFERMI ( 2.0_KDR, Input, 0.0_KDR, Fermi_2, &
+                  fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+    call DFERMI ( 3.0_KDR, Input, 0.0_KDR, Fermi_3, &
+                  fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+
+    select type ( P => Parameters )
+    type is ( real ( KDR ) )    
+    
+    Result = ( 2.0_KDR  *  Pi ** 2 ) ** ( 1.0_KDR / 3.0_KDR ) &
+             * Fermi_3 / ( Fermi_2 ** ( 4.0_KDR / 3.0_KDR ) ) &
+             -  P
+
+    end select
+  
+  end subroutine DegeneracyEquation
+
+  
 end module NeutrinoMoments_G__Form
