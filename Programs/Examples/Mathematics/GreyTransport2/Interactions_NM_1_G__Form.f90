@@ -655,6 +655,9 @@ end if
     !$OMP             fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta ) 
     do iV = 1, nValues
 
+      if ( A ( iV ) == 0.0_KDR ) &
+        cycle
+
       Factor_A  =  2  *  G_F ** 2  /  3 * Pi  &
                    *  ( Z ( iV ) / A ( iV )  *  ( 1  -  2 * Sin_2_Theta_W ) &
                         -  1. / 2. ) ** 2  &
