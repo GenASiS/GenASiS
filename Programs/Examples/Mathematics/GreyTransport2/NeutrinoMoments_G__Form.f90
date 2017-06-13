@@ -12,7 +12,7 @@ module NeutrinoMoments_G__Form
     integer ( KDI ), private, parameter :: &
       N_PRIMITIVE_NM = 1, &
       N_CONSERVED_NM = 1, &
-      N_FIELDS_NM    = 6, &
+      N_FIELDS_NM    = 7, &
       N_VECTORS_NM   = 0
 
   type, public, extends ( PhotonMoments_G_Form ) :: NeutrinoMoments_G_Form
@@ -23,6 +23,7 @@ module NeutrinoMoments_G__Form
       N_VECTORS_NM            = N_VECTORS_NM, &
       COMOVING_NUMBER         = 0, &
       CONSERVED_NUMBER        = 0, &
+      COMOVING_NUMBER_EQ      = 0, &
       DEGENERACY_PARAMETER    = 0, &
       DEGENERACY_PARAMETER_EQ = 0, &
       ENERGY_AVERAGE          = 0, &
@@ -193,7 +194,8 @@ contains
                                       RM % DEGENERACY_PARAMETER_EQ, &
                                       RM % ENERGY_AVERAGE, &
                                       RM % OCCUPANCY_AVERAGE, &
-                                      RM % COMOVING_ENERGY_EQ ], &
+                                      RM % COMOVING_ENERGY_EQ, &
+                                      RM % COMOVING_NUMBER_EQ ], &
              VectorOption = [ 'ComovingMomentum_U' ], &
              VectorIndicesOption = VectorIndices )
 
@@ -254,6 +256,7 @@ contains
         T      => RMV ( oV + 1 : oV + nV, C % TEMPERATURE_PARAMETER ), &
         T_EQ   => RMV ( oV + 1 : oV + nV, C % TEMPERATURE_PARAMETER_EQ ), &
         N      => RMV ( oV + 1 : oV + nV, C % COMOVING_NUMBER ), &
+        N_EQ   => RMV ( oV + 1 : oV + nV, C % COMOVING_NUMBER_EQ ), &
         D      => RMV ( oV + 1 : oV + nV, C % CONSERVED_NUMBER ), &
         Eta    => RMV ( oV + 1 : oV + nV, C % DEGENERACY_PARAMETER ), &
         Eta_EQ => RMV ( oV + 1 : oV + nV, C % DEGENERACY_PARAMETER_EQ ), &
@@ -265,7 +268,7 @@ contains
     if ( associated ( C % Interactions ) ) &
       call C % Interactions % ComputeEquilibriumParameters ( T_EQ, Eta_EQ, C )
     call C % ComputeSpectralParameters &
-           ( T, Eta, E_Ave, F_Ave, J_EQ, J, N, T_EQ, Eta_EQ )
+           ( T, Eta, E_Ave, F_Ave, J_EQ, N_EQ, J, N, T_EQ, Eta_EQ )
 
     end associate !-- J, etc.
     nullify ( RMV )
@@ -317,6 +320,7 @@ contains
         T      => RMV ( oV + 1 : oV + nV, C % TEMPERATURE_PARAMETER ), &
         T_EQ   => RMV ( oV + 1 : oV + nV, C % TEMPERATURE_PARAMETER_EQ ), &
         N      => RMV ( oV + 1 : oV + nV, C % COMOVING_NUMBER ), &
+        N_EQ   => RMV ( oV + 1 : oV + nV, C % COMOVING_NUMBER_EQ ), &
         D      => RMV ( oV + 1 : oV + nV, C % CONSERVED_NUMBER ), &
         Eta    => RMV ( oV + 1 : oV + nV, C % DEGENERACY_PARAMETER ), &
         Eta_EQ => RMV ( oV + 1 : oV + nV, C % DEGENERACY_PARAMETER_EQ ), &
@@ -328,7 +332,7 @@ contains
     if ( associated ( C % Interactions ) ) &
       call C % Interactions % ComputeEquilibriumParameters ( T_EQ, Eta_EQ, C )
     call C % ComputeSpectralParameters &
-           ( T, Eta, E_Ave, F_Ave, J_EQ, J, N, T_EQ, Eta_EQ )
+           ( T, Eta, E_Ave, F_Ave, J_EQ, N_EQ, J, N, T_EQ, Eta_EQ )
 
     end associate !-- J, etc.
     nullify ( RMV )
@@ -422,14 +426,15 @@ contains
 
 
   subroutine ComputeSpectralParameters_NM &
-               ( T, Eta, E_Ave, F_Ave, J_EQ, NM, J, N, T_EQ, Eta_EQ )
+               ( T, Eta, E_Ave, F_Ave, J_EQ, N_EQ, NM, J, N, T_EQ, Eta_EQ )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       T, &
       Eta, &
       E_Ave, &
       F_Ave, &
-      J_EQ
+      J_EQ, &
+      N_EQ
     class ( NeutrinoMoments_G_Form ), intent ( in ) :: &
       NM
     real ( KDR ), dimension ( : ), intent ( in ) :: &
@@ -444,9 +449,10 @@ contains
     real ( KDR ) :: &
       MomentRatio, &
       Factor_Eta, &
-      Factor_T, &
+      Factor_J_N, &
       Eta_ND, &  !-- Eta_NonDegenerate
-      Fermi_3, Fermi_3_EQ, &
+      Fermi_2, Fermi_3, &
+      Fermi_2_EQ, Fermi_3_EQ, &
       fdeta, fdeta2, &
       fdtheta, fdtheta2, &
       fdetadtheta
@@ -466,12 +472,13 @@ contains
         FourPi => 4.0_KDR * CONSTANT % PI )
 
     Factor_Eta  =  Pi ** ( - 2.0_KDR / 3.0_KDR )  /  3.0_KDR
-    Factor_T    =  FourPi  /  TwoPi ** 3
+    Factor_J_N  =  FourPi  /  TwoPi ** 3
 
 !call Show ( minval ( pack ( J / N ** (4./3.), mask = N > 0.0_KDR ) ), '>>> min MomentRatio' )
 
-    !$OMP parallel do private ( iV, Eta_ND, Fermi_3, fdeta, fdeta2, &
-    !$OMP                       fdtheta, fdtheta2, fdetadtheta )
+    !$OMP parallel do &
+    !$OMP   private ( iV, Eta_ND, Fermi_2, Fermi_3, Fermi_2_EQ, Fermi_3_EQ, &
+    !$OMP             fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta )
     do iV = 1, nValues
 
 !call Show ( iV, '>>> iV' )
@@ -512,14 +519,18 @@ call Show ( Eta_ND, '>>> Falling back to Eta_ND', CONSOLE % ERROR )
         Eta ( iV )  =  log ( tiny ( 0.0_KDR ) )  *  10.0_KDR
       end if
 
+      call DFERMI ( 2.0_KDR, Eta ( iV ), 0.0_KDR, Fermi_2, &
+                    fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
       call DFERMI ( 3.0_KDR, Eta ( iV ), 0.0_KDR, Fermi_3, &
+                    fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+
+      call DFERMI ( 2.0_KDR, Eta_EQ ( iV ), 0.0_KDR, Fermi_2_EQ, &
                     fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
       call DFERMI ( 3.0_KDR, Eta_EQ ( iV ), 0.0_KDR, Fermi_3_EQ, &
                     fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
 
       if ( N ( iV ) > 0.0_KDR .and. J ( iV ) > 0.0_KDR ) then
-        T  ( iV )     =  ( J ( iV )  &
-                           /  ( Factor_T * Fermi_3 ) ) ** ( 0.25_KDR )
+        T  ( iV )     =  J ( iV )  /  N ( iV )  *  Fermi_2 / Fermi_3
         E_Ave ( iV )  =  J ( iV )  /  N ( iV )
         F_Ave ( iV )  &
           =  1.0_KDR &
@@ -530,7 +541,8 @@ call Show ( Eta_ND, '>>> Falling back to Eta_ND', CONSOLE % ERROR )
         F_Ave ( iV )  =  0.0_KDR
       end if
 
-      J_EQ ( iV )   =  Factor_T  *  T_EQ ( iV ) ** 4  *  Fermi_3_EQ
+      N_EQ ( iV )  =  Factor_J_N  *  T_EQ ( iV ) ** 3  *  Fermi_2_EQ
+      J_EQ ( iV )  =  Factor_J_N  *  T_EQ ( iV ) ** 4  *  Fermi_3_EQ
 
     end do !-- iV
     !$OMP end parallel do
@@ -571,10 +583,11 @@ call Show ( Eta_ND, '>>> Falling back to Eta_ND', CONSOLE % ERROR )
 
     NM % COMOVING_NUMBER          =  oF + 1
     NM % CONSERVED_NUMBER         =  oF + 2
-    NM % DEGENERACY_PARAMETER     =  oF + 3
-    NM % DEGENERACY_PARAMETER_EQ  =  oF + 4
-    NM % ENERGY_AVERAGE           =  oF + 5
-    NM % OCCUPANCY_AVERAGE        =  oF + 6
+    NM % COMOVING_NUMBER_EQ       =  oF + 3
+    NM % DEGENERACY_PARAMETER     =  oF + 4
+    NM % DEGENERACY_PARAMETER_EQ  =  oF + 5
+    NM % ENERGY_AVERAGE           =  oF + 6
+    NM % OCCUPANCY_AVERAGE        =  oF + 7
 
     !-- variable names 
 
@@ -589,6 +602,7 @@ call Show ( Eta_ND, '>>> Falling back to Eta_ND', CONSOLE % ERROR )
     Variable ( oF + 1 : oF + NM % N_FIELDS_NM ) &
       = [ 'ComovingNumber          ', &
           'ConservedNumber         ', &
+          'ComovingNumber_EQ       ', &
           'DegeneracyParameter     ', &
           'DegeneracyParameter_EQ  ', &
           'EnergyAverage           ', &
@@ -626,6 +640,8 @@ call Show ( Eta_ND, '>>> Falling back to Eta_ND', CONSOLE % ERROR )
     VariableUnit ( NM % COMOVING_NUMBER ) &
       =  EnergyDensityUnit / TemperatureUnit
     VariableUnit ( NM % CONSERVED_NUMBER ) &
+      =  EnergyDensityUnit / TemperatureUnit
+    VariableUnit ( NM % COMOVING_NUMBER_EQ ) &
       =  EnergyDensityUnit / TemperatureUnit
 
     VariableUnit ( NM % ENERGY_AVERAGE )  =  TemperatureUnit
