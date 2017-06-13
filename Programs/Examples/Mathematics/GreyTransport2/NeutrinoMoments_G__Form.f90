@@ -494,6 +494,7 @@ contains
 !call Show ( RF % nIterations, '>>> nIterations' )
           if ( .not. RF % Success ) then
 call Show ( '>>> Eta fail', CONSOLE % ERROR )
+call Show ( NM % Name, '>>> Species', CONSOLE % ERROR )
 call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', CONSOLE % ERROR )
 call Show ( iV, '>>> iV', CONSOLE % ERROR )
 call Show ( J ( iV ), '>>> J', CONSOLE % ERROR )

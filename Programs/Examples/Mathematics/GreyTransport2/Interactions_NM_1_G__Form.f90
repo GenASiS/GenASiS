@@ -237,6 +237,7 @@ contains
              I % Value ( :, I % OPACITY_J ), &
              I % Value ( :, I % OPACITY_H ), &
              I % Value ( :, I % OPACITY_N ), &
+             NM, &
              NM % Value ( :, NM % COMOVING_ENERGY ), &
              F % Value ( :, F % INTERNAL_ENERGY ), &
              I % RegulationParameter, dT )
@@ -756,11 +757,13 @@ contains
 
 
   subroutine RegulateKernel &
-               ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, J, E, R, dT )
+               ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, NM, J, E, R, dT )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       Xi_J, Xi_H, Xi_N, &
       Chi_J, Chi_H, Chi_N
+    class ( NeutrinoMoments_G_Form ), intent ( in ) :: &
+      NM
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       J, &
       E
@@ -787,12 +790,13 @@ contains
 
       if ( Ratio > R ) then
          Xi_J ( iV )  =  R / Ratio  *   Xi_J ( iV )
-         Xi_H ( iV )  =  R / Ratio  *   Xi_H ( iV )
+!         Xi_H ( iV )  =  R / Ratio  *   Xi_H ( iV )
          Xi_N ( iV )  =  R / Ratio  *   Xi_N ( iV )
         Chi_J ( iV )  =  R / Ratio  *  Chi_J ( iV )
-        Chi_H ( iV )  =  R / Ratio  *  Chi_H ( iV )
+!        Chi_H ( iV )  =  R / Ratio  *  Chi_H ( iV )
         Chi_N ( iV )  =  R / Ratio  *  Chi_N ( iV )
 call Show ( '>>> Regulating Interactions', CONSOLE % ERROR )
+call Show ( NM % Name, '>>> Species', CONSOLE % ERROR )
 call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', CONSOLE % ERROR )
 call Show ( iV, '>>> iV', CONSOLE % ERROR )
 call Show ( R / Ratio, '>>> RegulationFactor', CONSOLE % ERROR )
