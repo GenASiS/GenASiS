@@ -445,7 +445,7 @@ contains
       MomentRatio, &
       Factor_Eta, &
       Factor_T, &
-      Eta_B, &  !-- Eta_Boltzmann
+      Eta_ND, &  !-- Eta_NonDegenerate
       Fermi_3, Fermi_3_EQ, &
       fdeta, fdeta2, &
       fdtheta, fdtheta2, &
@@ -470,7 +470,7 @@ contains
 
 !call Show ( minval ( pack ( J / N ** (4./3.), mask = N > 0.0_KDR ) ), '>>> min MomentRatio' )
 
-    !$OMP parallel do private ( iV, Eta_B, Fermi_3, fdeta, fdeta2, &
+    !$OMP parallel do private ( iV, Eta_ND, Fermi_3, fdeta, fdeta2, &
     !$OMP                       fdtheta, fdtheta2, fdetadtheta )
     do iV = 1, nValues
 
@@ -478,13 +478,13 @@ contains
 !call Show ( N ( iV ) ** ( 4./3. ), '>>> N^(4/3)' )
 !call Show ( J ( iV ), '>>> J' )
       if ( N ( iV ) > 0.0_KDR .and. J ( iV ) > 0.0_KDR ) then
-        MomentRatio  =  J ( iV )  *  N ( iV ) ** ( - 4.0_KDR / 3.0_KDR )
-        Eta_B  =  - 3.0_KDR  * log ( Factor_Eta  *  MomentRatio )
+        MomentRatio  =  J ( iV ) ** ( 1. / 4. )  *  N ( iV ) ** ( - 1. / 3. )
+        Eta_ND  =  - 3.0_KDR  * log ( Factor_Eta  *  MomentRatio ** 4 )
 !call Show ( MomentRatio, '>>> MomentRatio' )
-!call Show ( Eta_B, '>>> Eta_B' )
-        if ( Eta_B < -10.0_KDR ) then
-          Eta ( iV )  =  Eta_B
-!call Show ( '>>> Eta = Eta_B' )
+!call Show ( Eta_ND, '>>> Eta_ND' )
+        if ( Eta_ND < -10.0_KDR ) then
+          Eta ( iV )  =  Eta_ND
+!call Show ( '>>> Eta = Eta_ND' )
         else
 !call Show ( Eta ( iV ), '>>> Eta pre' )
 !          call RF % Solve ( Eta ( iV ), 1.1 * Eta ( iV ), Eta ( iV ) )
@@ -501,8 +501,8 @@ call Show ( N ( iV ), '>>> N', CONSOLE % ERROR )
 call Show ( MomentRatio, '>>> MomentRatio', CONSOLE % ERROR )
 call Show ( Eta ( iV ), '>>> Eta', CONSOLE % ERROR )
 call Show ( RF % SolutionAccuracy, '>>> SolutionAccuracy', CONSOLE % ERROR )
-call Show ( Eta_B, '>>> Falling back to Eta_B', CONSOLE % ERROR )
-            Eta ( iV )  =  Eta_B
+call Show ( Eta_ND, '>>> Falling back to Eta_ND', CONSOLE % ERROR )
+            Eta ( iV )  =  Eta_ND
 !call PROGRAM_HEADER % Abort ( )
           end if
         end if
@@ -724,12 +724,14 @@ call Show ( Eta_B, '>>> Falling back to Eta_B', CONSOLE % ERROR )
 
     real ( KDR ) :: &
       Pi, &
+      Factor, &
       Fermi_2, Fermi_3, &
       fdeta, fdeta2, &
       fdtheta, fdtheta2, &
       fdetadtheta
 
-    Pi  =  CONSTANT % PI
+    Pi      =  CONSTANT % PI
+    Factor  =  ( 2 * Pi ** 2 ) ** ( 1. / 12. )
 
     call DFERMI ( 2.0_KDR, Input, 0.0_KDR, Fermi_2, &
                   fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
@@ -739,8 +741,7 @@ call Show ( Eta_B, '>>> Falling back to Eta_B', CONSOLE % ERROR )
     select type ( P => Parameters )
     type is ( real ( KDR ) )    
     
-    Result = ( 2.0_KDR  *  Pi ** 2 ) ** ( 1.0_KDR / 3.0_KDR ) &
-             * Fermi_3 / ( Fermi_2 ** ( 4.0_KDR / 3.0_KDR ) ) &
+    Result = Factor  *  Fermi_3 ** ( 1. / 4. )  *  Fermi_2 ** ( - 1. / 3. ) &
              -  P
 
     end select
