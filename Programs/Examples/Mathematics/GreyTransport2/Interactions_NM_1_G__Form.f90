@@ -394,7 +394,7 @@ contains
                                             * Fermi_4_e_Q / Fermi_3_e_Q )  &
                     +  1. )
 
-if ( Y_e ( iV ) > 0.2_KDR ) then
+!if ( Y_e ( iV ) > 0.1_KDR ) then
 
       Xi_J ( iV )  &
         =  Xi_J ( iV )  &
@@ -412,16 +412,16 @@ if ( Y_e ( iV ) > 0.2_KDR ) then
                    +  Q ** 2            *  Fermi_2_e_Q )  &
               *  OneMinus_F_nu_N
 
-else
-  if ( iV > 2 ) then 
-call Show ( '>>> Preventing Y_e < 0.2', CONSOLE % ERROR )
-call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', CONSOLE % ERROR )
-call Show ( iV, '>>> iV', CONSOLE % ERROR )
-call Show ( 'Compute_NuE_N', '>>> Subroutine', CONSOLE % ERROR )
-  end if
-end if
+! else
+!   if ( iV > 2 ) then 
+! call Show ( '>>> Preventing Y_e < 0.2', CONSOLE % ERROR )
+! call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', CONSOLE % ERROR )
+! call Show ( iV, '>>> iV', CONSOLE % ERROR )
+! call Show ( 'Compute_NuE_N', '>>> Subroutine', CONSOLE % ERROR )
+!   end if
+! end if
 
-if ( Y_e ( iV ) < 0.51_KDR ) then
+!if ( Y_e ( iV ) < 0.51_KDR ) then
 
       if ( Fermi_2_nu > 0.0_KDR .and. Fermi_3_nu > 0.0_KDR ) then
 
@@ -453,12 +453,12 @@ if ( Y_e ( iV ) < 0.51_KDR ) then
                 *  OneMinus_F_e_N
       end if
 
-else 
-call Show ( '>>> Preventing Y_e > 0.51', CONSOLE % ERROR )
-call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', CONSOLE % ERROR )
-call Show ( iV, '>>> iV', CONSOLE % ERROR )
-call Show ( 'Compute_NuE_N', '>>> Subroutine', CONSOLE % ERROR )
-end if
+! else 
+! call Show ( '>>> Preventing Y_e > 0.51', CONSOLE % ERROR )
+! call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', CONSOLE % ERROR )
+! call Show ( iV, '>>> iV', CONSOLE % ERROR )
+! call Show ( 'Compute_NuE_N', '>>> Subroutine', CONSOLE % ERROR )
+! end if
 
     end do !-- iV
     !$OMP end parallel do
@@ -574,7 +574,7 @@ end if
                                             * Fermi_4_e / Fermi_3_e )  &
                     +  1. )
 
-if ( Y_e ( iV ) < 0.51_KDR ) then
+!if ( Y_e ( iV ) < 0.51_KDR ) then
 
       Xi_J ( iV )  &
         =  Xi_J ( iV )  &
@@ -593,14 +593,14 @@ if ( Y_e ( iV ) < 0.51_KDR ) then
                    +  Q ** 2            *  Fermi_2_e )  &
               *  OneMinus_F_nu_N
 
-else 
-call Show ( '>>> Preventing Y_e > 0.51', CONSOLE % ERROR )
-call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', CONSOLE % ERROR )
-call Show ( iV, '>>> iV', CONSOLE % ERROR )
-call Show ( 'Compute_NuBarE_N', '>>> Subroutine', CONSOLE % ERROR )
-end if
+! else 
+! call Show ( '>>> Preventing Y_e > 0.51', CONSOLE % ERROR )
+! call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', CONSOLE % ERROR )
+! call Show ( iV, '>>> iV', CONSOLE % ERROR )
+! call Show ( 'Compute_NuBarE_N', '>>> Subroutine', CONSOLE % ERROR )
+! end if
 
-if ( Y_e ( iV ) > 0.2_KDR ) then
+!if ( Y_e ( iV ) > 0.1_KDR ) then
 
       if ( T_nu ( iV ) * Fermi_3_nu > 0.0_KDR ) then
 
@@ -634,14 +634,14 @@ if ( Y_e ( iV ) > 0.2_KDR ) then
                 *  OneMinus_F_e_N
       end if
 
-else 
-  if ( iV > 2 ) then
-call Show ( '>>> Preventing Y_e < 0.2', CONSOLE % ERROR )
-call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', CONSOLE % ERROR )
-call Show ( iV, '>>> iV', CONSOLE % ERROR )
-call Show ( 'Compute_NuBarE_N', '>>> Subroutine', CONSOLE % ERROR )
-  end if
-end if
+! else 
+!   if ( iV > 2 ) then
+! call Show ( '>>> Preventing Y_e < 0.2', CONSOLE % ERROR )
+! call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', CONSOLE % ERROR )
+! call Show ( iV, '>>> iV', CONSOLE % ERROR )
+! call Show ( 'Compute_NuBarE_N', '>>> Subroutine', CONSOLE % ERROR )
+!   end if
+! end if
 
     end do !-- iV
     !$OMP end parallel do
