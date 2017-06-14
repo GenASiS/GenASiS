@@ -451,10 +451,11 @@ contains
       iV, &
       nValues
     real ( KDR ) :: &
+      OnePlusEpsilon, &
       MomentRatio, &
-      Factor_Eta, &
+      Factor_ND, Factor_ED_1, Factor_ED_2, &
       Factor_J_N, &
-      Eta_ND, Eta_ED, &  !-- Eta_NonDegenerate, Eta_ExtremeDegenerate
+      Eta_ND, Eta_ED, &  !-- NonDegenerate, ExtremeDegenerate
       Fermi_2, Fermi_3, &
       Fermi_2_EQ, Fermi_3_EQ, &
       fdeta, fdeta2, &
@@ -470,13 +471,18 @@ contains
 
     nValues = size ( T )
 
-    associate &
-      ( Pi     => CONSTANT % Pi, &
-        TwoPi  => 2.0_KDR * CONSTANT % PI, &
-        FourPi => 4.0_KDR * CONSTANT % PI )
+    OnePlusEpsilon  =  1.0_KDR  +  10.0_KDR * epsilon ( 0.0_KDR )
 
-    Factor_Eta  =  Pi ** ( - 2.0_KDR / 3.0_KDR )  /  3.0_KDR
-    Factor_J_N  =  FourPi  /  TwoPi ** 3
+    associate &
+      ( Pi      => CONSTANT % Pi, &
+        TwoPi   => 2.0_KDR * CONSTANT % PI, &
+        FourPi  => 4.0_KDR * CONSTANT % PI, &
+        EightPi => 8.0_KDR * CONSTANT % PI )
+    Factor_ND    =  Pi ** ( - 2.0_KDR / 3.0_KDR )  /  3.0_KDR
+    Factor_ED_1  =  EightPi ** ( 1.0_KDR / 12.0_KDR )
+    Factor_ED_2  =  3.0_KDR  /  Pi ** 2
+    Factor_J_N   =  FourPi  /  TwoPi ** 3
+    end associate !-- TwoPi, etc.
 
 !call Show ( minval ( pack ( J / N ** (4./3.), mask = N > 0.0_KDR ) ), '>>> min MomentRatio' )
 
@@ -490,13 +496,19 @@ contains
 !call Show ( N ( iV ) ** ( 4./3. ), '>>> N^(4/3)' )
 !call Show ( J ( iV ), '>>> J' )
       if ( N ( iV ) > 0.0_KDR .and. J ( iV ) > 0.0_KDR ) then
-        MomentRatio  =  J ( iV ) ** ( 1. / 4. )  *  N ( iV ) ** ( - 1. / 3. )
-        Eta_ND  =  - 3.0_KDR  * log ( Factor_Eta  *  MomentRatio ** 4 )
+        MomentRatio  =  J ( iV ) ** ( 1.0_KDR / 4.0_KDR )  &
+                        *  N ( iV ) ** ( - 1.0_KDR / 3.0_KDR )
+        MomentRatio  =  max ( MomentRatio, Factor_ED_1 * OnePlusEpsilon )
+        Eta_ND  =  - 3.0_KDR  * log ( Factor_ND  *  MomentRatio ** 4 )
+        Eta_ED  =  ( Factor_ED_2 * ( MomentRatio / Factor_ED_1 - 1.0_KDR ) ) &
+                   ** ( - 0.5_KDR )
 !call Show ( MomentRatio, '>>> MomentRatio' )
 !call Show ( Eta_ND, '>>> Eta_ND' )
         if ( Eta_ND < -10.0_KDR ) then
           Eta ( iV )  =  Eta_ND
 !call Show ( '>>> Eta = Eta_ND' )
+        else if ( Eta_ED > 10.0_KDR ) then
+          Eta ( iV )  =  Eta_ED
         else
 !call Show ( Eta ( iV ), '>>> Eta pre' )
 !          call RF % Solve ( Eta ( iV ), 1.1 * Eta ( iV ), Eta ( iV ) )
@@ -514,8 +526,13 @@ call Show ( N ( iV ), '>>> N', CONSOLE % ERROR )
 call Show ( MomentRatio, '>>> MomentRatio', CONSOLE % ERROR )
 call Show ( Eta ( iV ), '>>> Eta', CONSOLE % ERROR )
 call Show ( RF % SolutionAccuracy, '>>> SolutionAccuracy', CONSOLE % ERROR )
+            if ( Eta_ND < 1.0_KDR ) then
 call Show ( Eta_ND, '>>> Falling back to Eta_ND', CONSOLE % ERROR )
-            Eta ( iV )  =  Eta_ND
+              Eta ( iV )  =  Eta_ND
+            else
+call Show ( Eta_ED, '>>> Falling back to Eta_ED', CONSOLE % ERROR )
+              Eta ( iV )  =  Eta_ED
+            end if
 !call PROGRAM_HEADER % Abort ( )
           end if
         end if
@@ -551,8 +568,6 @@ call Show ( Eta_ND, '>>> Falling back to Eta_ND', CONSOLE % ERROR )
 
     end do !-- iV
     !$OMP end parallel do
-
-    end associate !-- TwoPi, etc.
 
   end subroutine ComputeSpectralParameters_NM
 
