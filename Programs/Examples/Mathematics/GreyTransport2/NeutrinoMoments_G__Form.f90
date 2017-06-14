@@ -137,8 +137,8 @@ contains
     character ( LDL ), dimension ( C % N_CONSERVED_NM ) :: &
       ConservedName
 
-    oP = C % N_PRIMITIVE_TEMPLATE + C % N_PRIMITIVE_RM
-    oC = C % N_CONSERVED_TEMPLATE + C % N_PRIMITIVE_RM
+    oP = C % N_PRIMITIVE_TEMPLATE + C % N_PRIMITIVE_PM + C % N_PRIMITIVE_RM
+    oC = C % N_CONSERVED_TEMPLATE + C % N_CONSERVED_PM + C % N_CONSERVED_RM
 
     if ( .not. allocated ( C % iaPrimitive ) ) then
       C % N_PRIMITIVE = oP + C % N_PRIMITIVE_NM
@@ -185,6 +185,7 @@ contains
     call Output % Initialize &
            ( RM, iaSelectedOption = [ RM % COMOVING_ENERGY, &
                                       RM % COMOVING_MOMENTUM_U, &
+                                      RM % FLUID_VELOCITY_U, &
                                       RM % FLUX_FACTOR, &
                                       RM % STRESS_FACTOR, &
                                       RM % TEMPERATURE_PARAMETER, &
@@ -387,9 +388,12 @@ contains
       ( F_D   => RawFlux ( oV + 1 : oV + nV, iNumber ), &
         H_Dim => Value_C ( oV + 1 : oV + nV, &
                            C % COMOVING_MOMENTUM_U ( iDimension ) ), &
+        N     => Value_C ( oV + 1 : oV + nV, C % COMOVING_NUMBER ), &
+        V_Dim => Value_C ( oV + 1 : oV + nV, &
+                           C % FLUID_VELOCITY_U ( iDimension ) ), &
         E_Ave => Value_C ( oV + 1 : oV + nV, C % ENERGY_AVERAGE ) )
 
-    call ComputeRawFluxesKernel ( F_D, H_Dim, E_Ave )
+    call ComputeRawFluxesKernel ( F_D, H_Dim, N, V_Dim, E_Ave )
 
     end associate !-- F_E, etc.
 
@@ -450,7 +454,7 @@ contains
       MomentRatio, &
       Factor_Eta, &
       Factor_J_N, &
-      Eta_ND, &  !-- Eta_NonDegenerate
+      Eta_ND, Eta_ED, &  !-- Eta_NonDegenerate, Eta_ExtremeDegenerate
       Fermi_2, Fermi_3, &
       Fermi_2_EQ, Fermi_3_EQ, &
       fdeta, fdeta2, &
@@ -477,7 +481,8 @@ contains
 !call Show ( minval ( pack ( J / N ** (4./3.), mask = N > 0.0_KDR ) ), '>>> min MomentRatio' )
 
     !$OMP parallel do &
-    !$OMP   private ( iV, Eta_ND, Fermi_2, Fermi_3, Fermi_2_EQ, Fermi_3_EQ, &
+    !$OMP   private ( iV, Eta_ND, Eta_ED, &
+    !$OMP             Fermi_2, Fermi_3, Fermi_2_EQ, Fermi_3_EQ, &
     !$OMP             fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta )
     do iV = 1, nValues
 
@@ -703,12 +708,14 @@ call Show ( Eta_ND, '>>> Falling back to Eta_ND', CONSOLE % ERROR )
   end subroutine ComputeComovingNumber
 
 
-  subroutine ComputeRawFluxesKernel ( F_D, H_Dim, E_Ave )
+  subroutine ComputeRawFluxesKernel ( F_D, H_Dim, N, V_Dim, E_Ave )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       F_D
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       H_Dim, &
+      N, &
+      V_Dim, &
       E_Ave
 
     integer ( KDI ) :: &
@@ -720,7 +727,7 @@ call Show ( Eta_ND, '>>> Falling back to Eta_ND', CONSOLE % ERROR )
     !$OMP parallel do private ( iV ) 
     do iV = 1, nValues
       if ( E_Ave ( iV ) > 0.0_KDR ) then
-        F_D ( iV )  =  H_Dim ( iV ) / E_Ave ( iV )
+        F_D ( iV )  =  H_Dim ( iV ) / E_Ave ( iV )  +  N ( iV ) * V_Dim ( iV )
       else
         F_D ( iV )  =  0.0_KDR
       end if

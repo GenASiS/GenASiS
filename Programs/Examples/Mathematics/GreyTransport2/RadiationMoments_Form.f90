@@ -8,10 +8,10 @@ module RadiationMoments_Form
   private
 
     integer ( KDI ), private, parameter :: &
-      N_PRIMITIVE_RM =  4, &
+      N_PRIMITIVE_RM =  7, &
       N_CONSERVED_RM =  4, &
-      N_FIELDS_RM    = 11, &
-      N_VECTORS_RM   =  2
+      N_FIELDS_RM    = 14, &
+      N_VECTORS_RM   =  3
 
   type, public, extends ( CurrentTemplate ) :: RadiationMomentsForm
     integer ( KDI ) :: &
@@ -26,7 +26,8 @@ module RadiationMoments_Form
       COMOVING_ENERGY_EQ = 0
     integer ( KDI ), dimension ( 3 ) :: &
       COMOVING_MOMENTUM_U  = 0, &
-      CONSERVED_MOMENTUM_D = 0
+      CONSERVED_MOMENTUM_D = 0, &
+      FLUID_VELOCITY_U     = 0
     class ( InteractionsTemplate ), pointer :: &
       Interactions => null ( )
   contains
@@ -151,7 +152,7 @@ contains
       allocate ( C % iaPrimitive ( C % N_PRIMITIVE ) )
     end if
     C % iaPrimitive ( oP + 1 : oP + C % N_PRIMITIVE_RM ) &
-      = [ C % COMOVING_ENERGY, C % COMOVING_MOMENTUM_U ]
+      = [ C % COMOVING_ENERGY, C % COMOVING_MOMENTUM_U, C % FLUID_VELOCITY_U ]
 
     if ( .not. allocated ( C % iaConserved ) ) then
       C % N_CONSERVED = oC + C % N_CONSERVED_RM
@@ -201,6 +202,7 @@ contains
     call Output % Initialize &
            ( RM, iaSelectedOption = [ RM % COMOVING_ENERGY, &
                                       RM % COMOVING_MOMENTUM_U, &
+                                      RM % FLUID_VELOCITY_U, &
                                       RM % FLUX_FACTOR, &
                                       RM % STRESS_FACTOR, &
                                       RM % COMOVING_ENERGY_EQ ], &
@@ -436,11 +438,13 @@ contains
         H_3 => Value_C ( oV + 1 : oV + nV, C % COMOVING_MOMENTUM_U ( 3 ) ), &
         H_Dim => Value_C ( oV + 1 : oV + nV, &
                            C % COMOVING_MOMENTUM_U ( iDimension ) ), &
+        V_Dim => Value_C ( oV + 1 : oV + nV, &
+                           C % FLUID_VELOCITY_U ( iDimension ) ), &
         SF => Value_C ( oV + 1 : oV + nV, C % STRESS_FACTOR ) )
 
     call ComputeRawFluxesKernel &
            ( F_E, F_S_1, F_S_2, F_S_3, F_S_Dim, J, H_1, H_2, H_3, H_Dim, &
-             SF, M_DD_22, M_DD_33 )
+             V_Dim, SF, M_DD_22, M_DD_33 )
 
     end associate !-- F_E, etc.
     end associate !-- M_DD_33, etc.
@@ -589,11 +593,12 @@ contains
 
     RM % COMOVING_ENERGY       =  oF +  1
     RM % CONSERVED_ENERGY      =  oF +  2
-    RM % COMOVING_MOMENTUM_U   =  oF + [ 3, 4, 5 ]
-    RM % CONSERVED_MOMENTUM_D  =  oF + [ 6, 7, 8 ]
-    RM % FLUX_FACTOR           =  oF +  9
-    RM % STRESS_FACTOR         =  oF + 10
-    RM % COMOVING_ENERGY_EQ    =  oF + 11
+    RM % COMOVING_MOMENTUM_U   =  oF + [ 3,  4,  5 ]
+    RM % CONSERVED_MOMENTUM_D  =  oF + [ 6,  7,  8 ]
+    RM % FLUID_VELOCITY_U      =  oF + [ 9, 10, 11 ]
+    RM % FLUX_FACTOR           =  oF + 12
+    RM % STRESS_FACTOR         =  oF + 13
+    RM % COMOVING_ENERGY_EQ    =  oF + 14
 
     !-- variable names 
 
@@ -614,6 +619,9 @@ contains
           'ConservedMomentum_D_1', &
           'ConservedMomentum_D_2', &
           'ConservedMomentum_D_3', &
+          'FluidVelocity_U_1    ', &
+          'FluidVelocity_U_2    ', &
+          'FluidVelocity_U_3    ', &
           'FluxFactor           ', &
           'StressFactor         ', &
           'ComovingEnergy_EQ    ' ]
@@ -644,7 +652,8 @@ contains
 
     Vector ( oV + 1 : oV + RM % N_VECTORS_RM ) &
       = [ 'ComovingMomentum_U ', &
-          'ConservedMomentum_D' ]
+          'ConservedMomentum_D', &
+          'FluidVelocity_U    ' ]
 
     !-- vector indices
 
@@ -659,6 +668,7 @@ contains
 
     call VectorIndices ( oV + 1 ) % Initialize ( RM % COMOVING_MOMENTUM_U )
     call VectorIndices ( oV + 2 ) % Initialize ( RM % CONSERVED_MOMENTUM_D )
+    call VectorIndices ( oV + 3 ) % Initialize ( RM % FLUID_VELOCITY_U )
 
   end subroutine InitializeBasics
 
@@ -909,7 +919,7 @@ contains
 
   subroutine ComputeRawFluxesKernel &
                ( F_E, F_S_1, F_S_2, F_S_3, F_S_Dim, J, H_1, H_2, H_3, &
-                 H_Dim, SF, M_DD_22, M_DD_33 )
+                 H_Dim, V_Dim, SF, M_DD_22, M_DD_33 )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       F_E, &
@@ -919,6 +929,7 @@ contains
       J, &
       H_1, H_2, H_3, &
       H_Dim, &
+      V_Dim, &
       SF, &
       M_DD_22, M_DD_33
 
@@ -942,7 +953,7 @@ contains
     !$OMP parallel do private ( iV ) 
     do iV = 1, nValues
 
-      F_E     ( iV )  =  H_Dim ( iV )
+      F_E     ( iV )  =  H_Dim ( iV )  +  J ( iV ) * V_Dim ( iV )
 
       F_S_1   ( iV )  =  0.5_KDR  *  ( 3.0_KDR * SF ( iV )  -  1.0_KDR )  &
                          *  H_1 ( iV ) / H_Sq ( iV )  &

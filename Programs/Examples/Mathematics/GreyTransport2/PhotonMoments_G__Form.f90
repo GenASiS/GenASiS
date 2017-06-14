@@ -122,6 +122,7 @@ contains
     call Output % Initialize &
            ( RM, iaSelectedOption = [ RM % COMOVING_ENERGY, &
                                       RM % COMOVING_MOMENTUM_U, &
+                                      RM % FLUID_VELOCITY_U, &
                                       RM % FLUX_FACTOR, &
                                       RM % STRESS_FACTOR, &
                                       RM % TEMPERATURE_PARAMETER, &
