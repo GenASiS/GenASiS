@@ -507,7 +507,7 @@ contains
         if ( Eta_ND < -10.0_KDR ) then
           Eta ( iV )  =  Eta_ND
 !call Show ( '>>> Eta = Eta_ND' )
-        else if ( Eta_ED > 10.0_KDR ) then
+        else if ( Eta_ED > 50.0_KDR ) then
           Eta ( iV )  =  Eta_ED
         else
 !call Show ( Eta ( iV ), '>>> Eta pre' )
