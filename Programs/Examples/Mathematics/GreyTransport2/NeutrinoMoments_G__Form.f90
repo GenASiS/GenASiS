@@ -455,7 +455,7 @@ contains
       MomentRatio, &
       Factor_ND, Factor_ED_1, Factor_ED_2, &
       Factor_J_N, &
-      Eta_ND, Eta_ED, &  !-- NonDegenerate, ExtremeDegenerate
+      Eta_ND, Eta_ED, Eta_Sol, & !-- NonDegenerate, ExtremeDegenerate, Solution
       Fermi_2, Fermi_3, &
       Fermi_2_EQ, Fermi_3_EQ, &
       fdeta, fdeta2, &
@@ -487,7 +487,7 @@ contains
 !call Show ( minval ( pack ( J / N ** (4./3.), mask = N > 0.0_KDR ) ), '>>> min MomentRatio' )
 
     !$OMP parallel do &
-    !$OMP   private ( iV, Eta_ND, Eta_ED, &
+    !$OMP   private ( iV, Eta_ND, Eta_ED, Eta_Sol, &
     !$OMP             Fermi_2, Fermi_3, Fermi_2_EQ, Fermi_3_EQ, &
     !$OMP             fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta )
     do iV = 1, nValues
@@ -512,11 +512,13 @@ contains
         else
 !call Show ( Eta ( iV ), '>>> Eta pre' )
 !          call RF % Solve ( Eta ( iV ), 1.1 * Eta ( iV ), Eta ( iV ) )
-          call RF % Solve ( Eta ( iV ), 0.99 * Eta ( iV ), Eta ( iV ) )
+          call RF % Solve ( Eta ( iV ), 0.99 * Eta ( iV ), Eta_Sol )
 !call Show ( RF % Success, '>>> Success' )
 !call Show ( RF % SolutionAccuracy, '>>> SolutionAccuracy' )
 !call Show ( RF % nIterations, '>>> nIterations' )
-          if ( .not. RF % Success ) then
+          if ( RF % Success ) then
+            Eta ( iV )  =  Eta_Sol
+          else
 call Show ( '>>> Eta fail', CONSOLE % ERROR )
 call Show ( NM % Name, '>>> Species', CONSOLE % ERROR )
 call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', CONSOLE % ERROR )
@@ -524,7 +526,8 @@ call Show ( iV, '>>> iV', CONSOLE % ERROR )
 call Show ( J ( iV ), '>>> J', CONSOLE % ERROR )
 call Show ( N ( iV ), '>>> N', CONSOLE % ERROR )
 call Show ( MomentRatio, '>>> MomentRatio', CONSOLE % ERROR )
-call Show ( Eta ( iV ), '>>> Eta', CONSOLE % ERROR )
+call Show ( Eta ( iV ), '>>> Eta previous', CONSOLE % ERROR )
+call Show ( Eta_Sol, '>>> Eta_Sol', CONSOLE % ERROR )
 call Show ( RF % SolutionAccuracy, '>>> SolutionAccuracy', CONSOLE % ERROR )
             if ( Eta_ND < 1.0_KDR ) then
 call Show ( Eta_ND, '>>> Falling back to Eta_ND', CONSOLE % ERROR )
