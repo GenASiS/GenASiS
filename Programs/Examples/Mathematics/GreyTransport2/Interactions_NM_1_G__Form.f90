@@ -172,35 +172,35 @@ contains
                NM % Value ( :, NM % TEMPERATURE_PARAMETER ), &
                NM % Value ( :, NM % DEGENERACY_PARAMETER ) )
 
-    case ( 'NEUTRINOS_E_NU_BAR' )
+    ! case ( 'NEUTRINOS_E_NU_BAR' )
 
-      call I % Compute_NuBarE_N_EA &
-             ( I % Value ( :, I % EMISSIVITY_J ), &
-               I % Value ( :, I % EMISSIVITY_N ), &
-               I % Value ( :, I % OPACITY_J ), &
-               I % Value ( :, I % OPACITY_H ), &
-               I % Value ( :, I % OPACITY_N ), &
-               F % Value ( :, F % BARYON_MASS ), &
-               F % Value ( :, F % COMOVING_DENSITY ), &
-               F % Value ( :, F % TEMPERATURE ), &
-               F % Value ( :, F % MASS_FRACTION_PROTON ), &
-               F % Value ( :, F % MASS_FRACTION_NEUTRON ), &
-               F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
-               NM % Value ( :, NM % TEMPERATURE_PARAMETER ), &
-               NM % Value ( :, NM % DEGENERACY_PARAMETER ), &
-               F % Value ( :, F % ELECTRON_FRACTION ) )
+    !   call I % Compute_NuBarE_N_EA &
+    !          ( I % Value ( :, I % EMISSIVITY_J ), &
+    !            I % Value ( :, I % EMISSIVITY_N ), &
+    !            I % Value ( :, I % OPACITY_J ), &
+    !            I % Value ( :, I % OPACITY_H ), &
+    !            I % Value ( :, I % OPACITY_N ), &
+    !            F % Value ( :, F % BARYON_MASS ), &
+    !            F % Value ( :, F % COMOVING_DENSITY ), &
+    !            F % Value ( :, F % TEMPERATURE ), &
+    !            F % Value ( :, F % MASS_FRACTION_PROTON ), &
+    !            F % Value ( :, F % MASS_FRACTION_NEUTRON ), &
+    !            F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
+    !            NM % Value ( :, NM % TEMPERATURE_PARAMETER ), &
+    !            NM % Value ( :, NM % DEGENERACY_PARAMETER ), &
+    !            F % Value ( :, F % ELECTRON_FRACTION ) )
 
-      call I % Compute_Nu_N_A_S &
-             ( I % Value ( :, I % OPACITY_H ), &
-               F % Value ( :, F % BARYON_MASS ), &
-               F % Value ( :, F % COMOVING_DENSITY ), &
-               F % Value ( :, F % MASS_FRACTION_PROTON ), &
-               F % Value ( :, F % MASS_FRACTION_NEUTRON ), &
-               F % Value ( :, F % MASS_FRACTION_HEAVY ), &
-               F % Value ( :, F % HEAVY_ATOMIC_NUMBER ), &
-               F % Value ( :, F % HEAVY_MASS_NUMBER ), &
-               NM % Value ( :, NM % TEMPERATURE_PARAMETER ), &
-               NM % Value ( :, NM % DEGENERACY_PARAMETER ) )
+    !   call I % Compute_Nu_N_A_S &
+    !          ( I % Value ( :, I % OPACITY_H ), &
+    !            F % Value ( :, F % BARYON_MASS ), &
+    !            F % Value ( :, F % COMOVING_DENSITY ), &
+    !            F % Value ( :, F % MASS_FRACTION_PROTON ), &
+    !            F % Value ( :, F % MASS_FRACTION_NEUTRON ), &
+    !            F % Value ( :, F % MASS_FRACTION_HEAVY ), &
+    !            F % Value ( :, F % HEAVY_ATOMIC_NUMBER ), &
+    !            F % Value ( :, F % HEAVY_MASS_NUMBER ), &
+    !            NM % Value ( :, NM % TEMPERATURE_PARAMETER ), &
+    !            NM % Value ( :, NM % DEGENERACY_PARAMETER ) )
 
 !    case default
 !      call Show ( 'Radiation Type not recognized', CONSOLE % ERROR )

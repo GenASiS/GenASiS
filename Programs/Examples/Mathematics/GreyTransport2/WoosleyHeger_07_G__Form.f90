@@ -23,9 +23,10 @@ module WoosleyHeger_07_G__Form
     WoosleyHeger_07_G_Form
       integer ( KDI ) :: &
         NEUTRINOS_E_NU             = 1, &
-        NEUTRINOS_E_NU_BAR         = 2, &
-        NEUTRINOS_MU_TAU_NU_NU_BAR = 3, &
-        FLUID                      = 4         
+        ! NEUTRINOS_E_NU_BAR         = 2, &
+        ! NEUTRINOS_MU_TAU_NU_NU_BAR = 3, &
+        ! FLUID                      = 4         
+        FLUID                      = 2         
       type ( WoosleyHeger_07_HeaderForm ), allocatable :: &
         Header
       type ( Interactions_ASC_Form ), allocatable :: &
@@ -57,9 +58,9 @@ module WoosleyHeger_07_G__Form
     class ( Fluid_P_MHN_Form ), pointer :: &
       Fluid => null ( )
     class ( NeutrinoMoments_G_Form ), pointer :: &
-      Radiation_E     => null ( ), &
-      Radiation_E_Bar => null ( ), &
-      Radiation_MuTau => null ( )   
+      Radiation_E     => null ( )!, &
+!      Radiation_E_Bar => null ( ), &
+!      Radiation_MuTau => null ( )   
     class ( Interactions_NM_1_G_Form ), private, pointer :: &
       Interactions => null ( )
 
@@ -89,12 +90,13 @@ contains
 
     !-- Prepare for Currents
 
-    WH % N_CURRENTS_PS = 4
+!    WH % N_CURRENTS_PS = 4
+    WH % N_CURRENTS_PS = 2
     allocate ( WH % Current_ASC_1D ( WH % N_CURRENTS_PS ) )
     allocate ( WH % TimeStepLabel ( WH % N_CURRENTS_PS ) )
     WH % TimeStepLabel ( WH % NEUTRINOS_E_NU ) = 'Nu_E'
-    WH % TimeStepLabel ( WH % NEUTRINOS_E_NU_BAR ) = 'NuBar_E'
-    WH % TimeStepLabel ( WH % NEUTRINOS_MU_TAU_NU_NU_BAR ) = 'Nu_X'
+!    WH % TimeStepLabel ( WH % NEUTRINOS_E_NU_BAR ) = 'NuBar_E'
+!    WH % TimeStepLabel ( WH % NEUTRINOS_MU_TAU_NU_NU_BAR ) = 'Nu_X'
     WH % TimeStepLabel ( WH % FLUID ) = 'Fluid'
 
     !-- FIXME: This does not account for curvilinear coordinates
@@ -116,37 +118,37 @@ contains
              EnergyDensityUnitOption = WHH % EnergyDensityUnit, &
              TemperatureUnitOption = WHH % TemperatureUnit )
 
-    !-- Electron Antineutrinos
+    ! !-- Electron Antineutrinos
 
-    allocate &
-      ( RadiationMoments_ASC_Form :: &
-          WH % Current_ASC_1D ( WH % NEUTRINOS_E_NU_BAR ) % Element )
-    select type ( RA_E_Bar => WH % Current_ASC_1D &
-                                ( WH % NEUTRINOS_E_NU_BAR ) % Element )
-    class is ( RadiationMoments_ASC_Form )
-    call RA_E_Bar % Initialize &
-           ( PS, 'NEUTRINOS_E_NU_BAR', NameShortOption = 'NuBar_E', &
-             MomentumDensity_U_UnitOption = MomentumDensity_U_Unit, &
-             MomentumDensity_D_UnitOption = MomentumDensity_D_Unit, &
-             EnergyDensityUnitOption = WHH % EnergyDensityUnit, &
-             TemperatureUnitOption = WHH % TemperatureUnit )
+    ! allocate &
+    !   ( RadiationMoments_ASC_Form :: &
+    !       WH % Current_ASC_1D ( WH % NEUTRINOS_E_NU_BAR ) % Element )
+    ! select type ( RA_E_Bar => WH % Current_ASC_1D &
+    !                             ( WH % NEUTRINOS_E_NU_BAR ) % Element )
+    ! class is ( RadiationMoments_ASC_Form )
+    ! call RA_E_Bar % Initialize &
+    !        ( PS, 'NEUTRINOS_E_NU_BAR', NameShortOption = 'NuBar_E', &
+    !          MomentumDensity_U_UnitOption = MomentumDensity_U_Unit, &
+    !          MomentumDensity_D_UnitOption = MomentumDensity_D_Unit, &
+    !          EnergyDensityUnitOption = WHH % EnergyDensityUnit, &
+    !          TemperatureUnitOption = WHH % TemperatureUnit )
 
-    !-- Mu and Tau Neutrinos and Antineutrinos
+    ! !-- Mu and Tau Neutrinos and Antineutrinos
 
-    allocate &
-      ( RadiationMoments_ASC_Form :: &
-          WH % Current_ASC_1D ( WH % NEUTRINOS_MU_TAU_NU_NU_BAR ) % Element )
-    select type &
-      ( RA_MuTau => WH % Current_ASC_1D &
-                       ( WH % NEUTRINOS_MU_TAU_NU_NU_BAR ) % Element )
-    class is ( RadiationMoments_ASC_Form )
-    call RA_MuTau % Initialize &
-           ( PS, 'NEUTRINOS_MU_TAU_NU_NU_BAR', &
-             NameShortOption = 'Nu_X', &
-             MomentumDensity_U_UnitOption = MomentumDensity_U_Unit, &
-             MomentumDensity_D_UnitOption = MomentumDensity_D_Unit, &
-             EnergyDensityUnitOption = WHH % EnergyDensityUnit, &
-             TemperatureUnitOption = WHH % TemperatureUnit )
+    ! allocate &
+    !   ( RadiationMoments_ASC_Form :: &
+    !       WH % Current_ASC_1D ( WH % NEUTRINOS_MU_TAU_NU_NU_BAR ) % Element )
+    ! select type &
+    !   ( RA_MuTau => WH % Current_ASC_1D &
+    !                    ( WH % NEUTRINOS_MU_TAU_NU_NU_BAR ) % Element )
+    ! class is ( RadiationMoments_ASC_Form )
+    ! call RA_MuTau % Initialize &
+    !        ( PS, 'NEUTRINOS_MU_TAU_NU_NU_BAR', &
+    !          NameShortOption = 'Nu_X', &
+    !          MomentumDensity_U_UnitOption = MomentumDensity_U_Unit, &
+    !          MomentumDensity_D_UnitOption = MomentumDensity_D_Unit, &
+    !          EnergyDensityUnitOption = WHH % EnergyDensityUnit, &
+    !          TemperatureUnitOption = WHH % TemperatureUnit )
 
     !-- Fluid
 
@@ -165,8 +167,8 @@ contains
              LengthUnitOption = WHH % CoordinateUnit ( 1 ), &
              EnergyDensityUnitOption = WHH % EnergyDensityUnit )
     call RA_E % SetInteractions ( IA )
-    call RA_E_Bar % SetInteractions ( IA )
-    call RA_MuTau % SetInteractions ( IA )
+!    call RA_E_Bar % SetInteractions ( IA )
+!    call RA_MuTau % SetInteractions ( IA )
     call PrepareInteractions ( WH )
     end associate !-- IA
 
@@ -185,19 +187,19 @@ contains
     S % HarvestIncrement_1D ( WH % NEUTRINOS_E_NU ) % Pointer &
       =>  ComputeFluidSource_Radiation
 
-    S % ApplySources_1D ( WH % NEUTRINOS_E_NU_BAR ) % Pointer &
-      =>  ApplySources_Radiation
-    S % ApplyRelaxation_1D ( WH % NEUTRINOS_E_NU_BAR ) % Pointer &
-      =>  ApplyRelaxation_NM_G
-    S % HarvestIncrement_1D ( WH % NEUTRINOS_E_NU_BAR ) % Pointer &
-      =>  ComputeFluidSource_Radiation
+    ! S % ApplySources_1D ( WH % NEUTRINOS_E_NU_BAR ) % Pointer &
+    !   =>  ApplySources_Radiation
+    ! S % ApplyRelaxation_1D ( WH % NEUTRINOS_E_NU_BAR ) % Pointer &
+    !   =>  ApplyRelaxation_NM_G
+    ! S % HarvestIncrement_1D ( WH % NEUTRINOS_E_NU_BAR ) % Pointer &
+    !   =>  ComputeFluidSource_Radiation
 
-    S % ApplySources_1D ( WH % NEUTRINOS_MU_TAU_NU_NU_BAR ) % Pointer &
-      =>  ApplySources_Radiation
-    S % ApplyRelaxation_1D ( WH % NEUTRINOS_MU_TAU_NU_NU_BAR ) % Pointer &
-      =>  ApplyRelaxation_NM_G
-    S % HarvestIncrement_1D ( WH % NEUTRINOS_MU_TAU_NU_NU_BAR ) % Pointer &
-      =>  ComputeFluidSource_Radiation
+    ! S % ApplySources_1D ( WH % NEUTRINOS_MU_TAU_NU_NU_BAR ) % Pointer &
+    !   =>  ApplySources_Radiation
+    ! S % ApplyRelaxation_1D ( WH % NEUTRINOS_MU_TAU_NU_NU_BAR ) % Pointer &
+    !   =>  ApplyRelaxation_NM_G
+    ! S % HarvestIncrement_1D ( WH % NEUTRINOS_MU_TAU_NU_NU_BAR ) % Pointer &
+    !   =>  ComputeFluidSource_Radiation
 
     S % ApplySources_1D ( WH % FLUID ) % Pointer &
       =>  ApplySources_Fluid
@@ -221,8 +223,8 @@ contains
 
     !-- Cleanup
 
-    end select !-- RA_MuTau
-    end select !-- RA_E_Bar
+!    end select !-- RA_MuTau
+!    end select !-- RA_E_Bar
     end select !-- RA_E
     end select !-- PS
     end associate !-- WHH
@@ -276,23 +278,23 @@ contains
                   ( WH % NEUTRINOS_E_NU ) % Element )
     class is ( RadiationMoments_ASC_Form )
 
-    select type &
-      ( RA_E_Bar => WH % Current_ASC_1D &
-                      ( WH % NEUTRINOS_E_NU_BAR ) % Element )
-    class is ( RadiationMoments_ASC_Form )
+    ! select type &
+    !   ( RA_E_Bar => WH % Current_ASC_1D &
+    !                   ( WH % NEUTRINOS_E_NU_BAR ) % Element )
+    ! class is ( RadiationMoments_ASC_Form )
 
-    select type &
-      ( RA_MuTau => WH % Current_ASC_1D &
-                       ( WH % NEUTRINOS_MU_TAU_NU_NU_BAR ) % Element )
-    class is ( RadiationMoments_ASC_Form )
+    ! select type &
+    !   ( RA_MuTau => WH % Current_ASC_1D &
+    !                    ( WH % NEUTRINOS_MU_TAU_NU_NU_BAR ) % Element )
+    ! class is ( RadiationMoments_ASC_Form )
 
     select type ( FA => WH % Current_ASC_1D ( WH % FLUID ) % Element )
     class is ( Fluid_ASC_Form )
 
     I        =>  IA % Interactions ( )
     R_E      =>  RA_E % NeutrinoMoments_G ( )
-    R_E_Bar  =>  RA_E_Bar % NeutrinoMoments_G ( )
-    R_MuTau  =>  RA_MuTau % NeutrinoMoments_G ( )
+!    R_E_Bar  =>  RA_E_Bar % NeutrinoMoments_G ( )
+!    R_MuTau  =>  RA_MuTau % NeutrinoMoments_G ( )
     F        =>  FA % Fluid_P_MHN ( )
 
     select type ( I )
@@ -316,11 +318,12 @@ contains
            ( [ F % nValues, F % N_CONSERVED ], ClearOption = .true. )
 
     end select !-- FA
-    end select !-- RA_MuTau
-    end select !-- RA_E_Bar
+!    end select !-- RA_MuTau
+!    end select !-- RA_E_Bar
     end select !-- RA_E
     end associate !-- IA
-    nullify ( F, R_E, R_E_Bar, R_MuTau, I )
+!    nullify ( F, R_E, R_E_Bar, R_MuTau, I )
+    nullify ( F, R_E, I )
 
   end subroutine PrepareInteractions
 
@@ -342,27 +345,27 @@ contains
                   ( WH % NEUTRINOS_E_NU ) % Element )
     class is ( RadiationMoments_ASC_Form )
 
-    select type &
-      ( RA_E_Bar => WH % Current_ASC_1D &
-                      ( WH % NEUTRINOS_E_NU_BAR ) % Element )
-    class is ( RadiationMoments_ASC_Form )
+    ! select type &
+    !   ( RA_E_Bar => WH % Current_ASC_1D &
+    !                   ( WH % NEUTRINOS_E_NU_BAR ) % Element )
+    ! class is ( RadiationMoments_ASC_Form )
 
-    select type &
-      ( RA_MuTau => WH % Current_ASC_1D &
-                       ( WH % NEUTRINOS_MU_TAU_NU_NU_BAR ) % Element )
-    class is ( RadiationMoments_ASC_Form )
+    ! select type &
+    !   ( RA_MuTau => WH % Current_ASC_1D &
+    !                    ( WH % NEUTRINOS_MU_TAU_NU_NU_BAR ) % Element )
+    ! class is ( RadiationMoments_ASC_Form )
 
     Radiation_E      =>  RA_E % NeutrinoMoments_G ( )
-    Radiation_E_Bar  =>  RA_E_Bar % NeutrinoMoments_G ( )
-    Radiation_MuTau  =>  RA_MuTau % NeutrinoMoments_G ( )
+!    Radiation_E_Bar  =>  RA_E_Bar % NeutrinoMoments_G ( )
+!    Radiation_MuTau  =>  RA_MuTau % NeutrinoMoments_G ( )
 
     !-- No initial radiation, but set eigenspeeds
     call Radiation_E % ComputeFromPrimitive ( G )
-    call Radiation_E_Bar % ComputeFromPrimitive ( G )
-    call Radiation_MuTau % ComputeFromPrimitive ( G )
+!    call Radiation_E_Bar % ComputeFromPrimitive ( G )
+!    call Radiation_MuTau % ComputeFromPrimitive ( G )
 
-    end select !-- RA_MuTau
-    end select !-- RA_E_Bar
+!    end select !-- RA_MuTau
+!    end select !-- RA_E_Bar
     end select !-- RA_E
     end select !-- PS
     nullify ( G )
@@ -471,18 +474,18 @@ real ( KDR ), dimension ( Fluid % nValues ) :: &
 
     !-- FIXME: This is a lagged setting of the fluid velocity in radiation
     associate &
-      ( R_E     => Radiation_E, &
-        R_E_Bar => Radiation_E_Bar, &
-        R_MuTau => Radiation_MuTau )
+      ( R_E     => Radiation_E )!, &
+!        R_E_Bar => Radiation_E_Bar, &
+!        R_MuTau => Radiation_MuTau )
     call Copy ( F % Value ( :, F % VELOCITY_U ( 1 ) : F % VELOCITY_U ( 3 ) ), &
                 R_E % Value ( :, R_E % FLUID_VELOCITY_U ( 1 ) &
                                : R_E % FLUID_VELOCITY_U ( 3 ) ) )
-    call Copy ( F % Value ( :, F % VELOCITY_U ( 1 ) : F % VELOCITY_U ( 3 ) ), &
-                R_E_Bar % Value ( :, R_E_Bar % FLUID_VELOCITY_U ( 1 ) &
-                                  : R_E_Bar % FLUID_VELOCITY_U ( 3 ) ) )
-    call Copy ( F % Value ( :, F % VELOCITY_U ( 1 ) : F % VELOCITY_U ( 3 ) ), &
-                R_MuTau % Value ( :, R_MuTau % FLUID_VELOCITY_U ( 1 ) &
-                                  : R_MuTau % FLUID_VELOCITY_U ( 3 ) ) )
+!    call Copy ( F % Value ( :, F % VELOCITY_U ( 1 ) : F % VELOCITY_U ( 3 ) ), &
+!                R_E_Bar % Value ( :, R_E_Bar % FLUID_VELOCITY_U ( 1 ) &
+!                                  : R_E_Bar % FLUID_VELOCITY_U ( 3 ) ) )
+!    call Copy ( F % Value ( :, F % VELOCITY_U ( 1 ) : F % VELOCITY_U ( 3 ) ), &
+!                R_MuTau % Value ( :, R_MuTau % FLUID_VELOCITY_U ( 1 ) &
+!                                  : R_MuTau % FLUID_VELOCITY_U ( 3 ) ) )
     end associate !-- R_E, etc.
 
 dG_G   = Increment % Value ( :, iEnergy ) &
