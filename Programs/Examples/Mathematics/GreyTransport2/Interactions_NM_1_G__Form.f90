@@ -240,6 +240,7 @@ contains
              NM, &
              NM % Value ( :, NM % COMOVING_ENERGY ), &
              F % Value ( :, F % INTERNAL_ENERGY ), &
+             NM % Value ( :, NM % BETA_EQUILIBRIUM ), &
              I % RegulationParameter, dT )
 
     end associate !-- F
@@ -769,7 +770,8 @@ contains
 
 
   subroutine RegulateKernel &
-               ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, NM, J, E, R, dT )
+               ( Xi_J, Xi_H, Xi_N, Chi_J, Chi_H, Chi_N, NM, J, E, Beta_EQ, &
+                 R, dT )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       Xi_J, Xi_H, Xi_N, &
@@ -778,7 +780,8 @@ contains
       NM
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       J, &
-      E
+      E, &
+      Beta_EQ
     real ( KDR ), intent ( in ) :: &
       R, &
       dT
@@ -794,7 +797,9 @@ contains
     !$OMP parallel do private ( iV, Ratio )
     do iV = 1, nValues
 
-      if ( E ( iV ) == 0.0_KDR ) &
+      if ( E ( iV )  ==  0.0_KDR ) &
+        cycle
+      if ( Beta_EQ ( iV )  >   0.0_KDR ) &
         cycle
 
       Ratio  =  abs ( Xi_J ( iV )  -  Chi_J ( iV ) * J ( iV ) ) * dT  &
