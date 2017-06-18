@@ -220,6 +220,19 @@ contains
       
       RF % nIterations = iIteration
       
+      RF % SolutionAccuracy = abs ( Y_1 )
+      Root = X_1
+      
+      if ( abs ( ( X_1 - X_0 ) /  X_0 ) <= RF % RequestedAccuracy &
+           .or. abs ( Y_1 ) <= RF % RequestedAccuracy ) &
+      then
+        RF % Success = .true. 
+        exit
+      end if
+      
+      if ( Y_1 == Y_0 ) &
+        exit
+
       X = X_1 - Y_1 * ( X_1 - X_0 ) / ( Y_1 - Y_0 )
       
       X_0 = X_1
@@ -227,16 +240,6 @@ contains
       
       X_1 = X
       call RF % FunctionEvaluator ( RF % FunctionParameters, X_1, Y_1 )
-      
-      RF % SolutionAccuracy = abs ( Y_1 )
-      
-      if ( abs ( ( X_1 - X_0 ) /  X_0 ) <= RF % RequestedAccuracy &
-           .or. abs ( Y_1 ) <= RF % RequestedAccuracy ) &
-      then
-        RF % Success = .true. 
-        Root = X_1
-        exit
-      end if
       
     end do
     
