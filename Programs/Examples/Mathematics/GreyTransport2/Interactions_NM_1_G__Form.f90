@@ -143,7 +143,7 @@ contains
 
     select case ( trim ( Current % Type ) )
     case ( 'NEUTRINOS_E_NU' )
-       
+
       call I % Compute_NuE_N_EA &
              ( I % Value ( :, I % EMISSIVITY_J ), &
                I % Value ( :, I % EMISSIVITY_N ), &
@@ -371,41 +371,41 @@ contains
 
       OneMinus_F_e_J   =  1.0_KDR
       OneMinus_F_nu_J  =  1.0_KDR
-!       if ( Fermi_4_nu > 0.0_KDR ) &
-        ! OneMinus_F_e_J  &
-        !   =  1. / ( exp ( Eta_e  -  T_nu ( iV ) / T ( iV ) &
-        !                             * Fermi_5_nu / Fermi_4_nu )  &
-        !           +  1. )
-      if ( Fermi_2_e_Q > 0.0_KDR ) &
+      if ( Fermi_4_nu > 0.0_KDR ) &
         OneMinus_F_e_J  &
-          =  1.0_KDR  &
-             /  ( exp ( Eta_e  -  Fermi_3_e_Q / Fermi_2_e_Q )  &
-                  +  1.0_KDR )
-!       if ( Fermi_4_e_Q > 0.0_KDR ) &
-        ! OneMinus_F_nu_J  &
-        !   =  1. / ( exp ( Eta_nu ( iV )  -  T ( iV ) / T_nu ( iV ) &
-        !                                     * Fermi_5_e_Q / Fermi_4_e_Q )  &
-        !             +  1. )
-      if ( Fermi_2_nu > 0.0_KDR ) &
+          =  1. / ( exp ( Eta_e  -  T_nu ( iV ) / T ( iV ) &
+                                    * Fermi_5_nu / Fermi_4_nu )  &
+                    +  1. )
+      ! if ( Fermi_2_e_Q > 0.0_KDR ) &
+      !   OneMinus_F_e_J  &
+      !     =  1.0_KDR  &
+      !        /  ( exp ( Eta_e  -  Fermi_3_e_Q / Fermi_2_e_Q )  &
+      !             +  1.0_KDR )
+      if ( Fermi_4_e_Q > 0.0_KDR .and. T_nu ( iV ) > 0.0_KDR ) &
         OneMinus_F_nu_J  &
-          =  1.0_KDR  &
-             /  ( exp ( Eta_nu ( iV )  -  Fermi_3_nu / Fermi_2_nu )  &
-                  +  1.0_KDR )
+          =  1. / ( exp ( Eta_nu ( iV )  -  T ( iV ) / T_nu ( iV ) &
+                                            * Fermi_5_e_Q / Fermi_4_e_Q )  &
+                    +  1. )
+      ! if ( Fermi_2_nu > 0.0_KDR ) &
+      !   OneMinus_F_nu_J  &
+      !     =  1.0_KDR  &
+      !        /  ( exp ( Eta_nu ( iV )  -  Fermi_3_nu / Fermi_2_nu )  &
+      !             +  1.0_KDR )
 
       OneMinus_F_e_N   =  1.0_KDR
       OneMinus_F_nu_N  =  1.0_KDR
-!       if ( Fermi_3_nu > 0.0_KDR ) &
-        ! OneMinus_F_e_N  &
-        !   =  1. / ( exp ( Eta_e  -  T_nu ( iV ) / T ( iV ) &
-        !                             * Fermi_4_nu / Fermi_3_nu )  &
-        !           +  1. )
-        OneMinus_F_e_N   =  OneMinus_F_e_J
-!       if ( Fermi_3_e_Q > 0.0_KDR ) &
-        ! OneMinus_F_nu_N  &
-        !   =  1. / ( exp ( Eta_nu ( iV )  -  T ( iV ) / T_nu ( iV ) &
-        !                                     * Fermi_4_e_Q / Fermi_3_e_Q )  &
-        !             +  1. )
-        OneMinus_F_nu_N   =  OneMinus_F_nu_J
+      if ( Fermi_3_nu > 0.0_KDR ) &
+        OneMinus_F_e_N  &
+          =  1. / ( exp ( Eta_e  -  T_nu ( iV ) / T ( iV ) &
+                                    * Fermi_4_nu / Fermi_3_nu )  &
+                    +  1. )
+!        OneMinus_F_e_N   =  OneMinus_F_e_J
+      if ( Fermi_3_e_Q > 0.0_KDR .and. T_nu ( iV ) > 0.0_KDR ) &
+        OneMinus_F_nu_N  &
+          =  1. / ( exp ( Eta_nu ( iV )  -  T ( iV ) / T_nu ( iV ) &
+                                            * Fermi_4_e_Q / Fermi_3_e_Q )  &
+                    +  1. )
+!        OneMinus_F_nu_N   =  OneMinus_F_nu_J
 
 !if ( Y_e ( iV ) > 0.1_KDR ) then
 
@@ -568,7 +568,7 @@ contains
         =  1. / ( exp ( -Eta_e  -  T_nu ( iV ) / T ( iV ) &
                                   * Fermi_5_nu_Q / Fermi_4_nu_Q )  &
                   +  1. )
-      if ( Fermi_4_e > 0.0_KDR ) &
+      if ( Fermi_4_e > 0.0_KDR .and. T_nu ( iV ) > 0.0_KDR ) &
         OneMinus_F_nu_J  &
           =  1. / ( exp ( Eta_nu ( iV )  -  T ( iV ) / T_nu ( iV ) &
                                             * Fermi_5_e / Fermi_4_e )  &
@@ -581,7 +581,7 @@ contains
         =  1. / ( exp ( -Eta_e  -  T_nu ( iV ) / T ( iV ) &
                                   * Fermi_4_nu_Q / Fermi_3_nu_Q )  &
                   +  1. )
-      if ( Fermi_3_e > 0.0_KDR ) &
+      if ( Fermi_3_e > 0.0_KDR .and. T_nu ( iV ) > 0.0_KDR ) &
         OneMinus_F_nu_N  &
           =  1. / ( exp ( Eta_nu ( iV )  -  T ( iV ) / T_nu ( iV ) &
                                             * Fermi_4_e / Fermi_3_e )  &
