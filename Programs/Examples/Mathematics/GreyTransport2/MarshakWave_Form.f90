@@ -575,7 +575,7 @@ contains
       S
     type ( VariableGroupForm ), intent ( inout ), target :: &
       Increment
-    class ( CurrentTemplate ), intent ( in ) :: &
+    class ( CurrentTemplate ), intent ( inout ) :: &
       Radiation
     real ( KDR ), intent ( in ) :: &
       TimeStep

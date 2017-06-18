@@ -48,6 +48,7 @@ module WoosleyHeger_07_G__Form
 
       private :: &
         ApplySources_Fluid_Kernel, &
+        ImposeBetaEquilibrium_Kernel, &
         ComputeFluidSource_G_S_Radiation_Kernel, &
         ComputeFluidSource_DP_Radiation_Kernel
 
@@ -539,7 +540,7 @@ end if
       S
     type ( VariableGroupForm ), intent ( inout ), target :: &
       Increment
-    class ( CurrentTemplate ), intent ( in ) :: &
+    class ( CurrentTemplate ), intent ( inout ) :: &
       Radiation
     real ( KDR ), intent ( in ) :: &
       TimeStep
@@ -585,6 +586,19 @@ end if
 
     !-- Taking shortcuts on conserved vs. comoving here
 
+    if ( trim ( Radiation % Type ) == 'NEUTRINOS_E_NU' ) &
+      call ImposeBetaEquilibrium_Kernel &
+             ( R % Value ( :, R % BETA_EQUILIBRIUM ), &
+               Increment % Value ( :, iEnergy_R ), &
+               Increment % Value ( :, iNumber_R ), &
+               R, &
+               F % Value ( :, F % BARYON_MASS ), &
+               F % Value ( :, F % COMOVING_DENSITY ), &
+               R % Value ( :, R % COMOVING_ENERGY ), &
+               R % Value ( :, R % COMOVING_ENERGY_EQ ), &
+               R % Value ( :, R % COMOVING_NUMBER ), &
+               R % Value ( :, R % COMOVING_NUMBER_EQ ) )
+
     call ComputeFluidSource_G_S_Radiation_Kernel &
            ( FluidSource_Radiation % Value ( :, iEnergy_F ), & 
              FluidSource_Radiation % Value ( :, iMomentum_1_F ), &
@@ -602,6 +616,7 @@ end if
              Increment % Value ( :, iMomentum_1_R ), &
              Increment % Value ( :, iMomentum_2_R ), &
              Increment % Value ( :, iMomentum_3_R ), &
+             R % Value ( :, R % BETA_EQUILIBRIUM ), &
              CONSTANT % SPEED_OF_LIGHT, TimeStep ) 
 
     select case ( trim ( Radiation % Type ) )
@@ -613,6 +628,7 @@ end if
                I % Value ( :, I % OPACITY_N ), &
                R % Value ( :, R % COMOVING_NUMBER ), &
                Increment % Value ( :, iNumber_R ), &
+               R % Value ( :, R % BETA_EQUILIBRIUM ), &
                CONSTANT % SPEED_OF_LIGHT, TimeStep, Sign = +1.0_KDR )
     case ( 'NEUTRINOS_E_NU_BAR' )
       call ComputeFluidSource_DP_Radiation_Kernel &
@@ -622,6 +638,7 @@ end if
                I % Value ( :, I % OPACITY_N ), &
                R % Value ( :, R % COMOVING_NUMBER ), &
                Increment % Value ( :, iNumber_R ), &
+               R % Value ( :, R % BETA_EQUILIBRIUM ), &
                CONSTANT % SPEED_OF_LIGHT, TimeStep, Sign = -1.0_KDR )
     end select !-- Radiation % Type
 
@@ -696,9 +713,46 @@ end if
   end subroutine ApplySources_Fluid_Kernel
 
 
+  subroutine ImposeBetaEquilibrium_Kernel &
+               ( Beta_EQ, dJ, dN, NM, M_F, N_F, J, J_EQ, N, N_EQ )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      Beta_EQ, &
+      dJ, &
+      dN
+    class ( NeutrinoMoments_G_Form ), intent ( in ) :: &
+      NM
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      M_F, N_F, &
+      J, J_EQ, &
+      N, N_EQ
+
+    integer ( KDI ) :: &
+      iV, &
+      nV
+    real ( KDR ) :: &
+      Rho_EQ
+
+    nV = size ( Beta_EQ )
+
+    Rho_EQ  =  1.0e13_KDR  *  UNIT % GRAM  *  UNIT % CENTIMETER ** (-3)
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nV
+      if ( M_F ( iV ) * N_F ( iV )  >  Rho_EQ ) then
+        Beta_EQ ( iV )  =  1.0_KDR
+        dJ ( iV )       =  J_EQ ( iV )  -  J ( iV )
+        dN ( iV )       =  N_EQ ( iV )  -  N ( iV )
+      end if
+    end do
+    !$OMP end parallel do
+
+  end subroutine ImposeBetaEquilibrium_Kernel
+
+
   subroutine ComputeFluidSource_G_S_Radiation_Kernel &
                ( FS_R_G, FS_R_S_1, FS_R_S_2, FS_R_S_3, IsProperCell, &
-                 E, EO, TO, J, dJ, H_1, H_2, H_3, dH_1, dH_2, dH_3, &
+                 E, EO, TO, J, dJ, H_1, H_2, H_3, dH_1, dH_2, dH_3, Beta_EQ, &
                  c, dT )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -713,7 +767,8 @@ end if
       J,  &
       dJ, &
       H_1, H_2, H_3, &
-      dH_1, dH_2, dH_3
+      dH_1, dH_2, dH_3, &
+      Beta_EQ
     real ( KDR ) :: &
       c, &
       dT
@@ -732,9 +787,14 @@ end if
     do iV = 1, nV
       if ( .not. IsProperCell ( iV ) ) &
         cycle
-      FS_R_G ( iV )  &
-        =  FS_R_G ( iV )  &
-           -  c * dT  *  ( E ( iV )  -  EO ( iV ) * ( J ( iV ) + dJ ( iV ) ) ) 
+      if ( Beta_EQ ( iV ) > 0.0_KDR ) then
+        FS_R_G ( iV )  =  - dJ ( iV )
+      else
+        FS_R_G ( iV )  &
+          =  FS_R_G ( iV )  &
+             -  c * dT  *  ( E ( iV )  &
+                             -  EO ( iV ) * ( J ( iV ) + dJ ( iV ) ) ) 
+      end if
       FS_R_S_1 ( iV )  &
         =  FS_R_S_1 ( iV )  +  c * dT  *  TO ( iV )  &
                                *  ( H_1 ( iV ) + dH_1 ( iV ) )
@@ -751,7 +811,7 @@ end if
 
 
   subroutine ComputeFluidSource_DP_Radiation_Kernel &
-               ( FS_R_DP, IsProperCell, EN, EON, JN, dJN, c, dT, Sign )
+               ( FS_R_DP, IsProperCell, EN, EON, JN, dJN, Beta_EQ, c, dT, Sign )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       FS_R_DP
@@ -761,7 +821,8 @@ end if
       EN, &
       EON, &
       JN,  &
-      dJN
+      dJN, &
+      Beta_EQ
     real ( KDR ) :: &
       c, &
       dT, &
@@ -785,10 +846,14 @@ end if
     do iV = 1, nV
       if ( .not. IsProperCell ( iV ) ) &
         cycle
-      FS_R_DP ( iV )  &
-        =  FS_R_DP ( iV )  &
-           -  Sign * c * dT * AMU &
-              *  ( EN ( iV )  -  EON ( iV ) * ( JN ( iV ) + dJN ( iV ) ) ) 
+      if ( Beta_EQ ( iV ) > 0.0_KDR ) then
+        FS_R_DP ( iV )  =  - AMU * dJN ( iV )
+      else
+        FS_R_DP ( iV )  &
+          =  FS_R_DP ( iV )  &
+             -  Sign * c * dT * AMU &
+                *  ( EN ( iV )  -  EON ( iV ) * ( JN ( iV ) + dJN ( iV ) ) )
+      end if
     end do
     !$OMP end parallel do
 

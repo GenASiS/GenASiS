@@ -208,7 +208,7 @@ module Step_RK_C_ASC__Template
         S
       type ( VariableGroupForm ), intent ( inout ), target :: &
         Increment
-      class ( CurrentTemplate ), intent ( in ) :: &
+      class ( CurrentTemplate ), intent ( inout ) :: &
         Current
       real ( KDR ), intent ( in ) :: &
         TimeStep
