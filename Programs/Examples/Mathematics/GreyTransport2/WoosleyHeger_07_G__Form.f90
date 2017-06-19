@@ -418,7 +418,7 @@ contains
 
     !-- An occasion to compute the interactions to be used in relaxation
     call Interactions % Compute ( Radiation )
-    call Interactions % Regulate ( Radiation, TimeStep )
+!    call Interactions % Regulate ( Radiation, TimeStep )
 
   end subroutine ApplySources_Radiation
 
@@ -611,22 +611,22 @@ end if
 
     !-- Taking shortcuts on conserved vs. comoving here
 
-    if ( trim ( Radiation % Type ) == 'NEUTRINOS_E_NU' ) &
-      call ImposeBetaEquilibrium_Kernel &
-             ( R % Value ( :, R % BETA_EQUILIBRIUM ), &
-               Increment % Value ( :, iEnergy_R ), &
-               Increment % Value ( :, iNumber_R ), &
-               R, &
-               F % Value ( :, F % BARYON_MASS ), &
-               F % Value ( :, F % COMOVING_DENSITY ), &
-               F % Value ( :, F % TEMPERATURE ), &
-               F % Value ( :, F % ENTROPY_PER_BARYON ), &
-               F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
-               F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
-               R % Value ( :, R % COMOVING_ENERGY ), &
-               R % Value ( :, R % COMOVING_ENERGY_EQ ), &
-               R % Value ( :, R % COMOVING_NUMBER ), &
-               R % Value ( :, R % COMOVING_NUMBER_EQ ) )
+    ! if ( trim ( Radiation % Type ) == 'NEUTRINOS_E_NU' ) &
+    !   call ImposeBetaEquilibrium_Kernel &
+    !          ( R % Value ( :, R % BETA_EQUILIBRIUM ), &
+    !            Increment % Value ( :, iEnergy_R ), &
+    !            Increment % Value ( :, iNumber_R ), &
+    !            R, &
+    !            F % Value ( :, F % BARYON_MASS ), &
+    !            F % Value ( :, F % COMOVING_DENSITY ), &
+    !            F % Value ( :, F % TEMPERATURE ), &
+    !            F % Value ( :, F % ENTROPY_PER_BARYON ), &
+    !            F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
+    !            F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
+    !            R % Value ( :, R % COMOVING_ENERGY ), &
+    !            R % Value ( :, R % COMOVING_ENERGY_EQ ), &
+    !            R % Value ( :, R % COMOVING_NUMBER ), &
+    !            R % Value ( :, R % COMOVING_NUMBER_EQ ) )
 
     call ComputeFluidSource_G_S_Radiation_Kernel &
            ( FluidSource_Radiation % Value ( :, iEnergy_F ), & 
