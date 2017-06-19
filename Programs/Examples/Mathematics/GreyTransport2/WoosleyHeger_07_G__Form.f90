@@ -597,6 +597,8 @@ end if
                R, &
                F % Value ( :, F % BARYON_MASS ), &
                F % Value ( :, F % COMOVING_DENSITY ), &
+               F % Value ( :, F % TEMPERATURE ), &
+               F % Value ( :, F % ENTROPY_PER_BARYON ), &
                R % Value ( :, R % COMOVING_ENERGY ), &
                R % Value ( :, R % COMOVING_ENERGY_EQ ), &
                R % Value ( :, R % COMOVING_NUMBER ), &
@@ -717,7 +719,7 @@ end if
 
 
   subroutine ImposeBetaEquilibrium_Kernel &
-               ( Beta_EQ, dJ, dN, NM, M_F, N_F, J, J_EQ, N, N_EQ )
+               ( Beta_EQ, dJ, dN, NM, M_F, N_F, T_F, S_F, J, J_EQ, N, N_EQ )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       Beta_EQ, &
@@ -726,7 +728,7 @@ end if
     class ( NeutrinoMoments_G_Form ), intent ( in ) :: &
       NM
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      M_F, N_F, &
+      M_F, N_F, T_F, S_F, &
       J, J_EQ, &
       N, N_EQ
 
@@ -734,18 +736,39 @@ end if
       iV, &
       nV
     real ( KDR ) :: &
-      Rho_EQ
+      Rho_EQ, &
+      f, &  !-- fraction
+      r, &  !-- ratio
+      Delta_J, Delta_N
 
     nV = size ( Beta_EQ )
 
     Rho_EQ  =  1.0e13_KDR  *  UNIT % GRAM  *  UNIT % CENTIMETER ** (-3)
+    f       =  0.01_KDR
 
-    !$OMP parallel do private ( iV )
+    !$OMP parallel do private ( iV, Delta_J, Delta_N, r )
     do iV = 1, nV
       if ( M_F ( iV ) * N_F ( iV )  >  Rho_EQ ) then
+
         Beta_EQ ( iV )  =  1.0_KDR
-        dJ ( iV )       =  J_EQ ( iV )  -  J ( iV )
-        dN ( iV )       =  N_EQ ( iV )  -  N ( iV )
+
+        Delta_J  =  J_EQ ( iV )  -  J ( iV )
+        Delta_N  =  N_EQ ( iV )  -  N ( iV )
+
+        r  =  min ( 1.0_KDR,  &
+                    f  *  T_F ( iV )  *  S_F ( iV )  /  abs ( Delta_J ) )
+
+        dJ ( iV )  =  r  *  Delta_J
+        dN ( iV )  =  r  *  Delta_N
+
+if ( r < 1.0_KDR ) then
+call Show ( '>>> Regulating approach to beta equilibrium', CONSOLE % ERROR )
+call Show ( NM % Name, '>>> Species', CONSOLE % ERROR )
+call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', CONSOLE % ERROR )
+call Show ( iV, '>>> iV', CONSOLE % ERROR )
+call Show ( r, '>>> RegulationFactor', CONSOLE % ERROR )
+end if
+
       end if
     end do
     !$OMP end parallel do
