@@ -476,14 +476,14 @@ contains
     OnePlusEpsilon  =  1.0_KDR  +  10.0_KDR * epsilon ( 0.0_KDR )
 
     associate &
-      ( Pi      => CONSTANT % PI, &
-        TwoPi   => 2.0_KDR * CONSTANT % PI, &
-        FourPi  => 4.0_KDR * CONSTANT % PI, &
-        SixPi   => 6.0_KDR * CONSTANT % PI, &
-        EightPi => 8.0_KDR * CONSTANT % PI )
+      ( Pi        => CONSTANT % PI, &
+        TwoPi     => 2.0_KDR  *  CONSTANT % PI, &
+        FourPi    => 4.0_KDR  *  CONSTANT % PI, &
+        SixPi_2   => 6.0_KDR  *  CONSTANT % PI ** 2, &
+        EightPi_2 => 8.0_KDR  *  CONSTANT % PI ** 2 )
     Factor_ND    =  Pi ** ( - 2.0_KDR / 3.0_KDR )  /  3.0_KDR
-    Factor_ED_1  =  EightPi ** ( 1.0_KDR / 4.0_KDR )  &
-                    /  SixPi ** ( 1.0_KDR / 3.0_KDR )
+    Factor_ED_1  =  EightPi_2 ** ( 1.0_KDR / 4.0_KDR )  &
+                    /  SixPi_2 ** ( 1.0_KDR / 3.0_KDR )
     Factor_ED_2  =  6.0_KDR  /  Pi ** 2
     Factor_J_N   =  FourPi  /  TwoPi ** 3
     end associate !-- TwoPi, etc.
@@ -531,6 +531,7 @@ call Show ( iV, '>>> iV', CONSOLE % ERROR )
 call Show ( J ( iV ), '>>> J', CONSOLE % ERROR )
 call Show ( N ( iV ), '>>> N', CONSOLE % ERROR )
 call Show ( MomentRatio, '>>> MomentRatio', CONSOLE % ERROR )
+call Show ( 1.0_KDR / Factor_ED_1, '>>> MomentRatioMin', CONSOLE % ERROR )
 call Show ( Eta ( iV ), '>>> Eta previous', CONSOLE % ERROR )
 call Show ( Eta_ND, '>>> Eta_ND', CONSOLE % ERROR )
 call Show ( Eta_ED, '>>> Eta_ED', CONSOLE % ERROR )
@@ -551,9 +552,9 @@ call Show ( Eta_ED, '>>> Falling back to Eta_ED', CONSOLE % ERROR )
         Eta ( iV )  =  log ( tiny ( 0.0_KDR ) )  *  10.0_KDR
       end if
 
-!      if ( trim ( NM % Type ) == 'NEUTRINOS_E_NU' ) then
-!        Eta ( iV )  =  min ( Eta ( iV ), Eta_EQ ( iV ) )
-!      end if
+      if ( trim ( NM % Type ) == 'NEUTRINOS_E_NU' ) then
+        Eta ( iV )  =  min ( Eta ( iV ), Eta_EQ ( iV ) )
+      end if
 
       call DFERMI ( 2.0_KDR, Eta ( iV ), 0.0_KDR, Fermi_2, &
                     fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )

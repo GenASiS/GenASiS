@@ -736,6 +736,7 @@ end if
       iV, &
       nV
     real ( KDR ) :: &
+      AMU, &
       Rho_EQ, &
       f, &  !-- fraction
       r, &  !-- ratio
@@ -743,12 +744,13 @@ end if
 
     nV = size ( Beta_EQ )
 
+    AMU     =  CONSTANT % ATOMIC_MASS_UNIT
     Rho_EQ  =  1.0e13_KDR  *  UNIT % GRAM  *  UNIT % CENTIMETER ** (-3)
     f       =  0.01_KDR
 
     !$OMP parallel do private ( iV, Delta_J, Delta_N, r )
     do iV = 1, nV
-      if ( M_F ( iV ) * N_F ( iV )  >  Rho_EQ ) then
+      if ( M_F ( iV )  *  N_F ( iV )  >  Rho_EQ ) then
 
         Beta_EQ ( iV )  =  1.0_KDR
 
@@ -756,7 +758,9 @@ end if
         Delta_N  =  N_EQ ( iV )  -  N ( iV )
 
         r  =  min ( 1.0_KDR,  &
-                    f  *  T_F ( iV )  *  S_F ( iV )  /  abs ( Delta_J ) )
+                    f  *  T_F ( iV )  *  S_F ( iV )  &
+                       *  M_F ( iV )  *  N_F ( iV )  /  AMU  &
+                    /  abs ( Delta_J ) )
 
         dJ ( iV )  =  r  *  Delta_J
         dN ( iV )  =  r  *  Delta_N
