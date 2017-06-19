@@ -31,6 +31,8 @@ module Integrator_C_1D_PS__Template
       ComputeCycle_ASC
     procedure, private, pass :: &
       ComputeTimeStepLocal
+    procedure, public, pass :: &
+      ComputeTimeStepLocalTemplate
   end type Integrator_C_1D_PS_Template
 
 contains
@@ -176,6 +178,18 @@ contains
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       TimeStepCandidate
 
+    call I % ComputeTimeStepLocalTemplate ( TimeStepCandidate )
+
+  end subroutine ComputeTimeStepLocal
+
+
+  subroutine ComputeTimeStepLocalTemplate ( I, TimeStepCandidate )
+
+    class ( Integrator_C_1D_PS_Template ), intent ( in ), target :: &
+      I
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      TimeStepCandidate
+
     integer ( KDI ) :: &
       iC  !-- iCurrent
     class ( GeometryFlatForm ), pointer :: &
@@ -221,7 +235,7 @@ contains
 
     nullify ( C, G )
 
-  end subroutine ComputeTimeStepLocal
+  end subroutine ComputeTimeStepLocalTemplate
 
 
 end module Integrator_C_1D_PS__Template

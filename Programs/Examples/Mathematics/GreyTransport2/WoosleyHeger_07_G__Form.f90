@@ -38,6 +38,8 @@ module WoosleyHeger_07_G__Form
       SetWriteTimeInterval
     final :: &
       Finalize
+    procedure, private, pass :: &
+      ComputeTimeStepLocal
   end type WoosleyHeger_07_G_Form
 
     private :: &
@@ -53,11 +55,13 @@ module WoosleyHeger_07_G__Form
         ComputeFluidSource_G_S_Radiation_Kernel, &
         ComputeFluidSource_DP_Radiation_Kernel
 
+    logical ( KDL ), private :: &
+      ReachedEquilibrium = .false.
     type ( VariableGroupForm ), private, allocatable :: &
       FluidSource_Radiation
-    class ( Fluid_P_MHN_Form ), pointer :: &
+    class ( Fluid_P_MHN_Form ), private, pointer :: &
       Fluid => null ( )
-    class ( NeutrinoMoments_G_Form ), pointer :: &
+    class ( NeutrinoMoments_G_Form ), private, pointer :: &
       Radiation_E     => null ( )!, &
 !      Radiation_E_Bar => null ( ), &
 !      Radiation_MuTau => null ( )   
@@ -255,6 +259,24 @@ contains
     call WH % FinalizeTemplate_C_1D_PS ( )
 
   end subroutine Finalize
+
+
+  subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
+
+    class ( WoosleyHeger_07_G_Form ), intent ( in ), target :: &
+      I
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      TimeStepCandidate
+
+    call I % ComputeTimeStepLocalTemplate ( TimeStepCandidate )
+
+!     if ( ReachedEquilibrium ) then
+!       TimeStepCandidate  =  1.0e-3  *  TimeStepCandidate
+! call Show ( '>>> Equilibrium time step reduction', CONSOLE % ERROR )
+! call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', CONSOLE % ERROR )
+!     end if
+
+  end subroutine ComputeTimeStepLocal
 
 
   subroutine PrepareInteractions ( WH )
@@ -599,6 +621,8 @@ end if
                F % Value ( :, F % COMOVING_DENSITY ), &
                F % Value ( :, F % TEMPERATURE ), &
                F % Value ( :, F % ENTROPY_PER_BARYON ), &
+               F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
+               F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
                R % Value ( :, R % COMOVING_ENERGY ), &
                R % Value ( :, R % COMOVING_ENERGY_EQ ), &
                R % Value ( :, R % COMOVING_NUMBER ), &
@@ -719,7 +743,8 @@ end if
 
 
   subroutine ImposeBetaEquilibrium_Kernel &
-               ( Beta_EQ, dJ, dN, NM, M_F, N_F, T_F, S_F, J, J_EQ, N, N_EQ )
+               ( Beta_EQ, dJ, dN, NM, M_F, N_F, T_F, S_F, Mu_e, Mu_n_p, &
+                 J, J_EQ, N, N_EQ )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       Beta_EQ, &
@@ -728,7 +753,7 @@ end if
     class ( NeutrinoMoments_G_Form ), intent ( in ) :: &
       NM
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      M_F, N_F, T_F, S_F, &
+      M_F, N_F, T_F, S_F, Mu_E, Mu_N_P, &
       J, J_EQ, &
       N, N_EQ
 
@@ -738,8 +763,8 @@ end if
     real ( KDR ) :: &
       AMU, &
       Rho_EQ, &
-      f, &  !-- fraction
-      r, &  !-- ratio
+      f, &         !-- fraction
+      r_J, r_N, &  !-- regulation factor
       Delta_J, Delta_N
 
     nV = size ( Beta_EQ )
@@ -748,29 +773,43 @@ end if
     Rho_EQ  =  1.0e13_KDR  *  UNIT % GRAM  *  UNIT % CENTIMETER ** (-3)
     f       =  0.01_KDR
 
-    !$OMP parallel do private ( iV, Delta_J, Delta_N, r )
+    !$OMP parallel do private ( iV, Delta_J, Delta_N, r_J, r_N )
     do iV = 1, nV
       if ( M_F ( iV )  *  N_F ( iV )  >  Rho_EQ ) then
+
+        if ( .not. ReachedEquilibrium ) then
+          ReachedEquilibrium = .true.
+call Show ( '>>> Reached beta equilibrium', CONSOLE % ERROR )
+call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', CONSOLE % ERROR )
+        end if
 
         Beta_EQ ( iV )  =  1.0_KDR
 
         Delta_J  =  J_EQ ( iV )  -  J ( iV )
         Delta_N  =  N_EQ ( iV )  -  N ( iV )
 
-        r  =  min ( 1.0_KDR,  &
+        r_J  =  min ( 1.0_KDR,  &
                     f  *  T_F ( iV )  *  S_F ( iV )  &
                        *  M_F ( iV )  *  N_F ( iV )  /  AMU  &
                     /  abs ( Delta_J ) )
 
-        dJ ( iV )  =  r  *  Delta_J
-        dN ( iV )  =  r  *  Delta_N
+        ! r_N  =  min ( 1.0_KDR,  &
+        !             f  *  T_F ( iV )  *  S_F ( iV )  &
+        !                *  M_F ( iV )  *  N_F ( iV )  /  AMU  &
+        !             /  ( ( Mu_e ( iV )  -  Mu_n_p ( iV ) ) &
+        !                  * abs ( Delta_N ) ) )
+        r_N  =  1.0_KDR
 
-if ( r < 1.0_KDR ) then
+        dJ ( iV )  =  r_J  *  Delta_J
+        dN ( iV )  =  r_N  *  Delta_N
+
+if ( r_J < 1.0_KDR .or. r_N < 1.0_KDR ) then
 call Show ( '>>> Regulating approach to beta equilibrium', CONSOLE % ERROR )
 call Show ( NM % Name, '>>> Species', CONSOLE % ERROR )
 call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', CONSOLE % ERROR )
 call Show ( iV, '>>> iV', CONSOLE % ERROR )
-call Show ( r, '>>> RegulationFactor', CONSOLE % ERROR )
+call Show ( r_J, '>>> RegulationFactor_J', CONSOLE % ERROR )
+call Show ( r_N, '>>> RegulationFactor_N', CONSOLE % ERROR )
 end if
 
       end if
