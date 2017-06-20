@@ -165,8 +165,16 @@ contains
     if ( I % Time == I % WriteTime ) &
       I % IsCheckpointTime = .true.
 
-if ( TimeStep < 2.0e-6_KDR * UNIT % SECOND ) then
+if ( I % iCycle > I % nRampCycles &
+     .and. TimeStep < 2.0e-6_KDR * UNIT % SECOND &
+     .and. mod ( I % iCycle, 10 ) == 0 ) &
+then
   I % IsCheckpointTime = .true.
+end if
+
+if ( TimeStep < 1.0e-12_KDR * UNIT % SECOND ) then
+  call Show ( TimeStep, I % TimeUnit, '>>> TimeStep too small', CONSOLE % ERROR )
+  call PROGRAM_HEADER % Abort ( )
 end if
 
     end associate !-- CA_1D, etc.
