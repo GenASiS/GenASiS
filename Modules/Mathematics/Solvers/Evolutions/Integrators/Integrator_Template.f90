@@ -78,7 +78,7 @@ module Integrator_Template
 !      ComputeTally
     procedure, private, pass :: &  !-- 3
       ComputeTally
-    procedure, private, pass :: &  !-- 3
+    procedure, public, pass :: &  !-- 3
       Write
 !-- See FIXME above
 !    procedure ( RTS ), private, pass, deferred :: &  !-- 3
@@ -694,7 +694,7 @@ contains
 
 !-- See FIXME above
   subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
-    class ( IntegratorTemplate ), intent ( in ), target :: &
+    class ( IntegratorTemplate ), intent ( inout ), target :: &
       I
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       TimeStepCandidate

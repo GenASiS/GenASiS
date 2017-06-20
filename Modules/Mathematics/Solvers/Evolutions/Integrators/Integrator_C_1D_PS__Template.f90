@@ -165,6 +165,10 @@ contains
     if ( I % Time == I % WriteTime ) &
       I % IsCheckpointTime = .true.
 
+if ( TimeStep < 2.0e-6_KDR * UNIT % SECOND ) then
+  I % IsCheckpointTime = .true.
+end if
+
     end associate !-- CA_1D, etc.
     end select !-- S
 
@@ -173,7 +177,7 @@ contains
 
   subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
 
-    class ( Integrator_C_1D_PS_Template ), intent ( in ), target :: &
+    class ( Integrator_C_1D_PS_Template ), intent ( inout ), target :: &
       I
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       TimeStepCandidate
