@@ -50,9 +50,10 @@ module WoosleyHeger_07_G__Form
       ComputeFluidSource_Radiation
 
       private :: &
-        ComputeTimeStep_J_Kernel, &
-        ComputeTimeStep_H_Kernel, &
-        ComputeTimeStep_N_Kernel, &
+        ComputeTimeStep_SB_J_Kernel, &
+        ComputeTimeStep_SB_N_Kernel, &
+        ComputeTimeStep_S_H_Kernel, &
+        ComputeTimeStep_YE_N_Kernel, &
         ApplySources_Fluid_Kernel, &
         ImposeBetaEquilibrium_Kernel, &
         ComputeFluidSource_G_S_Radiation_Kernel, &
@@ -100,14 +101,15 @@ contains
 !    WH % N_CURRENTS_PS = 4
     WH % N_CURRENTS_PS = 2
     allocate ( WH % Current_ASC_1D ( WH % N_CURRENTS_PS ) )
-    allocate ( WH % TimeStepLabel ( WH % N_CURRENTS_PS + 3 ) )
+    allocate ( WH % TimeStepLabel ( WH % N_CURRENTS_PS + 4 ) )
     WH % TimeStepLabel ( WH % NEUTRINOS_E_NU ) = 'Nu_E'
 !    WH % TimeStepLabel ( WH % NEUTRINOS_E_NU_BAR ) = 'NuBar_E'
 !    WH % TimeStepLabel ( WH % NEUTRINOS_MU_TAU_NU_NU_BAR ) = 'Nu_X'
     WH % TimeStepLabel ( WH % FLUID ) = 'Fluid'
-    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 1 ) = 'Interactions_J'
-    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 2 ) = 'Interactions_H'
-    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 3 ) = 'Interactions_N'
+    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 1 ) = 'Interactions_SB_J'
+    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 2 ) = 'Interactions_SB_N'
+    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 3 ) = 'Interactions_S_H'
+    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 4 ) = 'Interactions_YE_N'
 
     !-- FIXME: This does not account for curvilinear coordinates
     MomentumDensity_U_Unit  =  WHH % EnergyDensityUnit / UNIT % SPEED_OF_LIGHT
@@ -301,7 +303,7 @@ contains
 
     call I_R_E % Compute ( R_E )
 
-    call ComputeTimeStep_J_Kernel &
+    call ComputeTimeStep_SB_J_Kernel &
            ( CSL % IsProperCell, &
              I_R_E % Value ( :, I_R_E % EMISSIVITY_J ), &
              I_R_E % Value ( :, I_R_E % OPACITY_J ), &
@@ -312,14 +314,27 @@ contains
              F % Value ( :, F % COMOVING_DENSITY ), &
              TimeStepCandidate ( I % N_CURRENTS_PS + 1 ) )
 
-    call ComputeTimeStep_H_Kernel &
+    call ComputeTimeStep_SB_N_Kernel &
+           ( CSL % IsProperCell, &
+             I_R_E % Value ( :, I_R_E % EMISSIVITY_N ), &
+             I_R_E % Value ( :, I_R_E % OPACITY_N ), &
+             R_E % Value ( :, R_E % COMOVING_NUMBER ), &
+             F % Value ( :, F % TEMPERATURE ), &
+             F % Value ( :, F % ENTROPY_PER_BARYON ), &
+             F % Value ( :, F % BARYON_MASS ), &
+             F % Value ( :, F % COMOVING_DENSITY ), &
+             F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
+             F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
+             TimeStepCandidate ( I % N_CURRENTS_PS + 2 ) )
+
+    call ComputeTimeStep_S_H_Kernel &
            ( CSL % IsProperCell, &
              I_R_E % Value ( :, I_R_E % OPACITY_H ), &
              R_E % Value ( :, R_E % CONSERVED_MOMENTUM_D ( 1 ) ), &
              F % Value ( :, F % MOMENTUM_DENSITY_D ( 1 ) ), &
-             TimeStepCandidate ( I % N_CURRENTS_PS + 2 ) )
+             TimeStepCandidate ( I % N_CURRENTS_PS + 3 ) )
 
-    call ComputeTimeStep_N_Kernel &
+    call ComputeTimeStep_YE_N_Kernel &
            ( CSL % IsProperCell, &
              I_R_E % Value ( :, I_R_E % EMISSIVITY_N ), &
              I_R_E % Value ( :, I_R_E % OPACITY_N ), &
@@ -327,7 +342,7 @@ contains
              F % Value ( :, F % ELECTRON_FRACTION ), &
              F % Value ( :, F % BARYON_MASS ), &
              F % Value ( :, F % COMOVING_DENSITY ), &
-             TimeStepCandidate ( I % N_CURRENTS_PS + 3 ) )
+             TimeStepCandidate ( I % N_CURRENTS_PS + 4 ) )
 
     if ( minloc ( TimeStepCandidate, dim = 1 ) &
          > I % N_CURRENTS_PS ) &
@@ -748,14 +763,14 @@ end if
   end subroutine ComputeFluidSource_Radiation
 
 
-  subroutine ComputeTimeStep_J_Kernel &
-               ( IsProperCell, Xi_J, Chi_J, J, T, S, M, N, TimeStep )
+  subroutine ComputeTimeStep_SB_J_Kernel &
+               ( IsProperCell, Xi_J, Chi_J, J, T, SB, MB, NB, TimeStep )
 
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       IsProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       Xi_J, Chi_J, J, &
-      T, S, M, N
+      T, SB, MB, NB
     real ( KDR ), intent ( inout ) :: &
       TimeStep    
 
@@ -780,8 +795,8 @@ end if
         TimeStepInverse &
           = max ( TimeStepInverse, &
                   abs ( Xi_J ( iV )  -  Chi_J ( iV ) * J ( iV ) )  &
-                  /  ( T ( iV )  *  S ( iV )  &
-                       *  M ( iV )  *  N ( iV )  /  AMU  ) )
+                  /  ( T ( iV )  *  SB ( iV )  &
+                       *  MB ( iV )  *  NB ( iV )  /  AMU  ) )
       end if
     end do
     !$OMP end parallel do
@@ -789,10 +804,56 @@ end if
     TimeStepInverse = max ( tiny ( 0.0_KDR ), TimeStepInverse )
     TimeStep = min ( TimeStep, f * 1.0_KDR / TimeStepInverse )
 
-  end subroutine ComputeTimeStep_J_Kernel
+  end subroutine ComputeTimeStep_SB_J_Kernel
 
 
-  subroutine ComputeTimeStep_H_Kernel &
+  subroutine ComputeTimeStep_SB_N_Kernel &
+               ( IsProperCell, Xi_N, Chi_N, N, T, SB, MB, NB, Mu_e, Mu_n_p, &
+                 TimeStep )
+
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      IsProperCell
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      Xi_N, Chi_N, N, &
+      T, SB, MB, NB, Mu_e, Mu_n_p
+    real ( KDR ), intent ( inout ) :: &
+      TimeStep    
+
+    integer ( KDI ) :: &
+      iV, &
+      nV
+    real ( KDR ) :: &
+      AMU, &
+      f, &  !-- factor
+      TimeStepInverse
+
+    nV = size ( Xi_N )
+
+    AMU  =  CONSTANT % ATOMIC_MASS_UNIT
+    f    =  0.01_KDR
+
+    TimeStepInverse = - huge ( 0.0_KDR )
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nV
+      if ( IsProperCell ( iV ) ) then
+        TimeStepInverse &
+          = max ( TimeStepInverse, &
+                  ( Mu_e ( iV )  -  Mu_n_p ( iV ) )  &
+                  *  abs ( Xi_N ( iV )  -  Chi_N ( iV ) * N ( iV ) )  &
+                  /  ( T ( iV )  *  SB ( iV )  &
+                       *  MB ( iV )  *  NB ( iV )  /  AMU  ) )
+      end if
+    end do
+    !$OMP end parallel do
+
+    TimeStepInverse = max ( tiny ( 0.0_KDR ), TimeStepInverse )
+    TimeStep = min ( TimeStep, f * 1.0_KDR / TimeStepInverse )
+
+  end subroutine ComputeTimeStep_SB_N_Kernel
+
+
+  subroutine ComputeTimeStep_S_H_Kernel &
                ( IsProperCell, Chi_H, H_D, S_D, TimeStep )
 
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
@@ -832,17 +893,17 @@ end if
     TimeStepInverse = max ( tiny ( 0.0_KDR ), TimeStepInverse )
     TimeStep = min ( TimeStep, f * 1.0_KDR / TimeStepInverse )
 
-  end subroutine ComputeTimeStep_H_Kernel
+  end subroutine ComputeTimeStep_S_H_Kernel
 
 
-  subroutine ComputeTimeStep_N_Kernel &
-               ( IsProperCell, Xi_N, Chi_N, N, Y_e, M, N_F, TimeStep )
+  subroutine ComputeTimeStep_YE_N_Kernel &
+               ( IsProperCell, Xi_N, Chi_N, N, Y_e, MB, NB, TimeStep )
 
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       IsProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       Xi_N, Chi_N, N, &
-      Y_e, M, N_F
+      Y_e, MB, NB
     real ( KDR ), intent ( inout ) :: &
       TimeStep    
 
@@ -867,7 +928,7 @@ end if
         TimeStepInverse &
           = max ( TimeStepInverse, &
                   abs ( Xi_N ( iV )  -  Chi_N ( iV ) * N ( iV ) )  &
-                  /  ( Y_e ( iV )  *  M ( iV )  *  N_F ( iV )  /  AMU  ) )
+                  /  ( Y_e ( iV )  *  MB ( iV )  *  NB ( iV )  /  AMU  ) )
       end if
     end do
     !$OMP end parallel do
@@ -875,7 +936,7 @@ end if
     TimeStepInverse = max ( tiny ( 0.0_KDR ), TimeStepInverse )
     TimeStep = min ( TimeStep, f * 1.0_KDR / TimeStepInverse )
 
-  end subroutine ComputeTimeStep_N_Kernel
+  end subroutine ComputeTimeStep_YE_N_Kernel
 
 
   subroutine ApplySources_Fluid_Kernel &

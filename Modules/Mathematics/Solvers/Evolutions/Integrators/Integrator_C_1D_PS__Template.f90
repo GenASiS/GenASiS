@@ -167,7 +167,7 @@ contains
 
 if ( I % iCycle > I % nRampCycles &
      .and. TimeStep < 2.0e-6_KDR * UNIT % SECOND &
-     .and. mod ( I % iCycle, 10 ) == 0 ) &
+     .and. mod ( I % iCycle, 100 ) == 0 ) &
 then
   I % IsCheckpointTime = .true.
 end if
