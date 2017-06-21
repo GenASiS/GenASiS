@@ -584,7 +584,13 @@ contains
 
       !-- Momentum
 
-      Chi_H ( iV )  =  Chi_J ( iV )
+      Chi_H ( iV )  &
+        =  Chi_H ( iV )  &
+           +  Factor  *  N_n  &
+              *  (    T_nu ( iV ) ** 2     *  Fermi_5_nu / Fermi_3_nu &
+                   +  2 * Q * T_nu ( iV )  *  Fermi_4_nu / Fermi_3_nu &
+                   +  Q ** 2 )  &
+              *  OneMinus_F_e_J
 
       !-- Number
 
