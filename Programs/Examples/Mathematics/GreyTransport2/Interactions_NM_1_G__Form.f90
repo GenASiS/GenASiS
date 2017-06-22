@@ -173,6 +173,8 @@ contains
                F % Value ( :, F % TEMPERATURE ), &
                F % Value ( :, F % MASS_FRACTION_NEUTRON ), &
                F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
+               F % Value ( :, F % ENTROPY_PER_BARYON ), &
+               F % Value ( :, F % ELECTRON_FRACTION ), &
                NM % Value ( :, NM % TEMPERATURE_PARAMETER ), &
                NM % Value ( :, NM % DEGENERACY_PARAMETER ), &
                NM % Value ( :, NM % COMOVING_ENERGY_EQ ), &
@@ -501,14 +503,14 @@ contains
 
 
   subroutine Compute_NuE_N_EA_2 &
-               ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, M, N, T, X_n, Mu_e, &
+               ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, M, N, T, X_n, Mu_e, SB, YE, &
                  T_nu, Eta_nu, J_eq, N_eq, T_nu_eq, Eta_nu_eq )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       Xi_J, Xi_N, &
       Chi_J, Chi_H, Chi_N
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      M, N, T, X_n, Mu_e, &
+      M, N, T, X_n, Mu_e, SB, YE, &
       T_nu, Eta_nu, J_eq, N_eq, T_nu_eq, Eta_nu_eq
 
     integer ( KDI ) :: &
@@ -598,9 +600,10 @@ contains
                    +  Q ** 2 )  &
               *  OneMinus_F_e_J  /  OneMinus_F_nu_eq_J
 
-      Xi_J ( iV )  &
-        =  Xi_J ( iV )  &
-           +  Chi_J ( iV )  *  J_eq ( iV )
+      if ( SB ( iV )  >  0.1_KDR ) &
+        Xi_J ( iV )  &
+          =  Xi_J ( iV )  &
+             +  Chi_J ( iV )  *  J_eq ( iV )
 
       !-- Momentum
 
@@ -626,17 +629,19 @@ contains
       OneMinus_F_e_N      =  OneMinus_F_e_J
       OneMinus_F_nu_eq_N  =  OneMinus_F_nu_eq_J
 
-      Chi_N ( iV )  &
-        =  Chi_N ( iV )  &
-           +  Factor  *  N_n  &
-              *  (    T_nu ( iV ) ** 2     *  Fermi_4_nu / Fermi_2_nu &
-                   +  2 * Q * T_nu ( iV )  *  Fermi_3_nu / Fermi_2_nu &
-                   +  Q ** 2 )  &
-              *  OneMinus_F_e_N  /  OneMinus_F_nu_eq_N
+      if ( SB ( iV )  >  0.1_KDR ) &
+        Chi_N ( iV )  &
+          =  Chi_N ( iV )  &
+             +  Factor  *  N_n  &
+                *  (    T_nu ( iV ) ** 2     *  Fermi_4_nu / Fermi_2_nu &
+                     +  2 * Q * T_nu ( iV )  *  Fermi_3_nu / Fermi_2_nu &
+                     +  Q ** 2 )  &
+                *  OneMinus_F_e_N  /  OneMinus_F_nu_eq_N
 
-      Xi_N ( iV )  &
-        =  Xi_N ( iV )  &
-           +  Chi_N ( iV )  *  N_eq ( iV )
+      if ( YE ( iV ) > 0.2 ) &
+        Xi_N ( iV )  &
+          =  Xi_N ( iV )  &
+             +  Chi_N ( iV )  *  N_eq ( iV )
 
     end do !-- iV
     !$OMP end parallel do
