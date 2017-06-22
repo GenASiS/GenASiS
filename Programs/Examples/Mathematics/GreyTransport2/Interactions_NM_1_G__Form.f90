@@ -520,6 +520,8 @@ contains
       Q, &
       N_n, &
       Eta_e, &
+      Fermi_2_e, Fermi_3_e, &
+      Fermi_2_nu_eq, Fermi_3_nu_eq, &
       Fermi_2_nu, Fermi_3_nu, Fermi_4_nu, Fermi_5_nu, &
       fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta, &
       OneMinus_F_e_J, OneMinus_F_nu_eq_J, &
@@ -533,6 +535,7 @@ contains
 
     !$OMP parallel do &
     !$OMP   private ( iV, Eta_e, & 
+    !$OMP             Fermi_2_e, Fermi_3_e, &
     !$OMP             Fermi_2_nu, Fermi_3_nu, Fermi_4_nu, Fermi_5_nu, &
     !$OMP             fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta, &
     !$OMP             OneMinus_F_e_J, OneMinus_F_nu_eq_J, & 
@@ -545,6 +548,16 @@ contains
       N_n  =  M ( iV )  *  N ( iV )  *  X_n ( iV )  /  AMU
 
       Eta_e  =  Mu_e ( iV )  /  T ( iV )
+
+      call DFERMI ( 2.0_KDR, Eta_e, 0.0_KDR, Fermi_2_e, &
+                    fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+      call DFERMI ( 3.0_KDR, Eta_e, 0.0_KDR, Fermi_3_e, &
+                    fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+
+      call DFERMI ( 2.0_KDR, Eta_nu_eq ( iV ), 0.0_KDR, Fermi_2_nu_eq, &
+                    fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+      call DFERMI ( 3.0_KDR, Eta_nu_eq ( iV ), 0.0_KDR, Fermi_3_nu_eq, &
+                    fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
 
       call DFERMI ( 2.0_KDR, Eta_nu ( iV ), 0.0_KDR, Fermi_2_nu, &
                     fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
@@ -560,14 +573,21 @@ contains
 
       !-- Energy
 
+      ! OneMinus_F_e_J  &
+      !   =  1.0_KDR / ( exp ( Eta_e  -  T_nu ( iV ) / T ( iV ) &
+      !                                  * Fermi_5_nu / Fermi_4_nu )  &
+      !                  +  1.0_KDR )
+      ! OneMinus_F_nu_eq_J  &
+      !   =  1.0_KDR &
+      !      / ( exp ( Eta_nu_eq ( iV )  -  T_nu ( iV ) / T_nu_eq ( iV ) &
+      !                                     * Fermi_5_nu / Fermi_4_nu )  &
+      !          +  1.0_KDR )
       OneMinus_F_e_J  &
-        =  1.0_KDR / ( exp ( Eta_e  -  T_nu ( iV ) / T ( iV ) &
-                                       * Fermi_5_nu / Fermi_4_nu )  &
+        =  1.0_KDR / ( exp ( Eta_e  -  Fermi_3_e / Fermi_2_e )  &
                        +  1.0_KDR )
       OneMinus_F_nu_eq_J  &
         =  1.0_KDR &
-           / ( exp ( Eta_nu_eq ( iV )  -  T_nu ( iV ) / T_nu_eq ( iV ) &
-                                          * Fermi_5_nu / Fermi_4_nu )  &
+           / ( exp ( Eta_nu_eq ( iV )  -  Fermi_3_nu_eq / Fermi_2_nu_eq )  &
                +  1.0_KDR )
 
       Chi_J ( iV )  &
@@ -594,15 +614,17 @@ contains
 
       !-- Number
 
-      OneMinus_F_e_N  &
-        =  1.0_KDR / ( exp ( Eta_e  -  T_nu ( iV ) / T ( iV ) &
-                                       * Fermi_4_nu / Fermi_3_nu )  &
-                       +  1.0_KDR )
-      OneMinus_F_nu_eq_N  &
-        =  1.0_KDR &
-           / ( exp ( Eta_nu_eq ( iV )  -  T_nu ( iV ) / T_nu_eq ( iV ) &
-                                          * Fermi_4_nu / Fermi_3_nu )  &
-               +  1.0_KDR )
+      ! OneMinus_F_e_N  &
+      !   =  1.0_KDR / ( exp ( Eta_e  -  T_nu ( iV ) / T ( iV ) &
+      !                                  * Fermi_4_nu / Fermi_3_nu )  &
+      !                  +  1.0_KDR )
+      ! OneMinus_F_nu_eq_N  &
+      !   =  1.0_KDR &
+      !      / ( exp ( Eta_nu_eq ( iV )  -  T_nu ( iV ) / T_nu_eq ( iV ) &
+      !                                     * Fermi_4_nu / Fermi_3_nu )  &
+      !          +  1.0_KDR )
+      OneMinus_F_e_N      =  OneMinus_F_e_J
+      OneMinus_F_nu_eq_N  =  OneMinus_F_nu_eq_J
 
       Chi_N ( iV )  &
         =  Chi_N ( iV )  &
