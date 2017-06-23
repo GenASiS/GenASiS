@@ -281,10 +281,14 @@ contains
         S_2   => RMV ( oV + 1 : oV + nV, C % CONSERVED_MOMENTUM_D ( 2 ) ), &
         S_3   => RMV ( oV + 1 : oV + nV, C % CONSERVED_MOMENTUM_D ( 3 ) ), &
         FF    => RMV ( oV + 1 : oV + nV, C % FLUX_FACTOR ), &
-        SF    => RMV ( oV + 1 : oV + nV, C % STRESS_FACTOR ) )
+        SF    => RMV ( oV + 1 : oV + nV, C % STRESS_FACTOR ), &
+        V_1   => RMV ( oV + 1 : oV + nV, C % FLUID_VELOCITY_U ( 1 ) ), &
+        V_2   => RMV ( oV + 1 : oV + nV, C % FLUID_VELOCITY_U ( 2 ) ), &
+        V_3   => RMV ( oV + 1 : oV + nV, C % FLUID_VELOCITY_U ( 2 ) ) )
 
     call ComputeConservedEnergyMomentum &
-           ( E, S_1, S_2, S_3, J, H_1, H_2, H_3, M_DD_22, M_DD_33 )
+           ( E, S_1, S_2, S_3, J, H_1, H_2, H_3, M_DD_22, M_DD_33, &
+             V_1, V_2, V_3 )
     call ComputeEigenspeeds &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, J, H_1, H_2, H_3, &
              M_UU_22, M_UU_33, CONSTANT % SPEED_OF_LIGHT )
@@ -356,11 +360,14 @@ contains
         S_2   => RMV ( oV + 1 : oV + nV, C % CONSERVED_MOMENTUM_D ( 2 ) ), &
         S_3   => RMV ( oV + 1 : oV + nV, C % CONSERVED_MOMENTUM_D ( 3 ) ), &
         FF    => RMV ( oV + 1 : oV + nV, C % FLUX_FACTOR ), &
-        SF    => RMV ( oV + 1 : oV + nV, C % STRESS_FACTOR ) )
+        SF    => RMV ( oV + 1 : oV + nV, C % STRESS_FACTOR ), &
+        V_1   => RMV ( oV + 1 : oV + nV, C % FLUID_VELOCITY_U ( 1 ) ), &
+        V_2   => RMV ( oV + 1 : oV + nV, C % FLUID_VELOCITY_U ( 2 ) ), &
+        V_3   => RMV ( oV + 1 : oV + nV, C % FLUID_VELOCITY_U ( 2 ) ) )
 
     call ComputeComovingEnergyMomentum &
            ( J, H_1, H_2, H_3, E, S_1, S_2, S_3, M_DD_22, M_DD_33, &
-             M_UU_22, M_UU_33 )
+             M_UU_22, M_UU_33, V_1, V_2, V_3 )
     call ComputeEigenspeeds &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, J, H_1, H_2, H_3, &
              M_UU_22, M_UU_33, CONSTANT % SPEED_OF_LIGHT )
@@ -706,7 +713,8 @@ contains
 
 
   subroutine ComputeConservedEnergyMomentum &
-               ( E, S_1, S_2, S_3, J, H_1, H_2, H_3, M_DD_22, M_DD_33 )
+               ( E, S_1, S_2, S_3, J, H_1, H_2, H_3, M_DD_22, M_DD_33, &
+                 V_1, V_2, V_3 )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       E, &
@@ -715,7 +723,8 @@ contains
       J, &
       H_1, H_2, H_3
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      M_DD_22, M_DD_33
+      M_DD_22, M_DD_33, &
+      V_1, V_2, V_3
 
     integer ( KDI ) :: &
       iV, &
@@ -758,9 +767,11 @@ contains
 
     !$OMP parallel do private ( iV )
     do iV = 1, nValues
-      S_1 ( iV )  =  H_1 ( iV )
-      S_2 ( iV )  =  M_DD_22 ( iV )  *  H_2 ( iV )
-      S_3 ( iV )  =  M_DD_33 ( iV )  *  H_3 ( iV )
+      S_1 ( iV )  =  H_1 ( iV )  +  J ( iV ) * V_1 ( iV )
+      S_2 ( iV )  =  M_DD_22 ( iV )  &
+                     *  ( H_2 ( iV )  +  J ( iV ) * V_2 ( iV ) )
+      S_3 ( iV )  =  M_DD_33 ( iV )  &
+                     *  ( H_3 ( iV )  +  J ( iV ) * V_3 ( iV ) )
     end do !-- iV
     !$OMP end parallel do
 
@@ -769,7 +780,7 @@ contains
 
   subroutine ComputeComovingEnergyMomentum &
                ( J, H_1, H_2, H_3, E, S_1, S_2, S_3, M_DD_22, M_DD_33, &
-                 M_UU_22, M_UU_33 )
+                 M_UU_22, M_UU_33, V_1, V_2, V_3 )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       J, &
@@ -779,7 +790,8 @@ contains
       S_1, S_2, S_3
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       M_DD_22, M_DD_33, &
-      M_UU_22, M_UU_33
+      M_UU_22, M_UU_33, &
+      V_1, V_2, V_3
 
     integer ( KDI ) :: &
       iV, &
@@ -793,9 +805,9 @@ contains
     do iV = 1, nValues
       if ( E ( iV )  >  0.0_KDR ) then
         J ( iV )    =  E ( iV )
-        H_1 ( iV )  =  S_1 ( iV )
-        H_2 ( iV )  =  M_UU_22 ( iV ) * S_2 ( iV )
-        H_3 ( iV )  =  M_UU_33 ( iV ) * S_3 ( iV )
+        H_1 ( iV )  =  S_1 ( iV )  -  E ( iV ) * V_1 ( iV )  
+        H_2 ( iV )  =  M_UU_22 ( iV ) * S_2 ( iV )  -  E ( iV ) * V_2 ( iV )
+        H_3 ( iV )  =  M_UU_33 ( iV ) * S_3 ( iV )  -  E ( iV ) * V_3 ( iV )
       else
         J   ( iV ) = 0.0_KDR
         H_1 ( iV ) = 0.0_KDR

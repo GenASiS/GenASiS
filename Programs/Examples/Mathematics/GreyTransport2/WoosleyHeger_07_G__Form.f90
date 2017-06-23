@@ -373,16 +373,17 @@ contains
     !          F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
     !          TimeStepCandidate ( I % N_CURRENTS_PS + 6 ) )
 
-    if ( minloc ( TimeStepCandidate, dim = 1 ) &
-         > I % N_CURRENTS_PS ) &
-    then
-      call Show ( I % iCycle, '>>> iCycle', I % IGNORABILITY )
-      do iTSC = 1, I % nTimeStepCandidates
-        call Show ( TimeStepCandidate ( iTSC ), I % TimeUnit, &
-                    trim ( I % TimeStepLabel ( iTSC ) ) // ' TimeStep', &
-                    I % IGNORABILITY )
-      end do !-- iTSC
-    end if
+    ! if ( mod ( I % iCycle, 1000 ) == 0 &
+    !      .and. minloc ( TimeStepCandidate, dim = 1 ) &
+    !            > I % N_CURRENTS_PS ) &
+    ! then
+    !   call Show ( I % iCycle, '>>> iCycle', I % IGNORABILITY )
+    !   do iTSC = 1, I % nTimeStepCandidates
+    !     call Show ( TimeStepCandidate ( iTSC ), I % TimeUnit, &
+    !                 trim ( I % TimeStepLabel ( iTSC ) ) // ' TimeStep', &
+    !                 I % IGNORABILITY )
+    !   end do !-- iTSC
+    ! end if
 
     end associate !-- I_R_E, etc.
     end select !-- RA_E

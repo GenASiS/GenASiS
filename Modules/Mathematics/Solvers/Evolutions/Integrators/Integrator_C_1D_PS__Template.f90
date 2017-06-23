@@ -165,12 +165,12 @@ contains
     if ( I % Time == I % WriteTime ) &
       I % IsCheckpointTime = .true.
 
-if ( I % iCycle > I % nRampCycles &
-     .and. TimeStep < 2.0e-6_KDR * UNIT % SECOND &
-     .and. mod ( I % iCycle, 100 ) == 0 ) &
-then
-  I % IsCheckpointTime = .true.
-end if
+! if ( I % iCycle > I % nRampCycles &
+!      .and. TimeStep < 2.0e-6_KDR * UNIT % SECOND &
+!      .and. mod ( I % iCycle, 1000 ) == 0 ) &
+! then
+!   I % IsCheckpointTime = .true.
+! end if
 
 if ( TimeStep < 1.0e-12_KDR * UNIT % SECOND ) then
   call Show ( TimeStep, I % TimeUnit, '>>> TimeStep too small', CONSOLE % ERROR )
