@@ -129,7 +129,7 @@ contains
     class is ( RadiationMoments_ASC_Form )
     call RA_E % Initialize &
            ( PS, 'NEUTRINOS_E_NU', NameShortOption = 'Nu_E', &
-             UseLimiterOption = .true., LimiterParameterOption = 2.0_KDR, &
+             UseLimiterOption = .true., LimiterParameterOption = 1.0_KDR, &
              MomentumDensity_U_UnitOption = MomentumDensity_U_Unit, &
              MomentumDensity_D_UnitOption = MomentumDensity_D_Unit, &
              EnergyDensityUnitOption = WHH % EnergyDensityUnit, &
