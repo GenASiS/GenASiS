@@ -553,9 +553,9 @@ call Show ( Eta_ED, '>>> Falling back to Eta_ED', CONSOLE % ERROR )
         Eta ( iV )  =  log ( tiny ( 0.0_KDR ) )  *  10.0_KDR
       end if
 
-      if ( trim ( NM % Type ) == 'NEUTRINOS_E_NU' ) then
-        Eta ( iV )  =  min ( Eta ( iV ), Eta_EQ ( iV ) )
-      end if
+!      if ( trim ( NM % Type ) == 'NEUTRINOS_E_NU' ) then
+!        Eta ( iV )  =  min ( Eta ( iV ), Eta_EQ ( iV ) )
+!      end if
 
       call DFERMI ( 2.0_KDR, Eta ( iV ), 0.0_KDR, Fermi_2, &
                     fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
