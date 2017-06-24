@@ -64,6 +64,9 @@ module RadiationMoments_Form
       ComputeRawFluxesKernel, &
       ComputeDiffusionFactor_HLL_CSL
 
+      private :: &
+        ComputeComovingStress_D
+
 contains
 
 
@@ -446,13 +449,14 @@ contains
         H_3 => Value_C ( oV + 1 : oV + nV, C % COMOVING_MOMENTUM_U ( 3 ) ), &
         H_Dim => Value_C ( oV + 1 : oV + nV, &
                            C % COMOVING_MOMENTUM_U ( iDimension ) ), &
+        FF    => Value_C ( oV + 1 : oV + nV, C % FLUX_FACTOR ), &
+        SF    => Value_C ( oV + 1 : oV + nV, C % STRESS_FACTOR ), &
         V_Dim => Value_C ( oV + 1 : oV + nV, &
-                           C % FLUID_VELOCITY_U ( iDimension ) ), &
-        SF => Value_C ( oV + 1 : oV + nV, C % STRESS_FACTOR ) )
+                           C % FLUID_VELOCITY_U ( iDimension ) ) )
 
     call ComputeRawFluxesKernel &
            ( F_E, F_S_1, F_S_2, F_S_3, F_S_Dim, J, H_1, H_2, H_3, H_Dim, &
-             V_Dim, SF, M_DD_22, M_DD_33 )
+             FF, SF, V_Dim, M_DD_22, M_DD_33, iDimension )
 
     end associate !-- F_E, etc.
     end associate !-- M_DD_33, etc.
@@ -945,57 +949,45 @@ contains
 
 
   subroutine ComputeRawFluxesKernel &
-               ( F_E, F_S_1, F_S_2, F_S_3, F_S_Dim, J, H_1, H_2, H_3, &
-                 H_Dim, V_Dim, SF, M_DD_22, M_DD_33 )
+               ( F_E, F_S_1, F_S_2, F_S_3, F_S_Dim, J, H_1, H_2, H_3, H_Dim, &
+                 FF, SF, V_Dim, M_DD_22, M_DD_33, iDim )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       F_E, &
-      F_S_1, F_S_2, F_S_3, &
-      F_S_Dim
+      F_S_1, F_S_2, F_S_3, F_S_Dim
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       J, &
-      H_1, H_2, H_3, &
-      H_Dim, &
+      H_1, H_2, H_3, H_Dim, &
+      FF, SF, &
       V_Dim, &
-      SF, &
       M_DD_22, M_DD_33
+    integer ( KDI ), intent ( in ) :: &
+      iDim
 
     integer ( KDI ) :: &
       iV, &
       nValues
-    real ( KDR ), dimension ( size ( J ) ) :: &
-      H_Sq
+    real ( KDR ), dimension ( 3 ) :: &
+      K_U_Dim_D
 
     nValues = size ( J )
 
     !$OMP parallel do private ( iV ) 
     do iV = 1, nValues
-      H_Sq ( iV )  =  max ( H_1 ( iV ) ** 2  &
-                            +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
-                            +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2, &
-                            tiny ( 0.0_KDR ) )   
-    end do !-- iV
-    !$OMP end parallel do
 
-    !$OMP parallel do private ( iV ) 
-    do iV = 1, nValues
+      call ComputeComovingStress_D &
+             ( K_U_Dim_D ( 1 ), K_U_Dim_D ( 2 ), K_U_Dim_D ( 3 ), &
+               K_U_Dim_D ( iDim ), J ( iV ), H_1 ( iV ), H_2 ( iV ), &
+               H_3 ( iV ), H_Dim ( iV ), FF ( iV ), SF ( iV ), &
+               M_DD_22 ( iV ), M_DD_33 ( iV ) )
+      
+      F_E   ( iV )  =  H_Dim ( iV )  +  J ( iV ) * V_Dim ( iV )
 
-      F_E     ( iV )  =  H_Dim ( iV )  +  J ( iV ) * V_Dim ( iV )
+      F_S_1 ( iV )  =  K_U_Dim_D ( 1 )
 
-      F_S_1   ( iV )  =  0.5_KDR  *  ( 3.0_KDR * SF ( iV )  -  1.0_KDR )  &
-                         *  H_1 ( iV ) / H_Sq ( iV )  &
-                         *  J ( iV )  *  H_Dim ( iV )
+      F_S_2 ( iV )  =  K_U_Dim_D ( 2 )
 
-      F_S_2   ( iV )  =  0.5_KDR  *  ( 3.0_KDR * SF ( iV )  -  1.0_KDR )  &
-                         *  M_DD_22 ( iV )  *  H_2 ( iV )  /  H_Sq ( iV )  &
-                         *  J ( iV )  *  H_Dim ( iV )
-
-      F_S_3   ( iV )  =  0.5_KDR  *  ( 3.0_KDR * SF ( iV )  -  1.0_KDR )  &
-                         *  M_DD_33 ( iV )  *  H_3 ( iV )  /  H_Sq ( iV )  &
-                         *  J ( iV )  *  H_Dim ( iV )
-
-      F_S_Dim ( iV )  =  F_S_Dim ( iV )  &
-                         +  0.5_KDR * ( 1.0_KDR  -  SF ( iV ) ) * J ( iV )
+      F_S_3 ( iV )  =  K_U_Dim_D ( 3 )
 
     end do !-- iV
     !$OMP end parallel do
@@ -1069,6 +1061,51 @@ contains
     !$OMP end parallel do
       
   end subroutine ComputeDiffusionFactor_HLL_CSL
+
+
+  subroutine ComputeComovingStress_D &
+               ( K_1, K_2, K_3, K_Dim, J, H_1, H_2, H_3, H_Dim, FF, SF, &
+                 M_DD_22, M_DD_33 )
+
+    real ( KDR ), intent ( inout ) :: &
+      K_1, K_2, K_3, K_Dim
+    real ( KDR ), intent ( in ) :: &
+      J, &
+      H_1, H_2, H_3, H_Dim, &
+      FF, SF, &
+      M_DD_22, M_DD_33
+
+    real ( KDR ) :: &
+      H_Sq
+
+    H_Sq  =  max (                H_1 ** 2  &
+                   +  M_DD_22  *  H_2 ** 2  &
+                   +  M_DD_33  *  H_3 ** 2, &
+                   tiny ( 0.0_KDR ) )   
+
+    ! if ( H_Sq  <=  J ** 2  .and.  J  >  0.0_KDR ) then
+    !   FF  =  sqrt ( H_Sq )  /  J
+    ! else
+    !   FF  =  1.0_KDR
+    ! end if
+
+    ! SF  =  1.0_KDR / 3.0_KDR &
+    !        +  2.0_KDR / 3.0_KDR &
+    !           *  FF ** 2  /  5.0_KDR  &
+    !              * ( 3.0_KDR  -  FF   +   3.0_KDR  *  FF ** 2 )
+
+    K_1  =  0.5_KDR  *  ( 3.0_KDR * SF  -  1.0_KDR )  &
+            *  H_Dim  *            H_1  /  H_Sq   *  J
+
+    K_2  =  0.5_KDR  *  ( 3.0_KDR * SF  -  1.0_KDR )  &
+            *  H_Dim  *  M_DD_22 * H_2  /  H_Sq   *  J
+
+    K_3  =  0.5_KDR  *  ( 3.0_KDR * SF  -  1.0_KDR )  &
+            *  H_Dim  *  M_DD_33 * H_3  /  H_Sq   *  J
+
+    K_Dim  =  K_Dim  +  0.5_KDR * ( 1.0_KDR  -  SF )  *  J
+
+  end subroutine ComputeComovingStress_D
 
 
 end module RadiationMoments_Form
