@@ -231,7 +231,8 @@ contains
              MomentumUnitOption        = WHH % MomentumUnit, &
              AngularMomentumUnitOption = WHH % AngularMomentumUnit, &
              TimeUnitOption            = WHH % TimeUnit, &
-             ShockThresholdOption = 1.0_KDR )
+             ShockThresholdOption = 1.0_KDR, &
+             LimiterParameterOption = 1.4_KDR )
 
     end select !-- PS
 
