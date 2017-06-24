@@ -198,7 +198,8 @@ contains
                                       RM % OCCUPANCY_AVERAGE, &
                                       RM % COMOVING_ENERGY_EQ, &
                                       RM % COMOVING_NUMBER_EQ, &
-                                      RM % BETA_EQUILIBRIUM ], &
+                                      RM % BETA_EQUILIBRIUM, &
+                                      RM % DIFFUSION_FACTOR_E ], &
              VectorOption = [ 'ComovingMomentum_U' ], &
              VectorIndicesOption = VectorIndices )
 
@@ -408,7 +409,7 @@ contains
       DF_I
     class ( * ), intent ( in ), target :: &
       Grid
-    class ( NeutrinoMoments_G_Form ), intent ( in ) :: &
+    class ( NeutrinoMoments_G_Form ), intent ( inout ) :: &
       C
     integer ( KDI ), intent ( in ) :: &
       iDimension

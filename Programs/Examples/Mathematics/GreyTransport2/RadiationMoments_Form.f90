@@ -10,7 +10,7 @@ module RadiationMoments_Form
     integer ( KDI ), private, parameter :: &
       N_PRIMITIVE_RM =  7, &
       N_CONSERVED_RM =  4, &
-      N_FIELDS_RM    = 14, &
+      N_FIELDS_RM    = 15, &
       N_VECTORS_RM   =  3
 
   type, public, extends ( CurrentTemplate ) :: RadiationMomentsForm
@@ -23,7 +23,8 @@ module RadiationMoments_Form
       CONSERVED_ENERGY   = 0, &
       FLUX_FACTOR        = 0, &
       STRESS_FACTOR      = 0, &
-      COMOVING_ENERGY_EQ = 0
+      COMOVING_ENERGY_EQ = 0, &
+      DIFFUSION_FACTOR_E = 0
     integer ( KDI ), dimension ( 3 ) :: &
       COMOVING_MOMENTUM_U  = 0, &
       CONSERVED_MOMENTUM_D = 0, &
@@ -465,14 +466,16 @@ contains
       DF_I
     class ( * ), intent ( in ), target :: &
       Grid
-    class ( RadiationMomentsForm ), intent ( in ) :: &
+    class ( RadiationMomentsForm ), intent ( inout ) :: &
       C
     integer ( KDI ), intent ( in ) :: &
       iDimension
 
     integer ( KDI ) :: &
       iV, &
-      iEnergy
+      iD, &
+      iEnergy, &
+      iMomentum
     real ( KDR ), dimension ( : ), allocatable :: &
       M_DD_11
     real ( KDR ), dimension ( :, :, : ), pointer :: &
@@ -529,6 +532,16 @@ contains
       call ComputeDiffusionFactor_HLL_CSL &
              ( DF_I_E, SF, TO, M_DD, dX, iDimension, &
                Grid % nGhostLayers ( iDimension ) )
+
+      do iD = 1, 3
+        call Search &
+               ( C % iaConserved, C % CONSERVED_MOMENTUM_D ( iD ), iMomentum )
+        call Copy ( DF_I % Value ( :, iEnergy ), &
+                    DF_I % Value ( :, iMomentum ) )
+      end do !-- iD
+
+      call Copy ( DF_I % Value ( :, iEnergy ), &
+                  C % Value ( :, C % DIFFUSION_FACTOR_E ) )
 
       select case ( iDimension )
       case ( 1 )
@@ -606,6 +619,7 @@ contains
     RM % FLUX_FACTOR           =  oF + 12
     RM % STRESS_FACTOR         =  oF + 13
     RM % COMOVING_ENERGY_EQ    =  oF + 14
+    RM % DIFFUSION_FACTOR_E    =  oF + 15
 
     !-- variable names 
 
@@ -631,7 +645,8 @@ contains
           'FluidVelocity_U_3    ', &
           'FluxFactor           ', &
           'StressFactor         ', &
-          'ComovingEnergy_EQ    ' ]
+          'ComovingEnergy_EQ    ', &
+          'DiffusionFactor_E    ' ]
           
     !-- units
     

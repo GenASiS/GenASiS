@@ -432,7 +432,7 @@ contains
       F_IL, F_IR, &
       SS_I, &
       DF_I
-    class ( CurrentTemplate ), intent ( in ) :: &
+    class ( CurrentTemplate ), intent ( inout ) :: &
       C
     class ( * ), intent ( in ), target :: &
       Grid
@@ -480,7 +480,7 @@ contains
       F_IL, F_IR, &
       SS_I, &
       DF_I
-    class ( CurrentTemplate ), intent ( in ) :: &
+    class ( CurrentTemplate ), intent ( inout ) :: &
       C
     class ( * ), intent ( in ), target :: &
       Grid
@@ -533,7 +533,7 @@ contains
       DF_I
     class ( * ), intent ( in ), target :: &
       Grid
-    class ( CurrentTemplate ), intent ( in ) :: &
+    class ( CurrentTemplate ), intent ( inout ) :: &
       C
     integer ( KDI ), intent ( in ) :: &
       iDimension

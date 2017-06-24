@@ -221,7 +221,7 @@ contains
       F_IL, F_IR, &
       SS_I, &
       DF_I
-    class ( Fluid_P_Template ), intent ( in ) :: &
+    class ( Fluid_P_Template ), intent ( inout ) :: &
       C
     class ( * ), intent ( in ), target :: &
       Grid
