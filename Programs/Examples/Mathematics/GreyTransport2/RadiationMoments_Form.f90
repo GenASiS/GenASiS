@@ -451,12 +451,15 @@ contains
                            C % COMOVING_MOMENTUM_U ( iDimension ) ), &
         FF    => Value_C ( oV + 1 : oV + nV, C % FLUX_FACTOR ), &
         SF    => Value_C ( oV + 1 : oV + nV, C % STRESS_FACTOR ), &
+        V_1   => Value_C ( oV + 1 : oV + nV, C % FLUID_VELOCITY_U ( 1 ) ), &
+        V_2   => Value_C ( oV + 1 : oV + nV, C % FLUID_VELOCITY_U ( 2 ) ), &
+        V_3   => Value_C ( oV + 1 : oV + nV, C % FLUID_VELOCITY_U ( 3 ) ), &
         V_Dim => Value_C ( oV + 1 : oV + nV, &
                            C % FLUID_VELOCITY_U ( iDimension ) ) )
 
     call ComputeRawFluxesKernel &
            ( F_E, F_S_1, F_S_2, F_S_3, F_S_Dim, J, H_1, H_2, H_3, H_Dim, &
-             FF, SF, V_Dim, M_DD_22, M_DD_33, iDimension )
+             FF, SF, V_1, V_2, V_3, V_Dim, M_DD_22, M_DD_33, iDimension )
 
     end associate !-- F_E, etc.
     end associate !-- M_DD_33, etc.
@@ -950,7 +953,7 @@ contains
 
   subroutine ComputeRawFluxesKernel &
                ( F_E, F_S_1, F_S_2, F_S_3, F_S_Dim, J, H_1, H_2, H_3, H_Dim, &
-                 FF, SF, V_Dim, M_DD_22, M_DD_33, iDim )
+                 FF, SF, V_1, V_2, V_3, V_Dim, M_DD_22, M_DD_33, iDim )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       F_E, &
@@ -959,7 +962,7 @@ contains
       J, &
       H_1, H_2, H_3, H_Dim, &
       FF, SF, &
-      V_Dim, &
+      V_1, V_2, V_3, V_Dim, &
       M_DD_22, M_DD_33
     integer ( KDI ), intent ( in ) :: &
       iDim
@@ -981,13 +984,22 @@ contains
                H_3 ( iV ), H_Dim ( iV ), FF ( iV ), SF ( iV ), &
                M_DD_22 ( iV ), M_DD_33 ( iV ) )
       
-      F_E   ( iV )  =  H_Dim ( iV )  +  J ( iV ) * V_Dim ( iV )
+      F_E   ( iV )  =  H_Dim ( iV )  +  J ( iV ) * V_Dim ( iV )  &
+                       +  K_U_Dim_D ( 1 )  *  V_1 ( iV )  &
+                       +  K_U_Dim_D ( 2 )  *  V_2 ( iV )  &
+                       +  K_U_Dim_D ( 3 )  *  V_3 ( iV )
 
-      F_S_1 ( iV )  =  K_U_Dim_D ( 1 )
+      F_S_1 ( iV )  =  K_U_Dim_D ( 1 )  &
+                       +  H_Dim ( iV )  *  V_1 ( iV )  &
+                       +  V_Dim ( iV )  *  H_1 ( iV )
 
-      F_S_2 ( iV )  =  K_U_Dim_D ( 2 )
+      F_S_2 ( iV )  =  K_U_Dim_D ( 2 )  &
+                       +  M_DD_22 ( iV )  *  ( H_Dim ( iV )  *  V_2 ( iV )  &
+                                               +  V_Dim ( iV )  *  H_2 ( iV ) )
 
-      F_S_3 ( iV )  =  K_U_Dim_D ( 3 )
+      F_S_3 ( iV )  =  K_U_Dim_D ( 3 )  &
+                       +  M_DD_33 ( iV )  *  ( H_Dim ( iV )  *  V_3 ( iV )  &
+                                               +  V_Dim ( iV )  *  H_3 ( iV ) )
 
     end do !-- iV
     !$OMP end parallel do
