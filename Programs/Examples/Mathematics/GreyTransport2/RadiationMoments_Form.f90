@@ -60,11 +60,11 @@ module RadiationMoments_Form
       ComputeConservedEnergyMomentum, &
       ComputeComovingEnergyMomentum, &
       ComputeEigenspeeds, &
-      ComputeMomentFactors, &
       ComputeRawFluxesKernel, &
       ComputeDiffusionFactor_HLL_CSL
 
       private :: &
+        ComputeMomentFactors, &
         ComputeComovingStress_D
 
 contains
@@ -291,13 +291,11 @@ contains
         V_3   => RMV ( oV + 1 : oV + nV, C % FLUID_VELOCITY_U ( 2 ) ) )
 
     call ComputeConservedEnergyMomentum &
-           ( E, S_1, S_2, S_3, J, H_1, H_2, H_3, M_DD_22, M_DD_33, &
+           ( E, S_1, S_2, S_3, J, H_1, H_2, H_3, FF, SF, M_DD_22, M_DD_33, &
              V_1, V_2, V_3 )
     call ComputeEigenspeeds &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, J, H_1, H_2, H_3, &
              M_UU_22, M_UU_33, CONSTANT % SPEED_OF_LIGHT )
-    call ComputeMomentFactors &
-           ( SF, FF, J, H_1, H_2, H_3, M_DD_22, M_DD_33 )
 
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
@@ -375,8 +373,8 @@ contains
     call ComputeEigenspeeds &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, J, H_1, H_2, H_3, &
              M_UU_22, M_UU_33, CONSTANT % SPEED_OF_LIGHT )
-    call ComputeMomentFactors &
-           ( SF, FF, J, H_1, H_2, H_3, M_DD_22, M_DD_33 )
+!    call ComputeMomentFactors &
+!           ( SF, FF, J, H_1, H_2, H_3, M_DD_22, M_DD_33 )
 
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
@@ -735,15 +733,16 @@ contains
 
 
   subroutine ComputeConservedEnergyMomentum &
-               ( E, S_1, S_2, S_3, J, H_1, H_2, H_3, M_DD_22, M_DD_33, &
-                 V_1, V_2, V_3 )
+               ( E, S_1, S_2, S_3, J, H_1, H_2, H_3, FF, SF, &
+                 M_DD_22, M_DD_33, V_1, V_2, V_3 )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       E, &
       S_1, S_2, S_3
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       J, &
-      H_1, H_2, H_3
+      H_1, H_2, H_3, &
+      FF, SF
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       M_DD_22, M_DD_33, &
       V_1, V_2, V_3
@@ -751,6 +750,8 @@ contains
     integer ( KDI ) :: &
       iV, &
       nValues
+    real ( KDR ), dimension ( 3 ) :: &
+      K_U_Dim_D
     real ( KDR ), dimension ( size ( E ) ) :: &
       H
 
@@ -760,12 +761,6 @@ contains
     do iV = 1, nValues
       if ( J ( iV )  <  0.0_KDR ) &
         J ( iV )  =  0.0_KDR
-    end do !-- iV
-    !$OMP end parallel do
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-      E ( iV )  =  J ( iV )
     end do !-- iV
     !$OMP end parallel do
 
@@ -789,11 +784,53 @@ contains
 
     !$OMP parallel do private ( iV )
     do iV = 1, nValues
-      S_1 ( iV )  =  H_1 ( iV )  +  J ( iV ) * V_1 ( iV )
+      E ( iV )  &
+        =  J ( iV )  &
+           +  2.0_KDR * (                       V_1 ( iV )  *  H_1 ( iV )  &
+                          +  M_DD_22 ( iV )  *  V_2 ( iV )  *  H_2 ( iV )  &
+                          +  M_DD_33 ( iV )  *  V_3 ( iV )  *  H_3 ( iV ) )
+    end do !-- iV
+    !$OMP end parallel do
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nValues
+
+      call ComputeMomentFactors &
+             ( SF ( iV ), FF ( iV ), J ( iV ), H_1 ( iV ), H_2 ( iV ), &
+               H_3 ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ) )
+
+      call ComputeComovingStress_D &
+             ( K_U_Dim_D ( 1 ), K_U_Dim_D ( 2 ), K_U_Dim_D ( 3 ), &
+               K_U_Dim_D ( 1 ), J ( iV ), H_1 ( iV ), H_2 ( iV ), &
+               H_3 ( iV ), H_1 ( iV ), FF ( iV ), SF ( iV ), &
+               M_DD_22 ( iV ), M_DD_33 ( iV ) )
+      S_1 ( iV )  =  H_1 ( iV )  +  J ( iV ) * V_1 ( iV ) &
+                     +  K_U_Dim_D ( 1 )  *  V_1 ( iV )  &
+                     +  K_U_Dim_D ( 2 )  *  V_2 ( iV )  &
+                     +  K_U_Dim_D ( 3 )  *  V_3 ( iV )
+
+      call ComputeComovingStress_D &
+             ( K_U_Dim_D ( 1 ), K_U_Dim_D ( 2 ), K_U_Dim_D ( 3 ), &
+               K_U_Dim_D ( 2 ), J ( iV ), H_1 ( iV ), H_2 ( iV ), &
+               H_3 ( iV ), H_2 ( iV ), FF ( iV ), SF ( iV ), &
+               M_DD_22 ( iV ), M_DD_33 ( iV ) )
       S_2 ( iV )  =  M_DD_22 ( iV )  &
-                     *  ( H_2 ( iV )  +  J ( iV ) * V_2 ( iV ) )
+                     *  ( H_2 ( iV )  +  J ( iV ) * V_2 ( iV )  &
+                          +  K_U_Dim_D ( 1 )  *  V_1 ( iV )  &
+                          +  K_U_Dim_D ( 2 )  *  V_2 ( iV )  &
+                          +  K_U_Dim_D ( 3 )  *  V_3 ( iV ) )
+
+      call ComputeComovingStress_D &
+             ( K_U_Dim_D ( 1 ), K_U_Dim_D ( 2 ), K_U_Dim_D ( 3 ), &
+               K_U_Dim_D ( 3 ), J ( iV ), H_1 ( iV ), H_2 ( iV ), &
+               H_3 ( iV ), H_3 ( iV ), FF ( iV ), SF ( iV ), &
+               M_DD_22 ( iV ), M_DD_33 ( iV ) )
       S_3 ( iV )  =  M_DD_33 ( iV )  &
-                     *  ( H_3 ( iV )  +  J ( iV ) * V_3 ( iV ) )
+                     *  ( H_3 ( iV )  +  J ( iV ) * V_3 ( iV )  &
+                          +  K_U_Dim_D ( 1 )  *  V_1 ( iV )  &
+                          +  K_U_Dim_D ( 2 )  *  V_2 ( iV )  &
+                          +  K_U_Dim_D ( 3 )  *  V_3 ( iV ) )
+
     end do !-- iV
     !$OMP end parallel do
 
@@ -899,56 +936,6 @@ contains
     !$OMP end parallel do
 
   end subroutine ComputeEigenspeeds
-
-
-  subroutine ComputeMomentFactors &
-               ( SF, FF, J, H_1, H_2, H_3, M_DD_22, M_DD_33 )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      SF, &
-      FF
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      J, &
-      H_1, H_2, H_3, &
-      M_DD_22, M_DD_33
-
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-    real ( KDR ), dimension ( size ( SF ) ) :: &
-      H
-
-    nValues = size ( SF )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-      H ( iV )  =  sqrt ( H_1 ( iV ) ** 2  &
-                          +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
-                          +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 )
-    end do
-    !$OMP end parallel do
-    
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-      if ( H ( iV )  <=  J ( iV ) ) then
-        FF ( iV )  =  H ( iV )  /  max ( J ( iV ), tiny ( 0.0_KDR ) )
-      else
-        FF ( iV )  =  1.0_KDR
-      end if
-    end do
-    !$OMP end parallel do
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-      SF ( iV )  &
-        =  1.0_KDR / 3.0_KDR &
-           + 2.0_KDR / 3.0_KDR &
-             * ( FF ( iV ) ** 2  /  5.0_KDR  &
-                 * ( 3.0_KDR  -  FF ( iV )  +  3.0_KDR  *  FF ( iV ) ** 2 ) )
-    end do
-    !$OMP end parallel do
-
-  end subroutine ComputeMomentFactors
 
 
   subroutine ComputeRawFluxesKernel &
@@ -1073,6 +1060,38 @@ contains
     !$OMP end parallel do
       
   end subroutine ComputeDiffusionFactor_HLL_CSL
+
+
+  subroutine ComputeMomentFactors &
+               ( SF, FF, J, H_1, H_2, H_3, M_DD_22, M_DD_33 )
+
+    real ( KDR ), intent ( inout ) :: &
+      SF, &
+      FF
+    real ( KDR ), intent ( in ) :: &
+      J, &
+      H_1, H_2, H_3, &
+      M_DD_22, M_DD_33
+
+    real ( KDR ) :: &
+      H
+
+    H  =  sqrt ( H_1 ** 2  &
+                 +  M_DD_22  *  H_2 ** 2  &
+                 +  M_DD_33  *  H_3 ** 2 )
+    
+    if ( H  <=  J ) then
+      FF  =  H  /  max ( J, tiny ( 0.0_KDR ) )
+    else
+      FF  =  1.0_KDR
+    end if
+
+    SF  =  1.0_KDR / 3.0_KDR &
+           + 2.0_KDR / 3.0_KDR &
+             * ( FF ** 2  /  5.0_KDR  &
+                 * ( 3.0_KDR  -  FF  +  3.0_KDR  *  FF ** 2 ) )
+
+  end subroutine ComputeMomentFactors
 
 
   subroutine ComputeComovingStress_D &
