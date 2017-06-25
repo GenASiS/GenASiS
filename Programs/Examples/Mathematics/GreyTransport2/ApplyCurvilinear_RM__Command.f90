@@ -84,6 +84,8 @@ contains
              M_DD_22, M_DD_33, &
              S % dLogVolumeJacobian_dX ( 1 ) % Value, &
              S % dLogVolumeJacobian_dX ( 2 ) % Value, &
+             RM % Value ( :, RM % FLUID_VELOCITY_U ( 2 ) ), &
+             RM % Value ( :, RM % FLUID_VELOCITY_U ( 3 ) ), &
              TimeStep, S % B ( iStage ), Chart % nDimensions )
 
     end associate !-- M_DD_22, etc.
@@ -107,7 +109,7 @@ contains
   subroutine ApplyCurvilinear_RM_Kernel &
                ( KVM_1, KVM_2, SVM_1, SVM_2, CoordinateSystem, IsProperCell, &
                  J, H_1, H_2, H_3, SF, M_DD_22, M_DD_33, &
-                 dLVJ_dX1, dLVJ_dX2, dT, Weight_RK, nDimensions )
+                 dLVJ_dX1, dLVJ_dX2, V_2, V_3, dT, Weight_RK, nDimensions )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       KVM_1, KVM_2, &
@@ -121,7 +123,8 @@ contains
       H_1, H_2, H_3, &
       SF, & 
       M_DD_22, M_DD_33, &
-      dLVJ_dX1, dLVJ_dX2
+      dLVJ_dX1, dLVJ_dX2, &
+      V_2, V_3
     real ( KDR ), intent ( in ) :: &
       dT, &
       Weight_RK
@@ -132,8 +135,8 @@ contains
       iV, &
       nV
     real ( KDR ) :: &
-      K_22, &
-      K_33
+      K_22, K_33, &
+      P_22, P_33
     real ( KDR ), dimension ( : ), allocatable :: &
       H
 
@@ -152,7 +155,7 @@ contains
     select case ( trim ( CoordinateSystem ) )
     case ( 'CYLINDRICAL' )
 
-      !$OMP parallel do private ( iV, K_33 )
+      !$OMP parallel do private ( iV, K_33, P_33 )
       do iV = 1, nV
         if ( .not. IsProperCell ( iV ) ) cycle
 
@@ -163,15 +166,16 @@ contains
         else
           K_33  =  0.5_KDR * ( 1.0_KDR - SF ( iV ) ) * J ( iV )
         end if
+        P_33  =  K_33  +  2  *  M_DD_33 ( iV )  *  H_3 ( iV )  *  V_3 ( iV )  
 
-        KVM_1 ( iV )  =  KVM_1 ( iV )  +  K_33 * dLVJ_dX1 ( iV ) * dT
+        KVM_1 ( iV )  =  KVM_1 ( iV )  +  P_33 * dLVJ_dX1 ( iV ) * dT
         SVM_1 ( iV )  =  SVM_1 ( iV )  +  Weight_RK * K_33 * dLVJ_dX1 ( iV )
       end do
       !$OMP end parallel do
 
     case ( 'SPHERICAL' )
 
-      !$OMP parallel do private ( iV, K_22, K_33 )
+      !$OMP parallel do private ( iV, K_22, K_33, P_22, P_33 )
       do iV = 1, nV
         if ( .not. IsProperCell ( iV ) ) cycle
           
@@ -186,17 +190,19 @@ contains
           K_22  =  0.5_KDR * ( 1.0_KDR - SF ( iV ) ) * J ( iV )
           K_33  =  0.5_KDR * ( 1.0_KDR - SF ( iV ) ) * J ( iV )
         end if
+        P_22  =  K_22  +  2  *  M_DD_22 ( iV )  *  H_2 ( iV )  *  V_2 ( iV )  
+        P_33  =  K_33  +  2  *  M_DD_33 ( iV )  *  H_3 ( iV )  *  V_3 ( iV )  
 
         KVM_1 ( iV ) &
-          =  KVM_1 ( iV )  +  0.5_KDR * ( K_22 + K_33 ) * dLVJ_dX1 ( iV ) * dT
+          =  KVM_1 ( iV )  +  0.5_KDR * ( P_22 + P_33 ) * dLVJ_dX1 ( iV ) * dT
         SVM_1 ( iV ) &
           =  SVM_1 ( iV )  &
-             +  Weight_RK * 0.5_KDR * ( K_22 + K_33 ) * dLVJ_dX1 ( iV )
+             +  Weight_RK * 0.5_KDR * ( P_22 + P_33 ) * dLVJ_dX1 ( iV )
         if ( nDimensions > 1 ) then
           KVM_2 ( iV ) &
-            =  KVM_2 ( iV )  +  K_33 * dLVJ_dX2 ( iV ) * dT
+            =  KVM_2 ( iV )  +  P_33 * dLVJ_dX2 ( iV ) * dT
           SVM_2 ( iV ) &
-            =  SVM_2 ( iV )  +  Weight_RK * K_33 * dLVJ_dX2 ( iV )
+            =  SVM_2 ( iV )  +  Weight_RK * P_33 * dLVJ_dX2 ( iV )
         end if
       end do
       !$OMP end parallel do
