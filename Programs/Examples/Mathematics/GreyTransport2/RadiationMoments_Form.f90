@@ -65,7 +65,8 @@ module RadiationMoments_Form
 
       private :: &
         ComputeMomentFactors, &
-        ComputeComovingStress_D
+        ComputeComovingStress_D, &
+        ComputeComovingNonlinearSolve
 
 contains
 
@@ -368,13 +369,11 @@ contains
         V_3   => RMV ( oV + 1 : oV + nV, C % FLUID_VELOCITY_U ( 2 ) ) )
 
     call ComputeComovingEnergyMomentum &
-           ( J, H_1, H_2, H_3, E, S_1, S_2, S_3, M_DD_22, M_DD_33, &
+           ( J, H_1, H_2, H_3, E, S_1, S_2, S_3, FF, SF, C, M_DD_22, M_DD_33, &
              M_UU_22, M_UU_33, V_1, V_2, V_3 )
     call ComputeEigenspeeds &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, J, H_1, H_2, H_3, &
              M_UU_22, M_UU_33, CONSTANT % SPEED_OF_LIGHT )
-!    call ComputeMomentFactors &
-!           ( SF, FF, J, H_1, H_2, H_3, M_DD_22, M_DD_33 )
 
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
@@ -838,15 +837,18 @@ contains
 
 
   subroutine ComputeComovingEnergyMomentum &
-               ( J, H_1, H_2, H_3, E, S_1, S_2, S_3, M_DD_22, M_DD_33, &
-                 M_UU_22, M_UU_33, V_1, V_2, V_3 )
+               ( J, H_1, H_2, H_3, E, S_1, S_2, S_3, FF, SF, RM, &
+                 M_DD_22, M_DD_33, M_UU_22, M_UU_33, V_1, V_2, V_3 )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       J, &
       H_1, H_2, H_3
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       E, &
-      S_1, S_2, S_3
+      S_1, S_2, S_3, &
+      FF, SF
+    class ( RadiationMomentsForm ), intent ( in ) :: &
+      RM
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       M_DD_22, M_DD_33, &
       M_UU_22, M_UU_33, &
@@ -857,16 +859,27 @@ contains
       nValues
     real ( KDR ), dimension ( size ( E ) ) :: &
       H
+    logical ( KDL ) :: &
+      Success
 
-    nValues = size ( J )
+    nValues  =  size ( J )
 
     !$OMP parallel do private ( iV )
     do iV = 1, nValues
       if ( E ( iV )  >  0.0_KDR ) then
-        J ( iV )    =  E ( iV )
-        H_1 ( iV )  =  S_1 ( iV )  -  E ( iV ) * V_1 ( iV )  
-        H_2 ( iV )  =  M_UU_22 ( iV ) * S_2 ( iV )  -  E ( iV ) * V_2 ( iV )
-        H_3 ( iV )  =  M_UU_33 ( iV ) * S_3 ( iV )  -  E ( iV ) * V_3 ( iV )
+        call ComputeComovingNonlinearSolve &
+               ( J ( iV ), H_1 ( iV ), H_2 ( iV ), H_3 ( iV ), FF ( iV ), &
+                 SF ( iV ), E ( iV ), S_1 ( iV ), S_2 ( iV ), S_3 ( iV ), &
+                 M_DD_22 ( iV ), M_DD_33 ( iV ), M_UU_22 ( iV ), &
+                 M_UU_33 ( iV ), V_1 ( iV ), V_2 ( iV ), V_3 ( iV ), Success )
+        if ( .not. Success ) then
+          call Show ( '>>> ComputeComoving fail', CONSOLE % ERROR )
+          call Show ( RM % Name, '>>> Species', CONSOLE % ERROR )
+          call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', &
+                      CONSOLE % ERROR )
+          call Show ( iV, '>>> iV', CONSOLE % ERROR )
+          call Show ( J ( iV ), '>>> J', CONSOLE % ERROR )
+        end if
       else
         J   ( iV ) = 0.0_KDR
         H_1 ( iV ) = 0.0_KDR
@@ -876,6 +889,8 @@ contains
         S_1 ( iV ) = 0.0_KDR
         S_2 ( iV ) = 0.0_KDR
         S_3 ( iV ) = 0.0_KDR
+        FF  ( iV ) = 0.0_KDR
+        SF  ( iV ) = 0.0_KDR
       end if
     end do !-- iV
     !$OMP end parallel do
@@ -898,6 +913,9 @@ contains
         S_2 ( iV )  =  M_DD_22 ( iV )  *  H_2 ( iV )
         S_3 ( iV )  =  M_DD_33 ( iV )  *  H_3 ( iV )
       end if
+      call ComputeMomentFactors &
+             ( SF ( iV ), FF ( iV ), J ( iV ), H_1 ( iV ), H_2 ( iV ), &
+               H_3 ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ) )
     end do !-- iV
     !$OMP end parallel do
 
@@ -1114,17 +1132,6 @@ contains
                    +  M_DD_33  *  H_3 ** 2, &
                    tiny ( 0.0_KDR ) )   
 
-    ! if ( H_Sq  <=  J ** 2  .and.  J  >  0.0_KDR ) then
-    !   FF  =  sqrt ( H_Sq )  /  J
-    ! else
-    !   FF  =  1.0_KDR
-    ! end if
-
-    ! SF  =  1.0_KDR / 3.0_KDR &
-    !        +  2.0_KDR / 3.0_KDR &
-    !           *  FF ** 2  /  5.0_KDR  &
-    !              * ( 3.0_KDR  -  FF   +   3.0_KDR  *  FF ** 2 )
-
     K_1  =  0.5_KDR  *  ( 3.0_KDR * SF  -  1.0_KDR )  &
             *  H_Dim  *            H_1  /  H_Sq   *  J
 
@@ -1137,6 +1144,93 @@ contains
     K_Dim  =  K_Dim  +  0.5_KDR * ( 1.0_KDR  -  SF )  *  J
 
   end subroutine ComputeComovingStress_D
+
+
+  subroutine ComputeComovingNonlinearSolve &
+               ( J, H_1, H_2, H_3, FF, SF, E, S_1, S_2, S_3, &
+                 M_DD_22, M_DD_33, M_UU_22, M_UU_33, V_1, V_2, V_3, Success )
+
+    real ( KDR ), intent ( inout ) :: &
+      J, H_1, H_2, H_3, &
+      FF, SF
+    real ( KDR ), intent ( in ) :: &
+      E, S_1, S_2, S_3, &
+      M_DD_22, M_DD_33, &
+      M_UU_22, M_UU_33, &
+      V_1, V_2, V_3
+    logical ( KDL ), intent ( out ) :: &
+      Success
+
+    integer ( KDI ) :: &
+      iS, &  !-- iSolve
+      MaxIterations
+    real ( KDR ) :: &
+      Norm, NormDelta
+    real ( KDR ), dimension ( 3 ) :: &
+      K_U_Dim_D
+    real ( KDR ), dimension ( 4 ) :: &
+      SolutionOld, &
+      SolutionNew, &
+      Delta
+
+    MaxIterations  =  20
+
+    Success  =  .false.
+
+    do iS = 1, MaxIterations
+
+      SolutionOld  &
+        =  [ J,  H_1,  sqrt ( M_DD_22 )  *  H_2,  sqrt ( M_DD_33 )  *  H_3 ] 
+                            
+      J  =  E  -  2.0_KDR  * (                V_1  *  H_1  &
+                               +  M_DD_22  *  V_2  *  H_2  &
+                               +  M_DD_33  *  V_3  *  H_3 )
+
+      call ComputeMomentFactors &
+             ( SF, FF, J, H_1, H_2, H_3, M_DD_22, M_DD_33  )
+
+      call ComputeComovingStress_D &
+             ( K_U_Dim_D ( 1 ), K_U_Dim_D ( 2 ), K_U_Dim_D ( 3 ), &
+               K_U_Dim_D ( 1 ), J, H_1, H_2, H_3, H_1, FF, SF, &
+               M_DD_22, M_DD_33  )
+      H_1  =  S_1  -  J * V_1   &
+                   -  K_U_Dim_D ( 1 )  *  V_1   &
+                   -  K_U_Dim_D ( 2 )  *  V_2   &
+                   -  K_U_Dim_D ( 3 )  *  V_3 
+
+      call ComputeComovingStress_D &
+             ( K_U_Dim_D ( 1 ), K_U_Dim_D ( 2 ), K_U_Dim_D ( 3 ), &
+               K_U_Dim_D ( 2 ), J, H_1, H_2, H_3, H_2, FF, SF, &
+               M_DD_22, M_DD_33  )
+      H_2  =  M_UU_22 * S_2  -  J  * V_2   &
+                             -  K_U_Dim_D ( 1 )  *  V_1   &
+                             -  K_U_Dim_D ( 2 )  *  V_2   &
+                             -  K_U_Dim_D ( 3 )  *  V_3 
+
+      call ComputeComovingStress_D &
+             ( K_U_Dim_D ( 1 ), K_U_Dim_D ( 2 ), K_U_Dim_D ( 3 ), &
+               K_U_Dim_D ( 3 ), J, H_1, H_2, H_3, H_3, FF, SF, &
+               M_DD_22, M_DD_33  )
+      H_3  =  M_UU_33 * S_3  -  J * V_3   &
+                             -  K_U_Dim_D ( 1 )  *  V_1   &
+                             -  K_U_Dim_D ( 2 )  *  V_2   &
+                             -  K_U_Dim_D ( 3 )  *  V_3 
+
+      SolutionNew  &
+        =  [ J,  H_1,  sqrt ( M_DD_22 )  *  H_2,  sqrt ( M_DD_33 )  *  H_3 ] 
+
+      Norm       =  sqrt ( dot_product ( SolutionNew, SolutionNew ) )
+      NormDelta  =  sqrt ( dot_product ( SolutionNew - SolutionOld, &
+                                         SolutionNew - SolutionOld ) )
+
+      if ( NormDelta  <  1.0e-10_KDR * ( 1.0_KDR + Norm ) ) then
+        Success  =  .true.
+        exit
+      end if
+
+    end do !-- iS
+
+  end subroutine ComputeComovingNonlinearSolve
 
 
 end module RadiationMoments_Form

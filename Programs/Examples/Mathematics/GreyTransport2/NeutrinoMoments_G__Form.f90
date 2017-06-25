@@ -318,6 +318,7 @@ contains
            ( Value_C, G, Value_G, nValuesOption, oValueOption )
 
     RMV => Value_C
+    associate ( GV => Value_G )
 
     if ( present ( oValueOption ) ) then
       oV = oValueOption
@@ -332,7 +333,13 @@ contains
     end if
     
     associate &
+      ( M_DD_22 => GV ( oV + 1 : oV + nV, G % METRIC_DD_22 ), &
+        M_DD_33 => GV ( oV + 1 : oV + nV, G % METRIC_DD_33 ) )
+    associate &
       ( J       => RMV ( oV + 1 : oV + nV, C % COMOVING_ENERGY ), &
+        H_1     => RMV ( oV + 1 : oV + nV, C % COMOVING_MOMENTUM_U ( 1 ) ), &
+        H_2     => RMV ( oV + 1 : oV + nV, C % COMOVING_MOMENTUM_U ( 2 ) ), &
+        H_3     => RMV ( oV + 1 : oV + nV, C % COMOVING_MOMENTUM_U ( 3 ) ), &
         J_EQ    => RMV ( oV + 1 : oV + nV, C % COMOVING_ENERGY_EQ ), &
         T       => RMV ( oV + 1 : oV + nV, C % TEMPERATURE_PARAMETER ), &
         T_EQ    => RMV ( oV + 1 : oV + nV, C % TEMPERATURE_PARAMETER_EQ ), &
@@ -342,9 +349,13 @@ contains
         Eta     => RMV ( oV + 1 : oV + nV, C % DEGENERACY_PARAMETER ), &
         Eta_EQ  => RMV ( oV + 1 : oV + nV, C % DEGENERACY_PARAMETER_EQ ), &
         E_Ave   => RMV ( oV + 1 : oV + nV, C % ENERGY_AVERAGE ), &
-        F_Ave   => RMV ( oV + 1 : oV + nV, C % OCCUPANCY_AVERAGE ) )
+        F_Ave   => RMV ( oV + 1 : oV + nV, C % OCCUPANCY_AVERAGE ), & 
+        V_1   => RMV ( oV + 1 : oV + nV, C % FLUID_VELOCITY_U ( 1 ) ), &
+        V_2   => RMV ( oV + 1 : oV + nV, C % FLUID_VELOCITY_U ( 2 ) ), &
+        V_3   => RMV ( oV + 1 : oV + nV, C % FLUID_VELOCITY_U ( 2 ) ) )
 
-    call ComputeComovingNumber ( N, D )
+    call ComputeComovingNumber &
+           ( N, D, H_1, H_2, H_3, E_Ave, M_DD_22, M_DD_33, V_1, V_2, V_3 )
 
     if ( associated ( C % Interactions ) ) &
       call C % Interactions % ComputeEquilibriumParameters ( T_EQ, Eta_EQ, C )
@@ -352,6 +363,8 @@ contains
            ( T, Eta, E_Ave, F_Ave, J_EQ, N_EQ, J, N, T_EQ, Eta_EQ )
 
     end associate !-- J, etc.
+    end associate !-- M_DD_22, etc.
+    end associate !-- GV
     nullify ( RMV )
 
   end subroutine ComputeFromConservedCommon
@@ -739,12 +752,18 @@ call Show ( Eta_ED, '>>> Falling back to Eta_ED', CONSOLE % ERROR )
   end subroutine ComputeConservedNumber
 
 
-  subroutine ComputeComovingNumber ( N, D )
+  subroutine ComputeComovingNumber &
+               ( N, D, H_1, H_2, H_3, E_Ave, M_DD_22, M_DD_33, V_1, V_2, V_3 )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       N
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       D
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      H_1, H_2, H_3, &
+      E_Ave, &
+      M_DD_22, M_DD_33, &
+      V_1, V_2, V_3
 
     integer ( KDI ) :: &
       iV, &
@@ -756,6 +775,12 @@ call Show ( Eta_ED, '>>> Falling back to Eta_ED', CONSOLE % ERROR )
     do iV = 1, nValues
       if ( D ( iV )  >  0.0_KDR ) then
         N ( iV )  =  D ( iV )
+        if ( E_Ave ( iV ) > 0.0_KDR ) &
+          N ( iV )  =  N ( iV )  &
+                       -  (                       V_1 ( iV )  *  H_1 ( iV )  &
+                            +  M_DD_22 ( iV )  *  V_2 ( iV )  *  H_2 ( iV )  &
+                            +  M_DD_33 ( iV )  *  V_3 ( iV )  *  H_3 ( iV ) ) &
+                          /  E_Ave ( iV )
       else
         N ( iV )  =  0.0_KDR
         D ( iV )  =  0.0_KDR
