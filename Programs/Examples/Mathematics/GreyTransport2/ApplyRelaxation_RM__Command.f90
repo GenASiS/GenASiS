@@ -42,6 +42,8 @@ contains
       iMomentum_1, &
       iMomentum_2, &
       iMomentum_3
+    class ( GeometryFlatForm ), pointer :: &
+      G
 
     select type ( RM => RadiationMoments )
     class is ( RadiationMomentsForm )
@@ -60,10 +62,15 @@ contains
 
     associate ( I => RM % Interactions )
 
+    G => Chart % Geometry ( )
+
     select type ( SRM => Sources_RM )
     class is ( Sources_RM_Form )
       call ApplyRelaxation_RM_Kernel &
              ( IncrementExplicit % Value ( :, iEnergy ), &
+               IncrementExplicit % Value ( :, iMomentum_1 ), &
+               IncrementExplicit % Value ( :, iMomentum_2 ), &
+               IncrementExplicit % Value ( :, iMomentum_3 ), &
                DampingCoefficient % Value ( :, iEnergy ), &
                DampingCoefficient % Value ( :, iMomentum_1 ), &
                DampingCoefficient % Value ( :, iMomentum_2 ), &
@@ -76,10 +83,19 @@ contains
                I % Value ( :, I % EMISSIVITY_J ), &
                I % Value ( :, I % OPACITY_J ), &
                I % Value ( :, I % OPACITY_H ), &
+               RM % Value ( :, RM % COMOVING_ENERGY ), &
+               RM % Value ( :, RM % COMOVING_MOMENTUM_U ( 1 ) ), &
+               RM % Value ( :, RM % COMOVING_MOMENTUM_U ( 2 ) ), &
+               RM % Value ( :, RM % COMOVING_MOMENTUM_U ( 3 ) ), &
                RM % Value ( :, RM % CONSERVED_ENERGY ), &
                RM % Value ( :, RM % CONSERVED_MOMENTUM_D ( 1 ) ), &
                RM % Value ( :, RM % CONSERVED_MOMENTUM_D ( 2 ) ), &
                RM % Value ( :, RM % CONSERVED_MOMENTUM_D ( 3 ) ), &
+               RM % Value ( :, RM % FLUID_VELOCITY_U ( 1 ) ), &
+               RM % Value ( :, RM % FLUID_VELOCITY_U ( 2 ) ), &
+               RM % Value ( :, RM % FLUID_VELOCITY_U ( 3 ) ), &
+               G % Value ( :, G % METRIC_DD_22 ), &
+               G % Value ( :, G % METRIC_DD_33 ), &
                TimeStep, S % B ( iStage ), CONSTANT % SPEED_OF_LIGHT )
     end select !-- SRM
 
@@ -92,29 +108,34 @@ contains
       call PROGRAM_HEADER % Abort ( )
     end select !-- Chart
 
-     end select !-- RM
+    end select !-- RM
+
+    nullify ( G )
     
   end subroutine ApplyRelaxation_RM
     
 
   subroutine ApplyRelaxation_RM_Kernel &
-               ( KV_E, DCV_E, DCV_S_1, DCV_S_2, DCV_S_3, &
+               ( KV_E, KV_S_1, KV_S_2, KV_S_3, &
+                 DCV_E, DCV_S_1, DCV_S_2, DCV_S_3, &
                  SVNE_E, SVNE_S_1, SVNE_S_2, SVNE_S_3, &
-                 IsProperCell, Xi_J, Chi_J, Chi_H, E, S_1, S_2, S_3, &
+                 IsProperCell, Xi_J, Chi_J, Chi_H, J, H_1, H_2, H_3, &
+                 E, S_1, S_2, S_3, V_1, V_2, V_3, M_DD_22, M_DD_33, &
                  dT, Weight_RK, c )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      KV_E, &
+      KV_E, KV_S_1, KV_S_2, KV_S_3, &
       DCV_E, DCV_S_1, DCV_S_2, DCV_S_3, &
       SVNE_E, SVNE_S_1, SVNE_S_2, SVNE_S_3
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       IsProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      Xi_J, &
-      Chi_J, &
+      Xi_J, Chi_J, &
       Chi_H, &
-      E, &
-      S_1, S_2, S_3
+      J, H_1, H_2, H_3, &
+      E, S_1, S_2, S_3, &
+      V_1, V_2, V_3, &
+      M_DD_22, M_DD_33
     real ( KDR ), intent ( in ) :: &
       dT, &
       Weight_RK, &
@@ -131,7 +152,39 @@ contains
       if ( .not. IsProperCell ( iV ) ) &
         cycle
 
-      KV_E    ( iV )  =  KV_E ( iV )  +  c * Xi_J ( iV ) * dT
+      KV_E ( iV )  &
+        =  KV_E ( iV )  &
+           +  c * dT  &
+              * ( Xi_J ( iV )  &
+                  -  Chi_J ( iV )  *  ( J ( iV )  -  E ( iV ) )  &
+                  -  Chi_H ( iV )  &
+                     *  (                     V_1 ( iV ) * H_1 ( iV )  &
+                          +  M_DD_22 ( iV ) * V_2 ( iV ) * H_2 ( iV )  &
+                          +  M_DD_33 ( iV ) * V_3 ( iV ) * H_3 ( iV ) ) )
+
+      KV_S_1 ( iV )  &
+        =  KV_S_1 ( iV )  &
+           +  c * dT  &
+              * ( -  Chi_H ( iV )  *  ( H_1 ( iV )  -  S_1 ( iV ) )  &
+                  +  V_1 ( iV )  &
+                     *  ( Xi_J ( iV )  -  Chi_J ( iV ) * J ( iV ) ) ) 
+
+      KV_S_2 ( iV )  &
+        =  KV_S_2 ( iV )  &
+           +  c * dT  &
+              * ( -  Chi_H ( iV )  &
+                     *  ( M_DD_22 ( iV ) * H_2 ( iV )  -  S_2 ( iV ) )  &
+                  +  M_DD_22 ( iV )  *  V_2 ( iV )  &
+                     *  ( Xi_J ( iV )  -  Chi_J ( iV ) * J ( iV ) ) ) 
+
+      KV_S_3 ( iV )  &
+        =  KV_S_3 ( iV )  &
+           +  c * dT  &
+              * ( -  Chi_H ( iV )  &
+                     *  ( M_DD_33 ( iV ) * H_3 ( iV )  -  S_3 ( iV ) )  &
+                  +  M_DD_33 ( iV )  *  V_3 ( iV )  &
+                     *  ( Xi_J ( iV )  -  Chi_J ( iV ) * J ( iV ) ) ) 
+
       DCV_E   ( iV )  =  c * Chi_J ( iV )
       DCV_S_1 ( iV )  =  c * Chi_H ( iV )
       DCV_S_2 ( iV )  =  c * Chi_H ( iV )
@@ -145,18 +198,34 @@ contains
       if ( .not. IsProperCell ( iV ) ) &
         cycle
 
-      !-- Approximate since E, S_1, etc. do not include implicit update
+      !-- Approximate since J, H_1, etc. do not include implicit update
 
       SVNE_E ( iV )  &
         =  SVNE_E ( iV )  &
-           +  Weight_RK * c * ( Xi_J ( iV )  -  Chi_J ( iV ) * E ( iV ) )
-
+           +  Weight_RK * c  &
+              * ( Xi_J ( iV )  -  Chi_J ( iV ) * J ( iV ) &
+                  -  Chi_H ( iV )  &
+                     *  (                     V_1 ( iV ) * H_1 ( iV )  &
+                          +  M_DD_22 ( iV ) * V_2 ( iV ) * H_2 ( iV )  &
+                          +  M_DD_33 ( iV ) * V_3 ( iV ) * H_3 ( iV ) ) )
+                      
       SVNE_S_1 ( iV )  &
-        =  SVNE_S_1 ( iV )  -  Weight_RK * c * Chi_H ( iV ) * S_1 ( iV )
+        =  SVNE_S_1 ( iV )  &
+           +  Weight_RK * c  &
+              * ( -  Chi_H ( iV ) * H_1 ( iV )  &
+                  +  V_1 ( iV ) * ( Xi_J ( iV )  -  Chi_J ( iV ) * J ( iV ) ) )
+
       SVNE_S_2 ( iV )  &
-        =  SVNE_S_2 ( iV )  -  Weight_RK * c * Chi_H ( iV ) * S_2 ( iV )
-      SVNE_S_2 ( iV )  &
-        =  SVNE_S_2 ( iV )  -  Weight_RK * c * Chi_H ( iV ) * S_3 ( iV )
+        =  SVNE_S_2 ( iV )  &
+           +  Weight_RK * c  *  M_DD_22 ( iV )  &
+              * ( -  Chi_H ( iV ) * H_2 ( iV )  &
+                  +  V_2 ( iV ) * ( Xi_J ( iV )  -  Chi_J ( iV ) * J ( iV ) ) )
+
+      SVNE_S_3 ( iV )  &
+        =  SVNE_S_3 ( iV )  &
+           +  Weight_RK * c  *  M_DD_33 ( iV )  &
+              * ( -  Chi_H ( iV ) * H_3 ( iV )  &
+                  +  V_3 ( iV ) * ( Xi_J ( iV )  -  Chi_J ( iV ) * J ( iV ) ) )
 
     end do
     !$OMP end parallel do

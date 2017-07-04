@@ -69,6 +69,7 @@ contains
                Chart % IsProperCell, &
                I % Value ( :, I % EMISSIVITY_N ), &
                I % Value ( :, I % OPACITY_N ), &
+               NM % Value ( :, NM % COMOVING_NUMBER ), &
                NM % Value ( :, NM % CONSERVED_NUMBER ), &
                TimeStep, S % B ( iStage ), CONSTANT % SPEED_OF_LIGHT )
 !     end select !-- SNM
@@ -90,7 +91,7 @@ contains
   subroutine ApplyRelaxation_NM_G_Kernel &
                ( KV_N, DCV_N, &
 !                 SVNE_E, SVNE_S_1, SVNE_S_2, SVNE_S_3, &
-                 IsProperCell, Xi_N, Chi_N, D, dT, Weight_RK, c )
+                 IsProperCell, Xi_N, Chi_N, N, D, dT, Weight_RK, c )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       KV_N, &
@@ -99,9 +100,8 @@ contains
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       IsProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      Xi_N, &
-      Chi_N, &
-      D
+      Xi_N, Chi_N, &
+      N, D
     real ( KDR ), intent ( in ) :: &
       dT, &
       Weight_RK, &
@@ -118,7 +118,12 @@ contains
       if ( .not. IsProperCell ( iV ) ) &
         cycle
 
-      KV_N  ( iV )  =  KV_N ( iV )  +  c * Xi_N ( iV ) * dT
+      KV_N ( iV )  &
+        =  KV_N ( iV )  &
+           +  c * dT  &
+              * ( Xi_N ( iV )  &
+                  -  Chi_N ( iV )  *  ( N ( iV )  -  D ( iV ) ) )
+
       DCV_N ( iV )  =  c * Chi_N ( iV )
 
     end do
