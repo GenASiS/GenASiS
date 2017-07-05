@@ -42,6 +42,8 @@ module Interactions_NM_1_G__Form
     procedure, public, nopass :: &
       Compute_NuE_N_EA_2
     procedure, public, nopass :: &
+      Compute_NuE_N_EA_3
+    procedure, public, nopass :: &
       Compute_NuBarE_N_EA
     procedure, public, nopass :: &
       Compute_Nu_N_A_S
@@ -162,7 +164,27 @@ contains
       !          NM % Value ( :, NM % DEGENERACY_PARAMETER ), &
       !          F % Value ( :, F % ELECTRON_FRACTION ) )
 
-      call Compute_NuE_N_EA_2 &
+!       call Compute_NuE_N_EA_2 &
+!              ( I % Value ( :, I % EMISSIVITY_J ), &
+!                I % Value ( :, I % EMISSIVITY_N ), &
+!                I % Value ( :, I % OPACITY_J ), &
+!                I % Value ( :, I % OPACITY_H ), &
+!                I % Value ( :, I % OPACITY_N ), &
+!                F % Value ( :, F % BARYON_MASS ), &
+!                F % Value ( :, F % COMOVING_DENSITY ), &
+!                F % Value ( :, F % TEMPERATURE ), &
+!                F % Value ( :, F % MASS_FRACTION_NEUTRON ), &
+!                F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
+! !               F % Value ( :, F % ENTROPY_PER_BARYON ), &
+! !               F % Value ( :, F % ELECTRON_FRACTION ), &
+!                NM % Value ( :, NM % TEMPERATURE_PARAMETER ), &
+!                NM % Value ( :, NM % DEGENERACY_PARAMETER ), &
+!                NM % Value ( :, NM % COMOVING_ENERGY_EQ ), &
+!                NM % Value ( :, NM % COMOVING_NUMBER_EQ ), &
+!                NM % Value ( :, NM % TEMPERATURE_PARAMETER_EQ ), &
+!                NM % Value ( :, NM % DEGENERACY_PARAMETER_EQ ) )
+
+      call I % Compute_NuE_N_EA_3 &
              ( I % Value ( :, I % EMISSIVITY_J ), &
                I % Value ( :, I % EMISSIVITY_N ), &
                I % Value ( :, I % OPACITY_J ), &
@@ -171,28 +193,22 @@ contains
                F % Value ( :, F % BARYON_MASS ), &
                F % Value ( :, F % COMOVING_DENSITY ), &
                F % Value ( :, F % TEMPERATURE ), &
-               F % Value ( :, F % MASS_FRACTION_NEUTRON ), &
-               F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
-!               F % Value ( :, F % ENTROPY_PER_BARYON ), &
-!               F % Value ( :, F % ELECTRON_FRACTION ), &
-               NM % Value ( :, NM % TEMPERATURE_PARAMETER ), &
-               NM % Value ( :, NM % DEGENERACY_PARAMETER ), &
-               NM % Value ( :, NM % COMOVING_ENERGY_EQ ), &
-               NM % Value ( :, NM % COMOVING_NUMBER_EQ ), &
-               NM % Value ( :, NM % TEMPERATURE_PARAMETER_EQ ), &
-               NM % Value ( :, NM % DEGENERACY_PARAMETER_EQ ) )
-
-      call I % Compute_Nu_N_A_S &
-             ( I % Value ( :, I % OPACITY_H ), &
-               F % Value ( :, F % BARYON_MASS ), &
-               F % Value ( :, F % COMOVING_DENSITY ), &
                F % Value ( :, F % MASS_FRACTION_PROTON ), &
-               F % Value ( :, F % MASS_FRACTION_NEUTRON ), &
-               F % Value ( :, F % MASS_FRACTION_HEAVY ), &
-               F % Value ( :, F % HEAVY_ATOMIC_NUMBER ), &
-               F % Value ( :, F % HEAVY_MASS_NUMBER ), &
-               NM % Value ( :, NM % TEMPERATURE_PARAMETER ), &
-               NM % Value ( :, NM % DEGENERACY_PARAMETER ) )
+               F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
+               NM % Value ( :, NM % COMOVING_ENERGY_EQ ), &
+               NM % Value ( :, NM % COMOVING_NUMBER_EQ ) )
+
+      ! call I % Compute_Nu_N_A_S &
+      !        ( I % Value ( :, I % OPACITY_H ), &
+      !          F % Value ( :, F % BARYON_MASS ), &
+      !          F % Value ( :, F % COMOVING_DENSITY ), &
+      !          F % Value ( :, F % MASS_FRACTION_PROTON ), &
+      !          F % Value ( :, F % MASS_FRACTION_NEUTRON ), &
+      !          F % Value ( :, F % MASS_FRACTION_HEAVY ), &
+      !          F % Value ( :, F % HEAVY_ATOMIC_NUMBER ), &
+      !          F % Value ( :, F % HEAVY_MASS_NUMBER ), &
+      !          NM % Value ( :, NM % TEMPERATURE_PARAMETER ), &
+      !          NM % Value ( :, NM % DEGENERACY_PARAMETER ) )
 
     ! case ( 'NEUTRINOS_E_NU_BAR' )
 
@@ -648,6 +664,82 @@ contains
     !$OMP end parallel do
 
   end subroutine Compute_NuE_N_EA_2
+
+
+  subroutine Compute_NuE_N_EA_3 &
+               ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, M, N, T, X_p, Mu_e, J_eq, &
+                 N_eq )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      Xi_J, Xi_N, &
+      Chi_J, Chi_H, Chi_N
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      M, N, T, X_p, Mu_e, &
+      J_eq, N_eq
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+    real ( KDR ) :: &
+      Factor, &
+      Q, &
+      N_p, Eta_e_Q, Xi, &
+      Fermi_2_e_Q, Fermi_3_e_Q, Fermi_4_e_Q, Fermi_5_e_Q, &
+      fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta
+
+    nValues  =  size ( Xi_J )
+    
+    Factor  =  FourPi  /  TwoPi ** 3  &
+               *  G_F ** 2  /  Pi  *  ( 1  +  3 * g_A ** 2 )
+         Q  =  m_n - m_p
+
+    !$OMP parallel do &
+    !$OMP   private ( iV, N_p, Eta_e_Q, Xi, &
+    !$OMP             Fermi_2_e_Q, Fermi_3_e_Q, Fermi_4_e_Q, Fermi_5_e_Q, &
+    !$OMP             fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+    do iV = 1, nValues
+
+      if ( T ( iV ) == 0.0_KDR ) &
+        cycle
+
+      N_p      =  M ( iV )  *  N ( iV )  *  X_p ( iV )  /  AMU
+      Eta_e_Q  =  ( Mu_e ( iV )  -  Q )  /  T ( iV )
+
+      call DFERMI ( 2.0_KDR, Eta_e_Q, 0.0_KDR, Fermi_2_e_Q, &
+                    fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+      call DFERMI ( 3.0_KDR, Eta_e_Q, 0.0_KDR, Fermi_3_e_Q, &
+                    fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+      call DFERMI ( 4.0_KDR, Eta_e_Q, 0.0_KDR, Fermi_4_e_Q, &
+                    fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+      call DFERMI ( 5.0_KDR, Eta_e_Q, 0.0_KDR, Fermi_5_e_Q, &
+                    fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+
+      !--- Energy, Momentum
+
+      Xi  =  Factor  *  N_p  *  T ( iV ) ** 4  &
+             *  (    T ( iV ) ** 2     *  Fermi_5_e_Q  &
+                  +  2 * Q * T ( iV )  *  Fermi_4_e_Q  &
+                  +  Q ** 2            *  Fermi_3_e_Q )
+
+      Xi_J  ( iV )  =  Xi_J  ( iV )  +  Xi
+      Chi_J ( iV )  =  Chi_J ( iV )  +  Xi / J_eq ( iV )
+
+      Chi_H ( iV )  =  Chi_H ( iV )  +  Xi / J_eq ( iV )
+
+      !-- Number
+
+      Xi  =  Factor  *  N_p  *  T ( iV ) ** 3  &
+             *  (    T ( iV ) ** 2     *  Fermi_4_e_Q  &
+                  +  2 * Q * T ( iV )  *  Fermi_3_e_Q  &
+                  +  Q ** 2            *  Fermi_2_e_Q )
+
+      Xi_N  ( iV )  =  Xi_N  ( iV )  +  Xi
+      Chi_N ( iV )  =  Chi_N ( iV )  +  Xi / N_eq ( iV )
+
+    end do !-- iV
+    !$OMP end parallel do
+
+  end subroutine Compute_NuE_N_EA_3
 
 
   subroutine Compute_NuBarE_N_EA &
