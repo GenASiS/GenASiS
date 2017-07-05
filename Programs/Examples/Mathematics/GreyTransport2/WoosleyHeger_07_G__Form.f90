@@ -290,106 +290,106 @@ contains
 
     call I % ComputeTimeStepLocalTemplate ( TimeStepCandidate )
 
-    select type ( PS => I % PositionSpace )
-    class is ( Atlas_SC_Form )
+    ! select type ( PS => I % PositionSpace )
+    ! class is ( Atlas_SC_Form )
 
-    select type ( CSL => PS % Chart )
-    class is ( Chart_SL_Template )
+    ! select type ( CSL => PS % Chart )
+    ! class is ( Chart_SL_Template )
 
-    select type &
-      ( RA_E => I % Current_ASC_1D &
-                  ( I % NEUTRINOS_E_NU ) % Element )
-    class is ( RadiationMoments_ASC_Form )
+    ! select type &
+    !   ( RA_E => I % Current_ASC_1D &
+    !               ( I % NEUTRINOS_E_NU ) % Element )
+    ! class is ( RadiationMoments_ASC_Form )
 
-    R_E  =>  RA_E % NeutrinoMoments_G ( )
+    ! R_E  =>  RA_E % NeutrinoMoments_G ( )
 
-    associate &
-      ( I_R_E => Interactions, &
-        F => Fluid )
+    ! associate &
+    !   ( I_R_E => Interactions, &
+    !     F => Fluid )
 
-    call I_R_E % Compute ( R_E )
+    ! call I_R_E % Compute ( R_E )
 
-    call ComputeTimeStep_SB_J_Kernel &
-           ( CSL % IsProperCell, &
-             I_R_E % Value ( :, I_R_E % EMISSIVITY_J ), &
-             I_R_E % Value ( :, I_R_E % OPACITY_J ), &
-             R_E % Value ( :, R_E % COMOVING_ENERGY ), &
-             F % Value ( :, F % TEMPERATURE ), &
-             F % Value ( :, F % ENTROPY_PER_BARYON ), &
-             F % Value ( :, F % BARYON_MASS ), &
-             F % Value ( :, F % COMOVING_DENSITY ), &
-             TimeStepCandidate ( I % N_CURRENTS_PS + 1 ) )
-
-    call ComputeTimeStep_SB_N_Kernel &
-           ( CSL % IsProperCell, &
-             I_R_E % Value ( :, I_R_E % EMISSIVITY_N ), &
-             I_R_E % Value ( :, I_R_E % OPACITY_N ), &
-             R_E % Value ( :, R_E % COMOVING_NUMBER ), &
-             F % Value ( :, F % TEMPERATURE ), &
-             F % Value ( :, F % ENTROPY_PER_BARYON ), &
-             F % Value ( :, F % BARYON_MASS ), &
-             F % Value ( :, F % COMOVING_DENSITY ), &
-             F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
-             F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
-             TimeStepCandidate ( I % N_CURRENTS_PS + 2 ) )
-
-    ! call ComputeTimeStep_S_H_Kernel &
+    ! call ComputeTimeStep_SB_J_Kernel &
     !        ( CSL % IsProperCell, &
-    !          I_R_E % Value ( :, I_R_E % OPACITY_H ), &
-    !          R_E % Value ( :, R_E % CONSERVED_MOMENTUM_D ( 1 ) ), &
-    !          F % Value ( :, F % MOMENTUM_DENSITY_D ( 1 ) ), &
-    !          TimeStepCandidate ( I % N_CURRENTS_PS + 3 ) )
-
-    call ComputeTimeStep_YE_N_Kernel &
-           ( CSL % IsProperCell, &
-             I_R_E % Value ( :, I_R_E % EMISSIVITY_N ), &
-             I_R_E % Value ( :, I_R_E % OPACITY_N ), &
-             R_E % Value ( :, R_E % COMOVING_NUMBER ), &
-             F % Value ( :, F % ELECTRON_FRACTION ), &
-             F % Value ( :, F % BARYON_MASS ), &
-             F % Value ( :, F % COMOVING_DENSITY ), &
-             TimeStepCandidate ( I % N_CURRENTS_PS + 3 ) )
-
-    ! call Search ( R_E % iaConserved, R_E % CONSERVED_ENERGY, iEnergy )
-    ! call Search ( R_E % iaConserved, R_E % CONSERVED_NUMBER, iNumber )
-
-    ! call ComputeTimeStep_SB_Div_J_Kernel &
-    !        ( CSL % IsProperCell, &
-    !          R_E % Sources % Value ( :, iEnergy ), &
+    !          I_R_E % Value ( :, I_R_E % EMISSIVITY_J ), &
+    !          I_R_E % Value ( :, I_R_E % OPACITY_J ), &
+    !          R_E % Value ( :, R_E % COMOVING_ENERGY ), &
     !          F % Value ( :, F % TEMPERATURE ), &
     !          F % Value ( :, F % ENTROPY_PER_BARYON ), &
     !          F % Value ( :, F % BARYON_MASS ), &
     !          F % Value ( :, F % COMOVING_DENSITY ), &
-    !          TimeStepCandidate ( I % N_CURRENTS_PS + 5 ) )
+    !          TimeStepCandidate ( I % N_CURRENTS_PS + 1 ) )
 
-    ! call ComputeTimeStep_SB_Div_N_Kernel &
+    ! call ComputeTimeStep_SB_N_Kernel &
     !        ( CSL % IsProperCell, &
-    !          R_E % Sources % Value ( :, iNumber ), &
+    !          I_R_E % Value ( :, I_R_E % EMISSIVITY_N ), &
+    !          I_R_E % Value ( :, I_R_E % OPACITY_N ), &
+    !          R_E % Value ( :, R_E % COMOVING_NUMBER ), &
     !          F % Value ( :, F % TEMPERATURE ), &
     !          F % Value ( :, F % ENTROPY_PER_BARYON ), &
     !          F % Value ( :, F % BARYON_MASS ), &
     !          F % Value ( :, F % COMOVING_DENSITY ), &
     !          F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
     !          F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
-    !          TimeStepCandidate ( I % N_CURRENTS_PS + 6 ) )
+    !          TimeStepCandidate ( I % N_CURRENTS_PS + 2 ) )
 
-    ! if ( mod ( I % iCycle, 1000 ) == 0 &
-    !      .and. minloc ( TimeStepCandidate, dim = 1 ) &
-    !            > I % N_CURRENTS_PS ) &
-    ! then
-    !   call Show ( I % iCycle, '>>> iCycle', I % IGNORABILITY )
-    !   do iTSC = 1, I % nTimeStepCandidates
-    !     call Show ( TimeStepCandidate ( iTSC ), I % TimeUnit, &
-    !                 trim ( I % TimeStepLabel ( iTSC ) ) // ' TimeStep', &
-    !                 I % IGNORABILITY )
-    !   end do !-- iTSC
-    ! end if
+    ! ! call ComputeTimeStep_S_H_Kernel &
+    ! !        ( CSL % IsProperCell, &
+    ! !          I_R_E % Value ( :, I_R_E % OPACITY_H ), &
+    ! !          R_E % Value ( :, R_E % CONSERVED_MOMENTUM_D ( 1 ) ), &
+    ! !          F % Value ( :, F % MOMENTUM_DENSITY_D ( 1 ) ), &
+    ! !          TimeStepCandidate ( I % N_CURRENTS_PS + 3 ) )
 
-    end associate !-- I_R_E, etc.
-    end select !-- RA_E
-    end select !-- CSL
-    end select !-- PS
-    nullify ( R_E )
+    ! call ComputeTimeStep_YE_N_Kernel &
+    !        ( CSL % IsProperCell, &
+    !          I_R_E % Value ( :, I_R_E % EMISSIVITY_N ), &
+    !          I_R_E % Value ( :, I_R_E % OPACITY_N ), &
+    !          R_E % Value ( :, R_E % COMOVING_NUMBER ), &
+    !          F % Value ( :, F % ELECTRON_FRACTION ), &
+    !          F % Value ( :, F % BARYON_MASS ), &
+    !          F % Value ( :, F % COMOVING_DENSITY ), &
+    !          TimeStepCandidate ( I % N_CURRENTS_PS + 3 ) )
+
+    ! ! call Search ( R_E % iaConserved, R_E % CONSERVED_ENERGY, iEnergy )
+    ! ! call Search ( R_E % iaConserved, R_E % CONSERVED_NUMBER, iNumber )
+
+    ! ! call ComputeTimeStep_SB_Div_J_Kernel &
+    ! !        ( CSL % IsProperCell, &
+    ! !          R_E % Sources % Value ( :, iEnergy ), &
+    ! !          F % Value ( :, F % TEMPERATURE ), &
+    ! !          F % Value ( :, F % ENTROPY_PER_BARYON ), &
+    ! !          F % Value ( :, F % BARYON_MASS ), &
+    ! !          F % Value ( :, F % COMOVING_DENSITY ), &
+    ! !          TimeStepCandidate ( I % N_CURRENTS_PS + 5 ) )
+
+    ! ! call ComputeTimeStep_SB_Div_N_Kernel &
+    ! !        ( CSL % IsProperCell, &
+    ! !          R_E % Sources % Value ( :, iNumber ), &
+    ! !          F % Value ( :, F % TEMPERATURE ), &
+    ! !          F % Value ( :, F % ENTROPY_PER_BARYON ), &
+    ! !          F % Value ( :, F % BARYON_MASS ), &
+    ! !          F % Value ( :, F % COMOVING_DENSITY ), &
+    ! !          F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
+    ! !          F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
+    ! !          TimeStepCandidate ( I % N_CURRENTS_PS + 6 ) )
+
+    ! ! if ( mod ( I % iCycle, 1000 ) == 0 &
+    ! !      .and. minloc ( TimeStepCandidate, dim = 1 ) &
+    ! !            > I % N_CURRENTS_PS ) &
+    ! ! then
+    ! !   call Show ( I % iCycle, '>>> iCycle', I % IGNORABILITY )
+    ! !   do iTSC = 1, I % nTimeStepCandidates
+    ! !     call Show ( TimeStepCandidate ( iTSC ), I % TimeUnit, &
+    ! !                 trim ( I % TimeStepLabel ( iTSC ) ) // ' TimeStep', &
+    ! !                 I % IGNORABILITY )
+    ! !   end do !-- iTSC
+    ! ! end if
+
+    ! end associate !-- I_R_E, etc.
+    ! end select !-- RA_E
+    ! end select !-- CSL
+    ! end select !-- PS
+    ! nullify ( R_E )
 
   end subroutine ComputeTimeStepLocal
 
