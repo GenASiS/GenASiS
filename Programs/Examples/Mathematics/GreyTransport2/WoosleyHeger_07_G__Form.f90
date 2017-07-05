@@ -615,9 +615,9 @@ real ( KDR ), dimension ( Fluid % nValues ) :: &
       ( R_E     => Radiation_E )!, &
 !        R_E_Bar => Radiation_E_Bar, &
 !        R_MuTau => Radiation_MuTau )
-    call Copy ( F % Value ( :, F % VELOCITY_U ( 1 ) : F % VELOCITY_U ( 3 ) ), &
-                R_E % Value ( :, R_E % FLUID_VELOCITY_U ( 1 ) &
-                               : R_E % FLUID_VELOCITY_U ( 3 ) ) )
+!    call Copy ( F % Value ( :, F % VELOCITY_U ( 1 ) : F % VELOCITY_U ( 3 ) ), &
+!                R_E % Value ( :, R_E % FLUID_VELOCITY_U ( 1 ) &
+!                               : R_E % FLUID_VELOCITY_U ( 3 ) ) )
 !    call Copy ( F % Value ( :, F % VELOCITY_U ( 1 ) : F % VELOCITY_U ( 3 ) ), &
 !                R_E_Bar % Value ( :, R_E_Bar % FLUID_VELOCITY_U ( 1 ) &
 !                                  : R_E_Bar % FLUID_VELOCITY_U ( 3 ) ) )
