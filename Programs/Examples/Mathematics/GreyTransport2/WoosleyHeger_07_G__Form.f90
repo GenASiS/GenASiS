@@ -23,10 +23,10 @@ module WoosleyHeger_07_G__Form
     WoosleyHeger_07_G_Form
       integer ( KDI ) :: &
         NEUTRINOS_E_NU             = 1, &
-        ! NEUTRINOS_E_NU_BAR         = 2, &
+        NEUTRINOS_E_NU_BAR         = 2, &
         ! NEUTRINOS_MU_TAU_NU_NU_BAR = 3, &
         ! FLUID                      = 4         
-        FLUID                      = 2         
+        FLUID                      = 3         
       type ( WoosleyHeger_07_HeaderForm ), allocatable :: &
         Header
       type ( Interactions_ASC_Form ), allocatable :: &
@@ -68,8 +68,8 @@ module WoosleyHeger_07_G__Form
     class ( Fluid_P_MHN_Form ), private, pointer :: &
       Fluid => null ( )
     class ( NeutrinoMoments_G_Form ), private, pointer :: &
-      Radiation_E     => null ( )!, &
-!      Radiation_E_Bar => null ( ), &
+      Radiation_E     => null ( ), &
+      Radiation_E_Bar => null ( )!, &
 !      Radiation_MuTau => null ( )   
     class ( Interactions_NM_1_G_Form ), private, pointer :: &
       Interactions => null ( )
@@ -101,17 +101,17 @@ contains
     !-- Prepare for Currents
 
 !    WH % N_CURRENTS_PS = 4
-    WH % N_CURRENTS_PS = 2
+    WH % N_CURRENTS_PS = 3
     allocate ( WH % Current_ASC_1D ( WH % N_CURRENTS_PS ) )
-    allocate ( WH % TimeStepLabel ( WH % N_CURRENTS_PS + 3 ) )
+    allocate ( WH % TimeStepLabel ( WH % N_CURRENTS_PS + 4 ) )
     WH % TimeStepLabel ( WH % NEUTRINOS_E_NU ) = 'Nu_E'
-!    WH % TimeStepLabel ( WH % NEUTRINOS_E_NU_BAR ) = 'NuBar_E'
+    WH % TimeStepLabel ( WH % NEUTRINOS_E_NU_BAR ) = 'NuBar_E'
 !    WH % TimeStepLabel ( WH % NEUTRINOS_MU_TAU_NU_NU_BAR ) = 'Nu_X'
     WH % TimeStepLabel ( WH % FLUID ) = 'Fluid'
     WH % TimeStepLabel ( WH % N_CURRENTS_PS + 1 ) = 'Interactions_SB_J'
     WH % TimeStepLabel ( WH % N_CURRENTS_PS + 2 ) = 'Interactions_SB_N'
-!    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 3 ) = 'Interactions_S_H'
-    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 3 ) = 'Interactions_YE_N'
+    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 3 ) = 'Interactions_S_H'
+    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 4 ) = 'Interactions_YE_N'
 !    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 5 ) = 'Interactions_SB_Div_J'
 !    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 6 ) = 'Interactions_SB_Div_N'
 
@@ -135,20 +135,21 @@ contains
              EnergyDensityUnitOption = WHH % EnergyDensityUnit, &
              TemperatureUnitOption = WHH % TemperatureUnit )
 
-    ! !-- Electron Antineutrinos
+    !-- Electron Antineutrinos
 
-    ! allocate &
-    !   ( RadiationMoments_ASC_Form :: &
-    !       WH % Current_ASC_1D ( WH % NEUTRINOS_E_NU_BAR ) % Element )
-    ! select type ( RA_E_Bar => WH % Current_ASC_1D &
-    !                             ( WH % NEUTRINOS_E_NU_BAR ) % Element )
-    ! class is ( RadiationMoments_ASC_Form )
-    ! call RA_E_Bar % Initialize &
-    !        ( PS, 'NEUTRINOS_E_NU_BAR', NameShortOption = 'NuBar_E', &
-    !          MomentumDensity_U_UnitOption = MomentumDensity_U_Unit, &
-    !          MomentumDensity_D_UnitOption = MomentumDensity_D_Unit, &
-    !          EnergyDensityUnitOption = WHH % EnergyDensityUnit, &
-    !          TemperatureUnitOption = WHH % TemperatureUnit )
+    allocate &
+      ( RadiationMoments_ASC_Form :: &
+          WH % Current_ASC_1D ( WH % NEUTRINOS_E_NU_BAR ) % Element )
+    select type ( RA_E_Bar => WH % Current_ASC_1D &
+                                ( WH % NEUTRINOS_E_NU_BAR ) % Element )
+    class is ( RadiationMoments_ASC_Form )
+    call RA_E_Bar % Initialize &
+           ( PS, 'NEUTRINOS_E_NU_BAR', NameShortOption = 'NuBar_E', &
+             UseLimiterOption = .true., LimiterParameterOption = 1.0_KDR, &
+             MomentumDensity_U_UnitOption = MomentumDensity_U_Unit, &
+             MomentumDensity_D_UnitOption = MomentumDensity_D_Unit, &
+             EnergyDensityUnitOption = WHH % EnergyDensityUnit, &
+             TemperatureUnitOption = WHH % TemperatureUnit )
 
     ! !-- Mu and Tau Neutrinos and Antineutrinos
 
@@ -184,7 +185,7 @@ contains
              LengthUnitOption = WHH % CoordinateUnit ( 1 ), &
              EnergyDensityUnitOption = WHH % EnergyDensityUnit )
     call RA_E % SetInteractions ( IA )
-!    call RA_E_Bar % SetInteractions ( IA )
+    call RA_E_Bar % SetInteractions ( IA )
 !    call RA_MuTau % SetInteractions ( IA )
     call PrepareInteractions ( WH )
     end associate !-- IA
@@ -204,12 +205,12 @@ contains
     S % HarvestIncrement_1D ( WH % NEUTRINOS_E_NU ) % Pointer &
       =>  ComputeFluidSource_Radiation
 
-    ! S % ApplySources_1D ( WH % NEUTRINOS_E_NU_BAR ) % Pointer &
-    !   =>  ApplySources_Radiation
-    ! S % ApplyRelaxation_1D ( WH % NEUTRINOS_E_NU_BAR ) % Pointer &
-    !   =>  ApplyRelaxation_NM_G
-    ! S % HarvestIncrement_1D ( WH % NEUTRINOS_E_NU_BAR ) % Pointer &
-    !   =>  ComputeFluidSource_Radiation
+    S % ApplySources_1D ( WH % NEUTRINOS_E_NU_BAR ) % Pointer &
+      =>  ApplySources_Radiation
+    S % ApplyRelaxation_1D ( WH % NEUTRINOS_E_NU_BAR ) % Pointer &
+      =>  ApplyRelaxation_NM_G
+    S % HarvestIncrement_1D ( WH % NEUTRINOS_E_NU_BAR ) % Pointer &
+      =>  ComputeFluidSource_Radiation
 
     ! S % ApplySources_1D ( WH % NEUTRINOS_MU_TAU_NU_NU_BAR ) % Pointer &
     !   =>  ApplySources_Radiation
@@ -241,7 +242,7 @@ contains
     !-- Cleanup
 
 !    end select !-- RA_MuTau
-!    end select !-- RA_E_Bar
+    end select !-- RA_E_Bar
     end select !-- RA_E
     end select !-- PS
     end associate !-- WHH
@@ -333,12 +334,16 @@ contains
              F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
              TimeStepCandidate ( I % N_CURRENTS_PS + 2 ) )
 
-    ! call ComputeTimeStep_S_H_Kernel &
-    !        ( CSL % IsProperCell, &
-    !          I_R_E % Value ( :, I_R_E % OPACITY_H ), &
-    !          R_E % Value ( :, R_E % CONSERVED_MOMENTUM_D ( 1 ) ), &
-    !          F % Value ( :, F % MOMENTUM_DENSITY_D ( 1 ) ), &
-    !          TimeStepCandidate ( I % N_CURRENTS_PS + 3 ) )
+    call ComputeTimeStep_S_H_Kernel &
+           ( CSL % IsProperCell, &
+             I_R_E % Value ( :, I_R_E % EMISSIVITY_J ), &
+             I_R_E % Value ( :, I_R_E % OPACITY_J ), &
+             I_R_E % Value ( :, I_R_E % OPACITY_H ), &
+             R_E % Value ( :, R_E % COMOVING_ENERGY ), &
+             R_E % Value ( :, R_E % COMOVING_MOMENTUM_U ( 1 ) ), &
+             R_E % Value ( :, R_E % FLUID_VELOCITY_U ( 1 ) ), &
+             F % Value ( :, F % MOMENTUM_DENSITY_D ( 1 ) ), &
+             TimeStepCandidate ( I % N_CURRENTS_PS + 3 ) )
 
     call ComputeTimeStep_YE_N_Kernel &
            ( CSL % IsProperCell, &
@@ -348,7 +353,7 @@ contains
              F % Value ( :, F % ELECTRON_FRACTION ), &
              F % Value ( :, F % BARYON_MASS ), &
              F % Value ( :, F % COMOVING_DENSITY ), &
-             TimeStepCandidate ( I % N_CURRENTS_PS + 3 ) )
+             TimeStepCandidate ( I % N_CURRENTS_PS + 4 ) )
 
     ! call Search ( R_E % iaConserved, R_E % CONSERVED_ENERGY, iEnergy )
     ! call Search ( R_E % iaConserved, R_E % CONSERVED_NUMBER, iNumber )
@@ -373,17 +378,17 @@ contains
     !          F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
     !          TimeStepCandidate ( I % N_CURRENTS_PS + 6 ) )
 
-    ! if ( & !mod ( I % iCycle, 1000 ) == 0 &
-    !      !.and. 
-    !      minloc ( TimeStepCandidate, dim = 1 ) > I % N_CURRENTS_PS ) &
-    ! then
-    !   call Show ( I % iCycle, '>>> iCycle', I % IGNORABILITY )
-    !   do iTSC = 1, I % nTimeStepCandidates
-    !     call Show ( TimeStepCandidate ( iTSC ), I % TimeUnit, &
-    !                 trim ( I % TimeStepLabel ( iTSC ) ) // ' TimeStep', &
-    !                 I % IGNORABILITY )
-    !   end do !-- iTSC
-    ! end if
+    if ( mod ( I % iCycle, 1000 ) == 0 &
+         .and. &
+         minloc ( TimeStepCandidate, dim = 1 ) > I % N_CURRENTS_PS ) &
+    then
+      call Show ( I % iCycle, '>>> iCycle', I % IGNORABILITY )
+      do iTSC = 1, I % nTimeStepCandidates
+        call Show ( TimeStepCandidate ( iTSC ), I % TimeUnit, &
+                    trim ( I % TimeStepLabel ( iTSC ) ) // ' TimeStep', &
+                    I % IGNORABILITY )
+      end do !-- iTSC
+    end if
 
     end associate !-- I_R_E, etc.
     end select !-- RA_E
@@ -415,10 +420,10 @@ contains
                   ( WH % NEUTRINOS_E_NU ) % Element )
     class is ( RadiationMoments_ASC_Form )
 
-    ! select type &
-    !   ( RA_E_Bar => WH % Current_ASC_1D &
-    !                   ( WH % NEUTRINOS_E_NU_BAR ) % Element )
-    ! class is ( RadiationMoments_ASC_Form )
+    select type &
+      ( RA_E_Bar => WH % Current_ASC_1D &
+                      ( WH % NEUTRINOS_E_NU_BAR ) % Element )
+    class is ( RadiationMoments_ASC_Form )
 
     ! select type &
     !   ( RA_MuTau => WH % Current_ASC_1D &
@@ -430,7 +435,8 @@ contains
 
     I        =>  IA % Interactions ( )
     R_E      =>  RA_E % NeutrinoMoments_G ( )
-!    R_E_Bar  =>  RA_E_Bar % NeutrinoMoments_G ( )
+    R_E_Bar  =>  RA_E_Bar % NeutrinoMoments_G ( )
+    R_MuTau  =>  null ( )
 !    R_MuTau  =>  RA_MuTau % NeutrinoMoments_G ( )
     F        =>  FA % Fluid_P_MHN ( )
 
@@ -456,11 +462,11 @@ contains
 
     end select !-- FA
 !    end select !-- RA_MuTau
-!    end select !-- RA_E_Bar
+    end select !-- RA_E_Bar
     end select !-- RA_E
     end associate !-- IA
 !    nullify ( F, R_E, R_E_Bar, R_MuTau, I )
-    nullify ( F, R_E, I )
+    nullify ( F, R_E, R_E_Bar, I )
 
   end subroutine PrepareInteractions
 
@@ -482,10 +488,10 @@ contains
                   ( WH % NEUTRINOS_E_NU ) % Element )
     class is ( RadiationMoments_ASC_Form )
 
-    ! select type &
-    !   ( RA_E_Bar => WH % Current_ASC_1D &
-    !                   ( WH % NEUTRINOS_E_NU_BAR ) % Element )
-    ! class is ( RadiationMoments_ASC_Form )
+    select type &
+      ( RA_E_Bar => WH % Current_ASC_1D &
+                      ( WH % NEUTRINOS_E_NU_BAR ) % Element )
+    class is ( RadiationMoments_ASC_Form )
 
     ! select type &
     !   ( RA_MuTau => WH % Current_ASC_1D &
@@ -493,16 +499,16 @@ contains
     ! class is ( RadiationMoments_ASC_Form )
 
     Radiation_E      =>  RA_E % NeutrinoMoments_G ( )
-!    Radiation_E_Bar  =>  RA_E_Bar % NeutrinoMoments_G ( )
+    Radiation_E_Bar  =>  RA_E_Bar % NeutrinoMoments_G ( )
 !    Radiation_MuTau  =>  RA_MuTau % NeutrinoMoments_G ( )
 
     !-- No initial radiation, but set eigenspeeds
     call Radiation_E % ComputeFromPrimitive ( G )
-!    call Radiation_E_Bar % ComputeFromPrimitive ( G )
+    call Radiation_E_Bar % ComputeFromPrimitive ( G )
 !    call Radiation_MuTau % ComputeFromPrimitive ( G )
 
 !    end select !-- RA_MuTau
-!    end select !-- RA_E_Bar
+    end select !-- RA_E_Bar
     end select !-- RA_E
     end select !-- PS
     nullify ( G )
@@ -612,15 +618,15 @@ real ( KDR ), dimension ( Fluid % nValues ) :: &
 
     !-- FIXME: This is a lagged setting of the fluid velocity in radiation
     associate &
-      ( R_E     => Radiation_E )!, &
-!        R_E_Bar => Radiation_E_Bar, &
+      ( R_E     => Radiation_E, &
+        R_E_Bar => Radiation_E_Bar )!, &
 !        R_MuTau => Radiation_MuTau )
-!    call Copy ( F % Value ( :, F % VELOCITY_U ( 1 ) : F % VELOCITY_U ( 3 ) ), &
-!                R_E % Value ( :, R_E % FLUID_VELOCITY_U ( 1 ) &
-!                               : R_E % FLUID_VELOCITY_U ( 3 ) ) )
-!    call Copy ( F % Value ( :, F % VELOCITY_U ( 1 ) : F % VELOCITY_U ( 3 ) ), &
-!                R_E_Bar % Value ( :, R_E_Bar % FLUID_VELOCITY_U ( 1 ) &
-!                                  : R_E_Bar % FLUID_VELOCITY_U ( 3 ) ) )
+    call Copy ( F % Value ( :, F % VELOCITY_U ( 1 ) : F % VELOCITY_U ( 3 ) ), &
+                R_E % Value ( :, R_E % FLUID_VELOCITY_U ( 1 ) &
+                               : R_E % FLUID_VELOCITY_U ( 3 ) ) )
+    call Copy ( F % Value ( :, F % VELOCITY_U ( 1 ) : F % VELOCITY_U ( 3 ) ), &
+                R_E_Bar % Value ( :, R_E_Bar % FLUID_VELOCITY_U ( 1 ) &
+                                  : R_E_Bar % FLUID_VELOCITY_U ( 3 ) ) )
 !    call Copy ( F % Value ( :, F % VELOCITY_U ( 1 ) : F % VELOCITY_U ( 3 ) ), &
 !                R_MuTau % Value ( :, R_MuTau % FLUID_VELOCITY_U ( 1 ) &
 !                                  : R_MuTau % FLUID_VELOCITY_U ( 3 ) ) )
@@ -908,13 +914,16 @@ end if
 
 
   subroutine ComputeTimeStep_S_H_Kernel &
-               ( IsProperCell, Chi_H, H_D, S_D, TimeStep )
+               ( IsProperCell, Xi_J, Chi_J, Chi_H, J, H_U_1, V_1, S_D_1, &
+                 TimeStep )
 
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       IsProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      Chi_H, H_D, &
-      S_D
+      Xi_J, Chi_J, Chi_H, &
+      J, H_U_1, &
+      V_1, &
+      S_D_1
     real ( KDR ), intent ( inout ) :: &
       TimeStep    
 
@@ -938,8 +947,10 @@ end if
       if ( IsProperCell ( iV ) ) then
         TimeStepInverse &
           = max ( TimeStepInverse, &
-                  abs ( - Chi_H ( iV ) * H_D ( iV ) )  &
-                  /  abs ( S_D ( iV ) ) )
+                  abs ( - Chi_H ( iV ) * H_U_1 ( iV )  &
+                        +  V_1 ( iV )  &
+                           *  ( Xi_J ( iV )  -  Chi_J ( iV ) * J ( iV ) ) )  &
+                  /  abs ( S_D_1 ( iV ) ) )
       end if
     end do
     !$OMP end parallel do

@@ -46,6 +46,8 @@ module Interactions_NM_1_G__Form
     procedure, public, nopass :: &
       Compute_NuBarE_N_EA
     procedure, public, nopass :: &
+      Compute_NuBarE_N_EA_3
+    procedure, public, nopass :: &
       Compute_Nu_N_A_S
     ! procedure, public, pass :: &
     !   Compute_E_Nu_Nuclei_Kernel
@@ -198,19 +200,19 @@ contains
                NM % Value ( :, NM % COMOVING_ENERGY_EQ ), &
                NM % Value ( :, NM % COMOVING_NUMBER_EQ ) )
 
-      ! call I % Compute_Nu_N_A_S &
-      !        ( I % Value ( :, I % OPACITY_H ), &
-      !          F % Value ( :, F % BARYON_MASS ), &
-      !          F % Value ( :, F % COMOVING_DENSITY ), &
-      !          F % Value ( :, F % MASS_FRACTION_PROTON ), &
-      !          F % Value ( :, F % MASS_FRACTION_NEUTRON ), &
-      !          F % Value ( :, F % MASS_FRACTION_HEAVY ), &
-      !          F % Value ( :, F % HEAVY_ATOMIC_NUMBER ), &
-      !          F % Value ( :, F % HEAVY_MASS_NUMBER ), &
-      !          NM % Value ( :, NM % TEMPERATURE_PARAMETER ), &
-      !          NM % Value ( :, NM % DEGENERACY_PARAMETER ) )
+      call I % Compute_Nu_N_A_S &
+             ( I % Value ( :, I % OPACITY_H ), &
+               F % Value ( :, F % BARYON_MASS ), &
+               F % Value ( :, F % COMOVING_DENSITY ), &
+               F % Value ( :, F % MASS_FRACTION_PROTON ), &
+               F % Value ( :, F % MASS_FRACTION_NEUTRON ), &
+               F % Value ( :, F % MASS_FRACTION_HEAVY ), &
+               F % Value ( :, F % HEAVY_ATOMIC_NUMBER ), &
+               F % Value ( :, F % HEAVY_MASS_NUMBER ), &
+               NM % Value ( :, NM % TEMPERATURE_PARAMETER ), &
+               NM % Value ( :, NM % DEGENERACY_PARAMETER ) )
 
-    ! case ( 'NEUTRINOS_E_NU_BAR' )
+    case ( 'NEUTRINOS_E_NU_BAR' )
 
     !   call I % Compute_NuBarE_N_EA &
     !          ( I % Value ( :, I % EMISSIVITY_J ), &
@@ -228,22 +230,36 @@ contains
     !            NM % Value ( :, NM % DEGENERACY_PARAMETER ), &
     !            F % Value ( :, F % ELECTRON_FRACTION ) )
 
-    !   call I % Compute_Nu_N_A_S &
-    !          ( I % Value ( :, I % OPACITY_H ), &
-    !            F % Value ( :, F % BARYON_MASS ), &
-    !            F % Value ( :, F % COMOVING_DENSITY ), &
-    !            F % Value ( :, F % MASS_FRACTION_PROTON ), &
-    !            F % Value ( :, F % MASS_FRACTION_NEUTRON ), &
-    !            F % Value ( :, F % MASS_FRACTION_HEAVY ), &
-    !            F % Value ( :, F % HEAVY_ATOMIC_NUMBER ), &
-    !            F % Value ( :, F % HEAVY_MASS_NUMBER ), &
-    !            NM % Value ( :, NM % TEMPERATURE_PARAMETER ), &
-    !            NM % Value ( :, NM % DEGENERACY_PARAMETER ) )
+      call I % Compute_NuE_N_EA_3 &
+             ( I % Value ( :, I % EMISSIVITY_J ), &
+               I % Value ( :, I % EMISSIVITY_N ), &
+               I % Value ( :, I % OPACITY_J ), &
+               I % Value ( :, I % OPACITY_H ), &
+               I % Value ( :, I % OPACITY_N ), &
+               F % Value ( :, F % BARYON_MASS ), &
+               F % Value ( :, F % COMOVING_DENSITY ), &
+               F % Value ( :, F % TEMPERATURE ), &
+               F % Value ( :, F % MASS_FRACTION_NEUTRON ), &
+               F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
+               NM % Value ( :, NM % COMOVING_ENERGY_EQ ), &
+               NM % Value ( :, NM % COMOVING_NUMBER_EQ ) )
 
-!    case default
-!      call Show ( 'Radiation Type not recognized', CONSOLE % ERROR )
-!      call Show ( 'Interactions_NM_G_1__Form', 'module', CONSOLE % ERROR )
-!      call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )
+      call I % Compute_Nu_N_A_S &
+             ( I % Value ( :, I % OPACITY_H ), &
+               F % Value ( :, F % BARYON_MASS ), &
+               F % Value ( :, F % COMOVING_DENSITY ), &
+               F % Value ( :, F % MASS_FRACTION_PROTON ), &
+               F % Value ( :, F % MASS_FRACTION_NEUTRON ), &
+               F % Value ( :, F % MASS_FRACTION_HEAVY ), &
+               F % Value ( :, F % HEAVY_ATOMIC_NUMBER ), &
+               F % Value ( :, F % HEAVY_MASS_NUMBER ), &
+               NM % Value ( :, NM % TEMPERATURE_PARAMETER ), &
+               NM % Value ( :, NM % DEGENERACY_PARAMETER ) )
+
+   case default
+     call Show ( 'Radiation Type not recognized', CONSOLE % ERROR )
+     call Show ( 'Interactions_NM_G_1__Form', 'module', CONSOLE % ERROR )
+     call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )
     end select !-- Radiation % Type
 
     end associate !-- F
@@ -925,6 +941,83 @@ contains
   end subroutine Compute_NuBarE_N_EA
 
 
+  subroutine Compute_NuBarE_N_EA_3 &
+               ( Xi_J, Xi_N, Chi_J, Chi_H, Chi_N, M, N, T, X_n, Mu_e, J_eq, &
+                 N_eq )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      Xi_J, Xi_N, &
+      Chi_J, Chi_H, Chi_N
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      M, N, T, X_n, Mu_e, &
+      J_eq, N_eq
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+    real ( KDR ) :: &
+      Factor, &
+      Q, &
+      N_n, Eta_e, Xi, &
+      Fermi_2_e, Fermi_3_e, Fermi_4_e, Fermi_5_e, &
+      fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta
+
+    nValues  =  size ( Xi_J )
+    
+    Factor  =  FourPi  /  TwoPi ** 3  &
+               *  G_F ** 2  /  Pi  *  ( 1  +  3 * g_A ** 2 )
+         Q  =  m_n - m_p
+
+    !$OMP parallel do &
+    !$OMP   private ( iV, N_n, Eta_e, Xi, &
+    !$OMP             Fermi_2_e, Fermi_3_e, Fermi_4_e, Fermi_5_e, &
+    !$OMP             fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+    do iV = 1, nValues
+
+      if ( T ( iV ) == 0.0_KDR ) &
+        cycle
+
+      N_n    =  M ( iV )  *  N ( iV )  *  X_n ( iV )  /  AMU
+      Eta_e  =  Mu_e ( iV )  /  T ( iV )
+
+      call DFERMI ( 2.0_KDR, -Eta_e, 0.0_KDR, Fermi_2_e, &
+                    fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+      call DFERMI ( 3.0_KDR, -Eta_e, 0.0_KDR, Fermi_3_e, &
+                    fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+      call DFERMI ( 4.0_KDR, -Eta_e, 0.0_KDR, Fermi_4_e, &
+                    fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+      call DFERMI ( 5.0_KDR, -Eta_e, 0.0_KDR, Fermi_5_e, &
+                    fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+
+      !--- Energy, Momentum
+
+      Xi  =  Factor  *  N_n  *  T ( iV ) ** 3  &
+             *  (    T ( iV ) ** 3             *  Fermi_5_e  &
+                  +  3 *  Q  *  T ( iV ) ** 2  *  Fermi_4_e  &
+                  +  3 *  Q ** 2  *  T ( iV )  *  Fermi_3_e  &
+                  +  Q ** 3                    *  Fermi_2_e )
+
+      Xi_J  ( iV )  =  Xi_J  ( iV )  +  Xi
+      Chi_J ( iV )  =  Chi_J ( iV )  +  Xi / J_eq ( iV )
+
+      Chi_H ( iV )  =  Chi_H ( iV )  +  Xi / J_eq ( iV )
+
+      !-- Number
+
+      Xi  =  Factor  *  N_n  *  T ( iV ) ** 3  &
+             *  (    T ( iV ) ** 2     *  Fermi_4_e  &
+                  +  2 * Q * T ( iV )  *  Fermi_3_e  &
+                  +  Q ** 2            *  Fermi_2_e )
+
+      Xi_N  ( iV )  =  Xi_N  ( iV )  +  Xi
+      Chi_N ( iV )  =  Chi_N ( iV )  +  Xi / N_eq ( iV )
+
+    end do !-- iV
+    !$OMP end parallel do
+
+  end subroutine Compute_NuBarE_N_EA_3
+
+
   subroutine Compute_Nu_N_A_S ( Chi_H, M, N, X_p, X_n, X_A, Z, A, T_nu, Eta_nu )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -950,11 +1043,11 @@ contains
 
     nValues  =  size ( Chi_H )
     
-    Factor_p  =  2  *  G_F ** 2  /  3 * Pi  &
-                 *  ( ( 2 * Sin_2_Theta_W  -  1. / 2. ) ** 2 &
+    Factor_p  =  2.  *  G_F ** 2  /  ( 3. * Pi )  &
+                 *  ( ( 2. * Sin_2_Theta_W  -  1. / 2. ) ** 2  &
                       +  5. / 4. * g_A ** 2 )
 
-    Factor_n  =  2  *  G_F ** 2  /  3 * Pi  &
+    Factor_n  =  2.  *  G_F ** 2  /  ( 3. * Pi )  &
                  *  ( 1. / 4.  +  5. / 4. * g_A ** 2 )
 
     !$OMP parallel do &
@@ -965,8 +1058,8 @@ contains
       if ( A ( iV ) == 0.0_KDR ) &
         cycle
 
-      Factor_A  =  2  *  G_F ** 2  /  3 * Pi  &
-                   *  ( Z ( iV ) / A ( iV )  *  ( 1  -  2 * Sin_2_Theta_W ) &
+      Factor_A  =  2.  *  G_F ** 2  /  ( 3. * Pi ) &
+                   *  ( Z ( iV ) / A ( iV )  *  ( 1  -  2. * Sin_2_Theta_W ) &
                         -  1. / 2. ) ** 2  &
                    *  A ( iV ) ** 2
 
