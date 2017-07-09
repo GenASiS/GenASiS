@@ -103,15 +103,15 @@ contains
 !    WH % N_CURRENTS_PS = 4
     WH % N_CURRENTS_PS = 3
     allocate ( WH % Current_ASC_1D ( WH % N_CURRENTS_PS ) )
-    allocate ( WH % TimeStepLabel ( WH % N_CURRENTS_PS + 4 ) )
+    allocate ( WH % TimeStepLabel ( WH % N_CURRENTS_PS + 3 ) )
     WH % TimeStepLabel ( WH % NEUTRINOS_E_NU ) = 'Nu_E'
     WH % TimeStepLabel ( WH % NEUTRINOS_E_NU_BAR ) = 'NuBar_E'
 !    WH % TimeStepLabel ( WH % NEUTRINOS_MU_TAU_NU_NU_BAR ) = 'Nu_X'
     WH % TimeStepLabel ( WH % FLUID ) = 'Fluid'
     WH % TimeStepLabel ( WH % N_CURRENTS_PS + 1 ) = 'Interactions_SB_J'
     WH % TimeStepLabel ( WH % N_CURRENTS_PS + 2 ) = 'Interactions_SB_N'
-    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 3 ) = 'Interactions_S_H'
-    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 4 ) = 'Interactions_YE_N'
+!    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 3 ) = 'Interactions_S_H'
+    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 3 ) = 'Interactions_YE_N'
 !    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 5 ) = 'Interactions_SB_Div_J'
 !    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 6 ) = 'Interactions_SB_Div_N'
 
@@ -130,6 +130,7 @@ contains
     call RA_E % Initialize &
            ( PS, 'NEUTRINOS_E_NU', NameShortOption = 'Nu_E', &
              UseLimiterOption = .true., LimiterParameterOption = 1.0_KDR, &
+             Velocity_U_UnitOption = WHH % VelocityUnit, &
              MomentumDensity_U_UnitOption = MomentumDensity_U_Unit, &
              MomentumDensity_D_UnitOption = MomentumDensity_D_Unit, &
              EnergyDensityUnitOption = WHH % EnergyDensityUnit, &
@@ -146,6 +147,7 @@ contains
     call RA_E_Bar % Initialize &
            ( PS, 'NEUTRINOS_E_NU_BAR', NameShortOption = 'NuBar_E', &
              UseLimiterOption = .true., LimiterParameterOption = 1.0_KDR, &
+             Velocity_U_UnitOption = WHH % VelocityUnit, &
              MomentumDensity_U_UnitOption = MomentumDensity_U_Unit, &
              MomentumDensity_D_UnitOption = MomentumDensity_D_Unit, &
              EnergyDensityUnitOption = WHH % EnergyDensityUnit, &
@@ -334,16 +336,16 @@ contains
              F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
              TimeStepCandidate ( I % N_CURRENTS_PS + 2 ) )
 
-    call ComputeTimeStep_S_H_Kernel &
-           ( CSL % IsProperCell, &
-             I_R_E % Value ( :, I_R_E % EMISSIVITY_J ), &
-             I_R_E % Value ( :, I_R_E % OPACITY_J ), &
-             I_R_E % Value ( :, I_R_E % OPACITY_H ), &
-             R_E % Value ( :, R_E % COMOVING_ENERGY ), &
-             R_E % Value ( :, R_E % COMOVING_MOMENTUM_U ( 1 ) ), &
-             R_E % Value ( :, R_E % FLUID_VELOCITY_U ( 1 ) ), &
-             F % Value ( :, F % MOMENTUM_DENSITY_D ( 1 ) ), &
-             TimeStepCandidate ( I % N_CURRENTS_PS + 3 ) )
+    ! call ComputeTimeStep_S_H_Kernel &
+    !        ( CSL % IsProperCell, &
+    !          I_R_E % Value ( :, I_R_E % EMISSIVITY_J ), &
+    !          I_R_E % Value ( :, I_R_E % OPACITY_J ), &
+    !          I_R_E % Value ( :, I_R_E % OPACITY_H ), &
+    !          R_E % Value ( :, R_E % COMOVING_ENERGY ), &
+    !          R_E % Value ( :, R_E % COMOVING_MOMENTUM_U ( 1 ) ), &
+    !          R_E % Value ( :, R_E % FLUID_VELOCITY_U ( 1 ) ), &
+    !          F % Value ( :, F % MOMENTUM_DENSITY_D ( 1 ) ), &
+    !          TimeStepCandidate ( I % N_CURRENTS_PS + 3 ) )
 
     call ComputeTimeStep_YE_N_Kernel &
            ( CSL % IsProperCell, &
@@ -353,7 +355,7 @@ contains
              F % Value ( :, F % ELECTRON_FRACTION ), &
              F % Value ( :, F % BARYON_MASS ), &
              F % Value ( :, F % COMOVING_DENSITY ), &
-             TimeStepCandidate ( I % N_CURRENTS_PS + 4 ) )
+             TimeStepCandidate ( I % N_CURRENTS_PS + 3 ) )
 
     ! call Search ( R_E % iaConserved, R_E % CONSERVED_ENERGY, iEnergy )
     ! call Search ( R_E % iaConserved, R_E % CONSERVED_NUMBER, iNumber )
@@ -378,7 +380,8 @@ contains
     !          F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
     !          TimeStepCandidate ( I % N_CURRENTS_PS + 6 ) )
 
-    if ( mod ( I % iCycle, 1000 ) == 0 &
+    if ( ( mod ( I % iCycle, 1000 ) == 0 &
+           .or. any ( TimeStepCandidate < 1.0e-12_KDR * UNIT % SECOND ) ) &
          .and. &
          minloc ( TimeStepCandidate, dim = 1 ) > I % N_CURRENTS_PS ) &
     then

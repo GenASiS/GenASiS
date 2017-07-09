@@ -122,7 +122,7 @@ contains
              VectorIndicesOption )
 
     call SetUnits &
-           ( VariableUnit, RM, MomentumDensity_U_Unit, &
+           ( VariableUnit, RM, Velocity_U_Unit, MomentumDensity_U_Unit, &
              MomentumDensity_D_Unit, EnergyDensityUnit )
 
     call RM % InitializeTemplate &
@@ -700,7 +700,7 @@ contains
 
 
   subroutine SetUnits &
-               ( VariableUnit, RM, MomentumDensity_U_Unit, &
+               ( VariableUnit, RM, Velocity_U_Unit, MomentumDensity_U_Unit, &
                  MomentumDensity_D_Unit, EnergyDensityUnit )
 
     type ( MeasuredValueForm ), dimension ( : ), intent ( inout ) :: &
@@ -708,6 +708,7 @@ contains
     class ( RadiationMomentsForm ), intent ( in ) :: &
       RM
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
+      Velocity_U_Unit, &
       MomentumDensity_U_Unit, &
       MomentumDensity_D_Unit
     type ( MeasuredValueForm ), intent ( in ) :: &
@@ -724,6 +725,8 @@ contains
         = MomentumDensity_U_Unit ( iD )
       VariableUnit ( RM % CONSERVED_MOMENTUM_D ( iD ) ) &
         = MomentumDensity_D_Unit ( iD )      
+      VariableUnit ( RM % FLUID_VELOCITY_U ( iD ) ) &
+        = Velocity_U_Unit ( iD )
     end do
 
     VariableUnit ( RM % COMOVING_ENERGY_EQ ) = EnergyDensityUnit
