@@ -45,6 +45,8 @@ module Step_RK_C_ASC_1D__Template
         ApplyRelaxation_1D
       type ( HarvestIncrement_C_Pointer ), dimension ( : ), allocatable :: &
         HarvestIncrement_1D
+      type ( HarvestCurrent_C_Pointer ), dimension ( : ), allocatable :: &
+        HarvestCurrent_1D
   contains
     procedure, public, pass :: &
       InitializeTemplate_C_ASC_1D
@@ -153,6 +155,7 @@ contains
     allocate ( S % ApplySources_1D ( S % nCurrents ) )
     allocate ( S % ApplyRelaxation_1D ( S % nCurrents ) )
     allocate ( S % HarvestIncrement_1D ( S % nCurrents ) )
+    allocate ( S % HarvestCurrent_1D ( S % nCurrents ) )
 
   end subroutine InitializeTemplate_C_ASC_1D
 
@@ -242,6 +245,8 @@ contains
 
     call DeallocateStorage ( S )
 
+    if ( allocated ( S % HarvestCurrent_1D ) ) &
+      deallocate ( S % HarvestCurrent_1D )
     if ( allocated ( S % HarvestIncrement_1D ) ) &
       deallocate ( S % HarvestIncrement_1D )
     if ( allocated ( S % ApplyRelaxation_1D ) ) &
@@ -448,7 +453,7 @@ contains
 
     type ( CurrentPointerForm ), dimension ( : ), intent ( in ) :: &
       Current_1D
-    class ( Step_RK_C_ASC_1D_Template ), intent ( in ) :: &
+    class ( Step_RK_C_ASC_1D_Template ), intent ( inout ) :: &
       S
     type ( VariableGroupForm ), dimension ( : ), intent ( inout ) :: &
       Solution_1D
@@ -457,8 +462,14 @@ contains
       iC  !-- iCurrent
 
     do iC = 1, size ( Current_1D )
+
+      S % HarvestCurrent_C => S % HarvestCurrent_1D ( iC ) % Pointer
+
       call S % StoreSolution &
              ( Current_1D ( iC ) % Pointer, Solution_1D ( iC ) )
+
+      S % HarvestCurrent_C => null ( )
+
     end do !-- iC
 
   end subroutine StoreSolution_C_1D

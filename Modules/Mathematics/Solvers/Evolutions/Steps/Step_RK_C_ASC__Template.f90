@@ -38,6 +38,11 @@ module Step_RK_C_ASC__Template
       Pointer => null ( )
   end type HarvestIncrement_C_Pointer
 
+  type, public :: HarvestCurrent_C_Pointer
+    procedure ( HC ), pointer, nopass :: &
+      Pointer => null ( )
+  end type HarvestCurrent_C_Pointer
+
   type, public, extends ( Step_RK_Template ), abstract :: &
     Step_RK_C_ASC_Template
       integer ( KDI ) :: &
@@ -80,6 +85,8 @@ module Step_RK_C_ASC__Template
         ApplyRelaxation_C => null ( )
       procedure ( HI ), pointer, pass :: &
         HarvestIncrement_C => null ( )
+      procedure ( HC ), pointer, pass :: &
+        HarvestCurrent_C => null ( )
       type ( ApplyDivergence_C_Pointer ) :: &
         ApplyDivergence
       type ( ApplySources_C_Pointer ) :: &
@@ -213,6 +220,16 @@ module Step_RK_C_ASC__Template
       real ( KDR ), intent ( in ) :: &
         TimeStep
     end subroutine HI
+
+    subroutine HC ( S, Current )
+      use Basics
+      use Fields
+      import Step_RK_C_ASC_Template
+      class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
+        S
+      class ( CurrentTemplate ), intent ( in ) :: &
+        Current
+    end subroutine HC
 
   end interface
 
@@ -755,6 +772,9 @@ contains
       call PROGRAM_HEADER % Abort ( )
     end select !-- Grid
     call Current % ComputeFromConserved ( G )
+
+    if ( associated ( S % HarvestCurrent_C ) ) &
+      call S % HarvestCurrent_C ( Current )
 
     nullify ( G )
     

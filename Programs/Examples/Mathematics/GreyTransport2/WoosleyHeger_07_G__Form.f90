@@ -47,7 +47,8 @@ module WoosleyHeger_07_G__Form
       SetRadiation, &
       ApplySources_Radiation, &
       ApplySources_Fluid, &
-      ComputeFluidSource_Radiation
+      ComputeFluidSource_Radiation, &
+      SetRadiation_FluidVelocity
 
       private :: &
         ComputeTimeStep_SB_J_Kernel, &
@@ -223,6 +224,8 @@ contains
 
     S % ApplySources_1D ( WH % FLUID ) % Pointer &
       =>  ApplySources_Fluid
+    S % HarvestCurrent_1D ( WH % FLUID ) % Pointer &
+      =>  SetRadiation_FluidVelocity
 
     end select !-- S
 
@@ -619,22 +622,6 @@ real ( KDR ), dimension ( Fluid % nValues ) :: &
              F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
              F % Value ( :, F % CHEMICAL_POTENTIAL_E ) )
 
-    !-- FIXME: This is a lagged setting of the fluid velocity in radiation
-    associate &
-      ( R_E     => Radiation_E, &
-        R_E_Bar => Radiation_E_Bar )!, &
-!        R_MuTau => Radiation_MuTau )
-    call Copy ( F % Value ( :, F % VELOCITY_U ( 1 ) : F % VELOCITY_U ( 3 ) ), &
-                R_E % Value ( :, R_E % FLUID_VELOCITY_U ( 1 ) &
-                               : R_E % FLUID_VELOCITY_U ( 3 ) ) )
-    call Copy ( F % Value ( :, F % VELOCITY_U ( 1 ) : F % VELOCITY_U ( 3 ) ), &
-                R_E_Bar % Value ( :, R_E_Bar % FLUID_VELOCITY_U ( 1 ) &
-                                  : R_E_Bar % FLUID_VELOCITY_U ( 3 ) ) )
-!    call Copy ( F % Value ( :, F % VELOCITY_U ( 1 ) : F % VELOCITY_U ( 3 ) ), &
-!                R_MuTau % Value ( :, R_MuTau % FLUID_VELOCITY_U ( 1 ) &
-!                                  : R_MuTau % FLUID_VELOCITY_U ( 3 ) ) )
-    end associate !-- R_E, etc.
-
 dG_G   = Increment % Value ( :, iEnergy ) &
          /  max ( abs ( F % Value ( :, F % CONSERVED_ENERGY ) ), &
             tiny ( 0.0_KDR ) )
@@ -824,6 +811,36 @@ end if
     nullify ( G )
     
   end subroutine ComputeFluidSource_Radiation
+
+
+  subroutine SetRadiation_FluidVelocity ( S, Fluid )
+
+    class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
+      S
+    class ( CurrentTemplate ), intent ( in ) :: &
+      Fluid
+
+    select type ( F => Fluid )
+    class is ( Fluid_P_MHN_Form )
+
+    associate &
+      ( R_E     => Radiation_E, &
+        R_E_Bar => Radiation_E_Bar )!, &
+!        R_MuTau => Radiation_MuTau )
+    call Copy ( F % Value ( :, F % VELOCITY_U ( 1 ) : F % VELOCITY_U ( 3 ) ), &
+                R_E % Value ( :, R_E % FLUID_VELOCITY_U ( 1 ) &
+                               : R_E % FLUID_VELOCITY_U ( 3 ) ) )
+    call Copy ( F % Value ( :, F % VELOCITY_U ( 1 ) : F % VELOCITY_U ( 3 ) ), &
+                R_E_Bar % Value ( :, R_E_Bar % FLUID_VELOCITY_U ( 1 ) &
+                                  : R_E_Bar % FLUID_VELOCITY_U ( 3 ) ) )
+!    call Copy ( F % Value ( :, F % VELOCITY_U ( 1 ) : F % VELOCITY_U ( 3 ) ), &
+!                R_MuTau % Value ( :, R_MuTau % FLUID_VELOCITY_U ( 1 ) &
+!                                  : R_MuTau % FLUID_VELOCITY_U ( 3 ) ) )
+    end associate !-- R_E, etc.
+
+    end select !-- F
+
+  end subroutine SetRadiation_FluidVelocity
 
 
   subroutine ComputeTimeStep_SB_J_Kernel &
