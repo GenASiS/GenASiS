@@ -923,10 +923,10 @@ contains
         S_1 ( iV )  =  H_1 ( iV )
         S_2 ( iV )  =  M_DD_22 ( iV )  *  H_2 ( iV )
         S_3 ( iV )  =  M_DD_33 ( iV )  *  H_3 ( iV )
+        call ComputeMomentFactors &
+               ( SF ( iV ), FF ( iV ), J ( iV ), H_1 ( iV ), H_2 ( iV ), &
+                 H_3 ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ) )
       end if
-      call ComputeMomentFactors &
-             ( SF ( iV ), FF ( iV ), J ( iV ), H_1 ( iV ), H_2 ( iV ), &
-               H_3 ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ) )
     end do !-- iV
     !$OMP end parallel do
 
@@ -1179,10 +1179,9 @@ contains
       iS, &  !-- iSolve
       MaxIterations
     real ( KDR ) :: &
-      J_Old, J_Sum, &
+      J_Old, H_Old_1, H_Old_2, H_Old_3, &
       Norm_H, NormDelta_H
     real ( KDR ), dimension ( 3 ) :: &
-      H_Old, H, H_Sum, &
       K_U_Dim_D
 
     MaxIterations  =  20
@@ -1191,47 +1190,52 @@ contains
 
     do iS = 1, MaxIterations
 
-      J_Old  =  J
-      H_Old  =  [ H_1,  sqrt ( M_DD_22 )  *  H_2,  sqrt ( M_DD_33 )  *  H_3 ] 
+      J_Old    =  J
+      H_Old_1  =  H_1
+      H_Old_2  =  H_2
+      H_Old_3  =  H_3 
                             
-      J  =  E  -  2.0_KDR  * (                V_1  *  H_1  &
-                               +  M_DD_22  *  V_2  *  H_2  &
-                               +  M_DD_33  *  V_3  *  H_3 )
+      J  =  E  -  2.0_KDR  * (                V_1  *  H_Old_1  &
+                               +  M_DD_22  *  V_2  *  H_Old_2  &
+                               +  M_DD_33  *  V_3  *  H_Old_3 )
 
       call ComputeMomentFactors &
-             ( SF, FF, J, H_1, H_2, H_3, M_DD_22, M_DD_33  )
+             ( SF, FF, J_Old, H_Old_1, H_Old_2, H_Old_3, M_DD_22, M_DD_33  )
 
       call ComputeComovingStress_D &
              ( K_U_Dim_D ( 1 ), K_U_Dim_D ( 2 ), K_U_Dim_D ( 3 ), &
-               K_U_Dim_D ( 1 ), J, H_1, H_2, H_3, H_1, FF, SF, &
-               M_DD_22, M_DD_33  )
-      H_1  =  S_1  -  J * V_1   &
+               K_U_Dim_D ( 1 ), J_Old, H_Old_1, H_Old_2, H_Old_3, H_Old_1, &
+               FF, SF, M_DD_22, M_DD_33 )
+      H_1  =  S_1  -  J_Old * V_1   &
                    -  K_U_Dim_D ( 1 )  *  V_1   &
                    -  K_U_Dim_D ( 2 )  *  V_2   &
                    -  K_U_Dim_D ( 3 )  *  V_3 
 
       call ComputeComovingStress_D &
              ( K_U_Dim_D ( 1 ), K_U_Dim_D ( 2 ), K_U_Dim_D ( 3 ), &
-               K_U_Dim_D ( 2 ), J, H_1, H_2, H_3, H_2, FF, SF, &
-               M_DD_22, M_DD_33  )
-      H_2  =  M_UU_22 * S_2  -  J  * V_2   &
+               K_U_Dim_D ( 2 ), J_Old, H_Old_1, H_Old_2, H_Old_3, H_Old_2, &
+               FF, SF, M_DD_22, M_DD_33 )
+      H_2  =  M_UU_22 * S_2  -  J_Old  * V_2   &
                              -  K_U_Dim_D ( 1 )  *  V_1   &
                              -  K_U_Dim_D ( 2 )  *  V_2   &
                              -  K_U_Dim_D ( 3 )  *  V_3 
 
       call ComputeComovingStress_D &
              ( K_U_Dim_D ( 1 ), K_U_Dim_D ( 2 ), K_U_Dim_D ( 3 ), &
-               K_U_Dim_D ( 3 ), J, H_1, H_2, H_3, H_3, FF, SF, &
-               M_DD_22, M_DD_33  )
-      H_3  =  M_UU_33 * S_3  -  J * V_3   &
+               K_U_Dim_D ( 3 ), J_Old, H_Old_1, H_Old_2, H_Old_3, H_Old_3, &
+               FF, SF, M_DD_22, M_DD_33 )
+      H_3  =  M_UU_33 * S_3  -  J_Old * V_3   &
                              -  K_U_Dim_D ( 1 )  *  V_1   &
                              -  K_U_Dim_D ( 2 )  *  V_2   &
                              -  K_U_Dim_D ( 3 )  *  V_3 
 
-      H  =  [ H_1,  sqrt ( M_DD_22 )  *  H_2,  sqrt ( M_DD_33 )  *  H_3 ] 
+      Norm_H       =  sqrt ( (                H_1 ** 2  &
+                               +  M_DD_22  *  H_2 ** 2  &
+                               +  M_DD_33  *  H_3 ** 2 ) )
 
-      Norm_H       =  sqrt ( dot_product ( H, H ) )
-      NormDelta_H  =  sqrt ( dot_product ( H - H_Old, H - H_Old ) )
+      NormDelta_H  =  sqrt ( (                ( H_1 - H_Old_1 ) ** 2  &
+                               +  M_DD_22  *  ( H_2 - H_Old_2 ) ** 2  &
+                               +  M_DD_33  *  ( H_3 - H_Old_3 ) ** 2 ) )
 
       Delta_J_J  =  abs ( J - J_Old )  /  max ( abs ( J ), tiny ( 0.0_KDR ) )
       Delta_H_H  =  NormDelta_H  /  max ( Norm_H, tiny ( 0.0_KDR ) )
