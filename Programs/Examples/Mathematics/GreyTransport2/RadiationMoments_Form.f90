@@ -860,6 +860,8 @@ contains
     integer ( KDI ) :: &
       iV, &
       nValues
+    real ( KDR ) :: &
+      Delta_J_J, Delta_H_H
     real ( KDR ), dimension ( size ( E ) ) :: &
       H
     logical ( KDL ) :: &
@@ -874,7 +876,8 @@ contains
                ( J ( iV ), H_1 ( iV ), H_2 ( iV ), H_3 ( iV ), FF ( iV ), &
                  SF ( iV ), E ( iV ), S_1 ( iV ), S_2 ( iV ), S_3 ( iV ), &
                  M_DD_22 ( iV ), M_DD_33 ( iV ), M_UU_22 ( iV ), &
-                 M_UU_33 ( iV ), V_1 ( iV ), V_2 ( iV ), V_3 ( iV ), Success )
+                 M_UU_33 ( iV ), V_1 ( iV ), V_2 ( iV ), V_3 ( iV ), &
+                 Success, Delta_J_J, Delta_H_H )
         if ( .not. Success ) then
           call Show ( '>>> ComputeComoving fail', CONSOLE % ERROR )
           call Show ( RM % Name, '>>> Species', CONSOLE % ERROR )
@@ -882,6 +885,11 @@ contains
                       CONSOLE % ERROR )
           call Show ( iV, '>>> iV', CONSOLE % ERROR )
           call Show ( J ( iV ), '>>> J', CONSOLE % ERROR )
+          call Show ( H_1 ( iV ), '>>> H_1', CONSOLE % ERROR )
+          call Show ( H_2 ( iV ), '>>> H_2', CONSOLE % ERROR )
+          call Show ( H_3 ( iV ), '>>> H_3', CONSOLE % ERROR )
+          call Show ( Delta_J_J, '>>> Delta_J_J', CONSOLE % ERROR )
+          call Show ( Delta_H_H, '>>> Delta_H_H', CONSOLE % ERROR )
         end if
       else
         J   ( iV ) = 0.0_KDR
@@ -1151,7 +1159,8 @@ contains
 
   subroutine ComputeComovingNonlinearSolve &
                ( J, H_1, H_2, H_3, FF, SF, E, S_1, S_2, S_3, &
-                 M_DD_22, M_DD_33, M_UU_22, M_UU_33, V_1, V_2, V_3, Success )
+                 M_DD_22, M_DD_33, M_UU_22, M_UU_33, V_1, V_2, V_3, Success, &
+                 Delta_J_J, Delta_H_H )
 
     real ( KDR ), intent ( inout ) :: &
       J, H_1, H_2, H_3, &
@@ -1163,18 +1172,18 @@ contains
       V_1, V_2, V_3
     logical ( KDL ), intent ( out ) :: &
       Success
+    real ( KDR ), intent ( out ) :: &
+      Delta_J_J, Delta_H_H
 
     integer ( KDI ) :: &
       iS, &  !-- iSolve
       MaxIterations
     real ( KDR ) :: &
-      Norm, NormDelta
+      J_Old, J_Sum, &
+      Norm_H, NormDelta_H
     real ( KDR ), dimension ( 3 ) :: &
+      H_Old, H, H_Sum, &
       K_U_Dim_D
-    real ( KDR ), dimension ( 4 ) :: &
-      SolutionOld, &
-      SolutionNew, &
-      Delta
 
     MaxIterations  =  20
 
@@ -1182,8 +1191,8 @@ contains
 
     do iS = 1, MaxIterations
 
-      SolutionOld  &
-        =  [ J,  H_1,  sqrt ( M_DD_22 )  *  H_2,  sqrt ( M_DD_33 )  *  H_3 ] 
+      J_Old  =  J
+      H_Old  =  [ H_1,  sqrt ( M_DD_22 )  *  H_2,  sqrt ( M_DD_33 )  *  H_3 ] 
                             
       J  =  E  -  2.0_KDR  * (                V_1  *  H_1  &
                                +  M_DD_22  *  V_2  *  H_2  &
@@ -1219,14 +1228,17 @@ contains
                              -  K_U_Dim_D ( 2 )  *  V_2   &
                              -  K_U_Dim_D ( 3 )  *  V_3 
 
-      SolutionNew  &
-        =  [ J,  H_1,  sqrt ( M_DD_22 )  *  H_2,  sqrt ( M_DD_33 )  *  H_3 ] 
+      H  =  [ H_1,  sqrt ( M_DD_22 )  *  H_2,  sqrt ( M_DD_33 )  *  H_3 ] 
 
-      Norm       =  sqrt ( dot_product ( SolutionNew, SolutionNew ) )
-      NormDelta  =  sqrt ( dot_product ( SolutionNew - SolutionOld, &
-                                         SolutionNew - SolutionOld ) )
+      Norm_H       =  sqrt ( dot_product ( H, H ) )
+      NormDelta_H  =  sqrt ( dot_product ( H - H_Old, H - H_Old ) )
 
-      if ( NormDelta  <  1.0e-10_KDR * ( 1.0_KDR + Norm ) ) then
+      Delta_J_J  =  abs ( J - J_Old )  /  max ( abs ( J ), tiny ( 0.0_KDR ) )
+      Delta_H_H  =  NormDelta_H  /  max ( Norm_H, tiny ( 0.0_KDR ) )
+
+      if ( Delta_J_J  <  1.0e-10_KDR &
+           .and. Delta_H_H  <  1.0e-10_KDR ) &
+      then
         Success  =  .true.
         exit
       end if
