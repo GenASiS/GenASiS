@@ -705,6 +705,9 @@ contains
     Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerLoadInitial )
     if ( associated ( Timer ) ) call Timer % Start ( )
 
+    if ( associated ( S % HarvestCurrent_C ) ) &
+      call S % HarvestCurrent_C ( Current )
+
     associate ( iaC => Current % iaConserved )
     do iF = 1, Current % N_CONSERVED
       associate &
@@ -772,9 +775,6 @@ contains
       call PROGRAM_HEADER % Abort ( )
     end select !-- Grid
     call Current % ComputeFromConserved ( G )
-
-    if ( associated ( S % HarvestCurrent_C ) ) &
-      call S % HarvestCurrent_C ( Current )
 
     nullify ( G )
     

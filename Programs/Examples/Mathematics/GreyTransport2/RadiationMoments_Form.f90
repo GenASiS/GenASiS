@@ -289,7 +289,7 @@ contains
         SF    => RMV ( oV + 1 : oV + nV, C % STRESS_FACTOR ), &
         V_1   => RMV ( oV + 1 : oV + nV, C % FLUID_VELOCITY_U ( 1 ) ), &
         V_2   => RMV ( oV + 1 : oV + nV, C % FLUID_VELOCITY_U ( 2 ) ), &
-        V_3   => RMV ( oV + 1 : oV + nV, C % FLUID_VELOCITY_U ( 2 ) ) )
+        V_3   => RMV ( oV + 1 : oV + nV, C % FLUID_VELOCITY_U ( 3 ) ) )
 
     call ComputeConservedEnergyMomentum &
            ( E, S_1, S_2, S_3, J, H_1, H_2, H_3, FF, SF, M_DD_22, M_DD_33, &
@@ -366,7 +366,7 @@ contains
         SF    => RMV ( oV + 1 : oV + nV, C % STRESS_FACTOR ), &
         V_1   => RMV ( oV + 1 : oV + nV, C % FLUID_VELOCITY_U ( 1 ) ), &
         V_2   => RMV ( oV + 1 : oV + nV, C % FLUID_VELOCITY_U ( 2 ) ), &
-        V_3   => RMV ( oV + 1 : oV + nV, C % FLUID_VELOCITY_U ( 2 ) ) )
+        V_3   => RMV ( oV + 1 : oV + nV, C % FLUID_VELOCITY_U ( 3 ) ) )
 
     call ComputeComovingEnergyMomentum &
            ( J, H_1, H_2, H_3, E, S_1, S_2, S_3, FF, SF, C, M_DD_22, M_DD_33, &

@@ -433,7 +433,7 @@ contains
 
     type ( VariableGroupForm ), dimension ( : ), intent ( inout ) :: &
       Solution_1D
-    class ( Step_RK_C_ASC_1D_Template ), intent ( in ) :: &
+    class ( Step_RK_C_ASC_1D_Template ), intent ( inout ) :: &
       S
     type ( CurrentPointerForm ), dimension ( : ), intent ( in ) :: &
       Current_1D
@@ -442,8 +442,14 @@ contains
       iC  !-- iCurrent
 
     do iC = 1, size ( Current_1D )
+
+      S % HarvestCurrent_C => S % HarvestCurrent_1D ( iC ) % Pointer
+
       call S % LoadSolution &
              ( Solution_1D ( iC ), Current_1D ( iC ) % Pointer )
+
+      S % HarvestCurrent_C => null ( )
+
     end do !-- iC
 
   end subroutine LoadSolution_C_1D
@@ -453,7 +459,7 @@ contains
 
     type ( CurrentPointerForm ), dimension ( : ), intent ( in ) :: &
       Current_1D
-    class ( Step_RK_C_ASC_1D_Template ), intent ( inout ) :: &
+    class ( Step_RK_C_ASC_1D_Template ), intent ( in ) :: &
       S
     type ( VariableGroupForm ), dimension ( : ), intent ( inout ) :: &
       Solution_1D
@@ -462,14 +468,8 @@ contains
       iC  !-- iCurrent
 
     do iC = 1, size ( Current_1D )
-
-      S % HarvestCurrent_C => S % HarvestCurrent_1D ( iC ) % Pointer
-
       call S % StoreSolution &
              ( Current_1D ( iC ) % Pointer, Solution_1D ( iC ) )
-
-      S % HarvestCurrent_C => null ( )
-
     end do !-- iC
 
   end subroutine StoreSolution_C_1D
