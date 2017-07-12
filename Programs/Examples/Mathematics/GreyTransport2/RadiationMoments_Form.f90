@@ -1184,7 +1184,7 @@ contains
     real ( KDR ), dimension ( 3 ) :: &
       K_U_Dim_D
 
-    MaxIterations  =  20
+    MaxIterations  =  30
 
     Success  =  .false.
 
@@ -1241,7 +1241,7 @@ contains
       Delta_H_H  =  NormDelta_H  /  max ( Norm_H, tiny ( 0.0_KDR ) )
 
       if ( Delta_J_J  <  1.0e-10_KDR &
-           .and. Delta_H_H  <  1.0e-10_KDR ) &
+           .and. Delta_H_H  <  1.0e-9_KDR ) &
       then
         Success  =  .true.
         exit
