@@ -1258,7 +1258,7 @@ end if
 
   subroutine ComputeFluidSource_G_S_Radiation_Kernel &
                ( FS_R_G, FS_R_S_1, FS_R_S_2, FS_R_S_3, FS_R_DS, IsProperCell, &
-                 Xi_J, Chi_J, Chi_H, J, dE, H_1, H_2, H_3, dH_1, dH_2, dH_3, &
+                 Xi_J, Chi_J, Chi_H, J, dE, H_1, H_2, H_3, dS_1, dS_2, dS_3, &
                  Beta_EQ, V_1, V_2, V_3, T, M_DD_22, M_DD_33, c, dT )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -1273,7 +1273,7 @@ end if
       J,  &
       dE, &
       H_1, H_2, H_3, &
-      dH_1, dH_2, dH_3, &
+      dS_1, dS_2, dS_3, &
       Beta_EQ, &
       V_1, V_2, V_3, &
       T, &
@@ -1319,22 +1319,24 @@ end if
       FS_R_S_1 ( iV )  &
         =  FS_R_S_1 ( iV )  &
            -  c * dT  &  
-              * ( -  Chi_H ( iV )  *  H_1 ( iV )  &
+              * ( -  Chi_H ( iV )  *  ( H_1 ( iV )  +  dS_1 ( iV ) ) &
                   +  V_1 ( iV )  &
                      *  ( Xi_J ( iV )  -  Chi_J ( iV ) * J ( iV ) ) ) 
 
       FS_R_S_2 ( iV )  &
         =  FS_R_S_2 ( iV )  &
-           -  c * dT  *  M_DD_22 ( iV ) &  
-              * ( -  Chi_H ( iV )  *  H_2 ( iV )  &
-                  +  V_2 ( iV )  &
+           -  c * dT &  
+              * ( -  Chi_H ( iV )  *  ( M_DD_22 ( iV )  *  H_2 ( iV )  &
+                                        +  dS_2 ( iV ) )  &
+                  +  M_DD_22 ( iV )  *  V_2 ( iV )  &
                      *  ( Xi_J ( iV )  -  Chi_J ( iV ) * J ( iV ) ) ) 
 
       FS_R_S_3 ( iV )  &
         =  FS_R_S_3 ( iV )  &
-           -  c * dT  *  M_DD_33 ( iV ) &  
-              * ( -  Chi_H ( iV )  *  H_3 ( iV )  &
-                  +  V_3 ( iV )  &
+           -  c * dT  &  
+              * ( -  Chi_H ( iV )  *  ( M_DD_33 ( iV )  *  H_3 ( iV )  &
+                                        +  dS_3 ( iV ) )  &
+                  +  M_DD_33 ( iV )  *  V_3 ( iV )  &
                      *  ( Xi_J ( iV )  -  Chi_J ( iV ) * J ( iV ) ) ) 
 
       FS_R_DS ( iV )  &
