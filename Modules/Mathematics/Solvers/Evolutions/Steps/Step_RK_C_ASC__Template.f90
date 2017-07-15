@@ -190,7 +190,7 @@ module Step_RK_C_ASC__Template
       use Manifolds
       use Fields
       import Step_RK_C_ASC_Template
-      class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
+      class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
         S
       class ( Sources_C_Form ), intent ( inout ) :: &
         Sources
@@ -1045,14 +1045,11 @@ contains
 
     !-- Relaxation
     if ( associated ( S % ApplyRelaxation_C ) ) then
-      associate ( ID => S % IncrementDamping )
       allocate ( DC )
       call DC % Initialize ( shape ( K % Value ), ClearOption = .true. )
       call S % ApplyRelaxation_C &
              ( C % Sources, K, DC, C, Chart, TimeStep, iStage )
-      call ID % Compute ( K, C, K, DC, TimeStep )
       deallocate ( DC )
-      end associate !-- iD
     end if
 
     if ( associated ( S % ApplyDivergence_C ) ) then

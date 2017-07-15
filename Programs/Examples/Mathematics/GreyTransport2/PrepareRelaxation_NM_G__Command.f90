@@ -1,25 +1,25 @@
-module ApplyRelaxation_NM_G__Command
+module PrepareRelaxation_NM_G__Command
 
   use Basics
   use Mathematics
 !   use RadiationMoments_Form
 !   use Sources_RM__Form
   use NeutrinoMoments_G__Form
-  use ApplyRelaxation_RM__Command
+  use PrepareRelaxation_RM__Command
 
   implicit none
   private
 
   public :: &
-    ApplyRelaxation_NM_G
+    PrepareRelaxation_NM_G
 
     private :: &
-      ApplyRelaxation_NM_G_Kernel
+      PrepareRelaxation_NM_G_Kernel
 
 contains
 
 
-  subroutine ApplyRelaxation_NM_G &
+  subroutine PrepareRelaxation_NM_G &
                ( S, Sources_NM_G, IncrementExplicit, DampingCoefficient, &
                  NeutrinoMoments_G, Chart, TimeStep, iStage )
 
@@ -42,7 +42,7 @@ contains
     integer ( KDI ) :: &
       iNumber
 
-    call ApplyRelaxation_RM &
+    call PrepareRelaxation_RM &
            ( S, Sources_NM_G, IncrementExplicit, DampingCoefficient, &
              NeutrinoMoments_G, Chart, TimeStep, iStage)
 
@@ -59,7 +59,7 @@ contains
 
 !     select type ( SNM => Sources_NM )
 !     class is ( Sources_NM_Form )
-      call ApplyRelaxation_NM_G_Kernel &
+      call PrepareRelaxation_NM_G_Kernel &
              ( IncrementExplicit % Value ( :, iNumber ), &
                DampingCoefficient % Value ( :, iNumber ), &
 !                SNM % Value ( :, SNM % NET_EMISSION_E ), &
@@ -78,17 +78,17 @@ contains
 
     class default
       call Show ( 'Chart type not found', CONSOLE % ERROR )
-      call Show ( 'ApplyRelaxation_NM_G__Command', 'module', CONSOLE % ERROR )
-      call Show ( 'ApplyRelaxation_NM_G', 'subroutine', CONSOLE % ERROR ) 
+      call Show ( 'PrepareRelaxation_NM_G__Command', 'module', CONSOLE % ERROR )
+      call Show ( 'PrepareRelaxation_NM_G', 'subroutine', CONSOLE % ERROR ) 
       call PROGRAM_HEADER % Abort ( )
     end select !-- Chart
 
     end select !-- NM
     
-  end subroutine ApplyRelaxation_NM_G
+  end subroutine PrepareRelaxation_NM_G
     
 
-  subroutine ApplyRelaxation_NM_G_Kernel &
+  subroutine PrepareRelaxation_NM_G_Kernel &
                ( KV_N, DCV_N, &
 !                 SVNE_E, SVNE_S_1, SVNE_S_2, SVNE_S_3, &
                  IsProperCell, Xi_N, Chi_N, N, D, dT, Weight_RK, c )
@@ -150,7 +150,7 @@ contains
 !    end do
 !    !$OMP end parallel do
 
-  end subroutine ApplyRelaxation_NM_G_Kernel
+  end subroutine PrepareRelaxation_NM_G_Kernel
   
 
-end module ApplyRelaxation_NM_G__Command
+end module PrepareRelaxation_NM_G__Command

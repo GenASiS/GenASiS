@@ -122,18 +122,33 @@ Interactions_ASC__Form.o: \
   Interactions_CSL__Form.o \
   Interactions_ASC__Form.f90
 
+PrepareRelaxation_RM__Command.o: \
+  Basics.o \
+  Mathematics.o \
+  RadiationMoments_Form.o \
+  Sources_RM__Form.o \
+  PrepareRelaxation_RM__Command.f90
+
+PrepareRelaxation_NM_G__Command.o: \
+  Basics.o \
+  Mathematics.o \
+  NeutrinoMoments_G__Form.o \
+  PrepareRelaxation_RM__Command.o \
+  PrepareRelaxation_NM_G__Command.f90
+
 ApplyRelaxation_RM__Command.o: \
   Basics.o \
   Mathematics.o \
   RadiationMoments_Form.o \
   Sources_RM__Form.o \
+  PrepareRelaxation_RM__Command.o \
   ApplyRelaxation_RM__Command.f90
 
 ApplyRelaxation_NM_G__Command.o: \
   Basics.o \
   Mathematics.o \
   NeutrinoMoments_G__Form.o \
-  ApplyRelaxation_RM__Command.o \
+  PrepareRelaxation_NM_G__Command.o \
   ApplyRelaxation_NM_G__Command.f90
 
 GreyMoments.a: $(GREY_MOMENTS)

@@ -1,4 +1,4 @@
-module ApplyRelaxation_RM__Command
+module PrepareRelaxation_RM__Command
 
   use Basics
   use Mathematics
@@ -9,15 +9,15 @@ module ApplyRelaxation_RM__Command
   private
 
   public :: &
-    ApplyRelaxation_RM
+    PrepareRelaxation_RM
 
     private :: &
-      ApplyRelaxation_RM_Kernel
+      PrepareRelaxation_RM_Kernel
 
 contains
 
 
-  subroutine ApplyRelaxation_RM &
+  subroutine PrepareRelaxation_RM &
                ( S, Sources_RM, IncrementExplicit, DampingCoefficient, &
                  RadiationMoments, Chart, TimeStep, iStage )
 
@@ -66,7 +66,7 @@ contains
 
     select type ( SRM => Sources_RM )
     class is ( Sources_RM_Form )
-      call ApplyRelaxation_RM_Kernel &
+      call PrepareRelaxation_RM_Kernel &
              ( IncrementExplicit % Value ( :, iEnergy ), &
                IncrementExplicit % Value ( :, iMomentum_1 ), &
                IncrementExplicit % Value ( :, iMomentum_2 ), &
@@ -103,8 +103,8 @@ contains
 
     class default
       call Show ( 'Chart type not found', CONSOLE % ERROR )
-      call Show ( 'ApplyRelaxation_RM__Command', 'module', CONSOLE % ERROR )
-      call Show ( 'ApplyRelaxation_RM', 'subroutine', CONSOLE % ERROR ) 
+      call Show ( 'PrepareRelaxation_RM__Command', 'module', CONSOLE % ERROR )
+      call Show ( 'PrepareRelaxation_RM', 'subroutine', CONSOLE % ERROR ) 
       call PROGRAM_HEADER % Abort ( )
     end select !-- Chart
 
@@ -112,10 +112,10 @@ contains
 
     nullify ( G )
     
-  end subroutine ApplyRelaxation_RM
+  end subroutine PrepareRelaxation_RM
     
 
-  subroutine ApplyRelaxation_RM_Kernel &
+  subroutine PrepareRelaxation_RM_Kernel &
                ( KV_E, KV_S_1, KV_S_2, KV_S_3, &
                  DCV_E, DCV_S_1, DCV_S_2, DCV_S_3, &
                  SVNE_E, SVNE_S_1, SVNE_S_2, SVNE_S_3, &
@@ -230,7 +230,7 @@ contains
     end do
     !$OMP end parallel do
 
-  end subroutine ApplyRelaxation_RM_Kernel
+  end subroutine PrepareRelaxation_RM_Kernel
   
 
-end module ApplyRelaxation_RM__Command
+end module PrepareRelaxation_RM__Command
