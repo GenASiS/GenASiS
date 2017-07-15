@@ -230,7 +230,7 @@ contains
     !            NM % Value ( :, NM % DEGENERACY_PARAMETER ), &
     !            F % Value ( :, F % ELECTRON_FRACTION ) )
 
-      call I % Compute_NuE_N_EA_3 &
+      call I % Compute_NuBarE_N_EA_3 &
              ( I % Value ( :, I % EMISSIVITY_J ), &
                I % Value ( :, I % EMISSIVITY_N ), &
                I % Value ( :, I % OPACITY_J ), &

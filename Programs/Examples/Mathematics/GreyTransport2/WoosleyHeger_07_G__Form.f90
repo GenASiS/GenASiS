@@ -74,6 +74,8 @@ module WoosleyHeger_07_G__Form
 !      Radiation_MuTau => null ( )   
     class ( Interactions_NM_1_G_Form ), private, pointer :: &
       Interactions => null ( )
+    class ( Integrator_C_1D_PS_Template ), private, pointer :: & 
+      Integrator => null ( )
 
 contains
 
@@ -91,6 +93,8 @@ contains
 
     allocate ( WH % Header )
     associate ( WHH => WH % Header )
+
+    Integrator => WH
 
     !-- PositionSpace
 
@@ -641,6 +645,7 @@ dDP_DP_maxval = maxval ( abs ( dDP_DP ), mask = Chart % IsProperCell )
 dDS_DS_maxval = maxval ( abs ( dDS_DS ), mask = Chart % IsProperCell )
 if ( dG_G_maxval > Threshold ) then
   dG_G_maxloc = maxloc ( abs ( dG_G ), dim = 1, mask = Chart % IsProperCell )
+  call Show ( Integrator % iCycle, '>>> iCycle', Integrator % IGNORABILITY )
   call Show ( dG_G_maxval, '>>> dG_G_maxval', CONSOLE % ERROR )
   call Show ( dG_G_maxloc, '>>> dG_G_maxloc', CONSOLE % ERROR )
   call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', &
@@ -649,6 +654,7 @@ end if
 if ( dDP_DP_maxval > Threshold ) then
   dDP_DP_maxloc &
     = maxloc ( abs ( dDP_DP ), dim = 1, mask = Chart % IsProperCell )
+  call Show ( Integrator % iCycle, '>>> iCycle', Integrator % IGNORABILITY )
   call Show ( dDP_DP_maxval, '>>> dDP_DP_maxval', CONSOLE % ERROR )
   call Show ( dDP_DP_maxloc, '>>> dDP_DP_maxloc', CONSOLE % ERROR )
   call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', &
@@ -657,6 +663,7 @@ end if
 if ( dDS_DS_maxval > Threshold ) then
   dDS_DS_maxloc &
     = maxloc ( abs ( dDS_DS ), dim = 1, mask = Chart % IsProperCell )
+  call Show ( Integrator % iCycle, '>>> iCycle', Integrator % IGNORABILITY )
   call Show ( dDS_DS_maxval, '>>> dDS_DS_maxval', CONSOLE % ERROR )
   call Show ( dDS_DS_maxloc, '>>> dDS_DS_maxloc', CONSOLE % ERROR )
   call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', &
@@ -1319,7 +1326,7 @@ end if
       FS_R_S_1 ( iV )  &
         =  FS_R_S_1 ( iV )  &
            -  c * dT  &  
-              * ( -  Chi_H ( iV )  *  ( H_1 ( iV )  +  dS_1 ( iV ) ) &
+              * ( -  Chi_H ( iV )  *  ( H_1 ( iV )  +  dS_1 ( iV ) )  &
                   +  V_1 ( iV )  &
                      *  ( Xi_J ( iV )  -  Chi_J ( iV ) * J ( iV ) ) ) 
 
