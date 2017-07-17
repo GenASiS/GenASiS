@@ -5,6 +5,7 @@ module ApplyRelaxation_NM_G__Command
   use NeutrinoMoments_G__Form
   use Sources_RM__Form
   use PrepareRelaxation_NM_G__Command
+  use ApplyRelaxation_RM__Command
 
   implicit none
   private
@@ -35,13 +36,26 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iStage
 
+    integer ( KDI ) :: &
+      iNumber
+
     associate ( ID => S % IncrementDamping )
-    call PrepareRelaxation_NM_G &
+
+    !-- Number
+
+    call PrepareRelaxation_NM_G_Number &
            ( S, Sources_RM, IncrementExplicit, DampingCoefficient, &
-             NeutrinoMoments_G, Chart, TimeStep, iStage )
+             NeutrinoMoments_G, Chart, TimeStep, iStage, iNumber )
     call ID % Compute &
            ( IncrementExplicit, NeutrinoMoments_G, IncrementExplicit, &
-             DampingCoefficient, TimeStep )
+             DampingCoefficient, TimeStep, [ iNumber ] )
+
+    !-- Energy and Momentum
+
+    call ApplyRelaxation_RM &
+           ( S, Sources_RM, IncrementExplicit, DampingCoefficient, &
+             NeutrinoMoments_G, Chart, TimeStep, iStage )
+
     end associate !-- iD
 
   end subroutine ApplyRelaxation_NM_G

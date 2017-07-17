@@ -759,6 +759,7 @@ end if
              FluidSource_Radiation % Value ( :, iMomentum_2_F ), &
              FluidSource_Radiation % Value ( :, iMomentum_3_F ), &
              FluidSource_Radiation % Value ( :, iEntropy_F ), &
+             R, &
              Chart % IsProperCell, &
              I % Value ( :, I % EMISSIVITY_J ), &
              I % Value ( :, I % OPACITY_J ), &
@@ -768,9 +769,14 @@ end if
              R % Value ( :, R % COMOVING_MOMENTUM_U ( 1 ) ), &
              R % Value ( :, R % COMOVING_MOMENTUM_U ( 2 ) ), &
              R % Value ( :, R % COMOVING_MOMENTUM_U ( 3 ) ), &
+             R % Value ( :, R % CONSERVED_MOMENTUM_D ( 1 ) ), &
+             R % Value ( :, R % CONSERVED_MOMENTUM_D ( 2 ) ), &
+             R % Value ( :, R % CONSERVED_MOMENTUM_D ( 3 ) ), &
              Increment % Value ( :, iMomentum_1_R ), &
              Increment % Value ( :, iMomentum_2_R ), &
              Increment % Value ( :, iMomentum_3_R ), &
+             R % Value ( :, R % FLUX_FACTOR ), &
+             R % Value ( :, R % STRESS_FACTOR ), &
              R % Value ( :, R % BETA_EQUILIBRIUM ), &
              R % Value ( :, R % FLUID_VELOCITY_U ( 1 ) ), &
              R % Value ( :, R % FLUID_VELOCITY_U ( 2 ) ), &
@@ -1264,14 +1270,17 @@ end if
 
 
   subroutine ComputeFluidSource_G_S_Radiation_Kernel &
-               ( FS_R_G, FS_R_S_1, FS_R_S_2, FS_R_S_3, FS_R_DS, IsProperCell, &
-                 Xi_J, Chi_J, Chi_H, J, dE, H_1, H_2, H_3, dS_1, dS_2, dS_3, &
-                 Beta_EQ, V_1, V_2, V_3, T, M_DD_22, M_DD_33, c, dT )
+               ( FS_R_G, FS_R_S_1, FS_R_S_2, FS_R_S_3, FS_R_DS, &
+                 RM, IsProperCell, Xi_J, Chi_J, Chi_H, &
+                 J, dE, H_1, H_2, H_3, S_1, S_2, S_3, dS_1, dS_2, dS_3, &
+                 FF, SF, Beta_EQ, V_1, V_2, V_3, T, M_DD_22, M_DD_33, c, dT )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       FS_R_G, &
       FS_R_S_1, FS_R_S_2, FS_R_S_3, &
       FS_R_DS
+    class ( RadiationMomentsForm ), intent ( in ) :: &
+      RM
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       IsProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
@@ -1280,7 +1289,9 @@ end if
       J,  &
       dE, &
       H_1, H_2, H_3, &
+      S_1, S_2, S_3, &
       dS_1, dS_2, dS_3, &
+      FF, SF, &
       Beta_EQ, &
       V_1, V_2, V_3, &
       T, &
@@ -1294,6 +1305,8 @@ end if
       nV
     real ( KDR ) :: &
       AMU
+    real ( KDR ), dimension ( 3, 3 ) :: &
+      K_U_D
 
     nV = size ( FS_R_G )
 
@@ -1323,28 +1336,95 @@ end if
                      
 !      end if
 
+      ! FS_R_S_1 ( iV )  &
+      !   =  FS_R_S_1 ( iV )  &
+      !      -  c * dT  &  
+      !         * ( -  Chi_H ( iV )  *  ( H_1 ( iV )  +  dS_1 ( iV ) )  &
+      !             +  V_1 ( iV )  &
+      !                *  ( Xi_J ( iV )  -  Chi_J ( iV ) * J ( iV ) ) ) 
+
+      ! FS_R_S_2 ( iV )  &
+      !   =  FS_R_S_2 ( iV )  &
+      !      -  c * dT &  
+      !         * ( -  Chi_H ( iV )  *  ( M_DD_22 ( iV )  *  H_2 ( iV )  &
+      !                                   +  dS_2 ( iV ) )  &
+      !             +  M_DD_22 ( iV )  *  V_2 ( iV )  &
+      !                *  ( Xi_J ( iV )  -  Chi_J ( iV ) * J ( iV ) ) ) 
+
+      ! FS_R_S_3 ( iV )  &
+      !   =  FS_R_S_3 ( iV )  &
+      !      -  c * dT  &  
+      !         * ( -  Chi_H ( iV )  *  ( M_DD_33 ( iV )  *  H_3 ( iV )  &
+      !                                   +  dS_3 ( iV ) )  &
+      !             +  M_DD_33 ( iV )  *  V_3 ( iV )  &
+      !                *  ( Xi_J ( iV )  -  Chi_J ( iV ) * J ( iV ) ) ) 
+
+      call RM % ComputeComovingStress_D &
+             ( K_U_D ( 1, 1 ), K_U_D ( 1, 2 ), K_U_D ( 1, 3 ), &
+               K_U_D ( 1, 1 ), J ( iV ), H_1 ( iV ), H_2 ( iV ), H_3 ( iV ), &
+               H_1 ( iV ), FF ( iV ), SF ( iV ), &
+               M_DD_22 ( iV ), M_DD_33 ( iV ) )
+      call RM % ComputeComovingStress_D &
+             ( K_U_D ( 2, 1 ), K_U_D ( 2, 2 ), K_U_D ( 2, 3 ), &
+               K_U_D ( 2, 2 ), J ( iV ), H_1 ( iV ), H_2 ( iV ), H_3 ( iV ), &
+               H_2 ( iV ), FF ( iV ), SF ( iV ), &
+               M_DD_22 ( iV ), M_DD_33 ( iV ) )
+      call RM % ComputeComovingStress_D &
+             ( K_U_D ( 3, 1 ), K_U_D ( 3, 2 ), K_U_D ( 3, 3 ), &
+               K_U_D ( 3, 3 ), J ( iV ), H_1 ( iV ), H_2 ( iV ), H_3 ( iV ), &
+               H_3 ( iV ), FF ( iV ), SF ( iV ), &
+               M_DD_22 ( iV ), M_DD_33 ( iV ) )
+
       FS_R_S_1 ( iV )  &
         =  FS_R_S_1 ( iV )  &
            -  c * dT  &  
-              * ( -  Chi_H ( iV )  *  ( H_1 ( iV )  +  dS_1 ( iV ) )  &
+              * ( -  Chi_H ( iV )  &
+                     *  ( S_1 ( iV )  +  dS_1 ( iV )  &
+                          - ( V_1 ( iV )  &  
+                              + ( K_U_D ( 1, 1 )  *  V_1 ( iV )  &
+                                  +  M_DD_22 ( iV )  &
+                                     *  K_U_D ( 2, 1 )  *  V_2 ( iV )  &
+                                  +  M_DD_33 ( iV )  &
+                                     *  K_U_D ( 3, 1 )  *  V_3 ( iV ) )  &
+                                /  max ( J ( iV ), tiny ( 0.0_KDR ) ) )  &
+                            *  ( J ( iV )  +  dE ( iV ) ) )  &
                   +  V_1 ( iV )  &
-                     *  ( Xi_J ( iV )  -  Chi_J ( iV ) * J ( iV ) ) ) 
+                     *  ( Xi_J ( iV )  &
+                          -  Chi_J ( iV ) * ( J ( iV )  +  dE ( iV ) ) ) ) 
 
       FS_R_S_2 ( iV )  &
         =  FS_R_S_2 ( iV )  &
            -  c * dT &  
-              * ( -  Chi_H ( iV )  *  ( M_DD_22 ( iV )  *  H_2 ( iV )  &
-                                        +  dS_2 ( iV ) )  &
+              * ( -  Chi_H ( iV )  &
+                     *  ( S_2 ( iV )  +  dS_2 ( iV )  &
+                          - ( M_DD_22 ( iV )  *  V_2 ( iV )  &
+                              + ( K_U_D ( 1, 2 )  *  V_1 ( iV )  &
+                                  +  M_DD_22 ( iV )  &
+                                     *  K_U_D ( 2, 2 )  *  V_2 ( iV )  &
+                                  +  M_DD_33 ( iV )  &
+                                     *  K_U_D ( 3, 2 )  *  V_3 ( iV ) )  &
+                                /  max ( J ( iV ), tiny ( 0.0_KDR ) ) )  &
+                            *  ( J ( iV )  +  dE ( iV ) ) )  &
                   +  M_DD_22 ( iV )  *  V_2 ( iV )  &
-                     *  ( Xi_J ( iV )  -  Chi_J ( iV ) * J ( iV ) ) ) 
+                     *  ( Xi_J ( iV )  &
+                          -  Chi_J ( iV ) * ( J ( iV )  +  dE ( iV ) ) ) ) 
 
       FS_R_S_3 ( iV )  &
         =  FS_R_S_3 ( iV )  &
            -  c * dT  &  
-              * ( -  Chi_H ( iV )  *  ( M_DD_33 ( iV )  *  H_3 ( iV )  &
-                                        +  dS_3 ( iV ) )  &
+              * ( -  Chi_H ( iV )  &
+                     *  ( S_3 ( iV )  +  dS_3 ( iV )  &
+                          - ( M_DD_33 ( iV )  *  V_3 ( iV )  &
+                              + ( K_U_D ( 1, 3 )  *  V_1 ( iV )  &
+                                  +  M_DD_22 ( iV )  &
+                                     *  K_U_D ( 2, 3 )  *  V_2 ( iV )  &
+                                  +  M_DD_33 ( iV )  &
+                                     *  K_U_D ( 3, 3 )  *  V_3 ( iV ) )  &
+                                /  max ( J ( iV ), tiny ( 0.0_KDR ) ) )  &
+                            *  ( J ( iV )  +  dE ( iV ) ) )  &
                   +  M_DD_33 ( iV )  *  V_3 ( iV )  &
-                     *  ( Xi_J ( iV )  -  Chi_J ( iV ) * J ( iV ) ) ) 
+                     *  ( Xi_J ( iV )  &
+                          -  Chi_J ( iV ) * ( J ( iV )  +  dE ( iV ) ) ) ) 
 
       FS_R_DS ( iV )  &
         =  FS_R_DS ( iV )  &

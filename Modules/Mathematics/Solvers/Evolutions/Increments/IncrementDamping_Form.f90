@@ -15,8 +15,12 @@ module IncrementDamping_Form
   contains   
     procedure, public, pass :: &
       Initialize
-    procedure, public, pass :: &
-      Compute
+    procedure, private, pass :: &
+      ComputeAll
+    procedure, private, pass :: &
+      ComputeSelected
+    generic, public :: &
+      Compute => ComputeAll, ComputeSelected
     final :: &
       Finalize
   end type IncrementDampingForm
@@ -48,7 +52,7 @@ contains
   end subroutine Initialize
 
 
-  subroutine Compute &
+  subroutine ComputeAll &
                ( I, Increment, C, IncrementExplicit, DampingCoefficient, &
                  TimeStep )
 
@@ -69,8 +73,11 @@ contains
 
     call Show ( 'Computing an IncrementDamping', I % IGNORABILITY + 3 )
     call Show ( I % Name, 'Name', I % IGNORABILITY + 3 )
+    call Show ( C % Name, 'Current', I % IGNORABILITY + 3 )
 
     do iF = 1, C % N_CONSERVED
+      call Show ( C % Variable ( C % iaConserved ( iF ) ), 'Variable', &
+                  I % IGNORABILITY + 3 )
       call ComputeKernel &
              ( Increment % Value ( :, iF ), &
                C % Value ( :, C % iaConserved ( iF ) ), &
@@ -78,7 +85,47 @@ contains
                DampingCoefficient % Value ( :, iF ), TimeStep )
     end do
 
-  end subroutine Compute
+  end subroutine ComputeAll
+
+
+  subroutine ComputeSelected &
+               ( I, Increment, C, IncrementExplicit, DampingCoefficient, &
+                 TimeStep, iaConservedSelected )
+
+    class ( IncrementDampingForm ), intent ( inout ) :: &
+      I
+    type ( VariableGroupForm ), intent ( inout ) :: &
+      Increment
+    class ( CurrentTemplate ), intent ( in ) :: &
+      C
+    type ( VariableGroupForm ), intent ( in ) :: &
+      IncrementExplicit, &
+      DampingCoefficient
+    real ( KDR ), intent ( in ) :: &
+      TimeStep
+    integer ( KDI ), dimension ( : ), intent ( in ) :: &
+      iaConservedSelected
+
+    integer ( KDI ) :: &
+      iF  !-- iField
+
+    call Show ( 'Computing an IncrementDamping', I % IGNORABILITY + 3 )
+    call Show ( I % Name, 'Name', I % IGNORABILITY + 3 )
+    call Show ( C % Name, 'Current', I % IGNORABILITY + 3 )
+
+    do iF = 1, size ( iaConservedSelected )
+      associate ( iaCS => iaConservedSelected ( iF ) )
+      call Show ( C % Variable ( C % iaConserved ( iaCS ) ), 'Variable', &
+                  I % IGNORABILITY + 3 )
+      call ComputeKernel &
+             ( Increment % Value ( :, iaCS ), &
+               C % Value ( :, C % iaConserved ( iaCS ) ), &
+               IncrementExplicit % Value ( :, iaCS ), &
+               DampingCoefficient % Value ( :, iaCS ), TimeStep )
+      end associate !-- iaCS
+    end do
+
+  end subroutine ComputeSelected
 
 
   impure elemental subroutine Finalize ( I )

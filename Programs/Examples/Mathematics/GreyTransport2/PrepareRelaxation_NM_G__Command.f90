@@ -11,17 +11,17 @@ module PrepareRelaxation_NM_G__Command
   private
 
   public :: &
-    PrepareRelaxation_NM_G
+    PrepareRelaxation_NM_G_Number
 
     private :: &
-      PrepareRelaxation_NM_G_Kernel
+      PrepareRelaxation_NM_G_Number_Kernel
 
 contains
 
 
-  subroutine PrepareRelaxation_NM_G &
+  subroutine PrepareRelaxation_NM_G_Number &
                ( S, Sources_NM_G, IncrementExplicit, DampingCoefficient, &
-                 NeutrinoMoments_G, Chart, TimeStep, iStage )
+                 NeutrinoMoments_G, Chart, TimeStep, iStage, iNumber )
 
     class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
       S
@@ -38,19 +38,17 @@ contains
       TimeStep
     integer ( KDI ), intent ( in ) :: &
       iStage
-
-    integer ( KDI ) :: &
+    integer ( KDI ), intent ( out ) :: &
       iNumber
 
-    call PrepareRelaxation_RM &
-           ( S, Sources_NM_G, IncrementExplicit, DampingCoefficient, &
-             NeutrinoMoments_G, Chart, TimeStep, iStage)
+    call Show ( 'PrepareRelaxation_NM_G_Number', S % IGNORABILITY + 3 )
+    call Show ( NeutrinoMoments_G % Name, 'NeutrinoMoments', &
+                S % IGNORABILITY + 3 )
 
     select type ( NM => NeutrinoMoments_G )
     class is ( NeutrinoMoments_G_Form )
 
-    call Search ( NM % iaConserved, NM % CONSERVED_NUMBER, &
-                  iNumber )
+    call Search ( NM % iaConserved, NM % CONSERVED_NUMBER, iNumber )
 
     select type ( Chart )
     class is ( Chart_SL_Template )
@@ -59,7 +57,7 @@ contains
 
 !     select type ( SNM => Sources_NM )
 !     class is ( Sources_NM_Form )
-      call PrepareRelaxation_NM_G_Kernel &
+      call PrepareRelaxation_NM_G_Number_Kernel &
              ( IncrementExplicit % Value ( :, iNumber ), &
                DampingCoefficient % Value ( :, iNumber ), &
 !                SNM % Value ( :, SNM % NET_EMISSION_E ), &
@@ -78,17 +76,18 @@ contains
 
     class default
       call Show ( 'Chart type not found', CONSOLE % ERROR )
-      call Show ( 'PrepareRelaxation_NM_G__Command', 'module', CONSOLE % ERROR )
+      call Show ( 'PrepareRelaxation_NM_G__Command', 'module', &
+                  CONSOLE % ERROR )
       call Show ( 'PrepareRelaxation_NM_G', 'subroutine', CONSOLE % ERROR ) 
       call PROGRAM_HEADER % Abort ( )
     end select !-- Chart
 
     end select !-- NM
     
-  end subroutine PrepareRelaxation_NM_G
+  end subroutine PrepareRelaxation_NM_G_Number
     
 
-  subroutine PrepareRelaxation_NM_G_Kernel &
+  subroutine PrepareRelaxation_NM_G_Number_Kernel &
                ( KV_N, DCV_N, &
 !                 SVNE_E, SVNE_S_1, SVNE_S_2, SVNE_S_3, &
                  IsProperCell, Xi_N, Chi_N, N, D, dT, Weight_RK, c )
@@ -150,7 +149,7 @@ contains
 !    end do
 !    !$OMP end parallel do
 
-  end subroutine PrepareRelaxation_NM_G_Kernel
+  end subroutine PrepareRelaxation_NM_G_Number_Kernel
   
 
 end module PrepareRelaxation_NM_G__Command

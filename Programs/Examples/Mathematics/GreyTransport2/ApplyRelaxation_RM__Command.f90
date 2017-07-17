@@ -35,13 +35,34 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iStage
 
+    integer ( KDI ) :: &
+      iEnergy, &
+      iMomentum_1, &
+      iMomentum_2, &
+      iMomentum_3
+
     associate ( ID => S % IncrementDamping )
-    call PrepareRelaxation_RM &
+
+    !-- Energy
+
+    call PrepareRelaxation_RM_Energy &
            ( S, Sources_RM, IncrementExplicit, DampingCoefficient, &
-             RadiationMoments, Chart, TimeStep, iStage )
+             RadiationMoments, Chart, TimeStep, iStage, iEnergy )
     call ID % Compute &
            ( IncrementExplicit, RadiationMoments, IncrementExplicit, &
-             DampingCoefficient, TimeStep )
+             DampingCoefficient, TimeStep, [ iEnergy ] )
+
+    !-- Momentum
+
+    call PrepareRelaxation_RM_Momentum &
+           ( S, Sources_RM, IncrementExplicit, DampingCoefficient, &
+             RadiationMoments, Chart, TimeStep, iStage, iMomentum_1, &
+             iMomentum_2, iMomentum_3 )
+    call ID % Compute &
+           ( IncrementExplicit, RadiationMoments, IncrementExplicit, &
+             DampingCoefficient, TimeStep, &
+             [ iMomentum_1, iMomentum_2, iMomentum_3 ] )
+
     end associate !-- iD
 
   end subroutine ApplyRelaxation_RM

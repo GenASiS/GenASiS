@@ -52,6 +52,8 @@ module RadiationMoments_Form
       ComputeRawFluxes
     procedure, public, pass ( C ) :: &
       ComputeDiffusionFactor_HLL
+    procedure, public, nopass :: &
+      ComputeComovingStress_D
   end type RadiationMomentsForm
 
     private :: &
@@ -65,7 +67,7 @@ module RadiationMoments_Form
 
       private :: &
         ComputeMomentFactors, &
-        ComputeComovingStress_D, &
+!        ComputeComovingStress_D, &
         ComputeComovingNonlinearSolve
 
 contains
