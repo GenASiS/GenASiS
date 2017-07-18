@@ -804,20 +804,16 @@ contains
                H_3 ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ) )
 
       call ComputeComovingStress_D &
-             ( K_U_Dim_D ( 1 ), K_U_Dim_D ( 2 ), K_U_Dim_D ( 3 ), &
-               K_U_Dim_D ( 1 ), J ( iV ), H_1 ( iV ), H_2 ( iV ), &
-               H_3 ( iV ), H_1 ( iV ), FF ( iV ), SF ( iV ), &
-               M_DD_22 ( iV ), M_DD_33 ( iV ) )
+             ( K_U_Dim_D, [ H_1 ( iV ), H_2 ( iV ), H_3 ( iV ) ], J ( iV ), &
+               SF ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ), iD = 1 )
       S_1 ( iV )  =  H_1 ( iV )  +  J ( iV ) * V_1 ( iV ) &
                      +  K_U_Dim_D ( 1 )  *  V_1 ( iV )  &
                      +  K_U_Dim_D ( 2 )  *  V_2 ( iV )  &
                      +  K_U_Dim_D ( 3 )  *  V_3 ( iV )
 
       call ComputeComovingStress_D &
-             ( K_U_Dim_D ( 1 ), K_U_Dim_D ( 2 ), K_U_Dim_D ( 3 ), &
-               K_U_Dim_D ( 2 ), J ( iV ), H_1 ( iV ), H_2 ( iV ), &
-               H_3 ( iV ), H_2 ( iV ), FF ( iV ), SF ( iV ), &
-               M_DD_22 ( iV ), M_DD_33 ( iV ) )
+             ( K_U_Dim_D, [ H_1 ( iV ), H_2 ( iV ), H_3 ( iV ) ], J ( iV ), &
+               SF ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ), iD = 2 )
       S_2 ( iV )  =  M_DD_22 ( iV )  &
                      *  ( H_2 ( iV )  +  J ( iV ) * V_2 ( iV )  &
                           +  K_U_Dim_D ( 1 )  *  V_1 ( iV )  &
@@ -825,10 +821,8 @@ contains
                           +  K_U_Dim_D ( 3 )  *  V_3 ( iV ) )
 
       call ComputeComovingStress_D &
-             ( K_U_Dim_D ( 1 ), K_U_Dim_D ( 2 ), K_U_Dim_D ( 3 ), &
-               K_U_Dim_D ( 3 ), J ( iV ), H_1 ( iV ), H_2 ( iV ), &
-               H_3 ( iV ), H_3 ( iV ), FF ( iV ), SF ( iV ), &
-               M_DD_22 ( iV ), M_DD_33 ( iV ) )
+             ( K_U_Dim_D, [ H_1 ( iV ), H_2 ( iV ), H_3 ( iV ) ], J ( iV ), &
+               SF ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ), iD = 3 )
       S_3 ( iV )  =  M_DD_33 ( iV )  &
                      *  ( H_3 ( iV )  +  J ( iV ) * V_3 ( iV )  &
                           +  K_U_Dim_D ( 1 )  *  V_1 ( iV )  &
@@ -997,10 +991,8 @@ contains
     do iV = 1, nValues
 
       call ComputeComovingStress_D &
-             ( K_U_Dim_D ( 1 ), K_U_Dim_D ( 2 ), K_U_Dim_D ( 3 ), &
-               K_U_Dim_D ( iDim ), J ( iV ), H_1 ( iV ), H_2 ( iV ), &
-               H_3 ( iV ), H_Dim ( iV ), FF ( iV ), SF ( iV ), &
-               M_DD_22 ( iV ), M_DD_33 ( iV ) )
+             ( K_U_Dim_D, [ H_1 ( iV ), H_2 ( iV ), H_3 ( iV ) ], J ( iV ), &
+               SF ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ), iDim )
       
       F_E   ( iV )  =  H_Dim ( iV )  +  J ( iV ) * V_Dim ( iV )  &
                        +  K_U_Dim_D ( 1 )  *  V_1 ( iV )  &
@@ -1125,36 +1117,37 @@ contains
   end subroutine ComputeMomentFactors
 
 
-  subroutine ComputeComovingStress_D &
-               ( K_1, K_2, K_3, K_Dim, J, H_1, H_2, H_3, H_Dim, FF, SF, &
-                 M_DD_22, M_DD_33 )
+  subroutine ComputeComovingStress_D ( K_D, H_U, J, SF, M_DD_22, M_DD_33, iD )
 
-    real ( KDR ), intent ( inout ) :: &
-      K_1, K_2, K_3, K_Dim
+    real ( KDR ), dimension ( 3 ), intent ( inout ) :: &
+      K_D
+    real ( KDR ), dimension ( 3 ), intent ( in ) :: &
+      H_U
     real ( KDR ), intent ( in ) :: &
       J, &
-      H_1, H_2, H_3, H_Dim, &
-      FF, SF, &
+      SF, &
       M_DD_22, M_DD_33
+    integer ( KDI ), intent ( in ) :: &
+      iD
 
+    integer ( KDI ) :: &
+      jD
     real ( KDR ) :: &
       H_Sq
 
-    H_Sq  =  max (                H_1 ** 2  &
-                   +  M_DD_22  *  H_2 ** 2  &
-                   +  M_DD_33  *  H_3 ** 2, &
+    H_Sq  =  max (                H_U ( 1 ) ** 2  &
+                   +  M_DD_22  *  H_U ( 2 ) ** 2  &
+                   +  M_DD_33  *  H_U ( 3 ) ** 2, &
                    tiny ( 0.0_KDR ) )   
 
-    K_1  =  0.5_KDR  *  ( 3.0_KDR * SF  -  1.0_KDR )  &
-            *  H_Dim  *            H_1  /  H_Sq   *  J
-
-    K_2  =  0.5_KDR  *  ( 3.0_KDR * SF  -  1.0_KDR )  &
-            *  H_Dim  *  M_DD_22 * H_2  /  H_Sq   *  J
-
-    K_3  =  0.5_KDR  *  ( 3.0_KDR * SF  -  1.0_KDR )  &
-            *  H_Dim  *  M_DD_33 * H_3  /  H_Sq   *  J
-
-    K_Dim  =  K_Dim  +  0.5_KDR * ( 1.0_KDR  -  SF )  *  J
+    do jD = 1, 3
+      K_D ( jD )  =  0.5_KDR  *  ( 3.0_KDR * SF  -  1.0_KDR )  &
+                     *  H_U ( iD )  *  H_U ( jD )  /  H_Sq   *  J
+    end do
+    K_D ( 2 )  =  M_DD_22 * K_D ( 2 )
+    K_D ( 3 )  =  M_DD_33 * K_D ( 3 )
+    
+    K_D ( iD )  =  K_D ( iD )  +  0.5_KDR * ( 1.0_KDR  -  SF )  *  J
 
   end subroutine ComputeComovingStress_D
 
@@ -1205,27 +1198,24 @@ contains
              ( SF, FF, J_Old, H_Old_1, H_Old_2, H_Old_3, M_DD_22, M_DD_33  )
 
       call ComputeComovingStress_D &
-             ( K_U_Dim_D ( 1 ), K_U_Dim_D ( 2 ), K_U_Dim_D ( 3 ), &
-               K_U_Dim_D ( 1 ), J_Old, H_Old_1, H_Old_2, H_Old_3, H_Old_1, &
-               FF, SF, M_DD_22, M_DD_33 )
+             ( K_U_Dim_D, [ H_Old_1, H_Old_2, H_Old_3 ], J_Old, SF, &
+               M_DD_22, M_DD_33, iD = 1 )
       H_1  =  S_1  -  J_Old * V_1   &
                    -  K_U_Dim_D ( 1 )  *  V_1   &
                    -  K_U_Dim_D ( 2 )  *  V_2   &
                    -  K_U_Dim_D ( 3 )  *  V_3 
 
       call ComputeComovingStress_D &
-             ( K_U_Dim_D ( 1 ), K_U_Dim_D ( 2 ), K_U_Dim_D ( 3 ), &
-               K_U_Dim_D ( 2 ), J_Old, H_Old_1, H_Old_2, H_Old_3, H_Old_2, &
-               FF, SF, M_DD_22, M_DD_33 )
+             ( K_U_Dim_D, [ H_Old_1, H_Old_2, H_Old_3 ], J_Old, SF, &
+               M_DD_22, M_DD_33, iD = 2 )
       H_2  =  M_UU_22 * S_2  -  J_Old  * V_2   &
                              -  K_U_Dim_D ( 1 )  *  V_1   &
                              -  K_U_Dim_D ( 2 )  *  V_2   &
                              -  K_U_Dim_D ( 3 )  *  V_3 
 
       call ComputeComovingStress_D &
-             ( K_U_Dim_D ( 1 ), K_U_Dim_D ( 2 ), K_U_Dim_D ( 3 ), &
-               K_U_Dim_D ( 3 ), J_Old, H_Old_1, H_Old_2, H_Old_3, H_Old_3, &
-               FF, SF, M_DD_22, M_DD_33 )
+             ( K_U_Dim_D, [ H_Old_1, H_Old_2, H_Old_3 ], J_Old, SF, &
+               M_DD_22, M_DD_33, iD = 3 )
       H_3  =  M_UU_33 * S_3  -  J_Old * V_3   &
                              -  K_U_Dim_D ( 1 )  *  V_1   &
                              -  K_U_Dim_D ( 2 )  *  V_2   &

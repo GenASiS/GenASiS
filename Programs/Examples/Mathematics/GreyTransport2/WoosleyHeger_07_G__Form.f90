@@ -1328,11 +1328,11 @@ end if
           =  FS_R_G ( iV )  &
              -  c * dT  &
                 *  ( Xi_J ( iV )  &
-                     -  Chi_J ( iV ) * ( J ( iV ) + dE ( iV ) )  &
-                     -  Chi_H ( iV )  &
-                        *  (                     V_1 ( iV ) * H_1 ( iV )  &
-                             +  M_DD_22 ( iV ) * V_2 ( iV ) * H_2 ( iV )  &
-                             +  M_DD_33 ( iV ) * V_3 ( iV ) * H_3 ( iV ) ) )
+                     -  Chi_J ( iV ) * ( J ( iV ) + dE ( iV ) ) ) ! &
+!                     -  Chi_H ( iV )  &
+!                        *  (                     V_1 ( iV ) * H_1 ( iV )  &
+!                             +  M_DD_22 ( iV ) * V_2 ( iV ) * H_2 ( iV )  &
+!                             +  M_DD_33 ( iV ) * V_3 ( iV ) * H_3 ( iV ) ) )
                      
 !      end if
 
@@ -1360,20 +1360,14 @@ end if
       !                *  ( Xi_J ( iV )  -  Chi_J ( iV ) * J ( iV ) ) ) 
 
       call RM % ComputeComovingStress_D &
-             ( K_U_D ( 1, 1 ), K_U_D ( 1, 2 ), K_U_D ( 1, 3 ), &
-               K_U_D ( 1, 1 ), J ( iV ), H_1 ( iV ), H_2 ( iV ), H_3 ( iV ), &
-               H_1 ( iV ), FF ( iV ), SF ( iV ), &
-               M_DD_22 ( iV ), M_DD_33 ( iV ) )
+             ( K_U_D ( 1, : ), [ H_1 ( iV ), H_2 ( iV ), H_3 ( iV ) ], &
+               J ( iV ), SF ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ), iD = 1 )
       call RM % ComputeComovingStress_D &
-             ( K_U_D ( 2, 1 ), K_U_D ( 2, 2 ), K_U_D ( 2, 3 ), &
-               K_U_D ( 2, 2 ), J ( iV ), H_1 ( iV ), H_2 ( iV ), H_3 ( iV ), &
-               H_2 ( iV ), FF ( iV ), SF ( iV ), &
-               M_DD_22 ( iV ), M_DD_33 ( iV ) )
+             ( K_U_D ( 2, : ), [ H_1 ( iV ), H_2 ( iV ), H_3 ( iV ) ], &
+               J ( iV ), SF ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ), iD = 2 )
       call RM % ComputeComovingStress_D &
-             ( K_U_D ( 3, 1 ), K_U_D ( 3, 2 ), K_U_D ( 3, 3 ), &
-               K_U_D ( 3, 3 ), J ( iV ), H_1 ( iV ), H_2 ( iV ), H_3 ( iV ), &
-               H_3 ( iV ), FF ( iV ), SF ( iV ), &
-               M_DD_22 ( iV ), M_DD_33 ( iV ) )
+             ( K_U_D ( 3, : ), [ H_1 ( iV ), H_2 ( iV ), H_3 ( iV ) ], &
+               J ( iV ), SF ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ), iD = 3 )
 
       FS_R_S_1 ( iV )  &
         =  FS_R_S_1 ( iV )  &

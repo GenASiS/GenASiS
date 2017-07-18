@@ -319,21 +319,22 @@ contains
       if ( .not. IsProperCell ( iV ) ) &
         cycle
 
+!       KV_S_1 ( iV )  &
+!         =  KV_S_1 ( iV )  &
+!            +  c * dT  &
+!               * ( -  Chi_H ( iV )  *  ( H_1 ( iV )  -  S_1 ( iV ) )  &
+!                   +  V_1 ( iV )  &
+!                      *  ( Xi_J ( iV )  -  Chi_J ( iV ) * J ( iV ) ) ) 
+
       call RM % ComputeComovingStress_D &
-             ( K_U_D ( 1, 1 ), K_U_D ( 1, 2 ), K_U_D ( 1, 3 ), &
-               K_U_D ( 1, 1 ), J ( iV ), H_1 ( iV ), H_2 ( iV ), H_3 ( iV ), &
-               H_1 ( iV ), FF ( iV ), SF ( iV ), &
-               M_DD_22 ( iV ), M_DD_33 ( iV ) )
+             ( K_U_D ( 1, : ), [ H_1 ( iV ), H_2 ( iV ), H_3 ( iV ) ], &
+               J ( iV ), SF ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ), iD = 1 )
       call RM % ComputeComovingStress_D &
-             ( K_U_D ( 2, 1 ), K_U_D ( 2, 2 ), K_U_D ( 2, 3 ), &
-               K_U_D ( 2, 2 ), J ( iV ), H_1 ( iV ), H_2 ( iV ), H_3 ( iV ), &
-               H_2 ( iV ), FF ( iV ), SF ( iV ), &
-               M_DD_22 ( iV ), M_DD_33 ( iV ) )
+             ( K_U_D ( 2, : ), [ H_1 ( iV ), H_2 ( iV ), H_3 ( iV ) ], &
+               J ( iV ), SF ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ), iD = 2 )
       call RM % ComputeComovingStress_D &
-             ( K_U_D ( 3, 1 ), K_U_D ( 3, 2 ), K_U_D ( 3, 3 ), &
-               K_U_D ( 3, 3 ), J ( iV ), H_1 ( iV ), H_2 ( iV ), H_3 ( iV ), &
-               H_3 ( iV ), FF ( iV ), SF ( iV ), &
-               M_DD_22 ( iV ), M_DD_33 ( iV ) )
+             ( K_U_D ( 3, : ), [ H_1 ( iV ), H_2 ( iV ), H_3 ( iV ) ], &
+               J ( iV ), SF ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ), iD = 3 )
 
       KV_S_1 ( iV )  &
         =  KV_S_1 ( iV )  &
