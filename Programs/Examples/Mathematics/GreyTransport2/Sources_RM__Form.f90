@@ -8,14 +8,15 @@ module Sources_RM__Form
   private
 
     integer ( KDI ), private, parameter :: &
-      N_FIELDS_RM  = 7, &
+      N_FIELDS_RM  = 8, &
       N_VECTORS_RM = 3
 
   type, public, extends ( Sources_C_Form ) :: Sources_RM_Form
     integer ( KDI ) :: &
       N_FIELDS_RM    = N_FIELDS_RM, &
       N_VECTORS_RM   = N_VECTORS_RM, &
-      NET_EMISSION_E = 0   
+      NET_EMISSION_E = 0, &
+      NET_EMISSION_N = 0
     integer ( KDI ), dimension ( 3 ) :: &
       CURVILINEAR_S_D  = 0, &
       NET_EMISSION_S_D = 0
@@ -152,8 +153,9 @@ contains
       SRM % N_FIELDS = oF + SRM % N_FIELDS_RM
 
     SRM % NET_EMISSION_E    =  oF + 1
-    SRM % CURVILINEAR_S_D   =  oF + [ 2, 3, 4 ]
-    SRM % NET_EMISSION_S_D  =  oF + [ 5, 6, 7 ]
+    SRM % NET_EMISSION_N    =  oF + 2
+    SRM % CURVILINEAR_S_D   =  oF + [ 3, 4, 5 ]
+    SRM % NET_EMISSION_S_D  =  oF + [ 6, 7, 8 ]
 
     !-- variable names 
 
@@ -167,6 +169,7 @@ contains
 
     Variable ( oF + 1 : oF + SRM % N_FIELDS_RM ) &
       = [ 'NetEmission_E    ', &
+          'NetEmission_N    ', &
           'Curvilinear_S_D_1', &
           'Curvilinear_S_D_2', &
           'Curvilinear_S_D_3', &

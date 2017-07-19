@@ -1,4 +1,6 @@
 GREY_MOMENTS = \
+  ApplyRelaxation_NM_G_2__Command.o \
+  ApplyRelaxation_RM_2__Command.o \
   ApplyRelaxation_NM_G__Command.o \
   ApplyRelaxation_RM__Command.o \
   PrepareRelaxation_NM_G__Command.o \
