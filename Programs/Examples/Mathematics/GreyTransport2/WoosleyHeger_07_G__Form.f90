@@ -109,15 +109,15 @@ contains
 !    WH % N_CURRENTS_PS = 4
     WH % N_CURRENTS_PS = 3
     allocate ( WH % Current_ASC_1D ( WH % N_CURRENTS_PS ) )
-    allocate ( WH % TimeStepLabel ( WH % N_CURRENTS_PS + 3 ) )
+    allocate ( WH % TimeStepLabel ( WH % N_CURRENTS_PS + 4 ) )
     WH % TimeStepLabel ( WH % NEUTRINOS_E_NU ) = 'Nu_E'
     WH % TimeStepLabel ( WH % NEUTRINOS_E_NU_BAR ) = 'NuBar_E'
 !    WH % TimeStepLabel ( WH % NEUTRINOS_MU_TAU_NU_NU_BAR ) = 'Nu_X'
     WH % TimeStepLabel ( WH % FLUID ) = 'Fluid'
     WH % TimeStepLabel ( WH % N_CURRENTS_PS + 1 ) = 'Interactions_SB_J'
     WH % TimeStepLabel ( WH % N_CURRENTS_PS + 2 ) = 'Interactions_SB_N'
-!    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 3 ) = 'Interactions_S_H'
-    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 3 ) = 'Interactions_YE_N'
+    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 3 ) = 'Interactions_S_H'
+    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 4 ) = 'Interactions_YE_N'
 !    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 5 ) = 'Interactions_SB_Div_J'
 !    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 6 ) = 'Interactions_SB_Div_N'
 
@@ -344,16 +344,16 @@ contains
              F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
              TimeStepCandidate ( I % N_CURRENTS_PS + 2 ) )
 
-    ! call ComputeTimeStep_S_H_Kernel &
-    !        ( CSL % IsProperCell, &
-    !          I_R_E % Value ( :, I_R_E % EMISSIVITY_J ), &
-    !          I_R_E % Value ( :, I_R_E % OPACITY_J ), &
-    !          I_R_E % Value ( :, I_R_E % OPACITY_H ), &
-    !          R_E % Value ( :, R_E % COMOVING_ENERGY ), &
-    !          R_E % Value ( :, R_E % COMOVING_MOMENTUM_U ( 1 ) ), &
-    !          R_E % Value ( :, R_E % FLUID_VELOCITY_U ( 1 ) ), &
-    !          F % Value ( :, F % MOMENTUM_DENSITY_D ( 1 ) ), &
-    !          TimeStepCandidate ( I % N_CURRENTS_PS + 3 ) )
+    call ComputeTimeStep_S_H_Kernel &
+           ( CSL % IsProperCell, &
+             I_R_E % Value ( :, I_R_E % EMISSIVITY_J ), &
+             I_R_E % Value ( :, I_R_E % OPACITY_J ), &
+             I_R_E % Value ( :, I_R_E % OPACITY_H ), &
+             R_E % Value ( :, R_E % COMOVING_ENERGY ), &
+             R_E % Value ( :, R_E % COMOVING_MOMENTUM_U ( 1 ) ), &
+             R_E % Value ( :, R_E % FLUID_VELOCITY_U ( 1 ) ), &
+             F % Value ( :, F % MOMENTUM_DENSITY_D ( 1 ) ), &
+             TimeStepCandidate ( I % N_CURRENTS_PS + 3 ) )
 
     call ComputeTimeStep_YE_N_Kernel &
            ( CSL % IsProperCell, &
@@ -363,7 +363,7 @@ contains
              F % Value ( :, F % ELECTRON_FRACTION ), &
              F % Value ( :, F % BARYON_MASS ), &
              F % Value ( :, F % COMOVING_DENSITY ), &
-             TimeStepCandidate ( I % N_CURRENTS_PS + 3 ) )
+             TimeStepCandidate ( I % N_CURRENTS_PS + 4 ) )
 
     ! call Search ( R_E % iaConserved, R_E % CONSERVED_ENERGY, iEnergy )
     ! call Search ( R_E % iaConserved, R_E % CONSERVED_NUMBER, iNumber )
@@ -769,6 +769,7 @@ end if
              I % Value ( :, I % OPACITY_J ), &
              I % Value ( :, I % OPACITY_H ), &
              R % Value ( :, R % COMOVING_ENERGY ), &
+!             Increment % Value ( :, iEnergy_R ), &
              !-- FIXME: Total hack, this is dJ
              SR % Value ( :, SR % NET_EMISSION_E ), &
              R % Value ( :, R % COMOVING_MOMENTUM_U ( 1 ) ), &
@@ -777,6 +778,9 @@ end if
              R % Value ( :, R % CONSERVED_MOMENTUM_D ( 1 ) ), &
              R % Value ( :, R % CONSERVED_MOMENTUM_D ( 2 ) ), &
              R % Value ( :, R % CONSERVED_MOMENTUM_D ( 3 ) ), &
+!             Increment % Value ( :, iMomentum_1_R ), &
+!             Increment % Value ( :, iMomentum_2_R ), &
+!             Increment % Value ( :, iMomentum_3_R ), &
              !-- FIXME: Total hack, this is dH_D
              SR % Value ( :, SR % NET_EMISSION_S_D ( 1 ) ), &
              SR % Value ( :, SR % NET_EMISSION_S_D ( 2 ) ), &
@@ -801,6 +805,7 @@ end if
                I % Value ( :, I % EMISSIVITY_N ), &
                I % Value ( :, I % OPACITY_N ), &
                R % Value ( :, R % COMOVING_NUMBER ), &
+!               Increment % Value ( :, iNumber_R ), &
                !-- FIXME: Total hack, this is dN
                SR % Value ( :, SR % NET_EMISSION_N ), &
                R % Value ( :, R % BETA_EQUILIBRIUM ), &
@@ -816,6 +821,7 @@ end if
                I % Value ( :, I % EMISSIVITY_N ), &
                I % Value ( :, I % OPACITY_N ), &
                R % Value ( :, R % COMOVING_NUMBER ), &
+!               Increment % Value ( :, iNumber_R ), &
                !-- FIXME: Total hack, this is dN
                SR % Value ( :, SR % NET_EMISSION_N ), &
                R % Value ( :, R % BETA_EQUILIBRIUM ), &
@@ -1337,7 +1343,7 @@ end if
         !   =  FS_R_G ( iV )  &
         !      -  c * dT  &
         !         *  ( Xi_J ( iV )  &
-        !              -  Chi_J ( iV ) * ( J ( iV ) + dE ( iV ) ) ) &
+        !              -  Chi_J ( iV ) * ( J ( iV ) + dJ ( iV ) ) &
         !              -  Chi_H ( iV )  &
         !                 *  (                     V_1 ( iV ) * H_1 ( iV )  &
         !                      +  M_DD_22 ( iV ) * V_2 ( iV ) * H_2 ( iV )  &
@@ -1390,7 +1396,7 @@ end if
       !   =  FS_R_S_1 ( iV )  &
       !      -  c * dT  &  
       !         * ( -  Chi_H ( iV )  &
-      !                *  ( S_1 ( iV )  +  dS_1 ( iV )  &
+      !                *  ( S_1 ( iV )  +  dH_1 ( iV )  &
       !                     - ( V_1 ( iV )  &  
       !                         + ( K_U_D ( 1, 1 )  *  V_1 ( iV )  &
       !                             +  M_DD_22 ( iV )  &
@@ -1398,10 +1404,10 @@ end if
       !                             +  M_DD_33 ( iV )  &
       !                                *  K_U_D ( 3, 1 )  *  V_3 ( iV ) )  &
       !                           /  max ( J ( iV ), tiny ( 0.0_KDR ) ) )  &
-      !                       *  ( J ( iV )  +  dE ( iV ) ) )  &
+      !                       *  ( J ( iV )  +  dJ ( iV ) ) )  &
       !             +  V_1 ( iV )  &
       !                *  ( Xi_J ( iV )  &
-      !                     -  Chi_J ( iV ) * ( J ( iV )  +  dE ( iV ) ) ) ) 
+      !                     -  Chi_J ( iV ) * ( J ( iV )  +  dJ ( iV ) ) ) ) 
 
       FS_R_S_1 ( iV )  &
         =  FS_R_S_1 ( iV )  &

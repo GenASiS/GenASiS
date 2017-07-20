@@ -85,11 +85,13 @@ contains
       if ( .not. Chart % IsProperCell ( iV ) ) &
         cycle
 
-call Show ( iV, '>>> iV' )
-call Show ( RadiationMoments % Name, 'RadiationMoments' )
+!call Show ( iV, '>>> iV' )
+!call Show ( RadiationMoments % Name, 'RadiationMoments' )
 
       call ComputeCoefficients &
              ( RM, &
+               IncrementExplicit % Value ( iV, iEnergy ), &
+               IncrementExplicit % Value ( iV, iMomentum_1 ), &
                I  % Value ( iV, I % EMISSIVITY_J ), &
                I  % Value ( iV, I % OPACITY_J ), &
                I  % Value ( iV, I % OPACITY_H ), &
@@ -103,30 +105,30 @@ call Show ( RadiationMoments % Name, 'RadiationMoments' )
                G  % Value ( iV, G % METRIC_DD_33 ), &
                TimeStep, A, B, k_D )
 
-call Show ( A, '>>> A' )
-call Show ( B, '>>> B' )
-call Show ( k_D ( 1 ), '>>> k_D ( 1 )' )
+!call Show ( A, '>>> A' )
+!call Show ( B, '>>> B' )
+!call Show ( k_D ( 1 ), '>>> k_D ( 1 )' )
 
       call ComputeComovingIncrements &
              ( A, B, dJ, dH_1 )
       !-- FIXME: total hack, use Sources_RM to accessibly store comoving 
       !          increments 
       call ComputeConservedIncrements &
-             ( IncrementExplicit % Value ( iV, iEnergy ), &
+             ( k_D, dJ, dH_1, &
+               RM % Value ( iV, RM % FLUID_VELOCITY_U ( 1 ) ), &
+               IncrementExplicit % Value ( iV, iEnergy ), &
                IncrementExplicit % Value ( iV, iMomentum_1 ), &
                SRM % Value ( iV, SRM % NET_EMISSION_E ), &
-               SRM % Value ( iV, SRM % NET_EMISSION_S_D ( 1 ) ), &
-               k_D, dJ, dH_1, &
-               RM % Value ( iV, RM % FLUID_VELOCITY_U ( 1 ) ) )
+               SRM % Value ( iV, SRM % NET_EMISSION_S_D ( 1 ) ) )
 
-call Show ( RM % Value ( iV, RM % COMOVING_ENERGY ), '>>> J' )
-call Show ( dJ, '>>> dJ' )
-call Show ( RM % Value ( iV, RM % COMOVING_MOMENTUM_U ( 1 ) ), '>>> H_1' )
-call Show ( dH_1, '>>> dH_1' )
-call Show ( RM % Value ( iV, RM % CONSERVED_ENERGY ), '>>> E' )
-call Show ( IncrementExplicit % Value ( iV, iEnergy ), '>>> dE' )
-call Show ( RM % Value ( iV, RM % CONSERVED_MOMENTUM_D ( 1 ) ), '>>> S_1' )
-call Show ( IncrementExplicit % Value ( iV, iMomentum_1 ), '>>> dS_1' )
+! call Show ( RM % Value ( iV, RM % COMOVING_ENERGY ), '>>> J' )
+! call Show ( dJ, '>>> dJ' )
+! call Show ( RM % Value ( iV, RM % COMOVING_MOMENTUM_U ( 1 ) ), '>>> H_1' )
+! call Show ( dH_1, '>>> dH_1' )
+! call Show ( RM % Value ( iV, RM % CONSERVED_ENERGY ), '>>> E' )
+! call Show ( IncrementExplicit % Value ( iV, iEnergy ), '>>> dE' )
+! call Show ( RM % Value ( iV, RM % CONSERVED_MOMENTUM_D ( 1 ) ), '>>> S_1' )
+! call Show ( IncrementExplicit % Value ( iV, iMomentum_1 ), '>>> dS_1' )
 
     end do
     !$OMP end parallel do
@@ -141,12 +143,13 @@ call Show ( IncrementExplicit % Value ( iV, iMomentum_1 ), '>>> dS_1' )
 
 
   subroutine ComputeCoefficients &
-               ( RM, Xi_J, Chi_J, Chi_H, J, H_1, H_2, H_3, SF, V_1, &
+               ( RM, dE, dS_1, Xi_J, Chi_J, Chi_H, J, H_1, H_2, H_3, SF, V_1, &
                  M_DD_22, M_DD_33, dt, A, B, k_D )
 
     class ( RadiationMomentsForm ), intent ( in ) :: &
       RM
     real ( KDR ), intent ( in ) :: &
+      dE, dS_1, &
       Xi_J, Chi_J, Chi_H, &
       J, H_1, H_2, H_3, SF, V_1, &
       M_DD_22, M_DD_33, &
@@ -175,9 +178,11 @@ call Show ( IncrementExplicit % Value ( iV, iMomentum_1 ), '>>> dS_1' )
 
     A ( 2, 2 )  =  1.0_KDR  +  Chi_H * dt
 
-    B ( 1 )  =  ( Xi_J  - Chi_J * J  -  Chi_H * V_1 * H_1 ) * dt
+    B ( 1 )  =  dE    +  (    Xi_J  - Chi_J * J  &
+                           -  Chi_H * V_1 * H_1 ) * dt
 
-    B ( 2 )  =  ( - Chi_H * H_1  +  V_1 * ( Xi_J  -  Chi_J * J ) ) * dt
+    B ( 2 )  =  dS_1  +  ( -  Chi_H * H_1  &
+                           +  V_1 * ( Xi_J  -  Chi_J * J ) ) * dt
 
   end subroutine ComputeCoefficients
 
@@ -203,18 +208,18 @@ call Show ( IncrementExplicit % Value ( iV, iMomentum_1 ), '>>> dS_1' )
 
 
   subroutine ComputeConservedIncrements &
-               ( dE, dS_1, SVNE_E, SVNE_S_1, k_D, dJ, dH_1, V_1 )
+               ( k_D, dJ, dH_1, V_1, dE, dS_1, SVNE_E, SVNE_S_1 )
 
-    real ( KDR ), intent ( inout ) :: &
-      dE, dS_1, &
-      SVNE_E, SVNE_S_1
     real ( KDR ), dimension ( 3 ), intent ( in ) :: &
       k_D
     real ( KDR ), intent ( in ) :: &
       dJ, dH_1, V_1
+    real ( KDR ), intent ( out ) :: &
+      dE, dS_1, &
+      SVNE_E, SVNE_S_1
 
-    dE    =  dE    +  dJ    +  2.0_KDR  *  V_1  *  dH_1
-    dS_1  =  dS_1  +  dH_1  +  ( V_1  +  k_D ( 1 ) * V_1 )  *  dJ
+    dE    =  dJ    +  2.0_KDR  *  V_1  *  dH_1
+    dS_1  =  dH_1  +  ( V_1  +  k_D ( 1 ) * V_1 )  *  dJ
 
     !-- FIXME: total hack, use this to accessibly store comoving increments 
     SVNE_E    =  dJ

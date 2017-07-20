@@ -114,7 +114,8 @@ contains
     real ( KDR ) :: &
       dN
 
-    dD  =  ( Xi_N  -  Chi_N * N ) * dt  /  ( 1.0_KDR  +  Chi_N * dt )
+    dD  =  ( dD  +  ( Xi_N  -  Chi_N * N ) * dt )  &
+           /  ( 1.0_KDR  +  Chi_N * dt )
 
     if ( E_Ave > 0.0_KDR ) then
       dN  =  dD  -  V_1 * dH_1 / E_Ave
