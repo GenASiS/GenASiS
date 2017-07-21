@@ -99,6 +99,10 @@ for example, as the follows:
 > visit -cli -s ../FluidDynamics.visit.py RiemannProblem_2D
 > visit -cli -s ../FluidDynamics.visit.py RayleighTaylor_2D
 
+(The option "-nowin" can be added to above VisIt invocation to prevent VisIt
+from trying to display its visualization windows, resulting in the image files
+to be drawn off-screen instead.)
+
 Unit test programs exercising individual GenASiS classes can similarly be
 built and executed inside the "Executables" directory of each leaf
 division of the code under "Programs/UnitTests". For example, the following 
