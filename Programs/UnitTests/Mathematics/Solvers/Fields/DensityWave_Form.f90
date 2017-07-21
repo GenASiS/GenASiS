@@ -49,10 +49,6 @@ contains
 
     integer ( KDI ), dimension ( 3 ) :: &
       nWavelengths
-    real ( KDR ) :: &
-      Speed
-    real ( KDR ), dimension ( 3 ) :: &
-      Wavenumber
     logical ( KDL ) :: &
       VerboseStream
     character ( LDF ) :: &
@@ -83,47 +79,37 @@ contains
 
     nWavelengths = 0
     nWavelengths ( 1 : A % nDimensions ) = 1
-!    Period = 1.0_KDR
     call PROGRAM_HEADER % GetParameter ( nWavelengths, 'nWavelengths' )
-!    call PROGRAM_HEADER % GetParameter ( Period, 'Period' )
-
-    associate ( C => A % Chart )
-    associate ( BoxSize => C % MaxCoordinate - C % MinCoordinate )
-    where ( BoxSize > 0.0_KDR )
-      Wavenumber = nWavelengths / BoxSize
-    elsewhere
-      Wavenumber = 0.0_KDR
-    end where
-    end associate !-- BoxSize
-    end associate !-- C
 
     DW % Offset    = 2.0_KDR
     DW % Amplitude = 1.0_KDR
     call PROGRAM_HEADER % GetParameter ( DW % Offset, 'Offset' )
     call PROGRAM_HEADER % GetParameter ( DW % Amplitude, 'Amplitude' )
 
-    Speed = 1.0_KDR
-    call PROGRAM_HEADER % GetParameter ( Speed, 'Speed' )
-
     G  => A % Geometry ( )
     PC => PCA % ProtoCurrent ( )
+
+    PC % Speed = 1.0_KDR
+    call PROGRAM_HEADER % GetParameter ( PC % Speed, 'Speed' )
+
+    associate ( C => A % Chart )
+    associate ( BoxSize => C % MaxCoordinate - C % MinCoordinate )
+    where ( BoxSize > 0.0_KDR )
+      PC % Wavenumber = nWavelengths / BoxSize
+    elsewhere
+      PC % Wavenumber = 0.0_KDR
+    end where
+    end associate !-- BoxSize
+    end associate !-- C
+
     associate &
       ( X  => G % Value ( :, G % CENTER ( 1 ) ), &
         Y  => G % Value ( :, G % CENTER ( 2 ) ), &
         Z  => G % Value ( :, G % CENTER ( 3 ) ), &
-        VX => PC % Value ( :, PC % VELOCITY ( 1 ) ), &
-        VY => PC % Value ( :, PC % VELOCITY ( 2 ) ), &
-        VZ => PC % Value ( :, PC % VELOCITY ( 3 ) ), &
         N  => PC % Value ( :, PC % COMOVING_DENSITY ), &
-        K  => Wavenumber )
+        K  => PC % Wavenumber )
 
     N = DW % Waveform ( K ( 1 ) * X  +  K ( 2 ) * Y  +  K ( 3 ) * Z )
-
-    associate ( Abs_K => sqrt ( dot_product ( K, K ) ) )
-    VX = Speed * K ( 1 ) / Abs_K
-    VY = Speed * K ( 2 ) / Abs_K
-    VZ = Speed * K ( 3 ) / Abs_K
-    end associate !-- Abs_K
 
     call PC % ComputeFromPrimitive ( G )
 

@@ -238,10 +238,13 @@ contains
     class is ( Atlas_SC_Form )
     G => PS % Geometry ( )
 
+    PC % Speed      = DW % Speed
+    PC % Wavenumber = DW % Wavenumber
+
     associate &
-      ( K     => DW % Wavenumber, &
-        Abs_K => sqrt ( dot_product ( DW % Wavenumber, DW % Wavenumber ) ), &
-        V     => DW % Speed, &
+      ( K     => PC % Wavenumber, &
+        Abs_K => sqrt ( dot_product ( PC % Wavenumber, PC % Wavenumber ) ), &
+        V     => PC % Speed, &
         T     => Time, &
         X     => G % Value ( :, G % CENTER ( 1 ) ), &
         Y     => G % Value ( :, G % CENTER ( 2 ) ), &
