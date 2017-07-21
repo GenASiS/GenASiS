@@ -6,12 +6,42 @@ module RadiationMoments_Form
 
   implicit none
   private
+  
+  interface 
+    subroutine FunctionEvaluatorInterface ( Parameters, Input, Result )
+      use Basics
+      class ( * ), intent ( in ) :: &
+        Parameters
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        Input
+      real ( KDR ), dimension ( : ), intent ( out ) :: &
+        Result
+    end subroutine FunctionEvaluatorInterface
+  end interface 
+
 
     integer ( KDI ), private, parameter :: &
       N_PRIMITIVE_RM =  7, &
       N_CONSERVED_RM =  4, &
       N_FIELDS_RM    = 15, &
       N_VECTORS_RM   =  3
+
+  type, private :: ParameterForm
+   real ( KDR ) :: &
+    FF, &
+    SF
+  real ( KDR ), dimension ( 3 ) :: &
+    V, &
+    M_DD, & 
+    M_UU
+  real ( KDR ), dimension ( 4 ) :: &
+    E_M
+  end type ParameterForm
+
+    type ( ParameterForm ), private :: &
+      Parameters
+    type ( RootFindingForm), private :: &
+      RF
 
   type, public, extends ( CurrentTemplate ) :: RadiationMomentsForm
     integer ( KDI ) :: &
@@ -31,6 +61,9 @@ module RadiationMoments_Form
       FLUID_VELOCITY_U     = 0
     class ( InteractionsTemplate ), pointer :: &
       Interactions => null ( )
+    character ( LDF ) :: &
+      NonLinearSolver
+    
   contains
     procedure, private, pass :: &
       InitializeAllocate_RM
@@ -52,23 +85,26 @@ module RadiationMoments_Form
       ComputeRawFluxes
     procedure, public, pass ( C ) :: &
       ComputeDiffusionFactor_HLL
-    procedure, public, nopass :: &
-      ComputeComovingStress_D
   end type RadiationMomentsForm
 
     private :: &
       InitializeBasics, &
       SetUnits, &
       ComputeConservedEnergyMomentum, &
-      ComputeComovingEnergyMomentum, &
+      ComputeComovingEnergyMomentumDefault, &
+      ComputeComovingEnergyMomentumBroyden, &
       ComputeEigenspeeds, &
       ComputeRawFluxesKernel, &
       ComputeDiffusionFactor_HLL_CSL
 
       private :: &
         ComputeMomentFactors, &
-!        ComputeComovingStress_D, &
-        ComputeComovingNonlinearSolve
+        ComputeComovingStress_D, &
+        ComputeComovingNonlinearSolve, &
+        FunctionWrapper, &
+        SetParameters, &
+        ComputeInitialGuesses
+        
 
 contains
 
@@ -78,7 +114,8 @@ contains
                  MomentumDensity_U_Unit, MomentumDensity_D_Unit, &
                  EnergyDensityUnit, LimiterParameter, &
                  nValues, VariableOption, VectorOption, NameOption, &
-                 ClearOption, UnitOption, VectorIndicesOption )
+                 NonLinearSolverOption, ClearOption, UnitOption, &
+                 VectorIndicesOption )
 
     class ( RadiationMomentsForm ), intent ( inout ) :: &
       RM
@@ -100,7 +137,8 @@ contains
       VariableOption, &
       VectorOption
     character ( * ), intent ( in ), optional :: &
-      NameOption
+      NameOption, &
+      NonLinearSolverOption
     logical ( KDL ), intent ( in ), optional :: &
       ClearOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
@@ -121,7 +159,7 @@ contains
     call InitializeBasics &
            ( RM, Variable, Vector, Name, VariableUnit, VectorIndices, &
              VariableOption, VectorOption, NameOption, UnitOption, &
-             VectorIndicesOption )
+             VectorIndicesOption, NonLinearSolverOption )
 
     call SetUnits &
            ( VariableUnit, RM, Velocity_U_Unit, MomentumDensity_U_Unit, &
@@ -328,7 +366,7 @@ contains
       nV     !-- nValues
     real ( KDR ), dimension ( :, : ), pointer :: &
       RMV
-      
+
     RMV => Value_C
     associate ( GV => Value_G )
 
@@ -370,9 +408,16 @@ contains
         V_2   => RMV ( oV + 1 : oV + nV, C % FLUID_VELOCITY_U ( 2 ) ), &
         V_3   => RMV ( oV + 1 : oV + nV, C % FLUID_VELOCITY_U ( 3 ) ) )
 
-    call ComputeComovingEnergyMomentum &
-           ( J, H_1, H_2, H_3, E, S_1, S_2, S_3, FF, SF, C, M_DD_22, M_DD_33, &
-             M_UU_22, M_UU_33, V_1, V_2, V_3 )
+    select case ( C % NonLinearSolver )
+      case ( 'Broyden' )
+         call ComputeComovingEnergyMomentumBroyden &
+               ( J, H_1, H_2, H_3, E, S_1, S_2, S_3, FF, SF, C, &
+                 M_DD_22, M_DD_33, M_UU_22, M_UU_33, V_1, V_2, V_3 )
+      case DEFAULT
+        call ComputeComovingEnergyMomentumDefault &
+               ( J, H_1, H_2, H_3, E, S_1, S_2, S_3, FF, SF, C, &
+                 M_DD_22, M_DD_33, M_UU_22, M_UU_33, V_1, V_2, V_3 )
+    end select !-- NonLinearSolver
     call ComputeEigenspeeds &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, J, H_1, H_2, H_3, &
              M_UU_22, M_UU_33, CONSTANT % SPEED_OF_LIGHT )
@@ -472,7 +517,7 @@ contains
       DF_I
     class ( * ), intent ( in ), target :: &
       Grid
-    class ( RadiationMomentsForm ), intent ( inout ) :: &
+    class ( RadiationMomentsForm ), intent ( in ) :: &
       C
     integer ( KDI ), intent ( in ) :: &
       iDimension
@@ -570,7 +615,8 @@ contains
   subroutine InitializeBasics &
                ( RM, Variable, Vector, Name, VariableUnit, VectorIndices, &
                  VariableOption, VectorOption, NameOption, &
-                 VariableUnitOption, VectorIndicesOption )
+                 VariableUnitOption, VectorIndicesOption, &
+                 NonLinearSolverOption )
 
     class ( RadiationMomentsForm ), intent ( inout ) :: &
       RM
@@ -593,7 +639,8 @@ contains
       VariableOption, &
       VectorOption
     character ( * ), intent ( in ), optional :: &
-      NameOption
+      NameOption, &
+      NonLinearSolverOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       VariableUnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional :: &
@@ -603,6 +650,8 @@ contains
       iV, &  !-- iVector
       oF, &  !-- oField
       oV     !-- oVector
+    procedure ( FunctionEvaluatorInterface ), pointer :: &
+      FunctionEvaluator => null ( )
 
     if ( RM % Type == '' ) &
       RM % Type = 'RadiationMoments'
@@ -610,6 +659,21 @@ contains
     Name = 'Radiation'
     if ( present ( NameOption ) ) &
       Name = NameOption
+
+    RM % NonLinearSolver = 'Default'
+    if ( present ( NonLinearSolverOption ) ) &
+      RM % NonLinearSolver = NonLinearSolverOption
+
+    select case ( RM % NonLinearSolver )
+      case ( 'Broyden' )
+        FunctionEvaluator => FunctionWrapper
+
+        call RF % Initialize &
+               ( Parameters, &
+                 MD_FunctionEvaluatorOption = FunctionEvaluator, &
+                 AccuracyOption = 1.0e-8_KDR )
+    end select !-- NonLinearSolver
+
 
     !-- variable indices
 
@@ -804,16 +868,20 @@ contains
                H_3 ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ) )
 
       call ComputeComovingStress_D &
-             ( K_U_Dim_D, [ H_1 ( iV ), H_2 ( iV ), H_3 ( iV ) ], J ( iV ), &
-               SF ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ), iD = 1 )
+             ( K_U_Dim_D ( 1 ), K_U_Dim_D ( 2 ), K_U_Dim_D ( 3 ), &
+               K_U_Dim_D ( 1 ), J ( iV ), H_1 ( iV ), H_2 ( iV ), &
+               H_3 ( iV ), H_1 ( iV ), FF ( iV ), SF ( iV ), &
+               M_DD_22 ( iV ), M_DD_33 ( iV ) )
       S_1 ( iV )  =  H_1 ( iV )  +  J ( iV ) * V_1 ( iV ) &
                      +  K_U_Dim_D ( 1 )  *  V_1 ( iV )  &
                      +  K_U_Dim_D ( 2 )  *  V_2 ( iV )  &
                      +  K_U_Dim_D ( 3 )  *  V_3 ( iV )
 
       call ComputeComovingStress_D &
-             ( K_U_Dim_D, [ H_1 ( iV ), H_2 ( iV ), H_3 ( iV ) ], J ( iV ), &
-               SF ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ), iD = 2 )
+             ( K_U_Dim_D ( 1 ), K_U_Dim_D ( 2 ), K_U_Dim_D ( 3 ), &
+               K_U_Dim_D ( 2 ), J ( iV ), H_1 ( iV ), H_2 ( iV ), &
+               H_3 ( iV ), H_2 ( iV ), FF ( iV ), SF ( iV ), &
+               M_DD_22 ( iV ), M_DD_33 ( iV ) )
       S_2 ( iV )  =  M_DD_22 ( iV )  &
                      *  ( H_2 ( iV )  +  J ( iV ) * V_2 ( iV )  &
                           +  K_U_Dim_D ( 1 )  *  V_1 ( iV )  &
@@ -821,8 +889,10 @@ contains
                           +  K_U_Dim_D ( 3 )  *  V_3 ( iV ) )
 
       call ComputeComovingStress_D &
-             ( K_U_Dim_D, [ H_1 ( iV ), H_2 ( iV ), H_3 ( iV ) ], J ( iV ), &
-               SF ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ), iD = 3 )
+             ( K_U_Dim_D ( 1 ), K_U_Dim_D ( 2 ), K_U_Dim_D ( 3 ), &
+               K_U_Dim_D ( 3 ), J ( iV ), H_1 ( iV ), H_2 ( iV ), &
+               H_3 ( iV ), H_3 ( iV ), FF ( iV ), SF ( iV ), &
+               M_DD_22 ( iV ), M_DD_33 ( iV ) )
       S_3 ( iV )  =  M_DD_33 ( iV )  &
                      *  ( H_3 ( iV )  +  J ( iV ) * V_3 ( iV )  &
                           +  K_U_Dim_D ( 1 )  *  V_1 ( iV )  &
@@ -835,7 +905,7 @@ contains
   end subroutine ComputeConservedEnergyMomentum
 
 
-  subroutine ComputeComovingEnergyMomentum &
+  subroutine ComputeComovingEnergyMomentumDefault &
                ( J, H_1, H_2, H_3, E, S_1, S_2, S_3, FF, SF, RM, &
                  M_DD_22, M_DD_33, M_UU_22, M_UU_33, V_1, V_2, V_3 )
 
@@ -926,7 +996,116 @@ contains
     end do !-- iV
     !$OMP end parallel do
 
-  end subroutine ComputeComovingEnergyMomentum
+  end subroutine ComputeComovingEnergyMomentumDefault
+
+  
+   subroutine ComputeComovingEnergyMomentumBroyden &
+               ( J, H_1, H_2, H_3, E, S_1, S_2, S_3, FF, SF, RM, &
+                 M_DD_22, M_DD_33, M_UU_22, M_UU_33, V_1, V_2, V_3 )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      J, &
+      H_1, H_2, H_3
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      E, &
+      S_1, S_2, S_3, &
+      FF, SF
+    class ( RadiationMomentsForm ), intent ( in ) :: &
+      RM
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      M_DD_22, M_DD_33, &
+      M_UU_22, M_UU_33, &
+      V_1, V_2, V_3
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+    real ( KDR ), dimension ( size ( E ) ) :: &
+      H
+    logical ( KDL ) :: &
+      Success
+    real ( KDR ), dimension ( 4 ) :: &
+      Guess_1, &
+      Guess_2, &
+      Root
+
+    nValues  =  size ( J )
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nValues
+      Root = huge ( 0.0 )
+      if ( E ( iV )  >  0.0_KDR ) then
+         call SetParameters &
+                ( FF ( iV ), SF ( iV ), &
+                  V_1 ( iV ), V_2 ( iV ), V_3 ( iV ), &
+                  M_DD_22 ( iV ), M_DD_33 ( iV ), &
+                  M_UU_22 ( iV ), M_UU_33 ( iV ), &
+                  E ( iV ), S_1 ( iV ), S_2 ( iV ), S_3 ( iV ), &
+                  Parameters )
+         call ComputeInitialGuesses ( Guess_1, Guess_2, Parameters )
+         call RF % SolveBroyden ( Guess_1, Guess_2, Root )
+
+        if ( .not. RF % Success ) then
+          call Show ( '>>> ComputeComoving fail', CONSOLE % ERROR )
+          call Show ( RM % Name, '>>> Species', CONSOLE % ERROR )
+          call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', &
+                      CONSOLE % ERROR )
+          call Show ( iV, '>>> iV', CONSOLE % ERROR )
+          call Show ( J ( iV ), '>>> J', CONSOLE % ERROR )
+          call Show ( H_1 ( iV ), '>>> H_1', CONSOLE % ERROR )
+          call Show ( H_2 ( iV ), '>>> H_2', CONSOLE % ERROR )
+          call Show ( H_3 ( iV ), '>>> H_3', CONSOLE % ERROR )
+          call Show &
+               ( RF % SolutionAccuracy, &
+                 '>>> SolutionAccuracy', CONSOLE % ERROR )
+        end if
+
+        J   ( iV ) = Root ( 1 )
+        H_1 ( iV ) = Root ( 2 )
+        H_2 ( iV ) = Root ( 3 )
+        H_3 ( iV ) = Root ( 4 )
+        
+      else
+        J   ( iV ) = 0.0_KDR
+        H_1 ( iV ) = 0.0_KDR
+        H_2 ( iV ) = 0.0_KDR
+        H_3 ( iV ) = 0.0_KDR
+        E   ( iV ) = 0.0_KDR
+        S_1 ( iV ) = 0.0_KDR
+        S_2 ( iV ) = 0.0_KDR
+        S_3 ( iV ) = 0.0_KDR
+        FF  ( iV ) = 0.0_KDR
+        SF  ( iV ) = 0.0_KDR
+      end if
+    end do !-- iV
+    !$OMP end parallel do
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nValues
+      H ( iV )  =  sqrt ( H_1 ( iV ) ** 2  &
+                          +  M_DD_22 ( iV )  *  H_2 ( iV ) ** 2  &
+                          +  M_DD_33 ( iV )  *  H_3 ( iV ) ** 2 )
+    end do !-- iV
+    !$OMP end parallel do
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nValues
+      if ( H ( iV )  >  J ( iV ) ) then
+        H_1 ( iV )  =  ( H_1 ( iV )  /  H ( iV ) )  *  J ( iV )
+        H_2 ( iV )  =  ( H_2 ( iV )  /  H ( iV ) )  *  J ( iV )
+        H_3 ( iV )  =  ( H_3 ( iV )  /  H ( iV ) )  *  J ( iV )
+        S_1 ( iV )  =  H_1 ( iV )
+        S_2 ( iV )  =  M_DD_22 ( iV )  *  H_2 ( iV )
+        S_3 ( iV )  =  M_DD_33 ( iV )  *  H_3 ( iV )
+      end if
+
+      call ComputeMomentFactors &
+               ( SF ( iV ), FF ( iV ), J ( iV ), H_1 ( iV ), H_2 ( iV ), &
+                 H_3 ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ) )
+    end do !-- iV
+    !$OMP end parallel do
+
+  end subroutine ComputeComovingEnergyMomentumBroyden
 
 
   subroutine ComputeEigenspeeds &
@@ -991,8 +1170,10 @@ contains
     do iV = 1, nValues
 
       call ComputeComovingStress_D &
-             ( K_U_Dim_D, [ H_1 ( iV ), H_2 ( iV ), H_3 ( iV ) ], J ( iV ), &
-               SF ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ), iDim )
+             ( K_U_Dim_D ( 1 ), K_U_Dim_D ( 2 ), K_U_Dim_D ( 3 ), &
+               K_U_Dim_D ( iDim ), J ( iV ), H_1 ( iV ), H_2 ( iV ), &
+               H_3 ( iV ), H_Dim ( iV ), FF ( iV ), SF ( iV ), &
+               M_DD_22 ( iV ), M_DD_33 ( iV ) )
       
       F_E   ( iV )  =  H_Dim ( iV )  +  J ( iV ) * V_Dim ( iV )  &
                        +  K_U_Dim_D ( 1 )  *  V_1 ( iV )  &
@@ -1117,37 +1298,36 @@ contains
   end subroutine ComputeMomentFactors
 
 
-  subroutine ComputeComovingStress_D ( K_D, H_U, J, SF, M_DD_22, M_DD_33, iD )
+  subroutine ComputeComovingStress_D &
+               ( K_1, K_2, K_3, K_Dim, J, H_1, H_2, H_3, H_Dim, FF, SF, &
+                 M_DD_22, M_DD_33 )
 
-    real ( KDR ), dimension ( 3 ), intent ( inout ) :: &
-      K_D
-    real ( KDR ), dimension ( 3 ), intent ( in ) :: &
-      H_U
+    real ( KDR ), intent ( inout ) :: &
+      K_1, K_2, K_3, K_Dim
     real ( KDR ), intent ( in ) :: &
       J, &
-      SF, &
+      H_1, H_2, H_3, H_Dim, &
+      FF, SF, &
       M_DD_22, M_DD_33
-    integer ( KDI ), intent ( in ) :: &
-      iD
 
-    integer ( KDI ) :: &
-      jD
     real ( KDR ) :: &
       H_Sq
 
-    H_Sq  =  max (                H_U ( 1 ) ** 2  &
-                   +  M_DD_22  *  H_U ( 2 ) ** 2  &
-                   +  M_DD_33  *  H_U ( 3 ) ** 2, &
+    H_Sq  =  max (                H_1 ** 2  &
+                   +  M_DD_22  *  H_2 ** 2  &
+                   +  M_DD_33  *  H_3 ** 2, &
                    tiny ( 0.0_KDR ) )   
 
-    do jD = 1, 3
-      K_D ( jD )  =  0.5_KDR  *  ( 3.0_KDR * SF  -  1.0_KDR )  &
-                     *  H_U ( iD )  *  H_U ( jD )  /  H_Sq   *  J
-    end do
-    K_D ( 2 )  =  M_DD_22 * K_D ( 2 )
-    K_D ( 3 )  =  M_DD_33 * K_D ( 3 )
-    
-    K_D ( iD )  =  K_D ( iD )  +  0.5_KDR * ( 1.0_KDR  -  SF )  *  J
+    K_1  =  0.5_KDR  *  ( 3.0_KDR * SF  -  1.0_KDR )  &
+            *  H_Dim  *            H_1  /  H_Sq   *  J
+
+    K_2  =  0.5_KDR  *  ( 3.0_KDR * SF  -  1.0_KDR )  &
+            *  H_Dim  *  M_DD_22 * H_2  /  H_Sq   *  J
+
+    K_3  =  0.5_KDR  *  ( 3.0_KDR * SF  -  1.0_KDR )  &
+            *  H_Dim  *  M_DD_33 * H_3  /  H_Sq   *  J
+
+    K_Dim  =  K_Dim  +  0.5_KDR * ( 1.0_KDR  -  SF )  *  J
 
   end subroutine ComputeComovingStress_D
 
@@ -1198,24 +1378,27 @@ contains
              ( SF, FF, J_Old, H_Old_1, H_Old_2, H_Old_3, M_DD_22, M_DD_33  )
 
       call ComputeComovingStress_D &
-             ( K_U_Dim_D, [ H_Old_1, H_Old_2, H_Old_3 ], J_Old, SF, &
-               M_DD_22, M_DD_33, iD = 1 )
+             ( K_U_Dim_D ( 1 ), K_U_Dim_D ( 2 ), K_U_Dim_D ( 3 ), &
+               K_U_Dim_D ( 1 ), J_Old, H_Old_1, H_Old_2, H_Old_3, H_Old_1, &
+               FF, SF, M_DD_22, M_DD_33 )
       H_1  =  S_1  -  J_Old * V_1   &
                    -  K_U_Dim_D ( 1 )  *  V_1   &
                    -  K_U_Dim_D ( 2 )  *  V_2   &
                    -  K_U_Dim_D ( 3 )  *  V_3 
 
       call ComputeComovingStress_D &
-             ( K_U_Dim_D, [ H_Old_1, H_Old_2, H_Old_3 ], J_Old, SF, &
-               M_DD_22, M_DD_33, iD = 2 )
+             ( K_U_Dim_D ( 1 ), K_U_Dim_D ( 2 ), K_U_Dim_D ( 3 ), &
+               K_U_Dim_D ( 2 ), J_Old, H_Old_1, H_Old_2, H_Old_3, H_Old_2, &
+               FF, SF, M_DD_22, M_DD_33 )
       H_2  =  M_UU_22 * S_2  -  J_Old  * V_2   &
                              -  K_U_Dim_D ( 1 )  *  V_1   &
                              -  K_U_Dim_D ( 2 )  *  V_2   &
                              -  K_U_Dim_D ( 3 )  *  V_3 
 
       call ComputeComovingStress_D &
-             ( K_U_Dim_D, [ H_Old_1, H_Old_2, H_Old_3 ], J_Old, SF, &
-               M_DD_22, M_DD_33, iD = 3 )
+             ( K_U_Dim_D ( 1 ), K_U_Dim_D ( 2 ), K_U_Dim_D ( 3 ), &
+               K_U_Dim_D ( 3 ), J_Old, H_Old_1, H_Old_2, H_Old_3, H_Old_3, &
+               FF, SF, M_DD_22, M_DD_33 )
       H_3  =  M_UU_33 * S_3  -  J_Old * V_3   &
                              -  K_U_Dim_D ( 1 )  *  V_1   &
                              -  K_U_Dim_D ( 2 )  *  V_2   &
@@ -1232,8 +1415,8 @@ contains
       Delta_J_J  =  abs ( J - J_Old )  /  max ( abs ( J ), tiny ( 0.0_KDR ) )
       Delta_H_H  =  NormDelta_H  /  max ( Norm_H, tiny ( 0.0_KDR ) )
 
-      if ( Delta_J_J  <  1.0e-10_KDR &
-           .and. Delta_H_H  <  1.0e-9_KDR ) &
+      if ( Delta_J_J  <  1.0e-8_KDR &
+           .and. Delta_H_H  <  1.0e-8_KDR ) &
       then
         Success  =  .true.
         exit
@@ -1242,6 +1425,168 @@ contains
     end do !-- iS
 
   end subroutine ComputeComovingNonlinearSolve
+
+
+  subroutine FunctionWrapper ( Parameters, Input, Result )
+
+    class ( * ), intent ( in ) :: &
+      Parameters                            !-- RadiationMomentsForm
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      Input                                             !-- J, H_1, H_2, H_3
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      Result                                            
+
+    integer ( KDI ) :: &
+     iV, &
+     jV
+    real ( KDR ) :: &
+      H, &
+      k, &
+      vH, &
+      L_X
+   real ( KDR ), dimension ( 3 ) :: &
+      Kv
+   real ( KDR ), dimension ( 4 ) :: &
+      b
+    real ( KDR ), dimension ( 4, 4 ) :: &
+      L
+
+    select type ( P => Parameters )
+    type is ( ParameterForm )
+
+      H = sqrt (                    Input ( 2 ) ** 2.0_KDR &
+                 + P % M_DD ( 2 ) * Input ( 3 ) ** 2.0_KDR &
+                 + P % M_DD ( 3 ) * Input ( 4 ) ** 2.0_KDR )
+
+      call ComputeEddingtonFactor ( Input ( 1 ), H, k )
+
+      L = 0.0_KDR
+      L ( 1, 1 ) = 1.0_KDR
+
+      vH = 0.0_KDR
+      do iV = 2, 4
+        L ( iV, 1 ) = P % V ( iV - 1 )
+        L ( 1, iV ) = 2.0_KDR * P % V ( iV - 1 )
+        L ( iV, iV ) = 1.0_KDR
+        vH = vH + P % V ( iV - 1 ) * P % M_DD ( iV - 1 ) * Input ( iV )
+      end do !-- iV
+    
+      Kv = 0.0_KDR 
+      b  = 0.0_KDR 
+      
+      do iV = 2, 4 
+        Kv ( iV - 1 ) = 0.5_KDR * ( ( 1.0_KDR - k ) * P % V ( iV - 1 ) &
+                       + ( 3.0_KDR * k - 1.0_KDR ) * Input ( iV ) * vH &
+                          / max (  H ** 2, tiny ( 0.0 ) ) )
+        b ( iV ) = Kv ( iV - 1 ) * Input ( 1 )
+      end do !-- iV
+    
+      do iV = 1, 4 
+        L_X = 0.0_KDR
+        do jV = 1, 4
+           L_X = L_X + L ( iV, JV ) * Input ( jV ) 
+        end do !--jV
+        Result ( iV ) = L_X + b ( iV ) - P % E_M ( iV )
+      end do !-- iV
+
+    end select !-- P
+
+    call Show ( [ Input, Result ], 'Input - Result', CONSOLE % INFO_7 )
+  
+  end subroutine FunctionWrapper
+
+  
+  subroutine SetParameters &
+               ( FF, SF, V_1, V_2, V_3, M_DD_22, M_DD_33, &
+                 M_UU_22, M_UU_33, E, S_1, S_2, S_3, Parameters )
+   
+    real ( KDR ), intent ( in ) :: &
+      FF, SF, &
+      V_1, V_2, V_3, &
+      M_DD_22, M_DD_33, &
+      M_UU_22, M_UU_33, &
+      E, S_1, S_2, S_3
+    type ( ParameterForm ), intent ( out ) :: &
+      Parameters
+      
+    !-- Moment Factors
+      Parameters % FF = FF
+      Parameters % SF = SF
+      
+    !-- Velocities
+      Parameters % V ( 1 ) = V_1
+      Parameters % V ( 2 ) = V_2
+      Parameters % V ( 3 ) = V_3
+
+    !-- Metric Factors
+      Parameters % M_DD ( 1 ) = 1.0_KDR
+      Parameters % M_DD ( 2 ) = M_DD_22
+      Parameters % M_DD ( 3 ) = M_DD_33
+      
+      Parameters % M_UU ( 1 ) = 1.0_KDR
+      Parameters % M_UU ( 2 ) = M_UU_22
+      Parameters % M_UU ( 3 ) = M_UU_33
+
+    !-- Eulerian Moments
+      Parameters % E_M ( 1 ) = E
+      Parameters % E_M ( 2 ) = S_1
+      Parameters % E_M ( 3 ) = S_2
+      Parameters % E_M ( 4 ) = S_3
+    
+  end subroutine SetParameters
+
+
+  subroutine ComputeInitialGuesses ( Guess_1, Guess_2, Parameters )
+    real ( KDR ), dimension ( 4 ), intent ( inout ) :: &
+      Guess_1, &
+      Guess_2
+    type ( ParameterForm ), intent ( in ) :: &
+      Parameters
+
+    integer ( KDI ) :: &
+     iV
+    real ( KDR ) :: &
+      H, &
+      FF, &
+      SF, &
+      vH
+    real ( KDR ), dimension ( 3 ) :: &
+      Kv
+
+     Associate ( P => Parameters )
+    
+      Guess_1 = P % E_M
+
+      H = sqrt (                    Guess_1 ( 2 ) ** 2 &
+                 + P % M_DD ( 2 ) * Guess_1 ( 3 ) ** 2 &
+                 + P % M_DD ( 3 ) * Guess_1 ( 4 ) ** 2 )
+      
+      call ComputeMomentFactors &
+             ( SF, FF, Guess_1 ( 1 ), Guess_1 ( 2 ),Guess_1 ( 3 ), &
+               Guess_1 ( 4 ), P % M_DD ( 2 ), P % M_DD ( 3 ) )
+
+      vH = 0.0_KDR
+      do iV = 1, 3 
+        vH = vH + P % V ( iV ) * P % M_DD ( iV ) * Guess_1 ( iV + 1 )
+      end do
+
+      do iV = 1, 3 
+        Kv ( iV ) = 0.5_KDR * ( ( 1.0_KDR - SF ) * P % V ( iV ) &
+                    + ( 3.0_KDR * SF - 1 ) &
+                      * Guess_1 ( iV + 1 ) * vH / H ** 2.0_KDR )
+      end do
+
+      Guess_2 ( 1 ) = Guess_1 ( 1 ) - 2.0_KDR * vH
+
+      do iV = 2, 4
+        Guess_2 ( iV ) = Guess_1 ( iV ) &
+                         - Guess_1 ( 1 ) * ( P % V ( iV - 1 ) + Kv ( iV - 1 ) )
+      end do
+               
+    end associate !-- P
+      
+
+  end subroutine ComputeInitialGuesses
 
 
 end module RadiationMoments_Form
