@@ -169,10 +169,12 @@ contains
 !      .and. TimeStep < 2.0e-6_KDR * UNIT % SECOND &
 !      .and. mod ( I % iCycle, 1000 ) == 0 ) &
 ! then
+!if ( I % iCycle > 92937 ) then
 !   I % IsCheckpointTime = .true.
-! end if
+!end if
 
 if ( TimeStep < 1.0e-12_KDR * UNIT % SECOND ) then
+  call Show ( I % iCycle, '>>> iCycle' )
   call Show ( TimeStep, I % TimeUnit, '>>> TimeStep too small', CONSOLE % ERROR )
   call PROGRAM_HEADER % Abort ( )
 end if
