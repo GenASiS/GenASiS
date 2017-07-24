@@ -92,6 +92,8 @@ module Integrator_Template
       WriteTimeSeries
     procedure, private, pass :: &  !-- 3
       SetWriteTimeInterval
+    procedure, public, pass :: &
+      PrepareCycle
     procedure, public, pass :: &  !-- 3
       ComputeNewTime
     procedure, public, pass :: &
@@ -590,6 +592,14 @@ contains
       = ( I % FinishTime - I % StartTime ) / I % nWrite
 
   end subroutine SetWriteTimeInterval
+
+
+  subroutine PrepareCycle ( I )
+
+    class ( IntegratorTemplate ), intent ( inout ) :: &
+      I
+
+  end subroutine PrepareCycle
 
 
   subroutine ComputeNewTime ( I, TimeNew, HoldCheckpointSolveOption )

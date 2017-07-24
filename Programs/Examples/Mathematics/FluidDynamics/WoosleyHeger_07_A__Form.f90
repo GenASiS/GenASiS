@@ -3,6 +3,7 @@ module WoosleyHeger_07_A__Form
   !-- WoosleyHeger_07_Adiabatic__Form
 
   use Mathematics
+  use Fluid_P_MHN__Form
   use Fluid_ASC__Form
   use WoosleyHeger_07_Header_Form
 
@@ -17,6 +18,8 @@ module WoosleyHeger_07_A__Form
       Initialize
     procedure, public, pass :: &
       SetWriteTimeInterval
+    procedure, public, pass :: &
+      PrepareCycle
     final :: &
       Finalize
   end type WoosleyHeger_07_A_Form
@@ -85,6 +88,35 @@ contains
     call I % Header % SetWriteTimeInterval ( )
 
   end subroutine SetWriteTimeInterval
+
+
+  subroutine PrepareCycle ( I )
+
+    class ( WoosleyHeger_07_A_Form ), intent ( inout ) :: &
+      I
+
+    class ( GeometryFlatForm ), pointer :: &
+      G
+    class ( Fluid_P_MHN_Form ), pointer :: &
+      F
+
+    associate ( WHH => I % Header )
+
+    associate ( FA => WHH % Fluid_ASC )
+    F => FA % Fluid_P_MHN ( )
+
+    select type ( PS => WHH % Integrator % PositionSpace )
+    class is ( Atlas_SC_Form )
+    G => PS % Geometry ( )
+
+    call WHH % ComputeGravity ( F, PS, G )
+
+    end select !-- PS
+    end associate !-- FA
+    end associate !-- WHH
+    nullify ( F, G )
+
+  end subroutine PrepareCycle
 
 
   impure elemental subroutine Finalize ( WH )

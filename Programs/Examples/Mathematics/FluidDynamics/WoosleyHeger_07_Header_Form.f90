@@ -45,12 +45,20 @@ module WoosleyHeger_07_Header_Form
       SetIntegratorParameters
     procedure, public, pass :: &
       SetWriteTimeInterval
+    procedure, public, nopass :: &
+      ComputeGravity
   end type WoosleyHeger_07_HeaderForm
 
     private :: &
       PrepareInterpolation, &
-      LocalMax
+      LocalMax, &
+      ComputeGravityEdge, &
+      ComputeGravityCenter
 
+    real ( KDR ), dimension ( : ), allocatable, private :: &
+      Potential, &    !-- Edge
+      Potential_C, &  !-- Center
+      Acceleration_C  !-- Center
     integer ( KDI ), private, parameter :: &
       iRADIUS_TS            = 2, &  !-- must match the profile file columns
       iRADIAL_VELOCITY_TS   = 3, &
@@ -69,17 +77,7 @@ module WoosleyHeger_07_Header_Form
     ApplyGravity
 
     private :: &
-      ComputeGravity, &
-      ApplySourcesKernel
-
-      private :: &
-        ComputeGravityEdge, &
-        ComputeGravityCenter
-
-    real ( KDR ), dimension ( : ), allocatable, private :: &
-      Potential, &    !-- Edge
-      Potential_C, &  !-- Center
-      Acceleration_C  !-- Center
+      ApplyGravityKernel
 
 contains
 
@@ -444,6 +442,67 @@ contains
   end subroutine SetWriteTimeInterval
 
 
+  subroutine ComputeGravity ( F, PS, G )
+
+    class ( CurrentTemplate ), intent ( in ) :: &
+      F
+    class ( AtlasHeaderForm ), intent ( in ) :: &
+      PS
+    type ( GeometryFlatForm ), intent ( in ) :: &
+      G
+
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+      Phi_C, &
+      dPhi_dR_C, &
+      R
+
+    select type ( F )
+    class is ( Fluid_P_MHN_Form )
+
+    select type ( PS )
+    class is ( Atlas_SC_Form )
+
+    select type ( C => PS % Chart )
+    class is ( Chart_SLD_Form )
+
+    call ComputeGravityEdge &
+           ( C, F % Value ( :, F % CONSERVED_DENSITY ), &
+             G % Value ( :, G % VOLUME_JACOBIAN ), &
+             G % VALUE ( :, G % CENTER ( 1 ) ), &
+             G % VALUE ( :, G % WIDTH ( 1 ) ), CONSTANT % GRAVITATIONAL, &
+             Potential )
+
+    call Clear ( Potential_C )
+    call Clear ( Acceleration_C )
+    call C % SetVariablePointer ( Potential_C,    Phi_C )
+    call C % SetVariablePointer ( Acceleration_C, dPhi_dR_C )
+    call C % SetVariablePointer ( G % VALUE ( :, G % CENTER ( 1 ) ), R )
+
+    call ComputeGravityCenter ( Phi_C, dPhi_dR_C, C, R, Potential )
+
+    ! !-- 1D
+
+    ! call Clear ( Potential_C )
+
+    ! oV   =  Chart % nGhostLayers ( 1 )
+    ! nV   =  Chart % nCellsBrick ( 1 )
+    ! oVM  =  ( Chart % iaBrick ( 1 ) - 1 ) * Chart % nCellsBrick ( 1 ) &
+    !         -  Chart % nGhostLayers ( 1 )
+    ! do iV = oV + 1, oV + nV
+    !   Potential_C ( iV )  &
+    !     =  0.5_KDR * ( Potential ( oVM + iV - 1 )  +  Potential ( oVM + iV ) )
+    ! end do
+    ! Potential_C ( oV + nV + 1 )  =  Potential ( oVM + oV + nV )
+
+    end select !-- C
+    end select !-- PS
+    end select !-- F
+
+    nullify ( Phi_C, dPhi_dR_C, R )
+
+  end subroutine ComputeGravity
+
+
   subroutine PrepareInterpolation ( SI )
 
     type ( SplineInterpolationForm ), dimension ( 5 ), intent ( inout ) :: &
@@ -616,218 +675,6 @@ contains
     !$OMP end parallel do
  
   end function LocalMax
-
-
-  subroutine ApplyGravity &
-               ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
-
-    class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
-      S
-    class ( Sources_C_Form ), intent ( inout ) :: &
-      Sources_F
-    type ( VariableGroupForm ), intent ( inout ), target :: &
-      Increment
-    class ( CurrentTemplate ), intent ( in ) :: &
-      Fluid
-    real ( KDR ), intent ( in ) :: &
-      TimeStep
-    integer ( KDI ), intent ( in ) :: &
-      iStage
-
-    integer ( KDI ) :: &
-      iMomentum_1, &
-      iEnergy
-    real ( KDR ), dimension ( :, :, : ), pointer :: &
-      KV_M_1, &
-      KV_E, &
-      SV_M_1, &
-      SV_E, &
-      D, &
-      V_1, &
-      dPhi_dR
-    class ( GeometryFlatForm ), pointer :: &
-      G
-    type ( TimerForm ), pointer :: &
-      Timer
-
-    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerSources )
-    if ( associated ( Timer ) ) call Timer % Start ( )
-
-    call ApplyCurvilinear_F &
-           ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
-
-    call Show ( 'ApplySources_Gravity', CONSOLE % INFO_4 )
-
-    select type ( F => Fluid )
-    class is ( Fluid_P_MHN_Form )
-
-    call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 1 ), iMomentum_1 )
-    call Search ( F % iaConserved, F % CONSERVED_ENERGY, iEnergy )
-
-    select type ( FS => Sources_F )
-    class is ( Sources_F_Form )
-
-    select type ( Chart => S % Chart )
-    class is ( Chart_SLD_Form )
-
-    G => Chart % Geometry ( )
-
-!    if ( iStage == 1 ) &
-      call ComputeGravity ( F, Chart % Atlas, G )
-
-    call Chart % SetVariablePointer &
-           ( Increment % Value ( :, iMomentum_1 ), KV_M_1 )
-    call Chart % SetVariablePointer &
-           ( Increment % Value ( :, iEnergy ), KV_E )
-    call Chart % SetVariablePointer &
-           ( FS % Value ( :, FS % GRAVITATIONAL_S_D ( 1 ) ), SV_M_1 )
-    call Chart % SetVariablePointer &
-           ( FS % Value ( :, FS % GRAVITATIONAL_E ), SV_E )
-    call Chart % SetVariablePointer &
-           ( F % Value ( :, F % CONSERVED_DENSITY ), D )
-    call Chart % SetVariablePointer &
-           ( F % Value ( :, F % VELOCITY_U ( 1 ) ), V_1 )
-    call Chart % SetVariablePointer &
-           ( Acceleration_C, dPhi_dR )
-
-    call ApplySourcesKernel &
-           ( KV_M_1, KV_E, SV_M_1, SV_E, D, V_1, dPhi_dR, &
-             CONSTANT % GRAVITATIONAL, TimeStep, S % B ( iStage ), &
-             oV = Chart % nGhostLayers )
-
-    end select !-- Chart
-    end select !-- FS
-    end select !-- F
-
-    nullify ( KV_M_1, KV_E, SV_M_1, SV_E, dPhi_dR, D, V_1 )
-
-    if ( associated ( Timer ) ) call Timer % Stop ( )
-
-  end subroutine ApplyGravity
-
-
-  subroutine ComputeGravity ( F, PS, G )
-
-    class ( CurrentTemplate ), intent ( in ) :: &
-      F
-    class ( AtlasHeaderForm ), intent ( in ) :: &
-      PS
-    type ( GeometryFlatForm ), intent ( in ) :: &
-      G
-
-    real ( KDR ), dimension ( :, :, : ), pointer :: &
-      Phi_C, &
-      dPhi_dR_C, &
-      R
-
-    select type ( F )
-    class is ( Fluid_P_MHN_Form )
-
-    select type ( PS )
-    class is ( Atlas_SC_Form )
-
-    select type ( C => PS % Chart )
-    class is ( Chart_SLD_Form )
-
-    call ComputeGravityEdge &
-           ( C, F % Value ( :, F % CONSERVED_DENSITY ), &
-             G % Value ( :, G % VOLUME_JACOBIAN ), &
-             G % VALUE ( :, G % CENTER ( 1 ) ), &
-             G % VALUE ( :, G % WIDTH ( 1 ) ), CONSTANT % GRAVITATIONAL, &
-             Potential )
-
-    call Clear ( Potential_C )
-    call Clear ( Acceleration_C )
-    call C % SetVariablePointer ( Potential_C,    Phi_C )
-    call C % SetVariablePointer ( Acceleration_C, dPhi_dR_C )
-    call C % SetVariablePointer ( G % VALUE ( :, G % CENTER ( 1 ) ), R )
-
-    call ComputeGravityCenter ( Phi_C, dPhi_dR_C, C, R, Potential )
-
-    ! !-- 1D
-
-    ! call Clear ( Potential_C )
-
-    ! oV   =  Chart % nGhostLayers ( 1 )
-    ! nV   =  Chart % nCellsBrick ( 1 )
-    ! oVM  =  ( Chart % iaBrick ( 1 ) - 1 ) * Chart % nCellsBrick ( 1 ) &
-    !         -  Chart % nGhostLayers ( 1 )
-    ! do iV = oV + 1, oV + nV
-    !   Potential_C ( iV )  &
-    !     =  0.5_KDR * ( Potential ( oVM + iV - 1 )  +  Potential ( oVM + iV ) )
-    ! end do
-    ! Potential_C ( oV + nV + 1 )  =  Potential ( oVM + oV + nV )
-
-    end select !-- C
-    end select !-- PS
-    end select !-- F
-
-    nullify ( Phi_C, dPhi_dR_C, R )
-
-  end subroutine ComputeGravity
-
-
-  subroutine ApplySourcesKernel &
-               ( KV_M_1, KV_E, SV_M_1, SV_E, D, V_1, dPhi_dR, G, dT, &
-                 Weight_RK, oV )
-
-    real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
-      KV_M_1, &
-      KV_E, &
-      SV_M_1, &
-      SV_E
-    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
-      D, &
-      V_1, &
-      dPhi_dR
-    real ( KDR ), intent ( in ) :: &
-      G, &
-      dT, &
-      Weight_RK
-    integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
-      oV
-
-    integer ( KDI ) :: &
-      iV, jV, kV
-    integer ( KDI ), dimension ( 3 ) :: &
-      lV, uV
-    real ( KDR ) :: &
-      dPhi_dR_C
-
-    lV = 1
-    where ( shape ( D ) > 1 )
-      lV = oV + 1
-    end where
-    
-    uV = 1
-    where ( shape ( D ) > 1 )
-      uV = shape ( D ) - oV
-    end where
-
-    !$OMP parallel do private ( iV, jV, kV )
-    do kV = lV ( 3 ), uV ( 3 ) 
-      do jV = lV ( 2 ), uV ( 2 )
-        do iV = lV ( 1 ), uV ( 1 )
-          KV_M_1 ( iV, jV, kV )  &
-            =  KV_M_1 ( iV, jV, kV )  &
-               -  dT  *  D ( iV, jV, kV )  *  dPhi_dR ( iV, jV, kV )
-          KV_E ( iV, jV, kV )  &
-            =  KV_E ( iV, jV, kV )  &
-               -  dT  *  D ( iV, jV, kV )  *  dPhi_dR ( iV, jV, kV ) &
-                      *  V_1 ( iV, jV, kV ) 
-          SV_M_1 ( iV, jV, kV )  &
-            =  SV_M_1 ( iV, jV, kV )  &
-               -  D ( iV, jV, kV )  *  dPhi_dR ( iV, jV, kV )  *  Weight_RK
-          SV_E ( iV, jV, kV )  &
-            =  SV_E ( iV, jV, kV )  &
-               -  D ( iV, jV, kV )  *  dPhi_dR ( iV, jV, kV ) &
-                  *  V_1 ( iV, jV, kV )  *  Weight_RK
-        end do
-      end do
-    end do
-    !$OMP end parallel do
-
-  end subroutine ApplySourcesKernel
 
 
   subroutine ComputeGravityEdge ( C, D, VJ, R, dR, G, Phi )
@@ -1008,6 +855,154 @@ contains
     !$OMP end parallel do
 
   end subroutine ComputeGravityCenter
+
+
+  subroutine ApplyGravity &
+               ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
+
+    class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
+      S
+    class ( Sources_C_Form ), intent ( inout ) :: &
+      Sources_F
+    type ( VariableGroupForm ), intent ( inout ), target :: &
+      Increment
+    class ( CurrentTemplate ), intent ( in ) :: &
+      Fluid
+    real ( KDR ), intent ( in ) :: &
+      TimeStep
+    integer ( KDI ), intent ( in ) :: &
+      iStage
+
+    integer ( KDI ) :: &
+      iMomentum_1, &
+      iEnergy
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+      KV_M_1, &
+      KV_E, &
+      SV_M_1, &
+      SV_E, &
+      D, &
+      V_1, &
+      dPhi_dR
+    class ( GeometryFlatForm ), pointer :: &
+      G
+    type ( TimerForm ), pointer :: &
+      Timer
+
+    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerSources )
+    if ( associated ( Timer ) ) call Timer % Start ( )
+
+    call ApplyCurvilinear_F &
+           ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
+
+    call Show ( 'ApplySources_Gravity', CONSOLE % INFO_4 )
+
+    select type ( F => Fluid )
+    class is ( Fluid_P_MHN_Form )
+
+    call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 1 ), iMomentum_1 )
+    call Search ( F % iaConserved, F % CONSERVED_ENERGY, iEnergy )
+
+    select type ( FS => Sources_F )
+    class is ( Sources_F_Form )
+
+    select type ( Chart => S % Chart )
+    class is ( Chart_SLD_Form )
+
+    G => Chart % Geometry ( )
+
+    call Chart % SetVariablePointer &
+           ( Increment % Value ( :, iMomentum_1 ), KV_M_1 )
+    call Chart % SetVariablePointer &
+           ( Increment % Value ( :, iEnergy ), KV_E )
+    call Chart % SetVariablePointer &
+           ( FS % Value ( :, FS % GRAVITATIONAL_S_D ( 1 ) ), SV_M_1 )
+    call Chart % SetVariablePointer &
+           ( FS % Value ( :, FS % GRAVITATIONAL_E ), SV_E )
+    call Chart % SetVariablePointer &
+           ( F % Value ( :, F % CONSERVED_DENSITY ), D )
+    call Chart % SetVariablePointer &
+           ( F % Value ( :, F % VELOCITY_U ( 1 ) ), V_1 )
+    call Chart % SetVariablePointer &
+           ( Acceleration_C, dPhi_dR )
+
+    call ApplyGravityKernel &
+           ( KV_M_1, KV_E, SV_M_1, SV_E, D, V_1, dPhi_dR, &
+             CONSTANT % GRAVITATIONAL, TimeStep, S % B ( iStage ), &
+             oV = Chart % nGhostLayers )
+
+    end select !-- Chart
+    end select !-- FS
+    end select !-- F
+
+    nullify ( KV_M_1, KV_E, SV_M_1, SV_E, dPhi_dR, D, V_1 )
+
+    if ( associated ( Timer ) ) call Timer % Stop ( )
+
+  end subroutine ApplyGravity
+
+
+  subroutine ApplyGravityKernel &
+               ( KV_M_1, KV_E, SV_M_1, SV_E, D, V_1, dPhi_dR, G, dT, &
+                 Weight_RK, oV )
+
+    real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
+      KV_M_1, &
+      KV_E, &
+      SV_M_1, &
+      SV_E
+    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+      D, &
+      V_1, &
+      dPhi_dR
+    real ( KDR ), intent ( in ) :: &
+      G, &
+      dT, &
+      Weight_RK
+    integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
+      oV
+
+    integer ( KDI ) :: &
+      iV, jV, kV
+    integer ( KDI ), dimension ( 3 ) :: &
+      lV, uV
+    real ( KDR ) :: &
+      dPhi_dR_C
+
+    lV = 1
+    where ( shape ( D ) > 1 )
+      lV = oV + 1
+    end where
+    
+    uV = 1
+    where ( shape ( D ) > 1 )
+      uV = shape ( D ) - oV
+    end where
+
+    !$OMP parallel do private ( iV, jV, kV )
+    do kV = lV ( 3 ), uV ( 3 ) 
+      do jV = lV ( 2 ), uV ( 2 )
+        do iV = lV ( 1 ), uV ( 1 )
+          KV_M_1 ( iV, jV, kV )  &
+            =  KV_M_1 ( iV, jV, kV )  &
+               -  dT  *  D ( iV, jV, kV )  *  dPhi_dR ( iV, jV, kV )
+          KV_E ( iV, jV, kV )  &
+            =  KV_E ( iV, jV, kV )  &
+               -  dT  *  D ( iV, jV, kV )  *  dPhi_dR ( iV, jV, kV ) &
+                      *  V_1 ( iV, jV, kV ) 
+          SV_M_1 ( iV, jV, kV )  &
+            =  SV_M_1 ( iV, jV, kV )  &
+               -  D ( iV, jV, kV )  *  dPhi_dR ( iV, jV, kV )  *  Weight_RK
+          SV_E ( iV, jV, kV )  &
+            =  SV_E ( iV, jV, kV )  &
+               -  D ( iV, jV, kV )  *  dPhi_dR ( iV, jV, kV ) &
+                  *  V_1 ( iV, jV, kV )  *  Weight_RK
+        end do
+      end do
+    end do
+    !$OMP end parallel do
+
+  end subroutine ApplyGravityKernel
 
 
 end module WoosleyHeger_07_Header_Form
