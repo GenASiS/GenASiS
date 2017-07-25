@@ -197,7 +197,7 @@ module Step_RK_C_ASC__Template
       type ( VariableGroupForm ), intent ( inout ) :: &
         IncrementExplicit, &
         DampingCoefficient
-      class ( CurrentTemplate ), intent ( in ) :: &
+      class ( CurrentTemplate ), intent ( in ), target :: &
         Current
       class ( ChartTemplate ), intent ( in ) :: &
         Chart

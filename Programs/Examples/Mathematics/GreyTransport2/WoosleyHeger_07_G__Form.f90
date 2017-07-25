@@ -16,7 +16,7 @@ module WoosleyHeger_07_G__Form
   use Interactions_Template
   use Interactions_NM_1_G__Form
   use Interactions_ASC__Form
-  use ApplyRelaxation_NM_G_2__Command
+  use ApplyRelaxation_RM_2__Command
 
   implicit none
   private
@@ -38,6 +38,8 @@ module WoosleyHeger_07_G__Form
       Initialize
     procedure, public, pass :: &
       SetWriteTimeInterval
+    procedure, public, pass :: &
+      PrepareCycle
     final :: &
       Finalize
     procedure, private, pass :: &
@@ -53,7 +55,7 @@ module WoosleyHeger_07_G__Form
       SetRadiation_FluidVelocity
 
       private :: &
-        ComputeTimeStep_SB_J_Kernel, &
+        ComputeTimeStep_FS_R_Kernel, &
         ComputeTimeStep_SB_N_Kernel, &
         ComputeTimeStep_S_H_Kernel, &
         ComputeTimeStep_YE_N_Kernel, &
@@ -111,22 +113,18 @@ contains
 !    WH % N_CURRENTS_PS = 4
     WH % N_CURRENTS_PS = 3
     allocate ( WH % Current_ASC_1D ( WH % N_CURRENTS_PS ) )
-    allocate ( WH % TimeStepLabel ( WH % N_CURRENTS_PS + 8 ) )
+    allocate ( WH % TimeStepLabel ( WH % N_CURRENTS_PS + 3 ) )
     WH % TimeStepLabel ( WH % NEUTRINOS_E_NU ) = 'Nu_E'
     WH % TimeStepLabel ( WH % NEUTRINOS_E_NU_BAR ) = 'NuBar_E'
 !    WH % TimeStepLabel ( WH % NEUTRINOS_MU_TAU_NU_NU_BAR ) = 'Nu_X'
     WH % TimeStepLabel ( WH % FLUID ) = 'Fluid'
-    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 1 ) = 'SB_Nu_E_J'
-    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 2 ) = 'SB_Nu_E_N'
-    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 3 ) = 'S_Nu_E_J_H'
-    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 4 ) = 'YE_Nu_E_N'
+    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 1 ) = 'FluidSource_Radiation_G'
+!    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 2 ) = 'FluidSource_Radiation_S_1'
+    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 2 ) = 'FluidSource_Radiation_DS'
+    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 3 ) = 'FluidSource_Radiation_DP'
 !    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 5 ) = 'Interactions_E_J'
 !    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 5 ) = 'Interactions_SB_Div_J'
 !    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 6 ) = 'Interactions_SB_Div_N'
-    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 5 ) = 'SB_NuBar_E_J'
-    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 6 ) = 'SB_NuBar_E_N'
-    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 7 ) = 'S_NuBar_E_J_H'
-    WH % TimeStepLabel ( WH % N_CURRENTS_PS + 8 ) = 'YE_NuBar_E_N'
 
     !-- FIXME: This does not account for curvilinear coordinates
     MomentumDensity_U_Unit  =  WHH % EnergyDensityUnit / UNIT % SPEED_OF_LIGHT
@@ -216,16 +214,16 @@ contains
     S % ApplySources_1D ( WH % NEUTRINOS_E_NU ) % Pointer &
       =>  ApplySources_Radiation
     S % ApplyRelaxation_1D ( WH % NEUTRINOS_E_NU ) % Pointer &
-      =>  ApplyRelaxation_NM_G_2
-    S % HarvestIncrement_1D ( WH % NEUTRINOS_E_NU ) % Pointer &
-      =>  ComputeFluidSource_Radiation
+      =>  ApplyRelaxation_RM_2
+!    S % HarvestIncrement_1D ( WH % NEUTRINOS_E_NU ) % Pointer &
+!      =>  ComputeFluidSource_Radiation
 
     S % ApplySources_1D ( WH % NEUTRINOS_E_NU_BAR ) % Pointer &
       =>  ApplySources_Radiation
     S % ApplyRelaxation_1D ( WH % NEUTRINOS_E_NU_BAR ) % Pointer &
-      =>  ApplyRelaxation_NM_G_2
-    S % HarvestIncrement_1D ( WH % NEUTRINOS_E_NU_BAR ) % Pointer &
-      =>  ComputeFluidSource_Radiation
+      =>  ApplyRelaxation_RM_2
+!    S % HarvestIncrement_1D ( WH % NEUTRINOS_E_NU_BAR ) % Pointer &
+!      =>  ComputeFluidSource_Radiation
 
     ! S % ApplySources_1D ( WH % NEUTRINOS_MU_TAU_NU_NU_BAR ) % Pointer &
     !   =>  ApplySources_Radiation
@@ -236,8 +234,8 @@ contains
 
     S % ApplySources_1D ( WH % FLUID ) % Pointer &
       =>  ApplySources_Fluid
-    S % HarvestCurrent_1D ( WH % FLUID ) % Pointer &
-      =>  SetRadiation_FluidVelocity
+!    S % HarvestCurrent_1D ( WH % FLUID ) % Pointer &
+!      =>  SetRadiation_FluidVelocity
 
     end select !-- S
 
@@ -277,6 +275,35 @@ contains
   end subroutine SetWriteTimeInterval
 
 
+  subroutine PrepareCycle ( I )
+
+    class ( WoosleyHeger_07_G_Form ), intent ( inout ) :: &
+      I
+
+    class ( GeometryFlatForm ), pointer :: &
+      G
+
+    associate ( WHH => I % Header )
+
+    select type ( PS => WHH % Integrator % PositionSpace )
+    class is ( Atlas_SC_Form )
+    G => PS % Geometry ( )
+
+    call WHH % ComputeGravity ( Fluid, PS, G )
+
+    call Clear ( FluidSource_Radiation % Value )
+    call ComputeFluidSource_Radiation ( Fluid, Radiation_E, PS )
+    call ComputeFluidSource_Radiation ( Fluid, Radiation_E_Bar, PS )
+
+    call SetRadiation_FluidVelocity ( Fluid )
+
+    end select !-- PS
+    end associate !-- WHH
+    nullify ( G )
+
+  end subroutine PrepareCycle
+
+
   impure elemental subroutine Finalize ( WH )
 
     type ( WoosleyHeger_07_G_Form ), intent ( inout ) :: &
@@ -302,9 +329,14 @@ contains
     integer ( KDI ) :: &
       iTSC, &
       iEnergy, &
-      iNumber
-    class ( NeutrinoMoments_G_Form ), pointer :: &
-      R_E
+      iMomentum_1, &
+      iMomentum_2, &
+      iMomentum_3, &
+      iEntropy, &
+      iProton
+
+!    class ( NeutrinoMoments_G_Form ), pointer :: &
+!      R_E
 
     call I % ComputeTimeStepLocalTemplate ( TimeStepCandidate )
 
@@ -314,193 +346,241 @@ contains
     select type ( CSL => PS % Chart )
     class is ( Chart_SL_Template )
 
-    !-- Nu_E
+    associate ( F => Fluid )
 
-    select type &
-      ( RA_E => I % Current_ASC_1D &
-                  ( I % NEUTRINOS_E_NU ) % Element )
-    class is ( RadiationMoments_ASC_Form )
+    call Search ( F % iaConserved, F % CONSERVED_ENERGY, &
+                  iEnergy )
+    call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 1 ), &
+                  iMomentum_1 )
+    call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 2 ), &
+                  iMomentum_2 )
+    call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 3 ), &
+                  iMomentum_3 )
+    call Search ( F % iaConserved, F % CONSERVED_ENTROPY, iEntropy )
+    call Search ( F % iaConserved, F % CONSERVED_PROTON_DENSITY, iProton )
 
-    R_E  =>  RA_E % NeutrinoMoments_G ( )
-
-    associate &
-      ( I_R_E => Interactions, &
-        F => Fluid )
-
-    call I_R_E % Compute ( R_E )
-
-    call ComputeTimeStep_SB_J_Kernel &
+    call ComputeTimeStep_FS_R_Kernel &
            ( CSL % IsProperCell, &
-             I_R_E % Value ( :, I_R_E % EMISSIVITY_J ), &
-             I_R_E % Value ( :, I_R_E % OPACITY_J ), &
-             R_E % Value ( :, R_E % COMOVING_ENERGY ), &
-             F % Value ( :, F % TEMPERATURE ), &
-             F % Value ( :, F % ENTROPY_PER_BARYON ), &
-             F % Value ( :, F % BARYON_MASS ), &
-             F % Value ( :, F % COMOVING_DENSITY ), &
+             FluidSource_Radiation % Value ( :, iEnergy ), &
+             F % Value ( :, F % CONSERVED_ENERGY ), &
              TimeStepCandidate ( I % N_CURRENTS_PS + 1 ) )
-
-    call ComputeTimeStep_SB_N_Kernel &
+!    call ComputeTimeStep_FS_R_Kernel &
+!           ( CSL % IsProperCell, &
+!             FluidSource_Radiation % Value ( :, iMomentum_1 ), &
+!             F % Value ( :, F % MOMENTUM_DENSITY_D ( 1 ) ), &
+!             TimeStepCandidate ( I % N_CURRENTS_PS + 2 ) )
+    call ComputeTimeStep_FS_R_Kernel &
            ( CSL % IsProperCell, &
-             I_R_E % Value ( :, I_R_E % EMISSIVITY_N ), &
-             I_R_E % Value ( :, I_R_E % OPACITY_N ), &
-             R_E % Value ( :, R_E % COMOVING_NUMBER ), &
-             F % Value ( :, F % TEMPERATURE ), &
-             F % Value ( :, F % ENTROPY_PER_BARYON ), &
-             F % Value ( :, F % BARYON_MASS ), &
-             F % Value ( :, F % COMOVING_DENSITY ), &
-             F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
-             F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
+             FluidSource_Radiation % Value ( :, iEntropy ), &
+             F % Value ( :, F % CONSERVED_ENTROPY ), &
              TimeStepCandidate ( I % N_CURRENTS_PS + 2 ) )
-
-    call ComputeTimeStep_S_H_Kernel &
+    call ComputeTimeStep_FS_R_Kernel &
            ( CSL % IsProperCell, &
-             I_R_E % Value ( :, I_R_E % EMISSIVITY_J ), &
-             I_R_E % Value ( :, I_R_E % OPACITY_J ), &
-             I_R_E % Value ( :, I_R_E % OPACITY_H ), &
-             R_E % Value ( :, R_E % COMOVING_ENERGY ), &
-             R_E % Value ( :, R_E % COMOVING_MOMENTUM_U ( 1 ) ), &
-             R_E % Value ( :, R_E % FLUID_VELOCITY_U ( 1 ) ), &
-             F % Value ( :, F % MOMENTUM_DENSITY_D ( 1 ) ), &
+             FluidSource_Radiation % Value ( :, iProton ), &
+             F % Value ( :, F % CONSERVED_PROTON_DENSITY ), &
              TimeStepCandidate ( I % N_CURRENTS_PS + 3 ) )
 
-    call ComputeTimeStep_YE_N_Kernel &
-           ( CSL % IsProperCell, &
-             I_R_E % Value ( :, I_R_E % EMISSIVITY_N ), &
-             I_R_E % Value ( :, I_R_E % OPACITY_N ), &
-             R_E % Value ( :, R_E % COMOVING_NUMBER ), &
-             F % Value ( :, F % ELECTRON_FRACTION ), &
-             F % Value ( :, F % BARYON_MASS ), &
-             F % Value ( :, F % COMOVING_DENSITY ), &
-             TimeStepCandidate ( I % N_CURRENTS_PS + 4 ) )
+    end associate !-- F
 
-    ! call ComputeTimeStep_E_J_Kernel &
-    !        ( CSL % IsProperCell, &
-    !          I_R_E % Value ( :, I_R_E % EMISSIVITY_J ), &
-    !          I_R_E % Value ( :, I_R_E % OPACITY_J ), &
-    !          R_E % Value ( :, R_E % COMOVING_ENERGY ), &
-    !          F % Value ( :, F % INTERNAL_ENERGY ), &
-    !          TimeStepCandidate ( I % N_CURRENTS_PS + 5 ) )
+!     !-- Nu_E
 
-    ! call Search ( R_E % iaConserved, R_E % CONSERVED_ENERGY, iEnergy )
-    ! call Search ( R_E % iaConserved, R_E % CONSERVED_NUMBER, iNumber )
+!     select type &
+!       ( RA_E => I % Current_ASC_1D &
+!                   ( I % NEUTRINOS_E_NU ) % Element )
+!     class is ( RadiationMoments_ASC_Form )
 
-    ! call ComputeTimeStep_SB_Div_J_Kernel &
-    !        ( CSL % IsProperCell, &
-    !          R_E % Sources % Value ( :, iEnergy ), &
-    !          F % Value ( :, F % TEMPERATURE ), &
-    !          F % Value ( :, F % ENTROPY_PER_BARYON ), &
-    !          F % Value ( :, F % BARYON_MASS ), &
-    !          F % Value ( :, F % COMOVING_DENSITY ), &
-    !          TimeStepCandidate ( I % N_CURRENTS_PS + 5 ) )
+!     R_E  =>  RA_E % NeutrinoMoments_G ( )
 
-    ! call ComputeTimeStep_SB_Div_N_Kernel &
-    !        ( CSL % IsProperCell, &
-    !          R_E % Sources % Value ( :, iNumber ), &
-    !          F % Value ( :, F % TEMPERATURE ), &
-    !          F % Value ( :, F % ENTROPY_PER_BARYON ), &
-    !          F % Value ( :, F % BARYON_MASS ), &
-    !          F % Value ( :, F % COMOVING_DENSITY ), &
-    !          F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
-    !          F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
-    !          TimeStepCandidate ( I % N_CURRENTS_PS + 6 ) )
+!     associate &
+!       ( I_R_E => Interactions, &
+!         F => Fluid )
 
-    end associate !-- I_R_E, etc.
-    end select !-- RA_E
+!     select type ( SR => R_E % Sources )
+!     class is ( Sources_RM_Form )
 
-    !-- NuBar_E
+! !    call I_R_E % Compute ( R_E )
 
-    select type &
-      ( RA_E => I % Current_ASC_1D &
-                  ( I % NEUTRINOS_E_NU_BAR ) % Element )
-    class is ( RadiationMoments_ASC_Form )
+!     call ComputeTimeStep_SB_Kernel &
+!            ( CSL % IsProperCell, &
+!              SR % Value ( :, SR % COMOVING_ENERGY ), &
+!              SR % Value ( :, SR % COMOVING_NUMBER ), &
+!              F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
+!              F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
+!              F % Value ( :, F % TEMPERATURE ), &
+!              F % Value ( :, F % ENTROPY_PER_BARYON ), &
+!              F % Value ( :, F % BARYON_MASS ), &
+!              F % Value ( :, F % COMOVING_DENSITY ), &
+!              TimeStepCandidate ( I % N_CURRENTS_PS + 1 ), &
+!              Sign = + 1.0_KDR )
 
-    R_E  =>  RA_E % NeutrinoMoments_G ( )
+!     ! call ComputeTimeStep_SB_N_Kernel &
+!     !        ( CSL % IsProperCell, &
+!     !          I_R_E % Value ( :, I_R_E % EMISSIVITY_N ), &
+!     !          I_R_E % Value ( :, I_R_E % OPACITY_N ), &
+!     !          R_E % Value ( :, R_E % COMOVING_NUMBER ), &
+!     !          F % Value ( :, F % TEMPERATURE ), &
+!     !          F % Value ( :, F % ENTROPY_PER_BARYON ), &
+!     !          F % Value ( :, F % BARYON_MASS ), &
+!     !          F % Value ( :, F % COMOVING_DENSITY ), &
+!     !          F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
+!     !          F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
+!     !          TimeStepCandidate ( I % N_CURRENTS_PS + 2 ) )
 
-    associate &
-      ( I_R_E => Interactions, &
-        F => Fluid )
+!     call ComputeTimeStep_S_H_Kernel &
+!            ( CSL % IsProperCell, &
+!              I_R_E % Value ( :, I_R_E % EMISSIVITY_J ), &
+!              I_R_E % Value ( :, I_R_E % OPACITY_J ), &
+!              I_R_E % Value ( :, I_R_E % OPACITY_H ), &
+!              R_E % Value ( :, R_E % COMOVING_ENERGY ), &
+!              R_E % Value ( :, R_E % COMOVING_MOMENTUM_U ( 1 ) ), &
+!              R_E % Value ( :, R_E % FLUID_VELOCITY_U ( 1 ) ), &
+!              F % Value ( :, F % MOMENTUM_DENSITY_D ( 1 ) ), &
+!              TimeStepCandidate ( I % N_CURRENTS_PS + 3 ) )
 
-    call I_R_E % Compute ( R_E )
+!     call ComputeTimeStep_YE_N_Kernel &
+!            ( CSL % IsProperCell, &
+!              I_R_E % Value ( :, I_R_E % EMISSIVITY_N ), &
+!              I_R_E % Value ( :, I_R_E % OPACITY_N ), &
+!              R_E % Value ( :, R_E % COMOVING_NUMBER ), &
+!              F % Value ( :, F % ELECTRON_FRACTION ), &
+!              F % Value ( :, F % BARYON_MASS ), &
+!              F % Value ( :, F % COMOVING_DENSITY ), &
+!              TimeStepCandidate ( I % N_CURRENTS_PS + 4 ) )
 
-    call ComputeTimeStep_SB_J_Kernel &
-           ( CSL % IsProperCell, &
-             I_R_E % Value ( :, I_R_E % EMISSIVITY_J ), &
-             I_R_E % Value ( :, I_R_E % OPACITY_J ), &
-             R_E % Value ( :, R_E % COMOVING_ENERGY ), &
-             F % Value ( :, F % TEMPERATURE ), &
-             F % Value ( :, F % ENTROPY_PER_BARYON ), &
-             F % Value ( :, F % BARYON_MASS ), &
-             F % Value ( :, F % COMOVING_DENSITY ), &
-             TimeStepCandidate ( I % N_CURRENTS_PS + 5 ) )
+!     ! call ComputeTimeStep_E_J_Kernel &
+!     !        ( CSL % IsProperCell, &
+!     !          I_R_E % Value ( :, I_R_E % EMISSIVITY_J ), &
+!     !          I_R_E % Value ( :, I_R_E % OPACITY_J ), &
+!     !          R_E % Value ( :, R_E % COMOVING_ENERGY ), &
+!     !          F % Value ( :, F % INTERNAL_ENERGY ), &
+!     !          TimeStepCandidate ( I % N_CURRENTS_PS + 5 ) )
 
-    call ComputeTimeStep_SB_N_Kernel &
-           ( CSL % IsProperCell, &
-             I_R_E % Value ( :, I_R_E % EMISSIVITY_N ), &
-             I_R_E % Value ( :, I_R_E % OPACITY_N ), &
-             R_E % Value ( :, R_E % COMOVING_NUMBER ), &
-             F % Value ( :, F % TEMPERATURE ), &
-             F % Value ( :, F % ENTROPY_PER_BARYON ), &
-             F % Value ( :, F % BARYON_MASS ), &
-             F % Value ( :, F % COMOVING_DENSITY ), &
-             F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
-             F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
-             TimeStepCandidate ( I % N_CURRENTS_PS + 6 ) )
+!     ! call Search ( R_E % iaConserved, R_E % CONSERVED_ENERGY, iEnergy )
+!     ! call Search ( R_E % iaConserved, R_E % CONSERVED_NUMBER, iNumber )
 
-    call ComputeTimeStep_S_H_Kernel &
-           ( CSL % IsProperCell, &
-             I_R_E % Value ( :, I_R_E % EMISSIVITY_J ), &
-             I_R_E % Value ( :, I_R_E % OPACITY_J ), &
-             I_R_E % Value ( :, I_R_E % OPACITY_H ), &
-             R_E % Value ( :, R_E % COMOVING_ENERGY ), &
-             R_E % Value ( :, R_E % COMOVING_MOMENTUM_U ( 1 ) ), &
-             R_E % Value ( :, R_E % FLUID_VELOCITY_U ( 1 ) ), &
-             F % Value ( :, F % MOMENTUM_DENSITY_D ( 1 ) ), &
-             TimeStepCandidate ( I % N_CURRENTS_PS + 7 ) )
+!     ! call ComputeTimeStep_SB_Div_J_Kernel &
+!     !        ( CSL % IsProperCell, &
+!     !          R_E % Sources % Value ( :, iEnergy ), &
+!     !          F % Value ( :, F % TEMPERATURE ), &
+!     !          F % Value ( :, F % ENTROPY_PER_BARYON ), &
+!     !          F % Value ( :, F % BARYON_MASS ), &
+!     !          F % Value ( :, F % COMOVING_DENSITY ), &
+!     !          TimeStepCandidate ( I % N_CURRENTS_PS + 5 ) )
 
-    call ComputeTimeStep_YE_N_Kernel &
-           ( CSL % IsProperCell, &
-             I_R_E % Value ( :, I_R_E % EMISSIVITY_N ), &
-             I_R_E % Value ( :, I_R_E % OPACITY_N ), &
-             R_E % Value ( :, R_E % COMOVING_NUMBER ), &
-             F % Value ( :, F % ELECTRON_FRACTION ), &
-             F % Value ( :, F % BARYON_MASS ), &
-             F % Value ( :, F % COMOVING_DENSITY ), &
-             TimeStepCandidate ( I % N_CURRENTS_PS + 8 ) )
+!     ! call ComputeTimeStep_SB_Div_N_Kernel &
+!     !        ( CSL % IsProperCell, &
+!     !          R_E % Sources % Value ( :, iNumber ), &
+!     !          F % Value ( :, F % TEMPERATURE ), &
+!     !          F % Value ( :, F % ENTROPY_PER_BARYON ), &
+!     !          F % Value ( :, F % BARYON_MASS ), &
+!     !          F % Value ( :, F % COMOVING_DENSITY ), &
+!     !          F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
+!     !          F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
+!     !          TimeStepCandidate ( I % N_CURRENTS_PS + 6 ) )
 
-    ! call ComputeTimeStep_E_J_Kernel &
-    !        ( CSL % IsProperCell, &
-    !          I_R_E % Value ( :, I_R_E % EMISSIVITY_J ), &
-    !          I_R_E % Value ( :, I_R_E % OPACITY_J ), &
-    !          R_E % Value ( :, R_E % COMOVING_ENERGY ), &
-    !          F % Value ( :, F % INTERNAL_ENERGY ), &
-    !          TimeStepCandidate ( I % N_CURRENTS_PS + 5 ) )
+!     end select !-- SR
+!     end associate !-- F
+!     end select !-- RA_E
 
-    ! call Search ( R_E % iaConserved, R_E % CONSERVED_ENERGY, iEnergy )
-    ! call Search ( R_E % iaConserved, R_E % CONSERVED_NUMBER, iNumber )
+!     !-- NuBar_E
 
-    ! call ComputeTimeStep_SB_Div_J_Kernel &
-    !        ( CSL % IsProperCell, &
-    !          R_E % Sources % Value ( :, iEnergy ), &
-    !          F % Value ( :, F % TEMPERATURE ), &
-    !          F % Value ( :, F % ENTROPY_PER_BARYON ), &
-    !          F % Value ( :, F % BARYON_MASS ), &
-    !          F % Value ( :, F % COMOVING_DENSITY ), &
-    !          TimeStepCandidate ( I % N_CURRENTS_PS + 5 ) )
+!     select type &
+!       ( RA_E => I % Current_ASC_1D &
+!                   ( I % NEUTRINOS_E_NU_BAR ) % Element )
+!     class is ( RadiationMoments_ASC_Form )
 
-    ! call ComputeTimeStep_SB_Div_N_Kernel &
-    !        ( CSL % IsProperCell, &
-    !          R_E % Sources % Value ( :, iNumber ), &
-    !          F % Value ( :, F % TEMPERATURE ), &
-    !          F % Value ( :, F % ENTROPY_PER_BARYON ), &
-    !          F % Value ( :, F % BARYON_MASS ), &
-    !          F % Value ( :, F % COMOVING_DENSITY ), &
-    !          F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
-    !          F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
-    !          TimeStepCandidate ( I % N_CURRENTS_PS + 6 ) )
+!     R_E  =>  RA_E % NeutrinoMoments_G ( )
 
-    end associate !-- I_R_E, etc.
-    end select !-- RA_E
+!     associate &
+!       ( I_R_E => Interactions, &
+!         F => Fluid )
+
+!     select type ( SR => R_E % Sources )
+!     class is ( Sources_RM_Form )
+
+! !    call I_R_E % Compute ( R_E )
+
+!     call ComputeTimeStep_SB_Kernel &
+!            ( CSL % IsProperCell, &
+!              SR % Value ( :, SR % COMOVING_ENERGY ), &
+!              SR % Value ( :, SR % COMOVING_NUMBER ), &
+!              F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
+!              F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
+!              F % Value ( :, F % TEMPERATURE ), &
+!              F % Value ( :, F % ENTROPY_PER_BARYON ), &
+!              F % Value ( :, F % BARYON_MASS ), &
+!              F % Value ( :, F % COMOVING_DENSITY ), &
+!              TimeStepCandidate ( I % N_CURRENTS_PS + 1 ), &
+!              Sign = - 1.0_KDR )
+
+!     ! call ComputeTimeStep_SB_N_Kernel &
+!     !        ( CSL % IsProperCell, &
+!     !          I_R_E % Value ( :, I_R_E % EMISSIVITY_N ), &
+!     !          I_R_E % Value ( :, I_R_E % OPACITY_N ), &
+!     !          R_E % Value ( :, R_E % COMOVING_NUMBER ), &
+!     !          F % Value ( :, F % TEMPERATURE ), &
+!     !          F % Value ( :, F % ENTROPY_PER_BARYON ), &
+!     !          F % Value ( :, F % BARYON_MASS ), &
+!     !          F % Value ( :, F % COMOVING_DENSITY ), &
+!     !          F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
+!     !          F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
+!     !          TimeStepCandidate ( I % N_CURRENTS_PS + 6 ) )
+
+!     call ComputeTimeStep_S_H_Kernel &
+!            ( CSL % IsProperCell, &
+!              I_R_E % Value ( :, I_R_E % EMISSIVITY_J ), &
+!              I_R_E % Value ( :, I_R_E % OPACITY_J ), &
+!              I_R_E % Value ( :, I_R_E % OPACITY_H ), &
+!              R_E % Value ( :, R_E % COMOVING_ENERGY ), &
+!              R_E % Value ( :, R_E % COMOVING_MOMENTUM_U ( 1 ) ), &
+!              R_E % Value ( :, R_E % FLUID_VELOCITY_U ( 1 ) ), &
+!              F % Value ( :, F % MOMENTUM_DENSITY_D ( 1 ) ), &
+!              TimeStepCandidate ( I % N_CURRENTS_PS + 7 ) )
+
+!     call ComputeTimeStep_YE_N_Kernel &
+!            ( CSL % IsProperCell, &
+!              I_R_E % Value ( :, I_R_E % EMISSIVITY_N ), &
+!              I_R_E % Value ( :, I_R_E % OPACITY_N ), &
+!              R_E % Value ( :, R_E % COMOVING_NUMBER ), &
+!              F % Value ( :, F % ELECTRON_FRACTION ), &
+!              F % Value ( :, F % BARYON_MASS ), &
+!              F % Value ( :, F % COMOVING_DENSITY ), &
+!              TimeStepCandidate ( I % N_CURRENTS_PS + 8 ) )
+
+!     ! call ComputeTimeStep_E_J_Kernel &
+!     !        ( CSL % IsProperCell, &
+!     !          I_R_E % Value ( :, I_R_E % EMISSIVITY_J ), &
+!     !          I_R_E % Value ( :, I_R_E % OPACITY_J ), &
+!     !          R_E % Value ( :, R_E % COMOVING_ENERGY ), &
+!     !          F % Value ( :, F % INTERNAL_ENERGY ), &
+!     !          TimeStepCandidate ( I % N_CURRENTS_PS + 5 ) )
+
+!     ! call Search ( R_E % iaConserved, R_E % CONSERVED_ENERGY, iEnergy )
+!     ! call Search ( R_E % iaConserved, R_E % CONSERVED_NUMBER, iNumber )
+
+!     ! call ComputeTimeStep_SB_Div_J_Kernel &
+!     !        ( CSL % IsProperCell, &
+!     !          R_E % Sources % Value ( :, iEnergy ), &
+!     !          F % Value ( :, F % TEMPERATURE ), &
+!     !          F % Value ( :, F % ENTROPY_PER_BARYON ), &
+!     !          F % Value ( :, F % BARYON_MASS ), &
+!     !          F % Value ( :, F % COMOVING_DENSITY ), &
+!     !          TimeStepCandidate ( I % N_CURRENTS_PS + 5 ) )
+
+!     ! call ComputeTimeStep_SB_Div_N_Kernel &
+!     !        ( CSL % IsProperCell, &
+!     !          R_E % Sources % Value ( :, iNumber ), &
+!     !          F % Value ( :, F % TEMPERATURE ), &
+!     !          F % Value ( :, F % ENTROPY_PER_BARYON ), &
+!     !          F % Value ( :, F % BARYON_MASS ), &
+!     !          F % Value ( :, F % COMOVING_DENSITY ), &
+!     !          F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
+!     !          F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
+!     !          TimeStepCandidate ( I % N_CURRENTS_PS + 6 ) )
+
+!     end select !-- SR
+!     end associate !-- I_R_E, etc.
+!     end select !-- RA_E
 
     !-- Display 
 
@@ -530,7 +610,7 @@ contains
 
     end select !-- CSL
     end select !-- PS
-    nullify ( R_E )
+!    nullify ( R_E )
 
   end subroutine ComputeTimeStepLocal
 
@@ -652,6 +732,81 @@ contains
   end subroutine SetRadiation
 
 
+  subroutine ComputeFluidSource_Radiation ( F, R, PS )
+
+    class ( Fluid_P_MHN_Form ), intent ( in ) :: &
+      F
+    class ( NeutrinoMoments_G_Form ), intent ( in ) :: &
+      R
+    class ( Atlas_SC_Form ), intent ( in ) :: &
+      PS
+
+    integer ( KDI ) :: &
+      iEnergy, &
+      iMomentum_1, &
+      iMomentum_2, &
+      iMomentum_3, &
+      iEntropy, &
+      iProton
+
+    call Search ( F % iaConserved, F % CONSERVED_ENERGY, &
+                  iEnergy )
+    call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 1 ), &
+                  iMomentum_1 )
+    call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 2 ), &
+                  iMomentum_2 )
+    call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 3 ), &
+                  iMomentum_3 )
+    call Search ( F % iaConserved, F % CONSERVED_ENTROPY, iEntropy )
+    call Search ( F % iaConserved, F % CONSERVED_PROTON_DENSITY, iProton )
+
+    select type ( CSL => PS % Chart )
+    class is ( Chart_SL_Template )
+
+    select type ( SR => R % Sources )
+    class is ( Sources_RM_Form )
+
+    call ComputeFluidSource_G_S_Radiation_Kernel &
+           ( FluidSource_Radiation % Value ( :, iEnergy ), & 
+             FluidSource_Radiation % Value ( :, iMomentum_1 ), &
+             FluidSource_Radiation % Value ( :, iMomentum_2 ), &
+             FluidSource_Radiation % Value ( :, iMomentum_3 ), &
+             FluidSource_Radiation % Value ( :, iEntropy ), &
+             CSL % IsProperCell, &
+             SR % Value ( :, SR % COMOVING_ENERGY ), &
+             SR % Value ( :, SR % COMOVING_MOMENTUM_D ( 1 ) ), &
+             R % Value ( :, R % FLUID_VELOCITY_U ( 1 ) ), &
+             F % Value ( :, F % TEMPERATURE ) )
+
+    select case ( trim ( R % Type ) )
+    case ( 'NEUTRINOS_E_NU' )
+      call ComputeFluidSource_DP_Radiation_Kernel &
+             ( FluidSource_Radiation % Value ( :, iProton ), &
+               FluidSource_Radiation % Value ( :, iEntropy ), &
+               CSL % IsProperCell, &
+               SR % Value ( :, SR % COMOVING_NUMBER ), &
+               F % Value ( :, F % TEMPERATURE ), &
+               F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
+               F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
+               Sign  =  + 1.0_KDR )
+    case ( 'NEUTRINOS_E_NU_BAR' )
+      call ComputeFluidSource_DP_Radiation_Kernel &
+             ( FluidSource_Radiation % Value ( :, iProton ), &
+               FluidSource_Radiation % Value ( :, iEntropy ), &
+               CSL % IsProperCell, &
+               SR % Value ( :, SR % COMOVING_NUMBER ), &
+               F % Value ( :, F % TEMPERATURE ), &
+               F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
+               F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
+               Sign  =  - 1.0_KDR )
+    end select !-- R % Type
+
+    end select !-- SR
+    end select !-- CSL
+
+  end subroutine ComputeFluidSource_Radiation
+
+
   subroutine ApplySources_Radiation &
                ( S, Sources_RM, Increment, Radiation, TimeStep, iStage )
 
@@ -680,6 +835,151 @@ contains
   end subroutine ApplySources_Radiation
 
   
+!   subroutine ApplySources_Fluid &
+!                ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
+
+!     class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
+!       S
+!     class ( Sources_C_Form ), intent ( inout ) :: &
+!       Sources_F
+!     type ( VariableGroupForm ), intent ( inout ), target :: &
+!       Increment
+!     class ( CurrentTemplate ), intent ( in ) :: &
+!       Fluid
+!     real ( KDR ), intent ( in ) :: &
+!       TimeStep
+!     integer ( KDI ), intent ( in ) :: &
+!       iStage
+
+!     integer ( KDI ) :: &
+!       iEnergy, &
+!       iMomentum_1, &
+!       iMomentum_2, &
+!       iMomentum_3, &
+!       iProton, &
+!       iEntropy
+! integer ( KDI ) :: &
+!   dG_G_maxloc, &
+!   dDP_DP_maxloc, &
+!   dDS_DS_maxloc
+! real ( KDR ) :: &
+!   dG_G_maxval, &
+!   dDP_DP_maxval, &
+!   dDS_DS_maxval, &
+!   Threshold
+! real ( KDR ), dimension ( Fluid % nValues ) :: &
+!   dG_G, &
+!   dDP_DP, &
+!   dDS_DS
+
+!     call Show ( 'ApplySources_Fluid', CONSOLE % INFO_4 )
+
+!     call ApplyGravity ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
+
+!     select type ( F => Fluid )
+!     class is ( Fluid_P_MHN_Form )
+
+!     select type ( Chart => S % Chart )
+!     class is ( Chart_SL_Template )
+
+!     call Search ( F % iaConserved, F % CONSERVED_ENERGY, iEnergy )
+!     call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 1 ), iMomentum_1 )
+!     call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 2 ), iMomentum_2 )
+!     call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 3 ), iMomentum_3 )
+!     call Search ( F % iaConserved, F % CONSERVED_PROTON_DENSITY, iProton )
+!     call Search ( F % iaConserved, F % CONSERVED_ENTROPY, iEntropy )
+
+!     call ApplySources_Fluid_Kernel &
+!            ( Increment % Value ( :, iEnergy ), &
+!              Increment % Value ( :, iMomentum_1 ), &
+!              Increment % Value ( :, iMomentum_2 ), &
+!              Increment % Value ( :, iMomentum_3 ), &
+!              Increment % Value ( :, iProton ), &
+!              Increment % Value ( :, iEntropy ), &
+!              Chart % IsProperCell, &
+!              FluidSource_Radiation % Value ( :, iEnergy ), &
+!              FluidSource_Radiation % Value ( :, iMomentum_1 ), &
+!              FluidSource_Radiation % Value ( :, iMomentum_2 ), &
+!              FluidSource_Radiation % Value ( :, iMomentum_3 ), &
+!              FluidSource_Radiation % Value ( :, iProton ), &
+!              FluidSource_Radiation % Value ( :, iEntropy ), &
+!              F % Value ( :, F % TEMPERATURE ), &
+!              F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
+!              F % Value ( :, F % CHEMICAL_POTENTIAL_E ) )
+
+! dG_G   = Increment % Value ( :, iEnergy ) &
+!          /  max ( abs ( F % Value ( :, F % CONSERVED_ENERGY ) ), &
+!             tiny ( 0.0_KDR ) )
+! dDP_DP = Increment % Value ( :, iProton ) &
+!          /  max ( abs ( F % Value ( :, F % CONSERVED_PROTON_DENSITY ) ), &
+!                   tiny ( 0.0_KDR ) )
+! dDS_DS = Increment % Value ( :, iEntropy ) &
+!          /  max ( abs ( F % Value ( :, F % CONSERVED_ENTROPY ) ), &
+!                   tiny ( 0.0_KDR ) )
+! !call Show ( dG_G, '>>> dG_G' )
+! !call Show ( dDP_DP, '>>> dDP_DP' )
+! !call Show ( dDS_DS, '>>> dDS_DS' )
+
+! select type ( SF => Sources_F )
+! class is ( Sources_F_Form )
+
+! Threshold = 1.0e-1_KDR
+! dG_G_maxval   = maxval ( abs ( dG_G ), mask = Chart % IsProperCell )
+! dDP_DP_maxval = maxval ( abs ( dDP_DP ), mask = Chart % IsProperCell )
+! dDS_DS_maxval = maxval ( abs ( dDS_DS ), mask = Chart % IsProperCell )
+! if ( dG_G_maxval > Threshold ) then
+!   dG_G_maxloc = maxloc ( abs ( dG_G ), dim = 1, mask = Chart % IsProperCell )
+!   call Show ( Integrator % iCycle, '>>> iCycle', CONSOLE % ERROR )
+!   call Show ( dG_G_maxval, '>>> dG_G_maxval', CONSOLE % ERROR )
+!   call Show ( dG_G_maxloc, '>>> dG_G_maxloc', CONSOLE % ERROR )
+!   call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', &
+!               CONSOLE % ERROR )
+!   ! call Show ( maxval ( abs ( SF % Value ( :, SF % GRAVITATIONAL_E ) ) &
+!   !                      /  F % Value ( :, F % CONSERVED_ENERGY ), &
+!   !                      mask = Chart % IsProperCell ), &
+!   !             '>>> maxval SF % Gravity / G', CONSOLE % ERROR ) 
+!   ! call Show ( maxloc ( abs ( SF % Value ( :, SF % GRAVITATIONAL_E ) ) &
+!   !                      /  F % Value ( :, F % CONSERVED_ENERGY ), &
+!   !                      mask = Chart % IsProperCell ), &
+!   !             '>>> maxloc SF % Gravity / G', CONSOLE % ERROR )
+!   ! call Show ( maxval ( abs ( SF % Value ( :, iEnergy ) ) &
+!   !                      /  F % Value ( :, F % CONSERVED_ENERGY ), &
+!   !                      mask = Chart % IsProperCell ), &
+!   !             '>>> maxval SF % Div G / G', CONSOLE % ERROR ) 
+!   ! call Show ( maxloc ( abs ( SF % Value ( :, iEnergy ) ) &
+!   !                      /  F % Value ( :, F % CONSERVED_ENERGY ), &
+!   !                      mask = Chart % IsProperCell ), &
+!   !             '>>> maxloc SF % Div G / G', CONSOLE % ERROR )
+! end if
+! if ( dDP_DP_maxval > Threshold ) then
+!   dDP_DP_maxloc &
+!     = maxloc ( abs ( dDP_DP ), dim = 1, mask = Chart % IsProperCell )
+!   call Show ( Integrator % iCycle, '>>> iCycle', CONSOLE % ERROR )
+!   call Show ( dDP_DP_maxval, '>>> dDP_DP_maxval', CONSOLE % ERROR )
+!   call Show ( dDP_DP_maxloc, '>>> dDP_DP_maxloc', CONSOLE % ERROR )
+!   call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', &
+!               CONSOLE % ERROR )
+! end if
+! if ( dDS_DS_maxval > Threshold ) then
+!   dDS_DS_maxloc &
+!     = maxloc ( abs ( dDS_DS ), dim = 1, mask = Chart % IsProperCell )
+!   call Show ( Integrator % iCycle, '>>> iCycle', CONSOLE % ERROR )
+!   call Show ( dDS_DS_maxval, '>>> dDS_DS_maxval', CONSOLE % ERROR )
+!   call Show ( dDS_DS_maxloc, '>>> dDS_DS_maxloc', CONSOLE % ERROR )
+!   call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', &
+!               CONSOLE % ERROR )
+! end if
+ 
+! end select !-- SF
+
+!     call Clear ( FluidSource_Radiation % Value )
+
+!     end select !-- Chart
+!     end select !-- F
+
+!   end subroutine ApplySources_Fluid
+
+  
   subroutine ApplySources_Fluid &
                ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
 
@@ -701,21 +1001,8 @@ contains
       iMomentum_1, &
       iMomentum_2, &
       iMomentum_3, &
-      iProton, &
-      iEntropy
-integer ( KDI ) :: &
-  dG_G_maxloc, &
-  dDP_DP_maxloc, &
-  dDS_DS_maxloc
-real ( KDR ) :: &
-  dG_G_maxval, &
-  dDP_DP_maxval, &
-  dDS_DS_maxval, &
-  Threshold
-real ( KDR ), dimension ( Fluid % nValues ) :: &
-  dG_G, &
-  dDP_DP, &
-  dDS_DS
+      iEntropy, &
+      iProton
 
     call Show ( 'ApplySources_Fluid', CONSOLE % INFO_4 )
 
@@ -724,15 +1011,19 @@ real ( KDR ), dimension ( Fluid % nValues ) :: &
     select type ( F => Fluid )
     class is ( Fluid_P_MHN_Form )
 
+    call Search ( F % iaConserved, F % CONSERVED_ENERGY, &
+                  iEnergy )
+    call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 1 ), &
+                  iMomentum_1 )
+    call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 2 ), &
+                  iMomentum_2 )
+    call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 3 ), &
+                  iMomentum_3 )
+    call Search ( F % iaConserved, F % CONSERVED_ENTROPY, iEntropy )
+    call Search ( F % iaConserved, F % CONSERVED_PROTON_DENSITY, iProton )
+
     select type ( Chart => S % Chart )
     class is ( Chart_SL_Template )
-
-    call Search ( F % iaConserved, F % CONSERVED_ENERGY, iEnergy )
-    call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 1 ), iMomentum_1 )
-    call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 2 ), iMomentum_2 )
-    call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 3 ), iMomentum_3 )
-    call Search ( F % iaConserved, F % CONSERVED_PROTON_DENSITY, iProton )
-    call Search ( F % iaConserved, F % CONSERVED_ENTROPY, iEntropy )
 
     call ApplySources_Fluid_Kernel &
            ( Increment % Value ( :, iEnergy ), &
@@ -748,249 +1039,180 @@ real ( KDR ), dimension ( Fluid % nValues ) :: &
              FluidSource_Radiation % Value ( :, iMomentum_3 ), &
              FluidSource_Radiation % Value ( :, iProton ), &
              FluidSource_Radiation % Value ( :, iEntropy ), &
-             F % Value ( :, F % TEMPERATURE ), &
-             F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
-             F % Value ( :, F % CHEMICAL_POTENTIAL_E ) )
-
-dG_G   = Increment % Value ( :, iEnergy ) &
-         /  max ( abs ( F % Value ( :, F % CONSERVED_ENERGY ) ), &
-            tiny ( 0.0_KDR ) )
-dDP_DP = Increment % Value ( :, iProton ) &
-         /  max ( abs ( F % Value ( :, F % CONSERVED_PROTON_DENSITY ) ), &
-                  tiny ( 0.0_KDR ) )
-dDS_DS = Increment % Value ( :, iEntropy ) &
-         /  max ( abs ( F % Value ( :, F % CONSERVED_ENTROPY ) ), &
-                  tiny ( 0.0_KDR ) )
-!call Show ( dG_G, '>>> dG_G' )
-!call Show ( dDP_DP, '>>> dDP_DP' )
-!call Show ( dDS_DS, '>>> dDS_DS' )
-
-select type ( SF => Sources_F )
-class is ( Sources_F_Form )
-
-Threshold = 1.0e-1_KDR
-dG_G_maxval   = maxval ( abs ( dG_G ), mask = Chart % IsProperCell )
-dDP_DP_maxval = maxval ( abs ( dDP_DP ), mask = Chart % IsProperCell )
-dDS_DS_maxval = maxval ( abs ( dDS_DS ), mask = Chart % IsProperCell )
-if ( dG_G_maxval > Threshold ) then
-  dG_G_maxloc = maxloc ( abs ( dG_G ), dim = 1, mask = Chart % IsProperCell )
-  call Show ( Integrator % iCycle, '>>> iCycle', CONSOLE % ERROR )
-  call Show ( dG_G_maxval, '>>> dG_G_maxval', CONSOLE % ERROR )
-  call Show ( dG_G_maxloc, '>>> dG_G_maxloc', CONSOLE % ERROR )
-  call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', &
-              CONSOLE % ERROR )
-  ! call Show ( maxval ( abs ( SF % Value ( :, SF % GRAVITATIONAL_E ) ) &
-  !                      /  F % Value ( :, F % CONSERVED_ENERGY ), &
-  !                      mask = Chart % IsProperCell ), &
-  !             '>>> maxval SF % Gravity / G', CONSOLE % ERROR ) 
-  ! call Show ( maxloc ( abs ( SF % Value ( :, SF % GRAVITATIONAL_E ) ) &
-  !                      /  F % Value ( :, F % CONSERVED_ENERGY ), &
-  !                      mask = Chart % IsProperCell ), &
-  !             '>>> maxloc SF % Gravity / G', CONSOLE % ERROR )
-  ! call Show ( maxval ( abs ( SF % Value ( :, iEnergy ) ) &
-  !                      /  F % Value ( :, F % CONSERVED_ENERGY ), &
-  !                      mask = Chart % IsProperCell ), &
-  !             '>>> maxval SF % Div G / G', CONSOLE % ERROR ) 
-  ! call Show ( maxloc ( abs ( SF % Value ( :, iEnergy ) ) &
-  !                      /  F % Value ( :, F % CONSERVED_ENERGY ), &
-  !                      mask = Chart % IsProperCell ), &
-  !             '>>> maxloc SF % Div G / G', CONSOLE % ERROR )
-end if
-if ( dDP_DP_maxval > Threshold ) then
-  dDP_DP_maxloc &
-    = maxloc ( abs ( dDP_DP ), dim = 1, mask = Chart % IsProperCell )
-  call Show ( Integrator % iCycle, '>>> iCycle', CONSOLE % ERROR )
-  call Show ( dDP_DP_maxval, '>>> dDP_DP_maxval', CONSOLE % ERROR )
-  call Show ( dDP_DP_maxloc, '>>> dDP_DP_maxloc', CONSOLE % ERROR )
-  call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', &
-              CONSOLE % ERROR )
-end if
-if ( dDS_DS_maxval > Threshold ) then
-  dDS_DS_maxloc &
-    = maxloc ( abs ( dDS_DS ), dim = 1, mask = Chart % IsProperCell )
-  call Show ( Integrator % iCycle, '>>> iCycle', CONSOLE % ERROR )
-  call Show ( dDS_DS_maxval, '>>> dDS_DS_maxval', CONSOLE % ERROR )
-  call Show ( dDS_DS_maxloc, '>>> dDS_DS_maxloc', CONSOLE % ERROR )
-  call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', &
-              CONSOLE % ERROR )
-end if
- 
-end select !-- SF
-
-    call Clear ( FluidSource_Radiation % Value )
+             TimeStep )
 
     end select !-- Chart
     end select !-- F
 
   end subroutine ApplySources_Fluid
 
-  
-  subroutine ComputeFluidSource_Radiation ( S, Increment, Radiation, TimeStep )
 
-    class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
-      S
-    type ( VariableGroupForm ), intent ( inout ), target :: &
-      Increment
-    class ( CurrentTemplate ), intent ( inout ) :: &
-      Radiation
-    real ( KDR ), intent ( in ) :: &
-      TimeStep
+!   subroutine ComputeFluidSource_Radiation ( S, Increment, Radiation, TimeStep )
 
-    integer ( KDI ) :: &
-      iEnergy_F, &
-      iMomentum_1_F, &
-      iMomentum_2_F, &
-      iMomentum_3_F, &
-      iProton_F, &
-      iEntropy_F, &
-      iEnergy_R, &
-      iMomentum_1_R, &
-      iMomentum_2_R, &
-      iMomentum_3_R, &
-      iNumber_R
-    class ( GeometryFlatForm ), pointer :: &
-      G
+!     class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
+!       S
+!     type ( VariableGroupForm ), intent ( inout ), target :: &
+!       Increment
+!     class ( CurrentTemplate ), intent ( inout ) :: &
+!       Radiation
+!     real ( KDR ), intent ( in ) :: &
+!       TimeStep
 
-    select type ( R => Radiation )
-    class is ( NeutrinoMoments_G_Form )
+!     integer ( KDI ) :: &
+!       iEnergy_F, &
+!       iMomentum_1_F, &
+!       iMomentum_2_F, &
+!       iMomentum_3_F, &
+!       iProton_F, &
+!       iEntropy_F, &
+!       iEnergy_R, &
+!       iMomentum_1_R, &
+!       iMomentum_2_R, &
+!       iMomentum_3_R, &
+!       iNumber_R
+!     class ( GeometryFlatForm ), pointer :: &
+!       G
 
-    select type ( Chart => S % Chart )
-    class is ( Chart_SL_Template )
+!     select type ( R => Radiation )
+!     class is ( NeutrinoMoments_G_Form )
 
-    associate &
-      ( I => Interactions, &
-        F => Fluid )
+!     select type ( Chart => S % Chart )
+!     class is ( Chart_SL_Template )
 
-    call Search ( F % iaConserved, F % CONSERVED_ENERGY, iEnergy_F )
-    call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 1 ), &
-                  iMomentum_1_F )
-    call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 2 ), &
-                  iMomentum_2_F )
-    call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 3 ), &
-                  iMomentum_3_F )
-    call Search ( F % iaConserved, F % CONSERVED_PROTON_DENSITY, iProton_F )
-    call Search ( F % iaConserved, F % CONSERVED_ENTROPY, iEntropy_F )
-    call Search ( R % iaConserved, R % CONSERVED_ENERGY, iEnergy_R )
-    call Search ( R % iaConserved, R % CONSERVED_MOMENTUM_D ( 1 ), &
-                  iMomentum_1_R )
-    call Search ( R % iaConserved, R % CONSERVED_MOMENTUM_D ( 2 ), &
-                  iMomentum_2_R )
-    call Search ( R % iaConserved, R % CONSERVED_MOMENTUM_D ( 3 ), &
-                  iMomentum_3_R )
-    call Search ( R % iaConserved, R % CONSERVED_NUMBER, iNumber_R )
+!     associate &
+!       ( I => Interactions, &
+!         F => Fluid )
 
-    G => Chart % Geometry ( )
+!     call Search ( F % iaConserved, F % CONSERVED_ENERGY, iEnergy_F )
+!     call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 1 ), &
+!                   iMomentum_1_F )
+!     call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 2 ), &
+!                   iMomentum_2_F )
+!     call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 3 ), &
+!                   iMomentum_3_F )
+!     call Search ( F % iaConserved, F % CONSERVED_PROTON_DENSITY, iProton_F )
+!     call Search ( F % iaConserved, F % CONSERVED_ENTROPY, iEntropy_F )
+!     call Search ( R % iaConserved, R % CONSERVED_ENERGY, iEnergy_R )
+!     call Search ( R % iaConserved, R % CONSERVED_MOMENTUM_D ( 1 ), &
+!                   iMomentum_1_R )
+!     call Search ( R % iaConserved, R % CONSERVED_MOMENTUM_D ( 2 ), &
+!                   iMomentum_2_R )
+!     call Search ( R % iaConserved, R % CONSERVED_MOMENTUM_D ( 3 ), &
+!                   iMomentum_3_R )
+!     call Search ( R % iaConserved, R % CONSERVED_NUMBER, iNumber_R )
 
-    !-- Taking shortcuts on conserved vs. comoving here
+!     G => Chart % Geometry ( )
 
-    ! if ( trim ( Radiation % Type ) == 'NEUTRINOS_E_NU' ) &
-    !   call ImposeBetaEquilibrium_Kernel &
-    !          ( R % Value ( :, R % BETA_EQUILIBRIUM ), &
-    !            Increment % Value ( :, iEnergy_R ), &
-    !            Increment % Value ( :, iNumber_R ), &
-    !            R, &
-    !            F % Value ( :, F % BARYON_MASS ), &
-    !            F % Value ( :, F % COMOVING_DENSITY ), &
-    !            F % Value ( :, F % TEMPERATURE ), &
-    !            F % Value ( :, F % ENTROPY_PER_BARYON ), &
-    !            F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
-    !            F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
-    !            R % Value ( :, R % COMOVING_ENERGY ), &
-    !            R % Value ( :, R % COMOVING_ENERGY_EQ ), &
-    !            R % Value ( :, R % COMOVING_NUMBER ), &
-    !            R % Value ( :, R % COMOVING_NUMBER_EQ ) )
+!     !-- Taking shortcuts on conserved vs. comoving here
 
-    select type ( SR => Radiation % Sources )
-    class is ( Sources_RM_Form )
+!     ! if ( trim ( Radiation % Type ) == 'NEUTRINOS_E_NU' ) &
+!     !   call ImposeBetaEquilibrium_Kernel &
+!     !          ( R % Value ( :, R % BETA_EQUILIBRIUM ), &
+!     !            Increment % Value ( :, iEnergy_R ), &
+!     !            Increment % Value ( :, iNumber_R ), &
+!     !            R, &
+!     !            F % Value ( :, F % BARYON_MASS ), &
+!     !            F % Value ( :, F % COMOVING_DENSITY ), &
+!     !            F % Value ( :, F % TEMPERATURE ), &
+!     !            F % Value ( :, F % ENTROPY_PER_BARYON ), &
+!     !            F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
+!     !            F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
+!     !            R % Value ( :, R % COMOVING_ENERGY ), &
+!     !            R % Value ( :, R % COMOVING_ENERGY_EQ ), &
+!     !            R % Value ( :, R % COMOVING_NUMBER ), &
+!     !            R % Value ( :, R % COMOVING_NUMBER_EQ ) )
 
-    call ComputeFluidSource_G_S_Radiation_Kernel &
-           ( FluidSource_Radiation % Value ( :, iEnergy_F ), & 
-             FluidSource_Radiation % Value ( :, iMomentum_1_F ), &
-             FluidSource_Radiation % Value ( :, iMomentum_2_F ), &
-             FluidSource_Radiation % Value ( :, iMomentum_3_F ), &
-             FluidSource_Radiation % Value ( :, iEntropy_F ), &
-             R, &
-             Chart % IsProperCell, &
-             I % Value ( :, I % EMISSIVITY_J ), &
-             I % Value ( :, I % OPACITY_J ), &
-             I % Value ( :, I % OPACITY_H ), &
-             R % Value ( :, R % COMOVING_ENERGY ), &
-!             Increment % Value ( :, iEnergy_R ), &
-             !-- FIXME: Total hack, this is dJ
-             SR % Value ( :, SR % NET_EMISSION_E ), &
-             R % Value ( :, R % COMOVING_MOMENTUM_U ( 1 ) ), &
-             R % Value ( :, R % COMOVING_MOMENTUM_U ( 2 ) ), &
-             R % Value ( :, R % COMOVING_MOMENTUM_U ( 3 ) ), &
-             R % Value ( :, R % CONSERVED_MOMENTUM_D ( 1 ) ), &
-             R % Value ( :, R % CONSERVED_MOMENTUM_D ( 2 ) ), &
-             R % Value ( :, R % CONSERVED_MOMENTUM_D ( 3 ) ), &
-!             Increment % Value ( :, iMomentum_1_R ), &
-!             Increment % Value ( :, iMomentum_2_R ), &
-!             Increment % Value ( :, iMomentum_3_R ), &
-             !-- FIXME: Total hack, this is dH_D
-             SR % Value ( :, SR % NET_EMISSION_S_D ( 1 ) ), &
-             SR % Value ( :, SR % NET_EMISSION_S_D ( 2 ) ), &
-             SR % Value ( :, SR % NET_EMISSION_S_D ( 3 ) ), &
-             R % Value ( :, R % FLUX_FACTOR ), &
-             R % Value ( :, R % STRESS_FACTOR ), &
-             R % Value ( :, R % BETA_EQUILIBRIUM ), &
-             R % Value ( :, R % FLUID_VELOCITY_U ( 1 ) ), &
-             R % Value ( :, R % FLUID_VELOCITY_U ( 2 ) ), &
-             R % Value ( :, R % FLUID_VELOCITY_U ( 3 ) ), &
-             F % Value ( :, F % TEMPERATURE ), &
-             G % Value ( :, G % METRIC_DD_22 ), &
-             G % Value ( :, G % METRIC_DD_33 ), &
-             CONSTANT % SPEED_OF_LIGHT, TimeStep ) 
+!     select type ( SR => Radiation % Sources )
+!     class is ( Sources_RM_Form )
 
-    select case ( trim ( Radiation % Type ) )
-    case ( 'NEUTRINOS_E_NU' )
-      call ComputeFluidSource_DP_Radiation_Kernel &
-             ( FluidSource_Radiation % Value ( :, iProton_F ), & 
-               FluidSource_Radiation % Value ( :, iEntropy_F ), &
-               Chart % IsProperCell, &
-               I % Value ( :, I % EMISSIVITY_N ), &
-               I % Value ( :, I % OPACITY_N ), &
-               R % Value ( :, R % COMOVING_NUMBER ), &
-!               Increment % Value ( :, iNumber_R ), &
-               !-- FIXME: Total hack, this is dN
-               SR % Value ( :, SR % NET_EMISSION_N ), &
-               R % Value ( :, R % BETA_EQUILIBRIUM ), &
-               F % Value ( :, F % TEMPERATURE ), &
-               F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
-               F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
-               CONSTANT % SPEED_OF_LIGHT, TimeStep, Sign = +1.0_KDR )
-    case ( 'NEUTRINOS_E_NU_BAR' )
-      call ComputeFluidSource_DP_Radiation_Kernel &
-             ( FluidSource_Radiation % Value ( :, iProton_F ), & 
-               FluidSource_Radiation % Value ( :, iEntropy_F ), &
-               Chart % IsProperCell, &
-               I % Value ( :, I % EMISSIVITY_N ), &
-               I % Value ( :, I % OPACITY_N ), &
-               R % Value ( :, R % COMOVING_NUMBER ), &
-!               Increment % Value ( :, iNumber_R ), &
-               !-- FIXME: Total hack, this is dN
-               SR % Value ( :, SR % NET_EMISSION_N ), &
-               R % Value ( :, R % BETA_EQUILIBRIUM ), &
-               F % Value ( :, F % TEMPERATURE ), &
-               F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
-               F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
-               CONSTANT % SPEED_OF_LIGHT, TimeStep, Sign = -1.0_KDR )
-    end select !-- Radiation % Type
+!     call ComputeFluidSource_G_S_Radiation_Kernel &
+!            ( FluidSource_Radiation % Value ( :, iEnergy_F ), & 
+!              FluidSource_Radiation % Value ( :, iMomentum_1_F ), &
+!              FluidSource_Radiation % Value ( :, iMomentum_2_F ), &
+!              FluidSource_Radiation % Value ( :, iMomentum_3_F ), &
+!              FluidSource_Radiation % Value ( :, iEntropy_F ), &
+!              R, &
+!              Chart % IsProperCell, &
+!              I % Value ( :, I % EMISSIVITY_J ), &
+!              I % Value ( :, I % OPACITY_J ), &
+!              I % Value ( :, I % OPACITY_H ), &
+!              R % Value ( :, R % COMOVING_ENERGY ), &
+! !             Increment % Value ( :, iEnergy_R ), &
+!              !-- FIXME: Total hack, this is dJ
+!              SR % Value ( :, SR % COMOVING_ENERGY ), &
+!              R % Value ( :, R % COMOVING_MOMENTUM_U ( 1 ) ), &
+!              R % Value ( :, R % COMOVING_MOMENTUM_U ( 2 ) ), &
+!              R % Value ( :, R % COMOVING_MOMENTUM_U ( 3 ) ), &
+!              R % Value ( :, R % CONSERVED_MOMENTUM_D ( 1 ) ), &
+!              R % Value ( :, R % CONSERVED_MOMENTUM_D ( 2 ) ), &
+!              R % Value ( :, R % CONSERVED_MOMENTUM_D ( 3 ) ), &
+! !             Increment % Value ( :, iMomentum_1_R ), &
+! !             Increment % Value ( :, iMomentum_2_R ), &
+! !             Increment % Value ( :, iMomentum_3_R ), &
+!              !-- FIXME: Total hack, this is dH_D
+!              SR % Value ( :, SR % COMOVING_MOMENTUM_D ( 1 ) ), &
+!              SR % Value ( :, SR % COMOVING_MOMENTUM_D ( 2 ) ), &
+!              SR % Value ( :, SR % COMOVING_MOMENTUM_D ( 3 ) ), &
+!              R % Value ( :, R % FLUX_FACTOR ), &
+!              R % Value ( :, R % STRESS_FACTOR ), &
+!              R % Value ( :, R % BETA_EQUILIBRIUM ), &
+!              R % Value ( :, R % FLUID_VELOCITY_U ( 1 ) ), &
+!              R % Value ( :, R % FLUID_VELOCITY_U ( 2 ) ), &
+!              R % Value ( :, R % FLUID_VELOCITY_U ( 3 ) ), &
+!              F % Value ( :, F % TEMPERATURE ), &
+!              G % Value ( :, G % METRIC_DD_22 ), &
+!              G % Value ( :, G % METRIC_DD_33 ), &
+!              CONSTANT % SPEED_OF_LIGHT, TimeStep ) 
 
-    end select !-- SR 
-    end associate !-- I, etc.
-    end select !-- Chart
-    end select !-- R
+!     select case ( trim ( Radiation % Type ) )
+!     case ( 'NEUTRINOS_E_NU' )
+!       call ComputeFluidSource_DP_Radiation_Kernel &
+!              ( FluidSource_Radiation % Value ( :, iProton_F ), & 
+!                FluidSource_Radiation % Value ( :, iEntropy_F ), &
+!                Chart % IsProperCell, &
+!                I % Value ( :, I % EMISSIVITY_N ), &
+!                I % Value ( :, I % OPACITY_N ), &
+!                R % Value ( :, R % COMOVING_NUMBER ), &
+! !               Increment % Value ( :, iNumber_R ), &
+!                !-- FIXME: Total hack, this is dN
+!                SR % Value ( :, SR % COMOVING_NUMBER ), &
+!                R % Value ( :, R % BETA_EQUILIBRIUM ), &
+!                F % Value ( :, F % TEMPERATURE ), &
+!                F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
+!                F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
+!                CONSTANT % SPEED_OF_LIGHT, TimeStep, Sign = +1.0_KDR )
+!     case ( 'NEUTRINOS_E_NU_BAR' )
+!       call ComputeFluidSource_DP_Radiation_Kernel &
+!              ( FluidSource_Radiation % Value ( :, iProton_F ), & 
+!                FluidSource_Radiation % Value ( :, iEntropy_F ), &
+!                Chart % IsProperCell, &
+!                I % Value ( :, I % EMISSIVITY_N ), &
+!                I % Value ( :, I % OPACITY_N ), &
+!                R % Value ( :, R % COMOVING_NUMBER ), &
+! !               Increment % Value ( :, iNumber_R ), &
+!                !-- FIXME: Total hack, this is dN
+!                SR % Value ( :, SR % COMOVING_NUMBER ), &
+!                R % Value ( :, R % BETA_EQUILIBRIUM ), &
+!                F % Value ( :, F % TEMPERATURE ), &
+!                F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
+!                F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
+!                CONSTANT % SPEED_OF_LIGHT, TimeStep, Sign = -1.0_KDR )
+!     end select !-- Radiation % Type
 
-    nullify ( G )
+!     end select !-- SR 
+!     end associate !-- I, etc.
+!     end select !-- Chart
+!     end select !-- R
+
+!     nullify ( G )
     
-  end subroutine ComputeFluidSource_Radiation
+!   end subroutine ComputeFluidSource_Radiation
 
 
-  subroutine SetRadiation_FluidVelocity ( S, Fluid )
+  subroutine SetRadiation_FluidVelocity ( Fluid ) !( S, Fluid )
 
-    class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
-      S
+!    class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
+!      S
     class ( CurrentTemplate ), intent ( in ) :: &
       Fluid
 
@@ -1017,16 +1239,16 @@ end select !-- SF
   end subroutine SetRadiation_FluidVelocity
 
 
-  subroutine ComputeTimeStep_SB_J_Kernel &
-               ( IsProperCell, Xi_J, Chi_J, J, T, SB, MB, NB, TimeStep )
+  subroutine ComputeTimeStep_FS_R_Kernel &
+               ( IsProperCell, FS_R_D, D, TimeStep )
 
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       IsProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      Xi_J, Chi_J, J, &
-      T, SB, MB, NB
+      FS_R_D, &
+      D
     real ( KDR ), intent ( inout ) :: &
-      TimeStep    
+      TimeStep
 
     integer ( KDI ) :: &
       iV, &
@@ -1036,7 +1258,7 @@ end select !-- SF
       f, &  !-- factor
       TimeStepInverse
 
-    nV = size ( Xi_J )
+    nV = size ( D )
 
     AMU  =  CONSTANT % ATOMIC_MASS_UNIT
     f    =  0.01_KDR
@@ -1046,11 +1268,9 @@ end select !-- SF
     !$OMP parallel do private ( iV )
     do iV = 1, nV
       if ( IsProperCell ( iV ) ) then
-        TimeStepInverse &
-          = max ( TimeStepInverse, &
-                  abs ( Xi_J ( iV )  -  Chi_J ( iV ) * J ( iV ) )  &
-                  /  ( T ( iV )  *  SB ( iV )  &
-                       *  MB ( iV )  *  NB ( iV )  /  AMU  ) )
+        TimeStepInverse  &
+          = max ( TimeStepInverse,  &
+                  abs ( FS_R_D ( iV ) )  /  abs ( D ( iV ) ) )
       end if
     end do
     !$OMP end parallel do
@@ -1058,7 +1278,7 @@ end select !-- SF
     TimeStepInverse = max ( tiny ( 0.0_KDR ), TimeStepInverse )
     TimeStep = min ( TimeStep, f * 1.0_KDR / TimeStepInverse )
 
-  end subroutine ComputeTimeStep_SB_J_Kernel
+  end subroutine ComputeTimeStep_FS_R_Kernel
 
 
   subroutine ComputeTimeStep_SB_N_Kernel &
@@ -1329,8 +1549,7 @@ end select !-- SF
 
   subroutine ApplySources_Fluid_Kernel &
                ( K_G, K_S_1, K_S_2, K_S_3, K_DP, K_DS, IsProperCell, FS_R_G, &
-                 FS_R_S_1, FS_R_S_2, FS_R_S_3, FS_R_DP, FS_R_DS, &
-                 T, Mu_n_p, Mu_e )
+                 FS_R_S_1, FS_R_S_2, FS_R_S_3, FS_R_DP, FS_R_DS, dt )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       K_G, &
@@ -1343,9 +1562,9 @@ end select !-- SF
       FS_R_G, &
       FS_R_S_1, FS_R_S_2, FS_R_S_3, &
       FS_R_DP, &
-      FS_R_DS, &
-      T, &
-      Mu_n_p, Mu_e
+      FS_R_DS
+    real ( KDR ), intent ( in ) :: &
+      dt
 
     integer ( KDI ) :: &
       iV, &
@@ -1374,19 +1593,12 @@ end select !-- SF
     do iV = 1, nV
       if ( .not. IsProperCell ( iV ) ) &
         cycle
-      K_G ( iV )    =  K_G ( iV )    +  FS_R_G ( iV )
-      K_S_1 ( iV )  =  K_S_1 ( iV )  +  FS_R_S_1 ( iV )
-      K_S_2 ( iV )  =  K_S_2 ( iV )  +  FS_R_S_2 ( iV )
-      K_S_3 ( iV )  =  K_S_3 ( iV )  +  FS_R_S_3 ( iV )
-      K_DP ( iV )   =  K_DP ( iV )   +  FS_R_DP ( iV )
-      K_DS ( iV )   =  K_DS ( iV )   +  FS_R_DS ( iV )
-
-      ! K_DS ( iV )   &
-      !   =  K_DS ( iV )   &
-      !      +  ( AMU * FS_R_G ( iV ) &
-      !           -  ( Mu_e ( iV )  -  Mu_n_p ( iV ) )  &
-      !              *  FS_R_DP ( iV ) ) &
-      !         /  T ( iV )
+      K_G ( iV )    =  K_G ( iV )    +  FS_R_G ( iV )    *  dt
+      K_S_1 ( iV )  =  K_S_1 ( iV )  +  FS_R_S_1 ( iV )  *  dt
+      K_S_2 ( iV )  =  K_S_2 ( iV )  +  FS_R_S_2 ( iV )  *  dt
+      K_S_3 ( iV )  =  K_S_3 ( iV )  +  FS_R_S_3 ( iV )  *  dt
+      K_DP ( iV )   =  K_DP ( iV )   +  FS_R_DP ( iV )   *  dt
+      K_DS ( iV )   =  K_DS ( iV )   +  FS_R_DS ( iV )   *  dt
 
     end do
     !$OMP end parallel do
@@ -1471,178 +1683,228 @@ end if
   end subroutine ImposeBetaEquilibrium_Kernel
 
 
+!   subroutine ComputeFluidSource_G_S_Radiation_Kernel &
+!                ( FS_R_G, FS_R_S_1, FS_R_S_2, FS_R_S_3, FS_R_DS, &
+!                  RM, IsProperCell, Xi_J, Chi_J, Chi_H, &
+!                  J, dJ, H_1, H_2, H_3, S_1, S_2, S_3, dH_1, dH_2, dH_3, &
+!                  FF, SF, Beta_EQ, V_1, V_2, V_3, T, M_DD_22, M_DD_33, c, dT )
+
+!     real ( KDR ), dimension ( : ), intent ( inout ) :: &
+!       FS_R_G, &
+!       FS_R_S_1, FS_R_S_2, FS_R_S_3, &
+!       FS_R_DS
+!     class ( RadiationMomentsForm ), intent ( in ) :: &
+!       RM
+!     logical ( KDL ), dimension ( : ), intent ( in ) :: &
+!       IsProperCell
+!     real ( KDR ), dimension ( : ), intent ( in ) :: &
+!       Xi_J, Chi_J, &
+!       Chi_H, &
+!       J,  &
+!       dJ, &
+!       H_1, H_2, H_3, &
+!       S_1, S_2, S_3, &
+!       dH_1, dH_2, dH_3, &
+!       FF, SF, &
+!       Beta_EQ, &
+!       V_1, V_2, V_3, &
+!       T, &
+!       M_DD_22, M_DD_33
+!     real ( KDR ) :: &
+!       c, &
+!       dT
+
+!     integer ( KDI ) :: &
+!       iV, &
+!       nV
+!     real ( KDR ) :: &
+!       AMU
+!     real ( KDR ), dimension ( 3, 3 ) :: &
+!       K_U_D
+
+!     nV = size ( FS_R_G )
+
+!     AMU = CONSTANT % ATOMIC_MASS_UNIT
+
+! ! call Show ( FS_R_G, '>>> FS_R_G' )
+! ! call Show ( E, '>>> E' )
+! ! call Show ( c * dT, '>>> c * dT' )
+
+!     !$OMP parallel do private ( iV )
+!     do iV = 1, nV
+!       if ( .not. IsProperCell ( iV ) ) &
+!         cycle
+! !      if ( Beta_EQ ( iV ) > 0.0_KDR ) then
+! !        FS_R_G ( iV )  =  - dJ ( iV )
+! !      else
+
+!         ! FS_R_G ( iV )  &
+!         !   =  FS_R_G ( iV )  &
+!         !      -  c * dT  &
+!         !         *  ( Xi_J ( iV )  &
+!         !              -  Chi_J ( iV ) * ( J ( iV ) + dJ ( iV ) ) &
+!         !              -  Chi_H ( iV )  &
+!         !                 *  (                     V_1 ( iV ) * H_1 ( iV )  &
+!         !                      +  M_DD_22 ( iV ) * V_2 ( iV ) * H_2 ( iV )  &
+!         !                      +  M_DD_33 ( iV ) * V_3 ( iV ) * H_3 ( iV ) ) )
+                     
+!         FS_R_G ( iV )  &
+!           =  FS_R_G ( iV )  &
+!              -  c * dT  &
+!                 *  ( Xi_J ( iV )  &
+!                      -  Chi_J ( iV ) * ( J ( iV ) + dJ ( iV ) ) &
+!                      -  Chi_H ( iV )  &
+!                         *  ( V_1 ( iV ) * ( H_1 ( iV ) + dH_1 ( iV ) ) ) ) 
+
+! !      end if
+
+!       ! FS_R_S_1 ( iV )  &
+!       !   =  FS_R_S_1 ( iV )  &
+!       !      -  c * dT  &  
+!       !         * ( -  Chi_H ( iV )  *  ( H_1 ( iV )  +  dS_1 ( iV ) )  &
+!       !             +  V_1 ( iV )  &
+!       !                *  ( Xi_J ( iV )  -  Chi_J ( iV ) * J ( iV ) ) ) 
+
+!       ! FS_R_S_2 ( iV )  &
+!       !   =  FS_R_S_2 ( iV )  &
+!       !      -  c * dT &  
+!       !         * ( -  Chi_H ( iV )  *  ( M_DD_22 ( iV )  *  H_2 ( iV )  &
+!       !                                   +  dS_2 ( iV ) )  &
+!       !             +  M_DD_22 ( iV )  *  V_2 ( iV )  &
+!       !                *  ( Xi_J ( iV )  -  Chi_J ( iV ) * J ( iV ) ) ) 
+
+!       ! FS_R_S_3 ( iV )  &
+!       !   =  FS_R_S_3 ( iV )  &
+!       !      -  c * dT  &  
+!       !         * ( -  Chi_H ( iV )  *  ( M_DD_33 ( iV )  *  H_3 ( iV )  &
+!       !                                   +  dS_3 ( iV ) )  &
+!       !             +  M_DD_33 ( iV )  *  V_3 ( iV )  &
+!       !                *  ( Xi_J ( iV )  -  Chi_J ( iV ) * J ( iV ) ) ) 
+
+!       ! call RM % ComputeComovingStress_D &
+!       !        ( K_U_D ( 1, : ), [ H_1 ( iV ), H_2 ( iV ), H_3 ( iV ) ], &
+!       !          J ( iV ), SF ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ), iD = 1 )
+!       ! call RM % ComputeComovingStress_D &
+!       !        ( K_U_D ( 2, : ), [ H_1 ( iV ), H_2 ( iV ), H_3 ( iV ) ], &
+!       !          J ( iV ), SF ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ), iD = 2 )
+!       ! call RM % ComputeComovingStress_D &
+!       !        ( K_U_D ( 3, : ), [ H_1 ( iV ), H_2 ( iV ), H_3 ( iV ) ], &
+!       !          J ( iV ), SF ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ), iD = 3 )
+
+!       ! FS_R_S_1 ( iV )  &
+!       !   =  FS_R_S_1 ( iV )  &
+!       !      -  c * dT  &  
+!       !         * ( -  Chi_H ( iV )  &
+!       !                *  ( S_1 ( iV )  +  dH_1 ( iV )  &
+!       !                     - ( V_1 ( iV )  &  
+!       !                         + ( K_U_D ( 1, 1 )  *  V_1 ( iV )  &
+!       !                             +  M_DD_22 ( iV )  &
+!       !                                *  K_U_D ( 2, 1 )  *  V_2 ( iV )  &
+!       !                             +  M_DD_33 ( iV )  &
+!       !                                *  K_U_D ( 3, 1 )  *  V_3 ( iV ) )  &
+!       !                           /  max ( J ( iV ), tiny ( 0.0_KDR ) ) )  &
+!       !                       *  ( J ( iV )  +  dJ ( iV ) ) )  &
+!       !             +  V_1 ( iV )  &
+!       !                *  ( Xi_J ( iV )  &
+!       !                     -  Chi_J ( iV ) * ( J ( iV )  +  dJ ( iV ) ) ) ) 
+
+!       FS_R_S_1 ( iV )  &
+!         =  FS_R_S_1 ( iV )  &
+!            -  c * dT  &  
+!               * ( -  Chi_H ( iV )  &
+!                      *  ( H_1 ( iV )  +  dH_1 ( iV ) ) &
+!                   +  V_1 ( iV )  &
+!                      *  ( Xi_J ( iV )  &
+!                           -  Chi_J ( iV ) * ( J ( iV )  +  dJ ( iV ) ) ) ) 
+
+!       ! FS_R_S_2 ( iV )  &
+!       !   =  FS_R_S_2 ( iV )  &
+!       !      -  c * dT &  
+!       !         * ( -  Chi_H ( iV )  &
+!       !                *  ( S_2 ( iV )  +  dS_2 ( iV )  &
+!       !                     - ( M_DD_22 ( iV )  *  V_2 ( iV )  &
+!       !                         + ( K_U_D ( 1, 2 )  *  V_1 ( iV )  &
+!       !                             +  M_DD_22 ( iV )  &
+!       !                                *  K_U_D ( 2, 2 )  *  V_2 ( iV )  &
+!       !                             +  M_DD_33 ( iV )  &
+!       !                                *  K_U_D ( 3, 2 )  *  V_3 ( iV ) )  &
+!       !                           /  max ( J ( iV ), tiny ( 0.0_KDR ) ) )  &
+!       !                       *  ( J ( iV )  +  dE ( iV ) ) )  &
+!       !             +  M_DD_22 ( iV )  *  V_2 ( iV )  &
+!       !                *  ( Xi_J ( iV )  &
+!       !                     -  Chi_J ( iV ) * ( J ( iV )  +  dE ( iV ) ) ) ) 
+
+!       ! FS_R_S_3 ( iV )  &
+!       !   =  FS_R_S_3 ( iV )  &
+!       !      -  c * dT  &  
+!       !         * ( -  Chi_H ( iV )  &
+!       !                *  ( S_3 ( iV )  +  dS_3 ( iV )  &
+!       !                     - ( M_DD_33 ( iV )  *  V_3 ( iV )  &
+!       !                         + ( K_U_D ( 1, 3 )  *  V_1 ( iV )  &
+!       !                             +  M_DD_22 ( iV )  &
+!       !                                *  K_U_D ( 2, 3 )  *  V_2 ( iV )  &
+!       !                             +  M_DD_33 ( iV )  &
+!       !                                *  K_U_D ( 3, 3 )  *  V_3 ( iV ) )  &
+!       !                           /  max ( J ( iV ), tiny ( 0.0_KDR ) ) )  &
+!       !                       *  ( J ( iV )  +  dE ( iV ) ) )  &
+!       !             +  M_DD_33 ( iV )  *  V_3 ( iV )  &
+!       !                *  ( Xi_J ( iV )  &
+!       !                     -  Chi_J ( iV ) * ( J ( iV )  +  dE ( iV ) ) ) ) 
+
+!       FS_R_DS ( iV )  &
+!         =  FS_R_DS ( iV )  &
+!            -  c * dT * AMU  /  T ( iV ) &
+!               *  ( Xi_J ( iV )  -  Chi_J ( iV ) * ( J ( iV ) + dJ ( iV ) ) )
+
+!     end do
+!     !$OMP end parallel do
+
+!   end subroutine ComputeFluidSource_G_S_Radiation_Kernel
+
+
   subroutine ComputeFluidSource_G_S_Radiation_Kernel &
                ( FS_R_G, FS_R_S_1, FS_R_S_2, FS_R_S_3, FS_R_DS, &
-                 RM, IsProperCell, Xi_J, Chi_J, Chi_H, &
-                 J, dJ, H_1, H_2, H_3, S_1, S_2, S_3, dH_1, dH_2, dH_3, &
-                 FF, SF, Beta_EQ, V_1, V_2, V_3, T, M_DD_22, M_DD_33, c, dT )
+                 IsProperCell, Q, A_1, V_1, T )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       FS_R_G, &
       FS_R_S_1, FS_R_S_2, FS_R_S_3, &
       FS_R_DS
-    class ( RadiationMomentsForm ), intent ( in ) :: &
-      RM
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       IsProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      Xi_J, Chi_J, &
-      Chi_H, &
-      J,  &
-      dJ, &
-      H_1, H_2, H_3, &
-      S_1, S_2, S_3, &
-      dH_1, dH_2, dH_3, &
-      FF, SF, &
-      Beta_EQ, &
-      V_1, V_2, V_3, &
-      T, &
-      M_DD_22, M_DD_33
-    real ( KDR ) :: &
-      c, &
-      dT
+      Q, &
+      A_1, &
+      V_1, &
+      T
 
     integer ( KDI ) :: &
       iV, &
       nV
     real ( KDR ) :: &
       AMU
-    real ( KDR ), dimension ( 3, 3 ) :: &
-      K_U_D
 
     nV = size ( FS_R_G )
 
     AMU = CONSTANT % ATOMIC_MASS_UNIT
 
-! call Show ( FS_R_G, '>>> FS_R_G' )
-! call Show ( E, '>>> E' )
-! call Show ( c * dT, '>>> c * dT' )
-
     !$OMP parallel do private ( iV )
     do iV = 1, nV
+
       if ( .not. IsProperCell ( iV ) ) &
         cycle
-!      if ( Beta_EQ ( iV ) > 0.0_KDR ) then
-!        FS_R_G ( iV )  =  - dJ ( iV )
-!      else
 
-        ! FS_R_G ( iV )  &
-        !   =  FS_R_G ( iV )  &
-        !      -  c * dT  &
-        !         *  ( Xi_J ( iV )  &
-        !              -  Chi_J ( iV ) * ( J ( iV ) + dJ ( iV ) ) &
-        !              -  Chi_H ( iV )  &
-        !                 *  (                     V_1 ( iV ) * H_1 ( iV )  &
-        !                      +  M_DD_22 ( iV ) * V_2 ( iV ) * H_2 ( iV )  &
-        !                      +  M_DD_33 ( iV ) * V_3 ( iV ) * H_3 ( iV ) ) )
-                     
-        FS_R_G ( iV )  &
-          =  FS_R_G ( iV )  &
-             -  c * dT  &
-                *  ( Xi_J ( iV )  &
-                     -  Chi_J ( iV ) * ( J ( iV ) + dJ ( iV ) ) &
-                     -  Chi_H ( iV )  &
-                        *  ( V_1 ( iV ) * ( H_1 ( iV ) + dH_1 ( iV ) ) ) ) 
-
-!      end if
-
-      ! FS_R_S_1 ( iV )  &
-      !   =  FS_R_S_1 ( iV )  &
-      !      -  c * dT  &  
-      !         * ( -  Chi_H ( iV )  *  ( H_1 ( iV )  +  dS_1 ( iV ) )  &
-      !             +  V_1 ( iV )  &
-      !                *  ( Xi_J ( iV )  -  Chi_J ( iV ) * J ( iV ) ) ) 
-
-      ! FS_R_S_2 ( iV )  &
-      !   =  FS_R_S_2 ( iV )  &
-      !      -  c * dT &  
-      !         * ( -  Chi_H ( iV )  *  ( M_DD_22 ( iV )  *  H_2 ( iV )  &
-      !                                   +  dS_2 ( iV ) )  &
-      !             +  M_DD_22 ( iV )  *  V_2 ( iV )  &
-      !                *  ( Xi_J ( iV )  -  Chi_J ( iV ) * J ( iV ) ) ) 
-
-      ! FS_R_S_3 ( iV )  &
-      !   =  FS_R_S_3 ( iV )  &
-      !      -  c * dT  &  
-      !         * ( -  Chi_H ( iV )  *  ( M_DD_33 ( iV )  *  H_3 ( iV )  &
-      !                                   +  dS_3 ( iV ) )  &
-      !             +  M_DD_33 ( iV )  *  V_3 ( iV )  &
-      !                *  ( Xi_J ( iV )  -  Chi_J ( iV ) * J ( iV ) ) ) 
-
-      ! call RM % ComputeComovingStress_D &
-      !        ( K_U_D ( 1, : ), [ H_1 ( iV ), H_2 ( iV ), H_3 ( iV ) ], &
-      !          J ( iV ), SF ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ), iD = 1 )
-      ! call RM % ComputeComovingStress_D &
-      !        ( K_U_D ( 2, : ), [ H_1 ( iV ), H_2 ( iV ), H_3 ( iV ) ], &
-      !          J ( iV ), SF ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ), iD = 2 )
-      ! call RM % ComputeComovingStress_D &
-      !        ( K_U_D ( 3, : ), [ H_1 ( iV ), H_2 ( iV ), H_3 ( iV ) ], &
-      !          J ( iV ), SF ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ), iD = 3 )
-
-      ! FS_R_S_1 ( iV )  &
-      !   =  FS_R_S_1 ( iV )  &
-      !      -  c * dT  &  
-      !         * ( -  Chi_H ( iV )  &
-      !                *  ( S_1 ( iV )  +  dH_1 ( iV )  &
-      !                     - ( V_1 ( iV )  &  
-      !                         + ( K_U_D ( 1, 1 )  *  V_1 ( iV )  &
-      !                             +  M_DD_22 ( iV )  &
-      !                                *  K_U_D ( 2, 1 )  *  V_2 ( iV )  &
-      !                             +  M_DD_33 ( iV )  &
-      !                                *  K_U_D ( 3, 1 )  *  V_3 ( iV ) )  &
-      !                           /  max ( J ( iV ), tiny ( 0.0_KDR ) ) )  &
-      !                       *  ( J ( iV )  +  dJ ( iV ) ) )  &
-      !             +  V_1 ( iV )  &
-      !                *  ( Xi_J ( iV )  &
-      !                     -  Chi_J ( iV ) * ( J ( iV )  +  dJ ( iV ) ) ) ) 
+      FS_R_G ( iV )  &
+        =  FS_R_G ( iV )  &
+           -  ( Q ( iV )   +   V_1 ( iV )  *  A_1 ( iV ) ) 
 
       FS_R_S_1 ( iV )  &
         =  FS_R_S_1 ( iV )  &
-           -  c * dT  &  
-              * ( -  Chi_H ( iV )  &
-                     *  ( H_1 ( iV )  +  dH_1 ( iV ) ) &
-                  +  V_1 ( iV )  &
-                     *  ( Xi_J ( iV )  &
-                          -  Chi_J ( iV ) * ( J ( iV )  +  dJ ( iV ) ) ) ) 
-
-      ! FS_R_S_2 ( iV )  &
-      !   =  FS_R_S_2 ( iV )  &
-      !      -  c * dT &  
-      !         * ( -  Chi_H ( iV )  &
-      !                *  ( S_2 ( iV )  +  dS_2 ( iV )  &
-      !                     - ( M_DD_22 ( iV )  *  V_2 ( iV )  &
-      !                         + ( K_U_D ( 1, 2 )  *  V_1 ( iV )  &
-      !                             +  M_DD_22 ( iV )  &
-      !                                *  K_U_D ( 2, 2 )  *  V_2 ( iV )  &
-      !                             +  M_DD_33 ( iV )  &
-      !                                *  K_U_D ( 3, 2 )  *  V_3 ( iV ) )  &
-      !                           /  max ( J ( iV ), tiny ( 0.0_KDR ) ) )  &
-      !                       *  ( J ( iV )  +  dE ( iV ) ) )  &
-      !             +  M_DD_22 ( iV )  *  V_2 ( iV )  &
-      !                *  ( Xi_J ( iV )  &
-      !                     -  Chi_J ( iV ) * ( J ( iV )  +  dE ( iV ) ) ) ) 
-
-      ! FS_R_S_3 ( iV )  &
-      !   =  FS_R_S_3 ( iV )  &
-      !      -  c * dT  &  
-      !         * ( -  Chi_H ( iV )  &
-      !                *  ( S_3 ( iV )  +  dS_3 ( iV )  &
-      !                     - ( M_DD_33 ( iV )  *  V_3 ( iV )  &
-      !                         + ( K_U_D ( 1, 3 )  *  V_1 ( iV )  &
-      !                             +  M_DD_22 ( iV )  &
-      !                                *  K_U_D ( 2, 3 )  *  V_2 ( iV )  &
-      !                             +  M_DD_33 ( iV )  &
-      !                                *  K_U_D ( 3, 3 )  *  V_3 ( iV ) )  &
-      !                           /  max ( J ( iV ), tiny ( 0.0_KDR ) ) )  &
-      !                       *  ( J ( iV )  +  dE ( iV ) ) )  &
-      !             +  M_DD_33 ( iV )  *  V_3 ( iV )  &
-      !                *  ( Xi_J ( iV )  &
-      !                     -  Chi_J ( iV ) * ( J ( iV )  +  dE ( iV ) ) ) ) 
+           -  ( A_1 ( iV )  +  V_1 ( iV )  *  Q ( iV ) )
 
       FS_R_DS ( iV )  &
         =  FS_R_DS ( iV )  &
-           -  c * dT * AMU  /  T ( iV ) &
-              *  ( Xi_J ( iV )  -  Chi_J ( iV ) * ( J ( iV ) + dJ ( iV ) ) )
+           -  AMU  *  Q ( iV ) /  T ( iV )
 
     end do
     !$OMP end parallel do
@@ -1650,9 +1912,67 @@ end if
   end subroutine ComputeFluidSource_G_S_Radiation_Kernel
 
 
+!   subroutine ComputeFluidSource_DP_Radiation_Kernel &
+!                ( FS_R_DP, FS_R_DS, IsProperCell, Xi_N, Chi_N, N, dN, Beta_EQ, &
+!                  T, Mu_n_p, Mu_e, c, dT, Sign )
+
+!     real ( KDR ), dimension ( : ), intent ( inout ) :: &
+!       FS_R_DP, &
+!       FS_R_DS
+!     logical ( KDL ), dimension ( : ), intent ( in ) :: &
+!       IsProperCell
+!     real ( KDR ), dimension ( : ), intent ( in ) :: &
+!       Xi_N, Chi_N, &
+!       N, dN, &
+!       Beta_EQ, &
+!       T, Mu_n_p, Mu_e
+!     real ( KDR ) :: &
+!       c, &
+!       dT, &
+!       Sign
+
+!     integer ( KDI ) :: &
+!       iV, &
+!       nV
+!     real ( KDR ) :: &
+!       AMU
+
+!     nV = size ( FS_R_DP )
+
+!     AMU = CONSTANT % ATOMIC_MASS_UNIT
+
+! ! call Show ( FS_R_DP, '>>> FS_R_DP' )
+! ! call Show ( AMU * EN, '>>> AMU * EN' )
+! ! call Show ( c * dT, '>>> c * dT' )
+
+!     !$OMP parallel do private ( iV )
+!     do iV = 1, nV
+!       if ( .not. IsProperCell ( iV ) ) &
+!         cycle
+! !      if ( Beta_EQ ( iV ) > 0.0_KDR ) then
+! !        FS_R_DP ( iV )  =  - AMU * dJN ( iV )
+! !      else
+
+!         FS_R_DP ( iV )  &
+!           =  FS_R_DP ( iV )  &
+!              -  Sign * c * dT * AMU &
+!                 *  ( Xi_N ( iV )  -  Chi_N ( iV ) * ( N ( iV ) + dN ( iV ) ) )
+
+!         FS_R_DS ( iV )  &
+!           =  FS_R_DS ( iV )  &
+!              +  Sign * c * dT * AMU &
+!                 *  ( Mu_e ( iV )  -  Mu_n_p ( iV ) )  /  T ( iV )  &
+!                 *  ( Xi_N ( iV )  -  Chi_N ( iV ) * ( N ( iV ) + dN ( iV ) ) )
+
+! !      end if
+!     end do
+!     !$OMP end parallel do
+
+!   end subroutine ComputeFluidSource_DP_Radiation_Kernel
+
+
   subroutine ComputeFluidSource_DP_Radiation_Kernel &
-               ( FS_R_DP, FS_R_DS, IsProperCell, Xi_N, Chi_N, N, dN, Beta_EQ, &
-                 T, Mu_n_p, Mu_e, c, dT, Sign )
+               ( FS_R_DP, FS_R_DS, IsProperCell, R, T, Mu_e, Mu_n_p, Sign )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       FS_R_DP, &
@@ -1660,13 +1980,9 @@ end if
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       IsProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      Xi_N, Chi_N, &
-      N, dN, &
-      Beta_EQ, &
-      T, Mu_n_p, Mu_e
-    real ( KDR ) :: &
-      c, &
-      dT, &
+      R, &
+      T, Mu_e, Mu_n_p
+    real ( KDR ), intent ( in ) :: &
       Sign
 
     integer ( KDI ) :: &
@@ -1679,30 +1995,21 @@ end if
 
     AMU = CONSTANT % ATOMIC_MASS_UNIT
 
-! call Show ( FS_R_DP, '>>> FS_R_DP' )
-! call Show ( AMU * EN, '>>> AMU * EN' )
-! call Show ( c * dT, '>>> c * dT' )
-
     !$OMP parallel do private ( iV )
     do iV = 1, nV
+
       if ( .not. IsProperCell ( iV ) ) &
         cycle
-!      if ( Beta_EQ ( iV ) > 0.0_KDR ) then
-!        FS_R_DP ( iV )  =  - AMU * dJN ( iV )
-!      else
 
-        FS_R_DP ( iV )  &
-          =  FS_R_DP ( iV )  &
-             -  Sign * c * dT * AMU &
-                *  ( Xi_N ( iV )  -  Chi_N ( iV ) * ( N ( iV ) + dN ( iV ) ) )
+      FS_R_DP ( iV )  &
+        =  FS_R_DP ( iV )  &
+           -  Sign  *  AMU  *  R ( iV )
 
-        FS_R_DS ( iV )  &
-          =  FS_R_DS ( iV )  &
-             +  Sign * c * dT * AMU &
-                *  ( Mu_e ( iV )  -  Mu_n_p ( iV ) )  /  T ( iV )  &
-                *  ( Xi_N ( iV )  -  Chi_N ( iV ) * ( N ( iV ) + dN ( iV ) ) )
+      FS_R_DS ( iV )  &
+        =  FS_R_DS ( iV )  &
+           +  Sign  *  AMU &
+              *  ( Mu_e ( iV )  -  Mu_n_p ( iV ) )  /  T ( iV )  *  R ( iV )
 
-!      end if
     end do
     !$OMP end parallel do
 

@@ -175,6 +175,7 @@ contains
     real ( KDR ) :: &
       TimeNew
 
+    call I % PrepareCycle ( )
     call I % ComputeNewTime ( TimeNew )
 
     select type ( S => I % Step )

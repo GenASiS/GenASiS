@@ -13,13 +13,13 @@ module Sources_RM__Form
 
   type, public, extends ( Sources_C_Form ) :: Sources_RM_Form
     integer ( KDI ) :: &
-      N_FIELDS_RM    = N_FIELDS_RM, &
-      N_VECTORS_RM   = N_VECTORS_RM, &
-      NET_EMISSION_E = 0, &
-      NET_EMISSION_N = 0
+      N_FIELDS_RM     = N_FIELDS_RM, &
+      N_VECTORS_RM    = N_VECTORS_RM, &
+      COMOVING_ENERGY = 0, &
+      COMOVING_NUMBER = 0
     integer ( KDI ), dimension ( 3 ) :: &
-      CURVILINEAR_S_D  = 0, &
-      NET_EMISSION_S_D = 0
+      CURVILINEAR_S_D     = 0, &
+      COMOVING_MOMENTUM_D = 0
   contains
     procedure, private, pass :: &
       InitializeAllocate_SRM
@@ -152,10 +152,10 @@ contains
     if ( SRM % N_FIELDS == 0 ) &
       SRM % N_FIELDS = oF + SRM % N_FIELDS_RM
 
-    SRM % NET_EMISSION_E    =  oF + 1
-    SRM % NET_EMISSION_N    =  oF + 2
-    SRM % CURVILINEAR_S_D   =  oF + [ 3, 4, 5 ]
-    SRM % NET_EMISSION_S_D  =  oF + [ 6, 7, 8 ]
+    SRM % COMOVING_ENERGY      =  oF + 1
+    SRM % COMOVING_NUMBER      =  oF + 2
+    SRM % CURVILINEAR_S_D      =  oF + [ 3, 4, 5 ]
+    SRM % COMOVING_MOMENTUM_D  =  oF + [ 6, 7, 8 ]
 
     !-- variable names 
 
@@ -168,14 +168,14 @@ contains
     end if
 
     Variable ( oF + 1 : oF + SRM % N_FIELDS_RM ) &
-      = [ 'NetEmission_E    ', &
-          'NetEmission_N    ', &
-          'Curvilinear_S_D_1', &
-          'Curvilinear_S_D_2', &
-          'Curvilinear_S_D_3', &
-          'NetEmission_S_D_1', &
-          'NetEmission_S_D_2', &
-          'NetEmission_S_D_3' ]
+      = [ 'ComovingEnergy      ', &
+          'ComovingNumber      ', &
+          'Curvilinear_S_D_1   ', &
+          'Curvilinear_S_D_2   ', &
+          'Curvilinear_S_D_3   ', &
+          'ComovingMomentum_D_1', &
+          'ComovingMomentum_D_2', &
+          'ComovingMomentum_D_3' ]
           
     !-- units
     
@@ -202,9 +202,9 @@ contains
     end if
 
     Vector ( oV + 1 : oV + SRM % N_VECTORS_RM ) &
-      = [ 'Div_F_S_D      ', &
-          'Curvilinear_S_D', &
-          'NetEmission_S_D' ]
+      = [ 'Div_F_S_D         ', &
+          'Curvilinear_S_D   ', &
+          'ComovingMomentum_D' ]
 
     !-- vector indices
 
@@ -225,7 +225,7 @@ contains
 
     call VectorIndices ( oV + 1 ) % Initialize ( iMomentum )
     call VectorIndices ( oV + 2 ) % Initialize ( SRM % CURVILINEAR_S_D )
-    call VectorIndices ( oV + 3 ) % Initialize ( SRM % NET_EMISSION_S_D )
+    call VectorIndices ( oV + 3 ) % Initialize ( SRM % COMOVING_MOMENTUM_D )
 
   end subroutine InitializeBasics
 
@@ -244,13 +244,13 @@ contains
     integer ( KDI ) :: &
       iD
 
-    VariableUnit ( SRM % NET_EMISSION_E )  &
+    VariableUnit ( SRM % COMOVING_ENERGY )  &
       =  RM % Unit ( RM % CONSERVED_ENERGY )  /  TimeUnit
 
     do iD = 1, 3
       VariableUnit ( SRM % CURVILINEAR_S_D ( iD ) )  &
         =  RM % Unit ( RM % CONSERVED_MOMENTUM_D ( iD ) )  /  TimeUnit
-      VariableUnit ( SRM % NET_EMISSION_S_D ( iD ) )  &
+      VariableUnit ( SRM % COMOVING_MOMENTUM_D ( iD ) )  &
         =  RM % Unit ( RM % CONSERVED_MOMENTUM_D ( iD ) )  /  TimeUnit
     end do
 

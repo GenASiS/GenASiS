@@ -3,6 +3,7 @@ module ApplyRelaxation_RM_2__Command
   use Basics
   use Mathematics
   use RadiationMoments_Form
+  use NeutrinoMoments_G__Form
   use Sources_RM__Form
 
   implicit none
@@ -14,7 +15,9 @@ module ApplyRelaxation_RM_2__Command
     private :: &
       ComputeCoefficients, &
       ComputeComovingIncrements, &
-      ComputeConservedIncrements
+      ComputeConservedIncrements, &
+      ComputeSources!, &
+!      ComputeNumber
 
 contains
 
@@ -30,7 +33,7 @@ contains
     type ( VariableGroupForm ), intent ( inout ) :: &
       IncrementExplicit, &
       DampingCoefficient
-    class ( CurrentTemplate ), intent ( in ) :: &
+    class ( CurrentTemplate ), intent ( in ), target :: &
       RadiationMoments
     class ( ChartTemplate ), intent ( in ) :: &
       Chart
@@ -43,7 +46,8 @@ contains
       iV, &
       nV, &
       iEnergy, &
-      iMomentum_1
+      iMomentum_1, &
+      iNumber
     real ( KDR ) :: &
       dJ, dH_1
     real ( KDR ), dimension ( 3 ) :: &
@@ -54,6 +58,8 @@ contains
       A
     class ( GeometryFlatForm ), pointer :: &
       G
+    class ( NeutrinoMoments_G_Form ), pointer :: &
+      NM
 
     call Show ( 'ApplyRelaxation_RM_2', S % IGNORABILITY + 3 )
     call Show ( RadiationMoments % Name, 'RadiationMoments', &
@@ -61,8 +67,16 @@ contains
 
     nV = size ( IncrementExplicit % Value, dim = 1 )
 
+    NM => null ( )
+    select type ( RadiationMoments )
+    class is ( NeutrinoMoments_G_Form )
+      NM => RadiationMoments
+    end select
+
     select type ( RM => RadiationMoments )
     class is ( RadiationMomentsForm )
+
+    associate ( I => RM % Interactions )
 
     select type ( SRM => Sources_RM )
     class is ( Sources_RM_Form )
@@ -70,23 +84,20 @@ contains
     select type ( Chart )
     class is ( Chart_SL_Template )
 
-    associate ( I => RM % Interactions )
-
     G => Chart % Geometry ( )
 
     call Search ( RM % iaConserved, RM % CONSERVED_ENERGY, &
                   iEnergy )
     call Search ( RM % iaConserved, RM % CONSERVED_MOMENTUM_D ( 1 ), &
                   iMomentum_1 )
+    if ( associated ( NM ) ) &
+      call Search ( NM % iaConserved, NM % CONSERVED_NUMBER, iNumber )
 
     !$OMP parallel do private ( iV, A, B, dJ, dH_1, k_D )
     do iV = 1, nV
 
       if ( .not. Chart % IsProperCell ( iV ) ) &
         cycle
-
-!call Show ( iV, '>>> iV' )
-!call Show ( RadiationMoments % Name, 'RadiationMoments' )
 
       call ComputeCoefficients &
              ( RM, &
@@ -104,40 +115,44 @@ contains
                G  % Value ( iV, G % METRIC_DD_22 ), &
                G  % Value ( iV, G % METRIC_DD_33 ), &
                TimeStep, A, B, k_D )
-
-!call Show ( A, '>>> A' )
-!call Show ( B, '>>> B' )
-!call Show ( k_D ( 1 ), '>>> k_D ( 1 )' )
-
       call ComputeComovingIncrements &
              ( A, B, dJ, dH_1 )
-      !-- FIXME: total hack, use Sources_RM to accessibly store comoving 
-      !          increments 
       call ComputeConservedIncrements &
              ( k_D, dJ, dH_1, &
                RM % Value ( iV, RM % FLUID_VELOCITY_U ( 1 ) ), &
                IncrementExplicit % Value ( iV, iEnergy ), &
-               IncrementExplicit % Value ( iV, iMomentum_1 ), &
-               SRM % Value ( iV, SRM % NET_EMISSION_E ), &
-               SRM % Value ( iV, SRM % NET_EMISSION_S_D ( 1 ) ) )
+               IncrementExplicit % Value ( iV, iMomentum_1 ) )
+      call ComputeSources &
+             ( SRM % Value ( iV, SRM % COMOVING_ENERGY ), &
+               SRM % Value ( iV, SRM % COMOVING_MOMENTUM_D ( 1 ) ), &
+               I  % Value ( iV, I % EMISSIVITY_J ), &
+               I  % Value ( iV, I % OPACITY_J ), &
+               I  % Value ( iV, I % OPACITY_H ), &
+               RM % Value ( iV, RM % COMOVING_ENERGY ), &
+               RM % Value ( iV, RM % COMOVING_MOMENTUM_U ( 1 ) ), &
+               dJ, dH_1, S % B ( iStage ) )
 
-! call Show ( RM % Value ( iV, RM % COMOVING_ENERGY ), '>>> J' )
-! call Show ( dJ, '>>> dJ' )
-! call Show ( RM % Value ( iV, RM % COMOVING_MOMENTUM_U ( 1 ) ), '>>> H_1' )
-! call Show ( dH_1, '>>> dH_1' )
-! call Show ( RM % Value ( iV, RM % CONSERVED_ENERGY ), '>>> E' )
-! call Show ( IncrementExplicit % Value ( iV, iEnergy ), '>>> dE' )
-! call Show ( RM % Value ( iV, RM % CONSERVED_MOMENTUM_D ( 1 ) ), '>>> S_1' )
-! call Show ( IncrementExplicit % Value ( iV, iMomentum_1 ), '>>> dS_1' )
+      if ( associated ( NM ) ) &
+        call ComputeNumber &
+               ( IncrementExplicit % Value ( iV, iNumber ), &
+                 SRM % Value ( iV, SRM % COMOVING_NUMBER ), &
+                 I % Value ( iV, I % EMISSIVITY_N ), &
+                 I % Value ( iV, I % OPACITY_N ), &
+                 NM % Value ( iV, NM % FLUID_VELOCITY_U ( 1 ) ), &
+                 NM % Value ( iV, NM % COMOVING_NUMBER ), &
+                 NM % Value ( iV, NM % ENERGY_AVERAGE ), &
+                 dH_1, TimeStep, S % B ( iStage ) )
+!               ( dD, R, Xi_N, Chi_N, V_1, N, E_Ave, dH_1, dt, Weight_RK )
 
     end do
     !$OMP end parallel do
 
-    end associate !-- I
     end select !-- Chart
     end select !-- SRM
+    end associate !-- I
     end select !-- RM
-    nullify ( G )
+
+    nullify ( G, NM )
     
   end subroutine ApplyRelaxation_RM_2
 
@@ -207,25 +222,68 @@ contains
   end subroutine ComputeComovingIncrements
 
 
-  subroutine ComputeConservedIncrements &
-               ( k_D, dJ, dH_1, V_1, dE, dS_1, SVNE_E, SVNE_S_1 )
+  subroutine ComputeConservedIncrements ( k_D, dJ, dH_1, V_1, dE, dS_1 )
 
     real ( KDR ), dimension ( 3 ), intent ( in ) :: &
       k_D
     real ( KDR ), intent ( in ) :: &
       dJ, dH_1, V_1
     real ( KDR ), intent ( out ) :: &
-      dE, dS_1, &
-      SVNE_E, SVNE_S_1
+      dE, dS_1
 
     dE    =  dJ    +  2.0_KDR  *  V_1  *  dH_1
     dS_1  =  dH_1  +  ( V_1  +  k_D ( 1 ) * V_1 )  *  dJ
 
-    !-- FIXME: total hack, use this to accessibly store comoving increments 
-    SVNE_E    =  dJ
-    SVNE_S_1  =  dH_1
-
   end subroutine ComputeConservedIncrements
+
+
+  subroutine ComputeSources &
+               ( Q, A_1, Xi_J, Chi_J, Chi_H, J, H_1, dJ, dH_1, Weight_RK )
+
+    real ( KDR ), intent ( inout ) :: &
+      Q, A_1
+    real ( KDR ), intent ( in ) :: &
+      Xi_J, Chi_J, Chi_H, &
+      J, H_1, &
+      dJ, dH_1, &
+      Weight_RK
+
+    Q    =  Q    +  Weight_RK * ( Xi_J  -  Chi_J  *  ( J    +  dJ ) )
+    A_1  =  A_1  +  Weight_RK * (       -  Chi_H  *  ( H_1  +  dH_1 ) )
+
+  end subroutine ComputeSources
+
+
+  subroutine ComputeNumber &
+               ( dD, R, Xi_N, Chi_N, V_1, N, E_Ave, dH_1, dt, Weight_RK )
+
+    real ( KDR ), intent ( inout ) :: &
+      dD, &
+      R
+    real ( KDR ), intent ( in ) :: &
+      Xi_N, Chi_N, &
+      V_1, N, E_Ave, dH_1, &
+      dt, Weight_RK
+
+    real ( KDR ) :: &
+      dN
+
+    !-- Increments
+
+    dD  =  ( dD  +  ( Xi_N  -  Chi_N * N ) * dt )  &
+           /  ( 1.0_KDR  +  Chi_N * dt )
+
+    if ( E_Ave > 0.0_KDR ) then
+      dN  =  dD  -  V_1 * dH_1 / E_Ave
+    else
+      dN  =  dD
+    end if
+
+    !-- Source
+
+    R  =  R  +  Weight_RK * ( Xi_N  -  Chi_N  *  ( N  +  dN ) )
+
+  end subroutine ComputeNumber
 
 
 end module ApplyRelaxation_RM_2__Command

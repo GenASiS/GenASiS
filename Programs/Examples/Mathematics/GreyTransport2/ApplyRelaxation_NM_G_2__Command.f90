@@ -76,8 +76,6 @@ contains
       if ( .not. Chart % IsProperCell ( iV ) ) &
         cycle
 
-      !-- FIXME: total hack, use Sources_RM to accessibly store comoving 
-      !          increments 
       call ComputeIncrements &
              ( IncrementExplicit % Value ( iV, iNumber ), &
                SRM % Value ( iV, SRM % NET_EMISSION_N ), &

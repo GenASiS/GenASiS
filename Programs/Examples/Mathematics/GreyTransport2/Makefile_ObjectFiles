@@ -1,10 +1,5 @@
 GREY_MOMENTS = \
-  ApplyRelaxation_NM_G_2__Command.o \
   ApplyRelaxation_RM_2__Command.o \
-  ApplyRelaxation_NM_G__Command.o \
-  ApplyRelaxation_RM__Command.o \
-  PrepareRelaxation_NM_G__Command.o \
-  PrepareRelaxation_RM__Command.o \
   Interactions_ASC__Form.o \
   Interactions_CSL__Form.o \
   Interactions_NM_1_G__Form.o \
@@ -22,3 +17,8 @@ GREY_MOMENTS = \
   PhotonMoments_G__Form.o \
   RadiationMoments_Form.o \
   Interactions_Template.o
+#  ApplyRelaxation_NM_G_2__Command.o \
+#  ApplyRelaxation_NM_G__Command.o \
+#  ApplyRelaxation_RM__Command.o \
+#  PrepareRelaxation_NM_G__Command.o \
+#  PrepareRelaxation_RM__Command.o \
