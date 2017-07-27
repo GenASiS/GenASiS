@@ -415,14 +415,14 @@ contains
     
     associate &
       ( F_D   => RawFlux ( oV + 1 : oV + nV, iNumber ), &
+        J     => Value_C ( oV + 1 : oV + nV, C % COMOVING_ENERGY ), &
         H_Dim => Value_C ( oV + 1 : oV + nV, &
                            C % COMOVING_MOMENTUM_U ( iDimension ) ), &
         N     => Value_C ( oV + 1 : oV + nV, C % COMOVING_NUMBER ), &
         V_Dim => Value_C ( oV + 1 : oV + nV, &
-                           C % FLUID_VELOCITY_U ( iDimension ) ), &
-        E_Ave => Value_C ( oV + 1 : oV + nV, C % ENERGY_AVERAGE ) )
+                           C % FLUID_VELOCITY_U ( iDimension ) ) )
 
-    call ComputeRawFluxesKernel ( F_D, H_Dim, N, V_Dim, E_Ave )
+    call ComputeRawFluxesKernel ( F_D, J, H_Dim, N, V_Dim )
 
     end associate !-- F_E, etc.
 
@@ -791,29 +791,30 @@ call Show ( Eta_ED, '>>> Falling back to Eta_ED', CONSOLE % ERROR )
   end subroutine ComputeComovingNumber
 
 
-  subroutine ComputeRawFluxesKernel ( F_D, H_Dim, N, V_Dim, E_Ave )
+  subroutine ComputeRawFluxesKernel ( F_D, J, H_Dim, N, V_Dim )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       F_D
     real ( KDR ), dimension ( : ), intent ( in ) :: &
+      J, &
       H_Dim, &
       N, &
-      V_Dim, &
-      E_Ave
+      V_Dim
 
     integer ( KDI ) :: &
       iV, &
       nValues
+    real ( KDR ) :: &
+      ff_D
 
     nValues = size ( F_D )
 
     !$OMP parallel do private ( iV ) 
     do iV = 1, nValues
-      if ( E_Ave ( iV ) > 0.0_KDR ) then
-        F_D ( iV )  =  H_Dim ( iV ) / E_Ave ( iV )  +  N ( iV ) * V_Dim ( iV )
-      else
-        F_D ( iV )  =  0.0_KDR
-      end if
+      F_D ( iV )  =  N ( iV )  *  V_Dim ( iV )
+      if ( J ( iV ) > 0.0_KDR ) &
+        F_D ( iV )  =  F_D ( iV )  &
+                       +  ( H_Dim ( iV )  /  J ( iV ) )  *  N ( iV )
     end do !-- iV
     !$OMP end parallel do
 

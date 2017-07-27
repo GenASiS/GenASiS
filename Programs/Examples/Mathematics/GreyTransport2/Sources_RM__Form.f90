@@ -3,6 +3,7 @@ module Sources_RM__Form
   use Basics
   use Mathematics
   use RadiationMoments_Form
+  use NeutrinoMoments_G__Form
 
   implicit none
   private
@@ -13,13 +14,13 @@ module Sources_RM__Form
 
   type, public, extends ( Sources_C_Form ) :: Sources_RM_Form
     integer ( KDI ) :: &
-      N_FIELDS_RM     = N_FIELDS_RM, &
-      N_VECTORS_RM    = N_VECTORS_RM, &
-      COMOVING_ENERGY = 0, &
-      COMOVING_NUMBER = 0
+      N_FIELDS_RM    = N_FIELDS_RM, &
+      N_VECTORS_RM   = N_VECTORS_RM, &
+      INTERACTIONS_J = 0, &
+      INTERACTIONS_N = 0
     integer ( KDI ), dimension ( 3 ) :: &
-      CURVILINEAR_S_D     = 0, &
-      COMOVING_MOMENTUM_D = 0
+      CURVILINEAR_S_D  = 0, &
+      INTERACTIONS_H_D = 0
   contains
     procedure, private, pass :: &
       InitializeAllocate_SRM
@@ -152,10 +153,10 @@ contains
     if ( SRM % N_FIELDS == 0 ) &
       SRM % N_FIELDS = oF + SRM % N_FIELDS_RM
 
-    SRM % COMOVING_ENERGY      =  oF + 1
-    SRM % COMOVING_NUMBER      =  oF + 2
-    SRM % CURVILINEAR_S_D      =  oF + [ 3, 4, 5 ]
-    SRM % COMOVING_MOMENTUM_D  =  oF + [ 6, 7, 8 ]
+    SRM % INTERACTIONS_J    =  oF + 1
+    SRM % INTERACTIONS_N    =  oF + 2
+    SRM % CURVILINEAR_S_D   =  oF + [ 3, 4, 5 ]
+    SRM % INTERACTIONS_H_D  =  oF + [ 6, 7, 8 ]
 
     !-- variable names 
 
@@ -168,14 +169,14 @@ contains
     end if
 
     Variable ( oF + 1 : oF + SRM % N_FIELDS_RM ) &
-      = [ 'ComovingEnergy      ', &
-          'ComovingNumber      ', &
-          'Curvilinear_S_D_1   ', &
-          'Curvilinear_S_D_2   ', &
-          'Curvilinear_S_D_3   ', &
-          'ComovingMomentum_D_1', &
-          'ComovingMomentum_D_2', &
-          'ComovingMomentum_D_3' ]
+      = [ 'Interactions_J    ', &
+          'Interactions_N    ', &
+          'Curvilinear_S_D_1 ', &
+          'Curvilinear_S_D_2 ', &
+          'Curvilinear_S_D_3 ', &
+          'Interactions_H_D_1', &
+          'Interactions_H_D_2', &
+          'Interactions_H_D_3' ]
           
     !-- units
     
@@ -202,9 +203,9 @@ contains
     end if
 
     Vector ( oV + 1 : oV + SRM % N_VECTORS_RM ) &
-      = [ 'Div_F_S_D         ', &
-          'Curvilinear_S_D   ', &
-          'ComovingMomentum_D' ]
+      = [ 'Div_F_S_D       ', &
+          'Curvilinear_S_D ', &
+          'Interactions_H_D' ]
 
     !-- vector indices
 
@@ -225,7 +226,7 @@ contains
 
     call VectorIndices ( oV + 1 ) % Initialize ( iMomentum )
     call VectorIndices ( oV + 2 ) % Initialize ( SRM % CURVILINEAR_S_D )
-    call VectorIndices ( oV + 3 ) % Initialize ( SRM % COMOVING_MOMENTUM_D )
+    call VectorIndices ( oV + 3 ) % Initialize ( SRM % INTERACTIONS_H_D )
 
   end subroutine InitializeBasics
 
@@ -244,15 +245,21 @@ contains
     integer ( KDI ) :: &
       iD
 
-    VariableUnit ( SRM % COMOVING_ENERGY )  &
+    VariableUnit ( SRM % INTERACTIONS_J )  &
       =  RM % Unit ( RM % CONSERVED_ENERGY )  /  TimeUnit
 
     do iD = 1, 3
       VariableUnit ( SRM % CURVILINEAR_S_D ( iD ) )  &
         =  RM % Unit ( RM % CONSERVED_MOMENTUM_D ( iD ) )  /  TimeUnit
-      VariableUnit ( SRM % COMOVING_MOMENTUM_D ( iD ) )  &
+      VariableUnit ( SRM % INTERACTIONS_H_D ( iD ) )  &
         =  RM % Unit ( RM % CONSERVED_MOMENTUM_D ( iD ) )  /  TimeUnit
     end do
+
+    select type ( RM )
+    class is ( NeutrinoMoments_G_Form )
+      VariableUnit ( SRM % INTERACTIONS_N )  &
+        =  RM % Unit ( RM % CONSERVED_NUMBER )  /  TimeUnit
+    end select !-- RM
 
   end subroutine SetUnits
 

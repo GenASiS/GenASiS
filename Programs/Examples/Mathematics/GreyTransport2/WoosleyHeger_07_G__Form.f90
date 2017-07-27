@@ -773,8 +773,8 @@ contains
              FluidSource_Radiation % Value ( :, iMomentum_3 ), &
              FluidSource_Radiation % Value ( :, iEntropy ), &
              CSL % IsProperCell, &
-             SR % Value ( :, SR % COMOVING_ENERGY ), &
-             SR % Value ( :, SR % COMOVING_MOMENTUM_D ( 1 ) ), &
+             SR % Value ( :, SR % INTERACTIONS_J ), &
+             SR % Value ( :, SR % INTERACTIONS_H_D ( 1 ) ), &
              R % Value ( :, R % FLUID_VELOCITY_U ( 1 ) ), &
              F % Value ( :, F % TEMPERATURE ) )
 
@@ -784,7 +784,7 @@ contains
              ( FluidSource_Radiation % Value ( :, iProton ), &
                FluidSource_Radiation % Value ( :, iEntropy ), &
                CSL % IsProperCell, &
-               SR % Value ( :, SR % COMOVING_NUMBER ), &
+               SR % Value ( :, SR % INTERACTIONS_N ), &
                F % Value ( :, F % TEMPERATURE ), &
                F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
                F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
@@ -794,7 +794,7 @@ contains
              ( FluidSource_Radiation % Value ( :, iProton ), &
                FluidSource_Radiation % Value ( :, iEntropy ), &
                CSL % IsProperCell, &
-               SR % Value ( :, SR % COMOVING_NUMBER ), &
+               SR % Value ( :, SR % INTERACTIONS_N ), &
                F % Value ( :, F % TEMPERATURE ), &
                F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
                F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &

@@ -123,8 +123,8 @@ contains
                IncrementExplicit % Value ( iV, iEnergy ), &
                IncrementExplicit % Value ( iV, iMomentum_1 ) )
       call ComputeSources &
-             ( SRM % Value ( iV, SRM % COMOVING_ENERGY ), &
-               SRM % Value ( iV, SRM % COMOVING_MOMENTUM_D ( 1 ) ), &
+             ( SRM % Value ( iV, SRM % INTERACTIONS_J ), &
+               SRM % Value ( iV, SRM % INTERACTIONS_H_D ( 1 ) ), &
                I  % Value ( iV, I % EMISSIVITY_J ), &
                I  % Value ( iV, I % OPACITY_J ), &
                I  % Value ( iV, I % OPACITY_H ), &
@@ -135,14 +135,15 @@ contains
       if ( associated ( NM ) ) &
         call ComputeNumber &
                ( IncrementExplicit % Value ( iV, iNumber ), &
-                 SRM % Value ( iV, SRM % COMOVING_NUMBER ), &
+                 SRM % Value ( iV, SRM % INTERACTIONS_N ), &
                  I % Value ( iV, I % EMISSIVITY_N ), &
                  I % Value ( iV, I % OPACITY_N ), &
-                 NM % Value ( iV, NM % FLUID_VELOCITY_U ( 1 ) ), &
+                 NM % Value ( iV, NM % COMOVING_ENERGY ), &
+                 NM % Value ( iV, NM % COMOVING_MOMENTUM_U ( 1 ) ), &
                  NM % Value ( iV, NM % COMOVING_NUMBER ), &
-                 NM % Value ( iV, NM % ENERGY_AVERAGE ), &
-                 dH_1, TimeStep, S % B ( iStage ) )
-!               ( dD, R, Xi_N, Chi_N, V_1, N, E_Ave, dH_1, dt, Weight_RK )
+                 NM % Value ( iV, NM % FLUID_VELOCITY_U ( 1 ) ), &
+                 TimeStep, S % B ( iStage ) )
+!               ( dD, R, Xi_N, Chi_N, J, H_1, N, V_1, dt, Weight_RK )
 
     end do
     !$OMP end parallel do
@@ -255,29 +256,32 @@ contains
 
 
   subroutine ComputeNumber &
-               ( dD, R, Xi_N, Chi_N, V_1, N, E_Ave, dH_1, dt, Weight_RK )
+               ( dD, R, Xi_N, Chi_N, J, H_1, N, V_1, dt, Weight_RK )
 
     real ( KDR ), intent ( inout ) :: &
       dD, &
       R
     real ( KDR ), intent ( in ) :: &
       Xi_N, Chi_N, &
-      V_1, N, E_Ave, dH_1, &
+      J, H_1, N, V_1, &
       dt, Weight_RK
 
     real ( KDR ) :: &
       dN
+    real ( KDR ), dimension ( 3 ) :: &
+      f_D
 
     !-- Increments
 
-    dD  =  ( dD  +  ( Xi_N  -  Chi_N * N ) * dt )  &
-           /  ( 1.0_KDR  +  Chi_N * dt )
-
-    if ( E_Ave > 0.0_KDR ) then
-      dN  =  dD  -  V_1 * dH_1 / E_Ave
-    else
-      dN  =  dD
+    f_D  =  0
+    if ( J > 0.0_KDR ) then
+      f_D ( 1 )  =  H_1 / J
     end if
+
+    dN  =  ( dD  +  ( Xi_N  -  Chi_N * N ) * dt )  &
+           /  ( 1.0_KDR  +  V_1 * f_D ( 1 )  +  Chi_N * dt )
+
+    dD  =  ( 1.0_KDR  +  V_1 * f_D ( 1 ) )  *  dN
 
     !-- Source
 

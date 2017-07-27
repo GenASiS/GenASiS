@@ -170,8 +170,8 @@ contains
 !      .and. TimeStep < 2.0e-6_KDR * UNIT % SECOND &
 !      .and. mod ( I % iCycle, 1000 ) == 0 ) &
 ! then
-!if ( I % iCycle > 92937 ) then
-!   I % IsCheckpointTime = .true.
+!if ( I % iCycle > 73310 ) then
+!  I % IsCheckpointTime = .true.
 !end if
 
 if ( TimeStep < 1.0e-12_KDR * UNIT % SECOND ) then
