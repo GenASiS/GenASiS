@@ -203,6 +203,26 @@ contains
   end subroutine ComputeCoefficients
 
 
+  ! subroutine ComputeComovingIncrements ( A, B, dJ, dH_1 )
+
+  !   real ( KDR ), dimension ( 2, 2 ), intent ( in ) :: &
+  !     A
+  !   real ( KDR ), dimension ( 2 ), intent ( in ) :: &
+  !     B
+  !   real ( KDR ), intent ( out ) :: &
+  !     dJ, dH_1
+
+  !   real ( KDR ) :: &
+  !     Det
+
+  !   Det   =  A ( 1, 1 )  *  A ( 2, 2 )   -   A ( 1, 2 )  *  A ( 2, 1 )
+
+  !   dJ    =  ( B ( 1 )  *  A ( 2, 2 )   -   B ( 2 )  *  A ( 1, 2 ) )  /  Det
+  !   dH_1  =  ( A ( 1, 1 )  *  B ( 2 )   -   A ( 2, 1 )  *  B ( 1 ) )  /  Det
+
+  ! end subroutine ComputeComovingIncrements
+
+
   subroutine ComputeComovingIncrements ( A, B, dJ, dH_1 )
 
     real ( KDR ), dimension ( 2, 2 ), intent ( in ) :: &
@@ -212,13 +232,40 @@ contains
     real ( KDR ), intent ( out ) :: &
       dJ, dH_1
 
-    real ( KDR ) :: &
-      Det
+    integer ( KDI ), dimension ( 2 ) :: &
+      Pivot
 
-    Det   =  A ( 1, 1 )  *  A ( 2, 2 )   -   A ( 1, 2 )  *  A ( 2, 1 )
+    Pivot  =  maxloc ( abs ( A ) )
 
-    dJ    =  ( B ( 1 )  *  A ( 2, 2 )   -   B ( 2 )  *  A ( 1, 2 ) )  /  Det
-    dH_1  =  ( A ( 1, 1 )  *  B ( 2 )   -   A ( 2, 1 )  *  B ( 1 ) )  /  Det
+    if ( all ( Pivot == [ 1, 1 ] ) ) then
+
+      dH_1  =  ( B ( 2 )  -  A ( 2, 1 ) * B ( 1 ) / A ( 1, 1 ) )  &
+               /  ( A ( 2, 2 )  -  A ( 2, 1 ) * A ( 1, 2 ) / A ( 1, 1 ) )
+
+      dJ    =  B ( 1 ) / A ( 1, 1 )  -  A ( 1, 2 ) / A ( 1, 1 ) * dH_1
+
+    else if ( all ( Pivot == [ 1, 2 ] ) ) then
+
+      dJ    =  ( B ( 2 )  -  A ( 2, 2 ) * B ( 1 ) / A ( 1, 2 ) )  &
+               /  ( A ( 2, 1 )  -  A ( 2, 2 ) * A ( 1, 1 ) / A ( 1, 2 ) )
+
+      dH_1  =  B ( 1 ) / A ( 1, 2 )  -  A ( 1, 1 ) / A ( 1, 2 ) * dJ
+
+    else if ( all ( Pivot == [ 2, 1 ] ) ) then
+
+      dH_1  =  ( B ( 1 )  -  A ( 1, 1 ) * B ( 2 ) / A ( 2, 1 ) )  &
+               /  ( A ( 1, 2 )  -  A ( 1, 1 ) * A ( 2, 2 ) / A ( 2, 1 ) )
+
+      dJ    =  B ( 2 ) / A ( 2, 1 )  -  A ( 2, 2 ) / A ( 2, 1 ) * dH_1
+
+    else if ( all ( Pivot == [ 2, 2 ] ) ) then
+
+      dJ    =  ( B ( 1 )  -  A ( 1, 2 ) * B ( 2 ) / A ( 2, 2 ) )  &
+               /  ( A ( 1, 1 )  -  A ( 1, 2 ) * A ( 2, 1 ) / A ( 2, 2 ) )
+
+      dH_1  =  B ( 2 ) / A ( 2, 2 )  -  A ( 2, 1 ) / A ( 2, 2 ) * dJ
+
+    end if
 
   end subroutine ComputeComovingIncrements
 
