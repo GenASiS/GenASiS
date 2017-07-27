@@ -16,8 +16,9 @@ module ApplyRelaxation_RM_2__Command
       ComputeCoefficients, &
       ComputeComovingIncrements, &
       ComputeConservedIncrements, &
-      ComputeSources!, &
-!      ComputeNumber
+      ComputeSources, &
+      ComputeDecoupled, &
+      ComputeNumber
 
 contains
 
@@ -49,7 +50,8 @@ contains
       iMomentum_1, &
       iNumber
     real ( KDR ) :: &
-      dJ, dH_1
+      dJ, dH_1, &
+      Q_Old, A_1_Old, V_1_Old, Div_E
     real ( KDR ), dimension ( 3 ) :: &
       k_D  !-- Eddington tensor components ( K / J, Stress / EnergyDensity )
     real ( KDR ), dimension ( 2 ) :: &
@@ -93,7 +95,8 @@ contains
     if ( associated ( NM ) ) &
       call Search ( NM % iaConserved, NM % CONSERVED_NUMBER, iNumber )
 
-    !$OMP parallel do private ( iV, A, B, dJ, dH_1, k_D )
+    !$OMP parallel do private &
+    !$OMP   ( iV, A, B, dJ, dH_1, k_D, Q_Old, A_1_Old, V_1_Old, Div_E )
     do iV = 1, nV
 
       if ( .not. Chart % IsProperCell ( iV ) ) &
@@ -114,14 +117,39 @@ contains
                RM % Value ( iV, RM % FLUID_VELOCITY_U ( 1 ) ), &
                G  % Value ( iV, G % METRIC_DD_22 ), &
                G  % Value ( iV, G % METRIC_DD_33 ), &
-               TimeStep, A, B, k_D )
-      call ComputeComovingIncrements &
-             ( A, B, dJ, dH_1 )
-      call ComputeConservedIncrements &
-             ( k_D, dJ, dH_1, &
-               RM % Value ( iV, RM % FLUID_VELOCITY_U ( 1 ) ), &
-               IncrementExplicit % Value ( iV, iEnergy ), &
-               IncrementExplicit % Value ( iV, iMomentum_1 ) )
+               TimeStep, A, B, k_D, Q_Old, A_1_Old, V_1_Old, Div_E )
+
+if ( iStage == 1 ) then
+  SRM % Value ( iV, SRM % A_11 )  =  A ( 1, 1 )
+  SRM % Value ( iV, SRM % A_21 )  =  A ( 2, 1 )
+  SRM % Value ( iV, SRM % A_12 )  =  A ( 1, 2 )
+  SRM % Value ( iV, SRM % A_22 )  =  A ( 2, 2 )
+end if
+
+!      if ( abs ( V_1_Old * A_1_Old )  <  abs ( Q_Old ) +  abs ( Div_E ) ) then
+!      if ( A ( 1, 2 )  <  A ( 1, 1 ) ) then
+        call ComputeComovingIncrements &
+               ( A, B, dJ, dH_1 )
+        call ComputeConservedIncrements &
+               ( k_D, dJ, dH_1, &
+                 RM % Value ( iV, RM % FLUID_VELOCITY_U ( 1 ) ), &
+                 IncrementExplicit % Value ( iV, iEnergy ), &
+                 IncrementExplicit % Value ( iV, iMomentum_1 ) )
+!       else
+! call Show ( RM % Name, '>>> Decoupling', CONSOLE % ERROR )
+! call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank', CONSOLE % ERROR )
+! call Show ( iV, '>>> iV', CONSOLE % ERROR )
+!         call ComputeDecoupled &
+!                ( IncrementExplicit % Value ( iV, iEnergy ), &
+!                  IncrementExplicit % Value ( iV, iMomentum_1 ), &
+!                  I  % Value ( iV, I % EMISSIVITY_J ), &
+!                  I  % Value ( iV, I % OPACITY_J ), &
+!                  I  % Value ( iV, I % OPACITY_H ), &
+!                  RM % Value ( iV, RM % COMOVING_ENERGY ), &
+!                  RM % Value ( iV, RM % COMOVING_MOMENTUM_U ( 1 ) ), &
+!                  TimeStep, dJ, dH_1 )
+!       end if
+
       call ComputeSources &
              ( SRM % Value ( iV, SRM % INTERACTIONS_J ), &
                SRM % Value ( iV, SRM % INTERACTIONS_H_D ( 1 ) ), &
@@ -160,7 +188,8 @@ contains
 
   subroutine ComputeCoefficients &
                ( RM, dE, dS_1, Xi_J, Chi_J, Chi_H, J, H_1, H_2, H_3, SF, V_1, &
-                 M_DD_22, M_DD_33, dt, A, B, k_D )
+                 M_DD_22, M_DD_33, dt, A, B, k_D, &
+                 Q_Old, A_1_Old, V_1_Old, Div_E )
 
     class ( RadiationMomentsForm ), intent ( in ) :: &
       RM
@@ -176,6 +205,8 @@ contains
       B
     real ( KDR ), dimension ( 3 ), intent ( out ) :: &
       k_D
+    real ( KDR ), intent ( out ) :: &
+      Q_Old, A_1_Old, V_1_Old, Div_E
 
     call RM % ComputeComovingStress_D &
            ( k_D, [ H_1, H_2, H_3 ], J, SF, M_DD_22, M_DD_33, iD = 1 )
@@ -188,17 +219,22 @@ contains
 
     A ( 1, 1 )  =  1.0_KDR  +  Chi_J * dt
 
-    A ( 2, 1 )  =  ( 2.0_KDR  +  Chi_H * dt )  *  V_1
+    A ( 2, 1 )  =  V_1 * ( 1.0_KDR  +  Chi_J * dt )  +  k_D ( 1 ) * V_1
 
-    A ( 1, 2 )  =  V_1 * ( 1.0_KDR  +  Chi_J * dt )  +  k_D ( 1 ) * V_1
+    A ( 1, 2 )  =  ( 2.0_KDR  +  Chi_H * dt )  *  V_1
 
     A ( 2, 2 )  =  1.0_KDR  +  Chi_H * dt
 
-    B ( 1 )  =  dE    +  (    Xi_J  - Chi_J * J  &
+    B ( 1 )  =  dE    +  (    Xi_J  -  Chi_J * J  &
                            -  Chi_H * V_1 * H_1 ) * dt
 
     B ( 2 )  =  dS_1  +  ( -  Chi_H * H_1  &
                            +  V_1 * ( Xi_J  -  Chi_J * J ) ) * dt
+
+    Q_Old    =  Xi_J  -  Chi_J * J
+    A_1_Old  =        -  Chi_H * H_1
+    V_1_Old  =  V_1
+    Div_E    =  dE
 
   end subroutine ComputeCoefficients
 
@@ -300,6 +336,30 @@ contains
     A_1  =  A_1  +  Weight_RK * (       -  Chi_H  *  ( H_1  +  dH_1 ) )
 
   end subroutine ComputeSources
+
+
+  subroutine ComputeDecoupled &
+               ( dE, dS_1, Xi_J, Chi_J, Chi_H, J, H_1, dt, dJ, dH_1 )
+
+    real ( KDR ), intent ( inout ) :: &
+      dE, dS_1
+    real ( KDR ), intent ( in ) :: &
+      Xi_J, Chi_J, Chi_H, &
+      J, H_1, &
+      dt
+    real ( KDR ), intent ( out ) :: &
+      dJ, dH_1
+
+    dJ    =  ( dE  +  ( Xi_J  -  Chi_J * J ) * dt )  &
+             /  ( 1.0_KDR  +  Chi_J * dt )
+
+    dH_1  =  ( dS_1           -  Chi_H * H_1 * dt )  &
+             /  ( 1.0_KDR  +  Chi_H * dt )
+
+    dE    =  dJ
+    dS_1  =  dH_1
+
+  end subroutine ComputeDecoupled
 
 
   subroutine ComputeNumber &
