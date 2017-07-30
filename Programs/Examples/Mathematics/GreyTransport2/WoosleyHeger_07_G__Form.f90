@@ -597,16 +597,16 @@ contains
       end do !-- iTSC
     end if
 
-    if ( any ( TimeStepCandidate < 1.0e-11_KDR * UNIT % SECOND ) ) &
-    then
-      call Show ( I % iCycle, '>>> iCycle', CONSOLE % ERROR )
-      call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank' )
-      do iTSC = 1, I % nTimeStepCandidates
-        call Show ( TimeStepCandidate ( iTSC ), I % TimeUnit, &
-                    trim ( I % TimeStepLabel ( iTSC ) ) // ' TimeStep', &
-                    CONSOLE % ERROR )
-      end do !-- iTSC
-    end if
+    ! if ( any ( TimeStepCandidate < 1.0e-11_KDR * UNIT % SECOND ) ) &
+    ! then
+    !   call Show ( I % iCycle, '>>> iCycle', CONSOLE % ERROR )
+    !   call Show ( PROGRAM_HEADER % Communicator % Rank, '>>> Rank' )
+    !   do iTSC = 1, I % nTimeStepCandidates
+    !     call Show ( TimeStepCandidate ( iTSC ), I % TimeUnit, &
+    !                 trim ( I % TimeStepLabel ( iTSC ) ) // ' TimeStep', &
+    !                 CONSOLE % ERROR )
+    !   end do !-- iTSC
+    ! end if
 
     end select !-- CSL
     end select !-- PS
@@ -1041,6 +1041,23 @@ contains
              FluidSource_Radiation % Value ( :, iEntropy ), &
              TimeStep )
 
+    select type ( SF => Sources_F )
+    class is ( Sources_F_Form )
+
+    call Copy ( FluidSource_Radiation % Value ( :, iEnergy ), &
+                SF % Value ( :, SF % RADIATION_E ) )
+    call Copy ( FluidSource_Radiation % Value ( :, iProton ), &
+                SF % Value ( :, SF % RADIATION_DP ) )
+    call Copy ( FluidSource_Radiation % Value ( :, iEntropy ), &
+                SF % Value ( :, SF % RADIATION_DS ) )
+    call Copy ( FluidSource_Radiation % Value ( :, iMomentum_1 ), &
+                SF % Value ( :, SF % RADIATION_S_D ( 1 ) ) )
+    call Copy ( FluidSource_Radiation % Value ( :, iMomentum_2 ), &
+                SF % Value ( :, SF % RADIATION_S_D ( 2 ) ) )
+    call Copy ( FluidSource_Radiation % Value ( :, iMomentum_3 ), &
+                SF % Value ( :, SF % RADIATION_S_D ( 3 ) ) )
+
+    end select !-- SF
     end select !-- Chart
     end select !-- F
 

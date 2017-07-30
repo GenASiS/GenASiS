@@ -66,6 +66,7 @@ Sources_F__Form.o: \
   Mathematics.o \
   Fluid_D__Form.o \
   Fluid_P__Template.o \
+  Fluid_P_MHN__Form.o \
   Sources_F__Form.f90
 
 Sources_F_CSL__Form.o: \

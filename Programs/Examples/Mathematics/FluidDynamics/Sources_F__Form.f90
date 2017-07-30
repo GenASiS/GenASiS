@@ -4,22 +4,27 @@ module Sources_F__Form
   use Mathematics
   use Fluid_D__Form
   use Fluid_P__Template
+  use Fluid_P_MHN__Form
 
   implicit none
   private
 
     integer ( KDI ), private, parameter :: &
-      N_FIELDS_F  = 7, &
-      N_VECTORS_F = 3
+      N_FIELDS_F  = 13, &
+      N_VECTORS_F = 4
 
   type, public, extends ( Sources_C_Form ) :: Sources_F_Form
     integer ( KDI ) :: &
       N_FIELDS_F       = N_FIELDS_F, &
       N_VECTORS_F      = N_VECTORS_F, &
-      GRAVITATIONAL_E = 0
+      GRAVITATIONAL_E  = 0, &
+      RADIATION_E      = 0, &
+      RADIATION_DS     = 0, &
+      RADIATION_DP     = 0
     integer ( KDI ), dimension ( 3 ) :: &
       CURVILINEAR_S_D   = 0, &
-      GRAVITATIONAL_S_D = 0
+      GRAVITATIONAL_S_D = 0, &
+      RADIATION_S_D     = 0
   contains
     procedure, private, pass :: &
       InitializeAllocate_SF
@@ -153,8 +158,12 @@ contains
       SF % N_FIELDS = oF + SF % N_FIELDS_F
 
     SF % GRAVITATIONAL_E    =  oF + 1
-    SF % CURVILINEAR_S_D    =  oF + [ 2, 3, 4 ]
-    SF % GRAVITATIONAL_S_D  =  oF + [ 5, 6, 7 ]
+    SF % RADIATION_E        =  oF + 2
+    SF % RADIATION_DS       =  oF + 3
+    SF % RADIATION_DP       =  oF + 4
+    SF % CURVILINEAR_S_D    =  oF + [  5,  6,  7 ]
+    SF % GRAVITATIONAL_S_D  =  oF + [  8,  9, 10 ]
+    SF % RADIATION_S_D      =  oF + [ 11, 12, 13 ]
 
     !-- variable names 
 
@@ -168,12 +177,18 @@ contains
 
     Variable ( oF + 1 : oF + SF % N_FIELDS_F ) &
       = [ 'Gravitational_E    ', &
+          'Radiation_E        ', &
+          'Radiation_DS       ', &
+          'Radiation_DP       ', &
           'Curvilinear_S_D_1  ', &
           'Curvilinear_S_D_2  ', &
           'Curvilinear_S_D_3  ', &
           'Gravitational_S_D_1', &
           'Gravitational_S_D_2', &
-          'Gravitational_S_D_3' ]
+          'Gravitational_S_D_3', &
+          'Radiation_S_D_1    ', &
+          'Radiation_S_D_2    ', &
+          'Radiation_S_D_3    ' ]
           
     !-- units
     
@@ -202,7 +217,8 @@ contains
     Vector ( oV + 1 : oV + SF % N_VECTORS_F ) &
       = [ 'Div_F_S_D        ', &
           'Curvilinear_S_D  ', &
-          'Gravitational_S_D' ]
+          'Gravitational_S_D', &
+          'Radiation_S_D    ' ]
 
     !-- vector indices
 
@@ -223,6 +239,7 @@ contains
     call VectorIndices ( oV + 1 ) % Initialize ( iMomentum )
     call VectorIndices ( oV + 2 ) % Initialize ( SF % CURVILINEAR_S_D )
     call VectorIndices ( oV + 3 ) % Initialize ( SF % GRAVITATIONAL_S_D )
+    call VectorIndices ( oV + 4 ) % Initialize ( SF % RADIATION_S_D )
 
   end subroutine InitializeBasics
 
@@ -245,12 +262,24 @@ contains
     class is ( Fluid_P_Template )
       VariableUnit ( SF % GRAVITATIONAL_E )  &
         =  F % Unit ( F % CONSERVED_ENERGY )  /  TimeUnit
+      VariableUnit ( SF % RADIATION_E )  &
+        =  F % Unit ( F % CONSERVED_ENERGY )  /  TimeUnit
+    end select !-- F
+
+    select type ( F )
+    class is ( Fluid_P_MHN_Form )
+      VariableUnit ( SF % RADIATION_DS )  &
+        =  F % Unit ( F % CONSERVED_ENTROPY )  /  TimeUnit
+      VariableUnit ( SF % RADIATION_DP )  &
+        =  F % Unit ( F % CONSERVED_PROTON_DENSITY )  /  TimeUnit
     end select !-- F
 
     do iD = 1, 3
       VariableUnit ( SF % CURVILINEAR_S_D ( iD ) )  &
         =  F % Unit ( F % MOMENTUM_DENSITY_D ( iD ) )  /  TimeUnit
       VariableUnit ( SF % GRAVITATIONAL_S_D ( iD ) )  &
+        =  F % Unit ( F % MOMENTUM_DENSITY_D ( iD ) )  /  TimeUnit
+      VariableUnit ( SF % RADIATION_S_D ( iD ) )  &
         =  F % Unit ( F % MOMENTUM_DENSITY_D ( iD ) )  /  TimeUnit
     end do
 
