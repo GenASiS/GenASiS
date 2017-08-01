@@ -295,7 +295,7 @@ contains
     call ComputeFluidSource_Radiation ( Fluid, Radiation_E, PS )
     call ComputeFluidSource_Radiation ( Fluid, Radiation_E_Bar, PS )
 
-    call SetRadiation_FluidVelocity ( Fluid )
+    call SetRadiation_FluidVelocity ( Fluid, G )
 
     end select !-- PS
     end associate !-- WHH
@@ -1226,12 +1226,22 @@ contains
 !   end subroutine ComputeFluidSource_Radiation
 
 
-  subroutine SetRadiation_FluidVelocity ( Fluid ) !( S, Fluid )
+  subroutine SetRadiation_FluidVelocity ( Fluid, G ) !( S, Fluid )
 
 !    class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
 !      S
     class ( CurrentTemplate ), intent ( in ) :: &
       Fluid
+    class ( GeometryFlatForm ), intent ( in ) :: &
+      G
+
+    integer ( KDR ) :: &
+      iV, &
+      iV_1, iV_2
+    real ( KDR ) :: &
+      R_1, R_2, &
+      N_1, N_2, &
+      V_1, V_2
 
     select type ( F => Fluid )
     class is ( Fluid_P_MHN_Form )
@@ -1240,15 +1250,58 @@ contains
       ( R_E     => Radiation_E, &
         R_E_Bar => Radiation_E_Bar )!, &
 !        R_MuTau => Radiation_MuTau )
+
     call Copy ( F % Value ( :, F % VELOCITY_U ( 1 ) : F % VELOCITY_U ( 3 ) ), &
                 R_E % Value ( :, R_E % FLUID_VELOCITY_U ( 1 ) &
                                : R_E % FLUID_VELOCITY_U ( 3 ) ) )
-    call Copy ( F % Value ( :, F % VELOCITY_U ( 1 ) : F % VELOCITY_U ( 3 ) ), &
-                R_E_Bar % Value ( :, R_E_Bar % FLUID_VELOCITY_U ( 1 ) &
-                                  : R_E_Bar % FLUID_VELOCITY_U ( 3 ) ) )
+
+    associate &
+      ( V    =>  R_E % Value ( :, R_E % FLUID_VELOCITY_U ( 1 ) ), &
+        X_A  =>  F % Value ( :, F % MASS_FRACTION_HEAVY ), &
+        N    =>  F % Value ( :, F % COMOVING_DENSITY ), &
+        R    =>  G % Value ( :, G % CENTER ( 1 ) ) )
+
+    N_1  =  2.0e14_KDR  *  UNIT % MASS_DENSITY_CGS
+    N_2  =  1.0e13_KDR  *  UNIT % MASS_DENSITY_CGS
+
+    iV_1 = size ( V )
+    do iV = 2, size ( V )
+      if ( N ( iV - 1 )  >=  N_1 .and. N ( iV )  <  N_1 ) then
+        iV_1  =  iV - 1
+        R_1   =  R ( iV_1 )
+        V_1   =  V ( iV_1 )
+        exit
+      end if
+    end do !-- iV
+
+    iV_2 = 0
+    do iV = iV_1, size ( V )
+      if ( N ( iV )  <  N_2 ) then
+        iV_2 = iV
+        R_2   =  R ( iV_2 )
+        V_2   =  V ( iV_2 )
+        exit
+      end if
+    end do
+
+    do iV = iV_1 + 1, iV_2 - 1
+      V ( iV )  =  V_1  +  ( V_2 - V_1 ) / ( R_2 - R_1 ) * ( R ( iV )  -  R_1 )
+    end do
+
+    end associate !-- V, etc.
+
+!    call Copy ( F % Value ( :, F % VELOCITY_U ( 1 ) : F % VELOCITY_U ( 3 ) ), &
+!                R_E_Bar % Value ( :, R_E_Bar % FLUID_VELOCITY_U ( 1 ) &
+!                                  : R_E_Bar % FLUID_VELOCITY_U ( 3 ) ) )
 !    call Copy ( F % Value ( :, F % VELOCITY_U ( 1 ) : F % VELOCITY_U ( 3 ) ), &
 !                R_MuTau % Value ( :, R_MuTau % FLUID_VELOCITY_U ( 1 ) &
 !                                  : R_MuTau % FLUID_VELOCITY_U ( 3 ) ) )
+
+    call Copy ( R_E % Value ( :, R_E % FLUID_VELOCITY_U ( 1 ) &
+                               : R_E % FLUID_VELOCITY_U ( 3 ) ), &
+                R_E_Bar % Value ( :, R_E_Bar % FLUID_VELOCITY_U ( 1 ) &
+                                  : R_E_Bar % FLUID_VELOCITY_U ( 3 ) ) )
+
     end associate !-- R_E, etc.
 
     end select !-- F
