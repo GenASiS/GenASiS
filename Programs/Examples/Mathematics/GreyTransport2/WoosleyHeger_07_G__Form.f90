@@ -67,8 +67,12 @@ module WoosleyHeger_07_G__Form
         ComputeFluidSource_G_S_Radiation_Kernel, &
         ComputeFluidSource_DP_Radiation_Kernel
 
+    integer ( KDI ) :: &
+      iSmooth_1, iSmooth_2   
     logical ( KDL ), private :: &
       ReachedEquilibrium = .false.
+    logical ( KDL ), dimension ( : ), allocatable, private :: &
+      HeavyDisappeared
     type ( VariableGroupForm ), private, allocatable :: &
       FluidSource_Radiation
     class ( Fluid_P_MHN_Form ), private, pointer :: &
@@ -291,11 +295,11 @@ contains
 
     call WHH % ComputeGravity ( Fluid, PS, G )
 
+    call SetRadiation_FluidVelocity ( Fluid, G )
+
     call Clear ( FluidSource_Radiation % Value )
     call ComputeFluidSource_Radiation ( Fluid, Radiation_E, PS )
     call ComputeFluidSource_Radiation ( Fluid, Radiation_E_Bar, PS )
-
-    call SetRadiation_FluidVelocity ( Fluid, G )
 
     end select !-- PS
     end associate !-- WHH
@@ -1237,11 +1241,12 @@ contains
 
     integer ( KDR ) :: &
       iV, &
-      iV_1, iV_2
+      Margin
     real ( KDR ) :: &
       R_1, R_2, &
-      N_1, N_2, &
-      V_1, V_2
+      V_1, V_2, &
+      N_Smooth, &
+      X_A_Smooth
 
     select type ( F => Fluid )
     class is ( Fluid_P_MHN_Form )
@@ -1261,32 +1266,75 @@ contains
         N    =>  F % Value ( :, F % COMOVING_DENSITY ), &
         R    =>  G % Value ( :, G % CENTER ( 1 ) ) )
 
-    N_1  =  2.0e14_KDR  *  UNIT % MASS_DENSITY_CGS
-    N_2  =  1.0e13_KDR  *  UNIT % MASS_DENSITY_CGS
+    if ( .not. allocated ( HeavyDisappeared ) ) then
+      allocate ( HeavyDisappeared ( size ( V ) ) )
+      HeavyDisappeared = .false.
+      iSmooth_1  =  size ( V )
+      iSmooth_2  =  0
+    end if
 
-    iV_1 = size ( V )
-    do iV = 2, size ( V )
-      if ( N ( iV - 1 )  >=  N_1 .and. N ( iV )  <  N_1 ) then
-        iV_1  =  iV - 1
-        R_1   =  R ( iV_1 )
-        V_1   =  V ( iV_1 )
+    N_Smooth    =  1.0e13_KDR  *  UNIT % MASS_DENSITY_CGS
+    X_A_Smooth  =  0.1_KDR
+    Margin      =  2
+
+    where ( N > N_Smooth .and. X_A < X_A_Smooth .and. .not.HeavyDisappeared )
+      HeavyDisappeared = .true.
+    end where
+
+    do iV = 3, size ( V )
+      if ( HeavyDisappeared ( iV ) .and. X_A ( iV ) >= X_A_Smooth ) then
+        if ( iV - Margin  <  iSmooth_1 ) then
+          call Show ( 'Expanding smoothing region' )
+          iSmooth_1  =  iV - Margin
+          call Show ( iSmooth_1, 'iSmooth_1' )
+        end if
         exit
       end if
     end do !-- iV
 
-    iV_2 = 0
-    do iV = iV_1, size ( V )
-      if ( N ( iV )  <  N_2 ) then
-        iV_2 = iV
-        R_2   =  R ( iV_2 )
-        V_2   =  V ( iV_2 )
+    do iV = iSmooth_1 + Margin + 1, size ( V )
+      if ( X_A ( iV )  <  X_A_Smooth ) then
+        if ( iV + Margin  >  iSmooth_2 ) then
+          call Show ( 'Expanding smoothing region' )
+          iSmooth_2  =  iV + Margin
+          call Show ( iSmooth_2, 'iSmooth_2' )
+        end if
         exit
-      end if
-    end do
+      end if        
+    end do !-- iV
 
-    do iV = iV_1 + 1, iV_2 - 1
-      V ( iV )  =  V_1  +  ( V_2 - V_1 ) / ( R_2 - R_1 ) * ( R ( iV )  -  R_1 )
-    end do
+    ! N_1  =  2.0e14_KDR  *  UNIT % MASS_DENSITY_CGS
+
+    ! iV_1 = size ( V )
+    ! do iV = 2, size ( V )
+    !   if ( N ( iV - 1 )  >=  N_1 .and. N ( iV )  <  N_1 ) then
+    !     iV_1  =  iV - 1
+    !     R_1   =  R ( iV_1 )
+    !     V_1   =  V ( iV_1 )
+    !     exit
+    !   end if
+    ! end do !-- iV
+
+    ! iV_2 = 0
+    ! do iV = iV_1, size ( V )
+    !   if ( N ( iV )  <  N_2 ) then
+    !     iV_2 = iV
+    !     R_2   =  R ( iV_2 )
+    !     V_2   =  V ( iV_2 )
+    !     exit
+    !   end if
+    ! end do
+
+    if ( iSmooth_1  <  size ( V )  .and.  iSmooth_2 > 0 ) then
+      R_1  =  R ( iSmooth_1 )
+      R_2  =  R ( iSmooth_2 )
+      V_1  =  V ( iSmooth_1 )
+      V_2  =  V ( iSmooth_2 )
+      do iV = iSmooth_1 + 1, iSmooth_2 - 1
+        V ( iV )  =  V_1  +  ( V_2 - V_1 ) / ( R_2 - R_1 ) &
+                             * ( R ( iV )  -  R_1 )
+      end do
+    end if
 
     end associate !-- V, etc.
 
