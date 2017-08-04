@@ -27,7 +27,8 @@ module Integrator_Template
       Time
     logical ( KDL ) :: &
       IsCheckpointTime, &
-      NoWrite
+      NoWrite, &
+      WriteTimeExact
     type ( MeasuredValueForm ) :: &
       TimeUnit
     character ( LDF ) :: &
@@ -213,6 +214,9 @@ contains
     I % NoWrite = .false.
     call PROGRAM_HEADER % GetParameter ( I % NoWrite, 'NoWrite' )
 
+    I % WriteTimeExact = .false.
+    call PROGRAM_HEADER % GetParameter ( I % WriteTimeExact, 'WriteTimeExact' )
+
     call PROGRAM_HEADER % AddTimer &
            ( 'AdministerCheckpoint', I % iTimerAdministerCheckpoint )
     call PROGRAM_HEADER % AddTimer &
@@ -347,6 +351,8 @@ contains
       call I % SetWriteTimeInterval ( )
       I % WriteTime &
         = min ( I % Time + I % WriteTimeInterval, I % FinishTime )
+      if ( I % WriteTime == I % FinishTime ) &
+        I % WriteTimeExact = .true.
       call Show ( I % WriteTimeInterval, I % TimeUnit, 'WriteTimeInterval', &
                   I % IGNORABILITY )
       call Show ( I % WriteTime, I % TimeUnit, 'Next WriteTime', &
@@ -460,13 +466,15 @@ contains
 
 !    associate ( C => I % Atlas % Chart ( 1 ) % Element )
 
-    if ( I % Time + TimeStep > I % WriteTime ) then
-      call Show ( 'WriteTime encountered', I % IGNORABILITY ) 
-!      if ( present ( HoldCheckpointSolveOption ) ) &
-!        HoldCheckpointSolveOption ( 2 : C % nLevels ) = .true.
-      TimeStep = I % WriteTime - I % Time
-      call Show ( TimeStep, I % TimeUnit, 'Modified TimeStep', &
-                  I % IGNORABILITY )
+    if ( I % WriteTimeExact ) then
+      if ( I % Time + TimeStep > I % WriteTime ) then
+        call Show ( 'WriteTime encountered', I % IGNORABILITY ) 
+!        if ( present ( HoldCheckpointSolveOption ) ) &
+!          HoldCheckpointSolveOption ( 2 : C % nLevels ) = .true.
+        TimeStep = I % WriteTime - I % Time
+        call Show ( TimeStep, I % TimeUnit, 'Modified TimeStep', &
+                    I % IGNORABILITY )
+      end if
     end if
 
     TimeNew = I % Time + TimeStep
