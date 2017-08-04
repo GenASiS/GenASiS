@@ -1326,11 +1326,14 @@ contains
     ! end do
 
     if ( iSmooth_1  <  size ( V )  .and.  iSmooth_2 > 0 ) then
-      R_1  =  R ( iSmooth_1 )
+!      R_1  =  R ( iSmooth_1 )
+      R_1  =  0.0_KDR
       R_2  =  R ( iSmooth_2 )
-      V_1  =  V ( iSmooth_1 )
+!      V_1  =  V ( iSmooth_1 )
+      V_1  =  0.0_KDR
       V_2  =  V ( iSmooth_2 )
-      do iV = iSmooth_1 + 1, iSmooth_2 - 1
+!      do iV = iSmooth_1 + 1, iSmooth_2 - 1
+      do iV = 3, iSmooth_2 - 1
         V ( iV )  =  V_1  +  ( V_2 - V_1 ) / ( R_2 - R_1 ) &
                              * ( R ( iV )  -  R_1 )
       end do
