@@ -8,8 +8,18 @@ approximates one's computing environment is often sufficient to get started.
 The essential information needed includes the name of the compiler wrapper
 to compile MPI-based code (e.g. commonly 'mpif90' for Fortran), 
 compiler-specific flags for various debugging and optimization options, and
-the flags and locations to include and link with third-party libraries such
-as Silo. 
+the flags and locations to include and link with required third-party I/O 
+libraries Silo. 
+
+This version is compatible with Silo-4.10 and above. To use Silo with 
+GEnASiS, the Fortran interface to Silo should be enabled (which it is by
+default). In the simplest case, one can build Silo to be used with GenASiS
+with the following commands inside Silo distribution:
+> ./configure --enable-fortran
+> make
+> make install
+Silo's documentation (e.g. its INSTALL file) provides a more complete
+information on building Silo.
 
 Once the machine-specific Makefile is set up, the environment variable 
 GENASIS_MACHINE has to be set to tell the GenASiS build system to use the 
@@ -88,6 +98,10 @@ for example, as the follows:
 > visit -cli -s ../FluidDynamics.visit.py SineWave_3D
 > visit -cli -s ../FluidDynamics.visit.py RiemannProblem_2D
 > visit -cli -s ../FluidDynamics.visit.py RayleighTaylor_2D
+
+(The option "-nowin" can be added to above VisIt invocation to prevent VisIt
+from trying to display its visualization windows, resulting in the image files
+to be drawn off-screen instead.)
 
 Unit test programs exercising individual GenASiS classes can similarly be
 built and executed inside the "Executables" directory of each leaf
