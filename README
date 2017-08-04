@@ -12,13 +12,13 @@ the flags and locations to include and link with required third-party I/O
 libraries Silo. 
 
 This version is compatible with Silo-4.10 and above. To use Silo with 
-GEnASiS, the Fortran interface to Silo should be enabled (which it is by
+GenASiS, the Fortran interface to Silo should be enabled (which it is by
 default). In the simplest case, one can build Silo to be used with GenASiS
-with the following commands inside Silo distribution:
+with the following commands inside the Silo distribution:
 > ./configure --enable-fortran
 > make
 > make install
-Silo's documentation (e.g. its INSTALL file) provides a more complete
+Silo's documentation (e.g. its INSTALL file) provides more complete
 information on building Silo.
 
 Once the machine-specific Makefile is set up, the environment variable 
@@ -101,7 +101,7 @@ for example, as the follows:
 
 (The option "-nowin" can be added to above VisIt invocation to prevent VisIt
 from trying to display its visualization windows, resulting in the image files
-to be drawn off-screen instead.)
+being drawn off-screen instead.)
 
 Unit test programs exercising individual GenASiS classes can similarly be
 built and executed inside the "Executables" directory of each leaf
