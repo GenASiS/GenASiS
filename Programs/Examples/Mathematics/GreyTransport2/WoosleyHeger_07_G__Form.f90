@@ -70,7 +70,9 @@ module WoosleyHeger_07_G__Form
     integer ( KDI ) :: &
       iSmooth_1, iSmooth_2   
     logical ( KDL ), private :: &
-      ReachedEquilibrium = .false.
+      ReachedEquilibrium = .false., &
+!      VelocitySmoothing_A, VelocitySmoothing_B
+      VelocitySmoothing
     logical ( KDL ), dimension ( : ), allocatable, private :: &
       HeavyDisappeared
     type ( VariableGroupForm ), private, allocatable :: &
@@ -1268,13 +1270,16 @@ contains
 
     if ( .not. allocated ( HeavyDisappeared ) ) then
       allocate ( HeavyDisappeared ( size ( V ) ) )
-      HeavyDisappeared = .false.
+      HeavyDisappeared    = .false.
+!      VelocitySmoothing_A = .false.
+!      VelocitySmoothing_B = .false.
+      VelocitySmoothing = .false.
       iSmooth_1  =  size ( V )
       iSmooth_2  =  0
     end if
 
-    N_Smooth    =  1.0e13_KDR  *  UNIT % MASS_DENSITY_CGS
-    X_A_Smooth  =  0.1_KDR
+    N_Smooth    =  1.0e12_KDR  *  UNIT % MASS_DENSITY_CGS
+    X_A_Smooth  =  0.01_KDR
     Margin      =  2
 
     where ( N > N_Smooth .and. X_A < X_A_Smooth .and. .not.HeavyDisappeared )
@@ -1325,18 +1330,46 @@ contains
     !   end if
     ! end do
 
-    if ( iSmooth_1  <  size ( V )  .and.  iSmooth_2 > 0 ) then
-!      R_1  =  R ( iSmooth_1 )
+!    if ( .not.VelocitySmoothing_A .and. .not.VelocitySmoothing_B ) then 
+!      VelocitySmoothing_A  &
+    if ( .not.VelocitySmoothing ) then 
+      VelocitySmoothing  &
+        =  iSmooth_1  <  size ( V )  .and.  iSmooth_2 > 0  &
+           .and.  V ( iSmooth_2 )  >  0.0_KDR  &
+           .and.  V ( iSmooth_2 + Margin ) > 0.0_KDR
+      if ( VelocitySmoothing ) &
+!        call Show ( 'Velocity smoothing across X_A region triggered' )
+        call Show ( 'Velocity smoothing triggered' )
+    end if
+
+!    if ( VelocitySmoothing_A .and. .not.VelocitySmoothing_B ) then
+!      VelocitySmoothing_B  &
+!        =  VelocitySmoothing_A  .and.  V ( iSmooth_2 )  <  0.0_KDR
+!      if ( VelocitySmoothing_B ) &
+!        call Show ( 'Velocity smoothing to origin triggered' )
+!    end if
+
+!    if ( VelocitySmoothing_B ) then
+    if ( VelocitySmoothing ) then
+      !-- Smoothing to origin
       R_1  =  0.0_KDR
       R_2  =  R ( iSmooth_2 )
-!      V_1  =  V ( iSmooth_1 )
       V_1  =  0.0_KDR
       V_2  =  V ( iSmooth_2 )
-!      do iV = iSmooth_1 + 1, iSmooth_2 - 1
       do iV = 3, iSmooth_2 - 1
         V ( iV )  =  V_1  +  ( V_2 - V_1 ) / ( R_2 - R_1 ) &
                              * ( R ( iV )  -  R_1 )
       end do
+    ! else if ( VelocitySmoothing_A ) then
+    !   !-- Smoothing only across X_A region
+    !   R_1  =  R ( iSmooth_1 )
+    !   R_2  =  R ( iSmooth_2 )
+    !   V_1  =  V ( iSmooth_1 )
+    !   V_2  =  V ( iSmooth_2 )
+    !   do iV = iSmooth_1 + 1, iSmooth_2 - 1
+    !     V ( iV )  =  V_1  +  ( V_2 - V_1 ) / ( R_2 - R_1 ) &
+    !                          * ( R ( iV )  -  R_1 )
+    !   end do
     end if
 
     end associate !-- V, etc.
