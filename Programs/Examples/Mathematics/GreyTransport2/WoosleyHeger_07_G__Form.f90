@@ -1245,8 +1245,8 @@ contains
       iV, &
       Margin
     real ( KDR ) :: &
-      R_1, R_2, &
-      V_1, V_2, &
+      R_0, R_1, R_2, &
+      V_0, V_1, V_2, &
       N_Smooth, &
       X_A_Smooth
 
@@ -1351,15 +1351,15 @@ contains
 
 !    if ( VelocitySmoothing_B ) then
     if ( VelocitySmoothing ) then
-      !-- Smoothing to origin
-      R_1  =  0.0_KDR
-      R_2  =  R ( iSmooth_2 )
-      V_1  =  0.0_KDR
-      V_2  =  V ( iSmooth_2 )
-      do iV = 3, iSmooth_2 - 1
-        V ( iV )  =  V_1  +  ( V_2 - V_1 ) / ( R_2 - R_1 ) &
-                             * ( R ( iV )  -  R_1 )
-      end do
+      ! !-- Smoothing to origin
+      ! R_1  =  0.0_KDR
+      ! R_2  =  R ( iSmooth_2 )
+      ! V_1  =  0.0_KDR
+      ! V_2  =  V ( iSmooth_2 )
+      ! do iV = 3, iSmooth_2 - 1
+      !   V ( iV )  =  V_1  +  ( V_2 - V_1 ) / ( R_2 - R_1 ) &
+      !                        * ( R ( iV )  -  R_1 )
+      ! end do
     ! else if ( VelocitySmoothing_A ) then
     !   !-- Smoothing only across X_A region
     !   R_1  =  R ( iSmooth_1 )
@@ -1370,6 +1370,20 @@ contains
     !     V ( iV )  =  V_1  +  ( V_2 - V_1 ) / ( R_2 - R_1 ) &
     !                          * ( R ( iV )  -  R_1 )
     !   end do
+
+      do iV = 3, iSmooth_1
+        V ( iV )  =  0.0_KDR
+      end do
+
+      R_1  =  R ( iSmooth_1 )
+      R_2  =  R ( iSmooth_2 )
+      V_1  =  V ( iSmooth_1 )
+      V_2  =  V ( iSmooth_2 )
+      do iV = iSmooth_1 + 1, iSmooth_2 - 1
+        V ( iV )  =  V_1  +  ( V_2 - V_1 ) / ( R_2 - R_1 ) &
+                             * ( R ( iV )  -  R_1 )
+      end do
+
     end if
 
     end associate !-- V, etc.
