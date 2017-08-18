@@ -1,8 +1,9 @@
-!-- Integrator_C is a template for time evolution of a conserved current.
+!-- Integrator_C_PS is a template for time evolution of a conserved current
+!   on position space.
 
-module Integrator_C__Template
+module Integrator_C_PS__Template
 
-  !-- Integrator_Current_Template
+  !-- Integrator_Current_PositionSpace_Template
 
   use Basics
   use Manifolds
@@ -15,20 +16,18 @@ module Integrator_C__Template
   private
 
   type, public, extends ( IntegratorTemplate ), abstract :: &
-    Integrator_C_Template
+    Integrator_C_PS_Template
       real ( KDR ) :: &
         CourantFactor
       class ( Current_ASC_Template ), allocatable :: &
         Current_ASC
-      class ( Step_RK_Template ), allocatable :: &
-        Step
       class ( TimeSeries_C_Form ), allocatable :: &
         TimeSeries
   contains
     procedure, public, pass :: &  !-- 1
-      InitializeTemplate_C
+      InitializeTemplate_C_PS
     procedure, public, pass :: &  !-- 1
-      FinalizeTemplate_C
+      FinalizeTemplate_C_PS
     procedure, private, pass :: &  !-- 2
       ComputeCycle
     procedure, private, pass :: &  !-- 3
@@ -38,138 +37,143 @@ module Integrator_C__Template
     procedure, private, pass :: &  !-- 3
       WriteTimeSeries
     procedure, private, pass :: &
-      ComputeTimeStepLocal
-  end type Integrator_C_Template
-
-    private :: &
       ComputeCycle_ASC
-
-      private :: &
-        ComputeCycle_ASC_CSL
-
-      private :: &
-        ComputeTimeStepKernel_CSL
+    procedure, private, pass :: &
+      ComputeTimeStepLocal
+    procedure, public, nopass :: &
+      ComputeTimeStepKernel_CSL
+  end type Integrator_C_PS_Template
 
 contains
 
 
-  subroutine InitializeTemplate_C &
-               ( I, Name, TimeUnitOption, FinishTimeOption, nWriteOption )
+  subroutine InitializeTemplate_C_PS &
+               ( I, Name, TimeUnitOption, FinishTimeOption, &
+                 CourantFactorOption, nWriteOption )
 
-    class ( Integrator_C_Template ), intent ( inout ) :: &
+    class ( Integrator_C_PS_Template ), intent ( inout ) :: &
       I
     character ( * ), intent ( in )  :: &
       Name
     type ( MeasuredValueForm ), intent ( in ), optional :: &
       TimeUnitOption
     real ( KDR ), intent ( in ), optional :: &
-      FinishTimeOption
+      FinishTimeOption, &
+      CourantFactorOption
     integer ( KDI ), intent ( in ), optional :: &
       nWriteOption
+
+    if ( I % Type == '' ) &
+      I % Type = 'an Integrator_C_PS'
 
     if ( .not. allocated ( I % PositionSpace ) ) then
       call Show ( 'PositionSpace must be allocated by an extension', &
                   CONSOLE % ERROR )
-      call Show ( 'Integrator_C__Template', 'module', CONSOLE % ERROR )
-      call Show ( 'InitializeTemplate_C', 'subroutine', CONSOLE % ERROR )
+      call Show ( 'Integrator_C_PS__Template', 'module', CONSOLE % ERROR )
+      call Show ( 'InitializeTemplate_C_PS', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end if
 
     if ( .not. allocated ( I % Current_ASC ) ) then
-      call Show ( 'Current must be allocated by an extension', &
-                  CONSOLE % ERROR )
-      call Show ( 'Integrator_C__Template', 'module', CONSOLE % ERROR )
-      call Show ( 'InitializeTemplate_C', 'subroutine', CONSOLE % ERROR )
-      call PROGRAM_HEADER % Abort ( )
+      call Show ( 'Current_ASC not allocated by an extension', &
+                  CONSOLE % WARNING )
+      call Show ( 'Integrator_C_PS__Template', 'module', CONSOLE % WARNING )
+      call Show ( 'InitializeTemplate_C_PS', 'subroutine', CONSOLE % WARNING )
     end if
 
-    if ( .not. allocated ( I % Step ) ) then
-      call Show ( 'Step must be allocated by an extension', &
-                  CONSOLE % ERROR )
-      call Show ( 'Integrator_C__Template', 'module', CONSOLE % ERROR )
-      call Show ( 'InitializeTemplate_C', 'subroutine', CONSOLE % ERROR )
-      call PROGRAM_HEADER % Abort ( )
-    end if
-
-    I % CourantFactor = 0.7
+    I % CourantFactor = 0.9
+    if ( present ( CourantFactorOption ) ) &
+      I % CourantFactor = CourantFactorOption
     call PROGRAM_HEADER % GetParameter &
            ( I % CourantFactor, 'CourantFactor' )
 
     call I % InitializeTemplate &
            ( Name, TimeUnitOption, FinishTimeOption, nWriteOption )
+    call Show ( I % CourantFactor, 'CourantFactor', I % IGNORABILITY )
 
-    allocate ( I % TimeSeries )
-    associate &
-      ( TS => I % TimeSeries, &
-        CA => I % Current_ASC )
-    call TS % Initialize &
-           ( I, CA % TallyInterior, &
-             CA % TallyBoundaryGlobal ( 1 ) % Element, &
-             CA % TallyTotal, CA % TallyChange )
-    end associate !-- TS, etc.
+    if ( allocated ( I % Current_ASC ) ) then
+      allocate ( I % TimeSeries )
+      associate &
+        ( TS => I % TimeSeries, &
+          CA => I % Current_ASC )
+      call TS % Initialize &
+             ( I, CA % TallyInterior, &
+               CA % TallyBoundaryGlobal ( 1 ) % Element, &
+               CA % TallyTotal, CA % TallyChange )
+      end associate !-- TS, etc.
+    end if
 
-  end subroutine InitializeTemplate_C
+  end subroutine InitializeTemplate_C_PS
 
 
-  subroutine FinalizeTemplate_C ( I )
+  subroutine FinalizeTemplate_C_PS ( I )
 
-    class ( Integrator_C_Template ), intent ( inout ) :: &
+    class ( Integrator_C_PS_Template ), intent ( inout ) :: &
       I
 
    if ( allocated ( I % TimeSeries ) ) &
      deallocate ( I % TimeSeries )
-   if ( allocated ( I % Step ) ) &
-     deallocate ( I % Step )
    if ( allocated ( I % Current_ASC ) ) &
      deallocate ( I % Current_ASC )
 
     call I % FinalizeTemplate ( )
 
-  end subroutine FinalizeTemplate_C
+  end subroutine FinalizeTemplate_C_PS
 
 
   subroutine ComputeCycle ( I )
 
-    class ( Integrator_C_Template ), intent ( inout ) :: &
+    class ( Integrator_C_PS_Template ), intent ( inout ) :: &
       I
 
-    associate ( Timer => PROGRAM_HEADER % Timer ( I % iTimerComputeCycle ) )
-    call Timer % Start ( )
+    type ( TimerForm ), pointer :: &
+      Timer
+
+    Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerCycle )
+    if ( associated ( Timer ) ) call Timer % Start ( )
 
     select type ( PS => I % PositionSpace )
     class is ( Atlas_SC_Form )
-      call ComputeCycle_ASC ( I, PS )
+      call I % ComputeCycle_ASC ( PS )
     end select
 
-    call Timer % Stop ( )
-    end associate !-- Timer
+    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine ComputeCycle
 
 
-  subroutine ComputeTally ( I, ComputeChangeOption )
+  subroutine ComputeTally ( I, ComputeChangeOption, IgnorabilityOption )
 
-    class ( Integrator_C_Template ), intent ( inout ) :: &
+    class ( Integrator_C_PS_Template ), intent ( inout ) :: &
       I
     logical ( KDL ), intent ( in ), optional :: &
       ComputeChangeOption
+    integer ( KDI ), intent ( in ), optional :: &
+      IgnorabilityOption
 
-    associate ( Timer => PROGRAM_HEADER % Timer ( I % iTimerComputeTally ) )
-    call Timer % Start ( )
+    type ( TimerForm ), pointer :: &
+      Timer
+
+    if ( .not. allocated ( I % Current_ASC ) ) &
+      return
+
+    Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerTally )
+    if ( associated ( Timer ) ) call Timer % Start ( )
 
     associate ( CA => I % Current_ASC )
-    call CA % ComputeTally ( ComputeChangeOption = ComputeChangeOption )
+    call CA % ComputeTally &
+           ( ComputeChangeOption = ComputeChangeOption, &
+             IgnorabilityOption = IgnorabilityOption )
     end associate !-- CA
 
-    call Timer % Stop ( )
-    end associate !-- Timer
+    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine ComputeTally
 
 
   subroutine RecordTimeSeries ( I, MaxTime, MinTime, MeanTime )
 
-    class ( Integrator_C_Template ), intent ( inout ) :: &
+    class ( Integrator_C_PS_Template ), intent ( inout ) :: &
       I
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       MaxTime, &
@@ -181,6 +185,9 @@ contains
     real ( KDR ) :: &
       ReconstructionImbalance
 
+    if ( .not. allocated ( I % TimeSeries ) ) &
+      return
+
     call I % TimeSeries % Record ( MaxTime, MinTime, MeanTime )
 
     if ( I % TimeSeries % iTime <= 1 ) &
@@ -188,40 +195,85 @@ contains
     if ( PROGRAM_HEADER % Communicator % Rank /= CONSOLE % DisplayRank ) &
       return  !-- only DisplayRank has MinTime, MaxTime
 
-    do iT = 1, PROGRAM_HEADER % nTimers
-      if ( PROGRAM_HEADER % Timer ( iT ) % Name == 'ComputeReconstruction' ) &
-        exit
-    end do !-- iT
+    ! do iT = 1, PROGRAM_HEADER % nTimers
+    !   if ( PROGRAM_HEADER % Timer ( iT ) % Name == 'ComputeReconstruction' ) &
+    !     exit
+    ! end do !-- iT
 
-    ReconstructionImbalance &
-      = ( MaxTime ( iT ) - MinTime ( iT ) ) / MinTime ( iT )
-    call Show ( ReconstructionImbalance, 'ReconstructionImbalance' )
-    if ( ReconstructionImbalance > 0.5_KDR .and. MaxTime ( iT ) > 10.0 ) then
-      call Show ( 'ReconstructionBalance > 0.5', CONSOLE % ERROR )
-      call Show ( 'Integrator_C__Template', 'module', CONSOLE % ERROR )
-      call Show ( 'RecordTimeSeries', 'subroutine', CONSOLE % ERROR )
-      call PROGRAM_HEADER % Abort ( )
-    end if
+    ! ReconstructionImbalance &
+    !   = ( MaxTime ( iT ) - MinTime ( iT ) ) / MinTime ( iT )
+    ! call Show ( ReconstructionImbalance, 'ReconstructionImbalance', &
+    !             I % IGNORABILITY + 2 )
+    ! if ( ReconstructionImbalance > 0.5_KDR .and. MaxTime ( iT ) > 10.0 ) then
+    !   call Show ( 'ReconstructionBalance > 0.5', CONSOLE % ERROR )
+    !   call Show ( 'Integrator_C_PS__Template', 'module', CONSOLE % ERROR )
+    !   call Show ( 'RecordTimeSeries', 'subroutine', CONSOLE % ERROR )
+    !   call PROGRAM_HEADER % Abort ( )
+    ! end if
 
   end subroutine RecordTimeSeries
 
 
   subroutine WriteTimeSeries ( I )
 
-    class ( Integrator_C_Template ), intent ( inout ) :: &
+    class ( Integrator_C_PS_Template ), intent ( inout ) :: &
       I
+
+    if ( .not. allocated ( I % TimeSeries ) ) &
+      return
 
     call I % TimeSeries % Write ( )
 
   end subroutine WriteTimeSeries
 
 
-  subroutine ComputeTimeStepLocal ( I, TimeStep )
+  subroutine ComputeCycle_ASC ( I, PS )
 
-    class ( Integrator_C_Template ), intent ( in ) :: &
+    class ( Integrator_C_PS_Template ), intent ( inout ) :: &
       I
-    real ( KDR ), intent ( inout ) :: &
-      TimeStep
+    class ( Atlas_SC_Form ), intent ( inout ) :: &
+      PS
+
+    real ( KDR ) :: &
+      TimeNew
+
+    call I % PrepareCycle ( )
+    call I % ComputeNewTime ( TimeNew )
+
+    select type ( S => I % Step )
+    class is ( Step_RK_C_ASC_Template )
+
+    associate ( TimeStep => TimeNew - I % Time )    
+
+    select type ( Chart => PS % Chart )
+    class is ( Chart_SLD_Form )
+
+      call S % Compute ( I % Time, TimeStep )
+
+    class default
+      call Show ( 'Chart type not found', CONSOLE % ERROR )
+      call Show ( 'Integrator_C_PS__Template', 'module', CONSOLE % ERROR )
+      call Show ( 'ComputeCycle_ASC', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- C
+
+    I % iCycle = I % iCycle + 1
+    I % Time = I % Time + TimeStep
+    if ( I % Time == I % WriteTime ) &
+      I % IsCheckpointTime = .true.
+
+    end associate !-- TimeStep
+    end select !-- S
+
+  end subroutine ComputeCycle_ASC
+
+
+  subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
+
+    class ( Integrator_C_PS_Template ), intent ( inout ), target :: &
+      I
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      TimeStepCandidate
 
     class ( GeometryFlatForm ), pointer :: &
       G
@@ -239,7 +291,7 @@ contains
     G => CSL % Geometry ( )
     C => CA % Current ( )
     
-    call ComputeTimeStepKernel_CSL &
+    call I % ComputeTimeStepKernel_CSL &
            ( CSL % IsProperCell, &
              C % Value ( :, C % FAST_EIGENSPEED_PLUS ( 1 ) ), &
              C % Value ( :, C % FAST_EIGENSPEED_PLUS ( 2 ) ), &
@@ -250,85 +302,17 @@ contains
              G % Value ( :, G % WIDTH ( 1 ) ), &
              G % Value ( :, G % WIDTH ( 2 ) ), & 
              G % Value ( :, G % WIDTH ( 3 ) ), &
-             CSL % nDimensions, TimeStep )
+             CSL % nDimensions, TimeStepCandidate ( 1 ) )
 
     end associate !-- CA
     end select !-- CSL
     end select !-- PS
 
-    TimeStep = I % CourantFactor * TimeStep
+    TimeStepCandidate ( 1 ) = I % CourantFactor * TimeStepCandidate ( 1 )
 
     nullify ( C, G )
 
   end subroutine ComputeTimeStepLocal
-
-
-  subroutine ComputeCycle_ASC ( I, PS )
-
-    class ( Integrator_C_Template ), intent ( inout ) :: &
-      I
-    class ( Atlas_SC_Form ), intent ( inout ) :: &
-      PS
-
-    select type ( Chart => PS % Chart )
-    class is ( Chart_SLD_Form )
-      call ComputeCycle_ASC_CSL ( I, I % Current_ASC, Chart )
-    class default
-      call Show ( 'Chart type not found', CONSOLE % ERROR )
-      call Show ( 'Integrator_C__Template', 'module', CONSOLE % ERROR )
-      call Show ( 'ComputeCycle_ASC', 'subroutine', CONSOLE % ERROR )
-      call PROGRAM_HEADER % Abort ( )
-    end select !-- C
-
-  end subroutine ComputeCycle_ASC
-
-
-  subroutine ComputeCycle_ASC_CSL ( I, CA, CSL )
-
-    class ( Integrator_C_Template ), intent ( inout ) :: &
-      I
-    class ( Current_ASC_Template ), intent ( inout ) :: &
-      CA
-    class ( Chart_SLD_Form ), intent ( inout ) :: &
-      CSL
-
-    real ( KDR ) :: &
-      TimeNew
-
-    select type ( S => I % Step )
-    class is ( Step_RK_C_Template )
-
-    select type ( FC => CA % Chart )
-    class is ( Field_CSL_Template )
-
-    select type ( C => FC % Field )
-    class is ( CurrentTemplate )
-
-    call I % ComputeNewTime ( TimeNew )
-    associate ( TimeStep => TimeNew - I % Time )    
-
-    call S % Compute ( C, CSL, I % Time, TimeStep )
-
-    I % iCycle = I % iCycle + 1
-    I % Time = I % Time + TimeStep
-
-    if ( I % WriteTimeExact ) then
-      if ( I % Time == I % WriteTime ) &
-        I % IsCheckpointTime = .true.
-    else 
-      if ( I % Time  >  I % WriteTime &
-           .or. abs ( I % Time - I % WriteTime )  <  0.5_KDR * TimeStep ) &
-        I % IsCheckpointTime = .true.
-    end if
-
-    call CA % AccumulateBoundaryTally ( S % BoundaryFluence_CSL )
-
-    end associate !-- TimeStep
-    end select !-- C
-    end select !-- FC
-    end select !-- S
-
-  end subroutine ComputeCycle_ASC_CSL
 
 
   subroutine ComputeTimeStepKernel_CSL &
@@ -392,4 +376,4 @@ contains
   end subroutine ComputeTimeStepKernel_CSL
 
 
-end module Integrator_C__Template
+end module Integrator_C_PS__Template

@@ -57,13 +57,13 @@ contains
 
 
   subroutine InitializeBasic &
-               ( A, NameSuffix, CommunicatorOption, IncludeFacesOption, &
+               ( A, Name, CommunicatorOption, IncludeFacesOption, &
                  IncludeEdgesOption, nExcisionsOption, iDimensionalityOption )
 
     class ( AtlasHeaderForm ), intent ( inout ) :: &
       A
     character ( * ), intent ( in )  :: &
-      NameSuffix
+      Name
     type ( CommunicatorForm ), intent ( in ), target, optional :: &
       CommunicatorOption
     logical ( KDL ), intent ( in ), optional :: &
@@ -73,9 +73,6 @@ contains
       nExcisionsOption, &
       iDimensionalityOption
 
-    character ( LDL ), dimension ( : ), allocatable :: &
-      TypeWord
-
     A % IGNORABILITY = CONSOLE % INFO_1
 
     if ( .not. associated ( A % Type ) ) then
@@ -84,8 +81,7 @@ contains
     end if
 
     allocate ( A % Name )
-    call Split ( A % Type, ' ', TypeWord )
-    A % Name = trim ( TypeWord ( 2 ) ) // '_' // trim ( NameSuffix )
+    A % Name = Name
 
     call Show ( 'Initializing ' // trim ( A % Type ), A % IGNORABILITY )
     call Show ( A % Name, 'Name', A % IGNORABILITY )
@@ -115,7 +111,7 @@ contains
     class ( AtlasHeaderForm ), intent ( in ), target :: &
       A_Source
 
-    A % IGNORABILITY         =  CONSOLE % INFO_7  !-- NOT COPIED!
+    A % IGNORABILITY         =  CONSOLE % INFO_5  !-- NOT COPIED!
     A % nDimensions          =  A_Source % nDimensions
     A % nBoundaries          =  A_Source % nBoundaries
     A % IsDistributed        =  A_Source % IsDistributed
@@ -455,7 +451,7 @@ contains
   
       if ( C % nFaces > 0 ) then
           do iD = 1, A % nDimensions
-            call Show ( iD, 'Faces perpendicular to iDimension', &
+            call Show ( iD, 'Faces, iDimension', &
                         A % IGNORABILITY )
             associate &
               ( iaI => C % iaInner ( iD ), &

@@ -4,6 +4,7 @@
 module UNIT_Singleton
 
   use KIND_DEFAULT_Singleton
+  use KIND_BIG_Singleton
   use MeasuredValue_Form
   use CONSTANT_Singleton, &
         C => CONSTANT
@@ -19,50 +20,59 @@ module UNIT_Singleton
       CENTIMETER, &
       FEMTOMETER, &
       KILOMETER, &
+      ASTRONOMICAL_UNIT, &
       PARSEC, &
       GIGAPARSEC, &
       ANGSTROM
-    type ( MeasuredValueForm ) :: &  !-- Angle
-      RADIAN
-    type ( MeasuredValueForm ) :: &  !-- Time
-      SECOND, &
-      MILLISECOND, &
-      FEMTOSECOND
-    type ( MeasuredValueForm ) :: &  !-- Frequency
-      HERTZ, &
-      KILOHERTZ
     type ( MeasuredValueForm ) :: &  !-- Mass
       KILOGRAM, &
       GRAM, &
       ATOMIC_MASS_UNIT, &
       SOLAR_MASS
+    type ( MeasuredValueForm ) :: &  !-- Time
+      SECOND, &
+      MILLISECOND, &
+      FEMTOSECOND
+    type ( MeasuredValueForm ) :: &  !-- Magnetic current
+      AMPERE
+    type ( MeasuredValueForm ) :: &  !-- Temperature
+      KELVIN
+    type ( MeasuredValueForm ) :: &  !-- Amount of substance
+      MOLE, &
+      SOLAR_BARYON_NUMBER
+    type ( MeasuredValueForm ) :: &  !-- Angle
+      RADIAN
+    type ( MeasuredValueForm ) :: &  !-- Frequency
+      HERTZ, &
+      KILOHERTZ
     type ( MeasuredValueForm ) :: &  !-- Speed
       SPEED_OF_LIGHT
-    type ( MeasuredValueForm ) :: &  !-- Energy
-      JOULE, &
-      ERG, &
-      BETHE, &
-      ELECTRON_VOLT, &
-      MEV
     type ( MeasuredValueForm ) :: &  !-- Force
       NEWTON, &
       DYNE
     type ( MeasuredValueForm ) :: &  !-- Pressure
       PASCAL, &
       BARYE
-    type ( MeasuredValueForm ) :: &  !-- Temperature
-      KELVIN
-    type ( MeasuredValueForm ) :: &  !-- Magnetic current
-      AMPERE
     type ( MeasuredValueForm ) :: &  !-- Magnetic field
       TESLA, &
       GAUSS
-    type ( MeasuredValueForm ) :: &  !-- Number density
-      NUMBER_DENSITY_ANGSTROM
-    type ( MeasuredValueForm ) :: &  !-- Mass density
-      MASS_DENSITY_CGS
+    type ( MeasuredValueForm ) :: &  !-- Electric potential
+      VOLT
+    type ( MeasuredValueForm ) :: &  !-- Energy
+      JOULE, &
+      ERG, &
+      ELECTRON_VOLT, &
+      MEGA_ELECTRON_VOLT, &
+      BETHE
+    type ( MeasuredValueForm ) :: &  !-- Entropy per baryon
+      BOLTZMANN
     type ( MeasuredValueForm ) :: &  !-- Energy/length conversion
       HBAR_C
+    type ( MeasuredValueForm ) :: &  !-- Number density
+      NUMBER_DENSITY_ANGSTROM, &
+      NUMBER_DENSITY_MEV_HBAR_C
+    type ( MeasuredValueForm ) :: &  !-- Mass density
+      MASS_DENSITY_CGS
     type ( MeasuredValueForm ) :: &  !-- Computer resources
       KILOBYTE, &
       WALL_TIME
@@ -75,99 +85,141 @@ module UNIT_Singleton
   
   type ( UnitSingleton ), public, protected, save, target :: &
     UNIT
-  
+
+    character ( 5, KBCH ) :: &
+      MeV_Minus_1 &
+        = KBCH_'MeV' // char ( int ( z'207B' ), KBCH ) &
+                     // char ( int ( z'00B9' ), KBCH )
+
 contains
 
   
   subroutine Initialize ( )
     
     associate ( U => UNIT )
-    
+
     !-- Identity
-    call U % IDENTITY % Initialize ( '', '', 1.0_KDR )
+    call U % IDENTITY % Initialize &
+           ( '', '', 1.0_KDR )
     
     !-- Length
-    call U % METER % Initialize ( 'm', 'm', 1.0_KDR )
-    call U % CENTIMETER % Initialize ( 1.0e-2_KDR * U % METER, 'cm' )
-    call U % FEMTOMETER % Initialize ( 1.0e-15_KDR * U % METER, 'fm' )
-    call U % KILOMETER % Initialize  ( 1.0e+3_KDR * U % METER, 'km' )
+    call U % METER % Initialize &
+           ( 'm', MeV_Minus_1, C % METER )
+    call U % CENTIMETER % Initialize &
+           ( 1.0e-2_KDR * U % METER, 'cm' )
+    call U % FEMTOMETER % Initialize &
+           ( 1.0e-15_KDR * U % METER, 'fm' )
+    call U % KILOMETER % Initialize &
+           ( 1.0e+3_KDR * U % METER, 'km' )
+    call U % ASTRONOMICAL_UNIT % Initialize &
+           ( 'au', MeV_Minus_1, C % ASTRONOMICAL_UNIT )
     call U % PARSEC % Initialize &
-           ( ( C % ASTRONOMICAL_UNIT_MKS * U % METER ) &
-             / tan ( 2.0_KDR * C % PI / ( 360.0_KDR * 60.0_KDR * 60.0_KDR ) ), &
-            'pc' )
-    call U % GIGAPARSEC % Initialize ( 1.0e+9_KDR * U % PARSEC, 'Gpc' )
-    call U % ANGSTROM % Initialize  ( 1.0e-10_KDR * U % METER, 'A' )
-    
-    !-- Angle
-    call U % RADIAN % Initialize ( UNIT % IDENTITY, 'rad' )
-
-    !-- Time
-    call U % SECOND % Initialize &
-           ( C % SPEED_OF_LIGHT_MKS / C % SPEED_OF_LIGHT * U % METER, 's' )
-    call U % MILLISECOND % Initialize ( 1.0e-3_KDR * U % SECOND, 'ms' )
-    call U % FEMTOSECOND % Initialize ( 1.0e-15_KDR * U % SECOND, 'fs' )
-
-    !-- Frequency
-    call U % HERTZ % Initialize ( 1.0_KDR / U % SECOND, 'Hz' )
-    call U % KILOHERTZ % Initialize ( 1.0e+3_KDR * U % HERTZ, 'kHz' )
+           ( 'pc', MeV_Minus_1, C % PARSEC )
+    call U % GIGAPARSEC % Initialize &
+           ( 1.0e+9_KDR * U % PARSEC, 'Gpc' )
+    call U % ANGSTROM % Initialize &
+           ( 1.0e-10_KDR * U % METER, char ( int ( z'00C5' ), KBCH ) )
     
     !-- Mass
     call U % KILOGRAM % Initialize &
-           ( C % GRAVITATIONAL_MKS / C % GRAVITATIONAL &
-             * U % METER ** 3 / U % SECOND ** 2, 'kg' )
-    call U % GRAM % Initialize ( 1.0e-3_KDR * U % KILOGRAM, 'g' )
+           ( 'kg', 'MeV', C % KILOGRAM )
+    call U % GRAM % Initialize &
+           ( 1.0e-3_KDR * U % KILOGRAM, 'g' )
     call U % ATOMIC_MASS_UNIT % Initialize &
-           ( 1.0_KDR / C % AVOGADRO_MKS * U % GRAM, 'amu' )
+           ( 'u', 'MeV', C % ATOMIC_MASS_UNIT )
     call U % SOLAR_MASS % Initialize &
-           ( C % SOLAR_MASS_MKS * U % KILOGRAM, 'M_sun' )
+           ( KBCH_'M' // char ( int ( z'2299' ), KBCH ), 'MeV', &
+             C % SOLAR_MASS )
            
-    !-- Speed
-    call U % SPEED_OF_LIGHT % Initialize ( 'c', '', C % SPEED_OF_LIGHT )
-
-    !-- Energy
-    call U % JOULE % Initialize &
-           ( U % KILOGRAM * ( U % METER / U % SECOND ) ** 2, 'J' )
-    call U % ERG % Initialize &
-           ( U % GRAM * ( U % CENTIMETER / U % SECOND ) ** 2, 'erg' )
-    call U % BETHE % Initialize ( 1.0e51_KDR * U % ERG, 'Bethe' )
-    call U % ELECTRON_VOLT % Initialize &
-           ( C % ELECTRON_VOLT_MKS * U % JOULE, 'eV' )
-    call U % MEV % Initialize ( 1.0e6_KDR * U % ELECTRON_VOLT, 'MeV' )
-
-    !-- Force
-    call U % NEWTON % Initialize ( U % JOULE / U % METER, 'N' )
-    call U % DYNE   % Initialize ( U % ERG / U % CENTIMETER, 'dyn' )
-
-    !-- Pressure
-    call U % PASCAL % Initialize ( U % NEWTON / U % METER ** 2, 'Pa' )
-    call U % BARYE  % Initialize ( U % DYNE / U % CENTIMETER ** 2, 'Ba' )
-
-    !-- Temperature
-    call U % KELVIN % Initialize &
-           ( C % BOLTZMANN_MKS / C % BOLTZMANN * U % KILOGRAM &
-             * U % METER**2 / U % SECOND ** 2, 'K' )
+    !-- Time
+    call U % SECOND % Initialize &
+           ( 's', MeV_Minus_1, C % SECOND )
+    call U % MILLISECOND % Initialize &
+           ( 1.0e-3_KDR * U % SECOND, 'ms' )
+    call U % FEMTOSECOND % Initialize &
+           ( 1.0e-15_KDR * U % SECOND, 'fs' )
 
     !-- Magnetic current
     call U % AMPERE % Initialize &
-           ( ( ( C % PERMEABILITY_MKS / C % PERMEABILITY ) &
-               * U % NEWTON ) ** 0.5_KDR , 'A' )
+           ( 'A', 'MeV', C % AMPERE )
+
+    !-- Temperature
+    call U % KELVIN % Initialize &
+           ( 'K', 'MeV', C % KELVIN )
+
+    !-- Amount of substance
+    call U % MOLE % Initialize &
+           ( 'mol', '', C % MOLE )
+    call U % SOLAR_BARYON_NUMBER % Initialize &
+           ( KBCH_'N' // char ( int ( z'2299' ), KBCH ), '', &
+             C % SOLAR_MASS / C % ATOMIC_MASS_UNIT )
+
+    !-- Angle
+    call U % RADIAN % Initialize &
+           ( UNIT % IDENTITY, 'rad' )
+
+    !-- Frequency
+    call U % HERTZ % Initialize &
+           ( 1.0_KDR / U % SECOND, 'Hz' )
+    call U % KILOHERTZ % Initialize &
+           ( 1.0e+3_KDR * U % HERTZ, 'kHz' )
+    
+    !-- Speed
+    call U % SPEED_OF_LIGHT % Initialize &
+           ( 'c', '', C % SPEED_OF_LIGHT )
+
+    !-- Force
+    call U % NEWTON % Initialize &
+           ( U % KILOGRAM  *  U % METER  *  U % SECOND ** (-2), 'N' )
+    call U % DYNE % Initialize &
+           ( U % GRAM * U % CENTIMETER  *  U % SECOND ** (-2), 'dyn' )
+
+    !-- Pressure
+    call U % PASCAL % Initialize &
+           ( U % NEWTON / U % METER ** 2, 'Pa' )
+    call U % BARYE  % Initialize &
+           ( U % DYNE / U % CENTIMETER ** 2, 'Ba' )
 
     !-- Magnetic field
     call U % TESLA % Initialize &
            ( U % NEWTON / ( U % AMPERE * U % METER ), 'T' )
-    call U % GAUSS % Initialize ( 1.0e-4_KDR * U % TESLA, 'G' )
+    call U % GAUSS % Initialize &
+           ( 1.0e-4_KDR * U % TESLA, 'G' )
 
-    !-- Number density
-    call U % NUMBER_DENSITY_ANGSTROM % Initialize &
-           ( 1 / U % ANGSTROM ** 3, 'A^-3' ) 
+    !-- Electric potential
+    call U % VOLT % Initialize &
+           ( U % NEWTON * U % METER / ( U % AMPERE * U % SECOND ), 'V' )
 
-    !-- Mass density
-    call U % MASS_DENSITY_CGS % Initialize &
-           ( U % GRAM / U % CENTIMETER ** 3, 'g cm^-3' ) 
+    !-- Energy
+    call U % JOULE % Initialize &
+           ( U % NEWTON * U % METER, 'J' )
+    call U % ERG % Initialize &
+           ( U % DYNE * U % CENTIMETER, 'erg' )
+    call U % ELECTRON_VOLT % Initialize &
+           ( C % ELECTRON_CHARGE * U % VOLT, 'eV' )
+    call U % MEGA_ELECTRON_VOLT % Initialize &
+           ( 1.0e6_KDR * U % ELECTRON_VOLT, 'MeV' )
+    call U % BETHE % Initialize &
+           ( 1.0e51_KDR * U % ERG, 'B' )
+
+    !-- Entropy per baryon
+    call U % BOLTZMANN % Initialize &
+           ( 'k', '', C % BOLTZMANN )
 
     !-- Energy/length conversion
     call U % HBAR_C % Initialize &
-           ( '(hBar_c)', 'm^2', C % PLANCK_REDUCED * C % SPEED_OF_LIGHT )  
+           ( KBCH_'(' // char ( int ( z'0127' ), KBCH ) // KBCH_'c)', '', &
+             C % PLANCK_REDUCED * C % SPEED_OF_LIGHT )
+
+    !-- Number density
+    U % NUMBER_DENSITY_ANGSTROM &
+      =  1 / U % ANGSTROM ** 3
+    U % NUMBER_DENSITY_MEV_HBAR_C &
+      =  U % MEGA_ELECTRON_VOLT ** 3  /  U % HBAR_C ** 3
+
+    !-- Mass density
+    U % MASS_DENSITY_CGS &
+      =  U % GRAM  /  U % CENTIMETER ** 3
 
     !-- Computer resources
     call U % KILOBYTE % Initialize ( 'kB', 'kB', 1.0_KDR )
@@ -186,6 +238,8 @@ contains
       Result
 
     select case ( trim ( Selector ) )
+    case ( 'IDENTITY' )
+      Result = UNIT % IDENTITY
     case ( 'METER' )
       Result = UNIT % METER
     case ( 'CENTIMETER' )
@@ -194,24 +248,14 @@ contains
       Result = UNIT % FEMTOMETER
     case ( 'KILOMETER' )
       Result = UNIT % KILOMETER
+    case ( 'ASTRONOMICAL_UNIT' )
+      Result = UNIT % ASTRONOMICAL_UNIT
     case ( 'PARSEC' )   
       Result = UNIT % PARSEC
     case ( 'GIGAPARSEC' )  
       Result = UNIT % GIGAPARSEC
     case ( 'ANGSTROM' )  
       Result = UNIT % ANGSTROM
-    case ( 'RADIAN' )
-      Result = UNIT % RADIAN
-    case ( 'SECOND' )
-      Result = UNIT % SECOND
-    case ( 'MILLISECOND' ) 
-      Result = UNIT % MILLISECOND
-    case ( 'FEMTOSECOND' ) 
-      Result = UNIT % FEMTOSECOND
-    case ( 'HERTZ' )
-      Result = UNIT % HERTZ
-    case ( 'KILOHERTZ' )  
-      Result = UNIT % KILOHERTZ
     case ( 'KILOGRAM' )      
       Result = UNIT % KILOGRAM
     case ( 'GRAM' )
@@ -220,18 +264,28 @@ contains
       Result = UNIT % ATOMIC_MASS_UNIT
     case ( 'SOLAR_MASS' )
       Result = UNIT % SOLAR_MASS
+    case ( 'SECOND' )
+      Result = UNIT % SECOND
+    case ( 'MILLISECOND' ) 
+      Result = UNIT % MILLISECOND
+    case ( 'FEMTOSECOND' ) 
+      Result = UNIT % FEMTOSECOND
+    case ( 'AMPERE' )
+      Result = UNIT % AMPERE
+    case ( 'KELVIN' )
+      Result = UNIT % KELVIN
+    case ( 'MOLE' )
+      Result = UNIT % MOLE
+    case ( 'SOLAR_BARYON_NUMBER' )
+      Result = UNIT % SOLAR_BARYON_NUMBER
+    case ( 'RADIAN' )
+      Result = UNIT % RADIAN
+    case ( 'HERTZ' )
+      Result = UNIT % HERTZ
+    case ( 'KILOHERTZ' )  
+      Result = UNIT % KILOHERTZ
     case ( 'SPEED_OF_LIGHT' ) 
       Result = UNIT % SPEED_OF_LIGHT
-    case ( 'JOULE' )
-      Result = UNIT % JOULE    
-    case ( 'ERG' )
-      Result = UNIT % ERG
-    case ( 'BETHE' )
-      Result = UNIT % BETHE   
-    case ( 'ELECTRON_VOLT' )
-      Result = UNIT % ELECTRON_VOLT
-    case ( 'MEV' )
-      Result = UNIT % MEV
     case ( 'NEWTON' )
       Result = UNIT % NEWTON
     case ( 'DYNE' )
@@ -240,20 +294,32 @@ contains
       Result = UNIT % PASCAL
     case ( 'BARYE' )
       Result = UNIT % BARYE
-    case ( 'KELVIN' )
-      Result = UNIT % KELVIN
-    case ( 'AMPERE' )
-      Result = UNIT % AMPERE
     case ( 'TESLA' )
       Result = UNIT % TESLA
     case ( 'GAUSS' )
       Result = UNIT % GAUSS
-    case ( 'NUMBER_DENSITY_ANGSTROM' )
-      Result = UNIT % NUMBER_DENSITY_ANGSTROM
-    case ( 'MASS_DENSITY_CGS' )
-      Result = UNIT % MASS_DENSITY_CGS
+    case ( 'VOLT' )
+      Result = UNIT % VOLT
+    case ( 'JOULE' )
+      Result = UNIT % JOULE    
+    case ( 'ERG' )
+      Result = UNIT % ERG
+    case ( 'ELECTRON_VOLT' )
+      Result = UNIT % ELECTRON_VOLT
+    case ( 'MEGA_ELECTRON_VOLT' )
+      Result = UNIT % MEGA_ELECTRON_VOLT
+    case ( 'BETHE' )
+      Result = UNIT % BETHE   
+    case ( 'BOLTZMANN' )
+      Result = UNIT % BOLTZMANN
     case ( 'HBAR_C' )
       Result = UNIT % HBAR_C
+    case ( 'NUMBER_DENSITY_ANGSTROM' )
+      Result = UNIT % NUMBER_DENSITY_ANGSTROM
+    case ( 'NUMBER_DENSITY_MEV_HBAR_C' )
+      Result = UNIT % NUMBER_DENSITY_MEV_HBAR_C
+    case ( 'MASS_DENSITY_CGS' )
+      Result = UNIT % MASS_DENSITY_CGS
     case ( 'KILOBYTE' )
       Result = UNIT % KILOBYTE
     case ( 'WALL_TIME' )

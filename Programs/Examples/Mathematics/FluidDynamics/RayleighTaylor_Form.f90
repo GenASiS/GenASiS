@@ -3,13 +3,14 @@ module RayleighTaylor_Form
   use Basics
   use Mathematics
   use Fluid_P_P__Form
+  use Sources_F__Form
   use Fluid_ASC__Form
   use Tally_RT__Form
   
   implicit none
   private
   
-  type, public, extends ( Integrator_C_Template ) :: RayleighTaylorForm
+  type, public, extends ( Integrator_C_PS_Template ) :: RayleighTaylorForm
   contains
     procedure, public, pass :: &
       Initialize
@@ -40,15 +41,12 @@ contains
     integer ( KDI ) :: &
       iB  !-- iBoundary
 
-    if ( RT % Type == '' ) &
-      RT % Type = 'a RayleighTaylor' 
-
     !-- PositionSpace
 
     allocate ( Atlas_SC_Form :: RT % PositionSpace )
     select type ( PS => RT % PositionSpace )
     class is ( Atlas_SC_Form )
-    call PS % Initialize ( Name, PROGRAM_HEADER % Communicator )
+    call PS % Initialize ( 'PositionSpace', PROGRAM_HEADER % Communicator )
 
     call PS % SetBoundaryConditionsFace &
            ( [ 'PERIODIC', 'PERIODIC' ], iDimension = 1 )
@@ -58,7 +56,7 @@ contains
     call PS % CreateChart &
            ( MinCoordinateOption = [ -0.25_KDR, -0.75_KDR ], &
              MaxCoordinateOption = [ +0.25_KDR, +0.75_KDR ], &
-             nCellsOption = [ 128, 384 ] )
+             nCellsOption = [ 64, 192 ] )
 
     !-- Geometry of PositionSpace
 
@@ -85,15 +83,14 @@ contains
     end do !-- iB
        
     call FA % Initialize ( PS, 'POLYTROPIC' )
-    end select !-- FA
 
     !-- Step
 
-    allocate ( Step_RK2_C_Form :: RT % Step )
+    allocate ( Step_RK2_C_ASC_Form :: RT % Step )
     select type ( S => RT % Step )
-    class is ( Step_RK2_C_Form )
-    call S % Initialize ( Name )
-    S % ApplySources => ApplySources
+    class is ( Step_RK2_C_ASC_Form )
+    call S % Initialize ( FA, Name )
+    S % ApplySources % Pointer => ApplySources
     end select !-- S
 
     !-- Problem definition
@@ -112,10 +109,11 @@ contains
     !-- Set fluid and initialize template
 
     call SetFluid ( RT )
-    call RT % InitializeTemplate_C ( Name, FinishTimeOption = 8.5_KDR )
+    call RT % InitializeTemplate_C_PS ( Name, FinishTimeOption = 8.5_KDR )
     
     !-- Cleanup
 
+    end select !-- FA
     end select !-- PS
 
   end subroutine Initialize
@@ -126,7 +124,7 @@ contains
     type ( RayleighTaylorForm ), intent ( inout ) :: &
       RT
 
-    call RT % FinalizeTemplate_C ( )
+    call RT % FinalizeTemplate_C_PS ( )
 
   end subroutine Finalize
 
@@ -216,20 +214,30 @@ contains
   end subroutine SetFluid
 
   
-  subroutine ApplySources ( S, Increment, Fluid, TimeStep )
+  subroutine ApplySources &
+               ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
 
-    class ( Step_RK_C_Template ), intent ( in ) :: &
+    class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
       S
-    type ( VariableGroupForm ), intent ( inout ) :: &
+    class ( Sources_C_Form ), intent ( inout ) :: &
+      Sources_F
+    type ( VariableGroupForm ), intent ( inout ), target :: &
       Increment
     class ( CurrentTemplate ), intent ( in ) :: &
       Fluid
     real ( KDR ), intent ( in ) :: &
       TimeStep
+    integer ( KDI ), intent ( in ) :: &
+      iStage
 
     integer ( KDI ) :: &
       iMomentum_2, &
       iEnergy   
+    type ( TimerForm ), pointer :: &
+      Timer
+
+    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerSources )
+    if ( associated ( Timer ) ) call Timer % Start ( )
 
     select type ( F => Fluid )
     class is ( Fluid_P_P_Form )
@@ -248,9 +256,21 @@ contains
     KVM  =  KVM  -  dT * N * A
     KVE  =  KVE  -  dT * N * A * VY
 
+    select type ( FS => Sources_F )
+    class is ( Sources_F_Form )
+      associate &
+        ( SVM => FS % Value ( :, FS % GRAVITATIONAL_S_D ( 2 ) ), &
+          SVE => FS % Value ( :, FS % GRAVITATIONAL_E ) )
+      SVM  =  SVM  -  S % B ( iStage ) * N * A 
+      SVE  =  SVE  -  S % B ( iStage ) * N * A * VY 
+      end associate !-- SVM, etc.
+    end select !-- FS
+
     end associate !-- KVM, etc.
     end select !-- F
-    
+
+    if ( associated ( Timer ) ) call Timer % Stop ( )
+
   end subroutine ApplySources
 
   

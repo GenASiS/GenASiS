@@ -1,5 +1,6 @@
 program FindParameter_Command_Test
 
+  use ISO_FORTRAN_ENV
   use VariableManagement
   use Display
   use MessagePassing
@@ -34,9 +35,12 @@ program FindParameter_Command_Test
   type ( CommunicatorForm ), allocatable :: &
     C
 
+  open ( OUTPUT_UNIT, encoding = 'UTF-8' )
+
   allocate ( C )
   call C % Initialize ( )
   call CONSOLE % Initialize ( C % Rank )
+  call CONSOLE % SetVerbosity ( 'INFO_4' )
 
   call UNIT % Initialize ( )
 

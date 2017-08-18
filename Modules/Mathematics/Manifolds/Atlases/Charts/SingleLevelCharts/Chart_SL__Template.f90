@@ -219,16 +219,15 @@ contains
            ( C, GIS, trim ( C % Name ) // '_Stream_' // trim ( Label ) )
 
     do iF = 1, C % nFields
-      if ( Verbose ) then
-        associate ( F => C % Field ( iF ) % Pointer % Field )
-        call S % AddField ( F )
-        end associate !-- F
-      else
-        associate ( FO => C % Field ( iF ) % Pointer % FieldOutput )
-        call S % AddField ( FO )
-        end associate !-- FO
-      end if
-    end do
+      select type ( FC => C % Field ( iF ) % Pointer )
+      class is ( Field_CSL_Template )
+        if ( Verbose ) then
+          call S % AddField ( FC % Field )
+        else
+          call S % AddField ( FC % FieldOutput )
+        end if
+      end select !-- FC
+    end do !-- iF
 
     end associate !-- S
 

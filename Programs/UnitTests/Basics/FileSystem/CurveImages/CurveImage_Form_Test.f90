@@ -1,5 +1,6 @@
 program CurveImage_Form_Test
 
+  use ISO_FORTRAN_ENV
   use VariableManagement
   use Display
   use MessagePassing
@@ -28,6 +29,10 @@ program CurveImage_Form_Test
     CI_Write, &
     CI_Read
   
+  open ( OUTPUT_UNIT, encoding = 'UTF-8' )
+
+  call UNIT % Initialize ( )
+
   allocate ( C )
   call C % Initialize ( )
   
@@ -42,12 +47,14 @@ program CurveImage_Form_Test
   VariableName ( 1 ) = 'VariableName'
   call VG % Initialize &
          ( [ 20, 1 ], VariableOption = VariableName, &
-           NameOption = 'VariableGroup' )
+           NameOption = 'VariableGroup', &
+           UnitOption = [ UNIT % METER ] )
   VG % Value ( :, 1 ) &
     = [ ( ( iC + 20 * C % Rank ) * 2.0_KDR, iC = 1, 20 ) ] 
     
   call Show ( NodeCoordinate, 'NodeCoordinate' )
   call Show ( VG % Value ( :, 1 ), 'Variable' )
+  call Show ( VG % Unit, 'Unit' )
 
   call GIS % Initialize ( Name, CommunicatorOption = C )
   

@@ -3,8 +3,8 @@
 
 FORTRAN_COMPILE      = mpif90 -c -fopenmp
 FORTRAN_BOUND_CHECK  = -fbounds-check
-FORTRAN_DEBUG        = -g -ffpe-trap=invalid,zero,overflow #-Wall
-FORTRAN_OPTIMIZE     = -O3
+FORTRAN_DEBUG        = -g -Og -ffpe-trap=invalid,zero,overflow #-Wall
+FORTRAN_OPTIMIZE     = -Ofast
 FORTRAN_PROFILE      = 
 
 LINK = mpif90 -fopenmp

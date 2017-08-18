@@ -1,0 +1,11 @@
+SplineInterpolation_Form.o: \
+  Basics.o \
+  SplineInterpolation_Form.f90
+
+Interpolations.o: \
+  SplineInterpolation_Form.o \
+  Interpolations.f90
+
+Interpolations.a: $(INTERPOLATIONS)
+	ar r Interpolations.a $(INTERPOLATIONS)
+

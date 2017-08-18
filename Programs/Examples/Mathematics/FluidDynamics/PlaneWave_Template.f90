@@ -8,7 +8,7 @@ module PlaneWave_Template
   implicit none
   private
 
-  type, public, extends ( Integrator_C_Template ), abstract :: &
+  type, public, extends ( Integrator_C_PS_Template ), abstract :: &
     PlaneWaveTemplate
       real ( KDR ) :: &
         Speed
@@ -73,7 +73,7 @@ contains
     allocate ( Atlas_SC_Form :: PW % PositionSpace )
     select type ( PS => PW % PositionSpace )
     class is ( Atlas_SC_Form )
-    call PS % Initialize ( Name, PROGRAM_HEADER % Communicator )
+    call PS % Initialize ( 'PositionSpace', PROGRAM_HEADER % Communicator )
     call PS % CreateChart ( )
 
     !-- Geometry of PositionSpace
@@ -93,10 +93,10 @@ contains
 
     !-- Step
 
-    allocate ( Step_RK2_C_Form :: PW % Step )
+    allocate ( Step_RK2_C_ASC_Form :: PW % Step )
     select type ( S => PW % Step )
-    class is ( Step_RK2_C_Form )
-    call S % Initialize ( Name )
+    class is ( Step_RK2_C_ASC_Form )
+    call S % Initialize ( FA, Name )
     end select !-- S
 
     !-- Diagnostics
@@ -104,9 +104,13 @@ contains
     allocate ( PW % Reference )
     allocate ( PW % Difference )
     call PW % Reference % Initialize &
-           ( PS, 'DUST', NameOutputOption = 'Reference' )
+           ( PS, 'DUST', NameShortOption = 'Reference', &
+             AllocateSourcesOption = .false., &
+             IgnorabilityOption = CONSOLE % INFO_2 )
     call PW % Difference % Initialize &
-           ( PS, 'DUST', NameOutputOption = 'Difference' )
+           ( PS, 'DUST', NameShortOption = 'Difference', &
+             AllocateSourcesOption = .false., &
+             IgnorabilityOption = CONSOLE % INFO_2 )
     PW % SetReference => SetReference
 
     !-- Initial conditions
@@ -144,7 +148,7 @@ contains
 
     !-- Initialize template
 
-    call PW % InitializeTemplate_C &
+    call PW % InitializeTemplate_C_PS &
            ( Name, FinishTimeOption = nPeriods * Period )
 
     !-- Cleanup
@@ -208,7 +212,7 @@ contains
     if ( allocated ( PW % Reference ) ) &
       deallocate ( PW % Reference )
 
-    call PW % FinalizeTemplate_C
+    call PW % FinalizeTemplate_C_PS
 
   end subroutine FinalizeTemplate_PW
 
@@ -252,7 +256,7 @@ contains
 
   subroutine SetReference ( PW )
 
-    class ( IntegratorTemplate ), intent ( in ) :: &
+    class ( IntegratorTemplate ), intent ( inout ) :: &
       PW
 
     class ( Fluid_D_Form ), pointer :: &

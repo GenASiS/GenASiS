@@ -436,25 +436,19 @@ contains
                         trim ( VG % Unit ( iVrbl ) % Label ), &
                         len_trim ( VG % Unit ( iVrbl ) % Label ) )
                   
-          call Show &
-                 ( trim ( VG % Variable ( iVrbl ) ), 'Variable', &
-                   CONSOLE % INFO_6 )
-          call Show &
-                 ( VG % lVariable ( iVrbl ), 'lVariable', CONSOLE % INFO_6 )
-          call Show &
-                 ( trim ( MeshDirectory ) // 'Mesh', 'MeshDirectory', &
-                   CONSOLE % INFO_6 )
-          call Show &
-                 ( len_trim ( MeshDirectory ) + 4, 'lDirectory', &
-                   CONSOLE % INFO_6 )
+          call Show ( trim ( VG % Variable ( iVrbl ) ), 'Variable', &
+                      CONSOLE % INFO_6 )
+          call Show ( VG % lVariable ( iVrbl ), 'lVariable', CONSOLE % INFO_6 )
+          call Show ( trim ( MeshDirectory ) // 'Mesh', 'MeshDirectory', &
+                      CONSOLE % INFO_6 )
+          call Show ( len_trim ( MeshDirectory ) + 4, 'lDirectory', &
+                      CONSOLE % INFO_6 )
           call Show ( nSiloOptions, 'nSiloOptions', CONSOLE % INFO_6 )
           if ( len_trim ( VG % Unit ( iVrbl ) % Label ) > 0 ) then
-            call Show &
-                   ( trim ( VG % Unit ( iVrbl ) % Label ), 'Unit', &
-                     CONSOLE % INFO_6 )
-            call Show &
-                   ( len_trim ( VG % Unit ( iVrbl ) % Label ), 'lUnit', &
-                     CONSOLE % INFO_6 )
+            call Show ( trim ( VG % Unit ( iVrbl ) % Label ), 'Unit', &
+                        CONSOLE % INFO_6 )
+            call Show ( len_trim ( VG % Unit ( iVrbl ) % Label ), 'lUnit', &
+                        CONSOLE % INFO_6 )
           end if
 
           Error = DBPUTUV1 &
@@ -471,25 +465,19 @@ contains
         
         else !-- UGI % nTotalCells == 0
       
-          call Show &
-                 ( trim ( VG % Variable ( iVrbl ) ), 'Variable', &
-                   CONSOLE % INFO_6 )
-          call Show &
-                 ( VG % lVariable ( iVrbl ), 'lVariable', CONSOLE % INFO_6 )
-          call Show &
-                 ( trim ( MeshDirectory ) // 'Mesh', 'MeshDirectory', &
-                   CONSOLE % INFO_6 )
-          call Show &
-                 ( len_trim ( MeshDirectory ) + 4, 'lDirectory', &
-                   CONSOLE % INFO_6 )
+          call Show ( trim ( VG % Variable ( iVrbl ) ), 'Variable', &
+                      CONSOLE % INFO_6 )
+          call Show ( VG % lVariable ( iVrbl ), 'lVariable', CONSOLE % INFO_6 )
+          call Show ( trim ( MeshDirectory ) // 'Mesh', 'MeshDirectory', &
+                      CONSOLE % INFO_6 )
+          call Show ( len_trim ( MeshDirectory ) + 4, 'lDirectory', &
+                      CONSOLE % INFO_6 )
           call Show ( nSiloOptions, 'nSiloOptions', CONSOLE % INFO_6 )
           if ( len_trim ( VG % Unit ( iVrbl ) % Label ) > 0 ) then
-            call Show &
-                   ( trim ( VG % Unit ( iVrbl ) % Label ), 'Unit', &
-                     CONSOLE % INFO_6 )
-            call Show &
-                   ( len_trim ( VG % Unit ( iVrbl ) % Label ), 'lUnit', &
-                     CONSOLE % INFO_6 )
+            call Show ( trim ( VG % Unit ( iVrbl ) % Label ), 'Unit', &
+                        CONSOLE % INFO_6 )
+            call Show ( len_trim ( VG % Unit ( iVrbl ) % Label ), 'lUnit', &
+                        CONSOLE % INFO_6 )
           end if
 
           Error = DBPUTUV1 &

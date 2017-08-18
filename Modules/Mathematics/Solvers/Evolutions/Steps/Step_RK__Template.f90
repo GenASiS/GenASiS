@@ -8,7 +8,6 @@ module Step_RK__Template
   !   tableau entries A, B, C
 
   use Basics
-  use Operations
 
   implicit none
   private
@@ -16,8 +15,12 @@ module Step_RK__Template
   type, public, abstract :: Step_RK_Template
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
-      iTimerComputeStep = 0, &
-      iTimerComputeIncrement = 0, &
+      iTimerStep = 0, &
+      iTimerTemplate = 0, &
+      iTimerInitializeIntermediate = 0, &
+      iTimerIncrementIntermediate = 0, &
+      iTimerStage = 0, &
+      iTimerIncrementSolution = 0, &
       nStages
     real ( KDR ), dimension ( : ), allocatable :: &
       C, & 
@@ -31,30 +34,62 @@ module Step_RK__Template
     procedure, public, pass :: &
       InitializeTemplate
     procedure, public, pass :: &
+      InitializeTimers
+    procedure, public, pass :: &
       ComputeTemplate
     procedure, public, pass :: &
       FinalizeTemplate
-    procedure ( CI ), private, pass, deferred :: &
-      ComputeIncrement
+    procedure ( II ), private, pass, deferred :: &
+      InitializeIntermediate
+    procedure ( II_A_iK ), private, pass, deferred :: &
+      IncrementIntermediate
+    procedure ( CS ), private, pass, deferred :: &
+      ComputeStage
+    procedure ( IS_B_iS ), private, pass, deferred :: &
+      IncrementSolution
   end type Step_RK_Template
 
   abstract interface
 
-    subroutine CI ( S, K, Y, Time, TimeStep, iStage )
+    subroutine II ( S )
+      import Step_RK_Template
+      class ( Step_RK_Template ), intent ( inout ) :: &
+        S
+    end subroutine II
+
+    subroutine II_A_iK ( S, A, iK )
       use Basics
       import Step_RK_Template
       class ( Step_RK_Template ), intent ( inout ) :: &
         S
-      type ( VariableGroupForm ), intent ( inout ) :: &
-        K
-      type ( VariableGroupForm ), intent ( in ) :: &
-        Y
+      real ( KDR ), intent ( in ) :: &
+        A
+      integer ( KDI ), intent ( in ) :: &
+        iK
+    end subroutine II_A_iK
+
+    subroutine CS ( S, Time, TimeStep, iStage )
+      use Basics
+      import Step_RK_Template
+      class ( Step_RK_Template ), intent ( inout ) :: &
+        S
       real ( KDR ), intent ( in ) :: &
         Time, &
         TimeStep
       integer ( KDI ), intent ( in ) :: &
         iStage
-    end subroutine CI
+    end subroutine CS
+
+    subroutine IS_B_iS ( S, B, iS )
+      use Basics
+      import Step_RK_Template
+      class ( Step_RK_Template ), intent ( inout ) :: &
+        S
+      real ( KDR ), intent ( in ) :: &
+        B
+      integer ( KDI ), intent ( in ) :: &
+        iS
+    end subroutine IS_B_iS
 
   end interface
 
@@ -77,16 +112,13 @@ contains
 
     integer ( KDI ) :: &
       iS  !-- iStage
-    character ( LDL ), dimension ( : ), allocatable :: &
-      TypeWord
 
-    S % IGNORABILITY = CONSOLE % INFO_3
+    S % IGNORABILITY = CONSOLE % INFO_1
 
     if ( S % Type == '' ) &
       S % Type = 'a Step_RK' 
 
-    call Split ( S % Type, ' ', TypeWord )
-    S % Name = trim ( TypeWord ( 2 ) ) // '_' // trim ( NameSuffix ) 
+    S % Name = 'Step_' // trim ( NameSuffix ) 
 
     call Show ( 'Initializing ' // trim ( S % Type ), S % IGNORABILITY )
     call Show ( S % Name, 'Name', S % IGNORABILITY )
@@ -108,20 +140,127 @@ contains
 
     end associate !-- nS
 
-    call PROGRAM_HEADER % AddTimer &
-           ( 'ComputeStep', S % iTimerComputeStep )
-    call PROGRAM_HEADER % AddTimer &
-           ( 'ComputeIncrement', S % iTimerComputeIncrement )
-
   end subroutine InitializeTemplate
 
 
-  subroutine ComputeTemplate ( S, Solution, Time, TimeStep )
+  subroutine InitializeTimers ( S, BaseLevel )
 
     class ( Step_RK_Template ), intent ( inout ) :: &
       S
-    type ( VariableGroupForm ), intent ( inout ) :: &
-      Solution
+    integer ( KDI ), intent ( in ) :: &
+      BaseLevel
+
+    if ( S % iTimerStep > 0  &
+         .or.  BaseLevel > PROGRAM_HEADER % TimerLevel ) &
+      return
+
+    call PROGRAM_HEADER % AddTimer &
+           ( 'Step', S % iTimerStep, &
+             Level = BaseLevel )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'ComputeTemplate', S % iTimerTemplate, &
+               Level = BaseLevel + 1 )
+        call PROGRAM_HEADER % AddTimer &
+               ( 'InitializeIntermediate', S % iTimerInitializeIntermediate, &
+                 Level = BaseLevel + 2 )
+        call PROGRAM_HEADER % AddTimer &
+               ( 'IncrementIntermediate', S % iTimerIncrementIntermediate, &
+                 Level = BaseLevel + 2 )
+        call PROGRAM_HEADER % AddTimer &
+               ( 'ComputeStage', S % iTimerStage, &
+                 Level = BaseLevel + 2 )
+        call PROGRAM_HEADER % AddTimer &
+               ( 'IncrementSolution', S % iTimerIncrementSolution, &
+                 Level = BaseLevel + 2 )
+
+  end subroutine InitializeTimers
+
+
+!   subroutine ComputeTemplate ( S, Solution, Time, TimeStep )
+
+!     class ( Step_RK_Template ), intent ( inout ) :: &
+!       S
+!     type ( VariableGroupForm ), dimension ( : ), intent ( inout ) :: &
+!       Solution
+!     real ( KDR ), intent ( in ) :: &
+!       Time, &
+!       TimeStep
+
+!     integer ( KDI ) :: &
+!       iS, &  !-- iStage
+!       iG, &  !-- iGroup
+!       iK     !-- iIncrement
+!     integer ( KDI ), dimension ( size ( Solution ) ) :: &
+!       nValues, &
+!       nEquations
+!     type ( VariableGroupForm ), dimension ( size ( Solution ) ) :: &
+!       Y  !-- Argument of right-hand side
+!     type ( VariableGroupForm ), &
+!       dimension ( size ( Solution ), S % nStages ) :: &
+!         K  !-- Increments
+
+!     associate ( nGroups => size ( Solution ) ) !-- nGroups
+
+!     do iG = 1, nGroups
+!       nEquations ( iG )  =  Solution ( iG ) % nVariables
+!       nValues    ( iG )  =  Solution ( iG ) % nValues
+!       call Y ( iG ) % Initialize ( [ nValues ( iG ), nEquations ( iG ) ] )
+!     end do !-- iG
+
+!     !-- Compute increments
+
+!     do iS = 1, S % nStages
+!       do iG = 1, nGroups
+
+!         call K ( iG, iS ) % Initialize &
+!                ( [ nValues ( iG ), nEquations ( iG ) ] )
+
+!         associate &
+!           ( YV => Y ( iG ) % Value, &
+!             SV => Solution ( iG ) % Value )
+
+!         YV = SV
+!         do iK = 1, iS - 1
+!           associate &
+!             ( KV => K ( iG, iK ) % Value, &
+!               A  => S % A ( iS ) % Value ( iK ) )
+
+! !         YV  =  YV  +  A * KV  
+!           call MultiplyAdd ( YV, KV, A )
+
+!           end associate !-- KV, etc.
+!         end do !-- iK
+
+!         call S % ComputeIncrement ( K, Y, Time, TimeStep, iS, iG ) 
+
+!         end associate !-- YV, etc.
+
+!       end do !-- iG
+!     end do !-- iS
+
+!     !-- Assemble increments
+
+!     do iS = 1, S % nStages
+!       do iG = 1, nGroups
+!         associate &
+!           ( SV => Solution ( iG ) % Value, &
+!             KV => K ( iG, iS ) % Value, &
+!             B  => S % B ( iS ) )
+! !       SV  =  SV  +  B * KV
+!         call MultiplyAdd ( SV, KV, B )
+!         end associate !-- SV, etc.
+!       end do !-- iG
+!     end do !-- iS
+
+!     end associate !-- nGroups
+
+!   end subroutine ComputeTemplate
+
+
+  subroutine ComputeTemplate ( S, Time, TimeStep )
+
+    class ( Step_RK_Template ), intent ( inout ) :: &
+      S
     real ( KDR ), intent ( in ) :: &
       Time, &
       TimeStep
@@ -129,56 +268,45 @@ contains
     integer ( KDI ) :: &
       iS, &  !-- iStage
       iK     !-- iIncrement
-    type ( VariableGroupForm ) :: &
-      Y  !-- Argument of right-hand side
-    type ( VariableGroupForm ), dimension ( S % nStages ) :: &
-      K  !-- Increments
+    type ( TimerForm ), pointer :: &
+      Timer
 
-    associate &
-      ( nE => Solution % nVariables, &  !-- nEquations
-        nV => Solution % nValues )
+    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerTemplate )
+    if ( associated ( Timer ) ) call Timer % Start ( )
 
-    call Y % Initialize ( [ nV, nE ] )
+    !-- On entry, Solution = Y_N (old value)
 
-    associate &
-      ( YV => Y % Value, &
-        SV => Solution % Value )
-
-    !-- Compute increments
-
+    !-- Compute stages
     do iS = 1, S % nStages
 
-      call K ( iS ) % Initialize ( [ nV, nE ] )
+      call Show ( 'Computing a stage', S % IGNORABILITY + 2 )
+      call Show ( iS, 'iStage', S % IGNORABILITY + 2 )
 
-      YV = SV
+      !-- Set Y  =  Solution
+      call S % InitializeIntermediate ( )
+
       do iK = 1, iS - 1
-        associate &
-          ( KV => K ( iK ) % Value, &
-            A  => S % A ( iS ) % Value ( iK ) )
+        associate ( A  =>  S % A ( iS ) % Value ( iK ) )
+        !-- Set Y  =  Y  +  A * K ( iK )
+        call S % IncrementIntermediate ( A, iK )
+        end associate !-- A
+      end do !-- iK
 
-!        YV  =  YV  +  A * KV  
-        call MultiplyAdd ( YV, KV, A )
-
-        end associate !-- KV, etc.
-      end do !-- iA
-
-      call S % ComputeIncrement ( K ( iS ), Y, Time, TimeStep, iS ) 
+      call S % ComputeStage ( Time, TimeStep, iS )
 
     end do !-- iS
 
-    !-- Assemble increments
-
+    !-- Assemble stages
     do iS = 1, S % nStages
-      associate &
-        ( KV => K ( iS ) % Value, &
-          B  => S % B ( iS ) )
-!      SV  =  SV  +  B * KV
-      call MultiplyAdd ( SV, KV, B )
-      end associate !-- KV
+      associate ( B  =>  S % B ( iS ) )
+      !-- Set Solution  =  Solution  +  B * K ( iS )
+      call S % IncrementSolution ( B, iS )
+      end associate !-- B
     end do !-- iS
 
-    end associate !-- YV, etc.
-    end associate !-- nE, etc.
+    !-- On exit, Solution  =  Y_(N+1) (new value)
+
+    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine ComputeTemplate
 

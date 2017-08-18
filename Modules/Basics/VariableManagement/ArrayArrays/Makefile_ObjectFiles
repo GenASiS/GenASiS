@@ -2,6 +2,7 @@ ARRAY_ARRAYS = \
   ArrayArrays.o \
   Character_1D__Form.o \
   Complex_3D__Form.o \
+  Real_3D_2D__Form.o \
   Real_3D__Form.o \
   Real_2D__Form.o \
   Real_1D__Form.o \

@@ -26,11 +26,19 @@ Atlas_SC__Form.o: \
   GeometryFlat_ASC__Form.o \
   Atlas_SC__Form.f90
 
+Storage_ASC__Form.o: \
+  Basics.o \
+  Charts.o \
+  Field_ASC__Template.o \
+  Atlas_SC__Form.o \
+  Storage_ASC__Form.f90
+
 Intercharts.o: \
   Field_ASC__Template.o \
   Atlas_SC__Template.o \
   GeometryFlat_ASC__Form.o \
   Atlas_SC__Form.o \
+  Storage_ASC__Form.o \
   Intercharts.f90
 
 Intercharts.a: $(INTERCHARTS)

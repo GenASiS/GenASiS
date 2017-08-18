@@ -1,12 +1,26 @@
+StorageDivergence_Form.o: \
+  Basics.o \
+  Operations.o \
+  StorageDivergence_Form.f90
+
 IncrementDivergence_FV__Form.o: \
   Basics.o \
   Manifolds.o \
   Operations.o \
   Fields.o \
+  StorageDivergence_Form.o \
   IncrementDivergence_FV__Form.f90
 
+IncrementDamping_Form.o: \
+  Basics.o \
+  Operations.o \
+  Fields.o \
+  IncrementDamping_Form.f90
+
 Increments.o: \
+  StorageDivergence_Form.o \
   IncrementDivergence_FV__Form.o \
+  IncrementDamping_Form.o \
   Increments.f90
 
 Increments.a: $(INCREMENTS)

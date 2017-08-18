@@ -2,7 +2,9 @@ module ProtoCurrent_CSL__Form
 
   use Basics
   use Manifolds
+  use CurrentSources_Form
   use ProtoCurrent_Form
+  use ProtoCurrentSources_CSL__Form
 
   implicit none
   private
@@ -10,11 +12,15 @@ module ProtoCurrent_CSL__Form
   type, public, extends ( Field_CSL_Template ) :: ProtoCurrent_CSL_Form
     type ( MeasuredValueForm ), dimension ( 3 ) :: &
       VelocityUnit    
+    class ( ProtoCurrentSources_CSL_Form ), pointer :: &
+      Sources_CSL => null ( )
   contains
     procedure, public, pass :: &
       Initialize
     procedure, public, pass :: &
       ProtoCurrent
+    procedure, public, pass :: &
+      SetSources
     final :: &
       Finalize
     procedure, private, pass :: &
@@ -24,22 +30,24 @@ module ProtoCurrent_CSL__Form
 contains
 
 
-  subroutine Initialize ( PCC, C, nValues, NameOutputOption )
+  subroutine Initialize ( PCC, C, NameShort, nValues, IgnorabilityOption )
 
     class ( ProtoCurrent_CSL_Form ), intent ( inout ) :: &
       PCC
     class ( ChartTemplate ), intent ( in ) :: &
       C
+    character ( * ), intent ( in ) :: &
+      NameShort
     integer ( KDI ), intent ( in ) :: &
       nValues
-    character ( * ), intent ( in ), optional :: &
-      NameOutputOption
+    integer ( KDL ), intent ( in ), optional :: &
+      IgnorabilityOption
 
     if ( PCC % Type == '' ) &
       PCC % Type = 'a ProtoCurrent_CSL'
 
     call PCC % InitializeTemplate_CSL &
-           ( C, nValues, NameOutputOption = NameOutputOption )
+           ( C, NameShort, nValues, IgnorabilityOption )
 
   end subroutine Initialize
 
@@ -63,22 +71,45 @@ contains
   end function ProtoCurrent
 
 
+  subroutine SetSources ( PCC, PCSC )
+
+    class ( ProtoCurrent_CSL_Form ), intent ( inout ) :: &
+      PCC
+    class ( ProtoCurrentSources_CSL_Form ), intent ( in ), target :: &
+      PCSC
+
+    class ( ProtoCurrentForm ), pointer :: &
+      PC
+
+    PCC % Sources_CSL => PCSC
+
+    PC => PCC % ProtoCurrent ( )
+    select type ( PCS => PCSC % Field )
+    class is ( CurrentSourcesForm )
+      call PC % SetSources ( PCS )
+    end select !-- FF
+
+    nullify ( PC )
+
+  end subroutine SetSources
+
+
   impure elemental subroutine Finalize ( PCC )
 
     type ( ProtoCurrent_CSL_Form ), intent ( inout ) :: &
       PCC
+
+    nullify ( PCC % Sources_CSL )
 
     call PCC % FinalizeTemplate ( )
 
   end subroutine Finalize
 
 
-  subroutine SetField ( FC, NameOption )
+  subroutine SetField ( FC )
 
     class ( ProtoCurrent_CSL_Form ), intent ( inout ) :: &
       FC
-    character ( * ), intent ( in ), optional :: &
-      NameOption
 
     allocate ( ProtoCurrentForm :: FC % Field )
     allocate ( FC % FieldOutput )
@@ -86,7 +117,8 @@ contains
     select type ( PC => FC % Field )
     class is ( ProtoCurrentForm )
       call PC % Initialize &
-             ( FC % VelocityUnit, FC % nValues, NameOption = NameOption )
+             ( FC % VelocityUnit, FC % nValues, NameOption = FC % NameShort )
+      call PC % SetPrimitiveConserved ( )
       call PC % SetOutput ( FC % FieldOutput )
     end select !-- F
 

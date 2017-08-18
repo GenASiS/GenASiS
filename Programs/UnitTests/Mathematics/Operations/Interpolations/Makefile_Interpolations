@@ -1,0 +1,24 @@
+PATH_GENASIS = ../../../../../..
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+all: SplineInterpolation_Form_Test
+
+SplineInterpolation_Form_Test: Basics.a SplineInterpolation_Form_Test.o
+	$(LINK) $(FLAGS) -o SplineInterpolation_Form_Test_$(MACHINE) \
+	  SplineInterpolation_Form_Test.o SplineInterpolation_Form.o \
+          Basics.a $(LIBRARIES)
+
+clean:
+	rm -f *.o *.a *.mod *.ld
+
+clobber: clean
+	rm -f SplineInterpolation_Form_Test_*
+
+include $(PATH_BASICS)/Makefile_Dependencies 
+include $(PATH_INTERPOLATIONS)/Makefile_Dependencies 
+
+SplineInterpolation_Form_Test.o: \
+  Basics.o \
+  SplineInterpolation_Form.o \
+  SplineInterpolation_Form_Test.f90

@@ -8,7 +8,7 @@ module RiemannProblem_Form
   implicit none
   private
   
-  type, public, extends ( Integrator_C_Template ) :: RiemannProblemForm
+  type, public, extends ( Integrator_C_PS_Template ) :: RiemannProblemForm
   contains
     procedure, public, pass :: &
       Initialize
@@ -50,15 +50,12 @@ contains
       Normal, &
       UnitNormal
 
-    if ( RP % Type == '' ) &
-      RP % Type = 'a RiemannProblem' 
-
     !-- PositionSpace
 
     allocate ( Atlas_SC_Form :: RP % PositionSpace )
     select type ( PS => RP % PositionSpace )
     class is ( Atlas_SC_Form )
-    call PS % Initialize ( Name, PROGRAM_HEADER % Communicator )
+    call PS % Initialize ( 'PositionSpace', PROGRAM_HEADER % Communicator )
 
     do iD = 1, PS % nDimensions
       call PS % SetBoundaryConditionsFace &
@@ -81,14 +78,13 @@ contains
     select type ( FA => RP % Current_ASC )
     class is ( Fluid_ASC_Form )
     call FA % Initialize ( PS, 'POLYTROPIC' )
-    end select !-- FA
 
     !-- Step
 
-    allocate ( Step_RK2_C_Form :: RP % Step )
+    allocate ( Step_RK2_C_ASC_Form :: RP % Step )
     select type ( S => RP % Step )
-    class is ( Step_RK2_C_Form )
-    call S % Initialize ( Name )
+    class is ( Step_RK2_C_ASC_Form )
+    call S % Initialize ( FA, Name )
     end select !-- S
 
     !-- Problem definition
@@ -182,10 +178,11 @@ contains
     !-- Set fluid and initialize Integrator template
 
     call SetFluid ( RP )
-    call RP % InitializeTemplate_C ( Name )
+    call RP % InitializeTemplate_C_PS ( Name )
     
     !-- Cleanup
 
+    end select !-- FA
     end select !-- PS
 
   end subroutine Initialize
@@ -196,7 +193,7 @@ contains
     type ( RiemannProblemForm ), intent ( inout ) :: &
       RP
 
-    call RP % FinalizeTemplate_C ( )
+    call RP % FinalizeTemplate_C_PS ( )
 
   end subroutine Finalize
 

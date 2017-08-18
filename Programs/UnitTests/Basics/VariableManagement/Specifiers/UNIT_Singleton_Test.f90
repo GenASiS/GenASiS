@@ -1,5 +1,6 @@
 program UNIT_Singleton_Test
 
+  use ISO_FORTRAN_ENV
   use MeasuredValue_Form
   use UNIT_Singleton
   
@@ -10,6 +11,8 @@ program UNIT_Singleton_Test
     LengthUnit, &
     EnergyLengthUnit, &
     EnergyDensityUnit
+
+  open ( OUTPUT_UNIT, encoding = 'UTF-8' )
 
   call UNIT % Initialize ( )
 
@@ -22,25 +25,11 @@ program UNIT_Singleton_Test
   print*, 'METER               ', UNIT % METER      
   print*, 'CENTIMETER          ', UNIT % CENTIMETER 
   print*, 'FEMTOMETER          ', UNIT % FEMTOMETER 
-  print*, 'KILOMETER           ', UNIT % KILOMETER  
+  print*, 'KILOMETER           ', UNIT % KILOMETER
+  print*, 'ASTRONOMICAL_UNIT   ', UNIT % ASTRONOMICAL_UNIT  
   print*, 'PARSEC              ', UNIT % PARSEC     
   print*, 'GIGAPARSEC          ', UNIT % GIGAPARSEC
   print*, 'ANGSTROM            ', UNIT % ANGSTROM
-
-  print*
-  print*, 'Angle Units' 
-  print*, 'RADIAN              ', UNIT % RADIAN     
-
-  print*
-  print*, 'Time Units' 
-  print*, 'SECOND              ', UNIT % SECOND     
-  print*, 'MILLISECOND         ', UNIT % MILLISECOND
-  print*, 'FEMTOSECOND         ', UNIT % FEMTOSECOND
-
-  print*
-  print*, 'Frequency Units'
-  print*, 'HERTZ               ', UNIT % HERTZ      
-  print*, 'KILOHERTZ           ', UNIT % KILOHERTZ
 
   print*
   print*, 'Mass Units'  
@@ -50,16 +39,36 @@ program UNIT_Singleton_Test
   print*, 'SOLAR_MASS          ', UNIT % SOLAR_MASS
 
   print*
-  print*, 'Speed Units'
-  print*, 'SPEED_OF_LIGHT      ', UNIT % SPEED_OF_LIGHT
+  print*, 'Time Units' 
+  print*, 'SECOND              ', UNIT % SECOND     
+  print*, 'MILLISECOND         ', UNIT % MILLISECOND
+  print*, 'FEMTOSECOND         ', UNIT % FEMTOSECOND
 
   print*
-  print*, 'Energy Units'
-  print*, 'JOULE               ', UNIT % JOULE
-  print*, 'ERG                 ', UNIT % ERG
-  print*, 'BETHE               ', UNIT % BETHE
-  print*, 'ELECTRON_VOLT       ', UNIT % ELECTRON_VOLT
-  print*, 'MEV                 ', UNIT % MEV
+  print*, 'Magnetic Current Units'
+  print*, 'AMPERE              ', UNIT % AMPERE
+
+  print*
+  print*, 'Temperature Units'
+  print*, 'KELVIN              ', UNIT % KELVIN
+
+  print*
+  print*, 'Amount of Substance Units'
+  print*, 'MOLE                ', UNIT % MOLE
+  print*, 'SOLAR_BARYON_NUMBER ', UNIT % SOLAR_BARYON_NUMBER
+
+  print*
+  print*, 'Angle Units' 
+  print*, 'RADIAN              ', UNIT % RADIAN     
+
+  print*
+  print*, 'Frequency Units'
+  print*, 'HERTZ               ', UNIT % HERTZ      
+  print*, 'KILOHERTZ           ', UNIT % KILOHERTZ
+
+  print*
+  print*, 'Speed Units'
+  print*, 'SPEED_OF_LIGHT      ', UNIT % SPEED_OF_LIGHT
 
   print*
   print*, 'Force Units'
@@ -72,35 +81,49 @@ program UNIT_Singleton_Test
   print*, 'BARYE               ', UNIT % BARYE
 
   print*
-  print*, 'Temperature Units'
-  print*, 'KELVIN              ', UNIT % KELVIN
-
-  print*, 'Magnetic Current Units'
-  print*, 'AMPERE              ', UNIT % AMPERE
-
-  print*
   print*, 'Magnetic Field Units'
   print*, 'TESLA               ', UNIT % TESLA
   print*, 'GAUSS               ', UNIT % GAUSS
 
   print*
-  print*, 'Mass Density'
-  print*, 'MASS_DENSITY_CGS    ', UNIT % MASS_DENSITY_CGS
+  print*, 'Electric Potential Units'
+  print*, 'VOLT                ', UNIT % VOLT
+
+  print*
+  print*, 'Energy Units'
+  print*, 'JOULE               ', UNIT % JOULE
+  print*, 'ERG                 ', UNIT % ERG
+  print*, 'ELECTRON_VOLT       ', UNIT % ELECTRON_VOLT
+  print*, 'MEGA_ELECTRON_VOLT  ', UNIT % MEGA_ELECTRON_VOLT
+  print*, 'BETHE               ', UNIT % BETHE
+
+  print*
+  print*, 'Entropy per baryon Units'
+  print*, 'BOLTZMANN           ', UNIT % BOLTZMANN
 
   print*
   print*, 'Energy/length conversion'
   print*, 'HBAR_C              ', UNIT % HBAR_C
 
   print*
-  print*, 'Test'
-  EnergyUnit = UNIT % MEV
-  print*, 'EnergyUnit          ', EnergyUnit
-  LengthUnit = UNIT % HBAR_C / UNIT % MEV
-  print*, 'LengthUnit          ', LengthUnit
-  EnergyLengthUnit = EnergyUnit * LengthUnit
-  print*, 'EnergyLengthUnit ', EnergyLengthUnit
-  EnergyDensityUnit = EnergyUnit / ( LengthUnit ** 3 ) 
-  print*, 'EnergyDensityUnit   ', EnergyDensityUnit
+  print*, 'Number Density Units'
+  print*, 'NUMBER_DENSITY_ANGSTROM  ', UNIT % NUMBER_DENSITY_ANGSTROM
+  print*, 'NUMBER_DENSITY_MEV_HBAR_C', UNIT % NUMBER_DENSITY_MEV_HBAR_C
+
+  print*
+  print*, 'Mass Density'
+  print*, 'MASS_DENSITY_CGS    ', UNIT % MASS_DENSITY_CGS
+
+  ! print*
+  ! print*, 'Test'
+  ! EnergyUnit = UNIT % MEV
+  ! print*, 'EnergyUnit          ', EnergyUnit
+  ! LengthUnit = UNIT % HBAR_C / UNIT % MEV
+  ! print*, 'LengthUnit          ', LengthUnit
+  ! EnergyLengthUnit = EnergyUnit * LengthUnit
+  ! print*, 'EnergyLengthUnit ', EnergyLengthUnit
+  ! EnergyDensityUnit = EnergyUnit / ( LengthUnit ** 3 ) 
+  ! print*, 'EnergyDensityUnit   ', EnergyDensityUnit
   
 
 end program UNIT_Singleton_Test

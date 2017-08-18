@@ -66,8 +66,6 @@ contains
     type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
       SeriesUnit
     character ( LDL ), dimension ( : ), allocatable :: &
-      TypeWord
-    character ( LDL ), dimension ( : ), allocatable :: &
       SeriesName
 
     TS % IGNORABILITY = CONSOLE % INFO_2
@@ -75,8 +73,7 @@ contains
     if ( TS % Type == '' ) &
       TS % Type = 'a TimeSeries' 
 
-    call Split ( TS % Type, ' ', TypeWord )
-    TS % Name = trim ( TypeWord ( 2 ) ) // '_' // trim ( I % Name ) 
+    TS % Name = 'TimeSeries_' // trim ( I % Name ) 
 
     call Show ( 'Initializing ' // trim ( TS % Type ), TS % IGNORABILITY )
     call Show ( TS % Name, 'Name', TS % IGNORABILITY )
@@ -241,7 +238,8 @@ contains
     SBV ( iV, TS % CYCLE ) = I % iCycle
 
     call GetMemoryUsage &
-           ( Memory_HWM, Memory_RSS, PROGRAM_HEADER % Communicator, &
+           ( Memory_HWM, Memory_RSS, TS % IGNORABILITY, &
+             PROGRAM_HEADER % Communicator, &
              Max_HWM_Option  = Memory_Max_HWM, &
              Min_HWM_Option  = Memory_Min_HWM, &
              Mean_HWM_Option = Memory_Mean_HWM, &
@@ -288,6 +286,7 @@ contains
         CI => TS % CurveImage )
 
     call GIS % Open ( GIS % ACCESS_CREATE, SeriesOption = .false. )
+    call CI % ClearGrid ( )
     call CI % SetGrid  &
            ( Directory = 'TimeSeries', &
              NodeCoordinate = SB % Value ( 1 : TS % iTime, TS % TIME ), &

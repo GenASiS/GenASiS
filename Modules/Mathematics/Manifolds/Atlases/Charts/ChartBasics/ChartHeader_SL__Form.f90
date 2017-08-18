@@ -7,6 +7,7 @@ module ChartHeader_SL__Form
   use Basics
   use AtlasBasics
   use Chart_Template
+  use FieldChart_Template
   use Field_CSL__Template
 
   implicit none
@@ -27,7 +28,7 @@ module ChartHeader_SL__Form
       nGhostLayers => null ( )
     logical ( KDL ), dimension ( : ), pointer :: &
       IsProperCell => null ( )
-    type ( Field_CSL_Pointer ), dimension ( : ), allocatable :: &
+    type ( FieldChartPointer ), dimension ( : ), allocatable :: &
       Field
   contains
     procedure, private, pass :: &
@@ -201,6 +202,11 @@ contains
     C % nFields = C % nFields + 1
     C % Field ( C % nFields ) % Pointer => FC
 
+    call Show ( 'Adding a field', C % IGNORABILITY + 2 )
+    call Show ( C % Name, 'Chart', C % IGNORABILITY + 2 )
+    call Show ( FC % Name, 'Field', C % IGNORABILITY + 2 )
+    call Show ( C % nFields, 'nFields', C % IGNORABILITY + 2 )
+
   end subroutine AddField
 
 
@@ -292,17 +298,14 @@ contains
     C % nCells ( : nD ) = 32
     if ( present ( nCellsOption ) ) &
       C % nCells ( : nD ) = nCellsOption ( : nD )
-    call PROGRAM_HEADER % GetParameter &
-           ( C % nCells ( : nD ), 'nCells', &
-             ParameterStreamOption = C % ParameterStream )
+    call PROGRAM_HEADER % GetParameter ( C % nCells ( : nD ), 'nCells' )
 
     C % nGhostLayers = 0
     C % nGhostLayers ( : nD ) = 2
     if ( present ( nGhostLayersOption ) ) &
       C % nGhostLayers ( : nD ) = nGhostLayersOption ( : nD )
     call PROGRAM_HEADER % GetParameter &
-           ( C % nGhostLayers ( : nD ), 'nGhostLayers', &
-             ParameterStreamOption = C % ParameterStream )
+           ( C % nGhostLayers ( : nD ), 'nGhostLayers' )
 
     end associate !-- nD
 

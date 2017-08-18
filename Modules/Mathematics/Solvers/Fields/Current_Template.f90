@@ -5,6 +5,7 @@ module Current_Template
 
   use Basics
   use Manifolds
+  use Sources_C__Form
 
   implicit none
   private
@@ -29,45 +30,111 @@ module Current_Template
     integer ( KDI ), dimension ( 3 ) :: &
       FAST_EIGENSPEED_PLUS  = 0, &
       FAST_EIGENSPEED_MINUS = 0
+    integer ( KDI ) :: &  !-- Indices in SolverSpeed storage
+      ALPHA_PLUS      = 1, &
+      ALPHA_MINUS     = 2, &
+      ALPHA_CENTER    = 3, &
+      N_SOLVER_SPEEDS = 3
     integer ( KDI ), dimension ( : ), allocatable :: &
       iaPrimitive, &
       iaConserved
+    real ( KDR ) :: &
+      LimiterParameter
+    logical ( KDL ) :: &
+      UseLimiter
     character ( LDL ) :: &
-      Type = ''
+      Type = '', &
+      RiemannSolverType = ''
+    class ( Sources_C_Form ), pointer :: &
+      Sources => null ( )
   contains
     procedure, public, pass :: &
       InitializeTemplate
+    procedure ( SPC ), public, pass, deferred :: &
+      SetPrimitiveConserved
+    procedure, public, pass :: &
+      ShowPrimitiveConserved
+    procedure, public, pass :: &
+      SetSources
     procedure, private, pass :: &
       ComputeFromPrimitiveSelf
     procedure, private, pass ( C ) :: &
       ComputeFromPrimitiveOther
+    procedure, private, pass :: &
+      ComputeFromPrimitiveSelectGeometry
     generic, public :: &
       ComputeFromPrimitive &
-        => ComputeFromPrimitiveSelf, ComputeFromPrimitiveOther
+        => ComputeFromPrimitiveSelf, ComputeFromPrimitiveOther, &
+           ComputeFromPrimitiveSelectGeometry
     procedure, private, pass :: &
       ComputeFromConservedSelf
     procedure, private, pass ( C ) :: &
       ComputeFromConservedOther
+    procedure, private, pass :: &
+      ComputeFromConservedSelectGeometry
     generic, public :: &
       ComputeFromConserved &
-        => ComputeFromConservedSelf, ComputeFromConservedOther
-    procedure ( CRF ), public, pass ( C ), deferred :: &
-      ComputeRawFluxes
+        => ComputeFromConservedSelf, ComputeFromConservedOther, &
+           ComputeFromConservedSelectGeometry
     procedure, public, pass ( C ) :: &
-      ComputeRiemannSolverInput
-    procedure, public, pass ( C ) :: &
-      ComputeDiffusionFactor
+      ComputeFluxes
     procedure, public, pass :: &
       FinalizeTemplate
     procedure ( CFPC ), public, pass ( C ), deferred :: &
       ComputeFromPrimitiveCommon
     procedure ( CFCC ), public, pass ( C ), deferred :: &
       ComputeFromConservedCommon
+    procedure, public, pass ( C ) :: &
+      ComputeFluxes_HLL
+    procedure ( CRF ), public, pass ( C ), deferred :: &
+      ComputeRawFluxes
+    procedure, public, pass ( C ) :: &
+      ComputeDiffusionFactor_HLL
     procedure, public, nopass :: &
       SetDiffusionFactorUnity
   end type CurrentTemplate
 
   abstract interface
+
+    subroutine SPC ( C )
+      import CurrentTemplate
+      class ( CurrentTemplate ), intent ( inout ) :: &
+        C
+    end subroutine SPC
+
+    subroutine CFPC ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
+      use Basics
+      use Manifolds
+      import CurrentTemplate
+      real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
+        Value_C
+      class ( CurrentTemplate ), intent ( in ) :: &
+        C
+      class ( GeometryFlatForm ), intent ( in ) :: &
+        G
+      real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+        Value_G
+      integer ( KDI ), intent ( in ), optional :: &
+        nValuesOption, &
+        oValueOption
+    end subroutine CFPC
+
+    subroutine CFCC ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
+      use Basics
+      use Manifolds
+      import CurrentTemplate
+      real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
+        Value_C
+      class ( CurrentTemplate ), intent ( in ) :: &
+        C
+      class ( GeometryFlatForm ), intent ( in ) :: &
+        G
+      real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+        Value_G
+      integer ( KDI ), intent ( in ), optional :: &
+        nValuesOption, &
+        oValueOption
+    end subroutine CFCC
 
     subroutine CRF ( RawFlux, C, G, Value_C, Value_G, iDimension, &
                      nValuesOption, oValueOption )
@@ -90,56 +157,37 @@ module Current_Template
         oValueOption
     end subroutine CRF
     
-    subroutine CFPC ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
-      use Basics
-      use Manifolds
-      import CurrentTemplate
-      real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
-        Value_C
-      class ( CurrentTemplate ), intent ( in ) :: &
-        C
-      class ( GeometryFlatForm ), intent ( in ) :: &
-        G
-      real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-        Value_G
-      integer ( KDI ), intent ( in ), optional :: &
-        nValuesOption, &
-        oValueOption
-    end subroutine CFPC
-
-    subroutine CFCC ( C, G, Value, nValuesOption, oValueOption )
-      use Basics
-      use Manifolds
-      import CurrentTemplate
-      class ( CurrentTemplate ), intent ( in ) :: &
-        C
-      class ( GeometryFlatForm ), intent ( in ) :: &
-        G
-      real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
-        Value
-      integer ( KDI ), intent ( in ), optional :: &
-        nValuesOption, &
-        oValueOption
-    end subroutine CFCC
-
   end interface
+
+  type, public :: CurrentPointerForm
+    class ( CurrentTemplate ), pointer :: &
+      Pointer => null ( )
+  end type CurrentPointerForm
 
     private :: &
       InitializeBasics, &
       SetUnits, &
-      ComputeRiemannSolverInputKernel
+      ComputeSolverSpeeds_HLL_Kernel, &
+      ComputeFluxes_HLL_Kernel
 
 contains
 
 
   subroutine InitializeTemplate &
-               ( C, VelocityUnit, nValues, VariableOption, VectorOption, &
+               ( C, RiemannSolverType, UseLimiter, VelocityUnit, &
+                 LimiterParameter, nValues, VariableOption, VectorOption, &
                  NameOption, ClearOption, UnitOption, VectorIndicesOption )
 
     class ( CurrentTemplate ), intent ( inout ) :: &
       C
+    character ( * ), intent ( in ) :: &
+      RiemannSolverType
+    logical ( KDL ), intent ( in ) :: &
+      UseLimiter
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
       VelocityUnit
+    real ( KDR ), intent ( in ) :: &
+      LimiterParameter
     integer ( KDI ), intent ( in ) :: &
       nValues
     character ( * ), dimension ( : ), intent ( in ), optional :: &
@@ -175,7 +223,8 @@ contains
     call SetUnits ( VariableUnit, C, VelocityUnit )
 
     Clear = .true.
-    if ( present ( ClearOption ) ) Clear = ClearOption
+    if ( present ( ClearOption ) ) &
+      Clear = ClearOption
 
     call C % VariableGroupForm % Initialize &
            ( [ nValues, C % N_FIELDS ], &
@@ -184,7 +233,58 @@ contains
              UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndices )
 
+    C % RiemannSolverType = RiemannSolverType
+    C % UseLimiter        = UseLimiter
+    C % LimiterParameter  = LimiterParameter
+    call Show ( C % RiemannSolverType, 'RiemannSolverType', C % IGNORABILITY )
+    call Show ( C % UseLimiter, 'UseLimiter', C % IGNORABILITY )
+    if ( C % UseLimiter ) &
+      call Show ( C % LimiterParameter, 'LimiterParameter', C % IGNORABILITY )
+
   end subroutine InitializeTemplate
+
+
+  subroutine ShowPrimitiveConserved ( C, IgnorabilityOption )
+
+    class ( CurrentTemplate ), intent ( in ) :: &
+      C
+    integer ( KDI ), intent ( in ), optional :: &
+      IgnorabilityOption
+
+    integer ( KDI ) :: &
+      iF, &  !-- iField
+      Ignorability
+    character ( LDL ), dimension ( C % N_PRIMITIVE ) :: &
+      PrimitiveName
+    character ( LDL ), dimension ( C % N_CONSERVED ) :: &
+      ConservedName
+
+    Ignorability = C % IGNORABILITY
+    if ( present ( IgnorabilityOption ) ) &
+      Ignorability = IgnorabilityOption
+
+    do iF = 1, C % N_PRIMITIVE
+      PrimitiveName ( iF )  =  C % Variable ( C % iaPrimitive ( iF ) )
+    end do
+    do iF = 1, C % N_CONSERVED
+      ConservedName ( iF )  =  C % Variable ( C % iaConserved ( iF ) )
+    end do
+    call Show ( PrimitiveName, 'Primitive variables', Ignorability )
+    call Show ( ConservedName, 'Conserved variables', Ignorability )
+    
+  end subroutine ShowPrimitiveConserved
+
+
+  subroutine SetSources ( C, Sources )
+
+    class ( CurrentTemplate ), intent ( inout ) :: &
+      C
+    class ( Sources_C_Form ), intent ( in ), target :: &
+      Sources
+
+    C % Sources => Sources
+
+  end subroutine SetSources
 
 
   subroutine ComputeFromPrimitiveSelf ( C, G, nValuesOption, oValueOption )
@@ -224,6 +324,36 @@ contains
   end subroutine ComputeFromPrimitiveOther
 
 
+  subroutine ComputeFromPrimitiveSelectGeometry &
+               ( C, iGeometryValue, G, nValuesOption, oValueOption )
+
+    !-- Violating argument position for iGeometryValue to distinguish
+    !   overloaded interface
+
+    class ( CurrentTemplate ), intent ( inout ) :: &
+      C
+    integer ( KDI ), intent ( in ) :: &
+      iGeometryValue
+    class ( GeometryFlatForm ), intent ( in ) :: &
+      G
+    integer ( KDI ), intent ( in ), optional :: &
+      nValuesOption, &
+      oValueOption
+
+    associate &
+      ( nV => C % nValues, &
+        iV => iGeometryValue, &
+        iD => 1 )
+
+    call C % ComputeFromPrimitiveCommon &
+           ( C % Value, G, spread ( G % Value ( iV, : ), iD, nV ), &
+             nValuesOption, oValueOption )
+    
+    end associate !-- nV, etc.
+
+  end subroutine ComputeFromPrimitiveSelectGeometry
+
+
   subroutine ComputeFromConservedSelf ( C, G, nValuesOption, oValueOption )
 
     class ( CurrentTemplate ), intent ( inout ) :: &
@@ -235,13 +365,13 @@ contains
       oValueOption
 
     call C % ComputeFromConservedCommon &
-           ( G, C % Value, nValuesOption, oValueOption )
+           ( C % Value, G, G % Value, nValuesOption, oValueOption )
     
   end subroutine ComputeFromConservedSelf
 
 
   subroutine ComputeFromConservedOther &
-               ( Value_C, C, G, nValuesOption, oValueOption )
+               ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
 
     real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
       Value_C
@@ -249,69 +379,84 @@ contains
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
+    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+      Value_G
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
 
     call C % ComputeFromConservedCommon &
-           ( G, Value_C, nValuesOption, oValueOption )
+           ( Value_C, G, Value_G, nValuesOption, oValueOption )
     
   end subroutine ComputeFromConservedOther
 
 
-  subroutine ComputeRiemannSolverInput &
-               ( Increment, DiffusionFactor_I, AlphaPlus_I, AlphaMinus_I, &
-                 C, Grid, C_IL, C_IR, iDimension )
+  subroutine ComputeFromConservedSelectGeometry &
+               ( C, iGeometryValue, G, nValuesOption, oValueOption )
+
+    !-- Violating argument position for iGeometryValue to distinguish
+    !   overloaded interface
+
+    class ( CurrentTemplate ), intent ( inout ) :: &
+      C
+    integer ( KDI ), intent ( in ) :: &
+      iGeometryValue
+    class ( GeometryFlatForm ), intent ( in ) :: &
+      G
+    integer ( KDI ), intent ( in ), optional :: &
+      nValuesOption, &
+      oValueOption
+
+    associate &
+      ( nV => C % nValues, &
+        iV => iGeometryValue, &
+        iD => 1 )
+
+    call C % ComputeFromConservedCommon &
+           ( C % Value, G, spread ( G % Value ( iV, : ), iD, nV ), &
+             nValuesOption, oValueOption )
     
+    end associate !-- nV, etc.
+
+  end subroutine ComputeFromConservedSelectGeometry
+
+
+  subroutine ComputeFluxes &
+               ( Increment, F_I, F_IL, F_IR, SS_I, DF_I, C, Grid, G, &
+                 C_IL, C_IR, G_I, iDimension )
+
     class ( * ), intent ( inout ) :: &
       Increment
     type ( VariableGroupForm ), intent ( inout ) :: &
-      DiffusionFactor_I
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      AlphaPlus_I, &
-      AlphaMinus_I
-    class ( CurrentTemplate ), intent ( in ) :: &
-      C
-    class ( * ), intent ( in ) :: &
-      Grid
-    type ( VariableGroupForm ), intent ( in ) :: &
-      C_IL, &
-      C_IR
-    integer ( KDI ), intent ( in ) :: &
-      iDimension
-    
-    call ComputeRiemannSolverInputKernel &
-           ( AlphaPlus_I, AlphaMinus_I, &
-             C_IL % Value ( :, C % FAST_EIGENSPEED_PLUS ( iDimension ) ), &
-             C_IR % Value ( :, C % FAST_EIGENSPEED_PLUS ( iDimension ) ), &
-             C_IL % Value ( :, C % FAST_EIGENSPEED_MINUS ( iDimension ) ), &
-             C_IR % Value ( :, C % FAST_EIGENSPEED_MINUS ( iDimension ) ) )
-
-    call C % ComputeDiffusionFactor ( DiffusionFactor_I, Grid, iDimension )
-
-  end subroutine ComputeRiemannSolverInput
-
-
-  subroutine ComputeDiffusionFactor ( DF_I, Grid, C, iDimension )
-
-    type ( VariableGroupForm ), intent ( inout ) :: &
+      F_I, &
+      F_IL, F_IR, &
+      SS_I, &
       DF_I
+    class ( CurrentTemplate ), intent ( inout ) :: &
+      C
     class ( * ), intent ( in ), target :: &
       Grid
-    class ( CurrentTemplate ), intent ( in ) :: &
-      C
+    class ( GeometryFlatForm ), intent ( in ) :: &
+      G
+    type ( VariableGroupForm ), intent ( in ) :: &
+      C_IL, C_IR, &
+      G_I
     integer ( KDI ), intent ( in ) :: &
       iDimension
 
-    call C % SetDiffusionFactorUnity ( DF_I % Value )
+    call C % ComputeFluxes_HLL &
+           ( Increment, F_I, F_IL, F_IR, SS_I, DF_I, Grid, G, C_IL, C_IR, &
+             G_I, iDimension )
 
-  end subroutine ComputeDiffusionFactor
+  end subroutine ComputeFluxes
 
 
   impure elemental subroutine FinalizeTemplate ( C )
 
     class ( CurrentTemplate ), intent ( inout ) :: &
       C
+
+    nullify ( C % Sources )
 
     if ( allocated ( C % iaConserved ) ) &
       deallocate ( C % iaConserved )
@@ -322,6 +467,80 @@ contains
     call Show ( C % Name, 'Name', C % IGNORABILITY )
    
   end subroutine FinalizeTemplate
+
+
+  subroutine ComputeFluxes_HLL &
+               ( Increment, F_I, F_IL, F_IR, SS_I, DF_I, C, Grid, G, &
+                 C_IL, C_IR, G_I, iDimension )
+
+    class ( * ), intent ( inout ) :: &
+      Increment
+    type ( VariableGroupForm ), intent ( inout ) :: &
+      F_I, &
+      F_IL, F_IR, &
+      SS_I, &
+      DF_I
+    class ( CurrentTemplate ), intent ( inout ) :: &
+      C
+    class ( * ), intent ( in ), target :: &
+      Grid
+    class ( GeometryFlatForm ), intent ( in ) :: &
+      G
+    type ( VariableGroupForm ), intent ( in ) :: &
+      C_IL, C_IR, &
+      G_I
+    integer ( KDI ), intent ( in ) :: &
+      iDimension
+
+    integer ( KDI ) :: &
+      iF  !-- iField
+
+    call C % ComputeRawFluxes &
+           ( F_IL % Value, G, C_IL % Value, G_I % Value, iDimension )
+    call C % ComputeRawFluxes &
+           ( F_IR % Value, G, C_IR % Value, G_I % Value, iDimension )
+
+    call ComputeSolverSpeeds_HLL_Kernel &
+           ( SS_I % Value ( :, C % ALPHA_PLUS ), &
+             SS_I % Value ( :, C % ALPHA_MINUS ), &
+             C_IL % Value ( :, C % FAST_EIGENSPEED_PLUS ( iDimension ) ), &
+             C_IR % Value ( :, C % FAST_EIGENSPEED_PLUS ( iDimension ) ), &
+             C_IL % Value ( :, C % FAST_EIGENSPEED_MINUS ( iDimension ) ), &
+             C_IR % Value ( :, C % FAST_EIGENSPEED_MINUS ( iDimension ) ) )
+
+    call C % ComputeDiffusionFactor_HLL ( DF_I, Grid, iDimension )
+
+    associate ( iaC => C % iaConserved )    
+    do iF = 1, C % N_CONSERVED
+      call ComputeFluxes_HLL_Kernel &
+             ( F_IL % Value ( :, iF ), &
+               F_IR % Value ( :, iF ), &
+               C_IL % Value ( :, iaC ( iF ) ), &
+               C_IR % Value ( :, iaC ( iF ) ), &
+               SS_I % Value ( :, C % ALPHA_PLUS ), &
+               SS_I % Value ( :, C % ALPHA_MINUS ), &
+               DF_I % Value ( :, iF ), &
+               F_I % Value ( :, iF ) )
+    end do !-- iF
+    end associate !-- iaC
+
+  end subroutine ComputeFluxes_HLL
+
+
+  subroutine ComputeDiffusionFactor_HLL ( DF_I, Grid, C, iDimension )
+
+    type ( VariableGroupForm ), intent ( inout ) :: &
+      DF_I
+    class ( * ), intent ( in ), target :: &
+      Grid
+    class ( CurrentTemplate ), intent ( inout ) :: &
+      C
+    integer ( KDI ), intent ( in ) :: &
+      iDimension
+
+    call C % SetDiffusionFactorUnity ( DF_I % Value )
+
+  end subroutine ComputeDiffusionFactor_HLL
 
 
   subroutine SetDiffusionFactorUnity ( DFV_I )
@@ -348,8 +567,8 @@ contains
 
   subroutine InitializeBasics &
                ( C, Variable, Vector, Name, VariableUnit, VectorIndices, &
-                 VariableOption, VectorOption, NameOption, VariableUnitOption, &
-                 VectorIndicesOption )
+                 VariableOption, VectorOption, NameOption, &
+                 VariableUnitOption, VectorIndicesOption )
 
     class ( CurrentTemplate ), intent ( inout ) :: &
       C
@@ -379,11 +598,7 @@ contains
       VectorIndicesOption
 
     integer ( KDI ) :: &
-      iV, &  !-- iVector
-      iF  !-- iField
-    character ( LDF ), dimension ( : ), allocatable :: &
-      PrimitiveName, &
-      ConservedName
+      iV  !-- iVector
 
     if ( C % Type == '' ) &
       C % Type = 'a Current'
@@ -434,7 +649,8 @@ contains
     
     !-- vectors
 
-    if ( C % N_VECTORS == 0 ) C % N_VECTORS = C % N_VECTORS_TEMPLATE
+    if ( C % N_VECTORS == 0 ) &
+      C % N_VECTORS = C % N_VECTORS_TEMPLATE
 
     if ( present ( VectorOption ) ) then
       allocate ( Vector ( size ( VectorOption ) ) )
@@ -462,20 +678,6 @@ contains
     call VectorIndices ( 1 ) % Initialize ( C % FAST_EIGENSPEED_PLUS )
     call VectorIndices ( 2 ) % Initialize ( C % FAST_EIGENSPEED_MINUS )
 
-    !-- show primitive, conserved
-
-    allocate ( PrimitiveName ( C % N_PRIMITIVE ) )
-    do iF = 1, C % N_PRIMITIVE
-      PrimitiveName ( iF ) = Variable ( C % iaPrimitive ( iF ) )
-    end do !-- iF
-    call Show ( PrimitiveName, 'Primitive', C % IGNORABILITY )
- 
-    allocate ( ConservedName ( C % N_CONSERVED ) )
-    do iF = 1, C % N_CONSERVED
-      ConservedName ( iF ) = Variable ( C % iaConserved ( iF ) )
-    end do !-- iF
-    call Show ( ConservedName, 'Conserved', C % IGNORABILITY )
- 
   end subroutine InitializeBasics
 
 
@@ -499,7 +701,7 @@ contains
   end subroutine SetUnits
 
 
-  subroutine ComputeRiemannSolverInputKernel &
+  subroutine ComputeSolverSpeeds_HLL_Kernel &
                ( AP_I, AM_I, LP_IL, LP_IR, LM_IL, LM_IR )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -522,7 +724,39 @@ contains
     end do !-- iV
     !$OMP end parallel do
 
-  end subroutine ComputeRiemannSolverInputKernel
+  end subroutine ComputeSolverSpeeds_HLL_Kernel
+
+
+  subroutine ComputeFluxes_HLL_Kernel &
+               ( F_IL, F_IR, U_IL, U_IR, AP_I, AM_I, DF_I, F_I )
+
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      F_IL, F_IR, &
+      U_IL, U_IR, &
+      AP_I, &
+      AM_I, &
+      DF_I
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      F_I
+
+    integer ( KDI ) :: &
+      iV, &
+      nV  
+
+    nV = size ( F_I )
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nV
+      F_I ( iV ) &
+        =  (    AP_I ( iV ) * F_IL ( iV ) &
+             +  AM_I ( iV ) * F_IR ( iV ) &
+             -  DF_I ( iV ) * AP_I ( iV ) * AM_I ( iV ) &
+                * ( U_IR ( iV ) - U_IL ( iV ) ) ) &
+           /  max ( AP_I ( iV ) + AM_I ( iV ), tiny ( 0.0_KDR ) )
+    end do
+    !$OMP end parallel do
+
+  end subroutine ComputeFluxes_HLL_Kernel
 
 
 end module Current_Template

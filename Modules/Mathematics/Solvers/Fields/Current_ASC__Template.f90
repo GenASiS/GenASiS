@@ -14,6 +14,8 @@ module Current_ASC__Template
 
   type, public, extends ( Field_ASC_Template ), abstract :: &
     Current_ASC_Template
+      class ( Atlas_SC_Form ), pointer :: &
+        Atlas_SC => null ( )
       class ( Tally_C_Form ), allocatable :: &
         TallyInterior, &
         TallyTotal, &
@@ -40,25 +42,39 @@ module Current_ASC__Template
       FinalizeTemplate_ASC_C
   end type Current_ASC_Template
 
+  type, public :: Current_ASC_ElementForm
+    class ( Current_ASC_Template ), allocatable :: &
+      Element
+  contains
+    final :: &
+      FinalizeElement
+  end type Current_ASC_ElementForm
+
 contains
 
 
-  subroutine InitializeTemplate_ASC_C ( CA, A, NameOutputOption )
+  subroutine InitializeTemplate_ASC_C ( CA, A, NameShort, IgnorabilityOption )
 
     class ( Current_ASC_Template ), intent ( inout ) :: &
       CA
-    class ( AtlasHeaderForm ), intent ( in ), target :: &
+    class ( Atlas_SC_Form ), intent ( in ), target :: &
       A
-    character ( * ), intent ( in ), optional :: &
-      NameOutputOption
+    character ( * ), intent ( in ) :: &
+      NameShort
+    integer ( KDL ), intent ( in ), optional :: &
+      IgnorabilityOption
 
     integer ( KDI ) :: &
       iB  !-- iBoundary
     class ( CurrentTemplate ), pointer :: &
       C
 
-    call CA % InitializeTemplate_ASC &
-           ( A, NameOutputOption = NameOutputOption )
+    call CA % InitializeTemplate_ASC ( A, NameShort, IgnorabilityOption )
+
+    C => CA % Current ( )
+    call C % ShowPrimitiveConserved ( CA % IGNORABILITY )
+
+    CA % Atlas_SC => A
 
     if ( .not. allocated ( CA % TallyInterior ) ) then
 
@@ -72,7 +88,6 @@ contains
         allocate ( CA % TallyBoundaryGlobal ( iB ) % Element )
       end do !-- iB
 
-      C => CA % Current ( )
       call CA % TallyInterior % Initialize ( C, A )
       call CA % TallyTotal % Initialize ( C, A )
       call CA % TallyChange % Initialize ( C, A )
@@ -110,7 +125,7 @@ contains
       end select
     class default
       call Show ( 'Current type not recognized', CONSOLE % ERROR )
-      call Show ( 'Current_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Current_ASC__Template', 'module', CONSOLE % ERROR )
       call Show ( 'Current_CSL', 'function', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- CC
@@ -138,12 +153,14 @@ contains
   end subroutine AccumulateBoundaryTally_CSL
 
 
-  subroutine ComputeTally ( CA, ComputeChangeOption )
+  subroutine ComputeTally ( CA, ComputeChangeOption, IgnorabilityOption )
     
     class ( Current_ASC_Template ), intent ( inout ) :: &
       CA
     logical ( KDL ), intent ( in ), optional :: &
       ComputeChangeOption
+    integer ( KDI ), intent ( in ), optional :: &
+      IgnorabilityOption
     
     integer ( KDI ) :: &
       iB  !-- iBoundary
@@ -205,19 +222,22 @@ contains
   
     !-- Display
 
-    call CA % TallyInterior % Show ( 'Interior Fluid Tally' )
+    call CA % TallyInterior % Show &
+           ( 'Interior Tally ' // trim ( CA % Name ), IgnorabilityOption )
 
     BoundaryLoop: do iB = 1, A % nBoundaries
       call CA % TallyBoundaryGlobal ( iB ) % Element % Show &
              ( 'Boundary ' // trim ( A % BoundaryName ( iB ) ) &
-             // ' Fluid Tally', CONSOLE % INFO_2 )
+             // ' Tally ' // trim ( CA % Name ), IgnorabilityOption )
     end do BoundaryLoop
 
-    call CA % TallyTotal % Show ( 'Total Fluid Tally' )
+    call CA % TallyTotal % Show &
+           ( 'Total Tally ' // trim ( CA % Name ), IgnorabilityOption )
 
     if ( ComputeChange ) then
       call CA % TallyChange % Show &
-             ( 'Change in Total Fluid Tally' )
+             ( 'Change in Total Tally ' // trim ( CA % Name ), &
+               IgnorabilityOption )
     end if
 
     end associate !-- nI
@@ -232,14 +252,27 @@ contains
   end subroutine ComputeTally
   
   
-  subroutine FinalizeTemplate_ASC_C ( CA )
+  impure elemental subroutine FinalizeTemplate_ASC_C ( CA )
 
     class ( Current_ASC_Template ), intent ( inout ) :: &
       CA
 
+    nullify ( CA % Atlas_SC )
+
     call CA % FinalizeTemplate_ASC ( )
 
   end subroutine FinalizeTemplate_ASC_C
+
+
+  impure elemental subroutine FinalizeElement ( CAE )
+    
+    type ( Current_ASC_ElementForm ), intent ( inout ) :: &
+      CAE
+
+    if ( allocated ( CAE % Element ) ) &
+      deallocate ( CAE % Element )
+
+  end subroutine FinalizeElement
 
 
 end module Current_ASC__Template

@@ -5,11 +5,12 @@ module SedovTaylor_Form
   use Fluid_P__Template
   use Fluid_P_P__Form
   use Fluid_ASC__Form
+  use ApplyCurvilinear_F__Command
 
   implicit none
   private
 
-  type, public, extends ( Integrator_C_Template ) :: SedovTaylorForm
+  type, public, extends ( Integrator_C_PS_Template ) :: SedovTaylorForm
   contains
     procedure, public, pass :: &
       Initialize
@@ -49,9 +50,6 @@ contains
     character ( LDL ) :: &
       CoordinateSystem
 
-    if ( ST % Type == '' ) &
-      ST % Type = 'a SedovTaylor' 
-
     MaxRadius        = 0.35_KDR
     AdiabaticIndex   = 1.4_KDR
     Density          = 1.0_KDR
@@ -71,7 +69,7 @@ contains
     allocate ( Atlas_SC_Form :: ST % PositionSpace )
     select type ( PS => ST % PositionSpace )
     class is ( Atlas_SC_Form )
-    call PS % Initialize ( Name, PROGRAM_HEADER % Communicator )
+    call PS % Initialize ( 'PositionSpace', PROGRAM_HEADER % Communicator )
 
     nCellsRadius = 64
     call PROGRAM_HEADER % GetParameter ( nCellsRadius, 'nCellsRadius' )
@@ -141,24 +139,24 @@ contains
     select type ( FA => ST % Current_ASC )
     class is ( Fluid_ASC_Form )
     call FA % Initialize ( PS, 'POLYTROPIC' )
-    end select !-- FA
 
     !-- Step
 
-    allocate ( Step_RK2_C_Form :: ST % Step )
+    allocate ( Step_RK2_C_ASC_Form :: ST % Step )
     select type ( S => ST % Step )
-    class is ( Step_RK2_C_Form )
-    call S % Initialize ( Name )
-    S % ApplySources => ApplySourcesCurvilinear_Fluid_P
+    class is ( Step_RK2_C_ASC_Form )
+    call S % Initialize ( FA, Name )
+    S % ApplySources % Pointer => ApplyCurvilinear_F
     end select !-- S
 
     !-- Set fluid and initialize Integrator template
 
     call SetFluid ( ST )
-    call ST % InitializeTemplate_C ( Name, FinishTimeOption = FinishTime )
+    call ST % InitializeTemplate_C_PS ( Name, FinishTimeOption = FinishTime )
 
     !-- Cleanup
 
+    end select !-- FA
     end select !-- PS
 
   end subroutine Initialize
@@ -169,7 +167,7 @@ contains
     type ( SedovTaylorForm ), intent ( inout ) :: &
       ST
 
-    call ST % FinalizeTemplate_C ( )
+    call ST % FinalizeTemplate_C_PS ( )
 
   end subroutine Finalize
 

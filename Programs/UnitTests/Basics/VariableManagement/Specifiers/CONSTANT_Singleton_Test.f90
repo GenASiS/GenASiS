@@ -5,30 +5,27 @@ program CONSTANT_Singleton_Test
   implicit none
 
   print*
-  print*, 'Mathematical Constants'
-  print*, 'PI = ', CONSTANT % PI
-
-  print*
-  print*, 'Physical Constants'  
-  print*, 'SPEED_OF_LIGHT_MKS = ', CONSTANT % SPEED_OF_LIGHT_MKS
-  print*, 'PLANCK_REDUCED_MKS = ', CONSTANT % PLANCK_REDUCED_MKS
-  print*, 'PERMEABILITY_MKS   = ', CONSTANT % PERMEABILITY_MKS
-  print*, 'GRAVITATIONAL_MKS  = ', CONSTANT % GRAVITATIONAL_MKS
-  print*, 'AVOGADRO_MKS       = ', CONSTANT % AVOGADRO_MKS
-  print*, 'BOLTZMANN_MKS      = ', CONSTANT % BOLTZMANN_MKS
-  print*, 'ELECTRON_VOLT_MKS  = ', CONSTANT % ELECTRON_VOLT_MKS
-
-  print*
-  print*, 'Astrophysical Constants'
-  print*, 'ASTRONOMICAL_UNIT_MKS = ', CONSTANT % ASTRONOMICAL_UNIT_MKS
-  print*, 'SOLAR_MASS_MKS        = ', CONSTANT % SOLAR_MASS_MKS
-
-  print*
-  print*, 'GenASiS Constants'
-  print*, 'SPEED_OF_LIGHT = ', CONSTANT % SPEED_OF_LIGHT
-  print*, 'PERMEABILITY   = ', CONSTANT % PERMEABILITY
-  print*, 'GRAVITATIONAL  = ', CONSTANT % GRAVITATIONAL
-  print*, 'BOLTZMANN      = ', CONSTANT % BOLTZMANN
-  print*, 'PLANCK_REDUCED = ', CONSTANT % PLANCK_REDUCED
+  print*, 'PI                = ', CONSTANT % PI
+  print*, 'METER             = ', CONSTANT % METER
+  print*, 'KILOGRAM          = ', CONSTANT % KILOGRAM
+  print*, 'SECOND            = ', CONSTANT % SECOND
+  print*, 'AMPERE            = ', CONSTANT % AMPERE
+  print*, 'KELVIN            = ', CONSTANT % KELVIN
+  print*, 'MOLE              = ', CONSTANT % MOLE
+  print*, 'SPEED_OF_LIGHT    = ', CONSTANT % SPEED_OF_LIGHT
+  print*, 'PLANCK_REDUCED    = ', CONSTANT % PLANCK_REDUCED
+  print*, 'ELECTRON_CHARGE   = ', CONSTANT % ELECTRON_CHARGE
+  print*, 'ELECTRON_MASS     = ', CONSTANT % ELECTRON_MASS
+  print*, 'PROTON_MASS       = ', CONSTANT % PROTON_MASS
+  print*, 'ATOMIC_MASS_UNIT  = ', CONSTANT % ATOMIC_MASS_UNIT
+  print*, 'PERMEABILITY      = ', CONSTANT % PERMEABILITY
+  print*, 'GRAVITATIONAL     = ', CONSTANT % GRAVITATIONAL
+  print*, 'BOLTZMANN         = ', CONSTANT % BOLTZMANN
+  print*, 'STEFAN_BOLTZMANN  = ', CONSTANT % STEFAN_BOLTZMANN
+  print*, 'FERMI_COUPLING    = ', CONSTANT % FERMI_COUPLING
+  print*, 'ASTRONOMICAL_UNIT = ', CONSTANT % ASTRONOMICAL_UNIT
+  print*, 'PARSEC            = ', CONSTANT % PARSEC
+  print*, 'SOLAR_MASS        = ', CONSTANT % SOLAR_MASS
+  print*, 'NEUTRON_MASS      = ', CONSTANT % NEUTRON_MASS
 
 end program CONSTANT_Singleton_Test

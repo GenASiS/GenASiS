@@ -1,0 +1,107 @@
+PATH_GENASIS = ../../../../..
+
+all: SineWaveStreaming Thermalization
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+VPATH := $(VPATH):../../FluidDynamics:../../GreyTransport2
+include ../../FluidDynamics/Makefile_ObjectFiles
+include ../../GreyTransport2/Makefile_ObjectFiles
+
+SPECTRAL_MOMENTS = \
+  RadiationMoments_BSLL_ASC_CSLD__Form.o \
+#  Interactions_BSLL_ASC_CSLD__Form.o \
+#  SetFermiDiracSpectrum_Command.o \
+#  SetPlanckSpectrum_Command.o
+
+SineWaveStreaming: ThirdParty.a Basics.a Mathematics.a Fluid.a GreyMoments.a \
+  SpectralMoments.a SineWaveStreaming.o
+	$(LINK) $(FFLAGS) \
+          -o SineWaveStreaming_$(MACHINE) \
+          SineWaveStreaming.o SineWaveStreaming_Form.o \
+          PlaneWaveStreaming_Template.o \
+          SpectralMoments.a GreyMoments.a Fluid.a Mathematics.a Basics.a \
+          ThirdParty.a $(LIBRARIES)
+
+Thermalization: Basics.a Mathematics.a Fluid.a GreyMoments.a \
+  SpectralMoments.a Thermalization.o
+	$(LINK) $(FFLAGS) \
+          -o Thermalization_$(MACHINE) \
+          Thermalization.o Thermalization_Form.o \
+          SpectralMoments.a GreyMoments.a Fluid.a Mathematics.a Basics.a \
+          $(THIRD_PARTY) $(LIBRARIES)
+
+include $(PATH_BASICS)/Makefile_Dependencies
+include $(PATH_MATHEMATICS)/Makefile_Dependencies
+include $(PATH_THIRD_PARTY)/Makefile_Dependencies
+include ../../FluidDynamics/Makefile_Dependencies
+include ../../GreyTransport2/Makefile_Dependencies
+
+clean:
+	rm -f *.o *.a *.mod *.ld
+
+clobber: clean
+	rm -f SineWaveStreaming_*
+	rm -f Thermalization_*
+
+SetPlanckSpectrum_Command.o: \
+  Basics.o \
+  SetPlanckSpectrum_Command.f90
+
+SetFermiDiracSpectrum_Command.o: \
+  Basics.o \
+  SetFermiDiracSpectrum_Command.f90
+
+RadiationMoments_BSLL_ASC_CSLD__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  RadiationMoments_Form.o \
+  RadiationMoments_ASC__Form.o \
+  RadiationMoments_BSLL_ASC_CSLD__Form.f90
+
+Interactions_BSLL_ASC_CSLD__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Interactions_F__Form.o \
+  Interactions_ASC__Form.o \
+  Interactions_BSLL_ASC_CSLD__Form.f90
+
+SpectralMoments.a: $(SPECTRAL_MOMENTS)
+	ar r SpectralMoments.a $(SPECTRAL_MOMENTS)
+
+PlaneWaveStreaming_Template.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_ASC__Form.o \
+  RadiationMoments_Form.o \
+  RadiationMoments_ASC__Form.o \
+  RadiationMoments_BSLL_ASC_CSLD__Form.o \
+  PlaneWaveStreaming_Template.f90
+
+SineWaveStreaming_Form.o: \
+  Basics.o \
+  PlaneWaveStreaming_Template.o \
+  SineWaveStreaming_Form.f90
+
+SineWaveStreaming.o: \
+  Basics.o \
+  SineWaveStreaming_Form.o \
+  SineWaveStreaming.f90
+
+Thermalization_Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_P_NR__Form.o \
+  Fluid_ASC__Form.o \
+  RadiationMoments_Form.o \
+  RadiationMoments_ASC__Form.o \
+  Interactions_F__Form.o \
+  SetPlanckSpectrum_Command.o \
+  RadiationMoments_BSLL_ASC_CSLD__Form.o \
+  Interactions_BSLL_ASC_CSLD__Form.o \
+  Thermalization_Form.f90
+
+Thermalization.o: \
+  Basics.o \
+  Thermalization_Form.o \
+  Thermalization.f90

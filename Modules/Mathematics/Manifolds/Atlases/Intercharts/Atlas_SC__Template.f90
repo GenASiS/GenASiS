@@ -15,7 +15,7 @@ module Atlas_SC__Template
   type, public, extends ( AtlasHeaderForm ), abstract :: Atlas_SC_Template
     class ( ChartTemplate ), allocatable :: &
       Chart
-    type ( Field_ASC_Pointer ), dimension ( : ), allocatable :: &
+    type ( FieldAtlasPointer ), dimension ( : ), allocatable :: &
       Field
   contains
     procedure, private, pass :: &
@@ -40,13 +40,13 @@ contains
 
 
   subroutine InitializeBasic &
-               ( A, NameSuffix, CommunicatorOption, IncludeFacesOption, &
+               ( A, Name, CommunicatorOption, IncludeFacesOption, &
                  IncludeEdgesOption, nExcisionsOption, iDimensionalityOption )
 
     class ( Atlas_SC_Template ), intent ( inout ) :: &
       A
     character ( * ), intent ( in )  :: &
-      NameSuffix
+      Name
     type ( CommunicatorForm ), intent ( in ), target, optional :: &
       CommunicatorOption
     logical ( KDL ), intent ( in ), optional :: &
@@ -65,7 +65,7 @@ contains
     end if
 
     call A % AtlasHeaderForm % Initialize &
-           ( NameSuffix, CommunicatorOption, IncludeFacesOption, &
+           ( Name, CommunicatorOption, IncludeFacesOption, &
              IncludeEdgesOption, nExcisionsOption, iDimensionalityOption )
 
     allocate ( A % Field ( ATLAS % MAX_FIELDS ) )

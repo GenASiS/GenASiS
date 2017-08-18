@@ -35,6 +35,7 @@ module Show_Command
     module procedure ShowLogical
     module procedure ShowLogical_1D
     module procedure ShowCharacter
+    module procedure ShowCharacter_KBCH
     module procedure ShowCharacterNoDescription
     module procedure ShowCharacter_1D
     module procedure ShowMeasuredValue
@@ -963,6 +964,37 @@ contains
   end subroutine ShowCharacter
   
   
+  subroutine ShowCharacter_KBCH &
+               ( Character, Description, IgnorabilityOption, &
+                 DisplayRankOption, nLeadingLinesOption, &
+                 nTrailingLinesOption )
+
+    character ( *, KBCH ), intent ( in ) :: &
+      Character
+    character ( * ), intent ( in ) :: &
+      Description
+    integer ( KDI ), intent ( in ), optional :: &
+      IgnorabilityOption, &
+      DisplayRankOption, &
+      nLeadingLinesOption, &
+      nTrailingLinesOption
+
+    logical( KDL ) :: &
+      AbortShow
+    
+    call PrepareShow &
+           ( AbortShow, IgnorabilityOption, DisplayRankOption, &
+             nLeadingLinesOption )
+
+    if ( AbortShow ) return
+
+    print '(a35,a,a)', trim ( Description ), '  =  ', trim ( Character )
+
+    call EndShow ( nTrailingLinesOption )
+
+  end subroutine ShowCharacter_KBCH
+  
+  
   subroutine ShowCharacterNoDescription &
                ( Character, IgnorabilityOption, DisplayRankOption, &
                  nLeadingLinesOption, nTrailingLinesOption )
@@ -1018,7 +1050,7 @@ contains
   subroutine ShowCharacter_1D &
                ( Character, Description, IgnorabilityOption, &
                  DisplayRankOption, nLeadingLinesOption, &
-                 nTrailingLinesOption )
+                 nTrailingLinesOption, oIndexOption )
 
     !-- Convention on argument order violated because the Character being
     !   "Show"n is more important than the Description.
@@ -1031,10 +1063,12 @@ contains
       IgnorabilityOption, &
       DisplayRankOption, &
       nLeadingLinesOption, &
-      nTrailingLinesOption
+      nTrailingLinesOption, &
+      oIndexOption
 
     integer ( KDI ) :: &
-      i
+      i, &
+      oIndex
     logical ( KDL ) :: &
       AbortShow
     character ( LDN ) :: &
@@ -1046,9 +1080,13 @@ contains
 
     if ( AbortShow ) return
 
+    oIndex = 0
+    if ( present ( oIndexOption ) ) &
+      oIndex = oIndexOption
+
     print '(a35)', trim ( Description )
     do i = 1, size ( Character )
-      write ( IndexLabel, fmt = '( i7 )' ) i
+      write ( IndexLabel, fmt = '( i7 )' ) oIndex + i
       print & 
         '(a40,a)', '( ' // trim ( adjustl ( IndexLabel ) ) // ' ) =  ', &
         trim ( Character ( i ) )
@@ -1090,15 +1128,15 @@ contains
 
     if ( AbortShow ) return
 
-    if ( MeasuredValue % Label == '' ) then
+    if ( MeasuredValue % Label == KBCH_'' ) then
 
       LenUnit = len_trim ( MeasuredValue % Unit ) + 1
       write ( PrintFormat, fmt = '(a18,i0,a1)' ) &
         '(a35,a3,es15.6e3,a', LenUnit, ')'
     
       print trim ( PrintFormat ), &
-        trim ( Description ), '  =', MeasuredValue % Number, &
-        ' ' // trim ( MeasuredValue % Unit )
+        trim ( Description ), KBCH_'  =', MeasuredValue % Number, &
+        KBCH_' ' // trim ( MeasuredValue % Unit )
     
     else
 
@@ -1109,9 +1147,9 @@ contains
         '(a35,a3,es15.6e3,a', LenUnit, ')'
       
       print trim ( PrintFormat ), &
-        trim ( Description ), '  =', MeasuredValue % Number, &
-        ' ' // trim ( MeasuredValue % Unit ) &
-        // ' ( ' // trim ( MeasuredValue % Label ) // ' )'
+        trim ( Description ), KBCH_'  =', MeasuredValue % Number, &
+        KBCH_' ' // trim ( MeasuredValue % Unit ) &
+        // KBCH_' ( ' // trim ( MeasuredValue % Label ) // KBCH_' )'
 
     end if
 
@@ -1173,7 +1211,7 @@ contains
       LenUnit
     logical ( KDL ) :: &
       AbortShow
-    character ( LDN ) :: &
+    character ( LDN, KBCH ) :: &
       IndexLabel
     character ( LDL ) :: &
       PrintFormat
@@ -1188,7 +1226,7 @@ contains
     
     do i = 1, size ( MeasuredValue )
 
-      if ( MeasuredValue ( i ) % Label == '' ) then
+      if ( MeasuredValue ( i ) % Label == KBCH_'' ) then
 
         LenUnit = len_trim ( MeasuredValue ( i ) % Unit ) + 1
         write ( PrintFormat, fmt = '(a18,i0,a1)' ) &
@@ -1197,9 +1235,9 @@ contains
         write ( IndexLabel, fmt = '( i7 )' ) i
         print &
           trim ( PrintFormat ), &
-          '( ' // trim ( adjustl ( IndexLabel ) ) // ' ) =', &
+          KBCH_'( ' // trim ( adjustl ( IndexLabel ) ) // KBCH_' ) =', &
           MeasuredValue ( i ) % Number, &
-          ' ' // trim ( MeasuredValue ( i ) % Unit )
+          KBCH_' ' // trim ( MeasuredValue ( i ) % Unit )
 
       else
 
@@ -1212,10 +1250,10 @@ contains
         write ( IndexLabel, fmt = '( i7 )' ) i
         print &
           trim ( PrintFormat ), &
-          '( ' // trim ( adjustl ( IndexLabel ) ) // ' ) =', &
+          KBCH_'( ' // trim ( adjustl ( IndexLabel ) ) // KBCH_' ) =', &
           MeasuredValue ( i ) % Number, &
-          ' ' // trim ( MeasuredValue ( i ) % Unit ) &
-          // ' ( ' // trim ( MeasuredValue ( i ) % Label ) // ' )'
+          KBCH_' ' // trim ( MeasuredValue ( i ) % Unit ) &
+          // KBCH_' ( ' // trim ( MeasuredValue ( i ) % Label ) // KBCH_' )'
 
       end if
     

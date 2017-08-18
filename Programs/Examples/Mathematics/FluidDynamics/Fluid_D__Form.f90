@@ -4,6 +4,7 @@ module Fluid_D__Form
 
   use Basics
   use Mathematics
+  use FluidFeatures_Template
 
   implicit none
   private
@@ -26,21 +27,27 @@ module Fluid_D__Form
     integer ( KDI ), dimension ( 3 ) :: &
       VELOCITY_U         = 0, &
       MOMENTUM_DENSITY_D = 0
+    class ( FluidFeaturesTemplate ), pointer :: &
+      Features => null ( )
   contains
     procedure, public, pass :: &
       InitializeAllocate_D
     generic, public :: &
       Initialize => InitializeAllocate_D
-    procedure, public, pass ( C ) :: &
-      ComputeRawFluxes
+    procedure, public, pass :: &
+      SetPrimitiveConserved
     procedure, public, pass :: &
       SetOutput
+    procedure, public, pass :: &
+      SetFeatures
     final :: &
       Finalize
     procedure, public, pass ( C ) :: &
       ComputeFromPrimitiveCommon
     procedure, public, pass ( C ) :: &
       ComputeFromConservedCommon
+    procedure, public, pass ( C ) :: &
+      ComputeRawFluxes
     procedure, public, nopass :: &
       ComputeBaryonMassKernel
     procedure, public, nopass :: &
@@ -56,26 +63,27 @@ module Fluid_D__Form
       SetUnits, &
       ComputeRawFluxesKernel
 
-  public :: &
-    ApplySourcesCurvilinear_Fluid_D
-
-    private :: &
-      ApplySourcesCurvilinearKernel
-  
 contains
 
 
   subroutine InitializeAllocate_D &
-               ( F, VelocityUnit, MassDensityUnit, nValues, VariableOption, &
+               ( F, RiemannSolverType, UseLimiter, VelocityUnit, &
+                 MassDensityUnit, LimiterParameter, nValues, VariableOption, &
                  VectorOption, NameOption, ClearOption, UnitOption, &
                  VectorIndicesOption )
 
     class ( Fluid_D_Form ), intent ( inout ) :: &
       F
+    character ( * ), intent ( in ) :: &
+      RiemannSolverType
+    logical ( KDL ), intent ( in ) :: &
+      UseLimiter
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
       VelocityUnit
     type ( MeasuredValueForm ), intent ( in ) :: &
       MassDensityUnit
+    real ( KDR ), intent ( in ) :: &
+      LimiterParameter
     integer ( KDI ), intent ( in ) :: &
       nValues
     character ( * ), dimension ( : ), intent ( in ), optional :: &
@@ -109,81 +117,59 @@ contains
     call SetUnits ( VariableUnit, F, VelocityUnit, MassDensityUnit )
 
     call F % InitializeTemplate &
-           ( VelocityUnit, nValues, VariableOption = Variable, &
-             VectorOption = Vector, NameOption = Name, &
-             ClearOption = ClearOption, UnitOption = VariableUnit, &
-             VectorIndicesOption = VectorIndices )
+           ( RiemannSolverType, UseLimiter, VelocityUnit, LimiterParameter, &
+             nValues, VariableOption = Variable, VectorOption = Vector, &
+             NameOption = Name, ClearOption = ClearOption, &
+             UnitOption = VariableUnit, VectorIndicesOption = VectorIndices )
 
   end subroutine InitializeAllocate_D
   
 
-  subroutine ComputeRawFluxes &
-               ( RawFlux, C, G, Value_C, Value_G, iDimension, &
-                 nValuesOption, oValueOption )
-    
-    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
-      RawFlux
-    class ( Fluid_D_Form ), intent ( in ) :: &
+  subroutine SetPrimitiveConserved ( C )
+
+    class ( Fluid_D_Form ), intent ( inout ) :: &
       C
-    class ( GeometryFlatForm ), intent ( in ) :: &
-      G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_C, &
-      Value_G
-    integer ( KDI ), intent ( in ) :: &
-      iDimension
-    integer ( KDI ), intent ( in ), optional :: &
-      nValuesOption, &
-      oValueOption
 
     integer ( KDI ) :: &
-      iDensity
-    integer ( KDI ), dimension ( 3 ) :: &
-      iMomentum
-    integer ( KDI ) :: &
-      oV, &  !-- oValue
-      nV     !-- nValues
-      
-    if ( present ( oValueOption ) ) then
-      oV = oValueOption
-    else
-      oV = 0
+      iF, &  !-- iField
+      oP, &  !-- oPrimitive
+      oC     !-- oConserved
+    character ( LDL ), dimension ( C % N_PRIMITIVE_DUST ) :: &
+      PrimitiveName
+    character ( LDL ), dimension ( C % N_CONSERVED_DUST ) :: &
+      ConservedName
+
+    oP = C % N_PRIMITIVE_TEMPLATE
+    oC = C % N_CONSERVED_TEMPLATE
+
+    if ( .not. allocated ( C % iaPrimitive ) ) then
+      C % N_PRIMITIVE = oP + C % N_PRIMITIVE_DUST
+      allocate ( C % iaPrimitive ( C % N_PRIMITIVE ) )
     end if
+    C % iaPrimitive ( oP + 1 : oP + C % N_PRIMITIVE_DUST ) &
+      = [ C % COMOVING_DENSITY, C % VELOCITY_U ]
 
-    if ( present ( nValuesOption ) ) then
-      nV = nValuesOption
-    else
-      nV = size ( Value_C, dim = 1 )
+    if ( .not. allocated ( C % iaConserved ) ) then
+      C % N_CONSERVED = oC + C % N_CONSERVED_DUST
+      allocate ( C % iaConserved ( C % N_CONSERVED ) )
     end if
+    C % iaConserved ( oC + 1 : oC + C % N_CONSERVED_DUST ) &
+      = [ C % CONSERVED_DENSITY, C % MOMENTUM_DENSITY_D ]
     
-    call Search &
-           ( C % iaConserved, C % CONSERVED_DENSITY, iDensity )
-    call Search &
-           ( C % iaConserved, C % MOMENTUM_DENSITY_D ( 1 ), iMomentum ( 1 ) )
-    call Search &
-           ( C % iaConserved, C % MOMENTUM_DENSITY_D ( 2 ), iMomentum ( 2 ) )
-    call Search &
-           ( C % iaConserved, C % MOMENTUM_DENSITY_D ( 3 ), iMomentum ( 3 ) )
+    do iF = 1, C % N_PRIMITIVE_DUST
+      PrimitiveName ( iF )  =  C % Variable ( C % iaPrimitive ( oP + iF ) )
+    end do
+    do iF = 1, C % N_CONSERVED_DUST
+      ConservedName ( iF )  =  C % Variable ( C % iaConserved ( oC + iF ) )
+    end do
+    call Show ( PrimitiveName, 'Adding primitive variables', &
+                C % IGNORABILITY, oIndexOption = oP )
+    call Show ( ConservedName, 'Adding conserved variables', &
+                C % IGNORABILITY, oIndexOption = oC )
     
-    associate &
-      ( F_D   => RawFlux ( oV + 1 : oV + nV, iDensity ), &
-        F_S_1 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 1 ) ), &
-        F_S_2 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 2 ) ), &
-        F_S_3 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 3 ) ), &
-        D     => Value_C ( oV + 1 : oV + nV, C % CONSERVED_DENSITY ), &
-        S_1   => Value_C ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 1 ) ), &
-        S_2   => Value_C ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 2 ) ), &
-        S_3   => Value_C ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 3 ) ), &
-        V_Dim => Value_C ( oV + 1 : oV + nV, C % VELOCITY_U ( iDimension ) ) )
+  end subroutine SetPrimitiveConserved
 
-    call ComputeRawFluxesKernel &
-           ( F_D, F_S_1, F_S_2, F_S_3, D, S_1, S_2, S_3, V_Dim )
 
-    end associate !-- F_D, etc.
-
-  end subroutine ComputeRawFluxes
-  
-  
   subroutine SetOutput ( F, Output )
 
     class ( Fluid_D_Form ), intent ( in ) :: &
@@ -201,6 +187,18 @@ contains
              VectorIndicesOption = VectorIndices )
 
   end subroutine SetOutput
+
+
+  subroutine SetFeatures ( F, Features )
+
+    class ( Fluid_D_Form ), intent ( inout ) :: &
+      F
+    class ( FluidFeaturesTemplate ), intent ( in ), target :: &
+      Features
+
+    F % Features => Features
+
+  end subroutine SetFeatures
 
 
   impure elemental subroutine Finalize ( F )
@@ -283,14 +281,16 @@ contains
 
 
   subroutine ComputeFromConservedCommon &
-               ( C, G, Value, nValuesOption, oValueOption )
+               ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
 
+    real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
+      Value_C
     class ( Fluid_D_Form ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
-      Value
+    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+      Value_G
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
@@ -300,8 +300,8 @@ contains
       nV     !-- nValues
       
     associate &
-      ( FV  => Value, &
-        GV => G % Value )
+      ( FV => Value_C, &
+        GV => Value_G )
 
     if ( present ( oValueOption ) ) then
       oV = oValueOption
@@ -349,6 +349,73 @@ contains
   end subroutine ComputeFromConservedCommon
 
 
+  subroutine ComputeRawFluxes &
+               ( RawFlux, C, G, Value_C, Value_G, iDimension, &
+                 nValuesOption, oValueOption )
+    
+    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+      RawFlux
+    class ( Fluid_D_Form ), intent ( in ) :: &
+      C
+    class ( GeometryFlatForm ), intent ( in ) :: &
+      G
+    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+      Value_C, &
+      Value_G
+    integer ( KDI ), intent ( in ) :: &
+      iDimension
+    integer ( KDI ), intent ( in ), optional :: &
+      nValuesOption, &
+      oValueOption
+
+    integer ( KDI ) :: &
+      iDensity
+    integer ( KDI ), dimension ( 3 ) :: &
+      iMomentum
+    integer ( KDI ) :: &
+      oV, &  !-- oValue
+      nV     !-- nValues
+      
+    if ( present ( oValueOption ) ) then
+      oV = oValueOption
+    else
+      oV = 0
+    end if
+
+    if ( present ( nValuesOption ) ) then
+      nV = nValuesOption
+    else
+      nV = size ( Value_C, dim = 1 )
+    end if
+    
+    call Search &
+           ( C % iaConserved, C % CONSERVED_DENSITY, iDensity )
+    call Search &
+           ( C % iaConserved, C % MOMENTUM_DENSITY_D ( 1 ), iMomentum ( 1 ) )
+    call Search &
+           ( C % iaConserved, C % MOMENTUM_DENSITY_D ( 2 ), iMomentum ( 2 ) )
+    call Search &
+           ( C % iaConserved, C % MOMENTUM_DENSITY_D ( 3 ), iMomentum ( 3 ) )
+    
+    associate &
+      ( F_D   => RawFlux ( oV + 1 : oV + nV, iDensity ), &
+        F_S_1 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 1 ) ), &
+        F_S_2 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 2 ) ), &
+        F_S_3 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 3 ) ), &
+        D     => Value_C ( oV + 1 : oV + nV, C % CONSERVED_DENSITY ), &
+        S_1   => Value_C ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 1 ) ), &
+        S_2   => Value_C ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 2 ) ), &
+        S_3   => Value_C ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 3 ) ), &
+        V_Dim => Value_C ( oV + 1 : oV + nV, C % VELOCITY_U ( iDimension ) ) )
+
+    call ComputeRawFluxesKernel &
+           ( F_D, F_S_1, F_S_2, F_S_3, D, S_1, S_2, S_3, V_Dim )
+
+    end associate !-- F_D, etc.
+
+  end subroutine ComputeRawFluxes
+  
+  
   subroutine ComputeBaryonMassKernel ( M )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -514,9 +581,7 @@ contains
     integer ( KDI ) :: &
       iV, &  !-- iVector
       oF, &  !-- oField
-      oV, &  !-- oVector
-      oP, &  !-- oPrimitive
-      oC     !-- oConserved
+      oV     !-- oVector
 
     if ( F % Type == '' ) &
       F % Type = 'a Fluid_D'
@@ -571,7 +636,8 @@ contains
     !-- vectors
 
     oV = F % N_VECTORS_TEMPLATE
-    if ( F % N_VECTORS == 0 ) F % N_VECTORS = oV + F % N_VECTORS_DUST
+    if ( F % N_VECTORS == 0 ) &
+      F % N_VECTORS = oV + F % N_VECTORS_DUST
 
     if ( present ( VectorOption ) ) then
       allocate ( Vector ( size ( VectorOption ) ) )
@@ -599,25 +665,6 @@ contains
     call VectorIndices ( oV + 1 ) % Initialize ( F % VELOCITY_U )
     call VectorIndices ( oV + 2 ) % Initialize ( F % MOMENTUM_DENSITY_D )
 
-    !-- select primitive, conserved
-
-    oP = F % N_PRIMITIVE_TEMPLATE
-    oC = F % N_CONSERVED_TEMPLATE
-
-    if ( .not. allocated ( F % iaPrimitive ) ) then
-      F % N_PRIMITIVE = oP + F % N_PRIMITIVE_DUST
-      allocate ( F % iaPrimitive ( F % N_PRIMITIVE ) )
-    end if
-    F % iaPrimitive ( oP + 1 : oP + F % N_PRIMITIVE_DUST ) &
-      = [ F % COMOVING_DENSITY, F % VELOCITY_U ]
-
-    if ( .not. allocated ( F % iaConserved ) ) then
-      F % N_CONSERVED = oC + F % N_CONSERVED_DUST
-      allocate ( F % iaConserved ( F % N_CONSERVED ) )
-    end if
-    F % iaConserved ( oC + 1 : oC + F % N_CONSERVED_DUST ) &
-      = [ F % CONSERVED_DENSITY, F % MOMENTUM_DENSITY_D ]
-    
   end subroutine InitializeBasics
 
 
@@ -674,125 +721,6 @@ contains
     !$OMP end parallel do
 
   end subroutine ComputeRawFluxesKernel
-
-
-  subroutine ApplySourcesCurvilinear_Fluid_D ( S, Increment, Fluid, TimeStep )
-
-    class ( Step_RK_C_Template ), intent ( in ) :: &
-      S
-    type ( VariableGroupForm ), intent ( inout ) :: &
-      Increment
-    class ( CurrentTemplate ), intent ( in ) :: &
-      Fluid
-    real ( KDR ), intent ( in ) :: &
-      TimeStep
-
-    integer ( KDI ) :: &
-      iMomentum_1, &
-      iMomentum_2
-
-    select type ( F => Fluid )
-    class is ( Fluid_D_Form )
-
-    call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 1 ), iMomentum_1 )
-    call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 2 ), iMomentum_2 )
-
-    select type ( Grid => S % Grid )
-    class is ( Chart_SL_Template )
-
-    if ( trim ( Grid % CoordinateSystem ) == 'CARTESIAN' ) &
-      return
-
-    call ApplySourcesCurvilinearKernel &
-           ( Increment % Value ( :, iMomentum_1 ), &
-             Increment % Value ( :, iMomentum_2 ), &
-             Grid % CoordinateSystem, Grid % IsProperCell, &
-             F % Value ( :, F % MOMENTUM_DENSITY_D ( 2 ) ), &
-             F % Value ( :, F % MOMENTUM_DENSITY_D ( 3 ) ), &
-             F % Value ( :, F % VELOCITY_U ( 2 ) ), &
-             F % Value ( :, F % VELOCITY_U ( 3 ) ), &
-             S % dLogVolumeJacobian_dX ( 1 ) % Value, &
-             S % dLogVolumeJacobian_dX ( 2 ) % Value, &
-             TimeStep, Grid % nDimensions )
-
-    class default
-      call Show ( 'Grid type not found', CONSOLE % ERROR )
-      call Show ( 'Fluid_D__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'ApplySourcesCurvilinear', 'subroutine', CONSOLE % ERROR ) 
-      call PROGRAM_HEADER % Abort ( )
-    end select !-- Grid
-
-    end select !-- F
-    
-  end subroutine ApplySourcesCurvilinear_Fluid_D
-
-
-  subroutine ApplySourcesCurvilinearKernel &
-               ( KVM_1, KVM_2, CoordinateSystem, IsProperCell, &
-                 S_2, S_3, V_2, V_3, dLVJ_dX1, dLVJ_dX2, dT, nDimensions )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      KVM_1, KVM_2
-    logical ( KDL ), dimension ( : ), intent ( in ) :: &
-      IsProperCell
-    character ( * ), intent ( in ) :: &
-      CoordinateSystem
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      S_2, S_3, &
-      V_2, V_3, &
-      dLVJ_dX1, dLVJ_dX2
-    real ( KDR ), intent ( in ) :: &
-      dT
-    integer ( KDI ), intent ( in ) :: &
-      nDimensions
-
-    integer ( KDI ) :: &
-      iV, &
-      nV
-
-    nV = size ( KVM_1 )
-
-    select case ( trim ( CoordinateSystem ) )
-    case ( 'CYLINDRICAL' )
-
-      !$OMP parallel do private ( iV )
-      do iV = 1, nV
-        if ( .not. IsProperCell ( iV ) ) &
-          cycle
-        KVM_1 ( iV ) &
-          =  KVM_1 ( iV )  +  ( V_3 ( iV ) * S_3 ( iV ) ) &
-                              * dLVJ_dX1 ( iV ) * dT
-      end do
-      !$OMP end parallel do
-
-    case ( 'SPHERICAL' )
-
-      !$OMP parallel do private ( iV )
-      do iV = 1, nV
-        if ( .not. IsProperCell ( iV ) ) &
-          cycle
-        KVM_1 ( iV ) &
-          =  KVM_1 ( iV )  +  ( V_2 ( iV ) * S_2 ( iV )  &
-                                +  V_3 ( iV ) * S_3 ( iV ) ) &
-                              * 0.5_KDR * dLVJ_dX1 ( iV ) * dT
-      end do
-      !$OMP end parallel do
-
-      if ( nDimensions > 1 ) then
-        !$OMP parallel do private ( iV )
-        do iV = 1, nV
-          if ( .not. IsProperCell ( iV ) ) &
-            cycle
-          KVM_2 ( iV )  &
-            =  KVM_2 ( iV )  +  ( V_3 ( iV ) * S_3 ( iV ) ) &
-                                * dLVJ_dX2 ( iV ) * dT
-        end do
-        !$OMP end parallel do
-      end if
-
-    end select !-- CoordinateSystem
-
-  end subroutine ApplySourcesCurvilinearKernel
 
 
 end module Fluid_D__Form

@@ -3,4 +3,5 @@ INTERCHARTS = \
   Atlas_SC__Form.o \
   GeometryFlat_ASC__Form.o \
   Atlas_SC__Template.o \
+  Storage_ASC__Form.o \
   Field_ASC__Template.o

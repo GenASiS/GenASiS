@@ -1,0 +1,194 @@
+PATH_GENASIS = ../../../../..
+
+all:  SineWaveStreaming SineWaveDiffusion LineSource HomogeneousSphere \
+      MarshakWave WoosleyHeger_07_G
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+VPATH := $(VPATH):../../FluidDynamics
+include ../../FluidDynamics/Makefile_ObjectFiles
+include ../Makefile_ObjectFiles
+
+SineWaveStreaming: ThirdParty.a Basics.a Mathematics.a GreyMoments.a \
+  SineWaveStreaming.o
+	$(LINK) $(FFLAGS) \
+          -o SineWaveStreaming_$(MACHINE) \
+          SineWaveStreaming.o SineWaveStreaming_Form.o \
+          PlaneWaveStreaming_Template.o \
+          GreyMoments.a Mathematics.a Basics.a ThirdParty.a \
+          $(LIBRARIES)
+
+SineWaveDiffusion: ThirdParty.a Basics.a Mathematics.a Fluid.a GreyMoments.a \
+  SineWaveDiffusion.o
+	$(LINK) $(FFLAGS) \
+          -o SineWaveDiffusion_$(MACHINE) \
+          SineWaveDiffusion.o SineWaveDiffusion_Form.o \
+          GreyMoments.a Fluid.a Mathematics.a Basics.a ThirdParty.a \
+          $(LIBRARIES)
+
+LineSource: ThirdParty.a Basics.a Mathematics.a Fluid.a GreyMoments.a \
+  LineSource.o
+	$(LINK) $(FFLAGS) \
+          -o LineSource_$(MACHINE) \
+          LineSource.o LineSource_Form.o \
+          GreyMoments.a Fluid.a Mathematics.a Basics.a ThirdParty.a \
+          $(LIBRARIES)
+
+HomogeneousSphere: ThirdParty.a Basics.a Mathematics.a Fluid.a GreyMoments.a \
+  HomogeneousSphere.o
+	$(LINK) $(FFLAGS) \
+          -o HomogeneousSphere_$(MACHINE) \
+          HomogeneousSphere.o HomogeneousSphere_Form.o \
+          GreyMoments.a Fluid.a Mathematics.a Basics.a ThirdParty.a \
+          $(LIBRARIES)
+
+MarshakWave: ThirdParty.a Basics.a Mathematics.a Fluid.a GreyMoments.a \
+  MarshakWave.o
+	$(LINK) $(FFLAGS) \
+          -o MarshakWave_$(MACHINE) \
+          MarshakWave.o MarshakWave_Form.o \
+          GreyMoments.a Fluid.a Mathematics.a Basics.a ThirdParty.a \
+          $(LIBRARIES)
+
+WoosleyHeger_07_G: ThirdParty.a Basics.a Mathematics.a Fluid.a GreyMoments.a \
+  WoosleyHeger_07_G.o
+	$(LINK) $(FFLAGS) \
+          -o WoosleyHeger_07_G_$(MACHINE) \
+          WoosleyHeger_07_G.o WoosleyHeger_07_G__Form.o \
+          WoosleyHeger_07_Header_Form.o \
+          GreyMoments.a Fluid.a Mathematics.a Basics.a ThirdParty.a \
+          $(LIBRARIES)
+
+include $(PATH_BASICS)/Makefile_Dependencies
+include $(PATH_MATHEMATICS)/Makefile_Dependencies
+include $(PATH_THIRD_PARTY)/Makefile_Dependencies
+include ../../FluidDynamics/Makefile_Dependencies
+include ../Makefile_Dependencies
+
+clean:
+	rm -f *.o *.a *.mod *.ld
+
+clobber: clean
+	rm -f SineWaveStreaming_*
+	rm -f SineWaveDiffusion_*
+	rm -f LineSource_*
+	rm -f HomogeneousSphere_*
+	rm -f MarshakWave_*
+	rm -f WoosleyHeger_07_*
+
+PlaneWaveStreaming_Template.o: \
+  Basics.o \
+  Mathematics.o \
+  RadiationMoments_Form.o \
+  RadiationMoments_ASC__Form.o \
+  PlaneWaveStreaming_Template.f90
+
+SineWaveStreaming_Form.o: \
+  Basics.o \
+  PlaneWaveStreaming_Template.o \
+  SineWaveStreaming_Form.f90
+
+SineWaveStreaming.o: \
+  Basics.o \
+  SineWaveStreaming_Form.o \
+  SineWaveStreaming.f90
+
+SineWaveDiffusion_Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Interactions_Template.o \
+  RadiationMoments_Form.o \
+  RadiationMoments_ASC__Form.o \
+  Interactions_F__Form.o \
+  Interactions_ASC__Form.o \
+  ApplyRelaxation_RM__Command.o \
+  SineWaveDiffusion_Form.f90
+
+SineWaveDiffusion.o: \
+  Basics.o \
+  SineWaveDiffusion_Form.o \
+  SineWaveDiffusion.f90
+
+LineSource_Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Interactions_Template.o \
+  Interactions_ASC__Form.o \
+  RadiationMoments_Form.o \
+  RadiationMoments_ASC__Form.o \
+  ApplyCurvilinear_RM__Command.o \
+  LineSource_Form.f90
+
+LineSource.o: \
+  Basics.o \
+  LineSource_Form.o \
+  LineSource.f90
+
+HomogeneousSphere_Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Interactions_Template.o \
+  Interactions_ASC__Form.o \
+  RadiationMoments_Form.o \
+  RadiationMoments_ASC__Form.o \
+  ApplyCurvilinear_RM__Command.o \
+  ApplyRelaxation_RM__Command.o \
+  HomogeneousSphere_Form.f90
+
+HomogeneousSphere.o: \
+  Basics.o \
+  HomogeneousSphere_Form.o \
+  HomogeneousSphere.f90
+
+MarshakWave_Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_P_NR__Form.o \
+  Fluid_ASC__Form.o \
+  RadiationMoments_Form.o \
+  PhotonMoments_G__Form.o \
+  RadiationMoments_ASC__Form.o \
+  Interactions_Template.o \
+  Interactions_MWV_1_G__Form.o \
+  Interactions_MWV_2_G__Form.o \
+  Interactions_MWV_3_G__Form.o \
+  Interactions_ASC__Form.o \
+  ApplyRelaxation_RM__Command.o \
+  MarshakWave_Form.f90
+
+MarshakWave.o: \
+  Basics.o \
+  MarshakWave_Form.o \
+  MarshakWave.f90
+
+WoosleyHeger_07_Header_Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_P__Template.o \
+  Fluid_P_MHN__Form.o \
+  Fluid_ASC__Form.o \
+  Tally_F_P_MHN__Form.o \
+  WoosleyHeger_07_Header_Form.f90
+
+WoosleyHeger_07_G__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_P_MHN__Form.o \
+  Fluid_ASC__Form.o \
+  Sources_F__Form.o \
+  WoosleyHeger_07_Header_Form.o \
+  RadiationMoments_Form.o \
+  NeutrinoMoments_G__Form.o \
+  Sources_RM__Form.o \
+  RadiationMoments_ASC__Form.o \
+  ApplyCurvilinear_RM__Command.o \
+  Interactions_Template.o \
+  Interactions_NM_1_G__Form.o \
+  Interactions_ASC__Form.o \
+  ApplyRelaxation_RM_2__Command.o \
+  WoosleyHeger_07_G__Form.f90
+
+WoosleyHeger_07_G.o: \
+  Basics.o \
+  WoosleyHeger_07_G__Form.o \
+  WoosleyHeger_07_G.f90

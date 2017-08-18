@@ -22,48 +22,31 @@ module Field_CSL__Template
       InitializeTemplate_CSL
     procedure, public, pass :: &
       FinalizeTemplate_CSL
-    procedure ( SF ), private, pass, deferred :: &
-      SetField
   end type Field_CSL_Template
-
-    abstract interface 
-      subroutine SF ( FC, NameOption )
-        import Field_CSL_Template
-        class ( Field_CSL_Template ), intent ( inout ) :: &
-          FC
-        character ( * ), intent ( in ), optional :: &
-          NameOption
-      end subroutine
-    end interface
-
-  type, public :: Field_CSL_Pointer
-    class ( Field_CSL_Template ), pointer :: &
-      Pointer => null ( )
-  end type Field_CSL_Pointer
 
 contains
 
 
-  subroutine InitializeTemplate_CSL ( FC, C, nValues, NameOutputOption )
+  subroutine InitializeTemplate_CSL &
+               ( FC, C, NameShort, nValues, IgnorabilityOption )
 
     class ( Field_CSL_Template ), intent ( inout ) :: &
       FC
     class ( ChartTemplate ), intent ( in ), target :: &
       C
+    character ( * ), intent ( in ) :: &
+      NameShort
     integer ( KDI ), intent ( in ) :: &
       nValues
-    character ( * ), intent ( in ), optional :: &
-      NameOutputOption
+    integer ( KDL ), intent ( in ), optional :: &
+      IgnorabilityOption
 
-    call FC % InitializeTemplate ( C, NameOutputOption = NameOutputOption )
+    if ( FC % Type == '' ) &
+      FC % Type = 'a Field_CSL' 
 
     FC % nValues = nValues
 
-    if ( FC % NameOutput == '' ) then
-      call FC % SetField ( )
-    else
-      call FC % SetField ( NameOption = FC % NameOutput )
-    end if
+    call FC % InitializeTemplate ( C, NameShort, IgnorabilityOption )
 
   end subroutine InitializeTemplate_CSL
 

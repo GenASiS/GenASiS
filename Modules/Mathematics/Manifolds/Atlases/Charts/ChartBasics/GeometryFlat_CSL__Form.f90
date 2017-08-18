@@ -25,16 +25,18 @@ module GeometryFlat_CSL__Form
 contains
 
 
-  subroutine Initialize ( GC, C, nValues, NameOutputOption )
+  subroutine Initialize ( GC, C, NameShort, nValues, IgnorabilityOption )
 
     class ( GeometryFlat_CSL_Form ), intent ( inout ) :: &
       GC
     class ( ChartHeader_SL_Form ), intent ( in ), target :: &
       C
+    character ( * ), intent ( in ) :: &
+      NameShort
     integer ( KDI ), intent ( in ) :: &
       nValues
-    character ( * ), intent ( in ), optional :: &
-      NameOutputOption
+    integer ( KDL ), intent ( in ), optional :: &
+      IgnorabilityOption
 
     if ( GC % Type == '' ) &
       GC % Type = 'a GeometryFlat_CSL'
@@ -43,7 +45,7 @@ contains
       GC % GeometryType = 'FLAT'    
 
     call GC % InitializeTemplate_CSL &
-           ( C, nValues, NameOutputOption = NameOutputOption )
+           ( C, NameShort, nValues, IgnorabilityOption )
 
   end subroutine Initialize
 
@@ -58,12 +60,10 @@ contains
   end subroutine Finalize
 
 
-  subroutine SetField ( FC, NameOption )
+  subroutine SetField ( FC )
 
     class ( GeometryFlat_CSL_Form ), intent ( inout ) :: &
       FC
-    character ( * ), intent ( in ), optional :: &
-      NameOption
 
     if ( .not. allocated ( FC % Field ) ) then
       select case ( trim ( FC % GeometryType ) )
@@ -84,7 +84,7 @@ contains
     class is ( GeometryFlatForm )
       call G % Initialize &
              ( FC % Chart % CoordinateSystem, FC % Chart % CoordinateUnit, &
-               FC % nValues, NameOption = NameOption )
+               FC % nValues, NameOption = FC % NameShort )
       call G % SetOutput ( FC % FieldOutput )
     end select !-- F
 

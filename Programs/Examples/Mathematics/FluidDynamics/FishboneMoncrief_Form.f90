@@ -4,13 +4,15 @@ module FishboneMoncrief_Form
   use Mathematics
   use Fluid_P__Template
   use Fluid_P_P__Form
+  use Sources_F__Form
   use Fluid_ASC__Form
+  use ApplyCurvilinear_F__Command
   use Tally_FM__Form
 
   implicit none
   private
 
-  type, public, extends ( Integrator_C_Template ) :: FishboneMoncriefForm
+  type, public, extends ( Integrator_C_PS_Template ) :: FishboneMoncriefForm
   contains
     procedure, public, pass :: &
       Initialize
@@ -70,9 +72,6 @@ contains
     character ( LDL ), dimension ( 3 ) :: &
       Spacing
 
-    if ( FM % Type == '' ) &
-      FM % Type = 'a FishboneMoncrief' 
-
     associate &
       ( Kappa  => AngularMomentumParameter, &  !-- Between 1 and 2
         M      => CentralMass, &
@@ -120,7 +119,7 @@ contains
     allocate ( Atlas_SC_Form :: FM % PositionSpace )
     select type ( PS => FM % PositionSpace )
     class is ( Atlas_SC_Form )
-    call PS % Initialize ( Name, PROGRAM_HEADER % Communicator )
+    call PS % Initialize ( 'PositionSpace', PROGRAM_HEADER % Communicator )
 
     nCells = [ 128, 128, 1 ]
     call PROGRAM_HEADER % GetParameter ( nCells, 'nCells' )
@@ -199,16 +198,17 @@ contains
              EnergyDensityUnitOption = EnergyDensityUnit, &
              MassUnitOption = MassUnit, EnergyUnitOption = EnergyUnit, &
              MomentumUnitOption = MomentumUnit, &
-             AngularMomentumUnitOption = AngularMomentumUnit )
-    end select !-- FA
+             AngularMomentumUnitOption = AngularMomentumUnit, &
+             TimeUnitOption = TimeUnit, &
+             LimiterParameterOption = 1.8_KDR )
 
     !-- Step
 
-    allocate ( Step_RK2_C_Form :: FM % Step )
+    allocate ( Step_RK2_C_ASC_Form :: FM % Step )
     select type ( S => FM % Step )
-    class is ( Step_RK2_C_Form )
-    call S % Initialize ( Name )
-    S % ApplySources => ApplySources
+    class is ( Step_RK2_C_ASC_Form )
+    call S % Initialize ( FA, Name )
+    S % ApplySources % Pointer => ApplySources
     end select !-- S
 
     !-- Set fluid and initialize Integrator template
@@ -216,11 +216,12 @@ contains
     FinishTime = 1.0e-3_KDR * UNIT % SECOND
 
     call SetFluid ( FM )
-    call FM % InitializeTemplate_C &
+    call FM % InitializeTemplate_C_PS &
            ( Name, TimeUnitOption = TimeUnit, FinishTimeOption = FinishTime )
 
     !-- Cleanup
 
+    end select !-- FA
     end select !-- PS
 
   end subroutine Initialize
@@ -231,7 +232,7 @@ contains
     type ( FishboneMoncriefForm ), intent ( inout ) :: &
       FM
 
-    call FM % FinalizeTemplate_C ( )
+    call FM % FinalizeTemplate_C_PS ( )
 
   end subroutine Finalize
 
@@ -241,6 +242,8 @@ contains
     type ( FishboneMoncriefForm ), intent ( inout ) :: &
       FM
 
+    integer ( KDI ) :: &
+      iB  !-- iBoundary
     real ( KDR ) :: &
       EnthalpyMax, &
       PolytropicParameter
@@ -250,9 +253,6 @@ contains
       G
     class ( Fluid_P_P_Form ), pointer :: &
       F
-
-    integer ( KDI ) :: &
-      iB  !-- iBoundary
 
     associate &
       ( Kappa => AngularMomentumParameter, &
@@ -324,17 +324,17 @@ contains
 
     select type ( TI => FA % TallyInterior )
     class is ( Tally_FM_Form )
-       call TI % SetCentralMass ( M )
+      call TI % SetCentralMass ( M )
     end select !-- TI
     
     select type ( TT => FA % TallyTotal )
     class is ( Tally_FM_Form )
-       call TT % SetCentralMass ( M )
+      call TT % SetCentralMass ( M )
     end select !-- TT
     
     select type ( TC => FA % TallyChange )
     class is ( Tally_FM_Form )
-       call TC % SetCentralMass ( M )
+      call TC % SetCentralMass ( M )
     end select !-- TC
     
     do iB = 1, size ( FA % TallyBoundaryLocal )
@@ -357,24 +357,35 @@ contains
   end subroutine SetFluid
 
 
-  subroutine ApplySources ( S, Increment, Fluid, TimeStep )
+  subroutine ApplySources &
+               ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
 
-    class ( Step_RK_C_Template ), intent ( in ) :: &
+    class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
       S
-    type ( VariableGroupForm ), intent ( inout ) :: &
+    class ( Sources_C_Form ), intent ( inout ) :: &
+      Sources_F
+    type ( VariableGroupForm ), intent ( inout ), target :: &
       Increment
     class ( CurrentTemplate ), intent ( in ) :: &
       Fluid
     real ( KDR ), intent ( in ) :: &
       TimeStep
+    integer ( KDI ), intent ( in ) :: &
+      iStage
 
     integer ( KDI ) :: &
       iMomentum_1, &
       iEnergy
     class ( GeometryFlatForm ), pointer :: &
       G
+    type ( TimerForm ), pointer :: &
+      Timer
 
-    call ApplySourcesCurvilinear_Fluid_P ( S, Increment, Fluid, TimeStep )
+    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerSources )
+    if ( associated ( Timer ) ) call Timer % Start ( )
+
+    call ApplyCurvilinear_F &
+           ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
 
     select type ( F => Fluid )
     class is ( Fluid_P_Template )
@@ -382,34 +393,46 @@ contains
     call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 1 ), iMomentum_1 )
     call Search ( F % iaConserved, F % CONSERVED_ENERGY, iEnergy )
 
-    select type ( Grid => S % Grid )
+    select type ( FS => Sources_F )
+    class is ( Sources_F_Form )
+
+    select type ( Chart => S % Chart )
     class is ( Chart_SL_Template )
 
-    G => Grid % Geometry ( )
+    G => Chart % Geometry ( )
 
     call ApplySourcesKernel &
            ( Increment % Value ( :, iMomentum_1 ), &
              Increment % Value ( :, iEnergy ), &
-             Grid % IsProperCell, &
+             FS % Value ( :, FS % GRAVITATIONAL_S_D ( 1 ) ), &
+             FS % Value ( :, FS % GRAVITATIONAL_E ), &
+             Chart % IsProperCell, &
              F % Value ( :, F % COMOVING_DENSITY ), &
              F % Value ( :, F % VELOCITY_U ( 1 ) ), &
              G % Value ( :, G % CENTER ( 1 ) ), &
-             CONSTANT % GRAVITATIONAL, CentralMass, TimeStep ) 
+             CONSTANT % GRAVITATIONAL, CentralMass, TimeStep, &
+             S % B ( iStage ) ) 
 
     end select !-- Grid
+    end select !-- FS
     end select !-- F
 
     nullify ( G )
+
+    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine ApplySources
 
   
   subroutine ApplySourcesKernel &
-               ( KV_M_1, KV_E, IsProperCell, N, V_1, R, G, M, dT )
+               ( KV_M_1, KV_E, SV_M_1, SV_E, IsProperCell, N, V_1, R, G, M, &
+                 dT, Weight_RK )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       KV_M_1, &
-      KV_E   
+      KV_E, &
+      SV_M_1, &
+      SV_E
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       IsProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
@@ -419,7 +442,8 @@ contains
     real ( KDR ) :: &
       G, &
       M, &
-      dT
+      dT, &
+      Weight_RK
 
     integer ( KDI ) :: &
       iV, &
@@ -441,6 +465,8 @@ contains
         cycle
       KV_M_1 ( iV )  =  KV_M_1 ( iV )  +  dT * F_1 ( iV )
       KV_E   ( iV )  =  KV_E   ( iV )  +  dT * F_1 ( iV ) * V_1 ( iV ) 
+      SV_M_1 ( iV )  =  SV_M_1 ( iV )  +  F_1 ( iV ) * Weight_RK
+      SV_E   ( iV )  =  SV_E   ( iV )  +  F_1 ( iV ) * V_1 ( iV ) * Weight_RK 
     end do
     !$OMP end parallel do
 

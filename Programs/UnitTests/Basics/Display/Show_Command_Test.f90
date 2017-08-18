@@ -1,5 +1,6 @@
 program Show_Command_Test
 
+  use ISO_FORTRAN_ENV
   use VariableManagement
   use CONSOLE_Singleton
   use Show_Command
@@ -13,6 +14,8 @@ program Show_Command_Test
     Error
   type ( MeasuredValueForm ) :: &
     Length
+
+  open ( OUTPUT_UNIT, encoding = 'UTF-8' )
 
   call MPI_INIT ( Error )
   call MPI_COMM_RANK ( MPI_COMM_WORLD, Rank, Error )
@@ -52,13 +55,13 @@ program Show_Command_Test
          ( [ 'Hello world 1', 'Hello world 2', 'Hello world 3' ], &
            'Test character array' )
 
-  call Length % Initialize ( 'Meter', 10.0_KDR ) 
-  call Show ( Length, 'Length' )
-  
-  call Show ( Length % Number, UNIT % KILOMETER, 'Length in km' )
-  call Show ( Length % Number, UNIT % SECOND,  'Length in second' )
-  
-  call Show ( spread ( Length % Number, 1, 10 ), UNIT % PARSEC, 'Length' )
+  Length = 10.0_KDR  *  UNIT % METER
+  call Show ( Length, 'Length in program units' )
+  call Show ( Length, UNIT % METER, 'Length in m' )  
+  call Show ( Length, UNIT % KILOMETER, 'Length in km' )
+  call Show ( Length, UNIT % SECOND,  'Length in second' )
+  call Show ( spread ( Length % Number, 1, 10 ), UNIT % PARSEC, &
+              'Length in pc' )
   
   call MPI_FINALIZE ( Error )
 

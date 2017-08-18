@@ -4,6 +4,7 @@
 module MeasuredValue_Form
   
   use KIND_DEFAULT_Singleton
+  use KIND_BIG_Singleton
   use LEN_DEFAULT_Singleton
   use Split_Command
   use Join_Command
@@ -14,23 +15,33 @@ module MeasuredValue_Form
   type, public :: MeasuredValueForm
     real ( KDR ) :: &
       Number = 1.0_KDR
-    character ( LDL ) :: &
+    character ( LDL, KBCH ) :: &
       Unit = ''
-    character ( LDL ) :: &
+    character ( LDL, KBCH ) :: &
       Label = '' !-- Actual unit name if this object is being used as a unit
   contains
     procedure, private, pass :: &
       Initialize_MV
     procedure, private, pass :: &
+      Initialize_MV_KBCH
+    procedure, private, pass :: &
       Initialize_MV_Label
+    procedure, private, pass :: &
+      Initialize_MV_KBCH_Label
+    procedure, private, pass :: &
+      Initialize_MV_Label_KBCH
     procedure, private, pass :: &
       Initialize_MV_From_MV
     procedure, private, pass :: &
       Initialize_MV_From_MV_Label
+    procedure, private, pass :: &
+      Initialize_MV_From_MV_Label_KBCH
     generic :: &
       Initialize &
-        => Initialize_MV, Initialize_MV_Label, Initialize_MV_From_MV, &
-           Initialize_MV_From_MV_Label
+        => Initialize_MV, Initialize_MV_KBCH, Initialize_MV_Label, &
+           Initialize_MV_KBCH_Label, Initialize_MV_Label_KBCH, &
+           Initialize_MV_From_MV, Initialize_MV_From_MV_Label, &
+           Initialize_MV_From_MV_Label_KBCH
     procedure, private, pass :: &
       Addition_MV_MV
     procedure, private, pass :: &
@@ -75,10 +86,10 @@ module MeasuredValue_Form
            Product_MV_Integer, ProductInteger_MV
     procedure, private, pass :: &
       Power_MV_Integer
-    procedure, private, pass :: &
-      Power_MV_Real
+!    procedure, private, pass :: &
+!      Power_MV_Real
     generic :: &
-      operator ( ** ) => Power_MV_Integer, Power_MV_Real
+      operator ( ** ) => Power_MV_Integer!, Power_MV_Real
     procedure, private, pass :: &
       Quotient_MV_MV
     procedure, private, pass :: &
@@ -187,11 +198,51 @@ module MeasuredValue_Form
       ProductUnit
     procedure, private, nopass :: &
       PowerUnitInteger
-    procedure, private, nopass :: &
-      PowerUnitReal
+!    procedure, private, nopass :: &
+!      PowerUnitReal
     generic :: &
-      PowerUnit => PowerUnitInteger, PowerUnitReal
+      PowerUnit => PowerUnitInteger!, PowerUnitReal
   end type MeasuredValueForm
+
+    private :: &
+      AnalyzeUnit
+
+    integer ( KDI ), private, parameter :: &
+      Exponent_1    = int ( z'00B9' ), &
+      Exponent_2    = int ( z'00B2' ), &
+      Exponent_3    = int ( z'00B3' ), &
+      Exponent_4    = int ( z'2074' ), &
+      Exponent_5    = int ( z'2075' ), &
+      Exponent_6    = int ( z'2076' ), &
+      Exponent_7    = int ( z'2077' ), &
+      Exponent_8    = int ( z'2078' ), &
+      Exponent_9    = int ( z'2079' ), &
+      ExponentMinus = int ( z'207B' )
+    integer ( KDI ), dimension ( 9 ), private, parameter :: &
+      Exponent_I &
+        = [ Exponent_1, Exponent_2, Exponent_3, Exponent_4, Exponent_5, &
+            Exponent_6, Exponent_7, Exponent_8, Exponent_9 ]
+    character ( 1, KBCH ), private, parameter :: &
+      Exponent_1_Char   = char ( Exponent_1, KBCH ), &
+      Exponent_2_Char   = char ( Exponent_2, KBCH ), &
+      Exponent_3_Char   = char ( Exponent_3, KBCH ), &
+      Exponent_4_Char   = char ( Exponent_4, KBCH ), &
+      Exponent_5_Char   = char ( Exponent_5, KBCH ), &
+      Exponent_6_Char   = char ( Exponent_6, KBCH ), &
+      Exponent_7_Char   = char ( Exponent_7, KBCH ), &
+      Exponent_8_Char   = char ( Exponent_8, KBCH ), &
+      Exponent_9_Char   = char ( Exponent_9, KBCH ), &
+      ExponentMinusChar = char ( ExponentMinus, KBCH )
+    character ( 1, KBCH ), dimension ( 9 ), private, parameter :: &
+      Exponent_I_Char &
+        = [ Exponent_1_Char, Exponent_2_Char, Exponent_3_Char, &
+            Exponent_4_Char, Exponent_5_Char, Exponent_6_Char, &
+            Exponent_7_Char, Exponent_8_Char, Exponent_9_Char ]
+    character ( 9, KBCH ), private, parameter :: &
+      ExponentCharacters &
+        =    Exponent_1_Char // Exponent_2_Char // Exponent_3_Char &
+          // Exponent_4_Char // Exponent_5_Char // Exponent_6_Char &
+          // Exponent_7_Char // Exponent_8_Char // Exponent_9_Char
 
 contains
 
@@ -211,6 +262,21 @@ contains
   end subroutine Initialize_MV
   
   
+  subroutine Initialize_MV_KBCH ( MV, Unit, Number )
+    
+    class ( MeasuredValueForm ), intent ( inout ) :: &
+      MV
+    character ( *, KBCH ), intent ( in ) :: &
+      Unit
+    real ( KDR ), intent ( in ) :: &
+      Number
+      
+    MV % Number = Number
+    MV % Unit   = Unit
+
+  end subroutine Initialize_MV_KBCH
+  
+  
   subroutine Initialize_MV_Label ( MV, Label, Unit, Number )
     
     class ( MeasuredValueForm ), intent ( inout ) :: &
@@ -226,6 +292,42 @@ contains
     MV % Label  = Label
 
   end subroutine Initialize_MV_Label
+  
+  
+  subroutine Initialize_MV_KBCH_Label ( MV, Label, Unit, Number )
+    
+    class ( MeasuredValueForm ), intent ( inout ) :: &
+      MV
+    character ( *, KDCH ), intent ( in ) :: &
+      Label
+    character ( *, KBCH ), intent ( in ) :: &
+      Unit
+    real ( KDR ), intent ( in ) :: &
+      Number
+      
+    MV % Number = Number
+    MV % Unit   = Unit
+    MV % Label  = Label
+
+  end subroutine Initialize_MV_KBCH_Label
+  
+  
+  subroutine Initialize_MV_Label_KBCH ( MV, Label, Unit, Number )
+    
+    class ( MeasuredValueForm ), intent ( inout ) :: &
+      MV
+    character ( *, KBCH ), intent ( in ) :: &
+      Label
+    character ( *, KDCH ), intent ( in ) :: &
+      Unit
+    real ( KDR ), intent ( in ) :: &
+      Number
+      
+    MV % Number = Number
+    MV % Unit   = Unit
+    MV % Label  = Label
+
+  end subroutine Initialize_MV_Label_KBCH
   
   
   subroutine Initialize_MV_From_MV ( MV_Target, MV_Source )
@@ -256,6 +358,22 @@ contains
     MV_Target % Label  = Label
   
   end subroutine Initialize_MV_From_MV_Label
+  
+  
+  subroutine Initialize_MV_From_MV_Label_KBCH ( MV_Target, MV_Source, Label )
+    
+    class ( MeasuredValueForm ), intent ( inout ) :: &
+      MV_Target
+    type ( MeasuredValueForm ), intent ( in ) :: &
+      MV_Source
+    character ( *, KBCH ), intent ( in ) :: &
+      Label
+            
+    MV_Target % Number = MV_Source % Number
+    MV_Target % Unit   = MV_Source % Unit
+    MV_Target % Label  = Label
+  
+  end subroutine Initialize_MV_From_MV_Label_KBCH
   
   
   elemental function Addition_MV_MV ( Augend, Addend ) result ( A_MV_MV )
@@ -457,7 +575,7 @@ contains
       P_MV_MV
 
     P_MV_MV % Number = Multiplier % Number * Multiplicand % Number
-  
+
     P_MV_MV % Unit &
       = P_MV_MV % ProductUnit ( Multiplier % Unit, Multiplicand % Unit )
 
@@ -561,22 +679,22 @@ contains
   end function Power_MV_Integer
   
 
-  elemental function Power_MV_Real ( Base, Exponent ) result ( P_MV_R )
+  ! elemental function Power_MV_Real ( Base, Exponent ) result ( P_MV_R )
     
-    class ( MeasuredValueForm ), intent ( in ) :: &
-      Base
-    real ( KDR ), intent ( in ) :: &
-      Exponent
-    type ( MeasuredValueForm ) :: &
-      P_MV_R
+  !   class ( MeasuredValueForm ), intent ( in ) :: &
+  !     Base
+  !   real ( KDR ), intent ( in ) :: &
+  !     Exponent
+  !   type ( MeasuredValueForm ) :: &
+  !     P_MV_R
     
-    P_MV_R % Number = Base % Number ** Exponent
+  !   P_MV_R % Number = Base % Number ** Exponent
     
-    P_MV_R % Unit = P_MV_R % PowerUnit ( Base % Unit, Exponent )
+  !   P_MV_R % Unit = P_MV_R % PowerUnit ( Base % Unit, Exponent )
     
-    P_MV_R % Label = P_MV_R % PowerUnit ( Base % Label, Exponent )
+  !   P_MV_R % Label = P_MV_R % PowerUnit ( Base % Label, Exponent )
     
-  end function Power_MV_Real
+  ! end function Power_MV_Real
   
 
   impure elemental function Quotient_MV_MV ( Dividend, Divisor ) &
@@ -1209,93 +1327,169 @@ contains
   end function LessThanEqualToInteger_MV
 
 
+!   recursive function ProductUnit ( Unit_1, Unit_2 ) result ( P_U )
+
+!     character ( *, KBCH ), intent ( in ) :: &
+!       Unit_1, &
+!       Unit_2
+!     character ( LDL, KBCH ) :: &
+!       P_U
+
+!     integer ( KDI ) :: &
+!       iU_1, iU_2, &
+!       Caret, &
+!       Dot, &
+!       Exponent_1, &
+!       Exponent_2, &
+!       Exponent
+!     character ( LDL, KBCH ) :: &
+!       U_1, &
+!       U_2, &
+!       UnitBase_1, &
+!       UnitBase_2, &
+!       ExponentString
+!     character ( LDL, KBCH ), dimension ( : ), allocatable :: &
+!       UnitPiece_1, &
+!       UnitPiece_2
+  
+!     P_U = KBCH_''
+
+!     if ( trim ( Unit_1 ) == KBCH_'' .and. trim ( Unit_2 ) == KBCH_'' ) &
+!       return
+
+!     call Split ( Unit_1, KBCH_' ', UnitPiece_1 )
+!     call Split ( Unit_2, KBCH_' ', UnitPiece_2 )
+!     if ( size ( UnitPiece_1 ) > 1 .or. size ( UnitPiece_2 ) > 1 ) then
+!       do iU_1 = 1, size ( UnitPiece_1 )
+!         do iU_2 = 1, size ( UnitPiece_2 )
+!           Caret = index ( UnitPiece_1 ( iU_1 ), KBCH_'^' )
+!           if ( Caret > 0 ) then
+!             UnitBase_1 = UnitPiece_1 ( iU_1 ) ( : Caret - 1 )
+!           else
+!             UnitBase_1 = UnitPiece_1 ( iU_1 )
+!           end if
+!           if ( index ( UnitPiece_2 ( iU_2 ), trim ( UnitBase_1 ) ) > 0 ) then
+!             UnitPiece_1 ( iU_1 ) &
+!               = ProductUnit ( UnitPiece_1 ( iU_1 ), UnitPiece_2 ( iU_2 ) )
+!             UnitPiece_2 ( iU_2 ) = KBCH_''
+!           end if
+!         end do !-- iU_2
+!       end do !-- iU_1
+!       call Join ( UnitPiece_1, KBCH_' ', U_1 )
+!       call Join ( UnitPiece_2, KBCH_' ', U_2 )
+!       P_U = adjustl ( trim ( U_1 ) // KBCH_' ' // trim ( U_2 ) )
+!       return
+!     !   !-- Give up on this more complicated case
+!     !   P_U = adjustl ( trim ( Unit_1 ) // ' ' // trim ( Unit_2 ) )
+!     !   return
+!     end if
+
+!     !-- Analyze Unit_1
+!     Caret = index ( Unit_1, KBCH_'^' )     
+!     if ( Caret > 0 ) then
+!       UnitBase_1 = Unit_1 ( : Caret - 1 )
+!       Dot = index ( Unit_1 ( Caret + 1 : ), KBCH_'.' )
+!       if ( Dot > 0 ) then
+! !        print *, 'ERROR: Real exponents not implemented in Product_MV_MV'
+! !        stop
+!       else
+!         read ( Unit_1 ( Caret + 1 : ), fmt = '(i7)') Exponent_1
+!       end if
+!     else
+!       UnitBase_1 = Unit_1
+!       Exponent_1 = 1
+!     end if
+
+!     !-- Analyze Unit_2
+!     Caret = index ( Unit_2, KBCH_'^' )     
+!     if ( Caret > 0 ) then
+!       UnitBase_2 = Unit_2 ( : Caret - 1 )
+!       Dot = index ( Unit_2 ( Caret + 1 : ), KBCH_'.' )
+!       if ( Dot > 0 ) then
+! !        print *, 'ERROR: Real exponents not implemented in Product_MV_MV'
+! !        stop
+!       else
+!         read ( Unit_2 ( Caret + 1 : ), fmt = '(i7)') Exponent_2
+!       end if
+!     else
+!       UnitBase_2 = Unit_2
+!       Exponent_2 = 1
+!     end if
+
+!     if ( trim ( UnitBase_1 ) == trim ( UnitBase_2 ) ) then
+!       Exponent = Exponent_1 + Exponent_2
+!       if ( Exponent == 0 ) then
+!         P_U = ''
+!       else if ( Exponent == 1 ) then
+!         P_U = trim ( UnitBase_1 )
+!       else 
+!         write ( ExponentString, fmt ='(i7)' ) Exponent
+!         P_U = trim ( UnitBase_1 ) // KBCH_'^' &
+!               // trim ( adjustl ( ExponentString ) )
+!       end if
+!     else
+!       P_U = adjustl ( trim ( Unit_1 ) // KBCH_' ' // trim ( Unit_2 ) )
+!     end if
+
+! ! print*, 'UnitBase_1 ', trim ( UnitBase_1 )
+! ! print*, 'UnitBase_2 ', trim ( UnitBase_2 )
+! ! print*, 'Exponent_1 ', Exponent_1
+! ! print*, 'Exponent_2 ', Exponent_2
+! ! print*, 'Exponent', Exponent
+
+!   end function ProductUnit
+
+
   recursive function ProductUnit ( Unit_1, Unit_2 ) result ( P_U )
 
-    character ( * ), intent ( in ) :: &
+    character ( *, KBCH ), intent ( in ) :: &
       Unit_1, &
       Unit_2
-    character ( LDL ) :: &
+    character ( LDL, KBCH ) :: &
       P_U
 
     integer ( KDI ) :: &
       iU_1, iU_2, &
-      Caret, &
-      Dot, &
       Exponent_1, &
       Exponent_2, &
       Exponent
-    character ( LDL ) :: &
+    character ( LDL, KBCH ) :: &
       U_1, &
       U_2, &
       UnitBase_1, &
-      UnitBase_2, &
-      ExponentString
-    character ( LDL ), dimension ( : ), allocatable :: &
+      UnitBase_2!, &
+!       ExponentString
+    character ( LDL, KBCH ), dimension ( : ), allocatable :: &
       UnitPiece_1, &
       UnitPiece_2
   
-    P_U = ''
+    P_U = KBCH_''
 
-    if ( trim ( Unit_1 ) == '' .and. trim ( Unit_2 ) == '' ) return
+    if ( trim ( Unit_1 ) == KBCH_'' .and. trim ( Unit_2 ) == KBCH_'' ) &
+      return
 
-    call Split ( Unit_1, ' ', UnitPiece_1 )
-    call Split ( Unit_2, ' ', UnitPiece_2 )
+    call Split ( Unit_1, KBCH_' ', UnitPiece_1 )
+    call Split ( Unit_2, KBCH_' ', UnitPiece_2 )
     if ( size ( UnitPiece_1 ) > 1 .or. size ( UnitPiece_2 ) > 1 ) then
       do iU_1 = 1, size ( UnitPiece_1 )
         do iU_2 = 1, size ( UnitPiece_2 )
-          Caret = index ( UnitPiece_1 ( iU_1 ), '^' )
-          if ( Caret > 0 ) then
-            UnitBase_1 = UnitPiece_1 ( iU_1 ) ( : Caret - 1 )
-          else
-            UnitBase_1 = UnitPiece_1 ( iU_1 )
-          end if
+          call AnalyzeUnit &
+                 ( UnitPiece_1 ( iU_1 ), UnitBase_1, Exponent_1 )
           if ( index ( UnitPiece_2 ( iU_2 ), trim ( UnitBase_1 ) ) > 0 ) then
             UnitPiece_1 ( iU_1 ) &
               = ProductUnit ( UnitPiece_1 ( iU_1 ), UnitPiece_2 ( iU_2 ) )
-            UnitPiece_2 ( iU_2 ) = ''
+            UnitPiece_2 ( iU_2 ) = KBCH_''
           end if
         end do !-- iU_2
       end do !-- iU_1
-      call Join ( UnitPiece_1, ' ', U_1 )
-      call Join ( UnitPiece_2, ' ', U_2 )
-      P_U = adjustl ( trim ( U_1 ) // ' ' // trim ( U_2 ) )
+      call Join ( UnitPiece_1, KBCH_' ', U_1 )
+      call Join ( UnitPiece_2, KBCH_' ', U_2 )
+      P_U = adjustl ( trim ( U_1 ) // KBCH_' ' // trim ( U_2 ) )
       return
-    !   !-- Give up on this more complicated case
-    !   P_U = adjustl ( trim ( Unit_1 ) // ' ' // trim ( Unit_2 ) )
-    !   return
     end if
 
-    !-- Analyze Unit_1
-    Caret = index ( Unit_1, '^' )     
-    if ( Caret > 0 ) then
-      UnitBase_1 = Unit_1 ( : Caret - 1 )
-      Dot = index ( Unit_1 ( Caret + 1 : ), '.' )
-      if ( Dot > 0 ) then
-!        print *, 'ERROR: Real exponents not implemented in Product_MV_MV'
-!        stop
-      else
-        read ( Unit_1 ( Caret + 1 : ), fmt = '(i7)') Exponent_1
-      end if
-    else
-      UnitBase_1 = Unit_1
-      Exponent_1 = 1
-    end if
-
-    !-- Analyze Unit_2
-    Caret = index ( Unit_2, '^' )     
-    if ( Caret > 0 ) then
-      UnitBase_2 = Unit_2 ( : Caret - 1 )
-      Dot = index ( Unit_2 ( Caret + 1 : ), '.' )
-      if ( Dot > 0 ) then
-!        print *, 'ERROR: Real exponents not implemented in Product_MV_MV'
-!        stop
-      else
-        read ( Unit_2 ( Caret + 1 : ), fmt = '(i7)') Exponent_2
-      end if
-    else
-      UnitBase_2 = Unit_2
-      Exponent_2 = 1
-    end if
+    call AnalyzeUnit ( Unit_1, UnitBase_1, Exponent_1 )
+    call AnalyzeUnit ( Unit_2, UnitBase_2, Exponent_2 )
 
     if ( trim ( UnitBase_1 ) == trim ( UnitBase_2 ) ) then
       Exponent = Exponent_1 + Exponent_2
@@ -1304,11 +1498,12 @@ contains
       else if ( Exponent == 1 ) then
         P_U = trim ( UnitBase_1 )
       else 
-        write ( ExponentString, fmt ='(i7)' ) Exponent
-        P_U = trim ( UnitBase_1 ) // '^' // trim ( adjustl ( ExponentString ) )
+        if ( Exponent < 0 ) &
+          UnitBase_1 = trim ( UnitBase_1 ) // ExponentMinusChar
+        P_U = trim ( UnitBase_1 ) // Exponent_I_Char ( abs ( Exponent ) )
       end if
-    else
-      P_U = adjustl ( trim ( Unit_1 ) // ' ' // trim ( Unit_2 ) )
+    else !-- different units
+      P_U = adjustl ( trim ( Unit_1 ) // KBCH_' ' // trim ( Unit_2 ) )
     end if
 
 ! print*, 'UnitBase_1 ', trim ( UnitBase_1 )
@@ -1320,133 +1515,226 @@ contains
   end function ProductUnit
 
 
+  ! elemental function PowerUnitInteger ( Unit, Exponent ) result ( P_U )
+
+  !   character ( *, KBCH ), intent ( in ) :: &
+  !     Unit
+  !   integer ( KDI ), intent ( in ) :: &
+  !     Exponent
+  !   character ( LDL, KBCH ) :: &
+  !     P_U
+    
+  !   integer ( KDI ) :: &
+  !     iU, &  !-- iUnit
+  !     Caret, &
+  !     Dot, &
+  !     OldIntegerExponent
+  !   real ( KDR ) :: &
+  !     OldRealExponent
+  !   character ( LDL, KBCH ) :: &
+  !     ExponentString, &
+  !     Scratch
+  !   character ( LDL, KBCH ), dimension ( : ), allocatable :: &
+  !     UnitPiece
+      
+  !   P_U = KBCH_''
+
+  !   if ( Unit == KBCH_'' ) &
+  !     return
+
+  !   call Split ( Unit, KBCH_' ', UnitPiece )
+    
+  !   do iU = 1, size ( UnitPiece )
+
+  !     Scratch = UnitPiece ( iU )
+  !     Caret = index ( Scratch, KBCH_'^' )
+      
+  !     if ( Caret > 0 ) then
+  !       Dot = index ( Scratch ( Caret + 1 : ), KBCH_'.' )
+  !       if ( Dot > 0 ) then
+  !         read ( Scratch ( Caret + 1 : ), fmt = '(f7.4)' ) OldRealExponent
+  !         write &
+  !           ( ExponentString, fmt = '(f7.4)' )  ( OldRealExponent * Exponent )
+  !       else
+  !         read ( Scratch ( Caret + 1 : ), fmt = '(i7)') &
+  !              OldIntegerExponent
+  !         write &
+  !           ( ExponentString, fmt ='(i7)' ) ( OldIntegerExponent *  Exponent )
+  !       end if
+  !       UnitPiece ( iU ) &
+  !         = trim ( Scratch ( : Caret ) ) // trim ( adjustl ( ExponentString ) )
+  !     else
+  !       if ( Exponent == 1 ) exit
+  !       write ( ExponentString, fmt = '(i7)' ) Exponent
+  !       UnitPiece ( iU ) = &
+  !         trim ( Scratch ) // KBCH_'^' // trim ( adjustl ( ExponentString ) )
+  !     end if
+
+  !   end do 
+
+  !   call Join ( UnitPiece, KBCH_' ', P_U )
+      
+  ! end function PowerUnitInteger
+
+
   elemental function PowerUnitInteger ( Unit, Exponent ) result ( P_U )
 
-    character ( * ), intent ( in ) :: &
+    character ( *, KBCH ), intent ( in ) :: &
       Unit
     integer ( KDI ), intent ( in ) :: &
       Exponent
-    character ( LDL ) :: &
+    character ( LDL, KBCH ) :: &
       P_U
     
     integer ( KDI ) :: &
-      iU, &  !-- iUnit
-      Caret, &
-      Dot, &
-      OldIntegerExponent
-    real ( KDR ) :: &
-      OldRealExponent
-    character ( LDL ) :: &
-      ExponentString, &
-      Scratch
-    character ( LDL ), dimension ( : ), allocatable :: &
+      iU, &   !-- iUnit
+      OldExponent, &
+      NewExponent
+    logical ( KDL ) :: &
+      HasExponent
+    character ( LDL, KBCH ) :: &
+      UnitBase
+    character ( LDL, KBCH ), dimension ( : ), allocatable :: &
       UnitPiece
       
-    P_U = ''
+    P_U = KBCH_''
 
-    if ( Unit == '' ) return
+    if ( Unit == KBCH_'' ) &
+      return
 
-    call Split ( Unit, ' ', UnitPiece )
+    call Split ( Unit, KBCH_' ', UnitPiece )
     
     do iU = 1, size ( UnitPiece )
 
-      Scratch = UnitPiece ( iU )
-      Caret = index ( Scratch, '^' )
-      
-      if ( Caret > 0 ) then
-        Dot = index ( Scratch ( Caret + 1 : ), '.' )
-        if ( Dot > 0 ) then
-          read ( Scratch ( Caret + 1 : ), fmt = '(f7.4)' ) OldRealExponent
-          write &
-            ( ExponentString, fmt = '(f7.4)' )  ( OldRealExponent * Exponent )
-        else
-          read ( Scratch ( Caret + 1 : ), fmt = '(i7)') &
-               OldIntegerExponent
-          write &
-            ( ExponentString, fmt ='(i7)' ) ( OldIntegerExponent *  Exponent )
-        end if
+      call AnalyzeUnit ( UnitPiece ( iU ), UnitBase, OldExponent )
+
+      NewExponent = OldExponent * Exponent
+  
+      if ( NewExponent /= 1 ) then
+        if ( NewExponent < 0 ) &
+          UnitBase = trim ( UnitBase ) // ExponentMinusChar
         UnitPiece ( iU ) &
-          = trim ( Scratch ( : Caret ) ) // trim ( adjustl ( ExponentString ) )
-      else
-        if ( Exponent == 1 ) exit
-        write ( ExponentString, fmt = '(i7)' ) Exponent
-        UnitPiece ( iU ) = &
-          trim ( Scratch ) // '^' // trim ( adjustl ( ExponentString ) )
+          = trim ( UnitBase ) &
+            // Exponent_I_Char ( abs ( NewExponent ) )
       end if
 
     end do 
 
-    call Join ( UnitPiece, ' ', P_U )
+    call Join ( UnitPiece, KBCH_' ', P_U )
       
   end function PowerUnitInteger
 
 
-  elemental function PowerUnitReal ( Unit, Exponent ) result ( P_U )
+  ! elemental function PowerUnitReal ( Unit, Exponent ) result ( P_U )
 
-    character ( * ), intent ( in ) :: &
-      Unit
-    real ( KDR ), intent ( in ) :: &
-      Exponent
-    character ( LDL ) :: &
-      P_U
+  !   character ( *, KBCH ), intent ( in ) :: &
+  !     Unit
+  !   real ( KDR ), intent ( in ) :: &
+  !     Exponent
+  !   character ( LDL, KBCH ) :: &
+  !     P_U
     
-    integer ( KDI ) :: &
-      iU, &  !-- iUnit
-      Caret, &
-      Dot, &
-      OldIntegerExponent
-    real ( KDR ) :: &
-      OldRealExponent
-    character ( LDL ) :: &
-      ExponentString, &
-      Scratch
-    character ( LDL ), dimension ( : ), allocatable :: &
-      UnitPiece
+  !   integer ( KDI ) :: &
+  !     iU, &  !-- iUnit
+  !     Caret, &
+  !     Dot, &
+  !     OldIntegerExponent
+  !   real ( KDR ) :: &
+  !     OldRealExponent
+  !   character ( LDL, KBCH ) :: &
+  !     ExponentString, &
+  !     Scratch
+  !   character ( LDL, KBCH ), dimension ( : ), allocatable :: &
+  !     UnitPiece
       
-    P_U = ''
+  !   P_U = KBCH_''
 
-    if ( Unit == '' ) return
+  !   if ( Unit == KBCH_'' ) return
 
-    call Split ( Unit, ' ', UnitPiece )
+  !   call Split ( Unit, KBCH_' ', UnitPiece )
     
-    do iU = 1, size ( UnitPiece )
+  !   do iU = 1, size ( UnitPiece )
 
-      Scratch = UnitPiece ( iU )
-      Caret = index ( Scratch, '^' )
+  !     Scratch = UnitPiece ( iU )
+  !     Caret = index ( Scratch, KBCH_'^' )
      
-      if ( Caret > 0 ) then
-        Dot = index ( Scratch ( Caret + 1 : ), '.' )
-        if ( Dot > 0 ) then
-          read ( Scratch ( Caret + 1 : ), fmt = '(f7.4)' ) OldRealExponent
-          write &
-            ( ExponentString, fmt = '(f7.4)' )  ( OldRealExponent * Exponent )
-        else
-          read ( Scratch ( Caret + 1 : ), fmt = '(i7)') &
-               OldIntegerExponent
-          write &
-            ( ExponentString, fmt ='(f7.4)' ) ( OldIntegerExponent * Exponent )
-        end if
-        if ( trim ( adjustl ( ExponentString ) ) == '1.0000' ) then
-          UnitPiece ( iU ) = trim ( Scratch ( : Caret - 1 ) )
-        else
-          UnitPiece ( iU ) &
-            = trim ( Scratch ( : Caret ) ) // trim ( adjustl ( ExponentString ) )
-        end if
-      else
-        write ( ExponentString, fmt = '(f7.4)' ) Exponent
-        if ( trim ( adjustl ( ExponentString ) ) == '1.0000' ) then
-          UnitPiece ( iU ) = trim ( Scratch )
-        else
-          UnitPiece ( iU ) = &
-            trim ( Scratch ) // '^' // trim ( adjustl ( ExponentString ) )
-        end if
-      end if
+  !     if ( Caret > 0 ) then
+  !       Dot = index ( Scratch ( Caret + 1 : ), KBCH_'.' )
+  !       if ( Dot > 0 ) then
+  !         read ( Scratch ( Caret + 1 : ), fmt = '(f7.4)' ) OldRealExponent
+  !         write &
+  !           ( ExponentString, fmt = '(f7.4)' )  ( OldRealExponent * Exponent )
+  !       else
+  !         read ( Scratch ( Caret + 1 : ), fmt = '(i7)') &
+  !              OldIntegerExponent
+  !         write &
+  !           ( ExponentString, fmt ='(f7.4)' ) ( OldIntegerExponent * Exponent )
+  !       end if
+  !       if ( trim ( adjustl ( ExponentString ) ) == KBCH_'1.0000' ) then
+  !         UnitPiece ( iU ) = trim ( Scratch ( : Caret - 1 ) )
+  !       else
+  !         UnitPiece ( iU ) &
+  !           = trim ( Scratch ( : Caret ) ) &
+  !             // trim ( adjustl ( ExponentString ) )
+  !       end if
+  !     else
+  !       write ( ExponentString, fmt = '(f7.4)' ) Exponent
+  !       if ( trim ( adjustl ( ExponentString ) ) == KBCH_'1.0000' ) then
+  !         UnitPiece ( iU ) = trim ( Scratch )
+  !       else
+  !         UnitPiece ( iU ) = &
+  !           trim ( Scratch ) // KBCH_'^' // trim ( adjustl ( ExponentString ) )
+  !       end if
+  !     end if
 
-    end do
+  !   end do
     
-    call Join ( UnitPiece, ' ', P_U )
+  !   call Join ( UnitPiece, KBCH_' ', P_U )
       
-  end function PowerUnitReal
+  ! end function PowerUnitReal
+
+
+  pure subroutine AnalyzeUnit ( Unit, UnitBase, Exponent )
+
+    character ( *, KBCH ), intent ( in ) :: &
+      Unit
+    character ( *, KBCH ), intent ( out ) :: &
+      UnitBase
+    integer ( KDI ), intent ( out ) :: &
+      Exponent
+
+    integer ( KDI ) :: &
+      ltU  !-- ltUnit
+    logical ( KDL ) :: &
+      HasExponent, &
+      NegativeExponent
+
+    ltU = len_trim ( Unit )
+
+    if ( ltU == 0 ) then
+      UnitBase = ''
+      Exponent = 0
+      return
+    end if
+
+    HasExponent = any ( ichar ( Unit ( ltU : ), KBCH ) == Exponent_I )
+
+    if ( HasExponent ) then
+      Exponent = index ( ExponentCharacters, Unit ( ltU : ltU ) )
+      NegativeExponent &
+        = ichar ( Unit ( ltU - 1 : ), KBCH ) == ExponentMinus
+      if ( NegativeExponent ) then
+        Exponent  =  - Exponent
+        UnitBase = Unit ( 1 : ltU - 2 )
+      else
+        UnitBase = Unit ( 1 : ltU - 1 )
+      end if
+    else !-- no exponent
+      UnitBase = Unit
+      Exponent = 1
+    end if
+
+  end subroutine AnalyzeUnit
 
 
 end module MeasuredValue_Form

@@ -121,8 +121,10 @@ contains
       DescriptionOption, &
       WorkingDirectoryOption
     
-    call Show ( 'Initializing a GridImageStream', CONSOLE % INFO_2 )
-    call Show ( Name, 'Name', CONSOLE % INFO_2 )
+    GIS % IGNORABILITY = CONSOLE % INFO_2
+
+    call Show ( 'Initializing a GridImageStream', GIS % IGNORABILITY )
+    call Show ( Name, 'Name', GIS % IGNORABILITY )
 
     GIS % ACCESS_SET_GRID  = ACCESS_MODE_SET_GRID
     GIS % ACCESS_CREATE    = ACCESS_MODE_CREATE
@@ -130,7 +132,6 @@ contains
     GIS % ACCESS_READ      = ACCESS_MODE_READ
     GIS % ACCESS_UNOPENED  = ACCESS_MODE_UNOPENED
     GIS % HANDLE_UNDEFINED = HANDLE_UNDEFINED
-    GIS % IGNORABILITY     = CONSOLE % INFO_2
     
     GIS % lName = len_trim ( Name )
 
@@ -138,8 +139,8 @@ contains
     if ( present ( DescriptionOption ) ) &
       GIS % lDescription = len_trim ( DescriptionOption )
 
-    GIS % Number       = -1
-    GIS % AccessMode   = ACCESS_MODE_UNOPENED
+    GIS % Number          = -1
+    GIS % AccessMode      = ACCESS_MODE_UNOPENED
     GIS % MeshBlockHandle = HANDLE_UNDEFINED
     GIS % MultiMeshHandle = HANDLE_UNDEFINED
 
@@ -152,6 +153,7 @@ contains
     GIS % WorkingDirectory = '../Output/'
     if ( present ( WorkingDirectoryOption ) ) &
       GIS % WorkingDirectory = WorkingDirectoryOption
+    call Show ( GIS % WorkingDirectory, 'WorkingDirectory', GIS % IGNORABILITY )
       
     if ( present ( CommunicatorOption ) ) then
       GIS % nBlocks = CommunicatorOption % Size
@@ -168,9 +170,8 @@ contains
   end subroutine Initialize
   
   
-  subroutine Open &
-               ( GIS, AccessMode, SeriesOption, NumberOption, &
-                 BlockNumberOption )
+  subroutine Open ( GIS, AccessMode, SeriesOption, NumberOption, &
+                    BlockNumberOption )
                
     class ( GridImageStreamTemplate ), intent ( inout ) :: &
       GIS
@@ -342,24 +343,20 @@ contains
     end if
     
     if ( GIS % AccessMode == ACCESS_MODE_CREATE ) then
-      call Show &
-             ( 'Creating a GridImage file for writing', GIS % IGNORABILITY )
+      call Show ( 'Creating a GridImage file for writing', &
+                  GIS % IGNORABILITY )
     else
-      call Show &
-             ( 'Opening a GridImage file for writing', GIS % IGNORABILITY )
+      call Show ( 'Opening a GridImage file for writing', &
+                  GIS % IGNORABILITY )
     end if
-    call Show &
-           ( GIS % Name, 'Name', GIS % IGNORABILITY )
-    call Show &
-           ( FileNumberString, 'Number', GIS % IGNORABILITY )
+    call Show ( GIS % Name, 'Name', GIS % IGNORABILITY )
+    call Show ( FileNumberString, 'Number', GIS % IGNORABILITY )
 
     if ( .not. GIS % WorkingDirectoryCreated ) then
-      call Show &
-             ( 'Creating working directory if it does not exist', &
-                GIS % IGNORABILITY )
-      call Show &
-             ( GIS % WorkingDirectory,  'Working Directory', &
-               CONSOLE % INFO_3 )
+      call Show ( 'Creating working directory if it does not exist', &
+                  GIS % IGNORABILITY + 2 )
+      call Show ( GIS % WorkingDirectory,  'Working Directory', &
+                  GIS % IGNORABILITY + 2 )
       Error = MakeSystemDirectory &
                 ( trim ( GIS % WorkingDirectory ) // c_null_char, &
                   int( O'777', c_int ) )
@@ -500,12 +497,9 @@ contains
         
     GIS % AccessMode = ACCESS_MODE_READ
     
-    call Show &
-           ( 'Opening a GridImage file for reading', GIS % IGNORABILITY )
-    call Show &
-           ( GIS % Name, 'Name', GIS % IGNORABILITY )
-    call Show &
-           ( FileNumberString, 'Number', GIS % IGNORABILITY )
+    call Show ( 'Opening a GridImage file for reading', GIS % IGNORABILITY )
+    call Show ( GIS % Name, 'Name', GIS % IGNORABILITY )
+    call Show ( FileNumberString, 'Number', GIS % IGNORABILITY )
     
     if ( GIS % Parallel ) then
       
@@ -575,9 +569,8 @@ contains
     integer ( KDI ), intent ( out ) :: &
       Status
       
-    open &
-      ( newunit = Handle, file = trim ( PathName ), &
-        action = 'write', status = 'replace', iostat = Status )    
+    open ( newunit = Handle, file = trim ( PathName ), &
+           action = 'write', status = 'replace', iostat = Status )    
   
   end subroutine FileCreate
   
@@ -593,9 +586,8 @@ contains
     integer ( KDI ), intent ( out ) :: &
       Status
     
-    open &
-      ( newunit = Handle, file = trim ( PathName ), &
-        action = 'write', status = 'old', iostat = Status )    
+    open ( newunit = Handle, file = trim ( PathName ), &
+           action = 'write', status = 'old', iostat = Status )    
   
   end subroutine FileOpenWrite
   

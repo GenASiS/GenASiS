@@ -56,7 +56,7 @@ contains
     integer ( KDI ) :: &
       Scratch
 
-    Ignorability = CONSOLE % INFO_3
+    Ignorability = CONSOLE % INFO_4
     if ( present ( IgnorabilityOption ) ) Ignorability = IgnorabilityOption
 
     Success = .false.
@@ -128,7 +128,7 @@ contains
       Value = Scratch
       call Show ( 'Parameter ' // trim ( Name ) // ' found', Ignorability )
       call Show ( Source, 'Source', Ignorability )
-      if ( InputUnit % Label == '' ) then
+      if ( InputUnit % Label == KBCH_'' ) then
         call Show &
                ( Value, trim ( Name ) // ' ( dimensionless )', &
                  Ignorability )
@@ -203,7 +203,7 @@ contains
       Value = Scratch
       call Show ( 'Parameter ' // trim ( Name ) // ' found', Ignorability )
       call Show ( Source, 'Source', Ignorability )
-      if ( InputUnit % Label == '' ) then
+      if ( InputUnit % Label == KBCH_'' ) then
         call Show &
                ( Value, trim ( Name ) // ' ( dimensionless )', &
                  Ignorability )
@@ -378,6 +378,12 @@ contains
     if ( present ( SuccessOption ) ) SuccessOption = Success
 
     if ( Success ) then
+      if ( nValues > size ( Value ) ) then
+        call Show ( 'Ignoring extra input values', CONSOLE % WARNING )
+        call Show ( size ( Value ), 'nValues requested', CONSOLE % WARNING )
+        call Show ( nValues, 'nValues input', CONSOLE % WARNING )
+        nValues = size ( Value )
+      end if
       Value ( : nValues ) = Scratch ( : nValues )
       call Show ( 'Parameter ' // trim ( Name ) // ' found', Ignorability )
       call Show ( Source, 'Source', Ignorability )
@@ -440,10 +446,16 @@ contains
     if ( present ( SuccessOption ) ) SuccessOption = Success
 
     if ( Success ) then
+      if ( nValues > size ( Value ) ) then
+        call Show ( 'Ignoring extra input values', CONSOLE % WARNING )
+        call Show ( size ( Value ), 'nValues requested', CONSOLE % WARNING )
+        call Show ( nValues, 'nValues input', CONSOLE % WARNING )
+        nValues = size ( Value )
+      end if
       Value ( : nValues ) = Scratch ( : nValues )
       call Show ( 'Parameter ' // trim ( Name ) // ' found', Ignorability )
       call Show ( Source, 'Source', Ignorability )
-      if ( all ( InputUnit ( : nValues ) % Label == '' ) ) then
+      if ( all ( InputUnit ( : nValues ) % Label == KBCH_'' ) ) then
         call Show &
                ( Value ( : nValues ), &
                  trim ( Name ) // ' ( dimensionless )', Ignorability )
@@ -514,10 +526,16 @@ contains
     if ( present ( SuccessOption ) ) SuccessOption = Success
 
     if ( Success ) then
+      if ( nValues > size ( Value ) ) then
+        call Show ( 'Ignoring extra input values', CONSOLE % WARNING )
+        call Show ( size ( Value ), 'nValues requested', CONSOLE % WARNING )
+        call Show ( nValues, 'nValues input', CONSOLE % WARNING )
+        nValues = size ( Value )
+      end if
       Value ( : nValues ) = Scratch ( : nValues )
       call Show ( 'Parameter ' // trim ( Name ) // ' found', Ignorability )
       call Show ( Source, 'Source', Ignorability )
-      if ( all ( InputUnit ( : nValues ) % Label == '' ) ) then
+      if ( all ( InputUnit ( : nValues ) % Label == KBCH_'' ) ) then
         call Show &
                ( Value ( : nValues ), &
                  trim ( Name ) // ' ( dimensionless )', Ignorability )
@@ -583,6 +601,12 @@ contains
     if ( present ( SuccessOption ) ) SuccessOption = Success
 
     if ( Success ) then
+      if ( nValues > size ( Value ) ) then
+        call Show ( 'Ignoring extra input values', CONSOLE % WARNING )
+        call Show ( size ( Value ), 'nValues requested', CONSOLE % WARNING )
+        call Show ( nValues, 'nValues input', CONSOLE % WARNING )
+        nValues = size ( Value )
+      end if
       Value ( : nValues ) = Scratch ( : nValues )
       call Show ( 'Parameter ' // trim ( Name ) // ' found', Ignorability )
       call Show ( Source, 'Source', Ignorability )
@@ -640,6 +664,12 @@ contains
     if ( present ( SuccessOption ) ) SuccessOption = Success
 
     if ( Success ) then
+      if ( nValues > size ( Value ) ) then
+        call Show ( 'Ignoring extra input values', CONSOLE % WARNING )
+        call Show ( size ( Value ), 'nValues requested', CONSOLE % WARNING )
+        call Show ( nValues, 'nValues input', CONSOLE % WARNING )
+        nValues = size ( Value )
+      end if
       Value ( : nValues ) = Scratch ( : nValues )
       call Show ( 'Parameter ' // trim ( Name ) // ' found', Ignorability )
       call Show ( Source, 'Source', Ignorability )

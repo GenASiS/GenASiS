@@ -1,34 +1,37 @@
-!-- Step_RK2_C implements a second-order RungeKutta time step of a
+!-- Step_RK2_C_ASC implements a second-order RungeKutta time step of a
 !   conserved current.
 
-module Step_RK2_C__Form
+module Step_RK2_C_ASC__Form
 
-  !-- Step_RungeKuttaSecondOrder_Current_Form
+  !-- Step_RungeKuttaSecondOrder_Current_AtlasSingleChart_Form
 
   !-- See Wikipedia "Runge-Kutta methods" for explanation of Butcher 
   !   tableau entries A, B, C
 
   use Basics
-  use Step_RK_C__Template
+  use Fields
+  use Step_RK_C_ASC__Template
 
   implicit none
   private
 
-  type, public, extends ( Step_RK_C_Template ) :: Step_RK2_C_Form
+  type, public, extends ( Step_RK_C_ASC_Template ) :: Step_RK2_C_ASC_Form
   contains
     procedure, public, pass :: &
       Initialize
     final :: &
       Finalize
-  end type Step_RK2_C_Form
+  end type Step_RK2_C_ASC_Form
 
 contains
 
 
-  subroutine Initialize ( S, NameSuffix )
+  subroutine Initialize ( S, Current_ASC, NameSuffix )
 
-    class ( Step_RK2_C_Form ), intent ( inout ) :: &
+    class ( Step_RK2_C_ASC_Form ), intent ( inout ) :: &
       S
+    class ( Current_ASC_Template ), intent ( in ) :: &
+      Current_ASC
     character ( * ), intent ( in ) :: &
       NameSuffix
 
@@ -40,7 +43,7 @@ contains
       B
 
     if ( S % Type == '' ) &
-      S % Type = 'a Step_RK2_C' 
+      S % Type = 'a Step_RK2_C_ASC' 
 
     call Clear ( A )
     A ( 2, 1 ) = 1.0_KDR
@@ -50,19 +53,19 @@ contains
 
     C ( 2 ) = 1.0_KDR
     
-    call S % InitializeTemplate_C ( NameSuffix, A, B, C )
+    call S % InitializeTemplate_C_ASC ( Current_ASC, NameSuffix, A, B, C )
 
   end subroutine Initialize
 
 
   impure elemental subroutine Finalize ( S )
 
-    type ( Step_RK2_C_Form ), intent ( inout ) :: &
+    type ( Step_RK2_C_ASC_Form ), intent ( inout ) :: &
       S
 
-    call S % FinalizeTemplate_C ( )
+    call S % FinalizeTemplate_C_ASC ( )
 
   end subroutine Finalize
 
 
-end module Step_RK2_C__Form
+end module Step_RK2_C_ASC__Form

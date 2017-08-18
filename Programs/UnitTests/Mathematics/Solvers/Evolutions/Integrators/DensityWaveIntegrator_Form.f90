@@ -4,22 +4,23 @@ module DensityWaveIntegrator_Form
   use Manifolds
   use Steps
   use Integrator_Template
-  use Integrator_C__Template
+  use Integrator_C_PS__Template
   use ProtoFields
 
   implicit none
   private
 
-  type, public, extends ( Integrator_C_Template ) :: DensityWaveIntegratorForm
-    real ( KDR ) :: &
-      Offset, &
-      Amplitude, &
-      Speed
-    real ( KDR ), dimension ( 3 ) :: &
-      Wavenumber
-    type ( ProtoCurrent_ASC_Form ), allocatable :: &
-      Reference, &
-      Difference
+  type, public, extends ( Integrator_C_PS_Template ) :: &
+    DensityWaveIntegratorForm
+      real ( KDR ) :: &
+        Offset, &
+        Amplitude, &
+        Speed
+      real ( KDR ), dimension ( 3 ) :: &
+        Wavenumber
+      type ( ProtoCurrent_ASC_Form ), allocatable :: &
+        Reference, &
+        Difference
   contains
     procedure, public, pass :: &
       Initialize
@@ -79,18 +80,18 @@ contains
 
     !-- Step
 
-    allocate ( Step_RK2_C_Form :: DW % Step )
+    allocate ( Step_RK2_C_ASC_Form :: DW % Step )
     select type ( S => DW % Step )
-    class is ( Step_RK2_C_Form )
-    call S % Initialize ( Name )
+    class is ( Step_RK2_C_ASC_Form )
+    call S % Initialize ( PCA, Name )
     end select !-- Step
 
     !-- Diagnostics
 
     allocate ( DW % Reference )
     allocate ( DW % Difference )
-    call DW % Reference % Initialize ( PS, NameOutputOption = 'Reference' )
-    call DW % Difference % Initialize ( PS, NameOutputOption = 'Difference' )
+    call DW % Reference % Initialize ( PS, NameShortOption = 'Reference' )
+    call DW % Difference % Initialize ( PS, NameShortOption = 'Difference' )
     DW % SetReference => SetReference
 
     !-- Initial conditions
@@ -133,7 +134,7 @@ contains
 
     !-- Initialize template
 
-    call DW % InitializeTemplate_C &
+    call DW % InitializeTemplate_C_PS &
            ( Name, FinishTimeOption = nPeriods * Period )
 
     !-- Cleanup
@@ -197,7 +198,7 @@ contains
     if ( allocated ( DW % Reference ) ) &
       deallocate ( DW % Reference )
 
-    call DW % FinalizeTemplate_C
+    call DW % FinalizeTemplate_C_PS ( )
 
   end subroutine Finalize
 
@@ -275,7 +276,7 @@ contains
 
   subroutine SetReference ( DW )
 
-    class ( IntegratorTemplate ), intent ( in ) :: &
+    class ( IntegratorTemplate ), intent ( inout ) :: &
       DW
 
     class ( ProtoCurrentForm ), pointer :: &

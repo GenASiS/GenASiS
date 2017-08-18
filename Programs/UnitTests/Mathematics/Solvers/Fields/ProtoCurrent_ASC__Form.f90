@@ -4,12 +4,16 @@ module ProtoCurrent_ASC__Form
   use Manifolds
   use Current_ASC__Template
   use ProtoCurrent_Form
+  use ProtoCurrentSources_CSL__Form
+  use ProtoCurrentSources_ASC__Form
   use ProtoCurrent_CSL__Form
 
   implicit none
   private
   
   type, public, extends ( Current_ASC_Template ) :: ProtoCurrent_ASC_Form
+    type ( ProtoCurrentSources_ASC_Form ), allocatable :: &
+      Sources_ASC
   contains
     procedure, public, pass :: &
       Initialize
@@ -36,22 +40,27 @@ module ProtoCurrent_ASC__Form
 contains
 
 
-  subroutine Initialize ( PCA, A, NameOutputOption )
+  subroutine Initialize ( PCA, A, NameShortOption, IgnorabilityOption )
 
     class ( ProtoCurrent_ASC_Form ), intent ( inout ) :: &
       PCA
     class ( Atlas_SC_Form ), intent ( in ) :: &
       A
     character ( * ), intent ( in ), optional :: &
-      NameOutputOption
+      NameShortOption
+    integer ( KDL ), intent ( in ), optional :: &
+      IgnorabilityOption
 
 !     integer ( KDI ) :: &
 !       iB  !-- iBoundary
+    character ( LDL ) :: &
+      NameShort
 
     PCA % Type = 'a ProtoCurrent_ASC'
 
-    call PCA % InitializeTemplate_ASC_C &
-           ( A, NameOutputOption = NameOutputOption )
+    NameShort = 'Fluid'
+    if ( present ( NameShortOption ) ) &
+      NameShort = NameShortOption
 
 !     select case ( trim ( FluidType ) )
 !     case ( 'DUST' )
@@ -79,6 +88,22 @@ contains
 !     do iB = 1, A % nBoundaries
 !       call FA % TallyBoundary ( iB ) % Element % Initialize ( A )
 !     end do !-- iB
+
+    call PCA % InitializeTemplate_ASC_C ( A, NameShort, IgnorabilityOption )
+
+    allocate ( PCA % Sources_ASC )
+    associate ( PCSA => PCA % Sources_ASC )
+    call PCSA % Initialize &
+           ( PCA, NameShortOption = trim ( NameShort ) // '_Sources', &
+             IgnorabilityOption = IgnorabilityOption )
+    select type ( PCSC => PCSA % Chart )
+    class is ( ProtoCurrentSources_CSL_Form )
+      select type ( PC => PCA % Chart )
+      class is ( ProtoCurrent_CSL_Form )
+        call PC % SetSources ( PCSC )
+      end select !-- PC
+    end select !-- PCSC
+    end associate !-- PCSA
 
   end subroutine Initialize
 
@@ -108,17 +133,18 @@ contains
     type ( ProtoCurrent_ASC_Form ), intent ( inout ) :: &
       PCA
 
+    if ( allocated ( PCA % Sources_ASC ) ) &
+      deallocate ( PCA % Sources_ASC )
+
     call PCA % FinalizeTemplate_ASC_C ( )
 
   end subroutine Finalize
 
 
-  subroutine SetField ( FA, NameOutputOption )
+  subroutine SetField ( FA )
 
     class ( ProtoCurrent_ASC_Form ), intent ( inout ) :: &
       FA
-    character ( * ), intent ( in ), optional :: &
-      NameOutputOption
 
     select type ( A => FA % Atlas )
     class is ( Atlas_SC_Template )
@@ -131,7 +157,9 @@ contains
 
     select type ( PCC => FA % Chart )
     class is ( ProtoCurrent_CSL_Form )
-      call PCC % Initialize ( C, nValues, NameOutputOption = NameOutputOption )
+      call PCC % Initialize &
+             ( C, FA % NameShort, nValues, &
+               IgnorabilityOption = FA % Ignorability )
     end select !-- F
 
     call A % AddField ( FA )

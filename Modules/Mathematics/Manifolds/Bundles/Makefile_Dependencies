@@ -1,0 +1,48 @@
+BundleHeader_Form.o: \
+  Basics.o \
+  Atlases.o \
+  BundleHeader_Form.f90
+
+FieldBundle_Template.o: \
+  Basics.o \
+  BundleHeader_Form.o \
+  FieldBundle_Template.f90
+
+FibersWritten_CSL__Form.o: \
+  Basics.o \
+  Atlases.o \
+  FibersWritten_CSL__Form.f90
+
+Bundle_SLL_ASC_CSLD__Form.o: \
+  Basics.o \
+  Atlases.o \
+  BundleHeader_Form.o \
+  FibersWritten_CSL__Form.o \
+  Bundle_SLL_ASC_CSLD__Form.f90
+
+Field_BSLL_ASC_CSLD__Template.o: \
+  Basics.o \
+  Atlases.o \
+  BundleHeader_Form.o \
+  FieldBundle_Template.o \
+  Bundle_SLL_ASC_CSLD__Form.o \
+  Field_BSLL_ASC_CSLD__Template.f90
+
+Storage_BSLL_ASC_CSLD__Form.o: \
+  Basics.o \
+  Atlases.o \
+  Bundle_SLL_ASC_CSLD__Form.o \
+  Field_BSLL_ASC_CSLD__Template.o \
+  Storage_BSLL_ASC_CSLD__Form.f90
+
+Bundles.o: \
+  BundleHeader_Form.o \
+  FieldBundle_Template.o \
+  FibersWritten_CSL__Form.o \
+  Bundle_SLL_ASC_CSLD__Form.o \
+  Field_BSLL_ASC_CSLD__Template.o \
+  Storage_BSLL_ASC_CSLD__Form.o \
+  Bundles.f90
+
+Bundles.a: $(BUNDLES)
+	ar r Bundles.a $(BUNDLES)

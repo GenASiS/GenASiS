@@ -10,7 +10,7 @@ module Fluid_P_P__Form
   private
 
     integer ( KDI ), private, parameter :: &
-      N_PRIMITIVE_POLYTROPIC = 0, &
+      N_PRIMITIVE_POLYTROPIC = 1, &
       N_CONSERVED_POLYTROPIC = 0, &
       N_FIELDS_POLYTROPIC    = 1, &
       N_VECTORS_POLYTROPIC   = 0
@@ -31,17 +31,19 @@ module Fluid_P_P__Form
     generic, public :: &
       Initialize => InitializeAllocate_P_P
     procedure, public, pass :: &
+      SetPrimitiveConserved
+    procedure, public, pass :: &
       SetAdiabaticIndex
     procedure, public, pass :: &
       SetFiducialPolytropicParameter
-    procedure, public, pass ( C ) :: &
-      ComputeRawFluxes
     procedure, public, pass :: &
       SetOutput
     procedure, public, pass ( C ) :: &
       ComputeFromPrimitiveCommon
     procedure, public, pass ( C ) :: &
       ComputeFromConservedCommon
+    procedure, public, pass ( C ) :: &
+      ComputeRawFluxes
     procedure, public, nopass :: &
       Apply_EOS_P_Kernel
   end type Fluid_P_P_Form
@@ -54,18 +56,25 @@ contains
 
 
   subroutine InitializeAllocate_P_P &
-               ( F, VelocityUnit, MassDensityUnit, EnergyDensityUnit, &
-                 TemperatureUnit, nValues, VariableOption, VectorOption, &
+               ( F, RiemannSolverType, UseLimiter, VelocityUnit, &
+                 MassDensityUnit, EnergyDensityUnit, TemperatureUnit, &
+                 LimiterParameter, nValues, VariableOption, VectorOption, &
                  NameOption, ClearOption, UnitOption, VectorIndicesOption )
 
     class ( Fluid_P_P_Form ), intent ( inout ) :: &
       F
+    character ( * ), intent ( in ) :: &
+      RiemannSolverType
+    logical ( KDL ), intent ( in ) :: &
+      UseLimiter
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
       VelocityUnit
     type ( MeasuredValueForm ), intent ( in ) :: &
       MassDensityUnit, &
       EnergyDensityUnit, &
       TemperatureUnit
+    real ( KDR ), intent ( in ) :: &
+      LimiterParameter
     integer ( KDI ), intent ( in ) :: &
       nValues
     character ( * ), dimension ( : ), intent ( in ), optional :: &
@@ -92,13 +101,66 @@ contains
     call SetUnits ( VariableUnit, F, MassDensityUnit, EnergyDensityUnit )
 
     call F % InitializeTemplate_P &
-           ( VelocityUnit, MassDensityUnit, EnergyDensityUnit, &
-             TemperatureUnit, nValues, VariableOption = Variable, &
-             VectorOption = VectorOption, NameOption = NameOption, &
-             ClearOption = ClearOption, UnitOption = VariableUnit, &
+           ( RiemannSolverType, UseLimiter, VelocityUnit, MassDensityUnit, &
+             EnergyDensityUnit, TemperatureUnit, LimiterParameter, nValues, &
+             VariableOption = Variable, VectorOption = VectorOption, &
+             NameOption = NameOption, ClearOption = ClearOption, &
+             UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndicesOption )
 
+    !-- Non-standard entropy unit
+    F % Unit ( F % ENTROPY_PER_BARYON )  =  UNIT % IDENTITY
+
   end subroutine InitializeAllocate_P_P
+
+
+  subroutine SetPrimitiveConserved ( C )
+
+    class ( Fluid_P_P_Form ), intent ( inout ) :: &
+      C
+
+    integer ( KDI ) :: &
+      iF, &  !-- iField
+      oP, &  !-- oPrimitive
+      oC     !-- oConserved
+    character ( LDL ), dimension ( C % N_PRIMITIVE_POLYTROPIC ) :: &
+      PrimitiveName
+    character ( LDL ), dimension ( C % N_CONSERVED_POLYTROPIC ) :: &
+      ConservedName
+
+    oP = C % N_PRIMITIVE_TEMPLATE + C % N_PRIMITIVE_DUST &
+         + C % N_PRIMITIVE_PERFECT
+    oC = C % N_CONSERVED_TEMPLATE + C % N_CONSERVED_DUST &
+         + C % N_CONSERVED_PERFECT
+
+    if ( .not. allocated ( C % iaPrimitive ) ) then
+      C % N_PRIMITIVE = oP + C % N_PRIMITIVE_POLYTROPIC
+      allocate ( C % iaPrimitive ( C % N_PRIMITIVE ) )
+    end if
+    C % iaPrimitive ( oP + 1 : oP + C % N_PRIMITIVE_POLYTROPIC ) &
+      = [ C % INTERNAL_ENERGY ]
+
+    if ( .not. allocated ( C % iaConserved ) ) then
+      C % N_CONSERVED = oC + C % N_CONSERVED_POLYTROPIC
+      allocate ( C % iaConserved ( C % N_CONSERVED ) )
+    end if
+!    C % iaConserved ( oC + 1 : oC + C % N_CONSERVED_POLYTROPIC ) &
+!      = [ ]
+    
+    do iF = 1, C % N_PRIMITIVE_POLYTROPIC
+      PrimitiveName ( iF )  =  C % Variable ( C % iaPrimitive ( oP + iF ) )
+    end do
+    do iF = 1, C % N_CONSERVED_POLYTROPIC
+      ConservedName ( iF )  =  C % Variable ( C % iaConserved ( oC + iF ) )
+    end do
+    call Show ( PrimitiveName, 'Adding primitive variables', &
+                C % IGNORABILITY, oIndexOption = oP )
+    call Show ( ConservedName, 'Adding conserved variables', &
+                C % IGNORABILITY, oIndexOption = oC )
+
+    call C % SetPrimitiveConservedTemplate_P ( )
+
+  end subroutine SetPrimitiveConserved
 
 
   subroutine SetAdiabaticIndex ( F, AdiabaticIndex )
@@ -125,32 +187,6 @@ contains
   end subroutine SetFiducialPolytropicParameter
 
 
-  subroutine ComputeRawFluxes &
-               ( RawFlux, C, G, Value_C, Value_G, iDimension, &
-                 nValuesOption, oValueOption )
-    
-    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
-      RawFlux
-    class ( Fluid_P_P_Form ), intent ( in ) :: &
-      C
-    class ( GeometryFlatForm ), intent ( in ) :: &
-      G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_C, &
-      Value_G
-    integer ( KDI ), intent ( in ) :: &
-      iDimension
-    integer ( KDI ), intent ( in ), optional :: &
-      nValuesOption, &
-      oValueOption
-
-    call C % ComputeRawFluxesTemplate_P &
-           ( RawFlux, G, Value_C, Value_G, iDimension, nValuesOption, &
-             oValueOption )
-
-  end subroutine ComputeRawFluxes
-
-
   subroutine SetOutput ( F, Output )
 
     class ( Fluid_P_P_Form ), intent ( in ) :: &
@@ -165,8 +201,7 @@ contains
     call Output % Initialize &
            ( F, iaSelectedOption &
                   = [ F % COMOVING_DENSITY, F % VELOCITY_U, F % PRESSURE, &
-                      F % SOUND_SPEED, F % MACH_NUMBER, &
-                      F % ENTROPY_PER_BARYON ], &
+                      F % MACH_NUMBER, F % ENTROPY_PER_BARYON ], &
              VectorOption = [ 'Velocity                       ' ], &
              VectorIndicesOption = VectorIndices )
 
@@ -239,13 +274,13 @@ contains
         K     => FV ( oV + 1 : oV + nV, C % POLYTROPIC_PARAMETER ) )
 
     call C % ComputeBaryonMassKernel ( M )
+    call C % Apply_EOS_P_Kernel &
+           ( P, Gamma, SB, K, N, E, C % AdiabaticIndex, &
+             C % FiducialPolytropicParameter )
     call C % ComputeDensityMomentumKernel &
            ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
     call C % ComputeConservedEnergyKernel &
            ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
-    call C % Apply_EOS_P_Kernel &
-           ( P, Gamma, SB, K, N, E, C % AdiabaticIndex, &
-             C % FiducialPolytropicParameter )
     call C % ComputeEigenspeedsFluidKernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, MN, &
              M, N, V_1, V_2, V_3, S_1, S_2, S_3, P, Gamma, M_UU_22, M_UU_33 )
@@ -253,19 +288,24 @@ contains
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
     end associate !-- FV, etc.
-    
+
+    if ( associated ( C % Value, Value_C ) ) &
+      call C % Features % Detect ( )
+
   end subroutine ComputeFromPrimitiveCommon
 
 
   subroutine ComputeFromConservedCommon &
-               ( C, G, Value, nValuesOption, oValueOption )
+               ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
 
+    real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
+      Value_C
     class ( Fluid_P_P_Form ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
-      Value
+    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+      Value_G
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
@@ -275,8 +315,8 @@ contains
       nV     !-- nValues
 
     associate &
-      ( FV => Value, &
-        GV => G % Value )
+      ( FV => Value_C, &
+        GV => Value_G )
 
     if ( present ( oValueOption ) ) then
       oV = oValueOption
@@ -334,7 +374,36 @@ contains
     end associate !-- M_UU_22, etc.
     end associate !-- FV, etc.
     
+    if ( associated ( C % Value, Value_C ) ) &
+      call C % Features % Detect ( )
+
   end subroutine ComputeFromConservedCommon
+
+
+  subroutine ComputeRawFluxes &
+               ( RawFlux, C, G, Value_C, Value_G, iDimension, &
+                 nValuesOption, oValueOption )
+    
+    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+      RawFlux
+    class ( Fluid_P_P_Form ), intent ( in ) :: &
+      C
+    class ( GeometryFlatForm ), intent ( in ) :: &
+      G
+    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+      Value_C, &
+      Value_G
+    integer ( KDI ), intent ( in ) :: &
+      iDimension
+    integer ( KDI ), intent ( in ), optional :: &
+      nValuesOption, &
+      oValueOption
+
+    call C % ComputeRawFluxesTemplate_P &
+           ( RawFlux, G, Value_C, Value_G, iDimension, nValuesOption, &
+             oValueOption )
+
+  end subroutine ComputeRawFluxes
 
 
   subroutine Apply_EOS_P_Kernel ( P, Gamma, SB, K, N, E, Gamma_0, K0 )
@@ -379,7 +448,7 @@ contains
       if ( K ( iV ) > 0.0_KDR ) then
         SB ( iV )  =    log ( K ( iV ) / K0 ) / ( Gamma_0 - 1.0_KDR )
       else
-        SB ( iV )  =  - huge ( 1.0_KDR )
+        SB ( iV )  =  - 0.1 * huge ( 1.0_KDR )
       end if
     end do !-- iV
     !$OMP end parallel do
@@ -416,7 +485,8 @@ contains
 
     oF = F % N_FIELDS_TEMPLATE + F % N_FIELDS_DUST &
          + F % N_FIELDS_PERFECT
-    if ( F % N_FIELDS == 0 ) F % N_FIELDS = oF + F % N_FIELDS_POLYTROPIC
+    if ( F % N_FIELDS == 0 ) &
+      F % N_FIELDS = oF + F % N_FIELDS_POLYTROPIC
 
     F % POLYTROPIC_PARAMETER = oF + 1
 
@@ -449,27 +519,6 @@ contains
          + F % N_VECTORS_PERFECT
     if ( F % N_VECTORS == 0 ) F % N_VECTORS = oV + F % N_VECTORS_POLYTROPIC
 
-    !-- select primitive, conserved
-
-    oP = F % N_PRIMITIVE_TEMPLATE + F % N_PRIMITIVE_DUST &
-         + F % N_PRIMITIVE_PERFECT
-    oC = F % N_CONSERVED_TEMPLATE + F % N_CONSERVED_DUST &
-         + F % N_CONSERVED_PERFECT
-
-    if ( .not. allocated ( F % iaPrimitive ) ) then
-      F % N_PRIMITIVE = oP + F % N_PRIMITIVE_POLYTROPIC
-      allocate ( F % iaPrimitive ( F % N_PRIMITIVE ) )
-    end if
-!    F % iaPrimitive ( oP + 1 : oP + F % N_PRIMITIVE_POLYTROPIC ) &
-!      = [ ]
-
-    if ( .not. allocated ( F % iaConserved ) ) then
-      F % N_CONSERVED = oC + F % N_CONSERVED_POLYTROPIC
-      allocate ( F % iaConserved ( F % N_CONSERVED ) )
-    end if
-!    F % iaConserved ( oC + 1 : oC + F % N_CONSERVED_POLYTROPIC ) &
-!      = [ ]
-    
   end subroutine InitializeBasics
   
     
@@ -483,8 +532,8 @@ contains
       MassDensityUnit, &
       EnergyDensityUnit
 
-    VariableUnit ( F % POLYTROPIC_PARAMETER ) &
-      = EnergyDensityUnit  /  MassDensityUnit ** F % AdiabaticIndex
+!    VariableUnit ( F % POLYTROPIC_PARAMETER ) &
+!      = EnergyDensityUnit  /  MassDensityUnit ** F % AdiabaticIndex
 
   end subroutine SetUnits
 

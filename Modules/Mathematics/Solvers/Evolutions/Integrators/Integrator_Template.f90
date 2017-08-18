@@ -4,6 +4,7 @@ module Integrator_Template
 
   use Basics
   use Manifolds
+  use Steps
 
   implicit none
   private
@@ -11,14 +12,18 @@ module Integrator_Template
   type, public, abstract :: IntegratorTemplate
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
-      iTimerAdministerCheckpoint = 0, &
-      iTimerComputeCycle = 0, &
-      iTimerComputeTally = 0, &
+      iTimerEvolve = 0, &
+      iTimerCycle = 0, &
+      iTimerNewTime = 0, &
+      iTimerCheckpoint = 0, &
+      iTimerTally = 0, &
       iTimerWrite = 0, &
-      iTimerComputeNewTime = 0, &
       iCycle, &
+      iCheckpoint, &
       nRampCycles, &
-      nWrite
+      nWrite, &
+      nTimeStepCandidates, &
+      CheckpointDisplayInterval
     real ( KDR ) :: &
       StartTime, &
       FinishTime, &
@@ -29,6 +34,8 @@ module Integrator_Template
       IsCheckpointTime, &
       NoWrite, &
       WriteTimeExact
+    character ( LDL ), dimension ( : ), allocatable :: &
+      TimeStepLabel
     type ( MeasuredValueForm ) :: &
       TimeUnit
     character ( LDF ) :: &
@@ -42,6 +49,10 @@ module Integrator_Template
       PositionSpace
     class ( GeometryFlat_ASC_Form ), allocatable :: &
       Geometry_ASC
+    class ( BundleHeaderForm ), allocatable :: &
+      MomentumSpace
+    class ( Step_RK_Template ), allocatable :: &
+      Step
     procedure ( SR ), pointer :: &
       SetReference => null ( )
   contains
@@ -52,7 +63,9 @@ module Integrator_Template
     procedure, public, pass :: &  !-- 1
       FinalizeTemplate
     procedure, private, pass :: &  !-- 2
-      OpenStreams_PS
+      OpenStreams
+    procedure, public, pass :: &  !-- 2
+      InitializeTimers
     procedure, private, pass :: &  !-- 2
       AdministerCheckpoint
 !-- FIXME: Intel compiler fails to recognize concrete overriding in
@@ -66,7 +79,7 @@ module Integrator_Template
 !      ComputeTally
     procedure, private, pass :: &  !-- 3
       ComputeTally
-    procedure, private, pass :: &  !-- 3
+    procedure, public, pass :: &  !-- 3
       Write
 !-- See FIXME above
 !    procedure ( RTS ), private, pass, deferred :: &  !-- 3
@@ -80,10 +93,10 @@ module Integrator_Template
       WriteTimeSeries
     procedure, private, pass :: &  !-- 3
       SetWriteTimeInterval
+    procedure, public, pass :: &
+      PrepareCycle
     procedure, public, pass :: &  !-- 3
       ComputeNewTime
-    procedure, public, pass :: &  !-- 4
-      Write_PS
     procedure, public, pass :: &
       ComputeTimeStep
 !-- See FIXME above
@@ -97,7 +110,7 @@ module Integrator_Template
 
     subroutine SR ( I )
       import IntegratorTemplate
-      class ( IntegratorTemplate ), intent ( in ) :: &
+      class ( IntegratorTemplate ), intent ( inout ) :: &
         I
     end subroutine SR
 
@@ -109,13 +122,15 @@ module Integrator_Template
 !    end subroutine CC
 
 !-- See FIXME above
-!    subroutine CT ( I, ComputeChangeOption )
+!    subroutine CT ( I, ComputeChangeOption, IgnorabilityOption )
 !      use Basics
 !      import IntegratorTemplate
 !      class ( IntegratorTemplate ), intent ( inout ) :: &
 !        I
 !      logical ( KDL ), intent ( in ), optional :: &
 !        ComputeChangeOption      
+!      integer ( KDI ), intent ( in ), optional :: &
+!        IgnorabilityOption
 !    end subroutine CT
 
 !-- See FIXME above
@@ -131,13 +146,13 @@ module Integrator_Template
 !    end subroutine RTS
 
 !-- See FIXME above
-!    subroutine CTSL ( I, TimeStep )
+!    subroutine CTSL ( I, TimeStepCandidate )
 !      use Basics
 !      import IntegratorTemplate
-!      class ( IntegratorTemplate ), intent ( in ) :: &
+!      class ( IntegratorTemplate ), intent ( in ), target :: &
 !        I
-!      real ( KDR ), intent ( inout ) :: &
-!        TimeStep
+!      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+!        TimeStepCandidate
 !    end subroutine CTSL
 
   end interface
@@ -188,10 +203,11 @@ contains
       call PROGRAM_HEADER % Abort ( )
     end if
 
-    call I % OpenStreams_PS ( )
+    call I % OpenStreams ( )
 
     I % iCycle = 0
-    I % nRampCycles = 1
+    I % iCheckpoint = 0
+    I % nRampCycles = 100
     call PROGRAM_HEADER % GetParameter ( I % nRampCycles, 'nRampCycles' )
 
     I % StartTime  = 0.0_KDR
@@ -211,22 +227,35 @@ contains
       I % nWrite = nWriteOption
     call PROGRAM_HEADER % GetParameter ( I % nWrite, 'nWrite' )
 
+    I % CheckpointDisplayInterval = 100
+    call PROGRAM_HEADER % GetParameter &
+           ( I % CheckpointDisplayInterval, 'CheckpointDisplayInterval' )
+
     I % NoWrite = .false.
     call PROGRAM_HEADER % GetParameter ( I % NoWrite, 'NoWrite' )
 
     I % WriteTimeExact = .false.
     call PROGRAM_HEADER % GetParameter ( I % WriteTimeExact, 'WriteTimeExact' )
 
-    call PROGRAM_HEADER % AddTimer &
-           ( 'AdministerCheckpoint', I % iTimerAdministerCheckpoint )
-    call PROGRAM_HEADER % AddTimer &
-           ( 'ComputeCycle', I % iTimerComputeCycle )
-    call PROGRAM_HEADER % AddTimer &
-           ( 'ComputeTally', I % iTimerComputeTally )
-    call PROGRAM_HEADER % AddTimer &
-           ( 'Write', I % iTimerWrite )
-    call PROGRAM_HEADER % AddTimer &
-           ( 'ComputeNewTime', I % iTimerComputeNewTime )
+    if ( .not. allocated ( I % TimeStepLabel ) ) then
+      allocate ( I % TimeStepLabel ( 1 ) )
+      I % TimeStepLabel ( 1 ) = 'Physical TimeStep'
+    end if
+    I % nTimeStepCandidates = size ( I % TimeStepLabel )
+
+    if ( .not. allocated ( I % Step ) ) then
+      call Show ( 'Step must be allocated by an extension', &
+                  CONSOLE % WARNING )
+      call Show ( 'Integrator_Template', 'module', CONSOLE % WARNING )
+      call Show ( 'InitializeTemplate', 'subroutine', CONSOLE % WARNING )
+    end if
+
+    call Show ( I % StartTime, I % TimeUnit, 'StartTime', I % IGNORABILITY )
+    call Show ( I % FinishTime, I % TimeUnit, 'FinishTime', I % IGNORABILITY )
+    call Show ( I % nRampCycles, 'nRampCycles', I % IGNORABILITY )
+    call Show ( I % nWrite, 'nWrite', I % IGNORABILITY )
+    call Show ( I % CheckpointDisplayInterval, 'CheckpointDisplayInterval', &
+                I % IGNORABILITY )
 
   end subroutine InitializeTemplate
 
@@ -236,6 +265,14 @@ contains
     class ( IntegratorTemplate ), intent ( inout ) :: &
       I
 
+    type ( TimerForm ), pointer :: &
+      Timer
+
+    call I % InitializeTimers ( )
+
+    Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerEvolve )
+    if ( associated ( Timer ) ) call Timer % Start ( )   
+
     call Show ( 'Starting evolution', I % IGNORABILITY )
     call Show ( I % Name, 'Name', I % IGNORABILITY )
 
@@ -243,20 +280,21 @@ contains
     call I % AdministerCheckpoint ( ComputeChangeOption = .false. )
 
     do while ( I % Time < I % FinishTime )
-
-      call Show ( 'Computing a cycle', I % IGNORABILITY )
-      call Show ( I % Name, 'Name', I % IGNORABILITY )
+      call Show ( 'Computing a cycle', I % IGNORABILITY + 1 )
 
       call I % ComputeCycle ( )
 
-      call Show ( 'Cycle computed', I % IGNORABILITY )
-      call Show ( I % iCycle, 'iCycle', I % IGNORABILITY )
-      call Show ( I % Time, I % TimeUnit, 'Time', I % IGNORABILITY )
+      call Show ( 'Cycle computed', I % IGNORABILITY + 1 )
+      call Show ( I % iCycle, 'iCycle', I % IGNORABILITY + 1 )
+      call Show ( I % Time, I % TimeUnit, 'Time', I % IGNORABILITY + 1 )
 
+!call I % Write ( )
       if ( I % IsCheckpointTime ) &
         call I % AdministerCheckpoint ( )
 
     end do !-- Time < FinishTime 
+
+    if ( associated ( Timer ) ) call Timer % Stop ( )   
 
   end subroutine Evolve
 
@@ -266,12 +304,18 @@ contains
     class ( IntegratorTemplate ), intent ( inout ) :: &
       I
 
+    if ( allocated ( I % Step ) ) &
+      deallocate ( I % Step )
+    if ( allocated ( I % MomentumSpace ) ) &
+      deallocate ( I % MomentumSpace ) 
     if ( allocated ( I % Geometry_ASC ) ) &
       deallocate ( I % Geometry_ASC )
     if ( allocated ( I % PositionSpace ) ) &
       deallocate ( I % PositionSpace ) 
     if ( allocated ( I % GridImageStream ) ) &
       deallocate ( I % GridImageStream )
+    if ( allocated ( I % TimeStepLabel ) ) &
+      deallocate ( I % TimeStepLabel )
 
     nullify ( I % Communicator )
 
@@ -283,7 +327,7 @@ contains
   end subroutine FinalizeTemplate
 
 
-  subroutine OpenStreams_PS ( I )
+  subroutine OpenStreams ( I )
 
     class ( IntegratorTemplate ), intent ( inout ) :: &
       I
@@ -305,18 +349,71 @@ contains
     VerboseStream = .false.
     call PROGRAM_HEADER % GetParameter ( VerboseStream, 'VerboseStream' )
 
+    associate ( iS => 1 )  !-- iStream
+
     select type ( PS => I % PositionSpace )
     class is ( Atlas_SC_Form )
-
-    associate ( iS => 1 )  !-- iStream
-    call PS % OpenStream &
-           ( GIS, 'Time', iStream = iS, VerboseOption = VerboseStream )
-    end associate !-- iS
-
+      call PS % OpenStream &
+             ( GIS, 'Time', iStream = iS, VerboseOption = VerboseStream )
+    class default
+      call Show ( 'Atlas type not found', CONSOLE % ERROR )
+      call Show ( 'Integrator_Template', 'module', CONSOLE % ERROR )
+      call Show ( 'OpenStreams', 'subroutine', CONSOLE % ERROR ) 
+      call PROGRAM_HEADER % Abort ( )
     end select !-- PS
+
+    if ( allocated ( I % MomentumSpace ) ) then
+      select type ( MS => I % MomentumSpace )
+      class is ( Bundle_SLL_ASC_CSLD_Form )
+        call MS % OpenStream ( GIS, iStream = iS )
+      class default
+        call Show ( 'Bundle type not found', CONSOLE % ERROR )
+        call Show ( 'Integrator_Template', 'module', CONSOLE % ERROR )
+        call Show ( 'OpenStreams', 'subroutine', CONSOLE % ERROR ) 
+        call PROGRAM_HEADER % Abort ( )
+      end select !-- MS
+    end if !-- MomentumSpace
+
+    end associate !-- iS
     end associate !-- GIS
 
-  end subroutine OpenStreams_PS
+  end subroutine OpenStreams
+
+
+  subroutine InitializeTimers ( I )
+
+    class ( IntegratorTemplate ), intent ( inout ) :: &
+      I
+
+    integer ( KDI ) :: &
+      BaseLevel
+
+    BaseLevel = 0
+
+    if ( I % iTimerEvolve > 0  &
+         .or.  BaseLevel > PROGRAM_HEADER % TimerLevel ) &
+      return
+
+    call PROGRAM_HEADER % AddTimer &
+           ( 'Evolve', I % iTimerEvolve, Level = BaseLevel )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'Cycle', I % iTimerCycle, &
+               Level = BaseLevel + 1 )
+        call PROGRAM_HEADER % AddTimer &
+             ( 'NewTime', I % iTimerNewTime, &
+               Level = BaseLevel + 2 )
+        call I % Step % InitializeTimers ( BaseLevel + 2 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'Checkpoint', I % iTimerCheckpoint, &
+               Level = BaseLevel + 1 )
+        call PROGRAM_HEADER % AddTimer &
+               ( 'Tally', I % iTimerTally, &
+                 Level = BaseLevel + 2 )
+        call PROGRAM_HEADER % AddTimer &
+               ( 'Write', I % iTimerWrite, &
+                 Level = BaseLevel + 2 )
+
+  end subroutine InitializeTimers
 
 
   subroutine AdministerCheckpoint ( I, ComputeChangeOption )
@@ -326,25 +423,52 @@ contains
     logical ( KDL ), intent ( in ), optional :: &
       ComputeChangeOption
 
+    integer ( KDI ) :: &
+      TallyIgnorability, &
+      StatisticsIgnorability
+    logical ( KDL ) :: &
+      WriteTimeSeries
     real ( KDR ), dimension ( PROGRAM_HEADER % nTimers ) :: &
       MaxTime, &
       MinTime, &
       MeanTime
+    type ( TimerForm ), pointer :: &
+      Timer
 
-    associate &
-      ( Timer => PROGRAM_HEADER % Timer ( I % iTimerAdministerCheckpoint ) )
-    call Timer % Start ( )
+    Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerCheckpoint )
+    if ( associated ( Timer ) ) call Timer % Start ( )   
 
-    call I % ComputeTally ( ComputeChangeOption = ComputeChangeOption )
+    call Show ( 'Checkpoint reached', I % IGNORABILITY )
+    call Show ( I % iCheckpoint, 'iCheckpoint', I % IGNORABILITY )
+    call Show ( I % iCycle, 'iCycle', I % IGNORABILITY )
+    call Show ( I % Time, I % TimeUnit, 'Time', I % IGNORABILITY )
+
+    if ( I % Time > I % StartTime .and. I % Time < I % FinishTime &
+         .and. mod ( I % iCheckpoint, I % CheckpointDisplayInterval ) > 0 ) &
+    then
+      TallyIgnorability      = I % IGNORABILITY + 2
+      StatisticsIgnorability = I % IGNORABILITY + 2
+      WriteTimeSeries        = .false.
+    else
+      TallyIgnorability      = CONSOLE % INFO_1
+      StatisticsIgnorability = CONSOLE % INFO_1
+      WriteTimeSeries        = .true.
+    end if
+    call I % ComputeTally &
+           ( ComputeChangeOption = ComputeChangeOption, &
+             IgnorabilityOption  = TallyIgnorability )
+
     if ( associated ( I % SetReference ) ) &
       call I % SetReference ( )
     call I % Write ( )
     call PROGRAM_HEADER % ShowStatistics &
-           ( I % IGNORABILITY, &
+           ( StatisticsIgnorability, &
              CommunicatorOption = PROGRAM_HEADER % Communicator, &
              MaxTimeOption = MaxTime, MinTimeOption = MinTime, &
              MeanTimeOption = MeanTime )
     call I % RecordTimeSeries ( MaxTime, MinTime, MeanTime )
+    if ( WriteTimeSeries ) &
+      call I % WriteTimeSeries ( )
 
     I % IsCheckpointTime = .false.
     if ( I % Time < I % FinishTime ) then
@@ -356,16 +480,14 @@ contains
       call Show ( I % WriteTimeInterval, I % TimeUnit, 'WriteTimeInterval', &
                   I % IGNORABILITY )
       call Show ( I % WriteTime, I % TimeUnit, 'Next WriteTime', &
-                  I % IGNORABILITY )
+                  I % IGNORABILITY + 1 )
     else 
       call Show ( 'FinishTime reached', I % IGNORABILITY )
-      call Show ( I % iCycle, 'iCycle', I % IGNORABILITY )
-      call Show ( I % Time, I % TimeUnit, 'Time', I % IGNORABILITY )
-      call I % WriteTimeSeries ( )
     end if
 
-    call Timer % Stop ( )
-    end associate !-- Timer
+    I % iCheckpoint = I % iCheckpoint + 1
+
+    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine AdministerCheckpoint
 
@@ -378,11 +500,13 @@ contains
 
 
 !-- See FIXME above
-  subroutine ComputeTally ( I, ComputeChangeOption )
+  subroutine ComputeTally ( I, ComputeChangeOption, IgnorabilityOption )
     class ( IntegratorTemplate ), intent ( inout ) :: &
       I
     logical ( KDL ), intent ( in ), optional :: &
       ComputeChangeOption      
+    integer ( KDI ), intent ( in ), optional :: &
+      IgnorabilityOption
   end subroutine ComputeTally
 
 
@@ -391,16 +515,58 @@ contains
     class ( IntegratorTemplate ), intent ( inout ) :: &
       I
 
+    type ( TimerForm ), pointer :: &
+      Timer
+
     if ( I % NoWrite ) return
 
+    Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerWrite )
+    if ( associated ( Timer ) ) call Timer % Start ( )
+
+    if ( allocated ( I % MomentumSpace ) ) then
+      select type ( MS => I % MomentumSpace )
+      class is ( Bundle_SLL_ASC_CSLD_Form )
+        call MS % MarkFibersWritten ( )
+      end select !-- MS
+    end if !-- MomentumSpace
+
     associate &
-      ( Timer => PROGRAM_HEADER % Timer ( I % iTimerWrite ) )
-    call Timer % Start ( )
+      ( GIS => I % GridImageStream, &
+        iS  => 1 )  !-- iStream
+    call GIS % Open ( GIS % ACCESS_CREATE )
 
-    call I % Write_PS ( )
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
+      call PS % Write &
+             ( iStream = iS, TimeOption = I % Time / I % TimeUnit, &
+               CycleNumberOption = I % iCycle )
+    class default
+      call Show ( 'Atlas type not found', CONSOLE % ERROR )
+      call Show ( 'Integrator_Template', 'module', CONSOLE % ERROR )
+      call Show ( 'Write', 'subroutine', CONSOLE % ERROR ) 
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- PS
 
-    call Timer % Stop ( )
-    end associate !-- Timer
+    !-- Base's GIS must be closed before call to Bundle % Write ( ).
+    call GIS % Close ( )
+
+    if ( allocated ( I % MomentumSpace ) ) then
+      select type ( MS => I % MomentumSpace )
+      class is ( Bundle_SLL_ASC_CSLD_Form )
+        call MS % Write &
+               ( iStream = iS, TimeOption = I % Time / I % TimeUnit, &
+                 CycleNumberOption = I % iCycle )
+      class default
+        call Show ( 'Bundle type not found', CONSOLE % ERROR )
+        call Show ( 'Integrator_Template', 'module', CONSOLE % ERROR )
+        call Show ( 'Write', 'subroutine', CONSOLE % ERROR ) 
+        call PROGRAM_HEADER % Abort ( )
+      end select !-- MS
+    end if !-- MomentumSpace
+
+    end associate !-- GIS, etc.
+
+    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine Write
 
@@ -434,6 +600,14 @@ contains
   end subroutine SetWriteTimeInterval
 
 
+  subroutine PrepareCycle ( I )
+
+    class ( IntegratorTemplate ), intent ( inout ) :: &
+      I
+
+  end subroutine PrepareCycle
+
+
   subroutine ComputeNewTime ( I, TimeNew, HoldCheckpointSolveOption )
 
     class ( IntegratorTemplate ), intent ( inout ) :: &
@@ -445,13 +619,14 @@ contains
 
     real ( KDR ) :: &
       TimeStep
+    type ( TimerForm ), pointer :: &
+      Timer
 
-    associate &
-      ( Timer => PROGRAM_HEADER % Timer ( I % iTimerComputeNewTime ) )
-    call Timer % Start ( )
+    Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerNewTime )
+    if ( associated ( Timer ) ) call Timer % Start ( )
 
-    call Show ( 'Computing TimeNew', I % IGNORABILITY )
-    call Show ( I % Name, 'Name', I % IGNORABILITY )
+!    call Show ( 'Computing TimeNew', I % IGNORABILITY )
+!    call Show ( I % Name, 'Name', I % IGNORABILITY )
 
     ! associate ( CFC => I % ConservedFields % Chart ( 1 ) % Element )
     ! select type ( C => I % Atlas % Chart ( 1 ) % Element )
@@ -473,42 +648,18 @@ contains
 !          HoldCheckpointSolveOption ( 2 : C % nLevels ) = .true.
         TimeStep = I % WriteTime - I % Time
         call Show ( TimeStep, I % TimeUnit, 'Modified TimeStep', &
-                    I % IGNORABILITY )
+                    I % IGNORABILITY + 1 )
       end if
     end if
 
     TimeNew = I % Time + TimeStep
-    call Show ( TimeNew, I % TimeUnit, 'TimeNew', I % IGNORABILITY )
+    call Show ( TimeNew, I % TimeUnit, 'TimeNew', I % IGNORABILITY + 1 )
 
 !    end associate !-- C
 
-    call Timer % Stop ( )
-    end associate !-- Timer
+    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine ComputeNewTime
-
-
-  subroutine Write_PS ( I )
-
-    class ( IntegratorTemplate ), intent ( inout ) :: &
-      I
-
-    associate &
-      ( GIS => I % GridImageStream, &
-        iS  => 1 )  !-- iStream
-    select type ( PS => I % PositionSpace )
-    class is ( Atlas_SC_Form )
-
-    call GIS % Open ( GIS % ACCESS_CREATE )
-    call PS % Write &
-           ( iStream = iS, TimeOption = I % Time / I % TimeUnit, &
-             CycleNumberOption = I % iCycle )
-    call GIS % Close ( )
-
-    end select !-- PS
-    end associate !-- GIS, etc.
-
-  end subroutine Write_PS
 
 
   subroutine ComputeTimeStep ( I, TimeStep )
@@ -518,41 +669,53 @@ contains
     real ( KDR ), intent ( out ) :: &
       TimeStep
 
+    integer ( KDI ) :: &
+      iTSC  !-- iTimeStepCandidate
     real ( KDR ) :: &
       RampFactor
+    real ( KDR ), dimension ( I % nTimeStepCandidates ) :: &
+      TimeStepCandidate
     type ( CollectiveOperation_R_Form ) :: &
       CO
 
-    TimeStep = huge ( 0.0_KDR )
+    TimeStepCandidate = huge ( 0.0_KDR )
 
-    call I % ComputeTimeStepLocal ( TimeStep )
+    call I % ComputeTimeStepLocal ( TimeStepCandidate )
 
     call CO % Initialize &
-           ( I % Communicator, nOutgoing = [ 1 ], nIncoming = [ 1 ] )
-    CO % Outgoing % Value ( 1 ) = TimeStep
+           ( I % Communicator, nOutgoing = [ I % nTimeStepCandidates ], &
+             nIncoming = [ I % nTimeStepCandidates ] )
+    CO % Outgoing % Value = TimeStepCandidate
 
     call CO % Reduce ( REDUCTION % MIN )
 
-    TimeStep = CO % Incoming % Value ( 1 )
-    call Show ( TimeStep, I % TimeUnit, 'Physical TimeStep', I % IGNORABILITY )
+    TimeStepCandidate = CO % Incoming % Value
+    do iTSC = 1, I % nTimeStepCandidates
+      call Show ( TimeStepCandidate ( iTSC ), I % TimeUnit, &
+                  trim ( I % TimeStepLabel ( iTSC ) ) // ' TimeStep', &
+                  I % IGNORABILITY + 1 )
+    end do !-- iTSC
+
+    TimeStep = minval ( TimeStepCandidate )
 
     RampFactor &
       = min ( real ( I % iCycle + 1, KDR ) / I % nRampCycles, 1.0_KDR )
     if ( RampFactor < 1.0_KDR ) then
       TimeStep &
         = RampFactor * TimeStep
-      call Show ( TimeStep, I % TimeUnit, 'Ramped TimeStep', I % IGNORABILITY )
+      call Show ( TimeStep, I % TimeUnit, 'Ramped TimeStep', &
+                  I % IGNORABILITY + 1 )
     end if
 
   end subroutine ComputeTimeStep
 
 
 !-- See FIXME above
-  subroutine ComputeTimeStepLocal ( I, TimeStep )
-    class ( IntegratorTemplate ), intent ( in ) :: &
+  subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
+    class ( IntegratorTemplate ), intent ( inout ), target :: &
       I
-    real ( KDR ), intent ( inout ) :: &
-      TimeStep
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      TimeStepCandidate
   end subroutine ComputeTimeStepLocal
 
 

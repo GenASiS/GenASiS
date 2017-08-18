@@ -15,7 +15,6 @@ module Difference_Form
     character ( LDF ) :: &
       Name = ''
     type ( VariableGroupForm ), allocatable :: &
-      Input, &
       OutputInner
   contains
     procedure, public, pass :: &
@@ -34,21 +33,14 @@ module Difference_Form
 contains
 
 
-  subroutine Initialize ( D, Input, Name )
+  subroutine Initialize ( D, Name, ValueShape )
 
     class ( DifferenceForm ), intent ( inout ) :: &
       D
-    class ( VariableGroupForm ), intent ( in ) :: &
-      Input
     character ( * ), intent ( in ) :: &
       Name
-
-    integer ( KDI ) :: &
-      iS  !-- iSelected
-    character ( LDL ) :: &
-      dName
-    character ( LDL ), dimension ( : ), allocatable :: &
-      Variable
+    integer ( KDI ), dimension ( 2 ), intent ( in ) :: &
+      ValueShape
 
     D % IGNORABILITY = CONSOLE % INFO_5
     D % Name = Name
@@ -56,35 +48,20 @@ contains
     call Show ( 'Initializing a Difference', D % IGNORABILITY )
     call Show ( trim ( D % Name ), 'Name', D % IGNORABILITY )
 
-    allocate &
-      ( D % Input, &
-        D % OutputInner )
-    associate &
-      ( I  => D % Input, &
-        OI => D % OutputInner )
-
-    call I % Initialize ( Input )
-
-    allocate ( Variable ( I % nVariables ) )
-    Variable = [ ( I % Variable ( I % iaSelected ( iS ) ), &
-                   iS = 1, I % nVariables ) ]
-
-    dName = 'd_' // trim ( I % Name )
-    call OI % Initialize &
-           ( [ I % nValues, I % nVariables ], VariableOption = Variable, &
-             NameOption = dName )!, ClearOption = .true. )
-
-    end associate !-- I, etc.
+    allocate ( D % OutputInner )
+    call D % OutputInner % Initialize ( ValueShape, ClearOption = .true. )
 
   end subroutine Initialize
 
 
-  subroutine ComputeChart_SL ( D, CSL, iDimension )
+  subroutine ComputeChart_SL ( D, CSL, Input, iDimension )
 
     class ( DifferenceForm ), intent ( inout ) :: &
       D
     class ( Chart_SL_Template ), intent ( in ) :: &
       CSL
+    class ( VariableGroupForm ), intent ( in ) :: &
+      Input
     integer ( KDI ), intent ( in ) :: &
       iDimension
 
@@ -94,12 +71,12 @@ contains
       V, &
       dV_I
 
-    call Show ( 'Computing a Difference', D % IGNORABILITY )
-    call Show ( trim ( D % Name ), 'Name', D % IGNORABILITY )
-    call Show ( iDimension, 'iDimension', D % IGNORABILITY )
+    call Show ( 'Computing Difference', D % IGNORABILITY + 1 )
+    call Show ( trim ( D % Name ), 'Name', D % IGNORABILITY + 1 )
+    call Show ( iDimension, 'iDimension', D % IGNORABILITY + 1 )
 
     associate &
-      ( I  => D % Input, &
+      ( I  => Input, &
         OI => D % OutputInner )
 
     do iS = 1, I % nVariables
@@ -123,8 +100,8 @@ contains
     type ( DifferenceForm ), intent ( inout ) :: &
       D
 
-    if ( allocated ( D % OutputInner ) ) deallocate ( D % OutputInner )
-    if ( allocated ( D % Input ) ) deallocate ( D % Input )
+    if ( allocated ( D % OutputInner ) ) &
+      deallocate ( D % OutputInner )
 
     call Show ( 'Finalizing a Difference', D % IGNORABILITY )
     call Show ( trim ( D % Name ), 'Name', D % IGNORABILITY )

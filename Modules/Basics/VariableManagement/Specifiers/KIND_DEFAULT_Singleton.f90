@@ -8,19 +8,21 @@ module KIND_DEFAULT_Singleton
 
   type, public :: KindDefaultSingleton
     integer ( kind ( 1 ) ) :: &
-      INTEGER = kind ( 1 ), &
-      REAL    = kind ( 1.d0 ), &
-      COMPLEX = kind ( ( 1.d0, 1.d0 ) ), &
-      LOGICAL = kind ( .true. )
+      INTEGER   = kind ( 1 ), &
+      REAL      = kind ( 1.d0 ), &
+      COMPLEX   = kind ( ( 1.d0, 1.d0 ) ), &
+      LOGICAL   = kind ( .true. ), &
+      CHARACTER = selected_char_kind ( 'ASCII' )
   end type KindDefaultSingleton
 
   type ( KindDefaultSingleton ), public, parameter :: &
     KIND_DEFAULT = KindDefaultSingleton ( )
 
   integer ( KIND_DEFAULT % INTEGER ), public, parameter :: &
-    KDI = KIND_DEFAULT % INTEGER, &
-    KDR = KIND_DEFAULT % REAL, &
-    KDC = KIND_DEFAULT % COMPLEX, &
-    KDL = KIND_DEFAULT % LOGICAL
+    KDI  = KIND_DEFAULT % INTEGER, &
+    KDR  = KIND_DEFAULT % REAL, &
+    KDC  = KIND_DEFAULT % COMPLEX, &
+    KDL  = KIND_DEFAULT % LOGICAL, &
+    KDCH = KIND_DEFAULT % CHARACTER
 
 end module KIND_DEFAULT_Singleton

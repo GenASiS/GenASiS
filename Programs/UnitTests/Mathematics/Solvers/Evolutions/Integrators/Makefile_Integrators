@@ -11,7 +11,7 @@ DensityWaveIntegrator_Form_Test: Basics.a Manifolds.a Operations.a Fields.a \
 	$(LINK) $(FLAGS) \
           -o DensityWaveIntegrator_Form_Test_$(MACHINE) \
           DensityWaveIntegrator_Form_Test.o DensityWaveIntegrator_Form.o \
-          Integrator_C__Template.o TimeSeries_C__Form.o \
+          Integrator_C_PS__Template.o TimeSeries_C__Form.o \
           TimeSeries_Form.o Integrator_Template.o \
           Steps.a Increments.a ProtoFields.a Fields.a Operations.a \
           Manifolds.a Basics.a $(LIBRARIES)
@@ -37,7 +37,7 @@ DensityWaveIntegrator_Form.o: \
   Steps.o \
   ProtoFields.o \
   Integrator_Template.o \
-  Integrator_C__Template.o \
+  Integrator_C_PS__Template.o \
   DensityWaveIntegrator_Form.f90
 
 DensityWaveIntegrator_Form_Test.o: \

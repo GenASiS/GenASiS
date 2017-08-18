@@ -2,5 +2,6 @@ SINGLE_LEVEL_CHARTS = \
   SingleLevelCharts.o \
   Chart_SLD__Form.o \
   Chart_SLL__Form.o \
+  Storage_CSL__Form.o \
   Chart_SL__Template.o \
   ChartStream_SL__Form.o

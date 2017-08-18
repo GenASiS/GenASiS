@@ -32,6 +32,8 @@ module ProtoCurrent_Form
       InitializeAllocate_PC
     generic, public :: &
       Initialize => InitializeAllocate_PC
+    procedure, public, pass :: &
+      SetPrimitiveConserved
     procedure, public, pass ( C ) :: &
       ComputeRawFluxes
     procedure, public, pass :: &
@@ -96,13 +98,63 @@ contains
              VectorIndicesOption )
 
     call PC % InitializeTemplate &
-           ( VelocityUnit, nValues, VariableOption = Variable, &
+           ( RiemannSolverType = 'HLL', UseLimiter = .true., &
+             VelocityUnit = VelocityUnit, LimiterParameter = 2.0_KDR, &
+             nValues = nValues, VariableOption = Variable, &
              VectorOption = Vector, NameOption = Name, &
              ClearOption = ClearOption, UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndices )
 
+    call PC % SetPrimitiveConserved ( )
+
   end subroutine InitializeAllocate_PC
   
+
+  subroutine SetPrimitiveConserved ( C )
+
+    class ( ProtoCurrentForm ), intent ( inout ) :: &
+      C
+
+    integer ( KDI ) :: &
+      iF, &  !-- iField
+      oP, &  !-- oPrimitive
+      oC, &  !-- oConserved
+      Ignorability
+    character ( LDL ), dimension ( C % N_PRIMITIVE_PC ) :: &
+      PrimitiveName
+    character ( LDL ), dimension ( C % N_CONSERVED_PC ) :: &
+      ConservedName
+
+    oP = C % N_PRIMITIVE_TEMPLATE
+    oC = C % N_CONSERVED_TEMPLATE
+
+    if ( .not. allocated ( C % iaPrimitive ) ) then
+      C % N_PRIMITIVE = oP + C % N_PRIMITIVE_PC
+      allocate ( C % iaPrimitive ( C % N_PRIMITIVE ) )
+    end if
+    C % iaPrimitive ( oP + 1 : oP + C % N_PRIMITIVE_PC ) &
+      = [ C % COMOVING_DENSITY ]
+
+    if ( .not. allocated ( C % iaConserved ) ) then
+      C % N_CONSERVED = oC + C % N_CONSERVED_PC
+      allocate ( C % iaConserved ( C % N_CONSERVED ) )
+    end if
+    C % iaConserved ( oC + 1 : oC + C % N_CONSERVED_PC ) &
+      = [ C % CONSERVED_DENSITY ]
+
+    do iF = 1, C % N_PRIMITIVE_PC
+      PrimitiveName ( iF )  =  C % Variable ( C % iaPrimitive ( oP + iF ) )
+    end do
+    do iF = 1, C % N_CONSERVED_PC
+      ConservedName ( iF )  =  C % Variable ( C % iaConserved ( oC + iF ) )
+    end do
+    call Show ( PrimitiveName, 'Adding primitive variables', &
+                C % IGNORABILITY, oIndexOption = oP )
+    call Show ( ConservedName, 'Adding conserved variables', &
+                C % IGNORABILITY, oIndexOption = oC )
+    
+  end subroutine SetPrimitiveConserved
+
 
   subroutine ComputeRawFluxes &
                ( RawFlux, C, G, Value_C, Value_G, iDimension, &
@@ -249,14 +301,16 @@ contains
 
 
   subroutine ComputeFromConservedCommon &
-               ( C, G, Value, nValuesOption, oValueOption )
+               ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
 
+    real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
+      Value_C
     class ( ProtoCurrentForm ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
-      Value
+    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+      Value_G
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
@@ -266,8 +320,8 @@ contains
       nV     !-- nValues
       
     associate &
-      ( FV  => Value, &
-        GV => G % Value )
+      ( FV => Value_C, &
+        GV => Value_G )
 
     if ( present ( oValueOption ) ) then
       oV = oValueOption
@@ -345,8 +399,6 @@ contains
     integer ( KDI ) :: &
       oF, &  !-- oField
       oV, &  !-- oVector
-      oP, &  !-- oPrimitive
-      oC, &  !-- oConserved
       iV     !-- iVector
 
     if ( PC % Type == '' ) &
@@ -422,25 +474,6 @@ contains
 
     call VectorIndices ( oV + 1 ) % Initialize ( PC % VELOCITY )
 
-    !-- select primitive, conserved
-
-    oP = PC % N_PRIMITIVE_TEMPLATE
-    oC = PC % N_CONSERVED_TEMPLATE
-
-    if ( .not. allocated ( PC % iaPrimitive ) ) then
-      PC % N_PRIMITIVE = oP + PC % N_PRIMITIVE_PC
-      allocate ( PC % iaPrimitive ( PC % N_PRIMITIVE ) )
-    end if
-    PC % iaPrimitive ( oP + 1 : oP + PC % N_PRIMITIVE_PC ) &
-      = [ PC % COMOVING_DENSITY ]
-
-    if ( .not. allocated ( PC % iaConserved ) ) then
-      PC % N_CONSERVED = oC + PC % N_CONSERVED_PC
-      allocate ( PC % iaConserved ( PC % N_CONSERVED ) )
-    end if
-    PC % iaConserved ( oC + 1 : oC + PC % N_CONSERVED_PC ) &
-      = [ PC % CONSERVED_DENSITY ]
-    
   end subroutine InitializeBasics
 
 

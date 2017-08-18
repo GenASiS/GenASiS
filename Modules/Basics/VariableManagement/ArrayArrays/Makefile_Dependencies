@@ -28,6 +28,11 @@ Real_3D__Form.o: \
   ArrayOperations.o \
   Real_3D__Form.f90
 
+Real_3D_2D__Form.o: \
+  Specifiers.o \
+  Real_3D__Form.o \
+  Real_3D_2D__Form.f90
+
 Complex_3D__Form.o: \
   Specifiers.o \
   ArrayOperations.o \
@@ -44,6 +49,7 @@ ArrayArrays.o: \
   Real_1D__Form.o \
   Real_2D__Form.o \
   Real_3D__Form.o \
+  Real_3D_2D__Form.o \
   Complex_3D__Form.o \
   Character_1D__Form.o \
   ArrayArrays.f90

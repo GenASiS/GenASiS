@@ -28,14 +28,19 @@ module GeometryFlat_ASC__Form
 contains
 
 
-  subroutine Initialize ( GA, A, NameOutputOption )
+  subroutine Initialize ( GA, A, NameShortOption, IgnorabilityOption )
 
     class ( GeometryFlat_ASC_Form ), intent ( inout ) :: &
       GA
     class ( Atlas_SC_Template ), intent ( in ), target :: &
       A
     character ( * ), intent ( in ), optional :: &
-      NameOutputOption
+      NameShortOption
+    integer ( KDL ), intent ( in ), optional :: &
+      IgnorabilityOption
+
+    character ( LDL ) :: &
+      NameShort
 
     if ( GA % Type == '' ) &
       GA % Type = 'a GeometryFlat_ASC'
@@ -43,8 +48,11 @@ contains
     if ( GA % GeometryType == '' ) &
       GA % GeometryType = 'FLAT'    
 
-    call GA % InitializeTemplate_ASC &
-           ( A, NameOutputOption = NameOutputOption )
+    NameShort = 'Geometry'
+    if ( present ( NameShortOption ) ) &
+      NameShort = NameShortOption
+
+    call GA % InitializeTemplate_ASC ( A, NameShort, IgnorabilityOption )
 
   end subroutine Initialize
 
@@ -59,12 +67,10 @@ contains
   end subroutine Finalize
 
 
-  subroutine SetField ( FA, NameOutputOption )
+  subroutine SetField ( FA )
 
     class ( GeometryFlat_ASC_Form ), intent ( inout ) :: &
       FA
-    character ( * ), intent ( in ), optional :: &
-      NameOutputOption
 
     if ( .not. allocated ( FA % Chart ) ) then
       select case ( trim ( FA % GeometryType ) )
@@ -82,7 +88,8 @@ contains
           class is ( GeometryFlat_CSL_Form )
             associate ( nValues => C % nProperCells + C % nGhostCells )
             call GC % Initialize &
-                   ( C, nValues, NameOutputOption = NameOutputOption )
+                   ( C, FA % NameShort, nValues, &
+                     IgnorabilityOption = FA % IGNORABILITY )
             end associate !-- nValues
           end select !-- GC
 

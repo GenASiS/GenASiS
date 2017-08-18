@@ -805,25 +805,19 @@ contains
                       trim ( VG % Unit ( iVrbl ) % Label ), &
                       len_trim ( VG % Unit ( iVrbl ) % Label ) )
         
-        call Show &
-               ( trim ( VG % Variable ( iVrbl ) ), 'Variable', &
-                 CONSOLE % INFO_6 )
-        call Show &
-               ( VG % lVariable ( iVrbl ), 'lVariable', CONSOLE % INFO_6 )
-        call Show &
-               ( trim ( MeshDirectory ) // 'Mesh', 'MeshDirectory', &
-                 CONSOLE % INFO_6 )
-        call Show &
-               ( len_trim ( MeshDirectory ) + 4, 'lDirectory', &
-                 CONSOLE % INFO_6 )
+        call Show ( trim ( VG % Variable ( iVrbl ) ), 'Variable', &
+                    CONSOLE % INFO_6 )
+        call Show ( VG % lVariable ( iVrbl ), 'lVariable', CONSOLE % INFO_6 )
+        call Show ( trim ( MeshDirectory ) // 'Mesh', 'MeshDirectory', &
+                    CONSOLE % INFO_6 )
+        call Show ( len_trim ( MeshDirectory ) + 4, 'lDirectory', &
+                    CONSOLE % INFO_6 )
         call Show ( nSiloOptions, 'nSiloOptions', CONSOLE % INFO_6 )
         if ( len_trim ( VG % Unit ( iVrbl ) % Label ) > 0 ) then
-          call Show &
-                 ( trim ( VG % Unit ( iVrbl ) % Label ), 'Unit', &
-                   CONSOLE % INFO_6 )
-          call Show &
-                 ( len_trim ( VG % Unit ( iVrbl ) % Label ), 'lUnit', &
-                   CONSOLE % INFO_6 )
+          call Show ( trim ( VG % Unit ( iVrbl ) % Label ), 'Unit', &
+                      CONSOLE % INFO_6 )
+          call Show ( len_trim ( VG % Unit ( iVrbl ) % Label ), 'lUnit', &
+                      CONSOLE % INFO_6 )
         end if
 
         Error = DBPUTQV1 &
@@ -837,17 +831,14 @@ contains
                     SiloOptionList, Error )
 
         if ( SiloOptionList /= DB_F77NULL ) then
-          call Show &
-                 ( SiloOptionList, 'SiloOptionList before free', &
-                   CONSOLE % INFO_6 )        
+          call Show ( SiloOptionList, 'SiloOptionList before free', &
+                      CONSOLE % INFO_6 )        
           Error = DBFREEOPTLIST ( SiloOptionList )
-          call Show &
-                 ( SiloOptionList, 'SiloOptionList after free', &
-                   CONSOLE % INFO_6 )        
+          call Show ( SiloOptionList, 'SiloOptionList after free', &
+                      CONSOLE % INFO_6 )        
           SiloOptionList = DB_F77NULL
-          call Show &
-                 ( SiloOptionList, 'SiloOptionList after nullification', &
-                   CONSOLE % INFO_6 )        
+          call Show ( SiloOptionList, 'SiloOptionList after nullification', &
+                      CONSOLE % INFO_6 )        
           call Show ( DB_F77NULL, 'DB_F77NULL', CONSOLE % INFO_6 )
         end if
           

@@ -35,8 +35,6 @@ module Chart_Template
     character ( LDF ), pointer :: &
       Type => null ( ), &
       Name => null ( )
-    class ( ParameterStreamForm ), pointer :: &
-      ParameterStream => null ( )
     type ( ConnectivityForm ), pointer :: &
       Connectivity => null ( )
     class ( AtlasHeaderForm ), pointer :: &
@@ -113,12 +111,8 @@ contains
 
     character ( 2 ) :: &
       ChartNumber
-    character ( LDF ) :: &
-      Filename
-    character ( LDL ), dimension ( : ), allocatable :: &
-      TypeWord
 
-    C % IGNORABILITY = Atlas % IGNORABILITY + 1
+    C % IGNORABILITY = Atlas % IGNORABILITY
     C % iChart = iChart
     C % Atlas => Atlas
 
@@ -136,19 +130,11 @@ contains
     end if
 
     allocate ( C % Name )
-    call Split ( C % Type, ' ', TypeWord )
     write ( ChartNumber, fmt = '(i2.2)' ) iChart
-    C % Name = trim ( TypeWord ( 2 ) ) &
-               // '_' // ChartNumber // '_' // trim ( Atlas % Name ) 
+    C % Name = 'Chart_' // ChartNumber // '_' // trim ( Atlas % Name ) 
 
     call Show ( 'Initializing ' // trim ( C % Type ), C % IGNORABILITY )
     call Show ( C % Name, 'Name', C % IGNORABILITY )
-
-    allocate ( C % ParameterStream )
-    Filename &
-      = trim ( C % Name ) // '_Parameters'
-    call C % ParameterStream % Initialize &
-           ( Filename, PROGRAM_HEADER % Communicator % Rank )
 
     associate ( nD => C % nDimensions )
 
@@ -156,17 +142,13 @@ contains
     C % Ratio = 0.0_KDR
     if ( present ( RatioOption ) ) &
       C % Ratio ( : nD ) = RatioOption ( : nD )
-    call PROGRAM_HEADER % GetParameter &
-           ( C % Ratio ( : nD ), 'Ratio', &
-             ParameterStreamOption = C % ParameterStream )
+    call PROGRAM_HEADER % GetParameter ( C % Ratio ( : nD ), 'Ratio' )
 
     allocate ( C % Scale ( MAX_DIMENSIONS ) )
     C % Scale = 0.0_KDR
     if ( present ( ScaleOption ) ) &
       C % Scale ( : nD ) = ScaleOption ( : nD )
-    call PROGRAM_HEADER % GetParameter &
-           ( C % Scale ( : nD ), 'Scale', &
-             ParameterStreamOption = C % ParameterStream )
+    call PROGRAM_HEADER % GetParameter ( C % Scale ( : nD ), 'Scale' )
 
     C % nEqual = 0
     if ( present ( nEqualOption ) ) &
@@ -183,8 +165,7 @@ contains
       C % MinCoordinate ( : nD ) = MinCoordinateOption ( : nD )
     call PROGRAM_HEADER % GetParameter &
            ( C % MinCoordinate ( : nD ), 'MinCoordinate', &
-             InputUnitOption = C % CoordinateUnit ( : nD ), &
-             ParameterStreamOption = C % ParameterStream )
+             InputUnitOption = C % CoordinateUnit ( : nD ) )
 
     allocate ( C % MaxCoordinate ( MAX_DIMENSIONS ) )
     C % MaxCoordinate = 0.0_KDR
@@ -193,8 +174,7 @@ contains
       C % MaxCoordinate ( : nD ) = MaxCoordinateOption ( : nD )
     call PROGRAM_HEADER % GetParameter &
            ( C % MaxCoordinate ( : nD ), 'MaxCoordinate', &
-             InputUnitOption = C % CoordinateUnit ( : nD ), &
-             ParameterStreamOption = C % ParameterStream )
+             InputUnitOption = C % CoordinateUnit ( : nD ) )
 
     C % IsDistributed = Atlas % IsDistributed
     if ( present ( IsDistributedOption ) ) &
@@ -209,17 +189,14 @@ contains
     if ( present ( CoordinateSystemOption ) ) &
       C % CoordinateSystem = CoordinateSystemOption
     call PROGRAM_HEADER % GetParameter &
-           ( C % CoordinateSystem, 'CoordinateSystem', &
-             ParameterStreamOption = C % ParameterStream )
+           ( C % CoordinateSystem, 'CoordinateSystem' )
 
     allocate ( C % Spacing ( MAX_DIMENSIONS ) )
     C % Spacing = ''
     C % Spacing ( : nD ) = 'EQUAL'
     if ( present ( SpacingOption ) ) &
       C % Spacing ( : nD ) = SpacingOption ( : nD )
-    call PROGRAM_HEADER % GetParameter &
-           ( C % Spacing ( : nD ), 'Spacing', &
-             ParameterStreamOption = C % ParameterStream )
+    call PROGRAM_HEADER % GetParameter ( C % Spacing ( : nD ), 'Spacing' )
 
     associate ( AC => Atlas % Connectivity )
     allocate ( C % Connectivity )
@@ -257,7 +234,6 @@ contains
     C % Spacing          => C_Source % Spacing
     C % Type             => C_Source % Type
     C % Name             => C_Source % Name
-    C % ParameterStream  => C_Source % ParameterStream
     C % Connectivity     => C_Source % Connectivity
     C % Atlas            => C_Source % Atlas
 
@@ -282,7 +258,7 @@ contains
                 C % IGNORABILITY )
     call Show ( C % MaxCoordinate, C % CoordinateUnit, 'MaxCoordinate', &
                 C % IGNORABILITY )
-    call Show ( C % CoordinateUnit, 'CoordinateUnit' )
+    call Show ( C % CoordinateUnit, 'CoordinateUnit', C % IGNORABILITY )
 
     call Show ( C % Spacing, 'Spacing', C % IGNORABILITY )
 
@@ -325,7 +301,6 @@ contains
       deallocate ( C % CoordinateUnit )
       deallocate ( C % Scale )
       deallocate ( C % Ratio )
-      deallocate ( C % ParameterStream )
       deallocate ( C % Name )
       deallocate ( C % Type )
     else
@@ -338,7 +313,6 @@ contains
       nullify ( C % CoordinateUnit )
       nullify ( C % Scale )
       nullify ( C % Ratio )
-      nullify ( C % ParameterStream )
       nullify ( C % Name )
       nullify ( C % Type )
     end if !-- AllocatedValues

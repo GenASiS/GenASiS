@@ -12,7 +12,7 @@ module CONSOLE_Singleton
 
   type, extends ( ConsoleHeaderForm ), public :: ConsoleSingleton
     integer ( KDI ) :: &
-      Verbosity   = 5, &  !-- INFO_3, see ConsoleHeader_Form.f90
+      Verbosity   = 3, &  !-- CONSOLE % INFO_1, see ConsoleHeader_Form
       DisplayRank = 0, &
       ProcessRank = 0
     logical ( KDL ) :: &
@@ -103,7 +103,7 @@ contains
     procedure ( AbortInterface ), intent ( in ), pointer, optional :: &
       AbortOption
 
-    CONSOLE % Verbosity = CONSOLE % INFO_3
+    CONSOLE % Verbosity   = CONSOLE % INFO_1
     CONSOLE % ProcessRank = ProcessRank
     !CONSOLE % Abort => Abort_C
     if ( present ( AbortOption ) ) CONSOLE % Abort => AbortOption
