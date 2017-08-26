@@ -58,7 +58,7 @@ contains
     character ( * ), intent ( in ), optional :: &
       BoundaryConditionOption
 
-    call Show ( 'Initializing ' // trim ( CLE % Type ), CONSOLE % INFO_2 )
+    call Show ( 'Initializing ' // trim ( CLE % Type ), CONSOLE % INFO_1 )
 
     associate ( DM => CLE % DistributedMesh )
     call DM % Initialize ( C, BoundaryConditionOption )
@@ -110,7 +110,8 @@ contains
     integer ( KDI ) :: &
       iTimerComputation
       
-    call PROGRAM_HEADER % AddTimer ( 'Computational', iTimerComputation )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'Computational', iTimerComputation, Level = 1 )
     
     associate &
       ( DM  => CLE % DistributedMesh, &
@@ -127,13 +128,13 @@ contains
     CLE % WriteTime &
       = min ( CLE % Time + CLE % WriteTimeInterval, CLE % FinishTime )
 
-    call Show ( 'Evolving a Fluid', CONSOLE % INFO_2 )
+    call Show ( 'Evolving a Fluid', CONSOLE % INFO_1 )
     
     call T % Start ( ) 
 
     do while ( CLE % Time < CLE % FinishTime )
 
-      call Show ( 'Solving Conservation Equations', CONSOLE % INFO_3 )
+      call Show ( 'Solving Conservation Equations', CONSOLE % INFO_2 )
 
       call ComputeTimeStep ( CLE )
       if ( CLE % Time + CLE % TimeStep > CLE % WriteTime ) &
@@ -145,11 +146,11 @@ contains
 
       CLE % iCycle = CLE % iCycle + 1
       CLE % Time = CLE % Time + CLE % TimeStep
-      call Show ( CLE % iCycle, 'iCycle', CONSOLE % INFO_3 )
-      call Show ( CLE % Time, CLE % TimeUnit, 'Time', CONSOLE % INFO_3 )
+      call Show ( CLE % iCycle, 'iCycle', CONSOLE % INFO_2 )
+      call Show ( CLE % Time, CLE % TimeUnit, 'Time', CONSOLE % INFO_2 )
 
       if ( CLE % Time >= CLE % WriteTime ) then
-        
+
         call T % Stop ( )
 
         call DM % Write &
@@ -158,6 +159,9 @@ contains
         CLE % WriteTime &
           = min ( CLE % Time + CLE % WriteTimeInterval, CLE % FinishTime )
         
+        call Show ( CLE % iCycle, 'iCycle', CONSOLE % INFO_1 )
+        call Show ( CLE % Time, CLE % TimeUnit, 'Time', CONSOLE % INFO_1 )
+
         call T % Start ( )
         
       end if

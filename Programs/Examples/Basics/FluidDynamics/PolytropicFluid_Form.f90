@@ -380,7 +380,7 @@ contains
     PF % Unit ( PF % PRESSURE ) = EnergyUnit
     PF % Unit ( PF % ADIABATIC_INDEX ) = UNIT % IDENTITY
     PF % Unit ( PF % SOUND_SPEED ) = VelocityUnit ( 1 )
-    PF % Unit ( PF % POLYTROPIC_PARAMETER ) = EnergyUnit / DensityUnit ** Gamma
+!    PF % Unit ( PF % POLYTROPIC_PARAMETER ) = EnergyUnit / DensityUnit ** Gamma
 
     if ( UnitsOnly ) return
 

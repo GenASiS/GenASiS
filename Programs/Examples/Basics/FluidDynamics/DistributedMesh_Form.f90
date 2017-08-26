@@ -108,7 +108,7 @@ contains
     character ( * ), intent ( in ), optional :: &
       BoundaryConditionOption
 
-    DM % IGNORABILITY =  CONSOLE % INFO_3
+    DM % IGNORABILITY =  CONSOLE % INFO_1
     DM % Communicator => C
 
     call Show ( 'Initializing a DistributedMesh', DM % IGNORABILITY )
@@ -393,7 +393,7 @@ contains
     OutputDirectory = '../Output/'
     call PROGRAM_HEADER % GetParameter ( OutputDirectory, 'OutputDirectory' )
     
-    call PROGRAM_HEADER % AddTimer ( 'InputOutput', DM % iTimer_IO )
+    call PROGRAM_HEADER % AddTimer ( 'InputOutput', DM % iTimer_IO, Level = 1 )
     
     call PROGRAM_HEADER % Timer ( DM % iTimer_IO ) % Start ( )
 
@@ -474,7 +474,8 @@ contains
       CycleNumberOption
           
     call PROGRAM_HEADER % Timer ( DM % iTimer_IO ) % Start ( )
-    
+    call Show ( 'Writing image', CONSOLE % INFO_1 )
+
     associate ( GIS => DM % GridImageStream )
     call GIS % Open ( GIS % ACCESS_CREATE )
 
@@ -490,6 +491,7 @@ contains
     call GIS % Close ( )
     end associate !-- GIS
     
+    call Show ( DM % GridImageStream % Number, 'iImage', CONSOLE % INFO_1 )
     call PROGRAM_HEADER % Timer ( DM % iTimer_IO ) % Stop ( )
     
   end subroutine Write
