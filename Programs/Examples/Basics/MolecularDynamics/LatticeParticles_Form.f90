@@ -108,8 +108,11 @@ contains
            ( LP % NumberDensity, 'NumberDensity', &
              InputUnitOption = NumberDensityUnit )
 
+    if ( NumberDensityUnit == UNIT % NUMBER_DENSITY_ANGSTROM ) then
+      LengthUnit = UNIT % ANGSTROM
+    end if
+
     associate ( OneThird => 1.0_KDR / 3.0_KDR )
-    LengthUnit = NumberDensityUnit ** ( -OneThird )
     BoxLength = ( nParticles / LP % NumberDensity ) ** OneThird
     call Show ( BoxLength, LengthUnit, 'BoxLength', CONSOLE % INFO_2 )
     end associate !-- OneThird

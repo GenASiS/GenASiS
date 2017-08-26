@@ -124,7 +124,7 @@ contains
     character ( LDL ) :: &
       Step
 
-    call Show ( 'Initializing ' // trim ( PD % Type ), CONSOLE % INFO_3 )
+    call Show ( 'Initializing ' // trim ( PD % Type ), CONSOLE % INFO_1 )
 
     PD % iCycle  = 0
     PD % nCycles = 1000
@@ -179,9 +179,10 @@ contains
     type ( VariableGroupForm ), dimension ( 1 ) :: &
       VGP
 
-    call PROGRAM_HEADER % AddTimer ( 'Computational', iTimerComputation )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'Computational', iTimerComputation, Level = 1 )
 
-    call Show ( 'Evolving particles', CONSOLE % INFO_3 )
+    call Show ( 'Evolving particles', CONSOLE % INFO_1 )
 
     associate &
       ( DP => PD % DistributedParticles, &
@@ -189,7 +190,7 @@ contains
         T => PROGRAM_HEADER % Timer ( iTimerComputation ) )
 
     PD % Time = 0.0_KDR
-    call Show ( PD % Time, PD % TimeUnit, 'Time', CONSOLE % INFO_3 )
+    call Show ( PD % Time, PD % TimeUnit, 'Time', CONSOLE % INFO_2 )
 
     call PD % SetExtensiveIntensive ( )
     call VGP ( 1 ) % Initialize ( MP )
@@ -206,15 +207,15 @@ contains
 
     do iC = 1, PD % nCycles
 
-      call Show ( 'Stepping particles', CONSOLE % INFO_3 )
+      call Show ( 'Stepping particles', CONSOLE % INFO_2 )
       PD % iCycle = PD % iCycle + 1
-      call Show ( PD % iCycle, 'iCycle', CONSOLE % INFO_3 )
-      call Show ( PD % TimeStep, PD % TimeUnit, 'TimeStep', CONSOLE % INFO_3 )
+      call Show ( PD % iCycle, 'iCycle', CONSOLE % INFO_2 )
+      call Show ( PD % TimeStep, PD % TimeUnit, 'TimeStep', CONSOLE % INFO_2 )
 
       call PD % Step ( )
 
       PD % Time = PD % Time + PD % TimeStep
-      call Show ( PD % Time, PD % TimeUnit, 'Time', CONSOLE % INFO_3 )
+      call Show ( PD % Time, PD % TimeUnit, 'Time', CONSOLE % INFO_2 )
 
       PD % TimeValue ( iC ) = PD % Time
       call PD % RecordObservables ( iC )
@@ -226,6 +227,9 @@ contains
         call DP % Write &
                ( TimeOption = PD % Time / PD % TimeUnit, &
                  CycleNumberOption = PD % iCycle )
+
+        call Show ( PD % iCycle, 'iCycle', CONSOLE % INFO_1 )
+        call Show ( PD % Time, PD % TimeUnit, 'Time', CONSOLE % INFO_1 )
 
         call T % Start ( )
         

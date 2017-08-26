@@ -54,7 +54,7 @@ contains
     select type ( CP => GD % DistributedParticles )
     class is ( ClusterParticlesForm )
     associate &
-      ( G => CONSTANT % GRAVITATIONAL, &
+      ( G => 1.0_KDR, &
         M => CP % ParticleMass  *  CP % nParticles, &
         L => CP % SofteningLength )
     GD % TimeStep &
@@ -82,7 +82,7 @@ contains
 
     associate ( DP => PD % DistributedParticles )
     associate &
-      ( G => CONSTANT % GRAVITATIONAL, &
+      ( G => 1.0_KDR, &
         M => DP % ParticleMass ) 
 
     where ( Distance > 0.0_KDR )
@@ -113,7 +113,7 @@ contains
 
     associate ( DP => PD % DistributedParticles )
     associate &
-      ( G => CONSTANT % GRAVITATIONAL, &
+      ( G => 1.0_KDR, &
         M => DP % ParticleMass ) 
 
     where ( Distance > 0.0_KDR )
@@ -150,7 +150,7 @@ contains
     class is ( ClusterParticlesForm )
 
     associate &
-      ( G => CONSTANT % GRAVITATIONAL, &
+      ( G => 1.0_KDR, &
         M => CP % ParticleMass, &
         Epsilon => CP % SofteningLength ) 
 
@@ -184,7 +184,7 @@ contains
       CLS
 
     associate &
-      ( G => CONSTANT % GRAVITATIONAL, &
+      ( G => 1.0_KDR, &
         M_Total => CP % ParticleMass * CP % nParticles ) 
 
     CLS = - G * M_Total * M_Total / PotentialEnergy
@@ -204,7 +204,7 @@ contains
       PES
 
     associate &
-      ( G => CONSTANT % GRAVITATIONAL, &
+      ( G => 1.0_KDR, &
         M_Total => CP % ParticleMass * CP % nParticles ) 
 
     PES = G * M_Total * M_Total / ClusterSize
