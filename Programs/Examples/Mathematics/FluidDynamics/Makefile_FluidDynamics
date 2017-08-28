@@ -1,59 +1,50 @@
 PATH_GENASIS = ../../../../..
 
 all: SineWave SawtoothWave RiemannProblem RayleighTaylor \
-     SedovTaylor FishboneMoncrief WoosleyHeger_07_A
+     SedovTaylor FishboneMoncrief
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
 include ../Makefile_ObjectFiles
 
-SineWave: ThirdParty.a Basics.a Mathematics.a Fluid.a SineWave.o
+SineWave: Basics.a Mathematics.a Fluid.a SineWave.o
 	$(LINK) $(FFLAGS) \
           -o SineWave_$(MACHINE) \
           SineWave.o SineWave_Form.o PlaneWave_Template.o \
-          Fluid.a Mathematics.a Basics.a ThirdParty.a $(LIBRARIES)
+          Fluid.a Mathematics.a Basics.a $(LIBRARIES)
 
-SawtoothWave: ThirdParty.a Basics.a Mathematics.a Fluid.a SawtoothWave.o
+SawtoothWave: Basics.a Mathematics.a Fluid.a SawtoothWave.o
 	$(LINK) $(FFLAGS) \
           -o SawtoothWave_$(MACHINE) \
           SawtoothWave.o SawtoothWave_Form.o PlaneWave_Template.o \
-          Fluid.a Mathematics.a Basics.a ThirdParty.a $(LIBRARIES)
+          Fluid.a Mathematics.a Basics.a $(LIBRARIES)
 
-RiemannProblem: ThirdParty.a Basics.a Mathematics.a Fluid.a RiemannProblem.o
+RiemannProblem: Basics.a Mathematics.a Fluid.a RiemannProblem.o
 	$(LINK) $(FFLAGS) \
           -o RiemannProblem_$(MACHINE) \
           RiemannProblem.o RiemannProblem_Form.o \
-          Fluid.a Mathematics.a Basics.a ThirdParty.a $(LIBRARIES)
+          Fluid.a Mathematics.a Basics.a $(LIBRARIES)
 
-RayleighTaylor: ThirdParty.a Basics.a Mathematics.a Fluid.a RayleighTaylor.o
+RayleighTaylor: Basics.a Mathematics.a Fluid.a RayleighTaylor.o
 	$(LINK) $(FFLAGS) \
           -o RayleighTaylor_$(MACHINE) \
           RayleighTaylor.o RayleighTaylor_Form.o Tally_RT__Form.o \
-          Fluid.a Mathematics.a Basics.a ThirdParty.a $(LIBRARIES)
+          Fluid.a Mathematics.a Basics.a $(LIBRARIES)
 
-SedovTaylor: ThirdParty.a Basics.a Mathematics.a Fluid.a SedovTaylor.o
+SedovTaylor: Basics.a Mathematics.a Fluid.a SedovTaylor.o
 	$(LINK) $(FFLAGS) \
           -o SedovTaylor_$(MACHINE) \
           SedovTaylor.o SedovTaylor_Form.o \
-          Fluid.a Mathematics.a Basics.a ThirdParty.a $(LIBRARIES)
+          Fluid.a Mathematics.a Basics.a $(LIBRARIES)
 
-FishboneMoncrief: ThirdParty.a Basics.a Mathematics.a Fluid.a FishboneMoncrief.o
+FishboneMoncrief: Basics.a Mathematics.a Fluid.a FishboneMoncrief.o
 	$(LINK) $(FFLAGS) \
           -o FishboneMoncrief_$(MACHINE) \
           FishboneMoncrief.o FishboneMoncrief_Form.o Tally_FM__Form.o \
-          Fluid.a Mathematics.a Basics.a ThirdParty.a $(LIBRARIES)
-
-WoosleyHeger_07_A: ThirdParty.a Basics.a Mathematics.a Fluid.a \
-  WoosleyHeger_07_A.o
-	$(LINK) $(FFLAGS) \
-          -o WoosleyHeger_07_A_$(MACHINE) \
-          WoosleyHeger_07_A.o WoosleyHeger_07_A__Form.o \
-          WoosleyHeger_07_Header_Form.o \
-          Fluid.a Mathematics.a Basics.a ThirdParty.a $(LIBRARIES)
+          Fluid.a Mathematics.a Basics.a $(LIBRARIES)
 
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MATHEMATICS)/Makefile_Dependencies
-include $(PATH_THIRD_PARTY)/Makefile_Dependencies
 include ../Makefile_Dependencies
 
 clean:
@@ -66,7 +57,6 @@ clobber: clean
 	rm -f RayleighTaylor_*
 	rm -f SedovTaylor_*
 	rm -f FishboneMoncrief_*
-	rm -f WoosleyHeger_07_*
 
 PlaneWave_Template.o: \
   Basics.o \
@@ -164,26 +154,3 @@ FishboneMoncrief.o: \
   Basics.o \
   FishboneMoncrief_Form.o \
   FishboneMoncrief.f90
-
-WoosleyHeger_07_Header_Form.o: \
-  Basics.o \
-  Mathematics.o \
-  Fluid_P__Template.o \
-  Fluid_P_MHN__Form.o \
-  Sources_F__Form.o \
-  Fluid_ASC__Form.o \
-  ApplyCurvilinear_F__Command.o \
-  Tally_F_P_MHN__Form.o \
-  WoosleyHeger_07_Header_Form.f90
-
-WoosleyHeger_07_A__Form.o: \
-  Mathematics.o \
-  Fluid_P_MHN__Form.o \
-  Fluid_ASC__Form.o \
-  WoosleyHeger_07_Header_Form.o \
-  WoosleyHeger_07_A__Form.f90
-
-WoosleyHeger_07_A.o: \
-  Basics.o \
-  WoosleyHeger_07_A__Form.o \
-  WoosleyHeger_07_A.f90
