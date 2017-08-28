@@ -7,10 +7,8 @@ module Fluid_ASC__Form
   use Fluid_D__Form
   use Fluid_P_P__Form
   use Fluid_P_NR__Form
-  use Fluid_P_MHN__Form
   use Tally_F_D__Form
   use Tally_F_P__Form
-  use Tally_F_P_MHN__Form
   use Sources_F_CSL__Form
   use Sources_F_ASC__Form
   use FluidFeatures_CSL__Form
@@ -53,10 +51,6 @@ module Fluid_ASC__Form
       Fluid_P_NR_CSL
     generic, public :: &
       Fluid_P_NR => Fluid_P_NR_CSL
-    procedure, private, pass :: &
-      Fluid_P_MHN_CSL
-    generic, public :: &
-      Fluid_P_MHN => Fluid_P_MHN_CSL
     final :: &
       Finalize
     procedure, private, pass :: &
@@ -172,18 +166,6 @@ contains
             ( Tally_F_P_Form :: FA % TallyBoundaryLocal  ( iB ) % Element )
           allocate &
             ( Tally_F_P_Form :: FA % TallyBoundaryGlobal ( iB ) % Element )
-        end do !-- iB
-      case ( 'MEAN_HEAVY_NUCLEUS' )
-        allocate ( Tally_F_P_MHN_Form :: FA % TallyInterior )
-        allocate ( Tally_F_P_MHN_Form :: FA % TallyTotal )
-        allocate ( Tally_F_P_MHN_Form :: FA % TallyChange )
-        allocate ( FA % TallyBoundaryLocal  ( A % nBoundaries ) )
-        allocate ( FA % TallyBoundaryGlobal ( A % nBoundaries ) )
-        do iB = 1, A % nBoundaries
-          allocate &
-            ( Tally_F_P_MHN_Form :: FA % TallyBoundaryLocal  ( iB ) % Element )
-          allocate &
-            ( Tally_F_P_MHN_Form :: FA % TallyBoundaryGlobal ( iB ) % Element )
         end do !-- iB
       case default
         call Show ( 'FluidType not recognized', CONSOLE % ERROR )
@@ -355,26 +337,6 @@ contains
     end select !-- FC
 
   end function Fluid_P_NR_CSL
-
-
-  function Fluid_P_MHN_CSL ( FA ) result ( F )
-
-    class ( Fluid_ASC_Form ), intent ( in ) :: &
-      FA
-    class ( Fluid_P_MHN_Form ), pointer :: &
-      F
-
-    select type ( FC => FA % Chart )
-    class is ( Fluid_CSL_Form )
-      F => FC % Fluid_P_MHN ( )
-    class default
-      call Show ( 'Fluid Chart type not recognized', CONSOLE % ERROR )
-      call Show ( 'Fluid_ASC__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'Fluid_P_MHN_CSL', 'function', CONSOLE % ERROR )
-      call PROGRAM_HEADER % Abort ( )
-    end select !-- FC
-
-  end function Fluid_P_MHN_CSL
 
 
   impure elemental subroutine Finalize ( FA )

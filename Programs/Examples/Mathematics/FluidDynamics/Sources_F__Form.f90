@@ -4,7 +4,6 @@ module Sources_F__Form
   use Mathematics
   use Fluid_D__Form
   use Fluid_P__Template
-  use Fluid_P_MHN__Form
 
   implicit none
   private
@@ -264,14 +263,6 @@ contains
         =  F % Unit ( F % CONSERVED_ENERGY )  /  TimeUnit
       VariableUnit ( SF % RADIATION_E )  &
         =  F % Unit ( F % CONSERVED_ENERGY )  /  TimeUnit
-    end select !-- F
-
-    select type ( F )
-    class is ( Fluid_P_MHN_Form )
-      VariableUnit ( SF % RADIATION_DS )  &
-        =  F % Unit ( F % CONSERVED_ENTROPY )  /  TimeUnit
-      VariableUnit ( SF % RADIATION_DP )  &
-        =  F % Unit ( F % CONSERVED_PROTON_DENSITY )  /  TimeUnit
     end select !-- F
 
     do iD = 1, 3

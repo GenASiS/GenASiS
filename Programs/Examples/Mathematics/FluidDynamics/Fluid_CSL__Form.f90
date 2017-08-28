@@ -8,7 +8,6 @@ module Fluid_CSL__Form
   use Fluid_D__Form
   use Fluid_P_P__Form
   use Fluid_P_NR__Form
-  use Fluid_P_MHN__Form
   use Sources_F__Form
   use Sources_F_CSL__Form
   use FluidFeatures_CSL__Form
@@ -43,8 +42,6 @@ module Fluid_CSL__Form
       Fluid_P_P
     procedure, public, pass :: &
       Fluid_P_NR
-    procedure, public, pass :: &
-      Fluid_P_MHN
     procedure, public, pass :: &
       SetSources
     procedure, public, pass :: &
@@ -168,27 +165,6 @@ contains
   end function Fluid_P_NR
 
 
-  function Fluid_P_MHN ( FC ) result ( F )
-
-    class ( Fluid_CSL_Form ), intent ( in ), target :: &
-      FC
-    class ( Fluid_P_MHN_Form ), pointer :: &
-      F
-      
-    class ( VariableGroupForm ), pointer :: &
-      Field
-
-    F => null ( )
-
-    Field => FC % Field
-    select type ( Field )
-    class is ( Fluid_P_MHN_Form )
-    F => Field
-    end select !-- Field
-
-  end function Fluid_P_MHN
-
-
   subroutine SetSources ( FC, SFC )
 
     class ( Fluid_CSL_Form ), intent ( inout ) :: &
@@ -280,18 +256,6 @@ contains
       allocate ( Fluid_P_NR_Form :: FC % Field )
       select type ( F => FC % Field )
       type is ( Fluid_P_NR_Form )
-        call F % Initialize &
-               ( FC % RiemannSolverType, FC % UseLimiter, FC % VelocityUnit, &
-                 FC % MassDensityUnit, FC % EnergyDensityUnit, &
-                 FC % TemperatureUnit, FC % LimiterParameter, FC % nValues, &
-                 NameOption = FC % NameShort )
-        call F % SetPrimitiveConserved ( )
-        call F % SetOutput ( FC % FieldOutput )
-      end select !-- F
-    case ( 'MEAN_HEAVY_NUCLEUS' )
-      allocate ( Fluid_P_MHN_Form :: FC % Field )
-      select type ( F => FC % Field )
-      type is ( Fluid_P_MHN_Form )
         call F % Initialize &
                ( FC % RiemannSolverType, FC % UseLimiter, FC % VelocityUnit, &
                  FC % MassDensityUnit, FC % EnergyDensityUnit, &
