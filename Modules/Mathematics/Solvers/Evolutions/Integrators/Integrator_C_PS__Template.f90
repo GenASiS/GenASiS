@@ -81,7 +81,7 @@ contains
       call Show ( 'InitializeTemplate_C_PS', 'subroutine', CONSOLE % WARNING )
     end if
 
-    I % CourantFactor = 0.9
+    I % CourantFactor = 0.7_KDR
     if ( present ( CourantFactorOption ) ) &
       I % CourantFactor = CourantFactorOption
     call PROGRAM_HEADER % GetParameter &
