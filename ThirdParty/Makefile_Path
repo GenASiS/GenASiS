@@ -1,7 +1,0 @@
-PATH_OCONNOR_OTT = $(PATH_THIRD_PARTY)/OConnorOtt/EOSdriver
-PATH_TIMMES = $(PATH_THIRD_PARTY)/Timmes/fermi_dirac_with_derivatives
-
-VPATH_THIRD_PARTY = \
-  $(PATH_OCONNOR_OTT) \
-  $(PATH_TIMMES)
-
