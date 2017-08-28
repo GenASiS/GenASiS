@@ -1,7 +1,5 @@
-PATH_THIRD_PARTY = $(PATH_GENASIS)/ThirdParty
 PATH_MODULES     = $(PATH_GENASIS)/Modules
 
-include $(PATH_THIRD_PARTY)/Makefile_Path
 include $(PATH_MODULES)/Makefile_Path
 
-VPATH = ../:$(VPATH_THIRD_PARTY):$(VPATH_MODULES)
+VPATH = ../:$(VPATH_MODULES)

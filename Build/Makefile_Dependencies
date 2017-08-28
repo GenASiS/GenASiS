@@ -1,2 +1,1 @@
-include $(PATH_THIRD_PARTY)/Makefile_Dependencies
 include $(PATH_MODULES)/Makefile_Dependencies
