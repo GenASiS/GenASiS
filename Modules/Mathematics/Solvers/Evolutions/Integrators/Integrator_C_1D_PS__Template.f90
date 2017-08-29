@@ -181,11 +181,11 @@ contains
 !  I % IsCheckpointTime = .true.
 !end if
 
-if ( TimeStep < 1.0e-12_KDR * UNIT % SECOND ) then
-  call Show ( I % iCycle, '>>> iCycle' )
-  call Show ( TimeStep, I % TimeUnit, '>>> TimeStep too small', CONSOLE % ERROR )
-  call PROGRAM_HEADER % Abort ( )
-end if
+! if ( TimeStep < 1.0e-12_KDR * UNIT % SECOND ) then
+!   call Show ( I % iCycle, '>>> iCycle' )
+!   call Show ( TimeStep, I % TimeUnit, '>>> TimeStep too small', CONSOLE % ERROR )
+!   call PROGRAM_HEADER % Abort ( )
+! end if
 
     end associate !-- CA_1D, etc.
     end select !-- S

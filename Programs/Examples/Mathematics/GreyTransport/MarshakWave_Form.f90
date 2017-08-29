@@ -288,6 +288,7 @@ contains
     call Show ( Lambda, UNIT % CENTIMETER, 'Lambda' )
     call Show ( Tau, UNIT % IDENTITY, 'Tau' )
     call Show ( t_Diff, UNIT % SECOND, 't_Diff' )
+    call Show ( InteractionsType, 'InteractionsType' )
 
     select case ( trim ( InteractionsType ) )
     case ( 'MARSHAK_WAVE_VAYTET_2_GREY', 'MARSHAK_WAVE_VAYTET_3_GREY' )
@@ -608,7 +609,7 @@ contains
            ( FluidSource_Radiation % Value ( :, iEnergy_F ), &
              FluidSource_Radiation % Value ( :, iMomentum_1_F ), &
              Chart % IsProperCell, &
-             I % Value ( :, I % EMISSIVITY_H ), &
+             I % Value ( :, I % EMISSIVITY_J ), &
              I % Value ( :, I % OPACITY_J ), &
              I % Value ( :, I % OPACITY_H ), &
              R % Value ( :, R % COMOVING_ENERGY ), &
