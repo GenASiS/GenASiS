@@ -122,12 +122,5 @@ ApplyRelaxation_RM__Command.o: \
   PrepareRelaxation_RM__Command.o \
   ApplyRelaxation_RM__Command.f90
 
-ApplyRelaxation_RM_2__Command.o: \
-  Basics.o \
-  Mathematics.o \
-  RadiationMoments_Form.o \
-  Sources_RM__Form.o \
-  ApplyRelaxation_RM_2__Command.f90
-
 GreyMoments.a: $(GREY_MOMENTS)
 	ar r GreyMoments.a $(GREY_MOMENTS)
