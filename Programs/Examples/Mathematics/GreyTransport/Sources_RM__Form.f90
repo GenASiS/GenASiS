@@ -8,7 +8,7 @@ module Sources_RM__Form
   private
 
     integer ( KDI ), private, parameter :: &
-      N_FIELDS_RM  = 12, &
+      N_FIELDS_RM  = 8, &
       N_VECTORS_RM = 3
 
   type, public, extends ( Sources_C_Form ) :: Sources_RM_Form
@@ -16,8 +16,7 @@ module Sources_RM__Form
       N_FIELDS_RM    = N_FIELDS_RM, &
       N_VECTORS_RM   = N_VECTORS_RM, &
       INTERACTIONS_J = 0, &
-      INTERACTIONS_N = 0, &
-      A_11, A_21, A_12, A_22 = 0
+      INTERACTIONS_N = 0
     integer ( KDI ), dimension ( 3 ) :: &
       CURVILINEAR_S_D  = 0, &
       INTERACTIONS_H_D = 0
@@ -157,10 +156,6 @@ contains
     SRM % INTERACTIONS_N    =  oF + 2
     SRM % CURVILINEAR_S_D   =  oF + [ 3, 4, 5 ]
     SRM % INTERACTIONS_H_D  =  oF + [ 6, 7, 8 ]
-    SRM % A_11              =  oF + 9
-    SRM % A_21              =  oF + 10
-    SRM % A_12              =  oF + 11
-    SRM % A_22              =  oF + 12
 
     !-- variable names 
 
@@ -180,11 +175,7 @@ contains
           'Curvilinear_S_D_3 ', &
           'Interactions_H_D_1', &
           'Interactions_H_D_2', &
-          'Interactions_H_D_3', &
-          'A_11              ', &
-          'A_21              ', &
-          'A_12              ', &
-          'A_22              ' ]
+          'Interactions_H_D_3' ]
           
     !-- units
     
