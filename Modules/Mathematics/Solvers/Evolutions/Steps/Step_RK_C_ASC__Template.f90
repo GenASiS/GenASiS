@@ -733,8 +733,7 @@ contains
     type ( VariableGroupForm ), intent ( in ) :: &
       Solution
     logical ( KDL ), intent ( in ), optional :: &
-      IntermediateOption
-    logical ( KDL ), intent ( in ), optional :: &
+      IntermediateOption, &
       FinalOption
 
     integer ( KDI ) :: &

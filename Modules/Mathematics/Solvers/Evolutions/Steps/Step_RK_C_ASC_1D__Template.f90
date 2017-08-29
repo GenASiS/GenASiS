@@ -223,7 +223,8 @@ contains
 
     call S % LoadSolution ( S % Solution_1D, S % Current_1D )
     call S % ComputeTemplate ( Time, TimeStep )
-    call S % StoreSolution ( S % Current_1D, S % Solution_1D )
+    call S % StoreSolution ( S % Current_1D, S % Solution_1D, &
+                             FinalOption = .true. )
 
     do iC = 1, S % nCurrents
       associate ( CA => S % Current_ASC_1D ( iC ) % Element )
@@ -373,7 +374,7 @@ contains
           Y     => S % Y_1D ( iC ) )
 
       if ( iStage > 1 ) &
-        call S % StoreSolution ( C, Y )
+        call S % StoreSolution ( C, Y, IntermediateOption = .true. )
 
       call Clear ( K % Value )
 
@@ -455,7 +456,8 @@ contains
   end subroutine LoadSolution_C_1D
 
 
-  subroutine StoreSolution_C_1D ( Current_1D, S, Solution_1D )
+  subroutine StoreSolution_C_1D &
+               ( Current_1D, S, Solution_1D, IntermediateOption, FinalOption )
 
     type ( CurrentPointerForm ), dimension ( : ), intent ( in ) :: &
       Current_1D
@@ -463,13 +465,17 @@ contains
       S
     type ( VariableGroupForm ), dimension ( : ), intent ( inout ) :: &
       Solution_1D
+    logical ( KDL ), intent ( in ), optional :: &
+      IntermediateOption, &
+      FinalOption
 
     integer ( KDI ) :: &
       iC  !-- iCurrent
 
     do iC = 1, size ( Current_1D )
       call S % StoreSolution &
-             ( Current_1D ( iC ) % Pointer, Solution_1D ( iC ) )
+             ( Current_1D ( iC ) % Pointer, Solution_1D ( iC ), &
+               IntermediateOption, FinalOption )
     end do !-- iC
 
   end subroutine StoreSolution_C_1D
