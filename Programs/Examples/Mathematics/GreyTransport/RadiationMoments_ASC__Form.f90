@@ -6,7 +6,6 @@ module RadiationMoments_ASC__Form
   use Mathematics
   use RadiationMoments_Form
   use PhotonMoments_G__Form
-  use NeutrinoMoments_G__Form
   use Sources_RM_CSL__Form
   use Sources_RM_ASC__Form
   use RadiationMoments_CSL__Form
@@ -44,10 +43,6 @@ module RadiationMoments_ASC__Form
       PhotonMoments_G_CSL
     generic, public :: &
       PhotonMoments_G => PhotonMoments_G_CSL
-    procedure, private, pass :: &
-      NeutrinoMoments_G_CSL
-    generic, public :: &
-      NeutrinoMoments_G => NeutrinoMoments_G_CSL
     procedure, public, pass :: &
       SetInteractions
     final :: &
@@ -285,27 +280,6 @@ contains
     end select !-- FC
 
   end function PhotonMoments_G_CSL
-
-
-  function NeutrinoMoments_G_CSL ( RMA ) result ( NM )
-
-    class ( RadiationMoments_ASC_Form ), intent ( in ) :: &
-      RMA
-    class ( NeutrinoMoments_G_Form ), pointer :: &
-      NM
-
-    select type ( RMC => RMA % Chart )
-    class is ( RadiationMoments_CSL_Form )
-      NM => RMC % NeutrinoMoments_G ( )
-    class default
-      call Show ( 'RadiationMoments Chart type not recognized', &
-                  CONSOLE % ERROR )
-      call Show ( 'RadiationMoments_ASC__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'NeutrinoMoments_G_CSL', 'function', CONSOLE % ERROR )
-      call PROGRAM_HEADER % Abort ( )
-    end select !-- FC
-
-  end function NeutrinoMoments_G_CSL
 
 
   subroutine SetInteractions ( RMA, IA )

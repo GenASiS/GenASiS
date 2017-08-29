@@ -15,16 +15,10 @@ PhotonMoments_G__Form.o: \
   RadiationMoments_Form.o \
   PhotonMoments_G__Form.f90
 
-NeutrinoMoments_G__Form.o: \
-  Basics.o \
-  PhotonMoments_G__Form.o \
-  NeutrinoMoments_G__Form.f90
-
 Sources_RM__Form.o: \
   Basics.o \
   Mathematics.o \
   RadiationMoments_Form.o \
-  NeutrinoMoments_G__Form.o \
   Sources_RM__Form.f90
 
 Sources_RM_CSL__Form.o: \
@@ -46,7 +40,6 @@ RadiationMoments_CSL__Form.o: \
   Interactions_Template.o \
   RadiationMoments_Form.o \
   PhotonMoments_G__Form.o \
-  NeutrinoMoments_G__Form.o \
   Sources_RM__Form.o \
   Sources_RM_CSL__Form.o \
   RadiationMoments_CSL__Form.f90
@@ -56,7 +49,6 @@ RadiationMoments_ASC__Form.o: \
   Mathematics.o \
   RadiationMoments_Form.o \
   PhotonMoments_G__Form.o \
-  NeutrinoMoments_G__Form.o \
   Sources_RM_CSL__Form.o \
   Sources_RM_ASC__Form.o \
   RadiationMoments_CSL__Form.o \
@@ -97,13 +89,6 @@ Interactions_MWV_3_G__Form.o: \
   Interactions_MWV_2_G__Form.o \
   Interactions_MWV_3_G__Form.f90
 
-Interactions_NM_1_G__Form.o: \
-  Basics.o \
-  Mathematics.o \
-  Fluid_P_MHN__Form.o \
-  NeutrinoMoments_G__Form.o \
-  Interactions_NM_1_G__Form.f90
-
 Interactions_CSL__Form.o: \
   Basics.o \
   Mathematics.o \
@@ -112,7 +97,6 @@ Interactions_CSL__Form.o: \
   Interactions_MWV_1_G__Form.o \
   Interactions_MWV_2_G__Form.o \
   Interactions_MWV_3_G__Form.o \
-  Interactions_NM_1_G__Form.o \
   Interactions_CSL__Form.f90
 
 Interactions_ASC__Form.o: \
@@ -157,7 +141,6 @@ ApplyRelaxation_RM_2__Command.o: \
   Basics.o \
   Mathematics.o \
   RadiationMoments_Form.o \
-  NeutrinoMoments_G__Form.o \
   Sources_RM__Form.o \
   ApplyRelaxation_RM_2__Command.f90
 

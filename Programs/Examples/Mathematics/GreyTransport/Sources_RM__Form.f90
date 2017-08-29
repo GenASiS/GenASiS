@@ -3,7 +3,6 @@ module Sources_RM__Form
   use Basics
   use Mathematics
   use RadiationMoments_Form
-  use NeutrinoMoments_G__Form
 
   implicit none
   private
@@ -263,12 +262,6 @@ contains
       VariableUnit ( SRM % INTERACTIONS_H_D ( iD ) )  &
         =  RM % Unit ( RM % CONSERVED_MOMENTUM_D ( iD ) )  /  TimeUnit
     end do
-
-    select type ( RM )
-    class is ( NeutrinoMoments_G_Form )
-      VariableUnit ( SRM % INTERACTIONS_N )  &
-        =  RM % Unit ( RM % CONSERVED_NUMBER )  /  TimeUnit
-    end select !-- RM
 
   end subroutine SetUnits
 

@@ -3,7 +3,6 @@ module ApplyRelaxation_RM_2__Command
   use Basics
   use Mathematics
   use RadiationMoments_Form
-  use NeutrinoMoments_G__Form
   use Sources_RM__Form
 
   implicit none
@@ -60,20 +59,12 @@ contains
       A
     class ( GeometryFlatForm ), pointer :: &
       G
-    class ( NeutrinoMoments_G_Form ), pointer :: &
-      NM
 
     call Show ( 'ApplyRelaxation_RM_2', S % IGNORABILITY + 3 )
     call Show ( RadiationMoments % Name, 'RadiationMoments', &
                 S % IGNORABILITY + 3 )
 
     nV = size ( IncrementExplicit % Value, dim = 1 )
-
-    NM => null ( )
-    select type ( RadiationMoments )
-    class is ( NeutrinoMoments_G_Form )
-      NM => RadiationMoments
-    end select
 
     select type ( RM => RadiationMoments )
     class is ( RadiationMomentsForm )
@@ -92,8 +83,6 @@ contains
                   iEnergy )
     call Search ( RM % iaConserved, RM % CONSERVED_MOMENTUM_D ( 1 ), &
                   iMomentum_1 )
-    if ( associated ( NM ) ) &
-      call Search ( NM % iaConserved, NM % CONSERVED_NUMBER, iNumber )
 
     !$OMP parallel do private &
     !$OMP   ( iV, A, B, dJ, dH_1, k_D, Q_Old, A_1_Old, V_1_Old, Div_E )
@@ -160,19 +149,6 @@ end if
                RM % Value ( iV, RM % COMOVING_MOMENTUM_U ( 1 ) ), &
                dJ, dH_1, S % B ( iStage ) )
 
-      if ( associated ( NM ) ) &
-        call ComputeNumber &
-               ( IncrementExplicit % Value ( iV, iNumber ), &
-                 SRM % Value ( iV, SRM % INTERACTIONS_N ), &
-                 I % Value ( iV, I % EMISSIVITY_N ), &
-                 I % Value ( iV, I % OPACITY_N ), &
-                 NM % Value ( iV, NM % COMOVING_ENERGY ), &
-                 NM % Value ( iV, NM % COMOVING_MOMENTUM_U ( 1 ) ), &
-                 NM % Value ( iV, NM % COMOVING_NUMBER ), &
-                 NM % Value ( iV, NM % FLUID_VELOCITY_U ( 1 ) ), &
-                 TimeStep, S % B ( iStage ) )
-!               ( dD, R, Xi_N, Chi_N, J, H_1, N, V_1, dt, Weight_RK )
-
     end do
     !$OMP end parallel do
 
@@ -181,7 +157,7 @@ end if
     end associate !-- I
     end select !-- RM
 
-    nullify ( G, NM )
+    nullify ( G )
     
   end subroutine ApplyRelaxation_RM_2
 

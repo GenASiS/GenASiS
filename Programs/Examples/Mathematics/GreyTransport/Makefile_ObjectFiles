@@ -2,7 +2,6 @@ GREY_MOMENTS = \
   ApplyRelaxation_RM_2__Command.o \
   Interactions_ASC__Form.o \
   Interactions_CSL__Form.o \
-  Interactions_NM_1_G__Form.o \
   Interactions_MWV_3_G__Form.o \
   Interactions_MWV_2_G__Form.o \
   Interactions_MWV_1_G__Form.o \
@@ -13,7 +12,6 @@ GREY_MOMENTS = \
   Sources_RM_ASC__Form.o \
   Sources_RM_CSL__Form.o \
   Sources_RM__Form.o \
-  NeutrinoMoments_G__Form.o \
   PhotonMoments_G__Form.o \
   RadiationMoments_Form.o \
   Interactions_Template.o
