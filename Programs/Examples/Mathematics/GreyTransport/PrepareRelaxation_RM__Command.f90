@@ -65,7 +65,7 @@ contains
       call PrepareRelaxation_RM_Energy_Kernel &
              ( IncrementExplicit % Value ( :, iEnergy ), &
                DampingCoefficient % Value ( :, iEnergy ), &
-               SRM % Value ( :, SRM % NET_EMISSION_E ), &
+               SRM % Value ( :, SRM % INTERACTIONS_J ), &
                Chart % IsProperCell, &
                I % Value ( :, I % EMISSIVITY_J ), &
                I % Value ( :, I % OPACITY_J ), &
@@ -161,9 +161,9 @@ contains
                DampingCoefficient % Value ( :, iMomentum_1 ), &
                DampingCoefficient % Value ( :, iMomentum_2 ), &
                DampingCoefficient % Value ( :, iMomentum_3 ), &
-               SRM % Value ( :, SRM % NET_EMISSION_S_D ( 1 ) ), &
-               SRM % Value ( :, SRM % NET_EMISSION_S_D ( 2 ) ), &
-               SRM % Value ( :, SRM % NET_EMISSION_S_D ( 3 ) ), &
+               SRM % Value ( :, SRM % INTERACTIONS_H_D ( 1 ) ), &
+               SRM % Value ( :, SRM % INTERACTIONS_H_D ( 2 ) ), &
+               SRM % Value ( :, SRM % INTERACTIONS_H_D ( 3 ) ), &
                RM, &
                Chart % IsProperCell, &
                IncrementExplicit % Value ( :, iEnergy ), &

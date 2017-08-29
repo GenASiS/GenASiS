@@ -26,7 +26,7 @@ contains
     type ( VariableGroupForm ), intent ( inout ) :: &
       IncrementExplicit, &
       DampingCoefficient
-    class ( CurrentTemplate ), intent ( in ) :: &
+    class ( CurrentTemplate ), intent ( in ), target :: &
       RadiationMoments
     class ( ChartTemplate ), intent ( in ) :: &
       Chart

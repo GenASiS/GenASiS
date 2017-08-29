@@ -1,5 +1,7 @@
 GREY_MOMENTS = \
   ApplyRelaxation_RM_2__Command.o \
+  ApplyRelaxation_RM__Command.o \
+  PrepareRelaxation_RM__Command.o \
   Interactions_ASC__Form.o \
   Interactions_CSL__Form.o \
   Interactions_MWV_3_G__Form.o \
@@ -17,6 +19,4 @@ GREY_MOMENTS = \
   Interactions_Template.o
 #  ApplyRelaxation_NM_G_2__Command.o \
 #  ApplyRelaxation_NM_G__Command.o \
-#  ApplyRelaxation_RM__Command.o \
 #  PrepareRelaxation_NM_G__Command.o \
-#  PrepareRelaxation_RM__Command.o \
