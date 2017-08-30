@@ -95,6 +95,7 @@ Thermalization_Form.o: \
   RadiationMoments_Form.o \
   RadiationMoments_ASC__Form.o \
   Interactions_F__Form.o \
+  ApplyRelaxation_RM__Command.o \
   SetPlanckSpectrum_Command.o \
   RadiationMoments_BSLL_ASC_CSLD__Form.o \
   Interactions_BSLL_ASC_CSLD__Form.o \
