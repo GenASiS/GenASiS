@@ -4,24 +4,24 @@ all: SineWaveStreaming Thermalization
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-VPATH := $(VPATH):../../FluidDynamics:../../GreyTransport2
+VPATH := $(VPATH):../../FluidDynamics:../../GreyTransport
 include ../../FluidDynamics/Makefile_ObjectFiles
-include ../../GreyTransport2/Makefile_ObjectFiles
+include ../../GreyTransport/Makefile_ObjectFiles
 
 SPECTRAL_MOMENTS = \
   RadiationMoments_BSLL_ASC_CSLD__Form.o \
-#  Interactions_BSLL_ASC_CSLD__Form.o \
-#  SetFermiDiracSpectrum_Command.o \
-#  SetPlanckSpectrum_Command.o
+  Interactions_BSLL_ASC_CSLD__Form.o \
+  SetFermiDiracSpectrum_Command.o \
+  SetPlanckSpectrum_Command.o
 
-SineWaveStreaming: ThirdParty.a Basics.a Mathematics.a Fluid.a GreyMoments.a \
+SineWaveStreaming: Basics.a Mathematics.a Fluid.a GreyMoments.a \
   SpectralMoments.a SineWaveStreaming.o
 	$(LINK) $(FFLAGS) \
           -o SineWaveStreaming_$(MACHINE) \
           SineWaveStreaming.o SineWaveStreaming_Form.o \
           PlaneWaveStreaming_Template.o \
           SpectralMoments.a GreyMoments.a Fluid.a Mathematics.a Basics.a \
-          ThirdParty.a $(LIBRARIES)
+          $(LIBRARIES)
 
 Thermalization: Basics.a Mathematics.a Fluid.a GreyMoments.a \
   SpectralMoments.a Thermalization.o
@@ -29,13 +29,12 @@ Thermalization: Basics.a Mathematics.a Fluid.a GreyMoments.a \
           -o Thermalization_$(MACHINE) \
           Thermalization.o Thermalization_Form.o \
           SpectralMoments.a GreyMoments.a Fluid.a Mathematics.a Basics.a \
-          $(THIRD_PARTY) $(LIBRARIES)
+          $(LIBRARIES)
 
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MATHEMATICS)/Makefile_Dependencies
-include $(PATH_THIRD_PARTY)/Makefile_Dependencies
 include ../../FluidDynamics/Makefile_Dependencies
-include ../../GreyTransport2/Makefile_Dependencies
+include ../../GreyTransport/Makefile_Dependencies
 
 clean:
 	rm -f *.o *.a *.mod *.ld

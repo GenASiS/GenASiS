@@ -254,9 +254,11 @@ contains
 
     call S % ComputeTemplate ( Time, TimeStep )
 
-    call S % StoreSolution ( S % Current, S % Solution )
-    call S % StoreSolution ( S % Current_BSLL_ASC_CSLD, &
-                             S % Solution_BSLL_ASC_CSLD_S )
+    call S % StoreSolution &
+           ( S % Current, S % Solution, FinalOption = .true. )
+    call S % StoreSolution &
+           ( S % Current_BSLL_ASC_CSLD, S % Solution_BSLL_ASC_CSLD_S, &
+             FinalOption = .true. )
 
     associate &
       ( CB => S % Current_BSLL_ASC_CSLD, &
@@ -420,7 +422,8 @@ contains
 
 
   subroutine StoreSolution_C_BSLL_ASC_CSLD &
-               ( Current_BSLL_ASC_CSLD, S, Solution_BSLL_ASC_CSLD_S )
+               ( Current_BSLL_ASC_CSLD, S, Solution_BSLL_ASC_CSLD_S, &
+                 IntermediateOption, FinalOption )
 
     class ( Current_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
       Current_BSLL_ASC_CSLD
@@ -428,6 +431,9 @@ contains
       S
     type ( VariableGroupForm ), dimension ( : ), intent ( in ) :: &
       Solution_BSLL_ASC_CSLD_S
+    logical ( KDL ), intent ( in ), optional :: &
+      IntermediateOption, &
+      FinalOption
 
     integer ( KDI ) :: &
       iS     !-- iSection
@@ -441,7 +447,8 @@ contains
     do iS = 1, S % nSections
       associate ( Solution => Solution_BSLL_ASC_CSLD_S ( iS ) )
       Current  => CB % CurrentSection ( iS )
-      call S % StoreSolution ( Current, Solution )
+      call S % StoreSolution &
+             ( Current, Solution, IntermediateOption, FinalOption )
       end associate !-- Solution
     end do !-- iS
 

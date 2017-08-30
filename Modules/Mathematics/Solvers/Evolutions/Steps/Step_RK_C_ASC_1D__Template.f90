@@ -457,7 +457,8 @@ contains
 
 
   subroutine StoreSolution_C_1D &
-               ( Current_1D, S, Solution_1D, IntermediateOption, FinalOption )
+               ( Current_1D, S, Solution_1D, IntermediateOption, &
+                 FinalOption )
 
     type ( CurrentPointerForm ), dimension ( : ), intent ( in ) :: &
       Current_1D
