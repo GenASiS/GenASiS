@@ -15,11 +15,13 @@ module Bundle_SLL_ASC_CSLD__Form
 
   type, public, extends ( BundleHeaderForm ) :: Bundle_SLL_ASC_CSLD_Form
     integer ( KDI ) :: &
-      nBaseValues   = 0, &
-      nFibers       = 0, &
-      nSections     = 0, &
-      nFibersWrite  = 0, &
-      sFibersWrite  = 0
+      nBaseValues    = 0, &
+      nFibers        = 0, &
+      nSections      = 0, &
+      nFibersWrite   = 0, &
+      sFibersWrite   = 0, &
+      nSectionsWrite = 0, &
+      sSectionsWrite = 0
     integer ( KDI ), dimension ( : ), allocatable :: &
       iaBaseCell, &
       iaBaseCellLabel
@@ -167,6 +169,13 @@ contains
       B % Fiber_CSLL => CF
       B % nSections  =  CF % nProperCells
     end select !-- CF
+
+    B % nSectionsWrite = 5
+    call PROGRAM_HEADER % GetParameter ( B % nSectionsWrite, 'nSectionsWrite' )
+
+    B % sSectionsWrite = B % nSections / B % nSectionsWrite
+    if ( mod ( B % nSections, B % nSectionsWrite ) > 0 ) &
+      B % sSectionsWrite = B % sSectionsWrite + 1
 
     call B % Show ( )
 
@@ -438,6 +447,8 @@ contains
     call Show ( B % nSections, 'nSections', B % IGNORABILITY )
     call Show ( B % nFibersWrite, 'nFibersWrite', B % IGNORABILITY )
     call Show ( B % sFibersWrite, 'sFibersWrite', B % IGNORABILITY )
+    call Show ( B % nSectionsWrite, 'nSectionsWrite', B % IGNORABILITY )
+    call Show ( B % sSectionsWrite, 'sSectionsWrite', B % IGNORABILITY )
 
   end subroutine ShowHeader
 

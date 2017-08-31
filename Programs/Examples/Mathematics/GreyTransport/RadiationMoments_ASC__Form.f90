@@ -14,6 +14,8 @@ module RadiationMoments_ASC__Form
   private
   
   type, public, extends ( Current_ASC_Template ) :: RadiationMoments_ASC_Form
+    logical ( KDL ) :: &
+      SuppressWrite
     real ( KDR ) :: &
       LimiterParameter
     type ( MeasuredValueForm ) :: &
@@ -63,7 +65,7 @@ contains
                  EnergyUnitOption, MomentumUnitOption, &
                  AngularMomentumUnitOption, TimeUnitOption, &
                  LimiterParameterOption, IgnorabilityOption, &
-                 SuppressWriteSourcesOption )
+                 SuppressWriteOption, SuppressWriteSourcesOption )
 
     class ( RadiationMoments_ASC_Form ), intent ( inout ) :: &
       RMA
@@ -93,6 +95,7 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
     logical ( KDL ), intent ( in ), optional :: &
+      SuppressWriteOption, &
       SuppressWriteSourcesOption
 
 !    integer ( KDI ) :: &
@@ -206,6 +209,10 @@ contains
     NameShort = 'Radiation'
     if ( present ( NameShortOption ) ) &
       NameShort = NameShortOption
+
+    RMA % SuppressWrite = .false.
+    if ( present ( SuppressWriteOption ) ) &
+      RMA % SuppressWrite = SuppressWriteOption
 
     call RMA % InitializeTemplate_ASC_C ( A, NameShort, IgnorabilityOption )
 
@@ -348,7 +355,8 @@ contains
                IgnorabilityOption = FA % IGNORABILITY )
     end select !-- FC
 
-    call A % AddField ( FA )
+    if ( .not. FA % SuppressWrite ) &
+      call A % AddField ( FA )
 
     end associate !-- nValues
     end select !-- C

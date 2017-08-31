@@ -240,6 +240,8 @@ contains
     class ( RadiationMoments_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
       FB
 
+    logical ( KDL ) :: &
+      SuppressWrite
     integer ( KDI ) :: &
       iF, &  !-- iFiber
       iE     !-- iEnergy
@@ -288,6 +290,7 @@ contains
     call FBS % Initialize ( FB % nSections )
 
     do iE = 1, FB % nEnergyValues
+      SuppressWrite  =  ( mod ( iE - 1, B % sSectionsWrite ) /= 0 )
       write ( EnergyNumber, fmt = '(a1,i2.2)' ) '_', iE
       allocate ( RadiationMoments_ASC_Form :: FBS % Atlas ( iE ) % Element )
       select type ( RMA => FBS % Atlas ( iE ) % Element )
@@ -305,6 +308,7 @@ contains
                  MomentumUnitOption = FB % MomentumUnit, &
                  AngularMomentumUnitOption = FB % AngularMomentumUnit, &
                  IgnorabilityOption = CONSOLE % INFO_5, &
+                 SuppressWriteOption = SuppressWrite, &
                  SuppressWriteSourcesOption = .true. )
       end select !-- RMA
     end do !-- iE
