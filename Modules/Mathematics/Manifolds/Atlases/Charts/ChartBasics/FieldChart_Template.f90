@@ -50,7 +50,7 @@ contains
       C
     character ( * ), intent ( in ), optional :: &
       NameShort
-    integer ( KDL ), intent ( in ), optional :: &
+    integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
     FC % IGNORABILITY = C % IGNORABILITY

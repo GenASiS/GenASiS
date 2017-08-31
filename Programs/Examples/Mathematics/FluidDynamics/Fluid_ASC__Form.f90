@@ -95,7 +95,7 @@ contains
     real ( KDR ), intent ( in ), optional :: &
       LimiterParameterOption, &
       ShockThresholdOption
-    integer ( KDL ), intent ( in ), optional :: &
+    integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
     integer ( KDI ) :: &

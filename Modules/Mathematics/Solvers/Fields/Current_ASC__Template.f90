@@ -61,7 +61,7 @@ contains
       A
     character ( * ), intent ( in ) :: &
       NameShort
-    integer ( KDL ), intent ( in ), optional :: &
+    integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
     integer ( KDI ) :: &

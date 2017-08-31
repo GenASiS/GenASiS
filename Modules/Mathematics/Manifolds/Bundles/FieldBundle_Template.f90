@@ -53,7 +53,7 @@ contains
       B
     character ( * ), intent ( in ) :: &
       NameShort
-    integer ( KDL ), intent ( in ), optional :: &
+    integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
     FB % IGNORABILITY = B % IGNORABILITY

@@ -12,6 +12,8 @@ module Sources_RM_ASC__Form
   type, public, extends ( Field_ASC_Template ) :: Sources_RM_ASC_Form
     type ( MeasuredValueForm ) :: &
       TimeUnit
+    logical ( KDL ) :: &
+      SuppressWrite
     class ( Field_ASC_Template ), pointer :: &
       RadiationMoments_ASC => null ( )
   contains
@@ -38,7 +40,7 @@ contains
       NameShortOption
     type ( MeasuredValueForm ), intent ( in ), optional :: &
       TimeUnitOption
-    integer ( KDL ), intent ( in ), optional :: &
+    integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
     character ( LDL ) :: &

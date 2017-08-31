@@ -62,7 +62,7 @@ contains
       B
     character ( * ), intent ( in ) :: &
       NameShort
-    integer ( KDL ), intent ( in ), optional :: &
+    integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
     FB % Bundle_SLL_ASC_CSLD => B

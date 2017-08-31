@@ -36,7 +36,7 @@ contains
       A
     character ( * ), intent ( in ), optional :: &
       NameShortOption
-    integer ( KDL ), intent ( in ), optional :: &
+    integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
     character ( LDL ) :: &

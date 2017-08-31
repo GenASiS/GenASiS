@@ -89,7 +89,7 @@ contains
       TimeUnitOption
     real ( KDR ), intent ( in ), optional :: &
       LimiterParameterOption
-    integer ( KDL ), intent ( in ), optional :: &
+    integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
 !    integer ( KDI ) :: &

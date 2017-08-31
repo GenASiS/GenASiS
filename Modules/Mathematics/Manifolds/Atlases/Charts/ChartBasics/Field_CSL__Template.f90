@@ -38,7 +38,7 @@ contains
       NameShort
     integer ( KDI ), intent ( in ) :: &
       nValues
-    integer ( KDL ), intent ( in ), optional :: &
+    integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
     if ( FC % Type == '' ) &

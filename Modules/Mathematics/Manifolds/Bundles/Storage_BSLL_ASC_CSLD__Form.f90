@@ -40,7 +40,7 @@ contains
       NameShort
     integer ( KDI ), intent ( in ) :: &
       nFields
-    integer ( KDL ), intent ( in ), optional :: &
+    integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
     if ( SB % Type == '' ) &

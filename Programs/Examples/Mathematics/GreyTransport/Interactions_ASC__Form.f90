@@ -53,7 +53,7 @@ contains
       LengthUnitOption, &
       EnergyDensityUnitOption, &
       TemperatureUnitOption
-    integer ( KDL ), intent ( in ), optional :: &
+    integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
     character ( LDL ) :: &
