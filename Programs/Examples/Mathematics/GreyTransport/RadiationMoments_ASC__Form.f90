@@ -62,7 +62,8 @@ contains
                  EnergyDensityUnitOption, TemperatureUnitOption, &
                  EnergyUnitOption, MomentumUnitOption, &
                  AngularMomentumUnitOption, TimeUnitOption, &
-                 LimiterParameterOption, IgnorabilityOption )
+                 LimiterParameterOption, IgnorabilityOption, &
+                 SuppressWriteSourcesOption )
 
     class ( RadiationMoments_ASC_Form ), intent ( inout ) :: &
       RMA
@@ -91,6 +92,8 @@ contains
       LimiterParameterOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
+    logical ( KDL ), intent ( in ), optional :: &
+      SuppressWriteSourcesOption
 
 !    integer ( KDI ) :: &
 !      iB  !-- iBoundary
@@ -226,7 +229,8 @@ contains
       call SRMA % Initialize &
              ( RMA, NameShortOption = trim ( NameShort ) // '_Sources', &
                TimeUnitOption = TimeUnitOption, &
-               IgnorabilityOption = IgnorabilityOption )
+               IgnorabilityOption = IgnorabilityOption, &
+               SuppressWriteOption = SuppressWriteSourcesOption )
       select type ( SRMC => SRMA % Chart )
       class is ( Sources_RM_CSL_Form )
         select type ( RMC => RMA % Chart )

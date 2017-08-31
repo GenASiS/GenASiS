@@ -272,7 +272,8 @@ contains
                EnergyDensityUnitOption = FB % EnergyDensityUnit, &
                EnergyUnitOption = FB % EnergyUnit, &
                MomentumUnitOption = FB % MomentumUnit, &
-               AngularMomentumUnitOption = FB % AngularMomentumUnit )
+               AngularMomentumUnitOption = FB % AngularMomentumUnit, &
+               SuppressWriteSourcesOption = .true. )
 
       end select !-- AF
       end select !-- RMA
@@ -303,7 +304,8 @@ contains
                  EnergyUnitOption = FB % EnergyUnit, &
                  MomentumUnitOption = FB % MomentumUnit, &
                  AngularMomentumUnitOption = FB % AngularMomentumUnit, &
-                 IgnorabilityOption = CONSOLE % INFO_5 )
+                 IgnorabilityOption = CONSOLE % INFO_5, &
+                 SuppressWriteSourcesOption = .true. )
       end select !-- RMA
     end do !-- iE
 

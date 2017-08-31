@@ -30,7 +30,7 @@ contains
 
   subroutine Initialize &
                ( SRMA, RadiationMoments_ASC, NameShortOption, TimeUnitOption, &
-                 IgnorabilityOption )
+                 IgnorabilityOption, SuppressWriteOption )
 
     class ( Sources_RM_ASC_Form ), intent ( inout ) :: &
       SRMA
@@ -42,6 +42,8 @@ contains
       TimeUnitOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
+    logical ( KDL ), intent ( in ), optional :: &
+      SuppressWriteOption
 
     character ( LDL ) :: &
       NameShort
@@ -57,6 +59,10 @@ contains
     NameShort = 'Sources_RM'
     if ( present ( NameShortOption ) ) &
       NameShort = NameShortOption
+
+    SRMA % SuppressWrite = .false.
+    if ( present ( SuppressWriteOption ) ) &
+      SRMA % SuppressWrite = SuppressWriteOption
 
     call SRMA % InitializeTemplate_ASC &
            ( RadiationMoments_ASC % Atlas, NameShort, IgnorabilityOption )
@@ -100,7 +106,8 @@ contains
                IgnorabilityOption = FA % IGNORABILITY )
     end select !-- SRMC
 
-    call A % AddField ( FA )
+    if ( .not. FA % SuppressWrite ) &
+      call A % AddField ( FA )
 
     end select !-- RMC
     end associate !-- nValues
