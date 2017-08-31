@@ -179,10 +179,12 @@ contains
     call T % Reference_ASC % Initialize &
            ( PS, 'GENERIC', NameShortOption = 'Reference', &
              EnergyDensityUnitOption = EnergyDensityUnit, &
-             IgnorabilityOption = CONSOLE % INFO_2 )
+             AllocateSourcesOption = .false., &
+             IgnorabilityOption = CONSOLE % INFO_5 )
     call T % FractionalDifference_ASC % Initialize &
            ( PS, 'GENERIC', NameShortOption = 'FractionalDifference', &
-             IgnorabilityOption = CONSOLE % INFO_2 )
+             AllocateSourcesOption = .false., &
+             IgnorabilityOption = CONSOLE % INFO_5 )
     T % SetReference => SetReference
 
     !-- Initial conditions
