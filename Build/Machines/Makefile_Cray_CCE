@@ -15,3 +15,8 @@ LINK = ftn
 #-- link line flag &  location below
 INCLUDE_SILO = 
 LIBRARY_SILO = 
+
+#-- LAPACK library may be automatically linked by 
+#-- "module load lapack" if provided, otherwise, manually put 
+#-- link line flag & location below
+LIBRARY_LAPACK = 
