@@ -10,5 +10,5 @@ FORTRAN_PROFILE      =
 LINK = mpif90 -fopenmp
 
 #-- Silo library include and link line flag and location
-INCLUDE_SILO = #-I/usr/local/silo-4.10.2/include
-LIBRARY_SILO = #-L/usr/local/silo-4.10.2/lib -lsilo
+INCLUDE_SILO = -I/usr/local/silo-4.10.2/include
+LIBRARY_SILO = -L/usr/local/silo-4.10.2/lib -lsilo
