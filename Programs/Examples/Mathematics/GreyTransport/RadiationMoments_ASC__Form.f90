@@ -121,7 +121,7 @@ contains
     call PROGRAM_HEADER % GetParameter &
            ( RMA % UseLimiter, 'UseLimiter' )
 
-    RMA % LimiterParameter = 2.0_KDR
+    RMA % LimiterParameter = 1.4_KDR
     if ( present ( LimiterParameterOption ) ) &
       RMA % LimiterParameter = LimiterParameterOption
     call PROGRAM_HEADER % GetParameter &
