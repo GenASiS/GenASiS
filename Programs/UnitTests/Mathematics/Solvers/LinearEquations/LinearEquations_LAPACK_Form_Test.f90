@@ -1,46 +1,30 @@
 program LinearEquations_LAPACK_Form_Test
  
   use Basics
+  use LinearEquations_LAPACK__Form
 
-  integer ( KDI ) :: &
-    nEquations, &
-    nSolutions, &
-    Info
-  integer ( KDI ), dimension ( : ), allocatable :: &
-    iaPivot
-  real ( KDR ), dimension ( :, : ), allocatable :: &
-    Matrix
-  real ( KDR ), dimension ( :, : ), allocatable, target :: &
-    RightHandSide
-  real ( KDR ), dimension ( :, : ), pointer :: &
-    Solution
+  type ( LinearEquations_LAPACK_Form ) :: &
+    LE
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
          ( 'LinearEquations_LAPACK_Form_Test', &
            AppendDimensionalityOption = .false. )
 
-  nEquations = 3
-  nSolutions = 1
-
-  allocate ( iaPivot ( nEquations ) )
-  allocate ( RightHandSide ( nEquations, nSolutions ) )
-  allocate ( Matrix ( nEquations, nEquations ) )
-  Solution => RightHandSide
+  call LE % Initialize ( nEquations = 3, nSolutions = 1 )
 
   !-- Wikipedia "System of Linear Equations"
-  Matrix &
+  LE % Matrix &
     = reshape ( [ 3., 2., -1., 2., -2., 0.5, -1., 4.0, -1. ], &
-                [ nEquations, nEquations ] )
-  RightHandSide &
-    = reshape ( [ 1., -2., 0. ], [ nEquations, nSolutions ] )
-  call Show ( Matrix, 'Matrix' )
-  call Show ( RightHandSide, 'RightHandSide' )
+                [ LE % nEquations, LE % nEquations ] )
+  LE % RightHandSide &
+    = reshape ( [ 1., -2., 0. ], [ LE % nEquations, LE % nSolutions ] )
+  call Show ( LE % Matrix, 'Matrix' )
+  call Show ( LE % RightHandSide, 'RightHandSide' )
 
-  call DGESV ( nEquations, nSolutions, Matrix, nEquations, iaPivot, &
-               RightHandSide, nEquations, Info )
+  call LE % Solve ( )
 
-  call Show ( Solution, 'Solution' )
+  call Show ( LE % Solution, 'Solution' )
   call Show ( [ 1.0_KDR, -2.0_KDR, -2.0_KDR ], 'Expected Solution' )
 
   deallocate ( PROGRAM_HEADER )

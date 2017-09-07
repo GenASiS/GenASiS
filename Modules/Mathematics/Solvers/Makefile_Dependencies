@@ -1,8 +1,10 @@
+include $(PATH_LINEAR_EQUATIONS)/Makefile_Dependencies
 include $(PATH_NONLINEAR_EQUATIONS)/Makefile_Dependencies
 include $(PATH_FIELDS)/Makefile_Dependencies
 include $(PATH_EVOLUTIONS)/Makefile_Dependencies
 
 Solvers.o: \
+  LinearEquations.o \
   NonlinearEquations.o \
   Fields.o \
   Evolutions.o \

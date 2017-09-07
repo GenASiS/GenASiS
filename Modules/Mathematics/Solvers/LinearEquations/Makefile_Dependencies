@@ -1,0 +1,10 @@
+LinearEquations_LAPACK__Form.o: \
+  Basics.o \
+  LinearEquations_LAPACK__Form.f90
+
+LinearEquations.o: \
+  LinearEquations_LAPACK__Form.o \
+  LinearEquations.f90
+
+LinearEquations.a: $(LINEAR_EQUATIONS)
+	ar r LinearEquations.a $(LINEAR_EQUATIONS)

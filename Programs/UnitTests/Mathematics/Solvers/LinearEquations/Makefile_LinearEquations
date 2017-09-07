@@ -7,7 +7,8 @@ all: LinearEquations_LAPACK_Form_Test
 LinearEquations_LAPACK_Form_Test: Basics.a LinearEquations_LAPACK_Form_Test.o
 	$(LINK) $(FLAGS) \
            -o LinearEquations_LAPACK_Form_Test_$(MACHINE) \
-           LinearEquations_LAPACK_Form_Test.o Basics.a $(LIBRARIES)
+           LinearEquations_LAPACK_Form_Test.o LinearEquations_LAPACK__Form.o \
+           Basics.a $(LIBRARIES)
 
 clean:
 	rm -f *.o *.a *.mod *.ld
@@ -16,7 +17,9 @@ clobber: clean
 	rm -f LinearEquations_LAPACK_Form_Test_*
 
 include $(PATH_BASICS)/Makefile_Dependencies
+include $(PATH_LINEAR_EQUATIONS)/Makefile_Dependencies
 
 LinearEquations_LAPACK_Form_Test.o: \
   Basics.o \
+  LinearEquations_LAPACK__Form.o \
   LinearEquations_LAPACK_Form_Test.f90

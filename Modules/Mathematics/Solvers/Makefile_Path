@@ -1,3 +1,4 @@
+PATH_LINEAR_EQUATIONS    = $(PATH_SOLVERS)/LinearEquations
 PATH_NONLINEAR_EQUATIONS = $(PATH_SOLVERS)/NonlinearEquations
 PATH_FIELDS              = $(PATH_SOLVERS)/Fields
 PATH_EVOLUTIONS          = $(PATH_SOLVERS)/Evolutions
@@ -5,6 +6,7 @@ PATH_EVOLUTIONS          = $(PATH_SOLVERS)/Evolutions
 include $(PATH_EVOLUTIONS)/Makefile_Path
 
 VPATH_SOLVERS = \
+  $(PATH_LINEAR_EQUATIONS):\
   $(PATH_NONLINEAR_EQUATIONS):\
   $(PATH_FIELDS):\
   $(VPATH_EVOLUTIONS):\
