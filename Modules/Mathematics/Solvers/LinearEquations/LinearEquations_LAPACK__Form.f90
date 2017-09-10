@@ -60,7 +60,7 @@ contains
   end subroutine Solve
 
 
-  subroutine Finalize ( LE )
+  impure elemental subroutine Finalize ( LE )
 
     type ( LinearEquations_LAPACK_Form ), intent ( inout ) :: &
       LE
