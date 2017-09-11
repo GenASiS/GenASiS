@@ -184,8 +184,7 @@ module Step_RK_C_ASC__Template
         iStage
     end subroutine AS
 
-    subroutine AR ( S, Sources, IncrementExplicit, DampingCoefficient, &
-                    Current, Chart, TimeStep, iStage )
+    subroutine AR ( S, Sources, Increment, Current, Chart, TimeStep, iStage )
       use Basics
       use Manifolds
       use Fields
@@ -195,8 +194,7 @@ module Step_RK_C_ASC__Template
       class ( Sources_C_Form ), intent ( inout ) :: &
         Sources
       type ( VariableGroupForm ), intent ( inout ) :: &
-        IncrementExplicit, &
-        DampingCoefficient
+        Increment
       class ( CurrentTemplate ), intent ( in ), target :: &
         Current
       class ( ChartTemplate ), intent ( in ) :: &
@@ -1026,8 +1024,6 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iStage
 
-    type ( VariableGroupForm ), allocatable :: &
-      DC  !-- DampingCoefficient
     type ( TimerForm ), pointer :: &
       TimerGhost
 
@@ -1043,13 +1039,9 @@ contains
       call S % ApplySources_C ( C % Sources, K, C, TimeStep, iStage )
 
     !-- Relaxation
-    if ( associated ( S % ApplyRelaxation_C ) ) then
-      allocate ( DC )
-      call DC % Initialize ( shape ( K % Value ), ClearOption = .true. )
+    if ( associated ( S % ApplyRelaxation_C ) ) &
       call S % ApplyRelaxation_C &
-             ( C % Sources, K, DC, C, Chart, TimeStep, iStage )
-      deallocate ( DC )
-    end if
+             ( C % Sources, K, C, Chart, TimeStep, iStage )
 
     if ( associated ( S % ApplyDivergence_C ) ) then
       select type ( Chart )

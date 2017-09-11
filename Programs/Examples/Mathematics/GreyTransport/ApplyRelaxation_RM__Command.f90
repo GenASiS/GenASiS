@@ -1,4 +1,4 @@
-module ApplyRelaxation_RM_V__Command
+module ApplyRelaxation_RM__Command
 
   use OMP_LIB
   use Basics
@@ -10,7 +10,7 @@ module ApplyRelaxation_RM_V__Command
   private
 
   public :: &
-    ApplyRelaxation_RM_V
+    ApplyRelaxation_RM
 
     private :: &
       ComputeCoefficients, &
@@ -19,17 +19,16 @@ module ApplyRelaxation_RM_V__Command
 contains
 
 
-  subroutine ApplyRelaxation_RM_V &
-               ( S, Sources_RM, IncrementExplicit, DampingCoefficient, &
-                 RadiationMoments, Chart, TimeStep, iStage )
+  subroutine ApplyRelaxation_RM &
+               ( S, Sources_RM, Increment, RadiationMoments, Chart, TimeStep, &
+                 iStage )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
     class ( Sources_C_Form ), intent ( inout ) :: &
       Sources_RM
     type ( VariableGroupForm ), intent ( inout ) :: &
-      IncrementExplicit, &
-      DampingCoefficient
+      Increment
     class ( CurrentTemplate ), intent ( in ), target :: &
       RadiationMoments
     class ( ChartTemplate ), intent ( in ) :: &
@@ -57,11 +56,11 @@ contains
     type ( LinearEquations_LAPACK_Form ), dimension ( : ), allocatable :: &
       LE
 
-    call Show ( 'ApplyRelaxation_RM_V', S % IGNORABILITY + 3 )
+    call Show ( 'ApplyRelaxation_RM', S % IGNORABILITY + 3 )
     call Show ( RadiationMoments % Name, 'RadiationMoments', &
                 S % IGNORABILITY + 3 )
 
-    nV = size ( IncrementExplicit % Value, dim = 1 )
+    nV = size ( Increment % Value, dim = 1 )
 
     select type ( RM => RadiationMoments )
     class is ( RadiationMomentsForm )
@@ -99,10 +98,10 @@ contains
 
       call ComputeCoefficients &
              ( RM, &
-               IncrementExplicit % Value ( iV, iEnergy ), &
-               IncrementExplicit % Value ( iV, iMomentum_1 ), &
-               IncrementExplicit % Value ( iV, iMomentum_2 ), &
-               IncrementExplicit % Value ( iV, iMomentum_3 ), &
+               Increment % Value ( iV, iEnergy ), &
+               Increment % Value ( iV, iMomentum_1 ), &
+               Increment % Value ( iV, iMomentum_2 ), &
+               Increment % Value ( iV, iMomentum_3 ), &
                I  % Value ( iV, I % EMISSIVITY_J ), &
                I  % Value ( iV, I % OPACITY_J ), &
                I  % Value ( iV, I % OPACITY_H ), &
@@ -129,10 +128,10 @@ contains
                RM % Value ( iV, RM % FLUID_VELOCITY_U ( 3 ) ), &
                G  % Value ( iV, G % METRIC_DD_22 ), &
                G  % Value ( iV, G % METRIC_DD_33 ), &
-               IncrementExplicit % Value ( iV, iEnergy ), &
-               IncrementExplicit % Value ( iV, iMomentum_1 ), &
-               IncrementExplicit % Value ( iV, iMomentum_2 ), &
-               IncrementExplicit % Value ( iV, iMomentum_3 ) )
+               Increment % Value ( iV, iEnergy ), &
+               Increment % Value ( iV, iMomentum_1 ), &
+               Increment % Value ( iV, iMomentum_2 ), &
+               Increment % Value ( iV, iMomentum_3 ) )
 
     end do
     !$OMP end parallel do
@@ -143,7 +142,7 @@ contains
 
     nullify ( G )!, NM )
     
-  end subroutine ApplyRelaxation_RM_V
+  end subroutine ApplyRelaxation_RM
 
 
   subroutine ComputeCoefficients &
@@ -264,4 +263,4 @@ contains
   end subroutine ComputeConservedIncrements
 
 
-end module ApplyRelaxation_RM_V__Command
+end module ApplyRelaxation_RM__Command

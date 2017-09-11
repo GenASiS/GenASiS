@@ -7,7 +7,7 @@ module SineWaveDiffusion_Form
   use RadiationMoments_ASC__Form
   use Interactions_F__Form
   use Interactions_ASC__Form
-  use ApplyRelaxation_RM_V__Command
+  use ApplyRelaxation_RM__Command
 
   implicit none
   private
@@ -108,7 +108,7 @@ contains
     select type ( S => SWD % Step )
     class is ( Step_RK2_C_ASC_Form )
     call S % Initialize ( RMA, Name )
-    S % ApplyRelaxation % Pointer => ApplyRelaxation_RM_V
+    S % ApplyRelaxation % Pointer => ApplyRelaxation_RM
     end select !-- S
 
     !-- Diagnostics

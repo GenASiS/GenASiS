@@ -14,7 +14,7 @@ module MarshakWave_Form
   use Interactions_MWV_2_G__Form
   use Interactions_MWV_3_G__Form
   use Interactions_ASC__Form
-  use ApplyRelaxation_RM_V__Command
+  use ApplyRelaxation_RM__Command
 
   implicit none
   private
@@ -248,7 +248,7 @@ contains
     S % ApplySources_1D ( MW % FLUID ) % Pointer &
       =>  ApplySources_Fluid
     S % ApplyRelaxation_1D ( MW % RADIATION ) % Pointer &
-      =>  ApplyRelaxation_RM_V
+      =>  ApplyRelaxation_RM
     S % HarvestIncrement_1D ( MW % RADIATION ) % Pointer &
       =>  ComputeFluidSource_Radiation
 

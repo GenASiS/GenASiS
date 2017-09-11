@@ -7,7 +7,7 @@ module Thermalization_Form
   use RadiationMoments_Form
   use RadiationMoments_ASC__Form
   use Interactions_F__Form
-  use ApplyRelaxation_RM_V__Command
+  use ApplyRelaxation_RM__Command
   use SetPlanckSpectrum_Command
   use RadiationMoments_BSLL_ASC_CSLD__Form
   use Interactions_BSLL_ASC_CSLD__Form
@@ -167,7 +167,7 @@ contains
     S % ApplyDivergence   % Pointer => null ( )  !-- Disable fluid evolution
     S % ApplyDivergence_S % Pointer => null ( )  !-- Disable spatial 
                                                  !   section evolution
-    S % ApplyRelaxation_F % Pointer => ApplyRelaxation_RM_V
+    S % ApplyRelaxation_F % Pointer => ApplyRelaxation_RM
     end select !-- S
 
     !-- Diagnostics

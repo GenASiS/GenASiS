@@ -107,12 +107,12 @@ Interactions_ASC__Form.o: \
   Interactions_CSL__Form.o \
   Interactions_ASC__Form.f90
 
-ApplyRelaxation_RM_V__Command.o: \
+ApplyRelaxation_RM__Command.o: \
   Basics.o \
   Mathematics.o \
   RadiationMoments_Form.o \
   Sources_RM__Form.o \
-  ApplyRelaxation_RM_V__Command.f90
+  ApplyRelaxation_RM__Command.f90
 
 GreyMoments.a: $(GREY_MOMENTS)
 	ar r GreyMoments.a $(GREY_MOMENTS)
