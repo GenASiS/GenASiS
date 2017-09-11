@@ -107,21 +107,6 @@ Interactions_ASC__Form.o: \
   Interactions_CSL__Form.o \
   Interactions_ASC__Form.f90
 
-PrepareRelaxation_RM__Command.o: \
-  Basics.o \
-  Mathematics.o \
-  RadiationMoments_Form.o \
-  Sources_RM__Form.o \
-  PrepareRelaxation_RM__Command.f90
-
-ApplyRelaxation_RM__Command.o: \
-  Basics.o \
-  Mathematics.o \
-  RadiationMoments_Form.o \
-  Sources_RM__Form.o \
-  PrepareRelaxation_RM__Command.o \
-  ApplyRelaxation_RM__Command.f90
-
 ApplyRelaxation_RM_V__Command.o: \
   Basics.o \
   Mathematics.o \

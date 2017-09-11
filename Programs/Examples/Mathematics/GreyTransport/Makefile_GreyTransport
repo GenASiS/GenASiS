@@ -82,7 +82,6 @@ SineWaveDiffusion_Form.o: \
   Interactions_ASC__Form.o \
   ApplyRelaxation_RM_V__Command.o \
   SineWaveDiffusion_Form.f90
-#  ApplyRelaxation_RM__Command.o \
 
 SineWaveDiffusion.o: \
   Basics.o \
@@ -99,7 +98,6 @@ HomogeneousSphere_Form.o: \
   ApplyCurvilinear_RM__Command.o \
   ApplyRelaxation_RM_V__Command.o \
   HomogeneousSphere_Form.f90
-#  ApplyRelaxation_RM__Command.o \
 
 HomogeneousSphere.o: \
   Basics.o \
@@ -121,7 +119,6 @@ MarshakWave_Form.o: \
   Interactions_ASC__Form.o \
   ApplyRelaxation_RM_V__Command.o \
   MarshakWave_Form.f90
-#  ApplyRelaxation_RM__Command.o \
 
 MarshakWave.o: \
   Basics.o \
