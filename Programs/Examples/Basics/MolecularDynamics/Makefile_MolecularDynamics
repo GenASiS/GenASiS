@@ -25,7 +25,7 @@ ClusterFormation: Basics.a Particles.a ClusterFormation.o
           Particles.a Basics.a $(LIBRARIES)
 
 clean:
-	rm -f *.o *.mod *.ld
+	rm -f *.o *.a *.mod *.ld
 
 clobber: clean
 	rm -f ArgonEquilibrium_*
