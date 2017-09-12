@@ -14,7 +14,9 @@ module ApplyRelaxation_RM__Command
 
     private :: &
       ComputeCoefficients, &
-      ComputeComovingIncrements
+      ComputeComovingIncrements, &
+      ComputeConservedIncrements, &
+      ComputeSources
 
 contains
 
@@ -66,6 +68,9 @@ contains
     class is ( RadiationMomentsForm )
 
     associate ( I => RM % Interactions )
+
+    select type ( SRM => Sources_RM )
+    class is ( Sources_RM_Form )
 
     select type ( Chart )
     class is ( Chart_SL_Template )
@@ -133,10 +138,28 @@ contains
                Increment % Value ( iV, iMomentum_2 ), &
                Increment % Value ( iV, iMomentum_3 ) )
 
+      call ComputeSources &
+             ( SRM % Value ( iV, SRM % INTERACTIONS_J ), &
+               SRM % Value ( iV, SRM % INTERACTIONS_H_D ( 1 ) ), &
+               SRM % Value ( iV, SRM % INTERACTIONS_H_D ( 2 ) ), &
+               SRM % Value ( iV, SRM % INTERACTIONS_H_D ( 3 ) ), &
+                 I % Value ( iV, I % EMISSIVITY_J ), &
+                 I % Value ( iV, I % OPACITY_J ), &
+                 I % Value ( iV, I % OPACITY_H ), &
+                RM % Value ( iV, RM % COMOVING_ENERGY ), &
+                RM % Value ( iV, RM % COMOVING_MOMENTUM_U ( 1 ) ), &
+                RM % Value ( iV, RM % COMOVING_MOMENTUM_U ( 2 ) ), &
+                RM % Value ( iV, RM % COMOVING_MOMENTUM_U ( 3 ) ), &
+                dJ, dH_D_1, dH_D_2, dH_D_3, & 
+                 G % Value ( iV, G % METRIC_DD_22 ), &
+                 G % Value ( iV, G % METRIC_DD_33 ), &
+                S % B ( iStage ) )
+
     end do
     !$OMP end parallel do
 
     end select !-- Chart
+    end select !-- SRM
     end associate !-- I
     end select !-- RM
 
@@ -146,14 +169,14 @@ contains
 
 
   subroutine ComputeCoefficients &
-               ( RM, dE, dS_1, dS_2, dS_3, Xi_J, Chi_J, Chi_H, &
+               ( RM, dE, dS_D_1, dS_D_2, dS_D_3, Xi_J, Chi_J, Chi_H, &
                  J, H_1, H_2, H_3, SF, V_1, V_2, V_3, M_DD_22, M_DD_33, dt, &
                  A, B, k_DD )
 
     class ( RadiationMomentsForm ), intent ( in ) :: &
       RM
     real ( KDR ), intent ( in ) :: &
-      dE, dS_1, dS_2, dS_3, &
+      dE, dS_D_1, dS_D_2, dS_D_3, &
       Xi_J, Chi_J, Chi_H, &
       J, H_1, H_2, H_3, SF, &
       V_1, V_2, V_3, &
@@ -206,11 +229,11 @@ contains
                               -  Chi_H * (             V_1 * H_1  &
                                            * M_DD_22 * V_2 * H_2  &
                                            * M_DD_33 * V_3 * H_3 ) ) * dt
-    B ( 2, 1 )  =  dS_1  +            ( -  Chi_H * H_1  &
+    B ( 2, 1 )  =  dS_D_1  +            ( -  Chi_H * H_1  &
                                         +  V_1 * ( Xi_J  -  Chi_J * J ) ) * dt
-    B ( 3, 1 )  =  dS_2  +  M_DD_22 * ( -  Chi_H * H_2  &
+    B ( 3, 1 )  =  dS_D_2  +  M_DD_22 * ( -  Chi_H * H_2  &
                                         +  V_2 * ( Xi_J  -  Chi_J * J ) ) * dt
-    B ( 4, 1 )  =  dS_3  +  M_DD_33 * ( -  Chi_H * H_3  &
+    B ( 4, 1 )  =  dS_D_3  +  M_DD_33 * ( -  Chi_H * H_3  &
                                         +  V_3 * ( Xi_J  -  Chi_J * J ) ) * dt
 
   end subroutine ComputeCoefficients
@@ -235,7 +258,7 @@ contains
 
   subroutine ComputeConservedIncrements &
                ( k_DD, dJ, dH_D_1, dH_D_2, dH_D_3, V_1, V_2, V_3, &
-                 M_DD_22, M_DD_33, dE, dS_1, dS_2, dS_3 )
+                 M_DD_22, M_DD_33, dE, dS_D_1, dS_D_2, dS_D_3 )
 
     real ( KDR ), dimension ( 3, 3 ), intent ( in ) :: &
       k_DD
@@ -244,23 +267,53 @@ contains
       V_1, V_2, V_3, &
       M_DD_22, M_DD_33
     real ( KDR ), intent ( out ) :: &
-      dE, dS_1, dS_2, dS_3
+      dE, dS_D_1, dS_D_2, dS_D_3
 
     dE    =  dJ    +  2.0_KDR  *  dot_product ( [ V_1, V_2, V_3 ], &
                                                 [ dH_D_1, dH_D_2, dH_D_3 ] )
-    dS_1  =  dH_D_1  &
+    dS_D_1  =  dH_D_1  &
              +  ( V_1  &
                   +  dot_product ( k_DD ( 1, : ), [ V_1, V_2, V_3 ] ) )  *  dJ  
 
-    dS_2  =  dH_D_2  &
+    dS_D_2  =  dH_D_2  &
              +  ( M_DD_22 * V_2  &
                   +  dot_product ( k_DD ( 2, : ), [ V_1, V_2, V_3 ] ) )  *  dJ  
 
-    dS_3  =  dH_D_3  &
+    dS_D_3  =  dH_D_3  &
              +  ( M_DD_33 * V_3  &
                   +  dot_product ( k_DD ( 3, : ), [ V_1, V_2, V_3 ] ) )  *  dJ  
 
   end subroutine ComputeConservedIncrements
+
+
+  subroutine ComputeSources &
+               ( Q, A_D_1, A_D_2, A_D_3, Xi_J, Chi_J, Chi_H, &
+                 J, H_U_1, H_U_2, H_U_3, dJ, dH_D_1, dH_D_2, dH_D_3, &
+                 M_DD_22, M_DD_33, Weight_RK )
+
+    real ( KDR ), intent ( inout ) :: &
+      Q, A_D_1, A_D_2, A_D_3
+    real ( KDR ), intent ( in ) :: &
+      Xi_J, Chi_J, Chi_H, &
+      J, H_U_1, H_U_2, H_U_3, &
+      dJ, dH_D_1, dH_D_2, dH_D_3, &
+      M_DD_22, M_DD_33, &
+      Weight_RK
+
+    Q      =  Q      &
+              +  Weight_RK * ( Xi_J  &
+                               -  Chi_J  *  (               J  +      dJ ) )
+    A_D_1  =  A_D_1  &
+              +  Weight_RK * (  &
+                               -  Chi_H  *  (           H_U_1  +  dH_D_1 ) )
+    A_D_2  =  A_D_2  &
+              +  Weight_RK * (  &
+                               -  Chi_H  *  ( M_DD_22 * H_U_2  +  dH_D_2 ) )
+    A_D_3  =  A_D_3  &
+              +  Weight_RK * (  &
+                               -  Chi_H  *  ( M_DD_33 * H_U_3  +  dH_D_3 ) )
+
+  end subroutine ComputeSources
 
 
 end module ApplyRelaxation_RM__Command
