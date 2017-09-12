@@ -439,7 +439,7 @@ contains
 
     associate &
       ( C  => A % Connectivity, &
-        BC => A % BoundaryCondition, &
+        BC => A % BoundaryCondition ( :, : ), &
         BN => A % BoundaryName )
 
     call Show ( 'Boundary conditions', A % IGNORABILITY )
