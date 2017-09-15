@@ -1,7 +1,7 @@
 PATH_GENASIS = ../../../../..
 
 all:  SineWaveStreaming SineWaveDiffusion LineSource HomogeneousSphere \
-      MarshakWave WoosleyHeger_07_G
+      MarshakWave WoosleyHeger_07_G MullerTest
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
@@ -56,6 +56,14 @@ WoosleyHeger_07_G: ThirdParty.a Basics.a Mathematics.a Fluid.a GreyMoments.a \
           -o WoosleyHeger_07_G_$(MACHINE) \
           WoosleyHeger_07_G.o WoosleyHeger_07_G__Form.o \
           WoosleyHeger_07_Header_Form.o \
+          GreyMoments.a Fluid.a Mathematics.a Basics.a ThirdParty.a \
+          $(LIBRARIES)
+
+MullerTest: ThirdParty.a Basics.a Mathematics.a Fluid.a GreyMoments.a \
+  Muller_Test.o
+	$(LINK) $(FFLAGS) \
+          -o MullerTest_$(MACHINE) \
+          Muller_Test.o Muller_Test_Form.o \
           GreyMoments.a Fluid.a Mathematics.a Basics.a ThirdParty.a \
           $(LIBRARIES)
 
@@ -190,3 +198,16 @@ WoosleyHeger_07_G.o: \
   Basics.o \
   WoosleyHeger_07_G__Form.o \
   WoosleyHeger_07_G.f90
+
+Muller_Test_Form.o: \
+  Basics.o \
+  Mathematics.o \
+  RadiationMoments_Form.o \
+  RadiationMoments_ASC__Form.o \
+  ApplyCurvilinear_RM__Command.o \
+  Muller_Test_Form.f90
+
+Muller_Test.o: \
+  Basics.o \
+  Muller_Test_Form.o \
+  Muller_Test.f90
