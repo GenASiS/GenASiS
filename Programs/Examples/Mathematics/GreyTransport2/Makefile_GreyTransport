@@ -1,7 +1,7 @@
 PATH_GENASIS = ../../../../..
 
 all:  SineWaveStreaming SineWaveDiffusion LineSource HomogeneousSphere \
-      MarshakWave WoosleyHeger_07_G MullerTest
+      MarshakWave WoosleyHeger_07_G MullerTest Muller_C__Test
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
@@ -67,6 +67,22 @@ MullerTest: ThirdParty.a Basics.a Mathematics.a Fluid.a GreyMoments.a \
           GreyMoments.a Fluid.a Mathematics.a Basics.a ThirdParty.a \
           $(LIBRARIES)
 
+Muller_C__Test: ThirdParty.a Basics.a Mathematics.a GreyMoments.a \
+  Muller_C__Test.o
+	$(LINK) $(FFLAGS) \
+          -o Muller_C__Test_$(MACHINE) \
+          Muller_C__Test.o Muller_C__Test_Form.o \
+          GreyMoments.a Mathematics.a Basics.a ThirdParty.a \
+          $(LIBRARIES)
+
+DynamicDiffusion: ThirdParty.a Basics.a Mathematics.a Fluid.a GreyMoments.a \
+  DynamicDiffusion.o
+	$(LINK) $(FFLAGS) \
+          -o DynamicDiffusion_$(MACHINE) \
+          DynamicDiffusion.o DynamicDiffusion_Form.o \
+          GreyMoments.a Fluid.a Mathematics.a Basics.a ThirdParty.a \
+          $(LIBRARIES)
+
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MATHEMATICS)/Makefile_Dependencies
 include $(PATH_THIRD_PARTY)/Makefile_Dependencies
@@ -83,6 +99,9 @@ clobber: clean
 	rm -f HomogeneousSphere_*
 	rm -f MarshakWave_*
 	rm -f WoosleyHeger_07_*
+	rm -f MullerTest_*
+	rm -f Muller_C__Test_*
+	rm -f DynamicDiffusion_*
 
 PlaneWaveStreaming_Template.o: \
   Basics.o \
@@ -211,3 +230,33 @@ Muller_Test.o: \
   Basics.o \
   Muller_Test_Form.o \
   Muller_Test.f90
+
+Muller_C__Test_Form.o: \
+  Basics.o \
+  Mathematics.o \
+  RadiationMoments_Form.o \
+  RadiationMoments_ASC__Form.o \
+  Muller_C__Test_Form.f90
+
+Muller_C__Test.o: \
+  Basics.o \
+  Muller_C__Test_Form.o \
+  Muller_C__Test.f90
+
+DynamicDiffusion_Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Interactions_Template.o \
+  Interactions_F__Form.o \
+  Interactions_DD_G__Form.o \
+  Interactions_ASC__Form.o \
+  Interactions_CSL__Form.o \
+  RadiationMoments_Form.o \
+  RadiationMoments_ASC__Form.o \
+  ApplyRelaxation_RM__Command.o \
+  DynamicDiffusion_Form.f90
+
+DynamicDiffusion.o: \
+  Basics.o \
+  DynamicDiffusion_Form.o \
+  DynamicDiffusion.f90
