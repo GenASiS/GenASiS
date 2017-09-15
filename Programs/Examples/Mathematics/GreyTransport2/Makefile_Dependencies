@@ -103,6 +103,13 @@ Interactions_NM_1_G__Form.o: \
   NeutrinoMoments_G__Form.o \
   Interactions_NM_1_G__Form.f90
 
+Interactions_DD_G__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  RadiationMoments_Form.o \
+  Interactions_Template.o \
+  Interactions_DD_G__Form.f90
+
 Interactions_CSL__Form.o: \
   Basics.o \
   Mathematics.o \
@@ -112,6 +119,7 @@ Interactions_CSL__Form.o: \
   Interactions_MWV_2_G__Form.o \
   Interactions_MWV_3_G__Form.o \
   Interactions_NM_1_G__Form.o \
+  Interactions_DD_G__Form.o \
   Interactions_CSL__Form.f90
 
 Interactions_ASC__Form.o: \
