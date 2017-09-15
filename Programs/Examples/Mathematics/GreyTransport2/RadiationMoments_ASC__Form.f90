@@ -28,7 +28,8 @@ module RadiationMoments_ASC__Form
       UseLimiter
     character ( LDF ) :: &
       RadiationMomentsType = '', &
-      RiemannSolverType = ''
+      RiemannSolverType = '', &
+      NonlinearSolver = ''
     type ( Sources_RM_ASC_Form ), allocatable :: &
       Sources_ASC
     class ( Field_ASC_Template ), pointer :: &
@@ -67,7 +68,8 @@ contains
                  EnergyDensityUnitOption, TemperatureUnitOption, &
                  EnergyUnitOption, MomentumUnitOption, &
                  AngularMomentumUnitOption, TimeUnitOption, &
-                 LimiterParameterOption, IgnorabilityOption )
+                 LimiterParameterOption, IgnorabilityOption, &
+                 NonlinearSolverOption )
 
     class ( RadiationMoments_ASC_Form ), intent ( inout ) :: &
       RMA
@@ -77,7 +79,8 @@ contains
       RadiationMomentsType
     character ( * ), intent ( in ), optional :: &
       NameShortOption, &
-      RiemannSolverTypeOption
+      RiemannSolverTypeOption, &
+      NonlinearSolverOption
     logical ( KDL ), intent ( in ), optional :: &
       UseLimiterOption, &
       AllocateSourcesOption
@@ -136,6 +139,10 @@ contains
       RMA % MomentumDensity_U_Unit = MomentumDensity_U_UnitOption
     if ( present ( MomentumDensity_D_UnitOption ) ) &
       RMA % MomentumDensity_D_Unit = MomentumDensity_D_UnitOption
+    
+    RMA % NonlinearSolver   = 'Default'
+    if ( present ( NonlinearSolverOption ) ) &
+         RMA % NonlinearSolver   = NonlinearSolverOption
 
     ! if ( .not. allocated ( RMA % TallyInterior ) ) then
     !   select case ( trim ( RadiationMomentsType ) )
@@ -367,7 +374,8 @@ contains
                FA % MomentumDensity_U_Unit, FA % MomentumDensity_D_Unit, &
                FA % EnergyDensityUnit, FA % TemperatureUnit, &
                FA % LimiterParameter, nValues, &
-               IgnorabilityOption = FA % IGNORABILITY )
+               IgnorabilityOption = FA % IGNORABILITY, &
+               NonlinearSolverOption = FA % NonlinearSolver )
     end select !-- FC
 
     call A % AddField ( FA )

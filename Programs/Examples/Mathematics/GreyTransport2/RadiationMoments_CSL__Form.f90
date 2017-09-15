@@ -28,7 +28,8 @@ module RadiationMoments_CSL__Form
       UseLimiter
     character ( LDF ) :: &
       RadiationMomentsType = '', &
-      RiemannSolverType = ''
+      RiemannSolverType = '', &
+      NonlinearSolver
     class ( Sources_RM_CSL_Form ), pointer :: &
       Sources_CSL => null ( )
     class ( Field_CSL_Template ), pointer :: &
@@ -59,7 +60,8 @@ contains
                ( RMC, C, NameShort, RadiationMomentsType, RiemannSolverType, &
                  UseLimiter, Velocity_U_Unit, MomentumDensity_U_Unit, &
                  MomentumDensity_D_Unit, EnergyDensityUnit, TemperatureUnit, &
-                 LimiterParameter, nValues, IgnorabilityOption )
+                 LimiterParameter, nValues, IgnorabilityOption, &
+                 NonlinearSolverOption )
 
     class ( RadiationMoments_CSL_Form ), intent ( inout ) :: &
       RMC
@@ -84,6 +86,8 @@ contains
       nValues
     integer ( KDL ), intent ( in ), optional :: &
       IgnorabilityOption
+    character ( * ), intent ( in ), optional :: &
+      NonlinearSolverOption
 
     if ( RMC % Type == '' ) &
       RMC % Type = 'a RadiationMoments_CSL'
@@ -97,6 +101,10 @@ contains
     RMC % Velocity_U_Unit        = Velocity_U_Unit
     RMC % MomentumDensity_U_Unit = MomentumDensity_U_Unit
     RMC % MomentumDensity_D_Unit = MomentumDensity_D_Unit
+    
+    RMC % NonlinearSolver        = 'Default'
+    if ( present ( NonlinearSolverOption ) ) &
+         RMC % NonlinearSolver   = NonlinearSolverOption
 
     call RMC % InitializeTemplate_CSL &
            ( C, NameShort, nValues, IgnorabilityOption )
@@ -243,7 +251,8 @@ contains
                  FC % Velocity_U_Unit, FC % MomentumDensity_U_Unit, &
                  FC % MomentumDensity_D_Unit, FC % EnergyDensityUnit, &
                  FC % LimiterParameter, FC % nValues, &
-                 NameOption = FC % NameShort )
+                 NameOption = FC % NameShort, &
+                 NonlinearSolverOption = FC % NonlinearSolver )
         call RM % SetPrimitiveConserved ( )
         call RM % SetOutput ( FC % FieldOutput )
       end select !-- RM

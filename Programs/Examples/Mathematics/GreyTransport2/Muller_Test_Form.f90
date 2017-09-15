@@ -4,21 +4,14 @@ module Muller_Test_Form
 
   use Basics
   use Mathematics
-  use Interactions_Template
-  use Interactions_F__Form
-  use Interactions_CSL__Form
-  use Interactions_ASC__Form
   use RadiationMoments_Form
   use RadiationMoments_ASC__Form
   use ApplyCurvilinear_RM__Command
-  use ApplyRelaxation_RM__Command
 
   implicit none
   private
 
   type, public, extends ( Integrator_C_PS_Template ) :: MullerTestForm
-     type ( Interactions_ASC_Form ), allocatable :: &
-      Interactions_ASC
      type ( RadiationMoments_ASC_Form ), allocatable :: &
       Reference
      real ( KDR ) :: &
@@ -59,7 +52,10 @@ contains
       nCells, &
       nGhostLayers
     real ( KDR ) :: &
-      FinishTime
+      FinishTime, &
+      dR
+    real ( KDR ), dimension ( 3 ) :: &
+      Ratio
     type ( MeasuredValueForm ) :: &
       TimeUnit, &
       MassDensityUnit, &
@@ -72,19 +68,31 @@ contains
       VelocityUnit, &
       MomentumDensity_U_Unit, &
       MomentumDensity_D_Unit
+    character ( LDL ) :: &
+      NonlinearSolver
 
     associate &
       ( IR     => MT % InnerRadius, &
         IFR    => MT % InflectionRadius, &
         OR     => MT % OutterRadius )
 
-    IR  = 4.0_KDR    * UNIT % KILOMETER
-    IFR = 150.0_KDR  * UNIT % KILOMETER
-    OR  = 500.0_KDR * UNIT % KILOMETER
+    IR  = 4.0_KDR
+    IFR = 150.0_KDR
+    OR  = 500.0_KDR 
+    
+    dR  = OR - IR
 
     call PROGRAM_HEADER % GetParameter ( IR,     'InnerRadius' )
     call PROGRAM_HEADER % GetParameter ( IFR,    'InflectionRadius' )
     call PROGRAM_HEADER % GetParameter ( OR,     'OutterRadius' )
+
+    IR  = IR   * UNIT % KILOMETER
+    IFR = IFR  * UNIT % KILOMETER
+    OR  = OR  * UNIT % KILOMETER
+
+    NonlinearSolver = 'Default'
+    
+    call PROGRAM_HEADER % GetParameter ( NonlinearSolver,     'NonlinearSolver' )
 
     !-- PositionSpace
 
@@ -103,8 +111,6 @@ contains
              ( [ 'INFLOW ', 'OUTFLOW' ], iDimension = 1_KDI )
    ! end do !-- iD
 
-    Spacing = [ 'PROPORTIONAL', 'EQUAL       ', 'EQUAL       ' ]
-
     CoordinateUnit  =  [ UNIT % KILOMETER, UNIT % RADIAN, UNIT % RADIAN ]
 
     MinCoordinate = [ IR, 0.0_KDR, 0.0_KDR ]
@@ -114,13 +120,19 @@ contains
     nGhostLayers = [ 2, 1, 1 ]
     call PROGRAM_HEADER % GetParameter ( nCells, 'nCells' )
 
+    dR = dR / nCells ( 1 ) 
+    Spacing = [ 'PROPORTIONAL', 'EQUAL       ', 'EQUAL       ' ]
+    Ratio   = [ dR, 0.0_KDR, 0.0_KDR ]
+
     call PS % CreateChart &
            ( CoordinateSystemOption = CoordinateSystem, &
              CoordinateUnitOption = CoordinateUnit, &
              MinCoordinateOption = MinCoordinate, &
              MaxCoordinateOption = MaxCoordinate, &
              nCellsOption = nCells, &
-             nGhostLayersOption = nGhostLayers )
+             nGhostLayersOption = nGhostLayers )!, &
+!             SpacingOption = Spacing, &
+!             RatioOption = Ratio )
 
     !-- Geometry of PositionSpace
 
@@ -129,27 +141,6 @@ contains
     call GA % Initialize ( PS )
     call PS % SetGeometry ( GA )
     end associate !-- GA
-
-    !-- Interactions
-    allocate ( MT % Interactions_ASC )
-    associate ( IA => MT % Interactions_ASC )
-    
-    call IA % Initialize ( PS, 'FIXED' )
-    
-    select type ( IC => IA % Chart )
-    class is ( Interactions_CSL_Form )
-    select type ( I => IC % Field )
-    class is ( Interactions_F_Form )
-    associate &
-      ( Xi_J  => I % Value ( :, I % EMISSIVITY_J ), &
-        Chi_J => I % Value ( :, I % OPACITY_J ), &
-        Chi_H => I % Value ( :, I % OPACITY_H ) )
-
-    call SetInteractions ( MT, Xi_J, Chi_J, Chi_H )
-
-    end associate !-- Xi_J, etc.
-    end select !-- I
-    end select !-- IC
     
     !-- Prepare Units
     
@@ -176,9 +167,8 @@ contains
              MomentumDensity_U_UnitOption = MomentumDensity_U_Unit, &
              MomentumDensity_D_UnitOption = MomentumDensity_D_Unit, &
              EnergyDensityUnitOption = EnergyDensityUnit, &
-             UseLimiterOption = .true. )
-
-    call RMA % SetInteractions ( IA )
+             UseLimiterOption = .true., &
+             NonlinearSolverOption = NonlinearSolver )
 
     !-- Step
 
@@ -189,7 +179,6 @@ contains
     call S % Initialize ( RMA, Name )
 
     S % ApplySources % Pointer =>  ApplyCurvilinear_RM
-    !S % ApplyRelaxation % Pointer =>  ApplyRelaxation_RM
 
     end select !-- S
 
@@ -221,7 +210,6 @@ contains
     !-- Cleanup
 
     end select !-- RMA
-    end associate !-- IA
     end select !-- PS
     end associate !-- IR, etc.
 
@@ -277,13 +265,13 @@ contains
 
     where ( R >= MT % InflectionRadius * 0.9_KDR &
            .and. R < MT % InflectionRadius ) 
-      V_1 = - 0.05_KDR * CONSTANT % SPEED_OF_LIGHT * &
+      V_1 = - 0.2_KDR * CONSTANT % SPEED_OF_LIGHT * &
               ( R - MT % InflectionRadius * 0.9_KDR ) &
               / ( MT % InflectionRadius * 0.1_KDR )
     end where
 
     where ( R >= MT % InflectionRadius )
-      V_1 = - 0.05_KDR * CONSTANT % SPEED_OF_LIGHT &
+      V_1 = - 0.2_KDR * CONSTANT % SPEED_OF_LIGHT &
               * ( MT % InflectionRadius / R ) ** 2.0_KDR
     end where
 

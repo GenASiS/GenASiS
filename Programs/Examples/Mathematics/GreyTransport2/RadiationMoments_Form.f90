@@ -62,7 +62,7 @@ module RadiationMoments_Form
     class ( InteractionsTemplate ), pointer :: &
       Interactions => null ( )
     character ( LDF ) :: &
-      NonLinearSolver
+      NonlinearSolver
     
   contains
     procedure, private, pass :: &
@@ -115,7 +115,7 @@ contains
                  MomentumDensity_U_Unit, MomentumDensity_D_Unit, &
                  EnergyDensityUnit, LimiterParameter, &
                  nValues, VariableOption, VectorOption, NameOption, &
-                 NonLinearSolverOption, ClearOption, UnitOption, &
+                 NonlinearSolverOption, ClearOption, UnitOption, &
                  VectorIndicesOption )
 
     class ( RadiationMomentsForm ), intent ( inout ) :: &
@@ -139,7 +139,7 @@ contains
       VectorOption
     character ( * ), intent ( in ), optional :: &
       NameOption, &
-      NonLinearSolverOption
+      NonlinearSolverOption
     logical ( KDL ), intent ( in ), optional :: &
       ClearOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
@@ -160,7 +160,7 @@ contains
     call InitializeBasics &
            ( RM, Variable, Vector, Name, VariableUnit, VectorIndices, &
              VariableOption, VectorOption, NameOption, UnitOption, &
-             VectorIndicesOption, NonLinearSolverOption )
+             VectorIndicesOption, NonlinearSolverOption )
 
     call SetUnits &
            ( VariableUnit, RM, Velocity_U_Unit, MomentumDensity_U_Unit, &
@@ -409,16 +409,16 @@ contains
         V_2   => RMV ( oV + 1 : oV + nV, C % FLUID_VELOCITY_U ( 2 ) ), &
         V_3   => RMV ( oV + 1 : oV + nV, C % FLUID_VELOCITY_U ( 3 ) ) )
 
-    select case ( C % NonLinearSolver )
+    select case ( C % NonlinearSolver )
       case ( 'Broyden' )
          call ComputeComovingEnergyMomentumBroyden &
                ( J, H_1, H_2, H_3, E, S_1, S_2, S_3, FF, SF, C, &
                  M_DD_22, M_DD_33, M_UU_22, M_UU_33, V_1, V_2, V_3 )
-      case DEFAULT
+      case Default
         call ComputeComovingEnergyMomentumDefault &
                ( J, H_1, H_2, H_3, E, S_1, S_2, S_3, FF, SF, C, &
                  M_DD_22, M_DD_33, M_UU_22, M_UU_33, V_1, V_2, V_3 )
-    end select !-- NonLinearSolver
+    end select !-- NonlinearSolver
     call ComputeEigenspeeds &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, J, H_1, H_2, H_3, &
              M_UU_22, M_UU_33, CONSTANT % SPEED_OF_LIGHT )
@@ -617,7 +617,7 @@ contains
                ( RM, Variable, Vector, Name, VariableUnit, VectorIndices, &
                  VariableOption, VectorOption, NameOption, &
                  VariableUnitOption, VectorIndicesOption, &
-                 NonLinearSolverOption )
+                 NonlinearSolverOption )
 
     class ( RadiationMomentsForm ), intent ( inout ) :: &
       RM
@@ -641,7 +641,7 @@ contains
       VectorOption
     character ( * ), intent ( in ), optional :: &
       NameOption, &
-      NonLinearSolverOption
+      NonlinearSolverOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       VariableUnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional :: &
@@ -661,11 +661,13 @@ contains
     if ( present ( NameOption ) ) &
       Name = NameOption
 
-    RM % NonLinearSolver = 'Default'
-    if ( present ( NonLinearSolverOption ) ) &
-      RM % NonLinearSolver = NonLinearSolverOption
+    RM % NonlinearSolver = 'Default'
+    if ( present ( NonlinearSolverOption ) ) &
+      RM % NonlinearSolver = NonlinearSolverOption
 
-    select case ( RM % NonLinearSolver )
+    call Show ( RM % NonlinearSolver, 'NonlinearSolver' )
+
+    select case ( RM % NonlinearSolver )
       case ( 'Broyden' )
         FunctionEvaluator => FunctionWrapper
 
@@ -673,7 +675,7 @@ contains
                ( Parameters, &
                  MD_FunctionEvaluatorOption = FunctionEvaluator, &
                  AccuracyOption = 1.0e-8_KDR )
-    end select !-- NonLinearSolver
+    end select !-- NonlinearSolver
 
 
     !-- variable indices
@@ -926,6 +928,8 @@ contains
       nValues
     real ( KDR ) :: &
       Delta_J_J, Delta_H_H
+    real ( KDR ), dimension ( 3 ) :: &
+      K_U_Dim_D
     real ( KDR ), dimension ( size ( E ) ) :: &
       H
     logical ( KDL ) :: &
@@ -964,8 +968,8 @@ contains
         S_1 ( iV ) = 0.0_KDR
         S_2 ( iV ) = 0.0_KDR
         S_3 ( iV ) = 0.0_KDR
-        FF  ( iV ) = 0.0_KDR
-        SF  ( iV ) = 0.0_KDR
+        FF  ( iV ) = 1.0_KDR
+        SF  ( iV ) = 1.0_KDR
       end if
     end do !-- iV
     !$OMP end parallel do
@@ -984,12 +988,49 @@ contains
         H_1 ( iV )  =  ( H_1 ( iV )  /  H ( iV ) )  *  J ( iV )
         H_2 ( iV )  =  ( H_2 ( iV )  /  H ( iV ) )  *  J ( iV )
         H_3 ( iV )  =  ( H_3 ( iV )  /  H ( iV ) )  *  J ( iV )
-        S_1 ( iV )  =  H_1 ( iV )
-        S_2 ( iV )  =  M_DD_22 ( iV )  *  H_2 ( iV )
-        S_3 ( iV )  =  M_DD_33 ( iV )  *  H_3 ( iV )
+
+        E ( iV )  &
+        =  J ( iV )  &
+           +  2.0_KDR * (                       V_1 ( iV )  *  H_1 ( iV )  &
+                          +  M_DD_22 ( iV )  *  V_2 ( iV )  *  H_2 ( iV )  &
+                          +  M_DD_33 ( iV )  *  V_3 ( iV )  *  H_3 ( iV ) )
+
         call ComputeMomentFactors &
                ( SF ( iV ), FF ( iV ), J ( iV ), H_1 ( iV ), H_2 ( iV ), &
                  H_3 ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ) )
+        
+        call ComputeComovingStress_D &
+               ( K_U_Dim_D, [ H_1 ( iV ), H_2 ( iV ), H_3 ( iV ) ], J ( iV ), &
+                 SF ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ), iD = 1 )
+
+        S_1 ( iV ) &
+        =  H_1 ( iV )  +  J ( iV ) * V_1 ( iV ) &
+                       +  K_U_Dim_D ( 1 )  *  V_1 ( iV )  &
+                       +  K_U_Dim_D ( 2 )  *  V_2 ( iV )  &
+                       +  K_U_Dim_D ( 3 )  *  V_3 ( iV )
+
+        call ComputeComovingStress_D &
+               ( K_U_Dim_D, [ H_1 ( iV ), H_2 ( iV ), H_3 ( iV ) ], J ( iV ), &
+                 SF ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ), iD = 2 )
+
+        S_2 ( iV )  &
+        =  M_DD_22 ( iV )  &
+           *  ( H_2 ( iV )  +  J ( iV ) * V_2 ( iV )  &
+                            +  K_U_Dim_D ( 1 )  *  V_1 ( iV )  &
+                            +  K_U_Dim_D ( 2 )  *  V_2 ( iV )  &
+                            +  K_U_Dim_D ( 3 )  *  V_3 ( iV ) )
+  
+        call ComputeComovingStress_D &
+               ( K_U_Dim_D, [ H_1 ( iV ), H_2 ( iV ), H_3 ( iV ) ], J ( iV ), &
+                 SF ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ), iD = 3 )
+
+        S_3 ( iV ) &
+        =  M_DD_33 ( iV )  &
+           *  ( H_3 ( iV )  +  J ( iV ) * V_3 ( iV )  &
+                            +  K_U_Dim_D ( 1 )  *  V_1 ( iV )  &
+                            +  K_U_Dim_D ( 2 )  *  V_2 ( iV )  &
+                            +  K_U_Dim_D ( 3 )  *  V_3 ( iV ) )
+
       end if
     end do !-- iV
     !$OMP end parallel do
@@ -997,7 +1038,7 @@ contains
   end subroutine ComputeComovingEnergyMomentumDefault
 
   
-   subroutine ComputeComovingEnergyMomentumBroyden &
+  subroutine ComputeComovingEnergyMomentumBroyden &
                ( J, H_1, H_2, H_3, E, S_1, S_2, S_3, FF, SF, RM, &
                  M_DD_22, M_DD_33, M_UU_22, M_UU_33, V_1, V_2, V_3 )
 
@@ -1020,8 +1061,8 @@ contains
       nValues
     real ( KDR ), dimension ( size ( E ) ) :: &
       H
-    logical ( KDL ) :: &
-      Success
+    real ( KDR ), dimension ( 3 ) :: &
+      K_U_Dim_D
     real ( KDR ), dimension ( 4 ) :: &
       Guess_1, &
       Guess_2, &
@@ -1031,17 +1072,20 @@ contains
 
     !$OMP parallel do private ( iV )
     do iV = 1, nValues
-      Root = huge ( 0.0 )
+
       if ( E ( iV )  >  0.0_KDR ) then
-         call SetParameters &
-                ( FF ( iV ), SF ( iV ), &
-                  V_1 ( iV ), V_2 ( iV ), V_3 ( iV ), &
-                  M_DD_22 ( iV ), M_DD_33 ( iV ), &
-                  M_UU_22 ( iV ), M_UU_33 ( iV ), &
-                  E ( iV ), S_1 ( iV ), S_2 ( iV ), S_3 ( iV ), &
-                  Parameters )
-         call ComputeInitialGuesses ( Guess_1, Guess_2, Parameters )
-         call RF % Solve ( Guess_1, Guess_2, Root )
+
+        call SetParameters &
+               ( FF ( iV ), SF ( iV ), &
+                 V_1 ( iV ), V_2 ( iV ), V_3 ( iV ), &
+                 M_DD_22 ( iV ), M_DD_33 ( iV ), &
+                 M_UU_22 ( iV ), M_UU_33 ( iV ), &
+                 E ( iV ), S_1 ( iV ), S_2 ( iV ), S_3 ( iV ), &
+                 Parameters )
+
+        call ComputeInitialGuesses ( Guess_1, Guess_2, Parameters )
+
+        call RF % Solve ( Guess_1, Guess_2, Root )
 
         if ( .not. RF % Success ) then
           call Show ( '>>> ComputeComoving fail', CONSOLE % ERROR )
@@ -1062,7 +1106,11 @@ contains
         H_1 ( iV ) = Root ( 2 )
         H_2 ( iV ) = Root ( 3 )
         H_3 ( iV ) = Root ( 4 )
-        
+
+        call ComputeMomentFactors &
+               ( SF ( iV ), FF ( iV ), J ( iV ), H_1 ( iV ), H_2 ( iV ), &
+                 H_3 ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ) )
+   
       else
         J   ( iV ) = 0.0_KDR
         H_1 ( iV ) = 0.0_KDR
@@ -1072,9 +1120,10 @@ contains
         S_1 ( iV ) = 0.0_KDR
         S_2 ( iV ) = 0.0_KDR
         S_3 ( iV ) = 0.0_KDR
-        FF  ( iV ) = 0.0_KDR
-        SF  ( iV ) = 0.0_KDR
+        FF  ( iV ) = 1.0_KDR
+        SF  ( iV ) = 1.0_KDR
       end if
+      
     end do !-- iV
     !$OMP end parallel do
 
@@ -1088,18 +1137,57 @@ contains
 
     !$OMP parallel do private ( iV )
     do iV = 1, nValues
+      if ( J ( iV ) < 0.0_KDR ) J ( iV ) = 0.0_KDR
+
       if ( H ( iV )  >  J ( iV ) ) then
         H_1 ( iV )  =  ( H_1 ( iV )  /  H ( iV ) )  *  J ( iV )
         H_2 ( iV )  =  ( H_2 ( iV )  /  H ( iV ) )  *  J ( iV )
         H_3 ( iV )  =  ( H_3 ( iV )  /  H ( iV ) )  *  J ( iV )
-        S_1 ( iV )  =  H_1 ( iV )
-        S_2 ( iV )  =  M_DD_22 ( iV )  *  H_2 ( iV )
-        S_3 ( iV )  =  M_DD_33 ( iV )  *  H_3 ( iV )
-      end if
 
-      call ComputeMomentFactors &
-               ( SF ( iV ), FF ( iV ), J ( iV ), H_1 ( iV ), H_2 ( iV ), &
-                 H_3 ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ) )
+        E ( iV )  &
+        =  J ( iV )  &
+           +  2.0_KDR * (                       V_1 ( iV )  *  H_1 ( iV )  &
+                          +  M_DD_22 ( iV )  *  V_2 ( iV )  *  H_2 ( iV )  &
+                          +  M_DD_33 ( iV )  *  V_3 ( iV )  *  H_3 ( iV ) )
+
+         call ComputeMomentFactors &
+                ( SF ( iV ), FF ( iV ), J ( iV ), H_1 ( iV ), H_2 ( iV ), &
+                  H_3 ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ) )
+        
+         call ComputeComovingStress_D &
+                ( K_U_Dim_D, [ H_1 ( iV ), H_2 ( iV ), H_3 ( iV ) ], J ( iV ), &
+                  SF ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ), iD = 1 )
+
+         S_1 ( iV ) &
+         =  H_1 ( iV )  +  J ( iV ) * V_1 ( iV ) &
+                        +  K_U_Dim_D ( 1 )  *  V_1 ( iV )  &
+                        +  K_U_Dim_D ( 2 )  *  V_2 ( iV )  &
+                        +  K_U_Dim_D ( 3 )  *  V_3 ( iV )
+
+         call ComputeComovingStress_D &
+                ( K_U_Dim_D, [ H_1 ( iV ), H_2 ( iV ), H_3 ( iV ) ], J ( iV ), &
+                  SF ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ), iD = 2 )
+
+         S_2 ( iV )  &
+         =  M_DD_22 ( iV )  &
+            *  ( H_2 ( iV )  +  J ( iV ) * V_2 ( iV )  &
+                             +  K_U_Dim_D ( 1 )  *  V_1 ( iV )  &
+                             +  K_U_Dim_D ( 2 )  *  V_2 ( iV )  &
+                             +  K_U_Dim_D ( 3 )  *  V_3 ( iV ) )
+  
+         call ComputeComovingStress_D &
+                ( K_U_Dim_D, [ H_1 ( iV ), H_2 ( iV ), H_3 ( iV ) ], J ( iV ), &
+                  SF ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ), iD = 3 )
+
+         S_3 ( iV ) &
+         =  M_DD_33 ( iV )  &
+            *  ( H_3 ( iV )  +  J ( iV ) * V_3 ( iV )  &
+                             +  K_U_Dim_D ( 1 )  *  V_1 ( iV )  &
+                             +  K_U_Dim_D ( 2 )  *  V_2 ( iV )  &
+                             +  K_U_Dim_D ( 3 )  *  V_3 ( iV ) )
+
+      end if
+     
     end do !-- iV
     !$OMP end parallel do
 
@@ -1356,7 +1444,7 @@ contains
     real ( KDR ), dimension ( 3 ) :: &
       K_U_Dim_D
 
-    MaxIterations  =  30
+    MaxIterations  =  100
 
     Success  =  .false.
 
@@ -1453,6 +1541,13 @@ contains
                  + P % M_DD ( 2 ) * Input ( 3 ) ** 2.0_KDR &
                  + P % M_DD ( 3 ) * Input ( 4 ) ** 2.0_KDR )
 
+      FF = Input ( 1 ) / H
+      SF = 0.0_KDR
+
+      call ComputeMomentFactors &
+             ( SF, FF, Input ( 1 ), Input ( 2 ), Input ( 3 ), &
+               Input ( 4 ), P % M_DD ( 2 ), P % M_DD ( 3 ) )
+
       L = 0.0_KDR
       L ( 1, 1 ) = 1.0_KDR
 
@@ -1468,8 +1563,8 @@ contains
       b  = 0.0_KDR 
       
       do iV = 2, 4 
-        Kv ( iV - 1 ) = 0.5_KDR * ( ( 1.0_KDR - P % SF ) * P % V ( iV - 1 ) &
-                       + ( 3.0_KDR * P % SF - 1.0_KDR ) * Input ( iV ) * vH &
+        Kv ( iV - 1 ) = 0.5_KDR * ( ( 1.0_KDR - SF ) * P % V ( iV - 1 ) &
+                       + ( 3.0_KDR * SF - 1.0_KDR ) * Input ( iV ) * vH &
                           / max (  H ** 2, tiny ( 0.0 ) ) )
         b ( iV ) = Kv ( iV - 1 ) * Input ( 1 )
       end do !-- iV
@@ -1477,7 +1572,7 @@ contains
       do iV = 1, 4 
         L_X = 0.0_KDR
         do jV = 1, 4
-           L_X = L_X + L ( iV, JV ) * Input ( jV ) 
+           L_X = L_X + L ( iV, jV ) * Input ( jV ) 
         end do !--jV
         Result ( iV ) = L_X + b ( iV ) - P % E_M ( iV )
       end do !-- iV
