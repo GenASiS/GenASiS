@@ -21,6 +21,8 @@ module Integrator_C_PS__Template
         CourantFactor
       class ( Current_ASC_Template ), allocatable :: &
         Current_ASC
+      class ( Step_RK_Template ), allocatable :: &
+        Step
       class ( TimeSeries_C_Form ), allocatable :: &
         TimeSeries
   contains
@@ -30,6 +32,8 @@ module Integrator_C_PS__Template
       FinalizeTemplate_C_PS
     procedure, private, pass :: &  !-- 2
       ComputeCycle
+    procedure, private, pass :: &  !-- 3
+      InitializeStepTimers
     procedure, private, pass :: &  !-- 3
       ComputeTally
     procedure, private, pass :: &  !-- 3
@@ -81,6 +85,13 @@ contains
       call Show ( 'InitializeTemplate_C_PS', 'subroutine', CONSOLE % WARNING )
     end if
 
+    if ( .not. allocated ( I % Step ) ) then
+      call Show ( 'Step must be allocated by an extension', &
+                  CONSOLE % WARNING )
+      call Show ( 'Integrator_Template', 'module', CONSOLE % WARNING )
+      call Show ( 'InitializeTemplate', 'subroutine', CONSOLE % WARNING )
+    end if
+
     I % CourantFactor = 0.7_KDR
     if ( present ( CourantFactorOption ) ) &
       I % CourantFactor = CourantFactorOption
@@ -113,6 +124,8 @@ contains
 
    if ( allocated ( I % TimeSeries ) ) &
      deallocate ( I % TimeSeries )
+   if ( allocated ( I % Step ) ) &
+     deallocate ( I % Step )
    if ( allocated ( I % Current_ASC ) ) &
      deallocate ( I % Current_ASC )
 
@@ -140,6 +153,19 @@ contains
     if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine ComputeCycle
+
+
+  subroutine InitializeStepTimers ( I, BaseLevel )
+
+    class ( Integrator_C_PS_Template ), intent ( inout ) :: &
+      I
+    integer ( KDI ), intent ( in ) :: &
+      BaseLevel
+
+    if ( allocated ( I % Step ) ) &
+      call I % Step % InitializeTimers ( BaseLevel )
+
+  end subroutine InitializeStepTimers
 
 
   subroutine ComputeTally ( I, ComputeChangeOption, IgnorabilityOption )

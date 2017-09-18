@@ -4,7 +4,6 @@ module Integrator_Template
 
   use Basics
   use Manifolds
-  use Steps
 
   implicit none
   private
@@ -51,8 +50,6 @@ module Integrator_Template
       Geometry_ASC
     class ( BundleHeaderForm ), allocatable :: &
       MomentumSpace
-    class ( Step_RK_Template ), allocatable :: &
-      Step
     procedure ( SR ), pointer :: &
       SetReference => null ( )
   contains
@@ -74,6 +71,8 @@ module Integrator_Template
 !      ComputeCycle
     procedure, private, pass :: &  !-- 2
       ComputeCycle
+    procedure, private, pass :: &  !-- 3
+      InitializeStepTimers
 !-- See FIXME above
 !    procedure ( CT ), private, pass, deferred :: &  !-- 3
 !      ComputeTally
@@ -243,13 +242,6 @@ contains
     end if
     I % nTimeStepCandidates = size ( I % TimeStepLabel )
 
-    if ( .not. allocated ( I % Step ) ) then
-      call Show ( 'Step must be allocated by an extension', &
-                  CONSOLE % WARNING )
-      call Show ( 'Integrator_Template', 'module', CONSOLE % WARNING )
-      call Show ( 'InitializeTemplate', 'subroutine', CONSOLE % WARNING )
-    end if
-
     call Show ( I % StartTime, I % TimeUnit, 'StartTime', I % IGNORABILITY )
     call Show ( I % FinishTime, I % TimeUnit, 'FinishTime', I % IGNORABILITY )
     call Show ( I % nRampCycles, 'nRampCycles', I % IGNORABILITY )
@@ -304,8 +296,6 @@ contains
     class ( IntegratorTemplate ), intent ( inout ) :: &
       I
 
-    if ( allocated ( I % Step ) ) &
-      deallocate ( I % Step )
     if ( allocated ( I % MomentumSpace ) ) &
       deallocate ( I % MomentumSpace ) 
     if ( allocated ( I % Geometry_ASC ) ) &
@@ -402,7 +392,7 @@ contains
         call PROGRAM_HEADER % AddTimer &
              ( 'NewTime', I % iTimerNewTime, &
                Level = BaseLevel + 2 )
-        call I % Step % InitializeTimers ( BaseLevel + 2 )
+        call I % InitializeStepTimers ( BaseLevel + 2 )
       call PROGRAM_HEADER % AddTimer &
              ( 'Checkpoint', I % iTimerCheckpoint, &
                Level = BaseLevel + 1 )
@@ -497,6 +487,14 @@ contains
     class ( IntegratorTemplate ), intent ( inout ) :: &
       I
   end subroutine ComputeCycle
+
+
+  subroutine InitializeStepTimers ( I, BaseLevel )
+    class ( IntegratorTemplate ), intent ( inout ) :: &
+      I
+    integer ( KDI ), intent ( in ) :: &
+      BaseLevel
+  end subroutine InitializeStepTimers
 
 
 !-- See FIXME above
