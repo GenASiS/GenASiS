@@ -21,7 +21,7 @@ module Integrator_C_PS__Template
         CourantFactor
       class ( Current_ASC_Template ), allocatable :: &
         Current_ASC
-      class ( Step_RK_Template ), allocatable :: &
+      class ( Step_RK_C_ASC_Template ), allocatable :: &
         Step
       class ( TimeSeries_C_Form ), allocatable :: &
         TimeSeries
@@ -86,10 +86,10 @@ contains
     end if
 
     if ( .not. allocated ( I % Step ) ) then
-      call Show ( 'Step must be allocated by an extension', &
+      call Show ( 'Step not allocated by an extension', &
                   CONSOLE % WARNING )
-      call Show ( 'Integrator_Template', 'module', CONSOLE % WARNING )
-      call Show ( 'InitializeTemplate', 'subroutine', CONSOLE % WARNING )
+      call Show ( 'Integrator_C_PS__Template', 'module', CONSOLE % WARNING )
+      call Show ( 'InitializeTemplate_C_PS', 'subroutine', CONSOLE % WARNING )
     end if
 
     I % CourantFactor = 0.7_KDR
@@ -266,9 +266,7 @@ contains
     call I % PrepareCycle ( )
     call I % ComputeNewTime ( TimeNew )
 
-    select type ( S => I % Step )
-    class is ( Step_RK_C_ASC_Template )
-
+    associate ( S => I % Step )
     associate ( TimeStep => TimeNew - I % Time )    
 
     select type ( Chart => PS % Chart )
@@ -296,7 +294,7 @@ contains
     end if
 
     end associate !-- TimeStep
-    end select !-- S
+    end associate !-- S
 
   end subroutine ComputeCycle_ASC
 
