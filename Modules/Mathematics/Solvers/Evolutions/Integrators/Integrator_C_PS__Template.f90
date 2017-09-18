@@ -44,6 +44,8 @@ module Integrator_C_PS__Template
       ComputeCycle_ASC
     procedure, private, pass :: &
       ComputeTimeStepLocal
+    procedure, public, pass :: &
+      ComputeTimeStep_C_ASC
     procedure, public, nopass :: &
       ComputeTimeStepKernel_CSL
   end type Integrator_C_PS_Template
@@ -306,6 +308,20 @@ contains
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       TimeStepCandidate
 
+    call I % ComputeTimeStep_C_ASC ( TimeStepCandidate ( 1 ), I % Current_ASC )
+
+  end subroutine ComputeTimeStepLocal
+
+
+  subroutine ComputeTimeStep_C_ASC ( I, TimeStepCandidate, CA )
+
+    class ( Integrator_C_PS_Template ), intent ( inout ), target :: &
+      I
+    real ( KDR ), intent ( inout ) :: &
+      TimeStepCandidate
+    class ( Current_ASC_Template ), intent ( in ) :: &
+      CA
+
     class ( GeometryFlatForm ), pointer :: &
       G
     class ( CurrentTemplate ), pointer :: &
@@ -316,8 +332,6 @@ contains
 
     select type ( CSL => PS % Chart )
     class is ( Chart_SL_Template )
-
-    associate ( CA => I % Current_ASC )
 
     G => CSL % Geometry ( )
     C => CA % Current ( )
@@ -333,17 +347,16 @@ contains
              G % Value ( :, G % WIDTH ( 1 ) ), &
              G % Value ( :, G % WIDTH ( 2 ) ), & 
              G % Value ( :, G % WIDTH ( 3 ) ), &
-             CSL % nDimensions, TimeStepCandidate ( 1 ) )
+             CSL % nDimensions, TimeStepCandidate )
 
-    end associate !-- CA
     end select !-- CSL
     end select !-- PS
 
-    TimeStepCandidate ( 1 ) = I % CourantFactor * TimeStepCandidate ( 1 )
+    TimeStepCandidate = I % CourantFactor * TimeStepCandidate
 
     nullify ( C, G )
 
-  end subroutine ComputeTimeStepLocal
+  end subroutine ComputeTimeStep_C_ASC
 
 
   subroutine ComputeTimeStepKernel_CSL &

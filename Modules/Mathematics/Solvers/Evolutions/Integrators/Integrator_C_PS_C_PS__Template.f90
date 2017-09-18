@@ -37,6 +37,8 @@ module Integrator_C_PS_C_PS__Template
       PrepareStep_1
     procedure, private, pass :: &
       PrepareStep_2
+    procedure, private, pass :: &
+      ComputeTimeStepLocal
   end type Integrator_C_PS_C_PS_Template
 
 contains
@@ -246,6 +248,21 @@ contains
       I
 
   end subroutine PrepareStep_2
+
+
+  subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
+
+    class ( Integrator_C_PS_C_PS_Template ), intent ( inout ), target :: &
+      I
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      TimeStepCandidate
+
+    call I % ComputeTimeStep_C_ASC &
+           ( TimeStepCandidate ( 1 ), I % Current_ASC_1 )
+    call I % ComputeTimeStep_C_ASC &
+           ( TimeStepCandidate ( 2 ), I % Current_ASC_2 )
+
+  end subroutine ComputeTimeStepLocal
 
 
 end module Integrator_C_PS_C_PS__Template
