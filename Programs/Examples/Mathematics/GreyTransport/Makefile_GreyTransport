@@ -111,6 +111,7 @@ MarshakWave_Form.o: \
   Fluid_ASC__Form.o \
   RadiationMoments_Form.o \
   PhotonMoments_G__Form.o \
+  Sources_RM__Form.o \
   RadiationMoments_ASC__Form.o \
   Interactions_Template.o \
   Interactions_MWV_1_G__Form.o \

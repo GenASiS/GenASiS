@@ -8,6 +8,7 @@ module MarshakWave_Form
   use Fluid_ASC__Form
   use RadiationMoments_Form
   use PhotonMoments_G__Form
+  use Sources_RM__Form
   use RadiationMoments_ASC__Form
   use Interactions_Template
   use Interactions_MWV_1_G__Form
@@ -19,10 +20,7 @@ module MarshakWave_Form
   implicit none
   private
 
-  type, public, extends ( Integrator_C_1D_PS_Template ) :: MarshakWaveForm
-    integer ( KDI ) :: &
-      RADIATION = 1, &
-      FLUID     = 2         
+  type, public, extends ( Integrator_C_PS_C_PS_Template ) :: MarshakWaveForm
     type ( Interactions_ASC_Form ), allocatable :: &
       Interactions_ASC
   contains
@@ -30,19 +28,21 @@ module MarshakWave_Form
       Initialize
     final :: &
       Finalize
+    procedure, private, pass :: &
+      PrepareStep_1
+    procedure, private, pass :: &
+      PrepareStep_2
   end type MarshakWaveForm
 
     private :: &
       SetRadiation, &
       SetFluid, &
       SetInteractions, &
-      ApplySources_Radiation, &
-      ApplySources_Fluid, &
-      ComputeFluidSource_Radiation
+      ApplySources_Fluid
 
       private :: &
-        ApplySources_Fluid_Kernel, &
-        ComputeFluidSource_Radiation_Kernel
+        ComputeFluidSource_G_S_Radiation_Kernel, &
+        ApplySources_Fluid_Kernel
 
     real ( KDR ), private :: &
       AdiabaticIndex, &
@@ -63,6 +63,8 @@ module MarshakWave_Form
       FluidSource_Radiation
     class ( Fluid_P_NR_Form ), pointer :: &
       Fluid => null ( )
+    class ( PhotonMoments_G_Form ), pointer :: &
+      Radiation => null ( )
     class ( InteractionsTemplate ), pointer :: &
       Interactions => null ( )
 
@@ -166,11 +168,9 @@ contains
 
     !-- Prepare for Currents
 
-    MW % N_CURRENTS_PS = 2
-    allocate ( MW % Current_ASC_1D ( MW % N_CURRENTS_PS ) )
-    allocate ( MW % TimeStepLabel ( MW % N_CURRENTS_PS ) )
-    MW % TimeStepLabel ( MW % RADIATION ) = 'Radiation'
-    MW % TimeStepLabel ( MW % FLUID )     = 'Fluid'
+    allocate ( MW % TimeStepLabel ( 2 ) )
+    MW % TimeStepLabel ( 1 )  =  'Radiation'
+    MW % TimeStepLabel ( 2 )  =  'Fluid'
 
     TimeUnit = UNIT % SECOND
 
@@ -197,10 +197,8 @@ contains
     
     !-- RadiationMoments
 
-    allocate &
-      ( RadiationMoments_ASC_Form :: &
-          MW % Current_ASC_1D ( MW % RADIATION ) % Element )
-    select type ( RA => MW % Current_ASC_1D ( MW % RADIATION ) % Element )
+    allocate ( RadiationMoments_ASC_Form :: MW % Current_ASC_1 )
+    select type ( RA => MW % Current_ASC_1 )
     class is ( RadiationMoments_ASC_Form )
     call RA % Initialize &
            ( PS, 'PHOTONS_GREY', &
@@ -211,9 +209,8 @@ contains
 
     !-- Fluid
 
-    allocate &
-      ( Fluid_ASC_Form :: MW % Current_ASC_1D ( MW % FLUID ) % Element )
-    select type ( FA => MW % Current_ASC_1D ( MW % FLUID ) % Element )
+    allocate ( Fluid_ASC_Form :: MW % Current_ASC_2 )
+    select type ( FA => MW % Current_ASC_2 )
     class is ( Fluid_ASC_Form )
 
     call FA % Initialize &
@@ -235,24 +232,21 @@ contains
              EnergyDensityUnitOption = EnergyDensityUnit )
     call RA % SetInteractions ( IA )
 
-    !-- Step
+    !-- Steps
 
-    allocate ( Step_RK2_C_ASC_1D_Form :: MW % Step )
-    select type ( S => MW % Step )
-    class is ( Step_RK2_C_ASC_1D_Form )
+    allocate ( Step_RK2_C_ASC_Form :: MW % Step_1 )
+    select type ( S_R => MW % Step_1 )
+    class is ( Step_RK2_C_ASC_Form )
+      call S_R % Initialize ( MW % Current_ASC_1, Name // '_Radiation' )
+      S_R % ApplyRelaxation % Pointer  =>  ApplyRelaxation_RM
+    end select !-- S_R
 
-    call S % Initialize ( MW % Current_ASC_1D, Name )
-
-    S % ApplySources_1D ( MW % RADIATION ) % Pointer &
-      =>  ApplySources_Radiation
-    S % ApplySources_1D ( MW % FLUID ) % Pointer &
-      =>  ApplySources_Fluid
-    S % ApplyRelaxation_1D ( MW % RADIATION ) % Pointer &
-      =>  ApplyRelaxation_RM
-    S % HarvestIncrement_1D ( MW % RADIATION ) % Pointer &
-      =>  ComputeFluidSource_Radiation
-
-    end select !-- S
+    allocate ( Step_RK2_C_ASC_Form :: MW % Step_2 )
+    select type ( S_F => MW % Step_2 )
+    class is ( Step_RK2_C_ASC_Form )
+      call S_F % Initialize ( MW % Current_ASC_2, Name // '_Fluid' )
+      S_F % ApplySources % Pointer  =>  ApplySources_Fluid
+    end select !-- S_F
 
     !-- Initial conditions
 
@@ -301,7 +295,7 @@ contains
 
     FinishTime  =  1.36e-7_KDR  *  UNIT % SECOND
 
-    call MW % InitializeTemplate_C_1D_PS &
+    call MW % InitializeTemplate_C_PS_C_PS &
            ( Name, TimeUnitOption = TimeUnit, FinishTimeOption = FinishTime )
 
     !-- Cleanup
@@ -323,9 +317,64 @@ contains
     if ( allocated ( MW % Interactions_ASC ) ) &
       deallocate ( MW % Interactions_ASC )
 
-    call MW % FinalizeTemplate_C_1D_PS ( )
+    call MW % FinalizeTemplate_C_PS_C_PS ( )
 
   end subroutine Finalize
+
+
+  subroutine PrepareStep_1 ( I )
+
+    class ( MarshakWaveForm ), intent ( inout ) :: &
+      I
+
+    call Interactions % Compute ( Radiation )
+
+  end subroutine PrepareStep_1
+
+
+  subroutine PrepareStep_2 ( I )
+
+    class ( MarshakWaveForm ), intent ( inout ) :: &
+      I
+
+    integer ( KDI ) :: &
+      iEnergy, &
+      iMomentum_1
+
+    associate &
+      ( R => Radiation, &
+        F => Fluid )
+
+    select type ( SR => R % Sources )
+    class is ( Sources_RM_Form )
+
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
+
+    select type ( CSL => PS % Chart )
+    class is ( Chart_SL_Template )
+
+    call Search ( F % iaConserved, F % CONSERVED_ENERGY, &
+                  iEnergy )
+    call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 1 ), &
+                  iMomentum_1 )
+
+    call Clear ( FluidSource_Radiation % Value )
+
+    call ComputeFluidSource_G_S_Radiation_Kernel &
+           ( FluidSource_Radiation % Value ( :, iEnergy ), & 
+             FluidSource_Radiation % Value ( :, iMomentum_1 ), &
+             CSL % IsProperCell, &
+             SR % Value ( :, SR % INTERACTIONS_J ), &
+             SR % Value ( :, SR % INTERACTIONS_H_D ( 1 ) ) )
+!           ( FS_R_G, FS_R_S_1, IsProperCell, Q, A_1 )
+
+    end select !-- CSL
+    end select !-- PS
+    end select !-- SR
+    end associate !-- R, F
+
+  end subroutine PrepareStep_2
 
 
   subroutine SetRadiation ( MW )
@@ -342,7 +391,7 @@ contains
       ( T_0 => Temperature, &
         T_I => TemperatureInner )
 
-    select type ( RA => MW % Current_ASC_1D ( MW % RADIATION ) % Element )
+    select type ( RA => MW % Current_ASC_1 )
     class is ( RadiationMoments_ASC_Form )
     R => RA % PhotonMoments_G ( )
 
@@ -373,6 +422,9 @@ contains
 
     call R % ComputeFromPrimitive ( G )
 
+    !-- Module variable for accessibility
+    Radiation => RA % PhotonMoments_G ( )
+
     end associate !-- J, etc.
     end select !-- PS
     end select !-- RA
@@ -400,7 +452,7 @@ contains
         k_B   => CONSTANT % BOLTZMANN, &
         m_b   => CONSTANT % ATOMIC_MASS_UNIT )
 
-    select type ( FA => MW % Current_ASC_1D ( MW % FLUID ) % Element )
+    select type ( FA => MW % Current_ASC_2 )
     class is ( Fluid_ASC_Form )
     F => FA % Fluid_P_NR ( )
 
@@ -460,11 +512,11 @@ contains
 
     associate ( IA => MW % Interactions_ASC )
 
-    select type ( RA => MW % Current_ASC_1D ( MW % RADIATION ) % Element )
+    select type ( RA => MW % Current_ASC_1 )
     class is ( RadiationMoments_ASC_Form )
     R => RA % PhotonMoments_G ( )
 
-    select type ( FA => MW % Current_ASC_1D ( MW % FLUID ) % Element )
+    select type ( FA => MW % Current_ASC_2 )
     class is ( Fluid_ASC_Form )
     F => FA % Fluid_P_NR ( )
 
@@ -483,8 +535,6 @@ contains
       call PROGRAM_HEADER % Abort ( )
     end select !-- I
 
-    call I % Compute ( R )
-
     !-- Module variable for accessibility in ApplySources_Fluid below
     Interactions => I
 
@@ -502,30 +552,6 @@ contains
   end subroutine SetInteractions
 
 
-  subroutine ApplySources_Radiation &
-               ( S, Sources_RM, Increment, Radiation, TimeStep, iStage )
-
-    class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
-      S
-    class ( Sources_C_Form ), intent ( inout ) :: &
-      Sources_RM
-    type ( VariableGroupForm ), intent ( inout ), target :: &
-      Increment
-    class ( CurrentTemplate ), intent ( in ) :: &
-      Radiation
-    real ( KDR ), intent ( in ) :: &
-      TimeStep
-    integer ( KDI ), intent ( in ) :: &
-      iStage
-
-    !-- No sources applied here; just an occasion to compute interactions
-    !   to be used in relaxation.
-
-    call Interactions % Compute ( Radiation )
-
-  end subroutine ApplySources_Radiation
-
-  
   subroutine ApplySources_Fluid &
                ( S, Sources_RM, Increment, Fluid, TimeStep, iStage )
 
@@ -562,67 +588,40 @@ contains
              FluidSource_Radiation % Value ( :, iEnergy ), &
              FluidSource_Radiation % Value ( :, iMomentum_1 ) )
 
-    call Clear ( FluidSource_Radiation % Value )
-
     end select !-- Chart
     end select !-- F
 
   end subroutine ApplySources_Fluid
 
   
-  subroutine ComputeFluidSource_Radiation ( S, Increment, Radiation, TimeStep )
+  subroutine ComputeFluidSource_G_S_Radiation_Kernel &
+               ( FS_R_G, FS_R_S_1, IsProperCell, Q, A_1 )
 
-    class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
-      S
-    type ( VariableGroupForm ), intent ( inout ), target :: &
-      Increment
-    class ( CurrentTemplate ), intent ( inout ) :: &
-      Radiation
-    real ( KDR ), intent ( in ) :: &
-      TimeStep
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      FS_R_G, &
+      FS_R_S_1
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      IsProperCell
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      Q, &
+      A_1
 
     integer ( KDI ) :: &
-      iEnergy_F, &
-      iEnergy_R, &
-      iMomentum_1_F, &
-      iMomentum_1_R
+      iV, &
+      nV
 
-    select type ( R => Radiation )
-    class is ( PhotonMoments_G_Form )
+    nV = size ( FS_R_G )
 
-    select type ( Chart => S % Chart )
-    class is ( Chart_SL_Template )
+    !$OMP parallel do private ( iV )
+    do iV = 1, nV
+      if ( .not. IsProperCell ( iV ) ) &
+        cycle
+      FS_R_G ( iV )    =    FS_R_G ( iV )  -    Q ( iV ) 
+      FS_R_S_1 ( iV )  =  FS_R_S_1 ( iV )  -  A_1 ( iV )
+    end do
+    !$OMP end parallel do
 
-    associate &
-      ( I => Interactions, &
-        F => Fluid )
-
-    call Search ( F % iaConserved, F % CONSERVED_ENERGY, iEnergy_F )
-    call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 1 ), &
-                  iMomentum_1_F )
-    call Search ( R % iaConserved, R % CONSERVED_ENERGY, iEnergy_R )
-    call Search ( R % iaConserved, R % CONSERVED_MOMENTUM_D ( 1 ), &
-                  iMomentum_1_R )
-
-    !-- Taking shortcuts on conserved vs. comoving here
-    call ComputeFluidSource_Radiation_Kernel &
-           ( FluidSource_Radiation % Value ( :, iEnergy_F ), &
-             FluidSource_Radiation % Value ( :, iMomentum_1_F ), &
-             Chart % IsProperCell, &
-             I % Value ( :, I % EMISSIVITY_J ), &
-             I % Value ( :, I % OPACITY_J ), &
-             I % Value ( :, I % OPACITY_H ), &
-             R % Value ( :, R % COMOVING_ENERGY ), &
-             Increment % Value ( :, iEnergy_R ), &
-             R % Value ( :, R % CONSERVED_MOMENTUM_D ( 1 ) ), &
-             Increment % Value ( :, iMomentum_1_R ), &
-             CONSTANT % SPEED_OF_LIGHT, TimeStep ) 
-
-    end associate !-- I, etc.
-    end select !-- Chart
-    end select !-- R
-
-  end subroutine ComputeFluidSource_Radiation
+  end subroutine ComputeFluidSource_G_S_Radiation_Kernel
 
 
   subroutine ApplySources_Fluid_Kernel &
@@ -653,50 +652,6 @@ contains
     !$OMP end parallel do
 
   end subroutine ApplySources_Fluid_Kernel
-
-
-  subroutine ComputeFluidSource_Radiation_Kernel &
-               ( FS_R_G, FS_R_S_1, IsProperCell, Xi_J, Chi_J, Chi_H, &
-                 J, dJ, H, dH, c, dT )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      FS_R_G, &
-      FS_R_S_1
-    logical ( KDL ), dimension ( : ), intent ( in ) :: &
-      IsProperCell
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      Xi_J, &
-      Chi_J, &
-      Chi_H, &
-      J,  &
-      dJ, &
-      H,  &
-      dH
-    real ( KDR ) :: &
-      c, &
-      dT
-
-    integer ( KDI ) :: &
-      iV, &
-      nV
-
-    nV = size ( FS_R_G )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nV
-      if ( .not. IsProperCell ( iV ) ) &
-        cycle
-      FS_R_G ( iV )  &
-        =  FS_R_G ( iV )  &
-           -  c * dT  *  ( Xi_J ( iV )  &
-                           -  Chi_J ( iV ) * ( J ( iV ) + dJ ( iV ) ) ) 
-      FS_R_S_1 ( iV )  &
-        =  FS_R_S_1 ( iV )  &
-           +  c * dT  *  Chi_H ( iV )  *  ( H ( iV ) + dH ( iV ) )
-    end do
-    !$OMP end parallel do
-
-  end subroutine ComputeFluidSource_Radiation_Kernel
 
 
 end module MarshakWave_Form
