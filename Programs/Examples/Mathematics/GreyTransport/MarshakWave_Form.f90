@@ -237,14 +237,16 @@ contains
     allocate ( Step_RK2_C_ASC_Form :: MW % Step_1 )
     select type ( S_R => MW % Step_1 )
     class is ( Step_RK2_C_ASC_Form )
-      call S_R % Initialize ( MW % Current_ASC_1, Name // '_Radiation' )
+      call S_R % Initialize &
+             ( MW % Current_ASC_1, trim ( Name ) // '_Radiation' )
       S_R % ApplyRelaxation % Pointer  =>  ApplyRelaxation_RM
     end select !-- S_R
 
     allocate ( Step_RK2_C_ASC_Form :: MW % Step_2 )
     select type ( S_F => MW % Step_2 )
     class is ( Step_RK2_C_ASC_Form )
-      call S_F % Initialize ( MW % Current_ASC_2, Name // '_Fluid' )
+      call S_F % Initialize &
+             ( MW % Current_ASC_2, trim ( Name ) // '_Fluid' )
       S_F % ApplySources % Pointer  =>  ApplySources_Fluid
     end select !-- S_F
 
@@ -367,7 +369,6 @@ contains
              CSL % IsProperCell, &
              SR % Value ( :, SR % INTERACTIONS_J ), &
              SR % Value ( :, SR % INTERACTIONS_H_D ( 1 ) ) )
-!           ( FS_R_G, FS_R_S_1, IsProperCell, Q, A_1 )
 
     end select !-- CSL
     end select !-- PS
@@ -586,7 +587,8 @@ contains
              Increment % Value ( :, iMomentum_1 ), &
              Chart % IsProperCell, &
              FluidSource_Radiation % Value ( :, iEnergy ), &
-             FluidSource_Radiation % Value ( :, iMomentum_1 ) )
+             FluidSource_Radiation % Value ( :, iMomentum_1 ), &
+             TimeStep )
 
     end select !-- Chart
     end select !-- F
@@ -625,7 +627,7 @@ contains
 
 
   subroutine ApplySources_Fluid_Kernel &
-               ( K_G, K_S_1, IsProperCell, FS_R_G, FS_R_S_1 )
+               ( K_G, K_S_1, IsProperCell, FS_R_G, FS_R_S_1, dt )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       K_G, &
@@ -635,6 +637,8 @@ contains
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       FS_R_G, &
       FS_R_S_1
+    real ( KDR ), intent ( in ) :: &
+      dt
 
     integer ( KDI ) :: &
       iV, &
@@ -646,8 +650,8 @@ contains
     do iV = 1, nV
       if ( .not. IsProperCell ( iV ) ) &
         cycle
-      K_G ( iV )    =  K_G ( iV )    +  FS_R_G ( iV )
-      K_S_1 ( iV )  =  K_S_1 ( iV )  +  FS_R_S_1 ( iV )
+      K_G ( iV )    =  K_G ( iV )    +  FS_R_G ( iV )    *  dt
+      K_S_1 ( iV )  =  K_S_1 ( iV )  +  FS_R_S_1 ( iV )  *  dt
     end do
     !$OMP end parallel do
 

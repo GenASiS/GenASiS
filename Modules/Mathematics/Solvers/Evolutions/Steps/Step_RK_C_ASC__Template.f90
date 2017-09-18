@@ -301,7 +301,7 @@ contains
       return
 
     call PROGRAM_HEADER % AddTimer &
-           ( 'Step', S % iTimerStep, &
+           ( S % Name, S % iTimerStep, &
              Level = BaseLevel )
       call PROGRAM_HEADER % AddTimer &
              ( 'LoadInitial', S % iTimerLoadInitial, &
