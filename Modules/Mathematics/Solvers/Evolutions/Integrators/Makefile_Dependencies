@@ -25,6 +25,12 @@ Integrator_C_PS__Template.o: \
   TimeSeries_C__Form.o \
   Integrator_C_PS__Template.f90
 
+Integrator_C_PS_C_PS__Template.o: \
+  Basics.o \
+  Fields.o \
+  Integrator_C_PS__Template.o \
+  Integrator_C_PS_C_PS__Template.f90
+
 Integrator_C_1D_PS__Template.o: \
   Basics.o \
   Manifolds.o \
@@ -46,6 +52,7 @@ Integrators.o: \
   TimeSeries_Form.o \
   TimeSeries_C__Form.o \
   Integrator_C_PS__Template.o \
+  Integrator_C_PS_C_PS__Template.o \
   Integrator_C_1D_PS__Template.o \
   Integrator_C_MS_C_PS__Template.o \
   Integrators.f90
