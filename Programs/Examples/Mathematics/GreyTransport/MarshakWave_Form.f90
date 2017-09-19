@@ -5,6 +5,7 @@ module MarshakWave_Form
   use Basics
   use Mathematics
   use Fluid_P_NR__Form
+  use Sources_F__Form
   use Fluid_ASC__Form
   use RadiationMoments_Form
   use PhotonMoments_G__Form
@@ -59,8 +60,6 @@ module MarshakWave_Form
       MaxCoordinate
     character ( LDF ) :: &
       InteractionsType
-    type ( VariableGroupForm ), private, allocatable :: &
-      FluidSource_Radiation
     class ( Fluid_P_NR_Form ), pointer :: &
       Fluid => null ( )
     class ( PhotonMoments_G_Form ), pointer :: &
@@ -329,6 +328,8 @@ contains
     class ( MarshakWaveForm ), intent ( inout ) :: &
       I
 
+    call Clear ( Radiation % Sources % Value )
+
     call Interactions % Compute ( Radiation )
 
   end subroutine PrepareStep_1
@@ -339,10 +340,6 @@ contains
     class ( MarshakWaveForm ), intent ( inout ) :: &
       I
 
-    integer ( KDI ) :: &
-      iEnergy, &
-      iMomentum_1
-
     associate &
       ( R => Radiation, &
         F => Fluid )
@@ -350,28 +347,27 @@ contains
     select type ( SR => R % Sources )
     class is ( Sources_RM_Form )
 
+    select type ( SF => F % Sources )
+    class is ( Sources_F_Form )
+
     select type ( PS => I % PositionSpace )
     class is ( Atlas_SC_Form )
 
     select type ( CSL => PS % Chart )
     class is ( Chart_SL_Template )
 
-    call Search ( F % iaConserved, F % CONSERVED_ENERGY, &
-                  iEnergy )
-    call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 1 ), &
-                  iMomentum_1 )
-
-    call Clear ( FluidSource_Radiation % Value )
+    call Clear ( SF % Value )
 
     call ComputeFluidSource_G_S_Radiation_Kernel &
-           ( FluidSource_Radiation % Value ( :, iEnergy ), & 
-             FluidSource_Radiation % Value ( :, iMomentum_1 ), &
+           ( SF % Value ( :, SF % RADIATION_G ), & 
+             SF % Value ( :, SF % RADIATION_S_D ( 1 ) ), &
              CSL % IsProperCell, &
              SR % Value ( :, SR % INTERACTIONS_J ), &
              SR % Value ( :, SR % INTERACTIONS_H_D ( 1 ) ) )
 
     end select !-- CSL
     end select !-- PS
+    end select !-- SF
     end select !-- SR
     end associate !-- R, F
 
@@ -539,12 +535,6 @@ contains
     !-- Module variable for accessibility in ApplySources_Fluid below
     Interactions => I
 
-    !-- Storage for fluid source terms
-
-    allocate ( FluidSource_Radiation )
-    call FluidSource_Radiation % Initialize &
-           ( [ F % nValues, F % N_CONSERVED ], ClearOption = .true. )
-
     end select !-- FA
     end select !-- RA
     end associate !-- IA
@@ -554,12 +544,12 @@ contains
 
 
   subroutine ApplySources_Fluid &
-               ( S, Sources_RM, Increment, Fluid, TimeStep, iStage )
+               ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
 
     class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
       S
     class ( Sources_C_Form ), intent ( inout ) :: &
-      Sources_RM
+      Sources_F
     type ( VariableGroupForm ), intent ( inout ), target :: &
       Increment
     class ( CurrentTemplate ), intent ( in ) :: &
@@ -572,6 +562,9 @@ contains
     integer ( KDI ) :: &
       iEnergy, &
       iMomentum_1
+
+    select type ( SF => Sources_F )
+    class is ( Sources_F_Form )
 
     select type ( F => Fluid )
     class is ( Fluid_P_NR_Form )
@@ -586,12 +579,13 @@ contains
            ( Increment % Value ( :, iEnergy ), &
              Increment % Value ( :, iMomentum_1 ), &
              Chart % IsProperCell, &
-             FluidSource_Radiation % Value ( :, iEnergy ), &
-             FluidSource_Radiation % Value ( :, iMomentum_1 ), &
+             SF % Value ( :, SF % RADIATION_G ), &
+             SF % Value ( :, SF % RADIATION_S_D ( 1 ) ), &
              TimeStep )
 
     end select !-- Chart
     end select !-- F
+    end select !-- SF
 
   end subroutine ApplySources_Fluid
 

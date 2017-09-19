@@ -108,6 +108,7 @@ MarshakWave_Form.o: \
   Basics.o \
   Mathematics.o \
   Fluid_P_NR__Form.o \
+  Sources_F__Form.o \
   Fluid_ASC__Form.o \
   RadiationMoments_Form.o \
   PhotonMoments_G__Form.o \

@@ -1008,9 +1008,6 @@ contains
     type ( TimerForm ), pointer :: &
       TimerGhost
 
-    if ( iStage == 1 ) &
-      call Clear ( C % Sources % Value )
-
     !-- Divergence
     if ( associated ( S % ApplyDivergence_C ) ) &
       call S % ApplyDivergence_C ( ID, K, TimeStep, iStage )
@@ -1305,12 +1302,18 @@ contains
 
     call ID % Compute ( Increment, TimeStep, Weight_RK = S % B ( iStage ) )
 
+    !-- ID % Current is not necessarily associated until after ID % Compute
     associate ( C => ID % Current )
+
+    if ( iStage == 1 ) &
+      call Clear ( C % Sources % Value ( :, : C % N_CONSERVED ) )
+
     do iC = 1, C % N_CONSERVED
       call RecordDivergence &
              ( C % Sources % Value ( :, iC ), Increment % Value ( :, iC ), &
                TimeStep, Weight_RK = S % B ( iStage ) )
     end do !-- iC
+
     end associate !-- C
 
   end subroutine ApplyDivergence_C
