@@ -33,16 +33,6 @@ module Step_RK_C_ASC__Template
       Pointer => null ( )
   end type ApplyRelaxation_C_Pointer
 
-  type, public :: HarvestIncrement_C_Pointer
-    procedure ( HI ), pointer, nopass :: &
-      Pointer => null ( )
-  end type HarvestIncrement_C_Pointer
-
-  type, public :: HarvestCurrent_C_Pointer
-    procedure ( HC ), pointer, nopass :: &
-      Pointer => null ( )
-  end type HarvestCurrent_C_Pointer
-
   type, public, extends ( Step_RK_Template ), abstract :: &
     Step_RK_C_ASC_Template
       integer ( KDI ) :: &
@@ -83,18 +73,12 @@ module Step_RK_C_ASC__Template
         ApplySources_C => null ( ) 
       procedure ( AR ), pointer, pass :: &
         ApplyRelaxation_C => null ( )
-      procedure ( HI ), pointer, pass :: &
-        HarvestIncrement_C => null ( )
-      procedure ( HC ), pointer, pass :: &
-        HarvestCurrent_C => null ( )
       type ( ApplyDivergence_C_Pointer ) :: &
         ApplyDivergence
       type ( ApplySources_C_Pointer ) :: &
         ApplySources
       type ( ApplyRelaxation_C_Pointer ) :: &
         ApplyRelaxation
-      type ( HarvestIncrement_C_Pointer ) :: &
-        HarvestIncrement
   contains
     procedure, public, pass :: &
       InitializeTemplate_C_ASC
@@ -703,9 +687,6 @@ contains
     Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerLoadInitial )
     if ( associated ( Timer ) ) call Timer % Start ( )
 
-    if ( associated ( S % HarvestCurrent_C ) ) &
-      call S % HarvestCurrent_C ( Current )
-
     associate ( iaC => Current % iaConserved )
     do iF = 1, Current % N_CONSERVED
       associate &
@@ -1052,10 +1033,6 @@ contains
         if ( associated ( TimerGhost ) ) call TimerGhost % Stop ( )
       end select !-- Grid
     end if !-- ApplyDivergence_C
-
-    !-- Harvest completed increment
-    if ( associated ( S % HarvestIncrement_C ) ) &
-      call S % HarvestIncrement_C ( K, C, TimeStep )
 
   end subroutine ComputeStage_C
 
