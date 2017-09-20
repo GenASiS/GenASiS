@@ -1,0 +1,3 @@
+LINEAR_EQUATIONS = \
+  LinearEquations_LAPACK__Form.o \
+  LinearEquations.o 

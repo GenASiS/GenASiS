@@ -33,16 +33,6 @@ module Step_RK_C_ASC__Template
       Pointer => null ( )
   end type ApplyRelaxation_C_Pointer
 
-  type, public :: HarvestIncrement_C_Pointer
-    procedure ( HI ), pointer, nopass :: &
-      Pointer => null ( )
-  end type HarvestIncrement_C_Pointer
-
-  type, public :: HarvestCurrent_C_Pointer
-    procedure ( HC ), pointer, nopass :: &
-      Pointer => null ( )
-  end type HarvestCurrent_C_Pointer
-
   type, public, extends ( Step_RK_Template ), abstract :: &
     Step_RK_C_ASC_Template
       integer ( KDI ) :: &
@@ -83,18 +73,12 @@ module Step_RK_C_ASC__Template
         ApplySources_C => null ( ) 
       procedure ( AR ), pointer, pass :: &
         ApplyRelaxation_C => null ( )
-      procedure ( HI ), pointer, pass :: &
-        HarvestIncrement_C => null ( )
-      procedure ( HC ), pointer, pass :: &
-        HarvestCurrent_C => null ( )
       type ( ApplyDivergence_C_Pointer ) :: &
         ApplyDivergence
       type ( ApplySources_C_Pointer ) :: &
         ApplySources
       type ( ApplyRelaxation_C_Pointer ) :: &
         ApplyRelaxation
-      type ( HarvestIncrement_C_Pointer ) :: &
-        HarvestIncrement
   contains
     procedure, public, pass :: &
       InitializeTemplate_C_ASC
@@ -184,8 +168,7 @@ module Step_RK_C_ASC__Template
         iStage
     end subroutine AS
 
-    subroutine AR ( S, Sources, IncrementExplicit, DampingCoefficient, &
-                    Current, Chart, TimeStep, iStage )
+    subroutine AR ( S, Sources, Increment, Current, Chart, TimeStep, iStage )
       use Basics
       use Manifolds
       use Fields
@@ -195,8 +178,7 @@ module Step_RK_C_ASC__Template
       class ( Sources_C_Form ), intent ( inout ) :: &
         Sources
       type ( VariableGroupForm ), intent ( inout ) :: &
-        IncrementExplicit, &
-        DampingCoefficient
+        Increment
       class ( CurrentTemplate ), intent ( in ), target :: &
         Current
       class ( ChartTemplate ), intent ( in ) :: &
@@ -303,7 +285,7 @@ contains
       return
 
     call PROGRAM_HEADER % AddTimer &
-           ( 'Step', S % iTimerStep, &
+           ( S % Name, S % iTimerStep, &
              Level = BaseLevel )
       call PROGRAM_HEADER % AddTimer &
              ( 'LoadInitial', S % iTimerLoadInitial, &
@@ -705,9 +687,6 @@ contains
     Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerLoadInitial )
     if ( associated ( Timer ) ) call Timer % Start ( )
 
-    if ( associated ( S % HarvestCurrent_C ) ) &
-      call S % HarvestCurrent_C ( Current )
-
     associate ( iaC => Current % iaConserved )
     do iF = 1, Current % N_CONSERVED
       associate &
@@ -1026,13 +1005,8 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iStage
 
-    type ( VariableGroupForm ), allocatable :: &
-      DC  !-- DampingCoefficient
     type ( TimerForm ), pointer :: &
       TimerGhost
-
-    if ( iStage == 1 ) &
-      call Clear ( C % Sources % Value )
 
     !-- Divergence
     if ( associated ( S % ApplyDivergence_C ) ) &
@@ -1043,13 +1017,9 @@ contains
       call S % ApplySources_C ( C % Sources, K, C, TimeStep, iStage )
 
     !-- Relaxation
-    if ( associated ( S % ApplyRelaxation_C ) ) then
-      allocate ( DC )
-      call DC % Initialize ( shape ( K % Value ), ClearOption = .true. )
+    if ( associated ( S % ApplyRelaxation_C ) ) &
       call S % ApplyRelaxation_C &
-             ( C % Sources, K, DC, C, Chart, TimeStep, iStage )
-      deallocate ( DC )
-    end if
+             ( C % Sources, K, C, Chart, TimeStep, iStage )
 
     if ( associated ( S % ApplyDivergence_C ) ) then
       select type ( Chart )
@@ -1060,10 +1030,6 @@ contains
         if ( associated ( TimerGhost ) ) call TimerGhost % Stop ( )
       end select !-- Grid
     end if !-- ApplyDivergence_C
-
-    !-- Harvest completed increment
-    if ( associated ( S % HarvestIncrement_C ) ) &
-      call S % HarvestIncrement_C ( K, C, TimeStep )
 
   end subroutine ComputeStage_C
 
@@ -1336,12 +1302,18 @@ contains
 
     call ID % Compute ( Increment, TimeStep, Weight_RK = S % B ( iStage ) )
 
+    !-- ID % Current is not necessarily associated until after ID % Compute
     associate ( C => ID % Current )
+
+    if ( iStage == 1 ) &
+      call Clear ( C % Sources % Value ( :, : C % N_CONSERVED ) )
+
     do iC = 1, C % N_CONSERVED
       call RecordDivergence &
              ( C % Sources % Value ( :, iC ), Increment % Value ( :, iC ), &
                TimeStep, Weight_RK = S % B ( iStage ) )
     end do !-- iC
+
     end associate !-- C
 
   end subroutine ApplyDivergence_C

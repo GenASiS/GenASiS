@@ -16,8 +16,8 @@ module Sources_F__Form
     integer ( KDI ) :: &
       N_FIELDS_F       = N_FIELDS_F, &
       N_VECTORS_F      = N_VECTORS_F, &
-      GRAVITATIONAL_E  = 0, &
-      RADIATION_E      = 0, &
+      GRAVITATIONAL_G  = 0, &
+      RADIATION_G      = 0, &
       RADIATION_DS     = 0, &
       RADIATION_DP     = 0
     integer ( KDI ), dimension ( 3 ) :: &
@@ -156,8 +156,8 @@ contains
     if ( SF % N_FIELDS == 0 ) &
       SF % N_FIELDS = oF + SF % N_FIELDS_F
 
-    SF % GRAVITATIONAL_E    =  oF + 1
-    SF % RADIATION_E        =  oF + 2
+    SF % GRAVITATIONAL_G    =  oF + 1
+    SF % RADIATION_G        =  oF + 2
     SF % RADIATION_DS       =  oF + 3
     SF % RADIATION_DP       =  oF + 4
     SF % CURVILINEAR_S_D    =  oF + [  5,  6,  7 ]
@@ -175,8 +175,8 @@ contains
     end if
 
     Variable ( oF + 1 : oF + SF % N_FIELDS_F ) &
-      = [ 'Gravitational_E    ', &
-          'Radiation_E        ', &
+      = [ 'Gravitational_G    ', &
+          'Radiation_G        ', &
           'Radiation_DS       ', &
           'Radiation_DP       ', &
           'Curvilinear_S_D_1  ', &
@@ -259,9 +259,9 @@ contains
 
     select type ( F )
     class is ( Fluid_P_Template )
-      VariableUnit ( SF % GRAVITATIONAL_E )  &
+      VariableUnit ( SF % GRAVITATIONAL_G )  &
         =  F % Unit ( F % CONSERVED_ENERGY )  /  TimeUnit
-      VariableUnit ( SF % RADIATION_E )  &
+      VariableUnit ( SF % RADIATION_G )  &
         =  F % Unit ( F % CONSERVED_ENERGY )  /  TimeUnit
     end select !-- F
 

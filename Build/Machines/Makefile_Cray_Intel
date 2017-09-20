@@ -9,8 +9,13 @@ FORTRAN_PROFILE      =
 
 LINK = ftn
 
-#-- Silo library may be  automatically included & linked by 
+#-- Silo library may be automatically included & linked by 
 #-- "module load silo" if provided, otherwise, manually put include and 
-#-- link line flag &  location below
+#-- link line flag & location below
 INCLUDE_SILO = 
 LIBRARY_SILO = 
+
+#-- LAPACK library may be automatically linked by 
+#-- "module load lapack" if provided, otherwise, manually put 
+#-- link line flag & location below
+LIBRARY_LAPACK = 

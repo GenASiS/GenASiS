@@ -21,6 +21,8 @@ module Integrator_C_PS__Template
         CourantFactor
       class ( Current_ASC_Template ), allocatable :: &
         Current_ASC
+      class ( Step_RK_C_ASC_Template ), allocatable :: &
+        Step
       class ( TimeSeries_C_Form ), allocatable :: &
         TimeSeries
   contains
@@ -31,6 +33,8 @@ module Integrator_C_PS__Template
     procedure, private, pass :: &  !-- 2
       ComputeCycle
     procedure, private, pass :: &  !-- 3
+      InitializeStepTimers
+    procedure, private, pass :: &  !-- 3
       ComputeTally
     procedure, private, pass :: &  !-- 3
       RecordTimeSeries
@@ -40,6 +44,8 @@ module Integrator_C_PS__Template
       ComputeCycle_ASC
     procedure, private, pass :: &
       ComputeTimeStepLocal
+    procedure, public, pass :: &
+      ComputeTimeStep_C_ASC
     procedure, public, nopass :: &
       ComputeTimeStepKernel_CSL
   end type Integrator_C_PS_Template
@@ -81,6 +87,13 @@ contains
       call Show ( 'InitializeTemplate_C_PS', 'subroutine', CONSOLE % WARNING )
     end if
 
+    if ( .not. allocated ( I % Step ) ) then
+      call Show ( 'Step not allocated by an extension', &
+                  CONSOLE % WARNING )
+      call Show ( 'Integrator_C_PS__Template', 'module', CONSOLE % WARNING )
+      call Show ( 'InitializeTemplate_C_PS', 'subroutine', CONSOLE % WARNING )
+    end if
+
     I % CourantFactor = 0.7_KDR
     if ( present ( CourantFactorOption ) ) &
       I % CourantFactor = CourantFactorOption
@@ -113,6 +126,8 @@ contains
 
    if ( allocated ( I % TimeSeries ) ) &
      deallocate ( I % TimeSeries )
+   if ( allocated ( I % Step ) ) &
+     deallocate ( I % Step )
    if ( allocated ( I % Current_ASC ) ) &
      deallocate ( I % Current_ASC )
 
@@ -140,6 +155,19 @@ contains
     if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine ComputeCycle
+
+
+  subroutine InitializeStepTimers ( I, BaseLevel )
+
+    class ( Integrator_C_PS_Template ), intent ( inout ) :: &
+      I
+    integer ( KDI ), intent ( in ) :: &
+      BaseLevel
+
+    if ( allocated ( I % Step ) ) &
+      call I % Step % InitializeTimers ( BaseLevel )
+
+  end subroutine InitializeStepTimers
 
 
   subroutine ComputeTally ( I, ComputeChangeOption, IgnorabilityOption )
@@ -240,9 +268,7 @@ contains
     call I % PrepareCycle ( )
     call I % ComputeNewTime ( TimeNew )
 
-    select type ( S => I % Step )
-    class is ( Step_RK_C_ASC_Template )
-
+    associate ( S => I % Step )
     associate ( TimeStep => TimeNew - I % Time )    
 
     select type ( Chart => PS % Chart )
@@ -270,7 +296,7 @@ contains
     end if
 
     end associate !-- TimeStep
-    end select !-- S
+    end associate !-- S
 
   end subroutine ComputeCycle_ASC
 
@@ -282,6 +308,20 @@ contains
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       TimeStepCandidate
 
+    call I % ComputeTimeStep_C_ASC ( TimeStepCandidate ( 1 ), I % Current_ASC )
+
+  end subroutine ComputeTimeStepLocal
+
+
+  subroutine ComputeTimeStep_C_ASC ( I, TimeStepCandidate, CA )
+
+    class ( Integrator_C_PS_Template ), intent ( inout ), target :: &
+      I
+    real ( KDR ), intent ( inout ) :: &
+      TimeStepCandidate
+    class ( Current_ASC_Template ), intent ( in ) :: &
+      CA
+
     class ( GeometryFlatForm ), pointer :: &
       G
     class ( CurrentTemplate ), pointer :: &
@@ -292,8 +332,6 @@ contains
 
     select type ( CSL => PS % Chart )
     class is ( Chart_SL_Template )
-
-    associate ( CA => I % Current_ASC )
 
     G => CSL % Geometry ( )
     C => CA % Current ( )
@@ -309,17 +347,16 @@ contains
              G % Value ( :, G % WIDTH ( 1 ) ), &
              G % Value ( :, G % WIDTH ( 2 ) ), & 
              G % Value ( :, G % WIDTH ( 3 ) ), &
-             CSL % nDimensions, TimeStepCandidate ( 1 ) )
+             CSL % nDimensions, TimeStepCandidate )
 
-    end associate !-- CA
     end select !-- CSL
     end select !-- PS
 
-    TimeStepCandidate ( 1 ) = I % CourantFactor * TimeStepCandidate ( 1 )
+    TimeStepCandidate = I % CourantFactor * TimeStepCandidate
 
     nullify ( C, G )
 
-  end subroutine ComputeTimeStepLocal
+  end subroutine ComputeTimeStep_C_ASC
 
 
   subroutine ComputeTimeStepKernel_CSL &

@@ -43,10 +43,6 @@ module Step_RK_C_ASC_1D__Template
         ApplySources_1D
       type ( ApplyRelaxation_C_Pointer ), dimension ( : ), allocatable :: &
         ApplyRelaxation_1D
-      type ( HarvestIncrement_C_Pointer ), dimension ( : ), allocatable :: &
-        HarvestIncrement_1D
-      type ( HarvestCurrent_C_Pointer ), dimension ( : ), allocatable :: &
-        HarvestCurrent_1D
   contains
     procedure, public, pass :: &
       InitializeTemplate_C_ASC_1D
@@ -154,8 +150,6 @@ contains
     allocate ( S % ApplyDivergence_1D ( S % nCurrents ) )
     allocate ( S % ApplySources_1D ( S % nCurrents ) )
     allocate ( S % ApplyRelaxation_1D ( S % nCurrents ) )
-    allocate ( S % HarvestIncrement_1D ( S % nCurrents ) )
-    allocate ( S % HarvestCurrent_1D ( S % nCurrents ) )
 
   end subroutine InitializeTemplate_C_ASC_1D
 
@@ -246,10 +240,6 @@ contains
 
     call DeallocateStorage ( S )
 
-    if ( allocated ( S % HarvestCurrent_1D ) ) &
-      deallocate ( S % HarvestCurrent_1D )
-    if ( allocated ( S % HarvestIncrement_1D ) ) &
-      deallocate ( S % HarvestIncrement_1D )
     if ( allocated ( S % ApplyRelaxation_1D ) ) &
       deallocate ( S % ApplyRelaxation_1D )
     if ( allocated ( S % ApplySources_1D ) ) &
@@ -381,13 +371,11 @@ contains
       S % ApplyDivergence_C  => S % ApplyDivergence_1D  ( iC ) % Pointer
       S % ApplySources_C     => S % ApplySources_1D     ( iC ) % Pointer
       S % ApplyRelaxation_C  => S % ApplyRelaxation_1D  ( iC ) % Pointer
-      S % HarvestIncrement_C => S % HarvestIncrement_1D ( iC ) % Pointer
 
       call S % ComputeStage_C &
              ( S % IncrementDivergence_1D ( iC ), C, Chart, K, TimeStep, &
                iStage )
 
-      S % HarvestIncrement_C => null ( )
       S % ApplyRelaxation_C  => null ( )
       S % ApplySources_C     => null ( )
       S % ApplyDivergence_C  => null ( )
@@ -443,14 +431,8 @@ contains
       iC  !-- iCurrent
 
     do iC = 1, size ( Current_1D )
-
-      S % HarvestCurrent_C => S % HarvestCurrent_1D ( iC ) % Pointer
-
       call S % LoadSolution &
              ( Solution_1D ( iC ), Current_1D ( iC ) % Pointer )
-
-      S % HarvestCurrent_C => null ( )
-
     end do !-- iC
 
   end subroutine LoadSolution_C_1D
