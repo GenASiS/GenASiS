@@ -1,10 +1,10 @@
 module ProtoCurrentSources_CSL__Form
 
-  !-- ProtoCurrentSources_ChartSingleLevel__Form
+  !-- ProtoSources_C__ChartSingleLevel__Form
 
   use Basics
   use Manifolds
-  use CurrentSources_Form
+  use Sources_C__Form
   use ProtoCurrent_Form
 
   implicit none
@@ -76,9 +76,9 @@ contains
 
     allocate ( FC % FieldOutput )
 
-    allocate ( CurrentSourcesForm :: FC % Field )
+    allocate ( Sources_C_Form :: FC % Field )
     select type ( PCS => FC % Field )
-    class is ( CurrentSourcesForm )
+    class is ( Sources_C_Form )
     select type ( PC => FC % ProtoCurrent_CSL % Field )
     class is ( ProtoCurrentForm )
       call PCS % Initialize &

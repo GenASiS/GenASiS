@@ -2,7 +2,7 @@ module ProtoCurrent_CSL__Form
 
   use Basics
   use Manifolds
-  use CurrentSources_Form
+  use Sources_C__Form
   use ProtoCurrent_Form
   use ProtoCurrentSources_CSL__Form
 
@@ -85,7 +85,7 @@ contains
 
     PC => PCC % ProtoCurrent ( )
     select type ( PCS => PCSC % Field )
-    class is ( CurrentSourcesForm )
+    class is ( Sources_C_Form )
       call PC % SetSources ( PCS )
     end select !-- FF
 

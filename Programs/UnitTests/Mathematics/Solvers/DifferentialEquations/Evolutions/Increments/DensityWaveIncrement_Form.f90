@@ -112,7 +112,7 @@ contains
     call I % Compute ( VG_Increment, TimeStep, Weight_RK )
 
     associate ( PCS => PC % Sources )
-    PCS % Value ( :, 1 : PCS % N_FIELDS_CONSERVED )  &
+    PCS % Value ( :, 1 : PCS % N_FIELDS_C )  &
       =  Weight_RK  *  VG_Increment % Value  /  TimeStep
     end associate !-- PCS
 

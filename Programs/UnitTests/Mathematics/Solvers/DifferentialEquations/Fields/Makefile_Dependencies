@@ -7,7 +7,7 @@ ProtoCurrent_Form.o: \
 ProtoCurrentSources_CSL__Form.o: \
   Basics.o \
   Manifolds.o \
-  CurrentSources_Form.o \
+  Sources_C__Form.o \
   ProtoCurrent_Form.o \
   ProtoCurrentSources_CSL__Form.f90
 
@@ -20,7 +20,7 @@ ProtoCurrentSources_ASC__Form.o: \
 ProtoCurrent_CSL__Form.o: \
   Basics.o \
   Manifolds.o \
-  CurrentSources_Form.o \
+  Sources_C__Form.o \
   ProtoCurrent_Form.o \
   ProtoCurrentSources_CSL__Form.o \
   ProtoCurrent_CSL__Form.f90

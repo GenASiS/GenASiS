@@ -1,9 +1,7 @@
-include $(PATH_EVOLUTIONS)/Makefile_ObjectFiles
-include $(PATH_FIELDS)/Makefile_ObjectFiles
+include $(PATH_DIFFERENTIAL_EQUATIONS)/Makefile_ObjectFiles
 include $(PATH_ALGEBRAIC_EQUATIONS)/Makefile_ObjectFiles
 
 SOLVERS = \
   Solvers.o \
-  $(EVOLUTIONS) \
-  $(FIELDS) \
+  $(DIFFERENTIAL_EQUATIONS) \
   $(ALGEBRAIC_EQUATIONS)

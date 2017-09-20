@@ -1,7 +1,7 @@
 program ProtoCurrent_Form_Test
 
   use Basics
-  use CurrentSources_Form
+  use Sources_C__Form
   use ProtoCurrent_Form
 
   implicit none
@@ -16,7 +16,7 @@ program ProtoCurrent_Form_Test
     LengthUnit
   type ( MeasuredValueForm ), dimension ( 3 ) :: &
     VelocityUnit
-  type ( CurrentSourcesForm ), allocatable :: &
+  type ( Sources_C_Form ), allocatable :: &
     PCS
   type ( ProtoCurrentForm ), allocatable :: &
     PC

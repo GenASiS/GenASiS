@@ -1,7 +1,6 @@
 module Solvers
 
   use AlgebraicEquations
-  use Fields
-  use Evolutions
+  use DifferentialEquations
 
 end module Solvers
