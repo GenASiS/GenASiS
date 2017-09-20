@@ -1,4 +1,4 @@
-PATH_GENASIS = ../../../../../..
+PATH_GENASIS = ../../../../../../..
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
@@ -25,7 +25,7 @@ clobber: clean
 	rm -f RootFinding_Form_Test_*
 	rm -f GreyDegeneracySolver_Test_*
 
-include $(PATH_THIRD_PARTY)/Makefile_Dependencies
+#include $(PATH_THIRD_PARTY)/Makefile_Dependencies
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MANIFOLDS)/Makefile_Dependencies
 include $(PATH_OPERATIONS)/Makefile_Dependencies

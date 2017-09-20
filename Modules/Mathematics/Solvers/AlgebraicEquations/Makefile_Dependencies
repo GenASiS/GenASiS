@@ -1,0 +1,11 @@
+include $(PATH_LINEAR_EQUATIONS)/Makefile_Dependencies
+include $(PATH_NONLINEAR_EQUATIONS)/Makefile_Dependencies
+
+AlgebraicEquations.o: \
+  LinearEquations.o \
+  NonlinearEquations.o \
+  AlgebraicEquations.f90
+
+AlgebraicEquations.a: $(ALGEBRAIC_EQUATIONS)
+	ar r AlgebraicEquations.a $(ALGEBRAIC_EQUATIONS)
+

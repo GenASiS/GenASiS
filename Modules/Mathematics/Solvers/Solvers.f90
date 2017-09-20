@@ -1,7 +1,6 @@
 module Solvers
 
-  use LinearEquations
-  use NonlinearEquations
+  use AlgebraicEquations
   use Fields
   use Evolutions
 

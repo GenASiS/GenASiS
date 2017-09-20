@@ -1,0 +1,7 @@
+include $(PATH_NONLINEAR_EQUATIONS)/Makefile_ObjectFiles
+include $(PATH_LINEAR_EQUATIONS)/Makefile_ObjectFiles
+
+ALGEBRAIC_EQUATIONS = \
+  AlgebraicEquations.o \
+  $(NONLINEAR_EQUATIONS) \
+  $(LINEAR_EQUATIONS)
