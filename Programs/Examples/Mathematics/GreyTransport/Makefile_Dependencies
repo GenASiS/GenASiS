@@ -1,3 +1,11 @@
+SetPlanckSpectrum_Command.o: \
+  Basics.o \
+  SetPlanckSpectrum_Command.f90
+
+SetFermiDiracSpectrum_Command.o: \
+  Basics.o \
+  SetFermiDiracSpectrum_Command.f90
+
 Interactions_Template.o: \
   Basics.o \
   Mathematics.o \
@@ -14,6 +22,12 @@ PhotonMoments_G__Form.o: \
   Mathematics.o \
   RadiationMoments_Form.o \
   PhotonMoments_G__Form.f90
+
+PhotonMoments_S__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  RadiationMoments_Form.o \
+  PhotonMoments_S__Form.f90
 
 Sources_RM__Form.o: \
   Basics.o \
@@ -40,6 +54,7 @@ RadiationMoments_CSL__Form.o: \
   Interactions_Template.o \
   RadiationMoments_Form.o \
   PhotonMoments_G__Form.o \
+  PhotonMoments_S__Form.o \
   Sources_RM__Form.o \
   Sources_RM_CSL__Form.o \
   RadiationMoments_CSL__Form.f90
