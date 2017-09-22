@@ -27,8 +27,6 @@ module Thermalization_Form
       Initialize
     final :: &
       Finalize  
-  !   procedure, private, pass :: &
-  !     ComputeCycle
     procedure, private, pass :: &
       ComputeTimeStepLocal
   end type ThermalizationForm
@@ -37,8 +35,7 @@ module Thermalization_Form
       SetFluid, &
       SetRadiation, &
       SetInteractions, &
-      SetReference!, &
-!       ComputeCycle_BSLL_ASC_CSLD
+      SetReference
 
     real ( KDR ), private :: &
       TemperatureMin, &
@@ -223,25 +220,6 @@ contains
     call T % FinalizeTemplate_C_MS_C_PS ( )
 
   end subroutine Finalize
-
-
-!   subroutine ComputeCycle ( I )
-
-!     class ( ThermalizationForm ), intent ( inout ) :: &
-!       I
-
-!     associate ( Timer => PROGRAM_HEADER % Timer ( I % iTimerComputeCycle ) )
-!     call Timer % Start ( )
-
-!     select type ( MS => I % MomentumSpace )
-!     class is ( Bundle_SLL_ASC_CSLD_Form )
-!       call ComputeCycle_BSLL_ASC_CSLD ( I, MS )
-!     end select !-- MS
-
-!     call Timer % Stop ( )
-!     end associate !-- Timer
-
-!   end subroutine ComputeCycle
 
 
   subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
@@ -543,52 +521,6 @@ contains
     nullify ( F, RM_R, RM_C, RM_FD )
 
   end subroutine SetReference
-
-
-!   subroutine ComputeCycle_BSLL_ASC_CSLD ( T, MS )
-
-!     class ( ThermalizationForm ), intent ( inout ) :: &
-!       T
-!     class ( Bundle_SLL_ASC_CSLD_Form ), intent ( inout ) :: &
-!       MS
-
-!     integer ( KDI ) :: &
-!       iF     !-- iFiber
-!     real ( KDR ) :: &
-!       TimeNew
-!     class ( GeometryFlatForm ), pointer :: &
-!       G
-!     class ( RadiationMomentsForm ), pointer :: &
-!       RM
-
-!     call T % ComputeNewTime ( TimeNew )
-
-!     associate &
-!       ( S   => T % Step, &
-!         RMB => T % RadiationMoments_BSLL_ASC_CSLD, &
-!         CF  => MS % Fiber_CSLL, &
-!         TimeStep => TimeNew - T % Time )    
-
-!     G => MS % Base_CSLD % Geometry ( )
-
-!     do iF = 1, MS % nFibers
-!       associate ( iBC => MS % iaBaseCell ( iF ) )
-!       RM => RMB % RadiationMomentsFiber ( iF )
-!       call S % Compute &
-!              ( RM, CF, T % Time, TimeStep, GeometryOption = G, &
-!                iGeometryValueOption = iBC )
-!       end associate !-- iBC
-!     end do !-- iF
-
-!     T % iCycle = T % iCycle + 1
-!     T % Time = T % Time + TimeStep
-!     if ( T % Time == T % WriteTime ) &
-!       T % IsCheckpointTime = .true.
-
-!     end associate !-- S, etc.
-!     nullify ( G, RM )
-
-!   end subroutine ComputeCycle_BSLL_ASC_CSLD
 
 
 end module Thermalization_Form
