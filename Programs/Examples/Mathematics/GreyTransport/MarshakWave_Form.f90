@@ -194,7 +194,7 @@ contains
     AngularMomentumUnit  =  CoordinateUnit ( 1 ) &
                             *  MassUnit  *  UNIT % SPEED_OF_LIGHT
     
-    !-- RadiationMoments
+    !-- Radiation
 
     allocate ( RadiationMoments_ASC_Form :: MW % Current_ASC_1 )
     select type ( RA => MW % Current_ASC_1 )
@@ -290,7 +290,7 @@ contains
       call Show ( EnergyMax, UNIT % ELECTRON_VOLT, 'EnergyMax' )
     end select !-- InteractionsType
 
-    end associate !-- c_s, etc.
+    end associate !-- Mu, etc.
 
     !-- Initialize template
 
