@@ -230,6 +230,7 @@ contains
              LengthUnitOption = CoordinateUnit ( 1 ), &
              EnergyDensityUnitOption = EnergyDensityUnit )
     call RA % SetInteractions ( IA )
+    end associate !-- IA
 
     !-- Steps
 
@@ -301,7 +302,6 @@ contains
 
     !-- Cleanup
 
-    end associate !-- IA
     end select !-- FA
     end select !-- RA
     end select !-- PS
