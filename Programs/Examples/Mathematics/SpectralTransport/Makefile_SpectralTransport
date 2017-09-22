@@ -1,6 +1,6 @@
 PATH_GENASIS = ../../../../..
 
-all: SineWaveStreaming Thermalization
+all: SineWaveStreaming Thermalization MarshakWave
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
@@ -10,9 +10,7 @@ include ../../GreyTransport/Makefile_ObjectFiles
 
 SPECTRAL_MOMENTS = \
   RadiationMoments_BSLL_ASC_CSLD__Form.o \
-  Interactions_BSLL_ASC_CSLD__Form.o \
-  SetFermiDiracSpectrum_Command.o \
-  SetPlanckSpectrum_Command.o
+  Interactions_BSLL_ASC_CSLD__Form.o
 
 SineWaveStreaming: Basics.a Mathematics.a Fluid.a GreyMoments.a \
   SpectralMoments.a SineWaveStreaming.o
@@ -31,6 +29,14 @@ Thermalization: Basics.a Mathematics.a Fluid.a GreyMoments.a \
           SpectralMoments.a GreyMoments.a Fluid.a Mathematics.a Basics.a \
           $(LIBRARIES)
 
+MarshakWave: Basics.a Mathematics.a Fluid.a GreyMoments.a \
+  SpectralMoments.a MarshakWave.o
+	$(LINK) $(FFLAGS) \
+          -o MarshakWave_$(MACHINE) \
+          MarshakWave.o MarshakWave_Form.o \
+          SpectralMoments.a GreyMoments.a Fluid.a Mathematics.a Basics.a \
+          $(LIBRARIES)
+
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MATHEMATICS)/Makefile_Dependencies
 include ../../FluidDynamics/Makefile_Dependencies
@@ -42,14 +48,7 @@ clean:
 clobber: clean
 	rm -f SineWaveStreaming_*
 	rm -f Thermalization_*
-
-SetPlanckSpectrum_Command.o: \
-  Basics.o \
-  SetPlanckSpectrum_Command.f90
-
-SetFermiDiracSpectrum_Command.o: \
-  Basics.o \
-  SetFermiDiracSpectrum_Command.f90
+	rm -f MarshakWave_*
 
 RadiationMoments_BSLL_ASC_CSLD__Form.o: \
   Basics.o \
@@ -105,3 +104,18 @@ Thermalization.o: \
   Basics.o \
   Thermalization_Form.o \
   Thermalization.f90
+
+MarshakWave_Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_P_NR__Form.o \
+  Sources_F__Form.o \
+  Fluid_ASC__Form.o \
+  RadiationMoments_BSLL_ASC_CSLD__Form.o \
+  Interactions_BSLL_ASC_CSLD__Form.o \
+  MarshakWave_Form.f90
+
+MarshakWave.o: \
+  Basics.o \
+  MarshakWave_Form.o \
+  MarshakWave.f90
