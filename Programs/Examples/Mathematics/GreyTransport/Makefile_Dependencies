@@ -104,6 +104,15 @@ Interactions_MWV_3_G__Form.o: \
   Interactions_MWV_2_G__Form.o \
   Interactions_MWV_3_G__Form.f90
 
+Interactions_MWV_1_S__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_P__Template.o \
+  SetPlanckSpectrum_Command.o \
+  PhotonMoments_S__Form.o \
+  Interactions_Template.o \
+  Interactions_MWV_1_S__Form.f90
+
 Interactions_CSL__Form.o: \
   Basics.o \
   Mathematics.o \
