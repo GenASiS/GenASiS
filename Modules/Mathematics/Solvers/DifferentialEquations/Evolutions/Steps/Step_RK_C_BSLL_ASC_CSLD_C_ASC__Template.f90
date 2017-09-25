@@ -199,10 +199,12 @@ contains
     end associate !-- SD
 
     do iS = 1, S % nSections
-      associate ( ID => S % IncrementDivergence_S ( iS ) )
-      call S % DeallocateBoundaryFluence_CSL &
-             ( ID, S % BoundaryFluence_CSL_S ( iS ) % Array )
-      end associate !-- ID
+      if ( allocated ( S % BoundaryFluence_CSL_S ) ) then
+        associate ( ID => S % IncrementDivergence_S ( iS ) )
+        call S % DeallocateBoundaryFluence_CSL &
+               ( ID, S % BoundaryFluence_CSL_S ( iS ) % Array )
+        end associate !-- ID
+      end if
     end do !-- iS
 
     call S % Deallocate_RK_C_BSLL_ASC_CSLD ( )
