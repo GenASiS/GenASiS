@@ -130,11 +130,17 @@ contains
 
     !-- Step
 
-    allocate ( Step_RK2_C_BSLL_ASC_CSLD_C_ASC_Form :: PWS % Step )
-    select type ( S => PWS % Step )
-    class is ( Step_RK2_C_BSLL_ASC_CSLD_C_ASC_Form )
-    call S % Initialize ( RMB, FA, Name )
-    S % ApplyDivergence % Pointer => null ( )  !-- Disable fluid evolution
+    allocate ( Step_RK2_C_BSLL_ASC_CSLD_Form :: PWS % Step_MS )
+    select type ( S_MS => PWS % Step_MS )
+    class is ( Step_RK2_C_BSLL_ASC_CSLD_Form )
+    call S_MS % Initialize ( RMB, Name )
+    end select !-- S_MS
+
+    allocate ( Step_RK2_C_ASC_Form :: PWS % Step_PS )
+    select type ( S_PS => PWS % Step_PS )
+    class is ( Step_RK2_C_ASC_Form )
+    call S_PS % Initialize ( FA, Name )
+    S_PS % ApplyDivergence % Pointer => null ( )  !-- Disable fluid evolution
     end select !-- S
 
     !-- Diagnostics

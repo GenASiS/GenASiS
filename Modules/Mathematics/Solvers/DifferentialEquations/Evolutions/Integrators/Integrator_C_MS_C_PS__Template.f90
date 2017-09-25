@@ -21,6 +21,10 @@ module Integrator_C_MS_C_PS__Template
         UseLimiterParameter_F
       class ( Current_BSLL_ASC_CSLD_Template ), allocatable :: &
         Current_BSLL_ASC_CSLD
+      class ( Step_RK_C_ASC_Template ), allocatable :: &
+        Step_PS
+      class ( Step_RK_C_BSLL_ASC_CSLD_Template ), allocatable :: &
+        Step_MS
   contains
     procedure, public, pass :: &  !-- 1
       InitializeTemplate_C_MS_C_PS
@@ -29,9 +33,15 @@ module Integrator_C_MS_C_PS__Template
     procedure, private, pass :: &  !-- 2
       ComputeCycle
     procedure, private, pass :: &  !-- 3
+      InitializeStepTimers
+    procedure, private, pass :: &  !-- 3
       ComputeTally
     procedure, private, pass :: &
       ComputeCycle_BSLL_ASC_CSLD
+    procedure, private, pass :: &
+      PrepareStep_MS
+    procedure, private, pass :: &
+      PrepareStep_PS
     procedure, private, pass :: &
       ComputeTimeStepLocal
   end type Integrator_C_MS_C_PS_Template
@@ -98,6 +108,10 @@ contains
     class ( Integrator_C_MS_C_PS_Template ), intent ( inout ) :: &
       I
 
+   if ( allocated ( I % Step_MS ) ) &
+     deallocate ( I % Step_MS )
+   if ( allocated ( I % Step_PS ) ) &
+     deallocate ( I % Step_PS )
    if ( allocated ( I % Current_BSLL_ASC_CSLD ) ) &
      deallocate ( I % Current_BSLL_ASC_CSLD )
 
@@ -125,6 +139,21 @@ contains
     if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine ComputeCycle
+
+
+  subroutine InitializeStepTimers ( I, BaseLevel )
+
+    class ( Integrator_C_MS_C_PS_Template ), intent ( inout ) :: &
+      I
+    integer ( KDI ), intent ( in ) :: &
+      BaseLevel
+
+    if ( allocated ( I % Step_MS ) ) &
+      call I % Step_MS % InitializeTimers ( BaseLevel )
+    if ( allocated ( I % Step_PS ) ) &
+      call I % Step_PS % InitializeTimers ( BaseLevel )
+
+  end subroutine InitializeStepTimers
 
 
   subroutine ComputeTally ( I, ComputeChangeOption, IgnorabilityOption )
@@ -178,12 +207,19 @@ contains
     call I % PrepareCycle ( )
     call I % ComputeNewTime ( TimeNew )
 
-    select type ( S => I % Step )
-    class is ( Step_RK_C_BSLL_ASC_CSLD_C_ASC_Template )
-
     associate ( TimeStep => TimeNew - I % Time )    
 
-    call S % Compute ( I % Time, TimeStep )
+    associate &
+      ( S_MS => I % Step_MS, &
+        S_PS => I % Step_PS )
+
+    call I % PrepareStep_MS ( )
+    call S_MS % Compute ( I % Time, TimeStep )
+    
+    call I % PrepareStep_PS ( )
+    call S_PS % Compute ( I % Time, TimeStep )
+
+    end associate !-- S_MS, S_PS
 
     I % iCycle = I % iCycle + 1
     I % Time = I % Time + TimeStep
@@ -198,9 +234,24 @@ contains
     end if
 
     end associate !-- TimeStep
-    end select !-- S
 
   end subroutine ComputeCycle_BSLL_ASC_CSLD
+
+
+  subroutine PrepareStep_MS ( I )
+
+    class ( Integrator_C_MS_C_PS_Template ), intent ( inout ) :: &
+      I
+
+  end subroutine PrepareStep_MS
+
+
+  subroutine PrepareStep_PS ( I )
+
+    class ( Integrator_C_MS_C_PS_Template ), intent ( inout ) :: &
+      I
+
+  end subroutine PrepareStep_PS
 
 
   subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
