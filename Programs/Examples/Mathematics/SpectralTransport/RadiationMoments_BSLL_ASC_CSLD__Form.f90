@@ -34,7 +34,7 @@ module RadiationMoments_BSLL_ASC_CSLD__Form
     procedure, public, pass :: &
       Initialize
     procedure, public, pass :: &
-      RadiationMomentsFiber
+      RadiationMoments
     procedure, public, pass :: &
       PhotonMoments_S
     procedure, public, pass :: &
@@ -170,7 +170,7 @@ contains
   end subroutine ComputeTally
 
 
-  function RadiationMomentsFiber ( RMB, iFiber ) result ( RMF )
+  function RadiationMoments ( RMB, iFiber ) result ( RMF )
 
     class ( RadiationMoments_BSLL_ASC_CSLD_Form ), intent ( in ) :: &
       RMB
@@ -190,7 +190,7 @@ contains
       end select !-- RMC
     end select !-- RMA
 
-  end function RadiationMomentsFiber
+  end function RadiationMoments
 
 
   function PhotonMoments_S ( RMB, iFiber ) result ( RMF )
@@ -301,7 +301,7 @@ contains
                EnergyUnitOption = FB % EnergyUnit, &
                MomentumUnitOption = FB % MomentumUnit, &
                AngularMomentumUnitOption = FB % AngularMomentumUnit, &
-               SuppressWriteSourcesOption = .true. )
+               SuppressWriteSourcesOption = .false. )
 
       end select !-- AF
       end select !-- RMA
@@ -324,6 +324,8 @@ contains
         call RMA % Initialize &
                ( B % Base_ASC, FB % RadiationType, &
                  NameShortOption = trim ( FB % NameShort ) // EnergyNumber, &
+                 SuppressWriteOption = SuppressWrite, &
+                 SuppressWriteSourcesOption = .true., &
                  Velocity_U_UnitOption = FB % Velocity_U_Unit, &
                  MomentumDensity_U_UnitOption &
                    = FB % MomentumDensity_U_Unit, &
@@ -333,9 +335,7 @@ contains
                  EnergyUnitOption = FB % EnergyUnit, &
                  MomentumUnitOption = FB % MomentumUnit, &
                  AngularMomentumUnitOption = FB % AngularMomentumUnit, &
-                 IgnorabilityOption = CONSOLE % INFO_5, &
-                 SuppressWriteOption = SuppressWrite, &
-                 SuppressWriteSourcesOption = .true. )
+                 IgnorabilityOption = CONSOLE % INFO_5 )
       end select !-- RMA
     end do !-- iE
 
@@ -401,7 +401,7 @@ contains
           iBC => MS % iaBaseCell ( iF ), &
           CF  => MS % Fiber_CSLL )
 
-      RMF => RMB % RadiationMomentsFiber ( iF )
+      RMF => RMB % RadiationMoments ( iF )
       do iC = 1, RMF % N_CONSERVED
         Integrand ( iC ) % Value = RMF % Value ( :, iaC ( iC ) )
       end do !-- iC
