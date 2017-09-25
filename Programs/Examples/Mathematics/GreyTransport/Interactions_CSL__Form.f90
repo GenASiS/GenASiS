@@ -7,6 +7,7 @@ module Interactions_CSL__Form
   use Interactions_MWV_1_G__Form
   use Interactions_MWV_2_G__Form
   use Interactions_MWV_3_G__Form
+  use Interactions_MWV_1_S__Form
 
   implicit none
   private
@@ -163,6 +164,16 @@ contains
       allocate ( Interactions_MWV_3_G_Form :: FC % Field )
       select type ( I => FC % Field )
       type is ( Interactions_MWV_3_G_Form )
+        call I % Initialize &
+               ( FC % LengthUnit, FC % EnergyDensityUnit, &
+                 FC % TemperatureUnit, FC % nValues, &
+                 NameOption = FC % NameShort )
+        call I % SetOutput ( FC % FieldOutput )
+      end select !-- I
+    case ( 'MARSHAK_WAVE_VAYTET_1_SPECTRAL' )
+      allocate ( Interactions_MWV_1_S_Form :: FC % Field )
+      select type ( I => FC % Field )
+      type is ( Interactions_MWV_1_S_Form )
         call I % Initialize &
                ( FC % LengthUnit, FC % EnergyDensityUnit, &
                  FC % TemperatureUnit, FC % nValues, &

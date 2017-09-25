@@ -3,6 +3,7 @@ module RadiationMoments_BSLL_ASC_CSLD__Form
   use Basics
   use Mathematics
   use RadiationMoments_Form
+  use PhotonMoments_S__Form
   use RadiationMoments_ASC__Form
 
   implicit none
@@ -34,6 +35,8 @@ module RadiationMoments_BSLL_ASC_CSLD__Form
       Initialize
     procedure, public, pass :: &
       RadiationMomentsFiber
+    procedure, public, pass :: &
+      PhotonMoments_S
     procedure, public, pass :: &
       ComputeTally
     procedure, public, pass :: &
@@ -188,6 +191,29 @@ contains
     end select !-- RMA
 
   end function RadiationMomentsFiber
+
+
+  function PhotonMoments_S ( RMB, iFiber ) result ( RMF )
+
+    class ( RadiationMoments_BSLL_ASC_CSLD_Form ), intent ( in ) :: &
+      RMB
+    integer ( KDI ), intent ( in ) :: &
+      iFiber
+    class ( PhotonMoments_S_Form ), pointer :: &
+      RMF
+
+    select type ( RMA => RMB % Fiber % Atlas ( iFiber ) % Element )
+    class is ( Field_ASC_Template )
+      select type ( RMC => RMA % Chart )
+      class is ( Field_CSL_Template )   
+        select type ( RM => RMC % Field )
+        class is ( PhotonMoments_S_Form )
+          RMF => RM
+        end select !-- RM
+      end select !-- RMC
+    end select !-- RMA
+
+  end function PhotonMoments_S
 
 
   subroutine SetInteractions ( RMB, IB )

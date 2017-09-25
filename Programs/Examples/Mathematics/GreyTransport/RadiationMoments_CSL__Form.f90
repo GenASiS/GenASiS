@@ -41,6 +41,8 @@ module RadiationMoments_CSL__Form
     procedure, public, pass :: &
       PhotonMoments_G
     procedure, public, pass :: &
+      PhotonMoments_S
+    procedure, public, pass :: &
       SetSources
     procedure, public, pass :: &
       SetInteractions
@@ -142,6 +144,27 @@ contains
     end select !-- Field
 
   end function PhotonMoments_G
+
+
+  function PhotonMoments_S ( RMC ) result ( PM )
+
+    class ( RadiationMoments_CSL_Form ), intent ( in ), target :: &
+      RMC
+    class ( PhotonMoments_S_Form ), pointer :: &
+      PM
+      
+    class ( VariableGroupForm ), pointer :: &
+      Field
+
+    PM => null ( )
+
+    Field => RMC % Field
+    select type ( Field )
+    class is ( PhotonMoments_S_Form )
+    PM => Field
+    end select !-- Field
+
+  end function PhotonMoments_S
 
 
   subroutine SetSources ( RMC, SRMC )

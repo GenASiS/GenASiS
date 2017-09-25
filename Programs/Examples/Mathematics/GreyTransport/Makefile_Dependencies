@@ -64,6 +64,7 @@ RadiationMoments_ASC__Form.o: \
   Mathematics.o \
   RadiationMoments_Form.o \
   PhotonMoments_G__Form.o \
+  PhotonMoments_S__Form.o \
   Sources_RM_CSL__Form.o \
   Sources_RM_ASC__Form.o \
   RadiationMoments_CSL__Form.o \
@@ -121,6 +122,7 @@ Interactions_CSL__Form.o: \
   Interactions_MWV_1_G__Form.o \
   Interactions_MWV_2_G__Form.o \
   Interactions_MWV_3_G__Form.o \
+  Interactions_MWV_1_S__Form.o \
   Interactions_CSL__Form.f90
 
 Interactions_ASC__Form.o: \
