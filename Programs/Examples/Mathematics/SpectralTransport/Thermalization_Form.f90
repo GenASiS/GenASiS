@@ -157,14 +157,20 @@ contains
 
     !-- Step
 
-    allocate ( Step_RK2_C_BSLL_ASC_CSLD_C_ASC_Form :: T % Step )
-    select type ( S => T % Step )
-    class is ( Step_RK2_C_BSLL_ASC_CSLD_C_ASC_Form )
-    call S % Initialize ( RMB, FA, Name )
-    S % ApplyDivergence   % Pointer => null ( )  !-- Disable fluid evolution
-    S % ApplyDivergence_S % Pointer => null ( )  !-- Disable spatial 
-                                                 !   section evolution
-    S % ApplyRelaxation_F % Pointer => ApplyRelaxation_RM
+    allocate ( Step_RK2_C_BSLL_ASC_CSLD_Form :: T % Step_MS )
+    select type ( S_MS => T % Step_MS )
+    class is ( Step_RK2_C_BSLL_ASC_CSLD_Form )
+    call S_MS % Initialize ( RMB, Name )
+    S_MS % ApplyDivergence_S % Pointer => null ( )  !-- Disable spatial 
+                                                    !   section evolution
+    S_MS % ApplyRelaxation_F % Pointer => ApplyRelaxation_RM
+    end select !-- S_MS
+
+    allocate ( Step_RK2_C_ASC_Form :: T % Step_PS )
+    select type ( S_PS => T % Step_PS )
+    class is ( Step_RK2_C_ASC_Form )
+    call S_PS % Initialize ( FA, Name )
+    S_PS % ApplyDivergence % Pointer => null ( )  !-- Disable fluid evolution
     end select !-- S
 
     !-- Diagnostics
@@ -344,7 +350,7 @@ contains
 
     do iF = 1, MS % nFibers
       associate ( iBC => MS % iaBaseCell ( iF ) )
-      RM => RMB % RadiationMomentsFiber ( iF )
+      RM => RMB % RadiationMoments ( iF )
       associate &
         ( J    => RM % Value ( :, RM % COMOVING_ENERGY ), &
           H_1  => RM % Value ( :, RM % COMOVING_MOMENTUM_U ( 1 ) ), &
@@ -424,8 +430,8 @@ contains
 
     do iF = 1, MS % nFibers
       associate ( iBC => MS % iaBaseCell ( iF ) )
-      I  => IB % InteractionsFiber_F ( iF )
-      RM => RMB % RadiationMomentsFiber ( iF )
+      I  => IB % Interactions_F ( iF )
+      RM => RMB % RadiationMoments ( iF )
       associate &
         ( Xi_J  => I % Value ( :, I % EMISSIVITY_J ), &
           Chi_J => I % Value ( :, I % OPACITY_J ), &
