@@ -171,7 +171,7 @@ contains
     class is ( Step_RK2_C_ASC_Form )
     call S_PS % Initialize ( FA, Name )
     S_PS % ApplyDivergence % Pointer => null ( )  !-- Disable fluid evolution
-    end select !-- S
+    end select !-- S_PS
 
     !-- Diagnostics
 

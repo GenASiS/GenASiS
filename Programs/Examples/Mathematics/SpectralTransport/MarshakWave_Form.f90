@@ -9,6 +9,8 @@ module MarshakWave_Form
   use Fluid_ASC__Form
   use SetPlanckSpectrum_Command
   use PhotonMoments_S__Form
+  use Interactions_Template
+  use Interactions_MWV_1_S__Form
   use ApplyRelaxation_RM__Command
   use RadiationMoments_BSLL_ASC_CSLD__Form
   use Interactions_BSLL_ASC_CSLD__Form
@@ -24,12 +26,16 @@ module MarshakWave_Form
       Initialize
     final :: &
       Finalize  
+    procedure, private, pass :: &
+      PrepareStep_MS
+    procedure, private, pass :: &
+      PrepareStep_PS
   end type MarshakWaveForm
 
     private :: &
       SetRadiation, &
-      SetFluid!, &
-      ! SetInteractions, &
+      SetFluid, &
+      SetInteractions!, &
       ! ApplySources_Fluid
 
       ! private :: &
@@ -41,9 +47,9 @@ module MarshakWave_Form
       SpecificHeatCapacity, &
       MeanMolecularWeight, &
       MassDensity, &
-       Temperature, &
-       TemperatureInner, &
-    !   SpecificOpacity, &
+      Temperature, &
+      TemperatureInner, &
+      SpecificOpacity, &
       EnergyScale, &
       EnergyMax, &
       SoundSpeed
@@ -56,8 +62,8 @@ module MarshakWave_Form
       Fluid => null ( )
     class ( RadiationMoments_BSLL_ASC_CSLD_Form ), pointer :: &
       RadiationBundle => null ( )
-    ! class ( InteractionsTemplate ), pointer :: &
-    !   Interactions => null ( )
+    class ( Interactions_BSLL_ASC_CSLD_Form ), pointer :: &
+      InteractionsBundle => null ( )
 
 contains
 
@@ -74,10 +80,10 @@ contains
       nEnergyCells
     real ( KDR ) :: &
       BoxLength, &
-    !   MeanFreePath, &
-    !   OpticalDepth, &
+      MeanFreePath, &
+      OpticalDepth, &
       DynamicalTime, &
-    !   DiffusionTime, &
+      DiffusionTime, &
       FinishTime
     real ( KDR ), dimension ( 3 ) :: &
       Scale
@@ -104,9 +110,8 @@ contains
         C_V    => SpecificHeatCapacity, &
         N_0    => MassDensity, &
         T_0    => Temperature, &
-        T_I    => TemperatureInner &!, &
-    !     Kappa  => SpecificOpacity )
-    )
+        T_I    => TemperatureInner, &
+        Kappa  => SpecificOpacity )
 
     L      =  20.0_KDR    *  UNIT % CENTIMETER
     Gamma  =  1.4_KDR
@@ -114,7 +119,7 @@ contains
     N_0    =  1.0e-3_KDR  *  UNIT % MASS_DENSITY_CGS
     T_0    =  3.0e2_KDR   *  UNIT % KELVIN
     T_I    =  1.0e3_KDR   *  UNIT % KELVIN
-    ! Kappa  =  1.0e3_KDR   *  UNIT % CENTIMETER ** 2 / UNIT % GRAM
+    Kappa  =  1.0e3_KDR   *  UNIT % CENTIMETER ** 2 / UNIT % GRAM
     EnergyScale  =  sqrt ( T_0 * T_I )
 
     call PROGRAM_HEADER % GetParameter ( L,     'BoxLength' )
@@ -123,7 +128,7 @@ contains
     call PROGRAM_HEADER % GetParameter ( N_0,   'MassDensity' )
     call PROGRAM_HEADER % GetParameter ( T_0,   'Temperature' )
     call PROGRAM_HEADER % GetParameter ( T_I,   'TemperatureInner' )
-    ! call PROGRAM_HEADER % GetParameter ( Kappa, 'SpecificOpacity' )
+    call PROGRAM_HEADER % GetParameter ( Kappa, 'SpecificOpacity' )
     call PROGRAM_HEADER % GetParameter ( EnergyScale, 'EnergyScale' )
 
     InteractionsType = 'MARSHAK_WAVE_VAYTET_1_SPECTRAL'
@@ -263,34 +268,40 @@ contains
 
     !-- Step
 
-    allocate ( Step_RK2_C_BSLL_ASC_CSLD_C_ASC_Form :: MW % Step )
-    select type ( S => MW % Step )
-    class is ( Step_RK2_C_BSLL_ASC_CSLD_C_ASC_Form )
-    call S % Initialize ( RMB, FA, Name )
-    S % ApplyRelaxation_F % Pointer => ApplyRelaxation_RM
-    end select !-- S
+    allocate ( Step_RK2_C_BSLL_ASC_CSLD_Form :: MW % Step_MS )
+    select type ( S_MS => MW % Step_MS )
+    class is ( Step_RK2_C_BSLL_ASC_CSLD_Form )
+    call S_MS % Initialize ( RMB, Name )
+    S_MS % ApplyRelaxation_F % Pointer => ApplyRelaxation_RM
+    end select !-- S_MS
+
+    allocate ( Step_RK2_C_ASC_Form :: MW % Step_PS )
+    select type ( S_PS => MW % Step_PS )
+    class is ( Step_RK2_C_ASC_Form )
+    call S_PS % Initialize ( FA, Name )
+    end select !-- S_PS
 
     !-- Initial conditions
 
     call SetRadiation ( MW )
     call SetFluid ( MW )
-    ! call SetInteractions ( MW )
+    call SetInteractions ( MW )
 
     associate &
       ( Mu     => MeanMolecularWeight, & 
         c_s    => SoundSpeed, &
         t_Dyn  => DynamicalTime, &
-    !     Lambda => MeanFreePath, &
-    !     Tau    => OpticalDepth, &
-    !     t_Diff => DiffusionTime, &
+        Lambda => MeanFreePath, &
+        Tau    => OpticalDepth, &
+        t_Diff => DiffusionTime, &
         c      => CONSTANT % SPEED_OF_LIGHT &
       )
 
     t_Dyn   =  L / c_s
 
-    ! Lambda  =  1.0_KDR / ( N_0 * Kappa )
-    ! Tau     =  L / Lambda
-    ! t_Diff  =  L * Tau / c
+    Lambda  =  1.0_KDR / ( N_0 * Kappa )
+    Tau     =  L / Lambda
+    t_Diff  =  L * Tau / c
 
     call Show ( 'MarshakWave parameters' )
     call Show ( Gamma, 'Gamma' )
@@ -301,16 +312,16 @@ contains
     call Show ( c_s, UNIT % SPEED_OF_LIGHT, 'c_s' )
     call Show ( t_Dyn, UNIT % SECOND, 't_Dyn' )
     call Show ( T_I, UNIT % KELVIN, 'T_I' )
-    ! call Show ( Kappa, UNIT % CENTIMETER ** 2 / UNIT % GRAM, 'Kappa' )
-    ! call Show ( Lambda, UNIT % CENTIMETER, 'Lambda' )
-    ! call Show ( Tau, UNIT % IDENTITY, 'Tau' )
-    ! call Show ( t_Diff, UNIT % SECOND, 't_Diff' )
-    ! call Show ( InteractionsType, 'InteractionsType' )
+    call Show ( Kappa, UNIT % CENTIMETER ** 2 / UNIT % GRAM, 'Kappa' )
+    call Show ( Lambda, UNIT % CENTIMETER, 'Lambda' )
+    call Show ( Tau, UNIT % IDENTITY, 'Tau' )
+    call Show ( t_Diff, UNIT % SECOND, 't_Diff' )
+    call Show ( InteractionsType, 'InteractionsType' )
 
-    ! select case ( trim ( InteractionsType ) )
-    ! case ( 'MARSHAK_WAVE_VAYTET_2_GREY', 'MARSHAK_WAVE_VAYTET_3_GREY' )
-    !   call Show ( EnergyMax, UNIT % ELECTRON_VOLT, 'EnergyMax' )
-    ! end select !-- InteractionsType
+    select case ( trim ( InteractionsType ) )
+    case ( 'MARSHAK_WAVE_VAYTET_2_GREY', 'MARSHAK_WAVE_VAYTET_3_GREY' )
+      call Show ( EnergyMax, UNIT % ELECTRON_VOLT, 'EnergyMax' )
+    end select !-- InteractionsType
 
     end associate !-- Mu, etc.
 
@@ -343,6 +354,43 @@ contains
     call MW % FinalizeTemplate_C_MS_C_PS ( )
 
   end subroutine Finalize
+
+
+  subroutine PrepareStep_MS ( I )
+
+    class ( MarshakWaveForm ), intent ( inout ) :: &
+      I
+
+    integer ( KDI ) :: &
+      iF  !-- iFiber
+    class ( PhotonMoments_S_Form ), pointer :: &
+      Radiation
+    class ( InteractionsTemplate ), pointer :: &
+      Interactions
+
+    ! select type ( MS => I % MomentumSpace )
+    ! class is ( Bundle_SLL_ASC_CSLD_Form )
+
+    ! do iF = 1, MS % nFibers
+    !   Radiation    =>  RadiationBundle % PhotonMoments_S ( iF )
+    !   Interactions =>  InteractionsBundle % Interactions ( iF )
+    !   call Clear ( Radiation % Sources % Value )
+    !   call Interactions % Compute ( Radiation )
+    ! end do !-- iF
+
+    ! end select !-- MS
+
+    ! nullify ( Radiation, Interactions )
+
+  end subroutine PrepareStep_MS
+
+
+  subroutine PrepareStep_PS ( I )
+
+    class ( MarshakWaveForm ), intent ( inout ) :: &
+      I
+
+  end subroutine PrepareStep_PS
 
 
   subroutine SetRadiation ( MW )
@@ -472,6 +520,56 @@ contains
     nullify ( F, G )
 
   end subroutine SetFluid
+
+
+  subroutine SetInteractions ( MW )
+
+    type ( MarshakWaveForm ), intent ( inout ), target :: &
+      MW
+
+    integer ( KDI ) :: &
+      iF  !-- iFiber
+    class ( PhotonMoments_S_Form ), pointer :: &
+      R
+    class ( InteractionsTemplate ), pointer :: &
+      I
+
+    associate &
+      ( IB   =>  MW % Interactions_BSLL_ASC_CSLD, &
+        RMB  =>  RadiationBundle, &
+        F    =>  Fluid )
+
+    select type ( MS => MW % MomentumSpace )
+    class is ( Bundle_SLL_ASC_CSLD_Form )
+
+    do iF = 1, MS % nFibers
+      associate ( iBC => MS % iaBaseCell ( iF ) )
+      I  =>   IB % Interactions ( iF )
+      R  =>  RMB % PhotonMoments_S ( iF )
+      select type ( I )
+      type is ( Interactions_MWV_1_S_Form )
+        call I % Set ( R, F, RMB % Energy, SpecificOpacity, iBC )
+    ! type is ( Interactions_MWV_2_G_Form )
+    !   call I % Set ( R, F, SpecificOpacity, EnergyMax )
+    ! type is ( Interactions_MWV_3_G_Form )
+    !   call I % Set ( R, F, SpecificOpacity, EnergyMax, Temperature )
+    class default
+      call Show ( 'Interactions type not recognized', CONSOLE % ERROR )
+      call Show ( 'MarshakWave_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'SetInteractions', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- I
+      end associate !-- iBC
+    end do !-- iF
+
+    !-- Module variable for accessibility in PrepareStep_MS
+    InteractionsBundle => IB
+
+    end select !-- MS
+    end associate !-- IB, etc.
+    nullify ( R, I )
+
+  end subroutine SetInteractions
 
 
 end module MarshakWave_Form

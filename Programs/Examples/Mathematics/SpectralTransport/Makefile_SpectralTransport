@@ -61,6 +61,7 @@ RadiationMoments_BSLL_ASC_CSLD__Form.o: \
 Interactions_BSLL_ASC_CSLD__Form.o: \
   Basics.o \
   Mathematics.o \
+  Interactions_Template.o \
   Interactions_F__Form.o \
   Interactions_ASC__Form.o \
   Interactions_BSLL_ASC_CSLD__Form.f90
@@ -114,6 +115,8 @@ MarshakWave_Form.o: \
   Fluid_ASC__Form.o \
   SetPlanckSpectrum_Command.o \
   PhotonMoments_S__Form.o \
+  Interactions_Template.o \
+  Interactions_MWV_1_S__Form.o \
   ApplyRelaxation_RM__Command.o \
   RadiationMoments_BSLL_ASC_CSLD__Form.o \
   Interactions_BSLL_ASC_CSLD__Form.o \
