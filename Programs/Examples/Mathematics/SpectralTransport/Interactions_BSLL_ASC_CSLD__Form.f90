@@ -2,6 +2,7 @@ module Interactions_BSLL_ASC_CSLD__Form
 
   use Basics
   use Mathematics
+  use Interactions_Template
   use Interactions_F__Form
   use Interactions_ASC__Form
 
@@ -19,7 +20,9 @@ module Interactions_BSLL_ASC_CSLD__Form
     procedure, public, pass :: &
       Initialize
     procedure, public, pass :: &
-      InteractionsFiber_F
+      Interactions
+    procedure, public, pass :: &
+      Interactions_F
     final :: &
       Finalize
     procedure, private, pass :: &
@@ -106,7 +109,30 @@ contains
   end subroutine Initialize
 
 
-  function InteractionsFiber_F ( IB, iFiber ) result ( IF )
+  function Interactions ( IB, iFiber ) result ( IF )
+
+    class ( Interactions_BSLL_ASC_CSLD_Form ), intent ( in ) :: &
+      IB
+    integer ( KDI ), intent ( in ) :: &
+      iFiber
+    class ( InteractionsTemplate ), pointer :: &
+      IF
+
+    select type ( IA => IB % Fiber % Atlas ( iFiber ) % Element )
+    class is ( Field_ASC_Template )
+      select type ( IC => IA % Chart )
+      class is ( Field_CSL_Template )   
+        select type ( I => IC % Field )
+        class is ( InteractionsTemplate )
+          IF => I
+        end select !-- I
+      end select !-- IC
+    end select !-- IA
+
+  end function Interactions
+
+
+  function Interactions_F ( IB, iFiber ) result ( IF )
 
     class ( Interactions_BSLL_ASC_CSLD_Form ), intent ( in ) :: &
       IB
@@ -126,7 +152,7 @@ contains
       end select !-- IC
     end select !-- IA
 
-  end function InteractionsFiber_F
+  end function Interactions_F
 
 
   impure elemental subroutine Finalize ( IB )
