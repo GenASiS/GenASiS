@@ -7,6 +7,9 @@ module MarshakWave_Form
   use Fluid_P_NR__Form
   use Sources_F__Form
   use Fluid_ASC__Form
+  use SetPlanckSpectrum_Command
+  use PhotonMoments_S__Form
+  use ApplyRelaxation_RM__Command
   use RadiationMoments_BSLL_ASC_CSLD__Form
   use Interactions_BSLL_ASC_CSLD__Form
 
@@ -22,6 +25,16 @@ module MarshakWave_Form
     final :: &
       Finalize  
   end type MarshakWaveForm
+
+    private :: &
+      SetRadiation!, &
+      ! SetFluid, &
+      ! SetInteractions, &
+      ! ApplySources_Fluid
+
+      ! private :: &
+      !   ComputeFluidSource_G_S_Radiation_Kernel, &
+      !   ApplySources_Fluid_Kernel
 
     real ( KDR ), private :: &
     !   AdiabaticIndex, &
@@ -41,8 +54,8 @@ module MarshakWave_Form
       InteractionsType
     ! class ( Fluid_P_NR_Form ), pointer :: &
     !   Fluid => null ( )
-    ! class ( PhotonMoments_G_Form ), pointer :: &
-    !   Radiation => null ( )
+    class ( RadiationMoments_BSLL_ASC_CSLD_Form ), pointer :: &
+      RadiationBundle => null ( )
     ! class ( InteractionsTemplate ), pointer :: &
     !   Interactions => null ( )
 
@@ -60,12 +73,12 @@ contains
       iD, &  !-- iDimension
       nEnergyCells
     real ( KDR ) :: &
-      BoxLength!, &
+      BoxLength, &
     !   MeanFreePath, &
     !   OpticalDepth, &
     !   DynamicalTime, &
     !   DiffusionTime, &
-    !   FinishTime
+      FinishTime
     real ( KDR ), dimension ( 3 ) :: &
       Scale
     type ( MeasuredValueForm ) :: &
@@ -117,7 +130,7 @@ contains
     call PROGRAM_HEADER % GetParameter ( InteractionsType, 'InteractionsType' )
 
     select case ( trim ( InteractionsType ) )
-    case ( 'MARSHAK_WAVE_VAYTET_2_GREY', 'MARSHAK_WAVE_VAYTET_3_GREY' )
+    case ( 'MARSHAK_WAVE_VAYTET_2_SPECTRAL', 'MARSHAK_WAVE_VAYTET_3_SPECTRAL' )
       EnergyMax  =  0.620_KDR * UNIT % ELECTRON_VOLT
       call PROGRAM_HEADER % GetParameter ( EnergyMax, 'EnergyMax' )
     end select !-- InteractionsType
@@ -248,9 +261,18 @@ contains
     call RMB % SetInteractions ( IB )
     end associate !-- IB
 
+    !-- Step
+
+    allocate ( Step_RK2_C_BSLL_ASC_CSLD_C_ASC_Form :: MW % Step )
+    select type ( S => MW % Step )
+    class is ( Step_RK2_C_BSLL_ASC_CSLD_C_ASC_Form )
+    call S % Initialize ( RMB, FA, Name )
+    S % ApplyRelaxation_F % Pointer => ApplyRelaxation_RM
+    end select !-- S
+
     !-- Initial conditions
 
-    ! call SetRadiation ( MW )
+    call SetRadiation ( MW )
     ! call SetFluid ( MW )
     ! call SetInteractions ( MW )
 
@@ -291,6 +313,13 @@ contains
 
     ! end associate !-- Mu, etc.
 
+    !-- Initialize template
+
+    FinishTime  =  1.36e-7_KDR  *  UNIT % SECOND
+
+    call MW % InitializeTemplate_C_MS_C_PS &
+           ( Name, TimeUnitOption = TimeUnit, FinishTimeOption = FinishTime )
+
     !-- Cleanup
 
     end select !-- FA
@@ -313,6 +342,71 @@ contains
     call MW % FinalizeTemplate_C_MS_C_PS ( )
 
   end subroutine Finalize
+
+
+  subroutine SetRadiation ( MW )
+
+    type ( MarshakWaveForm ), intent ( inout ) :: &
+      MW
+
+    integer ( KDI ) :: &
+      iF  !-- iFiber
+    class ( GeometryFlatForm ), pointer :: &
+      G
+    class ( PhotonMoments_S_Form ), pointer :: &
+      RM
+
+    select type ( MS => MW % MomentumSpace )
+    class is ( Bundle_SLL_ASC_CSLD_Form )
+    G => MS % Base_CSLD % Geometry ( )
+
+    select type ( RMB => MW % Current_BSLL_ASC_CSLD )
+    type is ( RadiationMoments_BSLL_ASC_CSLD_Form )
+
+    do iF = 1, MS % nFibers
+      associate ( iBC => MS % iaBaseCell ( iF ) )
+      RM => RMB % PhotonMoments_S ( iF )
+      associate &
+        ( J    =>  RM % Value ( :, RM % COMOVING_ENERGY ), &
+          H_1  =>  RM % Value ( :, RM % COMOVING_MOMENTUM_U ( 1 ) ), &
+          H_2  =>  RM % Value ( :, RM % COMOVING_MOMENTUM_U ( 2 ) ), &
+          H_3  =>  RM % Value ( :, RM % COMOVING_MOMENTUM_U ( 3 ) ), &
+          T_0  =>  Temperature, &
+          T_I  =>  TemperatureInner, &
+          E    =>  RMB % Energy, &
+          X    =>  G % Value ( iBC, G % CENTER ( 1 ) ), &
+          Y    =>  G % Value ( iBC, G % CENTER ( 2 ) ), &
+          Z    =>  G % Value ( iBC, G % CENTER ( 3 ) ) )
+
+      if ( X < MinCoordinate ( 1 ) .or. Y < MinCoordinate ( 2 ) &
+            .or. Z < MinCoordinate ( 3 ) ) &
+      then
+        call SetPlanckSpectrum ( E, T_I, J )
+      else
+        call SetPlanckSpectrum ( E, T_0, J )
+      end if
+
+      H_1  =  0.0_KDR
+      H_2  =  0.0_KDR
+      H_3  =  0.0_KDR
+
+      call RM % ComputeFromPrimitive ( iBC, G )
+
+      end associate !-- J, etc.
+      end associate !-- iBC
+    end do !-- iF
+
+    call RMB % LoadSections ( )
+
+    !-- Module variable for accessibility
+    RadiationBundle => RMB
+
+    end select !-- RMB
+    end select !-- MS
+
+    nullify ( G, RM )
+
+  end subroutine SetRadiation
 
 
 end module MarshakWave_Form

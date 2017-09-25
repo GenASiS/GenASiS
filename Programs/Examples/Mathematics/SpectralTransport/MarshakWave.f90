@@ -14,7 +14,7 @@ program MarshakWave
 
   allocate ( MW )
   call MW % Initialize ( PROGRAM_HEADER % Name )
-!  call MW % Evolve ( )
+  call MW % Evolve ( )
   deallocate ( MW )
 
   deallocate ( PROGRAM_HEADER )

@@ -54,6 +54,7 @@ RadiationMoments_BSLL_ASC_CSLD__Form.o: \
   Basics.o \
   Mathematics.o \
   RadiationMoments_Form.o \
+  PhotonMoments_S__Form.o \
   RadiationMoments_ASC__Form.o \
   RadiationMoments_BSLL_ASC_CSLD__Form.f90
 
@@ -111,6 +112,9 @@ MarshakWave_Form.o: \
   Fluid_P_NR__Form.o \
   Sources_F__Form.o \
   Fluid_ASC__Form.o \
+  SetPlanckSpectrum_Command.o \
+  PhotonMoments_S__Form.o \
+  ApplyRelaxation_RM__Command.o \
   RadiationMoments_BSLL_ASC_CSLD__Form.o \
   Interactions_BSLL_ASC_CSLD__Form.o \
   MarshakWave_Form.f90
