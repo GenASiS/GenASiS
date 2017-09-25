@@ -532,7 +532,7 @@ contains
       call PROGRAM_HEADER % Abort ( )
     end select !-- I
 
-    !-- Module variable for accessibility in ApplySources_Fluid below
+    !-- Module variable for accessibility in PrepareStep_1
     Interactions => I
 
     end select !-- FA

@@ -64,13 +64,13 @@ contains
   subroutine Initialize &
                ( RMA, A, RadiationMomentsType, NameShortOption, &
                  RiemannSolverTypeOption, UseLimiterOption, &
-                 AllocateSourcesOption, Velocity_U_UnitOption, &
+                 AllocateSourcesOption, SuppressWriteOption, &
+                 SuppressWriteSourcesOption,  Velocity_U_UnitOption, &
                  MomentumDensity_U_UnitOption, MomentumDensity_D_UnitOption, &
                  EnergyDensityUnitOption, TemperatureUnitOption, &
                  EnergyUnitOption, MomentumUnitOption, &
                  AngularMomentumUnitOption, TimeUnitOption, &
-                 LimiterParameterOption, IgnorabilityOption, &
-                 SuppressWriteOption, SuppressWriteSourcesOption )
+                 LimiterParameterOption, IgnorabilityOption )
 
     class ( RadiationMoments_ASC_Form ), intent ( inout ) :: &
       RMA
@@ -83,7 +83,9 @@ contains
       RiemannSolverTypeOption
     logical ( KDL ), intent ( in ), optional :: &
       UseLimiterOption, &
-      AllocateSourcesOption
+      AllocateSourcesOption, &
+      SuppressWriteOption, &
+      SuppressWriteSourcesOption
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ), optional :: &
       Velocity_U_UnitOption, &
       MomentumDensity_U_UnitOption, &
@@ -99,9 +101,6 @@ contains
       LimiterParameterOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
-    logical ( KDL ), intent ( in ), optional :: &
-      SuppressWriteOption, &
-      SuppressWriteSourcesOption
 
 !    integer ( KDI ) :: &
 !      iB  !-- iBoundary
