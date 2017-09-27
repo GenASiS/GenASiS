@@ -90,8 +90,9 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iBaseCell
 
-    I % iBaseCell         =   iBaseCell
+    I % iBaseCell        =   iBaseCell
     I % SpecificOpacity  =   SpecificOpacity
+    I % Energy           =>  Energy
     I % Fluid            =>  Fluid
     I % Radiation        =>  Radiation
 
@@ -115,7 +116,8 @@ contains
              F % Value ( iBC, F % TEMPERATURE ), &
              I % Value ( :, I % EMISSIVITY_J ), &
              I % Value ( :, I % OPACITY_J ), &
-             I % Value ( :, I % OPACITY_H ) )
+             I % Value ( :, I % OPACITY_H ), &
+             R % Value ( :, R % COMOVING_ENERGY_EQ ) )
     end associate !-- R, etc.
 
   end subroutine Compute
@@ -135,18 +137,19 @@ contains
   end subroutine Finalize
 
 
-  subroutine ComputeKernel ( M, N, T, I, Xi_J, Chi_J, Chi_H )
+  subroutine ComputeKernel ( M, N, T, I, Xi_J, Chi_J, Chi_H, J_Eq )
 
     real ( KDR ), intent ( in ) :: &
       M, &
       N, &
       T
-    class ( Interactions_MWV_1_S_Form ), intent ( inout ) :: &
+    class ( Interactions_MWV_1_S_Form ), intent ( in ) :: &
       I
     real ( KDR ), dimension ( : ), intent ( out ) :: &
       Xi_J, &
       Chi_J, &
-      Chi_H
+      Chi_H, &
+      J_Eq
 
     integer ( KDI ) :: &
       iV, &
@@ -154,16 +157,11 @@ contains
     real ( KDR ) :: &
       Kappa
 
-    Kappa  =  I % SpecificOpacity
-
-    associate &
-      ( RM  =>  I % Radiation, &
-        E   =>  I % Energy )
-    associate &
-      ( J_Eq  =>  RM % Value ( :, RM % COMOVING_ENERGY_EQ ) )
-
+    associate ( E  =>  I % Energy )
     call SetPlanckSpectrum ( E, T, J_Eq )
+    end associate !-- E
 
+    Kappa    =  I % SpecificOpacity
     nValues  =  size ( Xi_J )
 
     !$OMP parallel do private ( iV ) 
@@ -173,9 +171,6 @@ contains
       Chi_H ( iV )  =  Chi_J ( iV )
     end do !-- iV
     !$OMP end parallel do
-
-    end associate !-- J_Eq
-    end associate !-- RM, etc.
 
   end subroutine ComputeKernel
 
