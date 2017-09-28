@@ -39,12 +39,12 @@ module MarshakWave_Form
       SetRadiation, &
       SetFluid, &
       SetInteractions, &
-      IntegrateSources
-      ! ApplySources_Fluid
+      IntegrateSources, &
+      ApplySources_Fluid
 
       private :: &
-        ComputeFluidSource_G_S_Radiation_Kernel!, &
-      !   ApplySources_Fluid_Kernel
+        ComputeFluidSource_G_S_Radiation_Kernel, &
+        ApplySources_Fluid_Kernel
 
     real ( KDR ), private :: &
       AdiabaticIndex, &
@@ -289,6 +289,7 @@ contains
     select type ( S_PS => MW % Step_PS )
     class is ( Step_RK2_C_ASC_Form )
     call S_PS % Initialize ( FA, Name )
+    S_PS % ApplySources % Pointer  =>  ApplySources_Fluid
     end select !-- S_PS
 
     !-- Initial conditions
@@ -378,7 +379,7 @@ contains
     class ( InteractionsTemplate ), pointer :: &
       Interactions
 
-call Show ( '>>> Prepare_MS' )
+!call Show ( '>>> Prepare_MS' )
     select type ( MS => I % MomentumSpace )
     class is ( Bundle_SLL_ASC_CSLD_Form )
 
@@ -386,15 +387,15 @@ call Show ( '>>> Prepare_MS' )
       Radiation    =>  RadiationBundle % PhotonMoments_S ( iF )
       Interactions =>  InteractionsBundle % Interactions ( iF )
       call Clear ( Radiation % Sources % Value )
-if ( iF == 1 ) then
-call Show ( iF, '>>> iF' )
-call Show ( Radiation % Value ( :, Radiation % COMOVING_ENERGY_EQ ), '>>> J_Eq pre' )
-end if
+!if ( iF == 1 ) then
+!call Show ( iF, '>>> iF' )
+!call Show ( Radiation % Value ( :, Radiation % COMOVING_ENERGY_EQ ), '>>> J_Eq pre' )
+!end if
       call Interactions % Compute ( Radiation )
-if ( iF == 1 ) then
-call Show ( Radiation % Value ( :, Radiation % COMOVING_ENERGY_EQ ), '>>> J_Eq' )
-call Show ( Radiation % Value ( :, Radiation % COMOVING_ENERGY ), '>>> J' )
-end if
+!if ( iF == 1 ) then
+!call Show ( Radiation % Value ( :, Radiation % COMOVING_ENERGY_EQ ), '>>> J_Eq' )
+!call Show ( Radiation % Value ( :, Radiation % COMOVING_ENERGY ), '>>> J' )
+!end if
     end do !-- iF
 
     end select !-- MS
@@ -412,7 +413,7 @@ end if
     class ( RadiationMomentsForm ), pointer :: &
       RMEI
 
-call Show ( '>>> Prepare_PS' )
+!call Show ( '>>> Prepare_PS' )
 
     call IntegrateSources ( I )
 
@@ -743,6 +744,53 @@ call Show ( '>>> Prepare_PS' )
   end subroutine IntegrateSources
 
 
+  subroutine ApplySources_Fluid &
+               ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
+
+    class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
+      S
+    class ( Sources_C_Form ), intent ( inout ) :: &
+      Sources_F
+    type ( VariableGroupForm ), intent ( inout ), target :: &
+      Increment
+    class ( CurrentTemplate ), intent ( in ) :: &
+      Fluid
+    real ( KDR ), intent ( in ) :: &
+      TimeStep
+    integer ( KDI ), intent ( in ) :: &
+      iStage
+
+    integer ( KDI ) :: &
+      iEnergy, &
+      iMomentum_1
+
+    select type ( SF => Sources_F )
+    class is ( Sources_F_Form )
+
+    select type ( F => Fluid )
+    class is ( Fluid_P_NR_Form )
+
+    select type ( Chart => S % Chart )
+    class is ( Chart_SL_Template )
+
+    call Search ( F % iaConserved, F % CONSERVED_ENERGY, iEnergy )
+    call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 1 ), iMomentum_1 )
+
+    call ApplySources_Fluid_Kernel &
+           ( Increment % Value ( :, iEnergy ), &
+             Increment % Value ( :, iMomentum_1 ), &
+             Chart % IsProperCell, &
+             SF % Value ( :, SF % RADIATION_G ), &
+             SF % Value ( :, SF % RADIATION_S_D ( 1 ) ), &
+             TimeStep )
+
+    end select !-- Chart
+    end select !-- F
+    end select !-- SF
+
+  end subroutine ApplySources_Fluid
+
+  
   subroutine ComputeFluidSource_G_S_Radiation_Kernel &
                ( FS_R_G, FS_R_S_1, IsProperCell, Q, A_1 )
 
@@ -771,6 +819,38 @@ call Show ( '>>> Prepare_PS' )
     !$OMP end parallel do
 
   end subroutine ComputeFluidSource_G_S_Radiation_Kernel
+
+
+  subroutine ApplySources_Fluid_Kernel &
+               ( K_G, K_S_1, IsProperCell, FS_R_G, FS_R_S_1, dt )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      K_G, &
+      K_S_1
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      IsProperCell
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      FS_R_G, &
+      FS_R_S_1
+    real ( KDR ), intent ( in ) :: &
+      dt
+
+    integer ( KDI ) :: &
+      iV, &
+      nV
+
+    nV = size ( K_G )
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nV
+      if ( .not. IsProperCell ( iV ) ) &
+        cycle
+      K_G ( iV )    =  K_G ( iV )    +  FS_R_G ( iV )    *  dt
+      K_S_1 ( iV )  =  K_S_1 ( iV )  +  FS_R_S_1 ( iV )  *  dt
+    end do
+    !$OMP end parallel do
+
+  end subroutine ApplySources_Fluid_Kernel
 
 
 end module MarshakWave_Form
