@@ -125,7 +125,7 @@ contains
     T_0    =  3.0e2_KDR   *  UNIT % KELVIN
     T_I    =  1.0e3_KDR   *  UNIT % KELVIN
     Kappa  =  1.0e3_KDR   *  UNIT % CENTIMETER ** 2 / UNIT % GRAM
-    EnergyScale  =  sqrt ( T_0 * T_I )
+    EnergyScale  =  T_I
 
     call PROGRAM_HEADER % GetParameter ( L,     'BoxLength' )
     call PROGRAM_HEADER % GetParameter ( Gamma, 'AdiabaticIndex' )
@@ -247,6 +247,7 @@ contains
                = MomentumDensity_D_Unit / CoordinateUnit_MS ( 1 ) ** 3, &
              EnergyDensityUnitOption &
                = EnergyDensityUnit / CoordinateUnit_MS ( 1 ) ** 3, &
+             TemperatureUnitOption = TemperatureUnit, &
              TimeUnitOption = TimeUnit )
 
     !-- Fluid
