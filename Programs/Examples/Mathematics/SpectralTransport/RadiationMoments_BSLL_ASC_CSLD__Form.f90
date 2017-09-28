@@ -19,7 +19,8 @@ module RadiationMoments_BSLL_ASC_CSLD__Form
         EnergyDensityUnit, &
         EnergyUnit, &
         MomentumUnit, &
-        AngularMomentumUnit
+        AngularMomentumUnit, &
+        TimeUnit
       type ( MeasuredValueForm ), dimension ( 3 ) :: &
         Velocity_U_Unit, &
         MomentumDensity_U_Unit, &
@@ -57,7 +58,7 @@ contains
                  Velocity_U_UnitOption, MomentumDensity_U_UnitOption, &
                  MomentumDensity_D_UnitOption, EnergyDensityUnitOption, &
                  EnergyUnitOption, MomentumUnitOption, &
-                 AngularMomentumUnitOption )
+                 AngularMomentumUnitOption, TimeUnitOption )
 
     class ( RadiationMoments_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
       RMB
@@ -75,7 +76,8 @@ contains
       EnergyDensityUnitOption, &
       EnergyUnitOption, &
       MomentumUnitOption, &
-      AngularMomentumUnitOption
+      AngularMomentumUnitOption, &
+      TimeUnitOption
 
     character ( LDL ) :: &
       NameShort
@@ -101,6 +103,8 @@ contains
       RMB % MomentumUnit = MomentumUnitOption
     if ( present ( AngularMomentumUnitOption ) ) &
       RMB % AngularMomentumUnit = AngularMomentumUnitOption
+    if ( present ( TimeUnitOption ) ) &
+      RMB % TimeUnit = TimeUnitOption
 
     ! select type ( B )
     ! class is ( Bundle_SLL_ASC_CSLD_Form )
@@ -294,6 +298,7 @@ contains
 
       call RMA % Initialize &
              ( AF, FB % RadiationType, NameShortOption = FB % NameShort, &
+               SuppressWriteSourcesOption = .false., &
                Velocity_U_UnitOption = FB % Velocity_U_Unit, &
                MomentumDensity_U_UnitOption = FB % MomentumDensity_U_Unit, &
                MomentumDensity_D_UnitOption = FB % MomentumDensity_D_Unit, &
@@ -301,7 +306,7 @@ contains
                EnergyUnitOption = FB % EnergyUnit, &
                MomentumUnitOption = FB % MomentumUnit, &
                AngularMomentumUnitOption = FB % AngularMomentumUnit, &
-               SuppressWriteSourcesOption = .false. )
+               TimeUnitOption = FB % TimeUnit )
 
       end select !-- AF
       end select !-- RMA
@@ -335,6 +340,7 @@ contains
                  EnergyUnitOption = FB % EnergyUnit, &
                  MomentumUnitOption = FB % MomentumUnit, &
                  AngularMomentumUnitOption = FB % AngularMomentumUnit, &
+                 TimeUnitOption = FB % TimeUnit, &
                  IgnorabilityOption = CONSOLE % INFO_5 )
       end select !-- RMA
     end do !-- iE
@@ -355,8 +361,17 @@ contains
       call EI % Initialize &
              ( B % Base_ASC, FB % RadiationType, &
                NameShortOption = trim ( FB % NameShort ) // '_Integral', &
+               Velocity_U_UnitOption = FB % Velocity_U_Unit, &
+               MomentumDensity_U_UnitOption &
+                 = FB % MomentumDensity_U_Unit * EnergyUnit ** 3, &
+               MomentumDensity_D_UnitOption &
+                 = FB % MomentumDensity_D_Unit * EnergyUnit ** 3, &
                EnergyDensityUnitOption &
-                 =  FB % EnergyDensityUnit * EnergyUnit ** 3 )
+                 =  FB % EnergyDensityUnit * EnergyUnit ** 3, &
+               EnergyUnitOption = FB % EnergyUnit, &
+               MomentumUnitOption = FB % MomentumUnit, &
+               AngularMomentumUnitOption = FB % AngularMomentumUnit, &
+               TimeUnitOption = FB % TimeUnit )
     end associate !-- EI
 
     end associate !-- B

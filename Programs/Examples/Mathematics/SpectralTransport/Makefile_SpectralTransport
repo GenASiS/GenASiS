@@ -114,7 +114,10 @@ MarshakWave_Form.o: \
   Sources_F__Form.o \
   Fluid_ASC__Form.o \
   SetPlanckSpectrum_Command.o \
+  RadiationMoments_Form.o \
   PhotonMoments_S__Form.o \
+  Sources_RM__Form.o \
+  RadiationMoments_ASC__Form.o \
   Interactions_Template.o \
   Interactions_MWV_1_S__Form.o \
   ApplyRelaxation_RM__Command.o \

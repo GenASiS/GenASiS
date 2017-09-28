@@ -204,7 +204,8 @@ contains
              MomentumDensity_U_UnitOption = MomentumDensity_U_Unit, &
              MomentumDensity_D_UnitOption = MomentumDensity_D_Unit, &
              EnergyDensityUnitOption = EnergyDensityUnit, &
-             TemperatureUnitOption = TemperatureUnit )
+             TemperatureUnitOption = TemperatureUnit, &
+             TimeUnitOption = TimeUnit )
 
     !-- Fluid
 
@@ -219,7 +220,8 @@ contains
              TemperatureUnitOption = TemperatureUnit, &
              MassUnitOption = MassUnit, EnergyUnitOption = EnergyUnit, &
              MomentumUnitOption = MomentumUnit, &
-             AngularMomentumUnitOption = AngularMomentumUnit )
+             AngularMomentumUnitOption = AngularMomentumUnit, &
+             TimeUnitOption = TimeUnit )
 
     !-- Interactions
 

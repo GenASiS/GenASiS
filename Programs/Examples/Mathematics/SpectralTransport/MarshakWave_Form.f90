@@ -8,7 +8,10 @@ module MarshakWave_Form
   use Sources_F__Form
   use Fluid_ASC__Form
   use SetPlanckSpectrum_Command
+  use RadiationMoments_Form
   use PhotonMoments_S__Form
+  use Sources_RM__Form
+  use RadiationMoments_ASC__Form
   use Interactions_Template
   use Interactions_MWV_1_S__Form
   use ApplyRelaxation_RM__Command
@@ -35,11 +38,12 @@ module MarshakWave_Form
     private :: &
       SetRadiation, &
       SetFluid, &
-      SetInteractions!, &
+      SetInteractions, &
+      IntegrateSources
       ! ApplySources_Fluid
 
-      ! private :: &
-      !   ComputeFluidSource_G_S_Radiation_Kernel, &
+      private :: &
+        ComputeFluidSource_G_S_Radiation_Kernel!, &
       !   ApplySources_Fluid_Kernel
 
     real ( KDR ), private :: &
@@ -97,7 +101,8 @@ contains
       MomentumUnit, &
       AngularMomentumUnit
     type ( MeasuredValueForm ), dimension ( 3 ) :: &
-      CoordinateUnit, &
+      CoordinateUnit_PS, &
+      CoordinateUnit_MS, &
       VelocityUnit, &
       MomentumDensity_U_Unit, &
       MomentumDensity_D_Unit
@@ -152,13 +157,13 @@ contains
              ( [ 'INFLOW', 'INFLOW' ], iDimension = iD )
     end do !-- iD
 
-    CoordinateUnit  =  UNIT % CENTIMETER
+    CoordinateUnit_PS  =  UNIT % CENTIMETER
 
     MinCoordinate  =  0.0_KDR
     MaxCoordinate  =  BoxLength
 
     call PS % CreateChart &
-           ( CoordinateUnitOption = CoordinateUnit, &
+           ( CoordinateUnitOption = CoordinateUnit_PS, &
              MinCoordinateOption = MinCoordinate, &
              MaxCoordinateOption = MaxCoordinate )
 
@@ -182,8 +187,8 @@ contains
     Scale = 0.0_KDR
     Scale ( 1 ) = EnergyScale
 
-    CoordinateUnit = UNIT % IDENTITY
-    CoordinateUnit ( 1 ) = UNIT % ELECTRON_VOLT
+    CoordinateUnit_MS = UNIT % IDENTITY
+    CoordinateUnit_MS ( 1 ) = UNIT % ELECTRON_VOLT
 
     Spacing = ''
     Spacing ( 1 ) = 'COMPACTIFIED'
@@ -194,7 +199,7 @@ contains
     call MS % CreateChart &
            ( SpacingOption = Spacing, &
              CoordinateSystemOption = 'SPHERICAL', &
-             CoordinateUnitOption = CoordinateUnit, &
+             CoordinateUnitOption = CoordinateUnit_MS, &
              ScaleOption = Scale, &
              nCellsOption = [ nEnergyCells, 1, 1 ], &
              nGhostLayersOption = [ 0, 0, 0 ] )
@@ -207,9 +212,9 @@ contains
 
     TimeUnit = UNIT % SECOND
 
-    VelocityUnit ( 1 )     =  CoordinateUnit ( 1 ) / TimeUnit 
-    VelocityUnit ( 2 )     =  CoordinateUnit ( 2 ) / TimeUnit
-    VelocityUnit ( 3 )     =  CoordinateUnit ( 3 ) / TimeUnit
+    VelocityUnit ( 1 )     =  CoordinateUnit_PS ( 1 ) / TimeUnit 
+    VelocityUnit ( 2 )     =  CoordinateUnit_PS ( 2 ) / TimeUnit
+    VelocityUnit ( 3 )     =  CoordinateUnit_PS ( 3 ) / TimeUnit
     MassDensityUnit        =  UNIT % MASS_DENSITY_CGS
     EnergyDensityUnit      =  UNIT % MASS_DENSITY_CGS  &
                               *  UNIT % SPEED_OF_LIGHT ** 2
@@ -217,15 +222,15 @@ contains
     MomentumDensity_D_Unit =  EnergyDensityUnit / UNIT % SPEED_OF_LIGHT
     TemperatureUnit        =  UNIT % KELVIN
 
-    MassUnit  =  MassDensityUnit  *  CoordinateUnit ( 1 )
+    MassUnit  =  MassDensityUnit  *  CoordinateUnit_PS ( 1 )
     if ( PS % nDimensions > 1 ) &
-      MassUnit  =  MassUnit  *  CoordinateUnit ( 2 )
+      MassUnit  =  MassUnit  *  CoordinateUnit_PS ( 2 )
     if ( PS % nDimensions > 2 ) &
-      MassUnit  =  MassUnit  *  CoordinateUnit ( 3 )
+      MassUnit  =  MassUnit  *  CoordinateUnit_PS ( 3 )
 
     EnergyUnit           =  MassUnit  *  UNIT % SPEED_OF_LIGHT ** 2
     MomentumUnit         =  MassUnit  *  UNIT % SPEED_OF_LIGHT
-    AngularMomentumUnit  =  CoordinateUnit ( 1 ) &
+    AngularMomentumUnit  =  CoordinateUnit_PS ( 1 ) &
                             *  MassUnit  *  UNIT % SPEED_OF_LIGHT
     
     !-- Radiation
@@ -236,9 +241,13 @@ contains
     type is ( RadiationMoments_BSLL_ASC_CSLD_Form )
     call RMB % Initialize &
            ( MS, 'PHOTONS_SPECTRAL', &
-             MomentumDensity_U_UnitOption = MomentumDensity_U_Unit, &
-             MomentumDensity_D_UnitOption = MomentumDensity_D_Unit, &
-             EnergyDensityUnitOption = EnergyDensityUnit )
+             MomentumDensity_U_UnitOption &
+               = MomentumDensity_U_Unit / CoordinateUnit_MS ( 1 ) ** 3, &
+             MomentumDensity_D_UnitOption &
+               = MomentumDensity_D_Unit / CoordinateUnit_MS ( 1 ) ** 3, &
+             EnergyDensityUnitOption &
+               = EnergyDensityUnit / CoordinateUnit_MS ( 1 ) ** 3, &
+             TimeUnitOption = TimeUnit )
 
     !-- Fluid
 
@@ -253,7 +262,8 @@ contains
              TemperatureUnitOption = TemperatureUnit, &
              MassUnitOption = MassUnit, EnergyUnitOption = EnergyUnit, &
              MomentumUnitOption = MomentumUnit, &
-             AngularMomentumUnitOption = AngularMomentumUnit )
+             AngularMomentumUnitOption = AngularMomentumUnit, &
+             TimeUnitOption = TimeUnit )
 
     !-- Interactions
 
@@ -261,7 +271,7 @@ contains
     associate ( IB => MW % Interactions_BSLL_ASC_CSLD )
     call IB % Initialize &
            ( MS, InteractionsType, &
-             LengthUnitOption = CoordinateUnit ( 1 ), &
+             LengthUnitOption = CoordinateUnit_PS ( 1 ), &
              EnergyDensityUnitOption = EnergyDensityUnit )
     call RMB % SetInteractions ( IB )
     end associate !-- IB
@@ -368,19 +378,28 @@ contains
     class ( InteractionsTemplate ), pointer :: &
       Interactions
 
-    ! select type ( MS => I % MomentumSpace )
-    ! class is ( Bundle_SLL_ASC_CSLD_Form )
+call Show ( '>>> Prepare_MS' )
+    select type ( MS => I % MomentumSpace )
+    class is ( Bundle_SLL_ASC_CSLD_Form )
 
-    ! do iF = 1, MS % nFibers
-    !   Radiation    =>  RadiationBundle % PhotonMoments_S ( iF )
-    !   Interactions =>  InteractionsBundle % Interactions ( iF )
-    !   call Clear ( Radiation % Sources % Value )
-    !   call Interactions % Compute ( Radiation )
-    ! end do !-- iF
+    do iF = 1, MS % nFibers
+      Radiation    =>  RadiationBundle % PhotonMoments_S ( iF )
+      Interactions =>  InteractionsBundle % Interactions ( iF )
+      call Clear ( Radiation % Sources % Value )
+if ( iF == 1 ) then
+call Show ( iF, '>>> iF' )
+call Show ( Radiation % Value ( :, Radiation % COMOVING_ENERGY_EQ ), '>>> J_Eq pre' )
+end if
+      call Interactions % Compute ( Radiation )
+if ( iF == 1 ) then
+call Show ( Radiation % Value ( :, Radiation % COMOVING_ENERGY_EQ ), '>>> J_Eq' )
+call Show ( Radiation % Value ( :, Radiation % COMOVING_ENERGY ), '>>> J' )
+end if
+    end do !-- iF
 
-    ! end select !-- MS
+    end select !-- MS
 
-    ! nullify ( Radiation, Interactions )
+    nullify ( Radiation, Interactions )
 
   end subroutine PrepareStep_MS
 
@@ -389,6 +408,43 @@ contains
 
     class ( MarshakWaveForm ), intent ( inout ) :: &
       I
+
+    class ( RadiationMomentsForm ), pointer :: &
+      RMEI
+
+call Show ( '>>> Prepare_PS' )
+
+    call IntegrateSources ( I )
+
+    RMEI => RadiationBundle % EnergyIntegral % RadiationMoments ( )
+
+    select type ( SR => RMEI % Sources )
+    class is ( Sources_RM_Form )
+
+    select type ( SF => Fluid % Sources )
+    class is ( Sources_F_Form )
+
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
+
+    select type ( CSL => PS % Chart )
+    class is ( Chart_SL_Template )
+
+    call Clear ( SF % Value )
+
+    call ComputeFluidSource_G_S_Radiation_Kernel &
+           ( SF % Value ( :, SF % RADIATION_G ), & 
+             SF % Value ( :, SF % RADIATION_S_D ( 1 ) ), &
+             CSL % IsProperCell, &
+             SR % Value ( :, SR % INTERACTIONS_J ), &
+             SR % Value ( :, SR % INTERACTIONS_H_D ( 1 ) ) )
+
+    end select !-- CSL
+    end select !-- PS
+    end select !-- SF
+    end select !-- SR
+
+    nullify ( RMEI )
 
   end subroutine PrepareStep_PS
 
@@ -399,9 +455,15 @@ contains
       MW
 
     integer ( KDI ) :: &
-      iF  !-- iFiber
+      iF, &  !-- iFiber
+      iS     !-- iSection
+    real ( KDR ), dimension ( : ), allocatable :: &
+      J_0, &
+      J_I
     class ( GeometryFlatForm ), pointer :: &
       G
+    class ( RadiationMomentsForm ), pointer :: &
+      RS
     class ( PhotonMoments_S_Form ), pointer :: &
       RM
 
@@ -412,28 +474,28 @@ contains
     select type ( RMB => MW % Current_BSLL_ASC_CSLD )
     type is ( RadiationMoments_BSLL_ASC_CSLD_Form )
 
+    associate &
+      ( T_0  =>  Temperature, &
+        T_I  =>  TemperatureInner, &
+        E    =>  RMB % Energy, &
+        X    =>  G % Value ( :, G % CENTER ( 1 ) ), &
+        Y    =>  G % Value ( :, G % CENTER ( 2 ) ), &
+        Z    =>  G % Value ( :, G % CENTER ( 3 ) ) )
+
+    !-- Proper cells
+
     do iF = 1, MS % nFibers
       associate ( iBC => MS % iaBaseCell ( iF ) )
       RM => RMB % PhotonMoments_S ( iF )
       associate &
-        ( J    =>  RM % Value ( :, RM % COMOVING_ENERGY ), &
-          H_1  =>  RM % Value ( :, RM % COMOVING_MOMENTUM_U ( 1 ) ), &
-          H_2  =>  RM % Value ( :, RM % COMOVING_MOMENTUM_U ( 2 ) ), &
-          H_3  =>  RM % Value ( :, RM % COMOVING_MOMENTUM_U ( 3 ) ), &
-          T_0  =>  Temperature, &
-          T_I  =>  TemperatureInner, &
-          E    =>  RMB % Energy, &
-          X    =>  G % Value ( iBC, G % CENTER ( 1 ) ), &
-          Y    =>  G % Value ( iBC, G % CENTER ( 2 ) ), &
-          Z    =>  G % Value ( iBC, G % CENTER ( 3 ) ) )
+        ( J     =>  RM % Value ( :, RM % COMOVING_ENERGY ), &
+          J_Eq  =>  RM % Value ( :, RM % COMOVING_ENERGY_EQ ), &
+          H_1   =>  RM % Value ( :, RM % COMOVING_MOMENTUM_U ( 1 ) ), &
+          H_2   =>  RM % Value ( :, RM % COMOVING_MOMENTUM_U ( 2 ) ), &
+          H_3   =>  RM % Value ( :, RM % COMOVING_MOMENTUM_U ( 3 ) ) )
 
-      if ( X < MinCoordinate ( 1 ) .or. Y < MinCoordinate ( 2 ) &
-            .or. Z < MinCoordinate ( 3 ) ) &
-      then
-        call SetPlanckSpectrum ( E, T_I, J )
-      else
-        call SetPlanckSpectrum ( E, T_0, J )
-      end if
+      call SetPlanckSpectrum ( E, T_0, J )
+      call SetPlanckSpectrum ( E, T_0, J_Eq )
 
       H_1  =  0.0_KDR
       H_2  =  0.0_KDR
@@ -447,13 +509,56 @@ contains
 
     call RMB % LoadSections ( )
 
+    !-- Boundary cells
+
+    allocate &
+      ( J_0 ( MS % nSections ), &
+        J_I ( MS % nSections ) )
+
+    call SetPlanckSpectrum ( E, T_I, J_I )
+    call SetPlanckSpectrum ( E, T_0, J_0 )
+
+    do iS = 1, MS % nSections
+      select type ( RSA => RMB % Section % Atlas ( iS ) % Element )
+      class is ( RadiationMoments_ASC_Form )
+        RS => RSA % RadiationMoments ( )
+        associate &
+          ( J     =>  RS % Value ( :, RS % COMOVING_ENERGY ), &
+            J_Eq  =>  RS % Value ( :, RS % COMOVING_ENERGY_EQ ), &
+            H_1   =>  RS % Value ( :, RS % COMOVING_MOMENTUM_U ( 1 ) ), &
+            H_2   =>  RS % Value ( :, RS % COMOVING_MOMENTUM_U ( 2 ) ), &
+            H_3   =>  RS % Value ( :, RS % COMOVING_MOMENTUM_U ( 3 ) ) )
+        where ( X < MinCoordinate ( 1 ) .or. Y < MinCoordinate ( 2 ) &
+               .or. Z < MinCoordinate ( 3 ) )
+          J     =  J_I ( iS )
+          J_Eq  =  J_I ( iS )
+          H_1   =  0.0_KDR
+          H_2   =  0.0_KDR
+          H_3   =  0.0_KDR
+        end where
+        where ( X > MinCoordinate ( 1 ) .or. Y > MinCoordinate ( 2 ) &
+               .or. Z > MinCoordinate ( 3 ) )
+          J     =  J_0 ( iS )
+          J_Eq  =  J_0 ( iS )
+          H_1   =  0.0_KDR
+          H_2   =  0.0_KDR
+          H_3   =  0.0_KDR
+        end where
+        end associate !-- J, etc.
+        call RS % ComputeFromPrimitive ( G )
+      end select
+    end do
+
+    deallocate ( J_0, J_I )
+    
     !-- Module variable for accessibility
     RadiationBundle => RMB
-
+  
+    end associate !-- T_0, etc.
     end select !-- RMB
     end select !-- MS
 
-    nullify ( G, RM )
+    nullify ( G, RS, RM )
 
   end subroutine SetRadiation
 
@@ -570,6 +675,102 @@ contains
     nullify ( R, I )
 
   end subroutine SetInteractions
+
+
+  subroutine IntegrateSources ( MW )
+
+    type ( MarshakWaveForm ), intent ( inout ), target :: &
+      MW
+
+    integer ( KDI ) :: &
+      iI, &  !-- iIntegral
+      iF, &  !-- iFiber
+      nIntegrals
+    real ( KDR ), dimension ( : ), allocatable :: &
+      Integral
+    type ( Real_1D_Form ), dimension ( : ), allocatable :: &
+      Integrand
+    type ( VolumeIntegralForm ) :: &
+      VI
+    class ( RadiationMomentsForm ), pointer :: &
+      RMEI, &
+      RMF
+
+    associate &
+      ( IB => InteractionsBundle, &
+        RMB => RadiationBundle, &
+        MS => RadiationBundle % Bundle_SLL_ASC_CSLD )
+
+    RMEI => RMB % EnergyIntegral % RadiationMoments ( )
+
+    nIntegrals = 2
+
+    allocate ( Integral  ( nIntegrals ) )
+    allocate ( Integrand ( nIntegrals ) )
+    do iI = 1, nIntegrals
+      call Integrand ( iI ) % Initialize ( RMB % nEnergyValues )
+    end do !-- iC
+
+    do iF = 1, MS % nFibers
+      associate &
+        ( iBC => MS % iaBaseCell ( iF ), &
+          CF  => MS % Fiber_CSLL )
+
+      RMF => RMB % RadiationMoments ( iF )
+      select type ( SF => RMF % Sources )
+      class is ( Sources_RM_Form )
+        Integrand ( 1 ) % Value  &
+          =  SF % Value ( :, SF % INTERACTIONS_J )
+        Integrand ( 2 ) % Value  &
+          =  SF % Value ( :, SF % INTERACTIONS_H_D ( 1 ) )
+      end select !-- SF
+
+      call VI % Compute ( CF, Integrand, Integral )
+
+      select type ( SEI => RMEI % Sources )
+      class is ( Sources_RM_Form )
+        SEI % Value ( iBC, SEI % INTERACTIONS_J ) = Integral ( 1 ) 
+        SEI % Value ( iBC, SEI % INTERACTIONS_H_D ) = Integral ( 1 ) 
+      end select !-- SEI
+      
+      end associate !-- iBC, etc.
+    end do !-- iF
+
+    end associate !-- IB, etc.
+
+    nullify ( RMEI, RMF )
+ 
+  end subroutine IntegrateSources
+
+
+  subroutine ComputeFluidSource_G_S_Radiation_Kernel &
+               ( FS_R_G, FS_R_S_1, IsProperCell, Q, A_1 )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      FS_R_G, &
+      FS_R_S_1
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      IsProperCell
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      Q, &
+      A_1
+
+    integer ( KDI ) :: &
+      iV, &
+      nV
+
+    nV = size ( FS_R_G )
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nV
+      if ( .not. IsProperCell ( iV ) ) &
+        cycle
+      FS_R_G ( iV )    =    FS_R_G ( iV )  -    Q ( iV ) 
+      FS_R_S_1 ( iV )  =  FS_R_S_1 ( iV )  -  A_1 ( iV )
+    end do
+    !$OMP end parallel do
+
+  end subroutine ComputeFluidSource_G_S_Radiation_Kernel
 
 
 end module MarshakWave_Form
