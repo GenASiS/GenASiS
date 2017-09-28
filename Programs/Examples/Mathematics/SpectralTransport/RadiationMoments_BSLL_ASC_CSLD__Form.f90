@@ -18,6 +18,7 @@ module RadiationMoments_BSLL_ASC_CSLD__Form
       type ( MeasuredValueForm ) :: &
         EnergyDensityUnit, &
         EnergyUnit, &
+        TemperatureUnit, &
         MomentumUnit, &
         AngularMomentumUnit, &
         TimeUnit
@@ -57,7 +58,7 @@ contains
                ( RMB, B, RadiationType, NameShortOption, &
                  Velocity_U_UnitOption, MomentumDensity_U_UnitOption, &
                  MomentumDensity_D_UnitOption, EnergyDensityUnitOption, &
-                 EnergyUnitOption, MomentumUnitOption, &
+                 TemperatureUnitOption, EnergyUnitOption, MomentumUnitOption, &
                  AngularMomentumUnitOption, TimeUnitOption )
 
     class ( RadiationMoments_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
@@ -74,6 +75,7 @@ contains
       MomentumDensity_D_UnitOption
     type ( MeasuredValueForm ), intent ( in ), optional :: &
       EnergyDensityUnitOption, &
+      TemperatureUnitOption, &
       EnergyUnitOption, &
       MomentumUnitOption, &
       AngularMomentumUnitOption, &
@@ -90,6 +92,8 @@ contains
 
     if ( present ( EnergyDensityUnitOption ) ) &
       RMB % EnergyDensityUnit = EnergyDensityUnitOption
+    if ( present ( TemperatureUnitOption ) ) &
+      RMB % TemperatureUnit = TemperatureUnitOption
     if ( present ( Velocity_U_UnitOption ) ) &
       RMB % Velocity_U_Unit = Velocity_U_UnitOption
     if ( present ( MomentumDensity_U_UnitOption ) ) &
@@ -279,6 +283,8 @@ contains
       EnergyUnit
     character ( 1 + 2 ) :: &
       EnergyNumber
+    character ( LDF ) :: &
+      RadiationType
 
     associate ( B => FB % Bundle_SLL_ASC_CSLD )
 
@@ -356,10 +362,17 @@ contains
     end select !--CF
     end associate !-- AF
 
+    select case ( trim ( FB % RadiationType ) )
+    case ( 'PHOTONS_SPECTRAL' )
+      RadiationType = 'PHOTONS_GREY'
+    case default
+      RadiationType = FB % RadiationType
+    end select !-- FB % RadiationType
+            
     allocate ( FB % EnergyIntegral )
     associate ( EI => FB % EnergyIntegral )
       call EI % Initialize &
-             ( B % Base_ASC, FB % RadiationType, &
+             ( B % Base_ASC, RadiationType, &
                NameShortOption = trim ( FB % NameShort ) // '_Integral', &
                Velocity_U_UnitOption = FB % Velocity_U_Unit, &
                MomentumDensity_U_UnitOption &
@@ -368,6 +381,7 @@ contains
                  = FB % MomentumDensity_D_Unit * EnergyUnit ** 3, &
                EnergyDensityUnitOption &
                  =  FB % EnergyDensityUnit * EnergyUnit ** 3, &
+               TemperatureUnitOption = FB % TemperatureUnit, &
                EnergyUnitOption = FB % EnergyUnit, &
                MomentumUnitOption = FB % MomentumUnit, &
                AngularMomentumUnitOption = FB % AngularMomentumUnit, &
