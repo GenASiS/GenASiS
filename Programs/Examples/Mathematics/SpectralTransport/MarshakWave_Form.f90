@@ -14,6 +14,8 @@ module MarshakWave_Form
   use RadiationMoments_ASC__Form
   use Interactions_Template
   use Interactions_MWV_1_S__Form
+  use Interactions_MWV_2_S__Form
+  use Interactions_MWV_3_S__Form
   use ApplyRelaxation_RM__Command
   use RadiationMoments_BSLL_ASC_CSLD__Form
   use Interactions_BSLL_ASC_CSLD__Form
@@ -656,10 +658,11 @@ contains
       select type ( I )
       type is ( Interactions_MWV_1_S_Form )
         call I % Set ( R, F, RMB % Energy, SpecificOpacity, iBC )
-    ! type is ( Interactions_MWV_2_G_Form )
-    !   call I % Set ( R, F, SpecificOpacity, EnergyMax )
-    ! type is ( Interactions_MWV_3_G_Form )
-    !   call I % Set ( R, F, SpecificOpacity, EnergyMax, Temperature )
+      type is ( Interactions_MWV_2_S_Form )
+        call I % Set ( R, F, RMB % Energy, SpecificOpacity, EnergyMax, iBC )
+      type is ( Interactions_MWV_3_S_Form )
+        call I % Set ( R, F, RMB % Energy, SpecificOpacity, EnergyMax, &
+                       Temperature, iBC )
     class default
       call Show ( 'Interactions type not recognized', CONSOLE % ERROR )
       call Show ( 'MarshakWave_Form', 'module', CONSOLE % ERROR )

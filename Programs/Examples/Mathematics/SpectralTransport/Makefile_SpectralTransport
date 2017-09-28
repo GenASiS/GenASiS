@@ -120,6 +120,8 @@ MarshakWave_Form.o: \
   RadiationMoments_ASC__Form.o \
   Interactions_Template.o \
   Interactions_MWV_1_S__Form.o \
+  Interactions_MWV_2_S__Form.o \
+  Interactions_MWV_3_S__Form.o \
   ApplyRelaxation_RM__Command.o \
   RadiationMoments_BSLL_ASC_CSLD__Form.o \
   Interactions_BSLL_ASC_CSLD__Form.o \
