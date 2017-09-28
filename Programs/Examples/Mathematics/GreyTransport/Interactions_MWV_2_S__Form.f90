@@ -15,6 +15,7 @@ module Interactions_MWV_2_S__Form
   type, public, extends ( Interactions_MWV_1_S_Form ) :: &
     Interactions_MWV_2_S_Form
       real ( KDR ) :: &
+        SpecificOpacityFloor = 0.0_KDR, &
         EnergyMax = 0.0_KDR
   contains
     procedure, private, pass :: &
@@ -66,8 +67,8 @@ contains
 
 
   subroutine Set_MWV_2_S &
-               ( I, Radiation, Fluid, Energy, SpecificOpacity, EnergyMax, &
-                 iBaseCell )
+               ( I, Radiation, Fluid, Energy, SpecificOpacity, &
+                 SpecificOpacityFloor, EnergyMax, iBaseCell )
 
     class ( Interactions_MWV_2_S_Form ), intent ( inout ) :: &
       I
@@ -79,12 +80,14 @@ contains
       Energy
     real ( KDR ), intent ( in ) :: &
       SpecificOpacity, &
+      SpecificOpacityFloor, &
       EnergyMax
     integer ( KDI ), intent ( in ) :: &
       iBaseCell
 
     call I % Set ( Radiation, Fluid, Energy, SpecificOpacity, iBaseCell )
 
+    I % SpecificOpacityFloor = SpecificOpacityFloor
     I % EnergyMax = EnergyMax
 
   end subroutine Set_MWV_2_S
@@ -156,7 +159,7 @@ contains
     call SetPlanckSpectrum ( E, T, J_Eq )
 
     Kappa_0    =  I % SpecificOpacity
-    Kappa_Min  =  10.0_KDR   *  UNIT % CENTIMETER ** 2 / UNIT % GRAM
+    Kappa_Min  =  I % SpecificOpacityFloor
     E_Max      =  I % EnergyMax
     nValues    =  size ( Xi_J )
 

@@ -56,6 +56,7 @@ module MarshakWave_Form
       Temperature, &
       TemperatureInner, &
       SpecificOpacity, &
+      SpecificOpacityFloor, &
       EnergyScale, &
       EnergyMax, &
       SoundSpeed
@@ -118,7 +119,8 @@ contains
         N_0    => MassDensity, &
         T_0    => Temperature, &
         T_I    => TemperatureInner, &
-        Kappa  => SpecificOpacity )
+        Kappa  => SpecificOpacity, &
+        Kappa_Min => SpecificOpacityFloor )
 
     L      =  20.0_KDR    *  UNIT % CENTIMETER
     Gamma  =  1.4_KDR
@@ -127,6 +129,7 @@ contains
     T_0    =  3.0e2_KDR   *  UNIT % KELVIN
     T_I    =  1.0e3_KDR   *  UNIT % KELVIN
     Kappa  =  1.0e3_KDR   *  UNIT % CENTIMETER ** 2 / UNIT % GRAM
+    Kappa_Min    =  10.0_KDR  *  UNIT % CENTIMETER ** 2 / UNIT % GRAM
     EnergyScale  =  T_I
 
     call PROGRAM_HEADER % GetParameter ( L,     'BoxLength' )
@@ -136,6 +139,8 @@ contains
     call PROGRAM_HEADER % GetParameter ( T_0,   'Temperature' )
     call PROGRAM_HEADER % GetParameter ( T_I,   'TemperatureInner' )
     call PROGRAM_HEADER % GetParameter ( Kappa, 'SpecificOpacity' )
+    call PROGRAM_HEADER % GetParameter ( Kappa, 'SpecificOpacity' )
+    call PROGRAM_HEADER % GetParameter ( Kappa_Min,   'SpecificOpacityFloor' )
     call PROGRAM_HEADER % GetParameter ( EnergyScale, 'EnergyScale' )
 
     InteractionsType = 'MARSHAK_WAVE_VAYTET_1_SPECTRAL'
@@ -659,10 +664,11 @@ contains
       type is ( Interactions_MWV_1_S_Form )
         call I % Set ( R, F, RMB % Energy, SpecificOpacity, iBC )
       type is ( Interactions_MWV_2_S_Form )
-        call I % Set ( R, F, RMB % Energy, SpecificOpacity, EnergyMax, iBC )
+        call I % Set ( R, F, RMB % Energy, SpecificOpacity, &
+                       SpecificOpacityFloor, EnergyMax, iBC )
       type is ( Interactions_MWV_3_S_Form )
-        call I % Set ( R, F, RMB % Energy, SpecificOpacity, EnergyMax, &
-                       Temperature, iBC )
+        call I % Set ( R, F, RMB % Energy, SpecificOpacity, &
+                       SpecificOpacityFloor, EnergyMax, Temperature, iBC )
     class default
       call Show ( 'Interactions type not recognized', CONSOLE % ERROR )
       call Show ( 'MarshakWave_Form', 'module', CONSOLE % ERROR )

@@ -66,8 +66,8 @@ contains
 
 
   subroutine Set_MWV_3_S &
-               ( I, Radiation, Fluid, Energy, SpecificOpacity, EnergyMax, &
-                 TemperatureScale, iBaseCell )
+               ( I, Radiation, Fluid, Energy, SpecificOpacity, &
+                 SpecificOpacityFloor, EnergyMax, TemperatureScale, iBaseCell )
 
     class ( Interactions_MWV_3_S_Form ), intent ( inout ) :: &
       I
@@ -79,13 +79,14 @@ contains
       Energy
     real ( KDR ), intent ( in ) :: &
       SpecificOpacity, &
+      SpecificOpacityFloor, &
       EnergyMax, &
       TemperatureScale
     integer ( KDI ), intent ( in ) :: &
       iBaseCell
 
-    call I % Set ( Radiation, Fluid, Energy, SpecificOpacity, EnergyMax, &
-                   iBaseCell )
+    call I % Set ( Radiation, Fluid, Energy, SpecificOpacity, &
+                   SpecificOpacityFloor, EnergyMax, iBaseCell )
 
     I % TemperatureScale = TemperatureScale
 
@@ -159,7 +160,7 @@ contains
     call SetPlanckSpectrum ( E, T, J_Eq )
 
     Kappa_0    =  I % SpecificOpacity
-    Kappa_Min  =  10.0_KDR   *  UNIT % CENTIMETER ** 2 / UNIT % GRAM
+    Kappa_Min  =  I % SpecificOpacityFloor
     E_Max      =  I % EnergyMax
     T_0        =  I % TemperatureScale
     nValues    =  size ( Xi_J )
