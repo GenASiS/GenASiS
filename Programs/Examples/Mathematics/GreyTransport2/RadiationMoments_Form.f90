@@ -940,6 +940,7 @@ contains
     !$OMP parallel do private ( iV )
     do iV = 1, nValues
       if ( E ( iV )  >  0.0_KDR ) then
+
         call ComputeComovingNonlinearSolve &
                ( J ( iV ), H_1 ( iV ), H_2 ( iV ), H_3 ( iV ), FF ( iV ), &
                  SF ( iV ), E ( iV ), S_1 ( iV ), S_2 ( iV ), S_3 ( iV ), &
@@ -984,7 +985,16 @@ contains
 
     !$OMP parallel do private ( iV )
     do iV = 1, nValues
-      if ( H ( iV )  >  J ( iV ) ) then
+       if ( J ( iV ) < 0.0_KDR ) then
+         J ( iV )   = 0.0_KDR
+         H_1 ( iV ) = 0.0_KDR
+         H_2 ( iV ) = 0.0_KDR
+         H_3 ( iV ) = 0.0_KDR
+         E ( iV )   = 0.0_KDR
+         S_1 ( iV ) = 0.0_KDR
+         S_2 ( iV ) = 0.0_KDR
+         S_3 ( iV ) = 0.0_KDR
+      else if ( H ( iV )  >  J ( iV ) ) then
         H_1 ( iV )  =  ( H_1 ( iV )  /  H ( iV ) )  *  J ( iV )
         H_2 ( iV )  =  ( H_2 ( iV )  /  H ( iV ) )  *  J ( iV )
         H_3 ( iV )  =  ( H_3 ( iV )  /  H ( iV ) )  *  J ( iV )
@@ -1369,7 +1379,7 @@ contains
                  +  M_DD_33  *  H_3 ** 2 )
     
     if ( H  <=  J ) then
-      FF  =  H  /  max ( J, tiny ( 0.0_KDR ) )
+      FF  =  H  /  max ( J, sqrt ( tiny ( 0.0_KDR ) ) )
     else
       FF  =  1.0_KDR
     end if
@@ -1403,7 +1413,7 @@ contains
     H_Sq  =  max (                H_U ( 1 ) ** 2  &
                    +  M_DD_22  *  H_U ( 2 ) ** 2  &
                    +  M_DD_33  *  H_U ( 3 ) ** 2, & 
-                   tiny ( 0.0_KDR ) ) 
+                   sqrt ( tiny ( 0.0_KDR ) ) ) 
 
     do jD = 1, 3
       K_D ( jD )  =  0.5_KDR  *  ( 3.0_KDR * SF  -  1.0_KDR )  &
@@ -1443,6 +1453,7 @@ contains
       Norm_H, NormDelta_H
     real ( KDR ), dimension ( 3 ) :: &
       K_U_Dim_D
+    
 
     MaxIterations  =  100
 
@@ -1494,8 +1505,10 @@ contains
                                +  M_DD_22  *  ( H_2 - H_Old_2 ) ** 2  &
                                +  M_DD_33  *  ( H_3 - H_Old_3 ) ** 2 ) )
 
-      Delta_J_J  =  abs ( J - J_Old )  /  max ( abs ( J ), tiny ( 0.0_KDR ) )
-      Delta_H_H  =  NormDelta_H  /  max ( Norm_H, tiny ( 0.0_KDR ) )
+      Delta_J_J  =  abs ( J - J_Old )  &
+                    /  max ( abs ( J ), sqrt ( tiny ( 0.0_KDR ) ) )
+      Delta_H_H  =  NormDelta_H  &
+                    /  max ( Norm_H, sqrt ( tiny ( 0.0_KDR ) ) )
 
       if ( Delta_J_J  <  1.0e-10_KDR &
            .and. Delta_H_H  <  1.0e-9_KDR ) &
