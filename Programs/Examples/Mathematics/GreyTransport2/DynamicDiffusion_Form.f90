@@ -112,9 +112,6 @@ contains
     class is ( Atlas_SC_Form )
     call PS % Initialize ( 'PositionSpace', PROGRAM_HEADER % Communicator )
     
-    PS % nDimensions = 2
-    call PROGRAM_HEADER % GetParameter ( PS % nDimensions, 'nDimensions' )
-    
     select case ( PS % nDimensions )
       case ( 1 ) 
          CoordinateSystem = 'CARTESIAN'
@@ -132,12 +129,14 @@ contains
 
     select case ( CoordinateSystem )
       case ( 'CARTESIAN' )
-        MinCoordinate = [ 0.0_KDR, 0.0_KDR, 0.0_KDR ]
-        MaxCoordinate = [ 3.0_KDR, 2.0_KDR, 0.0_KDR ]
+        MinCoordinate = [ 0.0_KDR, 1.0_KDR, 0.0_KDR ]
+        MaxCoordinate = [ 3.0_KDR, 1.0_KDR, 0.0_KDR ]
         call PS % SetBoundaryConditionsFace &
                ( [ 'OUTFLOW', 'OUTFLOW' ], iDimension = 1 )
         nCells = [ 512, 1, 1 ]
         if ( PS % nDimensions > 1 ) then
+          MinCoordinate = [ 0.0_KDR, 0.0_KDR, 0.0_KDR ]
+          MaxCoordinate = [ 3.0_KDR, 2.0_KDR, 0.0_KDR ]
           call PS % SetBoundaryConditionsFace &
                  ( [ 'OUTFLOW', 'OUTFLOW' ], iDimension = 2 )
            nCells = [ 512, 256, 1 ]
@@ -546,36 +545,21 @@ contains
       class is ( Atlas_SC_Form )
     associate ( nD => PS % nDimensions ) 
 
-    if ( nD > 1 ) then
       !$OMP parallel do private ( iV )
       do iV = 1, nValues
         R_sq       =  ( X ( iV ) - X0 ) ** 2 + ( Y ( iV ) - Y0 ) ** 2
-        J ( iV )   = J0 * exp ( - R_sq / ( 4.0_KDR * D0 * T0 ) )
+        J ( iV )   = max ( J0 * exp ( - R_sq / ( 4.0_KDR * D0 * T0 ) ), &
+                           sqrt ( tiny ( 0.0_KDR ) ) )
         HX ( iV )  = J0 * ( X ( iV ) - X0 ) / ( 2.0_KDR * T0 ) &
-                        * exp ( - R_sq / ( 4.0_KDR * D0  * T0 ) )
+                           * exp ( - R_sq / ( 4.0_KDR * D0  * T0 ) )
         HY ( iV )  = J0 * ( Y ( iV ) - Y0 ) / ( 2.0_KDR * T0 ) &
-                        * exp ( - R_sq / ( 4.0_KDR * D0 * T0 ) )
+                           * exp ( - R_sq / ( 4.0_KDR * D0 * T0 ) )
         HZ ( iV )  = 0.0_KDR
         VX ( iV )  = Beta * CONSTANT % SPEED_OF_LIGHT
         VY ( iV )  = 0.0_KDR
         VZ ( iV )  = 0.0_KDR
       end do !-- iV
       !$OMP end parallel do
-    else
-      !$OMP parallel do private ( iV )
-      do iV = 1, nValues
-        R_sq       =  ( X ( iV ) - X0 ) ** 2
-        J ( iV )   = J0 * exp ( - R_sq / ( 4.0_KDR * D0 * T0 ) )
-        HX ( iV )  = J0 * ( X ( iV ) - X0 ) / ( 2.0_KDR * T0 ) &
-                        * exp ( - R_sq / ( 4.0_KDR * D0  * T0 ) )
-        HY ( iV )  = 0.0_KDR
-        HZ ( iV )  = 0.0_KDR
-        VX ( iV )  = Beta * CONSTANT % SPEED_OF_LIGHT
-        VY ( iV )  = 0.0_KDR
-        VZ ( iV )  = 0.0_KDR
-      end do !-- iV
-      !$OMP end parallel do
-    end if
     
     end associate !-- nD
     end select !-- PS
