@@ -260,7 +260,7 @@ contains
     class is ( Sources_F_Form )
       associate &
         ( SVM => FS % Value ( :, FS % GRAVITATIONAL_S_D ( 2 ) ), &
-          SVE => FS % Value ( :, FS % GRAVITATIONAL_E ) )
+          SVE => FS % Value ( :, FS % GRAVITATIONAL_G ) )
       SVM  =  SVM  -  S % B ( iStage ) * N * A 
       SVE  =  SVE  -  S % B ( iStage ) * N * A * VY 
       end associate !-- SVM, etc.

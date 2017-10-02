@@ -405,7 +405,7 @@ contains
            ( Increment % Value ( :, iMomentum_1 ), &
              Increment % Value ( :, iEnergy ), &
              FS % Value ( :, FS % GRAVITATIONAL_S_D ( 1 ) ), &
-             FS % Value ( :, FS % GRAVITATIONAL_E ), &
+             FS % Value ( :, FS % GRAVITATIONAL_G ), &
              Chart % IsProperCell, &
              F % Value ( :, F % COMOVING_DENSITY ), &
              F % Value ( :, F % VELOCITY_U ( 1 ) ), &
