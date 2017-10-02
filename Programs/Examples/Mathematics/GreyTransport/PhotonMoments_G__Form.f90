@@ -126,8 +126,7 @@ contains
                                       RM % FLUX_FACTOR, &
                                       RM % STRESS_FACTOR, &
                                       RM % TEMPERATURE_PARAMETER, &
-                                      RM % TEMPERATURE_PARAMETER_EQ, &
-                                      RM % COMOVING_ENERGY_EQ ], &
+                                      RM % TEMPERATURE_PARAMETER_EQ ], &
              VectorOption = [ 'ComovingMomentum_U' ], &
              VectorIndicesOption = VectorIndices )
 
@@ -184,13 +183,12 @@ contains
     
     associate &
       ( J    => RMV ( oV + 1 : oV + nV, C % COMOVING_ENERGY ), &
-        J_EQ => RMV ( oV + 1 : oV + nV, C % COMOVING_ENERGY_EQ ), &
         T    => RMV ( oV + 1 : oV + nV, C % TEMPERATURE_PARAMETER ), &
         T_EQ => RMV ( oV + 1 : oV + nV, C % TEMPERATURE_PARAMETER_EQ ) )
 
     if ( associated ( C % Interactions ) ) &
       call C % Interactions % ComputeEquilibriumParameters ( T_EQ, C )
-    call C % ComputeSpectralParameters ( T, J_EQ, J, T_EQ )
+    call C % ComputeSpectralParameters ( T, J, T_EQ )
 
     end associate !-- J, etc.
     nullify ( RMV )
@@ -238,13 +236,12 @@ contains
     
     associate &
       ( J    => RMV ( oV + 1 : oV + nV, C % COMOVING_ENERGY ), &
-        J_EQ => RMV ( oV + 1 : oV + nV, C % COMOVING_ENERGY_EQ ), &
         T    => RMV ( oV + 1 : oV + nV, C % TEMPERATURE_PARAMETER ), &
         T_EQ => RMV ( oV + 1 : oV + nV, C % TEMPERATURE_PARAMETER_EQ ) )
 
     if ( associated ( C % Interactions ) ) &
       call C % Interactions % ComputeEquilibriumParameters ( T_EQ, C )
-    call C % ComputeSpectralParameters ( T, J_EQ, J, T_EQ )
+    call C % ComputeSpectralParameters ( T, J, T_EQ )
 
     end associate !-- J, etc.
     nullify ( RMV )
@@ -254,14 +251,13 @@ contains
 
   subroutine ComputeSpectralParameters_PM &
 !               ( T, Eta, E_Ave, F_Ave, J_EQ, RM, J, N, T_EQ, Eta_EQ )
-               ( T, J_EQ, PM, J, T_EQ )
+               ( T, PM, J, T_EQ )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      T, &
+      T
 !       Eta, &
 !       E_Ave, &
 !       F_Ave, &
-      J_EQ
     class ( PhotonMoments_G_Form ), intent ( in ) :: &
       PM
     real ( KDR ), dimension ( : ), intent ( in ) :: &
@@ -282,8 +278,7 @@ contains
 
     !$OMP parallel do private ( iV )
     do iV = 1, nValues
-      T    ( iV )  =  ( J ( iV )  /  a ) ** ( 0.25_KDR )
-      J_EQ ( iV )  =  a  *  T_EQ ( iV ) ** 4
+      T ( iV )  =  ( J ( iV )  /  a ) ** ( 0.25_KDR )
     end do !-- iV
     !$OMP end parallel do
 

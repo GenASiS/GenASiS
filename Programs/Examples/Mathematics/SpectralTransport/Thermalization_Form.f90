@@ -353,7 +353,6 @@ contains
       RM => RMB % RadiationMoments ( iF )
       associate &
         ( J     =>  RM % Value ( :, RM % COMOVING_ENERGY ), &
-          J_Eq  =>  RM % Value ( :, RM % COMOVING_ENERGY_EQ ), &
           H_1   =>  RM % Value ( :, RM % COMOVING_MOMENTUM_U ( 1 ) ), &
           H_2   =>  RM % Value ( :, RM % COMOVING_MOMENTUM_U ( 2 ) ), &
           H_3   =>  RM % Value ( :, RM % COMOVING_MOMENTUM_U ( 3 ) ), &
@@ -361,7 +360,6 @@ contains
           E     =>  RMB % Energy )
 
       call SetPlanckSpectrum ( E, T, J )
-      call SetPlanckSpectrum ( E, T, J_Eq )
 
       Amplitude = 0.9_KDR
       do iE = 1, RMB % nEnergyValues
@@ -438,9 +436,11 @@ contains
         ( Xi_J  => I % Value ( :, I % EMISSIVITY_J ), &
           Chi_J => I % Value ( :, I % OPACITY_J ), &
           Chi_H => I % Value ( :, I % OPACITY_H ), &
-          J_Eq  => RM % Value ( :, RM % COMOVING_ENERGY_EQ ), &
+          J_Eq  => I % Value ( :, I % EQUILIBRIUM_J ), &
           T     => F % Value ( iBC, F % TEMPERATURE ), &
           E     => RMB % Energy )
+
+      call SetPlanckSpectrum ( E, T, J_Eq )
 
       Xi_J   =  Opacity * J_Eq
       Chi_J  =  Opacity

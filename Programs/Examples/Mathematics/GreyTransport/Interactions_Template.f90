@@ -7,7 +7,7 @@ module Interactions_Template
   private
 
     integer ( KDI ), private, parameter :: &
-      N_FIELDS_TEMPLATE = 6
+      N_FIELDS_TEMPLATE = 8
 
   type, public, extends ( VariableGroupForm ), abstract :: InteractionsTemplate
     integer ( KDI ) :: &
@@ -19,7 +19,9 @@ module Interactions_Template
       EMISSIVITY_N      = 0, &
       OPACITY_J         = 0, &
       OPACITY_H         = 0, &
-      OPACITY_N         = 0
+      OPACITY_N         = 0, &
+      EQUILIBRIUM_J     = 0, &
+      EQUILIBRIUM_N     = 0
     character ( LDL ) :: &
       Type = ''
   contains
@@ -150,7 +152,9 @@ contains
                                      I % EMISSIVITY_N, &
                                      I % OPACITY_J, &
                                      I % OPACITY_H, &
-                                     I % OPACITY_N ] )
+                                     I % OPACITY_N, &
+                                     I % EQUILIBRIUM_J, &
+                                     I % EQUILIBRIUM_N ] )
 
   end subroutine SetOutput
 
@@ -202,12 +206,14 @@ contains
     if ( I % N_FIELDS == 0 ) &
       I % N_FIELDS = I % N_FIELDS_TEMPLATE
 
-    I % EMISSIVITY_J  =  1
-    I % EMISSIVITY_H  =  2
-    I % EMISSIVITY_N  =  3
-    I % OPACITY_J     =  4
-    I % OPACITY_H     =  5
-    I % OPACITY_N     =  6
+    I % EMISSIVITY_J   =  1
+    I % EMISSIVITY_H   =  2
+    I % EMISSIVITY_N   =  3
+    I % OPACITY_J      =  4
+    I % OPACITY_H      =  5
+    I % OPACITY_N      =  6
+    I % EQUILIBRIUM_J  =  7
+    I % EQUILIBRIUM_N  =  8
 
     !-- variable names 
 
@@ -220,12 +226,14 @@ contains
     end if
 
     Variable ( 1 : I % N_FIELDS_TEMPLATE ) &
-      = [ 'Emissivity_J', &
-          'Emissivity_H', &
-          'Emissivity_N', &
-          'Opacity_J   ', &
-          'Opacity_H   ', &
-          'Opacity_N   ' ]
+      = [ 'Emissivity_J ', &
+          'Emissivity_H ', &
+          'Emissivity_N ', &
+          'Opacity_J    ', &
+          'Opacity_H    ', &
+          'Opacity_N    ', &
+          'Equilibrium_J', &
+          'Equilibrium_N' ]
           
     !-- units
     
@@ -265,6 +273,10 @@ contains
       =  LengthUnit ** (-1)
     VariableUnit ( I % OPACITY_N ) &
       =  LengthUnit ** (-1)
+    VariableUnit ( I % EQUILIBRIUM_J ) &
+      =  EnergyDensityUnit
+    VariableUnit ( I % EQUILIBRIUM_N ) &
+      =  EnergyDensityUnit  *  TemperatureUnit ** (-1)
 
   end subroutine SetUnits
 

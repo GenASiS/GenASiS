@@ -10,7 +10,7 @@ module RadiationMoments_Form
     integer ( KDI ), private, parameter :: &
       N_PRIMITIVE_RM =  7, &
       N_CONSERVED_RM =  4, &
-      N_FIELDS_RM    = 15, &
+      N_FIELDS_RM    = 14, &
       N_VECTORS_RM   =  3
 
   type, public, extends ( CurrentTemplate ) :: RadiationMomentsForm
@@ -23,7 +23,6 @@ module RadiationMoments_Form
       CONSERVED_ENERGY   = 0, &
       FLUX_FACTOR        = 0, &
       STRESS_FACTOR      = 0, &
-      COMOVING_ENERGY_EQ = 0, &
       DIFFUSION_FACTOR_E = 0
     integer ( KDI ), dimension ( 3 ) :: &
       COMOVING_MOMENTUM_U  = 0, &
@@ -211,8 +210,7 @@ contains
                                       RM % COMOVING_MOMENTUM_U, &
                                       RM % FLUID_VELOCITY_U, &
                                       RM % FLUX_FACTOR, &
-                                      RM % STRESS_FACTOR, &
-                                      RM % COMOVING_ENERGY_EQ ], &
+                                      RM % STRESS_FACTOR ], &
              VectorOption = [ 'ComovingMomentum_U' ], &
              VectorIndicesOption = VectorIndices )
 
@@ -624,8 +622,7 @@ contains
     RM % FLUID_VELOCITY_U      =  oF + [ 9, 10, 11 ]
     RM % FLUX_FACTOR           =  oF + 12
     RM % STRESS_FACTOR         =  oF + 13
-    RM % COMOVING_ENERGY_EQ    =  oF + 14
-    RM % DIFFUSION_FACTOR_E    =  oF + 15
+    RM % DIFFUSION_FACTOR_E    =  oF + 14
 
     !-- variable names 
 
@@ -651,7 +648,6 @@ contains
           'FluidVelocity_U_3    ', &
           'FluxFactor           ', &
           'StressFactor         ', &
-          'ComovingEnergy_EQ    ', &
           'DiffusionFactor_E    ' ]
           
     !-- units
@@ -730,8 +726,6 @@ contains
       VariableUnit ( RM % FLUID_VELOCITY_U ( iD ) ) &
         = Velocity_U_Unit ( iD )
     end do
-
-    VariableUnit ( RM % COMOVING_ENERGY_EQ ) = EnergyDensityUnit
 
   end subroutine SetUnits
 

@@ -106,7 +106,8 @@ contains
              F % Value ( :, F % TEMPERATURE ), &
              I % Value ( :, I % EMISSIVITY_J ), &
              I % Value ( :, I % OPACITY_J ), &
-             I % Value ( :, I % OPACITY_H ) )
+             I % Value ( :, I % OPACITY_H ), &
+             I % Value ( :, I % EQUILIBRIUM_J ) )
     end associate !-- R, etc.
 
   end subroutine Compute
@@ -148,7 +149,7 @@ contains
   end subroutine Finalize
 
 
-  subroutine ComputeKernel ( TP, M, N, T, I, Xi_J, Chi_J, Chi_H )
+  subroutine ComputeKernel ( TP, M, N, T, I, Xi_J, Chi_J, Chi_H, J_Eq )
 
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       TP, &
@@ -160,7 +161,8 @@ contains
     real ( KDR ), dimension ( : ), intent ( out ) :: &
       Xi_J, &
       Chi_J, &
-      Chi_H
+      Chi_H, &
+      J_Eq
 
     integer ( KDI ) :: &
       iV, &
@@ -176,9 +178,14 @@ contains
 
     !$OMP parallel do private ( iV ) 
     do iV = 1, nValues
-      Xi_J  ( iV )  =  Kappa  *  M ( iV )  *  N ( iV )  *  a  *  T ( iV ) ** 4
+
+      J_Eq  ( iV )  =  a  *  T ( iV ) ** 4
+
+      Xi_J  ( iV )  =  Kappa  *  M ( iV )  *  N ( iV )  *  J_Eq ( iV )
       Chi_J ( iV )  =  Kappa  *  M ( iV )  *  N ( iV ) 
+
       Chi_H ( iV )  =  Chi_J ( iV )
+
     end do !-- iV
     !$OMP end parallel do
 

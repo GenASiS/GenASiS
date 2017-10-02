@@ -114,10 +114,10 @@ contains
     call SetPlanckSpectrum &
            ( I % Energy, &
              F % Value ( iBC, F % TEMPERATURE ), &
-             R % Value ( :, R % COMOVING_ENERGY_EQ ) )
+             I % Value ( :, I % EQUILIBRIUM_J ) )
 
     call I % ComputeKernel &
-           ( R % Value ( :, R % COMOVING_ENERGY_EQ ), &
+           ( I % Value ( :, I % EQUILIBRIUM_J ), &
              F % Value ( iBC, F % BARYON_MASS ), &
              F % Value ( iBC, F % COMOVING_DENSITY ), &
              F % Value ( iBC, F % TEMPERATURE ), &

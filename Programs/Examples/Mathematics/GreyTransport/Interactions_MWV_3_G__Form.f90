@@ -94,7 +94,7 @@ contains
   end subroutine Finalize
 
 
-  subroutine ComputeKernel ( TP, M, N, T, I, Xi_J, Chi_J, Chi_H )
+  subroutine ComputeKernel ( TP, M, N, T, I, Xi_J, Chi_J, Chi_H, J_Eq )
 
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       TP, &
@@ -106,7 +106,8 @@ contains
     real ( KDR ), dimension ( : ), intent ( out ) :: &
       Xi_J, &
       Chi_J, &
-      Chi_H
+      Chi_H, &
+      J_Eq
 
     integer ( KDI ) :: &
       iV, &
@@ -134,11 +135,14 @@ contains
       S     =  1.0_KDR  -  PlanckRatio * k_B * TP ( iV ) / E_Max
       S_Eq  =  1.0_KDR  -  PlanckRatio * k_B *  T ( iV ) / E_Max
 
+      J_Eq  ( iV )  =  a  *  T ( iV ) ** 4
+
       Xi_J  ( iV )  =  Kappa  *  M ( iV )  *  N ( iV )  &
-                       *  ( T ( iV ) / T_0 ) ** 1.5_KDR  *  S_Eq &
-                       *  a  *  T ( iV ) ** 4
+                       *  ( T ( iV ) / T_0 ) ** 1.5_KDR  *  S_Eq  &
+                       *  J_Eq ( iV )
       Chi_J ( iV )  =  Kappa  *  M ( iV )  *  N ( iV )  &
                        *  ( T ( iV ) / T_0 ) ** 1.5_KDR  *  S
+
       Chi_H ( iV )  =  Chi_J ( iV )
 
     end do !-- iV

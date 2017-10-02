@@ -280,7 +280,8 @@ contains
     call IB % Initialize &
            ( MS, InteractionsType, &
              LengthUnitOption = CoordinateUnit_PS ( 1 ), &
-             EnergyDensityUnitOption = EnergyDensityUnit )
+             EnergyDensityUnitOption &
+               = EnergyDensityUnit / CoordinateUnit_MS ( 1 ) ** 3 )
     call RMB % SetInteractions ( IB )
     end associate !-- IB
 
@@ -498,13 +499,11 @@ contains
       RM => RMB % PhotonMoments_S ( iF )
       associate &
         ( J     =>  RM % Value ( :, RM % COMOVING_ENERGY ), &
-          J_Eq  =>  RM % Value ( :, RM % COMOVING_ENERGY_EQ ), &
           H_1   =>  RM % Value ( :, RM % COMOVING_MOMENTUM_U ( 1 ) ), &
           H_2   =>  RM % Value ( :, RM % COMOVING_MOMENTUM_U ( 2 ) ), &
           H_3   =>  RM % Value ( :, RM % COMOVING_MOMENTUM_U ( 3 ) ) )
 
       call SetPlanckSpectrum ( E, T_0, J )
-      call SetPlanckSpectrum ( E, T_0, J_Eq )
 
       H_1  =  0.0_KDR
       H_2  =  0.0_KDR
@@ -533,25 +532,22 @@ contains
         RS => RSA % RadiationMoments ( )
         associate &
           ( J     =>  RS % Value ( :, RS % COMOVING_ENERGY ), &
-            J_Eq  =>  RS % Value ( :, RS % COMOVING_ENERGY_EQ ), &
             H_1   =>  RS % Value ( :, RS % COMOVING_MOMENTUM_U ( 1 ) ), &
             H_2   =>  RS % Value ( :, RS % COMOVING_MOMENTUM_U ( 2 ) ), &
             H_3   =>  RS % Value ( :, RS % COMOVING_MOMENTUM_U ( 3 ) ) )
         where ( X < MinCoordinate ( 1 ) .or. Y < MinCoordinate ( 2 ) &
                .or. Z < MinCoordinate ( 3 ) )
-          J     =  J_I ( iS )
-          J_Eq  =  J_I ( iS )
-          H_1   =  0.0_KDR
-          H_2   =  0.0_KDR
-          H_3   =  0.0_KDR
+          J    =  J_I ( iS )
+          H_1  =  0.0_KDR
+          H_2  =  0.0_KDR
+          H_3  =  0.0_KDR
         end where
         where ( X > MinCoordinate ( 1 ) .or. Y > MinCoordinate ( 2 ) &
                .or. Z > MinCoordinate ( 3 ) )
-          J     =  J_0 ( iS )
-          J_Eq  =  J_0 ( iS )
-          H_1   =  0.0_KDR
-          H_2   =  0.0_KDR
-          H_3   =  0.0_KDR
+          J    =  J_0 ( iS )
+          H_1  =  0.0_KDR
+          H_2  =  0.0_KDR
+          H_3  =  0.0_KDR
         end where
         end associate !-- J, etc.
         call RS % ComputeFromPrimitive ( G )

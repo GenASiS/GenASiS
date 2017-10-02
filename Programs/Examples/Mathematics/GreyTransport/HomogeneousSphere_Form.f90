@@ -233,12 +233,13 @@ contains
     associate &
       ( Xi_J  => I % Value ( :, I % EMISSIVITY_J ), &
         Chi_J => I % Value ( :, I % OPACITY_J ), &
-        Chi_H => I % Value ( :, I % OPACITY_H ) )
+        Chi_H => I % Value ( :, I % OPACITY_H ), &
+        J_Eq  => I % Value ( :, I % EQUILIBRIUM_J ) )
 
     call SetInteractions &
            ( HS, CoordinateSystem, IsHardSphere, EquilibriumDensity, &
              EffectiveOpacity, TransportOpacity, SofteningParameter, &
-             Xi_J, Chi_J, Chi_H )
+             Xi_J, Chi_J, Chi_H, J_Eq )
     end associate !-- Xi_J, etc.
     end select !-- I
     end select !-- IC
@@ -304,7 +305,7 @@ contains
     !-- Initial conditions
     
     RM => RMA % RadiationMoments ( )
-    call SetRadiation ( HS, RM, CoordinateSystem )
+    call SetRadiation ( HS, RM )
     
     !-- Initialize template
     
@@ -394,42 +395,34 @@ contains
   end subroutine Finalize
 
 
-  subroutine SetRadiation ( HS, RM, CoordinateSystem )
+  subroutine SetRadiation ( HS, RM )
 
     class ( HomogeneousSphereForm ), intent ( in ) :: &
       HS
     class ( RadiationMomentsForm ), intent ( inout ) :: &
       RM
-    character ( LDL ), intent ( in ) :: &
-      CoordinateSystem
     
     integer :: &
       iV
-    real ( KDR ), allocatable, dimension ( : ) :: &
-      R
     class ( GeometryFlatForm ), pointer :: &
       G
     
-    call SetRadius ( HS, CoordinateSystem, R )
-
     select type ( PS => HS % PositionSpace )
     class is ( Atlas_SC_Form )
 
     G => PS % Geometry ( )
 
     call SetRadiationKernel &
-           ( R    = R, &
-             J    = RM % Value ( :, RM % COMOVING_ENERGY ), &
+           ( J    = RM % Value ( :, RM % COMOVING_ENERGY ), &
              HX   = RM % Value ( :, RM % COMOVING_MOMENTUM_U ( 1 ) ), &
              HY   = RM % Value ( :, RM % COMOVING_MOMENTUM_U ( 2 ) ), &
-             HZ   = RM % Value ( :, RM % COMOVING_MOMENTUM_U ( 3 ) ), &
-             J_Eq = RM % Value ( :, RM % COMOVING_ENERGY_EQ ) )
+             HZ   = RM % Value ( :, RM % COMOVING_MOMENTUM_U ( 3 ) ) )
       
     call RM % ComputeFromPrimitive ( G )
 
     end select !-- PS
 
-      nullify ( G )
+    nullify ( G )
 
   end subroutine SetRadiation
 
@@ -437,7 +430,7 @@ contains
   subroutine SetInteractions &
                ( HS, CoordinateSystem, IsHardSphere, EquilibriumDensity, &
                  EffectiveOpacity, TransportOpacity, SofteningFactor, &
-                 Xi_J, Chi_J, Chi_H )
+                 Xi_J, Chi_J, Chi_H, J_Eq )
 
     class ( HomogeneousSphereForm ), intent ( in ) :: &
       HS
@@ -453,7 +446,8 @@ contains
     real ( KDR ), dimension ( : ), intent ( out ) :: &
       Xi_J, &
       Chi_J, &
-      Chi_H
+      Chi_H, &
+      J_Eq
 
     class ( GeometryFlatForm ), pointer :: &
       G
@@ -464,7 +458,8 @@ contains
      nValues
     
     select type ( PS => HS % PositionSpace )
-      class is ( Atlas_SC_Form )
+    class is ( Atlas_SC_Form )
+
       G => PS % Geometry ( )
       
       nValues = size ( G % Value ( :, G % CENTER ( 1 ) ) )
@@ -497,6 +492,17 @@ contains
         end do !-- iV
         !$OMP end parallel do
       end if
+
+      !$OMP parallel do private ( iV )
+      do iV = 1, nValues
+        if ( R ( iV ) < 1.0_KDR ) then
+          J_Eq ( iV )  =  EquilibriumDensity
+        else
+          J_Eq ( iV )  =  0.0_KDR
+        end if
+      end do !-- iV
+      !$OMP end parallel do
+
     end select !-- PS
 
   end subroutine SetInteractions
@@ -598,14 +604,11 @@ contains
   end subroutine SetRadius
 
 
-  subroutine SetRadiationKernel ( R, J, HX, HY, HZ, J_Eq )
+  subroutine SetRadiationKernel ( J, HX, HY, HZ )
 
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      R
     real ( KDR ), dimension ( : ), intent ( out ) :: &
       J, &
-      HX, HY, HZ, &
-      J_Eq
+      HX, HY, HZ
 
     integer ( KDI ) :: &
       iV, &  !-- iValue
@@ -619,11 +622,6 @@ contains
       HX ( iV )    =  0.0_KDR
       HY ( iV )    =  0.0_KDR
       HZ ( iV )    =  0.0_KDR
-      if ( R ( iV ) < 1.0_KDR ) then
-        J_Eq ( iV )  =  EquilibriumDensity
-      else
-        J_Eq ( iV )  =  0.0_KDR
-      end if
     end do !-- iV
     !$OMP end parallel do
 
