@@ -23,8 +23,6 @@ module Interactions_MWV_3_S__Form
       Set_MWV_3_S
     generic, public :: &
       Set => Set_MWV_3_S
-    procedure, public, pass :: &
-      Compute
     final :: &
       Finalize
     procedure, private, pass ( I ) :: &
@@ -93,30 +91,6 @@ contains
   end subroutine Set_MWV_3_S
 
 
-  subroutine Compute ( I, Current )
-
-    class ( Interactions_MWV_3_S_Form ), intent ( inout ) :: &
-      I
-    class ( CurrentTemplate ), intent ( in ) :: &
-      Current
-
-    associate &
-      ( R   => I % Radiation, &
-        F   => I % Fluid, &
-        iBC => I % iBaseCell )
-    call I % ComputeKernel &
-           ( F % Value ( iBC, F % BARYON_MASS ), &
-             F % Value ( iBC, F % COMOVING_DENSITY ), &
-             F % Value ( iBC, F % TEMPERATURE ), &
-             I % Value ( :, I % EMISSIVITY_J ), &
-             I % Value ( :, I % OPACITY_J ), &
-             I % Value ( :, I % OPACITY_H ), &
-             R % Value ( :, R % COMOVING_ENERGY_EQ ) )
-    end associate !-- R, etc.
-
-  end subroutine Compute
-
-
   impure elemental subroutine Finalize ( I )
 
     type ( Interactions_MWV_3_S_Form ), intent ( inout ) :: &
@@ -131,8 +105,10 @@ contains
   end subroutine Finalize
 
 
-  subroutine ComputeKernel ( M, N, T, I, Xi_J, Chi_J, Chi_H, J_Eq )
+  subroutine ComputeKernel ( J_Eq, M, N, T, I, Xi_J, Chi_J, Chi_H )
 
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      J_Eq
     real ( KDR ), intent ( in ) :: &
       M, &
       N, &
@@ -142,8 +118,7 @@ contains
     real ( KDR ), dimension ( : ), intent ( out ) :: &
       Xi_J, &
       Chi_J, &
-      Chi_H, &
-      J_Eq
+      Chi_H
 
     integer ( KDI ) :: &
       iV, &
@@ -157,15 +132,12 @@ contains
 
     associate ( E  =>  I % Energy )
 
-    call SetPlanckSpectrum ( E, T, J_Eq )
-
     Kappa_0    =  I % SpecificOpacity
     Kappa_Min  =  I % SpecificOpacityFloor
     E_Max      =  I % EnergyMax
     T_0        =  I % TemperatureScale
     nValues    =  size ( Xi_J )
 
-    !$OMP parallel do private ( iV ) 
     do iV = 1, nValues
 
       Kappa  =  max ( Kappa_0  *  ( 1.0_KDR  -  E ( iV ) / E_Max ), Kappa_Min )
@@ -176,7 +148,6 @@ contains
       Chi_H ( iV )  =  Chi_J ( iV )
 
     end do !-- iV
-    !$OMP end parallel do
 
     end associate !-- E
 
