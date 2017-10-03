@@ -852,6 +852,8 @@ contains
       nValues
     real ( KDR ) :: &
       Delta_J_J, Delta_H_H
+    real ( KDR ), dimension ( 3 ) :: &
+      K_U_Dim_D
     real ( KDR ), dimension ( size ( E ) ) :: &
       H
     logical ( KDL ) :: &
@@ -906,19 +908,66 @@ contains
 
     !$OMP parallel do private ( iV )
     do iV = 1, nValues
-      if ( H ( iV )  >  J ( iV ) ) then
+      if ( J ( iV ) < 0.0_KDR ) then
+
+        J ( iV )   = 0.0_KDR
+        H_1 ( iV ) = 0.0_KDR
+        H_2 ( iV ) = 0.0_KDR
+        H_3 ( iV ) = 0.0_KDR
+        E ( iV )   = 0.0_KDR
+        S_1 ( iV ) = 0.0_KDR
+        S_2 ( iV ) = 0.0_KDR
+        S_3 ( iV ) = 0.0_KDR
+
+      else if ( H ( iV )  >  J ( iV ) ) then
+
         H_1 ( iV )  =  ( H_1 ( iV )  /  H ( iV ) )  *  J ( iV )
         H_2 ( iV )  =  ( H_2 ( iV )  /  H ( iV ) )  *  J ( iV )
         H_3 ( iV )  =  ( H_3 ( iV )  /  H ( iV ) )  *  J ( iV )
-        S_1 ( iV )  =  H_1 ( iV )
-        S_2 ( iV )  =  M_DD_22 ( iV )  *  H_2 ( iV )
-        S_3 ( iV )  =  M_DD_33 ( iV )  *  H_3 ( iV )
+
+        E ( iV )  &
+          =  J ( iV )  &
+             +  2.0_KDR * (                       V_1 ( iV )  *  H_1 ( iV )  &
+                            +  M_DD_22 ( iV )  *  V_2 ( iV )  *  H_2 ( iV )  &
+                            +  M_DD_33 ( iV )  *  V_3 ( iV )  *  H_3 ( iV ) )
+
         call ComputeMomentFactors &
                ( SF ( iV ), FF ( iV ), J ( iV ), H_1 ( iV ), H_2 ( iV ), &
                  H_3 ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ) )
-      end if
+        
+        call ComputeComovingStress_D &
+               ( K_U_Dim_D, [ H_1 ( iV ), H_2 ( iV ), H_3 ( iV ) ], J ( iV ), &
+                 SF ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ), iD = 1 )
+        S_1 ( iV ) &
+          =  H_1 ( iV )  +  J ( iV ) * V_1 ( iV ) &
+                         +  K_U_Dim_D ( 1 )  *  V_1 ( iV )  &
+                         +  K_U_Dim_D ( 2 )  *  V_2 ( iV )  &
+                         +  K_U_Dim_D ( 3 )  *  V_3 ( iV )
+
+        call ComputeComovingStress_D &
+               ( K_U_Dim_D, [ H_1 ( iV ), H_2 ( iV ), H_3 ( iV ) ], J ( iV ), &
+                 SF ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ), iD = 2 )
+        S_2 ( iV )  &
+          =  M_DD_22 ( iV )  &
+             *  ( H_2 ( iV )  +  J ( iV ) * V_2 ( iV )  &
+                              +  K_U_Dim_D ( 1 )  *  V_1 ( iV )  &
+                              +  K_U_Dim_D ( 2 )  *  V_2 ( iV )  &
+                              +  K_U_Dim_D ( 3 )  *  V_3 ( iV ) )
+  
+        call ComputeComovingStress_D &
+               ( K_U_Dim_D, [ H_1 ( iV ), H_2 ( iV ), H_3 ( iV ) ], J ( iV ), &
+                 SF ( iV ), M_DD_22 ( iV ), M_DD_33 ( iV ), iD = 3 )
+
+        S_3 ( iV ) &
+          =  M_DD_33 ( iV )  &
+             *  ( H_3 ( iV )  +  J ( iV ) * V_3 ( iV )  &
+                              +  K_U_Dim_D ( 1 )  *  V_1 ( iV )  &
+                              +  K_U_Dim_D ( 2 )  *  V_2 ( iV )  &
+                              +  K_U_Dim_D ( 3 )  *  V_3 ( iV ) )
+
+     end if
     end do !-- iV
-    !$OMP end parallel do
+    !$OMP end parallel do    
 
   end subroutine ComputeComovingEnergyMomentum
 
