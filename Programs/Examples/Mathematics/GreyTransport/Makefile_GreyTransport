@@ -41,6 +41,15 @@ MarshakWave: Basics.a Mathematics.a Fluid.a GreyMoments.a \
           GreyMoments.a Fluid.a Mathematics.a Basics.a \
           $(LIBRARIES)
 
+StreamingProfile: Basics.a Mathematics.a Fluid.a GreyMoments.a \
+  StreamingProfile.o
+	$(LINK) $(FFLAGS) \
+          -o StreamingProfile_$(MACHINE) \
+          StreamingProfile.o StreamingProfile_Form.o \
+          GreyMoments.a Fluid.a Mathematics.a Basics.a \
+          $(LIBRARIES)
+
+
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MATHEMATICS)/Makefile_Dependencies
 include ../../FluidDynamics/Makefile_Dependencies
@@ -54,6 +63,7 @@ clobber: clean
 	rm -f SineWaveDiffusion_*
 	rm -f HomogeneousSphere_*
 	rm -f MarshakWave_*
+	rm -f StreamingProfile_*
 
 PlaneWaveStreaming_Template.o: \
   Basics.o \
@@ -127,3 +137,15 @@ MarshakWave.o: \
   MarshakWave_Form.o \
   MarshakWave.f90
 
+StreamingProfile_Form.o: \
+  Basics.o \
+  Mathematics.o \
+  RadiationMoments_Form.o \
+  RadiationMoments_ASC__Form.o \
+  ApplyCurvilinear_RM__Command.o \
+  StreamingProfile_Form.f90
+
+StreamingProfile.o: \
+  Basics.o \
+  StreamingProfile_Form.o \
+  StreamingProfile.f90
