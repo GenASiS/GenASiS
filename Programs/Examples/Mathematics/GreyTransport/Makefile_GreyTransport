@@ -1,6 +1,7 @@
 PATH_GENASIS = ../../../../..
 
-all:  SineWaveStreaming SineWaveDiffusion HomogeneousSphere MarshakWave
+all:  SineWaveStreaming SineWaveDiffusion HomogeneousSphere MarshakWave \
+      StreamingProfile
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 

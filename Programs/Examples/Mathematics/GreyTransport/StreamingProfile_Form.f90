@@ -162,7 +162,7 @@ contains
              MomentumDensity_U_UnitOption = MomentumDensity_U_Unit, &
              MomentumDensity_D_UnitOption = MomentumDensity_D_Unit, &
              EnergyDensityUnitOption = EnergyDensityUnit, &
-             UseLimiterOption = .true. )
+             UseLimiterOption = .true., LimiterParameterOption = 2.0_KDR )
 
     !-- Step
 
