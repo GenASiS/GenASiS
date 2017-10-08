@@ -290,14 +290,14 @@ contains
     allocate ( Step_RK2_C_BSLL_ASC_CSLD_Form :: MW % Step_MS )
     select type ( S_MS => MW % Step_MS )
     class is ( Step_RK2_C_BSLL_ASC_CSLD_Form )
-    call S_MS % Initialize ( RMB, Name )
+    call S_MS % Initialize ( RMB, 'Radiation' )
     S_MS % ApplyRelaxation_F % Pointer => ApplyRelaxation_RM
     end select !-- S_MS
 
     allocate ( Step_RK2_C_ASC_Form :: MW % Step_PS )
     select type ( S_PS => MW % Step_PS )
     class is ( Step_RK2_C_ASC_Form )
-    call S_PS % Initialize ( FA, Name )
+    call S_PS % Initialize ( FA, 'Fluid' )
     S_PS % ApplySources % Pointer  =>  ApplySources_Fluid
     end select !-- S_PS
 

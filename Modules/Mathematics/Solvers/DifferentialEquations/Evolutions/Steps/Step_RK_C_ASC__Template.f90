@@ -540,7 +540,7 @@ contains
       BaseLevel
 
     call PROGRAM_HEADER % AddTimer &
-           ( 'LoadInitial', S % iTimerLoadInitial_C, &
+           ( 'LoadInitial_C', S % iTimerLoadInitial_C, &
              Level = BaseLevel )
 
   end subroutine InitializeTimersLoadInitial
@@ -552,6 +552,9 @@ contains
       S
     integer ( KDI ), intent ( in ) :: &
       BaseLevel
+
+    if ( .not. allocated ( S % StorageDivergence_C ) ) &
+      return
 
     associate ( SD => S % StorageDivergence_C )
     call SD % InitializeTimers ( BaseLevel )

@@ -15,12 +15,11 @@ module Step_RK_C_BSLL_ASC_CSLD__Template
   use Fields
   use Increments
   use Step_RK_C_ASC__Template
-  use Step_RK_C_ASC_1D__Template
 
   implicit none
   private
 
-  type, public, extends ( Step_RK_C_ASC_1D_Template ), abstract :: &
+  type, public, extends ( Step_RK_C_ASC_Template ), abstract :: &
     Step_RK_C_BSLL_ASC_CSLD_Template
       integer ( KDI ) :: &
         nFibers   = 0, &
@@ -260,7 +259,7 @@ contains
     if ( allocated ( S % StorageDivergence_S ) ) &
       deallocate ( S % StorageDivergence_S )
 
-    call S % FinalizeTemplate_C_ASC_1D ( )
+    call S % FinalizeTemplate_C_ASC ( )
 
   end subroutine FinalizeTemplate_C_BSLL_ASC_CSLD
 
