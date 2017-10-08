@@ -9,12 +9,12 @@ module Integrator_C_MS_C_PS__Template
   use Manifolds
   use Fields
   use Steps
-  use Integrator_C_1D_PS__Template
+  use Integrator_C_PS__Template
 
   implicit none
   private
 
-  type, public, extends ( Integrator_C_1D_PS_Template ), abstract :: &
+  type, public, extends ( Integrator_C_PS_Template ), abstract :: &
     Integrator_C_MS_C_PS_Template
       logical ( KDL ) :: &
         UseLimiterParameter_S, &
