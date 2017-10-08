@@ -36,7 +36,7 @@ module Step_RK_C_ASC__Template
   type, public, extends ( Step_RK_Template ), abstract :: &
     Step_RK_C_ASC_Template
       integer ( KDI ) :: &
-        iTimerLoadInitial       = 0, &
+        iTimerLoadInitial_C = 0, &
         iTimerStoreIntermediate = 0, &
         iTimerSources           = 0, &
         iTimerGhost             = 0, &
@@ -90,6 +90,8 @@ module Step_RK_C_ASC__Template
       Compute
     procedure, public, pass :: &
       FinalizeTemplate_C_ASC
+    procedure, private, pass :: &
+      InitializeTimersLoadInitial
     procedure, private, pass :: &
       InitializeTimersDivergence
     procedure, private, pass :: &
@@ -287,9 +289,7 @@ contains
     call PROGRAM_HEADER % AddTimer &
            ( S % Name, S % iTimerStep, &
              Level = BaseLevel )
-      call PROGRAM_HEADER % AddTimer &
-             ( 'LoadInitial', S % iTimerLoadInitial, &
-             Level = BaseLevel + 1 )
+      call S % InitializeTimersLoadInitial ( BaseLevel + 1 )
       call PROGRAM_HEADER % AddTimer &
              ( 'Template', S % iTimerTemplate, &
                Level = BaseLevel + 1 )
@@ -532,6 +532,20 @@ contains
   end subroutine FinalizeTemplate_C_ASC
 
 
+  subroutine InitializeTimersLoadInitial ( S, BaseLevel )
+
+    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
+      S
+    integer ( KDI ), intent ( in ) :: &
+      BaseLevel
+
+    call PROGRAM_HEADER % AddTimer &
+           ( 'LoadInitial', S % iTimerLoadInitial_C, &
+             Level = BaseLevel )
+
+  end subroutine InitializeTimersLoadInitial
+
+
   subroutine InitializeTimersDivergence ( S, BaseLevel )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
@@ -539,10 +553,8 @@ contains
     integer ( KDI ), intent ( in ) :: &
       BaseLevel
 
-    associate &
-      ( SD => S % StorageDivergence_C, &
-        C  => S % Current )
-    call SD % InitializeTimers ( C % Name, BaseLevel )
+    associate ( SD => S % StorageDivergence_C )
+    call SD % InitializeTimers ( BaseLevel )
     end associate !-- SD, etc.
 
   end subroutine InitializeTimersDivergence
@@ -684,7 +696,7 @@ contains
     type ( TimerForm ), pointer :: &
       Timer
 
-    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerLoadInitial )
+    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerLoadInitial_C )
     if ( associated ( Timer ) ) call Timer % Start ( )
 
     associate ( iaC => Current % iaConserved )

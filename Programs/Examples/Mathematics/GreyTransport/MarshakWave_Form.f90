@@ -240,7 +240,7 @@ contains
     select type ( S_R => MW % Step_1 )
     class is ( Step_RK2_C_ASC_Form )
       call S_R % Initialize &
-             ( MW % Current_ASC_1, trim ( Name ) // '_Radiation' )
+             ( MW % Current_ASC_1, 'Radiation' )
       S_R % ApplyRelaxation % Pointer  =>  ApplyRelaxation_RM
     end select !-- S_R
 
@@ -248,7 +248,7 @@ contains
     select type ( S_F => MW % Step_2 )
     class is ( Step_RK2_C_ASC_Form )
       call S_F % Initialize &
-             ( MW % Current_ASC_2, trim ( Name ) // '_Fluid' )
+             ( MW % Current_ASC_2, 'Fluid' )
       S_F % ApplySources % Pointer  =>  ApplySources_Fluid
     end select !-- S_F
 

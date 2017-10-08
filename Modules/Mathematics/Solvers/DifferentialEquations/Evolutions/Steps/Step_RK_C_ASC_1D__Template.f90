@@ -271,10 +271,8 @@ contains
       iC  !-- iCurrent
 
     do iC = 1, S % nCurrents
-      associate &
-        ( SD => S % StorageDivergence_1D ( iC ), &
-          C  => S % Current_1D ( iC ) % Pointer )
-      call SD % InitializeTimers ( C % Name, BaseLevel )
+      associate ( SD => S % StorageDivergence_1D ( iC ) )
+      call SD % InitializeTimers ( BaseLevel )
       end associate !-- SD, etc.
     end do
 

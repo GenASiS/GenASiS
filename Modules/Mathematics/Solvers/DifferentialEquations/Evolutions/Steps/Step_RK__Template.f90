@@ -39,6 +39,8 @@ module Step_RK__Template
       ComputeTemplate
     procedure, public, pass :: &
       FinalizeTemplate
+    procedure ( IT ), private, pass, deferred :: &
+      InitializeTimersLoadInitial
     procedure ( II ), private, pass, deferred :: &
       InitializeIntermediate
     procedure ( II_A_iK ), private, pass, deferred :: &
@@ -50,6 +52,15 @@ module Step_RK__Template
   end type Step_RK_Template
 
   abstract interface
+
+    subroutine IT ( S, BaseLevel )
+      use Basics
+      import Step_RK_Template
+      class ( Step_RK_Template ), intent ( inout ) :: &
+        S
+      integer ( KDI ), intent ( in ) :: &
+        BaseLevel
+    end subroutine IT
 
     subroutine II ( S )
       import Step_RK_Template
@@ -157,8 +168,9 @@ contains
     call PROGRAM_HEADER % AddTimer &
            ( S % Name, S % iTimerStep, &
              Level = BaseLevel )
+      call S % InitializeTimersLoadInitial ( BaseLevel + 1 )
       call PROGRAM_HEADER % AddTimer &
-             ( 'ComputeTemplate', S % iTimerTemplate, &
+             ( 'Template', S % iTimerTemplate, &
                Level = BaseLevel + 1 )
         call PROGRAM_HEADER % AddTimer &
                ( 'InitializeIntermediate', S % iTimerInitializeIntermediate, &
@@ -167,7 +179,7 @@ contains
                ( 'IncrementIntermediate', S % iTimerIncrementIntermediate, &
                  Level = BaseLevel + 2 )
         call PROGRAM_HEADER % AddTimer &
-               ( 'ComputeStage', S % iTimerStage, &
+               ( 'Stage', S % iTimerStage, &
                  Level = BaseLevel + 2 )
         call PROGRAM_HEADER % AddTimer &
                ( 'IncrementSolution', S % iTimerIncrementSolution, &
