@@ -977,7 +977,8 @@ contains
   end subroutine IncrementIntermediate_C
 
 
-  subroutine ComputeStage_C ( S, ID, C, Chart, K, TimeStep, iStage )
+  subroutine ComputeStage_C &
+               ( S, ID, C, Chart, K, TimeStep, iStage, GhostExchangeOption )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
@@ -993,7 +994,11 @@ contains
       TimeStep
     integer ( KDI ), intent ( in ) :: &
       iStage
+    logical ( KDL ), intent ( in ), optional :: &
+      GhostExchangeOption
 
+    logical ( KDL ) :: &
+      GhostExchange
     type ( TimerForm ), pointer :: &
       TimerDivergence, &
       TimerSources, &
@@ -1025,7 +1030,11 @@ contains
       if ( associated ( TimerRelaxation ) ) call TimerRelaxation % Stop ( )
     end if
 
-    if ( associated ( S % ApplyDivergence_C ) ) then
+    GhostExchange = .true.
+    if ( present ( GhostExchangeOption ) ) &
+      GhostExchange = GhostExchangeOption
+
+    if ( GhostExchange .and. associated ( S % ApplyDivergence_C ) ) then
       select type ( Chart )
       class is ( Chart_SLD_Form )
         TimerGhost => PROGRAM_HEADER % TimerPointer ( S % iTimerGhost )

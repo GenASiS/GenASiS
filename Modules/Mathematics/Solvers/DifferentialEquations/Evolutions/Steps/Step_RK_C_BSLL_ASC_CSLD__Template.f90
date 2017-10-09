@@ -576,7 +576,7 @@ contains
 
       call S % ComputeStage_C &
              ( S % IncrementDivergence_S ( iS ), C, Chart, K, TimeStep, &
-               iStage )
+               iStage, GhostExchangeOption = .false. )
 
       end associate !-- Chart
 
@@ -631,7 +631,7 @@ contains
     TimerLoad_K => PROGRAM_HEADER % TimerPointer ( S % iTimerLoadSections )
     if ( associated ( TimerLoad_K ) ) call TimerLoad_K % Start ( )
 
-    call KB % LoadSections ( )
+    call KB % LoadSections ( GhostExchangeOption = .true. )
 
     if ( associated ( TimerLoad_K ) ) call TimerLoad_K % Stop ( )
 
