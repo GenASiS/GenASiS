@@ -22,6 +22,7 @@ module Step_RK_C_BSLL_ASC_CSLD__Template
   type, public, extends ( Step_RK_C_ASC_Template ), abstract :: &
     Step_RK_C_BSLL_ASC_CSLD_Template
       integer ( KDI ) :: &
+        iTimerLoadInitial_S = 0, &
         nFibers   = 0, &
         nSections = 0
       type ( Real_3D_2D_Form ), dimension ( : ), allocatable :: &
@@ -59,6 +60,8 @@ module Step_RK_C_BSLL_ASC_CSLD__Template
       Compute
     procedure, public, pass :: &
       FinalizeTemplate_C_BSLL_ASC_CSLD
+    procedure, private, pass :: &
+      InitializeTimersLoadInitial
     procedure, private, pass :: &
       InitializeIntermediate
     procedure, private, pass :: &
@@ -264,6 +267,20 @@ contains
   end subroutine FinalizeTemplate_C_BSLL_ASC_CSLD
 
 
+  subroutine InitializeTimersLoadInitial ( S, BaseLevel )
+
+    class ( Step_RK_C_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
+      S
+    integer ( KDI ), intent ( in ) :: &
+      BaseLevel
+
+    call PROGRAM_HEADER % AddTimer &
+           ( 'LoadInitial_S', S % iTimerLoadInitial_S, &
+             Level = BaseLevel )
+
+  end subroutine InitializeTimersLoadInitial
+
+
   subroutine InitializeIntermediate ( S )
 
     class ( Step_RK_C_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
@@ -366,6 +383,11 @@ contains
       iS     !-- iSection
     class ( CurrentTemplate ), pointer :: &
       Current
+    type ( TimerForm ), pointer :: &
+      Timer
+
+    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerLoadInitial_S )
+    if ( associated ( Timer ) ) call Timer % Start ( )
 
     associate ( CB => Current_BSLL_ASC_CSLD )
 
@@ -378,6 +400,8 @@ contains
 
     end associate !-- CB
     nullify ( Current )
+
+    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine LoadSolution_C_BSLL_ASC_CSLD
 
