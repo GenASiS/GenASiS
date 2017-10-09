@@ -43,6 +43,8 @@ module Step_RK__Template
       FinalizeTemplate
     procedure, public, pass :: &
       InitializeTimersStage
+    procedure ( LS ), private, pass, deferred :: &
+      LoadSolution
     procedure ( II ), private, pass, deferred :: &
       InitializeIntermediate
     procedure ( II_A_iK ), private, pass, deferred :: &
@@ -63,6 +65,12 @@ module Step_RK__Template
       integer ( KDI ), intent ( in ) :: &
         BaseLevel
     end subroutine IT
+
+    subroutine LS ( S )
+      import Step_RK_Template
+      class ( Step_RK_Template ), intent ( inout ) :: &
+        S
+    end subroutine LS
 
     subroutine II ( S )
       import Step_RK_Template
@@ -171,11 +179,11 @@ contains
            ( S % Name, S % iTimerStep, &
              Level = BaseLevel )
       call PROGRAM_HEADER % AddTimer &
-             ( 'LoadInitial', S % iTimerLoadInitial, &
-               Level = BaseLevel + 1 )
-      call PROGRAM_HEADER % AddTimer &
              ( 'Template', S % iTimerTemplate, &
                Level = BaseLevel + 1 )
+        call PROGRAM_HEADER % AddTimer &
+               ( 'LoadInitial', S % iTimerLoadInitial, &
+                 Level = BaseLevel + 2 )
         call PROGRAM_HEADER % AddTimer &
                ( 'InitializeIntermediate', S % iTimerInitializeIntermediate, &
                  Level = BaseLevel + 2 )
@@ -206,12 +214,14 @@ contains
       iK     !-- iIncrement
     type ( TimerForm ), pointer :: &
       Timer, &
+      Timer_LI, &
       Timer_II, &
       Timer_II_A_iK, &
       Timer_S, &
       Timer_IS
 
     Timer         => PROGRAM_HEADER % TimerPointer ( S % iTimerTemplate )
+    Timer_LI      => PROGRAM_HEADER % TimerPointer ( S % iTimerLoadInitial )
     Timer_II      => PROGRAM_HEADER % TimerPointer &
                        ( S % iTimerInitializeIntermediate )
     Timer_II_A_iK => PROGRAM_HEADER % TimerPointer &
@@ -222,7 +232,10 @@ contains
 
     if ( associated ( Timer ) ) call Timer % Start ( )
 
-    !-- On entry, Solution = Y_N (old value)
+    !-- Set Solution = Y_N (old value)
+    if ( associated ( Timer_LI ) ) call Timer_LI % Start ( )
+    call S % LoadSolution ( )
+    if ( associated ( Timer_LI ) ) call Timer_LI % Stop ( )
 
     !-- Compute stages
     do iS = 1, S % nStages

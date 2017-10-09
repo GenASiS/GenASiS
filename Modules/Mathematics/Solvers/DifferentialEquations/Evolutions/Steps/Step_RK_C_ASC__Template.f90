@@ -97,6 +97,8 @@ module Step_RK_C_ASC__Template
     procedure, private, pass :: &
       InitializeTimersDivergence
     procedure, private, pass :: &
+      LoadSolution
+    procedure, private, pass :: &
       InitializeIntermediate
     procedure, private, pass :: &
       IncrementIntermediate
@@ -106,10 +108,8 @@ module Step_RK_C_ASC__Template
       ComputeStage_C_ASC
     procedure, private, pass :: &
       IncrementSolution
-    procedure, private, pass ( S ) :: &
+    procedure, public, pass ( S ) :: &
       LoadSolution_C
-    generic, public :: &
-      LoadSolution => LoadSolution_C
     procedure, private, pass ( S ) :: &
       StoreSolution_C
     generic, public :: &
@@ -292,11 +292,11 @@ contains
            ( S % Name, S % iTimerStep, &
              Level = BaseLevel )
       call PROGRAM_HEADER % AddTimer &
-             ( 'LoadInitial', S % iTimerLoadInitial, &
-               Level = BaseLevel + 1 )
-      call PROGRAM_HEADER % AddTimer &
              ( 'Template', S % iTimerTemplate, &
                Level = BaseLevel + 1 )
+        call PROGRAM_HEADER % AddTimer &
+               ( 'LoadInitial', S % iTimerLoadInitial, &
+                 Level = BaseLevel + 2 )
         call PROGRAM_HEADER % AddTimer &
                ( 'InitializeIntermediate', S % iTimerInitializeIntermediate, &
                  Level = BaseLevel + 2 )
@@ -496,7 +496,6 @@ contains
       call S % ClearBoundaryFluence ( S % BoundaryFluence_CSL )
     if ( associated ( Timer_BF ) ) call Timer_BF % Stop ( )
 
-    call S % LoadSolution ( S % Solution, S % Current )
     call S % ComputeTemplate ( Time, TimeStep )
     call S % StoreSolution ( S % Current, S % Solution, FinalOption = .true. )
 
@@ -582,6 +581,16 @@ contains
     end associate !-- SD, etc.
 
   end subroutine InitializeTimersDivergence
+
+
+  subroutine LoadSolution ( S )
+
+    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
+      S
+
+    call S % LoadSolution_C ( S % Solution, S % Current )
+
+  end subroutine LoadSolution
 
 
   subroutine InitializeIntermediate ( S )
@@ -690,11 +699,6 @@ contains
 
     integer ( KDI ) :: &
       iF  !-- iField
-    type ( TimerForm ), pointer :: &
-      Timer
-
-    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerLoadInitial )
-    if ( associated ( Timer ) ) call Timer % Start ( )
 
     associate ( iaC => Current % iaConserved )
     do iF = 1, Current % N_CONSERVED
@@ -705,8 +709,6 @@ contains
       end associate !-- CV, etc.
     end do !-- iF
     end associate !-- iaC
-
-    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine LoadSolution_C
 

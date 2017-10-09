@@ -60,6 +60,8 @@ module Step_RK_C_BSLL_ASC_CSLD__Template
     procedure, public, pass :: &
       FinalizeTemplate_C_BSLL_ASC_CSLD
     procedure, private, pass :: &
+      LoadSolution
+    procedure, private, pass :: &
       InitializeIntermediate
     procedure, private, pass :: &
       IncrementIntermediate
@@ -67,10 +69,8 @@ module Step_RK_C_BSLL_ASC_CSLD__Template
       ComputeStage
     procedure, private, pass :: &
       IncrementSolution
-    procedure, private, pass ( S ) :: &
+    procedure, public, pass ( S ) :: &
       LoadSolution_C_BSLL_ASC_CSLD
-    generic, public :: &
-      LoadSolution => LoadSolution_C_BSLL_ASC_CSLD
     procedure, private, pass ( S ) :: &
       StoreSolution_C_BSLL_ASC_CSLD
     generic, public :: &
@@ -226,9 +226,6 @@ contains
     end do !-- iS
     if ( associated ( Timer_BF ) ) call Timer_BF % Stop ( )
 
-    call S % LoadSolution ( S % Solution_BSLL_ASC_CSLD_S, &
-                            S % Current_BSLL_ASC_CSLD )
-
     call S % ComputeTemplate ( Time, TimeStep )
 
     call S % StoreSolution &
@@ -269,6 +266,17 @@ contains
     call S % FinalizeTemplate_C_ASC ( )
 
   end subroutine FinalizeTemplate_C_BSLL_ASC_CSLD
+
+
+  subroutine LoadSolution ( S )
+
+    class ( Step_RK_C_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
+      S
+
+    call S % LoadSolution_C_BSLL_ASC_CSLD &
+           ( S % Solution_BSLL_ASC_CSLD_S, S % Current_BSLL_ASC_CSLD )
+
+  end subroutine LoadSolution
 
 
   subroutine InitializeIntermediate ( S )
@@ -346,7 +354,7 @@ contains
     do iS = 1, S % nSections
       associate ( Solution => Solution_BSLL_ASC_CSLD_S ( iS ) )
       Current => CB % CurrentSection ( iS )
-      call S % LoadSolution ( Solution, Current )
+      call S % LoadSolution_C ( Solution, Current )
       end associate !-- Solution
     end do !-- iS
 
