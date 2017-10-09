@@ -36,11 +36,11 @@ module Step_RK_C_ASC__Template
   type, public, extends ( Step_RK_Template ), abstract :: &
     Step_RK_C_ASC_Template
       integer ( KDI ) :: &
-        iTimerLoadInitial_C = 0, &
         iTimerStoreIntermediate = 0, &
         iTimerSources           = 0, &
         iTimerGhost             = 0, &
-        iTimerStoreFinal        = 0!, &
+        iTimerStoreFinal        = 0, &
+        iTimerBoundaryFluence   = 0
 !         iGeometryValue
       type ( Real_1D_Form ), dimension ( : ), allocatable :: &
         dLogVolumeJacobian_dX
@@ -90,8 +90,6 @@ module Step_RK_C_ASC__Template
       Compute
     procedure, public, pass :: &
       FinalizeTemplate_C_ASC
-    procedure, private, pass :: &
-      InitializeTimersLoadInitial
     procedure, private, pass :: &
       InitializeTimersDivergence
     procedure, private, pass :: &
@@ -289,7 +287,9 @@ contains
     call PROGRAM_HEADER % AddTimer &
            ( S % Name, S % iTimerStep, &
              Level = BaseLevel )
-      call S % InitializeTimersLoadInitial ( BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'LoadInitial', S % iTimerLoadInitial, &
+               Level = BaseLevel + 1 )
       call PROGRAM_HEADER % AddTimer &
              ( 'Template', S % iTimerTemplate, &
                Level = BaseLevel + 1 )
@@ -318,6 +318,9 @@ contains
                  Level = BaseLevel + 2 )
       call PROGRAM_HEADER % AddTimer &
              ( 'StoreFinal', S % iTimerStoreFinal, &
+               Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'BoundaryFluence', S % iTimerBoundaryFluence, &
                Level = BaseLevel + 1 )
 
   end subroutine InitializeTimers
@@ -483,27 +486,34 @@ contains
       TimeStep
 
     type ( TimerForm ), pointer :: &
-      Timer
+      Timer, &
+      Timer_BF
 
     call Show ( 'Computing a Step_RK_C_ASC', S % IGNORABILITY + 2 )
     call Show ( S % Name, 'Name', S % IGNORABILITY + 2 )
 
     Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerStep )
+    Timer_BF => PROGRAM_HEADER % TimerPointer ( S % iTimerBoundaryFluence )
+
     if ( associated ( Timer ) ) call Timer % Start ( )
 
     if ( .not. S % Allocated ) &
       call AllocateStorage ( S )
 
+    if ( associated ( Timer_BF ) ) call Timer_BF % Start ( )
     if ( allocated ( S % BoundaryFluence_CSL ) ) &
       call S % ClearBoundaryFluence ( S % BoundaryFluence_CSL )
+    if ( associated ( Timer_BF ) ) call Timer_BF % Stop ( )
 
     call S % LoadSolution ( S % Solution, S % Current )
     call S % ComputeTemplate ( Time, TimeStep )
     call S % StoreSolution ( S % Current, S % Solution, FinalOption = .true. )
 
+    if ( associated ( Timer_BF ) ) call Timer_BF % Start ( )
     if ( allocated ( S % BoundaryFluence_CSL ) ) &
       call S % Current_ASC % AccumulateBoundaryTally &
              ( S % BoundaryFluence_CSL )
+    if ( associated ( Timer_BF ) ) call Timer_BF % Stop ( )
 
     if ( associated ( Timer ) ) call Timer % Stop ( )
 
@@ -530,20 +540,6 @@ contains
     call S % FinalizeTemplate ( )
 
   end subroutine FinalizeTemplate_C_ASC
-
-
-  subroutine InitializeTimersLoadInitial ( S, BaseLevel )
-
-    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
-      S
-    integer ( KDI ), intent ( in ) :: &
-      BaseLevel
-
-    call PROGRAM_HEADER % AddTimer &
-           ( 'LoadInitial_C', S % iTimerLoadInitial_C, &
-             Level = BaseLevel )
-
-  end subroutine InitializeTimersLoadInitial
 
 
   subroutine InitializeTimersDivergence ( S, BaseLevel )
@@ -699,7 +695,7 @@ contains
     type ( TimerForm ), pointer :: &
       Timer
 
-    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerLoadInitial_C )
+    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerLoadInitial )
     if ( associated ( Timer ) ) call Timer % Start ( )
 
     associate ( iaC => Current % iaConserved )

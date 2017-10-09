@@ -22,7 +22,6 @@ module Step_RK_C_BSLL_ASC_CSLD__Template
   type, public, extends ( Step_RK_C_ASC_Template ), abstract :: &
     Step_RK_C_BSLL_ASC_CSLD_Template
       integer ( KDI ) :: &
-        iTimerLoadInitial_S = 0, &
         nFibers   = 0, &
         nSections = 0
       type ( Real_3D_2D_Form ), dimension ( : ), allocatable :: &
@@ -60,8 +59,6 @@ module Step_RK_C_BSLL_ASC_CSLD__Template
       Compute
     procedure, public, pass :: &
       FinalizeTemplate_C_BSLL_ASC_CSLD
-    procedure, private, pass :: &
-      InitializeTimersLoadInitial
     procedure, private, pass :: &
       InitializeIntermediate
     procedure, private, pass :: &
@@ -206,23 +203,28 @@ contains
     integer ( KDI ) :: &
       iS     !-- iSection
     type ( TimerForm ), pointer :: &
-      Timer
+      Timer, &
+      Timer_BF
 
     call Show ( 'Computing a Step_RK_C_BSLL_ASC_CSLD_C_ASC', &
                 S % IGNORABILITY + 2 )
     call Show ( S % Name, 'Name', S % IGNORABILITY + 2 )
 
     Timer => PROGRAM_HEADER % Timer ( S % iTimerStep )
+    Timer_BF => PROGRAM_HEADER % TimerPointer ( S % iTimerBoundaryFluence )
+
     if ( associated ( Timer ) ) call Timer % Start ( )
 
     if ( .not. S % Allocated ) &
       call AllocateStorage ( S )
 
+    if ( associated ( Timer_BF ) ) call Timer_BF % Start ( )
     do iS = 1, S % nSections
       if ( allocated ( S % BoundaryFluence_CSL_S ) ) &
         call S % ClearBoundaryFluence &
                ( S % BoundaryFluence_CSL_S ( iS ) % Array )
     end do !-- iS
+    if ( associated ( Timer_BF ) ) call Timer_BF % Stop ( )
 
     call S % LoadSolution ( S % Solution_BSLL_ASC_CSLD_S, &
                             S % Current_BSLL_ASC_CSLD )
@@ -235,6 +237,7 @@ contains
 
     associate ( CB => S % Current_BSLL_ASC_CSLD )
 
+    if ( associated ( Timer_BF ) ) call Timer_BF % Start ( )
     do iS = 1, S % nSections
       select type ( CBA => CB % Section % Atlas ( iS ) % Element )
       class is ( Current_ASC_Template )
@@ -242,6 +245,7 @@ contains
                ( S % BoundaryFluence_CSL_S ( iS ) % Array )
       end select !-- CBA
     end do !-- iS
+    if ( associated ( Timer_BF ) ) call Timer_BF % Stop ( )
 
     end associate !-- CB, etc.
 
@@ -265,20 +269,6 @@ contains
     call S % FinalizeTemplate_C_ASC ( )
 
   end subroutine FinalizeTemplate_C_BSLL_ASC_CSLD
-
-
-  subroutine InitializeTimersLoadInitial ( S, BaseLevel )
-
-    class ( Step_RK_C_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
-      S
-    integer ( KDI ), intent ( in ) :: &
-      BaseLevel
-
-    call PROGRAM_HEADER % AddTimer &
-           ( 'LoadInitial_S', S % iTimerLoadInitial_S, &
-             Level = BaseLevel )
-
-  end subroutine InitializeTimersLoadInitial
 
 
   subroutine InitializeIntermediate ( S )
@@ -383,11 +373,6 @@ contains
       iS     !-- iSection
     class ( CurrentTemplate ), pointer :: &
       Current
-    type ( TimerForm ), pointer :: &
-      Timer
-
-    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerLoadInitial_S )
-    if ( associated ( Timer ) ) call Timer % Start ( )
 
     associate ( CB => Current_BSLL_ASC_CSLD )
 
@@ -400,8 +385,6 @@ contains
 
     end associate !-- CB
     nullify ( Current )
-
-    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine LoadSolution_C_BSLL_ASC_CSLD
 

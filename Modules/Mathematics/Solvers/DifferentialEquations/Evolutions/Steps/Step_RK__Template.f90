@@ -16,6 +16,7 @@ module Step_RK__Template
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
       iTimerStep = 0, &
+      iTimerLoadInitial = 0, &
       iTimerTemplate = 0, &
       iTimerInitializeIntermediate = 0, &
       iTimerIncrementIntermediate = 0, &
@@ -39,8 +40,6 @@ module Step_RK__Template
       ComputeTemplate
     procedure, public, pass :: &
       FinalizeTemplate
-    procedure ( IT ), private, pass, deferred :: &
-      InitializeTimersLoadInitial
     procedure ( II ), private, pass, deferred :: &
       InitializeIntermediate
     procedure ( II_A_iK ), private, pass, deferred :: &
@@ -168,7 +167,9 @@ contains
     call PROGRAM_HEADER % AddTimer &
            ( S % Name, S % iTimerStep, &
              Level = BaseLevel )
-      call S % InitializeTimersLoadInitial ( BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'LoadInitial', S % iTimerLoadInitial, &
+               Level = BaseLevel + 1 )
       call PROGRAM_HEADER % AddTimer &
              ( 'Template', S % iTimerTemplate, &
                Level = BaseLevel + 1 )
