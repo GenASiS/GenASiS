@@ -559,6 +559,10 @@ contains
 
     if ( associated ( TimerSections ) ) call TimerSections % Start ( )
 
+    S % ApplyDivergence_C => S % ApplyDivergence_S % Pointer
+    S % ApplySources_C    => S % ApplySources_S    % Pointer
+    S % ApplyRelaxation_C => S % ApplyRelaxation_S % Pointer
+
     do iS = 1, S % nSections
 
       K => KB % FieldSection ( iS )
@@ -570,21 +574,17 @@ contains
 
       associate ( Chart => S % Chart )
 
-      S % ApplyDivergence_C => S % ApplyDivergence_S % Pointer
-      S % ApplySources_C    => S % ApplySources_S    % Pointer
-      S % ApplyRelaxation_C => S % ApplyRelaxation_S % Pointer
-
       call S % ComputeStage_C &
              ( S % IncrementDivergence_S ( iS ), C, Chart, K, TimeStep, &
                iStage )
 
-      S % ApplyRelaxation_C => null ( )
-      S % ApplySources_C    => null ( )
-      S % ApplyDivergence_C => null ( )
-
       end associate !-- Chart
 
     end do !-- iS
+
+    S % ApplyRelaxation_C => null ( )
+    S % ApplySources_C    => null ( )
+    S % ApplyDivergence_C => null ( )
 
     if ( associated ( TimerSections ) ) call TimerSections % Stop ( )
 
@@ -602,6 +602,10 @@ contains
     TimerFibers => PROGRAM_HEADER % TimerPointer ( S % iTimerFibers )
     if ( associated ( TimerFibers ) ) call TimerFibers % Start ( )
 
+    S % ApplyDivergence_C => S % ApplyDivergence_F % Pointer
+    S % ApplySources_C    => S % ApplySources_F    % Pointer
+    S % ApplyRelaxation_C => S % ApplyRelaxation_F % Pointer
+
     do iF = 1, S % nFibers
 
       K => KB % FieldFiber ( iF )
@@ -610,19 +614,15 @@ contains
 
       associate ( Chart => S % Chart_F )
 
-      S % ApplyDivergence_C => S % ApplyDivergence_F % Pointer
-      S % ApplySources_C    => S % ApplySources_F    % Pointer
-      S % ApplyRelaxation_C => S % ApplyRelaxation_F % Pointer
-
       call S % ComputeStage_C ( ID_Dummy, C, Chart, K, TimeStep, iStage )
-
-      S % ApplyRelaxation_C => null ( )
-      S % ApplySources_C    => null ( )
-      S % ApplyDivergence_C => null ( )
 
       end associate !-- Chart
 
     end do !-- iF
+
+    S % ApplyRelaxation_C => null ( )
+    S % ApplySources_C    => null ( )
+    S % ApplyDivergence_C => null ( )
 
     if ( associated ( TimerFibers ) ) call TimerFibers % Stop ( )
 
