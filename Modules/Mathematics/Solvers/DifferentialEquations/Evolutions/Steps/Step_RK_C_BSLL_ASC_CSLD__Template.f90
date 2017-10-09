@@ -22,6 +22,10 @@ module Step_RK_C_BSLL_ASC_CSLD__Template
   type, public, extends ( Step_RK_C_ASC_Template ), abstract :: &
     Step_RK_C_BSLL_ASC_CSLD_Template
       integer ( KDI ) :: &
+        iTimerSections = 0, &
+        iTimerStoreSections = 0, &
+        iTimerFibers = 0, &
+        iTimerLoadSections = 0, &
         nFibers   = 0, &
         nSections = 0
       type ( Real_3D_2D_Form ), dimension ( : ), allocatable :: &
@@ -59,6 +63,8 @@ module Step_RK_C_BSLL_ASC_CSLD__Template
       Compute
     procedure, public, pass :: &
       FinalizeTemplate_C_BSLL_ASC_CSLD
+    procedure, public, pass :: &
+      InitializeTimersStage
     procedure, private, pass :: &
       LoadSolution
     procedure, private, pass :: &
@@ -262,6 +268,50 @@ contains
     call S % FinalizeTemplate_C_ASC ( )
 
   end subroutine FinalizeTemplate_C_BSLL_ASC_CSLD
+
+
+  subroutine InitializeTimersStage ( S, BaseLevel )
+
+    class ( Step_RK_C_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
+      S
+    integer ( KDI ), intent ( in ) :: &
+      BaseLevel
+
+    call PROGRAM_HEADER % AddTimer &
+           ( 'Stage', S % iTimerStage, &
+             Level = BaseLevel )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'StoreIntermediate', S % iTimerStoreIntermediate, &
+               Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'Sections', S % iTimerSections, Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'StoreSections', S % iTimerStoreSections, &
+               Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'Fibers', S % iTimerFibers, Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'LoadSections', S % iTimerLoadSections, &
+               Level = BaseLevel + 1 )
+      ! call PROGRAM_HEADER % AddTimer &
+      !        ( 'ClearIncrement', S % iTimerClearIncrement, &
+      !          Level = BaseLevel + 1 )
+      ! call PROGRAM_HEADER % AddTimer &
+      !        ( 'ApplyDivergence', S % iTimerDivergence, &
+      !          Level = BaseLevel + 1 )
+      ! call S % InitializeTimersDivergence &
+      !        ( BaseLevel + 2 )
+      ! call PROGRAM_HEADER % AddTimer &
+      !        ( 'ApplySources', S % iTimerSources, &
+      !          Level = BaseLevel + 1 )
+      ! call PROGRAM_HEADER % AddTimer &
+      !        ( 'ApplyRelaxation', S % iTimerRelaxation, &
+      !          Level = BaseLevel + 1 )
+      ! call PROGRAM_HEADER % AddTimer &
+      !        ( 'GhostIncrement', S % iTimerGhost, &
+      !          Level = BaseLevel + 1 )
+
+  end subroutine InitializeTimersStage
 
 
   subroutine LoadSolution ( S )
@@ -479,7 +529,11 @@ contains
       K
     type ( TimerForm ), pointer :: &
       TimerStore, &
-      TimerClear
+      TimerSections, &
+      TimerStore_K, &
+      TimerFibers, &
+      TimerClear, &
+      TimerLoad_K
     class ( CurrentTemplate ), pointer :: &
       C
     type ( IncrementDivergence_FV_Form ) :: &
@@ -500,7 +554,10 @@ contains
 
     !-- Sections
 
-    TimerClear => PROGRAM_HEADER % TimerPointer ( S % iTimerClearIncrement )
+    TimerSections => PROGRAM_HEADER % TimerPointer ( S % iTimerSections )
+    TimerClear    => PROGRAM_HEADER % TimerPointer ( S % iTimerClearIncrement )
+
+    if ( associated ( TimerSections ) ) call TimerSections % Start ( )
 
     do iS = 1, S % nSections
 
@@ -529,10 +586,21 @@ contains
 
     end do !-- iS
 
+    if ( associated ( TimerSections ) ) call TimerSections % Stop ( )
+
     !-- Store K to fibers
+
+    TimerStore_K => PROGRAM_HEADER % TimerPointer ( S % iTimerStoreSections )
+    if ( associated ( TimerStore_K ) ) call TimerStore_K % Start ( )
+
     call KB % StoreSections ( )
 
+    if ( associated ( TimerStore_K ) ) call TimerStore_K % Stop ( )
+
     !-- Fibers
+
+    TimerFibers => PROGRAM_HEADER % TimerPointer ( S % iTimerFibers )
+    if ( associated ( TimerFibers ) ) call TimerFibers % Start ( )
 
     do iF = 1, S % nFibers
 
@@ -556,8 +624,16 @@ contains
 
     end do !-- iF
 
+    if ( associated ( TimerFibers ) ) call TimerFibers % Stop ( )
+
     !-- Load K to sections
+
+    TimerLoad_K => PROGRAM_HEADER % TimerPointer ( S % iTimerLoadSections )
+    if ( associated ( TimerLoad_K ) ) call TimerLoad_K % Start ( )
+
     call KB % LoadSections ( )
+
+    if ( associated ( TimerLoad_K ) ) call TimerLoad_K % Stop ( )
 
     end associate !-- CB, etc.
     nullify ( K, C )
