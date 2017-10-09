@@ -42,7 +42,6 @@ module Step_RK_C_ASC__Template
         iTimerSources           = 0, &
         iTimerRelaxation        = 0, &
         iTimerGhost             = 0, &
-        iTimerStoreFinal        = 0, &
         iTimerBoundaryFluence   = 0
 !         iGeometryValue
       type ( Real_1D_Form ), dimension ( : ), allocatable :: &
@@ -93,6 +92,8 @@ module Step_RK_C_ASC__Template
       Compute
     procedure, public, pass :: &
       FinalizeTemplate_C_ASC
+    procedure, public, pass :: &
+      InitializeTimersStage
     procedure, private, pass :: &
       InitializeTimersDivergence
     procedure, private, pass :: &
@@ -302,29 +303,7 @@ contains
         call PROGRAM_HEADER % AddTimer &
                ( 'IncrementIntermediate', S % iTimerIncrementIntermediate, &
                  Level = BaseLevel + 2 )
-        call PROGRAM_HEADER % AddTimer &
-               ( 'Stage', S % iTimerStage, &
-                 Level = BaseLevel + 2 )
-          call PROGRAM_HEADER % AddTimer &
-                 ( 'StoreIntermediate', S % iTimerStoreIntermediate, &
-                   Level = BaseLevel + 3 )
-          call PROGRAM_HEADER % AddTimer &
-                 ( 'ClearIncrement', S % iTimerClearIncrement, &
-                   Level = BaseLevel + 3 )
-          call PROGRAM_HEADER % AddTimer &
-                 ( 'ApplyDivergence', S % iTimerDivergence, &
-                   Level = BaseLevel + 3 )
-          call S % InitializeTimersDivergence &
-                 ( BaseLevel + 4 )
-          call PROGRAM_HEADER % AddTimer &
-                 ( 'ApplySources', S % iTimerSources, &
-                   Level = BaseLevel + 3 )
-          call PROGRAM_HEADER % AddTimer &
-                 ( 'ApplyRelaxation', S % iTimerRelaxation, &
-                   Level = BaseLevel + 3 )
-          call PROGRAM_HEADER % AddTimer &
-                 ( 'GhostIncrement', S % iTimerGhost, &
-                   Level = BaseLevel + 3 )
+        call S % InitializeTimersStage ( BaseLevel + 2 )
         call PROGRAM_HEADER % AddTimer &
                ( 'IncrementSolution', S % iTimerIncrementSolution, &
                  Level = BaseLevel + 2 )
@@ -552,6 +531,40 @@ contains
     call S % FinalizeTemplate ( )
 
   end subroutine FinalizeTemplate_C_ASC
+
+
+  subroutine InitializeTimersStage ( S, BaseLevel )
+
+    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
+      S
+    integer ( KDI ), intent ( in ) :: &
+      BaseLevel
+
+    call PROGRAM_HEADER % AddTimer &
+           ( 'Stage', S % iTimerStage, &
+             Level = BaseLevel )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'StoreIntermediate', S % iTimerStoreIntermediate, &
+               Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'ClearIncrement', S % iTimerClearIncrement, &
+               Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'ApplyDivergence', S % iTimerDivergence, &
+               Level = BaseLevel + 1 )
+      call S % InitializeTimersDivergence &
+             ( BaseLevel + 2 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'ApplySources', S % iTimerSources, &
+               Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'ApplyRelaxation', S % iTimerRelaxation, &
+               Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'GhostIncrement', S % iTimerGhost, &
+               Level = BaseLevel + 1 )
+
+  end subroutine InitializeTimersStage
 
 
   subroutine InitializeTimersDivergence ( S, BaseLevel )

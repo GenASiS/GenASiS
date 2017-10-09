@@ -22,6 +22,7 @@ module Step_RK__Template
       iTimerIncrementIntermediate = 0, &
       iTimerStage = 0, &
       iTimerIncrementSolution = 0, &
+      iTimerStoreFinal = 0, &
       nStages
     real ( KDR ), dimension ( : ), allocatable :: &
       C, & 
@@ -40,6 +41,8 @@ module Step_RK__Template
       ComputeTemplate
     procedure, public, pass :: &
       FinalizeTemplate
+    procedure, public, pass :: &
+      InitializeTimersStage
     procedure ( II ), private, pass, deferred :: &
       InitializeIntermediate
     procedure ( II_A_iK ), private, pass, deferred :: &
@@ -179,95 +182,15 @@ contains
         call PROGRAM_HEADER % AddTimer &
                ( 'IncrementIntermediate', S % iTimerIncrementIntermediate, &
                  Level = BaseLevel + 2 )
-        call PROGRAM_HEADER % AddTimer &
-               ( 'Stage', S % iTimerStage, &
-                 Level = BaseLevel + 2 )
+        call S % InitializeTimersStage ( BaseLevel + 2 )
         call PROGRAM_HEADER % AddTimer &
                ( 'IncrementSolution', S % iTimerIncrementSolution, &
                  Level = BaseLevel + 2 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'StoreFinal', S % iTimerStoreFinal, &
+               Level = BaseLevel + 1 )
 
   end subroutine InitializeTimers
-
-
-!   subroutine ComputeTemplate ( S, Solution, Time, TimeStep )
-
-!     class ( Step_RK_Template ), intent ( inout ) :: &
-!       S
-!     type ( VariableGroupForm ), dimension ( : ), intent ( inout ) :: &
-!       Solution
-!     real ( KDR ), intent ( in ) :: &
-!       Time, &
-!       TimeStep
-
-!     integer ( KDI ) :: &
-!       iS, &  !-- iStage
-!       iG, &  !-- iGroup
-!       iK     !-- iIncrement
-!     integer ( KDI ), dimension ( size ( Solution ) ) :: &
-!       nValues, &
-!       nEquations
-!     type ( VariableGroupForm ), dimension ( size ( Solution ) ) :: &
-!       Y  !-- Argument of right-hand side
-!     type ( VariableGroupForm ), &
-!       dimension ( size ( Solution ), S % nStages ) :: &
-!         K  !-- Increments
-
-!     associate ( nGroups => size ( Solution ) ) !-- nGroups
-
-!     do iG = 1, nGroups
-!       nEquations ( iG )  =  Solution ( iG ) % nVariables
-!       nValues    ( iG )  =  Solution ( iG ) % nValues
-!       call Y ( iG ) % Initialize ( [ nValues ( iG ), nEquations ( iG ) ] )
-!     end do !-- iG
-
-!     !-- Compute increments
-
-!     do iS = 1, S % nStages
-!       do iG = 1, nGroups
-
-!         call K ( iG, iS ) % Initialize &
-!                ( [ nValues ( iG ), nEquations ( iG ) ] )
-
-!         associate &
-!           ( YV => Y ( iG ) % Value, &
-!             SV => Solution ( iG ) % Value )
-
-!         YV = SV
-!         do iK = 1, iS - 1
-!           associate &
-!             ( KV => K ( iG, iK ) % Value, &
-!               A  => S % A ( iS ) % Value ( iK ) )
-
-! !         YV  =  YV  +  A * KV  
-!           call MultiplyAdd ( YV, KV, A )
-
-!           end associate !-- KV, etc.
-!         end do !-- iK
-
-!         call S % ComputeIncrement ( K, Y, Time, TimeStep, iS, iG ) 
-
-!         end associate !-- YV, etc.
-
-!       end do !-- iG
-!     end do !-- iS
-
-!     !-- Assemble increments
-
-!     do iS = 1, S % nStages
-!       do iG = 1, nGroups
-!         associate &
-!           ( SV => Solution ( iG ) % Value, &
-!             KV => K ( iG, iS ) % Value, &
-!             B  => S % B ( iS ) )
-! !       SV  =  SV  +  B * KV
-!         call MultiplyAdd ( SV, KV, B )
-!         end associate !-- SV, etc.
-!       end do !-- iG
-!     end do !-- iS
-
-!     end associate !-- nGroups
-
-!   end subroutine ComputeTemplate
 
 
   subroutine ComputeTemplate ( S, Time, TimeStep )
@@ -342,6 +265,20 @@ contains
     call Show ( S % Name, 'Name', S % IGNORABILITY )
 
   end subroutine FinalizeTemplate
+
+
+  subroutine InitializeTimersStage ( S, BaseLevel )
+
+    class ( Step_RK_Template ), intent ( inout ) :: &
+      S
+    integer ( KDI ), intent ( in ) :: &
+      BaseLevel
+
+    call PROGRAM_HEADER % AddTimer &
+           ( 'Stage', S % iTimerStage, &
+             Level = BaseLevel )
+
+  end subroutine InitializeTimersStage
 
 
 end module Step_RK__Template
