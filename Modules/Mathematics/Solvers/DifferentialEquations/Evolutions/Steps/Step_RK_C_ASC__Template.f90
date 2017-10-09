@@ -291,25 +291,7 @@ contains
     call PROGRAM_HEADER % AddTimer &
            ( S % Name, S % iTimerStep, &
              Level = BaseLevel )
-      call PROGRAM_HEADER % AddTimer &
-             ( 'Template', S % iTimerTemplate, &
-               Level = BaseLevel + 1 )
-        call PROGRAM_HEADER % AddTimer &
-               ( 'LoadInitial', S % iTimerLoadInitial, &
-                 Level = BaseLevel + 2 )
-        call PROGRAM_HEADER % AddTimer &
-               ( 'InitializeIntermediate', S % iTimerInitializeIntermediate, &
-                 Level = BaseLevel + 2 )
-        call PROGRAM_HEADER % AddTimer &
-               ( 'IncrementIntermediate', S % iTimerIncrementIntermediate, &
-                 Level = BaseLevel + 2 )
-        call S % InitializeTimersStage ( BaseLevel + 2 )
-        call PROGRAM_HEADER % AddTimer &
-               ( 'IncrementSolution', S % iTimerIncrementSolution, &
-                 Level = BaseLevel + 2 )
-        call PROGRAM_HEADER % AddTimer &
-               ( 'StoreFinal', S % iTimerStoreFinal, &
-                 Level = BaseLevel + 2 )
+      call S % InitializeTimersTemplate ( BaseLevel + 1 )
       call PROGRAM_HEADER % AddTimer &
              ( 'BoundaryFluence', S % iTimerBoundaryFluence, &
                Level = BaseLevel + 1 )

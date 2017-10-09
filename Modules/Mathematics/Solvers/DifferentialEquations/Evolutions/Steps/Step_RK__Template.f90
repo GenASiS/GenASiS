@@ -42,6 +42,8 @@ module Step_RK__Template
     procedure, public, pass :: &
       FinalizeTemplate
     procedure, public, pass :: &
+      InitializeTimersTemplate
+    procedure, public, pass :: &
       InitializeTimersStage
     procedure ( LS ), private, pass, deferred :: &
       LoadSolution
@@ -186,25 +188,7 @@ contains
     call PROGRAM_HEADER % AddTimer &
            ( S % Name, S % iTimerStep, &
              Level = BaseLevel )
-      call PROGRAM_HEADER % AddTimer &
-             ( 'Template', S % iTimerTemplate, &
-               Level = BaseLevel + 1 )
-        call PROGRAM_HEADER % AddTimer &
-               ( 'LoadInitial', S % iTimerLoadInitial, &
-                 Level = BaseLevel + 2 )
-        call PROGRAM_HEADER % AddTimer &
-               ( 'InitializeIntermediate', S % iTimerInitializeIntermediate, &
-                 Level = BaseLevel + 2 )
-        call PROGRAM_HEADER % AddTimer &
-               ( 'IncrementIntermediate', S % iTimerIncrementIntermediate, &
-                 Level = BaseLevel + 2 )
-        call S % InitializeTimersStage ( BaseLevel + 2 )
-        call PROGRAM_HEADER % AddTimer &
-               ( 'IncrementSolution', S % iTimerIncrementSolution, &
-                 Level = BaseLevel + 2 )
-        call PROGRAM_HEADER % AddTimer &
-               ( 'StoreFinal', S % iTimerStoreFinal, &
-                 Level = BaseLevel + 2 )
+      call S % InitializeTimersTemplate ( BaseLevel + 1 )
 
   end subroutine InitializeTimers
 
@@ -311,6 +295,36 @@ contains
     call Show ( S % Name, 'Name', S % IGNORABILITY )
 
   end subroutine FinalizeTemplate
+
+
+  subroutine InitializeTimersTemplate ( S, BaseLevel )
+
+    class ( Step_RK_Template ), intent ( inout ) :: &
+      S
+    integer ( KDI ), intent ( in ) :: &
+      BaseLevel
+
+    call PROGRAM_HEADER % AddTimer &
+           ( 'Template', S % iTimerTemplate, &
+             Level = BaseLevel )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'LoadInitial', S % iTimerLoadInitial, &
+               Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'InitializeIntermediate', S % iTimerInitializeIntermediate, &
+               Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'IncrementIntermediate', S % iTimerIncrementIntermediate, &
+               Level = BaseLevel + 1 )
+      call S % InitializeTimersStage ( BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'IncrementSolution', S % iTimerIncrementSolution, &
+               Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'StoreFinal', S % iTimerStoreFinal, &
+               Level = BaseLevel + 1 )
+
+  end subroutine InitializeTimersTemplate
 
 
   subroutine InitializeTimersStage ( S, BaseLevel )
