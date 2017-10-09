@@ -276,16 +276,7 @@ contains
     class ( Step_RK_C_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
       S
 
-    type ( TimerForm ), pointer :: &
-      Timer
-
-    Timer => PROGRAM_HEADER % TimerPointer &
-               ( S % iTimerInitializeIntermediate )
-    if ( associated ( Timer ) ) call Timer % Start ( )
-
     call S % InitializeIntermediate_C_BSLL_ASC_CSLD ( )
-
-    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine InitializeIntermediate
 
@@ -299,15 +290,7 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iK
 
-    type ( TimerForm ), pointer :: &
-      Timer
-
-    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerIncrementIntermediate )
-    if ( associated ( Timer ) ) call Timer % Start ( )
-
     call S % IncrementIntermediate_C_BSLL_ASC_CSLD ( A, iK )
-
-    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine IncrementIntermediate
 
@@ -322,17 +305,9 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iStage
 
-    type ( TimerForm ), pointer :: &
-      Timer
-
-    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerStage )
-    if ( associated ( Timer ) ) call Timer % Start ( )
-
     call S % ComputeStage_C_BSLL_ASC_CSLD &
       ( S % Current_BSLL_ASC_CSLD, S % K_BSLL_ASC_CSLD ( iStage ), &
         S % BoundaryFluence_CSL_S, S % Y_BSLL_ASC_CSLD_S, TimeStep, iStage )
-
-    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine ComputeStage
 
@@ -346,15 +321,7 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iS
 
-    type ( TimerForm ), pointer :: &
-      Timer
-
-    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerIncrementSolution )
-    if ( associated ( Timer ) ) call Timer % Start ( )
-
     call S % IncrementSolution_C_BSLL_ASC_CSLD ( B, iS )
-
-    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine IncrementSolution
 

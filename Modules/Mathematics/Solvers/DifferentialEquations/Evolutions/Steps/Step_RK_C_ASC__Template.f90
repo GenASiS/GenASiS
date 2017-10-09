@@ -589,16 +589,7 @@ contains
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
 
-    type ( TimerForm ), pointer :: &
-      Timer
-
-    Timer => PROGRAM_HEADER % TimerPointer &
-               ( S % iTimerInitializeIntermediate )
-    if ( associated ( Timer ) ) call Timer % Start ( )
-
     call S % InitializeIntermediate_C ( )
-
-    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine InitializeIntermediate
 
@@ -612,15 +603,7 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iK
 
-    type ( TimerForm ), pointer :: &
-      Timer
-
-    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerIncrementIntermediate )
-    if ( associated ( Timer ) ) call Timer % Start ( )
-
     call S % IncrementIntermediate_C  ( A, iK )
-
-    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine IncrementIntermediate
 
@@ -635,15 +618,7 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iStage
 
-    type ( TimerForm ), pointer :: &
-      Timer
-
-    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerStage )
-    if ( associated ( Timer ) ) call Timer % Start ( )
-
     call S % ComputeStage_C_ASC ( TimeStep, iStage )
-
-    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine ComputeStage
 
@@ -699,15 +674,7 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iS
 
-    type ( TimerForm ), pointer :: &
-      Timer
-
-    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerIncrementSolution )
-    if ( associated ( Timer ) ) call Timer % Start ( )
-
     call S % IncrementSolution_C ( B, iS )
-
-    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine IncrementSolution
 

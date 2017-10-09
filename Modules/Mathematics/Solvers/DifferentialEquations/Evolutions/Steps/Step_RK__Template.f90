@@ -205,9 +205,21 @@ contains
       iS, &  !-- iStage
       iK     !-- iIncrement
     type ( TimerForm ), pointer :: &
-      Timer
+      Timer, &
+      Timer_II, &
+      Timer_II_A_iK, &
+      Timer_S, &
+      Timer_IS
 
-    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerTemplate )
+    Timer         => PROGRAM_HEADER % TimerPointer ( S % iTimerTemplate )
+    Timer_II      => PROGRAM_HEADER % TimerPointer &
+                       ( S % iTimerInitializeIntermediate )
+    Timer_II_A_iK => PROGRAM_HEADER % TimerPointer &
+                       ( S % iTimerIncrementIntermediate )
+    Timer_S       => PROGRAM_HEADER % TimerPointer ( S % iTimerStage )
+    Timer_IS      => PROGRAM_HEADER % TimerPointer &
+                       ( S % iTimerIncrementSolution )
+
     if ( associated ( Timer ) ) call Timer % Start ( )
 
     !-- On entry, Solution = Y_N (old value)
@@ -219,19 +231,26 @@ contains
       call Show ( iS, 'iStage', S % IGNORABILITY + 2 )
 
       !-- Set Y  =  Solution
+      if ( associated ( Timer_II ) ) call Timer_II % Start ( )
       call S % InitializeIntermediate ( )
+      if ( associated ( Timer_II ) ) call Timer_II % Stop ( )
 
+      if ( associated ( Timer_II_A_iK ) ) call Timer_II_A_iK % Start ( )
       do iK = 1, iS - 1
         associate ( A  =>  S % A ( iS ) % Value ( iK ) )
         !-- Set Y  =  Y  +  A * K ( iK )
         call S % IncrementIntermediate ( A, iK )
         end associate !-- A
       end do !-- iK
+      if ( associated ( Timer_II_A_iK ) ) call Timer_II_A_iK % Stop ( )
 
+      if ( associated ( Timer_S ) ) call Timer_S % Start ( )
       call S % ComputeStage ( Time, TimeStep, iS )
+      if ( associated ( Timer_S ) ) call Timer_S % Stop ( )
 
     end do !-- iS
 
+    if ( associated ( Timer_IS ) ) call Timer_IS % Start ( )
     !-- Assemble stages
     do iS = 1, S % nStages
       associate ( B  =>  S % B ( iS ) )
@@ -239,6 +258,7 @@ contains
       call S % IncrementSolution ( B, iS )
       end associate !-- B
     end do !-- iS
+    if ( associated ( Timer_IS ) ) call Timer_IS % Stop ( )
 
     !-- On exit, Solution  =  Y_(N+1) (new value)
 
