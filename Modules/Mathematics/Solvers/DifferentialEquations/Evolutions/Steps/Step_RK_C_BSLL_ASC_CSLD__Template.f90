@@ -62,6 +62,8 @@ module Step_RK_C_BSLL_ASC_CSLD__Template
     procedure, private, pass :: &
       LoadSolution
     procedure, private, pass :: &
+      StoreSolution
+    procedure, private, pass :: &
       InitializeIntermediate
     procedure, private, pass :: &
       IncrementIntermediate
@@ -71,10 +73,8 @@ module Step_RK_C_BSLL_ASC_CSLD__Template
       IncrementSolution
     procedure, public, pass ( S ) :: &
       LoadSolution_C_BSLL_ASC_CSLD
-    procedure, private, pass ( S ) :: &
+    procedure, public, pass ( S ) :: &
       StoreSolution_C_BSLL_ASC_CSLD
-    generic, public :: &
-      StoreSolution => StoreSolution_C_BSLL_ASC_CSLD
     procedure, public, pass :: &
       InitializeIntermediate_C_BSLL_ASC_CSLD
     procedure, public, pass :: &
@@ -228,10 +228,6 @@ contains
 
     call S % ComputeTemplate ( Time, TimeStep )
 
-    call S % StoreSolution &
-           ( S % Current_BSLL_ASC_CSLD, S % Solution_BSLL_ASC_CSLD_S, &
-             FinalOption = .true. )
-
     associate ( CB => S % Current_BSLL_ASC_CSLD )
 
     if ( associated ( Timer_BF ) ) call Timer_BF % Start ( )
@@ -277,6 +273,17 @@ contains
            ( S % Solution_BSLL_ASC_CSLD_S, S % Current_BSLL_ASC_CSLD )
 
   end subroutine LoadSolution
+
+
+  subroutine StoreSolution ( S )
+
+    class ( Step_RK_C_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
+      S
+
+    call S % StoreSolution_C_BSLL_ASC_CSLD &
+           ( S % Current_BSLL_ASC_CSLD, S % Solution_BSLL_ASC_CSLD_S )
+
+  end subroutine StoreSolution
 
 
   subroutine InitializeIntermediate ( S )
@@ -365,8 +372,7 @@ contains
 
 
   subroutine StoreSolution_C_BSLL_ASC_CSLD &
-               ( Current_BSLL_ASC_CSLD, S, Solution_BSLL_ASC_CSLD_S, &
-                 IntermediateOption, FinalOption )
+               ( Current_BSLL_ASC_CSLD, S, Solution_BSLL_ASC_CSLD_S )
 
     class ( Current_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
       Current_BSLL_ASC_CSLD
@@ -374,9 +380,6 @@ contains
       S
     type ( VariableGroupForm ), dimension ( : ), intent ( in ) :: &
       Solution_BSLL_ASC_CSLD_S
-    logical ( KDL ), intent ( in ), optional :: &
-      IntermediateOption, &
-      FinalOption
 
     integer ( KDI ) :: &
       iS     !-- iSection
@@ -390,8 +393,7 @@ contains
     do iS = 1, S % nSections
       associate ( Solution => Solution_BSLL_ASC_CSLD_S ( iS ) )
       Current  => CB % CurrentSection ( iS )
-      call S % StoreSolution &
-             ( Current, Solution, IntermediateOption, FinalOption )
+      call S % StoreSolution_C ( Current, Solution )
       end associate !-- Solution
     end do !-- iS
 
@@ -475,6 +477,9 @@ contains
       iF     !-- iFiber
     type ( VariableGroupForm ), pointer :: &
       K
+    type ( TimerForm ), pointer :: &
+      TimerStore, &
+      TimerClear
     class ( CurrentTemplate ), pointer :: &
       C
     type ( IncrementDivergence_FV_Form ) :: &
@@ -484,15 +489,25 @@ contains
       ( CB => C_BSLL_ASC_CSLD, &
         KB => K_BSLL_ASC_CSLD )
 
-    if ( iStage > 1 ) &
-      call S % StoreSolution ( C_BSLL_ASC_CSLD, Y_BSLL_ASC_CSLD_S )
+    if ( iStage > 1 ) then
+      TimerStore => PROGRAM_HEADER % TimerPointer &
+                      ( S % iTimerStoreIntermediate )
+      if ( associated ( TimerStore ) ) call TimerStore % Start ( )
+      call S % StoreSolution_C_BSLL_ASC_CSLD &
+             ( C_BSLL_ASC_CSLD, Y_BSLL_ASC_CSLD_S )
+      if ( associated ( TimerStore ) ) call TimerStore % Stop ( )
+    end if
 
     !-- Sections
+
+    TimerClear => PROGRAM_HEADER % TimerPointer ( S % iTimerClearIncrement )
 
     do iS = 1, S % nSections
 
       K => KB % FieldSection ( iS )
+      if ( associated ( TimerClear ) ) call TimerClear % Start ( )
       call Clear ( K % Value )
+      if ( associated ( TimerClear ) ) call TimerClear % Stop ( )    
 
       C => CB % CurrentSection ( iS )
 

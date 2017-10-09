@@ -99,6 +99,8 @@ module Step_RK_C_ASC__Template
     procedure, private, pass :: &
       LoadSolution
     procedure, private, pass :: &
+      StoreSolution
+    procedure, private, pass :: &
       InitializeIntermediate
     procedure, private, pass :: &
       IncrementIntermediate
@@ -110,10 +112,8 @@ module Step_RK_C_ASC__Template
       IncrementSolution
     procedure, public, pass ( S ) :: &
       LoadSolution_C
-    procedure, private, pass ( S ) :: &
+    procedure, public, pass ( S ) :: &
       StoreSolution_C
-    generic, public :: &
-      StoreSolution => StoreSolution_C
 !     procedure, private, pass :: &
 !       ComputeIncrement
 !     procedure, public, pass :: &
@@ -307,9 +307,9 @@ contains
         call PROGRAM_HEADER % AddTimer &
                ( 'IncrementSolution', S % iTimerIncrementSolution, &
                  Level = BaseLevel + 2 )
-      call PROGRAM_HEADER % AddTimer &
-             ( 'StoreFinal', S % iTimerStoreFinal, &
-               Level = BaseLevel + 1 )
+        call PROGRAM_HEADER % AddTimer &
+               ( 'StoreFinal', S % iTimerStoreFinal, &
+                 Level = BaseLevel + 2 )
       call PROGRAM_HEADER % AddTimer &
              ( 'BoundaryFluence', S % iTimerBoundaryFluence, &
                Level = BaseLevel + 1 )
@@ -497,7 +497,6 @@ contains
     if ( associated ( Timer_BF ) ) call Timer_BF % Stop ( )
 
     call S % ComputeTemplate ( Time, TimeStep )
-    call S % StoreSolution ( S % Current, S % Solution, FinalOption = .true. )
 
     if ( associated ( Timer_BF ) ) call Timer_BF % Start ( )
     if ( allocated ( S % BoundaryFluence_CSL ) ) &
@@ -593,6 +592,16 @@ contains
   end subroutine LoadSolution
 
 
+  subroutine StoreSolution ( S )
+
+    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
+      S
+
+    call S % StoreSolution_C ( S % Current, S % Solution )
+
+  end subroutine StoreSolution
+
+
   subroutine InitializeIntermediate ( S )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
@@ -642,6 +651,7 @@ contains
       iStage
 
     type ( TimerForm ), pointer :: &
+      TimerStore, &
       TimerClear
 
     associate &
@@ -650,8 +660,13 @@ contains
         K     => S % K ( iStage ), &
         Y     => S % Y )
 
-    if ( iStage > 1 ) &
-      call S % StoreSolution ( C, Y, IntermediateOption = .true. )
+    if ( iStage > 1 ) then
+      TimerStore => PROGRAM_HEADER % TimerPointer &
+                      ( S % iTimerStoreIntermediate )
+      if ( associated ( TimerStore ) ) call TimerStore % Start ( )
+      call S % StoreSolution_C ( C, Y )
+      if ( associated ( TimerStore ) ) call TimerStore % Stop ( )
+    end if
 
     TimerClear => PROGRAM_HEADER % TimerPointer ( S % iTimerClearIncrement )
     if ( associated ( TimerClear ) ) call TimerClear % Start ( )
@@ -713,8 +728,7 @@ contains
   end subroutine LoadSolution_C
 
 
-  subroutine StoreSolution_C &
-               ( Current, S, Solution, IntermediateOption, FinalOption )
+  subroutine StoreSolution_C ( Current, S, Solution )
 
     class ( CurrentTemplate ), intent ( inout ) :: &
       Current
@@ -722,27 +736,11 @@ contains
       S
     type ( VariableGroupForm ), intent ( in ) :: &
       Solution
-    logical ( KDL ), intent ( in ), optional :: &
-      IntermediateOption, &
-      FinalOption
 
     integer ( KDI ) :: &
       iF  !-- iField
     class ( GeometryFlatForm ), pointer :: &
       G
-    type ( TimerForm ), pointer :: &
-      Timer
-
-    Timer => null ( )
-    if ( present ( FinalOption ) ) then
-      if ( FinalOption ) &
-        Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerStoreFinal )
-    else if ( present ( IntermediateOption ) ) then
-      if ( IntermediateOption ) &
-        Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerStoreIntermediate )
-    end if
-
-    if ( associated ( Timer ) ) call Timer % Start ( )
 
     associate ( iaC => Current % iaConserved )
     do iF = 1, Current % N_CONSERVED
@@ -767,8 +765,6 @@ contains
 
     nullify ( G )
     
-    if ( associated ( Timer ) ) call Timer % Stop ( )
-
   end subroutine StoreSolution_C
 
 

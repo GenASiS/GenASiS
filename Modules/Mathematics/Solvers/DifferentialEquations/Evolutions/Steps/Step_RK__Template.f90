@@ -16,8 +16,8 @@ module Step_RK__Template
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
       iTimerStep = 0, &
-      iTimerLoadInitial = 0, &
       iTimerTemplate = 0, &
+      iTimerLoadInitial = 0, &
       iTimerInitializeIntermediate = 0, &
       iTimerIncrementIntermediate = 0, &
       iTimerStage = 0, &
@@ -45,6 +45,8 @@ module Step_RK__Template
       InitializeTimersStage
     procedure ( LS ), private, pass, deferred :: &
       LoadSolution
+    procedure ( SS ), private, pass, deferred :: &
+      StoreSolution
     procedure ( II ), private, pass, deferred :: &
       InitializeIntermediate
     procedure ( II_A_iK ), private, pass, deferred :: &
@@ -71,6 +73,12 @@ module Step_RK__Template
       class ( Step_RK_Template ), intent ( inout ) :: &
         S
     end subroutine LS
+
+    subroutine SS ( S )
+      import Step_RK_Template
+      class ( Step_RK_Template ), intent ( inout ) :: &
+        S
+    end subroutine SS
 
     subroutine II ( S )
       import Step_RK_Template
@@ -194,9 +202,9 @@ contains
         call PROGRAM_HEADER % AddTimer &
                ( 'IncrementSolution', S % iTimerIncrementSolution, &
                  Level = BaseLevel + 2 )
-      call PROGRAM_HEADER % AddTimer &
-             ( 'StoreFinal', S % iTimerStoreFinal, &
-               Level = BaseLevel + 1 )
+        call PROGRAM_HEADER % AddTimer &
+               ( 'StoreFinal', S % iTimerStoreFinal, &
+                 Level = BaseLevel + 2 )
 
   end subroutine InitializeTimers
 
@@ -218,7 +226,8 @@ contains
       Timer_II, &
       Timer_II_A_iK, &
       Timer_S, &
-      Timer_IS
+      Timer_IS, &
+      Timer_SF
 
     Timer         => PROGRAM_HEADER % TimerPointer ( S % iTimerTemplate )
     Timer_LI      => PROGRAM_HEADER % TimerPointer ( S % iTimerLoadInitial )
@@ -229,6 +238,7 @@ contains
     Timer_S       => PROGRAM_HEADER % TimerPointer ( S % iTimerStage )
     Timer_IS      => PROGRAM_HEADER % TimerPointer &
                        ( S % iTimerIncrementSolution )
+    Timer_SF      => PROGRAM_HEADER % TimerPointer ( S % iTimerStoreFinal )
 
     if ( associated ( Timer ) ) call Timer % Start ( )
 
@@ -274,6 +284,9 @@ contains
     if ( associated ( Timer_IS ) ) call Timer_IS % Stop ( )
 
     !-- On exit, Solution  =  Y_(N+1) (new value)
+    if ( associated ( Timer_SF ) ) call Timer_SF % Start ( )
+    call S % StoreSolution ( )
+    if ( associated ( Timer_SF ) ) call Timer_SF % Stop ( )
 
     if ( associated ( Timer ) ) call Timer % Stop ( )
 
