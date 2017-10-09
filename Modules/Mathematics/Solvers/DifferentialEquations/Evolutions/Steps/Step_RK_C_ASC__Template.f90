@@ -37,7 +37,10 @@ module Step_RK_C_ASC__Template
     Step_RK_C_ASC_Template
       integer ( KDI ) :: &
         iTimerStoreIntermediate = 0, &
+        iTimerClearIncrement    = 0, &
+        iTimerDivergence        = 0, &
         iTimerSources           = 0, &
+        iTimerRelaxation        = 0, &
         iTimerGhost             = 0, &
         iTimerStoreFinal        = 0, &
         iTimerBoundaryFluence   = 0
@@ -305,10 +308,19 @@ contains
           call PROGRAM_HEADER % AddTimer &
                  ( 'StoreIntermediate', S % iTimerStoreIntermediate, &
                    Level = BaseLevel + 3 )
-          call S % InitializeTimersDivergence &
-                 ( BaseLevel + 3 )
           call PROGRAM_HEADER % AddTimer &
-                 ( 'Sources', S % iTimerSources, &
+                 ( 'ClearIncrement', S % iTimerClearIncrement, &
+                   Level = BaseLevel + 3 )
+          call PROGRAM_HEADER % AddTimer &
+                 ( 'ApplyDivergence', S % iTimerDivergence, &
+                   Level = BaseLevel + 3 )
+          call S % InitializeTimersDivergence &
+                 ( BaseLevel + 4 )
+          call PROGRAM_HEADER % AddTimer &
+                 ( 'ApplySources', S % iTimerSources, &
+                   Level = BaseLevel + 3 )
+          call PROGRAM_HEADER % AddTimer &
+                 ( 'ApplyRelaxation', S % iTimerRelaxation, &
                    Level = BaseLevel + 3 )
           call PROGRAM_HEADER % AddTimer &
                  ( 'GhostIncrement', S % iTimerGhost, &
@@ -632,6 +644,9 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iStage
 
+    type ( TimerForm ), pointer :: &
+      TimerClear
+
     associate &
       ( C     => S % Current, &
         Chart => S % Chart, &
@@ -641,7 +656,10 @@ contains
     if ( iStage > 1 ) &
       call S % StoreSolution ( C, Y, IntermediateOption = .true. )
 
+    TimerClear => PROGRAM_HEADER % TimerPointer ( S % iTimerClearIncrement )
+    if ( associated ( TimerClear ) ) call TimerClear % Start ( )
     call Clear ( K % Value )
+    if ( associated ( TimerClear ) ) call TimerClear % Stop ( )    
 
     S % ApplyDivergence_C => S % ApplyDivergence % Pointer
     S % ApplySources_C    => S % ApplySources    % Pointer
@@ -1017,20 +1035,35 @@ contains
       iStage
 
     type ( TimerForm ), pointer :: &
+      TimerDivergence, &
+      TimerSources, &
+      TimerRelaxation, &
       TimerGhost
 
     !-- Divergence
-    if ( associated ( S % ApplyDivergence_C ) ) &
+    if ( associated ( S % ApplyDivergence_C ) ) then
+      TimerDivergence => PROGRAM_HEADER % TimerPointer ( S % iTimerDivergence )
+      if ( associated ( TimerDivergence ) ) call TimerDivergence % Start ( )
       call S % ApplyDivergence_C ( ID, K, TimeStep, iStage )
+      if ( associated ( TimerDivergence ) ) call TimerDivergence % Stop ( )
+    end if
 
     !-- Other explicit sources
-    if ( associated ( S % ApplySources_C ) ) &
+    if ( associated ( S % ApplySources_C ) ) then
+      TimerSources => PROGRAM_HEADER % TimerPointer ( S % iTimerSources )
+      if ( associated ( TimerSources ) ) call TimerSources % Start ( )
       call S % ApplySources_C ( C % Sources, K, C, TimeStep, iStage )
+      if ( associated ( TimerSources ) ) call TimerSources % Stop ( )
+    end if
 
     !-- Relaxation
-    if ( associated ( S % ApplyRelaxation_C ) ) &
+    if ( associated ( S % ApplyRelaxation_C ) ) then
+      TimerRelaxation => PROGRAM_HEADER % TimerPointer ( S % iTimerRelaxation )
+      if ( associated ( TimerRelaxation ) ) call TimerRelaxation % Start ( )
       call S % ApplyRelaxation_C &
              ( C % Sources, K, C, Chart, TimeStep, iStage )
+      if ( associated ( TimerRelaxation ) ) call TimerRelaxation % Stop ( )
+    end if
 
     if ( associated ( S % ApplyDivergence_C ) ) then
       select type ( Chart )
