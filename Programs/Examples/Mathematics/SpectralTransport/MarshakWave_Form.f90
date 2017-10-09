@@ -84,6 +84,7 @@ contains
 
     integer ( KDI ) :: &
       iD, &  !-- iDimension
+      nPositionCells, &
       nEnergyCells
     real ( KDR ) :: &
       BoxLength, &
@@ -169,10 +170,14 @@ contains
     MinCoordinate  =  0.0_KDR
     MaxCoordinate  =  BoxLength
 
+    nPositionCells = 32
+    call PROGRAM_HEADER % GetParameter ( nPositionCells, 'nPositionCells' )
+
     call PS % CreateChart &
            ( CoordinateUnitOption = CoordinateUnit_PS, &
              MinCoordinateOption = MinCoordinate, &
-             MaxCoordinateOption = MaxCoordinate )
+             MaxCoordinateOption = MaxCoordinate, &
+             nCellsOption = [ nPositionCells, 1, 1 ] )
 
     !-- Geometry of PositionSpace
 
