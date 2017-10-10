@@ -67,7 +67,7 @@ contains
 
     TemperatureMin  =   0.1_KDR  *  UNIT % MEGA_ELECTRON_VOLT
     TemperatureMax  =  10.0_KDR  *  UNIT % MEGA_ELECTRON_VOLT
-    EnergyScale     =   4.0_KDR  *  UNIT % MEGA_ELECTRON_VOLT
+    EnergyScale     =  10.0_KDR  *  UNIT % MEGA_ELECTRON_VOLT
     call PROGRAM_HEADER % GetParameter ( TemperatureMin, 'TemperatureMin' )
     call PROGRAM_HEADER % GetParameter ( TemperatureMax, 'TemperatureMax' )
     call PROGRAM_HEADER % GetParameter ( EnergyScale, 'EnergyScale' )
@@ -128,14 +128,15 @@ contains
 
     !-- Radiation
 
-    EnergyDensityUnit  =  UNIT % MEGA_ELECTRON_VOLT / UNIT % HBAR_C ** 3
+    EnergyDensityUnit  =  UNIT % MEGA_ELECTRON_VOLT ** 4 / UNIT % HBAR_C ** 3
 
     allocate ( RadiationMoments_BSLL_ASC_CSLD_Form :: &
                T % Current_BSLL_ASC_CSLD )
     select type ( RMB => T % Current_BSLL_ASC_CSLD )
     type is ( RadiationMoments_BSLL_ASC_CSLD_Form )
     call RMB % Initialize &
-           ( MS, 'GENERIC', EnergyDensityUnitOption = EnergyDensityUnit )
+           ( MS, 'PHOTONS_SPECTRAL', &
+             EnergyDensityUnitOption = EnergyDensityUnit )
 
     !-- Fluid
 
