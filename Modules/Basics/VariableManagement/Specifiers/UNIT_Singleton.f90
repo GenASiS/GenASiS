@@ -86,10 +86,12 @@ module UNIT_Singleton
   type ( UnitSingleton ), public, protected, save, target :: &
     UNIT
 
+    character ( 6 ) :: &
+      MeV_Minus_1 = 'MeV^-1'
     character ( 5, KBCH ) :: &
-      MeV_Minus_1 &
-        = KBCH_'MeV' // char ( int ( z'207B' ), KBCH ) &
-                     // char ( int ( z'00B9' ), KBCH )
+      MeV_Minus_1_KBCH &
+        = KBCH_'MeV' // char ( KIND_BIG % SUPERSCRIPT_MINUS, KBCH ) &
+                     // char ( KIND_BIG % SUPERSCRIPT_1, KBCH )
 
 contains
 
@@ -103,8 +105,13 @@ contains
            ( '', '', 1.0_KDR )
     
     !-- Length
-    call U % METER % Initialize &
-           ( 'm', MeV_Minus_1, C % METER )
+    if ( KBCH > KDCH ) then
+      call U % METER % Initialize_UCS &
+             ( KBCH_'m', MeV_Minus_1_KBCH, 'm', MeV_Minus_1, C % METER )
+    else
+      call U % METER % Initialize &
+             ( 'm', MeV_Minus_1, C % METER )
+    end if
     call U % CENTIMETER % Initialize &
            ( 1.0e-2_KDR * U % METER, 'cm' )
     call U % FEMTOMETER % Initialize &
@@ -117,9 +124,15 @@ contains
            ( 'pc', MeV_Minus_1, C % PARSEC )
     call U % GIGAPARSEC % Initialize &
            ( 1.0e+9_KDR * U % PARSEC, 'Gpc' )
-    call U % ANGSTROM % Initialize &
-           ( 1.0e-10_KDR * U % METER, char ( int ( z'00C5' ), KBCH ) )
-    
+    if ( KBCH > KDCH ) then
+      call U % ANGSTROM % Initialize_UCS &
+             ( 1.0e-10_KDR * U % METER, &
+               char ( KIND_BIG % CAPITAL_A_RING, KBCH ), 'Ang' )
+    else
+      call U % ANGSTROM % Initialize &
+             ( 1.0e-10_KDR * U % METER, 'Ang' )
+    end if
+
     !-- Mass
     call U % KILOGRAM % Initialize &
            ( 'kg', 'MeV', C % KILOGRAM )
@@ -127,13 +140,23 @@ contains
            ( 1.0e-3_KDR * U % KILOGRAM, 'g' )
     call U % ATOMIC_MASS_UNIT % Initialize &
            ( 'u', 'MeV', C % ATOMIC_MASS_UNIT )
-    call U % SOLAR_MASS % Initialize &
-           ( KBCH_'M' // char ( int ( z'2299' ), KBCH ), 'MeV', &
-             C % SOLAR_MASS )
+    if ( KBCH > KDCH ) then
+      call U % SOLAR_MASS % Initialize_UCS &
+             ( KBCH_'M' // char ( KIND_BIG % CIRCLE_DOT, KBCH ), KBCH_'MeV', &
+               'M_Sun', 'MeV', C % SOLAR_MASS )
+    else
+      call U % SOLAR_MASS % Initialize &
+             ( 'M_Sun', 'MeV', C % SOLAR_MASS )
+    end if
            
     !-- Time
-    call U % SECOND % Initialize &
-           ( 's', MeV_Minus_1, C % SECOND )
+    if ( KBCH > KDCH ) then
+      call U % SECOND % Initialize_UCS &
+             ( KBCH_'s', MeV_Minus_1_KBCH, 's', MeV_Minus_1, C % SECOND )
+    else
+      call U % SECOND % Initialize &
+             ( 's', MeV_Minus_1, C % SECOND )
+    end if
     call U % MILLISECOND % Initialize &
            ( 1.0e-3_KDR * U % SECOND, 'ms' )
     call U % FEMTOSECOND % Initialize &
@@ -150,9 +173,14 @@ contains
     !-- Amount of substance
     call U % MOLE % Initialize &
            ( 'mol', '', C % MOLE )
-    call U % SOLAR_BARYON_NUMBER % Initialize &
-           ( KBCH_'N' // char ( int ( z'2299' ), KBCH ), '', &
-             C % SOLAR_MASS / C % ATOMIC_MASS_UNIT )
+    if ( KBCH > KDCH ) then
+      call U % SOLAR_BARYON_NUMBER % Initialize_UCS &
+             ( KBCH_'N' // char ( KIND_BIG % CIRCLE_DOT, KBCH ), KBCH_'', &
+               'N_Sun', '', C % SOLAR_MASS / C % ATOMIC_MASS_UNIT )
+    else
+      call U % SOLAR_BARYON_NUMBER % Initialize &
+             ( 'N_Sun', '', C % SOLAR_MASS / C % ATOMIC_MASS_UNIT )
+    end if
 
     !-- Angle
     call U % RADIAN % Initialize &
@@ -207,9 +235,16 @@ contains
            ( 'k', '', C % BOLTZMANN )
 
     !-- Energy/length conversion
-    call U % HBAR_C % Initialize &
-           ( KBCH_'(' // char ( int ( z'0127' ), KBCH ) // KBCH_'c)', '', &
-             C % PLANCK_REDUCED * C % SPEED_OF_LIGHT )
+    if ( KBCH > KDCH ) then
+      call U % HBAR_C % Initialize_UCS &
+             ( KBCH_'(' // char ( KIND_BIG % SMALL_H_STROKE, KBCH ) &
+                 // KBCH_'c)', &
+               KBCH_'', '(hBar_c)', '', &
+               C % PLANCK_REDUCED * C % SPEED_OF_LIGHT )
+    else
+      call U % HBAR_C % Initialize &
+             ( '(hBar_c)', '', C % PLANCK_REDUCED * C % SPEED_OF_LIGHT )
+    end if
 
     !-- Number density
     U % NUMBER_DENSITY_ANGSTROM &

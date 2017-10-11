@@ -18,7 +18,10 @@ module KIND_BIG_Singleton
       SUPERSCRIPT_7     = int ( z'2077' ), &
       SUPERSCRIPT_8     = int ( z'2078' ), &
       SUPERSCRIPT_9     = int ( z'2079' ), &
-      SUPERSCRIPT_MINUS = int ( z'207B' )
+      SUPERSCRIPT_MINUS = int ( z'207B' ), &
+      CAPITAL_A_RING    = int ( z'00C5' ), &
+      SMALL_H_STROKE    = int ( z'0127' ), &
+      CIRCLE_DOT        = int ( z'2299' )
 
   type, public :: KindBigSingleton
     integer ( kind ( KDI ) ) :: &
@@ -33,7 +36,10 @@ module KIND_BIG_Singleton
       SUPERSCRIPT_7     = SUPERSCRIPT_7, &
       SUPERSCRIPT_8     = SUPERSCRIPT_8, &
       SUPERSCRIPT_9     = SUPERSCRIPT_9, &
-      SUPERSCRIPT_MINUS = SUPERSCRIPT_MINUS
+      SUPERSCRIPT_MINUS = SUPERSCRIPT_MINUS, &
+      CAPITAL_A_RING    = CAPITAL_A_RING, &
+      SMALL_H_STROKE    = SMALL_H_STROKE, &
+      CIRCLE_DOT        = CIRCLE_DOT
   end type KindBigSingleton
 
   type ( KindBigSingleton ), public, parameter :: &

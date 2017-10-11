@@ -28,24 +28,23 @@ module MeasuredValue_Form
       Initialize_MV
 !     procedure, private, pass :: &
 !       Initialize_MV_KBCH
-!     procedure, private, pass :: &
-!       Initialize_MV_Label
-!     procedure, private, pass :: &
-!       Initialize_MV_KBCH_Label
-!     procedure, private, pass :: &
-!       Initialize_MV_Label_KBCH
+    procedure, private, pass :: &
+      Initialize_MV_Label
     procedure, private, pass :: &
       Initialize_MV_From_MV
-!     procedure, private, pass :: &
-!       Initialize_MV_From_MV_Label
-!     procedure, private, pass :: &
-!       Initialize_MV_From_MV_Label_KBCH
+    procedure, private, pass :: &
+      Initialize_MV_From_MV_Label
     generic :: &
       Initialize &
-        => Initialize_MV, &!, Initialize_MV_KBCH, Initialize_MV_Label, &
-!            Initialize_MV_KBCH_Label, Initialize_MV_Label_KBCH, &
-           Initialize_MV_From_MV!, Initialize_MV_From_MV_Label, &
-!            Initialize_MV_From_MV_Label_KBCH
+        => Initialize_MV, Initialize_MV_Label, &
+           Initialize_MV_From_MV, Initialize_MV_From_MV_Label
+    procedure, private, pass :: &
+      Initialize_UCS_MV_Label
+    procedure, private, pass :: &
+      Initialize_UCS_MV_From_MV_Label
+    generic :: &
+      Initialize_UCS &
+        => Initialize_UCS_MV_Label, Initialize_UCS_MV_From_MV_Label
     procedure, private, pass :: &
       Addition_MV_MV
     procedure, private, pass :: &
@@ -280,57 +279,23 @@ contains
 !   end subroutine Initialize_MV_KBCH
   
   
-!   subroutine Initialize_MV_Label ( MV, Label, Unit, Number )
+  subroutine Initialize_MV_Label ( MV, Label, Unit, Number )
     
-!     class ( MeasuredValueForm ), intent ( inout ) :: &
-!       MV
-!     character ( * ), intent ( in ) :: &
-!       Label, &
-!       Unit
-!     real ( KDR ), intent ( in ) :: &
-!       Number
+    class ( MeasuredValueForm ), intent ( inout ) :: &
+      MV
+    character ( * ), intent ( in ) :: &
+      Label, &
+      Unit
+    real ( KDR ), intent ( in ) :: &
+      Number
       
-!     MV % Number = Number
-!     MV % Unit   = Unit
-!     MV % Label  = Label
+    MV % Number    = Number
+    MV % Unit      = Unit
+    MV % Label     = Label
+    MV % Unit_UCS  = Unit
+    MV % Label_UCS = Label
 
-!   end subroutine Initialize_MV_Label
-  
-  
-!   subroutine Initialize_MV_KBCH_Label ( MV, Label, Unit, Number )
-    
-!     class ( MeasuredValueForm ), intent ( inout ) :: &
-!       MV
-!     character ( *, KDCH ), intent ( in ) :: &
-!       Label
-!     character ( *, KBCH ), intent ( in ) :: &
-!       Unit
-!     real ( KDR ), intent ( in ) :: &
-!       Number
-      
-!     MV % Number = Number
-!     MV % Unit   = Unit
-!     MV % Label  = Label
-
-!   end subroutine Initialize_MV_KBCH_Label
-  
-  
-!   subroutine Initialize_MV_Label_KBCH ( MV, Label, Unit, Number )
-    
-!     class ( MeasuredValueForm ), intent ( inout ) :: &
-!       MV
-!     character ( *, KBCH ), intent ( in ) :: &
-!       Label
-!     character ( *, KDCH ), intent ( in ) :: &
-!       Unit
-!     real ( KDR ), intent ( in ) :: &
-!       Number
-      
-!     MV % Number = Number
-!     MV % Unit   = Unit
-!     MV % Label  = Label
-
-!   end subroutine Initialize_MV_Label_KBCH
+  end subroutine Initialize_MV_Label
   
   
   subroutine Initialize_MV_From_MV ( MV_Target, MV_Source )
@@ -349,36 +314,68 @@ contains
   end subroutine Initialize_MV_From_MV
   
   
-!   subroutine Initialize_MV_From_MV_Label ( MV_Target, MV_Source, Label )
+  subroutine Initialize_MV_From_MV_Label ( MV_Target, MV_Source, Label )
     
-!     class ( MeasuredValueForm ), intent ( inout ) :: &
-!       MV_Target
-!     type ( MeasuredValueForm ), intent ( in ) :: &
-!       MV_Source
-!     character ( * ), intent ( in ) :: &
-!       Label
+    class ( MeasuredValueForm ), intent ( inout ) :: &
+      MV_Target
+    type ( MeasuredValueForm ), intent ( in ) :: &
+      MV_Source
+    character ( * ), intent ( in ) :: &
+      Label
             
-!     MV_Target % Number = MV_Source % Number
-!     MV_Target % Unit   = MV_Source % Unit
-!     MV_Target % Label  = Label
+    MV_Target % Number    = MV_Source % Number
+    MV_Target % Unit      = MV_Source % Unit
+    MV_Target % Label     = Label
+    MV_Target % Unit_UCS  = MV_Source % Unit_UCS
+    MV_Target % Label_UCS = Label
   
-!   end subroutine Initialize_MV_From_MV_Label
+  end subroutine Initialize_MV_From_MV_Label
   
   
-!   subroutine Initialize_MV_From_MV_Label_KBCH ( MV_Target, MV_Source, Label )
+  subroutine Initialize_UCS_MV_Label &
+               ( MV, Label_UCS, Unit_UCS, Label, Unit, Number )
     
-!     class ( MeasuredValueForm ), intent ( inout ) :: &
-!       MV_Target
-!     type ( MeasuredValueForm ), intent ( in ) :: &
-!       MV_Source
-!     character ( *, KBCH ), intent ( in ) :: &
-!       Label
-            
-!     MV_Target % Number = MV_Source % Number
-!     MV_Target % Unit   = MV_Source % Unit
-!     MV_Target % Label  = Label
+    class ( MeasuredValueForm ), intent ( inout ) :: &
+      MV
+    character ( *, KBCH ), intent ( in ) :: &
+      Label_UCS
+    character ( *, KBCH ), intent ( in ) :: &
+      Unit_UCS
+    character ( * ), intent ( in ) :: &
+      Label
+    character ( * ), intent ( in ) :: &
+      Unit
+    real ( KDR ), intent ( in ) :: &
+      Number
+      
+    MV % Number    = Number
+    MV % Unit      = Unit
+    MV % Label     = Label
+    MV % Unit_UCS  = Unit_UCS
+    MV % Label_UCS = Label_UCS
+
+  end subroutine Initialize_UCS_MV_Label
   
-!   end subroutine Initialize_MV_From_MV_Label_KBCH
+  
+  subroutine Initialize_UCS_MV_From_MV_Label &
+               ( MV_Target, MV_Source, Label_UCS, Label )
+    
+    class ( MeasuredValueForm ), intent ( inout ) :: &
+      MV_Target
+    type ( MeasuredValueForm ), intent ( in ) :: &
+      MV_Source
+    character ( *, KBCH ), intent ( in ) :: &
+      Label_UCS
+    character ( * ), intent ( in ) :: &
+      Label
+            
+    MV_Target % Number    = MV_Source % Number
+    MV_Target % Unit      = MV_Source % Unit
+    MV_Target % Label     = Label
+    MV_Target % Unit_UCS  = MV_Source % Unit_UCS
+    MV_Target % Label_UCS = Label_UCS
+  
+  end subroutine Initialize_UCS_MV_From_MV_Label
   
   
   elemental function Addition_MV_MV ( Augend, Addend ) result ( A_MV_MV )
