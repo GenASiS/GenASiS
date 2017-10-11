@@ -10,11 +10,12 @@ module Split_Command
   private
   
   public :: &
-    Split
+    Split, &
+    Split_KBCH
 
   interface Split
     module procedure Split_KDCH
-    module procedure Split_KBCH
+!    module procedure Split_KBCH
   end interface !-- Split  
 
 contains

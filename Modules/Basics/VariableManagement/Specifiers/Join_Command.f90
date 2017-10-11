@@ -10,11 +10,12 @@ module Join_Command
   private
   
   public :: &
-    Join
+    Join, &
+    Join_KBCH
 
   interface Join
     module procedure Join_KDCH
-    module procedure Join_KBCH
+!    module procedure Join_KBCH
   end interface !-- Join
   
 contains
