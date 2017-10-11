@@ -1,3 +1,9 @@
+ifdef USE_ISO_10646
+  KIND_BIG_Singleton = KIND_BIG_Singleton_ISO_10646
+else
+  KIND_BIG_Singleton = KIND_BIG_Singleton_ASCII
+endif
+
 SPECIFIERS = \
   Specifiers.o \
   UNIT_Singleton.o \
@@ -8,5 +14,5 @@ SPECIFIERS = \
   LEN_DEFAULT_Singleton.o \
   KIND_TINY_Singleton.o \
   KIND_SMALL_Singleton.o \
-  KIND_BIG_Singleton.o \
+  $(KIND_BIG_Singleton).o \
   KIND_DEFAULT_Singleton.o

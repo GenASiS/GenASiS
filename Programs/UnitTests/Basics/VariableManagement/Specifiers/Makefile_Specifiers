@@ -16,7 +16,7 @@ KIND_DEFAULT_Singleton_Test: KIND_DEFAULT_Singleton_Test.o
 KIND_BIG_Singleton_Test: KIND_BIG_Singleton_Test.o
 	$(LINK) $(FLAGS) \
           -o KIND_BIG_Singleton_Test_$(MACHINE) \
-          KIND_BIG_Singleton_Test.o KIND_BIG_Singleton.o \
+          KIND_BIG_Singleton_Test.o $(KIND_BIG_Singleton).o \
           KIND_DEFAULT_Singleton.o 
 
 KIND_SMALL_Singleton_Test: KIND_SMALL_Singleton_Test.o
@@ -85,7 +85,7 @@ KIND_DEFAULT_Singleton_Test.o: \
 
 KIND_BIG_Singleton_Test.o: \
   KIND_DEFAULT_Singleton.o \
-  KIND_BIG_Singleton.o \
+  $(KIND_BIG_Singleton).o \
   KIND_BIG_Singleton_Test.f90
 
 KIND_SMALL_Singleton_Test.o: \
