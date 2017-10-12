@@ -7,7 +7,7 @@ module Thermalization_Form
   use RadiationMoments_Form
   use RadiationMoments_ASC__Form
   use Interactions_F__Form
-  use ApplyRelaxation_RM__Command
+  use ApplyRelaxation_RM_S__Command
   use SetPlanckSpectrum_Command
   use RadiationMoments_BSLL_ASC_CSLD__Form
   use Interactions_BSLL_ASC_CSLD__Form
@@ -164,7 +164,7 @@ contains
     call S_MS % Initialize ( RMB, Name )
     S_MS % ApplyDivergence_S % Pointer => null ( )  !-- Disable spatial 
                                                     !   section evolution
-    S_MS % ApplyRelaxation_F % Pointer => ApplyRelaxation_RM
+    S_MS % ApplyRelaxation_F % Pointer => ApplyRelaxation_RM_S
     end select !-- S_MS
 
     allocate ( Step_RK2_C_ASC_Form :: T % Step_PS )

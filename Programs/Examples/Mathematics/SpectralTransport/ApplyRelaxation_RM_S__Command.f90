@@ -1,4 +1,4 @@
-module ApplyRelaxation_RM_G__Command
+module ApplyRelaxation_RM_S__Command
 
   !-- ApplyRelaxation_RadiationMoments_Grey__Command
 
@@ -12,7 +12,7 @@ module ApplyRelaxation_RM_G__Command
   private
 
   public :: &
-    ApplyRelaxation_RM_G
+    ApplyRelaxation_RM_S
 
     private :: &
       ComputeCoefficients, &
@@ -23,7 +23,7 @@ module ApplyRelaxation_RM_G__Command
 contains
 
 
-  subroutine ApplyRelaxation_RM_G &
+  subroutine ApplyRelaxation_RM_S &
                ( S, Sources_RM, Increment, RadiationMoments, Chart, &
                  TimeStep, iStage )
 
@@ -45,7 +45,6 @@ contains
     integer ( KDI ) :: &
       iV, &  !-- iValue
       nV, &  !-- nValues
-      iThread, &
       iEnergy, &
       iMomentum_1, iMomentum_2, iMomentum_3 !&
 !      iNumber
@@ -57,10 +56,10 @@ contains
       G
 !    class ( NeutrinoMoments_G_Form ), pointer :: &
 !      NM
-    type ( LinearEquations_LAPACK_Form ), dimension ( : ), allocatable :: &
+    type ( LinearEquations_LAPACK_Form ) :: &
       LE
 
-    call Show ( 'ApplyRelaxation_RM_G', S % IGNORABILITY + 3 )
+    call Show ( 'ApplyRelaxation_RM_S', S % IGNORABILITY + 3 )
     call Show ( RadiationMoments % Name, 'RadiationMoments', &
                 S % IGNORABILITY + 3 )
 
@@ -90,18 +89,12 @@ contains
 !    if ( associated ( NM ) ) &
 !      call Search ( NM % iaConserved, NM % CONSERVED_NUMBER, iNumber )
 
-    allocate ( LE ( 0 : PROGRAM_HEADER % MaxThreads - 1 ) )
+    call LE % Initialize ( nEquations = 4, nSolutions = 1 )
 
-    !$OMP parallel do private &
-    !$OMP ( iV, dJ, dH_D_1, dH_D_2, dH_D_3, k_DD )
     do iV = 1, nV
 
       if ( .not. Chart % IsProperCell ( iV ) ) &
         cycle
-
-      iThread = OMP_GET_THREAD_NUM ( )
-      if ( .not. allocated ( LE ( iThread ) % Matrix ) ) &
-        call LE ( iThread ) % Initialize ( nEquations = 4, nSolutions = 1 )
 
       call ComputeCoefficients &
              ( RM, &
@@ -122,11 +115,10 @@ contains
                RM % Value ( iV, RM % FLUID_VELOCITY_U ( 3 ) ), &
                G  % Value ( iV, G % METRIC_DD_22 ), &
                G  % Value ( iV, G % METRIC_DD_33 ), &
-               TimeStep, LE ( iThread ) % Matrix, &
-               LE ( iThread ) % RightHandSide, k_DD )
+               TimeStep, LE % Matrix, LE % RightHandSide, k_DD )
 
       call ComputeComovingIncrements &
-             ( LE ( iThread ), dJ, dH_D_1, dH_D_2, dH_D_3 )
+             ( LE, dJ, dH_D_1, dH_D_2, dH_D_3 )
 
       call ComputeConservedIncrements &
              ( k_DD, dJ, dH_D_1, dH_D_2, dH_D_3, &
@@ -158,7 +150,6 @@ contains
                 S % B ( iStage ) )
 
     end do
-    !$OMP end parallel do
 
     end select !-- Chart
     end select !-- SRM
@@ -167,7 +158,7 @@ contains
 
     nullify ( G )!, NM )
     
-  end subroutine ApplyRelaxation_RM_G
+  end subroutine ApplyRelaxation_RM_S
 
 
   subroutine ComputeCoefficients &
@@ -318,4 +309,4 @@ contains
   end subroutine ComputeSources
 
 
-end module ApplyRelaxation_RM_G__Command
+end module ApplyRelaxation_RM_S__Command

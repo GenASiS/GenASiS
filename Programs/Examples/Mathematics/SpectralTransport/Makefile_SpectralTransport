@@ -9,6 +9,7 @@ include ../../FluidDynamics/Makefile_ObjectFiles
 include ../../GreyTransport/Makefile_ObjectFiles
 
 SPECTRAL_MOMENTS = \
+  ApplyRelaxation_RM_S__Command.o \
   RadiationMoments_BSLL_ASC_CSLD__Form.o \
   Interactions_BSLL_ASC_CSLD__Form.o
 
@@ -66,6 +67,13 @@ Interactions_BSLL_ASC_CSLD__Form.o: \
   Interactions_ASC__Form.o \
   Interactions_BSLL_ASC_CSLD__Form.f90
 
+ApplyRelaxation_RM_S__Command.o: \
+  Basics.o \
+  Mathematics.o \
+  RadiationMoments_Form.o \
+  Sources_RM__Form.o \
+  ApplyRelaxation_RM_S__Command.f90
+
 SpectralMoments.a: $(SPECTRAL_MOMENTS)
 	ar r SpectralMoments.a $(SPECTRAL_MOMENTS)
 
@@ -96,7 +104,7 @@ Thermalization_Form.o: \
   RadiationMoments_Form.o \
   RadiationMoments_ASC__Form.o \
   Interactions_F__Form.o \
-  ApplyRelaxation_RM__Command.o \
+  ApplyRelaxation_RM_S__Command.o \
   SetPlanckSpectrum_Command.o \
   RadiationMoments_BSLL_ASC_CSLD__Form.o \
   Interactions_BSLL_ASC_CSLD__Form.o \
@@ -122,7 +130,7 @@ MarshakWave_Form.o: \
   Interactions_MWV_1_S__Form.o \
   Interactions_MWV_2_S__Form.o \
   Interactions_MWV_3_S__Form.o \
-  ApplyRelaxation_RM__Command.o \
+  ApplyRelaxation_RM_S__Command.o \
   RadiationMoments_BSLL_ASC_CSLD__Form.o \
   Interactions_BSLL_ASC_CSLD__Form.o \
   MarshakWave_Form.f90

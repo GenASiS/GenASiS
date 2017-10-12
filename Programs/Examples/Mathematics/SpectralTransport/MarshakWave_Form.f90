@@ -16,7 +16,7 @@ module MarshakWave_Form
   use Interactions_MWV_1_S__Form
   use Interactions_MWV_2_S__Form
   use Interactions_MWV_3_S__Form
-  use ApplyRelaxation_RM__Command
+  use ApplyRelaxation_RM_S__Command
   use RadiationMoments_BSLL_ASC_CSLD__Form
   use Interactions_BSLL_ASC_CSLD__Form
 
@@ -296,7 +296,7 @@ contains
     select type ( S_MS => MW % Step_MS )
     class is ( Step_RK2_C_BSLL_ASC_CSLD_Form )
     call S_MS % Initialize ( RMB, 'Radiation' )
-    S_MS % ApplyRelaxation_F % Pointer => ApplyRelaxation_RM
+    S_MS % ApplyRelaxation_F % Pointer => ApplyRelaxation_RM_S
     end select !-- S_MS
 
     allocate ( Step_RK2_C_ASC_Form :: MW % Step_PS )
