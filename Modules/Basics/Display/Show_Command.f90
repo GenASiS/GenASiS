@@ -616,8 +616,13 @@ contains
     type ( MeasuredValueForm ) :: &
       MV
     
-    call MV % Initialize ( Unit % Label, Real / Unit % Number )
-    
+    if ( KBCH > KDCH ) then
+      call MV % Initialize_UCS &
+             ( Unit % Label_UCS, Unit % Label, Real / Unit % Number )
+    else
+      call MV % Initialize ( Unit % Label, Real / Unit % Number )
+    end if
+  
     call Show &
            ( MV, Description, IgnorabilityOption, DisplayRankOption, &
              nLeadingLinesOption, nTrailingLinesOption )
@@ -655,8 +660,13 @@ contains
     allocate ( MV ( size ( Real ) ) )
     
     do iV = 1, size ( Real )
-      call MV ( iV ) % Initialize &
-             ( Unit % Label, Real ( iV ) / Unit % Number )
+      if ( KBCH > KDCH ) then
+        call MV ( iV ) % Initialize_UCS &
+               ( Unit % Label_UCS, Unit % Label, Real ( iV ) / Unit % Number )
+      else
+        call MV ( iV ) % Initialize &
+               ( Unit % Label, Real ( iV ) / Unit % Number )
+      end if
     end do
     
     call Show &
@@ -692,8 +702,14 @@ contains
       MV
     
     do iV = 1, size ( Real )
-      call MV ( iV ) % Initialize &
-             ( Unit ( iV ) % Label, Real ( iV ) / Unit ( iV ) % Number )
+      if ( KBCH > KDCH ) then
+        call MV ( iV ) % Initialize_UCS &
+               ( Unit ( iV ) % Label_UCS, Unit ( iV ) % Label, &
+                 Real ( iV ) / Unit ( iV ) % Number )
+      else
+        call MV ( iV ) % Initialize &
+               ( Unit ( iV ) % Label, Real ( iV ) / Unit ( iV ) % Number )
+      end if
     end do
     
     call Show &
@@ -1260,7 +1276,8 @@ contains
           KBCH_'( ' // trim ( adjustl ( IndexLabel ) ) // KBCH_' ) =', &
           MeasuredValue ( i ) % Number, &
           KBCH_' ' // trim ( MeasuredValue ( i ) % Unit_UCS ) &
-          // KBCH_' ( ' // trim ( MeasuredValue ( i ) % Label_UCS ) // KBCH_' )'
+          // KBCH_' ( ' // trim ( MeasuredValue ( i ) % Label_UCS ) &
+          // KBCH_' )'
 
       end if
     
@@ -1295,9 +1312,15 @@ contains
       MV
     
     do iMV = 1, size ( MV_Source )
-      call MV ( iMV ) % Initialize &
-             ( Unit ( iMV ) % Label, &
-               MV_Source ( iMV ) % Number / Unit ( iMV ) % Number )
+      if ( KBCH > KDCH ) then
+        call MV ( iMV ) % Initialize_UCS &
+               ( Unit ( iMV ) % Label_UCS, Unit ( iMV ) % Label, &
+                 MV_Source ( iMV ) % Number / Unit ( iMV ) % Number )
+      else
+        call MV ( iMV ) % Initialize &
+               ( Unit ( iMV ) % Label, &
+                 MV_Source ( iMV ) % Number / Unit ( iMV ) % Number )
+      end if
     end do
   
     call Show &
