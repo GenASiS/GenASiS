@@ -128,7 +128,7 @@ contains
 
     !-- Radiation
 
-    EnergyDensityUnit  =  UNIT % MEGA_ELECTRON_VOLT ** 4 / UNIT % HBAR_C ** 3
+    EnergyDensityUnit  =  UNIT % MEGA_ELECTRON_VOLT / UNIT % HBAR_C ** 3
 
     allocate ( RadiationMoments_BSLL_ASC_CSLD_Form :: &
                T % Current_BSLL_ASC_CSLD )
