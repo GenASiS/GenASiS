@@ -634,7 +634,6 @@ contains
 !    call Timer_G % Stop
 !    end associate !-- Timer_G  
 
-    G => CSL % Geometry ( )
     call CSL % SetVariablePointer &
            ( G % Value ( :, G % WIDTH ( iDimension ) ), dX )
 

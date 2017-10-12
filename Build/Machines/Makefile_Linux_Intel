@@ -12,6 +12,9 @@ LINK = mpif90 -qopenmp
 #-- Silo library include and link line flag and location
 INCLUDE_SILO = #-I/usr/local/silo/4.10/intel/include
 LIBRARY_SILO = #-L/usr/local/silo/4.10/intel/lib -lsilo
+#SILO_DIR=/oasis/scratch/comet/rbudiard/temp_project/software/silo/4.10.2/intel2016
+#INCLUDE_SILO=-I${SILO_DIR}/include
+#LIBRARY_SILO=-L${SILO_DIR}/lib -lsilo
 
 #-- LAPACK library link line flag and location
 LIBRARY_LAPACK = #-L/usr/local/lapack-3.7.1/lib -llapack -lrefblas

@@ -124,7 +124,7 @@ contains
                  MaxCoordinateOption, RatioOption, ScaleOption, &
                  nCellsOption, nGhostLayersOption, nDimensionsOption )
 
-    class ( Bundle_SLL_ASC_CSLD_Form ), intent ( inout ) :: &
+    class ( Bundle_SLL_ASC_CSLD_Form ), intent ( inout ), target :: &
       B
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       SpacingOption

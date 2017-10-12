@@ -111,7 +111,7 @@ contains
 
   function Interactions ( IB, iFiber ) result ( IF )
 
-    class ( Interactions_BSLL_ASC_CSLD_Form ), intent ( in ) :: &
+    class ( Interactions_BSLL_ASC_CSLD_Form ), intent ( in ), target :: &
       IB
     integer ( KDI ), intent ( in ) :: &
       iFiber
@@ -134,7 +134,7 @@ contains
 
   function Interactions_F ( IB, iFiber ) result ( IF )
 
-    class ( Interactions_BSLL_ASC_CSLD_Form ), intent ( in ) :: &
+    class ( Interactions_BSLL_ASC_CSLD_Form ), intent ( in ), target :: &
       IB
     integer ( KDI ), intent ( in ) :: &
       iFiber

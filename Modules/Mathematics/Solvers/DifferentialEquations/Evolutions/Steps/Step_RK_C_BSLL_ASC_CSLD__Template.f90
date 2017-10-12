@@ -158,6 +158,7 @@ contains
     call ID % Initialize ( S % Name )
     end associate !-- ID
 
+    S % ApplyDivergence_S % Pointer => ApplyDivergence_C
     S % ApplyDivergence_F % Pointer => null ( )
 
   end subroutine InitializeTemplate_C_BSLL_ASC_CSLD

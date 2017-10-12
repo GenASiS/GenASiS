@@ -20,7 +20,7 @@ module Step_RK_C_ASC__Template
 
   type, public :: ApplyDivergence_C_Pointer
     procedure ( ApplyDivergence_C ), pointer, nopass :: &
-      Pointer => ApplyDivergence_C
+      Pointer => null ( )
   end type ApplyDivergence_C_Pointer
 
   type, public :: ApplySources_C_Pointer
@@ -219,9 +219,11 @@ module Step_RK_C_ASC__Template
 
   end interface
 
+  public :: &
+    ApplyDivergence_C
+
     private :: &
       AllocateStorage, &
-      ApplyDivergence_C, &
       RecordDivergence
 
 contains
@@ -273,6 +275,8 @@ contains
     associate ( ID => S % IncrementDamping )
     call ID % Initialize ( S % Name )
     end associate !-- ID
+
+    S % ApplyDivergence % Pointer => ApplyDivergence_C
 
   end subroutine InitializeTemplate_C_ASC
 

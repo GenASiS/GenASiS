@@ -180,7 +180,7 @@ contains
 
   function RadiationMoments ( RMB, iFiber ) result ( RMF )
 
-    class ( RadiationMoments_BSLL_ASC_CSLD_Form ), intent ( in ) :: &
+    class ( RadiationMoments_BSLL_ASC_CSLD_Form ), intent ( in ), target :: &
       RMB
     integer ( KDI ), intent ( in ) :: &
       iFiber
@@ -203,7 +203,7 @@ contains
 
   function PhotonMoments_S ( RMB, iFiber ) result ( RMF )
 
-    class ( RadiationMoments_BSLL_ASC_CSLD_Form ), intent ( in ) :: &
+    class ( RadiationMoments_BSLL_ASC_CSLD_Form ), intent ( in ), target :: &
       RMB
     integer ( KDI ), intent ( in ) :: &
       iFiber
