@@ -16,7 +16,7 @@ module MarshakWave_Form
   use Interactions_MWV_2_G__Form
   use Interactions_MWV_3_G__Form
   use Interactions_ASC__Form
-  use ApplyRelaxation_RM__Command
+  use ApplyRelaxation_RM_G__Command
 
   implicit none
   private
@@ -241,7 +241,7 @@ contains
     class is ( Step_RK2_C_ASC_Form )
       call S_R % Initialize &
              ( MW % Current_ASC_1, 'Radiation' )
-      S_R % ApplyRelaxation % Pointer  =>  ApplyRelaxation_RM
+      S_R % ApplyRelaxation % Pointer  =>  ApplyRelaxation_RM_G
     end select !-- S_R
 
     allocate ( Step_RK2_C_ASC_Form :: MW % Step_2 )
@@ -363,9 +363,13 @@ contains
     call ComputeFluidSource_G_S_Radiation_Kernel &
            ( SF % Value ( :, SF % RADIATION_G ), & 
              SF % Value ( :, SF % RADIATION_S_D ( 1 ) ), &
+             SF % Value ( :, SF % RADIATION_S_D ( 2 ) ), &
+             SF % Value ( :, SF % RADIATION_S_D ( 3 ) ), &
              CSL % IsProperCell, &
              SR % Value ( :, SR % INTERACTIONS_J ), &
-             SR % Value ( :, SR % INTERACTIONS_H_D ( 1 ) ) )
+             SR % Value ( :, SR % INTERACTIONS_H_D ( 1 ) ), &
+             SR % Value ( :, SR % INTERACTIONS_H_D ( 2 ) ), &
+             SR % Value ( :, SR % INTERACTIONS_H_D ( 3 ) ) )
 
     end select !-- CSL
     end select !-- PS
@@ -563,7 +567,9 @@ contains
 
     integer ( KDI ) :: &
       iEnergy, &
-      iMomentum_1
+      iMomentum_1, &
+      iMomentum_2, &
+      iMomentum_3
 
     select type ( SF => Sources_F )
     class is ( Sources_F_Form )
@@ -576,13 +582,19 @@ contains
 
     call Search ( F % iaConserved, F % CONSERVED_ENERGY, iEnergy )
     call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 1 ), iMomentum_1 )
+    call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 2 ), iMomentum_2 )
+    call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 3 ), iMomentum_3 )
 
     call ApplySources_Fluid_Kernel &
            ( Increment % Value ( :, iEnergy ), &
              Increment % Value ( :, iMomentum_1 ), &
+             Increment % Value ( :, iMomentum_2 ), &
+             Increment % Value ( :, iMomentum_3 ), &
              Chart % IsProperCell, &
              SF % Value ( :, SF % RADIATION_G ), &
              SF % Value ( :, SF % RADIATION_S_D ( 1 ) ), &
+             SF % Value ( :, SF % RADIATION_S_D ( 2 ) ), &
+             SF % Value ( :, SF % RADIATION_S_D ( 3 ) ), &
              TimeStep )
 
     end select !-- Chart
@@ -593,16 +605,17 @@ contains
 
   
   subroutine ComputeFluidSource_G_S_Radiation_Kernel &
-               ( FS_R_G, FS_R_S_1, IsProperCell, Q, A_1 )
+               ( FS_R_G, FS_R_S_1, FS_R_S_2, FS_R_S_3, IsProperCell, &
+                 Q, A_1, A_2, A_3 )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       FS_R_G, &
-      FS_R_S_1
+      FS_R_S_1, FS_R_S_2, FS_R_S_3
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       IsProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       Q, &
-      A_1
+      A_1, A_2, A_3
 
     integer ( KDI ) :: &
       iV, &
@@ -616,6 +629,8 @@ contains
         cycle
       FS_R_G ( iV )    =    FS_R_G ( iV )  -    Q ( iV ) 
       FS_R_S_1 ( iV )  =  FS_R_S_1 ( iV )  -  A_1 ( iV )
+      FS_R_S_2 ( iV )  =  FS_R_S_2 ( iV )  -  A_2 ( iV )
+      FS_R_S_3 ( iV )  =  FS_R_S_3 ( iV )  -  A_3 ( iV )
     end do
     !$OMP end parallel do
 
@@ -623,16 +638,17 @@ contains
 
 
   subroutine ApplySources_Fluid_Kernel &
-               ( K_G, K_S_1, IsProperCell, FS_R_G, FS_R_S_1, dt )
+               ( K_G, K_S_1, K_S_2, K_S_3, IsProperCell, &
+                 FS_R_G, FS_R_S_1, FS_R_S_2, FS_R_S_3, dt )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       K_G, &
-      K_S_1
+      K_S_1, K_S_2, K_S_3
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       IsProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       FS_R_G, &
-      FS_R_S_1
+      FS_R_S_1, FS_R_S_2, FS_R_S_3
     real ( KDR ), intent ( in ) :: &
       dt
 
@@ -648,6 +664,8 @@ contains
         cycle
       K_G ( iV )    =  K_G ( iV )    +  FS_R_G ( iV )    *  dt
       K_S_1 ( iV )  =  K_S_1 ( iV )  +  FS_R_S_1 ( iV )  *  dt
+      K_S_2 ( iV )  =  K_S_2 ( iV )  +  FS_R_S_2 ( iV )  *  dt
+      K_S_3 ( iV )  =  K_S_3 ( iV )  +  FS_R_S_3 ( iV )  *  dt
     end do
     !$OMP end parallel do
 

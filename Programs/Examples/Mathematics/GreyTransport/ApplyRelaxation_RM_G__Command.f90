@@ -1,4 +1,6 @@
-module ApplyRelaxation_RM__Command
+module ApplyRelaxation_RM_G__Command
+
+  !-- ApplyRelaxation_RadiationMoments_Grey__Command
 
   use OMP_LIB
   use Basics
@@ -10,7 +12,7 @@ module ApplyRelaxation_RM__Command
   private
 
   public :: &
-    ApplyRelaxation_RM
+    ApplyRelaxation_RM_G
 
     private :: &
       ComputeCoefficients, &
@@ -21,7 +23,7 @@ module ApplyRelaxation_RM__Command
 contains
 
 
-  subroutine ApplyRelaxation_RM &
+  subroutine ApplyRelaxation_RM_G &
                ( S, Sources_RM, Increment, RadiationMoments, Chart, TimeStep, &
                  iStage )
 
@@ -165,7 +167,7 @@ contains
 
     nullify ( G )!, NM )
     
-  end subroutine ApplyRelaxation_RM
+  end subroutine ApplyRelaxation_RM_G
 
 
   subroutine ComputeCoefficients &
@@ -316,4 +318,4 @@ contains
   end subroutine ComputeSources
 
 
-end module ApplyRelaxation_RM__Command
+end module ApplyRelaxation_RM_G__Command

@@ -1,5 +1,5 @@
 GREY_MOMENTS = \
-  ApplyRelaxation_RM__Command.o \
+  ApplyRelaxation_RM_G__Command.o \
   Interactions_ASC__Form.o \
   Interactions_CSL__Form.o \
   Interactions_MWV_3_S__Form.o \
