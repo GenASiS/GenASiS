@@ -10,7 +10,8 @@ module Show_Command
   private
 
   public :: &
-    Show
+    Show, &
+    ShowCharacter_KBCH
 
   interface Show
     module procedure ShowInteger
@@ -35,7 +36,7 @@ module Show_Command
     module procedure ShowLogical
     module procedure ShowLogical_1D
     module procedure ShowCharacter
-    module procedure ShowCharacter_KBCH
+!    module procedure ShowCharacter_KBCH
     module procedure ShowCharacterNoDescription
     module procedure ShowCharacter_1D
     module procedure ShowMeasuredValue
@@ -1128,28 +1129,28 @@ contains
 
     if ( AbortShow ) return
 
-    if ( MeasuredValue % Label == KBCH_'' ) then
+    if ( MeasuredValue % Label_UCS == KBCH_'' ) then
 
-      LenUnit = len_trim ( MeasuredValue % Unit ) + 1
+      LenUnit = len_trim ( MeasuredValue % Unit_UCS ) + 1
       write ( PrintFormat, fmt = '(a18,i0,a1)' ) &
         '(a35,a3,es15.6e3,a', LenUnit, ')'
     
       print trim ( PrintFormat ), &
         trim ( Description ), KBCH_'  =', MeasuredValue % Number, &
-        KBCH_' ' // trim ( MeasuredValue % Unit )
+        KBCH_' ' // trim ( MeasuredValue % Unit_UCS )
     
     else
 
       LenUnit &
-        = len_trim ( MeasuredValue % Unit ) + 1 &
-          + len_trim ( MeasuredValue % Label ) + 5
+        = len_trim ( MeasuredValue % Unit_UCS ) + 1 &
+          + len_trim ( MeasuredValue % Label_UCS ) + 5
       write ( PrintFormat, fmt = '(a18,i0,a2)' ) &
         '(a35,a3,es15.6e3,a', LenUnit, ')'
       
       print trim ( PrintFormat ), &
         trim ( Description ), KBCH_'  =', MeasuredValue % Number, &
-        KBCH_' ' // trim ( MeasuredValue % Unit ) &
-        // KBCH_' ( ' // trim ( MeasuredValue % Label ) // KBCH_' )'
+        KBCH_' ' // trim ( MeasuredValue % Unit_UCS ) &
+        // KBCH_' ( ' // trim ( MeasuredValue % Label_UCS ) // KBCH_' )'
 
     end if
 
@@ -1179,11 +1180,17 @@ contains
     type ( MeasuredValueForm ) :: &
       MV
     
-    call MV % Initialize ( Unit % Label, MV_Source % Number / Unit % Number )
-    
-    call Show &
-           ( MV, Description, IgnorabilityOption, DisplayRankOption, &
-             nLeadingLinesOption, nTrailingLinesOption )
+    if ( KBCH > KDCH ) then
+      call MV % Initialize_UCS &
+             ( Unit % Label_UCS, Unit % Label, &
+               MV_Source % Number / Unit % Number )
+    else
+      call MV % Initialize &
+             ( Unit % Label, MV_Source % Number / Unit % Number )
+    end if
+
+    call Show ( MV, Description, IgnorabilityOption, DisplayRankOption, &
+                nLeadingLinesOption, nTrailingLinesOption )
 
   end subroutine ShowMeasuredValueConvertUnit
   
@@ -1226,7 +1233,7 @@ contains
     
     do i = 1, size ( MeasuredValue )
 
-      if ( MeasuredValue ( i ) % Label == KBCH_'' ) then
+      if ( MeasuredValue ( i ) % Label_UCS == KBCH_'' ) then
 
         LenUnit = len_trim ( MeasuredValue ( i ) % Unit ) + 1
         write ( PrintFormat, fmt = '(a18,i0,a1)' ) &
@@ -1237,7 +1244,7 @@ contains
           trim ( PrintFormat ), &
           KBCH_'( ' // trim ( adjustl ( IndexLabel ) ) // KBCH_' ) =', &
           MeasuredValue ( i ) % Number, &
-          KBCH_' ' // trim ( MeasuredValue ( i ) % Unit )
+          KBCH_' ' // trim ( MeasuredValue ( i ) % Unit_UCS )
 
       else
 
@@ -1252,8 +1259,8 @@ contains
           trim ( PrintFormat ), &
           KBCH_'( ' // trim ( adjustl ( IndexLabel ) ) // KBCH_' ) =', &
           MeasuredValue ( i ) % Number, &
-          KBCH_' ' // trim ( MeasuredValue ( i ) % Unit ) &
-          // KBCH_' ( ' // trim ( MeasuredValue ( i ) % Label ) // KBCH_' )'
+          KBCH_' ' // trim ( MeasuredValue ( i ) % Unit_UCS ) &
+          // KBCH_' ( ' // trim ( MeasuredValue ( i ) % Label_UCS ) // KBCH_' )'
 
       end if
     

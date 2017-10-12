@@ -26,8 +26,6 @@ module MeasuredValue_Form
   contains
     procedure, private, pass :: &
       Initialize_MV
-!     procedure, private, pass :: &
-!       Initialize_MV_KBCH
     procedure, private, pass :: &
       Initialize_MV_Label
     procedure, private, pass :: &
@@ -39,12 +37,15 @@ module MeasuredValue_Form
         => Initialize_MV, Initialize_MV_Label, &
            Initialize_MV_From_MV, Initialize_MV_From_MV_Label
     procedure, private, pass :: &
+      Initialize_UCS_MV
+    procedure, private, pass :: &
       Initialize_UCS_MV_Label
     procedure, private, pass :: &
       Initialize_UCS_MV_From_MV_Label
     generic :: &
       Initialize_UCS &
-        => Initialize_UCS_MV_Label, Initialize_UCS_MV_From_MV_Label
+        => Initialize_UCS_MV, Initialize_UCS_MV_Label, &
+           Initialize_UCS_MV_From_MV_Label
     procedure, private, pass :: &
       Addition_MV_MV
     procedure, private, pass :: &
@@ -264,21 +265,6 @@ contains
   end subroutine Initialize_MV
   
   
-!   subroutine Initialize_MV_KBCH ( MV, Unit, Number )
-    
-!     class ( MeasuredValueForm ), intent ( inout ) :: &
-!       MV
-!     character ( *, KBCH ), intent ( in ) :: &
-!       Unit
-!     real ( KDR ), intent ( in ) :: &
-!       Number
-      
-!     MV % Number = Number
-!     MV % Unit   = Unit
-
-!   end subroutine Initialize_MV_KBCH
-  
-  
   subroutine Initialize_MV_Label ( MV, Label, Unit, Number )
     
     class ( MeasuredValueForm ), intent ( inout ) :: &
@@ -330,6 +316,24 @@ contains
     MV_Target % Label_UCS = Label
   
   end subroutine Initialize_MV_From_MV_Label
+  
+  
+  subroutine Initialize_UCS_MV ( MV, Unit_UCS, Unit, Number )
+    
+    class ( MeasuredValueForm ), intent ( inout ) :: &
+      MV
+    character ( *, KBCH ), intent ( in ) :: &
+      Unit_UCS
+    character ( * ), intent ( in ) :: &
+      Unit
+    real ( KDR ), intent ( in ) :: &
+      Number
+      
+    MV % Number   = Number
+    MV % Unit     = Unit
+    MV % Unit_UCS = Unit_UCS
+
+  end subroutine Initialize_UCS_MV
   
   
   subroutine Initialize_UCS_MV_Label &
