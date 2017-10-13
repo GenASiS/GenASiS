@@ -535,6 +535,8 @@ contains
       TimerFibers, &
       TimerClear, &
       TimerLoad_K
+    class ( GeometryFlatForm ), pointer :: &
+      G_Base
     class ( CurrentTemplate ), pointer :: &
       C
     type ( IncrementDivergence_FV_Form ) :: &
@@ -542,7 +544,8 @@ contains
 
     associate &
       ( CB => C_BSLL_ASC_CSLD, &
-        KB => K_BSLL_ASC_CSLD )
+        KB => K_BSLL_ASC_CSLD, &
+         B => S % Bundle_SLL_ASC_CSLD )
 
     if ( iStage > 1 ) then
       TimerStore => PROGRAM_HEADER % TimerPointer &
@@ -603,6 +606,11 @@ contains
     TimerFibers => PROGRAM_HEADER % TimerPointer ( S % iTimerFibers )
     if ( associated ( TimerFibers ) ) call TimerFibers % Start ( )
 
+    select type ( C_Base => S % Chart )
+    class is ( Chart_SL_Template )
+      G_Base => C_Base % Geometry ( )
+    end select !-- C_Base
+
     S % ApplyDivergence_C => S % ApplyDivergence_F % Pointer
     S % ApplySources_C    => S % ApplySources_F    % Pointer
     S % ApplyRelaxation_C => S % ApplyRelaxation_F % Pointer
@@ -615,7 +623,10 @@ contains
 
       associate ( Chart => S % Chart_F )
 
-      call S % ComputeStage_C ( ID_Dummy, C, Chart, K, TimeStep, iStage )
+      call S % ComputeStage_C &
+             ( ID_Dummy, C, Chart, K, TimeStep, iStage, &
+               GeometryOption = G_Base, &
+               iGeometryValueOption = B % iaBaseCell ( iF ) )
 
       end associate !-- Chart
 
@@ -637,7 +648,7 @@ contains
     if ( associated ( TimerLoad_K ) ) call TimerLoad_K % Stop ( )
 
     end associate !-- CB, etc.
-    nullify ( K, C )
+    nullify ( K, C, G_Base )
 
   end subroutine ComputeStage_C_BSLL_ASC_CSLD
 

@@ -25,7 +25,7 @@ contains
 
   subroutine ApplyRelaxation_RM_S &
                ( S, Sources_RM, Increment, RadiationMoments, Chart, &
-                 TimeStep, iStage )
+                 TimeStep, iStage, GeometryOption, iGeometryValueOption )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
@@ -41,6 +41,10 @@ contains
       TimeStep
     integer ( KDI ), intent ( in ) :: &
       iStage
+    class ( GeometryFlatForm ), intent ( in ), optional :: &
+      GeometryOption
+    integer ( KDI ), intent ( in ), optional :: &
+      iGeometryValueOption
 
     integer ( KDI ) :: &
       iV, &  !-- iValue
@@ -52,8 +56,6 @@ contains
       dJ, dH_D_1, dH_D_2, dH_D_3
     real ( KDR ), dimension ( 3, 3 ) :: &
       k_DD  !-- Eddington tensor components ( K / J, Stress / EnergyDensity )
-    class ( GeometryFlatForm ), pointer :: &
-      G
 !    class ( NeutrinoMoments_G_Form ), pointer :: &
 !      NM
     type ( LinearEquations_LAPACK_Form ) :: &
@@ -62,6 +64,16 @@ contains
     call Show ( 'ApplyRelaxation_RM_S', S % IGNORABILITY + 3 )
     call Show ( RadiationMoments % Name, 'RadiationMoments', &
                 S % IGNORABILITY + 3 )
+
+    if ( .not. present ( GeometryOption ) &
+         .and. .not. present ( iGeometryValueOption ) ) &
+    then
+      call Show ( 'GeometryOption must be present', CONSOLE % ERROR )
+      call Show ( 'iGeometryValueOption must be present', CONSOLE % ERROR )
+      call Show ( 'ApplyRelaxation_RM_S', 'subroutine', CONSOLE % ERROR )
+      call Show ( 'ApplyRelaxation_RM_S_Command', 'module', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end if
 
     nV = size ( Increment % Value, dim = 1 )
 
@@ -76,7 +88,9 @@ contains
     select type ( Chart )
     class is ( Chart_SL_Template )
 
-    G => Chart % Geometry ( )
+    associate &
+      ( G   => GeometryOption, &
+        iVG => iGeometryValueOption )
 
     call Search ( RM % iaConserved, RM % CONSERVED_ENERGY, &
                   iEnergy )
@@ -113,8 +127,8 @@ contains
                RM % Value ( iV, RM % FLUID_VELOCITY_U ( 1 ) ), &
                RM % Value ( iV, RM % FLUID_VELOCITY_U ( 2 ) ), &
                RM % Value ( iV, RM % FLUID_VELOCITY_U ( 3 ) ), &
-               G  % Value ( iV, G % METRIC_DD_22 ), &
-               G  % Value ( iV, G % METRIC_DD_33 ), &
+               G  % Value ( iVG, G % METRIC_DD_22 ), &
+               G  % Value ( iVG, G % METRIC_DD_33 ), &
                TimeStep, LE % Matrix, LE % RightHandSide, k_DD )
 
       call ComputeComovingIncrements &
@@ -125,8 +139,8 @@ contains
                RM % Value ( iV, RM % FLUID_VELOCITY_U ( 1 ) ), &
                RM % Value ( iV, RM % FLUID_VELOCITY_U ( 2 ) ), &
                RM % Value ( iV, RM % FLUID_VELOCITY_U ( 3 ) ), &
-               G  % Value ( iV, G % METRIC_DD_22 ), &
-               G  % Value ( iV, G % METRIC_DD_33 ), &
+               G  % Value ( iVG, G % METRIC_DD_22 ), &
+               G  % Value ( iVG, G % METRIC_DD_33 ), &
                Increment % Value ( iV, iEnergy ), &
                Increment % Value ( iV, iMomentum_1 ), &
                Increment % Value ( iV, iMomentum_2 ), &
@@ -145,18 +159,19 @@ contains
                 RM % Value ( iV, RM % COMOVING_MOMENTUM_U ( 2 ) ), &
                 RM % Value ( iV, RM % COMOVING_MOMENTUM_U ( 3 ) ), &
                 dJ, dH_D_1, dH_D_2, dH_D_3, & 
-                 G % Value ( iV, G % METRIC_DD_22 ), &
-                 G % Value ( iV, G % METRIC_DD_33 ), &
+                 G % Value ( iVG, G % METRIC_DD_22 ), &
+                 G % Value ( iVG, G % METRIC_DD_33 ), &
                 S % B ( iStage ) )
 
     end do
 
+    end associate !-- G, etc.
     end select !-- Chart
     end select !-- SRM
     end associate !-- I
     end select !-- RM
 
-    nullify ( G )!, NM )
+    !nullify ( NM )
     
   end subroutine ApplyRelaxation_RM_S
 

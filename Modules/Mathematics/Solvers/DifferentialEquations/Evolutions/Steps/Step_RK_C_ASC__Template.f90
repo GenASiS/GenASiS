@@ -172,7 +172,8 @@ module Step_RK_C_ASC__Template
         iStage
     end subroutine AS
 
-    subroutine AR ( S, Sources, Increment, Current, Chart, TimeStep, iStage )
+    subroutine AR ( S, Sources, Increment, Current, Chart, TimeStep, iStage, &
+                    GeometryOption, iGeometryValueOption )
       use Basics
       use Manifolds
       use Fields
@@ -191,6 +192,10 @@ module Step_RK_C_ASC__Template
         TimeStep
       integer ( KDI ), intent ( in ) :: &
         iStage
+      class ( GeometryFlatForm ), intent ( in ), optional :: &
+        GeometryOption
+      integer ( KDI ), intent ( in ), optional :: &
+        iGeometryValueOption
     end subroutine AR
     
     subroutine HI ( S, Increment, Current, TimeStep )
@@ -982,7 +987,8 @@ contains
 
 
   subroutine ComputeStage_C &
-               ( S, ID, C, Chart, K, TimeStep, iStage, GhostExchangeOption )
+               ( S, ID, C, Chart, K, TimeStep, iStage, GeometryOption, & 
+                 GhostExchangeOption, iGeometryValueOption )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
@@ -998,8 +1004,12 @@ contains
       TimeStep
     integer ( KDI ), intent ( in ) :: &
       iStage
+    class ( GeometryFlatForm ), intent ( in ), optional :: &
+      GeometryOption
     logical ( KDL ), intent ( in ), optional :: &
       GhostExchangeOption
+    integer ( KDI ), intent ( in ), optional :: &
+      iGeometryValueOption
 
     logical ( KDL ) :: &
       GhostExchange
@@ -1030,7 +1040,8 @@ contains
       TimerRelaxation => PROGRAM_HEADER % TimerPointer ( S % iTimerRelaxation )
       if ( associated ( TimerRelaxation ) ) call TimerRelaxation % Start ( )
       call S % ApplyRelaxation_C &
-             ( C % Sources, K, C, Chart, TimeStep, iStage )
+             ( C % Sources, K, C, Chart, TimeStep, iStage, GeometryOption, &
+               iGeometryValueOption )
       if ( associated ( TimerRelaxation ) ) call TimerRelaxation % Stop ( )
     end if
 

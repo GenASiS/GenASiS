@@ -84,8 +84,9 @@ contains
 
     integer ( KDI ) :: &
       iD, &  !-- iDimension
-      nPositionCells, &
       nEnergyCells
+    integer ( KDI ), dimension ( 3 ) :: &
+      nPositionCells      
     real ( KDR ) :: &
       BoxLength, &
       MeanFreePath, &
@@ -145,10 +146,12 @@ contains
     call PROGRAM_HEADER % GetParameter ( EnergyScale, 'EnergyScale' )
 
     InteractionsType = 'MARSHAK_WAVE_VAYTET_1_SPECTRAL'
-    call PROGRAM_HEADER % GetParameter ( InteractionsType, 'InteractionsType' )
+    call PROGRAM_HEADER % GetParameter &
+           ( InteractionsType, 'InteractionsType' )
 
     select case ( trim ( InteractionsType ) )
-    case ( 'MARSHAK_WAVE_VAYTET_2_SPECTRAL', 'MARSHAK_WAVE_VAYTET_3_SPECTRAL' )
+    case ( 'MARSHAK_WAVE_VAYTET_2_SPECTRAL', &
+           'MARSHAK_WAVE_VAYTET_3_SPECTRAL' )
       EnergyMax  =  0.620_KDR * UNIT % ELECTRON_VOLT
       call PROGRAM_HEADER % GetParameter ( EnergyMax, 'EnergyMax' )
     end select !-- InteractionsType
@@ -170,14 +173,18 @@ contains
     MinCoordinate  =  0.0_KDR
     MaxCoordinate  =  BoxLength
 
-    nPositionCells = 32
-    call PROGRAM_HEADER % GetParameter ( nPositionCells, 'nPositionCells' )
+    associate ( nD => PS % nDimensions )
+    nPositionCells = 1
+    nPositionCells ( : nD ) = 32
+    call PROGRAM_HEADER % GetParameter &
+           ( nPositionCells ( : nD ), 'nPositionCells' )
+    end associate !-- nD
 
     call PS % CreateChart &
            ( CoordinateUnitOption = CoordinateUnit_PS, &
              MinCoordinateOption = MinCoordinate, &
              MaxCoordinateOption = MaxCoordinate, &
-             nCellsOption = [ nPositionCells, 1, 1 ] )
+             nCellsOption = nPositionCells )
 
     !-- Geometry of PositionSpace
 
@@ -319,8 +326,7 @@ contains
         Lambda => MeanFreePath, &
         Tau    => OpticalDepth, &
         t_Diff => DiffusionTime, &
-        c      => CONSTANT % SPEED_OF_LIGHT &
-      )
+        c      => CONSTANT % SPEED_OF_LIGHT )
 
     t_Dyn   =  L / c_s
 
@@ -450,9 +456,13 @@ contains
     call ComputeFluidSource_G_S_Radiation_Kernel &
            ( SF % Value ( :, SF % RADIATION_G ), & 
              SF % Value ( :, SF % RADIATION_S_D ( 1 ) ), &
+             SF % Value ( :, SF % RADIATION_S_D ( 2 ) ), &
+             SF % Value ( :, SF % RADIATION_S_D ( 3 ) ), &
              CSL % IsProperCell, &
              SR % Value ( :, SR % INTERACTIONS_J ), &
-             SR % Value ( :, SR % INTERACTIONS_H_D ( 1 ) ) )
+             SR % Value ( :, SR % INTERACTIONS_H_D ( 1 ) ), &
+             SR % Value ( :, SR % INTERACTIONS_H_D ( 2 ) ), &
+             SR % Value ( :, SR % INTERACTIONS_H_D ( 3 ) ) )
 
     end select !-- CSL
     end select !-- PS
@@ -547,8 +557,8 @@ contains
           H_2  =  0.0_KDR
           H_3  =  0.0_KDR
         end where
-        where ( X > MinCoordinate ( 1 ) .or. Y > MinCoordinate ( 2 ) &
-               .or. Z > MinCoordinate ( 3 ) )
+        where ( X > MaxCoordinate ( 1 ) .or. Y > MaxCoordinate ( 2 ) &
+               .or. Z > MaxCoordinate ( 3 ) )
           J    =  J_0 ( iS )
           H_1  =  0.0_KDR
           H_2  =  0.0_KDR
@@ -557,7 +567,7 @@ contains
         end associate !-- J, etc.
         call RS % ComputeFromPrimitive ( G )
       end select
-    end do
+    end do !-- iS
 
     deallocate ( J_0, J_I )
     
@@ -773,7 +783,9 @@ contains
 
     integer ( KDI ) :: &
       iEnergy, &
-      iMomentum_1
+      iMomentum_1, &
+      iMomentum_2, &
+      iMomentum_3
 
     select type ( SF => Sources_F )
     class is ( Sources_F_Form )
@@ -786,13 +798,19 @@ contains
 
     call Search ( F % iaConserved, F % CONSERVED_ENERGY, iEnergy )
     call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 1 ), iMomentum_1 )
+    call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 1 ), iMomentum_2 )
+    call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 1 ), iMomentum_3 )
 
     call ApplySources_Fluid_Kernel &
            ( Increment % Value ( :, iEnergy ), &
              Increment % Value ( :, iMomentum_1 ), &
+             Increment % Value ( :, iMomentum_2 ), &
+             Increment % Value ( :, iMomentum_3 ), &
              Chart % IsProperCell, &
              SF % Value ( :, SF % RADIATION_G ), &
              SF % Value ( :, SF % RADIATION_S_D ( 1 ) ), &
+             SF % Value ( :, SF % RADIATION_S_D ( 2 ) ), &
+             SF % Value ( :, SF % RADIATION_S_D ( 3 ) ), &
              TimeStep )
 
     end select !-- Chart
@@ -803,16 +821,17 @@ contains
 
   
   subroutine ComputeFluidSource_G_S_Radiation_Kernel &
-               ( FS_R_G, FS_R_S_1, IsProperCell, Q, A_1 )
+               ( FS_R_G, FS_R_S_1, FS_R_S_2, FS_R_S_3, IsProperCell, &
+                 Q, A_1, A_2, A_3 )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       FS_R_G, &
-      FS_R_S_1
+      FS_R_S_1, FS_R_S_2, FS_R_S_3
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       IsProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       Q, &
-      A_1
+      A_1, A_2, A_3
 
     integer ( KDI ) :: &
       iV, &
@@ -826,6 +845,8 @@ contains
         cycle
       FS_R_G ( iV )    =    FS_R_G ( iV )  -    Q ( iV ) 
       FS_R_S_1 ( iV )  =  FS_R_S_1 ( iV )  -  A_1 ( iV )
+      FS_R_S_2 ( iV )  =  FS_R_S_2 ( iV )  -  A_2 ( iV )
+      FS_R_S_3 ( iV )  =  FS_R_S_3 ( iV )  -  A_3 ( iV )
     end do
     !$OMP end parallel do
 
@@ -833,16 +854,17 @@ contains
 
 
   subroutine ApplySources_Fluid_Kernel &
-               ( K_G, K_S_1, IsProperCell, FS_R_G, FS_R_S_1, dt )
+               ( K_G, K_S_1, K_S_2, K_S_3, IsProperCell, &
+                 FS_R_G, FS_R_S_1, FS_R_S_2, FS_R_S_3, dt )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       K_G, &
-      K_S_1
+      K_S_1, K_S_2, K_S_3
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       IsProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       FS_R_G, &
-      FS_R_S_1
+      FS_R_S_1, FS_R_S_2, FS_R_S_3
     real ( KDR ), intent ( in ) :: &
       dt
 
@@ -858,6 +880,8 @@ contains
         cycle
       K_G ( iV )    =  K_G ( iV )    +  FS_R_G ( iV )    *  dt
       K_S_1 ( iV )  =  K_S_1 ( iV )  +  FS_R_S_1 ( iV )  *  dt
+      K_S_2 ( iV )  =  K_S_2 ( iV )  +  FS_R_S_2 ( iV )  *  dt
+      K_S_3 ( iV )  =  K_S_3 ( iV )  +  FS_R_S_3 ( iV )  *  dt
     end do
     !$OMP end parallel do
 
