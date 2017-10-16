@@ -8,7 +8,8 @@ LaplacianMultipole_Form_Test: Basics.a Manifolds.a \
   LaplacianMultipole_Form_Test.o
 	$(LINK) $(FLAGS) \
           -o LaplacianMultipole_Form_Test_$(MACHINE) \
-          LaplacianMultipole_Form_Test.o Manifolds.a Basics.a \
+          LaplacianMultipole_Form_Test.o LaplacianMultipole_Form.o \
+          Manifolds.a Basics.a \
           $(LIBRARIES)
 
 clean:

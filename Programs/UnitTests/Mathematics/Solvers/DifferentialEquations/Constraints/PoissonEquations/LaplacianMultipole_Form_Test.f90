@@ -15,6 +15,8 @@ module LaplacianMultipole_Form_Test__Form
       Geometry
     type ( Atlas_SC_Form ), allocatable :: &
       Atlas
+    type ( LaplacianMultipoleForm ), allocatable :: &
+      Laplacian
   contains
     procedure, public, pass :: &
       Initialize
@@ -35,7 +37,8 @@ contains
     integer ( KDI ) :: &
       nCellsRadial, &
       nCellsPolar, &
-      nCellsAzimuthal
+      nCellsAzimuthal, &
+      MaxMoment
     integer ( KDI ), dimension ( 3 ) :: &
       nCells
     real ( KDR ) :: &
@@ -86,6 +89,20 @@ contains
     call A % SetGeometry ( GA )
     end associate !-- GA
 
+    !-- Laplacian Multipole
+
+    MaxMoment = 2
+    call PROGRAM_HEADER % GetParameter ( MaxMoment, 'MaxMoment' )
+
+    allocate ( LMFT % Laplacian )
+    associate ( L => LMFT % Laplacian )
+    call L % Initialize ( A % Chart, MaxMoment )
+
+!    call L % SetRadialGrid ( LMFT % Source )
+
+    !-- Cleanup
+
+    end associate !-- L
     end associate !-- A
 
   end subroutine Initialize
@@ -96,6 +113,8 @@ contains
     type ( LaplacianMultipole_Form_Test_Form ) :: &
       LMFT
 
+    if ( allocated ( LMFT % Laplacian ) ) &
+      deallocate ( LMFT % Laplacian )
     if ( allocated ( LMFT % Geometry ) ) &
       deallocate ( LMFT % Geometry )
     if ( allocated ( LMFT % Atlas ) ) &
