@@ -1,0 +1,28 @@
+PATH_GENASIS = ../../../../../../../..
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+all: LaplacianMultipole_Form_Test
+
+LaplacianMultipole_Form_Test: Basics.a Manifolds.a \
+  LaplacianMultipole_Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o LaplacianMultipole_Form_Test_$(MACHINE) \
+          LaplacianMultipole_Form_Test.o Manifolds.a Basics.a \
+          $(LIBRARIES)
+
+clean:
+	rm -f *.o *.a *.mod *.ld
+
+clobber: clean
+	rm -f IncrementDivergence_FV__Form_Test_*
+
+include $(PATH_BASICS)/Makefile_Dependencies
+include $(PATH_MANIFOLDS)/Makefile_Dependencies
+include $(PATH_INCREMENTS)/Makefile_Dependencies
+
+LaplacianMultipole_Form_Test.o: \
+  Basics.o \
+  Manifolds.o \
+  LaplacianMultipole_Form.o \
+  LaplacianMultipole_Form_Test.f90

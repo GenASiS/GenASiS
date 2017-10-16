@@ -1,0 +1,11 @@
+LaplacianMultipole_Form.o: \
+  Basics.o \
+  Manifolds.o \
+  LaplacianMultipole_Form.f90 
+
+PoissonEquations.o: \
+  LaplacianMultipole_Form.o \
+  PoissonEquations.f90
+
+PoissonEquations.a: $(POISSON_EQUATIONS)
+	ar r PoissonEquations.a $(POISSON_EQUATIONS)

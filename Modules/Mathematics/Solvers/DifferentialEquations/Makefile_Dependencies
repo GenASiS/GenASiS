@@ -1,8 +1,10 @@
 include $(PATH_FIELDS)/Makefile_Dependencies
+include $(PATH_CONSTRAINTS)/Makefile_Dependencies
 include $(PATH_EVOLUTIONS)/Makefile_Dependencies
 
 DifferentialEquations.o: \
   Fields.o \
+  Constraints.o \
   Evolutions.o \
   DifferentialEquations.f90
 
