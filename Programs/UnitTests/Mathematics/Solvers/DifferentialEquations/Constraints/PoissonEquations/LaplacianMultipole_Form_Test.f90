@@ -79,6 +79,8 @@ contains
 
     call A % CreateChart &
            ( CoordinateSystemOption = CoordinateSystem, &
+             MinCoordinateOption = MinCoordinate, &
+             MaxCoordinateOption = MaxCoordinate, &
              nCellsOption = nCells )
 
     !-- Geometry
@@ -96,9 +98,9 @@ contains
 
     allocate ( LMFT % Laplacian )
     associate ( L => LMFT % Laplacian )
-    call L % Initialize ( A % Chart, MaxMoment )
+    call L % Initialize ( A, MaxMoment )
 
-!    call L % SetRadialGrid ( LMFT % Source )
+    call Show ( L % RadialEdge, 'RadialEdge' )
 
     !-- Cleanup
 
