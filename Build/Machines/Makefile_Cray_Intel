@@ -12,8 +12,9 @@ LINK = ftn
 #-- Silo library may be automatically included & linked by 
 #-- "module load silo" if provided, otherwise, manually put include and 
 #-- link line flag & location below
-INCLUDE_SILO = 
-LIBRARY_SILO = 
+SILO_DIR=/ccs/home/reubendb/projects/swtree/xc30/silo/4.10.2/intel17
+INCLUDE_SILO = -I${SILO_DIR}/include
+LIBRARY_SILO = -L${SILO_DIR}/lib -lsiloh5
 
 #-- LAPACK library may be automatically linked by 
 #-- "module load lapack" if provided, otherwise, manually put 
