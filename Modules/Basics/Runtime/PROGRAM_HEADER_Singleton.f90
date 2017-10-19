@@ -117,8 +117,12 @@ contains
     procedure ( ), pointer :: &
       Abort
       
-    open ( OUTPUT_UNIT, encoding = 'UTF-8' )
-
+    if ( KBCH == selected_char_kind ( 'ASCII' ) ) then
+      open ( OUTPUT_UNIT, encoding = 'DEFAULT' )
+    else if ( KBCH == selected_char_kind ( 'ISO_10646' ) ) then
+      open ( OUTPUT_UNIT, encoding = 'UTF-8' )
+    end if
+    
     AppendDimensionality = .true.
     if ( present ( AppendDimensionalityOption ) ) &
       AppendDimensionality = AppendDimensionalityOption

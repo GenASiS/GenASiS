@@ -2,6 +2,7 @@ program MeasuredValue_Form_Test
 
   use ISO_FORTRAN_ENV
   use KIND_DEFAULT_Singleton
+  use KIND_BIG_Singleton
   use MeasuredValue_Form
 
   implicit none
@@ -13,7 +14,11 @@ program MeasuredValue_Form_Test
     Length_2, &
     Time_1
 
-  open ( OUTPUT_UNIT, encoding = 'UTF-8' )
+  if ( KBCH == selected_char_kind ( 'ASCII' ) ) then
+    open ( OUTPUT_UNIT, encoding = 'DEFAULT' )
+  else if ( KBCH == selected_char_kind ( 'ISO_10646' ) ) then
+    open ( OUTPUT_UNIT, encoding = 'UTF-8' )
+  end if
 
   print *
 
