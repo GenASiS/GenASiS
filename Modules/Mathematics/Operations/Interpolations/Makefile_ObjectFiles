@@ -1,2 +1,3 @@
 INTERPOLATIONS = \
-  SplineInterpolation_Form.o
+  SplineInterpolation_Form.o \
+  Interpolations.o
