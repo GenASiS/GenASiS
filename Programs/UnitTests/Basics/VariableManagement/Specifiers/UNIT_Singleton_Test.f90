@@ -1,18 +1,17 @@
 program UNIT_Singleton_Test
 
   use ISO_FORTRAN_ENV
+  use KIND_BIG_Singleton
   use MeasuredValue_Form
   use UNIT_Singleton
   
   implicit none
 
-  type ( MeasuredValueForm ) :: &
-    EnergyUnit, &
-    LengthUnit, &
-    EnergyLengthUnit, &
-    EnergyDensityUnit
-
-  open ( OUTPUT_UNIT, encoding = 'UTF-8' )
+  if ( KBCH == selected_char_kind ( 'ASCII' ) ) then
+    open ( OUTPUT_UNIT, encoding = 'DEFAULT' )
+  else if ( KBCH == selected_char_kind ( 'ISO_10646' ) ) then
+    open ( OUTPUT_UNIT, encoding = 'UTF-8' )
+  end if
 
   call UNIT % Initialize ( )
 
@@ -113,17 +112,5 @@ program UNIT_Singleton_Test
   print*
   print*, 'Mass Density'
   print*, 'MASS_DENSITY_CGS    ', UNIT % MASS_DENSITY_CGS
-
-  ! print*
-  ! print*, 'Test'
-  ! EnergyUnit = UNIT % MEV
-  ! print*, 'EnergyUnit          ', EnergyUnit
-  ! LengthUnit = UNIT % HBAR_C / UNIT % MEV
-  ! print*, 'LengthUnit          ', LengthUnit
-  ! EnergyLengthUnit = EnergyUnit * LengthUnit
-  ! print*, 'EnergyLengthUnit ', EnergyLengthUnit
-  ! EnergyDensityUnit = EnergyUnit / ( LengthUnit ** 3 ) 
-  ! print*, 'EnergyDensityUnit   ', EnergyDensityUnit
-  
 
 end program UNIT_Singleton_Test

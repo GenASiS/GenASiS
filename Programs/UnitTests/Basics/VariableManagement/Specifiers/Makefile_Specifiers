@@ -112,6 +112,7 @@ SplitJoin_Command_Test.o: \
 
 MeasuredValue_Form_Test.o: \
   KIND_DEFAULT_Singleton.o \
+  $(KIND_BIG_Singleton).o \
   MeasuredValue_Form.o \
   MeasuredValue_Form_Test.f90
 
@@ -120,6 +121,7 @@ CONSTANT_Singleton_Test.o: \
   CONSTANT_Singleton_Test.f90
 
 UNIT_Singleton_Test.o: \
+  $(KIND_BIG_Singleton).o \
   MeasuredValue_Form.o \
   UNIT_Singleton.o \
   UNIT_Singleton_Test.f90
