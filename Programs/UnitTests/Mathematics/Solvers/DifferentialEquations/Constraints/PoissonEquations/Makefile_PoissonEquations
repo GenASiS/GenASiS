@@ -16,7 +16,7 @@ clean:
 	rm -f *.o *.a *.mod *.ld
 
 clobber: clean
-	rm -f IncrementDivergence_FV__Form_Test_*
+	rm -f LaplacianMultipole_Form_Test_*
 
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MANIFOLDS)/Makefile_Dependencies
