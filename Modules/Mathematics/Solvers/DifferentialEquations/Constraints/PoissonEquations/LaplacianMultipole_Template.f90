@@ -1,4 +1,4 @@
-module LaplacianMultipole_Form
+module LaplacianMultipole_Template
 
   use Basics
   use Manifolds
@@ -6,7 +6,7 @@ module LaplacianMultipole_Form
   implicit none
   private
 
-  type, public :: LaplacianMultipoleForm
+  type, public, abstract :: LaplacianMultipoleTemplate
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
       nRadialCells = 0, &
@@ -21,30 +21,45 @@ module LaplacianMultipole_Form
       SolidHarmonic_IC, SolidHarmonic_IS, &  !-- Irregular Cos, Sin
       Delta
     character ( LDF ) :: &
+      Type = '', &
       Name = ''
-    class ( Atlas_SC_Form ), pointer :: &
-      Atlas => null ( )
   contains
     procedure, public, pass :: &
-      Initialize
-    final :: &
-      Finalize
-  end type LaplacianMultipoleForm
-
-    private :: &
-      SetParameters, &
-      SetRadialEdge, &
+      InitializeTemplate
+    procedure ( SP ), private, pass, deferred :: &
+      SetParameters   
+    procedure, public, pass :: &
+      FinalizeTemplate
+    procedure, private, pass :: &
       SetMomentStorage
+  end type LaplacianMultipoleTemplate
+
+  abstract interface
+
+    subroutine SP ( LM, A, MaxDegree )
+      use Basics
+      use Manifolds
+      import LaplacianMultipoleTemplate
+      class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+        LM
+      class ( AtlasHeaderForm ), intent ( in ), target :: &
+        A
+      integer ( KDI ), intent ( in ) :: &
+        MaxDegree
+    end subroutine SP
+
+  end interface
+
 
 contains
 
 
-  subroutine Initialize ( LM, Atlas, MaxDegree )
+  subroutine InitializeTemplate ( LM, A, MaxDegree )
 
-    class ( LaplacianMultipoleForm ), intent ( inout ) :: &
+    class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
       LM
-    class ( Atlas_SC_Form ), intent ( in ), target :: &
-      Atlas
+    class ( AtlasHeaderForm ), intent ( in ) :: &
+      A
     integer ( KDI ), intent ( in ) :: &
       MaxDegree
 
@@ -53,13 +68,17 @@ contains
       iL, &
       iM
 
-    LM % IGNORABILITY = Atlas % IGNORABILITY
-    LM % Name = 'Laplacian_' // trim ( Atlas % Name )
+    LM % IGNORABILITY = A % IGNORABILITY
 
-    call Show ( 'Initializing a LaplacianMultipole', LM % IGNORABILITY )
+    if ( LM % Type == '' ) &
+      LM % Type = 'a LaplacianMultipole' 
+
+    LM % Name = 'Laplacian_' // trim ( A % Name )
+
+    call Show ( 'Initializing ' // trim ( LM % Type ), LM % IGNORABILITY )
     call Show ( LM % Name, 'Name', LM % IGNORABILITY )
 
-    call SetParameters ( LM, Atlas, MaxDegree )
+    call LM % SetParameters ( A, MaxDegree )
 
     allocate ( LM % SolidHarmonic_RC ( LM % nAngularMomentCells ) )
     allocate ( LM % SolidHarmonic_RS ( LM % nAngularMomentCells ) )
@@ -83,17 +102,13 @@ contains
     end do
     end associate !-- L, etc.
 
-    call SetRadialEdge ( LM )
-
-  end subroutine Initialize
+  end subroutine InitializeTemplate
 
 
-  impure elemental subroutine Finalize ( LM )
+  impure elemental subroutine FinalizeTemplate ( LM )
 
-    type ( LaplacianMultipoleForm ), intent ( inout ) :: &
+    class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
       LM
-
-    nullify ( LM % Atlas )
 
     if ( allocated ( LM % Delta ) ) &
       deallocate ( LM % Delta )
@@ -110,123 +125,15 @@ contains
 
     if ( LM % Name == '' ) return
 
-    call Show ( 'Finalizing a LaplacianMultipole', LM % IGNORABILITY )
+    call Show ( 'Finalizing ' // trim ( LM % Type ), LM % IGNORABILITY )
     call Show ( LM % Name, 'Name', LM % IGNORABILITY )
     
-  end subroutine Finalize
-
-
-  subroutine SetParameters ( LM, Atlas, MaxDegree )
-
-    class ( LaplacianMultipoleForm ), intent ( inout ) :: &
-      LM
-    class ( Atlas_SC_Form ), intent ( in ), target :: &
-      Atlas
-    integer ( KDI ), intent ( in ) :: &
-      MaxDegree
-
-    integer ( KDI ) :: &
-      iL, &
-      iM
-
-    LM % MaxDegree = MaxDegree
-    LM % MaxOrder  = MaxDegree
-    LM % Atlas => Atlas
-
-    select type ( C => LM % Atlas % Chart )
-    class is ( Chart_SL_Template )
-
-    select case ( trim ( C % CoordinateSystem ) )
-    case ( 'SPHERICAL' )
-       if ( C % nDimensions  <  3 ) &
-         LM % MaxOrder  =  0
-       if ( C % nDimensions  <  2 ) &
-         LM % MaxDegree  =  0
-    case default
-      call Show ( 'CoordinateSystem not supported', CONSOLE % ERROR )
-      call Show ( C % CoordinateSystem, 'CoordinateSystem', CONSOLE % ERROR )
-      call Show ( 'SetRadialEdge', 'subroutine', CONSOLE % ERROR )
-      call Show ( 'LaplacianMultipole_Form', 'module', CONSOLE % ERROR )
-    end select !-- CoordinateSystem
-
-    class default
-      call Show ( 'Chart type not supported', CONSOLE % ERROR )
-      call Show ( 'SetRadialEdge', 'subroutine', CONSOLE % ERROR )
-      call Show ( 'LaplacianMultipole_Form', 'module', CONSOLE % ERROR )    
-    end select !-- C
-    
-    associate &
-      ( L   => LM % MaxDegree, &
-        M   => LM % MaxOrder, &
-        nAM => LM % nAngularMomentCells )
-    nAM = 0
-    do iM = 0, M
-      do iL = iM, L
-        nAM = nAM + 1
-      end do
-    end do
-    end associate !-- L, etc.
-
-    call Show ( LM % MaxDegree, 'MaxDegree (l)', LM % IGNORABILITY )
-    call Show ( LM % MaxOrder, 'MaxOrder (m)', LM % IGNORABILITY )
-    call Show ( LM % nAngularMomentCells, 'nAngularMomentCells', &
-                LM % IGNORABILITY )
-
-  end subroutine SetParameters
-
-
-  subroutine SetRadialEdge ( LM )
-
-    type ( LaplacianMultipoleForm ), intent ( inout ) :: &
-      LM
-
-    integer ( KDI ) :: &
-      iC  !-- iCell
-    real ( KDR ), dimension ( : ), allocatable :: &
-      Center, &
-      Width
-
-    select type ( C => LM % Atlas % Chart )
-    class is ( Chart_SL_Template )
-
-    select case ( trim ( C % CoordinateSystem ) )
-    case ( 'SPHERICAL' )
-
-      LM % nRadialCells  =  C % nCells ( 1 )
-      associate ( nRC  =>  LM % nRadialCells )
-      allocate ( Center ( nRC ) )
-      allocate ( Width ( nRC ) )
-      allocate ( LM % RadialEdge ( nRC + 1 ) )
-
-      call C % SetGeometryCell &
-             ( Width, Center, nC = nRC, nGL = 0, iD = 1, iaF = 1 )
-
-      LM % RadialEdge ( 1 )  =  0.0_KDR
-      do iC = 1, nRC
-        LM % RadialEdge ( iC + 1 )  =  LM % RadialEdge ( iC )  +  Width ( iC )
-      end do !-- iC
-      
-      end associate !-- nRC
-
-    case default
-      call Show ( 'CoordinateSystem not supported', CONSOLE % ERROR )
-      call Show ( C % CoordinateSystem, 'CoordinateSystem', CONSOLE % ERROR )
-      call Show ( 'SetRadialEdge', 'subroutine', CONSOLE % ERROR )
-      call Show ( 'LaplacianMultipole_Form', 'module', CONSOLE % ERROR )
-    end select !-- CoordinateSystem
-
-    class default
-      call Show ( 'Chart type not supported', CONSOLE % ERROR )
-      call Show ( 'SetRadialEdge', 'subroutine', CONSOLE % ERROR )
-      call Show ( 'LaplacianMultipole_Form', 'module', CONSOLE % ERROR )    
-    end select !-- C
-
-  end subroutine SetRadialEdge
+  end subroutine FinalizeTemplate
 
 
   subroutine SetMomentStorage ( LM )
 
-    class ( LaplacianMultipoleForm ), intent ( inout ) :: &
+    class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
       LM
 
     ! if ( associated ( LM % MomentIrregularSin_1D ) ) &
@@ -290,4 +197,4 @@ contains
   end subroutine SetMomentStorage
 
 
-end module LaplacianMultipole_Form
+end module LaplacianMultipole_Template

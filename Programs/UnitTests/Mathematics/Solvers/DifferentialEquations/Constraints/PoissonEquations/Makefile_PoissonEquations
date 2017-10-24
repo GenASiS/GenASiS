@@ -2,28 +2,28 @@ PATH_GENASIS = ../../../../../../../..
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-all: LaplacianMultipole_Form_Test
+all: LaplacianMultipole_ASC__Form_Test
 
-LaplacianMultipole_Form_Test: Basics.a Manifolds.a \
-  LaplacianMultipole_Form_Test.o
+LaplacianMultipole_ASC__Form_Test: Basics.a Manifolds.a \
+  LaplacianMultipole_ASC__Form_Test.o
 	$(LINK) $(FLAGS) \
-          -o LaplacianMultipole_Form_Test_$(MACHINE) \
-          LaplacianMultipole_Form_Test.o LaplacianMultipole_Form.o \
-          Manifolds.a Basics.a \
+          -o LaplacianMultipole_ASC__Form_Test_$(MACHINE) \
+          LaplacianMultipole_ASC__Form_Test.o LaplacianMultipole_ASC__Form.o \
+          LaplacianMultipole_Template.o Manifolds.a Basics.a \
           $(LIBRARIES)
 
 clean:
 	rm -f *.o *.a *.mod *.ld
 
 clobber: clean
-	rm -f LaplacianMultipole_Form_Test_*
+	rm -f LaplacianMultipole_ASC__Form_Test_*
 
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MANIFOLDS)/Makefile_Dependencies
-include $(PATH_INCREMENTS)/Makefile_Dependencies
+include $(PATH_POISSON_EQUATIONS)/Makefile_Dependencies
 
-LaplacianMultipole_Form_Test.o: \
+LaplacianMultipole_ASC__Form_Test.o: \
   Basics.o \
   Manifolds.o \
-  LaplacianMultipole_Form.o \
-  LaplacianMultipole_Form_Test.f90
+  LaplacianMultipole_ASC__Form.o \
+  LaplacianMultipole_ASC__Form_Test.f90
