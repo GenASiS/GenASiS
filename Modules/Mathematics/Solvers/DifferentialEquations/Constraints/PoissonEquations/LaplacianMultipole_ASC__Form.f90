@@ -48,6 +48,7 @@ contains
     select case ( trim ( A % Chart % CoordinateSystem ) )
     case ( 'SPHERICAL' )
       call SetRadialEdgeSpherical ( LM )
+      call LM % SetMomentStorage ( )
     case default
       call Show ( 'CoordinateSystem not supported', CONSOLE % ERROR )
       call Show ( A % Chart % CoordinateSystem, 'CoordinateSystem', &

@@ -38,7 +38,7 @@ contains
       nCellsRadial, &
       nCellsPolar, &
       nCellsAzimuthal, &
-      MaxMoment
+      MaxDegree
     integer ( KDI ), dimension ( 3 ) :: &
       nCells
     real ( KDR ) :: &
@@ -93,12 +93,12 @@ contains
 
     !-- Laplacian Multipole
 
-    MaxMoment = 2
-    call PROGRAM_HEADER % GetParameter ( MaxMoment, 'MaxMoment' )
+    MaxDegree = 2
+    call PROGRAM_HEADER % GetParameter ( MaxDegree, 'MaxDegree' )
 
     allocate ( LMFT % Laplacian )
     associate ( L => LMFT % Laplacian )
-    call L % Initialize ( A, MaxMoment )
+    call L % Initialize ( A, MaxDegree )
 
     call Show ( L % RadialEdge, 'RadialEdge' )
 
