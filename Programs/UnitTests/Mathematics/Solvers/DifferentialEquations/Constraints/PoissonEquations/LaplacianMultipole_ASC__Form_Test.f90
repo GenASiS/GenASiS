@@ -41,16 +41,22 @@ contains
       nCellsRadial, &
       nCellsPolar, &
       nCellsAzimuthal, &
+      nCellsCore, &
       MaxDegree
     integer ( KDI ), dimension ( 3 ) :: &
       nCells
     real ( KDR ) :: &
-      RadiusMax
+      RadiusMax, &
+      RadiusCore
     real ( KDR ), dimension ( 3 ) :: &
       MinCoordinate, &
-      MaxCoordinate
+      MaxCoordinate, &
+      Ratio, &
+      Scale
     character ( LDL ) :: &
       CoordinateSystem
+    character ( LDL ), dimension ( 3 ) :: &
+      Spacing
     character ( LDL ), dimension ( : ), allocatable :: &
       R_C_Name, I_C_Name, &
       R_S_Name, I_S_Name
@@ -68,18 +74,6 @@ contains
 
     CoordinateSystem = 'SPHERICAL'
 
-    nCellsRadial = 64
-    call PROGRAM_HEADER % GetParameter ( nCellsRadial, 'nCellsRadial' )
-
-        nCellsPolar = nCellsRadial
-    nCellsAzimuthal = nCellsPolar * 2
- 
-    nCells = [ nCellsRadial, 1, 1 ]
-    if ( A % nDimensions > 1 ) &
-      nCells ( 2 ) = nCellsPolar
-    if ( A % nDimensions > 2 ) &
-      nCells ( 3 ) = nCellsAzimuthal
-
     RadiusMax = 10.0_KDR
     call PROGRAM_HEADER % GetParameter ( RadiusMax, 'RadiusMax' )
 
@@ -88,11 +82,47 @@ contains
     MaxCoordinate = [ RadiusMax,      Pi, 2.0_KDR * Pi ]
     end associate !-- Pi
 
+    Spacing        =  'EQUAL'
+    Spacing ( 1 )  =  'PROPORTIONAL'
+    
+    RadiusCore = RadiusMax / 8.0_KDR
+    call PROGRAM_HEADER % GetParameter ( RadiusMax, 'RadiusCore' )
+
+    nCellsCore = 32  !-- Number of central cells with equal spacing
+    call PROGRAM_HEADER % GetParameter ( nCellsCore, 'nCellsCore' )
+
+    call Show ( 'Mesh core parameters' )
+    call Show ( RadiusCore, 'RadiusCore' )
+    call Show ( nCellsCore, 'nCellsCore' )
+    call Show ( RadiusCore / nCellsCore, 'CellWidthCore' )
+
+    nCellsRadial = 3 * nCellsCore  !-- Aiming for roughly R_max = 10
+    call PROGRAM_HEADER % GetParameter ( nCellsRadial, 'nCellsRadial' )
+
+        nCellsPolar = 3 * nCellsCore
+    nCellsAzimuthal = 2 * nCellsPolar
+ 
+    nCells = [ nCellsRadial, 1, 1 ]
+    if ( A % nDimensions > 1 ) &
+      nCells ( 2 ) = nCellsPolar
+    if ( A % nDimensions > 2 ) &
+      nCells ( 3 ) = nCellsAzimuthal
+
+    Ratio        =  0.0_KDR
+    Ratio ( 1 )  =  CONSTANT % PI / nCellsPolar  !-- dTheta
+
+    Scale        =  0.0_KDR
+    Scale ( 1 )  =  RadiusCore
+
     call A % CreateChart &
-           ( CoordinateSystemOption = CoordinateSystem, &
+           ( SpacingOption = Spacing, &
+             CoordinateSystemOption = CoordinateSystem, &
              MinCoordinateOption = MinCoordinate, &
              MaxCoordinateOption = MaxCoordinate, &
-             nCellsOption = nCells )
+             RatioOption = Ratio, &
+             ScaleOption = Scale, &
+             nCellsOption = nCells, &
+             nEqualOption = nCellsCore )
 
     select type ( C => A % Chart )
     class is ( Chart_SLD_Form )
