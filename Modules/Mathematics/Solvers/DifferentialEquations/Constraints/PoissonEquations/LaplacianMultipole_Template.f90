@@ -46,6 +46,8 @@ module LaplacianMultipole_Template
     procedure ( SP ), private, pass, deferred :: &
       SetParameters   
     procedure, public, pass :: &
+      NameSolidHarmonics
+    procedure, public, pass :: &
       FinalizeTemplate
     procedure, public, pass :: &
       SetMomentStorage
@@ -125,6 +127,53 @@ contains
     end associate !-- L, etc.
 
   end subroutine InitializeTemplate
+
+
+  subroutine NameSolidHarmonics ( LM, R_C_Name, I_C_Name, R_S_Name, I_S_Name )
+
+    class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+      LM
+    character ( * ), dimension ( : ), intent ( out ), allocatable :: &
+      R_C_Name, I_C_Name, &
+      R_S_Name, I_S_Name
+
+    integer ( KDI ) :: &
+      iV, &  !-- iValue
+      iL, &
+      iM
+    character ( 3 ) :: &
+      Label_L, &
+      Label_M
+
+    associate &
+      ( L => LM % MaxDegree, &
+        M => LM % MaxOrder )
+
+    allocate ( R_C_Name ( LM % nAngularMomentCells ) ) 
+    allocate ( I_C_Name ( LM % nAngularMomentCells ) ) 
+    if ( LM % MaxOrder > 0 ) then
+      allocate ( R_S_Name ( LM % nAngularMomentCells ) ) 
+      allocate ( I_S_Name ( LM % nAngularMomentCells ) ) 
+    end if
+
+    iV = 0
+    do iM = 0, M
+      do iL = iM, L
+        iV = iV + 1
+        write ( Label_L, fmt = '(i3.3)' ) iL
+        write ( Label_M, fmt = '(i3.3)' ) iM
+        R_C_Name ( iV ) = 'RegularCos_' // Label_L // '_' // Label_M
+        I_C_Name ( iV ) = 'IrregularCos_' // Label_L // '_' // Label_M
+        if ( LM % MaxOrder > 0 ) then
+          R_S_Name ( iV ) = 'RegularSin_' // Label_L // '_' // Label_M
+          I_S_Name ( iV ) = 'IrregularSin_' // Label_L // '_' // Label_M
+        end if
+      end do
+    end do
+
+    end associate !-- L, etc.
+
+  end subroutine NameSolidHarmonics
 
 
   impure elemental subroutine FinalizeTemplate ( LM )

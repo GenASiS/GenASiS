@@ -48,6 +48,9 @@ contains
       MaxCoordinate
     character ( LDL ) :: &
       CoordinateSystem
+    character ( LDL ), dimension ( : ), allocatable :: &
+      R_C_Name, I_C_Name, &
+      R_S_Name, I_S_Name
 
     !-- Atlas
 
@@ -91,7 +94,7 @@ contains
     call A % SetGeometry ( GA )
     end associate !-- GA
 
-    !-- Laplacian Multipole
+    !-- Laplacian
 
     MaxDegree = 2
     call PROGRAM_HEADER % GetParameter ( MaxDegree, 'MaxDegree' )
@@ -101,6 +104,16 @@ contains
     call L % Initialize ( A, MaxDegree )
 
     call Show ( L % RadialEdge, 'RadialEdge' )
+
+    !-- Test solid harmonics
+
+    call L % NameSolidHarmonics ( R_C_Name, I_C_Name, R_S_Name, I_S_Name )
+call Show ( R_C_Name, '>>> R_C_Name' )
+call Show ( I_C_Name, '>>> I_C_Name' )
+if ( L % MaxOrder > 0 ) then
+  call Show ( R_S_Name, '>>> R_S_Name' )
+  call Show ( I_S_Name, '>>> I_S_Name' )
+end if
 
     !-- Cleanup
 
