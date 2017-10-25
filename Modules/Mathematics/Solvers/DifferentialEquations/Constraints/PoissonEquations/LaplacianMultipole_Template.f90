@@ -17,18 +17,20 @@ module LaplacianMultipole_Template
       Origin = 0.0_KDR
     real ( KDR ), dimension ( : ), allocatable :: &
       RadialEdge, &
-      SolidHarmonic_RC, SolidHarmonic_IC, &  !-- Regular, Irregular Cos
-      SolidHarmonic_RS, SolidHarmonic_IS, &  !-- Regular, Irregular Sin
       Delta
     real ( KDR ), dimension ( : ), pointer :: &
-      MyMoment_RC_1D => null ( ), &
-      MyMoment_IC_1D => null ( ), &
-      MyMoment_RS_1D => null ( ), &
-      MyMoment_IS_1D => null ( ), &
-      Moment_RC_1D   => null ( ), &    
-      Moment_IC_1D   => null ( ), &
-      Moment_RS_1D   => null ( ), &
-      Moment_IS_1D   => null ( )
+      SolidHarmonic_RC => null ( ), &  !-- Regular Cos
+      SolidHarmonic_IC => null ( ), &  !-- Irregular Cos
+      SolidHarmonic_RS => null ( ), &  !-- Regular Sin
+      SolidHarmonic_IS => null ( ), &  !-- Irregular Sin
+      MyMoment_RC_1D   => null ( ), &
+      MyMoment_IC_1D   => null ( ), &
+      MyMoment_RS_1D   => null ( ), &
+      MyMoment_IS_1D   => null ( ), &
+      Moment_RC_1D     => null ( ), &    
+      Moment_IC_1D     => null ( ), &
+      Moment_RS_1D     => null ( ), &
+      Moment_IS_1D     => null ( )
     real ( KDR ), dimension ( :, : ), pointer :: &
       MyMRC => null ( ), MyMRS => null ( ), &
       MyMIC => null ( ), MyMIS => null ( ), &
@@ -47,6 +49,8 @@ module LaplacianMultipole_Template
       SetParameters   
     procedure, public, pass :: &
       NameSolidHarmonics
+    procedure, public, pass :: &
+      ComputeSolidHarmonics
     procedure, public, pass :: &
       FinalizeTemplate
     procedure, public, pass :: &
@@ -70,7 +74,9 @@ module LaplacianMultipole_Template
   end interface
 
     private :: &
-      AssignPointers
+      AssignPointers, &
+      ComputeSolidHarmonicsKernel_C_M_0, &
+      ComputeSolidHarmonicsKernel_C_S
 
 contains
 
@@ -176,6 +182,71 @@ contains
   end subroutine NameSolidHarmonics
 
 
+  subroutine ComputeSolidHarmonics &
+               ( LM, CoordinateSystem, Position, nDimensions )
+
+    class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+      LM
+    character ( * ), intent ( in ) :: &
+      CoordinateSystem
+    real ( KDR ), dimension ( 3 ), intent ( in ) :: &
+      Position
+    integer ( KDI ), intent ( in ) :: &
+      nDimensions
+
+    integer ( KDI ) :: &
+      L
+    real ( KDR ) :: &
+      X, Y, Z
+    real ( KDR ), dimension ( : ), pointer :: &
+      R_C, I_C, &
+      R_S, I_S
+
+    L  =  LM % MaxDegree
+
+    R_C  =>  LM % SolidHarmonic_RC ( : )
+    I_C  =>  LM % SolidHarmonic_IC ( : )
+    R_S  =>  LM % SolidHarmonic_RS ( : )
+    I_S  =>  LM % SolidHarmonic_IS ( : )
+
+    select case ( trim ( CoordinateSystem ) )
+    case ( 'CARTESIAN' )
+      X  =  Position ( 1 )  -  LM % Origin ( 1 )
+      Y  =  Position ( 2 )  -  LM % Origin ( 2 )
+      Z  =  Position ( 3 )  -  LM % Origin ( 3 )
+    case ( 'CYLINDRICAL' )
+      if ( nDimensions < 3 ) then
+        X  =  Position ( 1 )
+        Y  =  0.0_KDR
+      else
+        X  =  Position ( 1 )  *  cos ( Position ( 3 ) )
+        Y  =  Position ( 1 )  *  sin ( Position ( 3 ) )
+      end if
+      Z  =  Position ( 2 )  -  LM % Origin ( 2 )
+    case ( 'SPHERICAL' )
+      if ( nDimensions < 3 ) then
+        X  =  Position ( 1 )  *  sin ( Position ( 2 ) )
+        Y  =  0.0_KDR
+      else
+        X  =  Position ( 1 )  *  sin ( Position ( 2 ) )  &
+                              *  cos ( Position ( 3 ) )
+        Y  =  Position ( 1 )  *  sin ( Position ( 2 ) )  &
+                              *  sin ( Position ( 3 ) )
+      end if
+      Z  =  Position ( 1 )  *  cos ( Position ( 2 ) )
+    end select !-- CoordinateSystem
+
+    if ( nDimensions < 3 ) then
+      call ComputeSolidHarmonicsKernel_C_M_0 ( X, Z, L, R_C, I_C )
+    else
+      call ComputeSolidHarmonicsKernel_C_S ( X, Y, Z, L, R_C, I_C, R_S, I_S )
+    end if
+
+    nullify ( R_C, I_C, R_S, I_S )
+
+  end subroutine ComputeSolidHarmonics
+
+
   impure elemental subroutine FinalizeTemplate ( LM )
 
     class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
@@ -211,17 +282,17 @@ contains
        deallocate ( LM % MyMoment_RS_1D )
     if ( associated ( LM % MyMoment_RC_1D ) ) &
        deallocate ( LM % MyMoment_RC_1D )
+    if ( associated ( LM % SolidHarmonic_IS ) ) &
+      deallocate ( LM % SolidHarmonic_IS )
+    if ( associated ( LM % SolidHarmonic_RS ) ) &
+      deallocate ( LM % SolidHarmonic_RS )
+    if ( associated ( LM % SolidHarmonic_IC ) ) &
+      deallocate ( LM % SolidHarmonic_IC )
+    if ( associated ( LM % SolidHarmonic_RC ) ) &
+      deallocate ( LM % SolidHarmonic_RC )
 
     if ( allocated ( LM % Delta ) ) &
       deallocate ( LM % Delta )
-    if ( allocated ( LM % SolidHarmonic_IS ) ) &
-      deallocate ( LM % SolidHarmonic_IS )
-    if ( allocated ( LM % SolidHarmonic_IC ) ) &
-      deallocate ( LM % SolidHarmonic_IC )
-    if ( allocated ( LM % SolidHarmonic_RS ) ) &
-      deallocate ( LM % SolidHarmonic_RS )
-    if ( allocated ( LM % SolidHarmonic_RC ) ) &
-      deallocate ( LM % SolidHarmonic_RC )
     if ( allocated ( LM % RadialEdge ) ) &
       deallocate ( LM % RadialEdge )
 
@@ -333,6 +404,141 @@ contains
     end associate !-- nR, nA
 
   end subroutine AssignPointers
+
+
+  subroutine ComputeSolidHarmonicsKernel_C_M_0 ( X, Z, L, R_C, I_C )
+
+    real ( KDR ), intent ( in ) :: &
+      X, Z
+    integer ( KDI ), intent ( in ) :: &
+      L
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      R_C, I_C
+
+    integer ( KDI ) :: &
+      iV, &  !-- iValue
+      iL, &
+      iM, &
+      iPD   !-- iPreviousDiagonal
+    real ( KDR ) :: &
+      D_2
+
+    D_2  =  X * X  +  Z * Z 
+
+    iV = 0
+    iM = 0
+
+    !-- ( L, M ) = ( iM, iM )
+    !-- Note iL = iM
+    iV = iV + 1
+    if ( iM == 0 ) then
+      iV = 1
+      R_C ( iV ) = 1.0_KDR
+      I_C ( iV ) = 1.0_KDR / sqrt ( D_2 )
+    else
+      R_C ( iV ) = - ( X * R_C ( iPD ) ) / ( 2 * iM )
+      I_C ( iV ) = - ( 2 * iM - 1 ) &
+                     * ( X * I_C ( iPD ) ) / D_2
+    end if
+    iPD = iV
+
+    if ( iM == L ) return
+
+    !-- ( L, M ) = ( iM + 1, iM )
+    !-- Note iL = iM + 1
+    iV = iV + 1
+    R_C ( iV ) = Z * R_C ( iV - 1 )  
+    I_C ( iV ) = ( 2 * ( iM + 1 ) - 1 ) * Z * I_C ( iV - 1 ) / D_2  
+
+    do iL = iM + 2, L
+      !-- ( L, M ) = ( iL, iM )
+      iV = iV + 1
+      R_C ( iV ) &
+        = ( ( 2 * iL - 1 ) * Z * R_C ( iV - 1 )  -  D_2 * R_C ( iV - 2 ) ) &
+          / ( ( iL + iM ) * ( iL - iM ) )
+      I_C ( iV ) &
+        = ( ( 2 * iL - 1 ) * Z * I_C ( iV - 1 )  &
+            -  ( ( iL - 1 )**2 - iM**2 ) * I_C ( iV - 2 ) ) &
+          / D_2
+    end do !-- iL
+
+  end subroutine ComputeSolidHarmonicsKernel_C_M_0
+
+
+  subroutine ComputeSolidHarmonicsKernel_C_S ( X, Y, Z, L, R_C, I_C, R_S, I_S )
+
+    real ( KDR ), intent ( in ) :: &
+      X, Y, Z
+    integer ( KDI ), intent ( in ) :: &
+      L
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      R_C, I_C, &
+      R_S, I_S
+
+    integer ( KDI ) :: &
+      iV, &  !-- iValue
+      iL, &
+      iM, &
+      iPD   !-- iPreviousDiagonal
+    real ( KDR ) :: &
+      D_2
+
+    D_2  =  X * X  +  Y * Y  +  Z * Z 
+
+    iV = 0
+    do iM = 0, L
+
+      !-- ( L, M ) = ( iM, iM )
+      !-- Note iL = iM
+      iV = iV + 1
+      if ( iM == 0 ) then
+        iV = 1
+        R_C ( iV ) = 1.0_KDR
+        R_S ( iV ) = 0.0_KDR
+        I_C ( iV ) = 1.0_KDR / sqrt ( D_2 )
+        I_S ( iV ) = 0.0_KDR
+      else
+        R_C ( iV ) = - ( X * R_C ( iPD ) - Y * R_S ( iPD ) ) / ( 2 * iM )
+        R_S ( iV ) = - ( Y * R_C ( iPD ) + X * R_S ( iPD ) ) / ( 2 * iM )
+        I_C ( iV ) = - ( 2 * iM - 1 ) &
+                       * ( X * I_C ( iPD ) - Y * I_S ( iPD ) ) / D_2
+        I_S ( iV ) = - ( 2 * iM - 1 ) &
+                       * ( Y * I_C ( iPD ) + X * I_S ( iPD ) ) / D_2
+      end if
+      iPD = iV
+
+      if ( iM == L ) exit
+
+      !-- ( L, M ) = ( iM + 1, iM )
+      !-- Note iL = iM + 1
+      iV = iV + 1
+      R_C ( iV ) = Z * R_C ( iV - 1 )  
+      R_S ( iV ) = Z * R_S ( iV - 1 )  
+      I_C ( iV ) = ( 2 * ( iM + 1 ) - 1 ) * Z * I_C ( iV - 1 ) / D_2  
+      I_S ( iV ) = ( 2 * ( iM + 1 ) - 1 ) * Z * I_S ( iV - 1 ) / D_2 
+
+      do iL = iM + 2, L
+        !-- (L,M) = (iL,iM)
+        iV = iV + 1
+        R_C ( iV ) &
+          = ( ( 2 * iL - 1 ) * Z * R_C ( iV - 1 )  -  D_2 * R_C ( iV - 2 ) ) &
+            / ( ( iL + iM ) * ( iL - iM ) )
+        R_S ( iV ) &
+          = ( ( 2 * iL - 1 ) * Z * R_S ( iV - 1 )  -  D_2 * R_S ( iV - 2 ) ) &
+            / ( ( iL + iM ) * ( iL - iM ) )
+        I_C ( iV ) &
+          = ( ( 2 * iL - 1 ) * Z * I_C ( iV - 1 )  &
+              -  ( ( iL - 1 )**2 - iM**2 ) * I_C ( iV - 2 ) ) &
+            / D_2
+        I_S ( iV ) &
+          = ( ( 2 * iL - 1 ) * Z * I_S ( iV - 1 )  &
+              -  ( ( iL - 1 )**2 - iM**2 ) * I_S ( iV - 2 ) ) &
+            / D_2
+      end do !-- iL
+
+    end do !-- iM
+
+  end subroutine ComputeSolidHarmonicsKernel_C_S
 
 
 end module LaplacianMultipole_Template

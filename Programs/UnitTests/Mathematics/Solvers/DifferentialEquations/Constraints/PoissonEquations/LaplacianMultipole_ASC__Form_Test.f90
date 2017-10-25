@@ -11,6 +11,8 @@ module LaplacianMultipole_ASC__Form_Test__Form
     ProgramName = 'LaplacianMultipole_ASC__Form_Test'
     
   type, public :: LaplacianMultipole_ASC__Form_Test_Form
+    type ( GridImageStreamForm ), allocatable :: &
+      Stream
     type ( GeometryFlat_ASC_Form ), allocatable :: &
       Geometry
     type ( Atlas_SC_Form ), allocatable :: &
@@ -35,6 +37,7 @@ contains
       Name
 
     integer ( KDI ) :: &
+      iC, &  !-- iCell
       nCellsRadial, &
       nCellsPolar, &
       nCellsAzimuthal, &
@@ -51,6 +54,11 @@ contains
     character ( LDL ), dimension ( : ), allocatable :: &
       R_C_Name, I_C_Name, &
       R_S_Name, I_S_Name
+    type ( VariableGroupForm ) :: &
+      SolidHarmonics_RC, SolidHarmonics_IC, &
+      SolidHarmonics_RS, SolidHarmonics_IS
+    class ( GeometryFlatForm ), pointer :: &
+      G
 
     !-- Atlas
 
@@ -63,8 +71,8 @@ contains
     nCellsRadial = 64
     call PROGRAM_HEADER % GetParameter ( nCellsRadial, 'nCellsRadial' )
 
-        nCellsPolar = nCellsRadial / 2
-    nCellsAzimuthal = nCellsPolar / 2
+        nCellsPolar = nCellsRadial
+    nCellsAzimuthal = nCellsPolar * 2
  
     nCells = [ nCellsRadial, 1, 1 ]
     if ( A % nDimensions > 1 ) &
@@ -86,12 +94,16 @@ contains
              MaxCoordinateOption = MaxCoordinate, &
              nCellsOption = nCells )
 
+    select type ( C => A % Chart )
+    class is ( Chart_SLD_Form )
+
     !-- Geometry
 
     allocate ( LMFT % Geometry )
     associate ( GA => LMFT % Geometry )  !-- GeometryAtlas
     call GA % Initialize ( A )
     call A % SetGeometry ( GA )
+    G => A % Geometry ( )
     end associate !-- GA
 
     !-- Laplacian
@@ -105,20 +117,78 @@ contains
 
     call Show ( L % RadialEdge, 'RadialEdge' )
 
-    !-- Test solid harmonics
+    !-- Compute solid harmonics
 
     call L % NameSolidHarmonics ( R_C_Name, I_C_Name, R_S_Name, I_S_Name )
-call Show ( R_C_Name, '>>> R_C_Name' )
-call Show ( I_C_Name, '>>> I_C_Name' )
-if ( L % MaxOrder > 0 ) then
-  call Show ( R_S_Name, '>>> R_S_Name' )
-  call Show ( I_S_Name, '>>> I_S_Name' )
-end if
+    call Show ( R_C_Name, '>>> R_C_Name' )
+    call Show ( I_C_Name, '>>> I_C_Name' )
+    if ( L % MaxOrder > 0 ) then
+      call Show ( R_S_Name, '>>> R_S_Name' )
+      call Show ( I_S_Name, '>>> I_S_Name' )
+    end if
+
+    call SolidHarmonics_RC % Initialize &
+           ( [ G % nValues, size ( R_C_Name ) ], &
+             NameOption = 'SolidHarmonics_RC', VariableOption = R_C_Name, &
+             ClearOption = .true. )
+    call SolidHarmonics_IC % Initialize &
+           ( [ G % nValues, size ( I_C_Name ) ], &
+             NameOption = 'SolidHarmonics_IC', VariableOption = I_C_Name, &
+             ClearOption = .true. )
+    if ( L % MaxOrder > 0 ) then
+      call SolidHarmonics_RS % Initialize &
+             ( [ G % nValues, size ( R_S_Name ) ], &
+               NameOption = 'SolidHarmonics_RS', VariableOption = R_S_Name, &
+               ClearOption = .true. )
+      call SolidHarmonics_IS % Initialize &
+             ( [ G % nValues, size ( I_S_Name ) ], &
+               NameOption = 'SolidHarmonics_IS', VariableOption = I_S_Name, &
+               ClearOption = .true. )
+    end if
+
+    do iC = 1, G % nValues
+      if ( .not. C % IsProperCell ( iC ) ) &
+        cycle
+      call L % ComputeSolidHarmonics &
+             ( C % CoordinateSystem, &
+               G % Value ( iC, G % CENTER ( 1 ) : G % CENTER ( 3 ) ), &
+               C % nDimensions )
+      SolidHarmonics_RC % Value ( iC, : )  =  L % SolidHarmonic_RC
+      SolidHarmonics_IC % Value ( iC, : )  =  L % SolidHarmonic_IC
+      if ( L % MaxOrder > 0 ) then
+        SolidHarmonics_RS % Value ( iC, : )  =  L % SolidHarmonic_RS
+        SolidHarmonics_IS % Value ( iC, : )  =  L % SolidHarmonic_IS
+      end if
+    end do
+
+    !-- Write
+
+    allocate ( LMFT % Stream )
+    call LMFT % Stream % Initialize &
+           ( Name, CommunicatorOption = PROGRAM_HEADER % Communicator )    
+    associate ( GIS => LMFT % Stream )
+
+    call A % OpenStream ( GIS, 'Stream', iStream = 1 )
+    call C % AddFieldImage ( SolidHarmonics_RC, iStream = 1 )
+    call C % AddFieldImage ( SolidHarmonics_IC, iStream = 1 )
+    if ( L % MaxOrder > 0 ) then
+      call C % AddFieldImage ( SolidHarmonics_RS, iStream = 1 )
+      call C % AddFieldImage ( SolidHarmonics_IS, iStream = 1 )
+    end if
+
+    call GIS % Open ( GIS % ACCESS_CREATE )
+    call A % Write ( iStream = 1 )
+    call GIS % Close ( )
+
+    end associate !-- GIS
 
     !-- Cleanup
 
     end associate !-- L
+    end select !-- C
     end associate !-- A
+
+    nullify ( G )
 
   end subroutine Initialize
 
@@ -134,6 +204,8 @@ end if
       deallocate ( LMFT % Geometry )
     if ( allocated ( LMFT % Atlas ) ) &
       deallocate ( LMFT % Atlas )
+    if ( allocated ( LMFT % Stream ) ) &
+      deallocate ( LMFT % Stream )
 
   end subroutine Finalize
 
