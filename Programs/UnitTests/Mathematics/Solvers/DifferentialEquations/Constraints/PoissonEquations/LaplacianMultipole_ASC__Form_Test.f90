@@ -56,13 +56,15 @@ contains
       MaxCoordinate, &
       Ratio, &
       Scale
+    character ( 3 ) :: &
+      Label_Ell, &
+      Label_M
     character ( LDL ) :: &
       CoordinateSystem
     character ( LDL ), dimension ( 3 ) :: &
       Spacing
     character ( LDL ), dimension ( : ), allocatable :: &
-      R_C_Name, I_C_Name, &
-      R_S_Name, I_S_Name
+      Suffix_L_M
     type ( VariableGroupForm ) :: &
       Source, &
       SolidHarmonics_RC, SolidHarmonics_IC, &
@@ -149,7 +151,7 @@ contains
     associate ( L => LMFT % Laplacian )
     call L % Initialize ( A, MaxDegree )
 
-    call Show ( L % RadialEdge, 'RadialEdge' )
+    call Show ( L % RadialEdge, 'RadialEdge', CONSOLE % INFO_2 )
 
     !-- Source
 
@@ -173,34 +175,45 @@ contains
     end where
     end associate !-- R, etc.
 
-    !-- Multipole names
+    !-- Multipole name suffixes
 
-    call L % NameSolidHarmonics ( R_C_Name, I_C_Name, R_S_Name, I_S_Name )
-    call Show ( R_C_Name, '>>> R_C_Name' )
-    call Show ( I_C_Name, '>>> I_C_Name' )
-    if ( L % MaxOrder > 0 ) then
-      call Show ( R_S_Name, '>>> R_S_Name' )
-      call Show ( I_S_Name, '>>> I_S_Name' )
-    end if
+    allocate ( Suffix_L_M ( L % nAngularMomentCells ) )
+    iA = 0
+    do iM = 0, L % MaxOrder
+      do iEll = iM, L % MaxDegree
+        iA = iA + 1
+        write ( Label_Ell, fmt = '(i3.3)' ) iEll
+        write ( Label_M,   fmt = '(i3.3)' ) iM
+        Suffix_L_M ( iA )  =  '_' // Label_Ell // '_' // Label_M
+      end do
+    end do
 
     !-- Compute solid harmonics
 
+    call Show ( 'RegularCos' // Suffix_L_M, 'RC' )
     call SolidHarmonics_RC % Initialize &
-           ( [ G % nValues, size ( R_C_Name ) ], &
-             NameOption = 'SolidHarmonics_RC', VariableOption = R_C_Name, &
+           ( [ G % nValues, L % nAngularMomentCells ], &
+             NameOption = 'SolidHarmonics_RC', &
+             VariableOption = 'RegularCos' // Suffix_L_M, &
              ClearOption = .true. )
+    call Show ( 'IrregularCos' // Suffix_L_M, 'IC' )
     call SolidHarmonics_IC % Initialize &
-           ( [ G % nValues, size ( I_C_Name ) ], &
-             NameOption = 'SolidHarmonics_IC', VariableOption = I_C_Name, &
+           ( [ G % nValues, L % nAngularMomentCells ], &
+             NameOption = 'SolidHarmonics_IC', &
+             VariableOption = 'IrregularCos' // Suffix_L_M, &
              ClearOption = .true. )
     if ( L % MaxOrder > 0 ) then
+      call Show ( 'RegularSin' // Suffix_L_M, 'RS' )
       call SolidHarmonics_RS % Initialize &
-             ( [ G % nValues, size ( R_S_Name ) ], &
-               NameOption = 'SolidHarmonics_RS', VariableOption = R_S_Name, &
+             ( [ G % nValues, L % nAngularMomentCells ], &
+               NameOption = 'SolidHarmonics_RS', &
+               VariableOption = 'RegularSin' // Suffix_L_M, &
                ClearOption = .true. )
+      call Show ( 'IrregularSin' // Suffix_L_M, 'IS' )
       call SolidHarmonics_IS % Initialize &
-             ( [ G % nValues, size ( I_S_Name ) ], &
-               NameOption = 'SolidHarmonics_IS', VariableOption = I_S_Name, &
+             ( [ G % nValues, L % nAngularMomentCells ], &
+               NameOption = 'SolidHarmonics_IS', &
+               VariableOption = 'IrregularSin' // Suffix_L_M, &
                ClearOption = .true. )
     end if
 
@@ -229,13 +242,13 @@ contains
     do iM = 0, L % MaxOrder
       do iEll = iM, L % MaxDegree
         iA = iA + 1
-        call Show ( iEll, 'iEll' )
-        call Show ( iM, 'iM' )
-        call Show ( L % MRC ( iA, : ), 'Moment_RC' )
-        call Show ( L % MIC ( iA, : ), 'Moment_IC' )
+        call Show ( iEll, 'iEll', CONSOLE % INFO_3 )
+        call Show ( iM, 'iM', CONSOLE % INFO_3 )
+        call Show ( L % MRC ( iA, : ), 'Moment_RC', CONSOLE % INFO_3 )
+        call Show ( L % MIC ( iA, : ), 'Moment_IC', CONSOLE % INFO_3 )
         if ( iM > 0 ) then
-          call Show ( L % MRS ( iA, : ), 'Moment_RS' )
-          call Show ( L % MIS ( iA, : ), 'Moment_IS' )
+          call Show ( L % MRS ( iA, : ), 'Moment_RS', CONSOLE % INFO_3 )
+          call Show ( L % MIS ( iA, : ), 'Moment_IS', CONSOLE % INFO_3 )
         end if
       end do
     end do
