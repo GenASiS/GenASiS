@@ -18,6 +18,8 @@ module LaplacianMultipole_ASC__Form
       SetParameters
     final :: &
       Finalize
+    procedure, private, pass :: &
+      ComputeMomentsLocal
   end type LaplacianMultipole_ASC_Form
 
     private :: &
@@ -34,11 +36,6 @@ contains
       A
     integer ( KDI ), intent ( in ) :: &
       MaxDegree
-
-    integer ( KDI ) :: &
-      iV, &  !-- iValue
-      iL, &
-      iM
 
     if ( LM % Type == '' ) &
       LM % Type = 'a LaplacianMultipole_ASC' 
@@ -133,6 +130,52 @@ contains
                 LM % IGNORABILITY )
 
   end subroutine SetParameters
+
+
+  subroutine ComputeMomentsLocal ( LM, Source )
+
+    class ( LaplacianMultipole_ASC_Form ), intent ( inout ) :: &
+      LM
+    type ( VariableGroupForm ), intent ( in ) :: &
+      Source !-- array over levels    
+
+    integer ( KDI ) :: &
+      iC
+    class ( GeometryFlatForm ), pointer :: &
+      G
+
+    select type ( C => LM % Chart )
+    class is ( Chart_SL_Template )
+
+      G => C % Geometry ( )
+
+      !$OMP parallel do private ( iC )
+      do iC = 1, G % nValues
+        if ( .not. C % IsProperCell ( iC ) ) &
+          cycle
+        call LM % ComputeSolidHarmonics &
+               ( C % CoordinateSystem, &
+                 G % Value ( iC, G % CENTER ( 1 ) : G % CENTER ( 3 ) ), &
+                 C % nDimensions )
+        call LM % ComputeMomentContributions &
+               ( C % CoordinateSystem, &
+                 G % Value ( iC, G % CENTER ( 1 ) : G % CENTER ( 3 ) ), &
+                 G % Value ( iC, G % WIDTH ( 1 ) : G % WIDTH ( 3 ) ), &
+                 G % Value ( iC, G % VOLUME_JACOBIAN ), &
+                 Source % Value ( iC, 1 ), &
+                 C % nDimensions )
+      end do
+      !$OMP end parallel do
+
+    class default
+      call Show ( 'Chart type not supported', CONSOLE % ERROR )
+      call Show ( 'ComputeMomentsLocal', 'subroutine', CONSOLE % ERROR )
+      call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
+    end select !-- C
+    
+    nullify ( G )
+
+  end subroutine ComputeMomentsLocal
 
 
   subroutine SetRadialEdgeSpherical ( LM )

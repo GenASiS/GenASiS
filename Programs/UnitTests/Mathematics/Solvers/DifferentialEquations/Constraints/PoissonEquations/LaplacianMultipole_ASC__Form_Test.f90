@@ -38,6 +38,7 @@ contains
 
     integer ( KDI ) :: &
       iC, &  !-- iCell
+      iA, iM, iEll, &  !-- iAngular, iOrder, iDegree
       nCellsRadial, &
       nCellsPolar, &
       nCellsAzimuthal, &
@@ -47,7 +48,9 @@ contains
       nCells
     real ( KDR ) :: &
       RadiusMax, &
-      RadiusCore
+      RadiusCore, &
+      RadiusDensity, &
+      Density
     real ( KDR ), dimension ( 3 ) :: &
       MinCoordinate, &
       MaxCoordinate, &
@@ -61,6 +64,7 @@ contains
       R_C_Name, I_C_Name, &
       R_S_Name, I_S_Name
     type ( VariableGroupForm ) :: &
+      Source, &
       SolidHarmonics_RC, SolidHarmonics_IC, &
       SolidHarmonics_RS, SolidHarmonics_IS
     class ( GeometryFlatForm ), pointer :: &
@@ -86,7 +90,7 @@ contains
     Spacing ( 1 )  =  'PROPORTIONAL'
     
     RadiusCore = RadiusMax / 8.0_KDR
-    call PROGRAM_HEADER % GetParameter ( RadiusMax, 'RadiusCore' )
+    call PROGRAM_HEADER % GetParameter ( RadiusCore, 'RadiusCore' )
 
     nCellsCore = 32  !-- Number of central cells with equal spacing
     call PROGRAM_HEADER % GetParameter ( nCellsCore, 'nCellsCore' )
@@ -147,7 +151,29 @@ contains
 
     call Show ( L % RadialEdge, 'RadialEdge' )
 
-    !-- Compute solid harmonics
+    !-- Source
+
+    call Source % Initialize &
+           ( [ G % nValues, 1 ], &
+               NameOption = 'Source', &
+               VariableOption = [ 'HomogeneousDensity' ], &
+               ClearOption = .true. )
+
+    RadiusDensity = RadiusMax / 10.0_KDR
+    call PROGRAM_HEADER % GetParameter ( RadiusDensity, 'RadiusDensity' )
+
+    Density = 1.0_KDR
+    call PROGRAM_HEADER % GetParameter ( Density, 'Density' )
+
+    associate &
+      ( R => G % Value ( :, G % CENTER ( 1 ) ), &
+        S => Source % Value ( :, 1 ) )
+    where ( R < RadiusDensity )
+      S = Density
+    end where
+    end associate !-- R, etc.
+
+    !-- Multipole names
 
     call L % NameSolidHarmonics ( R_C_Name, I_C_Name, R_S_Name, I_S_Name )
     call Show ( R_C_Name, '>>> R_C_Name' )
@@ -156,6 +182,8 @@ contains
       call Show ( R_S_Name, '>>> R_S_Name' )
       call Show ( I_S_Name, '>>> I_S_Name' )
     end if
+
+    !-- Compute solid harmonics
 
     call SolidHarmonics_RC % Initialize &
            ( [ G % nValues, size ( R_C_Name ) ], &
@@ -176,6 +204,7 @@ contains
                ClearOption = .true. )
     end if
 
+    !$OMP parallel do private ( iC )
     do iC = 1, G % nValues
       if ( .not. C % IsProperCell ( iC ) ) &
         cycle
@@ -190,6 +219,26 @@ contains
         SolidHarmonics_IS % Value ( iC, : )  =  L % SolidHarmonic_IS
       end if
     end do
+    !$OMP end parallel do
+
+    !-- Compute moments
+
+    call L % ComputeMoments ( Source )
+
+    iA = 0
+    do iM = 0, L % MaxOrder
+      do iEll = iM, L % MaxDegree
+        iA = iA + 1
+        call Show ( iEll, 'iEll' )
+        call Show ( iM, 'iM' )
+        call Show ( L % MRC ( iA, : ), 'Moment_RC' )
+        call Show ( L % MIC ( iA, : ), 'Moment_IC' )
+        if ( iM > 0 ) then
+          call Show ( L % MRS ( iA, : ), 'Moment_RS' )
+          call Show ( L % MIS ( iA, : ), 'Moment_IS' )
+        end if
+      end do
+    end do
 
     !-- Write
 
@@ -199,6 +248,7 @@ contains
     associate ( GIS => LMFT % Stream )
 
     call A % OpenStream ( GIS, 'Stream', iStream = 1 )
+    call C % AddFieldImage ( Source, iStream = 1 )
     call C % AddFieldImage ( SolidHarmonics_RC, iStream = 1 )
     call C % AddFieldImage ( SolidHarmonics_IC, iStream = 1 )
     if ( L % MaxOrder > 0 ) then

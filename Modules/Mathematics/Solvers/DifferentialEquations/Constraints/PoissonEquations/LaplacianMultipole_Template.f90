@@ -52,9 +52,15 @@ module LaplacianMultipole_Template
     procedure, public, pass :: &
       ComputeSolidHarmonics
     procedure, public, pass :: &
+      ComputeMoments
+    procedure, public, pass :: &
       FinalizeTemplate
     procedure, public, pass :: &
       SetMomentStorage
+    procedure ( CML ), private, pass, deferred :: &
+      ComputeMomentsLocal
+    procedure, public, pass :: &
+      ComputeMomentContributions
   end type LaplacianMultipoleTemplate
 
   abstract interface
@@ -71,12 +77,22 @@ module LaplacianMultipole_Template
         MaxDegree
     end subroutine SP
 
+    subroutine CML ( LM, Source )
+      use Basics
+      import LaplacianMultipoleTemplate
+      class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+        LM
+      type ( VariableGroupForm ), intent ( in ) :: &
+        Source  
+    end subroutine CML
   end interface
 
     private :: &
       AssignPointers, &
       ComputeSolidHarmonicsKernel_C_M_0, &
-      ComputeSolidHarmonicsKernel_C_S
+      ComputeSolidHarmonicsKernel_C_S, &
+      AddMomentShells, &
+      ComputeMomentContributionsKernel
 
 contains
 
@@ -247,6 +263,46 @@ contains
   end subroutine ComputeSolidHarmonics
 
 
+  subroutine ComputeMoments ( LM, Source )
+
+    class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+      LM
+    type ( VariableGroupForm ), intent ( in ) :: &
+      Source !-- array over levels    
+    
+    ! integer ( KDI ) :: &
+    !   iL, &  !-- iLevel
+    !   iC     !-- iCell
+
+    call Show ( 'Computing Moments', CONSOLE % INFO_3 )
+
+    call Clear ( LM % MyMRC )
+    call Clear ( LM % MyMIC )
+    if ( LM % MaxOrder > 0 ) then
+      call Clear ( LM % MyMRS )
+      call Clear ( LM % MyMIS )
+    end if
+
+    call LM % ComputeMomentsLocal ( Source )
+
+    call LM % Reduction_RC % Reduce ( REDUCTION % SUM )
+    call LM % Reduction_IC % Reduce ( REDUCTION % SUM )
+    if ( LM % MaxOrder > 0 ) then
+      call LM % Reduction_RS % Reduce ( REDUCTION % SUM )
+      call LM % Reduction_IS % Reduce ( REDUCTION % SUM )
+    end if
+
+    call AddMomentShells &
+           ( LM % MRC, LM % MIC, &
+             LM % nAngularMomentCells, LM % nRadialCells )
+    if ( LM % MaxOrder > 0 ) &
+      call AddMomentShells &
+             ( LM % MRS, LM % MIS, &
+               LM % nAngularMomentCells, LM % nRadialCells )
+
+  end subroutine ComputeMoments
+
+
   impure elemental subroutine FinalizeTemplate ( LM )
 
     class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
@@ -372,6 +428,78 @@ contains
     end associate !-- PHC
 
   end subroutine SetMomentStorage
+
+
+  subroutine ComputeMomentContributions &
+               ( LM, CoordinateSystem, Position, Width, VolumeJacobian, &
+                 Source, nDimensions )
+
+    class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+      LM
+    character ( * ), intent ( in ) :: &
+      CoordinateSystem
+    real ( KDR ), dimension ( 3 ), intent ( in ) :: &
+      Position, &
+      Width
+    real ( KDR ), intent ( in ) :: &
+      VolumeJacobian, &
+      Source
+    integer ( KDI ), intent ( in ) :: &
+      nDimensions
+
+    integer ( KDI ) :: &
+      iRS  !-- iRadiusSplit
+    real ( KDR ) :: &
+      X, Y, Z, &
+      R_P, &  !-- R_Perpendicular
+      D, &
+      Source_dV
+
+    select case ( trim ( CoordinateSystem ) )
+    case ( 'CARTESIAN' )
+      X  =  Position ( 1 )  -  LM % Origin ( 1 )
+      Y  =  Position ( 2 )  -  LM % Origin ( 2 )
+      Z  =  Position ( 3 )  -  LM % Origin ( 3 )
+      D  =  sqrt ( X * X  +  Y * Y  +  Z * Z )
+    case ( 'CYLINDRICAL' )
+      R_P  =  Position ( 1 )
+        Z  =  Position ( 2 )  -  LM % Origin ( 2 )
+        D  =  sqrt ( R_P * R_P  +  Z * Z )
+    case ( 'SPHERICAL' )
+      D  =  Position ( 1 )
+    end select !-- CoordinateSystem
+
+    if ( D > LM % RadialEdge ( size ( LM % RadialEdge ) ) ) then
+      call Show ( 'Radial grid not large enough', CONSOLE % ERROR )
+      call Show ( D, 'D', CONSOLE % ERROR )
+      call Show ( LM % RadialEdge ( size ( LM % RadialEdge ) ), 'D_Max', &
+                  CONSOLE % ERROR )
+      call Show ( 'ComputeMomentContributions', 'subroutine', CONSOLE % ERROR )
+      call Show ( 'LaplacianMultipole_Template', 'module', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end if
+
+    call Search ( LM % RadialEdge, D, iRS ) 
+!call Show ( D, 'D', nLeadingLinesOption = 1 )
+!call Show ( iRS, 'iRS' )
+!call Show ( LM % RadialEdge ( iRS ), 'R_in' )
+!call Show ( LM % RadialEdge ( iRS + 1 ), 'R_out' )
+
+    Source_dV  =  Source * VolumeJacobian &
+                         * product ( Width ( 1 : nDimensions ) )
+!call Show ( Source_dV, 'Source_dV' )
+
+    call ComputeMomentContributionsKernel &
+           ( LM % MyMRC, LM % MyMIC, &
+             LM % SolidHarmonic_RC, LM % SolidHarmonic_IC, &
+             Source_dV, LM % nAngularMomentCells, iRS )
+    if ( LM % MaxOrder > 0 ) &
+      call ComputeMomentContributionsKernel &
+             ( LM % MyMRS, LM % MyMIS, &
+               LM % SolidHarmonic_RS, LM % SolidHarmonic_IS, &
+               Source_dV, LM % nAngularMomentCells, iRS )
+
+  end subroutine ComputeMomentContributions
 
 
   subroutine AssignPointers &
@@ -539,6 +667,67 @@ contains
     end do !-- iM
 
   end subroutine ComputeSolidHarmonicsKernel_C_S
+
+
+  subroutine AddMomentShells ( MR, MI, nA, nR )
+
+    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+      MR, MI
+    integer ( KDI ), intent ( in ) :: &
+      nA, nR
+
+    integer ( KDI ) :: &
+      iA, &  !-- angular index
+      iR     !-- radial index
+
+    !$OMP parallel do private ( iR, iA )
+    do iR = 2, nR
+      do iA = 1, nA
+        MR ( iA, iR )  =  MR ( iA, iR - 1 )  +  MR ( iA, iR )
+      end do
+    end do
+    !$OMP end parallel do
+
+    !$OMP parallel do private ( iR, iA )
+    do iR = nR - 1, 1, -1
+      do iA = 1, nA
+        MI ( iA, iR )  =  MI ( iA, iR + 1 )  +  MI ( iA, iR )
+      end do
+    end do
+    !$OMP end parallel do
+
+  end subroutine AddMomentShells
+
+
+  subroutine ComputeMomentContributionsKernel &
+               ( MyMR, MyMI, R, I, Source_dV, nA, iRS )
+
+    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+      MyMR, MyMI
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      R, I
+    real ( KDR ), intent ( in ) :: &
+      Source_dV
+    integer ( KDI ), intent ( in ) :: &
+      nA, &
+      iRS
+
+    integer ( KDI ) :: &
+      iA      !-- iAngular
+    real ( KDR ), dimension ( nA ) :: &
+      R_S, I_S
+
+    do iA = 1, nA 
+      R_S ( iA )  =  R ( iA )  *  Source_dV
+      I_S ( iA )  =  I ( iA )  *  Source_dV
+    end do
+
+    do iA = 1, nA
+      MyMR ( iA, iRS )  =  MyMR ( iA, iRS )  +  R_S ( iA ) 
+      MyMI ( iA, iRS )  =  MyMI ( iA, iRS )  +  I_S ( iA )
+    end do
+
+  end subroutine ComputeMomentContributionsKernel
 
 
 end module LaplacianMultipole_Template
