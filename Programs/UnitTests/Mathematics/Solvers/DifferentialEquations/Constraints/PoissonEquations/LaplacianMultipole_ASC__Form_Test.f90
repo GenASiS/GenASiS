@@ -39,6 +39,7 @@ contains
     integer ( KDI ) :: &
       iC, &  !-- iCell
       iA, iM, iEll, &  !-- iAngular, iOrder, iDegree
+      iR, & !-- iRadial
       nCellsRadial, &
       nCellsPolar, &
       nCellsAzimuthal, &
@@ -50,7 +51,9 @@ contains
       RadiusMax, &
       RadiusCore, &
       RadiusDensity, &
-      Density
+      Density, &
+      MRC, MIC, &
+      MRS, MIS
     real ( KDR ), dimension ( 3 ) :: &
       MinCoordinate, &
       MaxCoordinate, &
@@ -64,11 +67,12 @@ contains
     character ( LDL ), dimension ( 3 ) :: &
       Spacing
     character ( LDL ), dimension ( : ), allocatable :: &
-      Suffix_L_M
+      Suffix_Ell_M
     type ( VariableGroupForm ) :: &
       Source, &
       SolidHarmonics_RC, SolidHarmonics_IC, &
-      SolidHarmonics_RS, SolidHarmonics_IS
+      SolidHarmonics_RS, SolidHarmonics_IS, &
+      Solution
     class ( GeometryFlatForm ), pointer :: &
       G
 
@@ -177,43 +181,43 @@ contains
 
     !-- Multipole name suffixes
 
-    allocate ( Suffix_L_M ( L % nAngularMomentCells ) )
+    allocate ( Suffix_Ell_M ( L % nAngularMomentCells ) )
     iA = 0
     do iM = 0, L % MaxOrder
       do iEll = iM, L % MaxDegree
         iA = iA + 1
         write ( Label_Ell, fmt = '(i3.3)' ) iEll
         write ( Label_M,   fmt = '(i3.3)' ) iM
-        Suffix_L_M ( iA )  =  '_' // Label_Ell // '_' // Label_M
+        Suffix_Ell_M ( iA )  =  '_' // Label_Ell // '_' // Label_M
       end do
     end do
 
     !-- Compute solid harmonics
 
-    call Show ( 'RegularCos' // Suffix_L_M, 'RC' )
+    call Show ( 'RegularCos' // Suffix_Ell_M, 'RC' )
     call SolidHarmonics_RC % Initialize &
            ( [ G % nValues, L % nAngularMomentCells ], &
              NameOption = 'SolidHarmonics_RC', &
-             VariableOption = 'RegularCos' // Suffix_L_M, &
+             VariableOption = 'RegularCos' // Suffix_Ell_M, &
              ClearOption = .true. )
-    call Show ( 'IrregularCos' // Suffix_L_M, 'IC' )
+    call Show ( 'IrregularCos' // Suffix_Ell_M, 'IC' )
     call SolidHarmonics_IC % Initialize &
            ( [ G % nValues, L % nAngularMomentCells ], &
              NameOption = 'SolidHarmonics_IC', &
-             VariableOption = 'IrregularCos' // Suffix_L_M, &
+             VariableOption = 'IrregularCos' // Suffix_Ell_M, &
              ClearOption = .true. )
     if ( L % MaxOrder > 0 ) then
-      call Show ( 'RegularSin' // Suffix_L_M, 'RS' )
+      call Show ( 'RegularSin' // Suffix_Ell_M, 'RS' )
       call SolidHarmonics_RS % Initialize &
              ( [ G % nValues, L % nAngularMomentCells ], &
                NameOption = 'SolidHarmonics_RS', &
-               VariableOption = 'RegularSin' // Suffix_L_M, &
+               VariableOption = 'RegularSin' // Suffix_Ell_M, &
                ClearOption = .true. )
-      call Show ( 'IrregularSin' // Suffix_L_M, 'IS' )
+      call Show ( 'IrregularSin' // Suffix_Ell_M, 'IS' )
       call SolidHarmonics_IS % Initialize &
              ( [ G % nValues, L % nAngularMomentCells ], &
                NameOption = 'SolidHarmonics_IS', &
-               VariableOption = 'IrregularSin' // Suffix_L_M, &
+               VariableOption = 'IrregularSin' // Suffix_Ell_M, &
                ClearOption = .true. )
     end if
 
@@ -253,6 +257,74 @@ contains
       end do
     end do
 
+    !-- Solution
+
+    call Solution % Initialize &
+           ( [ G % nValues, L % nAngularMomentCells + 1 ], &
+               NameOption = 'Solution', &
+               VariableOption = 'Phi' // [ Suffix_Ell_M, '' ], &
+               ClearOption = .true. )
+
+    !$OMP parallel do private ( iC )
+    do iC = 1, G % nValues
+
+      if ( .not. C % IsProperCell ( iC ) ) &
+        cycle
+
+      call L % ComputeSolidHarmonics &
+             ( C % CoordinateSystem, &
+               G % Value ( iC, G % CENTER ( 1 ) : G % CENTER ( 3 ) ), &
+               C % nDimensions )
+
+      call Search ( L % RadialEdge, G % Value ( iC, G % CENTER ( 1 ) ), iR )
+
+      associate ( Phi => Solution % Value ( iC, L % nAngularMomentCells + 1 ) )
+      do iA = 1, L % nAngularMomentCells
+        associate ( Phi_Ell_M => Solution % Value ( iC, iA ) )
+
+        MRC  =  0.5_KDR  *  L % MRC ( iA, iR )
+        if ( iR > 1 ) &
+          MRC  =  MRC  +  0.5_KDR  *  L % MRC ( iA, iR - 1 )
+
+        MIC  =  0.5_KDR  *  L % MIC ( iA, iR )
+        if ( iR < L % nRadialCells ) &
+          MIC  =  MIC  +  0.5_KDR  *  L % MIC ( iA, iR + 1 )
+
+        associate &
+          ( R_C  =>  L % SolidHarmonic_RC ( iA ), &
+            I_C  =>  L % SolidHarmonic_IC ( iA ) )
+        Phi_Ell_M  =  L % Delta ( iA ) * ( MRC * I_C  +  MIC * R_C )  
+        end associate !-- R_C, etc.
+        
+        if ( L % MaxOrder > 0 ) then
+
+          MRS  =  0.5_KDR  *  L % MRS ( iA, iR )
+          if ( iR > 1 ) &
+            MRS  =  MRS  +  0.5_KDR  *  L % MRS ( iA, iR - 1 )
+
+          MIS  =  0.5_KDR  *  L % MIS ( iA, iR )
+          if ( iR < L % nRadialCells ) &
+            MIS  =  MIS  +  0.5_KDR  *  L % MIS ( iA, iR + 1 )
+
+          associate &
+            ( R_S  =>  L % SolidHarmonic_RS ( iA ), &
+              I_S  =>  L % SolidHarmonic_IS ( iA ) )
+          Phi_Ell_M  =  Phi_Ell_M &
+                        +  L % Delta ( iA ) * ( MRS * I_S  +  MIS * R_S )  
+          end associate !-- R_C, etc.
+        
+        end if
+
+        Phi_Ell_M  =  - Phi_Ell_M  /  ( 4 * CONSTANT % PI )
+        Phi        =    Phi  +  Phi_Ell_M
+
+        end associate !-- Phi_L_M
+      end do !-- iA
+      end associate !-- Phi
+
+    end do !-- iC
+    !$OMP end parallel do
+
     !-- Write
 
     allocate ( LMFT % Stream )
@@ -268,6 +340,7 @@ contains
       call C % AddFieldImage ( SolidHarmonics_RS, iStream = 1 )
       call C % AddFieldImage ( SolidHarmonics_IS, iStream = 1 )
     end if
+    call C % AddFieldImage ( Solution, iStream = 1 )
 
     call GIS % Open ( GIS % ACCESS_CREATE )
     call A % Write ( iStream = 1 )
