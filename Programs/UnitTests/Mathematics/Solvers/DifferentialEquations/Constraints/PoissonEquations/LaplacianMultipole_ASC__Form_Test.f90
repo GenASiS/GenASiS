@@ -72,9 +72,11 @@ contains
       Source, &
       SolidHarmonics_RC, SolidHarmonics_IC, &
       SolidHarmonics_RS, SolidHarmonics_IS, &
-      Solution
+      Solution, &
+      Reference
     class ( GeometryFlatForm ), pointer :: &
       G
+
 
     !-- Atlas
 
@@ -137,6 +139,7 @@ contains
     select type ( C => A % Chart )
     class is ( Chart_SLD_Form )
 
+
     !-- Geometry
 
     allocate ( LMFT % Geometry )
@@ -145,6 +148,7 @@ contains
     call A % SetGeometry ( GA )
     G => A % Geometry ( )
     end associate !-- GA
+
 
     !-- Laplacian
 
@@ -156,6 +160,7 @@ contains
     call L % Initialize ( A, MaxDegree )
 
     call Show ( L % RadialEdge, 'RadialEdge', CONSOLE % INFO_2 )
+
 
     !-- Source
 
@@ -179,6 +184,7 @@ contains
     end where
     end associate !-- R, etc.
 
+
     !-- Multipole name suffixes
 
     allocate ( Suffix_Ell_M ( L % nAngularMomentCells ) )
@@ -191,6 +197,7 @@ contains
         Suffix_Ell_M ( iA )  =  '_' // Label_Ell // '_' // Label_M
       end do
     end do
+
 
     !-- Compute solid harmonics
 
@@ -238,6 +245,7 @@ contains
     end do
     !$OMP end parallel do
 
+
     !-- Compute moments
 
     call L % ComputeMoments ( Source )
@@ -256,6 +264,7 @@ contains
         end if
       end do
     end do
+
 
     !-- Solution
 
@@ -325,6 +334,28 @@ contains
     end do !-- iC
     !$OMP end parallel do
 
+
+    !-- Reference
+
+    call Reference % Initialize &
+           ( [ G % nValues, 1 ], &
+               NameOption = 'Reference', &
+               VariableOption = [ 'Phi' ], &
+               ClearOption = .true. )
+
+    associate &
+      ( R    =>  G % Value ( :, G % CENTER ( 1 ) ), &
+        Phi  =>  Reference % Value ( :, 1 ), &
+        Pi   =>  CONSTANT % PI )
+    where ( R < RadiusDensity )
+      Phi  =  1.0_KDR / 6.0_KDR  *  Density  *  R ** 2  &
+              -  1.0_KDR / 2.0_KDR  *  Density  *  RadiusDensity ** 2
+    elsewhere
+      Phi  =  - 1.0_KDR / 3.0_KDR  *  Density  *  RadiusDensity ** 3  /  R
+    end where
+    end associate !-- R
+
+
     !-- Write
 
     allocate ( LMFT % Stream )
@@ -341,6 +372,7 @@ contains
       call C % AddFieldImage ( SolidHarmonics_IS, iStream = 1 )
     end if
     call C % AddFieldImage ( Solution, iStream = 1 )
+    call C % AddFieldImage ( Reference, iStream = 1 )
 
     call GIS % Open ( GIS % ACCESS_CREATE )
     call A % Write ( iStream = 1 )
