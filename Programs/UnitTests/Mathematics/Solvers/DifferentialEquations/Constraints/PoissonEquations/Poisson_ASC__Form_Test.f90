@@ -43,9 +43,9 @@ contains
       nCellsRadial, &
       nCellsPolar, &
       nCellsAzimuthal, &
-      nCellsCore!, &
-      ! nEquations, &
-      ! MaxDegree
+      nCellsCore, &
+      nEquations, &
+      MaxDegree
     integer ( KDI ), dimension ( 3 ) :: &
       nCells
     real ( KDR ) :: &
@@ -148,9 +148,23 @@ contains
     end associate !-- GA
 
 
+    !-- Poisson
+
+    nEquations = 1
+
+    MaxDegree = 2
+    call PROGRAM_HEADER % GetParameter ( MaxDegree, 'MaxDegree' )
+
+    allocate ( PFT % Poisson )
+    associate ( P => PFT % Poisson )
+    call P % Initialize &
+           ( A, SolverType = 'MULTIPOLE', MaxDegreeOption = MaxDegree, &
+             nEquationsOption = nEquations )
+
+
     !-- Cleanup
 
-!    end associate !-- L
+    end associate !-- P
     end select !-- C
     end associate !-- A
 
@@ -164,8 +178,8 @@ contains
     type ( Poisson_ASC__Form_Test_Form ) :: &
       PFT
 
-!    if ( allocated ( PFT % Laplacian ) ) &
-!      deallocate ( PFT % Laplacian )
+    if ( allocated ( PFT % Poisson ) ) &
+      deallocate ( PFT % Poisson )
     if ( allocated ( PFT % Geometry ) ) &
       deallocate ( PFT % Geometry )
     if ( allocated ( PFT % Atlas ) ) &

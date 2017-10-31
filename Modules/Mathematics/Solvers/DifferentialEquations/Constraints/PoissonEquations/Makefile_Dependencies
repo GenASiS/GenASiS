@@ -12,11 +12,13 @@ LaplacianMultipole_ASC__Form.o: \
 Poisson_Template.o: \
   Basics.o \
   Manifolds.o \
+  LaplacianMultipole_Template.o \
   Poisson_Template.f90
 
 Poisson_ASC__Form.o: \
   Basics.o \
   Manifolds.o \
+  LaplacianMultipole_ASC__Form.o \
   Poisson_Template.o \
   Poisson_ASC__Form.f90
 

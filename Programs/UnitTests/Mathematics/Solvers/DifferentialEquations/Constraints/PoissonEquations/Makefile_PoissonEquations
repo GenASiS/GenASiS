@@ -16,6 +16,7 @@ Poisson_ASC__Form_Test: Basics.a Manifolds.a Poisson_ASC__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Poisson_ASC__Form_Test_$(MACHINE) \
           Poisson_ASC__Form_Test.o Poisson_ASC__Form.o Poisson_Template.o \
+          LaplacianMultipole_ASC__Form.o LaplacianMultipole_Template.o \
           Manifolds.a Basics.a $(LIBRARIES)
 
 clean:
