@@ -17,8 +17,8 @@ module Poisson_ASC__Form_Test__Form
       Geometry
     type ( Atlas_SC_Form ), allocatable :: &
       Atlas
-!    type ( Poisson_ASC_Form ), allocatable :: &
-!      Poisson
+    type ( Poisson_ASC_Form ), allocatable :: &
+      Poisson
   contains
     procedure, public, pass :: &
       Initialize
@@ -35,6 +35,126 @@ contains
       PFT
     character ( * ), intent ( in ) :: &
       Name
+
+    integer ( KDI ) :: &
+      ! iC, &  !-- iCell
+      ! iA, iM, iEll, &  !-- iAngular, iOrder, iDegree
+      ! iR, & !-- iRadial
+      nCellsRadial, &
+      nCellsPolar, &
+      nCellsAzimuthal, &
+      nCellsCore!, &
+      ! nEquations, &
+      ! MaxDegree
+    integer ( KDI ), dimension ( 3 ) :: &
+      nCells
+    real ( KDR ) :: &
+      RadiusMax, &
+      RadiusCore!, &
+!      RadiusDensity, &
+!      Density, &
+!      MRC, MIC, &
+!      MRS, MIS
+    real ( KDR ), dimension ( 3 ) :: &
+      MinCoordinate, &
+      MaxCoordinate, &
+      Ratio, &
+      Scale
+    character ( LDL ) :: &
+      CoordinateSystem
+    character ( LDL ), dimension ( 3 ) :: &
+      Spacing
+    class ( GeometryFlatForm ), pointer :: &
+      G
+
+    !-- Atlas
+
+    allocate ( PFT % Atlas )
+    associate ( A => PFT % Atlas )
+    call A % Initialize ( Name, PROGRAM_HEADER % Communicator )
+
+    CoordinateSystem = 'SPHERICAL'
+
+    call A % SetBoundaryConditionsFace &
+           ( [ 'REFLECTING', 'OUTFLOW   ' ], iDimension = 1 )
+    if ( A % nDimensions > 1 ) &
+      call A % SetBoundaryConditionsFace &
+             ( [ 'REFLECTING', 'REFLECTING' ], iDimension = 2 )
+    if ( A % nDimensions > 2 ) &
+      call A % SetBoundaryConditionsFace &
+             ( [ 'PERIODIC', 'PERIODIC' ], iDimension = 3 )
+
+    RadiusMax = 10.0_KDR
+    call PROGRAM_HEADER % GetParameter ( RadiusMax, 'RadiusMax' )
+
+    associate ( Pi => CONSTANT % PI )
+    MinCoordinate = [   0.0_KDR, 0.0_KDR,      0.0_KDR ]
+    MaxCoordinate = [ RadiusMax,      Pi, 2.0_KDR * Pi ]
+    end associate !-- Pi
+
+    Spacing        =  'EQUAL'
+    Spacing ( 1 )  =  'PROPORTIONAL'
+    
+    RadiusCore = RadiusMax / 8.0_KDR
+    call PROGRAM_HEADER % GetParameter ( RadiusCore, 'RadiusCore' )
+
+    nCellsCore = 32  !-- Number of central cells with equal spacing
+    call PROGRAM_HEADER % GetParameter ( nCellsCore, 'nCellsCore' )
+
+    call Show ( 'Mesh core parameters' )
+    call Show ( RadiusCore, 'RadiusCore' )
+    call Show ( nCellsCore, 'nCellsCore' )
+    call Show ( RadiusCore / nCellsCore, 'CellWidthCore' )
+
+    nCellsRadial = 3 * nCellsCore  !-- Aiming for roughly R_max = 10
+    call PROGRAM_HEADER % GetParameter ( nCellsRadial, 'nCellsRadial' )
+
+        nCellsPolar = 3 * nCellsCore
+    nCellsAzimuthal = 2 * nCellsPolar
+ 
+    nCells = [ nCellsRadial, 1, 1 ]
+    if ( A % nDimensions > 1 ) &
+      nCells ( 2 ) = nCellsPolar
+    if ( A % nDimensions > 2 ) &
+      nCells ( 3 ) = nCellsAzimuthal
+
+    Ratio        =  0.0_KDR
+    Ratio ( 1 )  =  CONSTANT % PI / nCellsPolar  !-- dTheta
+
+    Scale        =  0.0_KDR
+    Scale ( 1 )  =  RadiusCore
+
+    call A % CreateChart &
+           ( SpacingOption = Spacing, &
+             CoordinateSystemOption = CoordinateSystem, &
+             MinCoordinateOption = MinCoordinate, &
+             MaxCoordinateOption = MaxCoordinate, &
+             RatioOption = Ratio, &
+             ScaleOption = Scale, &
+             nCellsOption = nCells, &
+             nEqualOption = nCellsCore )
+
+    select type ( C => A % Chart )
+    class is ( Chart_SLD_Form )
+
+
+    !-- Geometry
+
+    allocate ( PFT % Geometry )
+    associate ( GA => PFT % Geometry )  !-- GeometryAtlas
+    call GA % Initialize ( A )
+    call A % SetGeometry ( GA )
+    G => A % Geometry ( )
+    end associate !-- GA
+
+
+    !-- Cleanup
+
+!    end associate !-- L
+    end select !-- C
+    end associate !-- A
+
+    nullify ( G )
 
   end subroutine Initialize
 
