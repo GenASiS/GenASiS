@@ -9,9 +9,13 @@ LaplacianMultipole_ASC__Form.o: \
   LaplacianMultipole_Template.o \
   LaplacianMultipole_ASC__Form.f90 
 
+Poisson_ASC__Form.o: \
+  Poisson_ASC__Form.f90
+
 PoissonEquations.o: \
   LaplacianMultipole_Template.o \
   LaplacianMultipole_ASC__Form.o \
+  Poisson_ASC__Form.o \
   PoissonEquations.f90
 
 PoissonEquations.a: $(POISSON_EQUATIONS)

@@ -1,3 +1,5 @@
 POISSON_EQUATIONS = \
+  Poisson_ASC__Form.o \
+  LaplacianMultipole_ASC__Form.o \
   LaplacianMultipole_Template.o \
   PoissonEquations.o
