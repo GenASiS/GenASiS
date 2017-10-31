@@ -44,6 +44,7 @@ contains
       nCellsPolar, &
       nCellsAzimuthal, &
       nCellsCore, &
+      nEquations, &
       MaxDegree
     integer ( KDI ), dimension ( 3 ) :: &
       nCells
@@ -85,6 +86,15 @@ contains
     call A % Initialize ( Name, PROGRAM_HEADER % Communicator )
 
     CoordinateSystem = 'SPHERICAL'
+
+    call A % SetBoundaryConditionsFace &
+           ( [ 'REFLECTING', 'OUTFLOW   ' ], iDimension = 1 )
+    if ( A % nDimensions > 1 ) &
+      call A % SetBoundaryConditionsFace &
+             ( [ 'REFLECTING', 'REFLECTING' ], iDimension = 2 )
+    if ( A % nDimensions > 2 ) &
+      call A % SetBoundaryConditionsFace &
+             ( [ 'PERIODIC', 'PERIODIC' ], iDimension = 3 )
 
     RadiusMax = 10.0_KDR
     call PROGRAM_HEADER % GetParameter ( RadiusMax, 'RadiusMax' )
@@ -152,12 +162,14 @@ contains
 
     !-- Laplacian
 
+    nEquations = 1
+
     MaxDegree = 2
     call PROGRAM_HEADER % GetParameter ( MaxDegree, 'MaxDegree' )
 
     allocate ( LMFT % Laplacian )
     associate ( L => LMFT % Laplacian )
-    call L % Initialize ( A, MaxDegree )
+    call L % Initialize ( A, MaxDegree, nEquations )
 
     call Show ( L % RadialEdge, 'RadialEdge', CONSOLE % INFO_2 )
 
@@ -165,7 +177,7 @@ contains
     !-- Source
 
     call Source % Initialize &
-           ( [ G % nValues, 1 ], &
+           ( [ G % nValues, nEquations ], &
                NameOption = 'Source', &
                VariableOption = [ 'HomogeneousDensity' ], &
                ClearOption = .true. )
@@ -256,11 +268,11 @@ contains
         iA = iA + 1
         call Show ( iEll, 'iEll', CONSOLE % INFO_3 )
         call Show ( iM, 'iM', CONSOLE % INFO_3 )
-        call Show ( L % MRC ( iA, : ), 'Moment_RC', CONSOLE % INFO_3 )
-        call Show ( L % MIC ( iA, : ), 'Moment_IC', CONSOLE % INFO_3 )
+        call Show ( L % MRC ( iA, :, 1 ), 'Moment_RC', CONSOLE % INFO_3 )
+        call Show ( L % MIC ( iA, :, 1 ), 'Moment_IC', CONSOLE % INFO_3 )
         if ( iM > 0 ) then
-          call Show ( L % MRS ( iA, : ), 'Moment_RS', CONSOLE % INFO_3 )
-          call Show ( L % MIS ( iA, : ), 'Moment_IS', CONSOLE % INFO_3 )
+          call Show ( L % MRS ( iA, :, 1 ), 'Moment_RS', CONSOLE % INFO_3 )
+          call Show ( L % MIS ( iA, :, 1 ), 'Moment_IS', CONSOLE % INFO_3 )
         end if
       end do
     end do
@@ -291,13 +303,13 @@ contains
       do iA = 1, L % nAngularMomentCells
         associate ( Phi_Ell_M => Solution % Value ( iC, iA ) )
 
-        MRC  =  0.5_KDR  *  L % MRC ( iA, iR )
+        MRC  =  0.5_KDR  *  L % MRC ( iA, iR, 1 )
         if ( iR > 1 ) &
-          MRC  =  MRC  +  0.5_KDR  *  L % MRC ( iA, iR - 1 )
+          MRC  =  MRC  +  0.5_KDR  *  L % MRC ( iA, iR - 1, 1 )
 
-        MIC  =  0.5_KDR  *  L % MIC ( iA, iR )
+        MIC  =  0.5_KDR  *  L % MIC ( iA, iR, 1 )
         if ( iR < L % nRadialCells ) &
-          MIC  =  MIC  +  0.5_KDR  *  L % MIC ( iA, iR + 1 )
+          MIC  =  MIC  +  0.5_KDR  *  L % MIC ( iA, iR + 1, 1 )
 
         associate &
           ( R_C  =>  L % SolidHarmonic_RC ( iA ), &
@@ -307,13 +319,13 @@ contains
         
         if ( L % MaxOrder > 0 ) then
 
-          MRS  =  0.5_KDR  *  L % MRS ( iA, iR )
+          MRS  =  0.5_KDR  *  L % MRS ( iA, iR, 1 )
           if ( iR > 1 ) &
-            MRS  =  MRS  +  0.5_KDR  *  L % MRS ( iA, iR - 1 )
+            MRS  =  MRS  +  0.5_KDR  *  L % MRS ( iA, iR - 1, 1 )
 
-          MIS  =  0.5_KDR  *  L % MIS ( iA, iR )
+          MIS  =  0.5_KDR  *  L % MIS ( iA, iR, 1 )
           if ( iR < L % nRadialCells ) &
-            MIS  =  MIS  +  0.5_KDR  *  L % MIS ( iA, iR + 1 )
+            MIS  =  MIS  +  0.5_KDR  *  L % MIS ( iA, iR + 1, 1 )
 
           associate &
             ( R_S  =>  L % SolidHarmonic_RS ( iA ), &

@@ -28,19 +28,20 @@ module LaplacianMultipole_ASC__Form
 contains
 
 
-  subroutine Initialize ( LM, A, MaxDegree )
+  subroutine Initialize ( LM, A, MaxDegree, nEquations )
 
     class ( LaplacianMultipole_ASC_Form ), intent ( inout ) :: &
       LM
     class ( Atlas_SC_Form ), intent ( in ), target :: &
       A
     integer ( KDI ), intent ( in ) :: &
-      MaxDegree
+      MaxDegree, &
+      nEquations
 
     if ( LM % Type == '' ) &
       LM % Type = 'a LaplacianMultipole_ASC' 
 
-    call LM % InitializeTemplate ( A, MaxDegree )
+    call LM % InitializeTemplate ( A, MaxDegree, nEquations )
 
     select case ( trim ( A % Chart % CoordinateSystem ) )
     case ( 'SPHERICAL' )
@@ -69,21 +70,23 @@ contains
   end subroutine Finalize
 
 
-  subroutine SetParameters ( LM, A, MaxDegree )
+  subroutine SetParameters ( LM, A, MaxDegree, nEquations )
 
     class ( LaplacianMultipole_ASC_Form ), intent ( inout ) :: &
       LM
     class ( AtlasHeaderForm ), intent ( in ), target :: &
       A
     integer ( KDI ), intent ( in ) :: &
-      MaxDegree
+      MaxDegree, &
+      nEquations
 
     integer ( KDI ) :: &
       iL, &
       iM
 
-    LM % MaxDegree  =   MaxDegree
-    LM % MaxOrder   =   MaxDegree
+    LM % nEquations  =   nEquations
+    LM % MaxDegree   =   MaxDegree
+    LM % MaxOrder    =   MaxDegree
 
     select type ( A )
     class is ( Atlas_SC_Form )
@@ -159,10 +162,10 @@ contains
                  C % nDimensions )
         call LM % ComputeMomentContributions &
                ( C % CoordinateSystem, &
+                 Source % Value ( iC, : ), &
                  G % Value ( iC, G % CENTER ( 1 ) : G % CENTER ( 3 ) ), &
                  G % Value ( iC, G % WIDTH ( 1 ) : G % WIDTH ( 3 ) ), &
                  G % Value ( iC, G % VOLUME_JACOBIAN ), &
-                 Source % Value ( iC, 1 ), &
                  C % nDimensions )
       end do
       !$OMP end parallel do
@@ -205,7 +208,8 @@ contains
 
       LM % RadialEdge ( 1 )  =  0.0_KDR
       do iC = 1, nRC
-        LM % RadialEdge ( iC + 1 )  =  LM % RadialEdge ( iC )  +  Width ( iC )
+        LM % RadialEdge ( iC + 1 )  &
+          =  LM % RadialEdge ( iC )  +  Width ( iC )
       end do !-- iC
       
       end associate !-- nRC

@@ -11,6 +11,7 @@ module LaplacianMultipole_Template
       IGNORABILITY = 0, &
       nRadialCells = 0, &
       nAngularMomentCells = 0, &
+      nEquations = 0, &
       MaxDegree = 0, &  !-- Max L
       MaxOrder  = 0     !-- Max M
     real ( KDR ), dimension ( 3 ) :: &
@@ -31,7 +32,7 @@ module LaplacianMultipole_Template
       Moment_IC_1D     => null ( ), &
       Moment_RS_1D     => null ( ), &
       Moment_IS_1D     => null ( )
-    real ( KDR ), dimension ( :, : ), pointer :: &
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
       MyMRC => null ( ), MyMRS => null ( ), &
       MyMIC => null ( ), MyMIS => null ( ), &
       MRC   => null ( ), MRS   => null ( ), &
@@ -63,7 +64,7 @@ module LaplacianMultipole_Template
 
   abstract interface
 
-    subroutine SP ( LM, A, MaxDegree )
+    subroutine SP ( LM, A, MaxDegree, nEquations )
       use Basics
       use Manifolds
       import LaplacianMultipoleTemplate
@@ -72,7 +73,8 @@ module LaplacianMultipole_Template
       class ( AtlasHeaderForm ), intent ( in ), target :: &
         A
       integer ( KDI ), intent ( in ) :: &
-        MaxDegree
+        MaxDegree, &
+        nEquations
     end subroutine SP
 
     subroutine CML ( LM, Source )
@@ -95,14 +97,15 @@ module LaplacianMultipole_Template
 contains
 
 
-  subroutine InitializeTemplate ( LM, A, MaxDegree )
+  subroutine InitializeTemplate ( LM, A, MaxDegree, nEquations )
 
     class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
       LM
     class ( AtlasHeaderForm ), intent ( in ) :: &
       A
     integer ( KDI ), intent ( in ) :: &
-      MaxDegree
+      MaxDegree, &
+      nEquations
 
     integer ( KDI ) :: &
       iV, &  !-- iValue
@@ -119,7 +122,7 @@ contains
     call Show ( 'Initializing ' // trim ( LM % Type ), LM % IGNORABILITY )
     call Show ( LM % Name, 'Name', LM % IGNORABILITY )
 
-    call LM % SetParameters ( A, MaxDegree )
+    call LM % SetParameters ( A, MaxDegree, nEquations )
 
     allocate ( LM % SolidHarmonic_RC ( LM % nAngularMomentCells ) )
     allocate ( LM % SolidHarmonic_IC ( LM % nAngularMomentCells ) )
@@ -245,11 +248,11 @@ contains
 
     call AddMomentShells &
            ( LM % MRC, LM % MIC, &
-             LM % nAngularMomentCells, LM % nRadialCells )
+             LM % nEquations, LM % nRadialCells, LM % nAngularMomentCells )
     if ( LM % MaxOrder > 0 ) &
       call AddMomentShells &
              ( LM % MRS, LM % MIS, &
-               LM % nAngularMomentCells, LM % nRadialCells )
+               LM % nEquations, LM % nRadialCells, LM % nAngularMomentCells )
 
   end subroutine ComputeMoments
 
@@ -333,18 +336,20 @@ contains
     if ( associated ( LM % MyMoment_RC_1D ) ) &
        deallocate ( LM % MyMoment_RC_1D )
 
-    associate ( nR_nA => LM % nRadialCells * LM % nAngularMomentCells )
-    allocate ( LM % MyMoment_RC_1D ( nR_nA ) )
-    allocate ( LM % MyMoment_IC_1D ( nR_nA ) )
-    allocate ( LM % Moment_RC_1D ( nR_nA ) )
-    allocate ( LM % Moment_IC_1D ( nR_nA ) )
+    associate &
+      ( nR_nA_nE => LM % nRadialCells * LM % nAngularMomentCells &
+                    * LM % nEquations )
+    allocate ( LM % MyMoment_RC_1D ( nR_nA_nE ) )
+    allocate ( LM % MyMoment_IC_1D ( nR_nA_nE ) )
+    allocate ( LM % Moment_RC_1D ( nR_nA_nE ) )
+    allocate ( LM % Moment_IC_1D ( nR_nA_nE ) )
     if ( LM % MaxOrder > 0 ) then
-      allocate ( LM % MyMoment_RS_1D ( nR_nA ) )
-      allocate ( LM % MyMoment_IS_1D ( nR_nA ) )
-      allocate ( LM % Moment_RS_1D ( nR_nA ) )
-      allocate ( LM % Moment_IS_1D ( nR_nA ) )
+      allocate ( LM % MyMoment_RS_1D ( nR_nA_nE ) )
+      allocate ( LM % MyMoment_IS_1D ( nR_nA_nE ) )
+      allocate ( LM % Moment_RS_1D ( nR_nA_nE ) )
+      allocate ( LM % Moment_IS_1D ( nR_nA_nE ) )
     end if
-    end associate !-- nR_nA
+    end associate !-- nR_nA_nE
 
     !-- FIXME: NAG has trouble with pointer rank reassignment when the 
     !          left-hand side is a member
@@ -382,29 +387,31 @@ contains
 
 
   subroutine ComputeMomentContributions &
-               ( LM, CoordinateSystem, Position, Width, VolumeJacobian, &
-                 Source, nDimensions )
+               ( LM, CoordinateSystem, Source, Position, Width, &
+                 VolumeJacobian, nDimensions )
 
     class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
       LM
     character ( * ), intent ( in ) :: &
       CoordinateSystem
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      Source
     real ( KDR ), dimension ( 3 ), intent ( in ) :: &
       Position, &
       Width
     real ( KDR ), intent ( in ) :: &
-      VolumeJacobian, &
-      Source
+      VolumeJacobian
     integer ( KDI ), intent ( in ) :: &
       nDimensions
 
     integer ( KDI ) :: &
       iRS  !-- iRadiusSplit
+    real ( KDR ), dimension ( LM % nEquations ) :: &
+      Source_dV
     real ( KDR ) :: &
       X, Y, Z, &
       R_P, &  !-- R_Perpendicular
-      D, &
-      Source_dV
+      D
 
     select case ( trim ( CoordinateSystem ) )
     case ( 'CARTESIAN' )
@@ -425,7 +432,8 @@ contains
       call Show ( D, 'D', CONSOLE % ERROR )
       call Show ( LM % RadialEdge ( size ( LM % RadialEdge ) ), 'D_Max', &
                   CONSOLE % ERROR )
-      call Show ( 'ComputeMomentContributions', 'subroutine', CONSOLE % ERROR )
+      call Show ( 'ComputeMomentContributions', 'subroutine', &
+                  CONSOLE % ERROR )
       call Show ( 'LaplacianMultipole_Template', 'module', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end if
@@ -443,12 +451,12 @@ contains
     call ComputeMomentContributionsKernel &
            ( LM % MyMRC, LM % MyMIC, &
              LM % SolidHarmonic_RC, LM % SolidHarmonic_IC, &
-             Source_dV, LM % nAngularMomentCells, iRS )
+             Source_dV, LM % nEquations, LM % nAngularMomentCells, iRS )
     if ( LM % MaxOrder > 0 ) &
       call ComputeMomentContributionsKernel &
              ( LM % MyMRS, LM % MyMIS, &
                LM % SolidHarmonic_RS, LM % SolidHarmonic_IS, &
-               Source_dV, LM % nAngularMomentCells, iRS )
+               Source_dV, LM % nEquations, LM % nAngularMomentCells, iRS )
 
   end subroutine ComputeMomentContributions
 
@@ -458,26 +466,27 @@ contains
 
     class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
       LM
-    real ( KDR ), dimension ( :, : ), pointer, intent ( out ) :: &
+    real ( KDR ), dimension ( :, :, : ), pointer, intent ( out ) :: &
       MyMRC, MyMRS, &
       MyMIC, MyMIS, &
       MRC, MRS, &
       MIC, MIS
 
     associate &
-      ( nR => LM % nRadialCells, &
+      ( nE => LM % nEquations, &
+        nR => LM % nRadialCells, &
         nA => LM % nAngularMomentCells )
 
-    MyMRC ( 1 : nA, 1 : nR ) => LM % MyMoment_RC_1D
-    MyMIC ( 1 : nA, 1 : nR ) => LM % MyMoment_IC_1D
-      MRC ( 1 : nA, 1 : nR ) => LM % Moment_RC_1D
-      MIC ( 1 : nA, 1 : nR ) => LM % Moment_IC_1D
+    MyMRC ( 1 : nA, 1 : nR, 1 : nE ) => LM % MyMoment_RC_1D
+    MyMIC ( 1 : nA, 1 : nR, 1 : nE ) => LM % MyMoment_IC_1D
+      MRC ( 1 : nA, 1 : nR, 1 : nE ) => LM % Moment_RC_1D
+      MIC ( 1 : nA, 1 : nR, 1 : nE ) => LM % Moment_IC_1D
 
     if ( LM % MaxOrder > 0 ) then
-      MyMRS ( 1 : nA, 1 : nR ) => LM % MyMoment_RS_1D
-      MyMIS ( 1 : nA, 1 : nR ) => LM % MyMoment_IS_1D
-        MRS ( 1 : nA, 1 : nR ) => LM % Moment_RS_1D
-        MIS ( 1 : nA, 1 : nR ) => LM % Moment_IS_1D
+      MyMRS ( 1 : nA, 1 : nR, 1 : nE ) => LM % MyMoment_RS_1D
+      MyMIS ( 1 : nA, 1 : nR, 1 : nE ) => LM % MyMoment_IS_1D
+        MRS ( 1 : nA, 1 : nR, 1 : nE ) => LM % Moment_RS_1D
+        MIS ( 1 : nA, 1 : nR, 1 : nE ) => LM % Moment_IS_1D
     end if
 
     end associate !-- nR, nA
@@ -600,10 +609,10 @@ contains
         !-- (L,M) = (iL,iM)
         iV = iV + 1
         R_C ( iV ) &
-          = ( ( 2 * iL - 1 ) * Z * R_C ( iV - 1 )  -  D_2 * R_C ( iV - 2 ) ) &
+          = ( ( 2 * iL - 1 ) * Z * R_C ( iV - 1 )  -  D_2 * R_C ( iV - 2 ) )&
             / ( ( iL + iM ) * ( iL - iM ) )
         R_S ( iV ) &
-          = ( ( 2 * iL - 1 ) * Z * R_S ( iV - 1 )  -  D_2 * R_S ( iV - 2 ) ) &
+          = ( ( 2 * iL - 1 ) * Z * R_S ( iV - 1 )  -  D_2 * R_S ( iV - 2 ) )&
             / ( ( iL + iM ) * ( iL - iM ) )
         I_C ( iV ) &
           = ( ( 2 * iL - 1 ) * Z * I_C ( iV - 1 )  &
@@ -620,62 +629,66 @@ contains
   end subroutine ComputeSolidHarmonicsKernel_C_S
 
 
-  subroutine AddMomentShells ( MR, MI, nA, nR )
+  subroutine AddMomentShells ( MR, MI, nE, nR, nA )
 
-    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+    real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
       MR, MI
     integer ( KDI ), intent ( in ) :: &
-      nA, nR
+      nE, nR, nA
 
     integer ( KDI ) :: &
       iA, &  !-- angular index
-      iR     !-- radial index
+      iR, &  !-- radial index
+      iE     !-- equation index
 
-    !$OMP parallel do private ( iR, iA )
-    do iR = 2, nR
-      do iA = 1, nA
-        MR ( iA, iR )  =  MR ( iA, iR - 1 )  +  MR ( iA, iR )
+    do iE = 1, nE
+      !$OMP parallel do private ( iR, iA )
+      do iR = 2, nR
+        do iA = 1, nA
+          MR ( iA, iR, iE )  =  MR ( iA, iR - 1, iE )  +  MR ( iA, iR, iE )
+        end do
       end do
+      !$OMP end parallel do
     end do
-    !$OMP end parallel do
 
-    !$OMP parallel do private ( iR, iA )
-    do iR = nR - 1, 1, -1
-      do iA = 1, nA
-        MI ( iA, iR )  =  MI ( iA, iR + 1 )  +  MI ( iA, iR )
+    do iE = 1, nE
+      !$OMP parallel do private ( iR, iA )
+      do iR = nR - 1, 1, -1
+        do iA = 1, nA
+          MI ( iA, iR, iE )  =  MI ( iA, iR + 1, iE )  +  MI ( iA, iR, iE )
+        end do
       end do
+      !$OMP end parallel do
     end do
-    !$OMP end parallel do
 
   end subroutine AddMomentShells
 
 
   subroutine ComputeMomentContributionsKernel &
-               ( MyMR, MyMI, R, I, Source_dV, nA, iRS )
+               ( MyMR, MyMI, SH_R, SH_I, Source_dV, nE, nA, iRS )
 
-    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+    real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
       MyMR, MyMI
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      R, I
-    real ( KDR ), intent ( in ) :: &
+      SH_R, SH_I
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
       Source_dV
     integer ( KDI ), intent ( in ) :: &
+      nE, &
       nA, &
       iRS
 
     integer ( KDI ) :: &
-      iA      !-- iAngular
-    real ( KDR ), dimension ( nA ) :: &
-      R_S, I_S
+      iA, &  !-- iAngular
+      iE     !-- iEquation   
 
-    do iA = 1, nA 
-      R_S ( iA )  =  R ( iA )  *  Source_dV
-      I_S ( iA )  =  I ( iA )  *  Source_dV
-    end do
-
-    do iA = 1, nA
-      MyMR ( iA, iRS )  =  MyMR ( iA, iRS )  +  R_S ( iA ) 
-      MyMI ( iA, iRS )  =  MyMI ( iA, iRS )  +  I_S ( iA )
+    do iE = 1, nE
+      do iA = 1, nA
+        MyMR ( iA, iRS, iE )  &
+          =  MyMR ( iA, iRS, iE )  +  SH_R ( iA )  *  Source_dV ( iE ) 
+        MyMI ( iA, iRS, iE )  &
+          =  MyMI ( iA, iRS, iE )  +  SH_I ( iA )  *  Source_dV ( iE )
+      end do
     end do
 
   end subroutine ComputeMomentContributionsKernel
