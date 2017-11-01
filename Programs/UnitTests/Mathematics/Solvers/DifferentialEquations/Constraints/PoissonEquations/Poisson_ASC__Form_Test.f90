@@ -169,12 +169,12 @@ contains
 
     allocate ( PFT % Source )
     associate ( SA => PFT % Source )
-
     call SA % Initialize &
            ( A, 'Source', nEquations, &
              VariableOption = [ 'HomogeneousDensity' ], &
              WriteOption = .true. )
     Source => SA % Storage ( )
+    end associate !-- SA
 
     RadiusDensity = RadiusMax / 10.0_KDR
     call PROGRAM_HEADER % GetParameter ( RadiusDensity, 'RadiusDensity' )
@@ -189,8 +189,6 @@ contains
       S = Density
     end where
     end associate !-- R, etc.
-
-    end associate !-- SA
 
 
     !-- Write

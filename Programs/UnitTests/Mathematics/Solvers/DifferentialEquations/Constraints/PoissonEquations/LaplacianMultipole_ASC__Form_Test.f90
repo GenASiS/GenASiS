@@ -17,6 +17,12 @@ module LaplacianMultipole_ASC__Form_Test__Form
       Geometry
     type ( Atlas_SC_Form ), allocatable :: &
       Atlas
+    type ( Storage_ASC_Form ), allocatable :: &
+      Source, &
+      SolidHarmonics_RC, SolidHarmonics_IC, &
+      SolidHarmonics_RS, SolidHarmonics_IS, &
+      Solution, &
+      Reference
     type ( LaplacianMultipole_ASC_Form ), allocatable :: &
       Laplacian
   contains
@@ -69,7 +75,7 @@ contains
       Spacing
     character ( LDL ), dimension ( : ), allocatable :: &
       Suffix_Ell_M
-    type ( VariableGroupForm ) :: &
+    type ( VariableGroupForm ), pointer :: &
       Source, &
       SolidHarmonics_RC, SolidHarmonics_IC, &
       SolidHarmonics_RS, SolidHarmonics_IS, &
@@ -176,11 +182,14 @@ contains
 
     !-- Source
 
-    call Source % Initialize &
-           ( [ G % nValues, nEquations ], &
-               NameOption = 'Source', &
-               VariableOption = [ 'HomogeneousDensity' ], &
-               ClearOption = .true. )
+    allocate ( LMFT % Source )
+    associate ( SA => LMFT % Source )
+    call SA % Initialize &
+           ( A, 'Source', nEquations, &
+             VariableOption = [ 'HomogeneousDensity' ], &
+             WriteOption = .true. )
+    Source => SA % Storage ( )
+    end associate !-- SA
 
     RadiusDensity = RadiusMax / 10.0_KDR
     call PROGRAM_HEADER % GetParameter ( RadiusDensity, 'RadiusDensity' )
@@ -214,30 +223,45 @@ contains
     !-- Compute solid harmonics
 
     call Show ( 'RegularCos' // Suffix_Ell_M, 'RC' )
-    call SolidHarmonics_RC % Initialize &
-           ( [ G % nValues, L % nAngularMomentCells ], &
-             NameOption = 'SolidHarmonics_RC', &
-             VariableOption = 'RegularCos' // Suffix_Ell_M, &
-             ClearOption = .true. )
     call Show ( 'IrregularCos' // Suffix_Ell_M, 'IC' )
-    call SolidHarmonics_IC % Initialize &
-           ( [ G % nValues, L % nAngularMomentCells ], &
-             NameOption = 'SolidHarmonics_IC', &
+
+    allocate ( LMFT % SolidHarmonics_RC, LMFT % SolidHarmonics_IC )
+    associate &
+      ( SH_RC => LMFT % SolidHarmonics_RC, &
+        SH_IC => LMFT % SolidHarmonics_IC )
+    call SH_RC % Initialize &
+           ( A, 'SolidHarmonics_RC', L % nAngularMomentCells, &
+             VariableOption = 'RegularCos' // Suffix_Ell_M, &
+             WriteOption = .true. )
+    call SH_IC % Initialize &
+           ( A, 'SolidHarmonics_IC', L % nAngularMomentCells, &
              VariableOption = 'IrregularCos' // Suffix_Ell_M, &
-             ClearOption = .true. )
+             WriteOption = .true. )
+    SolidHarmonics_RC => SH_RC % Storage ( )
+    SolidHarmonics_IC => SH_IC % Storage ( )
+    end associate !-- SH_RC, etc.
+    
     if ( L % MaxOrder > 0 ) then
+
       call Show ( 'RegularSin' // Suffix_Ell_M, 'RS' )
-      call SolidHarmonics_RS % Initialize &
-             ( [ G % nValues, L % nAngularMomentCells ], &
-               NameOption = 'SolidHarmonics_RS', &
-               VariableOption = 'RegularSin' // Suffix_Ell_M, &
-               ClearOption = .true. )
       call Show ( 'IrregularSin' // Suffix_Ell_M, 'IS' )
-      call SolidHarmonics_IS % Initialize &
-             ( [ G % nValues, L % nAngularMomentCells ], &
-               NameOption = 'SolidHarmonics_IS', &
+
+      allocate ( LMFT % SolidHarmonics_RS, LMFT % SolidHarmonics_IS )
+      associate &
+        ( SH_RS => LMFT % SolidHarmonics_RS, &
+          SH_IS => LMFT % SolidHarmonics_IS )
+      call SH_RS % Initialize &
+             ( A, 'SolidHarmonics_RS', L % nAngularMomentCells, &
+               VariableOption = 'RegularSin' // Suffix_Ell_M, &
+               WriteOption = .true. )
+      call SH_IS % Initialize &
+             ( A, 'SolidHarmonics_IS', L % nAngularMomentCells, &
                VariableOption = 'IrregularSin' // Suffix_Ell_M, &
-               ClearOption = .true. )
+               WriteOption = .true. )
+      SolidHarmonics_RS => SH_RS % Storage ( )
+      SolidHarmonics_IS => SH_IS % Storage ( )
+      end associate !-- SH_RS, etc.
+    
     end if
 
     !$OMP parallel do private ( iC )
@@ -280,11 +304,14 @@ contains
 
     !-- Solution
 
-    call Solution % Initialize &
-           ( [ G % nValues, L % nAngularMomentCells + 1 ], &
-               NameOption = 'Solution', &
-               VariableOption = 'Phi' // [ Suffix_Ell_M, '' ], &
-               ClearOption = .true. )
+    allocate ( LMFT % Solution )
+    associate ( SA => LMFT % Solution )
+    call SA % Initialize &
+           ( A, 'Solution', L % nAngularMomentCells + 1, &
+             VariableOption = 'Phi' // [ Suffix_Ell_M, '' ], &
+             WriteOption = .true. )
+    Solution => SA % Storage ( )
+    end associate !-- SA
 
     !$OMP parallel do private ( iC )
     do iC = 1, G % nValues
@@ -349,11 +376,14 @@ contains
 
     !-- Reference
 
-    call Reference % Initialize &
-           ( [ G % nValues, 1 ], &
-               NameOption = 'Reference', &
-               VariableOption = [ 'Phi' ], &
-               ClearOption = .true. )
+    allocate ( LMFT % Reference )
+    associate ( RA => LMFT % Reference )
+    call RA % Initialize &
+           ( A, 'Reference', nEquations, &
+             VariableOption = [ 'Phi' ], &
+             WriteOption = .true. )
+    Reference => RA % Storage ( )
+    end associate !-- RA
 
     associate &
       ( R    =>  G % Value ( :, G % CENTER ( 1 ) ), &
@@ -376,15 +406,6 @@ contains
     associate ( GIS => LMFT % Stream )
 
     call A % OpenStream ( GIS, 'Stream', iStream = 1 )
-    call C % AddFieldImage ( Source, iStream = 1 )
-    call C % AddFieldImage ( SolidHarmonics_RC, iStream = 1 )
-    call C % AddFieldImage ( SolidHarmonics_IC, iStream = 1 )
-    if ( L % MaxOrder > 0 ) then
-      call C % AddFieldImage ( SolidHarmonics_RS, iStream = 1 )
-      call C % AddFieldImage ( SolidHarmonics_IS, iStream = 1 )
-    end if
-    call C % AddFieldImage ( Solution, iStream = 1 )
-    call C % AddFieldImage ( Reference, iStream = 1 )
 
     call GIS % Open ( GIS % ACCESS_CREATE )
     call A % Write ( iStream = 1 )
@@ -398,7 +419,8 @@ contains
     end select !-- C
     end associate !-- A
 
-    nullify ( G )
+    nullify ( G, Source, SolidHarmonics_RC, SolidHarmonics_IC, &
+              SolidHarmonics_RS, SolidHarmonics_IS, Solution, Reference )
 
   end subroutine Initialize
 
@@ -408,14 +430,28 @@ contains
     type ( LaplacianMultipole_ASC__Form_Test_Form ) :: &
       LMFT
 
+    if ( allocated ( LMFT % Stream ) ) &
+      deallocate ( LMFT % Stream )
+    if ( allocated ( LMFT % Reference ) ) &
+      deallocate ( LMFT % Reference )
+    if ( allocated ( LMFT % Solution ) ) &
+      deallocate ( LMFT % Solution )
+    if ( allocated ( LMFT % SolidHarmonics_IS ) ) &
+      deallocate ( LMFT % SolidHarmonics_IS )
+    if ( allocated ( LMFT % SolidHarmonics_RS ) ) &
+      deallocate ( LMFT % SolidHarmonics_RS )
+    if ( allocated ( LMFT % SolidHarmonics_IC ) ) &
+      deallocate ( LMFT % SolidHarmonics_IC )
+    if ( allocated ( LMFT % SolidHarmonics_RC ) ) &
+      deallocate ( LMFT % SolidHarmonics_RC )
+    if ( allocated ( LMFT % Source ) ) &
+      deallocate ( LMFT % Source )
     if ( allocated ( LMFT % Laplacian ) ) &
       deallocate ( LMFT % Laplacian )
     if ( allocated ( LMFT % Geometry ) ) &
       deallocate ( LMFT % Geometry )
     if ( allocated ( LMFT % Atlas ) ) &
       deallocate ( LMFT % Atlas )
-    if ( allocated ( LMFT % Stream ) ) &
-      deallocate ( LMFT % Stream )
 
   end subroutine Finalize
 
