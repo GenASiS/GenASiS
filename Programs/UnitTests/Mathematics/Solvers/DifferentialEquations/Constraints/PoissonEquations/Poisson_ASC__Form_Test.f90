@@ -183,11 +183,20 @@ contains
     call PROGRAM_HEADER % GetParameter ( Density, 'Density' )
 
     associate &
-      ( R => G % Value ( :, G % CENTER ( 1 ) ), &
-        S => Source % Value ( :, 1 ) )
-    where ( R < RadiusDensity )
+      (  R => G % Value ( :, G % CENTER ( 1 ) ), &
+        dR => G % Value ( :, G % WIDTH ( 1 ) ), &
+         S => Source % Value ( :, 1 ) )
+    associate &
+      ( R_In  => R - 0.5_KDR * dR, &
+        R_Out => R + 0.5_KDR * dR, &
+        RD    => RadiusDensity )
+    where ( R_Out <= RD )
       S = Density
     end where
+    where ( R_In < RD .and. R_Out > RD )
+      S = Density * ( RD - R_In ) / dR
+    end where
+    end associate !-- R_In, etc.
     end associate !-- R, etc.
 
 
