@@ -17,6 +17,9 @@ module Poisson_ASC__Form_Test__Form
       Geometry
     type ( Atlas_SC_Form ), allocatable :: &
       Atlas
+    type ( Storage_ASC_Form ), allocatable :: &
+      Source, &
+      Solution
     type ( Poisson_ASC_Form ), allocatable :: &
       Poisson
   contains
@@ -50,11 +53,9 @@ contains
       nCells
     real ( KDR ) :: &
       RadiusMax, &
-      RadiusCore!, &
-!      RadiusDensity, &
-!      Density, &
-!      MRC, MIC, &
-!      MRS, MIS
+      RadiusCore, &
+      RadiusDensity, &
+      Density
     real ( KDR ), dimension ( 3 ) :: &
       MinCoordinate, &
       MaxCoordinate, &
@@ -64,6 +65,8 @@ contains
       CoordinateSystem
     character ( LDL ), dimension ( 3 ) :: &
       Spacing
+    type ( VariableGroupForm ), pointer :: &
+      Source
     class ( GeometryFlatForm ), pointer :: &
       G
 
@@ -162,13 +165,57 @@ contains
              nEquationsOption = nEquations )
 
 
+    !-- Source
+
+    allocate ( PFT % Source )
+    associate ( SA => PFT % Source )
+
+    call SA % Initialize &
+           ( A, 'Source', nEquations, &
+             VariableOption = [ 'HomogeneousDensity' ], &
+             WriteOption = .true. )
+    Source => SA % Storage ( )
+
+    RadiusDensity = RadiusMax / 10.0_KDR
+    call PROGRAM_HEADER % GetParameter ( RadiusDensity, 'RadiusDensity' )
+
+    Density = 1.0_KDR
+    call PROGRAM_HEADER % GetParameter ( Density, 'Density' )
+
+    associate &
+      ( R => G % Value ( :, G % CENTER ( 1 ) ), &
+        S => Source % Value ( :, 1 ) )
+    where ( R < RadiusDensity )
+      S = Density
+    end where
+    end associate !-- R, etc.
+
+    end associate !-- SA
+
+
+    !-- Write
+
+    allocate ( PFT % Stream )
+    call PFT % Stream % Initialize &
+           ( Name, CommunicatorOption = PROGRAM_HEADER % Communicator )    
+    associate ( GIS => PFT % Stream )
+
+    call A % OpenStream ( GIS, 'Stream', iStream = 1 )
+
+    call GIS % Open ( GIS % ACCESS_CREATE )
+    call A % Write ( iStream = 1 )
+    call GIS % Close ( )
+
+    end associate !-- GIS
+
+
     !-- Cleanup
 
     end associate !-- P
     end select !-- C
     end associate !-- A
 
-    nullify ( G )
+    nullify ( G, Source )
 
   end subroutine Initialize
 
@@ -178,14 +225,18 @@ contains
     type ( Poisson_ASC__Form_Test_Form ) :: &
       PFT
 
+    if ( allocated ( PFT % Stream ) ) &
+      deallocate ( PFT % Stream )
+    if ( allocated ( PFT % Solution ) ) &
+      deallocate ( PFT % Solution )
+    if ( allocated ( PFT % Source ) ) &
+      deallocate ( PFT % Source )
     if ( allocated ( PFT % Poisson ) ) &
       deallocate ( PFT % Poisson )
     if ( allocated ( PFT % Geometry ) ) &
       deallocate ( PFT % Geometry )
     if ( allocated ( PFT % Atlas ) ) &
       deallocate ( PFT % Atlas )
-    if ( allocated ( PFT % Stream ) ) &
-      deallocate ( PFT % Stream )
 
   end subroutine Finalize
 
