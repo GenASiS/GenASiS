@@ -59,6 +59,7 @@ contains
       RadiusCore, &
       RadiusDensity, &
       Density, &
+      Radius, &
       MRC, MIC, &
       MRS, MIS
     real ( KDR ), dimension ( 3 ) :: &
@@ -205,6 +206,7 @@ contains
       ( R_In  => R - 0.5_KDR * dR, &
         R_Out => R + 0.5_KDR * dR, &
         RD    => RadiusDensity )
+    S = 0.0_KDR
     where ( R_Out <= RD )
       S = Density
     end where
@@ -280,7 +282,7 @@ contains
       call L % ComputeSolidHarmonics &
              ( C % CoordinateSystem, &
                G % Value ( iC, G % CENTER ( 1 ) : G % CENTER ( 3 ) ), &
-               C % nDimensions )
+               C % nDimensions, Radius, iR )
       SolidHarmonics_RC % Value ( iC, : )  =  L % SolidHarmonic_RC
       SolidHarmonics_IC % Value ( iC, : )  =  L % SolidHarmonic_IC
       if ( L % MaxOrder > 0 ) then
@@ -331,9 +333,7 @@ contains
       call L % ComputeSolidHarmonics &
              ( C % CoordinateSystem, &
                G % Value ( iC, G % CENTER ( 1 ) : G % CENTER ( 3 ) ), &
-               C % nDimensions )
-
-      call Search ( L % RadialEdge, G % Value ( iC, G % CENTER ( 1 ) ), iR )
+               C % nDimensions, Radius, iR )
 
       associate ( Phi => Solution % Value ( iC, L % nAngularMomentCells + 1 ) )
       do iA = 1, L % nAngularMomentCells

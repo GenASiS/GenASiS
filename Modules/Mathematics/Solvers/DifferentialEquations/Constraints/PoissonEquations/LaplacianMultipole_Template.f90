@@ -153,7 +153,7 @@ contains
 
 
   subroutine ComputeSolidHarmonics &
-               ( LM, CoordinateSystem, Position, nDimensions )
+               ( LM, CoordinateSystem, Position, nDimensions, R, iR )
 
     class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
       LM
@@ -163,6 +163,10 @@ contains
       Position
     integer ( KDI ), intent ( in ) :: &
       nDimensions
+    real ( KDR ), intent ( out ) :: &
+      R
+    integer ( KDI ), intent ( out ) :: &
+      iR
 
     integer ( KDI ) :: &
       L
@@ -211,6 +215,25 @@ contains
     else
       call ComputeSolidHarmonicsKernel_C_S ( X, Y, Z, L, R_C, I_C, R_S, I_S )
     end if
+
+    R  =  sqrt ( X * X  +  Y * Y  +  Z * Z )
+
+    if ( R > LM % RadialEdge ( size ( LM % RadialEdge ) ) ) then
+      call Show ( 'Radial grid not large enough', CONSOLE % ERROR )
+      call Show ( R, 'R', CONSOLE % ERROR )
+      call Show ( LM % RadialEdge ( size ( LM % RadialEdge ) ), 'R_Max', &
+                  CONSOLE % ERROR )
+      call Show ( 'ComputeMomentContributions', 'subroutine', &
+                  CONSOLE % ERROR )
+      call Show ( 'LaplacianMultipole_Template', 'module', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end if
+
+    call Search ( LM % RadialEdge, R, iR ) 
+!call Show ( R, 'R', nLeadingLinesOption = 1 )
+!call Show ( iR, 'iR' )
+!call Show ( LM % RadialEdge ( iR ), 'R_in' )
+!call Show ( LM % RadialEdge ( iR + 1 ), 'R_out' )
 
     nullify ( R_C, I_C, R_S, I_S )
 
@@ -387,62 +410,23 @@ contains
 
 
   subroutine ComputeMomentContributions &
-               ( LM, CoordinateSystem, Source, Position, Width, &
-                 VolumeJacobian, nDimensions )
+               ( LM, Source, Width, VolumeJacobian, nDimensions, iR )
 
     class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
       LM
-    character ( * ), intent ( in ) :: &
-      CoordinateSystem
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       Source
     real ( KDR ), dimension ( 3 ), intent ( in ) :: &
-      Position, &
       Width
     real ( KDR ), intent ( in ) :: &
       VolumeJacobian
     integer ( KDI ), intent ( in ) :: &
       nDimensions
-
     integer ( KDI ) :: &
-      iRS  !-- iRadiusSplit
+      iR  !-- iRadius
+
     real ( KDR ), dimension ( LM % nEquations ) :: &
       Source_dV
-    real ( KDR ) :: &
-      X, Y, Z, &
-      R_P, &  !-- R_Perpendicular
-      D
-
-    select case ( trim ( CoordinateSystem ) )
-    case ( 'CARTESIAN' )
-      X  =  Position ( 1 )  -  LM % Origin ( 1 )
-      Y  =  Position ( 2 )  -  LM % Origin ( 2 )
-      Z  =  Position ( 3 )  -  LM % Origin ( 3 )
-      D  =  sqrt ( X * X  +  Y * Y  +  Z * Z )
-    case ( 'CYLINDRICAL' )
-      R_P  =  Position ( 1 )
-        Z  =  Position ( 2 )  -  LM % Origin ( 2 )
-        D  =  sqrt ( R_P * R_P  +  Z * Z )
-    case ( 'SPHERICAL' )
-      D  =  Position ( 1 )
-    end select !-- CoordinateSystem
-
-    if ( D > LM % RadialEdge ( size ( LM % RadialEdge ) ) ) then
-      call Show ( 'Radial grid not large enough', CONSOLE % ERROR )
-      call Show ( D, 'D', CONSOLE % ERROR )
-      call Show ( LM % RadialEdge ( size ( LM % RadialEdge ) ), 'D_Max', &
-                  CONSOLE % ERROR )
-      call Show ( 'ComputeMomentContributions', 'subroutine', &
-                  CONSOLE % ERROR )
-      call Show ( 'LaplacianMultipole_Template', 'module', CONSOLE % ERROR )
-      call PROGRAM_HEADER % Abort ( )
-    end if
-
-    call Search ( LM % RadialEdge, D, iRS ) 
-!call Show ( D, 'D', nLeadingLinesOption = 1 )
-!call Show ( iRS, 'iRS' )
-!call Show ( LM % RadialEdge ( iRS ), 'R_in' )
-!call Show ( LM % RadialEdge ( iRS + 1 ), 'R_out' )
 
     Source_dV  =  Source * VolumeJacobian &
                          * product ( Width ( 1 : nDimensions ) )
@@ -451,12 +435,12 @@ contains
     call ComputeMomentContributionsKernel &
            ( LM % MyMRC, LM % MyMIC, &
              LM % SolidHarmonic_RC, LM % SolidHarmonic_IC, &
-             Source_dV, LM % nEquations, LM % nAngularMomentCells, iRS )
+             Source_dV, LM % nEquations, LM % nAngularMomentCells, iR )
     if ( LM % MaxOrder > 0 ) &
       call ComputeMomentContributionsKernel &
              ( LM % MyMRS, LM % MyMIS, &
                LM % SolidHarmonic_RS, LM % SolidHarmonic_IS, &
-               Source_dV, LM % nEquations, LM % nAngularMomentCells, iRS )
+               Source_dV, LM % nEquations, LM % nAngularMomentCells, iR )
 
   end subroutine ComputeMomentContributions
 
@@ -553,7 +537,8 @@ contains
   end subroutine ComputeSolidHarmonicsKernel_C_M_0
 
 
-  subroutine ComputeSolidHarmonicsKernel_C_S ( X, Y, Z, L, R_C, I_C, R_S, I_S )
+  subroutine ComputeSolidHarmonicsKernel_C_S &
+               ( X, Y, Z, L, R_C, I_C, R_S, I_S )
 
     real ( KDR ), intent ( in ) :: &
       X, Y, Z

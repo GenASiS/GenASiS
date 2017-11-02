@@ -21,10 +21,27 @@ module Poisson_Template
   contains
     procedure, public, pass :: &
       InitializeTemplate
+    procedure ( S ), public, pass, deferred :: &
+      Solve
     procedure, public, pass :: &
       FinalizeTemplate
   end type PoissonTemplate
 
+  abstract interface 
+
+    subroutine S ( P, Solution, Source )
+      use Basics
+      use Manifolds
+      import PoissonTemplate
+      class ( PoissonTemplate ), intent ( inout ) :: &
+        P
+      class ( FieldAtlasTemplate ), intent ( inout ) :: &
+        Solution
+      class ( FieldAtlasTemplate ), intent ( in ) :: &
+        Source
+    end subroutine S
+
+  end interface
 
 contains
 

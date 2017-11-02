@@ -19,7 +19,8 @@ module Poisson_ASC__Form_Test__Form
       Atlas
     type ( Storage_ASC_Form ), allocatable :: &
       Source, &
-      Solution
+      Solution, &
+      Reference
     type ( Poisson_ASC_Form ), allocatable :: &
       Poisson
   contains
@@ -66,7 +67,8 @@ contains
     character ( LDL ), dimension ( 3 ) :: &
       Spacing
     type ( VariableGroupForm ), pointer :: &
-      Source
+      Source, &
+      Reference
     class ( GeometryFlatForm ), pointer :: &
       G
 
@@ -190,6 +192,7 @@ contains
       ( R_In  => R - 0.5_KDR * dR, &
         R_Out => R + 0.5_KDR * dR, &
         RD    => RadiusDensity )
+    S = 0.0_KDR
     where ( R_Out <= RD )
       S = Density
     end where
@@ -198,6 +201,43 @@ contains
     end where
     end associate !-- R_In, etc.
     end associate !-- R, etc.
+
+
+    !-- Solution
+
+    allocate ( PFT % Solution )
+    associate ( SA => PFT % Solution )
+    call SA % Initialize &
+           ( A, 'Solution', nEquations, &
+             VariableOption = [ 'Potential' ], &
+             WriteOption = .true. )
+    end associate !-- SA
+
+    call P % Solve ( PFT % Solution, PFT % Source )
+
+
+    !-- Source
+
+    allocate ( PFT % Reference )
+    associate ( RA => PFT % Reference )
+    call RA % Initialize &
+           ( A, 'Reference', nEquations, &
+             VariableOption = [ 'Potential' ], &
+             WriteOption = .true. )
+    Reference => RA % Storage ( )
+    end associate !-- SA
+
+    associate &
+      ( R    =>  G % Value ( :, G % CENTER ( 1 ) ), &
+        Phi  =>  Reference % Value ( :, 1 ), &
+        Pi   =>  CONSTANT % PI )
+    where ( R < RadiusDensity )
+      Phi  =  1.0_KDR / 6.0_KDR  *  Density  *  R ** 2  &
+              -  1.0_KDR / 2.0_KDR  *  Density  *  RadiusDensity ** 2
+    elsewhere
+      Phi  =  - 1.0_KDR / 3.0_KDR  *  Density  *  RadiusDensity ** 3  /  R
+    end where
+    end associate !-- R
 
 
     !-- Write
@@ -234,6 +274,8 @@ contains
 
     if ( allocated ( PFT % Stream ) ) &
       deallocate ( PFT % Stream )
+    if ( allocated ( PFT % Reference ) ) &
+      deallocate ( PFT % Reference )
     if ( allocated ( PFT % Solution ) ) &
       deallocate ( PFT % Solution )
     if ( allocated ( PFT % Source ) ) &

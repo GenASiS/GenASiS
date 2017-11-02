@@ -145,7 +145,10 @@ contains
       Source !-- array over levels    
 
     integer ( KDI ) :: &
-      iC
+      iC, &  !-- iCell
+      iR     !-- iRadius
+    real ( KDR ) :: &
+      R
     class ( GeometryFlatForm ), pointer :: &
       G
 
@@ -161,14 +164,12 @@ contains
         call LM % ComputeSolidHarmonics &
                ( C % CoordinateSystem, &
                  G % Value ( iC, G % CENTER ( 1 ) : G % CENTER ( 3 ) ), &
-                 C % nDimensions )
+                 C % nDimensions, R, iR )
         call LM % ComputeMomentContributions &
-               ( C % CoordinateSystem, &
-                 Source % Value ( iC, : ), &
-                 G % Value ( iC, G % CENTER ( 1 ) : G % CENTER ( 3 ) ), &
+               ( Source % Value ( iC, : ), &
                  G % Value ( iC, G % WIDTH ( 1 ) : G % WIDTH ( 3 ) ), &
                  G % Value ( iC, G % VOLUME_JACOBIAN ), &
-                 C % nDimensions )
+                 C % nDimensions, iR )
       end do
       !$OMP end parallel do
 
