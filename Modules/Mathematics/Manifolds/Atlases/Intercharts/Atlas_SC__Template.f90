@@ -26,8 +26,12 @@ module Atlas_SC__Template
       CreateChart
     procedure, public, pass :: &
       AddField
-    procedure, public, pass :: &
-      ApplyBoundaryConditions
+    procedure, private, pass :: &
+      ApplyBoundaryConditionsSingle, &
+      ApplyBoundaryConditionsAll
+    generic, public :: &
+      ApplyBoundaryConditions &
+        => ApplyBoundaryConditionsSingle, ApplyBoundaryConditionsAll
     procedure, public, pass :: &
       FinalizeTemplate
   end type Atlas_SC_Template
@@ -217,7 +221,7 @@ contains
   end subroutine AddField
 
 
-  subroutine ApplyBoundaryConditions ( A, F, iDimension, iConnection )
+  subroutine ApplyBoundaryConditionsSingle ( A, F, iDimension, iConnection )
 
     class ( Atlas_SC_Template ), intent ( inout ) :: &
       A
@@ -275,7 +279,27 @@ contains
       end associate !-- BC
     end do !-- iB
 
-  end subroutine ApplyBoundaryConditions
+  end subroutine ApplyBoundaryConditionsSingle
+
+
+  subroutine ApplyBoundaryConditionsAll ( A, F )
+
+    class ( Atlas_SC_Template ), intent ( inout ) :: &
+      A
+    class ( VariableGroupForm ), intent ( inout ) :: &
+      F  !-- Field
+
+    integer ( KDI ) :: &
+      iD, &  !-- iDimension
+      iC     !-- iConnection
+
+    do iD = 1, A % nDimensions
+      do iC = 1, A % Connectivity % nConnections
+        call A % ApplyBoundaryConditions ( F, iD, iC )
+      end do
+    end do
+
+  end subroutine ApplyBoundaryConditionsAll
 
 
   impure elemental subroutine FinalizeTemplate ( A )
