@@ -29,6 +29,8 @@ module Atlas_SC__Template
     procedure, public, pass :: &
       ApplyBoundaryConditions
     procedure, public, pass :: &
+      ApplyBoundaryConditionsFaces
+    procedure, public, pass :: &
       FinalizeTemplate
   end type Atlas_SC_Template
 
@@ -276,6 +278,26 @@ contains
     end do !-- iB
 
   end subroutine ApplyBoundaryConditions
+
+
+  subroutine ApplyBoundaryConditionsFaces ( A, F )
+
+    class ( Atlas_SC_Template ), intent ( inout ) :: &
+      A
+    class ( VariableGroupForm ), intent ( inout ) :: &
+      F  !-- Field
+
+    integer ( KDI ) :: &
+      iD  !-- iDimension
+
+    do iD = 1, A % nDimensions
+      call A % ApplyBoundaryConditions &
+             ( F, iD, A % Connectivity % iaInner ( iD ) )
+      call A % ApplyBoundaryConditions &
+             ( F, iD, A % Connectivity % iaOuter ( iD ) )
+    end do
+
+  end subroutine ApplyBoundaryConditionsFaces
 
 
   impure elemental subroutine FinalizeTemplate ( A )

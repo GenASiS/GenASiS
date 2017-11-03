@@ -1,0 +1,33 @@
+LaplacianMultipole_Template.o: \
+  Basics.o \
+  Manifolds.o \
+  LaplacianMultipole_Template.f90 
+
+LaplacianMultipole_ASC__Form.o: \
+  Basics.o \
+  Manifolds.o \
+  LaplacianMultipole_Template.o \
+  LaplacianMultipole_ASC__Form.f90 
+
+Poisson_Template.o: \
+  Basics.o \
+  Manifolds.o \
+  LaplacianMultipole_Template.o \
+  Poisson_Template.f90
+
+Poisson_ASC__Form.o: \
+  Basics.o \
+  Manifolds.o \
+  LaplacianMultipole_ASC__Form.o \
+  Poisson_Template.o \
+  Poisson_ASC__Form.f90
+
+PoissonEquations.o: \
+  LaplacianMultipole_Template.o \
+  LaplacianMultipole_ASC__Form.o \
+  Poisson_Template.o \
+  Poisson_ASC__Form.o \
+  PoissonEquations.f90
+
+PoissonEquations.a: $(POISSON_EQUATIONS)
+	ar r PoissonEquations.a $(POISSON_EQUATIONS)

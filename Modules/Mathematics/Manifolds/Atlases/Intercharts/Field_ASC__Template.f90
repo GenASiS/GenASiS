@@ -11,9 +11,10 @@ module Field_ASC__Template
   implicit none
   private
 
-  type, public, extends ( FieldAtlasTemplate ), abstract :: Field_ASC_Template
-    class ( FieldChartTemplate ), allocatable :: &
-      Chart
+  type, public, extends ( FieldAtlasTemplate ), abstract :: &
+    Field_ASC_Template
+      class ( FieldChartTemplate ), allocatable :: &
+        Chart
   contains
     procedure, public, pass :: &
       InitializeTemplate_ASC

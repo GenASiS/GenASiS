@@ -394,15 +394,14 @@ contains
 
     class ( ChartTemplate ), intent ( inout ) :: &
       C
-    integer ( KDI ), intent ( in ) :: &
-      iaF    !-- iaFirst
     real ( KDR ), dimension ( iaF : ), intent ( inout ) :: &
       Width, &
       Center
     integer ( KDI ), intent ( in ) :: &
       nC, &   !-- nCells
       nGL, &  !-- nGhostLayers
-      iD      !-- iDimension
+      iD, &      !-- iDimension
+      iaF    !-- iaFirst
 
     integer ( KDI ) :: &
       iC    !-- iCell

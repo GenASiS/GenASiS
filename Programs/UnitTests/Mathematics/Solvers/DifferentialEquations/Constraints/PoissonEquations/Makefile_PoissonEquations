@@ -1,0 +1,59 @@
+PATH_GENASIS = ../../../../../../../..
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+all: LaplacianMultipole_ASC__Form_Test Poisson_ASC__Form_Test
+
+LaplacianMultipole_ASC__Form_Test: Basics.a Manifolds.a \
+  LaplacianMultipole_ASC__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o LaplacianMultipole_ASC__Form_Test_$(MACHINE) \
+          LaplacianMultipole_ASC__Form_Test.o LaplacianMultipole_ASC__Form.o \
+          LaplacianMultipole_Template.o SetHomogeneousSphere_Command.o \
+          CreateProportionalChart_Command.o \
+          Manifolds.a Basics.a $(LIBRARIES)
+
+Poisson_ASC__Form_Test: Basics.a Manifolds.a Poisson_ASC__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Poisson_ASC__Form_Test_$(MACHINE) \
+          Poisson_ASC__Form_Test.o Poisson_ASC__Form.o Poisson_Template.o \
+          LaplacianMultipole_ASC__Form.o LaplacianMultipole_Template.o \
+          SetHomogeneousSphere_Command.o CreateProportionalChart_Command.o \
+          Manifolds.a Basics.a $(LIBRARIES)
+
+clean:
+	rm -f *.o *.a *.mod *.ld
+
+clobber: clean
+	rm -f LaplacianMultipole_ASC__Form_Test_*
+	rm -f Poisson_ASC__Form_Test_*
+
+include $(PATH_BASICS)/Makefile_Dependencies
+include $(PATH_MANIFOLDS)/Makefile_Dependencies
+include $(PATH_POISSON_EQUATIONS)/Makefile_Dependencies
+
+CreateProportionalChart_Command.o: \
+  Basics.o \
+  Manifolds.o \
+  CreateProportionalChart_Command.f90
+
+SetHomogeneousSphere_Command.o: \
+  Basics.o \
+  Manifolds.o \
+  SetHomogeneousSphere_Command.f90
+
+LaplacianMultipole_ASC__Form_Test.o: \
+  Basics.o \
+  Manifolds.o \
+  CreateProportionalChart_Command.o \
+  SetHomogeneousSphere_Command.o \
+  LaplacianMultipole_ASC__Form.o \
+  LaplacianMultipole_ASC__Form_Test.f90
+
+Poisson_ASC__Form_Test.o: \
+  Basics.o \
+  Manifolds.o \
+  CreateProportionalChart_Command.o \
+  SetHomogeneousSphere_Command.o \
+  Poisson_ASC__Form.o \
+  Poisson_ASC__Form_Test.f90
