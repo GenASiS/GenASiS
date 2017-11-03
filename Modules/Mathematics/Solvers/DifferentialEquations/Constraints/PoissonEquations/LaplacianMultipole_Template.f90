@@ -33,10 +33,10 @@ module LaplacianMultipole_Template
       Moment_RS_1D     => null ( ), &
       Moment_IS_1D     => null ( )
     real ( KDR ), dimension ( :, :, : ), pointer :: &
-      MyMRC => null ( ), MyMRS => null ( ), &
-      MyMIC => null ( ), MyMIS => null ( ), &
-      MRC   => null ( ), MRS   => null ( ), &
-      MIC   => null ( ), MIS   => null ( )
+      MyM_RC => null ( ), MyM_IC => null ( ), &
+      MyM_RS => null ( ), MyM_IS => null ( ), &
+      M_RC   => null ( ), M_IC   => null ( ), &
+      M_RS   => null ( ), M_IS   => null ( )
     character ( LDF ) :: &
       Type = '', &
       Name = ''
@@ -253,11 +253,11 @@ contains
 
     call Show ( 'Computing Moments', CONSOLE % INFO_3 )
 
-    call Clear ( LM % MyMRC )
-    call Clear ( LM % MyMIC )
+    call Clear ( LM % MyM_RC )
+    call Clear ( LM % MyM_IC )
     if ( LM % MaxOrder > 0 ) then
-      call Clear ( LM % MyMRS )
-      call Clear ( LM % MyMIS )
+      call Clear ( LM % MyM_RS )
+      call Clear ( LM % MyM_IS )
     end if
 
     call LM % ComputeMomentsLocal ( Source )
@@ -270,11 +270,11 @@ contains
     end if
 
     call AddMomentShells &
-           ( LM % MRC, LM % MIC, &
+           ( LM % M_RC, LM % M_IC, &
              LM % nEquations, LM % nRadialCells, LM % nAngularMomentCells )
     if ( LM % MaxOrder > 0 ) &
       call AddMomentShells &
-             ( LM % MRS, LM % MIS, &
+             ( LM % M_RS, LM % M_IS, &
                LM % nEquations, LM % nRadialCells, LM % nAngularMomentCells )
 
   end subroutine ComputeMoments
@@ -290,14 +290,14 @@ contains
     if ( allocated ( LM % Reduction_IC ) ) deallocate ( LM % Reduction_IC )
     if ( allocated ( LM % Reduction_IS ) ) deallocate ( LM % Reduction_IS )
 
-    nullify ( LM % MIS )
-    nullify ( LM % MIC )
-    nullify ( LM % MRS )
-    nullify ( LM % MRC )
-    nullify ( LM % MyMIS )
-    nullify ( LM % MyMIC )
-    nullify ( LM % MyMRS )
-    nullify ( LM % MyMRC )
+    nullify ( LM % M_IS )
+    nullify ( LM % M_RS )
+    nullify ( LM % M_IC )
+    nullify ( LM % M_RC )
+    nullify ( LM % MyM_IS )
+    nullify ( LM % MyM_RS )
+    nullify ( LM % MyM_IC )
+    nullify ( LM % MyM_RC )
 
     if ( associated ( LM % Moment_IS_1D ) ) &
        deallocate ( LM % Moment_IS_1D )
@@ -377,12 +377,12 @@ contains
     !-- FIXME: NAG has trouble with pointer rank reassignment when the 
     !          left-hand side is a member
     call AssignPointers &
-           ( LM, LM % MyMRC, LM % MyMRS, LM % MyMIC, LM % MyMIS, &
-             LM % MRC, LM % MRS, LM % MIC, LM % MIS )
+           ( LM, LM % MyM_RC, LM % MyM_IC, LM % MyM_RS, LM % MyM_IS, &
+             LM % M_RC, LM % M_IC, LM % M_RS, LM % M_IS )
 
     if ( allocated ( LM % Reduction_RC ) ) deallocate ( LM % Reduction_RC )
-    if ( allocated ( LM % Reduction_RS ) ) deallocate ( LM % Reduction_RS )
     if ( allocated ( LM % Reduction_IC ) ) deallocate ( LM % Reduction_IC )
+    if ( allocated ( LM % Reduction_RS ) ) deallocate ( LM % Reduction_RS )
     if ( allocated ( LM % Reduction_IS ) ) deallocate ( LM % Reduction_IS )
 
     associate ( PHC => PROGRAM_HEADER % Communicator )
@@ -433,12 +433,12 @@ contains
 !call Show ( Source_dV, 'Source_dV' )
 
     call ComputeMomentContributionsKernel &
-           ( LM % MyMRC, LM % MyMIC, &
+           ( LM % MyM_RC, LM % MyM_IC, &
              LM % SolidHarmonic_RC, LM % SolidHarmonic_IC, &
              Source_dV, LM % nEquations, LM % nAngularMomentCells, iR )
     if ( LM % MaxOrder > 0 ) &
       call ComputeMomentContributionsKernel &
-             ( LM % MyMRS, LM % MyMIS, &
+             ( LM % MyM_RS, LM % MyM_IS, &
                LM % SolidHarmonic_RS, LM % SolidHarmonic_IS, &
                Source_dV, LM % nEquations, LM % nAngularMomentCells, iR )
 
@@ -446,31 +446,31 @@ contains
 
 
   subroutine AssignPointers &
-               ( LM, MyMRC, MyMRS, MyMIC, MyMIS, MRC, MRS, MIC, MIS )
+               ( LM, MyM_RC, MyM_IC, MyM_RS, MyM_IS, M_RC, M_IC, M_RS, M_IS )
 
     class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
       LM
     real ( KDR ), dimension ( :, :, : ), pointer, intent ( out ) :: &
-      MyMRC, MyMRS, &
-      MyMIC, MyMIS, &
-      MRC, MRS, &
-      MIC, MIS
+      MyM_RC, MyM_IC, &
+      MyM_RS, MyM_IS, &
+      M_RC, M_IC, &
+      M_RS, M_IS
 
     associate &
       ( nE => LM % nEquations, &
         nR => LM % nRadialCells, &
         nA => LM % nAngularMomentCells )
 
-    MyMRC ( 1 : nA, 1 : nR, 1 : nE ) => LM % MyMoment_RC_1D
-    MyMIC ( 1 : nA, 1 : nR, 1 : nE ) => LM % MyMoment_IC_1D
-      MRC ( 1 : nA, 1 : nR, 1 : nE ) => LM % Moment_RC_1D
-      MIC ( 1 : nA, 1 : nR, 1 : nE ) => LM % Moment_IC_1D
+    MyM_RC ( 1 : nA, 1 : nR, 1 : nE ) => LM % MyMoment_RC_1D
+    MyM_IC ( 1 : nA, 1 : nR, 1 : nE ) => LM % MyMoment_IC_1D
+      M_RC ( 1 : nA, 1 : nR, 1 : nE ) => LM % Moment_RC_1D
+      M_IC ( 1 : nA, 1 : nR, 1 : nE ) => LM % Moment_IC_1D
 
     if ( LM % MaxOrder > 0 ) then
-      MyMRS ( 1 : nA, 1 : nR, 1 : nE ) => LM % MyMoment_RS_1D
-      MyMIS ( 1 : nA, 1 : nR, 1 : nE ) => LM % MyMoment_IS_1D
-        MRS ( 1 : nA, 1 : nR, 1 : nE ) => LM % Moment_RS_1D
-        MIS ( 1 : nA, 1 : nR, 1 : nE ) => LM % Moment_IS_1D
+      MyM_RS ( 1 : nA, 1 : nR, 1 : nE ) => LM % MyMoment_RS_1D
+      MyM_IS ( 1 : nA, 1 : nR, 1 : nE ) => LM % MyMoment_IS_1D
+        M_RS ( 1 : nA, 1 : nR, 1 : nE ) => LM % Moment_RS_1D
+        M_IS ( 1 : nA, 1 : nR, 1 : nE ) => LM % Moment_IS_1D
     end if
 
     end associate !-- nR, nA

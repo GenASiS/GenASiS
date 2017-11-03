@@ -232,24 +232,24 @@ contains
         if ( iR > 1 .and. iR < L % nRadialCells ) then
           call SolveKernel &
                  ( S, &
-                   L % MRC ( :, iR - 1, iE ), L % MIC ( :, iR, iE ), &
-                   L % MRC ( :, iR, iE ), L % MIC ( :, iR + 1, iE ), &
+                   L % M_RC ( :, iR - 1, iE ), L % M_IC ( :, iR, iE ), &
+                   L % M_RC ( :, iR, iE ), L % M_IC ( :, iR + 1, iE ), &
                    L % SolidHarmonic_RC ( : ), L % SolidHarmonic_IC ( : ), &
                    L % Delta, L % RadialEdge ( iR ), &
                    L % RadialEdge ( iR + 1 ), R )
         else if ( iR == 1 ) then
           call SolveKernel &
                  ( S, &
-                   Zero, L % MIC ( :, iR, iE ), &
-                   L % MRC ( :, iR, iE ), L % MIC ( :, iR + 1, iE ), &
+                   Zero, L % M_IC ( :, iR, iE ), &
+                   L % M_RC ( :, iR, iE ), L % M_IC ( :, iR + 1, iE ), &
                    L % SolidHarmonic_RC ( : ), L % SolidHarmonic_IC ( : ), &
                    L % Delta, L % RadialEdge ( iR ), &
                    L % RadialEdge ( iR + 1 ), R )
         else if ( iR == L % nRadialCells ) then
           call SolveKernel &
                  ( S, &
-                   L % MRC ( :, iR - 1, iE ), L % MIC ( :, iR, iE ), &
-                   L % MRC ( :, iR, iE ), Zero, &
+                   L % M_RC ( :, iR - 1, iE ), L % M_IC ( :, iR, iE ), &
+                   L % M_RC ( :, iR, iE ), Zero, &
                    L % SolidHarmonic_RC ( : ), L % SolidHarmonic_IC ( : ), &
                    L % Delta, L % RadialEdge ( iR ), &
                    L % RadialEdge ( iR + 1 ), R )
@@ -259,24 +259,24 @@ contains
           if ( iR > 1 .and. iR < L % nRadialCells ) then
             call SolveKernel &
                    ( S, &
-                     L % MRS ( :, iR - 1, iE ), L % MIS ( :, iR, iE ), &
-                     L % MRS ( :, iR, iE ), L % MIS ( :, iR + 1, iE ), &
+                     L % M_RS ( :, iR - 1, iE ), L % M_IS ( :, iR, iE ), &
+                     L % M_RS ( :, iR, iE ), L % M_IS ( :, iR + 1, iE ), &
                      L % SolidHarmonic_RS ( : ), L % SolidHarmonic_IS ( : ), &
                      L % Delta, L % RadialEdge ( iR ), &
                      L % RadialEdge ( iR + 1 ), R )
           else if ( iR == 1 ) then
             call SolveKernel &
                    ( S, &
-                     Zero, L % MIS ( :, iR, iE ), &
-                     L % MRS ( :, iR, iE ), L % MIS ( :, iR + 1, iE ), &
+                     Zero, L % M_IS ( :, iR, iE ), &
+                     L % M_RS ( :, iR, iE ), L % M_IS ( :, iR + 1, iE ), &
                      L % SolidHarmonic_RS ( : ), L % SolidHarmonic_IS ( : ), &
                      L % Delta, L % RadialEdge ( iR ), &
                      L % RadialEdge ( iR + 1 ), R )
           else if ( iR == L % nRadialCells ) then
             call SolveKernel &
                    ( S, &
-                     L % MRS ( :, iR - 1, iE ), L % MIS ( :, iR, iE ), &
-                     L % MRS ( :, iR, iE ), Zero, &
+                     L % M_RS ( :, iR - 1, iE ), L % M_IS ( :, iR, iE ), &
+                     L % M_RS ( :, iR, iE ), Zero, &
                      L % SolidHarmonic_RS ( : ), L % SolidHarmonic_IS ( : ), &
                      L % Delta, L % RadialEdge ( iR ), &
                      L % RadialEdge ( iR + 1 ), R )

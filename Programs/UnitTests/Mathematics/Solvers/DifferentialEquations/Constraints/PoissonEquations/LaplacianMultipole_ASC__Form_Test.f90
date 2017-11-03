@@ -60,8 +60,8 @@ contains
       RadiusDensity, &
       Density, &
       Radius, &
-      MRC, MIC, &
-      MRS, MIS
+      M_RC, M_IC, &
+      M_RS, M_IS
     real ( KDR ), dimension ( 3 ) :: &
       MinCoordinate, &
       MaxCoordinate, &
@@ -303,11 +303,11 @@ contains
         iA = iA + 1
         call Show ( iEll, 'iEll', CONSOLE % INFO_3 )
         call Show ( iM, 'iM', CONSOLE % INFO_3 )
-        call Show ( L % MRC ( iA, :, 1 ), 'Moment_RC', CONSOLE % INFO_3 )
-        call Show ( L % MIC ( iA, :, 1 ), 'Moment_IC', CONSOLE % INFO_3 )
+        call Show ( L % M_RC ( iA, :, 1 ), 'Moment_RC', CONSOLE % INFO_3 )
+        call Show ( L % M_IC ( iA, :, 1 ), 'Moment_IC', CONSOLE % INFO_3 )
         if ( iM > 0 ) then
-          call Show ( L % MRS ( iA, :, 1 ), 'Moment_RS', CONSOLE % INFO_3 )
-          call Show ( L % MIS ( iA, :, 1 ), 'Moment_IS', CONSOLE % INFO_3 )
+          call Show ( L % M_RS ( iA, :, 1 ), 'Moment_RS', CONSOLE % INFO_3 )
+          call Show ( L % M_IS ( iA, :, 1 ), 'Moment_IS', CONSOLE % INFO_3 )
         end if
       end do
     end do
@@ -339,35 +339,35 @@ contains
       do iA = 1, L % nAngularMomentCells
         associate ( Phi_Ell_M => Solution % Value ( iC, iA ) )
 
-        MRC  =  0.5_KDR  *  L % MRC ( iA, iR, 1 )
+        M_RC  =  0.5_KDR  *  L % M_RC ( iA, iR, 1 )
         if ( iR > 1 ) &
-          MRC  =  MRC  +  0.5_KDR  *  L % MRC ( iA, iR - 1, 1 )
+          M_RC  =  M_RC  +  0.5_KDR  *  L % M_RC ( iA, iR - 1, 1 )
 
-        MIC  =  0.5_KDR  *  L % MIC ( iA, iR, 1 )
+        M_IC  =  0.5_KDR  *  L % M_IC ( iA, iR, 1 )
         if ( iR < L % nRadialCells ) &
-          MIC  =  MIC  +  0.5_KDR  *  L % MIC ( iA, iR + 1, 1 )
+          M_IC  =  M_IC  +  0.5_KDR  *  L % M_IC ( iA, iR + 1, 1 )
 
         associate &
           ( R_C  =>  L % SolidHarmonic_RC ( iA ), &
             I_C  =>  L % SolidHarmonic_IC ( iA ) )
-        Phi_Ell_M  =  L % Delta ( iA ) * ( MRC * I_C  +  MIC * R_C )  
+        Phi_Ell_M  =  L % Delta ( iA ) * ( M_RC * I_C  +  M_IC * R_C )  
         end associate !-- R_C, etc.
         
         if ( L % MaxOrder > 0 ) then
 
-          MRS  =  0.5_KDR  *  L % MRS ( iA, iR, 1 )
+          M_RS  =  0.5_KDR  *  L % M_RS ( iA, iR, 1 )
           if ( iR > 1 ) &
-            MRS  =  MRS  +  0.5_KDR  *  L % MRS ( iA, iR - 1, 1 )
+            M_RS  =  M_RS  +  0.5_KDR  *  L % M_RS ( iA, iR - 1, 1 )
 
-          MIS  =  0.5_KDR  *  L % MIS ( iA, iR, 1 )
+          M_IS  =  0.5_KDR  *  L % M_IS ( iA, iR, 1 )
           if ( iR < L % nRadialCells ) &
-            MIS  =  MIS  +  0.5_KDR  *  L % MIS ( iA, iR + 1, 1 )
+            M_IS  =  M_IS  +  0.5_KDR  *  L % M_IS ( iA, iR + 1, 1 )
 
           associate &
             ( R_S  =>  L % SolidHarmonic_RS ( iA ), &
               I_S  =>  L % SolidHarmonic_IS ( iA ) )
           Phi_Ell_M  =  Phi_Ell_M &
-                        +  L % Delta ( iA ) * ( MRS * I_S  +  MIS * R_S )  
+                        +  L % Delta ( iA ) * ( M_RS * I_S  +  M_IS * R_S )  
           end associate !-- R_C, etc.
         
         end if
