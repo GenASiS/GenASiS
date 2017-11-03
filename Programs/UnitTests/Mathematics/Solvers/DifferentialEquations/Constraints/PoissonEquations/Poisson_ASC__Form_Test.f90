@@ -10,7 +10,7 @@ module Poisson_ASC__Form_Test__Form
   private
 
   integer ( KDI ), private, parameter :: &
-    O_HS                 = 0, &  !-- O_HOMOGENEOUS_SPHERE
+    O_HS                 = 0, &  !-- OFFSET_HOMOGENEOUS_SPHERE
     N_HOMOGENEOUS_SPHERE = 3, &
     N_EQUATIONS          = N_HOMOGENEOUS_SPHERE
   character ( LDL ), dimension ( N_EQUATIONS ), private, parameter :: &
@@ -87,7 +87,7 @@ contains
              nEquationsOption = N_EQUATIONS )
 
 
-    !-- Homogeneous sphere
+    !-- Source, Reference
 
     allocate ( PFT % Source )
     associate ( SA => PFT % Source )
@@ -103,6 +103,9 @@ contains
              VariableOption = VARIABLE, &
              WriteOption = .true. )
 
+
+    !-- Homogeneous sphere
+
     RadiusDensity  &
       =  A % Chart % MaxCoordinate ( 1 ) / [ 1.1_KDR, 2.0_KDR, 10.0_KDR ] 
     call PROGRAM_HEADER % GetParameter ( RadiusDensity, 'RadiusDensity' )
@@ -114,9 +117,6 @@ contains
       call SetHomogeneousSphere &
              ( SA, RA, A, Density ( iE ), RadiusDensity ( iE ), iE )
     end do
-
-    end associate !-- RA
-    end associate !-- SA
 
 
     !-- Solution
@@ -150,6 +150,8 @@ contains
 
     !-- Cleanup
 
+    end associate !-- RA
+    end associate !-- SA
     end associate !-- P
     end associate !-- A
 
