@@ -3,10 +3,20 @@ module Poisson_ASC__Form_Test__Form
   use Basics
   use Manifolds
   use Poisson_ASC__Form
+  use CreateProportionalChart_Command
+  use SetHomogeneousSphere_Command
 
   implicit none
   private
 
+  integer ( KDI ), private, parameter :: &
+    O_HS                 = 0, &  !-- O_HOMOGENEOUS_SPHERE
+    N_HOMOGENEOUS_SPHERE = 3, &
+    N_EQUATIONS          = N_HOMOGENEOUS_SPHERE
+  character ( LDL ), dimension ( N_EQUATIONS ), private, parameter :: &
+    VARIABLE = [ 'HomegeneousSphere_1', &
+                 'HomogeneousSphere_2', &
+                 'HomogeneousSphere_3' ]
   character ( LDF ), public, parameter :: &
     ProgramName = 'Poisson_ASC__Form_Test'
 
@@ -41,36 +51,11 @@ contains
       Name
 
     integer ( KDI ) :: &
-      ! iC, &  !-- iCell
-      ! iA, iM, iEll, &  !-- iAngular, iOrder, iDegree
-      ! iR, & !-- iRadial
-      nCellsRadial, &
-      nCellsPolar, &
-      nCellsAzimuthal, &
-      nCellsCore, &
-      nEquations, &
+      iE, &  !-- iEquation
       MaxDegree
-    integer ( KDI ), dimension ( 3 ) :: &
-      nCells
-    real ( KDR ) :: &
-      RadiusMax, &
-      RadiusCore, &
+    real ( KDR ), dimension ( N_EQUATIONS ) :: &
       RadiusDensity, &
       Density
-    real ( KDR ), dimension ( 3 ) :: &
-      MinCoordinate, &
-      MaxCoordinate, &
-      Ratio, &
-      Scale
-    character ( LDL ) :: &
-      CoordinateSystem
-    character ( LDL ), dimension ( 3 ) :: &
-      Spacing
-    type ( VariableGroupForm ), pointer :: &
-      Source, &
-      Reference
-    class ( GeometryFlatForm ), pointer :: &
-      G
 
     !-- Atlas
 
@@ -78,69 +63,7 @@ contains
     associate ( A => PFT % Atlas )
     call A % Initialize ( Name, PROGRAM_HEADER % Communicator )
 
-    CoordinateSystem = 'SPHERICAL'
-
-    call A % SetBoundaryConditionsFace &
-           ( [ 'REFLECTING', 'OUTFLOW   ' ], iDimension = 1 )
-    if ( A % nDimensions > 1 ) &
-      call A % SetBoundaryConditionsFace &
-             ( [ 'REFLECTING', 'REFLECTING' ], iDimension = 2 )
-    if ( A % nDimensions > 2 ) &
-      call A % SetBoundaryConditionsFace &
-             ( [ 'PERIODIC', 'PERIODIC' ], iDimension = 3 )
-
-    RadiusMax = 10.0_KDR
-    call PROGRAM_HEADER % GetParameter ( RadiusMax, 'RadiusMax' )
-
-    associate ( Pi => CONSTANT % PI )
-    MinCoordinate = [   0.0_KDR, 0.0_KDR,      0.0_KDR ]
-    MaxCoordinate = [ RadiusMax,      Pi, 2.0_KDR * Pi ]
-    end associate !-- Pi
-
-    Spacing        =  'EQUAL'
-    Spacing ( 1 )  =  'PROPORTIONAL'
-    
-    RadiusCore = RadiusMax / 8.0_KDR
-    call PROGRAM_HEADER % GetParameter ( RadiusCore, 'RadiusCore' )
-
-    nCellsCore = 32  !-- Number of central cells with equal spacing
-    call PROGRAM_HEADER % GetParameter ( nCellsCore, 'nCellsCore' )
-
-    call Show ( 'Mesh core parameters' )
-    call Show ( RadiusCore, 'RadiusCore' )
-    call Show ( nCellsCore, 'nCellsCore' )
-    call Show ( RadiusCore / nCellsCore, 'CellWidthCore' )
-
-    nCellsRadial = 3 * nCellsCore  !-- Aiming for roughly R_max = 10
-    call PROGRAM_HEADER % GetParameter ( nCellsRadial, 'nCellsRadial' )
-
-        nCellsPolar = 3 * nCellsCore
-    nCellsAzimuthal = 2 * nCellsPolar
- 
-    nCells = [ nCellsRadial, 1, 1 ]
-    if ( A % nDimensions > 1 ) &
-      nCells ( 2 ) = nCellsPolar
-    if ( A % nDimensions > 2 ) &
-      nCells ( 3 ) = nCellsAzimuthal
-
-    Ratio        =  0.0_KDR
-    Ratio ( 1 )  =  CONSTANT % PI / nCellsPolar  !-- dTheta
-
-    Scale        =  0.0_KDR
-    Scale ( 1 )  =  RadiusCore
-
-    call A % CreateChart &
-           ( SpacingOption = Spacing, &
-             CoordinateSystemOption = CoordinateSystem, &
-             MinCoordinateOption = MinCoordinate, &
-             MaxCoordinateOption = MaxCoordinate, &
-             RatioOption = Ratio, &
-             ScaleOption = Scale, &
-             nCellsOption = nCells, &
-             nEqualOption = nCellsCore )
-
-    select type ( C => A % Chart )
-    class is ( Chart_SLD_Form )
+    call CreateProportionalChart ( A )
 
 
     !-- Geometry
@@ -149,13 +72,10 @@ contains
     associate ( GA => PFT % Geometry )  !-- GeometryAtlas
     call GA % Initialize ( A )
     call A % SetGeometry ( GA )
-    G => A % Geometry ( )
     end associate !-- GA
 
 
     !-- Poisson
-
-    nEquations = 1
 
     MaxDegree = 2
     call PROGRAM_HEADER % GetParameter ( MaxDegree, 'MaxDegree' )
@@ -164,43 +84,39 @@ contains
     associate ( P => PFT % Poisson )
     call P % Initialize &
            ( A, SolverType = 'MULTIPOLE', MaxDegreeOption = MaxDegree, &
-             nEquationsOption = nEquations )
+             nEquationsOption = N_EQUATIONS )
 
 
-    !-- Source
+    !-- Homogeneous sphere
 
     allocate ( PFT % Source )
     associate ( SA => PFT % Source )
     call SA % Initialize &
-           ( A, 'Source', nEquations, &
-             VariableOption = [ 'HomogeneousDensity' ], &
+           ( A, 'Source', N_EQUATIONS, &
+             VariableOption = VARIABLE, &
              WriteOption = .true. )
-    Source => SA % Storage ( )
-    end associate !-- SA
 
-    RadiusDensity = RadiusMax / 10.0_KDR
+    allocate ( PFT % Reference )
+    associate ( RA => PFT % Reference )
+    call RA % Initialize &
+           ( A, 'Reference', N_EQUATIONS, &
+             VariableOption = VARIABLE, &
+             WriteOption = .true. )
+
+    RadiusDensity  &
+      =  A % Chart % MaxCoordinate ( 1 ) / [ 1.1_KDR, 2.0_KDR, 10.0_KDR ] 
     call PROGRAM_HEADER % GetParameter ( RadiusDensity, 'RadiusDensity' )
 
-    Density = 1.0_KDR
+    Density = 1.0_KDR / ( 4.0_KDR  *  CONSTANT % PI  *  RadiusDensity ** 3 )
     call PROGRAM_HEADER % GetParameter ( Density, 'Density' )
 
-    associate &
-      (  R => G % Value ( :, G % CENTER ( 1 ) ), &
-        dR => G % Value ( :, G % WIDTH ( 1 ) ), &
-         S => Source % Value ( :, 1 ) )
-    associate &
-      ( R_In  => R - 0.5_KDR * dR, &
-        R_Out => R + 0.5_KDR * dR, &
-        RD    => RadiusDensity )
-    S = 0.0_KDR
-    where ( R_Out <= RD )
-      S = Density
-    end where
-    where ( R_In < RD .and. R_Out > RD )
-      S = Density * ( RD - R_In ) / dR
-    end where
-    end associate !-- R_In, etc.
-    end associate !-- R, etc.
+    do iE = O_HS + 1, O_HS + N_HOMOGENEOUS_SPHERE
+      call SetHomogeneousSphere &
+             ( SA, RA, A, Density ( iE ), RadiusDensity ( iE ), iE )
+    end do
+
+    end associate !-- RA
+    end associate !-- SA
 
 
     !-- Solution
@@ -208,36 +124,12 @@ contains
     allocate ( PFT % Solution )
     associate ( SA => PFT % Solution )
     call SA % Initialize &
-           ( A, 'Solution', nEquations, &
-             VariableOption = [ 'Potential' ], &
+           ( A, 'Solution', N_EQUATIONS, &
+             VariableOption = VARIABLE, &
              WriteOption = .true. )
     end associate !-- SA
 
     call P % Solve ( PFT % Solution, PFT % Source )
-
-
-    !-- Source
-
-    allocate ( PFT % Reference )
-    associate ( RA => PFT % Reference )
-    call RA % Initialize &
-           ( A, 'Reference', nEquations, &
-             VariableOption = [ 'Potential' ], &
-             WriteOption = .true. )
-    Reference => RA % Storage ( )
-    end associate !-- SA
-
-    associate &
-      ( R    =>  G % Value ( :, G % CENTER ( 1 ) ), &
-        Phi  =>  Reference % Value ( :, 1 ), &
-        Pi   =>  CONSTANT % PI )
-    where ( R < RadiusDensity )
-      Phi  =  1.0_KDR / 6.0_KDR  *  Density  *  R ** 2  &
-              -  1.0_KDR / 2.0_KDR  *  Density  *  RadiusDensity ** 2
-    elsewhere
-      Phi  =  - 1.0_KDR / 3.0_KDR  *  Density  *  RadiusDensity ** 3  /  R
-    end where
-    end associate !-- R
 
 
     !-- Write
@@ -259,10 +151,7 @@ contains
     !-- Cleanup
 
     end associate !-- P
-    end select !-- C
     end associate !-- A
-
-    nullify ( G, Source )
 
   end subroutine Initialize
 

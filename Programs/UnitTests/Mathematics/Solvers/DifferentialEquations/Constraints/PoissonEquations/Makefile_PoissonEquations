@@ -9,7 +9,8 @@ LaplacianMultipole_ASC__Form_Test: Basics.a Manifolds.a \
 	$(LINK) $(FLAGS) \
           -o LaplacianMultipole_ASC__Form_Test_$(MACHINE) \
           LaplacianMultipole_ASC__Form_Test.o LaplacianMultipole_ASC__Form.o \
-          LaplacianMultipole_Template.o \
+          LaplacianMultipole_Template.o SetHomogeneousSphere_Command.o \
+          CreateProportionalChart_Command.o \
           Manifolds.a Basics.a $(LIBRARIES)
 
 Poisson_ASC__Form_Test: Basics.a Manifolds.a Poisson_ASC__Form_Test.o
@@ -17,6 +18,7 @@ Poisson_ASC__Form_Test: Basics.a Manifolds.a Poisson_ASC__Form_Test.o
           -o Poisson_ASC__Form_Test_$(MACHINE) \
           Poisson_ASC__Form_Test.o Poisson_ASC__Form.o Poisson_Template.o \
           LaplacianMultipole_ASC__Form.o LaplacianMultipole_Template.o \
+          SetHomogeneousSphere_Command.o CreateProportionalChart_Command.o \
           Manifolds.a Basics.a $(LIBRARIES)
 
 clean:
@@ -30,14 +32,28 @@ include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MANIFOLDS)/Makefile_Dependencies
 include $(PATH_POISSON_EQUATIONS)/Makefile_Dependencies
 
+CreateProportionalChart_Command.o: \
+  Basics.o \
+  Manifolds.o \
+  CreateProportionalChart_Command.f90
+
+SetHomogeneousSphere_Command.o: \
+  Basics.o \
+  Manifolds.o \
+  SetHomogeneousSphere_Command.f90
+
 LaplacianMultipole_ASC__Form_Test.o: \
   Basics.o \
   Manifolds.o \
+  CreateProportionalChart_Command.o \
+  SetHomogeneousSphere_Command.o \
   LaplacianMultipole_ASC__Form.o \
   LaplacianMultipole_ASC__Form_Test.f90
 
 Poisson_ASC__Form_Test.o: \
   Basics.o \
   Manifolds.o \
+  CreateProportionalChart_Command.o \
+  SetHomogeneousSphere_Command.o \
   Poisson_ASC__Form.o \
   Poisson_ASC__Form_Test.f90

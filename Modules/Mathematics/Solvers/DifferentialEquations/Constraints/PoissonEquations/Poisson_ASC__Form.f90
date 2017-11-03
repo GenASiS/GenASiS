@@ -235,7 +235,7 @@ contains
     end do !-- iE
 
     call C % ExchangeGhostData ( Solution )
-    call P % Atlas % ApplyBoundaryConditions ( Solution )
+!    call P % Atlas % ApplyBoundaryConditions ( Solution )
 
     end associate !-- L
 
