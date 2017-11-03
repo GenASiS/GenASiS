@@ -91,8 +91,8 @@ contains
     select case ( trim ( P % SolverType ) )
     case ( 'MULTIPOLE' )
       select type ( C => P % Atlas % Chart )
-      class is ( Chart_SL_Template )
-        call SolveMultipole_CSL ( P, Solution_VG, C, Source_VG )
+      class is ( Chart_SLD_Form )
+        call SolveMultipole_CSL ( P, C, Solution_VG, Source_VG )
       class default
         call Show ( 'Chart type not supported', CONSOLE % ERROR )
         call Show ( 'Solve', 'subroutine', CONSOLE % ERROR )
@@ -123,14 +123,14 @@ contains
   end subroutine Finalize
 
 
-  subroutine SolveMultipole_CSL ( P, Solution, C, Source )
+  subroutine SolveMultipole_CSL ( P, C, Solution, Source )
  
     type ( Poisson_ASC_Form ), intent ( inout ) :: &
       P
+    class ( Chart_SLD_Form ), intent ( inout ) :: &
+      C
     class ( VariableGroupForm ), intent ( inout ) :: &
       Solution
-    class ( Chart_SL_Template ), intent ( in ) :: &
-      C
     class ( VariableGroupForm ), intent ( in ) :: &
       Source
 
@@ -150,62 +150,6 @@ contains
     call Show ( P % Name, 'Name', P % IGNORABILITY + 2 )
 
     associate ( L => P % LaplacianMultipole )
-
-    ! !-- Compute potential on Interior leaf cells
-
-    ! call LM % SetRadialGrid ( Source )
-    ! call LM % ComputeMoments ( Source )
-
-    ! call Show ( 'Computing potential', PEC % IGNORABILITY )
-
-    ! do iL = 1, C % nLevels
-    !   !-- Assume the relevant variable is the first in the source VG.
-    !   associate ( iSltn => Solution ( iL ) % Selected ( 1 ) )
-    !   associate &
-    !     ( S_Interior => C % Level ( iL ) % Submesh ( SUBMESH % INTERIOR ), &
-    !       G => C % Level ( iL ) % Geometry, &
-    !       A => C % Level ( iL ) % Adaption, &
-    !       S => Source ( iL ) % Value ( :, 1 ), &
-    !       Phi => Solution ( iL ) % Value ( :, iSltn ) )
-
-    !   call Show ( iL, 'iLevel' )
-
-    !   do iC = S_Interior % oCell + 1, &
-    !           S_Interior % oCell + S_Interior % nProperCells
-
-    !     if ( A % Value ( iC, A % INTERIOR_PARENT ) > 0.0_KDR ) cycle
-
-    !     call LM % ComputeSolidHarmonics ( G % Value ( iC, G % CENTER ) )
-    !     call ComputePotential &
-    !            ( LM, G % Value ( iC, G % CENTER ), G % Value ( iC, G % WIDTH ), &
-    !              S ( iC ) * G % Value ( iC, G % VOLUME ), &
-    !              Phi ( iC ) )
-
-    !   end do
-
-    !   end associate !-- S_Interior, etc.
-    !   end associate !-- iSltn
-    ! end do
-
-    ! !-- Restrict interior values and ghost exchange
-
-    ! if ( present ( iLevelOption ) ) then
-    !   !-- argument of Sort must be intent ( inout )
-    !   allocate ( iLevel ( size ( iLevelOption ) ) )
-    !   iLevel = iLevelOption
-    !   call Sort ( iLevel )
-    !   do iL = size ( iLevel ), 1, -1
-    !     associate ( iLvl => iLevel ( iL ) )
-    !     if ( iLvl < C % nLevels ) &
-    !       call C % Restrict &
-    !              ( Solution ( iLvl + 1 ), Solution ( iLvl ), &
-    !                Interior = .true., Exterior = .false., iLevel = iLvl + 1 )
-    !     call C % Level ( iLvl ) % StartGhostExchange &
-    !            ( Solution ( iLvl : iLvl ) )
-    !     call C % Level ( iLvl ) % FinishGhostExchange ( )
-    !     end associate !-- iLvl
-    !   end do
-    ! end if
 
     call L % ComputeMoments ( Source )
 
@@ -290,17 +234,8 @@ contains
       !$OMP end parallel do
     end do !-- iE
 
-    select case ( trim ( C % CoordinateSystem ) )
-    case ( 'SPHERICAL' )
-
-    case default
-      call Show ( 'CoordinateSystem not supported', CONSOLE % ERROR )
-      call Show ( C % CoordinateSystem, 'CoordinateSystem', &
-                  CONSOLE % ERROR )
-      call Show ( 'SolveMultipole_CSL', 'subroutine', CONSOLE % ERROR )
-      call Show ( 'Poisson_ASC__Form', 'module', CONSOLE % ERROR )
-      call PROGRAM_HEADER % Abort ( )
-    end select !-- CoordinateSystem
+    call C % ExchangeGhostData ( Solution )
+    call P % Atlas % ApplyBoundaryConditions ( Solution )
 
     end associate !-- L
 
