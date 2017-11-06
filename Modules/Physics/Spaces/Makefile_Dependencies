@@ -3,8 +3,22 @@ Geometry_G__Form.o: \
   Mathematics.o \
   Geometry_G__Form.f90
 
+Geometry_CSL__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Geometry_G__Form.o \
+  Geometry_CSL__Form.f90
+
+Geometry_ASC__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Geometry_CSL__Form.o \
+  Geometry_ASC__Form.f90
+
 Spaces.o: \
   Geometry_G__Form.o \
+  Geometry_CSL__Form.o \
+  Geometry_ASC__Form.o \
   Spaces.f90
 
 Spaces.a: $(SPACES)

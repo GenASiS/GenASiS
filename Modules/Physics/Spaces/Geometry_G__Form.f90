@@ -1,3 +1,5 @@
+!-- Geometry_G represents Galilean geometry.
+
 module Geometry_G__Form
 
   !-- Geometry_Galilean__Form

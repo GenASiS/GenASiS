@@ -17,8 +17,10 @@ module GeometryFlat_ASC__Form
     character ( LDL ) :: &
       GeometryType = ''
   contains
-    procedure, public, pass :: &
-      Initialize
+    procedure, private, pass :: &
+      InitializeFlat
+    generic, public :: &
+      Initialize => InitializeFlat
     final :: &
       Finalize
     procedure, private, pass :: &
@@ -28,7 +30,7 @@ module GeometryFlat_ASC__Form
 contains
 
 
-  subroutine Initialize ( GA, A, NameShortOption, IgnorabilityOption )
+  subroutine InitializeFlat ( GA, A, NameShortOption, IgnorabilityOption )
 
     class ( GeometryFlat_ASC_Form ), intent ( inout ) :: &
       GA
@@ -54,7 +56,7 @@ contains
 
     call GA % InitializeTemplate_ASC ( A, NameShort, IgnorabilityOption )
 
-  end subroutine Initialize
+  end subroutine InitializeFlat
 
 
   impure elemental subroutine Finalize ( GA )
