@@ -1,0 +1,11 @@
+Geometry_G__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Geometry_G__Form.f90
+
+Spaces.o: \
+  Geometry_G__Form.o \
+  Spaces.f90
+
+Spaces.a: $(SPACES)
+	ar r Spaces.a $(SPACES)

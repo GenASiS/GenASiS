@@ -1,10 +1,12 @@
 PATH_BASICS      = $(PATH_MODULES)/Basics
 PATH_MATHEMATICS = $(PATH_MODULES)/Mathematics
+PATH_PHYSICS     = $(PATH_MODULES)/Physics
 
 include $(PATH_BASICS)/Makefile_Path
 include $(PATH_MATHEMATICS)/Makefile_Path
+include $(PATH_PHYSICS)/Makefile_Path
 
 VPATH_MODULES = \
   $(VPATH_BASICS):\
-  $(VPATH_MATHEMATICS)
-
+  $(VPATH_MATHEMATICS):\
+  $(VPATH_PHYSICS)
