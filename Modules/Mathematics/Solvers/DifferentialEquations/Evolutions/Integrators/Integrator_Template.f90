@@ -46,8 +46,6 @@ module Integrator_Template
       GridImageStream
     class ( AtlasHeaderForm ), allocatable :: &
       PositionSpace
-    class ( GeometryFlat_ASC_Form ), allocatable :: &
-      Geometry_ASC
     class ( BundleHeaderForm ), allocatable :: &
       MomentumSpace
     procedure ( SR ), pointer :: &
@@ -194,14 +192,6 @@ contains
       I % Communicator => I % PositionSpace % Communicator
     end if
 
-    if ( .not. allocated ( I % Geometry_ASC ) ) then
-      call Show ( 'Geometry must be allocated by an extension', &
-                  CONSOLE % ERROR )
-      call Show ( 'Integrator_Template', 'module', CONSOLE % ERROR )
-      call Show ( 'InitializeTemplate', 'subroutine', CONSOLE % ERROR )
-      call PROGRAM_HEADER % Abort ( )
-    end if
-
     call I % OpenStreams ( )
 
     I % iCycle = 0
@@ -298,8 +288,6 @@ contains
 
     if ( allocated ( I % MomentumSpace ) ) &
       deallocate ( I % MomentumSpace ) 
-    if ( allocated ( I % Geometry_ASC ) ) &
-      deallocate ( I % Geometry_ASC )
     if ( allocated ( I % PositionSpace ) ) &
       deallocate ( I % PositionSpace ) 
     if ( allocated ( I % GridImageStream ) ) &
