@@ -15,7 +15,6 @@ module Atlas_SC__Form_Test__Form
     type ( GridImageStreamForm ), allocatable :: &
       GIS_Base
     type ( GeometryFlat_ASC_Form ), allocatable :: &
-      GeometryBase, &
       GeometryFiber
     type ( Atlas_SC_Form ), allocatable :: &
       AtlasBase, &
@@ -56,20 +55,16 @@ contains
 
     allocate &
       ( AFT % AtlasBase, &
-        AFT % GeometryBase, &
         AFT % GIS_Base )
     associate &
       ( A   => AFT % AtlasBase, &
-        G   => AFT % GeometryBase, &
         GIS => AFT % GIS_Base )
 
     call A % Initialize &
            ( 'Base', CommunicatorOption = PROGRAM_HEADER % Communicator, &
              iDimensionalityOption = 1 )
-    call A % CreateChart ( )
-  
-    call G % Initialize ( A )
-    call A % SetGeometry ( G )
+    call A % CreateChart ( )  
+    call A % SetGeometry ( )
 
     call GIS % Initialize &
            ( PROGRAM_HEADER % Name, CommunicatorOption = A % Communicator )
@@ -94,10 +89,10 @@ contains
     call A % SetBoundaryConditionsFace ( [ 'REFLECTING', 'REFLECTING' ], 1 )
 
     Scale = 0.0_KDR
-    Scale ( 1 ) = 5.0_KDR * UNIT % MEV
+    Scale ( 1 ) = 5.0_KDR * UNIT % MEGA_ELECTRON_VOLT
 
     CoordinateUnit = UNIT % IDENTITY
-    CoordinateUnit ( 1 ) = UNIT % MEV
+    CoordinateUnit ( 1 ) = UNIT % MEGA_ELECTRON_VOLT
 
     Spacing = ''
     Spacing ( 1 ) = 'COMPACTIFIED'
@@ -108,7 +103,7 @@ contains
              ScaleOption = Scale, nGhostLayersOption = [ 0, 0, 0 ] )
 
     call G % Initialize ( A )
-    call A % SetGeometry ( G )
+    call A % SetGeometry ( GeometryOption = G )
 
     associate ( GIS_Base => AFT % GIS_Base )
 
@@ -152,7 +147,6 @@ contains
     deallocate ( AFT % AtlasFiber )
     deallocate ( AFT % AtlasBase )
     deallocate ( AFT % GeometryFiber )
-    deallocate ( AFT % GeometryBase )
     deallocate ( AFT % GIS_Base )
 
   end subroutine Finalize

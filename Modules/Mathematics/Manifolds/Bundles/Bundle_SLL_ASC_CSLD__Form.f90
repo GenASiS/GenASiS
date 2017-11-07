@@ -179,7 +179,7 @@ contains
 
     call B % Show ( )
 
-    call FM % SetGeometry ( GAF )
+    call FM % SetGeometry ( GeometryOption = GAF )
 
     allocate ( B % Fiber )
     associate ( F => B % Fiber )

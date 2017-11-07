@@ -13,8 +13,6 @@ module Bundle_SLL_ASC_CSLD__Form_Test__Form
   type, public :: Bundle_SLL_ASC_CSLD_Form_Test_Form
     type ( GridImageStreamForm ), allocatable :: &
       GridImageStream
-    type ( GeometryFlat_ASC_Form ), allocatable :: &
-      Geometry
     type ( Atlas_SC_Form ), allocatable :: &
       Base
     type ( Bundle_SLL_ASC_CSLD_Form ), allocatable :: &
@@ -31,8 +29,9 @@ contains
   
   subroutine Initialize ( BFT, Name )
 
-    class ( Bundle_SLL_ASC_CSLD_Form_Test_Form ), intent ( inout ), target :: &
-      BFT
+    class ( Bundle_SLL_ASC_CSLD_Form_Test_Form ), intent ( inout ), &
+      target :: &
+        BFT
     character ( * ), intent ( in ) :: &
       Name
 
@@ -47,20 +46,16 @@ contains
 
     allocate &
       ( BFT % Base, &
-        BFT % Geometry, &
         BFT % GridImageStream )
     associate &
       ( Base => BFT % Base, &
-        G    => BFT % Geometry, &
         GIS  => BFT % GridImageStream )
 
     call Base % Initialize &
            ( 'Base', CommunicatorOption = PROGRAM_HEADER % Communicator, &
              iDimensionalityOption = 1 )
-    call Base % CreateChart ( nCellsOption = [ 16, 16, 16 ] )
-  
-    call G % Initialize ( Base )
-    call Base % SetGeometry ( G )
+    call Base % CreateChart ( nCellsOption = [ 16, 16, 16 ] )  
+    call Base % SetGeometry ( )
 
     !-- Bundle
 
@@ -72,10 +67,10 @@ contains
            ( [ 'REFLECTING', 'REFLECTING' ], iDimension = 1 )
 
     Scale = 0.0_KDR
-    Scale ( 1 ) = 5.0_KDR * UNIT % MEV
+    Scale ( 1 ) = 5.0_KDR * UNIT % MEGA_ELECTRON_VOLT
 
     CoordinateUnit = UNIT % IDENTITY
-    CoordinateUnit ( 1 ) = UNIT % MEV
+    CoordinateUnit ( 1 ) = UNIT % MEGA_ELECTRON_VOLT
 
     Spacing = ''
     Spacing ( 1 ) = 'COMPACTIFIED'

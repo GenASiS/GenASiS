@@ -13,6 +13,8 @@ module Atlas_SC__Form
   private
 
   type, public, extends ( Atlas_SC_Template ) :: Atlas_SC_Form
+    logical ( KDL ) :: &
+      AllocatedGeometry = .false.
     class ( GeometryFlat_ASC_Form ), pointer :: &
       Geometry_ASC => null ( )
   contains
@@ -55,22 +57,36 @@ module Atlas_SC__Form
 contains
 
 
-  subroutine SetGeometry ( A, Geometry )
+  subroutine SetGeometry ( A, GeometryOption )
 
     class ( Atlas_SC_Form ), intent ( inout ) :: &
       A
-    class ( GeometryFlat_ASC_Form ), intent ( in ), target :: &
-      Geometry
+    class ( GeometryFlat_ASC_Form ), intent ( in ), target, optional :: &
+      GeometryOption
 
-    call A % AddField ( Geometry )
-    A % Geometry_ASC => Geometry
+    if ( associated ( A % Geometry_ASC ) ) then
+      A % AllocatedGeometry = .true.
+    else
+      if ( present ( GeometryOption ) ) then
+        A % AllocatedGeometry = .false.
+        A % Geometry_ASC => GeometryOption
+      else
+        A % AllocatedGeometry = .true.
+        allocate ( A % Geometry_ASC )
+        associate ( GA => A % Geometry_ASC )
+        call GA % Initialize ( A ) 
+        end associate !-- GA
+      end if
+    end if
+
+    call A % AddField ( A % Geometry_ASC )
 
     select type ( C => A % Chart )
     class is ( Chart_SL_Template )
 
       C % iFieldGeometry = C % nFields
 
-      select type ( GC => Geometry % Chart )
+      select type ( GC => A % Geometry_ASC % Chart )
       class is ( GeometryFlat_CSL_Form ) 
       call C % SetGeometry ( GC )
       end select !-- G_CSL
@@ -218,7 +234,11 @@ contains
     type ( Atlas_SC_Form ), intent ( inout ) :: &
       A
 
-    nullify ( A % Geometry_ASC )
+    if ( A % AllocatedGeometry ) then
+      deallocate ( A % Geometry_ASC )
+    else
+      nullify ( A % Geometry_ASC )
+    end if
 
     call A % FinalizeTemplate ( )
 

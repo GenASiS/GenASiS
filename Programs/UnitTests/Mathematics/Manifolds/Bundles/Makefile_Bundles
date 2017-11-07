@@ -9,12 +9,11 @@ Bundle_SLL_ASC_CSLD__Form_Test: Basics.a Atlases.a \
 	$(LINK) $(FLAGS) \
           -o Bundle_SLL_ASC_CSLD__Form_Test_$(MACHINE) \
           Bundle_SLL_ASC_CSLD__Form_Test.o Bundle_SLL_ASC_CSLD__Form.o \
-          Field_BSLL_ASC_CSLD__Template.o FibersWritten_CSL__Form.o \
-          FieldBundle_Template.o BundleHeader_Form.o \
+          FibersWritten_CSL__Form.o BundleHeader_Form.o \
           Atlases.a Basics.a $(LIBRARIES)
 
 clean:
-	rm -f *.o *.mod *.ld
+	rm -f *.o *.a *.mod *.ld
 
 clobber: clean
 	rm -f Bundle_SLL_ASC_CSLD__Form_Test_*
