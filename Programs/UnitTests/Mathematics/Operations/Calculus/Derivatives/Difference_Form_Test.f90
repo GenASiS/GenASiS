@@ -15,8 +15,6 @@ module Difference_Form_Test__Form
       GridImageStream
     type ( Atlas_SC_Form ), allocatable :: &
       Atlas
-    type ( GeometryFlat_ASC_Form ), allocatable :: &
-      Geometry
     type ( DifferenceForm ), allocatable :: &
       Difference
   contains
@@ -62,12 +60,7 @@ contains
     associate ( A => DFT % Atlas )
     call A % Initialize ( Name, PROGRAM_HEADER % Communicator )
     call A % CreateChart ( )
-
-    allocate ( DFT % Geometry )
-    associate ( GA => DFT % Geometry )  !-- GeometryAtlas
-    call GA % Initialize ( A )
-    call A % SetGeometry ( GA )
-    end associate !-- GA
+    call A % SetGeometry ( )
     
     call A % OpenStream ( GIS, '1', iStream = 1 )
 
@@ -103,7 +96,7 @@ contains
 
     allocate ( DFT % Difference )
     associate ( D => DFT % Difference )
-    call D % Initialize ( Gaussian, 'GaussianDifference' )
+    call D % Initialize ( 'GaussianDifference', shape ( Gaussian % Value ) )
     associate ( OI => D % OutputInner )
 
     nCompute = 100
@@ -114,22 +107,23 @@ contains
     do iC = 1, nCompute
       call Show ( iC, 'iC' )
       do iD = 1, C % nDimensions
-        call D % Compute ( C, iD )
+        call D % Compute ( C, Gaussian, iD )
       end do !-- iD
     end do !-- iC
 
     !-- An extra iteration to output to disk
     do iD = 1, C % nDimensions
 
-      call D % Compute ( C, iD )
+      call D % Compute ( C, Gaussian, iD )
 
       write ( iD_String, fmt = ' ( i1 ) ' ) iD
 
       associate ( dGI => d_Gaussian_Inner ( iD ) )
       call dGI % Initialize &
              ( [ OI % nValues, OI % nVariables ], &
-               VariableOption = OI % Variable, &
-               NameOption = trim ( OI % Name ) // '_' // iD_String )
+               VariableOption = Gaussian % Variable, &
+               NameOption = 'd_' // trim ( Gaussian % Name ) // '_' &
+                            // iD_String )
       call Copy ( OI % Value, dGI % Value )
       end associate !-- dGI
 
@@ -165,7 +159,6 @@ contains
       DFT
 
     deallocate ( DFT % Difference )
-    deallocate ( DFT % Geometry )
     deallocate ( DFT % Atlas )
     deallocate ( DFT % GridImageStream )
 

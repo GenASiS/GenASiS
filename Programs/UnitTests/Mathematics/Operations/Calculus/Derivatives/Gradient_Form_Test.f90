@@ -15,8 +15,6 @@ module Gradient_Form_Test__Form
       GridImageStream
     type ( Atlas_SC_Form ), allocatable :: &
       Atlas
-    type ( GeometryFlat_ASC_Form ), allocatable :: &
-      Geometry
     type ( GradientForm ), allocatable :: &
       Gradient
   contains
@@ -68,12 +66,7 @@ contains
     associate ( A => GFT % Atlas )
     call A % Initialize ( Name, PROGRAM_HEADER % Communicator )
     call A % CreateChart ( )
-
-    allocate ( GFT % Geometry )
-    associate ( GA => GFT % Geometry )  !-- GeometryAtlas
-    call GA % Initialize ( A )
-    call A % SetGeometry ( GA )
-    end associate !-- GA
+    call A % SetGeometry ( )
     
     call A % OpenStream ( GIS, '1', iStream = 1 )
 
@@ -121,7 +114,8 @@ contains
 
     allocate ( GFT % Gradient )
     associate ( Grad => GFT % Gradient )
-    call Grad % Initialize ( TestFields, 'TestFieldsGradient' )
+    call Grad % Initialize &
+           ( 'TestFieldsGradient', shape ( TestFields % Value ) )
     associate ( GO => Grad % Output )
 
     nCompute = 100
@@ -132,8 +126,9 @@ contains
     do iC = 1, nCompute
       call Show ( iC, 'iC' )
       do iD = 1, C % nDimensions
-        call Grad % Compute ( C, iD )
-        call Grad % Compute ( C, iD, LimiterParameterOption = 1.4_KDR )
+        call Grad % Compute ( C, TestFields, iD )
+        call Grad % Compute ( C, TestFields, iD, &
+                              LimiterParameterOption = 1.4_KDR )
       end do !-- iD
     end do !-- iC
 
@@ -144,25 +139,28 @@ contains
 
       !-- Without limiter
 
-      call Grad % Compute ( C, iD )
+      call Grad % Compute ( C, TestFields, iD )
 
       associate ( Grad_TF => Grad_TestFields ( iD ) )
       call Grad_TF % Initialize &
              ( [ GO % nValues, GO % nVariables ], &
-               VariableOption = GO % Variable, &
-               NameOption = trim ( GO % Name ) // '_' // iD_String )
+               VariableOption = TestFields % Variable, &
+               NameOption = 'Grad_' // trim ( TestFields % Name ) // '_' &
+                            // iD_String )
       call Copy ( GO % Value, Grad_TF % Value )
       end associate !-- Grad_TF
 
       !-- With limiter
 
-      call Grad % Compute ( C, iD, LimiterParameterOption = 1.4_KDR )
+      call Grad % Compute ( C, TestFields, iD, &
+                            LimiterParameterOption = 1.4_KDR )
 
       associate ( GradLimited_TF => GradLimited_TestFields ( iD ) )
       call GradLimited_TF % Initialize &
              ( [ GO % nValues, GO % nVariables ], &
-               VariableOption = GO % Variable, &
-               NameOption = trim ( GO % Name ) // '_Limited_' // iD_String )
+               VariableOption = TestFields % Variable, &
+               NameOption = 'Grad_' // trim ( TestFields % Name ) // &
+                            '_Limited_' // iD_String )
       call Copy ( GO % Value, GradLimited_TF % Value )
       end associate !-- Grad_TF
 
@@ -199,7 +197,6 @@ contains
       GFT
 
     deallocate ( GFT % Gradient )
-    deallocate ( GFT % Geometry )
     deallocate ( GFT % Atlas )
     deallocate ( GFT % GridImageStream )
 
