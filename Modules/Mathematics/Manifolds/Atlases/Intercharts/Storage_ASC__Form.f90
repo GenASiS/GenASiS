@@ -134,7 +134,8 @@ contains
       end associate !-- nValues
     end select !-- GC
 
-    call A % AddField ( FA )
+    if ( FA % Write ) &
+      call A % AddField ( FA )
 
     end select !-- C
     end select !-- A
