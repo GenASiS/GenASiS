@@ -63,14 +63,7 @@ contains
     end do !-- iD
 
     call PS % CreateChart ( )
-
-    !-- Geometry of PositionSpace
-
-    allocate ( RP % Geometry_ASC )
-    associate ( GA => RP % Geometry_ASC )  !-- GeometryAtlas
-    call GA % Initialize ( PS )
-    call PS % SetGeometry ( GA )
-    end associate !-- GA
+    call PS % SetGeometry ( )
 
     !-- Fluid
 

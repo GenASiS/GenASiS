@@ -125,13 +125,7 @@ contains
              MaxCoordinateOption = MaxCoordinate, &
              nCellsOption = nCells )
 
-    !-- Geometry of PositionSpace
-
-    allocate ( ST % Geometry_ASC )
-    associate ( GA => ST % Geometry_ASC )  !-- GeometryAtlas
-    call GA % Initialize ( PS )
-    call PS % SetGeometry ( GA )
-    end associate !-- GA
+    call PS % SetGeometry ( )
 
     !-- Fluid
 

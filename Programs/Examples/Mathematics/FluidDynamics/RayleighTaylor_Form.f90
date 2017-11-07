@@ -58,13 +58,7 @@ contains
              MaxCoordinateOption = [ +0.25_KDR, +0.75_KDR ], &
              nCellsOption = [ 64, 192 ] )
 
-    !-- Geometry of PositionSpace
-
-    allocate ( RT % Geometry_ASC )
-    associate ( GA => RT % Geometry_ASC )  !-- GeometryAtlas
-    call GA % Initialize ( PS )
-    call PS % SetGeometry ( GA )
-    end associate !-- GA
+    call PS % SetGeometry ( )
 
     !-- Fluid
 

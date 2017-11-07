@@ -153,13 +153,7 @@ contains
              RatioOption = Ratio, &
              nCellsOption = nCells )
 
-    !-- Geometry of PositionSpace
-
-    allocate ( FM % Geometry_ASC )
-    associate ( GA => FM % Geometry_ASC )  !-- GeometryAtlas
-    call GA % Initialize ( PS )
-    call PS % SetGeometry ( GA )
-    end associate !-- GA
+    call PS % SetGeometry ( )
 
     !-- Fluid
 
