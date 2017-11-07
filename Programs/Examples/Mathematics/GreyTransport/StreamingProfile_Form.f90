@@ -129,13 +129,7 @@ contains
 !             SpacingOption = Spacing, &
 !             RatioOption = Ratio )
 
-    !-- Geometry of PositionSpace
-
-    allocate ( SP % Geometry_ASC )
-    associate ( GA => SP % Geometry_ASC )  !-- GeometryAtlas
-    call GA % Initialize ( PS )
-    call PS % SetGeometry ( GA )
-    end associate !-- GA
+    call PS % SetGeometry ( )
     
     !-- Prepare Units
     

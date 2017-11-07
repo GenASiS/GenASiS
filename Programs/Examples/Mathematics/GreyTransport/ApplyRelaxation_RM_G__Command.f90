@@ -25,7 +25,7 @@ contains
 
   subroutine ApplyRelaxation_RM_G &
                ( S, Sources_RM, Increment, RadiationMoments, Chart, &
-                 TimeStep, iStage )
+                 TimeStep, iStage, GeometryOption, iGeometryValueOption )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
@@ -41,6 +41,10 @@ contains
       TimeStep
     integer ( KDI ), intent ( in ) :: &
       iStage
+    class ( GeometryFlatForm ), intent ( in ), optional :: &
+      GeometryOption
+    integer ( KDI ), intent ( in ), optional :: &
+      iGeometryValueOption
 
     integer ( KDI ) :: &
       iV, &  !-- iValue

@@ -79,14 +79,7 @@ contains
     call PS % CreateChart &
            ( MinCoordinateOption = [ -3.0_KDR, 0.0_KDR, 0.0_KDR ], &
              MaxCoordinateOption = [ +3.0_KDR, 0.0_KDR, 0.0_KDR ] )
-
-    !-- Geometry of PositionSpace
-
-    allocate ( SWD % Geometry_ASC )
-    associate ( GA => SWD % Geometry_ASC )  !-- GeometryAtlas
-    call GA % Initialize ( PS )
-    call PS % SetGeometry ( GA )
-    end associate !-- GA
+    call PS % SetGeometry ( )
 
     !-- RadiationMoments ( Generic )
 
