@@ -15,8 +15,6 @@ module LaplacianMultipole_ASC__Form_Test__Form
   type, public :: LaplacianMultipole_ASC__Form_Test_Form
     type ( GridImageStreamForm ), allocatable :: &
       Stream
-    type ( GeometryFlat_ASC_Form ), allocatable :: &
-      Geometry
     type ( Atlas_SC_Form ), allocatable :: &
       Atlas
     type ( Storage_ASC_Form ), allocatable :: &
@@ -80,18 +78,10 @@ contains
 
     call CreateProportionalChart ( A )
 
+    G => A % Geometry ( )
+
     select type ( C => A % Chart )
     class is ( Chart_SLD_Form )
-
-
-    !-- Geometry
-
-    allocate ( LMFT % Geometry )
-    associate ( GA => LMFT % Geometry )  !-- GeometryAtlas
-    call GA % Initialize ( A )
-    call A % SetGeometry ( GA )
-    G => A % Geometry ( )
-    end associate !-- GA
 
 
     !-- Laplacian
@@ -358,8 +348,6 @@ contains
       deallocate ( LMFT % Source )
     if ( allocated ( LMFT % Laplacian ) ) &
       deallocate ( LMFT % Laplacian )
-    if ( allocated ( LMFT % Geometry ) ) &
-      deallocate ( LMFT % Geometry )
     if ( allocated ( LMFT % Atlas ) ) &
       deallocate ( LMFT % Atlas )
 

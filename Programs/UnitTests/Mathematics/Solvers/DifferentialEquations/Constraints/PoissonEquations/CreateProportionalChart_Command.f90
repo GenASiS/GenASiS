@@ -98,6 +98,8 @@ contains
              nCellsOption = nCells, &
              nEqualOption = nCellsCore )
 
+    call A % SetGeometry ( )
+
   end subroutine CreateProportionalChart
 
 

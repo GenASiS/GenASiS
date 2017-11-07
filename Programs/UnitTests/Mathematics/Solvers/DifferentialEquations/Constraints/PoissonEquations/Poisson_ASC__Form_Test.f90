@@ -23,8 +23,6 @@ module Poisson_ASC__Form_Test__Form
   type, public :: Poisson_ASC__Form_Test_Form
     type ( GridImageStreamForm ), allocatable :: &
       Stream
-    type ( GeometryFlat_ASC_Form ), allocatable :: &
-      Geometry
     type ( Atlas_SC_Form ), allocatable :: &
       Atlas
     type ( Storage_ASC_Form ), allocatable :: &
@@ -64,15 +62,6 @@ contains
     call A % Initialize ( Name, PROGRAM_HEADER % Communicator )
 
     call CreateProportionalChart ( A )
-
-
-    !-- Geometry
-
-    allocate ( PFT % Geometry )
-    associate ( GA => PFT % Geometry )  !-- GeometryAtlas
-    call GA % Initialize ( A )
-    call A % SetGeometry ( GA )
-    end associate !-- GA
 
 
     !-- Poisson
@@ -173,8 +162,6 @@ contains
       deallocate ( PFT % Source )
     if ( allocated ( PFT % Poisson ) ) &
       deallocate ( PFT % Poisson )
-    if ( allocated ( PFT % Geometry ) ) &
-      deallocate ( PFT % Geometry )
     if ( allocated ( PFT % Atlas ) ) &
       deallocate ( PFT % Atlas )
 
