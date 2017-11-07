@@ -20,8 +20,6 @@ module DensityWave_Form
       Name = ''
     type ( GridImageStreamForm ), allocatable :: &
       GridImageStream
-    type ( GeometryFlat_ASC_Form ), allocatable :: &
-      Geometry
     type ( Atlas_SC_Form ), allocatable :: &
       Atlas
     type ( ProtoCurrent_ASC_Form ), allocatable :: &
@@ -68,10 +66,7 @@ contains
     associate ( A => DW % Atlas )
     call A % Initialize ( Name, PROGRAM_HEADER % Communicator )
     call A % CreateChart ( )
-
-    allocate ( DW % Geometry )
-    call DW % Geometry % Initialize ( A )
-    call A % SetGeometry ( DW % Geometry )
+    call A % SetGeometry ( )
 
     allocate ( DW % ProtoCurrent )
     associate ( PCA => DW % ProtoCurrent )
@@ -165,8 +160,6 @@ contains
       deallocate ( DW % ProtoCurrent )
     if ( allocated ( DW % Atlas ) ) &
       deallocate ( DW % Atlas )
-    if ( allocated ( DW % Geometry ) ) &
-      deallocate ( DW % Geometry )
     if ( allocated ( DW % GridImageStream ) ) &
       deallocate ( DW % GridImageStream )
 
