@@ -88,14 +88,7 @@ contains
     class is ( Atlas_SC_Form )
     call PS % Initialize ( Name, PROGRAM_HEADER % Communicator )
     call PS % CreateChart ( )
-
-    !-- Geometry of PositionSpace
-
-    allocate ( T % Geometry_ASC )
-    associate ( GA => T % Geometry_ASC )  !-- GeometryAtlas
-    call GA % Initialize ( PS )
-    call PS % SetGeometry ( GA )
-    end associate !-- GA
+    call PS % SetGeometry ( )
 
     !-- MomentumSpace
 

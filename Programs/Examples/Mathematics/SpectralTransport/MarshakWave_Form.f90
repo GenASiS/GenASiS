@@ -186,13 +186,7 @@ contains
              MaxCoordinateOption = MaxCoordinate, &
              nCellsOption = nPositionCells )
 
-    !-- Geometry of PositionSpace
-
-    allocate ( MW % Geometry_ASC )
-    associate ( GA => MW % Geometry_ASC )  !-- GeometryAtlas
-    call GA % Initialize ( PS )
-    call PS % SetGeometry ( GA )
-    end associate !-- GA
+    call PS % SetGeometry ( )
 
     !-- MomentumSpace
 

@@ -81,14 +81,7 @@ contains
     call PROGRAM_HEADER % GetParameter ( nCellsPosition, 'nCellsPosition' )
 
     call PS % CreateChart ( nCellsOption = nCellsPosition )
-
-    !-- Geometry of PositionSpace
-
-    allocate ( PWS % Geometry_ASC )
-    associate ( GA => PWS % Geometry_ASC )  !-- GeometryAtlas
-    call GA % Initialize ( PS )
-    call PS % SetGeometry ( GA )
-    end associate !-- GA
+    call PS % SetGeometry ( )
 
     !-- MomentumSpace
 
