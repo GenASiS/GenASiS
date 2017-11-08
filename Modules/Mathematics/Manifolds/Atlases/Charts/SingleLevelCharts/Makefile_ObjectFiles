@@ -1,5 +1,6 @@
 SINGLE_LEVEL_CHARTS = \
   SingleLevelCharts.o \
+  Chart_SLD_CC__Form.o \
   Chart_SLD__Form.o \
   Chart_SLL__Form.o \
   Storage_CSL__Form.o \

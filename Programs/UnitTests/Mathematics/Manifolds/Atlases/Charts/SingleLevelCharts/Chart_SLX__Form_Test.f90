@@ -79,7 +79,7 @@ contains
     call C % Initialize ( A, IsPeriodic, iChart = 1 )
 
     associate ( nValues => C % nProperCells + C % nGhostCells )
-    call G % Initialize ( C, nValues )
+    call G % Initialize ( C, 'Geometry', nValues )
     call C % AddField ( G )
     C % iFieldGeometry = C % nFields
     call C % SetGeometry ( G )
@@ -113,10 +113,10 @@ contains
     call A % SetBoundaryConditionsFace ( [ 'REFLECTING', 'REFLECTING' ], 1 )
 
     Scale = 0.0_KDR
-    Scale ( 1 ) = 5.0_KDR * UNIT % MEV
+    Scale ( 1 ) = 5.0_KDR * UNIT % MEGA_ELECTRON_VOLT
 
     CoordinateUnit = UNIT % IDENTITY
-    CoordinateUnit ( 1 ) = UNIT % MEV
+    CoordinateUnit ( 1 ) = UNIT % MEGA_ELECTRON_VOLT
 
     IsPeriodic = .false.
 
@@ -130,7 +130,7 @@ contains
              ScaleOption = Scale, nGhostLayersOption = [ 0, 0, 0 ] )
 
     associate ( nValues => C % nProperCells + C % nGhostCells )
-    call G % Initialize ( C, nValues )
+    call G % Initialize ( C, 'Geometry', nValues )
     call C % AddField ( G )
     C % iFieldGeometry = C % nFields
     call C % SetGeometry ( G )
@@ -183,6 +183,7 @@ contains
 
     deallocate ( CFT % GIS_Base )
     deallocate ( CFT % ChartBase )
+    deallocate ( CFT % GeometryBase )
     deallocate ( CFT % AtlasHeaderBase )
 
   end subroutine Finalize
