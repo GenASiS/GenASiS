@@ -58,9 +58,6 @@ contains
       nExcisionsOption, &
       iDimensionalityOption
 
-    logical ( KDL ), dimension ( 3 ) :: &
-      IsPeriodic
-
     if ( .not. associated ( A % Type ) ) then
       allocate ( A % Type )
       A % Type = 'an Atlas_SC' 

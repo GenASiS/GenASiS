@@ -2,7 +2,7 @@ PATH_GENASIS = ../../../../../../..
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-all: Atlas_SC__Form_Test
+all: Atlas_SC__Form_Test Atlas_SC_CC__Form_Test
 
 Atlas_SC__Form_Test: Basics.a AtlasBasics.a Charts.a Atlas_SC__Form_Test.o
 	$(LINK) $(FLAGS) \
@@ -11,11 +11,21 @@ Atlas_SC__Form_Test: Basics.a AtlasBasics.a Charts.a Atlas_SC__Form_Test.o
           Atlas_SC__Template.o Field_ASC__Template.o \
           Charts.a AtlasBasics.a Basics.a $(LIBRARIES)
 
+Atlas_SC_CC__Form_Test: Basics.a AtlasBasics.a Charts.a \
+  Atlas_SC_CC__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Atlas_SC_CC__Form_Test_$(MACHINE) \
+          Atlas_SC_CC__Form_Test.o Atlas_SC_CC__Form.o Atlas_SC__Form.o \
+          GeometryFlat_ASC__Form.o Atlas_SC__Template.o \
+          Field_ASC__Template.o \
+          Charts.a AtlasBasics.a Basics.a $(LIBRARIES)
+
 clean:
 	rm -f *.o *.a *.mod *.ld
 
 clobber: clean
 	rm -f Atlas_SC__Form_Test_*
+	rm -f Atlas_SC_CC__Form_Test_*
 
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_ATLAS_BASICS)/Makefile_Dependencies
@@ -28,4 +38,10 @@ Atlas_SC__Form_Test.o: \
   GeometryFlat_ASC__Form.o \
   Atlas_SC__Form.o \
   Atlas_SC__Form_Test.f90
+
+Atlas_SC_CC__Form_Test.o: \
+  Basics.o \
+  Charts.o \
+  Atlas_SC_CC__Form.o \
+  Atlas_SC_CC__Form_Test.f90
 
