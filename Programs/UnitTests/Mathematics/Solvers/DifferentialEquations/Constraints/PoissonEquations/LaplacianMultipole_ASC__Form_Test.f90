@@ -3,7 +3,6 @@ module LaplacianMultipole_ASC__Form_Test__Form
   use Basics
   use Manifolds
   use LaplacianMultipole_ASC__Form
-  use CreateProportionalChart_Command
   use SetHomogeneousSphere_Command
 
   implicit none
@@ -15,7 +14,7 @@ module LaplacianMultipole_ASC__Form_Test__Form
   type, public :: LaplacianMultipole_ASC__Form_Test_Form
     type ( GridImageStreamForm ), allocatable :: &
       Stream
-    type ( Atlas_SC_Form ), allocatable :: &
+    type ( Atlas_SC_CC_Form ), allocatable :: &
       Atlas
     type ( Storage_ASC_Form ), allocatable :: &
       Source, &
@@ -75,8 +74,8 @@ contains
     allocate ( LMFT % Atlas )
     associate ( A => LMFT % Atlas )
     call A % Initialize ( Name, PROGRAM_HEADER % Communicator )
-
-    call CreateProportionalChart ( A )
+    call A % CreateChart_CC ( )
+    call A % SetGeometry ( )
 
     G => A % Geometry ( )
 

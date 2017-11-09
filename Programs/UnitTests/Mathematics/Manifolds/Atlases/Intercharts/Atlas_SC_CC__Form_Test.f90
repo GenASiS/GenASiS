@@ -55,8 +55,7 @@ contains
         GIS => AFT % GIS )
 
     call A % Initialize &
-           ( 'Atlas', CommunicatorOption = PROGRAM_HEADER % Communicator, &
-             iDimensionalityOption = 1 )
+           ( 'Atlas', CommunicatorOption = PROGRAM_HEADER % Communicator )
     call A % CreateChart_CC ( )  
     call A % SetGeometry ( )
 

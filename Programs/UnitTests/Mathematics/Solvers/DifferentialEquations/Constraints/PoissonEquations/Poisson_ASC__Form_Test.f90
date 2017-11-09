@@ -3,7 +3,6 @@ module Poisson_ASC__Form_Test__Form
   use Basics
   use Manifolds
   use Poisson_ASC__Form
-  use CreateProportionalChart_Command
   use SetHomogeneousSphere_Command
 
   implicit none
@@ -23,7 +22,7 @@ module Poisson_ASC__Form_Test__Form
   type, public :: Poisson_ASC__Form_Test_Form
     type ( GridImageStreamForm ), allocatable :: &
       Stream
-    type ( Atlas_SC_Form ), allocatable :: &
+    type ( Atlas_SC_CC_Form ), allocatable :: &
       Atlas
     type ( Storage_ASC_Form ), allocatable :: &
       Source, &
@@ -60,8 +59,8 @@ contains
     allocate ( PFT % Atlas )
     associate ( A => PFT % Atlas )
     call A % Initialize ( Name, PROGRAM_HEADER % Communicator )
-
-    call CreateProportionalChart ( A )
+    call A % CreateChart_CC ( )
+    call A % SetGeometry ( )
 
 
     !-- Poisson
