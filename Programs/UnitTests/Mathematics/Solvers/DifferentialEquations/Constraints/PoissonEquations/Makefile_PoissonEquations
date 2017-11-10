@@ -36,6 +36,11 @@ SetHomogeneousSphere_Command.o: \
   Manifolds.o \
   SetHomogeneousSphere_Command.f90
 
+SetHomogeneousSpheroid_Command.o: \
+  Basics.o \
+  Manifolds.o \
+  SetHomogeneousSpheroid_Command.f90
+
 LaplacianMultipole_ASC__Form_Test.o: \
   Basics.o \
   Manifolds.o \
@@ -47,5 +52,6 @@ Poisson_ASC__Form_Test.o: \
   Basics.o \
   Manifolds.o \
   SetHomogeneousSphere_Command.o \
+  SetHomogeneousSpheroid_Command.o \
   Poisson_ASC__Form.o \
   Poisson_ASC__Form_Test.f90
