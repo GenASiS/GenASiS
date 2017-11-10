@@ -4,18 +4,22 @@ module Poisson_ASC__Form_Test__Form
   use Manifolds
   use Poisson_ASC__Form
   use SetHomogeneousSphere_Command
+  use SetHomogeneousSpheroid_Command
 
   implicit none
   private
 
   integer ( KDI ), private, parameter :: &
-    O_HS                 = 0, &  !-- OFFSET_HOMOGENEOUS_SPHERE
-    N_HOMOGENEOUS_SPHERE = 3, &
-    N_EQUATIONS          = N_HOMOGENEOUS_SPHERE
+    O_HS                   = 0, &  !-- OFFSET_HOMOGENEOUS_SPHERE
+    N_HOMOGENEOUS_SPHERE   = 3, &
+    O_S                    = N_HOMOGENEOUS_SPHERE, & !-- OFFSET_SPHEROID
+    N_HOMOGENEOUS_SPHEROID = 1, &
+    N_EQUATIONS            = N_HOMOGENEOUS_SPHERE + N_HOMOGENEOUS_SPHEROID
   character ( LDL ), dimension ( N_EQUATIONS ), private, parameter :: &
     VARIABLE = [ 'HomegeneousSphere_1', &
                  'HomogeneousSphere_2', &
-                 'HomogeneousSphere_3' ]
+                 'HomogeneousSphere_3', &
+                 'HomogenousSPheroid ' ]
   character ( LDF ), public, parameter :: &
     ProgramName = 'Poisson_ASC__Form_Test'
 
@@ -50,9 +54,14 @@ contains
     integer ( KDI ) :: &
       iE, &  !-- iEquation
       MaxDegree
+    real ( KDR ), dimension ( N_HOMOGENEOUS_SPHERE ) :: &
+      RadiusDensity
     real ( KDR ), dimension ( N_EQUATIONS ) :: &
-      RadiusDensity, &
       Density
+    real ( KDR ) :: &
+      SemiMajor, &
+      SemiMinor, &
+      Eccentricity
 
     !-- Atlas
 
@@ -98,7 +107,8 @@ contains
       =  A % Chart % MaxCoordinate ( 1 ) / [ 1.1_KDR, 2.0_KDR, 10.0_KDR ] 
     call PROGRAM_HEADER % GetParameter ( RadiusDensity, 'RadiusDensity' )
 
-    Density = 1.0_KDR / ( 4.0_KDR  *  CONSTANT % PI  *  RadiusDensity ** 3 )
+    Density ( O_HS + 1 : O_HS + N_HOMOGENEOUS_SPHERE ) &
+      = 1.0_KDR / ( 4.0_KDR  *  CONSTANT % PI  *  RadiusDensity ** 3 )
     call PROGRAM_HEADER % GetParameter ( Density, 'Density' )
 
     do iE = O_HS + 1, O_HS + N_HOMOGENEOUS_SPHERE
@@ -106,6 +116,24 @@ contains
              ( SA, RA, A, Density ( iE ), RadiusDensity ( iE ), iE )
     end do
 
+    !-- Homogeneous spheroid
+
+    SemiMajor = A % Chart % MaxCoordinate ( 1 ) * 0.5_KDR
+    call PROGRAM_HEADER % GetParameter ( SemiMajor, 'SemiMajor' )
+
+    Eccentricity = 0.9_KDR
+    call PROGRAM_HEADER % GetParameter ( Eccentricity, 'Eccentricity' )
+
+    SemiMinor = sqrt ( 1.0_KDR - Eccentricity ** 2 ) * SemiMajor
+
+    Density = 1.0_KDR / ( 4.0_KDR  *  CONSTANT % PI  )
+    call PROGRAM_HEADER % GetParameter ( Density, 'Density' )
+
+    do iE = O_S + 1, O_S + N_HOMOGENEOUS_SPHEROID
+      call SetHomogeneousSpheroid &
+             ( SA, RA, A, Density ( iE ), SemiMajor, SemiMinor, iE )
+    end do
+    
 
     !-- Solution
 
