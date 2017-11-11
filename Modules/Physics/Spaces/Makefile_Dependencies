@@ -3,6 +3,11 @@ Geometry_G__Form.o: \
   Mathematics.o \
   Geometry_G__Form.f90
 
+Geometry_N__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Geometry_N__Form.f90
+
 Geometry_CSL__Form.o: \
   Basics.o \
   Mathematics.o \

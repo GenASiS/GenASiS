@@ -20,7 +20,7 @@ module Geometry_G__Form
     procedure, public, pass :: &
       InitializeAllocate_G
     final :: &
-      Finalize_GG
+      Finalize
   end type Geometry_G_Form
 
 
@@ -63,14 +63,14 @@ contains
   end subroutine InitializeAllocate_G
 
 
-  impure elemental subroutine Finalize_GG ( G )
+  impure elemental subroutine Finalize ( G )
 
     type ( Geometry_G_Form ), intent ( inout ) :: &
       G
 
     !-- Empty routine to trigger finalization of parent type
 
-  end subroutine Finalize_GG
+  end subroutine Finalize
 
 
 end module Geometry_G__Form

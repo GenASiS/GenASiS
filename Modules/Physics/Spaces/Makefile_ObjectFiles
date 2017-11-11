@@ -2,4 +2,5 @@ SPACES = \
   Spaces.o \
   Geometry_ASC__Form.o \
   Geometry_CSL__Form.o \
+  Geometry_N__Form.o \
   Geometry_G__Form.o

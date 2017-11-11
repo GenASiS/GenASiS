@@ -340,7 +340,8 @@ contains
     
     !-- vectors
 
-    if ( G % N_VECTORS == 0 ) G % N_VECTORS = G % N_VECTORS_FLAT
+    if ( G % N_VECTORS == 0 ) &
+      G % N_VECTORS = G % N_VECTORS_FLAT
 
     if ( present ( VectorOption ) ) then
       allocate ( Vector ( size ( VectorOption ) ) )
