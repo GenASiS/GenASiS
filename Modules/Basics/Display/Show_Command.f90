@@ -1251,7 +1251,8 @@ contains
 
       if ( MeasuredValue ( i ) % Label_UCS == KBCH_'' ) then
 
-        LenUnit = len_trim ( MeasuredValue ( i ) % Unit ) + 1
+        LenUnit &
+          = len_trim ( MeasuredValue ( i ) % Unit_UCS ) + 1
         write ( PrintFormat, fmt = '(a18,i0,a1)' ) &
           '(a38,es15.6e3,a', LenUnit, ')'
       
@@ -1265,8 +1266,8 @@ contains
       else
 
         LenUnit &
-          = len_trim ( MeasuredValue ( i ) % Unit ) + 1 &
-            + len_trim ( MeasuredValue ( i ) % Label ) + 5
+          = len_trim ( MeasuredValue ( i ) % Unit_UCS ) + 1 &
+            + len_trim ( MeasuredValue ( i ) % Label_UCS ) + 5
         write ( PrintFormat, fmt = '(a18,i0,a2)' ) &
           '(a38,es15.6e3,a', LenUnit, ')'
       
