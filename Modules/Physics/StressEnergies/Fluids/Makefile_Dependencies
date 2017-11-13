@@ -1,0 +1,18 @@
+# FluidFeatures_Template.o: \
+#   Basics.o \
+#   Mathematics.o \
+#   FluidFeatures_Template.f90
+
+Fluid_D__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_D__Form.f90
+#  FluidFeatures_Template.o \
+
+Fluids.o: \
+  Fluid_D__Form.o \
+  Fluids.f90
+#  FluidFeatures_Template.o \
+
+Fluids.a: $(FLUIDS)
+	ar r Fluids.a $(FLUIDS)

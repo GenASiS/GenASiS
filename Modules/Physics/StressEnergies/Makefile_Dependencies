@@ -1,0 +1,7 @@
+include $(PATH_FLUIDS)/Makefile_Dependencies
+#include $(PATH_RADIATIONS)/Makefile_Dependencies
+
+StressEnergies.o: \
+  Fluids.o \
+  StressEnergies.f90
+#  Radiations.o \
