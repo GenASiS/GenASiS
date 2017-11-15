@@ -37,12 +37,12 @@ module Fluid_D__Form
       Initialize => InitializeAllocate_D
     procedure, public, pass :: &
       SetPrimitiveConserved
-!     procedure, public, pass :: &
-!       SetOutput
+    procedure, public, pass :: &
+      SetOutput
 !     procedure, public, pass :: &
 !       SetFeatures
-!     final :: &
-!       Finalize
+    final :: &
+      Finalize
     procedure, public, pass ( C ) :: &
       ComputeFromPrimitiveCommon
     procedure, public, pass ( C ) :: &
@@ -175,23 +175,24 @@ contains
   end subroutine SetPrimitiveConserved
 
 
-!   subroutine SetOutput ( F, Output )
+  subroutine SetOutput ( F, Output )
 
-!     class ( Fluid_D_Form ), intent ( in ) :: &
-!       F
-!     type ( VariableGroupForm ), intent ( inout ) :: &
-!       Output
+    class ( Fluid_D_Form ), intent ( in ) :: &
+      F
+    type ( VariableGroupForm ), intent ( inout ) :: &
+      Output
 
-!     type ( Integer_1D_Form ), dimension ( 1 ) :: &
-!       VectorIndices
+    type ( Integer_1D_Form ), dimension ( 1 ) :: &
+      VectorIndices
 
-!     call VectorIndices ( 1 ) % Initialize ( F % VELOCITY_U )
-!     call Output % Initialize &
-!            ( F, iaSelectedOption = [ F % COMOVING_DENSITY, F % VELOCITY_U ], &
-!              VectorOption = [ 'Velocity                       ' ], &
-!              VectorIndicesOption = VectorIndices )
+    call VectorIndices ( 1 ) % Initialize ( F % VELOCITY_U )
+    call Output % Initialize &
+           ( F, iaSelectedOption = [ F % COMOVING_BARYON_DENSITY, &
+                                     F % VELOCITY_U ], &
+             VectorOption = [ 'Velocity' ], &
+             VectorIndicesOption = VectorIndices )
 
-!   end subroutine SetOutput
+  end subroutine SetOutput
 
 
 !   subroutine SetFeatures ( F, Features )
@@ -206,14 +207,14 @@ contains
 !   end subroutine SetFeatures
 
 
-!   impure elemental subroutine Finalize ( F )
+  impure elemental subroutine Finalize ( F )
 
-!     type ( Fluid_D_Form ), intent ( inout ) :: &
-!       F
+    type ( Fluid_D_Form ), intent ( inout ) :: &
+      F
 
-!     call F % FinalizeTemplate ( )
+    call F % FinalizeTemplate ( )
 
-!   end subroutine Finalize
+  end subroutine Finalize
 
 
   subroutine ComputeFromPrimitiveCommon &
