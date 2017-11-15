@@ -29,11 +29,18 @@ Sources_F_CSL__Form.o: \
   Sources_F__Form.o \
   Sources_F_CSL__Form.f90
 
+Sources_F_ASC__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Sources_F_CSL__Form.o \
+  Sources_F_ASC__Form.f90
+
 Fluids.o: \
   Fluid_D__Form.o \
   Tally_F_D__Form.o \
   Sources_F__Form.o \
   Sources_F_CSL__Form.o \
+  Sources_F_ASC__Form.o \
   Fluids.f90
 #  FluidFeatures_Template.o \
 
