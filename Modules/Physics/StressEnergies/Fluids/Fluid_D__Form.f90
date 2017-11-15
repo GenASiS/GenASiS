@@ -63,8 +63,8 @@ module Fluid_D__Form
 
     private :: &
       InitializeBasics, &
-      SetUnits!, &
-!       ComputeRawFluxesKernel
+      SetUnits, &
+      ComputeRawFluxes_G_Kernel
 
 contains
 
@@ -376,50 +376,50 @@ contains
       nValuesOption, &
       oValueOption
 
-!     integer ( KDI ) :: &
-!       iDensity
-!     integer ( KDI ), dimension ( 3 ) :: &
-!       iMomentum
-!     integer ( KDI ) :: &
-!       oV, &  !-- oValue
-!       nV     !-- nValues
+    integer ( KDI ) :: &
+      iDensity
+    integer ( KDI ), dimension ( 3 ) :: &
+      iMomentum
+    integer ( KDI ) :: &
+      oV, &  !-- oValue
+      nV     !-- nValues
       
-!     if ( present ( oValueOption ) ) then
-!       oV = oValueOption
-!     else
-!       oV = 0
-!     end if
+    if ( present ( oValueOption ) ) then
+      oV = oValueOption
+    else
+      oV = 0
+    end if
 
-!     if ( present ( nValuesOption ) ) then
-!       nV = nValuesOption
-!     else
-!       nV = size ( Value_C, dim = 1 )
-!     end if
+    if ( present ( nValuesOption ) ) then
+      nV = nValuesOption
+    else
+      nV = size ( Value_C, dim = 1 )
+    end if
     
-!     call Search &
-!            ( C % iaConserved, C % CONSERVED_DENSITY, iDensity )
-!     call Search &
-!            ( C % iaConserved, C % MOMENTUM_DENSITY_D ( 1 ), iMomentum ( 1 ) )
-!     call Search &
-!            ( C % iaConserved, C % MOMENTUM_DENSITY_D ( 2 ), iMomentum ( 2 ) )
-!     call Search &
-!            ( C % iaConserved, C % MOMENTUM_DENSITY_D ( 3 ), iMomentum ( 3 ) )
+    call Search &
+           ( C % iaConserved, C % CONSERVED_BARYON_DENSITY, iDensity )
+    call Search &
+           ( C % iaConserved, C % MOMENTUM_DENSITY_D ( 1 ), iMomentum ( 1 ) )
+    call Search &
+           ( C % iaConserved, C % MOMENTUM_DENSITY_D ( 2 ), iMomentum ( 2 ) )
+    call Search &
+           ( C % iaConserved, C % MOMENTUM_DENSITY_D ( 3 ), iMomentum ( 3 ) )
     
-!     associate &
-!       ( F_D   => RawFlux ( oV + 1 : oV + nV, iDensity ), &
-!         F_S_1 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 1 ) ), &
-!         F_S_2 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 2 ) ), &
-!         F_S_3 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 3 ) ), &
-!         D     => Value_C ( oV + 1 : oV + nV, C % CONSERVED_DENSITY ), &
-!         S_1   => Value_C ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 1 ) ), &
-!         S_2   => Value_C ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 2 ) ), &
-!         S_3   => Value_C ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 3 ) ), &
-!         V_Dim => Value_C ( oV + 1 : oV + nV, C % VELOCITY_U ( iDimension ) ) )
+    associate &
+      ( F_D   => RawFlux ( oV + 1 : oV + nV, iDensity ), &
+        F_S_1 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 1 ) ), &
+        F_S_2 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 2 ) ), &
+        F_S_3 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 3 ) ), &
+        D     => Value_C ( oV + 1 : oV + nV, C % CONSERVED_BARYON_DENSITY ), &
+        S_1   => Value_C ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 1 ) ), &
+        S_2   => Value_C ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 2 ) ), &
+        S_3   => Value_C ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 3 ) ), &
+        V_Dim => Value_C ( oV + 1 : oV + nV, C % VELOCITY_U ( iDimension ) ) )
 
-!     call ComputeRawFluxesKernel &
-!            ( F_D, F_S_1, F_S_2, F_S_3, D, S_1, S_2, S_3, V_Dim )
+    call ComputeRawFluxes_G_Kernel &
+           ( F_D, F_S_1, F_S_2, F_S_3, D, S_1, S_2, S_3, V_Dim )
 
-!     end associate !-- F_D, etc.
+    end associate !-- F_D, etc.
 
   end subroutine ComputeRawFluxes
   
@@ -490,6 +490,8 @@ contains
 
   subroutine ComputeDensityVelocity_G_Kernel &
                ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33 )
+
+    !-- Galilean
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       N, &
@@ -709,33 +711,35 @@ contains
   end subroutine SetUnits
 
 
-!   subroutine ComputeRawFluxesKernel &
-!                ( F_D, F_S_1, F_S_2, F_S_3, D, S_1, S_2, S_3, V_Dim )
+  subroutine ComputeRawFluxes_G_Kernel &
+               ( F_D, F_S_1, F_S_2, F_S_3, D, S_1, S_2, S_3, V_Dim )
 
-!     real ( KDR ), dimension ( : ), intent ( inout ) :: &
-!       F_D, &
-!       F_S_1, F_S_2, F_S_3
-!     real ( KDR ), dimension ( : ), intent ( in ) :: &
-!       D, &
-!       S_1, S_2, S_3, &
-!       V_Dim
+    !-- Galilean
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      F_D, &
+      F_S_1, F_S_2, F_S_3
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      D, &
+      S_1, S_2, S_3, &
+      V_Dim
     
-!     integer ( KDI ) :: &
-!       iV, &
-!       nValues
+    integer ( KDI ) :: &
+      iV, &
+      nValues
 
-!     nValues = size ( F_D )
+    nValues = size ( F_D )
 
-!     !$OMP parallel do private ( iV ) 
-!     do iV = 1, nValues
-!       F_D   ( iV ) = D   ( iV ) * V_Dim ( iV ) 
-!       F_S_1 ( iV ) = S_1 ( iV ) * V_Dim ( iV ) 
-!       F_S_2 ( iV ) = S_2 ( iV ) * V_Dim ( iV ) 
-!       F_S_3 ( iV ) = S_3 ( iV ) * V_Dim ( iV ) 
-!     end do !-- iV
-!     !$OMP end parallel do
+    !$OMP parallel do private ( iV ) 
+    do iV = 1, nValues
+      F_D   ( iV ) = D   ( iV ) * V_Dim ( iV ) 
+      F_S_1 ( iV ) = S_1 ( iV ) * V_Dim ( iV ) 
+      F_S_2 ( iV ) = S_2 ( iV ) * V_Dim ( iV ) 
+      F_S_3 ( iV ) = S_3 ( iV ) * V_Dim ( iV ) 
+    end do !-- iV
+    !$OMP end parallel do
 
-!   end subroutine ComputeRawFluxesKernel
+  end subroutine ComputeRawFluxes_G_Kernel
 
 
 end module Fluid_D__Form
