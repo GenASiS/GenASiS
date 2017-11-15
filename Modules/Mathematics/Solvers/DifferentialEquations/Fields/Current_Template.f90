@@ -174,7 +174,7 @@ contains
 
 
   subroutine InitializeTemplate &
-               ( C, RiemannSolverType, UseLimiter, VelocityUnit, &
+               ( C, RiemannSolverType, UseLimiter, Velocity_U_Unit, &
                  LimiterParameter, nValues, VariableOption, VectorOption, &
                  NameOption, ClearOption, UnitOption, VectorIndicesOption )
 
@@ -185,7 +185,7 @@ contains
     logical ( KDL ), intent ( in ) :: &
       UseLimiter
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
-      VelocityUnit
+      Velocity_U_Unit
     real ( KDR ), intent ( in ) :: &
       LimiterParameter
     integer ( KDI ), intent ( in ) :: &
@@ -220,7 +220,7 @@ contains
              VariableOption, VectorOption, NameOption, UnitOption, &
              VectorIndicesOption )
 
-    call SetUnits ( VariableUnit, C, VelocityUnit )
+    call SetUnits ( VariableUnit, C, Velocity_U_Unit )
 
     Clear = .true.
     if ( present ( ClearOption ) ) &
@@ -681,21 +681,23 @@ contains
   end subroutine InitializeBasics
 
 
-  subroutine SetUnits ( VariableUnit, C, VelocityUnit )
+  subroutine SetUnits ( VariableUnit, C, Velocity_U_Unit )
 
     type ( MeasuredValueForm ), dimension ( : ), intent ( inout ) :: &
       VariableUnit
     class ( CurrentTemplate ), intent ( in ) :: &
       C
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
-      VelocityUnit
+      Velocity_U_Unit
 
     integer ( KDI ) :: &
       iD
 
     do iD = 1, 3
-      VariableUnit ( C % FAST_EIGENSPEED_PLUS ( iD ) )  = VelocityUnit ( iD )
-      VariableUnit ( C % FAST_EIGENSPEED_MINUS ( iD ) ) = VelocityUnit ( iD )
+      VariableUnit ( C % FAST_EIGENSPEED_PLUS ( iD ) )  &
+        = Velocity_U_Unit ( iD )
+      VariableUnit ( C % FAST_EIGENSPEED_MINUS ( iD ) )  &
+        = Velocity_U_Unit ( iD )
     end do
 
   end subroutine SetUnits
