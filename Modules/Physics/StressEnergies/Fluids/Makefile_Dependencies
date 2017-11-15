@@ -62,6 +62,14 @@ Fluid_ASC__Form.o: \
 #  FluidFeatures_CSL__Form.o \
 #  FluidFeatures_ASC__Form.o \
 
+ApplyCurvilinear_F__Command.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_D__Form.o \
+  Sources_F__Form.o \
+  ApplyCurvilinear_F__Command.f90
+#  Fluid_P__Template.o \
+
 Fluids.o: \
   Fluid_D__Form.o \
   Tally_F_D__Form.o \
@@ -70,6 +78,7 @@ Fluids.o: \
   Sources_F_ASC__Form.o \
   Fluid_CSL__Form.o \
   Fluid_ASC__Form.o \
+  ApplyCurvilinear_F__Command.o \
   Fluids.f90
 #  FluidFeatures_Template.o \
 

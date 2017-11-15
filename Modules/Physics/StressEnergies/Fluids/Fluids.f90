@@ -7,5 +7,6 @@ module Fluids
   use Sources_F_ASC__Form
   use Fluid_CSL__Form
   use Fluid_ASC__Form
+  use ApplyCurvilinear_F__Command
 
 end module Fluids

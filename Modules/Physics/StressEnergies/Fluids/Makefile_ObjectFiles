@@ -1,5 +1,6 @@
 FLUIDS = \
   Fluids.o \
+  ApplyCurvilinear_F__Command.o \
   Fluid_ASC__Form.o \
   Fluid_CSL__Form.o \
   Sources_F_ASC__Form.o \
