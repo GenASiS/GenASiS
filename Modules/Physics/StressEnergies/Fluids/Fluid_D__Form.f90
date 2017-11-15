@@ -59,9 +59,9 @@ module Fluid_D__Form
 !       ComputeEigenspeedsKernel_D
   end type Fluid_D_Form
 
-!     private :: &
-!       InitializeBasics, &
-!       SetUnits, &
+    private :: &
+      InitializeBasics, &
+      SetUnits!, &
 !       ComputeRawFluxesKernel
 
 contains
@@ -101,28 +101,31 @@ contains
       optional :: &
         VectorIndicesOption
 
-!     type ( Integer_1D_Form ), dimension ( : ), allocatable :: &
-!       VectorIndices
-!     type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
-!       VariableUnit
-!     character ( LDF ) :: &
-!       Name
-!     character ( LDL ), dimension ( : ), allocatable :: &
-!       Variable, &
-!       Vector
+    type ( Integer_1D_Form ), dimension ( : ), allocatable :: &
+      VectorIndices
+    type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
+      VariableUnit
+    character ( LDF ) :: &
+      Name
+    character ( LDL ), dimension ( : ), allocatable :: &
+      Variable, &
+      Vector
 
-!     call InitializeBasics &
-!            ( F, Variable, Vector, Name, VariableUnit, VectorIndices, &
-!              VariableOption, VectorOption, NameOption, UnitOption, &
-!              VectorIndicesOption )
+    call InitializeBasics &
+           ( F, Variable, Vector, Name, VariableUnit, VectorIndices, &
+             VariableOption, VectorOption, NameOption, UnitOption, &
+             VectorIndicesOption )
 
-!     call SetUnits ( VariableUnit, F, VelocityUnit, MassDensityUnit )
+    call SetUnits &
+           ( VariableUnit, F, Velocity_U_Unit, MomentumDensity_D_Unit, &
+             NumberDensityUnit )
 
-!     call F % InitializeTemplate &
-!            ( RiemannSolverType, UseLimiter, VelocityUnit, LimiterParameter, &
-!              nValues, VariableOption = Variable, VectorOption = Vector, &
-!              NameOption = Name, ClearOption = ClearOption, &
-!              UnitOption = VariableUnit, VectorIndicesOption = VectorIndices )
+    call F % InitializeTemplate &
+           ( RiemannSolverType, UseLimiter, Velocity_U_Unit, &
+             LimiterParameter, nValues, VariableOption = Variable, &
+             VectorOption = Vector, NameOption = Name, &
+             ClearOption = ClearOption, UnitOption = VariableUnit, &
+             VectorIndicesOption = VectorIndices )
 
   end subroutine InitializeAllocate_D
   
@@ -548,152 +551,155 @@ contains
 !   end subroutine ComputeEigenspeedsKernel_D
 
 
-!   subroutine InitializeBasics &
-!                ( F, Variable, Vector, Name, VariableUnit, VectorIndices, &
-!                  VariableOption, VectorOption, NameOption, &
-!                  VariableUnitOption, VectorIndicesOption )
+  subroutine InitializeBasics &
+               ( F, Variable, Vector, Name, VariableUnit, VectorIndices, &
+                 VariableOption, VectorOption, NameOption, &
+                 VariableUnitOption, VectorIndicesOption )
 
-!     class ( Fluid_D_Form ), intent ( inout ) :: &
-!       F
-!     character ( LDL ), dimension ( : ), allocatable, intent ( out ) :: &
-!       Variable, &
-!       Vector
-!     character ( LDF ), intent ( out ) :: &
-!       Name
-!     type ( MeasuredValueForm ), dimension ( : ), allocatable, &
-!       intent ( out ) :: &
-!         VariableUnit
-!     !-- FIXME: intent(out) here caused ICE with Intel Compiler 15
-!     !          Temporarily set to intent(inout)
-!     !type ( Integer_1D_Form ), dimension ( : ), allocatable, &
-!     !  intent ( out ) :: &
-!     type ( Integer_1D_Form ), dimension ( : ), allocatable, &
-!       intent ( inout ) :: &
-!         VectorIndices
-!     character ( * ), dimension ( : ), intent ( in ), optional :: &
-!       VariableOption, &
-!       VectorOption
-!     character ( * ), intent ( in ), optional :: &
-!       NameOption
-!     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
-!       VariableUnitOption
-!     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional :: &
-!       VectorIndicesOption
+    class ( Fluid_D_Form ), intent ( inout ) :: &
+      F
+    character ( LDL ), dimension ( : ), allocatable, intent ( out ) :: &
+      Variable, &
+      Vector
+    character ( LDF ), intent ( out ) :: &
+      Name
+    type ( MeasuredValueForm ), dimension ( : ), allocatable, &
+      intent ( out ) :: &
+        VariableUnit
+    !-- FIXME: intent(out) here caused ICE with Intel Compiler 15
+    !          Temporarily set to intent(inout)
+    !type ( Integer_1D_Form ), dimension ( : ), allocatable, &
+    !  intent ( out ) :: &
+    type ( Integer_1D_Form ), dimension ( : ), allocatable, &
+      intent ( inout ) :: &
+        VectorIndices
+    character ( * ), dimension ( : ), intent ( in ), optional :: &
+      VariableOption, &
+      VectorOption
+    character ( * ), intent ( in ), optional :: &
+      NameOption
+    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+      VariableUnitOption
+    type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional :: &
+      VectorIndicesOption
 
-!     integer ( KDI ) :: &
-!       iV, &  !-- iVector
-!       oF, &  !-- oField
-!       oV     !-- oVector
+    integer ( KDI ) :: &
+      iV, &  !-- iVector
+      oF, &  !-- oField
+      oV     !-- oVector
 
-!     if ( F % Type == '' ) &
-!       F % Type = 'a Fluid_D'
+    if ( F % Type == '' ) &
+      F % Type = 'a Fluid_D'
 
-!     Name = 'Fluid'
-!     if ( present ( NameOption ) ) &
-!       Name = NameOption
+    Name = 'Fluid'
+    if ( present ( NameOption ) ) &
+      Name = NameOption
 
-!     !-- variable indices
+    !-- variable indices
 
-!     oF = F % N_FIELDS_TEMPLATE
-!     if ( F % N_FIELDS == 0 ) &
-!       F % N_FIELDS = oF + F % N_FIELDS_DUST
+    oF = F % N_FIELDS_TEMPLATE
+    if ( F % N_FIELDS == 0 ) &
+      F % N_FIELDS = oF + F % N_FIELDS_DUST
 
-!     F % COMOVING_DENSITY   = oF + 1
-!     F % CONSERVED_DENSITY  = oF + 2
-!     F % BARYON_MASS        = oF + 3
-!     F % VELOCITY_U         = oF + [ 4, 5, 6 ]
-!     F % MOMENTUM_DENSITY_D = oF + [ 7, 8, 9 ]
+    F % COMOVING_BARYON_DENSITY   =  oF + 1
+    F % CONSERVED_BARYON_DENSITY  =  oF + 2
+    F % BARYON_MASS               =  oF + 3
+    F % VELOCITY_U                =  oF + [ 4, 5, 6 ]
+    F % MOMENTUM_DENSITY_D        =  oF + [ 7, 8, 9 ]
 
-!     !-- variable names 
+    !-- variable names 
 
-!     if ( present ( VariableOption ) ) then
-!       allocate ( Variable ( size ( VariableOption ) ) )
-!       Variable = VariableOption
-!     else
-!       allocate ( Variable ( F % N_FIELDS ) )
-!       Variable = ''
-!     end if
+    if ( present ( VariableOption ) ) then
+      allocate ( Variable ( size ( VariableOption ) ) )
+      Variable = VariableOption
+    else
+      allocate ( Variable ( F % N_FIELDS ) )
+      Variable = ''
+    end if
 
-!     Variable ( oF + 1 : oF + F % N_FIELDS_DUST ) &
-!       = [ 'ComovingDensity                ', &
-!           'ConservedDensity               ', &
-!           'BaryonMass                     ', &
-!           'Velocity_1                     ', &
-!           'Velocity_2                     ', &
-!           'Velocity_3                     ', &
-!           'MomentumDensity_1              ', &
-!           'MomentumDensity_2              ', &
-!           'MomentumDensity_3              ' ]
+    Variable ( oF + 1 : oF + F % N_FIELDS_DUST ) &
+      = [ 'ComovingBaryonDensity ', &
+          'ConservedBaryonDensity', &
+          'BaryonMass            ', &
+          'Velocity_1            ', &
+          'Velocity_2            ', &
+          'Velocity_3            ', &
+          'MomentumDensity_1     ', &
+          'MomentumDensity_2     ', &
+          'MomentumDensity_3     ' ]
           
-!     !-- units
+    !-- units
     
-!     if ( present ( VariableUnitOption ) ) then
-!       allocate ( VariableUnit ( size ( VariableUnitOption ) ) )
-!       VariableUnit = VariableUnitOption
-!     else
-!       allocate ( VariableUnit ( F % N_FIELDS ) )
-!       VariableUnit = UNIT % IDENTITY
-!     end if
+    if ( present ( VariableUnitOption ) ) then
+      allocate ( VariableUnit ( size ( VariableUnitOption ) ) )
+      VariableUnit = VariableUnitOption
+    else
+      allocate ( VariableUnit ( F % N_FIELDS ) )
+      VariableUnit = UNIT % IDENTITY
+    end if
     
-!     !-- vectors
+    !-- vectors
 
-!     oV = F % N_VECTORS_TEMPLATE
-!     if ( F % N_VECTORS == 0 ) &
-!       F % N_VECTORS = oV + F % N_VECTORS_DUST
+    oV = F % N_VECTORS_TEMPLATE
+    if ( F % N_VECTORS == 0 ) &
+      F % N_VECTORS = oV + F % N_VECTORS_DUST
 
-!     if ( present ( VectorOption ) ) then
-!       allocate ( Vector ( size ( VectorOption ) ) )
-!       Vector = VectorOption
-!     else
-!       allocate ( Vector ( F % N_VECTORS ) )
-!       Vector = ''
-!     end if
+    if ( present ( VectorOption ) ) then
+      allocate ( Vector ( size ( VectorOption ) ) )
+      Vector = VectorOption
+    else
+      allocate ( Vector ( F % N_VECTORS ) )
+      Vector = ''
+    end if
 
-!     Vector ( oV + 1 : oV + F % N_VECTORS_DUST ) &
-!       = [ 'Velocity                       ', &
-!           'MomentumDensity                ' ]
+    Vector ( oV + 1 : oV + F % N_VECTORS_DUST ) &
+      = [ 'Velocity       ', &
+          'MomentumDensity' ]
 
-!     !-- vector indices
+    !-- vector indices
 
-!     if ( present ( VectorIndicesOption ) ) then
-!       allocate ( VectorIndices ( size ( VectorIndicesOption ) ) )
-!       do iV = oV + F % N_VECTORS_DUST + 1, size ( VectorIndices )
-!         call VectorIndices ( iV ) % Initialize ( VectorIndicesOption ( iV ) )
-!       end do
-!     else
-!       allocate ( VectorIndices ( F % N_VECTORS ) )
-!     end if
+    if ( present ( VectorIndicesOption ) ) then
+      allocate ( VectorIndices ( size ( VectorIndicesOption ) ) )
+      do iV = oV + F % N_VECTORS_DUST + 1, size ( VectorIndices )
+        call VectorIndices ( iV ) % Initialize ( VectorIndicesOption ( iV ) )
+      end do
+    else
+      allocate ( VectorIndices ( F % N_VECTORS ) )
+    end if
 
-!     call VectorIndices ( oV + 1 ) % Initialize ( F % VELOCITY_U )
-!     call VectorIndices ( oV + 2 ) % Initialize ( F % MOMENTUM_DENSITY_D )
+    call VectorIndices ( oV + 1 ) % Initialize ( F % VELOCITY_U )
+    call VectorIndices ( oV + 2 ) % Initialize ( F % MOMENTUM_DENSITY_D )
 
-!   end subroutine InitializeBasics
+  end subroutine InitializeBasics
 
 
-!   subroutine SetUnits ( VariableUnit, F, VelocityUnit, MassDensityUnit )
+  subroutine SetUnits &
+               ( VariableUnit, F, Velocity_U_Unit, MomentumDensity_D_Unit, &
+                 NumberDensityUnit )
 
-!     type ( MeasuredValueForm ), dimension ( : ), intent ( inout ) :: &
-!       VariableUnit
-!     class ( Fluid_D_Form ), intent ( in ) :: &
-!       F
-!     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
-!       VelocityUnit
-!     type ( MeasuredValueForm ), intent ( in ) :: &
-!       MassDensityUnit
+    type ( MeasuredValueForm ), dimension ( : ), intent ( inout ) :: &
+      VariableUnit
+    class ( Fluid_D_Form ), intent ( in ) :: &
+      F
+    type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
+      Velocity_U_Unit, &
+      MomentumDensity_D_Unit
+    type ( MeasuredValueForm ), intent ( in ) :: &
+      NumberDensityUnit
 
-!     integer ( KDI ) :: &
-!       iD
+    integer ( KDI ) :: &
+      iD
 
-!     VariableUnit ( F % COMOVING_DENSITY )  = MassDensityUnit
-!     VariableUnit ( F % CONSERVED_DENSITY ) = MassDensityUnit
+    VariableUnit ( F % COMOVING_BARYON_DENSITY )  = NumberDensityUnit
+    VariableUnit ( F % CONSERVED_BARYON_DENSITY ) = NumberDensityUnit
 
-!     do iD = 1, 3
-!       VariableUnit ( F % VELOCITY_U ( iD ) ) = VelocityUnit ( iD )
-!       VariableUnit ( F % MOMENTUM_DENSITY_D ( iD ) ) &
-!         = MassDensityUnit * VelocityUnit ( iD )
-!     end do
+    do iD = 1, 3
+      VariableUnit ( F % VELOCITY_U ( iD ) ) = Velocity_U_Unit ( iD )
+      VariableUnit ( F % MOMENTUM_DENSITY_D ( iD ) ) &
+        = MomentumDensity_D_Unit ( iD )
+    end do
 
-!   end subroutine SetUnits
+  end subroutine SetUnits
 
 
 !   subroutine ComputeRawFluxesKernel &
