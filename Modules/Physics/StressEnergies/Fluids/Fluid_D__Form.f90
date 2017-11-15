@@ -303,56 +303,56 @@ contains
       nValuesOption, &
       oValueOption
 
-!     integer ( KDI ) :: &
-!       oV, &  !-- oValue
-!       nV     !-- nValues
+    integer ( KDI ) :: &
+      oV, &  !-- oValue
+      nV     !-- nValues
       
-!     associate &
-!       ( FV => Value_C, &
-!         GV => Value_G )
+    associate &
+      ( FV => Value_C, &
+        GV => Value_G )
 
-!     if ( present ( oValueOption ) ) then
-!       oV = oValueOption
-!     else
-!       oV = 0
-!     end if
+    if ( present ( oValueOption ) ) then
+      oV = oValueOption
+    else
+      oV = 0
+    end if
 
-!     if ( present ( nValuesOption ) ) then
-!       nV = nValuesOption
-!     else
-!       nV = size ( FV, dim = 1 )
-!     end if
+    if ( present ( nValuesOption ) ) then
+      nV = nValuesOption
+    else
+      nV = size ( FV, dim = 1 )
+    end if
 
-!     associate &
-!       ( M_UU_22 => GV ( oV + 1 : oV + nV, G % METRIC_UU_22 ), &
-!         M_UU_33 => GV ( oV + 1 : oV + nV, G % METRIC_UU_33 ) )
-!     associate &
-!       ( FEP_1 => FV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_PLUS ( 1 ) ), &
-!         FEP_2 => FV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_PLUS ( 2 ) ), &
-!         FEP_3 => FV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_PLUS ( 3 ) ), &
-!         FEM_1 => FV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_MINUS ( 1 ) ), &
-!         FEM_2 => FV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_MINUS ( 2 ) ), &
-!         FEM_3 => FV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_MINUS ( 3 ) ), &
-!         M     => FV ( oV + 1 : oV + nV, C % BARYON_MASS ), &
-!         N     => FV ( oV + 1 : oV + nV, C % COMOVING_DENSITY ), &
-!         V_1   => FV ( oV + 1 : oV + nV, C % VELOCITY_U ( 1 ) ), &
-!         V_2   => FV ( oV + 1 : oV + nV, C % VELOCITY_U ( 2 ) ), &
-!         V_3   => FV ( oV + 1 : oV + nV, C % VELOCITY_U ( 3 ) ), &
-!         D     => FV ( oV + 1 : oV + nV, C % CONSERVED_DENSITY ), &
-!         S_1   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 1 ) ), &
-!         S_2   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 2 ) ), &
-!         S_3   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 3 ) ) )
+    associate &
+      ( M_UU_22 => GV ( oV + 1 : oV + nV, G % METRIC_UU_22 ), &
+        M_UU_33 => GV ( oV + 1 : oV + nV, G % METRIC_UU_33 ) )
+    associate &
+      ( FEP_1 => FV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_PLUS ( 1 ) ), &
+        FEP_2 => FV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_PLUS ( 2 ) ), &
+        FEP_3 => FV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_PLUS ( 3 ) ), &
+        FEM_1 => FV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_MINUS ( 1 ) ), &
+        FEM_2 => FV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_MINUS ( 2 ) ), &
+        FEM_3 => FV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_MINUS ( 3 ) ), &
+        M     => FV ( oV + 1 : oV + nV, C % BARYON_MASS ), &
+        N     => FV ( oV + 1 : oV + nV, C % COMOVING_BARYON_DENSITY ), &
+        V_1   => FV ( oV + 1 : oV + nV, C % VELOCITY_U ( 1 ) ), &
+        V_2   => FV ( oV + 1 : oV + nV, C % VELOCITY_U ( 2 ) ), &
+        V_3   => FV ( oV + 1 : oV + nV, C % VELOCITY_U ( 3 ) ), &
+        D     => FV ( oV + 1 : oV + nV, C % CONSERVED_BARYON_DENSITY ), &
+        S_1   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 1 ) ), &
+        S_2   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 2 ) ), &
+        S_3   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 3 ) ) )
 
-!     call C % ComputeBaryonMassKernel &
-!            ( M )
-!     call C % ComputeDensityVelocityKernel &
-!            ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33 )
-!     call C % ComputeEigenspeedsKernel_D &
-!            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3 )
+    call C % ComputeBaryonMassKernel &
+           ( M, C % BaryonMassReference )
+    call C % ComputeDensityVelocity_G_Kernel &
+           ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33 )
+    call C % ComputeEigenspeedsKernel_D &
+           ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3 )
 
-!     end associate !-- FEP_1, etc.
-!     end associate !-- M_UU_22, etc.
-!     end associate !-- FV, etc.
+    end associate !-- FEP_1, etc.
+    end associate !-- M_UU_22, etc.
+    end associate !-- FV, etc.
 
   end subroutine ComputeFromConservedCommon
 
