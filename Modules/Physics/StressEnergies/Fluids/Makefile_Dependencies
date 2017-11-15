@@ -35,12 +35,25 @@ Sources_F_ASC__Form.o: \
   Sources_F_CSL__Form.o \
   Sources_F_ASC__Form.f90
 
+Fluid_CSL__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_D__Form.o \
+  Sources_F__Form.o \
+  Sources_F_CSL__Form.o \
+  Fluid_CSL__Form.f90
+#  FluidFeatures_Template.o \
+#  Fluid_P_P__Form.o \
+#  Fluid_P_NR__Form.o \
+#  FluidFeatures_CSL__Form.o \
+
 Fluids.o: \
   Fluid_D__Form.o \
   Tally_F_D__Form.o \
   Sources_F__Form.o \
   Sources_F_CSL__Form.o \
   Sources_F_ASC__Form.o \
+  Fluid_CSL__Form.o \
   Fluids.f90
 #  FluidFeatures_Template.o \
 
