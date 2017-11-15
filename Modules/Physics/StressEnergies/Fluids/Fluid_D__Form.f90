@@ -28,6 +28,8 @@ module Fluid_D__Form
     integer ( KDI ), dimension ( 3 ) :: &
       VELOCITY_U         = 0, &
       MOMENTUM_DENSITY_D = 0
+    real ( KDR ) :: &
+      BaryonMassReference = 1.0_KDR
 !     class ( FluidFeaturesTemplate ), pointer :: &
 !       Features => null ( )
   contains
@@ -49,14 +51,14 @@ module Fluid_D__Form
       ComputeFromConservedCommon
     procedure, public, pass ( C ) :: &
       ComputeRawFluxes
-!     procedure, public, nopass :: &
-!       ComputeBaryonMassKernel
-!     procedure, public, nopass :: &
-!       ComputeDensityMomentumKernel
-!     procedure, public, nopass :: &
-!       ComputeDensityVelocityKernel
-!     procedure, public, nopass :: &
-!       ComputeEigenspeedsKernel_D
+    procedure, public, nopass :: &
+      ComputeBaryonMassKernel
+    procedure, public, nopass :: &
+      ComputeDensityMomentum_G_Kernel
+    procedure, public, nopass :: &
+      ComputeDensityVelocity_G_Kernel
+    procedure, public, nopass :: &
+      ComputeEigenspeedsKernel_D
   end type Fluid_D_Form
 
     private :: &
@@ -232,56 +234,56 @@ contains
       nValuesOption, &
       oValueOption
 
-!     integer ( KDI ) :: &
-!       oV, &  !-- oValue
-!       nV     !-- nValues
+    integer ( KDI ) :: &
+      oV, &  !-- oValue
+      nV     !-- nValues
       
-!     associate &
-!       ( FV => Value_C, &
-!         GV => Value_G )
+    associate &
+      ( FV => Value_C, &
+        GV => Value_G )
 
-!     if ( present ( oValueOption ) ) then
-!       oV = oValueOption
-!     else
-!       oV = 0
-!     end if
+    if ( present ( oValueOption ) ) then
+      oV = oValueOption
+    else
+      oV = 0
+    end if
 
-!     if ( present ( nValuesOption ) ) then
-!       nV = nValuesOption
-!     else
-!       nV = size ( FV, dim = 1 )
-!     end if
+    if ( present ( nValuesOption ) ) then
+      nV = nValuesOption
+    else
+      nV = size ( FV, dim = 1 )
+    end if
 
-!     associate &
-!       ( M_DD_22 => GV ( oV + 1 : oV + nV, G % METRIC_DD_22 ), &
-!         M_DD_33 => GV ( oV + 1 : oV + nV, G % METRIC_DD_33 ) )
-!     associate &
-!       ( FEP_1 => FV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_PLUS ( 1 ) ), &
-!         FEP_2 => FV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_PLUS ( 2 ) ), &
-!         FEP_3 => FV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_PLUS ( 3 ) ), &
-!         FEM_1 => FV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_MINUS ( 1 ) ), &
-!         FEM_2 => FV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_MINUS ( 2 ) ), &
-!         FEM_3 => FV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_MINUS ( 3 ) ), &
-!         M     => FV ( oV + 1 : oV + nV, C % BARYON_MASS ), &
-!         N     => FV ( oV + 1 : oV + nV, C % COMOVING_DENSITY ), &
-!         V_1   => FV ( oV + 1 : oV + nV, C % VELOCITY_U ( 1 ) ), &
-!         V_2   => FV ( oV + 1 : oV + nV, C % VELOCITY_U ( 2 ) ), &
-!         V_3   => FV ( oV + 1 : oV + nV, C % VELOCITY_U ( 3 ) ), &
-!         D     => FV ( oV + 1 : oV + nV, C % CONSERVED_DENSITY ), &
-!         S_1   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 1 ) ), &
-!         S_2   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 2 ) ), &
-!         S_3   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 3 ) ) )
+    associate &
+      ( M_DD_22 => GV ( oV + 1 : oV + nV, G % METRIC_DD_22 ), &
+        M_DD_33 => GV ( oV + 1 : oV + nV, G % METRIC_DD_33 ) )
+    associate &
+      ( FEP_1 => FV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_PLUS ( 1 ) ), &
+        FEP_2 => FV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_PLUS ( 2 ) ), &
+        FEP_3 => FV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_PLUS ( 3 ) ), &
+        FEM_1 => FV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_MINUS ( 1 ) ), &
+        FEM_2 => FV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_MINUS ( 2 ) ), &
+        FEM_3 => FV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_MINUS ( 3 ) ), &
+        M     => FV ( oV + 1 : oV + nV, C % BARYON_MASS ), &
+        N     => FV ( oV + 1 : oV + nV, C % COMOVING_BARYON_DENSITY ), &
+        V_1   => FV ( oV + 1 : oV + nV, C % VELOCITY_U ( 1 ) ), &
+        V_2   => FV ( oV + 1 : oV + nV, C % VELOCITY_U ( 2 ) ), &
+        V_3   => FV ( oV + 1 : oV + nV, C % VELOCITY_U ( 3 ) ), &
+        D     => FV ( oV + 1 : oV + nV, C % CONSERVED_BARYON_DENSITY ), &
+        S_1   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 1 ) ), &
+        S_2   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 2 ) ), &
+        S_3   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 3 ) ) )
 
-!     call C % ComputeBaryonMassKernel &
-!            ( M )
-!     call C % ComputeDensityMomentumKernel &
-!            ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
-!     call C % ComputeEigenspeedsKernel_D &
-!            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3 )
+    call C % ComputeBaryonMassKernel &
+           ( M, C % BaryonMassReference )
+    call C % ComputeDensityMomentum_G_Kernel &
+           ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
+    call C % ComputeEigenspeedsKernel_D &
+           ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3 )
 
-!     end associate !-- FEP_1, etc.
-!     end associate !-- M_DD_22, etc.
-!     end associate !-- FV, etc.
+    end associate !-- FEP_1, etc.
+    end associate !-- M_DD_22, etc.
+    end associate !-- FV, etc.
 
   end subroutine ComputeFromPrimitiveCommon
 
@@ -422,134 +424,138 @@ contains
   end subroutine ComputeRawFluxes
   
   
-!   subroutine ComputeBaryonMassKernel ( M )
+  subroutine ComputeBaryonMassKernel ( M, BaryonMassReference )
 
-!     real ( KDR ), dimension ( : ), intent ( inout ) :: &
-!       M
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      M
+    real ( KDR ), intent ( in ) :: &
+      BaryonMassReference
 
-!     integer ( KDI ) :: &
-!       iV, &
-!       nValues
+    integer ( KDI ) :: &
+      iV, &
+      nValues
 
-!     nValues = size ( M )
+    nValues = size ( M )
 
-!     !$OMP parallel do private ( iV )
-!     do iV = 1, nValues
-!       M ( iV ) = 1.0_KDR
-!     end do !-- iV
-!     !$OMP end parallel do
+    !$OMP parallel do private ( iV )
+    do iV = 1, nValues
+      M ( iV )  =  BaryonMassReference
+    end do !-- iV
+    !$OMP end parallel do
 
-!   end subroutine ComputeBaryonMassKernel
+  end subroutine ComputeBaryonMassKernel
 
 
-!   subroutine ComputeDensityMomentumKernel & 	 	 
-! 	       ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
+  subroutine ComputeDensityMomentum_G_Kernel & 	 	 
+	       ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
  	 
-!     real ( KDR ), dimension ( : ), intent ( inout ) :: & 	 	 
-!       D, & 	 	 
-!       S_1, S_2, S_3, & 	 	 
-!       N 	 	 
-!     real ( KDR ), dimension ( : ), intent ( in ) :: & 	 	 
-!       M, & 	 	 
-!       V_1, V_2, V_3, &
-!       M_DD_22, M_DD_33
+    !-- Galilean
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: & 	 	 
+      D, & 	 	 
+      S_1, S_2, S_3, & 	 	 
+      N 	 	 
+    real ( KDR ), dimension ( : ), intent ( in ) :: & 	 	 
+      M, & 	 	 
+      V_1, V_2, V_3, &
+      M_DD_22, M_DD_33
  	 	 
-!     integer ( KDI ) :: &
-!       iV, &
-!       nValues
+    integer ( KDI ) :: &
+      iV, &
+      nValues
 
-!     nValues = size ( D )
+    nValues = size ( D )
 
-!     !$OMP parallel do private ( iV )
-!     do iV = 1, nValues
-!       if ( N ( iV )  <  0.0_KDR ) &
-!         N ( iV )  =  0.0_KDR
-!     end do !-- iV
-!     !$OMP end parallel do
+    !$OMP parallel do private ( iV )
+    do iV = 1, nValues
+      if ( N ( iV )  <  0.0_KDR ) &
+        N ( iV )  =  0.0_KDR
+    end do !-- iV
+    !$OMP end parallel do
 
-!     !$OMP parallel do private ( iV )
-!     do iV = 1, nValues
+    !$OMP parallel do private ( iV )
+    do iV = 1, nValues
 
-!       D ( iV ) = N ( iV ) 	 	 
+      D ( iV ) = N ( iV ) 	 	 
  	 	 
-!       S_1 ( iV )  =  M ( iV ) * N ( iV ) * V_1 ( iV )	 	 
-!       S_2 ( iV )  =  M ( iV ) * N ( iV ) * M_DD_22 ( iV ) * V_2 ( iV )
-!       S_3 ( iV )  =  M ( iV ) * N ( iV ) * M_DD_33 ( iV ) * V_3 ( iV )
+      S_1 ( iV )  =  M ( iV ) * N ( iV ) * V_1 ( iV )	 	 
+      S_2 ( iV )  =  M ( iV ) * N ( iV ) * M_DD_22 ( iV ) * V_2 ( iV )
+      S_3 ( iV )  =  M ( iV ) * N ( iV ) * M_DD_33 ( iV ) * V_3 ( iV )
 
-!     end do !-- iV
-!     !$OMP end parallel do
+    end do !-- iV
+    !$OMP end parallel do
 
-!   end subroutine ComputeDensityMomentumKernel 	 	 
-
-
-!   subroutine ComputeDensityVelocityKernel &
-!                ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33 )
-
-!     real ( KDR ), dimension ( : ), intent ( inout ) :: &
-!       N, &
-!       V_1, V_2, V_3, &
-!       D, &
-!       S_1, S_2, S_3
-!     real ( KDR ), dimension ( : ), intent ( in ) :: &
-!       M, &
-!       M_UU_22, M_UU_33
-
-!     integer ( KDI ) :: &
-!       iV, &
-!       nValues
-
-!     nValues = size ( N )
-
-!     !$OMP parallel do private ( iV )
-!     do iV = 1, nValues
-!       if ( D ( iV )  >  0.0_KDR ) then
-!         N ( iV )    =  D ( iV )
-!         V_1 ( iV )  =  S_1 ( iV ) / ( M ( iV ) * D ( iV ) )
-!         V_2 ( iV )  =  M_UU_22 ( iV ) * S_2 ( iV ) / ( M ( iV ) * D ( iV ) )
-!         V_3 ( iV )  =  M_UU_33 ( iV ) * S_3 ( iV ) / ( M ( iV ) * D ( iV ) )
-!       else
-!         N   ( iV ) = 0.0_KDR
-!         V_1 ( iV ) = 0.0_KDR
-!         V_2 ( iV ) = 0.0_KDR
-!         V_3 ( iV ) = 0.0_KDR
-!         D   ( iV ) = 0.0_KDR
-!         S_1 ( iV ) = 0.0_KDR
-!         S_2 ( iV ) = 0.0_KDR
-!         S_3 ( iV ) = 0.0_KDR
-!       end if
-!     end do !-- iV
-!     !$OMP end parallel do
-
-!   end subroutine ComputeDensityVelocityKernel
+  end subroutine ComputeDensityMomentum_G_Kernel 	 	 
 
 
-!   subroutine ComputeEigenspeedsKernel_D &
-!                ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3 )
+  subroutine ComputeDensityVelocity_G_Kernel &
+               ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33 )
 
-!     real ( KDR ), dimension ( : ), intent ( inout ) :: &
-!       FEP_1, FEP_2, FEP_3, &
-!       FEM_1, FEM_2, FEM_3
-!     real ( KDR ), dimension ( : ), intent ( in ) :: &
-!       V_1, V_2, V_3
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      N, &
+      V_1, V_2, V_3, &
+      D, &
+      S_1, S_2, S_3
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      M, &
+      M_UU_22, M_UU_33
 
-!     integer ( KDI ) :: &
-!       iV, &
-!       nValues
+    integer ( KDI ) :: &
+      iV, &
+      nValues
 
-!     nValues = size ( FEP_1 )
+    nValues = size ( N )
 
-!     !$OMP parallel do private ( iV ) 
-!     do iV = 1, nValues
-!       FEP_1 ( iV ) = V_1 ( iV ) 
-!       FEP_2 ( iV ) = V_2 ( iV ) 
-!       FEP_3 ( iV ) = V_3 ( iV ) 
-!       FEM_1 ( iV ) = V_1 ( iV ) 
-!       FEM_2 ( iV ) = V_2 ( iV ) 
-!       FEM_3 ( iV ) = V_3 ( iV ) 
-!     end do !-- iV
-!     !$OMP end parallel do
+    !$OMP parallel do private ( iV )
+    do iV = 1, nValues
+      if ( D ( iV )  >  0.0_KDR ) then
+        N ( iV )    =  D ( iV )
+        V_1 ( iV )  =  S_1 ( iV ) / ( M ( iV ) * D ( iV ) )
+        V_2 ( iV )  =  M_UU_22 ( iV ) * S_2 ( iV ) / ( M ( iV ) * D ( iV ) )
+        V_3 ( iV )  =  M_UU_33 ( iV ) * S_3 ( iV ) / ( M ( iV ) * D ( iV ) )
+      else
+        N   ( iV )  =  0.0_KDR
+        V_1 ( iV )  =  0.0_KDR
+        V_2 ( iV )  =  0.0_KDR
+        V_3 ( iV )  =  0.0_KDR
+        D   ( iV )  =  0.0_KDR
+        S_1 ( iV )  =  0.0_KDR
+        S_2 ( iV )  =  0.0_KDR
+        S_3 ( iV )  =  0.0_KDR
+      end if
+    end do !-- iV
+    !$OMP end parallel do
 
-!   end subroutine ComputeEigenspeedsKernel_D
+  end subroutine ComputeDensityVelocity_G_Kernel
+
+
+  subroutine ComputeEigenspeedsKernel_D &
+               ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3 )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      FEP_1, FEP_2, FEP_3, &
+      FEM_1, FEM_2, FEM_3
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      V_1, V_2, V_3
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+
+    nValues = size ( FEP_1 )
+
+    !$OMP parallel do private ( iV ) 
+    do iV = 1, nValues
+      FEP_1 ( iV )  =  V_1 ( iV ) 
+      FEP_2 ( iV )  =  V_2 ( iV ) 
+      FEP_3 ( iV )  =  V_3 ( iV ) 
+      FEM_1 ( iV )  =  V_1 ( iV ) 
+      FEM_2 ( iV )  =  V_2 ( iV ) 
+      FEM_3 ( iV )  =  V_3 ( iV ) 
+    end do !-- iV
+    !$OMP end parallel do
+
+  end subroutine ComputeEigenspeedsKernel_D
 
 
   subroutine InitializeBasics &
