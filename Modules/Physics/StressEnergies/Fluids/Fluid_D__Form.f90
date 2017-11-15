@@ -135,42 +135,42 @@ contains
     class ( Fluid_D_Form ), intent ( inout ) :: &
       C
 
-!     integer ( KDI ) :: &
-!       iF, &  !-- iField
-!       oP, &  !-- oPrimitive
-!       oC     !-- oConserved
-!     character ( LDL ), dimension ( C % N_PRIMITIVE_DUST ) :: &
-!       PrimitiveName
-!     character ( LDL ), dimension ( C % N_CONSERVED_DUST ) :: &
-!       ConservedName
+    integer ( KDI ) :: &
+      iF, &  !-- iField
+      oP, &  !-- oPrimitive
+      oC     !-- oConserved
+    character ( LDL ), dimension ( C % N_PRIMITIVE_DUST ) :: &
+      PrimitiveName
+    character ( LDL ), dimension ( C % N_CONSERVED_DUST ) :: &
+      ConservedName
 
-!     oP = C % N_PRIMITIVE_TEMPLATE
-!     oC = C % N_CONSERVED_TEMPLATE
+    oP = C % N_PRIMITIVE_TEMPLATE
+    oC = C % N_CONSERVED_TEMPLATE
 
-!     if ( .not. allocated ( C % iaPrimitive ) ) then
-!       C % N_PRIMITIVE = oP + C % N_PRIMITIVE_DUST
-!       allocate ( C % iaPrimitive ( C % N_PRIMITIVE ) )
-!     end if
-!     C % iaPrimitive ( oP + 1 : oP + C % N_PRIMITIVE_DUST ) &
-!       = [ C % COMOVING_DENSITY, C % VELOCITY_U ]
+    if ( .not. allocated ( C % iaPrimitive ) ) then
+      C % N_PRIMITIVE = oP + C % N_PRIMITIVE_DUST
+      allocate ( C % iaPrimitive ( C % N_PRIMITIVE ) )
+    end if
+    C % iaPrimitive ( oP + 1 : oP + C % N_PRIMITIVE_DUST ) &
+      = [ C % COMOVING_BARYON_DENSITY, C % VELOCITY_U ]
 
-!     if ( .not. allocated ( C % iaConserved ) ) then
-!       C % N_CONSERVED = oC + C % N_CONSERVED_DUST
-!       allocate ( C % iaConserved ( C % N_CONSERVED ) )
-!     end if
-!     C % iaConserved ( oC + 1 : oC + C % N_CONSERVED_DUST ) &
-!       = [ C % CONSERVED_DENSITY, C % MOMENTUM_DENSITY_D ]
+    if ( .not. allocated ( C % iaConserved ) ) then
+      C % N_CONSERVED = oC + C % N_CONSERVED_DUST
+      allocate ( C % iaConserved ( C % N_CONSERVED ) )
+    end if
+    C % iaConserved ( oC + 1 : oC + C % N_CONSERVED_DUST ) &
+      = [ C % CONSERVED_BARYON_DENSITY, C % MOMENTUM_DENSITY_D ]
     
-!     do iF = 1, C % N_PRIMITIVE_DUST
-!       PrimitiveName ( iF )  =  C % Variable ( C % iaPrimitive ( oP + iF ) )
-!     end do
-!     do iF = 1, C % N_CONSERVED_DUST
-!       ConservedName ( iF )  =  C % Variable ( C % iaConserved ( oC + iF ) )
-!     end do
-!     call Show ( PrimitiveName, 'Adding primitive variables', &
-!                 C % IGNORABILITY, oIndexOption = oP )
-!     call Show ( ConservedName, 'Adding conserved variables', &
-!                 C % IGNORABILITY, oIndexOption = oC )
+    do iF = 1, C % N_PRIMITIVE_DUST
+      PrimitiveName ( iF )  =  C % Variable ( C % iaPrimitive ( oP + iF ) )
+    end do
+    do iF = 1, C % N_CONSERVED_DUST
+      ConservedName ( iF )  =  C % Variable ( C % iaConserved ( oC + iF ) )
+    end do
+    call Show ( PrimitiveName, 'Adding primitive variables', &
+                C % IGNORABILITY, oIndexOption = oP )
+    call Show ( ConservedName, 'Adding conserved variables', &
+                C % IGNORABILITY, oIndexOption = oC )
     
   end subroutine SetPrimitiveConserved
 
