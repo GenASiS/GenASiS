@@ -1,3 +1,12 @@
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MATHEMATICS)/Makefile_Dependencies
 include $(PATH_PHYSICS)/Makefile_Dependencies
+
+GenASiS.o: \
+  Basics.o \
+  Mathematics.o \
+  Physics.o \
+  GenASiS.f90
+
+GenASiS.a: $(MODULES)
+	ar r GenASiS.a $(MODULES)

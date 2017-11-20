@@ -7,3 +7,6 @@ Physics.o: \
   StressEnergies.o \
   Universes.o \
   Physics.f90
+
+Physics.a: $(PHYSICS)
+	ar r Physics.a $(PHYSICS)

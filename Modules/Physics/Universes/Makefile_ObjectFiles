@@ -1,4 +1,4 @@
 UNIVERSES = \
   Universes.o \
   FluidBox_Form.o \
-  UniverseTemplate.o
+  Universe_Template.o
