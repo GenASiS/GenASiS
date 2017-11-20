@@ -153,10 +153,10 @@ contains
     end do !-- iS
     end associate !-- CB
 
-    allocate ( S % IncrementDamping )
-    associate ( ID => S % IncrementDamping )
-    call ID % Initialize ( S % Name )
-    end associate !-- ID
+!    allocate ( S % IncrementDamping )
+!    associate ( ID => S % IncrementDamping )
+!    call ID % Initialize ( S % Name )
+!    end associate !-- ID
 
     S % ApplyDivergence_S % Pointer => ApplyDivergence_C
     S % ApplyDivergence_F % Pointer => null ( )

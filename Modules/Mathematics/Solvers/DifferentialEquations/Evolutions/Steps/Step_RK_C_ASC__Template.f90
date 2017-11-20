@@ -67,8 +67,8 @@ module Step_RK_C_ASC__Template
         StorageDivergence_C
       type ( IncrementDivergence_FV_Form ), allocatable :: &
         IncrementDivergence_C
-      type ( IncrementDampingForm ), allocatable :: &
-        IncrementDamping
+!      type ( IncrementDampingForm ), allocatable :: &
+!        IncrementDamping
       procedure ( ApplyDivergence_C ), pointer, pass :: &
         ApplyDivergence_C => null ( )
       procedure ( AS ), pointer, pass :: &
@@ -276,10 +276,10 @@ contains
     call ID % SetStorage ( S % StorageDivergence_C )
     end associate !-- ID
 
-    allocate ( S % IncrementDamping )
-    associate ( ID => S % IncrementDamping )
-    call ID % Initialize ( S % Name )
-    end associate !-- ID
+!    allocate ( S % IncrementDamping )
+!    associate ( ID => S % IncrementDamping )
+!    call ID % Initialize ( S % Name )
+!    end associate !-- ID
 
     S % ApplyDivergence % Pointer => ApplyDivergence_C
 
@@ -507,8 +507,8 @@ contains
 
     call DeallocateStorage ( S )
 
-    if ( allocated ( S % IncrementDamping ) ) &
-      deallocate ( S % IncrementDamping )
+!    if ( allocated ( S % IncrementDamping ) ) &
+!      deallocate ( S % IncrementDamping )
     if ( allocated ( S % IncrementDivergence_C ) ) &
       deallocate ( S % IncrementDivergence_C )
     if ( allocated ( S % StorageDivergence_C ) ) &
