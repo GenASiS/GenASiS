@@ -17,10 +17,8 @@ module GeometryFlat_ASC__Form
     character ( LDL ) :: &
       GeometryType = ''
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       InitializeFlat
-    generic, public :: &
-      Initialize => InitializeFlat
     final :: &
       Finalize
     procedure, private, pass :: &
@@ -91,7 +89,7 @@ contains
           select type ( GC => FA % Chart )
           class is ( GeometryFlat_CSL_Form )
             associate ( nValues => C % nProperCells + C % nGhostCells )
-            call GC % Initialize &
+            call GC % InitializeFlat &
                    ( C, FA % NameShort, nValues, &
                      IgnorabilityOption = FA % IGNORABILITY )
             end associate !-- nValues

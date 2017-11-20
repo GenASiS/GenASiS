@@ -45,7 +45,7 @@ contains
 
     GC % GeometryType = GeometryType    
 
-    call GC % Initialize ( C, NameShort, nValues, IgnorabilityOption )
+    call GC % InitializeFlat ( C, NameShort, nValues, IgnorabilityOption )
 
   end subroutine InitializeType
 

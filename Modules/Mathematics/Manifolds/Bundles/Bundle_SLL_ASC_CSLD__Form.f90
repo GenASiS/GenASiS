@@ -162,7 +162,7 @@ contains
 
     allocate ( B % Geometry )
     associate ( GAF => B % Geometry )
-    call GAF % Initialize ( FM )
+    call GAF % InitializeFlat ( FM )
 
     select type ( CF => B % FiberMaster % Chart )
     class is ( Chart_SLL_Form )
@@ -171,7 +171,8 @@ contains
     end select !-- CF
 
     B % nSectionsWrite = 5
-    call PROGRAM_HEADER % GetParameter ( B % nSectionsWrite, 'nSectionsWrite' )
+    call PROGRAM_HEADER % GetParameter &
+           ( B % nSectionsWrite, 'nSectionsWrite' )
 
     B % sSectionsWrite = B % nSections / B % nSectionsWrite
     if ( mod ( B % nSections, B % nSectionsWrite ) > 0 ) &

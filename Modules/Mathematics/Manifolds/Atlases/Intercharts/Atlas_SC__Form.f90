@@ -74,7 +74,7 @@ contains
         A % AllocatedGeometry = .true.
         allocate ( A % Geometry_ASC )
         associate ( GA => A % Geometry_ASC )
-        call GA % Initialize ( A ) 
+        call GA % InitializeFlat ( A ) 
         end associate !-- GA
       end if
     end if

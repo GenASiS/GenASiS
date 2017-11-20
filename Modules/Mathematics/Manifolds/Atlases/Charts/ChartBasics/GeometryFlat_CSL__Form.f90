@@ -17,7 +17,7 @@ module GeometryFlat_CSL__Form
       GeometryType = ''
   contains
     procedure, public, pass :: &
-      Initialize
+      InitializeFlat
     final :: &
       Finalize
     procedure, private, pass :: &
@@ -27,7 +27,7 @@ module GeometryFlat_CSL__Form
 contains
 
 
-  subroutine Initialize ( GC, C, NameShort, nValues, IgnorabilityOption )
+  subroutine InitializeFlat ( GC, C, NameShort, nValues, IgnorabilityOption )
 
     class ( GeometryFlat_CSL_Form ), intent ( inout ) :: &
       GC
@@ -49,7 +49,7 @@ contains
     call GC % InitializeTemplate_CSL &
            ( C, NameShort, nValues, IgnorabilityOption )
 
-  end subroutine Initialize
+  end subroutine InitializeFlat
 
 
   impure elemental subroutine Finalize ( GC )

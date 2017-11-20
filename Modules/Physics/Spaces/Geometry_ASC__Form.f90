@@ -15,7 +15,7 @@ module Geometry_ASC__Form
   type, public, extends ( GeometryFlat_ASC_Form ) :: Geometry_ASC_Form
   contains
     procedure, public, pass :: &
-      InitializeType
+      Initialize
     final :: &
       Finalize
     procedure, private, pass :: &
@@ -25,7 +25,7 @@ module Geometry_ASC__Form
 contains
 
 
-  subroutine InitializeType &
+  subroutine Initialize &
                ( GA, A, GeometryType, NameShortOption, IgnorabilityOption )
 
     class ( Geometry_ASC_Form ), intent ( inout ) :: &
@@ -47,9 +47,9 @@ contains
 
     GA % GeometryType = GeometryType    
 
-    call GA % Initialize ( A, NameShortOption, IgnorabilityOption )
+    call GA % InitializeFlat ( A, NameShortOption, IgnorabilityOption )
 
-  end subroutine InitializeType
+  end subroutine Initialize
 
 
   impure elemental subroutine Finalize ( GA )
