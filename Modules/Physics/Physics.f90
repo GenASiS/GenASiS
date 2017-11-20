@@ -2,6 +2,6 @@ module Physics
 
   use Spaces
   use StressEnergies
-!  use Universes
+  use Universes
 
 end module Physics

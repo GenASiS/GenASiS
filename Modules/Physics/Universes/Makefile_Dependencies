@@ -1,0 +1,19 @@
+FluidBox_Form.o: \
+  Mathematics.o \
+  Spaces.o \
+  StressEnergies.o \
+  Universe_Template.o \
+  FluidBox_Form.f90
+
+Universe_Template.o: \
+  Basics.o \
+  Mathematics.o \
+  Universe_Template.f90
+
+Universes.o: \
+  FluidBox_Form.o \
+  Universe_Template.o \
+  Universes.f90
+
+Universes.a: $(UNIVERSES)
+	ar r Universes.a $(UNIVERSES)

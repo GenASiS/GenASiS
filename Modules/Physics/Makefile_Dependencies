@@ -1,9 +1,9 @@
 include $(PATH_SPACES)/Makefile_Dependencies
 include $(PATH_STRESS_ENERGIES)/Makefile_Dependencies
-#include $(PATH_UNIVERSES)/Makefile_Dependencies
+include $(PATH_UNIVERSES)/Makefile_Dependencies
 
 Physics.o: \
   Spaces.o \
   StressEnergies.o \
+  Universes.o \
   Physics.f90
-#  Universes.o \
