@@ -56,6 +56,8 @@ contains
 
     call GA % InitializeTemplate_ASC ( A, NameShort, IgnorabilityOption )
 
+    call Show ( GA % GeometryType, 'GeometryType', GA % IGNORABILITY )
+
   end subroutine InitializeFlat
 
 
