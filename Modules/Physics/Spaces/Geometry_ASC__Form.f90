@@ -83,8 +83,6 @@ contains
                IgnorabilityOption = FA % IGNORABILITY )
     end select !-- FC
 
-    call A % AddField ( FA )
-
     end associate !-- nValues
     end select !-- C
     end select !-- A

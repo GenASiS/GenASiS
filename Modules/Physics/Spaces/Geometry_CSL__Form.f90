@@ -7,6 +7,7 @@ module Geometry_CSL__Form
   use Basics
   use Mathematics
   use Geometry_G__Form
+  use Geometry_N__Form
 
   implicit none
   private
@@ -66,7 +67,9 @@ contains
 
     select case ( trim ( FC % GeometryType ) )
     case ( 'GALILEAN' )
-      allocate ( GeometryFlatForm :: FC % Field )
+      allocate ( Geometry_G_Form :: FC % Field )
+    case ( 'NEWTONIAN' )
+      allocate ( Geometry_N_Form :: FC % Field )
     case default
       call Show ( 'GeometryType not recognized', CONSOLE % ERROR )
       call Show ( FC % GeometryType, 'GeometryType', CONSOLE % ERROR )
