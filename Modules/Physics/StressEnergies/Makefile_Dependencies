@@ -5,3 +5,6 @@ StressEnergies.o: \
   Fluids.o \
   StressEnergies.f90
 #  Radiations.o \
+
+StressEnergies.a: $(STRESS_ENERGIES)
+	ar r StressEnergies.a $(STRESS_ENERGIES)

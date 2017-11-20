@@ -4,6 +4,7 @@ module Tally_F_D__Form
 
   use Basics
   use Mathematics
+  use Spaces
   use Fluid_D__Form
 
   implicit none
@@ -142,7 +143,7 @@ contains
     G => A % Geometry ( )
 
     select type ( G )
-    type is ( GeometryFlatForm )
+    type is ( Geometry_G_Form )
       T % nSelected = 8
       allocate ( T % iaSelected ( T % nSelected ) )
       T % iaSelected &
