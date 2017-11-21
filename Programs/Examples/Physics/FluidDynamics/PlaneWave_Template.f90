@@ -1,22 +1,18 @@
 module PlaneWave_Template
 
-  use Basics
-  use Mathematics
-  use Fluid_D__Form
-  use Fluid_ASC__Form
+  use GenASiS
 
   implicit none
   private
 
-  type, public, extends ( Integrator_C_PS_Template ), abstract :: &
-    PlaneWaveTemplate
-      real ( KDR ) :: &
-        Speed
-      real ( KDR ), dimension ( 3 ) :: &
-        Wavenumber
-      type ( Fluid_ASC_Form ), allocatable :: &
-        Reference, &
-        Difference
+  type, public, extends ( UniverseTemplate ), abstract :: PlaneWaveTemplate
+    real ( KDR ) :: &
+      Speed
+    real ( KDR ), dimension ( 3 ) :: &
+      Wavenumber
+    type ( Fluid_ASC_Form ), allocatable :: &
+      Reference, &
+      Difference
   contains
     procedure, public, pass :: &
       InitializeTemplate_PW
@@ -49,6 +45,9 @@ module PlaneWave_Template
       private :: &
         SetFluidKernel
 
+    class ( PlaneWaveTemplate ), private, pointer :: &
+      PlaneWave => null ( )
+
 contains
 
 
@@ -68,29 +67,27 @@ contains
     class ( Fluid_D_Form ), pointer :: &
       F
 
-    !-- PositionSpace
+    if ( PW % Type == '' ) &
+      PW % Type = 'a PlaneWave'
 
-    allocate ( Atlas_SC_Form :: PW % PositionSpace )
-    select type ( PS => PW % PositionSpace )
+    call PW % InitializeTemplate ( Name )
+
+
+    !-- Integrator
+
+    allocate ( FluidBoxForm :: PW % Integrator )
+    select type ( FB => PW % Integrator )
+    type is ( FluidBoxForm )
+    call FB % Initialize &
+           ( Name, FluidType = 'DUST', GeometryType = 'GALILEAN' )
+    FB % SetReference => SetReference
+
+    select type ( PS => FB % PositionSpace )
     class is ( Atlas_SC_Form )
-    call PS % Initialize ( 'PositionSpace', PROGRAM_HEADER % Communicator )
-    call PS % CreateChart ( )
-    call PS % SetGeometry ( )
 
-    !-- Fluid (Dust, i.e. pressureless fluid)
-
-    allocate ( Fluid_ASC_Form :: PW % Current_ASC )
-    select type ( FA => PW % Current_ASC )  !-- FluidAtlas
+    select type ( FA => FB % Current_ASC )
     class is ( Fluid_ASC_Form )
-    call FA % Initialize ( PS, 'DUST' )
 
-    !-- Step
-
-    allocate ( Step_RK2_C_ASC_Form :: PW % Step )
-    select type ( S => PW % Step )
-    class is ( Step_RK2_C_ASC_Form )
-    call S % Initialize ( FA, Name )
-    end select !-- S
 
     !-- Diagnostics
 
@@ -104,9 +101,11 @@ contains
            ( PS, 'DUST', NameShortOption = 'Difference', &
              AllocateSourcesOption = .false., &
              IgnorabilityOption = CONSOLE % INFO_2 )
-    PW % SetReference => SetReference
 
-    !-- Initial conditions
+
+    !-- Parameters
+
+    PlaneWave => PW
 
     nWavelengths = 0
     nWavelengths ( 1 : PS % nDimensions ) = 1
@@ -119,14 +118,13 @@ contains
     elsewhere
       PW % Wavenumber = 0.0_KDR
     end where
-    end associate !-- BoxSize
-    end associate !-- C
 
     PW % Speed = 1.0_KDR
     call PROGRAM_HEADER % GetParameter ( PW % Speed, 'Speed' )
 
     nPeriods = 1
     call PROGRAM_HEADER % GetParameter ( nPeriods, 'nPeriods' )
+    call Show ( nPeriods, 'nPeriods' )
 
     associate &
       ( K     => PW % Wavenumber, &
@@ -134,20 +132,25 @@ contains
         V     => PW % Speed )
     Period = 1.0_KDR / ( Abs_K * V )
     call Show ( Period, 'Period' )
-    end associate !-- K, etc.
+
+    FB % FinishTime = nPeriods * Period
+    call Show ( FB % FinishTime, 'Reset FinishTime' )
+
+
+    !-- Initial conditions
 
     F => FA % Fluid_D ( )
     call SetFluid ( PW, F, Time = 0.0_KDR )
 
-    !-- Initialize template
-
-    call PW % InitializeTemplate_C_PS &
-           ( Name, FinishTimeOption = nPeriods * Period )
 
     !-- Cleanup
 
+    end associate !-- K, etc.
+    end associate !-- BoxSize
+    end associate !-- C
     end select !-- FA
     end select !-- PS
+    end select !-- FB
     nullify ( F )
 
   end subroutine InitializeTemplate_PW
@@ -165,32 +168,34 @@ contains
     type ( CollectiveOperation_R_Form ) :: &
       CO
     
-    select type ( PS => PW % PositionSpace )
+    select type ( PS => PW % Integrator % PositionSpace )
     class is ( Atlas_SC_Form )
     select type ( C => PS % Chart )
     class is ( Chart_SL_Template )
 
     F_D => PW % Difference % Fluid_D ( )
 
-    associate ( Difference => F_D % Value ( :, F_D % COMOVING_DENSITY ) )
+    associate &
+      ( Difference => F_D % Value ( :, F_D % COMOVING_BARYON_DENSITY ) )
     call CO % Initialize ( PS % Communicator, [ 2 ], [ 2 ] )
     CO % Outgoing % Value ( 1 ) = sum ( abs ( Difference ), &
                                         mask = C % IsProperCell )
     CO % Outgoing % Value ( 2 ) = C % nProperCells
     call CO % Reduce ( REDUCTION % SUM )
-    end associate !-- Difference
 
     associate &
       ( DifferenceSum => CO % Incoming % Value ( 1 ), &
         nValues => CO % Incoming % Value ( 2 ) )
     L1 = DifferenceSum / nValues
-    end associate
 
     call Show ( L1, '*** L1 error', nLeadingLinesOption = 2, &
                 nTrailingLinesOption = 2 )
 
+    end associate !-- DifferenceSum, etc.
+    end associate !-- Difference
     end select !-- C
     end select !-- PS
+    nullify ( F_D )
 
   end subroutine ComputeError
 
@@ -205,7 +210,7 @@ contains
     if ( allocated ( PW % Reference ) ) &
       deallocate ( PW % Reference )
 
-    call PW % FinalizeTemplate_C_PS ( )
+    call PW % FinalizeTemplate ( )
 
   end subroutine FinalizeTemplate_PW
 
@@ -222,7 +227,7 @@ contains
     class ( GeometryFlatForm ), pointer :: &
       G
 
-    select type ( PS => PW % PositionSpace )
+    select type ( PS => PW % Integrator % PositionSpace )
     class is ( Atlas_SC_Form )
     G => PS % Geometry ( )
 
@@ -234,7 +239,7 @@ contains
              K = PW % Wavenumber, &
              V = PW % Speed, &
              T = Time, &
-             N  = F % Value ( :, F % COMOVING_DENSITY ), &
+             N  = F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
              VX = F % Value ( :, F % VELOCITY_U ( 1 ) ), &
              VY = F % Value ( :, F % VELOCITY_U ( 2 ) ), &
              VZ = F % Value ( :, F % VELOCITY_U ( 3 ) ) )
@@ -247,32 +252,31 @@ contains
   end subroutine SetFluid
 
 
-  subroutine SetReference ( PW )
+  subroutine SetReference ( FB )
 
     class ( IntegratorTemplate ), intent ( inout ) :: &
-      PW
+      FB
 
     class ( Fluid_D_Form ), pointer :: &
       F, &
       F_R, &  !-- F_Reference
       F_D     !-- F_Difference
 
-    select type ( PW )
-    class is ( PlaneWaveTemplate )
+    select type ( FB )
+    class is ( FluidBoxForm )
 
-    select type ( FA => PW % Current_ASC )
+    select type ( FA => FB % Current_ASC )
     class is ( Fluid_ASC_Form )
     F => FA % Fluid_D ( )
-    end select !-- FA
 
-    F_R => PW % Reference % Fluid_D ( )
-    call SetFluid ( PW, F_R, PW % Time )
+    F_R => PlaneWave % Reference % Fluid_D ( )
+    call SetFluid ( PlaneWave, F_R, FB % Time )
 
-    F_D => PW % Difference % Fluid_D ( )
-!    F_D % Value  =  F % Value  -  F_R % Value
+    F_D => PlaneWave % Difference % Fluid_D ( )
     call MultiplyAdd ( F % Value, F_R % Value, -1.0_KDR, F_D % Value )
 
-    end select !-- PW
+    end select !-- FA
+    end select !-- FB
     nullify ( F, F_R, F_D )
 
   end subroutine SetReference
@@ -305,18 +309,16 @@ contains
 
     !$OMP parallel do private ( iV )
     do iV = 1, nValues
+
       VX ( iV ) = V * K ( 1 ) / Abs_K
       VY ( iV ) = V * K ( 2 ) / Abs_K
       VZ ( iV ) = V * K ( 3 ) / Abs_K
-    end do !-- iV
-    !$OMP end parallel do
 
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
       N ( iV ) = PW % Waveform &
                    (    K ( 1 ) * ( X ( iV )  -  VX ( iV ) * T ) &
                      +  K ( 2 ) * ( Y ( iV )  -  VY ( iV ) * T ) &
                      +  K ( 3 ) * ( Z ( iV )  -  VZ ( iV ) * T ) )
+
     end do !-- iV
     !$OMP end parallel do
 

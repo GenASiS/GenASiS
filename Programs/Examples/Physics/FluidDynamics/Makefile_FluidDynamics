@@ -1,0 +1,152 @@
+PATH_GENASIS = ../../../../..
+
+all: SineWave #SawtoothWave RiemannProblem RayleighTaylor \
+     SedovTaylor FishboneMoncrief
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+# include ../Makefile_ObjectFiles
+
+SineWave: GenASiS.a SineWave.o
+	$(LINK) $(FFLAGS) \
+           -o SineWave_$(MACHINE) \
+           SineWave.o SineWave_Form.o PlaneWave_Template.o \
+           GenASiS.a $(LIBRARIES)
+
+# SawtoothWave: Basics.a Mathematics.a Fluid.a SawtoothWave.o
+# 	$(LINK) $(FFLAGS) \
+#           -o SawtoothWave_$(MACHINE) \
+#           SawtoothWave.o SawtoothWave_Form.o PlaneWave_Template.o \
+#           Fluid.a Mathematics.a Basics.a $(LIBRARIES)
+
+# RiemannProblem: Basics.a Mathematics.a Fluid.a RiemannProblem.o
+# 	$(LINK) $(FFLAGS) \
+#           -o RiemannProblem_$(MACHINE) \
+#           RiemannProblem.o RiemannProblem_Form.o \
+#           Fluid.a Mathematics.a Basics.a $(LIBRARIES)
+
+# RayleighTaylor: Basics.a Mathematics.a Fluid.a RayleighTaylor.o
+# 	$(LINK) $(FFLAGS) \
+#           -o RayleighTaylor_$(MACHINE) \
+#           RayleighTaylor.o RayleighTaylor_Form.o Tally_RT__Form.o \
+#           Fluid.a Mathematics.a Basics.a $(LIBRARIES)
+
+# SedovTaylor: Basics.a Mathematics.a Fluid.a SedovTaylor.o
+# 	$(LINK) $(FFLAGS) \
+#           -o SedovTaylor_$(MACHINE) \
+#           SedovTaylor.o SedovTaylor_Form.o \
+#           Fluid.a Mathematics.a Basics.a $(LIBRARIES)
+
+# FishboneMoncrief: Basics.a Mathematics.a Fluid.a FishboneMoncrief.o
+# 	$(LINK) $(FFLAGS) \
+#           -o FishboneMoncrief_$(MACHINE) \
+#           FishboneMoncrief.o FishboneMoncrief_Form.o Tally_FM__Form.o \
+#           Fluid.a Mathematics.a Basics.a $(LIBRARIES)
+
+include $(PATH_GENASIS)/Build/Makefile_Dependencies
+# include ../Makefile_Dependencies
+
+clean:
+	rm -f *.o *.a *.mod *.ld
+
+clobber: clean
+	rm -f SineWave_*
+# 	rm -f SawtoothWave_*
+# 	rm -f RiemannProblem_*
+# 	rm -f RayleighTaylor_*
+# 	rm -f SedovTaylor_*
+# 	rm -f FishboneMoncrief_*
+
+PlaneWave_Template.o: \
+  GenASiS.o \
+  PlaneWave_Template.f90
+
+SineWave_Form.o: \
+  GenASiS.o \
+  PlaneWave_Template.o \
+  SineWave_Form.f90
+
+SineWave.o: \
+  GenASiS.o \
+  SineWave_Form.o \
+  SineWave.f90
+
+# SawtoothWave_Form.o: \
+#   Basics.o \
+#   PlaneWave_Template.o \
+#   SawtoothWave_Form.f90
+
+# SawtoothWave.o: \
+#   Basics.o \
+#   SawtoothWave_Form.o \
+#   SawtoothWave.f90
+
+# RiemannProblem_Form.o: \
+#   Basics.o \
+#   Mathematics.o \
+#   Fluid_P_P__Form.o \
+#   Fluid_ASC__Form.o \
+#   RiemannProblem_Form.f90
+
+# RiemannProblem.o: \
+#   Basics.o \
+#   RiemannProblem_Form.o \
+#   RiemannProblem.f90
+
+# Tally_RT__Form.o: \
+#   Basics.o \
+#   Mathematics.o \
+#   Fluid_P_P__Form.o \
+#   Tally_F_P__Form.o \
+#   Tally_RT__Form.f90
+
+# RayleighTaylor_Form.o: \
+#   Basics.o \
+#   Mathematics.o \
+#   Fluid_P_P__Form.o \
+#   Sources_F__Form.o \
+#   Fluid_ASC__Form.o \
+#   Tally_RT__Form.o \
+#   RayleighTaylor_Form.f90
+
+# RayleighTaylor.o: \
+#   Basics.o \
+#   RayleighTaylor_Form.o \
+#   RayleighTaylor.f90
+
+# SedovTaylor_Form.o: \
+#   Basics.o \
+#   Mathematics.o \
+#   Fluid_P__Template.o \
+#   Fluid_P_P__Form.o \
+#   Fluid_ASC__Form.o \
+#   ApplyCurvilinear_F__Command.o \
+#   SedovTaylor_Form.f90
+
+# SedovTaylor.o: \
+#   Basics.o \
+#   SedovTaylor_Form.o \
+#   SedovTaylor.f90
+
+# Tally_FM__Form.o: \
+#   Basics.o \
+#   Mathematics.o \
+#   Fluid_P_P__Form.o \
+#   Tally_F_P__Form.o \
+#   Tally_FM__Form.f90
+
+# FishboneMoncrief_Form.o: \
+#   Basics.o \
+#   Mathematics.o \
+#   Fluid_P__Template.o \
+#   Fluid_P_P__Form.o \
+#   Sources_F__Form.o \
+#   Fluid_ASC__Form.o \
+#   ApplyCurvilinear_F__Command.o \
+#   Tally_FM__Form.o \
+#   FishboneMoncrief_Form.f90
+
+# FishboneMoncrief.o: \
+#   Basics.o \
+#   FishboneMoncrief_Form.o \
+#   FishboneMoncrief.f90

@@ -12,13 +12,13 @@ module Universe_Template
     character ( LDF ) :: &
       Type = '', &
       Name = ''
-    type ( CommunicatorForm ), pointer :: &
-      Communicator => null ( )
     class ( IntegratorTemplate ), allocatable :: &
       Integrator
   contains
     procedure, public, pass :: &
       InitializeTemplate
+    procedure, public, pass :: &
+      Evolve
     procedure, public, pass :: &
       FinalizeTemplate
   end type UniverseTemplate
@@ -46,6 +46,16 @@ contains
   end subroutine InitializeTemplate
 
 
+  subroutine Evolve ( U )
+
+    class ( UniverseTemplate ), intent ( inout ) :: &
+      U
+
+    call U % Integrator % Evolve ( )
+
+  end subroutine Evolve
+
+
   impure elemental subroutine FinalizeTemplate ( U )
 
     class ( UniverseTemplate ), intent ( inout ) :: &
@@ -53,8 +63,6 @@ contains
 
     if ( allocated ( U % Integrator ) ) &
       deallocate ( U % Integrator )
-
-    nullify ( U % Communicator )
 
     if ( U % Name == '' ) return
 
