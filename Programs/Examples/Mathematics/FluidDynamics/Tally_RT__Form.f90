@@ -19,7 +19,7 @@ module Tally_RT__Form
     procedure, public, pass :: &
       SelectVariables
     procedure, public, pass :: &
-      ComputeInteriorIntegrandGalilean
+      ComputeInteriorIntegrand
   end type Tally_RT_Form
 
 contains
@@ -59,7 +59,7 @@ contains
   end subroutine SelectVariables
   
 
-  subroutine ComputeInteriorIntegrandGalilean &
+  subroutine ComputeInteriorIntegrand &
                ( T, Integrand, C, G, nDimensions )
 
     class ( Tally_RT_Form ), intent ( inout ) :: &
@@ -81,7 +81,7 @@ contains
     class is ( Fluid_P_P_Form )
 
     call T % Tally_F_P_Form &
-           % ComputeInteriorIntegrandGalilean ( Integrand, C, G, nDimensions )
+           % ComputeInteriorIntegrand ( Integrand, C, G, nDimensions )
 
     associate &
       ( CE => C % Value ( :, C % CONSERVED_ENERGY ), &
@@ -101,7 +101,7 @@ contains
     end associate !-- CE, etc.
     end select !-- F
 
-  end subroutine ComputeInteriorIntegrandGalilean
+  end subroutine ComputeInteriorIntegrand
 
 
 end module Tally_RT__Form

@@ -32,9 +32,9 @@ module Tally_F_D__Form
     final :: &
       Finalize
     procedure, public, pass :: &
-      ComputeInteriorIntegrandGalilean
+      ComputeInteriorIntegrand
     procedure, public, pass :: &
-      ComputeBoundaryIntegrandGalilean_CSL
+      ComputeBoundaryIntegrand_CSL
   end type Tally_F_D_Form
 
     private :: &
@@ -185,7 +185,7 @@ contains
   end subroutine Finalize
 
 
-  subroutine ComputeInteriorIntegrandGalilean &
+  subroutine ComputeInteriorIntegrand &
                ( T, Integrand, C, G, nDimensions )
 
     class ( Tally_F_D_Form ), intent ( inout ) :: &
@@ -313,10 +313,10 @@ contains
     end associate !-- N, etc.
     end select !-- C
  
-  end subroutine ComputeInteriorIntegrandGalilean
+  end subroutine ComputeInteriorIntegrand
 
 
-  subroutine ComputeBoundaryIntegrandGalilean_CSL &
+  subroutine ComputeBoundaryIntegrand_CSL &
                ( T, Integrand, C, CSL, G, BoundaryFluence )
 
     class ( Tally_F_D_Form ), intent ( inout ) :: &
@@ -484,7 +484,7 @@ contains
 
     end select !-- C
        
-  end subroutine ComputeBoundaryIntegrandGalilean_CSL
+  end subroutine ComputeBoundaryIntegrand_CSL
 
 
   subroutine ComputeDensity_KE ( S_1, S_2, S_3, V_1, V_2, V_3, I )

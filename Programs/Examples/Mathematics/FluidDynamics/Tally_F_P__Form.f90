@@ -26,9 +26,9 @@ module Tally_F_P__Form
     final :: &
       Finalize
     procedure, public, pass :: &
-      ComputeInteriorIntegrandGalilean
+      ComputeInteriorIntegrand
     procedure, public, pass :: &
-      ComputeBoundaryIntegrandGalilean_CSL
+      ComputeBoundaryIntegrand_CSL
   end type Tally_F_P_Form
 
 
@@ -144,7 +144,7 @@ contains
   end subroutine Finalize
   
 
-  subroutine ComputeInteriorIntegrandGalilean &
+  subroutine ComputeInteriorIntegrand &
                ( T, Integrand, C, G, nDimensions )
 
     class ( Tally_F_P_Form ), intent ( inout ) :: &
@@ -166,7 +166,7 @@ contains
     class is ( Fluid_P_Template )
 
     call T % Tally_F_D_Form &
-           % ComputeInteriorIntegrandGalilean ( Integrand, C, G, nDimensions )
+           % ComputeInteriorIntegrand ( Integrand, C, G, nDimensions )
 
     associate &
       ( CE => C % Value ( :, C % CONSERVED_ENERGY ), &
@@ -184,10 +184,10 @@ contains
     end associate !-- CE, etc.
     end select !-- F
 
-  end subroutine ComputeInteriorIntegrandGalilean
+  end subroutine ComputeInteriorIntegrand
 
 
-  subroutine ComputeBoundaryIntegrandGalilean_CSL &
+  subroutine ComputeBoundaryIntegrand_CSL &
                ( T, Integrand, C, CSL, G, BoundaryFluence )
 
     class ( Tally_F_P_Form ), intent ( inout ) :: &
@@ -213,7 +213,7 @@ contains
     select type ( C )
     class is ( Fluid_P_Template )
 
-    call T % Tally_F_D_Form % ComputeBoundaryIntegrandGalilean_CSL &
+    call T % Tally_F_D_Form % ComputeBoundaryIntegrand_CSL &
            ( Integrand, C, CSL, G, BoundaryFluence )
 
     do iFluence = 1, C % N_CONSERVED
@@ -236,7 +236,7 @@ contains
 
     end select !-- C
 
-  end subroutine ComputeBoundaryIntegrandGalilean_CSL
+  end subroutine ComputeBoundaryIntegrand_CSL
 
 
 end module Tally_F_P__Form

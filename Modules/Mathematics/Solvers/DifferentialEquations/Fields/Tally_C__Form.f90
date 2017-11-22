@@ -50,9 +50,9 @@ module Tally_C__Form
     final :: &
       Finalize
     procedure, public, pass :: &
-      ComputeInteriorIntegrandGalilean
+      ComputeInteriorIntegrand
     procedure, public, pass :: &
-      ComputeBoundaryIntegrandGalilean_CSL
+      ComputeBoundaryIntegrand_CSL
     procedure, public, nopass :: &
       ComputeFacePositions
   end type Tally_C_Form
@@ -197,7 +197,7 @@ contains
     end do !-- iF
 
     G => CSL % Geometry ( )
-    call T % ComputeInteriorIntegrandGalilean &
+    call T % ComputeInteriorIntegrand &
            ( Integrand, C, G, CSL % nDimensions ) 
     
     call VI % Compute ( CSL, Integrand, Integral )
@@ -257,7 +257,7 @@ contains
     end do !-- iD
 
     G => CSL % Geometry ( )
-    call T % ComputeBoundaryIntegrandGalilean_CSL &
+    call T % ComputeBoundaryIntegrand_CSL &
            ( Integrand, C, CSL, G, BoundaryFluence ) 
 
     call SI % Compute ( CSL, Integrand, Integral, ReduceOption = .false. )
@@ -353,7 +353,7 @@ contains
   end subroutine FinalizeElement
 
 
-  subroutine ComputeInteriorIntegrandGalilean &
+  subroutine ComputeInteriorIntegrand &
                ( T, Integrand, C, G, nDimensions )
 
     class ( Tally_C_Form ), intent ( inout ) :: &
@@ -380,10 +380,10 @@ contains
     end do !-- iF
     end associate !-- iaC
 
-  end subroutine ComputeInteriorIntegrandGalilean
+  end subroutine ComputeInteriorIntegrand
 
   
-  subroutine ComputeBoundaryIntegrandGalilean_CSL &
+  subroutine ComputeBoundaryIntegrand_CSL &
                ( T, Integrand, C, CSL, G, BoundaryFluence )
 
     class ( Tally_C_Form ), intent ( inout ) :: &
@@ -429,7 +429,7 @@ contains
     end do !-- iD
     end associate !-- Cnnct
 
-  end subroutine ComputeBoundaryIntegrandGalilean_CSL
+  end subroutine ComputeBoundaryIntegrand_CSL
 
 
   subroutine ComputeFacePositions ( CSL, G, iD, iF, X_1, X_2, X_3 )
