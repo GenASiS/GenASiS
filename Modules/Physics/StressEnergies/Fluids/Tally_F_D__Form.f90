@@ -598,16 +598,17 @@ contains
     end if
 
     associate &
-      ( D   => C % Value ( :, C % CONSERVED_BARYON_DENSITY ), &
-        Phi => G % Value ( :, G % POTENTIAL ) )
+      ( M   => C % Value ( :, C % BARYON_MASS ), &
+        D   => C % Value ( :, C % CONSERVED_BARYON_DENSITY ), &
+        Phi => G % Value ( :, G % GRAVITATIONAL_POTENTIAL ) )
 
     do iS = 1, T % nSelected
       iI = T % iaSelected ( iS )
       if ( iI == T % GRAVITATIONAL_ENERGY ) then
-        Integrand ( iS ) % Value  =  0.5_KDR * D * Phi
+        Integrand ( iS ) % Value  =  0.5_KDR * M * D * Phi
       else if ( iI == T % TOTAL_ENERGY ) then
         Integrand ( iS ) % Value  &
-          =  Integrand ( T % KINETIC_ENERGY ) % Value  +  0.5_KDR * D * Phi
+          =  Integrand ( T % KINETIC_ENERGY ) % Value  +  0.5_KDR * M * D * Phi
       end if !-- iI
     end do !-- iS     
 

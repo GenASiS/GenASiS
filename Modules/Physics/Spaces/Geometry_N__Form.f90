@@ -1,4 +1,4 @@
-!-- Geometry_N represents Galilean geometry.
+!-- Geometry_N represents Newtonian geometry.
 
 module Geometry_N__Form
 
@@ -19,9 +19,9 @@ module Geometry_N__Form
       N_FIELDS_NEWTONIAN  = N_FIELDS_NEWTONIAN, &
       N_VECTORS_NEWTONIAN = N_VECTORS_NEWTONIAN
     integer ( KDI ) :: &
-      POTENTIAL = 0
+      GRAVITATIONAL_POTENTIAL = 0
     integer ( KDI ), dimension ( 3 ) :: &
-      GRAD_POTENTIAL_D = 0
+      GRAVITATIONAL_FORCE_D = 0
     contains
       procedure, public, pass :: &
         InitializeAllocate_G
@@ -76,10 +76,10 @@ contains
            ( G, Variable, Vector, VariableUnit, VectorIndices, &
              VariableOption, VectorOption, UnitOption, VectorIndicesOption )
 
-    VariableUnit ( G % POTENTIAL )  &
+    VariableUnit ( G % GRAVITATIONAL_POTENTIAL )  &
       =  UNIT % SPEED_OF_LIGHT ** 2
     do iD = 1, 3
-      VariableUnit ( G % GRAD_POTENTIAL_D ( iD ) ) &
+      VariableUnit ( G % GRAVITATIONAL_FORCE_D ( iD ) ) &
         =  UNIT % SPEED_OF_LIGHT ** 2  /  CoordinateUnit ( iD )
     end do
 
@@ -144,8 +144,8 @@ contains
     if ( G % N_FIELDS == 0 ) &
       G % N_FIELDS = oF + G % N_FIELDS_NEWTONIAN
 
-    G % POTENTIAL        = oF + 1
-    G % GRAD_POTENTIAL_D = oF + [ 2, 3, 4 ]
+    G % GRAVITATIONAL_POTENTIAL = oF + 1
+    G % GRAVITATIONAL_FORCE_D   = oF + [ 2, 3, 4 ]
 
     !-- variable names
 
@@ -158,10 +158,10 @@ contains
     end if
 
     Variable ( oF + 1 : oF + G % N_FIELDS_NEWTONIAN ) &
-      = [ 'Potential         ', &
-          'Grad_Potential_D_1', &
-          'Grad_Potential_D_2', &
-          'Grad_Potential_D_3' ]
+      = [ 'GravitationalPotential', &
+          'GravitationalForce_D_1', &
+          'GravitationalForce_D_2', &
+          'GravitationalForce_D_3' ]
 
     !-- units
     
@@ -187,7 +187,7 @@ contains
     end if
 
     Vector ( oV + 1 : oV + G % N_VECTORS_NEWTONIAN ) &
-      = [ 'Grad_Potential_D' ]
+      = [ 'GravitationalForce_D' ]
 
     !-- vector indices
 
@@ -201,7 +201,7 @@ contains
       allocate ( VectorIndices ( G % N_VECTORS ) )
     end if
 
-    call VectorIndices ( oV + 1 ) % Initialize ( G % GRAD_POTENTIAL_D )
+    call VectorIndices ( oV + 1 ) % Initialize ( G % GRAVITATIONAL_FORCE_D )
 
   end subroutine InitializeBasics
 
