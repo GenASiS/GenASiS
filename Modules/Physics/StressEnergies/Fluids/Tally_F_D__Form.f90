@@ -23,6 +23,8 @@ module Tally_F_D__Form
     integer ( KDI ), dimension ( 3 ) :: &
       MOMENTUM = 0, &
       ANGULAR_MOMENTUM = 0
+    procedure ( ), pointer, nopass :: &
+      ComputeGravitationalPotential => null ( )
   contains
     procedure, private, pass :: &
       InitializeFluid
@@ -37,9 +39,13 @@ module Tally_F_D__Form
     procedure, public, pass :: &
       ComputeBoundaryIntegrand_CSL
     procedure, public, pass :: &
-      ComputeInteriorIntegrandGalilean
+      ComputeInteriorIntegrand_G
     procedure, public, pass :: &
-      ComputeBoundaryIntegrandGalilean_CSL
+      ComputeBoundaryIntegrand_CSL_G
+    procedure, public, pass :: &
+      ComputeInteriorIntegrand_N
+    procedure, public, pass :: &
+      ComputeBoundaryIntegrand_CSL_N
   end type Tally_F_D_Form
 
     private :: &
@@ -191,7 +197,7 @@ contains
   end subroutine Finalize
 
 
-  subroutine ComputeInteriorIntegrandGalilean &
+  subroutine ComputeInteriorIntegrand &
                ( T, Integrand, C, G, nDimensions )
 
     class ( Tally_F_D_Form ), intent ( inout ) :: &
@@ -200,7 +206,71 @@ contains
       Integrand
     class ( CurrentTemplate ), intent ( in ) :: &
       C
-    type ( GeometryFlatForm ), intent ( in ) :: &
+    class ( GeometryFlatForm ), intent ( in ) :: &
+      G
+    integer ( KDI ), intent ( in ) :: &
+      nDimensions
+
+    select type ( G )
+    type is ( Geometry_G_Form )
+      call T % ComputeInteriorIntegrand_G &
+             ( Integrand, C, G, nDimensions )
+    type is ( Geometry_N_Form )
+      call T % ComputeInteriorIntegrand_N &
+             ( Integrand, C, G, nDimensions )
+    class default 
+      call Show ( 'Geometry type not recognized', CONSOLE % ERROR )
+      call Show ( 'Tally_F_D__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'ComputeInteriorIntegrand', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- G
+    
+  end subroutine ComputeInteriorIntegrand
+
+
+  subroutine ComputeBoundaryIntegrand_CSL &
+               ( T, Integrand, C, CSL, G, BoundaryFluence )
+
+    class ( Tally_F_D_Form ), intent ( inout ) :: &
+      T
+    type ( Real_3D_Form ), dimension ( :, : ), intent ( inout ) :: &
+      Integrand
+    class ( CurrentTemplate ), intent ( in ) :: &
+      C
+    class ( Chart_SL_Template ), intent ( in ) :: &
+      CSL
+    class ( GeometryFlatForm ), intent ( in ) :: &
+      G
+    type ( Real_3D_Form ), dimension ( :, : ), intent ( in ) :: &
+      BoundaryFluence
+
+    select type ( G )
+    type is ( Geometry_G_Form )
+      call T % ComputeBoundaryIntegrand_CSL_G &
+             ( Integrand, C, CSL, G, BoundaryFluence )
+    type is ( Geometry_N_Form )
+      call T % ComputeBoundaryIntegrand_CSL_N &
+             ( Integrand, C, CSL, G, BoundaryFluence )
+    class default 
+      call Show ( 'Geometry type not recognized', CONSOLE % ERROR )
+      call Show ( 'Tally_F_D__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'ComputeInteriorIntegrand', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- G
+    
+  end subroutine ComputeBoundaryIntegrand_CSL
+
+
+  subroutine ComputeInteriorIntegrand_G &
+               ( T, Integrand, C, G, nDimensions )
+
+    class ( Tally_F_D_Form ), intent ( inout ) :: &
+      T
+    type ( Real_1D_Form ), dimension ( : ), intent ( inout ) :: &
+      Integrand
+    class ( CurrentTemplate ), intent ( in ) :: &
+      C
+    class ( GeometryFlatForm ), intent ( in ) :: &
       G
     integer ( KDI ), intent ( in ) :: &
       nDimensions
@@ -319,10 +389,10 @@ contains
     end associate !-- N, etc.
     end select !-- C
  
-  end subroutine ComputeInteriorIntegrandGalilean
+  end subroutine ComputeInteriorIntegrand_G
 
 
-  subroutine ComputeBoundaryIntegrandGalilean_CSL &
+  subroutine ComputeBoundaryIntegrand_CSL_G &
                ( T, Integrand, C, CSL, G, BoundaryFluence )
 
     class ( Tally_F_D_Form ), intent ( inout ) :: &
@@ -333,7 +403,7 @@ contains
       C
     class ( Chart_SL_Template ), intent ( in ) :: &
       CSL
-    type ( GeometryFlatForm ), intent ( in ) :: &
+    class ( GeometryFlatForm ), intent ( in ) :: &
       G
     type ( Real_3D_Form ), dimension ( :, : ), intent ( in ) :: &
       BoundaryFluence
@@ -490,7 +560,84 @@ contains
 
     end select !-- C
        
-  end subroutine ComputeBoundaryIntegrandGalilean_CSL
+  end subroutine ComputeBoundaryIntegrand_CSL_G
+
+
+  subroutine ComputeInteriorIntegrand_N &
+               ( T, Integrand, C, G, nDimensions )
+
+    class ( Tally_F_D_Form ), intent ( inout ) :: &
+      T
+    type ( Real_1D_Form ), dimension ( : ), intent ( inout ) :: &
+      Integrand
+    class ( CurrentTemplate ), intent ( in ) :: &
+      C
+    class ( GeometryFlatForm ), intent ( in ) :: &
+      G
+    integer ( KDI ), intent ( in ) :: &
+      nDimensions
+
+    integer ( KDI ) :: &
+      iS, &  !-- iSelected
+      iI     !-- iIntegral
+
+    call T % ComputeInteriorIntegrand_G ( Integrand, C, G, nDimensions )
+
+    select type ( C )
+    class is ( Fluid_D_Form )
+    select type ( G )
+    type is ( Geometry_N_Form )
+
+    if ( associated ( T % ComputeGravitationalPotential ) ) then
+      call T % ComputeGravitationalPotential ( C, T % Atlas, G )
+    else
+      call Show ( 'ComputeGravitationalPotential not set', CONSOLE % ERROR )
+      call Show ( 'Tally_F_D__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'ComputeInteriorIntegrand_N', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end if
+
+    associate &
+      ( D   => C % Value ( :, C % CONSERVED_BARYON_DENSITY ), &
+        Phi => G % Value ( :, G % POTENTIAL ) )
+
+    do iS = 1, T % nSelected
+      iI = T % iaSelected ( iS )
+      if ( iI == T % GRAVITATIONAL_ENERGY ) then
+        Integrand ( iS ) % Value  =  0.5_KDR * D * Phi
+      else if ( iI == T % TOTAL_ENERGY ) then
+        Integrand ( iS ) % Value  &
+          =  Integrand ( T % KINETIC_ENERGY ) % Value  +  0.5_KDR * D * Phi
+      end if !-- iI
+    end do !-- iS     
+
+    end associate !-- D, etc.
+    end select !-- G
+    end select !-- C
+
+  end subroutine ComputeInteriorIntegrand_N
+
+
+  subroutine ComputeBoundaryIntegrand_CSL_N &
+               ( T, Integrand, C, CSL, G, BoundaryFluence )
+
+    class ( Tally_F_D_Form ), intent ( inout ) :: &
+      T
+    type ( Real_3D_Form ), dimension ( :, : ), intent ( inout ) :: &
+      Integrand
+    class ( CurrentTemplate ), intent ( in ) :: &
+      C
+    class ( Chart_SL_Template ), intent ( in ) :: &
+      CSL
+    class ( GeometryFlatForm ), intent ( in ) :: &
+      G
+    type ( Real_3D_Form ), dimension ( :, : ), intent ( in ) :: &
+      BoundaryFluence
+
+    call T % ComputeBoundaryIntegrand_CSL_G &
+           ( Integrand, C, CSL, G, BoundaryFluence )
+
+  end subroutine ComputeBoundaryIntegrand_CSL_N
 
 
   subroutine ComputeDensity_KE ( S_1, S_2, S_3, V_1, V_2, V_3, I )
