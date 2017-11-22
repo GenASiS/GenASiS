@@ -153,7 +153,7 @@ contains
       Integrand
     class ( CurrentTemplate ), intent ( in ) :: &
       C
-    type ( GeometryFlatForm ), intent ( in ) :: &
+    class ( GeometryFlatForm ), intent ( in ) :: &
       G
     integer ( KDI ), intent ( in ) :: &
       nDimensions
@@ -198,7 +198,7 @@ contains
       C
     class ( Chart_SL_Template ), intent ( in ) :: &
       CSL
-    type ( GeometryFlatForm ), intent ( in ) :: &
+    class ( GeometryFlatForm ), intent ( in ) :: &
       G
     type ( Real_3D_Form ), dimension ( :, : ), intent ( in ) :: &
       BoundaryFluence

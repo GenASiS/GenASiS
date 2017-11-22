@@ -33,6 +33,10 @@ module Tally_F_D__Form
     final :: &
       Finalize
     procedure, public, pass :: &
+      ComputeInteriorIntegrand
+    procedure, public, pass :: &
+      ComputeBoundaryIntegrand_CSL
+    procedure, public, pass :: &
       ComputeInteriorIntegrandGalilean
     procedure, public, pass :: &
       ComputeBoundaryIntegrandGalilean_CSL
