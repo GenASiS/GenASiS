@@ -61,13 +61,13 @@ contains
 
 
   subroutine InitializeAllocate_PC &
-               ( PC, VelocityUnit, nValues, VariableOption, VectorOption, &
+               ( PC, Velocity_U_Unit, nValues, VariableOption, VectorOption, &
                  NameOption, ClearOption, UnitOption, VectorIndicesOption )
 
     class ( ProtoCurrentForm ), intent ( inout ) :: &
       PC
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
-      VelocityUnit
+      Velocity_U_Unit
     integer ( KDI ), intent ( in ) :: &
       nValues
     character ( * ), dimension ( : ), intent ( in ), optional :: &
@@ -99,7 +99,7 @@ contains
 
     call PC % InitializeTemplate &
            ( RiemannSolverType = 'HLL', UseLimiter = .true., &
-             VelocityUnit = VelocityUnit, LimiterParameter = 2.0_KDR, &
+             Velocity_U_Unit = Velocity_U_Unit, LimiterParameter = 2.0_KDR, &
              nValues = nValues, VariableOption = Variable, &
              VectorOption = Vector, NameOption = Name, &
              ClearOption = ClearOption, UnitOption = VariableUnit, &

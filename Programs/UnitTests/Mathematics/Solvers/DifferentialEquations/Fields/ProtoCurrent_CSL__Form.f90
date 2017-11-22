@@ -11,7 +11,7 @@ module ProtoCurrent_CSL__Form
 
   type, public, extends ( Field_CSL_Template ) :: ProtoCurrent_CSL_Form
     type ( MeasuredValueForm ), dimension ( 3 ) :: &
-      VelocityUnit    
+      Velocity_U_Unit    
     class ( ProtoCurrentSources_CSL_Form ), pointer :: &
       Sources_CSL => null ( )
   contains
@@ -117,7 +117,8 @@ contains
     select type ( PC => FC % Field )
     class is ( ProtoCurrentForm )
       call PC % Initialize &
-             ( FC % VelocityUnit, FC % nValues, NameOption = FC % NameShort )
+             ( FC % Velocity_U_Unit, FC % nValues, &
+               NameOption = FC % NameShort )
       call PC % SetPrimitiveConserved ( )
       call PC % SetOutput ( FC % FieldOutput )
     end select !-- F
