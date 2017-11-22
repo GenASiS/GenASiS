@@ -1,4 +1,5 @@
 UNIVERSES = \
   Universes.o \
   FluidBox_Form.o \
+  FluidCentralCore_Form.o \
   Universe_Template.o

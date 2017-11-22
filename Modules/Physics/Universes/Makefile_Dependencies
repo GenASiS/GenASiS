@@ -4,6 +4,12 @@ FluidBox_Form.o: \
   StressEnergies.o \
   FluidBox_Form.f90
 
+FluidCentralCore_Form.o: \
+  Mathematics.o \
+  Spaces.o \
+  StressEnergies.o \
+  FluidCentralCore_Form.f90
+
 Universe_Template.o: \
   Basics.o \
   Mathematics.o \
@@ -11,6 +17,7 @@ Universe_Template.o: \
 
 Universes.o: \
   FluidBox_Form.o \
+  FluidCentralCore_Form.o \
   Universe_Template.o \
   Universes.f90
 

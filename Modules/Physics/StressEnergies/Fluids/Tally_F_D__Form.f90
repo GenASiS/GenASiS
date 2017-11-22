@@ -150,12 +150,13 @@ contains
         = [ T % BARYON_NUMBER, T % MOMENTUM, T % KINETIC_ENERGY, &
             T % ANGULAR_MOMENTUM ]
     
-    ! type is ( GeometryNewtonianForm )
-    !   allocate ( T % iaSelected ( 8 ) )
-    !   T % iaSelected &
-    !     = [ T % BARYON_NUMBER, T % MOMENTUM, T % KINETIC_ENERGY, &
-    !         T % FLUID_ENERGY, T % GRAVITATIONAL_ENERGY, &
-    !         T % TOTAL_ENERGY ]
+    type is ( Geometry_N_Form )
+      T % nSelected = 10
+      allocate ( T % iaSelected ( T % nSelected ) )
+      T % iaSelected &
+        = [ T % BARYON_NUMBER, T % MOMENTUM, T % KINETIC_ENERGY, &
+            T % ANGULAR_MOMENTUM, T % GRAVITATIONAL_ENERGY, &
+            T % TOTAL_ENERGY ]
     
     class default 
       call Show ( 'Geometry type not recognized', CONSOLE % ERROR )

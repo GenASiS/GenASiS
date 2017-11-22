@@ -2,7 +2,7 @@ PATH_GENASIS = ../../../../..
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-all: FluidBox_Form_Test
+all: FluidBox_Form_Test FluidCentralCore_Form_Test
 
 FluidBox_Form_Test: Basics.a Mathematics.a Spaces.a StressEnergies.a \
   FluidBox_Form_Test.o
@@ -11,11 +11,19 @@ FluidBox_Form_Test: Basics.a Mathematics.a Spaces.a StressEnergies.a \
           FluidBox_Form_Test.o FluidBox_Form.o \
           StressEnergies.a Spaces.a Mathematics.a Basics.a $(LIBRARIES)
 
+FluidCentralCore_Form_Test: Basics.a Mathematics.a Spaces.a StressEnergies.a \
+  FluidCentralCore_Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o FluidCentralCore_Form_Test_$(MACHINE) \
+          FluidCentralCore_Form_Test.o FluidCentralCore_Form.o \
+          StressEnergies.a Spaces.a Mathematics.a Basics.a $(LIBRARIES)
+
 clean:
 	rm -f *.o *.a *.mod *.ld
 
 clobber: clean
 	rm -f FluidBox_Form_Test_*
+	rm -f FluidCentralCore_Form_Test_*
 
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MATHEMATICS)/Makefile_Dependencies
@@ -27,3 +35,8 @@ FluidBox_Form_Test.o: \
   Basics.o \
   FluidBox_Form.o \
   FluidBox_Form_Test.f90
+
+FluidCentralCore_Form_Test.o: \
+  Basics.o \
+  FluidCentralCore_Form.o \
+  FluidCentralCore_Form_Test.f90
