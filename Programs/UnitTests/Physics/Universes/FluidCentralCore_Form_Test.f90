@@ -15,7 +15,8 @@ program FluidCentralCore_Form_Test
   call FB % Initialize &
          ( PROGRAM_HEADER % Name, &
            FluidType = 'DUST', &
-           GeometryType = 'NEWTONIAN' )
+           GeometryType = 'NEWTONIAN', &
+           GravitySolverTypeOption = 'MULTIPOLE' )
   deallocate ( FB )
 
   deallocate ( PROGRAM_HEADER )

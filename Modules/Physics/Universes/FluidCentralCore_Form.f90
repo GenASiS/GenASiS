@@ -8,6 +8,8 @@ module FluidCentralCore_Form
   private
 
   type, public, extends ( Integrator_C_PS_Template ) :: FluidCentralCoreForm
+    type ( Poisson_ASC_Form ), allocatable :: &
+      Poisson
   contains
     procedure, public, pass :: &
       Initialize
@@ -19,8 +21,9 @@ contains
 
 
   subroutine Initialize &
-               ( FCC, Name, FluidType, GeometryType, TimeUnitOption, &
-                 FinishTimeOption, CourantFactorOption, nWriteOption )
+               ( FCC, Name, FluidType, GeometryType, &
+                 GravitySolverTypeOption, TimeUnitOption, FinishTimeOption, &
+                 CourantFactorOption, nWriteOption )
 
     class ( FluidCentralCoreForm ), intent ( inout ) :: &
       FCC
@@ -28,6 +31,8 @@ contains
       Name, &
       FluidType, &
       GeometryType
+    character ( * ), intent ( in ), optional :: &
+      GravitySolverTypeOption
     type ( MeasuredValueForm ), intent ( in ), optional :: &
       TimeUnitOption
     real ( KDR ), intent ( in ), optional :: &
@@ -35,6 +40,9 @@ contains
       CourantFactorOption
     integer ( KDI ), intent ( in ), optional :: &
       nWriteOption
+
+    integer ( KDI ) :: &
+      MaxDegree
 
     if ( FCC % Type == '' ) &
       FCC % Type = 'a FluidCentralCore'
@@ -61,6 +69,31 @@ contains
     select type ( FA => FCC % Current_ASC )  !-- FluidAtlas
     class is ( Fluid_ASC_Form )
     call FA % Initialize ( PS, FluidType )
+
+    !-- Gravity
+
+    if ( trim ( GeometryType ) == 'NEWTONIAN' ) then
+      if ( present ( GravitySolverTypeOption ) ) then
+
+        MaxDegree = 10
+        call PROGRAM_HEADER % GetParameter ( MaxDegree, 'MaxDegree' )
+
+        allocate ( FCC % Poisson )
+        associate ( P => FCC % Poisson )
+          call P % Initialize &
+                 ( PS, SolverType = GravitySolverTypeOption, &
+                   MaxDegreeOption = MaxDegree, &
+                   nEquationsOption = 1 )
+        end associate !-- P
+
+      else
+        call Show ( 'NEWTONIAN geometry required GravitySolverType', &
+                    CONSOLE % ERROR )
+        call Show ( 'Initialize', 'subroutine', CONSOLE % ERROR )
+        call Show ( 'FluidCentralCore_Form', 'module', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end if
+    end if
 
     !-- Step
 
