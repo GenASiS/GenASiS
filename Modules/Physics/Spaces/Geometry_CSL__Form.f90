@@ -15,7 +15,7 @@ module Geometry_CSL__Form
   type, public, extends ( GeometryFlat_CSL_Form ) :: Geometry_CSL_Form
   contains
     procedure, public, pass :: &
-      InitializeType
+      Initialize
     final :: &
       Finalize
     procedure, private, pass :: &
@@ -25,7 +25,7 @@ module Geometry_CSL__Form
 contains
 
 
-  subroutine InitializeType &
+  subroutine Initialize &
                ( GC, C, NameShort, GeometryType, nValues, IgnorabilityOption )
 
     class ( Geometry_CSL_Form ), intent ( inout ) :: &
@@ -47,7 +47,7 @@ contains
 
     call GC % InitializeFlat ( C, NameShort, nValues, IgnorabilityOption )
 
-  end subroutine InitializeType
+  end subroutine Initialize
 
 
   impure elemental subroutine Finalize ( GC )
@@ -82,6 +82,11 @@ contains
 
     select type ( G => FC % Field )
     class is ( Geometry_G_Form )
+      call G % Initialize &
+             ( FC % Chart % CoordinateSystem, FC % Chart % CoordinateUnit, &
+               FC % nValues, NameOption = FC % NameShort )
+      call G % SetOutput ( FC % FieldOutput )
+    class is ( Geometry_N_Form )
       call G % Initialize &
              ( FC % Chart % CoordinateSystem, FC % Chart % CoordinateUnit, &
                FC % nValues, NameOption = FC % NameShort )

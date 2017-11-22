@@ -78,7 +78,7 @@ contains
 
     select type ( FC => FA % Chart )
     class is ( Geometry_CSL_Form )
-      call FC % InitializeType &
+      call FC % Initialize &
              ( C, FA % NameShort, FA % GeometryType, nValues, &
                IgnorabilityOption = FA % IGNORABILITY )
     end select !-- FC
