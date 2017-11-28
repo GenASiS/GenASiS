@@ -169,7 +169,7 @@ contains
                ( Source % Value ( iC, : ), &
                  G % Value ( iC, G % WIDTH ( 1 ) : G % WIDTH ( 3 ) ), &
                  G % Value ( iC, G % VOLUME_JACOBIAN ), &
-                 C % nDimensions, iR )
+                 Source % iaSelected, C % nDimensions, iR )
       end do
       !$OMP end parallel do
 

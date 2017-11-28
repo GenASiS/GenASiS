@@ -410,7 +410,8 @@ contains
 
 
   subroutine ComputeMomentContributions &
-               ( LM, Source, Width, VolumeJacobian, nDimensions, iR )
+               ( LM, Source, Width, VolumeJacobian, iaSource, nDimensions, &
+                 iR )
 
     class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
       LM
@@ -420,16 +421,23 @@ contains
       Width
     real ( KDR ), intent ( in ) :: &
       VolumeJacobian
+    integer ( KDI ), dimension ( : ), intent ( in ) :: &
+      iaSource
     integer ( KDI ), intent ( in ) :: &
       nDimensions
     integer ( KDI ) :: &
       iR  !-- iRadius
 
+    integer ( KDI ) :: &
+      iE  !-- iEquation
+    real ( KDR ) :: &
+      dV
     real ( KDR ), dimension ( LM % nEquations ) :: &
       Source_dV
 
-    Source_dV  =  Source * VolumeJacobian &
-                         * product ( Width ( 1 : nDimensions ) )
+    dV  =  VolumeJacobian * product ( Width ( 1 : nDimensions ) )
+    Source_dV  =  [ ( Source ( iaSource ( iE ) )  *  dV, &
+                      iE = 1, LM % nEquations ) ] 
 !call Show ( Source_dV, 'Source_dV' )
 
     call ComputeMomentContributionsKernel &
