@@ -16,6 +16,10 @@ module Geometry_CSL__Form
   contains
     procedure, public, pass :: &
       Initialize
+    procedure, public, pass :: &
+      Geometry_G
+    procedure, public, pass :: &
+      Geometry_N
     final :: &
       Finalize
     procedure, private, pass :: &
@@ -48,6 +52,48 @@ contains
     call GC % InitializeFlat ( C, NameShort, nValues, IgnorabilityOption )
 
   end subroutine Initialize
+
+
+  function Geometry_G ( GC ) result ( G )
+
+    class ( Geometry_CSL_Form ), intent ( in ), target :: &
+      GC
+    class ( Geometry_G_Form ), pointer :: &
+      G
+      
+    class ( VariableGroupForm ), pointer :: &
+      Field
+
+    G => null ( )
+
+    Field => GC % Field
+    select type ( Field )
+    class is ( Geometry_G_Form )
+    G => Field
+    end select !-- Field
+
+  end function Geometry_G
+
+
+  function Geometry_N ( GC ) result ( G )
+
+    class ( Geometry_CSL_Form ), intent ( in ), target :: &
+      GC
+    class ( Geometry_N_Form ), pointer :: &
+      G
+      
+    class ( VariableGroupForm ), pointer :: &
+      Field
+
+    G => null ( )
+
+    Field => GC % Field
+    select type ( Field )
+    class is ( Geometry_N_Form )
+    G => Field
+    end select !-- Field
+
+  end function Geometry_N
 
 
   impure elemental subroutine Finalize ( GC )

@@ -7,6 +7,8 @@ module Geometry_ASC__Form
 
   use Basics
   use Mathematics
+  use Geometry_G__Form
+  use Geometry_N__Form
   use Geometry_CSL__Form
 
   implicit none
@@ -16,6 +18,14 @@ module Geometry_ASC__Form
   contains
     procedure, public, pass :: &
       Initialize
+    procedure, private, pass :: &
+      Geometry_G_CSL
+    generic, public :: &
+      Geometry_G => Geometry_G_CSL
+    procedure, private, pass :: &
+      Geometry_N_CSL
+    generic, public :: &
+      Geometry_N => Geometry_N_CSL
     final :: &
       Finalize
     procedure, private, pass :: &
@@ -50,6 +60,46 @@ contains
     call GA % InitializeFlat ( A, NameShortOption, IgnorabilityOption )
 
   end subroutine Initialize
+
+
+  function Geometry_G_CSL ( GA ) result ( G )
+
+    class ( Geometry_ASC_Form ), intent ( in ) :: &
+      GA
+    class ( Geometry_G_Form ), pointer :: &
+      G
+
+    select type ( GC => GA % Chart )
+    class is ( Geometry_CSL_Form )
+      G => GC % Geometry_G ( )
+    class default
+      call Show ( 'Geometry Chart type not recognized', CONSOLE % ERROR )
+      call Show ( 'Geometry_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Geometry_G_CSL', 'function', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- GC
+
+  end function Geometry_G_CSL
+
+
+  function Geometry_N_CSL ( GA ) result ( G )
+
+    class ( Geometry_ASC_Form ), intent ( in ) :: &
+      GA
+    class ( Geometry_N_Form ), pointer :: &
+      G
+
+    select type ( GC => GA % Chart )
+    class is ( Geometry_CSL_Form )
+      G => GC % Geometry_N ( )
+    class default
+      call Show ( 'Geometry Chart type not recognized', CONSOLE % ERROR )
+      call Show ( 'Geometry_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Geometry_N_CSL', 'function', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- GC
+
+  end function Geometry_N_CSL
 
 
   impure elemental subroutine Finalize ( GA )
