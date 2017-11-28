@@ -13,16 +13,20 @@ module Storage_CSL__Form
 
   type, public, extends ( Field_CSL_Template ) :: Storage_CSL_Form
     integer ( KDI ) :: &
-      nFields
+      nFields = 0
     logical ( KDL ) :: &
-      Write
+      Write = .false.
     character ( LDL ), dimension ( : ), allocatable :: &
       Variable
     class ( Chart_SL_Template ), pointer :: &
       Chart_SL => null ( )
   contains
-    procedure, public, pass :: &
-      Initialize
+    procedure, private, pass :: &
+      InitializeAllocate
+    procedure, private, pass :: &
+      InitializeClone
+    generic, public :: &
+      Initialize => InitializeAllocate, InitializeClone
     procedure, public, pass :: &
       Storage
     final :: &
@@ -34,7 +38,7 @@ module Storage_CSL__Form
 contains
 
 
-  subroutine Initialize &
+  subroutine InitializeAllocate &
                ( SC, C, NameShort, nFields, nValues, VariableOption, &
                  WriteOption, IgnorabilityOption )
 
@@ -73,7 +77,37 @@ contains
     call SC % InitializeTemplate_CSL &
            ( C, NameShort, nValues, IgnorabilityOption )
 
-  end subroutine Initialize
+  end subroutine InitializeAllocate
+
+
+  subroutine InitializeClone &
+               ( SC_Target, FC_Source, NameShort, iaSelectedOption )
+
+    class ( Storage_CSL_Form ), intent ( inout ) :: &
+      SC_Target
+    class ( Field_CSL_Template ), intent ( in ) :: &
+      FC_Source
+    character ( * ), intent ( in ) :: &
+      NameShort
+    integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
+      iaSelectedOption
+
+    if ( SC_Target % Type == '' ) &
+      SC_Target % Type = 'a Storage_CSL' 
+
+    allocate ( SC_Target % Field )
+    associate ( F => SC_Target % Field )
+    call F % Initialize &
+           ( FC_Source % Field, NameOption = NameShort, &
+             iaSelectedOption = iaSelectedOption )
+
+    call SC_Target % InitializeTemplate_CSL &
+           ( FC_Source % Chart, NameShort, F % nValues, &
+             IgnorabilityOption = FC_Source % IGNORABILITY )
+
+    end associate !-- F
+
+  end subroutine InitializeClone
 
 
   function Storage ( SC ) result ( S )
@@ -116,6 +150,9 @@ contains
 
     class ( Storage_CSL_Form ), intent ( inout ) :: &
       FC
+
+    if ( allocated ( FC % Field ) ) &
+      return
 
     allocate ( FC % Field )
 

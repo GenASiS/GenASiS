@@ -15,16 +15,20 @@ module Storage_ASC__Form
 
   type, public, extends ( Field_ASC_Template ) :: Storage_ASC_Form
     integer ( KDI ) :: &
-      nFields
+      nFields = 0
     logical ( KDL ) :: &
-      Write
+      Write = .false.
     character ( LDL ), dimension ( : ), allocatable :: &
       Variable
     class ( Atlas_SC_Form ), pointer :: &
       Atlas_SC => null ( )
   contains
-    procedure, public, pass :: &
-      Initialize
+    procedure, private, pass :: &
+      InitializeAllocate
+    procedure, private, pass :: &
+      InitializeClone
+    generic, public :: &
+      Initialize => InitializeAllocate, InitializeClone
     procedure, private, pass :: &
       Storage_CSL
     generic, public :: &
@@ -38,7 +42,7 @@ module Storage_ASC__Form
 contains
 
 
-  subroutine Initialize &
+  subroutine InitializeAllocate &
                ( SA, A, NameShort, nFields, VariableOption, WriteOption, &
                  IgnorabilityOption )
 
@@ -75,7 +79,46 @@ contains
 
     call SA % InitializeTemplate_ASC ( A, NameShort, IgnorabilityOption )
 
-  end subroutine Initialize
+  end subroutine InitializeAllocate
+
+
+  subroutine InitializeClone &
+               ( SA_Target, FA_Source, NameShort, iaSelectedOption )
+
+    class ( Storage_ASC_Form ), intent ( inout ) :: &
+      SA_Target
+    class ( Field_ASC_Template ), intent ( in ) :: &
+      FA_Source
+    character ( * ), intent ( in ) :: &
+      NameShort
+    integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
+      iaSelectedOption
+
+    select type ( FC => FA_Source % Chart )
+    class is ( Field_CSL_Template )
+
+      if ( SA_Target % Type == '' ) &
+        SA_Target % Type = 'a Storage_ASC' 
+
+      allocate ( Storage_CSL_Form :: SA_Target % Chart )
+      select type ( SC => SA_Target % Chart )
+      type is ( Storage_CSL_Form )
+      call SC % Initialize &
+             ( FC, NameShort, iaSelectedOption = iaSelectedOption )
+      end select !-- SC
+
+      call SA_Target % InitializeTemplate_ASC &
+             ( FA_Source % Atlas, NameShort, &
+               IgnorabilityOption = FA_Source % IGNORABILITY )
+
+    class default
+      call Show ( 'Field Chart type not recognized', CONSOLE % ERROR )
+      call Show ( 'Storage_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'InitializeClone', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- SC
+    
+  end subroutine InitializeClone
 
 
   function Storage_CSL ( SA ) result ( S )
@@ -114,6 +157,9 @@ contains
 
     class ( Storage_ASC_Form ), intent ( inout ) :: &
       FA
+
+    if ( allocated ( FA % Chart ) ) &
+      return
 
     select type ( A => FA % Atlas )
     class is ( Atlas_SC_Form )
