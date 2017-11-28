@@ -8,6 +8,8 @@ module FluidCentralCore_Form
   private
 
   type, public, extends ( Integrator_C_PS_Template ) :: FluidCentralCoreForm
+    type ( Storage_ASC_Form ), allocatable :: &
+      PoissonStorage
     type ( Poisson_ASC_Form ), allocatable :: &
       Poisson
   contains
@@ -15,6 +17,8 @@ module FluidCentralCore_Form
       Initialize
     final :: &
       Finalize
+    procedure, public, nopass :: &
+      ComputeGravity
   end type FluidCentralCoreForm
 
 contains
@@ -43,6 +47,8 @@ contains
 
     integer ( KDI ) :: &
       MaxDegree
+    class ( Geometry_N_Form ), pointer :: &
+      G_N
 
     if ( FCC % Type == '' ) &
       FCC % Type = 'a FluidCentralCore'
@@ -59,7 +65,6 @@ contains
     select type ( GA => PS % Geometry_ASC )
     class is ( Geometry_ASC_Form )
     call GA % Initialize ( PS, GeometryType )
-    end select !-- GA
 
     call PS % SetGeometry ( )
 
@@ -78,12 +83,20 @@ contains
         MaxDegree = 10
         call PROGRAM_HEADER % GetParameter ( MaxDegree, 'MaxDegree' )
 
+        G_N => GA % Geometry_N ( )
+        allocate ( FCC % PoissonStorage )
+        associate ( PSA => FCC % PoissonStorage )
+        call PSA % Initialize &
+               ( GA, NameShort = 'PoissonStorage', &
+                 iaSelectedOption = [ G_N % GRAVITATIONAL_POTENTIAL ] )
+        end associate !-- PSA
+
         allocate ( FCC % Poisson )
         associate ( P => FCC % Poisson )
-          call P % Initialize &
-                 ( PS, SolverType = GravitySolverTypeOption, &
-                   MaxDegreeOption = MaxDegree, &
-                   nEquationsOption = 1 )
+        call P % Initialize &
+               ( PS, SolverType = GravitySolverTypeOption, &
+                 MaxDegreeOption = MaxDegree, &
+                 nEquationsOption = 1 )
         end associate !-- P
 
       else
@@ -111,7 +124,9 @@ contains
     !-- Cleanup
 
     end select !-- FA
+    end select !-- GA
     end select !-- PS
+    nullify ( G_N )
 
   end subroutine Initialize
 
@@ -121,9 +136,21 @@ contains
     type ( FluidCentralCoreForm ), intent ( inout ) :: &
       FCC
 
+    if ( allocated ( FCC % Poisson ) ) &
+      deallocate ( FCC % Poisson )
+    if ( allocated ( FCC % PoissonStorage ) ) &
+      deallocate ( FCC % PoissonStorage )
+
     call FCC % FinalizeTemplate_C_PS ( )
 
   end subroutine Finalize
+
+
+  subroutine ComputeGravity ( )
+
+!    call P % Solve ( PFT % Solution, PFT % Source )
+
+  end subroutine ComputeGravity
 
 
 end module FluidCentralCore_Form
