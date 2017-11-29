@@ -4,7 +4,8 @@
 module UNIT_Singleton
 
   use KIND_DEFAULT_Singleton
-  use KIND_BIG_Singleton
+  use KIND_BIG_Singleton, &
+        KB => KIND_BIG
   use MeasuredValue_Form
   use CONSTANT_Singleton, &
         C => CONSTANT
@@ -64,6 +65,8 @@ module UNIT_Singleton
       ELECTRON_VOLT, &
       MEGA_ELECTRON_VOLT, &
       BETHE
+    type ( MeasuredValueForm ) :: &  !-- Angular momentum
+      SOLAR_KERR_PARAMETER
     type ( MeasuredValueForm ) :: &  !-- Entropy per baryon
       BOLTZMANN
     type ( MeasuredValueForm ) :: &  !-- Energy/length conversion
@@ -90,8 +93,8 @@ module UNIT_Singleton
       MeV_Minus_1 = 'MeV^-1'
     character ( 5, KBCH ) :: &
       MeV_Minus_1_KBCH &
-        = KBCH_'MeV' // char ( KIND_BIG % SUPERSCRIPT_MINUS, KBCH ) &
-                     // char ( KIND_BIG % SUPERSCRIPT_1, KBCH )
+        = KBCH_'MeV' // char ( KB % SUPERSCRIPT_MINUS, KBCH ) &
+                     // char ( KB % SUPERSCRIPT_1, KBCH )
 
 contains
 
@@ -127,7 +130,7 @@ contains
     if ( KBCH > KDCH ) then
       call U % ANGSTROM % Initialize_UCS &
              ( 1.0e-10_KDR * U % METER, &
-               char ( KIND_BIG % CAPITAL_A_RING, KBCH ), 'Ang' )
+               char ( KB % CAPITAL_A_RING, KBCH ), 'Ang' )
     else
       call U % ANGSTROM % Initialize &
              ( 1.0e-10_KDR * U % METER, 'Ang' )
@@ -142,7 +145,7 @@ contains
            ( 'u', 'MeV', C % ATOMIC_MASS_UNIT )
     if ( KBCH > KDCH ) then
       call U % SOLAR_MASS % Initialize_UCS &
-             ( KBCH_'M' // char ( KIND_BIG % CIRCLE_DOT, KBCH ), KBCH_'MeV', &
+             ( KBCH_'M' // char ( KB % CIRCLE_DOT, KBCH ), KBCH_'MeV', &
                'M_Sun', 'MeV', C % SOLAR_MASS )
     else
       call U % SOLAR_MASS % Initialize &
@@ -175,11 +178,11 @@ contains
            ( 'mol', '', C % MOLE )
     if ( KBCH > KDCH ) then
       call U % SOLAR_BARYON_NUMBER % Initialize_UCS &
-             ( KBCH_'N' // char ( KIND_BIG % CIRCLE_DOT, KBCH ), KBCH_'', &
-               'N_Sun', '', C % SOLAR_MASS / C % ATOMIC_MASS_UNIT )
+             ( KBCH_'N' // char ( KB % CIRCLE_DOT, KBCH ), KBCH_'', &
+               'N_Sun', '', C % SOLAR_BARYON_NUMBER )
     else
       call U % SOLAR_BARYON_NUMBER % Initialize &
-             ( 'N_Sun', '', C % SOLAR_MASS / C % ATOMIC_MASS_UNIT )
+             ( 'N_Sun', '', C % SOLAR_BARYON_NUMBER )
     end if
 
     !-- Angle
@@ -230,6 +233,21 @@ contains
     call U % BETHE % Initialize &
            ( 1.0e51_KDR * U % ERG, 'B' )
 
+    !-- Angular momentum
+    if ( KBCH > KDCH ) then
+      call U % SOLAR_KERR_PARAMETER % Initialize_UCS &
+             ( KBCH_'G M' // char ( KB % CIRCLE_DOT, KBCH ) &
+               // char ( KB % SUPERSCRIPT_2, KBCH ) // KBCH_' c' &
+               // char ( KB % SUPERSCRIPT_MINUS, KBCH ) &
+               // char ( KB % SUPERSCRIPT_1, KBCH ), &
+               KBCH_'', &
+               'G M_Sun^2 c^-1', '', &
+               C % SOLAR_KERR_PARAMETER )
+    else
+      call U % SOLAR_KERR_PARAMETER % Initialize &
+             ( 'G M_Sun^2 c^-1', '', C % SOLAR_KERR_PARAMETER )
+    end if
+
     !-- Entropy per baryon
     call U % BOLTZMANN % Initialize &
            ( 'k', '', C % BOLTZMANN )
@@ -237,7 +255,7 @@ contains
     !-- Energy/length conversion
     if ( KBCH > KDCH ) then
       call U % HBAR_C % Initialize_UCS &
-             ( KBCH_'(' // char ( KIND_BIG % SMALL_H_STROKE, KBCH ) &
+             ( KBCH_'(' // char ( KB % SMALL_H_STROKE, KBCH ) &
                  // KBCH_'c)', &
                KBCH_'', '(hBar_c)', '', &
                C % PLANCK_REDUCED * C % SPEED_OF_LIGHT )

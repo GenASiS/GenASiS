@@ -59,30 +59,33 @@ module CONSTANT_Singleton
                              *  JOULE, &
       MOLE                =  AVOGADRO_SI, &
       !-- GenASiS Derived
-      ELECTRON_CHARGE   =  ELECTRON_CHARGE_SI &
-                           *  AMPERE * SECOND, &
-      ELECTRON_MASS     =  ELECTRON_MASS_SI &
-                           *  KILOGRAM, &
-      PROTON_MASS       =  PROTON_MASS_SI &
-                           *  KILOGRAM, &
-      ATOMIC_MASS_UNIT  =  ATOMIC_MASS_UNIT_SI &
-                           *  KILOGRAM, &
-      GRAVITATIONAL     =  GRAVITATIONAL_SI &
-                           *  METER ** 3  /  KILOGRAM  /  SECOND ** 2, &
-      STEFAN_BOLTZMANN  =  PI ** 2  /  60.0_KDR &
-                           *  BOLTZMANN ** 4 &
-                           /  ( PLANCK_REDUCED * SPEED_OF_LIGHT ) ** 3, &
-      FERMI_COUPLING    =  FERMI_HBAR_C_3_GEV_2 &
-                           *  ( PLANCK_REDUCED * SPEED_OF_LIGHT ) ** 3 &
-                           /  ( 1.0e3_KDR * MEGA_ELECTRON_VOLT ) ** 2, &
-      ASTRONOMICAL_UNIT =  ASTRONOMICAL_UNIT_SI &
-                           *  METER, &
-      PARSEC            =  PARSEC_SI &
-                           *  METER, &
-      SOLAR_MASS        =  SOLAR_MASS_SI &
-                           *  KILOGRAM, &
-      NEUTRON_MASS      =  NEUTRON_MASS_AMU &
-                           *  ATOMIC_MASS_UNIT
+      ELECTRON_CHARGE       =  ELECTRON_CHARGE_SI &
+                               *  AMPERE * SECOND, &
+      ELECTRON_MASS         =  ELECTRON_MASS_SI &
+                               *  KILOGRAM, &
+      PROTON_MASS           =  PROTON_MASS_SI &
+                               *  KILOGRAM, &
+      ATOMIC_MASS_UNIT      =  ATOMIC_MASS_UNIT_SI &
+                               *  KILOGRAM, &
+      GRAVITATIONAL         =  GRAVITATIONAL_SI &
+                               *  METER ** 3  /  KILOGRAM  /  SECOND ** 2, &
+      STEFAN_BOLTZMANN      =  PI ** 2  /  60.0_KDR &
+                               *  BOLTZMANN ** 4 &
+                               /  ( PLANCK_REDUCED * SPEED_OF_LIGHT ) ** 3, &
+      FERMI_COUPLING        =  FERMI_HBAR_C_3_GEV_2 &
+                               *  ( PLANCK_REDUCED * SPEED_OF_LIGHT ) ** 3 &
+                               /  ( 1.0e3_KDR * MEGA_ELECTRON_VOLT ) ** 2, &
+      ASTRONOMICAL_UNIT     =  ASTRONOMICAL_UNIT_SI &
+                               *  METER, &
+      PARSEC                =  PARSEC_SI &
+                               *  METER, &
+      SOLAR_MASS            =  SOLAR_MASS_SI &
+                               *  KILOGRAM, &
+      SOLAR_BARYON_NUMBER   =  SOLAR_MASS / ATOMIC_MASS_UNIT, &
+      SOLAR_KERR_PARAMETER  =  GRAVITATIONAL  *  SOLAR_MASS ** 2  &
+                               /  SPEED_OF_LIGHT, & 
+      NEUTRON_MASS          =  NEUTRON_MASS_AMU &
+                               *  ATOMIC_MASS_UNIT
 
   type, public :: ConstantSingleton
     real ( KDR ) :: &
@@ -110,9 +113,11 @@ module CONSTANT_Singleton
       FERMI_COUPLING    =  FERMI_COUPLING, &
       SIN_2_WEINBERG    =  SIN_2_WEINBERG, &
       !-- Astrophysical
-      ASTRONOMICAL_UNIT  =  ASTRONOMICAL_UNIT, &
-      PARSEC             =  PARSEC, &
-      SOLAR_MASS         =  SOLAR_MASS, &
+      ASTRONOMICAL_UNIT       =  ASTRONOMICAL_UNIT, &
+      PARSEC                  =  PARSEC, &
+      SOLAR_MASS              =  SOLAR_MASS, &
+      SOLAR_BARYON_NUMBER     =  SOLAR_BARYON_NUMBER, &
+      SOLAR_KERR_PARAMETER    =  SOLAR_KERR_PARAMETER, &
       !-- Particles (that are not in the PDG Physical Constants)
       NEUTRON_MASS            =  NEUTRON_MASS, &
       NEUTRON_AXIAL_COUPLING  =  NEUTRON_AXIAL_COUPLING
