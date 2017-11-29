@@ -70,6 +70,8 @@ contains
     if ( PW % Type == '' ) &
       PW % Type = 'a PlaneWave'
 
+    PlaneWave => PW
+
     call PW % InitializeTemplate ( Name )
 
 
@@ -104,8 +106,6 @@ contains
 
 
     !-- Parameters
-
-    PlaneWave => PW
 
     nWavelengths = 0
     nWavelengths ( 1 : PS % nDimensions ) = 1

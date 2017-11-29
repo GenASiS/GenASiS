@@ -9,9 +9,9 @@ module FluidCentralCore_Form
 
   type, public, extends ( Integrator_C_PS_Template ) :: FluidCentralCoreForm
     type ( Storage_ASC_Form ), allocatable :: &
-      PoissonStorage
+      Storage_ASC
     type ( Poisson_ASC_Form ), allocatable :: &
-      Poisson
+      Poisson_ASC
   contains
     procedure, public, pass :: &
       Initialize
@@ -21,6 +21,12 @@ module FluidCentralCore_Form
       ComputeGravity
   end type FluidCentralCoreForm
 
+    class ( FluidCentralCoreForm ), private, pointer :: &
+      FluidCentralCore => null ( )
+
+    private :: &
+      ComputeGravitySource
+
 contains
 
 
@@ -29,7 +35,7 @@ contains
                  GravitySolverTypeOption, TimeUnitOption, FinishTimeOption, &
                  CourantFactorOption, nWriteOption )
 
-    class ( FluidCentralCoreForm ), intent ( inout ) :: &
+    class ( FluidCentralCoreForm ), intent ( inout ), target :: &
       FCC
     character ( * ), intent ( in )  :: &
       Name, &
@@ -52,6 +58,9 @@ contains
 
     if ( FCC % Type == '' ) &
       FCC % Type = 'a FluidCentralCore'
+
+    FluidCentralCore => FCC
+
 
     !-- PositionSpace
 
@@ -84,20 +93,25 @@ contains
         call PROGRAM_HEADER % GetParameter ( MaxDegree, 'MaxDegree' )
 
         G_N => GA % Geometry_N ( )
-        allocate ( FCC % PoissonStorage )
-        associate ( PSA => FCC % PoissonStorage )
-        call PSA % Initialize &
+        allocate ( FCC % Storage_ASC )
+        associate ( SA => FCC % Storage_ASC )
+        call SA % Initialize &
                ( GA, NameShort = 'PoissonStorage', &
                  iaSelectedOption = [ G_N % GRAVITATIONAL_POTENTIAL ] )
-        end associate !-- PSA
+        end associate !-- SA
 
-        allocate ( FCC % Poisson )
-        associate ( P => FCC % Poisson )
-        call P % Initialize &
+        allocate ( FCC % Poisson_ASC )
+        associate ( PA => FCC % Poisson_ASC )
+        call PA % Initialize &
                ( PS, SolverType = GravitySolverTypeOption, &
                  MaxDegreeOption = MaxDegree, &
                  nEquationsOption = 1 )
-        end associate !-- P
+        end associate !-- PA
+
+        select type ( TI => FA % TallyInterior )
+        class is ( Tally_F_D_Form )
+          TI % ComputeGravitationalPotential => ComputeGravity
+        end select !-- TI
 
       else
         call Show ( 'NEWTONIAN geometry required GravitySolverType', &
@@ -136,10 +150,10 @@ contains
     type ( FluidCentralCoreForm ), intent ( inout ) :: &
       FCC
 
-    if ( allocated ( FCC % Poisson ) ) &
-      deallocate ( FCC % Poisson )
-    if ( allocated ( FCC % PoissonStorage ) ) &
-      deallocate ( FCC % PoissonStorage )
+    if ( allocated ( FCC % Poisson_ASC ) ) &
+      deallocate ( FCC % Poisson_ASC )
+    if ( allocated ( FCC % Storage_ASC ) ) &
+      deallocate ( FCC % Storage_ASC )
 
     call FCC % FinalizeTemplate_C_PS ( )
 
@@ -148,9 +162,60 @@ contains
 
   subroutine ComputeGravity ( )
 
-!    call P % Solve ( PFT % Solution, PFT % Source )
+    type ( VariableGroupForm ), pointer :: &
+      S
+    class ( Fluid_D_Form ), pointer :: &
+      F
+
+    associate &
+      ( PA  => FluidCentralCore % Poisson_ASC, &
+        SA => FluidCentralCore % Storage_ASC )
+
+    select type ( FA => FluidCentralCore % Current_ASC )  !-- FluidAtlas
+    class is ( Fluid_ASC_Form )
+
+    S  =>  SA % Storage ( )
+    F  =>  FA % Fluid_D ( )
+
+    call ComputeGravitySource &
+           ( F % Value ( :, F % BARYON_MASS ), &
+             F % Value ( :, F % CONSERVED_BARYON_DENSITY ), &
+             S % Value ( :, S % iaSelected ( 1 ) ) )
+
+    call PA % Solve ( SA, SA )
+
+    end select !-- FA
+    end associate !-- PA, etc.
+    nullify ( S, F )
 
   end subroutine ComputeGravity
+
+
+  subroutine ComputeGravitySource ( M, N, S )
+
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      M, &
+      N
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      S
+
+    integer ( KDI ) :: &
+      iV, &  !-- iValue
+      nValues
+    real ( KDR ) :: &
+      FourPi_G
+
+    FourPi_G  =  4.0_KDR  *  CONSTANT % PI  *  CONSTANT % GRAVITATIONAL
+
+    nValues = size ( S )
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nValues
+      S ( iV )  =  FourPi_G  *  M ( iV )  *  N ( iV )
+    end do
+    !$OMP end parallel do
+
+  end subroutine ComputeGravitySource
 
 
 end module FluidCentralCore_Form

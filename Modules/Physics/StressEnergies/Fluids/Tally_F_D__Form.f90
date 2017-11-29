@@ -589,7 +589,7 @@ contains
     type is ( Geometry_N_Form )
 
     if ( associated ( T % ComputeGravitationalPotential ) ) then
-      call T % ComputeGravitationalPotential ( C, T % Atlas, G )
+      call T % ComputeGravitationalPotential ( )
     else
       call Show ( 'ComputeGravitationalPotential not set', CONSOLE % ERROR )
       call Show ( 'Tally_F_D__Form', 'module', CONSOLE % ERROR )
