@@ -362,7 +362,9 @@ contains
     case ( 'MEGA_ELECTRON_VOLT' )
       Result = UNIT % MEGA_ELECTRON_VOLT
     case ( 'BETHE' )
-      Result = UNIT % BETHE   
+      Result = UNIT % BETHE
+    case ( 'SOLAR_KERR_PARAMETER' )
+      Result = UNIT % SOLAR_KERR_PARAMETER
     case ( 'BOLTZMANN' )
       Result = UNIT % BOLTZMANN
     case ( 'HBAR_C' )

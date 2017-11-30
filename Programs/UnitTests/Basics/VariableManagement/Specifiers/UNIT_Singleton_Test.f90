@@ -97,6 +97,10 @@ program UNIT_Singleton_Test
   print*, 'BETHE               ', UNIT % BETHE
 
   print*
+  print*, 'Angular momentum Units'
+  print*, 'SOLAR_KERR_PARAMETER', UNIT % SOLAR_KERR_PARAMETER
+
+  print*
   print*, 'Entropy per baryon Units'
   print*, 'BOLTZMANN           ', UNIT % BOLTZMANN
 
@@ -110,7 +114,7 @@ program UNIT_Singleton_Test
   print*, 'NUMBER_DENSITY_MEV_HBAR_C', UNIT % NUMBER_DENSITY_MEV_HBAR_C
 
   print*
-  print*, 'Mass Density'
+  print*, 'Mass Density Units'
   print*, 'MASS_DENSITY_CGS    ', UNIT % MASS_DENSITY_CGS
 
 end program UNIT_Singleton_Test
