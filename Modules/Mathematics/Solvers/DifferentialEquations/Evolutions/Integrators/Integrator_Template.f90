@@ -224,7 +224,8 @@ contains
     call PROGRAM_HEADER % GetParameter ( I % NoWrite, 'NoWrite' )
 
     I % WriteTimeExact = .false.
-    call PROGRAM_HEADER % GetParameter ( I % WriteTimeExact, 'WriteTimeExact' )
+    call PROGRAM_HEADER % GetParameter &
+           ( I % WriteTimeExact, 'WriteTimeExact' )
 
     if ( .not. allocated ( I % TimeStepLabel ) ) then
       allocate ( I % TimeStepLabel ( 1 ) )

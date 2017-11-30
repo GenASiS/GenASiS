@@ -19,13 +19,16 @@ module FluidCentralCore_Form
       Finalize
     procedure, public, nopass :: &
       ComputeGravity
+    procedure, private, pass :: &  !-- 3
+      SetWriteTimeInterval
   end type FluidCentralCoreForm
 
     class ( FluidCentralCoreForm ), private, pointer :: &
       FluidCentralCore => null ( )
 
     private :: &
-      ComputeGravitySource
+      ComputeGravitySource, &
+      LocalMax
 
 contains
 
@@ -56,7 +59,10 @@ contains
     real ( KDR ) :: &
       RadiusCore, &
       RadiusMax, &
-      RadialRatio
+      RadialRatio, &
+      FinishTime
+    type ( MeasuredValueForm ) :: &
+      TimeUnit
     type ( MeasuredValueForm ), dimension ( 3 ) :: &
       CoordinateUnit
     class ( Geometry_N_Form ), pointer :: &
@@ -167,8 +173,17 @@ contains
 
     !-- Template
 
+    TimeUnit = UNIT % SECOND
+    if ( present ( TimeUnitOption ) ) &
+      TimeUnit = TimeUnitOption
+
+    FinishTime = 1.0_KDR * UNIT % SECOND
+    if ( present ( FinishTimeOption ) ) &
+      FinishTime = FinishTimeOption
+
     call FCC % InitializeTemplate_C_PS &
-           ( Name, FinishTimeOption = FinishTimeOption, &
+           ( Name, TimeUnitOption = TimeUnit, &
+             FinishTimeOption = FinishTime, &
              CourantFactorOption = CourantFactorOption, &
              nWriteOption = nWriteOption )
 
@@ -228,6 +243,106 @@ contains
   end subroutine ComputeGravity
 
 
+  subroutine SetWriteTimeInterval ( I )
+
+    class ( FluidCentralCoreForm ), intent ( inout ) :: &
+      I
+
+    integer ( KDI ) :: &
+      iProcess, &
+      iRadius
+    real ( KDR ) :: &
+      VelocityMax, &
+      VelocityMaxRadius, &
+      DensityAve, &
+      TimeScaleDensityAve, &
+      TimeScaleVelocityMax
+    type ( CollectiveOperation_R_Form ), allocatable :: &
+      CO
+    class ( GeometryFlatForm ), pointer :: &
+      G
+    class ( Fluid_D_Form ), pointer :: &
+      F
+
+    select type ( FA => I % Current_ASC )
+    class is ( Fluid_ASC_Form )
+    F => FA % Fluid_D ( )
+
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
+    G => PS % Geometry ( )
+
+    select type ( Chart => PS % Chart )
+    class is ( Chart_SL_Template )
+
+    associate ( C => PS % Communicator ) 
+
+    !-- Find max velocity
+    allocate ( CO )
+    call CO % Initialize ( C, nOutgoing = [ 1 ], nIncoming = [ C % Size ] )
+    CO % Outgoing % Value ( 1 ) &
+      =  LocalMax ( Chart % IsProperCell, &
+                    abs ( F % Value ( :, F % VELOCITY_U ( 1 ) ) ) ) 
+    call CO % Gather ( )
+    VelocityMax  =  maxval ( CO % Incoming % Value )
+    iProcess     =  maxloc ( CO % Incoming % Value, dim = 1 )  -  1
+    deallocate ( CO )
+
+    if ( VelocityMax == 0.0_KDR ) &
+      return
+
+    !-- Find radius of max velocity
+    allocate ( CO )
+    call CO % Initialize &
+           ( C, nOutgoing = [ 1 ], nIncoming = [ 1 ], RootOption = iProcess )
+    if ( C % Rank == iProcess ) then
+      iRadius  =  maxloc ( abs ( F % Value ( :, F % VELOCITY_U ( 1 ) ) ), &
+                           dim = 1 )
+      CO % Outgoing % Value ( 1 )  =  G % Value ( iRadius, G % CENTER ( 1 ) )
+    end if
+    call CO % Broadcast ( )
+    VelocityMaxRadius = CO % Incoming % Value ( 1 )
+    deallocate ( CO )
+
+    !-- Compute average density
+    select type ( TI => FA % TallyInterior )
+    class is ( Tally_F_D_Form )
+    DensityAve  =  F % BaryonMassReference &
+                   * TI % Value ( TI % BARYON_NUMBER ) &
+                   / VelocityMaxRadius ** 3
+
+    !-- Time scales
+    TimeScaleVelocityMax &
+      =  VelocityMaxRadius  /  VelocityMax
+    TimeScaleDensityAve &
+      =  ( CONSTANT % GRAVITATIONAL  *  DensityAve ) ** ( -0.5_KDR )
+
+    I % WriteTimeInterval  &
+      =  min ( TimeScaleDensityAve, TimeScaleVelocityMax )  /  I % nWrite
+
+    call Show ( 'Time Scales', I % IGNORABILITY )
+    call Show ( VelocityMax, Chart % CoordinateUnit ( 1 ) / I % TimeUnit, &
+                'VelocityMax', I % IGNORABILITY )
+    call Show ( VelocityMaxRadius, Chart % CoordinateUnit ( 1 ), &
+                'VelocityMaxRadius', I % IGNORABILITY )
+    call Show ( DensityAve, UNIT % MASS_DENSITY_CGS, 'DensityAve', &
+                I % IGNORABILITY )
+    call Show ( TimeScaleDensityAve, I % TimeUnit, 'TimeScaleDensityAve', &
+                I % IGNORABILITY )
+    call Show ( TimeScaleVelocityMax, I % TimeUnit, 'TimeScaleVelocityMax', &
+                I % IGNORABILITY )
+
+    !-- Cleanup
+    end select !-- TI
+    end associate !-- C
+    end select !-- Chart
+    end select !-- PS
+    end select !-- FA
+    nullify ( G, F )
+
+  end subroutine SetWriteTimeInterval
+
+
   subroutine ComputeGravitySource ( M, N, S )
 
     real ( KDR ), dimension ( : ), intent ( in ) :: &
@@ -253,6 +368,30 @@ contains
     !$OMP end parallel do
 
   end subroutine ComputeGravitySource
+
+
+  function LocalMax ( IsProperCell, V ) result ( ML ) 
+
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      IsProperCell
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      V
+    real ( KDR ) :: &
+      ML
+
+    integer ( KDI ) :: &
+      iV
+
+    ML = - huge ( 0.0_KDR )
+    !$OMP parallel do private ( iV ) &
+    !$OMP reduction ( max : ML )
+    do iV = 1, size ( V )
+      if ( IsProperCell ( iV ) ) &
+        ML  =  max ( ML, V ( iV ) )
+    end do !-- iV
+    !$OMP end parallel do
+ 
+  end function LocalMax
 
 
 end module FluidCentralCore_Form

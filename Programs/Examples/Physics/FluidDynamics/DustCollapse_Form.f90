@@ -35,6 +35,8 @@ contains
     character ( * ), intent ( in ) :: &
       Name
 
+    real ( KDR ) :: &
+      TimeScale
     class ( Fluid_D_Form ), pointer :: &
       F
 
@@ -76,6 +78,14 @@ contains
     F => FA % Fluid_D ( )
     call SetFluid ( DC, F, Time = 0.0_KDR )
 
+    TimeScale  &
+      =  ( CONSTANT % GRAVITATIONAL  *  DC % DensityInitial ) ** ( -0.5_KDR )
+    FCC % WriteTimeInterval &
+      =  TimeScale / FCC % nWrite
+    call Show ( 'Time Scales', DC % IGNORABILITY )
+    call Show ( TimeScale, FCC % TimeUnit, 'TimeScaleDensityAve', &
+                DC % IGNORABILITY )
+    
 
     !-- Cleanup
 
