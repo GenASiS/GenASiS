@@ -66,7 +66,8 @@ contains
     DC % RadiusInitial &
       =  PS % Chart % MaxCoordinate ( 1 ) / 1.1_KDR
     DC % DensityInitial &
-      =  1.0_KDR / ( 4.0_KDR  *  CONSTANT % PI  *  DC % RadiusInitial ** 3 )
+      =  CONSTANT % SOLAR_BARYON_NUMBER &
+         / ( 4.0_KDR / 3.0_KDR *  CONSTANT % PI  *  DC % RadiusInitial ** 3 )
     call PROGRAM_HEADER % GetParameter &
            ( DC % RadiusInitial, 'RadiusInitial' )
     call PROGRAM_HEADER % GetParameter &

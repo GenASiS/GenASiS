@@ -71,9 +71,10 @@ contains
 
   subroutine InitializeAllocate_D &
                ( F, RiemannSolverType, UseLimiter, Velocity_U_Unit, &
-                 MomentumDensity_D_Unit, NumberDensityUnit, &
-                 LimiterParameter, nValues, VariableOption, VectorOption, &
-                 NameOption, ClearOption, UnitOption, VectorIndicesOption )
+                 MomentumDensity_D_Unit, BaryonMassUnit, NumberDensityUnit, &
+                 BaryonMassReference, LimiterParameter, nValues, &
+                 VariableOption, VectorOption, NameOption, ClearOption, &
+                 UnitOption, VectorIndicesOption )
 
     class ( Fluid_D_Form ), intent ( inout ) :: &
       F
@@ -85,8 +86,10 @@ contains
       Velocity_U_Unit, &
       MomentumDensity_D_Unit
     type ( MeasuredValueForm ), intent ( in ) :: &
+      BaryonMassUnit, &
       NumberDensityUnit
     real ( KDR ), intent ( in ) :: &
+      BaryonMassReference, &
       LimiterParameter
     integer ( KDI ), intent ( in ) :: &
       nValues
@@ -120,7 +123,7 @@ contains
 
     call SetUnits &
            ( VariableUnit, F, Velocity_U_Unit, MomentumDensity_D_Unit, &
-             NumberDensityUnit )
+             BaryonMassUnit, NumberDensityUnit )
 
     call F % InitializeTemplate &
            ( RiemannSolverType, UseLimiter, Velocity_U_Unit, &
@@ -128,6 +131,8 @@ contains
              VectorOption = Vector, NameOption = Name, &
              ClearOption = ClearOption, UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndices )
+
+    F % BaryonMassReference = BaryonMassReference
 
   end subroutine InitializeAllocate_D
   
@@ -684,7 +689,7 @@ contains
 
   subroutine SetUnits &
                ( VariableUnit, F, Velocity_U_Unit, MomentumDensity_D_Unit, &
-                 NumberDensityUnit )
+                 BaryonMassUnit, NumberDensityUnit )
 
     type ( MeasuredValueForm ), dimension ( : ), intent ( inout ) :: &
       VariableUnit
@@ -694,11 +699,13 @@ contains
       Velocity_U_Unit, &
       MomentumDensity_D_Unit
     type ( MeasuredValueForm ), intent ( in ) :: &
+      BaryonMassUnit, &
       NumberDensityUnit
 
     integer ( KDI ) :: &
       iD
 
+    VariableUnit ( F % BARYON_MASS )              = BaryonMassUnit
     VariableUnit ( F % COMOVING_BARYON_DENSITY )  = NumberDensityUnit
     VariableUnit ( F % CONSERVED_BARYON_DENSITY ) = NumberDensityUnit
 

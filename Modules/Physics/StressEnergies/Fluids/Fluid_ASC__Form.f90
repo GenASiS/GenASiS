@@ -20,8 +20,10 @@ module Fluid_ASC__Form
   
   type, public, extends ( Current_ASC_Template ) :: Fluid_ASC_Form
     real ( KDR ) :: &
-      LimiterParameter
+      LimiterParameter, &
+      BaryonMassReference
     type ( MeasuredValueForm ) :: &
+      BaryonMassUnit, &
       NumberDensityUnit, &
       EnergyDensityUnit, &
       TemperatureUnit
@@ -65,10 +67,11 @@ contains
                ( FA, A, FluidType, NameShortOption, RiemannSolverTypeOption, &
                  UseLimiterOption, AllocateSourcesOption, &
                  Velocity_U_UnitOption, MomentumDensity_D_UnitOption, &
-                 NumberDensityUnitOption, EnergyDensityUnitOption, &
-                 TemperatureUnitOption, MassUnitOption, EnergyUnitOption, &
-                 MomentumUnitOption, AngularMomentumUnitOption, &
-                 TimeUnitOption, LimiterParameterOption, &
+                 BaryonMassUnitOption, NumberDensityUnitOption, &
+                 EnergyDensityUnitOption, TemperatureUnitOption, &
+                 NumberUnitOption, EnergyUnitOption, MomentumUnitOption, &
+                 AngularMomentumUnitOption, TimeUnitOption, &
+                 BaryonMassReferenceOption, LimiterParameterOption, &
                  ShockThresholdOption, IgnorabilityOption )
 
     class ( Fluid_ASC_Form ), intent ( inout ) :: &
@@ -87,15 +90,17 @@ contains
       Velocity_U_UnitOption, &
       MomentumDensity_D_UnitOption
     type ( MeasuredValueForm ), intent ( in ), optional :: &
+      BaryonMassUnitOption, &
       NumberDensityUnitOption, &
       EnergyDensityUnitOption, &
       TemperatureUnitOption, &
-      MassUnitOption, &
+      NumberUnitOption, &
       EnergyUnitOption, &
       MomentumUnitOption, &
       AngularMomentumUnitOption, &
       TimeUnitOption
     real ( KDR ), intent ( in ), optional :: &
+      BaryonMassReferenceOption, &
       LimiterParameterOption, &
       ShockThresholdOption
     integer ( KDI ), intent ( in ), optional :: &
@@ -135,6 +140,12 @@ contains
     call PROGRAM_HEADER % GetParameter &
            ( FA % LimiterParameter, 'LimiterParameter' )
 
+    FA % BaryonMassReference = 1.0_KDR
+    if ( present ( BaryonMassReferenceOption ) ) &
+      FA % BaryonMassReference = BaryonMassReferenceOption
+
+    if ( present ( BaryonMassUnitOption ) ) &
+      FA % BaryonMassUnit = BaryonMassUnitOption
     if ( present ( NumberDensityUnitOption ) ) &
       FA % NumberDensityUnit = NumberDensityUnitOption
     if ( present ( EnergyDensityUnitOption ) ) &
@@ -183,7 +194,7 @@ contains
     select type ( TI => FA % TallyInterior )
     class is ( Tally_F_D_Form )
       call TI % Initialize &
-             ( A, MassUnitOption = MassUnitOption, &
+             ( A, NumberUnitOption = NumberUnitOption, &
                EnergyUnitOption = EnergyUnitOption, &
                MomentumUnitOption = MomentumUnitOption, &
                AngularMomentumUnitOption = AngularMomentumUnitOption )
@@ -192,7 +203,7 @@ contains
     select type ( TT => FA % TallyTotal )
     class is ( Tally_F_D_Form )
       call TT % Initialize &
-             ( A, MassUnitOption = MassUnitOption, &
+             ( A, NumberUnitOption = NumberUnitOption, &
                EnergyUnitOption = EnergyUnitOption, &
                MomentumUnitOption = MomentumUnitOption, &
                AngularMomentumUnitOption = AngularMomentumUnitOption )
@@ -201,7 +212,7 @@ contains
     select type ( TC => FA % TallyChange )
     class is ( Tally_F_D_Form )
       call TC % Initialize &
-             ( A, MassUnitOption = MassUnitOption, &
+             ( A, NumberUnitOption = NumberUnitOption, &
                EnergyUnitOption = EnergyUnitOption, &
                MomentumUnitOption = MomentumUnitOption, &
                AngularMomentumUnitOption = AngularMomentumUnitOption )
@@ -211,7 +222,7 @@ contains
       select type ( TB => FA % TallyBoundaryLocal ( iB ) % Element )
       class is ( Tally_F_D_Form )
         call TB % Initialize &
-               ( A, MassUnitOption = MassUnitOption, &
+               ( A, NumberUnitOption = NumberUnitOption, &
                  EnergyUnitOption = EnergyUnitOption, &
                  MomentumUnitOption = MomentumUnitOption, &
                  AngularMomentumUnitOption = AngularMomentumUnitOption )
@@ -219,7 +230,7 @@ contains
       select type ( TB => FA % TallyBoundaryGlobal ( iB ) % Element )
       class is ( Tally_F_D_Form )
         call TB % Initialize &
-               ( A, MassUnitOption = MassUnitOption, &
+               ( A, NumberUnitOption = NumberUnitOption, &
                  EnergyUnitOption = EnergyUnitOption, &
                  MomentumUnitOption = MomentumUnitOption, &
                  AngularMomentumUnitOption = AngularMomentumUnitOption )
@@ -378,8 +389,9 @@ contains
       call FC % Initialize &
              ( C, FA % NameShort, FA % FluidType, FA % RiemannSolverType, &
                FA % UseLimiter, FA % Velocity_U_Unit, &
-               FA % MomentumDensity_D_Unit, FA % NumberDensityUnit, &
-               FA % EnergyDensityUnit, FA % TemperatureUnit, &
+               FA % MomentumDensity_D_Unit, FA % BaryonMassUnit, &
+               FA % NumberDensityUnit, FA % EnergyDensityUnit, &
+               FA % TemperatureUnit, FA % BaryonMassReference, &
                FA % LimiterParameter, nValues, &
                IgnorabilityOption = FA % IGNORABILITY )
     end select !-- FC

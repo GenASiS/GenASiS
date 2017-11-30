@@ -66,15 +66,15 @@ contains
 
 
   subroutine InitializeFluid &
-               ( T, A, MassUnitOption, EnergyUnitOption, MomentumUnitOption, &
-                 AngularMomentumUnitOption )
+               ( T, A, NumberUnitOption, EnergyUnitOption, &
+                 MomentumUnitOption, AngularMomentumUnitOption )
     
     class ( Tally_F_D_Form ), intent ( inout ) :: &
       T
     class ( AtlasHeaderForm ), intent ( in ), target :: &
       A
     type ( MeasuredValueForm ), intent ( in ), optional :: &
-      MassUnitOption, &
+      NumberUnitOption, &
       EnergyUnitOption, &
       MomentumUnitOption, &
       AngularMomentumUnitOption
@@ -115,11 +115,11 @@ contains
     if ( .not. allocated ( T % Unit ) ) &
       allocate ( T % Unit ( T % N_INTEGRALS ) )
     
-    if ( present ( EnergyUnitOption ) .and. present ( MomentumUnitOption ) &
+    if ( present ( NumberUnitOption ) .and. present ( MomentumUnitOption ) &
          .and. present ( AngularMomentumUnitOption ) ) &
     then
       T % Unit ( 1 : T % N_INTEGRALS_DUST ) &
-        = [ MassUnitOption, spread ( MomentumUnitOption, 1, 3 ), &
+        = [ NumberUnitOption, spread ( MomentumUnitOption, 1, 3 ), &
             EnergyUnitOption, spread ( AngularMomentumUnitOption, 1, 3 ), &
             EnergyUnitOption, EnergyUnitOption ]
     else

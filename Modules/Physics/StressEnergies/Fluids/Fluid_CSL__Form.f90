@@ -17,8 +17,10 @@ module Fluid_CSL__Form
 
   type, public, extends ( Field_CSL_Template ) :: Fluid_CSL_Form
     real ( KDR ) :: &
-      LimiterParameter
+      LimiterParameter, &
+      BaryonMassReference
     type ( MeasuredValueForm ) :: &
+      BaryonMassUnit, &
       NumberDensityUnit, &
       EnergyDensityUnit, &
       TemperatureUnit
@@ -58,9 +60,10 @@ contains
 
   subroutine Initialize &
                ( FC, C, NameShort, FluidType, RiemannSolverType, UseLimiter, &
-                 Velocity_U_Unit, MomentumDensity_D_Unit, NumberDensityUnit, &
-                 EnergyDensityUnit, TemperatureUnit, LimiterParameter, &
-                 nValues, IgnorabilityOption )
+                 Velocity_U_Unit, MomentumDensity_D_Unit, BaryonMassUnit, &
+                 NumberDensityUnit, EnergyDensityUnit, TemperatureUnit, &
+                 BaryonMassReference, LimiterParameter, nValues, &
+                 IgnorabilityOption )
 
     class ( Fluid_CSL_Form ), intent ( inout ) :: &
       FC
@@ -76,10 +79,12 @@ contains
       Velocity_U_Unit, &
       MomentumDensity_D_Unit
     type ( MeasuredValueForm ), intent ( in ) :: &
+      BaryonMassUnit, &
       NumberDensityUnit, &
       EnergyDensityUnit, &
       TemperatureUnit
     real ( KDR ), intent ( in ) :: &
+      BaryonMassReference, &
       LimiterParameter
     integer ( KDI ), intent ( in ) :: &
       nValues
@@ -88,10 +93,11 @@ contains
 
     if ( FC % Type == '' ) &
       FC % Type = 'a Fluid_CSL'
-    FC % FluidType         = FluidType
-    FC % RiemannSolverType = RiemannSolverType
-    FC % UseLimiter        = UseLimiter
-    FC % LimiterParameter  = LimiterParameter
+    FC % FluidType           = FluidType
+    FC % RiemannSolverType   = RiemannSolverType
+    FC % UseLimiter          = UseLimiter
+    FC % LimiterParameter    = LimiterParameter
+    FC % BaryonMassReference = BaryonMassReference
 
     FC % NumberDensityUnit      = NumberDensityUnit
     FC % EnergyDensityUnit      = EnergyDensityUnit
@@ -239,7 +245,8 @@ contains
         call F % Initialize &
                ( FC % RiemannSolverType, FC % UseLimiter, &
                  FC % Velocity_U_Unit, FC % MomentumDensity_D_Unit, &
-                 FC % NumberDensityUnit, FC % LimiterParameter, &
+                 FC % BaryonMassUnit, FC % NumberDensityUnit, &
+                 FC % BaryonMassReference, FC % LimiterParameter, &
                  FC % nValues, NameOption = FC % NameShort )
         call F % SetPrimitiveConserved ( )
         call F % SetOutput ( FC % FieldOutput )

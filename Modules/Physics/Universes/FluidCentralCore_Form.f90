@@ -32,8 +32,8 @@ contains
 
   subroutine Initialize &
                ( FCC, Name, FluidType, GeometryType, &
-                 GravitySolverTypeOption, TimeUnitOption, FinishTimeOption, &
-                 CourantFactorOption, nWriteOption )
+                 GravitySolverTypeOption, TimeUnitOption, &
+                 FinishTimeOption, CourantFactorOption, nWriteOption )
 
     class ( FluidCentralCoreForm ), intent ( inout ), target :: &
       FCC
@@ -53,6 +53,12 @@ contains
 
     integer ( KDI ) :: &
       MaxDegree
+    real ( KDR ) :: &
+      RadiusCore, &
+      RadiusMax, &
+      RadialRatio
+    type ( MeasuredValueForm ), dimension ( 3 ) :: &
+      CoordinateUnit
     class ( Geometry_N_Form ), pointer :: &
       G_N
 
@@ -68,7 +74,18 @@ contains
     select type ( PS => FCC % PositionSpace )
     class is ( Atlas_SC_CC_Form )
     call PS % Initialize ( 'PositionSpace', PROGRAM_HEADER % Communicator )
-    call PS % CreateChart_CC ( )
+
+    RadiusCore   =   40.0_KDR  *  UNIT % KILOMETER
+    RadiusMax    =  1.0e4_KDR  *  UNIT % KILOMETER
+    RadialRatio  =  6.5_KDR
+
+    CoordinateUnit  =  [ UNIT % KILOMETER, UNIT % RADIAN, UNIT % RADIAN ]
+
+    call PS % CreateChart_CC &
+           ( CoordinateUnitOption = CoordinateUnit, &
+             RadiusCoreOption = RadiusCore, &
+             RadiusMaxOption = RadiusMax, &
+             RadialRatioOption = RadialRatio )
 
     allocate ( Geometry_ASC_Form :: PS % Geometry_ASC )
     select type ( GA => PS % Geometry_ASC )
@@ -82,7 +99,25 @@ contains
     allocate ( Fluid_ASC_Form :: FCC % Current_ASC )
     select type ( FA => FCC % Current_ASC )  !-- FluidAtlas
     class is ( Fluid_ASC_Form )
-    call FA % Initialize ( PS, FluidType )
+
+    select case ( trim ( GeometryType ) )
+    case ( 'GALILEAN' )
+      call FA % Initialize ( PS, FluidType )
+    case default
+      call FA % Initialize &
+             ( PS, FluidType, &
+               BaryonMassUnitOption &
+                 =  UNIT % ATOMIC_MASS_UNIT, &
+               NumberUnitOption &
+                 =  UNIT % SOLAR_BARYON_NUMBER, &
+               EnergyUnitOption &
+                 =  UNIT % SOLAR_MASS  *  UNIT % SPEED_OF_LIGHT **2, &
+               MomentumUnitOption &
+                 =  UNIT % SOLAR_MASS  *  UNIT % SPEED_OF_LIGHT, &
+               AngularMomentumUnitOption &
+                 =  UNIT % SOLAR_KERR_PARAMETER, &
+               BaryonMassReferenceOption = CONSTANT % ATOMIC_MASS_UNIT )
+    end select
 
     !-- Gravity
 
@@ -133,7 +168,9 @@ contains
     !-- Template
 
     call FCC % InitializeTemplate_C_PS &
-           ( Name, FinishTimeOption = FinishTimeOption )
+           ( Name, FinishTimeOption = FinishTimeOption, &
+             CourantFactorOption = CourantFactorOption, &
+             nWriteOption = nWriteOption )
 
     !-- Cleanup
 
