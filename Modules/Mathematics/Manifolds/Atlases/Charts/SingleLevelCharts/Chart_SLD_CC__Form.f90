@@ -105,7 +105,7 @@ contains
       C % RadialRatio = RadialRatioOption
     call PROGRAM_HEADER % GetParameter ( C % RadialRatio, 'RadialRatio' )
 
-    nCellsRadial    = C % RadialRatio  *  C % nCellsCore  !-- Aim for RadiusMax
+    nCellsRadial    = C % RadialRatio  *  C % nCellsCore !-- Aim for RadiusMax
     nCellsPolar     = 3  *  C % nCellsCore  !-- Close to unit aspect ratio
     nCellsAzimuthal = 2  *  nCellsPolar
  
@@ -144,12 +144,15 @@ contains
     call C % Chart_SLD_Form % Show ( )
 
     call Show ( 'Chart_SLD_CC parameters' )
-    call Show ( C % RadiusCore, 'RadiusCore' )
+    call Show ( C % RadiusCore, C % CoordinateUnit ( 1 ), 'RadiusCore' )
     call Show ( C % nCellsCore, 'nCellsCore' )
-    call Show ( C % RadiusCore / C % nCellsCore, 'CellWidthCore' )
+    call Show ( C % RadiusCore / C % nCellsCore, C % CoordinateUnit ( 1 ), &
+                'CellWidthCore' )
     call Show ( C % RadialRatio, 'RadialRatio' )
-    call Show ( C % RadiusMax, 'RadiusMax requested' )
-    call Show ( C % MaxCoordinate ( 1 ), 'RadiusMax actual' )
+    call Show ( C % RadiusMax, C % CoordinateUnit ( 1 ), &
+                'RadiusMax requested' )
+    call Show ( C % MaxCoordinate ( 1 ), C % CoordinateUnit ( 1 ), &
+                'RadiusMax actual' )
 
   end subroutine ShowHeader
 
