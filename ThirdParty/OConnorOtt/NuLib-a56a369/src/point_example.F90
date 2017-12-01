@@ -32,7 +32,7 @@ program point_example
   !number of energy groups
   integer :: mypoint_number_groups = 24
 
-  character*200 :: parameters = "/projects/ceclub/gr1dnulib/GitHub/NuLib/parameters"
+  character*200 :: parameters = "./parameters"
 
   !local variables
   real*8, allocatable,dimension(:,:) :: local_emissivity
@@ -64,8 +64,8 @@ program point_example
 #endif
   !read in EOS table & set reference mass
   call read_eos_table(eos_filename)
-  m_ref = m_amu !for SFHo_EOS (Hempel)
-  ! m_ref = m_n !for LS220
+  ! m_ref = m_amu !for SFHo_EOS (Hempel)
+  m_ref = m_n !for LS220
 
   !example point
   xrho = 1.0d12 !g/cm^3
