@@ -10,8 +10,13 @@ FORTRAN_PROFILE      =
 LINK = mpif90 -fopenmp
 
 #-- Silo library include and link line flag and location
-INCLUDE_SILO = #-I/usr/local/silo-4.10.2/include
-LIBRARY_SILO = #-L/usr/local/silo-4.10.2/lib -lsilo
+INCLUDE_SILO = -I/usr/local/silo-4.10.2/include
+LIBRARY_SILO = -L/usr/local/silo-4.10.2/lib -lsilo
+
+#-- HDF5 library include and link line flag and location
+HDF5DIR = /usr/local/Cellar/hdf5/1.8.16_1
+INCLUDE_HDF5 = -I$(HDF5DIR)/include
+LIBRARY_HDF5 = -L$(HDF5DIR)/lib -lhdf5 -lhdf5_fortran -lhdf5 -lz
 
 #-- LAPACK library link line flag and location
 LIBRARY_LAPACK = -framework Accelerate
