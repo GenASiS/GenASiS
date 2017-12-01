@@ -4,6 +4,7 @@ module RadiationMoments_BSLL_ASC_CSLD__Form
   use Mathematics
   use RadiationMoments_Form
   use PhotonMoments_S__Form
+  use NeutrinoMoments_S__Form
   use RadiationMoments_ASC__Form
 
   implicit none
@@ -39,6 +40,8 @@ module RadiationMoments_BSLL_ASC_CSLD__Form
       RadiationMoments
     procedure, public, pass :: &
       PhotonMoments_S
+    procedure, public, pass :: &
+      NeutrinoMoments_S
     procedure, public, pass :: &
       ComputeTally
     procedure, public, pass :: &
@@ -224,6 +227,29 @@ contains
   end function PhotonMoments_S
 
 
+  function NeutrinoMoments_S ( RMB, iFiber ) result ( RMF )
+
+    class ( RadiationMoments_BSLL_ASC_CSLD_Form ), intent ( in ), target :: &
+      RMB
+    integer ( KDI ), intent ( in ) :: &
+      iFiber
+    class ( NeutrinoMoments_S_Form ), pointer :: &
+      RMF
+
+    select type ( RMA => RMB % Fiber % Atlas ( iFiber ) % Element )
+    class is ( Field_ASC_Template )
+      select type ( RMC => RMA % Chart )
+      class is ( Field_CSL_Template )   
+        select type ( RM => RMC % Field )
+        class is ( NeutrinoMoments_S_Form )
+          RMF => RM
+        end select !-- RM
+      end select !-- RMC
+    end select !-- RMA
+
+  end function NeutrinoMoments_S
+
+
   subroutine SetInteractions ( RMB, IB )
 
     class ( RadiationMoments_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
@@ -365,6 +391,8 @@ contains
     select case ( trim ( FB % RadiationType ) )
     case ( 'PHOTONS_SPECTRAL' )
       RadiationType = 'PHOTONS_GREY'
+    case ( 'NEUTRINOS_SPECTRAL' )
+      RadiationType = 'NEUTRINOS_GREY'
     case default
       RadiationType = FB % RadiationType
     end select !-- FB % RadiationType

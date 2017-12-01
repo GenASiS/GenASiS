@@ -1,6 +1,6 @@
 PATH_GENASIS = ../../../../..
 
-all: SineWaveStreaming Thermalization MarshakWave
+all: SineWaveStreaming Thermalization ThermalizationNeutrinos MarshakWave
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
@@ -30,6 +30,14 @@ Thermalization: Basics.a Mathematics.a Fluid.a GreyMoments.a \
           SpectralMoments.a GreyMoments.a Fluid.a Mathematics.a Basics.a \
           $(LIBRARIES)
 
+ThermalizationNeutrinos: ThirdParty.a Basics.a Mathematics.a Fluid.a \
+  GreyMoments.a SpectralMoments.a ThermalizationNeutrinos.o
+	$(LINK) $(FFLAGS) \
+          -o ThermalizationNeutrinos_$(MACHINE) \
+          ThermalizationNeutrinos.o ThermalizationNeutrinos_Form.o \
+          SpectralMoments.a GreyMoments.a Fluid.a Mathematics.a Basics.a \
+          ThirdParty.a $(LIBRARIES)
+
 MarshakWave: Basics.a Mathematics.a Fluid.a GreyMoments.a \
   SpectralMoments.a MarshakWave.o
 	$(LINK) $(FFLAGS) \
@@ -38,6 +46,7 @@ MarshakWave: Basics.a Mathematics.a Fluid.a GreyMoments.a \
           SpectralMoments.a GreyMoments.a Fluid.a Mathematics.a Basics.a \
           $(LIBRARIES)
 
+include $(PATH_THIRD_PARTY)/Makefile_Dependencies
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MATHEMATICS)/Makefile_Dependencies
 include ../../FluidDynamics/Makefile_Dependencies
@@ -49,6 +58,7 @@ clean:
 clobber: clean
 	rm -f SineWaveStreaming_*
 	rm -f Thermalization_*
+	rm -f ThermalizationNeutrinos_*
 	rm -f MarshakWave_*
 
 RadiationMoments_BSLL_ASC_CSLD__Form.o: \
@@ -56,6 +66,7 @@ RadiationMoments_BSLL_ASC_CSLD__Form.o: \
   Mathematics.o \
   RadiationMoments_Form.o \
   PhotonMoments_S__Form.o \
+  NeutrinoMoments_S__Form.o \
   RadiationMoments_ASC__Form.o \
   RadiationMoments_BSLL_ASC_CSLD__Form.f90
 
@@ -114,6 +125,17 @@ Thermalization.o: \
   Basics.o \
   Thermalization_Form.o \
   Thermalization.f90
+
+ThermalizationNeutrinos_Form.o: \
+  Basics.o \
+  Mathematics.o \
+  RadiationMoments_BSLL_ASC_CSLD__Form.o \
+  ThermalizationNeutrinos_Form.f90
+
+ThermalizationNeutrinos.o: \
+  Basics.o \
+  ThermalizationNeutrinos_Form.o \
+  ThermalizationNeutrinos.f90
 
 MarshakWave_Form.o: \
   Basics.o \
