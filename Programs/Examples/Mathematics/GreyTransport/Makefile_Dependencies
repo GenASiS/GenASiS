@@ -29,6 +29,18 @@ PhotonMoments_S__Form.o: \
   RadiationMoments_Form.o \
   PhotonMoments_S__Form.f90
 
+NeutrinoMoments_G__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  PhotonMoments_G__Form.o \
+  NeutrinoMoments_G__Form.f90
+
+NeutrinoMoments_S__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  RadiationMoments_Form.o \
+  NeutrinoMoments_S__Form.f90
+
 Sources_RM__Form.o: \
   Basics.o \
   Mathematics.o \
@@ -55,6 +67,8 @@ RadiationMoments_CSL__Form.o: \
   RadiationMoments_Form.o \
   PhotonMoments_G__Form.o \
   PhotonMoments_S__Form.o \
+  NeutrinoMoments_G__Form.o \
+  NeutrinoMoments_S__Form.o \
   Sources_RM__Form.o \
   Sources_RM_CSL__Form.o \
   RadiationMoments_CSL__Form.f90
@@ -65,6 +79,8 @@ RadiationMoments_ASC__Form.o: \
   RadiationMoments_Form.o \
   PhotonMoments_G__Form.o \
   PhotonMoments_S__Form.o \
+  NeutrinoMoments_G__Form.o \
+  NeutrinoMoments_S__Form.o \
   Sources_RM_CSL__Form.o \
   Sources_RM_ASC__Form.o \
   RadiationMoments_CSL__Form.o \
