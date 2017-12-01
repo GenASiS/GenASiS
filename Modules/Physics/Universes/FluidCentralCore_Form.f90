@@ -8,6 +8,10 @@ module FluidCentralCore_Form
   private
 
   type, public, extends ( Integrator_C_PS_Template ) :: FluidCentralCoreForm
+    real ( KDR ) :: &
+      GravitationalConstant
+    logical ( KDL ) :: &
+      Dimensionless = .false.
     type ( Storage_ASC_Form ), allocatable :: &
       Storage_ASC
     type ( Poisson_ASC_Form ), allocatable :: &
@@ -35,8 +39,9 @@ contains
 
   subroutine Initialize &
                ( FCC, Name, FluidType, GeometryType, &
-                 GravitySolverTypeOption, TimeUnitOption, &
-                 FinishTimeOption, CourantFactorOption, nWriteOption )
+                 GravitySolverTypeOption, DimensionlessOption, &
+                 TimeUnitOption, FinishTimeOption, CourantFactorOption, &
+                 nWriteOption )
 
     class ( FluidCentralCoreForm ), intent ( inout ), target :: &
       FCC
@@ -46,6 +51,8 @@ contains
       GeometryType
     character ( * ), intent ( in ), optional :: &
       GravitySolverTypeOption
+    logical ( KDL ), intent ( in ), optional :: &
+      DimensionlessOption
     type ( MeasuredValueForm ), intent ( in ), optional :: &
       TimeUnitOption
     real ( KDR ), intent ( in ), optional :: &
@@ -73,6 +80,15 @@ contains
 
     FluidCentralCore => FCC
 
+    if ( present ( DimensionlessOption ) ) &
+      FCC % Dimensionless = DimensionlessOption
+
+    if ( FCC % Dimensionless ) then
+      FCC % GravitationalConstant  =  1.0_KDR
+    else
+      FCC % GravitationalConstant  =  CONSTANT % GRAVITATIONAL
+    end if
+
 
     !-- PositionSpace
 
@@ -81,17 +97,25 @@ contains
     class is ( Atlas_SC_CC_Form )
     call PS % Initialize ( 'PositionSpace', PROGRAM_HEADER % Communicator )
 
-    RadiusCore   =   40.0_KDR  *  UNIT % KILOMETER
-    RadiusMax    =  1.0e4_KDR  *  UNIT % KILOMETER
-    RadialRatio  =  6.5_KDR
+    if ( FCC % Dimensionless ) then
 
-    CoordinateUnit  =  [ UNIT % KILOMETER, UNIT % RADIAN, UNIT % RADIAN ]
+      call PS % CreateChart_CC ( )
 
-    call PS % CreateChart_CC &
-           ( CoordinateUnitOption = CoordinateUnit, &
-             RadiusCoreOption = RadiusCore, &
-             RadiusMaxOption = RadiusMax, &
-             RadialRatioOption = RadialRatio )
+    else
+
+      RadiusCore   =   40.0_KDR  *  UNIT % KILOMETER
+      RadiusMax    =  1.0e4_KDR  *  UNIT % KILOMETER
+      RadialRatio  =  6.5_KDR
+
+      CoordinateUnit  =  [ UNIT % KILOMETER, UNIT % RADIAN, UNIT % RADIAN ]
+
+      call PS % CreateChart_CC &
+             ( CoordinateUnitOption = CoordinateUnit, &
+               RadiusCoreOption = RadiusCore, &
+               RadiusMaxOption = RadiusMax, &
+               RadialRatioOption = RadialRatio )
+
+    end if !-- Dimensionless
 
     allocate ( Geometry_ASC_Form :: PS % Geometry_ASC )
     select type ( GA => PS % Geometry_ASC )
@@ -100,16 +124,16 @@ contains
 
     call PS % SetGeometry ( )
 
+
     !-- Fluid
 
     allocate ( Fluid_ASC_Form :: FCC % Current_ASC )
     select type ( FA => FCC % Current_ASC )  !-- FluidAtlas
     class is ( Fluid_ASC_Form )
 
-    select case ( trim ( GeometryType ) )
-    case ( 'GALILEAN' )
+    if ( FCC % Dimensionless ) then
       call FA % Initialize ( PS, FluidType )
-    case default
+    else
       call FA % Initialize &
              ( PS, FluidType, &
                BaryonMassUnitOption &
@@ -123,7 +147,8 @@ contains
                AngularMomentumUnitOption &
                  =  UNIT % SOLAR_KERR_PARAMETER, &
                BaryonMassReferenceOption = CONSTANT % ATOMIC_MASS_UNIT )
-    end select
+    end if
+
 
     !-- Gravity
 
@@ -155,13 +180,14 @@ contains
         end select !-- TI
 
       else
-        call Show ( 'NEWTONIAN geometry required GravitySolverType', &
+        call Show ( 'NEWTONIAN geometry requires GravitySolverType', &
                     CONSOLE % ERROR )
         call Show ( 'Initialize', 'subroutine', CONSOLE % ERROR )
         call Show ( 'FluidCentralCore_Form', 'module', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end if
     end if
+
 
     !-- Step
 
@@ -171,13 +197,15 @@ contains
     call S % Initialize ( FA, Name )
     end select !-- S
 
+
     !-- Template
 
-    TimeUnit = UNIT % SECOND
+    if ( .not. FCC % Dimensionless ) &
+      TimeUnit = UNIT % SECOND
     if ( present ( TimeUnitOption ) ) &
       TimeUnit = TimeUnitOption
 
-    FinishTime = 1.0_KDR * UNIT % SECOND
+    FinishTime = 1.0_KDR * TimeUnit
     if ( present ( FinishTimeOption ) ) &
       FinishTime = FinishTimeOption
 
@@ -186,6 +214,7 @@ contains
              FinishTimeOption = FinishTime, &
              CourantFactorOption = CourantFactorOption, &
              nWriteOption = nWriteOption )
+
 
     !-- Cleanup
 
@@ -315,7 +344,7 @@ contains
     TimeScaleVelocityMax &
       =  VelocityMaxRadius  /  VelocityMax
     TimeScaleDensityAve &
-      =  ( CONSTANT % GRAVITATIONAL  *  DensityAve ) ** ( -0.5_KDR )
+      =  ( I % GravitationalConstant  *  DensityAve ) ** ( -0.5_KDR )
 
     I % WriteTimeInterval  &
       =  min ( TimeScaleDensityAve, TimeScaleVelocityMax )  /  I % nWrite
@@ -357,7 +386,8 @@ contains
     real ( KDR ) :: &
       FourPi_G
 
-    FourPi_G  =  4.0_KDR  *  CONSTANT % PI  *  CONSTANT % GRAVITATIONAL
+    FourPi_G  =  4.0_KDR  *  CONSTANT % PI  &
+                 *  FluidCentralCore % GravitationalConstant
 
     nValues = size ( S )
 

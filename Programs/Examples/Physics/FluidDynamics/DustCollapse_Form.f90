@@ -52,8 +52,10 @@ contains
     select type ( FCC => DC % Integrator )
     type is ( FluidCentralCoreForm )
     call FCC % Initialize &
-           ( Name, FluidType = 'DUST', GeometryType = 'NEWTONIAN', &
-             GravitySolverTypeOption = 'MULTIPOLE' )
+           ( Name, FluidType = 'DUST', &
+             GeometryType = 'NEWTONIAN', &
+             GravitySolverTypeOption = 'MULTIPOLE', &
+             DimensionlessOption = .true. )
 !    FB % SetReference => SetReference
 
    select type ( PS => FCC % PositionSpace )
@@ -68,7 +70,7 @@ contains
     DC % RadiusInitial &
       =  PS % Chart % MaxCoordinate ( 1 ) / 1.1_KDR
     DC % DensityInitial &
-      =  CONSTANT % SOLAR_BARYON_NUMBER &
+      =  1.0_KDR &
          / ( 4.0_KDR / 3.0_KDR *  CONSTANT % PI  *  DC % RadiusInitial ** 3 )
     call PROGRAM_HEADER % GetParameter &
            ( DC % RadiusInitial, 'RadiusInitial' )
@@ -78,8 +80,7 @@ contains
     F => FA % Fluid_D ( )
     call SetFluid ( DC, F, Time = 0.0_KDR )
 
-    TimeScale  &
-      =  ( CONSTANT % GRAVITATIONAL  *  DC % DensityInitial ) ** ( -0.5_KDR )
+    TimeScale  =  DC % DensityInitial ** ( -0.5_KDR )
     FCC % WriteTimeInterval &
       =  TimeScale / FCC % nWrite
     call Show ( 'Time Scales', DC % IGNORABILITY )
