@@ -311,11 +311,6 @@ contains
     call I % ComputeTimeStep_C_ASC &
            ( TimeStepCandidate ( 1 ), I % Current_ASC )
 
-    !-- Backup for vanishing eigenspeed at t = 0
-    if ( I % Time == 0.0_KDR ) &
-      TimeStepCandidate ( 1 ) &
-        = min ( TimeStepCandidate ( 1 ), I % WriteTimeInterval )
-    
   end subroutine ComputeTimeStepLocal
 
 

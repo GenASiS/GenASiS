@@ -21,10 +21,14 @@ module FluidCentralCore_Form
       Initialize
     final :: &
       Finalize
-    procedure, private, pass :: &  !-- 3
+    procedure, private, pass :: &
       SetWriteTimeInterval
     procedure, public, pass :: &
       PrepareCycle
+    procedure, private, pass :: &
+      ComputeTimeStepLocal
+    procedure, public, pass :: &
+      ComputeTimeStep_G_ASC
   end type FluidCentralCoreForm
 
     class ( FluidCentralCoreForm ), private, pointer :: &
@@ -38,7 +42,8 @@ module FluidCentralCore_Form
         ApplyGravityMomentum, &
         ComputeGravitySource, &
         ComputeGravitationalForce, &
-        LocalMax
+        LocalMax, &
+        ComputeTimeStep_G_CSL
 
 contains
 
@@ -160,6 +165,11 @@ contains
 
     if ( trim ( GeometryType ) == 'NEWTONIAN' ) then
       if ( present ( GravitySolverTypeOption ) ) then
+
+        if ( .not. allocated ( FCC % TimeStepLabel ) ) &
+          allocate ( FCC % TimeStepLabel ( 2 ) )
+        FCC % TimeStepLabel ( 1 )  =  'Fluid'
+        FCC % TimeStepLabel ( 2 )  =  'Gravity'
 
         MaxDegree = 10
         call PROGRAM_HEADER % GetParameter ( MaxDegree, 'MaxDegree' )
@@ -356,6 +366,64 @@ contains
     call ComputeGravity ( )
 
   end subroutine PrepareCycle
+
+
+  subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
+
+    class ( FluidCentralCoreForm ), intent ( inout ), target :: &
+      I
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      TimeStepCandidate
+
+    call I % ComputeTimeStep_C_ASC &
+           ( TimeStepCandidate ( 1 ), I % Current_ASC )
+
+    call I % ComputeTimeStep_G_ASC &
+           ( TimeStepCandidate ( 2 ) )
+
+  end subroutine ComputeTimeStepLocal
+
+
+  subroutine ComputeTimeStep_G_ASC ( FCC, TimeStepCandidate )
+
+    class ( FluidCentralCoreForm ), intent ( inout ), target :: &
+      FCC
+    real ( KDR ), intent ( inout ) :: &
+      TimeStepCandidate
+
+    class ( Geometry_N_Form ), pointer :: &
+      G
+
+    select type ( PS => FCC % PositionSpace )
+    class is ( Atlas_SC_Form )
+
+    select type ( GA => PS % Geometry_ASC )
+    class is ( Geometry_ASC_Form )
+
+    if ( trim ( GA % GeometryType ) /= 'NEWTONIAN' ) &
+      return
+
+    select type ( CSL => PS % Chart )
+    class is ( Chart_SL_Template )
+
+    G  =>  GA % Geometry_N ( )
+
+    call ComputeTimeStep_G_CSL &
+           ( CSL % IsProperCell, &
+             G % Value ( :, G % GRAVITATIONAL_FORCE_D ( 1 ) ), &
+             G % Value ( :, G % GRAVITATIONAL_FORCE_D ( 2 ) ), &
+             G % Value ( :, G % GRAVITATIONAL_FORCE_D ( 3 ) ), &
+             G % Value ( :, G % WIDTH ( 1 ) ), &
+             G % Value ( :, G % WIDTH ( 2 ) ), & 
+             G % Value ( :, G % WIDTH ( 3 ) ), &
+             CSL % nDimensions, TimeStepCandidate )
+
+    end select !-- CSL
+    end select !-- GA
+    end select !-- PS
+    nullify ( G )
+
+  end subroutine ComputeTimeStep_G_ASC
 
 
   subroutine ApplySources &
@@ -584,6 +652,63 @@ contains
     !$OMP end parallel do
  
   end function LocalMax
+
+
+  subroutine ComputeTimeStep_G_CSL &
+               ( IsProperCell, GradPhi_1, GradPhi_2, GradPhi_3, &
+                 dX_1, dX_2, dX_3, nDimensions, TimeStep )
+
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      IsProperCell
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      GradPhi_1, GradPhi_2, GradPhi_3, &
+      dX_1, dX_2, dX_3
+    integer ( KDI ), intent ( in ) :: &
+      nDimensions
+    real ( KDR ), intent ( inout ) :: &
+      TimeStep
+
+    integer ( KDI ) :: &
+      iV, &
+      nV
+    real ( KDR ) :: &
+      TimeStepInverse
+
+    nV = size ( dX_1 )
+
+    select case ( nDimensions )
+    case ( 1 )
+      TimeStepInverse &
+        = maxval ( sqrt ( abs ( GradPhi_1 ) / dX_1 ), mask = IsProperCell )
+    case ( 2 )
+      TimeStepInverse &
+        = maxval ( sqrt (    abs ( GradPhi_1 ) / dX_1 &
+                          +  abs ( GradPhi_2 ) / dX_2 ), &
+                   mask = IsProperCell )
+    case ( 3 )
+      ! TimeStepInverse &
+      !   = maxval ( sqrt (   abs ( GradPhi_1 ) / dX_1 &
+      !                     + abs ( GradPhi_2 ) / dX_2 &
+      !                     + abs ( GradPhi_3 ) / dX_3 ) ), &
+      !              mask = IsProperCell )
+      TimeStepInverse = - huge ( 0.0_KDR )
+      !$OMP parallel do private ( iV ) &
+      !$OMP reduction ( max : TimeStepInverse )
+      do iV = 1, nV
+        if ( IsProperCell ( iV ) ) &
+          TimeStepInverse &
+            = max ( TimeStepInverse, &
+                    sqrt (   abs ( GradPhi_1 ( iV ) ) / dX_1 ( iV ) &
+                           + abs ( GradPhi_2 ( iV ) ) / dX_2 ( iV ) &
+                           + abs ( GradPhi_3 ( iV ) ) / dX_3 ( iV ) ) )
+      end do
+      !$OMP end parallel do
+    end select !-- nDimensions
+
+    TimeStepInverse = max ( tiny ( 0.0_KDR ), TimeStepInverse )
+    TimeStep = min ( TimeStep, 1.0_KDR / TimeStepInverse )
+
+  end subroutine ComputeTimeStep_G_CSL
 
 
 end module FluidCentralCore_Form
