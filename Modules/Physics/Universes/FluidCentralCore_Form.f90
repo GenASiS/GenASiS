@@ -21,19 +21,24 @@ module FluidCentralCore_Form
       Initialize
     final :: &
       Finalize
-    procedure, public, nopass :: &
-      ComputeGravity
     procedure, private, pass :: &  !-- 3
       SetWriteTimeInterval
+    procedure, public, pass :: &
+      PrepareCycle
   end type FluidCentralCoreForm
 
     class ( FluidCentralCoreForm ), private, pointer :: &
       FluidCentralCore => null ( )
 
     private :: &
-      ComputeGravitySource, &
-      ComputeGravitationalForce, &
-      LocalMax
+      ApplySources, &
+      ComputeGravity
+
+      private :: &
+        ApplyGravityMomentum, &
+        ComputeGravitySource, &
+        ComputeGravitationalForce, &
+        LocalMax
 
 contains
 
@@ -196,6 +201,7 @@ contains
     select type ( S => FCC % Step )
     class is ( Step_RK2_C_ASC_Form )
     call S % Initialize ( FA, Name )
+    S % ApplySources % Pointer => ApplySources
     end select !-- S
 
 
@@ -240,63 +246,6 @@ contains
     call FCC % FinalizeTemplate_C_PS ( )
 
   end subroutine Finalize
-
-
-  subroutine ComputeGravity ( )
-
-    type ( VariableGroupForm ), pointer :: &
-      S
-    class ( Geometry_N_Form ), pointer :: &
-      G
-    class ( Fluid_D_Form ), pointer :: &
-      F
-
-    integer ( KDI ) :: &
-      iD  !-- iDimension
-
-    associate &
-      ( PA  => FluidCentralCore % Poisson_ASC, &
-        SA => FluidCentralCore % Storage_ASC )
-
-    select type ( FA => FluidCentralCore % Current_ASC )
-    class is ( Fluid_ASC_Form )
-
-    select type ( PS => FluidCentralCore % PositionSpace )
-    class is ( Atlas_SC_Form )
-
-    select type ( GA => PS % Geometry_ASC )
-    class is ( Geometry_ASC_Form )
-
-    S  =>  SA % Storage ( )
-    G  =>  GA % Geometry_N ( )
-    F  =>  FA % Fluid_D ( )
-
-    call ComputeGravitySource &
-           ( F % Value ( :, F % BARYON_MASS ), &
-             F % Value ( :, F % CONSERVED_BARYON_DENSITY ), &
-             S % Value ( :, S % iaSelected ( 1 ) ) )
-
-    call PA % Solve ( SA, SA )
-
-    select type ( C => PS % Chart )
-    class is ( Chart_SLD_Form )
-      do iD = 1, C % nDimensions
-        call GA % Gradient % Compute ( C, S, iDimension = iD )
-        call ComputeGravitationalForce & 
-               ( F % Value ( :, F % BARYON_MASS ), &
-                 F % Value ( :, F % CONSERVED_BARYON_DENSITY ), &
-                 GA % Gradient % Output % Value ( :, 1 ), &
-                 G % Value ( :, G % GRAVITATIONAL_FORCE_D ( iD ) ) ) 
-      end do !-- iD
-    end select !-- C
-
-    end select !-- GA
-    end select !-- PS
-    end select !-- FA
-    end associate !-- PA, etc.
-    nullify ( S, F )
-
-  end subroutine ComputeGravity
 
 
   subroutine SetWriteTimeInterval ( I )
@@ -397,6 +346,168 @@ contains
     nullify ( G, F )
 
   end subroutine SetWriteTimeInterval
+
+
+  subroutine PrepareCycle ( I )
+
+    class ( FluidCentralCoreForm ), intent ( inout ) :: &
+      I
+
+    call ComputeGravity ( )
+
+  end subroutine PrepareCycle
+
+
+  subroutine ApplySources &
+               ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
+
+    class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
+      S
+    class ( Sources_C_Form ), intent ( inout ) :: &
+      Sources_F
+    type ( VariableGroupForm ), intent ( inout ), target :: &
+      Increment
+    class ( CurrentTemplate ), intent ( in ) :: &
+      Fluid
+    real ( KDR ), intent ( in ) :: &
+      TimeStep
+    integer ( KDI ), intent ( in ) :: &
+      iStage
+
+    integer ( KDI ) :: &
+      iD, &  !-- iDimension
+      iMomentum
+    type ( TimerForm ), pointer :: &
+      Timer
+    class ( Geometry_N_Form ), pointer :: &
+      G
+
+    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerSources )
+    if ( associated ( Timer ) ) call Timer % Start ( )
+
+    call ApplyCurvilinear_F &
+           ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
+
+    select type ( PS => FluidCentralCore % PositionSpace )
+    class is ( Atlas_SC_Form )
+
+    select type ( GA => PS % Geometry_ASC )
+    class is ( Geometry_ASC_Form )
+
+    G  =>  GA % Geometry_N ( )
+
+    select type ( F => Fluid )
+    class is ( Fluid_D_Form )
+
+    select type ( FS => Sources_F )
+    class is ( Sources_F_Form )
+
+    select type ( C => PS % Chart )
+    class is ( Chart_SLD_Form )
+      do iD = 1, C % nDimensions
+        call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( iD ), &
+                      iMomentum )
+        call ApplyGravityMomentum &
+               ( G % Value ( :, G % GRAVITATIONAL_FORCE_D ( iD ) ), &
+                 TimeStep, S % B ( iStage ), &
+                 Increment % Value ( :, iMomentum ), & 
+                 FS % Value ( :, FS % GRAVITATIONAL_S_D ( iD ) ) )
+      end do !-- iD
+    end select !-- C
+
+    end select !-- FS
+    end select !-- F
+    end select !-- GA
+    end select !-- PS
+    nullify ( G )
+
+    if ( associated ( Timer ) ) call Timer % Stop ( )
+
+  end subroutine ApplySources
+
+
+  subroutine ComputeGravity ( )
+
+    type ( VariableGroupForm ), pointer :: &
+      S
+    class ( Geometry_N_Form ), pointer :: &
+      G
+    class ( Fluid_D_Form ), pointer :: &
+      F
+
+    integer ( KDI ) :: &
+      iD  !-- iDimension
+
+    associate &
+      ( PA  => FluidCentralCore % Poisson_ASC, &
+        SA => FluidCentralCore % Storage_ASC )
+
+    select type ( FA => FluidCentralCore % Current_ASC )
+    class is ( Fluid_ASC_Form )
+
+    select type ( PS => FluidCentralCore % PositionSpace )
+    class is ( Atlas_SC_Form )
+
+    select type ( GA => PS % Geometry_ASC )
+    class is ( Geometry_ASC_Form )
+
+    S  =>  SA % Storage ( )
+    G  =>  GA % Geometry_N ( )
+    F  =>  FA % Fluid_D ( )
+
+    call ComputeGravitySource &
+           ( F % Value ( :, F % BARYON_MASS ), &
+             F % Value ( :, F % CONSERVED_BARYON_DENSITY ), &
+             S % Value ( :, S % iaSelected ( 1 ) ) )
+
+    call PA % Solve ( SA, SA )
+
+    select type ( C => PS % Chart )
+    class is ( Chart_SLD_Form )
+      do iD = 1, C % nDimensions
+        call GA % Gradient % Compute ( C, S, iDimension = iD )
+        call ComputeGravitationalForce & 
+               ( F % Value ( :, F % BARYON_MASS ), &
+                 F % Value ( :, F % CONSERVED_BARYON_DENSITY ), &
+                 GA % Gradient % Output % Value ( :, 1 ), &
+                 G % Value ( :, G % GRAVITATIONAL_FORCE_D ( iD ) ) ) 
+      end do !-- iD
+    end select !-- C
+
+    end select !-- GA
+    end select !-- PS
+    end select !-- FA
+    end associate !-- PA, etc.
+    nullify ( S, G, F )
+
+  end subroutine ComputeGravity
+
+
+  subroutine ApplyGravityMomentum ( F, dt, Weight_RK, K, S )
+
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      F
+    real ( KDR ) :: &
+      dt, &
+      Weight_RK
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      K, &
+      S
+
+    integer ( KDI ) :: &
+      iV, &  !-- iValue
+      nValues
+
+    nValues = size ( K )
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nValues
+      K ( iV )  =  K ( iV )  +  F ( iV )  *  dt
+      S ( iV )  =  S ( iV )  +  F ( iV )  *  Weight_RK
+    end do
+    !$OMP end parallel do
+
+  end subroutine ApplyGravityMomentum
 
 
   subroutine ComputeGravitySource ( M, N, S )
