@@ -15,6 +15,8 @@ module Geometry_ASC__Form
   private
 
   type, public, extends ( GeometryFlat_ASC_Form ) :: Geometry_ASC_Form
+    type ( GradientForm ), allocatable :: &
+      Gradient
   contains
     procedure, public, pass :: &
       Initialize
@@ -51,6 +53,8 @@ contains
 
     character ( LDL ) :: &
       NameShort
+    class ( Geometry_N_Form ), pointer :: &
+      G
 
     if ( GA % Type == '' ) &
       GA % Type = 'a Geometry_ASC'
@@ -58,6 +62,17 @@ contains
     GA % GeometryType = GeometryType    
 
     call GA % InitializeFlat ( A, NameShortOption, IgnorabilityOption )
+
+    select case ( trim ( GA % GeometryType ) )
+    case ( 'NEWTONIAN' )
+      allocate ( GA % Gradient )
+      associate ( Grad => GA % Gradient )
+      G => GA % Geometry_N ( )
+      call Grad % Initialize &
+             ( 'GeometryGradient', [ G % nValues, 1 ] )
+      end associate !-- Grad
+      nullify ( G )
+    end select !-- GeometryType
 
   end subroutine Initialize
 
@@ -107,7 +122,8 @@ contains
     type ( Geometry_ASC_Form ), intent ( inout ) :: &
       GA
 
-    !-- Trigger finalization of parent
+    if ( allocated ( GA % Gradient ) ) &
+      deallocate ( GA % Gradient )
 
   end subroutine Finalize
 

@@ -22,11 +22,13 @@ module Geometry_N__Form
       GRAVITATIONAL_POTENTIAL = 0
     integer ( KDI ), dimension ( 3 ) :: &
       GRAVITATIONAL_FORCE_D = 0
-    contains
-      procedure, public, pass :: &
-        InitializeAllocate_G
-      final :: &
-        Finalize
+  contains
+    procedure, public, pass :: &
+      InitializeAllocate_G
+    procedure, public, pass :: &
+      SetOutput
+    final :: &
+      Finalize
   end type Geometry_N_Form
 
 
@@ -92,12 +94,34 @@ contains
   end subroutine InitializeAllocate_G
 
 
+  subroutine SetOutput ( G, Output )
+
+    class ( Geometry_N_Form ), intent ( inout ) :: &
+      G
+    class ( VariableGroupForm ), intent ( inout ) :: &
+      Output
+
+    type ( Integer_1D_Form ), dimension ( 1 ) :: &
+      VectorIndices
+
+    call VectorIndices ( 1 ) % Initialize ( G % GRAVITATIONAL_FORCE_D )
+    call Output % Initialize &
+           ( G, iaSelectedOption &
+                  = [ G % CENTER, G % METRIC_DD_22, G % METRIC_DD_33, &
+                      G % GRAVITATIONAL_POTENTIAL, &
+                      G % GRAVITATIONAL_FORCE_D ], &
+             VectorOption = [ 'GravitationalForce' ], &
+             VectorIndicesOption = VectorIndices )
+
+  end subroutine SetOutput
+
+
   impure elemental subroutine Finalize ( G )
 
     type ( Geometry_N_Form ), intent ( inout ) :: &
       G
 
-    !-- Empty routine to trigger finalization of parent type
+    !-- Trigger finalization of parent
 
   end subroutine Finalize
 

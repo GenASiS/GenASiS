@@ -32,6 +32,7 @@ module FluidCentralCore_Form
 
     private :: &
       ComputeGravitySource, &
+      ComputeGravitationalForce, &
       LocalMax
 
 contains
@@ -128,7 +129,7 @@ contains
     !-- Fluid
 
     allocate ( Fluid_ASC_Form :: FCC % Current_ASC )
-    select type ( FA => FCC % Current_ASC )  !-- FluidAtlas
+    select type ( FA => FCC % Current_ASC )
     class is ( Fluid_ASC_Form )
 
     if ( FCC % Dimensionless ) then
@@ -245,17 +246,29 @@ contains
 
     type ( VariableGroupForm ), pointer :: &
       S
+    class ( Geometry_N_Form ), pointer :: &
+      G
     class ( Fluid_D_Form ), pointer :: &
       F
+
+    integer ( KDI ) :: &
+      iD  !-- iDimension
 
     associate &
       ( PA  => FluidCentralCore % Poisson_ASC, &
         SA => FluidCentralCore % Storage_ASC )
 
-    select type ( FA => FluidCentralCore % Current_ASC )  !-- FluidAtlas
+    select type ( FA => FluidCentralCore % Current_ASC )
     class is ( Fluid_ASC_Form )
 
+    select type ( PS => FluidCentralCore % PositionSpace )
+    class is ( Atlas_SC_Form )
+
+    select type ( GA => PS % Geometry_ASC )
+    class is ( Geometry_ASC_Form )
+
     S  =>  SA % Storage ( )
+    G  =>  GA % Geometry_N ( )
     F  =>  FA % Fluid_D ( )
 
     call ComputeGravitySource &
@@ -265,6 +278,20 @@ contains
 
     call PA % Solve ( SA, SA )
 
+    select type ( C => PS % Chart )
+    class is ( Chart_SLD_Form )
+      do iD = 1, C % nDimensions
+        call GA % Gradient % Compute ( C, S, iDimension = iD )
+        call ComputeGravitationalForce & 
+               ( F % Value ( :, F % BARYON_MASS ), &
+                 F % Value ( :, F % CONSERVED_BARYON_DENSITY ), &
+                 GA % Gradient % Output % Value ( :, 1 ), &
+                 G % Value ( :, G % GRAVITATIONAL_FORCE_D ( iD ) ) ) 
+      end do !-- iD
+    end select !-- C
+
+    end select !-- GA
+    end select !-- PS
     end select !-- FA
     end associate !-- PA, etc.
     nullify ( S, F )
@@ -398,6 +425,30 @@ contains
     !$OMP end parallel do
 
   end subroutine ComputeGravitySource
+
+
+  subroutine ComputeGravitationalForce ( M, N, GradPhi, F )
+
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      M, &
+      N, &
+      GradPhi
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      F
+
+    integer ( KDI ) :: &
+      iV, &  !-- iValue
+      nValues
+
+    nValues = size ( F )
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nValues
+      F ( iV )  =  - M ( iV )  *  N ( iV )  *  GradPhi ( iV )
+    end do
+    !$OMP end parallel do
+
+  end subroutine ComputeGravitationalForce
 
 
   function LocalMax ( IsProperCell, V ) result ( ML ) 
