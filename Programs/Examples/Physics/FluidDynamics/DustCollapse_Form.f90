@@ -36,7 +36,9 @@ contains
       Name
 
     real ( KDR ) :: &
-      TimeScale
+      TimeScale, &
+      RadiusFraction, &
+      Beta
     class ( Fluid_D_Form ), pointer :: &
       F
 
@@ -67,26 +69,41 @@ contains
 
     !-- Initial conditions
 
-    DC % RadiusInitial &
-      =  PS % Chart % MaxCoordinate ( 1 ) / 1.1_KDR
-    DC % DensityInitial &
-      =  1.0_KDR &
-         / ( 4.0_KDR / 3.0_KDR *  CONSTANT % PI  *  DC % RadiusInitial ** 3 )
-    call PROGRAM_HEADER % GetParameter &
-           ( DC % RadiusInitial, 'RadiusInitial' )
-    call PROGRAM_HEADER % GetParameter &
-           ( DC % DensityInitial, 'DensityInitial' )
+    associate &
+      ( R0 => DC % RadiusInitial, &
+        D0 => DC % DensityInitial, &
+        RF => RadiusFraction, &
+        PI => CONSTANT % PI )
 
+    R0  =  PS % Chart % MaxCoordinate ( 1 ) / 1.1_KDR
+    D0  =  1.0_KDR
+    RF  =  0.5_KDR
+    call PROGRAM_HEADER % GetParameter ( R0, 'RadiusInitial' )
+    call PROGRAM_HEADER % GetParameter ( D0, 'DensityInitial' )
+    call PROGRAM_HEADER % GetParameter ( RF, 'RadiusFraction' )
+
+    TimeScale         =  sqrt ( 3.0 / ( 8.0 * PI * D0 ) )
+    Beta              =  acos ( sqrt ( RF ) )
+    FCC % FinishTime  =  ( Beta  +  0.5 * sin ( 2 * Beta ) )  *  TimeScale
+
+    call Show ( 'DustCollapse parameters' )
+    call Show ( DC % RadiusInitial, 'RadiusInitial' )
+    call Show ( DC % DensityInitial, 'DensityInitial' )
+    call Show ( PI / 2  *  TimeScale, 'CollapseTime' )
+    call Show ( RadiusFraction, 'RadiusFraction' )
+    call Show ( FCC % FinishTime, 'Reset FinishTime' )
+
+    end associate !-- R0, etc.
+
+!    FCC % WriteTimeInterval &
+!      =  TimeScale / FCC % nWrite
+!    call Show ( 'Time Scales', DC % IGNORABILITY )
+!    call Show ( TimeScale, FCC % TimeUnit, 'TimeScaleDensityAve', &
+!                DC % IGNORABILITY )
+    
     F => FA % Fluid_D ( )
     call SetFluid ( DC, F, Time = 0.0_KDR )
 
-    TimeScale  =  DC % DensityInitial ** ( -0.5_KDR )
-    FCC % WriteTimeInterval &
-      =  TimeScale / FCC % nWrite
-    call Show ( 'Time Scales', DC % IGNORABILITY )
-    call Show ( TimeScale, FCC % TimeUnit, 'TimeScaleDensityAve', &
-                DC % IGNORABILITY )
-    
 
     !-- Cleanup
 

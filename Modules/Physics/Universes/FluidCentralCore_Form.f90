@@ -324,7 +324,7 @@ contains
     class is ( Tally_F_D_Form )
     DensityAve  =  F % BaryonMassReference &
                    * TI % Value ( TI % BARYON_NUMBER ) &
-                   / VelocityMaxRadius ** 3
+                   / ( 4.0 / 3.0  *  CONSTANT % PI  *  VelocityMaxRadius ** 3 )
 
     !-- Time scales
     TimeScaleVelocityMax &
@@ -340,7 +340,7 @@ contains
                 'VelocityMax', I % IGNORABILITY )
     call Show ( VelocityMaxRadius, Chart % CoordinateUnit ( 1 ), &
                 'VelocityMaxRadius', I % IGNORABILITY )
-    call Show ( DensityAve, UNIT % MASS_DENSITY_CGS, 'DensityAve', &
+    call Show ( DensityAve, UNIT % IDENTITY, 'DensityAve', &
                 I % IGNORABILITY )
     call Show ( TimeScaleDensityAve, I % TimeUnit, 'TimeScaleDensityAve', &
                 I % IGNORABILITY )
@@ -362,8 +362,6 @@ contains
 
     class ( FluidCentralCoreForm ), intent ( inout ) :: &
       I
-
-    call ComputeGravity ( )
 
   end subroutine PrepareCycle
 
@@ -418,6 +416,8 @@ contains
              G % Value ( :, G % WIDTH ( 3 ) ), &
              CSL % nDimensions, TimeStepCandidate )
 
+    TimeStepCandidate = TimeStepCandidate
+
     end select !-- CSL
     end select !-- GA
     end select !-- PS
@@ -455,6 +455,8 @@ contains
 
     call ApplyCurvilinear_F &
            ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
+
+    call ComputeGravity ( )
 
     select type ( PS => FluidCentralCore % PositionSpace )
     class is ( Atlas_SC_Form )
