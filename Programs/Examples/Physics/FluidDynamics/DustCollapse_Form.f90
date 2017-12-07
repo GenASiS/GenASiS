@@ -56,7 +56,6 @@ contains
     call FCC % Initialize &
            ( Name, FluidType = 'DUST', &
              GeometryType = 'NEWTONIAN', &
-             GravitySolverTypeOption = 'MULTIPOLE', &
              DimensionlessOption = .true. )
 !    FB % SetReference => SetReference
 

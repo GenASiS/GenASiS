@@ -10,10 +10,6 @@ module FluidCentralCore_Form
   type, public, extends ( Integrator_C_PS_Template ) :: FluidCentralCoreForm
     logical ( KDL ) :: &
       Dimensionless = .false.
-    type ( Storage_ASC_Form ), allocatable :: &
-      Storage_ASC
-    type ( Poisson_ASC_Form ), allocatable :: &
-      Poisson_ASC
   contains
     procedure, public, pass :: &
       Initialize
@@ -48,9 +44,8 @@ contains
 
   subroutine Initialize &
                ( FCC, Name, FluidType, GeometryType, &
-                 GravitySolverTypeOption, DimensionlessOption, &
-                 TimeUnitOption, FinishTimeOption, CourantFactorOption, &
-                 nWriteOption )
+                 DimensionlessOption, TimeUnitOption, FinishTimeOption, &
+                 CourantFactorOption, nWriteOption )
 
     class ( FluidCentralCoreForm ), intent ( inout ), target :: &
       FCC
@@ -58,8 +53,6 @@ contains
       Name, &
       FluidType, &
       GeometryType
-    character ( * ), intent ( in ), optional :: &
-      GravitySolverTypeOption
     logical ( KDL ), intent ( in ), optional :: &
       DimensionlessOption
     type ( MeasuredValueForm ), intent ( in ), optional :: &
@@ -70,8 +63,6 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       nWriteOption
 
-    integer ( KDI ) :: &
-      MaxDegree
     real ( KDR ) :: &
       RadiusCore, &
       RadiusMax, &
@@ -81,14 +72,14 @@ contains
       TimeUnit
     type ( MeasuredValueForm ), dimension ( 3 ) :: &
       CoordinateUnit
-    class ( Geometry_N_Form ), pointer :: &
-      G_N
+
 
     if ( FCC % Type == '' ) &
       FCC % Type = 'a FluidCentralCore'
 
     FluidCentralCore => FCC
 
+    FCC % Dimensionless = .false.
     if ( present ( DimensionlessOption ) ) &
       FCC % Dimensionless = DimensionlessOption
 
@@ -123,7 +114,14 @@ contains
     allocate ( Geometry_ASC_Form :: PS % Geometry_ASC )
     select type ( GA => PS % Geometry_ASC )
     class is ( Geometry_ASC_Form )
-    call GA % Initialize ( PS, GeometryType )
+    if ( FCC % Dimensionless ) then
+      call GA % Initialize &
+             ( PS, GeometryType, GravitySolverTypeOption = 'MULTIPOLE', &
+               GravitationalConstantOption = 1.0_KDR )
+    else
+      call GA % Initialize &
+             ( PS, GeometryType, GravitySolverTypeOption = 'MULTIPOLE' )
+    end if !-- Dimensionless
 
     call PS % SetGeometry ( )
 
@@ -156,44 +154,17 @@ contains
     !-- Gravity
 
     if ( trim ( GeometryType ) == 'NEWTONIAN' ) then
-      if ( present ( GravitySolverTypeOption ) ) then
 
-        if ( .not. allocated ( FCC % TimeStepLabel ) ) &
-          allocate ( FCC % TimeStepLabel ( 2 ) )
-        FCC % TimeStepLabel ( 1 )  =  'Fluid'
-        FCC % TimeStepLabel ( 2 )  =  'Gravity'
+      if ( .not. allocated ( FCC % TimeStepLabel ) ) &
+        allocate ( FCC % TimeStepLabel ( 2 ) )
+      FCC % TimeStepLabel ( 1 )  =  'Fluid'
+      FCC % TimeStepLabel ( 2 )  =  'Gravity'
 
-        MaxDegree = 10
-        call PROGRAM_HEADER % GetParameter ( MaxDegree, 'MaxDegree' )
+      select type ( TI => FA % TallyInterior )
+      class is ( Tally_F_D_Form )
+        TI % ComputeGravitationalPotential => ComputeGravity
+      end select !-- TI
 
-        G_N => GA % Geometry_N ( )
-        allocate ( FCC % Storage_ASC )
-        associate ( SA => FCC % Storage_ASC )
-        call SA % Initialize &
-               ( GA, NameShort = 'PoissonStorage', &
-                 iaSelectedOption = [ G_N % GRAVITATIONAL_POTENTIAL ] )
-        end associate !-- SA
-
-        allocate ( FCC % Poisson_ASC )
-        associate ( PA => FCC % Poisson_ASC )
-        call PA % Initialize &
-               ( PS, SolverType = GravitySolverTypeOption, &
-                 MaxDegreeOption = MaxDegree, &
-                 nEquationsOption = 1 )
-        end associate !-- PA
-
-        select type ( TI => FA % TallyInterior )
-        class is ( Tally_F_D_Form )
-          TI % ComputeGravitationalPotential => ComputeGravity
-        end select !-- TI
-
-      else
-        call Show ( 'NEWTONIAN geometry requires GravitySolverType', &
-                    CONSOLE % ERROR )
-        call Show ( 'Initialize', 'subroutine', CONSOLE % ERROR )
-        call Show ( 'FluidCentralCore_Form', 'module', CONSOLE % ERROR )
-        call PROGRAM_HEADER % Abort ( )
-      end if
     end if
 
 
@@ -231,7 +202,6 @@ contains
     end select !-- FA
     end select !-- GA
     end select !-- PS
-    nullify ( G_N )
 
   end subroutine Initialize
 
@@ -240,11 +210,6 @@ contains
 
     type ( FluidCentralCoreForm ), intent ( inout ) :: &
       FCC
-
-    if ( allocated ( FCC % Poisson_ASC ) ) &
-      deallocate ( FCC % Poisson_ASC )
-    if ( allocated ( FCC % Storage_ASC ) ) &
-      deallocate ( FCC % Storage_ASC )
 
     call FCC % FinalizeTemplate_C_PS ( )
 
@@ -506,10 +471,6 @@ contains
     integer ( KDI ) :: &
       iD  !-- iDimension
 
-    associate &
-      ( PA  => FluidCentralCore % Poisson_ASC, &
-        SA => FluidCentralCore % Storage_ASC )
-
     select type ( FA => FluidCentralCore % Current_ASC )
     class is ( Fluid_ASC_Form )
 
@@ -518,6 +479,10 @@ contains
 
     select type ( GA => PS % Geometry_ASC )
     class is ( Geometry_ASC_Form )
+
+    associate &
+      ( PA => GA % Poisson_ASC, &
+        SA => GA % Storage_ASC )
 
     S  =>  SA % Storage ( )
     G  =>  GA % Geometry_N ( )
@@ -543,10 +508,10 @@ contains
       end do !-- iD
     end select !-- C
 
+    end associate !-- PA, etc.
     end select !-- GA
     end select !-- PS
     end select !-- FA
-    end associate !-- PA, etc.
     nullify ( S, G, F )
 
   end subroutine ComputeGravity

@@ -17,8 +17,12 @@ module Geometry_ASC__Form
   type, public, extends ( GeometryFlat_ASC_Form ) :: Geometry_ASC_Form
     real ( KDR ) :: &
       GravitationalConstant
+    type ( Storage_ASC_Form ), allocatable :: &
+      Storage_ASC
     type ( GradientForm ), allocatable :: &
       Gradient
+    type ( Poisson_ASC_Form ), allocatable :: &
+      Poisson_ASC
   contains
     procedure, public, pass :: &
       Initialize
@@ -41,21 +45,25 @@ contains
 
   subroutine Initialize &
                ( GA, A, GeometryType, NameShortOption, &
-                 GravitationalConstantOption, IgnorabilityOption )
+                 GravitySolverTypeOption, GravitationalConstantOption, &
+                 IgnorabilityOption )
 
     class ( Geometry_ASC_Form ), intent ( inout ) :: &
       GA
-    class ( Atlas_SC_Template ), intent ( in ), target :: &
+    class ( Atlas_SC_Form ), intent ( in ), target :: &
       A
     character ( * ), intent ( in ) :: &
       GeometryType
     character ( * ), intent ( in ), optional :: &
-      NameShortOption
+      NameShortOption, &
+      GravitySolverTypeOption
     real ( KDR ), intent ( in ), optional :: &
       GravitationalConstantOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
+    integer ( KDI ) :: &
+      MaxDegree
     character ( LDL ) :: &
       NameShort
     class ( Geometry_N_Form ), pointer :: &
@@ -75,12 +83,42 @@ contains
       if ( present ( GravitationalConstantOption ) ) &
         GA % GravitationalConstant  =  GravitationalConstantOption
 
+      G => GA % Geometry_N ( )
+
+      allocate ( GA % Storage_ASC )
+      associate ( SA => GA % Storage_ASC )
+      call SA % Initialize &
+             ( GA, NameShort = 'PoissonStorage', &
+               iaSelectedOption = [ G % GRAVITATIONAL_POTENTIAL ] )
+      end associate !-- SA
+
       allocate ( GA % Gradient )
       associate ( Grad => GA % Gradient )
-      G => GA % Geometry_N ( )
       call Grad % Initialize &
              ( 'GeometryGradient', [ G % nValues, 1 ] )
       end associate !-- Grad
+
+      if ( present ( GravitySolverTypeOption ) ) then
+
+        MaxDegree = 10
+        call PROGRAM_HEADER % GetParameter ( MaxDegree, 'MaxDegree' )
+
+        allocate ( GA % Poisson_ASC )
+        associate ( PA => GA % Poisson_ASC )
+        call PA % Initialize &
+               ( A, SolverType = GravitySolverTypeOption, &
+                 MaxDegreeOption = MaxDegree, &
+                 nEquationsOption = 1 )
+        end associate !-- PA
+
+      else
+        call Show ( 'NEWTONIAN geometry requires GravitySolverType', &
+                    CONSOLE % ERROR )
+        call Show ( 'Initialize', 'subroutine', CONSOLE % ERROR )
+        call Show ( 'Geometry_ASC__Form', 'module', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end if
+
       nullify ( G )
 
     end select !-- GeometryType
@@ -133,8 +171,12 @@ contains
     type ( Geometry_ASC_Form ), intent ( inout ) :: &
       GA
 
+    if ( allocated ( GA % Poisson_ASC ) ) &
+      deallocate ( GA % Poisson_ASC )
     if ( allocated ( GA % Gradient ) ) &
       deallocate ( GA % Gradient )
+    if ( allocated ( GA % Storage_ASC ) ) &
+      deallocate ( GA % Storage_ASC )
 
   end subroutine Finalize
 
