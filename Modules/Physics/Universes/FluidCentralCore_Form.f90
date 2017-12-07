@@ -8,8 +8,6 @@ module FluidCentralCore_Form
   private
 
   type, public, extends ( Integrator_C_PS_Template ) :: FluidCentralCoreForm
-    real ( KDR ) :: &
-      GravitationalConstant
     logical ( KDL ) :: &
       Dimensionless = .false.
     type ( Storage_ASC_Form ), allocatable :: &
@@ -93,12 +91,6 @@ contains
 
     if ( present ( DimensionlessOption ) ) &
       FCC % Dimensionless = DimensionlessOption
-
-    if ( FCC % Dimensionless ) then
-      FCC % GravitationalConstant  =  1.0_KDR
-    else
-      FCC % GravitationalConstant  =  CONSTANT % GRAVITATIONAL
-    end if
 
 
     !-- PositionSpace
@@ -231,6 +223,7 @@ contains
              FinishTimeOption = FinishTime, &
              CourantFactorOption = CourantFactorOption, &
              nWriteOption = nWriteOption )
+    call Show ( FCC % Dimensionless, 'Dimensionless' )
 
 
     !-- Cleanup
@@ -285,6 +278,10 @@ contains
 
     select type ( PS => I % PositionSpace )
     class is ( Atlas_SC_Form )
+
+    select type ( GA => PS % Geometry_ASC )
+    class is ( Geometry_ASC_Form )
+
     G => PS % Geometry ( )
 
     select type ( Chart => PS % Chart )
@@ -330,7 +327,7 @@ contains
     TimeScaleVelocityMax &
       =  VelocityMaxRadius  /  VelocityMax
     TimeScaleDensityAve &
-      =  ( I % GravitationalConstant  *  DensityAve ) ** ( -0.5_KDR )
+      =  ( GA % GravitationalConstant  *  DensityAve ) ** ( -0.5_KDR )
 
     I % WriteTimeInterval  &
       =  min ( TimeScaleDensityAve, TimeScaleVelocityMax )  /  I % nWrite
@@ -351,6 +348,7 @@ contains
     end select !-- TI
     end associate !-- C
     end select !-- Chart
+    end select !-- GA
     end select !-- PS
     end select !-- FA
     nullify ( G, F )
@@ -528,6 +526,7 @@ contains
     call ComputeGravitySource &
            ( F % Value ( :, F % BARYON_MASS ), &
              F % Value ( :, F % CONSERVED_BARYON_DENSITY ), &
+             GA % GravitationalConstant, &
              S % Value ( :, S % iaSelected ( 1 ) ) )
 
     call PA % Solve ( SA, SA )
@@ -580,11 +579,13 @@ contains
   end subroutine ApplyGravityMomentum
 
 
-  subroutine ComputeGravitySource ( M, N, S )
+  subroutine ComputeGravitySource ( M, N, G, S )
 
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       M, &
       N
+    real ( KDR ), intent ( in ) :: &
+      G
     real ( KDR ), dimension ( : ), intent ( out ) :: &
       S
 
@@ -594,8 +595,7 @@ contains
     real ( KDR ) :: &
       FourPi_G
 
-    FourPi_G  =  4.0_KDR  *  CONSTANT % PI  &
-                 *  FluidCentralCore % GravitationalConstant
+    FourPi_G  =  4.0_KDR  *  CONSTANT % PI  *  G
 
     nValues = size ( S )
 

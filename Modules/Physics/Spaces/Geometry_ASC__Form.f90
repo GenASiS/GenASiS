@@ -15,6 +15,8 @@ module Geometry_ASC__Form
   private
 
   type, public, extends ( GeometryFlat_ASC_Form ) :: Geometry_ASC_Form
+    real ( KDR ) :: &
+      GravitationalConstant
     type ( GradientForm ), allocatable :: &
       Gradient
   contains
@@ -38,7 +40,8 @@ contains
 
 
   subroutine Initialize &
-               ( GA, A, GeometryType, NameShortOption, IgnorabilityOption )
+               ( GA, A, GeometryType, NameShortOption, &
+                 GravitationalConstantOption, IgnorabilityOption )
 
     class ( Geometry_ASC_Form ), intent ( inout ) :: &
       GA
@@ -48,6 +51,8 @@ contains
       GeometryType
     character ( * ), intent ( in ), optional :: &
       NameShortOption
+    real ( KDR ), intent ( in ), optional :: &
+      GravitationalConstantOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
@@ -65,6 +70,11 @@ contains
 
     select case ( trim ( GA % GeometryType ) )
     case ( 'NEWTONIAN' )
+
+      GA % GravitationalConstant  =  CONSTANT % GRAVITATIONAL
+      if ( present ( GravitationalConstantOption ) ) &
+        GA % GravitationalConstant  =  GravitationalConstantOption
+
       allocate ( GA % Gradient )
       associate ( Grad => GA % Gradient )
       G => GA % Geometry_N ( )
@@ -72,6 +82,7 @@ contains
              ( 'GeometryGradient', [ G % nValues, 1 ] )
       end associate !-- Grad
       nullify ( G )
+
     end select !-- GeometryType
 
   end subroutine Initialize
