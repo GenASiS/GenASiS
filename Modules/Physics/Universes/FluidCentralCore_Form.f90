@@ -29,13 +29,10 @@ module FluidCentralCore_Form
       FluidCentralCore => null ( )
 
     private :: &
-      ApplySources, &
-      ComputeGravity
+      ApplySources
 
       private :: &
         ApplyGravityMomentum, &
-        ComputeGravitySource, &
-        ComputeGravitationalForce, &
         LocalMax, &
         ComputeTimeStep_G_CSL
 
@@ -151,23 +148,6 @@ contains
     end if
 
 
-    !-- Gravity
-
-    if ( trim ( GeometryType ) == 'NEWTONIAN' ) then
-
-      if ( .not. allocated ( FCC % TimeStepLabel ) ) &
-        allocate ( FCC % TimeStepLabel ( 2 ) )
-      FCC % TimeStepLabel ( 1 )  =  'Fluid'
-      FCC % TimeStepLabel ( 2 )  =  'Gravity'
-
-      select type ( TI => FA % TallyInterior )
-      class is ( Tally_F_D_Form )
-        TI % ComputeGravitationalPotential => ComputeGravity
-      end select !-- TI
-
-    end if
-
-
     !-- Step
 
     allocate ( Step_RK2_C_ASC_Form :: FCC % Step )
@@ -179,6 +159,13 @@ contains
 
 
     !-- Template
+
+    if ( trim ( GeometryType ) == 'NEWTONIAN' ) then
+      if ( .not. allocated ( FCC % TimeStepLabel ) ) &
+        allocate ( FCC % TimeStepLabel ( 2 ) )
+      FCC % TimeStepLabel ( 1 )  =  'Fluid'
+      FCC % TimeStepLabel ( 2 )  =  'Gravity'
+    end if
 
     if ( .not. FCC % Dimensionless ) &
       TimeUnit = UNIT % SECOND
@@ -419,18 +406,20 @@ contains
     call ApplyCurvilinear_F &
            ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
 
-    call ComputeGravity ( )
-
     select type ( PS => FluidCentralCore % PositionSpace )
     class is ( Atlas_SC_Form )
 
     select type ( GA => PS % Geometry_ASC )
     class is ( Geometry_ASC_Form )
-
     G  =>  GA % Geometry_N ( )
 
     select type ( F => Fluid )
     class is ( Fluid_D_Form )
+
+    call GA % ComputeGravity &
+           ( FluidCentralCore % Current_ASC, &
+             iBaryonMass = F % BARYON_MASS, &
+             iBaryonDensity = F % CONSERVED_BARYON_DENSITY )
 
     select type ( FS => Sources_F )
     class is ( Sources_F_Form )
@@ -459,64 +448,6 @@ contains
   end subroutine ApplySources
 
 
-  subroutine ComputeGravity ( )
-
-    type ( VariableGroupForm ), pointer :: &
-      S
-    class ( Geometry_N_Form ), pointer :: &
-      G
-    class ( Fluid_D_Form ), pointer :: &
-      F
-
-    integer ( KDI ) :: &
-      iD  !-- iDimension
-
-    select type ( FA => FluidCentralCore % Current_ASC )
-    class is ( Fluid_ASC_Form )
-
-    select type ( PS => FluidCentralCore % PositionSpace )
-    class is ( Atlas_SC_Form )
-
-    select type ( GA => PS % Geometry_ASC )
-    class is ( Geometry_ASC_Form )
-
-    associate &
-      ( PA => GA % Poisson_ASC, &
-        SA => GA % Storage_ASC )
-
-    S  =>  SA % Storage ( )
-    G  =>  GA % Geometry_N ( )
-    F  =>  FA % Fluid_D ( )
-
-    call ComputeGravitySource &
-           ( F % Value ( :, F % BARYON_MASS ), &
-             F % Value ( :, F % CONSERVED_BARYON_DENSITY ), &
-             GA % GravitationalConstant, &
-             S % Value ( :, S % iaSelected ( 1 ) ) )
-
-    call PA % Solve ( SA, SA )
-
-    select type ( C => PS % Chart )
-    class is ( Chart_SLD_Form )
-      do iD = 1, C % nDimensions
-        call GA % Gradient % Compute ( C, S, iDimension = iD )
-        call ComputeGravitationalForce & 
-               ( F % Value ( :, F % BARYON_MASS ), &
-                 F % Value ( :, F % CONSERVED_BARYON_DENSITY ), &
-                 GA % Gradient % Output % Value ( :, 1 ), &
-                 G % Value ( :, G % GRAVITATIONAL_FORCE_D ( iD ) ) ) 
-      end do !-- iD
-    end select !-- C
-
-    end associate !-- PA, etc.
-    end select !-- GA
-    end select !-- PS
-    end select !-- FA
-    nullify ( S, G, F )
-
-  end subroutine ComputeGravity
-
-
   subroutine ApplyGravityMomentum ( F, dt, Weight_RK, K, S )
 
     real ( KDR ), dimension ( : ), intent ( in ) :: &
@@ -542,59 +473,6 @@ contains
     !$OMP end parallel do
 
   end subroutine ApplyGravityMomentum
-
-
-  subroutine ComputeGravitySource ( M, N, G, S )
-
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      M, &
-      N
-    real ( KDR ), intent ( in ) :: &
-      G
-    real ( KDR ), dimension ( : ), intent ( out ) :: &
-      S
-
-    integer ( KDI ) :: &
-      iV, &  !-- iValue
-      nValues
-    real ( KDR ) :: &
-      FourPi_G
-
-    FourPi_G  =  4.0_KDR  *  CONSTANT % PI  *  G
-
-    nValues = size ( S )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-      S ( iV )  =  FourPi_G  *  M ( iV )  *  N ( iV )
-    end do
-    !$OMP end parallel do
-
-  end subroutine ComputeGravitySource
-
-
-  subroutine ComputeGravitationalForce ( M, N, GradPhi, F )
-
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      M, &
-      N, &
-      GradPhi
-    real ( KDR ), dimension ( : ), intent ( out ) :: &
-      F
-
-    integer ( KDI ) :: &
-      iV, &  !-- iValue
-      nValues
-
-    nValues = size ( F )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-      F ( iV )  =  - M ( iV )  *  N ( iV )  *  GradPhi ( iV )
-    end do
-    !$OMP end parallel do
-
-  end subroutine ComputeGravitationalForce
 
 
   function LocalMax ( IsProperCell, V ) result ( ML ) 

@@ -34,11 +34,17 @@ module Geometry_ASC__Form
       Geometry_N_CSL
     generic, public :: &
       Geometry_N => Geometry_N_CSL
+    procedure, public, pass :: &
+      ComputeGravity
     final :: &
       Finalize
     procedure, private, pass :: &
       SetField
   end type Geometry_ASC_Form
+
+    private :: &
+      ComputeGravitySource, &
+      ComputeGravitationalForce
 
 contains
 
@@ -166,6 +172,71 @@ contains
   end function Geometry_N_CSL
 
 
+  subroutine ComputeGravity ( GA, FA, iBaryonMass, iBaryonDensity )
+
+    class ( Geometry_ASC_Form ), intent ( inout ) :: &
+      GA
+    class ( Current_ASC_Template ), intent ( in ) :: &
+      FA
+    integer ( KDI ), intent ( in ) :: &
+      iBaryonMass, &
+      iBaryonDensity
+
+    logical ( KDL ) :: &
+      ComputeForce
+    type ( VariableGroupForm ), pointer :: &
+      S
+    class ( Geometry_N_Form ), pointer :: &
+      G
+    class ( CurrentTemplate ), pointer :: &
+      F
+
+    integer ( KDI ) :: &
+      iD  !-- iDimension
+
+    select case ( trim ( GA % GeometryType ) )
+    case ( 'NEWTONIAN' )
+
+    select type ( A => GA % Atlas )
+    class is ( Atlas_SC_Form )
+
+    select type ( C => A % Chart )
+    class is ( Chart_SLD_Form )
+
+    associate &
+      ( PA => GA % Poisson_ASC, &
+        SA => GA % Storage_ASC )
+
+    S  =>  SA % Storage ( )
+    G  =>  GA % Geometry_N ( )
+    F  =>  FA % Current ( )
+
+    call ComputeGravitySource &
+           ( F % Value ( :, iBaryonMass ), &
+             F % Value ( :, iBaryonDensity ), &
+             GA % GravitationalConstant, &
+             S % Value ( :, S % iaSelected ( 1 ) ) )
+
+    call PA % Solve ( SA, SA )
+
+    do iD = 1, C % nDimensions
+      call GA % Gradient % Compute ( C, S, iDimension = iD )
+      call ComputeGravitationalForce & 
+             ( F % Value ( :, iBaryonMass ), &
+               F % Value ( :, iBaryonDensity ), &
+               GA % Gradient % Output % Value ( :, 1 ), &
+               G % Value ( :, G % GRAVITATIONAL_FORCE_D ( iD ) ) ) 
+    end do !-- iD
+
+    end associate !-- PA, etc.
+    end select !-- C
+    end select !-- A
+    end select !-- GeometryType
+    nullify ( S, G, F )
+
+  end subroutine ComputeGravity
+
+
   impure elemental subroutine Finalize ( GA )
 
     type ( Geometry_ASC_Form ), intent ( inout ) :: &
@@ -207,6 +278,59 @@ contains
     end select !-- A
 
   end subroutine SetField
+
+
+  subroutine ComputeGravitySource ( M, N, G, S )
+
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      M, &
+      N
+    real ( KDR ), intent ( in ) :: &
+      G
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      S
+
+    integer ( KDI ) :: &
+      iV, &  !-- iValue
+      nValues
+    real ( KDR ) :: &
+      FourPi_G
+
+    FourPi_G  =  4.0_KDR  *  CONSTANT % PI  *  G
+
+    nValues = size ( S )
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nValues
+      S ( iV )  =  FourPi_G  *  M ( iV )  *  N ( iV )
+    end do
+    !$OMP end parallel do
+
+  end subroutine ComputeGravitySource
+
+
+  subroutine ComputeGravitationalForce ( M, N, GradPhi, F )
+
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      M, &
+      N, &
+      GradPhi
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      F
+
+    integer ( KDI ) :: &
+      iV, &  !-- iValue
+      nValues
+
+    nValues = size ( F )
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nValues
+      F ( iV )  =  - M ( iV )  *  N ( iV )  *  GradPhi ( iV )
+    end do
+    !$OMP end parallel do
+
+  end subroutine ComputeGravitationalForce
 
 
 end module Geometry_ASC__Form

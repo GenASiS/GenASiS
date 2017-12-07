@@ -4,6 +4,7 @@ module Fluid_ASC__Form
 
   use Basics
   use Mathematics
+  use Spaces
   use Fluid_D__Form
 !  use Fluid_P_P__Form
 !  use Fluid_P_NR__Form
@@ -54,6 +55,8 @@ module Fluid_ASC__Form
 !      Fluid_P_NR_CSL
 !    generic, public :: &
 !      Fluid_P_NR => Fluid_P_NR_CSL
+    procedure, public, pass :: &
+      ComputeTally
     final :: &
       Finalize
     procedure, private, pass :: &
@@ -353,6 +356,39 @@ contains
   !   end select !-- FC
 
   ! end function Fluid_P_NR_CSL
+
+
+  subroutine ComputeTally ( CA, ComputeChangeOption, IgnorabilityOption )
+    
+    class ( Fluid_ASC_Form ), intent ( inout ) :: &
+      CA
+    logical ( KDL ), intent ( in ), optional :: &
+      ComputeChangeOption
+    integer ( KDI ), intent ( in ), optional :: &
+      IgnorabilityOption
+
+    class ( Fluid_D_Form ), pointer :: &
+      F
+
+    select type ( A => CA % Atlas )
+    class is ( Atlas_SC_Form )
+      
+    select type ( GA => A % Geometry_ASC )
+    class is ( Geometry_ASC_Form )
+
+    F => CA % Fluid_D ( )
+
+    call GA % ComputeGravity &
+           ( CA, iBaryonMass = F % BARYON_MASS, &
+             iBaryonDensity = F % CONSERVED_BARYON_DENSITY )
+
+    end select !-- GA
+    end select !-- A
+    nullify ( F )
+
+    call CA % ComputeTallyTemplate ( ComputeChangeOption, IgnorabilityOption )
+
+  end subroutine ComputeTally
 
 
   impure elemental subroutine Finalize ( FA )

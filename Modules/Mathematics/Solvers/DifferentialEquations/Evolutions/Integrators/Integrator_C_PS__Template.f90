@@ -266,6 +266,7 @@ contains
       TimeNew
 
     call I % PrepareCycle ( )
+
     call I % ComputeNewTime ( TimeNew )
 
     associate ( S => I % Step )

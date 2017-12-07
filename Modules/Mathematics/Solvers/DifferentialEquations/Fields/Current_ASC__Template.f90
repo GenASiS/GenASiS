@@ -39,6 +39,8 @@ module Current_ASC__Template
     procedure, public, pass :: &
       ComputeTally
     procedure, public, pass :: &
+      ComputeTallyTemplate
+    procedure, public, pass :: &
       FinalizeTemplate_ASC_C
   end type Current_ASC_Template
 
@@ -161,6 +163,21 @@ contains
       ComputeChangeOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
+
+    call CA % ComputeTallyTemplate ( ComputeChangeOption, IgnorabilityOption )
+
+  end subroutine ComputeTally
+
+
+  subroutine ComputeTallyTemplate &
+               ( CA, ComputeChangeOption, IgnorabilityOption )
+    
+    class ( Current_ASC_Template ), intent ( inout ) :: &
+      CA
+    logical ( KDL ), intent ( in ), optional :: &
+      ComputeChangeOption
+    integer ( KDI ), intent ( in ), optional :: &
+      IgnorabilityOption
     
     integer ( KDI ) :: &
       iB  !-- iBoundary
@@ -249,7 +266,7 @@ contains
       call PROGRAM_HEADER % Abort ( )
     end select !-- A
 
-  end subroutine ComputeTally
+  end subroutine ComputeTallyTemplate
   
   
   impure elemental subroutine FinalizeTemplate_ASC_C ( CA )
