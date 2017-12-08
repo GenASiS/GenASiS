@@ -12,7 +12,7 @@ module SetHomogeneousSpheroid_Command
 contains
 
   subroutine SetHomogeneousSpheroid &
-               ( Source_ASC, Reference_ASC, A, Density, SemiMajor, SemiMinor, &
+               ( Source_ASC, Reference_ASC, A, Density, a_1, a_3, &
                  iVariable )
 
     class ( Storage_ASC_Form ), intent ( inout ) :: &
@@ -22,8 +22,8 @@ contains
       A
     real ( KDR ), intent ( in ) :: &
       Density, &
-      SemiMajor, &
-      SemiMinor
+      a_1, &
+      a_3
     integer ( KDI ), intent ( in ) :: &
       iVariable
 
@@ -32,21 +32,136 @@ contains
       Reference
     class ( GeometryFlatForm ), pointer :: &
       G
-    real ( KDR ), allocatable, dimension ( : ) :: &
+    integer ( KDI ) :: &
+      i, &
+      iC, &  !-- iCell
+      iS, jS, kS     !-- iSubcell
+    integer ( KDI ), dimension ( 3 ) :: &
+      nSubcells
+    real ( KDR ), dimension ( 3 ) :: &
+      X_I, &
+      X_O, &
+      dXS, &  !-- dX_Subcell
+      XS      !--  X_Subcell
+    real ( KDR ), dimension ( : ), allocatable :: &
+      dV, &
+      BVF, &  !-- VolumeFraction
       rho_sq, & !-- X^2 + Y^2 
       Z_sq, &
       l, &
-      h
+      h, &
+      e_vec, &
+      C_I_vec, &
+      C_A_vec, &
+      C_B_vec
     real ( KDR ) :: &
+      dVS, &  !-- dVolumeSubcell
+      VS, &   !-- VolumeSubcell
       e, &
+      C_I, &
       C_A, &
-      C_B
-    integer ( KDI ) :: &
-      i
+      C_B, &
+      rho_sq_in_in, &
+      rho_sq_in_out, &
+      rho_sq_out_in, &
+      rho_sq_out_out, &
+      Z_sq_in_in, &
+      Z_sq_in_out, &
+      Z_sq_out_in, &
+      Z_sq_out_out, &
+      rho_S_sq, &
+      Z_s_sq
 
     !-- Geometry
 
     G => A % Geometry ( )
+
+        select type ( C => A % Chart )
+    class is ( Chart_SLD_Form )
+    
+    associate ( VJ => G % Value ( :, G % VOLUME_JACOBIAN ) )
+
+    allocate ( dV ( size ( VJ ) ) )
+    allocate ( BVF ( size ( VJ ) ) )
+    call Clear ( dV )
+    call Clear ( BVF )
+
+    nSubCells = 1
+    nSubcells ( : C % nDimensions ) = 20
+
+    do iC = 1, size ( VJ )
+      associate &
+        (  X => G % Value ( iC, G % CENTER ( 1 ) : G % CENTER ( 3 ) ), &
+          dX => G % Value ( iC, G % WIDTH  ( 1 ) : G % WIDTH  ( 3 ) ), &
+          Pi => CONSTANT % PI )
+
+      if ( .not. C % IsProperCell ( iC ) ) cycle
+
+      dV ( iC )  =  VJ ( iC ) * product ( dX ( : C % nDimensions ) )
+
+       X_I  =  X  -  0.5_KDR * dX
+       X_O  =  X  +  0.5_KDR * dX
+
+       rho_sq_in_in   = ( X_I ( 1 ) * sin ( X_I ( 2 ) ) ) ** 2
+       rho_sq_in_out  = ( X_O ( 1 ) * sin ( X_I ( 2 ) ) ) ** 2
+       rho_sq_out_in  = ( X_I ( 1 ) * sin ( X_O ( 2 ) ) ) ** 2
+       rho_sq_out_out = ( X_O ( 1 ) * sin ( X_O ( 2 ) ) ) ** 2
+
+       Z_sq_in_in   = ( X_I ( 1 ) * cos ( X_I ( 2 ) ) ) ** 2
+       Z_sq_in_out  = ( X_O ( 1 ) * cos ( X_I ( 2 ) ) ) ** 2
+       Z_sq_out_in  = ( X_I ( 1 ) * cos ( X_O ( 2 ) ) ) ** 2
+       Z_sq_out_out = ( X_O ( 1 ) * cos ( X_O ( 2 ) ) ) ** 2
+
+       if ( rho_sq_in_in / a_1 ** 2 + Z_sq_in_in / a_3 ** 2 <= 1.0_KDR &
+            .and. rho_sq_in_out / a_1 ** 2 + Z_sq_in_out / a_3 ** 2 <= 1.0_KDR &
+            .and. rho_sq_out_in / a_1 ** 2 + Z_sq_out_in / a_3 ** 2 <= 1.0_KDR &
+            .and. rho_sq_out_out / a_1 ** 2 &
+                  + Z_sq_out_out / a_3 ** 2 <= 1.0_KDR ) then 
+         BVF ( iC ) = 1.0_KDR
+         cycle
+       end if
+
+      if ( rho_sq_in_in / a_1 ** 2 + Z_sq_in_in / a_3 ** 2 > 1.0_KDR &
+           .and. rho_sq_in_out / a_1 ** 2 + Z_sq_in_out / a_3 ** 2 > 1.0_KDR &
+           .and. rho_sq_out_in / a_1 ** 2 + Z_sq_out_in / a_3 ** 2 > 1.0_KDR &
+           .and. rho_sq_out_out / a_1 ** 2 &
+                 + Z_sq_out_out / a_3 ** 2 > 1.0_KDR ) then 
+        BVF ( iC ) = 0.0_KDR
+        cycle
+      end if
+      
+      dXS  =  ( X_O  -  X_I ) / nSubcells
+
+      VS = 0.0_KDR
+      do kS = 1, nSubcells ( 3 )
+        do jS = 1, nSubcells ( 2 )
+          do iS = 1, nSubcells ( 1 )
+            XS  =  X_I  +  ( [ iS, jS, kS ] - 0.5_KDR ) * dXS
+            rho_S_sq = ( XS ( 1 ) * sin ( XS ( 2 ) ) ) ** 2
+            Z_S_sq = ( XS ( 1 ) * cos ( XS ( 2 ) ) ) ** 2
+            select case ( C % nDimensions )
+            case ( 2 )
+              dVS = 2 * Pi * XS ( 1 ) ** 2  * sin ( XS ( 2 ) ) &
+                      * dXS ( 1 ) * dXS ( 2 )
+            case ( 3 )
+              dVS = XS ( 1 ) ** 2  * sin ( XS ( 2 ) ) &
+                     * dXS ( 1 ) * dXS ( 2 ) * dXS ( 3 )
+            end select 
+            VS = VS + dVS
+            if ( rho_S_sq / a_1 ** 2 + Z_S_sq / a_3 ** 2 <= 1.0_KDR ) &
+              BVF ( iC ) = BVF ( iC ) + dVS
+          end do !-- iS
+        end do !-- jS
+      end do !-- kS
+      BVF ( iC ) = BVF ( iC ) / VS
+
+      end associate !-- X, etc.
+    end do !-- iC
+
+    end associate !-- VJ
+    end select !-- C
+
+
 
     associate &
       (  R    => G % Value ( :, G % CENTER ( 1 ) ), &
@@ -54,10 +169,10 @@ contains
         Theta => G % Value ( :, G % CENTER ( 2 ) ) )
 
     allocate &
-      ( rho_sq ( size ( R ) ) , &
-        Z_sq   ( size ( R ) ), &
-        l   ( size ( R ) ), &
-        h   ( size ( R ) ) )
+      ( rho_sq  ( size ( R ) ) , &
+        Z_sq    ( size ( R ) ), &
+        l       ( size ( R ) ), &
+        C_I_vec ( size ( R ) ) )
          
 
     rho_sq = ( R * sin ( Theta ) ) ** 2
@@ -67,87 +182,90 @@ contains
 
     Source => Source_ASC % Storage ( )
 
-    associate &
-      ( D     => Source % Value ( :, iVariable ), &
-        R_In  => R - 0.5_KDR * dR, &
-        R_Out => R + 0.5_KDR * dR, &
-        a     => SemiMajor, &
-        b     => SemiMinor )
+    associate ( D => Source % Value ( :, iVariable ) )
 
-    D = 0.0_KDR
-
-call Show ( 'Before density' )
-    where ( rho_sq /a ** 2 + Z_sq / b ** 2 <= 1.0_KDR )
-      D = Density
-    end where
-
-    ! where ( R_In * sin ( Theta ) < a .and. R_In * cos ( Theta ) < b )
-    !   where ( R_Out * sin ( Theta ) > a .and. R_Out * cos ( Theta ) > b )
-    !     D = Density * ( RD - R_In ) / dR
-    !   end where
-    ! end where
-
+    D = Density * BVF
 
     !-- Reference
 
     Reference => Reference_ASC % Storage ( )
 
-call Show ( b, 'b' )
+    e = sqrt ( 1.0_KDR &
+               - min ( ( a_3 / a_1 ), ( a_1 / a_3 ) )  ** 2 )
 
-    e = sqrt ( 1.0_KDR - ( b / a ) ** 2 )
+    if ( a_3 < a_1 ) then
+      C_I = 2 * sqrt ( 1.0_KDR - e ** 2 ) / e * asin ( e )
+      C_A = sqrt ( 1.0_KDR - e ** 2 ) / e ** 3 * asin ( e ) &
+            - ( 1.0_KDR - e ** 2 ) / e ** 2
 
-call Show ( e, 'e' )
-    C_A = sqrt ( 1.0_KDR - e ** 2 ) / e ** 3 * asin ( e ) &
-          - ( 1.0_KDR - e ** 2 ) / e ** 2
+      C_B = 2.0_KDR / e ** 2 &
+            - 2 * sqrt ( 1.0_KDR - e ** 2 ) / e ** 3 * asin ( e )
+    else
+      C_I  = 1.0_KDR / e * log ( ( 1 + e ) / ( 1 - e ) )
+      C_A = 1.0_KDR / e ** 2 &
+            - ( 1.0_KDR - e ** 2 ) / ( 2 * e ** 3 ) &
+               * log ( ( 1 + e ) / ( 1 - e ) )
 
-    C_B = 2.0_KDR / e ** 2 - 2 * sqrt ( 1.0_KDR - e ** 2 ) / e ** 3 * asin ( e )
-
-    where ( rho_sq /a ** 2 + Z_sq / b ** 2 > 1.0_KDR )
-      l = 0.5_KDR * ( ( rho_sq + Z_sq - a ** 2 - b **2  ) &
-            + sqrt ( 2.0_KDR * rho_sq * ( - a ** 2 + b ** 2 + Z_sq ) &
-                     + ( a ** 2 - b ** 2 + Z_sq ) ** 2 + rho_sq ** 2 ) )
-         ! + sqrt ( ( a ** 2 - b ** 2 ) ** 2 + ( rho + Z ) ** 2 &
-         !          + 2.0_KDR * a ** 2 * ( Z - rho ) &
-         !          - 2.0_KDR * b ** 2 * ( Z - rho ) ) )
-
-
-      where ( l < 0.0_KDR )
-        l = 0.5_KDR * ( ( rho_sq + Z_sq - a ** 2 - b **2  ) &
-            - sqrt ( 2.0_KDR * rho_sq * ( - a ** 2 + b ** 2 + Z_sq ) &
-                     + ( a ** 2 - b ** 2 + Z_sq ) ** 2 + rho_sq ** 2 ) )
-         ! - sqrt ( ( a ** 2 - b ** 2 ) ** 2 + ( rho + Z ) ** 2 &
-         !          + 2.0_KDR * a ** 2 * ( Z - rho ) &
-         !          - 2.0_KDR * b ** 2 * ( Z - rho ) ) )
-      end where
-
-      h = a * e / sqrt ( b ** 2 + l )
-    end where
-
-
-call Show ( 'before phi' )
+      C_B = ( 1.0_KDR - e ** 2 ) / e ** 3  * log ( ( 1 + e ) / ( 1 - e ) ) &
+            - 2 * ( 1.0_KDR - e ** 2 ) / e ** 2
+    end if
 
     associate &
       ( Phi  =>  Reference % Value ( :, iVariable ), &
         Pi   =>  CONSTANT % PI )
-    where ( rho_sq /a ** 2 + Z_sq / b ** 2 <= 1.0_KDR  )
-      Phi  =   - Density / 4.0_KDR * &
-                   ( C_A * ( 2.0_KDR * a ** 2 - rho_sq ) + C_B * ( b ** 2 - Z_sq ) )
-    elsewhere
-      Phi  =   -  Density / 2.0_KDR * a * b / e &
-                  * ( atan ( h ) &
-                        - 1 / ( 2 * a ** 2 * e ** 2 )&
-                            * ( rho_sq * ( atan ( h ) - h / ( 1 + h ** 2 ) ) &
-                                + 2 * Z_sq * ( h - atan ( h ) ) ) )
+
+      where ( rho_sq / a_1 ** 2 + Z_sq / a_3 ** 2 <= 1.0_KDR )
+        Phi  =   - Density / 4.0_KDR &
+                     * ( C_I * a_1 ** 2  - C_A * rho_sq - C_B * Z_sq )
+      end where
+
+    l = 0.0_KDR
+
+    where ( rho_sq / a_1 ** 2 + Z_sq / a_3 ** 2 > 1.0_KDR )
+      l = 0.5_KDR * ( ( rho_sq + Z_sq - a_1 ** 2 - a_3 **2  ) &
+            + sqrt ( ( a_1 ** 2 + a_3 ** 2 - Z_sq - rho_sq) ** 2 &
+                     - 4.0_KDR * ( a_1 ** 2 * a_3 ** 2 - rho_sq * a_3 ** 2 &
+                                   - Z_sq * a_1 ** 2 ) ) )
+
+      where ( l < 0.0_KDR )
+        l = 0.5_KDR * ( ( rho_sq + Z_sq - a_1 ** 2 - a_3 **2  ) &
+            - sqrt ( ( a_1 ** 2 + a_3 ** 2 - Z_sq - rho_sq) ** 2 &
+                     - 4.0_KDR * ( a_1 ** 2 * a_3 ** 2 - rho_sq * a_3 ** 2 &
+                                   - Z_sq * a_1 ** 2 ) ) )
+      end where
+     ! h = a_1 * e / sqrt ( a_3 ** 2 + l )
     end where
 
+    if ( a_3 < a_1 ) then
+      C_I_vec = Pi / sqrt ( a_1 ** 2 - a_3 ** 2 ) &
+            - 2.0_KDR / sqrt ( a_1 ** 2 - a_3 ** 2 ) &
+            * atan ( sqrt ( ( a_3 ** 2 + l ) / ( a_1 ** 2 - a_3 ** 2 ) ) )
+    else
+      C_I_vec = -1.0_KDR / sqrt ( a_3 ** 2 - a_1 ** 2 ) &
+                * log ( ( sqrt ( a_3 ** 2 + l ) &
+                           - sqrt ( a_3 ** 2 - a_1 ** 2 ) ) ** 2 &
+                             / ( a_1 ** 2 + l ) )
+    end if
+
+      where (  rho_sq / a_1 ** 2 + Z_sq / a_3 ** 2 > 1.0_KDR )
+        Phi  = - Density / 4.0_KDR * a_1 ** 2 * a_3 &
+               * ( ( 1.0_KDR + rho_sq / ( 2 * ( a_3 ** 2 - a_1 ** 2 ) ) &
+                   - Z_sq / ( a_3 ** 2 - a_1 ** 2 ) ) * C_I_vec &
+               - rho_sq * sqrt ( a_3 ** 2 + l ) &
+                 / ( ( a_3 ** 2 - a_1 ** 2 ) * ( a_1 ** 2 + l ) ) &
+               - Z_sq * ( 2.0_KDR &
+                          / ( ( a_1 ** 2 + l ) * sqrt ( a_3 ** 2 + l ) ) &
+                        - 2.0_KDR  * sqrt ( a_3 ** 2 + l ) &
+                           / ( ( a_3 ** 2 - a_1 ** 2 ) * ( a_1 ** 2 + l ) ) ))
+      end where
+       
     end associate !-- Phi, etc
     end associate !-- R_In, etc.
     end associate !-- R, etc.
 
-    deallocate ( rho_sq, Z_sq, l, h )
+    deallocate ( rho_sq, Z_sq, l, C_I_vec )
     nullify ( G, Source, Reference )
 
   end subroutine SetHomogeneousSpheroid
-
 
 end module SetHomogeneousSpheroid_Command
