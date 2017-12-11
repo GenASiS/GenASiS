@@ -76,6 +76,7 @@ module Chart_Template
       SetCenterCylindrical_1, &
       SetCenterSpherical_1, &
       SetCenterSpherical_2, &
+      SetWidthLeftRight, &
       SetGeometryCellEqual, &
       SetGeometryCellGeometric, &
       SetGeometryCellCompactified, &
@@ -709,6 +710,28 @@ contains
     end do
 
   end subroutine SetCenterSpherical_2
+
+
+  subroutine SetWidthLeftRight ( Width_L, Width_R, Edge, Center, nCells )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      Width_L, &
+      Width_R
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      Edge, &
+      Center
+    integer ( KDI ) :: &
+      nCells
+
+    integer ( KDI ) :: &
+      iC  !-- iCell
+
+    do iC = 1, nCells
+      Width_L ( iC )  =  Center ( iC )    -  Edge ( iC )
+      Width_R ( iC )  =  Edge ( iC + 1 )  -  Center ( iC )
+    end do
+
+  end subroutine SetWidthLeftRight
 
 
   subroutine SetGeometryCellEqual &
