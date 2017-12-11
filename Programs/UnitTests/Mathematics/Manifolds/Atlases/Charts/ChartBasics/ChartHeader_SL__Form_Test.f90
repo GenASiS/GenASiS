@@ -75,10 +75,10 @@ contains
     call A % SetBoundaryConditionsFace ( [ 'REFLECTING', 'REFLECTING' ], 1 )
 
     Scale = 0.0_KDR
-    Scale ( 1 ) = 5.0_KDR * UNIT % MEV
+    Scale ( 1 ) = 5.0_KDR * UNIT % MEGA_ELECTRON_VOLT
 
     CoordinateUnit = UNIT % IDENTITY
-    CoordinateUnit ( 1 ) = UNIT % MEV
+    CoordinateUnit ( 1 ) = UNIT % MEGA_ELECTRON_VOLT
 
     IsPeriodic = .false.
 

@@ -21,6 +21,8 @@ module Chart_Template
       MaxCoordinate => null ( ), &
       Ratio => null ( ), &
       Scale => null ( )
+    class ( Real_1D_Form ), dimension ( : ), pointer :: &
+      Edge
     type ( MeasuredValueForm ), dimension ( : ), pointer :: &
       CoordinateUnit => null ( )
     logical ( KDL ) :: &
@@ -66,6 +68,10 @@ module Chart_Template
 
     private :: &
       BrickIndex, &
+      SetEdgesEqual, &
+      SetEdgesGeometric, &
+      SetEdgesCompactified, &
+      SetEdgesProportional, &
       SetGeometryCellEqual, &
       SetGeometryCellGeometric, &
       SetGeometryCellCompactified, &
@@ -176,6 +182,8 @@ contains
            ( C % MaxCoordinate ( : nD ), 'MaxCoordinate', &
              InputUnitOption = C % CoordinateUnit ( : nD ) )
 
+    allocate ( C % Edge ( MAX_DIMENSIONS ) )
+
     C % IsDistributed = Atlas % IsDistributed
     if ( present ( IsDistributedOption ) ) &
       C % IsDistributed = IsDistributedOption
@@ -223,6 +231,7 @@ contains
     C % nFields          =  0  !-- NOT COPIED!   
     C % MinCoordinate    => C_Source % MinCoordinate
     C % MaxCoordinate    => C_Source % MaxCoordinate
+    C % Edge             => C_Source % Edge
     C % Ratio            => C_Source % Ratio
     C % Scale            => C_Source % Scale
     C % nEqual           =  C_Source % nEqual
@@ -296,6 +305,7 @@ contains
       deallocate ( C % Spacing )
       deallocate ( C % CoordinateSystem )
       deallocate ( C % IsPeriodic )
+      deallocate ( C % Edge )
       deallocate ( C % MaxCoordinate )
       deallocate ( C % MinCoordinate )
       deallocate ( C % CoordinateUnit )
@@ -308,6 +318,7 @@ contains
       nullify ( C % Spacing )
       nullify ( C % CoordinateSystem )
       nullify ( C % IsPeriodic )
+      nullify ( C % Edge )
       nullify ( C % MaxCoordinate )
       nullify ( C % MinCoordinate )
       nullify ( C % CoordinateUnit )
@@ -481,6 +492,134 @@ contains
     end associate !-- nB
 
   end function BrickIndex
+
+
+  subroutine SetEdgesEqual ( Edge, MinCoordinate, MaxCoordinate, nCells )
+
+    !-- Equal cell widths
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      Edge
+    real ( KDR ), intent ( in ) :: &
+      MinCoordinate, &
+      MaxCoordinate
+    integer ( KDI ), intent ( in ) :: &
+      nCells
+
+    integer ( KDI ) :: &
+      iC  !-- iCell
+    real ( KDR ) :: &
+      Width
+
+    Edge ( 1 )  =  MinCoordinate
+    Width       =  ( MaxCoordinate - MinCoordinate ) / nCells
+
+    do iC = 2, nCells + 1
+      Edge ( iC )  =  Edge ( iC - 1 )  +  Width
+    end do
+
+  end subroutine SetEdgesEqual
+
+
+  subroutine SetEdgesGeometric &
+               ( Edge, MinCoordinate, MaxCoordinate, Ratio, nCells )
+
+    !-- Each successive cell width is larger by Ratio
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      Edge
+    real ( KDR ), intent ( in ) :: &
+      MinCoordinate, &
+      MaxCoordinate, &
+      Ratio
+    integer ( KDI ), intent ( in ) :: &
+      nCells
+
+    integer ( KDI ) :: &
+      iC  !-- iCell
+    real ( KDR ) :: &
+      Width
+
+    Edge ( 1 )  =  MinCoordinate
+    Width       =  ( MaxCoordinate - MinCoordinate ) &
+                   * ( Ratio - 1.0_KDR ) / ( Ratio ** nCells  -  1.0_KDR )
+
+    do iC = 2, nCells + 1
+      Edge ( iC )  =  Edge ( iC - 1 )  +  Width
+      Width        =  Ratio * Width
+    end do
+
+  end subroutine SetEdgesGeometric
+
+
+  subroutine SetEdgesCompactified ( Edge, Scale, nCells )
+
+    !-- Compactify the domain [ 0, Infinity ] to [ 0, 1 ] via the
+    !   transformation Coordinate = Scale * S / ( 1 - S )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      Edge
+    real ( KDR ), intent ( in ) :: &
+      Scale
+    integer ( KDI ), intent ( in ) :: &
+      nCells
+
+    integer ( KDI ) :: &
+      iC  !-- iCell
+    real ( KDR ) :: &
+      dS, &
+      S, &
+      Width
+
+    dS = 1.0_KDR / nCells
+    S  = 0.5_KDR * dS
+
+    Edge ( 1 )  =  0.0_KDR
+    Width       =  Scale  *  dS / ( 1.0_KDR - S ) ** 2 
+
+    do iC = 2, nCells + 1
+      Edge ( iC )  =  Edge ( iC - 1 )  +  Width
+      S            =  ( 0.5_KDR + ( iC - 1 ) ) * dS
+      Width        =  Scale  *  dS / ( 1.0_KDR - S ) ** 2
+    end do
+
+  end subroutine SetEdgesCompactified
+
+
+  subroutine SetEdgesProportional &
+               ( Edge, MinCoordinate, Ratio, Scale, nCells, nEqual )
+
+    !-- Width proportional to the inner edge coordinate of the cell
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      Edge
+    real ( KDR ), intent ( in ) :: &
+      MinCoordinate, &
+      Ratio, &
+      Scale
+    integer ( KDI ), intent ( in ) :: &
+      nCells, &
+      nEqual
+
+    integer ( KDI ) :: &
+      iC  !-- iCell
+    real ( KDR ) :: &
+      Width
+
+    if ( nEqual == 0 ) then
+      Edge ( 1 )  =  MinCoordinate
+    else
+      call SetEdgesEqual ( Edge, MinCoordinate, Scale, nEqual )
+    end if
+    
+    Width  =  Ratio  *  Edge ( nEqual + 1 )
+
+    do iC = nEqual + 2, nCells
+      Edge ( iC )  =  Edge ( iC - 1 )  +  Width
+      Width        =  Ratio  *  Edge ( iC )
+    end do
+
+  end subroutine SetEdgesProportional
 
 
   subroutine SetGeometryCellEqual &
