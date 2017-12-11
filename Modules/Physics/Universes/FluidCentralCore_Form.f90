@@ -313,6 +313,30 @@ contains
     class ( FluidCentralCoreForm ), intent ( inout ) :: &
       I
 
+    ! class ( Fluid_D_Form ), pointer :: &
+    !   F
+
+    ! select type ( FA => I % Current_ASC )
+    ! class is ( Fluid_ASC_Form )
+
+    ! select type ( PS => I % PositionSpace )
+    ! class is ( Atlas_SC_Form )
+
+    ! select type ( GA => PS % Geometry_ASC )
+    ! class is ( Geometry_ASC_Form )
+
+    ! F => FA % Fluid_D ( )
+
+    ! call GA % ComputeGravity &
+    !       ( I % Current_ASC, &
+    !         iBaryonMass = F % BARYON_MASS, &
+    !         iBaryonDensity = F % CONSERVED_BARYON_DENSITY )
+
+    ! end select !-- GA
+    ! end select !-- PS
+    ! end select !-- FA
+    ! nullify ( F )
+
   end subroutine PrepareCycle
 
 
