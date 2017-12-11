@@ -22,7 +22,10 @@ module Chart_Template
       Ratio => null ( ), &
       Scale => null ( )
     class ( Real_1D_Form ), dimension ( : ), pointer :: &
-      Edge
+      Edge, &
+      Center, &
+      Width_L, &
+      Width_R
     type ( MeasuredValueForm ), dimension ( : ), pointer :: &
       CoordinateUnit => null ( )
     logical ( KDL ) :: &
@@ -76,11 +79,7 @@ module Chart_Template
       SetCenterCylindrical_1, &
       SetCenterSpherical_1, &
       SetCenterSpherical_2, &
-      SetWidthLeftRight, &
-      SetGeometryCellEqual, &
-      SetGeometryCellGeometric, &
-      SetGeometryCellCompactified, &
-      SetGeometryCellProportional
+      SetWidthLeftRight
 
     integer ( KDI ), private, parameter :: &
       MAX_DIMENSIONS = ATLAS % MAX_DIMENSIONS
@@ -187,7 +186,10 @@ contains
            ( C % MaxCoordinate ( : nD ), 'MaxCoordinate', &
              InputUnitOption = C % CoordinateUnit ( : nD ) )
 
-    allocate ( C % Edge ( MAX_DIMENSIONS ) )
+    allocate ( C % Edge    ( MAX_DIMENSIONS ) )
+    allocate ( C % Center  ( MAX_DIMENSIONS ) )
+    allocate ( C % Width_L ( MAX_DIMENSIONS ) )
+    allocate ( C % Width_R ( MAX_DIMENSIONS ) )
 
     C % IsDistributed = Atlas % IsDistributed
     if ( present ( IsDistributedOption ) ) &
@@ -237,6 +239,9 @@ contains
     C % MinCoordinate    => C_Source % MinCoordinate
     C % MaxCoordinate    => C_Source % MaxCoordinate
     C % Edge             => C_Source % Edge
+    C % Center           => C_Source % Center
+    C % Width_L          => C_Source % Width_L
+    C % Width_R          => C_Source % Width_R
     C % Ratio            => C_Source % Ratio
     C % Scale            => C_Source % Scale
     C % nEqual           =  C_Source % nEqual
@@ -310,6 +315,9 @@ contains
       deallocate ( C % Spacing )
       deallocate ( C % CoordinateSystem )
       deallocate ( C % IsPeriodic )
+      deallocate ( C % Width_R )
+      deallocate ( C % Width_L )
+      deallocate ( C % Center )
       deallocate ( C % Edge )
       deallocate ( C % MaxCoordinate )
       deallocate ( C % MinCoordinate )
@@ -323,6 +331,9 @@ contains
       nullify ( C % Spacing )
       nullify ( C % CoordinateSystem )
       nullify ( C % IsPeriodic )
+      nullify ( C % Width_R )
+      nullify ( C % Width_L )
+      nullify ( C % Center )
       nullify ( C % Edge )
       nullify ( C % MaxCoordinate )
       nullify ( C % MinCoordinate )
@@ -406,64 +417,168 @@ contains
   end subroutine SetBrick
 
 
-  subroutine SetGeometryCell ( C, Width, Center, nC, nGL, iD, iaF )
+  ! subroutine SetGeometryCell ( C, Width, Center, nC, nGL, iD, iaF )
+
+  !   class ( ChartTemplate ), intent ( inout ) :: &
+  !     C
+  !   real ( KDR ), dimension ( iaF : ), intent ( inout ) :: &
+  !     Width, &
+  !     Center
+  !   integer ( KDI ), intent ( in ) :: &
+  !     nC, &   !-- nCells
+  !     nGL, &  !-- nGhostLayers
+  !     iD, &      !-- iDimension
+  !     iaF    !-- iaFirst
+
+  !   integer ( KDI ) :: &
+  !     iC    !-- iCell
+
+  !   select case ( trim ( C % Spacing ( iD ) ) )
+  !   case ( 'EQUAL' )
+  !     call SetGeometryCellEqual &
+  !            ( Width  ( 1 : nC ), Center ( 1 : nC ), &
+  !              C % MinCoordinate ( iD ), C % MaxCoordinate ( iD ), nC )
+  !   case ( 'GEOMETRIC' )
+  !     call SetGeometryCellGeometric &
+  !            ( Width  ( 1 : nC ), Center ( 1 : nC ), &
+  !              C % MinCoordinate ( iD ), C % MaxCoordinate ( iD ), &
+  !              C % Ratio ( iD ), nC )
+  !   case ( 'COMPACTIFIED' )
+  !     call SetGeometryCellCompactified &
+  !            ( Width  ( 1 : nC ), Center ( 1 : nC ), &
+  !              C % Scale ( iD ), nC )
+  !     C % MinCoordinate ( iD ) = Center ( 1 )  - 0.5_KDR * Width ( 1 )
+  !     C % MaxCoordinate ( iD ) = Center ( nC ) + 0.5_KDR * Width ( nC )
+  !   case ( 'PROPORTIONAL' )
+  !     call SetGeometryCellProportional &
+  !            ( Width  ( 1 : nC ), Center ( 1 : nC ), &
+  !              C % MinCoordinate ( iD ), C % Ratio ( iD ), C % Scale ( iD ), &
+  !              nC, C % nEqual )
+  !     C % MaxCoordinate ( iD ) = Center ( nC ) + 0.5_KDR * Width ( nC )
+  !   case default
+  !     call Show ( 'Spacing type not recognized', CONSOLE % ERROR )
+  !     call Show ( 'Chart_Template', 'module', CONSOLE % ERROR )
+  !     call Show ( 'SetGeometryCell', 'subroutine', CONSOLE % ERROR )
+  !     call PROGRAM_HEADER % Abort ( )
+  !   end select
+
+  !   do iC = 1, nGL
+
+  !     Width ( 1 - iC )  = Width ( iC )
+  !     Width ( nC + iC ) = Width ( nC - ( iC - 1 ) )
+
+  !     Center ( 1 - iC ) &
+  !       = Center ( 1 - ( iC - 1 ) ) &
+  !         - 0.5_KDR * ( Width ( 1 - ( iC - 1 ) ) + Width ( 1 - iC ) ) 
+  !     Center ( nC + iC ) &
+  !       = Center ( nC + ( iC - 1 ) ) &
+  !         + 0.5_KDR * ( Width ( nC + ( iC - 1 ) ) + Width ( nC + iC ) )
+ 
+  !   end do !-- iC
+
+  ! end subroutine SetGeometryCell
+
+
+  subroutine SetGeometryCell ( C, nC, nGL, iD, iaF )
 
     class ( ChartTemplate ), intent ( inout ) :: &
       C
-    real ( KDR ), dimension ( iaF : ), intent ( inout ) :: &
-      Width, &
-      Center
     integer ( KDI ), intent ( in ) :: &
       nC, &   !-- nCells
       nGL, &  !-- nGhostLayers
-      iD, &      !-- iDimension
-      iaF    !-- iaFirst
+      iD, &   !-- iDimension
+      iaF     !-- iaFirst
 
     integer ( KDI ) :: &
       iC    !-- iCell
+    real ( KDL ) :: &
+      Width_IG, &
+      Width_OG
 
+    !-- C % Edge, C % Center, C % Width_L, C % Width_R must be initialized
+
+    !-- Edge, proper cells
     select case ( trim ( C % Spacing ( iD ) ) )
     case ( 'EQUAL' )
-      call SetGeometryCellEqual &
-             ( Width  ( 1 : nC ), Center ( 1 : nC ), &
+      call SetEdgeEqual &
+             ( C % Edge ( iD ) % Value ( 1 : nC + 1 ), &
                C % MinCoordinate ( iD ), C % MaxCoordinate ( iD ), nC )
     case ( 'GEOMETRIC' )
-      call SetGeometryCellGeometric &
-             ( Width  ( 1 : nC ), Center ( 1 : nC ), &
+      call SetEdgeGeometric &
+             ( C % Edge ( iD ) % Value ( 1 : nC + 1 ), &
                C % MinCoordinate ( iD ), C % MaxCoordinate ( iD ), &
                C % Ratio ( iD ), nC )
     case ( 'COMPACTIFIED' )
-      call SetGeometryCellCompactified &
-             ( Width  ( 1 : nC ), Center ( 1 : nC ), &
+      call SetEdgeCompactified &
+             ( C % Edge ( iD ) % Value ( 1 : nC + 1 ), &
                C % Scale ( iD ), nC )
-      C % MinCoordinate ( iD ) = Center ( 1 )  - 0.5_KDR * Width ( 1 )
-      C % MaxCoordinate ( iD ) = Center ( nC ) + 0.5_KDR * Width ( nC )
+      C % MinCoordinate ( iD )  =  C % Edge ( iD ) % Value ( 1 )
+      C % MaxCoordinate ( iD )  =  C % Edge ( iD ) % Value ( nC + 1 )
     case ( 'PROPORTIONAL' )
-      call SetGeometryCellProportional &
-             ( Width  ( 1 : nC ), Center ( 1 : nC ), &
+      call SetEdgeProportional &
+             ( C % Edge ( iD ) % Value ( 1 : nC + 1 ), &
                C % MinCoordinate ( iD ), C % Ratio ( iD ), C % Scale ( iD ), &
                nC, C % nEqual )
-      C % MaxCoordinate ( iD ) = Center ( nC ) + 0.5_KDR * Width ( nC )
+      C % MaxCoordinate ( iD )  =  C % Edge ( iD ) % Value ( nC + 1 )
     case default
-      call Show ( 'Spacing type not recognized', CONSOLE % ERROR )
+      call Show ( 'Spacing not recognized', CONSOLE % ERROR )
       call Show ( 'Chart_Template', 'module', CONSOLE % ERROR )
       call Show ( 'SetGeometryCell', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select
 
+    !-- Edge, ghost cells
+    associate ( Edge => C % Edge ( iD ) % Value )
     do iC = 1, nGL
-
-      Width ( 1 - iC )  = Width ( iC )
-      Width ( nC + iC ) = Width ( nC - ( iC - 1 ) )
-
-      Center ( 1 - iC ) &
-        = Center ( 1 - ( iC - 1 ) ) &
-          - 0.5_KDR * ( Width ( 1 - ( iC - 1 ) ) + Width ( 1 - iC ) ) 
-      Center ( nC + iC ) &
-        = Center ( nC + ( iC - 1 ) ) &
-          + 0.5_KDR * ( Width ( nC + ( iC - 1 ) ) + Width ( nC + iC ) )
- 
+      Width_IG  =  Edge ( iC + 1 )       -  Edge ( iC )
+      Width_OG  =  Edge ( nC - iC + 2 )  -  Edge ( nC - iC + 1 )
+      Edge ( 1 - iC )       =  Edge ( 2 - iC )   -  Width_IG
+      Edge ( nC + 1 + iC )  =  Edge ( nC + iC )  +  Width_OG
     end do !-- iC
+    end associate !-- Edge
+
+    !-- Center
+    select case ( trim ( C % CoordinateSystem ) )
+    case ( 'CARTESIAN' )
+      call SetCenterCartesian &
+             ( C % Center ( iD ) % Value, C % Edge ( iD ) % Value )
+    case ( 'CYLINDRICAL' )
+      select case ( iD )
+      case ( 1 )
+        call SetCenterCylindrical_1 &
+               ( C % Center ( iD ) % Value, C % Edge ( iD ) % Value, &
+                 nC, nGL, iaF )
+      case ( 2, 3 )
+        call SetCenterCartesian &
+               ( C % Center ( iD ) % Value, &
+                 C % Edge ( iD ) % Value )
+      end select
+    case ( 'SPHERICAL' )
+      select case ( iD )
+      case ( 1 )
+        call SetCenterSpherical_1 &
+               ( C % Center ( iD ) % Value, C % Edge ( iD ) % Value, &
+                 nC, nGL, iaF )
+      case ( 2 )
+        call SetCenterSpherical_2 &
+               ( C % Center ( iD ) % Value, C % Edge ( iD ) % Value, &
+                 nC, nGL, iaF )
+      case ( 3 )
+        call SetCenterCartesian &
+               ( C % Center ( iD ) % Value, &
+                 C % Edge ( iD ) % Value )
+      end select
+    case default
+      call Show ( 'CoordinateSystem not recognized', CONSOLE % ERROR )
+      call Show ( 'Chart_Template', 'module', CONSOLE % ERROR )
+      call Show ( 'SetGeometryCell', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select
+
+    !-- Width
+    call SetWidthLeftRight &
+           ( C % Width_L ( iD ) % Value, C % Width_R ( iD ) % Value, &
+             C % Edge ( iD ) % Value, C % Center ( iD ) % Value )
 
   end subroutine SetGeometryCell
 
@@ -499,7 +614,7 @@ contains
   end function BrickIndex
 
 
-  subroutine SetEdgeEqual ( Edge, MinCoordinate, MaxCoordinate, nCells )
+  subroutine SetEdgeEqual ( Edge, MinCoordinate, MaxCoordinate, nC )
 
     !-- Equal cell widths
 
@@ -509,7 +624,7 @@ contains
       MinCoordinate, &
       MaxCoordinate
     integer ( KDI ), intent ( in ) :: &
-      nCells
+      nC
 
     integer ( KDI ) :: &
       iC  !-- iCell
@@ -517,9 +632,9 @@ contains
       Width
 
     Edge ( 1 )  =  MinCoordinate
-    Width       =  ( MaxCoordinate - MinCoordinate ) / nCells
+    Width       =  ( MaxCoordinate - MinCoordinate ) / nC
 
-    do iC = 2, nCells + 1
+    do iC = 2, nC + 1
       Edge ( iC )  =  Edge ( iC - 1 )  +  Width
     end do
 
@@ -527,7 +642,7 @@ contains
 
 
   subroutine SetEdgeGeometric &
-               ( Edge, MinCoordinate, MaxCoordinate, Ratio, nCells )
+               ( Edge, MinCoordinate, MaxCoordinate, Ratio, nC )
 
     !-- Each successive cell width is larger by Ratio
 
@@ -538,7 +653,7 @@ contains
       MaxCoordinate, &
       Ratio
     integer ( KDI ), intent ( in ) :: &
-      nCells
+      nC
 
     integer ( KDI ) :: &
       iC  !-- iCell
@@ -547,9 +662,9 @@ contains
 
     Edge ( 1 )  =  MinCoordinate
     Width       =  ( MaxCoordinate - MinCoordinate ) &
-                   * ( Ratio - 1.0_KDR ) / ( Ratio ** nCells  -  1.0_KDR )
+                   * ( Ratio - 1.0_KDR ) / ( Ratio ** nC  -  1.0_KDR )
 
-    do iC = 2, nCells + 1
+    do iC = 2, nC + 1
       Edge ( iC )  =  Edge ( iC - 1 )  +  Width
       Width        =  Ratio * Width
     end do
@@ -557,7 +672,7 @@ contains
   end subroutine SetEdgeGeometric
 
 
-  subroutine SetEdgeCompactified ( Edge, Scale, nCells )
+  subroutine SetEdgeCompactified ( Edge, Scale, nC )
 
     !-- Compactify the domain [ 0, Infinity ] to [ 0, 1 ] via the
     !   transformation Coordinate = Scale * S / ( 1 - S )
@@ -567,7 +682,7 @@ contains
     real ( KDR ), intent ( in ) :: &
       Scale
     integer ( KDI ), intent ( in ) :: &
-      nCells
+      nC
 
     integer ( KDI ) :: &
       iC  !-- iCell
@@ -576,13 +691,13 @@ contains
       S, &
       Width
 
-    dS = 1.0_KDR / nCells
+    dS = 1.0_KDR / nC
     S  = 0.5_KDR * dS
 
     Edge ( 1 )  =  0.0_KDR
     Width       =  Scale  *  dS / ( 1.0_KDR - S ) ** 2 
 
-    do iC = 2, nCells + 1
+    do iC = 2, nC + 1
       Edge ( iC )  =  Edge ( iC - 1 )  +  Width
       S            =  ( 0.5_KDR + ( iC - 1 ) ) * dS
       Width        =  Scale  *  dS / ( 1.0_KDR - S ) ** 2
@@ -592,7 +707,7 @@ contains
 
 
   subroutine SetEdgeProportional &
-               ( Edge, MinCoordinate, Ratio, Scale, nCells, nEqual )
+               ( Edge, MinCoordinate, Ratio, Scale, nC, nEqual )
 
     !-- Width proportional to the inner edge coordinate of the cell
 
@@ -603,7 +718,7 @@ contains
       Ratio, &
       Scale
     integer ( KDI ), intent ( in ) :: &
-      nCells, &
+      nC, &
       nEqual
 
     integer ( KDI ) :: &
@@ -619,7 +734,7 @@ contains
     
     Width  =  Ratio  *  Edge ( nEqual + 1 )
 
-    do iC = nEqual + 2, nCells
+    do iC = nEqual + 2, nC
       Edge ( iC )  =  Edge ( iC - 1 )  +  Width
       Width        =  Ratio  *  Edge ( iC )
     end do
@@ -627,80 +742,111 @@ contains
   end subroutine SetEdgeProportional
 
 
-  subroutine SetCenterCartesian ( Center, Edge, nCells )
+  subroutine SetCenterCartesian ( Center, Edge )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       Center
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       Edge
-    integer ( KDI ), intent ( in ) :: &
-      nCells
 
     integer ( KDI ) :: &
       iC  !-- iCell
 
-    do iC = 1, nCells
+    do iC = 1, size ( Center )
       Center ( iC )  =  0.5_KDR * ( Edge ( iC )  +  Edge ( iC + 1 ) )
     end do
 
   end subroutine SetCenterCartesian
 
 
-  subroutine SetCenterCylindrical_1 ( Center, Edge, nCells )
+  subroutine SetCenterCylindrical_1 ( Center, Edge, nC, nGL, iaF )
 
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+    real ( KDR ), dimension ( iaF : ), intent ( inout ) :: &
       Center
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
+    real ( KDR ), dimension ( iaF : ), intent ( in ) :: &
       Edge
     integer ( KDI ), intent ( in ) :: &
-      nCells
+      nC, &
+      nGL, &
+      iaF
 
     integer ( KDI ) :: &
       iC  !-- iCell
 
-    do iC = 1, nCells
+    !-- Proper and outer ghost cells
+    do iC = 1, nC + nGL
       Center ( iC )  &
         =  2.0_KDR * ( Edge ( iC + 1 ) ** 3  -  Edge ( iC ) ** 3 )  &
            / ( 3.0_KDR * ( Edge ( iC + 1 ) ** 2  -  Edge ( iC ) ** 2 ) )
     end do
 
+    !-- Inner ghost cells
+    do iC = 1, nGL
+      if ( 0.5_KDR * ( Edge ( 2 - iC )  +  Edge ( 1 - iC ) )  >  0.0_KDR ) &
+      then
+        Center ( 1 - iC )  &
+          =  2.0_KDR * ( Edge ( 2 - iC ) ** 3  -  Edge ( 1 - iC ) ** 3 )  &
+             / ( 3.0_KDR * ( Edge ( 2 - iC ) ** 2  -  Edge ( 1 - iC ) ** 2 ) )
+      else
+        Center ( 1 - iC )  =  - Center ( iC )
+      end if
+    end do
+
   end subroutine SetCenterCylindrical_1
 
 
-  subroutine SetCenterSpherical_1 ( Center, Edge, nCells )
+  subroutine SetCenterSpherical_1 ( Center, Edge, nC, nGL, iaF )
 
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+    real ( KDR ), dimension ( iaF : ), intent ( inout ) :: &
       Center
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
+    real ( KDR ), dimension ( iaF : ), intent ( in ) :: &
       Edge
     integer ( KDI ), intent ( in ) :: &
-      nCells
+      nC, &
+      nGL, &
+      iaF
 
     integer ( KDI ) :: &
       iC  !-- iCell
 
-    do iC = 1, nCells
+    !-- Proper and outer ghost cells
+    do iC = 1, nC + nGL
       Center ( iC )  &
         =  3.0_KDR * ( Edge ( iC + 1 ) ** 4  -  Edge ( iC ) ** 4 )  &
            / ( 4.0_KDR * ( Edge ( iC + 1 ) ** 3  -  Edge ( iC ) ** 3 ) )
     end do
 
+    !-- Inner ghost cells
+    do iC = 1, nGL
+      if ( 0.5_KDR * ( Edge ( 2 - iC )  +  Edge ( 1 - iC ) )  >  0.0_KDR ) &
+      then
+        Center ( 1 - iC )  &
+          =  3.0_KDR * ( Edge ( 2 - iC ) ** 4  -  Edge ( 1 - iC ) ** 4 )  &
+             / ( 4.0_KDR * ( Edge ( 2 - iC ) ** 3  -  Edge ( 1 - iC ) ** 3 ) )
+      else
+        Center ( 1 - iC )  =  - Center ( iC )
+      end if
+    end do
+
   end subroutine SetCenterSpherical_1
 
 
-  subroutine SetCenterSpherical_2 ( Center, Edge, nCells )
+  subroutine SetCenterSpherical_2 ( Center, Edge, nC, nGL, iaF )
 
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+    real ( KDR ), dimension ( iaF : ), intent ( inout ) :: &
       Center
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
+    real ( KDR ), dimension ( iaF : ), intent ( in ) :: &
       Edge
     integer ( KDI ), intent ( in ) :: &
-      nCells
+      nC, &
+      nGL, &
+      iaF
 
     integer ( KDI ) :: &
       iC  !-- iCell
 
-    do iC = 1, nCells
+    !-- Proper cells
+    do iC = 1, nC
       Center ( iC )  &
         =  ( sin ( Edge ( iC + 1 ) )  -  sin ( Edge ( iC ) )  &
              +  Edge ( iC )      *  cos ( Edge ( iC ) )  &
@@ -709,10 +855,42 @@ contains
                  -  Edge ( iC + 1 )  *  cos ( Edge ( iC + 1 ) ) )
     end do
 
+    !-- Inner ghost cells
+    do iC = 1, nGL
+      if ( 0.5_KDR * ( Edge ( 2 - iC )  +  Edge ( 1 - iC ) )  >  0.0_KDR ) &
+      then
+        Center ( 1 - iC )  &
+        =  ( sin ( Edge ( 2 - iC ) )  -  sin ( Edge ( 1 - iC ) )  &
+             +  Edge ( 1 - iC )  *  cos ( Edge ( 1 - iC ) )  &
+             -  Edge ( 2 - iC )  *  cos ( Edge ( 2 - iC ) ) )  &
+           /  (     Edge ( 1 - iC )      *  cos ( Edge ( 1 - iC ) )  &
+                 -  Edge ( 2 - iC )  *  cos ( Edge ( 2 - iC ) ) )
+      else
+        Center ( 1 - iC )  =  - Center ( iC )
+      end if
+    end do
+
+    !-- Outer ghost cells
+    do iC = 1, nGL
+      if ( 0.5_KDR * ( Edge ( nC + iC )  +  Edge ( nC + 1 + iC ) ) &
+           <  CONSTANT % PI ) &
+      then
+        Center ( nC + iC )  &
+        =  ( sin ( Edge ( nC + 1 + iC ) )  -  sin ( Edge ( nC + iC ) )  &
+             +  Edge ( nC + iC )  *  cos ( Edge ( nC + iC ) )  &
+             -  Edge ( nC + 1 + iC )  *  cos ( Edge ( nC + 1 + iC ) ) )  &
+           /  (     Edge ( nC + iC )      *  cos ( Edge ( nC + iC ) )  &
+                 -  Edge ( nC + 1 + iC )  *  cos ( Edge ( nC + 1 + iC ) ) )
+      else
+        Center ( nC + iC )  &
+          =  2.0_KDR * CONSTANT % PI  -  Center ( nC - ( iC - 1 ) )  
+      end if
+    end do
+
   end subroutine SetCenterSpherical_2
 
 
-  subroutine SetWidthLeftRight ( Width_L, Width_R, Edge, Center, nCells )
+  subroutine SetWidthLeftRight ( Width_L, Width_R, Edge, Center )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       Width_L, &
@@ -720,159 +898,16 @@ contains
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       Edge, &
       Center
-    integer ( KDI ) :: &
-      nCells
 
     integer ( KDI ) :: &
       iC  !-- iCell
 
-    do iC = 1, nCells
+    do iC = 1, size ( Center )
       Width_L ( iC )  =  Center ( iC )    -  Edge ( iC )
       Width_R ( iC )  =  Edge ( iC + 1 )  -  Center ( iC )
     end do
 
   end subroutine SetWidthLeftRight
-
-
-  subroutine SetGeometryCellEqual &
-               ( Width, Center, MinCoordinate, MaxCoordinate, nCells )
-
-    !-- Equal cell widths
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      Width, &
-      Center
-    real ( KDR ), intent ( in ) :: &
-      MinCoordinate, &
-      MaxCoordinate
-    integer ( KDI ), intent ( in ) :: &
-      nCells
-
-    integer ( KDI ) :: &
-      iC  !-- iCell
-    real ( KDR ) :: &
-      CellWidth
-
-    CellWidth &
-      = ( MaxCoordinate - MinCoordinate ) / nCells
-
-    do iC = 1, nCells
-      Width  ( iC ) = CellWidth
-      Center ( iC ) = MinCoordinate  +  ( 0.5_KDR + ( iC - 1 ) ) * CellWidth
-    end do
-
-  end subroutine SetGeometryCellEqual
-
-
-  subroutine SetGeometryCellGeometric &
-               ( Width, Center, MinCoordinate, MaxCoordinate, Ratio, nCells )
-
-    !-- Each successive cell width is larger by Ratio
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      Width, &
-      Center
-    real ( KDR ), intent ( in ) :: &
-      MinCoordinate, &
-      MaxCoordinate, &
-      Ratio
-    integer ( KDI ), intent ( in ) :: &
-      nCells
-
-    integer ( KDI ) :: &
-      iC  !-- iCell
-
-    Width ( 1 ) &
-      = ( MaxCoordinate - MinCoordinate ) &
-        * ( Ratio - 1.0_KDR ) / ( Ratio ** nCells  -  1.0_KDR )
-
-    Center ( 1 ) = MinCoordinate  +  0.5_KDR * Width ( 1 )
-
-    do iC = 2, nCells
-      Width  ( iC ) &
-        = Ratio * Width ( iC - 1 )
-      Center ( iC ) &
-        = Center ( iC - 1 )  +  0.5_KDR * ( Width ( iC - 1 ) + Width ( iC ) )
-    end do
-
-  end subroutine SetGeometryCellGeometric
-
-
-  subroutine SetGeometryCellCompactified ( Width, Center, Scale, nCells )
-
-    !-- Compactify the domain [ 0, Infinity ] to [ 0, 1 ] via the
-    !   transformation Coordinate = Scale * S / ( 1 - S )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      Width, &
-      Center
-    real ( KDR ), intent ( in ) :: &
-      Scale
-    integer ( KDI ), intent ( in ) :: &
-      nCells
-
-    integer ( KDI ) :: &
-      iC  !-- iCell
-    real ( KDR ) :: &
-      dS, &
-      S
-
-    dS = 1.0_KDR / nCells
-    S  = 0.5_KDR * dS
-
-    Width ( 1 )  = Scale  *  dS / ( 1.0_KDR - S ) ** 2 
-    Center ( 1 ) = 0.5_KDR * Width ( 1 )
-
-    do iC = 2, nCells
-      S = ( 0.5_KDR + ( iC - 1 ) ) * dS
-      Width  ( iC ) &
-        = Scale  *  dS / ( 1.0_KDR - S ) ** 2
-      Center ( iC ) &
-        = Center ( iC - 1 )  +  0.5_KDR * ( Width ( iC - 1 ) + Width ( iC ) )
-    end do
-
-  end subroutine SetGeometryCellCompactified
-
-
-  subroutine SetGeometryCellProportional &
-               ( Width, Center, MinCoordinate, Ratio, Scale, nCells, nEqual )
-
-    !-- Width proportional to the inner edge coordinate of the cell
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      Width, &
-      Center
-    real ( KDR ), intent ( in ) :: &
-      MinCoordinate, &
-      Ratio, &
-      Scale
-    integer ( KDI ), intent ( in ) :: &
-      nCells, &
-      nEqual
-
-    integer ( KDI ) :: &
-      iC  !-- iCell
-    real ( KDR ) :: &
-      InnerEdge
-
-    if ( nEqual == 0 ) then
-      InnerEdge  =  MinCoordinate
-    else
-      call SetGeometryCellEqual &
-             ( Width, Center, MinCoordinate, Scale, nEqual )
-      InnerEdge  =  Scale
-    end if
-    
-    Width  ( nEqual + 1 )  =  Ratio * InnerEdge
-    Center ( nEqual + 1 )  =  InnerEdge  +  0.5_KDR * Width ( nEqual + 1 ) 
-
-    do iC = nEqual + 2, nCells
-      InnerEdge      =  Center ( iC - 1 )  +  0.5_KDR * Width ( iC - 1 )
-      Width  ( iC )  =  Ratio * InnerEdge
-      Center ( iC )  =  InnerEdge  +  0.5_KDR * Width ( iC )
-    end do
-
-  end subroutine SetGeometryCellProportional
 
 
 end module Chart_Template
