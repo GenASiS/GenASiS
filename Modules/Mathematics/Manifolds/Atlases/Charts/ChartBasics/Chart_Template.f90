@@ -68,10 +68,14 @@ module Chart_Template
 
     private :: &
       BrickIndex, &
-      SetEdgesEqual, &
-      SetEdgesGeometric, &
-      SetEdgesCompactified, &
-      SetEdgesProportional, &
+      SetEdgeEqual, &
+      SetEdgeGeometric, &
+      SetEdgeCompactified, &
+      SetEdgeProportional, &
+      SetCenterCartesian, &
+      SetCenterCylindrical_1, &
+      SetCenterSpherical_1, &
+      SetCenterSpherical_2, &
       SetGeometryCellEqual, &
       SetGeometryCellGeometric, &
       SetGeometryCellCompactified, &
@@ -494,7 +498,7 @@ contains
   end function BrickIndex
 
 
-  subroutine SetEdgesEqual ( Edge, MinCoordinate, MaxCoordinate, nCells )
+  subroutine SetEdgeEqual ( Edge, MinCoordinate, MaxCoordinate, nCells )
 
     !-- Equal cell widths
 
@@ -518,10 +522,10 @@ contains
       Edge ( iC )  =  Edge ( iC - 1 )  +  Width
     end do
 
-  end subroutine SetEdgesEqual
+  end subroutine SetEdgeEqual
 
 
-  subroutine SetEdgesGeometric &
+  subroutine SetEdgeGeometric &
                ( Edge, MinCoordinate, MaxCoordinate, Ratio, nCells )
 
     !-- Each successive cell width is larger by Ratio
@@ -549,10 +553,10 @@ contains
       Width        =  Ratio * Width
     end do
 
-  end subroutine SetEdgesGeometric
+  end subroutine SetEdgeGeometric
 
 
-  subroutine SetEdgesCompactified ( Edge, Scale, nCells )
+  subroutine SetEdgeCompactified ( Edge, Scale, nCells )
 
     !-- Compactify the domain [ 0, Infinity ] to [ 0, 1 ] via the
     !   transformation Coordinate = Scale * S / ( 1 - S )
@@ -583,10 +587,10 @@ contains
       Width        =  Scale  *  dS / ( 1.0_KDR - S ) ** 2
     end do
 
-  end subroutine SetEdgesCompactified
+  end subroutine SetEdgeCompactified
 
 
-  subroutine SetEdgesProportional &
+  subroutine SetEdgeProportional &
                ( Edge, MinCoordinate, Ratio, Scale, nCells, nEqual )
 
     !-- Width proportional to the inner edge coordinate of the cell
@@ -609,7 +613,7 @@ contains
     if ( nEqual == 0 ) then
       Edge ( 1 )  =  MinCoordinate
     else
-      call SetEdgesEqual ( Edge, MinCoordinate, Scale, nEqual )
+      call SetEdgeEqual ( Edge, MinCoordinate, Scale, nEqual )
     end if
     
     Width  =  Ratio  *  Edge ( nEqual + 1 )
@@ -619,7 +623,92 @@ contains
       Width        =  Ratio  *  Edge ( iC )
     end do
 
-  end subroutine SetEdgesProportional
+  end subroutine SetEdgeProportional
+
+
+  subroutine SetCenterCartesian ( Center, Edge, nCells )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      Center
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      Edge
+    integer ( KDI ), intent ( in ) :: &
+      nCells
+
+    integer ( KDI ) :: &
+      iC  !-- iCell
+
+    do iC = 1, nCells
+      Center ( iC )  =  0.5_KDR * ( Edge ( iC )  +  Edge ( iC + 1 ) )
+    end do
+
+  end subroutine SetCenterCartesian
+
+
+  subroutine SetCenterCylindrical_1 ( Center, Edge, nCells )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      Center
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      Edge
+    integer ( KDI ), intent ( in ) :: &
+      nCells
+
+    integer ( KDI ) :: &
+      iC  !-- iCell
+
+    do iC = 1, nCells
+      Center ( iC )  &
+        =  2.0_KDR * ( Edge ( iC + 1 ) ** 3  -  Edge ( iC ) ** 3 )  &
+           / ( 3.0_KDR * ( Edge ( iC + 1 ) ** 2  -  Edge ( iC ) ** 2 ) )
+    end do
+
+  end subroutine SetCenterCylindrical_1
+
+
+  subroutine SetCenterSpherical_1 ( Center, Edge, nCells )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      Center
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      Edge
+    integer ( KDI ), intent ( in ) :: &
+      nCells
+
+    integer ( KDI ) :: &
+      iC  !-- iCell
+
+    do iC = 1, nCells
+      Center ( iC )  &
+        =  3.0_KDR * ( Edge ( iC + 1 ) ** 4  -  Edge ( iC ) ** 4 )  &
+           / ( 4.0_KDR * ( Edge ( iC + 1 ) ** 3  -  Edge ( iC ) ** 3 ) )
+    end do
+
+  end subroutine SetCenterSpherical_1
+
+
+  subroutine SetCenterSpherical_2 ( Center, Edge, nCells )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      Center
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      Edge
+    integer ( KDI ), intent ( in ) :: &
+      nCells
+
+    integer ( KDI ) :: &
+      iC  !-- iCell
+
+    do iC = 1, nCells
+      Center ( iC )  &
+        =  ( sin ( Edge ( iC + 1 ) )  -  sin ( Edge ( iC ) )  &
+             +  Edge ( iC )      *  cos ( Edge ( iC ) )  &
+             -  Edge ( iC + 1 )  *  cos ( Edge ( iC + 1 ) ) )  &
+           /  (     Edge ( iC )      *  cos ( Edge ( iC ) )  &
+                 -  Edge ( iC + 1 )  *  cos ( Edge ( iC + 1 ) ) )
+    end do
+
+  end subroutine SetCenterSpherical_2
 
 
   subroutine SetGeometryCellEqual &
