@@ -1234,7 +1234,7 @@ contains
       LenUnit
     logical ( KDL ) :: &
       AbortShow
-    character ( LDN, KBCH ) :: &
+    character ( LDN ) :: &
       IndexLabel
     character ( LDL ) :: &
       PrintFormat
@@ -1259,7 +1259,7 @@ contains
         write ( IndexLabel, fmt = '( i7 )' ) i
         print &
           trim ( PrintFormat ), &
-          KBCH_'( ' // trim ( adjustl ( IndexLabel ) ) // KBCH_' ) =', &
+          '( ' // trim ( adjustl ( IndexLabel ) ) // ' ) =', &
           MeasuredValue ( i ) % Number, &
           KBCH_' ' // trim ( MeasuredValue ( i ) % Unit_UCS )
 
@@ -1274,7 +1274,7 @@ contains
         write ( IndexLabel, fmt = '( i7 )' ) i
         print &
           trim ( PrintFormat ), &
-          KBCH_'( ' // trim ( adjustl ( IndexLabel ) ) // KBCH_' ) =', &
+          '( ' // trim ( adjustl ( IndexLabel ) ) // ' ) =', &
           MeasuredValue ( i ) % Number, &
           KBCH_' ' // trim ( MeasuredValue ( i ) % Unit_UCS ) &
           // KBCH_' ( ' // trim ( MeasuredValue ( i ) % Label_UCS ) &
