@@ -67,7 +67,6 @@ subroutine TestGeometry ( Name, CoordinateSystem, nDimensions )
 
   integer ( KDI ) :: &
     i, &
-    iD, &  !-- iDimension
     nCells = 24, &
     nGhostLayers = 2, &
     nEqual = 8
@@ -85,6 +84,7 @@ subroutine TestGeometry ( Name, CoordinateSystem, nDimensions )
   case ( 'CARTESIAN' )
     call PC % InitializeTemplate &
            ( A, IsPeriodic = [ .false., .false., .false. ], iChart = 1, &
+             CoordinateSystemOption = CoordinateSystem, &
              MinCoordinateOption &
                = [ 0.0_KDR, 5.0_KDR, 10.0_KDR ]  *  UNIT % KILOMETER % Number, &
              MaxCoordinateOption &
@@ -94,6 +94,7 @@ subroutine TestGeometry ( Name, CoordinateSystem, nDimensions )
   case ( 'CYLINDRICAL' )
     call PC % InitializeTemplate &
            ( A, IsPeriodic = [ .false., .false., .true. ], iChart = 1, &
+             CoordinateSystemOption = CoordinateSystem, &
              MinCoordinateOption &
                = [ 0.0_KDR, -5.0_KDR, 0.0_KDR ], &
              MaxCoordinateOption &
@@ -104,6 +105,7 @@ subroutine TestGeometry ( Name, CoordinateSystem, nDimensions )
            ( A, IsPeriodic = [ .false., .false., .true. ], iChart = 1, &
              SpacingOption = [ 'PROPORTIONAL', 'EQUAL       ', &
                                'EQUAL       ' ], &
+             CoordinateSystemOption = CoordinateSystem, &
              MinCoordinateOption &
                = [ 0.0_KDR, 0.0_KDR, 0.0_KDR ], &
              MaxCoordinateOption &
@@ -119,20 +121,33 @@ subroutine TestGeometry ( Name, CoordinateSystem, nDimensions )
            NameOption = Name )
 
   call PC % SetGeometryCell ( nCells, nGL = nGhostLayers, iD = 1 )
-!  G % Value ( :, G % WIDTH ( 1 ) )  = Width
+  G % Value ( :, G % WIDTH_LEFT ( 1 ) ) = PC % WidthLeft ( 1 ) % Value
+  G % Value ( :, G % WIDTH_RIGHT ( 1 ) ) = PC % WidthRight ( 1 ) % Value
   G % Value ( :, G % CENTER ( 1 ) ) = PC % Center ( 1 ) % Value
   call Show ( PC % Edge ( 1 ) % Value, CoordinateUnit ( 1 ), 'Edge_1' )
+  do i = 1 - nGhostLayers, nCells + nGhostLayers
+    print *, PC % Edge ( 1 ) % Value ( i ), &
+             PC % Center ( 1 ) % Value ( i ), &
+             PC % Edge ( 1 ) % Value ( i + 1 )
+  end do
 
   if ( nDimensions > 1 ) then
     call PC % SetGeometryCell ( nCells, nGL = nGhostLayers, iD = 2 )
-!    G % Value ( :, G % WIDTH ( 2 ) )  = PC % Width
+    G % Value ( :, G % WIDTH_LEFT ( 2 ) ) = PC % WidthLeft ( 2 ) % Value
+    G % Value ( :, G % WIDTH_RIGHT ( 2 ) ) = PC % WidthRight ( 2 ) % Value
     G % Value ( :, G % CENTER ( 2 ) ) = PC % Center ( 2 ) % Value
     call Show ( PC % Edge ( 2 ) % Value, CoordinateUnit ( 1 ), 'Edge_2' )
+    do i = 1 - nGhostLayers, nCells + nGhostLayers
+      print *, PC % Edge ( 2 ) % Value ( i ), &
+               PC % Center ( 2 ) % Value ( i ), &
+               PC % Edge ( 2 ) % Value ( i + 1 )
+    end do
   end if
 
   if ( nDimensions > 2 ) then
     call PC % SetGeometryCell ( nCells, nGL = nGhostLayers, iD = 3 )
-!    G % Value ( :, G % WIDTH ( 3 ) )  = Width
+    G % Value ( :, G % WIDTH_LEFT ( 3 ) ) = PC % WidthLeft ( 3 ) % Value
+    G % Value ( :, G % WIDTH_RIGHT ( 3 ) ) = PC % WidthRight ( 3 ) % Value
     G % Value ( :, G % CENTER ( 3 ) ) = PC % Center ( 3 ) % Value
     call Show ( PC % Edge ( 3 ) % Value, CoordinateUnit ( 1 ), 'Edge_3' )
   end if

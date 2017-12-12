@@ -24,8 +24,8 @@ module Chart_Template
     class ( Real_1D_Form ), dimension ( : ), pointer :: &
       Edge, &
       Center, &
-      Width_L, &
-      Width_R
+      WidthLeft, &
+      WidthRight
     type ( MeasuredValueForm ), dimension ( : ), pointer :: &
       CoordinateUnit => null ( )
     logical ( KDL ) :: &
@@ -186,10 +186,10 @@ contains
            ( C % MaxCoordinate ( : nD ), 'MaxCoordinate', &
              InputUnitOption = C % CoordinateUnit ( : nD ) )
 
-    allocate ( C % Edge    ( MAX_DIMENSIONS ) )
-    allocate ( C % Center  ( MAX_DIMENSIONS ) )
-    allocate ( C % Width_L ( MAX_DIMENSIONS ) )
-    allocate ( C % Width_R ( MAX_DIMENSIONS ) )
+    allocate ( C % Edge       ( MAX_DIMENSIONS ) )
+    allocate ( C % Center     ( MAX_DIMENSIONS ) )
+    allocate ( C % WidthLeft  ( MAX_DIMENSIONS ) )
+    allocate ( C % WidthRight ( MAX_DIMENSIONS ) )
 
     C % IsDistributed = Atlas % IsDistributed
     if ( present ( IsDistributedOption ) ) &
@@ -240,8 +240,8 @@ contains
     C % MaxCoordinate    => C_Source % MaxCoordinate
     C % Edge             => C_Source % Edge
     C % Center           => C_Source % Center
-    C % Width_L          => C_Source % Width_L
-    C % Width_R          => C_Source % Width_R
+    C % WidthLeft        => C_Source % WidthLeft
+    C % WidthRight       => C_Source % WidthRight
     C % Ratio            => C_Source % Ratio
     C % Scale            => C_Source % Scale
     C % nEqual           =  C_Source % nEqual
@@ -315,8 +315,8 @@ contains
       deallocate ( C % Spacing )
       deallocate ( C % CoordinateSystem )
       deallocate ( C % IsPeriodic )
-      deallocate ( C % Width_R )
-      deallocate ( C % Width_L )
+      deallocate ( C % WidthRight )
+      deallocate ( C % WidthLeft )
       deallocate ( C % Center )
       deallocate ( C % Edge )
       deallocate ( C % MaxCoordinate )
@@ -331,8 +331,8 @@ contains
       nullify ( C % Spacing )
       nullify ( C % CoordinateSystem )
       nullify ( C % IsPeriodic )
-      nullify ( C % Width_R )
-      nullify ( C % Width_L )
+      nullify ( C % WidthRight )
+      nullify ( C % WidthLeft )
       nullify ( C % Center )
       nullify ( C % Edge )
       nullify ( C % MaxCoordinate )
@@ -417,68 +417,6 @@ contains
   end subroutine SetBrick
 
 
-  ! subroutine SetGeometryCell ( C, Width, Center, nC, nGL, iD, iaF )
-
-  !   class ( ChartTemplate ), intent ( inout ) :: &
-  !     C
-  !   real ( KDR ), dimension ( iaF : ), intent ( inout ) :: &
-  !     Width, &
-  !     Center
-  !   integer ( KDI ), intent ( in ) :: &
-  !     nC, &   !-- nCells
-  !     nGL, &  !-- nGhostLayers
-  !     iD, &      !-- iDimension
-  !     iaF    !-- iaFirst
-
-  !   integer ( KDI ) :: &
-  !     iC    !-- iCell
-
-  !   select case ( trim ( C % Spacing ( iD ) ) )
-  !   case ( 'EQUAL' )
-  !     call SetGeometryCellEqual &
-  !            ( Width  ( 1 : nC ), Center ( 1 : nC ), &
-  !              C % MinCoordinate ( iD ), C % MaxCoordinate ( iD ), nC )
-  !   case ( 'GEOMETRIC' )
-  !     call SetGeometryCellGeometric &
-  !            ( Width  ( 1 : nC ), Center ( 1 : nC ), &
-  !              C % MinCoordinate ( iD ), C % MaxCoordinate ( iD ), &
-  !              C % Ratio ( iD ), nC )
-  !   case ( 'COMPACTIFIED' )
-  !     call SetGeometryCellCompactified &
-  !            ( Width  ( 1 : nC ), Center ( 1 : nC ), &
-  !              C % Scale ( iD ), nC )
-  !     C % MinCoordinate ( iD ) = Center ( 1 )  - 0.5_KDR * Width ( 1 )
-  !     C % MaxCoordinate ( iD ) = Center ( nC ) + 0.5_KDR * Width ( nC )
-  !   case ( 'PROPORTIONAL' )
-  !     call SetGeometryCellProportional &
-  !            ( Width  ( 1 : nC ), Center ( 1 : nC ), &
-  !              C % MinCoordinate ( iD ), C % Ratio ( iD ), C % Scale ( iD ), &
-  !              nC, C % nEqual )
-  !     C % MaxCoordinate ( iD ) = Center ( nC ) + 0.5_KDR * Width ( nC )
-  !   case default
-  !     call Show ( 'Spacing type not recognized', CONSOLE % ERROR )
-  !     call Show ( 'Chart_Template', 'module', CONSOLE % ERROR )
-  !     call Show ( 'SetGeometryCell', 'subroutine', CONSOLE % ERROR )
-  !     call PROGRAM_HEADER % Abort ( )
-  !   end select
-
-  !   do iC = 1, nGL
-
-  !     Width ( 1 - iC )  = Width ( iC )
-  !     Width ( nC + iC ) = Width ( nC - ( iC - 1 ) )
-
-  !     Center ( 1 - iC ) &
-  !       = Center ( 1 - ( iC - 1 ) ) &
-  !         - 0.5_KDR * ( Width ( 1 - ( iC - 1 ) ) + Width ( 1 - iC ) ) 
-  !     Center ( nC + iC ) &
-  !       = Center ( nC + ( iC - 1 ) ) &
-  !         + 0.5_KDR * ( Width ( nC + ( iC - 1 ) ) + Width ( nC + iC ) )
- 
-  !   end do !-- iC
-
-  ! end subroutine SetGeometryCell
-
-
   subroutine SetGeometryCell ( C, nC, nGL, iD )
 
     class ( ChartTemplate ), intent ( inout ) :: &
@@ -500,10 +438,10 @@ contains
     call C % Center ( iD ) % Initialize &
            ( nValues  =  nC  +  2 * nGL, &
              iLowerBoundOption  =  1 - nGL )
-    call C % Width_L ( iD ) % Initialize &
+    call C % WidthLeft ( iD ) % Initialize &
            ( nValues  =  nC  +  2 * nGL, &
              iLowerBoundOption  =  1 - nGL )
-    call C % Width_R ( iD ) % Initialize &
+    call C % WidthRight ( iD ) % Initialize &
            ( nValues  =  nC  +  2 * nGL, &
              iLowerBoundOption  =  1 - nGL )
 
@@ -525,7 +463,6 @@ contains
       C % MinCoordinate ( iD )  =  C % Edge ( iD ) % Value ( 1 )
       C % MaxCoordinate ( iD )  =  C % Edge ( iD ) % Value ( nC + 1 )
     case ( 'PROPORTIONAL' )
-call Show ( '>>> 1' )
       call SetEdgeProportional &
              ( C % Edge ( iD ) % Value ( 1 : nC + 1 ), &
                C % MinCoordinate ( iD ), C % Ratio ( iD ), C % Scale ( iD ), &
@@ -588,7 +525,7 @@ call Show ( '>>> 1' )
 
     !-- Width
     call SetWidthLeftRight &
-           ( C % Width_L ( iD ) % Value, C % Width_R ( iD ) % Value, &
+           ( C % WidthLeft ( iD ) % Value, C % WidthRight ( iD ) % Value, &
              C % Edge ( iD ) % Value, C % Center ( iD ) % Value )
 
   end subroutine SetGeometryCell
@@ -862,8 +799,7 @@ call Show ( '>>> 1' )
         =  ( sin ( Edge ( iC + 1 ) )  -  sin ( Edge ( iC ) )  &
              +  Edge ( iC )      *  cos ( Edge ( iC ) )  &
              -  Edge ( iC + 1 )  *  cos ( Edge ( iC + 1 ) ) )  &
-           /  (     Edge ( iC )      *  cos ( Edge ( iC ) )  &
-                 -  Edge ( iC + 1 )  *  cos ( Edge ( iC + 1 ) ) )
+           /  ( cos ( Edge ( iC ) )  -  cos ( Edge ( iC + 1 ) ) )
     end do
 
     !-- Inner ghost cells
@@ -874,8 +810,7 @@ call Show ( '>>> 1' )
         =  ( sin ( Edge ( 2 - iC ) )  -  sin ( Edge ( 1 - iC ) )  &
              +  Edge ( 1 - iC )  *  cos ( Edge ( 1 - iC ) )  &
              -  Edge ( 2 - iC )  *  cos ( Edge ( 2 - iC ) ) )  &
-           /  (     Edge ( 1 - iC )      *  cos ( Edge ( 1 - iC ) )  &
-                 -  Edge ( 2 - iC )  *  cos ( Edge ( 2 - iC ) ) )
+           /  ( cos ( Edge ( 1 - iC ) )  -  cos ( Edge ( 2 - iC ) ) )
       else
         Center ( 1 - iC )  =  - Center ( iC )
       end if
@@ -901,11 +836,11 @@ call Show ( '>>> 1' )
   end subroutine SetCenterSpherical_2
 
 
-  subroutine SetWidthLeftRight ( Width_L, Width_R, Edge, Center )
+  subroutine SetWidthLeftRight ( WidthLeft, WidthRight, Edge, Center )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      Width_L, &
-      Width_R
+      WidthLeft, &
+      WidthRight
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       Edge, &
       Center
@@ -914,8 +849,8 @@ call Show ( '>>> 1' )
       iC  !-- iCell
 
     do iC = 1, size ( Center )
-      Width_L ( iC )  =  Center ( iC )    -  Edge ( iC )
-      Width_R ( iC )  =  Edge ( iC + 1 )  -  Center ( iC )
+      WidthLeft ( iC )  =  Center ( iC )    -  Edge ( iC )
+      WidthRight ( iC )  =  Edge ( iC + 1 )  -  Center ( iC )
     end do
 
   end subroutine SetWidthLeftRight
