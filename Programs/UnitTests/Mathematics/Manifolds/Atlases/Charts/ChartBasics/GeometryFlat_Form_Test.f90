@@ -19,24 +19,38 @@ program GeometryFlat_Form_Test
 
   character ( LDF ) :: &
     ProgramName = 'GeometryFlat_Form_Test', &
-    GeometryName_1 = 'GeometryFlat_1D', &
-    GeometryName_2 = 'GeometryFlat_2D', &
-    GeometryName_3 = 'GeometryFlat_3D'
+    GeometryName_1 = 'GeometryFlat_Cartesian_1D', &
+    GeometryName_2 = 'GeometryFlat_Cartesian_2D', &
+    GeometryName_3 = 'GeometryFlat_Cartesian_3D', &
+    GeometryName_4 = 'GeometryFlat_Cylindrical_1D', &
+    GeometryName_5 = 'GeometryFlat_Cylindrical_2D', &
+    GeometryName_6 = 'GeometryFlat_Cylindrical_3D', &
+    GeometryName_7 = 'GeometryFlat_Spherical_1D', &
+    GeometryName_8 = 'GeometryFlat_Spherical_2D', &
+    GeometryName_9 = 'GeometryFlat_Spherical_3D'
 
   allocate ( PROGRAM_HEADER )
   
   call PROGRAM_HEADER % Initialize ( ProgramName )
 
-  call TestGeometry ( GeometryName_1, 1 )
-  call TestGeometry ( GeometryName_2, 2 )
-  call TestGeometry ( GeometryName_3, 3 )
+  call TestGeometry ( GeometryName_1, 'CARTESIAN', 1 )
+  call TestGeometry ( GeometryName_2, 'CARTESIAN', 2 )
+  call TestGeometry ( GeometryName_3, 'CARTESIAN', 3 )
+
+  call TestGeometry ( GeometryName_4, 'CYLINDRICAL', 1 )
+  call TestGeometry ( GeometryName_5, 'CYLINDRICAL', 2 )
+  call TestGeometry ( GeometryName_6, 'CYLINDRICAL', 3 )
+
+  call TestGeometry ( GeometryName_7, 'SPHERICAL', 1 )
+  call TestGeometry ( GeometryName_8, 'SPHERICAL', 2 )
+  call TestGeometry ( GeometryName_9, 'SPHERICAL', 3 )
 
   deallocate ( PROGRAM_HEADER )
 
 end program GeometryFlat_Form_Test
 
 
-subroutine TestGeometry ( Name, nDimensions )
+subroutine TestGeometry ( Name, CoordinateSystem, nDimensions )
 
   use Basics
   use AtlasBasics
@@ -45,22 +59,20 @@ subroutine TestGeometry ( Name, nDimensions )
 
   implicit none
 
-  character ( LDF ), intent ( in ) :: &
-    Name
+  character ( * ), intent ( in ) :: &
+    Name, &
+    CoordinateSystem
   integer ( KDI ), intent ( in ) :: &
     nDimensions
 
   integer ( KDI ) :: &
     i, &
     iD, &  !-- iDimension
-    nValues = 4
-  real ( KDR ), dimension ( : ), allocatable :: &
-    Width, &
-    Center
+    nCells = 24, &
+    nGhostLayers = 2, &
+    nEqual = 8
   type ( MeasuredValueForm ), dimension ( 3 ) :: &
     CoordinateUnit
-  character ( LDL ) :: &
-    CoordinateSystem
   type ( AtlasHeaderForm ) :: &
     A
   type ( ProtoChartForm ) :: &
@@ -69,41 +81,64 @@ subroutine TestGeometry ( Name, nDimensions )
     G
 
   call A % Initialize ( 'Atlas' )
-  call PC % InitializeTemplate &
-         ( A, IsPeriodic = [ .false., .false., .false. ], iChart = 1, &
-           MinCoordinateOption = [ 0.0_KDR, 5.0_KDR, 10.0_KDR ], &
-           MaxCoordinateOption = [ 4.0_KDR, 9.0_KDR, 14.0_KDR ], &
-           nDimensionsOption = nDimensions ) 
-
-  CoordinateSystem = 'CARTESIAN'
-  CoordinateUnit ( : nDimensions ) = UNIT % KILOMETER
+  select case ( trim ( CoordinateSystem ) )
+  case ( 'CARTESIAN' )
+    call PC % InitializeTemplate &
+           ( A, IsPeriodic = [ .false., .false., .false. ], iChart = 1, &
+             MinCoordinateOption &
+               = [ 0.0_KDR, 5.0_KDR, 10.0_KDR ]  *  UNIT % KILOMETER % Number, &
+             MaxCoordinateOption &
+               = [ 4.0_KDR, 9.0_KDR, 14.0_KDR ]  *  UNIT % KILOMETER % Number, &
+             nDimensionsOption = nDimensions ) 
+    CoordinateUnit ( : nDimensions ) = UNIT % KILOMETER
+  case ( 'CYLINDRICAL' )
+    call PC % InitializeTemplate &
+           ( A, IsPeriodic = [ .false., .false., .true. ], iChart = 1, &
+             MinCoordinateOption &
+               = [ 0.0_KDR, -5.0_KDR, 0.0_KDR ], &
+             MaxCoordinateOption &
+               = [ 10.0_KDR, 5.0_KDR, 2.0_KDR * CONSTANT % PI ], &
+             nDimensionsOption = nDimensions ) 
+  case ( 'SPHERICAL' )
+    call PC % InitializeTemplate &
+           ( A, IsPeriodic = [ .false., .false., .true. ], iChart = 1, &
+             SpacingOption = [ 'PROPORTIONAL', 'EQUAL       ', &
+                               'EQUAL       ' ], &
+             MinCoordinateOption &
+               = [ 0.0_KDR, 0.0_KDR, 0.0_KDR ], &
+             MaxCoordinateOption &
+               = [ 10.0_KDR, CONSTANT % PI, 2.0_KDR * CONSTANT % PI ], &
+             RatioOption = [ CONSTANT % PI / 3 * nEqual, 0.0_KDR, 0.0_KDR ], &
+             ScaleOption = [ 1.0_KDR, 0.0_KDR, 0.0_KDR ], &
+             nDimensionsOption = nDimensions, &
+             nEqualOption = nEqual ) 
+  end select
 
   call G % Initialize &
-         ( CoordinateSystem, CoordinateUnit, nValues, NameOption = Name )
+         ( CoordinateSystem, CoordinateUnit, nCells + 2 * nGhostLayers, &
+           NameOption = Name )
 
-  allocate ( Width ( nValues ) )
-  allocate ( Center ( nValues ) )
-
-  call PC % SetGeometryCell &
-         ( Width, Center, nValues, nGL = 0, iD = 1, iaF = 1 )
-  G % Value ( :, G % WIDTH ( 1 ) )  = Width
-  G % Value ( :, G % CENTER ( 1 ) ) = Center
+  call PC % SetGeometryCell ( nCells, nGL = nGhostLayers, iD = 1 )
+!  G % Value ( :, G % WIDTH ( 1 ) )  = Width
+  G % Value ( :, G % CENTER ( 1 ) ) = PC % Center ( 1 ) % Value
+  call Show ( PC % Edge ( 1 ) % Value, CoordinateUnit ( 1 ), 'Edge_1' )
 
   if ( nDimensions > 1 ) then
-    call PC % SetGeometryCell &
-           ( Width, Center, nValues, nGL = 0, iD = 2, iaF = 1 )
-    G % Value ( :, G % WIDTH ( 2 ) )  = Width
-    G % Value ( :, G % CENTER ( 2 ) ) = Center
+    call PC % SetGeometryCell ( nCells, nGL = nGhostLayers, iD = 2 )
+!    G % Value ( :, G % WIDTH ( 2 ) )  = PC % Width
+    G % Value ( :, G % CENTER ( 2 ) ) = PC % Center ( 2 ) % Value
+    call Show ( PC % Edge ( 2 ) % Value, CoordinateUnit ( 1 ), 'Edge_2' )
   end if
 
   if ( nDimensions > 2 ) then
-    call PC % SetGeometryCell &
-           ( Width, Center, nValues, nGL = 0, iD = 3, iaF = 1 )
-    G % Value ( :, G % WIDTH ( 3 ) )  = Width
-    G % Value ( :, G % CENTER ( 3 ) ) = Center
+    call PC % SetGeometryCell ( nCells, nGL = nGhostLayers, iD = 3 )
+!    G % Value ( :, G % WIDTH ( 3 ) )  = Width
+    G % Value ( :, G % CENTER ( 3 ) ) = PC % Center ( 3 ) % Value
+    call Show ( PC % Edge ( 3 ) % Value, CoordinateUnit ( 1 ), 'Edge_3' )
   end if
 
-  call G % SetMetric ( nDimensions, nValues, 0 )
+  call G % SetMetric &
+         ( nDimensions, nValues = nCells, oValue = nGhostLayers )
 
   call Show ( 'Geometry variables' )
   call Show ( G % Name, 'Name' )

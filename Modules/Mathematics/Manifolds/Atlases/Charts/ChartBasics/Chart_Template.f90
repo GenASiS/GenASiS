@@ -479,15 +479,14 @@ contains
   ! end subroutine SetGeometryCell
 
 
-  subroutine SetGeometryCell ( C, nC, nGL, iD, iaF )
+  subroutine SetGeometryCell ( C, nC, nGL, iD )
 
     class ( ChartTemplate ), intent ( inout ) :: &
       C
     integer ( KDI ), intent ( in ) :: &
       nC, &   !-- nCells
       nGL, &  !-- nGhostLayers
-      iD, &   !-- iDimension
-      iaF     !-- iaFirst
+      iD      !-- iDimension
 
     integer ( KDI ) :: &
       iC    !-- iCell
@@ -495,7 +494,18 @@ contains
       Width_IG, &
       Width_OG
 
-    !-- C % Edge, C % Center, C % Width_L, C % Width_R must be initialized
+    call C % Edge ( iD ) % Initialize &
+           ( nValues  =  nC  +  2 * nGL + 1, &
+             iLowerBoundOption  =  1 - nGL )
+    call C % Center ( iD ) % Initialize &
+           ( nValues  =  nC  +  2 * nGL, &
+             iLowerBoundOption  =  1 - nGL )
+    call C % Width_L ( iD ) % Initialize &
+           ( nValues  =  nC  +  2 * nGL, &
+             iLowerBoundOption  =  1 - nGL )
+    call C % Width_R ( iD ) % Initialize &
+           ( nValues  =  nC  +  2 * nGL, &
+             iLowerBoundOption  =  1 - nGL )
 
     !-- Edge, proper cells
     select case ( trim ( C % Spacing ( iD ) ) )
@@ -515,6 +525,7 @@ contains
       C % MinCoordinate ( iD )  =  C % Edge ( iD ) % Value ( 1 )
       C % MaxCoordinate ( iD )  =  C % Edge ( iD ) % Value ( nC + 1 )
     case ( 'PROPORTIONAL' )
+call Show ( '>>> 1' )
       call SetEdgeProportional &
              ( C % Edge ( iD ) % Value ( 1 : nC + 1 ), &
                C % MinCoordinate ( iD ), C % Ratio ( iD ), C % Scale ( iD ), &
@@ -547,7 +558,7 @@ contains
       case ( 1 )
         call SetCenterCylindrical_1 &
                ( C % Center ( iD ) % Value, C % Edge ( iD ) % Value, &
-                 nC, nGL, iaF )
+                 nC, nGL, iaF = 1 - nGL )
       case ( 2, 3 )
         call SetCenterCartesian &
                ( C % Center ( iD ) % Value, &
@@ -558,11 +569,11 @@ contains
       case ( 1 )
         call SetCenterSpherical_1 &
                ( C % Center ( iD ) % Value, C % Edge ( iD ) % Value, &
-                 nC, nGL, iaF )
+                 nC, nGL, iaF = 1 - nGL )
       case ( 2 )
         call SetCenterSpherical_2 &
                ( C % Center ( iD ) % Value, C % Edge ( iD ) % Value, &
-                 nC, nGL, iaF )
+                 nC, nGL, iaF = 1 - nGL )
       case ( 3 )
         call SetCenterCartesian &
                ( C % Center ( iD ) % Value, &
@@ -734,7 +745,7 @@ contains
     
     Width  =  Ratio  *  Edge ( nEqual + 1 )
 
-    do iC = nEqual + 2, nC
+    do iC = nEqual + 2, nC + 1
       Edge ( iC )  =  Edge ( iC - 1 )  +  Width
       Width        =  Ratio  *  Edge ( iC )
     end do
