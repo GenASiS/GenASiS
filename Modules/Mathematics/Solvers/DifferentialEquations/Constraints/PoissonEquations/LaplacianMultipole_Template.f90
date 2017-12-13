@@ -409,34 +409,25 @@ contains
   end subroutine SetMomentStorage
 
 
-  subroutine ComputeMomentContributions &
-               ( LM, Source, Width, VolumeJacobian, iaSource, nDimensions, &
-                 iR )
+  subroutine ComputeMomentContributions ( LM, Source, Volume, iaSource, iR )
 
     class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
       LM
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       Source
-    real ( KDR ), dimension ( 3 ), intent ( in ) :: &
-      Width
     real ( KDR ), intent ( in ) :: &
-      VolumeJacobian
+      Volume
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
       iaSource
-    integer ( KDI ), intent ( in ) :: &
-      nDimensions
     integer ( KDI ) :: &
       iR  !-- iRadius
 
     integer ( KDI ) :: &
       iE  !-- iEquation
-    real ( KDR ) :: &
-      dV
     real ( KDR ), dimension ( LM % nEquations ) :: &
       Source_dV
 
-    dV  =  VolumeJacobian * product ( Width ( 1 : nDimensions ) )
-    Source_dV  =  [ ( Source ( iaSource ( iE ) )  *  dV, &
+    Source_dV  =  [ ( Source ( iaSource ( iE ) )  *  Volume, &
                       iE = 1, LM % nEquations ) ] 
 !call Show ( Source_dV, 'Source_dV' )
 

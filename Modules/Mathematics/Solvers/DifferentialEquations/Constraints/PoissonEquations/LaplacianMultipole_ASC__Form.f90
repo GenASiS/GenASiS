@@ -167,9 +167,8 @@ contains
                  C % nDimensions, R, iR )
         call LM % ComputeMomentContributions &
                ( Source % Value ( iC, : ), &
-                 G % Value ( iC, G % WIDTH ( 1 ) : G % WIDTH ( 3 ) ), &
-                 G % Value ( iC, G % VOLUME_JACOBIAN ), &
-                 Source % iaSelected, C % nDimensions, iR )
+                 G % Value ( iC, G % VOLUME ), &
+                 Source % iaSelected, iR )
       end do
       !$OMP end parallel do
 
@@ -202,19 +201,10 @@ contains
       LM % nRadialCells  =  C % nCells ( 1 )
 
       associate ( nRC  =>  LM % nRadialCells )
-      allocate ( Center ( nRC ) )
-      allocate ( Width ( nRC ) )
       allocate ( LM % RadialEdge ( nRC + 1 ) )
-
-      call C % SetGeometryCell &
-             ( Width, Center, nC = nRC, nGL = 0, iD = 1, iaF = 1 )
-
-      LM % RadialEdge ( 1 )  =  0.0_KDR
-      do iC = 1, nRC
-        LM % RadialEdge ( iC + 1 )  &
-          =  LM % RadialEdge ( iC )  +  Width ( iC )
+      do iC = 1, nRC + 1
+        LM % RadialEdge ( iC )  =  C % Edge ( 1 ) % Value ( iC )
       end do !-- iC
-      
       end associate !-- nRC
 
     class default

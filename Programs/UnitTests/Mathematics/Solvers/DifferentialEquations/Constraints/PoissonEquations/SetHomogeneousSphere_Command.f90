@@ -38,8 +38,9 @@ contains
     G => A % Geometry ( )
 
     associate &
-      (  R => G % Value ( :, G % CENTER ( 1 ) ), &
-        dR => G % Value ( :, G % WIDTH ( 1 ) ) )
+      (    R => G % Value ( :, G % CENTER ( 1 ) ), &
+        dR_L => G % Value ( :, G % WIDTH_LEFT ( 1 ) ), &
+        dR_R => G % Value ( :, G % WIDTH_RIGHT ( 1 ) ) )
 
 
     !-- Source
@@ -48,15 +49,15 @@ contains
 
     associate &
       ( D => Source % Value ( :, iVariable ), &
-        R_In  => R - 0.5_KDR * dR, &
-        R_Out => R + 0.5_KDR * dR, &
+        R_In  => R - dR_L, &
+        R_Out => R + dR_R, &
         RD    => RadiusDensity )
     D = 0.0_KDR
     where ( R_Out <= RD )
       D = Density
     end where
     where ( R_In < RD .and. R_Out > RD )
-      D = Density * ( RD - R_In ) / dR
+      D = Density * ( RD - R_In ) / ( dR_L + dR_R )
     end where
     end associate !-- R_In, etc.
 
