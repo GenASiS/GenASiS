@@ -229,50 +229,47 @@ contains
       nDimensions, &
       iDimension
 
-    ! integer ( KDI ) :: &
-    !   iD
+    integer ( KDI ) :: &
+      iD
 
-    ! do iD = 1, 3
-    !   if ( iD == iDimension ) &
-    !     cycle
-    !   call Copy ( G   % Value ( :, G % CENTER ( iD ) ), &
-    !               G_I % Value ( :, G % CENTER ( iD ) ) )
-    ! end do
+    do iD = 1, 3
+      if ( iD == iDimension ) &
+        cycle
+      call Copy ( G   % Value ( :, G % CENTER ( iD ) ), &
+                  G_I % Value ( :, G % CENTER ( iD ) ) )
+    end do
 
-    ! call ComputeEdges &
-    !        ( G   % Value ( :, G % CENTER ( iDimension ) ), &
-    !          G   % Value ( :, G % WIDTH ( iDimension ) ), &
-    !          G_I % Value ( :, G % CENTER ( iDimension ) ) )
+    call ComputeEdges &
+           ( G   % Value ( :, G % CENTER ( iDimension ) ), &
+             G   % Value ( :, G % WIDTH_LEFT ( iDimension ) ), &
+             G_I % Value ( :, G % CENTER ( iDimension ) ) )
 
-    ! select case ( trim ( G % CoordinateSystem ) )
-    ! case ( 'CARTESIAN' )
-    !   call SetMetricCartesian &
-    !          ( G_I % Value ( :, G % VOLUME_JACOBIAN ), &
-    !            G_I % Value ( :, G % METRIC_DD_22 ), &
-    !            G_I % Value ( :, G % METRIC_DD_33 ), &
-    !            G_I % Value ( :, G % METRIC_UU_22 ), &
-    !            G_I % Value ( :, G % METRIC_UU_33 ), &
-    !            nDimensions, nValues = G % nValues, oValue = 0 )
-    ! case ( 'CYLINDRICAL' )
-    !   call SetMetricCylindrical &
-    !          ( G_I % Value ( :, G % VOLUME_JACOBIAN ), &
-    !            G_I % Value ( :, G % METRIC_DD_22 ), &
-    !            G_I % Value ( :, G % METRIC_DD_33 ), &
-    !            G_I % Value ( :, G % METRIC_UU_22 ), &
-    !            G_I % Value ( :, G % METRIC_UU_33 ), &
-    !            G_I % Value ( :, G % CENTER ( 1 ) ), &
-    !            nDimensions, nValues = G % nValues, oValue = 0 )
-    ! case ( 'SPHERICAL' )
-    !   call SetMetricSpherical &
-    !          ( G_I % Value ( :, G % VOLUME_JACOBIAN ), &
-    !            G_I % Value ( :, G % METRIC_DD_22 ), &
-    !            G_I % Value ( :, G % METRIC_DD_33 ), &
-    !            G_I % Value ( :, G % METRIC_UU_22 ), &
-    !            G_I % Value ( :, G % METRIC_UU_33 ), &
-    !            G_I % Value ( :, G % CENTER ( 1 ) ), &
-    !            G_I % Value ( :, G % CENTER ( 2 ) ), &
-    !            nDimensions, nValues = G % nValues, oValue = 0 )
-    ! end select
+    select case ( trim ( G % CoordinateSystem ) )
+    case ( 'CARTESIAN' )
+      call SetMetricCartesian &
+             ( G_I % Value ( :, G % METRIC_DD_22 ), &
+               G_I % Value ( :, G % METRIC_DD_33 ), &
+               G_I % Value ( :, G % METRIC_UU_22 ), &
+               G_I % Value ( :, G % METRIC_UU_33 ), &
+               nDimensions, nValues = G % nValues, oValue = 0 )
+    case ( 'CYLINDRICAL' )
+      call SetMetricCylindrical &
+             ( G_I % Value ( :, G % METRIC_DD_22 ), &
+               G_I % Value ( :, G % METRIC_DD_33 ), &
+               G_I % Value ( :, G % METRIC_UU_22 ), &
+               G_I % Value ( :, G % METRIC_UU_33 ), &
+               G_I % Value ( :, G % CENTER ( 1 ) ), &
+               nDimensions, nValues = G % nValues, oValue = 0 )
+    case ( 'SPHERICAL' )
+      call SetMetricSpherical &
+             ( G_I % Value ( :, G % METRIC_DD_22 ), &
+               G_I % Value ( :, G % METRIC_DD_33 ), &
+               G_I % Value ( :, G % METRIC_UU_22 ), &
+               G_I % Value ( :, G % METRIC_UU_33 ), &
+               G_I % Value ( :, G % CENTER ( 1 ) ), &
+               G_I % Value ( :, G % CENTER ( 2 ) ), &
+               nDimensions, nValues = G % nValues, oValue = 0 )
+    end select
 
   end subroutine ComputeReconstruction
 
@@ -788,11 +785,11 @@ contains
   end subroutine SetMetricSpherical
 
 
-  subroutine ComputeEdges ( X, dX, X_I )
+  subroutine ComputeEdges ( X, dX_L, X_I )
 
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-       X, &
-      dX
+      X, &
+      dX_L
     real ( KDR ), dimension ( : ), intent ( out ) :: &
       X_I
 
@@ -804,7 +801,7 @@ contains
 
     !$OMP parallel do private ( iV )
     do iV = 1, nV
-      X_I ( iV )  =  X ( iV ) - 0.5_KDR * dX ( iV )
+      X_I ( iV )  =  X ( iV )  -  dX_L ( iV )
     end do
     !$OMP end parallel do
     
