@@ -310,9 +310,9 @@ contains
 
       call Edge ( iD ) % Initialize ( size ( Center_1D ) + 1 )
       Edge ( iD ) % Value ( 1 )  &
-        =  Center_1D ( 1 )  -  0.5_KDR * Width_L_1D ( 1 )
+        =  Center_1D ( 1 )  -  Width_L_1D ( 1 )
       Edge ( iD ) % Value ( 2 : )  &
-        =  Center_1D + 0.5_KDR * Width_R_1D
+        =  Center_1D + Width_R_1D
 
     end do !-- iD
 
