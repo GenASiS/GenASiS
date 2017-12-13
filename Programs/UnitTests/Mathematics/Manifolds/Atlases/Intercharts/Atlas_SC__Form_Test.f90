@@ -102,7 +102,7 @@ contains
              CoordinateUnitOption = CoordinateUnit, &
              ScaleOption = Scale, nGhostLayersOption = [ 0, 0, 0 ] )
 
-    call G % Initialize ( A )
+    call G % InitializeFlat ( A )
     call A % SetGeometry ( GeometryOption = G )
 
     associate ( GIS_Base => AFT % GIS_Base )
