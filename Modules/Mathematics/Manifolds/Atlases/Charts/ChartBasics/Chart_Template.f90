@@ -432,18 +432,20 @@ contains
       Width_IG, &
       Width_OG
 
-    call C % Edge ( iD ) % Initialize &
-           ( nValues  =  nC  +  2 * nGL + 1, &
-             iLowerBoundOption  =  1 - nGL )
-    call C % Center ( iD ) % Initialize &
-           ( nValues  =  nC  +  2 * nGL, &
-             iLowerBoundOption  =  1 - nGL )
-    call C % WidthLeft ( iD ) % Initialize &
-           ( nValues  =  nC  +  2 * nGL, &
-             iLowerBoundOption  =  1 - nGL )
-    call C % WidthRight ( iD ) % Initialize &
-           ( nValues  =  nC  +  2 * nGL, &
-             iLowerBoundOption  =  1 - nGL )
+    if ( C % AllocatedValues ) then
+      call C % Edge ( iD ) % Initialize &
+             ( nValues  =  nC  +  2 * nGL + 1, &
+               iLowerBoundOption  =  1 - nGL )
+      call C % Center ( iD ) % Initialize &
+             ( nValues  =  nC  +  2 * nGL, &
+               iLowerBoundOption  =  1 - nGL )
+      call C % WidthLeft ( iD ) % Initialize &
+             ( nValues  =  nC  +  2 * nGL, &
+               iLowerBoundOption  =  1 - nGL )
+      call C % WidthRight ( iD ) % Initialize &
+             ( nValues  =  nC  +  2 * nGL, &
+               iLowerBoundOption  =  1 - nGL )
+    end if
 
     !-- Edge, proper cells
     select case ( trim ( C % Spacing ( iD ) ) )
