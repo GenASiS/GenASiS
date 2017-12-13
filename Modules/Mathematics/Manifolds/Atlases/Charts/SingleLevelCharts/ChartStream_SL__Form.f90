@@ -258,10 +258,12 @@ contains
       iUB     !-- iUpperBound
     real ( KDR ), dimension ( : ), pointer :: &
       Center_1D, &
-      Width_1D
+      Width_L_1D, &
+      Width_R_1D
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       Center_3D, &
-      Width_3D
+      Width_L_3D, &
+      Width_R_3D
 
     associate ( C => CS % Chart )
 
@@ -284,26 +286,33 @@ contains
       call C % SetVariablePointer &
              ( G % Value ( :, G % CENTER ( iD ) ), Center_3D )
       call C % SetVariablePointer &
-             ( G % Value ( :, G % WIDTH ( iD ) ), Width_3D )
+             ( G % Value ( :, G % WIDTH_LEFT ( iD ) ), Width_L_3D )
+      call C % SetVariablePointer &
+             ( G % Value ( :, G % WIDTH_RIGHT ( iD ) ), Width_R_3D )
 
       iLB = lbound ( Center_3D, dim = iD )
       iUB = ubound ( Center_3D, dim = iD )
 
       select case ( iD )
       case ( 1 )
-        Center_1D => Center_3D ( iLB : iUB, 1, 1 )
-        Width_1D  => Width_3D  ( iLB : iUB, 1, 1 )
+        Center_1D  => Center_3D  ( iLB : iUB, 1, 1 )
+        Width_L_1D => Width_L_3D ( iLB : iUB, 1, 1 )
+        Width_R_1D => Width_R_3D ( iLB : iUB, 1, 1 )
       case ( 2 )
-        Center_1D => Center_3D ( 1, iLB : iUB, 1 )
-        Width_1D  => Width_3D  ( 1, iLB : iUB, 1 )
+        Center_1D  => Center_3D  ( 1, iLB : iUB, 1 )
+        Width_L_1D => Width_L_3D ( 1, iLB : iUB, 1 )
+        Width_R_1D => Width_R_3D ( 1, iLB : iUB, 1 )
       case ( 3 ) 
-        Center_1D => Center_3D ( 1, 1, iLB : iUB )
-        Width_1D  => Width_3D  ( 1, 1, iLB : iUB )
+        Center_1D  => Center_3D  ( 1, 1, iLB : iUB )
+        Width_L_1D => Width_L_3D ( 1, 1, iLB : iUB )
+        Width_R_1D => Width_R_3D ( 1, 1, iLB : iUB )
       end select !-- iD
 
       call Edge ( iD ) % Initialize ( size ( Center_1D ) + 1 )
-      Edge ( iD ) % Value ( 1 )   = Center_1D ( 1 ) - 0.5_KDR * Width_1D ( 1 )
-      Edge ( iD ) % Value ( 2 : ) = Center_1D       + 0.5_KDR * Width_1D
+      Edge ( iD ) % Value ( 1 )  &
+        =  Center_1D ( 1 )  -  0.5_KDR * Width_L_1D ( 1 )
+      Edge ( iD ) % Value ( 2 : )  &
+        =  Center_1D + 0.5_KDR * Width_R_1D
 
     end do !-- iD
 
@@ -318,9 +327,11 @@ contains
     end associate !-- C
 
     nullify ( Center_3D )
-    nullify ( Width_3D )
+    nullify ( Width_L_3D )
+    nullify ( Width_R_3D )
     nullify ( Center_1D )
-    nullify ( Width_1D )
+    nullify ( Width_L_1D )
+    nullify ( Width_R_1D )
 
   end subroutine SetEdgeValues
 

@@ -121,13 +121,14 @@ contains
   end subroutine Finalize
 
 
-  subroutine SetGeometryWidthCenter ( C, Width, Center, iD )
+  subroutine SetGeometryWidthCenter ( C, Center, Width_L, Width_R, iD )
 
     class ( Chart_SLL_Form ), intent ( inout ) :: &
       C
     type ( Real_1D_Form ), intent ( inout ) :: &
-      Width, &
-      Center
+      Center, &
+      Width_L, &
+      Width_R
     integer ( KDI ), intent ( in ) :: &
       iD  !-- iDimension
 
@@ -137,13 +138,18 @@ contains
         iaF => C % iaFirst ( iD ), &
         iaL => C % iaLast ( iD ) )
 
-    call Width  % Initialize &
-           ( iaL - ( iaF - 1 ), iLowerBoundOption = iaF )
     call Center % Initialize &
            ( iaL - ( iaF - 1 ), iLowerBoundOption = iaF )
+    call Width_L % Initialize &
+           ( iaL - ( iaF - 1 ), iLowerBoundOption = iaF )
+    call Width_R % Initialize &
+           ( iaL - ( iaF - 1 ), iLowerBoundOption = iaF )
 
-    call C % SetGeometryCell &
-           ( Width % Value, Center % Value, nC, nGL, iD, iaF )
+    call C % SetGeometryCell ( nC, nGL, iD )
+
+    call Copy ( C % Center ( iD ) % Value, Center % Value )
+    call Copy ( C % WidthLeft ( iD ) % Value, Width_L % Value )
+    call Copy ( C % WidthRight ( iD ) % Value, Width_R % Value )
 
     end associate !-- nC, etc.
 

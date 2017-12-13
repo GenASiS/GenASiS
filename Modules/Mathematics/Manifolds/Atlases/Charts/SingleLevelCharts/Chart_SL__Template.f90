@@ -60,14 +60,15 @@ module Chart_SL__Template
         iConnection
     end subroutine CB
 
-    subroutine SGWC ( C, Width, Center, iD )
+    subroutine SGWC ( C, Center, Width_L, Width_R, iD )
       use Basics
       import Chart_SL_Template
       class ( Chart_SL_Template ), intent ( inout ) :: &
         C
       type ( Real_1D_Form ), intent ( inout ) :: &
-        Width, &
-        Center
+        Center, &
+        Width_L, &
+        Width_R
       integer ( KDI ), intent ( in ) :: &
         iD  !-- iDimension
     end subroutine SGWC
@@ -93,11 +94,13 @@ contains
       iD, & !-- iDimension
       iC  !-- iCell
     type ( Real_1D_Form ), dimension ( ATLAS % MAX_DIMENSIONS ) :: &
-      Width, &
-      Center
+      Center, &
+      Width_L, &
+      Width_R
     real ( KDR ), dimension ( :, :, : ), pointer :: &
-      Width_3D, &
-      Center_3D
+      Center_3D, &
+      Width_L_3D, &
+      Width_R_3D
     class ( GeometryFlatForm ), pointer :: &
       G
 
@@ -106,54 +109,68 @@ contains
     G => C % Geometry ( )
 
     do iD = 1, C % nDimensions
-      call C % SetGeometryWidthCenter ( Width ( iD ), Center ( iD ), iD )
+      call C % SetGeometryWidthCenter &
+             ( Center ( iD ), Width_L ( iD ), Width_R ( iD ), iD )
     end do !-- iD
 
-    call Show ( Width  ( 1 ) % Value, C % CoordinateUnit ( 1 ), &
-                'Width 1', CONSOLE % INFO_7 )
     call Show ( Center ( 1 ) % Value, C % CoordinateUnit ( 1 ), &
                 'Center 1', CONSOLE % INFO_7 )
+    call Show ( Width_L ( 1 ) % Value, C % CoordinateUnit ( 1 ), &
+                'Width_L 1', CONSOLE % INFO_7 )
+    call Show ( Width_R ( 1 ) % Value, C % CoordinateUnit ( 1 ), &
+                'Width_R 1', CONSOLE % INFO_7 )
     if ( C % nDimensions > 1 ) then
-      call Show ( Width  ( 2 ) % Value, C % CoordinateUnit ( 2 ), &
-                'Width 2', CONSOLE % INFO_7 )
       call Show ( Center ( 2 ) % Value, C % CoordinateUnit ( 2 ), &
                 'Center 2', CONSOLE % INFO_7 )
+      call Show ( Width_L ( 2 ) % Value, C % CoordinateUnit ( 2 ), &
+                'Width_L 2', CONSOLE % INFO_7 )
+      call Show ( Width_R ( 2 ) % Value, C % CoordinateUnit ( 2 ), &
+                'Width_R 2', CONSOLE % INFO_7 )
     end if
     if ( C % nDimensions > 2 ) then
-      call Show ( Width  ( 3 ) % Value, C % CoordinateUnit ( 3 ), &
-                'Width 3', CONSOLE % INFO_7 )
       call Show ( Center ( 3 ) % Value, C % CoordinateUnit ( 3 ), &
                 'Center 3', CONSOLE % INFO_7 )
+      call Show ( Width_L ( 3 ) % Value, C % CoordinateUnit ( 3 ), &
+                'Width_L 3', CONSOLE % INFO_7 )
+      call Show ( Width_R ( 3 ) % Value, C % CoordinateUnit ( 3 ), &
+                'Width_L 3', CONSOLE % INFO_7 )
     end if
 
     do iD = 1, C % nDimensions
       call C % SetVariablePointer &
-             ( G % Value ( :, G % WIDTH ( iD ) ), Width_3D )
-      call C % SetVariablePointer &
              ( G % Value ( :, G % CENTER ( iD ) ), Center_3D )
+      call C % SetVariablePointer &
+             ( G % Value ( :, G % WIDTH_LEFT ( iD ) ), Width_L_3D )
+      call C % SetVariablePointer &
+             ( G % Value ( :, G % WIDTH_RIGHT ( iD ) ), Width_R_3D )
       associate &
-        ( Width_1D  => Width  ( iD ) % Value, &
-          Center_1D => Center ( iD ) % Value )
+        ( Center_1D => Center ( iD ) % Value, &
+          Width_L_1D  => Width_L ( iD ) % Value, &
+          Width_R_1D  => Width_R ( iD ) % Value )
       do iC = C % iaFirst ( iD ), C % iaLast ( iD )
         select case ( iD )
         case ( 1 )
-          Width_3D  ( iC, :, : ) = Width_1D  ( iC )
           Center_3D ( iC, :, : ) = Center_1D ( iC )
+          Width_L_3D  ( iC, :, : ) = Width_L_1D  ( iC )
+          Width_R_3D  ( iC, :, : ) = Width_R_1D  ( iC )
         case ( 2 )
-          Width_3D  ( :, iC, : ) = Width_1D  ( iC )
           Center_3D ( :, iC, : ) = Center_1D ( iC )
+          Width_L_3D  ( :, iC, : ) = Width_L_1D  ( iC )
+          Width_R_3D  ( :, iC, : ) = Width_R_1D  ( iC )
         case ( 3 )
-          Width_3D  ( :, :, iC ) = Width_1D  ( iC )
           Center_3D ( :, :, iC ) = Center_1D ( iC )
+          Width_L_3D  ( :, :, iC ) = Width_L_1D  ( iC )
+          Width_R_3D  ( :, :, iC ) = Width_R_1D  ( iC )
         end select !-- iD
       end do !-- iC
-      end associate !-- Width_1D, Center_1D
+      end associate !-- Center_1D, etc.
     end do !-- iD
 
     call G % SetMetric ( C % nDimensions, G % nValues, oValue = 0 )
 
     nullify ( G )
-    nullify ( Width_3D )
+    nullify ( Width_R_3D )
+    nullify ( Width_L_3D )
     nullify ( Center_3D )
 
   end subroutine SetGeometry

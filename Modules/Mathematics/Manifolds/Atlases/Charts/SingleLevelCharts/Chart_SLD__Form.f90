@@ -226,68 +226,50 @@ contains
   end subroutine Finalize
 
 
-  subroutine SetGeometryWidthCenter ( C, Width, Center, iD )
+  subroutine SetGeometryWidthCenter ( C, Center, Width_L, Width_R, iD )
 
     class ( Chart_SLD_Form ), intent ( inout ) :: &
       C
     type ( Real_1D_Form ), intent ( inout ) :: &
-      Width, &
-      Center
+      Center, &
+      Width_L, &
+      Width_R
     integer ( KDI ), intent ( in ) :: &
       iD  !-- iDimension
 
     integer ( KDI ) :: &
       iC, &  !-- iCell
       oC  !-- oCell (offset)
-    type ( Real_1D_Form ) :: &
-      GlobalWidth, &
-      GlobalCenter
 
     !-- Global cell widths and centers
 
     associate &
-      ( iaF => 1 - C % nGhostLayers ( iD ), &
-        iaL => C % nCells ( iD ) + C % nGhostLayers ( iD ) )
-    call GlobalWidth  % Initialize &
-           ( iaL - ( iaF - 1 ), iLowerBoundOption = iaF )
-    call GlobalCenter % Initialize &
-           ( iaL - ( iaF - 1 ), iLowerBoundOption = iaF )
-    end associate !-- iaF, etc.
-
-    associate &
-      ( Width_1D_G  => GlobalWidth  % Value, &
-        Center_1D_G => GlobalCenter % Value, &
-        nC => C % nCells ( iD ), &
+      ( nC => C % nCells ( iD ), &
         nGL => C % nGhostLayers ( iD ) )
-
-    associate ( iaF => 1 - C % nGhostLayers ( iD ) )
-    call C % SetGeometryCell ( Width_1D_G, Center_1D_G, nC, nGL, iD, iaF )
-    end associate !-- iaF
+    call C % SetGeometryCell ( nC, nGL, iD )
+    end associate !-- nC, etc.
 
     !-- Local cell widths and centers
 
     associate &
       ( iaF => 1 - C % nGhostLayers ( iD ), &
         iaL => C % nCellsBrick ( iD ) + C % nGhostLayers ( iD ) )
-    call Width  % Initialize &
-           ( iaL - ( iaF - 1 ), iLowerBoundOption = iaF )
+
     call Center % Initialize &
            ( iaL - ( iaF - 1 ), iLowerBoundOption = iaF )
-
-    associate &          
-      ( Width_1D_L  => Width  % Value, &
-        Center_1D_L => Center % Value )
+    call Width_L % Initialize &
+           ( iaL - ( iaF - 1 ), iLowerBoundOption = iaF )
+    call Width_R % Initialize &
+           ( iaL - ( iaF - 1 ), iLowerBoundOption = iaF )
 
     oC = ( C % iaBrick ( iD ) - 1 ) * C % nCellsBrick ( iD )
     do iC = iaF, iaL
-      Width_1D_L  ( iC ) = Width_1D_G  ( oC + iC )
-      Center_1D_L ( iC ) = Center_1D_G ( oC + iC )
+      Center % Value ( iC )  = C % Center ( iD ) % Value ( oC + iC )
+      Width_L % Value ( iC ) = C % WidthLeft ( iD ) % Value ( oC + iC )
+      Width_R % Value ( iC ) = C % WidthRight ( iD ) % Value ( oC + iC )
     end do
 
-    end associate !-- Width_1D_L, etc.
     end associate !-- iaF, etc.
-
-    end associate !-- Width_1D_G, etc.
 
   end subroutine SetGeometryWidthCenter
 
