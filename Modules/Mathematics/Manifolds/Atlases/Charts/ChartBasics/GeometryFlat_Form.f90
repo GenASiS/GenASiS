@@ -55,6 +55,9 @@ module GeometryFlat_Form
       InitializeBasics, &
       SetCoordinateSystem, &
       SetUnits, &
+      SetFiniteVolumeCartesian, &
+      SetFiniteVolumeCylindrical, &
+      SetFiniteVolumeSpherical, &
       SetMetricCartesian, &
       SetMetricCylindrical, &
       SetMetricSpherical, &
@@ -132,15 +135,11 @@ contains
 
     select case ( trim ( G % CoordinateSystem ) )
     case ( 'CARTESIAN' )
-      call SetMetricCartesian &
+      call SetFiniteVolumeCartesian &
              ( G % Value ( :, G % VOLUME ), &
                G % Value ( :, G % AREA_INNER ( 1 ) ), &
                G % Value ( :, G % AREA_INNER ( 2 ) ), &
                G % Value ( :, G % AREA_INNER ( 3 ) ), &
-               G % Value ( :, G % METRIC_DD_22 ), &
-               G % Value ( :, G % METRIC_DD_33 ), &
-               G % Value ( :, G % METRIC_UU_22 ), &
-               G % Value ( :, G % METRIC_UU_33 ), &
                G % Value ( :, G % WIDTH_LEFT ( 1 ) ), &
                G % Value ( :, G % WIDTH_LEFT ( 2 ) ), &
                G % Value ( :, G % WIDTH_LEFT ( 3 ) ), &
@@ -148,16 +147,18 @@ contains
                G % Value ( :, G % WIDTH_RIGHT ( 2 ) ), &
                G % Value ( :, G % WIDTH_RIGHT ( 3 ) ), &
                nDimensions, nValues, oValue )
+      call SetMetricCartesian &
+             ( G % Value ( :, G % METRIC_DD_22 ), &
+               G % Value ( :, G % METRIC_DD_33 ), &
+               G % Value ( :, G % METRIC_UU_22 ), &
+               G % Value ( :, G % METRIC_UU_33 ), &
+               nDimensions, nValues, oValue )
     case ( 'CYLINDRICAL' )
-      call SetMetricCylindrical &
+      call SetFiniteVolumeCylindrical &
              ( G % Value ( :, G % VOLUME ), &
                G % Value ( :, G % AREA_INNER ( 1 ) ), &
                G % Value ( :, G % AREA_INNER ( 2 ) ), &
                G % Value ( :, G % AREA_INNER ( 3 ) ), &
-               G % Value ( :, G % METRIC_DD_22 ), &
-               G % Value ( :, G % METRIC_DD_33 ), &
-               G % Value ( :, G % METRIC_UU_22 ), &
-               G % Value ( :, G % METRIC_UU_33 ), &
                G % Value ( :, G % WIDTH_LEFT ( 1 ) ), &
                G % Value ( :, G % WIDTH_LEFT ( 2 ) ), &
                G % Value ( :, G % WIDTH_LEFT ( 3 ) ), &
@@ -166,22 +167,33 @@ contains
                G % Value ( :, G % WIDTH_RIGHT ( 3 ) ), &
                G % Value ( :, G % CENTER ( 1 ) ), &
                nDimensions, nValues, oValue )
+      call SetMetricCylindrical &
+             ( G % Value ( :, G % METRIC_DD_22 ), &
+               G % Value ( :, G % METRIC_DD_33 ), &
+               G % Value ( :, G % METRIC_UU_22 ), &
+               G % Value ( :, G % METRIC_UU_33 ), &
+               G % Value ( :, G % CENTER ( 1 ) ), &
+               nDimensions, nValues, oValue )
     case ( 'SPHERICAL' )
-      call SetMetricSpherical &
+      call SetFiniteVolumeSpherical &
              ( G % Value ( :, G % VOLUME ), &
                G % Value ( :, G % AREA_INNER ( 1 ) ), &
                G % Value ( :, G % AREA_INNER ( 2 ) ), &
                G % Value ( :, G % AREA_INNER ( 3 ) ), &
-               G % Value ( :, G % METRIC_DD_22 ), &
-               G % Value ( :, G % METRIC_DD_33 ), &
-               G % Value ( :, G % METRIC_UU_22 ), &
-               G % Value ( :, G % METRIC_UU_33 ), &
                G % Value ( :, G % WIDTH_LEFT ( 1 ) ), &
                G % Value ( :, G % WIDTH_LEFT ( 2 ) ), &
                G % Value ( :, G % WIDTH_LEFT ( 3 ) ), &
                G % Value ( :, G % WIDTH_RIGHT ( 1 ) ), &
                G % Value ( :, G % WIDTH_RIGHT ( 2 ) ), &
                G % Value ( :, G % WIDTH_RIGHT ( 3 ) ), &
+               G % Value ( :, G % CENTER ( 1 ) ), &
+               G % Value ( :, G % CENTER ( 2 ) ), &
+               nDimensions, nValues, oValue )
+      call SetMetricSpherical &
+             ( G % Value ( :, G % METRIC_DD_22 ), &
+               G % Value ( :, G % METRIC_DD_33 ), &
+               G % Value ( :, G % METRIC_UU_22 ), &
+               G % Value ( :, G % METRIC_UU_33 ), &
                G % Value ( :, G % CENTER ( 1 ) ), &
                G % Value ( :, G % CENTER ( 2 ) ), &
                nDimensions, nValues, oValue )
@@ -487,16 +499,14 @@ contains
   end subroutine SetUnits
 
 
-  subroutine SetMetricCartesian &
-               ( V, A_I_1, A_I_2, A_I_3, M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
+  subroutine SetFiniteVolumeCartesian &
+               ( V, A_I_1, A_I_2, A_I_3, &
                  W_L_1, W_L_2, W_L_3, W_R_1, W_R_2, W_R_3, &
                  nDimensions, nValues, oValue )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       V, &
-      A_I_1, A_I_2, A_I_3, &
-      M_DD_22, M_DD_33, &
-      M_UU_22, M_UU_33
+      A_I_1, A_I_2, A_I_3
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       W_L_1, W_L_2, W_L_3, &
       W_R_1, W_R_2, W_R_3
@@ -535,27 +545,20 @@ contains
         A_I_3 ( iV )  =  dX * dY
       end select
 
-      M_DD_22 ( iV )  =  1.0_KDR
-      M_DD_33 ( iV )  =  1.0_KDR
-      M_UU_22 ( iV )  =  1.0_KDR
-      M_UU_33 ( iV )  =  1.0_KDR
-
     end do
     !$OMP end parallel do
 
-  end subroutine SetMetricCartesian
+  end subroutine SetFiniteVolumeCartesian
 
 
-  subroutine SetMetricCylindrical &
-               ( V, A_I_1, A_I_2, A_I_3, M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
+  subroutine SetFiniteVolumeCylindrical &
+               ( V, A_I_1, A_I_2, A_I_3, &
                  W_L_1, W_L_2, W_L_3, W_R_1, W_R_2, W_R_3, RP_C, &
                  nDimensions, nValues, oValue )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       V, &
-      A_I_1, A_I_2, A_I_3, &
-      M_DD_22, M_DD_33, &
-      M_UU_22, M_UU_33
+      A_I_1, A_I_2, A_I_3
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       W_L_1, W_L_2, W_L_3, &
       W_R_1, W_R_2, W_R_3, &
@@ -602,31 +605,20 @@ contains
         A_I_3 ( iV )  =  dRP * dZ
       end select
 
-      M_DD_22 ( iV )  =  1.0_KDR
-      M_DD_33 ( iV )  =  RP_C ( iV ) ** 2 
-      M_UU_22 ( iV )  =  1.0_KDR
-      if ( RP_C ( iV )  >  0.0_KDR ) then
-        M_UU_33 ( iV )  =  1.0_KDR  /  RP_C ( iV ) ** 2
-      else
-        M_UU_33 ( iV )  =  0.0_KDR
-      end if
-
     end do
     !$OMP end parallel do
 
-  end subroutine SetMetricCylindrical
+  end subroutine SetFiniteVolumeCylindrical
 
 
-  subroutine SetMetricSpherical &
-               ( V, A_I_1, A_I_2, A_I_3, M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
+  subroutine SetFiniteVolumeSpherical &
+               ( V, A_I_1, A_I_2, A_I_3, &
                  W_L_1, W_L_2, W_L_3, W_R_1, W_R_2, W_R_3, R_C, Th_C, &
                  nDimensions, nValues, oValue )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       V, &
-      A_I_1, A_I_2, A_I_3, &
-      M_DD_22, M_DD_33, &
-      M_UU_22, M_UU_33
+      A_I_1, A_I_2, A_I_3
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       W_L_1, W_L_2, W_L_3, &
       W_R_1, W_R_2, W_R_3, &
@@ -642,13 +634,11 @@ contains
       Pi, &
       R_I, R_O, &
       Th_I, Th_O, &
-      dR, dTh, dPh, &
-      Sin_Th_C
+      dR, dTh, dPh
 
     Pi  =  CONSTANT % PI
 
-    !$OMP parallel do private ( iV, R_I, R_O, Th_I, Th_O, dR, dTh, dPh, &
-    !$OMP                       Sin_Th_C )
+    !$OMP parallel do private ( iV, R_I, R_O, Th_I, Th_O, dR, dTh, dPh )
     do iV = oValue + 1, oValue + nValues
 
       R_I  =  R_C ( iV )  -  W_L_1 ( iV )
@@ -667,7 +657,6 @@ contains
         A_I_1 ( iV )  =  4.0_KDR  *  Pi  *  R_I ** 2
         A_I_2 ( iV )  =  Pi  *  ( R_O ** 2  -  R_I ** 2 )
         A_I_3 ( iV )  =  R_O ** 2  -  R_I ** 2
-        Sin_Th_C      =  1.0_KDR
       case ( 2 )
         V ( iV )      =  2.0_KDR / 3.0_KDR * Pi *  ( R_O ** 3  -  R_I ** 3 ) &
                          *  ( cos ( Th_I )  -  cos ( Th_O ) )
@@ -676,7 +665,6 @@ contains
         A_I_2 ( iV )  =  Pi  *  ( R_O ** 2  -  R_I ** 2 )  *  sin ( Th_I )
         A_I_3 ( iV )  =  0.5_KDR  *  ( R_O ** 2  -  R_I ** 2 )  &
                          *  ( cos ( Th_I )  -  cos ( Th_O ) )
-        Sin_Th_C      =  sin ( Th_C ( iV ) )
       case ( 3 )
         V ( iV )      =  1.0_KDR / 3.0_KDR  *  ( R_O ** 3  -  R_I ** 3 ) &
                          *  ( cos ( Th_I )  -  cos ( Th_O ) )  *  dPh
@@ -685,14 +673,110 @@ contains
                          *  sin ( Th_I )  *  dPh
         A_I_3 ( iV )  =  0.5_KDR  *  ( R_O ** 2  -  R_I ** 2 )  &
                          *  ( cos ( Th_I )  -  cos ( Th_O ) )
-        Sin_Th_C      =  sin ( Th_C ( iV ) )
       end select
 
-      M_DD_22 ( iV )  =  R_C ( iV ) ** 2
-      M_DD_33 ( iV )  =  ( R_C ( iV )  *  Sin_Th_C ) ** 2
-      if ( R_C ( iV )  *  Sin_Th_C  >  0.0_KDR ) then
-        M_UU_22 ( iV )  =  R_C ( iV ) ** ( -2 )
-        M_UU_33 ( iV )  =  ( R_C ( iV )  *  Sin_Th_C ) ** ( -2 )
+    end do
+    !$OMP end parallel do
+
+  end subroutine SetFiniteVolumeSpherical
+
+
+  subroutine SetMetricCartesian &
+               ( M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
+                 nDimensions, nValues, oValue )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      M_DD_22, M_DD_33, &
+      M_UU_22, M_UU_33
+    integer ( KDI ), intent ( in ) :: &
+      nDimensions, &
+      nValues, &
+      oValue
+
+    integer ( KDI ) :: &
+      iV  !-- iValue
+
+    !$OMP parallel do private ( iV )
+    do iV = oValue + 1, oValue + nValues
+      M_DD_22 ( iV )  =  1.0_KDR
+      M_DD_33 ( iV )  =  1.0_KDR
+      M_UU_22 ( iV )  =  1.0_KDR
+      M_UU_33 ( iV )  =  1.0_KDR
+    end do
+    !$OMP end parallel do
+
+  end subroutine SetMetricCartesian
+
+
+  subroutine SetMetricCylindrical &
+               ( M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
+                 RP, nDimensions, nValues, oValue )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      M_DD_22, M_DD_33, &
+      M_UU_22, M_UU_33
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      RP
+    integer ( KDI ), intent ( in ) :: &
+      nDimensions, &
+      nValues, &
+      oValue
+
+    integer ( KDI ) :: &
+      iV  !-- iValue
+
+    !$OMP parallel do private ( iV )
+    do iV = oValue + 1, oValue + nValues
+      M_DD_22 ( iV )  =  1.0_KDR
+      M_DD_33 ( iV )  =  RP ( iV ) ** 2 
+      M_UU_22 ( iV )  =  1.0_KDR
+      if ( RP ( iV )  >  0.0_KDR ) then
+        M_UU_33 ( iV )  =  1.0_KDR  /  RP ( iV ) ** 2
+      else
+        M_UU_33 ( iV )  =  0.0_KDR
+      end if
+    end do
+    !$OMP end parallel do
+
+  end subroutine SetMetricCylindrical
+
+
+  subroutine SetMetricSpherical &
+               ( M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
+                 R, Th, nDimensions, nValues, oValue )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      M_DD_22, M_DD_33, &
+      M_UU_22, M_UU_33
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      R, Th
+    integer ( KDI ), intent ( in ) :: &
+      nDimensions, &
+      nValues, &
+      oValue
+
+    integer ( KDI ) :: &
+      iV  !-- iValue
+    real ( KDR ) :: &
+      Sin_Th
+
+    !$OMP parallel do private ( iV, Sin_Th )
+    do iV = oValue + 1, oValue + nValues
+
+      select case ( nDimensions )
+      case ( 1 )
+        Sin_Th  =  1.0_KDR
+      case ( 2 )
+        Sin_Th  =  sin ( Th ( iV ) )
+      case ( 3 )
+        Sin_Th  =  sin ( Th ( iV ) )
+      end select
+
+      M_DD_22 ( iV )  =  R ( iV ) ** 2
+      M_DD_33 ( iV )  =  ( R ( iV )  *  Sin_Th ) ** 2
+      if ( R ( iV )  *  Sin_Th  >  0.0_KDR ) then
+        M_UU_22 ( iV )  =  R ( iV ) ** ( -2 )
+        M_UU_33 ( iV )  =  ( R ( iV )  *  Sin_Th ) ** ( -2 )
       else
         M_UU_22 ( iV )  =  0.0_KDR
         M_UU_33 ( iV )  =  0.0_KDR
