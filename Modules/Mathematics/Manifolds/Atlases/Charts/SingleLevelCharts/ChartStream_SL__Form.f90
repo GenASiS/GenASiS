@@ -284,11 +284,11 @@ contains
     do iD = 1, C % nDimensions
 
       call C % SetVariablePointer &
-             ( G % Value ( :, G % CENTER ( iD ) ), Center_3D )
+             ( G % Value ( :, G % CENTER_U ( iD ) ), Center_3D )
       call C % SetVariablePointer &
-             ( G % Value ( :, G % WIDTH_LEFT ( iD ) ), Width_L_3D )
+             ( G % Value ( :, G % WIDTH_LEFT_U ( iD ) ), Width_L_3D )
       call C % SetVariablePointer &
-             ( G % Value ( :, G % WIDTH_RIGHT ( iD ) ), Width_R_3D )
+             ( G % Value ( :, G % WIDTH_RIGHT_U ( iD ) ), Width_R_3D )
 
       iLB = lbound ( Center_3D, dim = iD )
       iUB = ubound ( Center_3D, dim = iD )
