@@ -17,7 +17,6 @@ module VolumeIntegral_Form
   end type VolumeIntegralForm
 
     private :: &
-      ComputeVolume, &
       ComputeIntegral_CSL
 
 contains
@@ -39,8 +38,6 @@ contains
       Ignorability
     real ( KDR ), dimension ( size ( Integral ) ) :: &
       MyIntegral
-    real ( KDR ), dimension ( : ), allocatable :: &
-      dVolume
     type ( CollectiveOperation_R_Form ) :: &
       CO
     class ( GeometryFlatForm ), pointer :: &
@@ -53,14 +50,6 @@ contains
 
     G => CSL % Geometry ( )
 
-    allocate ( dVolume ( G % nValues ) )
-    call ComputeVolume &
-           ( G % Value ( :, G % VOLUME_JACOBIAN ), &
-             G % Value ( :, G % WIDTH ( 1 ) ), &
-             G % Value ( :, G % WIDTH ( 2 ) ), &
-             G % Value ( :, G % WIDTH ( 3 ) ), &
-             CSL % nDimensions, dVolume )
-
     associate ( A => CSL % Atlas )
 
     if ( A % IsDistributed ) then
@@ -71,8 +60,8 @@ contains
 
     do iI = 1, nI
       call ComputeIntegral_CSL &
-             ( CSL % IsProperCell, Integrand ( iI ) % Value, dVolume, &
-               MyIntegral ( iI ) )
+             ( CSL % IsProperCell, Integrand ( iI ) % Value, &
+               G % Value ( :, G % VOLUME ), MyIntegral ( iI ) )
     end do !-- iI
     call Show ( 'Local contribution to VolumeIntegral', Ignorability )
     call Show ( MyIntegral, 'MyIntegral', Ignorability )
@@ -90,46 +79,6 @@ contains
     nullify ( G )
 
   end subroutine Compute_CSL
-
-
-  subroutine ComputeVolume ( VJ, dX_1, dX_2, dX_3, nDimensions, dV )
-
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      VJ, &
-      dX_1, dX_2, dX_3
-    integer ( KDI ), intent ( in ) :: &
-      nDimensions
-    real ( KDR ), dimension ( : ), intent ( out ) :: &
-      dV
-
-    integer ( KDI ) :: &
-      iV, &
-      nV
-
-    nV = size ( VJ )
-
-    select case ( nDimensions )
-    case ( 1 )
-      !$OMP parallel do private ( iV )
-      do iV = 1, nV
-        dV ( iV )  =  VJ ( iV ) * dX_1 ( iV )
-      end do
-      !$OMP end parallel do
-    case ( 2 )
-      !$OMP parallel do private ( iV )
-      do iV = 1, nV
-        dV ( iV )  =  VJ ( iV ) * dX_1 ( iV ) * dX_2 ( iV )
-      end do
-      !$OMP end parallel do
-    case ( 3 )
-      !$OMP parallel do private ( iV )
-      do iV = 1, nV
-        dV ( iV )  =  VJ ( iV ) * dX_1 ( iV ) * dX_2 ( iV ) * dX_3 ( iV )
-      end do
-      !$OMP end parallel do
-    end select !-- nDimensions
-
-  end subroutine ComputeVolume
 
 
   subroutine ComputeIntegral_CSL ( IsProperCell, dIdV, dV, I )
