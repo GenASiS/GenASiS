@@ -75,21 +75,6 @@ contains
       jD = mod ( iD, 3 ) + 1
       kD = mod ( jD, 3 ) + 1
     
-!      nS ( iD ) = 1
-!      nS ( jD ) = CSL % nCellsBrick ( jD )
-!      nS ( kD ) = CSL % nCellsBrick ( kD )
-!      allocate ( dA ( nS ( 1 ), nS ( 2 ), nS ( 3 ) ) )
-!      call Clear ( dA )
-      
-!      !-- assume VolumeJacobian already included in integrand
-!      oS = CSL % nGhostLayers
-!      call CSL % SetVariablePointer &
-!             ( G % Value ( :, G % WIDTH ( jD ) ), dX_J )
-!      call CSL % SetVariablePointer &
-!             ( G % Value ( :, G % WIDTH ( kD ) ), dX_K )
-!      call ComputeArea_CSL &
-!             ( dX_J, dX_K, dA, nS, oS, CSL % nDimensions, jD, kD )
-
       call CSL % SetVariablePointer &
              ( G % Value ( :, G % AREA_INNER_D ( iD ) ), AreaInner_D )
 
