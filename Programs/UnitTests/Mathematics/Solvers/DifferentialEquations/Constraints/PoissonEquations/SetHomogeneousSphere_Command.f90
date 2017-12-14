@@ -38,9 +38,9 @@ contains
     G => A % Geometry ( )
 
     associate &
-      (    R => G % Value ( :, G % CENTER ( 1 ) ), &
-        dR_L => G % Value ( :, G % WIDTH_LEFT ( 1 ) ), &
-        dR_R => G % Value ( :, G % WIDTH_RIGHT ( 1 ) ) )
+      (    R => G % Value ( :, G % CENTER_U ( 1 ) ), &
+        dR_L => G % Value ( :, G % WIDTH_LEFT_U ( 1 ) ), &
+        dR_R => G % Value ( :, G % WIDTH_RIGHT_U ( 1 ) ) )
 
 
     !-- Source

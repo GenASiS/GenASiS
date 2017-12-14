@@ -168,7 +168,7 @@ contains
 
         call L % ComputeSolidHarmonics &
                ( C % CoordinateSystem, &
-                 G % Value ( iC, G % CENTER ( 1 ) : G % CENTER ( 3 ) ), &
+                 G % Value ( iC, G % CENTER_U ( 1 ) : G % CENTER_U ( 3 ) ), &
                  C % nDimensions, R, iR )
 
         S = 0.0_KDR

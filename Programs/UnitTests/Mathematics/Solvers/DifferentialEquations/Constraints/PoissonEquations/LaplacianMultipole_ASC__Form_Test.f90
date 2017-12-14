@@ -193,7 +193,7 @@ contains
         cycle
       call L % ComputeSolidHarmonics &
              ( C % CoordinateSystem, &
-               G % Value ( iC, G % CENTER ( 1 ) : G % CENTER ( 3 ) ), &
+               G % Value ( iC, G % CENTER_U ( 1 ) : G % CENTER_U ( 3 ) ), &
                C % nDimensions, Radius, iR )
       SolidHarmonics_RC % Value ( iC, : )  =  L % SolidHarmonic_RC
       SolidHarmonics_IC % Value ( iC, : )  =  L % SolidHarmonic_IC
@@ -245,7 +245,7 @@ contains
 
       call L % ComputeSolidHarmonics &
              ( C % CoordinateSystem, &
-               G % Value ( iC, G % CENTER ( 1 ) : G % CENTER ( 3 ) ), &
+               G % Value ( iC, G % CENTER_U ( 1 ) : G % CENTER_U ( 3 ) ), &
                C % nDimensions, Radius, iR )
 
       associate ( Phi => Solution % Value ( iC, L % nAngularMomentCells + 1 ) )
