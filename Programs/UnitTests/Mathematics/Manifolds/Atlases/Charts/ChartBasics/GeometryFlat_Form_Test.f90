@@ -121,9 +121,9 @@ subroutine TestGeometry ( Name, CoordinateSystem, nDimensions )
            NameOption = Name )
 
   call PC % SetGeometryCell ( nCells, nGL = nGhostLayers, iD = 1 )
-  G % Value ( :, G % WIDTH_LEFT ( 1 ) ) = PC % WidthLeft ( 1 ) % Value
-  G % Value ( :, G % WIDTH_RIGHT ( 1 ) ) = PC % WidthRight ( 1 ) % Value
-  G % Value ( :, G % CENTER ( 1 ) ) = PC % Center ( 1 ) % Value
+  G % Value ( :, G % WIDTH_LEFT_U ( 1 ) ) = PC % WidthLeft ( 1 ) % Value
+  G % Value ( :, G % WIDTH_RIGHT_U ( 1 ) ) = PC % WidthRight ( 1 ) % Value
+  G % Value ( :, G % CENTER_U ( 1 ) ) = PC % Center ( 1 ) % Value
   call Show ( PC % Edge ( 1 ) % Value, CoordinateUnit ( 1 ), 'Edge_1' )
   do i = 1 - nGhostLayers, nCells + nGhostLayers
     print *, PC % Edge ( 1 ) % Value ( i ), &
@@ -133,9 +133,9 @@ subroutine TestGeometry ( Name, CoordinateSystem, nDimensions )
 
   if ( nDimensions > 1 ) then
     call PC % SetGeometryCell ( nCells, nGL = nGhostLayers, iD = 2 )
-    G % Value ( :, G % WIDTH_LEFT ( 2 ) ) = PC % WidthLeft ( 2 ) % Value
-    G % Value ( :, G % WIDTH_RIGHT ( 2 ) ) = PC % WidthRight ( 2 ) % Value
-    G % Value ( :, G % CENTER ( 2 ) ) = PC % Center ( 2 ) % Value
+    G % Value ( :, G % WIDTH_LEFT_U ( 2 ) ) = PC % WidthLeft ( 2 ) % Value
+    G % Value ( :, G % WIDTH_RIGHT_U ( 2 ) ) = PC % WidthRight ( 2 ) % Value
+    G % Value ( :, G % CENTER_U ( 2 ) ) = PC % Center ( 2 ) % Value
     call Show ( PC % Edge ( 2 ) % Value, CoordinateUnit ( 1 ), 'Edge_2' )
     do i = 1 - nGhostLayers, nCells + nGhostLayers
       print *, PC % Edge ( 2 ) % Value ( i ), &
@@ -146,9 +146,9 @@ subroutine TestGeometry ( Name, CoordinateSystem, nDimensions )
 
   if ( nDimensions > 2 ) then
     call PC % SetGeometryCell ( nCells, nGL = nGhostLayers, iD = 3 )
-    G % Value ( :, G % WIDTH_LEFT ( 3 ) ) = PC % WidthLeft ( 3 ) % Value
-    G % Value ( :, G % WIDTH_RIGHT ( 3 ) ) = PC % WidthRight ( 3 ) % Value
-    G % Value ( :, G % CENTER ( 3 ) ) = PC % Center ( 3 ) % Value
+    G % Value ( :, G % WIDTH_LEFT_U ( 3 ) ) = PC % WidthLeft ( 3 ) % Value
+    G % Value ( :, G % WIDTH_RIGHT_U ( 3 ) ) = PC % WidthRight ( 3 ) % Value
+    G % Value ( :, G % CENTER_U ( 3 ) ) = PC % Center ( 3 ) % Value
     call Show ( PC % Edge ( 3 ) % Value, CoordinateUnit ( 1 ), 'Edge_3' )
   end if
 

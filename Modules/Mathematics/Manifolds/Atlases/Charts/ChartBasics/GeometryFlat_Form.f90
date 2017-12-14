@@ -22,10 +22,10 @@ module GeometryFlat_Form
     integer ( KDI ) :: &
       VOLUME = 0
     integer ( KDI ), dimension ( 3 ) :: &
-      CENTER      = 0, &
-      WIDTH_LEFT  = 0, &
-      WIDTH_RIGHT = 0, &
-      AREA_INNER  = 0
+      CENTER_U        = 0, &
+      WIDTH_LEFT_U  = 0, &
+      WIDTH_RIGHT_U = 0, &
+      AREA_INNER_D  = 0
     integer ( KDI ) :: &
       METRIC_DD_22 = 0, &
       METRIC_DD_33 = 0, &
@@ -137,15 +137,15 @@ contains
     case ( 'CARTESIAN' )
       call SetFiniteVolumeCartesian &
              ( G % Value ( :, G % VOLUME ), &
-               G % Value ( :, G % AREA_INNER ( 1 ) ), &
-               G % Value ( :, G % AREA_INNER ( 2 ) ), &
-               G % Value ( :, G % AREA_INNER ( 3 ) ), &
-               G % Value ( :, G % WIDTH_LEFT ( 1 ) ), &
-               G % Value ( :, G % WIDTH_LEFT ( 2 ) ), &
-               G % Value ( :, G % WIDTH_LEFT ( 3 ) ), &
-               G % Value ( :, G % WIDTH_RIGHT ( 1 ) ), &
-               G % Value ( :, G % WIDTH_RIGHT ( 2 ) ), &
-               G % Value ( :, G % WIDTH_RIGHT ( 3 ) ), &
+               G % Value ( :, G % AREA_INNER_D ( 1 ) ), &
+               G % Value ( :, G % AREA_INNER_D ( 2 ) ), &
+               G % Value ( :, G % AREA_INNER_D ( 3 ) ), &
+               G % Value ( :, G % WIDTH_LEFT_U ( 1 ) ), &
+               G % Value ( :, G % WIDTH_LEFT_U ( 2 ) ), &
+               G % Value ( :, G % WIDTH_LEFT_U ( 3 ) ), &
+               G % Value ( :, G % WIDTH_RIGHT_U ( 1 ) ), &
+               G % Value ( :, G % WIDTH_RIGHT_U ( 2 ) ), &
+               G % Value ( :, G % WIDTH_RIGHT_U ( 3 ) ), &
                nDimensions, nValues, oValue )
       call SetMetricCartesian &
              ( G % Value ( :, G % METRIC_DD_22 ), &
@@ -156,46 +156,46 @@ contains
     case ( 'CYLINDRICAL' )
       call SetFiniteVolumeCylindrical &
              ( G % Value ( :, G % VOLUME ), &
-               G % Value ( :, G % AREA_INNER ( 1 ) ), &
-               G % Value ( :, G % AREA_INNER ( 2 ) ), &
-               G % Value ( :, G % AREA_INNER ( 3 ) ), &
-               G % Value ( :, G % WIDTH_LEFT ( 1 ) ), &
-               G % Value ( :, G % WIDTH_LEFT ( 2 ) ), &
-               G % Value ( :, G % WIDTH_LEFT ( 3 ) ), &
-               G % Value ( :, G % WIDTH_RIGHT ( 1 ) ), &
-               G % Value ( :, G % WIDTH_RIGHT ( 2 ) ), &
-               G % Value ( :, G % WIDTH_RIGHT ( 3 ) ), &
-               G % Value ( :, G % CENTER ( 1 ) ), &
+               G % Value ( :, G % AREA_INNER_D ( 1 ) ), &
+               G % Value ( :, G % AREA_INNER_D ( 2 ) ), &
+               G % Value ( :, G % AREA_INNER_D ( 3 ) ), &
+               G % Value ( :, G % WIDTH_LEFT_U ( 1 ) ), &
+               G % Value ( :, G % WIDTH_LEFT_U ( 2 ) ), &
+               G % Value ( :, G % WIDTH_LEFT_U ( 3 ) ), &
+               G % Value ( :, G % WIDTH_RIGHT_U ( 1 ) ), &
+               G % Value ( :, G % WIDTH_RIGHT_U ( 2 ) ), &
+               G % Value ( :, G % WIDTH_RIGHT_U ( 3 ) ), &
+               G % Value ( :, G % CENTER_U ( 1 ) ), &
                nDimensions, nValues, oValue )
       call SetMetricCylindrical &
              ( G % Value ( :, G % METRIC_DD_22 ), &
                G % Value ( :, G % METRIC_DD_33 ), &
                G % Value ( :, G % METRIC_UU_22 ), &
                G % Value ( :, G % METRIC_UU_33 ), &
-               G % Value ( :, G % CENTER ( 1 ) ), &
+               G % Value ( :, G % CENTER_U ( 1 ) ), &
                nDimensions, nValues, oValue )
     case ( 'SPHERICAL' )
       call SetFiniteVolumeSpherical &
              ( G % Value ( :, G % VOLUME ), &
-               G % Value ( :, G % AREA_INNER ( 1 ) ), &
-               G % Value ( :, G % AREA_INNER ( 2 ) ), &
-               G % Value ( :, G % AREA_INNER ( 3 ) ), &
-               G % Value ( :, G % WIDTH_LEFT ( 1 ) ), &
-               G % Value ( :, G % WIDTH_LEFT ( 2 ) ), &
-               G % Value ( :, G % WIDTH_LEFT ( 3 ) ), &
-               G % Value ( :, G % WIDTH_RIGHT ( 1 ) ), &
-               G % Value ( :, G % WIDTH_RIGHT ( 2 ) ), &
-               G % Value ( :, G % WIDTH_RIGHT ( 3 ) ), &
-               G % Value ( :, G % CENTER ( 1 ) ), &
-               G % Value ( :, G % CENTER ( 2 ) ), &
+               G % Value ( :, G % AREA_INNER_D ( 1 ) ), &
+               G % Value ( :, G % AREA_INNER_D ( 2 ) ), &
+               G % Value ( :, G % AREA_INNER_D ( 3 ) ), &
+               G % Value ( :, G % WIDTH_LEFT_U ( 1 ) ), &
+               G % Value ( :, G % WIDTH_LEFT_U ( 2 ) ), &
+               G % Value ( :, G % WIDTH_LEFT_U ( 3 ) ), &
+               G % Value ( :, G % WIDTH_RIGHT_U ( 1 ) ), &
+               G % Value ( :, G % WIDTH_RIGHT_U ( 2 ) ), &
+               G % Value ( :, G % WIDTH_RIGHT_U ( 3 ) ), &
+               G % Value ( :, G % CENTER_U ( 1 ) ), &
+               G % Value ( :, G % CENTER_U ( 2 ) ), &
                nDimensions, nValues, oValue )
       call SetMetricSpherical &
              ( G % Value ( :, G % METRIC_DD_22 ), &
                G % Value ( :, G % METRIC_DD_33 ), &
                G % Value ( :, G % METRIC_UU_22 ), &
                G % Value ( :, G % METRIC_UU_33 ), &
-               G % Value ( :, G % CENTER ( 1 ) ), &
-               G % Value ( :, G % CENTER ( 2 ) ), &
+               G % Value ( :, G % CENTER_U ( 1 ) ), &
+               G % Value ( :, G % CENTER_U ( 2 ) ), &
                nDimensions, nValues, oValue )
     case default
       call Show ( 'GeometryFlatForm % SetCellGeometry not implemented for ' &
@@ -214,7 +214,7 @@ contains
 
     call Output % Initialize &
            ( G, iaSelectedOption &
-                  = [ G % CENTER, G % METRIC_DD_22, G % METRIC_DD_33 ] )
+                  = [ G % CENTER_U, G % METRIC_DD_22, G % METRIC_DD_33 ] )
 
   end subroutine SetOutput
 
@@ -235,14 +235,14 @@ contains
     do iD = 1, 3
       if ( iD == iDimension ) &
         cycle
-      call Copy ( G   % Value ( :, G % CENTER ( iD ) ), &
-                  G_I % Value ( :, G % CENTER ( iD ) ) )
+      call Copy ( G   % Value ( :, G % CENTER_U ( iD ) ), &
+                  G_I % Value ( :, G % CENTER_U ( iD ) ) )
     end do
 
     call ComputeEdges &
-           ( G   % Value ( :, G % CENTER ( iDimension ) ), &
-             G   % Value ( :, G % WIDTH_LEFT ( iDimension ) ), &
-             G_I % Value ( :, G % CENTER ( iDimension ) ) )
+           ( G   % Value ( :, G % CENTER_U ( iDimension ) ), &
+             G   % Value ( :, G % WIDTH_LEFT_U ( iDimension ) ), &
+             G_I % Value ( :, G % CENTER_U ( iDimension ) ) )
 
     select case ( trim ( G % CoordinateSystem ) )
     case ( 'CARTESIAN' )
@@ -258,7 +258,7 @@ contains
                G_I % Value ( :, G % METRIC_DD_33 ), &
                G_I % Value ( :, G % METRIC_UU_22 ), &
                G_I % Value ( :, G % METRIC_UU_33 ), &
-               G_I % Value ( :, G % CENTER ( 1 ) ), &
+               G_I % Value ( :, G % CENTER_U ( 1 ) ), &
                nDimensions, nValues = G % nValues, oValue = 0 )
     case ( 'SPHERICAL' )
       call SetMetricSpherical &
@@ -266,8 +266,8 @@ contains
                G_I % Value ( :, G % METRIC_DD_33 ), &
                G_I % Value ( :, G % METRIC_UU_22 ), &
                G_I % Value ( :, G % METRIC_UU_33 ), &
-               G_I % Value ( :, G % CENTER ( 1 ) ), &
-               G_I % Value ( :, G % CENTER ( 2 ) ), &
+               G_I % Value ( :, G % CENTER_U ( 1 ) ), &
+               G_I % Value ( :, G % CENTER_U ( 2 ) ), &
                nDimensions, nValues = G % nValues, oValue = 0 )
     end select
 
@@ -334,15 +334,15 @@ contains
 
     !-- variable indices
 
-    G % VOLUME        =  1
-    G % CENTER        =  [  2,  3,  4 ]
-    G % WIDTH_LEFT    =  [  5,  6,  7 ]
-    G % WIDTH_RIGHT   =  [  8,  9, 10 ]
-    G % AREA_INNER    =  [ 11, 12, 13 ]
-    G % METRIC_DD_22  =  14
-    G % METRIC_DD_33  =  15
-    G % METRIC_UU_22  =  16
-    G % METRIC_UU_33  =  17
+    G % VOLUME         =  1
+    G % CENTER_U       =  [  2,  3,  4 ]
+    G % WIDTH_LEFT_U   =  [  5,  6,  7 ]
+    G % WIDTH_RIGHT_U  =  [  8,  9, 10 ]
+    G % AREA_INNER_D   =  [ 11, 12, 13 ]
+    G % METRIC_DD_22   =  14
+    G % METRIC_DD_33   =  15
+    G % METRIC_UU_22   =  16
+    G % METRIC_UU_33   =  17
 
     if ( G % N_FIELDS == 0 ) &
       G % N_FIELDS = G % N_FIELDS_FLAT
@@ -358,23 +358,23 @@ contains
     end if
 
     Variable ( 1 : G % N_FIELDS_FLAT ) &
-      = [ 'Volume      ', &
-          'Center_1    ', &
-          'Center_2    ', &
-          'Center_3    ', &
-          'WidthLeft_1 ', &
-          'WidthLeft_2 ', &
-          'WidthLeft_3 ', &
-          'WidthRight_1', &
-          'WidthRight_2', &
-          'WidthRight_3', &
-          'AreaInner_1 ', &
-          'AreaInner_2 ', &
-          'AreaInner_3 ', &
-          'Metric_DD_22', &
-          'Metric_DD_33', &
-          'Metric_UU_22', &
-          'Metric_UU_33' ]
+      = [ 'Volume        ', &
+          'Center_U_1    ', &
+          'Center_U_2    ', &
+          'Center_U_3    ', &
+          'WidthLeft_U_1 ', &
+          'WidthLeft_U_2 ', &
+          'WidthLeft_U_3 ', &
+          'WidthRight_U_1', &
+          'WidthRight_U_2', &
+          'WidthRight_U_3', &
+          'AreaInner_D_1 ', &
+          'AreaInner_D_2 ', &
+          'AreaInner_D_3 ', &
+          'Metric_DD_22  ', &
+          'Metric_DD_33  ', &
+          'Metric_UU_22  ', &
+          'Metric_UU_33  ' ]
 
     !-- units
     
@@ -412,7 +412,7 @@ contains
       allocate ( VectorIndices ( G % N_VECTORS ) )
     end if
 
-    call VectorIndices ( 1 ) % Initialize ( G % CENTER )
+    call VectorIndices ( 1 ) % Initialize ( G % CENTER_U )
 
   end subroutine InitializeBasics
 
@@ -443,11 +443,11 @@ contains
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
       CoordinateUnit
 
-    VariableUnit ( G % CENTER ( 1 ) : G % CENTER ( 3 ) ) &
+    VariableUnit ( G % CENTER_U ( 1 ) : G % CENTER_U ( 3 ) ) &
       = CoordinateUnit
-    VariableUnit ( G % WIDTH_LEFT ( 1 ) : G % WIDTH_LEFT ( 3 ) ) &
+    VariableUnit ( G % WIDTH_LEFT_U ( 1 ) : G % WIDTH_LEFT_U ( 3 ) ) &
       = CoordinateUnit
-    VariableUnit ( G % WIDTH_RIGHT ( 1 ) : G % WIDTH_RIGHT ( 3 ) ) &
+    VariableUnit ( G % WIDTH_RIGHT_U ( 1 ) : G % WIDTH_RIGHT_U ( 3 ) ) &
       = CoordinateUnit
 
     select case ( trim ( G % CoordinateSystem ) )
@@ -455,11 +455,11 @@ contains
       VariableUnit ( G % VOLUME )  &
         =  CoordinateUnit ( 1 )  *  CoordinateUnit ( 2 )  &
            *  CoordinateUnit ( 3 )
-      VariableUnit ( G % AREA_INNER ( 1 ) )  &
+      VariableUnit ( G % AREA_INNER_D ( 1 ) )  &
         =  CoordinateUnit ( 2 )  *  CoordinateUnit ( 3 )
-      VariableUnit ( G % AREA_INNER ( 2 ) )  &
+      VariableUnit ( G % AREA_INNER_D ( 2 ) )  &
         =  CoordinateUnit ( 3 )  *  CoordinateUnit ( 1 )
-      VariableUnit ( G % AREA_INNER ( 3 ) )  &
+      VariableUnit ( G % AREA_INNER_D ( 3 ) )  &
         =  CoordinateUnit ( 1 )  *  CoordinateUnit ( 2 )
       VariableUnit ( G % METRIC_DD_22 ) = UNIT % IDENTITY
       VariableUnit ( G % METRIC_DD_33 ) = UNIT % IDENTITY
@@ -468,12 +468,12 @@ contains
     case ( 'CYLINDRICAL' )
       VariableUnit ( G % VOLUME )  &
         =  CoordinateUnit ( 1 ) ** 2  *  CoordinateUnit ( 2 )
-      VariableUnit ( G % AREA_INNER ( 1 ) )  &
+      VariableUnit ( G % AREA_INNER_D ( 1 ) )  &
         =  CoordinateUnit ( 1 )  *  CoordinateUnit ( 2 )
-      VariableUnit ( G % AREA_INNER ( 2 ) )  &
+      VariableUnit ( G % AREA_INNER_D ( 2 ) )  &
         =  CoordinateUnit ( 1 ) ** 2
-      VariableUnit ( G % AREA_INNER ( 3 ) )  &
-        =  CoordinateUnit ( 1 )  *  CoordinateUnit ( 2 )
+      VariableUnit ( G % AREA_INNER_D ( 3 ) )  &
+        =  CoordinateUnit ( 1 ) ** 2  *  CoordinateUnit ( 2 )
       VariableUnit ( G % METRIC_DD_22 ) = UNIT % IDENTITY
       VariableUnit ( G % METRIC_DD_33 ) = CoordinateUnit ( 1 ) ** (  2 )
       VariableUnit ( G % METRIC_UU_22 ) = UNIT % IDENTITY
@@ -481,12 +481,12 @@ contains
     case ( 'SPHERICAL' )
       VariableUnit ( G % VOLUME )  &
         = CoordinateUnit ( 1 ) ** 3
-      VariableUnit ( G % AREA_INNER ( 1 ) )  &
+      VariableUnit ( G % AREA_INNER_D ( 1 ) )  &
         =  CoordinateUnit ( 1 ) ** 2
-      VariableUnit ( G % AREA_INNER ( 2 ) )  &
-        =  CoordinateUnit ( 1 ) ** 2
-      VariableUnit ( G % AREA_INNER ( 3 ) )  &
-        =  CoordinateUnit ( 1 ) ** 2
+      VariableUnit ( G % AREA_INNER_D ( 2 ) )  &
+        =  CoordinateUnit ( 1 ) ** 3
+      VariableUnit ( G % AREA_INNER_D ( 3 ) )  &
+        =  CoordinateUnit ( 1 ) ** 3
       VariableUnit ( G % METRIC_DD_22 ) = CoordinateUnit ( 1 ) ** (  2 )
       VariableUnit ( G % METRIC_DD_33 ) = CoordinateUnit ( 1 ) ** (  2 )
       VariableUnit ( G % METRIC_UU_22 ) = CoordinateUnit ( 1 ) ** ( -2 )
@@ -589,17 +589,17 @@ contains
         V ( iV )      =  Pi  *  ( RP_O ** 2  -  RP_I ** 2 )  
         A_I_1 ( iV )  =  2.0_KDR  *  Pi  *  RP_I  
         A_I_2 ( iV )  =  Pi  *  ( RP_O ** 2  -  RP_I ** 2 )
-        A_I_3 ( iV )  =  dRP
+        A_I_3 ( iV )  =  0.5_KDR  *  ( RP_O ** 2  -  RP_I ** 2 )
       case ( 2 )
         V ( iV )      =  Pi  *  ( RP_O ** 2  -  RP_I ** 2 )  *  dZ
         A_I_1 ( iV )  =  2.0_KDR  *  Pi  *  RP_I  *  dZ  
         A_I_2 ( iV )  =  Pi  *  ( RP_O ** 2  -  RP_I ** 2 )
-        A_I_3 ( iV )  =  dRP * dZ
+        A_I_3 ( iV )  =  0.5_KDR  *  ( RP_O ** 2  -  RP_I ** 2 ) * dZ
       case ( 3 )
         V ( iV )      =  0.5_KDR  *  ( RP_O ** 2  -  RP_I ** 2 )  *  dZ * dPh
         A_I_1 ( iV )  =  RP_I * dZ * dPh  
         A_I_2 ( iV )  =  0.5_KDR  *  ( RP_O ** 2  -  RP_I ** 2 )  *  dPh
-        A_I_3 ( iV )  =  dRP * dZ
+        A_I_3 ( iV )  =  0.5_KDR  *  ( RP_O ** 2  -  RP_I ** 2 ) * dZ
       end select
 
     end do
@@ -652,23 +652,24 @@ contains
       case ( 1 )
         V ( iV )      =  4.0_KDR / 3.0_KDR * Pi *  ( R_O ** 3  -  R_I ** 3 )
         A_I_1 ( iV )  =  4.0_KDR  *  Pi  *  R_I ** 2
-        A_I_2 ( iV )  =  Pi  *  ( R_O ** 2  -  R_I ** 2 )
-        A_I_3 ( iV )  =  R_O ** 2  -  R_I ** 2
+        A_I_2 ( iV )  =  2.0_KDR / 3.0_KDR * Pi *  ( R_O ** 3  -  R_I ** 3 )
+        A_I_3 ( iV )  =  2.0_KDR / 3.0_KDR  *  ( R_O ** 3  -  R_I ** 3 )
       case ( 2 )
         V ( iV )      =  2.0_KDR / 3.0_KDR * Pi *  ( R_O ** 3  -  R_I ** 3 ) &
                          *  ( cos ( Th_I )  -  cos ( Th_O ) )
         A_I_1 ( iV )  =  2.0_KDR  *  Pi  *  R_I ** 2  &
                          *  ( cos ( Th_I )  -  cos ( Th_O ) )
-        A_I_2 ( iV )  =  Pi  *  ( R_O ** 2  -  R_I ** 2 )  *  sin ( Th_I )
-        A_I_3 ( iV )  =  0.5_KDR  *  ( R_O ** 2  -  R_I ** 2 )  &
+        A_I_2 ( iV )  =  2.0_KDR / 3.0_KDR * Pi *  ( R_O ** 3  -  R_I ** 3 ) &
+                         *  sin ( Th_I )
+        A_I_3 ( iV )  =  1.0_KDR / 3.0_KDR  *  ( R_O ** 3  -  R_I ** 3 )  &
                          *  ( cos ( Th_I )  -  cos ( Th_O ) )
       case ( 3 )
         V ( iV )      =  1.0_KDR / 3.0_KDR  *  ( R_O ** 3  -  R_I ** 3 ) &
                          *  ( cos ( Th_I )  -  cos ( Th_O ) )  *  dPh
         A_I_1 ( iV )  =  R_I ** 2  *  ( cos ( Th_I )  -  cos ( Th_O ) )  * dPh 
-        A_I_2 ( iV )  =  0.5_KDR  *  ( R_O ** 2  -  R_I ** 2 )  &
+        A_I_2 ( iV )  =  1.0_KDR / 3.0_KDR  *  ( R_O ** 3  -  R_I ** 3 )  &
                          *  sin ( Th_I )  *  dPh
-        A_I_3 ( iV )  =  0.5_KDR  *  ( R_O ** 2  -  R_I ** 2 )  &
+        A_I_3 ( iV )  =  1.0_KDR / 3.0_KDR  *  ( R_O ** 3  -  R_I ** 3 )  &
                          *  ( cos ( Th_I )  -  cos ( Th_O ) )
       end select
 
