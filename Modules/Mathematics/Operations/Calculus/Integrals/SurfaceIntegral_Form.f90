@@ -29,7 +29,7 @@ contains
     class ( Chart_SL_Template ), intent ( in ) :: &
       CSL
     type ( Real_3D_Form ), dimension ( :, : ), intent ( in ) :: &
-      Integrand  !-- surface slab
+      Integrand  !-- surface slab, coordinate basis
     real ( KDR ), dimension ( : ), intent ( out ) :: &
       Integral
     logical ( KDL ), intent ( in ), optional :: &
@@ -46,11 +46,9 @@ contains
       nS     !-- nSurface
     real ( KDR ), dimension ( size ( Integral ) ) :: &
       MyIntegral
-    real ( KDR ), dimension ( :, :, : ), allocatable :: &
-      dA
     real ( KDR ), dimension ( :, :, : ), pointer :: &
-      dX_J, &
-      dX_K
+      AreaInner_D, &
+      dA_I, dA_O
     logical ( KDR ) :: &
       Reduce
     type ( CollectiveOperation_R_Form ) :: &
@@ -77,46 +75,69 @@ contains
       jD = mod ( iD, 3 ) + 1
       kD = mod ( jD, 3 ) + 1
     
+!      nS ( iD ) = 1
+!      nS ( jD ) = CSL % nCellsBrick ( jD )
+!      nS ( kD ) = CSL % nCellsBrick ( kD )
+!      allocate ( dA ( nS ( 1 ), nS ( 2 ), nS ( 3 ) ) )
+!      call Clear ( dA )
+      
+!      !-- assume VolumeJacobian already included in integrand
+!      oS = CSL % nGhostLayers
+!      call CSL % SetVariablePointer &
+!             ( G % Value ( :, G % WIDTH ( jD ) ), dX_J )
+!      call CSL % SetVariablePointer &
+!             ( G % Value ( :, G % WIDTH ( kD ) ), dX_K )
+!      call ComputeArea_CSL &
+!             ( dX_J, dX_K, dA, nS, oS, CSL % nDimensions, jD, kD )
+
+      call CSL % SetVariablePointer &
+             ( G % Value ( :, G % AREA_INNER_D ( iD ) ), AreaInner_D )
+
       nS ( iD ) = 1
       nS ( jD ) = CSL % nCellsBrick ( jD )
       nS ( kD ) = CSL % nCellsBrick ( kD )
-      allocate ( dA ( nS ( 1 ), nS ( 2 ), nS ( 3 ) ) )
-      call Clear ( dA )
-      
-      !-- assume VolumeJacobian already included in integrand
-      oS = CSL % nGhostLayers
-      call CSL % SetVariablePointer &
-             ( G % Value ( :, G % WIDTH ( jD ) ), dX_J )
-      call CSL % SetVariablePointer &
-             ( G % Value ( :, G % WIDTH ( kD ) ), dX_K )
-      call ComputeArea_CSL &
-             ( dX_J, dX_K, dA, nS, oS, CSL % nDimensions, jD, kD )
 
       !-- Inner boundary
       if ( CSL % iaBrick ( iD ) == 1 ) then
+
+        oS = CSL % nGhostLayers
+
+        dA_I => AreaInner_D ( oS ( iD ) + 1 : oS ( iD ) + nS ( iD ), &
+                              oS ( jD ) + 1 : oS ( jD ) + nS ( jD ), &
+                              oS ( kD ) + 1 : oS ( kD ) + nS ( kD ) )
+
         do iI = 1, nI
           associate ( dIdA => Integrand ( iI, C % iaInner ( iD ) ) % Value )
           !-- Outward normal points left
 !          MyIntegral ( iI ) = MyIntegral ( iI ) - sum ( dIdA * dA )
           call ComputeIntegral_CSL &
-                 ( MyIntegral ( iI ), dIdA, dA, Direction = -1.0_KDR )
+                 ( MyIntegral ( iI ), dIdA, dA_I, Direction = -1.0_KDR )
           end associate !-- dIdA
         end do !-- iI
+
       end if !-- iaBrick ( iD ) == 1
 
       !-- Outer boundary
       if ( CSL % iaBrick ( iD ) == CSL % nBricks ( iD ) ) then
+
+        oS         =  CSL % nGhostLayers
+        oS ( iD )  =  oS ( iD ) + CSL % nCellsBrick ( iD )
+
+        dA_O => AreaInner_D ( oS ( iD ) + 1 : oS ( iD ) + nS ( iD ), &
+                              oS ( jD ) + 1 : oS ( jD ) + nS ( jD ), &
+                              oS ( kD ) + 1 : oS ( kD ) + nS ( kD ) )
+
         do iI = 1, nI
           associate ( dIdA => Integrand ( iI, C % iaOuter ( iD ) ) % Value )
           !-- Outward normal points right
 !          MyIntegral ( iI ) = MyIntegral ( iI ) + sum ( dIdA * dA )
           call ComputeIntegral_CSL &
-                 ( MyIntegral ( iI ), dIdA, dA, Direction = +1.0_KDR )
+                 ( MyIntegral ( iI ), dIdA, dA_O, Direction = +1.0_KDR )
           end associate !-- dIdA
         end do !-- iI
+
       end if !-- iaBrick ( iD ) == nBricks ( iD )
 
-      deallocate ( dA )
     end do !-- iD
 
     call Show ( 'Local contribution to SurfaceIntegral', Ignorability )
@@ -133,7 +154,7 @@ contains
       Integral = MyIntegral
     end if !-- Reduce
 
-    nullify ( dX_J, dX_K, G )
+    nullify ( AreaInner_D, dA_I, dA_O, G )
     end associate !-- nI, etc.
 
   end subroutine Compute_CSL
