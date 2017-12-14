@@ -78,9 +78,9 @@ contains
     associate &
       ( R0 => ( C % MaxCoordinate + C % MinCoordinate ) / 2.0_KDR, &
         L  => ( C % MaxCoordinate - C % MinCoordinate ), &
-        X  => G % Value ( :, G % CENTER ( 1 ) ), &
-        Y  => G % Value ( :, G % CENTER ( 2 ) ), &
-        Z  => G % Value ( :, G % CENTER ( 3 ) ), &
+        X  => G % Value ( :, G % CENTER_U ( 1 ) ), &
+        Y  => G % Value ( :, G % CENTER_U ( 2 ) ), &
+        Z  => G % Value ( :, G % CENTER_U ( 3 ) ), &
         GaussianValue => Gaussian % Value ( :, 1 ) )
     associate &
       ( SigmaSq  => dot_product ( L, L ) / 64.0_KDR, &

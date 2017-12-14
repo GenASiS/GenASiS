@@ -103,7 +103,7 @@ contains
     Gmtry => CSL % Geometry ( )
     allocate ( Coordinate )
     call Coordinate % Initialize &
-           ( Gmtry, iaSelectedOption = [ Gmtry % CENTER ( iDimension ) ] )
+           ( Gmtry, iaSelectedOption = [ Gmtry % CENTER_U ( iDimension ) ] )
 
     call CD % Compute ( CSL, Coordinate, iDimension )
 
@@ -207,8 +207,8 @@ contains
               = ( sign ( 0.5_KDR, dV_L ) + sign ( 0.5_KDR, dV_R ) ) &
                 * min ( abs ( Theta * dV_L / dX_L ), &
                         abs ( Theta * dV_R / dX_R ), &
-                        abs ( ( dV_L + dV_R ) / ( dX_L + dX_R ) ) )
-                       
+                        abs ( ( dX_R ** 2  *  dV_L  +  dX_L ** 2  *  dV_R ) &
+                              / ( dX_L * dX_R * ( dX_L + dX_R ) ) ) )
           end do !-- iV
         end do !-- jV
       end do !-- kV
@@ -229,8 +229,10 @@ contains
             dX_L = dX_I ( iV, jV, kV )
             dX_R = dX_I ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) )
               
-            dVdX ( iV, jV, kV ) = ( dV_L + dV_R ) / ( dX_L + dX_R )
-
+            dVdX ( iV, jV, kV )&
+              =  ( dX_R ** 2  *  dV_L  +  dX_L ** 2  *  dV_R ) &
+                 / ( dX_L * dX_R * ( dX_L + dX_R ) )
+            
           end do !-- iV
         end do !-- jV
       end do !-- kV
