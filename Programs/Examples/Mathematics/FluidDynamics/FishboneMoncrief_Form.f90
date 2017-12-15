@@ -287,8 +287,8 @@ contains
           V_2 => F % Value ( :, F % VELOCITY_U ( 2 ) ), &
           V_3 => F % Value ( :, F % VELOCITY_U ( 3 ) ), &
             E => F % Value ( :, F % INTERNAL_ENERGY ), &
-            R => G % Value ( :, G % CENTER ( 1 ) ), &
-        Theta => G % Value ( :, G % CENTER ( 2 ) ) )
+            R => G % Value ( :, G % CENTER_U ( 1 ) ), &
+        Theta => G % Value ( :, G % CENTER_U ( 2 ) ) )
 
     W = max ( 0.0_KDR, &
               GC * M / ( c ** 2  *  R_In )  &
@@ -403,7 +403,7 @@ contains
              Chart % IsProperCell, &
              F % Value ( :, F % COMOVING_DENSITY ), &
              F % Value ( :, F % VELOCITY_U ( 1 ) ), &
-             G % Value ( :, G % CENTER ( 1 ) ), &
+             G % Value ( :, G % CENTER_U ( 1 ) ), &
              CONSTANT % GRAVITATIONAL, CentralMass, TimeStep, &
              S % B ( iStage ) ) 
 

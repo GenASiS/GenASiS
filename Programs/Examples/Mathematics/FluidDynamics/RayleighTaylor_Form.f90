@@ -149,8 +149,8 @@ contains
     G => PS % Geometry ( )
 
     associate &
-      ( X  => G % Value ( :, G % CENTER ( 1 ) ), &
-        Y  => G % Value ( :, G % CENTER ( 2 ) ), &
+      ( X  => G % Value ( :, G % CENTER_U ( 1 ) ), &
+        Y  => G % Value ( :, G % CENTER_U ( 2 ) ), &
         N  => F % Value ( :, F % COMOVING_DENSITY ), &
         E  => F % Value ( :, F % INTERNAL_ENERGY ), &
         VY => F % Value ( :, F % VELOCITY_U ( 2 ) ), &

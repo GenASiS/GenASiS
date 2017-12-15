@@ -88,7 +88,7 @@ contains
     associate &
       ( CE => C % Value ( :, C % CONSERVED_ENERGY ), &
         N  => C % Value ( :, C % COMOVING_DENSITY ), &
-        R  => G % Value ( :, G % CENTER ( 1 ) ), &
+        R  => G % Value ( :, G % CENTER_U ( 1 ) ), &
         M  => T % CentralMass, &
         GC => CONSTANT % GRAVITATIONAL )
 

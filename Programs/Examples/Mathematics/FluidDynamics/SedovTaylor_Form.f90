@@ -188,7 +188,6 @@ contains
       dXS, &  !-- dX_Subcell
       XS      !--  X_Subcell
     real ( KDR ), dimension ( : ), allocatable :: &
-      dV, &
       BVF  !-- VolumeFraction
     class ( GeometryFlatForm ), pointer :: &
       G
@@ -221,25 +220,26 @@ contains
         V_2 => F % Value ( :, F % VELOCITY_U ( 2 ) ), &
         V_3 => F % Value ( :, F % VELOCITY_U ( 3 ) ), &
           E => F % Value ( :, F % INTERNAL_ENERGY ), &
-         VJ => G % Value ( :, G % VOLUME_JACOBIAN ) )
+         dV => G % Value ( :, G % VOLUME ) )
 
-    allocate ( dV ( size ( VJ ) ) )
-    allocate ( BVF ( size ( VJ ) ) )
-    call Clear ( dV )
+    allocate ( BVF ( size ( dV ) ) )
     call Clear ( BVF )
 
     nSubCells = 1
     nSubcells ( : C % nDimensions ) = 20
 
-    do iC = 1, size ( VJ )
+    do iC = 1, size ( dV )
       associate &
-        (  X => G % Value ( iC, G % CENTER ( 1 ) : G % CENTER ( 3 ) ), &
-          dX => G % Value ( iC, G % WIDTH  ( 1 ) : G % WIDTH  ( 3 ) ), &
-          Pi => CONSTANT % PI )
+        (  X   => G % Value ( iC, G % CENTER_U ( 1 ) &
+                                  : G % CENTER_U ( 3 ) ), &
+          dX_L => G % Value ( iC, G % WIDTH_LEFT_U ( 1 ) &
+                                  : G % WIDTH_LEFT_U  ( 3 ) ), &
+          dX_R => G % Value ( iC, G % WIDTH_RIGHT_U ( 1 ) &
+                                  : G % WIDTH_RIGHT_U  ( 3 ) ), &
+          Pi   => CONSTANT % PI )
+      associate ( dX => dX_L + dX_R )
 
       if ( .not. C % IsProperCell ( iC ) ) cycle
-
-      dV ( iC )  =  VJ ( iC ) * product ( dX ( : C % nDimensions ) )
 
       if ( sqrt ( dot_product ( X, X ) ) &
            - 0.5_KDR * sqrt ( dot_product ( dX, dX ) ) > BlastRadius ) &
@@ -253,8 +253,8 @@ contains
         cycle
       end if
 
-      X_I  =  X  -  0.5_KDR * dX
-      X_O  =  X  +  0.5_KDR * dX
+      X_I  =  X  -  dX_L
+      X_O  =  X  +  dX_R
       dXS  =  ( X_O  -  X_I ) / nSubcells
 
       VS = 0.0_KDR
@@ -279,6 +279,7 @@ contains
       end do !-- kS
       BVF ( iC ) = BVF ( iC ) / VS
 
+      end associate !-- dX
       end associate !-- X, etc.
     end do !-- iC
 

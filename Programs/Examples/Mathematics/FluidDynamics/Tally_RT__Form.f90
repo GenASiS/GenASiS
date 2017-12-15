@@ -86,7 +86,7 @@ contains
     associate &
       ( CE => C % Value ( :, C % CONSERVED_ENERGY ), &
         N  => C % Value ( :, C % COMOVING_DENSITY ), &
-        Y  => G % Value ( :, G % CENTER ( 2 ) ), &
+        Y  => G % Value ( :, G % CENTER_U ( 2 ) ), &
         A  => T % Acceleration )
 
     do iS = 1, T % nSelected

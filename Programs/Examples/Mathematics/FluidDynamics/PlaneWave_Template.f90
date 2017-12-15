@@ -228,9 +228,9 @@ contains
 
     call SetFluidKernel &
            ( PW, &
-             X = G % Value ( :, G % CENTER ( 1 ) ), &
-             Y = G % Value ( :, G % CENTER ( 2 ) ), &
-             Z = G % Value ( :, G % CENTER ( 3 ) ), &
+             X = G % Value ( :, G % CENTER_U ( 1 ) ), &
+             Y = G % Value ( :, G % CENTER_U ( 2 ) ), &
+             Z = G % Value ( :, G % CENTER_U ( 3 ) ), &
              K = PW % Wavenumber, &
              V = PW % Speed, &
              T = Time, &

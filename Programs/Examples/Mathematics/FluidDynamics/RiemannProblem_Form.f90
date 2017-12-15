@@ -215,9 +215,9 @@ contains
     !-- Translate to origin, rotate normal to xz plane and then to x axis
 
     associate &
-      ( X  => G % Value ( :, G % CENTER ( 1 ) ), &
-        Y  => G % Value ( :, G % CENTER ( 2 ) ), &
-        Z  => G % Value ( :, G % CENTER ( 3 ) ), &
+      ( X  => G % Value ( :, G % CENTER_U ( 1 ) ), &
+        Y  => G % Value ( :, G % CENTER_U ( 2 ) ), &
+        Z  => G % Value ( :, G % CENTER_U ( 3 ) ), &
         N  => F % Value ( :, F % COMOVING_DENSITY ), &
         VX => F % Value ( :, F % VELOCITY_U ( 1 ) ), &
         VY => F % Value ( :, F % VELOCITY_U ( 2 ) ), &

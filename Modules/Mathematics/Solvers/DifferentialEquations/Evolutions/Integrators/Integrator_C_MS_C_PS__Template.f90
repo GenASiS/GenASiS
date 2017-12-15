@@ -299,9 +299,12 @@ contains
                C % Value ( :, C % FAST_EIGENSPEED_MINUS ( 1 ) ), &
                C % Value ( :, C % FAST_EIGENSPEED_MINUS ( 2 ) ), &
                C % Value ( :, C % FAST_EIGENSPEED_MINUS ( 3 ) ), &
-               G % Value ( :, G % WIDTH ( 1 ) ), &
-               G % Value ( :, G % WIDTH ( 2 ) ), & 
-               G % Value ( :, G % WIDTH ( 3 ) ), &
+               G % Value ( :, G % WIDTH_LEFT_U ( 1 ) ), &
+               G % Value ( :, G % WIDTH_LEFT_U ( 2 ) ), & 
+               G % Value ( :, G % WIDTH_LEFT_U ( 3 ) ), &
+               G % Value ( :, G % WIDTH_RIGHT_U ( 1 ) ), &
+               G % Value ( :, G % WIDTH_RIGHT_U ( 2 ) ), & 
+               G % Value ( :, G % WIDTH_RIGHT_U ( 3 ) ), &
                CSL % nDimensions, TimeStepCandidate ( iC ) )
 
     end do !-- iC
