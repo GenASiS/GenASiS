@@ -98,9 +98,9 @@ contains
     end associate !-- C
 
     associate &
-      ( X  => G % Value ( :, G % CENTER ( 1 ) ), &
-        Y  => G % Value ( :, G % CENTER ( 2 ) ), &
-        Z  => G % Value ( :, G % CENTER ( 3 ) ), &
+      ( X  => G % Value ( :, G % CENTER_U ( 1 ) ), &
+        Y  => G % Value ( :, G % CENTER_U ( 2 ) ), &
+        Z  => G % Value ( :, G % CENTER_U ( 3 ) ), &
         N  => PC % Value ( :, PC % COMOVING_DENSITY ), &
         K  => PC % Wavenumber )
 

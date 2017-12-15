@@ -84,8 +84,6 @@ contains
     integer ( KDI ) :: &
       iF, &  !-- iField
       iD     !-- iDimension
-    type ( MeasuredValueForm ) :: &
-      VolumeUnit
     class ( GeometryFlatForm ), pointer :: &
       G
 
@@ -125,15 +123,10 @@ contains
       associate ( CoordinateUnit => A % Chart % CoordinateUnit )   
       G => A % Geometry ( )
 
-      VolumeUnit = G % Unit ( G % VOLUME_JACOBIAN )
-      do iD = 1, 3
-        VolumeUnit = VolumeUnit * CoordinateUnit ( iD )
-      end do !-- iD
-
       associate ( iaC => C % iaConserved )
       do iF = 1, C % N_CONSERVED
         T % Unit ( iF ) &
-          = C % Unit ( iaC ( iF ) ) * VolumeUnit
+          = C % Unit ( iaC ( iF ) )  *  G % Unit ( G % VOLUME )
       end do !-- iF
       end associate !-- iaC
 
@@ -448,26 +441,32 @@ contains
       oB   !-- oBoundary
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       XC_1, XC_2, XC_3, &
-      dX_1, dX_2, dX_3, &
-      X_iD, dX_iD
+      dXL_1, dXL_2, dXL_3, &
+      X_iD, dXL_iD
 
-    call CSL % SetVariablePointer ( G % Value ( :, G % CENTER ( 1 ) ), XC_1 )
-    call CSL % SetVariablePointer ( G % Value ( :, G % CENTER ( 2 ) ), XC_2 )
-    call CSL % SetVariablePointer ( G % Value ( :, G % CENTER ( 3 ) ), XC_3 )
-    call CSL % SetVariablePointer ( G % Value ( :, G % WIDTH ( 1 ) ), dX_1 )
-    call CSL % SetVariablePointer ( G % Value ( :, G % WIDTH ( 2 ) ), dX_2 )
-    call CSL % SetVariablePointer ( G % Value ( :, G % WIDTH ( 3 ) ), dX_3 )
+    call CSL % SetVariablePointer &
+           ( G % Value ( :, G % CENTER_U ( 1 ) ), XC_1 )
+    call CSL % SetVariablePointer &
+           ( G % Value ( :, G % CENTER_U ( 2 ) ), XC_2 )
+    call CSL % SetVariablePointer &
+           ( G % Value ( :, G % CENTER_U ( 3 ) ), XC_3 )
+    call CSL % SetVariablePointer &
+           ( G % Value ( :, G % WIDTH_LEFT_U ( 1 ) ), dXL_1 )
+    call CSL % SetVariablePointer &
+           ( G % Value ( :, G % WIDTH_LEFT_U ( 2 ) ), dXL_2 )
+    call CSL % SetVariablePointer &
+           ( G % Value ( :, G % WIDTH_LEFT_U ( 3 ) ), dXL_3 )
 
     select case ( iD )
     case ( 1 )
-       X_iD =>  X_1
-      dX_iD => dX_1
+        X_iD =>   X_1
+      dXL_iD => dXL_1
     case ( 2 ) 
-       X_iD =>  X_2
-      dX_iD => dX_2
+        X_iD =>   X_2
+      dXL_iD => dXL_2
     case ( 3 ) 
-       X_iD =>  X_3
-      dX_iD => dX_3
+        X_iD =>   X_3
+      dXL_iD => dXL_3
     end select !-- iD
 
     !-- Geometry. Here proper cell indexing begins at 1
@@ -491,14 +490,13 @@ contains
     call CopyCollapse ( XC_2, X_2, oB + CSL % nGhostLayers )
     call CopyCollapse ( XC_3, X_3, oB + CSL % nGhostLayers )
         
-    !    X_iD  =  X_iD  -  0.5_KDR &
-    !                      * dX_iD ( oB ( 1 ) + 1 : oB ( 1 ) + nB ( 1 ), &
-    !                                oB ( 2 ) + 1 : oB ( 2 ) + nB ( 2 ), &
-    !                                oB ( 3 ) + 1 : oB ( 3 ) + nB ( 3 ) )
+    !    X_iD  =  X_iD  -  dXL_iD ( oB ( 1 ) + 1 : oB ( 1 ) + nB ( 1 ), &
+    !                              oB ( 2 ) + 1 : oB ( 2 ) + nB ( 2 ), &
+    !                              oB ( 3 ) + 1 : oB ( 3 ) + nB ( 3 ) )
     call MultiplyAddCollapse &
-           ( X_iD, dX_iD, -0.5_KDR, oB + CSL % nGhostLayers )
+           ( X_iD, dXL_iD, -1.0_KDR, oB + CSL % nGhostLayers )
 
-    nullify ( XC_1, XC_2, XC_3, dX_1, dX_2, dX_3, X_iD, dX_iD )
+    nullify ( XC_1, XC_2, XC_3, dXL_1, dXL_2, dXL_3, X_iD, dXL_iD )
 
   end subroutine ComputeFacePositions
 
