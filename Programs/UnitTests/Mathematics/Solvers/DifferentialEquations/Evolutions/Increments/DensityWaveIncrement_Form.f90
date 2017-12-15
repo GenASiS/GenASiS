@@ -250,9 +250,12 @@ contains
              PC % Value ( :, PC % FAST_EIGENSPEED_MINUS ( 1 ) ), &
              PC % Value ( :, PC % FAST_EIGENSPEED_MINUS ( 2 ) ), &
              PC % Value ( :, PC % FAST_EIGENSPEED_MINUS ( 3 ) ), &
-             G % Value ( :, G % WIDTH ( 1 ) ), &
-             G % Value ( :, G % WIDTH ( 2 ) ), & 
-             G % Value ( :, G % WIDTH ( 3 ) ), &
+             G % Value ( :, G % WIDTH_LEFT_U ( 1 ) ), &
+             G % Value ( :, G % WIDTH_LEFT_U ( 2 ) ), & 
+             G % Value ( :, G % WIDTH_LEFT_U ( 3 ) ), &
+             G % Value ( :, G % WIDTH_RIGHT_U ( 1 ) ), &
+             G % Value ( :, G % WIDTH_RIGHT_U ( 2 ) ), & 
+             G % Value ( :, G % WIDTH_RIGHT_U ( 3 ) ), &
              CSL % nDimensions, TimeStep )
 
     end associate !-- PCA
@@ -265,14 +268,16 @@ contains
 
   subroutine ComputeTimeStepKernel_CSL &
                ( IsProperCell, FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, &
-                 dX_1, dX_2, dX_3, nDimensions, TimeStep )
+                 dX_L_1, dX_L_2, dX_L_3, dX_R_1, dX_R_2, dX_R_3, &
+                 nDimensions, TimeStep )
 
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       IsProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       FEP_1, FEP_2, FEP_3, &
       FEM_1, FEM_2, FEM_3, &
-      dX_1, dX_2, dX_3
+      dX_L_1, dX_L_2, dX_L_3, &
+      dX_R_1, dX_R_2, dX_R_3
     integer ( KDI ), intent ( in ) :: &
       nDimensions
     real ( KDR ), intent ( inout ) :: &
@@ -284,17 +289,18 @@ contains
     select case ( nDimensions )
     case ( 1 )
       TimeStepInverse &
-        = maxval ( max ( FEP_1, -FEM_1 ) / dX_1, mask = IsProperCell )
+        = maxval ( max ( FEP_1, -FEM_1 ) / ( dX_L_1 + dX_R_1 ), &
+                   mask = IsProperCell )
     case ( 2 )
       TimeStepInverse &
-        = maxval (   max ( FEP_1, -FEM_1 ) / dX_1 &
-                   + max ( FEP_2, -FEM_2 ) / dX_2, &
+        = maxval (   max ( FEP_1, -FEM_1 ) / ( dX_L_1 + dX_R_1 ) &
+                   + max ( FEP_2, -FEM_2 ) / ( dX_L_2 + dX_R_2 ), &
                    mask = IsProperCell )
     case ( 3 )
       TimeStepInverse &
-        = maxval (   max ( FEP_1, -FEM_1 ) / dX_1 &
-                   + max ( FEP_2, -FEM_2 ) / dX_2 &
-                   + max ( FEP_3, -FEM_3 ) / dX_3, &
+        = maxval (   max ( FEP_1, -FEM_1 ) / ( dX_L_1 + dX_R_1 ) &
+                   + max ( FEP_2, -FEM_2 ) / ( dX_L_2 + dX_R_2 ) &
+                   + max ( FEP_3, -FEM_3 ) / ( dX_L_3 + dX_R_3 ), &
                    mask = IsProperCell )
     end select !-- nDimensions
 

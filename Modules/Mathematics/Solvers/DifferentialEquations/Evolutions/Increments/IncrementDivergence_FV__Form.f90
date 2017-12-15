@@ -602,12 +602,12 @@ contains
     integer ( KDI ) :: &
       iF  !-- iField
     real ( KDR ), dimension ( :, :, : ), pointer :: &
-      dX, &
+      dX_L, dX_R, &
       V, &
       dVdX, &
       V_IL, &
       V_IR, &
-      V_I, &
+      A_I, &
       dLVdX
 
 !    associate &
@@ -635,7 +635,9 @@ contains
 !    end associate !-- Timer_G  
 
     call CSL % SetVariablePointer &
-           ( G % Value ( :, G % WIDTH ( iDimension ) ), dX )
+           ( G % Value ( :, G % WIDTH_LEFT_U ( iDimension ) ), dX_L )
+    call CSL % SetVariablePointer &
+           ( G % Value ( :, G % WIDTH_RIGHT_U ( iDimension ) ), dX_R )
 
     !-- Reconstruct Current
 
@@ -654,7 +656,7 @@ contains
       call CSL % SetVariablePointer &
              ( C_IR % Value ( :, iaP ( iF ) ), V_IR )
       call ComputeReconstruction_CSL_Kernel &
-             ( V, dVdX, dX, V_IL, V_IR, iDimension, &
+             ( V, dVdX, dX_L, dX_R, V_IL, V_IR, iDimension, &
                CSL % nGhostLayers ( iDimension ) )
     end do !-- iF
     end associate !-- iaP
@@ -666,20 +668,19 @@ contains
 
     if ( associated ( I % dLogVolumeJacobian_dX ) ) then
       if ( size ( I % dLogVolumeJacobian_dX ) >= iDimension ) then
-        !-- dX already set
         call CSL % SetVariablePointer &
-               ( G % Value ( :, G % VOLUME_JACOBIAN ), V )
+               ( G % Value ( :, G % VOLUME ), V )
         call CSL % SetVariablePointer &
-               ( G_I % Value ( :, G % VOLUME_JACOBIAN ), V_I )
+               ( G_I % Value ( :, G % AREA_INNER_D ( iDimension ) ), A_I )
         call CSL % SetVariablePointer &
                ( I % dLogVolumeJacobian_dX ( iDimension ) % Value, dLVdX )
         call ComputeLogDerivative_CSL_Kernel &
-               ( V_I, V, dX, iDimension, CSL % nGhostLayers ( iDimension ), &
+               ( A_I, V, iDimension, CSL % nGhostLayers ( iDimension ), &
                  dLVdX )
       end if
     end if
 
-    nullify ( V, dVdX, dX, V_IL, V_IR, V_I, dLVdX )
+    nullify ( V, dVdX, V_IL, V_IR, A_I, dLVdX )
 
     end associate !-- C, etc.
 
@@ -708,9 +709,8 @@ contains
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       dU, &
       F_I, &
-      VJ_I, &
-      VJ, &
-      dX
+      A_I, &
+      V
     type ( TimerForm ), pointer :: &
       Timer
 
@@ -720,16 +720,13 @@ contains
     call Show ( 'Computing Increment', I % IGNORABILITY + 4 )
 
     associate &
-      ( C    => I % Current, &
-        G    => I % Geometry, &
-        G_I  => I % Storage % Geometry_I )
+      ( C => I % Current, &
+        G => I % Geometry )
 
     call CSL % SetVariablePointer &
-           ( G % Value ( :, G % WIDTH ( iDimension ) ), dX )
+           ( G % Value ( :, G % VOLUME ), V )
     call CSL % SetVariablePointer &
-           ( G % Value ( :, G % VOLUME_JACOBIAN ), VJ )
-    call CSL % SetVariablePointer &
-           ( G_I % Value ( :, G % VOLUME_JACOBIAN ), VJ_I )
+           ( G % Value ( :, G % AREA_INNER_D ( iDimension ) ), A_I )
 
     if ( .not. associated ( I % BoundaryFluence_CSL ) ) then
       call Show ( 'Increment % Set has not been called', CONSOLE % ERROR )
@@ -744,16 +741,16 @@ contains
       call CSL % SetVariablePointer &
              ( I % Storage % Flux_I % Value ( :, iF ), F_I )
       call ComputeIncrement_CSL_Kernel &
-             ( dU, F_I, VJ_I, VJ, dX, TimeStep, iDimension, &
+             ( dU, F_I, A_I, V, TimeStep, iDimension, &
                CSL % nGhostLayers ( iDimension ) )
       if ( associated ( I % BoundaryFluence_CSL ) ) &
         call RecordBoundaryFluence_CSL &
-               ( I % BoundaryFluence_CSL, CSL, F_I, VJ_I, I % Weight_RK, &
+               ( I % BoundaryFluence_CSL, CSL, F_I, I % Weight_RK, &
                  TimeStep, iDimension, iF )
     end do !-- iF
 
     end associate !-- C, etc.
-    nullify ( dU, F_I, VJ_I, VJ, dX )
+    nullify ( dU, F_I, A_I, V )
 
     if ( associated ( Timer ) ) call Timer % Stop ( )
 
@@ -761,15 +758,14 @@ contains
 
 
   subroutine ComputeReconstruction_CSL_Kernel &
-               ( V, dVdX, dX, V_IL, V_IR, iD, oV )
+               ( V, dVdX, dX_L, dX_R, V_IL, V_IR, iD, oV )
 
     real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
       V, &
       dVdX, &
-      dX
+      dX_L, dX_R
     real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
-      V_IL, &
-      V_IR
+      V_IL, V_IR
     integer ( KDI ), intent ( in ) :: &
       iD, &
       oV   
@@ -808,8 +804,8 @@ contains
 
           V_IL ( iV, jV, kV )  &
             =  V ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) )  &
-               +  0.5_KDR  *  dX ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ) &
-                           *  dVdX ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) )
+               +  dX_R ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ) &
+                  *  dVdX ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) )
 
         end do !-- iV
       end do !-- jV
@@ -823,7 +819,7 @@ contains
 
           V_IR ( iV, jV, kV )  &
             =  V ( iV, jV, kV )  &
-               -  0.5_KDR  *  dX ( iV, jV, kV )  *  dVdX ( iV, jV, kV )
+               -  dX_L ( iV, jV, kV )  *  dVdX ( iV, jV, kV )
 
         end do !-- iV
       end do !-- jV
@@ -833,12 +829,11 @@ contains
   end subroutine ComputeReconstruction_CSL_Kernel
 
 
-  subroutine ComputeLogDerivative_CSL_Kernel ( V_I, V, dX, iD, oV, dLVdX )
+  subroutine ComputeLogDerivative_CSL_Kernel ( A_I, V, iD, oV, dLVdX )
 
     real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
-      V_I, &
-      V, &
-      dX
+      A_I, &
+      V
     integer ( KDI ), intent ( in ) :: &
       iD, &
       oV   
@@ -873,9 +868,9 @@ contains
           iaVS = [ iV, jV, kV ] + iaS
 
           dLVdX ( iV, jV, kV ) &
-            =  (    V_I ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ) &
-                 -  V_I ( iV, jV, kV )  ) &
-               / ( V ( iV, jV, kV ) * dX ( iV, jV, kV ) )
+            =  (    A_I ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ) &
+                 -  A_I ( iV, jV, kV )  ) &
+               /  V ( iV, jV, kV )
 
         end do !-- iV
       end do !-- jV
@@ -885,16 +880,14 @@ contains
   end subroutine ComputeLogDerivative_CSL_Kernel
 
 
-  subroutine ComputeIncrement_CSL_Kernel &
-               ( dU, F_I, VJ_I, VJ, dX, dT, iD, oV )
+  subroutine ComputeIncrement_CSL_Kernel ( dU, F_I, A_I, V, dT, iD, oV )
     
     real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
       dU
     real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
       F_I, &
-      VJ_I, &
-      VJ, &
-      dX
+      A_I, &
+      V
     real ( KDR ), intent ( in ) :: &
       dT
     integer ( KDI ), intent ( in ) :: &
@@ -934,11 +927,11 @@ contains
 
           dU ( iV, jV, kV ) &
             = dU ( iV, jV, kV )  &
-              +  dT * (    VJ_I ( iV, jV, kV ) &
+              +  dT * (    A_I ( iV, jV, kV ) &
                            *  F_I ( iV, jV, kV ) &
-                        -  VJ_I ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ) &
+                        -  A_I ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ) &
                            *  F_I ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ) ) &
-                      / ( VJ ( iV, jV, kV ) * dX ( iV, jV, kV ) )
+                      /  V ( iV, jV, kV )
 
         end do !-- iV
       end do !-- jV
@@ -949,15 +942,14 @@ contains
 
 
   subroutine RecordBoundaryFluence_CSL &
-               ( BF, CSL, F_I, VJ_I, Weight_RK, dT, iD, iC )
+               ( BF, CSL, F_I, Weight_RK, dT, iD, iC )
 
     type ( Real_3D_Form ), dimension ( :, : ), intent ( inout ) :: &
       BF
     class ( Chart_SL_Template ), intent ( in ) :: &
       CSL
     real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
-      F_I, &
-      VJ_I
+      F_I
     real ( KDR ), intent ( in ) :: &
       Weight_RK, &
       dT
@@ -998,7 +990,7 @@ contains
       associate ( BF_Inner => BF ( iC, iCI ) % Value )
       oB = CSL % nGhostLayers
       call RecordBoundaryFluence_CSL_Kernel &
-             ( BF_Inner, F_I, VJ_I, Weight_RK * dT, nB, oB )
+             ( BF_Inner, F_I, Weight_RK * dT, nB, oB )
       end associate !-- BF_Inner
       end associate !-- iCI
     end if !-- iaBrick ( iD ) == 1
@@ -1009,7 +1001,7 @@ contains
       oB        = CSL % nGhostLayers
       oB ( iD ) =  oB ( iD ) + nCells
       call RecordBoundaryFluence_CSL_Kernel &
-             ( BF_Outer, F_I, VJ_I, Weight_RK * dT, nB, oB )
+             ( BF_Outer, F_I, Weight_RK * dT, nB, oB )
       end associate !-- BF_Outer
       end associate !-- iCO
     end if !-- iaBrick ( iD ) == nBricks ( iD )
@@ -1017,13 +1009,12 @@ contains
   end subroutine RecordBoundaryFluence_CSL
 
 
-  subroutine RecordBoundaryFluence_CSL_Kernel ( BF, F, VJ, Factor, nB, oB )
+  subroutine RecordBoundaryFluence_CSL_Kernel ( BF, F, Factor, nB, oB )
 
     real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
       BF
     real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
-      F, &
-      VJ
+      F
     real ( KDR ), intent ( in ) :: &
       Factor
     integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
@@ -1040,7 +1031,6 @@ contains
           BF ( iV, jV, kV ) &
             =  BF ( iV, jV, kV ) &
                +  Factor &
-                  *  VJ ( oB ( 1 ) + iV, oB ( 2 ) + jV, oB ( 3 ) + kV ) &
                   *   F ( oB ( 1 ) + iV, oB ( 2 ) + jV, oB ( 3 ) + kV )
         end do !-- iV
       end do !-- jV
