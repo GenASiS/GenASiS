@@ -671,7 +671,7 @@ contains
         call CSL % SetVariablePointer &
                ( G % Value ( :, G % VOLUME ), V )
         call CSL % SetVariablePointer &
-               ( G_I % Value ( :, G % AREA_INNER_D ( iDimension ) ), A_I )
+               ( G % Value ( :, G % AREA_INNER_D ( iDimension ) ), A_I )
         call CSL % SetVariablePointer &
                ( I % dLogVolumeJacobian_dX ( iDimension ) % Value, dLVdX )
         call ComputeLogDerivative_CSL_Kernel &
