@@ -240,9 +240,9 @@ contains
         Abs_K => sqrt ( dot_product ( PC % Wavenumber, PC % Wavenumber ) ), &
         V     => PC % Speed, &
         T     => Time, &
-        X     => G % Value ( :, G % CENTER ( 1 ) ), &
-        Y     => G % Value ( :, G % CENTER ( 2 ) ), &
-        Z     => G % Value ( :, G % CENTER ( 3 ) ), &
+        X     => G % Value ( :, G % CENTER_U ( 1 ) ), &
+        Y     => G % Value ( :, G % CENTER_U ( 2 ) ), &
+        Z     => G % Value ( :, G % CENTER_U ( 3 ) ), &
         VX    => PC % Value ( :, PC % VELOCITY ( 1 ) ), &
         VY    => PC % Value ( :, PC % VELOCITY ( 2 ) ), &
         VZ    => PC % Value ( :, PC % VELOCITY ( 3 ) ), &

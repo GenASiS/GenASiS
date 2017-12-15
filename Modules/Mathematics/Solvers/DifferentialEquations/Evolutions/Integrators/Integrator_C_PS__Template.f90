@@ -346,9 +346,12 @@ contains
              C % Value ( :, C % FAST_EIGENSPEED_MINUS ( 1 ) ), &
              C % Value ( :, C % FAST_EIGENSPEED_MINUS ( 2 ) ), &
              C % Value ( :, C % FAST_EIGENSPEED_MINUS ( 3 ) ), &
-             G % Value ( :, G % WIDTH ( 1 ) ), &
-             G % Value ( :, G % WIDTH ( 2 ) ), & 
-             G % Value ( :, G % WIDTH ( 3 ) ), &
+             G % Value ( :, G % WIDTH_LEFT_U ( 1 ) ), &
+             G % Value ( :, G % WIDTH_LEFT_U ( 2 ) ), & 
+             G % Value ( :, G % WIDTH_LEFT_U ( 3 ) ), &
+             G % Value ( :, G % WIDTH_RIGHT_U ( 1 ) ), &
+             G % Value ( :, G % WIDTH_RIGHT_U ( 2 ) ), & 
+             G % Value ( :, G % WIDTH_RIGHT_U ( 3 ) ), &
              CSL % nDimensions, TimeStepCandidate )
 
     end select !-- CSL
@@ -363,14 +366,16 @@ contains
 
   subroutine ComputeTimeStepKernel_CSL &
                ( IsProperCell, FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, &
-                 dX_1, dX_2, dX_3, nDimensions, TimeStep )
+                 dXL_1, dXL_2, dXL_3, dXR_1, dXR_2, dXR_3, nDimensions, &
+                 TimeStep )
 
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       IsProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       FEP_1, FEP_2, FEP_3, &
       FEM_1, FEM_2, FEM_3, &
-      dX_1, dX_2, dX_3
+      dXL_1, dXL_2, dXL_3, &
+      dXR_1, dXR_2, dXR_3
     integer ( KDI ), intent ( in ) :: &
       nDimensions
     real ( KDR ), intent ( inout ) :: &
@@ -387,11 +392,12 @@ contains
     select case ( nDimensions )
     case ( 1 )
       TimeStepInverse &
-        = maxval ( max ( FEP_1, -FEM_1 ) / dX_1, mask = IsProperCell )
+        = maxval ( max ( FEP_1, -FEM_1 ) / ( dXL_1 + dXR_1 ), &
+                   mask = IsProperCell )
     case ( 2 )
       TimeStepInverse &
-        = maxval (   max ( FEP_1, -FEM_1 ) / dX_1 &
-                   + max ( FEP_2, -FEM_2 ) / dX_2, &
+        = maxval (   max ( FEP_1, -FEM_1 ) / ( dXL_1 + dXR_1 ) &
+                   + max ( FEP_2, -FEM_2 ) / ( dXL_2 + dXR_2 ), &
                    mask = IsProperCell )
     case ( 3 )
       ! TimeStepInverse &
@@ -407,11 +413,11 @@ contains
           TimeStepInverse &
             = max ( TimeStepInverse, &
                       max ( FEP_1 ( iV ), -FEM_1 ( iV ) ) &
-                      / dX_1 ( iV ) &
+                      / ( dXL_1 ( iV ) + dXR_1 ( iV ) ) &
                     + max ( FEP_2 ( iV ), -FEM_2 ( iV ) ) &
-                      / dX_2 ( iV ) &
+                      / ( dXL_2 ( iV ) + dXR_2 ( iV ) ) &
                     + max ( FEP_3 ( iV ), -FEM_3 ( iV ) ) &
-                      / dX_3 ( iV ) )
+                      / ( dXL_3 ( iV ) + dXR_3 ( iV ) ) )
       end do
       !$OMP end parallel do
     end select !-- nDimensions

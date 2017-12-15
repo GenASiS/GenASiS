@@ -17,7 +17,6 @@ module SurfaceIntegral_Form
   end type SurfaceIntegralForm
 
     private :: &
-      ComputeArea_CSL, &
       ComputeIntegral_CSL
 
 contains
@@ -42,8 +41,8 @@ contains
       iI, &  !-- iIntegral
       Ignorability
     integer ( KDI ), dimension ( 3 ) :: &
-      oS, &  !-- oSurface
-      nS     !-- nSurface
+      nS, &  !-- nSurface
+      LB, UB  !-- LowerBound, UpperBound
     real ( KDR ), dimension ( size ( Integral ) ) :: &
       MyIntegral
     real ( KDR ), dimension ( :, :, : ), pointer :: &
@@ -85,11 +84,12 @@ contains
       !-- Inner boundary
       if ( CSL % iaBrick ( iD ) == 1 ) then
 
-        oS = CSL % nGhostLayers
+        LB = 1
+        UB = nS
 
-        dA_I => AreaInner_D ( oS ( iD ) + 1 : oS ( iD ) + nS ( iD ), &
-                              oS ( jD ) + 1 : oS ( jD ) + nS ( jD ), &
-                              oS ( kD ) + 1 : oS ( kD ) + nS ( kD ) )
+        dA_I => AreaInner_D ( LB ( 1 ) : UB ( 1 ), &
+                              LB ( 2 ) : UB ( 2 ), &
+                              LB ( 3 ) : UB ( 3 ) )
 
         do iI = 1, nI
           associate ( dIdA => Integrand ( iI, C % iaInner ( iD ) ) % Value )
@@ -105,12 +105,14 @@ contains
       !-- Outer boundary
       if ( CSL % iaBrick ( iD ) == CSL % nBricks ( iD ) ) then
 
-        oS         =  CSL % nGhostLayers
-        oS ( iD )  =  oS ( iD ) + CSL % nCellsBrick ( iD )
+        LB = 1
+        UB = nS
+        LB ( iD ) = LB ( iD ) + CSL % nCellsBrick ( iD )
+        UB ( iD ) = UB ( iD ) + CSL % nCellsBrick ( iD )
 
-        dA_O => AreaInner_D ( oS ( iD ) + 1 : oS ( iD ) + nS ( iD ), &
-                              oS ( jD ) + 1 : oS ( jD ) + nS ( jD ), &
-                              oS ( kD ) + 1 : oS ( kD ) + nS ( kD ) )
+        dA_O => AreaInner_D ( LB ( 1 ) : UB ( 1 ), &
+                              LB ( 2 ) : UB ( 2 ), &
+                              LB ( 3 ) : UB ( 3 ) )
 
         do iI = 1, nI
           associate ( dIdA => Integrand ( iI, C % iaOuter ( iD ) ) % Value )
@@ -143,72 +145,6 @@ contains
     end associate !-- nI, etc.
 
   end subroutine Compute_CSL
-
-
-  subroutine ComputeArea_CSL ( dX_J, dX_K, dA, nS, oS, nDimensions, jD, kD )
-
-    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
-      dX_J, &
-      dX_K
-    real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
-      dA
-    integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
-      nS, &
-      oS
-    integer ( KDI ), intent ( in ) :: &
-      nDimensions, &
-      jD, kD
-
-    integer ( KDI ) :: &
-      iV, jV, kV
-
-    if ( jD <= nDimensions .and. kD <= nDimensions ) then
-      !$OMP parallel do private ( iV, jV, kV ) collapse ( 3 )
-      do kV = 1, nS ( 3 )
-        do jV = 1, nS ( 2 )
-          do iV = 1, nS ( 1 )
-            dA ( iV, jV, kV ) &
-              =    dX_J ( oS ( 1 ) + iV, oS ( 2 ) + jV, oS ( 3 ) + kV ) &
-                 * dX_K ( oS ( 1 ) + iV, oS ( 2 ) + jV, oS ( 3 ) + kV )
-          end do !-- iV
-        end do !-- jV
-      end do !-- kV
-      !$OMP end parallel do
-    else if ( jD <= nDimensions ) then
-      !$OMP parallel do private ( iV, jV, kV ) collapse ( 3 )
-      do kV = 1, nS ( 3 )
-        do jV = 1, nS ( 2 )
-          do iV = 1, nS ( 1 )
-            dA ( iV, jV, kV ) &
-              = dX_J ( oS ( 1 ) + iV, oS ( 2 ) + jV, oS ( 3 ) + kV )
-          end do !-- iV
-        end do !-- jV
-      end do !-- kV
-      !$OMP end parallel do
-    else if ( kD <= nDimensions ) then
-      !$OMP parallel do private ( iV, jV, kV ) collapse ( 3 )
-      do kV = 1, nS ( 3 )
-        do jV = 1, nS ( 2 )
-          do iV = 1, nS ( 1 )
-            dA ( iV, jV, kV ) &
-              = dX_K ( oS ( 1 ) + iV, oS ( 2 ) + jV, oS ( 3 ) + kV )
-          end do !-- iV
-        end do !-- jV
-      end do !-- kV
-      !$OMP end parallel do
-    else
-      !$OMP parallel do private ( iV, jV, kV ) collapse ( 3 )
-      do kV = 1, nS ( 3 )
-        do jV = 1, nS ( 2 )
-          do iV = 1, nS ( 1 )
-            dA ( iV, jV, kV ) = 1.0_KDR
-          end do !-- iV
-        end do !-- jV
-      end do !-- kV
-      !$OMP end parallel do
-    end if
-
-  end subroutine ComputeArea_CSL
 
 
   subroutine ComputeIntegral_CSL ( I, dIdA, dA, Direction )
