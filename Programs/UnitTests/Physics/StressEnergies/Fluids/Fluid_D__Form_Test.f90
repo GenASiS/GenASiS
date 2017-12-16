@@ -20,7 +20,9 @@ program Fluid_D__Form_Test
          ( RiemannSolverType = 'HLL', UseLimiter = .true., &
            Velocity_U_Unit = [ ( UNIT % IDENTITY, iD = 1, 3 ) ], &
            MomentumDensity_D_Unit = [ ( UNIT % IDENTITY, iD = 1, 3 ) ], &
+           BaryonMassUnit = UNIT % IDENTITY, &
            NumberDensityUnit = UNIT % IDENTITY, &
+           BaryonMassReference = 1.0_KDR, &
            LimiterParameter = 1.4_KDR, nValues = 10 )
 
   deallocate ( PROGRAM_HEADER )

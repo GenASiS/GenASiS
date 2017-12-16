@@ -17,6 +17,8 @@ module Geometry_ASC__Form
   type, public, extends ( GeometryFlat_ASC_Form ) :: Geometry_ASC_Form
     real ( KDR ) :: &
       GravitationalConstant
+    character ( LDL ) :: &
+      GravitySolverType = ''
     type ( Storage_ASC_Form ), allocatable :: &
       Storage_ASC
     type ( GradientForm ), allocatable :: &
@@ -68,8 +70,6 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
-    integer ( KDI ) :: &
-      MaxDegree
     character ( LDL ) :: &
       NameShort
     class ( Geometry_N_Form ), pointer :: &
@@ -105,20 +105,9 @@ contains
       end associate !-- Grad
 
       if ( present ( GravitySolverTypeOption ) ) then
-
-        MaxDegree = 10
-        call PROGRAM_HEADER % GetParameter ( MaxDegree, 'MaxDegree' )
-
-        allocate ( GA % Poisson_ASC )
-        associate ( PA => GA % Poisson_ASC )
-        call PA % Initialize &
-               ( A, SolverType = GravitySolverTypeOption, &
-                 MaxDegreeOption = MaxDegree, &
-                 nEquationsOption = 1 )
-        end associate !-- PA
-
+        GA % GravitySolverType = GravitySolverTypeOption
       else
-        call Show ( 'NEWTONIAN geometry requires GravitySolverType', &
+        call Show ( 'NEWTONIAN geometry requires GravitySolverTypeOption', &
                     CONSOLE % ERROR )
         call Show ( 'Initialize', 'subroutine', CONSOLE % ERROR )
         call Show ( 'Geometry_ASC__Form', 'module', CONSOLE % ERROR )
@@ -182,6 +171,8 @@ contains
       iBaryonMass, &
       iBaryonDensity
 
+    integer ( KDI ) :: &
+      MaxDegree
     logical ( KDL ) :: &
       ComputeForce
     type ( VariableGroupForm ), pointer :: &
@@ -202,6 +193,21 @@ contains
 
     select type ( C => A % Chart )
     class is ( Chart_SLD_Form )
+
+    if ( .not. allocated ( GA % Poisson_ASC ) ) then
+
+        MaxDegree = 10
+        call PROGRAM_HEADER % GetParameter ( MaxDegree, 'MaxDegree' )
+
+        allocate ( GA % Poisson_ASC )
+        associate ( PA => GA % Poisson_ASC )
+        call PA % Initialize &
+               ( A, SolverType = GA % GravitySolverType, &
+                 MaxDegreeOption = MaxDegree, &
+                 nEquationsOption = 1 )
+        end associate !-- PA
+
+    end if
 
     associate &
       ( PA => GA % Poisson_ASC, &

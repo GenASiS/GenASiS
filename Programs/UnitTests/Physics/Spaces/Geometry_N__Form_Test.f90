@@ -38,9 +38,6 @@ subroutine TestGeometry ( Name, nDimensions )
   integer ( KDI ) :: &
     i, &
     nValues = 4
-  real ( KDR ), dimension ( : ), allocatable :: &
-    Width, &
-    Center
   type ( MeasuredValueForm ), dimension ( 3 ) :: &
     CoordinateUnit
   character ( LDL ) :: &
@@ -67,26 +64,23 @@ subroutine TestGeometry ( Name, nDimensions )
   call G % Initialize &
          ( CoordinateSystem, CoordinateUnit, nValues, NameOption = Name )
 
-  allocate ( Width ( nValues ) )
-  allocate ( Center ( nValues ) )
-
-  call C % SetGeometryCell &
-         ( Width, Center, nValues, nGL = 0, iD = 1, iaF = 1 )
-  G % Value ( :, G % WIDTH ( 1 ) )  = Width
-  G % Value ( :, G % CENTER ( 1 ) ) = Center
+  call C % SetGeometryCell ( nValues, nGL = 0, iD = 1 )
+  G % Value ( :, G % WIDTH_LEFT_U ( 1 ) )  =  C % WidthLeft ( 1 ) % Value
+  G % Value ( :, G % WIDTH_RIGHT_U ( 1 ) )  =  C % WidthRight ( 1 ) % Value
+  G % Value ( :, G % CENTER_U ( 1 ) )  =  C % Center ( 1 ) % Value
 
   if ( nDimensions > 1 ) then
-    call C % SetGeometryCell &
-           ( Width, Center, nValues, nGL = 0, iD = 2, iaF = 1 )
-    G % Value ( :, G % WIDTH ( 2 ) )  = Width
-    G % Value ( :, G % CENTER ( 2 ) ) = Center
+    call C % SetGeometryCell ( nValues, nGL = 0, iD = 2 )
+    G % Value ( :, G % WIDTH_LEFT_U ( 2 ) )  =  C % WidthLeft ( 2 ) % Value
+    G % Value ( :, G % WIDTH_RIGHT_U ( 1 ) )  =  C % WidthRight ( 2 ) % Value
+    G % Value ( :, G % CENTER_U ( 2 ) )  =  C % Center ( 2 ) % Value
   end if
 
   if ( nDimensions > 2 ) then
-    call C % SetGeometryCell &
-           ( Width, Center, nValues, nGL = 0, iD = 3, iaF = 1 )
-    G % Value ( :, G % WIDTH ( 3 ) )  = Width
-    G % Value ( :, G % CENTER ( 3 ) ) = Center
+    call C % SetGeometryCell ( nValues, nGL = 0, iD = 3 )
+    G % Value ( :, G % WIDTH_LEFT_U ( 3 ) )  =  C % WidthLeft ( 3 ) % Value
+    G % Value ( :, G % WIDTH_RIGHT_U ( 1 ) )  =  C % WidthRight ( 3 ) % Value
+    G % Value ( :, G % CENTER_U ( 3 ) ) =  C % Center ( 3 ) % Value
   end if
 
   call G % SetMetric ( nDimensions, nValues, 0 )

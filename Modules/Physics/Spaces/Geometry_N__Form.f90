@@ -107,7 +107,7 @@ contains
     call VectorIndices ( 1 ) % Initialize ( G % GRAVITATIONAL_FORCE_D )
     call Output % Initialize &
            ( G, iaSelectedOption &
-                  = [ G % CENTER, G % METRIC_DD_22, G % METRIC_DD_33, &
+                  = [ G % CENTER_U, G % METRIC_DD_22, G % METRIC_DD_33, &
                       G % GRAVITATIONAL_POTENTIAL, &
                       G % GRAVITATIONAL_FORCE_D ], &
              VectorOption = [ 'GravitationalForce' ], &

@@ -288,9 +288,9 @@ contains
         S_1 => C % Value ( :, C % MOMENTUM_DENSITY_D ( 1 ) ), & 
         S_2 => C % Value ( :, C % MOMENTUM_DENSITY_D ( 2 ) ), & 
         S_3 => C % Value ( :, C % MOMENTUM_DENSITY_D ( 3 ) ), &
-        X_1 => G % Value ( :, G % CENTER ( 1 ) ), &
-        X_2 => G % Value ( :, G % CENTER ( 2 ) ), &
-        X_3 => G % Value ( :, G % CENTER ( 3 ) ) )
+        X_1 => G % Value ( :, G % CENTER_U ( 1 ) ), &
+        X_2 => G % Value ( :, G % CENTER_U ( 2 ) ), &
+        X_3 => G % Value ( :, G % CENTER_U ( 3 ) ) )
 
     do iS = 1, T % nSelected
       iI = T % iaSelected ( iS )

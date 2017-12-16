@@ -6,18 +6,17 @@ program FluidCentralCore_Form_Test
   implicit none
 
   type ( FluidCentralCoreForm ), allocatable :: &
-    FB
+    FCC
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize ( 'FluidCentralCore_Form_Test' )
 
-  allocate ( FB )
-  call FB % Initialize &
+  allocate ( FCC )
+  call FCC % Initialize &
          ( PROGRAM_HEADER % Name, &
            FluidType = 'DUST', &
-           GeometryType = 'NEWTONIAN', &
-           GravitySolverTypeOption = 'MULTIPOLE' )
-  deallocate ( FB )
+           GeometryType = 'NEWTONIAN' )
+  deallocate ( FCC )
 
   deallocate ( PROGRAM_HEADER )
 
