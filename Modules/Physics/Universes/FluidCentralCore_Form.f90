@@ -385,6 +385,8 @@ contains
              G % Value ( :, G % GRAVITATIONAL_ACCELERATION_D ( 1 ) ), &
              G % Value ( :, G % GRAVITATIONAL_ACCELERATION_D ( 2 ) ), &
              G % Value ( :, G % GRAVITATIONAL_ACCELERATION_D ( 3 ) ), &
+             G % Value ( :, G % METRIC_UU_22 ), &
+             G % Value ( :, G % METRIC_UU_33 ), &
              G % Value ( :, G % WIDTH_LEFT_U ( 1 ) ), &
              G % Value ( :, G % WIDTH_LEFT_U ( 2 ) ), & 
              G % Value ( :, G % WIDTH_LEFT_U ( 3 ) ), &
@@ -534,13 +536,14 @@ contains
 
   subroutine ComputeTimeStep_G_CSL &
                ( IsProperCell, GradPhi_1, GradPhi_2, GradPhi_3, &
-                 dXL_1, dXL_2, dXL_3, dXR_1, dXR_2, dXR_3, &
+                 M_UU_22, M_UU_33, dXL_1, dXL_2, dXL_3, dXR_1, dXR_2, dXR_3, &
                  nDimensions, TimeStep )
 
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       IsProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       GradPhi_1, GradPhi_2, GradPhi_3, &
+      M_UU_22, M_UU_33, &
       dXL_1, dXL_2, dXL_3, &
       dXR_1, dXR_2, dXR_3
     integer ( KDI ), intent ( in ) :: &
@@ -563,14 +566,16 @@ contains
                    mask = IsProperCell )
     case ( 2 )
       TimeStepInverse &
-        = maxval ( sqrt (    abs ( GradPhi_1 ) / ( dXL_1 + dXR_1 ) &
-                          +  abs ( GradPhi_2 ) / ( dXL_2 + dXR_2 ) ), &
+        = maxval ( sqrt (    abs ( GradPhi_1 ) &
+                             / ( dXL_1 + dXR_1 ) &
+                          +  abs ( M_UU_22 * GradPhi_2 ) &
+                             / ( dXL_2 + dXR_2 ) ), &
                    mask = IsProperCell )
     case ( 3 )
       ! TimeStepInverse &
       !   = maxval ( sqrt (   abs ( GradPhi_1 ) / dX_1 &
-      !                     + abs ( GradPhi_2 ) / dX_2 &
-      !                     + abs ( GradPhi_3 ) / dX_3 ) ), &
+      !                     + abs ( M_UU_22 * GradPhi_2 ) / dX_2 &
+      !                     + abs ( M_UU_33 * GradPhi_3 ) / dX_3 ) ), &
       !              mask = IsProperCell )
       TimeStepInverse = - huge ( 0.0_KDR )
       !$OMP parallel do private ( iV ) &
@@ -581,10 +586,10 @@ contains
             = max ( TimeStepInverse, &
                     sqrt (   abs ( GradPhi_1 ( iV ) ) &
                                    / ( dXL_1 ( iV ) + dXR_1 ( iV ) ) &
-                           + abs ( GradPhi_2 ( iV ) ) / &
-                                   ( dXL_2 ( iV ) + dXR_2 ( iV ) ) &
-                           + abs ( GradPhi_3 ( iV ) ) / &
-                                   ( dXL_3 ( iV ) + dXR_3 ( iV ) ) ) )
+                           + abs ( M_UU_22 ( iV ) * GradPhi_2 ( iV ) ) &
+                                   / ( dXL_2 ( iV ) + dXR_2 ( iV ) ) &
+                           + abs ( M_UU_33 ( iV ) * GradPhi_3 ( iV ) ) &
+                                   / ( dXL_3 ( iV ) + dXR_3 ( iV ) ) ) )
       end do
       !$OMP end parallel do
     end select !-- nDimensions
