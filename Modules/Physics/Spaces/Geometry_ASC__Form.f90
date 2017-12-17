@@ -45,8 +45,8 @@ module Geometry_ASC__Form
   end type Geometry_ASC_Form
 
     private :: &
-      ComputeGravitySource, &
-      ComputeGravitationalForce
+      ComputeGravitySource!, &
+!      ComputeGravitationalForce
 
 contains
 
@@ -227,11 +227,13 @@ contains
 
     do iD = 1, C % nDimensions
       call GA % Gradient % Compute ( C, S, iDimension = iD )
-      call ComputeGravitationalForce & 
-             ( F % Value ( :, iBaryonMass ), &
-               F % Value ( :, iBaryonDensity ), &
-               GA % Gradient % Output % Value ( :, 1 ), &
-               G % Value ( :, G % GRAVITATIONAL_FORCE_D ( iD ) ) ) 
+      call Copy ( GA % Gradient % Output % Value ( :, 1 ), &
+                  G % Value ( :, G % GRAVITATIONAL_ACCELERATION_D ( iD ) ) )
+      ! call ComputeGravitationalForce & 
+      !        ( F % Value ( :, iBaryonMass ), &
+      !          F % Value ( :, iBaryonDensity ), &
+      !          GA % Gradient % Output % Value ( :, 1 ), &
+      !          G % Value ( :, G % GRAVITATIONAL_FORCE_D ( iD ) ) ) 
     end do !-- iD
 
     end associate !-- PA, etc.
@@ -315,28 +317,28 @@ contains
   end subroutine ComputeGravitySource
 
 
-  subroutine ComputeGravitationalForce ( M, N, GradPhi, F )
+  ! subroutine ComputeGravitationalForce ( M, N, GradPhi, F )
 
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      M, &
-      N, &
-      GradPhi
-    real ( KDR ), dimension ( : ), intent ( out ) :: &
-      F
+  !   real ( KDR ), dimension ( : ), intent ( in ) :: &
+  !     M, &
+  !     N, &
+  !     GradPhi
+  !   real ( KDR ), dimension ( : ), intent ( out ) :: &
+  !     F
 
-    integer ( KDI ) :: &
-      iV, &  !-- iValue
-      nValues
+  !   integer ( KDI ) :: &
+  !     iV, &  !-- iValue
+  !     nValues
 
-    nValues = size ( F )
+  !   nValues = size ( F )
 
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-      F ( iV )  =  - M ( iV )  *  N ( iV )  *  GradPhi ( iV )
-    end do
-    !$OMP end parallel do
+  !   !$OMP parallel do private ( iV )
+  !   do iV = 1, nValues
+  !     F ( iV )  =  - M ( iV )  *  N ( iV )  *  GradPhi ( iV )
+  !   end do
+  !   !$OMP end parallel do
 
-  end subroutine ComputeGravitationalForce
+  ! end subroutine ComputeGravitationalForce
 
 
 end module Geometry_ASC__Form

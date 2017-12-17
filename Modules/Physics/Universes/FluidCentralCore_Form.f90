@@ -382,9 +382,9 @@ contains
 
     call ComputeTimeStep_G_CSL &
            ( CSL % IsProperCell, &
-             G % Value ( :, G % GRAVITATIONAL_FORCE_D ( 1 ) ), &
-             G % Value ( :, G % GRAVITATIONAL_FORCE_D ( 2 ) ), &
-             G % Value ( :, G % GRAVITATIONAL_FORCE_D ( 3 ) ), &
+             G % Value ( :, G % GRAVITATIONAL_ACCELERATION_D ( 1 ) ), &
+             G % Value ( :, G % GRAVITATIONAL_ACCELERATION_D ( 2 ) ), &
+             G % Value ( :, G % GRAVITATIONAL_ACCELERATION_D ( 3 ) ), &
              G % Value ( :, G % WIDTH_LEFT_U ( 1 ) ), &
              G % Value ( :, G % WIDTH_LEFT_U ( 2 ) ), & 
              G % Value ( :, G % WIDTH_LEFT_U ( 3 ) ), &
@@ -457,7 +457,9 @@ contains
         call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( iD ), &
                       iMomentum )
         call ApplyGravityMomentum &
-               ( G % Value ( :, G % GRAVITATIONAL_FORCE_D ( iD ) ), &
+               ( F % Value ( :, F % BARYON_MASS ), &
+                 F % Value ( :, F % CONSERVED_BARYON_DENSITY ), &
+                 G % Value ( :, G % GRAVITATIONAL_ACCELERATION_D ( iD ) ), &
                  TimeStep, S % B ( iStage ), &
                  Increment % Value ( :, iMomentum ), & 
                  FS % Value ( :, FS % GRAVITATIONAL_S_D ( iD ) ) )
@@ -475,10 +477,12 @@ contains
   end subroutine ApplySources
 
 
-  subroutine ApplyGravityMomentum ( F, dt, Weight_RK, K, S )
+  subroutine ApplyGravityMomentum ( M, N, A, dt, Weight_RK, K, S )
 
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      F
+      M, &
+      N, &
+      A
     real ( KDR ) :: &
       dt, &
       Weight_RK
@@ -494,8 +498,10 @@ contains
 
     !$OMP parallel do private ( iV )
     do iV = 1, nValues
-      K ( iV )  =  K ( iV )  +  F ( iV )  *  dt
-      S ( iV )  =  S ( iV )  +  F ( iV )  *  Weight_RK
+      K ( iV )  =  K ( iV )  +  M ( iV )  *  N ( iV )  *  A ( iV )  &
+                                *  dt
+      S ( iV )  =  S ( iV )  +  M ( iV )  *  N ( iV )  *  A ( iV )  &
+                                *  Weight_RK
     end do
     !$OMP end parallel do
 
