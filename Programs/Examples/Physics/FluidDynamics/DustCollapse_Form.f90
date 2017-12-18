@@ -150,8 +150,9 @@ contains
     end if
 
     call SetFluidKernel &
-           (  R = G % Value ( :, G % CENTER ( 1 ) ), &
-             dR = G % Value ( :, G % WIDTH ( 1 ) ), &
+           (    R = G % Value ( :, G % CENTER_U ( 1 ) ), &
+             dR_L = G % Value ( :, G % WIDTH_LEFT_U ( 1 ) ), &
+             dR_R = G % Value ( :, G % WIDTH_RIGHT_U ( 1 ) ), &
              Density = DC % Density, &
              RadiusDensity = DC % Radius, &
               N = F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
@@ -167,11 +168,13 @@ contains
   end subroutine SetFluid
 
 
-  subroutine SetFluidKernel ( R, dR, Density, RadiusDensity, N, VX, VY, VZ )
+  subroutine SetFluidKernel &
+               ( R, dR_L, dR_R, Density, RadiusDensity, N, VX, VY, VZ )
 
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       R, &
-      dR
+      dR_L, &
+      dR_R
     real ( KDR ), intent ( in ) :: &
       Density, &
       RadiusDensity
@@ -185,16 +188,19 @@ contains
     VZ = 0.0_KDR
 
     associate &
-      ( R_In  => R - 0.5_KDR * dR, &
-        R_Out => R + 0.5_KDR * dR )
+      ( R_In  => R - dR_L, &
+        R_Out => R + dR_R )
 
     where ( R_Out <= RadiusDensity )
       N = Density
     end where
     where ( R_In < RadiusDensity .and. R_Out > RadiusDensity )
-      N = Density * ( RadiusDensity - R_In ) / dR
+      N = Density * ( RadiusDensity - R_In ) / ( dR_L + dR_R )
     end where
 
+!    N = Density / ( 1 + exp ( ( R - RadiusDensity ) &
+!                              / ( 3 * ( dR_L + dR_R ) ) ) ) 
+ 
     end associate !-- R_In, etc.
 
   end subroutine SetFluidKernel

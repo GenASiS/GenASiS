@@ -395,7 +395,7 @@ contains
              G % Value ( :, G % WIDTH_RIGHT_U ( 3 ) ), &
              CSL % nDimensions, TimeStepCandidate )
 
-    TimeStepCandidate = TimeStepCandidate
+    TimeStepCandidate = 0.01_KDR * TimeStepCandidate
 
     end select !-- CSL
     end select !-- GA
@@ -479,12 +479,12 @@ contains
   end subroutine ApplySources
 
 
-  subroutine ApplyGravityMomentum ( M, N, A, dt, Weight_RK, K, S )
+  subroutine ApplyGravityMomentum ( M, N, GradPhi, dt, Weight_RK, K, S )
 
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       M, &
       N, &
-      A
+      GradPhi
     real ( KDR ) :: &
       dt, &
       Weight_RK
@@ -500,9 +500,9 @@ contains
 
     !$OMP parallel do private ( iV )
     do iV = 1, nValues
-      K ( iV )  =  K ( iV )  +  M ( iV )  *  N ( iV )  *  A ( iV )  &
+      K ( iV )  =  K ( iV )  -  M ( iV )  *  N ( iV )  *  GradPhi ( iV )  &
                                 *  dt
-      S ( iV )  =  S ( iV )  +  M ( iV )  *  N ( iV )  *  A ( iV )  &
+      S ( iV )  =  S ( iV )  -  M ( iV )  *  N ( iV )  *  GradPhi ( iV )  &
                                 *  Weight_RK
     end do
     !$OMP end parallel do
