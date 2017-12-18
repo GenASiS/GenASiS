@@ -195,7 +195,8 @@ contains
       N = Density
     end where
     where ( R_In < RadiusDensity .and. R_Out > RadiusDensity )
-      N = Density * ( RadiusDensity - R_In ) / ( dR_L + dR_R )
+      N = Density * ( RadiusDensity ** 3  -  R_In ** 3 ) &
+                    / ( R_Out ** 3  -  R_In ** 3 )
     end where
 
 !    N = Density / ( 1 + exp ( ( R - RadiusDensity ) &
