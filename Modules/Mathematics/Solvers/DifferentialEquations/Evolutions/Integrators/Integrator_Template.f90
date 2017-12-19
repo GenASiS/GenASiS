@@ -29,6 +29,8 @@ module Integrator_Template
       WriteTimeInterval, &
       WriteTime, &
       Time
+    real ( KDR ), dimension ( : ), allocatable :: &
+      TimeStepCandidate
     logical ( KDL ) :: &
       IsCheckpointTime, &
       NoWrite, &
@@ -232,6 +234,7 @@ contains
       I % TimeStepLabel ( 1 ) = 'Physical TimeStep'
     end if
     I % nTimeStepCandidates = size ( I % TimeStepLabel )
+    allocate ( I % TimeStepCandidate ( I % nTimeStepCandidates ) )
 
     call Show ( I % StartTime, I % TimeUnit, 'StartTime', I % IGNORABILITY )
     call Show ( I % FinishTime, I % TimeUnit, 'FinishTime', I % IGNORABILITY )
@@ -295,6 +298,8 @@ contains
       deallocate ( I % GridImageStream )
     if ( allocated ( I % TimeStepLabel ) ) &
       deallocate ( I % TimeStepLabel )
+    if ( allocated ( I % TimeStepCandidate ) ) &
+      deallocate ( I % TimeStepCandidate )
 
     nullify ( I % Communicator )
 
@@ -403,6 +408,7 @@ contains
       ComputeChangeOption
 
     integer ( KDI ) :: &
+      iTSC, &
       TallyIgnorability, &
       StatisticsIgnorability
     logical ( KDL ) :: &
@@ -421,6 +427,11 @@ contains
     call Show ( I % iCheckpoint, 'iCheckpoint', I % IGNORABILITY )
     call Show ( I % iCycle, 'iCycle', I % IGNORABILITY )
     call Show ( I % Time, I % TimeUnit, 'Time', I % IGNORABILITY )
+    do iTSC = 1, I % nTimeStepCandidates
+      call Show ( I % TimeStepCandidate ( iTSC ), I % TimeUnit, &
+                  trim ( I % TimeStepLabel ( iTSC ) ) // ' TimeStep', &
+                  I % IGNORABILITY )
+    end do !-- iTSC
 
     if ( I % Time > I % StartTime .and. I % Time < I % FinishTime &
          .and. mod ( I % iCheckpoint, I % CheckpointDisplayInterval ) > 0 ) &
@@ -660,30 +671,28 @@ contains
       iTSC  !-- iTimeStepCandidate
     real ( KDR ) :: &
       RampFactor
-    real ( KDR ), dimension ( I % nTimeStepCandidates ) :: &
-      TimeStepCandidate
     type ( CollectiveOperation_R_Form ) :: &
       CO
 
-    TimeStepCandidate = huge ( 0.0_KDR )
+    I % TimeStepCandidate = huge ( 0.0_KDR )
 
-    call I % ComputeTimeStepLocal ( TimeStepCandidate )
+    call I % ComputeTimeStepLocal ( I % TimeStepCandidate )
 
     call CO % Initialize &
            ( I % Communicator, nOutgoing = [ I % nTimeStepCandidates ], &
              nIncoming = [ I % nTimeStepCandidates ] )
-    CO % Outgoing % Value = TimeStepCandidate
+    CO % Outgoing % Value = I % TimeStepCandidate
 
     call CO % Reduce ( REDUCTION % MIN )
 
-    TimeStepCandidate = CO % Incoming % Value
+    I % TimeStepCandidate = CO % Incoming % Value
     do iTSC = 1, I % nTimeStepCandidates
-      call Show ( TimeStepCandidate ( iTSC ), I % TimeUnit, &
+      call Show ( I % TimeStepCandidate ( iTSC ), I % TimeUnit, &
                   trim ( I % TimeStepLabel ( iTSC ) ) // ' TimeStep', &
                   I % IGNORABILITY + 1 )
     end do !-- iTSC
 
-    TimeStep = minval ( TimeStepCandidate )
+    TimeStep = minval ( I % TimeStepCandidate )
 
     RampFactor &
       = min ( real ( I % iCycle + 1, KDR ) / I % nRampCycles, 1.0_KDR )

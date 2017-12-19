@@ -395,7 +395,7 @@ contains
              G % Value ( :, G % WIDTH_RIGHT_U ( 3 ) ), &
              CSL % nDimensions, TimeStepCandidate )
 
-    TimeStepCandidate = 0.01_KDR * TimeStepCandidate
+    TimeStepCandidate = 0.1_KDR * TimeStepCandidate
 
     end select !-- CSL
     end select !-- GA
