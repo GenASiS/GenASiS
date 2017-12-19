@@ -56,7 +56,8 @@ contains
     call FCC % Initialize &
            ( Name, FluidType = 'DUST', &
              GeometryType = 'NEWTONIAN', &
-             DimensionlessOption = .true. )
+             DimensionlessOption = .true., &
+             LimiterParameterOption = 1.0_KDR )
 !    FB % SetReference => SetReference
 
    select type ( PS => FCC % PositionSpace )

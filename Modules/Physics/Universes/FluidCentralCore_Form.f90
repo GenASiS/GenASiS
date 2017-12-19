@@ -42,7 +42,7 @@ contains
   subroutine Initialize &
                ( FCC, Name, FluidType, GeometryType, &
                  DimensionlessOption, TimeUnitOption, FinishTimeOption, &
-                 CourantFactorOption, nWriteOption )
+                 CourantFactorOption, LimiterParameterOption, nWriteOption )
 
     class ( FluidCentralCoreForm ), intent ( inout ), target :: &
       FCC
@@ -56,7 +56,8 @@ contains
       TimeUnitOption
     real ( KDR ), intent ( in ), optional :: &
       FinishTimeOption, &
-      CourantFactorOption
+      CourantFactorOption, &
+      LimiterParameterOption
     integer ( KDI ), intent ( in ), optional :: &
       nWriteOption
 
@@ -130,7 +131,9 @@ contains
     class is ( Fluid_ASC_Form )
 
     if ( FCC % Dimensionless ) then
-      call FA % Initialize ( PS, FluidType )
+      call FA % Initialize &
+             ( PS, FluidType, &
+               LimiterParameterOption = LimiterParameterOption )
     else
       call FA % Initialize &
              ( PS, FluidType, &
@@ -144,7 +147,8 @@ contains
                  =  UNIT % SOLAR_MASS  *  UNIT % SPEED_OF_LIGHT, &
                AngularMomentumUnitOption &
                  =  UNIT % SOLAR_KERR_PARAMETER, &
-               BaryonMassReferenceOption = CONSTANT % ATOMIC_MASS_UNIT )
+               BaryonMassReferenceOption = CONSTANT % ATOMIC_MASS_UNIT, &
+               LimiterParameterOption = LimiterParameterOption )
     end if
 
 
