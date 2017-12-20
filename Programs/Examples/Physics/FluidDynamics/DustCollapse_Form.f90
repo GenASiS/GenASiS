@@ -7,10 +7,10 @@ module DustCollapse_Form
 
   type, public, extends ( UniverseTemplate ) :: DustCollapseForm
     real ( KDR ) :: &
-      RadiusInitial, &
       DensityInitial, &
-      Radius, &
-      Density
+      RadiusInitial, &
+      Density, &
+      Radius
   contains
     procedure, public, pass :: &
       Initialize
@@ -37,7 +37,8 @@ contains
 
     real ( KDR ) :: &
       TimeScale, &
-      RadiusFraction, &
+      DensityFactor, &
+      RadiusFactor, &
       Beta
     class ( Fluid_D_Form ), pointer :: &
       F
@@ -73,25 +74,29 @@ contains
     associate &
       ( R0 => DC % RadiusInitial, &
         D0 => DC % DensityInitial, &
-        RF => RadiusFraction, &
+        DF => DensityFactor, &
+        RF => RadiusFactor, &
         PI => CONSTANT % PI )
 
     R0  =  PS % Chart % MaxCoordinate ( 1 ) / 1.1_KDR
     D0  =  1.0_KDR
-    RF  =  0.5_KDR
+    DF  =  10.0_KDR
     call PROGRAM_HEADER % GetParameter ( R0, 'RadiusInitial' )
     call PROGRAM_HEADER % GetParameter ( D0, 'DensityInitial' )
-    call PROGRAM_HEADER % GetParameter ( RF, 'RadiusFraction' )
+    call PROGRAM_HEADER % GetParameter ( DF, 'DensityFactor' )
+
+    RF = DF ** ( - 1.0_KDR / 3.0_KDR ) 
 
     TimeScale         =  sqrt ( 3.0 / ( 8.0 * PI * D0 ) )
     Beta              =  acos ( sqrt ( RF ) )
     FCC % FinishTime  =  ( Beta  +  0.5 * sin ( 2 * Beta ) )  *  TimeScale
 
     call Show ( 'DustCollapse parameters' )
-    call Show ( DC % RadiusInitial, 'RadiusInitial' )
     call Show ( DC % DensityInitial, 'DensityInitial' )
+    call Show ( DC % RadiusInitial, 'RadiusInitial' )
+    call Show ( DensityFactor, 'DensityFactor' )
+    call Show ( RadiusFactor, 'RadiusFactor' )
     call Show ( PI / 2  *  TimeScale, 'CollapseTime' )
-    call Show ( RadiusFraction, 'RadiusFraction' )
     call Show ( FCC % FinishTime, 'Reset FinishTime' )
 
     end associate !-- R0, etc.
