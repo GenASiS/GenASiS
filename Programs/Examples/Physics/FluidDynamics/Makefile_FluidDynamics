@@ -1,6 +1,6 @@
 PATH_GENASIS = ../../../../..
 
-all: SineWave DustCollapse #SawtoothWave RiemannProblem RayleighTaylor \
+all: SineWave OppenheimerSnyder #SawtoothWave RiemannProblem RayleighTaylor \
      SedovTaylor FishboneMoncrief
 
 include $(PATH_GENASIS)/Build/Makefile_Build
@@ -13,10 +13,10 @@ SineWave: GenASiS.a SineWave.o
            SineWave.o SineWave_Form.o PlaneWave_Template.o \
            GenASiS.a $(LIBRARIES)
 
-DustCollapse: GenASiS.a DustCollapse.o
+OppenheimerSnyder: GenASiS.a OppenheimerSnyder.o
 	$(LINK) $(FFLAGS) \
-           -o DustCollapse_$(MACHINE) \
-           DustCollapse.o DustCollapse_Form.o \
+           -o OppenheimerSnyder_$(MACHINE) \
+           OppenheimerSnyder.o OppenheimerSnyder_Form.o \
            GenASiS.a $(LIBRARIES)
 
 # SawtoothWave: Basics.a Mathematics.a Fluid.a SawtoothWave.o
@@ -57,7 +57,7 @@ clean:
 
 clobber: clean
 	rm -f SineWave_*
-	rm -f DustCollapse_*
+	rm -f OppenheimerSnyder_*
 # 	rm -f SawtoothWave_*
 # 	rm -f RiemannProblem_*
 # 	rm -f RayleighTaylor_*
@@ -78,14 +78,14 @@ SineWave.o: \
   SineWave_Form.o \
   SineWave.f90
 
-DustCollapse_Form.o: \
+OppenheimerSnyder_Form.o: \
   GenASiS.o \
-  DustCollapse_Form.f90
+  OppenheimerSnyder_Form.f90
 
-DustCollapse.o: \
+OppenheimerSnyder.o: \
   GenASiS.o \
-  DustCollapse_Form.o \
-  DustCollapse.f90
+  OppenheimerSnyder_Form.o \
+  OppenheimerSnyder.f90
 
 # SawtoothWave_Form.o: \
 #   Basics.o \

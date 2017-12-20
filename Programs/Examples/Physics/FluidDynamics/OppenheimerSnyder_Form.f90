@@ -1,11 +1,11 @@
-module DustCollapse_Form
+module OppenheimerSnyder_Form
 
   use GenASiS
 
   implicit none
   private
 
-  type, public, extends ( UniverseTemplate ) :: DustCollapseForm
+  type, public, extends ( UniverseTemplate ) :: OppenheimerSnyderForm
     real ( KDR ) :: &
       DensityInitial, &
       RadiusInitial, &
@@ -16,7 +16,7 @@ module DustCollapse_Form
       Initialize
     final :: &
       Finalize
-  end type DustCollapseForm
+  end type OppenheimerSnyderForm
 
     private :: &
       SetFluid!, &
@@ -28,10 +28,10 @@ module DustCollapse_Form
 contains
 
 
-  subroutine Initialize ( DC, Name )
+  subroutine Initialize ( OS, Name )
 
-    class ( DustCollapseForm ), intent ( inout ) :: &
-      DC
+    class ( OppenheimerSnyderForm ), intent ( inout ) :: &
+      OS
     character ( * ), intent ( in ) :: &
       Name
 
@@ -43,16 +43,16 @@ contains
     class ( Fluid_D_Form ), pointer :: &
       F
 
-    if ( DC % Type == '' ) &
-      DC % Type = 'a DustCollapse'
+    if ( OS % Type == '' ) &
+      OS % Type = 'a OppenheimerSnyder'
 
-    call DC % InitializeTemplate ( Name )
+    call OS % InitializeTemplate ( Name )
 
 
     !-- Integrator
 
-    allocate ( FluidCentralCoreForm :: DC % Integrator )
-    select type ( FCC => DC % Integrator )
+    allocate ( FluidCentralCoreForm :: OS % Integrator )
+    select type ( FCC => OS % Integrator )
     type is ( FluidCentralCoreForm )
     call FCC % Initialize &
            ( Name, FluidType = 'DUST', &
@@ -72,8 +72,8 @@ contains
     !-- Initial conditions
 
     associate &
-      ( R0 => DC % RadiusInitial, &
-        D0 => DC % DensityInitial, &
+      ( R0 => OS % RadiusInitial, &
+        D0 => OS % DensityInitial, &
         DF => DensityFactor, &
         RF => RadiusFactor, &
         PI => CONSTANT % PI )
@@ -91,9 +91,9 @@ contains
     Beta              =  acos ( sqrt ( RF ) )
     FCC % FinishTime  =  ( Beta  +  0.5 * sin ( 2 * Beta ) )  *  TimeScale
 
-    call Show ( 'DustCollapse parameters' )
-    call Show ( DC % DensityInitial, 'DensityInitial' )
-    call Show ( DC % RadiusInitial, 'RadiusInitial' )
+    call Show ( 'OppenheimerSnyder parameters' )
+    call Show ( OS % DensityInitial, 'DensityInitial' )
+    call Show ( OS % RadiusInitial, 'RadiusInitial' )
     call Show ( DensityFactor, 'DensityFactor' )
     call Show ( RadiusFactor, 'RadiusFactor' )
     call Show ( PI / 2  *  TimeScale, 'CollapseTime' )
@@ -102,7 +102,7 @@ contains
     end associate !-- R0, etc.
 
     F => FA % Fluid_D ( )
-    call SetFluid ( DC, F, Time = 0.0_KDR )
+    call SetFluid ( OS, F, Time = 0.0_KDR )
 
 
     !-- Cleanup
@@ -116,20 +116,20 @@ contains
   end subroutine Initialize
 
 
-  impure elemental subroutine Finalize ( DC )
+  impure elemental subroutine Finalize ( OS )
     
-    type ( DustCollapseForm ), intent ( inout ) :: &
-      DC
+    type ( OppenheimerSnyderForm ), intent ( inout ) :: &
+      OS
 
-    call DC % FinalizeTemplate ( )
+    call OS % FinalizeTemplate ( )
 
   end subroutine Finalize
 
 
-  subroutine SetFluid ( DC, F, Time )
+  subroutine SetFluid ( OS, F, Time )
 
-    class ( DustCollapseForm ), intent ( inout ) :: &
-      DC
+    class ( OppenheimerSnyderForm ), intent ( inout ) :: &
+      OS
     class ( Fluid_D_Form ), intent ( inout ) :: &
       F
     real ( KDR ), intent ( in ) :: &
@@ -141,21 +141,21 @@ contains
     class ( GeometryFlatForm ), pointer :: &
       G
 
-    select type ( PS => DC % Integrator % PositionSpace )
+    select type ( PS => OS % Integrator % PositionSpace )
     class is ( Atlas_SC_Form )
     G => PS % Geometry ( )
 
     if ( Time == 0.0_KDR ) then
-      DC % Radius   =  DC % RadiusInitial
-      DC % Density  =  DC % DensityInitial
+      OS % Radius   =  OS % RadiusInitial
+      OS % Density  =  OS % DensityInitial
     end if
 
     call SetFluidKernel &
            (    R = G % Value ( :, G % CENTER_U ( 1 ) ), &
              dR_L = G % Value ( :, G % WIDTH_LEFT_U ( 1 ) ), &
              dR_R = G % Value ( :, G % WIDTH_RIGHT_U ( 1 ) ), &
-             Density = DC % Density, &
-             RadiusDensity = DC % Radius, &
+             Density = OS % Density, &
+             RadiusDensity = OS % Radius, &
               N = F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
              VX = F % Value ( :, F % VELOCITY_U ( 1 ) ), &
              VY = F % Value ( :, F % VELOCITY_U ( 2 ) ), &
@@ -208,4 +208,4 @@ contains
   end subroutine SetFluidKernel
 
 
-end module DustCollapse_Form
+end module OppenheimerSnyder_Form
