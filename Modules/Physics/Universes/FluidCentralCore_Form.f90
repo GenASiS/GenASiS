@@ -345,7 +345,7 @@ contains
     ! call GA % ComputeGravity &
     !       ( I % Current_ASC, &
     !         iBaryonMass = F % BARYON_MASS, &
-    !         iBaryonDensity = F % CONSERVED_BARYON_DENSITY )
+    !         iBaryonDensity = F % COMOVING_BARYON_DENSITY )
 
     ! end select !-- GA
     ! end select !-- PS
@@ -463,7 +463,7 @@ contains
     call GA % ComputeGravity &
            ( FluidCentralCore % Current_ASC, &
              iBaryonMass = F % BARYON_MASS, &
-             iBaryonDensity = F % CONSERVED_BARYON_DENSITY )
+             iBaryonDensity = F % COMOVING_BARYON_DENSITY )
 
     select type ( FS => Sources_F )
     class is ( Sources_F_Form )
