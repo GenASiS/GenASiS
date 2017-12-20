@@ -8,6 +8,8 @@ module FluidCentralCore_Form
   private
 
   type, public, extends ( Integrator_C_PS_Template ) :: FluidCentralCoreForm
+    real ( KDR ) :: &
+      GravityFactor
     logical ( KDL ) :: &
       Dimensionless = .false.
   contains
@@ -42,7 +44,8 @@ contains
   subroutine Initialize &
                ( FCC, Name, FluidType, GeometryType, &
                  DimensionlessOption, TimeUnitOption, FinishTimeOption, &
-                 CourantFactorOption, LimiterParameterOption, nWriteOption )
+                 CourantFactorOption, GravityFactorOption, &
+                 LimiterParameterOption, nWriteOption )
 
     class ( FluidCentralCoreForm ), intent ( inout ), target :: &
       FCC
@@ -57,6 +60,7 @@ contains
     real ( KDR ), intent ( in ), optional :: &
       FinishTimeOption, &
       CourantFactorOption, &
+      GravityFactorOption, &
       LimiterParameterOption
     integer ( KDI ), intent ( in ), optional :: &
       nWriteOption
@@ -123,6 +127,12 @@ contains
 
     call PS % SetGeometry ( )
 
+    FCC % GravityFactor = 0.1_KDR
+    if ( present ( GravityFactorOption ) ) &
+      FCC % GravityFactor = GravityFactorOption
+    call PROGRAM_HEADER % GetParameter &
+           ( FCC % GravityFactor, 'GravityFactor' )
+
 
     !-- Fluid
 
@@ -185,6 +195,7 @@ contains
              FinishTimeOption = FinishTime, &
              CourantFactorOption = CourantFactorOption, &
              nWriteOption = nWriteOption )
+    call Show ( FCC % GravityFactor, 'GravityFactor' )
     call Show ( FCC % Dimensionless, 'Dimensionless' )
 
 
@@ -399,7 +410,7 @@ contains
              G % Value ( :, G % WIDTH_RIGHT_U ( 3 ) ), &
              CSL % nDimensions, TimeStepCandidate )
 
-    TimeStepCandidate = 0.1_KDR * TimeStepCandidate
+    TimeStepCandidate  =  FCC % GravityFactor * TimeStepCandidate
 
     end select !-- CSL
     end select !-- GA

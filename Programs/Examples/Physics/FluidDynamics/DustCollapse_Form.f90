@@ -57,6 +57,7 @@ contains
            ( Name, FluidType = 'DUST', &
              GeometryType = 'NEWTONIAN', &
              DimensionlessOption = .true., &
+             GravityFactorOption = 0.01_KDR, &
              LimiterParameterOption = 1.0_KDR )
 !    FB % SetReference => SetReference
 
@@ -95,12 +96,6 @@ contains
 
     end associate !-- R0, etc.
 
-!    FCC % WriteTimeInterval &
-!      =  TimeScale / FCC % nWrite
-!    call Show ( 'Time Scales', DC % IGNORABILITY )
-!    call Show ( TimeScale, FCC % TimeUnit, 'TimeScaleDensityAve', &
-!                DC % IGNORABILITY )
-    
     F => FA % Fluid_D ( )
     call SetFluid ( DC, F, Time = 0.0_KDR )
 
