@@ -9,6 +9,13 @@ Fluid_D__Form.o: \
   Fluid_D__Form.f90
 #  FluidFeatures_Template.o \
 
+Fluid_P__Template.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluid_D__Form.o \
+  Fluid_P__Template.f90
+#  FluidFeatures_Template.o \
+
 Tally_F_D__Form.o: \
   Basics.o \
   Mathematics.o \

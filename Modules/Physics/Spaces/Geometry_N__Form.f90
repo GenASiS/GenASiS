@@ -85,6 +85,8 @@ contains
         VariableUnit ( G % GRAVITATIONAL_ACCELERATION_D ( iD ) ) &
           =  UNIT % SPEED_OF_LIGHT ** 2  /  CoordinateUnit ( iD )
       end do
+    else
+      !-- Dimensionless
     end if
       
     call G % GeometryFlatForm % Initialize &
