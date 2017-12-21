@@ -78,13 +78,15 @@ contains
            ( G, Variable, Vector, VariableUnit, VectorIndices, &
              VariableOption, VectorOption, UnitOption, VectorIndicesOption )
 
-    VariableUnit ( G % GRAVITATIONAL_POTENTIAL )  &
-      =  UNIT % SPEED_OF_LIGHT ** 2
-    do iD = 1, 3
-      VariableUnit ( G % GRAVITATIONAL_ACCELERATION_D ( iD ) ) &
-        =  UNIT % SPEED_OF_LIGHT ** 2  /  CoordinateUnit ( iD )
-    end do
-
+    if ( CoordinateUnit ( 1 )  /=  UNIT % IDENTITY ) then
+      VariableUnit ( G % GRAVITATIONAL_POTENTIAL )  &
+        =  UNIT % SPEED_OF_LIGHT ** 2
+      do iD = 1, 3
+        VariableUnit ( G % GRAVITATIONAL_ACCELERATION_D ( iD ) ) &
+          =  UNIT % SPEED_OF_LIGHT ** 2  /  CoordinateUnit ( iD )
+      end do
+    end if
+      
     call G % GeometryFlatForm % Initialize &
            ( CoordinateSystem, CoordinateUnit, nValues, &
              VariableOption = Variable, VectorOption = Vector, &
