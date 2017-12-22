@@ -3,6 +3,7 @@ module Fluids
   use FluidFeatures_Template
   use Fluid_D__Form
   use Fluid_P__Template
+  use Fluid_P_I__Form
   use Tally_F_D__Form
   use Sources_F__Form
   use Sources_F_CSL__Form
