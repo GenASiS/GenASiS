@@ -81,6 +81,7 @@ ApplyCurvilinear_F__Command.o: \
 
 Fluids.o: \
   Fluid_D__Form.o \
+  Fluid_P__Template.o \
   Tally_F_D__Form.o \
   Sources_F__Form.o \
   Sources_F_CSL__Form.o \
