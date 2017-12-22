@@ -1,20 +1,20 @@
-# FluidFeatures_Template.o: \
-#   Basics.o \
-#   Mathematics.o \
-#   FluidFeatures_Template.f90
+FluidFeatures_Template.o: \
+  Basics.o \
+  Mathematics.o \
+  FluidFeatures_Template.f90
 
 Fluid_D__Form.o: \
   Basics.o \
   Mathematics.o \
+  FluidFeatures_Template.o \
   Fluid_D__Form.f90
-#  FluidFeatures_Template.o \
 
 Fluid_P__Template.o: \
   Basics.o \
   Mathematics.o \
+  FluidFeatures_Template.o \
   Fluid_D__Form.o \
   Fluid_P__Template.f90
-#  FluidFeatures_Template.o \
 
 Tally_F_D__Form.o: \
   Basics.o \
@@ -80,6 +80,7 @@ ApplyCurvilinear_F__Command.o: \
 #  Fluid_P__Template.o \
 
 Fluids.o: \
+  FluidFeatures_Template.o \
   Fluid_D__Form.o \
   Fluid_P__Template.o \
   Tally_F_D__Form.o \
@@ -90,7 +91,6 @@ Fluids.o: \
   Fluid_ASC__Form.o \
   ApplyCurvilinear_F__Command.o \
   Fluids.f90
-#  FluidFeatures_Template.o \
 
 Fluids.a: $(FLUIDS)
 	ar r Fluids.a $(FLUIDS)

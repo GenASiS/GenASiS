@@ -5,6 +5,7 @@ module Fluid_P__Template
   use Basics
   use Mathematics
   use Fluid_D__Form
+  use FluidFeatures_Template
 
   implicit none
   private
@@ -38,25 +39,25 @@ module Fluid_P__Template
       ComputeFluxes
     procedure, public, pass ( C ) :: &
       ComputeCenterStates
-  !   procedure, public, pass ( C ) :: &
-  !     ComputeRawFluxesTemplate_P
+    procedure, public, pass ( C ) :: &
+      ComputeRawFluxesTemplate_P
     procedure, public, pass ( C ) :: &
       ComputeCenterStatesTemplate_P
-  !   procedure, public, nopass :: &
-  !     ComputeConservedEnergyKernel
-  !   procedure, public, nopass :: &
-  !     ComputeInternalEnergyKernel
-  !   procedure, public, nopass :: &
-  !     ComputeEigenspeedsFluidKernel
+    procedure, public, nopass :: &
+      ComputeConservedEnergyKernel
+    procedure, public, nopass :: &
+      ComputeInternalEnergyKernel
+    procedure, public, nopass :: &
+      ComputeEigenspeedsFluidKernel
   end type Fluid_P_Template
 
     private :: &
       InitializeBasics, &
       SetUnits, &
       ComputeCenterSpeedKernel, &
-      ComputeCenterStatesKernel!, &
-      ! ComputeFluxes_HLLC_Kernel, &
-      ! ComputeRawFluxesTemplate_P_Kernel
+      ComputeCenterStatesKernel, &
+      ComputeFluxes_HLLC_Kernel, &
+      ComputeRawFluxesTemplate_P_Kernel
 
 contains
 
@@ -271,19 +272,18 @@ contains
       call C % ComputeRawFluxes &
              ( F_IR % Value, G, C_ICR % Value, G_I % Value, iDimension )
 
-    !   select type ( FF => C % Features )
-    !   class is ( FluidFeaturesTemplate )
-    !   do iF = 1, C % N_CONSERVED
-    !     call ComputeFluxes_HLLC_Kernel &
-    !            ( F_I  % Value ( :, iF ), &
-    !              F_IL % Value ( :, iF ), &
-    !              F_IR % Value ( :, iF ), &
-    !              SS_I % Value ( :, C % ALPHA_PLUS ), &
-    !              SS_I % Value ( :, C % ALPHA_MINUS ), &
-    !              SS_I % Value ( :, C % ALPHA_CENTER ), &
-    !              FF   % Value ( :, FF % DIFFUSIVE_FLUX_I ( iDimension ) ) )
-    !   end do !-- iF
-    !   end select !-- FF
+      associate ( FF => C % Features )
+      do iF = 1, C % N_CONSERVED
+        call ComputeFluxes_HLLC_Kernel &
+               ( F_I  % Value ( :, iF ), &
+                 F_IL % Value ( :, iF ), &
+                 F_IR % Value ( :, iF ), &
+                 SS_I % Value ( :, C % ALPHA_PLUS ), &
+                 SS_I % Value ( :, C % ALPHA_MINUS ), &
+                 SS_I % Value ( :, C % ALPHA_CENTER ), &
+                 FF   % Value ( :, FF % DIFFUSIVE_FLUX_I ( iDimension ) ) )
+      end do !-- iF
+      end associate !-- FF
 
       end associate !-- C_ICL, etc.
 
@@ -321,6 +321,68 @@ contains
 
   end subroutine ComputeCenterStates
 
+
+  subroutine ComputeRawFluxesTemplate_P &
+               ( RawFlux, C, G, Value_C, Value_G, iDimension, &
+                 nValuesOption, oValueOption )
+    
+    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+      RawFlux
+    class ( Fluid_P_Template ), intent ( in ) :: &
+      C
+    class ( GeometryFlatForm ), intent ( in ) :: &
+      G
+    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+      Value_C, &
+      Value_G
+    integer ( KDI ), intent ( in ) :: &
+      iDimension
+    integer ( KDI ), intent ( in ), optional :: &
+      nValuesOption, &
+      oValueOption
+
+    integer ( KDI ) :: &
+      iMomentum, &
+      iEnergy
+    integer ( KDI ) :: &
+      oV, &  !-- oValue
+      nV     !-- nValues
+
+    call C % Fluid_D_Form % ComputeRawFluxes &
+           ( RawFlux, G, Value_C, Value_G, iDimension, nValuesOption, &
+             oValueOption )
+
+    if ( present ( oValueOption ) ) then
+      oV = oValueOption
+    else
+      oV = 0
+    end if
+
+    if ( present ( nValuesOption ) ) then
+      nV = nValuesOption
+    else
+      nV = size ( Value_C, dim = 1 )
+    end if
+    
+    call Search &
+           ( C % iaConserved, C % MOMENTUM_DENSITY_D ( iDimension ), &
+             iMomentum )
+    call Search &
+           ( C % iaConserved, C % CONSERVED_ENERGY, iEnergy )
+    
+    associate &
+      ( F_S_Dim => RawFlux ( oV + 1 : oV + nV, iMomentum ), &
+        F_G     => RawFlux ( oV + 1 : oV + nV, iEnergy ), &
+        G       => Value_C ( oV + 1 : oV + nV, C % CONSERVED_ENERGY ), &
+        P       => Value_C ( oV + 1 : oV + nV, C % PRESSURE ), &
+        V_Dim   => Value_C ( oV + 1 : oV + nV, C % VELOCITY_U ( iDimension ) ))
+
+    call ComputeRawFluxesTemplate_P_Kernel ( F_S_Dim, F_G, G, P, V_Dim )
+
+    end associate !-- F_S_Dim, etc.
+
+  end subroutine ComputeRawFluxesTemplate_P
+  
 
   subroutine ComputeCenterStatesTemplate_P &
                ( C_ICL, C_ICR, C, C_IL, C_IR, SS_I, M_DD_22, M_DD_33, iD )
@@ -388,6 +450,137 @@ contains
              M_DD_22, M_DD_33 )
 
   end subroutine ComputeCenterStatesTemplate_P
+
+
+  subroutine ComputeConservedEnergyKernel &
+               ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      G
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      M, &
+      N, &
+      V_1, V_2, V_3, &
+      S_1, S_2, S_3, &
+      E
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+
+    nValues = size ( G )
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nValues
+      G ( iV )  =  E ( iV )  +  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV )  &
+                                            +  S_2 ( iV ) * V_2 ( iV )  &
+                                            +  S_3 ( iV ) * V_3 ( iV ) )
+    end do !-- iV
+    !$OMP end parallel do
+
+  end subroutine ComputeConservedEnergyKernel
+
+
+  subroutine ComputeInternalEnergyKernel &
+               ( E, G, M, N, V_1, V_2, V_3, S_1, S_2, S_3 )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      E, &
+      G
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      M, &
+      N, &
+      V_1, V_2, V_3, &
+      S_1, S_2, S_3
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+
+    nValues = size ( E )
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nValues
+      E ( iV )  =  G ( iV )  -  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV ) &
+                                            +  S_2 ( iV ) * V_2 ( iV ) &
+                                            +  S_3 ( iV ) * V_3 ( iV ) )
+    end do
+    !$OMP end parallel do
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nValues
+      if ( E ( iV ) < 0.0_KDR ) then
+        E ( iV ) = 0.0_KDR
+        G ( iV ) = E ( iV )  +  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV ) &
+                                            +  S_2 ( iV ) * V_2 ( iV ) &
+                                            +  S_3 ( iV ) * V_3 ( iV ) )
+      end if
+    end do
+    !$OMP end parallel do
+
+  end subroutine ComputeInternalEnergyKernel
+
+
+  subroutine ComputeEigenspeedsFluidKernel &
+               ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, MN, &
+                 M, N, V_1, V_2, V_3, S_1, S_2, S_3, P, Gamma, &
+                 M_UU_22, M_UU_33 )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      FEP_1, FEP_2, FEP_3, &
+      FEM_1, FEM_2, FEM_3, &
+      CS, &
+      MN
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      M, &
+      N, &
+      V_1, V_2, V_3, & 
+      S_1, S_2, S_3, &
+      P, &
+      Gamma, &
+      M_UU_22, M_UU_33
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+
+    nValues = size ( FEP_1 )
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nValues
+      if ( N ( iV ) > 0.0_KDR .and. P ( iV ) > 0.0_KDR ) then
+        CS ( iV ) = sqrt ( Gamma ( iV ) * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
+      else
+        CS ( iV ) = 0.0_KDR
+      end if 
+    end do
+    !$OMP end parallel do
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nValues
+      if ( P ( iV ) > 0.0_KDR ) then
+        MN ( iV ) = sqrt ( (    S_1 ( iV ) * V_1 ( iV )  &
+                             +  S_2 ( iV ) * V_2 ( iV )  &
+                             +  S_3 ( iV ) * V_3 ( iV ) ) &
+                           / ( Gamma ( iV ) * P ( iV ) ) )
+      else
+        MN ( iV ) = 0.0_KDR
+      end if 
+    end do
+    !$OMP end parallel do
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nValues
+      FEP_1 ( iV )  =  V_1 ( iV )  +  CS ( iV ) 
+      FEP_2 ( iV )  =  V_2 ( iV )  +  sqrt ( M_UU_22 ( iV ) ) * CS ( iV ) 
+      FEP_3 ( iV )  =  V_3 ( iV )  +  sqrt ( M_UU_33 ( iV ) ) * CS ( iV )
+      FEM_1 ( iV )  =  V_1 ( iV )  -  CS ( iV )
+      FEM_2 ( iV )  =  V_2 ( iV )  -  sqrt ( M_UU_22 ( iV ) ) * CS ( iV )
+      FEM_3 ( iV )  =  V_3 ( iV )  -  sqrt ( M_UU_33 ( iV ) ) * CS ( iV )
+    end do
+    !$OMP end parallel do
+
+  end subroutine ComputeEigenspeedsFluidKernel
 
 
   subroutine InitializeBasics &
@@ -661,6 +854,74 @@ contains
     !$OMP end parallel do
 
   end subroutine ComputeCenterStatesKernel
+
+
+  subroutine ComputeFluxes_HLLC_Kernel &
+               ( F_I, F_ICL, F_ICR, AP_I, AM_I, AC_I, DF_I )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      F_I
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      F_ICL, F_ICR, &
+      AP_I, &
+      AM_I, &
+      AC_I, &
+      DF_I
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+    
+    nValues = size ( F_I )
+
+    !$OMP parallel do private ( iV ) 
+    do iV = 1, nValues
+
+      !-- If flagged for diffusive flux, leave HLL flux in place
+      if ( DF_I ( iV ) > 0.0_KDR ) &
+        cycle
+
+      if ( AP_I ( iV ) /= 0.0_KDR .and. AM_I ( iV ) /= 0.0_KDR ) then
+        !-- Use the appropriate center state flux
+        if ( AC_I ( iV ) >= 0.0_KDR ) then
+          F_I ( iV )  =  F_ICL ( iV )
+        else !-- AC < 0
+          F_I ( iV )  =  F_ICR ( iV )
+        end if !-- AC >= 0
+      else  !-- AP or AM == 0
+        !-- Leave HLL flux in place (which is upwind in this case)
+      end if !-- AP and AM /= 0
+
+    end do !-- iV
+    !$OMP end parallel do
+
+  end subroutine ComputeFluxes_HLLC_Kernel
+
+
+  subroutine ComputeRawFluxesTemplate_P_Kernel ( F_S_Dim, F_G, G, P, V_Dim )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      F_S_Dim, &
+      F_G
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      G, &
+      P, &
+      V_Dim
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+
+    nValues = size ( F_S_Dim )
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nValues
+      F_S_Dim ( iV ) = F_S_Dim ( iV )  +  P ( iV )
+      F_G     ( iV ) =     ( G ( iV )  +  P ( iV ) ) * V_Dim ( iV )
+    end do
+    !$OMP end parallel do
+
+  end subroutine ComputeRawFluxesTemplate_P_Kernel
 
 
 end module Fluid_P__Template

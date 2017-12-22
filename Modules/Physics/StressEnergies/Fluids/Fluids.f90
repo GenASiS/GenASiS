@@ -1,5 +1,6 @@
 module Fluids
 
+  use FluidFeatures_Template
   use Fluid_D__Form
   use Fluid_P__Template
   use Tally_F_D__Form

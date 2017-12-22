@@ -4,7 +4,7 @@ module Fluid_D__Form
 
   use Basics
   use Mathematics
-!  use FluidFeatures_Template
+  use FluidFeatures_Template
 
   implicit none
   private
@@ -30,8 +30,8 @@ module Fluid_D__Form
       MOMENTUM_DENSITY_D = 0
     real ( KDR ) :: &
       BaryonMassReference = 1.0_KDR
-!     class ( FluidFeaturesTemplate ), pointer :: &
-!       Features => null ( )
+    class ( FluidFeaturesTemplate ), pointer :: &
+      Features => null ( )
   contains
     procedure, public, pass :: &
       InitializeAllocate_D
@@ -41,8 +41,8 @@ module Fluid_D__Form
       SetPrimitiveConserved
     procedure, public, pass :: &
       SetOutput
-!     procedure, public, pass :: &
-!       SetFeatures
+    procedure, public, pass :: &
+      SetFeatures
     final :: &
       Finalize
     procedure, public, pass ( C ) :: &
@@ -202,16 +202,16 @@ contains
   end subroutine SetOutput
 
 
-!   subroutine SetFeatures ( F, Features )
+  subroutine SetFeatures ( F, Features )
 
-!     class ( Fluid_D_Form ), intent ( inout ) :: &
-!       F
-!     class ( FluidFeaturesTemplate ), intent ( in ), target :: &
-!       Features
+    class ( Fluid_D_Form ), intent ( inout ) :: &
+      F
+    class ( FluidFeaturesTemplate ), intent ( in ), target :: &
+      Features
 
-!     F % Features => Features
+    F % Features => Features
 
-!   end subroutine SetFeatures
+  end subroutine SetFeatures
 
 
   impure elemental subroutine Finalize ( F )
