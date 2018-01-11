@@ -144,7 +144,8 @@ contains
     iaS = 0
 !;    iaS ( iD ) = -1
 
-    !$OMP parallel do private ( iV, jV, kV, iaVS )
+    !$OMP target
+    !$OMP parallel do private ( iV, jV, kV, iaVS ) collapse ( 2 )
     do kV = lV ( 3 ), uV ( 3 ) 
       do jV = lV ( 2 ), uV ( 2 )
         do iV = lV ( 1 ), uV ( 1 )
@@ -158,6 +159,7 @@ contains
       end do !-- jV
     end do !-- kV
     !$OMP end parallel do
+    !$OMP end target
      
   end subroutine ComputeChart_SL_Kernel
 
