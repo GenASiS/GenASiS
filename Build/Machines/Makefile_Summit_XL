@@ -1,0 +1,14 @@
+# Makefile for generic linux with GNU compiler and generic MPI 
+# such as openmpi, mpich, etc.
+
+FORTRAN_COMPILE      = mpifort -c
+FORTRAN_BOUND_CHECK  = -qcheck=bounds
+FORTRAN_DEBUG        = -g #-Wall
+FORTRAN_OPTIMIZE     = -O3
+FORTRAN_PROFILE      = 
+
+LINK = mpif90
+
+SILO_DIR = /ccs/home/reubendb/projects/swtree/peak/silo/4.10.2/xl2017
+INCLUDE_SILO = -I${SILO_DIR}/include
+LIBRARY_SILO = -L${SILO_DIR}/lib -lsilo

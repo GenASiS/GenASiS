@@ -1,0 +1,27 @@
+PATH_GENASIS = ../../../../..
+
+all: Difference_Form_Test
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+Difference_Form_Test: Basics.a Difference_Form_Test.o
+	$(LINK) $(FLAGS) -o Difference_Form_Test_$(MACHINE) \
+          Difference_Form_Test.o Difference_Form.o \
+          Basics.a $(LIBRARIES)
+
+clean:
+	rm -f *.o *.a *.mod *.ld
+
+clobber: clean
+	rm -f Difference_Form_Test_*
+
+include $(PATH_BASICS)/Makefile_Dependencies
+
+Difference_Form.o: \
+  Basics.o \
+  Difference_Form.f90
+
+Difference_Form_Test.o: \
+  Basics.o \
+  Difference_Form.o \
+    Difference_Form_Test.f90
