@@ -9,11 +9,16 @@ Difference_Form_Test: Basics.a Difference_Form_Test.o
           Difference_Form_Test.o Difference_Form.o \
           Basics.a $(LIBRARIES)
 
+Jacobi_Test: Basics.a Jacobi_Test.o
+	$(LINK) $(FLAGS) -o Jacobi_Test_$(MACHINE) \
+          Jacobi_Test.o Basics.a $(LIBRARIES)
+
 clean:
 	rm -f *.o *.a *.mod *.ld
 
 clobber: clean
 	rm -f Difference_Form_Test_*
+	rm -f Jacobi_Test_*
 
 include $(PATH_BASICS)/Makefile_Dependencies
 
@@ -25,3 +30,7 @@ Difference_Form_Test.o: \
   Basics.o \
   Difference_Form.o \
     Difference_Form_Test.f90
+
+Jacobi_Test.o: \
+  Basics.o \
+  Jacobi_Test.f90

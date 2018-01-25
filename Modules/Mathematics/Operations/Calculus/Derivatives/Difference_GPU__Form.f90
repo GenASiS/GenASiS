@@ -1,14 +1,15 @@
 !-- Differences computes variable differentials on a chart: cell centered
 !   values on input yield differences on the inner face on output.
 
-module Difference_Form
+module Difference_GPU__Form
 
   use Basics
+  use Manifolds
 
   implicit none
   private
 
-  type, public :: DifferenceForm
+  type, public :: Difference_GPU_Form
     integer ( KDI ) :: &
       IGNORABILITY = 0
     character ( LDF ) :: &
@@ -24,7 +25,7 @@ module Difference_Form
       Compute => ComputeChart_SL
     final :: &
       Finalize
-  end type DifferenceForm
+  end type Difference_GPU_Form
 
     private :: &
       ComputeChart_SL_Kernel
@@ -34,7 +35,7 @@ contains
 
   subroutine Initialize ( D, Name, ValueShape )
 
-    class ( DifferenceForm ), intent ( inout ) :: &
+    class ( Difference_GPU_Form ), intent ( inout ) :: &
       D
     character ( * ), intent ( in ) :: &
       Name
@@ -53,41 +54,47 @@ contains
   end subroutine Initialize
 
 
-  subroutine ComputeChart_SL ( D, Input, nValues, iDimension )
+  subroutine ComputeChart_SL ( D, CSL, Input )
 
-    class ( DifferenceForm ), intent ( inout ) :: &
+    class ( Difference_GPU_Form ), intent ( inout ) :: &
       D
+    class ( Chart_SL_Template ), intent ( in ) :: &
+      CSL
     class ( VariableGroupForm ), intent ( in ) :: &
       Input
-    integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
-      nValues
-    integer ( KDI ), intent ( in ) :: &
-      iDimension
 
     integer ( KDI ) :: &
-      iS  !-- iSelected
+      iD, & !-- iDimension
+      iS    !-- iSelected
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       V, &
       dV_I
 
     call Show ( 'Computing Difference', D % IGNORABILITY + 1 )
     call Show ( trim ( D % Name ), 'Name', D % IGNORABILITY + 1 )
-    call Show ( iDimension, 'iDimension', D % IGNORABILITY + 1 )
-
+    
     associate &
       ( I  => Input, &
-        OI => D % OutputInner, &
-        nV => nValues )
+        OI => D % OutputInner )
 
     do iS = 1, I % nVariables
+    
+      call CSL % SetVariablePointer &
+             ( I % Value ( :, I % iaSelected ( iS ) ), V )
+      call CSL % SetVariablePointer &
+             ( OI % Value ( :, iS ), dV_I )
       
-      V ( 1 : nV ( 1 ), 1 : nV ( 2 ), 1 : nV ( 3 ) ) &
-        => I % Value ( :, I % iaSelected ( iS ) )
-      dV_I ( 1 : nV ( 1 ), 1 : nV ( 2 ), 1 : nV ( 3 ) ) &
-        => OI % Value ( :,  iS )
+      !$OMP target data map ( to: V ) map ( from: dV_I )
+
+      do iD = 1, CSL % nDimensions
+        call Show ( iD, 'iDimension', D % IGNORABILITY + 1 )
+        call ComputeChart_SL_Kernel &
+               ( V, iD, CSL % nGhostLayers ( iD ), dV_I )
+      end do !-- iD
       
-      call ComputeChart_SL_Kernel ( V, iDimension, 0, dV_I )
-    end do !-- iS
+      !$OMP end target data
+    
+    end do !-- is
 
     end associate !-- I, etc.
 
@@ -98,7 +105,7 @@ contains
 
   impure elemental subroutine Finalize ( D )
 
-    type ( DifferenceForm ), intent ( inout ) :: &
+    type ( Difference_GPU_Form ), intent ( inout ) :: &
       D
 
     if ( allocated ( D % OutputInner ) ) &
@@ -133,7 +140,7 @@ contains
     where ( shape ( V ) > 1 )
       lV = oV + 1
     end where
-!;    lV ( iD ) = oV
+    lV ( iD ) = oV
 
     uV = 1
     where ( shape ( V ) > 1 )
@@ -142,29 +149,29 @@ contains
     uV ( iD ) = size ( V, dim = iD )
     
     iaS = 0
-!;    iaS ( iD ) = -1
+    iaS ( iD ) = -1
 
     !$OMP target teams distribute 
     do kV = lV ( 3 ), uV ( 3 ) 
-      !$OMP parallel 
-      !$OMP do private ( iaVS ) collapse ( 2 ) schedule (static, 1)
+      !$OMP parallel do 
       do jV = lV ( 2 ), uV ( 2 )
+        !$OMP simd
         do iV = lV ( 1 ), uV ( 1 )
 
-          iaVS = [ iV, jV, kV ] + iaS
+          !-- iaVS = [ iV, jV, kV ] + iaS
 
           dV_I ( iV, jV, kV )  &
-            =  V ( iV, jV, kV )  -  V ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) )
+            =  V ( iV, jV, kV )  &
+               -  V ( iV + iaS ( 1 ), jV + iaS ( 2 ), kV + iaS ( 3 ) )
 
         end do !-- iV
+        !$OMP end simd
       end do !-- jV
-      !$OMP end do
-      !$OMP end parallel
+      !$OMP end parallel do
     end do !-- kV
     !$OMP end target teams distribute
-    
      
   end subroutine ComputeChart_SL_Kernel
 
 
-end module Difference_Form
+end module Difference_GPU__Form

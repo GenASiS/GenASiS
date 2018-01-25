@@ -3,6 +3,7 @@ module Difference_Form_Test__Form
   use Basics
   use Manifolds
   use Difference_Form
+  use Difference_GPU__Form
 
   implicit none
   private
@@ -17,6 +18,11 @@ module Difference_Form_Test__Form
       Atlas
     type ( DifferenceForm ), allocatable :: &
       Difference
+    type ( Difference_GPU_Form ), allocatable :: &
+      Difference_GPU
+    type ( TimerForm ) :: &
+      T_CPU, &
+      T_GPU
   contains
     procedure, public, pass :: &
       Initialize
@@ -37,7 +43,8 @@ contains
     integer ( KDI ) :: &
       iD, &  !-- iDimension
       iC, &  !-- iCompute
-      nCompute
+      nCompute, &
+      nVariables
     character ( 1 ) :: &
       iD_String
     type ( StorageForm ) :: &
@@ -70,10 +77,16 @@ contains
     class is ( Chart_SL_Template )
        
     !-- Values to be differenced
+    
+    nVariables = 1 
+    call PROGRAM_HEADER % GetParameter ( nVariables, 'nVariables' )
 
     call Gaussian % Initialize &
-           ( [ G % nValues, 1 ], NameOption = 'TestField', &
-             VariableOption = [ 'Gaussian                       ' ] )
+           ( [ G % nValues, nVariables ], NameOption = 'TestField', &
+             VariableOption &
+               = spread ( 'Gaussian                       ', &
+                          dim = 1, ncopies = nVariables ) )
+             
 
     associate &
       ( R0 => ( C % MaxCoordinate + C % MinCoordinate ) / 2.0_KDR, &
@@ -91,30 +104,66 @@ contains
 
     end associate !-- Sigma, etc.
     end associate !-- R0, etc.
+    
+    !-- Timers
+    
+    associate &
+      ( T_CPU => DFT % T_CPU, &
+        T_GPU => DFT % T_GPU )
+    
+    call T_CPU % Initialize ( 'Difference_CPU', Level = 1 )
+    call T_GPU % Initialize ( 'Difference_GPU', Level = 1 )
 
     !-- Difference
 
     allocate ( DFT % Difference )
-    associate ( D => DFT % Difference )
-    call D % Initialize ( 'GaussianDifference', shape ( Gaussian % Value ) )
-    associate ( OI => D % OutputInner )
+    allocate ( DFT % Difference_GPU )
+    associate &
+      ( D_CPU => DFT % Difference, &
+        D_GPU => DFT % Difference_GPU )
+    
+    call D_CPU % Initialize ( 'GaussianDifference', shape ( Gaussian % Value ) )
+    call D_GPU % Initialize ( 'GaussianDifference', shape ( Gaussian % Value ) )
+    
 
     nCompute = 100
     call PROGRAM_HEADER % GetParameter ( nCompute, 'nCompute' )
 
-    call Show ( 'Iterating D % Compute' )
+    call Show ( 'Iterating D_CPU % Compute' )
+    call T_CPU % Start ( )
     
     do iC = 1, nCompute
-      call Show ( iC, 'iC' )
+      if ( mod ( iC, 10 ) == 0 ) call Show ( iC, 'iC' )
       do iD = 1, C % nDimensions
-        call D % Compute ( C, Gaussian, iD )
+        call D_CPU % Compute ( C, Gaussian, iD )
       end do !-- iD
     end do !-- iC
+    
+    call T_CPU % Stop ( )
+    call T_CPU % ShowTotal ( CONSOLE % INFO_1 )
+    
+    call Show ( 'Iterating D_GPU % Compute' )
+    
+    call T_GPU % Start ( )
+    
+    do iC = 1, nCompute
+      if ( mod ( iC, 10 ) == 0 ) call Show ( iC, 'iC' )
+      call D_GPU % Compute ( C, Gaussian )
+    end do !-- iC
+    
+    call T_GPU % Stop ( )
+    call T_GPU % ShowTotal ( CONSOLE % INFO_1 )
+    
+    call Show ( T_CPU % TotalTime / T_GPU % TotalTime, 'GPU SpeedUp Factor' )
+    call Show ( T_GPU % TotalTime / T_CPU % TotalTime, 'CPU SpeedUp Factor' )
+    
+    
+    associate ( OI => D_CPU % OutputInner )
 
     !-- An extra iteration to output to disk
     do iD = 1, C % nDimensions
 
-      call D % Compute ( C, Gaussian, iD )
+      call D_CPU % Compute ( C, Gaussian, iD )
 
       write ( iD_String, fmt = ' ( i1 ) ' ) iD
 
@@ -130,6 +179,9 @@ contains
     end do !-- iD
 
     end associate !-- OI
+
+    end associate !-- Timers
+    
     end associate !-- D
 
     !-- Write

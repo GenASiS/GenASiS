@@ -3,6 +3,11 @@ Difference_Form.o: \
   Manifolds.o \
   Difference_Form.f90
 
+Difference_GPU__Form.o: \
+  Basics.o \
+  Manifolds.o \
+  Difference_GPU__Form.f90
+
 Gradient_Form.o: \
   Basics.o \
   Manifolds.o \
@@ -11,6 +16,7 @@ Gradient_Form.o: \
 
 Derivatives.o: \
   Difference_Form.o \
+  Difference_GPU__Form.o \
   Gradient_Form.o \
   Derivatives.f90
 
