@@ -44,11 +44,11 @@ module Fluid_P__Template
     procedure, public, pass ( C ) :: &
       ComputeCenterStatesTemplate_P
     procedure, public, nopass :: &
-      ComputeConservedEnergyKernel
+      ComputeConservedEnergy_G_Kernel
     procedure, public, nopass :: &
       ComputeInternalEnergyKernel
     procedure, public, nopass :: &
-      ComputeEigenspeedsFluidKernel
+      ComputeEigenspeeds_P_G_Kernel
   end type Fluid_P_Template
 
     private :: &
@@ -452,8 +452,10 @@ contains
   end subroutine ComputeCenterStatesTemplate_P
 
 
-  subroutine ComputeConservedEnergyKernel &
+  subroutine ComputeConservedEnergy_G_Kernel &
                ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
+
+    !-- Galilean
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       G
@@ -478,7 +480,7 @@ contains
     end do !-- iV
     !$OMP end parallel do
 
-  end subroutine ComputeConservedEnergyKernel
+  end subroutine ComputeConservedEnergy_G_Kernel
 
 
   subroutine ComputeInternalEnergyKernel &
@@ -521,23 +523,20 @@ contains
   end subroutine ComputeInternalEnergyKernel
 
 
-  subroutine ComputeEigenspeedsFluidKernel &
-               ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, MN, &
-                 M, N, V_1, V_2, V_3, S_1, S_2, S_3, P, Gamma, &
-                 M_UU_22, M_UU_33 )
+  subroutine ComputeEigenspeeds_P_G_Kernel &
+               ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
+                 V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33 )
+
+    !-- Galilean
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       FEP_1, FEP_2, FEP_3, &
       FEM_1, FEM_2, FEM_3, &
-      CS, &
       MN
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      M, &
-      N, &
       V_1, V_2, V_3, & 
-      S_1, S_2, S_3, &
-      P, &
-      Gamma, &
+      CS, &
+      M_DD_22, M_DD_33, &
       M_UU_22, M_UU_33
 
     integer ( KDI ) :: &
@@ -548,21 +547,11 @@ contains
 
     !$OMP parallel do private ( iV )
     do iV = 1, nValues
-      if ( N ( iV ) > 0.0_KDR .and. P ( iV ) > 0.0_KDR ) then
-        CS ( iV ) = sqrt ( Gamma ( iV ) * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
-      else
-        CS ( iV ) = 0.0_KDR
-      end if 
-    end do
-    !$OMP end parallel do
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-      if ( P ( iV ) > 0.0_KDR ) then
-        MN ( iV ) = sqrt ( (    S_1 ( iV ) * V_1 ( iV )  &
-                             +  S_2 ( iV ) * V_2 ( iV )  &
-                             +  S_3 ( iV ) * V_3 ( iV ) ) &
-                           / ( Gamma ( iV ) * P ( iV ) ) )
+      if ( CS ( iV ) > 0.0_KDR ) then
+        MN ( iV ) = sqrt (                      V_1 ( iV ) * V_1 ( iV )  &
+                            +  M_DD_22 ( iV ) * V_2 ( iV ) * V_2 ( iV )  &
+                            +  M_DD_33 ( iV ) * V_3 ( iV ) * V_3 ( iV ) ) &
+                    /  CS ( iV )
       else
         MN ( iV ) = 0.0_KDR
       end if 
@@ -580,7 +569,7 @@ contains
     end do
     !$OMP end parallel do
 
-  end subroutine ComputeEigenspeedsFluidKernel
+  end subroutine ComputeEigenspeeds_P_G_Kernel
 
 
   subroutine InitializeBasics &

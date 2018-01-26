@@ -58,7 +58,7 @@ module Fluid_D__Form
     procedure, public, nopass :: &
       ComputeDensityVelocity_G_Kernel
     procedure, public, nopass :: &
-      ComputeEigenspeedsKernel_D
+      ComputeEigenspeeds_D_G_Kernel
   end type Fluid_D_Form
 
     private :: &
@@ -283,7 +283,7 @@ contains
            ( M, C % BaryonMassReference )
     call C % ComputeDensityMomentum_G_Kernel &
            ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
-    call C % ComputeEigenspeedsKernel_D &
+    call C % ComputeEigenspeeds_D_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3 )
 
     end associate !-- FEP_1, etc.
@@ -352,7 +352,7 @@ contains
            ( M, C % BaryonMassReference )
     call C % ComputeDensityVelocity_G_Kernel &
            ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33 )
-    call C % ComputeEigenspeedsKernel_D &
+    call C % ComputeEigenspeeds_D_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3 )
 
     end associate !-- FEP_1, etc.
@@ -536,7 +536,7 @@ contains
   end subroutine ComputeDensityVelocity_G_Kernel
 
 
-  subroutine ComputeEigenspeedsKernel_D &
+  subroutine ComputeEigenspeeds_D_G_Kernel &
                ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3 )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -562,7 +562,7 @@ contains
     end do !-- iV
     !$OMP end parallel do
 
-  end subroutine ComputeEigenspeedsKernel_D
+  end subroutine ComputeEigenspeeds_D_G_Kernel
 
 
   subroutine InitializeBasics &
