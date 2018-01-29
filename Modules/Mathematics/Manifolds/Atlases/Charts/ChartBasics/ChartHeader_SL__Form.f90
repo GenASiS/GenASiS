@@ -40,7 +40,11 @@ module ChartHeader_SL__Form
     procedure, public, pass :: &
       AddField
     procedure, public, pass :: &
-      SetVariablePointer
+      SetVariablePointer_1D_3D, &
+      SetVariablePointer_Any_4D
+    generic, public :: &
+      SetVariablePointer => SetVariablePointer_1D_3D, &
+                            SetVariablePointer_Any_4D
     procedure, private, pass :: &
       ShowHeader
     generic, public :: &
@@ -210,7 +214,7 @@ contains
   end subroutine AddField
 
 
-  subroutine SetVariablePointer ( C, Variable_1D, Variable_3D )
+  subroutine SetVariablePointer_1D_3D ( C, Variable_1D, Variable_3D )
 
     class ( ChartHeader_SL_Form ), intent ( in ) :: &
       C
@@ -225,8 +229,34 @@ contains
         C % iaFirst ( 3 ) : C % iaLast ( 3 ) ) &
           => Variable_1D
     
-  end subroutine SetVariablePointer
+  end subroutine SetVariablePointer_1D_3D
 
+
+  subroutine SetVariablePointer_Any_4D ( C, Variable, nValues, Variable_4D )
+
+    class ( ChartHeader_SL_Form ), intent ( in ) :: &
+      C
+    real ( KDR ), dimension ( nValues ), intent ( in ), target :: &
+      Variable
+    integer ( KDI ), intent ( in ) :: &
+      nValues
+    real ( KDR ), dimension ( :, :, :, : ), intent ( out ), pointer :: &
+      Variable_4D
+    
+    integer ( KDI ) :: &
+      nVariables
+      
+    nVariables = nValues / product ( C % iaLast - C % iaFirst )
+      
+    Variable_4D &
+      ( C % iaFirst ( 1 ) : C % iaLast ( 1 ), &
+        C % iaFirst ( 2 ) : C % iaLast ( 2 ), &
+        C % iaFirst ( 3 ) : C % iaLast ( 3 ), &
+        1 : nVariables ) &
+          => Variable
+    
+  end subroutine SetVariablePointer_Any_4D
+  
 
   subroutine ShowHeader ( C )
 

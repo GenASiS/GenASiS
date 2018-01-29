@@ -22,7 +22,8 @@ module Difference_Form_Test__Form
       Difference_GPU
     type ( TimerForm ) :: &
       T_CPU, &
-      T_GPU
+      T_GPU, &
+      T_Transfer
   contains
     procedure, public, pass :: &
       Initialize
@@ -45,6 +46,8 @@ contains
       iC, &  !-- iCompute
       nCompute, &
       nVariables
+    real ( KDR ), dimension ( 3 ) :: &
+      L1
     character ( 1 ) :: &
       iD_String
     type ( StorageForm ) :: &
@@ -109,10 +112,12 @@ contains
     
     associate &
       ( T_CPU => DFT % T_CPU, &
-        T_GPU => DFT % T_GPU )
+        T_GPU => DFT % T_GPU, &
+        T_Transfer => DFT % T_Transfer )
     
     call T_CPU % Initialize ( 'Difference_CPU', Level = 1 )
     call T_GPU % Initialize ( 'Difference_GPU', Level = 1 )
+    call T_Transfer % Initialize ( 'Data Transfer', Level = 1 )
 
     !-- Difference
 
@@ -125,7 +130,6 @@ contains
     call D_CPU % Initialize ( 'GaussianDifference', shape ( Gaussian % Value ) )
     call D_GPU % Initialize ( 'GaussianDifference', shape ( Gaussian % Value ) )
     
-
     nCompute = 100
     call PROGRAM_HEADER % GetParameter ( nCompute, 'nCompute' )
 
@@ -142,13 +146,21 @@ contains
     call T_CPU % Stop ( )
     call T_CPU % ShowTotal ( CONSOLE % INFO_1 )
     
+    call Show ( 'Transferring Host Data to Device' )
+    call T_Transfer % Start ( )
+    call D_GPU % SetInput ( C, Gaussian )
+    call T_Transfer % Stop ( )
+    call T_Transfer % ShowTotal ( CONSOLE % INFO_1 )
+    
     call Show ( 'Iterating D_GPU % Compute' )
     
     call T_GPU % Start ( )
     
     do iC = 1, nCompute
       if ( mod ( iC, 10 ) == 0 ) call Show ( iC, 'iC' )
-      call D_GPU % Compute ( C, Gaussian )
+      do iD = 1, C % nDimensions
+        call D_GPU % Compute ( C, iD )
+      end do !-- iD
     end do !-- iC
     
     call T_GPU % Stop ( )
@@ -157,26 +169,48 @@ contains
     call Show ( T_CPU % TotalTime / T_GPU % TotalTime, 'GPU SpeedUp Factor' )
     call Show ( T_GPU % TotalTime / T_CPU % TotalTime, 'CPU SpeedUp Factor' )
     
-    
-    associate ( OI => D_CPU % OutputInner )
+    associate &
+      ( OI_CPU => D_CPU % OutputInner, &
+        OI_GPU => D_GPU % OutputInner )
 
     !-- An extra iteration to output to disk
+    
+    L1 = 0.0_KDR
+    call Show ( 'Iterating for output to disk' )
     do iD = 1, C % nDimensions
 
       call D_CPU % Compute ( C, Gaussian, iD )
+      call D_GPU % Compute ( C, iD )
 
       write ( iD_String, fmt = ' ( i1 ) ' ) iD
 
-      associate ( dGI => d_Gaussian_Inner ( iD ) )
-      call dGI % Initialize &
-             ( [ OI % nValues, OI % nVariables ], &
+      associate &
+        ( dGI_CPU => d_Gaussian_Inner_CPU ( iD ), &
+          dGI_GPU => d_Gaussian_Inner_GPU ( iD ) )
+      
+      call dGI_CPU % Initialize &
+             ( [ OI_CPU % nValues, OI_CPU % nVariables ], &
                VariableOption = Gaussian % Variable, &
                NameOption = 'd_' // trim ( Gaussian % Name ) // '_' &
                             // iD_String )
-      call Copy ( OI % Value, dGI % Value )
+      call Copy ( OI_CPU % Value, dGI_CPU % Value )
+      
+      call dGI_GPU % Initialize &
+             ( [ OI_GPU % nValues, OI_GPU % nVariables ], &
+               VariableOption = Gaussian % Variable, &
+               NameOption = 'd_' // trim ( Gaussian % Name ) // '_' &
+                            // iD_String )
+      call Copy ( OI_GPU % Value, dGI_GPU % Value )
+      
+      L1 ( iD ) &
+        = sum ( abs ( dGI_CPU % Value - dGI_GPU % Value ) ) &
+          / sum ( abs ( dGI_CPU % Value ) )
+          
       end associate !-- dGI
 
     end do !-- iD
+    
+    call Show ( L1, 'L1 Error CPU - GPU' )
 
     end associate !-- OI
 
@@ -185,10 +219,11 @@ contains
     end associate !-- D
 
     !-- Write
-
+    call Show ( 'Writing to Disk' )
     call C % AddFieldImage ( Gaussian, iStream = 1 )
     do iD = 1, C % nDimensions
-      call C % AddFieldImage ( d_Gaussian_Inner ( iD ), iStream = 1 )
+      call C % AddFieldImage ( d_Gaussian_Inner_CPU ( iD ), iStream = 1 )
+      call C % AddFieldImage ( d_Gaussian_Inner_GPU ( iD ), iStream = 1 )
     end do
 
     call GIS % Open ( GIS % ACCESS_CREATE )
@@ -211,6 +246,7 @@ contains
       DFT
 
     deallocate ( DFT % Difference )
+    deallocate ( DFT % Difference_GPU )
     deallocate ( DFT % Atlas )
     deallocate ( DFT % GridImageStream )
 
