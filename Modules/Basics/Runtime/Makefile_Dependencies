@@ -26,6 +26,12 @@ GetMemoryUsage_Command.o: \
   MessagePassing.o \
   GetMemoryUsage_Command.f90
 
+AllocateMemory_Command.C.o: \
+  AllocateMemory_Command.c
+
+AllocateMemory_Command.o: \
+  AllocateMemory_Command.f90
+
 PROGRAM_HEADER_Singleton.o: \
   VariableManagement.o \
   Display.o \

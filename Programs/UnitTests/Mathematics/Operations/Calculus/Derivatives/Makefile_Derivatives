@@ -27,6 +27,8 @@ include $(PATH_DERIVATIVES)/Makefile_Dependencies
 
 Difference_Form_Test.o: \
   Basics.o \
+  AllocateMemory_Command.C.o \
+  AllocateMemory_Command.o \
   Manifolds.o \
   Difference_Form.o \
   Difference_GPU__Form.o \
@@ -37,3 +39,4 @@ Gradient_Form_Test.o: \
   Manifolds.o \
   Gradient_Form.o \
   Gradient_Form_Test.f90
+

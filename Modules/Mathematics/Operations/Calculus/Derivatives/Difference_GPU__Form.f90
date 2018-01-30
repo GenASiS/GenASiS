@@ -2,9 +2,12 @@
 !   values on input yield differences on the inner face on output.
 
 module Difference_GPU__Form
-
+  
+  use ISO_C_BINDING
+  use OMP_LIB
   use Basics
   use Manifolds
+  use AllocateMemory_Command
 
   implicit none
   private
@@ -17,8 +20,13 @@ module Difference_GPU__Form
     type ( VariableGroupForm ), allocatable :: &
       Input, &
       OutputInner
+    type ( TimerForm ) :: &
+      T_Compute, &
+      T_Communication
     class ( Chart_SL_Template ), pointer :: &
       Chart
+    type ( c_ptr ) :: &
+      D_OutputInner
   contains
     procedure, public, pass :: &
       Initialize
@@ -26,16 +34,19 @@ module Difference_GPU__Form
       SetInput
     procedure, private, pass :: &
       ComputeChart_SL
+    procedure, private, pass :: &
+      ComputeChart_SL_Kernel
     generic, public :: &
       Compute => ComputeChart_SL
+    procedure, public, pass :: &
+      GetOutput
     final :: &
       Finalize
   end type Difference_GPU_Form
 
     private :: &
-      ComputeChart_SL_Kernel, &
-      ComputeChart_SL_Kernel_2
-
+      ComputeChart_SL_Kernel
+      
 contains
 
 
@@ -48,7 +59,7 @@ contains
     integer ( KDI ), dimension ( 2 ), intent ( in ) :: &
       ValueShape
 
-    D % IGNORABILITY = CONSOLE % INFO_5
+    D % IGNORABILITY = CONSOLE % INFO_1
     D % Name = Name
 
     call Show ( 'Initializing a Difference', D % IGNORABILITY )
@@ -58,6 +69,9 @@ contains
 
     allocate ( D % OutputInner )
     call D % OutputInner % Initialize ( ValueShape, ClearOption = .true. )
+    
+    call D % T_Compute % Initialize ( 'D_GPU Compute', Level = 1 )
+    call D % T_Communication % Initialize ( 'D_GPU Communication', Level = 1 )
 
   end subroutine Initialize
   
@@ -71,11 +85,18 @@ contains
     class ( VariableGroupForm ), intent ( in ), target :: &
       Input
     
+    
+    integer ( KDI ) :: &
+      nValues
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       dV_I
     real ( KDR ), dimension ( :, :, :, : ), pointer :: &
       V
-   
+    !type ( c_ptr ) :: &
+    !  dV_I
+    
+    call D % T_Communication % Start ( ) 
+    
     call D % Input % Initialize ( Input ) 
     D % Chart => CSL
     call CSL % SetVariablePointer_Any_4D &
@@ -83,7 +104,19 @@ contains
     call CSL % SetVariablePointer ( D % OutputInner % Value ( :, 1 ), dV_I )
     
     !$OMP target enter data map ( to: V )
-    !$OMP target enter data map ( alloc : dV_I )
+    !$OMP target enter data map ( alloc : dV_I ) 
+    
+    !
+    !nValues = size ( D % OutputInner % Value )
+    !call Show ( nValues, 'nValues F' )
+    !D % D_OutputInner = Allocate_D ( nValues )
+    !
+    !dV_I = D % D_OutputInner
+    !!$OMP target is_device_ptr ( dV_I )
+    !dV_I = D % D_OutputInner
+    !!$OMP end target 
+    
+    call D % T_Communication % Stop ( ) 
     
   end subroutine SetInput 
 
@@ -115,9 +148,10 @@ contains
     do iS = 1, I % nVariables
       call CSL % SetVariablePointer_Any_4D ( I % Value,  size ( I % Value ), V )
       call CSL % SetVariablePointer ( OI % Value ( :, iS ), dV_I )
-      call ComputeChart_SL_Kernel &
+      call D % ComputeChart_SL_Kernel &
              ( V, iDimension, I % iaSelected ( iS ), &
                CSL % nGhostLayers ( iDimension ), dV_I )
+      call D % GetOutput ( iS )
     end do !-- iS
 
     end associate !-- I, etc.
@@ -125,6 +159,34 @@ contains
     nullify ( V, dV_I )
 
   end subroutine ComputeChart_SL
+  
+  
+  subroutine GetOutput ( D, iS )
+  
+    class ( Difference_GPU_Form ), intent ( inout ) :: &
+      D
+    integer ( KDI ), intent ( in ) :: &
+      iS  !-- iSelected
+    
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+      dV_I
+    type ( c_ptr ) :: &
+      dV_I_D
+    
+    associate &
+      ( I  => D % Input, &
+        OI => D % OutputInner )
+    
+    dV_I_D = D % D_OutputInner
+    print*, 'dV_I_', D % D_OutputInner
+    call D % Chart % SetVariablePointer ( OI % Value ( :, iS ), dV_I )
+    !-- !$OMP target data map ( dV_I ) is_device_ptr ( dV_I_D )
+    !-- !$OMP target update from ( dV_I )
+    !-- !$OMP end target data
+             
+    end associate 
+    
+  end subroutine GetOutput 
 
 
   impure elemental subroutine Finalize ( D )
@@ -148,6 +210,9 @@ contains
     !nullify ( V, dV_I )
     !nullify ( D % Chart )
     
+    call D % T_Compute % ShowTotal ( CONSOLE % INFO_1 )
+    call D % T_Communication % ShowTotal ( CONSOLE % INFO_1 )
+    
     if ( allocated ( D % OutputInner ) ) &
       deallocate ( D % OutputInner )
 
@@ -157,8 +222,10 @@ contains
   end subroutine Finalize
 
 
-  subroutine ComputeChart_SL_Kernel ( V, iD, iS, oV, dV_I )
-
+  subroutine ComputeChart_SL_Kernel ( D, V, iD, iS, oV, dV_I )
+  
+    class ( Difference_GPU_Form ), intent ( inout ) :: &
+      D 
     real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
       V
     integer ( KDI ), intent ( in ) :: &
@@ -174,6 +241,8 @@ contains
       iaS, &
       iaVS, &   
       lV, uV
+    type ( c_ptr ) :: &
+      dV_I_D
     
 !    dV_I = V - cshift ( V, shift = -1, dim = iD )
 
@@ -192,7 +261,7 @@ contains
     iaS = 0
     iaS ( iD ) = -1
     
-    !$OMP target data map ( from : dV_I )
+    call D % T_Compute % Start ( )
     
     !$OMP target teams distribute 
     do kV = lV ( 3 ), uV ( 3 ) 
@@ -214,97 +283,19 @@ contains
     end do !-- kV
     !$OMP end target teams distribute
     
+    call D % T_Compute % Stop ( )
+    
+    call D % T_Communication % Start ( )
+    
+    !$OMP target data map ( dV_I_D ) use_device_ptr ( dV_I )
+    D % D_OutputInner = dV_I_D
     !$OMP end target data
+    
+    !--$OMP target update from ( dV_I )
+    
+    call D % T_Communication % Stop ( )
     
   end subroutine ComputeChart_SL_Kernel
   
-  
-  subroutine ComputeChart_SL_Kernel_2 ( V, iD, oV, dV_I )
-
-    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
-      V
-    integer ( KDI ), intent ( in ) :: &
-      iD, &
-      oV   
-    real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
-      dV_I
-
-    integer ( KDI ) :: &
-      iV, jV, kV
-    integer ( KDI ), dimension ( 3 ) :: &
-      lV, uV
-    
-!    dV_I = V - cshift ( V, shift = -1, dim = iD )
-
-    lV = 1
-    where ( shape ( V ) > 1 )
-      lV = oV + 1
-    end where
-    lV ( iD ) = oV
-
-    uV = 1
-    where ( shape ( V ) > 1 )
-      uV = shape ( V ) - oV
-    end where
-    uV ( iD ) = size ( V, dim = iD )
-    
-    if ( iD == 1 ) then
-    
-      !$OMP target teams distribute 
-      do kV = lV ( 3 ), uV ( 3 ) 
-        !$OMP parallel do 
-        do jV = lV ( 2 ), uV ( 2 )
-          !$OMP simd
-          do iV = lV ( 1 ), uV ( 1 )
-
-            dV_I ( iV, jV, kV )  =  V ( iV, jV, kV )  -  V ( iV - 1, jV, kV )
-
-          end do !-- iV
-          !$OMP end simd
-        end do !-- jV
-        !$OMP end parallel do
-      end do !-- kV
-      !$OMP end target teams distribute
-    
-    else if ( iD == 2 ) then
-    
-      !$OMP target teams distribute 
-      do kV = lV ( 3 ), uV ( 3 ) 
-        !$OMP parallel do 
-        do jV = lV ( 2 ), uV ( 2 )
-          !$OMP simd
-          do iV = lV ( 1 ), uV ( 1 )
-
-            dV_I ( iV, jV, kV )  =  V ( iV, jV, kV )  -  V ( iV, jV - 1, kV )
-
-          end do !-- iV
-          !$OMP end simd
-        end do !-- jV
-        !$OMP end parallel do
-      end do !-- kV
-      !$OMP end target teams distribute
-      
-    else if ( iD == 3 ) then
-
-      !$OMP target teams distribute 
-      do kV = lV ( 3 ), uV ( 3 ) 
-        !$OMP parallel do 
-        do jV = lV ( 2 ), uV ( 2 )
-          !$OMP simd
-          do iV = lV ( 1 ), uV ( 1 )
-
-            dV_I ( iV, jV, kV )  =  V ( iV, jV, kV )  -  V ( iV, jV, kV - 1 )
-
-          end do !-- iV
-          !$OMP end simd
-        end do !-- jV
-        !$OMP end parallel do
-      end do !-- kV
-      !$OMP end target teams distribute
-      
-    end if 
-         
-  end subroutine ComputeChart_SL_Kernel_2
-
 
 end module Difference_GPU__Form

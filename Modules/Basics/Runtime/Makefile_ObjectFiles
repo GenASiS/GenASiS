@@ -2,6 +2,8 @@ RUNTIME = \
   Runtime.o \
   PROGRAM_HEADER_Singleton.o \
   GetMemoryUsage_Command.o \
+  AllocateMemory_Command.C.o \
+  AllocateMemory_Command.o \
   Timer_Form.o \
   WallTime_Function.o \
   CommandLineOptions_Form.o \
