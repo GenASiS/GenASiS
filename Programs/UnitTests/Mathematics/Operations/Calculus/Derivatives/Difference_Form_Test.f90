@@ -219,16 +219,16 @@ contains
     end associate !-- D
 
     !-- Write
-    call Show ( 'Writing to Disk' )
-    call C % AddFieldImage ( Gaussian, iStream = 1 )
-    do iD = 1, C % nDimensions
-      call C % AddFieldImage ( d_Gaussian_Inner_CPU ( iD ), iStream = 1 )
-      call C % AddFieldImage ( d_Gaussian_Inner_GPU ( iD ), iStream = 1 )
-    end do
+    !call Show ( 'Writing to Disk' )
+    !call C % AddFieldImage ( Gaussian, iStream = 1 )
+    !do iD = 1, C % nDimensions
+    !  call C % AddFieldImage ( d_Gaussian_Inner_CPU ( iD ), iStream = 1 )
+    !  call C % AddFieldImage ( d_Gaussian_Inner_GPU ( iD ), iStream = 1 )
+    !end do
 
-    call GIS % Open ( GIS % ACCESS_CREATE )
-    call A % Write ( iStream = 1 )
-    call GIS % Close ( )
+    !call GIS % Open ( GIS % ACCESS_CREATE )
+    !call A % Write ( iStream = 1 )
+    !call GIS % Close ( )
 
     !-- Cleanup
 
