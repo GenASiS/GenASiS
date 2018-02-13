@@ -2,6 +2,7 @@ module Jacobi_Form
   
   use ISO_C_BINDING
   use Basics
+  use OMP_LIB
   
   implicit none
   private
@@ -32,86 +33,138 @@ contains
     class ( JacobiForm ), intent ( inout ), target :: &
       J
     
+    integer ( KDI ) :: &
+      iV, jV, Error
+    real ( KDR ), dimension ( :, : ), pointer :: &
+      A_O, A_U
     integer ( KDI ), dimension ( 2 ) :: &
       nCells
-    real ( KDR ), dimension ( : , : ), pointer :: &
-      A_O
-    type ( c_ptr ) :: &
-      D_A_O
+    real ( KDR ), dimension ( :, : ), allocatable, target :: &
+      LocalArray
     
-    nCells = [ 512, 512 ]
+    nCells = [ 4, 4 ]
     call PROGRAM_HEADER % GetParameter ( nCells, 'nCells' )
     
     allocate ( J % Input ( nCells ( 1 ), nCells ( 2 ) ) )
     allocate ( J % Output ( nCells ( 1 ), nCells ( 2 ) ) )
     
-    A_O => J % Input
-  
-    call random_number ( J % Input )
+    J % Input  = +1.0_KDR
+    J % Output = -2.0_KDR
     
     J % D_Input = C_NULL_PTR
     
+    !associate ( A_O => J % Input, A_U => J % Output )
+    A_O => J % Input
+    A_U => J % Output
+    
+    !-- !$OMP target enter data map ( to: A_O )
+    !-- !$OMP target enter data map ( alloc: A_U )
+    
+    print*, 'A_O Loc Before', c_loc ( A_O )
+    print*, 'A_U Loc Before', c_loc ( A_U )
+    print*, 'D_Input Before', J % D_Input
+    print*, 'D_Output Before', J % D_Output
+    
+    call Show ( A_O ( 1, 1 ), 'A_O Before', CONSOLE % INFO_1 )
+    
+    !-- !$OMP target data map ( A_O ) use_device_ptr ( A_O )
+    print*, 'A_O Inside', c_loc ( A_O )
+    J % D_Input  = Allocate_D ( size ( LocalArray ) )
+    !-- !$OMP end target data
+    
+    !-- !$OMP target data map ( A_U ) use_device_ptr ( A_U )
+    !print*, 'A_U Inside', c_loc ( A_U )
+    J % D_Output = Allocate_D ( size ( A_U ) )
+    !-- !$OMP end target data
+    
+    print*, 'A_O Loc After', c_loc ( A_O )
+    print*, 'D_Input After', J % D_Input
+    print*, 'A_U Loc After', c_loc ( A_U )
+    write ( *, fmt = '( a10, z20 )' ) 'D_Output After', J % D_Output
+    
+    call Show ( A_O ( 1, 1 ), 'A_O After', CONSOLE % INFO_1 )
+    
+    !end associate
+    
+    allocate ( LocalArray ( nCells ( 1 ), nCells ( 2 ) ) )
+    LocalArray = 0.0_KDR
+    Error = AssociateTarget &
+               ( c_loc ( LocalArray ), J % D_Input, size ( LocalArray ), 0 )
+    call Show ( Error, 'Error 1' )
+    
+    !$OMP target teams distribute parallel do
+    do jV = 1, nCells ( 2 )
+      do iV = 1, nCells ( 1 ) 
+        LocalArray ( iV, jV ) = 1.11111_KDR
+      end do
+    end do
+    !$OMP end target teams distribute parallel do
+    
+    Error = DisassociateTarget ( c_loc ( LocalArray ) )
+    call Show ( LocalArray, 'LocalArray' )
     
   end subroutine Initialize
   
   
-  subroutine Compute_GPU ( J, A_O, A_U )
+  subroutine Compute_GPU ( J, A_Old, A_Update )
   
-    class ( JacobiForm ), intent ( inout ) :: &
+    class ( JacobiForm ), intent ( inout ), target :: &
       J
     real ( KDR ), dimension ( :, : ), intent ( in ), target  :: &
-      A_O
-    real ( KDR ), dimension ( :, : ), intent ( out ) :: &
-      A_U
+      A_Old
+    real ( KDR ), dimension ( :, : ), intent ( out ), target :: &
+      A_Update
     
     integer ( KDI ) :: &
       iI, &
       iV, jV, &
-      nIterations
+      nIterations, &
+      Error
     integer ( KDI ), dimension ( 2 ) :: &
       nV
     type ( c_ptr ) :: &
       D_A_O
+    real ( KDR ), dimension ( :, : ), pointer :: &
+      A_O_P
+      
+    call Show ( A_Update, 'A_Update Begin' )
+    call Show ( A_Old, 'A_Old Begin' )
     
     nIterations = 1000
-    nV = shape ( A_O )
+    nV = shape ( A_Old )
     
-    !$OMP target enter data map ( to: A_O )
-    !$OMP target enter data map ( alloc: A_U )
+    Error = AssociateTarget &
+               ( c_loc ( A_Update ), J % D_Output, size ( A_Update ), 0 )
+    call Show ( Error, 'Error 2' )
     
-    !-- !$OMP target data map ( alloc : A_U ) map ( A_O ) 
+    Error = AssociateTarget &
+               ( c_loc ( A_Old ), J % D_Input, size ( A_Old ), 0 )
+    call Show ( Error, 'Error 3' )
+    
+    !call random_number ( A_Old ) !-- Should have no effect, 
+                               !   since A_Old is already on device
+    
     do iI = 1, nIterations
-      
       !$OMP target teams distribute parallel do collapse ( 2 ) schedule ( static, 1 )
-      do jV = 2, nV ( 2 ) - 1 
+      do jV = 1, nV ( 2 ) - 1
         !-- !$OMP parallel do
         do iV = 2, nV ( 1 ) - 1
-          A_U ( iV, jV ) & 
-            = 0.25_KDR * (   A_O ( iV, jV - 1 ) + A_O ( iV, jV + 1 ) &
-                           + A_O ( iV - 1, jV ) + A_O ( iV + 1, jV ) )
+          A_Update ( iV, jV ) & 
+            = 0.25_KDR * (   A_Old ( iV, jV - 1 ) + A_Old ( iV, jV + 1 ) &
+                           + A_Old ( iV - 1, jV ) + A_Old ( iV + 1, jV ) )
         end do
         !-- !$OMP end parallel do
       end do
       !$OMP end target teams distribute parallel do
-    
     end do
     
-    !-- !$OMP end target data
+    call Show ( A_Update, 'A_Update After Compute' )
+    !$OMP target update from ( A_Update )
+    call Show ( A_Update, 'A_Update After Update' )
     
-    print*, 'A_O Loc Before', c_loc ( A_O )
-    print*, 'D_Input Before', J % D_Input
+    Error = DisassociateTarget ( c_loc ( A_Update ) )
+    Error = DisassociateTarget ( c_loc ( A_Old ) )
     
-    !call Show ( A_O ( 1, 1 ), 'A_O Before', CONSOLE % INFO_1 )
-    
-    !$OMP target data map ( A_O ) use_device_ptr ( A_O )
-    print*, 'A_O Inside', c_loc ( A_O )
-    J % D_Input = c_loc ( A_O )
-    !$OMP end target data
-    
-    print*, 'A_O Loc After', c_loc ( A_O )
-    print*, 'D_Input After', J % D_Input
-    
-    !call Show ( A_O ( 1, 1 ), 'A_O After', CONSOLE % INFO_1 )
     
   end subroutine Compute_GPU
   
@@ -150,6 +203,8 @@ contains
       !$OMP end parallel do
     
     end do
+    
+    !call Show ( A_U, 'A_U CPU' )
     
     nullify ( A_O, A_U )
     
@@ -195,9 +250,11 @@ program Difference_Form_Test
   call T_GPU % Initialize ( 'Jacobi GPU ', Level = 1 )
   call T_CPU % Initialize ( 'Jacobi CPU ', Level = 1 )
   
-  !call T_CPU % Start ( )
-  !call J % Compute_CPU ( )
-  !call T_CPU % Stop ( )
+  call T_CPU % Start ( )
+  call J % Compute_CPU ( )
+  call T_CPU % Stop ( )
+  
+  J % Output = -2.0_KDR
   
   call T_GPU % Start ( )
   call J % Compute_GPU ( J % Input, J % Output )
