@@ -14,6 +14,10 @@ module Jacobi_Form
     type ( c_ptr ) :: &
       D_Input, &
       D_Output
+    type ( TimerForm ) :: &
+      Timer_GPU, &
+      Timer_CPU, &
+      Timer_DataTransfer
   contains
     procedure, public, pass :: &
       Initialize
@@ -21,6 +25,8 @@ module Jacobi_Form
       Compute_GPU
     procedure, public, pass :: &
       Compute_CPU
+    procedure, public, pass :: &
+      Validate
     final :: &
       Finalize
   end type JacobiForm
@@ -34,86 +40,56 @@ contains
       J
     
     integer ( KDI ) :: &
-      iV, jV, Error
-    real ( KDR ), dimension ( :, : ), pointer :: &
-      A_O, A_U
+      iV, jV, &
+      Error
     integer ( KDI ), dimension ( 2 ) :: &
       nCells
-    real ( KDR ), dimension ( :, : ), allocatable, target :: &
-      LocalArray
+    real ( KDR ), dimension ( :, : ), pointer :: &
+      I, O
     
     nCells = [ 4, 4 ]
     call PROGRAM_HEADER % GetParameter ( nCells, 'nCells' )
     
+    call J % Timer_GPU % Initialize ( 'Jacobi GPU ', Level = 1 )
+    call J % Timer_CPU % Initialize ( 'Jacobi CPU ', Level = 1 )
+    call J % Timer_DataTransfer % Initialize ( 'Data Transfer ', Level = 1 )
+    
     allocate ( J % Input ( nCells ( 1 ), nCells ( 2 ) ) )
     allocate ( J % Output ( nCells ( 1 ), nCells ( 2 ) ) )
     
-    J % Input  = +1.0_KDR
-    J % Output = -2.0_KDR
+    call random_number ( J % Input )
+    J % Output = 0.0_KDR
     
-    J % D_Input = C_NULL_PTR
+    !-- Allocate memory on Device
+    J % D_Input  = Allocate_D ( size ( J % Input ) )
+    J % D_Output = Allocate_D ( size ( J % Output ) )
     
-    !associate ( A_O => J % Input, A_U => J % Output )
-    A_O => J % Input
-    A_U => J % Output
+    call J % Timer_DataTransfer % Start ( )
     
-    !-- !$OMP target enter data map ( to: A_O )
-    !-- !$OMP target enter data map ( alloc: A_U )
+    !-- Update device's J % Input 
+    I => J % Input
+    Error = AssociateTarget ( c_loc ( I ), J % D_Input, size ( I ), 0 )
+    !$OMP target update to ( I )
+    Error = DisassociateTarget ( c_loc ( I ) )
     
-    print*, 'A_O Loc Before', c_loc ( A_O )
-    print*, 'A_U Loc Before', c_loc ( A_U )
-    print*, 'D_Input Before', J % D_Input
-    print*, 'D_Output Before', J % D_Output
+    !-- Update device's J % Output
+    O => J % Output
+    Error = AssociateTarget ( c_loc ( O ), J % D_Output, size ( O ), 0 )
+    !$OMP target update to ( O )
+    Error = DisassociateTarget ( c_loc ( O ) )
     
-    call Show ( A_O ( 1, 1 ), 'A_O Before', CONSOLE % INFO_1 )
+    call J % Timer_DataTransfer % Stop ( )
     
-    !-- !$OMP target data map ( A_O ) use_device_ptr ( A_O )
-    print*, 'A_O Inside', c_loc ( A_O )
-    J % D_Input  = Allocate_D ( size ( LocalArray ) )
-    !-- !$OMP end target data
-    
-    !-- !$OMP target data map ( A_U ) use_device_ptr ( A_U )
-    !print*, 'A_U Inside', c_loc ( A_U )
-    J % D_Output = Allocate_D ( size ( A_U ) )
-    !-- !$OMP end target data
-    
-    print*, 'A_O Loc After', c_loc ( A_O )
-    print*, 'D_Input After', J % D_Input
-    print*, 'A_U Loc After', c_loc ( A_U )
-    write ( *, fmt = '( a10, z20 )' ) 'D_Output After', J % D_Output
-    
-    call Show ( A_O ( 1, 1 ), 'A_O After', CONSOLE % INFO_1 )
-    
-    !end associate
-    
-    allocate ( LocalArray ( nCells ( 1 ), nCells ( 2 ) ) )
-    LocalArray = 0.0_KDR
-    Error = AssociateTarget &
-               ( c_loc ( LocalArray ), J % D_Input, size ( LocalArray ), 0 )
-    call Show ( Error, 'Error 1' )
-    
-    !$OMP target teams distribute parallel do
-    do jV = 1, nCells ( 2 )
-      do iV = 1, nCells ( 1 ) 
-        LocalArray ( iV, jV ) = 1.11111_KDR
-      end do
-    end do
-    !$OMP end target teams distribute parallel do
-    
-    Error = DisassociateTarget ( c_loc ( LocalArray ) )
-    call Show ( LocalArray, 'LocalArray' )
+    nullify ( O )
+    nullify ( I )
     
   end subroutine Initialize
   
   
-  subroutine Compute_GPU ( J, A_Old, A_Update )
+  subroutine Compute_GPU ( J )
   
     class ( JacobiForm ), intent ( inout ), target :: &
       J
-    real ( KDR ), dimension ( :, : ), intent ( in ), target  :: &
-      A_Old
-    real ( KDR ), dimension ( :, : ), intent ( out ), target :: &
-      A_Update
     
     integer ( KDI ) :: &
       iI, &
@@ -122,49 +98,38 @@ contains
       Error
     integer ( KDI ), dimension ( 2 ) :: &
       nV
-    type ( c_ptr ) :: &
-      D_A_O
     real ( KDR ), dimension ( :, : ), pointer :: &
-      A_O_P
-      
-    call Show ( A_Update, 'A_Update Begin' )
-    call Show ( A_Old, 'A_Old Begin' )
+      A_U, &
+      A_O
+          
+    A_O => J % Input
+    A_U => J % Output
     
     nIterations = 1000
-    nV = shape ( A_Old )
+    nV = shape ( A_O )
     
-    Error = AssociateTarget &
-               ( c_loc ( A_Update ), J % D_Output, size ( A_Update ), 0 )
-    call Show ( Error, 'Error 2' )
-    
-    Error = AssociateTarget &
-               ( c_loc ( A_Old ), J % D_Input, size ( A_Old ), 0 )
-    call Show ( Error, 'Error 3' )
-    
-    !call random_number ( A_Old ) !-- Should have no effect, 
-                               !   since A_Old is already on device
-    
+    Error = AssociateTarget ( c_loc ( A_U ), J % D_Output, size ( A_U ), 0 )
+    Error = AssociateTarget ( c_loc ( A_O ), J % D_Input, size ( A_O ), 0 )
+
     do iI = 1, nIterations
       !$OMP target teams distribute parallel do collapse ( 2 ) schedule ( static, 1 )
-      do jV = 1, nV ( 2 ) - 1
+      do jV = 2, nV ( 2 ) - 1
         !-- !$OMP parallel do
         do iV = 2, nV ( 1 ) - 1
-          A_Update ( iV, jV ) & 
-            = 0.25_KDR * (   A_Old ( iV, jV - 1 ) + A_Old ( iV, jV + 1 ) &
-                           + A_Old ( iV - 1, jV ) + A_Old ( iV + 1, jV ) )
+          A_U ( iV, jV ) & 
+            = 0.25_KDR * (   A_O ( iV, jV - 1 ) + A_O ( iV, jV + 1 ) &
+                           + A_O ( iV - 1, jV ) + A_O ( iV + 1, jV ) )
         end do
         !-- !$OMP end parallel do
       end do
       !$OMP end target teams distribute parallel do
     end do
     
-    call Show ( A_Update, 'A_Update After Compute' )
-    !$OMP target update from ( A_Update )
-    call Show ( A_Update, 'A_Update After Update' )
+    Error = DisassociateTarget ( c_loc ( A_U ) )
+    Error = DisassociateTarget ( c_loc ( A_O ) )
     
-    Error = DisassociateTarget ( c_loc ( A_Update ) )
-    Error = DisassociateTarget ( c_loc ( A_Old ) )
-    
+    nullify ( A_U )
+    nullify ( A_O )
     
   end subroutine Compute_GPU
   
@@ -204,11 +169,45 @@ contains
     
     end do
     
-    !call Show ( A_U, 'A_U CPU' )
-    
-    nullify ( A_O, A_U )
-    
   end subroutine Compute_CPU
+  
+  
+  subroutine Validate ( J )
+  
+    class ( JacobiForm ), intent ( inout ), target :: &
+      J
+  
+    !-- Validate computation done on GPU with results on CPU
+    
+    integer ( KDI ) :: &
+      Error
+    real ( KDR ) :: &
+      L1_Error
+    real ( KDR ), dimension ( :, : ), allocatable, target :: &
+      O_Host
+    
+    allocate &
+      ( O_Host ( size ( J % Input, dim = 1 ), size ( J % Input, dim = 2 ) ) )
+    
+    call J % Timer_DataTransfer % Start ( )
+    
+    !-- Get data on GPU to host variable O_Host so we can validate
+    Error &
+      = AssociateTarget &
+          ( c_loc ( O_Host ), J % D_Output, size ( O_Host ), 0 )
+    !$OMP target update from ( O_Host )
+    Error = DisassociateTarget ( c_loc ( O_Host ) )
+    
+    call J % Timer_DataTransfer % Stop ( )
+    
+    L1_Error = sum ( abs ( O_Host - J % Output ) ) / sum ( J % Output ) 
+    
+    call Show ( L1_Error,   'L1_Error' )
+    !call Show ( O_Host,     'O_Host' )
+    !call Show ( J % Input,  'J % Input' )
+    !call Show ( J % Output, 'J % Output' )
+  
+  end subroutine Validate
   
   
   subroutine Finalize ( J ) 
@@ -234,9 +233,6 @@ program Difference_Form_Test
   
   integer ( KDI ), dimension ( 2 ) :: &
     nCells
-  type ( TimerForm ) :: &
-    T_GPU, &
-    T_CPU
   type ( JacobiForm ) :: &
     J
   
@@ -245,25 +241,30 @@ program Difference_Form_Test
   
   call J % Initialize ( )
   
+  associate &
+    ( T_GPU => J % Timer_GPU, &
+      T_CPU => J % Timer_CPU )
+        
   call Show ( 'Calling Jacobi', CONSOLE % INFO_1 )
   
-  call T_GPU % Initialize ( 'Jacobi GPU ', Level = 1 )
-  call T_CPU % Initialize ( 'Jacobi CPU ', Level = 1 )
+  
+  call T_GPU % Start ( )
+  call J % Compute_GPU ( )
+  call T_GPU % Stop ( )
   
   call T_CPU % Start ( )
   call J % Compute_CPU ( )
   call T_CPU % Stop ( )
   
-  J % Output = -2.0_KDR
-  
-  call T_GPU % Start ( )
-  call J % Compute_GPU ( J % Input, J % Output )
-  call T_GPU % Stop ( )
+  call J % Validate ( ) 
   
   call T_GPU % ShowTotal ( CONSOLE % INFO_1 )
   call T_CPU % ShowTotal ( CONSOLE % INFO_1 )
+  call J % Timer_DataTransfer % ShowTotal ( CONSOLE % INFO_1 )
   
   call Show ( T_CPU % TotalTime / T_GPU % TotalTime, 'GPU SpeedUp Factor' )
+  
+  end associate
   
   deallocate ( PROGRAM_HEADER )
 
