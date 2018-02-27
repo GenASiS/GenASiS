@@ -1,7 +1,5 @@
 RUNTIME = \
   Runtime.o \
-  OMP_WrapperInterface.o \
-  OMP_Wrapper.o \
   PROGRAM_HEADER_Singleton.o \
   GetMemoryUsage_Command.o \
   Timer_Form.o \

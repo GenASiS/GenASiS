@@ -6,6 +6,5 @@ module Runtime
   use Timer_Form
   use GetMemoryUsage_Command
   use PROGRAM_HEADER_Singleton
-  use OMP_WrapperInterface
 
 end module Runtime

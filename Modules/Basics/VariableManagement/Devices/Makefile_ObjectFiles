@@ -1,0 +1,5 @@
+DEVICES = \
+  Devices.o \
+  AllocateDevice_Command.o \
+  Device_C_OMP.o \
+  Device_OMP.o

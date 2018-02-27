@@ -8,6 +8,8 @@ FORTRAN_OPTIMIZE     = #-Oipa2 #-- Default optimization (O2) but with lower ipa
                        #       #   level (defaupt ipa3 causes issue)
 FORTRAN_PROFILE      = 
 
+CC_COMPILE = cc -c 
+
 LINK = ftn
 
 #-- Silo library may be  automatically included & linked by 

@@ -1,0 +1,25 @@
+PATH_GENASIS = ../../../../../..
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+all: \
+  AllocateDevice_Command_Test
+
+AllocateDevice_Command_Test: AllocateDevice_Command_Test.o
+	$(LINK) $(FLAGS) \
+          -o AllocateDevice_Command_Test_$(MACHINE) \
+          AllocateDevice_Command_Test.o AllocateDevice_Command.o \
+          Device_C_OMP.o Device_OMP.o $(SPECIFIERS)
+
+clean:
+	rm -f *.o *.mod *.ld
+
+clobber: clean
+	rm -f AllocateDevice_Command_Test_*
+
+include $(PATH_SPECIFIERS)/Makefile_Dependencies
+include $(PATH_DEVICES)/Makefile_Dependencies
+
+AllocateDevice_Command_Test.o: \
+  AllocateDevice_Command.o \
+  AllocateDevice_Command_Test.f90

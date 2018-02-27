@@ -1,0 +1,18 @@
+Device_OMP.o: \
+  Device_OMP.c
+
+Device_C_OMP.o: \
+  Device_OMP.o \
+  Device_C_OMP.f90
+
+AllocateDevice_Command.o: \
+  Specifiers.o \
+  Device_C_OMP.o \
+  AllocateDevice_Command.f90
+
+Devices.o: \
+  AllocateDevice_Command.o \
+  Devices.f90
+
+Devices.a: $(DEVICES)
+	ar r Devices.a $(DEVICES)

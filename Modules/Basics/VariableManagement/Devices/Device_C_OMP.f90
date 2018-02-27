@@ -1,4 +1,4 @@
-module OMP_WrapperInterface
+module Device_C
 
   use ISO_C_BINDING
   
@@ -6,24 +6,24 @@ module OMP_WrapperInterface
   private
   
   public :: &
-    Allocate_D, &
-    AssociateTarget, &
+    AllocateTargetDouble, &
+    AssociateTargetDouble, &
     DisassociateTarget
   
   interface 
 
-    type ( c_ptr ) function Allocate_D ( nValues ) &
-                              bind ( c, name = 'Allocate_D_Double' )
+    type ( c_ptr ) function AllocateTargetDouble ( nValues ) &
+                              bind ( c, name = 'AllocateTargetDouble_OMP' )
       use iso_c_binding
       implicit none
       integer ( kind = c_int ), value :: &
         nValues
-    end function Allocate_D
+    end function AllocateTargetDouble
     
     
-    integer ( c_int ) function AssociateTarget &
+    integer ( c_int ) function AssociateTargetDouble &
                      ( Host, Device, nValues, oValue ) &
-                     bind ( c, name = 'AssociateTargetWrapper' )
+                     bind ( c, name = 'AssociateTargetDouble_OMP' )
     
       use iso_c_binding
       implicit none
@@ -33,11 +33,11 @@ module OMP_WrapperInterface
       integer ( c_int ), value :: &
         nValues, &
         oValue
-    end function AssociateTarget
+    end function AssociateTargetDouble
 
     
     integer ( c_int ) function DisassociateTarget ( Host ) &
-                     bind ( c, name = 'DisassociateTargetWrapper' )
+                     bind ( c, name = 'DisassociateTarget_OMP' )
     
       use iso_c_binding
       implicit none
@@ -47,4 +47,4 @@ module OMP_WrapperInterface
 
   end interface 
 
-end module OMP_WrapperInterface
+end module Device_C

@@ -26,12 +26,6 @@ GetMemoryUsage_Command.o: \
   MessagePassing.o \
   GetMemoryUsage_Command.f90
 
-OMP_Wrapper.o: \
-  OMP_Wrapper.c
-
-OMP_WrapperInterface.o: \
-  OMP_WrapperInterface.f90
-
 PROGRAM_HEADER_Singleton.o: \
   VariableManagement.o \
   Display.o \
@@ -49,8 +43,6 @@ Runtime.o: \
   InitializeRandomSeed_Command.o \
   CommandLineOptions_Form.o \
   PROGRAM_HEADER_Singleton.o \
-  OMP_WrapperInterface.o \
-  OMP_Wrapper.o \
   Runtime.f90
 
 Runtime.a: $(RUNTIME)

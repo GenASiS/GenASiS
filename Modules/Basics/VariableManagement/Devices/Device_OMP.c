@@ -2,24 +2,25 @@
 #include <stdio.h>
 #include <omp.h>
 
-void * Allocate_D_Double ( int nValues )
+void * AllocateTargetDouble_OMP ( int nValues )
   {
   int iDevice;
   void * D_Pointer;
   
   iDevice = omp_get_default_device();
   
-//  printf("nValues Alloc: %d\n", nValues );
-//  printf("iDevice: %d\n", iDevice );
-  
+  /*
+  printf("nValues Alloc: %d\n", nValues );
+  printf("iDevice: %d\n", iDevice );
+  */ 
   D_Pointer = omp_target_alloc ( sizeof ( double ) * nValues, iDevice );
   
-//  printf("D_Pointer : %p\n", D_Pointer);
+  // printf("D_Pointer : %p\n", D_Pointer);
   
   return D_Pointer;
   }
 
-int AssociateTargetWrapper 
+int AssociateTargetDouble_OMP 
       ( void * Host, void * Device, int nValues, int oValue )
   {    
   int iDevice, retval;
@@ -27,7 +28,6 @@ int AssociateTargetWrapper
   
   /*
   printf("nValues Assoc: %d\n", nValues );
-  
   printf("Host     : %p\n", Host );
   printf("Device   : %p\n", Device);
   */
@@ -49,7 +49,7 @@ int AssociateTargetWrapper
   return retval;
   }
   
-int DisassociateTargetWrapper ( void * Host )
+int DisassociateTarget_OMP ( void * Host )
   {
   int iDevice, retval;
   
