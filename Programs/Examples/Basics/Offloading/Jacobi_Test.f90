@@ -1,8 +1,8 @@
 module Jacobi_Form
   
-  use ISO_C_BINDING
+  use iso_c_binding
+  use Device_C
   use Basics
-  use OMP_LIB
   
   implicit none
   private
@@ -61,20 +61,20 @@ contains
     J % Output = 0.0_KDR
     
     !-- Allocate memory on Device
-    J % D_Input  = Allocate_D ( size ( J % Input ) )
-    J % D_Output = Allocate_D ( size ( J % Output ) )
+    call AllocateDevice ( J % Input, J % D_Input )
+    call AllocateDevice ( J % Output, J % D_Output )
     
     call J % Timer_DataTransfer % Start ( )
     
     !-- Update device's J % Input 
     I => J % Input
-    Error = AssociateTarget ( c_loc ( I ), J % D_Input, size ( I ), 0 )
+    call AssociateDevice ( J % D_Input, I, ErrorOption = Error )
     !$OMP target update to ( I )
     Error = DisassociateTarget ( c_loc ( I ) )
     
     !-- Update device's J % Output
     O => J % Output
-    Error = AssociateTarget ( c_loc ( O ), J % D_Output, size ( O ), 0 )
+    call AssociateDevice ( J % D_Output, O, ErrorOption = Error )
     !$OMP target update to ( O )
     Error = DisassociateTarget ( c_loc ( O ) )
     
@@ -108,9 +108,9 @@ contains
     nIterations = 1000
     nV = shape ( A_O )
     
-    Error = AssociateTarget ( c_loc ( A_U ), J % D_Output, size ( A_U ), 0 )
-    Error = AssociateTarget ( c_loc ( A_O ), J % D_Input, size ( A_O ), 0 )
-
+    call AssociateDevice ( J % D_Output, A_U, ErrorOption = Error )
+    call AssociateDevice ( J % D_Input, A_O, ErrorOption = Error )
+    
     do iI = 1, nIterations
       !$OMP target teams distribute parallel do collapse ( 2 ) schedule ( static, 1 )
       do jV = 2, nV ( 2 ) - 1
@@ -192,9 +192,7 @@ contains
     call J % Timer_DataTransfer % Start ( )
     
     !-- Get data on GPU to host variable O_Host so we can validate
-    Error &
-      = AssociateTarget &
-          ( c_loc ( O_Host ), J % D_Output, size ( O_Host ), 0 )
+    call AssociateDevice ( J % D_Output, O_Host, ErrorOption = Error )
     !$OMP target update from ( O_Host )
     Error = DisassociateTarget ( c_loc ( O_Host ) )
     
