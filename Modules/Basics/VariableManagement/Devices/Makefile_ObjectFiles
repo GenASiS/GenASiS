@@ -1,5 +1,6 @@
 DEVICES = \
   Devices.o \
+  AssociateDevice_Command.o \
   AllocateDevice_Command.o \
   Device_C_OMP.o \
   Device_OMP.o

@@ -20,7 +20,7 @@ contains
   
   subroutine AllocateDevice_KDR_1D ( Value, Device )
   
-    real ( KDR ), dimension ( : ) :: &
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
       Value
     type ( c_ptr ), intent ( out ) :: &
       Device
@@ -32,7 +32,7 @@ contains
 
   subroutine AllocateDevice_KDR_2D ( Value, Device )
   
-    real ( KDR ), dimension ( :, : ) :: &
+    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
       Value
     type ( c_ptr ), intent ( out ) :: &
       Device
