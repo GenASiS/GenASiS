@@ -14,6 +14,8 @@ FORTRAN_DEBUG        = -g #-Wall
 FORTRAN_OPTIMIZE     = -Ofast
 FORTRAN_PROFILE      = 
 
+CC_COMPILE           = mpicc -c -fopenmp
+
 LINK = mpifort -qsmp=omp:auto -qoffload
 
 SILO_DIR = /ccs/home/reubendb/projects/swtree/peak/silo/4.10.2/xl2017

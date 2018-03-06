@@ -23,7 +23,7 @@ contains
   
     type ( c_ptr ), intent ( in ) :: &
       Device
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
+    real ( KDR ), dimension ( : ), intent ( in ), target :: &
       Value
     integer ( KDI ), intent ( in ), optional :: &
       oValueOption
@@ -51,7 +51,7 @@ contains
   
     type ( c_ptr ), intent ( in ) :: &
       Device
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+    real ( KDR ), dimension ( :, : ), intent ( in ), target :: &
       Value
     integer ( KDI ), intent ( out ), optional :: &
       ErrorOption

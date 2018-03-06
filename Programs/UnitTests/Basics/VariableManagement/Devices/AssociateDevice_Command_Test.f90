@@ -1,4 +1,4 @@
-module AllocateDevice_Command_Test_Form
+module AssociateDevice_Command_Test_Form
 
   use iso_c_binding
   use Specifiers
@@ -7,7 +7,7 @@ module AllocateDevice_Command_Test_Form
   private
   
   interface Show
-    module procedure ShowAddress_1D
+    module procedure Show_C_Pointer_1D
   end interface Show
   
   public :: &
@@ -16,15 +16,17 @@ module AllocateDevice_Command_Test_Form
 contains
 
 
-  subroutine ShowAddress_1D ( Address, Description )
+  subroutine Show_C_Pointer_1D ( C_Pointer, Description )
 
     type ( c_ptr ), dimension ( : ), intent ( in ) :: &
-      Address
+      C_Pointer
     character ( * ), intent ( in ) :: &
       Description
     
     integer ( KDI ) :: &
       i
+    integer ( KBI ) :: &
+      Address
     logical ( KDL ) :: &
       AbortShow
     character ( LDN ) :: &
@@ -33,29 +35,30 @@ contains
       Buffer
 
     print '(a35)', trim ( Description )
-    do i = 1, size ( Address )
+    do i = 1, size ( C_Pointer )
       
       write ( IndexLabel, fmt = '( i7 )' ) i
-      write ( Buffer, fmt = ' ( z64 ) ' ) Address ( i )
+      Address = transfer ( C_Pointer, 1_KBI )
+      write ( Buffer, fmt = ' ( z64 ) ' ) Address
       Buffer = '0x' //  adjustl ( Buffer )
       print &
         '(a38, a32)', &
         '( ' // trim ( adjustl ( IndexLabel ) ) // ' ) = ', Buffer
     end do
 
-  end subroutine ShowAddress_1D
+  end subroutine Show_C_Pointer_1D
 
 
-end module AllocateDevice_Command_Test_Form
+end module AssociateDevice_Command_Test_Form
 
 
-program AllocateDevice_Command_Test
+program AssociateDevice_Command_Test
 
   use iso_c_binding
   use Specifiers
   use AllocateDevice_Command
   use AssociateDevice_Command
-  use AllocateDevice_Command_Test_Form
+  use AssociateDevice_Command_Test_Form
   
   implicit none
   
@@ -93,4 +96,4 @@ program AllocateDevice_Command_Test
   print*, 'Associate Error 1: ', Error_1
   print*, 'Associate Error 2: ', Error_2
 
-end program AllocateDevice_Command_Test
+end program AssociateDevice_Command_Test
