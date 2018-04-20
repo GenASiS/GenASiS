@@ -133,6 +133,8 @@ contains
              VectorIndicesOption = VectorIndices )
 
     F % BaryonMassReference = BaryonMassReference
+    call Show ( F % BaryonMassReference, F % Unit ( F % BARYON_MASS ), &
+                'BaryonMassReference', F % IGNORABILITY )
 
   end subroutine InitializeAllocate_D
   
