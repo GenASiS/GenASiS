@@ -20,7 +20,8 @@ program FluidFeatures_P__Form_Test
     FF
 
   allocate ( PROGRAM_HEADER )  
-  call PROGRAM_HEADER % Initialize ( ProgramName )
+  call PROGRAM_HEADER % Initialize &
+         ( ProgramName, AppendDimensionalityOption = .false. )
 
   call F % Initialize &
          ( RiemannSolverType = 'HLLC', UseLimiter = .true., &

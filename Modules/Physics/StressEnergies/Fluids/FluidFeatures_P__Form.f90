@@ -89,6 +89,7 @@ contains
              VectorIndicesOption = VectorIndicesOption )
 
     FF % ShockThreshold = ShockThreshold
+    call Show ( FF % ShockThreshold, 'ShockThreshold', FF % IGNORABILITY )
 
   end subroutine InitializeAllocate_P
 

@@ -159,8 +159,10 @@ contains
 
     n_0  =  1.0_KDR
     p_0  =  1.0_KDR
-    call Show ( n_0, NumberDensityUnit, 'FiducialBaryonDensity' )
-    call Show ( p_0, EnergyDensityUnit, 'FiducialPressure' )
+    call Show ( n_0, NumberDensityUnit, 'FiducialBaryonDensity', &
+                F % IGNORABILITY )
+    call Show ( p_0, EnergyDensityUnit, 'FiducialPressure', &
+                F % IGNORABILITY )
 
     end associate !-- amu, etc.
 
