@@ -107,36 +107,6 @@ contains
     type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
       VariableUnit
 
-    associate &
-      ( amu   => F % AtomicMassUnit, &
-        k     => F % BoltzmannConstant, &
-        gamma => F % AdiabaticIndex, &
-        mu    => F % MeanMolecularWeight, &
-        c_v   => F % SpecificHeatVolume, &
-        n_0   => F % FiducialBaryonDensity, &
-        p_0   => F % FiducialPressure )
-
-    if ( BaryonMassUnit /= UNIT % IDENTITY ) then
-      amu = CONSTANT % ATOMIC_MASS_UNIT
-    else !-- Dimensionless
-      amu = 1.0_KDR
-    end if
-
-    if ( TemperatureUnit /= UNIT % IDENTITY ) then
-      k = CONSTANT % BOLTZMANN
-    else !-- Dimensionless
-      k = 1.0_KDR
-    end if
-
-    gamma  =  1.4_KDR
-    mu     =  1.0_KDR
-    c_v    =  k / ( mu * ( gamma - 1.0_KDR ) )
-
-    n_0  =  1.0_KDR
-    p_0  =  1.0_KDR
-    
-    end associate !-- amu, etc.
-
     call InitializeBasics &
            ( F, Variable, VariableUnit, VariableOption, UnitOption )
 
@@ -148,6 +118,51 @@ contains
              VectorOption = VectorOption, NameOption = NameOption, &
              ClearOption = ClearOption, UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndicesOption )
+
+    associate &
+      ( amu   => F % AtomicMassUnit, &
+        k     => F % BoltzmannConstant, &
+        gamma => F % AdiabaticIndex, &
+        mu    => F % MeanMolecularWeight, &
+        c_v   => F % SpecificHeatVolume, &
+        n_0   => F % FiducialBaryonDensity, &
+        p_0   => F % FiducialPressure )
+
+    if ( BaryonMassUnit /= UNIT % IDENTITY ) then
+      amu = CONSTANT % ATOMIC_MASS_UNIT
+      call Show ( amu, UNIT % KILOGRAM, 'AtomicMassUnit', F % IGNORABILITY )
+    else !-- Dimensionless
+      amu = 1.0_KDR
+      call Show ( amu, 'AtomicMassUnit', F % IGNORABILITY )
+    end if
+
+    if ( TemperatureUnit /= UNIT % IDENTITY ) then
+      k = CONSTANT % BOLTZMANN
+      call Show ( k, UNIT % JOULE / UNIT % KELVIN, 'BoltzmannConstant', &
+                  F % IGNORABILITY )
+    else !-- Dimensionless
+      k = 1.0_KDR
+      call Show ( k, 'BoltzmannConstant', F % IGNORABILITY )
+    end if
+
+    gamma  =  1.4_KDR
+    mu     =  1.0_KDR
+    c_v    =  k / ( mu * ( gamma - 1.0_KDR ) )
+    call Show ( gamma, 'AdiabaticIndex', F % IGNORABILITY )
+    call Show ( mu, 'MeanMolecularWeight', F % IGNORABILITY )
+    if ( TemperatureUnit /= UNIT % IDENTITY ) then
+      call Show ( c_v, UNIT % BOLTZMANN, 'SpecificHeatVolume', &
+                  F % IGNORABILITY )
+    else
+      call Show ( c_v, 'SpecificHeatVolume', F % IGNORABILITY )
+    end if
+
+    n_0  =  1.0_KDR
+    p_0  =  1.0_KDR
+    call Show ( n_0, NumberDensityUnit, 'FiducialBaryonDensity' )
+    call Show ( p_0, EnergyDensityUnit, 'FiducialPressure' )
+
+    end associate !-- amu, etc.
 
   end subroutine InitializeAllocate_P_I
 
@@ -210,6 +225,10 @@ contains
 
     F % AdiabaticIndex = AdiabaticIndex
 
+    call Show ( 'Setting AdiabaticIndex of a Fluid_P_I', F % IGNORABILITY )
+    call Show ( F % Name, 'Name', F % IGNORABILITY )
+    call Show ( F % AdiabaticIndex, 'AdiabaticIndex', F % IGNORABILITY )
+
   end subroutine SetAdiabaticIndex
 
 
@@ -231,6 +250,18 @@ contains
     mu  =  MeanMolecularWeight
 
     c_v  =  k / ( mu * ( gamma - 1.0_KDR ) )
+
+    call Show ( 'Setting MeanMolecularWeight of a Fluid_P_I', F % IGNORABILITY )
+    call Show ( F % Name, 'Name', F % IGNORABILITY )
+    call Show ( F % MeanMolecularWeight, 'MeanMolecularWeight', &
+                F % IGNORABILITY )
+
+    if ( F % Unit ( F % TEMPERATURE ) /= UNIT % IDENTITY ) then
+      call Show ( c_v, UNIT % BOLTZMANN, 'SpecificHeatVolume', &
+                  F % IGNORABILITY )
+    else
+      call Show ( c_v, 'SpecificHeatVolume', F % IGNORABILITY )
+    end if
 
     end associate !-- amu, etc.
 
@@ -256,6 +287,18 @@ contains
 
     mu  =  k / ( c_v * ( gamma - 1.0_KDR ) )
 
+    call Show ( 'Setting SpecificHeatVolume of a Fluid_P_I', F % IGNORABILITY )
+    call Show ( F % Name, 'Name', F % IGNORABILITY )
+    if ( F % Unit ( F % TEMPERATURE ) /= UNIT % IDENTITY ) then
+      call Show ( c_v, UNIT % BOLTZMANN, 'SpecificHeatVolume', &
+                  F % IGNORABILITY )
+    else
+      call Show ( c_v, 'SpecificHeatVolume', F % IGNORABILITY )
+    end if
+
+    call Show ( F % MeanMolecularWeight, 'MeanMolecularWeight', &
+                F % IGNORABILITY )
+
     end associate !-- amu, etc.
 
   end subroutine SetSpecificHeatVolume
@@ -272,6 +315,13 @@ contains
 
     F % FiducialBaryonDensity = FiducialBaryonDensity
     F % FiducialPressure = FiducialPressure
+
+    call Show ( 'Setting fiducial parameters of a Fluid_P_I', F % IGNORABILITY )
+    call Show ( F % Name, 'Name', F % IGNORABILITY )
+    call Show ( F % FiducialBaryonDensity, 'FiducialBaryonDensity', &
+                F % IGNORABILITY )
+    call Show ( F % FiducialPressure, 'FiducialPressure', &
+                F % IGNORABILITY )
 
   end subroutine SetFiducialParameters
 
