@@ -65,7 +65,8 @@ contains
   
   
   subroutine Initialize &
-               ( PS, Filename, ProcessRank, PathOption, nLinesOption )
+               ( PS, Filename, ProcessRank, PathOption, IgnorabilityOption, &
+                 nLinesOption )
     
     class ( ParameterStreamForm ), intent ( inout ) :: &
       PS
@@ -76,6 +77,7 @@ contains
     character ( * ), intent ( in ), optional :: &
       PathOption
     integer ( KDI ), intent ( in ), optional :: &
+      IgnorabilityOption, &
       nLinesOption
     
     integer ( KDI ) :: &
@@ -87,6 +89,8 @@ contains
       Dummy
 
     PS % IGNORABILITY = CONSOLE % INFO_2
+    if ( present ( IgnorabilityOption ) ) &
+      PS % IGNORABILITY = IgnorabilityOption
 
     PS % ProcessRank = ProcessRank
 
