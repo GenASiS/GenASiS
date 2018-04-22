@@ -125,7 +125,7 @@ contains
              ( PS, GeometryType, GravitySolverTypeOption = 'MULTIPOLE' )
     end if !-- Dimensionless
 
-    call PS % SetGeometry ( )
+    call PS % SetGeometry ( GA )
 
     FCC % GravityFactor = 0.1_KDR
     if ( present ( GravityFactorOption ) ) &

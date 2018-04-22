@@ -51,9 +51,8 @@ contains
     select type ( GA => PS % Geometry_ASC )
     class is ( Geometry_ASC_Form )
     call GA % Initialize ( PS, GeometryType )
+    call PS % SetGeometry ( GA )
     end select !-- GA
-
-    call PS % SetGeometry ( )
 
     !-- Fluid
 
