@@ -164,7 +164,7 @@ contains
       oV     !-- oVector
 
     if ( G % Type == '' ) &
-      G % Type = 'Geometry_N'
+      G % Type = 'a Geometry_N'
 
     !-- variable indices
 
