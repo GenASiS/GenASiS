@@ -6,6 +6,7 @@ FLUIDS = \
   Sources_F_ASC__Form.o \
   Sources_F_CSL__Form.o \
   Sources_F__Form.o \
+  Tally_F_P__Form.o \
   Tally_F_D__Form.o \
   FluidFeatures_P__Form.o \
   Fluid_P_I__Form.o \

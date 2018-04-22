@@ -36,6 +36,14 @@ Tally_F_D__Form.o: \
   Fluid_D__Form.o \
   Tally_F_D__Form.f90
 
+Tally_F_P__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Spaces.o \
+  Fluid_P__Template.o \
+  Tally_F_D__Form.o \
+  Tally_F_P__Form.f90
+
 Sources_F__Form.o: \
   Basics.o \
   Mathematics.o \
@@ -96,7 +104,10 @@ Fluids.o: \
   FluidFeatures_Template.o \
   Fluid_D__Form.o \
   Fluid_P__Template.o \
+  Fluid_P_I__Form.o \
+  FluidFeatures_P__Form.o \
   Tally_F_D__Form.o \
+  Tally_F_P__Form.o \
   Sources_F__Form.o \
   Sources_F_CSL__Form.o \
   Sources_F_ASC__Form.o \
