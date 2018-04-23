@@ -17,6 +17,8 @@ program Geometry_ASC__Form_Test
   allocate ( PROGRAM_HEADER )  
   call PROGRAM_HEADER % Initialize ( ProgramName )
 
+  call CONSOLE % SetVerbosity ( 'INFO_4' )
+
   allocate ( A_G, A_N )
   call A_G % Initialize ( 'Atlas_SC_G', PROGRAM_HEADER % Communicator )
   call A_N % Initialize ( 'Atlas_SC_N', PROGRAM_HEADER % Communicator )

@@ -14,6 +14,8 @@ program Geometry_G__Form_Test
   call PROGRAM_HEADER % Initialize &
          ( ProgramName, AppendDimensionalityOption = .false. )
 
+  call CONSOLE % SetVerbosity ( 'INFO_4' )
+
   call TestGeometry ( GeometryName_1, 1 )
   call TestGeometry ( GeometryName_2, 2 )
   call TestGeometry ( GeometryName_3, 3 )
