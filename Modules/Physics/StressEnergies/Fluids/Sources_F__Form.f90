@@ -3,7 +3,7 @@ module Sources_F__Form
   use Basics
   use Mathematics
   use Fluid_D__Form
-!  use Fluid_P__Template
+  use Fluid_P__Template
 
   implicit none
   private
@@ -257,13 +257,13 @@ contains
     integer ( KDI ) :: &
       iD
 
-    ! select type ( F )
-    ! class is ( Fluid_P_Template )
-    !   VariableUnit ( SF % GRAVITATIONAL_G )  &
-    !     =  F % Unit ( F % CONSERVED_ENERGY )  /  TimeUnit
-    !   VariableUnit ( SF % RADIATION_G )  &
-    !     =  F % Unit ( F % CONSERVED_ENERGY )  /  TimeUnit
-    ! end select !-- F
+    select type ( F )
+    class is ( Fluid_P_Template )
+      VariableUnit ( SF % GRAVITATIONAL_G )  &
+        =  F % Unit ( F % CONSERVED_ENERGY )  /  TimeUnit
+      VariableUnit ( SF % RADIATION_G )  &
+        =  F % Unit ( F % CONSERVED_ENERGY )  /  TimeUnit
+    end select !-- F
 
     do iD = 1, 3
       VariableUnit ( SF % CURVILINEAR_S_D ( iD ) )  &

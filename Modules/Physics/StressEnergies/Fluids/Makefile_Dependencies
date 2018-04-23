@@ -48,8 +48,8 @@ Sources_F__Form.o: \
   Basics.o \
   Mathematics.o \
   Fluid_D__Form.o \
+  Fluid_P__Template.o \
   Sources_F__Form.f90
-#  Fluid_P__Template.o \
 
 Sources_F_CSL__Form.o: \
   Basics.o \
