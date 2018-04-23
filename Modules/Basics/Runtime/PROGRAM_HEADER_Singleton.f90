@@ -145,6 +145,10 @@ contains
 
     call CLO % Initialize ( )
 
+    Verbosity = CONSOLE % LABEL ( CONSOLE % Verbosity ) 
+    call CLO % Read ( Verbosity, 'Verbosity', CONSOLE % INFO_1 )
+    call CONSOLE % SetVerbosity ( Verbosity )
+
     DisplayRank  = CONSOLE % DisplayRank
     call CLO % Read ( DisplayRank, 'DisplayRank', CONSOLE % INFO_1 )
     call PH % Communicator % Synchronize ( )
@@ -179,13 +183,9 @@ contains
            ( Filename, PH % Communicator % Rank, &
              IgnorabilityOption = CONSOLE % INFO_1 )
 
-    Verbosity = CONSOLE % LABEL ( CONSOLE % Verbosity ) 
-    call PROGRAM_HEADER % GetParameter &
-           ( Verbosity, 'Verbosity', IgnorabilityOption = CONSOLE % INFO_1 )
-    call CONSOLE % SetVerbosity ( Verbosity )
-
+    call Show ( 'Setting Timer parameters', CONSOLE % INFO_1 )
     allocate ( PH % Timer ( MAX_TIMERS ) )
-    
+
     PH % TimerLevel = 8
     call PROGRAM_HEADER % GetParameter ( PH % TimerLevel, 'TimerLevel' )
     call Show ( PH % TimerLevel, 'TimerLevel', CONSOLE % INFO_1 )
