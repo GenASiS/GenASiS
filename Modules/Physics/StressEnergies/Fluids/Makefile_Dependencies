@@ -70,6 +70,12 @@ FluidFeatures_CSL__Form.o: \
   FluidFeatures_P__Form.o \
   FluidFeatures_CSL__Form.f90
 
+FluidFeatures_ASC__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  FluidFeatures_CSL__Form.o \
+  FluidFeatures_ASC__Form.f90
+
 Fluid_CSL__Form.o: \
   Basics.o \
   Mathematics.o \

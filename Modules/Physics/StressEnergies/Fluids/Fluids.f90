@@ -11,6 +11,7 @@ module Fluids
   use Sources_F_CSL__Form
   use Sources_F_ASC__Form
   use FluidFeatures_CSL__Form
+  use FluidFeatures_ASC__Form
   use Fluid_CSL__Form
   use Fluid_ASC__Form
   use ApplyCurvilinear_F__Command
