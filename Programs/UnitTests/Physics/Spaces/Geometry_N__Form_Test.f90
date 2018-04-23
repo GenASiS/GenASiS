@@ -11,7 +11,8 @@ program Geometry_N__Form_Test
     GeometryName_3 = 'Geometry_N_3D'
 
   allocate ( PROGRAM_HEADER )  
-  call PROGRAM_HEADER % Initialize ( ProgramName )
+  call PROGRAM_HEADER % Initialize &
+         ( ProgramName, AppendDimensionalityOption = .false. )
 
   call TestGeometry ( GeometryName_1, 1 )
   call TestGeometry ( GeometryName_2, 2 )
