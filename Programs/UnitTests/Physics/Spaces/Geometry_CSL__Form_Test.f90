@@ -34,7 +34,7 @@ program Geometry_CSL__Form_Test
   call GC_G % Initialize ( C_G, 'Geometry_CSL_G', 'GALILEAN', nValues )
   call GC_N % Initialize ( C_N, 'Geometry_CSL_N', 'NEWTONIAN', nValues )
 
-  deallocate ( GC_G, GC_N )
+  deallocate ( GC_N, GC_G )
   end associate !-- nValues
   end select !-- C_N
   end select !-- C_G
