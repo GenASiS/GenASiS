@@ -14,15 +14,18 @@ program FluidFeatures_P__Form_Test
     iD
   type ( Chart_SLD_Form ) :: &
     C
-  type ( Fluid_P_I_Form ) :: &
+  type ( Fluid_P_I_Form ), allocatable :: &
     F
-  type ( FluidFeatures_P_Form ) :: &
+  type ( FluidFeatures_P_Form ), allocatable :: &
     FF
 
   allocate ( PROGRAM_HEADER )  
   call PROGRAM_HEADER % Initialize &
          ( ProgramName, AppendDimensionalityOption = .false. )
 
+  call CONSOLE % SetVerbosity ( 'INFO_4' )
+
+  allocate ( F, FF )
   call F % Initialize &
          ( RiemannSolverType = 'HLLC', UseLimiter = .true., &
            Velocity_U_Unit = [ ( UNIT % IDENTITY, iD = 1, 3 ) ], &
@@ -36,6 +39,7 @@ program FluidFeatures_P__Form_Test
   call FF % Initialize &
          ( F, C, ShockThreshold = 0.1_KDR, nValues = 10 )
 
+  deallocate ( FF, F )
   deallocate ( PROGRAM_HEADER )
 
 end program FluidFeatures_P__Form_Test
