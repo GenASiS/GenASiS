@@ -108,7 +108,6 @@ contains
              VariableOption, VectorOption, NameOption, UnitOption, &
              VectorIndicesOption )
 
-    call SetCoordinateSystem ( G, CoordinateSystem )
     call SetUnits ( VariableUnit, G, CoordinateUnit )
 
     Clear = .true.
@@ -120,6 +119,8 @@ contains
              NameOption = Name, ClearOption = Clear, &
              UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndices )
+
+    call SetCoordinateSystem ( G, CoordinateSystem )
 
   end subroutine InitializeAllocate_G
 
