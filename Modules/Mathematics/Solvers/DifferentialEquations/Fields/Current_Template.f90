@@ -282,11 +282,11 @@ contains
     class ( Sources_C_Form ), intent ( in ), target :: &
       Sources
 
-    C % Sources => Sources
-
     call Show ( 'Setting Sources', C % IGNORABILITY )
     call Show ( C % Name, 'Name', C % IGNORABILITY )
     call Show ( Sources % Name, 'Sources', C % IGNORABILITY )
+
+    C % Sources => Sources
 
   end subroutine SetSources
 
