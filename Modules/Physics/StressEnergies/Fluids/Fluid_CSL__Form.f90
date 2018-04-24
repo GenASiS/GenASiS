@@ -163,14 +163,15 @@ contains
     FC % Sources_CSL => SFC
 
     F => FC % Fluid_D ( )
-    select type ( SF => SFC % Field )
-    class is ( Sources_F_Form )
-      call F % SetSources ( SF )
-    end select !-- SF
 
     call Show ( 'Setting Sources', F % IGNORABILITY - 1 )
     call Show ( FC % Name, 'Name', F % IGNORABILITY - 1 )
     call Show ( SFC % Name, 'Sources', F % IGNORABILITY - 1 )
+
+    select type ( SF => SFC % Field )
+    class is ( Sources_F_Form )
+      call F % SetSources ( SF )
+    end select !-- SF
 
     nullify ( F )
 
@@ -190,6 +191,11 @@ contains
     FC % Features_CSL => FFC
 
     F => FC % Fluid_D ( )
+
+    call Show ( 'Setting Features', F % IGNORABILITY - 1 )
+    call Show ( FC % Name, 'Name', F % IGNORABILITY - 1 )
+    call Show ( FFC % Name, 'Sources', F % IGNORABILITY - 1 )
+
     select type ( FF => FFC % Field )
     class is ( FluidFeaturesTemplate )
     call F % SetFeatures ( FF )

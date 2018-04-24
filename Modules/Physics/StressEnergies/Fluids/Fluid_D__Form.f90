@@ -211,6 +211,10 @@ contains
     class ( FluidFeaturesTemplate ), intent ( in ), target :: &
       Features
 
+    call Show ( 'Setting Features', F % IGNORABILITY )
+    call Show ( F % Name, 'Name', F % IGNORABILITY )
+    call Show ( Features % Name, 'Features', F % IGNORABILITY )
+
     F % Features => Features
 
   end subroutine SetFeatures
