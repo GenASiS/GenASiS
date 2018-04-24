@@ -17,22 +17,22 @@ program Geometry_ASC__Form_Test
   allocate ( PROGRAM_HEADER )  
   call PROGRAM_HEADER % Initialize ( ProgramName )
 
-  call CONSOLE % SetVerbosity ( 'INFO_4' )
-
   allocate ( A_G, A_N )
   call A_G % Initialize ( 'Atlas_SC_G', PROGRAM_HEADER % Communicator )
   call A_N % Initialize ( 'Atlas_SC_N', PROGRAM_HEADER % Communicator )
   call A_G % CreateChart ( )
   call A_N % CreateChart ( )
 
+  call CONSOLE % SetVerbosity ( 'INFO_4' )
   allocate ( GA_G, GA_N )
   call GA_G % Initialize &
-         ( A_G, 'GALILEAN', NameShortOption = 'Geometry_ASC_G' )
+         ( A_G, 'GALILEAN', NameShortOption = 'Geometry_G' )
   call GA_N % Initialize &
-         ( A_N, 'NEWTONIAN', NameShortOption = 'Geometry_ASC_N', &
+         ( A_N, 'NEWTONIAN', NameShortOption = 'Geometry_N', &
            GravitySolverTypeOption = 'MULTIPOLE' )
-
   deallocate ( GA_N, GA_G )
+  call CONSOLE % SetVerbosity ( 'INFO_1' )
+
   deallocate ( A_N, A_G )
   deallocate ( PROGRAM_HEADER )
 

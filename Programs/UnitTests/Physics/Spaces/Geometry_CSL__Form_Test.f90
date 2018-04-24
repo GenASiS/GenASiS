@@ -17,8 +17,6 @@ program Geometry_CSL__Form_Test
   allocate ( PROGRAM_HEADER )  
   call PROGRAM_HEADER % Initialize ( ProgramName )
 
-  call CONSOLE % SetVerbosity ( 'INFO_4' )
-
   allocate ( A_G, A_N )
   call A_G % Initialize ( 'Atlas_SC_G', PROGRAM_HEADER % Communicator )
   call A_N % Initialize ( 'Atlas_SC_N', PROGRAM_HEADER % Communicator )
@@ -32,11 +30,13 @@ program Geometry_CSL__Form_Test
 
   associate ( nValues => C_G % nProperCells + C_G % nGhostCells )
 
+  call CONSOLE % SetVerbosity ( 'INFO_4' )
   allocate ( GC_G, GC_N )
-  call GC_G % Initialize ( C_G, 'Geometry_CSL_G', 'GALILEAN', nValues )
-  call GC_N % Initialize ( C_N, 'Geometry_CSL_N', 'NEWTONIAN', nValues )
-
+  call GC_G % Initialize ( C_G, 'Geometry_G', 'GALILEAN', nValues )
+  call GC_N % Initialize ( C_N, 'Geometry_N', 'NEWTONIAN', nValues )
   deallocate ( GC_N, GC_G )
+  call CONSOLE % SetVerbosity ( 'INFO_1' )
+
   end associate !-- nValues
   end select !-- C_N
   end select !-- C_G
