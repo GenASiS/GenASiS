@@ -4,13 +4,12 @@ module Fluid_CSL__Form
 
   use Basics
   use Mathematics
-!  use FluidFeatures_Template
+  use FluidFeatures_Template
   use Fluid_D__Form
-!  use Fluid_P_P__Form
-!  use Fluid_P_NR__Form
+  use Fluid_P_I__Form
   use Sources_F__Form
   use Sources_F_CSL__Form
-!  use FluidFeatures_CSL__Form
+  use FluidFeatures_CSL__Form
 
   implicit none
   private
@@ -34,21 +33,19 @@ module Fluid_CSL__Form
       RiemannSolverType = ''
     class ( Sources_F_CSL_Form ), pointer :: &
       Sources_CSL => null ( )
-!    class ( FluidFeatures_CSL_Form ), pointer :: &
-!      Features_CSL => null ( )
+    class ( FluidFeatures_CSL_Form ), pointer :: &
+      Features_CSL => null ( )
   contains
     procedure, public, pass :: &
       Initialize
     procedure, public, pass :: &
       Fluid_D
-!    procedure, public, pass :: &
-!      Fluid_P_P
-!    procedure, public, pass :: &
-!      Fluid_P_NR
+    procedure, public, pass :: &
+      Fluid_P_I
     procedure, public, pass :: &
       SetSources
-!    procedure, public, pass :: &
-!      SetFeatures
+    procedure, public, pass :: &
+      SetFeatures
     final :: &
       Finalize
     procedure, private, pass :: &
@@ -132,46 +129,25 @@ contains
   end function Fluid_D
 
 
-  ! function Fluid_P_P ( FC ) result ( F )
+  function Fluid_P_I ( FC ) result ( F )
 
-  !   class ( Fluid_CSL_Form ), intent ( in ), target :: &
-  !     FC
-  !   class ( Fluid_P_P_Form ), pointer :: &
-  !     F
+    class ( Fluid_CSL_Form ), intent ( in ), target :: &
+      FC
+    class ( Fluid_P_I_Form ), pointer :: &
+      F
       
-  !   class ( VariableGroupForm ), pointer :: &
-  !     Field
+    class ( VariableGroupForm ), pointer :: &
+      Field
 
-  !   F => null ( )
+    F => null ( )
 
-  !   Field => FC % Field
-  !   select type ( Field )
-  !   class is ( Fluid_P_P_Form )
-  !   F => Field
-  !   end select !-- Field
+    Field => FC % Field
+    select type ( Field )
+    class is ( Fluid_P_I_Form )
+    F => Field
+    end select !-- Field
 
-  ! end function Fluid_P_P
-
-
-  ! function Fluid_P_NR ( FC ) result ( F )
-
-  !   class ( Fluid_CSL_Form ), intent ( in ), target :: &
-  !     FC
-  !   class ( Fluid_P_NR_Form ), pointer :: &
-  !     F
-      
-  !   class ( VariableGroupForm ), pointer :: &
-  !     Field
-
-  !   F => null ( )
-
-  !   Field => FC % Field
-  !   select type ( Field )
-  !   class is ( Fluid_P_NR_Form )
-  !   F => Field
-  !   end select !-- Field
-
-  ! end function Fluid_P_NR
+  end function Fluid_P_I
 
 
   subroutine SetSources ( FC, SFC )
@@ -197,27 +173,27 @@ contains
   end subroutine SetSources
 
 
-  ! subroutine SetFeatures ( FC, FFC )
+  subroutine SetFeatures ( FC, FFC )
 
-  !   class ( Fluid_CSL_Form ), intent ( inout ) :: &
-  !     FC
-  !   class ( FluidFeatures_CSL_Form ), intent ( in ), target :: &
-  !     FFC
+    class ( Fluid_CSL_Form ), intent ( inout ) :: &
+      FC
+    class ( FluidFeatures_CSL_Form ), intent ( in ), target :: &
+      FFC
 
-  !   class ( Fluid_D_Form ), pointer :: &
-  !     F
+    class ( Fluid_D_Form ), pointer :: &
+      F
 
-  !   FC % Features_CSL => FFC
+    FC % Features_CSL => FFC
 
-  !   F => FC % Fluid_D ( )
-  !   select type ( FF => FFC % Field )
-  !   class is ( FluidFeaturesTemplate )
-  !   call F % SetFeatures ( FF )
-  !   end select !-- FF
+    F => FC % Fluid_D ( )
+    select type ( FF => FFC % Field )
+    class is ( FluidFeaturesTemplate )
+    call F % SetFeatures ( FF )
+    end select !-- FF
 
-  !   nullify ( F )
+    nullify ( F )
 
-  ! end subroutine SetFeatures
+  end subroutine SetFeatures
 
 
   impure elemental subroutine Finalize ( FC )
@@ -251,30 +227,20 @@ contains
         call F % SetPrimitiveConserved ( )
         call F % SetOutput ( FC % FieldOutput )
       end select !-- F
-    ! case ( 'POLYTROPIC' )
-    !   allocate ( Fluid_P_P_Form :: FC % Field )
-    !   select type ( F => FC % Field )
-    !   type is ( Fluid_P_P_Form )
-    !     call F % Initialize &
-    !            ( FC % RiemannSolverType, FC % UseLimiter, FC % VelocityUnit, &
-    !              FC % MassDensityUnit, FC % EnergyDensityUnit, &
-    !              FC % TemperatureUnit, FC % LimiterParameter, FC % nValues, &
-    !              NameOption = FC % NameShort )
-    !     call F % SetPrimitiveConserved ( )
-    !     call F % SetOutput ( FC % FieldOutput )
-    !   end select !-- F
-    ! case ( 'NON_RELATIVISTIC' )
-    !   allocate ( Fluid_P_NR_Form :: FC % Field )
-    !   select type ( F => FC % Field )
-    !   type is ( Fluid_P_NR_Form )
-    !     call F % Initialize &
-    !            ( FC % RiemannSolverType, FC % UseLimiter, FC % VelocityUnit, &
-    !              FC % MassDensityUnit, FC % EnergyDensityUnit, &
-    !              FC % TemperatureUnit, FC % LimiterParameter, FC % nValues, &
-    !              NameOption = FC % NameShort )
-    !     call F % SetPrimitiveConserved ( )
-    !     call F % SetOutput ( FC % FieldOutput )
-    !   end select !-- F
+    case ( 'IDEAL' )
+      allocate ( Fluid_P_I_Form :: FC % Field )
+      select type ( F => FC % Field )
+      type is ( Fluid_P_I_Form )
+        call F % Initialize &
+               ( FC % RiemannSolverType, FC % UseLimiter, &
+                 FC % Velocity_U_Unit, FC % MomentumDensity_D_Unit, &
+                 FC % BaryonMassUnit, FC % NumberDensityUnit, &
+                 FC % EnergyDensityUnit, FC % TemperatureUnit, &
+                 FC % BaryonMassReference, FC % LimiterParameter, &
+                 FC % nValues, NameOption = FC % NameShort )
+        call F % SetPrimitiveConserved ( )
+        call F % SetOutput ( FC % FieldOutput )
+      end select !-- F
     case default
       call Show ( 'FluidType not recognized', CONSOLE % ERROR )
       call Show ( FC % FluidType, 'FluidType', CONSOLE % ERROR )
