@@ -168,6 +168,10 @@ contains
       call F % SetSources ( SF )
     end select !-- SF
 
+    call Show ( 'Setting Sources', F % IGNORABILITY - 1 )
+    call Show ( FC % Name, 'Name', F % IGNORABILITY - 1 )
+    call Show ( SFC % Name, 'Sources', F % IGNORABILITY - 1 )
+
     nullify ( F )
 
   end subroutine SetSources

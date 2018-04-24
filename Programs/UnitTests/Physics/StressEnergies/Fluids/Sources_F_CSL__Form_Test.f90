@@ -1,14 +1,15 @@
-program Fluid_CSL__Form_Test
+program Sources_F_CSL__Form_Test
 
   use Basics
   use Mathematics
   use Spaces
+  use Sources_F_CSL__Form
   use Fluid_CSL__Form
 
   implicit none
 
   character ( LDF ) :: &
-    ProgramName = 'Fluid_CSL__Form_Test'
+    ProgramName = 'Sources_F_CSL__Form_Test'
 
   integer ( KDI ) :: &
     iD
@@ -17,7 +18,9 @@ program Fluid_CSL__Form_Test
   type ( Geometry_ASC_Form ), allocatable :: &
     GA
   type ( Fluid_CSL_Form ), allocatable :: &
-    FC_D, FC_I
+    FC
+  type ( Sources_F_CSL_Form ), allocatable :: &
+    SFC
 
   allocate ( PROGRAM_HEADER )  
   call PROGRAM_HEADER % Initialize ( ProgramName )
@@ -34,39 +37,33 @@ program Fluid_CSL__Form_Test
   class is ( Chart_SL_Template )
   associate ( nValues => C % nProperCells + C % nGhostCells )
 
+  allocate ( FC )
+  call FC % Initialize &
+         ( C, 'Fluid', 'IDEAL', RiemannSolverType = 'HLLC', &
+           UseLimiter = .true., &
+           Velocity_U_Unit = [ ( UNIT % IDENTITY, iD = 1, 3 ) ], &
+           MomentumDensity_D_Unit = [ ( UNIT % IDENTITY, iD = 1, 3 ) ], &
+           BaryonMassUnit = UNIT % IDENTITY, &
+           NumberDensityUnit = UNIT % IDENTITY, &
+           EnergyDensityUnit = UNIT % IDENTITY, &
+           TemperatureUnit = UNIT % IDENTITY, &
+           BaryonMassReference = 1.0_KDR, &
+           LimiterParameter = 1.4_KDR, nValues = nValues )
+
   call CONSOLE % SetVerbosity ( 'INFO_4' )
-  allocate ( FC_D, FC_I )
+  allocate ( SFC )
 
-  call FC_D % Initialize &
-         ( C, 'Fluid_D', 'DUST', RiemannSolverType = 'HLL', &
-           UseLimiter = .true., &
-           Velocity_U_Unit = [ ( UNIT % IDENTITY, iD = 1, 3 ) ], &
-           MomentumDensity_D_Unit = [ ( UNIT % IDENTITY, iD = 1, 3 ) ], &
-           BaryonMassUnit = UNIT % IDENTITY, &
-           NumberDensityUnit = UNIT % IDENTITY, &
-           EnergyDensityUnit = UNIT % IDENTITY, &
-           TemperatureUnit = UNIT % IDENTITY, &
-           BaryonMassReference = 1.0_KDR, &
-           LimiterParameter = 1.4_KDR, nValues = nValues )
-  call FC_I % Initialize &
-         ( C, 'Fluid_I', 'IDEAL', RiemannSolverType = 'HLLC', &
-           UseLimiter = .true., &
-           Velocity_U_Unit = [ ( UNIT % IDENTITY, iD = 1, 3 ) ], &
-           MomentumDensity_D_Unit = [ ( UNIT % IDENTITY, iD = 1, 3 ) ], &
-           BaryonMassUnit = UNIT % IDENTITY, &
-           NumberDensityUnit = UNIT % IDENTITY, &
-           EnergyDensityUnit = UNIT % IDENTITY, &
-           TemperatureUnit = UNIT % IDENTITY, &
-           BaryonMassReference = 1.0_KDR, &
-           LimiterParameter = 1.4_KDR, nValues = nValues )
+  call SFC % Initialize ( FC, 'Sources_F', UNIT % IDENTITY, nValues )
+  call FC % SetSources ( SFC )
 
-  deallocate ( FC_I, FC_D )
+  deallocate ( SFC )
   call CONSOLE % SetVerbosity ( 'INFO_1' )
 
+  deallocate ( FC )
   end associate !-- nValues
   end select !-- C
   deallocate ( GA )
   deallocate ( A )
   deallocate ( PROGRAM_HEADER )
 
-end program Fluid_CSL__Form_Test
+end program Sources_F_CSL__Form_Test

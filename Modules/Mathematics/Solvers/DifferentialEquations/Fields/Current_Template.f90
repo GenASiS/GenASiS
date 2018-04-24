@@ -284,6 +284,10 @@ contains
 
     C % Sources => Sources
 
+    call Show ( 'Setting Sources', C % IGNORABILITY )
+    call Show ( C % Name, 'Name', C % IGNORABILITY )
+    call Show ( Sources % Name, 'Sources', C % IGNORABILITY )
+
   end subroutine SetSources
 
 

@@ -4,7 +4,7 @@ include $(PATH_GENASIS)/Build/Makefile_Build
 
 all: Fluid_D__Form_Test Fluid_P_I__Form_Test FluidFeatures_P__Form_Test \
      Tally_F_D__Form_Test Tally_F_P__Form_Test Sources_F__Form_Test \
-     Fluid_CSL__Form_Test
+     Fluid_CSL__Form_Test Sources_F_CSL__Form_Test
 
 Fluid_D__Form_Test: Basics.a Mathematics.a Fluid_D__Form_Test.o
 	$(LINK) $(FLAGS) \
@@ -58,6 +58,16 @@ Fluid_CSL__Form_Test: Basics.a Mathematics.a Fluid_CSL__Form_Test.o
           FluidFeatures_Template.o \
           Spaces.a Mathematics.a Basics.a $(LIBRARIES)
 
+#-- Intentionally out of order
+Sources_F_CSL__Form_Test: Basics.a Mathematics.a Sources_F_CSL__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Sources_F_CSL__Form_Test_$(MACHINE) \
+          Sources_F_CSL__Form_Test.o Fluid_CSL__Form.o \
+          FluidFeatures_CSL__Form.o Sources_F_CSL__Form.o Sources_F__Form.o \
+          FluidFeatures_P__Form.o Fluid_P_I__Form.o Fluid_P__Template.o \
+          Fluid_D__Form.o FluidFeatures_Template.o \
+          Spaces.a Mathematics.a Basics.a $(LIBRARIES)
+
 clean:
 	rm -f *.o *.a *.mod *.ld
 
@@ -69,6 +79,7 @@ clobber: clean
 	rm -f Tally_F_P__Form_Test_*
 	rm -f Sources_F__Form_Test_*
 	rm -f Fluid_CSL__Form_Test_*
+	rm -f Sources_F_CSL__Form_Test_*
 
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MATHEMATICS)/Makefile_Dependencies
@@ -118,3 +129,11 @@ Fluid_CSL__Form_Test.o: \
   Spaces.o \
   Fluid_CSL__Form.o \
   Fluid_CSL__Form_Test.f90
+
+Sources_F_CSL__Form_Test.o: \
+  Basics.o \
+  Mathematics.o \
+  Spaces.o \
+  Sources_F_CSL__Form_Test.o \
+  Fluid_CSL__Form.o \
+  Sources_F_CSL__Form_Test.f90
