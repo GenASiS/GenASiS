@@ -4,7 +4,8 @@ include $(PATH_GENASIS)/Build/Makefile_Build
 
 all: Fluid_D__Form_Test Fluid_P_I__Form_Test FluidFeatures_P__Form_Test \
      Tally_F_D__Form_Test Tally_F_P__Form_Test Sources_F__Form_Test \
-     Fluid_CSL__Form_Test Sources_F_CSL__Form_Test
+     Fluid_CSL__Form_Test Sources_F_CSL__Form_Test \
+     FluidFeatures_CSL__Form_Test Fluid_ASC__Form_Test
 
 Fluid_D__Form_Test: Basics.a Mathematics.a Fluid_D__Form_Test.o
 	$(LINK) $(FLAGS) \
@@ -49,7 +50,7 @@ Sources_F__Form_Test: Basics.a Mathematics.a Sources_F__Form_Test.o
           Fluid_D__Form.o FluidFeatures_Template.o \
           Mathematics.a Basics.a $(LIBRARIES)
 
-Fluid_CSL__Form_Test: Basics.a Mathematics.a Fluid_CSL__Form_Test.o
+Fluid_CSL__Form_Test: Basics.a Mathematics.a Spaces.a Fluid_CSL__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Fluid_CSL__Form_Test_$(MACHINE) \
           Fluid_CSL__Form_Test.o Fluid_CSL__Form.o FluidFeatures_CSL__Form.o \
@@ -59,7 +60,8 @@ Fluid_CSL__Form_Test: Basics.a Mathematics.a Fluid_CSL__Form_Test.o
           Spaces.a Mathematics.a Basics.a $(LIBRARIES)
 
 #-- Intentionally out of order
-Sources_F_CSL__Form_Test: Basics.a Mathematics.a Sources_F_CSL__Form_Test.o
+Sources_F_CSL__Form_Test: Basics.a Mathematics.a Spaces.a \
+  Sources_F_CSL__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Sources_F_CSL__Form_Test_$(MACHINE) \
           Sources_F_CSL__Form_Test.o Fluid_CSL__Form.o \
@@ -69,7 +71,7 @@ Sources_F_CSL__Form_Test: Basics.a Mathematics.a Sources_F_CSL__Form_Test.o
           Spaces.a Mathematics.a Basics.a $(LIBRARIES)
 
 #-- Intentionally out of order
-FluidFeatures_CSL__Form_Test: Basics.a Mathematics.a \
+FluidFeatures_CSL__Form_Test: Basics.a Mathematics.a Spaces.a \
   FluidFeatures_CSL__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o FluidFeatures_CSL__Form_Test_$(MACHINE) \
@@ -77,6 +79,17 @@ FluidFeatures_CSL__Form_Test: Basics.a Mathematics.a \
           FluidFeatures_CSL__Form.o Sources_F_CSL__Form.o Sources_F__Form.o \
           FluidFeatures_P__Form.o Fluid_P_I__Form.o Fluid_P__Template.o \
           Fluid_D__Form.o FluidFeatures_Template.o \
+          Spaces.a Mathematics.a Basics.a $(LIBRARIES)
+
+Fluid_ASC__Form_Test: Basics.a Mathematics.a Spaces.a Fluid_ASC__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Fluid_ASC__Form_Test_$(MACHINE) \
+          Fluid_ASC__Form_Test.o Fluid_ASC__Form.o Fluid_CSL__Form.o \
+          FluidFeatures_ASC__Form.o FluidFeatures_CSL__Form.o \
+          Sources_F_ASC__Form.o Sources_F_CSL__Form.o Sources_F__Form.o \
+          Tally_F_P__Form.o Tally_F_D__Form.o FluidFeatures_P__Form.o \
+          Fluid_P_I__Form.o Fluid_P__Template.o Fluid_D__Form.o \
+          FluidFeatures_Template.o \
           Spaces.a Mathematics.a Basics.a $(LIBRARIES)
 
 clean:
@@ -156,3 +169,10 @@ FluidFeatures_CSL__Form_Test.o: \
   FluidFeatures_CSL__Form.o \
   Fluid_CSL__Form.o \
   FluidFeatures_CSL__Form_Test.f90
+
+Fluid_ASC__Form_Test.o: \
+  Basics.o \
+  Mathematics.o \
+  Spaces.o \
+  Fluid_ASC__Form.o \
+  Fluid_ASC__Form_Test.f90

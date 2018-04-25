@@ -92,16 +92,15 @@ Fluid_ASC__Form.o: \
   Mathematics.o \
   Spaces.o \
   Fluid_D__Form.o \
+  Fluid_P_I__Form.o \
   Tally_F_D__Form.o \
+  Tally_F_P__Form.o \
   Sources_F_CSL__Form.o \
   Sources_F_ASC__Form.o \
+  FluidFeatures_CSL__Form.o \
+  FluidFeatures_ASC__Form.o \
   Fluid_CSL__Form.o \
   Fluid_ASC__Form.f90
-#  Fluid_P_P__Form.o \
-#  Fluid_P_NR__Form.o \
-#  Tally_F_P__Form.o \
-#  FluidFeatures_CSL__Form.o \
-#  FluidFeatures_ASC__Form.o \
 
 ApplyCurvilinear_F__Command.o: \
   Basics.o \

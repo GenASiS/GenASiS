@@ -6,14 +6,13 @@ module Fluid_ASC__Form
   use Mathematics
   use Spaces
   use Fluid_D__Form
-!  use Fluid_P_P__Form
-!  use Fluid_P_NR__Form
+  use Fluid_P_I__Form
   use Tally_F_D__Form
-!  use Tally_F_P__Form
+  use Tally_F_P__Form
   use Sources_F_CSL__Form
   use Sources_F_ASC__Form
-!  use FluidFeatures_CSL__Form
-!  use FluidFeatures_ASC__Form
+  use FluidFeatures_CSL__Form
+  use FluidFeatures_ASC__Form
   use Fluid_CSL__Form
   
   implicit none
@@ -38,8 +37,8 @@ module Fluid_ASC__Form
       RiemannSolverType = ''
     type ( Sources_F_ASC_Form ), allocatable :: &
       Sources_ASC
-!    type ( FluidFeatures_ASC_Form ), allocatable :: &
-!      Features_ASC
+    type ( FluidFeatures_ASC_Form ), allocatable :: &
+      Features_ASC
   contains
     procedure, public, pass :: &
       Initialize
@@ -47,14 +46,10 @@ module Fluid_ASC__Form
       Fluid_D_CSL
     generic, public :: &
       Fluid_D => Fluid_D_CSL
-!    procedure, private, pass :: &
-!      Fluid_P_P_CSL
-!    generic, public :: &
-!      Fluid_P_P => Fluid_P_P_CSL
-!    procedure, private, pass :: &
-!      Fluid_P_NR_CSL
-!    generic, public :: &
-!      Fluid_P_NR => Fluid_P_NR_CSL
+    procedure, private, pass :: &
+      Fluid_P_I_CSL
+    generic, public :: &
+      Fluid_P_I => Fluid_P_I_CSL
     procedure, public, pass :: &
       ComputeTally
     final :: &
@@ -174,18 +169,18 @@ contains
           allocate &
             ( Tally_F_D_Form :: FA % TallyBoundaryGlobal ( iB ) % Element )
         end do !-- iB
-      ! case ( 'POLYTROPIC', 'NON_RELATIVISTIC' )
-      !   allocate ( Tally_F_P_Form :: FA % TallyInterior )
-      !   allocate ( Tally_F_P_Form :: FA % TallyTotal )
-      !   allocate ( Tally_F_P_Form :: FA % TallyChange )
-      !   allocate ( FA % TallyBoundaryLocal  ( A % nBoundaries ) )
-      !   allocate ( FA % TallyBoundaryGlobal ( A % nBoundaries ) )
-      !   do iB = 1, A % nBoundaries
-      !     allocate &
-      !       ( Tally_F_P_Form :: FA % TallyBoundaryLocal  ( iB ) % Element )
-      !     allocate &
-      !       ( Tally_F_P_Form :: FA % TallyBoundaryGlobal ( iB ) % Element )
-      !   end do !-- iB
+      case ( 'IDEAL' )
+        allocate ( Tally_F_P_Form :: FA % TallyInterior )
+        allocate ( Tally_F_P_Form :: FA % TallyTotal )
+        allocate ( Tally_F_P_Form :: FA % TallyChange )
+        allocate ( FA % TallyBoundaryLocal  ( A % nBoundaries ) )
+        allocate ( FA % TallyBoundaryGlobal ( A % nBoundaries ) )
+        do iB = 1, A % nBoundaries
+          allocate &
+            ( Tally_F_P_Form :: FA % TallyBoundaryLocal  ( iB ) % Element )
+          allocate &
+            ( Tally_F_P_Form :: FA % TallyBoundaryGlobal ( iB ) % Element )
+        end do !-- iB
       case default
         call Show ( 'FluidType not recognized', CONSOLE % ERROR )
         call Show ( 'Fluid_ASC__Form', 'module', CONSOLE % ERROR )
@@ -275,25 +270,25 @@ contains
       end associate !-- SFA
     end if
 
-    ! !-- Features
+    !-- Features
 
-    ! if ( trim ( FA % FluidType ) /= 'DUST' ) then
-    !   allocate ( FA % Features_ASC )
-    !   associate ( FFA => FA % Features_ASC )
-    !   call FFA % Initialize &
-    !          ( FA, FA % FluidType, FA % RiemannSolverType, &
-    !            NameShortOption = trim ( NameShort ) // '_Features', &
-    !            ShockThresholdOption = ShockThresholdOption, &
-    !            IgnorabilityOption = IgnorabilityOption )
-    !   select type ( FFC => FFA % Chart )
-    !   class is ( FluidFeatures_CSL_Form )
-    !     select type ( FC => FA % Chart )
-    !     class is ( Fluid_CSL_Form )
-    !       call FC % SetFeatures ( FFC )
-    !     end select !-- FF
-    !   end select !-- FFC
-    !   end associate !-- FFA
-    ! end if !-- not DUST
+    if ( trim ( FA % FluidType ) /= 'DUST' ) then
+      allocate ( FA % Features_ASC )
+      associate ( FFA => FA % Features_ASC )
+      call FFA % Initialize &
+             ( FA, FA % FluidType, FA % RiemannSolverType, &
+               NameShortOption = trim ( NameShort ) // '_Features', &
+               ShockThresholdOption = ShockThresholdOption, &
+               IgnorabilityOption = IgnorabilityOption )
+      select type ( FFC => FFA % Chart )
+      class is ( FluidFeatures_CSL_Form )
+        select type ( FC => FA % Chart )
+        class is ( Fluid_CSL_Form )
+          call FC % SetFeatures ( FFC )
+        end select !-- FF
+      end select !-- FFC
+      end associate !-- FFA
+    end if !-- not DUST
 
   end subroutine Initialize
 
@@ -318,44 +313,24 @@ contains
   end function Fluid_D_CSL
 
 
-  ! function Fluid_P_P_CSL ( FA ) result ( F )
+  function Fluid_P_I_CSL ( FA ) result ( F )
 
-  !   class ( Fluid_ASC_Form ), intent ( in ) :: &
-  !     FA
-  !   class ( Fluid_P_P_Form ), pointer :: &
-  !     F
+    class ( Fluid_ASC_Form ), intent ( in ) :: &
+      FA
+    class ( Fluid_P_I_Form ), pointer :: &
+      F
 
-  !   select type ( FC => FA % Chart )
-  !   class is ( Fluid_CSL_Form )
-  !     F => FC % Fluid_P_P ( )
-  !   class default
-  !     call Show ( 'Fluid Chart type not recognized', CONSOLE % ERROR )
-  !     call Show ( 'Fluid_ASC__Form', 'module', CONSOLE % ERROR )
-  !     call Show ( 'Fluid_P_P_CSL', 'function', CONSOLE % ERROR )
-  !     call PROGRAM_HEADER % Abort ( )
-  !   end select !-- FC
+    select type ( FC => FA % Chart )
+    class is ( Fluid_CSL_Form )
+      F => FC % Fluid_P_I ( )
+    class default
+      call Show ( 'Fluid Chart type not recognized', CONSOLE % ERROR )
+      call Show ( 'Fluid_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Fluid_I_P_CSL', 'function', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- FC
 
-  ! end function Fluid_P_P_CSL
-
-
-  ! function Fluid_P_NR_CSL ( FA ) result ( F )
-
-  !   class ( Fluid_ASC_Form ), intent ( in ) :: &
-  !     FA
-  !   class ( Fluid_P_NR_Form ), pointer :: &
-  !     F
-
-  !   select type ( FC => FA % Chart )
-  !   class is ( Fluid_CSL_Form )
-  !     F => FC % Fluid_P_NR ( )
-  !   class default
-  !     call Show ( 'Fluid Chart type not recognized', CONSOLE % ERROR )
-  !     call Show ( 'Fluid_ASC__Form', 'module', CONSOLE % ERROR )
-  !     call Show ( 'Fluid_P_NR_CSL', 'function', CONSOLE % ERROR )
-  !     call PROGRAM_HEADER % Abort ( )
-  !   end select !-- FC
-
-  ! end function Fluid_P_NR_CSL
+  end function Fluid_P_I_CSL
 
 
   subroutine ComputeTally ( CA, ComputeChangeOption, IgnorabilityOption )
@@ -396,8 +371,8 @@ contains
     type ( Fluid_ASC_Form ), intent ( inout ) :: &
       FA
 
-!    if ( allocated ( FA % Features_ASC ) ) &
-!      deallocate ( FA % Features_ASC )
+    if ( allocated ( FA % Features_ASC ) ) &
+      deallocate ( FA % Features_ASC )
     if ( allocated ( FA % Sources_ASC ) ) &
       deallocate ( FA % Sources_ASC )
 
