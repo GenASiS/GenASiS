@@ -104,6 +104,8 @@ clobber: clean
 	rm -f Sources_F__Form_Test_*
 	rm -f Fluid_CSL__Form_Test_*
 	rm -f Sources_F_CSL__Form_Test_*
+	rm -f FluidFeatures_CSL__Form_Test_*
+	rm -f Fluid_ASC__Form_Test_*
 
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MATHEMATICS)/Makefile_Dependencies
