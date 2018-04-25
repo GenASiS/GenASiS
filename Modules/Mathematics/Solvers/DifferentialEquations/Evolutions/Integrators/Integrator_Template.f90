@@ -60,7 +60,9 @@ module Integrator_Template
     procedure, public, pass :: &  !-- 1
       FinalizeTemplate
     procedure, private, pass :: &  !-- 2
-      OpenStreams
+      OpenGridImageStreams
+    procedure, private, pass :: &  !-- 2
+      OpenManifoldStreams
     procedure, public, pass :: &  !-- 2
       InitializeTimers
     procedure, private, pass :: &  !-- 2
@@ -194,8 +196,6 @@ contains
       I % Communicator => I % PositionSpace % Communicator
     end if
 
-    call I % OpenStreams ( )
-
     I % iCycle = 0
     I % iCheckpoint = 0
     I % nRampCycles = 100
@@ -243,6 +243,8 @@ contains
     call Show ( I % CheckpointDisplayInterval, 'CheckpointDisplayInterval', &
                 I % IGNORABILITY )
 
+    call I % OpenGridImageStreams ( )
+
   end subroutine InitializeTemplate
 
 
@@ -254,6 +256,7 @@ contains
     type ( TimerForm ), pointer :: &
       Timer
 
+    call I % OpenManifoldStreams ( )
     call I % InitializeTimers ( )
 
     Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerEvolve )
@@ -311,13 +314,11 @@ contains
   end subroutine FinalizeTemplate
 
 
-  subroutine OpenStreams ( I )
+  subroutine OpenGridImageStreams ( I )
 
     class ( IntegratorTemplate ), intent ( inout ) :: &
       I
 
-    logical ( KDL ) :: &
-      VerboseStream
     character ( LDF ) :: &
       OutputDirectory
 
@@ -329,6 +330,20 @@ contains
     call GIS % Initialize &
            ( I % Name, CommunicatorOption = I % Communicator, &
              WorkingDirectoryOption = OutputDirectory )
+    end associate !-- GIS
+
+  end subroutine OpenGridImageStreams
+
+
+  subroutine OpenManifoldStreams ( I )
+
+    class ( IntegratorTemplate ), intent ( inout ) :: &
+      I
+
+    logical ( KDL ) :: &
+      VerboseStream
+
+    associate ( GIS => I % GridImageStream )
 
     VerboseStream = .false.
     call PROGRAM_HEADER % GetParameter ( VerboseStream, 'VerboseStream' )
@@ -361,7 +376,7 @@ contains
     end associate !-- iS
     end associate !-- GIS
 
-  end subroutine OpenStreams
+  end subroutine OpenManifoldStreams
 
 
   subroutine InitializeTimers ( I )
