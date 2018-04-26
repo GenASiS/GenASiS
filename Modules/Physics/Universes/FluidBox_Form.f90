@@ -19,7 +19,8 @@ contains
 
 
   subroutine Initialize &
-               ( FB, Name, FluidType, GeometryType, TimeUnitOption, &
+               ( FB, Name, FluidType, GeometryType, &
+                 BoundaryConditionsFaceOption, TimeUnitOption, &
                  FinishTimeOption, CourantFactorOption, nWriteOption )
 
     class ( FluidBoxForm ), intent ( inout ) :: &
@@ -28,6 +29,8 @@ contains
       Name, &
       FluidType, &
       GeometryType
+    type ( Character_1D_Form ), dimension ( : ), intent ( in ), optional :: &
+      BoundaryConditionsFaceOption
     type ( MeasuredValueForm ), intent ( in ), optional :: &
       TimeUnitOption
     real ( KDR ), intent ( in ), optional :: &
@@ -35,6 +38,9 @@ contains
       CourantFactorOption
     integer ( KDI ), intent ( in ), optional :: &
       nWriteOption
+
+    integer ( KDI ) :: &
+      iD  !-- iDimension
 
     if ( FB % Type == '' ) &
       FB % Type = 'a FluidBox'
@@ -45,6 +51,15 @@ contains
     select type ( PS => FB % PositionSpace )
     class is ( Atlas_SC_Form )
     call PS % Initialize ( 'PositionSpace', PROGRAM_HEADER % Communicator )
+
+    if ( present ( BoundaryConditionsFaceOption ) ) then
+      do iD = 1, PS % nDimensions
+        call PS % SetBoundaryConditionsFace &
+               ( BoundaryConditionsFaceOption ( iD ) % Value, &
+                 iDimension = iD )
+      end do !-- iD
+    end if
+
     call PS % CreateChart ( )
 
     allocate ( Geometry_ASC_Form :: PS % Geometry_ASC )
