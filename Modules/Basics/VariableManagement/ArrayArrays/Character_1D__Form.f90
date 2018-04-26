@@ -12,8 +12,12 @@ module Character_1D__Form
     character ( LDL ), dimension ( : ), allocatable :: &
       Value
   contains
-    procedure, public, pass :: &
-      Initialize => Initialize_C_1D
+    procedure, private, pass :: &
+      Initialize_C_1D
+    procedure, private, pass :: &
+      Initialize_C_1D_FromValue
+    generic :: &
+      Initialize => Initialize_C_1D, Initialize_C_1D_FromValue
     final :: &
       Finalize_C_1D
   end type Character_1D_Form
@@ -47,6 +51,22 @@ contains
   end subroutine Initialize_C_1D
 
 
+  subroutine Initialize_C_1D_FromValue ( A, Value, iLowerBoundOption )
+    
+    class ( Character_1D_Form ), intent ( inout ) :: &
+      A
+    character ( * ), dimension ( : ), intent ( in ) :: &
+      Value
+    integer ( KDI ), intent ( in ), optional :: &
+      iLowerBoundOption
+
+    call A % Initialize_C_1D &
+           ( size ( Value ), iLowerBoundOption = iLowerBoundOption )
+    A % Value = Value 
+
+  end subroutine Initialize_C_1D_FromValue
+  
+  
   elemental subroutine Finalize_C_1D ( A )
 
     type ( Character_1D_Form ), intent ( inout ) :: &
