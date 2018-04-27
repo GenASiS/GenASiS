@@ -1,7 +1,7 @@
 PATH_GENASIS = ../../../../..
 
 all: SineWave OppenheimerSnyder RiemannProblem RayleighTaylor \
-     SedovTaylor FishboneMoncrief #SawtoothWave 
+     SedovTaylor FishboneMoncrief YahilLattimer #SawtoothWave 
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
@@ -49,6 +49,12 @@ FishboneMoncrief: ThirdParty.a GenASiS.a FishboneMoncrief.o
            FishboneMoncrief.o FishboneMoncrief_Form.o \
            GenASiS.a ThirdParty.a $(LIBRARIES)
 
+YahilLattimer: GenASiS.a YahilLattimer.o
+	$(LINK) $(FFLAGS) \
+          -o YahilLattimer_$(MACHINE) \
+          YahilLattimer.o YahilLattimer_Form.o \
+          GenASiS.a $(LIBRARIES)
+
 include $(PATH_GENASIS)/Build/Makefile_Dependencies
 # include ../Makefile_Dependencies
 
@@ -62,6 +68,7 @@ clobber: clean
 	rm -f RayleighTaylor_*
 	rm -f SedovTaylor_*
 	rm -f FishboneMoncrief_*
+	rm -f YahilLattimer_*
 # 	rm -f SawtoothWave_*
 
 PlaneWave_Template.o: \
@@ -132,3 +139,12 @@ FishboneMoncrief.o: \
   GenASiS.o \
   FishboneMoncrief_Form.o \
   FishboneMoncrief.f90
+
+YahilLattimer_Form.o: \
+  GenASiS.o \
+  YahilLattimer_Form.f90
+
+YahilLattimer.o: \
+  GenASiS.o \
+  YahilLattimer_Form.o \
+  YahilLattimer.f90
