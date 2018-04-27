@@ -45,8 +45,10 @@ module Geometry_ASC__Form
   end type Geometry_ASC_Form
 
     private :: &
-      ComputeGravitySource!, &
-!      ComputeGravitationalForce
+      ComputeGravityMultipole
+
+      private :: &
+        ComputeGravitySource
 
 contains
 
@@ -89,30 +91,42 @@ contains
       if ( present ( GravitationalConstantOption ) ) &
         GA % GravitationalConstant  =  GravitationalConstantOption
 
-      G => GA % Geometry_N ( )
-
-      allocate ( GA % Storage_ASC )
-      associate ( SA => GA % Storage_ASC )
-      call SA % Initialize &
-             ( GA, NameShort = 'PoissonStorage', &
-               iaSelectedOption = [ G % GRAVITATIONAL_POTENTIAL ] )
-      end associate !-- SA
-
-      allocate ( GA % Gradient )
-      associate ( Grad => GA % Gradient )
-      call Grad % Initialize &
-             ( 'GeometryGradient', [ G % nValues, 1 ] )
-      end associate !-- Grad
-
       if ( present ( GravitySolverTypeOption ) ) then
         GA % GravitySolverType = GravitySolverTypeOption
+        call Show ( GA % GravitySolverType, 'GravitySolverType', &
+                    GA % IGNORABILITY )
       else
         call Show ( 'NEWTONIAN geometry requires GravitySolverTypeOption', &
                     CONSOLE % ERROR )
-        call Show ( 'Initialize', 'subroutine', CONSOLE % ERROR )
         call Show ( 'Geometry_ASC__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'Initialize', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end if
+
+      select case ( trim ( GA % GravitySolverType ) )
+      case ( 'MULTIPOLE' )
+
+        G => GA % Geometry_N ( )
+
+        allocate ( GA % Storage_ASC )
+        associate ( SA => GA % Storage_ASC )
+        call SA % Initialize &
+               ( GA, NameShort = 'PoissonStorage', &
+                 iaSelectedOption = [ G % GRAVITATIONAL_POTENTIAL ] )
+        end associate !-- SA
+
+        allocate ( GA % Gradient )
+        associate ( Grad => GA % Gradient )
+        call Grad % Initialize &
+               ( 'GeometryGradient', [ G % nValues, 1 ] )
+        end associate !-- Grad
+
+      case default
+        call Show ( 'GravitySolverType not recognized', CONSOLE % ERROR )
+        call Show ( 'Geometry_ASC__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'Initialize', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end select 
 
       nullify ( G )
 
@@ -171,76 +185,20 @@ contains
       iBaryonMass, &
       iBaryonDensity
 
-    integer ( KDI ) :: &
-      MaxDegree
-    logical ( KDL ) :: &
-      ComputeForce
-    type ( VariableGroupForm ), pointer :: &
-      S
-    class ( Geometry_N_Form ), pointer :: &
-      G
-    class ( CurrentTemplate ), pointer :: &
-      F
-
-    integer ( KDI ) :: &
-      iD  !-- iDimension
-
     select case ( trim ( GA % GeometryType ) )
     case ( 'NEWTONIAN' )
 
-    select type ( A => GA % Atlas )
-    class is ( Atlas_SC_Form )
+    select case ( trim ( GA % GravitySolverType ) )
+    case ( 'MULTIPOLE' )
+      call ComputeGravityMultipole ( GA, FA, iBaryonMass, iBaryonDensity )
+    case default
+      call Show ( 'GravitySolverType not recognized', CONSOLE % ERROR )
+      call Show ( 'Geometry_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'ComputeGravity', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select
 
-    select type ( C => A % Chart )
-    class is ( Chart_SLD_Form )
-
-    if ( .not. allocated ( GA % Poisson_ASC ) ) then
-
-        MaxDegree = 10
-        call PROGRAM_HEADER % GetParameter ( MaxDegree, 'MaxDegree' )
-
-        allocate ( GA % Poisson_ASC )
-        associate ( PA => GA % Poisson_ASC )
-        call PA % Initialize &
-               ( A, SolverType = GA % GravitySolverType, &
-                 MaxDegreeOption = MaxDegree, &
-                 nEquationsOption = 1 )
-        end associate !-- PA
-
-    end if
-
-    associate &
-      ( PA => GA % Poisson_ASC, &
-        SA => GA % Storage_ASC )
-
-    S  =>  SA % Storage ( )
-    G  =>  GA % Geometry_N ( )
-    F  =>  FA % Current ( )
-
-    call ComputeGravitySource &
-           ( F % Value ( :, iBaryonMass ), &
-             F % Value ( :, iBaryonDensity ), &
-             GA % GravitationalConstant, &
-             S % Value ( :, S % iaSelected ( 1 ) ) )
-
-    call PA % Solve ( SA, SA )
-
-    do iD = 1, C % nDimensions
-      call GA % Gradient % Compute ( C, S, iDimension = iD )
-      call Copy ( GA % Gradient % Output % Value ( :, 1 ), &
-                  G % Value ( :, G % GRAVITATIONAL_ACCELERATION_D ( iD ) ) )
-      ! call ComputeGravitationalForce & 
-      !        ( F % Value ( :, iBaryonMass ), &
-      !          F % Value ( :, iBaryonDensity ), &
-      !          GA % Gradient % Output % Value ( :, 1 ), &
-      !          G % Value ( :, G % GRAVITATIONAL_FORCE_D ( iD ) ) ) 
-    end do !-- iD
-
-    end associate !-- PA, etc.
-    end select !-- C
-    end select !-- A
     end select !-- GeometryType
-    nullify ( S, G, F )
 
   end subroutine ComputeGravity
 
@@ -288,6 +246,79 @@ contains
   end subroutine SetField
 
 
+  subroutine ComputeGravityMultipole ( GA, FA, iBaryonMass, iBaryonDensity )
+
+    class ( Geometry_ASC_Form ), intent ( inout ) :: &
+      GA
+    class ( Current_ASC_Template ), intent ( in ) :: &
+      FA
+    integer ( KDI ), intent ( in ) :: &
+      iBaryonMass, &
+      iBaryonDensity
+
+    integer ( KDI ) :: &
+      iD, &  !-- iDimension
+      MaxDegree
+    logical ( KDL ) :: &
+      ComputeForce
+    type ( VariableGroupForm ), pointer :: &
+      S
+    class ( Geometry_N_Form ), pointer :: &
+      G
+    class ( CurrentTemplate ), pointer :: &
+      F
+
+    select type ( A => GA % Atlas )
+    class is ( Atlas_SC_Form )
+
+    select type ( C => A % Chart )
+    class is ( Chart_SLD_Form )
+
+    if ( .not. allocated ( GA % Poisson_ASC ) ) then
+
+        MaxDegree = 10
+        call PROGRAM_HEADER % GetParameter ( MaxDegree, 'MaxDegree' )
+
+        allocate ( GA % Poisson_ASC )
+        associate ( PA => GA % Poisson_ASC )
+        call PA % Initialize &
+               ( A, SolverType = GA % GravitySolverType, &
+                 MaxDegreeOption = MaxDegree, &
+                 nEquationsOption = 1 )
+        end associate !-- PA
+
+    end if
+
+    associate &
+      ( PA => GA % Poisson_ASC, &
+        SA => GA % Storage_ASC )
+
+    S  =>  SA % Storage ( )
+    G  =>  GA % Geometry_N ( )
+    F  =>  FA % Current ( )
+
+    call ComputeGravitySource &
+           ( F % Value ( :, iBaryonMass ), &
+             F % Value ( :, iBaryonDensity ), &
+             GA % GravitationalConstant, &
+             S % Value ( :, S % iaSelected ( 1 ) ) )
+
+    call PA % Solve ( SA, SA )
+
+    do iD = 1, C % nDimensions
+      call GA % Gradient % Compute ( C, S, iDimension = iD )
+      call Copy ( GA % Gradient % Output % Value ( :, 1 ), &
+                  G % Value ( :, G % GRAVITATIONAL_ACCELERATION_D ( iD ) ) )
+    end do !-- iD
+
+    end associate !-- PA, etc.
+    end select !-- C
+    end select !-- A
+    nullify ( S, G, F )
+
+  end subroutine ComputeGravityMultipole
+
+
   subroutine ComputeGravitySource ( M, N, G, S )
 
     real ( KDR ), dimension ( : ), intent ( in ) :: &
@@ -315,30 +346,6 @@ contains
     !$OMP end parallel do
 
   end subroutine ComputeGravitySource
-
-
-  ! subroutine ComputeGravitationalForce ( M, N, GradPhi, F )
-
-  !   real ( KDR ), dimension ( : ), intent ( in ) :: &
-  !     M, &
-  !     N, &
-  !     GradPhi
-  !   real ( KDR ), dimension ( : ), intent ( out ) :: &
-  !     F
-
-  !   integer ( KDI ) :: &
-  !     iV, &  !-- iValue
-  !     nValues
-
-  !   nValues = size ( F )
-
-  !   !$OMP parallel do private ( iV )
-  !   do iV = 1, nValues
-  !     F ( iV )  =  - M ( iV )  *  N ( iV )  *  GradPhi ( iV )
-  !   end do
-  !   !$OMP end parallel do
-
-  ! end subroutine ComputeGravitationalForce
 
 
 end module Geometry_ASC__Form
