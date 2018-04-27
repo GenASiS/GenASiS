@@ -12,7 +12,8 @@ module ApplyGravity_F__Command
     ApplyGravity_F
 
     private :: &
-      ApplyGravityMomentum
+      ApplyGravityMomentum, &
+      ApplyGravityEnergy
 
 contains
 
@@ -35,7 +36,8 @@ contains
 
     integer ( KDI ) :: &
       iD, &  !-- iDimension
-      iMomentum
+      iMomentum, &
+      iEnergy
     type ( TimerForm ), pointer :: &
       Timer
     class ( Geometry_N_Form ), pointer :: &
@@ -64,19 +66,37 @@ contains
 
     select type ( C => PS % Chart )
     class is ( Chart_SLD_Form )
-      do iD = 1, C % nDimensions
-        call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( iD ), &
-                      iMomentum )
-        call ApplyGravityMomentum &
-               ( F % Value ( :, F % BARYON_MASS ), &
-                 F % Value ( :, F % CONSERVED_BARYON_DENSITY ), &
-                 G % Value ( :, G % GRAVITATIONAL_ACCELERATION_D ( iD ) ), &
-                 TimeStep, S % B ( iStage ), &
-                 Increment % Value ( :, iMomentum ), & 
-                 FS % Value ( :, FS % GRAVITATIONAL_S_D ( iD ) ) )
-      end do !-- iD
-    end select !-- C
 
+    do iD = 1, C % nDimensions
+      call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( iD ), &
+                    iMomentum )
+      call ApplyGravityMomentum &
+             ( F % Value ( :, F % BARYON_MASS ), &
+               F % Value ( :, F % CONSERVED_BARYON_DENSITY ), &
+               G % Value ( :, G % GRAVITATIONAL_ACCELERATION_D ( iD ) ), &
+               TimeStep, S % B ( iStage ), &
+               Increment % Value ( :, iMomentum ), & 
+               FS % Value ( :, FS % GRAVITATIONAL_S_D ( iD ) ) )
+    end do !-- iD
+
+    select type ( F_P => Fluid )
+    class is ( Fluid_P_Template )
+      call Search ( F_P % iaConserved, F_P % CONSERVED_ENERGY, iEnergy )
+      call ApplyGravityEnergy &
+             ( F % Value ( :, F % BARYON_MASS ), &
+               F % Value ( :, F % CONSERVED_BARYON_DENSITY ), &
+               F % Value ( :, F % VELOCITY_U ( 1 ) ), &
+               F % Value ( :, F % VELOCITY_U ( 2 ) ), &
+               F % Value ( :, F % VELOCITY_U ( 3 ) ), &
+               G % Value ( :, G % GRAVITATIONAL_ACCELERATION_D ( 1 ) ), &
+               G % Value ( :, G % GRAVITATIONAL_ACCELERATION_D ( 2 ) ), &
+               G % Value ( :, G % GRAVITATIONAL_ACCELERATION_D ( 3 ) ), &
+               TimeStep, S % B ( iStage ), &
+               Increment % Value ( :, iEnergy ), & 
+               FS % Value ( :, FS % GRAVITATIONAL_G ) )
+    end select !-- F_P
+
+    end select !-- C
     end select !-- FS
     end select !-- F
     end select !-- GA
@@ -117,6 +137,46 @@ contains
     !$OMP end parallel do
 
   end subroutine ApplyGravityMomentum
+
+
+  subroutine ApplyGravityEnergy &
+               ( M, N, V_1, V_2, V_3, GradPhi_1, GradPhi_2, GradPhi_3, dt, &
+                 Weight_RK, K, S )
+
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      M, &
+      N, &
+      V_1, V_2, V_3, &
+      GradPhi_1, GradPhi_2, GradPhi_3
+    real ( KDR ) :: &
+      dt, &
+      Weight_RK
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      K, &
+      S
+
+    integer ( KDI ) :: &
+      iV, &  !-- iValue
+      nValues
+
+    nValues = size ( K )
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nValues
+      K ( iV )  =  K ( iV )  -  M ( iV )  *  N ( iV )  &
+                                *  (    V_1 ( iV )  *  GradPhi_1 ( iV )  &
+                                     +  V_2 ( iV )  *  GradPhi_2 ( iV )  &
+                                     +  V_3 ( iV )  *  GradPhi_3 ( iV ) ) &
+                                *  dt
+      S ( iV )  =  S ( iV )  -  M ( iV )  *  N ( iV )  &
+                                *  (    V_1 ( iV )  *  GradPhi_1 ( iV )  &
+                                     +  V_2 ( iV )  *  GradPhi_2 ( iV )  &
+                                     +  V_3 ( iV )  *  GradPhi_3 ( iV ) ) &
+                                *  Weight_RK
+    end do
+    !$OMP end parallel do
+
+  end subroutine ApplyGravityEnergy
 
 
 end module ApplyGravity_F__Command
