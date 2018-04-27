@@ -20,8 +20,9 @@ contains
 
   subroutine Initialize &
                ( FB, Name, FluidType, GeometryType, &
-                 BoundaryConditionsFaceOption, TimeUnitOption, &
-                 FinishTimeOption, CourantFactorOption, nWriteOption )
+                 BoundaryConditionsFaceOption, GravitySolverTypeOption, &
+                 TimeUnitOption, FinishTimeOption, CourantFactorOption, &
+                 nWriteOption )
 
     class ( FluidBoxForm ), intent ( inout ) :: &
       FB
@@ -31,6 +32,8 @@ contains
       GeometryType
     type ( Character_1D_Form ), dimension ( : ), intent ( in ), optional :: &
       BoundaryConditionsFaceOption
+    character ( * ), intent ( in ), optional :: &
+      GravitySolverTypeOption
     type ( MeasuredValueForm ), intent ( in ), optional :: &
       TimeUnitOption
     real ( KDR ), intent ( in ), optional :: &
@@ -65,7 +68,9 @@ contains
     allocate ( Geometry_ASC_Form :: PS % Geometry_ASC )
     select type ( GA => PS % Geometry_ASC )
     class is ( Geometry_ASC_Form )
-    call GA % Initialize ( PS, GeometryType )
+    call GA % Initialize &
+           ( PS, GeometryType, &
+             GravitySolverTypeOption = GravitySolverTypeOption )
     call PS % SetGeometry ( GA )
     end select !-- GA
 

@@ -70,9 +70,6 @@ contains
     select type ( PS => FB % PositionSpace )
     class is ( Atlas_SC_Form )
 
-    select type ( FA => FB % Current_ASC )
-    class is ( Fluid_ASC_Form )
-
 
     !-- Parameters
 
@@ -90,7 +87,8 @@ contains
     call PROGRAM_HEADER % GetParameter ( RP % Density_R, 'DensityRight' )
     call PROGRAM_HEADER % GetParameter ( RP % Pressure_R, 'PressureRight' )
     call PROGRAM_HEADER % GetParameter ( RP % Speed_R, 'SpeedRight' )
-    call PROGRAM_HEADER % GetParameter ( RP % AdiabaticIndex, 'AdiabaticIndex' )
+    call PROGRAM_HEADER % GetParameter ( RP % AdiabaticIndex, &
+                                         'AdiabaticIndex' )
 
     RP % Energy_L = RP % Pressure_L / ( RP % AdiabaticIndex - 1.0_KDR )
     RP % Energy_R = RP % Pressure_R / ( RP % AdiabaticIndex - 1.0_KDR )
@@ -162,7 +160,6 @@ contains
 
     !-- Cleanup
 
-    end select !-- FA
     end select !-- PS
     end select !-- FB
 
