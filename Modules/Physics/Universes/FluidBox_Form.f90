@@ -23,7 +23,7 @@ contains
                ( FB, Name, FluidType, GeometryType, &
                  BoundaryConditionsFaceOption, GravitySolverTypeOption, &
                  TimeUnitOption, FinishTimeOption, CourantFactorOption, &
-                 nWriteOption )
+                 UniformAccelerationOption, nWriteOption )
 
     class ( FluidBoxForm ), intent ( inout ) :: &
       FB
@@ -39,7 +39,8 @@ contains
       TimeUnitOption
     real ( KDR ), intent ( in ), optional :: &
       FinishTimeOption, &
-      CourantFactorOption
+      CourantFactorOption, &
+      UniformAccelerationOption
     integer ( KDI ), intent ( in ), optional :: &
       nWriteOption
 
@@ -71,7 +72,8 @@ contains
     class is ( Geometry_ASC_Form )
     call GA % Initialize &
            ( PS, GeometryType, &
-             GravitySolverTypeOption = GravitySolverTypeOption )
+             GravitySolverTypeOption = GravitySolverTypeOption, &
+             UniformAccelerationOption = UniformAccelerationOption )
     call PS % SetGeometry ( GA )
     end select !-- GA
 

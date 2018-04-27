@@ -25,6 +25,8 @@ contains
 
     integer ( KDI ) :: &
       iD  !-- iDimension
+    real ( KDR ) :: &
+      Acceleration
     type ( Character_1D_Form ), dimension ( 3 ) :: &
       BoundaryConditionsFace
 
@@ -33,6 +35,8 @@ contains
 
     call RT % InitializeTemplate ( Name )
 
+    Acceleration = 0.1_KDR
+    call PROGRAM_HEADER % GetParameter ( Acceleration, 'Acceleration' )
 
     !-- Integrator
 
@@ -47,7 +51,8 @@ contains
     call FB % Initialize &
            ( Name, FluidType = 'IDEAL', GeometryType = 'NEWTONIAN', &
              BoundaryConditionsFaceOption = BCF, &
-             GravitySolverTypeOption = 'UNIFORM' )
+             GravitySolverTypeOption = 'UNIFORM', &
+             UniformAccelerationOption = Acceleration )
     end associate !-- BCF
 
     select type ( PS => FB % PositionSpace )

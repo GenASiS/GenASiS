@@ -16,7 +16,8 @@ module Geometry_ASC__Form
 
   type, public, extends ( GeometryFlat_ASC_Form ) :: Geometry_ASC_Form
     real ( KDR ) :: &
-      GravitationalConstant
+      GravitationalConstant, &
+      UniformAcceleration
     character ( LDL ) :: &
       GravitySolverType = ''
     type ( Storage_ASC_Form ), allocatable :: &
@@ -56,7 +57,7 @@ contains
   subroutine Initialize &
                ( GA, A, GeometryType, NameShortOption, &
                  GravitySolverTypeOption, GravitationalConstantOption, &
-                 IgnorabilityOption )
+                 UniformAccelerationOption, IgnorabilityOption )
 
     class ( Geometry_ASC_Form ), intent ( inout ) :: &
       GA
@@ -68,7 +69,8 @@ contains
       NameShortOption, &
       GravitySolverTypeOption
     real ( KDR ), intent ( in ), optional :: &
-      GravitationalConstantOption
+      GravitationalConstantOption, &
+      UniformAccelerationOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
@@ -120,6 +122,20 @@ contains
         call Grad % Initialize &
                ( 'GeometryGradient', [ G % nValues, 1 ] )
         end associate !-- Grad
+
+      case ( 'UNIFORM' )
+
+        if ( present ( UniformAccelerationOption ) ) then
+          GA % UniformAcceleration = UniformAccelerationOption
+          call Show ( GA % UniformAcceleration, 'UniformAcceleration', &
+                      GA % IGNORABILITY )
+        else
+          call Show ( 'GravitySolverType UNIFORM requires ' &
+                      // 'UniformAccelerationOption', CONSOLE % ERROR )
+          call Show ( 'Geometry_ASC__Form', 'module', CONSOLE % ERROR )
+          call Show ( 'Initialize', 'subroutine', CONSOLE % ERROR )
+          call PROGRAM_HEADER % Abort ( )
+        end if
 
       case default
         call Show ( 'GravitySolverType not recognized', CONSOLE % ERROR )
