@@ -2,4 +2,5 @@ UNIVERSES = \
   Universes.o \
   Universe_Template.o \
   FluidCentralCore_Form.o \
-  FluidBox_Form.o
+  FluidBox_Form.o \
+  ApplyGravity_F__Command.o

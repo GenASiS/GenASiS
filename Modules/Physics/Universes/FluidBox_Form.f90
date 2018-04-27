@@ -1,5 +1,6 @@
 module FluidBox_Form
 
+  use Basics
   use Mathematics
   use Spaces
   use StressEnergies
