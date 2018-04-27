@@ -25,8 +25,13 @@ contains
 
     integer ( KDI ) :: &
       iD  !-- iDimension
+    integer ( KDI ), dimension ( 3 ) :: &
+      nCells
     real ( KDR ) :: &
       Acceleration
+    real ( KDR ), dimension ( 3 ) :: &
+      MinCoordinate, &
+      MaxCoordinate
     type ( Character_1D_Form ), dimension ( 3 ) :: &
       BoundaryConditionsFace
 
@@ -45,14 +50,36 @@ contains
     type is ( FluidBoxForm )
 
     associate ( BCF => BoundaryConditionsFace )
-    do iD = 1, 3
-      call BCF ( iD ) % Initialize ( [ 'REFLECTING', 'REFLECTING' ] )     
-    end do
+    call BCF ( 1 ) % Initialize ( [ 'PERIODIC', 'PERIODIC' ] )
+    MinCoordinate ( 1 ) = -0.25_KDR
+    MaxCoordinate ( 1 ) = +0.25_KDR
+    nCells ( 1 ) = 64
+    select case ( trim ( PROGRAM_HEADER % Dimensionality ) )
+    case ( '2D' )
+      MinCoordinate ( 2 ) = -0.75_KDR
+      MaxCoordinate ( 2 ) = +0.75_KDR
+      nCells ( 2 ) = 192
+      call BCF ( 2 ) % Initialize ( [ 'REFLECTING', 'REFLECTING' ] )
+    case ( '3D' )
+      MinCoordinate ( 2 ) = -0.25_KDR
+      MaxCoordinate ( 2 ) = +0.25_KDR
+      MinCoordinate ( 3 ) = -0.75_KDR
+      MaxCoordinate ( 3 ) = +0.75_KDR
+      nCells ( 2 ) = 64
+      nCells ( 3 ) = 192
+      call BCF ( 2 ) % Initialize ( [ 'PERIODIC', 'PERIODIC' ] )
+      call BCF ( 3 ) % Initialize ( [ 'REFLECTING', 'REFLECTING' ] )
+    end select
+
     call FB % Initialize &
            ( Name, FluidType = 'IDEAL', GeometryType = 'NEWTONIAN', &
              BoundaryConditionsFaceOption = BCF, &
              GravitySolverTypeOption = 'UNIFORM', &
-             UniformAccelerationOption = Acceleration )
+             MinCoordinateOption = MinCoordinate, &
+             MaxCoordinateOption = MaxCoordinate, &
+             UniformAccelerationOption = Acceleration, &
+             nCellsOption = nCells )
+
     end associate !-- BCF
 
     select type ( PS => FB % PositionSpace )

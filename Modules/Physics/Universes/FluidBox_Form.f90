@@ -22,8 +22,9 @@ contains
   subroutine Initialize &
                ( FB, Name, FluidType, GeometryType, &
                  BoundaryConditionsFaceOption, GravitySolverTypeOption, &
-                 TimeUnitOption, FinishTimeOption, CourantFactorOption, &
-                 UniformAccelerationOption, nWriteOption )
+                 MinCoordinateOption, MaxCoordinateOption, TimeUnitOption, &
+                 FinishTimeOption, CourantFactorOption, &
+                 UniformAccelerationOption, nCellsOption, nWriteOption )
 
     class ( FluidBoxForm ), intent ( inout ) :: &
       FB
@@ -35,12 +36,17 @@ contains
       BoundaryConditionsFaceOption
     character ( * ), intent ( in ), optional :: &
       GravitySolverTypeOption
+    real ( KDR ), dimension ( : ), intent ( in ), optional :: &
+      MinCoordinateOption, &
+      MaxCoordinateOption
     type ( MeasuredValueForm ), intent ( in ), optional :: &
       TimeUnitOption
     real ( KDR ), intent ( in ), optional :: &
       FinishTimeOption, &
       CourantFactorOption, &
       UniformAccelerationOption
+    integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
+      nCellsOption
     integer ( KDI ), intent ( in ), optional :: &
       nWriteOption
 
@@ -65,7 +71,10 @@ contains
       end do !-- iD
     end if
 
-    call PS % CreateChart ( )
+    call PS % CreateChart &
+           ( MinCoordinateOption = MinCoordinateOption, &
+             MaxCoordinateOption = MaxCoordinateOption, &
+             nCellsOption = nCellsOption )
 
     allocate ( Geometry_ASC_Form :: PS % Geometry_ASC )
     select type ( GA => PS % Geometry_ASC )
