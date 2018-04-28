@@ -46,9 +46,11 @@ module Geometry_ASC__Form
   end type Geometry_ASC_Form
 
     private :: &
+      ComputeGravityUniform, &
       ComputeGravityMultipole
 
       private :: &
+        ComputeGravityUniformKernel, &
         ComputeGravitySource
 
 contains
@@ -106,6 +108,20 @@ contains
       end if
 
       select case ( trim ( GA % GravitySolverType ) )
+      case ( 'UNIFORM' )
+
+        if ( present ( UniformAccelerationOption ) ) then
+          GA % UniformAcceleration = UniformAccelerationOption
+          call Show ( GA % UniformAcceleration, 'UniformAcceleration', &
+                      GA % IGNORABILITY )
+        else
+          call Show ( 'GravitySolverType UNIFORM requires ' &
+                      // 'UniformAccelerationOption', CONSOLE % ERROR )
+          call Show ( 'Geometry_ASC__Form', 'module', CONSOLE % ERROR )
+          call Show ( 'Initialize', 'subroutine', CONSOLE % ERROR )
+          call PROGRAM_HEADER % Abort ( )
+        end if
+
       case ( 'MULTIPOLE' )
 
         G => GA % Geometry_N ( )
@@ -122,20 +138,6 @@ contains
         call Grad % Initialize &
                ( 'GeometryGradient', [ G % nValues, 1 ] )
         end associate !-- Grad
-
-      case ( 'UNIFORM' )
-
-        if ( present ( UniformAccelerationOption ) ) then
-          GA % UniformAcceleration = UniformAccelerationOption
-          call Show ( GA % UniformAcceleration, 'UniformAcceleration', &
-                      GA % IGNORABILITY )
-        else
-          call Show ( 'GravitySolverType UNIFORM requires ' &
-                      // 'UniformAccelerationOption', CONSOLE % ERROR )
-          call Show ( 'Geometry_ASC__Form', 'module', CONSOLE % ERROR )
-          call Show ( 'Initialize', 'subroutine', CONSOLE % ERROR )
-          call PROGRAM_HEADER % Abort ( )
-        end if
 
       case default
         call Show ( 'GravitySolverType not recognized', CONSOLE % ERROR )
@@ -205,6 +207,8 @@ contains
     case ( 'NEWTONIAN' )
 
     select case ( trim ( GA % GravitySolverType ) )
+    case ( 'UNIFORM' )
+      call ComputeGravityUniform ( GA )
     case ( 'MULTIPOLE' )
       call ComputeGravityMultipole ( GA, FA, iBaryonMass, iBaryonDensity )
     case default
@@ -260,6 +264,35 @@ contains
     end select !-- A
 
   end subroutine SetField
+
+
+  subroutine ComputeGravityUniform ( GA )
+
+    class ( Geometry_ASC_Form ), intent ( inout ) :: &
+      GA
+
+    class ( Geometry_N_Form ), pointer :: &
+      G
+
+    select type ( A => GA % Atlas )
+    class is ( Atlas_SC_Form )
+
+    G  =>  GA % Geometry_N ( )
+
+    call ComputeGravityUniformKernel &
+           ( G % Value ( :, G % GRAVITATIONAL_POTENTIAL ), & 
+             G % Value ( :, G % GRAVITATIONAL_ACCELERATION_D ( 1 ) ), &
+             G % Value ( :, G % GRAVITATIONAL_ACCELERATION_D ( 2 ) ), &
+             G % Value ( :, G % GRAVITATIONAL_ACCELERATION_D ( 3 ) ), &
+             G % Value ( :, G % CENTER_U ( 1 ) ), &
+             G % Value ( :, G % CENTER_U ( 2 ) ), &
+             G % Value ( :, G % CENTER_U ( 3 ) ), &
+             GA % UniformAcceleration, A % nDimensions )
+
+    end select !-- A
+    nullify ( G )
+
+  end subroutine ComputeGravityUniform
 
 
   subroutine ComputeGravityMultipole ( GA, FA, iBaryonMass, iBaryonDensity )
@@ -333,6 +366,67 @@ contains
     nullify ( S, G, F )
 
   end subroutine ComputeGravityMultipole
+
+
+  subroutine ComputeGravityUniformKernel &
+               ( Phi, GradPhi_1, GradPhi_2, GradPhi_3, X, Y, Z, &
+                 Acceleration, nDimensions )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      Phi, &
+      GradPhi_1, GradPhi_2, GradPhi_3
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      X, Y, Z
+    real ( KDR ), intent ( in ) :: &
+      Acceleration
+    integer ( KDI ), intent ( in ) :: &
+      nDimensions
+
+    integer ( KDI ) :: &
+      iV, &  !-- iValue
+      nValues
+
+    nValues = size ( Phi )
+
+    !-- Note Phi is only used in the energy tally, where it appears with
+    !   a factor of 0.5 appropriate for self-gravity. Here multiply Phi by
+    !   a factor of 2.0 to negate this factor of 0.5, in order that the tally
+    !   include the energy contribution appropriate to an external potential.
+
+    select case ( nDimensions )
+    case ( 1 )
+
+      !$OMP parallel do private ( iV )
+      do iV = 1, nValues
+        Phi ( iV )        =  2.0_KDR * Acceleration  *  X ( iV )
+        GradPhi_1 ( iV )  =  Acceleration
+      end do
+      !$OMP end parallel do
+
+    case ( 2 )
+
+      !$OMP parallel do private ( iV )
+      do iV = 1, nValues
+        Phi ( iV )        =  2.0_KDR * Acceleration  *  Y ( iV )
+        GradPhi_1 ( iV )  =  0.0_KDR
+        GradPhi_2 ( iV )  =  Acceleration
+      end do
+      !$OMP end parallel do
+
+    case ( 3 )
+
+      !$OMP parallel do private ( iV )
+      do iV = 1, nValues
+        Phi ( iV )        =  2.0_KDR * Acceleration  *  Z ( iV )
+        GradPhi_1 ( iV )  =  0.0_KDR
+        GradPhi_2 ( iV )  =  0.0_KDR
+        GradPhi_3 ( iV )  =  Acceleration
+      end do
+      !$OMP end parallel do
+
+    end select !-- nDimensions
+
+  end subroutine ComputeGravityUniformKernel
 
 
   subroutine ComputeGravitySource ( M, N, G, S )
