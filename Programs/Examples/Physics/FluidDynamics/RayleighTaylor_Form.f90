@@ -6,12 +6,20 @@ module RayleighTaylor_Form
   private
 
   type, public, extends ( UniverseTemplate ) :: RayleighTaylorForm
+    real ( KDR ), private :: &
+      DensityAbove, DensityBelow, &
+      PressureBase, &   
+      AdiabaticIndex, &
+      Acceleration
   contains
     procedure, public, pass :: &
       Initialize
     final :: &
       Finalize
   end type RayleighTaylorForm
+
+    private :: &
+      SetFluid
 
 contains
 
@@ -27,8 +35,6 @@ contains
       iD  !-- iDimension
     integer ( KDI ), dimension ( 3 ) :: &
       nCells
-    real ( KDR ) :: &
-      Acceleration
     real ( KDR ), dimension ( 3 ) :: &
       MinCoordinate, &
       MaxCoordinate
@@ -40,8 +46,22 @@ contains
 
     call RT % InitializeTemplate ( Name )
 
-    Acceleration = 0.1_KDR
-    call PROGRAM_HEADER % GetParameter ( Acceleration, 'Acceleration' )
+    RT % DensityAbove   = 2.0_KDR
+    RT % DensityBelow   = 1.0_KDR
+    RT % PressureBase   = 2.5_KDR
+    RT % AdiabaticIndex = 1.4_KDR
+    RT % Acceleration   = 0.1_KDR
+
+    call PROGRAM_HEADER % GetParameter &
+           ( RT % DensityAbove, 'DensityAbove' )
+    call PROGRAM_HEADER % GetParameter &
+           ( RT % DensityBelow, 'DensityBelow' )
+    call PROGRAM_HEADER % GetParameter &
+           ( RT % AdiabaticIndex, 'AdiabaticIndex' )
+    call PROGRAM_HEADER % GetParameter &
+           ( RT % Acceleration, 'Acceleration' )    
+    call PROGRAM_HEADER % GetParameter &
+           ( RT % Acceleration, 'Acceleration' )
 
     !-- Integrator
 
@@ -50,23 +70,18 @@ contains
     type is ( FluidBoxForm )
 
     associate ( BCF => BoundaryConditionsFace )
-    call BCF ( 1 ) % Initialize ( [ 'PERIODIC', 'PERIODIC' ] )
-    MinCoordinate ( 1 ) = -0.25_KDR
-    MaxCoordinate ( 1 ) = +0.25_KDR
-    nCells ( 1 ) = 64
     select case ( trim ( PROGRAM_HEADER % Dimensionality ) )
     case ( '2D' )
-      MinCoordinate ( 2 ) = -0.75_KDR
-      MaxCoordinate ( 2 ) = +0.75_KDR
-      nCells ( 2 ) = 192
+      MinCoordinate = [ -0.25_KDR, -0.75_KDR, 0.0_KDR ]
+      MaxCoordinate = [ +0.25_KDR, +0.75_KDR, 0.0_KDR ]
+      nCells = [ 64, 192, 1 ]
+      call BCF ( 1 ) % Initialize ( [ 'PERIODIC', 'PERIODIC' ] )
       call BCF ( 2 ) % Initialize ( [ 'REFLECTING', 'REFLECTING' ] )
     case ( '3D' )
-      MinCoordinate ( 2 ) = -0.25_KDR
-      MaxCoordinate ( 2 ) = +0.25_KDR
-      MinCoordinate ( 3 ) = -0.75_KDR
-      MaxCoordinate ( 3 ) = +0.75_KDR
-      nCells ( 2 ) = 64
-      nCells ( 3 ) = 192
+      MinCoordinate = [ -0.25_KDR, -0.25_KDR, -0.75_KDR ]
+      MaxCoordinate = [ +0.25_KDR, +0.25_KDR, +0.75_KDR ]
+      nCells = [ 64, 64, 192 ]
+      call BCF ( 1 ) % Initialize ( [ 'PERIODIC', 'PERIODIC' ] )
       call BCF ( 2 ) % Initialize ( [ 'PERIODIC', 'PERIODIC' ] )
       call BCF ( 3 ) % Initialize ( [ 'REFLECTING', 'REFLECTING' ] )
     end select
@@ -77,19 +92,17 @@ contains
              GravitySolverTypeOption = 'UNIFORM', &
              MinCoordinateOption = MinCoordinate, &
              MaxCoordinateOption = MaxCoordinate, &
-             UniformAccelerationOption = Acceleration, &
+             UniformAccelerationOption = RT % Acceleration, &
              nCellsOption = nCells )
 
     end associate !-- BCF
-
-    select type ( PS => FB % PositionSpace )
-    class is ( Atlas_SC_Form )
-
-
-    !-- Cleanup
-
-    end select !-- PS
     end select !-- FB
+
+
+    !-- Initial conditions
+
+    call SetFluid ( RT )
+
 
   end subroutine Initialize
 
@@ -104,4 +117,64 @@ contains
   end subroutine Finalize
 
 
+  subroutine SetFluid ( RT )
+
+    class ( RayleighTaylorForm ), intent ( inout ) :: &
+      RT
+
+    integer ( KDI ) :: &
+      iB  !-- iBoundary
+    class ( GeometryFlatForm ), pointer :: &
+      G
+    class ( Fluid_P_I_Form ), pointer :: &
+      F
+
+    select type ( FB => RT % Integrator )
+    class is ( FluidBoxForm )
+
+    select type ( FA => FB % Current_ASC )
+    class is ( Fluid_ASC_Form )
+
+    !-- Initial conditions
+       
+    F => FA % Fluid_P_I ( )
+
+    call F % SetAdiabaticIndex ( RT % AdiabaticIndex )
+
+    select type ( PS => FB % PositionSpace )
+    class is ( Atlas_SC_Form )
+    G => PS % Geometry ( )
+
+    associate &
+      ( X  => G % Value ( :, G % CENTER_U ( 1 ) ), &
+        Y  => G % Value ( :, G % CENTER_U ( 2 ) ), &
+        N  => F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
+        E  => F % Value ( :, F % INTERNAL_ENERGY ), &
+        VY => F % Value ( :, F % VELOCITY_U ( 2 ) ), &
+        Pi => CONSTANT % PI )
+
+    where ( Y > 0.0_KDR )     
+      N  = RT % DensityAbove
+    elsewhere
+      N  = RT % DensityBelow
+    end where
+
+    E  =  ( RT % PressureBase  -  N  *  RT % Acceleration  *  Y ) &
+          / ( RT % AdiabaticIndex  -  1.0_KDR )
+
+    VY  =  ( 0.01_KDR / 4.0_KDR ) &
+           *  ( 1.0_KDR  +  cos ( 4.0_KDR * Pi * X ) ) &
+           *  ( 1.0_KDR  +  cos ( 3.0_KDR * Pi * Y ) )
+    
+    call F % ComputeFromPrimitive ( G )
+
+    end associate !-- X, etc.
+    end select !-- PS
+    end select !-- FA
+    end select !-- FB
+    nullify ( F, G )
+    
+  end subroutine SetFluid
+
+  
 end module RayleighTaylor_Form
