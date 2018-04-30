@@ -92,6 +92,7 @@ contains
              GravitySolverTypeOption = 'UNIFORM', &
              MinCoordinateOption = MinCoordinate, &
              MaxCoordinateOption = MaxCoordinate, &
+             FinishTimeOption = 8.5_KDR, &
              UniformAccelerationOption = RT % Acceleration, &
              nCellsOption = nCells )
 

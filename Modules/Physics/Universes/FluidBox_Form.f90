@@ -4,6 +4,7 @@ module FluidBox_Form
   use Mathematics
   use Spaces
   use StressEnergies
+  use ApplyGravity_F__Command
 
   implicit none
   private
@@ -99,6 +100,8 @@ contains
     select type ( S => FB % Step )
     class is ( Step_RK2_C_ASC_Form )
     call S % Initialize ( FA, Name )
+    if ( present ( GravitySolverTypeOption ) ) &   
+      S % ApplySources % Pointer => ApplyGravity_F
     end select !-- S
 
     !-- Template
