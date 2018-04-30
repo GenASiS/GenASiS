@@ -149,24 +149,47 @@ contains
     associate &
       ( X  => G % Value ( :, G % CENTER_U ( 1 ) ), &
         Y  => G % Value ( :, G % CENTER_U ( 2 ) ), &
+        Z  => G % Value ( :, G % CENTER_U ( 3 ) ), &
         N  => F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
         E  => F % Value ( :, F % INTERNAL_ENERGY ), &
         VY => F % Value ( :, F % VELOCITY_U ( 2 ) ), &
+        VZ => F % Value ( :, F % VELOCITY_U ( 3 ) ), &
         Pi => CONSTANT % PI )
 
-    where ( Y > 0.0_KDR )     
-      N  = RT % DensityAbove
-    elsewhere
-      N  = RT % DensityBelow
-    end where
+    select case ( PS % nDimensions )
+    case ( 2 )
 
-    E  =  ( RT % PressureBase  -  N  *  RT % Acceleration  *  Y ) &
-          / ( RT % AdiabaticIndex  -  1.0_KDR )
+      where ( Y > 0.0_KDR )     
+        N  = RT % DensityAbove
+      elsewhere
+        N  = RT % DensityBelow
+      end where
 
-    VY  =  ( 0.01_KDR / 4.0_KDR ) &
-           *  ( 1.0_KDR  +  cos ( 4.0_KDR * Pi * X ) ) &
-           *  ( 1.0_KDR  +  cos ( 3.0_KDR * Pi * Y ) )
+      E  =  ( RT % PressureBase  -  N  *  RT % Acceleration  *  Y ) &
+            / ( RT % AdiabaticIndex  -  1.0_KDR )
+
+      VY  =  ( 0.01_KDR / 4.0_KDR ) &
+             *  ( 1.0_KDR  +  cos ( 4.0_KDR * Pi * X ) ) &
+             *  ( 1.0_KDR  +  cos ( 3.0_KDR * Pi * Y ) )
     
+    case ( 3 )
+
+      where ( Z > 0.0_KDR )     
+        N  = RT % DensityAbove
+      elsewhere
+        N  = RT % DensityBelow
+      end where
+
+      E  =  ( RT % PressureBase  -  N  *  RT % Acceleration  *  Z ) &
+            / ( RT % AdiabaticIndex  -  1.0_KDR )
+
+      VZ  =  ( 0.01_KDR / 4.0_KDR ) &
+             *  ( 1.0_KDR  +  cos ( 4.0_KDR * Pi &
+                                    * sqrt ( X ** 2  +  Y ** 2 ) ) ) &
+             *  ( 1.0_KDR  +  cos ( 3.0_KDR * Pi * Z ) )
+    
+    end select !-- nDimensions
+
     call F % ComputeFromPrimitive ( G )
 
     end associate !-- X, etc.
