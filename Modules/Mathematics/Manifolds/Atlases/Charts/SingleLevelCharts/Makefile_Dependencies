@@ -32,6 +32,12 @@ Chart_SLD__Form.o: \
   Chart_SL__Template.o \
   Chart_SLD__Form.f90
 
+Chart_SLD_SC__Form.o: \
+  Basics.o \
+  AtlasBasics.o \
+  Chart_SLD__Form.o \
+  Chart_SLD_SC__Form.f90
+
 Chart_SLD_CC__Form.o: \
   Basics.o \
   AtlasBasics.o \
@@ -44,6 +50,7 @@ SingleLevelCharts.o: \
   Storage_CSL__Form.o \
   Chart_SLL__Form.o \
   Chart_SLD__Form.o \
+  Chart_SLD_SC__Form.o \
   Chart_SLD_CC__Form.o \
   SingleLevelCharts.f90
 

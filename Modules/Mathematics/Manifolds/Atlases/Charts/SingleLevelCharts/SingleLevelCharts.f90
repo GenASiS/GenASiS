@@ -5,6 +5,7 @@ module SingleLevelCharts
   use Storage_CSL__Form
   use Chart_SLL__Form
   use Chart_SLD__Form
+  use Chart_SLD_SC__Form
   use Chart_SLD_CC__Form
 
 end module SingleLevelCharts
