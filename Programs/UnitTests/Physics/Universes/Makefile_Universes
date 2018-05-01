@@ -2,13 +2,22 @@ PATH_GENASIS = ../../../../..
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-all: FluidBox_Form_Test FluidCentralCore_Form_Test
+all: FluidBox_Form_Test FluidSymmetricCurvilinear_Form_Test \
+     FluidCentralCore_Form_Test
 
 FluidBox_Form_Test: Basics.a Mathematics.a Spaces.a StressEnergies.a \
   FluidBox_Form_Test.o
 	$(LINK) $(FLAGS) \
           -o FluidBox_Form_Test_$(MACHINE) \
-          FluidBox_Form_Test.o FluidBox_Form.o \
+          FluidBox_Form_Test.o FluidBox_Form.o ApplyGravity_F__Command.o \
+          StressEnergies.a Spaces.a Mathematics.a Basics.a $(LIBRARIES)
+
+FluidSymmetricCurvilinear_Form_Test: Basics.a Mathematics.a Spaces.a \
+  StressEnergies.a FluidSymmetricCurvilinear_Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o FluidSymmetricCurvilinear_Form_Test_$(MACHINE) \
+          FluidSymmetricCurvilinear_Form_Test.o \
+          FluidSymmetricCurvilinear_Form.o ApplyGravity_F__Command.o \
           StressEnergies.a Spaces.a Mathematics.a Basics.a $(LIBRARIES)
 
 FluidCentralCore_Form_Test: Basics.a Mathematics.a Spaces.a StressEnergies.a \
@@ -16,6 +25,7 @@ FluidCentralCore_Form_Test: Basics.a Mathematics.a Spaces.a StressEnergies.a \
 	$(LINK) $(FLAGS) \
           -o FluidCentralCore_Form_Test_$(MACHINE) \
           FluidCentralCore_Form_Test.o FluidCentralCore_Form.o \
+          ApplyGravity_F__Command.o \
           StressEnergies.a Spaces.a Mathematics.a Basics.a $(LIBRARIES)
 
 clean:
@@ -23,6 +33,7 @@ clean:
 
 clobber: clean
 	rm -f FluidBox_Form_Test_*
+	rm -f FluidSymmetricCurvilinear_Form_Test_*
 	rm -f FluidCentralCore_Form_Test_*
 
 include $(PATH_BASICS)/Makefile_Dependencies
@@ -35,6 +46,11 @@ FluidBox_Form_Test.o: \
   Basics.o \
   FluidBox_Form.o \
   FluidBox_Form_Test.f90
+
+FluidSymmetricCurvilinear_Form_Test.o: \
+  Basics.o \
+  FluidSymmetricCurvilinear_Form.o \
+  FluidSymmetricCurvilinear_Form_Test.f90
 
 FluidCentralCore_Form_Test.o: \
   Basics.o \
