@@ -1,33 +1,33 @@
-module Atlas_SC_CC__Form_Test__Form
+module Atlas_SC_SC__Form_Test__Form
 
   use Basics
   use Charts
-  use Atlas_SC_CC__Form
+  use Atlas_SC_SC__Form
 
   implicit none
   private
 
   character ( LDF ), public, parameter :: &
-    ProgramName = 'Atlas_SC_CC__Form_Test'
+    ProgramName = 'Atlas_SC_SC__Form_Test'
 
-  type, public :: Atlas_SC_CC_Form_Test_Form
+  type, public :: Atlas_SC_SC_Form_Test_Form
     type ( GridImageStreamForm ), allocatable :: &
       GIS
-    type ( Atlas_SC_CC_Form ), allocatable :: &
+    type ( Atlas_SC_SC_Form ), allocatable :: &
       Atlas
   contains
     procedure, public, pass :: &
       Initialize
     final :: &
       Finalize
-  end type Atlas_SC_CC_Form_Test_Form
+  end type Atlas_SC_SC_Form_Test_Form
 
 contains
 
   
   subroutine Initialize ( AFT, Name )
 
-    class ( Atlas_SC_CC_Form_Test_Form ), intent ( inout ), target :: &
+    class ( Atlas_SC_SC_Form_Test_Form ), intent ( inout ), target :: &
       AFT
     character ( * ), intent ( in ) :: &
       Name
@@ -41,7 +41,7 @@ contains
 
     call A % Initialize &
            ( 'Atlas', CommunicatorOption = PROGRAM_HEADER % Communicator )
-    call A % CreateChart_CC ( )  
+    call A % CreateChart_SC ( )  
     call A % SetGeometry ( )
 
     call GIS % Initialize &
@@ -59,7 +59,7 @@ contains
 
   subroutine Finalize ( AFT )
 
-    type ( Atlas_SC_CC_Form_Test_Form ), intent ( inout ) :: &
+    type ( Atlas_SC_SC_Form_Test_Form ), intent ( inout ) :: &
       AFT
 
     deallocate ( AFT % Atlas )
@@ -68,18 +68,18 @@ contains
   end subroutine Finalize
 
 
-end module Atlas_SC_CC__Form_Test__Form
+end module Atlas_SC_SC__Form_Test__Form
 
 
 
-program Atlas_SC_CC__Form_Test
+program Atlas_SC_SC__Form_Test
 
   use Basics
-  use Atlas_SC_CC__Form_Test__Form
+  use Atlas_SC_SC__Form_Test__Form
   
   implicit none
 
-  type ( Atlas_SC_CC_Form_Test_Form ), allocatable :: &
+  type ( Atlas_SC_SC_Form_Test_Form ), allocatable :: &
     AFT
     
   allocate ( PROGRAM_HEADER )
@@ -92,4 +92,4 @@ program Atlas_SC_CC__Form_Test
 
   deallocate ( PROGRAM_HEADER )
 
-end program Atlas_SC_CC__Form_Test
+end program Atlas_SC_SC__Form_Test

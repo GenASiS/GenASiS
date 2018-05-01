@@ -1,6 +1,7 @@
 INTERCHARTS = \
   Intercharts.o \
   Storage_ASC__Form.o \
+  Atlas_SC_SC__Form.o \
   Atlas_SC_CC__Form.o \
   Atlas_SC__Form.o \
   GeometryFlat_ASC__Form.o \
