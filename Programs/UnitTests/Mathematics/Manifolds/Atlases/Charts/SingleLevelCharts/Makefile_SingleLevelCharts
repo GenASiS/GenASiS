@@ -2,7 +2,8 @@ PATH_GENASIS = ../../../../../../../..
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-all: Chart_SLX__Form_Test Chart_SLD_SC__Form_Test Chart_SLD_CC__Form_Test
+all: Chart_SLX__Form_Test Chart_SLD_SC__Form_Test Chart_SLD_CE__Form_Test \
+     Chart_SLD_CC__Form_Test 
 
 Chart_SLX__Form_Test: Basics.a AtlasBasics.a ChartBasics.a \
   Chart_SLX__Form_Test.o
@@ -20,6 +21,14 @@ Chart_SLD_SC__Form_Test: Basics.a AtlasBasics.a ChartBasics.a \
           Chart_SLL__Form.o Chart_SL__Template.o ChartStream_SL__Form.o \
           ChartBasics.a AtlasBasics.a Basics.a $(LIBRARIES)
 
+Chart_SLD_CE__Form_Test: Basics.a AtlasBasics.a ChartBasics.a \
+  Chart_SLD_CE__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Chart_SLD_CE__Form_Test_$(MACHINE) \
+          Chart_SLD_CE__Form_Test.o Chart_SLD_CE__Form.o Chart_SLD__Form.o \
+          Chart_SLL__Form.o Chart_SL__Template.o ChartStream_SL__Form.o \
+          ChartBasics.a AtlasBasics.a Basics.a $(LIBRARIES)
+
 Chart_SLD_CC__Form_Test: Basics.a AtlasBasics.a ChartBasics.a \
   Chart_SLD_CC__Form_Test.o
 	$(LINK) $(FLAGS) \
@@ -34,6 +43,7 @@ clean:
 clobber: clean
 	rm -f Chart_SLX__Form_Test_*
 	rm -f Chart_SLD_SC__Form_Test_*
+	rm -f Chart_SLD_CE__Form_Test_*
 	rm -f Chart_SLD_CC__Form_Test_*
 
 include $(PATH_BASICS)/Makefile_Dependencies
@@ -55,6 +65,13 @@ Chart_SLD_SC__Form_Test.o: \
   ChartBasics.o \
   Chart_SLD_SC__Form.o \
   Chart_SLD_SC__Form_Test.f90
+
+Chart_SLD_CE__Form_Test.o: \
+  Basics.o \
+  AtlasBasics.o \
+  ChartBasics.o \
+  Chart_SLD_CE__Form.o \
+  Chart_SLD_CE__Form_Test.f90
 
 Chart_SLD_CC__Form_Test.o: \
   Basics.o \
