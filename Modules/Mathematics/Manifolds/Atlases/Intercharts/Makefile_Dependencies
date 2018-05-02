@@ -32,7 +32,13 @@ Atlas_SC_SC__Form.o: \
   Atlas_SC__Form.o \
   Atlas_SC_CC__Form.f90
 
-Atlas_SC_CC__Form.o: \
+Atlas_SC_CE__Form.o: \
+  Basics.o \
+  Charts.o \
+  Atlas_SC__Form.o \
+  Atlas_SC_CC__Form.f90
+
+Atlas_SC_CE__Form.o: \
   Basics.o \
   Charts.o \
   Atlas_SC__Form.o \
@@ -51,6 +57,7 @@ Intercharts.o: \
   GeometryFlat_ASC__Form.o \
   Atlas_SC__Form.o \
   Atlas_SC_SC__Form.o \
+  Atlas_SC_CE__Form.o \
   Atlas_SC_CC__Form.o \
   Storage_ASC__Form.o \
   Intercharts.f90
