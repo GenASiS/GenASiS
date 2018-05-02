@@ -73,6 +73,7 @@ contains
     select type ( S => FSC % Step )
     class is ( Step_RK2_C_ASC_Form )
     call S % Initialize ( FA, Name )
+    S % ApplySources % Pointer => ApplyCurvilinear_F
     end select !-- S
 
 

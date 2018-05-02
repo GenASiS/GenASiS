@@ -1,7 +1,7 @@
 PATH_GENASIS = ../../../../..
 
-all: SineWave OppenheimerSnyder RiemannProblem RayleighTaylor #SawtoothWave \
-     SedovTaylor FishboneMoncrief
+all: SineWave OppenheimerSnyder RiemannProblem RayleighTaylor \
+     SedovTaylor #FishboneMoncrief SawtoothWave 
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
@@ -37,11 +37,11 @@ RayleighTaylor: GenASiS.a RayleighTaylor.o
            RayleighTaylor.o RayleighTaylor_Form.o \
            GenASiS.a $(LIBRARIES)
 
-# SedovTaylor: Basics.a Mathematics.a Fluid.a SedovTaylor.o
-# 	$(LINK) $(FFLAGS) \
-#           -o SedovTaylor_$(MACHINE) \
-#           SedovTaylor.o SedovTaylor_Form.o \
-#           Fluid.a Mathematics.a Basics.a $(LIBRARIES)
+SedovTaylor: GenASiS.a SedovTaylor.o
+	$(LINK) $(FFLAGS) \
+          -o SedovTaylor_$(MACHINE) \
+          SedovTaylor.o SedovTaylor_Form.o \
+          GenASiS.a $(LIBRARIES)
 
 # FishboneMoncrief: Basics.a Mathematics.a Fluid.a FishboneMoncrief.o
 # 	$(LINK) $(FFLAGS) \
@@ -60,7 +60,7 @@ clobber: clean
 	rm -f OppenheimerSnyder_*
 	rm -f RiemannProblem_*
 	rm -f RayleighTaylor_*
-# 	rm -f SedovTaylor_*
+	rm -f SedovTaylor_*
 # 	rm -f FishboneMoncrief_*
 # 	rm -f SawtoothWave_*
 
@@ -122,19 +122,14 @@ RayleighTaylor.o: \
   RayleighTaylor_Form.o \
   RayleighTaylor.f90
 
-# SedovTaylor_Form.o: \
-#   Basics.o \
-#   Mathematics.o \
-#   Fluid_P__Template.o \
-#   Fluid_P_P__Form.o \
-#   Fluid_ASC__Form.o \
-#   ApplyCurvilinear_F__Command.o \
-#   SedovTaylor_Form.f90
+SedovTaylor_Form.o: \
+  GenASiS.o \
+  SedovTaylor_Form.f90
 
-# SedovTaylor.o: \
-#   Basics.o \
-#   SedovTaylor_Form.o \
-#   SedovTaylor.f90
+SedovTaylor.o: \
+  GenASiS.o \
+  SedovTaylor_Form.o \
+  SedovTaylor.f90
 
 # Tally_FM__Form.o: \
 #   Basics.o \
