@@ -17,7 +17,10 @@ module Geometry_ASC__Form
   type, public, extends ( GeometryFlat_ASC_Form ) :: Geometry_ASC_Form
     real ( KDR ) :: &
       GravitationalConstant, &
-      UniformAcceleration
+      UniformAcceleration, &
+      CentralMass
+    type ( MeasuredValueForm ) :: &
+      CentralMassUnit
     character ( LDL ) :: &
       GravitySolverType = ''
     type ( Storage_ASC_Form ), allocatable :: &
@@ -47,10 +50,12 @@ module Geometry_ASC__Form
 
     private :: &
       ComputeGravityUniform, &
+      ComputeGravityCentralMass, &
       ComputeGravityMultipole
 
       private :: &
         ComputeGravityUniformKernel, &
+        ComputeGravityCentralMassKernel, &
         ComputeGravitySource
 
 contains
@@ -58,8 +63,9 @@ contains
 
   subroutine Initialize &
                ( GA, A, GeometryType, NameShortOption, &
-                 GravitySolverTypeOption, GravitationalConstantOption, &
-                 UniformAccelerationOption, IgnorabilityOption )
+                 GravitySolverTypeOption, CentralMassUnitOption, &
+                 GravitationalConstantOption, UniformAccelerationOption, &
+                 CentralMassOption, IgnorabilityOption )
 
     class ( Geometry_ASC_Form ), intent ( inout ) :: &
       GA
@@ -70,9 +76,12 @@ contains
     character ( * ), intent ( in ), optional :: &
       NameShortOption, &
       GravitySolverTypeOption
+    type ( MeasuredValueForm ), intent ( in ), optional :: &
+      CentralMassUnitOption
     real ( KDR ), intent ( in ), optional :: &
       GravitationalConstantOption, &
-      UniformAccelerationOption
+      UniformAccelerationOption, &
+      CentralMassOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
@@ -117,6 +126,27 @@ contains
         else
           call Show ( 'GravitySolverType UNIFORM requires ' &
                       // 'UniformAccelerationOption', CONSOLE % ERROR )
+          call Show ( 'Geometry_ASC__Form', 'module', CONSOLE % ERROR )
+          call Show ( 'Initialize', 'subroutine', CONSOLE % ERROR )
+          call PROGRAM_HEADER % Abort ( )
+        end if
+
+      case ( 'CENTRAL_MASS' )
+
+        GA % GravitationalConstant  =  CONSTANT % GRAVITATIONAL
+        if ( present ( GravitationalConstantOption ) ) &
+          GA % GravitationalConstant  =  GravitationalConstantOption
+
+        if ( present ( CentralMassUnitOption ) ) &
+          GA % CentralMassUnit  =  CentralMassUnitOption
+
+        if ( present ( CentralMassOption ) ) then
+          GA % CentralMass = CentralMassOption
+          call Show ( GA % CentralMass, GA % CentralMassUnit, &
+                      'CentralMass', GA % IGNORABILITY )
+        else
+          call Show ( 'GravitySolverType CENTRAL_MASS requires ' &
+                      // 'CentralMassOption', CONSOLE % ERROR )
           call Show ( 'Geometry_ASC__Form', 'module', CONSOLE % ERROR )
           call Show ( 'Initialize', 'subroutine', CONSOLE % ERROR )
           call PROGRAM_HEADER % Abort ( )
@@ -209,6 +239,8 @@ contains
     select case ( trim ( GA % GravitySolverType ) )
     case ( 'UNIFORM' )
       call ComputeGravityUniform ( GA )
+    case ( 'CENTRAL_MASS' )
+      call ComputeGravityCentralMass ( GA )
     case ( 'MULTIPOLE' )
       call ComputeGravityMultipole ( GA, FA, iBaryonMass, iBaryonDensity )
     case default
@@ -293,6 +325,36 @@ contains
     nullify ( G )
 
   end subroutine ComputeGravityUniform
+
+
+  subroutine ComputeGravityCentralMass ( GA )
+
+    class ( Geometry_ASC_Form ), intent ( inout ) :: &
+      GA
+
+    class ( Geometry_N_Form ), pointer :: &
+      G
+
+    select type ( A => GA % Atlas )
+    class is ( Atlas_SC_Form )
+
+    G  =>  GA % Geometry_N ( )
+
+    call ComputeGravityCentralMassKernel &
+           ( G % Value ( :, G % GRAVITATIONAL_POTENTIAL ), & 
+             G % Value ( :, G % GRAVITATIONAL_ACCELERATION_D ( 1 ) ), &
+             G % Value ( :, G % GRAVITATIONAL_ACCELERATION_D ( 2 ) ), &
+             G % Value ( :, G % GRAVITATIONAL_ACCELERATION_D ( 3 ) ), &
+             G % Value ( :, G % CENTER_U ( 1 ) ), &
+             G % Value ( :, G % CENTER_U ( 2 ) ), &
+             G % Value ( :, G % CENTER_U ( 3 ) ), &
+             GA % GravitationalConstant, GA % CentralMass, &
+             G % CoordinateSystem )
+
+    end select !-- A
+    nullify ( G )
+
+  end subroutine ComputeGravityCentralMass
 
 
   subroutine ComputeGravityMultipole ( GA, FA, iBaryonMass, iBaryonDensity )
@@ -427,6 +489,54 @@ contains
     end select !-- nDimensions
 
   end subroutine ComputeGravityUniformKernel
+
+
+  subroutine ComputeGravityCentralMassKernel &
+               ( Phi, GradPhi_1, GradPhi_2, GradPhi_3, X_1, X_2, X_3, G, M, &
+                 CoordinateSystem )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      Phi, &
+      GradPhi_1, GradPhi_2, GradPhi_3
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      X_1, X_2, X_3
+    real ( KDR ), intent ( in ) :: &
+      G, &
+      M
+    character ( * ), intent ( in ) :: &
+      CoordinateSystem
+
+    integer ( KDI ) :: &
+      iV, &  !-- iValue
+      nValues
+
+    nValues = size ( Phi )
+
+    !-- Note Phi is only used in the energy tally, where it appears with
+    !   a factor of 0.5 appropriate for self-gravity. Here multiply Phi by
+    !   a factor of 2.0 to negate this factor of 0.5, in order that the tally
+    !   include the energy contribution appropriate to an external potential.
+
+    select case ( trim ( CoordinateSystem ) )
+    case ( 'SPHERICAL' )
+
+      !$OMP parallel do private ( iV )
+      do iV = 1, nValues
+        Phi ( iV )        =  - 2.0_KDR * G * M  /  X_1 ( iV )
+        GradPhi_1 ( iV )  =  G * M  /  X_1 ( iV ) ** 2
+      end do
+      !$OMP end parallel do
+
+    case default
+      call Show ( 'CoordinateSystem not implemented', CONSOLE % ERROR )
+      call Show ( CoordinateSystem, 'CoordinateSystem', CONSOLE % ERROR )
+      call Show ( 'Geometry_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'ComputeGravityCentralMassKernel', 'subroutine', &
+                  CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- CoordinateSystem
+
+  end subroutine ComputeGravityCentralMassKernel
 
 
   subroutine ComputeGravitySource ( M, N, G, S )

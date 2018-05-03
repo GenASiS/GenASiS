@@ -25,8 +25,9 @@ contains
 
   subroutine Initialize &
                ( FCE, Name, FluidType, GeometryType, DimensionlessOption, &
-                 TimeUnitOption, RadiusMaxOption, RadiusMinOption, &
-                 RadialRatioOption, FinishTimeOption, nWriteOption )
+                 TimeUnitOption, FinishTimeOption, RadiusMaxOption, &
+                 RadiusMinOption, RadialRatioOption, CentralMassOption, &
+                 nWriteOption )
 
     class ( FluidCentralExcisionForm ), intent ( inout ), target :: &
       FCE
@@ -42,14 +43,16 @@ contains
       FinishTimeOption, &
       RadiusMaxOption, &
       RadiusMinOption, &
-      RadialRatioOption
+      RadialRatioOption, &
+      CentralMassOption
     integer ( KDI ), intent ( in ), optional :: &
       nWriteOption
 
     real ( KDR ) :: &
       RadiusMin, &
       RadiusMax, &
-      RadialRatio!, &
+      RadialRatio, &
+      CentralMass!, &
 !      FinishTime
 !    type ( MeasuredValueForm ) :: &
 !      TimeUnit
@@ -109,10 +112,16 @@ contains
     if ( FCE % Dimensionless ) then
       call GA % Initialize &
              ( PS, GeometryType, GravitySolverTypeOption = 'CENTRAL_MASS', &
-               GravitationalConstantOption = 1.0_KDR )
+               GravitationalConstantOption = 1.0_KDR, &
+               CentralMassOption = 1.0_KDR )
     else
+      CentralMass  =  1.4_KDR  *  UNIT % SOLAR_MASS
+      if ( present ( CentralMassOption ) ) &
+        CentralMass = CentralMassOption
       call GA % Initialize &
-             ( PS, GeometryType, GravitySolverTypeOption = 'CENTRAL_MASS' )
+             ( PS, GeometryType, GravitySolverTypeOption = 'CENTRAL_MASS', &
+               CentralMassUnitOption = UNIT % SOLAR_MASS, &
+               CentralMassOption = CentralMass )
     end if !-- Dimensionless
 
     call PS % SetGeometry ( GA )

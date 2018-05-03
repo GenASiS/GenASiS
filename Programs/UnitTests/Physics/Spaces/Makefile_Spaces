@@ -27,8 +27,8 @@ Geometry_CSL__Form_Test: Basics.a Mathematics.a Geometry_CSL__Form_Test.o
 Geometry_ASC__Form_Test: Basics.a Mathematics.a Geometry_ASC__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Geometry_ASC__Form_Test_$(MACHINE) \
-          Geometry_ASC__Form_Test.o Geometry_ASC__Form.o Geometry_CSL__Form.o \
-          Geometry_N__Form.o Geometry_G__Form.o \
+          Geometry_ASC__Form_Test.o Geometry_ASC__Form.o \
+          Geometry_CSL__Form.o Geometry_N__Form.o Geometry_G__Form.o \
           Mathematics.a Basics.a $(LIBRARIES)
 
 clean:
