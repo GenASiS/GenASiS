@@ -20,6 +20,9 @@ module FluidCentralExcision_Form
       Finalize
   end type FluidCentralExcisionForm
 
+    private :: &
+      ApplySources
+
 contains
 
 
@@ -52,10 +55,10 @@ contains
       RadiusMin, &
       RadiusMax, &
       RadialRatio, &
-      CentralMass!, &
-!      FinishTime
-!    type ( MeasuredValueForm ) :: &
-!      TimeUnit
+      CentralMass, &
+      FinishTime
+    type ( MeasuredValueForm ) :: &
+      TimeUnit
     type ( MeasuredValueForm ), dimension ( 3 ) :: &
       CoordinateUnit
 
@@ -127,9 +130,62 @@ contains
     call PS % SetGeometry ( GA )
 
 
+    !-- Fluid
+
+    allocate ( Fluid_ASC_Form :: FCE % Current_ASC )
+    select type ( FA => FCE % Current_ASC )
+    class is ( Fluid_ASC_Form )
+
+    if ( FCE % Dimensionless ) then
+      call FA % Initialize ( PS, FluidType )
+    else
+      call FA % Initialize &
+             ( PS, FluidType, &
+               BaryonMassUnitOption &
+                 =  UNIT % ATOMIC_MASS_UNIT, &
+               NumberUnitOption &
+                 =  UNIT % SOLAR_BARYON_NUMBER, &
+               EnergyUnitOption &
+                 =  UNIT % SOLAR_MASS  *  UNIT % SPEED_OF_LIGHT **2, &
+               MomentumUnitOption &
+                 =  UNIT % SOLAR_MASS  *  UNIT % SPEED_OF_LIGHT, &
+               AngularMomentumUnitOption &
+                 =  UNIT % SOLAR_KERR_PARAMETER, &
+               BaryonMassReferenceOption = CONSTANT % ATOMIC_MASS_UNIT )
+    end if
+
+
+    !-- Step
+
+    allocate ( Step_RK2_C_ASC_Form :: FCE % Step )
+    select type ( S => FCE % Step )
+    class is ( Step_RK2_C_ASC_Form )
+    call S % Initialize ( FA, Name )
+    S % ApplySources % Pointer => ApplySources
+    end select !-- S
+
+
+    !-- Template
+
+    if ( .not. FCE % Dimensionless ) &
+      TimeUnit = UNIT % SECOND
+    if ( present ( TimeUnitOption ) ) &
+      TimeUnit = TimeUnitOption
+
+    FinishTime = 1.0_KDR * TimeUnit
+    if ( present ( FinishTimeOption ) ) &
+      FinishTime = FinishTimeOption
+
+    call FCE % InitializeTemplate_C_PS &
+           ( Name, TimeUnitOption = TimeUnit, &
+             FinishTimeOption = FinishTime, &
+             nWriteOption = nWriteOption )
+    call Show ( FCE % Dimensionless, 'Dimensionless' )
+
+
     !-- Cleanup
 
-!    end select !-- FA
+    end select !-- FA
     end select !-- GA
     end select !-- PS
 
@@ -144,6 +200,31 @@ contains
     call FCE % FinalizeTemplate_C_PS ( )
 
   end subroutine Finalize
+
+
+  subroutine ApplySources &
+               ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
+
+    class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
+      S
+    class ( Sources_C_Form ), intent ( inout ) :: &
+      Sources_F
+    type ( VariableGroupForm ), intent ( inout ), target :: &
+      Increment
+    class ( CurrentTemplate ), intent ( in ) :: &
+      Fluid
+    real ( KDR ), intent ( in ) :: &
+      TimeStep
+    integer ( KDI ), intent ( in ) :: &
+      iStage
+
+    call ApplyCurvilinear_F &
+           ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
+
+    call ApplyGravity_F &
+           ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
+
+  end subroutine ApplySources
 
 
 end module FluidCentralExcision_Form
