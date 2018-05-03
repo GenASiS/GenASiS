@@ -9,7 +9,8 @@ program FluidCentralCore_Form_Test
     FCC
 
   allocate ( PROGRAM_HEADER )
-  call PROGRAM_HEADER % Initialize ( 'FluidCentralCore_Form_Test' )
+  call PROGRAM_HEADER % Initialize &
+         ( 'FluidCentralCore_Form_Test', DimensionalityOption = '2D' )
 
   allocate ( FCC )
   call FCC % Initialize &

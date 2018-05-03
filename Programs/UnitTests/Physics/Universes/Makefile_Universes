@@ -3,7 +3,7 @@ PATH_GENASIS = ../../../../..
 include $(PATH_GENASIS)/Build/Makefile_Build
 
 all: FluidBox_Form_Test FluidSymmetricCurvilinear_Form_Test \
-     FluidCentralCore_Form_Test
+     FluidCentralExcision_Form_Test FluidCentralCore_Form_Test
 
 FluidBox_Form_Test: Basics.a Mathematics.a Spaces.a StressEnergies.a \
   FluidBox_Form_Test.o
@@ -20,6 +20,14 @@ FluidSymmetricCurvilinear_Form_Test: Basics.a Mathematics.a Spaces.a \
           FluidSymmetricCurvilinear_Form.o ApplyGravity_F__Command.o \
           StressEnergies.a Spaces.a Mathematics.a Basics.a $(LIBRARIES)
 
+FluidCentralExcision_Form_Test: Basics.a Mathematics.a Spaces.a \
+  StressEnergies.a FluidCentralExcision_Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o FluidCentralExcision_Form_Test_$(MACHINE) \
+          FluidCentralExcision_Form_Test.o FluidCentralExcision_Form.o \
+          ApplyGravity_F__Command.o \
+          StressEnergies.a Spaces.a Mathematics.a Basics.a $(LIBRARIES)
+
 FluidCentralCore_Form_Test: Basics.a Mathematics.a Spaces.a StressEnergies.a \
   FluidCentralCore_Form_Test.o
 	$(LINK) $(FLAGS) \
@@ -34,6 +42,7 @@ clean:
 clobber: clean
 	rm -f FluidBox_Form_Test_*
 	rm -f FluidSymmetricCurvilinear_Form_Test_*
+	rm -f FluidCentralExcision_Form_Test_*
 	rm -f FluidCentralCore_Form_Test_*
 
 include $(PATH_BASICS)/Makefile_Dependencies
@@ -51,6 +60,11 @@ FluidSymmetricCurvilinear_Form_Test.o: \
   Basics.o \
   FluidSymmetricCurvilinear_Form.o \
   FluidSymmetricCurvilinear_Form_Test.f90
+
+FluidCentralExcision_Form_Test.o: \
+  Basics.o \
+  FluidCentralExcision_Form.o \
+  FluidCentralExcision_Form_Test.f90
 
 FluidCentralCore_Form_Test.o: \
   Basics.o \
