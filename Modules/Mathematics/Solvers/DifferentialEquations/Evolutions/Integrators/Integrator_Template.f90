@@ -357,7 +357,7 @@ contains
     class default
       call Show ( 'Atlas type not found', CONSOLE % ERROR )
       call Show ( 'Integrator_Template', 'module', CONSOLE % ERROR )
-      call Show ( 'OpenStreams', 'subroutine', CONSOLE % ERROR ) 
+      call Show ( 'OpenManifoldStreams', 'subroutine', CONSOLE % ERROR ) 
       call PROGRAM_HEADER % Abort ( )
     end select !-- PS
 
