@@ -28,9 +28,9 @@ contains
 
   subroutine Initialize &
                ( FCE, Name, FluidType, GeometryType, DimensionlessOption, &
-                 TimeUnitOption, FinishTimeOption, RadiusMaxOption, &
-                 RadiusMinOption, RadialRatioOption, CentralMassOption, &
-                 nCellsPolarOption )
+                 TimeUnitOption, FinishTimeOption, LimiterParameterOption, &
+                 RadiusMaxOption, RadiusMinOption, RadialRatioOption, &
+                 CentralMassOption, nCellsPolarOption )
 
     class ( FluidCentralExcisionForm ), intent ( inout ), target :: &
       FCE
@@ -47,7 +47,8 @@ contains
       RadiusMaxOption, &
       RadiusMinOption, &
       RadialRatioOption, &
-      CentralMassOption
+      CentralMassOption, &
+      LimiterParameterOption
     integer ( KDI ), intent ( in ), optional :: &
       nCellsPolarOption
 
@@ -137,22 +138,36 @@ contains
     select type ( FA => FCE % Current_ASC )
     class is ( Fluid_ASC_Form )
 
+    if ( .not. FCE % Dimensionless ) &
+      TimeUnit = UNIT % SECOND
+    if ( present ( TimeUnitOption ) ) &
+      TimeUnit = TimeUnitOption
+
     if ( FCE % Dimensionless ) then
       call FA % Initialize ( PS, FluidType )
     else
       call FA % Initialize &
              ( PS, FluidType, &
+               Velocity_U_UnitOption &
+                 =  CoordinateUnit / TimeUnit, &
                BaryonMassUnitOption &
                  =  UNIT % ATOMIC_MASS_UNIT, &
+               NumberDensityUnitOption &
+                 =  UNIT % FEMTOMETER ** ( -3 ), &
+               EnergyDensityUnitOption &
+                 =  UNIT % MEGA_ELECTRON_VOLT  &
+                    *  UNIT % FEMTOMETER ** ( -3 ), &
                NumberUnitOption &
                  =  UNIT % SOLAR_BARYON_NUMBER, &
                EnergyUnitOption &
-                 =  UNIT % SOLAR_MASS  *  UNIT % SPEED_OF_LIGHT **2, &
+                 =  UNIT % SOLAR_MASS  *  UNIT % SPEED_OF_LIGHT ** 2, &
                MomentumUnitOption &
                  =  UNIT % SOLAR_MASS  *  UNIT % SPEED_OF_LIGHT, &
                AngularMomentumUnitOption &
                  =  UNIT % SOLAR_KERR_PARAMETER, &
-               BaryonMassReferenceOption = CONSTANT % ATOMIC_MASS_UNIT )
+               TimeUnitOption = TimeUnit, &
+               BaryonMassReferenceOption = CONSTANT % ATOMIC_MASS_UNIT, &
+               LimiterParameterOption = LimiterParameterOption )
     end if
 
 
@@ -167,11 +182,6 @@ contains
 
 
     !-- Template
-
-    if ( .not. FCE % Dimensionless ) &
-      TimeUnit = UNIT % SECOND
-    if ( present ( TimeUnitOption ) ) &
-      TimeUnit = TimeUnitOption
 
     FinishTime = 1.0_KDR * TimeUnit
     if ( present ( FinishTimeOption ) ) &
