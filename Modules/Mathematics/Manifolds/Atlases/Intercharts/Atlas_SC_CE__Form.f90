@@ -102,7 +102,7 @@ contains
   subroutine CreateChart_CE &
                ( A, CoordinateUnitOption, RadiusMaxOption, &
                  RadiusMinOption, RadialRatioOption, nGhostLayersOption, &
-                 nCellsExcisionOption )
+                 nCellsPolarOption )
 
     class ( Atlas_SC_CE_Form ), intent ( inout ) :: &
       A
@@ -115,7 +115,7 @@ contains
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       nGhostLayersOption
     integer ( KDI ), intent ( in ), optional :: &
-      nCellsExcisionOption
+      nCellsPolarOption
 
     allocate ( Chart_SLD_CE_Form :: A % Chart )
 
@@ -128,7 +128,7 @@ contains
                RadiusMinOption = RadiusMinOption, &
                RadialRatioOption = RadialRatioOption, &
                nGhostLayersOption = nGhostLayersOption, &
-               nCellsExcisionOption = nCellsExcisionOption )
+               nCellsPolarOption = nCellsPolarOption )
     end select !-- C
 
   end subroutine CreateChart_CE

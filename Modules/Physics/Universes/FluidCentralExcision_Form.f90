@@ -30,7 +30,7 @@ contains
                ( FCE, Name, FluidType, GeometryType, DimensionlessOption, &
                  TimeUnitOption, FinishTimeOption, RadiusMaxOption, &
                  RadiusMinOption, RadialRatioOption, CentralMassOption, &
-                 nWriteOption )
+                 nCellsPolarOption )
 
     class ( FluidCentralExcisionForm ), intent ( inout ), target :: &
       FCE
@@ -49,7 +49,7 @@ contains
       RadialRatioOption, &
       CentralMassOption
     integer ( KDI ), intent ( in ), optional :: &
-      nWriteOption
+      nCellsPolarOption
 
     real ( KDR ) :: &
       RadiusMin, &
@@ -88,9 +88,9 @@ contains
 
     else
 
-      RadiusMax    =  1.0e4_KDR  *  UNIT % KILOMETER
+      RadiusMax    =  1.0e3_KDR  *  UNIT % KILOMETER
       RadiusMin    =   40.0_KDR  *  UNIT % KILOMETER
-      RadialRatio  =  6.5_KDR
+      RadialRatio  =  1.0_KDR
       if ( present ( RadiusMaxOption ) ) &
         RadiusMax = RadiusMaxOption
       if ( present ( RadiusMinOption ) ) &
@@ -104,7 +104,8 @@ contains
              ( CoordinateUnitOption = CoordinateUnit, &
                RadiusMaxOption = RadiusMax, &
                RadiusMinOption = RadiusMin, &
-               RadialRatioOption = RadialRatio )
+               RadialRatioOption = RadialRatio, &
+               nCellsPolarOption = nCellsPolarOption )
 
     end if !-- Dimensionless
 
@@ -178,8 +179,7 @@ contains
 
     call FCE % InitializeTemplate_C_PS &
            ( Name, TimeUnitOption = TimeUnit, &
-             FinishTimeOption = FinishTime, &
-             nWriteOption = nWriteOption )
+             FinishTimeOption = FinishTime )
     call Show ( FCE % Dimensionless, 'Dimensionless' )
 
 

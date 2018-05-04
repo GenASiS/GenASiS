@@ -15,7 +15,7 @@ module Chart_SLD_CE__Form
 
   type, public, extends ( Chart_SLD_Form ) :: Chart_SLD_CE_Form
     integer ( KDI ) :: &
-      nCellsExcision
+      nCellsPolar
     real ( KDR ) :: &
       RadiusMin, &
       RadiusMax, &
@@ -35,7 +35,7 @@ contains
   subroutine Initialize_CE &
                ( C, Atlas, iChart, CoordinateUnitOption, RadiusMaxOption, &
                  RadiusMinOption, RadialRatioOption, nGhostLayersOption, &
-                 nCellsExcisionOption )
+                 nCellsPolarOption )
 
     class ( Chart_SLD_CE_Form ), intent ( inout ) :: &
       C
@@ -52,7 +52,7 @@ contains
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       nGhostLayersOption
     integer ( KDI ), intent ( in ), optional :: &
-      nCellsExcisionOption
+      nCellsPolarOption
 
     integer ( KDI ) :: &
       nCellsRadial, &
@@ -95,20 +95,20 @@ contains
     MaxCoordinate = [ C % RadiusMax,      Pi, 2.0_KDR * Pi ]
     end associate !-- Pi
 
-    C % nCellsExcision = 32  !-- Number of "excised" cells with equal spacing
-    if ( present ( nCellsExcisionOption ) ) &
-      C % nCellsExcision = nCellsExcisionOption
+    C % nCellsPolar = 32  !-- Number of "excised" cells with equal spacing
+    if ( present ( nCellsPolarOption ) ) &
+      C % nCellsPolar = nCellsPolarOption
     call PROGRAM_HEADER % GetParameter &
-           ( C % nCellsExcision, 'nCellsExcision' )
+           ( C % nCellsPolar, 'nCellsPolar' )
 
-    C % RadialRatio = 3
+    C % RadialRatio = 1
     if ( present ( RadialRatioOption ) ) &
       C % RadialRatio = RadialRatioOption
     call PROGRAM_HEADER % GetParameter ( C % RadialRatio, 'RadialRatio' )
 
-    nCellsRadial    = C % RadialRatio  *  C % nCellsExcision 
+    nCellsRadial    = C % RadialRatio  *  C % nCellsPolar 
                       !-- Aim for RadiusMax
-    nCellsPolar     = 3  *  C % nCellsExcision  
+    nCellsPolar     = C % nCellsPolar  
                       !-- Close to unit aspect ratio
     nCellsAzimuthal = 2  *  nCellsPolar
  
@@ -147,8 +147,8 @@ contains
 
     call Show ( 'Chart_SLD_CE parameters' )
     call Show ( C % RadiusMin, C % CoordinateUnit ( 1 ), 'RadiusCore' )
-    call Show ( C % nCellsExcision, 'nCellsExcision' )
-    call Show ( C % RadiusMin / C % nCellsExcision, &
+    call Show ( C % nCellsPolar, 'nCellsPolar' )
+    call Show ( CONSTANT % PI * C % RadiusMin / C % nCellsPolar, &
                 C % CoordinateUnit ( 1 ), 'CellWidthMin' )
     call Show ( C % RadialRatio, 'RadialRatio' )
     call Show ( C % RadiusMax, C % CoordinateUnit ( 1 ), &

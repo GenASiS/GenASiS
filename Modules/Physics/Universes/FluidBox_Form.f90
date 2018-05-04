@@ -25,7 +25,7 @@ contains
                  BoundaryConditionsFaceOption, GravitySolverTypeOption, &
                  MinCoordinateOption, MaxCoordinateOption, TimeUnitOption, &
                  FinishTimeOption, CourantFactorOption, &
-                 UniformAccelerationOption, nCellsOption, nWriteOption )
+                 UniformAccelerationOption, nCellsOption )
 
     class ( FluidBoxForm ), intent ( inout ) :: &
       FB
@@ -48,8 +48,6 @@ contains
       UniformAccelerationOption
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       nCellsOption
-    integer ( KDI ), intent ( in ), optional :: &
-      nWriteOption
 
     integer ( KDI ) :: &
       iD  !-- iDimension

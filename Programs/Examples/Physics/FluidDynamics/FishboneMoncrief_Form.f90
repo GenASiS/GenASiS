@@ -37,7 +37,7 @@ contains
     call FCE % Initialize &
            ( Name, FluidType = 'IDEAL', &
              GeometryType = 'NEWTONIAN', &
-             RadialRatioOption = 3.0_KDR )
+             nCellsPolarOption = 128 )
     end select !-- FCE
 
   end subroutine Initialize
