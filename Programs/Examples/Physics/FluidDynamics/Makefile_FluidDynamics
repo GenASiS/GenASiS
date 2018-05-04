@@ -1,7 +1,7 @@
 PATH_GENASIS = ../../../../..
 
 all: SineWave OppenheimerSnyder RiemannProblem RayleighTaylor \
-     SedovTaylor #FishboneMoncrief SawtoothWave 
+     SedovTaylor FishboneMoncrief #SawtoothWave 
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
@@ -43,11 +43,11 @@ SedovTaylor: GenASiS.a SedovTaylor.o
           SedovTaylor.o SedovTaylor_Form.o \
           GenASiS.a $(LIBRARIES)
 
-# FishboneMoncrief: Basics.a Mathematics.a Fluid.a FishboneMoncrief.o
-# 	$(LINK) $(FFLAGS) \
-#           -o FishboneMoncrief_$(MACHINE) \
-#           FishboneMoncrief.o FishboneMoncrief_Form.o Tally_FM__Form.o \
-#           Fluid.a Mathematics.a Basics.a $(LIBRARIES)
+FishboneMoncrief: GenASiS.a FishboneMoncrief.o
+	$(LINK) $(FFLAGS) \
+           -o FishboneMoncrief_$(MACHINE) \
+           FishboneMoncrief.o FishboneMoncrief_Form.o \
+           GenASiS.a $(LIBRARIES)
 
 include $(PATH_GENASIS)/Build/Makefile_Dependencies
 # include ../Makefile_Dependencies
@@ -61,7 +61,7 @@ clobber: clean
 	rm -f RiemannProblem_*
 	rm -f RayleighTaylor_*
 	rm -f SedovTaylor_*
-# 	rm -f FishboneMoncrief_*
+	rm -f FishboneMoncrief_*
 # 	rm -f SawtoothWave_*
 
 PlaneWave_Template.o: \
@@ -106,13 +106,6 @@ RiemannProblem.o: \
   RiemannProblem_Form.o \
   RiemannProblem.f90
 
-# Tally_RT__Form.o: \
-#   Basics.o \
-#   Mathematics.o \
-#   Fluid_P_P__Form.o \
-#   Tally_F_P__Form.o \
-#   Tally_RT__Form.f90
-
 RayleighTaylor_Form.o: \
   GenASiS.o \
   RayleighTaylor_Form.f90
@@ -131,25 +124,11 @@ SedovTaylor.o: \
   SedovTaylor_Form.o \
   SedovTaylor.f90
 
-# Tally_FM__Form.o: \
-#   Basics.o \
-#   Mathematics.o \
-#   Fluid_P_P__Form.o \
-#   Tally_F_P__Form.o \
-#   Tally_FM__Form.f90
+FishboneMoncrief_Form.o: \
+  GenASiS.o \
+  FishboneMoncrief_Form.f90
 
-# FishboneMoncrief_Form.o: \
-#   Basics.o \
-#   Mathematics.o \
-#   Fluid_P__Template.o \
-#   Fluid_P_P__Form.o \
-#   Sources_F__Form.o \
-#   Fluid_ASC__Form.o \
-#   ApplyCurvilinear_F__Command.o \
-#   Tally_FM__Form.o \
-#   FishboneMoncrief_Form.f90
-
-# FishboneMoncrief.o: \
-#   Basics.o \
-#   FishboneMoncrief_Form.o \
-#   FishboneMoncrief.f90
+FishboneMoncrief.o: \
+  GenASiS.o \
+  FishboneMoncrief_Form.o \
+  FishboneMoncrief.f90
