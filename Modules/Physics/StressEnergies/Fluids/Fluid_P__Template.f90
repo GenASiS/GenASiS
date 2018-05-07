@@ -251,6 +251,8 @@ contains
                F_IR % Value ( :, iDensity ), &
                F_IL % Value ( :, iMomentum ), &
                F_IR % Value ( :, iMomentum ), &
+               C_IL % Value ( :, C % BARYON_MASS ), &
+               C_IR % Value ( :, C % BARYON_MASS ), &
                C_IL % Value ( :, C % CONSERVED_BARYON_DENSITY ), &
                C_IR % Value ( :, C % CONSERVED_BARYON_DENSITY ), &
                C_IL % Value ( :, C % MOMENTUM_DENSITY_D ( iDimension ) ), &
@@ -408,6 +410,8 @@ contains
              C_ICR % Value ( :, C % VELOCITY_U ( 3 ) ), &
              C_ICL % Value ( :, C % VELOCITY_U ( iD ) ), &
              C_ICR % Value ( :, C % VELOCITY_U ( iD ) ), &
+             C_ICL % Value ( :, C % BARYON_MASS ), &
+             C_ICR % Value ( :, C % BARYON_MASS ), &
              C_ICL % Value ( :, C % CONSERVED_BARYON_DENSITY ), &
              C_ICR % Value ( :, C % CONSERVED_BARYON_DENSITY ), &
              C_ICL % Value ( :, C % MOMENTUM_DENSITY_D ( 1 ) ), &
@@ -430,6 +434,8 @@ contains
              C_IR % Value ( :, C % VELOCITY_U ( 3 ) ), &
              C_IL % Value ( :, C % VELOCITY_U ( iD ) ), &
              C_IR % Value ( :, C % VELOCITY_U ( iD ) ), &
+             C_IL % Value ( :, C % BARYON_MASS ), &
+             C_IR % Value ( :, C % BARYON_MASS ), &
              C_IL % Value ( :, C % CONSERVED_BARYON_DENSITY ), &
              C_IR % Value ( :, C % CONSERVED_BARYON_DENSITY ), &
              C_IL % Value ( :, C % MOMENTUM_DENSITY_D ( 1 ) ), &
@@ -680,14 +686,15 @@ contains
 
 
   subroutine ComputeCenterSpeedKernel &
-               ( AC_I, F_D_IL, F_D_IR, F_S_IL, F_S_IR, D_IL, D_IR, &
-                 S_IL, S_IR, AP_I, AM_I, M_UU )
+               ( AC_I, F_D_IL, F_D_IR, F_S_IL, F_S_IR, M_IL, M_IR, &
+                 D_IL, D_IR, S_IL, S_IR, AP_I, AM_I, M_UU )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       AC_I
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       F_D_IL, F_D_IR, &
       F_S_IL, F_S_IR, &
+      M_IL, M_IR, &
       D_IL, D_IR, &
       S_IL, S_IR, &
       AP_I, &
@@ -698,29 +705,30 @@ contains
       iV, &
       nValues
     real ( KDR ) :: &
-      D_Numerator, &
+      MD_Numerator, &
       S_Numerator, &
-      D_Numerator_Inv
+      MD_Numerator_Inv
 
     nValues = size ( AC_I )
 
     !$OMP parallel do private ( iV ) 
     do iV = 1, nValues
 
-      D_Numerator &
-        =  AP_I ( iV ) * D_IR ( iV )  +  AM_I ( iV ) * D_IL ( iV ) &
+      MD_Numerator &
+        =  AP_I ( iV ) * M_IR ( iV ) * D_IR ( iV )  &
+           +  AM_I ( iV ) * M_IL ( iV ) * D_IL ( iV ) &
            -  F_D_IR ( iV )  +  F_D_IL ( iV )
 
       S_Numerator &
         =  AP_I ( iV ) * S_IR ( iV )  +  AM_I ( iV ) * S_IL ( iV ) &
            -  F_S_IR ( iV )  +  F_S_IL ( iV )
 
-      D_Numerator_Inv  &
-        =  max ( D_Numerator, 0.0_KDR )  &
-           /  max ( D_Numerator ** 2, tiny ( 0.0_KDR ) )
+      MD_Numerator_Inv  &
+        =  max ( MD_Numerator, 0.0_KDR )  &
+           /  max ( MD_Numerator ** 2, tiny ( 0.0_KDR ) )
 
       AC_I ( iV )  &
-        =  M_UU ( iV )  *  S_Numerator  *  D_Numerator_Inv
+        =  M_UU ( iV )  *  S_Numerator  *  MD_Numerator_Inv
 
     end do !-- iV
     !$OMP end parallel do
@@ -730,13 +738,13 @@ contains
 
   subroutine ComputeCenterStatesKernel &
                ( V_1_ICL, V_1_ICR, V_2_ICL, V_2_ICR, V_3_ICL, V_3_ICR, &
-                 V_Dim_ICL, V_Dim_ICR, D_ICL, D_ICR, S_1_ICL, S_1_ICR, &
-                 S_2_ICL, S_2_ICR, S_3_ICL, S_3_ICR, S_Dim_ICL, S_Dim_ICR, &
-                 G_ICL, G_ICR, P_ICL, P_ICR, &
+                 V_Dim_ICL, V_Dim_ICR, M_ICL, M_ICR, D_ICL, D_ICR, &
+                 S_1_ICL, S_1_ICR, S_2_ICL, S_2_ICR, S_3_ICL, S_3_ICR, &
+                 S_Dim_ICL, S_Dim_ICR, G_ICL, G_ICR, P_ICL, P_ICR, &
                  V_1_IL, V_1_IR, V_2_IL, V_2_IR, V_3_IL, V_3_IR, &
-                 V_Dim_IL, V_Dim_IR, D_IL, D_IR, S_1_IL, S_1_IR, &
-                 S_2_IL, S_2_IR, S_3_IL, S_3_IR, S_Dim_IL, S_Dim_IR, &
-                 G_IL, G_IR, P_IL, P_IR, &
+                 V_Dim_IL, V_Dim_IR, M_IL, M_IR, D_IL, D_IR, &
+                 S_1_IL, S_1_IR, S_2_IL, S_2_IR, S_3_IL, S_3_IR, &
+                 S_Dim_IL, S_Dim_IR, G_IL, G_IR, P_IL, P_IR, &
                  AP_I, AM_I, AC_I, M_DD_22, M_DD_33 )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -744,6 +752,7 @@ contains
       V_2_ICL, V_2_ICR, &
       V_3_ICL, V_3_ICR, &
       V_Dim_ICL, V_Dim_ICR, &
+      M_ICL, M_ICR, &
       D_ICL, D_ICR, &
       S_1_ICL, S_1_ICR, &
       S_2_ICL, S_2_ICR, &
@@ -756,6 +765,7 @@ contains
       V_2_IL, V_2_IR, &
       V_3_IL, V_3_IR, &
       V_Dim_IL, V_Dim_IR, &
+      M_IL, M_IR, &
       D_IL, D_IR, &
       S_1_IL, S_1_IR, &
       S_2_IL, S_2_IR, &
@@ -813,17 +823,24 @@ contains
       AP_AC_Inv =  1.0_KDR &
                    / max ( abs ( AP_AC ), SqrtTiny )
 
+      M_ICL ( iV )  =  M_IL ( iV )
+      M_ICR ( iV )  =  M_IR ( iV )
+
       D_ICL ( iV )  =  D_IL ( iV ) * AM_VL * AM_AC_Inv
       D_ICR ( iV )  =  D_IR ( iV ) * AP_VR * AP_AC_Inv
 
-      S_1_ICL ( iV )  =  D_ICL ( iV )  *  V_1_ICL ( iV )
-      S_1_ICR ( iV )  =  D_ICR ( iV )  *  V_1_ICR ( iV )
+      S_1_ICL ( iV )  =  M_ICL ( iV )  *  D_ICL ( iV )  *  V_1_ICL ( iV )
+      S_1_ICR ( iV )  =  M_ICR ( iV )  *  D_ICR ( iV )  *  V_1_ICR ( iV )
 
-      S_2_ICL ( iV )  =  M_DD_22 ( iV )  *  D_ICL ( iV )  *  V_2_ICL ( iV )
-      S_2_ICR ( iV )  =  M_DD_22 ( iV )  *  D_ICR ( iV )  *  V_2_ICR ( iV )
+      S_2_ICL ( iV )  =  M_DD_22 ( iV )  &
+                         *  M_ICL ( iV )  *  D_ICL ( iV )  *  V_2_ICL ( iV )
+      S_2_ICR ( iV )  =  M_DD_22 ( iV )  &
+                         *  M_ICR ( iV )  *  D_ICR ( iV )  *  V_2_ICR ( iV )
 
-      S_3_ICL ( iV )  =  M_DD_33 ( iV )  *  D_ICL ( iV )  *  V_3_ICL ( iV )
-      S_3_ICR ( iV )  =  M_DD_33 ( iV )  *  D_ICR ( iV )  *  V_3_ICR ( iV )
+      S_3_ICL ( iV )  =  M_DD_33 ( iV )  &
+                         *  M_ICL ( iV )  *  D_ICL ( iV )  *  V_3_ICL ( iV )
+      S_3_ICR ( iV )  =  M_DD_33 ( iV )  &
+                         *  M_ICR ( iV )  *  D_ICR ( iV )  *  V_3_ICR ( iV )
 
       P_ICL ( iV )  =  P_IL ( iV )  +  S_Dim_IL  ( iV ) * AM_VL &
                                     -  S_Dim_ICL ( iV ) * AM_AC
