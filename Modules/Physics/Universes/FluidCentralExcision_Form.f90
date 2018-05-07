@@ -150,28 +150,28 @@ contains
              ( PS, FluidType, &
                Velocity_U_UnitOption &
                  =  CoordinateUnit / TimeUnit, &
-!               BaryonMassUnitOption &
-!                 =  UNIT % ATOMIC_MASS_UNIT, &
+               BaryonMassUnitOption &
+                 =  UNIT % ATOMIC_MASS_UNIT, &
                NumberDensityUnitOption &
-!                 =  UNIT % FEMTOMETER ** ( -3 ), &
-                 =  UNIT % MASS_DENSITY_CGS, &
+                 =  UNIT % FEMTOMETER ** ( -3 ), &
+!                 =  UNIT % MASS_DENSITY_CGS, &
                EnergyDensityUnitOption &
-!                 =  UNIT % MEGA_ELECTRON_VOLT  &
-!                    *  UNIT % FEMTOMETER ** ( -3 ), &
-                 =  UNIT % MASS_DENSITY_CGS  *  UNIT % SPEED_OF_LIGHT ** 2, &
+                 =  UNIT % MEGA_ELECTRON_VOLT  &
+                    *  UNIT % FEMTOMETER ** ( -3 ), &
+!                 =  UNIT % MASS_DENSITY_CGS  *  UNIT % SPEED_OF_LIGHT ** 2, &
                NumberUnitOption &
-!                 =  UNIT % SOLAR_BARYON_NUMBER, &
-                 =  UNIT % SOLAR_MASS, &
+                 =  UNIT % SOLAR_BARYON_NUMBER, &
+!                 =  UNIT % SOLAR_MASS, &
                EnergyUnitOption &
                  =  UNIT % SOLAR_MASS  *  UNIT % SPEED_OF_LIGHT ** 2, &
                MomentumUnitOption &
                  =  UNIT % SOLAR_MASS  *  UNIT % SPEED_OF_LIGHT, &
                AngularMomentumUnitOption &
-!                 =  UNIT % SOLAR_KERR_PARAMETER, &
-                  =  UNIT % KILOMETER  *  UNIT % SOLAR_MASS  &
-                     *  UNIT % SPEED_OF_LIGHT, &
+                 =  UNIT % SOLAR_KERR_PARAMETER, &
+!                  =  UNIT % KILOMETER  *  UNIT % SOLAR_MASS  &
+!                     *  UNIT % SPEED_OF_LIGHT, &
                TimeUnitOption = TimeUnit, &
-!               BaryonMassReferenceOption = CONSTANT % ATOMIC_MASS_UNIT, &
+               BaryonMassReferenceOption = CONSTANT % ATOMIC_MASS_UNIT, &
                LimiterParameterOption = LimiterParameterOption )
     end if
 

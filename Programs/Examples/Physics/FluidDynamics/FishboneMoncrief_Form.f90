@@ -56,8 +56,7 @@ contains
         L      => SpecificAngularMomentum, &
         G      => CONSTANT % GRAVITATIONAL, &
         c      => CONSTANT % SPEED_OF_LIGHT, &
-!        amu    => CONSTANT % ATOMIC_MASS_UNIT )
-        amu    => 1.0_KDR )
+        amu    => CONSTANT % ATOMIC_MASS_UNIT )
 
     Kappa  =  1.85_KDR
     M      =  3.0_KDR * UNIT % SOLAR_MASS
@@ -156,8 +155,7 @@ contains
         K     => PolytropicParameter, &
         GC    => CONSTANT % GRAVITATIONAL, &
         c     => CONSTANT % SPEED_OF_LIGHT, &
-!        amu   => CONSTANT % ATOMIC_MASS_UNIT )
-        amu   => 1.0_KDR )
+        amu   => CONSTANT % ATOMIC_MASS_UNIT )
 
     select type ( FCE => FM % Integrator )
     class is ( FluidCentralExcisionForm )
