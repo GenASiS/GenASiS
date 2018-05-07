@@ -56,7 +56,8 @@ contains
         L      => SpecificAngularMomentum, &
         G      => CONSTANT % GRAVITATIONAL, &
         c      => CONSTANT % SPEED_OF_LIGHT, &
-        amu    => CONSTANT % ATOMIC_MASS_UNIT )
+!        amu    => CONSTANT % ATOMIC_MASS_UNIT )
+        amu    => 1.0_KDR )
 
     Kappa  =  1.85_KDR
     M      =  3.0_KDR * UNIT % SOLAR_MASS
@@ -155,7 +156,8 @@ contains
         K     => PolytropicParameter, &
         GC    => CONSTANT % GRAVITATIONAL, &
         c     => CONSTANT % SPEED_OF_LIGHT, &
-        amu   => CONSTANT % ATOMIC_MASS_UNIT )
+!        amu   => CONSTANT % ATOMIC_MASS_UNIT )
+        amu   => 1.0_KDR )
 
     select type ( FCE => FM % Integrator )
     class is ( FluidCentralExcisionForm )
@@ -169,11 +171,10 @@ contains
     call F % SetAdiabaticIndex ( Gamma )
 
     W_Max = GC * M / ( c ** 2  *  R_In )  &
-            *  ( 0.5_KDR * ( Kappa  +  1.0_KDR / Kappa )  -  1.0_KDR )  &
-            / amu
+            *  ( 0.5_KDR * ( Kappa  +  1.0_KDR / Kappa )  -  1.0_KDR )
 
     K  =  ( Gamma - 1.0_KDR ) / Gamma  &
-          *  W_Max  /  N_Max ** ( Gamma - 1.0_KDR )
+          *  W_Max  /  ( amu * N_Max ) ** ( Gamma - 1.0_KDR )
 
     allocate ( Enthalpy ( F % nValues ) )
 
@@ -197,10 +198,11 @@ contains
                   -  0.5_KDR * Kappa  *  R_In ** 2  &
                      /  ( R * sin ( Theta ) ) ** 2 ) )
 
-    N  =  ( ( Gamma - 1.0_KDR ) / ( Gamma * K ) * W ) &
-          ** ( 1.0_KDR / ( Gamma - 1.0_KDR ) )
+    N  =  ( ( ( Gamma - 1.0_KDR ) / ( Gamma * K ) * W ) &
+          ** ( 1.0_KDR / ( Gamma - 1.0_KDR ) ) ) &
+          / amu
 
-    E  =  K  *  N ** Gamma  /  ( Gamma - 1.0_KDR )
+    E  =  K  *  ( amu * N ) ** Gamma  /  ( Gamma - 1.0_KDR )
 
     V_1 = 0.0_KDR
     V_2 = 0.0_KDR
