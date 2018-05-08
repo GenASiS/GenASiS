@@ -20,6 +20,7 @@ void * AllocateTargetDouble_OMP ( int nValues )
   return D_Pointer;
   }
 
+
 int AssociateTargetDouble_OMP 
       ( void * Host, void * Device, int nValues, int oValue )
   {    
@@ -48,6 +49,16 @@ int AssociateTargetDouble_OMP
   //printf("retval assoc: %d\n", retval);
   return retval;
   }
+  
+
+void FreeTarget_OMP ( void * D_Pointer )
+  {
+  int iDevice;
+  
+  iDevice = omp_get_default_device();
+  omp_target_free ( D_Pointer, iDevice );
+  }
+
   
 int DisassociateTarget_OMP ( void * Host )
   {

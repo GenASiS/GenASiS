@@ -1,7 +1,6 @@
 module Jacobi_Form
   
   use iso_c_binding
-  use Device_C
   use Basics
   
   implicit none
@@ -47,7 +46,7 @@ contains
     real ( KDR ), dimension ( :, : ), pointer :: &
       I, O
     
-    nCells = [ 4, 4 ]
+    nCells = [ 1024, 1024 ]
     call PROGRAM_HEADER % GetParameter ( nCells, 'nCells' )
     
     call J % Timer_GPU % Initialize ( 'Jacobi GPU ', Level = 1 )
@@ -70,13 +69,13 @@ contains
     I => J % Input
     call AssociateDevice ( J % D_Input, I, ErrorOption = Error )
     !$OMP target update to ( I )
-    Error = DisassociateTarget ( c_loc ( I ) )
+    call DisassociateDevice ( I, Error )
     
     !-- Update device's J % Output
     O => J % Output
     call AssociateDevice ( J % D_Output, O, ErrorOption = Error )
     !$OMP target update to ( O )
-    Error = DisassociateTarget ( c_loc ( O ) )
+    call DisassociateDevice ( O, Error )
     
     call J % Timer_DataTransfer % Stop ( )
     
@@ -125,8 +124,8 @@ contains
       !$OMP end target teams distribute parallel do
     end do
     
-    Error = DisassociateTarget ( c_loc ( A_U ) )
-    Error = DisassociateTarget ( c_loc ( A_O ) )
+    call DisassociateDevice ( A_U, Error )
+    call DisassociateDevice ( A_O, Error )
     
     nullify ( A_U )
     nullify ( A_O )
@@ -194,7 +193,7 @@ contains
     !-- Get data on GPU to host variable O_Host so we can validate
     call AssociateDevice ( J % D_Output, O_Host, ErrorOption = Error )
     !$OMP target update from ( O_Host )
-    Error = DisassociateTarget ( c_loc ( O_Host ) )
+    call DisassociateDevice ( O_Host, Error )
     
     call J % Timer_DataTransfer % Stop ( )
     

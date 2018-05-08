@@ -15,9 +15,21 @@ AssociateDevice_Command.o: \
   Device_C_OMP.o \
   AssociateDevice_Command.f90
 
+DeallocateDevice_Command.o: \
+  Specifiers.o \
+  Device_C_OMP.o \
+  DeallocateDevice_Command.f90
+
+DisassociateDevice_Command.o: \
+  Specifiers.o \
+  Device_C_OMP.o \
+  DisassociateDevice_Command.f90
+
 Devices.o: \
   AllocateDevice_Command.o \
   AssociateDevice_Command.o \
+  DeallocateDevice_Command.o \
+  DisassociateDevice_Command.o \
   Devices.f90
 
 Devices.a: $(DEVICES)

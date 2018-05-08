@@ -8,6 +8,7 @@ module Device_C
   public :: &
     AllocateTargetDouble, &
     AssociateTargetDouble, &
+    DeallocateTarget, &
     DisassociateTarget
   
   interface 
@@ -22,8 +23,8 @@ module Device_C
     
     
     integer ( c_int ) function AssociateTargetDouble &
-                     ( Host, Device, nValues, oValue ) &
-                     bind ( c, name = 'AssociateTargetDouble_OMP' )
+                        ( Host, Device, nValues, oValue ) &
+                        bind ( c, name = 'AssociateTargetDouble_OMP' )
     
       use iso_c_binding
       implicit none
@@ -34,10 +35,21 @@ module Device_C
         nValues, &
         oValue
     end function AssociateTargetDouble
+    
+    
+    subroutine DeallocateTarget ( Device ) &
+                        bind ( c, name = 'FreeTarget_OMP' )
+      
+      use iso_c_binding
+      implicit none
+      type ( c_ptr ), value :: &
+        Device
+    
+    end subroutine DeallocateTarget
 
     
     integer ( c_int ) function DisassociateTarget ( Host ) &
-                     bind ( c, name = 'DisassociateTarget_OMP' )
+                        bind ( c, name = 'DisassociateTarget_OMP' )
     
       use iso_c_binding
       implicit none

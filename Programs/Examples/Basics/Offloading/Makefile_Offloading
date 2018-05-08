@@ -1,6 +1,6 @@
 PATH_GENASIS = ../../../../..
 
-all: Difference_Form_Test
+all: Difference_Form_Test Jacobi_Test
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
