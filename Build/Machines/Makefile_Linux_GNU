@@ -13,6 +13,10 @@ LINK = mpif90 -fopenmp
 INCLUDE_SILO = -I/usr/local/silo-4.10.2/include
 LIBRARY_SILO = -L/usr/local/silo-4.10.2/lib -lsilo
 
+#-- HDF5 library include and link line flag and location
+INCLUDE_HDF5 = -I/usr/local/hdf5-1.8.17/include
+LIBRARY_HDF5 = -L/usr/local/hdf5-1.8.17/lib -lhdf5_fortran -lhdf5 -lz
+
 #-- LAPACK library link line flag and location
 LIBRARY_LAPACK = -L/usr/local/lapack-3.7.1/lib -llapack -lrefblas
 

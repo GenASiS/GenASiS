@@ -7,67 +7,72 @@ all: Fluid_D__Form_Test Fluid_P_I__Form_Test Fluid_P_HN__Form_Test \
      Sources_F__Form_Test Fluid_CSL__Form_Test Sources_F_CSL__Form_Test \
      FluidFeatures_CSL__Form_Test Fluid_ASC__Form_Test
 
-Fluid_D__Form_Test: Basics.a Mathematics.a Fluid_D__Form_Test.o
+Fluid_D__Form_Test: ThirdParty.a Basics.a Mathematics.a Fluid_D__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Fluid_D__Form_Test_$(MACHINE) \
           Fluid_D__Form_Test.o Fluid_D__Form.o FluidFeatures_Template.o \
-          Mathematics.a Basics.a $(LIBRARIES)
+          Mathematics.a Basics.a ThirdParty.a $(LIBRARIES)
 
-Fluid_P_I__Form_Test: Basics.a Mathematics.a Fluid_P_I__Form_Test.o
+Fluid_P_I__Form_Test: ThirdParty.a Basics.a Mathematics.a Fluid_P_I__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Fluid_P_I__Form_Test_$(MACHINE) \
           Fluid_P_I__Form_Test.o Fluid_P_I__Form.o \
           Fluid_P__Template.o Fluid_D__Form.o FluidFeatures_Template.o \
-          Mathematics.a Basics.a $(LIBRARIES)
+          Mathematics.a Basics.a ThirdParty.a $(LIBRARIES)
 
-Fluid_P_HN__Form_Test: Basics.a Mathematics.a Fluid_P_HN__Form_Test.o
+Fluid_P_HN__Form_Test: ThirdParty.a Basics.a Mathematics.a \
+  Fluid_P_HN__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Fluid_P_HN__Form_Test_$(MACHINE) \
           Fluid_P_HN__Form_Test.o Fluid_P_HN__Form.o \
           Fluid_P__Template.o Fluid_D__Form.o FluidFeatures_Template.o \
-          Mathematics.a Basics.a $(LIBRARIES)
+          Mathematics.a Basics.a ThirdParty.a $(LIBRARIES)
 
-FluidFeatures_P__Form_Test: Basics.a Mathematics.a FluidFeatures_P__Form_Test.o
+FluidFeatures_P__Form_Test: ThirdParty.a Basics.a Mathematics.a \
+  FluidFeatures_P__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o FluidFeatures_P__Form_Test_$(MACHINE) \
           FluidFeatures_P__Form_Test.o FluidFeatures_P__Form.o \
           Fluid_P_I__Form.o Fluid_P__Template.o Fluid_D__Form.o \
           FluidFeatures_Template.o \
-          Mathematics.a Basics.a $(LIBRARIES)
+          Mathematics.a Basics.a ThirdParty.a $(LIBRARIES)
 
-Tally_F_D__Form_Test: Basics.a Mathematics.a Spaces.a Tally_F_D__Form_Test.o
+Tally_F_D__Form_Test: ThirdParty.a Basics.a Mathematics.a Spaces.a \
+  Tally_F_D__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Tally_F_D__Form_Test_$(MACHINE) \
           Tally_F_D__Form_Test.o Tally_F_D__Form.o Fluid_D__Form.o \
           FluidFeatures_Template.o \
-          Spaces.a Mathematics.a Basics.a $(LIBRARIES)
+          Spaces.a Mathematics.a Basics.a ThirdParty.a $(LIBRARIES)
 
-Tally_F_P__Form_Test: Basics.a Mathematics.a Spaces.a Tally_F_P__Form_Test.o
+Tally_F_P__Form_Test: ThirdParty.a Basics.a Mathematics.a Spaces.a \
+  Tally_F_P__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Tally_F_P__Form_Test_$(MACHINE) \
           Tally_F_P__Form_Test.o Tally_F_P__Form.o Tally_F_D__Form.o \
           Fluid_P_I__Form.o Fluid_P__Template.o Fluid_D__Form.o \
           FluidFeatures_Template.o \
-          Spaces.a Mathematics.a Basics.a $(LIBRARIES)
+          Spaces.a Mathematics.a Basics.a ThirdParty.a $(LIBRARIES)
 
-Sources_F__Form_Test: Basics.a Mathematics.a Sources_F__Form_Test.o
+Sources_F__Form_Test: ThirdParty.a Basics.a Mathematics.a Sources_F__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Sources_F__Form_Test_$(MACHINE) \
           Sources_F__Form_Test.o Sources_F__Form.o Fluid_P__Template.o \
           Fluid_D__Form.o FluidFeatures_Template.o \
-          Mathematics.a Basics.a $(LIBRARIES)
+          Mathematics.a Basics.a ThirdParty.a $(LIBRARIES)
 
-Fluid_CSL__Form_Test: Basics.a Mathematics.a Spaces.a Fluid_CSL__Form_Test.o
+Fluid_CSL__Form_Test: ThirdParty.a Basics.a Mathematics.a Spaces.a \
+  Fluid_CSL__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Fluid_CSL__Form_Test_$(MACHINE) \
           Fluid_CSL__Form_Test.o Fluid_CSL__Form.o FluidFeatures_CSL__Form.o \
           Sources_F_CSL__Form.o Sources_F__Form.o FluidFeatures_P__Form.o \
           Fluid_P_I__Form.o Fluid_P__Template.o Fluid_D__Form.o \
           FluidFeatures_Template.o \
-          Spaces.a Mathematics.a Basics.a $(LIBRARIES)
+          Spaces.a Mathematics.a Basics.a ThirdParty.a $(LIBRARIES)
 
 #-- Intentionally out of order
-Sources_F_CSL__Form_Test: Basics.a Mathematics.a Spaces.a \
+Sources_F_CSL__Form_Test: ThirdParty.a Basics.a Mathematics.a Spaces.a \
   Sources_F_CSL__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Sources_F_CSL__Form_Test_$(MACHINE) \
@@ -75,10 +80,10 @@ Sources_F_CSL__Form_Test: Basics.a Mathematics.a Spaces.a \
           FluidFeatures_CSL__Form.o Sources_F_CSL__Form.o Sources_F__Form.o \
           FluidFeatures_P__Form.o Fluid_P_I__Form.o Fluid_P__Template.o \
           Fluid_D__Form.o FluidFeatures_Template.o \
-          Spaces.a Mathematics.a Basics.a $(LIBRARIES)
+          Spaces.a Mathematics.a Basics.a ThirdParty.a $(LIBRARIES)
 
 #-- Intentionally out of order
-FluidFeatures_CSL__Form_Test: Basics.a Mathematics.a Spaces.a \
+FluidFeatures_CSL__Form_Test: ThirdParty.a Basics.a Mathematics.a Spaces.a \
   FluidFeatures_CSL__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o FluidFeatures_CSL__Form_Test_$(MACHINE) \
@@ -86,9 +91,10 @@ FluidFeatures_CSL__Form_Test: Basics.a Mathematics.a Spaces.a \
           FluidFeatures_CSL__Form.o Sources_F_CSL__Form.o Sources_F__Form.o \
           FluidFeatures_P__Form.o Fluid_P_I__Form.o Fluid_P__Template.o \
           Fluid_D__Form.o FluidFeatures_Template.o \
-          Spaces.a Mathematics.a Basics.a $(LIBRARIES)
+          Spaces.a Mathematics.a Basics.a ThirdParty.a $(LIBRARIES)
 
-Fluid_ASC__Form_Test: Basics.a Mathematics.a Spaces.a Fluid_ASC__Form_Test.o
+Fluid_ASC__Form_Test: ThirdParty.a Basics.a Mathematics.a Spaces.a \
+  Fluid_ASC__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Fluid_ASC__Form_Test_$(MACHINE) \
           Fluid_ASC__Form_Test.o Fluid_ASC__Form.o Fluid_CSL__Form.o \
@@ -97,7 +103,7 @@ Fluid_ASC__Form_Test: Basics.a Mathematics.a Spaces.a Fluid_ASC__Form_Test.o
           Tally_F_P__Form.o Tally_F_D__Form.o FluidFeatures_P__Form.o \
           Fluid_P_I__Form.o Fluid_P__Template.o Fluid_D__Form.o \
           FluidFeatures_Template.o \
-          Spaces.a Mathematics.a Basics.a $(LIBRARIES)
+          Spaces.a Mathematics.a Basics.a ThirdParty.a $(LIBRARIES)
 
 clean:
 	rm -f *.o *.a *.mod *.ld
@@ -115,6 +121,7 @@ clobber: clean
 	rm -f FluidFeatures_CSL__Form_Test_*
 	rm -f Fluid_ASC__Form_Test_*
 
+include $(PATH_THIRD_PARTY)/Makefile_Dependencies
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MATHEMATICS)/Makefile_Dependencies
 include $(PATH_SPACES)/Makefile_Dependencies
