@@ -4,6 +4,7 @@ module Fluids
   use Fluid_D__Form
   use Fluid_P__Template
   use Fluid_P_I__Form
+  use Fluid_P_HN__Form
   use FluidFeatures_P__Form
   use Tally_F_D__Form
   use Tally_F_P__Form
