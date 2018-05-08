@@ -6,6 +6,18 @@ module YahilLattimer_Form
   private
 
   type, public, extends ( UniverseTemplate ) :: YahilLattimerForm
+    real ( KDR ) :: &
+      AdiabaticIndex, &
+      CentralDensity, &
+      CentralPressure, &
+      Kappa, &
+      t_collapse, &
+      t_end
+    real ( KDR ), dimension ( :, : ), allocatable :: &
+      AnalyticProfile
+    type ( Fluid_ASC_Form ), allocatable :: &
+      Reference, &
+      Difference
   contains
     procedure, public, pass :: &
       Initialize
@@ -15,8 +27,9 @@ module YahilLattimer_Form
 
     private :: &
       SetFluid, &
-      PrepareInterpolation
-!      SetReference
+      ReadTable, &
+      PrepareInterpolation, &
+      SetReference
 
 !      private :: &
 !        SetFluidKernel
@@ -27,29 +40,65 @@ module YahilLattimer_Form
       iV_TS  = 3, &
       iM_TS  = 4
     integer ( KDI ), private, parameter :: &
-      iX_SI  = 1, & !-- spline interpolation
-      iD_SI  = 2, & 
-      iV_SI  = 3, &
-      iM_SI  = 4
-
+      iRho_SI    = 1, & !-- spline interpolation
+      iV_SI    = 2
+    class ( YahilLattimerForm ), private, pointer :: &
+      YahilLattimer => null ( )
 contains
 
 
   subroutine Initialize ( YL, Name )
 
-    class ( YahilLattimerForm ), intent ( inout ) :: &
+    class ( YahilLattimerForm ), intent ( inout ), target :: &
       YL
     character ( * ), intent ( in ) :: &
       Name
 
     class ( Fluid_P_I_Form ), pointer :: &
       F
+    real ( KDR ) :: &
+      Rho_final, &
+      FinishTime
 
     if ( YL % Type == '' ) &
       YL % Type = 'a YahilLattimer'
 
+    YahilLattimer => YL
+
     call YL % InitializeTemplate ( Name )
 
+!-- FIXME: Set default parameters, read parameters
+    
+    YL % AdiabaticIndex  = 1.3_KDR
+    YL % CentralDensity  = 7e9_KDR * UNIT % MASS_DENSITY_CGS
+    YL % CentralPressure = 6e27_KDR * UNIT % BARYE
+call Show ( YL % CentralDensity, UNIT % MASS_DENSITY_CGS, 'CentralDensity' )
+call Show ( YL % CentralPressure, UNIT % BARYE, 'CentralPressure' )
+    
+    call PROGRAM_HEADER % GetParameter ( YL % AdiabaticIndex, &
+                                         'AdiabaticIndex' )
+    call PROGRAM_HEADER % GetParameter ( YL % CentralDensity, &
+                                         'CentralDensity' )
+    call PROGRAM_HEADER % GetParameter ( YL % CentralPressure, &
+                                         'CentralPressure' )
+
+    YL % Kappa= YL % CentralPressure &
+                  / ( YL % CentralDensity ** YL % AdiabaticIndex )
+
+    call PROGRAM_HEADER % GetParameter ( YL % Kappa, 'Kappa' )
+
+    YL % t_collapse = 0.2_KDR * UNIT % SECOND
+call Show ( YL % t_collapse, UNIT % SECOND, 't_collapse' )
+    call PROGRAM_HEADER % GetParameter ( YL % t_collapse, 't_collapse' )
+
+    Rho_final = 1e14_KDR * UNIT % MASS_DENSITY_CGS
+call Show ( Rho_final, UNIT % MASS_DENSITY_CGS, 'Rho_final' )
+    call PROGRAM_HEADER % GetParameter ( Rho_final, 'Rho_final' )
+
+    call ReadTable ( YL, YL % AnalyticProfile, Rho_final )
+    call PROGRAM_HEADER % GetParameter ( YL % t_end, 't_end' )
+
+    FinishTime = YL % t_collapse - YL % t_end
 
     !-- Integrator
 
@@ -57,24 +106,38 @@ contains
     select type ( FCC => YL % Integrator )
     type is ( FluidCentralCoreForm )
     call FCC % Initialize &
-           ( Name, FluidType = 'IDEAL', &
-             GeometryType = 'NEWTONIAN' )
-!    FB % SetReference => SetReference
+           ( Name, FluidType = 'IDEAL', GeometryType = 'NEWTONIAN', &
+             FinishTimeOption=FinishTime )
 
-   select type ( PS => FCC % PositionSpace )
-   class is ( Atlas_SC_Form )
+    FCC % SetReference => SetReference
 
-   select type ( FA => FCC % Current_ASC )
-   class is ( Fluid_ASC_Form )
+    select type ( PS => FCC % PositionSpace )
+    class is ( Atlas_SC_Form )
+
+    select type ( FA => FCC % Current_ASC )
+    class is ( Fluid_ASC_Form )
 
 
     !-- Initial Conditions
 
-!-- FIXME: Set default parameters, read parameters
+
 
     F => FA % Fluid_P_I ( )
+    call F % SetAdiabaticIndex ( YL % AdiabaticIndex )
     call SetFluid ( YL, F, Time = 0.0_KDR )
 
+    !-- Diagnostics
+
+    allocate ( YL % Reference )
+    allocate ( YL % Difference )
+    call YL % Reference % Initialize &
+           ( PS, 'IDEAL', NameShortOption = 'Reference', &
+             AllocateSourcesOption = .false., &
+             IgnorabilityOption = CONSOLE % INFO_2 )
+    call YL % Difference % Initialize &
+           ( PS, 'IDEAL', NameShortOption = 'Difference', &
+             AllocateSourcesOption = .false., &
+             IgnorabilityOption = CONSOLE % INFO_2 )
 
     !-- Cleanup
 
@@ -105,29 +168,68 @@ contains
     real ( KDR ), intent ( in ) :: &
       Time
 
-  end subroutine SetFluid
-
-
-    subroutine PrepareInterpolation ( SI )
-
-    type ( SplineInterpolationForm ), dimension ( 4 ), intent ( inout ) :: &
-      SI
-
+    class ( GeometryFlatForm ), pointer :: &
+      G
     integer ( KDI ) :: &
       iV
     real ( KDR ) :: &
-      Slope_X, &
-      Slope_D, &
-      Slope_V,&
-      Slope_M
+      T
     real ( KDR ), dimension ( : ), allocatable :: &
-      XC, &   !-- XCenter
-      dXC, &  !-- WidthCenter
-      X_edge, &
-      D_edge, &
-      V_edge
-    real ( KDR ), dimension ( :, : ), allocatable :: &
-      Profile
+      R, &
+      Rho, &
+      V
+    type ( SplineInterpolationForm ), dimension ( 2 ) :: &
+      SI
+
+    !-- Interpolate self similar solution
+
+    T = YL % t_collapse - Time 
+call Show ( T, UNIT % SECOND, '>>> time' )
+    call PrepareInterpolation &
+           ( SI, YL % AnalyticProfile, YL % Kappa, YL % AdiabaticIndex, T )
+
+    select type ( PS => YL % Integrator % PositionSpace )
+    class is ( Atlas_SC_Form )
+    G => PS % Geometry ( )
+
+    select type ( Grid => PS % Chart )
+    class is ( Chart_SL_Template )
+
+    associate &
+      ( R    => G % Value ( :, G % CENTER_U ( 1 ) ), &
+        Rho  => F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
+        V    => F % Value ( :, F % VELOCITY_U ( 1 ) ), &
+        E    => F % Value ( :, F % INTERNAL_ENERGY ), &
+        P    => F % Value ( :, F % PRESSURE ) )
+
+       do iV = 1, size ( R )
+        if ( .not. Grid % IsProperCell ( iV ) ) cycle
+        call SI ( iRHO_SI ) &
+                % Evaluate ( R ( iV ), Rho ( iV ) )
+        call SI ( iV_SI ) &
+                % Evaluate ( R ( iV ), V ( iV ) )
+        P ( iV ) = YL % Kappa * Rho ( iV ) ** ( YL % AdiabaticIndex )
+        E ( iV ) = P ( iV ) / ( YL % AdiabaticIndex - 1.0_KDR )
+      end do
+
+      call F % ComputeFromPrimitive ( G )
+
+    end associate !-- R, etc.
+    end select !-- Grid
+    end select !-- PS
+
+  end subroutine SetFluid
+
+
+  subroutine ReadTable ( YL, AP, Rho_final )
+    
+    class ( YahilLattimerForm ), intent ( inout ) :: &
+      YL
+    real ( KDR ), dimension ( :, : ), allocatable, intent ( inout ) :: &
+      AP
+    real ( KDR ), intent ( in ) :: &
+      Rho_final
+   
     character ( LDF ) :: &
       Path, &
       Filename
@@ -143,89 +245,142 @@ contains
     call TS % Initialize &
            ( Filename, PROGRAM_HEADER % Communicator % Rank, &
              PathOption = Path )
-    call TS % Read ( Profile, oRowOption = 1 )
+    call TS % Read ( AP, oRowOption = 1 )
 
-    !-- Set "edge" values
+    YL % t_end &
+         = sqrt ( AP ( 1, iD_TS ) / ( Rho_final * CONSTANT % GRAVITATIONAL ) )
+
+  end subroutine ReadTable
+
+
+    subroutine PrepareInterpolation ( SI, AP, Kappa, Gamma, T )
+
+    type ( SplineInterpolationForm ), dimension ( 2 ), intent ( inout ) :: &
+      SI
+    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+      AP
+    real ( KDR ), intent ( in ) :: &
+      Kappa, &
+      Gamma, &
+      T
+
+    integer ( KDI ) :: &
+      iV
+    real ( KDR ) :: &
+      Slope_Rho, &
+      Slope_V
+    real ( KDR ), dimension ( : ), allocatable :: &
+      R, &   !-- RCenter
+      R_Edge, &
+      dR, &  !-- CellWidth
+      Rho, &
+      V, &
+      Density, &
+      Velocity
 
     associate &
-      ( X => Profile ( :, iX_TS ), &  !-- cell outer edge
-        D => Profile ( :, iD_TS ), &  !-- cell center 
-        V => Profile ( :, iV_TS ), &  !-- cell center
-        M => Profile ( :, iM_TS ), &  !-- cell center
-        nProfile => size ( Profile, dim = 1 ) )
+      ( X   => AP ( :, iX_TS ), &  !-- cell center
+        D   => AP ( :, iD_TS ), &  !-- cell center 
+        V_P => AP ( :, iV_TS ), &  !-- cell center
+        M   => AP ( :, iM_TS ), &  !-- cell center
+        nProfile => size ( AP, dim = 1 ) )
 
-   ! R   = ( sqrt ( Kappa ) * G ** ( ( 1.0_KDR - Gamma ) / 2 ) &
-   !            * t ** ( 2.0_KDR - Gamma ) ) * X
-   ! Rho = D_P / ( G * t * t )
-   ! v   = ( sqrt ( Kappa ) * G ** ( ( 1.0 - Gamma ) / 2 ) &
-   !           * t ** ( 1.0_KDR - Gamma ) ) * V
+    allocate ( R      ( nProfile ), &
+               R_Edge ( nProfile + 1 ), &
+               dR     ( nProfile ), &
+               Rho    ( nProfile ), &
+               V      ( nProfile ) )
     
+    R   = ( sqrt ( Kappa ) &
+             * CONSTANT % GRAVITATIONAL ** ( ( 1.0_KDR - Gamma ) / 2 ) &
+             * T ** ( 2.0_KDR - Gamma ) ) * X
+    Rho = D / ( CONSTANT % GRAVITATIONAL * T * T )
+    V   = ( sqrt ( Kappa ) * CONSTANT % GRAVITATIONAL ** ( ( 1.0 - Gamma ) / 2 ) &
+              * T ** ( 1.0_KDR - Gamma ) ) * V_P
 
-    allocate ( X_edge ( nProfile + 1 ) )
-    allocate ( dXC ( nProfile ) )
-    allocate ( XC ( nProfile ) )
-    X_edge ( 1 )          =  0.0_KDR
-    do iV = 2, nProfile + 1
-      X_edge  ( iV )  =  X ( iV - 1 )
-      dXC ( iV - 1 )  =  X_edge ( iV )  -  X_edge ( iV - 1 )
-      XC  ( iV - 1 )  =  X_edge ( iV - 1 )  +  0.5_KDR * dXC ( iV - 1 )
+    R_Edge ( 1 ) = 0.0_KDR
+    dR ( 1 ) = 2 * R ( 1 )
+    do iV = 2, nProfile
+      R_Edge ( iV ) =  R ( iV - 1 )  + dR ( iV ) / 2
+      dR ( iV - 1 ) = R_Edge ( iV ) - R_Edge ( iV - 1 )
     end do
+    
+    dR ( nProfile ) = dR ( nProfile - 1 )
+    R_Edge ( nProfile + 1 ) = R_Edge ( nProfile ) + dR ( nProfile )
+
 
     allocate ( Density ( nProfile + 1 ) )
     allocate ( Velocity ( nProfile + 1 ) )
-   ! allocate ( M ( nProfile + 1 ) )
 
     !-- First edge extrapolated
-    Slope_D      =  ( D ( 2 )  -  D ( 1 ) )  &
-                    /  ( 0.5_KDR * ( dXC ( 1 )  +  dXC ( 2 ) ) )
+    Slope_Rho      =  ( Rho ( 2 )  -  Rho ( 1 ) )  &
+                       /  ( 0.5_KDR * ( dR ( 1 )  +  dR ( 2 ) ) )
     Slope_V     =  ( V ( 2 )  -  V ( 1 ) )  &
-                    /  ( 0.5_KDR * ( dVC ( 1 )  +  dVC ( 2 ) ) )
-    !Slope_M    =  ( M_P ( 2 )  -  M_P ( 1 ) )  &
-    !                /  ( 0.5_KDR * ( dRC ( 1 )  +  dRC ( 2 ) ) )
+                    /  ( 0.5_KDR * ( dR ( 1 )  +  dR ( 2 ) ) )
 
-    D_edge ( 1 )  =  Rho ( 1 ) +  Slope_D  * ( Radius ( 1 )  -  RC ( 1 ) )
-    V_edge ( 1 ) =  v   ( 1 ) +  Slope_V  * ( Radius ( 1 )  -  RC ( 1 ) )
-  !  M ( 1 )  =  M_P ( 1 )  +  Slope_SF   * ( Radius ( 1 )  -  RC ( 1 ) )
+    Density ( 1 )  =  Rho ( 1 ) + Slope_Rho * ( R_edge ( 1 ) - R ( 1 ) )
+    Velocity ( 1 ) =  V ( 1 ) + Slope_V * ( R_edge ( 1 ) - R ( 1 ) )
+
+  !  call Show ( Density ( 1 ), UNIT % MASS_DENSITY_CGS, 'Density')
+   ! call Show ( Velocity ( 1 ), UNIT % SPEED_OF_LIGHT, 'Velocity')
 
     do iV = 2, nProfile + 1
-
       if ( iV <= nProfile ) then
-        Slope_D      =  ( Rho ( iV )  - Rho ( iV - 1 ) )  &
-                        /  ( 0.5_KDR * ( dRC ( iV - 1 )  +  dRC ( iV ) ) )
-        Slope_V     =  ( v ( iV )  -  v ( iV - 1 ) )  &
-                        /  ( 0.5_KDR * ( dRC ( 1 )  +  dRC ( 2 ) ) )
-       ! Slope_M    =  ( M_P ( iV )  -  M_P ( iV - 1 ) )  &
-       !                 /  ( 0.5_KDR * ( dRC ( 1 )  +  dRC ( 2 ) ) )
+        Slope_Rho      =  ( Rho ( iV )  - Rho ( iV - 1 ) )  &
+                        /  ( 0.5_KDR * ( dR ( iV - 1 )  +  dR ( iV ) ) )
+        Slope_V     =  ( V ( iV )  -  V ( iV - 1 ) )  &
+                        /  ( 0.5_KDR * ( dR ( iV - 1 )  +  dR ( iV ) ) )
       else
-        !-- Last edge extrapolated with same slope
+       !-- Last edge extrapolated with same slope
       end if
 
       Density ( iV )  =  Rho ( iV - 1 )  &
-                         +  Slope_D * ( Radius ( iV )  -  RC ( iV - 1 ) )
-      Velocity ( iV ) =  v ( iV - 1 ) &
-                         +  Slope_V   * ( Radius ( iV )  -  RC ( iV - 1 ) )
-    !  M ( iV ) =  M_P ( iV -1 ) &
-    !              +  Slope_SF   * ( Radius ( iV )  -  RC ( iV - 1 ) )
+                         +  Slope_Rho * ( R_Edge ( iV )  -  R ( iV - 1 ) )
+      Velocity ( iV ) =  V ( iV - 1 ) &
+                         +  Slope_V   * ( R_Edge ( iV )  -  R ( iV - 1 ) )
     end do
 
+    
     end associate !-- R, etc.
-
-    call Show ( 'First few values' )
-    call Show ( Profile ( 1 : 5, iX_TS ), 'XTable' )
-    call Show ( Radius ( 1 : 5 ), 'RadiusEdge' )
-    call Show ( Profile ( 1 : 5, iD_TS ), 'DimensionlessDensityTable' )
-    call Show ( Density ( 1 : 5 ), 'DimensionlessDensityEdge' )
 
     !-- SplineInterpolation initialization
 
-    call SI ( iD_SI ) % Initialize &
-           ( Radius, Density, VerbosityOption = CONSOLE % INFO_3 )
+    call SI ( iRho_SI ) % Initialize &
+           ( R_Edge, Density, VerbosityOption = CONSOLE % INFO_3 )
     call SI ( iV_SI ) % Initialize &
-           ( Radius, Velocity, VerbosityOption = CONSOLE % INFO_3 )
-   ! call SI ( iM_SI ) % Initialize &
-   !        ( Radius, M, VerbosityOption = CONSOLE % INFO_3 )
+           ( R_Edge, Velocity, VerbosityOption = CONSOLE % INFO_3 )
 
   end subroutine PrepareInterpolation
+
+
+  subroutine SetReference ( FCC )
+
+    class ( IntegratorTemplate ), intent ( inout ) :: &
+      FCC
+
+    class ( Fluid_P_I_Form ), pointer :: &
+      F, &
+      F_R, &  !-- F_Reference
+      F_D     !-- F_Difference
+
+    select type ( FCC )
+    class is ( FluidCentralCoreForm )
+
+    select type ( FA => FCC % Current_ASC )
+    class is ( Fluid_ASC_Form )
+    F => FA % Fluid_P_I ( )
+
+    F_R => YahilLattimer % Reference % Fluid_P_I ( )
+    call SetFluid ( YahilLattimer, F_R, FCC % Time )
+
+    F_D => YahilLattimer % Difference % Fluid_P_I ( )
+    call MultiplyAdd ( F % Value, F_R % Value, -1.0_KDR, F_D % Value )
+
+    end select !-- FA
+    end select !-- FCC
+    nullify ( F, F_R, F_D )
+
+  end subroutine SetReference
 
 
 end module YahilLattimer_Form
