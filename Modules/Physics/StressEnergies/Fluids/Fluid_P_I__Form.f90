@@ -502,7 +502,7 @@ contains
            ( M, C % BaryonMassReference )
     call C % ComputeDensityVelocity_G_Kernel &
            ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33 )
-    call C % ComputeInternalEnergyKernel &
+    call C % ComputeInternalEnergy_G_Kernel &
            ( E, G, M, N, V_1, V_2, V_3, S_1, S_2, S_3 )
     call C % Apply_EOS_I_E_Kernel &
            ( P, SB, CS, M, N, E, C % AdiabaticIndex, C % SpecificHeatVolume, &

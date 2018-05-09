@@ -46,7 +46,7 @@ module Fluid_P__Template
     procedure, public, nopass :: &
       ComputeConservedEnergy_G_Kernel
     procedure, public, nopass :: &
-      ComputeInternalEnergyKernel
+      ComputeInternalEnergy_G_Kernel
     procedure, public, nopass :: &
       ComputeEigenspeeds_P_G_Kernel
   end type Fluid_P_Template
@@ -489,7 +489,7 @@ contains
   end subroutine ComputeConservedEnergy_G_Kernel
 
 
-  subroutine ComputeInternalEnergyKernel &
+  subroutine ComputeInternalEnergy_G_Kernel &
                ( E, G, M, N, V_1, V_2, V_3, S_1, S_2, S_3 )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -526,7 +526,7 @@ contains
     end do
     !$OMP end parallel do
 
-  end subroutine ComputeInternalEnergyKernel
+  end subroutine ComputeInternalEnergy_G_Kernel
 
 
   subroutine ComputeEigenspeeds_P_G_Kernel &
