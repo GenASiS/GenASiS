@@ -15,7 +15,7 @@ program Fluid_ASC__Form_Test
   type ( Geometry_ASC_Form ), allocatable :: &
     GA
   type ( Fluid_ASC_Form ), allocatable :: &
-    FA_D, FA_I
+    FA_D, FA_I, FA_HN
 
   allocate ( PROGRAM_HEADER )  
   call PROGRAM_HEADER % Initialize ( ProgramName )
@@ -29,10 +29,11 @@ program Fluid_ASC__Form_Test
   call A % SetGeometry ( GA )
 
   call CONSOLE % SetVerbosity ( 'INFO_4' )
-  allocate ( FA_D, FA_I )
+  allocate ( FA_D, FA_I, FA_HN )
   call FA_D % Initialize ( A, 'DUST', NameShortOption = 'Fluid_D' )
   call FA_I % Initialize ( A, 'IDEAL', NameShortOption = 'Fluid_I' )
-  deallocate ( FA_I, FA_D )
+  call FA_HN % Initialize ( A, 'HEAVY_NUCLEUS', NameShortOption = 'Fluid_HN' )
+  deallocate ( FA_HN, FA_I, FA_D )
   call CONSOLE % SetVerbosity ( 'INFO_1' )
 
   deallocate ( GA )

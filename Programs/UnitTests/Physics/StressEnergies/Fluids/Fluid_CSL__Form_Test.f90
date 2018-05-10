@@ -17,7 +17,7 @@ program Fluid_CSL__Form_Test
   type ( Geometry_ASC_Form ), allocatable :: &
     GA
   type ( Fluid_CSL_Form ), allocatable :: &
-    FC_D, FC_I
+    FC_D, FC_I, FC_HN
 
   allocate ( PROGRAM_HEADER )  
   call PROGRAM_HEADER % Initialize ( ProgramName )
@@ -35,7 +35,7 @@ program Fluid_CSL__Form_Test
   associate ( nValues => C % nProperCells + C % nGhostCells )
 
   call CONSOLE % SetVerbosity ( 'INFO_4' )
-  allocate ( FC_D, FC_I )
+  allocate ( FC_D, FC_I, FC_HN )
 
   call FC_D % Initialize &
          ( C, 'Fluid_D', 'DUST', RiemannSolverType = 'HLL', &
@@ -59,8 +59,19 @@ program Fluid_CSL__Form_Test
            TemperatureUnit = UNIT % IDENTITY, &
            BaryonMassReference = 1.0_KDR, &
            LimiterParameter = 1.4_KDR, nValues = nValues )
+  call FC_HN % Initialize &
+         ( C, 'Fluid_HN', 'HEAVY_NUCLEUS', RiemannSolverType = 'HLLC', &
+           UseLimiter = .true., &
+           Velocity_U_Unit = [ ( UNIT % IDENTITY, iD = 1, 3 ) ], &
+           MomentumDensity_D_Unit = [ ( UNIT % IDENTITY, iD = 1, 3 ) ], &
+           BaryonMassUnit = UNIT % IDENTITY, &
+           NumberDensityUnit = UNIT % IDENTITY, &
+           EnergyDensityUnit = UNIT % IDENTITY, &
+           TemperatureUnit = UNIT % IDENTITY, &
+           BaryonMassReference = 1.0_KDR, &
+           LimiterParameter = 1.4_KDR, nValues = nValues )
 
-  deallocate ( FC_I, FC_D )
+  deallocate ( FC_HN, FC_I, FC_D )
   call CONSOLE % SetVerbosity ( 'INFO_1' )
 
   end associate !-- nValues

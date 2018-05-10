@@ -7,6 +7,7 @@ module Fluid_CSL__Form
   use FluidFeatures_Template
   use Fluid_D__Form
   use Fluid_P_I__Form
+  use Fluid_P_HN__Form
   use Sources_F__Form
   use Sources_F_CSL__Form
   use FluidFeatures_CSL__Form
@@ -42,6 +43,8 @@ module Fluid_CSL__Form
       Fluid_D
     procedure, public, pass :: &
       Fluid_P_I
+    procedure, public, pass :: &
+      Fluid_P_HN
     procedure, public, pass :: &
       SetSources
     procedure, public, pass :: &
@@ -150,6 +153,27 @@ contains
   end function Fluid_P_I
 
 
+  function Fluid_P_HN ( FC ) result ( F )
+
+    class ( Fluid_CSL_Form ), intent ( in ), target :: &
+      FC
+    class ( Fluid_P_HN_Form ), pointer :: &
+      F
+      
+    class ( VariableGroupForm ), pointer :: &
+      Field
+
+    F => null ( )
+
+    Field => FC % Field
+    select type ( Field )
+    class is ( Fluid_P_HN_Form )
+    F => Field
+    end select !-- Field
+
+  end function Fluid_P_HN
+
+
   subroutine SetSources ( FC, SFC )
 
     class ( Fluid_CSL_Form ), intent ( inout ) :: &
@@ -241,6 +265,20 @@ contains
       allocate ( Fluid_P_I_Form :: FC % Field )
       select type ( F => FC % Field )
       type is ( Fluid_P_I_Form )
+        call F % Initialize &
+               ( FC % RiemannSolverType, FC % UseLimiter, &
+                 FC % Velocity_U_Unit, FC % MomentumDensity_D_Unit, &
+                 FC % BaryonMassUnit, FC % NumberDensityUnit, &
+                 FC % EnergyDensityUnit, FC % TemperatureUnit, &
+                 FC % BaryonMassReference, FC % LimiterParameter, &
+                 FC % nValues, NameOption = FC % NameShort )
+        call F % SetPrimitiveConserved ( )
+        call F % SetOutput ( FC % FieldOutput )
+      end select !-- F
+    case ( 'HEAVY_NUCLEUS' )
+      allocate ( Fluid_P_HN_Form :: FC % Field )
+      select type ( F => FC % Field )
+      type is ( Fluid_P_HN_Form )
         call F % Initialize &
                ( FC % RiemannSolverType, FC % UseLimiter, &
                  FC % Velocity_U_Unit, FC % MomentumDensity_D_Unit, &

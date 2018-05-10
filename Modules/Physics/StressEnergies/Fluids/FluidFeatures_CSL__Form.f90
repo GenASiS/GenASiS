@@ -79,7 +79,7 @@ contains
     allocate ( FC % FieldOutput )
 
     select case ( trim ( FC % FluidType ) )
-    case ( 'IDEAL' )
+    case ( 'IDEAL', 'HEAVY_NUCLEUS' )
       allocate ( FluidFeatures_P_Form :: FC % Field )
       select type ( FF => FC % Field )
       type is ( FluidFeatures_P_Form )

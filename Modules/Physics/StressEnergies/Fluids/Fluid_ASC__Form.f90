@@ -7,8 +7,10 @@ module Fluid_ASC__Form
   use Spaces
   use Fluid_D__Form
   use Fluid_P_I__Form
+  use Fluid_P_HN__Form
   use Tally_F_D__Form
   use Tally_F_P__Form
+  use Tally_F_P_HN__Form
   use Sources_F_CSL__Form
   use Sources_F_ASC__Form
   use FluidFeatures_CSL__Form
@@ -50,6 +52,10 @@ module Fluid_ASC__Form
       Fluid_P_I_CSL
     generic, public :: &
       Fluid_P_I => Fluid_P_I_CSL
+    procedure, private, pass :: &
+      Fluid_P_HN_CSL
+    generic, public :: &
+      Fluid_P_HN => Fluid_P_HN_CSL
     procedure, public, pass :: &
       ComputeTally
     final :: &
@@ -180,6 +186,20 @@ contains
             ( Tally_F_P_Form :: FA % TallyBoundaryLocal  ( iB ) % Element )
           allocate &
             ( Tally_F_P_Form :: FA % TallyBoundaryGlobal ( iB ) % Element )
+        end do !-- iB
+      case ( 'HEAVY_NUCLEUS' )
+        allocate ( Tally_F_P_HN_Form :: FA % TallyInterior )
+        allocate ( Tally_F_P_HN_Form :: FA % TallyTotal )
+        allocate ( Tally_F_P_HN_Form :: FA % TallyChange )
+        allocate ( FA % TallyBoundaryLocal  ( A % nBoundaries ) )
+        allocate ( FA % TallyBoundaryGlobal ( A % nBoundaries ) )
+        do iB = 1, A % nBoundaries
+          allocate &
+            ( Tally_F_P_HN_Form :: FA % TallyBoundaryLocal ( iB ) &
+                                      % Element )
+          allocate &
+            ( Tally_F_P_HN_Form :: FA % TallyBoundaryGlobal ( iB ) &
+                                      % Element )
         end do !-- iB
       case default
         call Show ( 'FluidType not recognized', CONSOLE % ERROR )
@@ -326,11 +346,31 @@ contains
     class default
       call Show ( 'Fluid Chart type not recognized', CONSOLE % ERROR )
       call Show ( 'Fluid_ASC__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'Fluid_I_P_CSL', 'function', CONSOLE % ERROR )
+      call Show ( 'Fluid_P_I_CSL', 'function', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- FC
 
   end function Fluid_P_I_CSL
+
+
+  function Fluid_P_HN_CSL ( FA ) result ( F )
+
+    class ( Fluid_ASC_Form ), intent ( in ) :: &
+      FA
+    class ( Fluid_P_HN_Form ), pointer :: &
+      F
+
+    select type ( FC => FA % Chart )
+    class is ( Fluid_CSL_Form )
+      F => FC % Fluid_P_HN ( )
+    class default
+      call Show ( 'Fluid Chart type not recognized', CONSOLE % ERROR )
+      call Show ( 'Fluid_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Fluid_P_HN_CSL', 'function', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- FC
+
+  end function Fluid_P_HN_CSL
 
 
   subroutine ComputeTally ( CA, ComputeChangeOption, IgnorabilityOption )
