@@ -51,6 +51,14 @@ Tally_F_P__Form.o: \
   Tally_F_D__Form.o \
   Tally_F_P__Form.f90
 
+Tally_F_P_HN__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Spaces.o \
+  Fluid_P_HN__Form.o \
+  Tally_F_P__Form.o \
+  Tally_F_P_HN__Form.f90
+
 Sources_F__Form.o: \
   Basics.o \
   Mathematics.o \
@@ -126,6 +134,7 @@ Fluids.o: \
   FluidFeatures_P__Form.o \
   Tally_F_D__Form.o \
   Tally_F_P__Form.o \
+  Tally_F_P_HN__Form.o \
   Sources_F__Form.o \
   Sources_F_CSL__Form.o \
   Sources_F_ASC__Form.o \

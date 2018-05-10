@@ -195,8 +195,7 @@ contains
   end subroutine Finalize
 
 
-  subroutine ComputeInteriorIntegrand &
-               ( T, Integrand, C, G, nDimensions )
+  subroutine ComputeInteriorIntegrand ( T, Integrand, C, G, nDimensions )
 
     class ( Tally_F_D_Form ), intent ( inout ) :: &
       T

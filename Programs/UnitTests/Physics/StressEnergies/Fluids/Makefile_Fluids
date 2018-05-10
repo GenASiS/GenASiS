@@ -4,8 +4,9 @@ include $(PATH_GENASIS)/Build/Makefile_Build
 
 all: Fluid_D__Form_Test FluidFeatures_P__Form_Test Fluid_P_I__Form_Test \
      Fluid_P_HN__Form_Test Tally_F_D__Form_Test Tally_F_P__Form_Test \
-     Sources_F__Form_Test Fluid_CSL__Form_Test Sources_F_CSL__Form_Test \
-     FluidFeatures_CSL__Form_Test Fluid_ASC__Form_Test
+     Tally_F_P_HN__Form_Test Sources_F__Form_Test Fluid_CSL__Form_Test \
+     Sources_F_CSL__Form_Test FluidFeatures_CSL__Form_Test \
+     Fluid_ASC__Form_Test
 
 Fluid_D__Form_Test: ThirdParty.a Basics.a Mathematics.a Fluid_D__Form_Test.o
 	$(LINK) $(FLAGS) \
@@ -51,6 +52,16 @@ Tally_F_P__Form_Test: ThirdParty.a Basics.a Mathematics.a Spaces.a \
           -o Tally_F_P__Form_Test_$(MACHINE) \
           Tally_F_P__Form_Test.o Tally_F_P__Form.o Tally_F_D__Form.o \
           Fluid_P_I__Form.o Fluid_P__Template.o Fluid_D__Form.o \
+          FluidFeatures_Template.o \
+          Spaces.a Mathematics.a Basics.a ThirdParty.a $(LIBRARIES)
+
+Tally_F_P_HN__Form_Test: ThirdParty.a Basics.a Mathematics.a Spaces.a \
+  Tally_F_P_HN__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Tally_F_P_HN__Form_Test_$(MACHINE) \
+          Tally_F_P_HN__Form_Test.o Tally_F_P_HN__Form.o Tally_F_P__Form.o \
+          Tally_F_D__Form.o Fluid_P_HN__Form.o Fluid_P_I__Form.o \
+          FluidFeatures_P__Form.o Fluid_P__Template.o Fluid_D__Form.o \
           FluidFeatures_Template.o \
           Spaces.a Mathematics.a Basics.a ThirdParty.a $(LIBRARIES)
 
@@ -115,6 +126,7 @@ clobber: clean
 	rm -f Fluid_P_HN__Form_Test_*
 	rm -f Tally_F_D__Form_Test_*
 	rm -f Tally_F_P__Form_Test_*
+	rm -f Tally_F_P_HN__Form_Test_*
 	rm -f Sources_F__Form_Test_*
 	rm -f Fluid_CSL__Form_Test_*
 	rm -f Sources_F_CSL__Form_Test_*
@@ -162,6 +174,13 @@ Tally_F_P__Form_Test.o: \
   Spaces.o \
   Tally_F_P__Form.o \
   Tally_F_P__Form_Test.f90
+
+Tally_F_P_HN__Form_Test.o: \
+  Basics.o \
+  Mathematics.o \
+  Spaces.o \
+  Tally_F_P_HN__Form.o \
+  Tally_F_P_HN__Form_Test.f90
 
 Sources_F__Form_Test.o: \
   Basics.o \
