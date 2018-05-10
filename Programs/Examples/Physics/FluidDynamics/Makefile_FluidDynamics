@@ -7,11 +7,11 @@ include $(PATH_GENASIS)/Build/Makefile_Build
 
 # include ../Makefile_ObjectFiles
 
-SineWave: GenASiS.a SineWave.o
+SineWave: ThirdParty.a GenASiS.a SineWave.o
 	$(LINK) $(FFLAGS) \
            -o SineWave_$(MACHINE) \
            SineWave.o SineWave_Form.o PlaneWave_Template.o \
-           GenASiS.a $(LIBRARIES)
+           GenASiS.a ThirdParty.a $(LIBRARIES)
 
 # SawtoothWave: Basics.a Mathematics.a Fluid.a SawtoothWave.o
 # 	$(LINK) $(FFLAGS) \
@@ -19,35 +19,35 @@ SineWave: GenASiS.a SineWave.o
 #           SawtoothWave.o SawtoothWave_Form.o PlaneWave_Template.o \
 #           Fluid.a Mathematics.a Basics.a $(LIBRARIES)
 
-OppenheimerSnyder: GenASiS.a OppenheimerSnyder.o
+OppenheimerSnyder: ThirdParty.a GenASiS.a OppenheimerSnyder.o
 	$(LINK) $(FFLAGS) \
            -o OppenheimerSnyder_$(MACHINE) \
            OppenheimerSnyder.o OppenheimerSnyder_Form.o \
-           GenASiS.a $(LIBRARIES)
+           GenASiS.a ThirdParty.a $(LIBRARIES)
 
-RiemannProblem: GenASiS.a RiemannProblem.o
+RiemannProblem: ThirdParty.a GenASiS.a RiemannProblem.o
 	$(LINK) $(FFLAGS) \
           -o RiemannProblem_$(MACHINE) \
           RiemannProblem.o RiemannProblem_Form.o \
-          GenASiS.a $(LIBRARIES)
+          GenASiS.a ThirdParty.a $(LIBRARIES)
 
-RayleighTaylor: GenASiS.a RayleighTaylor.o
+RayleighTaylor: ThirdParty.a GenASiS.a RayleighTaylor.o
 	$(LINK) $(FFLAGS) \
            -o RayleighTaylor_$(MACHINE) \
            RayleighTaylor.o RayleighTaylor_Form.o \
-           GenASiS.a $(LIBRARIES)
+           GenASiS.a ThirdParty.a $(LIBRARIES)
 
-SedovTaylor: GenASiS.a SedovTaylor.o
+SedovTaylor: ThirdParty.a GenASiS.a SedovTaylor.o
 	$(LINK) $(FFLAGS) \
           -o SedovTaylor_$(MACHINE) \
           SedovTaylor.o SedovTaylor_Form.o \
-          GenASiS.a $(LIBRARIES)
+          GenASiS.a ThirdParty.a $(LIBRARIES)
 
-FishboneMoncrief: GenASiS.a FishboneMoncrief.o
+FishboneMoncrief: ThirdParty.a GenASiS.a FishboneMoncrief.o
 	$(LINK) $(FFLAGS) \
            -o FishboneMoncrief_$(MACHINE) \
            FishboneMoncrief.o FishboneMoncrief_Form.o \
-           GenASiS.a $(LIBRARIES)
+           GenASiS.a ThirdParty.a $(LIBRARIES)
 
 include $(PATH_GENASIS)/Build/Makefile_Dependencies
 # include ../Makefile_Dependencies
