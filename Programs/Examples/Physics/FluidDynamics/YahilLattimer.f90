@@ -15,7 +15,7 @@ program YahilLattimer
   allocate ( YL )
   call YL % Initialize ( PROGRAM_HEADER % Name )
   call YL % Evolve ( )
-!  call YL % ComputeError ( )
+  call YL % ComputeError ( )
   deallocate ( YL )
 
   deallocate ( PROGRAM_HEADER )
