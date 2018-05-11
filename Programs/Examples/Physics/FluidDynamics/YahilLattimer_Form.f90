@@ -166,8 +166,9 @@ CoordinateUnit  =  [ UNIT % KILOMETER, UNIT % RADIAN, UNIT % RADIAN ]
              IgnorabilityOption = CONSOLE % INFO_2 )
 
     F_R => YahilLattimer % Reference % Fluid_P_I ( )
+    call F_R % SetAdiabaticIndex ( YL % AdiabaticIndex )
 
-    F_R % Value = F % Value
+   ! F_R % Value = F % Value
 
     !-- Cleanup
 
