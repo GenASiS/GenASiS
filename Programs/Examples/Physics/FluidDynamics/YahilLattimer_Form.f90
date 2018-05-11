@@ -410,6 +410,8 @@ call Show ( T, UNIT % SECOND, '>>> time' )
       F, &
       F_R, &  !-- F_Reference
       F_D     !-- F_Difference
+    integer ( KDI ) :: &
+      iV
 
     select type ( FCC )
     class is ( FluidCentralCoreForm )
@@ -419,16 +421,28 @@ call Show ( T, UNIT % SECOND, '>>> time' )
     F => FA % Fluid_P_I ( )
 
     F_R => YahilLattimer % Reference % Fluid_P_I ( )
-    if ( FCC % Time == 0.0_KDR ) then 
-       
-    else
-       call SetFluid ( YahilLattimer, F_R, FCC % Time )
-    end if
+    call SetFluid ( YahilLattimer, F_R, FCC % Time )
 
     F_D => YahilLattimer % Difference % Fluid_P_I ( )
     call MultiplyAdd ( F % Value, F_R % Value, -1.0_KDR, F_D % Value )
-    !F_D % Value = abs ( F_D % Value ) / F_R % Value
+    F_D % Value = abs ( F_D % Value )
 
+    associate &
+      ( Rho_D  => F_D % Value ( :, F_D % COMOVING_BARYON_DENSITY ), &
+        V_D    => F_D % Value ( :, F_D % VELOCITY_U ( 1 ) ), &
+        P_D    => F_D % Value ( :, F_D % PRESSURE ), &
+        Rho_R  => F_R % Value ( :, F_R % COMOVING_BARYON_DENSITY ), &
+        V_R    => F_R % Value ( :, F_R % VELOCITY_U ( 1 ) ), &
+        P_R    => F_R % Value ( :, F_R % PRESSURE ) )
+        
+
+    do iV = 1, size ( Rho_D )
+      Rho_D ( iV ) = Rho_D ( iV ) / max ( Rho_R ( iV ), sqrt ( tiny ( 0.0_KDR ) ) )
+      V_D ( iV )  = V_D ( iV ) / max ( abs ( V_R ( iV ) ), sqrt ( tiny ( 0.0_KDR ) ) )
+      P_D ( iV )  = P_D ( iV ) / max ( P_R ( iV ), sqrt ( tiny ( 0.0_KDR ) ) )
+    end do
+
+    end associate !-- Rho_D, etc.
     end select !-- FA
     end select !-- FCC
     nullify ( F, F_R, F_D )
