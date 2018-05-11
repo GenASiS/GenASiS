@@ -21,6 +21,8 @@ module YahilLattimer_Form
   contains
     procedure, public, pass :: &
       Initialize
+    procedure, public, pass :: &
+      ComputeError
     final :: &
       Finalize
   end type YahilLattimerForm
@@ -55,10 +57,16 @@ contains
       Name
 
     class ( Fluid_P_I_Form ), pointer :: &
-      F
+      F, &
+      F_R, &  !-- F_Reference
+      F_D     !-- F_Difference
     real ( KDR ) :: &
       Rho_final, &
       FinishTime
+    type ( MeasuredValueForm ), dimension ( 3 ) :: &
+      CoordinateUnit
+    class ( GeometryFlatForm ), pointer :: &
+      G
 
     if ( YL % Type == '' ) &
       YL % Type = 'a YahilLattimer'
@@ -113,31 +121,53 @@ call Show ( Rho_final, UNIT % MASS_DENSITY_CGS, 'Rho_final' )
 
     select type ( PS => FCC % PositionSpace )
     class is ( Atlas_SC_Form )
+    G => PS % Geometry ( )
 
     select type ( FA => FCC % Current_ASC )
     class is ( Fluid_ASC_Form )
 
-
     !-- Initial Conditions
-
-
 
     F => FA % Fluid_P_I ( )
     call F % SetAdiabaticIndex ( YL % AdiabaticIndex )
     call SetFluid ( YL, F, Time = 0.0_KDR )
 
     !-- Diagnostics
-
+CoordinateUnit  =  [ UNIT % KILOMETER, UNIT % RADIAN, UNIT % RADIAN ]
     allocate ( YL % Reference )
     allocate ( YL % Difference )
     call YL % Reference % Initialize &
            ( PS, 'IDEAL', NameShortOption = 'Reference', &
+               Velocity_U_UnitOption &
+                 =  CoordinateUnit / UNIT % SECOND, &
+               BaryonMassUnitOption &
+                 =  UNIT % ATOMIC_MASS_UNIT, &
+               NumberDensityUnitOption &
+                 =  UNIT % FEMTOMETER ** ( -3 ), &
+               EnergyDensityUnitOption &
+                 =  UNIT % MEGA_ELECTRON_VOLT  &
+                    *  UNIT % FEMTOMETER ** ( -3 ), &
+               BaryonMassReferenceOption = CONSTANT % ATOMIC_MASS_UNIT, &
              AllocateSourcesOption = .false., &
              IgnorabilityOption = CONSOLE % INFO_2 )
     call YL % Difference % Initialize &
            ( PS, 'IDEAL', NameShortOption = 'Difference', &
+               Velocity_U_UnitOption &
+                 =  CoordinateUnit / UNIT % SECOND, &
+               BaryonMassUnitOption &
+                 =  UNIT % ATOMIC_MASS_UNIT, &
+               NumberDensityUnitOption &
+                 =  UNIT % FEMTOMETER ** ( -3 ), &
+               EnergyDensityUnitOption &
+                 =  UNIT % MEGA_ELECTRON_VOLT  &
+                    *  UNIT % FEMTOMETER ** ( -3 ), &
+               BaryonMassReferenceOption = CONSTANT % ATOMIC_MASS_UNIT, &
              AllocateSourcesOption = .false., &
              IgnorabilityOption = CONSOLE % INFO_2 )
+
+    F_R => YahilLattimer % Reference % Fluid_P_I ( )
+
+    F_R % Value = F % Value
 
     !-- Cleanup
 
@@ -183,7 +213,10 @@ call Show ( Rho_final, UNIT % MASS_DENSITY_CGS, 'Rho_final' )
 
     !-- Interpolate self similar solution
 
-    T = YL % t_collapse - Time 
+    call Show ( Time, UNIT % SECOND, '>>> simulation time' )
+    T = YL % t_collapse - Time
+    call Show ( T, UNIT % SECOND, '>>> YahilLattimer time' )
+
 call Show ( T, UNIT % SECOND, '>>> time' )
     call PrepareInterpolation &
            ( SI, YL % AnalyticProfile, YL % Kappa, YL % AdiabaticIndex, T )
@@ -210,13 +243,24 @@ call Show ( T, UNIT % SECOND, '>>> time' )
                 % Evaluate ( R ( iV ), V ( iV ) )
         P ( iV ) = YL % Kappa * Rho ( iV ) ** ( YL % AdiabaticIndex )
         E ( iV ) = P ( iV ) / ( YL % AdiabaticIndex - 1.0_KDR )
+
+        !if ( T == YL % t_collapse ) then
+           !call Show ( iV, '>>> iV' )
+           !call show ( R ( iV ), '>>> Radius' )
+           !call show ( Rho ( iV ), '>>> Density' )
+           !call show ( P ( iV ), '>>> Presure' )
+        !end if
       end do
+      
+      Rho = Rho / CONSTANT % ATOMIC_MASS_UNIT
 
       call F % ComputeFromPrimitive ( G )
 
     end associate !-- R, etc.
     end select !-- Grid
     end select !-- PS
+
+    nullify ( G )
 
   end subroutine SetFluid
 
@@ -293,52 +337,55 @@ call Show ( T, UNIT % SECOND, '>>> time' )
     
     R   = ( sqrt ( Kappa ) &
              * CONSTANT % GRAVITATIONAL ** ( ( 1.0_KDR - Gamma ) / 2 ) &
-             * T ** ( 2.0_KDR - Gamma ) ) * X
-    Rho = D / ( CONSTANT % GRAVITATIONAL * T * T )
+             * T ** ( 2.0_KDR - Gamma ) ) * X 
+    Rho = D / ( CONSTANT % GRAVITATIONAL * T * T ) 
     V   = ( sqrt ( Kappa ) * CONSTANT % GRAVITATIONAL ** ( ( 1.0 - Gamma ) / 2 ) &
               * T ** ( 1.0_KDR - Gamma ) ) * V_P
 
-    R_Edge ( 1 ) = 0.0_KDR
-    dR ( 1 ) = 2 * R ( 1 )
-    do iV = 2, nProfile
-      R_Edge ( iV ) =  R ( iV - 1 )  + dR ( iV ) / 2
-      dR ( iV - 1 ) = R_Edge ( iV ) - R_Edge ( iV - 1 )
-    end do
+   ! R_Edge ( 1 ) = 0.0_KDR
+   ! dR ( 1 ) = 2 * R ( 1 )
+   ! do iV = 2, nProfile
+   !   R_Edge ( iV ) =  R ( iV - 1 )  + dR ( iV ) / 2
+   !   dR ( iV - 1 ) = R_Edge ( iV ) - R_Edge ( iV - 1 )
+   ! end do
     
-    dR ( nProfile ) = dR ( nProfile - 1 )
-    R_Edge ( nProfile + 1 ) = R_Edge ( nProfile ) + dR ( nProfile )
+   ! dR ( nProfile ) = dR ( nProfile - 1 )
+   ! R_Edge ( nProfile + 1 ) = R_Edge ( nProfile ) + dR ( nProfile )
 
 
-    allocate ( Density ( nProfile + 1 ) )
-    allocate ( Velocity ( nProfile + 1 ) )
+    allocate ( Density ( nProfile ) )
+    allocate ( Velocity ( nProfile ) )
+
+    Density = Rho ! * UNIT % FEMTOMETER ** ( -3 ) 
+    Velocity = V ! * UNIT % KILOMETER / UNIT % SECOND
 
     !-- First edge extrapolated
-    Slope_Rho      =  ( Rho ( 2 )  -  Rho ( 1 ) )  &
-                       /  ( 0.5_KDR * ( dR ( 1 )  +  dR ( 2 ) ) )
-    Slope_V     =  ( V ( 2 )  -  V ( 1 ) )  &
-                    /  ( 0.5_KDR * ( dR ( 1 )  +  dR ( 2 ) ) )
+   ! Slope_Rho      =  ( Rho ( 2 )  -  Rho ( 1 ) )  &
+   !                    /  ( 0.5_KDR * ( dR ( 1 )  +  dR ( 2 ) ) )
+   ! Slope_V     =  ( V ( 2 )  -  V ( 1 ) )  &
+   !                 /  ( 0.5_KDR * ( dR ( 1 )  +  dR ( 2 ) ) )
 
-    Density ( 1 )  =  Rho ( 1 ) + Slope_Rho * ( R_edge ( 1 ) - R ( 1 ) )
-    Velocity ( 1 ) =  V ( 1 ) + Slope_V * ( R_edge ( 1 ) - R ( 1 ) )
+   ! Density ( 1 )  =  Rho ( 1 ) + Slope_Rho * ( R_edge ( 1 ) - R ( 1 ) )
+   ! Velocity ( 1 ) =  V ( 1 ) + Slope_V * ( R_edge ( 1 ) - R ( 1 ) )
 
   !  call Show ( Density ( 1 ), UNIT % MASS_DENSITY_CGS, 'Density')
    ! call Show ( Velocity ( 1 ), UNIT % SPEED_OF_LIGHT, 'Velocity')
 
-    do iV = 2, nProfile + 1
-      if ( iV <= nProfile ) then
-        Slope_Rho      =  ( Rho ( iV )  - Rho ( iV - 1 ) )  &
-                        /  ( 0.5_KDR * ( dR ( iV - 1 )  +  dR ( iV ) ) )
-        Slope_V     =  ( V ( iV )  -  V ( iV - 1 ) )  &
-                        /  ( 0.5_KDR * ( dR ( iV - 1 )  +  dR ( iV ) ) )
-      else
-       !-- Last edge extrapolated with same slope
-      end if
+    !do iV = 2, nProfile + 1
+    !  if ( iV <= nProfile ) then
+    !    Slope_Rho      =  ( Rho ( iV )  - Rho ( iV - 1 ) )  &
+    !                    /  ( 0.5_KDR * ( dR ( iV - 1 )  +  dR ( iV ) ) )
+    !    Slope_V     =  ( V ( iV )  -  V ( iV - 1 ) )  &
+    !                    /  ( 0.5_KDR * ( dR ( iV - 1 )  +  dR ( iV ) ) )
+    !  else
+    !   !-- Last edge extrapolated with same slope
+    !  end if
 
-      Density ( iV )  =  Rho ( iV - 1 )  &
-                         +  Slope_Rho * ( R_Edge ( iV )  -  R ( iV - 1 ) )
-      Velocity ( iV ) =  V ( iV - 1 ) &
-                         +  Slope_V   * ( R_Edge ( iV )  -  R ( iV - 1 ) )
-    end do
+     ! Density ( iV )  =  Rho ( iV - 1 )  &
+     !                    +  Slope_Rho * ( R_Edge ( iV )  -  R ( iV - 1 ) )
+     ! Velocity ( iV ) =  V ( iV - 1 ) &
+     !                   +  Slope_V   * ( R_Edge ( iV )  -  R ( iV - 1 ) )
+    !end do
 
     
     end associate !-- R, etc.
@@ -346,9 +393,9 @@ call Show ( T, UNIT % SECOND, '>>> time' )
     !-- SplineInterpolation initialization
 
     call SI ( iRho_SI ) % Initialize &
-           ( R_Edge, Density, VerbosityOption = CONSOLE % INFO_3 )
+           ( R, Density, VerbosityOption = CONSOLE % INFO_3 )
     call SI ( iV_SI ) % Initialize &
-           ( R_Edge, Velocity, VerbosityOption = CONSOLE % INFO_3 )
+           ( R, Velocity, VerbosityOption = CONSOLE % INFO_3 )
 
   end subroutine PrepareInterpolation
 
@@ -371,16 +418,88 @@ call Show ( T, UNIT % SECOND, '>>> time' )
     F => FA % Fluid_P_I ( )
 
     F_R => YahilLattimer % Reference % Fluid_P_I ( )
-    call SetFluid ( YahilLattimer, F_R, FCC % Time )
+    if ( FCC % Time == 0.0_KDR ) then 
+       
+    else
+       call SetFluid ( YahilLattimer, F_R, FCC % Time )
+    end if
 
     F_D => YahilLattimer % Difference % Fluid_P_I ( )
     call MultiplyAdd ( F % Value, F_R % Value, -1.0_KDR, F_D % Value )
+    !F_D % Value = abs ( F_D % Value ) / F_R % Value
 
     end select !-- FA
     end select !-- FCC
     nullify ( F, F_R, F_D )
 
   end subroutine SetReference
+
+
+    subroutine ComputeError ( YL )
+
+    class ( YahilLattimerForm ), intent ( in ) :: &
+      YL
+    
+    real ( KDR ) :: &
+      L1_Rho, &
+      L1_V, &
+      L1_P
+    class ( Fluid_P_I_Form ), pointer :: &
+      F_D       
+    type ( CollectiveOperation_R_Form ) :: &
+      CO
+
+    select type ( FCC => YL % Integrator )
+    type is ( FluidCentralCoreForm )
+    select type ( PS => FCC % PositionSpace )
+    class is ( Atlas_SC_Form ) 
+    select type ( C => PS % Chart )
+    class is ( Chart_SL_Template )
+    
+    F_D => YL % Difference % Fluid_P_I ( )
+    
+    associate &
+      ( Difference_Rho => F_D % Value ( :, F_D % COMOVING_BARYON_DENSITY ), &
+        Difference_V   => F_D % Value ( :, F_D % VELOCITY_U ( 1 ) ), &
+        Difference_P   => F_D % Value ( :, F_D % PRESSURE ) )
+
+    call CO % Initialize ( PS % Communicator, [ 4 ], [ 4 ] )
+
+    CO % Outgoing % Value ( 1 ) = sum ( abs ( Difference_Rho ), &
+                                        mask = C % IsProperCell )
+    CO % Outgoing % Value ( 2 ) = sum ( abs ( Difference_V ), &
+                                        mask = C % IsProperCell )
+    CO % Outgoing % Value ( 3 ) = sum ( abs ( Difference_P ), &
+                                        mask = C % IsProperCell )
+    CO % Outgoing % Value ( 4 ) = C % nProperCells
+
+    call CO % Reduce ( REDUCTION % SUM )
+
+    end associate !-- Difference_J, etc.
+    
+    associate &
+      ( DifferenceSum_Rho  => CO % Incoming % Value ( 1 ), &
+        DifferenceSum_V    => CO % Incoming % Value ( 2 ), &
+        DifferenceSum_P    => CO % Incoming % Value ( 3 ), &
+        nValues => CO % Incoming % Value ( 4 ) )
+
+    L1_Rho = DifferenceSum_Rho   / nValues
+    L1_V   = DifferenceSum_V  / nValues
+    L1_P   = DifferenceSum_P / nValues
+    end associate
+
+    call Show ( L1_Rho, '*** L1_Rho error', nLeadingLinesOption = 2, &
+                nTrailingLinesOption = 2 )
+    call Show ( L1_V, '*** L1_V error', nLeadingLinesOption = 2, &
+                nTrailingLinesOption = 2 )
+    call Show ( L1_P, '*** L1_P error', nLeadingLinesOption = 2, &
+                nTrailingLinesOption = 2 )
+
+    end select !-- C
+    end select !-- PS
+    end select !--FCC
+
+  end subroutine ComputeError
 
 
 end module YahilLattimer_Form
