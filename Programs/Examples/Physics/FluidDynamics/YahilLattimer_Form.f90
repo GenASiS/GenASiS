@@ -42,7 +42,7 @@ module YahilLattimer_Form
       iV_TS  = 3, &
       iM_TS  = 4
     integer ( KDI ), private, parameter :: &
-      iRho_SI    = 1, & !-- spline interpolation
+      iRho_SI  = 1, & !-- spline interpolation
       iV_SI    = 2
     class ( YahilLattimerForm ), private, pointer :: &
       YahilLattimer => null ( )
@@ -152,15 +152,15 @@ CoordinateUnit  =  [ UNIT % KILOMETER, UNIT % RADIAN, UNIT % RADIAN ]
              IgnorabilityOption = CONSOLE % INFO_2 )
     call YL % Difference % Initialize &
            ( PS, 'IDEAL', NameShortOption = 'Difference', &
-               Velocity_U_UnitOption &
-                 =  CoordinateUnit / UNIT % SECOND, &
+              ! Velocity_U_UnitOption &
+              !   =  CoordinateUnit / UNIT % SECOND, &
                BaryonMassUnitOption &
                  =  UNIT % ATOMIC_MASS_UNIT, &
-               NumberDensityUnitOption &
-                 =  UNIT % FEMTOMETER ** ( -3 ), &
-               EnergyDensityUnitOption &
-                 =  UNIT % MEGA_ELECTRON_VOLT  &
-                    *  UNIT % FEMTOMETER ** ( -3 ), &
+              ! NumberDensityUnitOption &
+              !   =  UNIT % FEMTOMETER ** ( -3 ), &
+              ! EnergyDensityUnitOption &
+              !   =  UNIT % MEGA_ELECTRON_VOLT  &
+              !      *  UNIT % FEMTOMETER ** ( -3 ), &
                BaryonMassReferenceOption = CONSTANT % ATOMIC_MASS_UNIT, &
              AllocateSourcesOption = .false., &
              IgnorabilityOption = CONSOLE % INFO_2 )
@@ -244,13 +244,6 @@ call Show ( T, UNIT % SECOND, '>>> time' )
                 % Evaluate ( R ( iV ), V ( iV ) )
         P ( iV ) = YL % Kappa * Rho ( iV ) ** ( YL % AdiabaticIndex )
         E ( iV ) = P ( iV ) / ( YL % AdiabaticIndex - 1.0_KDR )
-
-        !if ( T == YL % t_collapse ) then
-           !call Show ( iV, '>>> iV' )
-           !call show ( R ( iV ), '>>> Radius' )
-           !call show ( Rho ( iV ), '>>> Density' )
-           !call show ( P ( iV ), '>>> Presure' )
-        !end if
       end do
       
       Rho = Rho / CONSTANT % ATOMIC_MASS_UNIT
@@ -434,12 +427,27 @@ call Show ( T, UNIT % SECOND, '>>> time' )
         Rho_R  => F_R % Value ( :, F_R % COMOVING_BARYON_DENSITY ), &
         V_R    => F_R % Value ( :, F_R % VELOCITY_U ( 1 ) ), &
         P_R    => F_R % Value ( :, F_R % PRESSURE ) )
-        
 
     do iV = 1, size ( Rho_D )
-      Rho_D ( iV ) = Rho_D ( iV ) / max ( Rho_R ( iV ), sqrt ( tiny ( 0.0_KDR ) ) )
-      V_D ( iV )  = V_D ( iV ) / max ( abs ( V_R ( iV ) ), sqrt ( tiny ( 0.0_KDR ) ) )
-      P_D ( iV )  = P_D ( iV ) / max ( P_R ( iV ), sqrt ( tiny ( 0.0_KDR ) ) )
+      Rho_D ( iV )   = Rho_D ( iV ) / max ( Rho_R ( iV ), tiny ( 0.0_KDR ) )
+      if ( V_R ( iV ) < 0.0_KDR ) then
+        call Show ( Rho_D ( iV ) * UNIT % FEMTOMETER ** ( -3 ), UNIT % FEMTOMETER ** ( -3 ), 'Rho_D' )
+        call Show ( Rho_R ( iV ), UNIT % FEMTOMETER ** ( -3 ), 'Rho_R' )
+        call Show ( V_D ( iV ) * UNIT % KILOMETER / UNIT % SECOND, UNIT % KILOMETER / UNIT % SECOND, 'V_D' )
+        call Show ( V_R ( iV ), UNIT % KILOMETER / UNIT % SECOND, 'V_R' )
+        call Show ( P_D ( iV ) * UNIT % MEGA_ELECTRON_VOLT  &
+                    *  UNIT % FEMTOMETER ** ( -3 ),  UNIT % MEGA_ELECTRON_VOLT  &
+                    *  UNIT % FEMTOMETER ** ( -3 ), 'P_D' )
+        call Show ( P_R ( iV ),  UNIT % MEGA_ELECTRON_VOLT  &
+                    *  UNIT % FEMTOMETER ** ( -3 ), 'P_R' )
+        V_D   ( iV ) = V_D ( iV ) / abs ( V_R ( iV ) )
+      else
+        V_D   ( iV ) = V_D ( iV ) / max ( V_R ( iV ) , tiny ( 0.0_KDR ) )
+      end if
+      P_D   ( iV )   = P_D   ( iV )/ max ( P_R ( iV ), tiny ( 0.0_KDR ) )
+      call Show ( Rho_D ( iV ), '>>> Rho_D' )
+      call Show ( V_D ( iV ), '>>> V_D' )
+      call Show ( P_D ( iV ), '>>> P_D' )
     end do
 
     end associate !-- Rho_D, etc.
@@ -450,9 +458,8 @@ call Show ( T, UNIT % SECOND, '>>> time' )
   end subroutine SetReference
 
 
-    subroutine ComputeError ( YL )
-
-    class ( YahilLattimerForm ), intent ( in ) :: &
+  subroutine ComputeError ( YL )
+    class ( YahilLattimerForm ) , intent ( in ) :: &
       YL
     
     real ( KDR ) :: &
@@ -460,7 +467,8 @@ call Show ( T, UNIT % SECOND, '>>> time' )
       L1_V, &
       L1_P
     class ( Fluid_P_I_Form ), pointer :: &
-      F_D       
+      F_D, &
+      F_R
     type ( CollectiveOperation_R_Form ) :: &
       CO
 
@@ -470,9 +478,9 @@ call Show ( T, UNIT % SECOND, '>>> time' )
     class is ( Atlas_SC_Form ) 
     select type ( C => PS % Chart )
     class is ( Chart_SL_Template )
-    
+       
     F_D => YL % Difference % Fluid_P_I ( )
-    
+
     associate &
       ( Difference_Rho => F_D % Value ( :, F_D % COMOVING_BARYON_DENSITY ), &
         Difference_V   => F_D % Value ( :, F_D % VELOCITY_U ( 1 ) ), &
@@ -490,7 +498,7 @@ call Show ( T, UNIT % SECOND, '>>> time' )
 
     call CO % Reduce ( REDUCTION % SUM )
 
-    end associate !-- Difference_J, etc.
+    end associate !-- Difference_Rho, etc.
     
     associate &
       ( DifferenceSum_Rho  => CO % Incoming % Value ( 1 ), &
@@ -498,9 +506,9 @@ call Show ( T, UNIT % SECOND, '>>> time' )
         DifferenceSum_P    => CO % Incoming % Value ( 3 ), &
         nValues => CO % Incoming % Value ( 4 ) )
 
-    L1_Rho = DifferenceSum_Rho   / nValues
-    L1_V   = DifferenceSum_V  / nValues
-    L1_P   = DifferenceSum_P / nValues
+    L1_Rho = DifferenceSum_Rho / nValues
+    L1_V   = DifferenceSum_V   / nValues
+    L1_P   = DifferenceSum_P   / nValues
     end associate
 
     call Show ( L1_Rho, '*** L1_Rho error', nLeadingLinesOption = 2, &
