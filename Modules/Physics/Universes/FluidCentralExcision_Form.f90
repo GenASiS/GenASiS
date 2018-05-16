@@ -149,27 +149,21 @@ contains
       call FA % Initialize &
              ( PS, FluidType, &
                Velocity_U_UnitOption &
-                 =  CoordinateUnit / TimeUnit, &
+                 =  spread ( UNIT % SPEED_OF_LIGHT, 1, 3 ), &
                BaryonMassUnitOption &
                  =  UNIT % ATOMIC_MASS_UNIT, &
                NumberDensityUnitOption &
-                 =  UNIT % FEMTOMETER ** ( -3 ), &
-!                 =  UNIT % MASS_DENSITY_CGS, &
+                 =  UNIT % NUMBER_DENSITY_NUCLEAR, &
                EnergyDensityUnitOption &
-                 =  UNIT % MEGA_ELECTRON_VOLT  &
-                    *  UNIT % FEMTOMETER ** ( -3 ), &
-!                 =  UNIT % MASS_DENSITY_CGS  *  UNIT % SPEED_OF_LIGHT ** 2, &
+                 =  UNIT % ENERGY_DENSITY_NUCLEAR, &
                NumberUnitOption &
                  =  UNIT % SOLAR_BARYON_NUMBER, &
-!                 =  UNIT % SOLAR_MASS, &
                EnergyUnitOption &
-                 =  UNIT % SOLAR_MASS  *  UNIT % SPEED_OF_LIGHT ** 2, &
+                 =  UNIT % ENERGY_SOLAR_MASS, &
                MomentumUnitOption &
-                 =  UNIT % SOLAR_MASS  *  UNIT % SPEED_OF_LIGHT, &
+                 =  UNIT % MOMENTUM_SOLAR_MASS, &
                AngularMomentumUnitOption &
                  =  UNIT % SOLAR_KERR_PARAMETER, &
-!                  =  UNIT % KILOMETER  *  UNIT % SOLAR_MASS  &
-!                     *  UNIT % SPEED_OF_LIGHT, &
                TimeUnitOption = TimeUnit, &
                BaryonMassReferenceOption = CONSTANT % ATOMIC_MASS_UNIT, &
                LimiterParameterOption = LimiterParameterOption )

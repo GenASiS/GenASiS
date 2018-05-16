@@ -148,14 +148,22 @@ contains
     else
       call FA % Initialize &
              ( PS, FluidType, &
+               Velocity_U_UnitOption &
+                 =  spread ( UNIT % SPEED_OF_LIGHT, 1, 3 ), &
                BaryonMassUnitOption &
                  =  UNIT % ATOMIC_MASS_UNIT, &
+               NumberDensityUnitOption &
+                 =  UNIT % NUMBER_DENSITY_NUCLEAR, &
+               EnergyDensityUnitOption &
+                 =  UNIT % ENERGY_DENSITY_NUCLEAR, &
+               TemperatureUnitOption &
+                 =  UNIT % MEGA_ELECTRON_VOLT, &
                NumberUnitOption &
                  =  UNIT % SOLAR_BARYON_NUMBER, &
                EnergyUnitOption &
-                 =  UNIT % SOLAR_MASS  *  UNIT % SPEED_OF_LIGHT **2, &
+                 =  UNIT % ENERGY_SOLAR_MASS, &
                MomentumUnitOption &
-                 =  UNIT % SOLAR_MASS  *  UNIT % SPEED_OF_LIGHT, &
+                 =  UNIT % MOMENTUM_SOLAR_MASS, &
                AngularMomentumUnitOption &
                  =  UNIT % SOLAR_KERR_PARAMETER, &
                BaryonMassReferenceOption = CONSTANT % ATOMIC_MASS_UNIT, &
