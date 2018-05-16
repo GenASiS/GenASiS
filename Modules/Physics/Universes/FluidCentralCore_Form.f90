@@ -167,6 +167,7 @@ contains
                AngularMomentumUnitOption &
                  =  UNIT % SOLAR_KERR_PARAMETER, &
                BaryonMassReferenceOption = CONSTANT % ATOMIC_MASS_UNIT, &
+               ShockThresholdOption = 1.0_KDR, &
                LimiterParameterOption = LimiterParameterOption )
     end if
 

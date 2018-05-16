@@ -24,6 +24,26 @@ contains
     character ( * ), intent ( in )  :: &
       Name
 
+    if ( WH % Type == '' ) &
+      WH % Type = 'a FishboneMoncrief'
+
+    call WH % InitializeTemplate ( Name )
+
+
+    !-- Integrator
+
+    allocate ( FluidCentralCoreForm :: WH % Integrator )
+    select type ( FCC => WH % Integrator )
+    type is ( FluidCentralCoreForm )
+    call FCC % Initialize &
+           ( Name, FluidType = 'HEAVY_NUCLEUS', &
+             GeometryType = 'NEWTONIAN' )
+
+
+    !-- Cleanup
+
+    end select !-- FCC
+
   end subroutine Initialize
 
 
