@@ -70,6 +70,10 @@ program UNIT_Singleton_Test
   print*, 'SPEED_OF_LIGHT      ', UNIT % SPEED_OF_LIGHT
 
   print*
+  print*, 'Momentum Units'
+  print*, 'MOMENTUM_SOLAR_MASS', UNIT % MOMENTUM_SOLAR_MASS
+
+  print*
   print*, 'Force Units'
   print*, 'NEWTON              ', UNIT % NEWTON
   print*, 'DYNE                ', UNIT % DYNE
@@ -95,6 +99,7 @@ program UNIT_Singleton_Test
   print*, 'ELECTRON_VOLT       ', UNIT % ELECTRON_VOLT
   print*, 'MEGA_ELECTRON_VOLT  ', UNIT % MEGA_ELECTRON_VOLT
   print*, 'BETHE               ', UNIT % BETHE
+  print*, 'ENERGY_SOLAR_MASS   ', UNIT % ENERGY_SOLAR_MASS
 
   print*
   print*, 'Angular momentum Units'
@@ -111,10 +116,15 @@ program UNIT_Singleton_Test
   print*
   print*, 'Number Density Units'
   print*, 'NUMBER_DENSITY_ANGSTROM  ', UNIT % NUMBER_DENSITY_ANGSTROM
+  print*, 'NUMBER_DENSITY_NUCLEAR   ', UNIT % NUMBER_DENSITY_NUCLEAR
   print*, 'NUMBER_DENSITY_MEV_HBAR_C', UNIT % NUMBER_DENSITY_MEV_HBAR_C
 
   print*
   print*, 'Mass Density Units'
-  print*, 'MASS_DENSITY_CGS    ', UNIT % MASS_DENSITY_CGS
+  print*, 'MASS_DENSITY_CGS', UNIT % MASS_DENSITY_CGS
+
+  print*
+  print*, 'Energy Density Units'
+  print*, 'ENERGY_DENSITY_NUCLEAR', UNIT % ENERGY_DENSITY_NUCLEAR
 
 end program UNIT_Singleton_Test

@@ -48,6 +48,8 @@ module UNIT_Singleton
       KILOHERTZ
     type ( MeasuredValueForm ) :: &  !-- Speed
       SPEED_OF_LIGHT
+    type ( MeasuredValueForm ) :: &  !-- Momentum
+      MOMENTUM_SOLAR_MASS
     type ( MeasuredValueForm ) :: &  !-- Force
       NEWTON, &
       DYNE
@@ -64,7 +66,8 @@ module UNIT_Singleton
       ERG, &
       ELECTRON_VOLT, &
       MEGA_ELECTRON_VOLT, &
-      BETHE
+      BETHE, &
+      ENERGY_SOLAR_MASS
     type ( MeasuredValueForm ) :: &  !-- Angular momentum
       SOLAR_KERR_PARAMETER
     type ( MeasuredValueForm ) :: &  !-- Entropy per baryon
@@ -73,9 +76,12 @@ module UNIT_Singleton
       HBAR_C
     type ( MeasuredValueForm ) :: &  !-- Number density
       NUMBER_DENSITY_ANGSTROM, &
+      NUMBER_DENSITY_NUCLEAR, &
       NUMBER_DENSITY_MEV_HBAR_C
     type ( MeasuredValueForm ) :: &  !-- Mass density
       MASS_DENSITY_CGS
+    type ( MeasuredValueForm ) :: &  !-- Energy density
+      ENERGY_DENSITY_NUCLEAR
     type ( MeasuredValueForm ) :: &  !-- Computer resources
       KILOBYTE, &
       WALL_TIME
@@ -199,6 +205,10 @@ contains
     call U % SPEED_OF_LIGHT % Initialize &
            ( 'c', '', C % SPEED_OF_LIGHT )
 
+    !-- Momentum
+    call U % MOMENTUM_SOLAR_MASS % Initialize &
+           ( U % SOLAR_MASS * U % SPEED_OF_LIGHT )
+
     !-- Force
     call U % NEWTON % Initialize &
            ( U % KILOGRAM  *  U % METER  *  U % SECOND ** (-2), 'N' )
@@ -232,6 +242,8 @@ contains
            ( 1.0e6_KDR * U % ELECTRON_VOLT, 'MeV' )
     call U % BETHE % Initialize &
            ( 1.0e51_KDR * U % ERG, 'B' )
+    call U % ENERGY_SOLAR_MASS % Initialize &
+           ( U % SOLAR_MASS * U % SPEED_OF_LIGHT ** 2 )
 
     !-- Angular momentum
     if ( KBCH > KDCH ) then
@@ -267,12 +279,18 @@ contains
     !-- Number density
     U % NUMBER_DENSITY_ANGSTROM &
       =  1 / U % ANGSTROM ** 3
+    U % NUMBER_DENSITY_NUCLEAR &
+      =  1 / U % FEMTOMETER ** 3
     U % NUMBER_DENSITY_MEV_HBAR_C &
       =  U % MEGA_ELECTRON_VOLT ** 3  /  U % HBAR_C ** 3
 
     !-- Mass density
     U % MASS_DENSITY_CGS &
       =  U % GRAM  /  U % CENTIMETER ** 3
+
+    !-- Energy density
+    U % ENERGY_DENSITY_NUCLEAR &
+      =  U % MEGA_ELECTRON_VOLT  /  U % FEMTOMETER ** 3
 
     !-- Computer resources
     call U % KILOBYTE % Initialize ( 'kB', 'kB', 1.0_KDR )
@@ -339,6 +357,8 @@ contains
       Result = UNIT % KILOHERTZ
     case ( 'SPEED_OF_LIGHT' ) 
       Result = UNIT % SPEED_OF_LIGHT
+    case ( 'MOMENTUM_SOLAR_MASS' )
+      Result = UNIT % MOMENTUM_SOLAR_MASS
     case ( 'NEWTON' )
       Result = UNIT % NEWTON
     case ( 'DYNE' )
@@ -363,6 +383,8 @@ contains
       Result = UNIT % MEGA_ELECTRON_VOLT
     case ( 'BETHE' )
       Result = UNIT % BETHE
+    case ( 'ENERGY_SOLAR_MASS' )
+      Result = UNIT % ENERGY_SOLAR_MASS
     case ( 'SOLAR_KERR_PARAMETER' )
       Result = UNIT % SOLAR_KERR_PARAMETER
     case ( 'BOLTZMANN' )
@@ -371,10 +393,14 @@ contains
       Result = UNIT % HBAR_C
     case ( 'NUMBER_DENSITY_ANGSTROM' )
       Result = UNIT % NUMBER_DENSITY_ANGSTROM
+    case ( 'NUMBER_DENSITY_NUCLEAR' )
+      Result = UNIT % NUMBER_DENSITY_NUCLEAR
     case ( 'NUMBER_DENSITY_MEV_HBAR_C' )
       Result = UNIT % NUMBER_DENSITY_MEV_HBAR_C
     case ( 'MASS_DENSITY_CGS' )
       Result = UNIT % MASS_DENSITY_CGS
+    case ( 'ENERGY_DENSITY_NUCLEAR' )
+      Result = UNIT % ENERGY_DENSITY_NUCLEAR
     case ( 'KILOBYTE' )
       Result = UNIT % KILOBYTE
     case ( 'WALL_TIME' )
