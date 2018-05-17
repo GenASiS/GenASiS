@@ -29,7 +29,6 @@ contains
 
     call WH % InitializeTemplate ( Name )
 
-
     !-- Integrator
 
     allocate ( FluidCentralCoreForm :: WH % Integrator )
@@ -37,8 +36,12 @@ contains
     type is ( FluidCentralCoreForm )
     call FCC % Initialize &
            ( Name, FluidType = 'HEAVY_NUCLEUS', &
-             GeometryType = 'NEWTONIAN' )
+             GeometryType = 'NEWTONIAN', &
+             nWriteOption = 30 )
 
+    !-- Initial Conditions
+
+    call WH % SetFluid ( )
 
     !-- Cleanup
 
