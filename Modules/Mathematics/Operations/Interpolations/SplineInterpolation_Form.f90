@@ -120,10 +120,13 @@ contains
     
     type ( SplineInterpolationForm ), intent ( inout ) :: &
       SI
-      
-    deallocate ( SI % DD_Interpolant )
-    deallocate ( SI % Value )
-    deallocate ( SI % Input )
+
+    if ( allocated ( SI % DD_Interpolant ) ) &
+      deallocate ( SI % DD_Interpolant )
+    if ( allocated ( SI % Value ) ) &
+      deallocate ( SI % Value )
+    if ( allocated ( SI % Input ) ) &
+      deallocate ( SI % Input )
     
   end subroutine Finalize 
   
