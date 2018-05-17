@@ -58,8 +58,8 @@ module Fluid_P_HN__Form
       ComputeConservedEntropy_G_Kernel
     procedure, public, nopass :: &
       ComputeProtonFraction_G_Kernel
-  !   procedure, public, nopass :: &
-  !     ComputeEntropyPerBaryonKernel
+    procedure, public, nopass :: &
+      ComputeEntropyPerBaryon_G_Kernel
     procedure, public, nopass :: &
       Apply_EOS_HN_T_Kernel
     procedure, public, nopass :: &
@@ -408,7 +408,7 @@ contains
         SB    => FV ( oV + 1 : oV + nV, C % ENTROPY_PER_BARYON ), &
         DP    => FV ( oV + 1 : oV + nV, C % CONSERVED_PROTON_DENSITY ), &
         YE    => FV ( oV + 1 : oV + nV, C % PROTON_FRACTION ), &
-    !     DS    => FV ( oV + 1 : oV + nV, C % CONSERVED_ENTROPY ), &
+        DS    => FV ( oV + 1 : oV + nV, C % CONSERVED_ENTROPY ), &
         X_P   => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_PROTON ), &
         X_N   => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_NEUTRON ), &
         X_He  => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_ALPHA ), &
@@ -428,8 +428,8 @@ contains
            ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
     call C % ComputeConservedProton_G_Kernel &
            ( DP, N, YE )
-    ! call C % ComputeConservedEntropyKernel &
-    !        ( DS, N, SB )
+    call C % ComputeConservedEntropy_G_Kernel &
+           ( DS, N, SB )
     call C % ComputeEigenspeeds_P_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
              V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33 )
@@ -531,15 +531,15 @@ contains
            ( E, G, M, N, V_1, V_2, V_3, S_1, S_2, S_3 )
     call C % ComputeProtonFraction_G_Kernel &
            ( YE, DP, N )
-    ! call C % ComputeEntropyPerBaryonKernel &
-    !        ( SB, DS, N )
+    call C % ComputeEntropyPerBaryon_G_Kernel &
+           ( SB, DS, N )
     call C % Apply_EOS_HN_SB_E_Kernel &
            ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
              M, N, YE, Shock )
-    ! call C % ComputeConservedEnergyKernel &   !-- For E computed from SB
-    !        ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E ) 
-    !call C % ComputeConservedEntropy_G_Kernel &  !-- For SB computed from E
-    !       ( DS, N, SB )
+    call C % ComputeConservedEnergy_G_Kernel &   !-- For E computed from SB
+           ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E ) 
+    call C % ComputeConservedEntropy_G_Kernel &  !-- For SB computed from E
+           ( DS, N, SB )
     call C % ComputeEigenspeeds_P_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
              V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33 )
@@ -732,6 +732,33 @@ contains
   end subroutine ComputeConservedEntropy_G_Kernel
 
 
+  subroutine ComputeEntropyPerBaryon_G_Kernel ( SB, DS, N )
+ 	 
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      SB, &
+      DS
+    real ( KDR ), dimension ( : ), intent ( in ) :: & 	 	 
+      N 	 	 
+ 	 	 
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+
+    nValues = size ( SB )
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nValues
+      if ( N ( iV ) > 0.0_KDR ) then
+        SB ( iV ) = DS ( iV ) / N ( iV )
+      else
+        SB ( iV ) = 0.0_KDR
+      end if
+    end do !-- iV
+    !$OMP end parallel do
+
+  end subroutine ComputeEntropyPerBaryon_G_Kernel
+  
+  
   subroutine Apply_EOS_HN_T_Kernel &
                ( P, E, CS, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
                  M, N, T, YE )
@@ -860,7 +887,7 @@ contains
                  / SpecificEnergy_CGS
       P ( iV ) = P ( iV ) / Pressure_CGS
       T ( iV ) = T ( iV ) / MeV
-!       if ( Shock ( iV ) > 0.0_KDR ) then
+      if ( Shock ( iV ) > 0.0_KDR ) then
 !         ! call nuc_eos_short &
 !         !        ( N_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), SB ( iV ), &
 !         !          cs2, dedt, dpderho, dpdrhoe, munu, &
@@ -871,18 +898,18 @@ contains
                  X_A ( iV ), X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), &
                  Mu_E ( iV ), mu_n, mu_p, Mu_NP ( iV ), &
                  keytemp_e, keyerr, rfeps )
-!       else !-- not Shock
+      else !-- not Shock
         ! call nuc_eos_short &
         !        ( N_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), SB ( iV ), &
         !         cs2, dedt, dpderho, dpdrhoe, munu, &
         !         keytemp_s, keyerr, rfeps )
-        ! call nuc_eos_full &
-        !        ( Rho_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), &
-        !          SB ( iV ), cs2, dedt, dpderho, dpdrhoe, X_He ( iV ), &
-        !          X_A ( iV ), X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), &
-        !          Mu_E ( iV ), mu_n, mu_p, Mu_NP ( iV ), &
-        !          keytemp_s, keyerr, rfeps )
-!       end if !-- Shock
+        call nuc_eos_full &
+               ( Rho_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), &
+                 SB ( iV ), cs2, dedt, dpderho, dpdrhoe, X_He ( iV ), &
+                 X_A ( iV ), X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), &
+                 Mu_E ( iV ), mu_n, mu_p, Mu_NP ( iV ), &
+                 keytemp_s, keyerr, rfeps )
+      end if !-- Shock
       if ( keyerr /= 0 ) then
         Rank = PROGRAM_HEADER % Communicator % Rank
         call Show ( 'EOS error', CONSOLE % WARNING, &
@@ -928,7 +955,7 @@ contains
     !$OMP parallel do private ( iV ) 
     do iV = 1, nValues
       F_DP ( iV )  =  DP ( iV )  *  V_Dim ( iV ) 
-!      F_DS ( iV )  =  DS ( iV )  *  V_Dim ( iV ) 
+      F_DS ( iV )  =  DS ( iV )  *  V_Dim ( iV ) 
     end do !-- iV
     !$OMP end parallel do
 
