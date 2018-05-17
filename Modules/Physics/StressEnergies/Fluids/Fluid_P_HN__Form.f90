@@ -538,8 +538,8 @@ contains
              M, N, YE, Shock )
     ! call C % ComputeConservedEnergyKernel &   !-- For E computed from SB
     !        ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E ) 
-    call C % ComputeConservedEntropy_G_Kernel &  !-- For SB computed from E
-           ( DS, N, SB )
+    !call C % ComputeConservedEntropy_G_Kernel &  !-- For SB computed from E
+    !       ( DS, N, SB )
     call C % ComputeEigenspeeds_P_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
              V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33 )
@@ -865,23 +865,23 @@ contains
 !         !        ( N_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), SB ( iV ), &
 !         !          cs2, dedt, dpderho, dpdrhoe, munu, &
 !         !          keytemp_e, keyerr, rfeps )
-!         call nuc_eos_full &
-!                ( N_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), SB ( iV ), &
-!                  cs2, dedt, dpderho, dpdrhoe, X_He ( iV ), X_A ( iV ), &
-!                  X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), &
-!                  Mu_E ( iV ), mu_n, mu_p, Mu_NP ( iV ), &
-!                  keytemp_e, keyerr, rfeps )
+        call nuc_eos_full &
+               ( Rho_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), &
+                 SB ( iV ), cs2, dedt, dpderho, dpdrhoe, X_He ( iV ), &
+                 X_A ( iV ), X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), &
+                 Mu_E ( iV ), mu_n, mu_p, Mu_NP ( iV ), &
+                 keytemp_e, keyerr, rfeps )
 !       else !-- not Shock
         ! call nuc_eos_short &
         !        ( N_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), SB ( iV ), &
         !         cs2, dedt, dpderho, dpdrhoe, munu, &
         !         keytemp_s, keyerr, rfeps )
-        call nuc_eos_full &
-               ( Rho_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), &
-                 SB ( iV ), cs2, dedt, dpderho, dpdrhoe, X_He ( iV ), &
-                 X_A ( iV ), X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), &
-                 Mu_E ( iV ), mu_n, mu_p, MU_NP ( iV ), &
-                 keytemp_s, keyerr, rfeps )
+        ! call nuc_eos_full &
+        !        ( Rho_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), &
+        !          SB ( iV ), cs2, dedt, dpderho, dpdrhoe, X_He ( iV ), &
+        !          X_A ( iV ), X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), &
+        !          Mu_E ( iV ), mu_n, mu_p, Mu_NP ( iV ), &
+        !          keytemp_s, keyerr, rfeps )
 !       end if !-- Shock
       if ( keyerr /= 0 ) then
         Rank = PROGRAM_HEADER % Communicator % Rank
