@@ -128,7 +128,7 @@ contains
 
     call PS % SetGeometry ( GA )
 
-    FCC % GravityFactor = 0.1_KDR
+    FCC % GravityFactor = 0.7_KDR
     if ( present ( GravityFactorOption ) ) &
       FCC % GravityFactor = GravityFactorOption
     call PROGRAM_HEADER % GetParameter &
