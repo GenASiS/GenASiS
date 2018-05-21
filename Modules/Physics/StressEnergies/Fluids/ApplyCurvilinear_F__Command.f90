@@ -58,8 +58,15 @@ contains
     select type ( Chart => S % Chart )
     class is ( Chart_SL_Template )
 
-    if ( trim ( Chart % CoordinateSystem ) == 'CARTESIAN' ) &
+    if ( trim ( Chart % CoordinateSystem ) == 'CARTESIAN' ) then
+      if ( associated ( Timer ) ) call Timer % Stop ( )
       return
+    end if
+
+    if ( iStage == 1 ) then
+      call Clear ( S_F % Value ( :, S_F % CURVILINEAR_S_D ( 1 ) ) )
+      call Clear ( S_F % Value ( :, S_F % CURVILINEAR_S_D ( 2 ) ) )
+    end if
 
     select type ( F => Fluid )
     class is ( Fluid_D_Form )
@@ -91,6 +98,7 @@ contains
                S % dLogVolumeJacobian_dX ( 1 ) % Value, &
                S % dLogVolumeJacobian_dX ( 2 ) % Value, &
                TimeStep, S % B ( iStage ), Chart % nDimensions )
+!call Show ( S_F % Value ( :, S_F % CURVILINEAR_S_D ( 1 ) ), '>>> Curvilinear source' )
     end select !-- F
 
     class default

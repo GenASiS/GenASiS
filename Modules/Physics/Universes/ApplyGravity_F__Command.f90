@@ -70,20 +70,27 @@ contains
     do iD = 1, C % nDimensions
       call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( iD ), &
                     iMomentum )
+      if ( iStage == 1 ) &
+        call Clear ( FS % Value ( :, FS % GRAVITATIONAL_S_D ( iD ) ) )
       call ApplyGravityMomentum &
-             ( F % Value ( :, F % BARYON_MASS ), &
+             ( Increment % Value ( :, iMomentum ), & 
+               FS % Value ( :, FS % GRAVITATIONAL_S_D ( iD ) ), &
+               F % Value ( :, F % BARYON_MASS ), &
                F % Value ( :, F % CONSERVED_BARYON_DENSITY ), &
                G % Value ( :, G % GRAVITATIONAL_ACCELERATION_D ( iD ) ), &
-               TimeStep, S % B ( iStage ), &
-               Increment % Value ( :, iMomentum ), & 
-               FS % Value ( :, FS % GRAVITATIONAL_S_D ( iD ) ) )
+               TimeStep, S % B ( iStage ) )
+!call Show ( FS % Value ( :, FS % GRAVITATIONAL_S_D ( iD ) ), '>>> Gravitational source' )
     end do !-- iD
 
     select type ( F_P => Fluid )
     class is ( Fluid_P_Template )
       call Search ( F_P % iaConserved, F_P % CONSERVED_ENERGY, iEnergy )
+      if ( iStage == 1 ) &
+        call Clear ( FS % Value ( :, FS % GRAVITATIONAL_G ) )
       call ApplyGravityEnergy &
-             ( F % Value ( :, F % BARYON_MASS ), &
+             ( Increment % Value ( :, iEnergy ), & 
+               FS % Value ( :, FS % GRAVITATIONAL_G ), &
+               F % Value ( :, F % BARYON_MASS ), &
                F % Value ( :, F % CONSERVED_BARYON_DENSITY ), &
                F % Value ( :, F % VELOCITY_U ( 1 ) ), &
                F % Value ( :, F % VELOCITY_U ( 2 ) ), &
@@ -91,9 +98,7 @@ contains
                G % Value ( :, G % GRAVITATIONAL_ACCELERATION_D ( 1 ) ), &
                G % Value ( :, G % GRAVITATIONAL_ACCELERATION_D ( 2 ) ), &
                G % Value ( :, G % GRAVITATIONAL_ACCELERATION_D ( 3 ) ), &
-               TimeStep, S % B ( iStage ), &
-               Increment % Value ( :, iEnergy ), & 
-               FS % Value ( :, FS % GRAVITATIONAL_G ) )
+               TimeStep, S % B ( iStage ) )
     end select !-- F_P
 
     end select !-- C
@@ -108,8 +113,11 @@ contains
   end subroutine ApplyGravity_F
 
 
-  subroutine ApplyGravityMomentum ( M, N, GradPhi, dt, Weight_RK, K, S )
+  subroutine ApplyGravityMomentum ( K, S, M, N, GradPhi, dt, Weight_RK )
 
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      K, &
+      S
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       M, &
       N, &
@@ -117,9 +125,6 @@ contains
     real ( KDR ) :: &
       dt, &
       Weight_RK
-    real ( KDR ), dimension ( : ), intent ( out ) :: &
-      K, &
-      S
 
     integer ( KDI ) :: &
       iV, &  !-- iValue
@@ -140,9 +145,12 @@ contains
 
 
   subroutine ApplyGravityEnergy &
-               ( M, N, V_1, V_2, V_3, GradPhi_1, GradPhi_2, GradPhi_3, dt, &
-                 Weight_RK, K, S )
+               ( K, S, M, N, V_1, V_2, V_3, GradPhi_1, GradPhi_2, GradPhi_3, &
+                 dt, Weight_RK )
 
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      K, &
+      S
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       M, &
       N, &
@@ -151,9 +159,6 @@ contains
     real ( KDR ) :: &
       dt, &
       Weight_RK
-    real ( KDR ), dimension ( : ), intent ( out ) :: &
-      K, &
-      S
 
     integer ( KDI ) :: &
       iV, &  !-- iValue
