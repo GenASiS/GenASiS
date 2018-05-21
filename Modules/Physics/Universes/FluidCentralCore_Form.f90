@@ -141,6 +141,11 @@ contains
     select type ( FA => FCC % Current_ASC )
     class is ( Fluid_ASC_Form )
 
+    if ( .not. FCC % Dimensionless ) &
+      TimeUnit = UNIT % SECOND
+    if ( present ( TimeUnitOption ) ) &
+      TimeUnit = TimeUnitOption
+
     if ( FCC % Dimensionless ) then
       call FA % Initialize &
              ( PS, FluidType, &
@@ -149,7 +154,7 @@ contains
       call FA % Initialize &
              ( PS, FluidType, &
                Velocity_U_UnitOption &
-                 =  spread ( UNIT % SPEED_OF_LIGHT, 1, 3 ), &
+                 =  CoordinateUnit / TimeUnit, &
                BaryonMassUnitOption &
                  =  UNIT % ATOMIC_MASS_UNIT, &
                NumberDensityUnitOption &
@@ -166,6 +171,7 @@ contains
                  =  UNIT % MOMENTUM_SOLAR_MASS, &
                AngularMomentumUnitOption &
                  =  UNIT % SOLAR_KERR_PARAMETER, &
+               TimeUnitOption = TimeUnit, &
                BaryonMassReferenceOption = CONSTANT % ATOMIC_MASS_UNIT, &
                ShockThresholdOption = 1.0_KDR, &
                LimiterParameterOption = LimiterParameterOption )
@@ -190,11 +196,6 @@ contains
       FCC % TimeStepLabel ( 1 )  =  'Fluid'
       FCC % TimeStepLabel ( 2 )  =  'Gravity'
     end if
-
-    if ( .not. FCC % Dimensionless ) &
-      TimeUnit = UNIT % SECOND
-    if ( present ( TimeUnitOption ) ) &
-      TimeUnit = TimeUnitOption
 
     FinishTime = 1.0_KDR * TimeUnit
     if ( present ( FinishTimeOption ) ) &

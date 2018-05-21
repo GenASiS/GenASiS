@@ -59,9 +59,14 @@ contains
       CentralMass, &
       FinishTime
     type ( MeasuredValueForm ) :: &
-      TimeUnit
+      TimeUnit, &
+      BaryonMassUnit, &
+      NumberDensityUnit, &
+      EnergyDensityUnit
     type ( MeasuredValueForm ), dimension ( 3 ) :: &
-      CoordinateUnit
+      CoordinateUnit, &
+      Velocity_U_Unit, &
+      MomentumDensity_D_Unit
 
 
     if ( FCE % Type == '' ) &
@@ -146,27 +151,30 @@ contains
     if ( FCE % Dimensionless ) then
       call FA % Initialize ( PS, FluidType )
     else
+      BaryonMassUnit                =  UNIT % ATOMIC_MASS_UNIT
+      NumberDensityUnit             =  UNIT % NUMBER_DENSITY_NUCLEAR
+      EnergyDensityUnit             =  UNIT % ENERGY_DENSITY_NUCLEAR
+      Velocity_U_Unit               =  CoordinateUnit / TimeUnit
+      MomentumDensity_D_Unit        =  BaryonMassUnit * NumberDensityUnit &
+                                       * Velocity_U_Unit
+      MomentumDensity_D_Unit ( 2 )  =  MomentumDensity_D_Unit ( 2 ) &
+                                       * CoordinateUnit ( 1 ) ** 2
+      MomentumDensity_D_Unit ( 3 )  =  MomentumDensity_D_Unit ( 3 ) &
+                                       * CoordinateUnit ( 1 ) ** 2
       call FA % Initialize &
              ( PS, FluidType, &
-               Velocity_U_UnitOption &
-                 =  spread ( UNIT % SPEED_OF_LIGHT, 1, 3 ), &
-               BaryonMassUnitOption &
-                 =  UNIT % ATOMIC_MASS_UNIT, &
-               NumberDensityUnitOption &
-                 =  UNIT % NUMBER_DENSITY_NUCLEAR, &
-               EnergyDensityUnitOption &
-                 =  UNIT % ENERGY_DENSITY_NUCLEAR, &
-               NumberUnitOption &
-                 =  UNIT % SOLAR_BARYON_NUMBER, &
-               EnergyUnitOption &
-                 =  UNIT % ENERGY_SOLAR_MASS, &
-               MomentumUnitOption &
-                 =  UNIT % MOMENTUM_SOLAR_MASS, &
-               AngularMomentumUnitOption &
-                 =  UNIT % SOLAR_KERR_PARAMETER, &
-               TimeUnitOption = TimeUnit, &
-               BaryonMassReferenceOption = CONSTANT % ATOMIC_MASS_UNIT, &
-               LimiterParameterOption = LimiterParameterOption )
+               Velocity_U_UnitOption         =  Velocity_U_Unit, &
+               MomentumDensity_D_UnitOption  =  MomentumDensity_D_Unit, &
+               BaryonMassUnitOption          =  BaryonMassUnit, &
+               NumberDensityUnitOption       =  NumberDensityUnit , &
+               EnergyDensityUnitOption       =  EnergyDensityUnit, &
+               NumberUnitOption              =  UNIT % SOLAR_BARYON_NUMBER, &
+               EnergyUnitOption              =  UNIT % ENERGY_SOLAR_MASS, &
+               MomentumUnitOption            =  UNIT % MOMENTUM_SOLAR_MASS, &
+               AngularMomentumUnitOption     =  UNIT % SOLAR_KERR_PARAMETER, &
+               TimeUnitOption                =  TimeUnit, &
+               BaryonMassReferenceOption     =  CONSTANT % ATOMIC_MASS_UNIT, &
+               LimiterParameterOption        =  LimiterParameterOption )
     end if
 
 
