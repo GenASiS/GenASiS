@@ -20,12 +20,19 @@ FluidSymmetricCurvilinear_Form.o: \
   StressEnergies.o \
   FluidSymmetricCurvilinear_Form.f90
 
-FluidCentralExcision_Form.o: \
+FluidCentral_Template.o: \
   Basics.o \
   Mathematics.o \
   Spaces.o \
   StressEnergies.o \
   ApplyGravity_F__Command.o \
+  FluidCentral_Template.f90
+
+FluidCentralExcision_Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Spaces.o \
+  FluidCentral_Template.o \
   FluidCentralExcision_Form.f90
 
 FluidCentralCore_Form.o: \
@@ -33,7 +40,7 @@ FluidCentralCore_Form.o: \
   Mathematics.o \
   Spaces.o \
   StressEnergies.o \
-  ApplyGravity_F__Command.o \
+  FluidCentral_Template.o \
   FluidCentralCore_Form.f90
 
 Universe_Template.o: \
@@ -45,6 +52,7 @@ Universes.o: \
   ApplyGravity_F__Command.o \
   FluidBox_Form.o \
   FluidSymmetricCurvilinear_Form.o \
+  FluidCentral_Template.o \
   FluidCentralExcision_Form.o \
   FluidCentralCore_Form.o \
   Universe_Template.o \

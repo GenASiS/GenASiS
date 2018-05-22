@@ -3,34 +3,33 @@ module FluidCentralExcision_Form
   use Basics
   use Mathematics
   use Spaces
-  use StressEnergies
-  use ApplyGravity_F__Command
+  use FluidCentral_Template
 
   implicit none
   private
 
-  type, public, extends ( Integrator_C_PS_Template ) :: &
+  type, public, extends ( FluidCentralTemplate ) :: &
     FluidCentralExcisionForm
-      logical ( KDL ) :: &
-        Dimensionless = .false.
   contains
     procedure, public, pass :: &
       Initialize
     final :: &
       Finalize
+    procedure, private, pass :: &
+      InitializePositionSpace
+    procedure, private, pass :: &
+      InitializeGeometry
   end type FluidCentralExcisionForm
-
-    private :: &
-      ApplySources
 
 contains
 
 
   subroutine Initialize &
                ( FCE, Name, FluidType, GeometryType, DimensionlessOption, &
-                 TimeUnitOption, FinishTimeOption, LimiterParameterOption, &
+                 TimeUnitOption, FinishTimeOption, CourantFactorOption, &
+                 LimiterParameterOption, ShockThresholdOption, &
                  RadiusMaxOption, RadiusMinOption, RadialRatioOption, &
-                 CentralMassOption, nCellsPolarOption )
+                 CentralMassOption, nWriteOption, nCellsPolarOption )
 
     class ( FluidCentralExcisionForm ), intent ( inout ), target :: &
       FCE
@@ -44,48 +43,64 @@ contains
       TimeUnitOption
     real ( KDR ), intent ( in ), optional :: &
       FinishTimeOption, &
+      CourantFactorOption, &
+      LimiterParameterOption, &
+      ShockThresholdOption, &
       RadiusMaxOption, &
       RadiusMinOption, &
       RadialRatioOption, &
-      CentralMassOption, &
-      LimiterParameterOption
+      CentralMassOption
     integer ( KDI ), intent ( in ), optional :: &
+      nWriteOption, &
       nCellsPolarOption
-
-    real ( KDR ) :: &
-      RadiusMin, &
-      RadiusMax, &
-      RadialRatio, &
-      CentralMass, &
-      FinishTime
-    type ( MeasuredValueForm ) :: &
-      TimeUnit, &
-      BaryonMassUnit, &
-      NumberDensityUnit, &
-      EnergyDensityUnit
-    type ( MeasuredValueForm ), dimension ( 3 ) :: &
-      CoordinateUnit, &
-      Velocity_U_Unit, &
-      MomentumDensity_D_Unit
-
 
     if ( FCE % Type == '' ) &
       FCE % Type = 'a FluidCentralExcision'
 
-    FCE % Dimensionless = .false.
-    if ( present ( DimensionlessOption ) ) &
-      FCE % Dimensionless = DimensionlessOption
+    call FCE % InitializeTemplate_FC &
+               ( Name, FluidType, GeometryType, &
+                 DimensionlessOption = DimensionlessOption, &
+                 TimeUnitOption = TimeUnitOption, &
+                 FinishTimeOption = FinishTimeOption, &
+                 CourantFactorOption = CourantFactorOption, &
+                 LimiterParameterOption = LimiterParameterOption, &
+                 ShockThresholdOption = ShockThresholdOption, &
+                 RadiusMaxOption = RadiusMaxOption, &
+                 RadiusMinOption = RadiusMinOption, &
+                 RadialRatioOption = RadialRatioOption, &
+                 CentralMassOption = CentralMassOption, &
+                 nWriteOption = nWriteOption, &
+                 nCellsPolarOption = nCellsPolarOption )
+
+  end subroutine Initialize
 
 
-    !-- PositionSpace
+  subroutine InitializePositionSpace &
+               ( FC, RadiusMaxOption, RadiusCoreOption, RadiusMinOption, &
+                 RadialRatioOption, nCellsCoreOption, nCellsPolarOption )
 
-    allocate ( Atlas_SC_CE_Form :: FCE % PositionSpace )
-    select type ( PS => FCE % PositionSpace )
+    class ( FluidCentralExcisionForm ), intent ( inout ) :: &
+      FC
+    real ( KDR ), intent ( in ), optional :: &
+      RadiusMaxOption, &
+      RadiusCoreOption, &
+      RadiusMinOption, &
+      RadialRatioOption
+    integer ( KDI ), intent ( in ), optional :: &
+      nCellsCoreOption, &
+      nCellsPolarOption
+
+    real ( KDR ) :: &
+      RadiusMax, &
+      RadiusMin, &
+      RadialRatio
+
+    allocate ( Atlas_SC_CE_Form :: FC % PositionSpace )
+    select type ( PS => FC % PositionSpace )
     class is ( Atlas_SC_CE_Form )
     call PS % Initialize ( 'PositionSpace', PROGRAM_HEADER % Communicator )
 
-
-    if ( FCE % Dimensionless ) then
+    if ( FC % Dimensionless ) then
 
       call PS % CreateChart_CE &
              ( RadiusMaxOption = RadiusMaxOption, &
@@ -104,10 +119,8 @@ contains
       if ( present ( RadialRatioOption ) ) &
         RadialRatio = RadialRatioOption
 
-      CoordinateUnit  =  [ UNIT % KILOMETER, UNIT % RADIAN, UNIT % RADIAN ]
-
       call PS % CreateChart_CE &
-             ( CoordinateUnitOption = CoordinateUnit, &
+             ( CoordinateUnitOption = FC % CoordinateUnit, &
                RadiusMaxOption = RadiusMax, &
                RadiusMinOption = RadiusMin, &
                RadialRatioOption = RadialRatio, &
@@ -115,11 +128,29 @@ contains
 
     end if !-- Dimensionless
 
+    end select !-- PS
 
-    allocate ( Geometry_ASC_Form :: PS % Geometry_ASC )
-    select type ( GA => PS % Geometry_ASC )
-    class is ( Geometry_ASC_Form )
-    if ( FCE % Dimensionless ) then
+  end subroutine InitializePositionSpace
+
+
+  subroutine InitializeGeometry &
+               ( FC, GA, PS, GeometryType, CentralMassOption )
+
+    class ( FluidCentralExcisionForm ), intent ( inout ) :: &
+      FC
+    type ( Geometry_ASC_Form ), intent ( inout ) :: &
+      GA
+    class ( Atlas_SC_Form ), intent ( in ) :: &
+      PS
+    character ( * ), intent ( in )  :: &
+      GeometryType
+    real ( KDR ), intent ( in ), optional :: &
+      CentralMassOption
+
+    real ( KDR ) :: &
+      CentralMass
+
+    if ( FC % Dimensionless ) then
       call GA % Initialize &
              ( PS, GeometryType, GravitySolverTypeOption = 'CENTRAL_MASS', &
                GravitationalConstantOption = 1.0_KDR, &
@@ -134,79 +165,7 @@ contains
                CentralMassOption = CentralMass )
     end if !-- Dimensionless
 
-    call PS % SetGeometry ( GA )
-
-
-    !-- Fluid
-
-    allocate ( Fluid_ASC_Form :: FCE % Current_ASC )
-    select type ( FA => FCE % Current_ASC )
-    class is ( Fluid_ASC_Form )
-
-    if ( .not. FCE % Dimensionless ) &
-      TimeUnit = UNIT % SECOND
-    if ( present ( TimeUnitOption ) ) &
-      TimeUnit = TimeUnitOption
-
-    if ( FCE % Dimensionless ) then
-      call FA % Initialize ( PS, FluidType )
-    else
-      BaryonMassUnit                =  UNIT % ATOMIC_MASS_UNIT
-      NumberDensityUnit             =  UNIT % NUMBER_DENSITY_NUCLEAR
-      EnergyDensityUnit             =  UNIT % ENERGY_DENSITY_NUCLEAR
-      Velocity_U_Unit               =  CoordinateUnit / TimeUnit
-      MomentumDensity_D_Unit        =  BaryonMassUnit * NumberDensityUnit &
-                                       * Velocity_U_Unit
-      MomentumDensity_D_Unit ( 2 )  =  MomentumDensity_D_Unit ( 2 ) &
-                                       * CoordinateUnit ( 1 ) ** 2
-      MomentumDensity_D_Unit ( 3 )  =  MomentumDensity_D_Unit ( 3 ) &
-                                       * CoordinateUnit ( 1 ) ** 2
-      call FA % Initialize &
-             ( PS, FluidType, &
-               Velocity_U_UnitOption         =  Velocity_U_Unit, &
-               MomentumDensity_D_UnitOption  =  MomentumDensity_D_Unit, &
-               BaryonMassUnitOption          =  BaryonMassUnit, &
-               NumberDensityUnitOption       =  NumberDensityUnit , &
-               EnergyDensityUnitOption       =  EnergyDensityUnit, &
-               NumberUnitOption              =  UNIT % SOLAR_BARYON_NUMBER, &
-               EnergyUnitOption              =  UNIT % ENERGY_SOLAR_MASS, &
-               MomentumUnitOption            =  UNIT % MOMENTUM_SOLAR_MASS, &
-               AngularMomentumUnitOption     =  UNIT % SOLAR_KERR_PARAMETER, &
-               TimeUnitOption                =  TimeUnit, &
-               BaryonMassReferenceOption     =  CONSTANT % ATOMIC_MASS_UNIT, &
-               LimiterParameterOption        =  LimiterParameterOption )
-    end if
-
-
-    !-- Step
-
-    allocate ( Step_RK2_C_ASC_Form :: FCE % Step )
-    select type ( S => FCE % Step )
-    class is ( Step_RK2_C_ASC_Form )
-    call S % Initialize ( FA, Name )
-    S % ApplySources % Pointer => ApplySources
-    end select !-- S
-
-
-    !-- Template
-
-    FinishTime = 1.0_KDR * TimeUnit
-    if ( present ( FinishTimeOption ) ) &
-      FinishTime = FinishTimeOption
-
-    call FCE % InitializeTemplate_C_PS &
-           ( Name, TimeUnitOption = TimeUnit, &
-             FinishTimeOption = FinishTime )
-    call Show ( FCE % Dimensionless, 'Dimensionless' )
-
-
-    !-- Cleanup
-
-    end select !-- FA
-    end select !-- GA
-    end select !-- PS
-
-  end subroutine Initialize
+  end subroutine InitializeGeometry
 
 
   impure elemental subroutine Finalize ( FCE )
@@ -217,31 +176,6 @@ contains
     call FCE % FinalizeTemplate_C_PS ( )
 
   end subroutine Finalize
-
-
-  subroutine ApplySources &
-               ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
-
-    class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
-      S
-    class ( Sources_C_Form ), intent ( inout ) :: &
-      Sources_F
-    type ( VariableGroupForm ), intent ( inout ), target :: &
-      Increment
-    class ( CurrentTemplate ), intent ( in ) :: &
-      Fluid
-    real ( KDR ), intent ( in ) :: &
-      TimeStep
-    integer ( KDI ), intent ( in ) :: &
-      iStage
-
-    call ApplyCurvilinear_F &
-           ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
-
-    call ApplyGravity_F &
-           ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
-
-  end subroutine ApplySources
 
 
 end module FluidCentralExcision_Form

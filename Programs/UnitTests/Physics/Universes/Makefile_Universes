@@ -27,7 +27,7 @@ FluidCentralExcision_Form_Test: ThirdParty.a Basics.a Mathematics.a Spaces.a \
 	$(LINK) $(FLAGS) \
           -o FluidCentralExcision_Form_Test_$(MACHINE) \
           FluidCentralExcision_Form_Test.o FluidCentralExcision_Form.o \
-          ApplyGravity_F__Command.o \
+          FluidCentral_Template.o ApplyGravity_F__Command.o \
           StressEnergies.a Spaces.a Mathematics.a Basics.a ThirdParty.a \
           $(LIBRARIES)
 
@@ -36,7 +36,7 @@ FluidCentralCore_Form_Test: ThirdParty.a Basics.a Mathematics.a Spaces.a \
 	$(LINK) $(FLAGS) \
           -o FluidCentralCore_Form_Test_$(MACHINE) \
           FluidCentralCore_Form_Test.o FluidCentralCore_Form.o \
-          ApplyGravity_F__Command.o \
+          FluidCentral_Template.o ApplyGravity_F__Command.o \
           StressEnergies.a Spaces.a Mathematics.a Basics.a ThirdParty.a \
           $(LIBRARIES)
 

@@ -4,21 +4,23 @@ module FluidCentralCore_Form
   use Mathematics
   use Spaces
   use StressEnergies
-  use ApplyGravity_F__Command
+  use FluidCentral_Template
 
   implicit none
   private
 
-  type, public, extends ( Integrator_C_PS_Template ) :: FluidCentralCoreForm
+  type, public, extends ( FluidCentralTemplate ) :: FluidCentralCoreForm
     real ( KDR ) :: &
       GravityFactor
-    logical ( KDL ) :: &
-      Dimensionless = .false.
   contains
     procedure, public, pass :: &
       Initialize
     final :: &
       Finalize
+    procedure, private, pass :: &
+      InitializePositionSpace
+    procedure, private, pass :: &
+      InitializeGeometry
     procedure, private, pass :: &
       SetWriteTimeInterval
     procedure, public, pass :: &
@@ -29,11 +31,8 @@ module FluidCentralCore_Form
       ComputeTimeStep_G_ASC
   end type FluidCentralCoreForm
 
-    class ( FluidCentralCoreForm ), private, pointer :: &
-      FluidCentralCore => null ( )
-
-    private :: &
-      ApplySources
+!    class ( FluidCentralCoreForm ), private, pointer :: &
+!      FluidCentralCore => null ( )
 
       private :: &
         LocalMax, &
@@ -46,7 +45,9 @@ contains
                ( FCC, Name, FluidType, GeometryType, &
                  DimensionlessOption, TimeUnitOption, FinishTimeOption, &
                  CourantFactorOption, GravityFactorOption, &
-                 LimiterParameterOption, nWriteOption )
+                 LimiterParameterOption, ShockThresholdOption, &
+                 RadiusMaxOption, RadiusCoreOption, RadialRatioOption, &
+                 nWriteOption, nCellsCoreOption )
 
     class ( FluidCentralCoreForm ), intent ( inout ), target :: &
       FCC
@@ -62,39 +63,81 @@ contains
       FinishTimeOption, &
       CourantFactorOption, &
       GravityFactorOption, &
-      LimiterParameterOption
+      LimiterParameterOption, &
+      ShockThresholdOption, &
+      RadiusMaxOption, &
+      RadiusCoreOption, &
+      RadialRatioOption
     integer ( KDI ), intent ( in ), optional :: &
+      nCellsCoreOption, &
       nWriteOption
-
-    real ( KDR ) :: &
-      RadiusCore, &
-      RadiusMax, &
-      RadialRatio, &
-      FinishTime
-    type ( MeasuredValueForm ) :: &
-      TimeUnit
-    type ( MeasuredValueForm ), dimension ( 3 ) :: &
-      CoordinateUnit
-
 
     if ( FCC % Type == '' ) &
       FCC % Type = 'a FluidCentralCore'
 
-    FluidCentralCore => FCC
+!    FluidCentralCore => FCC
 
-    FCC % Dimensionless = .false.
-    if ( present ( DimensionlessOption ) ) &
-      FCC % Dimensionless = DimensionlessOption
+    if ( trim ( GeometryType ) == 'NEWTONIAN' ) then
+
+      if ( .not. allocated ( FCC % TimeStepLabel ) ) &
+        allocate ( FCC % TimeStepLabel ( 2 ) )
+      FCC % TimeStepLabel ( 1 )  =  'Fluid'
+      FCC % TimeStepLabel ( 2 )  =  'Gravity'
+
+      FCC % GravityFactor = 0.7_KDR
+      if ( present ( GravityFactorOption ) ) &
+        FCC % GravityFactor = GravityFactorOption
+      call PROGRAM_HEADER % GetParameter &
+             ( FCC % GravityFactor, 'GravityFactor' )
+
+    end if
+
+    call FCC % InitializeTemplate_FC &
+               ( Name, FluidType, GeometryType, &
+                 DimensionlessOption = DimensionlessOption, &
+                 TimeUnitOption = TimeUnitOption, &
+                 FinishTimeOption = FinishTimeOption, &
+                 CourantFactorOption = CourantFactorOption, &
+                 LimiterParameterOption = LimiterParameterOption, &
+                 ShockThresholdOption = ShockThresholdOption, &
+                 RadiusMaxOption = RadiusMaxOption, &
+                 RadiusCoreOption = RadiusCoreOption, &
+                 RadialRatioOption = RadialRatioOption, &
+                 nWriteOption = nWriteOption, &
+                 nCellsCoreOption = nCellsCoreOption )
+
+    if ( trim ( GeometryType ) == 'NEWTONIAN' ) &
+      call Show ( FCC % GravityFactor, 'GravityFactor' )
+
+  end subroutine Initialize
 
 
-    !-- PositionSpace
+  subroutine InitializePositionSpace &
+               ( FC, RadiusMaxOption, RadiusCoreOption, RadiusMinOption, &
+                 RadialRatioOption, nCellsCoreOption, nCellsPolarOption )
 
-    allocate ( Atlas_SC_CC_Form :: FCC % PositionSpace )
-    select type ( PS => FCC % PositionSpace )
+    class ( FluidCentralCoreForm ), intent ( inout ) :: &
+      FC
+    real ( KDR ), intent ( in ), optional :: &
+      RadiusMaxOption, &
+      RadiusCoreOption, &
+      RadiusMinOption, &
+      RadialRatioOption
+    integer ( KDI ), intent ( in ), optional :: &
+      nCellsCoreOption, &
+      nCellsPolarOption
+
+    real ( KDR ) :: &
+      RadiusMax, &
+      RadiusCore, &
+      RadialRatio
+
+    allocate ( Atlas_SC_CC_Form :: FC % PositionSpace )
+    select type ( PS => FC % PositionSpace )
     class is ( Atlas_SC_CC_Form )
     call PS % Initialize ( 'PositionSpace', PROGRAM_HEADER % Communicator )
 
-    if ( FCC % Dimensionless ) then
+    if ( FC % Dimensionless ) then
 
       call PS % CreateChart_CC ( )
 
@@ -104,20 +147,35 @@ contains
       RadiusMax    =  1.0e4_KDR  *  UNIT % KILOMETER
       RadialRatio  =  6.5_KDR
 
-      CoordinateUnit  =  [ UNIT % KILOMETER, UNIT % RADIAN, UNIT % RADIAN ]
-
       call PS % CreateChart_CC &
-             ( CoordinateUnitOption = CoordinateUnit, &
+             ( CoordinateUnitOption = FC % CoordinateUnit, &
                RadiusCoreOption = RadiusCore, &
                RadiusMaxOption = RadiusMax, &
-               RadialRatioOption = RadialRatio )
+               RadialRatioOption = RadialRatio, &
+               nCellsCoreOption = nCellsCoreOption )
 
     end if !-- Dimensionless
 
-    allocate ( Geometry_ASC_Form :: PS % Geometry_ASC )
-    select type ( GA => PS % Geometry_ASC )
-    class is ( Geometry_ASC_Form )
-    if ( FCC % Dimensionless ) then
+    end select !-- PS
+
+  end subroutine InitializePositionSpace
+
+
+  subroutine InitializeGeometry &
+               ( FC, GA, PS, GeometryType, CentralMassOption )
+
+    class ( FluidCentralCoreForm ), intent ( inout ) :: &
+      FC
+    type ( Geometry_ASC_Form ), intent ( inout ) :: &
+      GA
+    class ( Atlas_SC_Form ), intent ( in ) :: &
+      PS
+    character ( * ), intent ( in )  :: &
+      GeometryType
+    real ( KDR ), intent ( in ), optional :: &
+      CentralMassOption
+
+    if ( FC % Dimensionless ) then
       call GA % Initialize &
              ( PS, GeometryType, GravitySolverTypeOption = 'MULTIPOLE', &
                GravitationalConstantOption = 1.0_KDR )
@@ -126,97 +184,7 @@ contains
              ( PS, GeometryType, GravitySolverTypeOption = 'MULTIPOLE' )
     end if !-- Dimensionless
 
-    call PS % SetGeometry ( GA )
-
-    FCC % GravityFactor = 0.7_KDR
-    if ( present ( GravityFactorOption ) ) &
-      FCC % GravityFactor = GravityFactorOption
-    call PROGRAM_HEADER % GetParameter &
-           ( FCC % GravityFactor, 'GravityFactor' )
-
-
-    !-- Fluid
-
-    allocate ( Fluid_ASC_Form :: FCC % Current_ASC )
-    select type ( FA => FCC % Current_ASC )
-    class is ( Fluid_ASC_Form )
-
-    if ( .not. FCC % Dimensionless ) &
-      TimeUnit = UNIT % SECOND
-    if ( present ( TimeUnitOption ) ) &
-      TimeUnit = TimeUnitOption
-
-    if ( FCC % Dimensionless ) then
-      call FA % Initialize &
-             ( PS, FluidType, &
-               LimiterParameterOption = LimiterParameterOption )
-    else
-      call FA % Initialize &
-             ( PS, FluidType, &
-               Velocity_U_UnitOption &
-                 =  CoordinateUnit / TimeUnit, &
-               BaryonMassUnitOption &
-                 =  UNIT % ATOMIC_MASS_UNIT, &
-               NumberDensityUnitOption &
-                 =  UNIT % NUMBER_DENSITY_NUCLEAR, &
-               EnergyDensityUnitOption &
-                 =  UNIT % ENERGY_DENSITY_NUCLEAR, &
-               TemperatureUnitOption &
-                 =  UNIT % MEGA_ELECTRON_VOLT, &
-               NumberUnitOption &
-                 =  UNIT % SOLAR_BARYON_NUMBER, &
-               EnergyUnitOption &
-                 =  UNIT % ENERGY_SOLAR_MASS, &
-               MomentumUnitOption &
-                 =  UNIT % MOMENTUM_SOLAR_MASS, &
-               AngularMomentumUnitOption &
-                 =  UNIT % SOLAR_KERR_PARAMETER, &
-               TimeUnitOption = TimeUnit, &
-               BaryonMassReferenceOption = CONSTANT % ATOMIC_MASS_UNIT, &
-               ShockThresholdOption = 1.0_KDR, &
-               LimiterParameterOption = LimiterParameterOption )
-    end if
-
-
-    !-- Step
-
-    allocate ( Step_RK2_C_ASC_Form :: FCC % Step )
-    select type ( S => FCC % Step )
-    class is ( Step_RK2_C_ASC_Form )
-    call S % Initialize ( FA, Name )
-    S % ApplySources % Pointer => ApplySources
-    end select !-- S
-
-
-    !-- Template
-
-    if ( trim ( GeometryType ) == 'NEWTONIAN' ) then
-      if ( .not. allocated ( FCC % TimeStepLabel ) ) &
-        allocate ( FCC % TimeStepLabel ( 2 ) )
-      FCC % TimeStepLabel ( 1 )  =  'Fluid'
-      FCC % TimeStepLabel ( 2 )  =  'Gravity'
-    end if
-
-    FinishTime = 1.0_KDR * TimeUnit
-    if ( present ( FinishTimeOption ) ) &
-      FinishTime = FinishTimeOption
-
-    call FCC % InitializeTemplate_C_PS &
-           ( Name, TimeUnitOption = TimeUnit, &
-             FinishTimeOption = FinishTime, &
-             CourantFactorOption = CourantFactorOption, &
-             nWriteOption = nWriteOption )
-    call Show ( FCC % GravityFactor, 'GravityFactor' )
-    call Show ( FCC % Dimensionless, 'Dimensionless' )
-
-
-    !-- Cleanup
-
-    end select !-- FA
-    end select !-- GA
-    end select !-- PS
-
-  end subroutine Initialize
+  end subroutine InitializeGeometry
 
 
   impure elemental subroutine Finalize ( FCC )
@@ -429,31 +397,6 @@ contains
     nullify ( G )
 
   end subroutine ComputeTimeStep_G_ASC
-
-
-  subroutine ApplySources &
-               ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
-
-    class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
-      S
-    class ( Sources_C_Form ), intent ( inout ) :: &
-      Sources_F
-    type ( VariableGroupForm ), intent ( inout ), target :: &
-      Increment
-    class ( CurrentTemplate ), intent ( in ) :: &
-      Fluid
-    real ( KDR ), intent ( in ) :: &
-      TimeStep
-    integer ( KDI ), intent ( in ) :: &
-      iStage
-
-    call ApplyCurvilinear_F &
-           ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
-
-    call ApplyGravity_F &
-           ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
-
-  end subroutine ApplySources
 
 
   function LocalMax ( IsProperCell, V ) result ( ML ) 
