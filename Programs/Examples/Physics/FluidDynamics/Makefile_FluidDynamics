@@ -49,11 +49,11 @@ FishboneMoncrief: ThirdParty.a GenASiS.a FishboneMoncrief.o
            FishboneMoncrief.o FishboneMoncrief_Form.o \
            GenASiS.a ThirdParty.a $(LIBRARIES)
 
-YahilLattimer: GenASiS.a YahilLattimer.o
+YahilLattimer: ThirdParty.a GenASiS.a YahilLattimer.o
 	$(LINK) $(FFLAGS) \
           -o YahilLattimer_$(MACHINE) \
           YahilLattimer.o YahilLattimer_Form.o \
-          GenASiS.a $(LIBRARIES)
+          GenASiS.a ThirdParty.a $(LIBRARIES)
 
 include $(PATH_GENASIS)/Build/Makefile_Dependencies
 # include ../Makefile_Dependencies
