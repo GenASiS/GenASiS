@@ -37,6 +37,7 @@ contains
     call FCC % Initialize &
            ( Name, FluidType = 'HEAVY_NUCLEUS', &
              GeometryType = 'NEWTONIAN', &
+             ShockThresholdOption = 1.0_KDR, &
              nWriteOption = 30 )
 
     !-- Initial Conditions
