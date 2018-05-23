@@ -1341,6 +1341,7 @@ contains
              ( C % Sources % Value ( :, iC ), Increment % Value ( :, iC ), &
                TimeStep, Weight_RK = S % B ( iStage ) )
     end do !-- iC
+!call Show ( C % Sources % Value ( :, 2 ), '>>> Divergence source' )
 
     end associate !-- C
 
