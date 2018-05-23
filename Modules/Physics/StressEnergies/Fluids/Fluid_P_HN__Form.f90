@@ -887,7 +887,7 @@ contains
                  / SpecificEnergy_CGS
       P ( iV ) = P ( iV ) / Pressure_CGS
       T ( iV ) = T ( iV ) / MeV
-      if ( Shock ( iV ) > 0.0_KDR ) then
+!      if ( Shock ( iV ) > 0.0_KDR ) then
 !         ! call nuc_eos_short &
 !         !        ( N_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), SB ( iV ), &
 !         !          cs2, dedt, dpderho, dpdrhoe, munu, &
@@ -898,18 +898,18 @@ contains
                  X_A ( iV ), X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), &
                  Mu_E ( iV ), mu_n, mu_p, Mu_NP ( iV ), &
                  keytemp_e, keyerr, rfeps )
-      else !-- not Shock
-        ! call nuc_eos_short &
-        !        ( N_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), SB ( iV ), &
-        !         cs2, dedt, dpderho, dpdrhoe, munu, &
-        !         keytemp_s, keyerr, rfeps )
-        call nuc_eos_full &
-               ( Rho_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), &
-                 SB ( iV ), cs2, dedt, dpderho, dpdrhoe, X_He ( iV ), &
-                 X_A ( iV ), X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), &
-                 Mu_E ( iV ), mu_n, mu_p, Mu_NP ( iV ), &
-                 keytemp_s, keyerr, rfeps )
-      end if !-- Shock
+      ! else !-- not Shock
+      !   ! call nuc_eos_short &
+      !   !        ( N_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), SB ( iV ), &
+      !   !         cs2, dedt, dpderho, dpdrhoe, munu, &
+      !   !         keytemp_s, keyerr, rfeps )
+      !   call nuc_eos_full &
+      !          ( Rho_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), &
+      !            SB ( iV ), cs2, dedt, dpderho, dpdrhoe, X_He ( iV ), &
+      !            X_A ( iV ), X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), &
+      !            Mu_E ( iV ), mu_n, mu_p, Mu_NP ( iV ), &
+      !            keytemp_s, keyerr, rfeps )
+      ! end if !-- Shock
       if ( keyerr /= 0 ) then
         Rank = PROGRAM_HEADER % Communicator % Rank
         call Show ( 'EOS error', CONSOLE % WARNING, &
