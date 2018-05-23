@@ -90,7 +90,8 @@ contains
     V_2 = 0.0_KDR
     V_3 = 0.0_KDR
 
-    call F % ComputeFromPrimitive ( G )
+!    call F % ComputeFromPrimitive ( G )
+    call F % ComputeFromTemperature ( F % Value, G, G % Value )
 
     end associate !-- N, etc.
     end select !-- PS

@@ -45,6 +45,8 @@ module Fluid_P_HN__Form
     procedure, public, pass :: &
       SetOutput
     procedure, public, pass ( C ) :: &
+      ComputeFromTemperature
+    procedure, public, pass ( C ) :: &
       ComputeFromPrimitiveCommon
     procedure, public, pass ( C ) :: &
       ComputeFromConservedCommon
@@ -64,6 +66,10 @@ module Fluid_P_HN__Form
       Apply_EOS_HN_T_Kernel
     procedure, public, nopass :: &
       Apply_EOS_HN_SB_E_Kernel
+    procedure, public, nopass :: &
+      Apply_EOS_HN_E_Kernel
+    procedure, public, nopass :: &
+      Apply_EOS_HN_SB_Kernel
   end type Fluid_P_HN_Form
 
     private :: &
@@ -183,7 +189,9 @@ contains
       allocate ( C % iaPrimitive ( C % N_PRIMITIVE ) )
     end if
     C % iaPrimitive ( oP + 1 : oP + C % N_PRIMITIVE_HEAVY_NUCLEUS ) &
-      = [ C % TEMPERATURE, C % PROTON_FRACTION ]
+!      = [ C % TEMPERATURE, C % PROTON_FRACTION ]
+      = [ C % INTERNAL_ENERGY, C % PROTON_FRACTION ]
+!      = [ C % ENTROPY_PER_BARYON, C % PROTON_FRACTION ]
 
     if ( .not. allocated ( C % iaConserved ) ) then
       C % N_CONSERVED = oC + C % N_CONSERVED_HEAVY_NUCLEUS
@@ -342,7 +350,7 @@ contains
   end subroutine SetOutput
   
   
-  subroutine ComputeFromPrimitiveCommon &
+  subroutine ComputeFromTemperature &
                ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
 
     real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
@@ -422,6 +430,117 @@ contains
     call C % Apply_EOS_HN_T_Kernel &
            ( P, E, CS, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
              M, N, T, YE )
+    call C % ComputeDensityMomentum_G_Kernel &
+           ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
+    call C % ComputeConservedEnergy_G_Kernel &
+           ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
+    call C % ComputeConservedProton_G_Kernel &
+           ( DP, N, YE )
+    call C % ComputeConservedEntropy_G_Kernel &
+           ( DS, N, SB )
+    call C % ComputeEigenspeeds_P_G_Kernel &
+           ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
+             V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33 )
+
+    end associate !-- FEP_1, etc.
+    end associate !-- M_DD_22, etc.
+    end associate !-- FV, etc.
+    
+    if ( associated ( C % Value, Value_C ) ) &
+      call C % Features % Detect ( )
+
+  end subroutine ComputeFromTemperature
+
+
+  subroutine ComputeFromPrimitiveCommon &
+               ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
+
+    real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
+      Value_C
+    class ( Fluid_P_HN_Form ), intent ( in ) :: &
+      C
+    class ( GeometryFlatForm ), intent ( in ) :: &
+      G
+    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+      Value_G
+    integer ( KDI ), intent ( in ), optional :: &
+      nValuesOption, &
+      oValueOption
+
+    integer ( KDI ) :: &
+      oV, &  !-- oValue
+      nV     !-- nValues
+      
+    associate &
+      ( FV => Value_C, &
+        GV => Value_G )
+
+    if ( present ( oValueOption ) ) then
+      oV = oValueOption
+    else
+      oV = 0
+    end if
+
+    if ( present ( nValuesOption ) ) then
+      nV = nValuesOption
+    else
+      nV = size ( FV, dim = 1 )
+    end if
+
+    associate &
+      ( M_DD_22 => GV ( oV + 1 : oV + nV, G % METRIC_DD_22 ), &
+        M_DD_33 => GV ( oV + 1 : oV + nV, G % METRIC_DD_33 ), &
+        M_UU_22 => GV ( oV + 1 : oV + nV, G % METRIC_UU_22 ), &
+        M_UU_33 => GV ( oV + 1 : oV + nV, G % METRIC_UU_33 ) )
+    associate &
+      ( FEP_1 => FV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_PLUS ( 1 ) ), &
+        FEP_2 => FV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_PLUS ( 2 ) ), &
+        FEP_3 => FV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_PLUS ( 3 ) ), &
+        FEM_1 => FV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_MINUS ( 1 ) ), &
+        FEM_2 => FV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_MINUS ( 2 ) ), &
+        FEM_3 => FV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_MINUS ( 3 ) ), &
+        M     => FV ( oV + 1 : oV + nV, C % BARYON_MASS ), &
+        N     => FV ( oV + 1 : oV + nV, C % COMOVING_BARYON_DENSITY ), &
+        V_1   => FV ( oV + 1 : oV + nV, C % VELOCITY_U ( 1 ) ), &
+        V_2   => FV ( oV + 1 : oV + nV, C % VELOCITY_U ( 2 ) ), &
+        V_3   => FV ( oV + 1 : oV + nV, C % VELOCITY_U ( 3 ) ), &
+        D     => FV ( oV + 1 : oV + nV, C % CONSERVED_BARYON_DENSITY ), &
+        S_1   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 1 ) ), &
+        S_2   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 2 ) ), &
+        S_3   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 3 ) ), &
+        E     => FV ( oV + 1 : oV + nV, C % INTERNAL_ENERGY ), &
+        G     => FV ( oV + 1 : oV + nV, C % CONSERVED_ENERGY ), &
+        P     => FV ( oV + 1 : oV + nV, C % PRESSURE ), &
+    !    Gamma => FV ( oV + 1 : oV + nV, C % ADIABATIC_INDEX ), &
+        CS    => FV ( oV + 1 : oV + nV, C % SOUND_SPEED ), &
+        MN    => FV ( oV + 1 : oV + nV, C % MACH_NUMBER ), &
+        T     => FV ( oV + 1 : oV + nV, C % TEMPERATURE ), &
+        SB    => FV ( oV + 1 : oV + nV, C % ENTROPY_PER_BARYON ), &
+        DP    => FV ( oV + 1 : oV + nV, C % CONSERVED_PROTON_DENSITY ), &
+        YE    => FV ( oV + 1 : oV + nV, C % PROTON_FRACTION ), &
+        DS    => FV ( oV + 1 : oV + nV, C % CONSERVED_ENTROPY ), &
+        X_P   => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_PROTON ), &
+        X_N   => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_NEUTRON ), &
+        X_He  => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_ALPHA ), &
+        X_A   => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_HEAVY ), &
+        Z     => FV ( oV + 1 : oV + nV, C % ATOMIC_NUMBER_HEAVY ), &
+        A     => FV ( oV + 1 : oV + nV, C % MASS_NUMBER_HEAVY ), &
+        Mu_NP => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_N_P ), &
+        Mu_E  => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_E ) )
+
+    call Copy ( C % Value ( :, C % PRESSURE ), P )
+    call Copy ( C % Value ( :, C % TEMPERATURE ), T )
+
+    call C % ComputeBaryonMassKernel ( M, C % BaryonMassReference )
+!    call C % Apply_EOS_HN_T_Kernel &
+!           ( P, E, CS, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
+!             M, N, T, YE )
+    call C % Apply_EOS_HN_E_Kernel &
+           ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
+             M, N, YE )
+!    call C % Apply_EOS_HN_SB_Kernel &
+!           ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
+!             M, N, YE )
     call C % ComputeDensityMomentum_G_Kernel &
            ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
     call C % ComputeConservedEnergy_G_Kernel &
@@ -536,6 +655,9 @@ contains
     call C % Apply_EOS_HN_SB_E_Kernel &
            ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
              M, N, YE, Shock )
+!    call C % Apply_EOS_HN_E_Kernel &
+!           ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
+!             M, N, YE )
     call C % ComputeConservedEnergy_G_Kernel &   !-- For E computed from SB
            ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E ) 
     call C % ComputeConservedEntropy_G_Kernel &  !-- For SB computed from E
@@ -831,6 +953,7 @@ contains
       E ( iV )      =  E ( iV ) * SpecificEnergy_CGS  +  OR_Shift
       E ( iV )      =  E ( iV ) * M ( iV ) * N ( iV )
       CS ( iV )     =  sqrt ( cs2 ) * Speed_CGS
+!      CS ( iV )     =  sqrt ( 2.0_KDR * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
       Mu_NP ( iV )  =  Mu_NP ( iV ) * MeV
       Mu_E  ( iV )  =  Mu_E ( iV ) * MeV
     end do
@@ -887,29 +1010,29 @@ contains
                  / SpecificEnergy_CGS
       P ( iV ) = P ( iV ) / Pressure_CGS
       T ( iV ) = T ( iV ) / MeV
-!      if ( Shock ( iV ) > 0.0_KDR ) then
-!         ! call nuc_eos_short &
-!         !        ( N_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), SB ( iV ), &
-!         !          cs2, dedt, dpderho, dpdrhoe, munu, &
-!         !          keytemp_e, keyerr, rfeps )
+      if ( Shock ( iV ) > 0.0_KDR ) then
+        ! call nuc_eos_short &
+        !        ( N_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), SB ( iV ), &
+        !          cs2, dedt, dpderho, dpdrhoe, munu, &
+        !          keytemp_e, keyerr, rfeps )
         call nuc_eos_full &
                ( Rho_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), &
                  SB ( iV ), cs2, dedt, dpderho, dpdrhoe, X_He ( iV ), &
                  X_A ( iV ), X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), &
                  Mu_E ( iV ), mu_n, mu_p, Mu_NP ( iV ), &
                  keytemp_e, keyerr, rfeps )
-      ! else !-- not Shock
-      !   ! call nuc_eos_short &
-      !   !        ( N_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), SB ( iV ), &
-      !   !         cs2, dedt, dpderho, dpdrhoe, munu, &
-      !   !         keytemp_s, keyerr, rfeps )
-      !   call nuc_eos_full &
-      !          ( Rho_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), &
-      !            SB ( iV ), cs2, dedt, dpderho, dpdrhoe, X_He ( iV ), &
-      !            X_A ( iV ), X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), &
-      !            Mu_E ( iV ), mu_n, mu_p, Mu_NP ( iV ), &
-      !            keytemp_s, keyerr, rfeps )
-      ! end if !-- Shock
+      else !-- not Shock
+        ! call nuc_eos_short &
+        !        ( N_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), SB ( iV ), &
+        !         cs2, dedt, dpderho, dpdrhoe, munu, &
+        !         keytemp_s, keyerr, rfeps )
+        call nuc_eos_full &
+               ( Rho_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), &
+                 SB ( iV ), cs2, dedt, dpderho, dpdrhoe, X_He ( iV ), &
+                 X_A ( iV ), X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), &
+                 Mu_E ( iV ), mu_n, mu_p, Mu_NP ( iV ), &
+                 keytemp_s, keyerr, rfeps )
+      end if !-- Shock
       if ( keyerr /= 0 ) then
         Rank = PROGRAM_HEADER % Communicator % Rank
         call Show ( 'EOS error', CONSOLE % WARNING, &
@@ -927,6 +1050,7 @@ contains
       E ( iV )      =  E ( iV ) * M ( iV ) * N ( iV )
       P ( iV )      =  P ( iV ) * Pressure_CGS
       CS ( iV )     =  sqrt ( cs2 ) * Speed_CGS
+!      CS ( iV )     =  sqrt ( 2.0_KDR * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
       T ( iV )      =  T ( iV ) * MeV
       Mu_NP ( iV )  =  Mu_NP ( iV ) * MeV
       Mu_E  ( iV )  =  Mu_E ( iV ) * MeV
@@ -934,6 +1058,170 @@ contains
     !$OMP end parallel do
     
   end subroutine Apply_EOS_HN_SB_E_Kernel
+
+
+  subroutine Apply_EOS_HN_E_Kernel &
+               ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
+                 M, N, YE )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      P, &
+      T, &
+      CS, &
+      E, &
+      SB, &
+      X_P, X_N, X_He, X_A, &
+      Z, A, &
+      Mu_NP, Mu_E
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      M, &
+      N, &
+      YE
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues, &
+      keytemp_e, &
+      keyerr, &
+      Rank
+    real ( KDR ) :: &
+      rfeps, &
+      Rho_Temp, &
+!      cs2, dedt, dpderho, dpdrhoe, munu
+      cs2, dedt, dpderho, dpdrhoe, mu_n, mu_p
+
+    nValues = size ( P )
+
+    !-- Compute P, T, Gamma, SB from N, E, YE
+
+    rfeps = 1.0e-9_KDR
+    keytemp_e = 0_KDI
+
+    !$OMP parallel do private ( iV ) 
+    do iV = 1, nValues
+      if ( N ( iV ) == 0.0_KDR ) cycle 
+      Rho_Temp   = M ( iV ) * N ( iV ) / MassDensity_CGS
+      E ( iV ) = ( E ( iV ) / ( M ( iV ) * N ( iV ) )  -  OR_Shift ) &
+                 / SpecificEnergy_CGS
+      P ( iV ) = P ( iV ) / Pressure_CGS
+      T ( iV ) = T ( iV ) / MeV
+      ! call nuc_eos_short &
+      !        ( N_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), SB ( iV ), &
+      !          cs2, dedt, dpderho, dpdrhoe, munu, &
+      !          keytemp_e, keyerr, rfeps )
+      call nuc_eos_full &
+             ( Rho_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), &
+               SB ( iV ), cs2, dedt, dpderho, dpdrhoe, X_He ( iV ), &
+               X_A ( iV ), X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), &
+               Mu_E ( iV ), mu_n, mu_p, Mu_NP ( iV ), &
+               keytemp_e, keyerr, rfeps )
+      if ( keyerr /= 0 ) then
+        Rank = PROGRAM_HEADER % Communicator % Rank
+        call Show ( 'EOS error', CONSOLE % WARNING, &
+                    DisplayRankOption = Rank )
+        call Show ( 'Fluid_P_HN__Form', 'module', CONSOLE % WARNING, &
+                    DisplayRankOption = Rank )
+        call Show ( 'Apply_EOS_HN_SB_E_Kernel', 'subroutine', &
+                    CONSOLE % WARNING, DisplayRankOption = Rank )
+        call Show ( Rank, 'Rank', DisplayRankOption = Rank )
+        call Show ( iV, 'iV', CONSOLE % WARNING, &
+                    DisplayRankOption = Rank )
+      end if
+!       call nuc_eos_one ( N_Temp, T ( iV ), YE ( iV ), Gamma ( iV ), 19 )
+      E ( iV )      =  E ( iV ) * SpecificEnergy_CGS  +  OR_Shift
+      E ( iV )      =  E ( iV ) * M ( iV ) * N ( iV )
+      P ( iV )      =  P ( iV ) * Pressure_CGS
+      CS ( iV )     =  sqrt ( cs2 ) * Speed_CGS
+!      CS ( iV )     =  sqrt ( 2.0_KDR * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
+      T ( iV )      =  T ( iV ) * MeV
+      Mu_NP ( iV )  =  Mu_NP ( iV ) * MeV
+      Mu_E  ( iV )  =  Mu_E ( iV ) * MeV
+    end do
+    !$OMP end parallel do
+    
+  end subroutine Apply_EOS_HN_E_Kernel
+
+
+  subroutine Apply_EOS_HN_SB_Kernel &
+               ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
+                 M, N, YE )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      P, &
+      T, &
+      CS, &
+      E, &
+      SB, &
+      X_P, X_N, X_He, X_A, &
+      Z, A, &
+      Mu_NP, Mu_E
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      M, &
+      N, &
+      YE
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues, &
+      keytemp_s, &
+      keyerr, &
+      Rank
+    real ( KDR ) :: &
+      rfeps, &
+      Rho_Temp, &
+!      cs2, dedt, dpderho, dpdrhoe, munu
+      cs2, dedt, dpderho, dpdrhoe, mu_n, mu_p
+
+    nValues = size ( P )
+
+    !-- Compute P, T, Gamma, SB from N, E, YE
+
+    rfeps = 1.0e-9_KDR
+    keytemp_s = 2_KDI
+
+    !$OMP parallel do private ( iV ) 
+    do iV = 1, nValues
+      if ( N ( iV ) == 0.0_KDR ) cycle 
+      Rho_Temp   = M ( iV ) * N ( iV ) / MassDensity_CGS
+      E ( iV ) = ( E ( iV ) / ( M ( iV ) * N ( iV ) )  -  OR_Shift ) &
+                 / SpecificEnergy_CGS
+      P ( iV ) = P ( iV ) / Pressure_CGS
+      T ( iV ) = T ( iV ) / MeV
+      ! call nuc_eos_short &
+      !        ( N_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), SB ( iV ), &
+      !         cs2, dedt, dpderho, dpdrhoe, munu, &
+      !         keytemp_s, keyerr, rfeps )
+      call nuc_eos_full &
+             ( Rho_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), &
+               SB ( iV ), cs2, dedt, dpderho, dpdrhoe, X_He ( iV ), &
+               X_A ( iV ), X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), &
+               Mu_E ( iV ), mu_n, mu_p, Mu_NP ( iV ), &
+               keytemp_s, keyerr, rfeps )
+      if ( keyerr /= 0 ) then
+        Rank = PROGRAM_HEADER % Communicator % Rank
+        call Show ( 'EOS error', CONSOLE % WARNING, &
+                    DisplayRankOption = Rank )
+        call Show ( 'Fluid_P_HN__Form', 'module', CONSOLE % WARNING, &
+                    DisplayRankOption = Rank )
+        call Show ( 'Apply_EOS_HN_SB_E_Kernel', 'subroutine', &
+                    CONSOLE % WARNING, DisplayRankOption = Rank )
+        call Show ( Rank, 'Rank', DisplayRankOption = Rank )
+        call Show ( iV, 'iV', CONSOLE % WARNING, &
+                    DisplayRankOption = Rank )
+      end if
+!       call nuc_eos_one ( N_Temp, T ( iV ), YE ( iV ), Gamma ( iV ), 19 )
+      E ( iV )      =  E ( iV ) * SpecificEnergy_CGS  +  OR_Shift
+      E ( iV )      =  E ( iV ) * M ( iV ) * N ( iV )
+      P ( iV )      =  P ( iV ) * Pressure_CGS
+      CS ( iV )     =  sqrt ( cs2 ) * Speed_CGS
+!      CS ( iV )     =  sqrt ( 2.0_KDR * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
+      T ( iV )      =  T ( iV ) * MeV
+      Mu_NP ( iV )  =  Mu_NP ( iV ) * MeV
+      Mu_E  ( iV )  =  Mu_E ( iV ) * MeV
+    end do
+    !$OMP end parallel do
+    
+  end subroutine Apply_EOS_HN_SB_Kernel
 
 
   subroutine ComputeRawFluxesKernel ( F_DP, F_DS, DP, DS, V_Dim )
