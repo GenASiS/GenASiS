@@ -66,7 +66,8 @@ contains
 
 
   subroutine ComputeChart_SL &
-               ( G, CSL, Input, iDimension, LimiterParameterOption )
+               ( G, CSL, Input, iDimension, UseLimiterOption, &
+                 LimiterParameterOption )
 
     class ( GradientForm ), intent ( inout ) :: &
       G
@@ -76,6 +77,8 @@ contains
       Input
     integer ( KDI ), intent ( in ) :: &
       iDimension
+    real ( KDR ), dimension ( : ), intent ( in ), optional :: &
+      UseLimiterOption
     real ( KDR ), intent ( in ), optional :: &
       LimiterParameterOption
 
@@ -84,7 +87,8 @@ contains
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       dV_I, &
       dX_I, &
-      dVdX
+      dVdX, &
+      UL_Option
     type ( VariableGroupForm ), allocatable :: &
       Coordinate
     class ( GeometryFlatForm ), pointer :: &
@@ -120,9 +124,18 @@ contains
              ( VD % OutputInner %  Value ( :, iV ), dV_I )
       call CSL % SetVariablePointer &
              ( G % Output % Value ( :, iV ), dVdX )
-      call ComputeChart_SL_Kernel &
-             ( dV_I, dX_I, iDimension, CSL % nGhostLayers ( iDimension ), &
-               dVdX, LimiterParameterOption )
+      if ( present ( UseLimiterOption ) ) then
+        call CSL % SetVariablePointer &
+               ( UseLimiterOption, UL_Option )
+        call ComputeChart_SL_Kernel &
+               ( dV_I, dX_I, iDimension, CSL % nGhostLayers ( iDimension ), &
+                 dVdX, UseLimiterOption = UL_Option, &
+                 ThetaOption = LimiterParameterOption )
+      else
+        call ComputeChart_SL_Kernel &
+               ( dV_I, dX_I, iDimension, CSL % nGhostLayers ( iDimension ), &
+                 dVdX, ThetaOption = LimiterParameterOption )
+      end if
     end do !-- iV
 
     end associate !-- VD, etc.
@@ -150,7 +163,7 @@ contains
 
 
   subroutine ComputeChart_SL_Kernel &
-               ( dV_I, dX_I, iD, oV, dVdX, ThetaOption )
+               ( dV_I, dX_I, iD, oV, dVdX, UseLimiterOption, ThetaOption )
 
     real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
       dV_I, &
@@ -160,6 +173,8 @@ contains
       oV
     real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
       dVdX
+    real ( KDR ), dimension ( :, :, : ), intent ( in ), optional :: &
+      UseLimiterOption
     real ( KDR ), intent ( in ), optional :: &
       ThetaOption
 
@@ -188,7 +203,45 @@ contains
     iaS = 0
     iaS ( iD ) = +1
 
-    if ( present ( ThetaOption ) ) then
+    if ( present ( ThetaOption ) .and. present ( UseLimiterOption ) ) then
+      associate &
+        ( Theta => ThetaOption, &
+          UseLimiter => UseLimiterOption )
+
+      !$OMP parallel do private ( iV, jV, kV, iaVS, dV_L, dV_R, dX_L, dX_R )
+      do kV = lV ( 3 ), uV ( 3 ) 
+        do jV = lV ( 2 ), uV ( 2 )
+          do iV = lV ( 1 ), uV ( 1 )
+
+            iaVS = [ iV, jV, kV ] + iaS
+
+            dV_L = dV_I ( iV, jV, kV )
+            dV_R = dV_I ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) )
+            dX_L = dX_I ( iV, jV, kV )
+            dX_R = dX_I ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) )
+              
+            if ( UseLimiter ( iV, jV, kV ) > 0.0_KDR ) then
+call Show ( UseLimiter ( iV, jV, kV ), '>>> UseLimiter' )
+call Show ( [ iV, jV, kV ], '>>> [ iV, jV, kV ]' )
+              dVdX ( iV, jV, kV ) &
+                = ( sign ( 0.5_KDR, dV_L ) + sign ( 0.5_KDR, dV_R ) ) &
+                  * min ( abs ( Theta * dV_L / dX_L ), &
+                          abs ( Theta * dV_R / dX_R ), &
+                          abs ( ( dX_R ** 2  *  dV_L  +  dX_L ** 2  *  dV_R ) &
+                                / ( dX_L * dX_R * ( dX_L + dX_R ) ) ) )
+            else
+              dVdX ( iV, jV, kV )&
+                =  ( dX_R ** 2  *  dV_L  +  dX_L ** 2  *  dV_R ) &
+                   / ( dX_L * dX_R * ( dX_L + dX_R ) )
+            end if
+
+          end do !-- iV
+        end do !-- jV
+      end do !-- kV
+      !$OMP end parallel do
+
+      end associate !-- Theta    
+    else if ( present ( ThetaOption ) ) then
       associate ( Theta => ThetaOption )
 
       !$OMP parallel do private ( iV, jV, kV, iaVS, dV_L, dV_R, dX_L, dX_R )
@@ -209,6 +262,7 @@ contains
                         abs ( Theta * dV_R / dX_R ), &
                         abs ( ( dX_R ** 2  *  dV_L  +  dX_L ** 2  *  dV_R ) &
                               / ( dX_L * dX_R * ( dX_L + dX_R ) ) ) )
+
           end do !-- iV
         end do !-- jV
       end do !-- kV

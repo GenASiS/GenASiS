@@ -110,7 +110,8 @@ contains
     type ( MeasuredValueForm ), dimension ( 3 ) :: &
       Velocity_U_Unit, &
       MomentumDensity_D_Unit
-
+    class ( Fluid_D_Form ), pointer :: &
+      F
 
     if ( FC % Type == '' ) &
       FC % Type = 'a FluidCentral'
@@ -190,8 +191,16 @@ contains
     allocate ( Step_RK2_C_ASC_Form :: FC % Step )
     select type ( S => FC % Step )
     class is ( Step_RK2_C_ASC_Form )
+
     call S % Initialize ( FA, Name )
     S % ApplySources % Pointer => ApplySources
+
+    ! F => FA % Fluid_D ( )
+    ! select type ( FF => F % Features )
+    ! class is ( FluidFeatures_P_Form )
+    ! call S % SetUseLimiter ( FF % Value ( :, FF % SHOCK ) )
+    ! end select !-- FF
+
     end select !-- S
 
 
@@ -215,6 +224,7 @@ contains
     end select !-- FA
     end select !-- GA
     end select !-- PS
+    nullify ( F )
 
   end subroutine InitializeTemplate_FC
 

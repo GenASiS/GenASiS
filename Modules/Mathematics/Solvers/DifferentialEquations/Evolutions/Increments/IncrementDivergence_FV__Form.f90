@@ -26,14 +26,16 @@ module IncrementDivergence_FV__Form
       iStream
     real ( KDR ) :: &
       Weight_RK = - huge ( 0.0_KDR ) !-- RungeKutta weight
-    logical ( KDL ) :: &
-      UseIncrementStream
-    character ( LDF ) :: &
-      Name = ''
+    real ( KDR ), dimension ( : ), pointer :: &
+      UseLimiter => null ( )
     type ( Real_1D_Form ), dimension ( : ), pointer :: &
       dLogVolumeJacobian_dX => null ( )
     type ( Real_3D_Form ), dimension ( :, : ), pointer :: &
       BoundaryFluence_CSL => null ( )
+    logical ( KDL ) :: &
+      UseIncrementStream
+    character ( LDF ) :: &
+      Name = ''
     type ( VariableGroupForm ), dimension ( : ), allocatable :: &
       Output
     type ( GridImageStreamForm ), allocatable :: &
@@ -65,6 +67,8 @@ module IncrementDivergence_FV__Form
       SetMetricDerivativesFlat
     generic, public :: &
       SetMetricDerivatives => SetMetricDerivativesFlat
+    procedure, public, pass :: &
+      SetUseLimiter
     procedure, public, pass :: &
       ClearMetricDerivatives
     procedure, public, pass :: &
@@ -218,6 +222,18 @@ contains
     I % dLogVolumeJacobian_dX => dLogVolumeJacobian_dX
 
   end subroutine SetMetricDerivativesFlat
+
+
+  subroutine SetUseLimiter ( I, UseLimiter )
+
+    class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
+      I
+    real ( KDR ), dimension ( : ), intent ( in ), target :: &
+      UseLimiter
+
+    I % UseLimiter => UseLimiter
+
+  end subroutine SetUseLimiter
 
 
   subroutine ClearMetricDerivatives ( I )
@@ -625,9 +641,16 @@ contains
 !    associate ( Timer_G => PROGRAM_HEADER % Timer ( I % iTimerGradient ) )
 !    call Timer_G % Start ( )
     if ( C % UseLimiter ) then
-      call Grad % Compute &
-             ( CSL, P, iDimension, &
-               LimiterParameterOption = C % LimiterParameter )
+      if ( associated ( I % UseLimiter ) ) then
+        call Grad % Compute &
+               ( CSL, P, iDimension, &
+                 UseLimiterOption = I % UseLimiter, &
+                 LimiterParameterOption = C % LimiterParameter )
+      else
+        call Grad % Compute &
+               ( CSL, P, iDimension, &
+                 LimiterParameterOption = C % LimiterParameter )
+      end if
     else
       call Grad % Compute ( CSL, P, iDimension )
     end if

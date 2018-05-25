@@ -93,6 +93,8 @@ module Step_RK_C_ASC__Template
     procedure, public, pass :: &
       FinalizeTemplate_C_ASC
     procedure, public, pass :: &
+      SetUseLimiter
+    procedure, public, pass :: &
       InitializeTimersStage
     procedure, private, pass :: &
       InitializeTimersDivergence
@@ -520,6 +522,20 @@ contains
     call S % FinalizeTemplate ( )
 
   end subroutine FinalizeTemplate_C_ASC
+
+
+  subroutine SetUseLimiter ( S, UseLimiter )
+
+    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
+      S
+    real ( KDR ), dimension ( : ), intent ( in ), target :: &
+      UseLimiter
+
+    associate ( ID => S % IncrementDivergence_C )
+    call ID % SetUseLimiter ( UseLimiter )
+    end associate !-- ID
+
+  end subroutine SetUseLimiter
 
 
   subroutine InitializeTimersStage ( S, BaseLevel )
