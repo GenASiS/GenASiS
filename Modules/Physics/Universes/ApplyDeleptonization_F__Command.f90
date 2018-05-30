@@ -25,7 +25,7 @@ module ApplyDeleptonization_F__Command
       ! Y_1   = 0.5_KDR, &     !-- G15
       ! Y_2   = 0.278_KDR, &   !-- G15
       ! Y_C   = 0.035_KDR      !-- G15
-      ! Rho_1 = 2.0e7_KDR, &   !-- G15
+      ! Rho_1 = 3.0e7_KDR, &   !-- G15
       ! Rho_2 = 2.0e13_KDR, &  !-- G15
       N_1, N_2
 
@@ -49,8 +49,7 @@ contains
       iStage
 
     integer ( KDI ) :: &
-      iProton, &
-      iBaryon
+      iProton
     type ( TimerForm ), pointer :: &
       Timer
 
@@ -66,8 +65,10 @@ contains
     select type ( S_F => Sources_F )
     class is ( Sources_F_Form )
 
+    select type ( Chart => S % Chart )
+    class is ( Chart_SL_Template )
+
     call Search ( F % iaConserved, F % CONSERVED_PROTON_DENSITY, iProton )
-    call Search ( F % iaConserved, F % CONSERVED_BARYON_DENSITY, iBaryon )
 
     if ( iStage == 1 ) then
       call Clear ( S_F % Value ( :, S_F % RADIATION_DP ) )
@@ -76,11 +77,12 @@ contains
     call ApplyProtonNumber &
            ( Increment % Value ( :, iProton ), &
              S_F % Value ( :, S_F % RADIATION_DP ), &
+             Chart % IsProperCell, &
              F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
              F % Value ( :, F % PROTON_FRACTION ), &
-             Increment % Value ( :, iBaryon ), & 
              TimeStep, S % B ( iStage ) )
 
+    end select !-- Chart
     end select !-- S_F
     end select !-- F
 
@@ -90,15 +92,16 @@ contains
 
 
   subroutine ApplyProtonNumber &
-               ( K_DP, S_DP, N, YP, K_D, dt, Weight_RK )
+               ( K_DP, S_DP, IsProperCell, N, YP, dt, Weight_RK )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       K_DP, &
       S_DP
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      IsProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       N, &
-      YP, &
-      K_D
+      YP
     real ( KDR ) :: &
       dt, &
       Weight_RK
@@ -108,6 +111,7 @@ contains
       nValues
     real ( KDR ) :: &
       X, &
+      abs_X, &
       YP_bar, &
       dYP, &
       dDP
@@ -117,19 +121,23 @@ contains
     !$OMP parallel do private ( iV )
     do iV = 1, nValues
 
-      X  =  abs ( max ( -1.0_KDR, &
-                        min ( 1.0_KDR, &
-                              ( 2 * log10 ( N ( iV ) ) &
-                                - log10 ( N_2 ) - log10 ( N_1 ) ) &
-                              / ( log10 ( N_2 ) - log10 ( N_1 ) ) ) ) )
+      if ( .not. IsProperCell ( iV ) ) &
+        cycle
+
+      X  =  max ( -1.0_KDR, &
+                  min ( 1.0_KDR, &
+                        ( 2 * log10 ( N ( iV ) ) &
+                          - log10 ( N_2 ) - log10 ( N_1 ) ) &
+                        / ( log10 ( N_2 ) - log10 ( N_1 ) ) ) )
+      abs_X  =  abs ( X )
 
       YP_bar  =  0.5_KDR * ( Y_1 + Y_2 )  +  0.5_KDR * X * ( Y_2 - Y_1 ) &
-                  +  Y_C * ( 1.0_KDR - X  +  4.0_KDR * X &
-                                             * ( X - 0.5_KDR ) &
-                                             * ( X - 1.0_KDR ) )
+                  +  Y_C * ( 1.0_KDR - abs_X  +  4.0_KDR * abs_X &
+                                                 * ( abs_X - 0.5_KDR ) &
+                                                 * ( abs_X - 1.0_KDR ) )
 
       dYP  =  min ( 0.0_KDR, YP_bar - YP ( iV ) )
-      dDP  =  N ( iV ) * dYP  +  YP ( iV )  *  K_D ( iV )
+      dDP  =  N ( iV ) * dYP
 
       K_DP ( iV )  =  K_DP ( iV )  +  dDP
       S_DP ( iV )  =  S_DP ( iV )  +  Weight_RK * dDP / dt
