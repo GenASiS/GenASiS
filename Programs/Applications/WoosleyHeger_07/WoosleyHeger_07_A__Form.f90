@@ -25,7 +25,7 @@ contains
       Name
 
     if ( WH % Type == '' ) &
-      WH % Type = 'a FishboneMoncrief'
+      WH % Type = 'a WoosleyHeger_07_A'
 
     call WH % InitializeTemplate ( Name )
 
