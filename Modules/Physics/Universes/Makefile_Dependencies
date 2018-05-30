@@ -5,6 +5,13 @@ ApplyGravity_F__Command.o: \
   StressEnergies.o \
   ApplyGravity_F__Command.f90
 
+ApplyDeleptonization_F__Command.o: \
+  Basics.o \
+  Mathematics.o \
+  Spaces.o \
+  StressEnergies.o \
+  ApplyDeleptonization_F__Command.f90
+
 FluidBox_Form.o: \
   Basics.o \
   Mathematics.o \
@@ -50,6 +57,7 @@ Universe_Template.o: \
 
 Universes.o: \
   ApplyGravity_F__Command.o \
+  ApplyDeleptonization_F__Command.o \
   FluidBox_Form.o \
   FluidSymmetricCurvilinear_Form.o \
   FluidCentral_Template.o \
