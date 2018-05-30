@@ -14,7 +14,7 @@ module ApplyDeleptonization_F__Command
     ApplyDeleptonization_F
 
     private :: &
-      ApplyDeleptonization_F_Kernel
+      ApplyProtonNumber
 
     real ( KDR ), private :: &
       Y_1   = 0.5_KDR, &     !-- N13
@@ -48,18 +48,40 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iStage
 
+    integer ( KDI ) :: &
+      iProton, &
+      iBaryon
     type ( TimerForm ), pointer :: &
       Timer
 
     Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerSources )
     if ( associated ( Timer ) ) call Timer % Start ( )
 
-    select type ( F => Fluid )
-    class is ( Fluid_P_HN_Form )
-
     N_1  =  Rho_1  *  UNIT % MASS_DENSITY_CGS / UNIT % ATOMIC_MASS_UNIT 
     N_2  =  Rho_2  *  UNIT % MASS_DENSITY_CGS / UNIT % ATOMIC_MASS_UNIT 
 
+    select type ( F => Fluid )
+    class is ( Fluid_P_HN_Form )
+
+    select type ( S_F => Sources_F )
+    class is ( Sources_F_Form )
+
+    call Search ( F % iaConserved, F % CONSERVED_PROTON_DENSITY, iProton )
+    call Search ( F % iaConserved, F % CONSERVED_BARYON_DENSITY, iBaryon )
+
+    if ( iStage == 1 ) then
+      call Clear ( S_F % Value ( :, S_F % RADIATION_DP ) )
+    end if
+
+    call ApplyProtonNumber &
+           ( Increment % Value ( :, iProton ), &
+             S_F % Value ( :, S_F % RADIATION_DP ), &
+             F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
+             F % Value ( :, F % PROTON_FRACTION ), &
+             Increment % Value ( :, iBaryon ), & 
+             TimeStep, S % B ( iStage ) )
+
+    end select !-- S_F
     end select !-- F
 
     if ( associated ( Timer ) ) call Timer % Stop ( )
@@ -67,15 +89,15 @@ contains
   end subroutine ApplyDeleptonization_F
 
 
-  subroutine ApplyDeleptonization_F_Kernel &
-               ( K_DP, S_DP, N, Y_e, K_D, dt, Weight_RK )
+  subroutine ApplyProtonNumber &
+               ( K_DP, S_DP, N, YP, K_D, dt, Weight_RK )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       K_DP, &
       S_DP
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       N, &
-      Y_e, &
+      YP, &
       K_D
     real ( KDR ) :: &
       dt, &
@@ -86,8 +108,9 @@ contains
       nValues
     real ( KDR ) :: &
       X, &
-      Y_e_bar, &
-      dY_e
+      YP_bar, &
+      dYP, &
+      dDP
 
     nValues = size ( K_DP )
 
@@ -100,17 +123,21 @@ contains
                                 - log10 ( N_2 ) - log10 ( N_1 ) ) &
                               / ( log10 ( N_2 ) - log10 ( N_1 ) ) ) ) )
 
-      Y_e_bar  =  0.5_KDR * ( Y_1 + Y_2 )  +  0.5_KDR * X * ( Y_2 - Y_1 ) &
+      YP_bar  =  0.5_KDR * ( Y_1 + Y_2 )  +  0.5_KDR * X * ( Y_2 - Y_1 ) &
                   +  Y_C * ( 1.0_KDR - X  +  4.0_KDR * X &
                                              * ( X - 0.5_KDR ) &
                                              * ( X - 1.0_KDR ) )
 
-      dY_e  =  min ( 0.0_KDR, Y_e_bar - Y_e ( iV ) )
+      dYP  =  min ( 0.0_KDR, YP_bar - YP ( iV ) )
+      dDP  =  N ( iV ) * dYP  +  YP ( iV )  *  K_D ( iV )
+
+      K_DP ( iV )  =  K_DP ( iV )  +  dDP
+      S_DP ( iV )  =  S_DP ( iV )  +  Weight_RK * dDP / dt
 
     end do
     !$OMP end parallel do
 
-  end subroutine ApplyDeleptonization_F_Kernel
+  end subroutine ApplyProtonNumber
 
 
 end module ApplyDeleptonization_F__Command
