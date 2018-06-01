@@ -1,6 +1,7 @@
 module ApplyDeleptonization_F__Command
 
   !-- M. Liebendorfer, ApJ 633 1024 (2005)
+  !-- but here neutrino stress only implemented in trapped region
 
   use Basics
   use Mathematics
@@ -14,7 +15,9 @@ module ApplyDeleptonization_F__Command
     ApplyDeleptonization_F
 
     private :: &
-      Apply_DP_DS_Kernel
+      Apply_DP_DS_Kernel, &
+      Apply_S_D_Kernel, &
+      ComputeNeutrinoPressure
 
     real ( KDR ), private :: &
       Y_1         = 0.5_KDR, &     !-- N13
@@ -52,10 +55,16 @@ contains
       iStage
 
     integer ( KDI ) :: &
+      iD, &
       iProton, &
-      iEntropy
+      iEntropy, &
+      iMomentum
+    type ( VariableGroupForm ) :: &
+      NeutrinoPressure
     type ( TimerForm ), pointer :: &
       Timer
+    type ( GradientForm ) :: &
+      Gradient
 
     Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerSources )
     if ( associated ( Timer ) ) call Timer % Start ( )
@@ -99,6 +108,33 @@ contains
              F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
              F % Value ( :, F % CONSERVED_ENTROPY ), &
              TimeStep, S % B ( iStage ) )
+
+    call NeutrinoPressure % Initialize &
+           ( [ F % nValues, 1 ] )
+    call Gradient % Initialize &
+           ( 'NeutrinoPressureGradient', [ F % nValues, 1 ] )
+    call ComputeNeutrinoPressure &
+           ( NeutrinoPressure % Value ( :, 1 ), &
+             Chart % IsProperCell, &
+             F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
+             F % Value ( :, F % TEMPERATURE ), &
+             F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
+             F % Value ( :, F % CHEMICAL_POTENTIAL_E ) )
+    call S % Current_ASC % Atlas_SC % ApplyBoundaryConditionsFaces &
+           ( NeutrinoPressure )
+    do iD = 1, Chart % nDimensions
+      call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( iD ), &
+                    iMomentum )
+      if ( iStage == 1 ) &
+        call Clear ( S_F % Value ( :, S_F % RADIATION_S_D ( iD ) ) )
+      call Gradient % Compute ( Chart, NeutrinoPressure, iDimension = iD )
+      call Apply_S_D_Kernel &
+             ( Increment % Value ( :, iMomentum ), &
+               S_F % Value ( :, S_F % RADIATION_S_D ( iD ) ), &
+               Chart % IsProperCell, &
+               Gradient % Output % Value ( :, 1 ), &
+               TimeStep, S % B ( iStage ) )
+    end do !-- iD
 
     end select !-- Chart
     end select !-- S_F
@@ -183,6 +219,97 @@ contains
     !$OMP end parallel do
 
   end subroutine Apply_DP_DS_Kernel
+
+
+  subroutine Apply_S_D_Kernel &
+               ( K_S_D, S_S_D, IsProperCell, dP_nu_dx, dt, Weight_RK )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      K_S_D, &
+      S_S_D
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      IsProperCell
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      dP_nu_dx
+    real ( KDR ) :: &
+      dt, &
+      Weight_RK
+
+    integer ( KDI ) :: &
+      iV, &  !-- iValue
+      nValues
+
+    nValues = size ( K_S_D )
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nValues
+
+      if ( .not. IsProperCell ( iV ) ) &
+        cycle
+
+      K_S_D ( iV )  =  K_S_D ( iV )  -  dP_Nu_dx ( iV ) * dt
+      S_S_D ( iV )  =  S_S_D ( iV )  -  Weight_RK * dP_Nu_dx ( iV )
+
+    end do
+    !$OMP end parallel do
+
+  end subroutine Apply_S_D_Kernel
+
+
+  subroutine ComputeNeutrinoPressure ( P_Nu, IsProperCell, N, T, Mu_NP, Mu_E )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      P_Nu
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      IsProperCell
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      N, &
+      T, &
+      Mu_NP, &
+      Mu_E
+
+    integer ( KDI ) :: &
+      iV, &  !-- iValue
+      nValues
+    real ( KDR ) :: &
+      k, &
+      a, b, c, d, &
+      Eta, &
+      F_3
+
+    nValues = size ( P_Nu )
+
+    k  =  CONSTANT % BOLTZMANN
+    a  =  2.0_KDR  *  CONSTANT % PI ** 2
+    b  =  7.0_KDR / 15.0_KDR   *  CONSTANT % PI ** 4
+    c  =  7.0_KDR / 120.0_KDR  *  CONSTANT % PI ** 4
+    d  =  4.0_KDR / 3.0_KDR    *  CONSTANT % PI  &
+          /  ( 2.0_KDR  *  CONSTANT % PI  *  CONSTANT % PLANCK_REDUCED  &
+               *  CONSTANT % SPEED_OF_LIGHT ) ** 3
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nValues
+
+      P_Nu ( iV )  =  0.0_KDR
+
+      if ( .not. IsProperCell ( iV ) ) &
+        cycle
+
+      if ( N ( iV ) >= N_Trap ) then
+
+        Eta  =  ( Mu_E ( iV ) - Mu_NP ( iV ) )  /  ( k * T ( iV ) )
+    
+        F_3  =  ( Eta ** 4  +  a * Eta ** 2  +  b )  /  4.0_KDR  &
+                -  c * exp ( -Eta )
+
+        P_Nu ( iV )  =  d  *  ( k * T ( iV ) ) ** 4  *  F_3
+
+      end if
+
+    end do
+    !$OMP end parallel do
+
+  end subroutine ComputeNeutrinoPressure
 
 
 end module ApplyDeleptonization_F__Command
