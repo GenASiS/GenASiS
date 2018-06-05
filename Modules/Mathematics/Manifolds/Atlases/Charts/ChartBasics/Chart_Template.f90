@@ -75,7 +75,7 @@ module Chart_Template
       SetEdgeGeometric, &
       SetEdgeCompactified, &
       SetEdgeProportional, &
-      SetCenterCartesian, &
+      SetCenterRectangular, &
       SetCenterCylindrical_1, &
       SetCenterSpherical_1, &
       SetCenterSpherical_2, &
@@ -200,7 +200,7 @@ contains
     C % IsPeriodic ( : nD ) = IsPeriodic ( : nD )
 
     allocate ( C % CoordinateSystem )
-    C % CoordinateSystem = 'CARTESIAN'
+    C % CoordinateSystem = 'RECTANGULAR'
     if ( present ( CoordinateSystemOption ) ) &
       C % CoordinateSystem = CoordinateSystemOption
     call PROGRAM_HEADER % GetParameter &
@@ -489,8 +489,8 @@ contains
 
     !-- Center
     select case ( trim ( C % CoordinateSystem ) )
-    case ( 'CARTESIAN' )
-      call SetCenterCartesian &
+    case ( 'RECTANGULAR' )
+      call SetCenterRectangular &
              ( C % Center ( iD ) % Value, C % Edge ( iD ) % Value )
     case ( 'CYLINDRICAL' )
       select case ( iD )
@@ -499,7 +499,7 @@ contains
                ( C % Center ( iD ) % Value, C % Edge ( iD ) % Value, &
                  nC, nGL, iaF = 1 - nGL )
       case ( 2, 3 )
-        call SetCenterCartesian &
+        call SetCenterRectangular &
                ( C % Center ( iD ) % Value, &
                  C % Edge ( iD ) % Value )
       end select
@@ -514,7 +514,7 @@ contains
                ( C % Center ( iD ) % Value, C % Edge ( iD ) % Value, &
                  nC, nGL, iaF = 1 - nGL )
       case ( 3 )
-        call SetCenterCartesian &
+        call SetCenterRectangular &
                ( C % Center ( iD ) % Value, &
                  C % Edge ( iD ) % Value )
       end select
@@ -692,7 +692,7 @@ contains
   end subroutine SetEdgeProportional
 
 
-  subroutine SetCenterCartesian ( Center, Edge )
+  subroutine SetCenterRectangular ( Center, Edge )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       Center
@@ -706,7 +706,7 @@ contains
       Center ( iC )  =  0.5_KDR * ( Edge ( iC )  +  Edge ( iC + 1 ) )
     end do
 
-  end subroutine SetCenterCartesian
+  end subroutine SetCenterRectangular
 
 
   subroutine SetCenterCylindrical_1 ( Center, Edge, nC, nGL, iaF )

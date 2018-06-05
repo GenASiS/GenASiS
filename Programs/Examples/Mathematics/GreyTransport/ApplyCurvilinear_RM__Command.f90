@@ -61,7 +61,7 @@ contains
     select type ( Chart => S % Chart )
     class is ( Chart_SL_Template )
 
-    if ( trim ( Chart % CoordinateSystem ) == 'CARTESIAN' ) &
+    if ( trim ( Chart % CoordinateSystem ) == 'RECTANGULAR' ) &
       return
 
     G => Chart % Geometry ( )

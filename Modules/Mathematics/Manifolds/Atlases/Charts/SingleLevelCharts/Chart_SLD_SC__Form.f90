@@ -91,9 +91,9 @@ contains
 
       nCells = [ C % nCellsRadius, 2 * C % nCellsRadius, 1 ]
 
-    case ( 3 )  !-- Cartesian coordinates
+    case ( 3 )  !-- Rectangular coordinates
  
-      CoordinateSystem = 'CARTESIAN' 
+      CoordinateSystem = 'RECTANGULAR' 
 
       MinCoordinate  =  - C % RadiusMax
       MaxCoordinate  =  + C % RadiusMax

@@ -58,7 +58,7 @@ contains
     select type ( Chart => S % Chart )
     class is ( Chart_SL_Template )
 
-    if ( trim ( Chart % CoordinateSystem ) == 'CARTESIAN' ) then
+    if ( trim ( Chart % CoordinateSystem ) == 'RECTANGULAR' ) then
       if ( associated ( Timer ) ) call Timer % Stop ( )
       return
     end if

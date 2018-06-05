@@ -19,9 +19,9 @@ program GeometryFlat_Form_Test
 
   character ( LDF ) :: &
     ProgramName = 'GeometryFlat_Form_Test', &
-    GeometryName_1 = 'GeometryFlat_Cartesian_1D', &
-    GeometryName_2 = 'GeometryFlat_Cartesian_2D', &
-    GeometryName_3 = 'GeometryFlat_Cartesian_3D', &
+    GeometryName_1 = 'GeometryFlat_Rectangular_1D', &
+    GeometryName_2 = 'GeometryFlat_Rectangular_2D', &
+    GeometryName_3 = 'GeometryFlat_Rectangular_3D', &
     GeometryName_4 = 'GeometryFlat_Cylindrical_1D', &
     GeometryName_5 = 'GeometryFlat_Cylindrical_2D', &
     GeometryName_6 = 'GeometryFlat_Cylindrical_3D', &
@@ -33,9 +33,9 @@ program GeometryFlat_Form_Test
   
   call PROGRAM_HEADER % Initialize ( ProgramName )
 
-  call TestGeometry ( GeometryName_1, 'CARTESIAN', 1 )
-  call TestGeometry ( GeometryName_2, 'CARTESIAN', 2 )
-  call TestGeometry ( GeometryName_3, 'CARTESIAN', 3 )
+  call TestGeometry ( GeometryName_1, 'RECTANGULAR', 1 )
+  call TestGeometry ( GeometryName_2, 'RECTANGULAR', 2 )
+  call TestGeometry ( GeometryName_3, 'RECTANGULAR', 3 )
 
   call TestGeometry ( GeometryName_4, 'CYLINDRICAL', 1 )
   call TestGeometry ( GeometryName_5, 'CYLINDRICAL', 2 )
@@ -81,7 +81,7 @@ subroutine TestGeometry ( Name, CoordinateSystem, nDimensions )
 
   call A % Initialize ( 'Atlas' )
   select case ( trim ( CoordinateSystem ) )
-  case ( 'CARTESIAN' )
+  case ( 'RECTANGULAR' )
     call PC % InitializeTemplate &
            ( A, IsPeriodic = [ .false., .false., .false. ], iChart = 1, &
              CoordinateSystemOption = CoordinateSystem, &

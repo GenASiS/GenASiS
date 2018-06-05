@@ -39,13 +39,13 @@ module Tally_F_D__Form
 
     private :: &
       ComputeDensity_KE, &
-      ComputeDensity_AM_Cartesian, &
+      ComputeDensity_AM_Rectangular, &
       ComputeDensity_LM_CylindricalHorizontal, &
       ComputeDensity_AM_CylindricalHorizontal, &
       ComputeDensity_LM_SphericalHorizontal, &
       ComputeDensity_LM_SphericalVertical, &
       ComputeDensity_AM_SphericalHorizontal, &
-      ComputeFluence_AM_Cartesian, &
+      ComputeFluence_AM_Rectangular, &
       ComputeFluence_LM_CylindricalHorizontal, &
       ComputeFluence_AM_CylindricalHorizontal, &
       ComputeFluence_LM_SphericalVertical, &
@@ -229,7 +229,7 @@ contains
     end do !-- iS
 
     select case ( trim ( G % CoordinateSystem ) )
-    case ( 'CARTESIAN' )
+    case ( 'RECTANGULAR' )
       do iS = 1, T % nSelected
         iI = T % iaSelected ( iS )
         if ( iI == T % MOMENTUM ( 1 ) ) then
@@ -239,13 +239,13 @@ contains
         else if ( iI == T % MOMENTUM ( 3 ) ) then
           call Copy ( S_3, Integrand ( iS ) % Value )
         else if ( iI == T % ANGULAR_MOMENTUM ( 1 ) ) then
-          call ComputeDensity_AM_Cartesian &
+          call ComputeDensity_AM_Rectangular &
                  ( X_2, X_3, S_2, S_3, Integrand ( iS ) % Value )
         else if ( iI == T % ANGULAR_MOMENTUM ( 2 ) ) then
-          call ComputeDensity_AM_Cartesian &
+          call ComputeDensity_AM_Rectangular &
                  ( X_3, X_1, S_3, S_1, Integrand ( iS ) % Value )
         else if ( iI == T % ANGULAR_MOMENTUM ( 3 ) ) then
-          call ComputeDensity_AM_Cartesian &
+          call ComputeDensity_AM_Rectangular &
                  ( X_1, X_2, S_1, S_2, Integrand ( iS ) % Value )
         end if !-- iI
       end do !-- iS
@@ -389,7 +389,7 @@ contains
         call T % ComputeFacePositions ( CSL, G, iD, iF, X_1, X_2, X_3 )
 
         select case ( trim ( G % CoordinateSystem ) )
-        case ( 'CARTESIAN' )
+        case ( 'RECTANGULAR' )
           do iS = 1, T % nSelected
             iI = T % iaSelected ( iS )
             if ( iI == T % BARYON_NUMBER ) then
@@ -401,13 +401,13 @@ contains
             else if ( iI == T % MOMENTUM ( 3 ) ) then
               call CopyCollapse ( S_3, Integrand ( iS, iC ) % Value )
             else if ( iI == T % ANGULAR_MOMENTUM ( 1 ) ) then
-              call ComputeFluence_AM_Cartesian &
+              call ComputeFluence_AM_Rectangular &
                      ( X_2, X_3, S_2, S_3, Integrand ( iS, iC ) % Value )
             else if ( iI == T % ANGULAR_MOMENTUM ( 2 ) ) then
-              call ComputeFluence_AM_Cartesian &
+              call ComputeFluence_AM_Rectangular &
                      ( X_3, X_1, S_3, S_1, Integrand ( iS, iC ) % Value )
             else if ( iI == T % ANGULAR_MOMENTUM ( 3 ) ) then
-              call ComputeFluence_AM_Cartesian &
+              call ComputeFluence_AM_Rectangular &
                      ( X_1, X_2, S_1, S_2, Integrand ( iS, iC ) % Value )
             end if !-- iI
           end do !-- iS
@@ -512,7 +512,7 @@ contains
   end subroutine ComputeDensity_KE
 
 
-  subroutine ComputeDensity_AM_Cartesian ( X_J, X_K, S_J, S_K, I_I )
+  subroutine ComputeDensity_AM_Rectangular ( X_J, X_K, S_J, S_K, I_I )
 
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       X_J, X_K, &
@@ -532,7 +532,7 @@ contains
     end do
     !$OMP end parallel do
 
-  end subroutine ComputeDensity_AM_Cartesian
+  end subroutine ComputeDensity_AM_Rectangular
 
 
   subroutine ComputeDensity_LM_CylindricalHorizontal &
@@ -725,7 +725,7 @@ contains
   end subroutine ComputeDensity_AM_SphericalHorizontal
 
 
-  subroutine ComputeFluence_AM_Cartesian ( X_J, X_K, S_J, S_K, I_I )
+  subroutine ComputeFluence_AM_Rectangular ( X_J, X_K, S_J, S_K, I_I )
 
     real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
       X_J, X_K, &
@@ -752,7 +752,7 @@ contains
     end do
     !$OMP end parallel do
 
-  end subroutine ComputeFluence_AM_Cartesian
+  end subroutine ComputeFluence_AM_Rectangular
 
 
   subroutine ComputeFluence_LM_CylindricalHorizontal &

@@ -184,7 +184,7 @@ contains
     I_S  =>  LM % SolidHarmonic_IS ( : )
 
     select case ( trim ( CoordinateSystem ) )
-    case ( 'CARTESIAN' )
+    case ( 'RECTANGULAR' )
       X  =  Position ( 1 )  -  LM % Origin ( 1 )
       Y  =  Position ( 2 )  -  LM % Origin ( 2 )
       Z  =  Position ( 3 )  -  LM % Origin ( 3 )

@@ -1,8 +1,8 @@
 program FishboneMoncrief
 
   !-- Plotting axisymmetric case in VisIt:
-  !   1. Transform Spherical to Cartesian
-  !   2. Project Y-Axis Cartesian
+  !   1. Transform Spherical to Rectangular
+  !   2. Project Y-Axis Rectangular
 
   use Basics
   use FishboneMoncrief_Form

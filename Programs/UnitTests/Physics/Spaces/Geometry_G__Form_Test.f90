@@ -61,7 +61,7 @@ subroutine TestGeometry ( Name, nDimensions )
              = [ 4.0_KDR, 9.0_KDR, 14.0_KDR ]  *  UNIT % KILOMETER % Number, &
            nDimensionsOption = nDimensions ) 
 
-  CoordinateSystem = 'CARTESIAN'
+  CoordinateSystem = 'RECTANGULAR'
   CoordinateUnit ( : nDimensions ) = UNIT % KILOMETER
 
   call G % Initialize &

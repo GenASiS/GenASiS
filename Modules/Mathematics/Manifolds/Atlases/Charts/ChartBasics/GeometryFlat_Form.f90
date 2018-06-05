@@ -55,10 +55,10 @@ module GeometryFlat_Form
       InitializeBasics, &
       SetCoordinateSystem, &
       SetUnits, &
-      SetFiniteVolumeCartesian, &
+      SetFiniteVolumeRectangular, &
       SetFiniteVolumeCylindrical, &
       SetFiniteVolumeSpherical, &
-      SetMetricCartesian, &
+      SetMetricRectangular, &
       SetMetricCylindrical, &
       SetMetricSpherical, &
       ComputeEdges
@@ -135,8 +135,8 @@ contains
       oValue
 
     select case ( trim ( G % CoordinateSystem ) )
-    case ( 'CARTESIAN' )
-      call SetFiniteVolumeCartesian &
+    case ( 'RECTANGULAR' )
+      call SetFiniteVolumeRectangular &
              ( G % Value ( :, G % VOLUME ), &
                G % Value ( :, G % AREA_INNER_D ( 1 ) ), &
                G % Value ( :, G % AREA_INNER_D ( 2 ) ), &
@@ -148,7 +148,7 @@ contains
                G % Value ( :, G % WIDTH_RIGHT_U ( 2 ) ), &
                G % Value ( :, G % WIDTH_RIGHT_U ( 3 ) ), &
                nDimensions, nValues, oValue )
-      call SetMetricCartesian &
+      call SetMetricRectangular &
              ( G % Value ( :, G % METRIC_DD_22 ), &
                G % Value ( :, G % METRIC_DD_33 ), &
                G % Value ( :, G % METRIC_UU_22 ), &
@@ -246,8 +246,8 @@ contains
              G_I % Value ( :, G % CENTER_U ( iDimension ) ) )
 
     select case ( trim ( G % CoordinateSystem ) )
-    case ( 'CARTESIAN' )
-      call SetMetricCartesian &
+    case ( 'RECTANGULAR' )
+      call SetMetricRectangular &
              ( G_I % Value ( :, G % METRIC_DD_22 ), &
                G_I % Value ( :, G % METRIC_DD_33 ), &
                G_I % Value ( :, G % METRIC_UU_22 ), &
@@ -452,7 +452,7 @@ contains
       = CoordinateUnit
 
     select case ( trim ( G % CoordinateSystem ) )
-    case ( 'CARTESIAN' )
+    case ( 'RECTANGULAR' )
       VariableUnit ( G % VOLUME )  &
         =  CoordinateUnit ( 1 )  *  CoordinateUnit ( 2 )  &
            *  CoordinateUnit ( 3 )
@@ -497,7 +497,7 @@ contains
   end subroutine SetUnits
 
 
-  subroutine SetFiniteVolumeCartesian &
+  subroutine SetFiniteVolumeRectangular &
                ( V, A_I_1, A_I_2, A_I_3, &
                  W_L_1, W_L_2, W_L_3, W_R_1, W_R_2, W_R_3, &
                  nDimensions, nValues, oValue )
@@ -546,7 +546,7 @@ contains
     end do
     !$OMP end parallel do
 
-  end subroutine SetFiniteVolumeCartesian
+  end subroutine SetFiniteVolumeRectangular
 
 
   subroutine SetFiniteVolumeCylindrical &
@@ -680,7 +680,7 @@ contains
   end subroutine SetFiniteVolumeSpherical
 
 
-  subroutine SetMetricCartesian &
+  subroutine SetMetricRectangular &
                ( M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
                  nDimensions, nValues, oValue )
 
@@ -704,7 +704,7 @@ contains
     end do
     !$OMP end parallel do
 
-  end subroutine SetMetricCartesian
+  end subroutine SetMetricRectangular
 
 
   subroutine SetMetricCylindrical &

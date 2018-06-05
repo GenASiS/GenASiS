@@ -121,7 +121,7 @@ contains
       case ( 2 ) 
          CoordinateSystem = 'CYLINDRICAL'
       case ( 3 )
-         CoordinateSystem = 'CARTESIAN'
+         CoordinateSystem = 'RECTANGULAR'
       case DEFAULT
         call show ( PS % nDimensions, 'nDimensions' )
         call Show ( 'Dimensionality not supported', CONSOLE % ERROR )
@@ -139,7 +139,7 @@ contains
     call PROGRAM_HEADER % GetParameter ( nCellsRadius, 'nCellsRadius' )
 
     select case ( CoordinateSystem )
-      case ( 'CARTESIAN' )
+      case ( 'RECTANGULAR' )
          MinCoordinate = [ - MaxRadius, - MaxRadius, - MaxRadius ]
          MaxCoordinate = [ + MaxRadius, + MaxRadius, + MaxRadius]
         call PS % SetBoundaryConditionsFace &
@@ -558,7 +558,7 @@ contains
       allocate ( R ( nValues ) )
 
       select case ( CoordinateSystem ) 
-        case ( 'CARTESIAN' )
+        case ( 'RECTANGULAR' )
           associate &
             ( X =>  G % Value ( :, G % CENTER ( 1 ) ), &
               Y =>  G % Value ( :, G % CENTER ( 2 ) ), &

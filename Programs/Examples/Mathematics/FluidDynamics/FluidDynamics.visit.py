@@ -73,12 +73,12 @@ elif ApplicationName[-2:] == '2D':
     TA = TransformAttributes ( )
     TA.transformType = TA.Coordinate
     TA.inputCoordSys = TA.Spherical
-    TA.outputCoordSys = TA.Cartesian
+    TA.outputCoordSys = TA.Rectangular
     SetOperatorOptions(TA, 1)
     
     AddOperator("Project", 1)
     PA = ProjectAttributes ( )
-    PA.projectionType = PA.XZCartesian
+    PA.projectionType = PA.XZRectangular
     SetOperatorOptions(PA, 1)
 
     p = PseudocolorAttributes ( )

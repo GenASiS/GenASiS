@@ -195,11 +195,11 @@ contains
               dVS = 4.0_KDR * Pi  *  XS ( 1 ) ** 2  *  dXS ( 1 )
             case ( 2 ) !-- Cylindrical coordinates
               dVS = 2.0_KDR * Pi * XS ( 1 ) * dXS ( 1 ) * dXS ( 2 )
-            case ( 3 ) !-- Cartesian coordinates
+            case ( 3 ) !-- Rectangular coordinates
               dVS = product ( dXS )
             end select !-- nD
             VS = VS + dVS
-            !-- All cases here have Cartesian distances!
+            !-- All cases here have Rectangular distances!
             if ( sqrt ( dot_product ( XS, XS ) ) <= BlastRadius ) &
               BVF ( iC ) = BVF ( iC ) + dVS
           end do !-- iS
