@@ -13,10 +13,10 @@ module Chart_SLD__Form
   private
 
   type, public, extends ( Chart_SL_Template ) :: Chart_SLD_Form
-    type ( VariableGroupForm ), dimension ( : ), allocatable :: &
-      ExchangeVariableGroup
-    type ( VariableGroup_1D_Form ), allocatable :: &
-      VariableGroup_1D
+    type ( StorageForm ), dimension ( : ), allocatable :: &
+      ExchangeStorage
+    type ( Storage_1D_Form ), allocatable :: &
+      Storage_1D
     type ( PortalHeaderForm ), allocatable :: &
       PortalPreviousNext, &
       PortalNextPrevious
@@ -113,40 +113,40 @@ contains
   end subroutine InitializeBasic
 
 
-  subroutine ExchangeGhostSingle ( C, VG )
+  subroutine ExchangeGhostSingle ( C, S )
 
     class ( Chart_SLD_Form ), intent ( inout ) :: &
       C
-    class ( VariableGroupForm ), intent ( inout ) :: &
-      VG
+    class ( StorageForm ), intent ( inout ) :: &
+      S
 
-    allocate ( C % ExchangeVariableGroup ( 1 ) )
-    call C % ExchangeVariableGroup ( 1 ) % Initialize ( VG )
+    allocate ( C % ExchangeStorage ( 1 ) )
+    call C % ExchangeStorage ( 1 ) % Initialize ( S )
 
-    call ExchangeGhostMultiple ( C, C % ExchangeVariableGroup )
+    call ExchangeGhostMultiple ( C, C % ExchangeStorage )
     
   end subroutine ExchangeGhostSingle
 
 
-  subroutine ExchangeGhostMultiple ( C, VG )
+  subroutine ExchangeGhostMultiple ( C, S )
 
     class ( Chart_SLD_Form ), intent ( inout ) :: &
       C
-    type ( VariableGroupForm ), dimension ( : ), intent ( in ) :: &
-      VG
+    type ( StorageForm ), dimension ( : ), intent ( in ) :: &
+      S
 
     call StartExchange &
-           ( C, C % PortalPreviousNext, VG, TAG_RECEIVE_PREVIOUS, &
+           ( C, C % PortalPreviousNext, S, TAG_RECEIVE_PREVIOUS, &
              TAG_SEND_NEXT )
     call FinishExchange ( C, TAG_RECEIVE_PREVIOUS )
 
     call StartExchange &
-           ( C, C % PortalNextPrevious, VG, TAG_RECEIVE_NEXT, &
+           ( C, C % PortalNextPrevious, S, TAG_RECEIVE_NEXT, &
              TAG_SEND_PREVIOUS )
     call FinishExchange ( C, TAG_RECEIVE_NEXT )
 
-    if ( allocated ( C % ExchangeVariableGroup ) ) &
-      deallocate ( C % ExchangeVariableGroup )
+    if ( allocated ( C % ExchangeStorage ) ) &
+      deallocate ( C % ExchangeStorage )
 
   end subroutine ExchangeGhostMultiple
 
@@ -216,10 +216,10 @@ contains
       deallocate ( C % PortalNextPrevious )
     if ( allocated ( C % PortalPreviousNext ) ) &
       deallocate ( C % PortalPreviousNext )
-    if ( allocated ( C % VariableGroup_1D ) ) &
-      deallocate ( C % VariableGroup_1D )
-    if ( allocated ( C % ExchangeVariableGroup ) ) &
-      deallocate ( C % ExchangeVariableGroup )
+    if ( allocated ( C % Storage_1D ) ) &
+      deallocate ( C % Storage_1D )
+    if ( allocated ( C % ExchangeStorage ) ) &
+      deallocate ( C % ExchangeStorage )
 
     call C % FinalizeTemplate_CSL ( )
 
@@ -362,14 +362,14 @@ contains
   end subroutine SetGhostExchangePortals
 
 
-  subroutine StartExchange ( C, PH, VG, TagReceive, TagSend )
+  subroutine StartExchange ( C, PH, S, TagReceive, TagSend )
 
     class ( Chart_SLD_Form ), intent ( inout ) :: &
       C
     type ( PortalHeaderForm ), intent ( in ) :: &
       PH
-    type ( VariableGroupForm ), dimension ( : ), intent ( in ) :: &
-      VG
+    type ( StorageForm ), dimension ( : ), intent ( in ) :: &
+      S
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
       TagReceive, &
       TagSend
@@ -380,31 +380,31 @@ contains
       oSend, &
       nSend
 
-    allocate ( C % VariableGroup_1D )
+    allocate ( C % Storage_1D )
     allocate ( C % Incoming )
     allocate ( C % Outgoing )
 
     associate &
-      ( VG_1D  => C % VariableGroup_1D, &
+      ( S_1D  => C % Storage_1D, &
         Communicator => C % Atlas % Communicator, &
         nCB => C % nCellsBrick, &
         nGL => C % nGhostLayers, &
         nD  => C % nDimensions )
 
-    call VG_1D % Initialize ( VG )
+    call S_1D % Initialize ( S )
 
     !-- Post Receives
 
     call C % Incoming % Initialize &
            ( Communicator, TagReceive ( : nD ), PH % Source, &
-             PH % nChunksFrom * VG_1D % nVariablesTotal )
+             PH % nChunksFrom * S_1D % nVariablesTotal )
     call C % Incoming % Receive ( )
 
     !-- Post Sends
 
     call C % Outgoing % Initialize &
            ( Communicator, TagSend ( : nD ), PH % Target, &
-             PH % nChunksTo * VG_1D % nVariablesTotal )
+             PH % nChunksTo * S_1D % nVariablesTotal )
 
     do iD = 1, nD
 
@@ -424,12 +424,12 @@ contains
         call PROGRAM_HEADER % Abort ( )
       end if !-- TagSend
 
-      call LoadMessage ( C, VG_1D, nSend, oSend, iD )
+      call LoadMessage ( C, S_1D, nSend, oSend, iD )
       call C % Outgoing % Send ( iD )
 
     end do !-- iD
 
-    end associate !-- VG_1D, etc.
+    end associate !-- S_1D, etc.
 
   end subroutine StartExchange
 
@@ -450,7 +450,7 @@ contains
       AllFinished
 
     associate &
-      ( VG_1D  => C % VariableGroup_1D, &
+      ( S_1D  => C % Storage_1D, &
         nCB => C % nCellsBrick, &
         nGL => C % nGhostLayers )
 
@@ -484,7 +484,7 @@ contains
         call PROGRAM_HEADER % Abort ( )
       end if !-- TagReceive
 
-      call StoreMessage ( C, VG_1D, nReceive, oReceive, iD )
+      call StoreMessage ( C, S_1D, nReceive, oReceive, iD )
 
     end do
 
@@ -494,21 +494,21 @@ contains
 
     !-- Cleanup
 
-    end associate !-- VG_1D, etc.
+    end associate !-- S_1D, etc.
 
     deallocate ( C % Outgoing )
     deallocate ( C % Incoming )
-    deallocate ( C % VariableGroup_1D )
+    deallocate ( C % Storage_1D )
 
   end subroutine FinishExchange
 
 
-  subroutine LoadMessage ( C, VG_1D, nSend, oSend, iM )
+  subroutine LoadMessage ( C, S_1D, nSend, oSend, iM )
 
     class ( Chart_SLD_Form ), intent ( inout ) :: &
       C
-    type ( VariableGroup_1D_Form ), intent ( in ) :: &
-      VG_1D
+    type ( Storage_1D_Form ), intent ( in ) :: &
+      S_1D
     integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
       nSend, &
       oSend
@@ -524,11 +524,11 @@ contains
       V  !-- Variable
 
     oBuffer = 0
-    do iG = 1, VG_1D % nGroups
-      do iS = 1, VG_1D % nVariables ( iG )          
-        iV = VG_1D % VariableGroup ( iG ) % iaSelected ( iS )
+    do iG = 1, S_1D % nGroups
+      do iS = 1, S_1D % nVariables ( iG )          
+        iV = S_1D % Storage ( iG ) % iaSelected ( iS )
         call C % SetVariablePointer &
-               ( VG_1D % VariableGroup ( iG ) % Value ( :, iV ), V ) 
+               ( S_1D % Storage ( iG ) % Value ( :, iV ), V ) 
         call Copy ( V, nSend, oSend, oBuffer, &
                     C % Outgoing % Message ( iM ) % Value )
         oBuffer = oBuffer + product ( nSend )
@@ -540,12 +540,12 @@ contains
   end subroutine LoadMessage
 
 
-  subroutine StoreMessage ( C, VG_1D, nReceive, oReceive, iM )
+  subroutine StoreMessage ( C, S_1D, nReceive, oReceive, iM )
 
     class ( Chart_SLD_Form ), intent ( in ) :: &
       C
-    type ( VariableGroup_1D_Form ), intent ( inout ) :: &
-      VG_1D
+    type ( Storage_1D_Form ), intent ( inout ) :: &
+      S_1D
     integer ( KDI ), dimension ( 3 ), intent ( in )  :: &
       nReceive, &
       oReceive
@@ -561,11 +561,11 @@ contains
       V  !-- Variable
 
     oBuffer = 0
-    do iG = 1, VG_1D % nGroups
-      do iS = 1, VG_1D % nVariables ( iG )          
-        iV = VG_1D % VariableGroup ( iG ) % iaSelected ( iS )
+    do iG = 1, S_1D % nGroups
+      do iS = 1, S_1D % nVariables ( iG )          
+        iV = S_1D % Storage ( iG ) % iaSelected ( iS )
         call C % SetVariablePointer &
-               ( VG_1D % VariableGroup ( iG ) % Value ( :, iV ), V ) 
+               ( S_1D % Storage ( iG ) % Value ( :, iV ), V ) 
         call Copy ( C % Incoming % Message ( iM ) % Value, &
                     nReceive, oReceive, oBuffer, V )
         oBuffer = oBuffer + product ( nReceive )

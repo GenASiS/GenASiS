@@ -9,7 +9,7 @@ module Interactions_Template
     integer ( KDI ), private, parameter :: &
       N_FIELDS_TEMPLATE = 8
 
-  type, public, extends ( VariableGroupForm ), abstract :: InteractionsTemplate
+  type, public, extends ( StorageForm ), abstract :: InteractionsTemplate
     integer ( KDI ) :: &
       IGNORABILITY      = 0, &
       N_FIELDS          = 0, &
@@ -102,7 +102,7 @@ contains
     if ( present ( ClearOption ) ) &
       Clear = ClearOption
 
-    call I % VariableGroupForm % Initialize &
+    call I % StorageForm % Initialize &
            ( [ nValues, I % N_FIELDS ], VariableOption = Variable, &
              NameOption = Name, ClearOption = Clear, &
              UnitOption = VariableUnit )
@@ -143,7 +143,7 @@ contains
 
     class ( InteractionsTemplate ), intent ( inout ) :: &
       I
-    type ( VariableGroupForm ), intent ( inout ) :: &
+    type ( StorageForm ), intent ( inout ) :: &
       Output
 
     call Output % Initialize &

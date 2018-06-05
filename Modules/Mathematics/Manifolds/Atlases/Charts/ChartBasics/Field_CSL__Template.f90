@@ -14,7 +14,7 @@ module Field_CSL__Template
   type, public, extends ( FieldChartTemplate ), abstract :: Field_CSL_Template
     integer ( KDI ) :: &
       nValues
-    class ( VariableGroupForm ), allocatable :: &
+    class ( StorageForm ), allocatable :: &
       Field, &
       FieldOutput
   contains

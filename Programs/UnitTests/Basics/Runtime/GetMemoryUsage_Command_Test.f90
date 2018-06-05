@@ -21,7 +21,7 @@ program GetMemoryUsage_Command_Test
     AcrossProcessesMinResidentSetSize, &
     AcrossProcessesMaxResidentSetSize, &
     AcrossProcessesMeanResidentSetSize
-  type ( VariableGroupForm ), dimension ( 10 ) :: &
+  type ( StorageForm ), dimension ( 10 ) :: &
     Dummy
   type ( CommunicatorForm ), allocatable :: &
     C

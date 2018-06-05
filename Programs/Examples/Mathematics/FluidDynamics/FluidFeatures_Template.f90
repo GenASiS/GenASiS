@@ -10,7 +10,7 @@ module FluidFeatures_Template
       N_FIELDS_TEMPLATE  = 3, &
       N_VECTORS_TEMPLATE = 0
 
-  type, public, extends ( VariableGroupForm ), abstract :: &
+  type, public, extends ( StorageForm ), abstract :: &
     FluidFeaturesTemplate
       integer ( KDI ) :: &
         IGNORABILITY       = 0, &
@@ -24,7 +24,7 @@ module FluidFeatures_Template
         Type = ''
       class ( * ), pointer :: &
         Grid => null ( )
-      class ( VariableGroupForm ), pointer :: &
+      class ( StorageForm ), pointer :: &
         Fluid => null ( )
   contains
     procedure, public, pass :: &
@@ -55,7 +55,7 @@ contains
 
     class ( FluidFeaturesTemplate ), intent ( inout ) :: &
       FF
-    class ( VariableGroupForm ), intent ( in ), target :: &
+    class ( StorageForm ), intent ( in ), target :: &
       Fluid
     class ( * ), intent ( in ), target :: &
       Grid
@@ -90,7 +90,7 @@ contains
     Clear = .true.
     if ( present ( ClearOption ) ) Clear = ClearOption
 
-    call FF % VariableGroupForm % Initialize &
+    call FF % StorageForm % Initialize &
            ( [ nValues, FF % N_FIELDS ], &
              VariableOption = Variable, VectorOption = VectorOption, &
              NameOption = Name, ClearOption = Clear, &

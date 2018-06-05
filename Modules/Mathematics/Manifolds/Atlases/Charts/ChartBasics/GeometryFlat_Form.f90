@@ -1,4 +1,4 @@
-!-- GeometryFlat extends VariableGroup to include functionality related to
+!-- GeometryFlat extends Storage to include functionality related to
 !   flat geometry, though with possibly curvilinear coordinates.
 
 module GeometryFlat_Form
@@ -12,7 +12,7 @@ module GeometryFlat_Form
       N_FIELDS_FLAT  = 17, &
       N_VECTORS_FLAT = 1
 
-  type, public, extends ( VariableGroupForm ) :: GeometryFlatForm
+  type, public, extends ( StorageForm ) :: GeometryFlatForm
     integer ( KDI ) :: &
       IGNORABILITY   = 0, &
       N_FIELDS       = 0, &
@@ -113,7 +113,7 @@ contains
     Clear = .true.
     if ( present ( ClearOption ) ) Clear = ClearOption
 
-    call G % VariableGroupForm % Initialize &
+    call G % StorageForm % Initialize &
            ( [ nValues, G % N_FIELDS ], &
              VariableOption = Variable, VectorOption = Vector, &
              NameOption = Name, ClearOption = Clear, &
@@ -210,7 +210,7 @@ contains
 
     class ( GeometryFlatForm ), intent ( inout ) :: &
       G
-    class ( VariableGroupForm ), intent ( inout ) :: &
+    class ( StorageForm ), intent ( inout ) :: &
       Output
 
     call Output % Initialize &
@@ -222,7 +222,7 @@ contains
 
   subroutine ComputeReconstruction ( G_I, G, nDimensions, iDimension )
 
-    type ( VariableGroupForm ), intent ( inout ) :: &
+    type ( StorageForm ), intent ( inout ) :: &
       G_I
     class ( GeometryFlatForm ), intent ( in ) :: &
       G

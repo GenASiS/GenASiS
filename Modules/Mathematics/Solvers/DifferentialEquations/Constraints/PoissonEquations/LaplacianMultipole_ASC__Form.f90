@@ -141,7 +141,7 @@ contains
 
     class ( LaplacianMultipole_ASC_Form ), intent ( inout ) :: &
       LM
-    type ( VariableGroupForm ), intent ( in ) :: &
+    type ( StorageForm ), intent ( in ) :: &
       Source !-- array over levels    
 
     integer ( KDI ) :: &

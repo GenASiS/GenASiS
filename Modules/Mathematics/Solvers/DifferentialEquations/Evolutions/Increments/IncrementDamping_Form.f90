@@ -58,11 +58,11 @@ contains
 
     class ( IncrementDampingForm ), intent ( inout ) :: &
       I
-    type ( VariableGroupForm ), intent ( inout ) :: &
+    type ( StorageForm ), intent ( inout ) :: &
       Increment
     class ( CurrentTemplate ), intent ( in ) :: &
       C
-    type ( VariableGroupForm ), intent ( in ) :: &
+    type ( StorageForm ), intent ( in ) :: &
       IncrementExplicit, &
       DampingCoefficient
     real ( KDR ), intent ( in ) :: &
@@ -94,11 +94,11 @@ contains
 
     class ( IncrementDampingForm ), intent ( inout ) :: &
       I
-    type ( VariableGroupForm ), intent ( inout ) :: &
+    type ( StorageForm ), intent ( inout ) :: &
       Increment
     class ( CurrentTemplate ), intent ( in ) :: &
       C
-    type ( VariableGroupForm ), intent ( in ) :: &
+    type ( StorageForm ), intent ( in ) :: &
       IncrementExplicit, &
       DampingCoefficient
     real ( KDR ), intent ( in ) :: &

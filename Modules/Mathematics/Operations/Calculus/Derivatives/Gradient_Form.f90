@@ -15,7 +15,7 @@ module Gradient_Form
       IGNORABILITY = 0
     character ( LDF ) :: &
       Name = ''
-    type ( VariableGroupForm ), allocatable :: &
+    type ( StorageForm ), allocatable :: &
       Output
     type ( DifferenceForm ), allocatable :: &
       CoordinateDifference, &
@@ -73,7 +73,7 @@ contains
       G
     class ( Chart_SL_Template ), intent ( in ) :: &
       CSL
-    class ( VariableGroupForm ), intent ( in ) :: &
+    class ( StorageForm ), intent ( in ) :: &
       Input
     integer ( KDI ), intent ( in ) :: &
       iDimension
@@ -89,7 +89,7 @@ contains
       dX_I, &
       dVdX, &
       UL_Option
-    type ( VariableGroupForm ), allocatable :: &
+    type ( StorageForm ), allocatable :: &
       Coordinate
     class ( GeometryFlatForm ), pointer :: &
       Gmtry

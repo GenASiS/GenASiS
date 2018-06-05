@@ -35,9 +35,9 @@ module GridImageStream_Form
     procedure, public, pass :: &
       AccessSiloPointer
     procedure, public, pass :: &
-      WriteVariableGroup
+      WriteStorage
     procedure, public, pass :: &
-      ReadVariableGroup
+      ReadStorage
     procedure, public, pass :: &
       Close
     procedure, public, pass :: &
@@ -343,12 +343,12 @@ contains
   end function AccessSiloPointer
   
   
-  subroutine WriteVariableGroup ( GIS, VG, DirectoryOption )
+  subroutine WriteStorage ( GIS, S, DirectoryOption )
   
     class ( GridImageStreamForm ), intent ( inout ) :: &
       GIS
-    class ( VariableGroupForm ), dimension ( : ), intent ( in ) :: &
-      VG
+    class ( StorageForm ), dimension ( : ), intent ( in ) :: &
+      S
     character ( * ), intent ( in ), optional :: &
       DirectoryOption
     
@@ -370,31 +370,31 @@ contains
         call GIS % MakeDirectory ( DirectoryOption )
     end if
     
-    do iG = 1, size ( VG )
-      call GIS % MakeDirectory ( VG ( iG ) % Name )
-      do iS = 1, VG ( iG ) % nVariables
-        iVrbl = VG ( iG ) % iaSelected ( iS )
+    do iG = 1, size ( S )
+      call GIS % MakeDirectory ( S ( iG ) % Name )
+      do iS = 1, S ( iG ) % nVariables
+        iVrbl = S ( iG ) % iaSelected ( iS )
         Error = DBWRITE &
                   ( GIS % MeshBlockHandle, &
-                    VG ( iG ) % Variable ( iVrbl ), & 
-                    VG ( iG ) % lVariable ( iVrbl ), &
-                    VG ( iG ) % Value ( :, iVrbl ), &
-                    [ VG ( iG ) % nValues ], 1, DB_DOUBLE )
+                    S ( iG ) % Variable ( iVrbl ), & 
+                    S ( iG ) % lVariable ( iVrbl ), &
+                    S ( iG ) % Value ( :, iVrbl ), &
+                    [ S ( iG ) % nValues ], 1, DB_DOUBLE )
       end do
       call GIS % ChangeDirectory ( '../' )
     end do
     
     call GIS % ChangeDirectory ( WorkingDirectory )
   
-  end subroutine WriteVariableGroup
+  end subroutine WriteStorage
   
   
-  subroutine ReadVariableGroup ( GIS, VG, DirectoryOption )
+  subroutine ReadStorage ( GIS, S, DirectoryOption )
   
     class ( GridImageStreamForm ), intent ( inout ) :: &
       GIS
-    class ( VariableGroupForm ), dimension ( : ), intent ( out ) :: &
-      VG
+    class ( StorageForm ), dimension ( : ), intent ( out ) :: &
+      S
     character ( * ), intent ( in ), optional :: &
       DirectoryOption
     
@@ -440,23 +440,23 @@ contains
       
       iG = iG + 1
       !-- assume all variables in this directory has the same number of 
-      !   elements since they were created from a VariableGroup object
+      !   elements since they were created from a Storage object
       Error = DBINQLEN &
                   ( GIS % MeshBlockHandle, GIS % ContentList ( 1 ), &
                     len_trim ( GIS % ContentList ( 1 ) ), nValues )
       
-      call VG ( iG ) % Initialize &
+      call S ( iG ) % Initialize &
              ( [ nValues, size ( GIS % ContentList ) ], &
                NameOption = trim ( Directory ( iD ) ), &
                VariableOption = GIS % ContentList )
       
-      do iVrbl = 1, VG ( iG ) % nVariables 
+      do iVrbl = 1, S ( iG ) % nVariables 
         Value = DB_GetVariable &
                   ( DB_File, &
-                    trim ( VG ( iG ) % Variable ( iVrbl ) ) // c_null_char )
+                    trim ( S ( iG ) % Variable ( iVrbl ) ) // c_null_char )
         call c_f_pointer ( Value, VariableValue, [ nValues ] )
         do iV = 1, nValues
-          VG ( iG ) % Value ( iV, iVrbl ) = VariableValue ( iV ) 
+          S ( iG ) % Value ( iV, iVrbl ) = VariableValue ( iV ) 
         end do
         call DB_FreeVariable ( Value )
       end do 
@@ -467,7 +467,7 @@ contains
     
     call GIS % ChangeDirectory ( WorkingDirectory )
     
-  end subroutine ReadVariableGroup
+  end subroutine ReadStorage
   
   
   subroutine Close ( GIS )

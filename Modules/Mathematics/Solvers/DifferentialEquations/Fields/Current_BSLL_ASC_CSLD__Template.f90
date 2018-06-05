@@ -39,7 +39,7 @@ contains
     class ( CurrentTemplate ), pointer :: &
       CF
 
-    class ( VariableGroupForm ), pointer :: &
+    class ( StorageForm ), pointer :: &
       F
 
     CF => null ( )
@@ -64,7 +64,7 @@ contains
     class ( CurrentTemplate ), pointer :: &
       CS
 
-    class ( VariableGroupForm ), pointer :: &
+    class ( StorageForm ), pointer :: &
       F
 
     CS => null ( )

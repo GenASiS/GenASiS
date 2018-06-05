@@ -309,18 +309,18 @@ contains
   end function MyAngularMomentum
 
 
-  subroutine SetImage ( DP, VG_P, VG_V, Name )
+  subroutine SetImage ( DP, S_P, S_V, Name )
 
     class ( DistributedParticlesForm ), intent ( inout ) :: &
       DP
-    class ( VariableGroupForm ), dimension ( : ), intent ( in ) :: &
-      VG_P, &
-      VG_V
+    class ( StorageForm ), dimension ( : ), intent ( in ) :: &
+      S_P, &
+      S_V
     character ( * ), intent ( in ) :: &
       Name
 
     integer ( KDI ) :: &
-      iVG  !-- iVariableGroup
+      iS  !-- iStorage
     character ( LDF ) :: &
       OutputDirectory
 
@@ -338,22 +338,22 @@ contains
 
     associate ( GIP => DP % GridImagePosition )
     call GIP % Initialize ( GIS ) 
-    do iVG = 1, size ( VG_P )
-      call GIP % AddVariableGroup ( VG_P ( iVG ) )
+    do iS = 1, size ( S_P )
+      call GIP % AddStorage ( S_P ( iS ) )
     end do
     end associate !-- GIP
 
     associate ( GIPB => DP % GridImagePositionBox )
     call GIPB % Initialize ( GIS ) 
-    do iVG = 1, size ( VG_P )
-      call GIPB % AddVariableGroup ( VG_P ( iVG ) )
+    do iS = 1, size ( S_P )
+      call GIPB % AddStorage ( S_P ( iS ) )
     end do
     end associate !-- GIPB
 
     associate ( GIV => DP % GridImageVelocity )
     call GIV % Initialize ( GIS ) 
-    do iVG = 1, size ( VG_V )
-      call GIV % AddVariableGroup ( VG_V ( iVG ) )
+    do iS = 1, size ( S_V )
+      call GIV % AddStorage ( S_V ( iS ) )
     end do
     end associate !-- GIV
 

@@ -30,7 +30,7 @@ module Step_RK_C_BSLL_ASC_CSLD__Template
         nSections = 0
       type ( Real_3D_2D_Form ), dimension ( : ), allocatable :: &
         BoundaryFluence_CSL_S
-      type ( VariableGroupForm ), dimension ( : ), allocatable :: &
+      type ( StorageForm ), dimension ( : ), allocatable :: &
         Solution_BSLL_ASC_CSLD_S, &
         Y_BSLL_ASC_CSLD_S
       type ( Storage_BSLL_ASC_CSLD_Form ), dimension ( : ), allocatable :: &
@@ -395,7 +395,7 @@ contains
   subroutine LoadSolution_C_BSLL_ASC_CSLD &
                ( Solution_BSLL_ASC_CSLD_S, S, Current_BSLL_ASC_CSLD )
 
-    type ( VariableGroupForm ), dimension ( : ), intent ( inout ) :: &
+    type ( StorageForm ), dimension ( : ), intent ( inout ) :: &
       Solution_BSLL_ASC_CSLD_S
     class ( Step_RK_C_BSLL_ASC_CSLD_Template ), intent ( in ) :: &
       S
@@ -429,12 +429,12 @@ contains
       Current_BSLL_ASC_CSLD
     class ( Step_RK_C_BSLL_ASC_CSLD_Template ), intent ( in ) :: &
       S
-    type ( VariableGroupForm ), dimension ( : ), intent ( in ) :: &
+    type ( StorageForm ), dimension ( : ), intent ( in ) :: &
       Solution_BSLL_ASC_CSLD_S
 
     integer ( KDI ) :: &
       iS     !-- iSection
-    class ( VariableGroupForm ), pointer :: &
+    class ( StorageForm ), pointer :: &
       Solution
     class ( CurrentTemplate ), pointer :: &
       Current
@@ -486,7 +486,7 @@ contains
 
     integer ( KDI ) :: &
       iS  !-- iSection
-    type ( VariableGroupForm ), pointer :: &
+    type ( StorageForm ), pointer :: &
       KS
 
     associate ( KB => S % K_BSLL_ASC_CSLD ( iK ) )
@@ -516,7 +516,7 @@ contains
       K_BSLL_ASC_CSLD
     type ( Real_3D_2D_Form ), dimension ( : ), intent ( inout ) :: &
       BF_CSL_S
-    type ( VariableGroupForm ), dimension ( : ), intent ( in ) :: &
+    type ( StorageForm ), dimension ( : ), intent ( in ) :: &
       Y_BSLL_ASC_CSLD_S
     real ( KDR ), intent ( in ) :: &
       TimeStep
@@ -526,7 +526,7 @@ contains
     integer ( KDI ) :: &
       iS, &  !-- iSection
       iF     !-- iFiber
-    type ( VariableGroupForm ), pointer :: &
+    type ( StorageForm ), pointer :: &
       K
     type ( TimerForm ), pointer :: &
       TimerStore, &
@@ -664,7 +664,7 @@ contains
 
     integer ( KDI ) :: &
       iS  !-- iSection
-    type ( VariableGroupForm ), pointer :: &
+    type ( StorageForm ), pointer :: &
       KS
 
     associate ( KB => S % K_BSLL_ASC_CSLD ( iStage ) )

@@ -50,10 +50,10 @@ module Step_RK_C_ASC__Template
         BoundaryFluence_CSL
       logical ( KDL ) :: &
         Allocated
-      type ( VariableGroupForm ), allocatable :: &
+      type ( StorageForm ), allocatable :: &
         Solution, &
         Y
-      type ( VariableGroupForm ), dimension ( : ), allocatable :: &
+      type ( StorageForm ), dimension ( : ), allocatable :: &
         K
 !       class ( GeometryFlatForm ), pointer :: &
 !         Geometry => null ( )
@@ -164,7 +164,7 @@ module Step_RK_C_ASC__Template
         S
       class ( Sources_C_Form ), intent ( inout ) :: &
         Sources
-      type ( VariableGroupForm ), intent ( inout ), target :: &
+      type ( StorageForm ), intent ( inout ), target :: &
         Increment
       class ( CurrentTemplate ), intent ( in ) :: &
         Current
@@ -184,7 +184,7 @@ module Step_RK_C_ASC__Template
         S
       class ( Sources_C_Form ), intent ( inout ) :: &
         Sources
-      type ( VariableGroupForm ), intent ( inout ) :: &
+      type ( StorageForm ), intent ( inout ) :: &
         Increment
       class ( CurrentTemplate ), intent ( in ), target :: &
         Current
@@ -206,7 +206,7 @@ module Step_RK_C_ASC__Template
       import Step_RK_C_ASC_Template
       class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
         S
-      type ( VariableGroupForm ), intent ( inout ), target :: &
+      type ( StorageForm ), intent ( inout ), target :: &
         Increment
       class ( CurrentTemplate ), intent ( inout ) :: &
         Current
@@ -359,7 +359,7 @@ contains
 !     integer ( KDI ), dimension ( size ( Current_1D ) ) :: &
 !       nValues, &
 !       nEquations
-!     type ( VariableGroupForm ), dimension ( size ( Current_1D ) ) :: &
+!     type ( StorageForm ), dimension ( size ( Current_1D ) ) :: &
 !       Solution
 !     class ( GeometryFlatForm ), pointer :: &
 !       G
@@ -712,7 +712,7 @@ contains
 
   subroutine LoadSolution_C ( Solution, S, Current )
 
-    type ( VariableGroupForm ), intent ( inout ) :: &
+    type ( StorageForm ), intent ( inout ) :: &
       Solution
     class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
       S
@@ -741,7 +741,7 @@ contains
       Current
     class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
       S
-    type ( VariableGroupForm ), intent ( in ) :: &
+    type ( StorageForm ), intent ( in ) :: &
       Solution
 
     integer ( KDI ) :: &
@@ -779,9 +779,9 @@ contains
 
 !     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
 !       S
-!     type ( VariableGroupForm ), dimension ( :, : ), intent ( inout ) :: &
+!     type ( StorageForm ), dimension ( :, : ), intent ( inout ) :: &
 !       K
-!     type ( VariableGroupForm ), dimension ( : ), intent ( in ) :: &
+!     type ( StorageForm ), dimension ( : ), intent ( in ) :: &
 !       Y
 !     real ( KDR ), intent ( in ) :: &
 !       Time, &
@@ -792,7 +792,7 @@ contains
 
 !     integer ( KDI ) :: &
 !       iF  !-- iField
-!     type ( VariableGroupForm ), allocatable :: &
+!     type ( StorageForm ), allocatable :: &
 !       DC  !-- DampingCoefficient
 !     class ( GeometryFlatForm ), pointer :: &
 !       G
@@ -1014,7 +1014,7 @@ contains
       C
     class ( ChartTemplate ), intent ( inout ) :: &
       Chart
-    type ( VariableGroupForm ), intent ( inout ) :: &
+    type ( StorageForm ), intent ( inout ) :: &
       K
     real ( KDR ), intent ( in ) :: &
       TimeStep
@@ -1334,7 +1334,7 @@ contains
       S
     type ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
       ID
-    type ( VariableGroupForm ), intent ( inout ) :: &
+    type ( StorageForm ), intent ( inout ) :: &
       Increment
     real ( KDR ), intent ( in ) :: &
       TimeStep

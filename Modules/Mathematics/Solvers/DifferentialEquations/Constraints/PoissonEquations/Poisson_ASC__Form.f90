@@ -76,23 +76,23 @@ contains
     class ( FieldAtlasTemplate ), intent ( in ) :: &
       Source
 
-    class ( VariableGroupForm ), pointer :: &
-      Source_VG, &
-      Solution_VG
+    class ( StorageForm ), pointer :: &
+      Source_S, &
+      Solution_S
 
     select type ( Source )
     class is ( Storage_ASC_Form )
-    Source_VG => Source % Storage ( )
+    Source_S => Source % Storage ( )
 
     select type ( Solution )
     class is ( Storage_ASC_Form )
-    Solution_VG => Solution % Storage ( )
+    Solution_S => Solution % Storage ( )
 
     select case ( trim ( P % SolverType ) )
     case ( 'MULTIPOLE' )
       select type ( C => P % Atlas % Chart )
       class is ( Chart_SLD_Form )
-        call SolveMultipole_CSL ( P, C, Solution_VG, Source_VG )
+        call SolveMultipole_CSL ( P, C, Solution_S, Source_S )
       class default
         call Show ( 'Chart type not supported', CONSOLE % ERROR )
         call Show ( 'Solve', 'subroutine', CONSOLE % ERROR )
@@ -129,9 +129,9 @@ contains
       P
     class ( Chart_SLD_Form ), intent ( inout ) :: &
       C
-    class ( VariableGroupForm ), intent ( inout ) :: &
+    class ( StorageForm ), intent ( inout ) :: &
       Solution
-    class ( VariableGroupForm ), intent ( in ) :: &
+    class ( StorageForm ), intent ( in ) :: &
       Source
 
     integer ( KDI ) :: &

@@ -220,7 +220,7 @@ contains
 
     class ( Atlas_SC_Template ), intent ( inout ) :: &
       A
-    class ( VariableGroupForm ), intent ( inout ) :: &
+    class ( StorageForm ), intent ( inout ) :: &
       F  !-- Field
     integer ( KDI ), intent ( in ) :: &
       iDimension, &
@@ -281,7 +281,7 @@ contains
 
     class ( Atlas_SC_Template ), intent ( inout ) :: &
       A
-    class ( VariableGroupForm ), intent ( inout ) :: &
+    class ( StorageForm ), intent ( inout ) :: &
       F  !-- Field
 
     integer ( KDI ) :: &
@@ -314,7 +314,7 @@ contains
 
     class ( Chart_SL_Template ), intent ( inout ) :: &
       CSL
-    class ( VariableGroupForm ), intent ( inout ) :: &
+    class ( StorageForm ), intent ( inout ) :: &
       F  !-- Field
     integer ( KDI ), intent ( in ) :: &
       iDimension, &
@@ -336,7 +336,7 @@ contains
 
     class ( Chart_SL_Template ), intent ( inout ) :: &
       CSL
-    class ( VariableGroupForm ), intent ( inout ) :: &
+    class ( StorageForm ), intent ( inout ) :: &
       F  !-- Field
     integer ( KDI ), intent ( in ) :: &
       iDimension, &

@@ -20,8 +20,8 @@ program StructuredGridImage_Form_Test
     VectorName
   type ( Integer_1D_Form ), dimension ( 1 ) :: &
     VectorIndices
-  type ( VariableGroupForm ) :: &
-    VG
+  type ( StorageForm ) :: &
+    S
   type ( CommunicatorForm ), allocatable :: &
     C
   type ( GridImageStreamForm ) :: &
@@ -54,14 +54,14 @@ program StructuredGridImage_Form_Test
   VariableName ( 2 ) = 'VariableName_2'
   VariableName ( 3 ) = 'VariableName_3'
   VectorName ( 1 ) = 'VectorName'
-  call VG % InitializeAllocate &
+  call S % InitializeAllocate &
          ( [ 12, 3 ], VariableOption = VariableName, &
-           NameOption = 'VariableGroup', VectorOption = VectorName, &
+           NameOption = 'Storage', VectorOption = VectorName, &
            VectorIndicesOption = VectorIndices )
-  VG % Value ( :, 1 ) &
+  S % Value ( :, 1 ) &
     = [ 1., 2., 3., 4., 5., 6., 2., 4., 6., 8., 10., 12. ]
-  VG % Value ( :, 2 ) = 2.0_KDR * VG % Value ( :, 1 )
-  VG % Value ( :, 3 ) = 3.0_KDR * VG % Value ( :, 1 )
+  S % Value ( :, 2 ) = 2.0_KDR * S % Value ( :, 1 )
+  S % Value ( :, 3 ) = 3.0_KDR * S % Value ( :, 1 )
     
   call GIS % Initialize ( Name, CommunicatorOption = C )
   
@@ -69,7 +69,7 @@ program StructuredGridImage_Form_Test
   
   call SGI_Rect % Initialize ( GIS )
 
-  call SGI_Rect % AddVariableGroup ( VG )
+  call SGI_Rect % AddStorage ( S )
   
   call SGI_Rect % SetGrid  &
          ( Directory = 'Rectilinear', &
@@ -83,20 +83,20 @@ program StructuredGridImage_Form_Test
   call Show ( SGI_Rect % NodeCoordinate_2, 'NodeCoordinate_2' )
   call Show ( SGI_Rect % NodeCoordinate_3, 'NodeCoordinate_3' )
   call Show &
-         ( SGI_Rect % VariableGroup ( 1 ) % Value ( :, 1 ), &
-           SGI_Rect % VariableGroup ( 1 ) % Variable ( 1 ) )
+         ( SGI_Rect % Storage ( 1 ) % Value ( :, 1 ), &
+           SGI_Rect % Storage ( 1 ) % Variable ( 1 ) )
   call Show &
-         ( SGI_Rect % VariableGroup ( 1 ) % Value ( :, 2 ), &
-           SGI_Rect % VariableGroup ( 1 ) % Variable ( 2 ) )
+         ( SGI_Rect % Storage ( 1 ) % Value ( :, 2 ), &
+           SGI_Rect % Storage ( 1 ) % Variable ( 2 ) )
   call Show &
-         ( SGI_Rect % VariableGroup ( 1 ) % Value ( :, 3 ), &
-           SGI_Rect % VariableGroup ( 1 ) % Variable ( 3 ) )
+         ( SGI_Rect % Storage ( 1 ) % Value ( :, 3 ), &
+           SGI_Rect % Storage ( 1 ) % Variable ( 3 ) )
 
   call SGI_Rect % Write ( )
   
   call GIS % Close ( ) 
   
-  call Clear ( VG % Value )
+  call Clear ( S % Value )
 
   call GIS % Open ( GIS % ACCESS_READ, NumberOption = 0 )
   
@@ -112,14 +112,14 @@ program StructuredGridImage_Form_Test
   call Show ( SGI_Read % NodeCoordinate_2, 'NodeCoordinate_2' )
   call Show ( SGI_Read % NodeCoordinate_3, 'NodeCoordinate_3' )
   call Show &
-         ( SGI_Read % VariableGroup ( 1 ) % Value ( :, 1 ), &
-           SGI_Read % VariableGroup ( 1 ) % Variable ( 1 ) )
+         ( SGI_Read % Storage ( 1 ) % Value ( :, 1 ), &
+           SGI_Read % Storage ( 1 ) % Variable ( 1 ) )
   call Show &
-         ( SGI_Read % VariableGroup ( 1 ) % Value ( :, 2 ), &
-           SGI_Read % VariableGroup ( 1 ) % Variable ( 2 ) )
+         ( SGI_Read % Storage ( 1 ) % Value ( :, 2 ), &
+           SGI_Read % Storage ( 1 ) % Variable ( 2 ) )
   call Show &
-         ( SGI_Read % VariableGroup ( 1 ) % Value ( :, 3 ), &
-           SGI_Read % VariableGroup ( 1 ) % Variable ( 3 ) )
+         ( SGI_Read % Storage ( 1 ) % Value ( :, 3 ), &
+           SGI_Read % Storage ( 1 ) % Variable ( 3 ) )
   
   call GIS % Close ( )
 

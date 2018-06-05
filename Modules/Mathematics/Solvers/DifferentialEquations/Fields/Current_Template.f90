@@ -16,7 +16,7 @@ module Current_Template
       N_FIELDS_TEMPLATE    = 6, &
       N_VECTORS_TEMPLATE   = 2
 
-  type, public, extends ( VariableGroupForm ), abstract :: CurrentTemplate
+  type, public, extends ( StorageForm ), abstract :: CurrentTemplate
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
       N_PRIMITIVE  = 0, &
@@ -226,7 +226,7 @@ contains
     if ( present ( ClearOption ) ) &
       Clear = ClearOption
 
-    call C % VariableGroupForm % Initialize &
+    call C % StorageForm % Initialize &
            ( [ nValues, C % N_FIELDS ], &
              VariableOption = Variable, VectorOption = Vector, &
              NameOption = Name, ClearOption = Clear, &
@@ -431,7 +431,7 @@ contains
 
     class ( * ), intent ( inout ) :: &
       Increment
-    type ( VariableGroupForm ), intent ( inout ) :: &
+    type ( StorageForm ), intent ( inout ) :: &
       F_I, &
       F_IL, F_IR, &
       SS_I, &
@@ -442,7 +442,7 @@ contains
       Grid
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    type ( VariableGroupForm ), intent ( in ) :: &
+    type ( StorageForm ), intent ( in ) :: &
       C_IL, C_IR, &
       G_I
     integer ( KDI ), intent ( in ) :: &
@@ -479,7 +479,7 @@ contains
 
     class ( * ), intent ( inout ) :: &
       Increment
-    type ( VariableGroupForm ), intent ( inout ) :: &
+    type ( StorageForm ), intent ( inout ) :: &
       F_I, &
       F_IL, F_IR, &
       SS_I, &
@@ -490,7 +490,7 @@ contains
       Grid
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    type ( VariableGroupForm ), intent ( in ) :: &
+    type ( StorageForm ), intent ( in ) :: &
       C_IL, C_IR, &
       G_I
     integer ( KDI ), intent ( in ) :: &
@@ -533,7 +533,7 @@ contains
 
   subroutine ComputeDiffusionFactor_HLL ( DF_I, Grid, C, iDimension )
 
-    type ( VariableGroupForm ), intent ( inout ) :: &
+    type ( StorageForm ), intent ( inout ) :: &
       DF_I
     class ( * ), intent ( in ), target :: &
       Grid

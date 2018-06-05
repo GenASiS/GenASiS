@@ -1,16 +1,16 @@
-!-- PackedVariableGroupForm loads and stores selected rows and columns of a
-!   VariableGroup data array into a contiguous data array. 
+!-- PackedStorageForm loads and stores selected rows and columns of a
+!   Storage data array into a contiguous data array. 
 
-module PackedVariableGroup_Form
+module PackedStorage_Form
 
   use Specifiers
   use ArrayOperations
-  use VariableGroup_Form
+  use Storage_Form
   
   implicit none
   private
   
-  type, public :: PackedVariableGroupForm
+  type, public :: PackedStorageForm
     integer ( KDI ) :: &
       nValues = 0, &
       nValuesUnpacked = 0, &
@@ -34,15 +34,15 @@ module PackedVariableGroup_Form
       Store
     final :: &
       Finalize
-  end type PackedVariableGroupForm
+  end type PackedStorageForm
 
-  type, public :: PackedVariableGroupElementForm
-    class ( PackedVariableGroupForm ), allocatable :: &
+  type, public :: PackedStorageElementForm
+    class ( PackedStorageForm ), allocatable :: &
       Element
   contains
     final :: &
       FinalizeElement
-  end type PackedVariableGroupElementForm
+  end type PackedStorageElementForm
 
     private :: &
       LoadVariable, &
@@ -53,10 +53,10 @@ contains
 
 
   subroutine InitializeEmpty &
-               ( PVG, iaUnpacked, nValuesUnpacked, nVariables, ClearOption )
+               ( PS, iaUnpacked, nValuesUnpacked, nVariables, ClearOption )
 
-    class ( PackedVariableGroupForm ), intent ( inout ) :: &
-      PVG
+    class ( PackedStorageForm ), intent ( inout ) :: &
+      PS
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
       iaUnpacked
     integer ( KDI ), intent ( in ) :: &
@@ -71,115 +71,115 @@ contains
     ClearRequested = .false.
     if ( present ( ClearOption ) ) ClearRequested = ClearOption
 
-    PVG % nVariables = nVariables    
-    PVG % nValues = size ( iaUnpacked )
-    PVG % nValuesUnpacked = nValuesUnpacked
+    PS % nVariables = nVariables    
+    PS % nValues = size ( iaUnpacked )
+    PS % nValuesUnpacked = nValuesUnpacked
 
-    allocate ( PVG % iaUnpacked ( PVG % nValues ) )
-    allocate ( PVG % Value ( PVG % nValues, PVG % nVariables ) )
-    if ( ClearRequested ) call Clear ( PVG % Value )
+    allocate ( PS % iaUnpacked ( PS % nValues ) )
+    allocate ( PS % Value ( PS % nValues, PS % nVariables ) )
+    if ( ClearRequested ) call Clear ( PS % Value )
 
     if ( size ( iaUnpacked ) > 0 ) &
-      call Copy ( iaUnpacked, PVG % iaUnpacked )
+      call Copy ( iaUnpacked, PS % iaUnpacked )
 
   end subroutine InitializeEmpty
   
   
-  subroutine InitializeCopy ( PVG, PVG_Source )
+  subroutine InitializeCopy ( PS, PS_Source )
 
-    class ( PackedVariableGroupForm ), intent ( inout ) :: &
-      PVG
-    class ( PackedVariableGroupForm ), intent ( in ) :: &
-      PVG_Source
+    class ( PackedStorageForm ), intent ( inout ) :: &
+      PS
+    class ( PackedStorageForm ), intent ( in ) :: &
+      PS_Source
 
-    PVG % nVariables = PVG_Source % nVariables    
-    PVG % nValues = PVG_Source % nValues
-    PVG % nValuesUnpacked = PVG_Source % nValuesUnpacked
+    PS % nVariables = PS_Source % nVariables    
+    PS % nValues = PS_Source % nValues
+    PS % nValuesUnpacked = PS_Source % nValuesUnpacked
 
-    allocate ( PVG % iaUnpacked ( PVG % nValues ) )
-    allocate ( PVG % Value ( PVG % nValues, PVG % nVariables ) )
+    allocate ( PS % iaUnpacked ( PS % nValues ) )
+    allocate ( PS % Value ( PS % nValues, PS % nVariables ) )
 
-    if ( size ( PVG % iaUnpacked ) > 0 ) then
-      call Copy ( PVG_Source % iaUnpacked, PVG % iaUnpacked )
-      call Copy ( PVG_Source % Value, PVG % Value )
+    if ( size ( PS % iaUnpacked ) > 0 ) then
+      call Copy ( PS_Source % iaUnpacked, PS % iaUnpacked )
+      call Copy ( PS_Source % Value, PS % Value )
     end if
 
   end subroutine InitializeCopy
 
 
-  subroutine Load ( PVG, VG )
+  subroutine Load ( PS, S )
     
-    class ( PackedVariableGroupForm ), intent ( inout ) :: &
-      PVG
-    class ( VariableGroupForm ), intent ( in ) :: &
-      VG
+    class ( PackedStorageForm ), intent ( inout ) :: &
+      PS
+    class ( StorageForm ), intent ( in ) :: &
+      S
       
     integer ( KDI ) :: &
       iV  !-- iVariable
     
-    if ( PVG % nValues == 0 ) return
+    if ( PS % nValues == 0 ) return
     
-    do iV = 1, PVG % nVariables
+    do iV = 1, PS % nVariables
       call LoadVariable &
-             ( PVG % Value ( :, iV ), &
-               VG % Value ( :, VG % iaSelected ( iV ) ), &
-               PVG % iaUnpacked, PVG % nValues )
+             ( PS % Value ( :, iV ), &
+               S % Value ( :, S % iaSelected ( iV ) ), &
+               PS % iaUnpacked, PS % nValues )
     end do
 
   end subroutine Load
   
     
-  subroutine Add ( PVG, VG )
+  subroutine Add ( PS, S )
     
-    class ( PackedVariableGroupForm ), intent ( inout ) :: &
-      PVG
-    class ( VariableGroupForm ), intent ( in ) :: &
-      VG
+    class ( PackedStorageForm ), intent ( inout ) :: &
+      PS
+    class ( StorageForm ), intent ( in ) :: &
+      S
       
     integer ( KDI ) :: &
       iV  !-- iVariable
     
-    if ( PVG % nValues == 0 ) return
+    if ( PS % nValues == 0 ) return
     
-    do iV = 1, PVG % nVariables
+    do iV = 1, PS % nVariables
       call AddVariable &
-             ( PVG % Value ( :, iV ), &
-               VG % Value ( :, VG % iaSelected ( iV ) ), &
-               PVG % iaUnpacked, PVG % nValues )
+             ( PS % Value ( :, iV ), &
+               S % Value ( :, S % iaSelected ( iV ) ), &
+               PS % iaUnpacked, PS % nValues )
     end do
 
   end subroutine Add
   
     
-  subroutine Store ( PVG, VG )
+  subroutine Store ( PS, S )
     
-    class ( PackedVariableGroupForm ), intent ( inout ) :: &
-      PVG
-    class ( VariableGroupForm ), intent ( inout ) :: &
-      VG
+    class ( PackedStorageForm ), intent ( inout ) :: &
+      PS
+    class ( StorageForm ), intent ( inout ) :: &
+      S
     
     integer ( KDI ) :: &
       iV  !-- iVariable
     
-    if ( PVG % nValues == 0 ) return
+    if ( PS % nValues == 0 ) return
     
-    do iV = 1, PVG % nVariables
+    do iV = 1, PS % nVariables
       call StoreVariable &
-             ( VG % Value ( :, VG % iaSelected ( iV ) ), &
-               PVG % Value ( :, iV ), &
-               PVG % iaUnpacked, PVG % nValues )
+             ( S % Value ( :, S % iaSelected ( iV ) ), &
+               PS % Value ( :, iV ), &
+               PS % iaUnpacked, PS % nValues )
     end do
     
   end subroutine Store
 
 
-  elemental subroutine Finalize ( PVG )
+  elemental subroutine Finalize ( PS )
 
-    type ( PackedVariableGroupForm ), intent ( inout ) :: &
-      PVG
+    type ( PackedStorageForm ), intent ( inout ) :: &
+      PS
 
-    if ( allocated ( PVG % Value ) ) deallocate ( PVG % Value )
-    if ( allocated ( PVG % iaUnpacked ) ) deallocate ( PVG % iaUnpacked )
+    if ( allocated ( PS % Value ) ) deallocate ( PS % Value )
+    if ( allocated ( PS % iaUnpacked ) ) deallocate ( PS % iaUnpacked )
 
   end subroutine Finalize
   
@@ -263,14 +263,14 @@ contains
   end subroutine StoreVariable
   
 
-  impure elemental subroutine FinalizeElement ( PVGE )
+  impure elemental subroutine FinalizeElement ( PSE )
     
-    type ( PackedVariableGroupElementForm ), intent ( inout ) :: &
-      PVGE
+    type ( PackedStorageElementForm ), intent ( inout ) :: &
+      PSE
 
-    if ( allocated ( PVGE % Element ) ) deallocate ( PVGE % Element )
+    if ( allocated ( PSE % Element ) ) deallocate ( PSE % Element )
 
   end subroutine FinalizeElement
 
 
-end module PackedVariableGroup_Form
+end module PackedStorage_Form

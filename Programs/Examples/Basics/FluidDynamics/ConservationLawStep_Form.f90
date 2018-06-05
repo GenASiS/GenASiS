@@ -13,7 +13,7 @@ module ConservationLawStep_Form
       N_MODIFIED_SPEEDS = 2
     real ( KDR ) :: &
       LimiterParameter
-    type ( VariableGroupForm ) :: &
+    type ( StorageForm ) :: &
       DifferenceLeft, &
       DifferenceRight, &
       ReconstructionInner, &
@@ -153,7 +153,7 @@ contains
 
     integer ( KDI ) :: &
       iV  !-- iVariable
-    type ( VariableGroupForm ) :: &
+    type ( StorageForm ) :: &
       Old, &
       Primitive
 

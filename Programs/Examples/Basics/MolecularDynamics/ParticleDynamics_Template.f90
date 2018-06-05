@@ -28,7 +28,7 @@ module ParticleDynamics_Template
       ForceValue
     character ( LDL ) :: &
       Type = ''
-    type ( VariableGroupForm ) :: &
+    type ( StorageForm ) :: &
       Extensive, &
       Intensive
     type ( GridImageStreamForm ) :: &
@@ -176,8 +176,8 @@ contains
     integer ( KDI ) :: &
       iC, &  !-- iCycle
       iTimerComputation
-    type ( VariableGroupForm ), dimension ( 1 ) :: &
-      VGP
+    type ( StorageForm ), dimension ( 1 ) :: &
+      SP
 
     call PROGRAM_HEADER % AddTimer &
            ( 'Computational', iTimerComputation, Level = 1 )
@@ -193,8 +193,8 @@ contains
     call Show ( PD % Time, PD % TimeUnit, 'Time', CONSOLE % INFO_2 )
 
     call PD % SetExtensiveIntensive ( )
-    call VGP ( 1 ) % Initialize ( MP )
-    call DP % SetImage ( VGP, VGP, PROGRAM_HEADER % Name )
+    call SP ( 1 ) % Initialize ( MP )
+    call DP % SetImage ( SP, SP, PROGRAM_HEADER % Name )
 
     PD % TimeValue ( 0 ) = PD % Time
     call ComputeForce ( PD )  !-- needed to get initial potential energy
@@ -292,8 +292,8 @@ contains
              nProperCells = size ( PD % TimeValue ), oValue = 0, &
              CoordinateUnitOption = PD % TimeUnit, &
              CoordinateLabelOption = 't' )
-    call TS % AddVariableGroup ( PD % Extensive )
-    call TS % AddVariableGroup ( PD % Intensive )
+    call TS % AddStorage ( PD % Extensive )
+    call TS % AddStorage ( PD % Intensive )
     call TS % Write ( )
     end associate !-- TS
 

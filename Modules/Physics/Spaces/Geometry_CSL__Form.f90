@@ -61,7 +61,7 @@ contains
     class ( Geometry_G_Form ), pointer :: &
       G
       
-    class ( VariableGroupForm ), pointer :: &
+    class ( StorageForm ), pointer :: &
       Field
 
     G => null ( )
@@ -82,7 +82,7 @@ contains
     class ( Geometry_N_Form ), pointer :: &
       G
       
-    class ( VariableGroupForm ), pointer :: &
+    class ( StorageForm ), pointer :: &
       Field
 
     G => null ( )

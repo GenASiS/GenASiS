@@ -372,7 +372,7 @@ contains
       MaxDegree
     logical ( KDL ) :: &
       ComputeForce
-    type ( VariableGroupForm ), pointer :: &
+    type ( StorageForm ), pointer :: &
       S
     class ( Geometry_N_Form ), pointer :: &
       G

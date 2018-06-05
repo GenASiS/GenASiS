@@ -60,7 +60,7 @@ contains
       Variable
     character ( LDL ), dimension ( : ), allocatable :: &
       Suffix_Ell_M
-    type ( VariableGroupForm ), pointer :: &
+    type ( StorageForm ), pointer :: &
       Source, &
       SolidHarmonics_RC, SolidHarmonics_IC, &
       SolidHarmonics_RS, SolidHarmonics_IS, &

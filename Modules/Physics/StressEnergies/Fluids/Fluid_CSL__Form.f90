@@ -118,7 +118,7 @@ contains
     class ( Fluid_D_Form ), pointer :: &
       F
       
-    class ( VariableGroupForm ), pointer :: &
+    class ( StorageForm ), pointer :: &
       Field
 
     F => null ( )
@@ -139,7 +139,7 @@ contains
     class ( Fluid_P_I_Form ), pointer :: &
       F
       
-    class ( VariableGroupForm ), pointer :: &
+    class ( StorageForm ), pointer :: &
       Field
 
     F => null ( )
@@ -160,7 +160,7 @@ contains
     class ( Fluid_P_HN_Form ), pointer :: &
       F
       
-    class ( VariableGroupForm ), pointer :: &
+    class ( StorageForm ), pointer :: &
       Field
 
     F => null ( )

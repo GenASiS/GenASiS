@@ -75,7 +75,7 @@ module WoosleyHeger_07_G__Form
       VelocitySmoothing
     logical ( KDL ), dimension ( : ), allocatable, private :: &
       HeavyDisappeared
-    type ( VariableGroupForm ), private, allocatable :: &
+    type ( StorageForm ), private, allocatable :: &
       FluidSource_Radiation
     class ( Fluid_P_MHN_Form ), private, pointer :: &
       Fluid => null ( )
@@ -820,7 +820,7 @@ contains
       S
     class ( Sources_C_Form ), intent ( inout ) :: &
       Sources_RM
-    type ( VariableGroupForm ), intent ( inout ), target :: &
+    type ( StorageForm ), intent ( inout ), target :: &
       Increment
     class ( CurrentTemplate ), intent ( in ) :: &
       Radiation
@@ -848,7 +848,7 @@ contains
 !       S
 !     class ( Sources_C_Form ), intent ( inout ) :: &
 !       Sources_F
-!     type ( VariableGroupForm ), intent ( inout ), target :: &
+!     type ( StorageForm ), intent ( inout ), target :: &
 !       Increment
 !     class ( CurrentTemplate ), intent ( in ) :: &
 !       Fluid
@@ -993,7 +993,7 @@ contains
       S
     class ( Sources_C_Form ), intent ( inout ) :: &
       Sources_F
-    type ( VariableGroupForm ), intent ( inout ), target :: &
+    type ( StorageForm ), intent ( inout ), target :: &
       Increment
     class ( CurrentTemplate ), intent ( in ) :: &
       Fluid
@@ -1074,7 +1074,7 @@ contains
 
 !     class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
 !       S
-!     type ( VariableGroupForm ), intent ( inout ), target :: &
+!     type ( StorageForm ), intent ( inout ), target :: &
 !       Increment
 !     class ( CurrentTemplate ), intent ( inout ) :: &
 !       Radiation

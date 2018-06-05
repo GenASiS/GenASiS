@@ -82,7 +82,7 @@ module LaplacianMultipole_Template
       import LaplacianMultipoleTemplate
       class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
         LM
-      type ( VariableGroupForm ), intent ( in ) :: &
+      type ( StorageForm ), intent ( in ) :: &
         Source  
     end subroutine CML
   end interface
@@ -244,7 +244,7 @@ contains
 
     class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
       LM
-    type ( VariableGroupForm ), intent ( in ) :: &
+    type ( StorageForm ), intent ( in ) :: &
       Source !-- array over levels    
     
     ! integer ( KDI ) :: &

@@ -15,8 +15,8 @@ module DensityWaveIncrement_Form
       nRampCycles = 1
     type ( Real_3D_Form ), dimension ( :, : ), allocatable :: &
       BoundaryFluence_CSL
-    type ( VariableGroupForm ), allocatable :: &
-      Increment_VG
+    type ( StorageForm ), allocatable :: &
+      Increment_S
     type ( StorageDivergenceForm ), allocatable :: &
       Storage
     type ( IncrementDivergence_FV_Form ), allocatable :: &
@@ -79,13 +79,13 @@ contains
       = [ ( PC % Variable ( PC % iaConserved ( iF ) ), &
             iF = 1, PC % N_CONSERVED ) ] 
 
-    allocate ( DW % Increment_VG )
-    associate ( VG_Increment => DW % Increment_VG )
-    call VG_Increment % Initialize &
+    allocate ( DW % Increment_S )
+    associate ( S_Increment => DW % Increment_S )
+    call S_Increment % Initialize &
            ( [ PC % nValues, PC % N_CONSERVED ], &
              VariableOption = ConservedVariable, NameOption = 'Increment' )
 
-    call C % AddFieldImage ( VG_Increment, iStream = 1 )
+    call C % AddFieldImage ( S_Increment, iStream = 1 )
 
     !-- TimeStep
 
@@ -109,14 +109,14 @@ contains
     call I % SetStorage ( DW % Storage )
     call I % SetBoundaryFluence ( DW % BoundaryFluence_CSL )
 
-    call I % Compute ( VG_Increment, TimeStep, Weight_RK )
+    call I % Compute ( S_Increment, TimeStep, Weight_RK )
 
     associate ( PCS => PC % Sources )
     PCS % Value ( :, 1 : PCS % N_FIELDS_C )  &
-      =  Weight_RK  *  VG_Increment % Value  /  TimeStep
+      =  Weight_RK  *  S_Increment % Value  /  TimeStep
     end associate !-- PCS
 
-    end associate !-- VG_Increment
+    end associate !-- S_Increment
     end associate !-- I, etc.
     end select !-- C
     nullify ( PC, G )
@@ -133,8 +133,8 @@ contains
       deallocate ( DW % Increment )
     if ( allocated ( DW % Storage ) ) &
       deallocate ( DW % Storage )
-    if ( allocated ( DW % Increment_VG ) ) &
-      deallocate ( DW % Increment_VG )
+    if ( allocated ( DW % Increment_S ) ) &
+      deallocate ( DW % Increment_S )
     if ( allocated ( DW % BoundaryFluence_CSL ) ) &
       deallocate ( DW % BoundaryFluence_CSL )
 

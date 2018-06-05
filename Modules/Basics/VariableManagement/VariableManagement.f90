@@ -3,6 +3,6 @@ module VariableManagement
   use Specifiers
   use ArrayOperations
   use ArrayArrays
-  use VariableGroups
+  use Storages
 
 end module VariableManagement

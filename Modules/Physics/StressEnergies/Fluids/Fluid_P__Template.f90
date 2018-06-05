@@ -178,7 +178,7 @@ contains
 
     class ( * ), intent ( inout ) :: &
       Increment
-    type ( VariableGroupForm ), intent ( inout ) :: &
+    type ( StorageForm ), intent ( inout ) :: &
       F_I, &
       F_IL, F_IR, &
       SS_I, &
@@ -189,7 +189,7 @@ contains
       Grid
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    type ( VariableGroupForm ), intent ( in ) :: &
+    type ( StorageForm ), intent ( in ) :: &
       C_IL, C_IR, &
       G_I
     integer ( KDI ), intent ( in ) :: &
@@ -306,11 +306,11 @@ contains
   subroutine ComputeCenterStates &
                ( C_ICL, C_ICR, C, C_IL, C_IR, SS_I, M_DD_22, M_DD_33, iD )
 
-    type ( VariableGroupForm ), intent ( inout ) :: &
+    type ( StorageForm ), intent ( inout ) :: &
       C_ICL, C_ICR
     class ( Fluid_P_Template ), intent ( in ) :: &
       C
-    type ( VariableGroupForm ), intent ( in ) :: &
+    type ( StorageForm ), intent ( in ) :: &
       C_IL, C_IR, &
       SS_I
     real ( KDR ), dimension ( : ), intent ( in ) :: &
@@ -389,11 +389,11 @@ contains
   subroutine ComputeCenterStatesTemplate_P &
                ( C_ICL, C_ICR, C, C_IL, C_IR, SS_I, M_DD_22, M_DD_33, iD )
 
-    type ( VariableGroupForm ), intent ( inout ) :: &
+    type ( StorageForm ), intent ( inout ) :: &
       C_ICL, C_ICR
     class ( Fluid_P_Template ), intent ( in ) :: &
       C
-    type ( VariableGroupForm ), intent ( in ) :: &
+    type ( StorageForm ), intent ( in ) :: &
       C_IL, C_IR, &
       SS_I
     real ( KDR ), dimension ( : ), intent ( in ) :: &

@@ -114,17 +114,17 @@ contains
 
     class ( Storage_CSL_Form ), intent ( in ), target :: &
       SC
-    class ( VariableGroupForm ), pointer :: &
+    class ( StorageForm ), pointer :: &
       S
       
-    class ( VariableGroupForm ), pointer :: &
+    class ( StorageForm ), pointer :: &
       Field
 
     S => null ( )
 
     Field => SC % Field
     select type ( Field )
-    class is ( VariableGroupForm )
+    class is ( StorageForm )
     S => Field
     end select !-- Field
 

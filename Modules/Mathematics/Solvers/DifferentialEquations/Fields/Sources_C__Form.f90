@@ -9,7 +9,7 @@ module Sources_C__Form
   implicit none
   private
 
-  type, public, extends ( VariableGroupForm ) :: Sources_C_Form
+  type, public, extends ( StorageForm ) :: Sources_C_Form
     integer ( KDI ) :: &
       IGNORABILITY        = 0, &
       N_FIELDS_C  = 0, &
@@ -43,7 +43,7 @@ contains
 
     class ( Sources_C_Form ), intent ( inout ) :: &
       SC
-    class ( VariableGroupForm ), intent ( in ) :: &
+    class ( StorageForm ), intent ( in ) :: &
       Current
     type ( MeasuredValueForm ), intent ( in ) :: &
       TimeUnit
@@ -87,7 +87,7 @@ contains
     Clear = .true.
     if ( present ( ClearOption ) ) Clear = ClearOption
 
-    call SC % VariableGroupForm % Initialize &
+    call SC % StorageForm % Initialize &
            ( [ Current % nValues, SC % N_FIELDS ], &
              VariableOption = Variable, VectorOption = Vector, &
              NameOption = Name, ClearOption = Clear, &
@@ -112,7 +112,7 @@ contains
 
     class ( Sources_C_Form ), intent ( inout ) :: &
       SC
-    type ( VariableGroupForm ), intent ( inout ) :: &
+    type ( StorageForm ), intent ( inout ) :: &
       Output
 
     call Output % Initialize ( SC )

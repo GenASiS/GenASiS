@@ -24,10 +24,10 @@ module Step_RK_C_ASC_1D__Template
         nCurrents = 0
       type ( Real_3D_2D_Form ), dimension ( : ), allocatable :: &
         BoundaryFluence_CSL_1D
-      type ( VariableGroupForm ), dimension ( : ), allocatable :: &
+      type ( StorageForm ), dimension ( : ), allocatable :: &
         Solution_1D, &
         Y_1D
-      type ( VariableGroupForm ), dimension ( :, : ), allocatable :: &
+      type ( StorageForm ), dimension ( :, : ), allocatable :: &
         K_1D
       type ( CurrentPointerForm ), dimension ( : ), allocatable :: &
         Current_1D
@@ -418,7 +418,7 @@ contains
 
   subroutine LoadSolution_C_1D ( Solution_1D, S, Current_1D )
 
-    type ( VariableGroupForm ), dimension ( : ), intent ( inout ) :: &
+    type ( StorageForm ), dimension ( : ), intent ( inout ) :: &
       Solution_1D
     class ( Step_RK_C_ASC_1D_Template ), intent ( inout ) :: &
       S
@@ -444,7 +444,7 @@ contains
       Current_1D
     class ( Step_RK_C_ASC_1D_Template ), intent ( in ) :: &
       S
-    type ( VariableGroupForm ), dimension ( : ), intent ( inout ) :: &
+    type ( StorageForm ), dimension ( : ), intent ( inout ) :: &
       Solution_1D
     logical ( KDL ), intent ( in ), optional :: &
       IntermediateOption, &

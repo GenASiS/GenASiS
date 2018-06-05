@@ -24,7 +24,7 @@ module TimeSeries_Form
       MEMORY_MEAN_RSS
     integer ( KDI ) :: &
       iTime = 0
-    type ( VariableGroupForm ), allocatable :: &
+    type ( StorageForm ), allocatable :: &
       SeriesBasic, &
       SeriesTimerMax, &
       SeriesTimerMin, &
@@ -175,10 +175,10 @@ contains
              ( trim ( I % Name ) // '_TimeSeries', &
                WorkingDirectoryOption = GIS_I % WorkingDirectory )
       call CI % Initialize ( GIS_TS ) 
-      call CI % AddVariableGroup ( SB )
-      call CI % AddVariableGroup ( ST_Max )
-      call CI % AddVariableGroup ( ST_Min )
-      call CI % AddVariableGroup ( ST_Mean )
+      call CI % AddStorage ( SB )
+      call CI % AddStorage ( ST_Max )
+      call CI % AddStorage ( ST_Min )
+      call CI % AddStorage ( ST_Mean )
       end associate !-- GIS_TS, etc.
     end if !-- output rank
 

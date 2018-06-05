@@ -14,7 +14,7 @@ module TimeSeries_C__Form
   private
 
   type, public, extends ( TimeSeriesForm ) :: TimeSeries_C_Form
-    type ( VariableGroupForm ), allocatable :: &
+    type ( StorageForm ), allocatable :: &
       SeriesInterior, &
       SeriesBoundary, &  
       SeriesTotal, &
@@ -108,10 +108,10 @@ contains
              NameOption = 'Change_' // I % Name, ClearOption = .true. )
     if ( allocated ( TS % CurveImage ) ) then
       associate ( CI => TS % CurveImage )
-      call CI % AddVariableGroup ( SI )
-      call CI % AddVariableGroup ( SB )
-      call CI % AddVariableGroup ( ST )
-      call CI % AddVariableGroup ( SC )
+      call CI % AddStorage ( SI )
+      call CI % AddStorage ( SB )
+      call CI % AddStorage ( ST )
+      call CI % AddStorage ( SC )
       end associate !-- CI
     end if
     end associate !-- ST, etc.

@@ -331,7 +331,7 @@ contains
 
     class ( Fluid_P_HN_Form ), intent ( in ) :: &
       F
-    type ( VariableGroupForm ), intent ( inout ) :: &
+    type ( StorageForm ), intent ( inout ) :: &
       Output
 
     type ( Integer_1D_Form ), dimension ( 1 ) :: &
@@ -745,11 +745,11 @@ contains
   subroutine ComputeCenterStates &
                ( C_ICL, C_ICR, C, C_IL, C_IR, SS_I, M_DD_22, M_DD_33, iD )
 
-    type ( VariableGroupForm ), intent ( inout ) :: &
+    type ( StorageForm ), intent ( inout ) :: &
       C_ICL, C_ICR
     class ( Fluid_P_HN_Form ), intent ( in ) :: &
       C
-    type ( VariableGroupForm ), intent ( in ) :: &
+    type ( StorageForm ), intent ( in ) :: &
       C_IL, C_IR, &
       SS_I
     real ( KDR ), dimension ( : ), intent ( in ) :: &

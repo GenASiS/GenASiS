@@ -125,7 +125,7 @@ contains
 
     class ( Storage_ASC_Form ), intent ( in ) :: &
       SA
-    class ( VariableGroupForm ), pointer :: &
+    class ( StorageForm ), pointer :: &
       S
 
     select type ( SC => SA % Chart )

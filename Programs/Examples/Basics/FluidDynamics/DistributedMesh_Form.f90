@@ -37,12 +37,12 @@ module DistributedMesh_Form
       CoordinateUnit
     character ( LDL ) :: &
       BoundaryCondition = 'PERIODIC'
-    type ( VariableGroupForm ) :: &
+    type ( StorageForm ) :: &
       Position
-    type ( VariableGroupForm ), dimension ( : ), allocatable :: &
-      ExchangeVariableGroup
-    type ( VariableGroup_1D_Form ), allocatable :: &
-      VariableGroup
+    type ( StorageForm ), dimension ( : ), allocatable :: &
+      ExchangeStorage
+    type ( Storage_1D_Form ), allocatable :: &
+      Storage
     type ( CommunicatorForm ), pointer :: &
       Communicator => null ( )
     type ( PortalHeaderForm ) :: &
@@ -143,27 +143,27 @@ contains
   end subroutine SetVariablePointer
 
 
-  subroutine StartGhostExchangeSingle ( DM, VG )
+  subroutine StartGhostExchangeSingle ( DM, S )
 
     class ( DistributedMeshForm ), intent ( inout ) :: &
       DM
-    class ( VariableGroupForm ), intent ( inout ) :: &
-      VG
+    class ( StorageForm ), intent ( inout ) :: &
+      S
 
-    allocate ( DM % ExchangeVariableGroup ( 1 ) )
-    call DM % ExchangeVariableGroup ( 1 ) % Initialize ( VG )
+    allocate ( DM % ExchangeStorage ( 1 ) )
+    call DM % ExchangeStorage ( 1 ) % Initialize ( S )
 
-    call StartGhostExchangeMultiple ( DM, DM % ExchangeVariableGroup )
+    call StartGhostExchangeMultiple ( DM, DM % ExchangeStorage )
     
   end subroutine StartGhostExchangeSingle
 
 
-  subroutine StartGhostExchangeMultiple ( DM, VG )
+  subroutine StartGhostExchangeMultiple ( DM, S )
 
     class ( DistributedMeshForm ), intent ( inout ) :: &
       DM
-    class ( VariableGroupForm ), dimension ( : ), intent ( inout ) :: &
-      VG
+    class ( StorageForm ), dimension ( : ), intent ( inout ) :: &
+      S
 
     integer ( KDI ) :: &
       iD, jD, kD, &  !-- iDimension, etc.
@@ -177,27 +177,27 @@ contains
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       V  !-- Variable
 
-    allocate ( DM % VariableGroup )
+    allocate ( DM % Storage )
     allocate ( DM % IncomingPrevious )
     allocate ( DM % IncomingNext )
     allocate ( DM % OutgoingPrevious )
     allocate ( DM % OutgoingNext )
 
     associate &
-      ( VG_1D  => DM % VariableGroup, &
+      ( S_1D  => DM % Storage, &
         PHP => DM % PortalHeaderPrevious, &
         PHN => DM % PortalHeaderNext )
 
-    call VG_1D % Initialize ( VG )
+    call S_1D % Initialize ( S )
 
     !-- Post Receives
 
     call DM % IncomingPrevious % Initialize &
            ( DM % Communicator, spread ( TAG_IN_PREV, 1, PHP % nSources ), &
-             PHP % Source, PHP % nChunksFrom * VG_1D % nVariablesTotal )
+             PHP % Source, PHP % nChunksFrom * S_1D % nVariablesTotal )
     call DM % IncomingNext % Initialize &
            ( DM % Communicator, spread ( TAG_IN_NEXT, 1, PHN % nSources ), &
-             PHN % Source, PHN % nChunksFrom * VG_1D % nVariablesTotal )
+             PHN % Source, PHN % nChunksFrom * S_1D % nVariablesTotal )
 
     call DM % IncomingPrevious % Receive ( )
     call DM % IncomingNext % Receive ( )
@@ -206,7 +206,7 @@ contains
 
     call DM % OutgoingPrevious % Initialize &
            ( DM % Communicator, spread ( TAG_OUT_PREV, 1, PHP % nTargets ), &
-             PHP % Target, PHP % nChunksTo * VG_1D % nVariablesTotal )
+             PHP % Target, PHP % nChunksTo * S_1D % nVariablesTotal )
 
     do iD = 1, DM % nDimensions
       jD = mod ( iD, 3 ) + 1
@@ -218,11 +218,11 @@ contains
       nSend ( jD ) = DM % nCellsPerBrick ( jD )
       nSend ( kD ) = DM % nCellsPerBrick ( kD )
 
-      do iG = 1, VG_1D % nGroups
-        do iS = 1, VG_1D % nVariables ( iG )          
-          iV = VG_1D % VariableGroup ( iG ) % iaSelected ( iS )
+      do iG = 1, S_1D % nGroups
+        do iS = 1, S_1D % nVariables ( iG )          
+          iV = S_1D % Storage ( iG ) % iaSelected ( iS )
           call DM % SetVariablePointer &
-                 ( VG_1D % VariableGroup ( iG ) % Value ( :, iV ), V ) 
+                 ( S_1D % Storage ( iG ) % Value ( :, iV ), V ) 
           call Copy ( V, nSend, oSend, oBuffer, &
                       DM % OutgoingPrevious % Message ( iD ) % Value )
           oBuffer = oBuffer + product ( nSend )
@@ -237,7 +237,7 @@ contains
 
     call DM % OutgoingNext % Initialize &
            ( DM % Communicator, spread ( TAG_OUT_NEXT, 1, PHN % nTargets ), &
-             PHN % Target, PHN % nChunksTo * VG_1D % nVariablesTotal )
+             PHN % Target, PHN % nChunksTo * S_1D % nVariablesTotal )
 
     do iD = 1, DM % nDimensions
       jD = mod ( iD, 3 ) + 1
@@ -251,11 +251,11 @@ contains
       nSend ( jD ) = DM % nCellsPerBrick ( jD )
       nSend ( kD ) = DM % nCellsPerBrick ( kD )
 
-      do iG = 1, VG_1D % nGroups
-        do iS = 1, VG_1D % nVariables ( iG )          
-          iV = VG_1D % VariableGroup ( iG ) % iaSelected ( iS )
+      do iG = 1, S_1D % nGroups
+        do iS = 1, S_1D % nVariables ( iG )          
+          iV = S_1D % Storage ( iG ) % iaSelected ( iS )
           call DM % SetVariablePointer &
-                 ( VG_1D % VariableGroup ( iG ) % Value ( :, iV ), V ) 
+                 ( S_1D % Storage ( iG ) % Value ( :, iV ), V ) 
           call Copy ( V, nSend, oSend, oBuffer, &
                       DM % OutgoingNext % Message ( iD ) % Value )
           oBuffer = oBuffer + product ( nSend )
@@ -267,7 +267,7 @@ contains
     end do !-- iD
 
     nullify ( V )
-    end associate !-- VG_1D, etc.
+    end associate !-- S_1D, etc.
 
   end subroutine StartGhostExchangeMultiple
 
@@ -289,7 +289,7 @@ contains
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       V  !-- Variable
 
-    associate ( VG_1D  => DM % VariableGroup )
+    associate ( S_1D  => DM % Storage )
 
     !-- Receive from Next
 
@@ -306,11 +306,11 @@ contains
 
       call DM % IncomingNext % Wait ( iD )
 
-      do iG = 1, VG_1D % nGroups
-        do iS = 1, VG_1D % nVariables ( iG )          
-          iV = VG_1D % VariableGroup ( iG ) % iaSelected ( iS )
+      do iG = 1, S_1D % nGroups
+        do iS = 1, S_1D % nVariables ( iG )          
+          iV = S_1D % Storage ( iG ) % iaSelected ( iS )
           call DM % SetVariablePointer &
-                 ( VG_1D % VariableGroup ( iG ) % Value ( :, iV ), V ) 
+                 ( S_1D % Storage ( iG ) % Value ( :, iV ), V ) 
           call Copy ( DM % IncomingNext % Message ( iD ) % Value, &
                       nReceive, oReceive, oBuffer, V )
           oBuffer = oBuffer + product ( nReceive )
@@ -334,11 +334,11 @@ contains
 
       call DM % IncomingPrevious % Wait ( iD )
 
-      do iG = 1, VG_1D % nGroups
-        do iS = 1, VG_1D % nVariables ( iG )          
-          iV = VG_1D % VariableGroup ( iG ) % iaSelected ( iS )
+      do iG = 1, S_1D % nGroups
+        do iS = 1, S_1D % nVariables ( iG )          
+          iV = S_1D % Storage ( iG ) % iaSelected ( iS )
           call DM % SetVariablePointer &
-                 ( VG_1D % VariableGroup ( iG ) % Value ( :, iV ), V ) 
+                 ( S_1D % Storage ( iG ) % Value ( :, iV ), V ) 
           call Copy ( DM % IncomingPrevious % Message ( iD ) % Value, &
                       nReceive, oReceive, oBuffer, V )
           oBuffer = oBuffer + product ( nReceive )
@@ -353,32 +353,32 @@ contains
     call DM % OutgoingNext % Wait ( )
 
     nullify ( V )
-    end associate !-- VG_1D
+    end associate !-- S_1D
 
     deallocate ( DM % OutgoingNext )
     deallocate ( DM % OutgoingPrevious )
     deallocate ( DM % IncomingNext )
     deallocate ( DM % IncomingPrevious )
-    deallocate ( DM % VariableGroup )
+    deallocate ( DM % Storage )
 
-    if ( allocated ( DM % ExchangeVariableGroup ) ) &
-      deallocate ( DM % ExchangeVariableGroup )
+    if ( allocated ( DM % ExchangeStorage ) ) &
+      deallocate ( DM % ExchangeStorage )
 
   end subroutine FinishGhostExchange
 
 
-  subroutine SetImage ( DM, VG, Name )
+  subroutine SetImage ( DM, S, Name )
 
     class ( DistributedMeshForm ), intent ( inout ) :: &
       DM
-    class ( VariableGroupForm ), dimension ( : ), intent ( in ) :: &
-      VG
+    class ( StorageForm ), dimension ( : ), intent ( in ) :: &
+      S
     character ( * ), intent ( in ) :: &
       Name
 
     integer ( KDI ) :: &
       iD, &  !-- iDimension
-      iVG    !-- iVariableGroup
+      iS    !-- iStorage
     integer ( KDI ), dimension ( MAX_N_DIMENSIONS ) :: &
       nCells, &
       nGhostInner, &
@@ -434,8 +434,8 @@ contains
              ( 'Curves', Edge ( 1 ), DM % nProperCells, &
                oValue = nGhostInner ( 1 ) + nExteriorInner ( 1 ), &
                CoordinateUnitOption = DM % CoordinateUnit ( 1 ) )
-      do iVG = 1, size ( VG )
-        call CI % AddVariableGroup ( VG ( iVG ) )
+      do iS = 1, size ( S )
+        call CI % AddStorage ( S ( iS ) )
       end do
       end associate !-- CI
 
@@ -448,8 +448,8 @@ contains
                nExteriorInner, nExteriorOuter, DM % nDimensions, &
                DM % nProperCells, DM % nGhostCells, &
                CoordinateUnitOption = DM % CoordinateUnit )
-      do iVG = 1, size ( VG )
-        call GI % AddVariableGroup ( VG ( iVG ) )
+      do iS = 1, size ( S )
+        call GI % AddStorage ( S ( iS ) )
       end do
       end associate !-- GI
 

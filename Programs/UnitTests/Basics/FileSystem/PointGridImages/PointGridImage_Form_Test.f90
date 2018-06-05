@@ -22,8 +22,8 @@ program PointGridImage_Form_Test
     Name = 'PointGridImage_Form_Test'
   character ( LDL ), dimension ( 3 ) :: &
     VariableName
-  type ( VariableGroupForm ) :: &
-    VG
+  type ( StorageForm ) :: &
+    S
     type ( CommunicatorForm ), allocatable :: &
     C
   type ( GridImageStreamForm ) :: &
@@ -50,10 +50,10 @@ program PointGridImage_Form_Test
   VariableName ( 2 ) = 'Center_2'
   VariableName ( 3 ) = 'Center_3'
   
-  call VG % Initialize &
+  call S % Initialize &
          ( [ N_CELLS, 3 ], VariableOption = VariableName, &
            NameOption = 'Geometry' )
-  VG % Value = Coordinate
+  S % Value = Coordinate
   
   call GIS % Initialize ( Name, CommunicatorOption = C )
   
@@ -61,7 +61,7 @@ program PointGridImage_Form_Test
   
   call PGI_Write % Initialize ( GIS )
 
-  call PGI_Write % AddVariableGroup ( VG )
+  call PGI_Write % AddStorage ( S )
   
   call PGI_Write % SetGrid  &
          ( Directory = 'Grid', &
@@ -73,15 +73,15 @@ program PointGridImage_Form_Test
   call Show ( PGI_Write % NodeCoordinate_1, 'Coordinate_1' )
   call Show ( PGI_Write % NodeCoordinate_2, 'Coordinate_2' )
   call Show ( PGI_Write % NodeCoordinate_3, 'Coordinate_3' )
-  call Show ( VG % Value ( :, 1 ),          'Center_1' )
-  call Show ( VG % Value ( :, 2 ),          'Center_1' )
-  call Show ( VG % Value ( :, 3 ),          'Center_1' )
+  call Show ( S % Value ( :, 1 ),          'Center_1' )
+  call Show ( S % Value ( :, 2 ),          'Center_1' )
+  call Show ( S % Value ( :, 3 ),          'Center_1' )
   
   call PGI_Write % Write ( )
   
   call GIS % Close ( ) 
   
-  call Clear ( VG % Value )
+  call Clear ( S % Value )
   
   call GIS % Open ( GIS % ACCESS_READ, NumberOption = 0 )
   
@@ -91,16 +91,16 @@ program PointGridImage_Form_Test
   
   call PGI_Read % Read ( )
   
-  associate ( VG_Read => PGI_Read % VariableGroup ( 1 ) )
+  associate ( S_Read => PGI_Read % Storage ( 1 ) )
   
   call Show ( PGI_Read % nDimensions,      'nDimensions'  )  
   call Show ( PGI_Read % nCells,           'nCells'       )
   call Show ( PGI_Read % NodeCoordinate_1, 'Coordinate_1' )
   call Show ( PGI_Read % NodeCoordinate_2, 'Coordinate_2' )
   call Show ( PGI_Read % NodeCoordinate_3, 'Coordinate_3' )
-  call Show ( VG_Read % Value ( :, 1 ),    'Center_1' )
-  call Show ( VG_Read % Value ( :, 2 ),    'Center_1' )
-  call Show ( VG_Read % Value ( :, 3 ),    'Center_1' )
+  call Show ( S_Read % Value ( :, 1 ),    'Center_1' )
+  call Show ( S_Read % Value ( :, 2 ),    'Center_1' )
+  call Show ( S_Read % Value ( :, 3 ),    'Center_1' )
   
   end associate
 

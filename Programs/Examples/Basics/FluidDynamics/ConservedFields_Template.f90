@@ -12,7 +12,7 @@ module ConservedFields_Template
       N_FIELDS_TEMPLATE    = 6, &
       N_VECTORS_TEMPLATE   = 0
 
-  type, public, extends ( VariableGroupForm ), abstract :: &
+  type, public, extends ( StorageForm ), abstract :: &
     ConservedFieldsTemplate
       integer ( KDI ) :: &
         N_PRIMITIVE = 0, &
@@ -31,7 +31,7 @@ module ConservedFields_Template
         iaConserved
       character ( LDL ) :: &
         Type = ''
-      type ( VariableGroupForm ), dimension ( 1 ) :: &
+      type ( StorageForm ), dimension ( 1 ) :: &
         Output
       type ( DistributedMeshForm ), pointer :: &
         DistributedMesh => null ( )

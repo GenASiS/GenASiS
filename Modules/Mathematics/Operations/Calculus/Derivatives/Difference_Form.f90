@@ -14,7 +14,7 @@ module Difference_Form
       IGNORABILITY = 0
     character ( LDF ) :: &
       Name = ''
-    type ( VariableGroupForm ), allocatable :: &
+    type ( StorageForm ), allocatable :: &
       OutputInner
   contains
     procedure, public, pass :: &
@@ -60,7 +60,7 @@ contains
       D
     class ( Chart_SL_Template ), intent ( in ) :: &
       CSL
-    class ( VariableGroupForm ), intent ( in ) :: &
+    class ( StorageForm ), intent ( in ) :: &
       Input
     integer ( KDI ), intent ( in ) :: &
       iDimension

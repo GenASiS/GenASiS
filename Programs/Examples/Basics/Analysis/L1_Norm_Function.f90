@@ -11,7 +11,7 @@ module L1_Norm_Function
   interface L1_Norm
     module procedure L1_Norm_Array_1D
     module procedure L1_Norm_Array_3D
-    module procedure L1_Norm_VariableGroup
+    module procedure L1_Norm_Storage
   end interface
 
 contains
@@ -178,13 +178,13 @@ contains
   end function L1_Norm_Array_3D
   
   
-  function L1_Norm_VariableGroup &
-             ( VG_Origin, VG_End, CommunicatorOption, iaSelectedOption, &
+  function L1_Norm_Storage &
+             ( S_Origin, S_End, CommunicatorOption, iaSelectedOption, &
                RootOption, nValuesOption, oValueOption ) result ( L1 )
              
-    class ( VariableGroupForm ), intent ( in ), target :: &
-      VG_Origin, &
-      VG_End
+    class ( StorageForm ), intent ( in ), target :: &
+      S_Origin, &
+      S_End
     type ( CommunicatorForm ), intent ( in ), optional, target :: &
       CommunicatorOption
     integer ( KDI ), dimension ( : ), intent ( in ), optional, target :: &
@@ -214,10 +214,10 @@ contains
     oV = 0
     if ( present ( oValueOption ) ) oV = oValueOption
     
-    nValues = VG_Origin % nValues
+    nValues = S_Origin % nValues
     if ( present ( nValuesOption ) ) nValues = nValuesOption
     
-    iaSelected => VG_Origin % iaSelected
+    iaSelected => S_Origin % iaSelected
     if ( present ( iaSelectedOption ) ) iaSelected => iaSelectedOption
     
     C => PROGRAM_HEADER % Communicator
@@ -230,10 +230,10 @@ contains
     do iS = 1, size ( iaSelected )
       iVrbl = iaSelected ( iS )
       MyDistanceSum ( iS ) &
-        = sum ( abs ( VG_End % Value ( oV + 1 : oV + nValues, iVrbl ) &
-                      - VG_Origin % Value ( oV + 1 : oV + nValues, iVrbl ) ) )
+        = sum ( abs ( S_End % Value ( oV + 1 : oV + nValues, iVrbl ) &
+                      - S_Origin % Value ( oV + 1 : oV + nValues, iVrbl ) ) )
       MyOriginSum ( iS ) &
-        = sum ( abs ( VG_Origin % Value ( oV + 1 : oV + nValues, iVrbl ) ) )
+        = sum ( abs ( S_Origin % Value ( oV + 1 : oV + nValues, iVrbl ) ) )
     end do
     
     call CO % Initialize &
@@ -274,7 +274,7 @@ contains
     nullify ( C )
     nullify ( iaSelected )
 
-  end function L1_Norm_VariableGroup
+  end function L1_Norm_Storage
   
   
 end module L1_Norm_Function

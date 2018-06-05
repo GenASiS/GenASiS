@@ -1,7 +1,7 @@
-module VariableGroups
+module Storages
 
-  use VariableGroup_Form
-  use PackedVariableGroup_Form
-  use VariableGroup_1D__Form
+  use Storage_Form
+  use PackedStorage_Form
+  use Storage_1D__Form
 
-end module VariableGroups
+end module Storages

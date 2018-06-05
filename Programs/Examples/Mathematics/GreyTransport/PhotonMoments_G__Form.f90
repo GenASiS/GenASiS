@@ -111,7 +111,7 @@ contains
 
     class ( PhotonMoments_G_Form ), intent ( inout ) :: &
       RM
-    type ( VariableGroupForm ), intent ( inout ) :: &
+    type ( StorageForm ), intent ( inout ) :: &
       Output
 
     type ( Integer_1D_Form ), dimension ( 1 ) :: &

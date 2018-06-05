@@ -19,8 +19,8 @@ program CurveImage_Form_Test
     Name = 'CurveImage_Form_Test'
   character ( LDL ), dimension ( 1 ) :: &
     VariableName
-  type ( VariableGroupForm ) :: &
-    VG
+  type ( StorageForm ) :: &
+    S
   type ( CommunicatorForm ), allocatable :: &
     C
   type ( GridImageStreamForm ) :: &
@@ -45,16 +45,16 @@ program CurveImage_Form_Test
   NodeCoordinate = NodeCoordinate  + oC_1
   
   VariableName ( 1 ) = 'VariableName'
-  call VG % Initialize &
+  call S % Initialize &
          ( [ 20, 1 ], VariableOption = VariableName, &
-           NameOption = 'VariableGroup', &
+           NameOption = 'Storage', &
            UnitOption = [ UNIT % METER ] )
-  VG % Value ( :, 1 ) &
+  S % Value ( :, 1 ) &
     = [ ( ( iC + 20 * C % Rank ) * 2.0_KDR, iC = 1, 20 ) ] 
     
   call Show ( NodeCoordinate, 'NodeCoordinate' )
-  call Show ( VG % Value ( :, 1 ), 'Variable' )
-  call Show ( VG % Unit, 'Unit' )
+  call Show ( S % Value ( :, 1 ), 'Variable' )
+  call Show ( S % Unit, 'Unit' )
 
   call GIS % Initialize ( Name, CommunicatorOption = C )
   
@@ -62,7 +62,7 @@ program CurveImage_Form_Test
   
   call CI_Write % Initialize ( GIS )
   
-  call CI_Write % AddVariableGroup ( VG )
+  call CI_Write % AddStorage ( S )
 
   call CI_Write % SetGrid  &
          ( Directory = 'Curves', NodeCoordinate = NodeCoordinate, &
@@ -72,7 +72,7 @@ program CurveImage_Form_Test
 
   call GIS % Close ( ) 
   
-  call Clear ( VG % Value )
+  call Clear ( S % Value )
   
   call GIS % Open ( GIS % ACCESS_READ, NumberOption = 0 )
   
@@ -84,8 +84,8 @@ program CurveImage_Form_Test
   
   call Show ( CI_Read % NodeCoordinate_1, 'NodeCoordinate_1' )
   call Show &
-         ( CI_Read % VariableGroup ( 1 ) % Value ( :, 1 ), &
-           CI_Read % VariableGroup ( 1 ) % Variable ( 1 ) )
+         ( CI_Read % Storage ( 1 ) % Value ( :, 1 ), &
+           CI_Read % Storage ( 1 ) % Variable ( 1 ) )
   
   call GIS % Close ( )
 

@@ -112,7 +112,7 @@ contains
     class ( CurrentTemplate ), pointer :: &
       C
     
-    class ( VariableGroupForm ), pointer :: &
+    class ( StorageForm ), pointer :: &
       F
     class ( FieldChartTemplate ), pointer :: &
       CC 

@@ -111,7 +111,7 @@ contains
     class ( RadiationMomentsForm ), pointer :: &
       RM
       
-    class ( VariableGroupForm ), pointer :: &
+    class ( StorageForm ), pointer :: &
       Field
 
     RM => null ( )
@@ -132,7 +132,7 @@ contains
     class ( PhotonMoments_G_Form ), pointer :: &
       PM
       
-    class ( VariableGroupForm ), pointer :: &
+    class ( StorageForm ), pointer :: &
       Field
 
     PM => null ( )
@@ -153,7 +153,7 @@ contains
     class ( PhotonMoments_S_Form ), pointer :: &
       PM
       
-    class ( VariableGroupForm ), pointer :: &
+    class ( StorageForm ), pointer :: &
       Field
 
     PM => null ( )

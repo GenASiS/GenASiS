@@ -25,7 +25,7 @@ contains
       S
     class ( Sources_C_Form ), intent ( inout ) :: &
       Sources_F
-    type ( VariableGroupForm ), intent ( inout ), target :: &
+    type ( StorageForm ), intent ( inout ), target :: &
       Increment
     class ( CurrentTemplate ), intent ( in ) :: &
       Fluid

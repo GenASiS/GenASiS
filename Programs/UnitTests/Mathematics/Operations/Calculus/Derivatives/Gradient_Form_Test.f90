@@ -45,9 +45,9 @@ contains
       nCompute
     character ( 1 ) :: &
       iD_String
-    type ( VariableGroupForm ) :: &
+    type ( StorageForm ) :: &
       TestFields
-    type ( VariableGroupForm ), dimension ( ATLAS % MAX_DIMENSIONS ) :: &
+    type ( StorageForm ), dimension ( ATLAS % MAX_DIMENSIONS ) :: &
       Grad_TestFields, &
       GradLimited_TestFields
     class ( GeometryFlatForm ), pointer :: &

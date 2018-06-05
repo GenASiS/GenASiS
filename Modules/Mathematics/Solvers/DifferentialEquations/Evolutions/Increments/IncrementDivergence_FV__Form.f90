@@ -36,7 +36,7 @@ module IncrementDivergence_FV__Form
       UseIncrementStream
     character ( LDF ) :: &
       Name = ''
-    type ( VariableGroupForm ), dimension ( : ), allocatable :: &
+    type ( StorageForm ), dimension ( : ), allocatable :: &
       Output
     type ( GridImageStreamForm ), allocatable :: &
       GridImageStream
@@ -250,7 +250,7 @@ contains
 
     class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
       I
-    type ( VariableGroupForm ), intent ( inout ) :: &
+    type ( StorageForm ), intent ( inout ) :: &
       Increment  !-- Assume Increment is already cleared!
     real ( KDR ), intent ( in ) :: &
       TimeStep
@@ -486,7 +486,7 @@ contains
     integer ( KDI ) :: &
       iDD_22, iDD_33, &
       iUU_22, iUU_33
-    type ( VariableGroupForm ) :: &
+    type ( StorageForm ) :: &
       P
     type ( TimerForm ), pointer :: &
       Timer
@@ -608,7 +608,7 @@ contains
 
     class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
       I
-    type ( VariableGroupForm ), intent ( in ) :: &
+    type ( StorageForm ), intent ( in ) :: &
       P
     class ( Chart_SL_Template ), intent ( in ) :: &
       CSL
@@ -718,7 +718,7 @@ contains
 
     class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
       I
-    type ( VariableGroupForm ), intent ( inout ) :: &
+    type ( StorageForm ), intent ( inout ) :: &
       Increment
     class ( Chart_SL_Template ), intent ( in ) :: &
       CSL

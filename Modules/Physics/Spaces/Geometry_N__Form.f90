@@ -102,7 +102,7 @@ contains
 
     class ( Geometry_N_Form ), intent ( inout ) :: &
       G
-    class ( VariableGroupForm ), intent ( inout ) :: &
+    class ( StorageForm ), intent ( inout ) :: &
       Output
 
     type ( Integer_1D_Form ), dimension ( 1 ) :: &

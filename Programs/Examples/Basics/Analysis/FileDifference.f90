@@ -4,7 +4,7 @@ program FileDifference
   use L1_Norm_Function
   
   integer ( KDI ) :: &
-    iVG, &
+    iS, &
     Filenumber_1, &
     Filenumber_2
   integer ( KDI ), dimension ( 3 ) :: &
@@ -92,24 +92,24 @@ program FileDifference
                 - GI_1 % oProperCellNodeHigh, 1 )
   end select
     
-  do iVG = 1, GI_1 % nVariableGroups
+  do iS = 1, GI_1 % nStorages
     
     associate &
-      ( VG_1 => GI_1 % VariableGroup ( iVG ), &
-        VG_2 => GI_2 % VariableGroup ( iVG ) )
+      ( S_1 => GI_1 % Storage ( iS ), &
+        S_2 => GI_2 % Storage ( iS ) )
     
-    allocate ( L1_Error ( VG_1 % nVariables ) )
+    allocate ( L1_Error ( S_1 % nVariables ) )
     
-    do iV = 1, VG_1 % nVariables
+    do iV = 1, S_1 % nVariables
       !-- Use pointer remapping to exclude computing error on ghost cells
       V_1 &
         ( iaFirst ( 1 ) : iaLast ( 1 ), &
           iaFirst ( 2 ) : iaLast ( 2 ), &  
-          iaFirst ( 3 ) : iaLast ( 3 ) ) => VG_1 % Value ( :, iV )
+          iaFirst ( 3 ) : iaLast ( 3 ) ) => S_1 % Value ( :, iV )
       V_2 &
         ( iaFirst ( 1 ) : iaLast ( 1 ), &
           iaFirst ( 2 ) : iaLast ( 2 ), &  
-          iaFirst ( 3 ) : iaLast ( 3 ) ) => VG_2 % Value ( :, iV )
+          iaFirst ( 3 ) : iaLast ( 3 ) ) => S_2 % Value ( :, iV )
       
       L1_Error ( iV ) &
         = L1_Norm ( V_1 ( 1 : nProperCells ( 1 ), &
@@ -126,8 +126,8 @@ program FileDifference
       
     end do
                   
-    call Show ( 'L1 Norm Error for ' // trim ( VG_1 % Name ) )
-    call Show ( L1_Error, VG_1 % Variable )
+    call Show ( 'L1 Norm Error for ' // trim ( S_1 % Name ) )
+    call Show ( L1_Error, S_1 % Variable )
     
     deallocate ( L1_Error )
     

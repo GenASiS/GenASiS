@@ -59,7 +59,7 @@ contains
     class ( ProtoCurrentForm ), pointer :: &
       PC
       
-    class ( VariableGroupForm ), pointer :: &
+    class ( StorageForm ), pointer :: &
       Field
     
     Field => PCC % Field

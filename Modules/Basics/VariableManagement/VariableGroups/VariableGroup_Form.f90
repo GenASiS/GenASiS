@@ -1,9 +1,9 @@
-!-- VariableGroupForm provides infrastructure in handling collection of
+!-- StorageForm provides infrastructure in handling collection of
 !   variables, typically sets of related physical fields. It includes both the
 !   metadata about the variables (names, units, etc) and storage for the
 !   variable data itself.
 
-module VariableGroup_Form
+module Storage_Form
   
   use Specifiers
   use ArrayOperations
@@ -12,7 +12,7 @@ module VariableGroup_Form
   implicit none
   private
   
-  type, public :: VariableGroupForm
+  type, public :: StorageForm
     integer ( KDI ) :: &
       nValues    = 0, &
       nVariables = 0, &
@@ -49,7 +49,7 @@ module VariableGroup_Form
       Initialize => InitializeAllocate, InitializeAssociate, InitializeClone
     final :: &
       Finalize
-  end type VariableGroupForm
+  end type StorageForm
 
     private :: &
       InitializeOptionalMembers
@@ -58,11 +58,11 @@ contains
 
 
   subroutine InitializeAllocate &
-               ( VG, ValueShape, VectorIndicesOption, UnitOption, &
+               ( S, ValueShape, VectorIndicesOption, UnitOption, &
                  VectorOption, VariableOption, NameOption, ClearOption )
     
-    class ( VariableGroupForm ), intent ( inout ) :: &
-      VG
+    class ( StorageForm ), intent ( inout ) :: &
+      S
     integer ( KDI ), dimension ( 2 ), intent ( in ) :: &
       ValueShape
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional :: &
@@ -82,33 +82,33 @@ contains
     logical ( KDL ) :: &
       ClearRequested
 
-    VG % nValues = ValueShape ( 1 )
+    S % nValues = ValueShape ( 1 )
     
-    VG % nVariables = ValueShape ( 2 )
+    S % nVariables = ValueShape ( 2 )
 
-    allocate ( VG % iaSelected ( VG % nVariables ) )
-    VG % iaSelected = [ ( iVrbl, iVrbl = 1, VG % nVariables ) ]
+    allocate ( S % iaSelected ( S % nVariables ) )
+    S % iaSelected = [ ( iVrbl, iVrbl = 1, S % nVariables ) ]
 
-    allocate ( VG % Value ( VG % nValues, ValueShape ( 2 ) ) )
-    VG % AllocatedValue = .true.
+    allocate ( S % Value ( S % nValues, ValueShape ( 2 ) ) )
+    S % AllocatedValue = .true.
     
     ClearRequested = .false.
     if ( present ( ClearOption ) ) ClearRequested = ClearOption
-    if ( ClearRequested ) call Clear ( VG % Value )  
+    if ( ClearRequested ) call Clear ( S % Value )  
     
     call InitializeOptionalMembers &
-           ( VG, VectorIndicesOption, UnitOption, VectorOption, &
+           ( S, VectorIndicesOption, UnitOption, VectorOption, &
              VariableOption, NameOption )
   
   end subroutine InitializeAllocate
   
   
   subroutine InitializeAssociate &
-               ( VG, Value, VectorIndicesOption, UnitOption, VectorOption, &
+               ( S, Value, VectorIndicesOption, UnitOption, VectorOption, &
                  VariableOption, NameOption, iaSelectedOption )
     
-    class ( VariableGroupForm ), intent ( inout ) :: &
-      VG
+    class ( StorageForm ), intent ( inout ) :: &
+      S
     real ( KDR ), dimension ( :, : ), intent ( in ), target :: &
       Value
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
@@ -126,39 +126,39 @@ contains
     integer ( KDI ) :: &
       iVrbl
 
-    VG % nValues = size ( Value, dim = 1 )
+    S % nValues = size ( Value, dim = 1 )
     
     if ( present ( iaSelectedOption ) ) then
-      VG % nVariables = size ( iaSelectedOption )
+      S % nVariables = size ( iaSelectedOption )
     else
-      VG % nVariables = size ( Value, dim = 2 )
+      S % nVariables = size ( Value, dim = 2 )
     end if
     
-    allocate ( VG % iaSelected ( VG % nVariables ) )
+    allocate ( S % iaSelected ( S % nVariables ) )
     if ( present ( iaSelectedOption ) ) then
-      VG % iaSelected = iaSelectedOption
+      S % iaSelected = iaSelectedOption
     else
-      VG % iaSelected = [ ( iVrbl, iVrbl = 1, VG % nVariables ) ]
+      S % iaSelected = [ ( iVrbl, iVrbl = 1, S % nVariables ) ]
     end if
 
-    VG % Value => Value
-    VG % AllocatedValue = .false.
+    S % Value => Value
+    S % AllocatedValue = .false.
     
     call InitializeOptionalMembers &
-           ( VG, VectorIndicesOption, UnitOption, VectorOption, &
+           ( S, VectorIndicesOption, UnitOption, VectorOption, &
              VariableOption, NameOption )
   
   end subroutine InitializeAssociate
   
   
   subroutine InitializeClone (  &
-               VG_Target, VG_Source, VectorIndicesOption, VectorOption, &
+               S_Target, S_Source, VectorIndicesOption, VectorOption, &
                NameOption, iaSelectedOption )
 
-    class ( VariableGroupForm ), intent ( inout ) :: &
-      VG_Target
-    class ( VariableGroupForm ), intent ( in ) :: &
-      VG_Source
+    class ( StorageForm ), intent ( inout ) :: &
+      S_Target
+    class ( StorageForm ), intent ( in ) :: &
+      S_Source
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
       VectorIndicesOption
     character ( * ), dimension ( : ), intent ( in ), optional :: &
@@ -171,106 +171,106 @@ contains
     integer ( KDI ) :: &
       iV     !-- iVector
 
-    VG_Target % nValues = VG_Source % nValues
+    S_Target % nValues = S_Source % nValues
     
     if ( present ( iaSelectedOption ) ) then
-      VG_Target % nVariables = size ( iaSelectedOption )
+      S_Target % nVariables = size ( iaSelectedOption )
     else
-      VG_Target % nVariables = VG_Source % nVariables
+      S_Target % nVariables = S_Source % nVariables
     end if
 
     if ( .not. present ( VectorIndicesOption ) ) &
-      VG_Target % nVectors = VG_Source % nVectors
+      S_Target % nVectors = S_Source % nVectors
 
-    VG_Target % lName = VG_Source % lName
+    S_Target % lName = S_Source % lName
 
-    if ( allocated ( VG_Source % lVariable ) ) then
-      allocate ( VG_Target % lVariable ( size ( VG_Source % lVariable ) ) )
-      VG_Target % lVariable = VG_Source % lVariable
+    if ( allocated ( S_Source % lVariable ) ) then
+      allocate ( S_Target % lVariable ( size ( S_Source % lVariable ) ) )
+      S_Target % lVariable = S_Source % lVariable
     end if
       
     if ( .not. present ( VectorOption ) ) then
-      allocate ( VG_Target % lVector ( size ( VG_Source % lVector ) ) )
-      VG_Target % lVector = VG_Source % lVector 
+      allocate ( S_Target % lVector ( size ( S_Source % lVector ) ) )
+      S_Target % lVector = S_Source % lVector 
     end if
 
-    allocate ( VG_Target % iaSelected ( VG_Target % nVariables ) )
+    allocate ( S_Target % iaSelected ( S_Target % nVariables ) )
     if ( present ( iaSelectedOption ) ) then
-      VG_Target % iaSelected = iaSelectedOption
+      S_Target % iaSelected = iaSelectedOption
     else
-      VG_Target % iaSelected = VG_Source % iaSelected
+      S_Target % iaSelected = S_Source % iaSelected
     end if
   
-    VG_Target % Value => VG_Source % Value
-    VG_Target % AllocatedValue = .false.
+    S_Target % Value => S_Source % Value
+    S_Target % AllocatedValue = .false.
     
     if ( .not. present ( NameOption ) ) &
-      VG_Target % Name = trim ( VG_Source % Name )
+      S_Target % Name = trim ( S_Source % Name )
 
-    if ( allocated ( VG_Source % Variable ) ) then
-      allocate ( VG_Target % Variable ( size (  VG_Source % Variable ) ) )
-      VG_Target % Variable = VG_Source % Variable
+    if ( allocated ( S_Source % Variable ) ) then
+      allocate ( S_Target % Variable ( size (  S_Source % Variable ) ) )
+      S_Target % Variable = S_Source % Variable
     end if
       
     if ( .not. present ( VectorOption ) ) then
-      allocate ( VG_Target % Vector ( size ( VG_Source % Vector ) ) )
-      VG_Target % Vector = VG_Source % Vector 
+      allocate ( S_Target % Vector ( size ( S_Source % Vector ) ) )
+      S_Target % Vector = S_Source % Vector 
     end if
       
-    if ( allocated ( VG_Source % Unit ) ) then
-      allocate ( VG_Target % Unit ( size ( VG_Source % Unit ) ) )
-      VG_Target % Unit = VG_Source % Unit
+    if ( allocated ( S_Source % Unit ) ) then
+      allocate ( S_Target % Unit ( size ( S_Source % Unit ) ) )
+      S_Target % Unit = S_Source % Unit
     end if
 
     if ( .not. present ( VectorIndicesOption ) ) then
-      allocate ( VG_Target % VectorIndices ( VG_Target % nVectors ) )
-      do iV = 1, VG_Target % nVectors
-        call VG_Target % VectorIndices ( iV ) % Initialize &
-               ( VG_Source % VectorIndices ( iV ) )
+      allocate ( S_Target % VectorIndices ( S_Target % nVectors ) )
+      do iV = 1, S_Target % nVectors
+        call S_Target % VectorIndices ( iV ) % Initialize &
+               ( S_Source % VectorIndices ( iV ) )
       end do
     end if
       
     call InitializeOptionalMembers &
-           ( VG_Target, VectorIndicesOption = VectorIndicesOption, &
+           ( S_Target, VectorIndicesOption = VectorIndicesOption, &
              VectorOption = VectorOption, NameOption = NameOption )
 
   end subroutine InitializeClone
 
 
-  impure elemental subroutine Finalize ( VG )
+  impure elemental subroutine Finalize ( S )
 
-    type ( VariableGroupForm ), intent ( inout ) :: &
-      VG
+    type ( StorageForm ), intent ( inout ) :: &
+      S
 
 !-- FIXME: this deallocation in a cloned variable group with no vectors
 !          caused trouble with Intel 12.1.2 
-!    if ( allocated ( VG % VectorIndices ) ) deallocate ( VG % VectorIndices )
-    if ( allocated ( VG % VectorIndices ) .and. VG % nVectors > 0 ) &
-      deallocate ( VG % VectorIndices )
+!    if ( allocated ( S % VectorIndices ) ) deallocate ( S % VectorIndices )
+    if ( allocated ( S % VectorIndices ) .and. S % nVectors > 0 ) &
+      deallocate ( S % VectorIndices )
 
-    if ( allocated ( VG % Unit ) )     deallocate ( VG % Unit )
+    if ( allocated ( S % Unit ) )     deallocate ( S % Unit )
 
-    if ( allocated ( VG % Vector ) )   deallocate ( VG % Vector )
-    if ( allocated ( VG % Variable ) ) deallocate ( VG % Variable )
+    if ( allocated ( S % Vector ) )   deallocate ( S % Vector )
+    if ( allocated ( S % Variable ) ) deallocate ( S % Variable )
 
-    if ( VG % AllocatedValue ) then
-      if ( associated ( VG % Value ) ) deallocate ( VG % Value )
+    if ( S % AllocatedValue ) then
+      if ( associated ( S % Value ) ) deallocate ( S % Value )
     end if
-    nullify ( VG % Value )
+    nullify ( S % Value )
 
-    if ( allocated ( VG % iaSelected ) )  deallocate ( VG % iaSelected )
-    if ( allocated ( VG % lVector ) )   deallocate ( VG % lVector )
-    if ( allocated ( VG % lVariable ) ) deallocate ( VG % lVariable )
+    if ( allocated ( S % iaSelected ) )  deallocate ( S % iaSelected )
+    if ( allocated ( S % lVector ) )   deallocate ( S % lVector )
+    if ( allocated ( S % lVariable ) ) deallocate ( S % lVariable )
 
   end subroutine Finalize
   
 
   subroutine InitializeOptionalMembers &
-               ( VG, VectorIndicesOption, UnitOption, VectorOption, &
+               ( S, VectorIndicesOption, UnitOption, VectorOption, &
                  VariableOption, NameOption )
                  
-    class ( VariableGroupForm ), intent ( inout ) :: &
-      VG
+    class ( StorageForm ), intent ( inout ) :: &
+      S
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
       VectorIndicesOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
@@ -287,57 +287,57 @@ contains
       iVctr      !-- iVector
       
     if ( present ( VectorIndicesOption ) ) then
-      VG % nVectors = size ( VectorIndicesOption )
-      allocate ( VG % VectorIndices ( VG % nVectors ) )
-      do iVctr = 1, VG % nVectors
-        call VG % VectorIndices ( iVctr ) % Initialize &
+      S % nVectors = size ( VectorIndicesOption )
+      allocate ( S % VectorIndices ( S % nVectors ) )
+      do iVctr = 1, S % nVectors
+        call S % VectorIndices ( iVctr ) % Initialize &
                ( VectorIndicesOption ( iVctr ) )
       end do
     end if
     
-    if ( .not. allocated ( VG % VectorIndices ) ) &
-      allocate ( VG % VectorIndices ( 0 ) )
+    if ( .not. allocated ( S % VectorIndices ) ) &
+      allocate ( S % VectorIndices ( 0 ) )
 
     if ( present ( NameOption ) ) then
-      VG % lName = len_trim ( NameOption )
-      VG % Name = NameOption
+      S % lName = len_trim ( NameOption )
+      S % Name = NameOption
     end if 
     
-    if ( .not. allocated ( VG % lVariable ) ) then
-      allocate ( VG % lVariable ( size ( VG % Value, dim = 2 ) ) )
-      VG % lVariable = 0
+    if ( .not. allocated ( S % lVariable ) ) then
+      allocate ( S % lVariable ( size ( S % Value, dim = 2 ) ) )
+      S % lVariable = 0
     end if
     
-    if ( .not. allocated ( VG % Variable ) ) then
-      allocate ( VG % Variable ( size ( VG % Value, dim = 2 ) ) )
-      VG % Variable = ''
+    if ( .not. allocated ( S % Variable ) ) then
+      allocate ( S % Variable ( size ( S % Value, dim = 2 ) ) )
+      S % Variable = ''
     end if
     
     if ( present ( VariableOption ) ) then
-      do iS = 1, VG % nVariables
-        iVrbl = VG % iaSelected ( iS )
-        VG % Variable ( iVrbl ) = VariableOption ( iS )
-        VG % lVariable ( iVrbl ) = len_trim ( VariableOption ( iS ) )
+      do iS = 1, S % nVariables
+        iVrbl = S % iaSelected ( iS )
+        S % Variable ( iVrbl ) = VariableOption ( iS )
+        S % lVariable ( iVrbl ) = len_trim ( VariableOption ( iS ) )
       end do
     end if
       
     if ( present ( VectorOption ) ) then
-      allocate ( VG % lVector ( size ( VectorOption ) ) )
-      VG % lVector = len_trim ( VectorOption )
-      allocate ( VG % Vector ( size ( VectorOption ) ) )
-      VG % Vector = VectorOption
+      allocate ( S % lVector ( size ( VectorOption ) ) )
+      S % lVector = len_trim ( VectorOption )
+      allocate ( S % Vector ( size ( VectorOption ) ) )
+      S % Vector = VectorOption
     end if
     
-    if ( .not. allocated ( VG % lVector ) ) &
-      allocate ( VG % lVector ( 0 ) )
-    if ( .not. allocated ( VG % Vector ) ) &
-      allocate ( VG % Vector ( 0 ) )
+    if ( .not. allocated ( S % lVector ) ) &
+      allocate ( S % lVector ( 0 ) )
+    if ( .not. allocated ( S % Vector ) ) &
+      allocate ( S % Vector ( 0 ) )
 
-    if ( .not. allocated ( VG % Unit ) ) &
-      allocate ( VG % Unit ( size ( VG % Value, dim = 2 ) ) )
-    if ( present ( UnitOption ) ) VG % Unit = UnitOption
+    if ( .not. allocated ( S % Unit ) ) &
+      allocate ( S % Unit ( size ( S % Value, dim = 2 ) ) )
+    if ( present ( UnitOption ) ) S % Unit = UnitOption
     
   end subroutine InitializeOptionalMembers
 
 
-end module VariableGroup_Form
+end module Storage_Form

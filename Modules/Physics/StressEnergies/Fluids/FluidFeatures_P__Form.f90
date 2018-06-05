@@ -53,7 +53,7 @@ contains
 
     class ( FluidFeatures_P_Form ), intent ( inout ) :: &
       FF
-    class ( VariableGroupForm ), intent ( in ) :: &
+    class ( StorageForm ), intent ( in ) :: &
       Fluid
     class ( * ), intent ( in ) :: &
       Grid
@@ -99,8 +99,8 @@ contains
     class ( FluidFeatures_P_Form ), intent ( inout ) :: &
       FF
 
-    type ( VariableGroupForm ) :: &
-      VG_Shock
+    type ( StorageForm ) :: &
+      S_Shock
 
     call Clear ( FF % Value )
 
@@ -114,8 +114,8 @@ contains
 
       select type ( Grid_SLD => FF % Grid )
       class is ( Chart_SLD_Form )
-        call VG_Shock % Initialize ( FF, iaSelectedOption = [ FF % SHOCK ] )
-        call Grid_SLD % ExchangeGhostData ( VG_Shock )
+        call S_Shock % Initialize ( FF, iaSelectedOption = [ FF % SHOCK ] )
+        call Grid_SLD % ExchangeGhostData ( S_Shock )
       end select
 
     class default
@@ -144,7 +144,7 @@ contains
 
     class ( FluidFeatures_P_Form ), intent ( inout ) :: &
       FF
-    type ( VariableGroupForm ), intent ( inout ) :: &
+    type ( StorageForm ), intent ( inout ) :: &
       Output
 
     call Output % Initialize &

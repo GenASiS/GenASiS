@@ -26,13 +26,13 @@ module PointGridImage_Form
     procedure, private, pass :: &
       WriteMesh
     procedure, private, pass :: &
-      WriteVariableGroup
+      WriteStorage
     procedure, public, pass :: &
       Read
     procedure, private, pass :: &
       ReadMesh
     procedure, private, pass :: &
-      ReadVariableGroup
+      ReadStorage
     final :: &
       Finalize
   end type PointGridImageForm
@@ -142,7 +142,7 @@ contains
     
     call GI % WriteMesh ( TimeOption, CycleNumberOption )
     
-    call GI % WriteVariableGroup ( TimeOption, CycleNumberOption ) 
+    call GI % WriteStorage ( TimeOption, CycleNumberOption ) 
     
     call GI % Stream % ChangeDirectory ( WorkingDirectory ) 
   
@@ -177,15 +177,15 @@ contains
 
     call GI % ReadMesh ( )
     
-    !-- prepare VariableGroup to read into
-    if ( GI % nVariableGroups == 0 ) then 
+    !-- prepare Storage to read into
+    if ( GI % nStorages == 0 ) then 
       call GI % Stream % ListContents ( ContentTypeOption = 'Directory' )
-      GI % nVariableGroups = size ( GI % Stream % ContentList )
+      GI % nStorages = size ( GI % Stream % ContentList )
 !-- FIXME: NAG 5.3.1 should support sourced allocation
 !      allocate ( GroupName, source = GI % Stream % ContentList )
       allocate ( GroupName ( size ( GI % Stream % ContentList ) ) )
       GroupName = GI % Stream % ContentList
-      do iG = 1, GI % nVariableGroups
+      do iG = 1, GI % nStorages
         if ( len_trim ( GroupName ( iG ) ) > 0 ) &
           call GI % Stream % ChangeDirectory ( GroupName ( iG ) )
         call GI % Stream % ListContents &
@@ -196,9 +196,9 @@ contains
         VariableName = GI % Stream % ContentList 
         nVariables = size ( GI % Stream % ContentList )
         if ( nVariables == 0 ) then
-          GI % nVariableGroups = 0 
+          GI % nStorages = 0 
         else
-          call GI % VariableGroup ( iG ) % Initialize &
+          call GI % Storage ( iG ) % Initialize &
                  ( [ GI % nCells, nVariables ], &
                    VariableOption = VariableName, &
                    NameOption = GroupName ( iG ) ) 
@@ -208,7 +208,7 @@ contains
       end do
     end if  
       
-    call GI % ReadVariableGroup ( )
+    call GI % ReadStorage ( )
     
     call GI % Stream % ChangeDirectory ( WorkingDirectory )
 
@@ -222,8 +222,8 @@ contains
     
     nullify ( PGI % Stream )
 
-    if ( allocated ( PGI % VariableGroup ) ) &
-      deallocate ( PGI % VariableGroup )
+    if ( allocated ( PGI % Storage ) ) &
+      deallocate ( PGI % Storage )
     
     if ( allocated ( PGI % NodeCoordinate_3 ) ) &
       deallocate ( PGI % NodeCoordinate_3 )
@@ -397,7 +397,7 @@ contains
   end subroutine ReadMesh
   
   
-  subroutine WriteVariableGroup ( PGI, TimeOption, CycleNumberOption ) 
+  subroutine WriteStorage ( PGI, TimeOption, CycleNumberOption ) 
 
     class ( PointGridImageForm ), intent ( inout ) :: &
       PGI
@@ -423,32 +423,32 @@ contains
   
     MeshDirectory = PGI % Stream % CurrentDirectory
   
-    do iG = 1, PGI % nVariableGroups
+    do iG = 1, PGI % nStorages
     
-      associate ( VG => PGI % VariableGroup ( iG ) )
+      associate ( S => PGI % Storage ( iG ) )
     
-      call Show ( 'Writing a VariableGroup (point)', CONSOLE % INFO_5 )
+      call Show ( 'Writing a Storage (point)', CONSOLE % INFO_5 )
       call Show ( iG, 'iGroup', CONSOLE % INFO_5 )
-      call Show ( VG % Name, 'Name', CONSOLE % INFO_5 )
+      call Show ( S % Name, 'Name', CONSOLE % INFO_5 )
 
-      call PGI % Stream % MakeDirectory ( VG % Name ) 
+      call PGI % Stream % MakeDirectory ( S % Name ) 
     
-      do iS = 1, VG % nVariables
+      do iS = 1, S % nVariables
         
-        iVrbl = VG % iaSelected ( iS )
+        iVrbl = S % iaSelected ( iS )
         
         call Show ( 'Writing a Variable (point)', CONSOLE % INFO_6 )
         call Show ( iS, 'iSelected', CONSOLE % INFO_6 )
-        call Show ( VG % Variable ( iVrbl ), 'Name', CONSOLE % INFO_6 )
+        call Show ( S % Variable ( iVrbl ), 'Name', CONSOLE % INFO_6 )
 
-        Value => VG % Value ( PGI % oValue + 1 :, iVrbl )
+        Value => S % Value ( PGI % oValue + 1 :, iVrbl )
         
         nSiloOptions = 0
         if ( present ( TimeOption ) ) &
           nSiloOptions = nSiloOptions + 1
         if ( present ( CycleNumberOption ) ) &
           nSiloOptions = nSiloOptions + 1    
-        if ( len_trim ( VG % Unit ( iVrbl ) % Label ) > 0 ) &
+        if ( len_trim ( S % Unit ( iVrbl ) % Label ) > 0 ) &
           nSiloOptions = nSiloOptions + 1
           
         if ( nSiloOptions > 0 ) &
@@ -460,17 +460,17 @@ contains
         if ( present ( CycleNumberOption ) ) &
           Error = DBADDIOPT &
                     ( SiloOptionList, DBOPT_CYCLE, CycleNumberOption )
-        if ( len_trim ( VG % Unit ( iVrbl ) % Label ) > 0 ) &
+        if ( len_trim ( S % Unit ( iVrbl ) % Label ) > 0 ) &
           Error = DBADDCOPT &
                     ( SiloOptionList, DBOPT_UNITS, &
-                      trim ( VG % Unit ( iVrbl ) % Label ), &
-                      len_trim ( VG % Unit ( iVrbl ) % Label ) )
+                      trim ( S % Unit ( iVrbl ) % Label ), &
+                      len_trim ( S % Unit ( iVrbl ) % Label ) )
         
         call Show &
-               ( trim ( VG % Variable ( iVrbl ) ), 'Variable', &
+               ( trim ( S % Variable ( iVrbl ) ), 'Variable', &
                  CONSOLE % INFO_6 )
         call Show &
-               ( VG % lVariable ( iVrbl ), 'lVariable', CONSOLE % INFO_6 )
+               ( S % lVariable ( iVrbl ), 'lVariable', CONSOLE % INFO_6 )
         call Show &
                ( trim ( MeshDirectory ) // 'Mesh', 'MeshDirectory', &
                  CONSOLE % INFO_6 )
@@ -478,22 +478,22 @@ contains
                ( len_trim ( MeshDirectory ) + 4, 'lDirectory', &
                  CONSOLE % INFO_6 )
         call Show ( nSiloOptions, 'nSiloOptions', CONSOLE % INFO_6 )
-        if ( len_trim ( VG % Unit ( iVrbl ) % Label ) > 0 ) then
+        if ( len_trim ( S % Unit ( iVrbl ) % Label ) > 0 ) then
           call Show &
-                 ( trim ( VG % Unit ( iVrbl ) % Label ), 'Unit', &
+                 ( trim ( S % Unit ( iVrbl ) % Label ), 'Unit', &
                    CONSOLE % INFO_6 )
           call Show &
-                 ( len_trim ( VG % Unit ( iVrbl ) % Label ), 'lUnit', &
+                 ( len_trim ( S % Unit ( iVrbl ) % Label ), 'lUnit', &
                    CONSOLE % INFO_6 )
         end if
 
         Error = DBPUTPV1 &
                   ( PGI % Stream % MeshBlockHandle, &
-                    trim ( VG % Variable ( iVrbl ) ), &
-                    VG % lVariable ( iVrbl ), &
+                    trim ( S % Variable ( iVrbl ) ), &
+                    S % lVariable ( iVrbl ), &
                     trim ( MeshDirectory ) // 'Mesh', &
                     len_trim ( MeshDirectory ) + 4, &
-                    Value / VG % Unit ( iVrbl ) % Number, PGI % nCells, &
+                    Value / S % Unit ( iVrbl ) % Number, PGI % nCells, &
                     DB_DOUBLE, SiloOptionList, Error )
 
         if ( SiloOptionList /= DB_F77NULL ) then
@@ -512,11 +512,11 @@ contains
         end if
           
         call PGI % WriteMultiVariable &
-               ( VG % Variable ( iVrbl ), TimeOption, CycleNumberOption )
+               ( S % Variable ( iVrbl ), TimeOption, CycleNumberOption )
         
       end do
       
-      call PGI % WriteVectorVariable ( VG )
+      call PGI % WriteVectorVariable ( S )
       
       call PGI % Stream % ChangeDirectory ( '../' )
       
@@ -526,10 +526,10 @@ contains
   
     nullify ( Value )
   
-  end subroutine WriteVariableGroup 
+  end subroutine WriteStorage 
   
   
-  subroutine ReadVariableGroup ( PGI ) 
+  subroutine ReadStorage ( PGI ) 
 
     class ( PointGridImageForm ), intent ( inout ) :: &
       PGI
@@ -558,25 +558,25 @@ contains
 
     MeshDirectory = PGI % Stream % CurrentDirectory
 
-    do iG = 1, PGI % nVariableGroups
+    do iG = 1, PGI % nStorages
       
-      associate ( VG => PGI % VariableGroup ( iG ), &
+      associate ( S => PGI % Storage ( iG ), &
                   nDims => PGI % nDimensions )
 
-      call Show ( 'Reading a VariableGroup', CONSOLE % INFO_5 )
+      call Show ( 'Reading a Storage', CONSOLE % INFO_5 )
       call Show ( iG, 'iGroup', CONSOLE % INFO_5 )
-      call Show ( VG % Name, 'Name', CONSOLE % INFO_5 )
+      call Show ( S % Name, 'Name', CONSOLE % INFO_5 )
 
-      if ( len_trim ( VG % Name ) > 0 ) &
-        call PGI % Stream % ChangeDirectory ( VG  % Name )
+      if ( len_trim ( S % Name ) > 0 ) &
+        call PGI % Stream % ChangeDirectory ( S  % Name )
 
       DB_File &
         = PGI % Stream % AccessSiloPointer ( PGI % Stream % MeshBlockHandle )
 
-      do iS = 1, VG % nVariables
+      do iS = 1, S % nVariables
 
-        iVrbl = VG % iaSelected ( iS )
-        VariableName = trim ( VG % Variable ( iVrbl ) ) // c_null_char
+        iVrbl = S % iaSelected ( iS )
+        VariableName = trim ( S % Variable ( iVrbl ) ) // c_null_char
         
         DB_MV_Handle = DB_GetPointVariable ( DB_File, VariableName )
         call c_f_pointer ( DB_MV_Handle, DB_MV )
@@ -590,8 +590,8 @@ contains
           call c_f_pointer &
                  ( ValueArrays ( iA ), VariableValue, [ DB_MV % nElements ] )
           call Copy &
-                 ( VariableValue * VG % Unit ( iVrbl ) % Number, &
-                   VG % Value ( PGI % oValue + 1 &
+                 ( VariableValue * S % Unit ( iVrbl ) % Number, &
+                   S % Value ( PGI % oValue + 1 &
                                 : PGI % oValue + DB_MV % nElements, iVrbl ) )
         end do
         
@@ -599,7 +599,7 @@ contains
       
       end do
       
-      if ( len_trim ( VG % Name ) > 0 ) &
+      if ( len_trim ( S % Name ) > 0 ) &
         call PGI % Stream % ChangeDirectory ( '../' )
 
       end associate
@@ -609,7 +609,7 @@ contains
     DB_File      = c_null_ptr
     DB_MV_Handle = c_null_ptr
          
-  end subroutine ReadVariableGroup
+  end subroutine ReadStorage
 
 
 end module PointGridImage_Form

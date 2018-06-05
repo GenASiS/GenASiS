@@ -120,7 +120,7 @@ contains
       iV     !-- iVariable
     logical ( KDL ) :: &
       GhostExchange
-    class ( VariableGroupForm ), pointer :: &
+    class ( StorageForm ), pointer :: &
       FF, &
       FS
 
@@ -165,7 +165,7 @@ contains
     integer ( KDI ) :: &
       iF, &  !-- iFiber
       iV     !-- iVariable
-    class ( VariableGroupForm ), pointer :: &
+    class ( StorageForm ), pointer :: &
       FF, &
       FS
 
@@ -196,7 +196,7 @@ contains
       FB
     integer ( KDI ), intent ( in ) :: &
       iFiber
-    class ( VariableGroupForm ), pointer :: &
+    class ( StorageForm ), pointer :: &
       FF
     
     class ( FieldChartTemplate ), pointer :: &
@@ -220,7 +220,7 @@ contains
       FB
     integer ( KDI ), intent ( in ) :: &
       iSection
-    class ( VariableGroupForm ), pointer :: &
+    class ( StorageForm ), pointer :: &
       FS
     
     class ( FieldChartTemplate ), pointer :: &

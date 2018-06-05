@@ -210,7 +210,7 @@ contains
 
     class ( Fluid_P_NR_Form ), intent ( in ) :: &
       F
-    type ( VariableGroupForm ), intent ( inout ) :: &
+    type ( StorageForm ), intent ( inout ) :: &
       Output
 
     type ( Integer_1D_Form ), dimension ( 1 ) :: &

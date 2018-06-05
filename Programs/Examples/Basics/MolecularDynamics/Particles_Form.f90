@@ -5,7 +5,7 @@ module Particles_Form
   implicit none
   private
 
-  type, public, extends ( VariableGroupForm ) :: ParticlesForm
+  type, public, extends ( StorageForm ) :: ParticlesForm
     integer, dimension ( 3 ) :: &
       POSITION     = [ 1, 2, 3 ], &
       POSITION_BOX = [ 4, 5, 6 ], &

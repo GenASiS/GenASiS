@@ -26,7 +26,7 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iVariable
 
-    type ( VariableGroupForm ), pointer :: &
+    type ( StorageForm ), pointer :: &
       Source, &
       Reference
     class ( GeometryFlatForm ), pointer :: &

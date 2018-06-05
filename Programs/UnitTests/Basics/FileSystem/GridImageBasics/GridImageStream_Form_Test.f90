@@ -15,9 +15,9 @@ program GridImageStream_Form_Test
           'Variable_5', 'Variable_6'  ]
   character ( LDF ) :: &
     Name = 'Stream_Form_Test'
-  type ( VariableGroupForm ), dimension ( : ), allocatable :: &
-    VG_W, &
-    VG_R
+  type ( StorageForm ), dimension ( : ), allocatable :: &
+    S_W, &
+    S_R
   type ( CommunicatorForm ), allocatable :: &
     C
   type ( GridImageStreamForm ), allocatable :: &
@@ -80,25 +80,25 @@ program GridImageStream_Form_Test
     call GIS % ChangeDirectory ( '/' )
     call GIS % MakeDirectory ( 'SubDirectory_4' )
     
-    allocate ( VG_W ( 3 ) )
-    call VG_W ( 1 ) % Initialize &
+    allocate ( S_W ( 3 ) )
+    call S_W ( 1 ) % Initialize &
            ( ValueShape = [ 10, 6 ], &
-             VariableOption = Variable, NameOption = 'VariableGroup_1' )
-    call random_number ( VG_W ( 1 ) % Value )
+             VariableOption = Variable, NameOption = 'Storage_1' )
+    call random_number ( S_W ( 1 ) % Value )
 
-    call VG_W ( 2 ) % Initialize &
+    call S_W ( 2 ) % Initialize &
            ( ValueShape = [ 15, 6 ], &
-             VariableOption = Variable, NameOption = 'VariableGroup_2')
-    call random_number ( VG_W ( 2 ) % Value )
+             VariableOption = Variable, NameOption = 'Storage_2')
+    call random_number ( S_W ( 2 ) % Value )
     
-    call VG_W ( 3 ) % Initialize &
+    call S_W ( 3 ) % Initialize &
            ( ValueShape = [ 26, 6 ], &
-             VariableOption = Variable, NameOption = 'VariableGroup_3')
-    call random_number ( VG_W ( 3 ) % Value )
+             VariableOption = Variable, NameOption = 'Storage_3')
+    call random_number ( S_W ( 3 ) % Value )
     
     call GIS % ChangeDirectory ( '/' )
-    call GIS % WriteVariableGroup &
-           ( VG_W, DirectoryOption = 'SubDirectory_1' )
+    call GIS % WriteStorage &
+           ( S_W, DirectoryOption = 'SubDirectory_1' )
     
     call GIS % Close ( )
     
@@ -110,20 +110,20 @@ program GridImageStream_Form_Test
     call GIS % ListContents ( ContentTypeOption = 'Directory' )
     call Show ( size ( GIS % ContentList ), 'nDirectories' )
     
-    allocate ( VG_R ( 3 ) )
-    call GIS % ReadVariableGroup &
-           ( VG_R, DirectoryOption = 'SubDirectory_1' )
+    allocate ( S_R ( 3 ) )
+    call GIS % ReadStorage &
+           ( S_R, DirectoryOption = 'SubDirectory_1' )
            
     call Show &
-           ( all ( VG_W ( 1 ) % Value == VG_R ( 1 ) % Value ) &
-               .and. all ( VG_W ( 2 ) % Value == VG_R ( 2 ) % Value ) &
-               .and. all ( VG_W ( 3 ) % Value == VG_R ( 3 ) % Value ), &
-             'Ever R/W VG Value Matches' )
+           ( all ( S_W ( 1 ) % Value == S_R ( 1 ) % Value ) &
+               .and. all ( S_W ( 2 ) % Value == S_R ( 2 ) % Value ) &
+               .and. all ( S_W ( 3 ) % Value == S_R ( 3 ) % Value ), &
+             'Ever R/W S Value Matches' )
     
     call GIS % Close ( )
     
-    deallocate ( VG_R )
-    deallocate ( VG_W )
+    deallocate ( S_R )
+    deallocate ( S_W )
     
   end do
   

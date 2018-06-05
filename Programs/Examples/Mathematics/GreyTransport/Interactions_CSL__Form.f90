@@ -79,7 +79,7 @@ contains
     class ( InteractionsTemplate ), pointer :: &
       I
       
-    class ( VariableGroupForm ), pointer :: &
+    class ( StorageForm ), pointer :: &
       Field
 
     I => null ( )
@@ -100,7 +100,7 @@ contains
     class ( Interactions_F_Form ), pointer :: &
       I
       
-    class ( VariableGroupForm ), pointer :: &
+    class ( StorageForm ), pointer :: &
       Field
 
     I => null ( )

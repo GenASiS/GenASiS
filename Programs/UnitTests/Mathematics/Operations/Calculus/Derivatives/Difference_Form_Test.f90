@@ -40,9 +40,9 @@ contains
       nCompute
     character ( 1 ) :: &
       iD_String
-    type ( VariableGroupForm ) :: &
+    type ( StorageForm ) :: &
       Gaussian
-    type ( VariableGroupForm ), dimension ( ATLAS % MAX_DIMENSIONS ) :: &
+    type ( StorageForm ), dimension ( ATLAS % MAX_DIMENSIONS ) :: &
       d_Gaussian_Inner
     class ( GeometryFlatForm ), pointer :: &
       G

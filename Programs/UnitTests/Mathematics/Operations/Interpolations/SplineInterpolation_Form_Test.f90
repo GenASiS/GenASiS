@@ -19,9 +19,9 @@ program SplineInterpolation_Form_Test
     Table
   character ( LDF ) :: &
     DataFile = ''
-  type ( VariableGroupForm ) :: &
-    VG_Known, &
-    VG_Interpolated
+  type ( StorageForm ) :: &
+    S_Known, &
+    S_Interpolated
   type ( GridImageStreamForm ) :: &
     GIS
   type ( TableStreamForm ) :: &
@@ -55,43 +55,43 @@ program SplineInterpolation_Form_Test
   !-- initialize storage for interpolated values, and interpolate
 
   allocate ( InterpolatedInput ( 5 * size ( KnownInput ) ) )
-  call VG_Interpolated % Initialize &
+  call S_Interpolated % Initialize &
          ( [ size ( InterpolatedInput ), 1 ], &
            VariableOption = [ 'Interpolated' ] )
   Delta &
     = ( maxval ( KnownInput ) - minval ( KnownInput ) ) &
-      / VG_Interpolated % nValues 
+      / S_Interpolated % nValues 
   
-  do iV = 1, VG_Interpolated % nValues
+  do iV = 1, S_Interpolated % nValues
     InterpolatedInput ( iV ) = KnownInput ( 1 ) + ( iV - 1 ) * Delta 
     call SI % Evaluate &
-           ( InterpolatedInput ( iV ), VG_Interpolated % Value ( iV, 1 ) )
+           ( InterpolatedInput ( iV ), S_Interpolated % Value ( iV, 1 ) )
   end do 
   
   call Show ( Table, 'Original value', CONSOLE % INFO_5 )
   call Show &
          ( reshape &
-             ( [ InterpolatedInput, VG_Interpolated % Value ( :, 1 ) ], &
-               [ VG_Interpolated % nValues, 2 ] ), 'Interpolated value', &
+             ( [ InterpolatedInput, S_Interpolated % Value ( :, 1 ) ], &
+               [ S_Interpolated % nValues, 2 ] ), 'Interpolated value', &
            CONSOLE % INFO_5 )
 
   !-- write
-  call VG_Known % Initialize &
+  call S_Known % Initialize &
          ( [ size ( KnownInput ), 1 ], VariableOption = [ 'Known' ] )
-  VG_Known % Value ( :, 1 ) = Table ( :, 2 )
+  S_Known % Value ( :, 1 ) = Table ( :, 2 )
   
   call GIS % Initialize ( ProgramName )
   call GIS % Open ( GIS % ACCESS_CREATE )
   
   call CI_Known % Initialize ( GIS )
-  call CI_Known % AddVariableGroup ( VG_Known )
+  call CI_Known % AddStorage ( S_Known )
   call CI_Known % SetGrid &
          ( Directory = '', NodeCoordinate = KnownInput, &
            nProperCells = size ( KnownInput ), oValue = 0 )
   call CI_Known % Write ( )
   
   call CI_Interpolated % Initialize ( GIS )
-  call CI_Interpolated % AddVariableGroup ( VG_Interpolated )
+  call CI_Interpolated % AddStorage ( S_Interpolated )
   call CI_Interpolated % SetGrid &
          ( Directory = '', NodeCoordinate = InterpolatedInput, &
            nProperCells = size ( InterpolatedInput ), oValue = 0 )

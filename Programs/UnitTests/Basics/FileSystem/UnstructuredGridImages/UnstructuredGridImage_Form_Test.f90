@@ -20,8 +20,8 @@ program UnstructuredGridImage_Form_Test
     Name = 'UnstructuredGridImage_Form_Test'
   character ( LDL ), dimension ( 2 ) :: &
     VariableName
-  type ( VariableGroupForm ), dimension ( 2 ) :: &
-    VG
+  type ( StorageForm ), dimension ( 2 ) :: &
+    S
   type ( CommunicatorForm ), allocatable :: &
     C
   type ( GridImageStreamForm ) :: &
@@ -45,17 +45,17 @@ program UnstructuredGridImage_Form_Test
   oC_1 = C % Rank * maxval ( NodeCoordinate ( :, 1 ) )
   NodeCoordinate ( :, 1 ) = NodeCoordinate ( :, 1 ) + oC_1
   
-  VariableName = [ 'VG_1_Name_1', 'VG_1_Name_2' ]
-  call VG ( 1 ) % Initialize &
+  VariableName = [ 'S_1_Name_1', 'S_1_Name_2' ]
+  call S ( 1 ) % Initialize &
          ( [ 1, 2 ], VariableOption = VariableName, &
-           NameOption = 'VariableGroup_1' )
-  VG ( 1 ) % Value ( :, : ) = NodeCoordinate ( 6 : 6, 1 : 2 )
+           NameOption = 'Storage_1' )
+  S ( 1 ) % Value ( :, : ) = NodeCoordinate ( 6 : 6, 1 : 2 )
   
-  VariableName = [ 'VG_2_Name_1', 'VG_2_Name_2' ]
-  call VG ( 2 ) % Initialize &
+  VariableName = [ 'S_2_Name_1', 'S_2_Name_2' ]
+  call S ( 2 ) % Initialize &
          ( [ 1, 2 ], VariableOption = VariableName, &
-           NameOption = 'VariableGroup_2' )
-  VG ( 2 ) % Value ( :, : ) = 2 * NodeCoordinate ( 6 : 6, 1 : 2 )
+           NameOption = 'Storage_2' )
+  S ( 2 ) % Value ( :, : ) = 2 * NodeCoordinate ( 6 : 6, 1 : 2 )
   
   call CONSOLE % Initialize ( C % Rank )
 
@@ -65,8 +65,8 @@ program UnstructuredGridImage_Form_Test
   
   call UGI_Write % Initialize ( GIS )
 
-  call UGI_Write % AddVariableGroup ( VG ( 1 ) )
-  call UGI_Write % AddVariableGroup ( VG ( 2 ) )
+  call UGI_Write % AddStorage ( S ( 1 ) )
+  call UGI_Write % AddStorage ( S ( 2 ) )
   
   call UGI_Write % SetGrid  &
          ( Directory = 'Unstructured', &
@@ -101,10 +101,10 @@ program UnstructuredGridImage_Form_Test
                               == UGI_Read % NodeCoordinate_3 ) ), &
               'Every R/W NodeCoordinate matches' )
   
-  call Show ( ( all ( UGI_Write % VariableGroup ( 1 ) % Value &
-                        == UGI_Read % VariableGroup ( 1 ) % Value ) &
-                .and. all ( UGI_Write % VariableGroup ( 2 ) % Value &
-                              == UGI_Read % VariableGroup ( 2 ) % Value ) ), &
+  call Show ( ( all ( UGI_Write % Storage ( 1 ) % Value &
+                        == UGI_Read % Storage ( 1 ) % Value ) &
+                .and. all ( UGI_Write % Storage ( 2 ) % Value &
+                              == UGI_Read % Storage ( 2 ) % Value ) ), &
               'Every R/W Variable matches' )
   
   call GIS % Close ( ) 

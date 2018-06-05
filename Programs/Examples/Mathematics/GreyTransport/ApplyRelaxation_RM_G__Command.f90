@@ -31,7 +31,7 @@ contains
       S
     class ( Sources_C_Form ), intent ( inout ) :: &
       Sources_RM
-    type ( VariableGroupForm ), intent ( inout ) :: &
+    type ( StorageForm ), intent ( inout ) :: &
       Increment
     class ( CurrentTemplate ), intent ( in ), target :: &
       RadiationMoments

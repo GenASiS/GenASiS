@@ -14,7 +14,7 @@ module StorageDivergence_Form
       iTimerReconstruction = 0, &
       iTimerFluxes         = 0, &
       iTimerIncrement      = 0
-    type ( VariableGroupForm ), allocatable :: &
+    type ( StorageForm ), allocatable :: &
       Geometry_I, &              !-- Geometry_Inner
       Current_IL, Current_IR, &  !-- Current_InnerLeft, Current_InnerRight
       SolverSpeeds_I, &          !-- SolverSpeeds_Inner

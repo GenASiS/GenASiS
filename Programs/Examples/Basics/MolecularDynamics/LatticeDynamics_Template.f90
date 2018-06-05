@@ -14,7 +14,7 @@ module LatticeDynamics_Template
         TargetTemperatureInterval
       type ( MeasuredValueForm ) :: &
         EnergyUnit
-    type ( VariableGroupForm ) :: &
+    type ( StorageForm ) :: &
       Correlation
     type ( GridImageStreamForm ) :: &
       CorrelationImageStream
@@ -396,7 +396,7 @@ contains
              nProperCells = LP % nCorrelationBins, oValue = 0, &
              CoordinateUnitOption = LP % LengthUnit, &
              CoordinateLabelOption = 'r' )
-    call CF % AddVariableGroup ( LD % Correlation )
+    call CF % AddStorage ( LD % Correlation )
     call CF % Write ( )
     end associate !-- CF
 

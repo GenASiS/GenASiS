@@ -1,9 +1,9 @@
-program VariableGroup_1D__Form_Test
+program Storage_1D__Form_Test
 
   use Specifiers
   use ArrayArrays
-  use VariableGroup_Form
-  use VariableGroup_1D__Form
+  use Storage_Form
+  use Storage_1D__Form
 
   implicit none
 
@@ -19,10 +19,10 @@ program VariableGroup_1D__Form_Test
     VariableUnit
   type ( Integer_1D_Form ), dimension ( 1 ) :: &
     VectorIndices
-  type ( VariableGroupForm ), dimension ( 3 ) :: &
-    VG
-  type ( VariableGroup_1D_Form ) :: &
-    VGAM
+  type ( StorageForm ), dimension ( 3 ) :: &
+    S
+  type ( Storage_1D_Form ) :: &
+    SAM
 
   do i = 1, size ( VariableUnit ) 
     call VariableUnit ( i ) % Initialize &
@@ -31,73 +31,73 @@ program VariableGroup_1D__Form_Test
 
   call VectorIndices ( 1 ) % Initialize ( [ 2, 3 ] )
 
-  call VG ( 1 ) % Initialize &
+  call S ( 1 ) % Initialize &
          ( ValueShape = [ 4, 6 ], VectorIndicesOption = VectorIndices, &
            UnitOption = VariableUnit, VectorOption = [ 'Vector_1' ], &
-           VariableOption = Variable, NameOption = 'VariableGroup_1' )
-  call PrintVariableGroup ( VG ( 1 ) )
+           VariableOption = Variable, NameOption = 'Storage_1' )
+  call PrintStorage ( S ( 1 ) )
 
-  call VG ( 2 ) % Initialize ( VG ( 1 ), NameOption = 'VariableGroup_2' )
-  call PrintVariableGroup ( VG ( 2 ) )
+  call S ( 2 ) % Initialize ( S ( 1 ), NameOption = 'Storage_2' )
+  call PrintStorage ( S ( 2 ) )
 
-  call VG ( 3 ) % Initialize &
-         ( VG ( 1 ), NameOption = 'VariableGroup_3', &
+  call S ( 3 ) % Initialize &
+         ( S ( 1 ), NameOption = 'Storage_3', &
            iaSelectedOption = [ 2, 3, 6 ] )
-  call PrintVariableGroup ( VG ( 3 ) )
+  call PrintStorage ( S ( 3 ) )
 
-  call VGAM % Initialize ( VG )
+  call SAM % Initialize ( S )
   print *
-  print *, 'VGAM % nGroups = ', VGAM % nGroups
-  print *, 'VGAM % nVariablesTotal = ', VGAM % nVariablesTotal
-  print *, 'VGAM % nVariables = ', VGAM % nVariables
+  print *, 'SAM % nGroups = ', SAM % nGroups
+  print *, 'SAM % nVariablesTotal = ', SAM % nVariablesTotal
+  print *, 'SAM % nVariables = ', SAM % nVariables
 
 contains
 
 
-subroutine PrintVariableGroup ( VG )
+subroutine PrintStorage ( S )
 
   use Specifiers
-  use VariableGroup_Form
+  use Storage_Form
 
   integer ( KDI ) :: &
     i
-  type ( VariableGroupForm ) :: &
-    VG
+  type ( StorageForm ) :: &
+    S
 
   print *
-  print *, 'VG % nValues = ', VG % nValues
-  print *, 'VG % nVariables = ', VG % nVariables
-  print *, 'VG % nVectors = ', VG % nVectors
-  print *, 'VG % lName = ', VG % lName
-  print *, 'VG % lVariable = ', VG % lVariable
-  print *, 'VG % lVector = ', VG % lVector
-  print *, 'VG % iaSelected = ', VG % iaSelected
-  print *, 'VG % AllocatedValue = ', VG % AllocatedValue
-  print *, 'VG % Name = ', trim ( VG % Name )
+  print *, 'S % nValues = ', S % nValues
+  print *, 'S % nVariables = ', S % nVariables
+  print *, 'S % nVectors = ', S % nVectors
+  print *, 'S % lName = ', S % lName
+  print *, 'S % lVariable = ', S % lVariable
+  print *, 'S % lVector = ', S % lVector
+  print *, 'S % iaSelected = ', S % iaSelected
+  print *, 'S % AllocatedValue = ', S % AllocatedValue
+  print *, 'S % Name = ', trim ( S % Name )
 
-  do i = 1, VG % nVariables
+  do i = 1, S % nVariables
     print *, &
-      'VG % Variable (', i, ') = ', &
-      trim ( VG % Variable ( VG % iaSelected ( i ) ) )
+      'S % Variable (', i, ') = ', &
+      trim ( S % Variable ( S % iaSelected ( i ) ) )
   end do
 
-  do i = 1, VG % nVectors
+  do i = 1, S % nVectors
     print *, &
-      'VG % Vector (', i, ') = ', trim ( VG % Vector ( i ) )
+      'S % Vector (', i, ') = ', trim ( S % Vector ( i ) )
   end do
 
-  do i = 1, VG % nVariables
+  do i = 1, S % nVariables
     print *, &
-      'VG % Unit (', i, ') % Unit = ', &
-      trim ( VG % Unit ( VG % iaSelected ( i ) ) % Unit )
+      'S % Unit (', i, ') % Unit = ', &
+      trim ( S % Unit ( S % iaSelected ( i ) ) % Unit )
   end do
 
-  do i = 1, VG % nVectors
+  do i = 1, S % nVectors
     print *, &
-      'VG % VectorIndices (', i, ') = ', VG % VectorIndices ( i ) % Value
+      'S % VectorIndices (', i, ') = ', S % VectorIndices ( i ) % Value
   end do
 
-end subroutine PrintVariableGroup
+end subroutine PrintStorage
 
 
-end program VariableGroup_1D__Form_Test
+end program Storage_1D__Form_Test

@@ -31,7 +31,7 @@ contains
       S
     class ( Sources_C_Form ), intent ( inout ) :: &
       Sources_RM
-    type ( VariableGroupForm ), intent ( inout ) :: &
+    type ( StorageForm ), intent ( inout ) :: &
       Increment
     class ( CurrentTemplate ), intent ( in ), target :: &
       RadiationMoments
@@ -90,7 +90,7 @@ contains
 
     associate &
       ( G   => GeometryOption, &
-        iVG => iGeometryValueOption )
+        iS => iGeometryValueOption )
 
     call Search ( RM % iaConserved, RM % CONSERVED_ENERGY, &
                   iEnergy )
@@ -127,8 +127,8 @@ contains
                RM % Value ( iV, RM % FLUID_VELOCITY_U ( 1 ) ), &
                RM % Value ( iV, RM % FLUID_VELOCITY_U ( 2 ) ), &
                RM % Value ( iV, RM % FLUID_VELOCITY_U ( 3 ) ), &
-               G  % Value ( iVG, G % METRIC_DD_22 ), &
-               G  % Value ( iVG, G % METRIC_DD_33 ), &
+               G  % Value ( iS, G % METRIC_DD_22 ), &
+               G  % Value ( iS, G % METRIC_DD_33 ), &
                TimeStep, LE % Matrix, LE % RightHandSide, k_DD )
 
       call ComputeComovingIncrements &
@@ -139,8 +139,8 @@ contains
                RM % Value ( iV, RM % FLUID_VELOCITY_U ( 1 ) ), &
                RM % Value ( iV, RM % FLUID_VELOCITY_U ( 2 ) ), &
                RM % Value ( iV, RM % FLUID_VELOCITY_U ( 3 ) ), &
-               G  % Value ( iVG, G % METRIC_DD_22 ), &
-               G  % Value ( iVG, G % METRIC_DD_33 ), &
+               G  % Value ( iS, G % METRIC_DD_22 ), &
+               G  % Value ( iS, G % METRIC_DD_33 ), &
                Increment % Value ( iV, iEnergy ), &
                Increment % Value ( iV, iMomentum_1 ), &
                Increment % Value ( iV, iMomentum_2 ), &
@@ -159,8 +159,8 @@ contains
                 RM % Value ( iV, RM % COMOVING_MOMENTUM_U ( 2 ) ), &
                 RM % Value ( iV, RM % COMOVING_MOMENTUM_U ( 3 ) ), &
                 dJ, dH_D_1, dH_D_2, dH_D_3, & 
-                 G % Value ( iVG, G % METRIC_DD_22 ), &
-                 G % Value ( iVG, G % METRIC_DD_33 ), &
+                 G % Value ( iS, G % METRIC_DD_22 ), &
+                 G % Value ( iS, G % METRIC_DD_33 ), &
                 S % B ( iStage ) )
 
     end do

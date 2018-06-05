@@ -183,7 +183,7 @@ contains
     class ( GeometryFlatForm ), pointer :: &
       G
       
-    class ( VariableGroupForm ), pointer :: &
+    class ( StorageForm ), pointer :: &
       Field
 
     if ( .not. associated ( C % Geometry_CSL ) ) then
@@ -255,7 +255,7 @@ contains
 
     class ( Chart_SL_Template ), intent ( inout ), target :: &
       C
-    class ( VariableGroupForm ), intent ( in ) :: &
+    class ( StorageForm ), intent ( in ) :: &
       Field
     integer ( KDI ), intent ( in ) :: &
       iStream

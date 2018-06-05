@@ -89,17 +89,17 @@ contains
   end subroutine Initialize
 
 
-  subroutine AddField ( CS, VG )
+  subroutine AddField ( CS, S )
 
     class ( ChartStream_SL_Form ), intent ( inout ) :: &
       CS
-    class ( VariableGroupForm ), intent ( in ) :: &
-      VG
+    class ( StorageForm ), intent ( in ) :: &
+      S
 
     if ( allocated ( CS % CurveImage ) ) then
-      call CS % CurveImage % AddVariableGroup ( VG )
+      call CS % CurveImage % AddStorage ( S )
     else if ( allocated ( CS % GridImage ) ) then
-      call CS % GridImage % AddVariableGroup ( VG )
+      call CS % GridImage % AddStorage ( S )
     end if
 
   end subroutine AddField
@@ -111,9 +111,9 @@ contains
       CS
 
     if ( allocated ( CS % CurveImage ) ) then
-      call CS % CurveImage % ClearVariableGroups ( )
+      call CS % CurveImage % ClearStorages ( )
     else if ( allocated ( CS % GridImage ) ) then
-      call CS % GridImage % ClearVariableGroups ( )
+      call CS % GridImage % ClearStorages ( )
     end if
 
   end subroutine ClearFields
