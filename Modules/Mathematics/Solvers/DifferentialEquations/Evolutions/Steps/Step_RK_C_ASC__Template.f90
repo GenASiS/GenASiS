@@ -43,7 +43,7 @@ module Step_RK_C_ASC__Template
         iTimerRelaxation        = 0, &
         iTimerGhost             = 0, &
         iTimerBoundaryFluence   = 0
-!         iGeometryValue
+!         iStrgeometryValue
       type ( Real_1D_Form ), dimension ( : ), allocatable :: &
         dLogVolumeJacobian_dX
       type ( Real_3D_Form ), dimension ( :, : ), allocatable :: &
@@ -175,7 +175,7 @@ module Step_RK_C_ASC__Template
     end subroutine AS
 
     subroutine AR ( S, Sources, Increment, Current, Chart, TimeStep, iStage, &
-                    GeometryOption, iGeometryValueOption )
+                    GeometryOption, iStrgeometryValueOption )
       use Basics
       use Manifolds
       use Fields
@@ -197,7 +197,7 @@ module Step_RK_C_ASC__Template
       class ( GeometryFlatForm ), intent ( in ), optional :: &
         GeometryOption
       integer ( KDI ), intent ( in ), optional :: &
-        iGeometryValueOption
+        iStrgeometryValueOption
     end subroutine AR
     
     subroutine HI ( S, Increment, Current, TimeStep )
@@ -334,7 +334,7 @@ contains
 
 !   subroutine Compute_1D &
 !                ( S, Current_1D, Grid, Time, TimeStep, GeometryOption, &
-!                  UseLimiterParameterOption, iGeometryValueOption )
+!                  UseLimiterParameterOption, iStrgeometryValueOption )
 
 !     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
 !       S
@@ -351,11 +351,11 @@ contains
 !     logical ( KDL ), intent ( in ), dimension ( : ), optional :: &
 !       UseLimiterParameterOption
 !     integer ( KDI ), intent ( in ), optional :: &
-!       iGeometryValueOption
+!       iStrgeometryValueOption
 
 !     integer ( KDI ) :: &
 !       iF, &  !-- iField
-!       iG     !-- iStorage
+!       iStrg     !-- iStorage
 !     integer ( KDI ), dimension ( size ( Current_1D ) ) :: &
 !       nValues, &
 !       nEquations
@@ -374,10 +374,10 @@ contains
 !     associate ( nStorages => size ( Current_1D ) )
 
 !     S % Geometry => null ( )
-!     if ( present ( GeometryOption ) .and. present ( iGeometryValueOption ) ) &
+!     if ( present ( GeometryOption ) .and. present ( iStrgeometryValueOption ) ) &
 !     then
 !       S % Geometry => GeometryOption
-!       S % iGeometryValue = iGeometryValueOption
+!       S % iStrgeometryValue = iStrgeometryValueOption
 !     end if
 
 !     if ( .not. allocated ( S % ApplyDivergence_1D ) ) &
@@ -389,26 +389,26 @@ contains
 
 !     !-- Allocate Solution and initialize from Current_1D
 
-!     do iG = 1, nStorages
+!     do iStrg = 1, nStorages
 !       associate &
-!         ( C   => Current_1D ( iG ) % Pointer )
+!         ( C   => Current_1D ( iStrg ) % Pointer )
 !       associate &
 !         ( iaC => C % iaConserved, &
 !           nE  => C % N_CONSERVED, &  !-- nEquations
 !           nV  => C % nValues )
 
-!       call Solution ( iG ) % Initialize ( [ nV, nE ] )
+!       call Solution ( iStrg ) % Initialize ( [ nV, nE ] )
 !       do iF = 1, C % N_CONSERVED
 !         associate &
 !           ( CV => C % Value ( :, iaC ( iF ) ), &
-!             SV => Solution ( iG ) % Value ( :, iF ) )
+!             SV => Solution ( iStrg ) % Value ( :, iF ) )
 !         call Copy ( CV, SV )
 !         end associate !-- CV, etc.
 !       end do !-- iF
 
 !       end associate !-- iaC, etc.
 !       end associate !-- C, etc.
-!     end do !-- iG
+!     end do !-- iStrg
 
 !     !-- Compute Solution
 
@@ -418,20 +418,20 @@ contains
 
 !     !-- Copy Solution to Current_1D
 
-!     do iG = 1, nStorages
-!       associate ( C => Current_1D ( iG ) % Pointer )
+!     do iStrg = 1, nStorages
+!       associate ( C => Current_1D ( iStrg ) % Pointer )
 !       associate ( iaC => C % iaConserved )
 
 !       do iF = 1, C % N_CONSERVED
 !         associate &
-!           ( SV => Solution ( iG ) % Value ( :, iF ), &
+!           ( SV => Solution ( iStrg ) % Value ( :, iF ), &
 !             CV => C % Value ( :, iaC ( iF ) ) )
 !         call Copy ( SV, CV )
 !         end associate !-- YV, etc.
 !       end do !-- iF
 
 !       if ( associated ( S % Geometry ) ) then
-!         call C % ComputeFromConserved ( S % iGeometryValue, S % Geometry )
+!         call C % ComputeFromConserved ( S % iStrgeometryValue, S % Geometry )
 !       else
 !         select type ( Grid )
 !         class is ( Chart_SL_Template )
@@ -447,7 +447,7 @@ contains
 
 !       end associate !-- iaC
 !       end associate !-- C
-!     end do !-- iG
+!     end do !-- iStrg
 
 !     end associate !-- nStorages
 
@@ -816,7 +816,7 @@ contains
 !       end do !-- iF
 
 !       if ( associated ( S % Geometry ) ) then
-!         call C % ComputeFromConserved ( S % iGeometryValue, S % Geometry )
+!         call C % ComputeFromConserved ( S % iStrgeometryValue, S % Geometry )
 !       else
 !         select type ( Grid => S % Grid )
 !         class is ( Chart_SL_Template )
@@ -889,7 +889,7 @@ contains
 !     integer ( KDI ) :: &
 !       iD, jD, kD, &  !-- iDimension
 !       iF, &  !-- iField
-!       iG     !-- iStorage
+!       iStrg     !-- iStorage
 !     integer ( KDI ), dimension ( 3 ) :: &
 !       nSurface
 
@@ -907,12 +907,12 @@ contains
 !         deallocate ( S % BoundaryFluence_CSL )
 !       allocate ( S % BoundaryFluence_CSL ( nStorages ) )
 
-!       do iG = 1, nStorages
+!       do iStrg = 1, nStorages
 !         associate &
 !           ( C => Grid % Atlas % Connectivity, &
 !             nDimensions => Grid % nDimensions, &
-!             nConserved  => S % Current_1D ( iG ) % Pointer % N_CONSERVED, &
-!             BF => S % BoundaryFluence_CSL ( iG ) )
+!             nConserved  => S % Current_1D ( iStrg ) % Pointer % N_CONSERVED, &
+!             BF => S % BoundaryFluence_CSL ( iStrg ) )
 !         call BF % Initialize ( [ nConserved, C % nFaces ] )
 !         do iD = 1, nDimensions
 !           jD = mod ( iD, 3 ) + 1
@@ -929,7 +929,7 @@ contains
 !         end do !-- iD
 !         end associate !-- C, etc.
 
-!       end do !-- iG
+!       end do !-- iStrg
 
 !       if ( ( trim ( Grid % CoordinateSystem ) == 'SPHERICAL' &
 !              .or. trim ( Grid % CoordinateSystem ) == 'CYLINDRICAL' ) ) &
@@ -1004,7 +1004,7 @@ contains
 
   subroutine ComputeStage_C &
                ( S, ID, C, Chart, K, TimeStep, iStage, GeometryOption, & 
-                 GhostExchangeOption, iGeometryValueOption )
+                 GhostExchangeOption, iStrgeometryValueOption )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
@@ -1025,7 +1025,7 @@ contains
     logical ( KDL ), intent ( in ), optional :: &
       GhostExchangeOption
     integer ( KDI ), intent ( in ), optional :: &
-      iGeometryValueOption
+      iStrgeometryValueOption
 
     logical ( KDL ) :: &
       GhostExchange
@@ -1057,7 +1057,7 @@ contains
       if ( associated ( TimerRelaxation ) ) call TimerRelaxation % Start ( )
       call S % ApplyRelaxation_C &
              ( C % Sources, K, C, Chart, TimeStep, iStage, GeometryOption, &
-               iGeometryValueOption )
+               iStrgeometryValueOption )
       if ( associated ( TimerRelaxation ) ) call TimerRelaxation % Stop ( )
     end if
 

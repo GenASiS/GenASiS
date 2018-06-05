@@ -159,7 +159,7 @@ contains
       CycleNumberOption
     
     integer ( KDI ) :: &
-      iG, &
+      iStrg, &
       nVariables 
     character ( LDL ), dimension ( : ), allocatable :: &
       StorageName, &
@@ -185,9 +185,9 @@ contains
 !      allocate ( StorageName, source = GI % Stream % ContentList )
       allocate ( StorageName ( size ( GI % Stream % ContentList ) ) )
       StorageName = GI % Stream % ContentList
-      do iG = 1, GI % nStorages
-        if ( len_trim ( StorageName ( iG ) ) > 0 ) &
-          call GI % Stream % ChangeDirectory ( StorageName ( iG ) )
+      do iStrg = 1, GI % nStorages
+        if ( len_trim ( StorageName ( iStrg ) ) > 0 ) &
+          call GI % Stream % ChangeDirectory ( StorageName ( iStrg ) )
         call GI % Stream % ListContents &
                ( ContentTypeOption = 'PointGridVariable' )
         if ( allocated ( VariableName ) ) deallocate ( VariableName )
@@ -198,12 +198,12 @@ contains
         if ( nVariables == 0 ) then
           GI % nStorages = 0 
         else
-          call GI % Storage ( iG ) % Initialize &
+          call GI % Storage ( iStrg ) % Initialize &
                  ( [ GI % nCells, nVariables ], &
                    VariableOption = VariableName, &
-                   NameOption = StorageName ( iG ) ) 
+                   NameOption = StorageName ( iStrg ) ) 
         end if
-        if ( len_trim ( StorageName ( iG ) ) > 0 ) &
+        if ( len_trim ( StorageName ( iStrg ) ) > 0 ) &
           call GI % Stream % ChangeDirectory ( '..' )
       end do
     end if  
@@ -410,7 +410,7 @@ contains
       iV, &      !-- iValue
       iVrbl, &   !-- iVariable
       iS, &      !-- iSelected
-      iG, &      !-- iStorage
+      iStrg, &      !-- iStorage
       nSiloOptions, &
       SiloOptionList, &
       Error
@@ -423,12 +423,12 @@ contains
   
     MeshDirectory = PGI % Stream % CurrentDirectory
   
-    do iG = 1, PGI % nStorages
+    do iStrg = 1, PGI % nStorages
     
-      associate ( S => PGI % Storage ( iG ) )
+      associate ( S => PGI % Storage ( iStrg ) )
     
       call Show ( 'Writing a Storage (point)', CONSOLE % INFO_5 )
-      call Show ( iG, 'iStorage', CONSOLE % INFO_5 )
+      call Show ( iStrg, 'iStorage', CONSOLE % INFO_5 )
       call Show ( S % Name, 'Name', CONSOLE % INFO_5 )
 
       call PGI % Stream % MakeDirectory ( S % Name ) 
@@ -537,7 +537,7 @@ contains
     integer ( KDI ) :: &
       iV, &      !-- iValue
       iVrbl, &   !-- iVariable
-      iG, &      !-- iSelected
+      iStrg, &      !-- iSelected
       iS, &      !-- iStorage   
       iA, &      !-- iArray   
       oV, &
@@ -558,13 +558,13 @@ contains
 
     MeshDirectory = PGI % Stream % CurrentDirectory
 
-    do iG = 1, PGI % nStorages
+    do iStrg = 1, PGI % nStorages
       
-      associate ( S => PGI % Storage ( iG ), &
+      associate ( S => PGI % Storage ( iStrg ), &
                   nDims => PGI % nDimensions )
 
       call Show ( 'Reading a Storage', CONSOLE % INFO_5 )
-      call Show ( iG, 'iStorage', CONSOLE % INFO_5 )
+      call Show ( iStrg, 'iStorage', CONSOLE % INFO_5 )
       call Show ( S % Name, 'Name', CONSOLE % INFO_5 )
 
       if ( len_trim ( S % Name ) > 0 ) &

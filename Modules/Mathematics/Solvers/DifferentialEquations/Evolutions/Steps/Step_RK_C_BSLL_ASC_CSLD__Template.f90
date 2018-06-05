@@ -626,7 +626,7 @@ contains
       call S % ComputeStage_C &
              ( ID_Dummy, C, Chart, K, TimeStep, iStage, &
                GeometryOption = G_Base, &
-               iGeometryValueOption = B % iaBaseCell ( iF ) )
+               iStrgeometryValueOption = B % iaBaseCell ( iF ) )
 
       end associate !-- Chart
 

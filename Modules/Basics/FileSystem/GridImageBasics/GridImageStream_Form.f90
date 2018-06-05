@@ -353,7 +353,7 @@ contains
       DirectoryOption
     
     integer ( KDI )  :: &
-      iG, &
+      iStrg, &
       iS, &
       iVrbl, &
       Error
@@ -370,16 +370,16 @@ contains
         call GIS % MakeDirectory ( DirectoryOption )
     end if
     
-    do iG = 1, size ( S )
-      call GIS % MakeDirectory ( S ( iG ) % Name )
-      do iS = 1, S ( iG ) % nVariables
-        iVrbl = S ( iG ) % iaSelected ( iS )
+    do iStrg = 1, size ( S )
+      call GIS % MakeDirectory ( S ( iStrg ) % Name )
+      do iS = 1, S ( iStrg ) % nVariables
+        iVrbl = S ( iStrg ) % iaSelected ( iS )
         Error = DBWRITE &
                   ( GIS % MeshBlockHandle, &
-                    S ( iG ) % Variable ( iVrbl ), & 
-                    S ( iG ) % lVariable ( iVrbl ), &
-                    S ( iG ) % Value ( :, iVrbl ), &
-                    [ S ( iG ) % nValues ], 1, DB_DOUBLE )
+                    S ( iStrg ) % Variable ( iVrbl ), & 
+                    S ( iStrg ) % lVariable ( iVrbl ), &
+                    S ( iStrg ) % Value ( :, iVrbl ), &
+                    [ S ( iStrg ) % nValues ], 1, DB_DOUBLE )
       end do
       call GIS % ChangeDirectory ( '../' )
     end do
@@ -399,7 +399,7 @@ contains
       DirectoryOption
     
     integer ( KDI )  :: &
-      iG, &
+      iStrg, &
       iD, &   !-- iDirectory
       iV, &
       iVrbl, &
@@ -428,7 +428,7 @@ contains
     
     DB_File = GIS % AccessSiloPointer ( GIS % MeshBlockHandle )
     
-    iG = 0
+    iStrg = 0
     do iD = 1, size ( Directory )
       
       call GIS % ChangeDirectory ( Directory ( iD ) )
@@ -438,25 +438,25 @@ contains
         cycle
       end if
       
-      iG = iG + 1
+      iStrg = iStrg + 1
       !-- assume all variables in this directory has the same number of 
       !   elements since they were created from a Storage object
       Error = DBINQLEN &
                   ( GIS % MeshBlockHandle, GIS % ContentList ( 1 ), &
                     len_trim ( GIS % ContentList ( 1 ) ), nValues )
       
-      call S ( iG ) % Initialize &
+      call S ( iStrg ) % Initialize &
              ( [ nValues, size ( GIS % ContentList ) ], &
                NameOption = trim ( Directory ( iD ) ), &
                VariableOption = GIS % ContentList )
       
-      do iVrbl = 1, S ( iG ) % nVariables 
+      do iVrbl = 1, S ( iStrg ) % nVariables 
         Value = DB_GetVariable &
                   ( DB_File, &
-                    trim ( S ( iG ) % Variable ( iVrbl ) ) // c_null_char )
+                    trim ( S ( iStrg ) % Variable ( iVrbl ) ) // c_null_char )
         call c_f_pointer ( Value, VariableValue, [ nValues ] )
         do iV = 1, nValues
-          S ( iG ) % Value ( iV, iVrbl ) = VariableValue ( iV ) 
+          S ( iStrg ) % Value ( iV, iVrbl ) = VariableValue ( iV ) 
         end do
         call DB_FreeVariable ( Value )
       end do 

@@ -9,7 +9,7 @@ program GetMemoryUsage_Command_Test
   implicit none
   
   integer ( KDI ) :: &
-    iG, &
+    iStrg, &
     nValues, &
     DisplayRank
   type ( MeasuredValueForm ) :: &
@@ -44,9 +44,9 @@ program GetMemoryUsage_Command_Test
   call CLO % Read ( nValues, 'nValues' )
   call Show ( nValues, 'nValues' )
   
-  do iG = 1, size ( Dummy ) 
-    call Dummy ( iG ) % Initialize ( [ nValues, C % Rank + 1 ] )
-    call random_number ( Dummy ( iG ) % Value )
+  do iStrg = 1, size ( Dummy ) 
+    call Dummy ( iStrg ) % Initialize ( [ nValues, C % Rank + 1 ] )
+    call random_number ( Dummy ( iStrg ) % Value )
   end do
   
   !-- get memory usage

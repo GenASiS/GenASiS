@@ -167,7 +167,7 @@ contains
       CycleNumberOption
     
     integer ( KDI ) :: &
-      iG, &     !-- iStorage
+      iStrg, &     !-- iStorage
       iS, &     !-- iSelected
       iVrbl, &  !-- iVariable
       nSiloOptions, &
@@ -207,12 +207,12 @@ contains
                  = GI % Stream % Communicator % Size * [ GI % nTotalCells ], &
                RootOption = 0 )
       
-      do iG = 1, GI % nStorages
+      do iStrg = 1, GI % nStorages
         
-        associate ( S => GI % Storage ( iG ) )
+        associate ( S => GI % Storage ( iStrg ) )
 
         call Show ( 'Writing a Storage (curve)', CONSOLE % INFO_5 )
-        call Show ( iG, 'iStorage', CONSOLE % INFO_5 )
+        call Show ( iStrg, 'iStorage', CONSOLE % INFO_5 )
         call Show ( S % Name, 'Name', CONSOLE % INFO_5 )
 
         call GI % Stream % MakeDirectory ( S % Name )
@@ -323,12 +323,12 @@ contains
 
     else !-- .not. Parallel
     
-      do iG = 1, GI % nStorages
+      do iStrg = 1, GI % nStorages
         
-        associate ( S => GI % Storage ( iG ) )
+        associate ( S => GI % Storage ( iStrg ) )
         
         call Show ( 'Writing a Storage (curve)', CONSOLE % INFO_5 )
-        call Show ( iG, 'iStorage', CONSOLE % INFO_5 )
+        call Show ( iStrg, 'iStorage', CONSOLE % INFO_5 )
         call Show ( S % Name, 'Name', CONSOLE % INFO_5 )
 
         call GI % Stream % MakeDirectory ( S % Name )
@@ -429,7 +429,7 @@ contains
       CycleNumberOption
     
     integer ( KDI ) :: &
-      iG, &     !-- iStorage
+      iStrg, &     !-- iStorage
       iS, &     !-- iSelected
       iVrbl, &  !-- iVariable
       nSiloOptions, &
@@ -465,9 +465,9 @@ contains
 !      allocate ( StorageName, source = GI % Stream % ContentList )
       allocate ( StorageName ( size ( GI % Stream % ContentList ) ) )
       StorageName = GI % Stream % ContentList
-      do iG = 1, GI % nStorages
-        if ( len_trim ( StorageName ( iG ) ) > 0 ) &
-          call GI % Stream % ChangeDirectory ( StorageName ( iG ) )
+      do iStrg = 1, GI % nStorages
+        if ( len_trim ( StorageName ( iStrg ) ) > 0 ) &
+          call GI % Stream % ChangeDirectory ( StorageName ( iStrg ) )
         call GI % Stream % ListContents &
                ( ContentTypeOption = 'Curve' )
         if ( allocated ( VariableName ) ) deallocate ( VariableName )
@@ -489,12 +489,12 @@ contains
             deallocate ( GI % NodeCoordinate_1 )
           allocate ( GI % NodeCoordinate_1 ( GI % nTotalCells ) )
 
-          call GI % Storage ( iG ) % Initialize &
+          call GI % Storage ( iStrg ) % Initialize &
                  ( [ GI % oValue + GI % nTotalCells, nVariables ], &
                      VariableOption = VariableName, &
-                     NameOption = StorageName ( iG ) )
+                     NameOption = StorageName ( iStrg ) )
           
-          associate ( S => GI % Storage ( iG ) )
+          associate ( S => GI % Storage ( iStrg ) )
           
           do iVrbl = 1, nVariables
             Error = DBGETCURVE &
@@ -519,7 +519,7 @@ contains
         
         end if
         
-        if ( len_trim ( StorageName ( iG ) ) > 0 ) &
+        if ( len_trim ( StorageName ( iStrg ) ) > 0 ) &
           call GI % Stream % ChangeDirectory ( '..' )
       end do
     end if

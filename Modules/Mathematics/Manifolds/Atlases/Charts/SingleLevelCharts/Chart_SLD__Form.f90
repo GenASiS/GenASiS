@@ -516,7 +516,7 @@ contains
       iM
 
     integer ( KDI ) :: &
-      iG, &  !-- iStorage
+      iStrg, &  !-- iStorage
       iS, &  !-- iSelected
       iV, &  !-- iVariable
       oBuffer
@@ -524,16 +524,16 @@ contains
       V  !-- Variable
 
     oBuffer = 0
-    do iG = 1, S_1D % nStorages
-      do iS = 1, S_1D % nVariables ( iG )          
-        iV = S_1D % Storage ( iG ) % iaSelected ( iS )
+    do iStrg = 1, S_1D % nStorages
+      do iS = 1, S_1D % nVariables ( iStrg )          
+        iV = S_1D % Storage ( iStrg ) % iaSelected ( iS )
         call C % SetVariablePointer &
-               ( S_1D % Storage ( iG ) % Value ( :, iV ), V ) 
+               ( S_1D % Storage ( iStrg ) % Value ( :, iV ), V ) 
         call Copy ( V, nSend, oSend, oBuffer, &
                     C % Outgoing % Message ( iM ) % Value )
         oBuffer = oBuffer + product ( nSend )
       end do !-- iS
-    end do !-- iG
+    end do !-- iStrg
 
     nullify ( V )
 
@@ -553,7 +553,7 @@ contains
       iM
 
     integer ( KDI ) :: &
-      iG, &  !-- iStorage
+      iStrg, &  !-- iStorage
       iS, &  !-- iSelected
       iV, &  !-- iVariable
       oBuffer
@@ -561,16 +561,16 @@ contains
       V  !-- Variable
 
     oBuffer = 0
-    do iG = 1, S_1D % nStorages
-      do iS = 1, S_1D % nVariables ( iG )          
-        iV = S_1D % Storage ( iG ) % iaSelected ( iS )
+    do iStrg = 1, S_1D % nStorages
+      do iS = 1, S_1D % nVariables ( iStrg )          
+        iV = S_1D % Storage ( iStrg ) % iaSelected ( iS )
         call C % SetVariablePointer &
-               ( S_1D % Storage ( iG ) % Value ( :, iV ), V ) 
+               ( S_1D % Storage ( iStrg ) % Value ( :, iV ), V ) 
         call Copy ( C % Incoming % Message ( iM ) % Value, &
                     nReceive, oReceive, oBuffer, V )
         oBuffer = oBuffer + product ( nReceive )
       end do !-- iS
-    end do !-- iG
+    end do !-- iStrg
 
     nullify ( V )
 

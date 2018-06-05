@@ -35,19 +35,19 @@ contains
       S
 
     integer ( KDI ) :: &
-      iG  !-- iStorage
+      iStrg  !-- iStorage
 
     S_1D % nStorages = size ( S )
 
     allocate ( S_1D % nVariables ( S_1D % nStorages ) )
     S_1D % nVariables &
-      = [ ( S ( iG ) % nVariables, iG = 1, S_1D % nStorages ) ]           
+      = [ ( S ( iStrg ) % nVariables, iStrg = 1, S_1D % nStorages ) ]           
 
     S_1D % nVariablesTotal = sum ( S_1D % nVariables )
     
     allocate ( S_1D % Storage ( S_1D % nStorages ) )
-    do iG = 1, S_1D % nStorages
-      call S_1D % Storage ( iG ) % Initialize ( S ( iG ) )
+    do iStrg = 1, S_1D % nStorages
+      call S_1D % Storage ( iStrg ) % Initialize ( S ( iStrg ) )
     end do
 
   end subroutine Initialize

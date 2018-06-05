@@ -329,15 +329,15 @@ contains
 
 
   subroutine ComputeFromPrimitiveSelectGeometry &
-               ( C, iGeometryValue, G, nValuesOption, oValueOption )
+               ( C, iStrgeometryValue, G, nValuesOption, oValueOption )
 
-    !-- Violating argument position for iGeometryValue to distinguish
+    !-- Violating argument position for iStrgeometryValue to distinguish
     !   overloaded interface
 
     class ( CurrentTemplate ), intent ( inout ) :: &
       C
     integer ( KDI ), intent ( in ) :: &
-      iGeometryValue
+      iStrgeometryValue
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
     integer ( KDI ), intent ( in ), optional :: &
@@ -346,7 +346,7 @@ contains
 
     associate &
       ( nV => C % nValues, &
-        iV => iGeometryValue, &
+        iV => iStrgeometryValue, &
         iD => 1 )
 
     call C % ComputeFromPrimitiveCommon &
@@ -396,15 +396,15 @@ contains
 
 
   subroutine ComputeFromConservedSelectGeometry &
-               ( C, iGeometryValue, G, nValuesOption, oValueOption )
+               ( C, iStrgeometryValue, G, nValuesOption, oValueOption )
 
-    !-- Violating argument position for iGeometryValue to distinguish
+    !-- Violating argument position for iStrgeometryValue to distinguish
     !   overloaded interface
 
     class ( CurrentTemplate ), intent ( inout ) :: &
       C
     integer ( KDI ), intent ( in ) :: &
-      iGeometryValue
+      iStrgeometryValue
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
     integer ( KDI ), intent ( in ), optional :: &
@@ -413,7 +413,7 @@ contains
 
     associate &
       ( nV => C % nValues, &
-        iV => iGeometryValue, &
+        iV => iStrgeometryValue, &
         iD => 1 )
 
     call C % ComputeFromConservedCommon &

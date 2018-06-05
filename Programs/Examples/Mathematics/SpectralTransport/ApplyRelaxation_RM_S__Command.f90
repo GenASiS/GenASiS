@@ -25,7 +25,7 @@ contains
 
   subroutine ApplyRelaxation_RM_S &
                ( S, Sources_RM, Increment, RadiationMoments, Chart, &
-                 TimeStep, iStage, GeometryOption, iGeometryValueOption )
+                 TimeStep, iStage, GeometryOption, iStrgeometryValueOption )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
@@ -44,7 +44,7 @@ contains
     class ( GeometryFlatForm ), intent ( in ), optional :: &
       GeometryOption
     integer ( KDI ), intent ( in ), optional :: &
-      iGeometryValueOption
+      iStrgeometryValueOption
 
     integer ( KDI ) :: &
       iV, &  !-- iValue
@@ -66,10 +66,10 @@ contains
                 S % IGNORABILITY + 3 )
 
     if ( .not. present ( GeometryOption ) &
-         .and. .not. present ( iGeometryValueOption ) ) &
+         .and. .not. present ( iStrgeometryValueOption ) ) &
     then
       call Show ( 'GeometryOption must be present', CONSOLE % ERROR )
-      call Show ( 'iGeometryValueOption must be present', CONSOLE % ERROR )
+      call Show ( 'iStrgeometryValueOption must be present', CONSOLE % ERROR )
       call Show ( 'ApplyRelaxation_RM_S', 'subroutine', CONSOLE % ERROR )
       call Show ( 'ApplyRelaxation_RM_S_Command', 'module', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
@@ -90,7 +90,7 @@ contains
 
     associate &
       ( G   => GeometryOption, &
-        iS => iGeometryValueOption )
+        iS => iStrgeometryValueOption )
 
     call Search ( RM % iaConserved, RM % CONSERVED_ENERGY, &
                   iEnergy )
