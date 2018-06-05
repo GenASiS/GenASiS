@@ -167,7 +167,7 @@ contains
 
     integer ( KDI ) :: &
       iD, jD, kD, &  !-- iDimension, etc.
-      iG, &  !-- iGroup
+      iG, &  !-- iStorage
       iS, &  !-- iSelected
       iV, &  !-- iVariable
       oBuffer
@@ -218,7 +218,7 @@ contains
       nSend ( jD ) = DM % nCellsPerBrick ( jD )
       nSend ( kD ) = DM % nCellsPerBrick ( kD )
 
-      do iG = 1, S_1D % nGroups
+      do iG = 1, S_1D % nStorages
         do iS = 1, S_1D % nVariables ( iG )          
           iV = S_1D % Storage ( iG ) % iaSelected ( iS )
           call DM % SetVariablePointer &
@@ -251,7 +251,7 @@ contains
       nSend ( jD ) = DM % nCellsPerBrick ( jD )
       nSend ( kD ) = DM % nCellsPerBrick ( kD )
 
-      do iG = 1, S_1D % nGroups
+      do iG = 1, S_1D % nStorages
         do iS = 1, S_1D % nVariables ( iG )          
           iV = S_1D % Storage ( iG ) % iaSelected ( iS )
           call DM % SetVariablePointer &
@@ -279,7 +279,7 @@ contains
 
     integer ( KDI ) :: &
       iD, jD, kD, &  !-- iDimension, etc.
-      iG, &  !-- iGroup
+      iG, &  !-- iStorage
       iS, &  !-- iSelected
       iV, &  !-- iVariable
       oBuffer
@@ -306,7 +306,7 @@ contains
 
       call DM % IncomingNext % Wait ( iD )
 
-      do iG = 1, S_1D % nGroups
+      do iG = 1, S_1D % nStorages
         do iS = 1, S_1D % nVariables ( iG )          
           iV = S_1D % Storage ( iG ) % iaSelected ( iS )
           call DM % SetVariablePointer &
@@ -334,7 +334,7 @@ contains
 
       call DM % IncomingPrevious % Wait ( iD )
 
-      do iG = 1, S_1D % nGroups
+      do iG = 1, S_1D % nStorages
         do iS = 1, S_1D % nVariables ( iG )          
           iV = S_1D % Storage ( iG ) % iaSelected ( iS )
           call DM % SetVariablePointer &

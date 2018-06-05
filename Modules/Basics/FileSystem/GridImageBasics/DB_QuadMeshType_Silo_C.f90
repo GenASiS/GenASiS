@@ -12,7 +12,7 @@ module DB_QuadMeshType_Silo_C
     integer ( c_int ) :: &
       Identifier, &
       BlockNumber, &
-      GroupNumber
+      StorageNumber
     type ( c_ptr ) :: &
       Name
     integer ( c_int ) :: &

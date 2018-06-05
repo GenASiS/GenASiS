@@ -162,7 +162,7 @@ contains
       iG, &
       nVariables 
     character ( LDL ), dimension ( : ), allocatable :: &
-      GroupName, &
+      StorageName, &
       VariableName
     character ( LDF ) :: &
       WorkingDirectory
@@ -182,12 +182,12 @@ contains
       call GI % Stream % ListContents ( ContentTypeOption = 'Directory' )
       GI % nStorages = size ( GI % Stream % ContentList )
 !-- FIXME: NAG 5.3.1 should support sourced allocation
-!      allocate ( GroupName, source = GI % Stream % ContentList )
-      allocate ( GroupName ( size ( GI % Stream % ContentList ) ) )
-      GroupName = GI % Stream % ContentList
+!      allocate ( StorageName, source = GI % Stream % ContentList )
+      allocate ( StorageName ( size ( GI % Stream % ContentList ) ) )
+      StorageName = GI % Stream % ContentList
       do iG = 1, GI % nStorages
-        if ( len_trim ( GroupName ( iG ) ) > 0 ) &
-          call GI % Stream % ChangeDirectory ( GroupName ( iG ) )
+        if ( len_trim ( StorageName ( iG ) ) > 0 ) &
+          call GI % Stream % ChangeDirectory ( StorageName ( iG ) )
         call GI % Stream % ListContents &
                ( ContentTypeOption = 'PointGridVariable' )
         if ( allocated ( VariableName ) ) deallocate ( VariableName )
@@ -201,9 +201,9 @@ contains
           call GI % Storage ( iG ) % Initialize &
                  ( [ GI % nCells, nVariables ], &
                    VariableOption = VariableName, &
-                   NameOption = GroupName ( iG ) ) 
+                   NameOption = StorageName ( iG ) ) 
         end if
-        if ( len_trim ( GroupName ( iG ) ) > 0 ) &
+        if ( len_trim ( StorageName ( iG ) ) > 0 ) &
           call GI % Stream % ChangeDirectory ( '..' )
       end do
     end if  
@@ -410,7 +410,7 @@ contains
       iV, &      !-- iValue
       iVrbl, &   !-- iVariable
       iS, &      !-- iSelected
-      iG, &      !-- iGroup
+      iG, &      !-- iStorage
       nSiloOptions, &
       SiloOptionList, &
       Error
@@ -428,7 +428,7 @@ contains
       associate ( S => PGI % Storage ( iG ) )
     
       call Show ( 'Writing a Storage (point)', CONSOLE % INFO_5 )
-      call Show ( iG, 'iGroup', CONSOLE % INFO_5 )
+      call Show ( iG, 'iStorage', CONSOLE % INFO_5 )
       call Show ( S % Name, 'Name', CONSOLE % INFO_5 )
 
       call PGI % Stream % MakeDirectory ( S % Name ) 
@@ -538,7 +538,7 @@ contains
       iV, &      !-- iValue
       iVrbl, &   !-- iVariable
       iG, &      !-- iSelected
-      iS, &      !-- iGroup   
+      iS, &      !-- iStorage   
       iA, &      !-- iArray   
       oV, &
       nProperCells
@@ -564,7 +564,7 @@ contains
                   nDims => PGI % nDimensions )
 
       call Show ( 'Reading a Storage', CONSOLE % INFO_5 )
-      call Show ( iG, 'iGroup', CONSOLE % INFO_5 )
+      call Show ( iG, 'iStorage', CONSOLE % INFO_5 )
       call Show ( S % Name, 'Name', CONSOLE % INFO_5 )
 
       if ( len_trim ( S % Name ) > 0 ) &

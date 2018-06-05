@@ -47,7 +47,7 @@ program Storage_1D__Form_Test
 
   call SAM % Initialize ( S )
   print *
-  print *, 'SAM % nGroups = ', SAM % nGroups
+  print *, 'SAM % nStorages = ', SAM % nStorages
   print *, 'SAM % nVariablesTotal = ', SAM % nVariablesTotal
   print *, 'SAM % nVariables = ', SAM % nVariables
 

@@ -355,7 +355,7 @@ contains
 
 !     integer ( KDI ) :: &
 !       iF, &  !-- iField
-!       iG     !-- iGroup
+!       iG     !-- iStorage
 !     integer ( KDI ), dimension ( size ( Current_1D ) ) :: &
 !       nValues, &
 !       nEquations
@@ -371,7 +371,7 @@ contains
 !     S % Current_1D => Current_1D
 !     S % Grid => Grid
 
-!     associate ( nGroups => size ( Current_1D ) )
+!     associate ( nStorages => size ( Current_1D ) )
 
 !     S % Geometry => null ( )
 !     if ( present ( GeometryOption ) .and. present ( iGeometryValueOption ) ) &
@@ -381,15 +381,15 @@ contains
 !     end if
 
 !     if ( .not. allocated ( S % ApplyDivergence_1D ) ) &
-!       allocate ( S % ApplyDivergence_1D ( nGroups ) )
+!       allocate ( S % ApplyDivergence_1D ( nStorages ) )
 !     if ( .not. allocated ( S % ApplySources_1D ) ) &
-!       allocate ( S % ApplySources_1D ( nGroups ) )
+!       allocate ( S % ApplySources_1D ( nStorages ) )
 !     if ( .not. allocated ( S % ApplyRelaxation_1D ) ) &
-!       allocate ( S % ApplyRelaxation_1D ( nGroups ) )
+!       allocate ( S % ApplyRelaxation_1D ( nStorages ) )
 
 !     !-- Allocate Solution and initialize from Current_1D
 
-!     do iG = 1, nGroups
+!     do iG = 1, nStorages
 !       associate &
 !         ( C   => Current_1D ( iG ) % Pointer )
 !       associate &
@@ -418,7 +418,7 @@ contains
 
 !     !-- Copy Solution to Current_1D
 
-!     do iG = 1, nGroups
+!     do iG = 1, nStorages
 !       associate ( C => Current_1D ( iG ) % Pointer )
 !       associate ( iaC => C % iaConserved )
 
@@ -449,7 +449,7 @@ contains
 !       end associate !-- C
 !     end do !-- iG
 
-!     end associate !-- nGroups
+!     end associate !-- nStorages
 
 !     nullify ( S % Grid )
 !     nullify ( S % Current_1D )
@@ -775,7 +775,7 @@ contains
   end subroutine StoreSolution_C
 
 
-!   subroutine ComputeIncrement ( S, K, Y, Time, TimeStep, iStage, iGroup )
+!   subroutine ComputeIncrement ( S, K, Y, Time, TimeStep, iStage, iStorage )
 
 !     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
 !       S
@@ -788,7 +788,7 @@ contains
 !       TimeStep
 !     integer ( KDI ), intent ( in ) :: &
 !       iStage, &
-!       iGroup
+!       iStorage
 
 !     integer ( KDI ) :: &
 !       iF  !-- iField
@@ -802,14 +802,14 @@ contains
 !     call Timer % Start ( )
 
 !     associate &
-!       ( C   => S % Current_1D ( iGroup ) % Pointer, &
-!         iaC => S % Current_1D ( iGroup ) % Pointer % iaConserved )
+!       ( C   => S % Current_1D ( iStorage ) % Pointer, &
+!         iaC => S % Current_1D ( iStorage ) % Pointer % iaConserved )
 
 !     if ( iStage > 1 ) then
 
 !       do iF = 1, C % N_CONSERVED
 !         associate &
-!           ( YV => Y ( iGroup ) % Value ( :, iF ), &
+!           ( YV => Y ( iStorage ) % Value ( :, iF ), &
 !             CV => C % Value ( :, iaC ( iF ) ) )
 !         call Copy ( YV, CV )
 !         end associate !-- YV, etc.
@@ -832,25 +832,25 @@ contains
 
 !     end if !-- iStage > 1
 
-!     associate ( KG => K ( iGroup, iStage ) )
+!     associate ( KG => K ( iStorage, iStage ) )
 
 !     call Clear ( KG % Value )
 
 !     !-- Divergence
-!     if ( associated ( S % ApplyDivergence_1D ( iGroup ) % Pointer ) ) &
-!       call S % ApplyDivergence_1D ( iGroup ) % Pointer &
-!              ( S, KG, C, TimeStep, iStage, iGroup )
+!     if ( associated ( S % ApplyDivergence_1D ( iStorage ) % Pointer ) ) &
+!       call S % ApplyDivergence_1D ( iStorage ) % Pointer &
+!              ( S, KG, C, TimeStep, iStage, iStorage )
 
 !     !-- Other explicit sources
-!     if ( associated ( S % ApplySources_1D ( iGroup ) % Pointer ) ) &
-!       call S % ApplySources_1D ( iGroup ) % Pointer ( S, KG, C, TimeStep )
+!     if ( associated ( S % ApplySources_1D ( iStorage ) % Pointer ) ) &
+!       call S % ApplySources_1D ( iStorage ) % Pointer ( S, KG, C, TimeStep )
 
 !     !-- Relaxation
-!     if ( associated ( S % ApplyRelaxation_1D ( iGroup ) % Pointer ) ) then
+!     if ( associated ( S % ApplyRelaxation_1D ( iStorage ) % Pointer ) ) then
 !       associate ( ID => S % IncrementDamping )
 !       allocate ( DC )
 !       call DC % Initialize ( shape ( KG % Value ), ClearOption = .true. )
-!       call S % ApplyRelaxation_1D ( iGroup ) % Pointer &
+!       call S % ApplyRelaxation_1D ( iStorage ) % Pointer &
 !              ( S, KG, DC, C, TimeStep )
 !       call ID % Compute ( KG, C, KG, DC, TimeStep )
 !       deallocate ( DC )
@@ -889,13 +889,13 @@ contains
 !     integer ( KDI ) :: &
 !       iD, jD, kD, &  !-- iDimension
 !       iF, &  !-- iField
-!       iG     !-- iGroup
+!       iG     !-- iStorage
 !     integer ( KDI ), dimension ( 3 ) :: &
 !       nSurface
 
-!     associate ( nGroups => size ( S % Current_1D ) )
+!     associate ( nStorages => size ( S % Current_1D ) )
 
-!     allocate ( S % UseLimiterParameter ( nGroups ) )
+!     allocate ( S % UseLimiterParameter ( nStorages ) )
 !     S % UseLimiterParameter = .true.
 !     if ( present ( UseLimiterParameterOption ) ) &
 !       S % UseLimiterParameter = UseLimiterParameterOption
@@ -905,9 +905,9 @@ contains
 
 !       if ( allocated ( S % BoundaryFluence_CSL ) ) &
 !         deallocate ( S % BoundaryFluence_CSL )
-!       allocate ( S % BoundaryFluence_CSL ( nGroups ) )
+!       allocate ( S % BoundaryFluence_CSL ( nStorages ) )
 
-!       do iG = 1, nGroups
+!       do iG = 1, nStorages
 !         associate &
 !           ( C => Grid % Atlas % Connectivity, &
 !             nDimensions => Grid % nDimensions, &
@@ -952,7 +952,7 @@ contains
 !       call PROGRAM_HEADER % Abort ( )
 !     end select !-- Grid
 
-!     end associate !-- nGroups
+!     end associate !-- nStorages
 
 !   end subroutine SetDivergence
 

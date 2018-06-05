@@ -379,7 +379,7 @@ contains
 
     integer ( KDI ) :: &
       iF, &  !-- iField
-      iFG    !-- iFieldGroup
+      iFG    !-- iFieldStorage
     character ( LDL ), dimension ( : ), allocatable :: &
       PrimitiveVariable, &
       ConservedVariable

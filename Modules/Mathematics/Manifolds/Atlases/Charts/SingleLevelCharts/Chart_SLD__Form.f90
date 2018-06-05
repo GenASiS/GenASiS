@@ -516,7 +516,7 @@ contains
       iM
 
     integer ( KDI ) :: &
-      iG, &  !-- iGroup
+      iG, &  !-- iStorage
       iS, &  !-- iSelected
       iV, &  !-- iVariable
       oBuffer
@@ -524,7 +524,7 @@ contains
       V  !-- Variable
 
     oBuffer = 0
-    do iG = 1, S_1D % nGroups
+    do iG = 1, S_1D % nStorages
       do iS = 1, S_1D % nVariables ( iG )          
         iV = S_1D % Storage ( iG ) % iaSelected ( iS )
         call C % SetVariablePointer &
@@ -553,7 +553,7 @@ contains
       iM
 
     integer ( KDI ) :: &
-      iG, &  !-- iGroup
+      iG, &  !-- iStorage
       iS, &  !-- iSelected
       iV, &  !-- iVariable
       oBuffer
@@ -561,7 +561,7 @@ contains
       V  !-- Variable
 
     oBuffer = 0
-    do iG = 1, S_1D % nGroups
+    do iG = 1, S_1D % nStorages
       do iS = 1, S_1D % nVariables ( iG )          
         iV = S_1D % Storage ( iG ) % iaSelected ( iS )
         call C % SetVariablePointer &

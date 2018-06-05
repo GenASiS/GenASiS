@@ -97,9 +97,9 @@ module DB_TableOfContentsType_Silo_C
     integer ( c_int ) :: & 
       n_MRG_Trees
     type ( c_ptr ) :: & 
-      GroupelMap;
+      StorageelMap;
     integer ( c_int ) :: & 
-      nGroupelMaps;
+      nStorageelMaps;
     type ( c_ptr ) :: & 
       MRG_Variable;
     integer ( c_int ) :: & 

@@ -11,7 +11,7 @@ module Storage_1D__Form
 
   type, public :: Storage_1D_Form
     integer ( KDI ) :: &
-      nGroups         = 0, &
+      nStorages         = 0, &
       nVariablesTotal = 0
     integer ( KDI ), dimension ( : ), allocatable :: &
       nVariables
@@ -35,18 +35,18 @@ contains
       S
 
     integer ( KDI ) :: &
-      iG  !-- iGroup
+      iG  !-- iStorage
 
-    S_1D % nGroups = size ( S )
+    S_1D % nStorages = size ( S )
 
-    allocate ( S_1D % nVariables ( S_1D % nGroups ) )
+    allocate ( S_1D % nVariables ( S_1D % nStorages ) )
     S_1D % nVariables &
-      = [ ( S ( iG ) % nVariables, iG = 1, S_1D % nGroups ) ]           
+      = [ ( S ( iG ) % nVariables, iG = 1, S_1D % nStorages ) ]           
 
     S_1D % nVariablesTotal = sum ( S_1D % nVariables )
     
-    allocate ( S_1D % Storage ( S_1D % nGroups ) )
-    do iG = 1, S_1D % nGroups
+    allocate ( S_1D % Storage ( S_1D % nStorages ) )
+    do iG = 1, S_1D % nStorages
       call S_1D % Storage ( iG ) % Initialize ( S ( iG ) )
     end do
 

@@ -167,7 +167,7 @@ contains
       CycleNumberOption
     
     integer ( KDI ) :: &
-      iG, &     !-- iGroup
+      iG, &     !-- iStorage
       iS, &     !-- iSelected
       iVrbl, &  !-- iVariable
       nSiloOptions, &
@@ -212,7 +212,7 @@ contains
         associate ( S => GI % Storage ( iG ) )
 
         call Show ( 'Writing a Storage (curve)', CONSOLE % INFO_5 )
-        call Show ( iG, 'iGroup', CONSOLE % INFO_5 )
+        call Show ( iG, 'iStorage', CONSOLE % INFO_5 )
         call Show ( S % Name, 'Name', CONSOLE % INFO_5 )
 
         call GI % Stream % MakeDirectory ( S % Name )
@@ -328,7 +328,7 @@ contains
         associate ( S => GI % Storage ( iG ) )
         
         call Show ( 'Writing a Storage (curve)', CONSOLE % INFO_5 )
-        call Show ( iG, 'iGroup', CONSOLE % INFO_5 )
+        call Show ( iG, 'iStorage', CONSOLE % INFO_5 )
         call Show ( S % Name, 'Name', CONSOLE % INFO_5 )
 
         call GI % Stream % MakeDirectory ( S % Name )
@@ -429,7 +429,7 @@ contains
       CycleNumberOption
     
     integer ( KDI ) :: &
-      iG, &     !-- iGroup
+      iG, &     !-- iStorage
       iS, &     !-- iSelected
       iVrbl, &  !-- iVariable
       nSiloOptions, &
@@ -442,7 +442,7 @@ contains
       X_Scratch, &
       Y_Scratch
     character ( LDL ), dimension ( : ), allocatable :: &
-      GroupName, &
+      StorageName, &
       VariableName
     character ( LDF ) :: &
       WorkingDirectory
@@ -462,12 +462,12 @@ contains
       call GI % Stream % ListContents ( ContentTypeOption = 'Directory' )
       GI % nStorages = size ( GI % Stream % ContentList )
 !-- FIXME: NAG 5.3.1 should support sourced allocation
-!      allocate ( GroupName, source = GI % Stream % ContentList )
-      allocate ( GroupName ( size ( GI % Stream % ContentList ) ) )
-      GroupName = GI % Stream % ContentList
+!      allocate ( StorageName, source = GI % Stream % ContentList )
+      allocate ( StorageName ( size ( GI % Stream % ContentList ) ) )
+      StorageName = GI % Stream % ContentList
       do iG = 1, GI % nStorages
-        if ( len_trim ( GroupName ( iG ) ) > 0 ) &
-          call GI % Stream % ChangeDirectory ( GroupName ( iG ) )
+        if ( len_trim ( StorageName ( iG ) ) > 0 ) &
+          call GI % Stream % ChangeDirectory ( StorageName ( iG ) )
         call GI % Stream % ListContents &
                ( ContentTypeOption = 'Curve' )
         if ( allocated ( VariableName ) ) deallocate ( VariableName )
@@ -492,7 +492,7 @@ contains
           call GI % Storage ( iG ) % Initialize &
                  ( [ GI % oValue + GI % nTotalCells, nVariables ], &
                      VariableOption = VariableName, &
-                     NameOption = GroupName ( iG ) )
+                     NameOption = StorageName ( iG ) )
           
           associate ( S => GI % Storage ( iG ) )
           
@@ -519,7 +519,7 @@ contains
         
         end if
         
-        if ( len_trim ( GroupName ( iG ) ) > 0 ) &
+        if ( len_trim ( StorageName ( iG ) ) > 0 ) &
           call GI % Stream % ChangeDirectory ( '..' )
       end do
     end if

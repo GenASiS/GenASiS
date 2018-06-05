@@ -12,7 +12,7 @@ module DB_UnstructuredMeshType_Silo_C
     integer ( c_int ) :: &
       Identifier, &           !-- Identifier for this object
       BlockNumber, &          !-- Block number for this mesh
-      GroupNumber             !-- Block group number for this mesh
+      StorageNumber             !-- Block group number for this mesh
     type ( c_ptr ) :: &                     
       Name                    !-- Name associated with mesh
     integer ( c_int ) :: &                  
