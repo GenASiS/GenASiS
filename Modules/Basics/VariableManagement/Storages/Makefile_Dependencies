@@ -1,0 +1,25 @@
+Storage_Form.o: \
+  Specifiers.o \
+  ArrayOperations.o \
+  ArrayArrays.o \
+  Storage_Form.f90
+
+PackedStorage_Form.o: \
+  Specifiers.o \
+  ArrayOperations.o \
+  Storage_Form.o \
+  PackedStorage_Form.f90
+
+Storage_1D__Form.o: \
+  Specifiers.o \
+  Storage_Form.o \
+  Storage_1D__Form.f90
+
+Storages.o: \
+  Storage_Form.o \
+  PackedStorage_Form.o \
+  Storage_1D__Form.o \
+  Storages.f90 \
+
+Storages.a: $(STORAGES)
+	ar r Storages.a $(STORAGES)

@@ -1,11 +1,11 @@
-include $(PATH_VARIABLE_GROUPS)/Makefile_ObjectFiles
+include $(PATH_STORAGES)/Makefile_ObjectFiles
 include $(PATH_ARRAY_ARRAYS)/Makefile_ObjectFiles
 include $(PATH_ARRAY_OPERATIONS)/Makefile_ObjectFiles
 include $(PATH_SPECIFIERS)/Makefile_ObjectFiles
 
 VARIABLE_MANAGEMENT = \
   VariableManagement.o \
-  $(VARIABLE_GROUPS) \
+  $(STORAGES) \
   $(ARRAY_ARRAYS) \
   $(ARRAY_OPERATIONS) \
   $(SPECIFIERS)

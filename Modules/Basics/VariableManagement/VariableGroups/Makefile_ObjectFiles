@@ -1,5 +1,0 @@
-VARIABLE_GROUPS = \
-  VariableGroups.o \
-  VariableGroup_1D__Form.o \
-  PackedVariableGroup_Form.o \
-  VariableGroup_Form.o

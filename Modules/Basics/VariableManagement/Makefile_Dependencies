@@ -1,13 +1,13 @@
 include $(PATH_SPECIFIERS)/Makefile_Dependencies
 include $(PATH_ARRAY_OPERATIONS)/Makefile_Dependencies
 include $(PATH_ARRAY_ARRAYS)/Makefile_Dependencies
-include $(PATH_VARIABLE_GROUPS)/Makefile_Dependencies
+include $(PATH_STORAGES)/Makefile_Dependencies
 
 VariableManagement.o: \
   Specifiers.o \
   ArrayOperations.o \
   ArrayArrays.o \
-  VariableGroups.o \
+  Storages.o \
   VariableManagement.f90
 
 VariableManagement.a: $(VARIABLE_MANAGEMENT)

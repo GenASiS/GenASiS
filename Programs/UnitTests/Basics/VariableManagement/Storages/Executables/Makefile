@@ -4,4 +4,4 @@ PURPOSE = DEBUG
 
 FFLAGS  = $(FORTRAN_$(PURPOSE))
 
-include ../Makefile_VariableGroups
+include ../Makefile_Storages

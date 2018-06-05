@@ -1,0 +1,5 @@
+STORAGES = \
+  Storages.o \
+  Storage_1D__Form.o \
+  PackedStorage_Form.o \
+  Storage_Form.o
