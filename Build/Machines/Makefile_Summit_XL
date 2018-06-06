@@ -8,15 +8,15 @@
 #   export OMP_PLACES=threads
 #   export OMP_NUM_THREADS=x
 
-FORTRAN_COMPILE      = mpifort -c #-qsmp=omp:auto -qoffload
+FORTRAN_COMPILE      = mpifort -c -qsmp=omp:auto -qoffload
 FORTRAN_BOUND_CHECK  = -qcheck=bounds
 FORTRAN_DEBUG        = -g #-Wall
 FORTRAN_OPTIMIZE     = -Ofast
 FORTRAN_PROFILE      = 
 
-CC_COMPILE           = mpicc -c #-fopenmp
+CC_COMPILE           = mpicc -c -fopenmp
 
-LINK = mpifort #-qsmp=omp:auto -qoffload
+LINK = mpifort -qsmp=omp:auto -qoffload
 
 SILO_DIR = /ccs/home/reubendb/projects/swtree/peak/silo/4.10.2/xl2017
 INCLUDE_SILO = -I${SILO_DIR}/include

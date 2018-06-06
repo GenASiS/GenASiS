@@ -33,8 +33,8 @@ module Storage_Form
     character ( LDL ), dimension ( : ), allocatable :: &
       Variable, &
       Vector
-    type ( c_ptr ) :: &
-      D_Value     !-- Device pointer for Value
+    type ( c_ptr ), dimension ( : ), allocatable :: &
+      D_Selected     !-- Device pointer for Selected Value
     type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
       Unit
     type ( Integer_1D_Form ), dimension ( : ), allocatable :: &
@@ -51,6 +51,16 @@ module Storage_Form
       InitializeClone
     generic :: &
       Initialize => InitializeAllocate, InitializeAssociate, InitializeClone
+    procedure, public, pass :: &
+      AllocateDevice => AllocateDevice_S
+    procedure, private, pass :: &
+      UpdateDeviceAll
+    generic :: &
+      UpdateDevice => UpdateDeviceAll
+    procedure, private, pass :: &
+      UpdateHostAll
+    generic :: &
+      UpdateHost => UpdateHostAll
     final :: &
       Finalize
   end type StorageForm
@@ -124,8 +134,6 @@ contains
       VariableOption
     character ( * ), intent ( in ), optional :: &
       NameOption
-    logical ( KDL ), intent ( in ), optional :: &
-      UpdateDeviceOption
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       iaSelectedOption
     
@@ -150,14 +158,6 @@ contains
     S % Value => Value
     S % AllocatedValue = .false.
     
-    if ( present ( UpdateDeviceOption ) ) then
-      if ( UpdateDeviceOption ) then
-        call AllocateDevice  ( VG % Value, VG % D_Value )
-        call AssociateDevice ( VG % D_Value, Value )
-        !$OMP target update to ( Value )
-      end if
-    end if
-     
     call InitializeOptionalMembers &
            ( S, VectorIndicesOption, UnitOption, VectorOption, &
              VariableOption, NameOption )
@@ -249,12 +249,65 @@ contains
              VectorOption = VectorOption, NameOption = NameOption )
 
   end subroutine InitializeClone
+  
+  
+  subroutine AllocateDevice_S ( S )
+  
+    class ( StorageForm ), intent ( inout ) :: &
+      S
+      
+    integer ( KDI ) :: &
+      iV
+      
+    allocate ( S % D_Selected ( S % nVariables ) )
+    
+    do iV = 1, S % nVariables
+      call AllocateDevice &
+             ( S % Value ( :, S % iaSelected ( iV ) ), S % D_Selected ( iV ) )
+    end do
+  
+  end subroutine AllocateDevice_S
+  
+  
+  subroutine UpdateDeviceAll ( S )
+  
+    class ( StorageForm ), intent ( inout ) :: &
+      S
+      
+    integer ( KDI ) :: &
+      iV
+      
+    do iV = 1, S % nVariables
+      call UpdateDevice &
+             ( S % Value ( :, S % iaSelected ( iV ) ), S % D_Selected ( iV ) )
+    end do
+  
+  end subroutine UpdateDeviceAll
+
+
+  subroutine UpdateHostAll ( S )
+  
+    class ( StorageForm ), intent ( inout ) :: &
+      S
+      
+    integer ( KDI ) :: &
+      iV
+      
+    do iV = 1, S % nVariables
+      call UpdateHost &
+             ( S % D_Selected ( iV ), S % Value ( :, S % iaSelected ( iV ) ) )
+    end do
+  
+  end subroutine UpdateHostAll
 
 
   impure elemental subroutine Finalize ( S )
 
     type ( StorageForm ), intent ( inout ) :: &
       S
+      
+    integer ( KDI ) :: &
+      iV
 
 !-- FIXME: this deallocation in a cloned variable group with no vectors
 !          caused trouble with Intel 12.1.2 
@@ -262,19 +315,26 @@ contains
     if ( allocated ( S % VectorIndices ) .and. S % nVectors > 0 ) &
       deallocate ( S % VectorIndices )
 
-    if ( allocated ( S % Unit ) )     deallocate ( S % Unit )
+    if ( allocated ( S % Unit ) )       deallocate ( S % Unit )
+    
+    if ( allocated ( S % D_Selected ) ) then
+      do iV = 1, S % nVariables
+        call DeallocateDevice ( S % D_Selected ( iV ) )
+      end do
+      deallocate ( S % D_Selected )
+    end if
 
-    if ( allocated ( S % Vector ) )   deallocate ( S % Vector )
-    if ( allocated ( S % Variable ) ) deallocate ( S % Variable )
+    if ( allocated ( S % Vector ) )     deallocate ( S % Vector )
+    if ( allocated ( S % Variable ) )   deallocate ( S % Variable )
 
     if ( S % AllocatedValue ) then
-      if ( associated ( S % Value ) ) deallocate ( S % Value )
+      if ( associated ( S % Value ) )   deallocate ( S % Value )
     end if
     nullify ( S % Value )
 
-    if ( allocated ( S % iaSelected ) )  deallocate ( S % iaSelected )
-    if ( allocated ( S % lVector ) )   deallocate ( S % lVector )
-    if ( allocated ( S % lVariable ) ) deallocate ( S % lVariable )
+    if ( allocated ( S % iaSelected ) ) deallocate ( S % iaSelected )
+    if ( allocated ( S % lVector ) )    deallocate ( S % lVector )
+    if ( allocated ( S % lVariable ) )  deallocate ( S % lVariable )
 
   end subroutine Finalize
   

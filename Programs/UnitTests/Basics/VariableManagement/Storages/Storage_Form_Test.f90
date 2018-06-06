@@ -1,6 +1,7 @@
 program Storage_Form_Test
 
   use Specifiers
+  use ArrayOperations
   use ArrayArrays
   use Storage_Form
 
@@ -43,6 +44,24 @@ program Storage_Form_Test
   call S ( 3 ) % Initialize &
          ( S ( 1 ), NameOption = 'Storage_3', &
            iaSelectedOption = [ 2, 3, 6 ] )
+  
+  do i = 1, S ( 3 ) % nVariables 
+    call random_number ( S ( 3 ) % Value ( :, S ( 3 ) % iaSelected ( i ) ) )
+    print*, 'Host Initial', S ( 3 ) % Value ( :, S ( 3 ) % iaSelected ( i ) )
+  end do
+  call S ( 3 ) % AllocateDevice ( )
+  call S ( 3 ) % UpdateDevice ( )
+  
+  call Clear ( S ( 3 ) % Value )
+  do i = 1, S ( 3 ) % nVariables 
+    print*, 'Host Cleared', S ( 3 ) % Value ( :, S ( 3 ) % iaSelected ( i ) )
+  end do
+  
+  call S ( 3 ) % UpdateHost ( )
+  do i = 1, S ( 3 ) % nVariables 
+    print*, 'Host From Device', S ( 3 ) % Value ( :, S ( 3 ) % iaSelected ( i ) )
+  end do
+  
   call PrintStorage ( S ( 3 ) )
   
 contains
@@ -52,11 +71,18 @@ contains
 
     use Specifiers
     use Storage_Form
+    
+    type ( StorageForm ) :: &
+      S
 
     integer ( KDI ) :: &
       i
-    type ( StorageForm ) :: &
-      S
+    integer ( KBI ) :: &
+      Address
+    character ( LDN ) :: &
+      IndexLabel
+    character ( LDB ) :: &
+      Buffer
 
     print *
     print *, 'S % nValues = ', S % nValues
@@ -90,9 +116,23 @@ contains
       print *, &
         'S % VectorIndices (', i, ') = ', S % VectorIndices ( i ) % Value
     end do
+    
+    if ( allocated ( S % D_Selected ) ) then
+    
+      print*, 'S % D_Selected: ' 
+      do i = 1, S % nVariables
+        write ( IndexLabel, fmt = '( i7 )' ) i
+        Address = transfer ( S % D_Selected ( i ), 1_KBI )
+        write ( Buffer, fmt = ' ( z64 ) ' ) Address
+        Buffer = '0x' //  adjustl ( Buffer )
+        print &
+          '(a38, a32)', &
+          '( ' // trim ( adjustl ( IndexLabel ) ) // ' ) = ', Buffer
+      end do
+    
+    end if
 
   end subroutine PrintStorage
 
 
 end program Storage_Form_Test
-
