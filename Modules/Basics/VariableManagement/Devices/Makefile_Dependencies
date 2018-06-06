@@ -25,11 +25,25 @@ DisassociateDevice_Command.o: \
   Device_C_OMP.o \
   DisassociateDevice_Command.f90
 
+UpdateDevice_Command.o: \
+  Specifiers.o \
+  AssociateDevice_Command.o \
+  DisassociateDevice_Command.o \
+  UpdateDevice_Command.f90
+
+UpdateHost_Command.o: \
+  Specifiers.o \
+  AssociateDevice_Command.o \
+  DisassociateDevice_Command.o \
+  UpdateHost_Command.f90
+
 Devices.o: \
   AllocateDevice_Command.o \
   AssociateDevice_Command.o \
   DeallocateDevice_Command.o \
   DisassociateDevice_Command.o \
+  UpdateDevice_Command.o \
+  UpdateHost_Command.o \
   Devices.f90
 
 Devices.a: $(DEVICES)

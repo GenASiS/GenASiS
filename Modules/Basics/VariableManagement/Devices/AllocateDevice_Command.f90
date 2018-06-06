@@ -24,7 +24,7 @@ contains
       Value
     type ( c_ptr ), intent ( out ) :: &
       Device
-    
+      
     Device = AllocateTargetDouble ( size ( Value ) )
   
   end subroutine AllocateDevice_KDR_1D
