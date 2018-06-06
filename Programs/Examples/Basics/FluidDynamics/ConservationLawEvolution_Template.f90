@@ -122,9 +122,9 @@ contains
 
     CLE % Time = CLE % StartTime
 
-    call DM % Write &
-           ( TimeOption = CLE % Time / CLE % TimeUnit, &
-             CycleNumberOption = CLE % iCycle )
+    !call DM % Write &
+    !       ( TimeOption = CLE % Time / CLE % TimeUnit, &
+    !         CycleNumberOption = CLE % iCycle )
     CLE % WriteTime &
       = min ( CLE % Time + CLE % WriteTimeInterval, CLE % FinishTime )
 
@@ -153,9 +153,9 @@ contains
 
         call T % Stop ( )
 
-        call DM % Write &
-               ( TimeOption = CLE % Time / CLE % TimeUnit, &
-                 CycleNumberOption = CLE % iCycle )
+        !call DM % Write &
+        !       ( TimeOption = CLE % Time / CLE % TimeUnit, &
+        !         CycleNumberOption = CLE % iCycle )
         CLE % WriteTime &
           = min ( CLE % Time + CLE % WriteTimeInterval, CLE % FinishTime )
         

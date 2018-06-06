@@ -5,7 +5,9 @@
 
 module Storage_Form
   
+  use iso_c_binding
   use Specifiers
+  use Devices
   use ArrayOperations
   use ArrayArrays
     
@@ -31,6 +33,8 @@ module Storage_Form
     character ( LDL ), dimension ( : ), allocatable :: &
       Variable, &
       Vector
+    type ( c_ptr ) :: &
+      D_Value     !-- Device pointer for Value
     type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
       Unit
     type ( Integer_1D_Form ), dimension ( : ), allocatable :: &
@@ -120,6 +124,8 @@ contains
       VariableOption
     character ( * ), intent ( in ), optional :: &
       NameOption
+    logical ( KDL ), intent ( in ), optional :: &
+      UpdateDeviceOption
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       iaSelectedOption
     
@@ -144,6 +150,14 @@ contains
     S % Value => Value
     S % AllocatedValue = .false.
     
+    if ( present ( UpdateDeviceOption ) ) then
+      if ( UpdateDeviceOption ) then
+        call AllocateDevice  ( VG % Value, VG % D_Value )
+        call AssociateDevice ( VG % D_Value, Value )
+        !$OMP target update to ( Value )
+      end if
+    end if
+     
     call InitializeOptionalMembers &
            ( S, VectorIndicesOption, UnitOption, VectorOption, &
              VariableOption, NameOption )

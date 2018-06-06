@@ -400,10 +400,51 @@ contains
     real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
       dV_Left, &
       dV_Right
+      
+    integer ( KDI ) :: &
+      iV, jV, kV
+    integer ( KDI ), dimension ( 3 ) :: &
+      iaS, &
+      iaVS, &   
+      lV, uV
+    
+!    dV_Left  = V - cshift ( V, shift = -1, dim = iDimension )
 
-    dV_Left  = V - cshift ( V, shift = -1, dim = iDimension )
+    lV = 1
+    where ( shape ( V ) > 1 )
+      lV = oV + 1
+    end where
+    lV ( iD ) = oV
+
+    uV = 1
+    where ( shape ( V ) > 1 )
+      uV = shape ( V ) - oV
+    end where
+    uV ( iDimension ) = size ( V, dim = iDimension )
+    
+    iaS = 0
+    iaS ( iDimension ) = -1
+
+    !$OMP parallel do private ( iV, jV, kV, iaVS )
+    do kV = lV ( 3 ), uV ( 3 ) 
+      do jV = lV ( 2 ), uV ( 2 )
+        do iV = lV ( 1 ), uV ( 1 )
+
+          iaVS = [ iV, jV, kV ] + iaS
+
+          dV_Left ( iV, jV, kV )  &
+            =  V ( iV, jV, kV )  -  V ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) )
+
+        end do !-- iV
+      end do !-- jV
+    end do !-- kV
+    !$OMP end parallel do
+    
+    
+
+    
     dV_Right = cshift ( V, shift = 1, dim = iDimension ) - V
-
+    
   end subroutine ComputeDifferencesKernel
 
 
