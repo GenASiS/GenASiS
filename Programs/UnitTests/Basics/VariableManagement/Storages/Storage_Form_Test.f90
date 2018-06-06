@@ -44,6 +44,7 @@ program Storage_Form_Test
   call S ( 3 ) % Initialize &
          ( S ( 1 ), NameOption = 'Storage_3', &
            iaSelectedOption = [ 2, 3, 6 ] )
+  call PrintStorage ( S ( 3 ) )
   
   do i = 1, S ( 3 ) % nVariables 
     call random_number ( S ( 3 ) % Value ( :, S ( 3 ) % iaSelected ( i ) ) )
@@ -61,8 +62,6 @@ program Storage_Form_Test
   do i = 1, S ( 3 ) % nVariables 
     print*, 'Host From Device', S ( 3 ) % Value ( :, S ( 3 ) % iaSelected ( i ) )
   end do
-  
-  call PrintStorage ( S ( 3 ) )
   
 contains
 

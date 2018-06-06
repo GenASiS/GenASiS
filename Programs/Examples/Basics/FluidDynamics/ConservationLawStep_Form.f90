@@ -1,5 +1,6 @@
 module ConservationLawStep_Form
 
+  use iso_c_binding
   use Basics
   use ConservedFields_Template
 
@@ -79,6 +80,9 @@ contains
              VariableOption &
                = [ ( CF % Variable ( CF % iaPrimitive ( iV ) ), &
                      iV = 1, CF % N_PRIMITIVE ) ] )
+
+    call CLS % DifferenceLeft  % AllocateDevice ( )
+    call CLS % DifferenceRight % AllocateDevice ( )
 
     !-- Reconstruction
 
@@ -174,8 +178,11 @@ contains
     end do
 
     !-- Substep 1
+    call Show ( '<<< Substep 1')
 
     call CLS % ComputeUpdate ( TimeStep ) !-- K1 = dT * RHS
+    
+    call Show ( '<<< After Compute Update')
     
     do iV = 1, Current % N_CONSERVED
       !-- Current = Old + K1
@@ -228,7 +235,8 @@ contains
     associate ( DM => CF % DistributedMesh )
 
     call Clear ( CLS % Update % Value )
-
+    
+    call Show ( '<<< ComputeUpdate: Dimension loop' )
     do iD = 1, DM % nDimensions
 
       call CLS % ComputeDifferences ( iD )
@@ -251,12 +259,12 @@ contains
   end subroutine ComputeUpdate
 
 
-  subroutine ComputeDifferences ( CLS, iDimension )
+  subroutine ComputeDifferences ( CLS, iD )
 
     class ( ConservationLawStepForm ), intent ( inout ) :: &
       CLS
     integer ( KDI ), intent ( in ) :: &
-      iDimension
+      iD
 
     integer ( KDI ) :: &
       iV  !-- iVariable
@@ -267,11 +275,17 @@ contains
 
     associate ( CF => CLS % ConservedFields )
     associate ( DM  => CF % DistributedMesh )
+    
+    call Show ('<<< Compute Differences')
 
     call CF % ApplyBoundaryConditions &
-           ( CF % Value, CF % Value, iDimension, iBoundary = -1 )
+           ( CF % Value, CF % Value, iD, iBoundary = -1 )
     call CF % ApplyBoundaryConditions &
-           ( CF % Value, CF % Value, iDimension, iBoundary = +1 )
+           ( CF % Value, CF % Value, iD, iBoundary = +1 )
+           
+    call Show ('<<< After ApplyBoundary')
+    
+    call CF % UpdateDevice ( )
 
     do iV = 1, CF % N_PRIMITIVE
       call DM % SetVariablePointer &
@@ -280,9 +294,19 @@ contains
              ( CLS % DifferenceLeft % Value ( :, iV ), dV_Left )
       call DM % SetVariablePointer &
              ( CLS % DifferenceRight % Value ( :, iV ), dV_Right )
-      call ComputeDifferencesKernel ( V, iDimension, dV_Left, dV_Right )
+      call ComputeDifferencesKernel &
+             ( V, DM % nGhostLayers ( iD ), iD, &
+               CF % D_Selected ( CF % iaPrimitive ( iV ) ), &
+               CLS % DifferenceLeft % D_Selected ( iV ), &
+               CLS % DifferenceRight % D_Selected ( iV ), &
+               dV_Left, dV_Right )
     end do
-
+    
+    call Show ( '<<< After Differences' )
+    
+    call CLS % DifferenceLeft % UpdateHost ( )
+    call CLS % DifferenceRight % UpdateHost ( )
+    
     nullify ( V, dV_Left, dV_Right )
     end associate !-- DM
     end associate !-- CF
@@ -391,12 +415,18 @@ contains
   end subroutine ComputeFluxes
 
 
-  subroutine ComputeDifferencesKernel ( V, iDimension, dV_Left, dV_Right )
+  subroutine ComputeDifferencesKernel &
+               ( V, oV, iD, D_V, D_dV_Left, D_dV_Right, dV_Left, dV_Right )
 
     real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
       V
     integer ( KDI ), intent ( in ) :: &
-      iDimension
+      oV, &
+      iD
+    type ( c_ptr ), intent ( in ) :: &
+      D_V, &
+      D_dV_Left, &
+      D_dV_Right
     real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
       dV_Left, &
       dV_Right
@@ -407,8 +437,10 @@ contains
       iaS, &
       iaVS, &   
       lV, uV
-    
-!    dV_Left  = V - cshift ( V, shift = -1, dim = iDimension )
+      
+    call AssociateDevice ( D_V, V )
+    call AssociateDevice ( D_dV_Left, dV_Left )
+    call AssociateDevice ( D_dV_Right, dV_Right )
 
     lV = 1
     where ( shape ( V ) > 1 )
@@ -420,15 +452,23 @@ contains
     where ( shape ( V ) > 1 )
       uV = shape ( V ) - oV
     end where
-    uV ( iDimension ) = size ( V, dim = iDimension )
+    uV ( iD ) = size ( V, dim = iD ) - 1
     
-    iaS = 0
-    iaS ( iDimension ) = -1
+    call Show ( '<<< compute differences kernel' )
 
-    !$OMP parallel do private ( iV, jV, kV, iaVS )
+!    dV_Left  = V - cshift ( V, shift = -1, dim = iD )    
+
+    iaS = 0
+    iaS ( iD ) = -1
+    
+    !-- $OMP parallel do private ( iV, jV, kV, iaVS )
+    
+    !$OMP target teams distribute parallel do collapse ( 3 ) schedule ( static, 1 )
     do kV = lV ( 3 ), uV ( 3 ) 
       do jV = lV ( 2 ), uV ( 2 )
         do iV = lV ( 1 ), uV ( 1 )
+        
+          !call Show ( [ iV, jV, kV ], '<<< iV, jV, kV: 1' )
 
           iaVS = [ iV, jV, kV ] + iaS
 
@@ -438,12 +478,40 @@ contains
         end do !-- iV
       end do !-- jV
     end do !-- kV
-    !$OMP end parallel do
+    !$OMP end target teams distribute parallel do
     
+    !-- $OMP end parallel do
     
 
+!    dV_Right = cshift ( V, shift = 1, dim = iD ) - V
+
+    iaS = 0
+    iaS ( iD ) = +1
     
-    dV_Right = cshift ( V, shift = 1, dim = iDimension ) - V
+    !-- $OMP parallel do private ( iV, jV, kV, iaVS )
+    
+    !$OMP target teams distribute parallel do collapse ( 3 ) schedule ( static, 1 )
+    do kV = lV ( 3 ), uV ( 3 ) 
+      do jV = lV ( 2 ), uV ( 2 )
+        do iV = lV ( 1 ), uV ( 1 )
+          
+          !call Show ( [ iV, jV, kV ], '<<< iV, jV, kV: 2' )
+
+          iaVS = [ iV, jV, kV ] + iaS
+
+          dV_Right ( iV, jV, kV )  &
+            =  V ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ) - V ( iV, jV, kV )
+
+        end do !-- iV
+      end do !-- jV
+    end do !-- kV
+    !$OMP end target teams distribute parallel do
+    
+    !-- $OMP end parallel do
+
+    call DisassociateDevice ( dV_Right )
+    call DisassociateDevice ( dV_Left )
+    call DisassociateDevice ( V )
     
   end subroutine ComputeDifferencesKernel
 

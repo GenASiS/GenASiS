@@ -57,6 +57,7 @@ contains
     type is ( PolytropicFluidForm )
 
     call PF % Initialize ( DM, NameOption = 'PolytropicFluid' )
+    call PF % AllocateDevice ( )
 
     !-- Left and Right states
 
