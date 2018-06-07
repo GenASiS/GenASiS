@@ -463,7 +463,8 @@ contains
     
     !-- $OMP parallel do private ( iV, jV, kV, iaVS )
     
-    !$OMP target teams distribute parallel do collapse ( 3 ) schedule ( static, 1 )
+    !$OMP  target teams distribute parallel do collapse ( 3 ) &
+    !$OMP& schedule ( static, 1 ) private ( iaVS )
     do kV = lV ( 3 ), uV ( 3 ) 
       do jV = lV ( 2 ), uV ( 2 )
         do iV = lV ( 1 ), uV ( 1 )
@@ -490,7 +491,8 @@ contains
     
     !-- $OMP parallel do private ( iV, jV, kV, iaVS )
     
-    !$OMP target teams distribute parallel do collapse ( 3 ) schedule ( static, 1 )
+    !$OMP  target teams distribute parallel do collapse ( 3 ) &
+    !$OMP& schedule ( static, 1 ) private ( iaVS )
     do kV = lV ( 3 ), uV ( 3 ) 
       do jV = lV ( 2 ), uV ( 2 )
         do iV = lV ( 1 ), uV ( 1 )
