@@ -11,7 +11,7 @@ module Fluid_P__Template
   private
 
     integer ( KDI ), private, parameter :: &
-      N_PRIMITIVE_PERFECT = 0, &
+      N_PRIMITIVE_PERFECT = 1, &
       N_CONSERVED_PERFECT = 2, &
       N_FIELDS_PERFECT    = 8, &
       N_VECTORS_PERFECT   = 0
@@ -146,8 +146,8 @@ contains
       C % N_PRIMITIVE = oP + C % N_PRIMITIVE_PERFECT
       allocate ( C % iaPrimitive ( C % N_PRIMITIVE ) )
     end if
-!    C % iaPrimitive ( oP + 1 : oP + C % N_PRIMITIVE_PERFECT ) &
-!      = [ ]
+    C % iaPrimitive ( oP + 1 : oP + C % N_PRIMITIVE_PERFECT ) &
+      = [ C % INTERNAL_ENERGY ]
 
     if ( .not. allocated ( C % iaConserved ) ) then
       C % N_CONSERVED = oC + C % N_CONSERVED_PERFECT

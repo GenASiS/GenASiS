@@ -11,7 +11,7 @@ module Fluid_P_HN__Form
   private
 
     integer ( KDI ), private, parameter :: &
-      N_PRIMITIVE_HEAVY_NUCLEUS = 2, &
+      N_PRIMITIVE_HEAVY_NUCLEUS = 1, &
       N_CONSERVED_HEAVY_NUCLEUS = 1, &
       N_FIELDS_HEAVY_NUCLEUS    = 10, &
       N_VECTORS_HEAVY_NUCLEUS   = 0
@@ -193,9 +193,7 @@ contains
       allocate ( C % iaPrimitive ( C % N_PRIMITIVE ) )
     end if
     C % iaPrimitive ( oP + 1 : oP + C % N_PRIMITIVE_HEAVY_NUCLEUS ) &
-!      = [ C % TEMPERATURE, C % PROTON_FRACTION ]
-      = [ C % INTERNAL_ENERGY, C % PROTON_FRACTION ]
-!      = [ C % ENTROPY_PER_BARYON, C % PROTON_FRACTION ]
+      = [ C % PROTON_FRACTION ]
 
     if ( .not. allocated ( C % iaConserved ) ) then
       C % N_CONSERVED = oC + C % N_CONSERVED_HEAVY_NUCLEUS
