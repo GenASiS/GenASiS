@@ -160,7 +160,7 @@ contains
         associate ( SA => GA % Storage_ASC )
         call SA % Initialize &
                ( GA, NameShort = 'PoissonStorage', &
-                 iaSelectedOption = [ G % GRAVITATIONAL_POTENTIAL ] )
+                 iaSelectedOption = [ G % POTENTIAL ] )
         end associate !-- SA
 
         allocate ( GA % Gradient )
@@ -312,10 +312,10 @@ contains
     G  =>  GA % Geometry_N ( )
 
     call ComputeGravityUniformKernel &
-           ( G % Value ( :, G % GRAVITATIONAL_POTENTIAL ), & 
-             G % Value ( :, G % GRAVITATIONAL_ACCELERATION_D ( 1 ) ), &
-             G % Value ( :, G % GRAVITATIONAL_ACCELERATION_D ( 2 ) ), &
-             G % Value ( :, G % GRAVITATIONAL_ACCELERATION_D ( 3 ) ), &
+           ( G % Value ( :, G % POTENTIAL ), & 
+             G % Value ( :, G % POTENTIAL_GRADIENT_D ( 1 ) ), &
+             G % Value ( :, G % POTENTIAL_GRADIENT_D ( 2 ) ), &
+             G % Value ( :, G % POTENTIAL_GRADIENT_D ( 3 ) ), &
              G % Value ( :, G % CENTER_U ( 1 ) ), &
              G % Value ( :, G % CENTER_U ( 2 ) ), &
              G % Value ( :, G % CENTER_U ( 3 ) ), &
@@ -341,10 +341,10 @@ contains
     G  =>  GA % Geometry_N ( )
 
     call ComputeGravityCentralMassKernel &
-           ( G % Value ( :, G % GRAVITATIONAL_POTENTIAL ), & 
-             G % Value ( :, G % GRAVITATIONAL_ACCELERATION_D ( 1 ) ), &
-             G % Value ( :, G % GRAVITATIONAL_ACCELERATION_D ( 2 ) ), &
-             G % Value ( :, G % GRAVITATIONAL_ACCELERATION_D ( 3 ) ), &
+           ( G % Value ( :, G % POTENTIAL ), & 
+             G % Value ( :, G % POTENTIAL_GRADIENT_D ( 1 ) ), &
+             G % Value ( :, G % POTENTIAL_GRADIENT_D ( 2 ) ), &
+             G % Value ( :, G % POTENTIAL_GRADIENT_D ( 3 ) ), &
              G % Value ( :, G % CENTER_U ( 1 ) ), &
              G % Value ( :, G % CENTER_U ( 2 ) ), &
              G % Value ( :, G % CENTER_U ( 3 ) ), &
@@ -419,7 +419,7 @@ contains
     do iD = 1, C % nDimensions
       call GA % Gradient % Compute ( C, S, iDimension = iD )
       call Copy ( GA % Gradient % Output % Value ( :, 1 ), &
-                  G % Value ( :, G % GRAVITATIONAL_ACCELERATION_D ( iD ) ) )
+                  G % Value ( :, G % POTENTIAL_GRADIENT_D ( iD ) ) )
     end do !-- iD
 
     end associate !-- PA, etc.

@@ -77,7 +77,7 @@ contains
                FS % Value ( :, FS % GRAVITATIONAL_S_D ( iD ) ), &
                F % Value ( :, F % BARYON_MASS ), &
                F % Value ( :, F % CONSERVED_BARYON_DENSITY ), &
-               G % Value ( :, G % GRAVITATIONAL_ACCELERATION_D ( iD ) ), &
+               G % Value ( :, G % POTENTIAL_GRADIENT_D ( iD ) ), &
                TimeStep, S % B ( iStage ) )
 !call Show ( FS % Value ( :, FS % GRAVITATIONAL_S_D ( iD ) ), '>>> Gravitational source' )
     end do !-- iD
@@ -95,9 +95,9 @@ contains
                F % Value ( :, F % VELOCITY_U ( 1 ) ), &
                F % Value ( :, F % VELOCITY_U ( 2 ) ), &
                F % Value ( :, F % VELOCITY_U ( 3 ) ), &
-               G % Value ( :, G % GRAVITATIONAL_ACCELERATION_D ( 1 ) ), &
-               G % Value ( :, G % GRAVITATIONAL_ACCELERATION_D ( 2 ) ), &
-               G % Value ( :, G % GRAVITATIONAL_ACCELERATION_D ( 3 ) ), &
+               G % Value ( :, G % POTENTIAL_GRADIENT_D ( 1 ) ), &
+               G % Value ( :, G % POTENTIAL_GRADIENT_D ( 2 ) ), &
+               G % Value ( :, G % POTENTIAL_GRADIENT_D ( 3 ) ), &
                TimeStep, S % B ( iStage ) )
     end select !-- F_P
 
