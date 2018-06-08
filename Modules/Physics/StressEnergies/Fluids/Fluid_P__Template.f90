@@ -349,8 +349,8 @@ contains
 
     integer ( KDI ) :: &
       iMomentum, &
-      iEnergy
-    integer ( KDI ) :: &
+      iEnergy, &
+      iEntropy, &
       oV, &  !-- oValue
       nV     !-- nValues
 
@@ -375,15 +375,20 @@ contains
              iMomentum )
     call Search &
            ( C % iaConserved, C % CONSERVED_ENERGY, iEnergy )
+    call Search &
+           ( C % iaConserved, C % CONSERVED_ENTROPY, iEntropy )
     
     associate &
       ( F_S_Dim => RawFlux ( oV + 1 : oV + nV, iMomentum ), &
         F_G     => RawFlux ( oV + 1 : oV + nV, iEnergy ), &
+        F_DS    => RawFlux ( oV + 1 : oV + nV, iEntropy ), &
         G       => Value_C ( oV + 1 : oV + nV, C % CONSERVED_ENERGY ), &
         P       => Value_C ( oV + 1 : oV + nV, C % PRESSURE ), &
+        DS      => Value_C ( oV + 1 : oV + nV, C % CONSERVED_ENTROPY ), &
         V_Dim   => Value_C ( oV + 1 : oV + nV, C % VELOCITY_U ( iDimension ) ))
 
-    call ComputeRawFluxesTemplate_P_Kernel ( F_S_Dim, F_G, G, P, V_Dim )
+    call ComputeRawFluxesTemplate_P_Kernel &
+           ( F_S_Dim, F_G, F_DS, G, P, DS, V_Dim )
 
     end associate !-- F_S_Dim, etc.
 
@@ -430,6 +435,8 @@ contains
              C_ICR % Value ( :, C % CONSERVED_ENERGY ), &
              C_ICL % Value ( :, C % PRESSURE ), &
              C_ICR % Value ( :, C % PRESSURE ), &
+             C_ICL % Value ( :, C % CONSERVED_ENTROPY ), &
+             C_ICR % Value ( :, C % CONSERVED_ENTROPY ), &
              C_IL % Value ( :, C % VELOCITY_U ( 1 ) ), &
              C_IR % Value ( :, C % VELOCITY_U ( 1 ) ), &
              C_IL % Value ( :, C % VELOCITY_U ( 2 ) ), &
@@ -454,6 +461,8 @@ contains
              C_IR % Value ( :, C % CONSERVED_ENERGY ), &
              C_IL % Value ( :, C % PRESSURE ), &
              C_IR % Value ( :, C % PRESSURE ), &
+             C_IL % Value ( :, C % CONSERVED_ENTROPY ), &
+             C_IR % Value ( :, C % CONSERVED_ENTROPY ), &
              SS_I % Value ( :, C % ALPHA_PLUS ), &
              SS_I % Value ( :, C % ALPHA_MINUS ), &
              SS_I % Value ( :, C % ALPHA_CENTER ), &
@@ -745,10 +754,10 @@ contains
                  V_Dim_ICL, V_Dim_ICR, M_ICL, M_ICR, D_ICL, D_ICR, &
                  S_1_ICL, S_1_ICR, S_2_ICL, S_2_ICR, S_3_ICL, S_3_ICR, &
                  S_Dim_ICL, S_Dim_ICR, G_ICL, G_ICR, P_ICL, P_ICR, &
-                 V_1_IL, V_1_IR, V_2_IL, V_2_IR, V_3_IL, V_3_IR, &
-                 V_Dim_IL, V_Dim_IR, M_IL, M_IR, D_IL, D_IR, &
+                 DS_ICL, DS_ICR, V_1_IL, V_1_IR, V_2_IL, V_2_IR, &
+                 V_3_IL, V_3_IR, V_Dim_IL, V_Dim_IR, M_IL, M_IR, D_IL, D_IR, &
                  S_1_IL, S_1_IR, S_2_IL, S_2_IR, S_3_IL, S_3_IR, &
-                 S_Dim_IL, S_Dim_IR, G_IL, G_IR, P_IL, P_IR, &
+                 S_Dim_IL, S_Dim_IR, G_IL, G_IR, P_IL, P_IR, DS_IL, DS_IR, &
                  AP_I, AM_I, AC_I, M_DD_22, M_DD_33 )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -763,7 +772,8 @@ contains
       S_3_ICL, S_3_ICR, &
       S_Dim_ICL, S_Dim_ICR, &
       G_ICL, G_ICR, &
-      P_ICL, P_ICR
+      P_ICL, P_ICR, &
+      DS_ICL, DS_ICR
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       V_1_IL, V_1_IR, &
       V_2_IL, V_2_IR, &
@@ -777,6 +787,7 @@ contains
       S_Dim_IL, S_Dim_IR, &
       G_IL, G_IR, &
       P_IL, P_IR, &
+      DS_IL, DS_IR, &
       AP_I, &
       AM_I, &
       AC_I, &
@@ -860,6 +871,9 @@ contains
                          +  AC_I ( iV ) * P_ICR ( iV ) ) &
                        * AP_AC_Inv
 
+      DS_ICL ( iV )  =  DS_IL ( iV ) * AM_VL * AM_AC_Inv
+      DS_ICR ( iV )  =  DS_IR ( iV ) * AP_VR * AP_AC_Inv
+
     end do !-- iV
     !$OMP end parallel do
 
@@ -908,14 +922,17 @@ contains
   end subroutine ComputeFluxes_HLLC_Kernel
 
 
-  subroutine ComputeRawFluxesTemplate_P_Kernel ( F_S_Dim, F_G, G, P, V_Dim )
+  subroutine ComputeRawFluxesTemplate_P_Kernel &
+               ( F_S_Dim, F_G, F_DS, G, P, DS, V_Dim )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       F_S_Dim, &
-      F_G
+      F_G, &
+      F_DS
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       G, &
       P, &
+      DS, &
       V_Dim
 
     integer ( KDI ) :: &
@@ -926,8 +943,9 @@ contains
 
     !$OMP parallel do private ( iV )
     do iV = 1, nValues
-      F_S_Dim ( iV ) = F_S_Dim ( iV )  +  P ( iV )
-      F_G     ( iV ) =     ( G ( iV )  +  P ( iV ) ) * V_Dim ( iV )
+      F_S_Dim ( iV )  =  F_S_Dim ( iV )  +  P ( iV )
+      F_G     ( iV )  =  ( G ( iV )  +  P ( iV ) ) * V_Dim ( iV )
+      F_DS    ( iV )  =  DS ( iV )  *  V_Dim ( iV ) 
     end do
     !$OMP end parallel do
 

@@ -702,7 +702,6 @@ contains
 
     integer ( KDI ) :: &
       iProton, &
-      iEntropy, &
       oV, &  !-- oValue
       nV     !-- nValues
 
@@ -723,19 +722,15 @@ contains
     end if
 
     call Search ( C % iaConserved, C % CONSERVED_PROTON_DENSITY, iProton )
-    call Search ( C % iaConserved, C % CONSERVED_ENTROPY, iEntropy )
 
     associate &
       ( F_DP  => RawFlux ( oV + 1 : oV + nV, iProton ), &
-        F_DS  => RawFlux ( oV + 1 : oV + nV, iEntropy ), &
         DP    => Value_C ( oV + 1 : oV + nV, &
                            C % CONSERVED_PROTON_DENSITY ), &
-        DS    => Value_C ( oV + 1 : oV + nV, &
-                           C % CONSERVED_ENTROPY ), &
         V_Dim => Value_C ( oV + 1 : oV + nV, &
                            C % VELOCITY_U ( iDimension ) ) )
 
-    call ComputeRawFluxesKernel ( F_DP, F_DS, DP, DS, V_Dim )
+    call ComputeRawFluxesKernel ( F_DP, DP, V_Dim )
 
     end associate !-- F_DP, etc.
 
@@ -763,12 +758,8 @@ contains
     call ComputeCenterStatesKernel &
            ( C_ICL % Value ( :, C % CONSERVED_PROTON_DENSITY ), &
              C_ICR % Value ( :, C % CONSERVED_PROTON_DENSITY ), &
-             C_ICL % Value ( :, C % CONSERVED_ENTROPY ), &
-             C_ICR % Value ( :, C % CONSERVED_ENTROPY ), &
              C_IL % Value ( :, C % CONSERVED_PROTON_DENSITY ), &
              C_IR % Value ( :, C % CONSERVED_PROTON_DENSITY ), &
-             C_IL % Value ( :, C % CONSERVED_ENTROPY ), &
-             C_IR % Value ( :, C % CONSERVED_ENTROPY ), &
              C_IL % Value ( :, C % VELOCITY_U ( iD ) ), &
              C_IR % Value ( :, C % VELOCITY_U ( iD ) ), &
              SS_I % Value ( :, C % ALPHA_PLUS ), &
@@ -1228,14 +1219,12 @@ contains
   end subroutine Apply_EOS_HN_SB_Kernel
 
 
-  subroutine ComputeRawFluxesKernel ( F_DP, F_DS, DP, DS, V_Dim )
+  subroutine ComputeRawFluxesKernel ( F_DP, DP, V_Dim )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      F_DP, &
-      F_DS
+      F_DP
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       DP, &
-      DS, &
       V_Dim
     
     integer ( KDI ) :: &
@@ -1247,7 +1236,6 @@ contains
     !$OMP parallel do private ( iV ) 
     do iV = 1, nValues
       F_DP ( iV )  =  DP ( iV )  *  V_Dim ( iV ) 
-      F_DS ( iV )  =  DS ( iV )  *  V_Dim ( iV ) 
     end do !-- iV
     !$OMP end parallel do
 
@@ -1255,15 +1243,13 @@ contains
 
 
   subroutine ComputeCenterStatesKernel &
-               ( DP_ICL, DP_ICR, DS_ICL, DS_ICR, DP_IL, DP_IR, DS_IL, DS_IR, &
-                 V_Dim_IL, V_Dim_IR, AP_I, AM_I, AC_I )
+               ( DP_ICL, DP_ICR, DP_IL, DP_IR, V_Dim_IL, V_Dim_IR, &
+                 AP_I, AM_I, AC_I )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      DP_ICL, DP_ICR, &
-      DS_ICL, DS_ICR
+      DP_ICL, DP_ICR
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       DP_IL, DP_IR, &
-      DS_IL, DS_IR, &
       V_Dim_IL, V_Dim_IR, &
       AP_I, &
       AM_I, &
@@ -1304,9 +1290,6 @@ contains
 
       DP_ICL ( iV )  =  DP_IL ( iV ) * AM_VL * AM_AC_Inv
       DP_ICR ( iV )  =  DP_IR ( iV ) * AP_VR * AP_AC_Inv
-
-      DS_ICL ( iV )  =  DS_IL ( iV ) * AM_VL * AM_AC_Inv
-      DS_ICR ( iV )  =  DS_IR ( iV ) * AP_VR * AP_AC_Inv
 
     end do !-- iV
     !$OMP end parallel do
