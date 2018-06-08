@@ -40,7 +40,7 @@ program FluidFeatures_CSL__Form_Test
   allocate ( FC )
   call FC % Initialize &
          ( C, 'Fluid', 'IDEAL', RiemannSolverType = 'HLLC', &
-           UseLimiter = .true., &
+           UseEntropy = .false., UseLimiter = .true., &
            Velocity_U_Unit = [ ( UNIT % IDENTITY, iD = 1, 3 ) ], &
            MomentumDensity_D_Unit = [ ( UNIT % IDENTITY, iD = 1, 3 ) ], &
            BaryonMassUnit = UNIT % IDENTITY, &

@@ -64,17 +64,19 @@ contains
 
 
   subroutine InitializeAllocate_P_I &
-               ( F, RiemannSolverType, UseLimiter, Velocity_U_Unit, &
-                 MomentumDensity_D_Unit, BaryonMassUnit, NumberDensityUnit, &
-                 EnergyDensityUnit, TemperatureUnit, BaryonMassReference, &
-                 LimiterParameter, nValues, VariableOption, VectorOption, &
-                 NameOption, ClearOption, UnitOption, VectorIndicesOption )
+               ( F, RiemannSolverType, UseEntropy, UseLimiter, &
+                 Velocity_U_Unit, MomentumDensity_D_Unit, BaryonMassUnit, &
+                 NumberDensityUnit, EnergyDensityUnit, TemperatureUnit, &
+                 BaryonMassReference, LimiterParameter, nValues, &
+                 VariableOption, VectorOption, NameOption, ClearOption, &
+                 UnitOption, VectorIndicesOption )
 
     class ( Fluid_P_I_Form ), intent ( inout ) :: &
       F
     character ( * ), intent ( in ) :: &
       RiemannSolverType
     logical ( KDL ), intent ( in ) :: &
+      UseEntropy, &
       UseLimiter
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
       Velocity_U_Unit, &
@@ -111,7 +113,7 @@ contains
            ( F, Variable, VariableUnit, VariableOption, UnitOption )
 
     call F % InitializeTemplate_P &
-           ( RiemannSolverType, UseLimiter, Velocity_U_Unit, &
+           ( RiemannSolverType, UseEntropy, UseLimiter, Velocity_U_Unit, &
              MomentumDensity_D_Unit, BaryonMassUnit, NumberDensityUnit, &
              EnergyDensityUnit, TemperatureUnit, BaryonMassReference, &
              LimiterParameter, nValues, VariableOption = Variable, &

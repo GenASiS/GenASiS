@@ -21,7 +21,8 @@ program Fluid_P_HN__Form_Test
 
   allocate ( F )
   call F % Initialize &
-         ( RiemannSolverType = 'HLLC', UseLimiter = .true., &
+         ( RiemannSolverType = 'HLLC', &
+           UseEntropy = .false., UseLimiter = .true., &
            Velocity_U_Unit = [ ( UNIT % IDENTITY, iD = 1, 3 ) ], &
            MomentumDensity_D_Unit = [ ( UNIT % IDENTITY, iD = 1, 3 ) ], &
            BaryonMassUnit = UNIT % IDENTITY, &

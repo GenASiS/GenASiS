@@ -28,7 +28,8 @@ module Fluid_CSL__Form
       Velocity_U_Unit, &
       MomentumDensity_D_Unit
     logical ( KDL ) :: &
-      UseLimiter
+      UseLimiter, &
+      UseEntropy
     character ( LDF ) :: &
       FluidType = '', &
       RiemannSolverType = ''
@@ -59,11 +60,11 @@ contains
 
 
   subroutine Initialize &
-               ( FC, C, NameShort, FluidType, RiemannSolverType, UseLimiter, &
-                 Velocity_U_Unit, MomentumDensity_D_Unit, BaryonMassUnit, &
-                 NumberDensityUnit, EnergyDensityUnit, TemperatureUnit, &
-                 BaryonMassReference, LimiterParameter, nValues, &
-                 IgnorabilityOption )
+               ( FC, C, NameShort, FluidType, RiemannSolverType, UseEntropy, &
+                 UseLimiter, Velocity_U_Unit, MomentumDensity_D_Unit, &
+                 BaryonMassUnit, NumberDensityUnit, EnergyDensityUnit, &
+                 TemperatureUnit, BaryonMassReference, LimiterParameter, &
+                 nValues, IgnorabilityOption )
 
     class ( Fluid_CSL_Form ), intent ( inout ) :: &
       FC
@@ -74,6 +75,7 @@ contains
       FluidType, &
       RiemannSolverType
     logical ( KDL ), intent ( in ) :: &
+      UseEntropy, &
       UseLimiter
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
       Velocity_U_Unit, &
@@ -96,6 +98,7 @@ contains
     FC % FluidType           = FluidType
     FC % RiemannSolverType   = RiemannSolverType
     FC % UseLimiter          = UseLimiter
+    FC % UseEntropy          = UseEntropy
     FC % LimiterParameter    = LimiterParameter
     FC % BaryonMassReference = BaryonMassReference
 
@@ -266,7 +269,7 @@ contains
       select type ( F => FC % Field )
       type is ( Fluid_P_I_Form )
         call F % Initialize &
-               ( FC % RiemannSolverType, FC % UseLimiter, &
+               ( FC % RiemannSolverType, FC % UseEntropy, FC % UseLimiter, &
                  FC % Velocity_U_Unit, FC % MomentumDensity_D_Unit, &
                  FC % BaryonMassUnit, FC % NumberDensityUnit, &
                  FC % EnergyDensityUnit, FC % TemperatureUnit, &
@@ -280,7 +283,7 @@ contains
       select type ( F => FC % Field )
       type is ( Fluid_P_HN_Form )
         call F % Initialize &
-               ( FC % RiemannSolverType, FC % UseLimiter, &
+               ( FC % RiemannSolverType, FC % UseEntropy, FC % UseLimiter, &
                  FC % Velocity_U_Unit, FC % MomentumDensity_D_Unit, &
                  FC % BaryonMassUnit, FC % NumberDensityUnit, &
                  FC % EnergyDensityUnit, FC % TemperatureUnit, &

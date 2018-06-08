@@ -39,7 +39,7 @@ program Fluid_CSL__Form_Test
 
   call FC_D % Initialize &
          ( C, 'Fluid_D', 'DUST', RiemannSolverType = 'HLL', &
-           UseLimiter = .true., &
+           UseEntropy = .false., UseLimiter = .true., &
            Velocity_U_Unit = [ ( UNIT % IDENTITY, iD = 1, 3 ) ], &
            MomentumDensity_D_Unit = [ ( UNIT % IDENTITY, iD = 1, 3 ) ], &
            BaryonMassUnit = UNIT % IDENTITY, &
@@ -50,7 +50,7 @@ program Fluid_CSL__Form_Test
            LimiterParameter = 1.4_KDR, nValues = nValues )
   call FC_I % Initialize &
          ( C, 'Fluid_I', 'IDEAL', RiemannSolverType = 'HLLC', &
-           UseLimiter = .true., &
+           UseEntropy = .false., UseLimiter = .true., &
            Velocity_U_Unit = [ ( UNIT % IDENTITY, iD = 1, 3 ) ], &
            MomentumDensity_D_Unit = [ ( UNIT % IDENTITY, iD = 1, 3 ) ], &
            BaryonMassUnit = UNIT % IDENTITY, &
@@ -61,7 +61,7 @@ program Fluid_CSL__Form_Test
            LimiterParameter = 1.4_KDR, nValues = nValues )
   call FC_HN % Initialize &
          ( C, 'Fluid_HN', 'HEAVY_NUCLEUS', RiemannSolverType = 'HLLC', &
-           UseLimiter = .true., &
+           UseEntropy = .false., UseLimiter = .true., &
            Velocity_U_Unit = [ ( UNIT % IDENTITY, iD = 1, 3 ) ], &
            MomentumDensity_D_Unit = [ ( UNIT % IDENTITY, iD = 1, 3 ) ], &
            BaryonMassUnit = UNIT % IDENTITY, &

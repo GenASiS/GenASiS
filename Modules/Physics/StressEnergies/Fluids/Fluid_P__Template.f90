@@ -30,6 +30,8 @@ module Fluid_P__Template
       CONSERVED_ENTROPY   = 0, &
       SOUND_SPEED         = 0, &
       MACH_NUMBER         = 0
+    logical ( KDL ) :: &
+      UseEntropy
   contains
     procedure, public, pass :: &
       InitializeTemplate_P
@@ -63,17 +65,19 @@ contains
 
 
   subroutine InitializeTemplate_P &
-               ( F, RiemannSolverType, UseLimiter, Velocity_U_Unit, &
-                 MomentumDensity_D_Unit, BaryonMassUnit, NumberDensityUnit, &
-                 EnergyDensityUnit, TemperatureUnit, BaryonMassReference, &
-                 LimiterParameter, nValues, VariableOption, VectorOption, &
-                 NameOption, ClearOption, UnitOption, VectorIndicesOption )
+               ( F, RiemannSolverType, UseEntropy, UseLimiter, &
+                 Velocity_U_Unit, MomentumDensity_D_Unit, BaryonMassUnit, &
+                 NumberDensityUnit, EnergyDensityUnit, TemperatureUnit, &
+                 BaryonMassReference, LimiterParameter, nValues, &
+                 VariableOption, VectorOption, NameOption, ClearOption, &
+                 UnitOption, VectorIndicesOption )
 
     class ( Fluid_P_Template ), intent ( inout ) :: &
       F
     character ( * ), intent ( in ) :: &
       RiemannSolverType
     logical ( KDL ), intent ( in ) :: &
+      UseEntropy, &
       UseLimiter
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
       Velocity_U_Unit, &

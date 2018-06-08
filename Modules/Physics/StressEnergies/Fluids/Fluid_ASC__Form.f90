@@ -33,7 +33,8 @@ module Fluid_ASC__Form
       Velocity_U_Unit, &
       MomentumDensity_D_Unit
     logical ( KDL ) :: &
-      UseLimiter
+      UseLimiter, &
+      UseEntropy
     character ( LDF ) :: &
       FluidType         = '', &
       RiemannSolverType = ''
@@ -69,7 +70,7 @@ contains
 
   subroutine Initialize &
                ( FA, A, FluidType, NameShortOption, RiemannSolverTypeOption, &
-                 UseLimiterOption, AllocateSourcesOption, &
+                 UseEntropyOption, UseLimiterOption, AllocateSourcesOption, &
                  Velocity_U_UnitOption, MomentumDensity_D_UnitOption, &
                  BaryonMassUnitOption, NumberDensityUnitOption, &
                  EnergyDensityUnitOption, TemperatureUnitOption, &
@@ -88,6 +89,7 @@ contains
       NameShortOption, &
       RiemannSolverTypeOption
     logical ( KDL ), intent ( in ), optional :: &
+      UseEntropyOption, &
       UseLimiterOption, &
       AllocateSourcesOption
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ), optional :: &
@@ -131,6 +133,17 @@ contains
       FA % RiemannSolverType = RiemannSolverTypeOption
     call PROGRAM_HEADER % GetParameter &
            ( FA % RiemannSolverType, 'RiemannSolverType' )
+
+    select case ( trim ( FA % FluidType ) )
+    case ( 'HEAVY_NUCLEUS' )
+      FA % UseEntropy = .true.
+    case default
+      FA % UseEntropy = .false.
+    end select
+    if ( present ( UseEntropyOption ) ) &
+      FA % UseEntropy = UseEntropyOption
+    call PROGRAM_HEADER % GetParameter &
+           ( FA % UseEntropy, 'UseEntropy' )
 
     FA % UseLimiter = .true.
     if ( present ( UseLimiterOption ) ) &
@@ -439,7 +452,7 @@ contains
     class is ( Fluid_CSL_Form )
       call FC % Initialize &
              ( C, FA % NameShort, FA % FluidType, FA % RiemannSolverType, &
-               FA % UseLimiter, FA % Velocity_U_Unit, &
+               FA % UseEntropy, FA % UseLimiter, FA % Velocity_U_Unit, &
                FA % MomentumDensity_D_Unit, FA % BaryonMassUnit, &
                FA % NumberDensityUnit, FA % EnergyDensityUnit, &
                FA % TemperatureUnit, FA % BaryonMassReference, &
