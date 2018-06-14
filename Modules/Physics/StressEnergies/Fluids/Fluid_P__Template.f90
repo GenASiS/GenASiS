@@ -48,7 +48,11 @@ module Fluid_P__Template
     procedure, public, nopass :: &
       ComputeConservedEnergy_G_Kernel
     procedure, public, nopass :: &
+      ComputeConservedEntropy_G_Kernel
+    procedure, public, nopass :: &
       ComputeInternalEnergy_G_Kernel
+    procedure, public, nopass :: &
+      ComputeEntropyPerBaryon_G_Kernel
     procedure, public, nopass :: &
       ComputeEigenspeeds_P_G_Kernel
   end type Fluid_P_Template
@@ -125,6 +129,8 @@ contains
              NameOption = NameOption, ClearOption = ClearOption, &
              UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndicesOption )
+
+    F % UseEntropy  =  UseEntropy
 
   end subroutine InitializeTemplate_P
 
@@ -502,6 +508,29 @@ contains
   end subroutine ComputeConservedEnergy_G_Kernel
 
 
+  subroutine ComputeConservedEntropy_G_Kernel ( DS, N, SB )
+ 	 
+    real ( KDR ), dimension ( : ), intent ( inout ) :: & 	 	 
+      DS
+    real ( KDR ), dimension ( : ), intent ( in ) :: & 	 	 
+      N, &
+      SB 	 	 
+ 	 	 
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+
+    nValues = size ( DS )
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nValues
+      DS ( iV )  =  SB ( iV )  *  N ( iV )
+    end do !-- iV
+    !$OMP end parallel do
+
+  end subroutine ComputeConservedEntropy_G_Kernel
+
+
   subroutine ComputeInternalEnergy_G_Kernel &
                ( E, G, M, N, V_1, V_2, V_3, S_1, S_2, S_3 )
 
@@ -542,6 +571,33 @@ contains
   end subroutine ComputeInternalEnergy_G_Kernel
 
 
+  subroutine ComputeEntropyPerBaryon_G_Kernel ( SB, DS, N )
+ 	 
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      SB, &
+      DS
+    real ( KDR ), dimension ( : ), intent ( in ) :: & 	 	 
+      N 	 	 
+ 	 	 
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+
+    nValues = size ( SB )
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nValues
+      if ( N ( iV ) > 0.0_KDR ) then
+        SB ( iV ) = DS ( iV ) / N ( iV )
+      else
+        SB ( iV ) = 0.0_KDR
+      end if
+    end do !-- iV
+    !$OMP end parallel do
+
+  end subroutine ComputeEntropyPerBaryon_G_Kernel
+  
+  
   subroutine ComputeEigenspeeds_P_G_Kernel &
                ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
                  V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33 )

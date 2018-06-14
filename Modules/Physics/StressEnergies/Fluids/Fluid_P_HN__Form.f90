@@ -57,11 +57,7 @@ module Fluid_P_HN__Form
     procedure, public, nopass :: &
       ComputeConservedProton_G_Kernel
     procedure, public, nopass :: &
-      ComputeConservedEntropy_G_Kernel
-    procedure, public, nopass :: &
       ComputeProtonFraction_G_Kernel
-    procedure, public, nopass :: &
-      ComputeEntropyPerBaryon_G_Kernel
     procedure, public, nopass :: &
       Apply_EOS_HN_T_Kernel
     procedure, public, nopass :: &
@@ -413,14 +409,14 @@ contains
         E     => FV ( oV + 1 : oV + nV, C % INTERNAL_ENERGY ), &
         G     => FV ( oV + 1 : oV + nV, C % CONSERVED_ENERGY ), &
         P     => FV ( oV + 1 : oV + nV, C % PRESSURE ), &
+        T     => FV ( oV + 1 : oV + nV, C % TEMPERATURE ), &
+        SB    => FV ( oV + 1 : oV + nV, C % ENTROPY_PER_BARYON ), &
+        DS    => FV ( oV + 1 : oV + nV, C % CONSERVED_ENTROPY ), &
     !    Gamma => FV ( oV + 1 : oV + nV, C % ADIABATIC_INDEX ), &
         CS    => FV ( oV + 1 : oV + nV, C % SOUND_SPEED ), &
         MN    => FV ( oV + 1 : oV + nV, C % MACH_NUMBER ), &
-        T     => FV ( oV + 1 : oV + nV, C % TEMPERATURE ), &
-        SB    => FV ( oV + 1 : oV + nV, C % ENTROPY_PER_BARYON ), &
-        DP    => FV ( oV + 1 : oV + nV, C % CONSERVED_PROTON_DENSITY ), &
         YE    => FV ( oV + 1 : oV + nV, C % PROTON_FRACTION ), &
-        DS    => FV ( oV + 1 : oV + nV, C % CONSERVED_ENTROPY ), &
+        DP    => FV ( oV + 1 : oV + nV, C % CONSERVED_PROTON_DENSITY ), &
         X_P   => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_PROTON ), &
         X_N   => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_NEUTRON ), &
         X_He  => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_ALPHA ), &
@@ -438,10 +434,10 @@ contains
            ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
     call C % ComputeConservedEnergy_G_Kernel &
            ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
-    call C % ComputeConservedProton_G_Kernel &
-           ( DP, N, YE )
     call C % ComputeConservedEntropy_G_Kernel &
            ( DS, N, SB )
+    call C % ComputeConservedProton_G_Kernel &
+           ( DP, N, YE )
     call C % ComputeEigenspeeds_P_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
              V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33 )
@@ -515,14 +511,14 @@ contains
         E     => FV ( oV + 1 : oV + nV, C % INTERNAL_ENERGY ), &
         G     => FV ( oV + 1 : oV + nV, C % CONSERVED_ENERGY ), &
         P     => FV ( oV + 1 : oV + nV, C % PRESSURE ), &
+        T     => FV ( oV + 1 : oV + nV, C % TEMPERATURE ), &
+        SB    => FV ( oV + 1 : oV + nV, C % ENTROPY_PER_BARYON ), &
+        DS    => FV ( oV + 1 : oV + nV, C % CONSERVED_ENTROPY ), &
     !    Gamma => FV ( oV + 1 : oV + nV, C % ADIABATIC_INDEX ), &
         CS    => FV ( oV + 1 : oV + nV, C % SOUND_SPEED ), &
         MN    => FV ( oV + 1 : oV + nV, C % MACH_NUMBER ), &
-        T     => FV ( oV + 1 : oV + nV, C % TEMPERATURE ), &
-        SB    => FV ( oV + 1 : oV + nV, C % ENTROPY_PER_BARYON ), &
-        DP    => FV ( oV + 1 : oV + nV, C % CONSERVED_PROTON_DENSITY ), &
         YE    => FV ( oV + 1 : oV + nV, C % PROTON_FRACTION ), &
-        DS    => FV ( oV + 1 : oV + nV, C % CONSERVED_ENTROPY ), &
+        DP    => FV ( oV + 1 : oV + nV, C % CONSERVED_PROTON_DENSITY ), &
         X_P   => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_PROTON ), &
         X_N   => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_NEUTRON ), &
         X_He  => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_ALPHA ), &
@@ -549,10 +545,10 @@ contains
            ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
     call C % ComputeConservedEnergy_G_Kernel &
            ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
-    call C % ComputeConservedProton_G_Kernel &
-           ( DP, N, YE )
     call C % ComputeConservedEntropy_G_Kernel &
            ( DS, N, SB )
+    call C % ComputeConservedProton_G_Kernel &
+           ( DP, N, YE )
     call C % ComputeEigenspeeds_P_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
              V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33 )
@@ -634,9 +630,9 @@ contains
         MN    => FV ( oV + 1 : oV + nV, C % MACH_NUMBER ), &
         T     => FV ( oV + 1 : oV + nV, C % TEMPERATURE ), &
         SB    => FV ( oV + 1 : oV + nV, C % ENTROPY_PER_BARYON ), &
-        DP    => FV ( oV + 1 : oV + nV, C % CONSERVED_PROTON_DENSITY ), &
-        YE    => FV ( oV + 1 : oV + nV, C % PROTON_FRACTION ), &
         DS    => FV ( oV + 1 : oV + nV, C % CONSERVED_ENTROPY ), &
+        YE    => FV ( oV + 1 : oV + nV, C % PROTON_FRACTION ), &
+        DP    => FV ( oV + 1 : oV + nV, C % CONSERVED_PROTON_DENSITY ), &
         X_P   => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_PROTON ), &
         X_N   => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_NEUTRON ), &
         X_He  => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_ALPHA ), &
@@ -652,10 +648,10 @@ contains
            ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33 )
     call C % ComputeInternalEnergy_G_Kernel &
            ( E, G, M, N, V_1, V_2, V_3, S_1, S_2, S_3 )
-    call C % ComputeProtonFraction_G_Kernel &
-           ( YE, DP, N )
     call C % ComputeEntropyPerBaryon_G_Kernel &
            ( SB, DS, N )
+    call C % ComputeProtonFraction_G_Kernel &
+           ( YE, DP, N )
     call C % Apply_EOS_HN_SB_E_Kernel &
            ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
              M, N, YE, Shock )
@@ -826,56 +822,6 @@ contains
   end subroutine ComputeProtonFraction_G_Kernel
   
   
-  subroutine ComputeConservedEntropy_G_Kernel ( DS, N, SB )
- 	 
-    real ( KDR ), dimension ( : ), intent ( inout ) :: & 	 	 
-      DS
-    real ( KDR ), dimension ( : ), intent ( in ) :: & 	 	 
-      N, &
-      SB 	 	 
- 	 	 
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-
-    nValues = size ( DS )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-      DS ( iV )  =  SB ( iV )  *  N ( iV )
-    end do !-- iV
-    !$OMP end parallel do
-
-  end subroutine ComputeConservedEntropy_G_Kernel
-
-
-  subroutine ComputeEntropyPerBaryon_G_Kernel ( SB, DS, N )
- 	 
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      SB, &
-      DS
-    real ( KDR ), dimension ( : ), intent ( in ) :: & 	 	 
-      N 	 	 
- 	 	 
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-
-    nValues = size ( SB )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-      if ( N ( iV ) > 0.0_KDR ) then
-        SB ( iV ) = DS ( iV ) / N ( iV )
-      else
-        SB ( iV ) = 0.0_KDR
-      end if
-    end do !-- iV
-    !$OMP end parallel do
-
-  end subroutine ComputeEntropyPerBaryon_G_Kernel
-  
-  
   subroutine Apply_EOS_HN_T_Kernel &
                ( P, E, CS, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
                  M, N, T, YE )
@@ -948,7 +894,6 @@ contains
       E ( iV )      =  E ( iV ) * SpecificEnergy_CGS  +  OR_Shift
       E ( iV )      =  E ( iV ) * M ( iV ) * N ( iV )
       CS ( iV )     =  sqrt ( cs2 ) * Speed_CGS
-!      CS ( iV )     =  sqrt ( 2.0_KDR * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
       Mu_NP ( iV )  =  Mu_NP ( iV ) * MeV
       Mu_E  ( iV )  =  Mu_E ( iV ) * MeV
     end do
@@ -1045,7 +990,6 @@ contains
       E ( iV )      =  E ( iV ) * M ( iV ) * N ( iV )
       P ( iV )      =  P ( iV ) * Pressure_CGS
       CS ( iV )     =  sqrt ( cs2 ) * Speed_CGS
-!      CS ( iV )     =  sqrt ( 2.0_KDR * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
       T ( iV )      =  T ( iV ) * MeV
       Mu_NP ( iV )  =  Mu_NP ( iV ) * MeV
       Mu_E  ( iV )  =  Mu_E ( iV ) * MeV
