@@ -5,6 +5,7 @@ module Fluid_P_I__Form
   use Basics
   use Mathematics
   use Fluid_P__Template
+  use FluidFeatures_P__Form
   
   implicit none
   private
@@ -52,6 +53,8 @@ module Fluid_P_I__Form
       ComputeFromConservedCommon
     procedure, public, pass ( C ) :: &
       ComputeRawFluxes
+    procedure, public, nopass :: &
+      Apply_EOS_HN_SB_E_Kernel
     procedure, public, nopass :: &
       Apply_EOS_I_E_Kernel
   end type Fluid_P_I_Form
@@ -411,9 +414,10 @@ contains
         E     => FV ( oV + 1 : oV + nV, C % INTERNAL_ENERGY ), &
         G     => FV ( oV + 1 : oV + nV, C % CONSERVED_ENERGY ), &
         P     => FV ( oV + 1 : oV + nV, C % PRESSURE ), &
+        SB    => FV ( oV + 1 : oV + nV, C % ENTROPY_PER_BARYON ), &
+        DS    => FV ( oV + 1 : oV + nV, C % CONSERVED_ENTROPY ), &
         CS    => FV ( oV + 1 : oV + nV, C % SOUND_SPEED ), &
-        MN    => FV ( oV + 1 : oV + nV, C % MACH_NUMBER ), &
-        SB    => FV ( oV + 1 : oV + nV, C % ENTROPY_PER_BARYON ) )
+        MN    => FV ( oV + 1 : oV + nV, C % MACH_NUMBER ) )
 
     call C % ComputeBaryonMassKernel ( M, C % BaryonMassReference )
     call C % Apply_EOS_I_E_Kernel &
@@ -423,6 +427,8 @@ contains
            ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
     call C % ComputeConservedEnergy_G_Kernel &
            ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
+    call C % ComputeConservedEntropy_G_Kernel &
+           ( DS, N, SB )
     call C % ComputeEigenspeeds_P_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
              V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33 )
@@ -472,6 +478,9 @@ contains
       nV = size ( FV, dim = 1 )
     end if
     
+    select type ( FF => C % Features )
+    class is ( FluidFeatures_P_Form )
+
     associate &
       ( M_DD_22 => GV ( oV + 1 : oV + nV, G % METRIC_DD_22 ), &
         M_DD_33 => GV ( oV + 1 : oV + nV, G % METRIC_DD_33 ), &
@@ -496,9 +505,11 @@ contains
         E     => FV ( oV + 1 : oV + nV, C % INTERNAL_ENERGY ), &
         G     => FV ( oV + 1 : oV + nV, C % CONSERVED_ENERGY ), &
         P     => FV ( oV + 1 : oV + nV, C % PRESSURE ), &
+        SB    => FV ( oV + 1 : oV + nV, C % ENTROPY_PER_BARYON ), &
+        DS    => FV ( oV + 1 : oV + nV, C % CONSERVED_ENTROPY ), &
         CS    => FV ( oV + 1 : oV + nV, C % SOUND_SPEED ), &
         MN    => FV ( oV + 1 : oV + nV, C % MACH_NUMBER ), &
-        SB    => FV ( oV + 1 : oV + nV, C % ENTROPY_PER_BARYON ) )
+        Shock => FF % Value ( oV + 1 : oV + nV, FF % SHOCK ) )
 
     call C % ComputeBaryonMassKernel &
            ( M, C % BaryonMassReference )
@@ -506,15 +517,30 @@ contains
            ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33 )
     call C % ComputeInternalEnergy_G_Kernel &
            ( E, G, M, N, V_1, V_2, V_3, S_1, S_2, S_3 )
-    call C % Apply_EOS_I_E_Kernel &
-           ( P, SB, CS, M, N, E, C % AdiabaticIndex, C % SpecificHeatVolume, &
-             C % FiducialBaryonDensity, C % FiducialPressure )
+    if ( C % UseEntropy ) then
+      call C % ComputeEntropyPerBaryon_G_Kernel &
+             ( SB, DS, N )
+      call C % Apply_EOS_HN_SB_E_Kernel &
+             ( P, E, SB, CS, M, N, Shock, C % AdiabaticIndex, &
+               C % SpecificHeatVolume, C % FiducialBaryonDensity, &
+               C % FiducialPressure )
+      call C % ComputeConservedEnergy_G_Kernel &
+             ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
+    else
+      call C % Apply_EOS_I_E_Kernel &
+             ( P, SB, CS, M, N, E, C % AdiabaticIndex, &
+               C % SpecificHeatVolume, C % FiducialBaryonDensity, &
+               C % FiducialPressure )
+    end if
+    call C % ComputeConservedEntropy_G_Kernel &
+           ( DS, N, SB )
     call C % ComputeEigenspeeds_P_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
              V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33 )
 
     end associate !-- FEP_1, etc.
     end associate !-- M_UU_22, etc.
+    end select !-- FF
     end associate !-- FV, etc.
     
     if ( associated ( C % Value, Value_C ) ) &
@@ -547,6 +573,65 @@ contains
              oValueOption )
 
   end subroutine ComputeRawFluxes
+
+
+  subroutine Apply_EOS_HN_SB_E_Kernel &
+               ( P, E, SB, CS, M, N, Shock, Gamma, C_V, N0, P0 )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      P, &
+      E, &
+      SB, &
+      CS
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      M, &
+      N, &
+      Shock
+    real ( KDR ), intent ( in ) :: &
+      Gamma, &
+      C_V, &
+      N0, &
+      P0
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+
+    nValues = size ( P )
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nValues
+
+      if ( Shock ( iV ) > 0.0_KDR ) then
+
+        P ( iV )  =  ( Gamma - 1.0_KDR )  *  E ( iV ) 
+
+        if ( P ( iV ) > 0.0_KDR ) then
+          SB ( iV )  =  C_V  *  log ( P ( iV ) / P0  &
+                                      *  ( N0 / N ( iV ) ) ** Gamma ) 
+        else
+          SB ( iV )  =  - 0.1 * huge ( 1.0_KDR )
+        end if
+
+      else
+
+        P ( iV )  =  P0  *  ( N ( iV ) / N0 ) ** Gamma  &
+                     *  exp ( SB ( iV ) / C_V )
+
+        E ( iV )  =  P ( iV )  /  ( Gamma - 1.0_KDR )
+
+      end if
+
+      if ( N ( iV ) > 0.0_KDR .and. P ( iV ) > 0.0_KDR ) then
+        CS ( iV ) = sqrt ( Gamma * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
+      else
+        CS ( iV ) = 0.0_KDR
+      end if 
+
+    end do !-- iV
+    !$OMP end parallel do
+
+  end subroutine Apply_EOS_HN_SB_E_Kernel
 
 
   subroutine Apply_EOS_I_E_Kernel ( P, SB, CS, M, N, E, Gamma, C_V, N0, P0 )
