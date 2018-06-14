@@ -277,6 +277,7 @@ contains
     call Show ( FA % FluidType, 'FluidType', FA % IGNORABILITY )
     call Show ( FA % RiemannSolverType, 'RiemannSolverType', &
                 FA % IGNORABILITY )
+    call Show ( FA % UseEntropy, 'UseEntropy', FA % IGNORABILITY )
     call Show ( FA % UseLimiter, 'UseLimiter', FA % IGNORABILITY )
     call Show ( FA % LimiterParameter, 'LimiterParameter', FA % IGNORABILITY )
 
