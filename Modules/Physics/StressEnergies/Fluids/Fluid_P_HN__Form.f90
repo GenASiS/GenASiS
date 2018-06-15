@@ -648,20 +648,23 @@ contains
            ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33 )
     call C % ComputeInternalEnergy_G_Kernel &
            ( E, G, M, N, V_1, V_2, V_3, S_1, S_2, S_3 )
-    call C % ComputeEntropyPerBaryon_G_Kernel &
-           ( SB, DS, N )
+    if ( C % UseEntropy ) then
+      call C % ComputeEntropyPerBaryon_G_Kernel &
+             ( SB, DS, N )
+      call C % Apply_EOS_HN_SB_E_Kernel &
+             ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
+               M, N, YE, Shock )
+      call C % ComputeConservedEnergy_G_Kernel &
+             ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
+    else
+      call C % Apply_EOS_HN_E_Kernel &
+             ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
+               M, N, YE )
+    end if
+    call C % ComputeConservedEntropy_G_Kernel &
+           ( DS, N, SB )
     call C % ComputeProtonFraction_G_Kernel &
            ( YE, DP, N )
-    call C % Apply_EOS_HN_SB_E_Kernel &
-           ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-             M, N, YE, Shock )
-!    call C % Apply_EOS_HN_E_Kernel &
-!           ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-!             M, N, YE )
-    call C % ComputeConservedEnergy_G_Kernel &   !-- For E computed from SB
-           ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E ) 
-    call C % ComputeConservedEntropy_G_Kernel &  !-- For SB computed from E
-           ( DS, N, SB )
     call C % ComputeEigenspeeds_P_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
              V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33 )
