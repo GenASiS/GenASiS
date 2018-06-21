@@ -62,7 +62,8 @@ contains
       F_D     !-- F_Difference
     real ( KDR ) :: &
       Rho_final, &
-      FinishTime
+      FinishTime, &
+      R_max
     type ( MeasuredValueForm ), dimension ( 3 ) :: &
       CoordinateUnit
     class ( GeometryFlatForm ), pointer :: &
@@ -123,6 +124,13 @@ call Show ( Rho_final, UNIT % MASS_DENSITY_CGS, 'Rho_final' )
     class is ( Atlas_SC_Form )
     G => PS % Geometry ( )
 
+    select type ( C => PS % Chart )
+    class is ( Chart_SL_Template )
+
+    R_Max = G % Value ( C % nProperCells , G % CENTER_U ( 1 ) )
+
+    end select !-- C
+
     select type ( FA => FCC % Current_ASC )
     class is ( Fluid_ASC_Form )
 
@@ -130,7 +138,7 @@ call Show ( Rho_final, UNIT % MASS_DENSITY_CGS, 'Rho_final' )
 
     F => FA % Fluid_P_I ( )
     call F % SetAdiabaticIndex ( YL % AdiabaticIndex )
-    call SetFluid ( YL, F, Time = 0.0_KDR )
+    call SetFluid ( YL, F, Time = 0.0_KDR )!R_Max, Time = 0.0_KDR )
 
     !-- Diagnostics
 CoordinateUnit  =  [ UNIT % KILOMETER, UNIT % RADIAN, UNIT % RADIAN ]
@@ -168,14 +176,12 @@ CoordinateUnit  =  [ UNIT % KILOMETER, UNIT % RADIAN, UNIT % RADIAN ]
     F_R => YahilLattimer % Reference % Fluid_P_I ( )
     call F_R % SetAdiabaticIndex ( YL % AdiabaticIndex )
 
-   ! F_R % Value = F % Value
-
     !-- Cleanup
 
     end select !-- FA
     end select !-- PS
     end select !-- FCC
-    nullify ( F )
+    nullify ( F, F_R )
 
   end subroutine Initialize
 
@@ -190,13 +196,14 @@ CoordinateUnit  =  [ UNIT % KILOMETER, UNIT % RADIAN, UNIT % RADIAN ]
   end subroutine Finalize
 
 
-  subroutine SetFluid ( YL, F, Time )
+  subroutine SetFluid ( YL, F, Time )!R_Max, Time )
 
     class ( YahilLattimerForm ), intent ( inout ) :: &
       YL
     class ( Fluid_P_I_Form ), intent ( inout ) :: &
       F
     real ( KDR ), intent ( in ) :: &
+      !R_Max, &
       Time
 
     class ( GeometryFlatForm ), pointer :: &
@@ -214,13 +221,11 @@ CoordinateUnit  =  [ UNIT % KILOMETER, UNIT % RADIAN, UNIT % RADIAN ]
 
     !-- Interpolate self similar solution
 
-    call Show ( Time, UNIT % SECOND, '>>> simulation time' )
     T = YL % t_collapse - Time
-    call Show ( T, UNIT % SECOND, '>>> YahilLattimer time' )
 
-call Show ( T, UNIT % SECOND, '>>> time' )
     call PrepareInterpolation &
-           ( SI, YL % AnalyticProfile, YL % Kappa, YL % AdiabaticIndex, T )
+           ( SI, YL % AnalyticProfile, YL % Kappa, &
+             YL % AdiabaticIndex, T)!, R_Max )
 
     select type ( PS => YL % Integrator % PositionSpace )
     class is ( Atlas_SC_Form )
@@ -228,6 +233,9 @@ call Show ( T, UNIT % SECOND, '>>> time' )
 
     select type ( Grid => PS % Chart )
     class is ( Chart_SL_Template )
+
+    select type ( C => PS % Chart )
+    class is ( Chart_SLD_Form )
 
     associate &
       ( R    => G % Value ( :, G % CENTER_U ( 1 ) ), &
@@ -237,7 +245,7 @@ call Show ( T, UNIT % SECOND, '>>> time' )
         P    => F % Value ( :, F % PRESSURE ) )
 
        do iV = 1, size ( R )
-        if ( .not. Grid % IsProperCell ( iV ) ) cycle
+         if ( .not. C % IsProperCell ( iV ) ) cycle
         call SI ( iRHO_SI ) &
                 % Evaluate ( R ( iV ), Rho ( iV ) )
         call SI ( iV_SI ) &
@@ -249,10 +257,12 @@ call Show ( T, UNIT % SECOND, '>>> time' )
       Rho = Rho / CONSTANT % ATOMIC_MASS_UNIT
 
       call F % ComputeFromPrimitive ( G )
+      call C % ExchangeGhostData ( F )
 
     end associate !-- R, etc.
-    end select !-- Grid
-    end select !-- PS
+    end select    !-- C
+    end select    !-- Grid
+    end select    !-- PS
 
     nullify ( G )
 
@@ -291,7 +301,7 @@ call Show ( T, UNIT % SECOND, '>>> time' )
   end subroutine ReadTable
 
 
-    subroutine PrepareInterpolation ( SI, AP, Kappa, Gamma, T )
+    subroutine PrepareInterpolation ( SI, AP, Kappa, Gamma, T)!, R_Max )
 
     type ( SplineInterpolationForm ), dimension ( 2 ), intent ( inout ) :: &
       SI
@@ -300,7 +310,8 @@ call Show ( T, UNIT % SECOND, '>>> time' )
     real ( KDR ), intent ( in ) :: &
       Kappa, &
       Gamma, &
-      T
+      T!, &
+     ! R_Max
 
     integer ( KDI ) :: &
       iV
@@ -312,9 +323,7 @@ call Show ( T, UNIT % SECOND, '>>> time' )
       R_Edge, &
       dR, &  !-- CellWidth
       Rho, &
-      V, &
-      Density, &
-      Velocity
+      V
 
     associate &
       ( X   => AP ( :, iX_TS ), &  !-- cell center
@@ -323,73 +332,62 @@ call Show ( T, UNIT % SECOND, '>>> time' )
         M   => AP ( :, iM_TS ), &  !-- cell center
         nProfile => size ( AP, dim = 1 ) )
 
-    allocate ( R      ( nProfile ), &
-               R_Edge ( nProfile + 1 ), &
-               dR     ( nProfile ), &
-               Rho    ( nProfile ), &
-               V      ( nProfile ) )
+    allocate ( R      ( nProfile + 1 ), &
+               Rho    ( nProfile + 1 ), &
+               V      ( nProfile + 1 ) )
     
-    R   = ( sqrt ( Kappa ) &
-             * CONSTANT % GRAVITATIONAL ** ( ( 1.0_KDR - Gamma ) / 2 ) &
-             * T ** ( 2.0_KDR - Gamma ) ) * X 
-    Rho = D / ( CONSTANT % GRAVITATIONAL * T * T ) 
-    V   = ( sqrt ( Kappa ) * CONSTANT % GRAVITATIONAL ** ( ( 1.0 - Gamma ) / 2 ) &
-              * T ** ( 1.0_KDR - Gamma ) ) * V_P
+    R ( 2 : nProfile + 1 ) &
+      = ( sqrt ( Kappa ) * CONSTANT % GRAVITATIONAL &
+                             ** ( ( 1.0_KDR - Gamma ) / 2 ) &
+         * T ** ( 2.0_KDR - Gamma ) ) * X 
 
-   ! R_Edge ( 1 ) = 0.0_KDR
-   ! dR ( 1 ) = 2 * R ( 1 )
-   ! do iV = 2, nProfile
-   !   R_Edge ( iV ) =  R ( iV - 1 )  + dR ( iV ) / 2
-   !   dR ( iV - 1 ) = R_Edge ( iV ) - R_Edge ( iV - 1 )
-   ! end do
+    Rho ( 2 : nProfile + 1 ) &
+      = D / ( CONSTANT % GRAVITATIONAL * T * T ) 
+
+    V ( 2 : nProfile + 1 ) &
+      = ( sqrt ( Kappa ) * CONSTANT % GRAVITATIONAL &
+                             ** ( ( 1.0 - Gamma ) / 2 ) &
+          * T ** ( 1.0_KDR - Gamma ) ) * V_P
+
+    R ( 1 ) = 0.0_KDR
+  !  R ( nProfile + 2 ) = R_Max
     
-   ! dR ( nProfile ) = dR ( nProfile - 1 )
-   ! R_Edge ( nProfile + 1 ) = R_Edge ( nProfile ) + dR ( nProfile )
+    Slope_Rho = ( Rho ( 3 ) - Rho ( 2 ) ) / ( R ( 3 ) - R ( 2 ) )
+    Slope_V   = ( V   ( 3 ) - V   ( 2 ) ) / ( R ( 3 ) - R ( 2 ) )
 
+    Rho ( 1 ) = Rho ( 2 ) - Slope_Rho * R ( 2 )
+    V   ( 1 ) = V   ( 2 ) - Slope_V   * R ( 2 ) 
 
-    allocate ( Density ( nProfile ) )
-    allocate ( Velocity ( nProfile ) )
+  !  Slope_Rho = ( Rho ( nProfile + 1 ) - Rho ( nProfile ) ) &
+  !               / ( R ( nProfile + 1 ) - R ( nProfile ) )
+  !  Slope_V   = ( V   ( nProfile + 1 ) - V   ( nProfile ) ) &
+  !               / ( R ( nProfile + 1 ) - R ( nProfile ) )
 
-    Density = Rho ! * UNIT % FEMTOMETER ** ( -3 ) 
-    Velocity = V ! * UNIT % KILOMETER / UNIT % SECOND
+  !  Rho ( nProfile + 2 ) = Rho ( nProfile + 1 ) &
+  !                         + Slope_Rho &
+  !                           * ( R ( nProfile + 2 ) - R ( nProfile + 1 ) )
+  !  V   ( nProfile + 2 ) = V   ( nProfile + 1 ) &
+  !                         + Slope_V &
+  !                           * ( R ( nProfile + 2 ) - R ( nProfile + 1 ) )
 
-    !-- First edge extrapolated
-   ! Slope_Rho      =  ( Rho ( 2 )  -  Rho ( 1 ) )  &
-   !                    /  ( 0.5_KDR * ( dR ( 1 )  +  dR ( 2 ) ) )
-   ! Slope_V     =  ( V ( 2 )  -  V ( 1 ) )  &
-   !                 /  ( 0.5_KDR * ( dR ( 1 )  +  dR ( 2 ) ) )
+    call Show ( Rho ( 1 ), 'Rho_1' )
+    call Show ( Rho ( 2 ), 'Rho_2' )
+    call Show ( V ( 1 ), 'V_1' )
+    call Show ( V ( 2 ), 'V_2' )
 
-   ! Density ( 1 )  =  Rho ( 1 ) + Slope_Rho * ( R_edge ( 1 ) - R ( 1 ) )
-   ! Velocity ( 1 ) =  V ( 1 ) + Slope_V * ( R_edge ( 1 ) - R ( 1 ) )
-
-  !  call Show ( Density ( 1 ), UNIT % MASS_DENSITY_CGS, 'Density')
-   ! call Show ( Velocity ( 1 ), UNIT % SPEED_OF_LIGHT, 'Velocity')
-
-    !do iV = 2, nProfile + 1
-    !  if ( iV <= nProfile ) then
-    !    Slope_Rho      =  ( Rho ( iV )  - Rho ( iV - 1 ) )  &
-    !                    /  ( 0.5_KDR * ( dR ( iV - 1 )  +  dR ( iV ) ) )
-    !    Slope_V     =  ( V ( iV )  -  V ( iV - 1 ) )  &
-    !                    /  ( 0.5_KDR * ( dR ( iV - 1 )  +  dR ( iV ) ) )
-    !  else
-    !   !-- Last edge extrapolated with same slope
-    !  end if
-
-     ! Density ( iV )  =  Rho ( iV - 1 )  &
-     !                    +  Slope_Rho * ( R_Edge ( iV )  -  R ( iV - 1 ) )
-     ! Velocity ( iV ) =  V ( iV - 1 ) &
-     !                   +  Slope_V   * ( R_Edge ( iV )  -  R ( iV - 1 ) )
-    !end do
-
+   ! call Show ( Rho ( nProfile + 1 ), 'Rho_n1' )
+   ! call Show ( Rho ( nProfile + 2 ), 'Rho_n2' )
+   ! call Show ( V ( nProfile + 1 ), 'V_n1' )
+   ! call Show ( V ( nProfile + 2 ), 'V_2' )
     
-    end associate !-- R, etc.
-
-    !-- SplineInterpolation initialization
+   !-- SplineInterpolation initialization
 
     call SI ( iRho_SI ) % Initialize &
-           ( R, Density, VerbosityOption = CONSOLE % INFO_3 )
+           ( R, Rho, VerbosityOption = CONSOLE % INFO_3 )
     call SI ( iV_SI ) % Initialize &
-           ( R, Velocity, VerbosityOption = CONSOLE % INFO_3 )
+           ( R, V, VerbosityOption = CONSOLE % INFO_3 )
+
+    end associate !-- R, etc
 
   end subroutine PrepareInterpolation
 
@@ -405,16 +403,32 @@ call Show ( T, UNIT % SECOND, '>>> time' )
       F_D     !-- F_Difference
     integer ( KDI ) :: &
       iV
+    real ( KDR ) :: &
+      R_Max
+    class ( GeometryFlatForm ), pointer :: &
+      G
 
     select type ( FCC )
     class is ( FluidCentralCoreForm )
+
+   ! select type ( PS => FCC % PositionSpace )
+   ! class is ( Atlas_SC_Form )
+   ! G => PS % Geometry ( )
+
+   ! select type ( C => PS % Chart )
+   ! class is ( Chart_SL_Template )
+
+   ! R_Max = G % Value ( C % nProperCells , G % CENTER_U ( 1 ) )
+
+    !end select !-- C
+    !end select !-- G 
 
     select type ( FA => FCC % Current_ASC )
     class is ( Fluid_ASC_Form )
     F => FA % Fluid_P_I ( )
 
     F_R => YahilLattimer % Reference % Fluid_P_I ( )
-    call SetFluid ( YahilLattimer, F_R, FCC % Time )
+    call SetFluid ( YahilLattimer, F_R, FCC % Time )!R_Max, FCC % Time )
 
     F_D => YahilLattimer % Difference % Fluid_P_I ( )
     call MultiplyAdd ( F % Value, F_R % Value, -1.0_KDR, F_D % Value )
@@ -431,23 +445,11 @@ call Show ( T, UNIT % SECOND, '>>> time' )
     do iV = 1, size ( Rho_D )
       Rho_D ( iV )   = Rho_D ( iV ) / max ( Rho_R ( iV ), tiny ( 0.0_KDR ) )
       if ( V_R ( iV ) < 0.0_KDR ) then
-        call Show ( Rho_D ( iV ) * UNIT % FEMTOMETER ** ( -3 ), UNIT % FEMTOMETER ** ( -3 ), 'Rho_D' )
-        call Show ( Rho_R ( iV ), UNIT % FEMTOMETER ** ( -3 ), 'Rho_R' )
-        call Show ( V_D ( iV ) * UNIT % KILOMETER / UNIT % SECOND, UNIT % KILOMETER / UNIT % SECOND, 'V_D' )
-        call Show ( V_R ( iV ), UNIT % KILOMETER / UNIT % SECOND, 'V_R' )
-        call Show ( P_D ( iV ) * UNIT % MEGA_ELECTRON_VOLT  &
-                    *  UNIT % FEMTOMETER ** ( -3 ),  UNIT % MEGA_ELECTRON_VOLT  &
-                    *  UNIT % FEMTOMETER ** ( -3 ), 'P_D' )
-        call Show ( P_R ( iV ),  UNIT % MEGA_ELECTRON_VOLT  &
-                    *  UNIT % FEMTOMETER ** ( -3 ), 'P_R' )
         V_D   ( iV ) = V_D ( iV ) / abs ( V_R ( iV ) )
       else
         V_D   ( iV ) = V_D ( iV ) / max ( V_R ( iV ) , tiny ( 0.0_KDR ) )
       end if
       P_D   ( iV )   = P_D   ( iV )/ max ( P_R ( iV ), tiny ( 0.0_KDR ) )
-      call Show ( Rho_D ( iV ), '>>> Rho_D' )
-      call Show ( V_D ( iV ), '>>> V_D' )
-      call Show ( P_D ( iV ), '>>> P_D' )
     end do
 
     end associate !-- Rho_D, etc.
