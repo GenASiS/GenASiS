@@ -26,7 +26,7 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iVariable
 
-    type ( VariableGroupForm ), pointer :: &
+    type ( StorageForm ), pointer :: &
       Source, &
       Reference
     class ( GeometryFlatForm ), pointer :: &
@@ -42,9 +42,8 @@ contains
     G => A % Geometry ( )
 
     associate &
-      (  R    => G % Value ( :, G % CENTER ( 1 ) ), &
-        dR    => G % Value ( :, G % WIDTH ( 1 ) ), &
-        Theta => G % Value ( :, G % CENTER ( 2 ) ) )
+      (  R    => G % Value ( :, G % CENTER_U ( 1 ) ), &
+        Theta => G % Value ( :, G % CENTER_U ( 2 ) ) )
 
     allocate &
       ( rho_sq ( size ( R ) ) , &

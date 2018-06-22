@@ -27,7 +27,7 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iVariable
 
-    type ( VariableGroupForm ), pointer :: &
+    type ( StorageForm ), pointer :: &
       Source, &
       Reference
     class ( GeometryFlatForm ), pointer :: &
@@ -44,7 +44,6 @@ contains
       dXS, &  !-- dX_Subcell
       XS      !--  X_Subcell
     real ( KDR ), dimension ( : ), allocatable :: &
-      dV, &
       BVF, &  !-- VolumeFraction
       rho_sq, & !-- X^2 + Y^2 
       Z_sq, &
@@ -78,29 +77,26 @@ contains
 
         select type ( C => A % Chart )
     class is ( Chart_SLD_Form )
-    
-    associate ( VJ => G % Value ( :, G % VOLUME_JACOBIAN ) )
+      
+    associate ( dV => G % Value ( :, G % VOLUME ) )
 
-    allocate ( dV ( size ( VJ ) ) )
-    allocate ( BVF ( size ( VJ ) ) )
-    call Clear ( dV )
+    allocate ( BVF ( size ( dV ) ) )
     call Clear ( BVF )
 
     nSubCells = 1
     nSubcells ( : C % nDimensions ) = 20
 
-    do iC = 1, size ( VJ )
+    do iC = 1, size ( dV )
       associate &
-        (  X => G % Value ( iC, G % CENTER ( 1 ) : G % CENTER ( 3 ) ), &
-          dX => G % Value ( iC, G % WIDTH  ( 1 ) : G % WIDTH  ( 3 ) ), &
+        (  X => G % Value ( iC, G % CENTER_U ( 1 ) : G % CENTER_U ( 3 ) ), &
+          dX_L => G % Value ( iC, G % WIDTH_LEFT_U ( 1 ) : G % WIDTH_LEFT_U ( 3 ) ), &
+          dX_R => G % Value ( iC, G % WIDTH_RIGHT_U ( 1 ) : G % WIDTH_RIGHT_U ( 3 ) ), &
           Pi => CONSTANT % PI )
 
       if ( .not. C % IsProperCell ( iC ) ) cycle
 
-      dV ( iC )  =  VJ ( iC ) * product ( dX ( : C % nDimensions ) )
-
-       X_I  =  X  -  0.5_KDR * dX
-       X_O  =  X  +  0.5_KDR * dX
+       X_I  =  X  - dX_L
+       X_O  =  X  + dX_R
 
        rho_sq_in_in   = ( X_I ( 1 ) * sin ( X_I ( 2 ) ) ) ** 2
        rho_sq_in_out  = ( X_O ( 1 ) * sin ( X_I ( 2 ) ) ) ** 2
@@ -164,9 +160,8 @@ contains
 
 
     associate &
-      (  R    => G % Value ( :, G % CENTER ( 1 ) ), &
-        dR    => G % Value ( :, G % WIDTH ( 1 ) ), &
-        Theta => G % Value ( :, G % CENTER ( 2 ) ) )
+      (  R    => G % Value ( :, G % CENTER_U ( 1 ) ), &
+        Theta => G % Value ( :, G % CENTER_U ( 2 ) ) )
 
     allocate &
       ( rho_sq  ( size ( R ) ) , &

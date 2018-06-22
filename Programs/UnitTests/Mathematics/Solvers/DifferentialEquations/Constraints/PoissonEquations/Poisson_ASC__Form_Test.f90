@@ -245,7 +245,7 @@ contains
       L1_KPD_2, &
       L1_KPD_3, &
       L1_KPD_4
-    class ( VariableGroupForm ), pointer :: &
+    class ( StorageForm ), pointer :: &
       Solution, &
       Reference, &
       Difference         
