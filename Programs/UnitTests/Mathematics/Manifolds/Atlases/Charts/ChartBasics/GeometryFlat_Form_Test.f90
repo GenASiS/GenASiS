@@ -86,9 +86,9 @@ subroutine TestGeometry ( Name, CoordinateSystem, nDimensions )
            ( A, IsPeriodic = [ .false., .false., .false. ], iChart = 1, &
              CoordinateSystemOption = CoordinateSystem, &
              MinCoordinateOption &
-               = [ 0.0_KDR, 5.0_KDR, 10.0_KDR ]  *  UNIT % KILOMETER % Number, &
+               = [ 0.0_KDR, 5.0_KDR, 10.0_KDR ] * UNIT % KILOMETER % Number, &
              MaxCoordinateOption &
-               = [ 4.0_KDR, 9.0_KDR, 14.0_KDR ]  *  UNIT % KILOMETER % Number, &
+               = [ 4.0_KDR, 9.0_KDR, 14.0_KDR ] * UNIT % KILOMETER % Number, &
              nDimensionsOption = nDimensions ) 
     CoordinateUnit ( : nDimensions ) = UNIT % KILOMETER
   case ( 'CYLINDRICAL' )
@@ -152,7 +152,7 @@ subroutine TestGeometry ( Name, CoordinateSystem, nDimensions )
     call Show ( PC % Edge ( 3 ) % Value, CoordinateUnit ( 1 ), 'Edge_3' )
   end if
 
-  call G % SetMetric &
+  call G % SetMetricFixed &
          ( nDimensions, nValues = nCells, oValue = nGhostLayers )
 
   call Show ( 'Geometry variables' )

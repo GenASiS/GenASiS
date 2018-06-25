@@ -41,7 +41,7 @@ module GeometryFlat_Form
     generic, public :: &
       Initialize => InitializeAllocate_G
     procedure, public, pass :: &
-      SetMetric
+      SetMetricFixed
     procedure, public, pass :: &
       SetOutput
     procedure, public, pass ( G ) :: &
@@ -125,7 +125,7 @@ contains
   end subroutine InitializeAllocate_G
 
 
-  subroutine SetMetric ( G, nDimensions, nValues, oValue )
+  subroutine SetMetricFixed ( G, nDimensions, nValues, oValue )
 
     class ( GeometryFlatForm ), intent ( inout ) :: &
       G
@@ -199,11 +199,14 @@ contains
                G % Value ( :, G % CENTER_U ( 2 ) ), &
                nDimensions, nValues, oValue )
     case default
-      call Show ( 'GeometryFlatForm % SetCellGeometry not implemented for ' &
-                  // trim ( G % CoordinateSystem ), CONSOLE % ERROR )
+      call Show ( 'CoordinateSystem not recognized', CONSOLE % ERROR )
+      call Show ( G % CoordinateSystem, 'CoordinateSystem', CONSOLE % ERROR )
+      call Show ( 'GeometryFlat_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'SetMetricFixed', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
     end select
 
-  end subroutine SetMetric
+  end subroutine SetMetricFixed
 
 
   subroutine SetOutput ( G, Output )

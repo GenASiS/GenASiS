@@ -166,7 +166,7 @@ contains
       end associate !-- Center_1D, etc.
     end do !-- iD
 
-    call G % SetMetric ( C % nDimensions, G % nValues, oValue = 0 )
+    call G % SetMetricFixed ( C % nDimensions, G % nValues, oValue = 0 )
 
     nullify ( G )
     nullify ( Width_R_3D )
