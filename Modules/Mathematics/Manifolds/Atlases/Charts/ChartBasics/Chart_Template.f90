@@ -417,7 +417,7 @@ contains
   end subroutine SetBrick
 
 
-  subroutine SetGeometryCell ( C, nC, nGL, iD )
+  subroutine SetGeometryCell ( C, nC, nGL, iD, EdgeValueOption )
 
     class ( ChartTemplate ), intent ( inout ) :: &
       C
@@ -425,6 +425,8 @@ contains
       nC, &   !-- nCells
       nGL, &  !-- nGhostLayers
       iD      !-- iDimension
+    real ( KDR ), dimension ( : ), intent ( in ), optional :: &
+      EdgeValueOption
 
     integer ( KDI ) :: &
       iC    !-- iCell
@@ -432,50 +434,61 @@ contains
       Width_IG, &
       Width_OG
 
-    if ( C % AllocatedValues ) then
+    if ( .not. C % AllocatedValues ) &
+      return
+
+    if ( .not. allocated ( C % Edge ( iD ) % Value ) ) &
       call C % Edge ( iD ) % Initialize &
              ( nValues  =  nC  +  2 * nGL + 1, &
                iLowerBoundOption  =  1 - nGL )
+    if ( .not. allocated ( C % Center ( iD ) % Value ) ) &
       call C % Center ( iD ) % Initialize &
              ( nValues  =  nC  +  2 * nGL, &
                iLowerBoundOption  =  1 - nGL )
+    if ( .not. allocated ( C % WidthLeft ( iD ) % Value ) ) &
       call C % WidthLeft ( iD ) % Initialize &
              ( nValues  =  nC  +  2 * nGL, &
                iLowerBoundOption  =  1 - nGL )
+    if ( .not. allocated ( C % WidthRight ( iD ) % Value ) ) &
       call C % WidthRight ( iD ) % Initialize &
              ( nValues  =  nC  +  2 * nGL, &
                iLowerBoundOption  =  1 - nGL )
-    end if
 
     !-- Edge, proper cells
-    select case ( trim ( C % Spacing ( iD ) ) )
-    case ( 'EQUAL' )
-      call SetEdgeEqual &
-             ( C % Edge ( iD ) % Value ( 1 : nC + 1 ), &
-               C % MinCoordinate ( iD ), C % MaxCoordinate ( iD ), nC )
-    case ( 'GEOMETRIC' )
-      call SetEdgeGeometric &
-             ( C % Edge ( iD ) % Value ( 1 : nC + 1 ), &
-               C % MinCoordinate ( iD ), C % MaxCoordinate ( iD ), &
-               C % Ratio ( iD ), nC )
-    case ( 'COMPACTIFIED' )
-      call SetEdgeCompactified &
-             ( C % Edge ( iD ) % Value ( 1 : nC + 1 ), &
-               C % Scale ( iD ), nC )
-      C % MinCoordinate ( iD )  =  C % Edge ( iD ) % Value ( 1 )
-      C % MaxCoordinate ( iD )  =  C % Edge ( iD ) % Value ( nC + 1 )
-    case ( 'PROPORTIONAL' )
-      call SetEdgeProportional &
-             ( C % Edge ( iD ) % Value ( 1 : nC + 1 ), &
-               C % MinCoordinate ( iD ), C % Ratio ( iD ), C % Scale ( iD ), &
-               nC, C % nEqual )
-      C % MaxCoordinate ( iD )  =  C % Edge ( iD ) % Value ( nC + 1 )
-    case default
-      call Show ( 'Spacing not recognized', CONSOLE % ERROR )
-      call Show ( 'Chart_Template', 'module', CONSOLE % ERROR )
-      call Show ( 'SetGeometryCell', 'subroutine', CONSOLE % ERROR )
-      call PROGRAM_HEADER % Abort ( )
-    end select
+    if ( present ( EdgeValueOption ) ) then
+      C % Edge ( iD ) % Value ( 1 : nC + 1 )  =  EdgeValueOption
+      C % MinCoordinate ( iD )  =  EdgeValueOption ( 1 )
+      C % MaxCoordinate ( iD )  =  EdgeValueOption ( nC + 1 )
+    else
+      select case ( trim ( C % Spacing ( iD ) ) )
+      case ( 'EQUAL' )
+        call SetEdgeEqual &
+               ( C % Edge ( iD ) % Value ( 1 : nC + 1 ), &
+                 C % MinCoordinate ( iD ), C % MaxCoordinate ( iD ), nC )
+      case ( 'GEOMETRIC' )
+        call SetEdgeGeometric &
+               ( C % Edge ( iD ) % Value ( 1 : nC + 1 ), &
+                 C % MinCoordinate ( iD ), C % MaxCoordinate ( iD ), &
+                 C % Ratio ( iD ), nC )
+      case ( 'COMPACTIFIED' )
+        call SetEdgeCompactified &
+               ( C % Edge ( iD ) % Value ( 1 : nC + 1 ), &
+                 C % Scale ( iD ), nC )
+        C % MinCoordinate ( iD )  =  C % Edge ( iD ) % Value ( 1 )
+        C % MaxCoordinate ( iD )  =  C % Edge ( iD ) % Value ( nC + 1 )
+      case ( 'PROPORTIONAL' )
+        call SetEdgeProportional &
+               ( C % Edge ( iD ) % Value ( 1 : nC + 1 ), &
+                 C % MinCoordinate ( iD ), C % Ratio ( iD ), &
+                 C % Scale ( iD ), nC, C % nEqual )
+        C % MaxCoordinate ( iD )  =  C % Edge ( iD ) % Value ( nC + 1 )
+      case default
+        call Show ( 'Spacing not recognized', CONSOLE % ERROR )
+        call Show ( 'Chart_Template', 'module', CONSOLE % ERROR )
+        call Show ( 'SetGeometryCell', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end select
+    end if
 
     !-- Edge, ghost cells
     associate ( Edge => C % Edge ( iD ) % Value )
