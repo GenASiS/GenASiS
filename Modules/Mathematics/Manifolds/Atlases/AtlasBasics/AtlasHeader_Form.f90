@@ -58,7 +58,8 @@ contains
 
   subroutine InitializeBasic &
                ( A, Name, CommunicatorOption, IncludeFacesOption, &
-                 IncludeEdgesOption, nExcisionsOption, iDimensionalityOption )
+                 IncludeEdgesOption, nExcisionsOption, nDimensionsOption, &
+                 iDimensionalityOption )
 
     class ( AtlasHeaderForm ), intent ( inout ) :: &
       A
@@ -71,6 +72,7 @@ contains
       IncludeEdgesOption
     integer ( KDI ), intent ( in ), optional :: &
       nExcisionsOption, &
+      nDimensionsOption, &
       iDimensionalityOption
 
     A % IGNORABILITY = CONSOLE % INFO_1
@@ -91,7 +93,7 @@ contains
       A % Communicator => CommunicatorOption
     end if !-- present Communicator 
 
-    call SetDimensionality ( A, iDimensionalityOption )
+    call SetDimensionality ( A, nDimensionsOption, iDimensionalityOption )
 
     A % AllocatedValues = .true.
 
@@ -352,17 +354,22 @@ contains
   end subroutine Finalize
 
 
-  subroutine SetDimensionality ( A, iDimensionalityOption )
+  subroutine SetDimensionality ( A, nDimensionsOption, iDimensionalityOption )
 
     class ( AtlasHeaderForm ), intent ( inout ) :: &
       A
     integer ( KDI ), intent ( in ), optional :: &
+      nDimensionsOption, &
       iDimensionalityOption
 
     integer ( KDI ) :: &
       iDimensionality
     character ( LDL ), dimension ( : ), allocatable :: &
       Dimensionality
+
+    if ( present ( nDimensionsOption ) ) then
+      A % nDimensions = nDimensionsOption
+    end if
 
     !-- Allow for specification of base manifold and bundle 
     !   dimensionalities; take the first element here, the dimensionality

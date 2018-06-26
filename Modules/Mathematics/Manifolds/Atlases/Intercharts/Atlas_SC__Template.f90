@@ -43,7 +43,8 @@ contains
 
   subroutine InitializeBasic &
                ( A, Name, CommunicatorOption, IncludeFacesOption, &
-                 IncludeEdgesOption, nExcisionsOption, iDimensionalityOption )
+                 IncludeEdgesOption, nExcisionsOption, nDimensionsOption, &
+                 iDimensionalityOption )
 
     class ( Atlas_SC_Template ), intent ( inout ) :: &
       A
@@ -56,6 +57,7 @@ contains
       IncludeEdgesOption
     integer ( KDI ), intent ( in ), optional :: &
       nExcisionsOption, &
+      nDimensionsOption, &
       iDimensionalityOption
 
     if ( .not. associated ( A % Type ) ) then
@@ -65,7 +67,8 @@ contains
 
     call A % AtlasHeaderForm % Initialize &
            ( Name, CommunicatorOption, IncludeFacesOption, &
-             IncludeEdgesOption, nExcisionsOption, iDimensionalityOption )
+             IncludeEdgesOption, nExcisionsOption, nDimensionsOption, &
+             iDimensionalityOption )
 
     allocate ( A % Field ( ATLAS % MAX_FIELDS ) )
 

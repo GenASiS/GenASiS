@@ -28,7 +28,8 @@ contains
 
   subroutine InitializeBasic &
                ( A, Name, CommunicatorOption, IncludeFacesOption, &
-                 IncludeEdgesOption, nExcisionsOption, iDimensionalityOption )
+                 IncludeEdgesOption, nExcisionsOption, nDimensionsOption, &
+                 iDimensionalityOption )
 
     class ( Atlas_SC_SC_Form ), intent ( inout ) :: &
       A
@@ -41,6 +42,7 @@ contains
       IncludeEdgesOption
     integer ( KDI ), intent ( in ), optional :: &
       nExcisionsOption, &
+      nDimensionsOption, &
       iDimensionalityOption
 
     if ( .not. associated ( A % Type ) ) then
@@ -50,7 +52,8 @@ contains
 
     call A % Atlas_SC_Form % Initialize &
            ( Name, CommunicatorOption, IncludeFacesOption, &
-             IncludeEdgesOption, nExcisionsOption, iDimensionalityOption )
+             IncludeEdgesOption, nExcisionsOption, nDimensionsOption, &
+             iDimensionalityOption )
 
     select case ( A % nDimensions )
     case ( 1 )
