@@ -342,7 +342,9 @@ contains
       lVectorDefinition
     character ( LDB ), dimension ( : ), allocatable :: &
       VectorName, &
-      VectorDefinition
+      VectorDefinition, &
+      Scratch
+    
     
     if ( .not. GI % Stream % IsWritable ( CheckMultiMeshOption = .true. ) ) &
       return
@@ -354,21 +356,20 @@ contains
     allocate ( lVectorName ( S % nVectors ) )
     allocate ( lVectorDefinition ( S % nVectors ) )
     
+    allocate ( Scratch ( GI % nDimensions ) )
+    
     oS = 0
     if ( GI % Stream % CurrentDirectory ( 1 : 1 ) == '/' ) oS = 1
-
+    
     do iVctr = 1, S % nVectors
-      !-- FIXME: Setting iD = 1 to avoid gfortran compiler bug 
-      !          that trips runtime array bound-checking eventhough
-      !          iD is set in the implicit do-loop
-      iD = 1
-      call Join &
-             ( [ ( '<' &
-                   // trim ( GI % Stream % CurrentDirectory ( oS + 1 : ) ) &
-                   // trim ( S % Variable ( S % VectorIndices ( iVctr ) &
-                                                % Value ( iD ) ) ) &
-                   // '>', iD = 1, GI % nDimensions ) ], &
-               ',', VectorDefinition ( iVctr ) )
+      !-- FIXME: XL compiler has trouble using implicit do loop
+      do iD = 1, GI % nDimensions
+        Scratch ( iD ) &
+          = ( '<' // trim ( GI % Stream % CurrentDirectory ( oS + 1 : ) ) &
+              // trim ( S % Variable ( S % VectorIndices ( iVctr ) &
+                                         % Value ( iD ) ) ) // '>' )
+      end do
+      call Join ( Scratch , ',', VectorDefinition ( iVctr ) ) 
       VectorDefinition ( iVctr ) &
         = '{' // trim ( VectorDefinition ( iVctr ) ) // '}'
       lVectorDefinition ( iVctr ) = len_trim ( VectorDefinition ( iVctr ) )
@@ -377,7 +378,6 @@ contains
             // trim ( S % Vector ( iVctr ) )
       lVectorName ( iVctr ) = len_trim ( VectorName ( iVctr ) )
     end do
-    
     Error = DBSET2DSTRLEN ( LDB )
     Error = DBPUTDEFVARS &
               ( GI % Stream % MultiMeshHandle, trim ( S % Name ), &
