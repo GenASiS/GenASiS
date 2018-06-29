@@ -588,7 +588,7 @@ contains
     associate &
       ( M   => C % Value ( :, C % BARYON_MASS ), &
         D   => C % Value ( :, C % CONSERVED_BARYON_DENSITY ), &
-        Phi => G % Value ( :, G % GRAVITATIONAL_POTENTIAL ) )
+        Phi => G % Value ( :, G % POTENTIAL ) )
 
     do iS = 1, T % nSelected
       iI = T % iaSelected ( iS )

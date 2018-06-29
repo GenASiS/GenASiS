@@ -376,9 +376,9 @@ contains
 
     call ComputeTimeStep_G_CSL &
            ( CSL % IsProperCell, &
-             G % Value ( :, G % GRAVITATIONAL_ACCELERATION_D ( 1 ) ), &
-             G % Value ( :, G % GRAVITATIONAL_ACCELERATION_D ( 2 ) ), &
-             G % Value ( :, G % GRAVITATIONAL_ACCELERATION_D ( 3 ) ), &
+             G % Value ( :, G % POTENTIAL_GRADIENT_D ( 1 ) ), &
+             G % Value ( :, G % POTENTIAL_GRADIENT_D ( 2 ) ), &
+             G % Value ( :, G % POTENTIAL_GRADIENT_D ( 3 ) ), &
              G % Value ( :, G % METRIC_UU_22 ), &
              G % Value ( :, G % METRIC_UU_33 ), &
              G % Value ( :, G % WIDTH_LEFT_U ( 1 ) ), &

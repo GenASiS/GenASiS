@@ -55,7 +55,7 @@ contains
       FFA % Type = 'a FluidFeatures_ASC'
     FFA % FluidType = FluidType
 
-    FFA % ShockThreshold = 0.2_KDR
+    FFA % ShockThreshold = 0.1_KDR
     if ( present ( ShockThresholdOption ) ) &
       FFA % ShockThreshold = ShockThresholdOption
     call PROGRAM_HEADER % GetParameter &

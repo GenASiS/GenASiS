@@ -19,6 +19,6 @@ CC_COMPILE           = mpicc -c -fopenmp
 LINK = mpifort -qsmp=omp -qoffload #-qsmp=omp:auto -qoffload
 
 #SILO_DIR = /ccs/home/reubendb/projects/swtree/peak/silo/4.10.2/xl2017
-SILO_DIR = /ccs/home/reubendb/projects/swtree/silo_xl
+SILO_DIR = /sw/peak/caascade/silo/4.10.2/xl20180502
 INCLUDE_SILO = -I${SILO_DIR}/include
 LIBRARY_SILO = -L${SILO_DIR}/lib -lsilo

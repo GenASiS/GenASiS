@@ -11,7 +11,7 @@ module Fluid_P_HN__Form
   private
 
     integer ( KDI ), private, parameter :: &
-      N_PRIMITIVE_HEAVY_NUCLEUS = 2, &
+      N_PRIMITIVE_HEAVY_NUCLEUS = 1, &
       N_CONSERVED_HEAVY_NUCLEUS = 1, &
       N_FIELDS_HEAVY_NUCLEUS    = 10, &
       N_VECTORS_HEAVY_NUCLEUS   = 0
@@ -57,11 +57,7 @@ module Fluid_P_HN__Form
     procedure, public, nopass :: &
       ComputeConservedProton_G_Kernel
     procedure, public, nopass :: &
-      ComputeConservedEntropy_G_Kernel
-    procedure, public, nopass :: &
       ComputeProtonFraction_G_Kernel
-    procedure, public, nopass :: &
-      ComputeEntropyPerBaryon_G_Kernel
     procedure, public, nopass :: &
       Apply_EOS_HN_T_Kernel
     procedure, public, nopass :: &
@@ -90,17 +86,19 @@ contains
 
 
   subroutine InitializeAllocate_P_HN &
-               ( F, RiemannSolverType, UseLimiter, Velocity_U_Unit, &
-                 MomentumDensity_D_Unit, BaryonMassUnit, NumberDensityUnit, &
-                 EnergyDensityUnit, TemperatureUnit, BaryonMassReference, &
-                 LimiterParameter, nValues, VariableOption, VectorOption, &
-                 NameOption, ClearOption, UnitOption, VectorIndicesOption )
+               ( F, RiemannSolverType, UseEntropy, UseLimiter, &
+                 Velocity_U_Unit, MomentumDensity_D_Unit, BaryonMassUnit, &
+                 NumberDensityUnit, EnergyDensityUnit, TemperatureUnit, &
+                 BaryonMassReference, LimiterParameter, nValues, &
+                 VariableOption, VectorOption, NameOption, ClearOption, &
+                 UnitOption, VectorIndicesOption )
 
     class ( Fluid_P_HN_Form ), intent ( inout ) :: &
       F
     character ( * ), intent ( in ) :: &
       RiemannSolverType
     logical ( KDL ), intent ( in ) :: &
+      UseEntropy, &
       UseLimiter
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
       Velocity_U_Unit, &
@@ -139,7 +137,7 @@ contains
     call SetUnits ( VariableUnit, F, NumberDensityUnit, TemperatureUnit )
 
     call F % InitializeTemplate_P &
-           ( RiemannSolverType, UseLimiter, Velocity_U_Unit, &
+           ( RiemannSolverType, UseEntropy, UseLimiter, Velocity_U_Unit, &
              MomentumDensity_D_Unit, BaryonMassUnit, NumberDensityUnit, &
              EnergyDensityUnit, TemperatureUnit, BaryonMassReference, &
              LimiterParameter, nValues, VariableOption = Variable, &
@@ -193,9 +191,7 @@ contains
       allocate ( C % iaPrimitive ( C % N_PRIMITIVE ) )
     end if
     C % iaPrimitive ( oP + 1 : oP + C % N_PRIMITIVE_HEAVY_NUCLEUS ) &
-!      = [ C % TEMPERATURE, C % PROTON_FRACTION ]
-      = [ C % INTERNAL_ENERGY, C % PROTON_FRACTION ]
-!      = [ C % ENTROPY_PER_BARYON, C % PROTON_FRACTION ]
+      = [ C % PROTON_FRACTION ]
 
     if ( .not. allocated ( C % iaConserved ) ) then
       C % N_CONSERVED = oC + C % N_CONSERVED_HEAVY_NUCLEUS
@@ -413,14 +409,14 @@ contains
         E     => FV ( oV + 1 : oV + nV, C % INTERNAL_ENERGY ), &
         G     => FV ( oV + 1 : oV + nV, C % CONSERVED_ENERGY ), &
         P     => FV ( oV + 1 : oV + nV, C % PRESSURE ), &
+        T     => FV ( oV + 1 : oV + nV, C % TEMPERATURE ), &
+        SB    => FV ( oV + 1 : oV + nV, C % ENTROPY_PER_BARYON ), &
+        DS    => FV ( oV + 1 : oV + nV, C % CONSERVED_ENTROPY ), &
     !    Gamma => FV ( oV + 1 : oV + nV, C % ADIABATIC_INDEX ), &
         CS    => FV ( oV + 1 : oV + nV, C % SOUND_SPEED ), &
         MN    => FV ( oV + 1 : oV + nV, C % MACH_NUMBER ), &
-        T     => FV ( oV + 1 : oV + nV, C % TEMPERATURE ), &
-        SB    => FV ( oV + 1 : oV + nV, C % ENTROPY_PER_BARYON ), &
-        DP    => FV ( oV + 1 : oV + nV, C % CONSERVED_PROTON_DENSITY ), &
         YE    => FV ( oV + 1 : oV + nV, C % PROTON_FRACTION ), &
-        DS    => FV ( oV + 1 : oV + nV, C % CONSERVED_ENTROPY ), &
+        DP    => FV ( oV + 1 : oV + nV, C % CONSERVED_PROTON_DENSITY ), &
         X_P   => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_PROTON ), &
         X_N   => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_NEUTRON ), &
         X_He  => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_ALPHA ), &
@@ -438,10 +434,10 @@ contains
            ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
     call C % ComputeConservedEnergy_G_Kernel &
            ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
-    call C % ComputeConservedProton_G_Kernel &
-           ( DP, N, YE )
     call C % ComputeConservedEntropy_G_Kernel &
            ( DS, N, SB )
+    call C % ComputeConservedProton_G_Kernel &
+           ( DP, N, YE )
     call C % ComputeEigenspeeds_P_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
              V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33 )
@@ -515,14 +511,14 @@ contains
         E     => FV ( oV + 1 : oV + nV, C % INTERNAL_ENERGY ), &
         G     => FV ( oV + 1 : oV + nV, C % CONSERVED_ENERGY ), &
         P     => FV ( oV + 1 : oV + nV, C % PRESSURE ), &
+        T     => FV ( oV + 1 : oV + nV, C % TEMPERATURE ), &
+        SB    => FV ( oV + 1 : oV + nV, C % ENTROPY_PER_BARYON ), &
+        DS    => FV ( oV + 1 : oV + nV, C % CONSERVED_ENTROPY ), &
     !    Gamma => FV ( oV + 1 : oV + nV, C % ADIABATIC_INDEX ), &
         CS    => FV ( oV + 1 : oV + nV, C % SOUND_SPEED ), &
         MN    => FV ( oV + 1 : oV + nV, C % MACH_NUMBER ), &
-        T     => FV ( oV + 1 : oV + nV, C % TEMPERATURE ), &
-        SB    => FV ( oV + 1 : oV + nV, C % ENTROPY_PER_BARYON ), &
-        DP    => FV ( oV + 1 : oV + nV, C % CONSERVED_PROTON_DENSITY ), &
         YE    => FV ( oV + 1 : oV + nV, C % PROTON_FRACTION ), &
-        DS    => FV ( oV + 1 : oV + nV, C % CONSERVED_ENTROPY ), &
+        DP    => FV ( oV + 1 : oV + nV, C % CONSERVED_PROTON_DENSITY ), &
         X_P   => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_PROTON ), &
         X_N   => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_NEUTRON ), &
         X_He  => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_ALPHA ), &
@@ -549,10 +545,10 @@ contains
            ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
     call C % ComputeConservedEnergy_G_Kernel &
            ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
-    call C % ComputeConservedProton_G_Kernel &
-           ( DP, N, YE )
     call C % ComputeConservedEntropy_G_Kernel &
            ( DS, N, SB )
+    call C % ComputeConservedProton_G_Kernel &
+           ( DP, N, YE )
     call C % ComputeEigenspeeds_P_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
              V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33 )
@@ -634,9 +630,9 @@ contains
         MN    => FV ( oV + 1 : oV + nV, C % MACH_NUMBER ), &
         T     => FV ( oV + 1 : oV + nV, C % TEMPERATURE ), &
         SB    => FV ( oV + 1 : oV + nV, C % ENTROPY_PER_BARYON ), &
-        DP    => FV ( oV + 1 : oV + nV, C % CONSERVED_PROTON_DENSITY ), &
-        YE    => FV ( oV + 1 : oV + nV, C % PROTON_FRACTION ), &
         DS    => FV ( oV + 1 : oV + nV, C % CONSERVED_ENTROPY ), &
+        YE    => FV ( oV + 1 : oV + nV, C % PROTON_FRACTION ), &
+        DP    => FV ( oV + 1 : oV + nV, C % CONSERVED_PROTON_DENSITY ), &
         X_P   => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_PROTON ), &
         X_N   => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_NEUTRON ), &
         X_He  => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_ALPHA ), &
@@ -652,20 +648,23 @@ contains
            ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33 )
     call C % ComputeInternalEnergy_G_Kernel &
            ( E, G, M, N, V_1, V_2, V_3, S_1, S_2, S_3 )
+    if ( C % UseEntropy ) then
+      call C % ComputeEntropyPerBaryon_G_Kernel &
+             ( SB, DS, N )
+      call C % Apply_EOS_HN_SB_E_Kernel &
+             ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
+               M, N, YE, Shock )
+      call C % ComputeConservedEnergy_G_Kernel &
+             ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
+    else
+      call C % Apply_EOS_HN_E_Kernel &
+             ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
+               M, N, YE )
+    end if
+    call C % ComputeConservedEntropy_G_Kernel &
+           ( DS, N, SB )
     call C % ComputeProtonFraction_G_Kernel &
            ( YE, DP, N )
-    call C % ComputeEntropyPerBaryon_G_Kernel &
-           ( SB, DS, N )
-    call C % Apply_EOS_HN_SB_E_Kernel &
-           ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-             M, N, YE, Shock )
-!    call C % Apply_EOS_HN_E_Kernel &
-!           ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-!             M, N, YE )
-    call C % ComputeConservedEnergy_G_Kernel &   !-- For E computed from SB
-           ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E ) 
-    call C % ComputeConservedEntropy_G_Kernel &  !-- For SB computed from E
-           ( DS, N, SB )
     call C % ComputeEigenspeeds_P_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
              V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33 )
@@ -702,7 +701,6 @@ contains
 
     integer ( KDI ) :: &
       iProton, &
-      iEntropy, &
       oV, &  !-- oValue
       nV     !-- nValues
 
@@ -723,19 +721,15 @@ contains
     end if
 
     call Search ( C % iaConserved, C % CONSERVED_PROTON_DENSITY, iProton )
-    call Search ( C % iaConserved, C % CONSERVED_ENTROPY, iEntropy )
 
     associate &
       ( F_DP  => RawFlux ( oV + 1 : oV + nV, iProton ), &
-        F_DS  => RawFlux ( oV + 1 : oV + nV, iEntropy ), &
         DP    => Value_C ( oV + 1 : oV + nV, &
                            C % CONSERVED_PROTON_DENSITY ), &
-        DS    => Value_C ( oV + 1 : oV + nV, &
-                           C % CONSERVED_ENTROPY ), &
         V_Dim => Value_C ( oV + 1 : oV + nV, &
                            C % VELOCITY_U ( iDimension ) ) )
 
-    call ComputeRawFluxesKernel ( F_DP, F_DS, DP, DS, V_Dim )
+    call ComputeRawFluxesKernel ( F_DP, DP, V_Dim )
 
     end associate !-- F_DP, etc.
 
@@ -763,12 +757,8 @@ contains
     call ComputeCenterStatesKernel &
            ( C_ICL % Value ( :, C % CONSERVED_PROTON_DENSITY ), &
              C_ICR % Value ( :, C % CONSERVED_PROTON_DENSITY ), &
-             C_ICL % Value ( :, C % CONSERVED_ENTROPY ), &
-             C_ICR % Value ( :, C % CONSERVED_ENTROPY ), &
              C_IL % Value ( :, C % CONSERVED_PROTON_DENSITY ), &
              C_IR % Value ( :, C % CONSERVED_PROTON_DENSITY ), &
-             C_IL % Value ( :, C % CONSERVED_ENTROPY ), &
-             C_IR % Value ( :, C % CONSERVED_ENTROPY ), &
              C_IL % Value ( :, C % VELOCITY_U ( iD ) ), &
              C_IR % Value ( :, C % VELOCITY_U ( iD ) ), &
              SS_I % Value ( :, C % ALPHA_PLUS ), &
@@ -833,56 +823,6 @@ contains
     !$OMP end parallel do
 
   end subroutine ComputeProtonFraction_G_Kernel
-  
-  
-  subroutine ComputeConservedEntropy_G_Kernel ( DS, N, SB )
- 	 
-    real ( KDR ), dimension ( : ), intent ( inout ) :: & 	 	 
-      DS
-    real ( KDR ), dimension ( : ), intent ( in ) :: & 	 	 
-      N, &
-      SB 	 	 
- 	 	 
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-
-    nValues = size ( DS )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-      DS ( iV )  =  SB ( iV )  *  N ( iV )
-    end do !-- iV
-    !$OMP end parallel do
-
-  end subroutine ComputeConservedEntropy_G_Kernel
-
-
-  subroutine ComputeEntropyPerBaryon_G_Kernel ( SB, DS, N )
- 	 
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      SB, &
-      DS
-    real ( KDR ), dimension ( : ), intent ( in ) :: & 	 	 
-      N 	 	 
- 	 	 
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-
-    nValues = size ( SB )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-      if ( N ( iV ) > 0.0_KDR ) then
-        SB ( iV ) = DS ( iV ) / N ( iV )
-      else
-        SB ( iV ) = 0.0_KDR
-      end if
-    end do !-- iV
-    !$OMP end parallel do
-
-  end subroutine ComputeEntropyPerBaryon_G_Kernel
   
   
   subroutine Apply_EOS_HN_T_Kernel &
@@ -957,7 +897,6 @@ contains
       E ( iV )      =  E ( iV ) * SpecificEnergy_CGS  +  OR_Shift
       E ( iV )      =  E ( iV ) * M ( iV ) * N ( iV )
       CS ( iV )     =  sqrt ( cs2 ) * Speed_CGS
-!      CS ( iV )     =  sqrt ( 2.0_KDR * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
       Mu_NP ( iV )  =  Mu_NP ( iV ) * MeV
       Mu_E  ( iV )  =  Mu_E ( iV ) * MeV
     end do
@@ -1054,7 +993,6 @@ contains
       E ( iV )      =  E ( iV ) * M ( iV ) * N ( iV )
       P ( iV )      =  P ( iV ) * Pressure_CGS
       CS ( iV )     =  sqrt ( cs2 ) * Speed_CGS
-!      CS ( iV )     =  sqrt ( 2.0_KDR * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
       T ( iV )      =  T ( iV ) * MeV
       Mu_NP ( iV )  =  Mu_NP ( iV ) * MeV
       Mu_E  ( iV )  =  Mu_E ( iV ) * MeV
@@ -1228,14 +1166,12 @@ contains
   end subroutine Apply_EOS_HN_SB_Kernel
 
 
-  subroutine ComputeRawFluxesKernel ( F_DP, F_DS, DP, DS, V_Dim )
+  subroutine ComputeRawFluxesKernel ( F_DP, DP, V_Dim )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      F_DP, &
-      F_DS
+      F_DP
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       DP, &
-      DS, &
       V_Dim
     
     integer ( KDI ) :: &
@@ -1247,7 +1183,6 @@ contains
     !$OMP parallel do private ( iV ) 
     do iV = 1, nValues
       F_DP ( iV )  =  DP ( iV )  *  V_Dim ( iV ) 
-      F_DS ( iV )  =  DS ( iV )  *  V_Dim ( iV ) 
     end do !-- iV
     !$OMP end parallel do
 
@@ -1255,15 +1190,13 @@ contains
 
 
   subroutine ComputeCenterStatesKernel &
-               ( DP_ICL, DP_ICR, DS_ICL, DS_ICR, DP_IL, DP_IR, DS_IL, DS_IR, &
-                 V_Dim_IL, V_Dim_IR, AP_I, AM_I, AC_I )
+               ( DP_ICL, DP_ICR, DP_IL, DP_IR, V_Dim_IL, V_Dim_IR, &
+                 AP_I, AM_I, AC_I )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      DP_ICL, DP_ICR, &
-      DS_ICL, DS_ICR
+      DP_ICL, DP_ICR
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       DP_IL, DP_IR, &
-      DS_IL, DS_IR, &
       V_Dim_IL, V_Dim_IR, &
       AP_I, &
       AM_I, &
@@ -1304,9 +1237,6 @@ contains
 
       DP_ICL ( iV )  =  DP_IL ( iV ) * AM_VL * AM_AC_Inv
       DP_ICR ( iV )  =  DP_IR ( iV ) * AP_VR * AP_AC_Inv
-
-      DS_ICL ( iV )  =  DS_IL ( iV ) * AM_VL * AM_AC_Inv
-      DS_ICR ( iV )  =  DS_IR ( iV ) * AP_VR * AP_AC_Inv
 
     end do !-- iV
     !$OMP end parallel do

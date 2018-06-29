@@ -522,16 +522,21 @@ contains
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       N, &
       V_1, V_2, V_3
-
-    associate ( KE => 0.5_KDR * N * ( V_1 ** 2 + V_2 ** 2 + V_3 ** 2 ) )
-
-    E = G - KE
+      
+    real ( KDR ), dimension ( size ( N ) ) :: &
+      KE
+      
+    !-- FIXME: 'associate' construct causes segfault with IBM XL
+    !associate ( KE => 0.5_KDR * N * ( V_1 ** 2 + V_2 ** 2 + V_3 ** 2 ) )
+    
+    KE = 0.5_KDR * N * ( V_1 ** 2 + V_2 ** 2 + V_3 ** 2 )
+    E  = G - KE
     where ( E < 0.0_KDR )
       E = 0.0_KDR
       G = KE
     end where
 
-    end associate !-- KE
+    !end associate !-- KE
 
   end subroutine ComputePrimitiveKernel
 
