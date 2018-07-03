@@ -178,11 +178,11 @@ contains
     end do
 
     !-- Substep 1
-    call Show ( '<<< Substep 1')
+    !call Show ( '<<< Substep 1')
 
     call CLS % ComputeUpdate ( TimeStep ) !-- K1 = dT * RHS
     
-    call Show ( '<<< After Compute Update')
+    !call Show ( '<<< After Compute Update')
     
     do iV = 1, Current % N_CONSERVED
       !-- Current = Old + K1
@@ -236,7 +236,7 @@ contains
 
     call Clear ( CLS % Update % Value )
     
-    call Show ( '<<< ComputeUpdate: Dimension loop' )
+    !call Show ( '<<< ComputeUpdate: Dimension loop' )
     do iD = 1, DM % nDimensions
 
       call CLS % ComputeDifferences ( iD )
@@ -276,14 +276,14 @@ contains
     associate ( CF => CLS % ConservedFields )
     associate ( DM  => CF % DistributedMesh )
     
-    call Show ('<<< Compute Differences')
+    !call Show ('<<< Compute Differences')
 
     call CF % ApplyBoundaryConditions &
            ( CF % Value, CF % Value, iD, iBoundary = -1 )
     call CF % ApplyBoundaryConditions &
            ( CF % Value, CF % Value, iD, iBoundary = +1 )
            
-    call Show ('<<< After ApplyBoundary')
+    !call Show ('<<< After ApplyBoundary')
     
     call CF % UpdateDevice ( )
 
@@ -302,7 +302,7 @@ contains
                dV_Left, dV_Right )
     end do
     
-    call Show ( '<<< After Differences' )
+    !call Show ( '<<< After Differences' )
     
     call CLS % DifferenceLeft % UpdateHost ( )
     call CLS % DifferenceRight % UpdateHost ( )
@@ -454,7 +454,7 @@ contains
     end where
     uV ( iD ) = size ( V, dim = iD ) - 1
     
-    call Show ( '<<< compute differences kernel' )
+    !call Show ( '<<< compute differences kernel' )
 
 !    dV_Left  = V - cshift ( V, shift = -1, dim = iD )    
 
