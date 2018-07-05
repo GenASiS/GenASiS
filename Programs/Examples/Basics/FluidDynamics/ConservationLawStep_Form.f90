@@ -11,7 +11,9 @@ module ConservationLawStep_Form
     integer ( KDI ) :: &
       ALPHA_PLUS  = 1, &
       ALPHA_MINUS = 2, &
-      N_MODIFIED_SPEEDS = 2
+      N_MODIFIED_SPEEDS = 2, &
+      iTimerAccelerated, &
+      iTimerDataTransfer
     real ( KDR ) :: &
       LimiterParameter
     type ( StorageForm ) :: &
@@ -144,7 +146,13 @@ contains
 
     end associate !-- nCells
     end associate !-- DM
-
+    
+    call PROGRAM_HEADER % AddTimer &
+           ( 'Accelerated', CLS % iTimerAccelerated, Level = 1 )
+    
+    call PROGRAM_HEADER % AddTimer &
+           ( 'DataTransfer', CLS % iTimerDataTransfer, Level = 1 )
+    
   end subroutine Initialize
 
 
@@ -275,6 +283,9 @@ contains
 
     associate ( CF => CLS % ConservedFields )
     associate ( DM  => CF % DistributedMesh )
+    associate &
+      ( T_DT  => PROGRAM_HEADER % Timer ( CLS % iTimerDataTransfer ), &
+        T_A   => PROGRAM_HEADER % Timer ( CLS % iTimerAccelerated ) )
     
     !call Show ('<<< Compute Differences')
 
@@ -285,7 +296,9 @@ contains
            
     !call Show ('<<< After ApplyBoundary')
     
+    call T_DT % Start ( )
     call CF % UpdateDevice ( )
+    call T_DT % Stop ( )
 
     do iV = 1, CF % N_PRIMITIVE
       call DM % SetVariablePointer &
@@ -294,20 +307,26 @@ contains
              ( CLS % DifferenceLeft % Value ( :, iV ), dV_Left )
       call DM % SetVariablePointer &
              ( CLS % DifferenceRight % Value ( :, iV ), dV_Right )
+      call T_A % Start ( )
       call ComputeDifferencesKernel &
              ( V, DM % nGhostLayers ( iD ), iD, &
                CF % D_Selected ( CF % iaPrimitive ( iV ) ), &
                CLS % DifferenceLeft % D_Selected ( iV ), &
                CLS % DifferenceRight % D_Selected ( iV ), &
                dV_Left, dV_Right )
+      call T_A % Stop ( )
     end do
     
     !call Show ( '<<< After Differences' )
     
+    call T_DT % Start ( )
     call CLS % DifferenceLeft % UpdateHost ( )
     call CLS % DifferenceRight % UpdateHost ( )
+    call T_DT % Stop ( )
     
     nullify ( V, dV_Left, dV_Right )
+    
+    end associate !-- T_DT
     end associate !-- DM
     end associate !-- CF
 
