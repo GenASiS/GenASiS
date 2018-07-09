@@ -369,6 +369,7 @@ contains
 
     if ( present ( nDimensionsOption ) ) then
       A % nDimensions = nDimensionsOption
+      return
     end if
 
     !-- Allow for specification of base manifold and bundle 

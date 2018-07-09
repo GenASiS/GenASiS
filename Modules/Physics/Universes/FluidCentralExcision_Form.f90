@@ -173,7 +173,7 @@ contains
     type ( FluidCentralExcisionForm ), intent ( inout ) :: &
       FCE
 
-    call FCE % FinalizeTemplate_C_PS ( )
+    call FCE % FinalizeTemplate_FC ( )
 
   end subroutine Finalize
 

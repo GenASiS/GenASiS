@@ -212,7 +212,7 @@ contains
     class default
       call Show ( 'Chart type not recognized', CONSOLE % ERROR )
       call Show ( 'Atlas_SC__Template', 'module', CONSOLE % ERROR )
-      call Show ( 'AddField_CSL', 'subroutine', CONSOLE % ERROR )
+      call Show ( 'AddField', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- C
 

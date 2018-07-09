@@ -192,7 +192,7 @@ contains
     type ( FluidCentralCoreForm ), intent ( inout ) :: &
       FCC
 
-    call FCC % FinalizeTemplate_C_PS ( )
+    call FCC % FinalizeTemplate_FC ( )
 
   end subroutine Finalize
 

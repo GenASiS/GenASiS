@@ -15,6 +15,10 @@ module FluidCentral_Template
         CoordinateUnit
       logical ( KDL ) :: &
         Dimensionless
+      type ( Atlas_SC_Form ), allocatable :: &
+        Atlas_SC_EM  !-- EnclosedMass
+      type ( Fluid_ASC_Form ), allocatable :: &
+        Fluid_ASC_EM  !-- EnclosedMass
   contains
     procedure, public, pass :: &
       InitializeTemplate_FC
@@ -22,6 +26,8 @@ module FluidCentral_Template
       InitializePositionSpace
     procedure ( IG ), private, pass, deferred :: &
       InitializeGeometry
+    procedure, public, pass :: &
+      FinalizeTemplate_FC
   end type FluidCentralTemplate
 
   abstract interface
@@ -62,6 +68,7 @@ module FluidCentral_Template
   end interface
 
     private :: &
+      InitializeDiagnostics, &
       ApplySources
 
 contains
@@ -219,6 +226,11 @@ contains
     call Show ( FC % Dimensionless, 'Dimensionless' )
 
 
+    !-- Diagnostics
+    
+    call InitializeDiagnostics ( FC )
+
+    
     !-- Cleanup
 
     end select !-- FA
@@ -227,6 +239,56 @@ contains
     nullify ( F )
 
   end subroutine InitializeTemplate_FC
+
+
+  subroutine FinalizeTemplate_FC ( FC )
+
+    class ( FluidCentralTemplate ), intent ( inout ) :: &
+      FC
+
+    if ( allocated ( FC % Atlas_SC_EM ) ) &
+      deallocate ( FC % Atlas_SC_EM )
+
+    call FC % FinalizeTemplate_C_PS ( )
+
+  end subroutine FinalizeTemplate_FC
+
+
+  subroutine InitializeDiagnostics ( FC )
+
+    class ( FluidCentralTemplate ), intent ( inout ) :: &
+      FC
+
+    call Show ( 'Initializing FluidCentralCore diagnostics', &
+                FC % IGNORABILITY )
+
+    select type ( PS => FC % PositionSpace )
+    class is ( Atlas_SC_Form )
+
+    if ( PS % Communicator % Rank /= 0 ) &
+      return
+
+    !-- Enclosed mass position space
+
+    allocate ( FC % Atlas_SC_EM )
+    associate ( PS_EM => FC % Atlas_SC_EM )
+
+    call PS_EM % Initialize ( 'EnclosedMass', nDimensionsOption = 1 )
+
+    select type ( C => PS % Chart )
+    class is ( Chart_SL_Template )
+      call PS_EM % CreateChart &
+             ( nCellsOption       = C % nCells ( 1 : 1 ), &
+               nGhostLayersOption = C % nGhostLayers ( 1 : 1 ) )   
+    end select !-- C
+
+    call PS_EM % SetGeometry ( )
+
+    end associate !-- PS_EM
+
+    end select !-- PS
+
+  end subroutine InitializeDiagnostics
 
 
   subroutine ApplySources &
