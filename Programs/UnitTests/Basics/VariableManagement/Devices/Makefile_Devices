@@ -4,7 +4,8 @@ include $(PATH_GENASIS)/Build/Makefile_Build
 
 all: \
   AllocateDevice_Command_Test AssociateDevice_Command_Test \
-  DeallocateDevice_Command_Test DisassociateDevice_Command_Test
+  DeallocateDevice_Command_Test DisassociateDevice_Command_Test \
+  UpdateDevice_Command_Test
 
 AllocateDevice_Command_Test: AllocateDevice_Command_Test.o
 	$(LINK) $(FLAGS) \
@@ -32,6 +33,15 @@ DisassociateDevice_Command_Test: DisassociateDevice_Command_Test.o
           DisassociateDevice_Command.o AllocateDevice_Command.o \
           Device_C_OMP.o Device_OMP.o $(SPECIFIERS)
 
+UpdateDevice_Command_Test: UpdateDevice_Command_Test.o
+	$(LINK) $(FLAGS) \
+          -o UpdateDevice_Command_Test_$(MACHINE) \
+          UpdateDevice_Command_Test.o \
+          AllocateDevice_Command.o AssociateDevice_Command.o \
+          DeallocateDevice_Command.o DisassociateDevice_Command.o \
+          UpdateDevice_Command.o \
+          Device_C_OMP.o Device_OMP.o $(SPECIFIERS)
+
 clean:
 	rm -f *.o *.mod *.ld
 
@@ -40,6 +50,7 @@ clobber: clean
 	rm -f AssociateDevice_Command_Test_*
 	rm -f DeallocateDevice_Command_Test_*
 	rm -f DisassociateDevice_Command_Test_*
+	rm -f UpdateDevice_Command_Test_*
 
 include $(PATH_SPECIFIERS)/Makefile_Dependencies
 include $(PATH_DEVICES)/Makefile_Dependencies
@@ -63,3 +74,8 @@ DisassociateDevice_Command_Test.o: \
   AssociateDevice_Command.o \
   DisassociateDevice_Command.o \
   DisassociateDevice_Command_Test.f90
+
+UpdateDevice_Command_Test.o: \
+  AllocateDevice_Command.o \
+  UpdateDevice_Command.o \
+  UpdateDevice_Command_Test.f90
