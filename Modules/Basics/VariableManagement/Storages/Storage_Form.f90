@@ -55,12 +55,16 @@ module Storage_Form
       AllocateDevice => AllocateDevice_S
     procedure, private, pass :: &
       UpdateDeviceAll
+    procedure, private, pass :: &
+      UpdateDeviceSingle
     generic :: &
-      UpdateDevice => UpdateDeviceAll
+      UpdateDevice => UpdateDeviceAll, UpdateDeviceSingle
     procedure, private, pass :: &
       UpdateHostAll
+    procedure, private, pass :: &
+      UpdateHostSingle
     generic :: &
-      UpdateHost => UpdateHostAll
+      UpdateHost => UpdateHostAll, UpdateHostSingle
     final :: &
       Finalize
   end type StorageForm
@@ -275,14 +279,30 @@ contains
       S
       
     integer ( KDI ) :: &
-      iV
+      iS
       
-    do iV = 1, S % nVariables
+    do iS = 1, S % nVariables
       call UpdateDevice &
-             ( S % Value ( :, S % iaSelected ( iV ) ), S % D_Selected ( iV ) )
+             ( S % Value ( :, S % iaSelected ( iS ) ), S % D_Selected ( iS ) )
     end do
   
   end subroutine UpdateDeviceAll
+
+
+  subroutine UpdateDeviceSingle ( S, iV )
+  
+    class ( StorageForm ), intent ( inout ) :: &
+      S
+    integer ( KDI ), intent ( in ) :: &
+      iV
+    
+    integer ( KDI ) :: &
+      iS
+    
+    call Search ( S % iaSelected, iV, iS )
+    call UpdateDevice ( S % Value ( :, iV ), S % D_Selected ( iS ) )
+  
+  end subroutine UpdateDeviceSingle
 
 
   subroutine UpdateHostAll ( S )
@@ -291,14 +311,30 @@ contains
       S
       
     integer ( KDI ) :: &
-      iV
+      iS
       
-    do iV = 1, S % nVariables
+    do iS = 1, S % nVariables
       call UpdateHost &
-             ( S % D_Selected ( iV ), S % Value ( :, S % iaSelected ( iV ) ) )
+             ( S % D_Selected ( iS ), S % Value ( :, S % iaSelected ( iS ) ) )
     end do
   
   end subroutine UpdateHostAll
+  
+  
+  subroutine UpdateHostSingle ( S, iV )
+  
+    class ( StorageForm ), intent ( inout ) :: &
+      S
+    integer ( KDI ), intent ( in ) :: &
+      iV
+    
+    integer ( KDI ) :: &
+      iS
+    
+    call Search ( S % iaSelected, iV, iS )
+    call UpdateHost ( S % D_Selected ( iS ), S % Value ( :, iV ) )
+  
+  end subroutine UpdateHostSingle
 
 
   impure elemental subroutine Finalize ( S )

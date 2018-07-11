@@ -275,7 +275,7 @@ contains
       iD
 
     integer ( KDI ) :: &
-      iV  !-- iVariable
+      iP  !-- iPrimitive
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       V, &
       dV_Left, &
@@ -297,32 +297,37 @@ contains
     !call Show ('<<< After ApplyBoundary')
     
     call T_DT % Start ( )
-    call CF % UpdateDevice ( )
+    call CF % UpdateDevice ( CF % iaPrimitive ( 1 ) )
     call T_DT % Stop ( )
-
-    do iV = 1, CF % N_PRIMITIVE
+    
+    do iP = 1, CF % N_PRIMITIVE
+      if ( iP < CF % N_PRIMITIVE ) then
+        call T_DT % Start ( )
+        call CF % UpdateDevice ( CF % iaPrimitive ( iP + 1 ) )
+        call T_DT % Stop ( )
+      end if
       call DM % SetVariablePointer &
-             ( CF % Value ( :, CF % iaPrimitive ( iV ) ), V )
+             ( CF % Value ( :, CF % iaPrimitive ( iP ) ), V )
       call DM % SetVariablePointer &
-             ( CLS % DifferenceLeft % Value ( :, iV ), dV_Left )
+             ( CLS % DifferenceLeft % Value ( :, iP ), dV_Left )
       call DM % SetVariablePointer &
-             ( CLS % DifferenceRight % Value ( :, iV ), dV_Right )
+             ( CLS % DifferenceRight % Value ( :, iP ), dV_Right )
       call T_A % Start ( )
       call ComputeDifferencesKernel &
              ( V, DM % nGhostLayers ( iD ), iD, &
-               CF % D_Selected ( CF % iaPrimitive ( iV ) ), &
-               CLS % DifferenceLeft % D_Selected ( iV ), &
-               CLS % DifferenceRight % D_Selected ( iV ), &
+               CF % D_Selected ( CF % iaPrimitive ( iP ) ), &
+               CLS % DifferenceLeft % D_Selected ( iP ), &
+               CLS % DifferenceRight % D_Selected ( iP ), &
                dV_Left, dV_Right )
       call T_A % Stop ( )
+      
+      call T_DT % Start ( )
+      call CLS % DifferenceLeft % UpdateHost ( iP )
+      call CLS % DifferenceRight % UpdateHost ( iP )
+      call T_DT % Stop ( )
     end do
     
     !call Show ( '<<< After Differences' )
-    
-    call T_DT % Start ( )
-    call CLS % DifferenceLeft % UpdateHost ( )
-    call CLS % DifferenceRight % UpdateHost ( )
-    call T_DT % Stop ( )
     
     nullify ( V, dV_Left, dV_Right )
     
