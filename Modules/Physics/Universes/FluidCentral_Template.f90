@@ -246,6 +246,8 @@ contains
     class ( FluidCentralTemplate ), intent ( inout ) :: &
       FC
 
+    if ( allocated ( FC % Fluid_ASC_EM ) ) &
+      deallocate ( FC % Fluid_ASC_EM )
     if ( allocated ( FC % Atlas_SC_EM ) ) &
       deallocate ( FC % Atlas_SC_EM )
 
@@ -265,8 +267,12 @@ contains
     select type ( PS => FC % PositionSpace )
     class is ( Atlas_SC_Form )
 
+    select type ( FA => FC % Current_ASC )
+    class is ( Fluid_ASC_Form )
+
     if ( PS % Communicator % Rank /= 0 ) &
       return
+
 
     !-- Enclosed mass position space
 
@@ -277,15 +283,47 @@ contains
 
     select type ( C => PS % Chart )
     class is ( Chart_SL_Template )
-      call PS_EM % CreateChart &
-             ( nCellsOption       = C % nCells ( 1 : 1 ), &
-               nGhostLayersOption = C % nGhostLayers ( 1 : 1 ) )   
+      if ( FC % Dimensionless ) then
+        call PS_EM % CreateChart &
+               ( nCellsOption         = C % nCells ( 1 : 1 ), &
+                 nGhostLayersOption   = C % nGhostLayers ( 1 : 1 ) )
+      else
+        call PS_EM % CreateChart &
+               ( CoordinateUnitOption = [ UNIT % SOLAR_MASS ], &
+                 nCellsOption         = C % nCells ( 1 : 1 ), &
+                 nGhostLayersOption   = C % nGhostLayers ( 1 : 1 ) )
+      end if
     end select !-- C
 
     call PS_EM % SetGeometry ( )
 
-    end associate !-- PS_EM
 
+    !-- Enclosed mass fluid
+
+    allocate ( FC % Fluid_ASC_EM )
+    associate ( FA_EM => FC % Fluid_ASC_EM )
+
+    if ( FC % Dimensionless ) then
+      call FA_EM % Initialize ( PS_EM, FA % FluidType )
+    else
+      call FA_EM % Initialize &
+             ( PS_EM, FA % FluidType, &
+               AllocateTallyOption           =  .false., &
+               AllocateSourcesOption         =  .false., &
+               Velocity_U_UnitOption         =  FA % Velocity_U_Unit, &
+               MomentumDensity_D_UnitOption  =  FA % MomentumDensity_D_Unit, &
+               BaryonMassUnitOption          =  FA % BaryonMassUnit, &
+               NumberDensityUnitOption       =  FA % NumberDensityUnit, &
+               EnergyDensityUnitOption       =  FA % EnergyDensityUnit, &
+               BaryonMassReferenceOption     =  CONSTANT % ATOMIC_MASS_UNIT )
+    end if
+
+
+    !-- Cleanup
+
+    end associate !-- FA_EM
+    end associate !-- PS_EM
+    end select !-- FA
     end select !-- PS
 
   end subroutine InitializeDiagnostics

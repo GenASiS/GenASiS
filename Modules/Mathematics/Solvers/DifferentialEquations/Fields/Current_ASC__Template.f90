@@ -55,7 +55,8 @@ module Current_ASC__Template
 contains
 
 
-  subroutine InitializeTemplate_ASC_C ( CA, A, NameShort, IgnorabilityOption )
+  subroutine InitializeTemplate_ASC_C &
+               ( CA, A, NameShort, AllocateTallyOption, IgnorabilityOption )
 
     class ( Current_ASC_Template ), intent ( inout ) :: &
       CA
@@ -63,11 +64,15 @@ contains
       A
     character ( * ), intent ( in ) :: &
       NameShort
+    logical ( KDL ), intent ( in ), optional :: &
+      AllocateTallyOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
     integer ( KDI ) :: &
       iB  !-- iBoundary
+    logical ( KDL ) :: &
+      AllocateTally
     class ( CurrentTemplate ), pointer :: &
       C
 
@@ -78,7 +83,11 @@ contains
 
     CA % Atlas_SC => A
 
-    if ( .not. allocated ( CA % TallyInterior ) ) then
+    AllocateTally = .true.
+    if ( present ( AllocateTallyOption ) ) &
+      AllocateTally = AllocateTallyOption
+
+    if ( .not. allocated ( CA % TallyInterior ) .and. AllocateTally ) then
 
       allocate ( CA % TallyInterior )
       allocate ( CA % TallyTotal )

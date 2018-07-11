@@ -70,14 +70,15 @@ contains
 
   subroutine Initialize &
                ( FA, A, FluidType, NameShortOption, RiemannSolverTypeOption, &
-                 UseEntropyOption, UseLimiterOption, AllocateSourcesOption, &
-                 Velocity_U_UnitOption, MomentumDensity_D_UnitOption, &
-                 BaryonMassUnitOption, NumberDensityUnitOption, &
-                 EnergyDensityUnitOption, TemperatureUnitOption, &
-                 NumberUnitOption, EnergyUnitOption, MomentumUnitOption, &
-                 AngularMomentumUnitOption, TimeUnitOption, &
-                 BaryonMassReferenceOption, LimiterParameterOption, &
-                 ShockThresholdOption, IgnorabilityOption )
+                 UseEntropyOption, UseLimiterOption, AllocateTallyOption, &
+                 AllocateSourcesOption, Velocity_U_UnitOption, &
+                 MomentumDensity_D_UnitOption, BaryonMassUnitOption, &
+                 NumberDensityUnitOption, EnergyDensityUnitOption, &
+                 TemperatureUnitOption, NumberUnitOption, EnergyUnitOption, &
+                 MomentumUnitOption, AngularMomentumUnitOption, &
+                 TimeUnitOption, BaryonMassReferenceOption, &
+                 LimiterParameterOption, ShockThresholdOption, &
+                 IgnorabilityOption )
 
     class ( Fluid_ASC_Form ), intent ( inout ) :: &
       FA
@@ -91,6 +92,7 @@ contains
     logical ( KDL ), intent ( in ), optional :: &
       UseEntropyOption, &
       UseLimiterOption, &
+      AllocateTallyOption, &
       AllocateSourcesOption
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ), optional :: &
       Velocity_U_UnitOption, &
@@ -117,6 +119,7 @@ contains
     character ( LDL ) :: &
       NameShort
     logical ( KDL ) :: &
+      AllocateTally, &
       AllocateSources
 
     if ( FA % Type == '' ) &
@@ -174,105 +177,115 @@ contains
     if ( present ( MomentumDensity_D_UnitOption ) ) &
       FA % MomentumDensity_D_Unit = MomentumDensity_D_UnitOption
 
-    if ( .not. allocated ( FA % TallyInterior ) ) then
-      select case ( trim ( FluidType ) )
-      case ( 'DUST' )
-        allocate ( Tally_F_D_Form :: FA % TallyInterior )
-        allocate ( Tally_F_D_Form :: FA % TallyTotal )
-        allocate ( Tally_F_D_Form :: FA % TallyChange )
-        allocate ( FA % TallyBoundaryLocal  ( A % nBoundaries ) )
-        allocate ( FA % TallyBoundaryGlobal ( A % nBoundaries ) )
-        do iB = 1, A % nBoundaries 
-          allocate &
-            ( Tally_F_D_Form :: FA % TallyBoundaryLocal  ( iB ) % Element )
-          allocate &
-            ( Tally_F_D_Form :: FA % TallyBoundaryGlobal ( iB ) % Element )
-        end do !-- iB
-      case ( 'IDEAL' )
-        allocate ( Tally_F_P_Form :: FA % TallyInterior )
-        allocate ( Tally_F_P_Form :: FA % TallyTotal )
-        allocate ( Tally_F_P_Form :: FA % TallyChange )
-        allocate ( FA % TallyBoundaryLocal  ( A % nBoundaries ) )
-        allocate ( FA % TallyBoundaryGlobal ( A % nBoundaries ) )
-        do iB = 1, A % nBoundaries
-          allocate &
-            ( Tally_F_P_Form :: FA % TallyBoundaryLocal  ( iB ) % Element )
-          allocate &
-            ( Tally_F_P_Form :: FA % TallyBoundaryGlobal ( iB ) % Element )
-        end do !-- iB
-      case ( 'HEAVY_NUCLEUS' )
-        allocate ( Tally_F_P_HN_Form :: FA % TallyInterior )
-        allocate ( Tally_F_P_HN_Form :: FA % TallyTotal )
-        allocate ( Tally_F_P_HN_Form :: FA % TallyChange )
-        allocate ( FA % TallyBoundaryLocal  ( A % nBoundaries ) )
-        allocate ( FA % TallyBoundaryGlobal ( A % nBoundaries ) )
-        do iB = 1, A % nBoundaries
-          allocate &
-            ( Tally_F_P_HN_Form :: FA % TallyBoundaryLocal ( iB ) &
-                                      % Element )
-          allocate &
-            ( Tally_F_P_HN_Form :: FA % TallyBoundaryGlobal ( iB ) &
-                                      % Element )
-        end do !-- iB
-      case default
-        call Show ( 'FluidType not recognized', CONSOLE % ERROR )
-        call Show ( 'Fluid_ASC__Form', 'module', CONSOLE % ERROR )
-        call Show ( 'Initialize', 'subroutine', CONSOLE % ERROR )
-        call PROGRAM_HEADER % Abort ( )
-      end select !-- FluidType   
-    end if !-- allocated TallyInterior
+    AllocateTally = .true.
+    if ( present ( AllocateTallyOption ) ) &
+      AllocateTally = AllocateTallyOption
+
+    if ( AllocateTally ) then
+
+      if ( .not. allocated ( FA % TallyInterior ) ) then
+        select case ( trim ( FluidType ) )
+        case ( 'DUST' )
+          allocate ( Tally_F_D_Form :: FA % TallyInterior )
+          allocate ( Tally_F_D_Form :: FA % TallyTotal )
+          allocate ( Tally_F_D_Form :: FA % TallyChange )
+          allocate ( FA % TallyBoundaryLocal  ( A % nBoundaries ) )
+          allocate ( FA % TallyBoundaryGlobal ( A % nBoundaries ) )
+          do iB = 1, A % nBoundaries 
+            allocate &
+              ( Tally_F_D_Form :: FA % TallyBoundaryLocal  ( iB ) % Element )
+            allocate &
+              ( Tally_F_D_Form :: FA % TallyBoundaryGlobal ( iB ) % Element )
+          end do !-- iB
+        case ( 'IDEAL' )
+          allocate ( Tally_F_P_Form :: FA % TallyInterior )
+          allocate ( Tally_F_P_Form :: FA % TallyTotal )
+          allocate ( Tally_F_P_Form :: FA % TallyChange )
+          allocate ( FA % TallyBoundaryLocal  ( A % nBoundaries ) )
+          allocate ( FA % TallyBoundaryGlobal ( A % nBoundaries ) )
+          do iB = 1, A % nBoundaries
+            allocate &
+              ( Tally_F_P_Form :: FA % TallyBoundaryLocal  ( iB ) % Element )
+            allocate &
+              ( Tally_F_P_Form :: FA % TallyBoundaryGlobal ( iB ) % Element )
+          end do !-- iB
+        case ( 'HEAVY_NUCLEUS' )
+          allocate ( Tally_F_P_HN_Form :: FA % TallyInterior )
+          allocate ( Tally_F_P_HN_Form :: FA % TallyTotal )
+          allocate ( Tally_F_P_HN_Form :: FA % TallyChange )
+          allocate ( FA % TallyBoundaryLocal  ( A % nBoundaries ) )
+          allocate ( FA % TallyBoundaryGlobal ( A % nBoundaries ) )
+          do iB = 1, A % nBoundaries
+            allocate &
+              ( Tally_F_P_HN_Form :: FA % TallyBoundaryLocal ( iB ) &
+                                        % Element )
+            allocate &
+              ( Tally_F_P_HN_Form :: FA % TallyBoundaryGlobal ( iB ) &
+                                        % Element )
+          end do !-- iB
+        case default
+          call Show ( 'FluidType not recognized', CONSOLE % ERROR )
+          call Show ( 'Fluid_ASC__Form', 'module', CONSOLE % ERROR )
+          call Show ( 'Initialize', 'subroutine', CONSOLE % ERROR )
+          call PROGRAM_HEADER % Abort ( )
+        end select !-- FluidType   
+      end if !-- allocated TallyInterior
       
-    select type ( TI => FA % TallyInterior )
-    class is ( Tally_F_D_Form )
-      call TI % Initialize &
-             ( A, NumberUnitOption = NumberUnitOption, &
-               EnergyUnitOption = EnergyUnitOption, &
-               MomentumUnitOption = MomentumUnitOption, &
-               AngularMomentumUnitOption = AngularMomentumUnitOption )
-    end select !-- TI
-
-    select type ( TT => FA % TallyTotal )
-    class is ( Tally_F_D_Form )
-      call TT % Initialize &
-             ( A, NumberUnitOption = NumberUnitOption, &
-               EnergyUnitOption = EnergyUnitOption, &
-               MomentumUnitOption = MomentumUnitOption, &
-               AngularMomentumUnitOption = AngularMomentumUnitOption )
-    end select !-- TT
-
-    select type ( TC => FA % TallyChange )
-    class is ( Tally_F_D_Form )
-      call TC % Initialize &
-             ( A, NumberUnitOption = NumberUnitOption, &
-               EnergyUnitOption = EnergyUnitOption, &
-               MomentumUnitOption = MomentumUnitOption, &
-               AngularMomentumUnitOption = AngularMomentumUnitOption )
-    end select !-- TC
-
-    do iB = 1, A % nBoundaries
-      select type ( TB => FA % TallyBoundaryLocal ( iB ) % Element )
+      select type ( TI => FA % TallyInterior )
       class is ( Tally_F_D_Form )
-        call TB % Initialize &
+        call TI % Initialize &
                ( A, NumberUnitOption = NumberUnitOption, &
                  EnergyUnitOption = EnergyUnitOption, &
                  MomentumUnitOption = MomentumUnitOption, &
                  AngularMomentumUnitOption = AngularMomentumUnitOption )
-      end select !-- TB
-      select type ( TB => FA % TallyBoundaryGlobal ( iB ) % Element )
+      end select !-- TI
+
+      select type ( TT => FA % TallyTotal )
       class is ( Tally_F_D_Form )
-        call TB % Initialize &
+        call TT % Initialize &
                ( A, NumberUnitOption = NumberUnitOption, &
                  EnergyUnitOption = EnergyUnitOption, &
                  MomentumUnitOption = MomentumUnitOption, &
                  AngularMomentumUnitOption = AngularMomentumUnitOption )
-      end select !-- TB
-    end do !-- iB
+      end select !-- TT
+
+      select type ( TC => FA % TallyChange )
+      class is ( Tally_F_D_Form )
+        call TC % Initialize &
+               ( A, NumberUnitOption = NumberUnitOption, &
+                 EnergyUnitOption = EnergyUnitOption, &
+                 MomentumUnitOption = MomentumUnitOption, &
+                 AngularMomentumUnitOption = AngularMomentumUnitOption )
+      end select !-- TC
+
+      do iB = 1, A % nBoundaries
+        select type ( TB => FA % TallyBoundaryLocal ( iB ) % Element )
+        class is ( Tally_F_D_Form )
+          call TB % Initialize &
+                 ( A, NumberUnitOption = NumberUnitOption, &
+                   EnergyUnitOption = EnergyUnitOption, &
+                   MomentumUnitOption = MomentumUnitOption, &
+                   AngularMomentumUnitOption = AngularMomentumUnitOption )
+        end select !-- TB
+        select type ( TB => FA % TallyBoundaryGlobal ( iB ) % Element )
+        class is ( Tally_F_D_Form )
+          call TB % Initialize &
+                 ( A, NumberUnitOption = NumberUnitOption, &
+                   EnergyUnitOption = EnergyUnitOption, &
+                   MomentumUnitOption = MomentumUnitOption, &
+                   AngularMomentumUnitOption = AngularMomentumUnitOption )
+        end select !-- TB
+      end do !-- iB
+
+    end if !-- AllocateTally 
 
     NameShort = 'Fluid'
     if ( present ( NameShortOption ) ) &
       NameShort = NameShortOption
 
-    call FA % InitializeTemplate_ASC_C ( A, NameShort, IgnorabilityOption )
+    call FA % InitializeTemplate_ASC_C &
+           ( A, NameShort, AllocateTallyOption = AllocateTallyOption, &
+             IgnorabilityOption = IgnorabilityOption )
 
     call Show ( FA % FluidType, 'FluidType', FA % IGNORABILITY )
     call Show ( FA % RiemannSolverType, 'RiemannSolverType', &
