@@ -16,9 +16,11 @@ module FluidCentral_Template
       logical ( KDL ) :: &
         Dimensionless
       type ( Atlas_SC_Form ), allocatable :: &
-        Atlas_SC_EM  !-- EnclosedMass
+        Atlas_SC_SA, &  !-- SphericalAverage
+        Atlas_SC_EM     !-- EnclosedMass
       type ( Fluid_ASC_Form ), allocatable :: &
-        Fluid_ASC_EM  !-- EnclosedMass
+        Fluid_ASC_SA, &  !-- SphericalAverage
+        Fluid_ASC_EM     !-- EnclosedMass
   contains
     procedure, public, pass :: &
       InitializeTemplate_FC
@@ -274,6 +276,30 @@ contains
       return
 
 
+    !-- Spherical average position space
+
+    allocate ( FC % Atlas_SC_SA )
+    associate ( PS_SA => FC % Atlas_SC_SA )
+
+    call PS_SA % Initialize ( 'SphericalAverage', nDimensionsOption = 1 )
+
+    select type ( C => PS % Chart )
+    class is ( Chart_SL_Template )
+      if ( FC % Dimensionless ) then
+        call PS_SA % CreateChart &
+               ( nCellsOption         = C % nCells ( 1 : 1 ), &
+                 nGhostLayersOption   = C % nGhostLayers ( 1 : 1 ) )
+      else
+        call PS_SA % CreateChart &
+               ( CoordinateUnitOption = FC % CoordinateUnit ( 1 : 1 ), &
+                 nCellsOption         = C % nCells ( 1 : 1 ), &
+                 nGhostLayersOption   = C % nGhostLayers ( 1 : 1 ) )
+      end if
+    end select !-- C
+
+    call PS_SA % SetGeometry ( )
+
+
     !-- Enclosed mass position space
 
     allocate ( FC % Atlas_SC_EM )
@@ -296,6 +322,27 @@ contains
     end select !-- C
 
     call PS_EM % SetGeometry ( )
+
+
+    !-- Spherical average fluid
+
+    allocate ( FC % Fluid_ASC_SA )
+    associate ( FA_SA => FC % Fluid_ASC_SA )
+
+    if ( FC % Dimensionless ) then
+      call FA_SA % Initialize ( PS_SA, FA % FluidType )
+    else
+      call FA_SA % Initialize &
+             ( PS_SA, FA % FluidType, &
+               AllocateTallyOption           =  .false., &
+               AllocateSourcesOption         =  .false., &
+               Velocity_U_UnitOption         =  FA % Velocity_U_Unit, &
+               MomentumDensity_D_UnitOption  =  FA % MomentumDensity_D_Unit, &
+               BaryonMassUnitOption          =  FA % BaryonMassUnit, &
+               NumberDensityUnitOption       =  FA % NumberDensityUnit, &
+               EnergyDensityUnitOption       =  FA % EnergyDensityUnit, &
+               BaryonMassReferenceOption     =  CONSTANT % ATOMIC_MASS_UNIT )
+    end if
 
 
     !-- Enclosed mass fluid
@@ -322,7 +369,9 @@ contains
     !-- Cleanup
 
     end associate !-- FA_EM
+    end associate !-- FA_SA
     end associate !-- PS_EM
+    end associate !-- PS_SA
     end select !-- FA
     end select !-- PS
 
