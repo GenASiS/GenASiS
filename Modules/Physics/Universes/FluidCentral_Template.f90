@@ -28,6 +28,8 @@ module FluidCentral_Template
       InitializePositionSpace
     procedure ( IG ), private, pass, deferred :: &
       InitializeGeometry
+    procedure, public, pass :: &  !-- 2
+      OpenManifoldStreams
     procedure, public, pass :: &
       FinalizeTemplate_FC
   end type FluidCentralTemplate
@@ -241,6 +243,31 @@ contains
     nullify ( F )
 
   end subroutine InitializeTemplate_FC
+
+
+  subroutine OpenManifoldStreams ( I )
+
+    class ( FluidCentralTemplate ), intent ( inout ) :: &
+      I
+
+    logical ( KDL ) :: &
+      VerboseStream
+
+    call I % OpenManifoldStreamsTemplate ( )
+
+    VerboseStream = .false.
+    call PROGRAM_HEADER % GetParameter ( VerboseStream, 'VerboseStream' )
+
+    associate ( GIS => I % GridImageStream )
+    associate ( iS => 1 )  !-- iStream
+      call I % Atlas_SC_SA % OpenStream &
+             ( GIS, 'Time', iStream = iS, VerboseOption = VerboseStream )
+      call I % Atlas_SC_EM % OpenStream &
+             ( GIS, 'Time', iStream = iS, VerboseOption = VerboseStream )
+    end associate !-- iS
+    end associate !-- GIS
+
+  end subroutine OpenManifoldStreams
 
 
   subroutine FinalizeTemplate_FC ( FC )

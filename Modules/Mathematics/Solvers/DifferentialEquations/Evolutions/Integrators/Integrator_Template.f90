@@ -61,7 +61,9 @@ module Integrator_Template
       FinalizeTemplate
     procedure, private, pass :: &  !-- 2
       OpenGridImageStreams
-    procedure, private, pass :: &  !-- 2
+    procedure, public, pass :: &  !-- 2
+      OpenManifoldStreamsTemplate
+    procedure, public, pass :: &  !-- 2
       OpenManifoldStreams
     procedure, public, pass :: &  !-- 2
       InitializeTimers
@@ -335,7 +337,7 @@ contains
   end subroutine OpenGridImageStreams
 
 
-  subroutine OpenManifoldStreams ( I )
+  subroutine OpenManifoldStreamsTemplate ( I )
 
     class ( IntegratorTemplate ), intent ( inout ) :: &
       I
@@ -375,6 +377,16 @@ contains
 
     end associate !-- iS
     end associate !-- GIS
+
+  end subroutine OpenManifoldStreamsTemplate
+
+
+  subroutine OpenManifoldStreams ( I )
+
+    class ( IntegratorTemplate ), intent ( inout ) :: &
+      I
+
+    call I % OpenManifoldStreamsTemplate ( )
 
   end subroutine OpenManifoldStreams
 
