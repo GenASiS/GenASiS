@@ -255,6 +255,9 @@ contains
 
     call I % OpenManifoldStreamsTemplate ( )
 
+    if ( I % PositionSpace % Communicator % Rank /= 0 ) &
+      return
+
     VerboseStream = .false.
     call PROGRAM_HEADER % GetParameter ( VerboseStream, 'VerboseStream' )
 
