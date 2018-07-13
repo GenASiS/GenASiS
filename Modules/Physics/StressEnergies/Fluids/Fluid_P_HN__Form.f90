@@ -74,13 +74,15 @@ module Fluid_P_HN__Form
       ComputeRawFluxesKernel, &
       ComputeCenterStatesKernel
 
-    real ( KDR ), private :: &
+    real ( KDR ), private, protected :: &
       OR_Shift, &
       MassDensity_CGS, &
       SpecificEnergy_CGS, &
       Pressure_CGS, &
       Speed_CGS, &
       MeV
+    logical ( KDL ), private, protected :: &
+      TableInitialized = .false.
 
 contains
 
@@ -145,6 +147,9 @@ contains
              ClearOption = ClearOption, UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndicesOption )
 
+    if ( TableInitialized ) &
+      return
+
 !    call READTABLE &
 !           ( '../Parameters/LS220_234r_136t_50y_analmu_20091212_SVNr26.h5' )
 !    call READTABLE &
@@ -163,6 +168,8 @@ contains
     Pressure_CGS        =  UNIT % BARYE
     Speed_CGS           =  UNIT % CENTIMETER  /  UNIT % SECOND
     MeV                 =  UNIT % MEGA_ELECTRON_VOLT
+
+    TableInitialized  =  .true.
 
   end subroutine InitializeAllocate_P_HN
 
