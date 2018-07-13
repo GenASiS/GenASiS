@@ -28,7 +28,7 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iVariable
 
-    type ( VariableGroupForm ), pointer :: &
+    type ( StorageForm ), pointer :: &
       Source, &
       Reference
     class ( GeometryFlatForm ), pointer :: &
@@ -40,8 +40,7 @@ contains
     G => A % Geometry ( )
 
     associate &
-      (  R => G % Value ( :, G % CENTER ( 1 ) ), &
-        dR => G % Value ( :, G % WIDTH ( 1 ) ) )
+      (  R => G % Value ( :, G % CENTER_U ( 1 ) ) )
 
 
     !-- Source
@@ -50,8 +49,6 @@ contains
 
     associate &
       ( D => Source % Value ( :, iVariable ), &
-        R_In  => R - 0.5_KDR * dR, &
-        R_Out => R + 0.5_KDR * dR, &
         RD    => RadiusDensity, &
         RC    => RadiusCondensed )
     D = 0.0_KDR
