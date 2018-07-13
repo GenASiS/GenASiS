@@ -7,6 +7,7 @@ module Poisson_ASC__Form_Test__Form
   use SetHomogeneousSphere_Command
   use SetHomogeneousSpheroid_Command
   use SetKuzminPlummerDisk_Command
+  use SetSatohDisk_Command
 
   implicit none
   private
@@ -18,8 +19,10 @@ module Poisson_ASC__Form_Test__Form
     N_HOMOGENEOUS_SPHEROID = 3, &
     O_KPD                  = O_S + N_HOMOGENEOUS_SPHEROID, &
     N_KUZMIN_PLUMMER_DISK  = 4, &
-    N_EQUATIONS            &
-      = N_HOMOGENEOUS_SPHERE + N_HOMOGENEOUS_SPHEROID + N_KUZMIN_PLUMMER_DISK
+    O_SD                   = O_KPD + N_KUZMIN_PLUMMER_DISK, &
+    N_SATOH_DISK           = 4, &
+    N_EQUATIONS            = N_HOMOGENEOUS_SPHERE + N_HOMOGENEOUS_SPHEROID &
+                             + N_KUZMIN_PLUMMER_DISK + N_SATOH_DISK
   character ( LDL ), dimension ( N_EQUATIONS ), private, parameter :: &
     VARIABLE = [ 'HomogeneousSphere_1  ', &
                  'HomogeneousSphere_2  ', &
@@ -30,7 +33,11 @@ module Poisson_ASC__Form_Test__Form
                  'KuzminPlummerDisk_1  ', &
                  'KuzminPlummerDisk_2  ', &
                  'KuzminPlummerDisk_3  ', &
-                 'KuzminPlummerDisk_4  ']
+                 'KuzminPlummerDisk_4  ', &
+                 'SatohDisk_1          ', &
+                 'SatohDisk_2          ', &
+                 'SatohDisk_3          ', &
+                 'SatohDisk_4          ' ]
   character ( LDF ), public, parameter :: &
     ProgramName = 'Poisson_ASC__Form_Test'
 
@@ -183,6 +190,15 @@ contains
                KPD_a ( iE - O_KPD ), KPD_b ( iE - O_KPD ) , iE )
     end do
 
+    !-- Satoh Disk
+    !-- Same parameters as KuzminPlummer Disk
+
+    do iE = O_SD + 1, O_SD + N_SATOH_DISK
+      call SetKuzminPlummerDisk &
+             ( SA, RA, A, Total_Mass, &
+               KPD_a ( iE - O_KPD ), KPD_b ( iE - O_KPD ) , iE )
+    end do
+
     !-- Solution, Difference
 
     allocate ( PFT % Solution )
@@ -238,13 +254,17 @@ contains
       PFT
     
     real ( KDR ) :: &
-      L1_DS_1, &
-      L1_DS_2, &
-      L1_DS_3, &
+      L1_S_1, &
+      L1_S_2, &
+      L1_S_3, &
       L1_KPD_1, &
       L1_KPD_2, &
       L1_KPD_3, &
-      L1_KPD_4
+      L1_KPD_4, &
+      L1_SD_1, &
+      L1_SD_2, &
+      L1_SD_3, &
+      L1_SD_4
     class ( StorageForm ), pointer :: &
       Solution, &
       Reference, &
@@ -263,20 +283,24 @@ contains
     select type ( C => A % Chart )
     class is ( Chart_SL_Template )
     
-    associate ( DS_1   => Difference % Value ( :, O_S + 1 ), &
-                DS_2   => Difference % Value ( :, O_S + 2 ), &
-                DS_3   => Difference % Value ( :, O_S + 3 ), &
+    associate ( S_1   => Difference % Value ( :, O_S + 1 ), &
+                S_2   => Difference % Value ( :, O_S + 2 ), &
+                S_3   => Difference % Value ( :, O_S + 3 ), &
                 KPD_1  => Difference % Value ( :, O_KPD + 1 ), &
                 KPD_2  => Difference % Value ( :, O_KPD + 2 ), &
                 KPD_3  => Difference % Value ( :, O_KPD + 3 ), &
-                KPD_4  => Difference % Value ( :, O_KPD + 4 ) )
+                KPD_4  => Difference % Value ( :, O_KPD + 4 ), &
+                SD_1   => Difference % Value ( :, O_SD + 1 ), &
+                SD_2   => Difference % Value ( :, O_SD + 2 ), &
+                SD_3   => Difference % Value ( :, O_SD + 3 ), &
+                SD_4   => Difference % Value ( :, O_SD + 4 ) )
 
-    call CO % Initialize ( A % Communicator, [ 8 ], [ 8 ] )
-    CO % Outgoing % Value ( 1 ) = sum ( abs ( DS_1 ), &
+    call CO % Initialize ( A % Communicator, [ 12 ], [ 12 ] )
+    CO % Outgoing % Value ( 1 ) = sum ( abs ( S_1 ), &
                                         mask = C % IsProperCell )
-    CO % Outgoing % Value ( 2 ) = sum ( abs ( DS_2 ), &
+    CO % Outgoing % Value ( 2 ) = sum ( abs ( S_2 ), &
                                        mask = C % IsProperCell )
-    CO % Outgoing % Value ( 3 ) = sum ( abs ( DS_3 ), &
+    CO % Outgoing % Value ( 3 ) = sum ( abs ( S_3 ), &
                                         mask = C % IsProperCell )
     CO % Outgoing % Value ( 4 ) = sum ( abs ( KPD_1 ), &
                                         mask = C % IsProperCell )
@@ -286,36 +310,52 @@ contains
                                         mask = C % IsProperCell )
     CO % Outgoing % Value ( 7 ) = sum ( abs ( KPD_4 ), &
                                         mask = C % IsProperCell )
-    CO % Outgoing % Value ( 8 ) = C % nProperCells
+    CO % Outgoing % Value ( 8 ) = sum ( abs ( SD_1 ), &
+                                        mask = C % IsProperCell )
+    CO % Outgoing % Value ( 9 ) = sum ( abs ( SD_2 ), &
+                                        mask = C % IsProperCell )
+    CO % Outgoing % Value ( 10 ) = sum ( abs ( SD_3 ), &
+                                        mask = C % IsProperCell )
+    CO % Outgoing % Value ( 11 ) = sum ( abs ( SD_4 ), &
+                                        mask = C % IsProperCell )
+    CO % Outgoing % Value ( 12 ) = C % nProperCells
     call CO % Reduce ( REDUCTION % SUM )
 
     end associate !-- DS_1, etc.
     
     associate &
-      ( DS_1   => CO % Incoming % Value ( 1 ), &
-        DS_2   => CO % Incoming % Value ( 2 ), &
-        DS_3   => CO % Incoming % Value ( 3 ), &
+      ( S_1    => CO % Incoming % Value ( 1 ), &
+        S_2    => CO % Incoming % Value ( 2 ), &
+        S_3    => CO % Incoming % Value ( 3 ), &
         KPD_1  => CO % Incoming % Value ( 4 ), &
         KPD_2  => CO % Incoming % Value ( 5 ), &
         KPD_3  => CO % Incoming % Value ( 6 ), &
         KPD_4  => CO % Incoming % Value ( 7 ), &
-        nValues => CO % Incoming % Value ( 8 ) )
+        SD_1   => CO % Incoming % Value ( 8 ), &
+        SD_2   => CO % Incoming % Value ( 9 ), &
+        SD_3   => CO % Incoming % Value ( 10 ), &
+        SD_4   => CO % Incoming % Value ( 11 ), &
+        nValues => CO % Incoming % Value ( 12 ) )
 
-    L1_DS_1   = DS_1  / nValues
-    L1_DS_2   = DS_2  / nValues
-    L1_DS_3   = DS_3  / nValues
-    L1_KPD_1   = KPD_1  / nValues
-    L1_KPD_2   = KPD_2  / nValues
-    L1_KPD_3   = KPD_3  / nValues
-    L1_KPD_4   = KPD_4  / nValues
+    L1_S_1    = S_1  / nValues
+    L1_S_2    = S_2  / nValues
+    L1_S_3    = S_3  / nValues
+    L1_KPD_1  = KPD_1  / nValues
+    L1_KPD_2  = KPD_2  / nValues
+    L1_KPD_3  = KPD_3  / nValues
+    L1_KPD_4  = KPD_4  / nValues
+    L1_SD_1   = SD_1  / nValues
+    L1_SD_2   = SD_2  / nValues
+    L1_SD_3   = SD_3  / nValues
+    L1_SD_4   = SD_4  / nValues
 
     end associate
 
-    call Show ( L1_DS_1, '*** L1_DS_1 error', nLeadingLinesOption = 2, &
+    call Show ( L1_S_1, '*** L1_S_1 error', nLeadingLinesOption = 2, &
                 nTrailingLinesOption = 2 )
-    call Show ( L1_DS_2, '*** L1_DS_2 error', nLeadingLinesOption = 2, &
+    call Show ( L1_S_2, '*** L1_S_2 error', nLeadingLinesOption = 2, &
                 nTrailingLinesOption = 2 )
-    call Show ( L1_DS_3, '*** L1_DS_3 error', nLeadingLinesOption = 2, &
+    call Show ( L1_S_3, '*** L1_S_3 error', nLeadingLinesOption = 2, &
                 nTrailingLinesOption = 2 )
     call Show ( L1_KPD_1, '*** L1_KPD_1 error', nLeadingLinesOption = 2, &
                 nTrailingLinesOption = 2 )
@@ -324,6 +364,14 @@ contains
     call Show ( L1_KPD_3, '*** L1_KPD_3 error', nLeadingLinesOption = 2, &
                 nTrailingLinesOption = 2 )
     call Show ( L1_KPD_4, '*** L1_KPD_4 error', nLeadingLinesOption = 2, &
+                nTrailingLinesOption = 2 )
+    call Show ( L1_SD_1, '*** L1_SD_1 error', nLeadingLinesOption = 2, &
+                nTrailingLinesOption = 2 )
+    call Show ( L1_SD_2, '*** L1_SD_2 error', nLeadingLinesOption = 2, &
+                nTrailingLinesOption = 2 )
+    call Show ( L1_SD_3, '*** L1_SD_3 error', nLeadingLinesOption = 2, &
+                nTrailingLinesOption = 2 )
+    call Show ( L1_SD_4, '*** L1_SD_4 error', nLeadingLinesOption = 2, &
                 nTrailingLinesOption = 2 )
 
     end select !-- C

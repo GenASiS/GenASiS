@@ -18,11 +18,12 @@ Poisson_ASC__Form_Test: Basics.a Manifolds.a Operations.a Poisson_ASC__Form_Test
           Poisson_ASC__Form_Test.o Poisson_ASC__Form.o Poisson_Template.o \
           LaplacianMultipole_ASC__Form.o LaplacianMultipole_Template.o \
           SetHomogeneousSphere_Command.o SetHomogeneousSpheroid_Command.o \
-	  SetKuzminPlummerDisk_Command.o Operations.a Manifolds.a \
+	  SetKuzminPlummerDisk_Command.o SetSatohDisk_Command.o \
+	  Operations.a Manifolds.a \
           Basics.a $(LIBRARIES)
 
 Logarithmic_Poisson_ASC__Form_Test: Basics.a Manifolds.a Operations.a \
-Logarithmic_Poisson_ASC__Form_Test.o
+  Logarithmic_Poisson_ASC__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Logarithmic_Poisson_ASC__Form_Test_$(MACHINE) \
           Logarithmic_Poisson_ASC__Form_Test.o Poisson_ASC__Form.o Poisson_Template.o \
@@ -58,6 +59,11 @@ SetKuzminPlummerDisk_Command.o: \
   Manifolds.o \
   SetKuzminPlummerDisk_Command.f90
 
+SetSatohDisk_Command.o: \
+  Basics.o \
+  Manifolds.o \
+  SetSatohDisk_Command.f90
+
 SetLogarithmic_Command.o: \
   Basics.o \
   Manifolds.o \
@@ -77,6 +83,7 @@ Poisson_ASC__Form_Test.o: \
   SetHomogeneousSphere_Command.o \
   SetHomogeneousSpheroid_Command.o \
   SetKuzminPlummerDisk_Command.o \
+  SetSatohDisk_Command.o \
   Poisson_ASC__Form.o \
   Poisson_ASC__Form_Test.f90
 
