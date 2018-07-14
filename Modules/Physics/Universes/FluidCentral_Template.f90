@@ -16,8 +16,8 @@ module FluidCentral_Template
       logical ( KDL ) :: &
         Dimensionless
       type ( Atlas_SC_Form ), allocatable :: &
-        Atlas_SC_SA, &  !-- SphericalAverage
-        Atlas_SC_EM     !-- EnclosedMass
+        PositionSpace_SA, &  !-- SphericalAverage
+        PositionSpace_EM     !-- EnclosedMass
       type ( Fluid_ASC_Form ), allocatable :: &
         Fluid_ASC_SA, &  !-- SphericalAverage
         Fluid_ASC_EM     !-- EnclosedMass
@@ -263,9 +263,9 @@ contains
 
     associate ( GIS => I % GridImageStream )
     associate ( iS => 1 )  !-- iStream
-      call I % Atlas_SC_SA % OpenStream &
+      call I % PositionSpace_SA % OpenStream &
              ( GIS, 'Time', iStream = iS, VerboseOption = VerboseStream )
-      call I % Atlas_SC_EM % OpenStream &
+      call I % PositionSpace_EM % OpenStream &
              ( GIS, 'Time', iStream = iS, VerboseOption = VerboseStream )
     end associate !-- iS
     end associate !-- GIS
@@ -280,8 +280,8 @@ contains
 
     if ( allocated ( FC % Fluid_ASC_EM ) ) &
       deallocate ( FC % Fluid_ASC_EM )
-    if ( allocated ( FC % Atlas_SC_EM ) ) &
-      deallocate ( FC % Atlas_SC_EM )
+    if ( allocated ( FC % PositionSpace_EM ) ) &
+      deallocate ( FC % PositionSpace_EM )
 
     call FC % FinalizeTemplate_C_PS ( )
 
@@ -308,8 +308,8 @@ contains
 
     !-- Spherical average position space
 
-    allocate ( FC % Atlas_SC_SA )
-    associate ( PS_SA => FC % Atlas_SC_SA )
+    allocate ( FC % PositionSpace_SA )
+    associate ( PS_SA => FC % PositionSpace_SA )
 
     call PS_SA % Initialize ( 'SphericalAverage', nDimensionsOption = 1 )
 
@@ -332,8 +332,8 @@ contains
 
     !-- Enclosed mass position space
 
-    allocate ( FC % Atlas_SC_EM )
-    associate ( PS_EM => FC % Atlas_SC_EM )
+    allocate ( FC % PositionSpace_EM )
+    associate ( PS_EM => FC % PositionSpace_EM )
 
     call PS_EM % Initialize ( 'EnclosedMass', nDimensionsOption = 1 )
 
