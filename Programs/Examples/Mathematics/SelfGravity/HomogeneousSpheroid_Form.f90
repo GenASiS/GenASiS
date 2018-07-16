@@ -99,7 +99,7 @@ contains
     call PROGRAM_HEADER % GetParameter ( SemiMajor, 'SemiMajor' )
 
     Eccentricity = sqrt ( 1.0_KDR &
-                         - [ 0.2_KDR ** 2, 0.7_KDR ** 2, 0.2_KDR ** 2 ] )
+                         - [ 0.7_KDR ** 2, 0.2_KDR ** 2, 0.2_KDR ** 2 ] )
     call PROGRAM_HEADER % GetParameter ( Eccentricity, 'Eccentricity' )
 
     SemiMinor = sqrt ( 1.0_KDR - Eccentricity ** 2 ) * SemiMajor
