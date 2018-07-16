@@ -196,7 +196,7 @@ contains
     do iE = O_SD + 1, O_SD + N_SATOH_DISK
       call SetKuzminPlummerDisk &
              ( SA, RA, A, Total_Mass, &
-               KPD_a ( iE - O_KPD ), KPD_b ( iE - O_KPD ) , iE )
+               KPD_a ( iE - O_SD ), KPD_b ( iE - O_SD ) , iE )
     end do
 
     !-- Solution, Difference
