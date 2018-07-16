@@ -39,4 +39,12 @@ contains
   end subroutine Initialize 
 
 
+  subroutine Finalize ( HS )
+    
+    type ( HomogeneousSpheroidForm ) :: &
+      HS
+
+  end subroutine Finalize
+
+
 end module HomogeneousSpheroid_Form
