@@ -1,17 +1,26 @@
 PATH_GENASIS = ../../../../..
 
-all: HomogeneousSpheroid
+all: HomogeneousSpheroid KuzminPlummer
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-HomogeneousSpheroid: Basics.a Mathematics.a HomogeneousSpheroid.o
+include ../Makefile_ObjectFiles
+
+HomogeneousSpheroid: Basics.a Mathematics.a Density.a HomogeneousSpheroid.o
 	$(LINK) $(FLAGS) \
 	  -o HomogeneousSpheroid_$(MACHINE) \
 	  HomogeneousSpheroid.o HomogeneousSpheroid_Form.o \
-	  Mathematics.a Basics.a $(LIBRARIES)
+	  Density.a Mathematics.a Basics.a $(LIBRARIES)
+
+KuzminPlummer: Basics.a Mathematics.a Density.a KuzminPlummerDisk.o
+	$(LINK) $(FLAGS) \
+	  -o KuzminPlummerDisk_$(MACHINE) \
+	  KuzminPlummerDisk.o KuzminPlummerDisk_Form.o \
+	  Density.a Mathematics.a Basics.a $(LIBRARIES)
 
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MATHEMATICS)/Makefile_Dependencies
+include ../Makefile_Dependencies
 
 clean:
 	rm -f *.o *.a *.mod *.ld
@@ -22,9 +31,21 @@ clobber: clean
 HomogeneousSpheroid_Form.o: \
   Basics.a \
   Mathematics.a \
+  DensityDistribution_Template.o \
   HomogeneousSpheroid_Form.f90
 
 HomogeneousSpheroid.o: \
   Basics.o \
   HomogeneousSpheroid_Form.o \
   HomogeneousSpheroid.f90
+
+KuzminPlummerDisk_Form.o: \
+  Basics.a \
+  Mathematics.a \
+  DensityDistribution_Template.o \
+  KuzminPlummerDisk_Form.f90
+
+KuzminPlummerDisk.o: \
+  Basics.o \
+  KuzminPlummerDisk_Form.o \
+  KuzminPlummerDisk.f90
