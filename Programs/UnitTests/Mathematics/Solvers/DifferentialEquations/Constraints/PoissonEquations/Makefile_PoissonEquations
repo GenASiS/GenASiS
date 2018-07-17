@@ -2,7 +2,7 @@ PATH_GENASIS = ../../../../../../../..
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-all: LaplacianMultipole_ASC__Form_Test Poisson_ASC__Form_Test
+all: LaplacianMultipole_ASC__Form_Test Poisson_ASC__Form_Test Logarithmic_Poisson_ASC__Form_Test
 
 LaplacianMultipole_ASC__Form_Test: Basics.a Manifolds.a \
   LaplacianMultipole_ASC__Form_Test.o
@@ -12,13 +12,24 @@ LaplacianMultipole_ASC__Form_Test: Basics.a Manifolds.a \
           LaplacianMultipole_Template.o SetHomogeneousSphere_Command.o \
           Manifolds.a Basics.a $(LIBRARIES)
 
-Poisson_ASC__Form_Test: Basics.a Manifolds.a Poisson_ASC__Form_Test.o
+Poisson_ASC__Form_Test: Basics.a Manifolds.a Operations.a Poisson_ASC__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Poisson_ASC__Form_Test_$(MACHINE) \
           Poisson_ASC__Form_Test.o Poisson_ASC__Form.o Poisson_Template.o \
           LaplacianMultipole_ASC__Form.o LaplacianMultipole_Template.o \
-          SetHomogeneousSphere_Command.o \
-          Manifolds.a Basics.a $(LIBRARIES)
+          SetHomogeneousSphere_Command.o SetHomogeneousSpheroid_Command.o \
+	  SetKuzminPlummerDisk_Command.o SetSatohDisk_Command.o \
+	  Operations.a Manifolds.a \
+          Basics.a $(LIBRARIES)
+
+Logarithmic_Poisson_ASC__Form_Test: Basics.a Manifolds.a Operations.a \
+  Logarithmic_Poisson_ASC__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Logarithmic_Poisson_ASC__Form_Test_$(MACHINE) \
+          Logarithmic_Poisson_ASC__Form_Test.o Poisson_ASC__Form.o Poisson_Template.o \
+          LaplacianMultipole_ASC__Form.o LaplacianMultipole_Template.o \
+	  SetLogarithmic_Command.o Operations.a Manifolds.a \
+          Basics.a $(LIBRARIES)
 
 clean:
 	rm -f *.o *.a *.mod *.ld
@@ -26,15 +37,37 @@ clean:
 clobber: clean
 	rm -f LaplacianMultipole_ASC__Form_Test_*
 	rm -f Poisson_ASC__Form_Test_*
+	rm -f Logarithmic_Poisson_ASC__Form_Test_*
 
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MANIFOLDS)/Makefile_Dependencies
+include $(PATH_OPERATIONS)/Makefile_Dependencies
 include $(PATH_POISSON_EQUATIONS)/Makefile_Dependencies
 
 SetHomogeneousSphere_Command.o: \
   Basics.o \
   Manifolds.o \
   SetHomogeneousSphere_Command.f90
+
+SetHomogeneousSpheroid_Command.o: \
+  Basics.o \
+  Manifolds.o \
+  SetHomogeneousSpheroid_Command.f90
+
+SetKuzminPlummerDisk_Command.o: \
+  Basics.o \
+  Manifolds.o \
+  SetKuzminPlummerDisk_Command.f90
+
+SetSatohDisk_Command.o: \
+  Basics.o \
+  Manifolds.o \
+  SetSatohDisk_Command.f90
+
+SetLogarithmic_Command.o: \
+  Basics.o \
+  Manifolds.o \
+  SetLogarithmic_Command.f90
 
 LaplacianMultipole_ASC__Form_Test.o: \
   Basics.o \
@@ -46,6 +79,18 @@ LaplacianMultipole_ASC__Form_Test.o: \
 Poisson_ASC__Form_Test.o: \
   Basics.o \
   Manifolds.o \
+  Operations.o \
   SetHomogeneousSphere_Command.o \
+  SetHomogeneousSpheroid_Command.o \
+  SetKuzminPlummerDisk_Command.o \
+  SetSatohDisk_Command.o \
   Poisson_ASC__Form.o \
   Poisson_ASC__Form_Test.f90
+
+Logarithmic_Poisson_ASC__Form_Test.o: \
+  Basics.o \
+  Manifolds.o \
+  Operations.o \
+  SetLogarithmic_Command.o \
+  Poisson_ASC__Form.o \
+  Logarithmic_Poisson_ASC__Form_Test.f90

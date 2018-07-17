@@ -1,0 +1,30 @@
+PATH_GENASIS = ../../../../..
+
+all: HomogeneousSpheroid
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+HomogeneousSpheroid: Basics.a Mathematics.a HomogeneousSpheroid.o
+	$(LINK) $(FLAGS) \
+	  -o HomogeneousSpheroid_$(MACHINE) \
+	  HomogeneousSpheroid.o HomogeneousSpheroid_Form.o \
+	  Mathematics.a Basics.a $(LIBRARIES)
+
+include $(PATH_BASICS)/Makefile_Dependencies
+include $(PATH_MATHEMATICS)/Makefile_Dependencies
+
+clean:
+	rm -f *.o *.a *.mod *.ld
+
+clobber: clean
+	rm -f HomogeneousSpheroid_*
+
+HomogeneousSpheroid_Form.o: \
+  Basics.a \
+  Mathematics.a \
+  HomogeneousSpheroid_Form.f90
+
+HomogeneousSpheroid.o: \
+  Basics.o \
+  HomogeneousSpheroid_Form.o \
+  HomogeneousSpheroid.f90
