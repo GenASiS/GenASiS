@@ -2,266 +2,70 @@
 !! Analytic solutions taken from Binney and Tremaine "Galactic Dynamics" second edition 
 !!   Chapter 2 Section 2.5.2 Table 2.1 pg 90.
 
+! Constructs DD % N_equations homogeneous spheroid density profiles, 
+!   making the last profile prolate.
+
 module HomogeneousSpheroid_Form
 
   use Basics
   use Mathematics
+  use DensityDistribution_Template
   
   implicit none
 
-  integer ( KDI ), private, parameter :: &
-    N_EQUATIONS = 3
-  character ( LDL ), dimension ( N_EQUATIONS ), private, parameter :: &
-    VARIABLE = [ 'OblateHomogeneousSpheroid_1 ', &
-                 'OblateHomogeneousSpheroid_2 ', &
-                 'ProlateHomogeneousSpheroid_1' ]
-
-  type, public :: HomogeneousSpheroidForm
-    type ( GridImageStreamForm ), allocatable :: &
-      Stream
-    type ( Atlas_SC_CC_Form ), allocatable :: &
-      Atlas
-    type ( Storage_ASC_Form ), allocatable :: &
-      Source, &
-      Solution, &
-      Reference, &
-      Difference
-    type ( Poisson_ASC_Form ), allocatable :: &
-      Poisson
+  type, public, extends ( DensityDistributionTemplate ) :: &
+    HomogeneousSpheroidForm
   contains
     procedure, public, pass :: &
-      Initialize
-    procedure, public, pass :: &
-      ComputeError
-    final :: &
-      Finalize
+      SetHomogeneousSpheroid
   end type HomogeneousSpheroidForm
 
     private :: &
-      SetHomogeneousSpheroid
+      SetHomogeneousSpheroidKernal
 
 contains
 
 
-  subroutine Initialize ( HS, Name )
-    
-    class ( HomogeneousSpheroidForm ) :: &
+  subroutine SetHomogeneousSpheroid ( HS, Density, SemiMajor, Eccentricity )
+    class ( HomogeneousSpheroidForm ), intent ( inout ) :: &
       HS
-    character ( * ), intent ( in ) :: &
-      Name
+    real ( KDR ), intent ( in ) :: &
+      Density
+    real ( KDR ), dimension ( HS % N_Equations ) :: &
+      Eccentricity, &
+      SemiMajor
 
     integer ( KDI ) :: &
-      iE, & !iEquation
-      MaxDegree
+      iE !-- iEquation
     real ( KDR ) :: &
-      Density, &
-      TotalMass
-    real ( KDR ), dimension ( N_EQUATIONS ) :: &
-      Eccentricity, &
-      SemiMajor, &
+      ProlateMajor
+    real ( KDR ), dimension ( HS % N_Equations ) :: &
       SemiMinor
-
-    !-- Atlas
-    
-    allocate ( HS % Atlas )
-    associate ( A => HS % Atlas )
-    call A % Initialize ( Name, PROGRAM_HEADER % Communicator )
-    call A % CreateChart_CC ( )
-    call A % SetGeometry ( )
-
-    !-- Poisson
-    MaxDegree = 10
-    call PROGRAM_HEADER % GetParameter ( MaxDegree, 'MaxDegree' )
-
-    allocate ( HS % Poisson )
-    associate ( P => HS % Poisson )
-    call P % Initialize &
-           ( A, SolverType = 'MULTIPOLE', MaxDegreeOption = MaxDegree, &
-             nEquationsOption = N_EQUATIONS )
-
-    !-- Source, Reference
-
-    allocate ( HS % Source )
-    associate ( SA => HS % Source )
-    call SA % Initialize &
-           ( A, 'Source', N_EQUATIONS, &
-             VariableOption = VARIABLE, &
-             WriteOption = .true. )
-
-    allocate ( HS % Reference )
-    associate ( RA => HS % Reference )
-    call RA % Initialize &
-           ( A, 'Reference', N_EQUATIONS, &
-             VariableOption = VARIABLE, &
-             WriteOption = .true. )
-
-    SemiMajor = A % Chart % MaxCoordinate ( 1 ) / 2
-    call PROGRAM_HEADER % GetParameter ( SemiMajor, 'SemiMajor' )
-
-    Eccentricity = sqrt ( 1.0_KDR &
-                         - [ 0.7_KDR ** 2, 0.2_KDR ** 2, 0.2_KDR ** 2 ] )
-    call PROGRAM_HEADER % GetParameter ( Eccentricity, 'Eccentricity' )
 
     SemiMinor = sqrt ( 1.0_KDR - Eccentricity ** 2 ) * SemiMajor
 
     !-- Prolate Spheroid 
-    SemiMajor ( N_EQUATIONS ) = SemiMinor ( N_EQUATIONS )
-    SemiMinor ( N_EQUATIONS ) = A % Chart % MaxCoordinate ( 1 ) * 0.5_KDR
+    ProlateMajor                   = SemiMajor ( HS % N_Equations )
+    SemiMajor ( HS % N_Equations ) = SemiMinor ( HS % N_Equations )
+    SemiMinor ( HS % N_Equations ) = ProlateMajor
 
-    Density = 1.0_KDR / ( 4.0_KDR * CONSTANT % PI )
-    call PROGRAM_HEADER % GetParameter ( Density, 'Density' )
+    associate ( A => HS % Atlas )
+    associate ( SA => HS % Source )
+    associate ( RA => HS % Reference )
 
-    do iE = 1, N_EQUATIONS
-      call SetHomogeneousSpheroid &
+    do iE = 1, HS % N_Equations
+      call SetHomogeneousSpheroidKernal &
              ( SA, RA, A, Density, SemiMajor ( iE), SemiMinor ( iE ), iE )
     end do
 
-    end associate !-- SA
     end associate !-- RA
-
-    !-- Solution, Difference
-
-    allocate ( HS % Solution )
-    associate ( SA => HS % Solution )
-    call SA % Initialize &
-           ( A, 'Solution', N_EQUATIONS, &
-             VariableOption = VARIABLE, &
-             WriteOption = .true. )
     end associate !-- SA
-
-    allocate ( HS % Difference)
-    associate ( DA => HS % Difference )
-    call DA % Initialize &
-           ( A, 'Difference', N_EQUATIONS, &
-             VariableOption = VARIABLE, &
-             WriteOption = .true. )
-    end associate !-- DA
-
-    call P % Solve ( HS % Solution, HS % Source )
-    
-    call HS % ComputeError ( ) 
-
-    !-- Write
-
-    allocate ( HS % Stream )
-    call HS % Stream % Initialize &
-           ( Name, CommunicatorOption = PROGRAM_HEADER % Communicator )    
-    associate ( GIS => HS % Stream )
-
-    call A % OpenStream ( GIS, 'Stream', iStream = 1 )
-
-    call GIS % Open ( GIS % ACCESS_CREATE )
-    call A % Write ( iStream = 1 )
-    call GIS % Close ( )
-
-    end associate !-- GIS
-
-    !-- Cleanup
-
-    end associate !-- P
-    end associate !-- A
-  
-  end subroutine Initialize 
-
-
-  subroutine ComputeError ( HS )
-
-    class ( HomogeneousSpheroidForm ), intent ( in ) :: &
-      HS
-    
-    real ( KDR ) :: &
-      L1_OS_1, &
-      L1_OS_2, &
-      L1_PS
-    class ( StorageForm ), pointer :: &
-      Solution, &
-      Reference, &
-      Difference         
-    type ( CollectiveOperation_R_Form ) :: &
-      CO
-    
-    Solution   => HS % Solution   % Storage ( )
-    Reference  => HS % Reference  % Storage ( )
-    Difference => HS % Difference % Storage ( )
-
-    call MultiplyAdd &
-           ( Solution % Value, Reference % Value, -1.0_KDR, Difference % Value )
-
-    associate ( A => HS % Atlas ) 
-    select type ( C => A % Chart )
-    class is ( Chart_SL_Template )
-    
-    associate ( OS_1   => Difference % Value ( :, 1 ), &
-                OS_2   => Difference % Value ( :, 2 ), &
-                PS     => Difference % Value ( :, 3 ) )
-
-    call CO % Initialize ( A % Communicator, [ 4 ], [ 4 ] )
-    CO % Outgoing % Value ( 1 ) = sum ( abs ( OS_1 ), &
-                                        mask = C % IsProperCell )
-    CO % Outgoing % Value ( 2 ) = sum ( abs ( OS_2 ), &
-                                       mask = C % IsProperCell )
-    CO % Outgoing % Value ( 3 ) = sum ( abs ( PS ), &
-                                        mask = C % IsProperCell )
-    CO % Outgoing % Value ( 4 ) = C % nProperCells
-    call CO % Reduce ( REDUCTION % SUM )
-
-    end associate !-- OS_1, etc.
-    
-    !-- L1 error
-
-    associate &
-      ( OS_1    => CO % Incoming % Value ( 1 ), &
-        OS_2    => CO % Incoming % Value ( 2 ), &
-        PS      => CO % Incoming % Value ( 3 ), &
-        nValues => CO % Incoming % Value ( 4 ) )
-
-    L1_OS_1  = OS_1 / nValues
-    L1_OS_2  = OS_2 / nValues
-    L1_PS    = PS   / nValues
-
-    end associate !-- OS_1, etc. 
-
-    call Show ( L1_OS_1, '*** L1_OS_1 error', nLeadingLinesOption = 2, &
-                nTrailingLinesOption = 2 )
-    call Show ( L1_OS_2, '*** L1_OS_2 error', nLeadingLinesOption = 2, &
-                nTrailingLinesOption = 2 )
-    call Show ( L1_PS, '*** L1_PS error', nLeadingLinesOption = 2, &
-                nTrailingLinesOption = 2 )
-
-    end select !-- C
     end associate !-- A
 
-    !-- Relative difference
-
-    Difference % Value = abs ( Difference % Value / Reference % Value )
-
-    nullify ( Solution, Reference, Difference )
-
-  end subroutine ComputeError  
+  end subroutine SetHomogeneousSpheroid 
 
 
-  subroutine Finalize ( HS )
-    
-    type ( HomogeneousSpheroidForm ) :: &
-      HS
-
-    if ( allocated ( HS % Stream ) ) &
-      deallocate ( HS % Stream )
-    if ( allocated ( HS % Reference ) ) &
-      deallocate ( HS % Reference )
-    if ( allocated ( HS % Solution ) ) &
-      deallocate ( HS % Solution )
-    if ( allocated ( HS % Source ) ) &
-      deallocate ( HS % Source )
-    if ( allocated ( HS % Poisson ) ) &
-      deallocate ( HS % Poisson )
-    if ( allocated ( HS % Atlas ) ) &
-      deallocate ( HS % Atlas )
-
-  end subroutine Finalize
-  
-
-  subroutine SetHomogeneousSpheroid &
+  subroutine SetHomogeneousSpheroidKernal &
                ( Source_ASC, Reference_ASC, A, Density, a_1, a_3, &
                  iVariable )
 
@@ -511,7 +315,7 @@ contains
     deallocate ( rho_sq, Z_sq, l, C_I_vec )
     nullify ( G, Source, Reference )
 
-  end subroutine SetHomogeneousSpheroid
+  end subroutine SetHomogeneousSpheroidKernal
 
 
 end module HomogeneousSpheroid_Form

@@ -1,0 +1,8 @@
+DensityDistribution_Template.o: \
+  Basics.a \
+  Mathematics.a \
+  DensityDistribution_Template.f90
+
+
+Density.a: $(DENSITY)
+	ar r Density.a $(DENSITY)
