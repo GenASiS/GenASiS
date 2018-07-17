@@ -221,8 +221,6 @@ contains
             dX_R = dX_I ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) )
               
             if ( UseLimiter ( iV, jV, kV ) > 0.0_KDR ) then
-call Show ( UseLimiter ( iV, jV, kV ), '>>> UseLimiter' )
-call Show ( [ iV, jV, kV ], '>>> [ iV, jV, kV ]' )
               dVdX ( iV, jV, kV ) &
                 = ( sign ( 0.5_KDR, dV_L ) + sign ( 0.5_KDR, dV_R ) ) &
                   * min ( abs ( Theta * dV_L / dX_L ), &
