@@ -182,7 +182,7 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       NumberOption, &
       BlockNumberOption
-    
+
     if ( AccessMode == ACCESS_MODE_SET_GRID ) then
       GIS % AccessMode = AccessMode
       call Show ( 'Setting a GridImage grid', GIS % IGNORABILITY )

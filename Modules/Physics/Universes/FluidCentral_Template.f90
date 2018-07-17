@@ -15,6 +15,8 @@ module FluidCentral_Template
         CoordinateUnit
       logical ( KDL ) :: &
         Dimensionless
+      type ( GridImageStreamForm ), allocatable :: &
+        GridImageStream_SA_EM
       type ( Atlas_SC_Form ), allocatable :: &
         PositionSpace_SA, &  !-- SphericalAverage
         PositionSpace_EM     !-- EnclosedMass
@@ -29,7 +31,11 @@ module FluidCentral_Template
     procedure ( IG ), private, pass, deferred :: &
       InitializeGeometry
     procedure, public, pass :: &  !-- 2
+      OpenGridImageStreams
+    procedure, public, pass :: &  !-- 2
       OpenManifoldStreams
+    procedure, public, pass :: &  !-- 3
+      Write
     procedure, public, pass :: &
       FinalizeTemplate_FC
   end type FluidCentralTemplate
@@ -245,6 +251,28 @@ contains
   end subroutine InitializeTemplate_FC
 
 
+  subroutine OpenGridImageStreams ( I )
+
+    class ( FluidCentralTemplate ), intent ( inout ) :: &
+      I
+
+    call I % OpenGridImageStreamsTemplate ( )
+
+    if ( I % PositionSpace % Communicator % Rank /= CONSOLE % DisplayRank ) &
+      return
+
+    allocate ( I % GridImageStream_SA_EM )
+    associate &
+      ( GIS_I     => I % GridImageStream, &
+        GIS_SA_EM => I % GridImageStream_SA_EM )
+    call GIS_SA_EM % Initialize &
+           ( trim ( I % Name ) // '_SA_EM', & 
+             WorkingDirectoryOption = GIS_I % WorkingDirectory )
+    end associate !-- GIS_I, etc.
+
+  end subroutine OpenGridImageStreams
+
+
   subroutine OpenManifoldStreams ( I )
 
     class ( FluidCentralTemplate ), intent ( inout ) :: &
@@ -255,13 +283,13 @@ contains
 
     call I % OpenManifoldStreamsTemplate ( )
 
-    if ( I % PositionSpace % Communicator % Rank /= 0 ) &
+    if ( I % PositionSpace % Communicator % Rank /= CONSOLE % DisplayRank ) &
       return
 
     VerboseStream = .false.
     call PROGRAM_HEADER % GetParameter ( VerboseStream, 'VerboseStream' )
 
-    associate ( GIS => I % GridImageStream )
+    associate ( GIS => I % GridImageStream_SA_EM )
     associate ( iS => 1 )  !-- iStream
       call I % PositionSpace_SA % OpenStream &
              ( GIS, 'Time', iStream = iS, VerboseOption = VerboseStream )
@@ -273,6 +301,36 @@ contains
   end subroutine OpenManifoldStreams
 
 
+  subroutine Write ( I )
+
+    class ( FluidCentralTemplate ), intent ( inout ) :: &
+      I
+
+    call I % WriteTemplate ( )
+
+    if ( I % PositionSpace % Communicator % Rank /= CONSOLE % DisplayRank ) &
+      return
+
+    associate &
+      ( GIS => I % GridImageStream_SA_EM, &
+        iS  => 1 )  !-- iStream
+    call GIS % Open ( GIS % ACCESS_CREATE )
+
+    call I % PositionSpace_SA % Write &
+           ( iStream = iS, DirectoryOption = 'Chart_SA', &
+             TimeOption = I % Time / I % TimeUnit, &
+             CycleNumberOption = I % iCycle )
+    call I % PositionSpace_EM % Write &
+           ( iStream = iS, DirectoryOption = 'Chart_EM', &
+             TimeOption = I % Time / I % TimeUnit, &
+             CycleNumberOption = I % iCycle )
+
+    call GIS % Close ( )
+    end associate !-- GIS, etc.
+
+  end subroutine Write
+
+
   subroutine FinalizeTemplate_FC ( FC )
 
     class ( FluidCentralTemplate ), intent ( inout ) :: &
@@ -280,8 +338,16 @@ contains
 
     if ( allocated ( FC % Fluid_ASC_EM ) ) &
       deallocate ( FC % Fluid_ASC_EM )
+    if ( allocated ( FC % Fluid_ASC_SA ) ) &
+      deallocate ( FC % Fluid_ASC_SA )
+
     if ( allocated ( FC % PositionSpace_EM ) ) &
       deallocate ( FC % PositionSpace_EM )
+    if ( allocated ( FC % PositionSpace_SA ) ) &
+      deallocate ( FC % PositionSpace_SA )
+
+    if ( allocated ( FC % GridImageStream_SA_EM ) ) &
+      deallocate ( FC % GridImageStream_SA_EM )
 
     call FC % FinalizeTemplate_C_PS ( )
 
@@ -302,7 +368,7 @@ contains
     select type ( FA => FC % Current_ASC )
     class is ( Fluid_ASC_Form )
 
-    if ( PS % Communicator % Rank /= 0 ) &
+    if ( PS % Communicator % Rank /= CONSOLE % DisplayRank ) &
       return
 
 

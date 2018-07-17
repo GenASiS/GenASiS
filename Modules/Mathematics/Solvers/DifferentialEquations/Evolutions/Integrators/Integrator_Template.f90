@@ -59,7 +59,9 @@ module Integrator_Template
       Evolve
     procedure, public, pass :: &  !-- 1
       FinalizeTemplate
-    procedure, private, pass :: &  !-- 2
+    procedure, public, pass :: &  !-- 2
+      OpenGridImageStreamsTemplate
+    procedure, public, pass :: &  !-- 2
       OpenGridImageStreams
     procedure, public, pass :: &  !-- 2
       OpenManifoldStreamsTemplate
@@ -82,6 +84,8 @@ module Integrator_Template
 !      ComputeTally
     procedure, private, pass :: &  !-- 3
       ComputeTally
+    procedure, public, pass :: &  !-- 3
+      WriteTemplate
     procedure, public, pass :: &  !-- 3
       Write
 !-- See FIXME above
@@ -316,7 +320,7 @@ contains
   end subroutine FinalizeTemplate
 
 
-  subroutine OpenGridImageStreams ( I )
+  subroutine OpenGridImageStreamsTemplate ( I )
 
     class ( IntegratorTemplate ), intent ( inout ) :: &
       I
@@ -333,6 +337,16 @@ contains
            ( I % Name, CommunicatorOption = I % Communicator, &
              WorkingDirectoryOption = OutputDirectory )
     end associate !-- GIS
+
+  end subroutine OpenGridImageStreamsTemplate
+
+
+  subroutine OpenGridImageStreams ( I )
+
+    class ( IntegratorTemplate ), intent ( inout ) :: &
+      I
+
+    call I % OpenGridImageStreamsTemplate ( )
 
   end subroutine OpenGridImageStreams
 
@@ -535,7 +549,7 @@ contains
   end subroutine ComputeTally
 
 
-  subroutine Write ( I )
+  subroutine WriteTemplate ( I )
 
     class ( IntegratorTemplate ), intent ( inout ) :: &
       I
@@ -592,6 +606,16 @@ contains
     end associate !-- GIS, etc.
 
     if ( associated ( Timer ) ) call Timer % Stop ( )
+
+  end subroutine WriteTemplate
+
+
+  subroutine Write ( I )
+
+    class ( IntegratorTemplate ), intent ( inout ) :: &
+      I
+
+    call I % WriteTemplate ( )
 
   end subroutine Write
 
