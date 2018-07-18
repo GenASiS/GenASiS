@@ -13,7 +13,8 @@ module ConservationLawStep_Form
       ALPHA_MINUS = 2, &
       N_MODIFIED_SPEEDS = 2, &
       iTimerAccelerated, &
-      iTimerDataTransfer
+      iTimerDataTransferDevice, &
+      iTimerDataTransferHost
     real ( KDR ) :: &
       LimiterParameter
     type ( StorageForm ) :: &
@@ -98,6 +99,9 @@ contains
     call CLS % ReconstructionOuter % Initialize &
            ( [ nCells, CF % nVariables ], NameOption = 'ReconstructionOuter', &
              VariableOption = CF % Variable )
+    
+    call CLS % ReconstructionInner % AllocateDevice ( )
+    call CLS % ReconstructionOuter % AllocateDevice ( )
 
     !-- Riemann solver
 
@@ -151,7 +155,9 @@ contains
            ( 'Accelerated', CLS % iTimerAccelerated, Level = 1 )
     
     call PROGRAM_HEADER % AddTimer &
-           ( 'DataTransfer', CLS % iTimerDataTransfer, Level = 1 )
+           ( 'DataTransfer to Device', CLS % iTimerDataTransferDevice, Level = 1 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'DataTransfer to Host', CLS % iTimerDataTransferHost, Level = 1 )
     
   end subroutine Initialize
 
@@ -284,8 +290,9 @@ contains
     associate ( CF => CLS % ConservedFields )
     associate ( DM  => CF % DistributedMesh )
     associate &
-      ( T_DT  => PROGRAM_HEADER % Timer ( CLS % iTimerDataTransfer ), &
-        T_A   => PROGRAM_HEADER % Timer ( CLS % iTimerAccelerated ) )
+      ( T_DT_D  => PROGRAM_HEADER % Timer ( CLS % iTimerDataTransferDevice ), &
+        T_DT_H  => PROGRAM_HEADER % Timer ( CLS % iTimerDataTransferHost ), &
+        T_A     => PROGRAM_HEADER % Timer ( CLS % iTimerAccelerated ) )
     
     !call Show ('<<< Compute Differences')
 
@@ -296,15 +303,15 @@ contains
            
     !call Show ('<<< After ApplyBoundary')
     
-    call T_DT % Start ( )
+    call T_DT_D % Start ( )
     call CF % UpdateDevice ( CF % iaPrimitive ( 1 ) )
-    call T_DT % Stop ( )
+    call T_DT_D % Stop ( )
     
     do iP = 1, CF % N_PRIMITIVE
       if ( iP < CF % N_PRIMITIVE ) then
-        call T_DT % Start ( )
+        call T_DT_D % Start ( )
         call CF % UpdateDevice ( CF % iaPrimitive ( iP + 1 ) )
-        call T_DT % Stop ( )
+        call T_DT_D % Stop ( )
       end if
       call DM % SetVariablePointer &
              ( CF % Value ( :, CF % iaPrimitive ( iP ) ), V )
@@ -321,10 +328,10 @@ contains
                dV_Left, dV_Right )
       call T_A % Stop ( )
       
-      call T_DT % Start ( )
+      call T_DT_H % Start ( )
       call CLS % DifferenceLeft % UpdateHost ( iP )
       call CLS % DifferenceRight % UpdateHost ( iP )
-      call T_DT % Stop ( )
+      call T_DT_H % Stop ( )
     end do
     
     !call Show ( '<<< After Differences' )
@@ -555,22 +562,38 @@ contains
       V_Inner, &
       V_Outer
 
-    real ( KDR ), dimension ( size ( V ) ) :: &
+    !real ( KDR ), dimension ( size ( V ) ) :: &
+    !  dV
+    integer ( KDI ) :: &
+      iV
+    real ( KDR ) :: &
       dV
+      
+    
 
-    where ( dV_Left > 0.0_KDR .and. dV_Right > 0.0_KDR )
-      dV = min ( Theta * dV_Left, Theta * dV_Right, &
-                   0.5_KDR * ( dV_Left + dV_Right ) )
-    elsewhere ( dV_Left < 0.0_KDR .and. dV_Right < 0.0_KDR )
-      dV = max ( Theta * dV_Left, Theta * dV_Right, &
-                   0.5_KDR * ( dV_Left + dV_Right ) )      
-    elsewhere
-      dV = 0.0_KDR
-    endwhere
+    !where ( dV_Left > 0.0_KDR .and. dV_Right > 0.0_KDR )
+    !  dV = min ( Theta * dV_Left, Theta * dV_Right, &
+    !               0.5_KDR * ( dV_Left + dV_Right ) )
+    !elsewhere ( dV_Left < 0.0_KDR .and. dV_Right < 0.0_KDR )
+    !  dV = max ( Theta * dV_Left, Theta * dV_Right, &
+    !               0.5_KDR * ( dV_Left + dV_Right ) )      
+    !elsewhere
+    !  dV = 0.0_KDR
+    !endwhere
 
-    V_Inner = V - 0.5_KDR * dV
-    V_Outer = V + 0.5_KDR * dV
-
+    !V_Inner = V - 0.5_KDR * dV
+    !V_Outer = V + 0.5_KDR * dV
+    
+    do iV = 1, size ( V )
+      dV = ( sign ( 0.5_KDR, dV_Left ( iV ) ) &
+             + sign ( 0.5_KDR, dV_Right ( iV ) ) ) &
+             * min ( abs ( Theta * dV_Left ( iV ) ), &
+                     abs ( Theta * dV_Right ( iV ) ), &
+                     abs ( 0.5_KDR * ( dV_Left ( iV ) + dV_Right ( iV ) ) ) )
+      V_Inner ( iV ) = V ( iV ) - 0.5_KDR * dV
+      V_Outer ( iV ) = V ( iV ) + 0.5_KDR * dV
+    end do
+    
   end subroutine ComputeReconstructionKernel
 
 
