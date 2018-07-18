@@ -1,6 +1,7 @@
 PATH_GENASIS = ../../../../..
 
-all: Difference_Form_Test Jacobi_Test JacobiAsync_Test
+all: Difference_Form_Test Jacobi_Test JacobiAsync_Test Async_Test
+
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
@@ -16,6 +17,9 @@ Jacobi_Test: Basics.a Jacobi_Test.o
 JacobiAsync_Test: Basics.a JacobiAsync_Test.o
 	$(LINK) $(FLAGS) -o JacobiAsync_Test_$(MACHINE) \
           JacobiAsync_Test.o Basics.a $(LIBRARIES)
+
+Async_Test: async.o
+	$(LINK_NVCC) -o Async_Test_$(MACHINE) async.o
 
 clean:
 	rm -f *.o *.a *.mod *.ld
@@ -42,3 +46,6 @@ Jacobi_Test.o: \
 JacobiAsync_Test.o: \
   Basics.o \
   JacobiAsync_Test.f90
+
+async.o: \
+  async.cu

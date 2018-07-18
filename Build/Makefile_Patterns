@@ -8,3 +8,7 @@ endif
 
 %.o : %.c
 	$(CC_COMPILE) $(DEFINES) $(CFLAGS) $(INCLUDE) $<
+
+%.o : %.cu
+	$(NVCC_COMPILE) $(DEFINES) $(CFLAGS) $(INCLUDE) $<
+

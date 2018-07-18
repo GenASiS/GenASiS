@@ -15,8 +15,11 @@ FORTRAN_OPTIMIZE     = -Ofast
 FORTRAN_PROFILE      = 
 
 CC_COMPILE           = mpicc -c -fopenmp
+NVCC_COMPILE         = nvcc -c
 
 LINK = mpifort -qsmp=omp -qoffload #-qsmp=omp:auto -qoffload
+
+LINK_NVCC = nvcc
 
 #SILO_DIR = /ccs/home/reubendb/projects/swtree/peak/silo/4.10.2/xl2017
 SILO_DIR = /sw/peak/caascade/silo/4.10.2/xl20180502
