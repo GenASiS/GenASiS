@@ -65,6 +65,10 @@ module Storage_Form
       UpdateHostSingle
     generic :: &
       UpdateHost => UpdateHostAll, UpdateHostSingle
+    procedure, public, pass :: &
+      FinishUpdate_S
+    generic :: &
+      FinishUpdate => FinishUpdate_S
     final :: &
       Finalize
   end type StorageForm
@@ -300,7 +304,7 @@ contains
       iS
     
     call Search ( S % iaSelected, iV, iS )
-    call UpdateDevice ( S % Value ( :, iV ), S % D_Selected ( iS ) )
+    call UpdateDeviceAsync ( S % Value ( :, iV ), S % D_Selected ( iS ) )
   
   end subroutine UpdateDeviceSingle
 
@@ -335,7 +339,25 @@ contains
     call UpdateHost ( S % D_Selected ( iS ), S % Value ( :, iV ) )
   
   end subroutine UpdateHostSingle
-
+  
+  
+  subroutine FinishUpdate_S ( S, iV )
+  
+    class ( StorageForm ), intent ( in ) :: &
+      S
+    integer ( KDI ), intent ( in ) :: &
+      iV
+      
+    integer ( KDI ) :: &
+      iS
+      
+    !call Search ( S % iaSelected, iV, iS )
+    !!$OMP task depend ( in: S % D_Selected ( iS ) )
+    !Dummy = 1
+    !!$OMP end task
+  
+  end subroutine FinishUpdate_S
+  
 
   impure elemental subroutine Finalize ( S )
 

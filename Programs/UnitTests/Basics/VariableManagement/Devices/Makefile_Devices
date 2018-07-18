@@ -39,7 +39,7 @@ UpdateDevice_Command_Test: UpdateDevice_Command_Test.o
           UpdateDevice_Command_Test.o \
           AllocateDevice_Command.o AssociateDevice_Command.o \
           DeallocateDevice_Command.o DisassociateDevice_Command.o \
-          UpdateDevice_Command.o \
+          UpdateDevice_Command.o UpdateHost_Command.o \
           Device_C_OMP.o Device_OMP.o $(SPECIFIERS)
 
 clean:
@@ -78,4 +78,5 @@ DisassociateDevice_Command_Test.o: \
 UpdateDevice_Command_Test.o: \
   AllocateDevice_Command.o \
   UpdateDevice_Command.o \
+  UpdateHost_Command.o \
   UpdateDevice_Command_Test.f90

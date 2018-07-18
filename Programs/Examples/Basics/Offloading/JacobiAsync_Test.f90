@@ -16,7 +16,9 @@ module Jacobi_Form
     type ( TimerForm ) :: &
       Timer_GPU, &
       Timer_CPU, &
-      Timer_DataTransfer
+      Timer_DataTransfer, &
+      Timer_StartTransfer, &
+      Timer_FinishTransfer
   contains
     procedure, public, pass :: &
       Initialize
@@ -51,7 +53,9 @@ contains
     
     call J % Timer_GPU % Initialize ( 'Jacobi GPU ', Level = 1 )
     call J % Timer_CPU % Initialize ( 'Jacobi CPU ', Level = 1 )
-    call J % Timer_DataTransfer % Initialize ( 'Data Transfer ', Level = 1 )
+    !call J % Timer_DataTransfer % Initialize ( 'Data Transfer ', Level = 1 )
+    call J % Timer_StartTransfer % Initialize ( 'Start Transfer ', Level = 1 )
+    call J % Timer_FinishTransfer % Initialize ( 'Finish Transfer ', Level = 1 )
     
     allocate ( J % Input ( nCells ( 1 ), nCells ( 2 ) ) )
     allocate ( J % Output ( nCells ( 1 ), nCells ( 2 ) ) )
@@ -63,21 +67,30 @@ contains
     call AllocateDevice ( J % Input, J % D_Input )
     call AllocateDevice ( J % Output, J % D_Output )
     
-    call J % Timer_DataTransfer % Start ( )
-    
+    call J % Timer_StartTransfer % Start ( )
     !-- Update device's J % Input 
     I => J % Input
     call AssociateDevice ( J % D_Input, I, ErrorOption = Error )
-    !$OMP target update to ( I )
-    call DisassociateDevice ( I, Error )
+    !$OMP target update to ( I ) depend ( out: I ) nowait
     
     !-- Update device's J % Output
     O => J % Output
     call AssociateDevice ( J % D_Output, O, ErrorOption = Error )
-    !$OMP target update to ( O )
-    call DisassociateDevice ( O, Error )
+    !$OMP target update to ( O ) depend ( out: O ) nowait
+    call J % Timer_StartTransfer % Stop ( )
     
-    call J % Timer_DataTransfer % Stop ( )
+    
+    call J % Timer_FinishTransfer % Start ( )
+    !$OMP task depend ( in: O )
+    call Show ( 'Finishing transfer I' )
+    call DisassociateDevice ( I, Error )
+    !$OMP end task
+    
+    !$OMP task depend ( in: I )
+    call Show ( 'Finishing transfer O' )
+    call DisassociateDevice ( O, Error )
+    !$OMP end task
+    call J % Timer_FinishTransfer % Stop ( )
     
     nullify ( O )
     nullify ( I )
@@ -257,7 +270,9 @@ program Difference_Form_Test
   
   call T_GPU % ShowTotal ( CONSOLE % INFO_1 )
   call T_CPU % ShowTotal ( CONSOLE % INFO_1 )
-  call J % Timer_DataTransfer % ShowTotal ( CONSOLE % INFO_1 )
+  !call J % Timer_DataTransfer % ShowTotal ( CONSOLE % INFO_1 )
+  call J % Timer_StartTransfer % ShowTotal ( CONSOLE % INFO_1 )
+  call J % Timer_FinishTransfer % ShowTotal ( CONSOLE % INFO_1 )
   
   call Show ( T_CPU % TotalTime / T_GPU % TotalTime, 'GPU SpeedUp Factor' )
   
