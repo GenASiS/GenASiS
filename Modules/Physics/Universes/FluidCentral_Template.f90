@@ -79,6 +79,7 @@ module FluidCentral_Template
 
     private :: &
       InitializeDiagnostics, &
+      ComputeSphericalAverage, &
       ApplySources
 
 contains
@@ -472,6 +473,47 @@ contains
     end select !-- PS
 
   end subroutine InitializeDiagnostics
+
+
+  subroutine ComputeSphericalAverage ( FC )
+
+    class ( FluidCentralTemplate ), intent ( inout ) :: &
+      FC
+
+    real ( KDR ), dimension ( : ), allocatable :: &
+      SolidAngle
+    real ( KDR ), dimension ( :, : ), allocatable :: &
+      MyIntegral, &
+      Integral
+    class ( GeometryFlatForm ), pointer :: &
+      G
+    class ( Fluid_D_Form ), pointer :: &
+      F, &
+      F_SA
+
+    select type ( PS => FC % PositionSpace )
+    class is ( Atlas_SC_Form )
+    G => PS % Geometry ( )
+
+    select type ( FA => FC % Current_ASC )
+    class is ( Fluid_ASC_Form )
+    F => FA % Fluid_D ( )
+
+    select type ( C_SA => FC % PositionSpace_SA % Chart )
+    type is ( Chart_SLL_Form )
+
+    F_SA => FC % Fluid_ASC_SA % Fluid_D ( )
+
+    allocate ( SolidAngle ( G % nValues ) )
+    allocate ( MyIntegral ( C_SA % nCells ( 1 ), F_SA % N_CONSERVED ) )
+    allocate ( Integral ( C_SA % nCells ( 1 ), F_SA % N_CONSERVED ) )
+
+    end select !-- C_SA
+    end select !-- FA
+    end select !-- PS
+    nullify ( G, F, F_SA )
+
+  end subroutine ComputeSphericalAverage
 
 
   subroutine ApplySources &
