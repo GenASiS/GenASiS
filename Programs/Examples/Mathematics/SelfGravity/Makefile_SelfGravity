@@ -1,6 +1,6 @@
 PATH_GENASIS = ../../../../..
 
-all: HomogeneousSpheroid KuzminPlummer Satoh
+all: HomogeneousSpheroid KuzminPlummer Satoh Logarithmic
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
@@ -24,6 +24,12 @@ Satoh: Basics.a Mathematics.a Density.a SatohDisk.o
 	  SatohDisk.o SatohDisk_Form.o \
 	  Density.a Mathematics.a Basics.a $(LIBRARIES)
 
+Logarithmic: Basics.a Mathematics.a Density.a LogarithmicPotential.o
+	$(LINK) $(FLAGS) \
+	  -o LogarithmicPotential_$(MACHINE) \
+	  LogarithmicPotential.o LogarithmicPotential_Form.o \
+	  Density.a Mathematics.a Basics.a $(LIBRARIES)
+
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MATHEMATICS)/Makefile_Dependencies
 include ../Makefile_Dependencies
@@ -35,6 +41,7 @@ clobber: clean
 	rm -f HomogeneousSpheroid_*
 	rm -f KuzminPlummerDisk_*
 	rm -f SatohDisk_*
+	rm -f LogarithmicPotential_*
 
 HomogeneousSpheroid_Form.o: \
   Basics.a \
@@ -68,3 +75,14 @@ SatohDisk.o: \
   Basics.o \
   SatohDisk_Form.o \
   SatohDisk.f90
+
+LogarithmicPotential_Form.o: \
+  Basics.a \
+  Mathematics.a \
+  DensityDistribution_Template.o \
+  LogarithmicPotential_Form.f90
+
+LogarithmicPotential.o: \
+  Basics.o \
+  LogarithmicPotential_Form.o \
+  LogarithmicPotential.f90
