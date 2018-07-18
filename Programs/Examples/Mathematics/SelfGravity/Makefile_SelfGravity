@@ -1,6 +1,6 @@
 PATH_GENASIS = ../../../../..
 
-all: HomogeneousSpheroid KuzminPlummer
+all: HomogeneousSpheroid KuzminPlummer Satoh
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
@@ -18,6 +18,12 @@ KuzminPlummer: Basics.a Mathematics.a Density.a KuzminPlummerDisk.o
 	  KuzminPlummerDisk.o KuzminPlummerDisk_Form.o \
 	  Density.a Mathematics.a Basics.a $(LIBRARIES)
 
+Satoh: Basics.a Mathematics.a Density.a SatohDisk.o
+	$(LINK) $(FLAGS) \
+	  -o SatohDisk_$(MACHINE) \
+	  SatohDisk.o SatohDisk_Form.o \
+	  Density.a Mathematics.a Basics.a $(LIBRARIES)
+
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MATHEMATICS)/Makefile_Dependencies
 include ../Makefile_Dependencies
@@ -27,6 +33,8 @@ clean:
 
 clobber: clean
 	rm -f HomogeneousSpheroid_*
+	rm -f KuzminPlummerDisk_*
+	rm -f SatohDisk_*
 
 HomogeneousSpheroid_Form.o: \
   Basics.a \
@@ -49,3 +57,14 @@ KuzminPlummerDisk.o: \
   Basics.o \
   KuzminPlummerDisk_Form.o \
   KuzminPlummerDisk.f90
+
+SatohDisk_Form.o: \
+  Basics.a \
+  Mathematics.a \
+  DensityDistribution_Template.o \
+  SatohDisk_Form.f90
+
+SatohDisk.o: \
+  Basics.o \
+  SatohDisk_Form.o \
+  SatohDisk.f90
