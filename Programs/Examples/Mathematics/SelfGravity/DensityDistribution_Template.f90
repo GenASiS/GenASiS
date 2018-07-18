@@ -1,7 +1,3 @@
-!! Parameters for spheroids taken from Muller Stienmetz 1995 for comparison.
-!! Analytic solutions taken from Binney and Tremaine "Galactic Dynamics" second edition 
-!!   Chapter 2 Section 2.5.2 Table 2.1 pg 90.
-
 module DensityDistribution_Template
 
   use Basics
@@ -30,19 +26,20 @@ module DensityDistribution_Template
       Initialize
     procedure, public, pass :: &
       Compute
+    procedure, public, pass :: &
+      ComputeError
     final :: &
       Finalize
-
   end type DensityDistributionTemplate
 
-    private :: &
-      ComputeError
+  private :: &
+    ComputeError, &
+    ShiftSolution
 
 contains
 
 
-  subroutine Initialize ( DD, Name, N_Eq, Variable )
-    
+  subroutine Initialize ( DD, Name, N_Eq, Variable, RadiusMaxOption )
     class ( DensityDistributionTemplate ) :: &
       DD
     character ( * ), intent ( in ) :: &
@@ -51,14 +48,16 @@ contains
       N_Eq
     character ( LDL ), dimension ( N_Eq ), intent ( in ) :: &
       Variable
+    real ( KDR ), optional :: &
+      RadiusMaxOption
     
-
     integer ( KDI ) :: &
       iE, & !iEquation
       MaxDegree
     real ( KDR ) :: &
       Density, &
-      TotalMass
+      TotalMass, &
+      RadiusMax
     real ( KDR ), dimension ( N_Eq ) :: &
       Eccentricity, &
       SemiMajor, &
@@ -66,13 +65,16 @@ contains
 
     DD % N_Equations = N_eq
     DD % Variable = Variable
+    
+    RadiusMax = 10.0_KDR
+    if ( present ( RadiusMaxOption ) ) RadiusMax = RadiusMaxOption
 
     !-- Atlas
     
     allocate ( DD % Atlas )
     associate ( A => DD % Atlas )
     call A % Initialize ( Name, PROGRAM_HEADER % Communicator )
-    call A % CreateChart_CC ( )
+    call A % CreateChart_CC ( RadiusMaxOption = RadiusMax )
     call A % SetGeometry ( )
 
     !-- Poisson
@@ -128,15 +130,19 @@ contains
   end subroutine Initialize 
 
 
-  subroutine Compute ( DD )
+  subroutine Compute ( DD, ShiftSolutionOption )
     class ( DensityDistributionTemplate ), intent ( inout ) :: &
       DD
+    logical ( KDL ), optional :: &
+      ShiftSolutionOption
 
     associate ( A => DD % Atlas )
 
     associate ( P => DD % Poisson )
 
     call P % Solve ( DD % Solution, DD % Source )
+
+    if ( present ( ShiftSolutionOption ) ) call ShiftSolution ( DD )
     
     call ComputeError ( DD ) 
 
@@ -163,8 +169,74 @@ contains
   end subroutine Compute
 
 
-  subroutine ComputeError ( DD )
+  subroutine Finalize ( DD )
+    type ( DensityDistributionTemplate ) :: &
+      DD
 
+    if ( allocated ( DD % Stream ) ) &
+      deallocate ( DD % Stream )
+    if ( allocated ( DD % Reference ) ) &
+      deallocate ( DD % Reference )
+    if ( allocated ( DD % Solution ) ) &
+      deallocate ( DD % Solution )
+    if ( allocated ( DD % Source ) ) &
+      deallocate ( DD % Source )
+    if ( allocated ( DD % Poisson ) ) &
+      deallocate ( DD % Poisson )
+    if ( allocated ( DD % Atlas ) ) &
+      deallocate ( DD % Atlas )
+
+  end subroutine Finalize
+
+
+  subroutine ShiftSolution ( DD )
+    type ( DensityDistributionTemplate ), intent ( inout ) :: &
+      DD
+
+    integer ( KDI ) :: &
+      iE
+    real ( KDR ) :: &
+      D
+    class ( StorageForm ), pointer :: &
+      Solution, &
+      Reference, &
+      Difference
+    type ( CollectiveOperation_R_Form ) :: &
+      CO
+    
+    Solution   => DD % Solution   % Storage ( )
+    Reference  => DD % Reference  % Storage ( )
+
+    associate ( A => DD % Atlas ) 
+    select type ( C => A % Chart )
+    class is ( Chart_SL_Template )
+
+    call CO % Initialize &
+                ( A % Communicator, [ DD % N_Equations * 2 ], &
+                    [ DD % N_Equations * 2 ] )
+    do iE = 1, DD % N_Equations
+      CO % Outgoing % Value ( 2 * iE - 1 ) &
+        = minval ( Solution % Value ( :, iE ), mask = C % IsProperCell )
+      CO % Outgoing % Value ( 2 * iE ) &
+        = minval ( Reference % Value ( :, iE ), mask = C % IsProperCell )
+    end do
+    call CO % Reduce ( REDUCTION % MIN )
+
+    do iE = 1, DD % N_Equations
+      D = abs ( CO % Incoming % Value ( 2 * iE - 1 ) &
+                 - CO % Incoming % Value ( 2 * iE ) )
+      Solution % Value ( :, iE ) = Solution % Value ( :, iE ) + D
+    end do
+
+    end select !-- C
+    end associate !-- A
+
+    nullify ( Solution, Reference )
+
+  end subroutine ShiftSolution
+
+
+  subroutine ComputeError ( DD )
     class ( DensityDistributionTemplate ), intent ( in ) :: &
       DD
 
@@ -230,27 +302,6 @@ contains
     nullify ( Solution, Reference, Difference )
 
   end subroutine ComputeError  
-
-
-  subroutine Finalize ( DD )
-    
-    type ( DensityDistributionTemplate ) :: &
-      DD
-
-    if ( allocated ( DD % Stream ) ) &
-      deallocate ( DD % Stream )
-    if ( allocated ( DD % Reference ) ) &
-      deallocate ( DD % Reference )
-    if ( allocated ( DD % Solution ) ) &
-      deallocate ( DD % Solution )
-    if ( allocated ( DD % Source ) ) &
-      deallocate ( DD % Source )
-    if ( allocated ( DD % Poisson ) ) &
-      deallocate ( DD % Poisson )
-    if ( allocated ( DD % Atlas ) ) &
-      deallocate ( DD % Atlas )
-
-  end subroutine Finalize
 
 
 end module DensityDistribution_Template
