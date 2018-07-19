@@ -574,19 +574,18 @@ contains
     real ( KDR ) :: &
       Pi, &
       RP_I, RP_O, &
-      dRP, dZ, dPh
+      dZ, dPh
 
     Pi  =  CONSTANT % PI
 
-    !$OMP parallel do private ( iV, RP_I, RP_O, dRP, dZ, dPh )
+    !$OMP parallel do private ( iV, RP_I, RP_O, dZ, dPh )
     do iV = oValue + 1, oValue + nValues
 
       RP_I  =  RP_C ( iV )  -  W_L_1 ( iV )
       RP_O  =  RP_C ( iV )  +  W_R_1 ( iV )
 
-       dRP  =  W_L_1 ( iV )  +  W_R_1 ( iV ) 
         dZ  =  W_L_2 ( iV )  +  W_R_2 ( iV ) 
-      dPh  =  W_L_3 ( iV )  +  W_R_3 ( iV ) 
+       dPh  =  W_L_3 ( iV )  +  W_R_3 ( iV ) 
 
       select case ( nDimensions )
       case ( 1 )
@@ -635,11 +634,11 @@ contains
       Pi, &
       R_I, R_O, &
       Th_I, Th_O, &
-      dR, dTh, dPh
+      dPh
 
     Pi  =  CONSTANT % PI
 
-    !$OMP parallel do private ( iV, R_I, R_O, Th_I, Th_O, dR, dTh, dPh )
+    !$OMP parallel do private ( iV, R_I, R_O, Th_I, Th_O, dPh )
     do iV = oValue + 1, oValue + nValues
 
       R_I  =  R_C ( iV )  -  W_L_1 ( iV )
@@ -648,8 +647,6 @@ contains
       Th_I  =  Th_C ( iV )  -  W_L_2 ( iV )
       Th_O  =  Th_C ( iV )  +  W_R_2 ( iV )
 
-       dR  =  W_L_1 ( iV )  +  W_R_1 ( iV ) 
-      dTh  =  W_L_2 ( iV )  +  W_R_2 ( iV ) 
       dPh  =  W_L_3 ( iV )  +  W_R_3 ( iV ) 
 
       select case ( nDimensions )
