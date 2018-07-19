@@ -226,7 +226,8 @@ contains
   end subroutine Finalize
 
 
-  subroutine SetGeometryWidthCenter ( C, Center, Width_L, Width_R, iD )
+  subroutine SetGeometryWidthCenter &
+               ( C, Center, Width_L, Width_R, iD, EdgeValueOption )
 
     class ( Chart_SLD_Form ), intent ( inout ) :: &
       C
@@ -236,6 +237,8 @@ contains
       Width_R
     integer ( KDI ), intent ( in ) :: &
       iD  !-- iDimension
+    real ( KDR ), dimension ( : ), intent ( in ), optional :: &
+      EdgeValueOption
 
     integer ( KDI ) :: &
       iC, &  !-- iCell
@@ -246,7 +249,7 @@ contains
     associate &
       ( nC => C % nCells ( iD ), &
         nGL => C % nGhostLayers ( iD ) )
-    call C % SetGeometryCell ( nC, nGL, iD )
+    call C % SetGeometryCell ( nC, nGL, iD, EdgeValueOption )
     end associate !-- nC, etc.
 
     !-- Local cell widths and centers

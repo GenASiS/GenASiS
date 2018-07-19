@@ -360,6 +360,9 @@ contains
     class ( FluidCentralTemplate ), intent ( inout ) :: &
       FC
 
+    type ( Real_1D_Form ), dimension ( 1 ) :: &
+      Edge
+
     call Show ( 'Initializing FluidCentralCore diagnostics', &
                 FC % IGNORABILITY )
 
@@ -384,17 +387,23 @@ contains
     class is ( Chart_SL_Template )
       if ( FC % Dimensionless ) then
         call PS_SA % CreateChart &
-               ( nCellsOption         = C % nCells ( 1 : 1 ), &
-                 nGhostLayersOption   = C % nGhostLayers ( 1 : 1 ) )
+               ( CoordinateSystemOption = 'SPHERICAL', &
+                 nCellsOption           = C % nCells ( 1 : 1 ), &
+                 nGhostLayersOption     = C % nGhostLayers ( 1 : 1 ) )
       else
         call PS_SA % CreateChart &
-               ( CoordinateUnitOption = FC % CoordinateUnit ( 1 : 1 ), &
-                 nCellsOption         = C % nCells ( 1 : 1 ), &
-                 nGhostLayersOption   = C % nGhostLayers ( 1 : 1 ) )
+               ( CoordinateSystemOption = 'SPHERICAL', &
+                 CoordinateUnitOption   = FC % CoordinateUnit ( 1 : 1 ), &
+                 nCellsOption           = C % nCells ( 1 : 1 ), &
+                 nGhostLayersOption     = C % nGhostLayers ( 1 : 1 ) )
       end if
+
+      Edge ( 1 ) % Value  &
+        =  C % Edge ( 1 ) % Value ( 1 : C % nCells ( 1 ) + 1 )
+
     end select !-- C
 
-    call PS_SA % SetGeometry ( )
+    call PS_SA % SetGeometry ( EdgeOption = Edge )
 
 
     !-- Enclosed mass position space

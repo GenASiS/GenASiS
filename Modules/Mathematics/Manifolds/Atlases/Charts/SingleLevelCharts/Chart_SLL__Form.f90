@@ -121,7 +121,8 @@ contains
   end subroutine Finalize
 
 
-  subroutine SetGeometryWidthCenter ( C, Center, Width_L, Width_R, iD )
+  subroutine SetGeometryWidthCenter &
+               ( C, Center, Width_L, Width_R, iD, EdgeValueOption )
 
     class ( Chart_SLL_Form ), intent ( inout ) :: &
       C
@@ -131,6 +132,8 @@ contains
       Width_R
     integer ( KDI ), intent ( in ) :: &
       iD  !-- iDimension
+    real ( KDR ), dimension ( : ), intent ( in ), optional :: &
+      EdgeValueOption
 
     associate &
       ( nC  => C % nCells ( iD ), &
@@ -145,7 +148,7 @@ contains
     call Width_R % Initialize &
            ( iaL - ( iaF - 1 ), iLowerBoundOption = iaF )
 
-    call C % SetGeometryCell ( nC, nGL, iD )
+    call C % SetGeometryCell ( nC, nGL, iD, EdgeValueOption )
 
     call Copy ( C % Center ( iD ) % Value, Center % Value )
     call Copy ( C % WidthLeft ( iD ) % Value, Width_L % Value )

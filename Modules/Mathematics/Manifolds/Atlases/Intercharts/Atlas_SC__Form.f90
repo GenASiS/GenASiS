@@ -57,12 +57,14 @@ module Atlas_SC__Form
 contains
 
 
-  subroutine SetGeometry ( A, GeometryOption )
+  subroutine SetGeometry ( A, GeometryOption, EdgeOption )
 
     class ( Atlas_SC_Form ), intent ( inout ) :: &
       A
     class ( GeometryFlat_ASC_Form ), intent ( in ), target, optional :: &
       GeometryOption
+    type ( Real_1D_Form ), dimension ( : ), intent ( in ), optional :: &
+      EdgeOption
 
     if ( associated ( A % Geometry_ASC ) ) then
       A % AllocatedGeometry = .true.
@@ -88,7 +90,7 @@ contains
 
       select type ( GC => A % Geometry_ASC % Chart )
       class is ( GeometryFlat_CSL_Form ) 
-      call C % SetGeometry ( GC )
+      call C % SetGeometry ( GC, EdgeOption )
       end select !-- G_CSL
 
       call A % Show ( )

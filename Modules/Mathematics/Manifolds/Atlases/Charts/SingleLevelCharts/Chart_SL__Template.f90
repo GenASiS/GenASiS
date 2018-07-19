@@ -60,7 +60,7 @@ module Chart_SL__Template
         iConnection
     end subroutine CB
 
-    subroutine SGWC ( C, Center, Width_L, Width_R, iD )
+    subroutine SGWC ( C, Center, Width_L, Width_R, iD, EdgeValueOption )
       use Basics
       import Chart_SL_Template
       class ( Chart_SL_Template ), intent ( inout ) :: &
@@ -71,6 +71,8 @@ module Chart_SL__Template
         Width_R
       integer ( KDI ), intent ( in ) :: &
         iD  !-- iDimension
+      real ( KDR ), dimension ( : ), intent ( in ), optional :: &
+        EdgeValueOption
     end subroutine SGWC
 
   end interface
@@ -83,12 +85,14 @@ module Chart_SL__Template
 contains
 
   
-  subroutine SetGeometry ( C, Geometry )
+  subroutine SetGeometry ( C, Geometry, EdgeOption )
 
     class ( Chart_SL_Template ), intent ( inout ) :: &
       C
     class ( GeometryFlat_CSL_Form ), intent ( in ), target :: &
       Geometry
+    type ( Real_1D_Form ), dimension ( : ), intent ( in ), optional :: &
+      EdgeOption
 
     integer ( KDI ) :: &
       iD, & !-- iDimension
@@ -109,6 +113,14 @@ contains
     G => C % Geometry ( )
 
     do iD = 1, C % nDimensions
+      if ( present ( EdgeOption ) ) then
+        if ( allocated ( EdgeOption ( iD ) % Value ) ) then
+          call C % SetGeometryWidthCenter &
+                 ( Center ( iD ), Width_L ( iD ), Width_R ( iD ), iD, &
+                   EdgeValueOption = EdgeOption ( iD ) % Value )
+          cycle
+        end if
+      end if
       call C % SetGeometryWidthCenter &
              ( Center ( iD ), Width_L ( iD ), Width_R ( iD ), iD )
     end do !-- iD
