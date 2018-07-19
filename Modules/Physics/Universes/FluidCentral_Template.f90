@@ -82,6 +82,10 @@ module FluidCentral_Template
       ComputeSphericalAverage, &
       ApplySources
 
+      private :: &
+        ComputeSolidAngleKernel, &
+        ComputeMyIntegralKernel
+
 contains
 
 
@@ -309,6 +313,8 @@ contains
 
     call I % WriteTemplate ( )
 
+    call ComputeSphericalAverage ( I )
+
     if ( I % PositionSpace % Communicator % Rank /= CONSOLE % DisplayRank ) &
       return
 
@@ -372,8 +378,8 @@ contains
     select type ( FA => FC % Current_ASC )
     class is ( Fluid_ASC_Form )
 
-    if ( PS % Communicator % Rank /= CONSOLE % DisplayRank ) &
-      return
+!    if ( PS % Communicator % Rank /= CONSOLE % DisplayRank ) &
+!      return
 
 
     !-- Spherical average position space
@@ -389,13 +395,13 @@ contains
         call PS_SA % CreateChart &
                ( CoordinateSystemOption = 'SPHERICAL', &
                  nCellsOption           = C % nCells ( 1 : 1 ), &
-                 nGhostLayersOption     = C % nGhostLayers ( 1 : 1 ) )
+                 nGhostLayersOption     = [ 0 ] )
       else
         call PS_SA % CreateChart &
                ( CoordinateSystemOption = 'SPHERICAL', &
                  CoordinateUnitOption   = FC % CoordinateUnit ( 1 : 1 ), &
                  nCellsOption           = C % nCells ( 1 : 1 ), &
-                 nGhostLayersOption     = C % nGhostLayers ( 1 : 1 ) )
+                 nGhostLayersOption     = [ 0 ] )
       end if
 
       Edge ( 1 ) % Value  &
@@ -489,6 +495,8 @@ contains
     class ( FluidCentralTemplate ), intent ( inout ) :: &
       FC
 
+    integer ( KDI ), dimension ( : ), allocatable :: &
+      iRadius
     real ( KDR ), dimension ( : ), allocatable :: &
       SolidAngle
     real ( KDR ), dimension ( :, : ), allocatable :: &
@@ -513,9 +521,22 @@ contains
 
     F_SA => FC % Fluid_ASC_SA % Fluid_D ( )
 
+    allocate ( iRadius ( G % nValues ) )
     allocate ( SolidAngle ( G % nValues ) )
     allocate ( MyIntegral ( C_SA % nCells ( 1 ), F_SA % N_CONSERVED ) )
     allocate ( Integral ( C_SA % nCells ( 1 ), F_SA % N_CONSERVED ) )
+
+    call ComputeSolidAngleKernel &
+           ( SolidAngle, iRadius, &
+             G % Value ( :, G % WIDTH_LEFT_U ( 2 ) ), &
+             G % Value ( :, G % WIDTH_LEFT_U ( 3 ) ), &
+             G % Value ( :, G % WIDTH_RIGHT_U ( 2 ) ), &
+             G % Value ( :, G % WIDTH_RIGHT_U ( 3 ) ), &
+             G % Value ( :, G % CENTER_U ( 1 ) ), &
+             G % Value ( :, G % CENTER_U ( 2 ) ), &
+             C_SA % Edge ( 1 ) % Value, PS % nDimensions )
+
+    call Clear ( MyIntegral )
 
     end select !-- C_SA
     end select !-- FA
@@ -548,6 +569,73 @@ contains
            ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
 
   end subroutine ApplySources
+
+
+  subroutine ComputeSolidAngleKernel &
+               ( dOmega, iR, W_L_2, W_L_3, W_R_2, W_R_3, R_C, Th_C, &
+                 EdgeValue, nDimensions )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      dOmega
+    integer ( KDI ), dimension ( : ), intent ( inout ) :: &
+      iR
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      W_L_2, W_L_3, &
+      W_R_2, W_R_3, &
+      R_C, &
+      Th_C, &
+      EdgeValue
+    integer ( KDI ), intent ( in ) :: &
+      nDimensions
+
+    integer ( KDI ) :: &
+      iV  !-- iValue
+    real ( KDR ) :: &
+      TwoPi, FourPi, &
+      Th_I, Th_O, &
+      dPh
+    
+    TwoPi   =  2.0_KDR  *  CONSTANT % PI
+    FourPi  =  4.0_KDR  *  CONSTANT % PI
+
+    !$OMP parallel do private ( iV, Th_I, Th_O, dPh )
+    do iV = 1, size ( dOmega )
+      
+      Th_I  =  Th_C ( iV )  -  W_L_2 ( iV )
+      Th_O  =  Th_C ( iV )  +  W_R_2 ( iV )
+
+      dPh  =  W_L_3 ( iV )  +  W_R_3 ( iV ) 
+
+      select case ( nDimensions )
+      case ( 1 )
+        dOmega ( iV )  =  FourPi
+      case ( 2 )
+        dOmega ( iV )  =  TwoPi  *  ( cos ( Th_I )  -  cos ( Th_O ) )
+      case ( 3 ) 
+        dOmega ( iV )  =  dPh  *  ( cos ( Th_I )  -  cos ( Th_O ) )
+      end select !-- nDimensions
+
+      call Search ( EdgeValue, R_C ( iV ), iR ( iV ) )
+
+    end do
+    !$OMP end parallel do
+
+  end subroutine ComputeSolidAngleKernel
+
+
+  subroutine ComputeMyIntegralKernel ( MyI, IsProperCell, D, dOmega, iR )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      MyI
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      IsProperCell
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      D, &
+      dOmega
+    integer ( KDI ), dimension ( : ), intent ( in ) :: &
+      iR
+
+  end subroutine ComputeMyIntegralKernel
 
 
 end module FluidCentral_Template
