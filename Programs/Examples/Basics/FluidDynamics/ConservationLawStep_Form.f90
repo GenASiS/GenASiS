@@ -12,7 +12,8 @@ module ConservationLawStep_Form
       ALPHA_PLUS  = 1, &
       ALPHA_MINUS = 2, &
       N_MODIFIED_SPEEDS = 2, &
-      iTimerAccelerated, &
+      iTimerDifference, &
+      iTimerReconstruction, &
       iTimerDataTransferDevice, &
       iTimerDataTransferHost
     real ( KDR ) :: &
@@ -152,8 +153,9 @@ contains
     end associate !-- DM
     
     call PROGRAM_HEADER % AddTimer &
-           ( 'Accelerated', CLS % iTimerAccelerated, Level = 1 )
-    
+           ( 'Difference', CLS % iTimerDifference, Level = 1 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'Reconstruction', CLS % iTimerReconstruction, Level = 1 )
     call PROGRAM_HEADER % AddTimer &
            ( 'DataTransfer to Device', CLS % iTimerDataTransferDevice, Level = 1 )
     call PROGRAM_HEADER % AddTimer &
@@ -292,7 +294,7 @@ contains
     associate &
       ( T_DT_D  => PROGRAM_HEADER % Timer ( CLS % iTimerDataTransferDevice ), &
         T_DT_H  => PROGRAM_HEADER % Timer ( CLS % iTimerDataTransferHost ), &
-        T_A     => PROGRAM_HEADER % Timer ( CLS % iTimerAccelerated ) )
+        T_D     => PROGRAM_HEADER % Timer ( CLS % iTimerDifference ) )
     
     !call Show ('<<< Compute Differences')
 
@@ -319,19 +321,19 @@ contains
              ( CLS % DifferenceLeft % Value ( :, iP ), dV_Left )
       call DM % SetVariablePointer &
              ( CLS % DifferenceRight % Value ( :, iP ), dV_Right )
-      call T_A % Start ( )
+      call T_D % Start ( )
       call ComputeDifferencesKernel &
              ( V, DM % nGhostLayers ( iD ), iD, &
                CF % D_Selected ( CF % iaPrimitive ( iP ) ), &
                CLS % DifferenceLeft % D_Selected ( iP ), &
                CLS % DifferenceRight % D_Selected ( iP ), &
                dV_Left, dV_Right )
-      call T_A % Stop ( )
+      call T_D % Stop ( )
       
-      call T_DT_H % Start ( )
-      call CLS % DifferenceLeft % UpdateHost ( iP )
-      call CLS % DifferenceRight % UpdateHost ( iP )
-      call T_DT_H % Stop ( )
+      !call T_DT_H % Start ( )
+      !call CLS % DifferenceLeft % UpdateHost ( iP )
+      !call CLS % DifferenceRight % UpdateHost ( iP )
+      !call T_DT_H % Stop ( )
     end do
     
     !call Show ( '<<< After Differences' )
@@ -351,26 +353,45 @@ contains
       CLS
 
     integer ( KDI ) :: &
-      iV  !-- iVariable
+      iP  !-- iPrimitive
 
     associate ( CF => CLS % ConservedFields )
     associate ( iaP => CF % iaPrimitive )
-
-    do iV = 1, CF % N_PRIMITIVE
+    
+    associate &
+      ( T_DT_D  => PROGRAM_HEADER % Timer ( CLS % iTimerDataTransferDevice ), &
+        T_DT_H  => PROGRAM_HEADER % Timer ( CLS % iTimerDataTransferHost ), &
+        T_R     => PROGRAM_HEADER % Timer ( CLS % iTimerReconstruction ) )
+    
+    
+    do iP = 1, CF % N_PRIMITIVE
+      call T_R % Start ( )
       call ComputeReconstructionKernel &
-             ( CF % Value ( :, iaP ( iV ) ), &
-               CLS % DifferenceLeft % Value ( :, iV ), &
-               CLS % DifferenceRight % Value ( :, iV ), &
+             ( CF % Value ( :, iaP ( iP ) ), &
+               CLS % DifferenceLeft % Value ( :, iP ), &
+               CLS % DifferenceRight % Value ( :, iP ), &
                CLS % LimiterParameter, &
-               CLS % ReconstructionInner % Value ( :, iaP ( iV ) ), &
-               CLS % ReconstructionOuter % Value ( :, iaP ( iV ) ) )
+               CF % D_Selected ( iaP ( iP ) ), &
+               CLS % DifferenceLeft % D_Selected ( iP ), &
+               CLS % DifferenceRight % D_Selected ( iP ), &
+               CLS % ReconstructionInner % D_Selected ( iaP ( iP ) ), &
+               CLS % ReconstructionOuter % D_Selected ( iaP ( iP ) ), &
+               CLS % ReconstructionInner % Value ( :, iaP ( iP ) ), &
+               CLS % ReconstructionOuter % Value ( :, iaP ( iP ) ) )
+      call T_R % Stop ( )
+      
+      call T_DT_H % Start ( )
+      call CLS % ReconstructionInner % UpdateHost ( iaP ( iP ) )
+      call CLS % ReconstructionOuter % UpdateHost ( iaP ( iP ) )
+      call T_DT_H % Stop ( )
     end do
 
     call CF % ComputeAuxiliary ( CLS % ReconstructionInner % Value )
     call CF % ComputeAuxiliary ( CLS % ReconstructionOuter % Value )
     call CF % ComputeConserved ( CLS % ReconstructionInner % Value )
     call CF % ComputeConserved ( CLS % ReconstructionOuter % Value )
-
+    
+    end associate !-- Timer
     end associate !-- iaP
     end associate !-- CF
 
@@ -456,11 +477,9 @@ contains
       iD
     type ( c_ptr ), intent ( in ) :: &
       D_V, &
-      D_dV_Left, &
-      D_dV_Right
+      D_dV_Left, D_dV_Right
     real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
-      dV_Left, &
-      dV_Right
+      dV_Left, dV_Right
       
     integer ( KDI ) :: &
       iV, jV, kV
@@ -550,17 +569,20 @@ contains
 
 
   subroutine ComputeReconstructionKernel &
-               ( V, dV_Left, dV_Right, Theta, V_Inner, V_Outer )
+               ( V, dV_Left, dV_Right, Theta, D_V, D_dV_Left, D_dV_Right, &
+                 D_V_Inner, D_V_Outer, V_Inner, V_Outer )
 
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       V, &
-      dV_Left, &
-      dV_Right
+      dV_Left, dV_Right
     real ( KDR ), intent ( in ) :: &
       Theta
+    type ( c_ptr ), intent ( in ) :: &
+      D_V, &
+      D_dV_Left, D_dV_Right, &
+      D_V_Inner, D_V_Outer
     real ( KDR ), dimension ( : ), intent ( out ) :: &
-      V_Inner, &
-      V_Outer
+      V_Inner, V_Outer
 
     !real ( KDR ), dimension ( size ( V ) ) :: &
     !  dV
@@ -569,8 +591,13 @@ contains
     real ( KDR ) :: &
       dV
       
-    
+    call AssociateDevice ( D_V, V )
+    call AssociateDevice ( D_dV_Left, dV_Left )
+    call AssociateDevice ( D_dV_Right, dV_Right )
+    call AssociateDevice ( D_V_Inner, V_Inner )
+    call AssociateDevice ( D_V_Outer, V_Outer )
 
+      
     !where ( dV_Left > 0.0_KDR .and. dV_Right > 0.0_KDR )
     !  dV = min ( Theta * dV_Left, Theta * dV_Right, &
     !               0.5_KDR * ( dV_Left + dV_Right ) )
@@ -584,6 +611,8 @@ contains
     !V_Inner = V - 0.5_KDR * dV
     !V_Outer = V + 0.5_KDR * dV
     
+    !$OMP  target teams distribute parallel do &
+    !$OMP& schedule ( static, 1 ) private ( dV )
     do iV = 1, size ( V )
       dV = ( sign ( 0.5_KDR, dV_Left ( iV ) ) &
              + sign ( 0.5_KDR, dV_Right ( iV ) ) ) &
@@ -593,6 +622,13 @@ contains
       V_Inner ( iV ) = V ( iV ) - 0.5_KDR * dV
       V_Outer ( iV ) = V ( iV ) + 0.5_KDR * dV
     end do
+    !$OMP end target teams distribute parallel do
+    
+    call DisassociateDevice ( V_Outer )
+    call DisassociateDevice ( V_Inner )
+    call DisassociateDevice ( dV_Right )
+    call DisassociateDevice ( dV_Left )
+    call DisassociateDevice ( V )
     
   end subroutine ComputeReconstructionKernel
 
