@@ -743,7 +743,7 @@ contains
     VariableUnit ( F % CONSERVED_ENERGY )   = EnergyDensityUnit
     VariableUnit ( F % PRESSURE )           = EnergyDensityUnit
     VariableUnit ( F % TEMPERATURE )        = TemperatureUnit
-    if ( TemperatureUnit /= UNIT % IDENTITY ) then
+    if ( TemperatureUnit % Label /= '' ) then
       VariableUnit ( F % ENTROPY_PER_BARYON ) = UNIT % BOLTZMANN
       VariableUnit ( F % CONSERVED_ENTROPY )  = UNIT % BOLTZMANN &
                                                 * NumberDensityUnit

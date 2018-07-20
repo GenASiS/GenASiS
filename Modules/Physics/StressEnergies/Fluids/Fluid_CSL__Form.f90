@@ -102,6 +102,7 @@ contains
     FC % LimiterParameter    = LimiterParameter
     FC % BaryonMassReference = BaryonMassReference
 
+    FC % BaryonMassUnit         = BaryonMassUnit
     FC % NumberDensityUnit      = NumberDensityUnit
     FC % EnergyDensityUnit      = EnergyDensityUnit
     FC % TemperatureUnit        = TemperatureUnit
