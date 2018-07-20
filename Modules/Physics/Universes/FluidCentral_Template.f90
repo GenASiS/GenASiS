@@ -128,7 +128,8 @@ contains
       TimeUnit, &
       BaryonMassUnit, &
       NumberDensityUnit, &
-      EnergyDensityUnit
+      EnergyDensityUnit, &
+      TemperatureUnit
     type ( MeasuredValueForm ), dimension ( 3 ) :: &
       Velocity_U_Unit, &
       MomentumDensity_D_Unit
@@ -183,6 +184,7 @@ contains
       BaryonMassUnit                =  UNIT % ATOMIC_MASS_UNIT
       NumberDensityUnit             =  UNIT % NUMBER_DENSITY_NUCLEAR
       EnergyDensityUnit             =  UNIT % ENERGY_DENSITY_NUCLEAR
+      TemperatureUnit               =  UNIT % MEGA_ELECTRON_VOLT
       Velocity_U_Unit               =  FC % CoordinateUnit  /  TimeUnit
       MomentumDensity_D_Unit        =  BaryonMassUnit * NumberDensityUnit &
                                        * Velocity_U_Unit
@@ -197,6 +199,7 @@ contains
                BaryonMassUnitOption          =  BaryonMassUnit, &
                NumberDensityUnitOption       =  NumberDensityUnit , &
                EnergyDensityUnitOption       =  EnergyDensityUnit, &
+               TemperatureUnitOption         =  TemperatureUnit, &
                NumberUnitOption              =  UNIT % SOLAR_BARYON_NUMBER, &
                EnergyUnitOption              =  UNIT % ENERGY_SOLAR_MASS, &
                MomentumUnitOption            =  UNIT % MOMENTUM_SOLAR_MASS, &
@@ -206,7 +209,6 @@ contains
                LimiterParameterOption        =  LimiterParameterOption, &
                ShockThresholdOption          =  ShockThresholdOption )
     end if
-
 
     !-- Step
 
@@ -453,7 +455,8 @@ contains
                BaryonMassUnitOption          =  FA % BaryonMassUnit, &
                NumberDensityUnitOption       =  FA % NumberDensityUnit, &
                EnergyDensityUnitOption       =  FA % EnergyDensityUnit, &
-               BaryonMassReferenceOption     =  CONSTANT % ATOMIC_MASS_UNIT )
+               TemperatureUnitOption         =  FA % TemperatureUnit, &
+               BaryonMassReferenceOption     =  FA % BaryonMassReference )
     end if
 
 
@@ -495,15 +498,20 @@ contains
     class ( FluidCentralTemplate ), intent ( inout ) :: &
       FC
 
+    integer ( KDI ) :: &
+      oB, &  !-- oBuffer
+      iA, &  !-- iAverage
+      nAverage
     integer ( KDI ), dimension ( : ), allocatable :: &
-      iRadius
+      iRadius, &
+      iaAverage
     real ( KDR ), dimension ( : ), allocatable :: &
       SolidAngle
-    real ( KDR ), dimension ( :, : ), allocatable :: &
-      MyIntegral, &
-      Integral
+    type ( CollectiveOperation_R_Form ) :: &
+      CO
     class ( GeometryFlatForm ), pointer :: &
-      G
+      G, &
+      G_SA
     class ( Fluid_D_Form ), pointer :: &
       F, &
       F_SA
@@ -516,15 +524,17 @@ contains
     class is ( Fluid_ASC_Form )
     F => FA % Fluid_D ( )
 
+    select type ( C => PS % Chart )
+    class is ( Chart_SLD_Form )
+
     select type ( C_SA => FC % PositionSpace_SA % Chart )
     type is ( Chart_SLL_Form )
 
+    G_SA => FC % PositionSpace_SA % Geometry ( )
     F_SA => FC % Fluid_ASC_SA % Fluid_D ( )
 
     allocate ( iRadius ( G % nValues ) )
     allocate ( SolidAngle ( G % nValues ) )
-    allocate ( MyIntegral ( C_SA % nCells ( 1 ), F_SA % N_CONSERVED ) )
-    allocate ( Integral ( C_SA % nCells ( 1 ), F_SA % N_CONSERVED ) )
 
     call ComputeSolidAngleKernel &
            ( SolidAngle, iRadius, &
@@ -536,12 +546,63 @@ contains
              G % Value ( :, G % CENTER_U ( 2 ) ), &
              C_SA % Edge ( 1 ) % Value, PS % nDimensions )
 
-    call Clear ( MyIntegral )
+    nAverage = F % N_CONSERVED
+    select type ( F )
+    class is ( Fluid_P_HN_Form )
+      nAverage = nAverage + 2  !-- Add pressure, temperature for initial guess
+    end select !-- F
+
+    allocate ( iaAverage ( nAverage ) )
+    iaAverage ( 1 : F % N_CONSERVED ) = F % iaConserved
+    select type ( F )
+    class is ( Fluid_P_HN_Form )
+      iaAverage ( F % N_CONSERVED + 1 )  =  F % PRESSURE
+      iaAverage ( F % N_CONSERVED + 2 )  =  F % TEMPERATURE
+    end select !-- F
+
+    call CO % Initialize &
+           ( PS % Communicator, &
+             nOutgoing = [ F_SA % nValues  *  nAverage ], &
+             nIncoming = [ F_SA % nValues  *  nAverage ], &
+             RootOption = CONSOLE % DisplayRank )
+
+    oB = 0
+    do iA = 1, nAverage
+      associate &
+        ( MyIntegral_SA => CO % Outgoing &
+                              % Value ( oB + 1 : oB + F_SA % nValues ), &
+          Variable      => F % Value ( :, iaAverage ( iA ) ) )
+      call Clear ( MyIntegral_SA )
+      call ComputeMyIntegralKernel &
+             ( MyIntegral_SA, C % IsProperCell, Variable, SolidAngle, iRadius )
+      oB  =  oB  +  F_SA % nValues
+      end associate !-- MyIntegral, etc. 
+    end do !-- iA
+
+    call CO % Reduce ( REDUCTION % SUM )
+
+    if ( PS % Communicator % Rank == CONSOLE % DisplayRank ) then
+
+      oB = 0
+      do iA = 1, nAverage
+        associate &
+          ( Integral_SA => CO % Incoming &
+                             % Value ( oB + 1 : oB + F_SA % nValues ), &
+            Variable_SA => F_SA % Value ( :, iaAverage ( iA ) ) )
+        call Copy ( Integral_SA, Variable_SA )
+        oB  =  oB  +  F_SA % nValues
+        end associate !-- MyIntegral, etc. 
+      end do !-- iA
+
+      call F_SA % ComputeFromConserved ( G_SA )
+
+    end if !-- DisplayRank
 
     end select !-- C_SA
     end select !-- FA
+    end select !-- C
     end select !-- PS
-    nullify ( G, F, F_SA )
+    nullify ( G, G_SA, F, F_SA )
 
   end subroutine ComputeSphericalAverage
 
@@ -623,17 +684,30 @@ contains
   end subroutine ComputeSolidAngleKernel
 
 
-  subroutine ComputeMyIntegralKernel ( MyI, IsProperCell, D, dOmega, iR )
+  subroutine ComputeMyIntegralKernel ( MyI, IsProperCell, V, dOmega, iR )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       MyI
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       IsProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      D, &
+      V, &
       dOmega
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
       iR
+
+    integer ( KDI ) :: &
+      iV
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, size ( V )
+      if ( .not. IsProperCell ( iV ) ) &
+        cycle
+      MyI ( iR ( iV ) )  =  MyI ( iR ( iV ) )  +  V ( iV ) * dOmega ( iV )
+    end do
+    !$OMP end parallel do
+ 
+    MyI  =  MyI  /  ( 4.0_KDR  *  CONSTANT % PI )
 
   end subroutine ComputeMyIntegralKernel
 
