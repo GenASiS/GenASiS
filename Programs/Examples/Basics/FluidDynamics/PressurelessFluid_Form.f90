@@ -701,12 +701,64 @@ contains
       LM_I, LM_O
     integer ( KDI ), intent ( in ) :: &
       iD
+      
+    integer ( KDI ) :: &
+      iV, jV, kV
+    integer ( KDI ), dimension ( 3 ) :: &
+      iaS_P, iaS_M, &
+      iaVS_P, iaVS_M, &
+      lV, uV
+      
+    !AP_I = max ( 0.0_KDR, + cshift ( LP_O, shift = -1, dim = iD ), + LP_I )
+    !AP_O = max ( 0.0_KDR, + LP_O, + cshift ( LP_I, shift = +1, dim = iD ) )
+    !AM_I = max ( 0.0_KDR, - cshift ( LM_O, shift = -1, dim = iD ), - LM_I )
+    !AM_O = max ( 0.0_KDR, - LM_O, - cshift ( LM_I, shift = +1, dim = iD ) )
 
-    AP_I = max ( 0.0_KDR, + cshift ( LP_O, shift = -1, dim = iD ), + LP_I )
-    AP_O = max ( 0.0_KDR, + LP_O, + cshift ( LP_I, shift = +1, dim = iD ) )
-    AM_I = max ( 0.0_KDR, - cshift ( LM_O, shift = -1, dim = iD ), - LM_I )
-    AM_O = max ( 0.0_KDR, - LM_O, - cshift ( LM_I, shift = +1, dim = iD ) )
+    lV = 1
+    where ( shape ( LP_O ) > 1 )
+      lV = 1
+    end where
+    lV ( iD ) = 0
 
+    uV = 1
+    where ( shape ( LP_O ) > 1 )
+      uV = shape ( LP_O )
+    end where
+    uV ( iD ) = size ( LP_O, dim = iD ) - 1
+    
+    iaS_M = 0
+    iaS_M ( iD ) = - 1
+    iaS_P = 0
+    iaS_P ( iD ) = + 1
+    
+    do kV = lV ( 3 ), uV ( 3 )    
+      do jV = lV ( 2 ), uV ( 2 )  
+        do iV = lV ( 1 ), uV ( 1 )
+        
+          iaVS_M = [ iV, jV, kV ] + iaS_M
+          iaVS_P = [ iV, jV, kV ] + iaS_P
+          
+          AP_I ( iV, jV, KV ) &
+            = max ( 0.0_KDR, &
+                    + LP_O ( iaVS_M ( 1 ), iaVS_M ( 2 ), iaVS_M ( 3 ) ), &
+                    + LP_I ( iV, jV, kV ) )
+          AP_O ( iV, jV, KV ) &
+            = max ( 0.0_KDR, &
+                    + LP_O ( iV, jV, kV ), &
+                    + LP_I ( iaVS_P ( 1 ), iaVS_P ( 2 ), iaVS_P ( 3 ) ) )
+          AM_I ( iV, jV, KV ) &
+            = max ( 0.0_KDR, &
+                    - LM_O ( iaVS_M ( 1 ), iaVS_M ( 2 ), iaVS_M ( 3 ) ), &
+                    - LM_I ( iV, jV, kV ) )
+          AM_O ( iV, jV, KV ) &
+            = max ( 0.0_KDR, &
+                    - LM_O ( iV, jV, kV ), &
+                    - LM_I ( iaVS_P ( 1 ), iaVS_P ( 2 ), iaVS_P ( 3 ) ) )
+        end do
+      end do
+    end do
+
+    
   end subroutine ComputeRiemannSolverInputKernel
 
 
