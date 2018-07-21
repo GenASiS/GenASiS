@@ -80,6 +80,7 @@ module FluidCentral_Template
     private :: &
       InitializeDiagnostics, &
       ComputeSphericalAverage, &
+      ComputeEnclosedBaryons, &
       ApplySources
 
       private :: &
@@ -316,6 +317,7 @@ contains
     call I % WriteTemplate ( )
 
     call ComputeSphericalAverage ( I )
+    call ComputeEnclosedBaryons ( I )
 
     if ( I % PositionSpace % Communicator % Rank /= CONSOLE % DisplayRank ) &
       return
@@ -406,15 +408,15 @@ contains
                  nGhostLayersOption     = [ 0 ] )
       end if
 
-      Edge ( 1 ) % Value  &
-        =  C % Edge ( 1 ) % Value ( 1 : C % nCells ( 1 ) + 1 )
+      call Edge ( 1 ) % Initialize &
+             ( C % Edge ( 1 ) % Value ( 1 : C % nCells ( 1 ) + 1 ) )
 
     end select !-- C
 
     call PS_SA % SetGeometry ( EdgeOption = Edge )
 
 
-    !-- Enclosed mass position space
+    !-- Enclosed baryons position space
 
     allocate ( FC % PositionSpace_EB )
     associate ( PS_EB => FC % PositionSpace_EB )
@@ -426,12 +428,12 @@ contains
       if ( FC % Dimensionless ) then
         call PS_EB % CreateChart &
                ( nCellsOption         = C % nCells ( 1 : 1 ), &
-                 nGhostLayersOption   = C % nGhostLayers ( 1 : 1 ) )
+                 nGhostLayersOption   = [ 0 ] )
       else
         call PS_EB % CreateChart &
-               ( CoordinateUnitOption = [ UNIT % SOLAR_MASS ], &
+               ( CoordinateUnitOption = [ UNIT % SOLAR_BARYON_NUMBER ], &
                  nCellsOption         = C % nCells ( 1 : 1 ), &
-                 nGhostLayersOption   = C % nGhostLayers ( 1 : 1 ) )
+                 nGhostLayersOption   = [ 0 ] )
       end if
     end select !-- C
 
@@ -460,7 +462,7 @@ contains
     end if
 
 
-    !-- Enclosed mass fluid
+    !-- Enclosed baryons fluid
 
     allocate ( FC % Fluid_ASC_EB )
     associate ( FA_EB => FC % Fluid_ASC_EB )
@@ -605,6 +607,54 @@ contains
     nullify ( G, G_SA, F, F_SA )
 
   end subroutine ComputeSphericalAverage
+
+
+  subroutine ComputeEnclosedBaryons ( FC )
+
+    class ( FluidCentralTemplate ), intent ( inout ) :: &
+      FC
+
+    type ( Real_1D_Form ), dimension ( 1 ) :: &
+      Edge
+    class ( GeometryFlatForm ), pointer :: &
+      G_SA
+    class ( Fluid_D_Form ), pointer :: &
+      F_SA, &
+      F_EB
+
+    integer ( KDI ) :: &
+      iV
+
+    if ( FC % PositionSpace % Communicator % Rank /= CONSOLE % DisplayRank ) &
+      return
+
+    G_SA => FC % PositionSpace_SA % Geometry ( )
+    F_SA => FC % Fluid_ASC_SA % Fluid_D ( )
+    F_EB => FC % Fluid_ASC_EB % Fluid_D ( )
+
+    call Copy ( F_SA % Value, F_EB % Value )
+
+    associate &
+      ( dV => G_SA % Value ( :, G_SA % VOLUME ), &
+         N => F_SA % Value ( :, F_SA % COMOVING_BARYON_DENSITY ) )
+
+    call Edge ( 1 ) % Initialize ( size ( N ) + 1 )
+
+    Edge ( 1 ) % Value ( 1 )  =  0.0_KDR
+    do iV = 1, size ( N )
+      Edge ( 1 ) % Value ( iV + 1 )  &
+        =  Edge ( 1 ) % Value ( iV )  +  N ( iV ) * dV ( iV )
+    end do
+
+    select type ( C_EB => FC % PositionSpace_EB % Chart )
+    type is ( Chart_SLL_Form )
+      call C_EB % ResetGeometry ( Edge )
+    end select !-- C_EB
+
+    end associate !-- dV, etc.
+    nullify ( G_SA, F_SA, F_EB )
+
+  end subroutine ComputeEnclosedBaryons
 
 
   subroutine ApplySources &
