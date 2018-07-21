@@ -16,13 +16,13 @@ module FluidCentral_Template
       logical ( KDL ) :: &
         Dimensionless
       type ( GridImageStreamForm ), allocatable :: &
-        GridImageStream_SA_EM
+        GridImageStream_SA_EB
       type ( Atlas_SC_Form ), allocatable :: &
         PositionSpace_SA, &  !-- SphericalAverage
-        PositionSpace_EM     !-- EnclosedMass
+        PositionSpace_EB     !-- EnclosedBaryons
       type ( Fluid_ASC_Form ), allocatable :: &
         Fluid_ASC_SA, &  !-- SphericalAverage
-        Fluid_ASC_EM     !-- EnclosedMass
+        Fluid_ASC_EB     !-- EnclosedBaryons
   contains
     procedure, public, pass :: &
       InitializeTemplate_FC
@@ -268,12 +268,12 @@ contains
     if ( I % PositionSpace % Communicator % Rank /= CONSOLE % DisplayRank ) &
       return
 
-    allocate ( I % GridImageStream_SA_EM )
+    allocate ( I % GridImageStream_SA_EB )
     associate &
       ( GIS_I     => I % GridImageStream, &
-        GIS_SA_EM => I % GridImageStream_SA_EM )
-    call GIS_SA_EM % Initialize &
-           ( trim ( I % Name ) // '_SA_EM', & 
+        GIS_SA_EB => I % GridImageStream_SA_EB )
+    call GIS_SA_EB % Initialize &
+           ( trim ( I % Name ) // '_SA_EB', & 
              WorkingDirectoryOption = GIS_I % WorkingDirectory )
     end associate !-- GIS_I, etc.
 
@@ -296,11 +296,11 @@ contains
     VerboseStream = .false.
     call PROGRAM_HEADER % GetParameter ( VerboseStream, 'VerboseStream' )
 
-    associate ( GIS => I % GridImageStream_SA_EM )
+    associate ( GIS => I % GridImageStream_SA_EB )
     associate ( iS => 1 )  !-- iStream
       call I % PositionSpace_SA % OpenStream &
              ( GIS, 'Time', iStream = iS, VerboseOption = VerboseStream )
-      call I % PositionSpace_EM % OpenStream &
+      call I % PositionSpace_EB % OpenStream &
              ( GIS, 'Time', iStream = iS, VerboseOption = VerboseStream )
     end associate !-- iS
     end associate !-- GIS
@@ -321,7 +321,7 @@ contains
       return
 
     associate &
-      ( GIS => I % GridImageStream_SA_EM, &
+      ( GIS => I % GridImageStream_SA_EB, &
         iS  => 1 )  !-- iStream
     call GIS % Open ( GIS % ACCESS_CREATE )
 
@@ -329,8 +329,8 @@ contains
            ( iStream = iS, DirectoryOption = 'Chart_SA', &
              TimeOption = I % Time / I % TimeUnit, &
              CycleNumberOption = I % iCycle )
-    call I % PositionSpace_EM % Write &
-           ( iStream = iS, DirectoryOption = 'Chart_EM', &
+    call I % PositionSpace_EB % Write &
+           ( iStream = iS, DirectoryOption = 'Chart_EB', &
              TimeOption = I % Time / I % TimeUnit, &
              CycleNumberOption = I % iCycle )
 
@@ -345,18 +345,18 @@ contains
     class ( FluidCentralTemplate ), intent ( inout ) :: &
       FC
 
-    if ( allocated ( FC % Fluid_ASC_EM ) ) &
-      deallocate ( FC % Fluid_ASC_EM )
+    if ( allocated ( FC % Fluid_ASC_EB ) ) &
+      deallocate ( FC % Fluid_ASC_EB )
     if ( allocated ( FC % Fluid_ASC_SA ) ) &
       deallocate ( FC % Fluid_ASC_SA )
 
-    if ( allocated ( FC % PositionSpace_EM ) ) &
-      deallocate ( FC % PositionSpace_EM )
+    if ( allocated ( FC % PositionSpace_EB ) ) &
+      deallocate ( FC % PositionSpace_EB )
     if ( allocated ( FC % PositionSpace_SA ) ) &
       deallocate ( FC % PositionSpace_SA )
 
-    if ( allocated ( FC % GridImageStream_SA_EM ) ) &
-      deallocate ( FC % GridImageStream_SA_EM )
+    if ( allocated ( FC % GridImageStream_SA_EB ) ) &
+      deallocate ( FC % GridImageStream_SA_EB )
 
     call FC % FinalizeTemplate_C_PS ( )
 
@@ -416,26 +416,26 @@ contains
 
     !-- Enclosed mass position space
 
-    allocate ( FC % PositionSpace_EM )
-    associate ( PS_EM => FC % PositionSpace_EM )
+    allocate ( FC % PositionSpace_EB )
+    associate ( PS_EB => FC % PositionSpace_EB )
 
-    call PS_EM % Initialize ( 'EnclosedMass', nDimensionsOption = 1 )
+    call PS_EB % Initialize ( 'EnclosedBaryons', nDimensionsOption = 1 )
 
     select type ( C => PS % Chart )
     class is ( Chart_SL_Template )
       if ( FC % Dimensionless ) then
-        call PS_EM % CreateChart &
+        call PS_EB % CreateChart &
                ( nCellsOption         = C % nCells ( 1 : 1 ), &
                  nGhostLayersOption   = C % nGhostLayers ( 1 : 1 ) )
       else
-        call PS_EM % CreateChart &
+        call PS_EB % CreateChart &
                ( CoordinateUnitOption = [ UNIT % SOLAR_MASS ], &
                  nCellsOption         = C % nCells ( 1 : 1 ), &
                  nGhostLayersOption   = C % nGhostLayers ( 1 : 1 ) )
       end if
     end select !-- C
 
-    call PS_EM % SetGeometry ( )
+    call PS_EB % SetGeometry ( )
 
 
     !-- Spherical average fluid
@@ -462,14 +462,14 @@ contains
 
     !-- Enclosed mass fluid
 
-    allocate ( FC % Fluid_ASC_EM )
-    associate ( FA_EM => FC % Fluid_ASC_EM )
+    allocate ( FC % Fluid_ASC_EB )
+    associate ( FA_EB => FC % Fluid_ASC_EB )
 
     if ( FC % Dimensionless ) then
-      call FA_EM % Initialize ( PS_EM, FA % FluidType )
+      call FA_EB % Initialize ( PS_EB, FA % FluidType )
     else
-      call FA_EM % Initialize &
-             ( PS_EM, FA % FluidType, &
+      call FA_EB % Initialize &
+             ( PS_EB, FA % FluidType, &
                AllocateTallyOption           =  .false., &
                AllocateSourcesOption         =  .false., &
                Velocity_U_UnitOption         =  FA % Velocity_U_Unit, &
@@ -483,9 +483,9 @@ contains
 
     !-- Cleanup
 
-    end associate !-- FA_EM
+    end associate !-- FA_EB
     end associate !-- FA_SA
-    end associate !-- PS_EM
+    end associate !-- PS_EB
     end associate !-- PS_SA
     end select !-- FA
     end select !-- PS
