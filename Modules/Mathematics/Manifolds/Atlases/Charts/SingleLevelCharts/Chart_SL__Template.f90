@@ -23,6 +23,8 @@ module Chart_SL__Template
     procedure, public, pass :: &
       SetGeometry
     procedure, public, pass :: &
+      ResetGeometry
+    procedure, public, pass :: &
       Geometry
     procedure, public, pass :: &
       OpenStream
@@ -186,6 +188,18 @@ contains
     nullify ( Center_3D )
 
   end subroutine SetGeometry
+
+
+  subroutine ResetGeometry ( C, Edge )
+
+    class ( Chart_SL_Template ), intent ( inout ) :: &
+      C
+    type ( Real_1D_Form ), dimension ( : ), intent ( in ) :: &
+      Edge
+
+    call C % SetGeometry ( C % Geometry_CSL, EdgeOption = Edge )
+
+  end subroutine ResetGeometry
 
 
   function Geometry ( C ) result ( G )
