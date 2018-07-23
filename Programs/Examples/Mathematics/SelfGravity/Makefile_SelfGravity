@@ -1,6 +1,6 @@
 PATH_GENASIS = ../../../../..
 
-all: HomogeneousSpheroid KuzminPlummer Satoh Logarithmic
+all: HomogeneousSpheroid KuzminPlummer Satoh Logarithmic TwoPowerDensity
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
@@ -30,6 +30,12 @@ Logarithmic: Basics.a Mathematics.a Density.a LogarithmicPotential.o
 	  LogarithmicPotential.o LogarithmicPotential_Form.o \
 	  Density.a Mathematics.a Basics.a $(LIBRARIES)
 
+TwoPowerDensity: Basics.a Mathematics.a Density.a TwoPowerDensity.o
+	$(LINK) $(FLAGS) \
+	  -o TwoPowerDensity_$(MACHINE) \
+	  TwoPowerDensity.o TwoPowerDensity_Form.o \
+	  Density.a Mathematics.a Basics.a $(LIBRARIES)
+
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MATHEMATICS)/Makefile_Dependencies
 include ../Makefile_Dependencies
@@ -42,6 +48,7 @@ clobber: clean
 	rm -f KuzminPlummerDisk_*
 	rm -f SatohDisk_*
 	rm -f LogarithmicPotential_*
+	rm -f TwoPowerDensity_*
 
 HomogeneousSpheroid_Form.o: \
   Basics.a \
@@ -86,3 +93,14 @@ LogarithmicPotential.o: \
   Basics.o \
   LogarithmicPotential_Form.o \
   LogarithmicPotential.f90
+
+TwoPowerDensity_Form.o: \
+  Basics.a \
+  Mathematics.a \
+  DensityDistribution_Template.o \
+  TwoPowerDensity_Form.f90
+
+TwoPowerDensity.o: \
+  Basics.o \
+  TwoPowerDensity_Form.o \
+  TwoPowerDensity.f90
