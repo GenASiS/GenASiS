@@ -344,7 +344,8 @@ contains
            ( ValueOuter ( :, CF % FAST_EIGENSPEED_MINUS ( iDimension ) ), LM_O )
 
     call ComputeRiemannSolverInputKernel &
-           ( AP_I, AP_O, AM_I, AM_O, LP_I, LP_O, LM_I, LM_O, iDimension )
+           ( AP_I, AP_O, AM_I, AM_O, LP_I, LP_O, LM_I, LM_O, &
+             CF % DistributedMesh % nGhostLayers ( iDimension ), iDimension )
 
     end select !-- S
       
@@ -691,7 +692,7 @@ contains
 
 
   subroutine ComputeRiemannSolverInputKernel &
-               ( AP_I, AP_O, AM_I, AM_O, LP_I, LP_O, LM_I, LM_O, iD )
+               ( AP_I, AP_O, AM_I, AM_O, LP_I, LP_O, LM_I, LM_O, oV, iD )
 
     real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
       AP_I, AP_O, &
@@ -700,6 +701,7 @@ contains
       LP_I, LP_O, &
       LM_I, LM_O
     integer ( KDI ), intent ( in ) :: &
+      oV, &
       iD
       
     integer ( KDI ) :: &
@@ -708,21 +710,16 @@ contains
       iaS_P, iaS_M, &
       iaVS_P, iaVS_M, &
       lV, uV
-      
-    !AP_I = max ( 0.0_KDR, + cshift ( LP_O, shift = -1, dim = iD ), + LP_I )
-    !AP_O = max ( 0.0_KDR, + LP_O, + cshift ( LP_I, shift = +1, dim = iD ) )
-    !AM_I = max ( 0.0_KDR, - cshift ( LM_O, shift = -1, dim = iD ), - LM_I )
-    !AM_O = max ( 0.0_KDR, - LM_O, - cshift ( LM_I, shift = +1, dim = iD ) )
-
+    
     lV = 1
     where ( shape ( LP_O ) > 1 )
-      lV = 1
+      lV = oV + 1
     end where
-    lV ( iD ) = 0
-
+    lV ( iD ) = oV
+    
     uV = 1
     where ( shape ( LP_O ) > 1 )
-      uV = shape ( LP_O )
+      uV = shape ( LP_O ) - oV
     end where
     uV ( iD ) = size ( LP_O, dim = iD ) - 1
     
@@ -757,7 +754,6 @@ contains
         end do
       end do
     end do
-
     
   end subroutine ComputeRiemannSolverInputKernel
 
