@@ -190,6 +190,7 @@ contains
       call CI % SetGrid &
              ( Directory, Edge ( 1 ), nProperCells, &
                oValue = nGhostInner ( 1 ) + nExteriorInner ( 1 ), &
+               CoordinateLabelOption = C % CoordinateLabel ( 1 ), &
                CoordinateUnitOption = C % CoordinateUnit ( 1 ) )
       call CI % Write &
              ( TimeOption = TimeOption, &
@@ -201,7 +202,8 @@ contains
       call GI % SetGrid &
              ( Directory, Edge, nCells, nGhostInner, nGhostOuter, &
                nExteriorInner, nExteriorOuter, C % nDimensions, nProperCells, &
-               nGhostCells, CoordinateUnitOption = C % CoordinateUnit )
+               nGhostCells, CoordinateLabelOption = C % CoordinateLabel, &
+               CoordinateUnitOption = C % CoordinateUnit )
       call GI % Write &
              ( TimeOption = TimeOption, &
                CycleNumberOption = CycleNumberOption )

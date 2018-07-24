@@ -36,6 +36,7 @@ module Chart_Template
     character ( LDL ), pointer :: &
       CoordinateSystem => null ( )
     character ( LDL ), dimension ( : ), pointer :: &
+      CoordinateLabel => null ( ), &   
       Spacing => null ( )
     character ( LDF ), pointer :: &
       Type => null ( ), &
@@ -205,6 +206,15 @@ contains
       C % CoordinateSystem = CoordinateSystemOption
     call PROGRAM_HEADER % GetParameter &
            ( C % CoordinateSystem, 'CoordinateSystem' )
+
+    allocate ( C % CoordinateLabel ( MAX_DIMENSIONS ) )
+    C % CoordinateLabel  =  [ 'X', 'Y', 'Z' ]
+    select case ( trim ( C % CoordinateSystem ) )
+    case ( 'CYLINDRICAL' )
+      C % CoordinateLabel  =  [ 'R_Perp', 'Z     ', 'Phi   ' ]
+    case ( 'SPHERICAL' )
+      C % CoordinateLabel  =  [ 'R    ', 'Theta', 'Phi  ' ]
+    end select !-- CoordinateSystem
 
     allocate ( C % Spacing ( MAX_DIMENSIONS ) )
     C % Spacing = ''

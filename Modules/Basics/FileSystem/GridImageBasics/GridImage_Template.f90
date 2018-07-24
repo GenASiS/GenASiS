@@ -26,9 +26,7 @@ module GridImage_Template
       NodeCoordinate_2, &
       NodeCoordinate_3
     character ( LDL ), dimension ( 3 ) :: &
-      CoordinateLabel = [ 'X                             ', &
-                          'Y                             ', &
-                          'Z                             ' ]
+      CoordinateLabel = [ 'X', 'Y', 'Z' ]
     type ( MeasuredValueForm ), dimension ( 3 ) :: &
       CoordinateUnit
     type ( StorageForm ), dimension ( : ), allocatable :: &
