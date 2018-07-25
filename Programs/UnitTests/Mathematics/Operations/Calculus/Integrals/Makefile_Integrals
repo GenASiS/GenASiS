@@ -1,0 +1,26 @@
+PATH_GENASIS = ../../../../../../..
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+all: VolumeIntegral_Form_Test
+
+VolumeIntegral_Form_Test: Basics.a Manifolds.a VolumeIntegral_Form_Test.o
+	$(LINK) $(FLAGS) -o VolumeIntegral_Form_Test_$(MACHINE) \
+          VolumeIntegral_Form_Test.o VolumeIntegral_Form.o \
+          Manifolds.a Basics.a $(LIBRARIES)
+
+clean:
+	rm -f *.o *.a *.mod *.ld
+
+clobber: clean
+	rm -f VolumeIntegral_Form_Test_*
+
+include $(PATH_BASICS)/Makefile_Dependencies 
+include $(PATH_MANIFOLDS)/Makefile_Dependencies 
+include $(PATH_INTEGRALS)/Makefile_Dependencies 
+
+VolumeIntegral_Form_Test.o: \
+  Basics.o \
+  Manifolds.o \
+  VolumeIntegral_Form.o \
+  VolumeIntegral_Form_Test.f90
