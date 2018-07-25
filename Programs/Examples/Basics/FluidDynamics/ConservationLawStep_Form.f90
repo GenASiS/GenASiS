@@ -118,6 +118,9 @@ contains
              VariableOption &
                = [ 'AlphaPlus                      ', &
                    'AlphaMinus                     ' ] )
+    
+    call CLS % ModifiedSpeedsInner % AllocateDevice ( )
+    call CLS % ModifiedSpeedsOuter % AllocateDevice ( )
 
     call CLS % RawFluxInner % Initialize &
            ( [ nCells, CF % N_CONSERVED ], NameOption = 'RawFluxInner', &
@@ -426,9 +429,14 @@ contains
            ( CLS % ReconstructionInner % Value, &
              CLS % ReconstructionOuter % Value, iDimension, iBoundary = +1 )
 
+    call CLS % ReconstructionInner % UpdateDevice ( )
+    call CLS % ReconstructionOuter % UpdateDevice ( )
+    
     call CF % ComputeRiemannSolverInput &
            ( CLS, CLS % ReconstructionInner % Value, &
-             CLS % ReconstructionOuter % Value, iDimension )
+             CLS % ReconstructionOuter % Value, iDimension, &
+             CLS % ReconstructionInner % D_Selected, &
+             CLS % ReconstructionOuter % D_Selected )
 
     call CF % ComputeRawFluxes &
            ( CLS % RawFluxInner % Value, CLS % ReconstructionInner % Value, &

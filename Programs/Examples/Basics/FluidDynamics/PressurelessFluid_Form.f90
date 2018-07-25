@@ -1,5 +1,6 @@
 module PressurelessFluid_Form
 
+  use iso_c_binding
   use Basics
   use DistributedMesh_Form
   use ConservedFields_Template
@@ -305,7 +306,8 @@ contains
   
   
   subroutine ComputeRiemannSolverInput &
-               ( CF, Step, ValueInner, ValueOuter, iDimension )
+               ( CF, Step, ValueInner, ValueOuter, iDimension, &
+                 D_ValueInner, D_ValueOuter )
     
     class ( PressurelessFluidForm ), intent ( inout ) :: &
       CF
@@ -316,6 +318,9 @@ contains
       ValueOuter
     integer ( KDI ), intent ( in ) :: &
       iDimension
+    type ( c_ptr ), dimension ( : ), intent ( in ) :: &
+      D_ValueInner, &
+      D_ValueOuter
     
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       AP_I, AP_O, &
@@ -345,8 +350,24 @@ contains
 
     call ComputeRiemannSolverInputKernel &
            ( AP_I, AP_O, AM_I, AM_O, LP_I, LP_O, LM_I, LM_O, &
-             CF % DistributedMesh % nGhostLayers ( iDimension ), iDimension )
-
+             CF % DistributedMesh % nGhostLayers ( iDimension ), iDimension, &
+             S % ModifiedSpeedsInner % D_Selected ( S % ALPHA_PLUS ), &
+             S % ModifiedSpeedsOuter % D_Selected ( S % ALPHA_PLUS ), &
+             S % ModifiedSpeedsInner % D_Selected ( S % ALPHA_MINUS ), &
+             S % ModifiedSpeedsOuter % D_Selected ( S % ALPHA_MINUS ), &
+             D_ValueInner ( CF % FAST_EIGENSPEED_PLUS ( iDimension ) ), &
+             D_ValueOuter ( CF % FAST_EIGENSPEED_PLUS ( iDimension ) ), &
+             D_ValueInner ( CF % FAST_EIGENSPEED_MINUS ( iDimension ) ), &
+             D_ValueOuter ( CF % FAST_EIGENSPEED_MINUS ( iDimension ) ) )
+             
+    associate ( &
+      T_DT_H  => PROGRAM_HEADER % Timer ( S % iTimerDataTransferHost ) )
+    call T_DT_H % Start ( )
+    call S % ModifiedSpeedsInner % UpdateHost ( )
+    call S % ModifiedSpeedsOuter % UpdateHost ( )
+    call T_DT_H % Stop ( )
+    end associate
+    
     end select !-- S
       
   end subroutine ComputeRiemannSolverInput
@@ -692,7 +713,9 @@ contains
 
 
   subroutine ComputeRiemannSolverInputKernel &
-               ( AP_I, AP_O, AM_I, AM_O, LP_I, LP_O, LM_I, LM_O, oV, iD )
+               ( AP_I, AP_O, AM_I, AM_O, LP_I, LP_O, LM_I, LM_O, oV, iD, &
+                 D_AP_I, D_AP_O, D_AM_I, D_AM_O, D_LP_I, D_LP_O, &
+                 D_LM_I, D_LM_O )
 
     real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
       AP_I, AP_O, &
@@ -703,6 +726,11 @@ contains
     integer ( KDI ), intent ( in ) :: &
       oV, &
       iD
+    type ( c_ptr ), intent ( in ) :: &
+      D_AP_I, D_AP_O, &
+      D_AM_I, D_AM_O, &
+      D_LP_I, D_LP_O, &
+      D_LM_I, D_LM_O
       
     integer ( KDI ) :: &
       iV, jV, kV
@@ -710,7 +738,21 @@ contains
       iaS_P, iaS_M, &
       iaVS_P, iaVS_M, &
       lV, uV
+      
+    !AP_I = max ( 0.0_KDR, + cshift ( LP_O, shift = -1, dim = iD ), + LP_I )
+    !AP_O = max ( 0.0_KDR, + LP_O, + cshift ( LP_I, shift = +1, dim = iD ) )
+    !AM_I = max ( 0.0_KDR, - cshift ( LM_O, shift = -1, dim = iD ), - LM_I )
+    !AM_O = max ( 0.0_KDR, - LM_O, - cshift ( LM_I, shift = +1, dim = iD ) )
     
+    call AssociateDevice ( D_AP_I, AP_I )
+    call AssociateDevice ( D_AP_O, AP_O )
+    call AssociateDevice ( D_AM_I, AM_I )
+    call AssociateDevice ( D_AM_O, AM_O )
+    call AssociateDevice ( D_LP_I, LP_I )
+    call AssociateDevice ( D_LP_O, LP_O )
+    call AssociateDevice ( D_LM_I, LM_I )
+    call AssociateDevice ( D_LM_O, LM_O )
+
     lV = 1
     where ( shape ( LP_O ) > 1 )
       lV = oV + 1
@@ -728,6 +770,8 @@ contains
     iaS_P = 0
     iaS_P ( iD ) = + 1
     
+    !$OMP  target teams distribute parallel do collapse ( 3 ) &
+    !$OMP& schedule ( static, 1 ) private ( iaVS_M, iaVS_P )
     do kV = lV ( 3 ), uV ( 3 )    
       do jV = lV ( 2 ), uV ( 2 )  
         do iV = lV ( 1 ), uV ( 1 )
@@ -754,6 +798,16 @@ contains
         end do
       end do
     end do
+    !$OMP end target teams distribute parallel do
+    
+    call DisassociateDevice ( LM_O )
+    call DisassociateDevice ( LM_I )
+    call DisassociateDevice ( LP_O )
+    call DisassociateDevice ( LP_I )
+    call DisassociateDevice ( AM_O )
+    call DisassociateDevice ( AM_I )
+    call DisassociateDevice ( AP_O )
+    call DisassociateDevice ( AP_I )
     
   end subroutine ComputeRiemannSolverInputKernel
 

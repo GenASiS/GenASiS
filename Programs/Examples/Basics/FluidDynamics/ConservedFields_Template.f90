@@ -96,7 +96,9 @@ module ConservedFields_Template
     end subroutine ComputeRawFluxesInterface
     
     subroutine ComputeRiemannSolverInputInterface &
-                 ( CF, Step, ValueInner, ValueOuter, iDimension )
+                 ( CF, Step, ValueInner, ValueOuter, iDimension, &
+                   D_ValueInner, D_ValueOuter )
+      use iso_c_binding
       use Basics
       import ConservedFieldsTemplate    
       class ( ConservedFieldsTemplate ), intent ( inout ) :: &
@@ -108,6 +110,9 @@ module ConservedFields_Template
         ValueOuter
       integer ( KDI ), intent ( in ) :: &
         iDimension
+      type ( c_ptr ), dimension ( : ), intent ( in ) :: &
+        D_ValueInner, &
+        D_ValueOuter
     end subroutine ComputeRiemannSolverInputInterface
     
   end interface
