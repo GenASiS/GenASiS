@@ -15,6 +15,8 @@ module ConservationLawStep_Form
       iTimerDifference, &
       iTimerReconstruction, &
       iTimerRiemannSolverInput, &
+      iTimerRawFluxes, &
+      iTimerFluxes, &
       iTimerDataTransferDevice, &
       iTimerDataTransferHost
     real ( KDR ) :: &
@@ -162,6 +164,10 @@ contains
            ( 'Reconstruction', CLS % iTimerReconstruction, Level = 1 )
     call PROGRAM_HEADER % AddTimer &
            ( 'RiemannSolverInput', CLS % iTimerRiemannSolverInput, Level = 1 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'RawFluxes', CLS % iTimerRawFluxes, Level = 1 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'Fluxes', CLS % iTimerFluxes, Level = 1 )
     call PROGRAM_HEADER % AddTimer &
            ( 'DataTransfer to Device', CLS % iTimerDataTransferDevice, Level = 1 )
     call PROGRAM_HEADER % AddTimer &
@@ -425,7 +431,9 @@ contains
       ( DM  => CF % DistributedMesh, &
         iaC => CF % iaConserved, &
         T_DT_D  => PROGRAM_HEADER % Timer ( CLS % iTimerDataTransferDevice ), &
-        T_RSI => PROGRAM_HEADER % Timer ( CLS % iTimerRiemannSolverInput ) )
+        T_RSI => PROGRAM_HEADER % Timer ( CLS % iTimerRiemannSolverInput ), &
+        T_RF  => PROGRAM_HEADER % Timer ( CLS % iTimerRawFluxes ), &
+        T_F   => PROGRAM_HEADER % Timer ( CLS % iTimerFluxes ) )
 
     call CF % ApplyBoundaryConditions &
            ( CLS % ReconstructionOuter % Value, &
@@ -447,12 +455,14 @@ contains
              CLS % ReconstructionOuter % D_Selected )
     call T_RSI % Stop ( )
 
+    call T_RF % Start ( )
     call CF % ComputeRawFluxes &
            ( CLS % RawFluxInner % Value, CLS % ReconstructionInner % Value, &
              iDimension )
     call CF % ComputeRawFluxes &
            ( CLS % RawFluxOuter % Value, CLS % ReconstructionOuter % Value, &
              iDimension )
+    call T_RF % Stop ( )
 
     call DM % SetVariablePointer &
            ( CLS % ModifiedSpeedsInner % Value ( :, CLS % ALPHA_PLUS ), AP_I )
@@ -472,9 +482,11 @@ contains
              ( CLS % ReconstructionInner % Value ( :, iaC ( iV ) ), U_I )
       call DM % SetVariablePointer &
              ( CLS % ReconstructionOuter % Value ( :, iaC ( iV ) ), U_O )
+      call T_F % Start ( )
       call ComputeFluxesKernel &
              ( AP_I, AP_O, AM_I, AM_O, RF_I, RF_O, U_I, U_O, iDimension, &
                F_I, F_O )
+      call T_F % Stop ( )
     end do
 
     nullify ( AP_I, AP_O, AM_I, AM_O, RF_I, RF_O, U_I, U_O, F_I, F_O )
