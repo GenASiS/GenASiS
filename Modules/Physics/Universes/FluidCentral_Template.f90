@@ -427,11 +427,13 @@ contains
     class is ( Chart_SL_Template )
       if ( FC % Dimensionless ) then
         call PS_EB % CreateChart &
-               ( nCellsOption         = C % nCells ( 1 : 1 ), &
-                 nGhostLayersOption   = [ 0 ] )
+               ( CoordinateLabelOption = [ 'BaryonNumber' ], &
+                 nCellsOption          = C % nCells ( 1 : 1 ), &
+                 nGhostLayersOption    = [ 0 ] )
       else
         call PS_EB % CreateChart &
-               ( CoordinateUnitOption = [ UNIT % SOLAR_BARYON_NUMBER ], &
+               ( CoordinateLabelOption = [ 'BaryonNumber' ], &
+                 CoordinateUnitOption = [ UNIT % SOLAR_BARYON_NUMBER ], &
                  nCellsOption         = C % nCells ( 1 : 1 ), &
                  nGhostLayersOption   = [ 0 ] )
       end if

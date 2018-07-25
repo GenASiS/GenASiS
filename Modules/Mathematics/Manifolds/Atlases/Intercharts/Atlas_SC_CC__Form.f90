@@ -66,16 +66,17 @@ contains
 
 
   subroutine CreateChart &
-               ( A, SpacingOption, CoordinateSystemOption, &
-                 CoordinateUnitOption, MinCoordinateOption, &
-                 MaxCoordinateOption, RatioOption, ScaleOption, &
-                 nCellsOption, nGhostLayersOption, nDimensionsOption, &
-                 nEqualOption )
+               ( A, SpacingOption, CoordinateLabelOption, &
+                 CoordinateSystemOption, CoordinateUnitOption, &
+                 MinCoordinateOption, MaxCoordinateOption, RatioOption, &
+                 ScaleOption, nCellsOption, nGhostLayersOption, &
+                 nDimensionsOption, nEqualOption )
 
     class ( Atlas_SC_CC_Form ), intent ( inout ) :: &
       A
     character ( * ), dimension ( : ), intent ( in ), optional :: &
-      SpacingOption
+      SpacingOption, &
+      CoordinateLabelOption
     character ( * ), intent ( in ), optional :: &
       CoordinateSystemOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &

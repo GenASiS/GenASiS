@@ -31,10 +31,11 @@ contains
 
   subroutine InitializeBasic &
                ( C, Atlas, IsPeriodic, iChart, SpacingOption, &
-                 CoordinateSystemOption, IsDistributedOption, &
-                 CoordinateUnitOption, MinCoordinateOption, &
-                 MaxCoordinateOption, RatioOption, ScaleOption, nCellsOption, &
-                 nGhostLayersOption, nDimensionsOption, nEqualOption )
+                 CoordinateLabelOption, CoordinateSystemOption, &
+                 IsDistributedOption, CoordinateUnitOption, &
+                 MinCoordinateOption, MaxCoordinateOption, RatioOption, &
+                 ScaleOption, nCellsOption, nGhostLayersOption, &
+                 nDimensionsOption, nEqualOption )
 
     class ( Chart_SLL_Form ), intent ( inout ) :: &
       C
@@ -45,7 +46,8 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iChart
     character ( * ), dimension ( : ), intent ( in ), optional :: &
-      SpacingOption
+      SpacingOption, &
+      CoordinateLabelOption
     character ( * ), intent ( in ), optional :: &
       CoordinateSystemOption
     logical ( KDL ), intent ( in ), optional :: &
@@ -70,11 +72,11 @@ contains
     end if
 
     call C % ChartHeader_SL_Form % Initialize &
-           ( Atlas, IsPeriodic, iChart, SpacingOption, &
+           ( Atlas, IsPeriodic, iChart, SpacingOption, CoordinateLabelOption, &
              CoordinateSystemOption, IsDistributedOption, &
-             CoordinateUnitOption, MinCoordinateOption, &
-             MaxCoordinateOption, RatioOption, ScaleOption, nCellsOption, &
-             nGhostLayersOption, nDimensionsOption, nEqualOption )
+             CoordinateUnitOption, MinCoordinateOption, MaxCoordinateOption, &
+             RatioOption, ScaleOption, nCellsOption, nGhostLayersOption, &
+             nDimensionsOption, nEqualOption )
 
   end subroutine InitializeBasic
 

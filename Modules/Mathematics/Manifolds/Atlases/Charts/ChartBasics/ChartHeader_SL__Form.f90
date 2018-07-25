@@ -63,11 +63,11 @@ contains
 
   subroutine InitializeBasic &
                ( C, Atlas, IsPeriodic, iChart, SpacingOption, &
-                 CoordinateSystemOption, IsDistributedOption, &
-                 CoordinateUnitOption, MinCoordinateOption, &
-                 MaxCoordinateOption, RatioOption, ScaleOption, &
-                 nCellsOption, nGhostLayersOption, nDimensionsOption, &
-                 nEqualOption )
+                 CoordinateLabelOption, CoordinateSystemOption, &
+                 IsDistributedOption, CoordinateUnitOption, &
+                 MinCoordinateOption, MaxCoordinateOption, RatioOption, &
+                 ScaleOption, nCellsOption, nGhostLayersOption, &
+                 nDimensionsOption, nEqualOption )
 
     class ( ChartHeader_SL_Form ), intent ( inout ) :: &
       C
@@ -78,7 +78,8 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iChart
     character ( * ), dimension ( : ), intent ( in ), optional :: &
-      SpacingOption
+      SpacingOption, &
+      CoordinateLabelOption
     character ( * ), intent ( in ), optional :: &
       CoordinateSystemOption
     logical ( KDL ), intent ( in ), optional :: &
@@ -112,10 +113,10 @@ contains
 
     call C % InitializeTemplateBasic &
                ( Atlas, IsPeriodic, iChart, SpacingOption, &
-                 CoordinateSystemOption, IsDistributedOption, &
-                 CoordinateUnitOption, MinCoordinateOption, &
-                 MaxCoordinateOption, RatioOption, ScaleOption, &
-                 nDimensionsOption, nEqualOption )
+                 CoordinateLabelOption, CoordinateSystemOption, &
+                 IsDistributedOption, CoordinateUnitOption, &
+                 MinCoordinateOption, MaxCoordinateOption, RatioOption, &
+                 ScaleOption, nDimensionsOption, nEqualOption )
 
     allocate ( C % nCells ( MAX_DIMENSIONS ) )
     allocate ( C % nGhostLayers ( MAX_DIMENSIONS ) )

@@ -90,10 +90,10 @@ contains
 
   subroutine InitializeTemplateBasic &
                ( C, Atlas, IsPeriodic, iChart, SpacingOption, &
-                 CoordinateSystemOption, IsDistributedOption, &
-                 CoordinateUnitOption, MinCoordinateOption, &
-                 MaxCoordinateOption, RatioOption, ScaleOption, &
-                 nDimensionsOption, nEqualOption )
+                 CoordinateLabelOption, CoordinateSystemOption, &
+                 IsDistributedOption, CoordinateUnitOption, &
+                 MinCoordinateOption, MaxCoordinateOption, RatioOption, &
+                 ScaleOption, nDimensionsOption, nEqualOption )
 
     class ( ChartTemplate ), intent ( inout ) :: &
       C
@@ -104,7 +104,8 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iChart
     character ( * ), dimension ( : ), intent ( in ), optional :: &
-      SpacingOption
+      SpacingOption, &
+      CoordinateLabelOption
     character ( * ), intent ( in ), optional :: &
       CoordinateSystemOption
     logical ( KDL ), intent ( in ), optional :: &
@@ -215,6 +216,10 @@ contains
     case ( 'SPHERICAL' )
       C % CoordinateLabel  =  [ 'R    ', 'Theta', 'Phi  ' ]
     end select !-- CoordinateSystem
+    if ( present ( CoordinateLabelOption ) ) &
+      C % CoordinateLabel ( : nD ) = CoordinateLabelOption ( : nD )
+    call PROGRAM_HEADER % GetParameter &
+           ( C % CoordinateLabel ( : nD ), 'CoordinateLabel' )
 
     allocate ( C % Spacing ( MAX_DIMENSIONS ) )
     C % Spacing = ''

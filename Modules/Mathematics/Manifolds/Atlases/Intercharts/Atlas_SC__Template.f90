@@ -114,16 +114,17 @@ contains
 
 
   subroutine CreateChart &
-               ( A, SpacingOption, CoordinateSystemOption, &
-                 CoordinateUnitOption, MinCoordinateOption, &
-                 MaxCoordinateOption, RatioOption, ScaleOption, &
-                 nCellsOption, nGhostLayersOption, nDimensionsOption, &
-                 nEqualOption )
+               ( A, SpacingOption, CoordinateLabelOption, &
+                 CoordinateSystemOption, CoordinateUnitOption, &
+                 MinCoordinateOption, MaxCoordinateOption, RatioOption, &
+                 ScaleOption, nCellsOption, nGhostLayersOption, &
+                 nDimensionsOption, nEqualOption )
 
     class ( Atlas_SC_Template ), intent ( inout ) :: &
       A
     character ( * ), dimension ( : ), intent ( in ), optional :: &
-      SpacingOption
+      SpacingOption, &
+      CoordinateLabelOption
     character ( * ), intent ( in ), optional :: &
       CoordinateSystemOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
@@ -179,6 +180,7 @@ contains
     class is ( Chart_SL_Template )
       call C % Initialize &
              ( A, IsPeriodic, iChart = 1, SpacingOption = SpacingOption, & 
+               CoordinateLabelOption = CoordinateLabelOption, &
                CoordinateSystemOption = CoordinateSystemOption, &
                CoordinateUnitOption = CoordinateUnitOption, &
                MinCoordinateOption = MinCoordinateOption, &

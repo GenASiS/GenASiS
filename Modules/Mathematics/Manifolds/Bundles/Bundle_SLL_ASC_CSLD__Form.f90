@@ -119,15 +119,17 @@ contains
 
 
   subroutine CreateChart &
-               ( B, SpacingOption, CoordinateSystemOption, &
-                 CoordinateUnitOption, MinCoordinateOption, &
-                 MaxCoordinateOption, RatioOption, ScaleOption, &
-                 nCellsOption, nGhostLayersOption, nDimensionsOption )
+               ( B, SpacingOption, CoordinateLabelOption, &
+                 CoordinateSystemOption, CoordinateUnitOption, &
+                 MinCoordinateOption, MaxCoordinateOption, RatioOption, &
+                 ScaleOption, nCellsOption, nGhostLayersOption, &
+                 nDimensionsOption )
 
     class ( Bundle_SLL_ASC_CSLD_Form ), intent ( inout ), target :: &
       B
     character ( * ), dimension ( : ), intent ( in ), optional :: &
-      SpacingOption
+      SpacingOption, &
+      CoordinateLabelOption
     character ( * ), intent ( in ), optional :: &
       CoordinateSystemOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
@@ -155,7 +157,7 @@ contains
 
     associate ( FM => B % FiberMaster )
     call FM % CreateChart &
-           ( SpacingOption, CoordinateSystemOption, &
+           ( SpacingOption, CoordinateLabelOption, CoordinateSystemOption, &
              CoordinateUnitOption, MinCoordinateOption, &
              MaxCoordinateOption, RatioOption, ScaleOption, &
              nCellsOption, nGhostLayersOption, nDimensionsOption )
