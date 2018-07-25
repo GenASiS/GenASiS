@@ -14,6 +14,7 @@ module ConservationLawStep_Form
       N_MODIFIED_SPEEDS = 2, &
       iTimerDifference, &
       iTimerReconstruction, &
+      iTimerRiemannSolverInput, &
       iTimerDataTransferDevice, &
       iTimerDataTransferHost
     real ( KDR ) :: &
@@ -159,6 +160,8 @@ contains
            ( 'Difference', CLS % iTimerDifference, Level = 1 )
     call PROGRAM_HEADER % AddTimer &
            ( 'Reconstruction', CLS % iTimerReconstruction, Level = 1 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'RiemannSolverInput', CLS % iTimerRiemannSolverInput, Level = 1 )
     call PROGRAM_HEADER % AddTimer &
            ( 'DataTransfer to Device', CLS % iTimerDataTransferDevice, Level = 1 )
     call PROGRAM_HEADER % AddTimer &
@@ -420,7 +423,9 @@ contains
     associate ( CF => CLS % ConservedFields )
     associate &
       ( DM  => CF % DistributedMesh, &
-        iaC => CF % iaConserved )
+        iaC => CF % iaConserved, &
+        T_DT_D  => PROGRAM_HEADER % Timer ( CLS % iTimerDataTransferDevice ), &
+        T_RSI => PROGRAM_HEADER % Timer ( CLS % iTimerRiemannSolverInput ) )
 
     call CF % ApplyBoundaryConditions &
            ( CLS % ReconstructionOuter % Value, &
@@ -429,14 +434,18 @@ contains
            ( CLS % ReconstructionInner % Value, &
              CLS % ReconstructionOuter % Value, iDimension, iBoundary = +1 )
 
+    call T_DT_D % Start ( )
     call CLS % ReconstructionInner % UpdateDevice ( )
     call CLS % ReconstructionOuter % UpdateDevice ( )
+    call T_DT_D % Stop ( )
     
+    call T_RSI % Start ( )
     call CF % ComputeRiemannSolverInput &
            ( CLS, CLS % ReconstructionInner % Value, &
              CLS % ReconstructionOuter % Value, iDimension, &
              CLS % ReconstructionInner % D_Selected, &
              CLS % ReconstructionOuter % D_Selected )
+    call T_RSI % Stop ( )
 
     call CF % ComputeRawFluxes &
            ( CLS % RawFluxInner % Value, CLS % ReconstructionInner % Value, &
