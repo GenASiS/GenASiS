@@ -8,9 +8,15 @@ SurfaceIntegral_Form.o: \
   Manifolds.o \
   SurfaceIntegral_Form.f90
 
+SphericalAverage_Form.o: \
+  Basics.o \
+  Manifolds.o \
+  SphericalAverage_Form.f90
+
 Integrals.o: \
   VolumeIntegral_Form.o \
   SurfaceIntegral_Form.o \
+  SphericalAverage_Form.o \
   Integrals.f90
 
 Integrals.a: $(INTEGRALS)

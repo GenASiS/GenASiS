@@ -83,9 +83,9 @@ module FluidCentral_Template
       ComputeEnclosedBaryons, &
       ApplySources
 
-      private :: &
-        ComputeSolidAngleKernel, &
-        ComputeMyIntegralKernel
+!      private :: &
+!        ComputeSolidAngleKernel, &
+!        ComputeMyIntegralKernel
 
 contains
 
@@ -507,14 +507,14 @@ contains
       iA, &  !-- iAverage
       nAverage
     integer ( KDI ), dimension ( : ), allocatable :: &
-      iRadius, &
+!      iRadius, &
       iaAverage
-    real ( KDR ), dimension ( : ), allocatable :: &
-      SolidAngle
-    type ( CollectiveOperation_R_Form ) :: &
-      CO
+!    real ( KDR ), dimension ( : ), allocatable :: &
+!      SolidAngle
+!    type ( CollectiveOperation_R_Form ) :: &
+!      CO
     class ( GeometryFlatForm ), pointer :: &
-      G, &
+!      G, &
       G_SA
     class ( Fluid_D_Form ), pointer :: &
       F, &
@@ -537,18 +537,18 @@ contains
     G_SA => FC % PositionSpace_SA % Geometry ( )
     F_SA => FC % Fluid_ASC_SA % Fluid_D ( )
 
-    allocate ( iRadius ( G % nValues ) )
-    allocate ( SolidAngle ( G % nValues ) )
+!    allocate ( iRadius ( G % nValues ) )
+!    allocate ( SolidAngle ( G % nValues ) )
 
-    call ComputeSolidAngleKernel &
-           ( SolidAngle, iRadius, &
-             G % Value ( :, G % WIDTH_LEFT_U ( 2 ) ), &
-             G % Value ( :, G % WIDTH_LEFT_U ( 3 ) ), &
-             G % Value ( :, G % WIDTH_RIGHT_U ( 2 ) ), &
-             G % Value ( :, G % WIDTH_RIGHT_U ( 3 ) ), &
-             G % Value ( :, G % CENTER_U ( 1 ) ), &
-             G % Value ( :, G % CENTER_U ( 2 ) ), &
-             C_SA % Edge ( 1 ) % Value, PS % nDimensions )
+!    call ComputeSolidAngleKernel &
+!           ( SolidAngle, iRadius, &
+!             G % Value ( :, G % WIDTH_LEFT_U ( 2 ) ), &
+!             G % Value ( :, G % WIDTH_LEFT_U ( 3 ) ), &
+!             G % Value ( :, G % WIDTH_RIGHT_U ( 2 ) ), &
+!             G % Value ( :, G % WIDTH_RIGHT_U ( 3 ) ), &
+!             G % Value ( :, G % CENTER_U ( 1 ) ), &
+!             G % Value ( :, G % CENTER_U ( 2 ) ), &
+!             C_SA % Edge ( 1 ) % Value, PS % nDimensions )
 
     nAverage = F % N_CONSERVED
     select type ( F )
@@ -564,39 +564,39 @@ contains
       iaAverage ( F % N_CONSERVED + 2 )  =  F % TEMPERATURE
     end select !-- F
 
-    call CO % Initialize &
-           ( PS % Communicator, &
-             nOutgoing = [ F_SA % nValues  *  nAverage ], &
-             nIncoming = [ F_SA % nValues  *  nAverage ], &
-             RootOption = CONSOLE % DisplayRank )
+    ! call CO % Initialize &
+    !        ( PS % Communicator, &
+    !          nOutgoing = [ F_SA % nValues  *  nAverage ], &
+    !          nIncoming = [ F_SA % nValues  *  nAverage ], &
+    !          RootOption = CONSOLE % DisplayRank )
 
-    oB = 0
-    do iA = 1, nAverage
-      associate &
-        ( MyIntegral_SA => CO % Outgoing &
-                              % Value ( oB + 1 : oB + F_SA % nValues ), &
-          Variable      => F % Value ( :, iaAverage ( iA ) ) )
-      call Clear ( MyIntegral_SA )
-      call ComputeMyIntegralKernel &
-             ( MyIntegral_SA, C % IsProperCell, Variable, SolidAngle, iRadius )
-      oB  =  oB  +  F_SA % nValues
-      end associate !-- MyIntegral, etc. 
-    end do !-- iA
+    ! oB = 0
+    ! do iA = 1, nAverage
+    !   associate &
+    !     ( MyIntegral_SA => CO % Outgoing &
+    !                           % Value ( oB + 1 : oB + F_SA % nValues ), &
+    !       Variable      => F % Value ( :, iaAverage ( iA ) ) )
+    !   call Clear ( MyIntegral_SA )
+    !   call ComputeMyIntegralKernel &
+    !          ( MyIntegral_SA, C % IsProperCell, Variable, SolidAngle, iRadius )
+    !   oB  =  oB  +  F_SA % nValues
+    !   end associate !-- MyIntegral, etc. 
+    ! end do !-- iA
 
-    call CO % Reduce ( REDUCTION % SUM )
+    ! call CO % Reduce ( REDUCTION % SUM )
 
     if ( PS % Communicator % Rank == CONSOLE % DisplayRank ) then
 
-      oB = 0
-      do iA = 1, nAverage
-        associate &
-          ( Integral_SA => CO % Incoming &
-                             % Value ( oB + 1 : oB + F_SA % nValues ), &
-            Variable_SA => F_SA % Value ( :, iaAverage ( iA ) ) )
-        call Copy ( Integral_SA, Variable_SA )
-        oB  =  oB  +  F_SA % nValues
-        end associate !-- MyIntegral, etc. 
-      end do !-- iA
+      ! oB = 0
+      ! do iA = 1, nAverage
+      !   associate &
+      !     ( Integral_SA => CO % Incoming &
+      !                        % Value ( oB + 1 : oB + F_SA % nValues ), &
+      !       Variable_SA => F_SA % Value ( :, iaAverage ( iA ) ) )
+      !   call Copy ( Integral_SA, Variable_SA )
+      !   oB  =  oB  +  F_SA % nValues
+      !   end associate !-- MyIntegral, etc. 
+      ! end do !-- iA
 
       call F_SA % ComputeFromConserved ( G_SA )
 
@@ -684,84 +684,84 @@ contains
   end subroutine ApplySources
 
 
-  subroutine ComputeSolidAngleKernel &
-               ( dOmega, iR, W_L_2, W_L_3, W_R_2, W_R_3, R_C, Th_C, &
-                 EdgeValue, nDimensions )
+  ! subroutine ComputeSolidAngleKernel &
+  !              ( dOmega, iR, W_L_2, W_L_3, W_R_2, W_R_3, R_C, Th_C, &
+  !                EdgeValue, nDimensions )
 
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      dOmega
-    integer ( KDI ), dimension ( : ), intent ( inout ) :: &
-      iR
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      W_L_2, W_L_3, &
-      W_R_2, W_R_3, &
-      R_C, &
-      Th_C, &
-      EdgeValue
-    integer ( KDI ), intent ( in ) :: &
-      nDimensions
+  !   real ( KDR ), dimension ( : ), intent ( inout ) :: &
+  !     dOmega
+  !   integer ( KDI ), dimension ( : ), intent ( inout ) :: &
+  !     iR
+  !   real ( KDR ), dimension ( : ), intent ( in ) :: &
+  !     W_L_2, W_L_3, &
+  !     W_R_2, W_R_3, &
+  !     R_C, &
+  !     Th_C, &
+  !     EdgeValue
+  !   integer ( KDI ), intent ( in ) :: &
+  !     nDimensions
 
-    integer ( KDI ) :: &
-      iV  !-- iValue
-    real ( KDR ) :: &
-      TwoPi, FourPi, &
-      Th_I, Th_O, &
-      dPh
+  !   integer ( KDI ) :: &
+  !     iV  !-- iValue
+  !   real ( KDR ) :: &
+  !     TwoPi, FourPi, &
+  !     Th_I, Th_O, &
+  !     dPh
     
-    TwoPi   =  2.0_KDR  *  CONSTANT % PI
-    FourPi  =  4.0_KDR  *  CONSTANT % PI
+  !   TwoPi   =  2.0_KDR  *  CONSTANT % PI
+  !   FourPi  =  4.0_KDR  *  CONSTANT % PI
 
-    !$OMP parallel do private ( iV, Th_I, Th_O, dPh )
-    do iV = 1, size ( dOmega )
+  !   !$OMP parallel do private ( iV, Th_I, Th_O, dPh )
+  !   do iV = 1, size ( dOmega )
       
-      Th_I  =  Th_C ( iV )  -  W_L_2 ( iV )
-      Th_O  =  Th_C ( iV )  +  W_R_2 ( iV )
+  !     Th_I  =  Th_C ( iV )  -  W_L_2 ( iV )
+  !     Th_O  =  Th_C ( iV )  +  W_R_2 ( iV )
 
-      dPh  =  W_L_3 ( iV )  +  W_R_3 ( iV ) 
+  !     dPh  =  W_L_3 ( iV )  +  W_R_3 ( iV ) 
 
-      select case ( nDimensions )
-      case ( 1 )
-        dOmega ( iV )  =  FourPi
-      case ( 2 )
-        dOmega ( iV )  =  TwoPi  *  ( cos ( Th_I )  -  cos ( Th_O ) )
-      case ( 3 ) 
-        dOmega ( iV )  =  dPh  *  ( cos ( Th_I )  -  cos ( Th_O ) )
-      end select !-- nDimensions
+  !     select case ( nDimensions )
+  !     case ( 1 )
+  !       dOmega ( iV )  =  FourPi
+  !     case ( 2 )
+  !       dOmega ( iV )  =  TwoPi  *  ( cos ( Th_I )  -  cos ( Th_O ) )
+  !     case ( 3 ) 
+  !       dOmega ( iV )  =  dPh  *  ( cos ( Th_I )  -  cos ( Th_O ) )
+  !     end select !-- nDimensions
 
-      call Search ( EdgeValue, R_C ( iV ), iR ( iV ) )
+  !     call Search ( EdgeValue, R_C ( iV ), iR ( iV ) )
 
-    end do
-    !$OMP end parallel do
+  !   end do
+  !   !$OMP end parallel do
 
-  end subroutine ComputeSolidAngleKernel
+  ! end subroutine ComputeSolidAngleKernel
 
 
-  subroutine ComputeMyIntegralKernel ( MyI, IsProperCell, V, dOmega, iR )
+  ! subroutine ComputeMyIntegralKernel ( MyI, IsProperCell, V, dOmega, iR )
 
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      MyI
-    logical ( KDL ), dimension ( : ), intent ( in ) :: &
-      IsProperCell
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      V, &
-      dOmega
-    integer ( KDI ), dimension ( : ), intent ( in ) :: &
-      iR
+  !   real ( KDR ), dimension ( : ), intent ( inout ) :: &
+  !     MyI
+  !   logical ( KDL ), dimension ( : ), intent ( in ) :: &
+  !     IsProperCell
+  !   real ( KDR ), dimension ( : ), intent ( in ) :: &
+  !     V, &
+  !     dOmega
+  !   integer ( KDI ), dimension ( : ), intent ( in ) :: &
+  !     iR
 
-    integer ( KDI ) :: &
-      iV
+  !   integer ( KDI ) :: &
+  !     iV
 
-    !$OMP parallel do private ( iV )
-    do iV = 1, size ( V )
-      if ( .not. IsProperCell ( iV ) ) &
-        cycle
-      MyI ( iR ( iV ) )  =  MyI ( iR ( iV ) )  +  V ( iV ) * dOmega ( iV )
-    end do
-    !$OMP end parallel do
+  !   !$OMP parallel do private ( iV )
+  !   do iV = 1, size ( V )
+  !     if ( .not. IsProperCell ( iV ) ) &
+  !       cycle
+  !     MyI ( iR ( iV ) )  =  MyI ( iR ( iV ) )  +  V ( iV ) * dOmega ( iV )
+  !   end do
+  !   !$OMP end parallel do
  
-    MyI  =  MyI  /  ( 4.0_KDR  *  CONSTANT % PI )
+  !   MyI  =  MyI  /  ( 4.0_KDR  *  CONSTANT % PI )
 
-  end subroutine ComputeMyIntegralKernel
+  ! end subroutine ComputeMyIntegralKernel
 
 
 end module FluidCentral_Template

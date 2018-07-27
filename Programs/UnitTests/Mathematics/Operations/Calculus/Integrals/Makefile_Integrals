@@ -2,7 +2,8 @@ PATH_GENASIS = ../../../../../../..
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-all: VolumeIntegral_Form_Test SurfaceIntegral_Form_Test
+all: VolumeIntegral_Form_Test SurfaceIntegral_Form_Test \
+     SphericalAverage_Form_Test
 
 VolumeIntegral_Form_Test: Basics.a Manifolds.a VolumeIntegral_Form_Test.o
 	$(LINK) $(FLAGS) -o VolumeIntegral_Form_Test_$(MACHINE) \
@@ -14,12 +15,18 @@ SurfaceIntegral_Form_Test: Basics.a Manifolds.a SurfaceIntegral_Form_Test.o
           SurfaceIntegral_Form_Test.o SurfaceIntegral_Form.o \
           Manifolds.a Basics.a $(LIBRARIES)
 
+SphericalAverage_Form_Test: Basics.a Manifolds.a SphericalAverage_Form_Test.o
+	$(LINK) $(FLAGS) -o SphericalAverage_Form_Test_$(MACHINE) \
+          SphericalAverage_Form_Test.o SphericalAverage_Form.o \
+          Manifolds.a Basics.a $(LIBRARIES)
+
 clean:
 	rm -f *.o *.a *.mod *.ld
 
 clobber: clean
 	rm -f VolumeIntegral_Form_Test_*
 	rm -f SurfaceIntegral_Form_Test_*
+	rm -f SphericalAverage_Form_Test_*
 
 include $(PATH_BASICS)/Makefile_Dependencies 
 include $(PATH_MANIFOLDS)/Makefile_Dependencies 
@@ -36,3 +43,9 @@ SurfaceIntegral_Form_Test.o: \
   Manifolds.o \
   SurfaceIntegral_Form.o \
   SurfaceIntegral_Form_Test.f90
+
+SphericalAverage_Form_Test.o: \
+  Basics.o \
+  Manifolds.o \
+  SphericalAverage_Form.o \
+  SphericalAverage_Form_Test.f90
