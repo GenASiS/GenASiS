@@ -51,7 +51,7 @@ contains
     type ( Real_1D_Form ), dimension ( 1 ) :: &
       Edge
     class ( StorageForm ), pointer :: &
-      I
+      I, I_SA
     class ( GeometryFlatForm ), pointer :: &
       G
 
@@ -95,6 +95,9 @@ contains
              nGhostLayersOption     = [ 0 ] )
     call A_SA % SetGeometry ( EdgeOption = Edge )
 
+    select type ( C_SA => A_SA % Chart )
+    class is ( Chart_SL_Template )
+
     !-- Integrand
     
     allocate &
@@ -116,7 +119,8 @@ contains
     A2  =  0.4_KDR * C % MaxCoordinate ( 1 )
     A3  =  0.2_KDR * C % MaxCoordinate ( 1 )
 
-    I => IA % Storage ( )
+    I    => IA % Storage ( )
+    I_SA => AA % Storage ( )
 
     associate &
       ( R     => G % Value ( :, G % CENTER_U ( 1 ) ), &
@@ -163,30 +167,33 @@ contains
       Ellipsoid  =  0.0_KDR
     end where
 
-!     !-- SphericalAverage
+    !-- SphericalAverage
 
-!     allocate ( SAFT % SphericalAverage )
-!     associate ( VI => SAFT % SphericalAverage )
+    allocate ( SAFT % SphericalAverage )
+    associate ( SA => SAFT % SphericalAverage )
 
-!     call VI % Compute ( C, Integrand, Integral )
-!     call Show ( Integral ( 1 ), '*** SphericalAverage', nLeadingLinesOption = 1 )
-!     call Show ( 4.0_KDR / 3.0_KDR  *  CONSTANT % PI  &
-!                 *  C % MaxCoordinate ( 1 ) ** 3, &
-!                 '*** Expected', nTrailingLinesOption = 1 )
+    call SA % Compute ( I_SA, C, C_SA, I )
 
     !-- Write
 
     call A % OpenStream ( GIS, '1', iStream = 1 )
-
     call GIS % Open ( GIS % ACCESS_CREATE )
     call A % Write ( iStream = 1 )
     call GIS % Close ( )
 
+    if ( A % Communicator % Rank == CONSOLE % DisplayRank ) then
+      call A_SA % OpenStream ( GIS_SA, '1', iStream = 1 )
+      call GIS_SA % Open ( GIS_SA % ACCESS_CREATE )
+      call A_SA % Write ( iStream = 1 )
+      call GIS_SA % Close ( )
+    end if
+
     !-- Cleanup
 
-!     end associate !-- VI
+    end associate !-- SA
     end associate !-- R, etc.
     end associate !-- IA, etc.
+    end select !-- C_SA
     end select !-- C
     end associate !-- A, etc.
     end associate !-- GIS, etc.

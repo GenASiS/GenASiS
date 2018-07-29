@@ -23,14 +23,15 @@ module SphericalAverage_Form
 contains
 
 
-  subroutine Compute_CSL ( Source, Target, CSL, CSL_SA, IgnorabilityOption )
+  subroutine Compute_CSL ( Target, CSL, CSL_SA, Source, IgnorabilityOption )
 
     type ( StorageForm ), intent ( inout ) :: &
-      Source, &
       Target
     class ( Chart_SL_Template ), intent ( in ) :: &
       CSL, &
       CSL_SA
+    type ( StorageForm ), intent ( in ) :: &
+      Source
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
