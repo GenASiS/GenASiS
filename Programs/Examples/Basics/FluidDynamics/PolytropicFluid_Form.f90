@@ -1,5 +1,6 @@
 module PolytropicFluid_Form
 
+  use iso_c_binding
   use Basics
   use DistributedMesh_Form
   use PressurelessFluid_Form
@@ -295,7 +296,8 @@ contains
   end subroutine ApplyBoundaryConditions
 
 
-  subroutine ComputeRawFluxes ( CF, RawFlux, Value, iDimension )
+  subroutine ComputeRawFluxes &
+               ( CF, RawFlux, Value, iDimension, D_RawFlux, D_Value )
     
     class ( PolytropicFluidForm ), intent ( inout ) :: &
       CF
@@ -305,26 +307,61 @@ contains
       Value
     integer ( KDI ), intent ( in ) :: &
       iDimension
+    type ( c_ptr ), dimension ( : ), intent ( in ) :: &
+      D_RawFlux, &
+      D_Value
     
     integer ( KDI ) :: &
+      iDensity, &
       iEnergy, &
+      iMomentumDim
+    integer ( KDI ), dimension ( 3 ) :: &
       iMomentum
 
-    call CF % PressurelessFluidForm % ComputeRawFluxes &
-           ( RawFlux, Value, iDimension ) 
+    !call CF % PressurelessFluidForm % ComputeRawFluxes &
+    !       ( RawFlux, Value, iDimension, D_RawFlux, D_Value ) 
 
+    call Search &
+           ( CF % iaConserved, CF % CONSERVED_DENSITY, iDensity )
+    call Search &
+           ( CF % iaConserved, CF % MOMENTUM_DENSITY ( 1 ), iMomentum ( 1 ) )
+    call Search &
+           ( CF % iaConserved, CF % MOMENTUM_DENSITY ( 2 ), iMomentum ( 2 ) )
+    call Search &
+           ( CF % iaConserved, CF % MOMENTUM_DENSITY ( 3 ), iMomentum ( 3 ) )
     call Search &
            ( CF % iaConserved, CF % CONSERVED_ENERGY, iEnergy )
     call Search &
            ( CF % iaConserved, CF % MOMENTUM_DENSITY ( iDimension ), &
-             iMomentum )
+             iMomentumDim )
     
     call ComputeRawFluxesKernel &
-           ( RawFlux ( :, iMomentum ), &
+           ( RawFlux ( :, iDensity ), &
+             RawFlux ( :, iMomentum ( 1 ) ), &
+             RawFlux ( :, iMomentum ( 2 ) ), &
+             RawFlux ( :, iMomentum ( 3 ) ), &
+             RawFlux ( :, iMomentumDim ), &
              RawFlux ( :, iEnergy ), &
+             Value ( :, CF % CONSERVED_DENSITY ), &
+             Value ( :, CF % MOMENTUM_DENSITY ( 1 ) ), &
+             Value ( :, CF % MOMENTUM_DENSITY ( 2 ) ), &
+             Value ( :, CF % MOMENTUM_DENSITY ( 3 ) ), &
              Value ( :, CF % CONSERVED_ENERGY ), &
              Value ( :, CF % PRESSURE ), &
-             Value ( :, CF % VELOCITY ( iDimension ) ) )
+             Value ( :, CF % VELOCITY ( iDimension ) ), &
+             D_RawFlux ( iDensity ), &
+             D_RawFlux ( iMomentum ( 1 ) ), &
+             D_RawFlux ( iMomentum ( 2 ) ), &
+             D_RawFlux ( iMomentum ( 3 ) ), &
+             D_RawFlux ( iMomentumDim ), &
+             D_RawFlux ( iEnergy ), &
+             D_Value ( CF % CONSERVED_DENSITY ), &
+             D_Value ( CF % MOMENTUM_DENSITY ( 1 ) ), &
+             D_Value ( CF % MOMENTUM_DENSITY ( 2 ) ), &
+             D_Value ( CF % MOMENTUM_DENSITY ( 3 ) ), &
+             D_Value ( CF % CONSERVED_ENERGY ), &
+             D_Value ( CF % PRESSURE ), &
+             D_Value ( CF % VELOCITY ( iDimension ) ) )
                
   end subroutine ComputeRawFluxes
   
@@ -644,19 +681,83 @@ contains
   end subroutine ApplyBoundaryConditionsReflecting
 
 
-  subroutine ComputeRawFluxesKernel ( F_S_Dim, F_G, G, P, V_Dim )
+  subroutine ComputeRawFluxesKernel &
+               ( F_D, F_S_1, F_S_2, F_S_3, F_S_Dim, F_G, D, S_1, S_2, S_3, &
+                 G, P, V_Dim, D_F_D, D_F_S_1, D_F_S_2, D_F_S_3, D_F_S_Dim, &
+                 D_F_G, D_D, D_S_1, D_S_2, D_S_3, D_G, D_P, D_V_Dim )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      F_D, &
+      F_S_1, F_S_2, F_S_3, &
       F_S_Dim, &
       F_G
     real ( KDR ), dimension ( : ), intent ( in ) :: &
+      D, &
+      S_1, S_2, S_3, &
       G, &
       P, &
       V_Dim
+    type ( c_ptr ), intent ( in ) :: &
+      D_F_D, &
+      D_F_S_1, D_F_S_2, D_F_S_3, &
+      D_F_S_Dim, &
+      D_F_G, &
+      D_D, &
+      D_S_1, D_S_2, D_S_3, &
+      D_G, &
+      D_P, &
+      D_V_Dim
+      
+    integer ( KDI ) :: &
+      iV
+      
+    call AssociateDevice ( D_F_D, F_D )
+    call AssociateDevice ( D_F_S_1, F_S_1 )
+    call AssociateDevice ( D_F_S_2, F_S_2 )
+    call AssociateDevice ( D_F_S_3, F_S_3 )
+    call AssociateDevice ( D_F_S_Dim, F_S_Dim )
+    call AssociateDevice ( D_F_G, F_G )
+    call AssociateDevice ( D_D, D )
+    call AssociateDevice ( D_S_1, S_1 )
+    call AssociateDevice ( D_S_2, S_2 )
+    call AssociateDevice ( D_S_3, S_3 )
+    call AssociateDevice ( D_G, G )
+    call AssociateDevice ( D_P, P )
+    call AssociateDevice ( D_V_Dim, V_Dim )
+    
+    !F_D   = D   * V_Dim
+    !F_S_1 = S_1 * V_Dim
+    !F_S_2 = S_2 * V_Dim
+    !F_S_3 = S_3 * V_Dim
+    !F_S_Dim = F_S_Dim + P
+    !F_G = ( G + P ) * V_Dim
+    
+    !$OMP  target teams distribute parallel do &
+    !$OMP& schedule ( static, 1 )
+    do iV = 1, size ( F_D )
+      F_D ( iV )     = D ( iV )   * V_Dim ( iV ) 
+      F_S_1 ( iV )   = S_1 ( iV ) * V_Dim ( iV ) 
+      F_S_2 ( iV )   = S_2 ( iV ) * V_Dim ( iV ) 
+      F_S_3 ( iV )   = S_3 ( iV ) * V_Dim ( iV ) 
+      F_S_Dim ( iV ) = F_S_Dim ( iV ) + P ( iV ) 
+      F_G ( iV )     = ( G ( iV ) + P ( iV ) ) * V_Dim ( iV )
+    end do
+    !$OMP end target teams distribute parallel do
 
-    F_S_Dim = F_S_Dim + P
-    F_G = ( G + P ) * V_Dim
-
+    call DisassociateDevice ( V_Dim )
+    call DisassociateDevice ( P )
+    call DisassociateDevice ( G )
+    call DisassociateDevice ( S_3 )
+    call DisassociateDevice ( S_2 )
+    call DisassociateDevice ( S_1 )
+    call DisassociateDevice ( D )
+    call DisassociateDevice ( F_G )
+    call DisassociateDevice ( F_S_Dim )
+    call DisassociateDevice ( F_S_3 )
+    call DisassociateDevice ( F_S_2 )
+    call DisassociateDevice ( F_S_1 )
+    call DisassociateDevice ( F_D )
+    
   end subroutine ComputeRawFluxesKernel
 
 

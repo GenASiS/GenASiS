@@ -266,7 +266,8 @@ contains
   end subroutine ApplyBoundaryConditions
 
 
-  subroutine ComputeRawFluxes ( CF, RawFlux, Value, iDimension )
+  subroutine ComputeRawFluxes &
+               ( CF, RawFlux, Value, iDimension, D_RawFlux, D_Value )
     
     class ( PressurelessFluidForm ), intent ( inout ) :: &
       CF
@@ -276,6 +277,9 @@ contains
       Value
     integer ( KDI ), intent ( in ) :: &
       iDimension
+    type ( c_ptr ), dimension ( : ), intent ( in ) :: &
+      D_RawFlux, &
+      D_Value
     
     integer ( KDI ) :: &
       iDensity

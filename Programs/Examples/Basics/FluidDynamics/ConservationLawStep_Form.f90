@@ -135,6 +135,8 @@ contains
              VariableOption &
                = [ ( CF % Variable ( CF % iaConserved ( iV ) ), &
                      iV = 1, CF % N_CONSERVED ) ] )
+    call CLS % RawFluxInner % AllocateDevice ( )
+    call CLS % RawFluxOuter % AllocateDevice ( )
 
     call CLS % FluxInner % Initialize &
            ( [ nCells, CF % N_CONSERVED ], NameOption = 'FluxInner', &
@@ -431,6 +433,7 @@ contains
       ( DM  => CF % DistributedMesh, &
         iaC => CF % iaConserved, &
         T_DT_D  => PROGRAM_HEADER % Timer ( CLS % iTimerDataTransferDevice ), &
+        T_DT_H  => PROGRAM_HEADER % Timer ( CLS % iTimerDataTransferHost ), &
         T_RSI => PROGRAM_HEADER % Timer ( CLS % iTimerRiemannSolverInput ), &
         T_RF  => PROGRAM_HEADER % Timer ( CLS % iTimerRawFluxes ), &
         T_F   => PROGRAM_HEADER % Timer ( CLS % iTimerFluxes ) )
@@ -458,11 +461,18 @@ contains
     call T_RF % Start ( )
     call CF % ComputeRawFluxes &
            ( CLS % RawFluxInner % Value, CLS % ReconstructionInner % Value, &
-             iDimension )
+             iDimension, CLS % RawFluxInner % D_Selected, &
+             CLS % ReconstructionInner % D_Selected )
     call CF % ComputeRawFluxes &
            ( CLS % RawFluxOuter % Value, CLS % ReconstructionOuter % Value, &
-             iDimension )
+             iDimension, CLS % RawFluxOuter % D_Selected, &
+             CLS % ReconstructionOuter % D_Selected )
     call T_RF % Stop ( )
+    
+    call T_DT_H % Start ( )
+    call CLS % RawFluxInner % UpdateHost ( )
+    call CLS % RawFluxOuter % UpdateHost ( )
+    call T_DT_H % Stop ( )
 
     call DM % SetVariablePointer &
            ( CLS % ModifiedSpeedsInner % Value ( :, CLS % ALPHA_PLUS ), AP_I )

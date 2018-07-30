@@ -82,7 +82,9 @@ module ConservedFields_Template
         PrimitiveOnlyOption
     end subroutine ApplyBoundaryConditionsInterface
     
-    subroutine ComputeRawFluxesInterface ( CF, RawFlux, Value, iDimension )
+    subroutine ComputeRawFluxesInterface &
+                 ( CF, RawFlux, Value, iDimension, D_RawFlux, D_Value )
+      use iso_c_binding
       use Basics
       import ConservedFieldsTemplate
       class ( ConservedFieldsTemplate ), intent ( inout ) :: &
@@ -93,6 +95,9 @@ module ConservedFields_Template
         Value
       integer ( KDI ), intent ( in ) :: &
         iDimension
+      type ( c_ptr ), dimension ( : ), intent ( in ) :: &
+        D_RawFlux, &
+        D_Value
     end subroutine ComputeRawFluxesInterface
     
     subroutine ComputeRiemannSolverInputInterface &
