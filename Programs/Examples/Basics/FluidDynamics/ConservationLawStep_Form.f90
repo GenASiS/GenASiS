@@ -17,6 +17,11 @@ module ConservationLawStep_Form
       iTimerRiemannSolverInput, &
       iTimerRawFluxes, &
       iTimerFluxes, &
+      iTimerPrimitive, &
+      iTimerConserved, &
+      iTimerAuxiliary, &
+      iTimerUpdate, &
+      iTimerBoundaryCondition, &
       iTimerDataTransferDevice, &
       iTimerDataTransferHost
     real ( KDR ) :: &
@@ -161,6 +166,8 @@ contains
     end associate !-- DM
     
     call PROGRAM_HEADER % AddTimer &
+           ( 'Update', CLS % iTimerUpdate, Level = 1 )
+    call PROGRAM_HEADER % AddTimer &
            ( 'Difference', CLS % iTimerDifference, Level = 1 )
     call PROGRAM_HEADER % AddTimer &
            ( 'Reconstruction', CLS % iTimerReconstruction, Level = 1 )
@@ -171,9 +178,20 @@ contains
     call PROGRAM_HEADER % AddTimer &
            ( 'Fluxes', CLS % iTimerFluxes, Level = 1 )
     call PROGRAM_HEADER % AddTimer &
-           ( 'DataTransfer to Device', CLS % iTimerDataTransferDevice, Level = 1 )
+           ( 'ComputePrimitive', CLS % iTimerPrimitive, Level = 1 )
     call PROGRAM_HEADER % AddTimer &
-           ( 'DataTransfer to Host', CLS % iTimerDataTransferHost, Level = 1 )
+           ( 'ComputeConserved', CLS % iTimerConserved, Level = 1 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'ComputeAuxiliary', CLS % iTimerAuxiliary, Level = 1 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'ApplyBoundaryConditions', CLS % iTimerBoundaryCondition, &
+             Level = 1 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'DataTransfer to Device', CLS % iTimerDataTransferDevice, &
+             Level = 1 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'DataTransfer to Host', CLS % iTimerDataTransferHost, &
+             Level = 1 )
     
   end subroutine Initialize
 
@@ -197,7 +215,9 @@ contains
       ( DM => CF % DistributedMesh, &
         Current => CF, &
         Update  => CLS % Update, &
-        iaC => CF % iaConserved )
+        iaC => CF % iaConserved, &
+        T_P => PROGRAM_HEADER % Timer ( CLS % iTimerPrimitive ), &
+        T_A => PROGRAM_HEADER % Timer ( CLS % iTimerAuxiliary ) )
 
     call Old % Initialize ( [ Current % nValues, Current % N_CONSERVED ] )
     call Primitive % Initialize &
@@ -219,10 +239,14 @@ contains
       Current % Value ( :, iaC ( iV ) ) &
         = Old % Value ( :, iV ) + Update % Value ( :, iV )
     end do
-
+    
+    call T_P % Start ( )
     call Current % ComputePrimitive ( Current % Value )
+    call T_P % Stop ( )
     call DM % StartGhostExchange ( Primitive )
+    call T_A % Start ( )
     call Current % ComputeAuxiliary ( Current % Value )
+    call T_A % Stop ( )
     call DM % FinishGhostExchange ( )
 
     !-- Substep 2
@@ -239,9 +263,13 @@ contains
                       + Current % Value ( :, iaC ( iV ) ) )
     end do
 
+    call T_P % Start ( )
     call Current % ComputePrimitive ( Current % Value )
+    call T_P % Stop ( )
     call DM % StartGhostExchange ( Primitive )
+    call T_A % Start ( )
     call Current % ComputeAuxiliary ( Current % Value )
+    call T_P % Stop ( )
     call DM % FinishGhostExchange ( )
     
     end associate !-- DM, etc.
@@ -263,6 +291,7 @@ contains
 
     associate ( CF => CLS % ConservedFields )
     associate ( DM => CF % DistributedMesh )
+    associate ( T_U => PROGRAM_HEADER % Timer ( CLS % iTimerUpdate ) )
 
     call Clear ( CLS % Update % Value )
     
@@ -272,7 +301,8 @@ contains
       call CLS % ComputeDifferences ( iD )
       call CLS % ComputeReconstruction ( )
       call CLS % ComputeFluxes ( iD )
-
+      
+      call T_U % Start ( )
       do iV = 1, CF % N_CONSERVED
         call ComputeUpdateKernel &
                ( CLS % Update % Value ( :, iV ), &
@@ -280,9 +310,11 @@ contains
                  CLS % FluxOuter % Value ( :, iV ), DM % CellVolume, &
                  DM % CellArea ( iD ), TimeStep )
       end do
+      call T_U % Stop ( )
 
     end do
-
+    
+    end associate !-- T_U
     end associate !-- DM
     end associate !-- CF
 
@@ -308,14 +340,17 @@ contains
     associate &
       ( T_DT_D  => PROGRAM_HEADER % Timer ( CLS % iTimerDataTransferDevice ), &
         T_DT_H  => PROGRAM_HEADER % Timer ( CLS % iTimerDataTransferHost ), &
-        T_D     => PROGRAM_HEADER % Timer ( CLS % iTimerDifference ) )
+        T_D     => PROGRAM_HEADER % Timer ( CLS % iTimerDifference ), &
+        T_BC    => PROGRAM_HEADER % Timer ( CLS % iTimerBoundaryCondition ) )
     
     !call Show ('<<< Compute Differences')
 
+    call T_BC % Start ( )
     call CF % ApplyBoundaryConditions &
            ( CF % Value, CF % Value, iD, iBoundary = -1 )
     call CF % ApplyBoundaryConditions &
            ( CF % Value, CF % Value, iD, iBoundary = +1 )
+    call T_BC % Stop ( )
            
     !call Show ('<<< After ApplyBoundary')
     
@@ -375,7 +410,9 @@ contains
     associate &
       ( T_DT_D  => PROGRAM_HEADER % Timer ( CLS % iTimerDataTransferDevice ), &
         T_DT_H  => PROGRAM_HEADER % Timer ( CLS % iTimerDataTransferHost ), &
-        T_R     => PROGRAM_HEADER % Timer ( CLS % iTimerReconstruction ) )
+        T_R     => PROGRAM_HEADER % Timer ( CLS % iTimerReconstruction ), &
+        T_A     => PROGRAM_HEADER % Timer ( CLS % iTimerAuxiliary ), &
+        T_C     => PROGRAM_HEADER % Timer ( CLS % iTimerConserved ) )
     
     
     do iP = 1, CF % N_PRIMITIVE
@@ -400,10 +437,15 @@ contains
       call T_DT_H % Stop ( )
     end do
 
+    call T_A % Start ( )
     call CF % ComputeAuxiliary ( CLS % ReconstructionInner % Value )
     call CF % ComputeAuxiliary ( CLS % ReconstructionOuter % Value )
+    call T_A % Stop ( )
+    
+    call T_C % Start ( )
     call CF % ComputeConserved ( CLS % ReconstructionInner % Value )
     call CF % ComputeConserved ( CLS % ReconstructionOuter % Value )
+    call T_C % Stop ( )
     
     end associate !-- Timer
     end associate !-- iaP
@@ -436,14 +478,17 @@ contains
         T_DT_H  => PROGRAM_HEADER % Timer ( CLS % iTimerDataTransferHost ), &
         T_RSI => PROGRAM_HEADER % Timer ( CLS % iTimerRiemannSolverInput ), &
         T_RF  => PROGRAM_HEADER % Timer ( CLS % iTimerRawFluxes ), &
-        T_F   => PROGRAM_HEADER % Timer ( CLS % iTimerFluxes ) )
+        T_F   => PROGRAM_HEADER % Timer ( CLS % iTimerFluxes ), &
+        T_BC  => PROGRAM_HEADER % Timer ( CLS % iTimerBoundaryCondition ) )
 
+    call T_BC % Start ( )
     call CF % ApplyBoundaryConditions &
            ( CLS % ReconstructionOuter % Value, &
              CLS % ReconstructionInner % Value, iDimension, iBoundary = -1 )
     call CF % ApplyBoundaryConditions &
            ( CLS % ReconstructionInner % Value, &
              CLS % ReconstructionOuter % Value, iDimension, iBoundary = +1 )
+    call T_BC % Stop ( )
 
     call T_DT_D % Start ( )
     call CLS % ReconstructionInner % UpdateDevice ( )
