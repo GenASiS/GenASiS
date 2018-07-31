@@ -33,7 +33,11 @@ module PressurelessFluid_Form
     generic :: &
       Initialize => InitializeWithMesh
     procedure, public, pass :: &
-      ComputeConserved
+      ComputeConservedHost
+    procedure, public, pass :: &
+      ComputeConservedDevice
+    generic :: &
+      ComputeConserved => ComputeConservedHost, ComputeConservedDevice
     procedure, public, pass :: &
       ComputePrimitive
     procedure, public, pass :: &
@@ -57,6 +61,7 @@ module PressurelessFluid_Form
     private :: &
       InitializeBasics, &
       ComputeConservedKernel, &
+      ComputeConservedKernelDevice, &
       ComputePrimitiveKernel, &
       ComputeEigenspeedsKernel, &
       ComputeEigenspeedsKernelDevice, &
@@ -109,7 +114,7 @@ contains
   end subroutine InitializeWithMesh
 
   
-  subroutine ComputeConserved ( CF, Value )
+  subroutine ComputeConservedHost ( CF, Value )
 
     class ( PressurelessFluidForm ), intent ( inout ) :: &
       CF
@@ -126,7 +131,37 @@ contains
         Value ( :, CF % VELOCITY ( 2 ) ), &   
         Value ( :, CF % VELOCITY ( 3 ) ) )    
 
-  end subroutine ComputeConserved
+  end subroutine ComputeConservedHost
+  
+
+  subroutine ComputeConservedDevice ( CF, Value, D_Value )
+
+    class ( PressurelessFluidForm ), intent ( inout ) :: &
+      CF
+    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+      Value
+    type  ( c_ptr ), dimension ( : ), intent ( in ) :: &
+      D_Value
+    
+    call ComputeConservedKernelDevice &
+      ( Value ( :, CF % CONSERVED_DENSITY ), &
+        Value ( :, CF % MOMENTUM_DENSITY ( 1 ) ), &
+        Value ( :, CF % MOMENTUM_DENSITY ( 2 ) ), &
+        Value ( :, CF % MOMENTUM_DENSITY ( 3 ) ), &
+        Value ( :, CF % COMOVING_DENSITY ), &
+        Value ( :, CF % VELOCITY ( 1 ) ), &    
+        Value ( :, CF % VELOCITY ( 2 ) ), &   
+        Value ( :, CF % VELOCITY ( 3 ) ), &
+        D_Value ( CF % CONSERVED_DENSITY ), &
+        D_Value ( CF % MOMENTUM_DENSITY ( 1 ) ), &
+        D_Value ( CF % MOMENTUM_DENSITY ( 2 ) ), &
+        D_Value ( CF % MOMENTUM_DENSITY ( 3 ) ), &
+        D_Value ( CF % COMOVING_DENSITY ), &
+        D_Value ( CF % VELOCITY ( 1 ) ), &    
+        D_Value ( CF % VELOCITY ( 2 ) ), &   
+        D_Value ( CF % VELOCITY ( 3 ) ) )
+
+  end subroutine ComputeConservedDevice
   
 
   subroutine ComputePrimitive ( CF, Value )
@@ -642,6 +677,56 @@ contains
     S_3 = N * V_3
 
   end subroutine ComputeConservedKernel
+
+
+  subroutine ComputeConservedKernelDevice &
+               ( D, S_1, S_2, S_3, N, V_1, V_2, V_3, &
+                 D_D, D_S_1, D_S_2, D_S_3, D_N, D_V_1, D_V_2, D_V_3 )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      D, &
+      S_1, S_2, S_3
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      N, &
+      V_1, V_2, V_3
+    type ( c_ptr ), intent ( in ) :: &
+      D_D, &
+      D_S_1, D_S_2, D_S_3, &
+      D_N, &
+      D_V_1, D_V_2, D_V_3
+    
+    integer ( KDI ) :: &
+      iV
+    
+    call AssociateDevice ( D_D, D )
+    call AssociateDevice ( D_S_1, S_1 )
+    call AssociateDevice ( D_S_2, S_2 )
+    call AssociateDevice ( D_S_3, S_3 )
+    call AssociateDevice ( D_N, N )
+    call AssociateDevice ( D_V_1, V_1 )
+    call AssociateDevice ( D_V_2, V_2 )
+    call AssociateDevice ( D_V_3, V_3 )
+
+    !$OMP  target teams distribute parallel do &
+    !$OMP& schedule ( static, 1 )
+    do iV = 1, size ( D )
+      D   ( iV ) = N ( iV )
+      S_1 ( iV ) = N ( iV ) * V_1 ( iV )
+      S_2 ( iV ) = N ( iV ) * V_2 ( iV )
+      S_3 ( iV ) = N ( iV ) * V_3 ( iV )
+    end do
+    !$OMP end target teams distribute parallel do
+    
+    call DisassociateDevice ( V_3 )
+    call DisassociateDevice ( V_2 )
+    call DisassociateDevice ( V_1 )
+    call DisassociateDevice ( N )
+    call DisassociateDevice ( S_3 )
+    call DisassociateDevice ( S_2 )
+    call DisassociateDevice ( S_1 )
+    call DisassociateDevice ( D )
+
+  end subroutine ComputeConservedKernelDevice
 
 
   subroutine ComputePrimitiveKernel ( N, V_1, V_2, V_3, D, S_1, S_2, S_3 )

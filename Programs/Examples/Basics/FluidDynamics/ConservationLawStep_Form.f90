@@ -441,15 +441,19 @@ contains
              CLS % ReconstructionInner % D_Selected )
     call T_A % Stop ( )
     
+    call T_C % Start ( )
+    call CF % ComputeConserved &
+           ( CLS % ReconstructionInner % Value, &
+             CLS % ReconstructionInner % D_Selected )
+    call CF % ComputeConserved &
+           ( CLS % ReconstructionOuter % Value, &
+             CLS % ReconstructionOuter % D_Selected )
+    call T_C % Stop ( )
+    
     call T_DT_H % Start ( )
     call CLS % ReconstructionInner % UpdateHost ( )
     call CLS % ReconstructionOuter % UpdateHost ( )
     call T_DT_H % Stop ( )
-    
-    call T_C % Start ( )
-    call CF % ComputeConserved ( CLS % ReconstructionInner % Value )
-    call CF % ComputeConserved ( CLS % ReconstructionOuter % Value )
-    call T_C % Stop ( )
     
     end associate !-- Timer
     end associate !-- iaP
