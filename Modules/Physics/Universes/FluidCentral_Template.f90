@@ -441,7 +441,10 @@ contains
     associate ( FA_SA => FC % Fluid_ASC_SA )
 
     if ( FC % Dimensionless ) then
-      call FA_SA % Initialize ( PS_SA, FA % FluidType )
+      call FA_SA % Initialize &
+             ( PS_SA, FA % FluidType, &
+               AllocateTallyOption           =  .false., &
+               AllocateSourcesOption         =  .false. )
     else
       call FA_SA % Initialize &
              ( PS_SA, FA % FluidType, &
@@ -463,7 +466,10 @@ contains
     associate ( FA_EB => FC % Fluid_ASC_EB )
 
     if ( FC % Dimensionless ) then
-      call FA_EB % Initialize ( PS_EB, FA % FluidType )
+      call FA_EB % Initialize &
+             ( PS_EB, FA % FluidType, &
+               AllocateTallyOption           =  .false., &
+               AllocateSourcesOption         =  .false. )
     else
       call FA_EB % Initialize &
              ( PS_EB, FA % FluidType, &
