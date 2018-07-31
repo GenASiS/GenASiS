@@ -1046,14 +1046,14 @@ contains
     end do
     !$OMP end target teams distribute parallel do
                
-    call AssociateDevice ( D_VK_I, VK_I )
-    call AssociateDevice ( D_VJ_I, VJ_I )
-    call AssociateDevice ( D_VI_I, VI_I )
-    call AssociateDevice ( D_N_I, N_I )
-    call AssociateDevice ( D_VK_E, VK_E )
-    call AssociateDevice ( D_VJ_E, VJ_E )
-    call AssociateDevice ( D_VI_E, VI_E )
-    call AssociateDevice ( D_N_E, N_E )
+    call DisassociateDevice ( VK_I )
+    call DisassociateDevice ( VJ_I )
+    call DisassociateDevice ( VI_I )
+    call DisassociateDevice ( N_I )
+    call DisassociateDevice ( VK_E )
+    call DisassociateDevice ( VJ_E )
+    call DisassociateDevice ( VI_E )
+    call DisassociateDevice ( N_E )
     
   end subroutine ApplyBoundaryConditionsReflectingDevice
 
