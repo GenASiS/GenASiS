@@ -46,7 +46,12 @@ module PolytropicFluid_Form
     procedure, public, pass :: &
       ComputeAuxiliaryFromPressure
     procedure, public, pass :: &
-      ApplyBoundaryConditions
+      ApplyBoundaryConditionsHost
+    procedure, public, pass :: &
+      ApplyBoundaryConditionsDevice
+    generic :: &
+      ApplyBoundaryConditions &
+        => ApplyBoundaryConditionsHost, ApplyBoundaryConditionsDevice
     procedure, public, pass :: &
       ComputeRawFluxes
     procedure, public, pass :: &
@@ -66,6 +71,7 @@ module PolytropicFluid_Form
       ComputeEigenspeedsKernel, &
       ComputeEigenspeedsKernelDevice, &
       ApplyBoundaryConditionsReflecting, &
+      ApplyBoundaryConditionsReflectingDevice, &
       ComputeRawFluxesKernel
 
 contains
@@ -292,7 +298,7 @@ contains
   end subroutine ComputeAuxiliaryFromPressure
   
   
-  subroutine ApplyBoundaryConditions &
+  subroutine ApplyBoundaryConditionsHost &
               ( CF, ExteriorValue, InteriorValue, iDimension, iBoundary, &
                 PrimitiveOnlyOption )
 
@@ -384,7 +390,109 @@ contains
 
     end associate  !-- iD, etc.
   
-  end subroutine ApplyBoundaryConditions
+  end subroutine ApplyBoundaryConditionsHost
+
+
+  subroutine ApplyBoundaryConditionsDevice &
+              ( CF, ExteriorValue, InteriorValue, iDimension, iBoundary, &
+                D_ExteriorValue, D_InteriorValue, PrimitiveOnlyOption )
+
+    class ( PolytropicFluidForm ), intent ( inout ) :: &
+      CF
+    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+      ExteriorValue
+    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+      InteriorValue
+    integer ( KDI ), intent ( in ) :: &
+      iDimension, &
+      iBoundary
+    type ( c_ptr ), dimension ( : ), intent ( in ) :: &
+      D_ExteriorValue, &
+      D_InteriorValue
+    logical ( KDL ), intent ( in ), optional :: &
+      PrimitiveOnlyOption
+
+    integer ( KDI ) :: &
+      jD, kD   !-- jDimension, kDimension
+    integer ( KDI ), dimension ( 3 ) :: &
+      oBI, &  !-- oBoundaryInterior
+      oBE, &  !-- oBoundaryExterior
+      nB      !-- nBoundary
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+      E_I, &
+      Gamma_I, &
+      E_E, &
+      Gamma_E
+    logical ( KDL ) :: &
+      PrimitiveOnly
+
+    call CF % PressurelessFluidForm % ApplyBoundaryConditions &
+           ( ExteriorValue, InteriorValue, iDimension, iBoundary, &
+             D_ExteriorValue, D_InteriorValue, PrimitiveOnlyOption = .true. )
+
+    PrimitiveOnly = .false.
+    if ( present ( PrimitiveOnlyOption ) ) PrimitiveOnly = PrimitiveOnlyOption
+
+    associate &
+      ( iD => iDimension, &
+        iB => iBoundary, &
+        DM => CF % DistributedMesh )
+    
+    if ( iB == -1 .and. DM % iaBrick ( iD ) /= 1 ) return
+    if ( iB == +1 .and. DM % iaBrick ( iD ) /= DM % nBricks ( iD ) ) return
+ 
+    jD = mod ( iD, 3 ) + 1
+    kD = mod ( jD, 3 ) + 1
+
+    call DM % SetVariablePointer &
+           ( InteriorValue ( :, CF % INTERNAL_ENERGY ), E_I )
+    call DM % SetVariablePointer &
+           ( InteriorValue ( :, CF % ADIABATIC_INDEX ), Gamma_I )
+    call DM % SetVariablePointer &
+           ( ExteriorValue ( :, CF % INTERNAL_ENERGY ), E_E )
+    call DM % SetVariablePointer &
+           ( ExteriorValue ( :, CF % ADIABATIC_INDEX ), Gamma_E )
+
+    !-- In setting oBI and oBE, note kernel routine does not inherit lbound
+
+    oBI = DM % nGhostLayers
+    if ( iB == +1 ) then
+      oBI ( iD ) = oBI ( iD ) + DM % nCellsPerBrick ( iD ) - 1
+    end if
+
+    oBE = oBI
+    oBE ( iD ) = oBE ( iD ) + iB
+
+    nB ( iD ) = 1
+    nB ( jD ) = DM % nCellsPerBrick ( jD )
+    nB ( kD ) = DM % nCellsPerBrick ( kD )
+
+    select case ( trim ( DM % BoundaryCondition ) ) 
+    case ( 'PERIODIC' )
+      return
+    case ( 'REFLECTING' )
+      call ApplyBoundaryConditionsReflectingDevice &
+             ( E_E, Gamma_E, E_I, Gamma_I, nB, oBE, oBI, &
+               D_ExteriorValue ( CF % INTERNAL_ENERGY ), &
+               D_ExteriorValue ( CF % ADIABATIC_INDEX ), &
+               D_InteriorValue ( CF % INTERNAL_ENERGY ), &
+               D_InteriorValue ( CF % ADIABATIC_INDEX ) )
+    case default
+      call Show &
+             ( 'This boundary condition is not implemented', CONSOLE % ERROR )
+      call Show &
+             ( DM % BoundaryCondition, 'Name', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select 
+
+    if ( PrimitiveOnly ) return
+
+    call CF % ComputeAuxiliary ( ExteriorValue, D_ExteriorValue )
+    call CF % ComputeConserved ( ExteriorValue, D_ExteriorValue )
+
+    end associate  !-- iD, etc.
+  
+  end subroutine ApplyBoundaryConditionsDevice
 
 
   subroutine ComputeRawFluxes &
@@ -912,8 +1020,8 @@ contains
     call DisassociateDevice ( FEP_1 )
 
   end subroutine ComputeEigenspeedsKernelDevice
-
-
+  
+  
   subroutine ApplyBoundaryConditionsReflecting &
                ( E_E, Gamma_E, E_I, Gamma_I, nB, oBE, oBI )
 
@@ -943,6 +1051,56 @@ contains
               oBI ( 3 ) + 1 : oBI ( 3 ) + nB ( 3 ) )
 
   end subroutine ApplyBoundaryConditionsReflecting
+
+
+  subroutine ApplyBoundaryConditionsReflectingDevice &
+               ( E_E, Gamma_E, E_I, Gamma_I, nB, oBE, oBI, &
+                 D_E_E, D_Gamma_E, D_E_I, D_Gamma_I )
+
+    real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
+      E_E, &
+      Gamma_E
+    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+      E_I, &
+      Gamma_I
+    integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
+      nB,  & 
+      oBE, &
+      oBI
+    type ( c_ptr ), intent ( in ) :: &
+      D_E_E, &
+      D_Gamma_E, &
+      D_E_I, &
+      D_Gamma_I
+      
+    integer ( KDI ) :: &
+      iV, jV, kV
+      
+    call AssociateDevice ( D_E_E, E_E )
+    call AssociateDevice ( D_Gamma_E, Gamma_E )
+    call AssociateDevice ( D_E_I, E_I )
+    call AssociateDevice ( D_Gamma_I, Gamma_I )
+    
+    !$OMP  target teams distribute parallel do collapse ( 3 ) &
+    !$OMP& schedule ( static, 1 )
+    do kV = 1, nB ( 3 )
+      do jV = 1, nB ( 2 )
+        do iV = 1, nB ( 1 )
+          E_E ( oBE ( 1 ) + iV, oBE ( 2 ) + jV, oBE ( 3 ) + kV ) &
+            = E_I ( oBI ( 1 ) + iV, oBI ( 2 ) + jV, oBI ( 3 ) + kV )
+          Gamma_E ( oBE ( 1 ) + iV, oBE ( 2 ) + jV, oBE ( 3 ) + kV ) &
+            = Gamma_I ( oBI ( 1 ) + iV, oBI ( 2 ) + jV, oBI ( 3 ) + kV )
+        end do
+      end do
+    end do
+    !$OMP end target teams distribute parallel do
+    
+    call DisassociateDevice ( Gamma_I )
+    call DisassociateDevice ( E_I )
+    call DisassociateDevice ( Gamma_E )
+    call DisassociateDevice ( E_E )
+
+  end subroutine ApplyBoundaryConditionsReflectingDevice
 
 
   subroutine ComputeRawFluxesKernel &

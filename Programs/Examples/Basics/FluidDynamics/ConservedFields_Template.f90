@@ -40,7 +40,7 @@ module ConservedFields_Template
       InitializeTemplate
     procedure ( ComputeInterface ), public, pass, deferred :: &
       ComputeConservedHost
-    procedure ( ComputeInterfaceDevice ), public, pass, deferred :: &
+    procedure ( ComputeDeviceInterface ), public, pass, deferred :: &
       ComputeConservedDevice
     generic :: &
       ComputeConserved => ComputeConservedHost, ComputeConservedDevice
@@ -48,12 +48,17 @@ module ConservedFields_Template
       ComputePrimitive
     procedure ( ComputeInterface ), public, pass, deferred :: &
       ComputeAuxiliaryHost
-    procedure ( ComputeInterfaceDevice ), public, pass, deferred :: &
+    procedure ( ComputeDeviceInterface ), public, pass, deferred :: &
       ComputeAuxiliaryDevice
     generic :: &
       ComputeAuxiliary => ComputeAuxiliaryHost, ComputeAuxiliaryDevice
     procedure ( ApplyBoundaryConditionsInterface ), public, pass, deferred :: &
-      ApplyBoundaryConditions
+      ApplyBoundaryConditionsHost
+    procedure ( ApplyBoundaryConditionsDeviceInterface ), public, pass, deferred :: &
+      ApplyBoundaryConditionsDevice
+    generic :: &
+      ApplyBoundaryConditions &
+        => ApplyBoundaryConditionsHost, ApplyBoundaryConditionsDevice
     procedure ( ComputeRawFluxesInterface ), public, pass, deferred :: &
       ComputeRawFluxes
     procedure ( ComputeRiemannSolverInputInterface ), public, pass, &
@@ -72,7 +77,7 @@ module ConservedFields_Template
         Value
     end subroutine ComputeInterface
     
-    subroutine ComputeInterfaceDevice ( CF, Value, D_Value )
+    subroutine ComputeDeviceInterface ( CF, Value, D_Value )
       use iso_c_binding
       use Basics
       import ConservedFieldsTemplate
@@ -82,7 +87,7 @@ module ConservedFields_Template
         Value
       type ( c_ptr ), dimension ( : ), intent ( in ) :: &
         D_Value
-    end subroutine ComputeInterfaceDevice
+    end subroutine ComputeDeviceInterface
     
     subroutine ApplyBoundaryConditionsInterface &
                  ( CF, ExteriorValue, InteriorValue, iDimension, iBoundary, &
@@ -101,6 +106,28 @@ module ConservedFields_Template
       logical ( KDL ), intent ( in ), optional :: &
         PrimitiveOnlyOption
     end subroutine ApplyBoundaryConditionsInterface
+    
+    subroutine ApplyBoundaryConditionsDeviceInterface &
+                 ( CF, ExteriorValue, InteriorValue, iDimension, iBoundary, &
+                   D_ExteriorValue, D_InteriorValue, PrimitiveOnlyOption )
+      use iso_c_binding
+      use Basics
+      import ConservedFieldsTemplate
+      class ( ConservedFieldsTemplate ), intent ( inout ) :: &
+        CF
+      real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+        ExteriorValue
+      real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+        InteriorValue
+      integer ( KDI ), intent ( in ) :: &
+        iDimension, &
+        iBoundary
+      type ( c_ptr ), dimension ( : ), intent ( in ) :: &
+        D_ExteriorValue, &
+        D_InteriorValue
+      logical ( KDL ), intent ( in ), optional :: &
+        PrimitiveOnlyOption
+    end subroutine ApplyBoundaryConditionsDeviceInterface
     
     subroutine ComputeRawFluxesInterface &
                  ( CF, RawFlux, Value, iDimension, D_RawFlux, D_Value )
