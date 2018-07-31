@@ -34,7 +34,11 @@ module PolytropicFluid_Form
     procedure, public, pass :: &
       ComputePrimitive
     procedure, public, pass :: &
-      ComputeAuxiliary
+      ComputeAuxiliaryHost
+    procedure, public, pass :: &
+      ComputeAuxiliaryDevice
+    generic :: &
+      ComputeAuxiliary => ComputeAuxiliaryHost, ComputeAuxiliaryDevice
     procedure, public, pass :: &
       ComputeAuxiliaryFromPressure
     procedure, public, pass :: &
@@ -52,8 +56,10 @@ module PolytropicFluid_Form
       ComputeConservedKernel, &
       ComputePrimitiveKernel, &
       ComputeAuxiliaryKernel, &
+      ComputeAuxiliaryKernelDevice, &
       ComputeAuxiliaryFromPressureKernel, &
       ComputeEigenspeedsKernel, &
+      ComputeEigenspeedsKernelDevice, &
       ApplyBoundaryConditionsReflecting, &
       ComputeRawFluxesKernel
 
@@ -137,7 +143,7 @@ contains
   end subroutine ComputePrimitive
   
   
-  subroutine ComputeAuxiliary ( CF, Value )
+  subroutine ComputeAuxiliaryHost ( CF, Value )
     
     class ( PolytropicFluidForm ), intent ( inout ) :: &
       CF
@@ -166,7 +172,59 @@ contains
              Value ( :, CF % PRESSURE ), &
              Value ( :, CF % ADIABATIC_INDEX ) )
     
-  end subroutine ComputeAuxiliary
+  end subroutine ComputeAuxiliaryHost
+  
+  
+  subroutine ComputeAuxiliaryDevice ( CF, Value, D_Value )
+    
+    class ( PolytropicFluidForm ), intent ( inout ) :: &
+      CF
+    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+      Value
+    type ( c_ptr ), dimension ( : ), intent ( in ) :: &
+      D_Value
+    
+    call ComputeAuxiliaryKernelDevice &
+           ( Value ( :, CF % PRESSURE ), &
+             Value ( :, CF % POLYTROPIC_PARAMETER ), &
+             Value ( :, CF % COMOVING_DENSITY ), &
+             Value ( :, CF % INTERNAL_ENERGY ), &
+             Value ( :, CF % ADIABATIC_INDEX ), &
+             D_Value ( CF % PRESSURE ), &
+             D_Value ( CF % POLYTROPIC_PARAMETER ), &
+             D_Value ( CF % COMOVING_DENSITY ), &
+             D_Value ( CF % INTERNAL_ENERGY ), &
+             D_Value ( CF % ADIABATIC_INDEX ) )
+  
+    call ComputeEigenspeedsKernelDevice &
+           ( Value ( :, CF % FAST_EIGENSPEED_PLUS ( 1 ) ), &
+             Value ( :, CF % FAST_EIGENSPEED_PLUS ( 2 ) ), &
+             Value ( :, CF % FAST_EIGENSPEED_PLUS ( 3 ) ), &
+             Value ( :, CF % FAST_EIGENSPEED_MINUS ( 1 ) ), &
+             Value ( :, CF % FAST_EIGENSPEED_MINUS ( 2 ) ), &
+             Value ( :, CF % FAST_EIGENSPEED_MINUS ( 3 ) ), &
+             Value ( :, CF % SOUND_SPEED ), &
+             Value ( :, CF % COMOVING_DENSITY ), &
+             Value ( :, CF % VELOCITY ( 1 ) ), &
+             Value ( :, CF % VELOCITY ( 2 ) ), &
+             Value ( :, CF % VELOCITY ( 3 ) ), &
+             Value ( :, CF % PRESSURE ), &
+             Value ( :, CF % ADIABATIC_INDEX ), &
+             D_Value ( CF % FAST_EIGENSPEED_PLUS ( 1 ) ), &
+             D_Value ( CF % FAST_EIGENSPEED_PLUS ( 2 ) ), &
+             D_Value ( CF % FAST_EIGENSPEED_PLUS ( 3 ) ), &
+             D_Value ( CF % FAST_EIGENSPEED_MINUS ( 1 ) ), &
+             D_Value ( CF % FAST_EIGENSPEED_MINUS ( 2 ) ), &
+             D_Value ( CF % FAST_EIGENSPEED_MINUS ( 3 ) ), &
+             D_Value ( CF % SOUND_SPEED ), &
+             D_Value ( CF % COMOVING_DENSITY ), &
+             D_Value ( CF % VELOCITY ( 1 ) ), &
+             D_Value ( CF % VELOCITY ( 2 ) ), &
+             D_Value ( CF % VELOCITY ( 3 ) ), &
+             D_Value ( CF % PRESSURE ), &
+             D_Value ( CF % ADIABATIC_INDEX ) )
+    
+  end subroutine ComputeAuxiliaryDevice
   
   
   subroutine ComputeAuxiliaryFromPressure ( CF, Value )
@@ -599,6 +657,54 @@ contains
   end subroutine ComputeAuxiliaryKernel
 
 
+  subroutine ComputeAuxiliaryKernelDevice &
+               ( P, K, N, E, Gamma, &
+                 D_P, D_K, D_N, D_E, D_Gamma )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      P, &
+      K
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      N, &
+      E, &
+      Gamma
+    type ( c_ptr ), intent ( in ) :: &
+      D_P, &
+      D_K, &
+      D_N, &
+      D_E, &
+      D_Gamma
+    
+    integer ( KDI ) :: &
+      iV
+      
+    call AssociateDevice ( D_P, P )
+    call AssociateDevice ( D_K, K )
+    call AssociateDevice ( D_N, N )
+    call AssociateDevice ( D_E, E )
+    call AssociateDevice ( D_Gamma, Gamma )
+    
+    !$OMP  target teams distribute parallel do &
+    !$OMP& schedule ( static, 1 )
+    do iV = 1, size ( P )
+      P ( iV ) = E ( iV ) * ( Gamma ( iV ) - 1.0_KDR )
+      if ( N ( iV ) ** Gamma ( iV ) > 0.0_KDR ) then
+        K ( iV ) = P ( iV ) / ( N ( iV ) ** Gamma ( iV ) )
+      else
+        K ( iV ) = 0.0_KDR
+      end if
+    end do
+    !$OMP end target teams distribute parallel do
+      
+    call DisassociateDevice ( Gamma )
+    call DisassociateDevice ( E )
+    call DisassociateDevice ( N )
+    call DisassociateDevice ( K )
+    call DisassociateDevice ( P )
+
+  end subroutine ComputeAuxiliaryKernelDevice
+
+
   subroutine ComputeAuxiliaryFromPressureKernel ( E, K, N, P, Gamma )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -648,6 +754,87 @@ contains
     FEM_3 = V_3 - CS
 
   end subroutine ComputeEigenspeedsKernel
+
+
+  subroutine ComputeEigenspeedsKernelDevice &
+               ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, N, &
+                 V_1, V_2, V_3, P, Gamma, &
+                 D_FEP_1, D_FEP_2, D_FEP_3, D_FEM_1, D_FEM_2, D_FEM_3, &
+                 D_CS, D_N, D_V_1, D_V_2, D_V_3, D_P, D_Gamma )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      FEP_1, FEP_2, FEP_3, &
+      FEM_1, FEM_2, FEM_3, &
+      CS
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      N, &
+      V_1, V_2, V_3, &
+      P, &
+      Gamma
+    type ( c_ptr ), intent ( in ) :: &
+      D_FEP_1, D_FEP_2, D_FEP_3, &
+      D_FEM_1, D_FEM_2, D_FEM_3, &
+      D_CS, &
+      D_N, &
+      D_V_1, D_V_2, D_V_3, &
+      D_P, &
+      D_Gamma
+      
+    integer ( KDI ) :: &
+      iV
+      
+    call AssociateDevice ( D_FEP_1, FEP_1 )
+    call AssociateDevice ( D_FEP_2, FEP_2 )
+    call AssociateDevice ( D_FEP_3, FEP_3 )
+    call AssociateDevice ( D_FEM_1, FEM_1 )
+    call AssociateDevice ( D_FEM_2, FEM_2 )
+    call AssociateDevice ( D_FEM_3, FEM_3 )
+    call AssociateDevice ( D_CS, CS )
+    call AssociateDevice ( D_N, N )
+    call AssociateDevice ( D_V_1, V_1 )
+    call AssociateDevice ( D_V_2, V_2 )
+    call AssociateDevice ( D_V_3, V_3 )
+    call AssociateDevice ( D_P, P )
+    call AssociateDevice ( D_Gamma, Gamma )
+    
+    !$OMP  target teams distribute parallel do &
+    !$OMP& schedule ( static, 1 )
+    do iV = 1, size ( N )
+      if ( N ( iV ) > 0.0_KDR .and. P ( iV ) > 0.0_KDR ) then
+        CS ( iV ) = sqrt ( Gamma ( iV ) * P ( iV ) / N ( iV ) )
+      else
+        CS ( iV ) = 0.0_KDR
+      end if
+    end do
+    !$OMP end target teams distribute parallel do
+    
+    !$OMP  target teams distribute parallel do &
+    !$OMP& schedule ( static, 1 )
+    do iV = 1, size ( N )
+      FEP_1 ( iV ) = V_1 ( iV ) + CS ( iV )
+      FEP_2 ( iV ) = V_2 ( iV ) + CS ( iV )
+      FEP_3 ( iV ) = V_3 ( iV ) + CS ( iV )
+      FEM_1 ( iV ) = V_1 ( iV ) - CS ( iV )
+      FEM_2 ( iV ) = V_2 ( iV ) - CS ( iV )
+      FEM_3 ( iV ) = V_3 ( iV ) - CS ( iV )
+    end do
+    !$OMP end target teams distribute parallel do
+    
+    call DisassociateDevice ( Gamma )
+    call DisassociateDevice ( P )
+    call DisassociateDevice ( V_3 )
+    call DisassociateDevice ( V_2 )
+    call DisassociateDevice ( V_1 )
+    call DisassociateDevice ( N )
+    call DisassociateDevice ( CS )
+    call DisassociateDevice ( FEM_3 )
+    call DisassociateDevice ( FEM_2 )
+    call DisassociateDevice ( FEM_1 )
+    call DisassociateDevice ( FEP_3 )
+    call DisassociateDevice ( FEP_2 )
+    call DisassociateDevice ( FEP_1 )
+
+  end subroutine ComputeEigenspeedsKernelDevice
 
 
   subroutine ApplyBoundaryConditionsReflecting &

@@ -43,7 +43,11 @@ module ConservedFields_Template
     procedure ( ComputeInterface ), public, pass, deferred :: &
       ComputePrimitive
     procedure ( ComputeInterface ), public, pass, deferred :: &
-      ComputeAuxiliary
+      ComputeAuxiliaryHost
+    procedure ( ComputeInterfaceDevice ), public, pass, deferred :: &
+      ComputeAuxiliaryDevice
+    generic :: &
+      ComputeAuxiliary => ComputeAuxiliaryHost, ComputeAuxiliaryDevice
     procedure ( ApplyBoundaryConditionsInterface ), public, pass, deferred :: &
       ApplyBoundaryConditions
     procedure ( ComputeRawFluxesInterface ), public, pass, deferred :: &
@@ -63,6 +67,18 @@ module ConservedFields_Template
       real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
         Value
     end subroutine ComputeInterface
+    
+    subroutine ComputeInterfaceDevice ( CF, Value, D_Value )
+      use iso_c_binding
+      use Basics
+      import ConservedFieldsTemplate
+      class ( ConservedFieldsTemplate ), intent ( inout ) :: &
+        CF
+      real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+        Value
+      type ( c_ptr ), dimension ( : ), intent ( in ) :: &
+        D_Value
+    end subroutine ComputeInterfaceDevice
     
     subroutine ApplyBoundaryConditionsInterface &
                  ( CF, ExteriorValue, InteriorValue, iDimension, iBoundary, &

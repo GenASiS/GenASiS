@@ -37,7 +37,11 @@ module PressurelessFluid_Form
     procedure, public, pass :: &
       ComputePrimitive
     procedure, public, pass :: &
-      ComputeAuxiliary
+      ComputeAuxiliaryHost
+    procedure, public, pass :: &
+      ComputeAuxiliaryDevice
+    generic :: &
+      ComputeAuxiliary => ComputeAuxiliaryHost, ComputeAuxiliaryDevice
     procedure, public, pass :: &
       ApplyBoundaryConditions
     procedure, public, pass :: &
@@ -55,6 +59,7 @@ module PressurelessFluid_Form
       ComputeConservedKernel, &
       ComputePrimitiveKernel, &
       ComputeEigenspeedsKernel, &
+      ComputeEigenspeedsKernelDevice, &
       ApplyBoundaryConditionsReflecting, &
       ComputeRawFluxesKernel, &
       ComputeRiemannSolverInputKernel
@@ -144,7 +149,7 @@ contains
   end subroutine ComputePrimitive
   
   
-  subroutine ComputeAuxiliary ( CF, Value )
+  subroutine ComputeAuxiliaryHost ( CF, Value )
     
     class ( PressurelessFluidForm ), intent ( inout ) :: &
       CF
@@ -164,7 +169,41 @@ contains
              Value ( :, CF % VELOCITY ( 2 ) ), &
              Value ( :, CF % VELOCITY ( 3 ) ) )
     
-  end subroutine ComputeAuxiliary
+  end subroutine ComputeAuxiliaryHost
+  
+  
+  subroutine ComputeAuxiliaryDevice ( CF, Value, D_Value )
+    
+    class ( PressurelessFluidForm ), intent ( inout ) :: &
+      CF
+    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+      Value
+    type ( c_ptr ), dimension ( : ), intent ( in ) :: &
+      D_Value
+    
+    !-- No auxiliary variables besides eigenspeeds
+
+    call ComputeEigenspeedsKernelDevice &
+           ( Value ( :, CF % FAST_EIGENSPEED_PLUS ( 1 ) ), &
+             Value ( :, CF % FAST_EIGENSPEED_PLUS ( 2 ) ), &
+             Value ( :, CF % FAST_EIGENSPEED_PLUS ( 3 ) ), &
+             Value ( :, CF % FAST_EIGENSPEED_MINUS ( 1 ) ), &
+             Value ( :, CF % FAST_EIGENSPEED_MINUS ( 2 ) ), &
+             Value ( :, CF % FAST_EIGENSPEED_MINUS ( 3 ) ), &
+             Value ( :, CF % VELOCITY ( 1 ) ), &
+             Value ( :, CF % VELOCITY ( 2 ) ), &
+             Value ( :, CF % VELOCITY ( 3 ) ), &
+             D_Value ( CF % FAST_EIGENSPEED_PLUS ( 1 ) ), &
+             D_Value ( CF % FAST_EIGENSPEED_PLUS ( 2 ) ), &
+             D_Value ( CF % FAST_EIGENSPEED_PLUS ( 3 ) ), &
+             D_Value ( CF % FAST_EIGENSPEED_MINUS ( 1 ) ), &
+             D_Value ( CF % FAST_EIGENSPEED_MINUS ( 2 ) ), &
+             D_Value ( CF % FAST_EIGENSPEED_MINUS ( 3 ) ), &
+             D_Value ( CF % VELOCITY ( 1 ) ), &
+             D_Value ( CF % VELOCITY ( 2 ) ), &
+             D_Value ( CF % VELOCITY ( 3 ) ) )
+    
+  end subroutine ComputeAuxiliaryDevice
   
   
   subroutine ApplyBoundaryConditions &
@@ -650,6 +689,58 @@ contains
     FEM_3 = V_3
 
   end subroutine ComputeEigenspeedsKernel
+
+
+  subroutine ComputeEigenspeedsKernelDevice &
+               ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3, &
+                 D_FEP_1, D_FEP_2, D_FEP_3, D_FEM_1, D_FEM_2, D_FEM_3, &
+                 D_V_1, D_V_2, D_V_3 )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      FEP_1, FEP_2, FEP_3, &
+      FEM_1, FEM_2, FEM_3
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      V_1, V_2, V_3
+    type ( c_ptr ), intent ( in ) :: &
+      D_FEP_1, D_FEP_2, D_FEP_3, &
+      D_FEM_1, D_FEM_2, D_FEM_3, &
+      D_V_1, D_V_2, D_V_3
+    integer ( KDI ) :: &
+      iV
+      
+    call AssociateDevice ( D_FEP_1, FEP_1 )
+    call AssociateDevice ( D_FEP_2, FEP_2 )
+    call AssociateDevice ( D_FEP_3, FEP_3 )
+    call AssociateDevice ( D_FEM_1, FEM_1 )
+    call AssociateDevice ( D_FEM_2, FEM_2 )
+    call AssociateDevice ( D_FEM_3, FEM_3 )
+    call AssociateDevice ( D_V_1, V_1 )
+    call AssociateDevice ( D_V_2, V_2 )
+    call AssociateDevice ( D_V_3,  V_3 )
+    
+    !$OMP  target teams distribute parallel do &
+    !$OMP& schedule ( static, 1 )
+    do iV = 1, size ( FEP_1 )
+      FEP_1 ( iV ) = V_1 ( iV )
+      FEP_2 ( iV ) = V_2 ( iV )
+      FEP_3 ( iV ) = V_3 ( iV )
+      FEM_1 ( iV ) = V_1 ( iV )
+      FEM_2 ( iV ) = V_2 ( iV )
+      FEM_3 ( iV ) = V_3 ( iV )
+    end do
+    !$OMP end target teams distribute parallel do
+    
+    call DisassociateDevice ( V_3 )
+    call DisassociateDevice ( V_2 )
+    call DisassociateDevice ( V_1 )
+    call DisassociateDevice ( FEM_3 )
+    call DisassociateDevice ( FEM_2 )
+    call DisassociateDevice ( FEM_1 )
+    call DisassociateDevice ( FEP_3 )
+    call DisassociateDevice ( FEP_2 )
+    call DisassociateDevice ( FEP_1 )
+
+  end subroutine ComputeEigenspeedsKernelDevice
 
 
   subroutine ApplyBoundaryConditionsReflecting &

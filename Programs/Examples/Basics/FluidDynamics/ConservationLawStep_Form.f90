@@ -430,17 +430,21 @@ contains
                CLS % ReconstructionInner % Value ( :, iaP ( iP ) ), &
                CLS % ReconstructionOuter % Value ( :, iaP ( iP ) ) )
       call T_R % Stop ( )
-      
-      call T_DT_H % Start ( )
-      call CLS % ReconstructionInner % UpdateHost ( iaP ( iP ) )
-      call CLS % ReconstructionOuter % UpdateHost ( iaP ( iP ) )
-      call T_DT_H % Stop ( )
     end do
 
     call T_A % Start ( )
-    call CF % ComputeAuxiliary ( CLS % ReconstructionInner % Value )
-    call CF % ComputeAuxiliary ( CLS % ReconstructionOuter % Value )
+    call CF % ComputeAuxiliary &
+           ( CLS % ReconstructionInner % Value, &
+             CLS % ReconstructionInner % D_Selected )
+    call CF % ComputeAuxiliary &
+           ( CLS % ReconstructionOuter % Value, &
+             CLS % ReconstructionInner % D_Selected )
     call T_A % Stop ( )
+    
+    call T_DT_H % Start ( )
+    call CLS % ReconstructionInner % UpdateHost ( )
+    call CLS % ReconstructionOuter % UpdateHost ( )
+    call T_DT_H % Stop ( )
     
     call T_C % Start ( )
     call CF % ComputeConserved ( CLS % ReconstructionInner % Value )
