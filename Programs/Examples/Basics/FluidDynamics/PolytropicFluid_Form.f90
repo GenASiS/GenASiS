@@ -1086,10 +1086,13 @@ contains
     do kV = 1, nB ( 3 )
       do jV = 1, nB ( 2 )
         do iV = 1, nB ( 1 )
+        
           E_E ( oBE ( 1 ) + iV, oBE ( 2 ) + jV, oBE ( 3 ) + kV ) &
             = E_I ( oBI ( 1 ) + iV, oBI ( 2 ) + jV, oBI ( 3 ) + kV )
+          
           Gamma_E ( oBE ( 1 ) + iV, oBE ( 2 ) + jV, oBE ( 3 ) + kV ) &
             = Gamma_I ( oBI ( 1 ) + iV, oBI ( 2 ) + jV, oBI ( 3 ) + kV )
+            
         end do
       end do
     end do

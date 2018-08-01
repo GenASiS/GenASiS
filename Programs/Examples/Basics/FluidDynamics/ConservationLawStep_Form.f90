@@ -344,26 +344,34 @@ contains
         T_BC    => PROGRAM_HEADER % Timer ( CLS % iTimerBoundaryCondition ) )
     
     !call Show ('<<< Compute Differences')
-
+    
+    call T_DT_D % Start ( )
+    call CF % UpdateDevice ( )
+    call T_DT_D % Stop ( )
+    
     call T_BC % Start ( )
     call CF % ApplyBoundaryConditions &
-           ( CF % Value, CF % Value, iD, iBoundary = -1 )
+           ( CF % Value, CF % Value, iD, iBoundary = -1, &
+             D_ExteriorValue = CF % D_Selected, &
+             D_InteriorValue = CF % D_Selected )
     call CF % ApplyBoundaryConditions &
-           ( CF % Value, CF % Value, iD, iBoundary = +1 )
+           ( CF % Value, CF % Value, iD, iBoundary = +1, &
+             D_ExteriorValue = CF % D_Selected, &
+             D_InteriorValue = CF % D_Selected )
     call T_BC % Stop ( )
            
     !call Show ('<<< After ApplyBoundary')
     
-    call T_DT_D % Start ( )
-    call CF % UpdateDevice ( CF % iaPrimitive ( 1 ) )
-    call T_DT_D % Stop ( )
+    !call T_DT_D % Start ( )
+    !call CF % UpdateDevice ( CF % iaPrimitive ( 1 ) )
+    !call T_DT_D % Stop ( )
     
     do iP = 1, CF % N_PRIMITIVE
-      if ( iP < CF % N_PRIMITIVE ) then
-        call T_DT_D % Start ( )
-        call CF % UpdateDevice ( CF % iaPrimitive ( iP + 1 ) )
-        call T_DT_D % Stop ( )
-      end if
+      !if ( iP < CF % N_PRIMITIVE ) then
+        !call T_DT_D % Start ( )
+        !call CF % UpdateDevice ( CF % iaPrimitive ( iP + 1 ) )
+        !call T_DT_D % Stop ( )
+      !end if
       call DM % SetVariablePointer &
              ( CF % Value ( :, CF % iaPrimitive ( iP ) ), V )
       call DM % SetVariablePointer &
@@ -414,7 +422,6 @@ contains
         T_A     => PROGRAM_HEADER % Timer ( CLS % iTimerAuxiliary ), &
         T_C     => PROGRAM_HEADER % Timer ( CLS % iTimerConserved ) )
     
-    
     do iP = 1, CF % N_PRIMITIVE
       call T_R % Start ( )
       call ComputeReconstructionKernel &
@@ -450,10 +457,10 @@ contains
              CLS % ReconstructionOuter % D_Selected )
     call T_C % Stop ( )
     
-    call T_DT_H % Start ( )
-    call CLS % ReconstructionInner % UpdateHost ( )
-    call CLS % ReconstructionOuter % UpdateHost ( )
-    call T_DT_H % Stop ( )
+    !call T_DT_H % Start ( )
+    !call CLS % ReconstructionInner % UpdateHost ( )
+    !call CLS % ReconstructionOuter % UpdateHost ( )
+    !call T_DT_H % Stop ( )
     
     end associate !-- Timer
     end associate !-- iaP
@@ -492,16 +499,20 @@ contains
     call T_BC % Start ( )
     call CF % ApplyBoundaryConditions &
            ( CLS % ReconstructionOuter % Value, &
-             CLS % ReconstructionInner % Value, iDimension, iBoundary = -1 )
+             CLS % ReconstructionInner % Value, iDimension, iBoundary = -1, &
+             D_ExteriorValue = CLS % ReconstructionOuter % D_Selected, &
+             D_InteriorValue = CLS % ReconstructionInner % D_Selected )
     call CF % ApplyBoundaryConditions &
            ( CLS % ReconstructionInner % Value, &
-             CLS % ReconstructionOuter % Value, iDimension, iBoundary = +1 )
+             CLS % ReconstructionOuter % Value, iDimension, iBoundary = +1, &
+             D_ExteriorValue = CLS % ReconstructionInner % D_Selected, &
+             D_InteriorValue = CLS % ReconstructionOuter % D_Selected )
     call T_BC % Stop ( )
 
-    call T_DT_D % Start ( )
-    call CLS % ReconstructionInner % UpdateDevice ( )
-    call CLS % ReconstructionOuter % UpdateDevice ( )
-    call T_DT_D % Stop ( )
+    !call T_DT_D % Start ( )
+    !call CLS % ReconstructionInner % UpdateDevice ( )
+    !call CLS % ReconstructionOuter % UpdateDevice ( )
+    !call T_DT_D % Stop ( )
     
     call T_RSI % Start ( )
     call CF % ComputeRiemannSolverInput &
@@ -525,6 +536,8 @@ contains
     call T_DT_H % Start ( )
     call CLS % RawFluxInner % UpdateHost ( )
     call CLS % RawFluxOuter % UpdateHost ( )
+    call CLS % ReconstructionInner % UpdateHost ( )
+    call CLS % ReconstructionOuter % UpdateHost ( )
     call T_DT_H % Stop ( )
 
     call DM % SetVariablePointer &
