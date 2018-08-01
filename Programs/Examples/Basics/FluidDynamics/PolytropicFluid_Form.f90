@@ -780,7 +780,9 @@ contains
     !$OMP& schedule ( static, 1 )
     do iV = 1, size ( G )
       G ( iV ) = E ( iV ) + 0.5_KDR * N ( iV ) &
-                 * ( V_1 ( iV ) ** 2 + V_2 ( iV ) ** 2 + V_3 ( iV ) ** 2 )
+                 * ( V_1 ( iV ) * V_1 ( iV ) &
+                     + V_2 ( iV ) * V_2 ( iV ) &
+                     + V_3 ( iV ) * V_3 ( iV ) )
     end do
     !$OMP end target teams distribute parallel do
     
@@ -873,7 +875,7 @@ contains
     !$OMP& schedule ( static, 1 )
     do iV = 1, size ( P )
       P ( iV ) = E ( iV ) * ( Gamma ( iV ) - 1.0_KDR )
-      if ( N ( iV ) ** Gamma ( iV ) > 0.0_KDR ) then
+      if ( N ( iV ) > 0.0_KDR ) then
         K ( iV ) = P ( iV ) / ( N ( iV ) ** Gamma ( iV ) )
       else
         K ( iV ) = 0.0_KDR
