@@ -43,7 +43,7 @@ module FluidCentral_Template
   abstract interface
 
     subroutine IPS ( FC, RadiusMaxOption, RadiusCoreOption, RadiusMinOption, &
-                     RadialRatioOption, nCellsCoreOption, nCellsPolarOption )
+                     RadialRatioOption, nCellsPolarOption )
       use Basics
       import FluidCentralTemplate
       class ( FluidCentralTemplate ), intent ( inout ) :: &
@@ -54,7 +54,6 @@ module FluidCentral_Template
         RadiusMinOption, &
         RadialRatioOption
       integer ( KDI ), intent ( in ), optional :: &
-        nCellsCoreOption, &
         nCellsPolarOption
     end subroutine IPS
 
@@ -92,7 +91,7 @@ contains
                  LimiterParameterOption, ShockThresholdOption, &
                  RadiusMaxOption, RadiusCoreOption, RadiusMinOption, &
                  RadialRatioOption, CentralMassOption, nWriteOption, &
-                 nCellsCoreOption, nCellsPolarOption )
+                 nCellsPolarOption )
 
     class ( FluidCentralTemplate ), intent ( inout ) :: &
       FC
@@ -116,7 +115,6 @@ contains
       CentralMassOption
     integer ( KDI ), intent ( in ), optional :: &
       nWriteOption, &
-      nCellsCoreOption, &
       nCellsPolarOption
 
     real ( KDR ) :: &
@@ -155,7 +153,7 @@ contains
 
     call FC % InitializePositionSpace &
            ( RadiusMaxOption, RadiusCoreOption, RadiusMinOption, &
-             RadialRatioOption, nCellsCoreOption, nCellsPolarOption )
+             RadialRatioOption, nCellsPolarOption )
 
     select type ( PS => FC % PositionSpace )
     class is ( Atlas_SC_Form )

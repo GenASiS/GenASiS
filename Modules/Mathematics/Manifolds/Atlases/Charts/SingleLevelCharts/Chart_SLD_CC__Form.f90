@@ -14,11 +14,12 @@ module Chart_SLD_CC__Form
 
   type, public, extends ( Chart_SLD_Form ) :: Chart_SLD_CC_Form
     integer ( KDI ) :: &
+      nCellsPolar, &
       nCellsCore
     real ( KDR ) :: &
       RadiusCore, &
       RadiusMax, &
-      RadialRatio  !-- nCellsRadial / nCellsCore
+      RadialRatio  !-- nCellsRadial / nCellsPolar
   contains
     procedure, private, pass :: &
       Initialize_CC
@@ -35,7 +36,7 @@ contains
   subroutine Initialize_CC &
                ( C, Atlas, iChart, CoordinateUnitOption, RadiusMaxOption, &
                  RadiusCoreOption, RadialRatioOption, nGhostLayersOption, &
-                 nCellsCoreOption )
+                 nCellsPolarOption )
 
     class ( Chart_SLD_CC_Form ), intent ( inout ) :: &
       C
@@ -52,7 +53,7 @@ contains
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       nGhostLayersOption
     integer ( KDI ), intent ( in ), optional :: &
-      nCellsCoreOption
+      nCellsPolarOption
 
     integer ( KDI ) :: &
       nCellsRadial, &
@@ -95,19 +96,30 @@ contains
       C % RadiusCore = RadiusCoreOption
     call PROGRAM_HEADER % GetParameter ( C % RadiusCore, 'RadiusCore' )
 
-    C % nCellsCore = 32  !-- Number of central cells with equal spacing
-    if ( present ( nCellsCoreOption ) ) &
-      C % nCellsCore = nCellsCoreOption
-    call PROGRAM_HEADER % GetParameter ( C % nCellsCore, 'nCellsCore' )
+    C % nCellsPolar = 128
+    if ( present ( nCellsPolarOption ) ) &
+      C % nCellsPolar = nCellsPolarOption
+    call PROGRAM_HEADER % GetParameter ( C % nCellsPolar, 'nCellsPolar' )
 
-    C % RadialRatio = 3
+    if ( .not. any ( C % nCellsPolar &
+                       == [ 32, 64, 128, 256, 512, 1024, 2048, 4096 ] ) ) &
+    then 
+      call Show ( 'nCellsPolar must be a power of 2', CONSOLE % ERROR )
+      call Show ( 'Initialize_CC', 'subroutine', CONSOLE % ERROR )
+      call Show ( 'Chart_SLD_CC__Form', 'module', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end if
+
+    C % nCellsCore  =  10 * ( C % nCellsPolar / 32 )  
+
+    C % RadialRatio = 1
     if ( present ( RadialRatioOption ) ) &
       C % RadialRatio = RadialRatioOption
     call PROGRAM_HEADER % GetParameter ( C % RadialRatio, 'RadialRatio' )
 
-    nCellsRadial    = C % RadialRatio  *  C % nCellsCore !-- Aim for RadiusMax
-    nCellsPolar     = 3  *  C % nCellsCore  !-- Close to unit aspect ratio
-    nCellsAzimuthal = 2  *  nCellsPolar
+    nCellsRadial    = C % RadialRatio  *  C % nCellsPolar !-- Aim for RadiusMax
+    nCellsPolar     = C % nCellsPolar
+    nCellsAzimuthal = 2 * nCellsPolar
  
     nCells = [ nCellsRadial, 1, 1 ]
     if ( Atlas % nDimensions > 1 ) &
@@ -144,8 +156,9 @@ contains
     call C % Chart_SLD_Form % Show ( )
 
     call Show ( 'Chart_SLD_CC parameters' )
-    call Show ( C % RadiusCore, C % CoordinateUnit ( 1 ), 'RadiusCore' )
+    call Show ( C % nCellsPolar, 'nCellsPolar' )
     call Show ( C % nCellsCore, 'nCellsCore' )
+    call Show ( C % RadiusCore, C % CoordinateUnit ( 1 ), 'RadiusCore' )
     call Show ( C % RadiusCore / C % nCellsCore, C % CoordinateUnit ( 1 ), &
                 'CellWidthCore' )
     call Show ( C % RadialRatio, 'RadialRatio' )

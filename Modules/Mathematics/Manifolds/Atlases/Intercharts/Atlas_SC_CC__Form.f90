@@ -105,7 +105,7 @@ contains
   subroutine CreateChart_CC &
                ( A, CoordinateUnitOption, RadiusMaxOption, &
                  RadiusCoreOption, RadialRatioOption, nGhostLayersOption, &
-                 nCellsCoreOption )
+                 nCellsPolarOption )
 
     class ( Atlas_SC_CC_Form ), intent ( inout ) :: &
       A
@@ -118,7 +118,7 @@ contains
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       nGhostLayersOption
     integer ( KDI ), intent ( in ), optional :: &
-      nCellsCoreOption
+      nCellsPolarOption
 
     allocate ( Chart_SLD_CC_Form :: A % Chart )
 
@@ -131,7 +131,7 @@ contains
                RadiusCoreOption = RadiusCoreOption, &
                RadialRatioOption = RadialRatioOption, &
                nGhostLayersOption = nGhostLayersOption, &
-               nCellsCoreOption = nCellsCoreOption )
+               nCellsPolarOption = nCellsPolarOption )
     end select !-- C
 
   end subroutine CreateChart_CC
