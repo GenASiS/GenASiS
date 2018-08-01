@@ -240,13 +240,13 @@ contains
         = Old % Value ( :, iV ) + Update % Value ( :, iV )
     end do
     
-    call T_P % Start ( )
+    !call T_P % Start ( )
     call Current % ComputePrimitive ( Current % Value )
-    call T_P % Stop ( )
+    !call T_P % Stop ( )
     call DM % StartGhostExchange ( Primitive )
-    call T_A % Start ( )
+    !call T_A % Start ( )
     call Current % ComputeAuxiliary ( Current % Value )
-    call T_A % Stop ( )
+    !call T_A % Stop ( )
     call DM % FinishGhostExchange ( )
 
     !-- Substep 2
@@ -263,13 +263,13 @@ contains
                       + Current % Value ( :, iaC ( iV ) ) )
     end do
 
-    call T_P % Start ( )
+    !call T_P % Start ( )
     call Current % ComputePrimitive ( Current % Value )
-    call T_P % Stop ( )
+    !call T_P % Stop ( )
     call DM % StartGhostExchange ( Primitive )
-    call T_A % Start ( )
+    !call T_A % Start ( )
     call Current % ComputeAuxiliary ( Current % Value )
-    call T_P % Stop ( )
+    !call T_P % Stop ( )
     call DM % FinishGhostExchange ( )
     
     end associate !-- DM, etc.
