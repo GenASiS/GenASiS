@@ -560,8 +560,8 @@ contains
              ( CLS % ReconstructionOuter % Value ( :, iaC ( iV ) ), U_O )
       call T_F % Start ( )
       call ComputeFluxesKernel &
-             ( AP_I, AP_O, AM_I, AM_O, RF_I, RF_O, U_I, U_O, iDimension, &
-               F_I, F_O )
+             ( AP_I, AP_O, AM_I, AM_O, RF_I, RF_O, U_I, U_O, &
+               DM % nGhostLayers ( iDimension ), iDimension, F_I, F_O )
       call T_F % Stop ( )
     end do
 
@@ -739,7 +739,8 @@ contains
 
 
   subroutine ComputeFluxesKernel &
-               ( AP_I, AP_O, AM_I, AM_O, RF_I, RF_O, U_I, U_O, iD, F_I, F_O )
+               ( AP_I, AP_O, AM_I, AM_O, RF_I, RF_O, U_I, U_O, oV, iD, &
+                 F_I, F_O )
 
     real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
       AP_I, AP_O, &
@@ -747,26 +748,98 @@ contains
       RF_I, RF_O, &
       U_I, U_O
     integer ( KDI ), intent ( in ) :: &
+      oV, &
       iD
     real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
       F_I, F_O
-
-    where ( AP_I + AM_I > 0.0_KDR )
-      F_I = ( AP_I * cshift ( RF_O, shift = -1, dim = iD )  +  AM_I * RF_I &
-              - AP_I * AM_I * ( U_I - cshift ( U_O, shift = -1, dim = iD ) ) ) &
-            / ( AP_I + AM_I )
-    elsewhere
-      F_I = 0.0_KDR
+      
+    integer ( KDI ) :: &
+      iV, jV, kV
+    integer ( KDI ), dimension ( 3 ) :: &
+      iaS, &
+      iaVS, &   
+      lV, uV
+      
+    lV = 1
+    where ( shape ( F_I ) > 1 )
+      lV = oV + 1
     end where
+    lV ( iD ) = oV
 
-    where ( AP_O + AM_O > 0.0_KDR )
-      F_O = ( AP_O * RF_O  +  AM_O * cshift ( RF_I, shift = +1, dim = iD ) &
-              - AP_O * AM_O * ( cshift ( U_I, shift = +1, dim = iD ) - U_O ) ) &
-            / ( AP_O + AM_O )
-    elsewhere
-      F_O = 0.0_KDR
+    uV = 1
+    where ( shape ( F_I ) > 1 )
+      uV = shape ( F_I ) - oV
     end where
+    uV ( iD ) = size ( F_I, dim = iD ) - 1
+    
+    !where ( AP_I + AM_I > 0.0_KDR )
+    !  F_I = ( AP_I * cshift ( RF_O, shift = -1, dim = iD )  +  AM_I * RF_I &
+    !          - AP_I * AM_I * ( U_I - cshift ( U_O, shift = -1, dim = iD ) ) ) &
+    !        / ( AP_I + AM_I )
+    !elsewhere
+    !  F_I = 0.0_KDR
+    !end where
+    
+    iaS = 0
+    iaS ( iD ) = -1
+    
+    do kV = lV ( 3 ), uV ( 3 ) 
+      do jV = lV ( 2 ), uV ( 2 )
+        do iV = lV ( 1 ), uV ( 1 )
+            
+          iaVS = [ iV, jV, kV ] + iaS
+          
+          if ( AP_I ( iV, jV, kV ) + AM_I ( iV, jV, kV ) > 0.0_KDR ) then
+            F_I ( iV, jV, kV ) &
+              = ( AP_I ( iV, jV, kV ) &
+                    * RF_O ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ) &
+                  + AM_I ( iV, jV, kV ) * RF_I ( iV, jV, kV ) &
+                  - AP_I ( iV, jV, kV ) * AM_I ( iV, jV, kV ) &
+                    * ( U_I ( iV, jV, kV ) &
+                        -  U_O ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ) ) ) &
+                / ( AP_I ( iV, jV, kV ) + AM_I ( iV, jV, kV ) )
+          else
+            F_I ( iV, jV, kV ) = 0.0_KDR
+          end if
 
+        end do
+      end do
+    end do
+    
+    !where ( AP_O + AM_O > 0.0_KDR )
+    !  F_O = ( AP_O * RF_O  +  AM_O * cshift ( RF_I, shift = +1, dim = iD ) &
+    !          - AP_O * AM_O * ( cshift ( U_I, shift = +1, dim = iD ) - U_O ) ) &
+    !        / ( AP_O + AM_O )
+    !elsewhere
+    !  F_O = 0.0_KDR
+    !end where
+    
+    iaS = 0
+    iaS ( iD ) = +1
+    
+    do kV = lV ( 3 ), uV ( 3 ) 
+      do jV = lV ( 2 ), uV ( 2 )
+        do iV = lV ( 1 ), uV ( 1 )
+            
+          iaVS = [ iV, jV, kV ] + iaS
+          
+          if ( AP_O ( iV, jV, kV ) + AM_O ( iV, jV, kV ) > 0.0_KDR ) then
+            F_O ( iV, jV, kV ) &
+              = ( AP_O ( iV, jV, kV ) * RF_O ( iV, jV, kV ) &
+                  +  AM_O ( iV, jV, kV ) &
+                     * RF_I ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ) &
+                  - AP_O ( iV, jV, kV ) * AM_O ( iV, jV, kV ) &
+                    * ( U_I ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ) &
+                        - U_O ( iV, jV, kV ) ) ) &
+                / ( AP_O ( iV, jV, kV ) + AM_O ( iV, jV, kV ) )
+          else
+            F_O ( iV, jV, kV ) = 0.0_KDR
+          end if
+          
+        end do
+      end do
+    end do
+    
   end subroutine ComputeFluxesKernel
 
 
