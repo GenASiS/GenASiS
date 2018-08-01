@@ -127,7 +127,7 @@ contains
       allocate ( C % nCellsBrick ( MAX_DIMENSIONS ) )
       allocate ( C % nBricks ( MAX_DIMENSIONS ) )
       call C % SetBrick &
-             ( Atlas % Communicator, C % nCells, C % nCellsBrick, &
+             ( C % nCells, Atlas % Communicator, C % nCellsBrick, &
                C % nBricks, C % iaBrick )
       call SetChartFirstLast ( C, C % nCellsBrick )
     else

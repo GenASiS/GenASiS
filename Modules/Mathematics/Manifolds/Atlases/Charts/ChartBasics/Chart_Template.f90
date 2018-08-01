@@ -56,7 +56,7 @@ module Chart_Template
       ShowTemplate
     procedure, public, pass :: &
       FinalizeTemplate
-    procedure, public, pass :: &
+    procedure, public, pass ( C ) :: &
       SetBrick
     procedure, public, pass :: &
       SetGeometryCell
@@ -375,14 +375,14 @@ contains
 
 
   subroutine SetBrick &
-               ( C, Communicator, nCells, nCellsBrick, nBricks, iaBrick )
+               ( nCells, C, Communicator, nCellsBrick, nBricks, iaBrick )
 
+    integer ( KDI ), dimension ( : ), intent ( inout ) :: &
+      nCells
     class ( ChartTemplate ), intent ( in ) :: &
       C
     type ( CommunicatorForm ), intent ( in ) :: &
       Communicator
-    integer ( KDI ), dimension ( : ), intent ( in ) :: &
-      nCells
     integer ( KDI ), dimension ( : ), intent ( out ) :: &
       nCellsBrick, &
       nBricks, &
@@ -415,14 +415,14 @@ contains
     do iD = 1, C % nDimensions
       if ( mod ( nCells ( iD ), nBricks ( iD ) ) /= 0 ) then
         call Show ( 'nBricks in each dimension must divide evenly into ' &
-                    // 'nCells in each dimension', CONSOLE % ERROR )
-        call Show ( iD, 'iDimension', CONSOLE % ERROR )
-        call Show ( nCells ( iD ), 'nCells', CONSOLE % ERROR )
-        call Show ( nBricks ( iD ), 'nBricks', CONSOLE % ERROR )
-        call Show ( 'Chart_Template', 'module', CONSOLE % ERROR )
-        call Show ( 'SetBrick', 'subroutine', CONSOLE % ERROR )
-        call PROGRAM_HEADER % Communicator % Synchronize ( )
-        call PROGRAM_HEADER % Abort ( )
+                    // 'nCells in each dimension', CONSOLE % WARNING )
+        call Show ( iD, 'iDimension', CONSOLE % WARNING )
+        call Show ( nBricks ( iD ), 'nBricks', CONSOLE % WARNING )
+        call Show ( nCells ( iD ), 'nCells requested', CONSOLE % WARNING )
+        nCells ( iD ) = ( nCells ( iD ) / nBricks ( iD ) ) * nBricks ( iD )
+        call Show ( nCells ( iD ), 'nCells granted', CONSOLE % WARNING )
+        call Show ( 'SetBrick', 'subroutine', CONSOLE % WARNING )
+        call Show ( 'Chart_Template', 'module', CONSOLE % WARNING )
       end if
     end do
     
