@@ -153,7 +153,9 @@ contains
              VariableOption &
                = [ ( CF % Variable ( CF % iaConserved ( iV ) ), &
                      iV = 1, CF % N_CONSERVED ) ] )
-
+    call CLS % FluxInner % AllocateDevice ( )
+    call CLS % FluxOuter % AllocateDevice ( )
+    
     !-- Update
 
     call CLS % Update % Initialize &
@@ -533,12 +535,12 @@ contains
              CLS % ReconstructionOuter % D_Selected )
     call T_RF % Stop ( )
     
-    call T_DT_H % Start ( )
-    call CLS % RawFluxInner % UpdateHost ( )
-    call CLS % RawFluxOuter % UpdateHost ( )
-    call CLS % ReconstructionInner % UpdateHost ( )
-    call CLS % ReconstructionOuter % UpdateHost ( )
-    call T_DT_H % Stop ( )
+    !call T_DT_H % Start ( )
+    !call CLS % RawFluxInner % UpdateHost ( )
+    !call CLS % RawFluxOuter % UpdateHost ( )
+    !call CLS % ReconstructionInner % UpdateHost ( )
+    !call CLS % ReconstructionOuter % UpdateHost ( )
+    !call T_DT_H % Stop ( )
 
     call DM % SetVariablePointer &
            ( CLS % ModifiedSpeedsInner % Value ( :, CLS % ALPHA_PLUS ), AP_I )
@@ -561,9 +563,25 @@ contains
       call T_F % Start ( )
       call ComputeFluxesKernel &
              ( AP_I, AP_O, AM_I, AM_O, RF_I, RF_O, U_I, U_O, &
-               DM % nGhostLayers ( iDimension ), iDimension, F_I, F_O )
+               DM % nGhostLayers ( iDimension ), iDimension, &
+               CLS % ModifiedSpeedsInner % D_Selected ( CLS % ALPHA_PLUS ), &
+               CLS % ModifiedSpeedsOuter % D_Selected ( CLS % ALPHA_PLUS ), &
+               CLS % ModifiedSpeedsInner % D_Selected ( CLS % ALPHA_MINUS ), &
+               CLS % ModifiedSpeedsOuter % D_Selected ( CLS % ALPHA_MINUS ), &
+               CLS % RawFluxInner % D_Selected ( iV ), &
+               CLS % RawFluxOuter % D_Selected ( iV ), &
+               CLS % ReconstructionInner % D_Selected ( iaC ( iV ) ), &
+               CLS % ReconstructionOuter % D_Selected ( iaC ( iV ) ), &
+               CLS % FluxInner % D_Selected ( iV ), &
+               CLS % FluxOuter % D_Selected ( iV ), &
+               F_I, F_O )
       call T_F % Stop ( )
     end do
+    
+    call T_DT_H % Start ( )
+    call CLS % FluxInner % UpdateHost ( )
+    call CLS % FluxOuter % UpdateHost ( )
+    call T_DT_H % Stop ( )
 
     nullify ( AP_I, AP_O, AM_I, AM_O, RF_I, RF_O, U_I, U_O, F_I, F_O )
     end associate !-- DM, iaC
@@ -740,7 +758,8 @@ contains
 
   subroutine ComputeFluxesKernel &
                ( AP_I, AP_O, AM_I, AM_O, RF_I, RF_O, U_I, U_O, oV, iD, &
-                 F_I, F_O )
+                 D_AP_I, D_AP_O, D_AM_I, D_AM_O, D_RF_I, D_RF_O, &
+                 D_U_I, D_U_O, D_F_I, D_F_O, F_I, F_O )
 
     real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
       AP_I, AP_O, &
@@ -750,6 +769,12 @@ contains
     integer ( KDI ), intent ( in ) :: &
       oV, &
       iD
+    type ( c_ptr ), intent ( in ) :: &
+      D_AP_I, D_AP_O, &
+      D_AM_I, D_AM_O, &
+      D_RF_I, D_RF_O, &
+      D_U_I, D_U_O, &
+      D_F_I, D_F_O
     real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
       F_I, F_O
       
@@ -760,6 +785,17 @@ contains
       iaVS, &   
       lV, uV
       
+    call AssociateDevice ( D_AP_I, AP_I )
+    call AssociateDevice ( D_AP_O, AP_O )
+    call AssociateDevice ( D_AM_I, AM_I )
+    call AssociateDevice ( D_AM_O, AM_O )
+    call AssociateDevice ( D_RF_I, RF_I )
+    call AssociateDevice ( D_RF_O, RF_O )
+    call AssociateDevice ( D_U_I, U_I )
+    call AssociateDevice ( D_U_O, U_O )
+    call AssociateDevice ( D_F_I, F_I )
+    call AssociateDevice ( D_F_O, F_O )
+            
     lV = 1
     where ( shape ( F_I ) > 1 )
       lV = oV + 1
@@ -783,6 +819,8 @@ contains
     iaS = 0
     iaS ( iD ) = -1
     
+    !$OMP  target teams distribute parallel do collapse ( 3 ) &
+    !$OMP& schedule ( static, 1 ) private ( iaVS )
     do kV = lV ( 3 ), uV ( 3 ) 
       do jV = lV ( 2 ), uV ( 2 )
         do iV = lV ( 1 ), uV ( 1 )
@@ -805,6 +843,7 @@ contains
         end do
       end do
     end do
+    !$OMP end target teams distribute parallel do
     
     !where ( AP_O + AM_O > 0.0_KDR )
     !  F_O = ( AP_O * RF_O  +  AM_O * cshift ( RF_I, shift = +1, dim = iD ) &
@@ -817,6 +856,8 @@ contains
     iaS = 0
     iaS ( iD ) = +1
     
+    !$OMP  target teams distribute parallel do collapse ( 3 ) &
+    !$OMP& schedule ( static, 1 ) private ( iaVS )
     do kV = lV ( 3 ), uV ( 3 ) 
       do jV = lV ( 2 ), uV ( 2 )
         do iV = lV ( 1 ), uV ( 1 )
@@ -839,6 +880,18 @@ contains
         end do
       end do
     end do
+    !$OMP end target teams distribute parallel do
+    
+    call DisassociateDevice ( F_O )
+    call DisassociateDevice ( F_I )
+    call DisassociateDevice ( U_O )
+    call DisassociateDevice ( U_I )
+    call DisassociateDevice ( RF_O )
+    call DisassociateDevice ( RF_I )
+    call DisassociateDevice ( AM_O )
+    call DisassociateDevice ( AM_I )
+    call DisassociateDevice ( AP_O )
+    call DisassociateDevice ( AP_I )
     
   end subroutine ComputeFluxesKernel
 
