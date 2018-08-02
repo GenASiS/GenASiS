@@ -192,11 +192,13 @@ contains
 
     associate &
       (          R => G % Value ( :, G % CENTER_U ( 1 ) ), &
+             Theta => G % Value ( :, G % CENTER_U ( 2 ) ), &
                 dR => G % Value ( :, G % WIDTH_LEFT_U ( 1 ) )  &
                       +  G % Value ( :, G % WIDTH_RIGHT_U ( 1 ) ), &
             dTheta => G % Value ( :, G % WIDTH_LEFT_U ( 2 ) )  &
                       +  G % Value ( :, G % WIDTH_RIGHT_U ( 2 ) ), &
             Crsn_2 => G % Value ( :, G % COARSENING ( 2 ) ), &
+            Crsn_3 => G % Value ( :, G % COARSENING ( 3 ) ), &
         MyMinWidth => CO % Outgoing % Value ( 1 ) )
       
     MyMinWidth = huge ( 1.0_KDR )
@@ -217,11 +219,23 @@ contains
       if ( .not. C % IsProperCell ( iV ) ) &
         cycle
       Crsn_2 ( iV )  =  1.0_KDR
-      Coarsen: do
+      Coarsen_2: do
         if ( Crsn_2 ( iV )  *  R ( iV )  *  dTheta ( iV )  >  C % MinWidth ) &
-          exit Coarsen
+          exit Coarsen_2
         Crsn_2 ( iV )  =  2.0_KDR  *  Crsn_2 ( iV )
-      end do Coarsen
+      end do Coarsen_2
+    end do !-- iV
+
+    do iV = 1, size ( R )
+      if ( .not. C % IsProperCell ( iV ) ) &
+        cycle
+      Crsn_3 ( iV )  =  1.0_KDR
+      Coarsen_3: do
+        if ( Crsn_3 ( iV )  *  R ( iV )  *  sin ( Theta ( iV ) )  &
+             *  dTheta ( iV )  >  C % MinWidth ) &
+          exit Coarsen_3
+        Crsn_3 ( iV )  =  2.0_KDR  *  Crsn_3 ( iV )
+      end do Coarsen_3
     end do !-- iV
 
     nullify ( G )
