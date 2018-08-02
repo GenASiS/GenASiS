@@ -231,11 +231,8 @@ contains
     end do
 
     !-- Substep 1
-    !call Show ( '<<< Substep 1')
 
     call CLS % ComputeUpdate ( TimeStep ) !-- K1 = dT * RHS
-    
-    !call Show ( '<<< After Compute Update')
     
     do iV = 1, Current % N_CONSERVED
       !-- Current = Old + K1
@@ -307,7 +304,6 @@ contains
     call CLS % ConservedFields % UpdateDevice ( )
     call T_DT_D % Stop ( )
     
-    !call Show ( '<<< ComputeUpdate: Dimension loop' )
     do iD = 1, DM % nDimensions
 
       call CLS % ComputeDifferences ( iD )
@@ -362,12 +358,6 @@ contains
         T_D     => PROGRAM_HEADER % Timer ( CLS % iTimerDifference ), &
         T_BC    => PROGRAM_HEADER % Timer ( CLS % iTimerBoundaryCondition ) )
     
-    !call Show ('<<< Compute Differences')
-    
-    !call T_DT_D % Start ( )
-    !call CF % UpdateDevice ( )
-    !call T_DT_D % Stop ( )
-    
     call T_BC % Start ( )
     call CF % ApplyBoundaryConditions &
            ( CF % Value, CF % Value, iD, iBoundary = -1, &
@@ -379,18 +369,7 @@ contains
              D_InteriorValue = CF % D_Selected )
     call T_BC % Stop ( )
            
-    !call Show ('<<< After ApplyBoundary')
-    
-    !call T_DT_D % Start ( )
-    !call CF % UpdateDevice ( CF % iaPrimitive ( 1 ) )
-    !call T_DT_D % Stop ( )
-    
     do iP = 1, CF % N_PRIMITIVE
-      !if ( iP < CF % N_PRIMITIVE ) then
-        !call T_DT_D % Start ( )
-        !call CF % UpdateDevice ( CF % iaPrimitive ( iP + 1 ) )
-        !call T_DT_D % Stop ( )
-      !end if
       call DM % SetVariablePointer &
              ( CF % Value ( :, CF % iaPrimitive ( iP ) ), V )
       call DM % SetVariablePointer &
@@ -405,14 +384,7 @@ contains
                CLS % DifferenceRight % D_Selected ( iP ), &
                dV_Left, dV_Right )
       call T_D % Stop ( )
-      
-      !call T_DT_H % Start ( )
-      !call CLS % DifferenceLeft % UpdateHost ( iP )
-      !call CLS % DifferenceRight % UpdateHost ( iP )
-      !call T_DT_H % Stop ( )
     end do
-    
-    !call Show ( '<<< After Differences' )
     
     nullify ( V, dV_Left, dV_Right )
     
@@ -476,11 +448,6 @@ contains
              CLS % ReconstructionOuter % D_Selected )
     call T_C % Stop ( )
     
-    !call T_DT_H % Start ( )
-    !call CLS % ReconstructionInner % UpdateHost ( )
-    !call CLS % ReconstructionOuter % UpdateHost ( )
-    !call T_DT_H % Stop ( )
-    
     end associate !-- Timer
     end associate !-- iaP
     end associate !-- CF
@@ -528,11 +495,6 @@ contains
              D_InteriorValue = CLS % ReconstructionOuter % D_Selected )
     call T_BC % Stop ( )
 
-    !call T_DT_D % Start ( )
-    !call CLS % ReconstructionInner % UpdateDevice ( )
-    !call CLS % ReconstructionOuter % UpdateDevice ( )
-    !call T_DT_D % Stop ( )
-    
     call T_RSI % Start ( )
     call CF % ComputeRiemannSolverInput &
            ( CLS, CLS % ReconstructionInner % Value, &
@@ -552,13 +514,6 @@ contains
              CLS % ReconstructionOuter % D_Selected )
     call T_RF % Stop ( )
     
-    !call T_DT_H % Start ( )
-    !call CLS % RawFluxInner % UpdateHost ( )
-    !call CLS % RawFluxOuter % UpdateHost ( )
-    !call CLS % ReconstructionInner % UpdateHost ( )
-    !call CLS % ReconstructionOuter % UpdateHost ( )
-    !call T_DT_H % Stop ( )
-
     call DM % SetVariablePointer &
            ( CLS % ModifiedSpeedsInner % Value ( :, CLS % ALPHA_PLUS ), AP_I )
     call DM % SetVariablePointer &
@@ -595,11 +550,6 @@ contains
       call T_F % Stop ( )
     end do
     
-    !call T_DT_H % Start ( )
-    !call CLS % FluxInner % UpdateHost ( )
-    !call CLS % FluxOuter % UpdateHost ( )
-    !call T_DT_H % Stop ( )
-
     nullify ( AP_I, AP_O, AM_I, AM_O, RF_I, RF_O, U_I, U_O, F_I, F_O )
     end associate !-- DM, iaC
     end associate !-- CF
@@ -644,14 +594,10 @@ contains
     end where
     uV ( iD ) = size ( V, dim = iD ) - 1
     
-    !call Show ( '<<< compute differences kernel' )
-
 !    dV_Left  = V - cshift ( V, shift = -1, dim = iD )    
 
     iaS = 0
     iaS ( iD ) = -1
-    
-    !-- $OMP parallel do private ( iV, jV, kV, iaVS )
     
     !$OMP  target teams distribute parallel do collapse ( 3 ) &
     !$OMP& schedule ( static, 1 ) private ( iaVS )
@@ -671,15 +617,10 @@ contains
     end do !-- kV
     !$OMP end target teams distribute parallel do
     
-    !-- $OMP end parallel do
-    
-
 !    dV_Right = cshift ( V, shift = 1, dim = iD ) - V
 
     iaS = 0
     iaS ( iD ) = +1
-    
-    !-- $OMP parallel do private ( iV, jV, kV, iaVS )
     
     !$OMP  target teams distribute parallel do collapse ( 3 ) &
     !$OMP& schedule ( static, 1 ) private ( iaVS )
@@ -699,8 +640,6 @@ contains
     end do !-- kV
     !$OMP end target teams distribute parallel do
     
-    !-- $OMP end parallel do
-
     call DisassociateDevice ( dV_Right )
     call DisassociateDevice ( dV_Left )
     call DisassociateDevice ( V )
@@ -737,7 +676,6 @@ contains
     call AssociateDevice ( D_V_Inner, V_Inner )
     call AssociateDevice ( D_V_Outer, V_Outer )
 
-      
     !where ( dV_Left > 0.0_KDR .and. dV_Right > 0.0_KDR )
     !  dV = min ( Theta * dV_Left, Theta * dV_Right, &
     !               0.5_KDR * ( dV_Left + dV_Right ) )
