@@ -179,7 +179,7 @@ contains
       C
 
     integer ( KDI ) :: &
-      iV
+      iV  !-- iValue
     type ( CollectiveOperation_R_Form ) :: &
       CO
     class ( GeometryFlatForm ), pointer :: &
@@ -191,11 +191,12 @@ contains
            ( C % Atlas % Communicator, nOutgoing = [ 1 ], nIncoming = [ 1 ] )
 
     associate &
-      (      R => G % Value ( :, G % CENTER_U ( 1 ) ), &
-            dR => G % Value ( :, G % WIDTH_LEFT_U ( 1 ) )  &
-                  +  G % Value ( :, G % WIDTH_RIGHT_U ( 1 ) ), &
-        dTheta => G % Value ( :, G % WIDTH_LEFT_U ( 2 ) )  &
-                  +  G % Value ( :, G % WIDTH_RIGHT_U ( 2 ) ), &
+      (          R => G % Value ( :, G % CENTER_U ( 1 ) ), &
+                dR => G % Value ( :, G % WIDTH_LEFT_U ( 1 ) )  &
+                      +  G % Value ( :, G % WIDTH_RIGHT_U ( 1 ) ), &
+            dTheta => G % Value ( :, G % WIDTH_LEFT_U ( 2 ) )  &
+                      +  G % Value ( :, G % WIDTH_RIGHT_U ( 2 ) ), &
+            Crsn_2 => G % Value ( :, G % COARSENING ( 2 ) ), &
         MyMinWidth => CO % Outgoing % Value ( 1 ) )
       
     MyMinWidth = huge ( 1.0_KDR )
@@ -211,6 +212,17 @@ contains
 
     C % MinWidth  =  CO % Incoming % Value ( 1 )
     call Show ( C % MinWidth, C % CoordinateUnit ( 1 ), 'MinWidth' )
+
+    do iV = 1, size ( R )
+      if ( .not. C % IsProperCell ( iV ) ) &
+        cycle
+      Crsn_2 ( iV )  =  1.0_KDR
+      Coarsen: do
+        if ( Crsn_2 ( iV )  *  R ( iV )  *  dTheta ( iV )  >  C % MinWidth ) &
+          exit Coarsen
+        Crsn_2 ( iV )  =  2.0_KDR  *  Crsn_2 ( iV )
+      end do Coarsen
+    end do !-- iV
 
     nullify ( G )
 
