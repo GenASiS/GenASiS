@@ -163,6 +163,7 @@ contains
              VariableOption &
                = [ ( CF % Variable ( CF % iaConserved ( iV ) ), &
                      iV = 1, CF % N_CONSERVED ) ] )
+    call CLS % Update % AllocateDevice ( )
 
     end associate !-- nCells
     end associate !-- DM
@@ -293,9 +294,18 @@ contains
 
     associate ( CF => CLS % ConservedFields )
     associate ( DM => CF % DistributedMesh )
-    associate ( T_U => PROGRAM_HEADER % Timer ( CLS % iTimerUpdate ) )
+    associate & 
+      ( T_DT_D  => PROGRAM_HEADER % Timer ( CLS % iTimerDataTransferDevice ), &
+        T_DT_H  => PROGRAM_HEADER % Timer ( CLS % iTimerDataTransferHost ), &
+        T_U => PROGRAM_HEADER % Timer ( CLS % iTimerUpdate ) )
 
     call Clear ( CLS % Update % Value )
+    
+    call T_DT_D % Start ( )
+    !-- FIXME: Need Clear ( ) on Device
+    call CLS % Update % UpdateDevice ( ) 
+    call CLS % ConservedFields % UpdateDevice ( )
+    call T_DT_D % Stop ( )
     
     !call Show ( '<<< ComputeUpdate: Dimension loop' )
     do iD = 1, DM % nDimensions
@@ -310,13 +320,20 @@ contains
                ( CLS % Update % Value ( :, iV ), &
                  CLS % FluxInner % Value ( :, iV ), &
                  CLS % FluxOuter % Value ( :, iV ), DM % CellVolume, &
-                 DM % CellArea ( iD ), TimeStep )
+                 DM % CellArea ( iD ), TimeStep, &
+                 CLS % Update % D_Selected ( iV ), &
+                 CLS % FluxInner % D_Selected ( iV ), &
+                 CLS % FluxOuter % D_Selected ( iV ) )
       end do
       call T_U % Stop ( )
 
     end do
     
-    end associate !-- T_U
+    call T_DT_H % Start ( )
+    call CLS % Update % UpdateHost ( ) 
+    call T_DT_H % Stop ( )
+    
+    end associate !-- T_DT_D, etc.
     end associate !-- DM
     end associate !-- CF
 
@@ -347,9 +364,9 @@ contains
     
     !call Show ('<<< Compute Differences')
     
-    call T_DT_D % Start ( )
-    call CF % UpdateDevice ( )
-    call T_DT_D % Stop ( )
+    !call T_DT_D % Start ( )
+    !call CF % UpdateDevice ( )
+    !call T_DT_D % Stop ( )
     
     call T_BC % Start ( )
     call CF % ApplyBoundaryConditions &
@@ -578,10 +595,10 @@ contains
       call T_F % Stop ( )
     end do
     
-    call T_DT_H % Start ( )
-    call CLS % FluxInner % UpdateHost ( )
-    call CLS % FluxOuter % UpdateHost ( )
-    call T_DT_H % Stop ( )
+    !call T_DT_H % Start ( )
+    !call CLS % FluxInner % UpdateHost ( )
+    !call CLS % FluxOuter % UpdateHost ( )
+    !call T_DT_H % Stop ( )
 
     nullify ( AP_I, AP_O, AM_I, AM_O, RF_I, RF_O, U_I, U_O, F_I, F_O )
     end associate !-- DM, iaC
@@ -896,7 +913,8 @@ contains
   end subroutine ComputeFluxesKernel
 
 
-  subroutine ComputeUpdateKernel ( dU, F_I, F_O, V, A, dT )
+  subroutine ComputeUpdateKernel &
+               ( dU, F_I, F_O, V, A, dT, D_dU, D_F_I, D_F_O )
     
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       dU
@@ -906,9 +924,28 @@ contains
       V, &
       A, &
       dT
+    type ( c_ptr ), intent ( in ) :: &
+      D_dU, &
+      D_F_I, D_F_O
+    
+    integer ( KDI ) :: &
+      iV
+      
+    call AssociateDevice ( D_dU, dU )
+    call AssociateDevice ( D_F_I, F_I )
+    call AssociateDevice ( D_F_O, F_O )
 
-    dU = dU - dT * ( F_O - F_I ) * A / V
- 
+    !$OMP  target teams distribute parallel do &
+    !$OMP& schedule ( static, 1 )
+    do iV = 1, size ( dU )
+      dU ( iV ) = dU ( iV ) - dT * ( F_O ( iV ) - F_I ( iV ) ) * A / V
+    end do
+    !$OMP end target teams distribute parallel do
+    
+    call DisassociateDevice ( F_O )
+    call DisassociateDevice ( F_I )
+    call DisassociateDevice ( dU )
+
   end subroutine ComputeUpdateKernel
 
 
