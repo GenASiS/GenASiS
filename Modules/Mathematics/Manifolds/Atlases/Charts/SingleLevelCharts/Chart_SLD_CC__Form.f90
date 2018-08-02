@@ -7,6 +7,7 @@ module Chart_SLD_CC__Form
 
   use Basics
   use AtlasBasics
+  use ChartBasics
   use Chart_SLD__Form
 
   implicit none
@@ -19,7 +20,8 @@ module Chart_SLD_CC__Form
     real ( KDR ) :: &
       RadiusCore, &
       RadiusMax, &
-      RadialRatio  !-- nCellsRadial / nCellsPolar
+      RadialRatio, &  !-- nCellsRadial / nCellsPolar
+      MinWidth
   contains
     procedure, private, pass :: &
       Initialize_CC
@@ -27,8 +29,9 @@ module Chart_SLD_CC__Form
       Initialize => Initialize_CC
     procedure, private, pass :: &
       ShowHeader
+    procedure, public, pass :: &
+      SetCoarsening
   end type Chart_SLD_CC_Form
-
 
 contains
 
@@ -168,6 +171,52 @@ contains
                 'RadiusMax actual' )
 
   end subroutine ShowHeader
+
+
+  subroutine SetCoarsening ( C )
+
+    class ( Chart_SLD_CC_Form ), intent ( inout ) :: &
+      C
+
+    integer ( KDI ) :: &
+      iV
+    type ( CollectiveOperation_R_Form ) :: &
+      CO
+    class ( GeometryFlatForm ), pointer :: &
+      G
+
+    G => C % Geometry ( )
+
+    call CO % Initialize &
+           ( C % Atlas % Communicator, nOutgoing = [ 1 ], nIncoming = [ 1 ] )
+
+    associate &
+      (      R => G % Value ( :, G % CENTER_U ( 1 ) ), &
+            dR => G % Value ( :, G % WIDTH_LEFT_U ( 1 ) )  &
+                  +  G % Value ( :, G % WIDTH_RIGHT_U ( 1 ) ), &
+        dTheta => G % Value ( :, G % WIDTH_LEFT_U ( 2 ) )  &
+                  +  G % Value ( :, G % WIDTH_RIGHT_U ( 2 ) ), &
+        MyMinWidth => CO % Outgoing % Value ( 1 ) )
+      
+    MyMinWidth = huge ( 1.0_KDR )
+    do iV = 1, size ( R )
+      if ( R ( iV )  >  C % RadiusCore  &
+           .and.  R ( iV )  <  C % RadiusCore  +  dR ( iV ) ) &
+      then
+        MyMinWidth = min ( MyMinWidth, R ( iV ) * dTheta ( iV ) )
+      end if
+    end do !-- iV
+
+    call CO % Reduce ( REDUCTION % MIN )
+
+    C % MinWidth  =  CO % Incoming % Value ( 1 )
+    call Show ( C % MinWidth, C % CoordinateUnit ( 1 ), 'MinWidth' )
+
+    nullify ( G )
+
+    end associate !-- R, etc.
+
+  end subroutine SetCoarsening
 
 
 end module Chart_SLD_CC__Form

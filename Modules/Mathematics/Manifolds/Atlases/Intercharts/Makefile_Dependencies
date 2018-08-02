@@ -41,6 +41,7 @@ Atlas_SC_CE__Form.o: \
 Atlas_SC_CC__Form.o: \
   Basics.o \
   Charts.o \
+  GeometryFlat_ASC__Form.o \
   Atlas_SC__Form.o \
   Atlas_SC_CC__Form.f90
 
