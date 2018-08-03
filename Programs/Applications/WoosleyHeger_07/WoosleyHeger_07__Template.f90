@@ -64,6 +64,9 @@ contains
     class is ( Atlas_SC_Form )
     G => PS % Geometry ( )
 
+    select type ( C => PS % Chart )
+    class is ( Chart_SLD_Form )
+
     associate &
       (     N => F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
             T => F % Value ( :, F % TEMPERATURE ), &
@@ -75,6 +78,9 @@ contains
             R => G % Value ( :, G % CENTER_U ( 1 ) ) )
 
     do iV = 1, size ( N )
+
+      if ( .not. C % IsProperCell ( iV ) ) &
+        cycle
 
       call SI ( iDENSITY_SI ) % Evaluate ( R ( iV ), MD ) 
       call SI ( iTEMPERATURE_SI ) % Evaluate ( R ( iV ) , T ( iV ) ) 
@@ -90,10 +96,11 @@ contains
     V_2 = 0.0_KDR
     V_3 = 0.0_KDR
 
-!    call F % ComputeFromPrimitive ( G )
     call F % ComputeFromTemperature ( F % Value, G, G % Value )
+    call C % ExchangeGhostData ( F )
 
     end associate !-- N, etc.
+    end select !-- C
     end select !-- PS
     end select !-- FA
     end select !-- I
