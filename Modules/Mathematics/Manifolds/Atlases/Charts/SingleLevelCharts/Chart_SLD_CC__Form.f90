@@ -180,39 +180,23 @@ contains
 
     integer ( KDI ) :: &
       iV  !-- iValue
-    type ( CollectiveOperation_R_Form ) :: &
-      CO
     class ( GeometryFlatForm ), pointer :: &
       G
 
     G => C % Geometry ( )
 
-    call CO % Initialize &
-           ( C % Atlas % Communicator, nOutgoing = [ 1 ], nIncoming = [ 1 ] )
+    if ( C % nDimensions < 2 ) &
+      return
 
     associate &
-      (          R => G % Value ( :, G % CENTER_U ( 1 ) ), &
+      (      R_MW => C % RadiusCore, &
+           dTheta => C % WidthLeft ( 2 ) % Value ( 1 ) &
+                     +  C % WidthRight ( 2 ) % Value ( 1 ), &
+                 R => G % Value ( :, G % CENTER_U ( 1 ) ), &
              Theta => G % Value ( :, G % CENTER_U ( 2 ) ), &
-                dR => G % Value ( :, G % WIDTH_LEFT_U ( 1 ) )  &
-                      +  G % Value ( :, G % WIDTH_RIGHT_U ( 1 ) ), &
-            dTheta => G % Value ( :, G % WIDTH_LEFT_U ( 2 ) )  &
-                      +  G % Value ( :, G % WIDTH_RIGHT_U ( 2 ) ), &
-            Crsn_2 => G % Value ( :, G % COARSENING ( 2 ) ), &
-            Crsn_3 => G % Value ( :, G % COARSENING ( 3 ) ), &
-        MyMinWidth => CO % Outgoing % Value ( 1 ) )
+            Crsn_2 => G % Value ( :, G % COARSENING ( 2 ) ) )
       
-    MyMinWidth = huge ( 1.0_KDR )
-    do iV = 1, size ( R )
-      if ( R ( iV )  >  C % RadiusCore  &
-           .and.  R ( iV )  <  C % RadiusCore  +  dR ( iV ) ) &
-      then
-        MyMinWidth = min ( MyMinWidth, R ( iV ) * dTheta ( iV ) )
-      end if
-    end do !-- iV
-
-    call CO % Reduce ( REDUCTION % MIN )
-
-    C % MinWidth  =  CO % Incoming % Value ( 1 )
+    C % MinWidth  =  R_MW * dTheta
     call Show ( C % MinWidth, C % CoordinateUnit ( 1 ), 'MinWidth' )
 
     do iV = 1, size ( R )
@@ -220,19 +204,27 @@ contains
         cycle
       Crsn_2 ( iV )  =  1.0_KDR
       Coarsen_2: do
-        if ( Crsn_2 ( iV )  *  R ( iV )  *  dTheta ( iV )  >  C % MinWidth ) &
+        if ( Crsn_2 ( iV )  *  R ( iV )  *  dTheta  >  C % MinWidth ) &
           exit Coarsen_2
         Crsn_2 ( iV )  =  2.0_KDR  *  Crsn_2 ( iV )
       end do Coarsen_2
     end do !-- iV
+
+    if ( C % nDimensions < 3 ) &
+      return
+
+    associate &
+      (   dPhi => C % WidthLeft ( 3 ) % Value ( 1 ) &
+                  +  C % WidthRight ( 3 ) % Value ( 1 ), &
+        Crsn_3 => G % Value ( :, G % COARSENING ( 3 ) ) )
 
     do iV = 1, size ( R )
       if ( .not. C % IsProperCell ( iV ) ) &
         cycle
       Crsn_3 ( iV )  =  1.0_KDR
       Coarsen_3: do
-        if ( Crsn_3 ( iV )  *  R ( iV )  *  sin ( Theta ( iV ) )  &
-             *  dTheta ( iV )  >  C % MinWidth ) &
+        if ( Crsn_3 ( iV )  *  R ( iV )  *  sin ( Theta ( iV ) )  *  dPhi  &
+             >  C % MinWidth ) &
           exit Coarsen_3
         Crsn_3 ( iV )  =  2.0_KDR  *  Crsn_3 ( iV )
       end do Coarsen_3
@@ -240,7 +232,8 @@ contains
 
     nullify ( G )
 
-    end associate !-- R, etc.
+    end associate !-- dPhi, etc.
+    end associate !-- R_MW, etc.
 
   end subroutine SetCoarsening
 
