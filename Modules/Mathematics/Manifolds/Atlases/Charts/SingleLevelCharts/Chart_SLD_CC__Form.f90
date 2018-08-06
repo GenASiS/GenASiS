@@ -17,11 +17,17 @@ module Chart_SLD_CC__Form
     integer ( KDI ) :: &
       nCellsPolar, &
       nCellsCore
+    integer ( KDI ), dimension ( :, : ), allocatable :: &
+      nPillars_2, &
+      nPillars_3
     real ( KDR ) :: &
       RadiusCore, &
       RadiusMax, &
       RadialRatio, &  !-- nCellsRadial / nCellsPolar
       MinWidth
+    type ( CommunicatorForm ), allocatable :: &
+      Communicator_2, &
+      Communicator_3
   contains
     procedure, private, pass :: &
       Initialize_CC
@@ -31,6 +37,8 @@ module Chart_SLD_CC__Form
       ShowHeader
     procedure, public, pass :: &
       SetCoarsening
+    final :: &
+      Finalize
   end type Chart_SLD_CC_Form
 
 contains
@@ -179,7 +187,9 @@ contains
       C
 
     integer ( KDI ) :: &
-      iV  !-- iValue
+      iV, &          !-- iValue
+      iB, jB, kB, &  !-- iBrick, etc.
+      iC, jC, kC     !-- iCell, etc.
     class ( GeometryFlatForm ), pointer :: &
       G
 
@@ -188,16 +198,21 @@ contains
     if ( C % nDimensions < 2 ) &
       return
 
+    call Show ( 'SetCoarsening', C % IGNORABILITY )
+    call Show ( C % Name, 'Chart', C % IGNORABILITY )
+
     associate &
-      (      R_MW => C % RadiusCore, &
+      (       nCB => C % nCellsBrick, &
+             R_MW => C % RadiusCore, &
+              R_G => C % Center ( 1 ) % Value, &  !-- R_Global
            dTheta => C % WidthLeft ( 2 ) % Value ( 1 ) &
                      +  C % WidthRight ( 2 ) % Value ( 1 ), &
                  R => G % Value ( :, G % CENTER_U ( 1 ) ), &
-             Theta => G % Value ( :, G % CENTER_U ( 2 ) ), &
             Crsn_2 => G % Value ( :, G % COARSENING ( 2 ) ) )
       
     C % MinWidth  =  R_MW * dTheta
-    call Show ( C % MinWidth, C % CoordinateUnit ( 1 ), 'MinWidth' )
+    call Show ( C % MinWidth, C % CoordinateUnit ( 1 ), 'MinWidth', &
+                C % IGNORABILITY )
 
     do iV = 1, size ( R )
       if ( .not. C % IsProperCell ( iV ) ) &
@@ -210,13 +225,29 @@ contains
       end do Coarsen_2
     end do !-- iV
 
+    allocate ( C % nPillars_2 ( C % nBricks ( 1 ), C % nBricks ( 3 ) ) )
+    C % nPillars_2 = 0
+    do kB = 1, C % nBricks ( 3 )
+      do iB = 1, C % nBricks ( 1 )
+        do kC = ( kB - 1 ) * nCB ( 3 ) + 1, kB * nCB ( 3 )
+          do iC = ( iB - 1 ) * nCB ( 1 ) + 1, iB * nCB ( 1 )
+            if ( R_G ( iC ) * dTheta  <  C % MinWidth ) &
+              C % nPillars_2 ( iB, kB )  =  C % nPillars_2 ( iB, kB )  +  1
+          end do !-- iC
+        end do !-- kC
+      end do !-- iB
+    end do !-- kB
+    call Show ( C % nPillars_2, 'nPillars_2', C % IGNORABILITY )
+
     if ( C % nDimensions < 3 ) &
       return
 
     associate &
-      (   dPhi => C % WidthLeft ( 3 ) % Value ( 1 ) &
-                  +  C % WidthRight ( 3 ) % Value ( 1 ), &
-        Crsn_3 => G % Value ( :, G % COARSENING ( 3 ) ) )
+      ( Theta_G => C % Center ( 2 ) % Value, &  !-- Theta_Global
+           dPhi => C % WidthLeft ( 3 ) % Value ( 1 ) &
+                   +  C % WidthRight ( 3 ) % Value ( 1 ), &
+          Theta => G % Value ( :, G % CENTER_U ( 2 ) ), &
+         Crsn_3 => G % Value ( :, G % COARSENING ( 3 ) ) )
 
     do iV = 1, size ( R )
       if ( .not. C % IsProperCell ( iV ) ) &
@@ -230,12 +261,43 @@ contains
       end do Coarsen_3
     end do !-- iV
 
-    nullify ( G )
+    allocate ( C % nPillars_3 ( C % nBricks ( 1 ), C % nBricks ( 2 ) ) )
+    C % nPillars_3 = 0
+    do jB = 1, C % nBricks ( 2 )
+      do iB = 1, C % nBricks ( 1 )
+        do jC = ( jB - 1 ) * nCB ( 2 ) + 1, jB * nCB ( 2 )
+          do iC = ( iB - 1 ) * nCB ( 1 ) + 1, iB * nCB ( 1 )
+            if ( R_G ( iC ) * sin ( Theta_G ( jC ) ) * dPhi  <  C % MinWidth ) &
+              C % nPillars_3 ( iB, jB )  =  C % nPillars_3 ( iB, jB )  +  1
+          end do !-- iC
+        end do !-- jC
+      end do !-- iB
+    end do !-- jB
+    call Show ( C % nPillars_3, 'nPillars_3', C % IGNORABILITY )
 
     end associate !-- dPhi, etc.
-    end associate !-- R_MW, etc.
+    end associate !-- nCB, etc.
+
+    nullify ( G )
 
   end subroutine SetCoarsening
+
+
+  impure elemental subroutine Finalize ( C )
+
+    type ( Chart_SLD_CC_Form ), intent ( inout ) :: &
+      C
+
+    if ( allocated ( C % Communicator_3 ) ) &
+      deallocate ( C % Communicator_3 )
+    if ( allocated ( C % Communicator_2 ) ) &
+      deallocate ( C % Communicator_2 )
+    if ( allocated ( C % nPillars_3 ) ) &
+      deallocate ( C % nPillars_3 )
+    if ( allocated ( C % nPillars_2 ) ) &
+      deallocate ( C % nPillars_2 )
+
+  end subroutine Finalize
 
 
 end module Chart_SLD_CC__Form
