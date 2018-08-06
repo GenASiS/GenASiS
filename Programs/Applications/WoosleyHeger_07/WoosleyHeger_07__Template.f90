@@ -38,7 +38,8 @@ contains
       WH
 
     integer ( KDI ) :: &
-      iV  !-- iValue
+      iV, &  !-- iValue
+      iD     !-- iDimension
     real ( KDR ) :: &
       MD, &  !-- MassDensity
       SE     !-- SpecificEnergy
@@ -96,8 +97,18 @@ contains
     V_2 = 0.0_KDR
     V_3 = 0.0_KDR
 
-    call F % ComputeFromTemperature ( F % Value, G, G % Value )
     call C % ExchangeGhostData ( F )
+
+    do iD = 1, PS % nDimensions
+      associate &
+        ( iaI => PS % Connectivity % iaInner ( iD ), &
+          iaO => PS % Connectivity % iaOuter ( iD ) )
+      call PS % ApplyBoundaryConditions ( F, iD, iaI )
+      call PS % ApplyBoundaryConditions ( F, iD, iaO )
+      end associate !-- iaI, etc.
+    end do !-- iD
+
+    call F % ComputeFromTemperature ( F % Value, G, G % Value )
 
     end associate !-- N, etc.
     end select !-- C
