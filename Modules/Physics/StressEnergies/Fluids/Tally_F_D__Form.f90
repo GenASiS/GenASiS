@@ -437,7 +437,6 @@ contains
 
     associate ( Cnnct => CSL % Atlas % Connectivity )
     do iD = 1, CSL % nDimensions
-
       nB = shape ( BoundaryFluence ( 1, Cnnct % iaInner ( iD ) ) % Value )
 
       !-- Geometry
@@ -446,7 +445,6 @@ contains
       allocate ( X_3 ( nB ( 1 ), nB ( 2 ), nB ( 3 ) ) )
 
       do iF = 1, 2
-
         if ( iF == 1 ) then
           iC = Cnnct % iaInner ( iD )
         else if ( iF == 2 ) then
@@ -458,9 +456,7 @@ contains
             S_1 => BoundaryFluence ( iMomentum_1, iC ) % Value, &
             S_2 => BoundaryFluence ( iMomentum_2, iC ) % Value, &
             S_3 => BoundaryFluence ( iMomentum_3, iC ) % Value )
-
         call T % ComputeFacePositions ( CSL, G, iD, iF, X_1, X_2, X_3 )
-
         select case ( trim ( G % CoordinateSystem ) )
         case ( 'RECTANGULAR' )
           do iS = 1, T % nSelected
@@ -1086,7 +1082,8 @@ contains
         do iV = 1, nV ( 1 )
           I_I ( iV, jV, kV ) &
             =  cos ( X_2 ( iV, jV, kV ) )  *   S_1 ( iV, jV, kV ) &
-               -  sin ( X_2 ( iV, jV, kV ) )  /  X_1 ( iV, jV, kV ) &
+               -  sin ( X_2 ( iV, jV, kV ) ) &
+                    /  max ( X_1 ( iV, jV, kV ), sqrt ( tiny ( 0.0_KDR ) ) ) &
                   *  S_2 ( iV, jV, kV )
         end do
       end do
