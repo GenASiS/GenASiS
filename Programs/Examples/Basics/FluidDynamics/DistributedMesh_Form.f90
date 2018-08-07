@@ -533,51 +533,40 @@ contains
     CommunicatorSizeRoot &
       = DM % Communicator % Size ** ( 1.0_KDR / DM % nDimensions ) + 0.5_KDR
 
-    if &
-      ( CommunicatorSizeRoot ** DM % nDimensions &
-        /= DM % Communicator % Size ) &
-    then
-      call Show &
-             ( 'The square root  ( 2D ) or cube root  ( 3D ) of the number ' &
-               // 'of MPI processes must be an integer', &
-               CONSOLE % ERROR )
-      call Show &
-             ( DM % Communicator % Size, 'nProcesses', CONSOLE % ERROR )
-      call Show &
-             ( DM % nDimensions, 'nDimensions', CONSOLE % ERROR )
-      call Show &
-             ( DM % Communicator % Size ** ( 1.0_KDR / DM % nDimensions ), &
-               'nProcessesRoot', CONSOLE % ERROR )
+    DM % nBricks = 1
+    DM % nBricks ( : DM % nDimensions ) = CommunicatorSizeRoot
+    call PROGRAM_HEADER % GetParameter &
+           ( DM % nBricks ( : DM % nDimensions ), 'nBricks' )
+    
+    if ( product ( DM % nBricks ) /= DM % Communicator % Size ) then
+      call Show ( 'The total number of bricks must equal ' &
+                  // 'the number of MPI processes', CONSOLE % ERROR )
+      call Show ( DM % Communicator % Size, 'nProcesses', CONSOLE % ERROR )
+      call Show ( DM % nBricks ( 1 : DM % nDimensions ), 'nBricks', &
+                  CONSOLE % ERROR )
+      call Show ( product ( DM % nBricks ), 'product ( DM % nBricks )', &
+                  CONSOLE % ERROR )
+      call Show ( 'DistributedMesh_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'SetBrickDecomposition', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Communicator % Synchronize ( )
       call PROGRAM_HEADER % Abort ( )
     end if
-    
+
     do iD = 1, DM % nDimensions
-      if &
-        ( DM % nCells ( iD ) > 1 &
-         .and. mod ( DM % nCells ( iD ), CommunicatorSizeRoot ) /= 0 ) &
-      then
-        call Show &
-               ( 'The square root  ( 2D ) or cube root  ( 3D ) of the number '&
-                 // 'of MPI processes must divide evenly into ' &
-                 // 'nCells in each dimension', &
-                 CONSOLE % ERROR )
+      if ( mod ( DM % nCells ( iD ), DM % nBricks ( iD ) ) /= 0 ) then
+        call Show ( 'nBricks in each dimension must divide evenly into ' &
+                    // 'nCells in each dimension', CONSOLE % ERROR )
         call Show ( iD, 'iDimension', CONSOLE % ERROR )
-        call Show &
-               ( DM % nCells ( iD ), 'nTopLevelCells', &
-                 CONSOLE % ERROR )
-        call Show &
-               ( DM % Communicator % Size ** ( 1.0_KDR / DM % nDimensions ), &
-                 'nProcessesRoot', CONSOLE % ERROR )
-        call Show &
-               ( ( 1.0_KDR * DM % nCells ( iD ) ) / CommunicatorSizeRoot, &
-                 'nBricks', CONSOLE % ERROR )
+        call Show ( DM % nCells ( iD ), 'nCells', CONSOLE % ERROR )
+        call Show ( DM % nBricks ( iD ), 'nBricks', CONSOLE % ERROR )
+        call Show ( 'DistributedMesh_Form', 'module', CONSOLE % ERROR )
+        call Show ( 'SetBrickDecomposition', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Communicator % Synchronize ( )
         call PROGRAM_HEADER % Abort ( )
       end if
     end do
     
-    DM % nCellsPerBrick &
-      = max ( DM % nCells / CommunicatorSizeRoot, 1 )
-    DM % nBricks = DM % nCells / DM % nCellsPerBrick
+    DM % nCellsPerBrick = DM % nCells / DM % nBricks
     DM % iaBrick = BrickIndex ( DM )  
 
     DM % iaFirst = 1
