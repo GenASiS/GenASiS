@@ -12,7 +12,8 @@ module ConservationLawEvolution_Template
     integer ( KDI ) :: &
       iCycle, &
       nRampCycles, &
-      nWrite
+      nWrite, &
+      nCycles
     real ( KDR ) :: &
       CourantFactor, &
       StartTime, &
@@ -81,10 +82,13 @@ contains
     CLE % StartTime  = 0.0_KDR
     CLE % FinishTime = 1.0_KDR
     CLE % TimeUnit   = UNIT % IDENTITY
+    CLE % nCycles    = huge ( 1 )
     call PROGRAM_HEADER % GetParameter &
            ( CLE % StartTime, 'StartTime', InputUnitOption = CLE % TimeUnit )    
     call PROGRAM_HEADER % GetParameter &
            ( CLE % FinishTime, 'FinishTime', InputUnitOption = CLE % TimeUnit )
+    call PROGRAM_HEADER % GetParameter &
+           ( CLE % nCycles, 'nCycles' )
 
     CLE % nWrite = 100
     call PROGRAM_HEADER % GetParameter ( CLE % nWrite, 'nWrite' )
@@ -132,7 +136,8 @@ contains
     
     call T % Start ( ) 
 
-    do while ( CLE % Time < CLE % FinishTime )
+    do while ( CLE % Time < CLE % FinishTime &
+               .and. CLE % iCycle < CLE % nCycles )
 
       call Show ( 'Solving Conservation Equations', CONSOLE % INFO_2 )
 
