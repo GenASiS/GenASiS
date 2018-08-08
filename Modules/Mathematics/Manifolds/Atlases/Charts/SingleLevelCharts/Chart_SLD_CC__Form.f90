@@ -17,9 +17,6 @@ module Chart_SLD_CC__Form
     integer ( KDI ) :: &
       nCellsPolar, &
       nCellsCore
-    integer ( KDI ), dimension ( :, : ), allocatable :: &
-      nPillars_2, &
-      nPillars_3
     real ( KDR ) :: &
       RadiusCore, &
       RadiusMax, &
@@ -189,11 +186,21 @@ contains
     integer ( KDI ) :: &
       iV, &          !-- iValue
       iB, jB, kB, &  !-- iBrick, etc.
-      iC, jC, kC     !-- iCell, etc.
+      iC, jC, kC, &  !-- iCell, etc.
+      iR, &          !-- iRank
+      nRanks_2, &
+      nRanks_3
+    integer ( KDI ), dimension ( : ), allocatable :: &
+      Rank_2, Rank_3
+    integer ( KDI ), dimension ( :, : ), allocatable :: &
+      nPillars_2, &
+      nPillars_3
     class ( GeometryFlatForm ), pointer :: &
       G
 
     G => C % Geometry ( )
+
+    !-- Polar coarsening
 
     if ( C % nDimensions < 2 ) &
       return
@@ -202,13 +209,16 @@ contains
     call Show ( C % Name, 'Chart', C % IGNORABILITY )
 
     associate &
-      (       nCB => C % nCellsBrick, &
-             R_MW => C % RadiusCore, &
-              R_G => C % Center ( 1 ) % Value, &  !-- R_Global
-           dTheta => C % WidthLeft ( 2 ) % Value ( 1 ) &
-                     +  C % WidthRight ( 2 ) % Value ( 1 ), &
-                 R => G % Value ( :, G % CENTER_U ( 1 ) ), &
-            Crsn_2 => G % Value ( :, G % COARSENING ( 2 ) ) )
+      (   nB => C % nBricks, &
+         nCB => C % nCellsBrick, &
+        R_MW => C % RadiusCore )
+             
+    associate &
+      (    R_G => C % Center ( 1 ) % Value, &  !-- R_Global
+        dTheta => C % WidthLeft ( 2 ) % Value ( 1 ) &
+                  +  C % WidthRight ( 2 ) % Value ( 1 ), &
+             R => G % Value ( :, G % CENTER_U ( 1 ) ), &
+        Crsn_2 => G % Value ( :, G % COARSENING ( 2 ) ) )
       
     C % MinWidth  =  R_MW * dTheta
     call Show ( C % MinWidth, C % CoordinateUnit ( 1 ), 'MinWidth', &
@@ -225,19 +235,38 @@ contains
       end do Coarsen_2
     end do !-- iV
 
-    allocate ( C % nPillars_2 ( C % nBricks ( 1 ), C % nBricks ( 3 ) ) )
-    C % nPillars_2 = 0
-    do kB = 1, C % nBricks ( 3 )
-      do iB = 1, C % nBricks ( 1 )
+    allocate ( nPillars_2 ( nB ( 1 ), nB ( 3 ) ) )
+    nPillars_2 = 0
+    do kB = 1, nB ( 3 )
+      do iB = 1, nB ( 1 )
         do kC = ( kB - 1 ) * nCB ( 3 ) + 1, kB * nCB ( 3 )
           do iC = ( iB - 1 ) * nCB ( 1 ) + 1, iB * nCB ( 1 )
             if ( R_G ( iC ) * dTheta  <  C % MinWidth ) &
-              C % nPillars_2 ( iB, kB )  =  C % nPillars_2 ( iB, kB )  +  1
+              nPillars_2 ( iB, kB )  =  nPillars_2 ( iB, kB )  +  1
           end do !-- iC
         end do !-- kC
       end do !-- iB
     end do !-- kB
-    call Show ( C % nPillars_2, 'nPillars_2', C % IGNORABILITY )
+    call Show ( nPillars_2, 'nPillars_2', C % IGNORABILITY )
+
+    nRanks_2 = count ( nPillars_2 > 0 ) * nB ( 2 )
+    allocate ( Rank_2 ( nRanks_2 ) )
+    iR = 0
+    do kB = 1, nB ( 3 )
+      iLoop: do iB = 1, nB ( 1 )
+        if ( nPillars_2 ( iB, kB ) == 0 ) &
+          cycle iLoop
+        do jB = 1, nB ( 2 )
+          iR = iR + 1
+          Rank_2 ( iR ) = ( kB - 1 ) * nB ( 1 ) * nB ( 2 )  &
+                          +  ( jB - 1 ) * nB ( 1 )  &
+                          +  ( iB - 1 ) 
+        end do !-- jB
+      end do iLoop !-- iB
+    end do !-- kB
+    call Show ( Rank_2, 'Rank_2' )
+
+    !-- Azimuthal coarsening
 
     if ( C % nDimensions < 3 ) &
       return
@@ -261,22 +290,40 @@ contains
       end do Coarsen_3
     end do !-- iV
 
-    allocate ( C % nPillars_3 ( C % nBricks ( 1 ), C % nBricks ( 2 ) ) )
-    C % nPillars_3 = 0
-    do jB = 1, C % nBricks ( 2 )
-      do iB = 1, C % nBricks ( 1 )
+    allocate ( nPillars_3 ( nB ( 1 ), nB ( 2 ) ) )
+    nPillars_3 = 0
+    do jB = 1, nB ( 2 )
+      do iB = 1, nB ( 1 )
         do jC = ( jB - 1 ) * nCB ( 2 ) + 1, jB * nCB ( 2 )
           do iC = ( iB - 1 ) * nCB ( 1 ) + 1, iB * nCB ( 1 )
             if ( R_G ( iC ) * sin ( Theta_G ( jC ) ) * dPhi  <  C % MinWidth ) &
-              C % nPillars_3 ( iB, jB )  =  C % nPillars_3 ( iB, jB )  +  1
+              nPillars_3 ( iB, jB )  =  nPillars_3 ( iB, jB )  +  1
           end do !-- iC
         end do !-- jC
       end do !-- iB
     end do !-- jB
-    call Show ( C % nPillars_3, 'nPillars_3', C % IGNORABILITY )
+    call Show ( nPillars_3, 'nPillars_3', C % IGNORABILITY )
 
-    end associate !-- dPhi, etc.
-    end associate !-- nCB, etc.
+    nRanks_3 = count ( nPillars_3 > 0 ) * nB ( 3 )
+    allocate ( Rank_3 ( nRanks_3 ) )
+    iR = 0
+    do jB = 1, nB ( 2 )
+      iLoop: do iB = 1, nB ( 1 )
+        if ( nPillars_3 ( iB, jB ) == 0 ) &
+          cycle iLoop
+        do kB = 1, nB ( 3 )
+          iR = iR + 1
+          Rank_3 ( iR ) = ( kB - 1 ) * nB ( 1 ) * nB ( 2 )  &
+                          +  ( jB - 1 ) * nB ( 1 )  &
+                          +  ( iB - 1 ) 
+        end do !-- kB
+      end do iLoop !-- iB
+    end do !-- jB
+    call Show ( Rank_3, 'Rank_3' )
+
+    end associate !-- Theta_G, etc.
+    end associate !-- R_G, etc.
+    end associate !-- nB, etc.
 
     nullify ( G )
 
@@ -292,10 +339,6 @@ contains
       deallocate ( C % Communicator_3 )
     if ( allocated ( C % Communicator_2 ) ) &
       deallocate ( C % Communicator_2 )
-    if ( allocated ( C % nPillars_3 ) ) &
-      deallocate ( C % nPillars_3 )
-    if ( allocated ( C % nPillars_2 ) ) &
-      deallocate ( C % nPillars_2 )
 
   end subroutine Finalize
 
