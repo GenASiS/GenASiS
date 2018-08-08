@@ -247,7 +247,7 @@ contains
         end do !-- kC
       end do !-- iB
     end do !-- kB
-    call Show ( nPillars_2, 'nPillars_2', C % IGNORABILITY )
+    call Show ( nPillars_2, 'nPillars_2', C % IGNORABILITY + 1 )
 
     nRanks_2 = count ( nPillars_2 > 0 ) * nB ( 2 )
     allocate ( Rank_2 ( nRanks_2 ) )
@@ -264,7 +264,13 @@ contains
         end do !-- jB
       end do iLoop !-- iB
     end do !-- kB
-    call Show ( Rank_2, 'Rank_2' )
+    call Show ( Rank_2, 'Rank_2', C % IGNORABILITY + 1 )
+
+    allocate ( C % Communicator_2 )
+    associate ( Comm_2 => C % Communicator_2 )
+    call Comm_2 % Initialize &
+           ( C % Atlas % Communicator, Rank_2, NameOption = 'Coarsening_2' )
+    end associate !-- Comm_2
 
     !-- Azimuthal coarsening
 
@@ -302,7 +308,7 @@ contains
         end do !-- jC
       end do !-- iB
     end do !-- jB
-    call Show ( nPillars_3, 'nPillars_3', C % IGNORABILITY )
+    call Show ( nPillars_3, 'nPillars_3', C % IGNORABILITY + 1 )
 
     nRanks_3 = count ( nPillars_3 > 0 ) * nB ( 3 )
     allocate ( Rank_3 ( nRanks_3 ) )
@@ -319,7 +325,13 @@ contains
         end do !-- kB
       end do iLoop !-- iB
     end do !-- jB
-    call Show ( Rank_3, 'Rank_3' )
+    call Show ( Rank_3, 'Rank_3', C % IGNORABILITY + 1 )
+
+    allocate ( C % Communicator_3 )
+    associate ( Comm_3 => C % Communicator_3 )
+    call Comm_3 % Initialize &
+           ( C % Atlas % Communicator, Rank_3, NameOption = 'Coarsening_3' )
+    end associate !-- Comm_3
 
     end associate !-- Theta_G, etc.
     end associate !-- R_G, etc.
