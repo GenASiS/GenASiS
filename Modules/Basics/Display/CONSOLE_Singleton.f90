@@ -155,15 +155,10 @@ contains
     integer ( KDI ), intent ( in ) :: &
       DisplayRank
 
-    integer ( KDI ) :: &
-      DisplayRankOld
-
-    DisplayRankOld = CONSOLE % DisplayRank
+    call ShowMessage ( 'Modifying CONSOLE', CONSOLE % INFO_1 )
+    call ShowInteger ( DisplayRank, 'DisplayRank', CONSOLE % INFO_1 )
 
     CONSOLE % DisplayRank = DisplayRank
-
-    call ShowMessage ( 'Modifying CONSOLE', CONSOLE % INFO_1 )
-    call ShowInteger ( CONSOLE % DisplayRank, 'DisplayRank', CONSOLE % INFO_1 )
 
   end subroutine SetDisplayRank
   
