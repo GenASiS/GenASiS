@@ -12,6 +12,8 @@ module ConservationLawStep_Form
       ALPHA_PLUS  = 1, &
       ALPHA_MINUS = 2, &
       N_MODIFIED_SPEEDS = 2, &
+      iTimerCommunication, &
+      iTimerRKStep, &
       iTimerDifference, &
       iTimerReconstruction, &
       iTimerRiemannSolverInput, &
@@ -169,6 +171,10 @@ contains
     end associate !-- DM
     
     call PROGRAM_HEADER % AddTimer &
+           ( 'Communication', CLS % iTimerCommunication, Level = 1 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'RK Step', CLS % iTimerRKStep, Level = 1 )
+    call PROGRAM_HEADER % AddTimer &
            ( 'Update', CLS % iTimerUpdate, Level = 1 )
     call PROGRAM_HEADER % AddTimer &
            ( 'Difference', CLS % iTimerDifference, Level = 1 )
@@ -219,8 +225,10 @@ contains
         Current => CF, &
         Update  => CLS % Update, &
         iaC => CF % iaConserved, &
-        T_P => PROGRAM_HEADER % Timer ( CLS % iTimerPrimitive ), &
-        T_A => PROGRAM_HEADER % Timer ( CLS % iTimerAuxiliary ) )
+        T_C  => PROGRAM_HEADER % Timer ( CLS % iTimerCommunication ), &
+        T_RK => PROGRAM_HEADER % Timer ( CLS % iTimerRKStep ) )
+        
+    call T_RK % Start ( )
 
     call Old % Initialize ( [ Current % nValues, Current % N_CONSERVED ] )
     call Primitive % Initialize &
@@ -229,30 +237,36 @@ contains
     do iV = 1, Current % N_CONSERVED
       call Copy ( Current % Value ( :, iaC ( iV ) ), Old % Value ( :, iV ) )
     end do
-
+    
+    call T_RK % Stop ( )
     !-- Substep 1
 
     call CLS % ComputeUpdate ( TimeStep ) !-- K1 = dT * RHS
     
+    call T_RK % Start ( )
     do iV = 1, Current % N_CONSERVED
       !-- Current = Old + K1
       Current % Value ( :, iaC ( iV ) ) &
         = Old % Value ( :, iV ) + Update % Value ( :, iV )
     end do
     
-    !call T_P % Start ( )
     call Current % ComputePrimitive ( Current % Value )
-    !call T_P % Stop ( )
+    call T_RK % Stop ( )
+    call T_C % Start ( )
     call DM % StartGhostExchange ( Primitive )
-    !call T_A % Start ( )
+    call T_C % Stop ( )
+    call T_RK % Start ( )
     call Current % ComputeAuxiliary ( Current % Value )
-    !call T_A % Stop ( )
+    call T_RK % Stop ( )
+    call T_C % Start ( )
     call DM % FinishGhostExchange ( )
+    call T_C % Stop ( )
 
     !-- Substep 2
 
     call CLS % ComputeUpdate ( TimeStep ) !-- K2 = dT * RHS
     
+    call T_RK % Start ( )
     do iV = 1, Current % N_CONSERVED
       !-- Current = Old + 0.5 * ( k1 + k2 )
       !           = 0.5 Old + 0.5 ( Old + k1 + k2 )            
@@ -263,14 +277,17 @@ contains
                       + Current % Value ( :, iaC ( iV ) ) )
     end do
 
-    !call T_P % Start ( )
     call Current % ComputePrimitive ( Current % Value )
-    !call T_P % Stop ( )
+    call T_RK % Stop ( )
+    call T_C % Start ( )
     call DM % StartGhostExchange ( Primitive )
-    !call T_A % Start ( )
+    call T_C % Stop ( )
+    call T_RK % Start ( )
     call Current % ComputeAuxiliary ( Current % Value )
-    !call T_P % Stop ( )
+    call T_RK % Stop ( )
+    call T_C % Start ( )
     call DM % FinishGhostExchange ( )
+    call T_C % Stop ( )
     
     end associate !-- DM, etc.
     end associate !-- CF
