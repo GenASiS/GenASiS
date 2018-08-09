@@ -179,36 +179,36 @@ contains
     end associate !-- DM
     
     call PROGRAM_HEADER % AddTimer &
-           ( 'Communication', CLS % iTimerCommunication, Level = 1 )
+           ( 'Communication', CLS % iTimerCommunication, Level = 2 )
     call PROGRAM_HEADER % AddTimer &
-           ( 'RK Step', CLS % iTimerRKStep, Level = 1 )
+           ( 'RK Step', CLS % iTimerRKStep, Level = 2 )
     call PROGRAM_HEADER % AddTimer &
-           ( 'Update', CLS % iTimerUpdate, Level = 1 )
+           ( 'Update', CLS % iTimerUpdate, Level = 2 )
     call PROGRAM_HEADER % AddTimer &
-           ( 'Difference', CLS % iTimerDifference, Level = 1 )
+           ( 'Difference', CLS % iTimerDifference, Level = 2 )
     call PROGRAM_HEADER % AddTimer &
-           ( 'Reconstruction', CLS % iTimerReconstruction, Level = 1 )
+           ( 'Reconstruction', CLS % iTimerReconstruction, Level = 2 )
     call PROGRAM_HEADER % AddTimer &
-           ( 'RiemannSolverInput', CLS % iTimerRiemannSolverInput, Level = 1 )
+           ( 'RiemannSolverInput', CLS % iTimerRiemannSolverInput, Level = 2 )
     call PROGRAM_HEADER % AddTimer &
-           ( 'RawFluxes', CLS % iTimerRawFluxes, Level = 1 )
+           ( 'RawFluxes', CLS % iTimerRawFluxes, Level = 2 )
     call PROGRAM_HEADER % AddTimer &
-           ( 'Fluxes', CLS % iTimerFluxes, Level = 1 )
+           ( 'Fluxes', CLS % iTimerFluxes, Level = 2 )
     call PROGRAM_HEADER % AddTimer &
-           ( 'ComputePrimitive', CLS % iTimerPrimitive, Level = 1 )
+           ( 'ComputePrimitive', CLS % iTimerPrimitive, Level = 2 )
     call PROGRAM_HEADER % AddTimer &
-           ( 'ComputeConserved', CLS % iTimerConserved, Level = 1 )
+           ( 'ComputeConserved', CLS % iTimerConserved, Level = 2 )
     call PROGRAM_HEADER % AddTimer &
-           ( 'ComputeAuxiliary', CLS % iTimerAuxiliary, Level = 1 )
+           ( 'ComputeAuxiliary', CLS % iTimerAuxiliary, Level = 2 )
     call PROGRAM_HEADER % AddTimer &
            ( 'ApplyBoundaryConditions', CLS % iTimerBoundaryCondition, &
-             Level = 1 )
+             Level = 2 )
     call PROGRAM_HEADER % AddTimer &
            ( 'DataTransfer to Device', CLS % iTimerDataTransferDevice, &
-             Level = 1 )
+             Level = 2 )
     call PROGRAM_HEADER % AddTimer &
            ( 'DataTransfer to Host', CLS % iTimerDataTransferHost, &
-             Level = 1 )
+             Level = 2 )
     
   end subroutine Initialize
 
@@ -287,9 +287,6 @@ contains
     
     call T_C % Start ( )
     call DM % StartGhostExchange ( Primitive )
-    call T_C % Stop ( )
-    
-    call T_C % Start ( )
     call DM % FinishGhostExchange ( )
     call T_C % Stop ( )
     
@@ -332,9 +329,6 @@ contains
     
     call T_C % Start ( )
     call DM % StartGhostExchange ( Primitive )
-    call T_C % Stop ( )
-    
-    call T_C % Start ( )
     call DM % FinishGhostExchange ( )
     call T_C % Stop ( )
     
