@@ -189,12 +189,16 @@ contains
       iC, jC, kC, &  !-- iCell, etc.
       iR, &          !-- iRank
       nRanks_2, &
-      nRanks_3
+      nRanks_3, &
+      nPillarsTotal, &
+      nPillarsSurplus
     integer ( KDI ), dimension ( : ), allocatable :: &
-      Rank_2, Rank_3
+      Rank_2, Rank_3, &
+      nPillarsStart_2, nPillarsStart_3, &
+      nPillarsFinish_2, nPillarsFinish_3
     integer ( KDI ), dimension ( :, : ), allocatable :: &
-      nPillars_2, &
-      nPillars_3
+      nPillarsBrick_2, &
+      nPillarsBrick_3
     class ( GeometryFlatForm ), pointer :: &
       G
 
@@ -219,11 +223,13 @@ contains
                   +  C % WidthRight ( 2 ) % Value ( 1 ), &
              R => G % Value ( :, G % CENTER_U ( 1 ) ), &
         Crsn_2 => G % Value ( :, G % COARSENING ( 2 ) ) )
-      
+
+    !-- Determin MinWidth
     C % MinWidth  =  R_MW * dTheta
     call Show ( C % MinWidth, C % CoordinateUnit ( 1 ), 'MinWidth', &
                 C % IGNORABILITY )
 
+    !-- Set coarsening factor
     do iV = 1, size ( R )
       if ( .not. C % IsProperCell ( iV ) ) &
         cycle
@@ -235,26 +241,27 @@ contains
       end do Coarsen_2
     end do !-- iV
 
-    allocate ( nPillars_2 ( nB ( 1 ), nB ( 3 ) ) )
-    nPillars_2 = 0
+    !-- Count coarsening pillars in transverse brick space 
+    allocate ( nPillarsBrick_2 ( nB ( 1 ), nB ( 3 ) ) )
+    nPillarsBrick_2 = 0
     do kB = 1, nB ( 3 )
       do iB = 1, nB ( 1 )
         do kC = ( kB - 1 ) * nCB ( 3 ) + 1, kB * nCB ( 3 )
           do iC = ( iB - 1 ) * nCB ( 1 ) + 1, iB * nCB ( 1 )
             if ( R_G ( iC ) * dTheta  <  C % MinWidth ) &
-              nPillars_2 ( iB, kB )  =  nPillars_2 ( iB, kB )  +  1
+              nPillarsBrick_2 ( iB, kB )  =  nPillarsBrick_2 ( iB, kB )  +  1
           end do !-- iC
         end do !-- kC
       end do !-- iB
     end do !-- kB
-    call Show ( nPillars_2, 'nPillars_2', C % IGNORABILITY + 1 )
+    call Show ( nPillarsBrick_2, 'nPillarsBrick_2', C % IGNORABILITY + 1 )
 
-    nRanks_2 = count ( nPillars_2 > 0 ) * nB ( 2 )
+    nRanks_2 = count ( nPillarsBrick_2 > 0 ) * nB ( 2 )
     allocate ( Rank_2 ( nRanks_2 ) )
     iR = 0
     do kB = 1, nB ( 3 )
       iLoop: do iB = 1, nB ( 1 )
-        if ( nPillars_2 ( iB, kB ) == 0 ) &
+        if ( nPillarsBrick_2 ( iB, kB ) == 0 ) &
           cycle iLoop
         do jB = 1, nB ( 2 )
           iR = iR + 1
@@ -272,6 +279,14 @@ contains
            ( C % Atlas % Communicator, Rank_2, NameOption = 'Coarsening_2' )
     end associate !-- Comm_2
 
+    allocate ( nPillarsFinish_2 ( nRanks_2 ) )
+    nPillarsTotal = sum ( nPillarsBrick_2 )
+    nPillarsSurplus = mod ( nPillarsTotal, nPillarsTotal / nRanks_2 )
+    nPillarsFinish_2 = nPillarsTotal / nRanks_2
+    nPillarsFinish_2 ( : nPillarsSurplus ) &
+      = nPillarsFinish_2 ( : nPillarsSurplus ) + 1
+    call Show ( nPillarsFinish_2, 'nPillarsFinish_2', C % IGNORABILITY + 1 )
+
     !-- Azimuthal coarsening
 
     if ( C % nDimensions < 3 ) &
@@ -284,6 +299,7 @@ contains
           Theta => G % Value ( :, G % CENTER_U ( 2 ) ), &
          Crsn_3 => G % Value ( :, G % COARSENING ( 3 ) ) )
 
+    !-- Set coarsening factor
     do iV = 1, size ( R )
       if ( .not. C % IsProperCell ( iV ) ) &
         cycle
@@ -296,26 +312,27 @@ contains
       end do Coarsen_3
     end do !-- iV
 
-    allocate ( nPillars_3 ( nB ( 1 ), nB ( 2 ) ) )
-    nPillars_3 = 0
+    !-- Count coarsening pillars in transverse brick space 
+    allocate ( nPillarsBrick_3 ( nB ( 1 ), nB ( 2 ) ) )
+    nPillarsBrick_3 = 0
     do jB = 1, nB ( 2 )
       do iB = 1, nB ( 1 )
         do jC = ( jB - 1 ) * nCB ( 2 ) + 1, jB * nCB ( 2 )
           do iC = ( iB - 1 ) * nCB ( 1 ) + 1, iB * nCB ( 1 )
             if ( R_G ( iC ) * sin ( Theta_G ( jC ) ) * dPhi  <  C % MinWidth ) &
-              nPillars_3 ( iB, jB )  =  nPillars_3 ( iB, jB )  +  1
+              nPillarsBrick_3 ( iB, jB )  =  nPillarsBrick_3 ( iB, jB )  +  1
           end do !-- iC
         end do !-- jC
       end do !-- iB
     end do !-- jB
-    call Show ( nPillars_3, 'nPillars_3', C % IGNORABILITY + 1 )
+    call Show ( nPillarsBrick_3, 'nPillarsBrick_3', C % IGNORABILITY + 1 )
 
-    nRanks_3 = count ( nPillars_3 > 0 ) * nB ( 3 )
+    nRanks_3 = count ( nPillarsBrick_3 > 0 ) * nB ( 3 )
     allocate ( Rank_3 ( nRanks_3 ) )
     iR = 0
     do jB = 1, nB ( 2 )
       iLoop: do iB = 1, nB ( 1 )
-        if ( nPillars_3 ( iB, jB ) == 0 ) &
+        if ( nPillarsBrick_3 ( iB, jB ) == 0 ) &
           cycle iLoop
         do kB = 1, nB ( 3 )
           iR = iR + 1
@@ -332,6 +349,14 @@ contains
     call Comm_3 % Initialize &
            ( C % Atlas % Communicator, Rank_3, NameOption = 'Coarsening_3' )
     end associate !-- Comm_3
+
+    allocate ( nPillarsFinish_3 ( nRanks_3 ) )
+    nPillarsTotal = sum ( nPillarsBrick_3 )
+    nPillarsSurplus = mod ( nPillarsTotal, nPillarsTotal / nRanks_3 )
+    nPillarsFinish_3 = nPillarsTotal / nRanks_3
+    nPillarsFinish_3 ( : nPillarsSurplus ) &
+      = nPillarsFinish_3 ( : nPillarsSurplus ) + 1
+    call Show ( nPillarsFinish_3, 'nPillarsFinish_3', C % IGNORABILITY + 1 )
 
     end associate !-- Theta_G, etc.
     end associate !-- R_G, etc.
