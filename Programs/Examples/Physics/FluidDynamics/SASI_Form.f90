@@ -10,7 +10,7 @@ module SASI_Form
       CentralMass, &
       ShockRadius, &
       AdiabaticIndex, &
-      Accretion
+      AccretionRate
   contains
     procedure, public, pass :: &
       Initialize
@@ -57,7 +57,7 @@ contains
     call PROGRAM_HEADER % GetParameter ( R_S, 'ShockRadius' )
     Gamma  =  1.3_KDR 
     call PROGRAM_HEADER % GetParameter ( Gamma, 'AdiabaticIndex' )
-    AR     =  1.0e-6_KDR / ( 4 * Pi ) * UNIT % SOLAR_MASS / UNIT % SECOND
+    AR     =  0.3_KDR * UNIT % SOLAR_MASS / UNIT % SECOND
     call PROGRAM_HEADER % GetParameter ( AP, 'AccretionRate' )
 
     R_Out  = 2 * R_S
@@ -168,17 +168,17 @@ contains
           V_1 => F % Value ( :, F % VELOCITY_U ( 1 ) ), &
           V_2 => F % Value ( :, F % VELOCITY_U ( 2 ) ), &
           V_3 => F % Value ( :, F % VELOCITY_U ( 3 ) ), &
+           AR => SF % AccretionRate, &
             R => G % Value ( :, G % CENTER_U ( 1 ) ), &
-        Theta => G % Value ( :, G % CENTER_U ( 2 ) ) )
+        Theta => G % Value ( :, G % CENTER_U ( 2 ) ), &
+        FourPi)
 
     V_2 = 0.0_KDR
     V_3 = 0.0_KDR
 
-    where ( R < R_S )
-       
-
-    where ( N > 0.0_KDR )
-      V_3  =  sqrt ( Kappa * GC * M * R_In )  /  ( R * sin ( Theta ) ) ** 2
+    where ( R > R_S )
+      V_1  =  sqrt ( 2 * Kappa * GC * M * R_In )  / R  
+      N    =  AR / ( 
     elsewhere
       N    =    AP * N_Max  *  ( R / R_In ) ** ( - 1.5_KDR )
       V_1  =  - sqrt ( 2.0_KDR * GC * M / R )
