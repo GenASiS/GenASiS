@@ -194,8 +194,8 @@ contains
       nPillarsSurplus
     integer ( KDI ), dimension ( : ), allocatable :: &
       Rank_2, Rank_3, &
-      nPillarsStart_2, nPillarsStart_3, &
-      nPillarsFinish_2, nPillarsFinish_3
+      nPillarsSend_2, nPillarsSend_3, &
+      nPillarsReceive_2, nPillarsReceive_3
     integer ( KDI ), dimension ( :, : ), allocatable :: &
       nPillarsBrick_2, &
       nPillarsBrick_3
@@ -256,8 +256,12 @@ contains
     end do !-- kB
     call Show ( nPillarsBrick_2, 'nPillarsBrick_2', C % IGNORABILITY + 1 )
 
+    !-- Determine subcommunicator ranks and nPillars send and receive
     nRanks_2 = count ( nPillarsBrick_2 > 0 ) * nB ( 2 )
     allocate ( Rank_2 ( nRanks_2 ) )
+    allocate ( nPillarsSend_2 ( nRanks_2 ) )
+    allocate ( nPillarsReceive_2 ( nRanks_2 ) )
+
     iR = 0
     do kB = 1, nB ( 3 )
       iLoop: do iB = 1, nB ( 1 )
@@ -267,25 +271,28 @@ contains
           iR = iR + 1
           Rank_2 ( iR ) = ( kB - 1 ) * nB ( 1 ) * nB ( 2 )  &
                           +  ( jB - 1 ) * nB ( 1 )  &
-                          +  ( iB - 1 ) 
+                          +  ( iB - 1 )
+          nPillarsSend_2 ( iR ) = nPillarsBrick_2 ( iB, kB )
         end do !-- jB
       end do iLoop !-- iB
     end do !-- kB
-    call Show ( Rank_2, 'Rank_2', C % IGNORABILITY + 1 )
 
+    nPillarsTotal = sum ( nPillarsBrick_2 )
+    nPillarsSurplus = mod ( nPillarsTotal, nPillarsTotal / nRanks_2 )
+    nPillarsReceive_2 = nPillarsTotal / nRanks_2
+    nPillarsReceive_2 ( : nPillarsSurplus ) &
+      = nPillarsReceive_2 ( : nPillarsSurplus ) + 1
+
+    call Show ( Rank_2, 'Rank_2', C % IGNORABILITY + 1 )
+    call Show ( nPillarsSend_2, 'nPillarsSend_2', C % IGNORABILITY + 1 )
+    call Show ( nPillarsReceive_2, 'nPillarsReceive_2', C % IGNORABILITY + 1 )
+
+    !-- Create subcommunicator
     allocate ( C % Communicator_2 )
     associate ( Comm_2 => C % Communicator_2 )
     call Comm_2 % Initialize &
            ( C % Atlas % Communicator, Rank_2, NameOption = 'Coarsening_2' )
     end associate !-- Comm_2
-
-    allocate ( nPillarsFinish_2 ( nRanks_2 ) )
-    nPillarsTotal = sum ( nPillarsBrick_2 )
-    nPillarsSurplus = mod ( nPillarsTotal, nPillarsTotal / nRanks_2 )
-    nPillarsFinish_2 = nPillarsTotal / nRanks_2
-    nPillarsFinish_2 ( : nPillarsSurplus ) &
-      = nPillarsFinish_2 ( : nPillarsSurplus ) + 1
-    call Show ( nPillarsFinish_2, 'nPillarsFinish_2', C % IGNORABILITY + 1 )
 
     !-- Azimuthal coarsening
 
@@ -327,8 +334,12 @@ contains
     end do !-- jB
     call Show ( nPillarsBrick_3, 'nPillarsBrick_3', C % IGNORABILITY + 1 )
 
+    !-- Determine subcommunicator ranks and nPillars send and receive
     nRanks_3 = count ( nPillarsBrick_3 > 0 ) * nB ( 3 )
     allocate ( Rank_3 ( nRanks_3 ) )
+    allocate ( nPillarsSend_3 ( nRanks_3 ) )
+    allocate ( nPillarsReceive_3 ( nRanks_3 ) )
+
     iR = 0
     do jB = 1, nB ( 2 )
       iLoop: do iB = 1, nB ( 1 )
@@ -339,24 +350,27 @@ contains
           Rank_3 ( iR ) = ( kB - 1 ) * nB ( 1 ) * nB ( 2 )  &
                           +  ( jB - 1 ) * nB ( 1 )  &
                           +  ( iB - 1 ) 
+          nPillarsSend_3 ( iR ) = nPillarsBrick_3 ( iB, kB )
         end do !-- kB
       end do iLoop !-- iB
     end do !-- jB
-    call Show ( Rank_3, 'Rank_3', C % IGNORABILITY + 1 )
 
+    nPillarsTotal = sum ( nPillarsBrick_3 )
+    nPillarsSurplus = mod ( nPillarsTotal, nPillarsTotal / nRanks_3 )
+    nPillarsReceive_3 = nPillarsTotal / nRanks_3
+    nPillarsReceive_3 ( : nPillarsSurplus ) &
+      = nPillarsReceive_3 ( : nPillarsSurplus ) + 1
+
+    call Show ( Rank_3, 'Rank_3', C % IGNORABILITY + 1 )
+    call Show ( nPillarsSend_3, 'nPillarsSend_3', C % IGNORABILITY + 1 )
+    call Show ( nPillarsReceive_3, 'nPillarsReceive_3', C % IGNORABILITY + 1 )
+
+    !-- Create subcommunicator
     allocate ( C % Communicator_3 )
     associate ( Comm_3 => C % Communicator_3 )
     call Comm_3 % Initialize &
            ( C % Atlas % Communicator, Rank_3, NameOption = 'Coarsening_3' )
     end associate !-- Comm_3
-
-    allocate ( nPillarsFinish_3 ( nRanks_3 ) )
-    nPillarsTotal = sum ( nPillarsBrick_3 )
-    nPillarsSurplus = mod ( nPillarsTotal, nPillarsTotal / nRanks_3 )
-    nPillarsFinish_3 = nPillarsTotal / nRanks_3
-    nPillarsFinish_3 ( : nPillarsSurplus ) &
-      = nPillarsFinish_3 ( : nPillarsSurplus ) + 1
-    call Show ( nPillarsFinish_3, 'nPillarsFinish_3', C % IGNORABILITY + 1 )
 
     end associate !-- Theta_G, etc.
     end associate !-- R_G, etc.
