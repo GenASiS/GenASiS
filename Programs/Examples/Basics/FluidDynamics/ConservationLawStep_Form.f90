@@ -29,6 +29,7 @@ module ConservationLawStep_Form
     real ( KDR ) :: &
       LimiterParameter
     type ( StorageForm ) :: &
+      Old, &
       DifferenceLeft, &
       DifferenceRight, &
       ReconstructionInner, &
@@ -60,7 +61,9 @@ module ConservationLawStep_Form
     private :: &
       ComputeDifferencesKernel, &
       ComputeReconstructionKernel, &
-      ComputeFluxesKernel
+      ComputeFluxesKernel, &
+      AddUpdateKernel, &
+      CombineUpdatesKernel
 
 contains
 
@@ -81,6 +84,11 @@ contains
 
     associate ( DM => CF % DistributedMesh )
     associate ( nCells => DM % nProperCells + DM % nGhostCells )
+    
+    !-- Old
+    
+    call CLS % Old % Initialize ( [ nCells, CF % N_CONSERVED ] )
+    call CLS % Old % AllocateDevice ( )
 
     !-- Differences
 
@@ -215,7 +223,6 @@ contains
     integer ( KDI ) :: &
       iV  !-- iVariable
     type ( StorageForm ) :: &
-      Old, &
       Primitive
 
     associate &
@@ -223,68 +230,110 @@ contains
     associate &
       ( DM => CF % DistributedMesh, &
         Current => CF, &
+        Old => CLS % Old, &
         Update  => CLS % Update, &
         iaC => CF % iaConserved, &
         T_C  => PROGRAM_HEADER % Timer ( CLS % iTimerCommunication ), &
-        T_RK => PROGRAM_HEADER % Timer ( CLS % iTimerRKStep ) )
+        T_RK => PROGRAM_HEADER % Timer ( CLS % iTimerRKStep ), &
+        T_A  => PROGRAM_HEADER % Timer ( CLS % iTimerAuxiliary ), &
+        T_P  => PROGRAM_HEADER % Timer ( CLS % iTimerPrimitive ), &
+        T_DT_D  => PROGRAM_HEADER % Timer ( CLS % iTimerDataTransferDevice ), &
+        T_DT_H  => PROGRAM_HEADER % Timer ( CLS % iTimerDataTransferHost ) )
         
-    call T_RK % Start ( )
-
-    call Old % Initialize ( [ Current % nValues, Current % N_CONSERVED ] )
+    
     call Primitive % Initialize &
            ( Current, iaSelectedOption = Current % iaPrimitive )
 
-    do iV = 1, Current % N_CONSERVED
-      call Copy ( Current % Value ( :, iaC ( iV ) ), Old % Value ( :, iV ) )
-    end do
+    call T_DT_D % Start ( )
+    call Current % UpdateDevice ( )
+    call T_DT_D % Stop ( )
     
+    call T_RK % Start ( )
+    do iV = 1, Current % N_CONSERVED
+      call Copy ( Current % Value ( :, iaC ( iV ) ), &
+                  Current % D_Selected ( iaC ( iV ) ), &
+                  Old % D_Selected ( iV ), Old % Value ( :, iV ) )
+    end do
     call T_RK % Stop ( )
+    
     !-- Substep 1
-
+    
     call CLS % ComputeUpdate ( TimeStep ) !-- K1 = dT * RHS
     
     call T_RK % Start ( )
     do iV = 1, Current % N_CONSERVED
       !-- Current = Old + K1
-      Current % Value ( :, iaC ( iV ) ) &
-        = Old % Value ( :, iV ) + Update % Value ( :, iV )
+    !  Current % Value ( :, iaC ( iV ) ) &
+    !    = Old % Value ( :, iV ) + Update % Value ( :, iV )
+      call AddUpdateKernel &
+             ( Old % Value ( :, iV ), Update % Value ( :, iV ), &
+               Old % D_Selected ( iV ), Update % D_Selected ( iV ), &
+               Current % D_Selected ( iaC ( iV ) ), &
+               Current % Value ( :, iaC ( iV ) ) )
     end do
-    
-    call Current % ComputePrimitive ( Current % Value )
     call T_RK % Stop ( )
+    
+    call T_P % Start ( )
+    call Current % ComputePrimitive ( Current % Value, Current % D_Selected )
+    call T_P % Stop ( )
+    
+    call T_A % Start ( )
+    call Current % ComputeAuxiliary ( Current % Value, Current % D_Selected )
+    call T_A % Stop ( )
+    
+    call T_DT_H % Start ( )
+    call Current % UpdateHost ( ) 
+    call T_DT_H % Stop ( )
+    
     call T_C % Start ( )
     call DM % StartGhostExchange ( Primitive )
     call T_C % Stop ( )
-    call T_RK % Start ( )
-    call Current % ComputeAuxiliary ( Current % Value )
-    call T_RK % Stop ( )
+    
     call T_C % Start ( )
     call DM % FinishGhostExchange ( )
     call T_C % Stop ( )
-
+    
+    call T_DT_D % Start ( )
+    call Current % UpdateDevice ( )
+    call T_DT_D % Stop ( )
+    
     !-- Substep 2
-
+    
     call CLS % ComputeUpdate ( TimeStep ) !-- K2 = dT * RHS
     
     call T_RK % Start ( )
     do iV = 1, Current % N_CONSERVED
       !-- Current = Old + 0.5 * ( k1 + k2 )
       !           = 0.5 Old + 0.5 ( Old + k1 + k2 )            
-      Current % Value ( :, iaC ( iV ) ) &
-        = Current % Value ( :, iaC ( iV ) ) + Update % Value ( :, iV )
-      Current % Value ( :, iaC ( iV ) ) &
-        = 0.5_KDR * ( Old % Value ( :, iV ) &
-                      + Current % Value ( :, iaC ( iV ) ) )
+      !Current % Value ( :, iaC ( iV ) ) &
+      !  = Current % Value ( :, iaC ( iV ) ) + Update % Value ( :, iV )
+      !Current % Value ( :, iaC ( iV ) ) &
+      !  = 0.5_KDR * ( Old % Value ( :, iV ) &
+      !                + Current % Value ( :, iaC ( iV ) ) )
+      call CombineUpdatesKernel &
+             ( Current % Value ( :, iaC ( iV ) ), &
+               Old % Value ( :, iV ), Update % Value ( :, iV ), &
+               Current % D_Selected ( iaC ( iV ) ), &
+               Old % D_Selected ( iV ), Update % D_Selected ( iV ) )
     end do
-
-    call Current % ComputePrimitive ( Current % Value )
     call T_RK % Stop ( )
+    
+    call T_P % Start ( )
+    call Current % ComputePrimitive ( Current % Value, Current % D_Selected )
+    call T_P % Stop ( )
+    
+    call T_A % Start ( )
+    call Current % ComputeAuxiliary ( Current % Value, Current % D_Selected )
+    call T_A % Stop ( )
+    
+    call T_DT_H % Start ( )
+    call Current % UpdateHost ( ) 
+    call T_DT_H % Stop ( )
+    
     call T_C % Start ( )
     call DM % StartGhostExchange ( Primitive )
     call T_C % Stop ( )
-    call T_RK % Start ( )
-    call Current % ComputeAuxiliary ( Current % Value )
-    call T_RK % Stop ( )
+    
     call T_C % Start ( )
     call DM % FinishGhostExchange ( )
     call T_C % Stop ( )
@@ -308,18 +357,9 @@ contains
 
     associate ( CF => CLS % ConservedFields )
     associate ( DM => CF % DistributedMesh )
-    associate & 
-      ( T_DT_D  => PROGRAM_HEADER % Timer ( CLS % iTimerDataTransferDevice ), &
-        T_DT_H  => PROGRAM_HEADER % Timer ( CLS % iTimerDataTransferHost ), &
-        T_U => PROGRAM_HEADER % Timer ( CLS % iTimerUpdate ) )
+    associate ( T_U => PROGRAM_HEADER % Timer ( CLS % iTimerUpdate ) )
 
-    call Clear ( CLS % Update % Value )
-    
-    call T_DT_D % Start ( )
-    !-- FIXME: Need Clear ( ) on Device
-    call CLS % Update % UpdateDevice ( ) 
-    call CLS % ConservedFields % UpdateDevice ( )
-    call T_DT_D % Stop ( )
+    call Clear ( CLS % Update % D_Selected, CLS % Update % Value )
     
     do iD = 1, DM % nDimensions
 
@@ -341,10 +381,6 @@ contains
       call T_U % Stop ( )
 
     end do
-    
-    call T_DT_H % Start ( )
-    call CLS % Update % UpdateHost ( ) 
-    call T_DT_H % Stop ( )
     
     end associate !-- T_DT_D, etc.
     end associate !-- DM
@@ -368,7 +404,7 @@ contains
       dV_Right
 
     associate ( CF => CLS % ConservedFields )
-    associate ( DM  => CF % DistributedMesh )
+    associate ( DM => CF % DistributedMesh )
     associate &
       ( T_DT_D  => PROGRAM_HEADER % Timer ( CLS % iTimerDataTransferDevice ), &
         T_DT_H  => PROGRAM_HEADER % Timer ( CLS % iTimerDataTransferHost ), &
@@ -902,6 +938,78 @@ contains
     call DisassociateDevice ( dU )
 
   end subroutine ComputeUpdateKernel
+  
+  
+  subroutine AddUpdateKernel ( O, U, D_O, D_U, D_C, C )
+    
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      O, &
+      U
+    type ( c_ptr ), intent ( in ) :: &
+      D_O, &
+      D_U, &
+      D_C
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      C 
+      
+    integer ( KDI ) :: &
+      iV, &
+      nV
+    
+    call AssociateDevice ( D_O, O )
+    call AssociateDevice ( D_U, U )
+    call AssociateDevice ( D_C, C )
+    
+    nV = size ( O )
+    
+    !$OMP  target teams distribute parallel do &
+    !$OMP& schedule ( static, 1 )
+    do iV = 1, nV
+      C ( iV ) = O ( iV ) + U ( iV )
+    end do
+    !$OMP end target teams distribute parallel do
+    
+    call DisassociateDevice ( C )
+    call DisassociateDevice ( U )
+    call DisassociateDevice ( O )
 
+  end subroutine AddUpdateKernel
+  
+  
+  subroutine CombineUpdatesKernel ( C, O, U, D_C, D_O, D_U )
+    
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      C 
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      O, &
+      U
+    type ( c_ptr ), intent ( in ) :: &
+      D_C, &
+      D_O, &
+      D_U
+      
+    integer ( KDI ) :: &
+      iV, &
+      nV
+    
+    call AssociateDevice ( D_C, C )    
+    call AssociateDevice ( D_O, O )
+    call AssociateDevice ( D_U, U )
+    
+    nV = size ( O )
+    
+    !$OMP  target teams distribute parallel do &
+    !$OMP& schedule ( static, 1 )
+    do iV = 1, nV
+      C ( iV ) = 0.5_KDR * ( O ( iV ) + ( C ( iV ) + U ( iV ) ) )
+    end do
+    !$OMP end target teams distribute parallel do
+    
+    call DisassociateDevice ( U )
+    call DisassociateDevice ( O )
+    call DisassociateDevice ( C )
+
+  end subroutine CombineUpdatesKernel
+  
 
 end module ConservationLawStep_Form

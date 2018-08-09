@@ -39,7 +39,9 @@ module PressurelessFluid_Form
     generic :: &
       ComputeConserved => ComputeConservedHost, ComputeConservedDevice
     procedure, public, pass :: &
-      ComputePrimitive
+      ComputePrimitiveHost
+    procedure, public, pass :: &
+      ComputePrimitiveDevice
     procedure, public, pass :: &
       ComputeAuxiliaryHost
     procedure, public, pass :: &
@@ -170,7 +172,7 @@ contains
   end subroutine ComputeConservedDevice
   
 
-  subroutine ComputePrimitive ( CF, Value )
+  subroutine ComputePrimitiveHost ( CF, Value )
     
     class ( PressurelessFluidForm ), intent ( inout ) :: &
       CF
@@ -187,7 +189,37 @@ contains
              Value ( :, CF % MOMENTUM_DENSITY ( 2 ) ), &
              Value ( :, CF % MOMENTUM_DENSITY ( 3 ) ) )
   
-  end subroutine ComputePrimitive
+  end subroutine ComputePrimitiveHost
+  
+  
+  subroutine ComputePrimitiveDevice ( CF, Value, D_Value )
+    
+    class ( PressurelessFluidForm ), intent ( inout ) :: &
+      CF
+    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+      Value
+    type  ( c_ptr ), dimension ( : ), intent ( in ) :: &
+      D_Value
+   
+    call ComputePrimitiveKernelDevice &
+           ( Value ( :, CF % COMOVING_DENSITY ), &
+             Value ( :, CF % VELOCITY ( 1 ) ), &
+             Value ( :, CF % VELOCITY ( 2 ) ), &
+             Value ( :, CF % VELOCITY ( 3 ) ), &
+             Value ( :, CF % CONSERVED_DENSITY ), &
+             Value ( :, CF % MOMENTUM_DENSITY ( 1 ) ), &
+             Value ( :, CF % MOMENTUM_DENSITY ( 2 ) ), &
+             Value ( :, CF % MOMENTUM_DENSITY ( 3 ) ), &
+             D_Value ( CF % COMOVING_DENSITY ), &
+             D_Value ( CF % VELOCITY ( 1 ) ), &
+             D_Value ( CF % VELOCITY ( 2 ) ), &
+             D_Value ( CF % VELOCITY ( 3 ) ), &
+             D_Value ( CF % CONSERVED_DENSITY ), &
+             D_Value ( CF % MOMENTUM_DENSITY ( 1 ) ), &
+             D_Value ( CF % MOMENTUM_DENSITY ( 2 ) ), &
+             D_Value ( CF % MOMENTUM_DENSITY ( 3 ) ) )
+  
+  end subroutine ComputePrimitiveDevice
   
   
   subroutine ComputeAuxiliaryHost ( CF, Value )
@@ -874,6 +906,68 @@ contains
   end subroutine ComputePrimitiveKernel
 
 
+  subroutine ComputePrimitiveKernelDevice &
+               ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, &
+                 D_N, D_V_1, D_V_2, D_V_3, D_D, D_S_1, D_S_2, D_S_3 )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      N, &
+      V_1, V_2, V_3, &
+      D, &
+      S_1, S_2, S_3
+    type ( c_ptr ), intent ( in ) :: &
+      D_N, &
+      D_V_1, D_V_2, D_V_3, &
+      D_D, &
+      D_S_1, D_S_2, D_S_3
+      
+    integer ( KDI ) :: &
+      iV
+
+
+    call Copy ( D, D_D, D_N, N )
+    
+    call AssociateDevice ( D_N, N )
+    call AssociateDevice ( D_V_1, V_1 )
+    call AssociateDevice ( D_V_2, V_2 )
+    call AssociateDevice ( D_V_3, V_3 )
+    call AssociateDevice ( D_D, D )
+    call AssociateDevice ( D_S_1, S_1 )
+    call AssociateDevice ( D_S_2, S_2 )
+    call AssociateDevice ( D_S_3, S_3 )
+    
+    !$OMP  target teams distribute parallel do &
+    !$OMP& schedule ( static, 1 )
+    do iV = 1, size ( N )
+      if ( N ( iV ) > 0.0_KDR ) then
+        V_1 ( iV ) = S_1 ( iV ) / N ( iV )
+        V_2 ( iV ) = S_2 ( iV ) / N ( iV )
+        V_3 ( iV ) = S_3 ( iV ) / N ( iV )
+      else
+        N   ( iV )= 0.0_KDR
+        V_1 ( iV ) = 0.0_KDR
+        V_2 ( iV ) = 0.0_KDR
+        V_3 ( iV ) = 0.0_KDR
+        D   ( iV ) = 0.0_KDR
+        S_1 ( iV ) = 0.0_KDR
+        S_2 ( iV ) = 0.0_KDR
+        S_3 ( iV ) = 0.0_KDR
+      end if
+    end do
+    !$OMP end target teams distribute parallel do
+    
+    call DisassociateDevice ( S_3 )
+    call DisassociateDevice ( S_2 )
+    call DisassociateDevice ( S_1 )
+    call DisassociateDevice ( D )
+    call DisassociateDevice ( V_3 )
+    call DisassociateDevice ( V_2 )
+    call DisassociateDevice ( V_1 )
+    call DisassociateDevice ( N )
+    
+  end subroutine ComputePrimitiveKernelDevice
+
+  
   subroutine ComputeEigenspeedsKernel &
                ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3 )
 

@@ -6,6 +6,7 @@ module Copy_Command
 
   use iso_c_binding
   use Specifiers
+  use Devices
 
   implicit none
   private
@@ -30,6 +31,7 @@ module Copy_Command
     module procedure CopyReal_1D
     module procedure CopyReal_2D
     module procedure CopyReal_3D
+    module procedure CopyReal_1D_Device
 !     module procedure CopyReal_1D_Section
 !     module procedure CopyReal_2D_Section
 !     module procedure CopyReal_3D_Section
@@ -361,6 +363,40 @@ contains
     !$OMP end parallel do
 
   end subroutine CopyReal_3D
+  
+  
+  subroutine CopyReal_1D_Device ( A, D_A, D_B, B )
+
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      A
+    type ( c_ptr ), intent ( in ) :: &
+      D_A
+    type ( c_ptr ), intent ( in ) :: &
+      D_B
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      B
+    
+    integer ( KDI ) :: &
+      iV, &
+      nV
+      
+    call AssociateDevice ( D_A, A )
+    call AssociateDevice ( D_B, B )
+
+    nV = size ( A )
+    
+    !$OMP  target teams distribute parallel do &
+    !$OMP& schedule ( static, 1 )
+    do iV = 1, nV
+      B ( iV ) = A ( iV )
+    end do
+    !$OMP end target teams distribute parallel do
+    
+    call DisassociateDevice ( B )
+    call DisassociateDevice ( A )
+
+  end subroutine CopyReal_1D_Device
+  
   
   
   ! subroutine CopyReal_1D_Section ( A, oSource, oTarget, nValues, B )

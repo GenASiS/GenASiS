@@ -5,7 +5,9 @@
 
 module Clear_Command
 
+  use iso_c_binding
   use Specifiers
+  use Devices
 
   implicit none
   private
@@ -25,6 +27,8 @@ module Clear_Command
     module procedure ClearReal_1D
     module procedure ClearReal_2D
     module procedure ClearReal_3D
+    module procedure ClearReal_1D_Device
+    module procedure ClearReal_2D_Device
     ! module procedure ClearReal_4D
     ! module procedure ClearComplex_1D
     ! module procedure ClearComplex_2D
@@ -198,6 +202,53 @@ contains
     !$OMP end parallel do
 
   end subroutine ClearReal_3D
+  
+  
+  subroutine ClearReal_1D_Device ( D_A, A )
+
+    type ( c_ptr ), intent ( in ) :: &
+      D_A
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      A
+    
+    integer ( KDI ) :: &
+      iV, &
+      nV
+
+    nV = size ( A )
+    
+    call AssociateDevice ( D_A, A )
+    
+    !$OMP  target teams distribute parallel do &
+    !$OMP& schedule ( static, 1 )
+    do iV = 1, nV
+      A ( iV ) = 0.0_KDR
+    end do
+    !$OMP end target teams distribute parallel do
+    
+    call DisassociateDevice ( A )
+
+  end subroutine ClearReal_1D_Device
+  
+
+  subroutine ClearReal_2D_Device ( D_A, A )
+
+    type ( c_ptr ), dimension ( : ), intent ( in ) :: &
+      D_A
+    real ( KDR ), dimension ( :, : ), intent ( out ) :: &
+      A
+    
+    integer ( KDI ) :: &
+      iV, &
+      nV
+
+    nV = size ( A, dim = 2 )
+
+    do iV = 1, nV
+      call Clear ( D_A ( iV ), A ( :, iV ) )
+    end do
+    
+  end subroutine ClearReal_2D_Device
   
   
   ! subroutine ClearReal_4D ( A )

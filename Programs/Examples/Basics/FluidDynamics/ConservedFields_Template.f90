@@ -45,7 +45,11 @@ module ConservedFields_Template
     generic :: &
       ComputeConserved => ComputeConservedHost, ComputeConservedDevice
     procedure ( ComputeInterface ), public, pass, deferred :: &
-      ComputePrimitive
+      ComputePrimitiveHost
+    procedure ( ComputeDeviceInterface ), public, pass, deferred :: &
+      ComputePrimitiveDevice
+    generic :: &
+      ComputePrimitive => ComputePrimitiveHost, ComputePrimitiveDevice
     procedure ( ComputeInterface ), public, pass, deferred :: &
       ComputeAuxiliaryHost
     procedure ( ComputeDeviceInterface ), public, pass, deferred :: &
