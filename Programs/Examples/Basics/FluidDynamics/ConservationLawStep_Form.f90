@@ -240,7 +240,6 @@ contains
         T_DT_D  => PROGRAM_HEADER % Timer ( CLS % iTimerDataTransferDevice ), &
         T_DT_H  => PROGRAM_HEADER % Timer ( CLS % iTimerDataTransferHost ) )
         
-    
     call Primitive % Initialize &
            ( Current, iaSelectedOption = Current % iaPrimitive )
 
