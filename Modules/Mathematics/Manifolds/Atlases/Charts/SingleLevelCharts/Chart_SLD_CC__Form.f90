@@ -188,17 +188,20 @@ contains
       iB, jB, kB, &  !-- iBrick, etc.
       iC, jC, kC, &  !-- iCell, etc.
       iR, &          !-- iRank
+      iRR, iRS, &    !-- iRankReceive, Send
+      iPR, iPS, &    !-- iPillarReceive, Send
       nRanks_2, &
       nRanks_3, &
       nPillarsTotal, &
       nPillarsSurplus
     integer ( KDI ), dimension ( : ), allocatable :: &
       Rank_2, Rank_3, &
-      nPillarsSend_2, nPillarsSend_3, &
-      nPillarsReceive_2, nPillarsReceive_3
+      nPillars_2, nPillars_3, &
+      nSegmentsFrom_2, nSegmentsFrom_3, &
+      nSegmentsTo_2, nSegmentsTo_3
     integer ( KDI ), dimension ( :, : ), allocatable :: &
-      nPillarsBrick_2, &
-      nPillarsBrick_3
+      nPillarsTransverse_2, &
+      nPillarsTransverse_3
     class ( GeometryFlatForm ), pointer :: &
       G
 
@@ -209,7 +212,7 @@ contains
     if ( C % nDimensions < 2 ) &
       return
 
-    call Show ( 'SetCoarsening', C % IGNORABILITY )
+    call Show ( 'SetCoarsening_2', C % IGNORABILITY )
     call Show ( C % Name, 'Chart', C % IGNORABILITY )
 
     associate &
@@ -242,50 +245,48 @@ contains
     end do !-- iV
 
     !-- Count coarsening pillars in transverse brick space 
-    allocate ( nPillarsBrick_2 ( nB ( 1 ), nB ( 3 ) ) )
-    nPillarsBrick_2 = 0
+    allocate ( nPillarsTransverse_2 ( nB ( 1 ), nB ( 3 ) ) )
+    nPillarsTransverse_2 = 0
     do kB = 1, nB ( 3 )
       do iB = 1, nB ( 1 )
         do kC = ( kB - 1 ) * nCB ( 3 ) + 1, kB * nCB ( 3 )
           do iC = ( iB - 1 ) * nCB ( 1 ) + 1, iB * nCB ( 1 )
             if ( R_G ( iC ) * dTheta  <  C % MinWidth ) &
-              nPillarsBrick_2 ( iB, kB )  =  nPillarsBrick_2 ( iB, kB )  +  1
+              nPillarsTransverse_2 ( iB, kB )  &
+                =  nPillarsTransverse_2 ( iB, kB )  +  1
           end do !-- iC
         end do !-- kC
       end do !-- iB
     end do !-- kB
-    call Show ( nPillarsBrick_2, 'nPillarsBrick_2', C % IGNORABILITY + 1 )
+    call Show ( nPillarsTransverse_2, 'nPillarsTransverse_2', &
+                C % IGNORABILITY + 1 )
 
-    !-- Determine subcommunicator ranks and nPillars send and receive
-    nRanks_2 = count ( nPillarsBrick_2 > 0 ) * nB ( 2 )
-    allocate ( Rank_2 ( nRanks_2 ) )
-    allocate ( nPillarsSend_2 ( nRanks_2 ) )
-    allocate ( nPillarsReceive_2 ( nRanks_2 ) )
+    !-- Determine pillar distribution
+    nRanks_2 = count ( nPillarsTransverse_2 > 0 ) * nB ( 2 )
+    allocate ( nPillars_2 ( 0 : nRanks_2 - 1 ) )
+    nPillarsTotal = sum ( nPillarsTransverse_2 )
+    nPillarsSurplus = mod ( nPillarsTotal, nPillarsTotal / nRanks_2 )
+    nPillars_2 = nPillarsTotal / nRanks_2
+    nPillars_2 ( 0 : nPillarsSurplus - 1 ) &
+      = nPillars_2 ( 0 : nPillarsSurplus - 1 ) + 1
+    call Show ( nPillars_2, 'nPillars_2', C % IGNORABILITY + 1 )
 
+    !-- Determine subcommunicator ranks
+    allocate ( Rank_2 ( 0 : nRanks_2 - 1 ) )
     iR = 0
     do kB = 1, nB ( 3 )
       iLoop: do iB = 1, nB ( 1 )
-        if ( nPillarsBrick_2 ( iB, kB ) == 0 ) &
+        if ( nPillarsTransverse_2 ( iB, kB ) == 0 ) &
           cycle iLoop
         do jB = 1, nB ( 2 )
-          iR = iR + 1
           Rank_2 ( iR ) = ( kB - 1 ) * nB ( 1 ) * nB ( 2 )  &
                           +  ( jB - 1 ) * nB ( 1 )  &
                           +  ( iB - 1 )
-          nPillarsSend_2 ( iR ) = nPillarsBrick_2 ( iB, kB )
+          iR = iR + 1
         end do !-- jB
       end do iLoop !-- iB
     end do !-- kB
-
-    nPillarsTotal = sum ( nPillarsBrick_2 )
-    nPillarsSurplus = mod ( nPillarsTotal, nPillarsTotal / nRanks_2 )
-    nPillarsReceive_2 = nPillarsTotal / nRanks_2
-    nPillarsReceive_2 ( : nPillarsSurplus ) &
-      = nPillarsReceive_2 ( : nPillarsSurplus ) + 1
-
     call Show ( Rank_2, 'Rank_2', C % IGNORABILITY + 1 )
-    call Show ( nPillarsSend_2, 'nPillarsSend_2', C % IGNORABILITY + 1 )
-    call Show ( nPillarsReceive_2, 'nPillarsReceive_2', C % IGNORABILITY + 1 )
 
     !-- Create subcommunicator
     allocate ( C % Communicator_2 )
@@ -294,10 +295,41 @@ contains
            ( C % Atlas % Communicator, Rank_2, NameOption = 'Coarsening_2' )
     end associate !-- Comm_2
 
+!     if ( Comm_2 % Initialized ) then
+
+!       !-- Determine nSegmentsFrom and nSegmentsTo
+!       allocate ( nSegmentsFrom_2 ( nRanks_2 ) )
+!       allocate ( nSegmentsTo_2 ( nRanks_2 ) )
+!       iRR = 0
+!       iP  = 0
+!       do kB = 1, nB ( 3 )
+!         do iB = 1, nB ( 1 )
+!           if ( nPillarsTransverse_2 ( iB, kB ) == 0 ) &
+!             cycle iLoop
+!           do kC = ( kB - 1 ) * nCB ( 3 ) + 1, kB * nCB ( 3 )
+!             do iC = ( iB - 1 ) * nCB ( 1 ) + 1, iB * nCB ( 1 )
+!               iP = iP + 1
+!               if ( iP == nSegmentsReceive_2 ( iRR ) ) then
+!                 if ( iRR - 1 == Comm_2 % Rank ) then
+! !                  nSegmentsFrom_2 ( ) = 
+!                 end if
+!                 iRR = iRR + 1
+!                 iP  = 0
+!               end if
+!             end do !-- iC
+!           end do !-- kC
+!         end do !-- iB
+!       end do !-- kB
+
+!     end if
+
     !-- Azimuthal coarsening
 
     if ( C % nDimensions < 3 ) &
       return
+
+    call Show ( 'SetCoarsening_3', C % IGNORABILITY )
+    call Show ( C % Name, 'Chart', C % IGNORABILITY )
 
     associate &
       ( Theta_G => C % Center ( 2 ) % Value, &  !-- Theta_Global
@@ -320,50 +352,48 @@ contains
     end do !-- iV
 
     !-- Count coarsening pillars in transverse brick space 
-    allocate ( nPillarsBrick_3 ( nB ( 1 ), nB ( 2 ) ) )
-    nPillarsBrick_3 = 0
+    allocate ( nPillarsTransverse_3 ( nB ( 1 ), nB ( 2 ) ) )
+    nPillarsTransverse_3 = 0
     do jB = 1, nB ( 2 )
       do iB = 1, nB ( 1 )
         do jC = ( jB - 1 ) * nCB ( 2 ) + 1, jB * nCB ( 2 )
           do iC = ( iB - 1 ) * nCB ( 1 ) + 1, iB * nCB ( 1 )
             if ( R_G ( iC ) * sin ( Theta_G ( jC ) ) * dPhi  <  C % MinWidth ) &
-              nPillarsBrick_3 ( iB, jB )  =  nPillarsBrick_3 ( iB, jB )  +  1
+              nPillarsTransverse_3 ( iB, jB )  &
+                =  nPillarsTransverse_3 ( iB, jB )  +  1
           end do !-- iC
         end do !-- jC
       end do !-- iB
     end do !-- jB
-    call Show ( nPillarsBrick_3, 'nPillarsBrick_3', C % IGNORABILITY + 1 )
+    call Show ( nPillarsTransverse_3, 'nPillarsTransverse_3', &
+                C % IGNORABILITY + 1 )
 
-    !-- Determine subcommunicator ranks and nPillars send and receive
-    nRanks_3 = count ( nPillarsBrick_3 > 0 ) * nB ( 3 )
-    allocate ( Rank_3 ( nRanks_3 ) )
-    allocate ( nPillarsSend_3 ( nRanks_3 ) )
-    allocate ( nPillarsReceive_3 ( nRanks_3 ) )
+    !-- Determine pillar distribution
+    nRanks_3 = count ( nPillarsTransverse_3 > 0 ) * nB ( 3 )
+    allocate ( nPillars_3 ( 0 : nRanks_3 - 1 ) )
+    nPillarsTotal = sum ( nPillarsTransverse_3 )
+    nPillarsSurplus = mod ( nPillarsTotal, nPillarsTotal / nRanks_3 )
+    nPillars_3 = nPillarsTotal / nRanks_3
+    nPillars_3 ( 0 : nPillarsSurplus - 1 ) &
+      = nPillars_3 ( 0 : nPillarsSurplus - 1 ) + 1
+    call Show ( nPillars_3, 'nPillars_3', C % IGNORABILITY + 1 )
 
+    !-- Determine subcommunicator ranks
+    allocate ( Rank_3 ( 0 : nRanks_3 - 1 ) )
     iR = 0
     do jB = 1, nB ( 2 )
       iLoop: do iB = 1, nB ( 1 )
-        if ( nPillarsBrick_3 ( iB, jB ) == 0 ) &
+        if ( nPillarsTransverse_3 ( iB, jB ) == 0 ) &
           cycle iLoop
         do kB = 1, nB ( 3 )
-          iR = iR + 1
           Rank_3 ( iR ) = ( kB - 1 ) * nB ( 1 ) * nB ( 2 )  &
                           +  ( jB - 1 ) * nB ( 1 )  &
                           +  ( iB - 1 ) 
-          nPillarsSend_3 ( iR ) = nPillarsBrick_3 ( iB, kB )
+          iR = iR + 1
         end do !-- kB
       end do iLoop !-- iB
     end do !-- jB
-
-    nPillarsTotal = sum ( nPillarsBrick_3 )
-    nPillarsSurplus = mod ( nPillarsTotal, nPillarsTotal / nRanks_3 )
-    nPillarsReceive_3 = nPillarsTotal / nRanks_3
-    nPillarsReceive_3 ( : nPillarsSurplus ) &
-      = nPillarsReceive_3 ( : nPillarsSurplus ) + 1
-
     call Show ( Rank_3, 'Rank_3', C % IGNORABILITY + 1 )
-    call Show ( nPillarsSend_3, 'nPillarsSend_3', C % IGNORABILITY + 1 )
-    call Show ( nPillarsReceive_3, 'nPillarsReceive_3', C % IGNORABILITY + 1 )
 
     !-- Create subcommunicator
     allocate ( C % Communicator_3 )
@@ -378,6 +408,7 @@ contains
 
     nullify ( G )
 
+call PROGRAM_HEADER % Abort ( )
   end subroutine SetCoarsening
 
 
