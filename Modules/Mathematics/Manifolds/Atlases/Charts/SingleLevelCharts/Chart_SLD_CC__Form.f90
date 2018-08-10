@@ -188,8 +188,8 @@ contains
       iB, jB, kB, &  !-- iBrick, etc.
       iC, jC, kC, &  !-- iCell, etc.
       iR, &          !-- iRank
-      iRR, iRS, &    !-- iRankReceive, Send
-      iPR, iPS, &    !-- iPillarReceive, Send
+      iRB, iRP, &    !-- iRankBrick, iRankPillar
+      iP, &         !-- iPillar
       nRanks_2, &
       nRanks_3, &
       nPillarsTotal, &
@@ -207,6 +207,11 @@ contains
 
     G => C % Geometry ( )
 
+    associate &
+      (   nB => C % nBricks, &
+         nCB => C % nCellsBrick, &
+        R_MW => C % RadiusCore )
+             
     !-- Polar coarsening
 
     if ( C % nDimensions < 2 ) &
@@ -215,11 +220,6 @@ contains
     call Show ( 'SetCoarsening_2', C % IGNORABILITY )
     call Show ( C % Name, 'Chart', C % IGNORABILITY )
 
-    associate &
-      (   nB => C % nBricks, &
-         nCB => C % nCellsBrick, &
-        R_MW => C % RadiusCore )
-             
     associate &
       (    R_G => C % Center ( 1 ) % Value, &  !-- R_Global
         dTheta => C % WidthLeft ( 2 ) % Value ( 1 ) &
@@ -265,7 +265,7 @@ contains
     nRanks_2 = count ( nPillarsTransverse_2 > 0 ) * nB ( 2 )
     allocate ( nPillars_2 ( 0 : nRanks_2 - 1 ) )
     nPillarsTotal = sum ( nPillarsTransverse_2 )
-    nPillarsSurplus = mod ( nPillarsTotal, nPillarsTotal / nRanks_2 )
+    nPillarsSurplus = mod ( nPillarsTotal, nRanks_2 )
     nPillars_2 = nPillarsTotal / nRanks_2
     nPillars_2 ( 0 : nPillarsSurplus - 1 ) &
       = nPillars_2 ( 0 : nPillarsSurplus - 1 ) + 1
@@ -293,35 +293,50 @@ contains
     associate ( Comm_2 => C % Communicator_2 )
     call Comm_2 % Initialize &
            ( C % Atlas % Communicator, Rank_2, NameOption = 'Coarsening_2' )
+
+    if ( Comm_2 % Initialized ) then
+
+      !-- Determine nSegmentsFrom and nSegmentsTo
+      allocate ( nSegmentsFrom_2 ( 0 : nRanks_2 - 1 ) )
+      allocate ( nSegmentsTo_2 ( 0 : nRanks_2 - 1 ) )
+      iRB = 0
+      iRP = 0
+      iP = 0
+      nSegmentsFrom_2 = 0
+      nSegmentsTo_2   = 0
+      do kB = 1, nB ( 3 )
+        iLoop: do iB = 1, nB ( 1 )
+          if ( nPillarsTransverse_2 ( iB, kB ) == 0 ) &
+            cycle iLoop
+          do kC = ( kB - 1 ) * nCB ( 3 ) + 1, kB * nCB ( 3 )
+            do iC = ( iB - 1 ) * nCB ( 1 ) + 1, iB * nCB ( 1 )
+              if ( R_G ( iC ) * dTheta  <  C % MinWidth ) then
+                iP = iP + 1
+                do jB = 0, nB ( 2 ) - 1
+                  if ( Comm_2 % Rank == iRP ) &
+                    nSegmentsFrom_2 ( iRB + jB )  &
+                      =  nSegmentsFrom_2 ( iRB + jB )  +  1
+                  if ( Comm_2 % Rank == iRB + jB ) &
+                    nSegmentsTo_2 ( iRP ) &
+                      =  nSegmentsTo_2 ( iRP )  +  1
+                end do !-- jB
+                if ( iP == nPillars_2 ( iRP ) ) then
+                  iRP = iRP + 1
+                  iP = 0
+                end if
+              end if
+            end do !-- iC
+          end do !-- kC
+          iRB = iRB + nB ( 2 )
+        end do iLoop !-- iB
+      end do !-- kB
+      call Show ( 'Communication counting', C % IGNORABILITY + 1 )
+      call Show ( nSegmentsFrom_2, 'nSegmentsFrom_2', C % IGNORABILITY + 1 )
+      call Show ( nSegmentsTo_2, 'nSegmentsTo_2', C % IGNORABILITY + 1 )
+
+    end if !-- Comm_2 % Initialized
     end associate !-- Comm_2
 
-!     if ( Comm_2 % Initialized ) then
-
-!       !-- Determine nSegmentsFrom and nSegmentsTo
-!       allocate ( nSegmentsFrom_2 ( nRanks_2 ) )
-!       allocate ( nSegmentsTo_2 ( nRanks_2 ) )
-!       iRR = 0
-!       iP  = 0
-!       do kB = 1, nB ( 3 )
-!         do iB = 1, nB ( 1 )
-!           if ( nPillarsTransverse_2 ( iB, kB ) == 0 ) &
-!             cycle iLoop
-!           do kC = ( kB - 1 ) * nCB ( 3 ) + 1, kB * nCB ( 3 )
-!             do iC = ( iB - 1 ) * nCB ( 1 ) + 1, iB * nCB ( 1 )
-!               iP = iP + 1
-!               if ( iP == nSegmentsReceive_2 ( iRR ) ) then
-!                 if ( iRR - 1 == Comm_2 % Rank ) then
-! !                  nSegmentsFrom_2 ( ) = 
-!                 end if
-!                 iRR = iRR + 1
-!                 iP  = 0
-!               end if
-!             end do !-- iC
-!           end do !-- kC
-!         end do !-- iB
-!       end do !-- kB
-
-!     end if
 
     !-- Azimuthal coarsening
 
@@ -372,7 +387,7 @@ contains
     nRanks_3 = count ( nPillarsTransverse_3 > 0 ) * nB ( 3 )
     allocate ( nPillars_3 ( 0 : nRanks_3 - 1 ) )
     nPillarsTotal = sum ( nPillarsTransverse_3 )
-    nPillarsSurplus = mod ( nPillarsTotal, nPillarsTotal / nRanks_3 )
+    nPillarsSurplus = mod ( nPillarsTotal, nRanks_3 )
     nPillars_3 = nPillarsTotal / nRanks_3
     nPillars_3 ( 0 : nPillarsSurplus - 1 ) &
       = nPillars_3 ( 0 : nPillarsSurplus - 1 ) + 1
@@ -400,7 +415,52 @@ contains
     associate ( Comm_3 => C % Communicator_3 )
     call Comm_3 % Initialize &
            ( C % Atlas % Communicator, Rank_3, NameOption = 'Coarsening_3' )
+
+    if ( Comm_3 % Initialized ) then
+
+      !-- Determine nSegmentsFrom and nSegmentsTo
+      allocate ( nSegmentsFrom_3 ( 0 : nRanks_3 - 1 ) )
+      allocate ( nSegmentsTo_3 ( 0 : nRanks_3 - 1 ) )
+      iRB = 0
+      iRP = 0
+      iP = 0
+      nSegmentsFrom_3 = 0
+      nSegmentsTo_3   = 0
+      do jB = 1, nB ( 2 )
+        iLoop: do iB = 1, nB ( 1 )
+          if ( nPillarsTransverse_3 ( iB, jB ) == 0 ) &
+            cycle iLoop
+          do jC = ( jB - 1 ) * nCB ( 2 ) + 1, jB * nCB ( 2 )
+            do iC = ( iB - 1 ) * nCB ( 1 ) + 1, iB * nCB ( 1 )
+              if ( R_G ( iC ) * sin ( Theta_G ( jC ) ) * dPhi  &
+                   <  C % MinWidth ) &
+              then
+                iP = iP + 1
+                do kB = 0, nB ( 3 ) - 1
+                  if ( Comm_3 % Rank == iRP ) &
+                    nSegmentsFrom_3 ( iRB + kB )  &
+                      =  nSegmentsFrom_3 ( iRB + kB )  +  1
+                  if ( Comm_3 % Rank == iRB + kB ) &
+                    nSegmentsTo_3 ( iRP ) &
+                      =  nSegmentsTo_3 ( iRP )  +  1
+                end do !-- kB
+                if ( iP == nPillars_3 ( iRP ) ) then
+                  iRP = iRP + 1
+                  iP = 0
+                end if
+              end if
+            end do !-- iC
+          end do !-- jC
+          iRB = iRB + nB ( 3 )
+        end do iLoop !-- iB
+      end do !-- jB
+      call Show ( 'Communication counting', C % IGNORABILITY + 1 )
+      call Show ( nSegmentsFrom_3, 'nSegmentsFrom_3', C % IGNORABILITY + 1 )
+      call Show ( nSegmentsTo_3, 'nSegmentsTo_3', C % IGNORABILITY + 1 )
+
+    end if !-- Comm_3 % Initialized
     end associate !-- Comm_3
+
 
     end associate !-- Theta_G, etc.
     end associate !-- R_G, etc.
@@ -408,6 +468,7 @@ contains
 
     nullify ( G )
 
+call C % Atlas % Communicator % Synchronize ( )
 call PROGRAM_HEADER % Abort ( )
   end subroutine SetCoarsening
 
