@@ -36,8 +36,6 @@ module PressurelessFluid_Form
       ComputeConservedHost
     procedure, public, pass :: &
       ComputeConservedDevice
-    generic :: &
-      ComputeConserved => ComputeConservedHost, ComputeConservedDevice
     procedure, public, pass :: &
       ComputePrimitiveHost
     procedure, public, pass :: &
@@ -46,15 +44,10 @@ module PressurelessFluid_Form
       ComputeAuxiliaryHost
     procedure, public, pass :: &
       ComputeAuxiliaryDevice
-    generic :: &
-      ComputeAuxiliary => ComputeAuxiliaryHost, ComputeAuxiliaryDevice
     procedure, public, pass :: &
       ApplyBoundaryConditionsHost
     procedure, public, pass :: &
       ApplyBoundaryConditionsDevice
-    generic :: &
-      ApplyBoundaryConditions &
-        => ApplyBoundaryConditionsHost, ApplyBoundaryConditionsDevice
     procedure, public, pass :: &
       ComputeRawFluxes
     procedure, public, pass :: &
