@@ -47,6 +47,7 @@ Chart_SLD_CE__Form.o: \
 Chart_SLD_CC__Form.o: \
   Basics.o \
   AtlasBasics.o \
+  ChartBasics.o \
   Chart_SLD__Form.o \
   Chart_SLD_CC__Form.f90
 

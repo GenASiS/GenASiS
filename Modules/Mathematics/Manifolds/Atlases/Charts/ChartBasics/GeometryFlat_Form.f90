@@ -9,7 +9,7 @@ module GeometryFlat_Form
   private
 
     integer ( KDI ), private, parameter :: &
-      N_FIELDS_FLAT  = 17, &
+      N_FIELDS_FLAT  = 20, &
       N_VECTORS_FLAT = 1
 
   type, public, extends ( StorageForm ) :: GeometryFlatForm
@@ -22,10 +22,11 @@ module GeometryFlat_Form
     integer ( KDI ) :: &
       VOLUME = 0
     integer ( KDI ), dimension ( 3 ) :: &
-      CENTER_U        = 0, &
+      CENTER_U      = 0, &
       WIDTH_LEFT_U  = 0, &
       WIDTH_RIGHT_U = 0, &
-      AREA_INNER_D  = 0
+      AREA_INNER_D  = 0, &
+      COARSENING    = 0
     integer ( KDI ) :: &
       METRIC_DD_22 = 0, &
       METRIC_DD_33 = 0, &
@@ -121,6 +122,10 @@ contains
              NameOption = Name, ClearOption = Clear, &
              UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndices )
+
+    G % Value ( :, G % COARSENING ( 1 ) )  =  1.0_KDR
+    G % Value ( :, G % COARSENING ( 2 ) )  =  1.0_KDR
+    G % Value ( :, G % COARSENING ( 3 ) )  =  1.0_KDR
 
   end subroutine InitializeAllocate_G
 
@@ -343,10 +348,11 @@ contains
     G % WIDTH_LEFT_U   =  [  5,  6,  7 ]
     G % WIDTH_RIGHT_U  =  [  8,  9, 10 ]
     G % AREA_INNER_D   =  [ 11, 12, 13 ]
-    G % METRIC_DD_22   =  14
-    G % METRIC_DD_33   =  15
-    G % METRIC_UU_22   =  16
-    G % METRIC_UU_33   =  17
+    G % COARSENING     =  [ 14, 15, 16 ]
+    G % METRIC_DD_22   =  17
+    G % METRIC_DD_33   =  18
+    G % METRIC_UU_22   =  19
+    G % METRIC_UU_33   =  20
 
     if ( G % N_FIELDS == 0 ) &
       G % N_FIELDS = G % N_FIELDS_FLAT
@@ -375,6 +381,9 @@ contains
           'AreaInner_D_1 ', &
           'AreaInner_D_2 ', &
           'AreaInner_D_3 ', &
+          'Coarsening_1  ', &
+          'Coarsening_2  ', &
+          'Coarsening_3  ', &
           'Metric_DD_22  ', &
           'Metric_DD_33  ', &
           'Metric_UU_22  ', &

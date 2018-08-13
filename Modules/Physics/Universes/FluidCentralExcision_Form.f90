@@ -77,7 +77,7 @@ contains
 
   subroutine InitializePositionSpace &
                ( FC, RadiusMaxOption, RadiusCoreOption, RadiusMinOption, &
-                 RadialRatioOption, nCellsCoreOption, nCellsPolarOption )
+                 RadialRatioOption, nCellsPolarOption )
 
     class ( FluidCentralExcisionForm ), intent ( inout ) :: &
       FC
@@ -87,7 +87,6 @@ contains
       RadiusMinOption, &
       RadialRatioOption
     integer ( KDI ), intent ( in ), optional :: &
-      nCellsCoreOption, &
       nCellsPolarOption
 
     real ( KDR ) :: &

@@ -30,6 +30,7 @@ include $(PATH_DISPLAY)/Makefile_Dependencies
 include $(PATH_MESSAGE_PASSING_BASICS)/Makefile_Dependencies
 
 Communicator_Form_Test.o: \
+  VariableManagement.o \
   Display.o \
   Communicator_Form.o \
   Communicator_Form_Test.f90

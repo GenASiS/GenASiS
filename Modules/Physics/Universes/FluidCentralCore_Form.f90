@@ -47,7 +47,7 @@ contains
                  CourantFactorOption, GravityFactorOption, &
                  LimiterParameterOption, ShockThresholdOption, &
                  RadiusMaxOption, RadiusCoreOption, RadialRatioOption, &
-                 nWriteOption, nCellsCoreOption )
+                 nWriteOption, nCellsPolarOption )
 
     class ( FluidCentralCoreForm ), intent ( inout ), target :: &
       FCC
@@ -69,7 +69,7 @@ contains
       RadiusCoreOption, &
       RadialRatioOption
     integer ( KDI ), intent ( in ), optional :: &
-      nCellsCoreOption, &
+      nCellsPolarOption, &
       nWriteOption
 
     if ( FCC % Type == '' ) &
@@ -104,7 +104,7 @@ contains
                  RadiusCoreOption = RadiusCoreOption, &
                  RadialRatioOption = RadialRatioOption, &
                  nWriteOption = nWriteOption, &
-                 nCellsCoreOption = nCellsCoreOption )
+                 nCellsPolarOption = nCellsPolarOption )
 
     if ( trim ( GeometryType ) == 'NEWTONIAN' ) &
       call Show ( FCC % GravityFactor, 'GravityFactor' )
@@ -114,7 +114,7 @@ contains
 
   subroutine InitializePositionSpace &
                ( FC, RadiusMaxOption, RadiusCoreOption, RadiusMinOption, &
-                 RadialRatioOption, nCellsCoreOption, nCellsPolarOption )
+                 RadialRatioOption, nCellsPolarOption )
 
     class ( FluidCentralCoreForm ), intent ( inout ) :: &
       FC
@@ -124,7 +124,6 @@ contains
       RadiusMinOption, &
       RadialRatioOption
     integer ( KDI ), intent ( in ), optional :: &
-      nCellsCoreOption, &
       nCellsPolarOption
 
     real ( KDR ) :: &
@@ -145,14 +144,14 @@ contains
 
       RadiusCore   =   40.0_KDR  *  UNIT % KILOMETER
       RadiusMax    =  1.0e4_KDR  *  UNIT % KILOMETER
-      RadialRatio  =  6.5_KDR
+      RadialRatio  =  2.1_KDR
 
       call PS % CreateChart_CC &
              ( CoordinateUnitOption = FC % CoordinateUnit, &
                RadiusCoreOption = RadiusCore, &
                RadiusMaxOption = RadiusMax, &
                RadialRatioOption = RadialRatio, &
-               nCellsCoreOption = nCellsCoreOption )
+               nCellsPolarOption = nCellsPolarOption )
 
     end if !-- Dimensionless
 

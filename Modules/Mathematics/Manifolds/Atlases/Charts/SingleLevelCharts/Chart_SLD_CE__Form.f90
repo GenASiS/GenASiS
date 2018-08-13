@@ -19,7 +19,7 @@ module Chart_SLD_CE__Form
     real ( KDR ) :: &
       RadiusMin, &
       RadiusMax, &
-      RadialRatio  !-- nCellsRadial / nCellsCore
+      RadialRatio  !-- nCellsRadial / nCellsPolar
   contains
     procedure, private, pass :: &
       Initialize_CE
@@ -98,18 +98,15 @@ contains
     C % nCellsPolar = 32  !-- Number of "excised" cells with equal spacing
     if ( present ( nCellsPolarOption ) ) &
       C % nCellsPolar = nCellsPolarOption
-    call PROGRAM_HEADER % GetParameter &
-           ( C % nCellsPolar, 'nCellsPolar' )
+    call PROGRAM_HEADER % GetParameter ( C % nCellsPolar, 'nCellsPolar' )
 
     C % RadialRatio = 1
     if ( present ( RadialRatioOption ) ) &
       C % RadialRatio = RadialRatioOption
     call PROGRAM_HEADER % GetParameter ( C % RadialRatio, 'RadialRatio' )
 
-    nCellsRadial    = C % RadialRatio  *  C % nCellsPolar 
-                      !-- Aim for RadiusMax
+    nCellsRadial    = C % RadialRatio  *  C % nCellsPolar  !-- Aim for RadiusMax
     nCellsPolar     = C % nCellsPolar  
-                      !-- Close to unit aspect ratio
     nCellsAzimuthal = 2  *  nCellsPolar
  
     nCells = [ nCellsRadial, 1, 1 ]

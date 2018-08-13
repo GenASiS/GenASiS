@@ -111,24 +111,34 @@ contains
            ( Parent % Handle, NewStorage, C % Handle, C % Error )
     call MPI_GROUP_FREE ( NewStorage, C % Error )
     call MPI_GROUP_FREE ( OldStorage, C % Error )
-    call MPI_COMM_SIZE ( C % Handle, C % Size, C % Error )
-    call MPI_COMM_RANK ( C % Handle, C % Rank, C % Error )
 
-    allocate ( C % RankIndex ( 0 : C % Size - 1 ) )
-    C % RankIndex = [ ( iRank, iRank = 0, C % Size - 1 ) ]
-    
     C % Name = ''
     if ( present ( NameOption ) ) C % Name = NameOption
 
     C % Parent => Parent
 
     call Show ( 'Initializing a Communicator', CONSOLE % INFO_2 )
-    call Show ( C % Parent % Name, 'Parent', CONSOLE % INFO_2 )
+    call Show ( C % Parent % Name, 'Parent name', CONSOLE % INFO_2 )
+    call Show ( C % Parent % Rank, 'Parent rank', CONSOLE % INFO_2 )
     call Show ( C % Name, 'Name', CONSOLE % INFO_2 )
-    call Show ( C % Size, 'Size', CONSOLE % INFO_2 )
+    call Show ( size ( Ranks ), 'Size', CONSOLE % INFO_2 )
 
-    C % Initialized = .true. 
-  
+    if ( C % Handle /= MPI_COMM_NULL ) then
+
+      call MPI_COMM_SIZE ( C % Handle, C % Size, C % Error )
+      call MPI_COMM_RANK ( C % Handle, C % Rank, C % Error )
+
+      allocate ( C % RankIndex ( 0 : C % Size - 1 ) )
+      C % RankIndex = [ ( iRank, iRank = 0, C % Size - 1 ) ]
+    
+      C % Initialized = .true. 
+
+    else
+      C % Initialized = .false.
+    end if
+
+    call Show ( C % Initialized, 'Initialized', CONSOLE % INFO_2 )
+
   end subroutine InitializeSubcommunicator
   
   
@@ -179,7 +189,8 @@ contains
       call Show ( C % Name, 'Name', CONSOLE % INFO_2 )
       nullify ( C % Parent )
       if ( allocated ( C % RankIndex ) ) deallocate ( C % RankIndex )
-      call MPI_COMM_FREE ( C % Handle, Error )
+      if ( C % Handle /= MPI_COMM_NULL ) &
+        call MPI_COMM_FREE ( C % Handle, Error )
     end if
     
     C % Initialized = .false.

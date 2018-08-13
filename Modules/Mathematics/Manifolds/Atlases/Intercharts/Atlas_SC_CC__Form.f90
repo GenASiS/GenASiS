@@ -6,6 +6,7 @@ module Atlas_SC_CC__Form
 
   use Basics
   use Charts
+  use GeometryFlat_ASC__Form
   use Atlas_SC__Form
 
   implicit none
@@ -15,6 +16,8 @@ module Atlas_SC_CC__Form
   contains
     procedure, private, pass :: &
       InitializeBasic
+    procedure, public, pass :: &
+      SetGeometry
     procedure, public, pass :: &
       CreateChart
     procedure, public, pass :: &
@@ -65,6 +68,25 @@ contains
   end subroutine InitializeBasic
 
 
+  subroutine SetGeometry ( A, GeometryOption, EdgeOption )
+
+    class ( Atlas_SC_CC_Form ), intent ( inout ) :: &
+      A
+    class ( GeometryFlat_ASC_Form ), intent ( in ), target, optional :: &
+      GeometryOption
+    type ( Real_1D_Form ), dimension ( : ), intent ( in ), optional :: &
+      EdgeOption
+
+    call A % Atlas_SC_Form % SetGeometry ( GeometryOption, EdgeOption )
+
+    select type ( C => A % Chart )
+    class is ( Chart_SLD_CC_Form )
+      call C % SetCoarsening ( )
+    end select !-- C
+
+  end subroutine SetGeometry
+
+
   subroutine CreateChart &
                ( A, SpacingOption, CoordinateLabelOption, &
                  CoordinateSystemOption, CoordinateUnitOption, &
@@ -105,7 +127,7 @@ contains
   subroutine CreateChart_CC &
                ( A, CoordinateUnitOption, RadiusMaxOption, &
                  RadiusCoreOption, RadialRatioOption, nGhostLayersOption, &
-                 nCellsCoreOption )
+                 nCellsPolarOption )
 
     class ( Atlas_SC_CC_Form ), intent ( inout ) :: &
       A
@@ -118,7 +140,7 @@ contains
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       nGhostLayersOption
     integer ( KDI ), intent ( in ), optional :: &
-      nCellsCoreOption
+      nCellsPolarOption
 
     allocate ( Chart_SLD_CC_Form :: A % Chart )
 
@@ -131,7 +153,7 @@ contains
                RadiusCoreOption = RadiusCoreOption, &
                RadialRatioOption = RadialRatioOption, &
                nGhostLayersOption = nGhostLayersOption, &
-               nCellsCoreOption = nCellsCoreOption )
+               nCellsPolarOption = nCellsPolarOption )
     end select !-- C
 
   end subroutine CreateChart_CC

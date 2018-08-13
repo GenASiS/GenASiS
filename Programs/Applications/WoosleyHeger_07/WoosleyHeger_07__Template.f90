@@ -38,7 +38,8 @@ contains
       WH
 
     integer ( KDI ) :: &
-      iV  !-- iValue
+      iV, &  !-- iValue
+      iD     !-- iDimension
     real ( KDR ) :: &
       MD, &  !-- MassDensity
       SE     !-- SpecificEnergy
@@ -64,6 +65,9 @@ contains
     class is ( Atlas_SC_Form )
     G => PS % Geometry ( )
 
+    select type ( C => PS % Chart )
+    class is ( Chart_SLD_Form )
+
     associate &
       (     N => F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
             T => F % Value ( :, F % TEMPERATURE ), &
@@ -75,6 +79,9 @@ contains
             R => G % Value ( :, G % CENTER_U ( 1 ) ) )
 
     do iV = 1, size ( N )
+
+      if ( .not. C % IsProperCell ( iV ) ) &
+        cycle
 
       call SI ( iDENSITY_SI ) % Evaluate ( R ( iV ), MD ) 
       call SI ( iTEMPERATURE_SI ) % Evaluate ( R ( iV ) , T ( iV ) ) 
@@ -90,10 +97,21 @@ contains
     V_2 = 0.0_KDR
     V_3 = 0.0_KDR
 
-!    call F % ComputeFromPrimitive ( G )
+    call C % ExchangeGhostData ( F )
+
+    do iD = 1, PS % nDimensions
+      associate &
+        ( iaI => PS % Connectivity % iaInner ( iD ), &
+          iaO => PS % Connectivity % iaOuter ( iD ) )
+      call PS % ApplyBoundaryConditions ( F, iD, iaI )
+      call PS % ApplyBoundaryConditions ( F, iD, iaO )
+      end associate !-- iaI, etc.
+    end do !-- iD
+
     call F % ComputeFromTemperature ( F % Value, G, G % Value )
 
     end associate !-- N, etc.
+    end select !-- C
     end select !-- PS
     end select !-- FA
     end select !-- I
