@@ -34,6 +34,8 @@ module CollectiveOperation_R__Form
     procedure, public, pass :: &
       AllToAll
     procedure, public, pass :: &
+      AllToAll_V
+    procedure, public, pass :: &
       Reduce
     final :: &
       Finalize
@@ -192,6 +194,52 @@ contains
     end associate
     
   end subroutine AllToAll
+
+
+  subroutine AllToAll_V ( CO )
+  
+    class ( CollectiveOperation_R_Form ), intent ( inout ) :: &
+      CO
+
+    real :: &
+      PlainReal
+    integer ( KDI ) :: &
+      i, &
+      PlainValueSize, &
+      ThisValueSize, &
+      SizeRatio
+    integer ( KDI ), dimension ( CO % Communicator % Size ) :: &
+      SendCount, ReceiveCount, &
+      SendDisplacement, ReceiveDisplacement
+
+    associate &
+      ( OV => CO % Outgoing % Value ( : ), &
+        IV => CO % Incoming % Value ( : ) )
+    
+    inquire ( iolength = ThisValueSize ) OV ( 1 )
+    inquire ( iolength = PlainValueSize ) PlainReal
+    SizeRatio = max ( 1, ThisValueSize / PlainValueSize )
+
+    SendCount    = CO % nOutgoing * SizeRatio
+    ReceiveCount = CO % nIncoming * SizeRatio
+
+    SendDisplacement ( 1 )    = 0
+    ReceiveDisplacement ( 1 ) = 0
+    do i = 2, CO % Communicator % Size
+      SendDisplacement ( i ) &
+        = SendDisplacement ( i - 1 ) + SendCount ( i - 1 )
+      ReceiveDisplacement ( i ) &
+        = ReceiveDisplacement ( i - 1 ) + ReceiveCount ( i - 1 )
+    end do
+
+    call MPI_ALLTOALLV &
+           ( OV, SendCount, SendDisplacement, MPI_REAL, &
+             IV, ReceiveCount, ReceiveDisplacement, MPI_REAL, &
+             CO % Communicator % Handle, CO % Error )  
+      
+    end associate
+    
+  end subroutine AllToAll_V
 
 
   subroutine Reduce ( CO, Operation )

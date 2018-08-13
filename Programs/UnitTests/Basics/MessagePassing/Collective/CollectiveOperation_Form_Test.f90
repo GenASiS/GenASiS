@@ -12,8 +12,12 @@ program CollectiveOperation_Form_Test
   implicit none
 
   integer ( KDI ) :: &
-    iV, &
+    iV, jV, &  !-- iValue, etc.
+    iB, &      !-- iBuffer
     nOutgoing
+  integer ( KDI ), dimension ( : ), allocatable :: &
+    nOutgoing_V, &
+    nIncoming_V
   complex ( KDC ) :: &
     ComplexValue
   type ( CommunicatorForm ), allocatable :: &
@@ -143,8 +147,35 @@ program CollectiveOperation_Form_Test
   call Show ( CO_C % Incoming % Value, 'IncomingValue_1D Complex' )
 
   deallocate ( CO_C ) 
-    
-  !-- Reduction
+
+  !-- AllToAll_V Real
+
+  call Show ( 'AllToAll_V Real' )
+
+  allocate ( CO_R )
+  allocate ( nOutgoing_V ( C % Size ), nIncoming_V ( C % Size ) )
+  nOutgoing_V = [ ( iV, iV = 1, C % Size ) ]
+  nIncoming_V = [ ( nOutgoing_V ( C % Rank + 1 ), iV = 1, C % Size ) ]
+  call Show ( nOutgoing_V, 'nOutgoing_V' )
+  call Show ( nIncoming_V, 'nIncoming_V' )
+  call CO_R % Initialize ( C, nOutgoing = nOutgoing_V, nIncoming = nIncoming_V )
+
+  iB = 0
+  do iV = 1, C % Size
+    do jV = 1, iV
+      iB = iB + 1
+      CO_R % Outgoing % Value ( iB ) = ( C % Rank + 1 )  *  10 ** ( iV - 1 )
+    end do
+  end do
+  call Show ( CO_R % Outgoing % Value, 'OutgoingValue_1D Real' )
+
+  call CO_R % AllToAll_V ( )
+
+  call Show ( CO_R % Incoming % Value, 'IncomingValue_1D Real' )
+
+  deallocate ( CO_R )
+
+  !-- AllReduce Real
 
   call Show ( 'AllReduce Real' )
 
