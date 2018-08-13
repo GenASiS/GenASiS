@@ -468,8 +468,8 @@ contains
 
     nullify ( G )
 
-call C % Atlas % Communicator % Synchronize ( )
-call PROGRAM_HEADER % Abort ( )
+!call C % Atlas % Communicator % Synchronize ( )
+!call PROGRAM_HEADER % Abort ( )
   end subroutine SetCoarsening
 
 
