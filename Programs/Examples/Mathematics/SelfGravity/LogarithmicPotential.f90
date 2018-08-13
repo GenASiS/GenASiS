@@ -45,7 +45,8 @@ program LogarithmicPotential
 
   call L % SetLogarithmic ( v0, rho_c, q_phi )
 
-  call L % Compute ( ShiftSolutionOption = .true. )
+  call L % Compute &
+         ( ShiftSolutionOption = .true., NormalizeSolutionOption = .true. )
   
   deallocate ( L )
 

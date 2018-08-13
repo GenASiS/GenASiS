@@ -45,7 +45,7 @@ program SatohDisk
 
   call S % SetSatoh ( TotalMass, a, ratio )
 
-  call S % Compute ( )
+  call S % Compute ( NormalizeSolutionOption = .true. )
   
   deallocate ( S )
 

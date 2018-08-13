@@ -26,16 +26,15 @@ module DensityDistribution_Template
       Initialize
     procedure, public, pass :: &
       Compute
-    procedure, public, pass :: &
-      ComputeError
     final :: &
       Finalize
   end type DensityDistributionTemplate
 
   private :: &
     ComputeError, &
-    ShiftSolution
-
+    ShiftSolutionKernel, &
+    NormalizeSolutionKernel
+    
 contains
 
 
@@ -130,11 +129,19 @@ contains
   end subroutine Initialize 
 
 
-  subroutine Compute ( DD, ShiftSolutionOption )
+  subroutine Compute ( DD, ShiftSolutionOption, NormalizeSolutionOption )
     class ( DensityDistributionTemplate ), intent ( inout ) :: &
       DD
     logical ( KDL ), optional :: &
-      ShiftSolutionOption
+      ShiftSolutionOption, &
+      NormalizeSolutionOption
+
+    logical ( KDL ) :: &
+      ShiftSolution, &
+      NormalizeSolution
+
+    ShiftSolution = .false.
+    NormalizeSolution = .false. 
 
     associate ( A => DD % Atlas )
 
@@ -142,9 +149,15 @@ contains
 
     call P % Solve ( DD % Solution, DD % Source )
 
-    if ( present ( ShiftSolutionOption ) ) call ShiftSolution ( DD )
-    
-    call ComputeError ( DD ) 
+    if ( present ( ShiftSolutionOption )  ) &
+      ShiftSolution = ShiftSolutionOption
+    if ( ShiftSolution ) call ShiftSolutionKernel ( DD )
+
+    if ( present ( NormalizeSolutionOption ) ) &
+      NormalizeSolution = NormalizeSolutionOption
+    if ( NormalizeSolution ) call NormalizeSolutionKernel ( DD )
+
+    call ComputeError ( DD, NormalizeSolution ) 
 
     !-- Write
 
@@ -189,56 +202,11 @@ contains
   end subroutine Finalize
 
 
-  subroutine ShiftSolution ( DD )
-    type ( DensityDistributionTemplate ), intent ( inout ) :: &
+  subroutine ComputeError ( DD, Normalized )
+    class ( DensityDistributionTemplate ), intent ( inout ) :: &
       DD
-
-    integer ( KDI ) :: &
-      iE
-    real ( KDR ) :: &
-      D
-    class ( StorageForm ), pointer :: &
-      Solution, &
-      Reference, &
-      Difference
-    type ( CollectiveOperation_R_Form ) :: &
-      CO
-    
-    Solution   => DD % Solution   % Storage ( )
-    Reference  => DD % Reference  % Storage ( )
-
-    associate ( A => DD % Atlas ) 
-    select type ( C => A % Chart )
-    class is ( Chart_SL_Template )
-
-    call CO % Initialize &
-                ( A % Communicator, [ DD % N_Equations * 2 ], &
-                    [ DD % N_Equations * 2 ] )
-    do iE = 1, DD % N_Equations
-      CO % Outgoing % Value ( 2 * iE - 1 ) &
-        = minval ( Solution % Value ( :, iE ), mask = C % IsProperCell )
-      CO % Outgoing % Value ( 2 * iE ) &
-        = minval ( Reference % Value ( :, iE ), mask = C % IsProperCell )
-    end do
-    call CO % Reduce ( REDUCTION % MIN )
-
-    do iE = 1, DD % N_Equations
-      D = abs ( CO % Incoming % Value ( 2 * iE - 1 ) &
-                 - CO % Incoming % Value ( 2 * iE ) )
-      Solution % Value ( :, iE ) = Solution % Value ( :, iE ) + D
-    end do
-
-    end select !-- C
-    end associate !-- A
-
-    nullify ( Solution, Reference )
-
-  end subroutine ShiftSolution
-
-
-  subroutine ComputeError ( DD )
-    class ( DensityDistributionTemplate ), intent ( in ) :: &
-      DD
+    logical ( KDL ), intent ( in ) :: &
+      Normalized
 
     integer ( KDI ) :: &
       nM, & 
@@ -256,8 +224,10 @@ contains
     Reference  => DD % Reference  % Storage ( )
     Difference => DD % Difference % Storage ( )
 
-    call MultiplyAdd &
-           ( Solution % Value, Reference % Value, -1.0_KDR, Difference % Value )
+    if ( .not. Normalized ) &
+      call MultiplyAdd &
+             ( Solution % Value, Reference % Value, &
+                 -1.0_KDR, Difference % Value )
 
     associate ( A => DD % Atlas ) 
     select type ( C => A % Chart )
@@ -297,11 +267,107 @@ contains
 
     !-- Relative difference
 
-    Difference % Value = abs ( Difference % Value / Reference % Value )
+    if ( .not. Normalized ) &
+      Difference % Value = abs ( Difference % Value / Reference % Value )
 
     nullify ( Solution, Reference, Difference )
 
-  end subroutine ComputeError  
+  end subroutine ComputeError
 
+
+  subroutine ShiftSolutionKernel ( DD )
+    type ( DensityDistributionTemplate ), intent ( inout ) :: &
+      DD
+
+    integer ( KDI ) :: &
+      iE
+    real ( KDR ) :: &
+      D
+    class ( StorageForm ), pointer :: &
+      Solution, &
+      Reference
+    type ( CollectiveOperation_R_Form ) :: &
+      CO
+    
+    Solution   => DD % Solution   % Storage ( )
+    Reference  => DD % Reference  % Storage ( )
+
+    associate ( A => DD % Atlas ) 
+    select type ( C => A % Chart )
+    class is ( Chart_SL_Template )
+
+    call CO % Initialize &
+                ( A % Communicator, [ DD % N_Equations * 2 ], &
+                    [ DD % N_Equations * 2 ] )
+    do iE = 1, DD % N_Equations
+      CO % Outgoing % Value ( 2 * iE - 1 ) &
+        = minval ( Solution % Value ( :, iE ), mask = C % IsProperCell )
+      CO % Outgoing % Value ( 2 * iE ) &
+        = minval ( Reference % Value ( :, iE ), mask = C % IsProperCell )
+    end do
+    call CO % Reduce ( REDUCTION % MIN )
+
+    do iE = 1, DD % N_Equations
+      D = abs ( CO % Incoming % Value ( 2 * iE - 1 ) &
+                 - CO % Incoming % Value ( 2 * iE ) )
+      Solution % Value ( :, iE ) = Solution % Value ( :, iE ) + D
+    end do
+
+    end select !-- C
+    end associate !-- A
+
+    nullify ( Solution, Reference )
+
+  end subroutine ShiftSolutionKernel
+
+
+  subroutine NormalizeSolutionKernel ( DD )
+    type ( DensityDistributionTemplate ), intent ( inout ) :: &
+      DD
+
+    integer ( KDI ) :: &
+      iE
+    class ( StorageForm ), pointer :: &
+      Solution, &
+      Reference, &
+      Difference
+    type ( CollectiveOperation_R_Form ) :: &
+      CO
+    
+    Solution   => DD % Solution   % Storage ( )
+    Reference  => DD % Reference  % Storage ( )
+    Difference => DD % Difference % Storage ( )
+
+    associate ( A => DD % Atlas ) 
+    select type ( C => A % Chart )
+    class is ( Chart_SL_Template )
+
+    call CO % Initialize &
+                ( A % Communicator, [ DD % N_Equations * 2 ], &
+                    [ DD % N_Equations * 2 ] )
+    do iE = 1, DD % N_Equations
+      CO % Outgoing % Value ( 2 * iE - 1 ) &
+        = minval ( Solution % Value ( :, iE ), mask = C % IsProperCell )
+      CO % Outgoing % Value ( 2 * iE ) &
+        = minval ( Reference % Value ( :, iE ), mask = C % IsProperCell )
+    end do
+    call CO % Reduce ( REDUCTION % MIN )
+
+    do iE = 1, DD % N_Equations
+      Difference % Value ( :, iE ) &
+        = abs ( ( Solution % Value ( :, iE ) &
+                  / CO % Incoming % Value ( 2 * iE - 1 ) &
+              - Reference % Value ( :, iE ) &
+                  / CO % Incoming % Value ( 2 * iE ) ) &
+              * CO % Incoming % Value ( 2 * iE ) &
+                  / Reference % Value ( :, iE ) )
+    end do
+
+    end select !-- C
+    end associate !-- A
+
+    nullify ( Solution, Reference, Difference )
+
+  end subroutine NormalizeSolutionKernel  
 
 end module DensityDistribution_Template

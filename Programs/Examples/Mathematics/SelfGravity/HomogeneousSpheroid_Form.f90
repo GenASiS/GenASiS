@@ -142,9 +142,14 @@ contains
 
     do iC = 1, size ( dV )
       associate &
-        (  X => G % Value ( iC, G % CENTER_U ( 1 ) : G % CENTER_U ( 3 ) ), &
-          dX_L => G % Value ( iC, G % WIDTH_LEFT_U ( 1 ) : G % WIDTH_LEFT_U ( 3 ) ), &
-          dX_R => G % Value ( iC, G % WIDTH_RIGHT_U ( 1 ) : G % WIDTH_RIGHT_U ( 3 ) ), &
+        (  X => &
+             G % Value ( iC, G % CENTER_U ( 1 ) : G % CENTER_U ( 3 ) ), &
+          dX_L => &
+            G % Value ( iC, G % WIDTH_LEFT_U ( 1 ) &
+                              : G % WIDTH_LEFT_U ( 3 ) ), &
+          dX_R => &
+            G % Value ( iC, G % WIDTH_RIGHT_U ( 1 ) &
+                              : G % WIDTH_RIGHT_U ( 3 ) ), &
           Pi => CONSTANT % PI )
 
       if ( .not. C % IsProperCell ( iC ) ) cycle
