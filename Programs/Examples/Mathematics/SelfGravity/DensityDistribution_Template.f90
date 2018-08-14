@@ -233,18 +233,19 @@ contains
     select type ( C => A % Chart )
     class is ( Chart_SL_Template )
     
-    associate ( D   => Difference % Value )
+    associate ( D   => Difference % Value, &
+                R   => Reference  % Value )
 
-    nM = DD % N_Equations + 1
+    nM = DD % N_Equations
 
-    call CO % Initialize ( A % Communicator, [ nM ], [ nM ] )
+    call CO % Initialize ( A % Communicator, [ 2 * nM ], [ 2 * nM ] )
 
-    do iM = 1, nM - 1
-      CO % Outgoing % Value ( iM ) = sum ( abs ( D ( :, iM ) ), &
-                                            mask = C % IsProperCell )
+    do iM = 1, nM
+      CO % Outgoing % Value ( 2 * iM ) &
+        = sum ( abs ( R ( :, iM ) ), mask = C % IsProperCell )
+      CO % Outgoing % Value ( 2 * iM - 1 )&
+        = sum ( abs ( D ( :, iM ) ), mask = C % IsProperCell )
     end do
-
-    CO % Outgoing % Value ( nM ) = C % nProperCells
 
     call CO % Reduce ( REDUCTION % SUM )
 
@@ -254,8 +255,8 @@ contains
 
     associate ( IN   => CO % Incoming % Value )
 
-    do iM = 1, nM - 1
-      L1 = IN ( iM ) / IN ( nM )
+    do iM = 1, nM
+      L1 = IN ( 2 * iM - 1 ) / IN ( 2 * iM )
       call Show ( L1, '*** L1 error', nLeadingLinesOption = 2, &
                 nTrailingLinesOption = 2 )
     end do
