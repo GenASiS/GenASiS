@@ -105,6 +105,10 @@ contains
 
     call CLS % DifferenceLeft  % AllocateDevice ( )
     call CLS % DifferenceRight % AllocateDevice ( )
+    call Clear ( CLS % DifferenceLeft % D_Selected, &
+                 CLS % DifferenceLeft % Value )
+    call Clear ( CLS % DifferenceRight % D_Selected, &
+                 CLS % DifferenceRight % Value )
 
     !-- Reconstruction
 
@@ -121,6 +125,10 @@ contains
     
     call CLS % ReconstructionInner % AllocateDevice ( )
     call CLS % ReconstructionOuter % AllocateDevice ( )
+    call Clear ( CLS % ReconstructionInner % D_Selected, &
+                 CLS % ReconstructionInner % Value ) 
+    call Clear ( CLS % ReconstructionOuter % D_Selected, &
+                 CLS % ReconstructionOuter % Value ) 
 
     !-- Riemann solver
 
@@ -139,6 +147,10 @@ contains
     
     call CLS % ModifiedSpeedsInner % AllocateDevice ( )
     call CLS % ModifiedSpeedsOuter % AllocateDevice ( )
+    call Clear ( CLS % ModifiedSpeedsInner % D_Selected, &
+                 CLS % ModifiedSpeedsInner % Value )
+    call Clear ( CLS % ModifiedSpeedsOuter % D_Selected, &
+                 CLS % ModifiedSpeedsOuter % Value )
 
     call CLS % RawFluxInner % Initialize &
            ( [ nCells, CF % N_CONSERVED ], NameOption = 'RawFluxInner', &
@@ -152,6 +164,10 @@ contains
                      iV = 1, CF % N_CONSERVED ) ] )
     call CLS % RawFluxInner % AllocateDevice ( )
     call CLS % RawFluxOuter % AllocateDevice ( )
+    call Clear ( CLS % RawFluxInner % D_Selected, &
+                 CLS % RawFluxInner % Value )
+    call Clear ( CLS % RawFluxOuter % D_Selected, &
+                 CLS % RawFluxOuter % Value )
 
     call CLS % FluxInner % Initialize &
            ( [ nCells, CF % N_CONSERVED ], NameOption = 'FluxInner', &
@@ -165,6 +181,10 @@ contains
                      iV = 1, CF % N_CONSERVED ) ] )
     call CLS % FluxInner % AllocateDevice ( )
     call CLS % FluxOuter % AllocateDevice ( )
+    call Clear ( CLS % FluxInner % D_Selected, &
+                 CLS % FluxInner % Value )
+    call Clear ( CLS % FluxOuter % D_Selected, &
+                 CLS % FluxOuter % Value )
     
     !-- Update
 

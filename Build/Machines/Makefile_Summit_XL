@@ -10,7 +10,7 @@
 
 FORTRAN_COMPILE      = mpifort -c -qsmp=omp -qoffload #-qsmp=omp:auto -qoffload
 FORTRAN_BOUND_CHECK  = -qcheck=bounds
-FORTRAN_DEBUG        = -g #-Wall
+FORTRAN_DEBUG        = -g -qsigtrap #-Wall
 FORTRAN_OPTIMIZE     = -Ofast
 FORTRAN_PROFILE      = 
 
