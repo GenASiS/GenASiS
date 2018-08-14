@@ -226,7 +226,7 @@ contains
              FEM_1 ( 1 : nCPB ( 1 ), 1 : nCPB ( 2 ), 1 : nCPB ( 3 ) ), &
              FEM_2 ( 1 : nCPB ( 1 ), 1 : nCPB ( 2 ), 1 : nCPB ( 3 ) ), &
              FEM_3 ( 1 : nCPB ( 1 ), 1 : nCPB ( 2 ), 1 : nCPB ( 3 ) ), &
-             DM % CellWidth, CO % Outgoing % Value ( 1 ) )
+             DM % CellWidth, DM % nDimensions, CO % Outgoing % Value ( 1 ) )
     end associate !-- nCPB
     call CO % Reduce ( REDUCTION % MIN )
 
@@ -240,19 +240,32 @@ contains
 
   subroutine ComputeTimeStepKernel &
                ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, &
-                 CellWidth, TimeStepLocal )
+                 CellWidth, nDimensions, TimeStepLocal )
 
     real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
       FEP_1, FEP_2, FEP_3, &
       FEM_1, FEM_2, FEM_3
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       CellWidth
+    integer ( KDI ), intent ( in ) :: &
+      nDimensions
     real ( KDR ), intent ( out ) :: &
       TimeStepLocal
 
-    TimeStepLocal &
-      = minval ( CellWidth ) &
-        / maxval ( max ( FEP_1, FEP_2, FEP_3, -FEM_1, -FEM_2, -FEM_3 ) )
+    select case ( nDimensions ) 
+    case ( 1 ) 
+      TimeStepLocal &
+        = CellWidth ( 1 ) &
+          / maxval ( max ( FEP_1, -FEM_1 ) )
+    case ( 2 ) 
+      TimeStepLocal &
+        = minval ( CellWidth ( 1 : 2 ) ) &
+          / maxval ( max ( FEP_1, FEP_2, -FEM_1, -FEM_2 ) )
+    case ( 3 ) 
+      TimeStepLocal &
+        = minval ( CellWidth ) &
+          / maxval ( max ( FEP_1, FEP_2, FEP_3, -FEM_1, -FEM_2, -FEM_3 ) )
+    end select
 
   end subroutine ComputeTimeStepKernel
 
