@@ -17,6 +17,12 @@ module Chart_SLD_CC__Form
     integer ( KDI ) :: &
       nCellsPolar, &
       nCellsCore
+    integer ( KDI ), dimension ( : ), allocatable :: &
+      nSegmentsFrom_2, nSegmentsTo_2, &
+      nSegmentsFrom_3, nSegmentsTo_3
+    integer ( KDI ), dimension ( :, : ), allocatable :: &
+      nPillarsTransverse_2, &
+      nPillarsTransverse_3
     real ( KDR ) :: &
       RadiusCore, &
       RadiusMax, &
@@ -196,12 +202,7 @@ contains
       nPillarsSurplus
     integer ( KDI ), dimension ( : ), allocatable :: &
       Rank_2, Rank_3, &
-      nPillars_2, nPillars_3, &
-      nSegmentsFrom_2, nSegmentsFrom_3, &
-      nSegmentsTo_2, nSegmentsTo_3
-    integer ( KDI ), dimension ( :, : ), allocatable :: &
-      nPillarsTransverse_2, &
-      nPillarsTransverse_3
+      nPillars_2, nPillars_3
     class ( GeometryFlatForm ), pointer :: &
       G
 
@@ -245,26 +246,26 @@ contains
     end do !-- iV
 
     !-- Count coarsening pillars in transverse brick space 
-    allocate ( nPillarsTransverse_2 ( nB ( 1 ), nB ( 3 ) ) )
-    nPillarsTransverse_2 = 0
+    allocate ( C % nPillarsTransverse_2 ( nB ( 1 ), nB ( 3 ) ) )
+    C % nPillarsTransverse_2 = 0
     do kB = 1, nB ( 3 )
       do iB = 1, nB ( 1 )
         do kC = ( kB - 1 ) * nCB ( 3 ) + 1, kB * nCB ( 3 )
           do iC = ( iB - 1 ) * nCB ( 1 ) + 1, iB * nCB ( 1 )
             if ( R_G ( iC ) * dTheta  <  C % MinWidth ) &
-              nPillarsTransverse_2 ( iB, kB )  &
-                =  nPillarsTransverse_2 ( iB, kB )  +  1
+              C % nPillarsTransverse_2 ( iB, kB )  &
+                =  C % nPillarsTransverse_2 ( iB, kB )  +  1
           end do !-- iC
         end do !-- kC
       end do !-- iB
     end do !-- kB
-    call Show ( nPillarsTransverse_2, 'nPillarsTransverse_2', &
+    call Show ( C % nPillarsTransverse_2, 'nPillarsTransverse_2', &
                 C % IGNORABILITY + 1 )
 
     !-- Determine pillar distribution
-    nRanks_2 = count ( nPillarsTransverse_2 > 0 ) * nB ( 2 )
+    nRanks_2 = count ( C % nPillarsTransverse_2 > 0 ) * nB ( 2 )
     allocate ( nPillars_2 ( 0 : nRanks_2 - 1 ) )
-    nPillarsTotal = sum ( nPillarsTransverse_2 )
+    nPillarsTotal = sum ( C % nPillarsTransverse_2 )
     nPillarsSurplus = mod ( nPillarsTotal, nRanks_2 )
     nPillars_2 = nPillarsTotal / nRanks_2
     nPillars_2 ( 0 : nPillarsSurplus - 1 ) &
@@ -276,7 +277,7 @@ contains
     iR = 0
     do kB = 1, nB ( 3 )
       iLoop: do iB = 1, nB ( 1 )
-        if ( nPillarsTransverse_2 ( iB, kB ) == 0 ) &
+        if ( C % nPillarsTransverse_2 ( iB, kB ) == 0 ) &
           cycle iLoop
         do jB = 1, nB ( 2 )
           Rank_2 ( iR ) = ( kB - 1 ) * nB ( 1 ) * nB ( 2 )  &
@@ -297,16 +298,16 @@ contains
     if ( Comm_2 % Initialized ) then
 
       !-- Determine nSegmentsFrom and nSegmentsTo
-      allocate ( nSegmentsFrom_2 ( 0 : nRanks_2 - 1 ) )
-      allocate ( nSegmentsTo_2 ( 0 : nRanks_2 - 1 ) )
+      allocate ( C % nSegmentsFrom_2 ( 0 : nRanks_2 - 1 ) )
+      allocate ( C % nSegmentsTo_2 ( 0 : nRanks_2 - 1 ) )
       iRB = 0
       iRP = 0
       iP = 0
-      nSegmentsFrom_2 = 0
-      nSegmentsTo_2   = 0
+      C % nSegmentsFrom_2 = 0
+      C % nSegmentsTo_2   = 0
       do kB = 1, nB ( 3 )
         iLoop: do iB = 1, nB ( 1 )
-          if ( nPillarsTransverse_2 ( iB, kB ) == 0 ) &
+          if ( C % nPillarsTransverse_2 ( iB, kB ) == 0 ) &
             cycle iLoop
           do kC = ( kB - 1 ) * nCB ( 3 ) + 1, kB * nCB ( 3 )
             do iC = ( iB - 1 ) * nCB ( 1 ) + 1, iB * nCB ( 1 )
@@ -314,11 +315,11 @@ contains
                 iP = iP + 1
                 do jB = 0, nB ( 2 ) - 1
                   if ( Comm_2 % Rank == iRP ) &
-                    nSegmentsFrom_2 ( iRB + jB )  &
-                      =  nSegmentsFrom_2 ( iRB + jB )  +  1
+                    C % nSegmentsFrom_2 ( iRB + jB )  &
+                      =  C % nSegmentsFrom_2 ( iRB + jB )  +  1
                   if ( Comm_2 % Rank == iRB + jB ) &
-                    nSegmentsTo_2 ( iRP ) &
-                      =  nSegmentsTo_2 ( iRP )  +  1
+                    C % nSegmentsTo_2 ( iRP ) &
+                      =  C % nSegmentsTo_2 ( iRP )  +  1
                 end do !-- jB
                 if ( iP == nPillars_2 ( iRP ) ) then
                   iRP = iRP + 1
@@ -331,8 +332,8 @@ contains
         end do iLoop !-- iB
       end do !-- kB
       call Show ( 'Communication counting', C % IGNORABILITY + 1 )
-      call Show ( nSegmentsFrom_2, 'nSegmentsFrom_2', C % IGNORABILITY + 1 )
-      call Show ( nSegmentsTo_2, 'nSegmentsTo_2', C % IGNORABILITY + 1 )
+      call Show ( C % nSegmentsFrom_2, 'nSegmentsFrom_2', C % IGNORABILITY + 1 )
+      call Show ( C % nSegmentsTo_2, 'nSegmentsTo_2', C % IGNORABILITY + 1 )
 
     end if !-- Comm_2 % Initialized
     end associate !-- Comm_2
@@ -367,26 +368,27 @@ contains
     end do !-- iV
 
     !-- Count coarsening pillars in transverse brick space 
-    allocate ( nPillarsTransverse_3 ( nB ( 1 ), nB ( 2 ) ) )
-    nPillarsTransverse_3 = 0
+    allocate ( C % nPillarsTransverse_3 ( nB ( 1 ), nB ( 2 ) ) )
+    C % nPillarsTransverse_3 = 0
     do jB = 1, nB ( 2 )
       do iB = 1, nB ( 1 )
         do jC = ( jB - 1 ) * nCB ( 2 ) + 1, jB * nCB ( 2 )
           do iC = ( iB - 1 ) * nCB ( 1 ) + 1, iB * nCB ( 1 )
-            if ( R_G ( iC ) * sin ( Theta_G ( jC ) ) * dPhi  <  C % MinWidth ) &
-              nPillarsTransverse_3 ( iB, jB )  &
-                =  nPillarsTransverse_3 ( iB, jB )  +  1
+            if ( R_G ( iC ) * sin ( Theta_G ( jC ) ) * dPhi  &
+                 <  C % MinWidth ) &
+              C % nPillarsTransverse_3 ( iB, jB )  &
+                =  C % nPillarsTransverse_3 ( iB, jB )  +  1
           end do !-- iC
         end do !-- jC
       end do !-- iB
     end do !-- jB
-    call Show ( nPillarsTransverse_3, 'nPillarsTransverse_3', &
+    call Show ( C % nPillarsTransverse_3, 'nPillarsTransverse_3', &
                 C % IGNORABILITY + 1 )
 
     !-- Determine pillar distribution
-    nRanks_3 = count ( nPillarsTransverse_3 > 0 ) * nB ( 3 )
+    nRanks_3 = count ( C % nPillarsTransverse_3 > 0 ) * nB ( 3 )
     allocate ( nPillars_3 ( 0 : nRanks_3 - 1 ) )
-    nPillarsTotal = sum ( nPillarsTransverse_3 )
+    nPillarsTotal = sum ( C % nPillarsTransverse_3 )
     nPillarsSurplus = mod ( nPillarsTotal, nRanks_3 )
     nPillars_3 = nPillarsTotal / nRanks_3
     nPillars_3 ( 0 : nPillarsSurplus - 1 ) &
@@ -398,7 +400,7 @@ contains
     iR = 0
     do jB = 1, nB ( 2 )
       iLoop: do iB = 1, nB ( 1 )
-        if ( nPillarsTransverse_3 ( iB, jB ) == 0 ) &
+        if ( C % nPillarsTransverse_3 ( iB, jB ) == 0 ) &
           cycle iLoop
         do kB = 1, nB ( 3 )
           Rank_3 ( iR ) = ( kB - 1 ) * nB ( 1 ) * nB ( 2 )  &
@@ -419,16 +421,16 @@ contains
     if ( Comm_3 % Initialized ) then
 
       !-- Determine nSegmentsFrom and nSegmentsTo
-      allocate ( nSegmentsFrom_3 ( 0 : nRanks_3 - 1 ) )
-      allocate ( nSegmentsTo_3 ( 0 : nRanks_3 - 1 ) )
+      allocate ( C % nSegmentsFrom_3 ( 0 : nRanks_3 - 1 ) )
+      allocate ( C % nSegmentsTo_3 ( 0 : nRanks_3 - 1 ) )
       iRB = 0
       iRP = 0
       iP = 0
-      nSegmentsFrom_3 = 0
-      nSegmentsTo_3   = 0
+      C % nSegmentsFrom_3 = 0
+      C % nSegmentsTo_3   = 0
       do jB = 1, nB ( 2 )
         iLoop: do iB = 1, nB ( 1 )
-          if ( nPillarsTransverse_3 ( iB, jB ) == 0 ) &
+          if ( C % nPillarsTransverse_3 ( iB, jB ) == 0 ) &
             cycle iLoop
           do jC = ( jB - 1 ) * nCB ( 2 ) + 1, jB * nCB ( 2 )
             do iC = ( iB - 1 ) * nCB ( 1 ) + 1, iB * nCB ( 1 )
@@ -438,11 +440,11 @@ contains
                 iP = iP + 1
                 do kB = 0, nB ( 3 ) - 1
                   if ( Comm_3 % Rank == iRP ) &
-                    nSegmentsFrom_3 ( iRB + kB )  &
-                      =  nSegmentsFrom_3 ( iRB + kB )  +  1
+                    C % nSegmentsFrom_3 ( iRB + kB )  &
+                      =  C % nSegmentsFrom_3 ( iRB + kB )  +  1
                   if ( Comm_3 % Rank == iRB + kB ) &
-                    nSegmentsTo_3 ( iRP ) &
-                      =  nSegmentsTo_3 ( iRP )  +  1
+                    C % nSegmentsTo_3 ( iRP ) &
+                      =  C % nSegmentsTo_3 ( iRP )  +  1
                 end do !-- kB
                 if ( iP == nPillars_3 ( iRP ) ) then
                   iRP = iRP + 1
@@ -455,8 +457,10 @@ contains
         end do iLoop !-- iB
       end do !-- jB
       call Show ( 'Communication counting', C % IGNORABILITY + 1 )
-      call Show ( nSegmentsFrom_3, 'nSegmentsFrom_3', C % IGNORABILITY + 1 )
-      call Show ( nSegmentsTo_3, 'nSegmentsTo_3', C % IGNORABILITY + 1 )
+      call Show ( C % nSegmentsFrom_3, 'C % nSegmentsFrom_3', &
+                  C % IGNORABILITY + 1 )
+      call Show ( C % nSegmentsTo_3, 'C % nSegmentsTo_3', &
+                  C % IGNORABILITY + 1 )
 
     end if !-- Comm_3 % Initialized
     end associate !-- Comm_3
@@ -482,6 +486,20 @@ contains
       deallocate ( C % Communicator_3 )
     if ( allocated ( C % Communicator_2 ) ) &
       deallocate ( C % Communicator_2 )
+
+    if ( allocated ( C % nPillarsTransverse_3 ) ) &
+      deallocate ( C % nPillarsTransverse_3 )
+    if ( allocated ( C % nPillarsTransverse_2 ) ) &
+      deallocate ( C % nPillarsTransverse_2 )
+
+    if ( allocated ( C % nSegmentsTo_3 ) ) &
+      deallocate ( C % nSegmentsTo_3 )
+    if ( allocated ( C % nSegmentsFrom_3 ) ) &
+      deallocate ( C % nSegmentsFrom_3 )
+    if ( allocated ( C % nSegmentsTo_2 ) ) &
+      deallocate ( C % nSegmentsTo_2 )
+    if ( allocated ( C % nSegmentsFrom_2 ) ) &
+      deallocate ( C % nSegmentsFrom_2 )
 
   end subroutine Finalize
 
