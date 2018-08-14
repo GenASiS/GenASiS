@@ -16,7 +16,12 @@ program FluidCentralCore_Form_Test
   call FCC % Initialize &
          ( PROGRAM_HEADER % Name, &
            FluidType = 'DUST', &
-           GeometryType = 'NEWTONIAN' )
+           GeometryType = 'NEWTONIAN', &
+           DimensionlessOption = .true. )
+
+  call FCC % OpenManifoldStreams ( )
+  call FCC % Write ( )
+
   deallocate ( FCC )
 
   deallocate ( PROGRAM_HEADER )
