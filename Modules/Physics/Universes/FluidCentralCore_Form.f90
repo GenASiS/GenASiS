@@ -12,6 +12,9 @@ module FluidCentralCore_Form
   type, public, extends ( FluidCentralTemplate ) :: FluidCentralCoreForm
     real ( KDR ) :: &
       GravityFactor
+    type ( CollectiveOperation_R_Form ), allocatable :: &
+      CO_Coarsening_2, &
+      CO_Coarsening_3
   contains
     procedure, public, pass :: &
       Initialize
@@ -35,6 +38,7 @@ module FluidCentralCore_Form
 !      FluidCentralCore => null ( )
 
       private :: &
+        SetCoarsening, &
         LocalMax, &
         ComputeTimeStep_G_CSL
 
@@ -108,6 +112,8 @@ contains
 
     if ( trim ( GeometryType ) == 'NEWTONIAN' ) &
       call Show ( FCC % GravityFactor, 'GravityFactor' )
+
+    call SetCoarsening ( FCC )
 
   end subroutine Initialize
 
@@ -191,9 +197,49 @@ contains
     type ( FluidCentralCoreForm ), intent ( inout ) :: &
       FCC
 
+    if ( allocated ( FCC % CO_Coarsening_3 ) ) &
+      deallocate ( FCC % CO_Coarsening_3 )
+    if ( allocated ( FCC % CO_Coarsening_2 ) ) &
+      deallocate ( FCC % CO_Coarsening_2 )
+
     call FCC % FinalizeTemplate_FC ( )
 
   end subroutine Finalize
+
+
+  subroutine SetCoarsening ( FCC )
+
+    class ( FluidCentralCoreForm ), intent ( inout ) :: &
+      FCC
+
+    select type ( PS => FCC % PositionSpace )
+    class is ( Atlas_SC_CC_Form )
+
+
+    !-- Polar coarsening
+
+    if ( PS % nDimensions < 2 ) &
+      return
+
+    call Show ( 'SetCoarsening_2', FCC % IGNORABILITY )
+    call Show ( FCC % Name, 'Universe', FCC % IGNORABILITY )
+
+    allocate ( FCC % CO_Coarsening_2 )
+
+
+    !-- Azimuthal coarsening
+
+    if ( PS % nDimensions < 3 ) &
+      return
+
+    call Show ( 'SetCoarsening_3', FCC % IGNORABILITY )
+    call Show ( FCC % Name, 'Universe', FCC % IGNORABILITY )
+
+    allocate ( FCC % CO_Coarsening_3 )
+
+    end select !-- PS
+
+  end subroutine SetCoarsening
 
 
   subroutine SetWriteTimeInterval ( I )
