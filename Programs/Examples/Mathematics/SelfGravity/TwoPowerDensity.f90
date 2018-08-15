@@ -49,7 +49,7 @@ program TwoPowerDensity
 
   call TP % SetTwoPowerDensity ( Density, a, alpha, beta )
 
-  call TP % Compute ( )
+  call TP % Compute ( NormalizeSolutionOption = .true. )
   
   deallocate ( TP )
 

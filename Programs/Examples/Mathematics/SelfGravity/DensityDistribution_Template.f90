@@ -26,16 +26,15 @@ module DensityDistribution_Template
       Initialize
     procedure, public, pass :: &
       Compute
-    procedure, public, pass :: &
-      ComputeError
     final :: &
       Finalize
   end type DensityDistributionTemplate
 
   private :: &
     ComputeError, &
-    ShiftSolution
-
+    ShiftSolutionKernel, &
+    NormalizeSolutionKernel
+    
 contains
 
 
@@ -130,11 +129,19 @@ contains
   end subroutine Initialize 
 
 
-  subroutine Compute ( DD, ShiftSolutionOption )
+  subroutine Compute ( DD, ShiftSolutionOption, NormalizeSolutionOption )
     class ( DensityDistributionTemplate ), intent ( inout ) :: &
       DD
     logical ( KDL ), optional :: &
-      ShiftSolutionOption
+      ShiftSolutionOption, &
+      NormalizeSolutionOption
+
+    logical ( KDL ) :: &
+      ShiftSolution, &
+      NormalizeSolution
+
+    ShiftSolution = .false.
+    NormalizeSolution = .false. 
 
     associate ( A => DD % Atlas )
 
@@ -142,9 +149,15 @@ contains
 
     call P % Solve ( DD % Solution, DD % Source )
 
-    if ( present ( ShiftSolutionOption ) ) call ShiftSolution ( DD )
-    
-    call ComputeError ( DD ) 
+    if ( present ( ShiftSolutionOption )  ) &
+      ShiftSolution = ShiftSolutionOption
+    if ( ShiftSolution ) call ShiftSolutionKernel ( DD )
+
+    if ( present ( NormalizeSolutionOption ) ) &
+      NormalizeSolution = NormalizeSolutionOption
+    if ( NormalizeSolution ) call NormalizeSolutionKernel ( DD )
+
+    call ComputeError ( DD, NormalizeSolution ) 
 
     !-- Write
 
@@ -189,7 +202,81 @@ contains
   end subroutine Finalize
 
 
-  subroutine ShiftSolution ( DD )
+  subroutine ComputeError ( DD, Normalized )
+    class ( DensityDistributionTemplate ), intent ( inout ) :: &
+      DD
+    logical ( KDL ), intent ( in ) :: &
+      Normalized
+
+    integer ( KDI ) :: &
+      nM, & 
+      iM !-- iMessage
+    real ( KDR ) :: &
+      L1
+    class ( StorageForm ), pointer :: &
+      Solution, &
+      Reference, &
+      Difference         
+    type ( CollectiveOperation_R_Form ) :: &
+      CO
+    
+    Solution   => DD % Solution   % Storage ( )
+    Reference  => DD % Reference  % Storage ( )
+    Difference => DD % Difference % Storage ( )
+
+    if ( .not. Normalized ) &
+      call MultiplyAdd &
+             ( Solution % Value, Reference % Value, &
+                 -1.0_KDR, Difference % Value )
+
+    associate ( A => DD % Atlas ) 
+    select type ( C => A % Chart )
+    class is ( Chart_SL_Template )
+    
+    associate ( D   => Difference % Value, &
+                R   => Reference  % Value )
+
+    nM = DD % N_Equations
+
+    call CO % Initialize ( A % Communicator, [ 2 * nM ], [ 2 * nM ] )
+
+    do iM = 1, nM
+      CO % Outgoing % Value ( 2 * iM ) &
+        = sum ( abs ( R ( :, iM ) ), mask = C % IsProperCell )
+      CO % Outgoing % Value ( 2 * iM - 1 )&
+        = sum ( abs ( D ( :, iM ) ), mask = C % IsProperCell )
+    end do
+
+    call CO % Reduce ( REDUCTION % SUM )
+
+    end associate !-- D
+    
+    !-- L1 error
+
+    associate ( IN   => CO % Incoming % Value )
+
+    do iM = 1, nM
+      L1 = IN ( 2 * iM - 1 ) / IN ( 2 * iM )
+      call Show ( L1, '*** L1 error', nLeadingLinesOption = 2, &
+                nTrailingLinesOption = 2 )
+    end do
+
+    end associate !-- IN 
+
+    end select !-- C
+    end associate !-- A
+
+    !-- Relative difference
+
+    if ( .not. Normalized ) &
+      Difference % Value = abs ( Difference % Value / Reference % Value )
+
+    nullify ( Solution, Reference, Difference )
+
+  end subroutine ComputeError
+
+
+  subroutine ShiftSolutionKernel ( DD )
     type ( DensityDistributionTemplate ), intent ( inout ) :: &
       DD
 
@@ -199,8 +286,7 @@ contains
       D
     class ( StorageForm ), pointer :: &
       Solution, &
-      Reference, &
-      Difference
+      Reference
     type ( CollectiveOperation_R_Form ) :: &
       CO
     
@@ -233,22 +319,19 @@ contains
 
     nullify ( Solution, Reference )
 
-  end subroutine ShiftSolution
+  end subroutine ShiftSolutionKernel
 
 
-  subroutine ComputeError ( DD )
-    class ( DensityDistributionTemplate ), intent ( in ) :: &
+  subroutine NormalizeSolutionKernel ( DD )
+    type ( DensityDistributionTemplate ), intent ( inout ) :: &
       DD
 
     integer ( KDI ) :: &
-      nM, & 
-      iM !-- iMessage
-    real ( KDR ) :: &
-      L1
+      iE
     class ( StorageForm ), pointer :: &
       Solution, &
       Reference, &
-      Difference         
+      Difference
     type ( CollectiveOperation_R_Form ) :: &
       CO
     
@@ -256,52 +339,39 @@ contains
     Reference  => DD % Reference  % Storage ( )
     Difference => DD % Difference % Storage ( )
 
-    call MultiplyAdd &
-           ( Solution % Value, Reference % Value, -1.0_KDR, Difference % Value )
-
     associate ( A => DD % Atlas ) 
     select type ( C => A % Chart )
     class is ( Chart_SL_Template )
-    
-    associate ( D   => Difference % Value )
 
-    nM = DD % N_Equations + 1
+    call CO % Initialize &
+                ( A % Communicator, [ DD % N_Equations * 2 ], &
+                    [ DD % N_Equations * 2 ] )
+    do iE = 1, DD % N_Equations
+      CO % Outgoing % Value ( 2 * iE - 1 ) &
+        = minval ( Solution % Value ( :, iE ), mask = C % IsProperCell )
+      CO % Outgoing % Value ( 2 * iE ) &
+        = minval ( Reference % Value ( :, iE ), mask = C % IsProperCell )
+    end do
+    call CO % Reduce ( REDUCTION % MIN )
 
-    call CO % Initialize ( A % Communicator, [ nM ], [ nM ] )
-
-    do iM = 1, nM - 1
-      CO % Outgoing % Value ( iM ) = sum ( abs ( D ( :, iM ) ), &
-                                            mask = C % IsProperCell )
+    do iE = 1, DD % N_Equations
+      Difference % Value ( :, iE ) &
+        = abs ( ( Solution % Value ( :, iE ) &
+                  / CO % Incoming % Value ( 2 * iE - 1 ) &
+              - Reference % Value ( :, iE ) &
+                  / CO % Incoming % Value ( 2 * iE ) ) )
+      Reference % Value ( :, iE ) &
+        = Reference % Value ( :, iE ) &
+            / CO % Incoming % Value ( 2 * iE )
     end do
 
-    CO % Outgoing % Value ( nM ) = C % nProperCells
-
-    call CO % Reduce ( REDUCTION % SUM )
-
-    end associate !-- D
-    
-    !-- L1 error
-
-    associate ( IN   => CO % Incoming % Value )
-
-    do iM = 1, nM - 1
-      L1 = IN ( iM ) / IN ( nM )
-      call Show ( L1, '*** L1 error', nLeadingLinesOption = 2, &
-                nTrailingLinesOption = 2 )
-    end do
-
-    end associate !-- IN 
+   
 
     end select !-- C
     end associate !-- A
 
-    !-- Relative difference
-
-    Difference % Value = abs ( Difference % Value / Reference % Value )
-
     nullify ( Solution, Reference, Difference )
 
-  end subroutine ComputeError  
-
+  end subroutine NormalizeSolutionKernel  
 
 end module DensityDistribution_Template
