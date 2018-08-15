@@ -359,10 +359,13 @@ contains
         = abs ( ( Solution % Value ( :, iE ) &
                   / CO % Incoming % Value ( 2 * iE - 1 ) &
               - Reference % Value ( :, iE ) &
-                  / CO % Incoming % Value ( 2 * iE ) ) &
-              * CO % Incoming % Value ( 2 * iE ) &
-                  / Reference % Value ( :, iE ) )
+                  / CO % Incoming % Value ( 2 * iE ) ) )
+      Reference % Value ( :, iE ) &
+        = Reference % Value ( :, iE ) &
+            / CO % Incoming % Value ( 2 * iE )
     end do
+
+   
 
     end select !-- C
     end associate !-- A
