@@ -18,13 +18,13 @@ program FluidCentralCore_Form_Test
            FluidType = 'DUST', &
            GeometryType = 'NEWTONIAN', &
            DimensionlessOption = .true. )
+  call FCC % OpenManifoldStreams ( VerboseStreamOption = .true. )
 
   call SetFluid ( FCC )
-
-  call FCC % OpenManifoldStreams ( VerboseStreamOption = .true. )
   call FCC % Write ( )
 
-  call FCC % CoarsenSingularities ( )
+  call CoarsenFluid ( FCC )
+  call FCC % Write ( )
 
   deallocate ( FCC )
 
@@ -106,3 +106,30 @@ subroutine SetFluid ( FCC )
   nullify ( F, S_2, S_3 )
 
 end subroutine SetFluid
+
+
+subroutine CoarsenFluid ( FCC )
+
+  use Basics
+  use StressEnergies
+  use FluidCentralCore_Form
+
+  type ( FluidCentralCoreForm ), intent ( inout ) :: &
+    FCC
+
+  type ( StorageForm ) :: &
+    S
+  class ( Fluid_D_Form ), pointer :: &
+    F
+
+  select type ( FA => FCC % Current_ASC )
+  class is ( Fluid_ASC_Form )
+  F => FA % Fluid_D ( )
+
+  call S % Initialize ( F, iaSelectedOption = F % iaConserved )
+  call FCC % CoarsenSingularities ( S )
+
+  end select !-- FA
+  nullify ( F )
+
+end subroutine CoarsenFluid

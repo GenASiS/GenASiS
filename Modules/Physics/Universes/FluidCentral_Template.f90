@@ -41,7 +41,7 @@ module FluidCentral_Template
       SetCoarsening
     procedure, public, pass :: &
       CoarsenSingularitiesTemplate
-    procedure ( SC ), public, pass, deferred :: &
+    procedure ( CS ), public, pass, deferred :: &
       CoarsenSingularities
     procedure, public, pass :: &  !-- 2
       OpenGridImageStreams
@@ -90,6 +90,15 @@ module FluidCentral_Template
       class ( FluidCentralTemplate ), intent ( inout ) :: &
         FC
     end subroutine SC
+
+    subroutine CS ( FC, S )
+      use Basics
+      import FluidCentralTemplate
+      class ( FluidCentralTemplate ), intent ( inout ) :: &
+        FC
+      class ( StorageForm ), intent ( inout ) :: &
+        S
+    end subroutine CS
 
   end interface
 
@@ -224,6 +233,7 @@ contains
                LimiterParameterOption        =  LimiterParameterOption, &
                ShockThresholdOption          =  ShockThresholdOption )
     end if
+
 
     !-- Step
 
@@ -387,16 +397,18 @@ contains
   end subroutine SetCoarseningTemplate
 
 
-  subroutine CoarsenSingularitiesTemplate ( FC, iAngular )
+  subroutine CoarsenSingularitiesTemplate ( FC, S, iAngular )
 
     class ( FluidCentralTemplate ), intent ( inout ) :: &
       FC
+    class ( StorageForm ), intent ( inout ) :: &
+      S
     integer ( KDI ), intent ( in ) :: &
       iAngular
 
-    call ComposePillars ( FC, iAngular )
+    call ComposePillars ( FC, S, iAngular )
     call CoarsenPillars ( FC, iAngular )
-    call DecomposePillars ( FC, iAngular )
+    call DecomposePillars ( FC, S, iAngular )
 
   end subroutine CoarsenSingularitiesTemplate
 
@@ -738,19 +750,22 @@ contains
   end subroutine ComputeEnclosedBaryons
 
 
-  subroutine ComposePillars ( FC, iAngular )
+  subroutine ComposePillars ( FC, S, iAngular )
 
     class ( FluidCentralTemplate ), intent ( inout ) :: &
       FC
+    class ( StorageForm ), intent ( inout ) :: &
+      S
     integer ( KDI ), intent ( in ) :: &
       iAngular
 
     integer ( KDI ) :: &
       oO, &          !-- oOutgoing
       iC, jC, kC, &  !-- iCell, etc.
-      iV
+      iS
     real ( KDR ), dimension ( :, :, : ), pointer :: &
-      Crsn_2, Crsn_3
+      Crsn_2, Crsn_3, &
+      SV
     class ( GeometryFlatForm ), pointer :: &
       G
     class ( Fluid_D_Form ), pointer :: &
@@ -793,11 +808,13 @@ contains
             cycle
           Outgoing ( oO + 1 ) = Crsn_2 ( iC, 1, kC )
           oO = oO + 1
-          do iV = 1, F % N_CONSERVED
+          do iS = 1, S % nVariables
+            call C % SetVariablePointer &
+                   ( S % Value ( :, S % iaSelected ( iS ) ), SV )
             Outgoing ( oO + 1 : oO + nCB ( 2 ) ) &
-              =  Outgoing ( oO + 1 : oO + nCB ( 2 ) )  +  iV
+              =  SV ( iC, 1 : nCB ( 2 ), kC )
             oO = oO + nCB ( 2 )
-          end do !-- iV
+          end do !-- iS
         end do !-- iC
       end do !-- kC
 
@@ -831,11 +848,13 @@ call Show ( Incoming, '>>> Incoming 2' )
             cycle
           Outgoing ( oO + 1 ) = Crsn_3 ( iC, jC, 1 )
           oO = oO + 1
-          do iV = 1, F % N_CONSERVED
+          do iS = 1, F % N_CONSERVED
+            call C % SetVariablePointer &
+                   ( S % Value ( :, S % iaSelected ( iS ) ), SV )
             Outgoing ( oO + 1 : oO + nCB ( 3 ) ) &
-              =  Outgoing ( oO + 1 : oO + nCB ( 3 ) )  +  iV
+              =  SV ( iC, jC, 1 : nCB ( 3 ) )
             oO = oO + nCB ( 3 )
-          end do !-- iV
+          end do !-- iS
         end do !-- iC
       end do !-- jC
 
@@ -866,10 +885,12 @@ call Show ( Incoming, '>>> Incoming 3' )
   end subroutine CoarsenPillars
 
 
-  subroutine DecomposePillars ( FC, iAngular )
+  subroutine DecomposePillars ( FC, S, iAngular )
 
     class ( FluidCentralTemplate ), intent ( inout ) :: &
       FC
+    class ( StorageForm ), intent ( inout ) :: &
+      S
     integer ( KDI ), intent ( in ) :: &
       iAngular
 

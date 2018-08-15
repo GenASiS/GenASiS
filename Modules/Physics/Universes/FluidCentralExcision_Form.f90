@@ -191,10 +191,12 @@ contains
   end subroutine SetCoarsening
 
 
-  subroutine CoarsenSingularities ( FC )
+  subroutine CoarsenSingularities ( FC, S )
 
     class ( FluidCentralExcisionForm ), intent ( inout ) :: &
       FC
+    class ( StorageForm ), intent ( inout ) :: &
+      S
 
     !-- FIXME: Fill in along the lines of FluidCentralCore_Form
 
