@@ -345,8 +345,8 @@ contains
 
       call CO_F % Initialize &
              ( C % Communicator_2, &
-               nIncoming  =  C % nSegmentsFrom_2  *  nValuesFactor_2  +  1, &
-               nOutgoing  =  C % nSegmentsTo_2    *  nValuesFactor_2  +  1 )
+               nIncoming  =  C % nSegmentsFrom_2  *  ( nValuesFactor_2 + 1 ), &
+               nOutgoing  =  C % nSegmentsTo_2    *  ( nValuesFactor_2 + 1 ) )
       call CO_B % Initialize &
              ( C % Communicator_2, &
                nIncoming  =  C % nSegmentsTo_2    *  nValuesFactor_2, &
@@ -369,8 +369,8 @@ contains
   
       call CO_F % Initialize &
              ( C % Communicator_3, &
-               nIncoming  =  C % nSegmentsFrom_3  *  nValuesFactor_3  +  1, &
-               nOutgoing  =  C % nSegmentsTo_3    *  nValuesFactor_3  +  1 )
+               nIncoming  =  C % nSegmentsFrom_3  *  ( nValuesFactor_3 + 1 ), &
+               nOutgoing  =  C % nSegmentsTo_3    *  ( nValuesFactor_3 + 1 ) )
       call CO_B % Initialize &
              ( C % Communicator_3, &
                nIncoming  =  C % nSegmentsTo_3    *  nValuesFactor_3, &
@@ -746,8 +746,13 @@ contains
       iAngular
 
     integer ( KDI ) :: &
-      iB, jB, kB, &  !-- iBrick, etc.
-      iC, jC, kC     !-- iCell, etc.
+      oO, &          !-- oOutgoing
+      iC, jC, kC, &  !-- iCell, etc.
+      iV
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+      Crsn_2, Crsn_3
+    class ( GeometryFlatForm ), pointer :: &
+      G
     class ( Fluid_D_Form ), pointer :: &
       F
 
@@ -757,13 +762,12 @@ contains
 
     select type ( PS => FC % PositionSpace )
     class is ( Atlas_SC_Form )
+    G => PS % Geometry ( )
 
     select type ( C => PS % Chart )
     class is ( Chart_SLD_CC_Form )
 
-    associate &
-      (   nB => C % nBricks, &
-         nCB => C % nCellsBrick )
+    associate ( nCB => C % nCellsBrick )
 
     select case ( iAngular )
     case ( 2 )
@@ -771,49 +775,83 @@ contains
       if ( .not. C % Communicator_2 % Initialized ) &
         return
 
-      associate ( Buffer => FC % CO_CoarsenForward_2 % Outgoing % Value )
+      associate &
+        ( CO => FC % CO_CoarsenForward_2 )
+      associate &
+        ( Outgoing => CO % Outgoing % Value, &
+          Incoming => CO % Incoming % Value )
 
-      do kB = 1, nB ( 3 )
-        iLoop_2: do iB = 1, nB ( 1 )
-          if ( C % nPillarsTransverse_2 ( iB, kB ) == 0 ) &
-            cycle iLoop_2
-          do kC = ( kB - 1 ) * nCB ( 3 ) + 1, kB * nCB ( 3 )
-            do iC = ( iB - 1 ) * nCB ( 1 ) + 1, iB * nCB ( 1 )
+      Outgoing = C % Atlas % Communicator % Rank * 100
 
-            end do !-- iC
-          end do !-- kC
-        end do iLoop_2 !-- iB
-      end do !-- kB
+      call C % SetVariablePointer &
+             ( G % Value ( :, G % COARSENING ( 2 ) ), Crsn_2 )
 
-      end associate !-- Buffer
+      oO = 0
+      do kC = 1, nCB ( 3 )
+        do iC = 1, nCB ( 1 )
+          if ( Crsn_2 ( iC, 1, kC ) < 2.0_KDR ) &
+            cycle
+          Outgoing ( oO + 1 ) = Crsn_2 ( iC, 1, kC )
+          oO = oO + 1
+          do iV = 1, F % N_CONSERVED
+            Outgoing ( oO + 1 : oO + nCB ( 2 ) ) &
+              =  Outgoing ( oO + 1 : oO + nCB ( 2 ) )  +  iV
+            oO = oO + nCB ( 2 )
+          end do !-- iV
+        end do !-- iC
+      end do !-- kC
+
+!call Show ( Outgoing, '>>> Outgoing 2' )
+      call CO % AllToAll_V ( )
+call Show ( Incoming, '>>> Incoming 2' )
+
+      end associate !-- Outgoing, etc.
+      end associate !-- CO
 
     case ( 3 )
 
       if ( .not. C % Communicator_3 % Initialized ) &
         return
 
-      associate ( Buffer => FC % CO_CoarsenForward_3 % Outgoing % Value )
+      associate &
+        ( CO => FC % CO_CoarsenForward_3 )
+      associate &
+        ( Outgoing => CO % Outgoing % Value, &
+          Incoming => CO % Incoming % Value )
 
-      do jB = 1, nB ( 2 )
-        iLoop_3: do iB = 1, nB ( 1 )
-          if ( C % nPillarsTransverse_3 ( iB, jB ) == 0 ) &
-            cycle iLoop_3
-          do jC = ( jB - 1 ) * nCB ( 2 ) + 1, jB * nCB ( 2 )
-            do iC = ( iB - 1 ) * nCB ( 1 ) + 1, iB * nCB ( 1 )
+      Outgoing = C % Atlas % Communicator % Rank * 100
 
-            end do !-- iC
-          end do !-- jC
-        end do iLoop_3 !-- iB
-      end do !-- jB
+      call C % SetVariablePointer &
+             ( G % Value ( :, G % COARSENING ( 3 ) ), Crsn_3 )
 
-      end associate !-- Buffer
+      oO = 0
+      do jC = 1, nCB ( 2 )
+        do iC = 1, nCB ( 1 )
+          if ( Crsn_3 ( iC, jC, 1 ) < 2.0_KDR ) &
+            cycle
+          Outgoing ( oO + 1 ) = Crsn_3 ( iC, jC, 1 )
+          oO = oO + 1
+          do iV = 1, F % N_CONSERVED
+            Outgoing ( oO + 1 : oO + nCB ( 3 ) ) &
+              =  Outgoing ( oO + 1 : oO + nCB ( 3 ) )  +  iV
+            oO = oO + nCB ( 3 )
+          end do !-- iV
+        end do !-- iC
+      end do !-- jC
+
+!call Show ( Outgoing, '>>> Outgoing 3' )
+      call CO % AllToAll_V ( )
+call Show ( Incoming, '>>> Incoming 3' )
+
+      end associate !-- Outgoing, etc.
+      end associate !-- CO
 
     end select !-- iAngular
-    end associate !-- nB, etc.
+    end associate !-- nCB
     end select !-- C
     end select !-- PS
     end select !-- FA
-    nullify ( F )
+    nullify ( F, G, Crsn_2, Crsn_3 )
 
   end subroutine ComposePillars
 
