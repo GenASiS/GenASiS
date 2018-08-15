@@ -73,5 +73,7 @@ FluidCentralExcision_Form_Test.o: \
 
 FluidCentralCore_Form_Test.o: \
   Basics.o \
+  Mathematics.o \
+  StressEnergies.o \
   FluidCentralCore_Form.o \
   FluidCentralCore_Form_Test.f90
