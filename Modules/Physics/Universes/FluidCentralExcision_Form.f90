@@ -16,6 +16,8 @@ module FluidCentralExcision_Form
     final :: &
       Finalize
     procedure, private, pass :: &
+      SetCoarsening
+    procedure, private, pass :: &
       InitializePositionSpace
     procedure, private, pass :: &
       InitializeGeometry
@@ -175,6 +177,16 @@ contains
     call FCE % FinalizeTemplate_FC ( )
 
   end subroutine Finalize
+
+
+  subroutine SetCoarsening ( FC )
+
+    class ( FluidCentralExcisionForm ), intent ( inout ) :: &
+      FC
+
+    !-- FIXME: Fill in along the lines of FluidCentralCore_Form
+
+  end subroutine SetCoarsening
 
 
 end module FluidCentralExcision_Form

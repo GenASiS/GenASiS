@@ -12,9 +12,6 @@ module FluidCentralCore_Form
   type, public, extends ( FluidCentralTemplate ) :: FluidCentralCoreForm
     real ( KDR ) :: &
       GravityFactor
-    type ( CollectiveOperation_R_Form ), allocatable :: &
-      CO_CoarsenForward_2, CO_CoarsenBackward_2, &
-      CO_CoarsenForward_3, CO_CoarsenBackward_3
   contains
     procedure, public, pass :: &
       Initialize
@@ -24,6 +21,8 @@ module FluidCentralCore_Form
       InitializePositionSpace
     procedure, private, pass :: &
       InitializeGeometry
+    procedure, private, pass :: &
+      SetCoarsening
     procedure, private, pass :: &
       SetWriteTimeInterval
     procedure, public, pass :: &
@@ -113,8 +112,6 @@ contains
     if ( trim ( GeometryType ) == 'NEWTONIAN' ) &
       call Show ( FCC % GravityFactor, 'GravityFactor' )
 
-    call SetCoarsening ( FCC )
-
   end subroutine Initialize
 
 
@@ -197,104 +194,36 @@ contains
     type ( FluidCentralCoreForm ), intent ( inout ) :: &
       FCC
 
-    if ( allocated ( FCC % CO_CoarsenBackward_3 ) ) &
-      deallocate ( FCC % CO_CoarsenBackward_3 )
-    if ( allocated ( FCC % CO_CoarsenForward_3 ) ) &
-      deallocate ( FCC % CO_CoarsenForward_3 )
-    if ( allocated ( FCC % CO_CoarsenBackward_2 ) ) &
-      deallocate ( FCC % CO_CoarsenBackward_2 )
-    if ( allocated ( FCC % CO_CoarsenForward_2 ) ) &
-      deallocate ( FCC % CO_CoarsenForward_2 )
-
     call FCC % FinalizeTemplate_FC ( )
 
   end subroutine Finalize
 
 
-  subroutine SetCoarsening ( FCC )
+  subroutine SetCoarsening ( FC )
 
     class ( FluidCentralCoreForm ), intent ( inout ) :: &
-      FCC
+      FC
 
-    integer ( KDI ) :: &
-      nValuesFactor_2, &
-      nValuesFactor_3
-    class ( Fluid_D_Form ), pointer :: &
-      F
-
-    select type ( FA => FCC % Current_ASC )
-    class is ( Fluid_ASC_Form )
-    F => FA % Fluid_D ( )
-
-    select type ( PS => FCC % PositionSpace )
+    select type ( PS => FC % PositionSpace )
     class is ( Atlas_SC_CC_Form )
-
-    select type ( C => PS % Chart )
-    class is ( Chart_SLD_CC_Form )
-
 
     !-- Polar coarsening
 
     if ( PS % nDimensions < 2 ) &
       return
-
-    call Show ( 'SetCoarsening_2', FCC % IGNORABILITY )
-    call Show ( FCC % Name, 'Universe', FCC % IGNORABILITY )
-
-    allocate ( FCC % CO_CoarsenForward_2 )
-    allocate ( FCC % CO_CoarsenBackward_2 )
-    associate &
-      ( CO_F => FCC % CO_CoarsenForward_2, &
-        CO_B => FCC % CO_CoarsenBackward_2 )
-
-    nValuesFactor_2  =  F % N_CONSERVED  *  C % nCellsBrick ( 2 )
-
-    call CO_F % Initialize &
-           ( C % Communicator_2, &
-             nIncoming  =  C % nSegmentsFrom_2  *  nValuesFactor_2, &
-             nOutgoing  =  C % nSegmentsTo_2    *  nValuesFactor_2 )
-    call CO_B % Initialize &
-           ( C % Communicator_2, &
-             nIncoming  =  C % nSegmentsTo_2    *  nValuesFactor_2, &
-             nOutgoing  =  C % nSegmentsFrom_2  *  nValuesFactor_2 )
-
-    end associate !-- CO_F, etc.
-
+    call Show ( 'SetCoarsening_2', FC % IGNORABILITY )
+    call Show ( FC % Name, 'Universe', FC % IGNORABILITY )
+    call FC % SetCoarseningTemplate ( iAngular = 2 )
 
     !-- Azimuthal coarsening
 
     if ( PS % nDimensions < 3 ) &
       return
+    call Show ( 'SetCoarsening_3', FC % IGNORABILITY )
+    call Show ( FC % Name, 'Universe', FC % IGNORABILITY )
+    call FC % SetCoarseningTemplate ( iAngular = 3 )
 
-    call Show ( 'SetCoarsening_3', FCC % IGNORABILITY )
-    call Show ( FCC % Name, 'Universe', FCC % IGNORABILITY )
-
-    allocate ( FCC % CO_CoarsenForward_3 )
-    allocate ( FCC % CO_CoarsenBackward_3 )
-    associate &
-      ( CO_F => FCC % CO_CoarsenForward_3, &
-        CO_B => FCC % CO_CoarsenBackward_3 )
-
-    nValuesFactor_3  =  F % N_CONSERVED  *  C % nCellsBrick ( 3 )
-
-    call CO_F % Initialize &
-           ( C % Communicator_3, &
-             nIncoming  =  C % nSegmentsFrom_3  *  nValuesFactor_3, &
-             nOutgoing  =  C % nSegmentsTo_3    *  nValuesFactor_3 )
-    call CO_B % Initialize &
-           ( C % Communicator_3, &
-             nIncoming  =  C % nSegmentsTo_3    *  nValuesFactor_3, &
-             nOutgoing  =  C % nSegmentsFrom_3  *  nValuesFactor_3 )
-
-    end associate !-- CO_F, etc.
-
-
-    !-- Cleanup
-
-    end select !-- C
     end select !-- PS
-    end select !-- FA
-    nullify ( F )
 
   end subroutine SetCoarsening
 

@@ -15,6 +15,9 @@ module FluidCentral_Template
         CoordinateUnit
       logical ( KDL ) :: &
         Dimensionless
+      type ( CollectiveOperation_R_Form ), allocatable :: &
+        CO_CoarsenForward_2, CO_CoarsenBackward_2, &
+        CO_CoarsenForward_3, CO_CoarsenBackward_3
       type ( GridImageStreamForm ), allocatable :: &
         GridImageStream_SA_EB
       type ( Atlas_SC_Form ), allocatable :: &
@@ -26,18 +29,22 @@ module FluidCentral_Template
   contains
     procedure, public, pass :: &
       InitializeTemplate_FC
+    procedure, public, pass :: &
+      FinalizeTemplate_FC
     procedure ( IPS ), private, pass, deferred :: &
       InitializePositionSpace
     procedure ( IG ), private, pass, deferred :: &
       InitializeGeometry
+    procedure, public, pass :: &
+      SetCoarseningTemplate
+    procedure ( SC ), private, pass, deferred :: &
+      SetCoarsening
     procedure, public, pass :: &  !-- 2
       OpenGridImageStreams
     procedure, public, pass :: &  !-- 2
       OpenManifoldStreams
     procedure, public, pass :: &  !-- 3
       Write
-    procedure, public, pass :: &
-      FinalizeTemplate_FC
   end type FluidCentralTemplate
 
   abstract interface
@@ -73,6 +80,12 @@ module FluidCentral_Template
       real ( KDR ), intent ( in ), optional :: &
         CentralMassOption
     end subroutine IG
+
+    subroutine SC ( FC )
+      import FluidCentralTemplate
+      class ( FluidCentralTemplate ), intent ( inout ) :: &
+        FC
+    end subroutine SC
 
   end interface
 
@@ -237,6 +250,7 @@ contains
 
     call Show ( FC % Dimensionless, 'Dimensionless' )
 
+    call FC % SetCoarsening ( )
 
     !-- Diagnostics
     
@@ -251,6 +265,117 @@ contains
     nullify ( F )
 
   end subroutine InitializeTemplate_FC
+
+
+  subroutine FinalizeTemplate_FC ( FC )
+
+    class ( FluidCentralTemplate ), intent ( inout ) :: &
+      FC
+
+    if ( allocated ( FC % Fluid_ASC_EB ) ) &
+      deallocate ( FC % Fluid_ASC_EB )
+    if ( allocated ( FC % Fluid_ASC_SA ) ) &
+      deallocate ( FC % Fluid_ASC_SA )
+
+    if ( allocated ( FC % PositionSpace_EB ) ) &
+      deallocate ( FC % PositionSpace_EB )
+    if ( allocated ( FC % PositionSpace_SA ) ) &
+      deallocate ( FC % PositionSpace_SA )
+
+    if ( allocated ( FC % GridImageStream_SA_EB ) ) &
+      deallocate ( FC % GridImageStream_SA_EB )
+
+    if ( allocated ( FC % CO_CoarsenBackward_3 ) ) &
+      deallocate ( FC % CO_CoarsenBackward_3 )
+    if ( allocated ( FC % CO_CoarsenForward_3 ) ) &
+      deallocate ( FC % CO_CoarsenForward_3 )
+    if ( allocated ( FC % CO_CoarsenBackward_2 ) ) &
+      deallocate ( FC % CO_CoarsenBackward_2 )
+    if ( allocated ( FC % CO_CoarsenForward_2 ) ) &
+      deallocate ( FC % CO_CoarsenForward_2 )
+
+    call FC % FinalizeTemplate_C_PS ( )
+
+  end subroutine FinalizeTemplate_FC
+
+
+  subroutine SetCoarseningTemplate ( FC, iAngular )
+
+    class ( FluidCentralTemplate ), intent ( inout ) :: &
+      FC
+    integer ( KDI ), intent ( in ) :: &
+      iAngular
+
+    integer ( KDI ) :: &
+      nValuesFactor_2, &
+      nValuesFactor_3
+    class ( Fluid_D_Form ), pointer :: &
+      F
+
+    select type ( FA => FC % Current_ASC )
+    class is ( Fluid_ASC_Form )
+    F => FA % Fluid_D ( )
+
+    select type ( PS => FC % PositionSpace )
+    class is ( Atlas_SC_Form )
+
+    select type ( C => PS % Chart )
+    class is ( Chart_SLD_CC_Form )
+
+    select case ( iAngular )
+    case ( 2 )
+
+      if ( C % Communicator_2 % Initialized ) then
+        allocate ( FC % CO_CoarsenForward_2 )
+        allocate ( FC % CO_CoarsenBackward_2 )
+        associate &
+          ( CO_F => FC % CO_CoarsenForward_2, &
+            CO_B => FC % CO_CoarsenBackward_2 )
+
+        nValuesFactor_2  =  F % N_CONSERVED  *  C % nCellsBrick ( 2 )
+
+        call CO_F % Initialize &
+               ( C % Communicator_2, &
+                 nIncoming  =  C % nSegmentsFrom_2  *  nValuesFactor_2, &
+                 nOutgoing  =  C % nSegmentsTo_2    *  nValuesFactor_2 )
+        call CO_B % Initialize &
+               ( C % Communicator_2, &
+                 nIncoming  =  C % nSegmentsTo_2    *  nValuesFactor_2, &
+                 nOutgoing  =  C % nSegmentsFrom_2  *  nValuesFactor_2 )
+
+        end associate !-- CO_F, etc.
+      end if !-- Communicator_2 % Initialized
+
+    case ( 3 )
+
+      if ( C % Communicator_3 % Initialized ) then
+        allocate ( FC % CO_CoarsenForward_3 )
+        allocate ( FC % CO_CoarsenBackward_3 )
+        associate &
+          ( CO_F => FC % CO_CoarsenForward_3, &
+            CO_B => FC % CO_CoarsenBackward_3 )
+
+        nValuesFactor_3  =  F % N_CONSERVED  *  C % nCellsBrick ( 3 )
+  
+        call CO_F % Initialize &
+               ( C % Communicator_3, &
+                 nIncoming  =  C % nSegmentsFrom_3  *  nValuesFactor_3, &
+                 nOutgoing  =  C % nSegmentsTo_3    *  nValuesFactor_3 )
+        call CO_B % Initialize &
+               ( C % Communicator_3, &
+                 nIncoming  =  C % nSegmentsTo_3    *  nValuesFactor_3, &
+                 nOutgoing  =  C % nSegmentsFrom_3  *  nValuesFactor_3 )
+
+        end associate !-- CO_F, etc.
+      end if !-- Communicator_3 % Initialized
+
+    end select !-- iAngular
+    end select !-- C
+    end select !-- PS
+    end select !-- FA
+    nullify ( F )
+
+  end subroutine SetCoarseningTemplate
 
 
   subroutine OpenGridImageStreams ( I )
@@ -334,29 +459,6 @@ contains
     end associate !-- GIS, etc.
 
   end subroutine Write
-
-
-  subroutine FinalizeTemplate_FC ( FC )
-
-    class ( FluidCentralTemplate ), intent ( inout ) :: &
-      FC
-
-    if ( allocated ( FC % Fluid_ASC_EB ) ) &
-      deallocate ( FC % Fluid_ASC_EB )
-    if ( allocated ( FC % Fluid_ASC_SA ) ) &
-      deallocate ( FC % Fluid_ASC_SA )
-
-    if ( allocated ( FC % PositionSpace_EB ) ) &
-      deallocate ( FC % PositionSpace_EB )
-    if ( allocated ( FC % PositionSpace_SA ) ) &
-      deallocate ( FC % PositionSpace_SA )
-
-    if ( allocated ( FC % GridImageStream_SA_EB ) ) &
-      deallocate ( FC % GridImageStream_SA_EB )
-
-    call FC % FinalizeTemplate_C_PS ( )
-
-  end subroutine FinalizeTemplate_FC
 
 
   subroutine InitializeDiagnostics ( FC )
