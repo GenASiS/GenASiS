@@ -400,20 +400,24 @@ contains
   end subroutine OpenGridImageStreams
 
 
-  subroutine OpenManifoldStreams ( I )
+  subroutine OpenManifoldStreams ( I, VerboseStreamOption )
 
     class ( FluidCentralTemplate ), intent ( inout ) :: &
       I
+    logical ( KDL ), intent ( in ), optional :: &
+      VerboseStreamOption
 
     logical ( KDL ) :: &
       VerboseStream
 
-    call I % OpenManifoldStreamsTemplate ( )
+    call I % OpenManifoldStreamsTemplate ( VerboseStreamOption )
 
     if ( I % PositionSpace % Communicator % Rank /= CONSOLE % DisplayRank ) &
       return
 
     VerboseStream = .false.
+    if ( present ( VerboseStreamOption ) ) &
+      VerboseStream = VerboseStreamOption
     call PROGRAM_HEADER % GetParameter ( VerboseStream, 'VerboseStream' )
 
     associate ( GIS => I % GridImageStream_SA_EB )

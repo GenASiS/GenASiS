@@ -19,7 +19,7 @@ program FluidCentralCore_Form_Test
            GeometryType = 'NEWTONIAN', &
            DimensionlessOption = .true. )
 
-  call FCC % OpenManifoldStreams ( )
+  call FCC % OpenManifoldStreams ( VerboseStreamOption = .true. )
   call FCC % Write ( )
 
   deallocate ( FCC )
