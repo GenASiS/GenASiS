@@ -39,6 +39,10 @@ module FluidCentral_Template
       SetCoarseningTemplate
     procedure ( SC ), private, pass, deferred :: &
       SetCoarsening
+    procedure, public, pass :: &
+      CoarsenSingularitiesTemplate
+    procedure ( SC ), public, pass, deferred :: &
+      CoarsenSingularities
     procedure, public, pass :: &  !-- 2
       OpenGridImageStreams
     procedure, public, pass :: &  !-- 2
@@ -93,6 +97,9 @@ module FluidCentral_Template
       InitializeDiagnostics, &
       ComputeSphericalAverage, &
       ComputeEnclosedBaryons, &
+      ComposePillars, &
+      CoarsenPillars, &
+      DecomposePillars, &
       ApplySources
 
 contains
@@ -325,49 +332,51 @@ contains
     select case ( iAngular )
     case ( 2 )
 
-      if ( C % Communicator_2 % Initialized ) then
-        allocate ( FC % CO_CoarsenForward_2 )
-        allocate ( FC % CO_CoarsenBackward_2 )
-        associate &
-          ( CO_F => FC % CO_CoarsenForward_2, &
-            CO_B => FC % CO_CoarsenBackward_2 )
+      if ( .not. C % Communicator_2 % Initialized ) &
+        return
 
-        nValuesFactor_2  =  F % N_CONSERVED  *  C % nCellsBrick ( 2 )
+      allocate ( FC % CO_CoarsenForward_2 )
+      allocate ( FC % CO_CoarsenBackward_2 )
+      associate &
+        ( CO_F => FC % CO_CoarsenForward_2, &
+          CO_B => FC % CO_CoarsenBackward_2 )
 
-        call CO_F % Initialize &
-               ( C % Communicator_2, &
-                 nIncoming  =  C % nSegmentsFrom_2  *  nValuesFactor_2, &
-                 nOutgoing  =  C % nSegmentsTo_2    *  nValuesFactor_2 )
-        call CO_B % Initialize &
-               ( C % Communicator_2, &
-                 nIncoming  =  C % nSegmentsTo_2    *  nValuesFactor_2, &
-                 nOutgoing  =  C % nSegmentsFrom_2  *  nValuesFactor_2 )
+      nValuesFactor_2  =  F % N_CONSERVED  *  C % nCellsBrick ( 2 )
 
-        end associate !-- CO_F, etc.
-      end if !-- Communicator_2 % Initialized
+      call CO_F % Initialize &
+             ( C % Communicator_2, &
+               nIncoming  =  C % nSegmentsFrom_2  *  nValuesFactor_2  +  1, &
+               nOutgoing  =  C % nSegmentsTo_2    *  nValuesFactor_2  +  1 )
+      call CO_B % Initialize &
+             ( C % Communicator_2, &
+               nIncoming  =  C % nSegmentsTo_2    *  nValuesFactor_2, &
+               nOutgoing  =  C % nSegmentsFrom_2  *  nValuesFactor_2 )
+
+      end associate !-- CO_F, etc.
 
     case ( 3 )
 
-      if ( C % Communicator_3 % Initialized ) then
-        allocate ( FC % CO_CoarsenForward_3 )
-        allocate ( FC % CO_CoarsenBackward_3 )
-        associate &
-          ( CO_F => FC % CO_CoarsenForward_3, &
-            CO_B => FC % CO_CoarsenBackward_3 )
+      if ( .not. C % Communicator_3 % Initialized ) &
+        return
 
-        nValuesFactor_3  =  F % N_CONSERVED  *  C % nCellsBrick ( 3 )
+      allocate ( FC % CO_CoarsenForward_3 )
+      allocate ( FC % CO_CoarsenBackward_3 )
+      associate &
+        ( CO_F => FC % CO_CoarsenForward_3, &
+          CO_B => FC % CO_CoarsenBackward_3 )
+
+      nValuesFactor_3  =  F % N_CONSERVED  *  C % nCellsBrick ( 3 )
   
-        call CO_F % Initialize &
-               ( C % Communicator_3, &
-                 nIncoming  =  C % nSegmentsFrom_3  *  nValuesFactor_3, &
-                 nOutgoing  =  C % nSegmentsTo_3    *  nValuesFactor_3 )
-        call CO_B % Initialize &
-               ( C % Communicator_3, &
-                 nIncoming  =  C % nSegmentsTo_3    *  nValuesFactor_3, &
-                 nOutgoing  =  C % nSegmentsFrom_3  *  nValuesFactor_3 )
+      call CO_F % Initialize &
+             ( C % Communicator_3, &
+               nIncoming  =  C % nSegmentsFrom_3  *  nValuesFactor_3  +  1, &
+               nOutgoing  =  C % nSegmentsTo_3    *  nValuesFactor_3  +  1 )
+      call CO_B % Initialize &
+             ( C % Communicator_3, &
+               nIncoming  =  C % nSegmentsTo_3    *  nValuesFactor_3, &
+               nOutgoing  =  C % nSegmentsFrom_3  *  nValuesFactor_3 )
 
-        end associate !-- CO_F, etc.
-      end if !-- Communicator_3 % Initialized
+      end associate !-- CO_F, etc.
 
     end select !-- iAngular
     end select !-- C
@@ -376,6 +385,20 @@ contains
     nullify ( F )
 
   end subroutine SetCoarseningTemplate
+
+
+  subroutine CoarsenSingularitiesTemplate ( FC, iAngular )
+
+    class ( FluidCentralTemplate ), intent ( inout ) :: &
+      FC
+    integer ( KDI ), intent ( in ) :: &
+      iAngular
+
+    call ComposePillars ( FC, iAngular )
+    call CoarsenPillars ( FC, iAngular )
+    call DecomposePillars ( FC, iAngular )
+
+  end subroutine CoarsenSingularitiesTemplate
 
 
   subroutine OpenGridImageStreams ( I )
@@ -713,6 +736,106 @@ contains
     nullify ( G_SA, F_SA, F_EB )
 
   end subroutine ComputeEnclosedBaryons
+
+
+  subroutine ComposePillars ( FC, iAngular )
+
+    class ( FluidCentralTemplate ), intent ( inout ) :: &
+      FC
+    integer ( KDI ), intent ( in ) :: &
+      iAngular
+
+    integer ( KDI ) :: &
+      iB, jB, kB, &  !-- iBrick, etc.
+      iC, jC, kC     !-- iCell, etc.
+    class ( Fluid_D_Form ), pointer :: &
+      F
+
+    select type ( FA => FC % Current_ASC )
+    class is ( Fluid_ASC_Form )
+    F => FA % Fluid_D ( )
+
+    select type ( PS => FC % PositionSpace )
+    class is ( Atlas_SC_Form )
+
+    select type ( C => PS % Chart )
+    class is ( Chart_SLD_CC_Form )
+
+    associate &
+      (   nB => C % nBricks, &
+         nCB => C % nCellsBrick )
+
+    select case ( iAngular )
+    case ( 2 )
+
+      if ( .not. C % Communicator_2 % Initialized ) &
+        return
+
+      associate ( Buffer => FC % CO_CoarsenForward_2 % Outgoing % Value )
+
+      do kB = 1, nB ( 3 )
+        iLoop_2: do iB = 1, nB ( 1 )
+          if ( C % nPillarsTransverse_2 ( iB, kB ) == 0 ) &
+            cycle iLoop_2
+          do kC = ( kB - 1 ) * nCB ( 3 ) + 1, kB * nCB ( 3 )
+            do iC = ( iB - 1 ) * nCB ( 1 ) + 1, iB * nCB ( 1 )
+
+            end do !-- iC
+          end do !-- kC
+        end do iLoop_2 !-- iB
+      end do !-- kB
+
+      end associate !-- Buffer
+
+    case ( 3 )
+
+      if ( .not. C % Communicator_3 % Initialized ) &
+        return
+
+      associate ( Buffer => FC % CO_CoarsenForward_3 % Outgoing % Value )
+
+      do jB = 1, nB ( 2 )
+        iLoop_3: do iB = 1, nB ( 1 )
+          if ( C % nPillarsTransverse_3 ( iB, jB ) == 0 ) &
+            cycle iLoop_3
+          do jC = ( jB - 1 ) * nCB ( 2 ) + 1, jB * nCB ( 2 )
+            do iC = ( iB - 1 ) * nCB ( 1 ) + 1, iB * nCB ( 1 )
+
+            end do !-- iC
+          end do !-- jC
+        end do iLoop_3 !-- iB
+      end do !-- jB
+
+      end associate !-- Buffer
+
+    end select !-- iAngular
+    end associate !-- nB, etc.
+    end select !-- C
+    end select !-- PS
+    end select !-- FA
+    nullify ( F )
+
+  end subroutine ComposePillars
+
+
+  subroutine CoarsenPillars ( FC, iAngular )
+
+    class ( FluidCentralTemplate ), intent ( inout ) :: &
+      FC
+    integer ( KDI ), intent ( in ) :: &
+      iAngular
+
+  end subroutine CoarsenPillars
+
+
+  subroutine DecomposePillars ( FC, iAngular )
+
+    class ( FluidCentralTemplate ), intent ( inout ) :: &
+      FC
+    integer ( KDI ), intent ( in ) :: &
+      iAngular
+
+  end subroutine DecomposePillars
 
 
   subroutine ApplySources &

@@ -23,6 +23,8 @@ module FluidCentralCore_Form
       InitializeGeometry
     procedure, private, pass :: &
       SetCoarsening
+    procedure, public, pass :: &
+      CoarsenSingularities
     procedure, private, pass :: &
       SetWriteTimeInterval
     procedure, public, pass :: &
@@ -226,6 +228,31 @@ contains
     end select !-- PS
 
   end subroutine SetCoarsening
+
+
+  subroutine CoarsenSingularities ( FC )
+
+    class ( FluidCentralCoreForm ), intent ( inout ) :: &
+      FC
+
+    select type ( PS => FC % PositionSpace )
+    class is ( Atlas_SC_CC_Form )
+
+    !-- Polar coarsening
+
+    if ( PS % nDimensions < 2 ) &
+      return
+    call FC % CoarsenSingularitiesTemplate ( iAngular = 2 )
+
+    !-- Azimuthal coarsening
+
+    if ( PS % nDimensions < 3 ) &
+      return
+    call FC % CoarsenSingularitiesTemplate ( iAngular = 3 )
+
+    end select !-- PS
+
+  end subroutine CoarsenSingularities
 
 
   subroutine SetWriteTimeInterval ( I )

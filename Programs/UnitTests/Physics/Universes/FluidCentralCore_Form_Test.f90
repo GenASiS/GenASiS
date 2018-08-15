@@ -22,6 +22,8 @@ program FluidCentralCore_Form_Test
   call FCC % OpenManifoldStreams ( VerboseStreamOption = .true. )
   call FCC % Write ( )
 
+  call FCC % CoarsenSingularities ( )
+
   deallocate ( FCC )
 
   deallocate ( PROGRAM_HEADER )
