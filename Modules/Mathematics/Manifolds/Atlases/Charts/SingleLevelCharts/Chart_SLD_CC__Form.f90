@@ -245,6 +245,7 @@ contains
           exit Coarsen_2
         Crsn_2 ( iV )  =  2.0_KDR  *  Crsn_2 ( iV )
       end do Coarsen_2
+      Crsn_2 ( iV )  =  min ( Crsn_2 ( iV ), real ( C % nCells ( 2 ) ) )
     end do !-- iV
 
     !-- Count coarsening pillars in transverse brick space 
@@ -369,6 +370,7 @@ contains
           exit Coarsen_3
         Crsn_3 ( iV )  =  2.0_KDR  *  Crsn_3 ( iV )
       end do Coarsen_3
+      Crsn_3 ( iV )  =  min ( Crsn_3 ( iV ), real ( C % nCells ( 3 ) ) )
     end do !-- iV
 
     !-- Count coarsening pillars in transverse brick space 

@@ -12,8 +12,8 @@ module FluidCentral_Template
   type, public, extends ( Integrator_C_PS_Template ), abstract :: &
     FluidCentralTemplate
       integer ( KDI ), dimension ( : ), allocatable :: &
-        CoarsenFactor_2, &
-        CoarsenFactor_3
+        nCoarsen_2, &
+        nCoarsen_3
       type ( MeasuredValueForm ), dimension ( 3 ) :: &
         CoordinateUnit
       logical ( KDL ) :: &
@@ -322,10 +322,10 @@ contains
     if ( allocated ( FC % CoarsenPillar_2 ) ) &
       deallocate ( FC % CoarsenPillar_2 )
 
-    if ( allocated ( FC % CoarsenFactor_3 ) ) &
-      deallocate ( FC % CoarsenFactor_3 )
-    if ( allocated ( FC % CoarsenFactor_2 ) ) &
-      deallocate ( FC % CoarsenFactor_2 )
+    if ( allocated ( FC % nCoarsen_3 ) ) &
+      deallocate ( FC % nCoarsen_3 )
+    if ( allocated ( FC % nCoarsen_2 ) ) &
+      deallocate ( FC % nCoarsen_2 )
 
     call FC % FinalizeTemplate_C_PS ( )
 
@@ -381,7 +381,7 @@ contains
 
       end associate !-- CO_F, etc.
 
-      allocate ( FC % CoarsenFactor_2 ( C % nPillars_2 ) )
+      allocate ( FC % nCoarsen_2 ( C % nPillars_2 ) )
       allocate ( FC % CoarsenPillar_2 ( C % nPillars_2 ) )
       do iP = 1, C % nPillars_2
         call FC % CoarsenPillar_2 ( iP ) % Initialize &
@@ -412,7 +412,7 @@ contains
 
       end associate !-- CO_F, etc.
 
-      allocate ( FC % CoarsenFactor_3 ( C % nPillars_3 ) )
+      allocate ( FC % nCoarsen_3 ( C % nPillars_3 ) )
       allocate ( FC % CoarsenPillar_3 ( C % nPillars_3 ) )
       do iP = 1, C % nPillars_3
         call FC % CoarsenPillar_3 ( iP ) % Initialize &
@@ -862,8 +862,7 @@ contains
       oC = 0
       do iB = 1, C % nBricks ( 2 )
         do iP = 1, C % nPillars_2
-          FC % CoarsenFactor_2 ( iP ) &
-            = min ( int ( Incoming ( oI + 1 ) + 0.5_KDR ), C % nCells ( 2 ) )
+          FC % nCoarsen_2 ( iP ) = int ( Incoming ( oI + 1 ) + 0.5_KDR )
           oI = oI + 1
           associate ( CP => FC % CoarsenPillar_2 ( iP ) )
             do iS = 1, CP % nVariables
@@ -878,7 +877,7 @@ contains
 
 ! do iP = 1, C % nPillars_2
 !   call Show ( iP, '>>> iPillar_2' )
-!   call Show ( FC % CoarsenFactor_2 ( iP ), '>>> CoarsenFactor_2' )
+!   call Show ( FC % nCoarsen_2 ( iP ), '>>> nCoarsen_2' )
 !   call Show ( FC % CoarsenPillar_2 ( iP ) % Value, '>>> CoarsenPillar_2' )
 ! end do !-- iP
 
@@ -926,8 +925,7 @@ contains
       oC = 0
       do iB = 1, C % nBricks ( 3 )
         do iP = 1, C % nPillars_3
-          FC % CoarsenFactor_3 ( iP ) &
-            = min ( int ( Incoming ( oI + 1 ) + 0.5_KDR ), C % nCells ( 3 ) )
+          FC % nCoarsen_3 ( iP ) = int ( Incoming ( oI + 1 ) + 0.5_KDR )
           oI = oI + 1
           associate ( CP => FC % CoarsenPillar_3 ( iP ) )
             do iS = 1, CP % nVariables
@@ -942,7 +940,7 @@ contains
 
 ! do iP = 1, C % nPillars_3
 !   call Show ( iP, '>>> iPillar_3' )
-!   call Show ( FC % CoarsenFactor_3 ( iP ), '>>> CoarsenFactor_3' )
+!   call Show ( FC % nCoarsen_3 ( iP ), '>>> nCoarsen_3' )
 !   call Show ( FC % CoarsenPillar_3 ( iP ) % Value, '>>> CoarsenPillar_3' )
 ! end do !-- iP
 
