@@ -341,8 +341,8 @@ contains
 
     integer ( KDI ) :: &
       iP, &  !-- iPillar
-      nValuesFactor_2, &
-      nValuesFactor_3
+      nValuesFactor_F_2, nValuesFactor_B_2, &
+      nValuesFactor_F_3, nValuesFactor_B_3
     class ( Fluid_D_Form ), pointer :: &
       F
 
@@ -368,16 +368,18 @@ contains
         ( CO_F => FC % CO_CoarsenForward_2, &
           CO_B => FC % CO_CoarsenBackward_2 )
 
-      nValuesFactor_2  =  F % N_CONSERVED  *  C % nCellsBrick ( 2 )
+      nValuesFactor_F_2  =  ( 1 + F % N_CONSERVED )  *  C % nCellsBrick ( 2 ) &
+                            +  1
+      nValuesFactor_B_2  =  F % N_CONSERVED  *  C % nCellsBrick ( 2 )
 
       call CO_F % Initialize &
              ( C % Communicator_2, &
-               nIncoming  =  C % nSegmentsFrom_2  *  ( nValuesFactor_2 + 1 ), &
-               nOutgoing  =  C % nSegmentsTo_2    *  ( nValuesFactor_2 + 1 ) )
+               nIncoming  =  C % nSegmentsFrom_2  *  nValuesFactor_F_2, &
+               nOutgoing  =  C % nSegmentsTo_2    *  nValuesFactor_F_2 )
       call CO_B % Initialize &
              ( C % Communicator_2, &
-               nIncoming  =  C % nSegmentsTo_2    *  nValuesFactor_2, &
-               nOutgoing  =  C % nSegmentsFrom_2  *  nValuesFactor_2 )
+               nIncoming  =  C % nSegmentsTo_2    *  nValuesFactor_B_2, &
+               nOutgoing  =  C % nSegmentsFrom_2  *  nValuesFactor_B_2 )
 
       end associate !-- CO_F, etc.
 
@@ -385,7 +387,7 @@ contains
       allocate ( FC % CoarsenPillar_2 ( C % nPillars_2 ) )
       do iP = 1, C % nPillars_2
         call FC % CoarsenPillar_2 ( iP ) % Initialize &
-               ( [ C % nCells ( 2 ), F % N_CONSERVED ] )
+               ( [ C % nCells ( 2 ), 1 + F % N_CONSERVED ] )
       end do  !-- iP
 
     case ( 3 )
@@ -399,16 +401,19 @@ contains
         ( CO_F => FC % CO_CoarsenForward_3, &
           CO_B => FC % CO_CoarsenBackward_3 )
 
-      nValuesFactor_3  =  F % N_CONSERVED  *  C % nCellsBrick ( 3 )
+      nValuesFactor_F_3  =  ( 1 + F % N_CONSERVED )  *  C % nCellsBrick ( 3 ) &
+                            +  1
+      nValuesFactor_B_3  =  F % N_CONSERVED  *  C % nCellsBrick ( 3 )
+
   
       call CO_F % Initialize &
              ( C % Communicator_3, &
-               nIncoming  =  C % nSegmentsFrom_3  *  ( nValuesFactor_3 + 1 ), &
-               nOutgoing  =  C % nSegmentsTo_3    *  ( nValuesFactor_3 + 1 ) )
+               nIncoming  =  C % nSegmentsFrom_3  *  nValuesFactor_F_3, &
+               nOutgoing  =  C % nSegmentsTo_3    *  nValuesFactor_F_3 )
       call CO_B % Initialize &
              ( C % Communicator_3, &
-               nIncoming  =  C % nSegmentsTo_3    *  nValuesFactor_3, &
-               nOutgoing  =  C % nSegmentsFrom_3  *  nValuesFactor_3 )
+               nIncoming  =  C % nSegmentsTo_3    *  nValuesFactor_B_3, &
+               nOutgoing  =  C % nSegmentsFrom_3  *  nValuesFactor_B_3 )
 
       end associate !-- CO_F, etc.
 
@@ -416,7 +421,7 @@ contains
       allocate ( FC % CoarsenPillar_3 ( C % nPillars_3 ) )
       do iP = 1, C % nPillars_3
         call FC % CoarsenPillar_3 ( iP ) % Initialize &
-               ( [ C % nCells ( 3 ), F % N_CONSERVED ] )
+               ( [ C % nCells ( 3 ), 1 + F % N_CONSERVED ] )
       end do  !-- iP
 
     end select !-- iAngular
@@ -799,6 +804,7 @@ contains
       iB             !-- iBrick
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       Crsn_2, Crsn_3, &
+      Vol, &
       SV
     class ( GeometryFlatForm ), pointer :: &
       G
@@ -836,6 +842,8 @@ contains
 
       call C % SetVariablePointer &
              ( G % Value ( :, G % COARSENING ( 2 ) ), Crsn_2 )
+      call C % SetVariablePointer &
+             ( G % Value ( :, G % VOLUME ), Vol )
 
       oO = 0
       do kC = 1, nCB ( 3 )
@@ -844,6 +852,9 @@ contains
             cycle
           Outgoing ( oO + 1 ) = Crsn_2 ( iC, 1, kC )
           oO = oO + 1
+          Outgoing ( oO + 1 : oO + nCB ( 2 ) ) &
+            =  Vol ( iC, 1 : nCB ( 2 ), kC )
+          oO = oO + nCB ( 2 )
           do iS = 1, S % nVariables
             call C % SetVariablePointer &
                    ( S % Value ( :, S % iaSelected ( iS ) ), SV )
@@ -865,11 +876,11 @@ contains
           FC % nCoarsen_2 ( iP ) = int ( Incoming ( oI + 1 ) + 0.5_KDR )
           oI = oI + 1
           associate ( CP => FC % CoarsenPillar_2 ( iP ) )
-            do iS = 1, CP % nVariables
-              CP % Value ( oC + 1 : oC + nCB ( 2 ), iS )  &
-                =  Incoming ( oI + 1 : oI + nCB ( 2 ) )
-              oI = oI + nCB ( 2 )
-            end do !-- iS
+          do iS = 1, CP % nVariables
+            CP % Value ( oC + 1 : oC + nCB ( 2 ), iS )  &
+              =  Incoming ( oI + 1 : oI + nCB ( 2 ) )
+            oI = oI + nCB ( 2 )
+          end do !-- iS
           end associate !-- CP
         end do !-- iP
         oC = oC + nCB ( 2 )
@@ -899,6 +910,8 @@ contains
 
       call C % SetVariablePointer &
              ( G % Value ( :, G % COARSENING ( 3 ) ), Crsn_3 )
+      call C % SetVariablePointer &
+             ( G % Value ( :, G % VOLUME ), Vol )
 
       oO = 0
       do jC = 1, nCB ( 2 )
@@ -907,6 +920,9 @@ contains
             cycle
           Outgoing ( oO + 1 ) = Crsn_3 ( iC, jC, 1 )
           oO = oO + 1
+          Outgoing ( oO + 1 : oO + nCB ( 3 ) ) &
+            =  Vol ( iC, jC, 1 : nCB ( 3 ) )
+          oO = oO + nCB ( 3 )
           do iS = 1, F % N_CONSERVED
             call C % SetVariablePointer &
                    ( S % Value ( :, S % iaSelected ( iS ) ), SV )
@@ -928,11 +944,11 @@ contains
           FC % nCoarsen_3 ( iP ) = int ( Incoming ( oI + 1 ) + 0.5_KDR )
           oI = oI + 1
           associate ( CP => FC % CoarsenPillar_3 ( iP ) )
-            do iS = 1, CP % nVariables
-              CP % Value ( oC + 1 : oC + nCB ( 3 ), iS )  &
-                =  Incoming ( oI + 1 : oI + nCB ( 3 ) )
-              oI = oI + nCB ( 3 )
-            end do !-- iS
+          do iS = 1, CP % nVariables
+            CP % Value ( oC + 1 : oC + nCB ( 3 ), iS )  &
+              =  Incoming ( oI + 1 : oI + nCB ( 3 ) )
+            oI = oI + nCB ( 3 )
+          end do !-- iS
           end associate !-- CP
         end do !-- iP
         oC = oC + nCB ( 3 )
