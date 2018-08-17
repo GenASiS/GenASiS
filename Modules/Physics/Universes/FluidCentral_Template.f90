@@ -808,12 +808,6 @@ contains
       SV
     class ( GeometryFlatForm ), pointer :: &
       G
-    class ( Fluid_D_Form ), pointer :: &
-      F
-
-    select type ( FA => FC % Current_ASC )
-    class is ( Fluid_ASC_Form )
-    F => FA % Fluid_D ( )
 
     select type ( PS => FC % PositionSpace )
     class is ( Atlas_SC_Form )
@@ -822,9 +816,7 @@ contains
     select type ( C => PS % Chart )
     class is ( Chart_SLD_CC_Form )
 
-    associate &
-      ( nCB => C % nCellsBrick, &
-         nB => C % nBricks )
+    associate ( nCB => C % nCellsBrick )
 
     select case ( iAngular )
     case ( 2 )
@@ -837,8 +829,6 @@ contains
       associate &
         ( Outgoing => CO % Outgoing % Value, &
           Incoming => CO % Incoming % Value )
-
-      Outgoing = C % Atlas % Communicator % Rank * 100
 
       call C % SetVariablePointer &
              ( G % Value ( :, G % COARSENING ( 2 ) ), Crsn_2 )
@@ -906,8 +896,6 @@ contains
         ( Outgoing => CO % Outgoing % Value, &
           Incoming => CO % Incoming % Value )
 
-      Outgoing = C % Atlas % Communicator % Rank * 100
-
       call C % SetVariablePointer &
              ( G % Value ( :, G % COARSENING ( 3 ) ), Crsn_3 )
       call C % SetVariablePointer &
@@ -923,7 +911,7 @@ contains
           Outgoing ( oO + 1 : oO + nCB ( 3 ) ) &
             =  Vol ( iC, jC, 1 : nCB ( 3 ) )
           oO = oO + nCB ( 3 )
-          do iS = 1, F % N_CONSERVED
+          do iS = 1, S % nVariables
             call C % SetVariablePointer &
                    ( S % Value ( :, S % iaSelected ( iS ) ), SV )
             Outgoing ( oO + 1 : oO + nCB ( 3 ) ) &
@@ -964,11 +952,10 @@ contains
       end associate !-- CO
 
     end select !-- iAngular
-    end associate !-- nCB, etc.
+    end associate !-- nCB
     end select !-- C
     end select !-- PS
-    end select !-- FA
-    nullify ( F, G, Crsn_2, Crsn_3 )
+    nullify ( G, Crsn_2, Crsn_3, Vol, SV )
 
   end subroutine ComposePillars
 
@@ -1052,6 +1039,133 @@ contains
       S
     integer ( KDI ), intent ( in ) :: &
       iAngular
+
+    integer ( KDI ) :: &
+      oO, oI, &      !-- oOutgoing, oIncoming
+      oC, &          !-- oCell
+      iC, jC, kC, &  !-- iCell, etc.
+      iS, &          !-- iSelected
+      iP, &          !-- iPillar
+      iB             !-- iBrick
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+      Crsn_2, Crsn_3, &
+      SV
+    class ( GeometryFlatForm ), pointer :: &
+      G
+
+    select type ( PS => FC % PositionSpace )
+    class is ( Atlas_SC_Form )
+    G => PS % Geometry ( )
+
+    select type ( C => PS % Chart )
+    class is ( Chart_SLD_CC_Form )
+
+    associate ( nCB => C % nCellsBrick )
+
+    select case ( iAngular )
+    case ( 2 )
+
+      if ( .not. C % Communicator_2 % Initialized ) &
+        return
+
+      associate &
+        ( CO => FC % CO_CoarsenBackward_2 )
+      associate &
+        ( Outgoing => CO % Outgoing % Value, &
+          Incoming => CO % Incoming % Value )
+
+      oO = 0
+      oC = 0
+      do iB = 1, C % nBricks ( 2 )
+        do iP = 1, C % nPillars_2
+          associate ( CP => FC % CoarsenPillar_2 ( iP ) )
+          do iS = 2, CP % nVariables
+            Outgoing ( oO + 1 : oO + nCB ( 2 ) ) &
+              =  CP % Value ( oC + 1 : oC + nCB ( 2 ), iS )
+            oO = oO + nCB ( 2 )
+          end do !-- iS
+          end associate !-- CP
+        end do !-- iP
+        oC = oC + nCB ( 2 )
+      end do !-- iB
+
+      call CO % AllToAll_V ( )
+
+      call C % SetVariablePointer &
+             ( G % Value ( :, G % COARSENING ( 2 ) ), Crsn_2 )
+
+      oI = 0
+      do kC = 1, nCB ( 3 )
+        do iC = 1, nCB ( 1 )
+          if ( Crsn_2 ( iC, 1, kC ) < 2.0_KDR ) &
+            cycle
+          do iS = 1, S % nVariables
+            call C % SetVariablePointer &
+                   ( S % Value ( :, S % iaSelected ( iS ) ), SV )
+            SV ( iC, 1 : nCB ( 2 ), kC )  &
+              =  Incoming ( oI + 1 : oI + nCB ( 2 ) )
+            oI = oI + nCB ( 2 )
+          end do !-- iS
+        end do !-- iC
+      end do !-- kC
+
+      end associate !-- Outgoing, etc.
+      end associate !-- CO
+
+    case ( 3 )
+
+      if ( .not. C % Communicator_3 % Initialized ) &
+        return
+
+      associate &
+        ( CO => FC % CO_CoarsenBackward_3 )
+      associate &
+        ( Outgoing => CO % Outgoing % Value, &
+          Incoming => CO % Incoming % Value )
+
+      oO = 0
+      oC = 0
+      do iB = 1, C % nBricks ( 3 )
+        do iP = 1, C % nPillars_3
+          associate ( CP => FC % CoarsenPillar_3 ( iP ) )
+          do iS = 2, CP % nVariables
+            Outgoing ( oO + 1 : oO + nCB ( 3 ) ) &
+              =  CP % Value ( oC + 1 : oC + nCB ( 3 ), iS )
+            oO = oO + nCB ( 3 )
+          end do !-- iS
+          end associate !-- CP
+        end do !-- iP
+        oC = oC + nCB ( 3 )
+      end do !-- iB
+
+      call CO % AllToAll_V ( )
+
+      call C % SetVariablePointer &
+             ( G % Value ( :, G % COARSENING ( 3 ) ), Crsn_3 )
+
+      oI = 0
+      do jC = 1, nCB ( 2 )
+        do iC = 1, nCB ( 1 )
+          if ( Crsn_3 ( iC, jC, 1 ) < 2.0_KDR ) &
+            cycle
+          do iS = 1, S % nVariables
+            call C % SetVariablePointer &
+                   ( S % Value ( :, S % iaSelected ( iS ) ), SV )
+            SV ( iC, jC, 1 : nCB ( 3 ) )  &
+              =  Incoming ( oI + 1 : oI + nCB ( 3 ) )
+            oI = oI + nCB ( 3 )
+          end do !-- iS
+        end do !-- iC
+      end do !-- jC
+
+      end associate !-- Outgoing, etc.
+      end associate !-- CO
+
+    end select !-- iAngular
+    end associate !-- nCB
+    end select !-- C
+    end select !-- PS
+    nullify ( G, Crsn_2, Crsn_3, SV )
 
   end subroutine DecomposePillars
 
