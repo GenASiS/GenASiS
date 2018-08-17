@@ -11,6 +11,9 @@ module FluidCentral_Template
 
   type, public, extends ( Integrator_C_PS_Template ), abstract :: &
     FluidCentralTemplate
+      type ( Real_1D_Form ), dimension ( :, : ), allocatable :: &
+        CoarsenPillar_2, &
+        CoarsenPillar_3
       type ( MeasuredValueForm ), dimension ( 3 ) :: &
         CoordinateUnit
       logical ( KDL ) :: &
@@ -363,6 +366,8 @@ contains
                nOutgoing  =  C % nSegmentsFrom_2  *  nValuesFactor_2 )
 
       end associate !-- CO_F, etc.
+
+!      allocate ( FC % CoarsenPillars_2 ( 
 
     case ( 3 )
 

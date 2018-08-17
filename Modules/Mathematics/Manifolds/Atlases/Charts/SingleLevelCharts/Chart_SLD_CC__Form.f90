@@ -16,13 +16,12 @@ module Chart_SLD_CC__Form
   type, public, extends ( Chart_SLD_Form ) :: Chart_SLD_CC_Form
     integer ( KDI ) :: &
       nCellsPolar, &
-      nCellsCore
+      nCellsCore, &
+      nPillars_2, &
+      nPillars_3
     integer ( KDI ), dimension ( : ), allocatable :: &
       nSegmentsFrom_2, nSegmentsTo_2, &
       nSegmentsFrom_3, nSegmentsTo_3
-    integer ( KDI ), dimension ( :, : ), allocatable :: &
-      nPillarsTransverse_2, &
-      nPillarsTransverse_3
     real ( KDR ) :: &
       RadiusCore, &
       RadiusMax, &
@@ -203,6 +202,9 @@ contains
     integer ( KDI ), dimension ( : ), allocatable :: &
       Rank_2, Rank_3, &
       nPillars_2, nPillars_3
+    integer ( KDI ), dimension ( :, : ), allocatable :: &
+      nPillarsTransverse_2, &
+      nPillarsTransverse_3
     class ( GeometryFlatForm ), pointer :: &
       G
 
@@ -246,26 +248,26 @@ contains
     end do !-- iV
 
     !-- Count coarsening pillars in transverse brick space 
-    allocate ( C % nPillarsTransverse_2 ( nB ( 1 ), nB ( 3 ) ) )
-    C % nPillarsTransverse_2 = 0
+    allocate ( nPillarsTransverse_2 ( nB ( 1 ), nB ( 3 ) ) )
+    nPillarsTransverse_2 = 0
     do kB = 1, nB ( 3 )
       do iB = 1, nB ( 1 )
         do kC = ( kB - 1 ) * nCB ( 3 ) + 1, kB * nCB ( 3 )
           do iC = ( iB - 1 ) * nCB ( 1 ) + 1, iB * nCB ( 1 )
             if ( R_G ( iC ) * dTheta  <  C % MinWidth ) &
-              C % nPillarsTransverse_2 ( iB, kB )  &
-                =  C % nPillarsTransverse_2 ( iB, kB )  +  1
+              nPillarsTransverse_2 ( iB, kB )  &
+                =  nPillarsTransverse_2 ( iB, kB )  +  1
           end do !-- iC
         end do !-- kC
       end do !-- iB
     end do !-- kB
-    call Show ( C % nPillarsTransverse_2, 'nPillarsTransverse_2', &
+    call Show ( nPillarsTransverse_2, 'nPillarsTransverse_2', &
                 C % IGNORABILITY + 1 )
 
     !-- Determine pillar distribution
-    nRanks_2 = count ( C % nPillarsTransverse_2 > 0 ) * nB ( 2 )
+    nRanks_2 = count ( nPillarsTransverse_2 > 0 ) * nB ( 2 )
     allocate ( nPillars_2 ( 0 : nRanks_2 - 1 ) )
-    nPillarsTotal = sum ( C % nPillarsTransverse_2 )
+    nPillarsTotal = sum ( nPillarsTransverse_2 )
     nPillarsSurplus = mod ( nPillarsTotal, nRanks_2 )
     nPillars_2 = nPillarsTotal / nRanks_2
     nPillars_2 ( 0 : nPillarsSurplus - 1 ) &
@@ -277,7 +279,7 @@ contains
     iR = 0
     do kB = 1, nB ( 3 )
       iLoop: do iB = 1, nB ( 1 )
-        if ( C % nPillarsTransverse_2 ( iB, kB ) == 0 ) &
+        if ( nPillarsTransverse_2 ( iB, kB ) == 0 ) &
           cycle iLoop
         do jB = 1, nB ( 2 )
           Rank_2 ( iR ) = ( kB - 1 ) * nB ( 1 ) * nB ( 2 )  &
@@ -297,6 +299,8 @@ contains
 
     if ( Comm_2 % Initialized ) then
 
+      C % nPillars_2 = nPillars_2 ( Comm_2 % Rank )
+
       !-- Determine nSegmentsFrom and nSegmentsTo
       allocate ( C % nSegmentsFrom_2 ( 0 : nRanks_2 - 1 ) )
       allocate ( C % nSegmentsTo_2 ( 0 : nRanks_2 - 1 ) )
@@ -307,7 +311,7 @@ contains
       C % nSegmentsTo_2   = 0
       do kB = 1, nB ( 3 )
         iLoop: do iB = 1, nB ( 1 )
-          if ( C % nPillarsTransverse_2 ( iB, kB ) == 0 ) &
+          if ( nPillarsTransverse_2 ( iB, kB ) == 0 ) &
             cycle iLoop
           do kC = ( kB - 1 ) * nCB ( 3 ) + 1, kB * nCB ( 3 )
             do iC = ( iB - 1 ) * nCB ( 1 ) + 1, iB * nCB ( 1 )
@@ -368,27 +372,27 @@ contains
     end do !-- iV
 
     !-- Count coarsening pillars in transverse brick space 
-    allocate ( C % nPillarsTransverse_3 ( nB ( 1 ), nB ( 2 ) ) )
-    C % nPillarsTransverse_3 = 0
+    allocate ( nPillarsTransverse_3 ( nB ( 1 ), nB ( 2 ) ) )
+    nPillarsTransverse_3 = 0
     do jB = 1, nB ( 2 )
       do iB = 1, nB ( 1 )
         do jC = ( jB - 1 ) * nCB ( 2 ) + 1, jB * nCB ( 2 )
           do iC = ( iB - 1 ) * nCB ( 1 ) + 1, iB * nCB ( 1 )
             if ( R_G ( iC ) * sin ( Theta_G ( jC ) ) * dPhi  &
                  <  C % MinWidth ) &
-              C % nPillarsTransverse_3 ( iB, jB )  &
-                =  C % nPillarsTransverse_3 ( iB, jB )  +  1
+              nPillarsTransverse_3 ( iB, jB )  &
+                =  nPillarsTransverse_3 ( iB, jB )  +  1
           end do !-- iC
         end do !-- jC
       end do !-- iB
     end do !-- jB
-    call Show ( C % nPillarsTransverse_3, 'nPillarsTransverse_3', &
+    call Show ( nPillarsTransverse_3, 'nPillarsTransverse_3', &
                 C % IGNORABILITY + 1 )
 
     !-- Determine pillar distribution
-    nRanks_3 = count ( C % nPillarsTransverse_3 > 0 ) * nB ( 3 )
+    nRanks_3 = count ( nPillarsTransverse_3 > 0 ) * nB ( 3 )
     allocate ( nPillars_3 ( 0 : nRanks_3 - 1 ) )
-    nPillarsTotal = sum ( C % nPillarsTransverse_3 )
+    nPillarsTotal = sum ( nPillarsTransverse_3 )
     nPillarsSurplus = mod ( nPillarsTotal, nRanks_3 )
     nPillars_3 = nPillarsTotal / nRanks_3
     nPillars_3 ( 0 : nPillarsSurplus - 1 ) &
@@ -400,7 +404,7 @@ contains
     iR = 0
     do jB = 1, nB ( 2 )
       iLoop: do iB = 1, nB ( 1 )
-        if ( C % nPillarsTransverse_3 ( iB, jB ) == 0 ) &
+        if ( nPillarsTransverse_3 ( iB, jB ) == 0 ) &
           cycle iLoop
         do kB = 1, nB ( 3 )
           Rank_3 ( iR ) = ( kB - 1 ) * nB ( 1 ) * nB ( 2 )  &
@@ -420,6 +424,8 @@ contains
 
     if ( Comm_3 % Initialized ) then
 
+      C % nPillars_3 = nPillars_3 ( Comm_3 % Rank )
+
       !-- Determine nSegmentsFrom and nSegmentsTo
       allocate ( C % nSegmentsFrom_3 ( 0 : nRanks_3 - 1 ) )
       allocate ( C % nSegmentsTo_3 ( 0 : nRanks_3 - 1 ) )
@@ -430,7 +436,7 @@ contains
       C % nSegmentsTo_3   = 0
       do jB = 1, nB ( 2 )
         iLoop: do iB = 1, nB ( 1 )
-          if ( C % nPillarsTransverse_3 ( iB, jB ) == 0 ) &
+          if ( nPillarsTransverse_3 ( iB, jB ) == 0 ) &
             cycle iLoop
           do jC = ( jB - 1 ) * nCB ( 2 ) + 1, jB * nCB ( 2 )
             do iC = ( iB - 1 ) * nCB ( 1 ) + 1, iB * nCB ( 1 )
@@ -486,11 +492,6 @@ contains
       deallocate ( C % Communicator_3 )
     if ( allocated ( C % Communicator_2 ) ) &
       deallocate ( C % Communicator_2 )
-
-    if ( allocated ( C % nPillarsTransverse_3 ) ) &
-      deallocate ( C % nPillarsTransverse_3 )
-    if ( allocated ( C % nPillarsTransverse_2 ) ) &
-      deallocate ( C % nPillarsTransverse_2 )
 
     if ( allocated ( C % nSegmentsTo_3 ) ) &
       deallocate ( C % nSegmentsTo_3 )
