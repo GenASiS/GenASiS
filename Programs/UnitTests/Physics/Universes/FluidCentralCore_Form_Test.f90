@@ -74,13 +74,13 @@ subroutine SetFluid ( FCC )
   if ( C % nDimensions < 2 ) &
     return
 
-  dS  =  1.0_KDR  /  C % nCells ( 2 )
+  dS  =  CONSTANT % PI  /  C % nCells ( 2 )
 
   do kC = 1, nCB ( 3 )
     do jC = 1, nCB ( 2 )
       do iC = 1, nCB ( 1 )
         S_2 ( iC, jC, kC )  &
-          =  ( ( iaB ( 2 ) - 1 ) * nCB ( 2 )  +  jC )  *  dS 
+          =  sin ( ( ( iaB ( 2 ) - 1 ) * nCB ( 2 )  +  jC - 0.5_KDR )  *  dS )
       end do
     end do
   end do
@@ -88,13 +88,13 @@ subroutine SetFluid ( FCC )
   if ( C % nDimensions < 3 ) &
     return
 
-  dS  =  1.0_KDR  /  C % nCells ( 3 )
+  dS  =  2.0_KDR * CONSTANT % PI  /  C % nCells ( 3 )
 
   do kC = 1, nCB ( 3 )
     do jC = 1, nCB ( 2 )
       do iC = 1, nCB ( 1 )
         S_3 ( iC, jC, kC )  &
-          =  ( ( iaB ( 3 ) - 1 ) * nCB ( 3 )  +  kC )  *  dS 
+          =  sin ( ( ( iaB ( 3 ) - 1 ) * nCB ( 3 )  +  kC - 0.5_KDR )  *  dS )
       end do
     end do
   end do
