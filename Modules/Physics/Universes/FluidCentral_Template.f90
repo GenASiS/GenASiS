@@ -11,13 +11,16 @@ module FluidCentral_Template
 
   type, public, extends ( Integrator_C_PS_Template ), abstract :: &
     FluidCentralTemplate
-      type ( Real_1D_Form ), dimension ( :, : ), allocatable :: &
-        CoarsenPillar_2, &
-        CoarsenPillar_3
+      integer ( KDI ), dimension ( : ), allocatable :: &
+        CoarsenFactor_2, &
+        CoarsenFactor_3
       type ( MeasuredValueForm ), dimension ( 3 ) :: &
         CoordinateUnit
       logical ( KDL ) :: &
         Dimensionless
+      type ( StorageForm ), dimension ( : ), allocatable :: &
+        CoarsenPillar_2, &
+        CoarsenPillar_3
       type ( CollectiveOperation_R_Form ), allocatable :: &
         CO_CoarsenForward_2, CO_CoarsenBackward_2, &
         CO_CoarsenForward_3, CO_CoarsenBackward_3
@@ -314,6 +317,16 @@ contains
     if ( allocated ( FC % CO_CoarsenForward_2 ) ) &
       deallocate ( FC % CO_CoarsenForward_2 )
 
+    if ( allocated ( FC % CoarsenPillar_3 ) ) &
+      deallocate ( FC % CoarsenPillar_3 )
+    if ( allocated ( FC % CoarsenPillar_2 ) ) &
+      deallocate ( FC % CoarsenPillar_2 )
+
+    if ( allocated ( FC % CoarsenFactor_3 ) ) &
+      deallocate ( FC % CoarsenFactor_3 )
+    if ( allocated ( FC % CoarsenFactor_2 ) ) &
+      deallocate ( FC % CoarsenFactor_2 )
+
     call FC % FinalizeTemplate_C_PS ( )
 
   end subroutine FinalizeTemplate_FC
@@ -327,6 +340,7 @@ contains
       iAngular
 
     integer ( KDI ) :: &
+      iP, &  !-- iPillar
       nValuesFactor_2, &
       nValuesFactor_3
     class ( Fluid_D_Form ), pointer :: &
@@ -367,7 +381,12 @@ contains
 
       end associate !-- CO_F, etc.
 
-!      allocate ( FC % CoarsenPillars_2 ( 
+      allocate ( FC % CoarsenFactor_2 ( C % nPillars_2 ) )
+      allocate ( FC % CoarsenPillar_2 ( C % nPillars_2 ) )
+      do iP = 1, C % nPillars_2
+        call FC % CoarsenPillar_2 ( iP ) % Initialize &
+               ( [ C % nCells ( 2 ), F % N_CONSERVED ] )
+      end do  !-- iP
 
     case ( 3 )
 
@@ -392,6 +411,13 @@ contains
                nOutgoing  =  C % nSegmentsFrom_3  *  nValuesFactor_3 )
 
       end associate !-- CO_F, etc.
+
+      allocate ( FC % CoarsenFactor_3 ( C % nPillars_3 ) )
+      allocate ( FC % CoarsenPillar_3 ( C % nPillars_3 ) )
+      do iP = 1, C % nPillars_3
+        call FC % CoarsenPillar_3 ( iP ) % Initialize &
+               ( [ C % nCells ( 3 ), F % N_CONSERVED ] )
+      end do  !-- iP
 
     end select !-- iAngular
     end select !-- C
@@ -765,9 +791,12 @@ contains
       iAngular
 
     integer ( KDI ) :: &
-      oO, &          !-- oOutgoing
+      oO, oI, &      !-- oOutgoing, oIncoming
+      oC, &          !-- oCell
       iC, jC, kC, &  !-- iCell, etc.
-      iS
+      iS, &          !-- iSelected
+      iP, &          !-- iPillar
+      iB             !-- iBrick
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       Crsn_2, Crsn_3, &
       SV
@@ -787,7 +816,9 @@ contains
     select type ( C => PS % Chart )
     class is ( Chart_SLD_CC_Form )
 
-    associate ( nCB => C % nCellsBrick )
+    associate &
+      ( nCB => C % nCellsBrick, &
+         nB => C % nBricks )
 
     select case ( iAngular )
     case ( 2 )
@@ -825,7 +856,31 @@ contains
 
 !call Show ( Outgoing, '>>> Outgoing 2' )
       call CO % AllToAll_V ( )
-call Show ( Incoming, '>>> Incoming 2' )
+!call Show ( Incoming, '>>> Incoming 2' )
+
+      oI = 0
+      oC = 0
+      do iB = 1, C % nBricks ( 2 )
+        do iP = 1, C % nPillars_2
+          FC % CoarsenFactor_2 ( iP ) &
+            = min ( int ( Incoming ( oI + 1 ) + 0.5_KDR ), C % nCells ( 2 ) )
+          oI = oI + 1
+          associate ( CP => FC % CoarsenPillar_2 ( iP ) )
+            do iS = 1, CP % nVariables
+              CP % Value ( oC + 1 : oC + nCB ( 2 ), iS )  &
+                =  Incoming ( oI + 1 : oI + nCB ( 2 ) )
+              oI = oI + nCB ( 2 )
+            end do !-- iS
+          end associate !-- CP
+        end do !-- iP
+        oC = oC + nCB ( 2 )
+      end do !-- iB
+
+! do iP = 1, C % nPillars_2
+!   call Show ( iP, '>>> iPillar_2' )
+!   call Show ( FC % CoarsenFactor_2 ( iP ), '>>> CoarsenFactor_2' )
+!   call Show ( FC % CoarsenPillar_2 ( iP ) % Value, '>>> CoarsenPillar_2' )
+! end do !-- iP
 
       end associate !-- Outgoing, etc.
       end associate !-- CO
@@ -865,13 +920,37 @@ call Show ( Incoming, '>>> Incoming 2' )
 
 !call Show ( Outgoing, '>>> Outgoing 3' )
       call CO % AllToAll_V ( )
-call Show ( Incoming, '>>> Incoming 3' )
+!call Show ( Incoming, '>>> Incoming 3' )
+
+      oI = 0
+      oC = 0
+      do iB = 1, C % nBricks ( 3 )
+        do iP = 1, C % nPillars_3
+          FC % CoarsenFactor_3 ( iP ) &
+            = min ( int ( Incoming ( oI + 1 ) + 0.5_KDR ), C % nCells ( 3 ) )
+          oI = oI + 1
+          associate ( CP => FC % CoarsenPillar_3 ( iP ) )
+            do iS = 1, CP % nVariables
+              CP % Value ( oC + 1 : oC + nCB ( 3 ), iS )  &
+                =  Incoming ( oI + 1 : oI + nCB ( 3 ) )
+              oI = oI + nCB ( 3 )
+            end do !-- iS
+          end associate !-- CP
+        end do !-- iP
+        oC = oC + nCB ( 3 )
+      end do !-- iB
+
+! do iP = 1, C % nPillars_3
+!   call Show ( iP, '>>> iPillar_3' )
+!   call Show ( FC % CoarsenFactor_3 ( iP ), '>>> CoarsenFactor_3' )
+!   call Show ( FC % CoarsenPillar_3 ( iP ) % Value, '>>> CoarsenPillar_3' )
+! end do !-- iP
 
       end associate !-- Outgoing, etc.
       end associate !-- CO
 
     end select !-- iAngular
-    end associate !-- nCB
+    end associate !-- nCB, etc.
     end select !-- C
     end select !-- PS
     end select !-- FA
