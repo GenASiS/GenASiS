@@ -975,10 +975,71 @@ contains
 
   subroutine CoarsenPillars ( FC, iAngular )
 
-    class ( FluidCentralTemplate ), intent ( inout ) :: &
+    class ( FluidCentralTemplate ), intent ( inout ), target :: &
       FC
     integer ( KDI ), intent ( in ) :: &
       iAngular
+
+    integer ( KDI ) :: &
+      oC, &  !-- oCell
+      iP, &  !-- iPillar
+      iA, &  !-- iAverage
+      iV     !-- iVariable
+    integer ( KDI ), dimension ( : ), pointer :: &
+      nCoarsen
+    real ( KDR ) :: &
+      Volume_A, &
+      Density_A
+    type ( StorageForm ), dimension ( : ), pointer :: &
+      CP
+
+    select type ( PS => FC % PositionSpace )
+    class is ( Atlas_SC_Form )
+
+    select type ( C => PS % Chart )
+    class is ( Chart_SLD_CC_Form )
+
+    select case ( iAngular )
+    case ( 2 )
+      if ( .not. C % Communicator_2 % Initialized ) &
+        return
+      nCoarsen => FC % nCoarsen_2
+      CP => FC % CoarsenPillar_2
+    case ( 3 )
+      if ( .not. C % Communicator_3 % Initialized ) &
+        return
+      nCoarsen => FC % nCoarsen_3
+      CP => FC % CoarsenPillar_3
+    end select !-- iAngular
+
+    do iP = 1, size ( CP )
+      oC = 0
+      associate ( Volume => CP ( iP ) % Value ( :, 1 ) )
+      do iA = 1, CP ( iP ) % nValues / nCoarsen ( iP )
+        Volume_A = sum ( Volume ( oC + 1 : oC + nCoarsen ( iP ) ) )
+        do iV = 2, CP ( iP ) % nVariables
+          associate ( Density => CP ( iP ) % Value ( :, iV ) )
+          Density_A = sum ( Volume ( oC + 1 : oC + nCoarsen ( iP ) ) &
+                            *  Density ( oC + 1 : oC + nCoarsen ( iP ) ) )
+          Density ( oC + 1 : oC + nCoarsen ( iP ) ) &
+            =  Density_A / Volume_A
+          end associate !-- Density
+        end do !-- iV
+        oC = oC + nCoarsen ( iP )
+      end do !-- iA
+      end associate !-- Volume
+    end do !-- iP
+
+! call Show ( iAngular, '>>> iAngular' )
+! do iP = 1, size ( CP )
+!   call Show ( iP, '>>> iPillar' )
+!   call Show ( nCoarsen ( iP ), '>>> nCoarsen' )
+!   call Show ( CP ( iP ) % Value, '>>> Coarsened values' )
+! end do !-- iP
+
+    end select !-- C
+    end select !-- PS
+    nullify ( CP, nCoarsen )
 
   end subroutine CoarsenPillars
 
