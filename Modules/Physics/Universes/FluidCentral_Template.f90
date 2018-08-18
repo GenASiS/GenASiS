@@ -97,13 +97,15 @@ module FluidCentral_Template
         FC
     end subroutine SC
 
-    subroutine CS ( FC, S )
+    subroutine CS ( FC, S, iAngular )
       use Basics
       import FluidCentralTemplate
       class ( FluidCentralTemplate ), intent ( inout ) :: &
         FC
       class ( StorageForm ), intent ( inout ) :: &
         S
+      integer ( KDI ), intent ( in ) :: &
+        iAngular
     end subroutine CS
 
   end interface
@@ -797,11 +799,15 @@ contains
 
     integer ( KDI ) :: &
       oO, oI, &      !-- oOutgoing, oIncoming
+      oP, &          !-- oPillar
       oC, &          !-- oCell
       iC, jC, kC, &  !-- iCell, etc.
       iS, &          !-- iSelected
-      iP, &          !-- iPillar
-      iB             !-- iBrick
+      iG, &          !-- iGroup (of pillars/processes)
+      iB, &          !-- iBrick
+      iR, &          !-- iRank
+      iPS, &         !-- iPillarSegment
+      iP             !-- iPillar
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       Crsn_2, Crsn_3, &
       Vol, &
@@ -855,32 +861,30 @@ contains
         end do !-- iC
       end do !-- kC
 
-!call Show ( Outgoing, '>>> Outgoing 2' )
       call CO % AllToAll_V ( )
-!call Show ( Incoming, '>>> Incoming 2' )
 
+      oP = 0
       oI = 0
-      oC = 0
-      do iB = 1, C % nBricks ( 2 )
-        do iP = 1, C % nPillars_2
-          FC % nCoarsen_2 ( iP ) = int ( Incoming ( oI + 1 ) + 0.5_KDR )
-          oI = oI + 1
-          associate ( CP => FC % CoarsenPillar_2 ( iP ) )
-          do iS = 1, CP % nVariables
-            CP % Value ( oC + 1 : oC + nCB ( 2 ), iS )  &
-              =  Incoming ( oI + 1 : oI + nCB ( 2 ) )
-            oI = oI + nCB ( 2 )
-          end do !-- iS
-          end associate !-- CP
-        end do !-- iP
-        oC = oC + nCB ( 2 )
-      end do !-- iB
-
-! do iP = 1, C % nPillars_2
-!   call Show ( iP, '>>> iPillar_2' )
-!   call Show ( FC % nCoarsen_2 ( iP ), '>>> nCoarsen_2' )
-!   call Show ( FC % CoarsenPillar_2 ( iP ) % Value, '>>> CoarsenPillar_2' )
-! end do !-- iP
+      do iG = 1, C % Communicator_2 % Size  /  C % nBricks ( 2 )
+        oC = 0
+        do iB = 1, C % nBricks ( 2 )
+          iR = ( iG - 1 ) * C % nBricks ( 2 )  +  iB  -  1
+          do iPS = 1, C % nSegmentsFrom_2 ( iR )
+            iP = oP + iPS
+            FC % nCoarsen_2 ( iP ) = int ( Incoming ( oI + 1 ) + 0.5_KDR )
+            oI = oI + 1
+            associate ( CP => FC % CoarsenPillar_2 ( iP ) )
+            do iS = 1, CP % nVariables
+              CP % Value ( oC + 1 : oC + nCB ( 2 ), iS )  &
+                =  Incoming ( oI + 1 : oI + nCB ( 2 ) )
+              oI = oI + nCB ( 2 )
+            end do !-- iS
+            end associate !-- CP
+          end do !-- iPS
+          oC = oC + nCB ( 2 )
+        end do !-- iB
+        oP = oP + C % nSegmentsFrom_2 ( iR )
+      end do !-- iG
 
       end associate !-- Outgoing, etc.
       end associate !-- CO
@@ -921,32 +925,30 @@ contains
         end do !-- iC
       end do !-- jC
 
-!call Show ( Outgoing, '>>> Outgoing 3' )
       call CO % AllToAll_V ( )
-!call Show ( Incoming, '>>> Incoming 3' )
 
+      oP = 0
       oI = 0
-      oC = 0
-      do iB = 1, C % nBricks ( 3 )
-        do iP = 1, C % nPillars_3
-          FC % nCoarsen_3 ( iP ) = int ( Incoming ( oI + 1 ) + 0.5_KDR )
-          oI = oI + 1
-          associate ( CP => FC % CoarsenPillar_3 ( iP ) )
-          do iS = 1, CP % nVariables
-            CP % Value ( oC + 1 : oC + nCB ( 3 ), iS )  &
-              =  Incoming ( oI + 1 : oI + nCB ( 3 ) )
-            oI = oI + nCB ( 3 )
-          end do !-- iS
-          end associate !-- CP
-        end do !-- iP
-        oC = oC + nCB ( 3 )
-      end do !-- iB
-
-! do iP = 1, C % nPillars_3
-!   call Show ( iP, '>>> iPillar_3' )
-!   call Show ( FC % nCoarsen_3 ( iP ), '>>> nCoarsen_3' )
-!   call Show ( FC % CoarsenPillar_3 ( iP ) % Value, '>>> CoarsenPillar_3' )
-! end do !-- iP
+      do iG = 1, C % Communicator_3 % Size  /  C % nBricks ( 3 )
+        oC = 0
+        do iB = 1, C % nBricks ( 3 )
+          iR = ( iG - 1 ) * C % nBricks ( 3 )  +  iB  -  1
+          do iPS = 1, C % nSegmentsFrom_3 ( iR )
+            iP = oP + iPS
+            FC % nCoarsen_3 ( iP ) = int ( Incoming ( oI + 1 ) + 0.5_KDR )
+            oI = oI + 1
+            associate ( CP => FC % CoarsenPillar_3 ( iP ) )
+            do iS = 1, CP % nVariables
+              CP % Value ( oC + 1 : oC + nCB ( 3 ), iS )  &
+                =  Incoming ( oI + 1 : oI + nCB ( 3 ) )
+              oI = oI + nCB ( 3 )
+            end do !-- iS
+            end associate !-- CP
+          end do !-- iPS
+          oC = oC + nCB ( 3 )
+        end do !-- iB
+        oP = oP + C % nSegmentsFrom_3 ( iR )
+      end do !-- iG
 
       end associate !-- Outgoing, etc.
       end associate !-- CO
@@ -1017,13 +1019,6 @@ contains
       end associate !-- Volume
     end do !-- iP
 
-! call Show ( iAngular, '>>> iAngular' )
-! do iP = 1, size ( CP )
-!   call Show ( iP, '>>> iPillar' )
-!   call Show ( nCoarsen ( iP ), '>>> nCoarsen' )
-!   call Show ( CP ( iP ) % Value, '>>> Coarsened values' )
-! end do !-- iP
-
     end select !-- C
     end select !-- PS
     nullify ( CP, nCoarsen )
@@ -1042,11 +1037,15 @@ contains
 
     integer ( KDI ) :: &
       oO, oI, &      !-- oOutgoing, oIncoming
+      oP, &          !-- oPillar
       oC, &          !-- oCell
       iC, jC, kC, &  !-- iCell, etc.
       iS, &          !-- iSelected
-      iP, &          !-- iPillar
-      iB             !-- iBrick
+      iG, &          !-- iGroup (of pillars/processes)
+      iB, &          !-- iBrick
+      iR, &          !-- iRank
+      iPS, &         !-- iPillarSegment
+      iP             !-- iPillar
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       Crsn_2, Crsn_3, &
       SV
@@ -1074,20 +1073,26 @@ contains
         ( Outgoing => CO % Outgoing % Value, &
           Incoming => CO % Incoming % Value )
 
+      oP = 0
       oO = 0
-      oC = 0
-      do iB = 1, C % nBricks ( 2 )
-        do iP = 1, C % nPillars_2
-          associate ( CP => FC % CoarsenPillar_2 ( iP ) )
-          do iS = 2, CP % nVariables
-            Outgoing ( oO + 1 : oO + nCB ( 2 ) ) &
-              =  CP % Value ( oC + 1 : oC + nCB ( 2 ), iS )
-            oO = oO + nCB ( 2 )
-          end do !-- iS
-          end associate !-- CP
-        end do !-- iP
-        oC = oC + nCB ( 2 )
-      end do !-- iB
+      do iG = 1, C % Communicator_2 % Size  /  C % nBricks ( 2 )
+        oC = 0
+        do iB = 1, C % nBricks ( 2 )
+          iR = ( iG - 1 ) * C % nBricks ( 2 )  +  iB  -  1
+          do iPS = 1, C % nSegmentsFrom_2 ( iR )
+            iP = oP + iPS
+            associate ( CP => FC % CoarsenPillar_2 ( iP ) )
+            do iS = 2, CP % nVariables
+              Outgoing ( oO + 1 : oO + nCB ( 2 ) )  &
+                =  CP % Value ( oC + 1 : oC + nCB ( 2 ), iS )
+              oO = oO + nCB ( 2 )
+            end do !-- iS
+            end associate !-- CP
+          end do !-- iPS
+          oC = oC + nCB ( 2 )
+        end do !-- iB
+        oP = oP + C % nSegmentsFrom_2 ( iR )
+      end do !-- iG
 
       call CO % AllToAll_V ( )
 
@@ -1123,20 +1128,26 @@ contains
         ( Outgoing => CO % Outgoing % Value, &
           Incoming => CO % Incoming % Value )
 
+      oP = 0
       oO = 0
-      oC = 0
-      do iB = 1, C % nBricks ( 3 )
-        do iP = 1, C % nPillars_3
-          associate ( CP => FC % CoarsenPillar_3 ( iP ) )
-          do iS = 2, CP % nVariables
-            Outgoing ( oO + 1 : oO + nCB ( 3 ) ) &
-              =  CP % Value ( oC + 1 : oC + nCB ( 3 ), iS )
-            oO = oO + nCB ( 3 )
-          end do !-- iS
-          end associate !-- CP
-        end do !-- iP
-        oC = oC + nCB ( 3 )
-      end do !-- iB
+      do iG = 1, C % Communicator_3 % Size  /  C % nBricks ( 3 )
+        oC = 0
+        do iB = 1, C % nBricks ( 3 )
+          iR = ( iG - 1 ) * C % nBricks ( 3 )  +  iB  -  1
+          do iPS = 1, C % nSegmentsFrom_3 ( iR )
+            iP = oP + iPS
+            associate ( CP => FC % CoarsenPillar_3 ( iP ) )
+            do iS = 2, CP % nVariables
+              Outgoing ( oO + 1 : oO + nCB ( 3 ) )  &
+                =  CP % Value ( oC + 1 : oC + nCB ( 3 ), iS )
+              oO = oO + nCB ( 3 )
+            end do !-- iS
+            end associate !-- CP
+          end do !-- iPS
+          oC = oC + nCB ( 3 )
+        end do !-- iB
+        oP = oP + C % nSegmentsFrom_3 ( iR )
+      end do !-- iG
 
       call CO % AllToAll_V ( )
 

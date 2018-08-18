@@ -230,27 +230,28 @@ contains
   end subroutine SetCoarsening
 
 
-  subroutine CoarsenSingularities ( FC, S )
+  subroutine CoarsenSingularities ( FC, S, iAngular )
 
     class ( FluidCentralCoreForm ), intent ( inout ) :: &
       FC
     class ( StorageForm ), intent ( inout ) :: &
       S
+    integer ( KDI ), intent ( in ) :: &
+      iAngular
 
     select type ( PS => FC % PositionSpace )
     class is ( Atlas_SC_CC_Form )
 
-    !-- Polar coarsening
+    select case ( iAngular )
+    case ( 2 )
+      if ( PS % nDimensions < 2 ) &
+        return
+    case ( 3 )
+      if ( PS % nDimensions < 3 ) &
+        return
+    end select !-- iAngular
 
-    if ( PS % nDimensions < 2 ) &
-      return
-    call FC % CoarsenSingularitiesTemplate ( S, iAngular = 2 )
-
-    !-- Azimuthal coarsening
-
-    if ( PS % nDimensions < 3 ) &
-      return
-    call FC % CoarsenSingularitiesTemplate ( S, iAngular = 3 )
+    call FC % CoarsenSingularitiesTemplate ( S, iAngular )
 
     end select !-- PS
 
