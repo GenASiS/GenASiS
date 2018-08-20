@@ -687,15 +687,20 @@ contains
     integer ( KDI ) :: &
       iV, &
       nV
+    real ( KDR ) :: &
+      SqrtTiny
 
     nV = size ( I_I )
+    
+    SqrtTiny = sqrt ( tiny ( 0.0_KDR ) )
 
     select case ( iD )
     case ( 1 )
       !$OMP parallel do private ( iV )
       do iV = 1, nV
         I_I ( iV )  =     cos ( X_3 ( iV ) )  *  S_1 ( iV )  &
-                       -  sin ( X_3 ( iV ) )  /  X_1 ( iV )  &
+                       -  sin ( X_3 ( iV ) )  &
+                          /  max ( X_1 ( iV ), SqrtTiny )  &
                           *  S_3 ( iV ) 
       end do
       !$OMP end parallel do
@@ -703,7 +708,8 @@ contains
       !$OMP parallel do private ( iV )
       do iV = 1, nV
         I_I ( iV )  =     sin ( X_3 ( iV ) )  *  S_1 ( iV )  &
-                       +  cos ( X_3 ( iV ) )  /  X_1 ( iV )  &
+                       +  cos ( X_3 ( iV ) )  &
+                          /  max ( X_1 ( iV ), SqrtTiny )  &
                           *  S_3 ( iV ) 
       end do
       !$OMP end parallel do
@@ -726,8 +732,12 @@ contains
     integer ( KDI ) :: &
       iV, &
       nV
+    real ( KDR ) :: &
+      SqrtTiny
 
     nV = size ( I_I )
+
+    SqrtTiny = sqrt ( tiny ( 0.0_KDR ) )
 
     select case ( iD )
     case ( 1 )
@@ -735,7 +745,8 @@ contains
       do iV = 1, nV
         I_I ( iV )  =  sin ( X_3 ( iV ) )  *  (   X_1 ( iV )  *  S_2 ( iV )  &
                                                 - X_2 ( iV )  *  S_1 ( iV ) ) &
-                       - X_2 ( iV )  *  cos ( X_3 ( iV ) )  /  X_1 ( iV )  &
+                       - X_2 ( iV )  *  cos ( X_3 ( iV ) )  &
+                         /  max ( X_1 ( iV ), SqrtTiny )  &
                          *  S_3 ( iV )                         
       end do
       !$OMP end parallel do
@@ -744,7 +755,8 @@ contains
       do iV = 1, nV
         I_I ( iV )  =  cos ( X_3 ( iV ) )  *  (   X_2 ( iV )  *  S_1 ( iV )  &
                                                 - X_1 ( iV )  *  S_2 ( iV ) ) &
-                       - X_2 ( iV )  *  sin ( X_3 ( iV ) )  /  X_1 ( iV )  &
+                       - X_2 ( iV )  *  sin ( X_3 ( iV ) )  &
+                         /  max ( X_1 ( iV ), SqrtTiny )  &
                          *  S_3 ( iV )                         
       end do
       !$OMP end parallel do
@@ -767,20 +779,26 @@ contains
     integer ( KDI ) :: &
       iV, &
       nV
+    real ( KDR ) :: &
+      SqrtTiny
 
     nV = size ( I_I )
+
+    SqrtTiny = sqrt ( tiny ( 0.0_KDR ) )
 
     select case ( iD )
     case ( 1 )
       !$OMP parallel do private ( iV )
       do iV = 1, nV
         I_I ( iV )  =     sin ( X_2 ( iV ) )  *  cos ( X_3 ( iV ) ) &
-                            * S_1 ( iV ) &
+                          * S_1 ( iV ) &
                        +  cos ( X_2 ( iV ) )  *  cos ( X_3 ( iV ) ) &
-                            /  X_1 ( iV )  *  S_2 ( iV ) &
+                          /  max ( X_1 ( iV ), SqrtTiny )  &
+                          *  S_2 ( iV ) &
                        -  sin ( X_3 ( iV ) )  &
-                            /  ( X_1 ( iV ) * sin ( X_2 ( iV ) ) )  &
-                            *  S_3 ( iV ) 
+                          /  ( max ( X_1 ( iV ), SqrtTiny ) &
+                               * sin ( X_2 ( iV ) ) )  &
+                          *  S_3 ( iV ) 
       end do
       !$OMP end parallel do
     case ( 2 )
@@ -789,9 +807,10 @@ contains
         I_I ( iV )  =     sin ( X_2 ( iV ) )  *  sin ( X_3 ( iV ) ) &
                             * S_1 ( iV ) &
                        +  cos ( X_2 ( iV ) )  *  sin ( X_3 ( iV ) ) &
-                            /  X_1 ( iV )  *  S_2 ( iV ) &
+                            /  max ( X_1 ( iV ), SqrtTiny )  *  S_2 ( iV ) &
                        +  cos ( X_3 ( iV ) )  &
-                            /  ( X_1 ( iV ) * sin ( X_2 ( iV ) ) )  &
+                            /  ( max ( X_1 ( iV ), SqrtTiny ) &
+                                 * sin ( X_2 ( iV ) ) )  &
                             *  S_3 ( iV ) 
       end do
       !$OMP end parallel do
@@ -811,13 +830,19 @@ contains
     integer ( KDI ) :: &
       iV, &
       nV
+    real ( KDR ) :: &
+      SqrtTiny
 
     nV = size ( I_I )
+
+    SqrtTiny = sqrt ( tiny ( 0.0_KDR ) )
 
     !$OMP parallel do private ( iV )
     do iV = 1, nV
       I_I ( iV )  =  cos ( X_2 ( iV ) )  *  S_1 ( iV ) &
-                     -  ( sin ( X_2 ( iV ) )  /  X_1 ( iV ) )  *  S_2 ( iV )
+                     -  ( sin ( X_2 ( iV ) )  &
+                          /  max ( X_1 ( iV ), SqrtTiny ) )  &
+                        *  S_2 ( iV )
     end do
     !$OMP end parallel do
 
@@ -838,8 +863,12 @@ contains
     integer ( KDI ) :: &
       iV, &
       nV
+    real ( KDR ) :: &
+      SqrtTiny
 
     nV = size ( I_I )
+
+    SqrtTiny = sqrt ( tiny ( 0.0_KDR ) )
 
     select case ( iD )
     case ( 1 )
@@ -847,7 +876,8 @@ contains
       do iV = 1, nV
         I_I ( iV )  =  - sin ( X_3 ( iV ) )  *  S_2 ( iV )  &
                        - ( cos ( X_2 ( iV ) )  *  cos ( X_3 ( iV ) )  &
-                           /  sin ( X_2 ( iV ) ) )  *  S_3 ( iV )  
+                           /  sin ( max ( X_2 ( iV ), SqrtTiny ) ) )  &
+                         *  S_3 ( iV )  
       end do
       !$OMP end parallel do
     case ( 2 )
@@ -855,7 +885,8 @@ contains
       do iV = 1, nV
         I_I ( iV )  =    cos ( X_3 ( iV ) )  *  S_2 ( iV )  &
                        - ( cos ( X_2 ( iV ) )  *  sin ( X_3 ( iV ) )  &
-                           /  sin ( X_2 ( iV ) ) )  *  S_3 ( iV )  
+                           /  sin ( max ( X_2 ( iV ), SqrtTiny ) ) )  &
+                         *  S_3 ( iV )  
       end do
       !$OMP end parallel do
     end select
@@ -908,8 +939,12 @@ contains
       iV, jV, kV
     integer ( KDI ), dimension ( 3 ) :: &
       nV
+    real ( KDR ) :: &
+      SqrtTiny
 
     nV = shape ( I_I )
+
+    SqrtTiny = sqrt ( tiny ( 0.0_KDR ) )
 
     select case ( iD )
     case ( 1 )
@@ -919,7 +954,8 @@ contains
           do iV = 1, nV ( 1 )
             I_I ( iV, jV, kV )  &
               =  cos ( X_3 ( iV, jV, kV ) )  *  S_1 ( iV, jV, kV )  &
-                 -  sin ( X_3 ( iV, jV, kV ) )  /  X_1 ( iV, jV, kV )  &
+                 -  sin ( X_3 ( iV, jV, kV ) )  &
+                    /  max ( X_1 ( iV, jV, kV ), SqrtTiny )  &
                     *  S_3 ( iV, jV, kV ) 
           end do
         end do
@@ -932,7 +968,8 @@ contains
           do iV = 1, nV ( 1 )
             I_I ( iV, jV, kV )  &
               =  sin ( X_3 ( iV, jV, kV ) )  *  S_1 ( iV, jV, kV )  &
-                 +  cos ( X_3 ( iV, jV, kV ) )  /  X_1 ( iV, jV, kV )  &
+                 +  cos ( X_3 ( iV, jV, kV ) )  &
+                    /  max ( X_1 ( iV, jV, kV ), SqrtTiny )  &
                     *  S_3 ( iV, jV, kV ) 
           end do
         end do
@@ -958,8 +995,12 @@ contains
       iV, jV, kV
     integer ( KDI ), dimension ( 3 ) :: &
       nV
+    real ( KDR ) :: &
+      SqrtTiny
 
     nV = shape ( I_I )
+
+    SqrtTiny = sqrt ( tiny ( 0.0_KDR ) )
 
     select case ( iD )
     case ( 1 )
@@ -972,7 +1013,8 @@ contains
                    *  (   X_1 ( iV, jV, kV )  *  S_2 ( iV, jV, kV )  &
                         - X_2 ( iV, jV, kV )  *  S_1 ( iV, jV, kV ) ) &
                  -  X_2 ( iV, jV, kV )  *  cos ( X_3 ( iV, jV, kV ) )  &
-                    /  X_1 ( iV, jV, kV )  *  S_3 ( iV, jV, kV )                         
+                    /  max ( X_1 ( iV, jV, kV ), SqrtTiny )  &
+                    *  S_3 ( iV, jV, kV )                         
           end do
         end do
       end do
@@ -987,7 +1029,8 @@ contains
                    *  (   X_2 ( iV, jV, kV )  *  S_1 ( iV, jV, kV )  &
                         - X_1 ( iV, jV, kV )  *  S_2 ( iV, jV, kV ) ) &
                  -  X_2 ( iV, jV, kV )  *  sin ( X_3 ( iV, jV, kV ) )  &
-                    /  X_1 ( iV, jV, kV )  *  S_3 ( iV, jV, kV )                         
+                    /  max ( X_1 ( iV, jV, kV ), SqrtTiny )  &
+                    *  S_3 ( iV, jV, kV )                         
           end do
         end do
       end do
@@ -1012,8 +1055,12 @@ contains
       iV, jV, kV
     integer ( KDI ), dimension ( 3 ) :: &
       nV
+    real ( KDR ) :: &
+      SqrtTiny
 
     nV = shape ( I_I )
+
+    SqrtTiny = sqrt ( tiny ( 0.0_KDR ) )
 
     select case ( iD )
     case ( 1 )
@@ -1026,10 +1073,11 @@ contains
                                       *  S_1 ( iV, jV, kV ) &
                                    +  cos ( X_2 ( iV, jV, kV ) )  &
                                       *  cos ( X_3 ( iV, jV, kV ) ) &
-                                      /  X_1 ( iV, jV, kV )  &
+                                      /  max ( X_1 ( iV, jV, kV ), SqrtTiny ) &
                                       *  S_2 ( iV, jV, kV ) &
                                    -  sin ( X_3 ( iV, jV, kV ) )  &
-                                      /  ( X_1 ( iV, jV, kV ) &
+                                      /  ( max ( X_1 ( iV, jV, kV ), &
+                                                 SqrtTiny ) &
                                            * sin ( X_2 ( iV, jV, kV ) ) )  &
                                       *  S_3 ( iV, jV, kV ) 
           end do
@@ -1046,10 +1094,11 @@ contains
                                       *  S_1 ( iV, jV, kV ) &
                                    +  cos ( X_2 ( iV, jV, kV ) )  &
                                       *  sin ( X_3 ( iV, jV, kV ) ) &
-                                      /  X_1 ( iV, jV, kV )  &
+                                      /  max ( X_1 ( iV, jV, kV ), SqrtTiny ) &
                                       *  S_2 ( iV, jV, kV ) &
                                    +  cos ( X_3 ( iV, jV, kV ) )  &
-                                      /  ( X_1 ( iV, jV, kV ) &
+                                      /  ( max ( X_1 ( iV, jV, kV ), &
+                                                 SqrtTiny ) &
                                            * sin ( X_2 ( iV, jV, kV ) ) )  &
                                       *  S_3 ( iV, jV, kV ) 
           end do
@@ -1073,8 +1122,12 @@ contains
       iV, jV, kV
     integer ( KDI ), dimension ( 3 ) :: &
       nV
+    real ( KDR ) :: &
+      SqrtTiny
 
     nV = shape ( I_I )
+
+    SqrtTiny = sqrt ( tiny ( 0.0_KDR ) )
 
     !$OMP parallel do private ( iV, jV, kV ) collapse ( 3 )
     do kV = 1, nV ( 3 )
@@ -1083,7 +1136,7 @@ contains
           I_I ( iV, jV, kV ) &
             =  cos ( X_2 ( iV, jV, kV ) )  *   S_1 ( iV, jV, kV ) &
                -  sin ( X_2 ( iV, jV, kV ) ) &
-                    /  max ( X_1 ( iV, jV, kV ), sqrt ( tiny ( 0.0_KDR ) ) ) &
+                    /  max ( X_1 ( iV, jV, kV ), SqrtTiny ) &
                   *  S_2 ( iV, jV, kV )
         end do
       end do
@@ -1108,8 +1161,12 @@ contains
       iV, jV, kV
     integer ( KDI ), dimension ( 3 ) :: &
       nV
+    real ( KDR ) :: &
+      SqrtTiny
 
     nV = shape ( I_I )
+
+    SqrtTiny = sqrt ( tiny ( 0.0_KDR ) )
 
     select case ( iD )
     case ( 1 )
@@ -1121,7 +1178,8 @@ contains
               =  - sin ( X_3 ( iV, jV, kV ) )  *  S_2 ( iV, jV, kV )  &
                  - ( cos ( X_2 ( iV, jV, kV ) )  &
                      *  cos ( X_3 ( iV, jV, kV ) )  &
-                   /  sin ( X_2 ( iV, jV, kV ) ) )  *  S_3 ( iV, jV, kV )  
+                     /  sin ( max ( X_2 ( iV, jV, kV ), SqrtTiny ) ) )  &
+                   *  S_3 ( iV, jV, kV )  
           end do
         end do
       end do
@@ -1135,7 +1193,8 @@ contains
               =    cos ( X_3 ( iV, jV, kV ) )  *  S_2 ( iV, jV, kV )  &
                  - ( cos ( X_2 ( iV, jV, kV ) )  &
                      *  sin ( X_3 ( iV, jV, kV ) )  &
-                   /  sin ( X_2 ( iV, jV, kV ) ) )  *  S_3 ( iV, jV, kV )  
+                     /  sin ( max ( X_2 ( iV, jV, kV ), SqrtTiny ) ) )  &
+                   *  S_3 ( iV, jV, kV )  
           end do
         end do
       end do
