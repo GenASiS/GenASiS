@@ -46,9 +46,9 @@ module FluidCentral_Template
     procedure ( SC ), private, pass, deferred :: &
       SetCoarsening
     procedure, public, pass :: &
-      CoarsenSingularitiesTemplate
+      CoarsenSingularityTemplate
     procedure ( CS ), public, nopass, deferred :: &
-      CoarsenSingularities
+      CoarsenSingularity
     procedure, public, pass :: &  !-- 2
       OpenGridImageStreams
     procedure, public, pass :: &  !-- 2
@@ -432,7 +432,7 @@ contains
   end subroutine SetCoarseningTemplate
 
 
-  subroutine CoarsenSingularitiesTemplate ( FC, S, iAngular )
+  subroutine CoarsenSingularityTemplate ( FC, S, iAngular )
 
     class ( FluidCentralTemplate ), intent ( inout ) :: &
       FC
@@ -445,7 +445,7 @@ contains
     call CoarsenPillars ( FC, iAngular )
     call DecomposePillars ( FC, S, iAngular )
 
-  end subroutine CoarsenSingularitiesTemplate
+  end subroutine CoarsenSingularityTemplate
 
 
   subroutine OpenGridImageStreams ( I )

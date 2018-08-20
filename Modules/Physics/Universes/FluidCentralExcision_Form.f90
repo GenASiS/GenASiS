@@ -22,7 +22,7 @@ module FluidCentralExcision_Form
     procedure, private, pass :: &
       SetCoarsening
     procedure, public, nopass :: &
-      CoarsenSingularities
+      CoarsenSingularity
   end type FluidCentralExcisionForm
 
 contains
@@ -191,7 +191,7 @@ contains
   end subroutine SetCoarsening
 
 
-  subroutine CoarsenSingularities ( S, iAngular )
+  subroutine CoarsenSingularity ( S, iAngular )
 
     class ( StorageForm ), intent ( inout ) :: &
       S
@@ -200,7 +200,7 @@ contains
 
     !-- FIXME: Fill in along the lines of FluidCentralCore_Form
 
-  end subroutine CoarsenSingularities
+  end subroutine CoarsenSingularity
 
 
 end module FluidCentralExcision_Form

@@ -24,7 +24,7 @@ module FluidCentralCore_Form
     procedure, private, pass :: &
       SetCoarsening
     procedure, public, nopass :: &
-      CoarsenSingularities
+      CoarsenSingularity
     procedure, private, pass :: &
       SetWriteTimeInterval
     procedure, public, pass :: &
@@ -162,7 +162,7 @@ contains
 
     select type ( C => PS % Chart )
     class is ( Chart_SLD_Form )
-      C % CoarsenSingularities => CoarsenSingularities
+      C % CoarsenSingularity => CoarsenSingularity
     end select !-- C
 
     end select !-- PS
@@ -235,7 +235,7 @@ contains
   end subroutine SetCoarsening
 
 
-  subroutine CoarsenSingularities ( S, iAngular )
+  subroutine CoarsenSingularity ( S, iAngular )
 
     class ( StorageForm ), intent ( inout ) :: &
       S
@@ -256,11 +256,11 @@ contains
         return
     end select !-- iAngular
 
-    call FluidCentralCore % CoarsenSingularitiesTemplate ( S, iAngular )
+    call FluidCentralCore % CoarsenSingularityTemplate ( S, iAngular )
 
     end select !-- PS
 
-  end subroutine CoarsenSingularities
+  end subroutine CoarsenSingularity
 
 
   subroutine SetWriteTimeInterval ( I )

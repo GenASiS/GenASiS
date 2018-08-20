@@ -31,7 +31,7 @@ module ChartHeader_SL__Form
     type ( FieldChartPointer ), dimension ( : ), allocatable :: &
       Field
     procedure ( CS ), pointer, nopass :: &
-      CoarsenSingularities => null ( )
+      CoarsenSingularity => null ( )
   contains
     procedure, private, pass :: &
       InitializeBasic
