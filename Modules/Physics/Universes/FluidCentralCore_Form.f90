@@ -160,6 +160,11 @@ contains
 
     end if !-- Dimensionless
 
+    select type ( C => PS % Chart )
+    class is ( Chart_SLD_Form )
+      C % CoarsenSingularities => CoarsenSingularities
+    end select !-- C
+
     end select !-- PS
 
   end subroutine InitializePositionSpace
