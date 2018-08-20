@@ -47,7 +47,7 @@ module FluidCentral_Template
       SetCoarsening
     procedure, public, pass :: &
       CoarsenSingularitiesTemplate
-    procedure ( CS ), public, pass, deferred :: &
+    procedure ( CS ), public, nopass, deferred :: &
       CoarsenSingularities
     procedure, public, pass :: &  !-- 2
       OpenGridImageStreams
@@ -97,11 +97,8 @@ module FluidCentral_Template
         FC
     end subroutine SC
 
-    subroutine CS ( FC, S, iAngular )
+    subroutine CS ( S, iAngular )
       use Basics
-      import FluidCentralTemplate
-      class ( FluidCentralTemplate ), intent ( inout ) :: &
-        FC
       class ( StorageForm ), intent ( inout ) :: &
         S
       integer ( KDI ), intent ( in ) :: &

@@ -21,7 +21,7 @@ module FluidCentralExcision_Form
       InitializeGeometry
     procedure, private, pass :: &
       SetCoarsening
-    procedure, public, pass :: &
+    procedure, public, nopass :: &
       CoarsenSingularities
   end type FluidCentralExcisionForm
 
@@ -191,10 +191,8 @@ contains
   end subroutine SetCoarsening
 
 
-  subroutine CoarsenSingularities ( FC, S, iAngular )
+  subroutine CoarsenSingularities ( S, iAngular )
 
-    class ( FluidCentralExcisionForm ), intent ( inout ) :: &
-      FC
     class ( StorageForm ), intent ( inout ) :: &
       S
     integer ( KDI ), intent ( in ) :: &

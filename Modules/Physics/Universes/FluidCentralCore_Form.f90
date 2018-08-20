@@ -23,7 +23,7 @@ module FluidCentralCore_Form
       InitializeGeometry
     procedure, private, pass :: &
       SetCoarsening
-    procedure, public, pass :: &
+    procedure, public, nopass :: &
       CoarsenSingularities
     procedure, private, pass :: &
       SetWriteTimeInterval
@@ -35,8 +35,8 @@ module FluidCentralCore_Form
       ComputeTimeStep_G_ASC
   end type FluidCentralCoreForm
 
-!    class ( FluidCentralCoreForm ), private, pointer :: &
-!      FluidCentralCore => null ( )
+    class ( FluidCentralCoreForm ), private, pointer :: &
+      FluidCentralCore => null ( )
 
       private :: &
         SetCoarsening, &
@@ -80,7 +80,7 @@ contains
     if ( FCC % Type == '' ) &
       FCC % Type = 'a FluidCentralCore'
 
-!    FluidCentralCore => FCC
+    FluidCentralCore => FCC
 
     if ( trim ( GeometryType ) == 'NEWTONIAN' ) then
 
@@ -230,19 +230,19 @@ contains
   end subroutine SetCoarsening
 
 
-  subroutine CoarsenSingularities ( FC, S, iAngular )
+  subroutine CoarsenSingularities ( S, iAngular )
 
-    class ( FluidCentralCoreForm ), intent ( inout ) :: &
-      FC
     class ( StorageForm ), intent ( inout ) :: &
       S
     integer ( KDI ), intent ( in ) :: &
       iAngular
 
-    select type ( PS => FC % PositionSpace )
+    select type ( PS => FluidCentralCore % PositionSpace )
     class is ( Atlas_SC_CC_Form )
 
     select case ( iAngular )
+    case ( 1 )
+      return
     case ( 2 )
       if ( PS % nDimensions < 2 ) &
         return
@@ -251,7 +251,7 @@ contains
         return
     end select !-- iAngular
 
-    call FC % CoarsenSingularitiesTemplate ( S, iAngular )
+    call FluidCentralCore % CoarsenSingularitiesTemplate ( S, iAngular )
 
     end select !-- PS
 
