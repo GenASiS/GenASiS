@@ -2,9 +2,9 @@ DEVICES = \
   Devices.o \
   UpdateHost_Command.o \
   UpdateDevice_Command.o \
-  DisassociateDevice_Command.o \
+  DisassociateHost_Command.o \
   DeallocateDevice_Command.o \
-  AssociateDevice_Command.o \
+  AssociateHost_Command.o \
   AllocateDevice_Command.o \
   Device_C_OMP.o \
   Device_OMP.o

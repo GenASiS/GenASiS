@@ -3,8 +3,8 @@ PATH_GENASIS = ../../../../../..
 include $(PATH_GENASIS)/Build/Makefile_Build
 
 all: \
-  AllocateDevice_Command_Test AssociateDevice_Command_Test \
-  DeallocateDevice_Command_Test DisassociateDevice_Command_Test \
+  AllocateDevice_Command_Test AssociateHost_Command_Test \
+  DeallocateDevice_Command_Test DisassociateHost_Command_Test \
   UpdateDevice_Command_Test
 
 AllocateDevice_Command_Test: AllocateDevice_Command_Test.o
@@ -13,10 +13,10 @@ AllocateDevice_Command_Test: AllocateDevice_Command_Test.o
           AllocateDevice_Command_Test.o AllocateDevice_Command.o \
           Device_C_OMP.o Device_OMP.o $(SPECIFIERS)
 
-AssociateDevice_Command_Test: AssociateDevice_Command_Test.o
+AssociateHost_Command_Test: AssociateHost_Command_Test.o
 	$(LINK) $(FLAGS) \
-          -o AssociateDevice_Command_Test_$(MACHINE) \
-          AssociateDevice_Command_Test.o AssociateDevice_Command.o \
+          -o AssociateHost_Command_Test_$(MACHINE) \
+          AssociateHost_Command_Test.o AssociateHost_Command.o \
           AllocateDevice_Command.o Device_C_OMP.o Device_OMP.o $(SPECIFIERS)
 
 DeallocateDevice_Command_Test: DeallocateDevice_Command_Test.o
@@ -26,19 +26,19 @@ DeallocateDevice_Command_Test: DeallocateDevice_Command_Test.o
           DeallocateDevice_Command.o Device_C_OMP.o Device_OMP.o \
           $(SPECIFIERS)
 
-DisassociateDevice_Command_Test: DisassociateDevice_Command_Test.o
+DisassociateHost_Command_Test: DisassociateHost_Command_Test.o
 	$(LINK) $(FLAGS) \
-          -o DisassociateDevice_Command_Test_$(MACHINE) \
-          DisassociateDevice_Command_Test.o AssociateDevice_Command.o \
-          DisassociateDevice_Command.o AllocateDevice_Command.o \
+          -o DisassociateHost_Command_Test_$(MACHINE) \
+          DisassociateHost_Command_Test.o AssociateHost_Command.o \
+          DisassociateHost_Command.o AllocateDevice_Command.o \
           Device_C_OMP.o Device_OMP.o $(SPECIFIERS)
 
 UpdateDevice_Command_Test: UpdateDevice_Command_Test.o
 	$(LINK) $(FLAGS) \
           -o UpdateDevice_Command_Test_$(MACHINE) \
           UpdateDevice_Command_Test.o \
-          AllocateDevice_Command.o AssociateDevice_Command.o \
-          DeallocateDevice_Command.o DisassociateDevice_Command.o \
+          AllocateDevice_Command.o AssociateHost_Command.o \
+          DeallocateDevice_Command.o DisassociateHost_Command.o \
           UpdateDevice_Command.o UpdateHost_Command.o \
           Device_C_OMP.o Device_OMP.o $(SPECIFIERS)
 
@@ -47,9 +47,9 @@ clean:
 
 clobber: clean
 	rm -f AllocateDevice_Command_Test_*
-	rm -f AssociateDevice_Command_Test_*
+	rm -f AssociateHost_Command_Test_*
 	rm -f DeallocateDevice_Command_Test_*
-	rm -f DisassociateDevice_Command_Test_*
+	rm -f DisassociateHost_Command_Test_*
 	rm -f UpdateDevice_Command_Test_*
 
 include $(PATH_SPECIFIERS)/Makefile_Dependencies
@@ -59,21 +59,21 @@ AllocateDevice_Command_Test.o: \
   AllocateDevice_Command.o \
   AllocateDevice_Command_Test.f90
 
-AssociateDevice_Command_Test.o: \
+AssociateHost_Command_Test.o: \
   AllocateDevice_Command.o \
-  AssociateDevice_Command.o \
-  AssociateDevice_Command_Test.f90
+  AssociateHost_Command.o \
+  AssociateHost_Command_Test.f90
 
 DeallocateDevice_Command_Test.o: \
   AllocateDevice_Command.o \
   DeallocateDevice_Command.o \
   DeallocateDevice_Command_Test.f90
 
-DisassociateDevice_Command_Test.o: \
+DisassociateHost_Command_Test.o: \
   AllocateDevice_Command.o \
-  AssociateDevice_Command.o \
-  DisassociateDevice_Command.o \
-  DisassociateDevice_Command_Test.f90
+  AssociateHost_Command.o \
+  DisassociateHost_Command.o \
+  DisassociateHost_Command_Test.f90
 
 UpdateDevice_Command_Test.o: \
   AllocateDevice_Command.o \

@@ -840,14 +840,14 @@ contains
     integer ( KDI ) :: &
       iV
     
-    call AssociateDevice ( D_D, D )
-    call AssociateDevice ( D_S_1, S_1 )
-    call AssociateDevice ( D_S_2, S_2 )
-    call AssociateDevice ( D_S_3, S_3 )
-    call AssociateDevice ( D_N, N )
-    call AssociateDevice ( D_V_1, V_1 )
-    call AssociateDevice ( D_V_2, V_2 )
-    call AssociateDevice ( D_V_3, V_3 )
+    call AssociateHost ( D_D, D )
+    call AssociateHost ( D_S_1, S_1 )
+    call AssociateHost ( D_S_2, S_2 )
+    call AssociateHost ( D_S_3, S_3 )
+    call AssociateHost ( D_N, N )
+    call AssociateHost ( D_V_1, V_1 )
+    call AssociateHost ( D_V_2, V_2 )
+    call AssociateHost ( D_V_3, V_3 )
 
     !$OMP  target teams distribute parallel do &
     !$OMP& schedule ( static, 1 )
@@ -859,14 +859,14 @@ contains
     end do
     !$OMP end target teams distribute parallel do
     
-    call DisassociateDevice ( V_3 )
-    call DisassociateDevice ( V_2 )
-    call DisassociateDevice ( V_1 )
-    call DisassociateDevice ( N )
-    call DisassociateDevice ( S_3 )
-    call DisassociateDevice ( S_2 )
-    call DisassociateDevice ( S_1 )
-    call DisassociateDevice ( D )
+    call DisassociateHost ( V_3 )
+    call DisassociateHost ( V_2 )
+    call DisassociateHost ( V_1 )
+    call DisassociateHost ( N )
+    call DisassociateHost ( S_3 )
+    call DisassociateHost ( S_2 )
+    call DisassociateHost ( S_1 )
+    call DisassociateHost ( D )
 
   end subroutine ComputeConservedKernelDevice
 
@@ -920,14 +920,14 @@ contains
 
     call Copy ( D, D_D, D_N, N )
     
-    call AssociateDevice ( D_N, N )
-    call AssociateDevice ( D_V_1, V_1 )
-    call AssociateDevice ( D_V_2, V_2 )
-    call AssociateDevice ( D_V_3, V_3 )
-    call AssociateDevice ( D_D, D )
-    call AssociateDevice ( D_S_1, S_1 )
-    call AssociateDevice ( D_S_2, S_2 )
-    call AssociateDevice ( D_S_3, S_3 )
+    call AssociateHost ( D_N, N )
+    call AssociateHost ( D_V_1, V_1 )
+    call AssociateHost ( D_V_2, V_2 )
+    call AssociateHost ( D_V_3, V_3 )
+    call AssociateHost ( D_D, D )
+    call AssociateHost ( D_S_1, S_1 )
+    call AssociateHost ( D_S_2, S_2 )
+    call AssociateHost ( D_S_3, S_3 )
     
     !$OMP  target teams distribute parallel do &
     !$OMP& schedule ( static, 1 )
@@ -949,14 +949,14 @@ contains
     end do
     !$OMP end target teams distribute parallel do
     
-    call DisassociateDevice ( S_3 )
-    call DisassociateDevice ( S_2 )
-    call DisassociateDevice ( S_1 )
-    call DisassociateDevice ( D )
-    call DisassociateDevice ( V_3 )
-    call DisassociateDevice ( V_2 )
-    call DisassociateDevice ( V_1 )
-    call DisassociateDevice ( N )
+    call DisassociateHost ( S_3 )
+    call DisassociateHost ( S_2 )
+    call DisassociateHost ( S_1 )
+    call DisassociateHost ( D )
+    call DisassociateHost ( V_3 )
+    call DisassociateHost ( V_2 )
+    call DisassociateHost ( V_1 )
+    call DisassociateHost ( N )
     
   end subroutine ComputePrimitiveKernelDevice
 
@@ -997,15 +997,15 @@ contains
     integer ( KDI ) :: &
       iV
       
-    call AssociateDevice ( D_FEP_1, FEP_1 )
-    call AssociateDevice ( D_FEP_2, FEP_2 )
-    call AssociateDevice ( D_FEP_3, FEP_3 )
-    call AssociateDevice ( D_FEM_1, FEM_1 )
-    call AssociateDevice ( D_FEM_2, FEM_2 )
-    call AssociateDevice ( D_FEM_3, FEM_3 )
-    call AssociateDevice ( D_V_1, V_1 )
-    call AssociateDevice ( D_V_2, V_2 )
-    call AssociateDevice ( D_V_3,  V_3 )
+    call AssociateHost ( D_FEP_1, FEP_1 )
+    call AssociateHost ( D_FEP_2, FEP_2 )
+    call AssociateHost ( D_FEP_3, FEP_3 )
+    call AssociateHost ( D_FEM_1, FEM_1 )
+    call AssociateHost ( D_FEM_2, FEM_2 )
+    call AssociateHost ( D_FEM_3, FEM_3 )
+    call AssociateHost ( D_V_1, V_1 )
+    call AssociateHost ( D_V_2, V_2 )
+    call AssociateHost ( D_V_3,  V_3 )
     
     !$OMP  target teams distribute parallel do &
     !$OMP& schedule ( static, 1 )
@@ -1019,15 +1019,15 @@ contains
     end do
     !$OMP end target teams distribute parallel do
     
-    call DisassociateDevice ( V_3 )
-    call DisassociateDevice ( V_2 )
-    call DisassociateDevice ( V_1 )
-    call DisassociateDevice ( FEM_3 )
-    call DisassociateDevice ( FEM_2 )
-    call DisassociateDevice ( FEM_1 )
-    call DisassociateDevice ( FEP_3 )
-    call DisassociateDevice ( FEP_2 )
-    call DisassociateDevice ( FEP_1 )
+    call DisassociateHost ( V_3 )
+    call DisassociateHost ( V_2 )
+    call DisassociateHost ( V_1 )
+    call DisassociateHost ( FEM_3 )
+    call DisassociateHost ( FEM_2 )
+    call DisassociateHost ( FEM_1 )
+    call DisassociateHost ( FEP_3 )
+    call DisassociateHost ( FEP_2 )
+    call DisassociateHost ( FEP_1 )
 
   end subroutine ComputeEigenspeedsKernelDevice
 
@@ -1101,14 +1101,14 @@ contains
     integer ( KDI ) :: &
       iV, jV, kV
       
-    call AssociateDevice ( D_N_E, N_E )
-    call AssociateDevice ( D_VI_E, VI_E )
-    call AssociateDevice ( D_VJ_E, VJ_E )
-    call AssociateDevice ( D_VK_E, VK_E )
-    call AssociateDevice ( D_N_I, N_I )
-    call AssociateDevice ( D_VI_I, VI_I )
-    call AssociateDevice ( D_VJ_I, VJ_I )
-    call AssociateDevice ( D_VK_I, VK_I )
+    call AssociateHost ( D_N_E, N_E )
+    call AssociateHost ( D_VI_E, VI_E )
+    call AssociateHost ( D_VJ_E, VJ_E )
+    call AssociateHost ( D_VK_E, VK_E )
+    call AssociateHost ( D_N_I, N_I )
+    call AssociateHost ( D_VI_I, VI_I )
+    call AssociateHost ( D_VJ_I, VJ_I )
+    call AssociateHost ( D_VK_I, VK_I )
     
     !$OMP  target teams distribute parallel do collapse ( 3 ) &
     !$OMP& schedule ( static, 1 )
@@ -1133,14 +1133,14 @@ contains
     end do
     !$OMP end target teams distribute parallel do
                
-    call DisassociateDevice ( VK_I )
-    call DisassociateDevice ( VJ_I )
-    call DisassociateDevice ( VI_I )
-    call DisassociateDevice ( N_I )
-    call DisassociateDevice ( VK_E )
-    call DisassociateDevice ( VJ_E )
-    call DisassociateDevice ( VI_E )
-    call DisassociateDevice ( N_E )
+    call DisassociateHost ( VK_I )
+    call DisassociateHost ( VJ_I )
+    call DisassociateHost ( VI_I )
+    call DisassociateHost ( N_I )
+    call DisassociateHost ( VK_E )
+    call DisassociateHost ( VJ_E )
+    call DisassociateHost ( VI_E )
+    call DisassociateHost ( N_E )
     
   end subroutine ApplyBoundaryConditionsReflectingDevice
 
@@ -1196,14 +1196,14 @@ contains
     !AM_I = max ( 0.0_KDR, - cshift ( LM_O, shift = -1, dim = iD ), - LM_I )
     !AM_O = max ( 0.0_KDR, - LM_O, - cshift ( LM_I, shift = +1, dim = iD ) )
     
-    call AssociateDevice ( D_AP_I, AP_I )
-    call AssociateDevice ( D_AP_O, AP_O )
-    call AssociateDevice ( D_AM_I, AM_I )
-    call AssociateDevice ( D_AM_O, AM_O )
-    call AssociateDevice ( D_LP_I, LP_I )
-    call AssociateDevice ( D_LP_O, LP_O )
-    call AssociateDevice ( D_LM_I, LM_I )
-    call AssociateDevice ( D_LM_O, LM_O )
+    call AssociateHost ( D_AP_I, AP_I )
+    call AssociateHost ( D_AP_O, AP_O )
+    call AssociateHost ( D_AM_I, AM_I )
+    call AssociateHost ( D_AM_O, AM_O )
+    call AssociateHost ( D_LP_I, LP_I )
+    call AssociateHost ( D_LP_O, LP_O )
+    call AssociateHost ( D_LM_I, LM_I )
+    call AssociateHost ( D_LM_O, LM_O )
 
     lV = 1
     where ( shape ( LP_O ) > 1 )
@@ -1252,14 +1252,14 @@ contains
     end do
     !$OMP end target teams distribute parallel do
     
-    call DisassociateDevice ( LM_O )
-    call DisassociateDevice ( LM_I )
-    call DisassociateDevice ( LP_O )
-    call DisassociateDevice ( LP_I )
-    call DisassociateDevice ( AM_O )
-    call DisassociateDevice ( AM_I )
-    call DisassociateDevice ( AP_O )
-    call DisassociateDevice ( AP_I )
+    call DisassociateHost ( LM_O )
+    call DisassociateHost ( LM_I )
+    call DisassociateHost ( LP_O )
+    call DisassociateHost ( LP_I )
+    call DisassociateHost ( AM_O )
+    call DisassociateHost ( AM_I )
+    call DisassociateHost ( AP_O )
+    call DisassociateHost ( AP_I )
     
   end subroutine ComputeRiemannSolverInputKernel
 

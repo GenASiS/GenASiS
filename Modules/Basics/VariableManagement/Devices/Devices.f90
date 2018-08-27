@@ -1,9 +1,9 @@
 module Devices
 
   use AllocateDevice_Command
-  use AssociateDevice_Command
+  use AssociateHost_Command
   use DeallocateDevice_Command
-  use DisassociateDevice_Command
+  use DisassociateHost_Command
   use UpdateDevice_Command
   use UpdateHost_Command
 

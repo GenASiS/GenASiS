@@ -644,9 +644,9 @@ contains
       iaVS, &   
       lV, uV
       
-    call AssociateDevice ( D_V, V )
-    call AssociateDevice ( D_dV_Left, dV_Left )
-    call AssociateDevice ( D_dV_Right, dV_Right )
+    call AssociateHost ( D_V, V )
+    call AssociateHost ( D_dV_Left, dV_Left )
+    call AssociateHost ( D_dV_Right, dV_Right )
 
     lV = 1
     where ( shape ( V ) > 1 )
@@ -706,9 +706,9 @@ contains
     end do !-- kV
     !$OMP end target teams distribute parallel do
     
-    call DisassociateDevice ( dV_Right )
-    call DisassociateDevice ( dV_Left )
-    call DisassociateDevice ( V )
+    call DisassociateHost ( dV_Right )
+    call DisassociateHost ( dV_Left )
+    call DisassociateHost ( V )
     
   end subroutine ComputeDifferencesKernel
 
@@ -736,11 +736,11 @@ contains
     real ( KDR ) :: &
       dV
       
-    call AssociateDevice ( D_V, V )
-    call AssociateDevice ( D_dV_Left, dV_Left )
-    call AssociateDevice ( D_dV_Right, dV_Right )
-    call AssociateDevice ( D_V_Inner, V_Inner )
-    call AssociateDevice ( D_V_Outer, V_Outer )
+    call AssociateHost ( D_V, V )
+    call AssociateHost ( D_dV_Left, dV_Left )
+    call AssociateHost ( D_dV_Right, dV_Right )
+    call AssociateHost ( D_V_Inner, V_Inner )
+    call AssociateHost ( D_V_Outer, V_Outer )
 
     !where ( dV_Left > 0.0_KDR .and. dV_Right > 0.0_KDR )
     !  dV = min ( Theta * dV_Left, Theta * dV_Right, &
@@ -768,11 +768,11 @@ contains
     end do
     !$OMP end target teams distribute parallel do
     
-    call DisassociateDevice ( V_Outer )
-    call DisassociateDevice ( V_Inner )
-    call DisassociateDevice ( dV_Right )
-    call DisassociateDevice ( dV_Left )
-    call DisassociateDevice ( V )
+    call DisassociateHost ( V_Outer )
+    call DisassociateHost ( V_Inner )
+    call DisassociateHost ( dV_Right )
+    call DisassociateHost ( dV_Left )
+    call DisassociateHost ( V )
     
   end subroutine ComputeReconstructionKernel
 
@@ -806,16 +806,16 @@ contains
       iaVS, &   
       lV, uV
       
-    call AssociateDevice ( D_AP_I, AP_I )
-    call AssociateDevice ( D_AP_O, AP_O )
-    call AssociateDevice ( D_AM_I, AM_I )
-    call AssociateDevice ( D_AM_O, AM_O )
-    call AssociateDevice ( D_RF_I, RF_I )
-    call AssociateDevice ( D_RF_O, RF_O )
-    call AssociateDevice ( D_U_I, U_I )
-    call AssociateDevice ( D_U_O, U_O )
-    call AssociateDevice ( D_F_I, F_I )
-    call AssociateDevice ( D_F_O, F_O )
+    call AssociateHost ( D_AP_I, AP_I )
+    call AssociateHost ( D_AP_O, AP_O )
+    call AssociateHost ( D_AM_I, AM_I )
+    call AssociateHost ( D_AM_O, AM_O )
+    call AssociateHost ( D_RF_I, RF_I )
+    call AssociateHost ( D_RF_O, RF_O )
+    call AssociateHost ( D_U_I, U_I )
+    call AssociateHost ( D_U_O, U_O )
+    call AssociateHost ( D_F_I, F_I )
+    call AssociateHost ( D_F_O, F_O )
             
     lV = 1
     where ( shape ( F_I ) > 1 )
@@ -903,16 +903,16 @@ contains
     end do
     !$OMP end target teams distribute parallel do
     
-    call DisassociateDevice ( F_O )
-    call DisassociateDevice ( F_I )
-    call DisassociateDevice ( U_O )
-    call DisassociateDevice ( U_I )
-    call DisassociateDevice ( RF_O )
-    call DisassociateDevice ( RF_I )
-    call DisassociateDevice ( AM_O )
-    call DisassociateDevice ( AM_I )
-    call DisassociateDevice ( AP_O )
-    call DisassociateDevice ( AP_I )
+    call DisassociateHost ( F_O )
+    call DisassociateHost ( F_I )
+    call DisassociateHost ( U_O )
+    call DisassociateHost ( U_I )
+    call DisassociateHost ( RF_O )
+    call DisassociateHost ( RF_I )
+    call DisassociateHost ( AM_O )
+    call DisassociateHost ( AM_I )
+    call DisassociateHost ( AP_O )
+    call DisassociateHost ( AP_I )
     
   end subroutine ComputeFluxesKernel
 
@@ -935,9 +935,9 @@ contains
     integer ( KDI ) :: &
       iV
       
-    call AssociateDevice ( D_dU, dU )
-    call AssociateDevice ( D_F_I, F_I )
-    call AssociateDevice ( D_F_O, F_O )
+    call AssociateHost ( D_dU, dU )
+    call AssociateHost ( D_F_I, F_I )
+    call AssociateHost ( D_F_O, F_O )
 
     !$OMP  target teams distribute parallel do &
     !$OMP& schedule ( static, 1 )
@@ -946,9 +946,9 @@ contains
     end do
     !$OMP end target teams distribute parallel do
     
-    call DisassociateDevice ( F_O )
-    call DisassociateDevice ( F_I )
-    call DisassociateDevice ( dU )
+    call DisassociateHost ( F_O )
+    call DisassociateHost ( F_I )
+    call DisassociateHost ( dU )
 
   end subroutine ComputeUpdateKernel
   
@@ -969,9 +969,9 @@ contains
       iV, &
       nV
     
-    call AssociateDevice ( D_O, O )
-    call AssociateDevice ( D_U, U )
-    call AssociateDevice ( D_C, C )
+    call AssociateHost ( D_O, O )
+    call AssociateHost ( D_U, U )
+    call AssociateHost ( D_C, C )
     
     nV = size ( O )
     
@@ -982,9 +982,9 @@ contains
     end do
     !$OMP end target teams distribute parallel do
     
-    call DisassociateDevice ( C )
-    call DisassociateDevice ( U )
-    call DisassociateDevice ( O )
+    call DisassociateHost ( C )
+    call DisassociateHost ( U )
+    call DisassociateHost ( O )
 
   end subroutine AddUpdateKernel
   
@@ -1005,9 +1005,9 @@ contains
       iV, &
       nV
     
-    call AssociateDevice ( D_C, C )    
-    call AssociateDevice ( D_O, O )
-    call AssociateDevice ( D_U, U )
+    call AssociateHost ( D_C, C )    
+    call AssociateHost ( D_O, O )
+    call AssociateHost ( D_U, U )
     
     nV = size ( O )
     
@@ -1018,9 +1018,9 @@ contains
     end do
     !$OMP end target teams distribute parallel do
     
-    call DisassociateDevice ( U )
-    call DisassociateDevice ( O )
-    call DisassociateDevice ( C )
+    call DisassociateHost ( U )
+    call DisassociateHost ( O )
+    call DisassociateHost ( C )
 
   end subroutine CombineUpdatesKernel
   

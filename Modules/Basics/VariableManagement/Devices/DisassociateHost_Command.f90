@@ -1,4 +1,4 @@
-module DisassociateDevice_Command
+module DisassociateHost_Command
 
   use iso_c_binding
   use Specifiers
@@ -8,18 +8,18 @@ module DisassociateDevice_Command
   private
   
   public :: &
-    DisassociateDevice
+    DisassociateHost
   
-  interface DisassociateDevice
-    module procedure DisassociateDevice_KDR_1D
-    module procedure DisassociateDevice_KDR_2D
-    module procedure DisassociateDevice_KDR_3D
-  end interface DisassociateDevice
+  interface DisassociateHost
+    module procedure DisassociateHost_KDR_1D
+    module procedure DisassociateHost_KDR_2D
+    module procedure DisassociateHost_KDR_3D
+  end interface DisassociateHost
   
 contains
   
   
-  subroutine DisassociateDevice_KDR_1D ( Value, ErrorOption )
+  subroutine DisassociateHost_KDR_1D ( Value, ErrorOption )
   
     real ( KDR ), dimension ( : ), intent ( in ), target :: &
       Value
@@ -34,10 +34,10 @@ contains
     if ( present ( ErrorOption ) ) &
       ErrorOption = Error
   
-  end subroutine DisassociateDevice_KDR_1D
+  end subroutine DisassociateHost_KDR_1D
 
 
-  subroutine DisassociateDevice_KDR_2D ( Value, ErrorOption )
+  subroutine DisassociateHost_KDR_2D ( Value, ErrorOption )
   
     real ( KDR ), dimension ( :, : ), intent ( in ), target :: &
       Value
@@ -52,10 +52,10 @@ contains
     if ( present ( ErrorOption ) ) &
       ErrorOption = Error
 
-  end subroutine DisassociateDevice_KDR_2D
+  end subroutine DisassociateHost_KDR_2D
   
   
-  subroutine DisassociateDevice_KDR_3D ( Value, ErrorOption )
+  subroutine DisassociateHost_KDR_3D ( Value, ErrorOption )
   
     real ( KDR ), dimension ( :, :, : ), intent ( in ), target :: &
       Value
@@ -70,7 +70,7 @@ contains
     if ( present ( ErrorOption ) ) &
       ErrorOption = Error
 
-  end subroutine DisassociateDevice_KDR_3D
+  end subroutine DisassociateHost_KDR_3D
 
 
-end module DisassociateDevice_Command
+end module DisassociateHost_Command

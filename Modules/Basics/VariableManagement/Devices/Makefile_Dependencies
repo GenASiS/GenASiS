@@ -10,38 +10,38 @@ AllocateDevice_Command.o: \
   Device_C_OMP.o \
   AllocateDevice_Command.f90
 
-AssociateDevice_Command.o: \
+AssociateHost_Command.o: \
   Specifiers.o \
   Device_C_OMP.o \
-  AssociateDevice_Command.f90
+  AssociateHost_Command.f90
 
 DeallocateDevice_Command.o: \
   Specifiers.o \
   Device_C_OMP.o \
   DeallocateDevice_Command.f90
 
-DisassociateDevice_Command.o: \
+DisassociateHost_Command.o: \
   Specifiers.o \
   Device_C_OMP.o \
-  DisassociateDevice_Command.f90
+  DisassociateHost_Command.f90
 
 UpdateDevice_Command.o: \
   Specifiers.o \
-  AssociateDevice_Command.o \
-  DisassociateDevice_Command.o \
+  AssociateHost_Command.o \
+  DisassociateHost_Command.o \
   UpdateDevice_Command.f90
 
 UpdateHost_Command.o: \
   Specifiers.o \
-  AssociateDevice_Command.o \
-  DisassociateDevice_Command.o \
+  AssociateHost_Command.o \
+  DisassociateHost_Command.o \
   UpdateHost_Command.f90
 
 Devices.o: \
   AllocateDevice_Command.o \
-  AssociateDevice_Command.o \
+  AssociateHost_Command.o \
   DeallocateDevice_Command.o \
-  DisassociateDevice_Command.o \
+  DisassociateHost_Command.o \
   UpdateDevice_Command.o \
   UpdateHost_Command.o \
   Devices.f90

@@ -380,8 +380,8 @@ contains
       iV, &
       nV
       
-    call AssociateDevice ( D_A, A )
-    call AssociateDevice ( D_B, B )
+    call AssociateHost ( D_A, A )
+    call AssociateHost ( D_B, B )
 
     nV = size ( A )
     
@@ -392,8 +392,8 @@ contains
     end do
     !$OMP end target teams distribute parallel do
     
-    call DisassociateDevice ( B )
-    call DisassociateDevice ( A )
+    call DisassociateHost ( B )
+    call DisassociateHost ( A )
 
   end subroutine CopyReal_1D_Device
   

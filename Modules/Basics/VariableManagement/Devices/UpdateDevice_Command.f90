@@ -2,8 +2,8 @@ module UpdateDevice_Command
   
   use iso_c_binding
   use Specifiers
-  use AssociateDevice_Command
-  use DisassociateDevice_Command
+  use AssociateHost_Command
+  use DisassociateHost_Command
   
   implicit none
   private
@@ -28,9 +28,9 @@ contains
     integer ( KDI ), intent ( out ), optional :: &
       ErrorOption
       
-    call AssociateDevice ( Device, Value, ErrorOption )
+    call AssociateHost ( Device, Value, ErrorOption )
     !$OMP target update to ( Value ) 
-    call DisassociateDevice ( Value, ErrorOption )
+    call DisassociateHost ( Value, ErrorOption )
   
   end subroutine UpdateDevice_KDR_1D
 
@@ -44,9 +44,9 @@ contains
     integer ( KDI ), intent ( out ), optional :: &
       ErrorOption
       
-    call AssociateDevice ( Device, Value, ErrorOption )
+    call AssociateHost ( Device, Value, ErrorOption )
     !$OMP target update to ( Value ) 
-    call DisassociateDevice ( Value, ErrorOption )
+    call DisassociateHost ( Value, ErrorOption )
   
   end subroutine UpdateDevice_KDR_2D
 

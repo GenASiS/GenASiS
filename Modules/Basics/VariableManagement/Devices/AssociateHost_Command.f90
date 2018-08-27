@@ -1,4 +1,4 @@
-module AssociateDevice_Command
+module AssociateHost_Command
   
   use iso_c_binding
   use Specifiers
@@ -8,18 +8,18 @@ module AssociateDevice_Command
   private
   
   public :: &
-    AssociateDevice
+    AssociateHost
   
-  interface AssociateDevice
-    module procedure AssociateDevice_KDR_1D
-    module procedure AssociateDevice_KDR_2D
-    module procedure AssociateDevice_KDR_3D
-  end interface AssociateDevice
+  interface AssociateHost
+    module procedure AssociateHost_KDR_1D
+    module procedure AssociateHost_KDR_2D
+    module procedure AssociateHost_KDR_3D
+  end interface AssociateHost
   
 contains
   
   
-  subroutine AssociateDevice_KDR_1D &
+  subroutine AssociateHost_KDR_1D &
                ( Device, Value, oValueOption, ErrorOption )
   
     type ( c_ptr ), intent ( in ) :: &
@@ -45,10 +45,10 @@ contains
     if ( present ( ErrorOption ) ) &
       ErrorOption = Error
   
-  end subroutine AssociateDevice_KDR_1D
+  end subroutine AssociateHost_KDR_1D
 
 
-  subroutine AssociateDevice_KDR_2D ( Device, Value, ErrorOption )
+  subroutine AssociateHost_KDR_2D ( Device, Value, ErrorOption )
   
     type ( c_ptr ), intent ( in ) :: &
       Device
@@ -69,10 +69,10 @@ contains
     if ( present ( ErrorOption ) ) &
       ErrorOption = Error
 
-  end subroutine AssociateDevice_KDR_2D
+  end subroutine AssociateHost_KDR_2D
 
   
-  subroutine AssociateDevice_KDR_3D ( Device, Value, ErrorOption )
+  subroutine AssociateHost_KDR_3D ( Device, Value, ErrorOption )
   
     type ( c_ptr ), intent ( in ) :: &
       Device
@@ -93,7 +93,7 @@ contains
     if ( present ( ErrorOption ) ) &
       ErrorOption = Error
 
-  end subroutine AssociateDevice_KDR_3D
+  end subroutine AssociateHost_KDR_3D
 
 
-end module AssociateDevice_Command
+end module AssociateHost_Command

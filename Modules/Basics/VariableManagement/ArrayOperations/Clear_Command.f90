@@ -217,7 +217,7 @@ contains
 
     nV = size ( A )
     
-    call AssociateDevice ( D_A, A )
+    call AssociateHost ( D_A, A )
     
     !$OMP  target teams distribute parallel do &
     !$OMP& schedule ( static, 1 )
@@ -226,7 +226,7 @@ contains
     end do
     !$OMP end target teams distribute parallel do
     
-    call DisassociateDevice ( A )
+    call DisassociateHost ( A )
 
   end subroutine ClearReal_1D_Device
   

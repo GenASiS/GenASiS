@@ -1,4 +1,4 @@
-module AssociateDevice_Command_Test_Form
+module DisassociateHost_Command_Test_Form
 
   use iso_c_binding
   use Specifiers
@@ -49,16 +49,17 @@ contains
   end subroutine Show_C_Pointer_1D
 
 
-end module AssociateDevice_Command_Test_Form
+end module DisassociateHost_Command_Test_Form
 
 
-program AssociateDevice_Command_Test
+program DisassociateHost_Command_Test
 
   use iso_c_binding
   use Specifiers
   use AllocateDevice_Command
-  use AssociateDevice_Command
-  use AssociateDevice_Command_Test_Form
+  use AssociateHost_Command
+  use DisassociateHost_Command
+  use DisassociateHost_Command_Test_Form
   
   implicit none
   
@@ -89,11 +90,21 @@ program AssociateDevice_Command_Test
   
   call Show ( [ dValue_1D, dValue_2D ], 'Addresses post allocation' )
   
-  call AssociateDevice ( dValue_1D, Value_1D, ErrorOption = Error_1 )
-  call AssociateDevice ( dValue_2D, Value_2D, ErrorOption = Error_2 )
+  call AssociateHost ( dValue_1D, Value_1D, ErrorOption = Error_1 )
+  call AssociateHost ( dValue_2D, Value_2D, ErrorOption = Error_2 )
   
   call Show ( [ dValue_1D, dValue_2D ], 'Addresses post association' )
   print*, 'Associate Error 1: ', Error_1
   print*, 'Associate Error 2: ', Error_2
+  
+  Error_1 = - huge ( 1 )
+  Error_2 = - huge ( 1 )
+  
+  call DisassociateHost ( Value_1D, ErrorOption = Error_1 )
+  call DisassociateHost ( Value_2D, ErrorOption = Error_2 )
+  
+  call Show ( [ dValue_1D, dValue_2D ], 'Addresses post disassociation' )
+  print*, 'Associate Error 1: ', Error_1
+  print*, 'Associate Error 2: ', Error_2
 
-end program AssociateDevice_Command_Test
+end program DisassociateHost_Command_Test

@@ -84,7 +84,7 @@ program UpdateDevice_Command_Test
   call UpdateDeviceAsync ( Value_1D, dValue_1D )
   call UpdateDeviceAsync ( Value_2D, dValue_2D )
   !$OMP taskwait
-  !#OMP end parallel
+  !$OMP end parallel
   TotalTime = OMP_GET_WTIME ( ) - StartTime
   print*, 'Data Transfer Time (Async)', TotalTime
   
