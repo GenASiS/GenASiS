@@ -19,7 +19,7 @@ program Storage_Form_Test
     VariableUnit
   type ( Integer_1D_Form ), dimension ( 1 ) :: &
     VectorIndices
-  type ( StorageForm ), dimension ( 3 ) :: &
+  type ( StorageForm ), dimension ( 5 ) :: &
     S
 
   do i = 1, size ( VariableUnit ) 
@@ -37,20 +37,23 @@ program Storage_Form_Test
   call PrintStorage ( S ( 1 ) )
 
   !-- InitializeClone
-  call S ( 2 ) % Initialize ( S ( 1 ), NameOption = 'Storage_2' )
+  call S ( 2 ) % Initialize &
+         ( S ( 1 ), NameOption = 'Storage_2', &
+           iaSelectedOption = [ 1, 2, 3, 5 ] )
+  call S ( 2 ) % AllocateDevice ( )
   call PrintStorage ( S ( 2 ) )
 
   !-- InitializeClone, take 2
   call S ( 3 ) % Initialize &
-         ( S ( 1 ), NameOption = 'Storage_3', &
-           iaSelectedOption = [ 2, 3, 6 ] )
+         ( S ( 2 ), NameOption = 'Storage_3', &
+           iaSelectedOption = [ 1, 3, 6 ] )
+  call S ( 3 ) % AllocateDevice ( )
   call PrintStorage ( S ( 3 ) )
   
   do i = 1, S ( 3 ) % nVariables 
     call random_number ( S ( 3 ) % Value ( :, S ( 3 ) % iaSelected ( i ) ) )
     print*, 'Host Initial', S ( 3 ) % Value ( :, S ( 3 ) % iaSelected ( i ) )
   end do
-  call S ( 3 ) % AllocateDevice ( )
   call S ( 3 ) % UpdateDevice ( )
   
   call Clear ( S ( 3 ) % Value )

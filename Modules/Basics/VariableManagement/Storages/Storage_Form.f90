@@ -114,6 +114,9 @@ contains
     if ( present ( ClearOption ) ) ClearRequested = ClearOption
     if ( ClearRequested ) call Clear ( S % Value )  
     
+    allocate ( S % D_Selected ( S % nVariables ) )
+    S % D_Selected = c_null_ptr
+    
     call InitializeOptionalMembers &
            ( S, VectorIndicesOption, UnitOption, VectorOption, &
              VariableOption, NameOption )
@@ -162,6 +165,9 @@ contains
     S % Value => Value
     S % AllocatedValue = .false.
     
+    allocate ( S % D_Selected ( S % nVariables ) )
+    S % D_Selected = c_null_ptr
+    
     call InitializeOptionalMembers &
            ( S, VectorIndicesOption, UnitOption, VectorOption, &
              VariableOption, NameOption )
@@ -187,7 +193,8 @@ contains
       iaSelectedOption
 
     integer ( KDI ) :: &
-      iV     !-- iVector
+      iV, &     !-- iVector
+      iS_S, iS_T
 
     S_Target % nValues = S_Source % nValues
     
@@ -247,7 +254,23 @@ contains
                ( S_Source % VectorIndices ( iV ) )
       end do
     end if
-      
+    
+    allocate ( S_Target % D_Selected ( S_Target % nVariables ) )
+    if ( .not. present ( iaSelectedOption ) ) then
+      S_Target % D_Selected = S_Source % D_Selected
+    else
+      S_Target % D_Selected = c_null_ptr
+      do iS_T = 1, S_Target % nVariables
+        iV = S_Target % iaSelected ( iS_T )
+        do iS_S = 1, S_Source % nVariables
+          if ( iV == S_Source % iaSelected ( iS_S ) ) then
+            S_Target % D_Selected ( iS_T ) = S_Source % D_Selected ( iS_S )
+            exit
+          end if
+        end do
+      end do
+    end if
+    
     call InitializeOptionalMembers &
            ( S_Target, VectorIndicesOption = VectorIndicesOption, &
              VectorOption = VectorOption, NameOption = NameOption )
@@ -263,11 +286,10 @@ contains
     integer ( KDI ) :: &
       iV
       
-    allocate ( S % D_Selected ( S % nVariables ) )
-    
     do iV = 1, S % nVariables
-      call AllocateDevice &
-             ( S % Value ( :, S % iaSelected ( iV ) ), S % D_Selected ( iV ) )
+      if ( c_associated ( S % D_Selected ( iV ) ) ) cycle
+        call AllocateDevice &
+               ( S % Value ( :, S % iaSelected ( iV ) ), S % D_Selected ( iV ) )
     end do
   
   end subroutine AllocateDevice_S
