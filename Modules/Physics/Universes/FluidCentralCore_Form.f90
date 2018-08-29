@@ -22,6 +22,10 @@ module FluidCentralCore_Form
     procedure, private, pass :: &
       InitializeGeometry
     procedure, private, pass :: &
+      SetCoarsening
+    procedure, public, nopass :: &
+      CoarsenSingularity
+    procedure, private, pass :: &
       SetWriteTimeInterval
     procedure, public, pass :: &
       PrepareCycle
@@ -31,10 +35,11 @@ module FluidCentralCore_Form
       ComputeTimeStep_G_ASC
   end type FluidCentralCoreForm
 
-!    class ( FluidCentralCoreForm ), private, pointer :: &
-!      FluidCentralCore => null ( )
+    class ( FluidCentralCoreForm ), private, pointer :: &
+      FluidCentralCore => null ( )
 
       private :: &
+        SetCoarsening, &
         LocalMax, &
         ComputeTimeStep_G_CSL
 
@@ -75,7 +80,7 @@ contains
     if ( FCC % Type == '' ) &
       FCC % Type = 'a FluidCentralCore'
 
-!    FluidCentralCore => FCC
+    FluidCentralCore => FCC
 
     if ( trim ( GeometryType ) == 'NEWTONIAN' ) then
 
@@ -155,6 +160,11 @@ contains
 
     end if !-- Dimensionless
 
+    select type ( C => PS % Chart )
+    class is ( Chart_SLD_Form )
+      C % CoarsenSingularity => CoarsenSingularity
+    end select !-- C
+
     end select !-- PS
 
   end subroutine InitializePositionSpace
@@ -194,6 +204,63 @@ contains
     call FCC % FinalizeTemplate_FC ( )
 
   end subroutine Finalize
+
+
+  subroutine SetCoarsening ( FC )
+
+    class ( FluidCentralCoreForm ), intent ( inout ) :: &
+      FC
+
+    select type ( PS => FC % PositionSpace )
+    class is ( Atlas_SC_CC_Form )
+
+    !-- Polar coarsening
+
+    if ( PS % nDimensions < 2 ) &
+      return
+    call Show ( 'SetCoarsening_2', FC % IGNORABILITY )
+    call Show ( FC % Name, 'Universe', FC % IGNORABILITY )
+    call FC % SetCoarseningTemplate ( iAngular = 2 )
+
+    !-- Azimuthal coarsening
+
+    if ( PS % nDimensions < 3 ) &
+      return
+    call Show ( 'SetCoarsening_3', FC % IGNORABILITY )
+    call Show ( FC % Name, 'Universe', FC % IGNORABILITY )
+    call FC % SetCoarseningTemplate ( iAngular = 3 )
+
+    end select !-- PS
+
+  end subroutine SetCoarsening
+
+
+  subroutine CoarsenSingularity ( S, iAngular )
+
+    class ( StorageForm ), intent ( inout ) :: &
+      S
+    integer ( KDI ), intent ( in ) :: &
+      iAngular
+
+    select type ( PS => FluidCentralCore % PositionSpace )
+    class is ( Atlas_SC_CC_Form )
+
+    select case ( iAngular )
+    case ( 1 )
+      return
+    case ( 2 )
+      if ( PS % nDimensions < 2 ) &
+        return
+    case ( 3 )
+      if ( PS % nDimensions < 3 ) &
+        return
+    end select !-- iAngular
+
+    call FluidCentralCore % CoarsenSingularityTemplate ( S, iAngular )
+
+    end select !-- PS
+
+  end subroutine CoarsenSingularity
 
 
   subroutine SetWriteTimeInterval ( I )

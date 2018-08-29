@@ -352,6 +352,8 @@ contains
              G % Value ( :, G % WIDTH_RIGHT_U ( 1 ) ), &
              G % Value ( :, G % WIDTH_RIGHT_U ( 2 ) ), & 
              G % Value ( :, G % WIDTH_RIGHT_U ( 3 ) ), &
+             G % Value ( :, G % COARSENING ( 2 ) ), &
+             G % Value ( :, G % COARSENING ( 3 ) ), &
              CSL % nDimensions, TimeStepCandidate )
 
     end select !-- CSL
@@ -366,8 +368,8 @@ contains
 
   subroutine ComputeTimeStepKernel_CSL &
                ( IsProperCell, FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, &
-                 dXL_1, dXL_2, dXL_3, dXR_1, dXR_2, dXR_3, nDimensions, &
-                 TimeStep )
+                 dXL_1, dXL_2, dXL_3, dXR_1, dXR_2, dXR_3, Crsn_2, Crsn_3, &
+                 nDimensions, TimeStep )
 
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       IsProperCell
@@ -375,7 +377,8 @@ contains
       FEP_1, FEP_2, FEP_3, &
       FEM_1, FEM_2, FEM_3, &
       dXL_1, dXL_2, dXL_3, &
-      dXR_1, dXR_2, dXR_3
+      dXR_1, dXR_2, dXR_3, &
+      Crsn_2, Crsn_3
     integer ( KDI ), intent ( in ) :: &
       nDimensions
     real ( KDR ), intent ( inout ) :: &
@@ -397,7 +400,7 @@ contains
     case ( 2 )
       TimeStepInverse &
         = maxval (   max ( FEP_1, -FEM_1 ) / ( dXL_1 + dXR_1 ) &
-                   + max ( FEP_2, -FEM_2 ) / ( dXL_2 + dXR_2 ), &
+                   + max ( FEP_2, -FEM_2 ) / ( Crsn_2 * ( dXL_2 + dXR_2 ) ), &
                    mask = IsProperCell )
     case ( 3 )
       ! TimeStepInverse &
@@ -415,9 +418,9 @@ contains
                       max ( FEP_1 ( iV ), -FEM_1 ( iV ) ) &
                       / ( dXL_1 ( iV ) + dXR_1 ( iV ) ) &
                     + max ( FEP_2 ( iV ), -FEM_2 ( iV ) ) &
-                      / ( dXL_2 ( iV ) + dXR_2 ( iV ) ) &
+                      / ( Crsn_2 ( iV ) * ( dXL_2 ( iV ) + dXR_2 ( iV ) ) ) &
                     + max ( FEP_3 ( iV ), -FEM_3 ( iV ) ) &
-                      / ( dXL_3 ( iV ) + dXR_3 ( iV ) ) )
+                      / ( Crsn_3 ( iV ) * ( dXL_3 ( iV ) + dXR_3 ( iV ) ) ) )
       end do
       !$OMP end parallel do
     end select !-- nDimensions

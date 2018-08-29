@@ -305,6 +305,8 @@ contains
                G % Value ( :, G % WIDTH_RIGHT_U ( 1 ) ), &
                G % Value ( :, G % WIDTH_RIGHT_U ( 2 ) ), & 
                G % Value ( :, G % WIDTH_RIGHT_U ( 3 ) ), &
+               G % Value ( :, G % COARSENING ( 2 ) ), &
+               G % Value ( :, G % COARSENING ( 3 ) ), &
                CSL % nDimensions, TimeStepCandidate ( iC ) )
 
     end do !-- iC

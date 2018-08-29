@@ -92,7 +92,8 @@ module IncrementDivergence_FV__Form
           ComputeReconstruction_CSL_Kernel, &
           ComputeLogDerivative_CSL_Kernel, &
           ComputeIncrement_CSL_Kernel, &
-          RecordBoundaryFluence_CSL
+          RecordBoundaryFluence_CSL, &
+          ApplyIncrement_CSL_Kernel
 
           private :: &
             RecordBoundaryFluence_CSL_Kernel
@@ -730,7 +731,7 @@ contains
     integer ( KDI ) :: &
       iF  !-- iField
     real ( KDR ), dimension ( :, :, : ), pointer :: &
-      dU, &
+      dU_Dim, &
       F_I, &
       A_I, &
       V
@@ -760,20 +761,26 @@ contains
 
     do iF = 1, C % N_CONSERVED
       call CSL % SetVariablePointer &
-             ( Increment % Value ( :, iF ), dU )
+             ( I % Storage % IncrementDimension % Value ( :, iF ), dU_Dim )
       call CSL % SetVariablePointer &
              ( I % Storage % Flux_I % Value ( :, iF ), F_I )
       call ComputeIncrement_CSL_Kernel &
-             ( dU, F_I, A_I, V, TimeStep, iDimension, &
-               CSL % nGhostLayers ( iDimension ) )
+             ( F_I, A_I, V, TimeStep, iDimension, &
+               CSL % nGhostLayers ( iDimension ), dU_Dim )
+      if ( associated ( CSL % CoarsenSingularity ) ) &
+        call CSL % CoarsenSingularity &
+               ( I % Storage % IncrementDimension, iDimension )
       if ( associated ( I % BoundaryFluence_CSL ) ) &
         call RecordBoundaryFluence_CSL &
                ( I % BoundaryFluence_CSL, CSL, F_I, I % Weight_RK, &
                  TimeStep, iDimension, iF )
+      call ApplyIncrement_CSL_Kernel &
+             ( Increment % Value ( :, iF ), &
+               I % Storage % IncrementDimension % Value ( :, iF ) )
     end do !-- iF
 
     end associate !-- C, etc.
-    nullify ( dU, F_I, A_I, V )
+    nullify ( dU_Dim, F_I, A_I, V )
 
     if ( associated ( Timer ) ) call Timer % Stop ( )
 
@@ -903,10 +910,8 @@ contains
   end subroutine ComputeLogDerivative_CSL_Kernel
 
 
-  subroutine ComputeIncrement_CSL_Kernel ( dU, F_I, A_I, V, dT, iD, oV )
+  subroutine ComputeIncrement_CSL_Kernel ( F_I, A_I, V, dT, iD, oV, dU_Dim )
     
-    real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
-      dU
     real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
       F_I, &
       A_I, &
@@ -916,6 +921,8 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iD, &
       oV   
+    real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
+      dU_Dim
 
     integer ( KDI ) :: &
       iV, jV, kV
@@ -924,18 +931,18 @@ contains
       iaVS, &
       lV, uV
 
-!    dU  =  dU  +  dT * ( VJ_I * F_I  &
-!                         -  cshift ( VJ_I * F_I, shift = +1, dim = iD ) ) &
-!                       / ( VJ * dX )
+!    dU_Dim  =  dT * ( VJ_I * F_I  &
+!                      -  cshift ( VJ_I * F_I, shift = +1, dim = iD ) ) &
+!                    / ( VJ * dX )
 
     lV = 1
-    where ( shape ( dU ) > 1 )
+    where ( shape ( dU_Dim ) > 1 )
       lV = oV + 1
     end where
     
     uV = 1
-    where ( shape ( dU ) > 1 )
-      uV = shape ( dU ) - oV
+    where ( shape ( dU_Dim ) > 1 )
+      uV = shape ( dU_Dim ) - oV
     end where
       
     iaS = 0
@@ -948,13 +955,12 @@ contains
 
           iaVS = [ iV, jV, kV ] + iaS
 
-          dU ( iV, jV, kV ) &
-            = dU ( iV, jV, kV )  &
-              +  dT * (    A_I ( iV, jV, kV ) &
-                           *  F_I ( iV, jV, kV ) &
-                        -  A_I ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ) &
-                           *  F_I ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ) ) &
-                      /  V ( iV, jV, kV )
+          dU_Dim ( iV, jV, kV ) &
+            =  dT * (    A_I ( iV, jV, kV ) &
+                         *  F_I ( iV, jV, kV ) &
+                      -  A_I ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ) &
+                         *  F_I ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ) ) &
+                    /  V ( iV, jV, kV )
 
         end do !-- iV
       end do !-- jV
@@ -1061,6 +1067,27 @@ contains
     !$OMP end parallel do
 
   end subroutine RecordBoundaryFluence_CSL_Kernel
+
+
+  subroutine ApplyIncrement_CSL_Kernel ( dU, dU_Dim )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      dU
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      dU_Dim
+
+    integer ( KDI ) :: &
+      iV
+
+!    dU  =  dU  +  dU_Dim
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, size ( dU )
+      dU ( iV )  =  dU ( iV )  +  dU_Dim ( iV )
+    end do !-- iV
+    !$OMP end parallel do
+    
+  end subroutine ApplyIncrement_CSL_Kernel
 
 
 end module IncrementDivergence_FV__Form

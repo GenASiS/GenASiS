@@ -19,6 +19,10 @@ module FluidCentralExcision_Form
       InitializePositionSpace
     procedure, private, pass :: &
       InitializeGeometry
+    procedure, private, pass :: &
+      SetCoarsening
+    procedure, public, nopass :: &
+      CoarsenSingularity
   end type FluidCentralExcisionForm
 
 contains
@@ -73,6 +77,16 @@ contains
                  nCellsPolarOption = nCellsPolarOption )
 
   end subroutine Initialize
+
+
+  impure elemental subroutine Finalize ( FCE )
+
+    type ( FluidCentralExcisionForm ), intent ( inout ) :: &
+      FCE
+
+    call FCE % FinalizeTemplate_FC ( )
+
+  end subroutine Finalize
 
 
   subroutine InitializePositionSpace &
@@ -167,14 +181,26 @@ contains
   end subroutine InitializeGeometry
 
 
-  impure elemental subroutine Finalize ( FCE )
+  subroutine SetCoarsening ( FC )
 
-    type ( FluidCentralExcisionForm ), intent ( inout ) :: &
-      FCE
+    class ( FluidCentralExcisionForm ), intent ( inout ) :: &
+      FC
 
-    call FCE % FinalizeTemplate_FC ( )
+    !-- FIXME: Fill in along the lines of FluidCentralCore_Form
 
-  end subroutine Finalize
+  end subroutine SetCoarsening
+
+
+  subroutine CoarsenSingularity ( S, iAngular )
+
+    class ( StorageForm ), intent ( inout ) :: &
+      S
+    integer ( KDI ), intent ( in ) :: &
+      iAngular
+
+    !-- FIXME: Fill in along the lines of FluidCentralCore_Form
+
+  end subroutine CoarsenSingularity
 
 
 end module FluidCentralExcision_Form

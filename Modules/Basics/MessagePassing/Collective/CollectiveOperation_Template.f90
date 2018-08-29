@@ -31,7 +31,7 @@ module CollectiveOperation_Template
 contains
 
   
-  subroutine InitializeTemplate ( CO, C, nIncoming, nOutgoing, RootOption )
+  subroutine InitializeTemplate ( CO, C, nOutgoing, nIncoming, RootOption )
   
     class ( CollectiveOperationTemplate ), intent ( inout ) :: &
       CO

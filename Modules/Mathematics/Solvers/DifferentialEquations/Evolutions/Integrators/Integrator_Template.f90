@@ -351,10 +351,12 @@ contains
   end subroutine OpenGridImageStreams
 
 
-  subroutine OpenManifoldStreamsTemplate ( I )
+  subroutine OpenManifoldStreamsTemplate ( I, VerboseStreamOption )
 
     class ( IntegratorTemplate ), intent ( inout ) :: &
       I
+    logical ( KDL ), intent ( in ), optional :: &
+      VerboseStreamOption
 
     logical ( KDL ) :: &
       VerboseStream
@@ -362,6 +364,8 @@ contains
     associate ( GIS => I % GridImageStream )
 
     VerboseStream = .false.
+    if ( present ( VerboseStreamOption ) ) &
+      VerboseStream = VerboseStreamOption
     call PROGRAM_HEADER % GetParameter ( VerboseStream, 'VerboseStream' )
 
     associate ( iS => 1 )  !-- iStream
@@ -395,12 +399,14 @@ contains
   end subroutine OpenManifoldStreamsTemplate
 
 
-  subroutine OpenManifoldStreams ( I )
+  subroutine OpenManifoldStreams ( I, VerboseStreamOption )
 
     class ( IntegratorTemplate ), intent ( inout ) :: &
       I
+    logical ( KDL ), intent ( in ), optional :: &
+      VerboseStreamOption
 
-    call I % OpenManifoldStreamsTemplate ( )
+    call I % OpenManifoldStreamsTemplate ( VerboseStreamOption )
 
   end subroutine OpenManifoldStreams
 
