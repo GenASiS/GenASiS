@@ -41,7 +41,7 @@ program TwoPowerDensity
   beta  = [ 4.0_KDR, 4.0_KDR, 3.0_KDR ] 
   call PROGRAM_HEADER % GetParameter ( beta, 'beta' )
 
-  a = 0.1_KDR
+  a = 2.0_KDR
   call PROGRAM_HEADER % GetParameter ( a, 'a' ) 
 
   Density = 1.0_KDR / ( 4.0_KDR  *  CONSTANT % PI  )
@@ -49,7 +49,7 @@ program TwoPowerDensity
 
   call TP % SetTwoPowerDensity ( Density, a, alpha, beta )
 
-  call TP % Compute ( NormalizeSolutionOption = .true. )
+  call TP % Compute ( ShiftSolutionOption = .true. )
   
   deallocate ( TP )
 

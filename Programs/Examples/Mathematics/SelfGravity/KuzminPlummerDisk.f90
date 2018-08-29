@@ -45,7 +45,7 @@ program KuzminPlummerDisk
 
   call KP % SetKuzminPlummer ( TotalMass, a, ratio )
 
-  call KP % Compute ( NormalizeSolutionOption = .true. )
+  call KP % Compute ( ShiftSolutionOption = .true. )
   
   deallocate ( KP )
 
