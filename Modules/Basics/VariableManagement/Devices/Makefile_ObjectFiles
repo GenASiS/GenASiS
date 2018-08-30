@@ -1,5 +1,7 @@
 DEVICES = \
   Devices.o \
+  DeallocateHost_Command.o \
+  AllocateHost_Command.o \
   UpdateHost_Command.o \
   UpdateDevice_Command.o \
   DisassociateHost_Command.o \
@@ -7,4 +9,5 @@ DEVICES = \
   AssociateHost_Command.o \
   AllocateDevice_Command.o \
   Device_C_OMP.o \
+  Device_CUDA.o \
   Device_OMP.o

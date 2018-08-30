@@ -1,6 +1,6 @@
 module Device_C
 
-  use ISO_C_BINDING
+  use iso_c_binding
   
   implicit none
   private
@@ -9,7 +9,9 @@ module Device_C
     AllocateTargetDouble, &
     AssociateTargetDouble, &
     DeallocateTarget, &
-    DisassociateTarget
+    DisassociateTarget, &
+    AllocateHostDouble, &
+    FreeHost
   
   interface 
 
@@ -37,9 +39,7 @@ module Device_C
     end function AssociateTargetDouble
     
     
-    subroutine DeallocateTarget ( Device ) &
-                        bind ( c, name = 'FreeTarget_OMP' )
-      
+    subroutine DeallocateTarget ( Device ) bind ( c, name = 'FreeTarget_OMP' )
       use iso_c_binding
       implicit none
       type ( c_ptr ), value :: &
@@ -56,6 +56,25 @@ module Device_C
       type ( c_ptr ), value :: &
         Host
     end function DisassociateTarget
+    
+    
+    type ( c_ptr ) function AllocateHostDouble ( nValues ) &
+                              bind ( c, name = 'AllocateHostDouble_CUDA' )
+      use iso_c_binding
+      implicit none
+      integer ( kind = c_int ), value :: &
+        nValues
+    end function AllocateHostDouble
+    
+    
+    subroutine FreeHost ( Host ) bind ( c, name = 'FreeHost_CUDA' )
+      use iso_c_binding
+      implicit none
+      type ( c_ptr ), value :: &
+        Host
+    
+    end subroutine FreeHost
+
 
   end interface 
 

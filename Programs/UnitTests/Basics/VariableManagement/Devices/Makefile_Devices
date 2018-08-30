@@ -5,7 +5,7 @@ include $(PATH_GENASIS)/Build/Makefile_Build
 all: \
   AllocateDevice_Command_Test AssociateHost_Command_Test \
   DeallocateDevice_Command_Test DisassociateHost_Command_Test \
-  UpdateDevice_Command_Test
+  UpdateDevice_Command_Test AllocateHost_Command_Test
 
 AllocateDevice_Command_Test: AllocateDevice_Command_Test.o
 	$(LINK) $(FLAGS) \
@@ -41,6 +41,17 @@ UpdateDevice_Command_Test: UpdateDevice_Command_Test.o
           DeallocateDevice_Command.o DisassociateHost_Command.o \
           UpdateDevice_Command.o UpdateHost_Command.o \
           Device_C_OMP.o Device_OMP.o $(SPECIFIERS)
+
+AllocateHost_Command_Test: AllocateHost_Command_Test.o
+	$(LINK) $(FLAGS) \
+          -o AllocateHost_Command_Test_$(MACHINE) \
+          AllocateHost_Command_Test.o \
+          AllocateDevice_Command.o AssociateHost_Command.o \
+          DisassociateHost_Command.o \
+          UpdateDevice_Command.o AllocateHost_Command.o \
+          DeallocateHost_Command.o Device_C_OMP.o \
+          Device_CUDA.o Device_OMP.o $(SPECIFIERS) $(LIBRARIES)
+
 
 clean:
 	rm -f *.o *.mod *.ld
@@ -80,3 +91,10 @@ UpdateDevice_Command_Test.o: \
   UpdateDevice_Command.o \
   UpdateHost_Command.o \
   UpdateDevice_Command_Test.f90
+
+AllocateHost_Command_Test.o: \
+  AllocateDevice_Command.o \
+  UpdateDevice_Command.o \
+  AllocateHost_Command.o \
+  DeallocateHost_Command.o \
+  AllocateHost_Command_Test.f90

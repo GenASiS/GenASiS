@@ -25,3 +25,6 @@ LINK_NVCC = nvcc
 SILO_DIR = /sw/peak/caascade/silo/4.10.2/xl20180502
 INCLUDE_SILO = -I${SILO_DIR}/include
 LIBRARY_SILO = -L${SILO_DIR}/lib -lsilo
+
+INCLUDE_CUDA = -I${OLCF_CUDA_ROOT}/include
+LIBRARY_CUDA = -L${OLCF_CUDA_ROOT}/lib64 -lcudart

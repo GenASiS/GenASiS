@@ -73,41 +73,4 @@ program UpdateDevice_Command_Test
       / sum ( abs ( Value_2D_Save ) )
       
   
-  call random_number ( Value_1D )
-  call random_number ( Value_2D )
-  Value_1D_Save = Value_1D
-  Value_2D_Save = Value_2D
-  
-  StartTime = OMP_GET_WTIME ( )
-  !$OMP parallel
-  !$OMP single nowait
-  call UpdateDeviceAsync ( Value_1D, dValue_1D )
-  call UpdateDeviceAsync ( Value_2D, dValue_2D )
-  !$OMP taskwait
-  !$OMP end parallel
-  TotalTime = OMP_GET_WTIME ( ) - StartTime
-  print*, 'Data Transfer Time (Async)', TotalTime
-  
-  StartTime = OMP_GET_WTIME ( )
-  call FinishUpdate ( dValue_1D )
-  call FinishUpdate ( dValue_2D )
-  TotalTime = OMP_GET_WTIME ( ) - StartTime
-  print*, 'Finish Transfer Time', TotalTime
-  
-
-  Value_1D = 0.0_KDR
-  Value_2D = 0.0_KDR
-  
-  call UpdateHost ( dValue_1D, Value_1D )
-  call UpdateHost ( dValue_2D, Value_2D )
-  
-  !-- check error
-  print*, 'Error 1D', &
-    sum ( abs ( Value_1D_Save - Value_1D ) ) &
-      / sum ( abs ( Value_1D_Save ) )
-  print*, 'Error 2D', & 
-    sum ( abs ( Value_2D_Save - Value_2D ) ) &
-      / sum ( abs ( Value_2D_Save ) )
-  
-  
 end program UpdateDevice_Command_Test
