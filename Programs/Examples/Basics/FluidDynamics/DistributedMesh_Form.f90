@@ -70,7 +70,8 @@ module DistributedMesh_Form
     procedure, private, pass :: &
       StartGhostExchangeMultiple
     generic :: &
-      StartGhostExchange => StartGhostExchangeSingle, StartGhostExchangeMultiple
+      StartGhostExchange => StartGhostExchangeSingle, &
+                            StartGhostExchangeMultiple
     procedure, public, pass :: &
       FinishGhostExchange
     procedure, public, pass :: &

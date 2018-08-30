@@ -211,7 +211,7 @@ contains
              VectorIndicesOption = VectorIndicesOption, &
              UnitOption = VariableUnit, VectorOption = VectorOption, &
              VariableOption = Variable, NameOption = NameOption, &
-             ClearOption = ClearOption )
+             ClearOption = ClearOption, PinnedOption = .true. )
     end associate !-- DM
     
     CF % DistributedMesh => DistributedMesh

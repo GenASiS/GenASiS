@@ -27,7 +27,8 @@ module Storage_Form
     real ( KDR ), dimension ( :, : ), pointer :: &
       Value => null (  )
     logical ( KDL ) :: &
-      AllocatedValue = .false.
+      AllocatedValue = .false., &
+      Pinned = .false.
     character ( LDF ) :: &
       Name = ''
     character ( LDL ), dimension ( : ), allocatable :: &
@@ -77,7 +78,8 @@ contains
 
   subroutine InitializeAllocate &
                ( S, ValueShape, VectorIndicesOption, UnitOption, &
-                 VectorOption, VariableOption, NameOption, ClearOption )
+                 VectorOption, VariableOption, NameOption, ClearOption, &
+                 PinnedOption )
     
     class ( StorageForm ), intent ( inout ) :: &
       S
@@ -93,7 +95,8 @@ contains
     character ( * ), intent ( in ), optional :: &
       NameOption
     logical ( KDL ), intent ( in ), optional :: &
-      ClearOption
+      ClearOption, &
+      PinnedOption
     
     integer ( KDI ) :: &
       iVrbl
@@ -107,7 +110,13 @@ contains
     allocate ( S % iaSelected ( S % nVariables ) )
     S % iaSelected = [ ( iVrbl, iVrbl = 1, S % nVariables ) ]
 
-    allocate ( S % Value ( S % nValues, ValueShape ( 2 ) ) )
+    S % Pinned = .false.
+    if ( present ( PinnedOption ) ) S % Pinned = PinnedOption
+    if ( S % Pinned ) then
+      call AllocateHost ( S % Value, [ S % nValues, ValueShape ( 2 ) ] )
+    else
+      allocate ( S % Value ( S % nValues, ValueShape ( 2 ) ) )
+    end if
     S % AllocatedValue = .true.
     
     ClearRequested = .false.
@@ -386,7 +395,13 @@ contains
     if ( allocated ( S % Variable ) )   deallocate ( S % Variable )
 
     if ( S % AllocatedValue ) then
-      if ( associated ( S % Value ) )   deallocate ( S % Value )
+      if ( associated ( S % Value ) ) then
+        if ( S % Pinned ) then
+          call DeallocateHost ( S % Value )
+        else
+         deallocate ( S % Value )
+        end if
+      end if
     end if
     nullify ( S % Value )
 
