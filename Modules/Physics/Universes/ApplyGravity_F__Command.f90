@@ -75,6 +75,7 @@ contains
       call ApplyGravityMomentum &
              ( Increment % Value ( :, iMomentum ), & 
                FS % Value ( :, FS % GRAVITATIONAL_S_D ( iD ) ), &
+               C % IsProperCell, &
                F % Value ( :, F % BARYON_MASS ), &
                F % Value ( :, F % CONSERVED_BARYON_DENSITY ), &
                G % Value ( :, G % POTENTIAL_GRADIENT_D ( iD ) ), &
@@ -90,6 +91,7 @@ contains
       call ApplyGravityEnergy &
              ( Increment % Value ( :, iEnergy ), & 
                FS % Value ( :, FS % GRAVITATIONAL_G ), &
+               C % IsProperCell, &
                F % Value ( :, F % BARYON_MASS ), &
                F % Value ( :, F % CONSERVED_BARYON_DENSITY ), &
                F % Value ( :, F % VELOCITY_U ( 1 ) ), &
@@ -113,11 +115,14 @@ contains
   end subroutine ApplyGravity_F
 
 
-  subroutine ApplyGravityMomentum ( K, S, M, N, GradPhi, dt, Weight_RK )
+  subroutine ApplyGravityMomentum &
+               ( K, S, IsProperCell, M, N, GradPhi, dt, Weight_RK )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       K, &
       S
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      IsProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       M, &
       N, &
@@ -134,6 +139,8 @@ contains
 
     !$OMP parallel do private ( iV )
     do iV = 1, nValues
+      if ( .not. IsProperCell ( iV ) ) &
+        cycle
       K ( iV )  =  K ( iV )  -  M ( iV )  *  N ( iV )  *  GradPhi ( iV )  &
                                 *  dt
       S ( iV )  =  S ( iV )  -  M ( iV )  *  N ( iV )  *  GradPhi ( iV )  &
@@ -145,12 +152,15 @@ contains
 
 
   subroutine ApplyGravityEnergy &
-               ( K, S, M, N, V_1, V_2, V_3, GradPhi_1, GradPhi_2, GradPhi_3, &
+               ( K, S, IsProperCell, M, N, V_1, V_2, V_3, &
+                 GradPhi_1, GradPhi_2, GradPhi_3, &
                  dt, Weight_RK )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       K, &
       S
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      IsProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       M, &
       N, &
@@ -168,6 +178,8 @@ contains
 
     !$OMP parallel do private ( iV )
     do iV = 1, nValues
+      if ( .not. IsProperCell ( iV ) ) &
+        cycle
       K ( iV )  =  K ( iV )  -  M ( iV )  *  N ( iV )  &
                                 *  (    V_1 ( iV )  *  GradPhi_1 ( iV )  &
                                      +  V_2 ( iV )  *  GradPhi_2 ( iV )  &

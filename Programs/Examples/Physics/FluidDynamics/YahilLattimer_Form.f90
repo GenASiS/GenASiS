@@ -62,8 +62,7 @@ contains
       F_D     !-- F_Difference
     real ( KDR ) :: &
       Rho_final, &
-      FinishTime, &
-      R_max
+      FinishTime
     type ( MeasuredValueForm ), dimension ( 3 ) :: &
       CoordinateUnit
     class ( GeometryFlatForm ), pointer :: &
@@ -76,13 +75,11 @@ contains
 
     call YL % InitializeTemplate ( Name )
 
-!-- FIXME: Set default parameters, read parameters
+    !--Set default parameters, read parameters
     
     YL % AdiabaticIndex  = 1.3_KDR
     YL % CentralDensity  = 7e9_KDR * UNIT % MASS_DENSITY_CGS
     YL % CentralPressure = 6e27_KDR * UNIT % BARYE
-call Show ( YL % CentralDensity, UNIT % MASS_DENSITY_CGS, 'CentralDensity' )
-call Show ( YL % CentralPressure, UNIT % BARYE, 'CentralPressure' )
     
     call PROGRAM_HEADER % GetParameter ( YL % AdiabaticIndex, &
                                          'AdiabaticIndex' )
@@ -91,23 +88,27 @@ call Show ( YL % CentralPressure, UNIT % BARYE, 'CentralPressure' )
     call PROGRAM_HEADER % GetParameter ( YL % CentralPressure, &
                                          'CentralPressure' )
 
+    call Show &
+         ( YL % CentralDensity, UNIT % MASS_DENSITY_CGS, 'CentralDensity' )
+    call Show &
+         ( YL % CentralPressure, UNIT % BARYE, 'CentralPressure' )
+
     YL % Kappa= YL % CentralPressure &
                   / ( YL % CentralDensity ** YL % AdiabaticIndex )
 
-    call PROGRAM_HEADER % GetParameter ( YL % Kappa, 'Kappa' )
-
     YL % t_collapse = 0.2_KDR * UNIT % SECOND
-call Show ( YL % t_collapse, UNIT % SECOND, 't_collapse' )
     call PROGRAM_HEADER % GetParameter ( YL % t_collapse, 't_collapse' )
+    call Show ( YL % t_collapse, UNIT % SECOND, 't_collapse' )
 
     Rho_final = 1e14_KDR * UNIT % MASS_DENSITY_CGS
-call Show ( Rho_final, UNIT % MASS_DENSITY_CGS, 'Rho_final' )
     call PROGRAM_HEADER % GetParameter ( Rho_final, 'Rho_final' )
+    call Show ( Rho_final, UNIT % MASS_DENSITY_CGS, 'Rho_final' )
 
     call ReadTable ( YL, YL % AnalyticProfile, Rho_final )
     call PROGRAM_HEADER % GetParameter ( YL % t_end, 't_end' )
 
     FinishTime = YL % t_collapse - YL % t_end
+    Call Show ( FinishTime, UNIT % SECOND, 'FinishTime')
 
     !-- Integrator
 
@@ -127,8 +128,6 @@ call Show ( Rho_final, UNIT % MASS_DENSITY_CGS, 'Rho_final' )
     select type ( C => PS % Chart )
     class is ( Chart_SL_Template )
 
-    R_Max = G % Value ( C % nProperCells , G % CENTER_U ( 1 ) )
-
     end select !-- C
 
     select type ( FA => FCC % Current_ASC )
@@ -138,10 +137,14 @@ call Show ( Rho_final, UNIT % MASS_DENSITY_CGS, 'Rho_final' )
 
     F => FA % Fluid_P_I ( )
     call F % SetAdiabaticIndex ( YL % AdiabaticIndex )
-    call SetFluid ( YL, F, Time = 0.0_KDR )!R_Max, Time = 0.0_KDR )
+
+    call SetFluid ( YL, F, Time = 0.0_KDR )
+
 
     !-- Diagnostics
-CoordinateUnit  =  [ UNIT % KILOMETER, UNIT % RADIAN, UNIT % RADIAN ]
+
+    CoordinateUnit  =  [ UNIT % KILOMETER, UNIT % RADIAN, UNIT % RADIAN ]
+
     allocate ( YL % Reference )
     allocate ( YL % Difference )
     call YL % Reference % Initialize &
@@ -196,14 +199,13 @@ CoordinateUnit  =  [ UNIT % KILOMETER, UNIT % RADIAN, UNIT % RADIAN ]
   end subroutine Finalize
 
 
-  subroutine SetFluid ( YL, F, Time )!R_Max, Time )
+  subroutine SetFluid ( YL, F, Time )
 
     class ( YahilLattimerForm ), intent ( inout ) :: &
       YL
     class ( Fluid_P_I_Form ), intent ( inout ) :: &
       F
     real ( KDR ), intent ( in ) :: &
-      !R_Max, &
       Time
 
     class ( GeometryFlatForm ), pointer :: &
@@ -225,7 +227,7 @@ CoordinateUnit  =  [ UNIT % KILOMETER, UNIT % RADIAN, UNIT % RADIAN ]
 
     call PrepareInterpolation &
            ( SI, YL % AnalyticProfile, YL % Kappa, &
-             YL % AdiabaticIndex, T)!, R_Max )
+             YL % AdiabaticIndex, T)
 
     select type ( PS => YL % Integrator % PositionSpace )
     class is ( Atlas_SC_Form )
@@ -240,16 +242,21 @@ CoordinateUnit  =  [ UNIT % KILOMETER, UNIT % RADIAN, UNIT % RADIAN ]
     associate &
       ( R    => G % Value ( :, G % CENTER_U ( 1 ) ), &
         Rho  => F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
-        V    => F % Value ( :, F % VELOCITY_U ( 1 ) ), &
+        V_1  => F % Value ( :, F % VELOCITY_U ( 1 ) ), &
+        V_2  => F % Value ( :, F % VELOCITY_U ( 2 ) ), &
+        V_3  => F % Value ( :, F % VELOCITY_U ( 3 ) ), &
         E    => F % Value ( :, F % INTERNAL_ENERGY ), &
         P    => F % Value ( :, F % PRESSURE ) )
 
-       do iV = 1, size ( R )
-         if ( .not. C % IsProperCell ( iV ) ) cycle
+    V_2 = 0.0_KDR
+    V_3 = 0.0_KDR
+
+      do iV = 1, size ( R )
+        if ( R ( iV ) < 0.0_KDR ) cycle
         call SI ( iRHO_SI ) &
                 % Evaluate ( R ( iV ), Rho ( iV ) )
         call SI ( iV_SI ) &
-                % Evaluate ( R ( iV ), V ( iV ) )
+                % Evaluate ( R ( iV ), V_1 ( iV ) )
         P ( iV ) = YL % Kappa * Rho ( iV ) ** ( YL % AdiabaticIndex )
         E ( iV ) = P ( iV ) / ( YL % AdiabaticIndex - 1.0_KDR )
       end do
@@ -257,7 +264,6 @@ CoordinateUnit  =  [ UNIT % KILOMETER, UNIT % RADIAN, UNIT % RADIAN ]
       Rho = Rho / CONSTANT % ATOMIC_MASS_UNIT
 
       call F % ComputeFromPrimitive ( G )
-      call C % ExchangeGhostData ( F )
 
     end associate !-- R, etc.
     end select    !-- C
@@ -280,15 +286,16 @@ CoordinateUnit  =  [ UNIT % KILOMETER, UNIT % RADIAN, UNIT % RADIAN ]
    
     character ( LDF ) :: &
       Path, &
-      Filename
+      FileName
     type ( TableStreamForm ) :: &
       TS
 
     Path = '../Parameters/'
-    Filename = 'YahilHomologousCollapse_Gm_130.dat'
+    FileName = 'YahilLattimerCollapse_Gm_130.dat'
     
     call PROGRAM_HEADER % GetParameter &
-           ( Filename, 'Filename' )
+           ( FileName, 'FileName' )
+    call Show ( FileName, 'FileName' )
 
     call TS % Initialize &
            ( Filename, PROGRAM_HEADER % Communicator % Rank, &
@@ -301,7 +308,7 @@ CoordinateUnit  =  [ UNIT % KILOMETER, UNIT % RADIAN, UNIT % RADIAN ]
   end subroutine ReadTable
 
 
-    subroutine PrepareInterpolation ( SI, AP, Kappa, Gamma, T)!, R_Max )
+  subroutine PrepareInterpolation ( SI, AP, Kappa, Gamma, T)
 
     type ( SplineInterpolationForm ), dimension ( 2 ), intent ( inout ) :: &
       SI
@@ -350,35 +357,12 @@ CoordinateUnit  =  [ UNIT % KILOMETER, UNIT % RADIAN, UNIT % RADIAN ]
           * T ** ( 1.0_KDR - Gamma ) ) * V_P
 
     R ( 1 ) = 0.0_KDR
-  !  R ( nProfile + 2 ) = R_Max
     
     Slope_Rho = ( Rho ( 3 ) - Rho ( 2 ) ) / ( R ( 3 ) - R ( 2 ) )
     Slope_V   = ( V   ( 3 ) - V   ( 2 ) ) / ( R ( 3 ) - R ( 2 ) )
 
     Rho ( 1 ) = Rho ( 2 ) - Slope_Rho * R ( 2 )
     V   ( 1 ) = V   ( 2 ) - Slope_V   * R ( 2 ) 
-
-  !  Slope_Rho = ( Rho ( nProfile + 1 ) - Rho ( nProfile ) ) &
-  !               / ( R ( nProfile + 1 ) - R ( nProfile ) )
-  !  Slope_V   = ( V   ( nProfile + 1 ) - V   ( nProfile ) ) &
-  !               / ( R ( nProfile + 1 ) - R ( nProfile ) )
-
-  !  Rho ( nProfile + 2 ) = Rho ( nProfile + 1 ) &
-  !                         + Slope_Rho &
-  !                           * ( R ( nProfile + 2 ) - R ( nProfile + 1 ) )
-  !  V   ( nProfile + 2 ) = V   ( nProfile + 1 ) &
-  !                         + Slope_V &
-  !                           * ( R ( nProfile + 2 ) - R ( nProfile + 1 ) )
-
-    call Show ( Rho ( 1 ), 'Rho_1' )
-    call Show ( Rho ( 2 ), 'Rho_2' )
-    call Show ( V ( 1 ), 'V_1' )
-    call Show ( V ( 2 ), 'V_2' )
-
-   ! call Show ( Rho ( nProfile + 1 ), 'Rho_n1' )
-   ! call Show ( Rho ( nProfile + 2 ), 'Rho_n2' )
-   ! call Show ( V ( nProfile + 1 ), 'V_n1' )
-   ! call Show ( V ( nProfile + 2 ), 'V_2' )
     
    !-- SplineInterpolation initialization
 
@@ -410,25 +394,12 @@ CoordinateUnit  =  [ UNIT % KILOMETER, UNIT % RADIAN, UNIT % RADIAN ]
 
     select type ( FCC )
     class is ( FluidCentralCoreForm )
-
-   ! select type ( PS => FCC % PositionSpace )
-   ! class is ( Atlas_SC_Form )
-   ! G => PS % Geometry ( )
-
-   ! select type ( C => PS % Chart )
-   ! class is ( Chart_SL_Template )
-
-   ! R_Max = G % Value ( C % nProperCells , G % CENTER_U ( 1 ) )
-
-    !end select !-- C
-    !end select !-- G 
-
     select type ( FA => FCC % Current_ASC )
     class is ( Fluid_ASC_Form )
     F => FA % Fluid_P_I ( )
 
     F_R => YahilLattimer % Reference % Fluid_P_I ( )
-    call SetFluid ( YahilLattimer, F_R, FCC % Time )!R_Max, FCC % Time )
+    call SetFluid ( YahilLattimer, F_R, FCC % Time )
 
     F_D => YahilLattimer % Difference % Fluid_P_I ( )
     call MultiplyAdd ( F % Value, F_R % Value, -1.0_KDR, F_D % Value )
@@ -482,21 +453,36 @@ CoordinateUnit  =  [ UNIT % KILOMETER, UNIT % RADIAN, UNIT % RADIAN ]
     class is ( Chart_SL_Template )
        
     F_D => YL % Difference % Fluid_P_I ( )
+    F_R => YL % Reference % Fluid_P_I ( )
 
     associate &
-      ( Difference_Rho => F_D % Value ( :, F_D % COMOVING_BARYON_DENSITY ), &
-        Difference_V   => F_D % Value ( :, F_D % VELOCITY_U ( 1 ) ), &
-        Difference_P   => F_D % Value ( :, F_D % PRESSURE ) )
+      ( Difference_Rho &
+          => F_D % Value ( :, F_D % COMOVING_BARYON_DENSITY ), &
+        Reference_Rho &
+          => F_R % Value ( :, F_R % COMOVING_BARYON_DENSITY ), &
+        Difference_V   &
+          => F_D % Value ( :, F_D % VELOCITY_U ( 1 ) ), &
+        Reference_V   &
+          => F_R % Value ( :, F_R % VELOCITY_U ( 1 ) ), &
+        Difference_P   &
+          => F_D % Value ( :, F_D % PRESSURE ), &
+        Reference_P   &
+          => F_R % Value ( :, F_R % PRESSURE ) )
 
-    call CO % Initialize ( PS % Communicator, [ 4 ], [ 4 ] )
+    call CO % Initialize ( PS % Communicator, [ 6 ], [ 6 ] )
 
     CO % Outgoing % Value ( 1 ) = sum ( abs ( Difference_Rho ), &
                                         mask = C % IsProperCell )
-    CO % Outgoing % Value ( 2 ) = sum ( abs ( Difference_V ), &
+    CO % Outgoing % Value ( 2 ) = sum ( abs ( Reference_Rho ), &
                                         mask = C % IsProperCell )
-    CO % Outgoing % Value ( 3 ) = sum ( abs ( Difference_P ), &
+    CO % Outgoing % Value ( 3 ) = sum ( abs ( Difference_V ), &
                                         mask = C % IsProperCell )
-    CO % Outgoing % Value ( 4 ) = C % nProperCells
+    CO % Outgoing % Value ( 4 ) = sum ( abs ( Reference_V ), &
+                                        mask = C % IsProperCell )
+    CO % Outgoing % Value ( 5 ) = sum ( abs ( Difference_P ), &
+                                        mask = C % IsProperCell )
+    CO % Outgoing % Value ( 6 ) = sum ( abs ( Reference_P ), &
+                                        mask = C % IsProperCell )
 
     call CO % Reduce ( REDUCTION % SUM )
 
@@ -504,13 +490,15 @@ CoordinateUnit  =  [ UNIT % KILOMETER, UNIT % RADIAN, UNIT % RADIAN ]
     
     associate &
       ( DifferenceSum_Rho  => CO % Incoming % Value ( 1 ), &
-        DifferenceSum_V    => CO % Incoming % Value ( 2 ), &
-        DifferenceSum_P    => CO % Incoming % Value ( 3 ), &
-        nValues => CO % Incoming % Value ( 4 ) )
+        ReferenceSum_Rho   => CO % Incoming % Value ( 2 ), &
+        DifferenceSum_V    => CO % Incoming % Value ( 3 ), &
+        ReferenceSum_V   => CO % Incoming % Value ( 4 ), &
+        DifferenceSum_P    => CO % Incoming % Value ( 5 ), &
+        ReferenceSum_P   => CO % Incoming % Value ( 6 ) )
 
-    L1_Rho = DifferenceSum_Rho / nValues
-    L1_V   = DifferenceSum_V   / nValues
-    L1_P   = DifferenceSum_P   / nValues
+    L1_Rho = DifferenceSum_Rho / ReferenceSum_Rho
+    L1_V   = DifferenceSum_V   / ReferenceSum_V
+    L1_P   = DifferenceSum_P   / ReferenceSum_P
     end associate
 
     call Show ( L1_Rho, '*** L1_Rho error', nLeadingLinesOption = 2, &
