@@ -97,12 +97,10 @@ module FluidCentral_Template
         FC
     end subroutine SC
 
-    subroutine CS ( S, iAngular )
+    subroutine CS ( S )
       use Basics
       class ( StorageForm ), intent ( inout ) :: &
         S
-      integer ( KDI ), intent ( in ) :: &
-        iAngular
     end subroutine CS
 
   end interface

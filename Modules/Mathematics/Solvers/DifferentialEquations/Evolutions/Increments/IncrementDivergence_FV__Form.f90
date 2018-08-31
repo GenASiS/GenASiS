@@ -767,9 +767,6 @@ contains
       call ComputeIncrement_CSL_Kernel &
              ( F_I, A_I, V, TimeStep, iDimension, &
                CSL % nGhostLayers ( iDimension ), dU_Dim )
-      if ( associated ( CSL % CoarsenSingularity ) ) &
-        call CSL % CoarsenSingularity &
-               ( I % Storage % IncrementDimension, iDimension )
       if ( associated ( I % BoundaryFluence_CSL ) ) &
         call RecordBoundaryFluence_CSL &
                ( I % BoundaryFluence_CSL, CSL, F_I, I % Weight_RK, &

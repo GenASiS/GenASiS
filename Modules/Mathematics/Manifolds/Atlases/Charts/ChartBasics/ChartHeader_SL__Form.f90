@@ -30,8 +30,6 @@ module ChartHeader_SL__Form
       IsProperCell => null ( )
     type ( FieldChartPointer ), dimension ( : ), allocatable :: &
       Field
-    procedure ( CS ), pointer, nopass :: &
-      CoarsenSingularity => null ( )
   contains
     procedure, private, pass :: &
       InitializeBasic
@@ -50,16 +48,6 @@ module ChartHeader_SL__Form
     final :: &
       Finalize
   end type ChartHeader_SL_Form
-
-  abstract interface
-    subroutine CS ( S, iAngular )
-      use Basics
-      class ( StorageForm ), intent ( inout ) :: &
-        S
-      integer ( KDI ), intent ( in ) :: &
-        iAngular
-    end subroutine CS
-  end interface
 
     private :: &
       SetChartCells, &

@@ -191,12 +191,10 @@ contains
   end subroutine SetCoarsening
 
 
-  subroutine CoarsenSingularity ( S, iAngular )
+  subroutine CoarsenSingularity ( S )
 
     class ( StorageForm ), intent ( inout ) :: &
       S
-    integer ( KDI ), intent ( in ) :: &
-      iAngular
 
     !-- FIXME: Fill in along the lines of FluidCentralCore_Form
 

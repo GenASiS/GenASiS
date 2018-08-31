@@ -81,6 +81,8 @@ module Step_RK_C_ASC__Template
         ApplySources
       type ( ApplyRelaxation_C_Pointer ) :: &
         ApplyRelaxation
+      procedure ( CS ), pointer, nopass :: &
+        CoarsenSingularity => null ( )
   contains
     procedure, public, pass :: &
       InitializeTemplate_C_ASC
@@ -223,6 +225,12 @@ module Step_RK_C_ASC__Template
       class ( CurrentTemplate ), intent ( in ) :: &
         Current
     end subroutine HC
+
+    subroutine CS ( S )
+      use Basics
+      class ( StorageForm ), intent ( inout ) :: &
+        S
+    end subroutine CS
 
   end interface
 
@@ -1060,6 +1068,9 @@ contains
                iStrgeometryValueOption )
       if ( associated ( TimerRelaxation ) ) call TimerRelaxation % Stop ( )
     end if
+
+    if ( associated ( S % CoarsenSingularity ) ) &
+      call S % CoarsenSingularity ( K )
 
     GhostExchange = .true.
     if ( present ( GhostExchangeOption ) ) &
