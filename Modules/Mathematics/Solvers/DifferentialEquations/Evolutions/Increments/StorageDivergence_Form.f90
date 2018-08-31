@@ -15,14 +15,13 @@ module StorageDivergence_Form
       iTimerFluxes         = 0, &
       iTimerIncrement      = 0
     type ( StorageForm ), allocatable :: &
-      Geometry_I, &                !-- Geometry_Inner
-      Current_IL, Current_IR, &    !-- Current_InnerLeft, Current_InnerRight
-      SolverSpeeds_I, &            !-- SolverSpeeds_Inner
-      DiffusionFactor_I, &         !-- DiffusionFactor_Inner
-      Flux_IL, Flux_IR, &          !-- Flux_InnerLeft, Flux_InnerRight
-      Flux_I, &                    !-- Flux_Inner
-      Current_ICL, Current_ICR, &  !-- Current_InnerCenterLeft, Right
-      IncrementDimension
+      Geometry_I, &              !-- Geometry_Inner
+      Current_IL, Current_IR, &  !-- Current_InnerLeft, Current_InnerRight
+      SolverSpeeds_I, &          !-- SolverSpeeds_Inner
+      DiffusionFactor_I, &       !-- DiffusionFactor_Inner
+      Flux_IL, Flux_IR, &        !-- Flux_InnerLeft, Flux_InnerRight
+      Flux_I, &                  !-- Flux_Inner
+      Current_ICL, Current_ICR   !-- Current_InnerCenterLeft, _InnerCenterRight
     type ( GradientForm ), allocatable :: &
       GradientPrimitive
   contains
@@ -108,10 +107,6 @@ contains
 
     allocate ( SD % Flux_I )
     call SD % Flux_I % Initialize &
-           ( [ nValues, nConserved ], ClearOption = .true. )
-
-    allocate ( SD % IncrementDimension )
-    call SD % IncrementDimension % Initialize &
            ( [ nValues, nConserved ], ClearOption = .true. )
 
     allocate ( SD % GradientPrimitive )
