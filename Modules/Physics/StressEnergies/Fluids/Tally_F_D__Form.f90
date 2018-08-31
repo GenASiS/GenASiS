@@ -796,8 +796,8 @@ contains
                           /  max ( X_1 ( iV ), SqrtTiny )  &
                           *  S_2 ( iV ) &
                        -  sin ( X_3 ( iV ) )  &
-                          /  ( max ( X_1 ( iV ), SqrtTiny ) &
-                               * sin ( X_2 ( iV ) ) )  &
+                          /  max ( X_1 ( iV ) * sin ( X_2 ( iV ) ), &
+                                   SqrtTiny )  &
                           *  S_3 ( iV ) 
       end do
       !$OMP end parallel do
@@ -805,13 +805,14 @@ contains
       !$OMP parallel do private ( iV )
       do iV = 1, nV
         I_I ( iV )  =     sin ( X_2 ( iV ) )  *  sin ( X_3 ( iV ) ) &
-                            * S_1 ( iV ) &
+                          *  S_1 ( iV ) &
                        +  cos ( X_2 ( iV ) )  *  sin ( X_3 ( iV ) ) &
-                            /  max ( X_1 ( iV ), SqrtTiny )  *  S_2 ( iV ) &
+                          /  max ( X_1 ( iV ), SqrtTiny )  &
+                          *  S_2 ( iV ) &
                        +  cos ( X_3 ( iV ) )  &
-                            /  ( max ( X_1 ( iV ), SqrtTiny ) &
-                                 * sin ( X_2 ( iV ) ) )  &
-                            *  S_3 ( iV ) 
+                          /  max ( X_1 ( iV ) * sin ( X_2 ( iV ) ), &
+                                   SqrtTiny )  &
+                          *  S_3 ( iV ) 
       end do
       !$OMP end parallel do
     end select
@@ -1076,9 +1077,9 @@ contains
                                       /  max ( X_1 ( iV, jV, kV ), SqrtTiny ) &
                                       *  S_2 ( iV, jV, kV ) &
                                    -  sin ( X_3 ( iV, jV, kV ) )  &
-                                      /  ( max ( X_1 ( iV, jV, kV ), &
-                                                 SqrtTiny ) &
-                                           * sin ( X_2 ( iV, jV, kV ) ) )  &
+                                      /  ( max ( X_1 ( iV, jV, kV )  &
+                                                 * sin ( X_2 ( iV, jV, kV ) ),&
+                                                 SqrtTiny ) )  &
                                       *  S_3 ( iV, jV, kV ) 
           end do
         end do
@@ -1094,12 +1095,13 @@ contains
                                       *  S_1 ( iV, jV, kV ) &
                                    +  cos ( X_2 ( iV, jV, kV ) )  &
                                       *  sin ( X_3 ( iV, jV, kV ) ) &
-                                      /  max ( X_1 ( iV, jV, kV ), SqrtTiny ) &
+                                      /  max ( X_1 ( iV, jV, kV ), &
+                                               SqrtTiny )  &
                                       *  S_2 ( iV, jV, kV ) &
                                    +  cos ( X_3 ( iV, jV, kV ) )  &
-                                      /  ( max ( X_1 ( iV, jV, kV ), &
-                                                 SqrtTiny ) &
-                                           * sin ( X_2 ( iV, jV, kV ) ) )  &
+                                      /  ( max ( X_1 ( iV, jV, kV )  &
+                                                 * sin ( X_2 ( iV, jV, kV ) ),&
+                                                 SqrtTiny ) )  &
                                       *  S_3 ( iV, jV, kV ) 
           end do
         end do
@@ -1178,7 +1180,7 @@ contains
               =  - sin ( X_3 ( iV, jV, kV ) )  *  S_2 ( iV, jV, kV )  &
                  - ( cos ( X_2 ( iV, jV, kV ) )  &
                      *  cos ( X_3 ( iV, jV, kV ) )  &
-                     /  sin ( max ( X_2 ( iV, jV, kV ), SqrtTiny ) ) )  &
+                     /  max ( sin ( X_2 ( iV, jV, kV ) ), SqrtTiny ) )  &
                    *  S_3 ( iV, jV, kV )  
           end do
         end do
@@ -1193,7 +1195,7 @@ contains
               =    cos ( X_3 ( iV, jV, kV ) )  *  S_2 ( iV, jV, kV )  &
                  - ( cos ( X_2 ( iV, jV, kV ) )  &
                      *  sin ( X_3 ( iV, jV, kV ) )  &
-                     /  sin ( max ( X_2 ( iV, jV, kV ), SqrtTiny ) ) )  &
+                     /  max ( sin ( X_2 ( iV, jV, kV ) ), SqrtTiny ) )  &
                    *  S_3 ( iV, jV, kV )  
           end do
         end do
