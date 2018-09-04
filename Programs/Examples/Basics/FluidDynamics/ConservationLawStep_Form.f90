@@ -262,7 +262,7 @@ contains
         
     call Primitive % Initialize &
            ( Current, iaSelectedOption = Current % iaPrimitive )
-
+    
     call T_DT_D % Start ( )
     call Current % UpdateDevice ( )
     call T_DT_D % Stop ( )
@@ -305,7 +305,7 @@ contains
     call T_DT_H % Stop ( )
     
     call T_C % Start ( )
-    call DM % StartGhostExchange ( Primitive )
+    call DM % StartGhostExchange ( )
     call DM % FinishGhostExchange ( )
     call T_C % Stop ( )
     
@@ -347,7 +347,7 @@ contains
     call T_DT_H % Stop ( )
     
     call T_C % Start ( )
-    call DM % StartGhostExchange ( Primitive )
+    call DM % StartGhostExchange ( )
     call DM % FinishGhostExchange ( )
     call T_C % Stop ( )
     
