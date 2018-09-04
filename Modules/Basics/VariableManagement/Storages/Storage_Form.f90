@@ -204,6 +204,8 @@ contains
     integer ( KDI ) :: &
       iV, &     !-- iVector
       iS_S, iS_T
+    type ( c_ptr ), dimension ( : ), allocatable :: &
+      Scratch
 
     S_Target % nValues = S_Source % nValues
     
@@ -265,6 +267,7 @@ contains
     end if
     
     allocate ( S_Target % D_Selected ( S_Target % nVariables ) )
+    allocate ( Scratch, source = S_Source % D_Selected )
     if ( .not. present ( iaSelectedOption ) ) then
       S_Target % D_Selected = S_Source % D_Selected
     else
@@ -273,7 +276,8 @@ contains
         iV = S_Target % iaSelected ( iS_T )
         do iS_S = 1, S_Source % nVariables
           if ( iV == S_Source % iaSelected ( iS_S ) ) then
-            S_Target % D_Selected ( iS_T ) = S_Source % D_Selected ( iS_S )
+             S_Target % D_Selected ( iS_T ) = Scratch ( iS_S )
+!            S_Target % D_Selected ( iS_T ) = S_Source % D_Selected ( iS_S )
             exit
           end if
         end do
@@ -297,8 +301,8 @@ contains
       
     do iV = 1, S % nVariables
       if ( c_associated ( S % D_Selected ( iV ) ) ) cycle
-        call AllocateDevice &
-               ( S % Value ( :, S % iaSelected ( iV ) ), S % D_Selected ( iV ) )
+      call AllocateDevice &
+             ( S % Value ( :, S % iaSelected ( iV ) ), S % D_Selected ( iV ) )
     end do
   
   end subroutine AllocateDevice_S
