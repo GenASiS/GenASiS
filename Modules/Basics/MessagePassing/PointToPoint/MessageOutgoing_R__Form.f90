@@ -3,6 +3,7 @@
 
 module MessageOutgoing_R__Form
 
+  use iso_c_binding
   use MPI
   use VariableManagement
   use Message_R__Form
@@ -23,7 +24,7 @@ contains
 
   subroutine Send ( M )
 
-    class ( MessageOutgoing_R_Form ), intent ( inout ) :: &
+    class ( MessageOutgoing_R_Form ), intent ( inout ), target :: &
       M
 
     integer ( KDI ) :: &
@@ -33,14 +34,22 @@ contains
       SendCount
     real :: &
       PlainReal
+    real ( KDR ), dimension ( : ), pointer :: &
+      Value
   
     inquire ( iolength = ThisValueSize ) M % Value ( 1 )
     inquire ( iolength = PlainValueSize ) PlainReal
     SizeRatio = max ( 1, ThisValueSize / PlainValueSize )
     SendCount = size ( M % Value ) * SizeRatio
+    
+    if ( c_associated ( M % D_Value ) ) then
+      call c_f_pointer ( M % D_Value, Value, [ size ( M % Value ) ] )
+    else
+      Value => M % Value
+    end if
 
     call MPI_ISEND &
-           ( M % Value, SendCount, MPI_REAL, M % Rank, M % Tag, &
+           ( Value, SendCount, MPI_REAL, M % Rank, M % Tag, &
              M % Communicator % Handle, M % Handle, M % Error )
     
   end subroutine Send

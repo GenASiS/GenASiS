@@ -19,6 +19,10 @@ module Message_1D__Template
       MessageTemplate => null ( )
   contains
     procedure, public, pass :: &
+      AllocateDevice_M_1D
+    generic :: &
+      AllocateDevice => AllocateDevice_M_1D
+    procedure, public, pass :: &
       WaitOne
     procedure, public, pass :: &
       WaitAny
@@ -30,6 +34,21 @@ module Message_1D__Template
   
 contains
 
+
+  subroutine AllocateDevice_M_1D ( M_1D )
+    
+    class ( Message_1D_Template ), intent ( inout ), target :: &
+      M_1D
+      
+    integer ( KDI ) :: &
+      iM    !-- iMessage
+
+    do iM = 1, M_1D % nMessages
+      call M_1D % MessageTemplate ( iM ) % AllocateDevice ( )
+    end do
+
+  end subroutine AllocateDevice_M_1D
+  
 
   subroutine WaitOne ( M_1D, Index )
 

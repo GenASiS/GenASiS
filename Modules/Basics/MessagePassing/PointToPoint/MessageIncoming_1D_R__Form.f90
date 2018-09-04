@@ -66,8 +66,8 @@ contains
     nullify ( M )
 
   end subroutine InitializeAllocate
-
-
+  
+  
   subroutine ReceiveOne ( M_1D, iM )
 
     class ( MessageIncoming_1D_R_Form ), intent ( inout ), target :: &
