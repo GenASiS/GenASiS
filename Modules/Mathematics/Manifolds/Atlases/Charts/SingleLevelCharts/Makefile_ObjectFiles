@@ -2,6 +2,7 @@ SINGLE_LEVEL_CHARTS = \
   SingleLevelCharts.o \
   Chart_SLD_CC__Form.o \
   Chart_SLD_CE__Form.o \
+  Chart_SLD_C__Template.o \
   Chart_SLD_SC__Form.o \
   Chart_SLD__Form.o \
   Chart_SLL__Form.o \

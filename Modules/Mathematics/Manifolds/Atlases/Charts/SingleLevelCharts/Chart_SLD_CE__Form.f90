@@ -8,14 +8,12 @@ module Chart_SLD_CE__Form
 
   use Basics
   use AtlasBasics
-  use Chart_SLD__Form
+  use Chart_SLD_C__Template
 
   implicit none
   private
 
-  type, public, extends ( Chart_SLD_Form ) :: Chart_SLD_CE_Form
-    integer ( KDI ) :: &
-      nCellsPolar
+  type, public, extends ( Chart_SLD_C_Template ) :: Chart_SLD_CE_Form
     real ( KDR ) :: &
       RadiusMin, &
       RadiusMax, &

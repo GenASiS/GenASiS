@@ -8,17 +8,14 @@ module Chart_SLD_CC__Form
   use Basics
   use AtlasBasics
   use ChartBasics
-  use Chart_SLD__Form
+  use Chart_SLD_C__Template
 
   implicit none
   private
 
-  type, public, extends ( Chart_SLD_Form ) :: Chart_SLD_CC_Form
+  type, public, extends ( Chart_SLD_C_Template ) :: Chart_SLD_CC_Form
     integer ( KDI ) :: &
-      nCellsPolar, &
-      nCellsCore, &
-      nPillars_2, &
-      nPillars_3
+      nCellsCore
     integer ( KDI ), dimension ( : ), allocatable :: &
       nSegmentsFrom_2, nSegmentsTo_2, &
       nSegmentsFrom_3, nSegmentsTo_3
