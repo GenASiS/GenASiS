@@ -111,6 +111,11 @@ contains
                  nWriteOption = nWriteOption, &
                  nCellsPolarOption = nCellsPolarOption )
 
+    select type ( S => FCC % Step )
+    class is ( Step_RK2_C_ASC_Form )
+      S % CoarsenSingularity => CoarsenSingularity
+    end select !-- S
+
     if ( trim ( GeometryType ) == 'NEWTONIAN' ) &
       call Show ( FCC % GravityFactor, 'GravityFactor' )
 
@@ -159,11 +164,6 @@ contains
                nCellsPolarOption = nCellsPolarOption )
 
     end if !-- Dimensionless
-
-    select type ( C => PS % Chart )
-    class is ( Chart_SLD_Form )
-      C % CoarsenSingularity => CoarsenSingularity
-    end select !-- C
 
     end select !-- PS
 
@@ -235,29 +235,19 @@ contains
   end subroutine SetCoarsening
 
 
-  subroutine CoarsenSingularity ( S, iAngular )
+  subroutine CoarsenSingularity ( S )
 
     class ( StorageForm ), intent ( inout ) :: &
       S
-    integer ( KDI ), intent ( in ) :: &
-      iAngular
 
     select type ( PS => FluidCentralCore % PositionSpace )
     class is ( Atlas_SC_CC_Form )
 
-    select case ( iAngular )
-    case ( 1 )
-      return
-    case ( 2 )
-      if ( PS % nDimensions < 2 ) &
-        return
-    case ( 3 )
-      if ( PS % nDimensions < 3 ) &
-        return
-    end select !-- iAngular
-
-    call FluidCentralCore % CoarsenSingularityTemplate ( S, iAngular )
-
+    if ( PS % nDimensions > 2 ) &
+      call FluidCentralCore % CoarsenSingularityTemplate ( S, iAngular = 3 )
+    if ( PS % nDimensions > 1 ) &
+      call FluidCentralCore % CoarsenSingularityTemplate ( S, iAngular = 2 )
+  
     end select !-- PS
 
   end subroutine CoarsenSingularity
