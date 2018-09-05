@@ -35,42 +35,42 @@ contains
     class ( Chart_SLD_CC__Form_Test_Form ), intent ( inout ), target :: &
       CFT
 
-    ! allocate &
-    !   ( CFT % AtlasHeader, &
-    !     CFT % Geometry, &
-    !     CFT % Chart, &
-    !     CFT % GIS )
-    ! associate &
-    !   ( A => CFT % AtlasHeader, &
-    !     G => CFT % Geometry, &
-    !     C => CFT % Chart, &
-    !     GIS => CFT % GIS )
+    allocate &
+      ( CFT % AtlasHeader, &
+        CFT % Geometry, &
+        CFT % Chart, &
+        CFT % GIS )
+    associate &
+      ( A => CFT % AtlasHeader, &
+        G => CFT % Geometry, &
+        C => CFT % Chart, &
+        GIS => CFT % GIS )
 
-    ! call A % Initialize &
-    !        ( 'Atlas', CommunicatorOption = PROGRAM_HEADER % Communicator )
+    call A % Initialize &
+           ( 'Atlas', CommunicatorOption = PROGRAM_HEADER % Communicator )
 
-    ! call C % Initialize ( A, iChart = 1 )
+    call C % Initialize ( A, iChart = 1 )
 
-    ! associate ( nValues => C % nProperCells + C % nGhostCells )
-    ! call G % InitializeFlat ( C, 'Geometry', nValues )
-    ! call C % AddField ( G )
-    ! C % iFieldGeometry = C % nFields
-    ! call C % SetGeometry ( G )
-    ! end associate !-- nValues
+    associate ( nValues => C % nProperCells + C % nGhostCells )
+    call G % InitializeFlat ( C, 'Geometry', nValues )
+    call C % AddField ( G )
+    C % iFieldGeometry = C % nFields
+    call C % SetGeometry ( G )
+    end associate !-- nValues
 
-    ! call A % Show ( )
-    ! call C % Show ( )
-    ! call C % SetCoarsening ( )
+    call A % Show ( )
+    call C % Show ( )
+    call C % SetCoarsening ( )
 
-    ! call GIS % Initialize &
-    !        ( PROGRAM_HEADER % Name, CommunicatorOption = A % Communicator )
-    ! call C % OpenStream ( GIS, '1', iStream = 1 )
+    call GIS % Initialize &
+           ( PROGRAM_HEADER % Name, CommunicatorOption = A % Communicator )
+    call C % OpenStream ( GIS, '1', iStream = 1 )
 
-    ! call GIS % Open ( GIS % ACCESS_CREATE )
-    ! call C % Write ( iStream = 1 )
-    ! call GIS % Close ( )
+    call GIS % Open ( GIS % ACCESS_CREATE )
+    call C % Write ( iStream = 1 )
+    call GIS % Close ( )
 
-    ! end associate !-- A, etc.
+    end associate !-- A, etc.
 
   end subroutine Initialize
 
@@ -80,10 +80,10 @@ contains
     type ( Chart_SLD_CC__Form_Test_Form ), intent ( inout ) :: &
       CFT
 
-    ! deallocate ( CFT % GIS )
-    ! deallocate ( CFT % Chart )
-    ! deallocate ( CFT % Geometry )
-    ! deallocate ( CFT % AtlasHeader )
+    deallocate ( CFT % GIS )
+    deallocate ( CFT % Chart )
+    deallocate ( CFT % Geometry )
+    deallocate ( CFT % AtlasHeader )
 
   end subroutine Finalize
 

@@ -61,6 +61,11 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       nCellsPolarOption
 
+    C % RadiusMax = 10.0_KDR
+    if ( present ( RadiusMaxOption ) ) &
+      C % RadiusMax = RadiusMaxOption
+    call PROGRAM_HEADER % GetParameter ( C % RadiusMax, 'RadiusMax' )
+
     C % RadiusCore = C % RadiusMax / 8.0_KDR
     if ( present ( RadiusCoreOption ) ) &
       C % RadiusCore = RadiusCoreOption

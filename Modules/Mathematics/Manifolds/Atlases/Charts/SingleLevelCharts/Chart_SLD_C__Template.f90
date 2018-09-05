@@ -86,11 +86,6 @@ contains
     IsPeriodic = .false.
     IsPeriodic ( 3 ) = .true.
 
-    C % RadiusMax = 10.0_KDR
-    if ( present ( RadiusMaxOption ) ) &
-      C % RadiusMax = RadiusMaxOption
-    call PROGRAM_HEADER % GetParameter ( C % RadiusMax, 'RadiusMax' )
-
     associate ( Pi => CONSTANT % PI )
     MinCoordinate = [ RadiusMin,     0.0_KDR,      0.0_KDR ]
     MaxCoordinate = [ C % RadiusMax,      Pi, 2.0_KDR * Pi ]
