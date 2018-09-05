@@ -93,9 +93,10 @@ contains
 
     Source => Source_ASC % Storage ( )
 
-    associate ( D => Source % Value ( :, iVariable ) )
+    associate ( D => Source % Value ( :, iVariable ), &
+        FourPiG   =>  4 * CONSTANT % PI * CONSTANT % GRAVITATIONAL )
 
-      D = Density &
+      D = Density * FourPiG &
           / ( ( R / rr ) ** alpha &
               * ( 1.0_KDR + ( R / rr ) ) ** ( beta - alpha ) )
 
@@ -107,18 +108,22 @@ contains
     Reference => Reference_ASC % Storage ( )
 
     associate &
-      ( Phi  =>  Reference % Value ( :, iVariable ) )
+      ( Phi  =>  Reference % Value ( :, iVariable ), &
+        FourPiG   =>  4 * CONSTANT % PI * CONSTANT % GRAVITATIONAL )
 
     if ( beta == 4.0_KDR ) then
       if ( alpha == 1.0_KDR ) then
-        Phi = - Density * rr ** 2 * 1.0_KDR / ( 2 * ( 1 + R / rr ) )
+        Phi = - FourPiG * Density * rr ** 2 &
+                / ( 2 * ( 1 + R / rr ) )
       else if ( alpha == 2.0_KDR ) then
-        Phi = - Density * rr ** 2 * log ( 1 + rr / max ( R, tiny ( 0.0_KDR ) ) )
+        Phi = - FourPiG * Density * rr ** 2 &
+                  * log ( 1 + rr / max ( R, tiny ( 0.0_KDR ) ) )
       else
         call Show ( '**** Analytic Solution Not Implemented ****' )
       end if
     else if ( beta == 3.0_KDR ) then
-      Phi = - Density * rr ** 2 * log ( 1 + R / rr ) * rr / max ( R, tiny ( 0.0_KDR ) )
+      Phi = - FourPiG * Density * rr ** 2 * log ( 1 + R / rr ) * rr &
+                / max ( R, tiny ( 0.0_KDR ) )
     else
       call Show ( '**** Analytic Solution Not Implemented ****' )
     end if

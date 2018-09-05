@@ -236,9 +236,10 @@ contains
 
     Source => Source_ASC % Storage ( )
 
-    associate ( D => Source % Value ( :, iVariable ) )
+    associate ( D => Source % Value ( :, iVariable ), &
+                FourPi => 4 * CONSTANT % PI )
 
-    D = Density * BVF
+    D = Density * BVF * FourPi
 
     !-- Reference
 
@@ -269,7 +270,7 @@ contains
         Pi   =>  CONSTANT % PI )
 
       where ( rho_sq / a_1 ** 2 + Z_sq / a_3 ** 2 <= 1.0_KDR )
-        Phi  =   - Density / 4.0_KDR &
+        Phi  =   - Density * Pi &
                      * ( C_I * a_1 ** 2  - C_A * rho_sq - C_B * Z_sq )
       end where
 
@@ -302,7 +303,7 @@ contains
     end if
 
       where (  rho_sq / a_1 ** 2 + Z_sq / a_3 ** 2 > 1.0_KDR )
-        Phi  = - Density / 4.0_KDR * a_1 ** 2 * a_3 &
+        Phi  = - Density * Pi * a_1 ** 2 * a_3 &
                * ( ( 1.0_KDR + rho_sq / ( 2 * ( a_3 ** 2 - a_1 ** 2 ) ) &
                    - Z_sq / ( a_3 ** 2 - a_1 ** 2 ) ) * C_I_vec &
                - rho_sq * sqrt ( a_3 ** 2 + l ) &

@@ -114,10 +114,10 @@ contains
     Reference => Reference_ASC % Storage ( )
 
     associate &
-      ( Phi  =>  Reference % Value ( :, iVariable ), &
-        Pi   =>  CONSTANT % PI )
+      ( Phi  =>  Reference % Value ( :, iVariable ) )
 
-    Phi = v0 ** 2 * log ( rho_c ** 2 + rho_sq + Z_sq / ( q_phi ** 2 ) ) / 2
+    Phi = v0 ** 2 &
+            * log ( rho_c ** 2 + rho_sq + Z_sq / ( q_phi ** 2 ) ) / 2
 
     end associate !-- Phi, etc
     end associate !-- R_In, etc.

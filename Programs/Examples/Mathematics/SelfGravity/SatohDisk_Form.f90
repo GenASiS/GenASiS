@@ -125,10 +125,9 @@ contains
     Reference => Reference_ASC % Storage ( )
 
     associate &
-      ( Phi  =>  Reference % Value ( :, iVariable ), &
-        Pi   =>  CONSTANT % PI )
+      ( Phi  =>  Reference % Value ( :, iVariable ) )
 
-    Phi = - M  / S
+    Phi = - M / S
 
     end associate !-- Phi, etc
     end associate !-- R_In, etc.

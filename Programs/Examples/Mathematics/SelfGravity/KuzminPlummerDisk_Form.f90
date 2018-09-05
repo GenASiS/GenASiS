@@ -132,10 +132,9 @@ contains
 
     associate &
       ( Phi  =>  Reference % Value ( :, iVariable ), &
-        Pi   =>  CONSTANT % PI, &
-        G_C  =>  1.0_KDR  ) !CONSTANT % GRAVITATIONAL )
-
-    Phi = - G_C * M  / sqrt ( rho_sq + ( C_a + sqrt ( Z_sq + C_b ** 2 ) ) ** 2 )
+        G_C  =>  1.0_KDR  ) 
+    Phi = - G_C * M & 
+            / sqrt ( rho_sq + ( C_a + sqrt ( Z_sq + C_b ** 2 ) ) ** 2 )
 
     end associate !-- Phi, etc
     end associate !-- R_In, etc.
