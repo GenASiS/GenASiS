@@ -15,9 +15,7 @@ module Chart_SLD_CE__Form
 
   type, public, extends ( Chart_SLD_C_Template ) :: Chart_SLD_CE_Form
     real ( KDR ) :: &
-      RadiusMin, &
-      RadiusMax, &
-      RadialRatio  !-- nCellsRadial / nCellsPolar
+      RadiusExcision
   contains
     procedure, private, pass :: &
       Initialize_CE
@@ -32,7 +30,7 @@ contains
 
   subroutine Initialize_CE &
                ( C, Atlas, iChart, CoordinateUnitOption, RadiusMaxOption, &
-                 RadiusMinOption, RadialRatioOption, nGhostLayersOption, &
+                 RadiusExcisionOption, RadialRatioOption, nGhostLayersOption, &
                  nCellsPolarOption )
 
     class ( Chart_SLD_CE_Form ), intent ( inout ) :: &
@@ -45,90 +43,28 @@ contains
       CoordinateUnitOption
     real ( KDR ), intent ( in ), optional :: &
       RadiusMaxOption, &
-      RadiusMinOption, &
+      RadiusExcisionOption, &
       RadialRatioOption
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       nGhostLayersOption
     integer ( KDI ), intent ( in ), optional :: &
       nCellsPolarOption
 
-    integer ( KDI ) :: &
-      nCellsRadial, &
-      nCellsPolar, &
-      nCellsAzimuthal
-    integer ( KDI ), dimension ( 3 ) :: &
-      nCells
-    real ( KDR ), dimension ( 3 ) :: &
-      MinCoordinate, &
-      MaxCoordinate, &
-      Ratio, &
-      Scale
-    logical ( KDL ), dimension ( 3 ) :: &
-      IsPeriodic
-    character ( LDL ) :: &
-      CoordinateSystem
-    character ( LDL ), dimension ( 3 ) :: &
-      Spacing
+    C % RadiusExcision = 1.0_KDR
+    if ( present ( RadiusExcisionOption ) ) &
+      C % RadiusExcision = RadiusExcisionOption
+    call PROGRAM_HEADER % GetParameter ( C % RadiusExcision, 'RadiusExcision' )
 
-    CoordinateSystem = 'SPHERICAL'
-
-    Spacing        =  'EQUAL'
-    Spacing ( 1 )  =  'PROPORTIONAL'
-    
-    IsPeriodic = .false.
-    IsPeriodic ( 3 ) = .true.
-
-    C % RadiusMin = 1.0_KDR
-    if ( present ( RadiusMinOption ) ) &
-      C % RadiusMin = RadiusMinOption
-    call PROGRAM_HEADER % GetParameter ( C % RadiusMin, 'RadiusMin' )
-
-    C % RadiusMax = 10.0_KDR
-    if ( present ( RadiusMaxOption ) ) &
-      C % RadiusMax = RadiusMaxOption
-    call PROGRAM_HEADER % GetParameter ( C % RadiusMax, 'RadiusMax' )
-
-    associate ( Pi => CONSTANT % PI )
-    MinCoordinate = [ C % RadiusMin, 0.0_KDR,      0.0_KDR ]
-    MaxCoordinate = [ C % RadiusMax,      Pi, 2.0_KDR * Pi ]
-    end associate !-- Pi
-
-    C % nCellsPolar = 32  !-- Number of "excised" cells with equal spacing
-    if ( present ( nCellsPolarOption ) ) &
-      C % nCellsPolar = nCellsPolarOption
-    call PROGRAM_HEADER % GetParameter ( C % nCellsPolar, 'nCellsPolar' )
-
-    C % RadialRatio = 1
-    if ( present ( RadialRatioOption ) ) &
-      C % RadialRatio = RadialRatioOption
-    call PROGRAM_HEADER % GetParameter ( C % RadialRatio, 'RadialRatio' )
-
-    nCellsRadial    = C % RadialRatio  *  C % nCellsPolar  !-- Aim for RadiusMax
-    nCellsPolar     = C % nCellsPolar  
-    nCellsAzimuthal = 2  *  nCellsPolar
- 
-    nCells = [ nCellsRadial, 1, 1 ]
-    if ( Atlas % nDimensions > 1 ) &
-      nCells ( 2 ) = nCellsPolar
-    if ( Atlas % nDimensions > 2 ) &
-      nCells ( 3 ) = nCellsAzimuthal
-
-    Ratio        =  0.0_KDR
-    Ratio ( 1 )  =  CONSTANT % PI / nCellsPolar  !-- dTheta
-
-    Scale        =  0.0_KDR
-    Scale ( 1 )  =  C % RadiusMin
-
-    call C % Chart_SLD_Form % Initialize &
-           ( Atlas, IsPeriodic, iChart, SpacingOption = Spacing, &
-             CoordinateSystemOption = CoordinateSystem, &
+    call C % InitializeTemplate_C &
+           ( Atlas = Atlas, &
+             RadiusMin = C % RadiusExcision, &
+             RadiusScale = C % RadiusExcision, &
+             iChart = iChart, &
              CoordinateUnitOption = CoordinateUnitOption, &
-             MinCoordinateOption = MinCoordinate, &
-             MaxCoordinateOption = MaxCoordinate, &
-             RatioOption = Ratio, &
-             ScaleOption = Scale, &
-             nCellsOption = nCells, &
-             nGhostLayersOption = nGhostLayersOption )
+             RadiusMaxOption = RadiusMaxOption, &
+             RadialRatioOption = RadialRatioOption, &
+             nGhostLayersOption = nGhostLayersOption, &
+             nCellsPolarOption = nCellsPolarOption )
 
   end subroutine Initialize_CE
 
@@ -141,9 +77,9 @@ contains
     call C % Chart_SLD_Form % Show ( )
 
     call Show ( 'Chart_SLD_CE parameters' )
-    call Show ( C % RadiusMin, C % CoordinateUnit ( 1 ), 'RadiusCore' )
+    call Show ( C % RadiusExcision, C % CoordinateUnit ( 1 ), 'RadiusCore' )
     call Show ( C % nCellsPolar, 'nCellsPolar' )
-    call Show ( CONSTANT % PI * C % RadiusMin / C % nCellsPolar, &
+    call Show ( CONSTANT % PI * C % RadiusExcision / C % nCellsPolar, &
                 C % CoordinateUnit ( 1 ), 'CellWidthMin' )
     call Show ( C % RadialRatio, 'RadialRatio' )
     call Show ( C % RadiusMax, C % CoordinateUnit ( 1 ), &
