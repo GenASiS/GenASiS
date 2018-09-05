@@ -25,9 +25,14 @@ module Chart_SLD_C__Template
       RadiusMax, &
       RadialRatio, &  !-- nCellsRadial / nCellsPolar
       MinWidth
+    type ( CommunicatorForm ), allocatable :: &
+      Communicator_2, &
+      Communicator_3
   contains
     procedure, public, pass :: &
       InitializeTemplate_C
+    procedure, public, pass :: &
+      FinalizeTemplate_C
     procedure, private, pass :: &
       SetCore
   end type Chart_SLD_C_Template
@@ -132,6 +137,28 @@ contains
              nEqualOption = nEqualOption )
 
   end subroutine InitializeTemplate_C
+
+
+  impure elemental subroutine FinalizeTemplate_C ( C )
+
+    class ( Chart_SLD_C_Template ), intent ( inout ) :: &
+      C
+
+    if ( allocated ( C % Communicator_3 ) ) &
+      deallocate ( C % Communicator_3 )
+    if ( allocated ( C % Communicator_2 ) ) &
+      deallocate ( C % Communicator_2 )
+
+    if ( allocated ( C % nSegmentsTo_3 ) ) &
+      deallocate ( C % nSegmentsTo_3 )
+    if ( allocated ( C % nSegmentsFrom_3 ) ) &
+      deallocate ( C % nSegmentsFrom_3 )
+    if ( allocated ( C % nSegmentsTo_2 ) ) &
+      deallocate ( C % nSegmentsTo_2 )
+    if ( allocated ( C % nSegmentsFrom_2 ) ) &
+      deallocate ( C % nSegmentsFrom_2 )
+
+  end subroutine FinalizeTemplate_C
 
 
   subroutine SetCore ( C )

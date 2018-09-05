@@ -18,9 +18,6 @@ module Chart_SLD_CC__Form
       nCellsCore
     real ( KDR ) :: &
       RadiusCore
-    type ( CommunicatorForm ), allocatable :: &
-      Communicator_2, &
-      Communicator_3
   contains
     procedure, private, pass :: &
       Initialize_CC
@@ -435,19 +432,7 @@ contains
     type ( Chart_SLD_CC_Form ), intent ( inout ) :: &
       C
 
-    if ( allocated ( C % Communicator_3 ) ) &
-      deallocate ( C % Communicator_3 )
-    if ( allocated ( C % Communicator_2 ) ) &
-      deallocate ( C % Communicator_2 )
-
-    if ( allocated ( C % nSegmentsTo_3 ) ) &
-      deallocate ( C % nSegmentsTo_3 )
-    if ( allocated ( C % nSegmentsFrom_3 ) ) &
-      deallocate ( C % nSegmentsFrom_3 )
-    if ( allocated ( C % nSegmentsTo_2 ) ) &
-      deallocate ( C % nSegmentsTo_2 )
-    if ( allocated ( C % nSegmentsFrom_2 ) ) &
-      deallocate ( C % nSegmentsFrom_2 )
+    call C % FinalizeTemplate_C ( )
 
   end subroutine Finalize
 

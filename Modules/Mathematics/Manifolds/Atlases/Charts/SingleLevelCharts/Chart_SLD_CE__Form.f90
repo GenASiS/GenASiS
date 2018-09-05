@@ -23,6 +23,8 @@ module Chart_SLD_CE__Form
       Initialize => Initialize_CE
     procedure, private, pass :: &
       ShowHeader
+    final :: &
+      Finalize
   end type Chart_SLD_CE_Form
 
 contains
@@ -93,6 +95,16 @@ contains
                 'RadiusMax actual' )
 
   end subroutine ShowHeader
+
+
+  impure elemental subroutine Finalize ( C )
+
+    type ( Chart_SLD_CE_Form ), intent ( inout ) :: &
+      C
+
+    call C % FinalizeTemplate_C ( )
+
+  end subroutine Finalize
 
 
 end module Chart_SLD_CE__Form
