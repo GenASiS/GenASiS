@@ -68,10 +68,11 @@ contains
       C % RadiusCore = RadiusCoreOption
     call PROGRAM_HEADER % GetParameter ( C % RadiusCore, 'RadiusCore' )
 
+    C % RadiusScale = C % RadiusCore
+
     call C % InitializeTemplate_C &
            ( Atlas = Atlas, &
              RadiusMin = 0.0_KDR, &
-             RadiusScale = C % RadiusCore, &
              iChart = iChart, &
              CoordinateUnitOption = CoordinateUnitOption, &
              RadiusMaxOption = RadiusMaxOption, &
@@ -109,18 +110,11 @@ contains
       C
 
     call C % Chart_SLD_Form % Show ( )
+    call C % ShowHeaderTemplate_C ( )
 
     call Show ( 'Chart_SLD_CC parameters' )
-    call Show ( C % nCellsPolar, 'nCellsPolar' )
-    call Show ( C % nCellsCore, 'nCellsCore' )
     call Show ( C % RadiusCore, C % CoordinateUnit ( 1 ), 'RadiusCore' )
-    call Show ( C % RadiusCore / C % nCellsCore, C % CoordinateUnit ( 1 ), &
-                'CellWidthCore' )
-    call Show ( C % RadialRatio, 'RadialRatio' )
-    call Show ( C % RadiusMax, C % CoordinateUnit ( 1 ), &
-                'RadiusMax requested' )
-    call Show ( C % MaxCoordinate ( 1 ), C % CoordinateUnit ( 1 ), &
-                'RadiusMax actual' )
+    call Show ( C % nCellsCore, 'nCellsCore' )
 
   end subroutine ShowHeader
 
@@ -154,8 +148,7 @@ contains
 
     associate &
       (   nB => C % nBricks, &
-         nCB => C % nCellsBrick, &
-        R_MW => C % RadiusCore )
+         nCB => C % nCellsBrick )
              
     !-- Polar coarsening
 
@@ -171,11 +164,6 @@ contains
                   +  C % WidthRight ( 2 ) % Value ( 1 ), &
              R => G % Value ( :, G % CENTER_U ( 1 ) ), &
         Crsn_2 => G % Value ( :, G % COARSENING ( 2 ) ) )
-
-    !-- Determin MinWidth
-    C % MinWidth  =  R_MW * dTheta
-    call Show ( C % MinWidth, C % CoordinateUnit ( 1 ), 'MinWidth', &
-                C % IGNORABILITY )
 
     !-- Set coarsening factor
     do iV = 1, size ( R )

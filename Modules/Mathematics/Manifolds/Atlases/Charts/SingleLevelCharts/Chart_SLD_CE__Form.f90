@@ -62,10 +62,11 @@ contains
       C % RadiusExcision = RadiusExcisionOption
     call PROGRAM_HEADER % GetParameter ( C % RadiusExcision, 'RadiusExcision' )
 
+    C % RadiusScale = C % RadiusExcision
+
     call C % InitializeTemplate_C &
            ( Atlas = Atlas, &
              RadiusMin = C % RadiusExcision, &
-             RadiusScale = C % RadiusExcision, &
              iChart = iChart, &
              CoordinateUnitOption = CoordinateUnitOption, &
              RadiusMaxOption = RadiusMaxOption, &
@@ -82,17 +83,10 @@ contains
       C
 
     call C % Chart_SLD_Form % Show ( )
+    call C % ShowHeaderTemplate_C ( )
 
     call Show ( 'Chart_SLD_CE parameters' )
-    call Show ( C % RadiusExcision, C % CoordinateUnit ( 1 ), 'RadiusCore' )
-    call Show ( C % nCellsPolar, 'nCellsPolar' )
-    call Show ( CONSTANT % PI * C % RadiusExcision / C % nCellsPolar, &
-                C % CoordinateUnit ( 1 ), 'CellWidthMin' )
-    call Show ( C % RadialRatio, 'RadialRatio' )
-    call Show ( C % RadiusMax, C % CoordinateUnit ( 1 ), &
-                'RadiusMax requested' )
-    call Show ( C % MaxCoordinate ( 1 ), C % CoordinateUnit ( 1 ), &
-                'RadiusMax actual' )
+    call Show ( C % RadiusExcision, C % CoordinateUnit ( 1 ), 'RadiusExcision' )
 
   end subroutine ShowHeader
 

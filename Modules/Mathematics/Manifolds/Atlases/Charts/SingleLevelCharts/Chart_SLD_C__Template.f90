@@ -23,6 +23,7 @@ module Chart_SLD_C__Template
       nSegmentsFrom_3, nSegmentsTo_3
     real ( KDR ) :: &
       RadiusMax, &
+      RadiusScale, &
       RadialRatio, &  !-- nCellsRadial / nCellsPolar
       MinWidth
     type ( CommunicatorForm ), allocatable :: &
@@ -31,6 +32,8 @@ module Chart_SLD_C__Template
   contains
     procedure, public, pass :: &
       InitializeTemplate_C
+    procedure, public, pass :: &
+      ShowHeaderTemplate_C
     procedure, public, pass :: &
       FinalizeTemplate_C
     procedure, private, pass :: &
@@ -41,17 +44,16 @@ contains
 
 
   subroutine InitializeTemplate_C &
-               ( C, Atlas, RadiusMin, RadiusScale, iChart, &
-                 CoordinateUnitOption, RadiusMaxOption, RadialRatioOption, &
-                 nGhostLayersOption, nCellsPolarOption, nEqualOption )
+               ( C, Atlas, RadiusMin, iChart, CoordinateUnitOption, &
+                 RadiusMaxOption, RadialRatioOption, nGhostLayersOption, &
+                 nCellsPolarOption, nEqualOption )
 
     class ( Chart_SLD_C_Template ), intent ( inout ) :: &
       C
     class ( AtlasHeaderForm ), intent ( in ), target :: &
       Atlas
     real ( KDR ), intent ( in ) :: &
-      RadiusMin, &
-      RadiusScale
+      RadiusMin
     integer ( KDI ), intent ( in ) :: &
       iChart
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
@@ -112,6 +114,8 @@ contains
     nCellsPolar      =  C % nCellsPolar
     nCellsAzimuthal  =  2 * nCellsPolar
  
+    C % MinWidth  =  C % RadiusScale  *  CONSTANT % PI / nCellsPolar
+
     nCells = [ nCellsRadial, 1, 1 ]
     if ( Atlas % nDimensions > 1 ) &
       nCells ( 2 ) = nCellsPolar
@@ -122,7 +126,7 @@ contains
     Ratio ( 1 )  =  CONSTANT % PI / nCellsPolar  !-- dTheta
 
     Scale        =  0.0_KDR
-    Scale ( 1 )  =  RadiusScale
+    Scale ( 1 )  =  C % RadiusScale
 
     call C % Chart_SLD_Form % Initialize &
            ( Atlas, IsPeriodic, iChart, SpacingOption = Spacing, &
@@ -137,6 +141,26 @@ contains
              nEqualOption = nEqualOption )
 
   end subroutine InitializeTemplate_C
+
+
+  subroutine ShowHeaderTemplate_C ( C )
+
+    class ( Chart_SLD_C_Template ), intent ( in ) :: &
+      C
+
+    call Show ( 'Chart_SLD_C parameters' )
+    call Show ( C % nCellsPolar, 'nCellsPolar', C % IGNORABILITY )
+    call Show ( C % RadiusScale, C % CoordinateUnit ( 1 ), 'RadiusScale', &
+                C % IGNORABILITY )
+    call Show ( C % MinWidth, C % CoordinateUnit ( 1 ), 'MinWidth', &
+                C % IGNORABILITY )
+    call Show ( C % RadialRatio, 'RadialRatio' )
+    call Show ( C % RadiusMax, C % CoordinateUnit ( 1 ), &
+                'RadiusMax requested', C % IGNORABILITY )
+    call Show ( C % MaxCoordinate ( 1 ), C % CoordinateUnit ( 1 ), &
+                'RadiusMax actual', C % IGNORABILITY )
+
+  end subroutine ShowHeaderTemplate_C
 
 
   impure elemental subroutine FinalizeTemplate_C ( C )
