@@ -82,7 +82,7 @@ module Step_RK_C_ASC__Template
       type ( ApplyRelaxation_C_Pointer ) :: &
         ApplyRelaxation
       procedure ( CS ), pointer, nopass :: &
-        CoarsenSingularity => null ( )
+        CoarsenSingularities => null ( )
   contains
     procedure, public, pass :: &
       InitializeTemplate_C_ASC
@@ -1069,8 +1069,8 @@ contains
       if ( associated ( TimerRelaxation ) ) call TimerRelaxation % Stop ( )
     end if
 
-    if ( associated ( S % CoarsenSingularity ) ) &
-      call S % CoarsenSingularity ( K )
+    if ( associated ( S % CoarsenSingularities ) ) &
+      call S % CoarsenSingularities ( K )
 
     GhostExchange = .true.
     if ( present ( GhostExchangeOption ) ) &

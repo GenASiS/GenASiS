@@ -24,7 +24,7 @@ module FluidCentralCore_Form
     procedure, private, pass :: &
       SetCoarsening
     procedure, public, nopass :: &
-      CoarsenSingularity
+      CoarsenSingularities
     procedure, private, pass :: &
       SetWriteTimeInterval
     procedure, public, pass :: &
@@ -113,7 +113,7 @@ contains
 
     select type ( S => FCC % Step )
     class is ( Step_RK2_C_ASC_Form )
-      S % CoarsenSingularity => CoarsenSingularity
+      S % CoarsenSingularities => CoarsenSingularities
     end select !-- S
 
     if ( trim ( GeometryType ) == 'NEWTONIAN' ) &
@@ -123,7 +123,7 @@ contains
 
 
   subroutine InitializePositionSpace &
-               ( FC, RadiusMaxOption, RadiusCoreOption, RadiusMinOption, &
+               ( FC, RadiusMaxOption, RadiusCoreOption, RadiusExcisionOption, &
                  RadialRatioOption, nCellsPolarOption )
 
     class ( FluidCentralCoreForm ), intent ( inout ) :: &
@@ -131,7 +131,7 @@ contains
     real ( KDR ), intent ( in ), optional :: &
       RadiusMaxOption, &
       RadiusCoreOption, &
-      RadiusMinOption, &
+      RadiusExcisionOption, &
       RadialRatioOption
     integer ( KDI ), intent ( in ), optional :: &
       nCellsPolarOption
@@ -235,7 +235,7 @@ contains
   end subroutine SetCoarsening
 
 
-  subroutine CoarsenSingularity ( S )
+  subroutine CoarsenSingularities ( S )
 
     class ( StorageForm ), intent ( inout ) :: &
       S
@@ -250,7 +250,7 @@ contains
   
     end select !-- PS
 
-  end subroutine CoarsenSingularity
+  end subroutine CoarsenSingularities
 
 
   subroutine SetWriteTimeInterval ( I )
