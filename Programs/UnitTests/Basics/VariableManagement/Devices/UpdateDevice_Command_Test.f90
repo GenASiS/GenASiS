@@ -4,6 +4,7 @@ program UpdateDevice_Command_Test
   use omp_lib
   use Specifiers
   use AllocateDevice_Command
+  use DeallocateDevice_Command
   use UpdateDevice_Command
   use UpdateHost_Command
   
@@ -50,7 +51,6 @@ program UpdateDevice_Command_Test
   Value_1D_Save = Value_1D
   Value_2D_Save = Value_2D
   
-  
   !-- Testing sync update
   StartTime = OMP_GET_WTIME ( )
   call UpdateDevice ( Value_1D, dValue_1D )
@@ -71,6 +71,9 @@ program UpdateDevice_Command_Test
   print*, 'Error 2D', & 
     sum ( abs ( Value_2D_Save - Value_2D ) ) &
       / sum ( abs ( Value_2D_Save ) )
+      
+  call DeallocateDevice ( dValue_2D )
+  call DeallocateDevice ( dValue_1D )
       
   
 end program UpdateDevice_Command_Test

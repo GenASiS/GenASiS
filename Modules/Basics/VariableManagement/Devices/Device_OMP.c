@@ -70,4 +70,40 @@ int DisassociateTarget_OMP ( void * Host )
   //printf("retval disassoc : %d\n", retval);
   return retval;
   }
+
+
+int HostToDeviceCopyDouble_OMP ( void * Host, void * Device, int nValues, 
+                             int oHostValue, int oDeviceValue )
+  {
+  int iHost, iDevice, retval;
+  size_t Length, oHV, oDV;
   
+  iDevice = omp_get_default_device ( );
+  iHost   = omp_get_initial_device ( );
+  Length  = sizeof ( double ) * nValues;
+  oHV     = sizeof ( double ) * oHostValue;
+  oDV     = sizeof ( double ) * oDeviceValue;
+  
+  retval = omp_target_memcpy 
+             ( Device, Host, Length, oDV, oHV, iDevice, iHost ); 
+             
+  return retval;
+  }
+
+int DeviceToHostCopyDouble_OMP ( void * Device, void * Host, int nValues, 
+                             int oDeviceValue, int oHostValue )
+  {
+  int iHost, iDevice, retval;
+  size_t Length, oHV, oDV;
+  
+  iDevice = omp_get_default_device ( );
+  iHost   = omp_get_initial_device ( );
+  Length  = sizeof ( double ) * nValues;
+  oHV     = sizeof ( double ) * oHostValue;
+  oDV     = sizeof ( double ) * oDeviceValue;
+  
+  retval = omp_target_memcpy 
+             ( Host, Device, Length, oHV, oDV, iHost, iDevice ); 
+  
+  return retval;
+  }

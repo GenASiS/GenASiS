@@ -88,6 +88,7 @@ DisassociateHost_Command_Test.o: \
 
 UpdateDevice_Command_Test.o: \
   AllocateDevice_Command.o \
+  DeallocateDevice_Command.o \
   UpdateDevice_Command.o \
   UpdateHost_Command.o \
   UpdateDevice_Command_Test.f90
