@@ -23,6 +23,8 @@ module Chart_SLD_CE__Form
       Initialize => Initialize_CE
     procedure, private, pass :: &
       ShowHeader
+    procedure, public, pass :: &
+      SetCoarsening
     final :: &
       Finalize
   end type Chart_SLD_CE_Form
@@ -89,6 +91,16 @@ contains
     call Show ( C % RadiusExcision, C % CoordinateUnit ( 1 ), 'RadiusExcision' )
 
   end subroutine ShowHeader
+
+
+  subroutine SetCoarsening ( C )
+
+    class ( Chart_SLD_CE_Form ), intent ( inout ) :: &
+      C
+
+    call C % SetCoarseningAzimuthal ( )
+
+  end subroutine SetCoarsening
 
 
   impure elemental subroutine Finalize ( C )

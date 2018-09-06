@@ -60,6 +60,7 @@ contains
 
     call A % Show ( )
     call C % Show ( )
+    call C % SetCoarsening ( )
 
     call GIS % Initialize &
            ( PROGRAM_HEADER % Name, CommunicatorOption = A % Communicator )
