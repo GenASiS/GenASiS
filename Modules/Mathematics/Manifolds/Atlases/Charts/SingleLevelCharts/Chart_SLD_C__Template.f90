@@ -156,6 +156,22 @@ contains
              nGhostLayersOption = nGhostLayersOption, &
              nEqualOption = nEqualOption )
 
+    if ( C % nCells ( 2 ) /= C % nCellsPolar ) then
+      call Show ( 'Choose nBricks such that nCells ( 2 ) need not be', &
+                  CONSOLE % ERROR )
+      call Show ( 'changed from requested nCellsPolar', &
+                  CONSOLE % ERROR )
+      call Show ( C % nCellsPolar, 'nCellsPolar', CONSOLE % ERROR )
+      call Show ( C % nBricks ( 2 ), 'nBricks ( 2 )', CONSOLE % ERROR )
+      call Show ( mod ( C % nCellsPolar, C % nBricks ( 2 ) ), &
+                  'mod ( nCellsPolar, nBricks ( 2 ) )', CONSOLE % ERROR )
+      call Show ( C % nCells ( 2 ), 'nCells ( 2 )', CONSOLE % ERROR )
+      call Show ( 'InitializeTemplate_C', 'subroutine', CONSOLE % ERROR )
+      call Show ( 'Chart_SLD_C__Template', 'module', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Communicator % Synchronize ( )
+      call PROGRAM_HEADER % Abort ( )
+    end if
+      
   end subroutine InitializeTemplate_C
 
 
