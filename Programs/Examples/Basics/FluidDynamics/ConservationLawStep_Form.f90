@@ -301,7 +301,7 @@ contains
     call T_A % Stop ( )
     
     call T_DT_H % Start ( )
-    call Current % UpdateHost ( ) 
+    call Primitive % UpdateHost ( ) 
     call T_DT_H % Stop ( )
     
     call T_C % Start ( )
@@ -310,7 +310,7 @@ contains
     call T_C % Stop ( )
     
     call T_DT_D % Start ( )
-    call Current % UpdateDevice ( )
+    call Primitive % UpdateDevice ( )
     call T_DT_D % Stop ( )
     
     !-- Substep 2
@@ -343,7 +343,7 @@ contains
     call T_A % Stop ( )
     
     call T_DT_H % Start ( )
-    call Current % UpdateHost ( ) 
+    call Primitive % UpdateHost ( ) 
     call T_DT_H % Stop ( )
     
     call T_C % Start ( )

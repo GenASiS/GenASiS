@@ -187,8 +187,8 @@ contains
     call DM % IncomingNext % Initialize &
            ( DM % Communicator, spread ( TAG_IN_NEXT, 1, PHN % nSources ), &
              PHN % Source, PHN % nChunksFrom * S_1D % nVariablesTotal )
-    call DM % IncomingPrevious % AllocateDevice ( )
-    call DM % IncomingNext % AllocateDevice ( )
+    !call DM % IncomingPrevious % AllocateDevice ( )
+    !call DM % IncomingNext % AllocateDevice ( )
     
     call DM % OutgoingPrevious % Initialize &
            ( DM % Communicator, spread ( TAG_OUT_PREV, 1, PHP % nTargets ), &
@@ -196,8 +196,8 @@ contains
     call DM % OutgoingNext % Initialize &
            ( DM % Communicator, spread ( TAG_OUT_NEXT, 1, PHN % nTargets ), &
              PHN % Target, PHN % nChunksTo * S_1D % nVariablesTotal )
-    call DM % OutgoingPrevious % AllocateDevice ( )
-    call DM % OutgoingNext % AllocateDevice ( )
+    !call DM % OutgoingPrevious % AllocateDevice ( )
+    !call DM % OutgoingNext % AllocateDevice ( )
     
     end associate
   
