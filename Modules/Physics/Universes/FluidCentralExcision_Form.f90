@@ -22,7 +22,7 @@ module FluidCentralExcision_Form
     procedure, private, pass :: &
       SetCoarsening
     procedure, public, nopass :: &
-      CoarsenSingularity
+      CoarsenSingularities
   end type FluidCentralExcisionForm
 
 contains
@@ -90,7 +90,7 @@ contains
 
 
   subroutine InitializePositionSpace &
-               ( FC, RadiusMaxOption, RadiusCoreOption, RadiusMinOption, &
+               ( FC, RadiusMaxOption, RadiusCoreOption, RadiusExcisionOption, &
                  RadialRatioOption, nCellsPolarOption )
 
     class ( FluidCentralExcisionForm ), intent ( inout ) :: &
@@ -98,14 +98,14 @@ contains
     real ( KDR ), intent ( in ), optional :: &
       RadiusMaxOption, &
       RadiusCoreOption, &
-      RadiusMinOption, &
+      RadiusExcisionOption, &
       RadialRatioOption
     integer ( KDI ), intent ( in ), optional :: &
       nCellsPolarOption
 
     real ( KDR ) :: &
       RadiusMax, &
-      RadiusMin, &
+      RadiusExcision, &
       RadialRatio
 
     allocate ( Atlas_SC_CE_Form :: FC % PositionSpace )
@@ -117,25 +117,25 @@ contains
 
       call PS % CreateChart_CE &
              ( RadiusMaxOption = RadiusMaxOption, &
-               RadiusMinOption = RadiusMinOption, &
+               RadiusExcisionOption = RadiusExcisionOption, &
                RadialRatioOption = RadialRatioOption )
 
     else
 
-      RadiusMax    =  1.0e3_KDR  *  UNIT % KILOMETER
-      RadiusMin    =   40.0_KDR  *  UNIT % KILOMETER
-      RadialRatio  =  1.0_KDR
+      RadiusMax       =  1.0e3_KDR  *  UNIT % KILOMETER
+      RadiusExcision  =   40.0_KDR  *  UNIT % KILOMETER
+      RadialRatio     =  1.0_KDR
       if ( present ( RadiusMaxOption ) ) &
         RadiusMax = RadiusMaxOption
-      if ( present ( RadiusMinOption ) ) &
-        RadiusMin = RadiusMinOption
+      if ( present ( RadiusExcisionOption ) ) &
+        RadiusExcision = RadiusExcisionOption
       if ( present ( RadialRatioOption ) ) &
         RadialRatio = RadialRatioOption
 
       call PS % CreateChart_CE &
              ( CoordinateUnitOption = FC % CoordinateUnit, &
                RadiusMaxOption = RadiusMax, &
-               RadiusMinOption = RadiusMin, &
+               RadiusExcisionOption = RadiusExcision, &
                RadialRatioOption = RadialRatio, &
                nCellsPolarOption = nCellsPolarOption )
 
@@ -191,14 +191,14 @@ contains
   end subroutine SetCoarsening
 
 
-  subroutine CoarsenSingularity ( S )
+  subroutine CoarsenSingularities ( S )
 
     class ( StorageForm ), intent ( inout ) :: &
       S
 
     !-- FIXME: Fill in along the lines of FluidCentralCore_Form
 
-  end subroutine CoarsenSingularity
+  end subroutine CoarsenSingularities
 
 
 end module FluidCentralExcision_Form

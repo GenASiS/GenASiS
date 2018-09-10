@@ -23,10 +23,7 @@ program FluidCentralCore_Form_Test
   call SetFluid ( FCC )
   call FCC % Write ( )
 
-  call CoarsenFluid ( FCC, 2 )
-  call FCC % Write ( )
-
-  call CoarsenFluid ( FCC, 3 )
+  call CoarsenFluid ( FCC )
   call FCC % Write ( )
 
   deallocate ( FCC )
@@ -111,7 +108,7 @@ subroutine SetFluid ( FCC )
 end subroutine SetFluid
 
 
-subroutine CoarsenFluid ( FCC, iAngular )
+subroutine CoarsenFluid ( FCC )
 
   use Basics
   use StressEnergies
@@ -119,8 +116,6 @@ subroutine CoarsenFluid ( FCC, iAngular )
 
   type ( FluidCentralCoreForm ), intent ( inout ) :: &
     FCC
-  integer ( KDI ), intent ( in ) :: &
-    iAngular
 
   type ( StorageForm ) :: &
     S
@@ -132,7 +127,7 @@ subroutine CoarsenFluid ( FCC, iAngular )
   F => FA % Fluid_D ( )
 
   call S % Initialize ( F, iaSelectedOption = F % iaConserved )
-  call FCC % CoarsenSingularities ( S, iAngular )
+  call FCC % CoarsenSingularities ( S )
 
   end select !-- FA
   nullify ( F )

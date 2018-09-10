@@ -48,7 +48,7 @@ module FluidCentral_Template
     procedure, public, pass :: &
       CoarsenSingularityTemplate
     procedure ( CS ), public, nopass, deferred :: &
-      CoarsenSingularity
+      CoarsenSingularities
     procedure, public, pass :: &  !-- 2
       OpenGridImageStreams
     procedure, public, pass :: &  !-- 2
@@ -59,8 +59,9 @@ module FluidCentral_Template
 
   abstract interface
 
-    subroutine IPS ( FC, RadiusMaxOption, RadiusCoreOption, RadiusMinOption, &
-                     RadialRatioOption, nCellsPolarOption )
+    subroutine IPS ( FC, RadiusMaxOption, RadiusCoreOption, &
+                     RadiusExcisionOption, RadialRatioOption, &
+                     nCellsPolarOption )
       use Basics
       import FluidCentralTemplate
       class ( FluidCentralTemplate ), intent ( inout ) :: &
@@ -68,7 +69,7 @@ module FluidCentral_Template
       real ( KDR ), intent ( in ), optional :: &
         RadiusMaxOption, &
         RadiusCoreOption, &
-        RadiusMinOption, &
+        RadiusExcisionOption, &
         RadialRatioOption
       integer ( KDI ), intent ( in ), optional :: &
         nCellsPolarOption

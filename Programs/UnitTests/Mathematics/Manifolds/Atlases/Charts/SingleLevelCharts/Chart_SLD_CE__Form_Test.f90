@@ -60,10 +60,11 @@ contains
 
     call A % Show ( )
     call C % Show ( )
+    call C % SetCoarsening ( )
 
     call GIS % Initialize &
            ( PROGRAM_HEADER % Name, CommunicatorOption = A % Communicator )
-    call C % OpenStream ( GIS, '1', iStream = 1 )
+    call C % OpenStream ( GIS, '1', iStream = 1, VerboseOption = .true. )
 
     call GIS % Open ( GIS % ACCESS_CREATE )
     call C % Write ( iStream = 1 )
