@@ -156,7 +156,7 @@ contains
              nGhostLayersOption = nGhostLayersOption, &
              nEqualOption = nEqualOption )
 
-    if ( C % nCells ( 2 ) /= C % nCellsPolar ) then
+    if ( C % nDimensions > 1 .and. C % nCells ( 2 ) /= C % nCellsPolar ) then
       call Show ( 'Choose nBricks such that nCells ( 2 ) need not be', &
                   CONSOLE % ERROR )
       call Show ( 'changed from requested nCellsPolar', &
