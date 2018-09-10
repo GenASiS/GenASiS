@@ -213,7 +213,8 @@ contains
     integer ( KDI ) :: &
       iV
     real ( KDR ) :: &
-      T
+      T, &
+      R_TM
     real ( KDR ), dimension ( : ), allocatable :: &
       R, &
       Rho, &
@@ -227,7 +228,7 @@ contains
 
     call PrepareInterpolation &
            ( SI, YL % AnalyticProfile, YL % Kappa, &
-             YL % AdiabaticIndex, T)
+             YL % AdiabaticIndex, T )
 
     select type ( PS => YL % Integrator % PositionSpace )
     class is ( Atlas_SC_Form )
@@ -252,7 +253,8 @@ contains
     V_3 = 0.0_KDR
 
       do iV = 1, size ( R )
-        if ( R ( iV ) < 0.0_KDR ) cycle
+        if ( R ( iV ) < 0.0_KDR ) &
+             cycle
         call SI ( iRHO_SI ) &
                 % Evaluate ( R ( iV ), Rho ( iV ) )
         call SI ( iV_SI ) &
@@ -308,7 +310,7 @@ contains
   end subroutine ReadTable
 
 
-  subroutine PrepareInterpolation ( SI, AP, Kappa, Gamma, T)
+  subroutine PrepareInterpolation ( SI, AP, Kappa, Gamma, T )
 
     type ( SplineInterpolationForm ), dimension ( 2 ), intent ( inout ) :: &
       SI
@@ -317,8 +319,7 @@ contains
     real ( KDR ), intent ( in ) :: &
       Kappa, &
       Gamma, &
-      T!, &
-     ! R_Max
+      T
 
     integer ( KDI ) :: &
       iV
@@ -338,7 +339,7 @@ contains
         V_P => AP ( :, iV_TS ), &  !-- cell center
         M   => AP ( :, iM_TS ), &  !-- cell center
         nProfile => size ( AP, dim = 1 ) )
-
+    
     allocate ( R      ( nProfile + 1 ), &
                Rho    ( nProfile + 1 ), &
                V      ( nProfile + 1 ) )
@@ -354,16 +355,16 @@ contains
     V ( 2 : nProfile + 1 ) &
       = ( sqrt ( Kappa ) * CONSTANT % GRAVITATIONAL &
                              ** ( ( 1.0 - Gamma ) / 2 ) &
-          * T ** ( 1.0_KDR - Gamma ) ) * V_P
+          * T ** ( 1.0_KDR - Gamma ) ) * V_P 
 
     R ( 1 ) = 0.0_KDR
     
     Slope_Rho = ( Rho ( 3 ) - Rho ( 2 ) ) / ( R ( 3 ) - R ( 2 ) )
     Slope_V   = ( V   ( 3 ) - V   ( 2 ) ) / ( R ( 3 ) - R ( 2 ) )
 
-    Rho ( 1 ) = Rho ( 2 ) - Slope_Rho * R ( 2 )
-    V   ( 1 ) = V   ( 2 ) - Slope_V   * R ( 2 ) 
-    
+     Rho ( 1 ) = Rho ( 2 ) - Slope_Rho * R ( 2 )
+     V   ( 1 ) = V   ( 2 ) - Slope_V   * R ( 2 ) 
+
    !-- SplineInterpolation initialization
 
     call SI ( iRho_SI ) % Initialize &
@@ -389,8 +390,6 @@ contains
       iV
     real ( KDR ) :: &
       R_Max
-    class ( GeometryFlatForm ), pointer :: &
-      G
 
     select type ( FCC )
     class is ( FluidCentralCoreForm )
@@ -403,27 +402,11 @@ contains
 
     F_D => YahilLattimer % Difference % Fluid_P_I ( )
     call MultiplyAdd ( F % Value, F_R % Value, -1.0_KDR, F_D % Value )
-    F_D % Value = abs ( F_D % Value )
 
-    associate &
-      ( Rho_D  => F_D % Value ( :, F_D % COMOVING_BARYON_DENSITY ), &
-        V_D    => F_D % Value ( :, F_D % VELOCITY_U ( 1 ) ), &
-        P_D    => F_D % Value ( :, F_D % PRESSURE ), &
-        Rho_R  => F_R % Value ( :, F_R % COMOVING_BARYON_DENSITY ), &
-        V_R    => F_R % Value ( :, F_R % VELOCITY_U ( 1 ) ), &
-        P_R    => F_R % Value ( :, F_R % PRESSURE ) )
+    F_D % Value = abs ( F_D % Value &
+                          / max ( abs ( F_R % Value ), &
+                                    sqrt ( tiny ( 0.0_KDR ) ) ) )
 
-    do iV = 1, size ( Rho_D )
-      Rho_D ( iV )   = Rho_D ( iV ) / max ( Rho_R ( iV ), tiny ( 0.0_KDR ) )
-      if ( V_R ( iV ) < 0.0_KDR ) then
-        V_D   ( iV ) = V_D ( iV ) / abs ( V_R ( iV ) )
-      else
-        V_D   ( iV ) = V_D ( iV ) / max ( V_R ( iV ) , tiny ( 0.0_KDR ) )
-      end if
-      P_D   ( iV )   = P_D   ( iV )/ max ( P_R ( iV ), tiny ( 0.0_KDR ) )
-    end do
-
-    end associate !-- Rho_D, etc.
     end select !-- FA
     end select !-- FCC
     nullify ( F, F_R, F_D )
@@ -440,6 +423,7 @@ contains
       L1_V, &
       L1_P
     class ( Fluid_P_I_Form ), pointer :: &
+      F, &
       F_D, &
       F_R
     type ( CollectiveOperation_R_Form ) :: &
@@ -451,10 +435,17 @@ contains
     class is ( Atlas_SC_Form ) 
     select type ( C => PS % Chart )
     class is ( Chart_SL_Template )
-       
-    F_D => YL % Difference % Fluid_P_I ( )
-    F_R => YL % Reference % Fluid_P_I ( )
+    select type ( FA => FCC % Current_ASC )
+    class is ( Fluid_ASC_Form )
+    F => FA % Fluid_P_I ( )
 
+    F_R => YL % Reference % Fluid_P_I ( )
+    call SetFluid ( YahilLattimer, F_R, FCC % Time )
+
+    F_D => YL % Difference % Fluid_P_I ( )
+    call MultiplyAdd ( F % Value, F_R % Value, -1.0_KDR, F_D % Value )
+       
+    
     associate &
       ( Difference_Rho &
           => F_D % Value ( :, F_D % COMOVING_BARYON_DENSITY ), &
@@ -492,9 +483,9 @@ contains
       ( DifferenceSum_Rho  => CO % Incoming % Value ( 1 ), &
         ReferenceSum_Rho   => CO % Incoming % Value ( 2 ), &
         DifferenceSum_V    => CO % Incoming % Value ( 3 ), &
-        ReferenceSum_V   => CO % Incoming % Value ( 4 ), &
+        ReferenceSum_V     => CO % Incoming % Value ( 4 ), &
         DifferenceSum_P    => CO % Incoming % Value ( 5 ), &
-        ReferenceSum_P   => CO % Incoming % Value ( 6 ) )
+        ReferenceSum_P     => CO % Incoming % Value ( 6 ) )
 
     L1_Rho = DifferenceSum_Rho / ReferenceSum_Rho
     L1_V   = DifferenceSum_V   / ReferenceSum_V
@@ -508,9 +499,12 @@ contains
     call Show ( L1_P, '*** L1_P error', nLeadingLinesOption = 2, &
                 nTrailingLinesOption = 2 )
 
+    end select !-- FA
     end select !-- C
     end select !-- PS
     end select !--FCC
+
+    nullify ( F, F_R, F_D )
 
   end subroutine ComputeError
 
