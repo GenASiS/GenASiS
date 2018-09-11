@@ -48,16 +48,15 @@ contains
         Gamma  => SF % AdiabaticIndex, &
         AR     => SF % AccretionRate, &
         R_In   => RadiusIN, &
-        R_Out  => RadiusOuter, &
-        Pi     => CONSTANT % PI )
+        R_Out  => RadiusOuter )
 
-    M      =  3.0_KDR * UNIT % SOLAR_MASS
+    M      =  1.2_KDR * UNIT % SOLAR_MASS
     call PROGRAM_HEADER % GetParameter ( M, 'CentralMass' )
     R_S    =  200.0_KDR * UNIT % KILOMETER
     call PROGRAM_HEADER % GetParameter ( R_S, 'ShockRadius' )
-    Gamma  =  1.3_KDR 
+    Gamma  =  4.0_KDR / 3.0_KDR 
     call PROGRAM_HEADER % GetParameter ( Gamma, 'AdiabaticIndex' )
-    AR     =  0.3_KDR * UNIT % SOLAR_MASS / UNIT % SECOND
+    AR     =  0.36_KDR * UNIT % SOLAR_MASS / UNIT % SECOND
     call PROGRAM_HEADER % GetParameter ( AP, 'AccretionRate' )
 
     R_Out  = 2 * R_S
