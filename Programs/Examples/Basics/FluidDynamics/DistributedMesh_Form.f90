@@ -248,7 +248,11 @@ contains
           iV = S_1D % Storage ( iStrg ) % iaSelected ( iS )
           call DM % SetVariablePointer &
                  ( S_1D % Storage ( iStrg ) % Value ( :, iV ), V ) 
+          !call Copy ( V, nSend, oSend, oBuffer, &
+          !            DM % OutgoingPrevious % Message ( iD ) % Value )
           call Copy ( V, nSend, oSend, oBuffer, &
+                      S_1D % Storage ( iStrg ) % D_Selected ( iS ), &
+                      DM % OutgoingPrevious % Message ( iD ) % D_Value, &
                       DM % OutgoingPrevious % Message ( iD ) % Value )
           oBuffer = oBuffer + product ( nSend )
         end do !-- iS
@@ -277,7 +281,11 @@ contains
           iV = S_1D % Storage ( iStrg ) % iaSelected ( iS )
           call DM % SetVariablePointer &
                  ( S_1D % Storage ( iStrg ) % Value ( :, iV ), V ) 
+          !call Copy ( V, nSend, oSend, oBuffer, &
+          !            DM % OutgoingNext % Message ( iD ) % Value )
           call Copy ( V, nSend, oSend, oBuffer, &
+                      S_1D % Storage ( iStrg ) % D_Selected ( iS ), &
+                      DM % OutgoingNext % Message ( iD ) % D_Value, &
                       DM % OutgoingNext % Message ( iD ) % Value )
           oBuffer = oBuffer + product ( nSend )
         end do !-- iS
@@ -332,8 +340,12 @@ contains
           iV = S_1D % Storage ( iStrg ) % iaSelected ( iS )
           call DM % SetVariablePointer &
                  ( S_1D % Storage ( iStrg ) % Value ( :, iV ), V ) 
+          !call Copy ( DM % IncomingNext % Message ( iD ) % Value, &
+          !            nReceive, oReceive, oBuffer, V )
           call Copy ( DM % IncomingNext % Message ( iD ) % Value, &
-                      nReceive, oReceive, oBuffer, V )
+                      nReceive, oReceive, oBuffer, &
+                      DM % IncomingNext % Message ( iD ) % D_Value, &
+                      S_1D % Storage ( iStrg ) % D_Selected ( iS ), V )
           oBuffer = oBuffer + product ( nReceive )
         end do !-- iS
       end do !-- iStrg
@@ -360,8 +372,12 @@ contains
           iV = S_1D % Storage ( iStrg ) % iaSelected ( iS )
           call DM % SetVariablePointer &
                  ( S_1D % Storage ( iStrg ) % Value ( :, iV ), V ) 
+          !call Copy ( DM % IncomingPrevious % Message ( iD ) % Value, &
+          !            nReceive, oReceive, oBuffer, V )
           call Copy ( DM % IncomingPrevious % Message ( iD ) % Value, &
-                      nReceive, oReceive, oBuffer, V )
+                      nReceive, oReceive, oBuffer, &
+                      DM % IncomingPrevious % Message ( iD ) % D_Value, &
+                      S_1D % Storage ( iStrg ) % D_Selected ( iS ), V )
           oBuffer = oBuffer + product ( nReceive )
         end do !-- iS
       end do !-- iStrg

@@ -38,7 +38,9 @@ module Copy_Command
 ! !-- NOTE: This may be needed if KDR is not double precision
 ! !    module procedure Copy_C_Double_Real_1D
     module procedure CopyReal_3D_1D
+    module procedure CopyReal_3D_1D_Device
     module procedure CopyReal_1D_3D
+    module procedure CopyReal_1D_3D_Device
     module procedure CopyComplex_1D
 !     module procedure CopyComplex_2D
 !     module procedure CopyComplex_3D
@@ -515,6 +517,59 @@ contains
   end subroutine CopyReal_3D_1D
 
 
+  subroutine CopyReal_3D_1D_Device ( A, nSource, oSource, oTarget, D_A, D_B, B )
+
+    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+      A
+    integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
+      nSource, &
+      oSource
+    integer ( KDI ), intent ( in ) :: &
+      oTarget
+    type ( c_ptr ), intent ( in ) :: &
+      D_A
+    type ( c_ptr ), intent ( in ) :: &
+      D_B
+    !-- This argument is last in the spirit of intent ( out ), but should
+    !   remain intent ( inout ) so existing values outside the section
+    !   are not corrupted
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      B
+      
+    integer ( KDI ) :: &
+      iT, &
+      iV, jV, kV, &
+      iS, jS, kS
+    
+    call AssociateHost ( D_A, A )
+    call AssociateHost ( D_B, B )
+
+    !$OMP  target teams distribute parallel do collapse ( 3 )&
+    !$OMP& schedule ( static, 1 ) private ( iS, jS, kS, iT )
+    do kV = oSource ( 3 ) + 1, oSource ( 3 ) + nSource ( 3 )
+      do jV = oSource ( 2 ) + 1, oSource ( 2 ) + nSource ( 2 )
+        do iV = oSource ( 1 ) + 1, oSource ( 1 ) + nSource ( 1 )
+          
+          iS = iV - oSource ( 1 )
+          jS = jV - oSource ( 2 )
+          jS = kV - oSource ( 3 )
+          
+          iT = iS + ( jS - 1 ) * nSource ( 1 ) &
+                  + ( kS - 1 ) * nSource ( 1 ) * nSource ( 2 )
+          
+          B ( oTarget + iT ) = A ( iV, jV, kV )
+          
+        end do
+      end do
+    end do
+    !$OMP  end target teams distribute parallel do
+    
+    call DisassociateHost ( B )
+    call DisassociateHost ( A )
+
+  end subroutine CopyReal_3D_1D_Device
+
+
   subroutine CopyReal_1D_3D ( A, nTarget, oTarget, oSource, B )
 
     real ( KDR ), dimension ( : ), intent ( in ) :: &
@@ -537,6 +592,66 @@ contains
                   nTarget ) 
 
   end subroutine CopyReal_1D_3D
+
+
+  subroutine CopyReal_1D_3D_Device &
+               ( A, nTarget, oTarget, oSource, D_A, D_B, B )
+
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      A
+    integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
+      nTarget, &
+      oTarget
+    integer ( KDI ), intent ( in ) :: &
+      oSource
+    type ( c_ptr ), intent ( in ) :: &
+      D_A
+    type ( c_ptr ), intent ( in ) :: &
+      D_B
+    !-- This argument is last in the spirit of intent ( out ), but should
+    !   remain intent ( inout ) so existing values outside the section
+    !   are not corrupted
+    real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
+      B
+    
+    integer ( KDI ) :: &
+      iS, &
+      iV, jV, kV, &
+      iT, jT, kT
+
+    !B ( oTarget ( 1 ) + 1 : oTarget ( 1 ) + nTarget ( 1 ), &
+    !    oTarget ( 2 ) + 1 : oTarget ( 2 ) + nTarget ( 2 ), &
+    !    oTarget ( 3 ) + 1 : oTarget ( 3 ) + nTarget ( 3 ) ) &
+    !  = reshape ( A ( oSource + 1 : oSource + product ( nTarget ) ), &
+    !              nTarget )
+    
+    call AssociateHost ( D_A, A )
+    call AssociateHost ( D_B, B )
+    
+    !$OMP  target teams distribute parallel do collapse ( 3 )&
+    !$OMP& schedule ( static, 1 ) private ( iT, jT, kT, iS )
+    do kV = oTarget ( 3 ) + 1, oTarget ( 3 ) + nTarget ( 3 )
+      do jV = oTarget ( 2 ) + 1, oTarget ( 2 ) + nTarget ( 2 )
+        do iV = oTarget ( 1 ) + 1, oTarget ( 1 ) + nTarget ( 1 )
+        
+          iT = iV - oTarget ( 1 )
+          jT = jV - oTarget ( 2 )
+          kT = kV - oTarget ( 3 )
+          
+          iS = iT + ( jT - 1 ) * nTarget ( 1 ) &
+                  + ( kT - 1 ) * nTarget ( 1 ) * nTarget ( 2 )
+          
+          B ( iV, jV, kV ) = A ( oSource + iS )
+        
+        end do
+      end do
+    end do
+    !$OMP end target teams distribute parallel do
+    
+    call DisassociateHost ( B )
+    call DisassociateHost ( A )
+
+  end subroutine CopyReal_1D_3D_Device
 
 
   subroutine CopyComplex_1D ( A, B )
