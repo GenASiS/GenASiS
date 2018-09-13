@@ -72,7 +72,7 @@ contains
     call PROGRAM_HEADER % GetParameter ( M_N, 'MachNumber' )
 
     R_Out  = 2 * R_S
-    R_In   = 0.1_KDR * R_S
+    R_In   = 0.2_KDR * R_S
 
     Kappa = 2 / ( Gamma + 1.0_KDR ) &
               * ( ( Gamma - 1.0_KDR ) / ( Gamma + 1.0_KDR ) ) ** Gamma &
@@ -114,7 +114,7 @@ contains
 
     call SetFluid ( SF )
 
-    call IntroduceDensityRingsPerturbation ( SF )
+    !call IntroduceDensityRingsPerturbation ( SF )
 
   end subroutine Initialize
 
@@ -192,21 +192,20 @@ contains
         V_1 ( iV )  = ( - u ( iV ) )
         N ( iV )    = AR / ( FourPi * abs ( V_1 ( iV ) ) * R ( iV ) ** 2 )
         P ( iV )    = Kappa * N ( iV ) ** Gamma
-        E ( iV )    = P ( iV ) / ( Gamma - 1.0_KDR )
       else
         V_1 ( iV )  = - sqrt ( 2.0_KDR * G_C * M / R ( iV ) )
         N ( iV )    = AR / ( FourPi * abs ( V_1 ( iV ) ) * R ( iV ) ** 2 )
         P ( iV )    = N ( iV ) / Gamma * ( V_1 ( iV ) / M_N ) ** 2
       end if
 
-      if ( R ( iV ) <= 0.11 * R_S .and. R ( iV ) > 0.09 * R_S ) then
+      if ( R ( iV ) <= 0.21 * R_S .and. R ( iV ) > 0.19 * R_S ) then
          B = P ( iV ) * R ( iV ) ** 4
          C = N ( iV ) * R ( iV ) ** 3
       end if
     end do
     
     do iV = 1, size ( R )
-      if ( R ( iV ) <= 0.1*R_S ) then
+      if ( R ( iV ) < 0.2*R_S ) then
          P ( iV ) = B * R ( iV ) ** ( - 4 )
          N ( iV ) = C * R ( iV ) ** ( -3 )
       end if
@@ -241,11 +240,12 @@ contains
       iV
     real ( KDR ) :: &
       a, &
-      F1, &
-      F2
+      F_MP, &
+      F_U
     real ( KDR ), allocatable, dimension ( : ) :: & 
-      u1, &
-      u2, &
+      u_U, &
+      u_L, &
+      MP, &
       root
     class ( GeometryFlatForm ), pointer :: &
       G
@@ -272,62 +272,74 @@ contains
    associate ( R => G % Value ( :, G % CENTER_U ( 1 ) ) )
 
    allocate &
-     ( u1 ( size ( R ) ), &
-       u2 ( size ( R ) ), &
-       root ( size ( R ) ) )
-        
-   u1 = ( (Gamma - 1.0_KDR ) * G_C * M / ( Gamma * Kappa ) ) &
-          ** ( 1.0_KDR / ( 1.0_KDR - Gamma ) ) * AR / FourPi
+     ( u_U ( size ( R ) ), &
+       u_L ( size ( R ) ), &
+       root ( size ( R ) ), &
+       MP   ( size ( R ) ) )
+  
+   u_L = 1.0_KDR
+   u_U = 1.0_KDR
+   MP  = 1.0_KDR
 
-   u2 = ( Gamma - 1.0_KDR ) / ( Gamma + 1.0_KDR ) &
-          * sqrt ( 2 * G_C * M / R_S )
+   where ( R < R_S )
+     u_L = 100.0_KDR * UNIT % KILOMETER / UNIT % SECOND
+     u_U = ( Gamma - 1.0_KDR ) / ( Gamma + 1.0_KDR ) &
+            * sqrt ( 2 * G_C * M / R_S )
+   end where
 
    nIterations = 0
    
    Converged = .false.
    root = 1.0_KDR
 
-   do while ( .not. converged )
-     nIterations = nIterations + 1
-
-     !--- Use secant method (see mathworld.com) to find 
+   !do while ( .not. converged )
+     
+   !  call Show ( nIterations, '>>> n1' )
+     !--- Use Bisection method to find 
      !      root of Bernoulli equation: 
      do iV = 1, size ( R )
-       if ( u1 ( iV ) < 0.0_KDR ) u1 ( iV ) = - u1 ( iV )
-       if ( R ( IV ) < R_S ) then
-         F1 = R ( iv ) * u1 ( iV ) ** 2 &
-                + a * R ( iV ) ** ( 3.0_KDR - 2 * Gamma ) &
-                * u1 ( iV ) ** ( 1.0_KDR - Gamma ) &
-                - 2 * G_C * M
-         F2 = R ( iV ) * u2 ( iV ) ** 2 &
-                + a * R ( iV ) ** ( 3.0_KDR - 2 * Gamma ) &
-                * u2 ( iV ) ** ( 1.0_KDR - Gamma ) &
-                - 2 * G_C * M
-         if ( F1 == F2 ) then
-           root ( iV ) = u1 ( iV )
-         else 
-           root ( iV ) &
-             = u1 ( iV ) &
-               - F1 / ( F1 - F2 ) * ( u1 ( iV ) - u2 ( iV ) )
+       Converged = .false.
+       nIterations = 0
+       do while ( .not. Converged )
+         nIterations = nIterations + 1
+         if ( R ( IV ) < R_S ) then
+           MP ( iV )  = ( u_U ( iV ) + u_L ( iV ) ) / 2
+           F_MP = R ( iV ) * MP ( iV ) ** 2 &
+                  + a * R ( iV ) ** ( 3.0_KDR - 2 * Gamma ) &
+                  * MP ( iV ) ** ( 1.0_KDR - Gamma ) &
+                  - 2 * G_C * M
+           F_U = R ( iV ) * u_U ( iV ) ** 2 &
+                  + a * R ( iV ) ** ( 3.0_KDR - 2 * Gamma ) &
+                  * u_U ( iV ) ** ( 1.0_KDR - Gamma ) &
+                  - 2 * G_C * M
+           if ( sign ( 1.0_KDR , F_MP ) == sign ( 1.0_KDR, F_U ) ) then
+             u_U ( iV ) = MP ( iV )
+           else
+             u_L ( iV ) = MP ( iV )
+           end if
+           if ( u_U ( iV ) - u_L ( iV ) <= 1.0e-8_KDR ) then
+             root ( iV ) = MP ( iV )
+             Converged = .true.
+           end if
+         else
+          Converged = .true. 
          end if
-       end if
+       end do
      end do
+   !  if ( all ( ( u_U - u_L ) <= 1.0e-8_KDR ) ) then
+   !    root = MP
+   !    Converged = .true.
+   !  end if
+   !end do
 
-     if ( all ( abs ( ( root - u1 ) / root ) <= 1.0e-12_KDR ) ) then
-       Converged = .true.
-     else
-        u2 = u1 
-        u1 = root
-     end if
-    ! call Show ( u1, 'root' )
-   end do
+
    u = root
 
    end associate !-- R
    end select !-- G
    end select !-- FCE
    end associate !-- M, etc.
-
+call Show ( 'end of Velocity' )
   end subroutine SetVelocityProfile 
 
 
@@ -399,6 +411,6 @@ contains
 
    nullify ( F, G )
 
-  end subroutine
+  end subroutine IntroduceDensityRingsPerturbation
 
 end module SASI_Form

@@ -56,7 +56,7 @@ contains
              iDimensionalityOption )
 
     call A % SetBoundaryConditionsFace &
-           ( [ 'OUTFLOW', 'INFLOW ' ], iDimension = 1 )
+           ( [ 'INFLOW', 'INFLOW' ], iDimension = 1 )
     if ( A % nDimensions > 1 ) &
       call A % SetBoundaryConditionsFace &
              ( [ 'REFLECTING', 'REFLECTING' ], iDimension = 2 )
