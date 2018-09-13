@@ -132,7 +132,7 @@ program AllocateHost_Command_Test
   TotalTime = OMP_GET_WTIME ( ) - StartTime
   print*, 'Pinned memory Data Transfer'
   print*, 'Device-to-Host Time (s)        :', TotalTime
-  print*, 'Device-to-Hosw Bandwith (GB/s) :', DataSize_GB / TotalTime
+  print*, 'Device-to-Host Bandwith (GB/s) :', DataSize_GB / TotalTime
   print*, ''
   
   !-- Timing pageable memory update
@@ -141,7 +141,7 @@ program AllocateHost_Command_Test
   TotalTime = OMP_GET_WTIME ( ) - StartTime
   print*, 'Pageable memory Data Transfer'
   print*, 'Device-to-Host Time (s)        :', TotalTime
-  print*, 'Device-to-Hosw Bandwith (GB/s) :', DataSize_GB / TotalTime
+  print*, 'Device-to-Host Bandwith (GB/s) :', DataSize_GB / TotalTime
   print*, ''
   
   call DeallocateDevice ( d_Pa_Value_2D )
