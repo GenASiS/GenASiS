@@ -311,7 +311,7 @@ contains
            ( C, nOutgoing = [ 1 ], nIncoming = [ 1 ], RootOption = iProcess )
     if ( C % Rank == iProcess ) then
       iRadius  =  maxloc ( abs ( F % Value ( :, F % VELOCITY_U ( 1 ) ) ), &
-                           dim = 1 )
+                           dim = 1, mask = Chart % IsProperCell )
       CO % Outgoing % Value ( 1 )  =  G % Value ( iRadius, G % CENTER_U ( 1 ) )
     end if
     call CO % Broadcast ( )

@@ -596,7 +596,7 @@ contains
       end if !-- iI
     end do !-- iS     
 
-    end associate !-- D, etc.
+    end associate !-- M, etc.
     end select !-- G
     end select !-- C
 
@@ -619,8 +619,41 @@ contains
     type ( Real_3D_Form ), dimension ( :, : ), intent ( in ) :: &
       BoundaryFluence
 
+    integer ( KDI ) :: &
+      iD, &   !-- iDimension
+!      iF, &   !-- iFace
+!      iC, &   !-- iConnectivity
+!      iS, &   !-- iSelected
+!      iI, &   !-- iIntegral
+      iFluence, &
+      iDensity
+    integer ( KDI ), dimension ( 3 ) :: &
+      nB    !-- nBoundary
+!    real ( KDR ), dimension ( :, :, : ), allocatable :: &
+!      X_1, X_2, X_3
+
     call T % ComputeBoundaryIntegrand_CSL_G &
            ( Integrand, C, CSL, G, BoundaryFluence )
+
+    select type ( C )
+    class is ( Fluid_D_Form )
+    select type ( G )
+    type is ( Geometry_N_Form )
+
+    do iFluence = 1, C % N_CONSERVED
+      if ( C % iaConserved ( iFluence ) == C % CONSERVED_BARYON_DENSITY ) &
+        iDensity = iFluence
+    end do !-- iFluence
+
+    associate ( Cnnct => CSL % Atlas % Connectivity )
+    do iD = 1, CSL % nDimensions
+      nB = shape ( BoundaryFluence ( 1, Cnnct % iaInner ( iD ) ) % Value )
+
+    end do !-- iD
+    end associate !-- Cnnct
+
+    end select !-- G
+    end select !-- C
 
   end subroutine ComputeBoundaryIntegrand_CSL_N
 
