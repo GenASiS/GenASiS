@@ -46,10 +46,10 @@ AllocateHost_Command_Test: AllocateHost_Command_Test.o
 	$(LINK) $(FLAGS) \
           -o AllocateHost_Command_Test_$(MACHINE) \
           AllocateHost_Command_Test.o \
-          AllocateDevice_Command.o AssociateHost_Command.o \
-          DisassociateHost_Command.o \
-          UpdateDevice_Command.o AllocateHost_Command.o \
-          DeallocateHost_Command.o Device_C_OMP.o \
+          AllocateDevice_Command.o DeallocateDevice_Command.o \
+          AssociateHost_Command.o DisassociateHost_Command.o \
+          UpdateDevice_Command.o UpdateHost_Command.o \
+          AllocateHost_Command.o DeallocateHost_Command.o Device_C_OMP.o \
           Device_CUDA.o Device_OMP.o $(SPECIFIERS) $(LIBRARIES)
 
 
@@ -95,7 +95,9 @@ UpdateDevice_Command_Test.o: \
 
 AllocateHost_Command_Test.o: \
   AllocateDevice_Command.o \
+  DeallocateDevice_Command.o \
   UpdateDevice_Command.o \
+  UpdateHost_Command.o \
   AllocateHost_Command.o \
   DeallocateHost_Command.o \
   AllocateHost_Command_Test.f90
