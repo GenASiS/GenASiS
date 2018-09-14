@@ -27,9 +27,9 @@ module Tally_F_P__Form
     final :: &
       Finalize
     procedure, public, pass :: &
-      ComputeInteriorIntegrand
+      ComputeInteriorIntegrand_G
     procedure, public, pass :: &
-      ComputeBoundaryIntegrand_CSL
+      ComputeBoundaryIntegrand_CSL_G
   end type Tally_F_P_Form
 
 
@@ -146,7 +146,7 @@ contains
   end subroutine Finalize
   
 
-  subroutine ComputeInteriorIntegrand ( T, Integrand, C, G, nDimensions )
+  subroutine ComputeInteriorIntegrand_G ( T, Integrand, C, G, nDimensions )
 
     class ( Tally_F_P_Form ), intent ( inout ) :: &
       T
@@ -167,7 +167,7 @@ contains
     class is ( Fluid_P_Template )
 
     call T % Tally_F_D_Form &
-           % ComputeInteriorIntegrand ( Integrand, C, G, nDimensions )
+           % ComputeInteriorIntegrand_G ( Integrand, C, G, nDimensions )
 
     associate &
       ( CE => C % Value ( :, C % CONSERVED_ENERGY ), &
@@ -177,28 +177,20 @@ contains
       iI = T % iaSelected ( iS )
       if ( iI == T % FLUID_ENERGY ) then
         call Copy ( CE, Integrand ( iS ) % Value )
+      else if ( iI == T % TOTAL_ENERGY ) then
+        call Copy ( CE, Integrand ( iS ) % Value )
       else if ( iI == T % INTERNAL_ENERGY ) then
         call Copy ( IE, Integrand ( iS ) % Value )
       end if !-- iI
     end do !-- iS
 
-    select type ( G )
-    type is ( Geometry_N_Form )
-      do iS = 1, T % nSelected
-        iI = T % iaSelected ( iS )
-        if ( iI == T % TOTAL_ENERGY ) then
-          call Add ( Integrand ( iS ) % Value, CE )
-        end if !-- iI
-      end do !-- iS
-    end select !-- G
-
     end associate !-- CE, etc.
     end select !-- C
 
-  end subroutine ComputeInteriorIntegrand
+  end subroutine ComputeInteriorIntegrand_G
 
 
-  subroutine ComputeBoundaryIntegrand_CSL &
+  subroutine ComputeBoundaryIntegrand_CSL_G &
                ( T, Integrand, C, CSL, G, BoundaryFluence )
 
     class ( Tally_F_P_Form ), intent ( inout ) :: &
@@ -224,7 +216,7 @@ contains
     select type ( C )
     class is ( Fluid_P_Template )
 
-    call T % Tally_F_D_Form % ComputeBoundaryIntegrand_CSL &
+    call T % Tally_F_D_Form % ComputeBoundaryIntegrand_CSL_G &
            ( Integrand, C, CSL, G, BoundaryFluence )
 
     do iFluence = 1, C % N_CONSERVED
@@ -239,6 +231,8 @@ contains
         iI = T % iaSelected ( iS )
         if ( iI == T % FLUID_ENERGY ) then
           call CopyCollapse ( CE, Integrand ( iS, iF ) % Value )
+        else if ( iI == T % TOTAL_ENERGY ) then
+          call CopyCollapse ( CE, Integrand ( iS, iF ) % Value )
         end if !-- iI
       end do !-- iS
       end associate !-- CE
@@ -247,7 +241,7 @@ contains
 
     end select !-- C
 
-  end subroutine ComputeBoundaryIntegrand_CSL
+  end subroutine ComputeBoundaryIntegrand_CSL_G
 
 
 end module Tally_F_P__Form

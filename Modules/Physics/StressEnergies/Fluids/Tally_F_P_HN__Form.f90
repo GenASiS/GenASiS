@@ -26,9 +26,9 @@ module Tally_F_P_HN__Form
     final :: &
       Finalize
     procedure, public, pass :: &
-      ComputeInteriorIntegrand
+      ComputeInteriorIntegrand_G
     procedure, public, pass :: &
-      ComputeBoundaryIntegrand_CSL
+      ComputeBoundaryIntegrand_CSL_G
   end type Tally_F_P_HN_Form
 
 
@@ -145,7 +145,7 @@ contains
   end subroutine Finalize
   
 
-  subroutine ComputeInteriorIntegrand ( T, Integrand, C, G, nDimensions )
+  subroutine ComputeInteriorIntegrand_G ( T, Integrand, C, G, nDimensions )
 
     class ( Tally_F_P_HN_Form ), intent ( inout ) :: &
       T
@@ -166,7 +166,7 @@ contains
     class is ( Fluid_P_HN_Form )
 
     call T % Tally_F_P_Form &
-           % ComputeInteriorIntegrand ( Integrand, C, G, nDimensions )
+           % ComputeInteriorIntegrand_G ( Integrand, C, G, nDimensions )
 
     associate ( DP => C % Value ( :, C % CONSERVED_PROTON_DENSITY ) )
     
@@ -180,10 +180,10 @@ contains
     end associate !-- DP
     end select !-- C
 
-  end subroutine ComputeInteriorIntegrand
+  end subroutine ComputeInteriorIntegrand_G
 
 
-  subroutine ComputeBoundaryIntegrand_CSL &
+  subroutine ComputeBoundaryIntegrand_CSL_G &
                ( T, Integrand, C, CSL, G, BoundaryFluence )
 
     class ( Tally_F_P_HN_Form ), intent ( inout ) :: &
@@ -203,15 +203,13 @@ contains
       iF, &   !-- iFace
       iS, &   !-- iSelected
       iI, &   !-- iIntegral
-!       iC, &   !-- iConnectivity
-!       iD, &   !-- iDimension
       iFluence, &
       iProton
 
     select type ( C )
     class is ( Fluid_P_HN_Form )
 
-    call T % Tally_F_P_Form % ComputeBoundaryIntegrand_CSL &
+    call T % Tally_F_P_Form % ComputeBoundaryIntegrand_CSL_G &
            ( Integrand, C, CSL, G, BoundaryFluence )
 
     do iFluence = 1, C % N_CONSERVED
@@ -232,30 +230,10 @@ contains
       end associate !-- CE
     end do !-- iF
 
-!     !-- outer radial boundary, assume 1D
-!     iD  =  1
-!     iC  =  Cnnct % iaOuter ( iD )
-!     associate &
-!       ( D   => BoundaryFluence ( iDensity, iC ) % Value ( 1, 1, 1 ), &
-!         CE  => BoundaryFluence ( iEnergy, iC ) % Value ( 1, 1, 1 ), &
-!         Phi => 0.5_KDR * ( T % GravitationalPotential ( C % nValues - 1 ) &
-!                            + T % GravitationalPotential ( C % nValues - 2 ) ) )
-!     do iS = 1, T % nSelected
-!       iI = T % iaSelected ( iS )
-!       if ( iI == T % GRAVITATIONAL_ENERGY ) then
-!         Integrand ( iS, iC ) % Value ( 1, 1, 1 ) =  D * Phi
-!       else if ( iI == T % TOTAL_ENERGY ) then
-!         Integrand ( iS, iC ) % Value ( 1, 1, 1 ) =  CE  +  D * Phi 
-!       end if !-- iI
-!     end do !-- iS
-
-!     end associate !-- D, etc.
-
     end associate !-- Cnnct
-
     end select !-- C
 
-  end subroutine ComputeBoundaryIntegrand_CSL
+  end subroutine ComputeBoundaryIntegrand_CSL_G
 
 
 end module Tally_F_P_HN__Form

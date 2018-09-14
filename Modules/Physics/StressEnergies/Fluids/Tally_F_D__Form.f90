@@ -58,7 +58,8 @@ module Tally_F_D__Form
       ComputeFluence_LM_CylindricalHorizontal, &
       ComputeFluence_AM_CylindricalHorizontal, &
       ComputeFluence_LM_SphericalVertical, &
-      ComputeFluence_AM_SphericalHorizontal
+      ComputeFluence_AM_SphericalHorizontal, &
+      ComputeFluence_GE_Spherical
 
 contains
 
@@ -298,6 +299,14 @@ contains
       else if ( iI == T % KINETIC_ENERGY ) then
         call ComputeDensity_KE &
                ( S_1, S_2, S_3, V_1, V_2, V_3, Integrand ( iS ) % Value )
+      end if !-- iI
+    end do !-- iS
+
+    do iS = 1, T % nSelected
+      iI = T % iaSelected ( iS )
+      if ( iI == T % TOTAL_ENERGY ) then
+        call Copy ( Integrand ( T % KINETIC_ENERGY ) % Value, &
+                    Integrand ( iS ) % Value )
       end if !-- iI
     end do !-- iS
 
@@ -544,8 +553,8 @@ contains
             end if !-- iI
           end do !-- iS
         end select !-- CoordinateSystem
-
         end associate !-- D, etc.
+
       end do !-- iF
       deallocate ( X_1, X_2, X_3 )
     end do !-- iD
@@ -592,7 +601,7 @@ contains
         Integrand ( iS ) % Value  =  0.5_KDR * M * D * Phi
       else if ( iI == T % TOTAL_ENERGY ) then
         Integrand ( iS ) % Value  &
-          =  Integrand ( T % KINETIC_ENERGY ) % Value  +  0.5_KDR * M * D * Phi
+          =  Integrand ( iS ) % Value  +  0.5_KDR * M * D * Phi
       end if !-- iI
     end do !-- iS     
 
@@ -621,16 +630,21 @@ contains
 
     integer ( KDI ) :: &
       iD, &   !-- iDimension
-!      iF, &   !-- iFace
-!      iC, &   !-- iConnectivity
-!      iS, &   !-- iSelected
-!      iI, &   !-- iIntegral
+      iF, &   !-- iFace
+      iC, &   !-- iConnectivity
+      iS, &   !-- iSelected
+      iI, &   !-- iIntegral
       iFluence, &
-      iDensity
+      iDensity, &
+      iGravity
     integer ( KDI ), dimension ( 3 ) :: &
       nB    !-- nBoundary
-!    real ( KDR ), dimension ( :, :, : ), allocatable :: &
-!      X_1, X_2, X_3
+    real ( KDR ), dimension ( :, :, : ), allocatable :: &
+      X_1, X_2, X_3
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+      Phi, &
+      R, &
+      M
 
     call T % ComputeBoundaryIntegrand_CSL_G &
            ( Integrand, C, CSL, G, BoundaryFluence )
@@ -645,15 +659,63 @@ contains
         iDensity = iFluence
     end do !-- iFluence
 
+    call CSL % SetVariablePointer ( G % Value ( :, G % POTENTIAL ), Phi )
+    call CSL % SetVariablePointer ( C % Value ( :, C % BARYON_MASS ), M )
+
     associate ( Cnnct => CSL % Atlas % Connectivity )
-    do iD = 1, CSL % nDimensions
+    DimensionLoop: do iD = 1, CSL % nDimensions
       nB = shape ( BoundaryFluence ( 1, Cnnct % iaInner ( iD ) ) % Value )
 
-    end do !-- iD
+      !-- Geometry
+      allocate ( X_1 ( nB ( 1 ), nB ( 2 ), nB ( 3 ) ) )
+      allocate ( X_2 ( nB ( 1 ), nB ( 2 ), nB ( 3 ) ) )
+      allocate ( X_3 ( nB ( 1 ), nB ( 2 ), nB ( 3 ) ) )
+
+      FaceLoop: do iF = 1, 2
+        if ( iF == 1 ) then
+          iC = Cnnct % iaInner ( iD )
+        else if ( iF == 2 ) then
+          iC = Cnnct % iaOuter ( iD )
+        end if
+
+        associate ( D => BoundaryFluence ( iDensity, iC ) % Value )
+        call T % ComputeFacePositions ( CSL, G, iD, iF, X_1, X_2, X_3 )
+        select case ( trim ( G % CoordinateSystem ) )
+        case ( 'SPHERICAL' )
+          if ( iD /= 1 ) &
+            exit DimensionLoop
+          if ( iF /= 2 ) &
+            cycle FaceLoop
+          do iS = 1, T % nSelected
+            iI = T % iaSelected ( iS )
+            call CSL % SetVariablePointer &
+                   ( G % Value ( :, G % CENTER_U ( 1 ) ), R )
+            if ( iI == T % GRAVITATIONAL_ENERGY ) then
+              call ComputeFluence_GE_Spherical &
+                     ( CSL, M, Phi, R, D, X_1, Integrand ( iS, iC ) % Value )
+              iGravity = iS
+            end if !-- iI
+          end do !-- iS
+        end select !-- CoordinateSystem
+
+        do iS = 1, T % nSelected
+          iI = T % iaSelected ( iS )
+        if ( iI == T % TOTAL_ENERGY ) then
+          Integrand ( iS, iF ) % Value  &
+            =  Integrand ( iS, iF ) % Value  &
+               +  Integrand ( iGravity, iF ) % Value
+        end if !-- iI
+      end do !-- iS
+
+        end associate !-- D, etc.
+      end do FaceLoop !-- iF
+      deallocate ( X_1, X_2, X_3 )
+    end do DimensionLoop !-- iD
     end associate !-- Cnnct
 
     end select !-- G
     end select !-- C
+    nullify ( Phi )
 
   end subroutine ComputeBoundaryIntegrand_CSL_N
 
@@ -1237,6 +1299,45 @@ contains
     end select
 
   end subroutine ComputeFluence_AM_SphericalHorizontal
+
+
+  subroutine ComputeFluence_GE_Spherical ( CSL, M, Phi, R, D, R_I, I_I )
+
+    class ( Chart_SL_Template ), intent ( in ) :: &
+      CSL    
+    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+      M, &
+      Phi, &
+      R, &
+      D, &
+      R_I
+    real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
+      I_I
+
+    integer ( KDI ) :: &
+      oI, oJ, oK, &
+      iV, jV, kV
+    integer ( KDI ), dimension ( 3 ) :: &
+      nV
+
+    nV  =  shape ( I_I )
+
+    oI  =  CSL % nGhostLayers ( 1 )  +  CSL % nCellsBrick ( 1 )  -  1
+    oJ  =  CSL % nGhostLayers ( 2 )
+    oK  =  CSL % nGhostLayers ( 3 )
+
+    !$OMP parallel do private ( iV, jV, kV ) collapse ( 2 )
+    do kV = 1, nV ( 3 )
+      do jV = 1, nV ( 2 )
+          I_I ( 1, jV, kV )  &
+            =  Phi ( oI + 1, oJ + jV, oK + kV )  &
+               *  R ( oI + 1, oJ + jV, oK + kV )  /  R_I ( 1, jV, kV )  &
+               *  M ( oI + 1, oJ + jV, oK + kV )  *  D ( 1, jV, kV )
+      end do
+    end do
+    !$OMP end parallel do
+
+  end subroutine ComputeFluence_GE_Spherical
 
 
 end module Tally_F_D__Form
