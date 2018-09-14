@@ -32,7 +32,7 @@ program LogarithmicPotential
   allocate ( L )
 
   call L % Initialize ( PROGRAM_HEADER % Name, N_EQUATIONS, &
-                        VARIABLE, RadiusMaxOption = 1.5_KDR )
+                        VARIABLE, RadiusMaxOption = 10.0_KDR )
 
   v0 = 1.0_KDR
   call PROGRAM_HEADER % GetParameter ( v0, 'v0' )
@@ -40,13 +40,13 @@ program LogarithmicPotential
   rho_c = 0.1_KDR 
   call PROGRAM_HEADER % GetParameter ( rho_c, 'rho_c' )
 
-  q_phi = [ 0.52_KDR, 0.7_KDR, 0.95_KDR ]
+  q_phi = [ 1.0_KDR/ sqrt ( 2.0_KDR ), 0.75_KDR, 0.8_KDR ]
   call PROGRAM_HEADER % GetParameter ( q_phi, 'q_phi' )
 
   call L % SetLogarithmic ( v0, rho_c, q_phi )
 
   call L % Compute &
-         ( ShiftSolutionOption = .true., NormalizeSolutionOption = .true. )
+         ( ShiftSolutionOption = .true. )
   
   deallocate ( L )
 

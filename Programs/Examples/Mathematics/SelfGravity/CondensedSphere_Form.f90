@@ -85,10 +85,11 @@ contains
 
     Source => Source_ASC % Storage ( )
 
-    associate ( D => Source % Value ( :, iVariable ) )
+    associate ( D => Source % Value ( :, iVariable ), &
+                FourPi => 4 * CONSTANT % PI )
 
     where ( R <= SR )
-      D = Density / ( 1.0_KDR + ( R / rr ) ** 2 )
+      D = Density / ( 1.0_KDR + ( R / rr ) ** 2 ) * FourPi
     elsewhere 
       D = 0.0_KDR
     end where
@@ -101,15 +102,16 @@ contains
     Reference => Reference_ASC % Storage ( )
 
     associate &
-      ( Phi  =>  Reference % Value ( :, iVariable ) )
+      ( Phi  =>  Reference % Value ( :, iVariable ), &
+        FourPi => 4 * CONSTANT % PI )
 
     where ( R <= SR ) 
       Phi = &
-            Density * rr ** 2 * ( atan ( R / rr ) / ( R / rr ) &
+            Density * FourPi * rr ** 2 * ( atan ( R / rr ) / ( R / rr ) &
               + log ( ( 1.0_KDR + ( R / rr ) ** 2 ) &
                         / ( 1.0_KDR + ( SR / rr ) ** 2 ) ) / 2 - 1.0_KDR )
     elsewhere
-      Phi = - Density * rr ** 3 / R * ( SR / rr - atan ( SR / rr ) )
+      Phi = - Density * FourPi * rr ** 3 / R * ( SR / rr - atan ( SR / rr ) )
     end where 
 
     end associate !-- Phi
