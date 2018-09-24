@@ -39,7 +39,6 @@ module FluidCentralCore_Form
       FluidCentralCore => null ( )
 
       private :: &
-        SetCoarsening, &
         LocalMax, &
         ComputeTimeStep_G_CSL
 

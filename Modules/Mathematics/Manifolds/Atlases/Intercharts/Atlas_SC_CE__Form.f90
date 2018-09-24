@@ -7,6 +7,7 @@ module Atlas_SC_CE__Form
 
   use Basics
   use Charts
+  use GeometryFlat_ASC__Form
   use Atlas_SC__Form
 
   implicit none
@@ -16,6 +17,8 @@ module Atlas_SC_CE__Form
   contains
     procedure, private, pass :: &
       InitializeBasic
+    procedure, public, pass :: &
+      SetGeometry
     procedure, public, pass :: &
       CreateChart
     procedure, public, pass :: &
@@ -64,6 +67,25 @@ contains
              ( [ 'PERIODIC', 'PERIODIC' ], iDimension = 3 )
 
   end subroutine InitializeBasic
+
+
+  subroutine SetGeometry ( A, GeometryOption, EdgeOption )
+
+    class ( Atlas_SC_CE_Form ), intent ( inout ) :: &
+      A
+    class ( GeometryFlat_ASC_Form ), intent ( in ), target, optional :: &
+      GeometryOption
+    type ( Real_1D_Form ), dimension ( : ), intent ( in ), optional :: &
+      EdgeOption
+
+    call A % Atlas_SC_Form % SetGeometry ( GeometryOption, EdgeOption )
+
+    select type ( C => A % Chart )
+    class is ( Chart_SLD_CE_Form )
+      call C % SetCoarsening ( )
+    end select !-- C
+
+  end subroutine SetGeometry
 
 
   subroutine CreateChart &
