@@ -84,6 +84,7 @@ contains
     call Show ( Gamma, 'Gamma' )
     call Show ( N_Max, UNIT % FEMTOMETER ** (-3), 'N_Max' )
     call Show ( amu * N_Max, UNIT % MASS_DENSITY_CGS, 'Rho_Max' )
+    call Show ( AP, 'AtmosphereParameter' )
 
     RadiusMin  =  ( 2.0_KDR / 3.0_KDR ) * R_In
     call PROGRAM_HEADER % GetParameter ( RadiusMin, 'RadiusMin' )

@@ -237,7 +237,7 @@ contains
 
     if ( .not. allocated ( I % TimeStepLabel ) ) then
       allocate ( I % TimeStepLabel ( 1 ) )
-      I % TimeStepLabel ( 1 ) = 'Physical TimeStep'
+      I % TimeStepLabel ( 1 ) = 'Physical'
     end if
     I % nTimeStepCandidates = size ( I % TimeStepLabel )
     allocate ( I % TimeStepCandidate ( I % nTimeStepCandidates ) )
