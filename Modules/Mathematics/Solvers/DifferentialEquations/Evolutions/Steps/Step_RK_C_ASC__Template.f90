@@ -617,12 +617,15 @@ contains
   end subroutine StoreSolution
 
 
-  subroutine InitializeIntermediate ( S )
+  subroutine InitializeIntermediate ( S, iStage )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
+    integer ( KDI ), intent ( in ) :: &
+      iStage
 
-    call S % InitializeIntermediate_C ( )
+    if ( iStage > 1 ) &
+      call S % InitializeIntermediate_C ( )
 
   end subroutine InitializeIntermediate
 

@@ -337,12 +337,15 @@ contains
   end subroutine StoreSolution
 
 
-  subroutine InitializeIntermediate ( S )
+  subroutine InitializeIntermediate ( S, iStage )
 
     class ( Step_RK_C_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
       S
+    integer ( KDI ), intent ( in ) :: &
+      iStage
 
-    call S % InitializeIntermediate_C_BSLL_ASC_CSLD ( )
+    if ( iStage > 1 ) &
+      call S % InitializeIntermediate_C_BSLL_ASC_CSLD ( )
 
   end subroutine InitializeIntermediate
 
