@@ -757,6 +757,10 @@ contains
 
     integer ( KDI ) :: &
       iF  !-- iField
+    type ( StorageForm ) :: &
+      Conserved
+    type ( TimerForm ), pointer :: &
+      TimerGhost
     class ( GeometryFlatForm ), pointer :: &
       G
 
@@ -770,16 +774,32 @@ contains
     end do !-- iF
     end associate !-- iaC
 
+    call Conserved % Initialize &
+           ( Current, iaSelectedOption = Current % iaConserved )
+
     select type ( Chart => S % Chart )
-    class is ( Chart_SL_Template )
+    class is ( Chart_SLD_Form )
+
       G => Chart % Geometry ( )
+
+      if ( associated ( S % CoarsenSingularities ) ) then
+        call Current % ComputeFromConserved ( G )    !-- possible edits
+        call S % CoarsenSingularities ( Conserved )  !-- averages
+      end if
+
+      TimerGhost => PROGRAM_HEADER % TimerPointer ( S % iTimerGhost )
+      if ( associated ( TimerGhost ) ) call TimerGhost % Start ( )
+      call Chart % ExchangeGhostData ( Conserved )
+      if ( associated ( TimerGhost ) ) call TimerGhost % Stop ( )
+
+      call Current % ComputeFromConserved ( G )
+
     class default
       call Show ( 'Grid type not found', CONSOLE % ERROR )
       call Show ( 'Step_RK_C_ASC__Form', 'module', CONSOLE % ERROR )
       call Show ( 'StoreSolution_C', 'subroutine', CONSOLE % ERROR ) 
       call PROGRAM_HEADER % Abort ( )
     end select !-- Grid
-    call Current % ComputeFromConserved ( G )
 
     nullify ( G )
     
@@ -1043,8 +1063,8 @@ contains
     type ( TimerForm ), pointer :: &
       TimerDivergence, &
       TimerSources, &
-      TimerRelaxation, &
-      TimerGhost
+      TimerRelaxation!, &
+!      TimerGhost
 
     !-- Divergence
     if ( associated ( S % ApplyDivergence_C ) ) then
@@ -1072,22 +1092,22 @@ contains
       if ( associated ( TimerRelaxation ) ) call TimerRelaxation % Stop ( )
     end if
 
-    if ( associated ( S % CoarsenSingularities ) ) &
-      call S % CoarsenSingularities ( K )
+    ! if ( associated ( S % CoarsenSingularities ) ) &
+    !   call S % CoarsenSingularities ( K )
 
-    GhostExchange = .true.
-    if ( present ( GhostExchangeOption ) ) &
-      GhostExchange = GhostExchangeOption
+    ! GhostExchange = .true.
+    ! if ( present ( GhostExchangeOption ) ) &
+    !   GhostExchange = GhostExchangeOption
 
-    if ( GhostExchange .and. associated ( S % ApplyDivergence_C ) ) then
-      select type ( Chart )
-      class is ( Chart_SLD_Form )
-        TimerGhost => PROGRAM_HEADER % TimerPointer ( S % iTimerGhost )
-        if ( associated ( TimerGhost ) ) call TimerGhost % Start ( )
-        call Chart % ExchangeGhostData ( K )
-        if ( associated ( TimerGhost ) ) call TimerGhost % Stop ( )
-      end select !-- Grid
-    end if !-- ApplyDivergence_C
+    ! if ( GhostExchange .and. associated ( S % ApplyDivergence_C ) ) then
+    !   select type ( Chart )
+    !   class is ( Chart_SLD_Form )
+    !     TimerGhost => PROGRAM_HEADER % TimerPointer ( S % iTimerGhost )
+    !     if ( associated ( TimerGhost ) ) call TimerGhost % Start ( )
+    !     call Chart % ExchangeGhostData ( K )
+    !     if ( associated ( TimerGhost ) ) call TimerGhost % Stop ( )
+    !   end select !-- Grid
+    ! end if !-- ApplyDivergence_C
 
   end subroutine ComputeStage_C
 
