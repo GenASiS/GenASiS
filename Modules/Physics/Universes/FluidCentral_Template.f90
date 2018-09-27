@@ -352,7 +352,7 @@ contains
     class is ( Atlas_SC_Form )
 
     select type ( C => PS % Chart )
-    class is ( Chart_SLD_CC_Form )
+    class is ( Chart_SLD_C_Template )
 
     select case ( iAngular )
     case ( 2 )
@@ -439,6 +439,9 @@ contains
       S
     integer ( KDI ), intent ( in ) :: &
       iAngular
+
+    call Show ( 'Coarsening Singularity', FC % IGNORABILITY + 2 )
+    call Show ( iAngular, 'iAngular', FC % IGNORABILITY + 2 )
 
     call ComposePillars ( FC, S, iAngular )
     call CoarsenPillars ( FC, iAngular )
@@ -811,12 +814,15 @@ contains
     class ( GeometryFlatForm ), pointer :: &
       G
 
+call Show ( '>>> Compose pillars' )
+call Show ( iAngular, '>>> iAngular' )
+
     select type ( PS => FC % PositionSpace )
     class is ( Atlas_SC_Form )
     G => PS % Geometry ( )
 
     select type ( C => PS % Chart )
-    class is ( Chart_SLD_CC_Form )
+    class is ( Chart_SLD_C_Template )
 
     associate ( nCB => C % nCellsBrick )
 
@@ -887,6 +893,7 @@ contains
 
     case ( 3 )
 
+call Show ( '>>> iAngular = 3' )
       if ( .not. C % Communicator_3 % Initialized ) &
         return
 
@@ -916,6 +923,11 @@ contains
                    ( S % Value ( :, S % iaSelected ( iS ) ), SV )
             Outgoing ( oO + 1 : oO + nCB ( 3 ) ) &
               =  SV ( iC, jC, 1 : nCB ( 3 ) )
+if ( FC % Time > 1.8e-3_KDR  *  UNIT % SECOND .and. iC == 1 .and. jC == 1 &
+     .and. iS == 1 ) &
+then
+  call Show ( Outgoing ( oO + 1 : oO + nCB ( 3 ) ), '>>> Outgoing' )
+end if
             oO = oO + nCB ( 3 )
           end do !-- iS
         end do !-- iC
@@ -982,7 +994,7 @@ contains
     class is ( Atlas_SC_Form )
 
     select type ( C => PS % Chart )
-    class is ( Chart_SLD_CC_Form )
+    class is ( Chart_SLD_C_Template )
 
     select case ( iAngular )
     case ( 2 )
@@ -1053,7 +1065,7 @@ contains
     G => PS % Geometry ( )
 
     select type ( C => PS % Chart )
-    class is ( Chart_SLD_CC_Form )
+    class is ( Chart_SLD_C_Template )
 
     associate ( nCB => C % nCellsBrick )
 
