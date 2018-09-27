@@ -52,6 +52,8 @@ module Fluid_P__Template
     procedure, public, nopass :: &
       ComputeInternalEnergy_G_Kernel
     procedure, public, nopass :: &
+      Compute_N_V_E_G_Kernel
+    procedure, public, nopass :: &
       ComputeEntropyPerBaryon_G_Kernel
     procedure, public, nopass :: &
       ComputeEigenspeeds_P_G_Kernel
@@ -569,6 +571,72 @@ contains
     !$OMP end parallel do
 
   end subroutine ComputeInternalEnergy_G_Kernel
+
+
+  subroutine Compute_N_V_E_G_Kernel &
+               ( N, V_1, V_2, V_3, E, D, S_1, S_2, S_3, G, M, M_UU_22, M_UU_33 )
+
+    !-- Galilean
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      N, &
+      V_1, V_2, V_3, &
+      E, &
+      D, &
+      S_1, S_2, S_3, &
+      G
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      M, &
+      M_UU_22, M_UU_33
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+real ( KDR ) :: &
+  N_Min
+
+N_Min  =  1.0e-11_KDR  *  UNIT % NUMBER_DENSITY_NUCLEAR
+
+    nValues = size ( N )
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nValues
+
+!      if ( D ( iV )  >  0.0_KDR ) then
+      if ( D ( iV )  >  N_Min ) then
+          N ( iV )  =  D ( iV )
+        V_1 ( iV )  =  S_1 ( iV ) / ( M ( iV ) * D ( iV ) )
+        V_2 ( iV )  =  M_UU_22 ( iV ) * S_2 ( iV ) / ( M ( iV ) * D ( iV ) )
+        V_3 ( iV )  =  M_UU_33 ( iV ) * S_3 ( iV ) / ( M ( iV ) * D ( iV ) )
+          E ( iV )  =  G ( iV )  -  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV ) &
+                                                +  S_2 ( iV ) * V_2 ( iV ) &
+                                                +  S_3 ( iV ) * V_3 ( iV ) )
+      else
+!        N   ( iV )  =  0.0_KDR
+          N ( iV )  =  N_Min
+        V_1 ( iV )  =  0.0_KDR
+        V_2 ( iV )  =  0.0_KDR
+        V_3 ( iV )  =  0.0_KDR
+          E ( iV )  =  0.0_KDR
+!        D   ( iV )  =  0.0_KDR
+          D ( iV )  =  N_Min
+        S_1 ( iV )  =  0.0_KDR
+        S_2 ( iV )  =  0.0_KDR
+        S_3 ( iV )  =  0.0_KDR
+          G ( iV )  =  0.0_KDR
+      end if
+
+      if ( E ( iV ) < 0.0_KDR ) then
+        E ( iV ) = 0.0_KDR
+        G ( iV ) = E ( iV )  +  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV ) &
+                                            +  S_2 ( iV ) * V_2 ( iV ) &
+                                            +  S_3 ( iV ) * V_3 ( iV ) )
+      end if
+
+    end do !-- iV
+    !$OMP end parallel do
+
+  end subroutine Compute_N_V_E_G_Kernel
 
 
   subroutine ComputeEntropyPerBaryon_G_Kernel ( SB, DS, N )

@@ -56,7 +56,7 @@ module Fluid_D__Form
     procedure, public, nopass :: &
       ComputeDensityMomentum_G_Kernel
     procedure, public, nopass :: &
-      ComputeDensityVelocity_G_Kernel
+      Compute_N_V_G_Kernel
     procedure, public, nopass :: &
       ComputeEigenspeeds_D_G_Kernel
   end type Fluid_D_Form
@@ -356,7 +356,7 @@ contains
 
     call C % ComputeBaryonMassKernel &
            ( M, C % BaryonMassReference )
-    call C % ComputeDensityVelocity_G_Kernel &
+    call C % Compute_N_V_G_Kernel &
            ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33 )
     call C % ComputeEigenspeeds_D_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3 )
@@ -499,7 +499,7 @@ contains
   end subroutine ComputeDensityMomentum_G_Kernel 	 	 
 
 
-  subroutine ComputeDensityVelocity_G_Kernel &
+  subroutine Compute_N_V_G_Kernel &
                ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33 )
 
     !-- Galilean
@@ -516,22 +516,29 @@ contains
     integer ( KDI ) :: &
       iV, &
       nValues
+real ( KDR ) :: &
+  N_Min
+
+N_Min  =  1.0e-11_KDR  *  UNIT % NUMBER_DENSITY_NUCLEAR
 
     nValues = size ( N )
 
     !$OMP parallel do private ( iV )
     do iV = 1, nValues
-      if ( D ( iV )  >  0.0_KDR ) then
+!      if ( D ( iV )  >  0.0_KDR ) then
+      if ( D ( iV )  >  N_Min ) then
         N ( iV )    =  D ( iV )
         V_1 ( iV )  =  S_1 ( iV ) / ( M ( iV ) * D ( iV ) )
         V_2 ( iV )  =  M_UU_22 ( iV ) * S_2 ( iV ) / ( M ( iV ) * D ( iV ) )
         V_3 ( iV )  =  M_UU_33 ( iV ) * S_3 ( iV ) / ( M ( iV ) * D ( iV ) )
       else
-        N   ( iV )  =  0.0_KDR
+!        N   ( iV )  =  0.0_KDR
+        N   ( iV )  =  N_Min
         V_1 ( iV )  =  0.0_KDR
         V_2 ( iV )  =  0.0_KDR
         V_3 ( iV )  =  0.0_KDR
-        D   ( iV )  =  0.0_KDR
+!        D   ( iV )  =  0.0_KDR
+        D   ( iV )  =  N_Min
         S_1 ( iV )  =  0.0_KDR
         S_2 ( iV )  =  0.0_KDR
         S_3 ( iV )  =  0.0_KDR
@@ -539,7 +546,7 @@ contains
     end do !-- iV
     !$OMP end parallel do
 
-  end subroutine ComputeDensityVelocity_G_Kernel
+  end subroutine Compute_N_V_G_Kernel
 
 
   subroutine ComputeEigenspeeds_D_G_Kernel &
