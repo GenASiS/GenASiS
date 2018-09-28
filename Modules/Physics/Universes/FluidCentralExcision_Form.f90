@@ -218,22 +218,12 @@ contains
       S
 
     associate ( FCE => FluidCentralExcision )
-if ( FCE % Time > 1.8e-3_KDR  *  UNIT % SECOND ) then
-  call Show ( '>>> Before coarsening' )
-  call FluidCentralExcision % Write ( )
-end if
-
     select type ( PS => FCE % PositionSpace )
     class is ( Atlas_SC_CE_Form )
 
     if ( PS % nDimensions > 2 ) &
       call FCE % CoarsenSingularityTemplate ( S, iAngular = 3 )
   
-if ( FCE % Time > 1.8e-3_KDR  *  UNIT % SECOND ) then
-  call Show ( '>>> After coarsening' )
-  call FluidCentralExcision % Write ( )
-end if
-
     end select !-- PS
     end associate !-- FluidCentralExcision
 

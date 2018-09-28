@@ -402,7 +402,6 @@ contains
       nValuesFactor_F_3  =  ( 1 + F % N_CONSERVED )  *  C % nCellsBrick ( 3 ) &
                             +  1
       nValuesFactor_B_3  =  F % N_CONSERVED  *  C % nCellsBrick ( 3 )
-
   
       call CO_F % Initialize &
              ( C % Communicator_3, &
@@ -814,9 +813,6 @@ contains
     class ( GeometryFlatForm ), pointer :: &
       G
 
-call Show ( '>>> Compose pillars' )
-call Show ( iAngular, '>>> iAngular' )
-
     select type ( PS => FC % PositionSpace )
     class is ( Atlas_SC_Form )
     G => PS % Geometry ( )
@@ -893,7 +889,6 @@ call Show ( iAngular, '>>> iAngular' )
 
     case ( 3 )
 
-call Show ( '>>> iAngular = 3' )
       if ( .not. C % Communicator_3 % Initialized ) &
         return
 
@@ -923,11 +918,6 @@ call Show ( '>>> iAngular = 3' )
                    ( S % Value ( :, S % iaSelected ( iS ) ), SV )
             Outgoing ( oO + 1 : oO + nCB ( 3 ) ) &
               =  SV ( iC, jC, 1 : nCB ( 3 ) )
-if ( FC % Time > 1.8e-3_KDR  *  UNIT % SECOND .and. iC == 1 .and. jC == 1 &
-     .and. iS == 1 ) &
-then
-  call Show ( Outgoing ( oO + 1 : oO + nCB ( 3 ) ), '>>> Outgoing' )
-end if
             oO = oO + nCB ( 3 )
           end do !-- iS
         end do !-- iC
