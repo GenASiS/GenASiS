@@ -222,7 +222,7 @@ contains
       call Show ( 'ComputeInteriorIntegrand', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- G
-    
+
   end subroutine ComputeInteriorIntegrand
 
 
@@ -585,6 +585,11 @@ contains
 
     call T % ComputeInteriorIntegrand_G ( Integrand, C, G, nDimensions )
 
+    select type ( A => T % Atlas )
+    class is ( Atlas_SC_Form )    
+    select type ( GA => A % Geometry_ASC )
+    class is ( Geometry_ASC_Form )
+
     select type ( C )
     class is ( Fluid_D_Form )
     select type ( G )
@@ -595,19 +600,34 @@ contains
         D   => C % Value ( :, C % CONSERVED_BARYON_DENSITY ), &
         Phi => G % Value ( :, G % POTENTIAL ) )
 
-    do iS = 1, T % nSelected
-      iI = T % iaSelected ( iS )
-      if ( iI == T % GRAVITATIONAL_ENERGY ) then
-        Integrand ( iS ) % Value  =  0.5_KDR * M * D * Phi
-      else if ( iI == T % TOTAL_ENERGY ) then
-        Integrand ( iS ) % Value  &
-          =  Integrand ( iS ) % Value  +  0.5_KDR * M * D * Phi
-      end if !-- iI
-    end do !-- iS     
+    select case ( trim ( GA % GravitySolverType ) )
+    case ( 'UNIFORM', 'CENTRAL_MASS' )  !-- External potential
+      do iS = 1, T % nSelected
+        iI = T % iaSelected ( iS )
+        if ( iI == T % GRAVITATIONAL_ENERGY ) then
+          Integrand ( iS ) % Value  =  M * D * Phi
+        else if ( iI == T % TOTAL_ENERGY ) then
+          Integrand ( iS ) % Value  &
+            =  Integrand ( iS ) % Value  +  M * D * Phi
+        end if !-- iI
+      end do !-- iS     
+    case default
+      do iS = 1, T % nSelected
+        iI = T % iaSelected ( iS )
+        if ( iI == T % GRAVITATIONAL_ENERGY ) then
+          Integrand ( iS ) % Value  =  0.5_KDR * M * D * Phi
+        else if ( iI == T % TOTAL_ENERGY ) then
+          Integrand ( iS ) % Value  &
+            =  Integrand ( iS ) % Value  +  0.5_KDR * M * D * Phi
+        end if !-- iI
+      end do !-- iS     
+    end select !-- GravitySolverType
 
     end associate !-- M, etc.
     end select !-- G
     end select !-- C
+    end select !-- GA
+    end select !-- A
 
   end subroutine ComputeInteriorIntegrand_N
 
@@ -684,8 +704,8 @@ contains
         case ( 'SPHERICAL' )
           if ( iD /= 1 ) &
             exit DimensionLoop
-          if ( iF /= 2 ) &
-            cycle FaceLoop
+!          if ( iF /= 2 ) &
+!            cycle FaceLoop
           do iS = 1, T % nSelected
             iI = T % iaSelected ( iS )
             call CSL % SetVariablePointer &
@@ -1316,9 +1336,13 @@ contains
 
     integer ( KDI ) :: &
       oI, oJ, oK, &
-      iV, jV, kV
+      jV, kV
     integer ( KDI ), dimension ( 3 ) :: &
       nV
+    real ( KDR ) :: &
+      SqrtTiny
+
+    SqrtTiny = sqrt ( tiny ( 0.0_KDR ) )
 
     nV  =  shape ( I_I )
 
@@ -1326,12 +1350,13 @@ contains
     oJ  =  CSL % nGhostLayers ( 2 )
     oK  =  CSL % nGhostLayers ( 3 )
 
-    !$OMP parallel do private ( iV, jV, kV ) collapse ( 2 )
+    !$OMP parallel do private ( jV, kV ) collapse ( 2 )
     do kV = 1, nV ( 3 )
       do jV = 1, nV ( 2 )
           I_I ( 1, jV, kV )  &
             =  Phi ( oI + 1, oJ + jV, oK + kV )  &
-               *  R ( oI + 1, oJ + jV, oK + kV )  /  R_I ( 1, jV, kV )  &
+               *  R ( oI + 1, oJ + jV, oK + kV )  &
+                  /  max ( R_I ( 1, jV, kV ), SqrtTiny )  &
                *  M ( oI + 1, oJ + jV, oK + kV )  *  D ( 1, jV, kV )
       end do
     end do
