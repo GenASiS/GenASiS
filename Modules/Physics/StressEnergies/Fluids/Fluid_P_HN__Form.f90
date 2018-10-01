@@ -651,10 +651,9 @@ contains
         Shock => FF % Value ( oV + 1 : oV + nV, FF % SHOCK ) )
 
     call C % ComputeBaryonMassKernel ( M, C % BaryonMassReference )
-    call C % Compute_N_V_G_Kernel &
-           ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33 )
-    call C % ComputeInternalEnergy_G_Kernel &
-           ( E, G, M, N, V_1, V_2, V_3, S_1, S_2, S_3 )
+    call C % Compute_N_V_E_G_Kernel &
+               ( N, V_1, V_2, V_3, E, D, S_1, S_2, S_3, G, M, &
+                 M_UU_22, M_UU_33, C % BaryonDensityMin )
     call C % ComputeProtonFraction_G_Kernel &
            ( YE, DP, N )
     if ( C % UseEntropy ) then

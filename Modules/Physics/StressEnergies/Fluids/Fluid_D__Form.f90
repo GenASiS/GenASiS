@@ -29,7 +29,8 @@ module Fluid_D__Form
       VELOCITY_U         = 0, &
       MOMENTUM_DENSITY_D = 0
     real ( KDR ) :: &
-      BaryonMassReference = 1.0_KDR
+      BaryonMassReference = 1.0_KDR, &
+      BaryonDensityMin = 0.0_KDR
     class ( FluidFeaturesTemplate ), pointer :: &
       Features => null ( )
   contains
@@ -39,6 +40,8 @@ module Fluid_D__Form
       Initialize => InitializeAllocate_D
     procedure, public, pass :: &
       SetPrimitiveConserved
+    procedure, public, pass :: &
+      SetBaryonDensityMin
     procedure, public, pass :: &
       SetOutput
     procedure, public, pass :: &
@@ -182,6 +185,22 @@ contains
                 C % IGNORABILITY, oIndexOption = oC )
     
   end subroutine SetPrimitiveConserved
+
+
+  subroutine SetBaryonDensityMin ( F, BaryonDensityMin )
+
+    class ( Fluid_D_Form ), intent ( inout ) :: &
+      F
+    real ( KDR ), intent ( in ) :: &
+      BaryonDensityMin
+
+    F % BaryonDensityMin = BaryonDensityMin
+
+    call Show ( 'Setting BaryonDensityMin of a Fluid', F % IGNORABILITY )
+    call Show ( F % Name, 'Name', F % IGNORABILITY )
+    call Show ( F % BaryonDensityMin, 'BaryonDensityMin', F % IGNORABILITY )
+
+  end subroutine SetBaryonDensityMin
 
 
   subroutine SetOutput ( F, Output )
@@ -357,7 +376,8 @@ contains
     call C % ComputeBaryonMassKernel &
            ( M, C % BaryonMassReference )
     call C % Compute_N_V_G_Kernel &
-           ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33 )
+           ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33, &
+             C % BaryonDensityMin )
     call C % ComputeEigenspeeds_D_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3 )
 
@@ -500,9 +520,10 @@ contains
 
 
   subroutine Compute_N_V_G_Kernel &
-               ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33 )
+               ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33, &
+                 N_Min )
 
-    !-- Galilean
+    !-- Compute_ComovingBaryonDensity_Velocity_Galilean
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       N, &
@@ -512,32 +533,27 @@ contains
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       M, &
       M_UU_22, M_UU_33
+    real ( KDR ), intent ( in ) :: &
+      N_Min
 
     integer ( KDI ) :: &
       iV, &
       nValues
-real ( KDR ) :: &
-  N_Min
-
-N_Min  =  1.0e-11_KDR  *  UNIT % NUMBER_DENSITY_NUCLEAR
 
     nValues = size ( N )
 
     !$OMP parallel do private ( iV )
     do iV = 1, nValues
-!      if ( D ( iV )  >  0.0_KDR ) then
       if ( D ( iV )  >  N_Min ) then
         N ( iV )    =  D ( iV )
         V_1 ( iV )  =  S_1 ( iV ) / ( M ( iV ) * D ( iV ) )
         V_2 ( iV )  =  M_UU_22 ( iV ) * S_2 ( iV ) / ( M ( iV ) * D ( iV ) )
         V_3 ( iV )  =  M_UU_33 ( iV ) * S_3 ( iV ) / ( M ( iV ) * D ( iV ) )
       else
-!        N   ( iV )  =  0.0_KDR
         N   ( iV )  =  N_Min
         V_1 ( iV )  =  0.0_KDR
         V_2 ( iV )  =  0.0_KDR
         V_3 ( iV )  =  0.0_KDR
-!        D   ( iV )  =  0.0_KDR
         D   ( iV )  =  N_Min
         S_1 ( iV )  =  0.0_KDR
         S_2 ( iV )  =  0.0_KDR

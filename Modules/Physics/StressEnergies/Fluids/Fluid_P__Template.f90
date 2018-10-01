@@ -574,9 +574,10 @@ contains
 
 
   subroutine Compute_N_V_E_G_Kernel &
-               ( N, V_1, V_2, V_3, E, D, S_1, S_2, S_3, G, M, M_UU_22, M_UU_33 )
+               ( N, V_1, V_2, V_3, E, D, S_1, S_2, S_3, G, M, &
+                 M_UU_22, M_UU_33, N_Min )
 
-    !-- Galilean
+    !-- Compute_ComovingBaryonDensity_Velocity_InternalEnergyDensity_Galilean
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       N, &
@@ -588,21 +589,18 @@ contains
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       M, &
       M_UU_22, M_UU_33
+    real ( KDR ), intent ( in ) :: &
+      N_Min
 
     integer ( KDI ) :: &
       iV, &
       nValues
-real ( KDR ) :: &
-  N_Min
-
-N_Min  =  1.0e-11_KDR  *  UNIT % NUMBER_DENSITY_NUCLEAR
 
     nValues = size ( N )
 
     !$OMP parallel do private ( iV )
     do iV = 1, nValues
 
-!      if ( D ( iV )  >  0.0_KDR ) then
       if ( D ( iV )  >  N_Min ) then
           N ( iV )  =  D ( iV )
         V_1 ( iV )  =  S_1 ( iV ) / ( M ( iV ) * D ( iV ) )
@@ -612,13 +610,11 @@ N_Min  =  1.0e-11_KDR  *  UNIT % NUMBER_DENSITY_NUCLEAR
                                                 +  S_2 ( iV ) * V_2 ( iV ) &
                                                 +  S_3 ( iV ) * V_3 ( iV ) )
       else
-!        N   ( iV )  =  0.0_KDR
           N ( iV )  =  N_Min
         V_1 ( iV )  =  0.0_KDR
         V_2 ( iV )  =  0.0_KDR
         V_3 ( iV )  =  0.0_KDR
           E ( iV )  =  0.0_KDR
-!        D   ( iV )  =  0.0_KDR
           D ( iV )  =  N_Min
         S_1 ( iV )  =  0.0_KDR
         S_2 ( iV )  =  0.0_KDR
