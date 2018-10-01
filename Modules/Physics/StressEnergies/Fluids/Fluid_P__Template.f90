@@ -50,8 +50,6 @@ module Fluid_P__Template
     procedure, public, nopass :: &
       ComputeConservedEntropy_G_Kernel
     procedure, public, nopass :: &
-      ComputeInternalEnergy_G_Kernel
-    procedure, public, nopass :: &
       Compute_N_V_E_G_Kernel
     procedure, public, nopass :: &
       ComputeEntropyPerBaryon_G_Kernel
@@ -531,46 +529,6 @@ contains
     !$OMP end parallel do
 
   end subroutine ComputeConservedEntropy_G_Kernel
-
-
-  subroutine ComputeInternalEnergy_G_Kernel &
-               ( E, G, M, N, V_1, V_2, V_3, S_1, S_2, S_3 )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      E, &
-      G
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      M, &
-      N, &
-      V_1, V_2, V_3, &
-      S_1, S_2, S_3
-
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-
-    nValues = size ( E )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-      E ( iV )  =  G ( iV )  -  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV ) &
-                                            +  S_2 ( iV ) * V_2 ( iV ) &
-                                            +  S_3 ( iV ) * V_3 ( iV ) )
-    end do
-    !$OMP end parallel do
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-      if ( E ( iV ) < 0.0_KDR ) then
-        E ( iV ) = 0.0_KDR
-        G ( iV ) = E ( iV )  +  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV ) &
-                                            +  S_2 ( iV ) * V_2 ( iV ) &
-                                            +  S_3 ( iV ) * V_3 ( iV ) )
-      end if
-    end do
-    !$OMP end parallel do
-
-  end subroutine ComputeInternalEnergy_G_Kernel
 
 
   subroutine Compute_N_V_E_G_Kernel &

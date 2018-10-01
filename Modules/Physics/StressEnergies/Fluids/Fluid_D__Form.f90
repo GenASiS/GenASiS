@@ -198,7 +198,9 @@ contains
 
     call Show ( 'Setting BaryonDensityMin of a Fluid', F % IGNORABILITY )
     call Show ( F % Name, 'Name', F % IGNORABILITY )
-    call Show ( F % BaryonDensityMin, 'BaryonDensityMin', F % IGNORABILITY )
+    call Show ( F % BaryonDensityMin, &
+                F % Unit ( F % COMOVING_BARYON_DENSITY ), 'BaryonDensityMin', &
+                F % IGNORABILITY )
 
   end subroutine SetBaryonDensityMin
 
