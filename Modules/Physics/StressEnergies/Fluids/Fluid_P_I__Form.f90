@@ -595,6 +595,10 @@ contains
     integer ( KDI ) :: &
       iV, &
       nValues
+    real ( KDR ) :: &
+      SqrtHuge
+
+    SqrtHuge = sqrt ( huge ( 1.0_KDR ) )
 
     nValues = size ( P )
 
@@ -609,7 +613,7 @@ contains
           SB ( iV )  =  C_V  *  log ( P ( iV ) / P0  &
                                       *  ( N0 / N ( iV ) ) ** Gamma ) 
         else
-          SB ( iV )  =  - 0.1 * huge ( 1.0_KDR )
+          SB ( iV )  =  - SqrtHuge
         end if
 
       else
@@ -652,6 +656,10 @@ contains
     integer ( KDI ) :: &
       iV, &
       nValues
+    real ( KDR ) :: &
+      SqrtHuge
+
+    SqrtHuge = sqrt ( huge ( 1.0_KDR ) )
 
     nValues = size ( P )
 
@@ -664,7 +672,7 @@ contains
         SB ( iV )  =  C_V  *  log ( P ( iV ) / P0  &
                                     *  ( N0 / N ( iV ) ) ** Gamma ) 
       else
-        SB ( iV )  =  - 0.1 * huge ( 1.0_KDR )
+        SB ( iV )  =  - SqrtHuge
       end if
 
       if ( N ( iV ) > 0.0_KDR .and. P ( iV ) > 0.0_KDR ) then
