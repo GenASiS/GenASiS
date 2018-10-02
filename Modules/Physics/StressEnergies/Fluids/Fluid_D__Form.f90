@@ -55,13 +55,13 @@ module Fluid_D__Form
     procedure, public, pass ( C ) :: &
       ComputeRawFluxes
     procedure, public, nopass :: &
-      ComputeBaryonMassKernel
+      Compute_M_Kernel
     procedure, public, nopass :: &
-      ComputeDensityMomentum_G_Kernel
+      Compute_D_S_G_Kernel
     procedure, public, nopass :: &
       Compute_N_V_G_Kernel
     procedure, public, nopass :: &
-      ComputeEigenspeeds_D_G_Kernel
+      Compute_FE_D_G_Kernel
   end type Fluid_D_Form
 
     private :: &
@@ -306,11 +306,11 @@ contains
         S_2   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 2 ) ), &
         S_3   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 3 ) ) )
 
-    call C % ComputeBaryonMassKernel &
+    call C % Compute_M_Kernel &
            ( M, C % BaryonMassReference )
-    call C % ComputeDensityMomentum_G_Kernel &
+    call C % Compute_D_S_G_Kernel &
            ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
-    call C % ComputeEigenspeeds_D_G_Kernel &
+    call C % Compute_FE_D_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3 )
 
     end associate !-- FEP_1, etc.
@@ -375,12 +375,12 @@ contains
         S_2   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 2 ) ), &
         S_3   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 3 ) ) )
 
-    call C % ComputeBaryonMassKernel &
+    call C % Compute_M_Kernel &
            ( M, C % BaryonMassReference )
     call C % Compute_N_V_G_Kernel &
            ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33, &
              C % BaryonDensityMin )
-    call C % ComputeEigenspeeds_D_G_Kernel &
+    call C % Compute_FE_D_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3 )
 
     end associate !-- FEP_1, etc.
@@ -457,7 +457,9 @@ contains
   end subroutine ComputeRawFluxes
   
   
-  subroutine ComputeBaryonMassKernel ( M, BaryonMassReference )
+  subroutine Compute_M_Kernel ( M, BaryonMassReference )
+
+    !-- Compute_BaryonMass_Kernel
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       M
@@ -476,13 +478,13 @@ contains
     end do !-- iV
     !$OMP end parallel do
 
-  end subroutine ComputeBaryonMassKernel
+  end subroutine Compute_M_Kernel
 
 
-  subroutine ComputeDensityMomentum_G_Kernel & 	 	 
+  subroutine Compute_D_S_G_Kernel & 	 	 
 	       ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
  	 
-    !-- Galilean
+    !-- Compute_ConservedDensity_Momentum_Galilean_Kernel
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: & 	 	 
       D, & 	 	 
@@ -518,7 +520,7 @@ contains
     end do !-- iV
     !$OMP end parallel do
 
-  end subroutine ComputeDensityMomentum_G_Kernel 	 	 
+  end subroutine Compute_D_S_G_Kernel 	 	 
 
 
   subroutine Compute_N_V_G_Kernel &
@@ -567,8 +569,10 @@ contains
   end subroutine Compute_N_V_G_Kernel
 
 
-  subroutine ComputeEigenspeeds_D_G_Kernel &
+  subroutine Compute_FE_D_G_Kernel &
                ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3 )
+
+    !-- Compute_FastEigenspeeds_Dust_Galilean_Kernel
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       FEP_1, FEP_2, FEP_3, &
@@ -593,7 +597,7 @@ contains
     end do !-- iV
     !$OMP end parallel do
 
-  end subroutine ComputeEigenspeeds_D_G_Kernel
+  end subroutine Compute_FE_D_G_Kernel
 
 
   subroutine InitializeBasics &
