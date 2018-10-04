@@ -1,7 +1,7 @@
 PATH_GENASIS = ../../../../..
 
 all: SineWave OppenheimerSnyder RiemannProblem RayleighTaylor \
-     SedovTaylor FishboneMoncrief YahilLattimer #SawtoothWave 
+     SedovTaylor FishboneMoncrief YahilLattimer SpheroidCollapse \		   #SawtoothWave 
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
@@ -54,6 +54,12 @@ YahilLattimer: ThirdParty.a GenASiS.a YahilLattimer.o
           -o YahilLattimer_$(MACHINE) \
           YahilLattimer.o YahilLattimer_Form.o \
           GenASiS.a ThirdParty.a $(LIBRARIES)
+
+SpheroidCollapse: ThirdParty.a GenASiS.a SpheroidCollapse.o
+	$(LINK) $(FFLAGS) \
+           -o SpheroidCollapse_$(MACHINE) \
+           SpheroidCollapse.o SpheroidCollapse_Form.o \
+           GenASiS.a ThirdParty.a $(LIBRARIES)
 
 include $(PATH_GENASIS)/Build/Makefile_Dependencies
 # include ../Makefile_Dependencies
@@ -148,3 +154,12 @@ YahilLattimer.o: \
   GenASiS.o \
   YahilLattimer_Form.o \
   YahilLattimer.f90
+
+SpheroidCollapse_Form.o: \
+  GenASiS.o \
+  SpheroidCollapse_Form.f90
+
+SpheroidCollapse.o: \
+  GenASiS.o \
+  SpheroidCollapse_Form.o \
+  SpheroidCollapse.f90
