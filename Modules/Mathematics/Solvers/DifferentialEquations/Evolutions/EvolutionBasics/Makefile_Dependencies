@@ -1,0 +1,10 @@
+IntegratorHeader_Form.o: \
+  Basics.o \
+  IntegratorHeader_Form.f90
+
+EvolutionBasics.o: \
+  IntegratorHeader_Form.o \
+  EvolutionBasics.f90
+
+EvolutionBasics.a: $(EVOLUTION_BASICS)
+	ar r EvolutionBasics.a $(EVOLUTION_BASICS)

@@ -1,8 +1,10 @@
+include $(PATH_EVOLUTION_BASICS)/Makefile_Dependencies
 include $(PATH_INCREMENTS)/Makefile_Dependencies
 include $(PATH_STEPS)/Makefile_Dependencies
 include $(PATH_INTEGRATORS)/Makefile_Dependencies
 
 Evolutions.o: \
+  EvolutionBasics.o \
   Increments.o \
   Steps.o \
   Integrators.o \
