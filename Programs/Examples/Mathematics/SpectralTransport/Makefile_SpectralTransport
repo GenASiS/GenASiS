@@ -4,7 +4,7 @@ all: SineWaveStreaming Thermalization MarshakWave
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-VPATH := $(VPATH):../../FluidDynamics:../../GreyTransport
+VPATH := ../../FluidDynamics:../../GreyTransport:$(VPATH)
 include ../../FluidDynamics/Makefile_ObjectFiles
 include ../../GreyTransport/Makefile_ObjectFiles
 

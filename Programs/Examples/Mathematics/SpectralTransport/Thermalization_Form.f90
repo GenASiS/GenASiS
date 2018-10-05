@@ -154,7 +154,7 @@ contains
     allocate ( Step_RK2_C_BSLL_ASC_CSLD_Form :: T % Step_MS )
     select type ( S_MS => T % Step_MS )
     class is ( Step_RK2_C_BSLL_ASC_CSLD_Form )
-    call S_MS % Initialize ( RMB, Name )
+    call S_MS % Initialize ( T, RMB, Name )
     S_MS % ApplyDivergence_S % Pointer => null ( )  !-- Disable spatial 
                                                     !   section evolution
     S_MS % ApplyRelaxation_F % Pointer => ApplyRelaxation_RM_S
@@ -163,7 +163,7 @@ contains
     allocate ( Step_RK2_C_ASC_Form :: T % Step_PS )
     select type ( S_PS => T % Step_PS )
     class is ( Step_RK2_C_ASC_Form )
-    call S_PS % Initialize ( FA, Name )
+    call S_PS % Initialize ( T, FA, Name )
     S_PS % ApplyDivergence % Pointer => null ( )  !-- Disable fluid evolution
     end select !-- S_PS
 
@@ -263,9 +263,9 @@ contains
     associate &
       ( R0 => ( C % MaxCoordinate + C % MinCoordinate ) / 2.0_KDR, &
         L  => ( C % MaxCoordinate - C % MinCoordinate ), &
-        X  => G % Value ( :, G % CENTER ( 1 ) ), &
-        Y  => G % Value ( :, G % CENTER ( 2 ) ), &
-        Z  => G % Value ( :, G % CENTER ( 3 ) ), &
+        X  => G % Value ( :, G % CENTER_U ( 1 ) ), &
+        Y  => G % Value ( :, G % CENTER_U ( 2 ) ), &
+        Z  => G % Value ( :, G % CENTER_U ( 3 ) ), &
         Temperature => F % Value ( :, F % TEMPERATURE ), &
         Density     => F % Value ( :, F % COMOVING_DENSITY ), &
         Velocity_1  => F % Value ( :, F % VELOCITY_U ( 1 ) ), &

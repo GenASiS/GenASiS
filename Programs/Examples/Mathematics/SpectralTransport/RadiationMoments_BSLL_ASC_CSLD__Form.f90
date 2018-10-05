@@ -123,7 +123,7 @@ contains
     ! RMB % iaBaseCell = B % iaBaseCell
 
     GF => B % GeometryFiber ( )
-    associate ( Energy => GF % Value ( :, GF % CENTER ( 1 ) ) )
+    associate ( Energy => GF % Value ( :, GF % CENTER_U ( 1 ) ) )
     RMB % nEnergyValues = size ( Energy )
     allocate ( RMB % Energy ( RMB % nEnergyValues ) )
     RMB % Energy = Energy
