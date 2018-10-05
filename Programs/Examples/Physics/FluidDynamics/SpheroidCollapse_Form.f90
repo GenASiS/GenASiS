@@ -75,7 +75,7 @@ contains
     TimeScale &
       = sqrt ( 3.0_KDR / ( 8.0_KDR * CONSTANT % PI * SC % InitialDensity ) )
 
-    FCC % FinishTime = 0.5 * TimeScale
+    FCC % FinishTime = 1.2 * TimeScale
     call Show ( FCC % FinishTime, 'Reset FinishTime' )
 
     F => FA % Fluid_D ( )
@@ -280,7 +280,7 @@ contains
 
     nullify ( G )
 
-    N = D0 * BVF * 4 * CONSTANT % PI
+    N = D0 * BVF
 
   end subroutine SetFluidKernel
 

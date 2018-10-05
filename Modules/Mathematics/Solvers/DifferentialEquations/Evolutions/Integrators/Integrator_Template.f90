@@ -204,7 +204,8 @@ contains
       call Show ( I % Time, I % TimeUnit, 'Time', I % IGNORABILITY + 1 )
 
       TimeStepRatio  &
-        =  minval ( I % TimeStepCandidate )  /  I % WriteTimeInterval 
+        =  minval ( I % TimeStepCandidate ) &
+             / max ( I % WriteTimeInterval, sqrt ( tiny ( 0.0_KDR ) ) )
       if ( TimeStepRatio  <  1.0e-6  *  I % nWrite ) then
         call I % AdministerCheckpoint ( )
         call Show ( 'TimeStepRatio too small', CONSOLE % WARNING )

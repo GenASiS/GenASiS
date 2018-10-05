@@ -1,7 +1,7 @@
 PATH_GENASIS = ../../../../..
 
 all: SineWave OppenheimerSnyder RiemannProblem RayleighTaylor \
-     SedovTaylor FishboneMoncrief YahilLattimer SpheroidCollapse \		   #SawtoothWave 
+     SedovTaylor FishboneMoncrief YahilLattimer SpheroidCollapse		   #SawtoothWave 
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
