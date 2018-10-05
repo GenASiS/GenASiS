@@ -10,7 +10,7 @@ program SpheroidCollapse
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'SpheroidCollapse', DimensionalityOption = '1D' )
+         ( 'SpheroidCollapse', DimensionalityOption = '2D' )
 
   allocate ( SC )
   call SC % Initialize ( PROGRAM_HEADER % Name )

@@ -10,7 +10,10 @@ module SpheroidCollapse_Form
 
   type, public, extends ( UniverseTemplate ) :: SpheroidCollapseForm
     Real ( KDR ) :: &
-      Eccentricity
+      SemiMajor, &
+      SemiMinor, &
+      Eccentricity, &
+      InitialDensity
   contains
     procedure, public, pass :: &
       Initialize 
@@ -35,12 +38,13 @@ contains
     class ( Fluid_D_Form ), pointer :: &
       F
 
+    real ( KDR ) :: &
+     TimeScale
 
     if ( SC % Type == '' ) &
       SC % Type = ' a SpheroidCollapse'
 
     call SC % InitializeTemplate ( Name )
-
 
     !-- Integrator
 
@@ -63,6 +67,16 @@ contains
    class is ( Fluid_ASC_Form )
 
     !-- Initial conditions
+
+    SC % SemiMajor = PS % Chart % MaxCoordinate ( 1 ) / 1.1_KDR
+    SC % SemiMinor = SC % SemiMajor * 0.8
+    SC % InitialDensity = 1.0_KDR
+
+    TimeScale &
+      = sqrt ( 3.0_KDR / ( 8.0_KDR * CONSTANT % PI * SC % InitialDensity ) )
+
+    FCC % FinishTime = 0.5 * TimeScale
+    call Show ( FCC % FinishTime, 'Reset FinishTime' )
 
     F => FA % Fluid_D ( )
     call SetFluid ( SC, F, Time = 0.0_KDR )
@@ -95,10 +109,7 @@ contains
       F
     real ( KDR ), intent ( in ) :: &
       Time
-    
-    real ( KDR ) :: &
-      Radius, &
-      Density
+
     class ( GeometryFlatForm ), pointer :: &
       G
 
@@ -107,15 +118,14 @@ contains
     G => PS % Geometry ( )
 
     call SetFluidKernel &
-           (    R = G % Value ( :, G % CENTER_U ( 1 ) ), &
-             dR_L = G % Value ( :, G % WIDTH_LEFT_U ( 1 ) ), &
-             dR_R = G % Value ( :, G % WIDTH_RIGHT_U ( 1 ) ), &
-             Density = 1.0_KDR, & !OS % Density, &
-             RadiusDensity = 1.0_KDR, & !OS % Radius, &
-              N = F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
-             VX = F % Value ( :, F % VELOCITY_U ( 1 ) ), &
-             VY = F % Value ( :, F % VELOCITY_U ( 2 ) ), &
-             VZ = F % Value ( :, F % VELOCITY_U ( 3 ) ) )
+           (  PS, &
+              a_1 = SC % SemiMajor, &
+              a_3 = SC % SemiMinor, &
+              D0  = SC % InitialDensity, &
+              N   = F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
+             V_1 = F % Value ( :, F % VELOCITY_U ( 1 ) ), &
+             V_2 = F % Value ( :, F % VELOCITY_U ( 2 ) ), &
+             V_3 = F % Value ( :, F % VELOCITY_U ( 3 ) ) )
 
     call F % ComputeFromPrimitive ( G )
 
@@ -125,41 +135,152 @@ contains
   end subroutine SetFluid
 
   
-    subroutine SetFluidKernel &
-               ( R, dR_L, dR_R, Density, RadiusDensity, N, VX, VY, VZ )
+   subroutine SetFluidKernel ( A, a_1, a_3, D0, N, V_1, V_2, V_3 )
 
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      R, &
-      dR_L, &
-      dR_R
+    class ( Atlas_SC_Form ), intent ( in ) :: &
+      A
     real ( KDR ), intent ( in ) :: &
-      Density, &
-      RadiusDensity
+      a_1, &
+      a_3, &
+      D0
     real ( KDR ), dimension ( : ), intent ( out ) :: &
       N, &
-      VX, VY, VZ
+      V_1, &
+      V_2, &
+      V_3
 
-    N  = 0.0_KDR
-    VX = 0.0_KDR
-    VY = 0.0_KDR
-    VZ = 0.0_KDR
+    class ( GeometryFlatForm ), pointer :: &
+      G
+    integer ( KDI ) :: &
+      i, &
+      iC, &  !-- iCell
+      iS, jS, kS     !-- iSubcell
+    integer ( KDI ), dimension ( 3 ) :: &
+      nSubcells
+    real ( KDR ), dimension ( 3 ) :: &
+      X_I, &
+      X_O, &
+      dXS, &  !-- dX_Subcell
+      XS      !--  X_Subcell
+    real ( KDR ), dimension ( : ), allocatable :: &
+      BVF, &  !-- VolumeFraction
+      rho_sq, & !-- X^2 + Y^2 
+      Z_sq
+    real ( KDR ) :: &
+      dVS, &  !-- dVolumeSubcell
+      VS, &   !-- VolumeSubcell
+      rho_sq_in_in, &
+      rho_sq_in_out, &
+      rho_sq_out_in, &
+      rho_sq_out_out, &
+      Z_sq_in_in, &
+      Z_sq_in_out, &
+      Z_sq_out_in, &
+      Z_sq_out_out, &
+      rho_S_sq, &
+      Z_s_sq
 
-    associate &
-      ( R_In  => R - dR_L, &
-        R_Out => R + dR_R )
+    N   = 0.0_KDR
+    V_1 = 0.0_KDR
+    V_2 = 0.0_KDR
+    V_3 = 0.0_KDR
 
-    where ( R_Out <= RadiusDensity )
-      N = Density
-    end where
-    where ( R_In < RadiusDensity .and. R_Out > RadiusDensity )
-      N = Density * ( RadiusDensity ** 3  -  R_In ** 3 ) &
-                    / ( R_Out ** 3  -  R_In ** 3 )
-    end where
+    G => A % Geometry ( )
 
-!    N = Density / ( 1 + exp ( ( R - RadiusDensity ) &
-!                              / ( 3 * ( dR_L + dR_R ) ) ) ) 
- 
-    end associate !-- R_In, etc.
+    select type ( C => A % Chart )
+    class is ( Chart_SLD_Form )
+
+    associate ( dV => G % Value ( :, G % VOLUME ) )
+
+    allocate ( BVF ( size ( dV ) ) )
+    call Clear ( BVF )
+
+    nSubCells = 1
+    nSubcells ( : C % nDimensions ) = 20
+
+    do iC = 1, size ( dV )
+      associate &
+        (  X => &
+             G % Value ( iC, G % CENTER_U ( 1 ) : G % CENTER_U ( 3 ) ), &
+          dX_L => &
+            G % Value ( iC, G % WIDTH_LEFT_U ( 1 ) &
+                              : G % WIDTH_LEFT_U ( 3 ) ), &
+          dX_R => &
+            G % Value ( iC, G % WIDTH_RIGHT_U ( 1 ) &
+                              : G % WIDTH_RIGHT_U ( 3 ) ), &
+          Pi => CONSTANT % PI )
+
+      if ( .not. C % IsProperCell ( iC ) ) cycle
+
+       X_I  =  X  - dX_L
+       X_O  =  X  + dX_R
+
+       rho_sq_in_in   = ( X_I ( 1 ) * sin ( X_I ( 2 ) ) ) ** 2
+       rho_sq_in_out  = ( X_O ( 1 ) * sin ( X_I ( 2 ) ) ) ** 2
+       rho_sq_out_in  = ( X_I ( 1 ) * sin ( X_O ( 2 ) ) ) ** 2
+       rho_sq_out_out = ( X_O ( 1 ) * sin ( X_O ( 2 ) ) ) ** 2
+
+       Z_sq_in_in   = ( X_I ( 1 ) * cos ( X_I ( 2 ) ) ) ** 2
+       Z_sq_in_out  = ( X_O ( 1 ) * cos ( X_I ( 2 ) ) ) ** 2
+       Z_sq_out_in  = ( X_I ( 1 ) * cos ( X_O ( 2 ) ) ) ** 2
+       Z_sq_out_out = ( X_O ( 1 ) * cos ( X_O ( 2 ) ) ) ** 2
+
+       if ( rho_sq_in_in / a_1 ** 2 + Z_sq_in_in / a_3 ** 2 <= 1.0_KDR &
+            .and. rho_sq_in_out / a_1 ** 2 &
+                    + Z_sq_in_out / a_3 ** 2 <= 1.0_KDR &
+            .and. rho_sq_out_in / a_1 ** 2 &
+                    + Z_sq_out_in / a_3 ** 2 <= 1.0_KDR &
+            .and. rho_sq_out_out / a_1 ** 2 &
+                    + Z_sq_out_out / a_3 ** 2 <= 1.0_KDR ) then 
+         BVF ( iC ) = 1.0_KDR
+         cycle
+       end if
+
+      if ( rho_sq_in_in / a_1 ** 2 + Z_sq_in_in / a_3 ** 2 > 1.0_KDR &
+           .and. rho_sq_in_out / a_1 ** 2 &
+                   + Z_sq_in_out / a_3 ** 2 > 1.0_KDR &
+           .and. rho_sq_out_in / a_1 ** 2 &
+                   + Z_sq_out_in / a_3 ** 2 > 1.0_KDR &
+           .and. rho_sq_out_out / a_1 ** 2 &
+                   + Z_sq_out_out / a_3 ** 2 > 1.0_KDR ) then 
+        BVF ( iC ) = 0.0_KDR
+        cycle
+      end if
+      
+      dXS  =  ( X_O  -  X_I ) / nSubcells
+
+      VS = 0.0_KDR
+      do kS = 1, nSubcells ( 3 )
+        do jS = 1, nSubcells ( 2 )
+          do iS = 1, nSubcells ( 1 )
+            XS  =  X_I  +  ( [ iS, jS, kS ] - 0.5_KDR ) * dXS
+            rho_S_sq = ( XS ( 1 ) * sin ( XS ( 2 ) ) ) ** 2
+            Z_S_sq = ( XS ( 1 ) * cos ( XS ( 2 ) ) ) ** 2
+            select case ( C % nDimensions )
+            case ( 2 )
+              dVS = 2 * Pi * XS ( 1 ) ** 2  * sin ( XS ( 2 ) ) &
+                      * dXS ( 1 ) * dXS ( 2 )
+            case ( 3 )
+              dVS = XS ( 1 ) ** 2  * sin ( XS ( 2 ) ) &
+                     * dXS ( 1 ) * dXS ( 2 ) * dXS ( 3 )
+            end select 
+            VS = VS + dVS
+            if ( rho_S_sq / a_1 ** 2 + Z_S_sq / a_3 ** 2 <= 1.0_KDR ) &
+              BVF ( iC ) = BVF ( iC ) + dVS
+          end do !-- iS
+        end do !-- jS
+      end do !-- kS
+      BVF ( iC ) = BVF ( iC ) / VS
+
+      end associate !-- X, etc.
+    end do !-- iC
+
+    end associate !-- dV
+    end select !-- C
+
+    nullify ( G )
+
+    N = D0 * BVF * 4 * CONSTANT % PI
 
   end subroutine SetFluidKernel
 
