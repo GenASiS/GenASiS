@@ -86,7 +86,7 @@ subroutine TestGeometry ( Name, nDimensions )
     G % Value ( :, G % CENTER_U ( 3 ) ) =  C % Center ( 3 ) % Value
   end if
 
-  call G % SetMetric ( nDimensions, nValues, 0 )
+  call G % SetMetricFixed ( nDimensions, nValues, 0 )
 
   call Show ( 'Geometry variables' )
   call Show ( G % Name, 'Name' )

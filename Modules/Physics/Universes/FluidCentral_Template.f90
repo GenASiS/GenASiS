@@ -245,7 +245,7 @@ contains
     select type ( S => FC % Step )
     class is ( Step_RK2_C_ASC_Form )
 
-    call S % Initialize ( FA, Name )
+    call S % Initialize ( FC, FA, Name )
     S % ApplySources % Pointer => ApplySources
 
     ! F => FA % Fluid_D ( )

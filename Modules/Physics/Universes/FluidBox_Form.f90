@@ -97,7 +97,7 @@ contains
     allocate ( Step_RK2_C_ASC_Form :: FB % Step )
     select type ( S => FB % Step )
     class is ( Step_RK2_C_ASC_Form )
-    call S % Initialize ( FA, Name )
+    call S % Initialize ( FB, FA, Name )
     if ( present ( GravitySolverTypeOption ) ) &   
       S % ApplySources % Pointer => ApplyGravity_F
     end select !-- S

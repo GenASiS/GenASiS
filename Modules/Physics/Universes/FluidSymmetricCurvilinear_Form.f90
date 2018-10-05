@@ -72,7 +72,7 @@ contains
     allocate ( Step_RK2_C_ASC_Form :: FSC % Step )
     select type ( S => FSC % Step )
     class is ( Step_RK2_C_ASC_Form )
-    call S % Initialize ( FA, Name )
+    call S % Initialize ( FSC, FA, Name )
     S % ApplySources % Pointer => ApplyCurvilinear_F
     end select !-- S
 
