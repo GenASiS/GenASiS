@@ -225,7 +225,8 @@ contains
     if ( present ( NameShortOption ) ) &
       NameShort = NameShortOption
 
-    call FA % InitializeTemplate_ASC_C ( A, NameShort, IgnorabilityOption )
+    call FA % InitializeTemplate_ASC_C &
+           ( A, NameShort, IgnorabilityOption = IgnorabilityOption )
 
     call Show ( FA % FluidType, 'FluidType', FA % IGNORABILITY )
     call Show ( FA % RiemannSolverType, 'RiemannSolverType', &

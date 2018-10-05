@@ -77,7 +77,7 @@ contains
     allocate ( Step_RK2_C_ASC_Form :: RP % Step )
     select type ( S => RP % Step )
     class is ( Step_RK2_C_ASC_Form )
-    call S % Initialize ( FA, Name )
+    call S % Initialize ( RP, FA, Name )
     end select !-- S
 
     !-- Problem definition

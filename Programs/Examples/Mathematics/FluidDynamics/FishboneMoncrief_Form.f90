@@ -201,7 +201,7 @@ contains
     allocate ( Step_RK2_C_ASC_Form :: FM % Step )
     select type ( S => FM % Step )
     class is ( Step_RK2_C_ASC_Form )
-    call S % Initialize ( FA, Name )
+    call S % Initialize ( FM, FA, Name )
     S % ApplySources % Pointer => ApplySources
     end select !-- S
 
