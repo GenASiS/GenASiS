@@ -89,7 +89,7 @@ contains
     allocate ( Step_RK2_C_ASC_Form :: PWS % Step )
     select type ( S => PWS % Step )
     class is ( Step_RK2_C_ASC_Form )
-    call S % Initialize ( RMA, Name )
+    call S % Initialize ( PWS, RMA, Name )
     end select !-- S
 
     !-- Diagnostics
@@ -229,9 +229,9 @@ contains
 
     call SetRadiationKernel &
            ( PWS, &
-             X  = G % Value ( :, G % CENTER ( 1 ) ), &
-             Y  = G % Value ( :, G % CENTER ( 2 ) ), &
-             Z  = G % Value ( :, G % CENTER ( 3 ) ), &
+             X  = G % Value ( :, G % CENTER_U ( 1 ) ), &
+             Y  = G % Value ( :, G % CENTER_U ( 2 ) ), &
+             Z  = G % Value ( :, G % CENTER_U ( 3 ) ), &
              K  = PWS % Wavenumber, &
              V  = PWS % Speed, &
              T  = Time, &

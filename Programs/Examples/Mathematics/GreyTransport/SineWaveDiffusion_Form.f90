@@ -100,7 +100,7 @@ contains
     allocate ( Step_RK2_C_ASC_Form :: SWD % Step )
     select type ( S => SWD % Step )
     class is ( Step_RK2_C_ASC_Form )
-    call S % Initialize ( RMA, Name )
+    call S % Initialize ( SWD, RMA, Name )
     S % ApplyRelaxation % Pointer => ApplyRelaxation_RM_G
     end select !-- S
 
@@ -218,7 +218,7 @@ contains
     G => PS % Geometry ( )
 
     call SetRadiationKernel &
-           ( X   = G % Value ( :, G % CENTER ( 1 ) ), &
+           ( X   = G % Value ( :, G % CENTER_U ( 1 ) ), &
              T   = Time, &
              Tau = TimeScale, &
              Pi  = CONSTANT % PI, &

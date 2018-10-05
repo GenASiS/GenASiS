@@ -218,7 +218,8 @@ contains
     if ( present ( SuppressWriteOption ) ) &
       RMA % SuppressWrite = SuppressWriteOption
 
-    call RMA % InitializeTemplate_ASC_C ( A, NameShort, IgnorabilityOption )
+    call RMA % InitializeTemplate_ASC_C &
+           ( A, NameShort, IgnorabilityOption = IgnorabilityOption )
 
     call Show ( RMA % RadiationMomentsType, 'RadiationMomentsType', &
                 RMA % IGNORABILITY )

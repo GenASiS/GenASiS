@@ -483,7 +483,7 @@ contains
     real ( KDR ), dimension ( : ), allocatable :: &
       M_DD_11
     real ( KDR ), dimension ( :, :, : ), pointer :: &
-      dX, &
+      dX_L, dX_R, &
       M_DD, &
       TO, &
       SF, &
@@ -502,7 +502,9 @@ contains
       G => Grid % Geometry ( )
 
       call Grid % SetVariablePointer &
-             ( G % Value ( :, G % WIDTH ( iDimension ) ), dX )
+             ( G % Value ( :, G % WIDTH_LEFT_U ( iDimension ) ), dX_L )
+      call Grid % SetVariablePointer &
+             ( G % Value ( :, G % WIDTH_RIGHT_U ( iDimension ) ), dX_R )
 
       select case ( iDimension )
       case ( 1 )
@@ -534,7 +536,7 @@ contains
              ( DF_I % Value ( :, iEnergy ), DF_I_E )
 
       call ComputeDiffusionFactor_HLL_CSL &
-             ( DF_I_E, SF, TO, M_DD, dX, iDimension, &
+             ( DF_I_E, SF, TO, M_DD, dX_L, dX_R, iDimension, &
                Grid % nGhostLayers ( iDimension ) )
 
       do iD = 1, 3
@@ -560,7 +562,7 @@ contains
     end select !-- Grid
 
     nullify ( G )
-    nullify ( dX, M_DD, TO, SF, DF_I_E )
+    nullify ( dX_L, dX_R, M_DD, TO, SF, DF_I_E )
 
   end subroutine ComputeDiffusionFactor_HLL
 
@@ -1061,7 +1063,7 @@ contains
 
 
   subroutine ComputeDiffusionFactor_HLL_CSL &
-               ( DF_I_E, SF, TO, M_DD, dX, iD, oV )
+               ( DF_I_E, SF, TO, M_DD, dX_L, dX_R, iD, oV )
 
     real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
       DF_I_E
@@ -1069,7 +1071,7 @@ contains
       SF, &
       TO, &
       M_DD, &
-      dX
+      dX_L, dX_R
     integer ( KDI ), intent ( in ) :: &
       iD, &
       oV   
@@ -1107,14 +1109,15 @@ contains
           DF_L  &
             =  SF ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) )  &
                /  max (  sqrt ( M_DD ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ) ) &
-                         *  dX ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) )   &
-                         *  TO ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ),  &
+                         *  ( dX_L ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ) &
+                              +  dX_R ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ) ) &
+                         *  TO ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ), &
                          tiny ( 0.0_KDR ) )
 
           DF_R  &
             =  SF ( iV, jV, kV )  &
                /  max (  sqrt ( M_DD ( iV, jV, kV ) ) &
-                         *  dX ( iV, jV, kV )   &
+                         *  ( dX_L ( iV, jV, kV )  +  dX_R ( iV, jV, kV ) )  &
                          *  TO ( iV, jV, kV ),  &
                          tiny ( 0.0_KDR ) )
 
