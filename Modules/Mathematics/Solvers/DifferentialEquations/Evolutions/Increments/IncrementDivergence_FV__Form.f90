@@ -305,7 +305,7 @@ contains
       call Show ( '>>> Leaving Increment % Compute' )
 
     if ( associated ( Timer ) ) call Timer % Stop ( )
-
+    
   end subroutine Compute
 
 

@@ -60,7 +60,7 @@ subroutine SetFluid ( FCC )
   class is ( Atlas_SC_Form )
 
   select type ( C => PS % Chart )
-  class is ( Chart_SLD_CC_Form )
+  class is ( Chart_SLD_C_Template )
 
   associate &
     ( iaB => C % iaBrick, &

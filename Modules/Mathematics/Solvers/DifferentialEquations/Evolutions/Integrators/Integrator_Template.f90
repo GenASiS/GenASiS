@@ -237,7 +237,7 @@ contains
 
     if ( .not. allocated ( I % TimeStepLabel ) ) then
       allocate ( I % TimeStepLabel ( 1 ) )
-      I % TimeStepLabel ( 1 ) = 'Physical TimeStep'
+      I % TimeStepLabel ( 1 ) = 'Physical'
     end if
     I % nTimeStepCandidates = size ( I % TimeStepLabel )
     allocate ( I % TimeStepCandidate ( I % nTimeStepCandidates ) )
@@ -259,6 +259,8 @@ contains
     class ( IntegratorTemplate ), intent ( inout ) :: &
       I
 
+    real ( KDR ) :: &
+      TimeStepRatio
     type ( TimerForm ), pointer :: &
       Timer
 
@@ -282,6 +284,15 @@ contains
       call Show ( 'Cycle computed', I % IGNORABILITY + 1 )
       call Show ( I % iCycle, 'iCycle', I % IGNORABILITY + 1 )
       call Show ( I % Time, I % TimeUnit, 'Time', I % IGNORABILITY + 1 )
+
+      TimeStepRatio  &
+        =  minval ( I % TimeStepCandidate )  /  I % WriteTimeInterval 
+      if ( TimeStepRatio  <  1.0e-6  *  I % nWrite ) then
+        call I % AdministerCheckpoint ( )
+        call Show ( 'TimeStepRatio too small', CONSOLE % WARNING )
+        call Show ( TimeStepRatio, 'TimeStepRatio', CONSOLE % WARNING )
+        exit
+      end if
 
 !call I % Write ( )
       if ( I % IsCheckpointTime ) &

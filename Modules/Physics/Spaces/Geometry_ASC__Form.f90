@@ -450,17 +450,12 @@ contains
 
     nValues = size ( Phi )
 
-    !-- Note Phi is only used in the energy tally, where it appears with
-    !   a factor of 0.5 appropriate for self-gravity. Here multiply Phi by
-    !   a factor of 2.0 to negate this factor of 0.5, in order that the tally
-    !   include the energy contribution appropriate to an external potential.
-
     select case ( nDimensions )
     case ( 1 )
 
       !$OMP parallel do private ( iV )
       do iV = 1, nValues
-        Phi ( iV )        =  2.0_KDR * Acceleration  *  X ( iV )
+        Phi ( iV )        =  Acceleration  *  X ( iV )
         GradPhi_1 ( iV )  =  Acceleration
       end do
       !$OMP end parallel do
@@ -469,7 +464,7 @@ contains
 
       !$OMP parallel do private ( iV )
       do iV = 1, nValues
-        Phi ( iV )        =  2.0_KDR * Acceleration  *  Y ( iV )
+        Phi ( iV )        =  Acceleration  *  Y ( iV )
         GradPhi_1 ( iV )  =  0.0_KDR
         GradPhi_2 ( iV )  =  Acceleration
       end do
@@ -479,7 +474,7 @@ contains
 
       !$OMP parallel do private ( iV )
       do iV = 1, nValues
-        Phi ( iV )        =  2.0_KDR * Acceleration  *  Z ( iV )
+        Phi ( iV )        =  Acceleration  *  Z ( iV )
         GradPhi_1 ( iV )  =  0.0_KDR
         GradPhi_2 ( iV )  =  0.0_KDR
         GradPhi_3 ( iV )  =  Acceleration
@@ -512,17 +507,12 @@ contains
 
     nValues = size ( Phi )
 
-    !-- Note Phi is only used in the energy tally, where it appears with
-    !   a factor of 0.5 appropriate for self-gravity. Here multiply Phi by
-    !   a factor of 2.0 to negate this factor of 0.5, in order that the tally
-    !   include the energy contribution appropriate to an external potential.
-
     select case ( trim ( CoordinateSystem ) )
     case ( 'SPHERICAL' )
 
       !$OMP parallel do private ( iV )
       do iV = 1, nValues
-        Phi ( iV )        =  - 2.0_KDR * G * M  /  X_1 ( iV )
+        Phi ( iV )        =  - G * M  /  X_1 ( iV )
         GradPhi_1 ( iV )  =  G * M  /  X_1 ( iV ) ** 2
       end do
       !$OMP end parallel do

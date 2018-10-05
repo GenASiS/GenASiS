@@ -352,7 +352,7 @@ contains
     class is ( Atlas_SC_Form )
 
     select type ( C => PS % Chart )
-    class is ( Chart_SLD_CC_Form )
+    class is ( Chart_SLD_C_Template )
 
     select case ( iAngular )
     case ( 2 )
@@ -402,7 +402,6 @@ contains
       nValuesFactor_F_3  =  ( 1 + F % N_CONSERVED )  *  C % nCellsBrick ( 3 ) &
                             +  1
       nValuesFactor_B_3  =  F % N_CONSERVED  *  C % nCellsBrick ( 3 )
-
   
       call CO_F % Initialize &
              ( C % Communicator_3, &
@@ -439,6 +438,9 @@ contains
       S
     integer ( KDI ), intent ( in ) :: &
       iAngular
+
+    call Show ( 'Coarsening Singularity', FC % IGNORABILITY + 2 )
+    call Show ( iAngular, 'iAngular', FC % IGNORABILITY + 2 )
 
     call ComposePillars ( FC, S, iAngular )
     call CoarsenPillars ( FC, iAngular )
@@ -816,7 +818,7 @@ contains
     G => PS % Geometry ( )
 
     select type ( C => PS % Chart )
-    class is ( Chart_SLD_CC_Form )
+    class is ( Chart_SLD_C_Template )
 
     associate ( nCB => C % nCellsBrick )
 
@@ -982,7 +984,7 @@ contains
     class is ( Atlas_SC_Form )
 
     select type ( C => PS % Chart )
-    class is ( Chart_SLD_CC_Form )
+    class is ( Chart_SLD_C_Template )
 
     select case ( iAngular )
     case ( 2 )
@@ -1053,7 +1055,7 @@ contains
     G => PS % Geometry ( )
 
     select type ( C => PS % Chart )
-    class is ( Chart_SLD_CC_Form )
+    class is ( Chart_SLD_C_Template )
 
     associate ( nCB => C % nCellsBrick )
 

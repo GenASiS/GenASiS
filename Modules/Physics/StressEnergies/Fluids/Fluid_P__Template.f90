@@ -46,15 +46,15 @@ module Fluid_P__Template
     procedure, public, pass ( C ) :: &
       ComputeCenterStatesTemplate_P
     procedure, public, nopass :: &
-      ComputeConservedEnergy_G_Kernel
+      Compute_G_G_Kernel
     procedure, public, nopass :: &
-      ComputeConservedEntropy_G_Kernel
+      Compute_DS_G_Kernel
     procedure, public, nopass :: &
-      ComputeInternalEnergy_G_Kernel
+      Compute_N_V_E_G_Kernel
     procedure, public, nopass :: &
-      ComputeEntropyPerBaryon_G_Kernel
+      Compute_SB_G_Kernel
     procedure, public, nopass :: &
-      ComputeEigenspeeds_P_G_Kernel
+      Compute_FE_P_G_Kernel
   end type Fluid_P_Template
 
     private :: &
@@ -477,10 +477,10 @@ contains
   end subroutine ComputeCenterStatesTemplate_P
 
 
-  subroutine ComputeConservedEnergy_G_Kernel &
+  subroutine Compute_G_G_Kernel &
                ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
 
-    !-- Galilean
+    !-- Compute_ConservedEnergy_Galilean_Kernel
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       G
@@ -505,11 +505,13 @@ contains
     end do !-- iV
     !$OMP end parallel do
 
-  end subroutine ComputeConservedEnergy_G_Kernel
+  end subroutine Compute_G_G_Kernel
 
 
-  subroutine ComputeConservedEntropy_G_Kernel ( DS, N, SB )
+  subroutine Compute_DS_G_Kernel ( DS, N, SB )
  	 
+    !-- Compute_ConservedEntropy_Galilean_Kernel
+
     real ( KDR ), dimension ( : ), intent ( inout ) :: & 	 	 
       DS
     real ( KDR ), dimension ( : ), intent ( in ) :: & 	 	 
@@ -528,51 +530,75 @@ contains
     end do !-- iV
     !$OMP end parallel do
 
-  end subroutine ComputeConservedEntropy_G_Kernel
+  end subroutine Compute_DS_G_Kernel
 
 
-  subroutine ComputeInternalEnergy_G_Kernel &
-               ( E, G, M, N, V_1, V_2, V_3, S_1, S_2, S_3 )
+  subroutine Compute_N_V_E_G_Kernel &
+               ( N, V_1, V_2, V_3, E, D, S_1, S_2, S_3, G, M, &
+                 M_UU_22, M_UU_33, N_Min )
+
+    !-- Compute_ComovingBaryonDensity_Velocity_InternalEnergyDensity_Galilean
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      E, &
-      G
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      M, &
       N, &
       V_1, V_2, V_3, &
-      S_1, S_2, S_3
+      E, &
+      D, &
+      S_1, S_2, S_3, &
+      G
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      M, &
+      M_UU_22, M_UU_33
+    real ( KDR ), intent ( in ) :: &
+      N_Min
 
     integer ( KDI ) :: &
       iV, &
       nValues
 
-    nValues = size ( E )
+    nValues = size ( N )
 
     !$OMP parallel do private ( iV )
     do iV = 1, nValues
-      E ( iV )  =  G ( iV )  -  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV ) &
-                                            +  S_2 ( iV ) * V_2 ( iV ) &
-                                            +  S_3 ( iV ) * V_3 ( iV ) )
-    end do
-    !$OMP end parallel do
 
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
+      if ( D ( iV )  >  N_Min ) then
+          N ( iV )  =  D ( iV )
+        V_1 ( iV )  =  S_1 ( iV ) / ( M ( iV ) * D ( iV ) )
+        V_2 ( iV )  =  M_UU_22 ( iV ) * S_2 ( iV ) / ( M ( iV ) * D ( iV ) )
+        V_3 ( iV )  =  M_UU_33 ( iV ) * S_3 ( iV ) / ( M ( iV ) * D ( iV ) )
+          E ( iV )  =  G ( iV )  -  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV ) &
+                                                +  S_2 ( iV ) * V_2 ( iV ) &
+                                                +  S_3 ( iV ) * V_3 ( iV ) )
+      else
+          N ( iV )  =  N_Min
+        V_1 ( iV )  =  0.0_KDR
+        V_2 ( iV )  =  0.0_KDR
+        V_3 ( iV )  =  0.0_KDR
+          E ( iV )  =  0.0_KDR
+          D ( iV )  =  N_Min
+        S_1 ( iV )  =  0.0_KDR
+        S_2 ( iV )  =  0.0_KDR
+        S_3 ( iV )  =  0.0_KDR
+          G ( iV )  =  0.0_KDR
+      end if
+
       if ( E ( iV ) < 0.0_KDR ) then
         E ( iV ) = 0.0_KDR
         G ( iV ) = E ( iV )  +  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV ) &
                                             +  S_2 ( iV ) * V_2 ( iV ) &
                                             +  S_3 ( iV ) * V_3 ( iV ) )
       end if
-    end do
+
+    end do !-- iV
     !$OMP end parallel do
 
-  end subroutine ComputeInternalEnergy_G_Kernel
+  end subroutine Compute_N_V_E_G_Kernel
 
 
-  subroutine ComputeEntropyPerBaryon_G_Kernel ( SB, DS, N )
+  subroutine Compute_SB_G_Kernel ( SB, DS, N )
  	 
+    !-- Compute_EntropyPerBaryon_Galilean_Kernel
+
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       SB, &
       DS
@@ -595,14 +621,14 @@ contains
     end do !-- iV
     !$OMP end parallel do
 
-  end subroutine ComputeEntropyPerBaryon_G_Kernel
+  end subroutine Compute_SB_G_Kernel
   
   
-  subroutine ComputeEigenspeeds_P_G_Kernel &
+  subroutine Compute_FE_P_G_Kernel &
                ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
                  V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33 )
 
-    !-- Galilean
+    !-- Compute_FastEigenspeeds_Perfect_Galilean_Kernel
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       FEP_1, FEP_2, FEP_3, &
@@ -644,7 +670,7 @@ contains
     end do
     !$OMP end parallel do
 
-  end subroutine ComputeEigenspeeds_P_G_Kernel
+  end subroutine Compute_FE_P_G_Kernel
 
 
   subroutine InitializeBasics &

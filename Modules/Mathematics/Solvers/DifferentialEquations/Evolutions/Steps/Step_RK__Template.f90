@@ -82,10 +82,13 @@ module Step_RK__Template
         S
     end subroutine SS
 
-    subroutine II ( S )
+    subroutine II ( S, iStage )
+      use Basics
       import Step_RK_Template
       class ( Step_RK_Template ), intent ( inout ) :: &
         S
+      integer ( KDI ), intent ( in ) :: &
+        iStage
     end subroutine II
 
     subroutine II_A_iK ( S, A, iK )
@@ -239,7 +242,7 @@ contains
 
       !-- Set Y  =  Solution
       if ( associated ( Timer_II ) ) call Timer_II % Start ( )
-      call S % InitializeIntermediate ( )
+      call S % InitializeIntermediate ( iS )
       if ( associated ( Timer_II ) ) call Timer_II % Stop ( )
 
       if ( associated ( Timer_II_A_iK ) ) call Timer_II_A_iK % Start ( )

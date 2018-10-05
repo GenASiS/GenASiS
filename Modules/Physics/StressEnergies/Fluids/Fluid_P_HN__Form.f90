@@ -55,9 +55,9 @@ module Fluid_P_HN__Form
     procedure, public, pass ( C ) :: &
       ComputeCenterStates
     procedure, public, nopass :: &
-      ComputeConservedProton_G_Kernel
+      Compute_DP_G_Kernel
     procedure, public, nopass :: &
-      ComputeProtonFraction_G_Kernel
+      Compute_YP_G_Kernel
     procedure, public, nopass :: &
       Apply_EOS_HN_T_Kernel
     procedure, public, nopass :: &
@@ -433,19 +433,19 @@ contains
         Mu_NP => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_N_P ), &
         Mu_E  => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_E ) )
 
-    call C % ComputeBaryonMassKernel ( M, C % BaryonMassReference )
+    call C % Compute_M_Kernel ( M, C % BaryonMassReference )
     call C % Apply_EOS_HN_T_Kernel &
            ( P, E, CS, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
              M, N, T, YE )
-    call C % ComputeDensityMomentum_G_Kernel &
+    call C % Compute_D_S_G_Kernel &
            ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
-    call C % ComputeConservedEnergy_G_Kernel &
+    call C % Compute_G_G_Kernel &
            ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
-    call C % ComputeConservedEntropy_G_Kernel &
+    call C % Compute_DS_G_Kernel &
            ( DS, N, SB )
-    call C % ComputeConservedProton_G_Kernel &
+    call C % Compute_DP_G_Kernel &
            ( DP, N, YE )
-    call C % ComputeEigenspeeds_P_G_Kernel &
+    call C % Compute_FE_P_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
              V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33 )
 
@@ -538,7 +538,7 @@ contains
     call Copy ( C % Value ( :, C % PRESSURE ), P )
     call Copy ( C % Value ( :, C % TEMPERATURE ), T )
 
-    call C % ComputeBaryonMassKernel ( M, C % BaryonMassReference )
+    call C % Compute_M_Kernel ( M, C % BaryonMassReference )
 !    call C % Apply_EOS_HN_T_Kernel &
 !           ( P, E, CS, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
 !             M, N, T, YE )
@@ -548,15 +548,15 @@ contains
 !    call C % Apply_EOS_HN_SB_Kernel &
 !           ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
 !             M, N, YE )
-    call C % ComputeDensityMomentum_G_Kernel &
+    call C % Compute_D_S_G_Kernel &
            ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
-    call C % ComputeConservedEnergy_G_Kernel &
+    call C % Compute_G_G_Kernel &
            ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
-    call C % ComputeConservedEntropy_G_Kernel &
+    call C % Compute_DS_G_Kernel &
            ( DS, N, SB )
-    call C % ComputeConservedProton_G_Kernel &
+    call C % Compute_DP_G_Kernel &
            ( DP, N, YE )
-    call C % ComputeEigenspeeds_P_G_Kernel &
+    call C % Compute_FE_P_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
              V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33 )
 
@@ -650,29 +650,28 @@ contains
         Mu_E  => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_E ), &
         Shock => FF % Value ( oV + 1 : oV + nV, FF % SHOCK ) )
 
-    call C % ComputeBaryonMassKernel ( M, C % BaryonMassReference )
-    call C % ComputeDensityVelocity_G_Kernel &
-           ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33 )
-    call C % ComputeInternalEnergy_G_Kernel &
-           ( E, G, M, N, V_1, V_2, V_3, S_1, S_2, S_3 )
-    call C % ComputeProtonFraction_G_Kernel &
+    call C % Compute_M_Kernel ( M, C % BaryonMassReference )
+    call C % Compute_N_V_E_G_Kernel &
+               ( N, V_1, V_2, V_3, E, D, S_1, S_2, S_3, G, M, &
+                 M_UU_22, M_UU_33, C % BaryonDensityMin )
+    call C % Compute_YP_G_Kernel &
            ( YE, DP, N )
     if ( C % UseEntropy ) then
-      call C % ComputeEntropyPerBaryon_G_Kernel &
+      call C % Compute_SB_G_Kernel &
              ( SB, DS, N )
       call C % Apply_EOS_HN_SB_E_Kernel &
              ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
                M, N, YE, Shock )
-      call C % ComputeConservedEnergy_G_Kernel &
+      call C % Compute_G_G_Kernel &
              ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
     else
       call C % Apply_EOS_HN_E_Kernel &
              ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
                M, N, YE )
     end if
-    call C % ComputeConservedEntropy_G_Kernel &
+    call C % Compute_DS_G_Kernel &
            ( DS, N, SB )
-    call C % ComputeEigenspeeds_P_G_Kernel &
+    call C % Compute_FE_P_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
              V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33 )
 
@@ -775,7 +774,7 @@ contains
   end subroutine ComputeCenterStates
 
 
-  subroutine ComputeConservedProton_G_Kernel ( DP, N, YE )
+  subroutine Compute_DP_G_Kernel ( DP, N, YE )
  	 
     real ( KDR ), dimension ( : ), intent ( inout ) :: & 	 	 
       DP
@@ -795,11 +794,13 @@ contains
     end do !-- iV
     !$OMP end parallel do
 
-  end subroutine ComputeConservedProton_G_Kernel
+  end subroutine Compute_DP_G_Kernel
 
 
-  subroutine ComputeProtonFraction_G_Kernel ( YE, DP, N )
+  subroutine Compute_YP_G_Kernel ( YE, DP, N )
  	 
+    !-- Compute_ProtonFraction_Galilean_Kernel
+
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       YE, &
       DP
@@ -829,7 +830,7 @@ contains
     end do !-- iV
     !$OMP end parallel do
 
-  end subroutine ComputeProtonFraction_G_Kernel
+  end subroutine Compute_YP_G_Kernel
   
   
   subroutine Apply_EOS_HN_T_Kernel &

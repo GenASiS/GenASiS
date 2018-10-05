@@ -39,7 +39,6 @@ module FluidCentralCore_Form
       FluidCentralCore => null ( )
 
       private :: &
-        SetCoarsening, &
         LocalMax, &
         ComputeTimeStep_G_CSL
 
@@ -240,15 +239,25 @@ contains
     class ( StorageForm ), intent ( inout ) :: &
       S
 
-    select type ( PS => FluidCentralCore % PositionSpace )
+    associate ( FCC => FluidCentralCore )
+    select type ( PS => FCC % PositionSpace )
     class is ( Atlas_SC_CC_Form )
 
-    if ( PS % nDimensions > 2 ) &
-      call FluidCentralCore % CoarsenSingularityTemplate ( S, iAngular = 3 )
-    if ( PS % nDimensions > 1 ) &
-      call FluidCentralCore % CoarsenSingularityTemplate ( S, iAngular = 2 )
+    select case ( mod ( FCC % iCycle, 2 ) )
+    case ( 0 )
+      if ( PS % nDimensions > 2 ) &
+        call FCC % CoarsenSingularityTemplate ( S, iAngular = 3 )
+      if ( PS % nDimensions > 1 ) &
+        call FCC % CoarsenSingularityTemplate ( S, iAngular = 2 )
+    case ( 1 )
+      if ( PS % nDimensions > 1 ) &
+        call FCC % CoarsenSingularityTemplate ( S, iAngular = 2 )
+      if ( PS % nDimensions > 2 ) &
+        call FCC % CoarsenSingularityTemplate ( S, iAngular = 3 )
+    end select
   
     end select !-- PS
+    end associate !-- FCC
 
   end subroutine CoarsenSingularities
 

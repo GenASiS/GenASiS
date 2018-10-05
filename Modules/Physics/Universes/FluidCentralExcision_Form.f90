@@ -25,6 +25,9 @@ module FluidCentralExcision_Form
       CoarsenSingularities
   end type FluidCentralExcisionForm
 
+    class ( FluidCentralExcisionForm ), private, pointer :: &
+      FluidCentralExcision => null ( )
+
 contains
 
 
@@ -61,6 +64,8 @@ contains
     if ( FCE % Type == '' ) &
       FCE % Type = 'a FluidCentralExcision'
 
+    FluidCentralExcision => FCE
+
     call FCE % InitializeTemplate_FC &
                ( Name, FluidType, GeometryType, &
                  DimensionlessOption = DimensionlessOption, &
@@ -75,6 +80,11 @@ contains
                  CentralMassOption = CentralMassOption, &
                  nWriteOption = nWriteOption, &
                  nCellsPolarOption = nCellsPolarOption )
+
+    select type ( S => FCE % Step )
+    class is ( Step_RK2_C_ASC_Form )
+      S % CoarsenSingularities => CoarsenSingularities
+    end select !-- S
 
   end subroutine Initialize
 
@@ -186,7 +196,18 @@ contains
     class ( FluidCentralExcisionForm ), intent ( inout ) :: &
       FC
 
-    !-- FIXME: Fill in along the lines of FluidCentralCore_Form
+    select type ( PS => FC % PositionSpace )
+    class is ( Atlas_SC_CE_Form )
+
+    !-- Azimuthal coarsening
+
+    if ( PS % nDimensions < 3 ) &
+      return
+    call Show ( 'SetCoarsening_3', FC % IGNORABILITY )
+    call Show ( FC % Name, 'Universe', FC % IGNORABILITY )
+    call FC % SetCoarseningTemplate ( iAngular = 3 )
+
+    end select !-- PS
 
   end subroutine SetCoarsening
 
@@ -196,7 +217,15 @@ contains
     class ( StorageForm ), intent ( inout ) :: &
       S
 
-    !-- FIXME: Fill in along the lines of FluidCentralCore_Form
+    associate ( FCE => FluidCentralExcision )
+    select type ( PS => FCE % PositionSpace )
+    class is ( Atlas_SC_CE_Form )
+
+    if ( PS % nDimensions > 2 ) &
+      call FCE % CoarsenSingularityTemplate ( S, iAngular = 3 )
+  
+    end select !-- PS
+    end associate !-- FluidCentralExcision
 
   end subroutine CoarsenSingularities
 

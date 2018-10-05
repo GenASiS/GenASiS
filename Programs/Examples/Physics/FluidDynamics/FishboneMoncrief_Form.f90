@@ -21,7 +21,8 @@ module FishboneMoncrief_Form
   end type FishboneMoncriefForm
 
     private :: &
-      SetFluid
+      SetFluid, &
+      SetBaryonDensityMin
 
 contains
 
@@ -84,6 +85,7 @@ contains
     call Show ( Gamma, 'Gamma' )
     call Show ( N_Max, UNIT % FEMTOMETER ** (-3), 'N_Max' )
     call Show ( amu * N_Max, UNIT % MASS_DENSITY_CGS, 'Rho_Max' )
+    call Show ( AP, 'AtmosphereParameter' )
 
     RadiusMin  =  ( 2.0_KDR / 3.0_KDR ) * R_In
     call PROGRAM_HEADER % GetParameter ( RadiusMin, 'RadiusMin' )
@@ -112,6 +114,7 @@ contains
     !-- Initial conditions
 
     call SetFluid ( FM )
+    call SetBaryonDensityMin ( FM )
 
 
   end subroutine Initialize
@@ -223,6 +226,53 @@ contains
     nullify ( F, G )
 
   end subroutine SetFluid
+
+
+  subroutine SetBaryonDensityMin ( FM )
+
+    type ( FishboneMoncriefForm ), intent ( inout ) :: &
+      FM
+
+    type ( CollectiveOperation_R_Form ) :: &
+      CO
+    class ( Fluid_P_I_Form ), pointer :: &
+      F
+
+    select type ( FCE => FM % Integrator )
+    class is ( FluidCentralExcisionForm )
+
+    select type ( FA => FCE % Current_ASC )
+    class is ( Fluid_ASC_Form )
+    F => FA % Fluid_P_I ( )
+
+    select type ( PS => FCE % PositionSpace )
+    class is ( Atlas_SC_Form )
+
+    select type ( CSL => PS % Chart )
+    class is ( Chart_SLD_Form )
+
+    call CO % Initialize &
+           ( PS % Communicator, nOutgoing = [ 1 ], nIncoming = [ 1 ] )
+
+    associate &
+      ( My_N_Min => CO % Outgoing % Value ( 1 ), &
+           N_Min => CO % Incoming % Value ( 1 ) )
+ 
+    My_N_Min  =  minval ( F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
+                          mask = CSL % IsProperCell )
+
+    call CO % Reduce ( REDUCTION % MIN )
+
+    call F % SetBaryonDensityMin ( N_Min )
+
+    end associate !-- My_N_Min, etc.
+    end select !-- CSL
+    end select !-- PS
+    end select !-- FA
+    end select !-- FCE
+    nullify ( F )
+
+  end subroutine SetBaryonDensityMin
 
 
 end module FishboneMoncrief_Form
