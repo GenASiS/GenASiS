@@ -43,7 +43,7 @@ module IntegratorHeader_Form
       Name = ''
   contains
     procedure, public, pass :: &
-      Initialize
+      InitializeHeader
     final :: &
       Finalize
   end type IntegratorHeaderForm
@@ -51,7 +51,7 @@ module IntegratorHeader_Form
 contains
 
 
-  subroutine Initialize &
+  subroutine InitializeHeader &
                ( I, Name, TimeUnitOption, FinishTimeOption, nWriteOption )
 
     class ( IntegratorHeaderForm ), intent ( inout ) :: &
@@ -122,7 +122,7 @@ contains
     call Show ( I % CheckpointDisplayInterval, 'CheckpointDisplayInterval', &
                 I % IGNORABILITY )
 
-  end subroutine Initialize
+  end subroutine InitializeHeader
 
   
   subroutine Finalize ( I )

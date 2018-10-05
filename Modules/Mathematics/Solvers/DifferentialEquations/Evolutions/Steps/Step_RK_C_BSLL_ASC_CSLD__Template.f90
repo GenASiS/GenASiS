@@ -13,6 +13,7 @@ module Step_RK_C_BSLL_ASC_CSLD__Template
   use Manifolds
   use Operations
   use Fields
+  use EvolutionBasics
   use Increments
   use Step_RK_C_ASC__Template
 
@@ -102,10 +103,12 @@ contains
 
 
   subroutine InitializeTemplate_C_BSLL_ASC_CSLD &
-               ( S, Current_BSLL_ASC_CSLD, NameSuffix, A, B, C )
+               ( S, I, Current_BSLL_ASC_CSLD, NameSuffix, A, B, C )
 
     class ( Step_RK_C_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
       S
+    class ( IntegratorHeaderForm ), intent ( in ) :: &
+      I
     class ( Current_BSLL_ASC_CSLD_Template ), intent ( in ), target :: &
       Current_BSLL_ASC_CSLD
     character ( * ), intent ( in ) :: &
@@ -123,7 +126,7 @@ contains
     if ( S % Type == '' ) &
       S % Type = 'a Step_RK_C_BSLL_ASC_CSLD_C_ASC' 
 
-    call S % InitializeTemplate ( NameSuffix, A, B, C )
+    call S % InitializeTemplate ( I, NameSuffix, A, B, C )
 
     S % Bundle_SLL_ASC_CSLD   =>  Current_BSLL_ASC_CSLD % Bundle_SLL_ASC_CSLD
     S % Current_BSLL_ASC_CSLD =>  Current_BSLL_ASC_CSLD

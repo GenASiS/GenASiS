@@ -7,14 +7,15 @@ include ../../../Fields/Makefile_ObjectFiles
 all: DensityWaveIntegrator_Form_Test
 
 DensityWaveIntegrator_Form_Test: Basics.a Manifolds.a Operations.a Fields.a \
-  ProtoFields.a Increments.a Steps.a DensityWaveIntegrator_Form_Test.o
+  ProtoFields.a EvolutionBasics.a Increments.a Steps.a \
+  DensityWaveIntegrator_Form_Test.o
 	$(LINK) $(FLAGS) \
           -o DensityWaveIntegrator_Form_Test_$(MACHINE) \
           DensityWaveIntegrator_Form_Test.o DensityWaveIntegrator_Form.o \
           Integrator_C_PS__Template.o TimeSeries_C__Form.o \
           TimeSeries_Form.o Integrator_Template.o \
-          Steps.a Increments.a ProtoFields.a Fields.a Operations.a \
-          Manifolds.a Basics.a $(LIBRARIES)
+          Steps.a Increments.a EvolutionBasics.a ProtoFields.a Fields.a \
+          Operations.a Manifolds.a Basics.a $(LIBRARIES)
 
 clean:
 	rm -f *.o *.a *.mod *.ld
@@ -26,6 +27,7 @@ include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MANIFOLDS)/Makefile_Dependencies
 include $(PATH_OPERATIONS)/Makefile_Dependencies
 include $(PATH_FIELDS)/Makefile_Dependencies
+include $(PATH_EVOLUTION_BASICS)/Makefile_Dependencies
 include $(PATH_INCREMENTS)/Makefile_Dependencies
 include $(PATH_STEPS)/Makefile_Dependencies
 include $(PATH_INTEGRATORS)/Makefile_Dependencies

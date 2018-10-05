@@ -12,6 +12,7 @@ module Step_RK_C_ASC__Template
   use Manifolds
   use Operations
   use Fields
+  use EvolutionBasics
   use Increments
   use Step_RK__Template
 
@@ -244,10 +245,12 @@ module Step_RK_C_ASC__Template
 contains
 
 
-  subroutine InitializeTemplate_C_ASC ( S, Current_ASC, NameSuffix, A, B, C )
+  subroutine InitializeTemplate_C_ASC ( S, I, Current_ASC, NameSuffix, A, B, C )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
+    class ( IntegratorHeaderForm ), intent ( in ) :: &
+      I
     class ( Current_ASC_Template ), intent ( in ), target :: &
       Current_ASC
     character ( * ), intent ( in ) :: &
@@ -262,7 +265,7 @@ contains
     if ( S % Type == '' ) &
       S % Type = 'a Step_RK_C_ASC' 
 
-    call S % InitializeTemplate ( NameSuffix, A, B, C )
+    call S % InitializeTemplate ( I, NameSuffix, A, B, C )
 
     select type ( Chart => Current_ASC % Atlas_SC % Chart )
     class is ( Chart_SL_Template )

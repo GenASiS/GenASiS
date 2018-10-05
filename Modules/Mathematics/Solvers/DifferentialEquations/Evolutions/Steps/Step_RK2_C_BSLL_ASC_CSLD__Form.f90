@@ -12,6 +12,7 @@ module Step_RK2_C_BSLL_ASC_CSLD__Form
 
   use Basics
   use Fields
+  use EvolutionBasics
   use Step_RK_C_BSLL_ASC_CSLD__Template
 
   implicit none
@@ -29,10 +30,12 @@ module Step_RK2_C_BSLL_ASC_CSLD__Form
 contains
 
 
-  subroutine Initialize ( S, Current_BSLL_ASC_CSLD, NameSuffix )
+  subroutine Initialize ( S, I, Current_BSLL_ASC_CSLD, NameSuffix )
 
     class ( Step_RK2_C_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
       S
+    class ( IntegratorHeaderForm ), intent ( in ) :: &
+      I
     class ( Current_BSLL_ASC_CSLD_Template ), intent ( in ) :: &
       Current_BSLL_ASC_CSLD
     character ( * ), intent ( in ) :: &
@@ -57,7 +60,7 @@ contains
     C ( 2 ) = 1.0_KDR
     
     call S % InitializeTemplate_C_BSLL_ASC_CSLD &
-           ( Current_BSLL_ASC_CSLD, NameSuffix, A, B, C )
+           ( I, Current_BSLL_ASC_CSLD, NameSuffix, A, B, C )
 
   end subroutine Initialize
 

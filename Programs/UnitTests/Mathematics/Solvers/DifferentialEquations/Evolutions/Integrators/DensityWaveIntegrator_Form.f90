@@ -76,7 +76,7 @@ contains
     allocate ( Step_RK2_C_ASC_Form :: DW % Step )
     select type ( S => DW % Step )
     class is ( Step_RK2_C_ASC_Form )
-    call S % Initialize ( PCA, Name )
+    call S % Initialize ( DW, PCA, Name )
     end select !-- Step
 
     !-- Diagnostics

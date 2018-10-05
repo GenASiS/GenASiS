@@ -2,6 +2,7 @@ module DensityWaveStep_Form
 
   use Basics
   use ProtoFields
+  use EvolutionBasics
   use ProtoIncrements
   use Step_RK2_C_ASC__Form
 
@@ -31,6 +32,8 @@ contains
     real ( KDR ) :: &
       CourantFactor, &
       TimeStep
+    type ( IntegratorHeaderForm ) :: &
+      I
 
     !-- Initialize parent
 
@@ -60,7 +63,7 @@ contains
     allocate ( DW % Step )
     associate ( S => DW % Step )
 
-    call S % Initialize ( DW % ProtoCurrent, Name )
+    call S % Initialize ( I, DW % ProtoCurrent, Name )
 
     call S % Compute ( DW % Time, TimeStep ) 
     call DW % ProtoCurrent % ComputeTally ( )

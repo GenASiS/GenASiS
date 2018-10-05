@@ -151,7 +151,7 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       nWriteOption
 
-    call I % IntegratorHeaderForm % Initialize &
+    call I % IntegratorHeaderForm % InitializeHeader &
            ( Name, TimeUnitOption, FinishTimeOption, nWriteOption )
 
     if ( .not. allocated ( I % PositionSpace ) ) then

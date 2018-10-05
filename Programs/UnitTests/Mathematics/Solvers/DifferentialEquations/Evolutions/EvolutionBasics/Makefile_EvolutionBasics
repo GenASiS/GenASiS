@@ -18,7 +18,7 @@ clean:
 	rm -f *.o *.a *.mod *.ld
 
 clobber: clean
-	rm -f EvolutionHeader_Form_Test_*
+	rm -f IntegratorHeader_Form_Test_*
 
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_EVOLUTION_BASICS)/Makefile_Dependencies

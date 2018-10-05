@@ -8,13 +8,14 @@ include ../../Increments/Makefile_ObjectFiles
 all: Step_RK2_C_ASC__Form_Test
 
 Step_RK2_C_ASC__Form_Test: Basics.a Manifolds.a Operations.a Fields.a \
-  ProtoFields.a Increments.a ProtoIncrements.a Step_RK2_C_ASC__Form_Test.o
+  ProtoFields.a EvolutionBasics.a Increments.a ProtoIncrements.a \
+  Step_RK2_C_ASC__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Step_RK2_C_ASC__Form_Test_$(MACHINE) \
           Step_RK2_C_ASC__Form_Test.o DensityWaveStep_Form.o \
           Step_RK2_C_ASC__Form.o Step_RK_C_ASC__Template.o \
-	  Step_RK__Template.o ProtoIncrements.a Increments.a ProtoFields.a \
-          Fields.a Operations.a Manifolds.a Basics.a $(LIBRARIES)
+	  Step_RK__Template.o ProtoIncrements.a Increments.a EvolutionBasics.a \
+          ProtoFields.a Fields.a Operations.a Manifolds.a Basics.a $(LIBRARIES)
 
 clean:
 	rm -f *.o *.a *.mod *.ld
@@ -26,6 +27,7 @@ include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MANIFOLDS)/Makefile_Dependencies
 include $(PATH_OPERATIONS)/Makefile_Dependencies
 include $(PATH_FIELDS)/Makefile_Dependencies
+include $(PATH_EVOLUTION_BASICS)/Makefile_Dependencies
 include $(PATH_INCREMENTS)/Makefile_Dependencies
 include $(PATH_STEPS)/Makefile_Dependencies
 include ../../../Fields/Makefile_Dependencies
@@ -34,6 +36,7 @@ include ../../Increments/Makefile_Dependencies
 DensityWaveStep_Form.o: \
   Basics.o \
   ProtoFields.o \
+  EvolutionBasics.o \
   ProtoIncrements.o \
   Step_RK2_C_ASC__Form.o \
   DensityWaveStep_Form.f90

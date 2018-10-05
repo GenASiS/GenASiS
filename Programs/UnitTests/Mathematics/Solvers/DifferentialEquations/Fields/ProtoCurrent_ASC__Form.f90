@@ -89,7 +89,8 @@ contains
 !       call FA % TallyBoundary ( iB ) % Element % Initialize ( A )
 !     end do !-- iB
 
-    call PCA % InitializeTemplate_ASC_C ( A, NameShort, IgnorabilityOption )
+    call PCA % InitializeTemplate_ASC_C &
+           ( A, NameShort, IgnorabilityOption = IgnorabilityOption )
 
     allocate ( PCA % Sources_ASC )
     associate ( PCSA => PCA % Sources_ASC )

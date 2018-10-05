@@ -8,6 +8,7 @@ module Step_RK__Template
   !   tableau entries A, B, C
 
   use Basics
+  use EvolutionBasics
 
   implicit none
   private
@@ -32,6 +33,8 @@ module Step_RK__Template
     character ( LDF ) :: &
       Type = '', &
       Name = ''
+    class ( IntegratorHeaderForm ), pointer :: &
+      Integrator => null ( )
   contains
     procedure, public, pass :: &
       InitializeTemplate
@@ -131,10 +134,12 @@ module Step_RK__Template
 contains
 
 
-  subroutine InitializeTemplate ( S, NameSuffix, A, B, C )
+  subroutine InitializeTemplate ( S, I, NameSuffix, A, B, C )
 
     class ( Step_RK_Template ), intent ( inout ) :: &
       S
+    class ( IntegratorHeaderForm ), intent ( in ), target :: &
+      I
     character ( * ), intent ( in ) :: &
       NameSuffix
     real ( KDR ), dimension ( 2 : , : ), intent ( in ) :: &
@@ -173,6 +178,8 @@ contains
     S % C = C
 
     end associate !-- nS
+
+    S % Integrator => I
 
   end subroutine InitializeTemplate
 
