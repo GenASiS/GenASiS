@@ -164,7 +164,7 @@ contains
     select type ( S => SP % Step )
     class is ( Step_RK2_C_ASC_Form )
 
-    call S % Initialize ( RMA, Name )
+    call S % Initialize ( SP, RMA, Name )
 
     S % ApplySources % Pointer =>  ApplyCurvilinear_RM
 
@@ -237,7 +237,7 @@ contains
         V_1 => RM % Value ( :, RM % FLUID_VELOCITY_U ( 1 ) ), &
          FF => RM % Value ( :, RM % FLUX_FACTOR ), &
          SF => RM % Value ( :, RM % STRESS_FACTOR ), &
-          R =>  G % Value ( :, G % CENTER ( 1 ) ) )
+          R =>  G % Value ( :, G % CENTER_U ( 1 ) ) )
 
     J    =  0.0_KDR
     H_1  =  0.0_KDR
@@ -319,7 +319,7 @@ contains
       (   J => RM_R % Value ( :, RM % COMOVING_ENERGY ), &
         H_1 => RM_R % Value ( :, RM % COMOVING_MOMENTUM_U ( 1 ) ), &
         V_1 => RM % Value ( :, RM % FLUID_VELOCITY_U ( 1 ) ), &
-        R   => G % Value ( :, G % CENTER ( 1 ) ), &
+        R   => G % Value ( :, G % CENTER_U ( 1 ) ), &
         Pi  => CONSTANT % PI, &
         c   => CONSTANT % SPEED_OF_LIGHT )
 

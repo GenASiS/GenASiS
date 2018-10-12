@@ -4,54 +4,23 @@ module Integrator_Template
 
   use Basics
   use Manifolds
+  use EvolutionBasics
 
   implicit none
   private
 
-  type, public, abstract :: IntegratorTemplate
-    integer ( KDI ) :: &
-      IGNORABILITY = 0, &
-      iTimerEvolve = 0, &
-      iTimerCycle = 0, &
-      iTimerNewTime = 0, &
-      iTimerCheckpoint = 0, &
-      iTimerTally = 0, &
-      iTimerWrite = 0, &
-      iCycle, &
-      iCheckpoint, &
-      nRampCycles, &
-      nWrite, &
-      nTimeStepCandidates, &
-      CheckpointDisplayInterval
-    real ( KDR ) :: &
-      StartTime, &
-      FinishTime, &
-      WriteTimeInterval, &
-      WriteTime, &
-      Time
-    real ( KDR ), dimension ( : ), allocatable :: &
-      TimeStepCandidate
-    logical ( KDL ) :: &
-      IsCheckpointTime, &
-      NoWrite, &
-      WriteTimeExact
-    character ( LDL ), dimension ( : ), allocatable :: &
-      TimeStepLabel
-    type ( MeasuredValueForm ) :: &
-      TimeUnit
-    character ( LDF ) :: &
-      Type = '', &
-      Name = ''
-    type ( CommunicatorForm ), pointer :: &
-      Communicator => null ( )
-    type ( GridImageStreamForm ), allocatable :: &
-      GridImageStream
-    class ( AtlasHeaderForm ), allocatable :: &
-      PositionSpace
-    class ( BundleHeaderForm ), allocatable :: &
-      MomentumSpace
-    procedure ( SR ), pointer :: &
-      SetReference => null ( )
+  type, public, extends ( IntegratorHeaderForm ), abstract :: &
+    IntegratorTemplate
+      type ( CommunicatorForm ), pointer :: &
+        Communicator => null ( )
+      type ( GridImageStreamForm ), allocatable :: &
+        GridImageStream
+      class ( AtlasHeaderForm ), allocatable :: &
+        PositionSpace
+      class ( BundleHeaderForm ), allocatable :: &
+        MomentumSpace
+      procedure ( SR ), pointer :: &
+        SetReference => null ( )
   contains
     procedure, public, pass :: &  !-- 1
       InitializeTemplate
@@ -182,15 +151,8 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       nWriteOption
 
-    I % IGNORABILITY = CONSOLE % INFO_1
-
-    if ( I % Type == '' ) &
-      I % Type = 'an Integrator' 
-
-    I % Name = Name
-
-    call Show ( 'Initializing ' // trim ( I % Type ), I % IGNORABILITY )
-    call Show ( I % Name, 'Name', I % IGNORABILITY )
+    call I % IntegratorHeaderForm % InitializeHeader &
+           ( Name, TimeUnitOption, FinishTimeOption, nWriteOption )
 
     if ( .not. allocated ( I % PositionSpace ) ) then
       call Show ( 'PositionSpace must be allocated by an extension', &
@@ -201,53 +163,6 @@ contains
     else
       I % Communicator => I % PositionSpace % Communicator
     end if
-
-    I % iCycle = 0
-    I % iCheckpoint = 0
-    I % nRampCycles = 100
-    call PROGRAM_HEADER % GetParameter ( I % nRampCycles, 'nRampCycles' )
-
-    I % StartTime  = 0.0_KDR
-    I % FinishTime = 1.0_KDR
-    I % TimeUnit   = UNIT % IDENTITY
-    if ( present ( FinishTimeOption ) ) &
-      I % FinishTime = FinishTimeOption
-    if ( present ( TimeUnitOption ) ) &
-      I % TimeUnit = TimeUnitOption
-    call PROGRAM_HEADER % GetParameter &
-           ( I % StartTime, 'StartTime', InputUnitOption = I % TimeUnit )    
-    call PROGRAM_HEADER % GetParameter &
-           ( I % FinishTime, 'FinishTime', InputUnitOption = I % TimeUnit )
-
-    I % nWrite = 100
-    if ( present ( nWriteOption ) ) &
-      I % nWrite = nWriteOption
-    call PROGRAM_HEADER % GetParameter ( I % nWrite, 'nWrite' )
-
-    I % CheckpointDisplayInterval = 100
-    call PROGRAM_HEADER % GetParameter &
-           ( I % CheckpointDisplayInterval, 'CheckpointDisplayInterval' )
-
-    I % NoWrite = .false.
-    call PROGRAM_HEADER % GetParameter ( I % NoWrite, 'NoWrite' )
-
-    I % WriteTimeExact = .false.
-    call PROGRAM_HEADER % GetParameter &
-           ( I % WriteTimeExact, 'WriteTimeExact' )
-
-    if ( .not. allocated ( I % TimeStepLabel ) ) then
-      allocate ( I % TimeStepLabel ( 1 ) )
-      I % TimeStepLabel ( 1 ) = 'Physical'
-    end if
-    I % nTimeStepCandidates = size ( I % TimeStepLabel )
-    allocate ( I % TimeStepCandidate ( I % nTimeStepCandidates ) )
-
-    call Show ( I % StartTime, I % TimeUnit, 'StartTime', I % IGNORABILITY )
-    call Show ( I % FinishTime, I % TimeUnit, 'FinishTime', I % IGNORABILITY )
-    call Show ( I % nRampCycles, 'nRampCycles', I % IGNORABILITY )
-    call Show ( I % nWrite, 'nWrite', I % IGNORABILITY )
-    call Show ( I % CheckpointDisplayInterval, 'CheckpointDisplayInterval', &
-                I % IGNORABILITY )
 
     call I % OpenGridImageStreams ( )
 
@@ -322,11 +237,6 @@ contains
       deallocate ( I % TimeStepCandidate )
 
     nullify ( I % Communicator )
-
-    if ( I % Name == '' ) return
-
-    call Show ( 'Finalizing ' // trim ( I % Type ), I % IGNORABILITY )
-    call Show ( I % Name, 'Name', I % IGNORABILITY )
 
   end subroutine FinalizeTemplate
 

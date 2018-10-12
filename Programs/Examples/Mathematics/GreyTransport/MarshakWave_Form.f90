@@ -234,7 +234,7 @@ contains
     select type ( S_R => MW % Step_1 )
     class is ( Step_RK2_C_ASC_Form )
       call S_R % Initialize &
-             ( MW % Current_ASC_1, 'Radiation' )
+             ( MW, MW % Current_ASC_1, 'Radiation' )
       S_R % ApplyRelaxation % Pointer  =>  ApplyRelaxation_RM_G
     end select !-- S_R
 
@@ -242,7 +242,7 @@ contains
     select type ( S_F => MW % Step_2 )
     class is ( Step_RK2_C_ASC_Form )
       call S_F % Initialize &
-             ( MW % Current_ASC_2, 'Fluid' )
+             ( MW, MW % Current_ASC_2, 'Fluid' )
       S_F % ApplySources % Pointer  =>  ApplySources_Fluid
     end select !-- S_F
 
@@ -401,9 +401,9 @@ contains
         H_1 => R % Value ( :, R % COMOVING_MOMENTUM_U ( 1 ) ), &
         H_2 => R % Value ( :, R % COMOVING_MOMENTUM_U ( 2 ) ), &
         H_3 => R % Value ( :, R % COMOVING_MOMENTUM_U ( 3 ) ), &
-          X => G % Value ( :, G % CENTER ( 1 ) ), &
-          Y => G % Value ( :, G % CENTER ( 2 ) ), &
-          Z => G % Value ( :, G % CENTER ( 3 ) ), &
+          X => G % Value ( :, G % CENTER_U ( 1 ) ), &
+          Y => G % Value ( :, G % CENTER_U ( 2 ) ), &
+          Z => G % Value ( :, G % CENTER_U ( 3 ) ), &
           a => 4.0_KDR * CONSTANT % STEFAN_BOLTZMANN )
 
     J  =  a  *  T_0 ** 4

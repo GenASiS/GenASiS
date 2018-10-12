@@ -83,7 +83,7 @@ contains
     allocate ( Step_RK2_C_ASC_Form :: RT % Step )
     select type ( S => RT % Step )
     class is ( Step_RK2_C_ASC_Form )
-    call S % Initialize ( FA, Name )
+    call S % Initialize ( RT, FA, Name )
     S % ApplySources % Pointer => ApplySources
     end select !-- S
 

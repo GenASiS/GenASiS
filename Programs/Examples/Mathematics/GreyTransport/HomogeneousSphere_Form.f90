@@ -251,7 +251,7 @@ contains
     allocate ( Step_RK2_C_ASC_Form :: HS % Step )
     select type ( S => HS % Step )
     class is ( Step_RK2_C_ASC_Form )
-    call S % Initialize ( RMA, Name )
+    call S % Initialize ( HS, RMA, Name )
     S % ApplySources % Pointer    => ApplyCurvilinear_RM
     S % ApplyRelaxation % Pointer => ApplyRelaxation_RM_G
     end select !-- S
@@ -456,7 +456,7 @@ contains
 
       G => PS % Geometry ( )
       
-      nValues = size ( G % Value ( :, G % CENTER ( 1 ) ) )
+      nValues = size ( G % Value ( :, G % CENTER_U ( 1 ) ) )
 
       call SetRadius ( HS, CoordinateSystem, R )
       
@@ -554,15 +554,15 @@ contains
       class is ( Atlas_SC_Form )
       G => PS % Geometry ( )
       
-      nValues = size ( G % Value ( :, G % CENTER ( 1 ) ) )
+      nValues = size ( G % Value ( :, G % CENTER_U ( 1 ) ) )
       allocate ( R ( nValues ) )
 
       select case ( CoordinateSystem ) 
         case ( 'RECTANGULAR' )
           associate &
-            ( X =>  G % Value ( :, G % CENTER ( 1 ) ), &
-              Y =>  G % Value ( :, G % CENTER ( 2 ) ), &
-              Z =>  G % Value ( :, G % CENTER ( 3 ) ) )
+            ( X =>  G % Value ( :, G % CENTER_U ( 1 ) ), &
+              Y =>  G % Value ( :, G % CENTER_U ( 2 ) ), &
+              Z =>  G % Value ( :, G % CENTER_U ( 3 ) ) )
   
           !$OMP parallel do private ( iV )
           do iV = 1, nValues
@@ -572,8 +572,8 @@ contains
           end associate !-- X, etc.
         case ( 'CYLINDRICAL' )
           associate &
-            ( Rho =>  G % Value ( :, G % CENTER ( 1 ) ), &
-              Z   =>  G % Value ( :, G % CENTER ( 2 ) ) )
+            ( Rho =>  G % Value ( :, G % CENTER_U ( 1 ) ), &
+              Z   =>  G % Value ( :, G % CENTER_U ( 2 ) ) )
           !$OMP parallel do private ( iV )
           do iV = 1, nValues
             R ( iV ) = sqrt ( ( Rho ( iV ) ** 2 + Z ( iV ) ** 2 ) )
@@ -583,7 +583,7 @@ contains
         case ( 'SPHERICAL' )
           !$OMP parallel do private ( iV )
           do iV = 1, nValues
-            R ( iV ) = G % Value ( iV, G % CENTER ( 1 ) )
+            R ( iV ) = G % Value ( iV, G % CENTER_U ( 1 ) )
           end do !-- iV
           !$OMP end parallel do
         case DEFAULT

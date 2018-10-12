@@ -139,7 +139,7 @@ contains
     allocate ( Step_RK2_C_ASC_Form :: ST % Step )
     select type ( S => ST % Step )
     class is ( Step_RK2_C_ASC_Form )
-    call S % Initialize ( FA, Name )
+    call S % Initialize ( ST, FA, Name )
     S % ApplySources % Pointer => ApplyCurvilinear_F
     end select !-- S
 

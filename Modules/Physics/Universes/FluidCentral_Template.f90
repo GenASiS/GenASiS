@@ -17,7 +17,8 @@ module FluidCentral_Template
       type ( MeasuredValueForm ), dimension ( 3 ) :: &
         CoordinateUnit
       logical ( KDL ) :: &
-        Dimensionless
+        Dimensionless, &
+        UseCoarsening
       type ( StorageForm ), dimension ( : ), allocatable :: &
         CoarsenPillar_2, &
         CoarsenPillar_3
@@ -199,6 +200,11 @@ contains
 
     call PS % SetGeometry ( GA )
 
+    FC % UseCoarsening = .true.
+    call PROGRAM_HEADER % GetParameter ( FC % UseCoarsening, 'UseCoarsening' )
+    if ( FC % UseCoarsening ) &
+      call PS % SetCoarsening ( )
+
 
     !-- Fluid
 
@@ -245,7 +251,7 @@ contains
     select type ( S => FC % Step )
     class is ( Step_RK2_C_ASC_Form )
 
-    call S % Initialize ( FA, Name )
+    call S % Initialize ( FC, FA, Name )
     S % ApplySources % Pointer => ApplySources
 
     ! F => FA % Fluid_D ( )
@@ -270,8 +276,10 @@ contains
              nWriteOption = nWriteOption )
 
     call Show ( FC % Dimensionless, 'Dimensionless' )
+    call Show ( FC % UseCoarsening, 'UseCoarsening' )
 
-    call FC % SetCoarsening ( )
+    if ( FC % UseCoarsening ) &
+      call FC % SetCoarsening ( )
 
     !-- Diagnostics
     
@@ -438,6 +446,9 @@ contains
       S
     integer ( KDI ), intent ( in ) :: &
       iAngular
+
+    if ( .not. FC % UseCoarsening ) &
+      return
 
     call Show ( 'Coarsening Singularity', FC % IGNORABILITY + 2 )
     call Show ( iAngular, 'iAngular', FC % IGNORABILITY + 2 )

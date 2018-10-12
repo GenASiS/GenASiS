@@ -20,6 +20,8 @@ module Atlas_SC__Form
   contains
     procedure, public, pass :: &
       SetGeometry
+    procedure, public, pass :: &
+      SetCoarsening   
     procedure, private, pass :: &
       Geometry_CSL
     generic, public :: &
@@ -104,6 +106,27 @@ contains
     end select !-- C
 
   end subroutine SetGeometry
+
+
+  subroutine SetCoarsening ( A )
+
+    class ( Atlas_SC_Form ), intent ( inout ) :: &
+      A
+
+    select type ( C => A % Chart )
+    class is ( Chart_SLD_CE_Form )
+      call C % SetCoarsening ( )
+    class is ( Chart_SLD_CC_Form )
+      call C % SetCoarsening ( )
+    class default
+      call Show ( 'Chart type does not support coarsening', CONSOLE % WARNING )
+      call Show ( 'Name', C % Name, CONSOLE % WARNING )
+      call Show ( 'Type', C % Type, CONSOLE % WARNING )
+      call Show ( 'Atlas_SC__Form', 'module', CONSOLE % WARNING )
+      call Show ( 'SetCoarsening', 'subroutine', CONSOLE % WARNING )
+    end select !-- C
+
+  end subroutine SetCoarsening
 
 
   function Geometry_CSL ( A ) result ( G )

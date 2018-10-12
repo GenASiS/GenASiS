@@ -1,0 +1,29 @@
+PATH_GENASIS = ../../../../../../../..
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+all: \
+  IntegratorHeader_Form_Test
+
+runtests: all
+	${PATH_GENASIS}/Workflow/RunJobMultiple.sh 8 1  
+
+IntegratorHeader_Form_Test: Basics.a IntegratorHeader_Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o IntegratorHeader_Form_Test_$(MACHINE) \
+          IntegratorHeader_Form_Test.o IntegratorHeader_Form.o \
+          Basics.a $(LIBRARIES)
+
+clean:
+	rm -f *.o *.a *.mod *.ld
+
+clobber: clean
+	rm -f IntegratorHeader_Form_Test_*
+
+include $(PATH_BASICS)/Makefile_Dependencies
+include $(PATH_EVOLUTION_BASICS)/Makefile_Dependencies
+
+IntegratorHeader_Form_Test.o: \
+  Basics.o \
+  IntegratorHeader_Form.o \
+  IntegratorHeader_Form_Test.f90

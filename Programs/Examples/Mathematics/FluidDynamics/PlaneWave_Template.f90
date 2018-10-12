@@ -89,7 +89,7 @@ contains
     allocate ( Step_RK2_C_ASC_Form :: PW % Step )
     select type ( S => PW % Step )
     class is ( Step_RK2_C_ASC_Form )
-    call S % Initialize ( FA, Name )
+    call S % Initialize ( PW, FA, Name )
     end select !-- S
 
     !-- Diagnostics

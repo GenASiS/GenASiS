@@ -5,7 +5,7 @@ all:  SineWaveStreaming SineWaveDiffusion HomogeneousSphere MarshakWave \
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-VPATH := $(VPATH):../../FluidDynamics
+VPATH := ../../FluidDynamics:$(VPATH)
 include ../../FluidDynamics/Makefile_ObjectFiles
 include ../Makefile_ObjectFiles
 

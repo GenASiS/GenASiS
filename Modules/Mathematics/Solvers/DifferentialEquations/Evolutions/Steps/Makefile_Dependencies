@@ -1,5 +1,6 @@
 Step_RK__Template.o: \
   Basics.o \
+  EvolutionBasics.o \
   Step_RK__Template.f90
 
 Step_RK_C_ASC__Template.o: \
@@ -7,6 +8,7 @@ Step_RK_C_ASC__Template.o: \
   Manifolds.o \
   Operations.o \
   Fields.o \
+  EvolutionBasics.o \
   Increments.o \
   Step_RK__Template.o \
   Step_RK_C_ASC__Template.f90
@@ -25,6 +27,7 @@ Step_RK_C_BSLL_ASC_CSLD__Template.o: \
   Manifolds.o \
   Operations.o \
   Fields.o \
+  EvolutionBasics.o \
   Increments.o \
   Step_RK_C_ASC__Template.o \
   Step_RK_C_BSLL_ASC_CSLD__Template.f90
@@ -32,6 +35,7 @@ Step_RK_C_BSLL_ASC_CSLD__Template.o: \
 Step_RK2_C_ASC__Form.o: \
   Basics.o \
   Fields.o \
+  EvolutionBasics.o \
   Step_RK_C_ASC__Template.o \
   Step_RK2_C_ASC__Form.f90
 
@@ -44,6 +48,7 @@ Step_RK2_C_ASC__Form.o: \
 Step_RK2_C_BSLL_ASC_CSLD__Form.o: \
   Basics.o \
   Fields.o \
+  EvolutionBasics.o \
   Step_RK_C_BSLL_ASC_CSLD__Template.o \
   Step_RK2_C_BSLL_ASC_CSLD__Form.f90
 
