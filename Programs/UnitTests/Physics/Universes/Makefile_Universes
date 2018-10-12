@@ -10,7 +10,8 @@ FluidBox_Form_Test: ThirdParty.a Basics.a Mathematics.a Spaces.a \
 	$(LINK) $(FLAGS) \
           -o FluidBox_Form_Test_$(MACHINE) \
           FluidBox_Form_Test.o FluidBox_Form.o ApplyGravity_F__Command.o \
-          StressEnergies.a Spaces.a Mathematics.a Basics.a ThirdParty.a \
+          ComputeGravity_Command.o StressEnergies.a Spaces.a Mathematics.a \
+          Basics.a ThirdParty.a \
           $(LIBRARIES)
 
 FluidSymmetricCurvilinear_Form_Test: ThirdParty.a Basics.a Mathematics.a \
@@ -28,7 +29,8 @@ FluidCentralExcision_Form_Test: ThirdParty.a Basics.a Mathematics.a Spaces.a \
           -o FluidCentralExcision_Form_Test_$(MACHINE) \
           FluidCentralExcision_Form_Test.o FluidCentralExcision_Form.o \
           FluidCentral_Template.o ApplyGravity_F__Command.o \
-          StressEnergies.a Spaces.a Mathematics.a Basics.a ThirdParty.a \
+          ComputeGravity_Command.o StressEnergies.a Spaces.a Mathematics.a \
+          Basics.a ThirdParty.a \
           $(LIBRARIES)
 
 FluidCentralCore_Form_Test: ThirdParty.a Basics.a Mathematics.a Spaces.a \
@@ -37,7 +39,8 @@ FluidCentralCore_Form_Test: ThirdParty.a Basics.a Mathematics.a Spaces.a \
           -o FluidCentralCore_Form_Test_$(MACHINE) \
           FluidCentralCore_Form_Test.o FluidCentralCore_Form.o \
           FluidCentral_Template.o ApplyGravity_F__Command.o \
-          StressEnergies.a Spaces.a Mathematics.a Basics.a ThirdParty.a \
+          ComputeGravity_Command.o StressEnergies.a Spaces.a Mathematics.a \
+          Basics.a ThirdParty.a \
           $(LIBRARIES)
 
 clean:

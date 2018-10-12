@@ -409,25 +409,6 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
-    class ( Fluid_D_Form ), pointer :: &
-      F
-
-    select type ( A => CA % Atlas )
-    class is ( Atlas_SC_Form )
-      
-    select type ( GA => A % Geometry_ASC )
-    class is ( Geometry_ASC_Form )
-
-    F => CA % Fluid_D ( )
-
-    call GA % ComputeGravity &
-           ( CA, iBaryonMass = F % BARYON_MASS, &
-             iBaryonDensity = F % CONSERVED_BARYON_DENSITY )
-
-    end select !-- GA
-    end select !-- A
-    nullify ( F )
-
     call CA % ComputeTallyTemplate ( ComputeChangeOption, IgnorabilityOption )
 
   end subroutine ComputeTally

@@ -19,6 +19,11 @@ module Step_RK_C_ASC__Template
   implicit none
   private
 
+  type, public :: ComputeConstraints_C_Pointer
+    procedure ( CC ), pointer, nopass :: &
+      Pointer => null ( )
+  end type ComputeConstraints_C_Pointer
+
   type, public :: ApplyDivergence_C_Pointer
     procedure ( ApplyDivergence_C ), pointer, nopass :: &
       Pointer => null ( )
@@ -39,6 +44,7 @@ module Step_RK_C_ASC__Template
       integer ( KDI ) :: &
         iTimerStoreIntermediate = 0, &
         iTimerClearIncrement    = 0, &
+        iTimerConstraints       = 0, &
         iTimerDivergence        = 0, &
         iTimerSources           = 0, &
         iTimerRelaxation        = 0, &
@@ -76,6 +82,8 @@ module Step_RK_C_ASC__Template
         ApplySources_C => null ( ) 
       procedure ( AR ), pointer, pass :: &
         ApplyRelaxation_C => null ( )
+      type ( ComputeConstraints_C_Pointer ) :: &
+        ComputeConstraints
       type ( ApplyDivergence_C_Pointer ) :: &
         ApplyDivergence
       type ( ApplySources_C_Pointer ) :: &
@@ -158,6 +166,12 @@ module Step_RK_C_ASC__Template
   end type Step_RK_C_ASC_Template
 
   abstract interface 
+
+    subroutine CC ( S )
+      import Step_RK_C_ASC_Template
+      class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
+        S
+    end subroutine CC
 
     subroutine AS ( S, Sources, Increment, Current, TimeStep, iStage )
       use Basics
@@ -566,6 +580,9 @@ contains
              ( 'ClearIncrement', S % iTimerClearIncrement, &
                Level = BaseLevel + 1 )
       call PROGRAM_HEADER % AddTimer &
+             ( 'ComputeConstraints', S % iTimerConstraints, &
+               Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
              ( 'ApplyDivergence', S % iTimerDivergence, &
                Level = BaseLevel + 1 )
       call S % InitializeTimersDivergence &
@@ -783,6 +800,9 @@ contains
       call PROGRAM_HEADER % Abort ( )
     end select !-- Grid
     call Current % ComputeFromConserved ( G )
+
+    if ( associated ( S % ComputeConstraints % Pointer ) ) &
+      call S % ComputeConstraints % Pointer ( S )
 
     nullify ( G )
     

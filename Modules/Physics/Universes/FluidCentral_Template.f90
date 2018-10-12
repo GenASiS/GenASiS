@@ -4,6 +4,7 @@ module FluidCentral_Template
   use Mathematics
   use Spaces
   use StressEnergies
+  use ComputeGravity_Command
   use ApplyGravity_F__Command
 
   implicit none
@@ -252,6 +253,7 @@ contains
     class is ( Step_RK2_C_ASC_Form )
 
     call S % Initialize ( FC, FA, Name )
+    S % ComputeConstraints % Pointer => ComputeGravity
     S % ApplySources % Pointer => ApplySources
 
     ! F => FA % Fluid_D ( )

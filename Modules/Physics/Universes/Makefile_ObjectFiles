@@ -7,4 +7,5 @@ UNIVERSES = \
   FluidSymmetricCurvilinear_Form.o \
   FluidBox_Form.o \
   ApplyDeleptonization_F__Command.o \
-  ApplyGravity_F__Command.o
+  ApplyGravity_F__Command.o \
+  ComputeGravity_Command.o

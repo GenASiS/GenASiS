@@ -56,11 +56,6 @@ contains
     select type ( F => Fluid )
     class is ( Fluid_D_Form )
 
-    call GA % ComputeGravity &
-           ( S % Current_ASC, &
-             iBaryonMass = F % BARYON_MASS, &
-             iBaryonDensity = F % COMOVING_BARYON_DENSITY )
-
     select type ( FS => Sources_F )
     class is ( Sources_F_Form )
 

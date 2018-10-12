@@ -31,6 +31,8 @@ module Integrator_C_PS__Template
     procedure, public, pass :: &  !-- 1
       FinalizeTemplate_C_PS
     procedure, private, pass :: &  !-- 2
+      ComputeConstraints
+    procedure, private, pass :: &  !-- 2
       ComputeCycle
     procedure, private, pass :: &  !-- 3
       InitializeStepTimers
@@ -134,6 +136,22 @@ contains
     call I % FinalizeTemplate ( )
 
   end subroutine FinalizeTemplate_C_PS
+
+
+  subroutine ComputeConstraints ( I )
+
+    class ( Integrator_C_PS_Template ), intent ( inout ) :: &
+      I
+
+    select type ( S => I % Step )
+    class is ( Step_RK_C_ASC_Template )
+
+    if ( associated ( S % ComputeConstraints % Pointer ) ) &
+      call S % ComputeConstraints % Pointer ( S )
+
+    end select !-- S
+
+  end subroutine ComputeConstraints
 
 
   subroutine ComputeCycle ( I )
