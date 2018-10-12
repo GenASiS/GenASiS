@@ -39,7 +39,9 @@ contains
       F
 
     real ( KDR ) :: &
-     TimeScale
+     OS_Radius, &      !-- Equaivalent Oppenheimer-Snyder Collapse Radius
+     TimeScale, &
+     Beta              !-- Factor to set FinishTime to correspond to OS
 
     if ( SC % Type == '' ) &
       SC % Type = ' a SpheroidCollapse'
@@ -67,15 +69,20 @@ contains
    class is ( Fluid_ASC_Form )
 
     !-- Initial conditions
-
-    SC % SemiMajor = PS % Chart % MaxCoordinate ( 1 ) / 1.1_KDR
-    SC % SemiMinor = SC % SemiMajor * 0.8
+    OS_Radius           = PS % Chart % MaxCoordinate ( 1 ) / 1.5_KDR
+    SC % SemiMajor      = 1.2 * OS_Radius
     SC % InitialDensity = 1.0_KDR
+
+    call PROGRAM_HEADER % GetParameter ( OS_Radius, 'OS_Radius' )
+    call PROGRAM_HEADER % GetParameter ( SC % InitialDensity, 'rho_0' )
+    call PROGRAM_HEADER % GetParameter ( SC % SemiMajor, 'SemiMajor' )
+
+    SC % SemiMinor      = OS_Radius ** 3 / SC % SemiMajor ** 2
 
     TimeScale &
       = sqrt ( 3.0_KDR / ( 8.0_KDR * CONSTANT % PI * SC % InitialDensity ) )
 
-    FCC % FinishTime = 1.2 * TimeScale
+    FCC % FinishTime = 1.2_KDR * TimeScale
     call Show ( FCC % FinishTime, 'Reset FinishTime' )
 
     F => FA % Fluid_D ( )
@@ -123,11 +130,12 @@ contains
               a_3 = SC % SemiMinor, &
               D0  = SC % InitialDensity, &
               N   = F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
-             V_1 = F % Value ( :, F % VELOCITY_U ( 1 ) ), &
-             V_2 = F % Value ( :, F % VELOCITY_U ( 2 ) ), &
-             V_3 = F % Value ( :, F % VELOCITY_U ( 3 ) ) )
+              V_1 = F % Value ( :, F % VELOCITY_U ( 1 ) ), &
+              V_2 = F % Value ( :, F % VELOCITY_U ( 2 ) ), &
+              V_3 = F % Value ( :, F % VELOCITY_U ( 3 ) ) )
 
     call F % ComputeFromPrimitive ( G )
+    call C % ExchangeGhostData ( F )
 
     end select    !-- PS
     nullify ( G )
