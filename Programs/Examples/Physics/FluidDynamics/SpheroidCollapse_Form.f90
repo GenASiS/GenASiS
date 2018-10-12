@@ -124,6 +124,9 @@ contains
     class is ( Atlas_SC_Form )
     G => PS % Geometry ( )
 
+    select type ( C => PS % Chart ) 
+    class is ( Chart_SLD_Form )
+
     call SetFluidKernel &
            (  PS, &
               a_1 = SC % SemiMajor, &
@@ -137,6 +140,7 @@ contains
     call F % ComputeFromPrimitive ( G )
     call C % ExchangeGhostData ( F )
 
+    end select    !-- C
     end select    !-- PS
     nullify ( G )
 
