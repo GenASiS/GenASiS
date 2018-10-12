@@ -1,7 +1,7 @@
 PATH_GENASIS = ../../../../..
 
 all: SineWave OppenheimerSnyder RiemannProblem RayleighTaylor \
-     SedovTaylor FishboneMoncrief YahilLattimer SpheroidCollapse		   #SawtoothWave 
+     SedovTaylor FishboneMoncrief YahilLattimer SpheroidCollapse ODE_Solve #SawtoothWave 
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
@@ -59,6 +59,12 @@ SpheroidCollapse: ThirdParty.a GenASiS.a SpheroidCollapse.o
 	$(LINK) $(FFLAGS) \
            -o SpheroidCollapse_$(MACHINE) \
            SpheroidCollapse.o SpheroidCollapse_Form.o \
+           GenASiS.a ThirdParty.a $(LIBRARIES)\
+
+ODE_Solve: ThirdParty.a GenASiS.a ODE_Solve_Command_Test.o
+	$(LINK) $(FFLAGS) \
+           -o ODE_Solve_Command_Test_$(MACHINE) \
+           ODE_Solve_Command_Test.o ODE_Solve_Command.o \
            GenASiS.a ThirdParty.a $(LIBRARIES)
 
 include $(PATH_GENASIS)/Build/Makefile_Dependencies
@@ -163,3 +169,12 @@ SpheroidCollapse.o: \
   GenASiS.o \
   SpheroidCollapse_Form.o \
   SpheroidCollapse.f90
+
+ODE_Solve_Command.o: \
+  GenASiS.o \
+  ODE_Solve_Command.f90
+
+ODE_Solve_Command_Test.o: \
+  GenASiS.o \
+  ODE_Solve_Command.o \
+  ODE_Solve_Command_Test.f90
