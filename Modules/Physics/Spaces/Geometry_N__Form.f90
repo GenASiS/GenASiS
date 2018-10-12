@@ -31,6 +31,8 @@ module Geometry_N__Form
       Finalize
   end type Geometry_N_Form
 
+    private :: &
+      InitializeBasics
 
 contains
 
@@ -88,7 +90,7 @@ contains
     else
       !-- Dimensionless
     end if
-      
+
     call G % GeometryFlatForm % Initialize &
            ( CoordinateSystem, CoordinateUnit, nValues, &
              VariableOption = Variable, VectorOption = Vector, &

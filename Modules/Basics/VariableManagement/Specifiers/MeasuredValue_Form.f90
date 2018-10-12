@@ -944,8 +944,8 @@ contains
 
     NET = .false.
 
-    if ( MV_1 % Unit == MV_2 % Unit &
-         .and. MV_1 % Number /= MV_2 % Number ) &
+    if ( MV_1 % Unit /= MV_2 % Unit &
+         .or. MV_1 % Number /= MV_2 % Number ) &
       NET = .true.
 
   end function NotEqualTo_MV_MV
