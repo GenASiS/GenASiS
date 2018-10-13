@@ -14,7 +14,7 @@ Geometry_G__Form_Test: Basics.a Mathematics.a Geometry_G__Form_Test.o
 Geometry_N__Form_Test: Basics.a Mathematics.a Geometry_N__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Geometry_N__Form_Test_$(MACHINE) \
-          Geometry_N__Form_Test.o Geometry_N__Form.o \
+          Geometry_N__Form_Test.o Geometry_N__Form.o Geometry_G__Form.o \
           Mathematics.a Basics.a $(LIBRARIES)
 
 Geometry_N_FF_S__Form_Test: Basics.a Mathematics.a Geometry_N__Form.o \
@@ -22,7 +22,7 @@ Geometry_N_FF_S__Form_Test: Basics.a Mathematics.a Geometry_N__Form.o \
 	$(LINK) $(FLAGS) \
           -o Geometry_N_FF_S__Form_Test_$(MACHINE) \
           Geometry_N_FF_S__Form_Test.o Geometry_N_FF_S__Form.o \
-          Geometry_N__Form.o \
+          Geometry_N__Form.o Geometry_G__Form.o \
           Mathematics.a Basics.a $(LIBRARIES)
 
 Geometry_CSL__Form_Test: Basics.a Mathematics.a Geometry_CSL__Form_Test.o
