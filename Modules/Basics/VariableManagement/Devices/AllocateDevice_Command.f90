@@ -11,13 +11,26 @@ module AllocateDevice_Command
     AllocateDevice
   
   interface AllocateDevice
+    module procedure AllocateDevice_KDR
     module procedure AllocateDevice_KDR_1D
     module procedure AllocateDevice_KDR_2D
   end interface AllocateDevice
   
 contains
 
+
+  subroutine AllocateDevice_KDR ( nValues, Device )
   
+    integer ( KDI ), intent ( in ) :: &
+      nValues
+    type ( c_ptr ), intent ( out ) :: &
+      Device
+    
+    Device = AllocateTargetDouble ( nValues )
+  
+  end subroutine AllocateDevice_KDR
+
+
   subroutine AllocateDevice_KDR_1D ( Value, Device )
   
     real ( KDR ), dimension ( : ), intent ( in ) :: &

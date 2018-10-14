@@ -124,7 +124,6 @@ contains
 
     call ShowParameters ( DM )
     
-    
   end subroutine Initialize
 
 

@@ -131,13 +131,13 @@ program AllocateHost_Command_Test
   print*, ''
   
   !-- Timing pageable memory update Host-to-Device
-  StartTime = OMP_GET_WTIME ( )
-  call UpdateDevice ( Pa_Value_2D, d_Pa_Value_2D )
-  TotalTime = OMP_GET_WTIME ( ) - StartTime
-  print*, 'Pageable memory Data Transfer'
-  print*, 'Host-to-Device Time (s)        :', TotalTime
-  print*, 'Host-to-Device Bandwith (GB/s) :', DataSize_GB / TotalTime
-  print*, ''
+!  StartTime = OMP_GET_WTIME ( )
+!  call UpdateDevice ( Pa_Value_2D, d_Pa_Value_2D )
+!  TotalTime = OMP_GET_WTIME ( ) - StartTime
+!  print*, 'Pageable memory Data Transfer'
+!  print*, 'Host-to-Device Time (s)        :', TotalTime
+!  print*, 'Host-to-Device Bandwith (GB/s) :', DataSize_GB / TotalTime
+!  print*, ''
   
   !-- Timing pageable memory update Host-to-Device loop
   StartTime = OMP_GET_WTIME ( )
@@ -162,13 +162,13 @@ program AllocateHost_Command_Test
   print*, ''
   
   !-- Timing pageable memory update Device-To-Host
-  StartTime = OMP_GET_WTIME ( )
-  call UpdateHost ( d_Pa_Value_2D, Pa_Value_2D )
-  TotalTime = OMP_GET_WTIME ( ) - StartTime
-  print*, 'Pageable memory Data Transfer'
-  print*, 'Device-to-Host Time (s)        :', TotalTime
-  print*, 'Device-to-Host Bandwith (GB/s) :', DataSize_GB / TotalTime
-  print*, ''
+!  StartTime = OMP_GET_WTIME ( )
+!  call UpdateHost ( d_Pa_Value_2D, Pa_Value_2D )
+!  TotalTime = OMP_GET_WTIME ( ) - StartTime
+!  print*, 'Pageable memory Data Transfer'
+!  print*, 'Device-to-Host Time (s)        :', TotalTime
+!  print*, 'Device-to-Host Bandwith (GB/s) :', DataSize_GB / TotalTime
+!  print*, ''
   
   !-- Timing pageable memory update Device-To-Host Loop
   StartTime = OMP_GET_WTIME ( )

@@ -16,10 +16,11 @@ module Storage_Form
   
   type, public :: StorageForm
     integer ( KDI ) :: &
-      nValues    = 0, &
-      nVariables = 0, &
-      nVectors   = 0, &
-      lName      = 0
+      nValues     = 0, &
+      nVariables  = 0, &
+      nVectors    = 0, &
+      lName       = 0, &
+      ErrorDevice = 0
     integer ( KDI ), dimension ( : ), allocatable :: &
       iaSelected, &
       lVariable, &
@@ -40,18 +41,20 @@ module Storage_Form
       Unit
     type ( Integer_1D_Form ), dimension ( : ), allocatable :: &
       VectorIndices
+    type ( StorageForm ), pointer, private :: &
+      Primary => null ( )
   contains
     !-- FIXME: Changed "private" to "public" since marking this private
     !          cause problem in the overriding subroutine in extension
     !          with CCE-8.x (possibly related to bug CCS # 121803)
     procedure, public, pass :: &
       InitializeAllocate
-    procedure, public, pass, non_overridable :: &
-      InitializeAssociate
+    !procedure, public, pass, non_overridable :: &
+    !  InitializeAssociate
     procedure, public, pass :: &
       InitializeClone
     generic :: &
-      Initialize => InitializeAllocate, InitializeAssociate, InitializeClone
+      Initialize => InitializeAllocate, InitializeClone
     procedure, public, pass :: &
       AllocateDevice => AllocateDevice_S
     procedure, private, pass :: &
@@ -131,57 +134,57 @@ contains
              VariableOption, NameOption )
   
   end subroutine InitializeAllocate
-  
-  
-  subroutine InitializeAssociate &
-               ( S, Value, VectorIndicesOption, UnitOption, VectorOption, &
-                 VariableOption, NameOption, iaSelectedOption )
-    
-    class ( StorageForm ), intent ( inout ) :: &
-      S
-    real ( KDR ), dimension ( :, : ), intent ( in ), target :: &
-      Value
-    type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
-      VectorIndicesOption
-    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
-      UnitOption
-    character ( * ), dimension ( : ), intent ( in ), optional :: &
-      VectorOption, &
-      VariableOption
-    character ( * ), intent ( in ), optional :: &
-      NameOption
-    integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
-      iaSelectedOption
-    
-    integer ( KDI ) :: &
-      iVrbl
 
-    S % nValues = size ( Value, dim = 1 )
-    
-    if ( present ( iaSelectedOption ) ) then
-      S % nVariables = size ( iaSelectedOption )
-    else
-      S % nVariables = size ( Value, dim = 2 )
-    end if
-    
-    allocate ( S % iaSelected ( S % nVariables ) )
-    if ( present ( iaSelectedOption ) ) then
-      S % iaSelected = iaSelectedOption
-    else
-      S % iaSelected = [ ( iVrbl, iVrbl = 1, S % nVariables ) ]
-    end if
-
-    S % Value => Value
-    S % AllocatedValue = .false.
-    
-    allocate ( S % D_Selected ( S % nVariables ) )
-    S % D_Selected = c_null_ptr
-    
-    call InitializeOptionalMembers &
-           ( S, VectorIndicesOption, UnitOption, VectorOption, &
-             VariableOption, NameOption )
   
-  end subroutine InitializeAssociate
+!  subroutine InitializeAssociate &
+!               ( S, Value, VectorIndicesOption, UnitOption, VectorOption, &
+!                 VariableOption, NameOption, iaSelectedOption )
+!    
+!    class ( StorageForm ), intent ( inout ) :: &
+!      S
+!    real ( KDR ), dimension ( :, : ), intent ( in ), target :: &
+!      Value
+!    type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
+!      VectorIndicesOption
+!    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+!      UnitOption
+!    character ( * ), dimension ( : ), intent ( in ), optional :: &
+!      VectorOption, &
+!      VariableOption
+!    character ( * ), intent ( in ), optional :: &
+!      NameOption
+!    integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
+!      iaSelectedOption
+!    
+!    integer ( KDI ) :: &
+!      iVrbl
+!
+!    S % nValues = size ( Value, dim = 1 )
+!    
+!    if ( present ( iaSelectedOption ) ) then
+!      S % nVariables = size ( iaSelectedOption )
+!    else
+!      S % nVariables = size ( Value, dim = 2 )
+!    end if
+!    
+!    allocate ( S % iaSelected ( S % nVariables ) )
+!    if ( present ( iaSelectedOption ) ) then
+!      S % iaSelected = iaSelectedOption
+!    else
+!      S % iaSelected = [ ( iVrbl, iVrbl = 1, S % nVariables ) ]
+!    end if
+!
+!    S % Value => Value
+!    S % AllocatedValue = .false.
+!    
+!    allocate ( S % D_Selected ( S % nVariables ) )
+!    S % D_Selected = c_null_ptr
+!    
+!    call InitializeOptionalMembers &
+!           ( S, VectorIndicesOption, UnitOption, VectorOption, &
+!             VariableOption, NameOption )
+!  
+!  end subroutine InitializeAssociate
   
   
   subroutine InitializeClone (  &
@@ -190,7 +193,7 @@ contains
 
     class ( StorageForm ), intent ( inout ) :: &
       S_Target
-    class ( StorageForm ), intent ( in ) :: &
+    class ( StorageForm ), intent ( in ), target :: &
       S_Source
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
       VectorIndicesOption
@@ -264,6 +267,12 @@ contains
       end do
     end if
     
+    if ( S_Source % AllocatedValue ) then
+      S_Target % Primary => S_Source
+    else
+      S_Target % Primary => S_Source % Primary
+    end if
+    
     allocate ( S_Target % D_Selected ( S_Target % nVariables ) )
     if ( .not. present ( iaSelectedOption ) ) then
       S_Target % D_Selected = S_Source % D_Selected
@@ -271,9 +280,10 @@ contains
       S_Target % D_Selected = c_null_ptr
       do iS_T = 1, S_Target % nVariables
         iV = S_Target % iaSelected ( iS_T )
-        do iS_S = 1, S_Source % nVariables
-          if ( iV == S_Source % iaSelected ( iS_S ) ) then
-            S_Target % D_Selected ( iS_T ) = S_Source % D_Selected ( iS_S )
+        do iS_S = 1, S_Target % Primary % nVariables
+          if ( iV == S_Target % Primary % iaSelected ( iS_S ) ) then
+            S_Target % D_Selected ( iS_T ) &
+              = S_Target % Primary % D_Selected ( iS_S )
             exit
           end if
         end do
@@ -294,12 +304,18 @@ contains
       
     integer ( KDI ) :: &
       iV
-      
-    do iV = 1, S % nVariables
-      if ( c_associated ( S % D_Selected ( iV ) ) ) cycle
+    real ( KDR ), dimension ( :, : ), pointer :: &
+      Scratch
+    
+    if ( S % AllocatedValue ) then
       call AllocateDevice &
-             ( S % Value ( :, S % iaSelected ( iV ) ), S % D_Selected ( iV ) )
-    end do
+             ( S % nValues * S % nVariables, S % D_Selected ( 1 ) )
+      call c_f_pointer &
+             ( S % D_Selected ( 1 ), Scratch, [ S % nValues, S % nVariables ] )
+      do iV = 2, S % nVariables
+        S % D_Selected ( iV ) = c_loc ( Scratch ( :, iV ) )
+      end do
+    end if
   
   end subroutine AllocateDevice_S
   
@@ -308,14 +324,20 @@ contains
   
     class ( StorageForm ), intent ( inout ) :: &
       S
-      
     integer ( KDI ) :: &
       iS
       
-    do iS = 1, S % nVariables
+    if ( S % AllocatedValue ) then
       call UpdateDevice &
-             ( S % Value ( :, S % iaSelected ( iS ) ), S % D_Selected ( iS ) )
-    end do
+             ( S % Value, S % D_Selected ( 1 ), &
+               ErrorOption = S % ErrorDevice )
+    else
+      do iS = 1, S % nVariables
+        call UpdateDevice &
+               ( S % Value ( :, S % iaSelected ( iS ) ), &
+                 S % D_Selected ( iS ), ErrorOption = S % ErrorDevice )
+      end do
+    end if
   
   end subroutine UpdateDeviceAll
 
@@ -331,7 +353,9 @@ contains
       iS
     
     call Search ( S % iaSelected, iV, iS )
-    call UpdateDevice ( S % Value ( :, iV ), S % D_Selected ( iS ) )
+    call UpdateDevice &
+           ( S % Value ( :, iV ), S % D_Selected ( iS ), &
+             ErrorOption = S % ErrorDevice )
   
   end subroutine UpdateDeviceSingle
 
@@ -344,11 +368,15 @@ contains
     integer ( KDI ) :: &
       iS
       
-    do iS = 1, S % nVariables
-      call UpdateHost &
-             ( S % D_Selected ( iS ), S % Value ( :, S % iaSelected ( iS ) ) )
-    end do
-  
+    if ( S % AllocatedValue ) then
+      call UpdateHost ( S % D_Selected ( 1 ), S % Value )
+    else
+      do iS = 1, S % nVariables
+        call UpdateHost &
+               ( S % D_Selected ( iS ), S % Value ( :, S % iaSelected ( iS ) ) )
+      end do
+    end if
+    
   end subroutine UpdateHostAll
   
   

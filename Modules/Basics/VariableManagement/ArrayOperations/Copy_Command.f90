@@ -552,7 +552,7 @@ contains
           
           iS = iV - oSource ( 1 )
           jS = jV - oSource ( 2 )
-          jS = kV - oSource ( 3 )
+          kS = kV - oSource ( 3 )
           
           iT = iS + ( jS - 1 ) * nSource ( 1 ) &
                   + ( kS - 1 ) * nSource ( 1 ) * nSource ( 2 )

@@ -1,5 +1,6 @@
 program Storage_Form_Test
 
+  use omp_lib
   use Specifiers
   use ArrayOperations
   use ArrayArrays
@@ -9,6 +10,10 @@ program Storage_Form_Test
 
   integer ( KDI ) :: &
     i
+  real ( KDR ) :: &
+    StartTime, &
+    TotalTime, &
+    DataSize_GB
   character ( LDL ), dimension ( 6 ) :: &
     Variable &
       = [ 'Variable_1', 'Variable_2', 'Variable_3', 'Variable_4', &
@@ -66,6 +71,57 @@ program Storage_Form_Test
     print*, 'Host From Device', S ( 3 ) % Value ( :, S ( 3 ) % iaSelected ( i ) )
   end do
   
+  call S ( 4 ) % Initialize &
+         ( ValueShape = [ 256**3, 16 ], PinnedOption = .true. )
+  call random_number ( S ( 4 ) % Value )
+  call S ( 4 ) % AllocateDevice ( )
+         
+  
+  call S ( 5 ) % Initialize &
+         ( S ( 4 ), &
+           iaSelectedOption = [ 1, 3, 5, 7, 9, 11, 13, 15 ] )
+  call S ( 5 ) % AllocateDevice ( )
+  
+  DataSize_GB = 1.0_KDR * S ( 4 ) % nValues * S ( 4 ) % nVariables * 8 &
+                / 1.0e9_KDR 
+  print*, 'Data size (GB)', DataSize_GB
+  
+  StartTime = OMP_GET_WTIME ( )
+  call S ( 5 ) % UpdateDevice ( )
+  TotalTime = OMP_GET_WTIME ( ) - StartTime
+  print*, 'Overlay Storage Data Transfer'
+  print*, 'Device Error                   :', S ( 5 ) % ErrorDevice
+  print*, 'Host-to-Device Time (s)        :', TotalTime
+  print*, 'Host-to-Device Bandwith (GB/s) :', DataSize_GB / TotalTime / 2
+  print*, ''
+  
+  StartTime = OMP_GET_WTIME ( )
+  call S ( 4 ) % UpdateDevice ( )
+  TotalTime = OMP_GET_WTIME ( ) - StartTime
+  print*, 'Primary Storage Data Transfer'
+  print*, 'Device Error                   :', S ( 4 ) % ErrorDevice
+  print*, 'Host-to-Device Time (s)        :', TotalTime
+  print*, 'Host-to-Device Bandwith (GB/s) :', DataSize_GB / TotalTime
+  print*, ''
+  
+  StartTime = OMP_GET_WTIME ( )
+  call S ( 5 ) % UpdateHost ( )
+  TotalTime = OMP_GET_WTIME ( ) - StartTime
+  print*, 'Overlay Storage Data Transfer'
+  print*, 'Device Error                   :', S ( 5 ) % ErrorDevice
+  print*, 'Device-to-Host Time (s)        :', TotalTime
+  print*, 'Device-to-Host Bandwith (GB/s) :', DataSize_GB / TotalTime / 2
+  print*, ''
+
+  StartTime = OMP_GET_WTIME ( )
+  call S ( 4 ) % UpdateHost ( )
+  TotalTime = OMP_GET_WTIME ( ) - StartTime
+  print*, 'Primary Storage Data Transfer'
+  print*, 'Device Error                   :', S ( 4 ) % ErrorDevice
+  print*, 'Device-to-Host Time (s)        :', TotalTime
+  print*, 'Device-to-Host Bandwith (GB/s) :', DataSize_GB / TotalTime
+  print*, ''
+
 contains
 
 
