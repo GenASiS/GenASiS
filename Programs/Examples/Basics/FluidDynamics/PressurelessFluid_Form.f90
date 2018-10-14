@@ -580,14 +580,6 @@ contains
              D_ValueInner ( CF % FAST_EIGENSPEED_MINUS ( iDimension ) ), &
              D_ValueOuter ( CF % FAST_EIGENSPEED_MINUS ( iDimension ) ) )
              
-    associate ( &
-      T_DT_H  => PROGRAM_HEADER % Timer ( S % iTimerDataTransferHost ) )
-    call T_DT_H % Start ( )
-    call S % ModifiedSpeedsInner % UpdateHost ( )
-    call S % ModifiedSpeedsOuter % UpdateHost ( )
-    call T_DT_H % Stop ( )
-    end associate
-    
     end select !-- S
       
   end subroutine ComputeRiemannSolverInput
