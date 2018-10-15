@@ -8,7 +8,7 @@ module Geometry_CSL__Form
   use Mathematics
   use Geometry_G__Form
   use Geometry_N__Form
-  use Geometry_N_FF_S__Form
+  use Geometry_N_S__Form
 
   implicit none
   private
@@ -117,8 +117,8 @@ contains
       allocate ( Geometry_G_Form :: FC % Field )
     case ( 'NEWTONIAN' )
       allocate ( Geometry_N_Form :: FC % Field )
-    case ( 'NEWTONIAN_FF_S' )  !-- FluidFlux_Momentum
-      allocate ( Geometry_N_FF_S_Form :: FC % Field )
+    case ( 'NEWTONIAN_STRESS' )
+      allocate ( Geometry_N_S_Form :: FC % Field )
     case default
       call Show ( 'GeometryType not recognized', CONSOLE % ERROR )
       call Show ( FC % GeometryType, 'GeometryType', CONSOLE % ERROR )

@@ -98,7 +98,7 @@ contains
     call GA % InitializeFlat ( A, NameShortOption, IgnorabilityOption )
 
     select case ( trim ( GA % GeometryType ) )
-    case ( 'NEWTONIAN' )
+    case ( 'NEWTONIAN', 'NEWTONIAN_STRESS' )
 
       GA % GravitationalConstant  =  CONSTANT % GRAVITATIONAL
       if ( present ( GravitationalConstantOption ) ) &
@@ -234,7 +234,7 @@ contains
       iBaryonDensity
 
     select case ( trim ( GA % GeometryType ) )
-    case ( 'NEWTONIAN' )
+    case ( 'NEWTONIAN', 'NEWTONIAN_STRESS' )
 
     select case ( trim ( GA % GravitySolverType ) )
     case ( 'UNIFORM' )

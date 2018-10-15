@@ -9,18 +9,18 @@ Geometry_N__Form.o: \
   Geometry_G__Form.o \
   Geometry_N__Form.f90
 
-Geometry_N_FF_S__Form.o: \
+Geometry_N_S__Form.o: \
   Basics.o \
   Mathematics.o \
   Geometry_N__Form.o \
-  Geometry_N_FF_S__Form.f90
+  Geometry_N_S__Form.f90
 
 Geometry_CSL__Form.o: \
   Basics.o \
   Mathematics.o \
   Geometry_G__Form.o \
   Geometry_N__Form.o \
-  Geometry_N_FF_S__Form.o \
+  Geometry_N_S__Form.o \
   Geometry_CSL__Form.f90
 
 Geometry_ASC__Form.o: \
@@ -34,7 +34,7 @@ Geometry_ASC__Form.o: \
 Spaces.o: \
   Geometry_G__Form.o \
   Geometry_N__Form.o \
-  Geometry_N_FF_S__Form.o \
+  Geometry_N_S__Form.o \
   Geometry_CSL__Form.o \
   Geometry_ASC__Form.o \
   Spaces.f90

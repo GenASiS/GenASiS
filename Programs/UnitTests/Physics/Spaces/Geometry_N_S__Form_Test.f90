@@ -1,14 +1,14 @@
-program Geometry_N_FF_S__Form_Test
+program Geometry_N_S__Form_Test
 
   use Basics
 
   implicit none
 
   character ( LDF ) :: &
-    ProgramName = 'Geometry_N_FF_S__Form_Test', &
-    GeometryName_1 = 'Geometry_N_FF_S_1D', &
-    GeometryName_2 = 'Geometry_N_FF_S_2D', &
-    GeometryName_3 = 'Geometry_N_FF_S_3D'
+    ProgramName = 'Geometry_N_S__Form_Test', &
+    GeometryName_1 = 'Geometry_N_S_1D', &
+    GeometryName_2 = 'Geometry_N_S_2D', &
+    GeometryName_3 = 'Geometry_N_S_3D'
 
   allocate ( PROGRAM_HEADER )  
   call PROGRAM_HEADER % Initialize &
@@ -22,14 +22,14 @@ program Geometry_N_FF_S__Form_Test
 
   deallocate ( PROGRAM_HEADER )
 
-end program Geometry_N_FF_S__Form_Test
+end program Geometry_N_S__Form_Test
 
 
 subroutine TestGeometry ( Name, nDimensions )
 
   use Basics
   use Mathematics
-  use Geometry_N_FF_S__Form
+  use Geometry_N_S__Form
 
   implicit none
 
@@ -49,7 +49,7 @@ subroutine TestGeometry ( Name, nDimensions )
     A
   type ( Chart_SLL_Form ) :: &
     C
-  type ( Geometry_N_FF_S_Form ) :: &
+  type ( Geometry_N_S_Form ) :: &
     G
 
   call A % Initialize ( 'Atlas' )

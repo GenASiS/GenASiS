@@ -1,10 +1,11 @@
-!-- Geometry_N_FF_S represents Newtonian geometry, plus an overloading of
+!-- Geometry_N_S represents Newtonian geometry, plus an overloading of
 !   ComputeReconstruction to add reconstruction of gradient of Phi for use
-!   in fluid flux.
+!   in the divergence of a gravitational stress as an alternative to a 
+!   gravitational force source term.
 
-module Geometry_N_FF_S__Form
+module Geometry_N_S__Form
 
-  !-- Geometry_Newtonian_FluidFlux_Momentum__Form
+  !-- Geometry_Newtonian_Stress__Form
 
   use Basics
   use Mathematics
@@ -13,13 +14,13 @@ module Geometry_N_FF_S__Form
   implicit none
   private
 
-  type, public, extends ( Geometry_N_Form ) :: Geometry_N_FF_S_Form
+  type, public, extends ( Geometry_N_Form ) :: Geometry_N_S_Form
   contains
     procedure, public, pass :: &
       InitializeAllocate_G
     final :: &
       Finalize
-  end type Geometry_N_FF_S_Form
+  end type Geometry_N_S_Form
 
 contains
 
@@ -29,7 +30,7 @@ contains
                  VariableOption, VectorOption, NameOption, ClearOption, &
                  UnitOption, VectorIndicesOption )
 
-    class ( Geometry_N_FF_S_Form ), intent ( inout ) :: &
+    class ( Geometry_N_S_Form ), intent ( inout ) :: &
       G
     character ( * ), intent ( in ) :: &
       CoordinateSystem
@@ -50,7 +51,7 @@ contains
       VectorIndicesOption
 
     if ( G % Type == '' ) &
-      G % Type = 'a Geometry_N_FF_S'
+      G % Type = 'a Geometry_N_S'
 
     call G % Geometry_N_Form % Initialize &
            ( CoordinateSystem, CoordinateUnit, nValues, &
@@ -62,7 +63,7 @@ contains
 
   impure elemental subroutine Finalize ( G )
 
-    type ( Geometry_N_FF_S_Form ), intent ( inout ) :: &
+    type ( Geometry_N_S_Form ), intent ( inout ) :: &
       G
 
     !-- Empty routine to trigger finalization of parent type
@@ -70,4 +71,4 @@ contains
   end subroutine Finalize
 
 
-end module Geometry_N_FF_S__Form
+end module Geometry_N_S__Form
