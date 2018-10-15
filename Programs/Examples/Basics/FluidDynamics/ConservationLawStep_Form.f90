@@ -243,8 +243,8 @@ contains
     integer ( KDI ) :: &
       iV  !-- iVariable
     type ( StorageForm ) :: &
-      Primitive, &
-      Eigenspeed
+      Primitive!, &
+      !Eigenspeed
 
     associate &
       ( CF => CLS % ConservedFields )
@@ -261,17 +261,17 @@ contains
         T_DT_D  => PROGRAM_HEADER % Timer ( CLS % iTimerDataTransferDevice ), &
         T_DT_H  => PROGRAM_HEADER % Timer ( CLS % iTimerDataTransferHost ) )
         
-    !call Primitive % Initialize &
-    !       ( Current, iaSelectedOption = Current % iaPrimitive )
+    call Primitive % Initialize &
+           ( Current, iaSelectedOption = Current % iaPrimitive )
     
-    call Eigenspeed % Initialize &
-           ( Current, &
-             iaSelectedOption = [ Current % FAST_EIGENSPEED_PLUS ( : ), &
-                                  Current % FAST_EIGENSPEED_MINUS ( : ) ] )
+    !call Eigenspeed % Initialize &
+    !       ( Current, &
+    !         iaSelectedOption = [ Current % FAST_EIGENSPEED_PLUS ( : ), &
+    !                              Current % FAST_EIGENSPEED_MINUS ( : ) ] )
     
-    !call T_DT_D % Start ( )
-    !call Current % UpdateDevice ( )
-    !call T_DT_D % Stop ( )
+    call T_DT_D % Start ( )
+    call Current % UpdateDevice ( )
+    call T_DT_D % Stop ( )
     
     call T_RK % Start ( )
     do iV = 1, Current % N_CONSERVED
@@ -306,18 +306,18 @@ contains
     call Current % ComputeAuxiliary ( Current % Value, Current % D_Selected )
     call T_A % Stop ( )
     
-    !call T_DT_H % Start ( )
-    !call Primitive % UpdateHost ( ) 
-    !call T_DT_H % Stop ( )
+    call T_DT_H % Start ( )
+    call Primitive % UpdateHost ( ) 
+    call T_DT_H % Stop ( )
     
     call T_C % Start ( )
     call DM % StartGhostExchange ( )
     call DM % FinishGhostExchange ( )
     call T_C % Stop ( )
     
-    !call T_DT_D % Start ( )
-    !call Primitive % UpdateDevice ( )
-    !call T_DT_D % Stop ( )
+    call T_DT_D % Start ( )
+    call Primitive % UpdateDevice ( )
+    call T_DT_D % Stop ( )
     
     !-- Substep 2
     
@@ -348,14 +348,18 @@ contains
     call Current % ComputeAuxiliary ( Current % Value, Current % D_Selected )
     call T_A % Stop ( )
     
+    call T_DT_H % Start ( )
+    call Primitive % UpdateHost ( ) 
+    call T_DT_H % Stop ( )
+    
     call T_C % Start ( )
     call DM % StartGhostExchange ( )
     call DM % FinishGhostExchange ( )
     call T_C % Stop ( )
     
-    call T_DT_H % Start ( )
-    call Eigenspeed % UpdateHost ( ) 
-    call T_DT_H % Stop ( )
+    !call T_DT_H % Start ( )
+    !call Eigenspeed % UpdateHost ( ) 
+    !call T_DT_H % Stop ( )
     
     end associate !-- DM, etc.
     end associate !-- CF
