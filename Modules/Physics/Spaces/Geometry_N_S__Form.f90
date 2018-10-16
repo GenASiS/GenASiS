@@ -18,9 +18,14 @@ module Geometry_N_S__Form
   contains
     procedure, public, pass :: &
       InitializeAllocate_G
+    procedure, public, pass ( G ) :: &
+      ComputeReconstruction
     final :: &
       Finalize
   end type Geometry_N_S_Form
+
+    private :: &
+      ComputeReconstructionKernel
 
 contains
 
@@ -61,6 +66,22 @@ contains
   end subroutine InitializeAllocate_G
 
 
+  subroutine ComputeReconstruction ( G_I, G, nDimensions, iDimension )
+
+    type ( StorageForm ), intent ( inout ) :: &
+      G_I
+    class ( Geometry_N_S_Form ), intent ( in ) :: &
+      G
+    integer ( KDI ), intent ( in ) :: &
+      nDimensions, &
+      iDimension
+
+    call G % GeometryFlatForm % ComputeReconstruction &
+           ( G_I, nDimensions, iDimension )
+
+  end subroutine ComputeReconstruction
+
+
   impure elemental subroutine Finalize ( G )
 
     type ( Geometry_N_S_Form ), intent ( inout ) :: &
@@ -69,6 +90,11 @@ contains
     !-- Empty routine to trigger finalization of parent type
 
   end subroutine Finalize
+
+
+  subroutine ComputeReconstructionKernel ( )
+
+  end subroutine ComputeReconstructionKernel
 
 
 end module Geometry_N_S__Form
