@@ -277,11 +277,12 @@ contains
              CourantFactorOption = CourantFactorOption, &
              nWriteOption = nWriteOption )
 
-    call Show ( FC % Dimensionless, 'Dimensionless' )
-    call Show ( FC % UseCoarsening, 'UseCoarsening' )
+    call Show ( FC % Dimensionless, 'Dimensionless', FC % IGNORABILITY )
+    call Show ( FC % UseCoarsening, 'UseCoarsening', FC % IGNORABILITY )
 
     if ( FC % UseCoarsening ) &
       call FC % SetCoarsening ( )
+
 
     !-- Diagnostics
     

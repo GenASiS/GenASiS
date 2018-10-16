@@ -53,12 +53,8 @@ contains
     class is ( Chart_SLD_Form )
       call GradPhi % Initialize &
              ( G, iaSelectedOption = [ G % POTENTIAL_GRADIENT_D ] )
-call Show ( G % Value ( :, [ G % POTENTIAL_GRADIENT_D ( 1 ) ] ), &
-            '>>> GradPhi before' )
       call C % ExchangeGhostData ( GradPhi )
       call PS % ApplyBoundaryConditionsFaces ( GradPhi )  
-call Show ( G % Value ( :, [ G % POTENTIAL_GRADIENT_D ( 1 ) ] ), &
-            '>>> GradPhi after' )
     end select !-- C
     end select !-- G
 

@@ -107,7 +107,7 @@ contains
             T % FLUID_ENERGY, T % INTERNAL_ENERGY, T % KINETIC_ENERGY, &
             T % ANGULAR_MOMENTUM ]
     
-    type is ( Geometry_N_Form )
+    class is ( Geometry_N_Form )
       T % nSelected = 13
       allocate ( T % iaSelected ( T % nSelected ) )
       T % iaSelected &
@@ -118,9 +118,9 @@ contains
     
     class default 
       call Show ( 'This type is not implemented yet', CONSOLE % WARNING )
-      call Show ( 'Tally_F_P_HN__Form % SelectVariables', &
-                  'Subroutine', CONSOLE % WARNING )
-            
+      call Show ( 'Tally_F_P_HN__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'SelectVariables', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
     end select !-- G
 
     class default 

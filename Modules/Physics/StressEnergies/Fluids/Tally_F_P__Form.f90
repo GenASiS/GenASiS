@@ -109,7 +109,7 @@ contains
         = [ T % BARYON_NUMBER, T % MOMENTUM, T % FLUID_ENERGY, &
             T % INTERNAL_ENERGY, T % KINETIC_ENERGY, T % ANGULAR_MOMENTUM ]
     
-    type is ( Geometry_N_Form )
+    class is ( Geometry_N_Form )
       T % nSelected = 12
       allocate ( T % iaSelected ( T % nSelected ) )
       T % iaSelected &
@@ -120,8 +120,8 @@ contains
     class default 
       call Show ( 'Geometry type not recognized', CONSOLE % ERROR )
       call Show ( 'Tally_F_P_Form', 'module', CONSOLE % ERROR )
-      call Show ( 'SelectVariables', 'subroutine', CONSOLE % ERROR )
-            
+      call Show ( 'SelectVariables', 'subroutine', CONSOLE % ERROR )            
+      call PROGRAM_HEADER % Abort ( )
     end select !-- G
 
     class default 

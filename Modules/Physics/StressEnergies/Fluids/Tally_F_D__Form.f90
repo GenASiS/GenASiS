@@ -159,7 +159,7 @@ contains
         = [ T % BARYON_NUMBER, T % MOMENTUM, T % KINETIC_ENERGY, &
             T % ANGULAR_MOMENTUM ]
     
-    type is ( Geometry_N_Form )
+    class is ( Geometry_N_Form )
       T % nSelected = 10
       allocate ( T % iaSelected ( T % nSelected ) )
       T % iaSelected &
@@ -213,7 +213,7 @@ contains
     type is ( Geometry_G_Form )
       call T % ComputeInteriorIntegrand_G &
              ( Integrand, C, G, nDimensions )
-    type is ( Geometry_N_Form )
+    class is ( Geometry_N_Form )
       call T % ComputeInteriorIntegrand_N &
              ( Integrand, C, G, nDimensions )
     class default 
@@ -246,7 +246,7 @@ contains
     type is ( Geometry_G_Form )
       call T % ComputeBoundaryIntegrand_CSL_G &
              ( Integrand, C, CSL, G, BoundaryFluence )
-    type is ( Geometry_N_Form )
+    class is ( Geometry_N_Form )
       call T % ComputeBoundaryIntegrand_CSL_N &
              ( Integrand, C, CSL, G, BoundaryFluence )
     class default 
@@ -593,7 +593,7 @@ contains
     select type ( C )
     class is ( Fluid_D_Form )
     select type ( G )
-    type is ( Geometry_N_Form )
+    class is ( Geometry_N_Form )
 
     associate &
       ( M   => C % Value ( :, C % BARYON_MASS ), &
@@ -624,6 +624,12 @@ contains
     end select !-- GravitySolverType
 
     end associate !-- M, etc.
+
+    class default 
+      call Show ( 'Geometry type not recognized', CONSOLE % ERROR )
+      call Show ( 'Tally_F_D__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'ComputeInteriorIntegrand_N', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
     end select !-- G
     end select !-- C
     end select !-- GA
