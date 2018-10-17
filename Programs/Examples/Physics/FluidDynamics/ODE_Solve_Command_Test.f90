@@ -84,12 +84,11 @@ program ODE_Solve_Command_Test
   call ODEF % FunctionDerivativeEvaluator &
                 ( ODEF % FunctionParameters, X1, Y_Start, dYdX )
 
-  Epsilon = 1.0e-8_KDR
+  Epsilon = ODEF % RequestedAccuracy
 
-  H1 = ( X2 - X1 ) / 100.0_KDR
+  H1 = ( X2 - X1 ) / ODEF % MaximumSteps
 
-  call IntegrateODE &
-         ( ODEF, Y_Start, X1, X2, Epsilon, H1 )
+  call ODEF % IntegrateODE ( Y_Start, X1, X2, Epsilon, H1 )
 
   call Show ( Y_Start ( 1 ), 'Computed X(pi)' )
   call Show ( Y_Start ( 2 ), 'Computed V(pi)' )
@@ -97,8 +96,8 @@ program ODE_Solve_Command_Test
   call Show ( 2 * cos ( X2 ), 'Analytic X(pi)' )
   call Show ( -2 * sin ( X2 ), 'Analytic V(pi)')
 
-  call Show ( abs ( Y_Start ( 1 ) - 2 * cos ( X2 ) ), 'Absolute X Error' )
-  call Show ( abs ( Y_Start ( 2 ) + 2 * sin ( X2 ) ), 'Absolute V Error' )
+  call Show ( abs ( ( Y_Start ( 1 ) - 2 * cos ( X2 ) ) / ( 2 * cos ( X2 ) ) ), 'Absolute X Error' )
+  call Show ( abs ( ( Y_Start ( 2 ) + 2 * sin ( X2 ) )/ ( 2 * sin ( X2 ) ) ), 'Absolute V Error' )
 
   deallocate ( PROGRAM_HEADER )
 

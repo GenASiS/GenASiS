@@ -9,8 +9,7 @@ module ODE_Solve_Command
     integer ( KDI ), private :: &
       IGNORABILITY
     integer ( KDI ) :: &
-      MaximumSteps = 500000, &
-      nSteps       = 0
+      MaximumSteps = 500000
     real ( KDR ) :: &
       RequestedAccuracy = 1.0e-8_KDR, &
       SolutionAccuracy
@@ -31,6 +30,10 @@ module ODE_Solve_Command
       SolveDP5             !-- Dormand-Prince 5th order RK with adaptive steps
     generic :: &
       Solve => SolveRK4, SolveDP5
+    procedure, public, pass :: &
+      VariableStepSolve
+    procedure, public, pass :: &
+      IntegrateODE
     final :: &
       Finalize
   end type ODEForm
@@ -51,8 +54,7 @@ module ODE_Solve_Command
   end interface
 
     public :: &
-      DerivativeEvaluatorInterface, &
-      IntegrateODE
+      DerivativeEvaluatorInterface
 
 contains
 
@@ -257,7 +259,7 @@ contains
 
   
   subroutine IntegrateODE &
-               ( ODEF, Y_Start, X1, X2, Epsilon, H1, MaximumStepOption )
+               ( ODEF, Y_Start, X1, X2, Epsilon, H1 )
 
     class ( ODEForm ), intent ( inout ) :: &
       ODEF 
@@ -268,44 +270,153 @@ contains
       X2, &
       Epsilon, &
       H1
-    integer ( KDI ), intent ( in ), optional :: &
-      MaximumStepOption
 
     integer ( KDI ) :: &
-      K
+      nS, &             !-- number of steps
+      nOk, &            !-- number of successful steps taken
+      nBad              !-- number of unsuccessful steps taken
     real ( KDR ) :: &
       H_Min, &
       X, &
-      H
+      H, &
+      H_Out, &
+      H_New
     real ( KDR ), dimension ( : ), allocatable :: &
       Y, &
-      Y_Out, &
+      Y_Scale, &
       dYdX
 
     allocate &
       ( Y ( size ( Y_Start ) ), &
-        Y_Out ( size ( Y_Start ) ), &
+        Y_Scale ( size ( Y_Start ) ), &
         dYdX ( size ( Y_Start ) ) )
 
-    H_Min = ( X2 - X1 ) / ODEF % MaximumSteps
+    X = X1
+    H = H1
+    Y = Y_Start
 
-      Y = Y_Start
-      Y_Out = 0.0_KDR
-      dYdX = 0.0_KDR
-      X = X1
-      H = H_Min !-- Take MaximumStep equally sized steps
+    H_Out = 0.0_KDR
+    H_New = 0.0_KDR
 
-      do K = 1, ODEF % MaximumSteps
-        call ODEF % FunctionDerivativeEvaluator &
+    nOk  = 0
+    nBad = 0
+
+    do nS = 1, ODEF % MaximumSteps
+      call ODEF % FunctionDerivativeEvaluator &
                       ( ODEF % FunctionParameters, X, Y, dYdX )
-        call ODEF % Solve ( H, X, Y, dYdX, Y_Out ) 
-        X = X + H
-        Y = Y_Out
-      end do
+      Y_Scale = abs ( Y + abs ( H * dYdX ) ) + sqrt ( tiny ( 0.0_KDR ) )
+      if ( X + H > X2 ) &
+        H = X2 - X
+      call ODEF % VariableStepSolve &
+                  ( Y, dYdX, X, H, Epsilon, Y_Scale, H_Out, H_New )
 
-      Y_Start = Y
+      if ( H_Out == H ) then 
+        nOk = nOk + 1
+      else
+        nBad = nBad + 1
+      end if
+      
+      if ( X >= X2 ) then
+        Y_Start = Y
+        call Show ( 'Solution obtained in')
+        call Show ( nS, 'total steps' )
+        call Show ( nOk, 'good steps' )
+        call Show ( nBad, 'altered steps' )
+        return
+      end if
+
+      H = H_New
+    end do
+
+    call Show ( 'Solution obtained in maximum number of steps allowed' )
 
   end subroutine IntegrateODE
+
+
+  subroutine VariableStepSolve &
+               ( ODEF, Y, dYdX, X, H_In, Epsilon_In, Y_Scale, H_Out, H_New )
+
+    class ( ODEForm ), intent ( inout ) :: &
+      ODEF 
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      Y, &
+      dYdX
+    real ( KDR ), intent ( inout ) :: &
+      X
+    real ( KDR ), intent ( in ) :: &
+      H_In, &
+      Epsilon_In
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      Y_Scale
+    real ( KDR ), intent ( out ) :: &
+      H_Out, &
+      H_New
+
+    real ( KDR ), PARAMETER :: &
+      P_Grow    = - 0.2_KDR, &
+      P_Shrink  = - 0.25_KDR, &
+      F_Cor     = 1.0_KDR / 15.0_KDR, &
+      Safety    = 0.9_KDR, &
+      ErrorCon  = ( 4.0_KDR / Safety ) ** ( 1 / P_Grow )
+    integer ( KDI ) :: &
+      K
+    real ( KDR ) :: &
+      H_Min, &
+      X_Save, &
+      H, &
+      HH
+    real ( KDR ), dimension ( size ( Y ) ) :: &
+      Y_Save, &
+      Y_Temp, &
+      dYdX_Save, &
+      Epsilon, &
+      ErrorMax 
+
+    X_Save    = X
+    Y_Save    = Y
+    dYdX_Save = dYdX
+
+    H = H_In
+    HH = H / 2
+
+    call ODEF % Solve ( HH, X_Save, Y_Save, dYdX_Save, Y_Temp ) 
+
+    X = X_Save + HH
+
+    call ODEF % FunctionDerivativeEvaluator &
+                  ( ODEF % FunctionParameters, X, Y_Temp, dYdX )
+
+    call ODEF % Solve ( HH, X, Y_Temp, dYdX, Y )
+
+    X = X_Save + H
+    
+    call ODEF % Solve ( H, X_Save, Y_Save, dYdX_Save, Y_Temp ) 
+
+    ErrorMax = 0.0_KDR
+
+    Y_Temp = Y - Y_Temp
+
+    ErrorMax = Max ( ErrorMax, abs ( Y_Temp / Y_Scale ) ) 
+    Epsilon = Epsilon_In * Y_Scale
+
+    ErrorMax = ErrorMax / Epsilon
+
+    if ( maxval ( ErrorMax ) > 1.0_KDR ) then
+      H = Safety * H * ( maxval ( ErrorMax ) ** P_Shrink )
+      call ODEF % VariableStepSolve &
+                    ( Y_Save, dYdX_Save, X_Save, H, &
+                      Epsilon_In, Y_Scale, H_Out, H_New )
+    else
+      H_Out = H
+      if ( maxval ( ErrorMax ) > ErrorCon ) then
+        H_New = Safety * H * ( maxval ( ErrorMax ) ** P_Grow )
+      else
+        H_New = 4.0_KDR * H
+      end if
+      Y = Y + Y_Temp * F_Cor
+    end if
+
+  end subroutine VariableStepSolve
 
   subroutine Finalize ( ODEF )
     type ( ODEForm ), intent ( inout ) :: &

@@ -81,6 +81,8 @@ clobber: clean
 	rm -f SedovTaylor_*
 	rm -f FishboneMoncrief_*
 	rm -f YahilLattimer_*
+	rm -f SpheroidCollapse_*
+	rm -f ODE_Solve_Command_*
 # 	rm -f SawtoothWave_*
 
 PlaneWave_Template.o: \
