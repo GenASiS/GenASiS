@@ -508,7 +508,11 @@ contains
 !    associate &
 !      ( Timer_G => PROGRAM_HEADER % Timer ( I % iTimerReconstruction_G ) )
 !    call Timer_G % Start ( )
-    call G % ComputeReconstruction ( G_I, I % Chart % nDimensions, iDimension )
+    select type ( CSL => I % Chart )
+    class is ( ChartHeader_SL_Form )
+    call G % ComputeReconstruction &
+           ( G_I, CSL, I % Chart % nDimensions, iDimension )
+    end select !-- CSL
 !    call Timer_G % Stop
 !    end associate !-- Timer_G
 
@@ -679,8 +683,8 @@ contains
       call CSL % SetVariablePointer &
              ( C_IR % Value ( :, iaP ( iF ) ), V_IR )
       call ComputeReconstruction_CSL_Kernel &
-             ( V, dVdX, dX_L, dX_R, V_IL, V_IR, iDimension, &
-               CSL % nGhostLayers ( iDimension ) )
+             ( V, dVdX, dX_L, dX_R, iDimension, &
+               CSL % nGhostLayers ( iDimension ), V_IL, V_IR )
     end do !-- iF
     end associate !-- iaP
 
@@ -703,7 +707,7 @@ contains
       end if
     end if
 
-    nullify ( V, dVdX, V_IL, V_IR, A_I, dLVdX )
+    nullify ( dX_L, dX_R, V, dVdX, V_IL, V_IR, A_I, dLVdX )
 
     end associate !-- C, etc.
 
@@ -781,17 +785,17 @@ contains
 
 
   subroutine ComputeReconstruction_CSL_Kernel &
-               ( V, dVdX, dX_L, dX_R, V_IL, V_IR, iD, oV )
+               ( V, dVdX, dX_L, dX_R, iD, oV, V_IL, V_IR )
 
     real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
       V, &
       dVdX, &
       dX_L, dX_R
-    real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
-      V_IL, V_IR
     integer ( KDI ), intent ( in ) :: &
       iD, &
       oV   
+    real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
+      V_IL, V_IR
     
     integer ( KDI ) :: &
       iV, jV, kV

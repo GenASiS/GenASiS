@@ -4,6 +4,7 @@
 module GeometryFlat_Form
 
   use Basics
+  use ChartHeader_SL__Form
 
   implicit none
   private
@@ -45,8 +46,10 @@ module GeometryFlat_Form
       SetMetricFixed
     procedure, public, pass :: &
       SetOutput
-    procedure, public, pass ( G ) :: &
-      ComputeReconstruction
+    procedure, private, pass ( G ) :: &
+      ComputeReconstruction_CSL
+    generic, public :: &
+      ComputeReconstruction => ComputeReconstruction_CSL
     final :: &  !-- FIXME: Intel doesn't like final procedure name to be the
                 !          same as the parent's final
       Finalize_G
@@ -228,10 +231,12 @@ contains
   end subroutine SetOutput
 
 
-  subroutine ComputeReconstruction ( G_I, G, nDimensions, iDimension )
+  subroutine ComputeReconstruction_CSL ( G_I, CSL, G, nDimensions, iDimension )
 
     type ( StorageForm ), intent ( inout ) :: &
       G_I
+    class ( ChartHeader_SL_Form ), intent ( in ) :: &
+      CSL
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
     integer ( KDI ), intent ( in ) :: &
@@ -280,7 +285,7 @@ contains
                nDimensions, nValues = G % nValues, oValue = 0 )
     end select
 
-  end subroutine ComputeReconstruction
+  end subroutine ComputeReconstruction_CSL
 
 
   impure elemental subroutine Finalize_G ( G )
