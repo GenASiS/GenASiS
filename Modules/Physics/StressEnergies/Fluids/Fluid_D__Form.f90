@@ -4,6 +4,7 @@ module Fluid_D__Form
 
   use Basics
   use Mathematics
+  use Spaces
   use FluidFeatures_Template
 
   implicit none
@@ -67,7 +68,8 @@ module Fluid_D__Form
     private :: &
       InitializeBasics, &
       SetUnits, &
-      ComputeRawFluxes_G_Kernel
+      ComputeRawFluxes_G_Kernel, &
+      ComputeRawFluxes_N_S_Kernel
 
 contains
 
@@ -452,6 +454,25 @@ contains
     call ComputeRawFluxes_G_Kernel &
            ( F_D, F_S_1, F_S_2, F_S_3, D, S_1, S_2, S_3, V_Dim )
 
+    select type ( G )
+    class is ( Geometry_N_S_Form )
+      associate &
+        ( GradPhi_1 &
+            => Value_G ( oV + 1 : oV + nV, G % POTENTIAL_GRADIENT_D ( 1 ) ), &
+          GradPhi_2 &
+            => Value_G ( oV + 1 : oV + nV, G % POTENTIAL_GRADIENT_D ( 2 ) ), &
+          GradPhi_3 &
+            => Value_G ( oV + 1 : oV + nV, G % POTENTIAL_GRADIENT_D ( 3 ) ), &
+          M_UU_22 &
+            => Value_G ( oV + 1 : oV + nV, G % METRIC_UU_22 ), &
+          M_UU_33 &
+            => Value_G ( oV + 1 : oV + nV, G % METRIC_UU_33 ) )
+      call ComputeRawFluxes_N_S_Kernel &
+             ( F_S_1, F_S_2, F_S_3, GradPhi_1, GradPhi_2, GradPhi_3, &
+               M_UU_22, M_UU_33, iDimension )
+      end associate !-- GradPhi_1, etc.
+    end select
+
     end associate !-- F_D, etc.
 
   end subroutine ComputeRawFluxes
@@ -774,14 +795,106 @@ contains
 
     !$OMP parallel do private ( iV ) 
     do iV = 1, nValues
-      F_D   ( iV ) = D   ( iV ) * V_Dim ( iV ) 
-      F_S_1 ( iV ) = S_1 ( iV ) * V_Dim ( iV ) 
-      F_S_2 ( iV ) = S_2 ( iV ) * V_Dim ( iV ) 
-      F_S_3 ( iV ) = S_3 ( iV ) * V_Dim ( iV ) 
+      F_D   ( iV )  =  D   ( iV )  *  V_Dim ( iV ) 
+      F_S_1 ( iV )  =  S_1 ( iV )  *  V_Dim ( iV ) 
+      F_S_2 ( iV )  =  S_2 ( iV )  *  V_Dim ( iV ) 
+      F_S_3 ( iV )  =  S_3 ( iV )  *  V_Dim ( iV ) 
     end do !-- iV
     !$OMP end parallel do
 
   end subroutine ComputeRawFluxes_G_Kernel
+
+
+  subroutine ComputeRawFluxes_N_S_Kernel &
+               ( F_S_1, F_S_2, F_S_3, GradPhi_1, GradPhi_2, GradPhi_3, &
+                 M_UU_22, M_UU_33, iDimension )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      F_S_1, F_S_2, F_S_3
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      GradPhi_1, GradPhi_2, GradPhi_3, &
+      M_UU_22, M_UU_33
+    integer ( KDI ) :: &
+      iDimension
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+    real ( KDR ) :: &
+      One_FourPi_G
+
+    One_FourPi_G  =  1.0_KDR  /  ( 4.0_KDR  *  CONSTANT % PI  &
+                                   *  CONSTANT % GRAVITATIONAL )
+
+    nValues = size ( F_S_1 )
+
+    select case ( iDimension )
+    case ( 1 )
+      !$OMP parallel do private ( iV ) 
+      do iV = 1, nValues
+        F_S_1 ( iV )  &
+          =  F_S_1 ( iV )  &
+             +  One_FourPi_G  &
+                *  GradPhi_1 ( iV )  *  GradPhi_1 ( iV ) &
+             -  One_FourPi_G  *  0.5_KDR  &
+                *  (    GradPhi_1 ( iV ) * GradPhi_1 ( iV ) &
+                     +  GradPhi_2 ( iV ) * M_UU_22 ( iV ) * GradPhi_2 ( iV ) &
+                     +  GradPhi_3 ( iV ) * M_UU_33 ( iV ) * GradPhi_3 ( iV ) )
+        F_S_2 ( iV )  &
+          =  F_S_2 ( iV )  &
+             +  One_FourPi_G  &
+                *  GradPhi_2 ( iV )  *  GradPhi_1 ( iV ) 
+        F_S_3 ( iV )  &
+          =  F_S_3 ( iV )  &
+             +  One_FourPi_G  &
+                *  GradPhi_3 ( iV )  *  GradPhi_1 ( iV ) 
+      end do !-- iV
+      !$OMP end parallel do
+    case ( 2 )
+      !$OMP parallel do private ( iV ) 
+      do iV = 1, nValues
+        F_S_1 ( iV )  &
+          =  F_S_1 ( iV )  &
+             +  One_FourPi_G  &
+                *  GradPhi_1 ( iV )  *  M_UU_22 ( iV )  *  GradPhi_2 ( iV ) 
+        F_S_2 ( iV )  &
+          =  F_S_2 ( iV )  &
+             +  One_FourPi_G  &
+                *  GradPhi_2 ( iV )  *  M_UU_22 ( iV )  *  GradPhi_2 ( iV ) &
+             -  One_FourPi_G  *  0.5_KDR  &
+                *  (    GradPhi_1 ( iV ) * GradPhi_1 ( iV ) &
+                     +  GradPhi_2 ( iV ) * M_UU_22 ( iV ) * GradPhi_2 ( iV ) &
+                     +  GradPhi_3 ( iV ) * M_UU_33 ( iV ) * GradPhi_3 ( iV ) )
+        F_S_3 ( iV )  &
+          =  F_S_3 ( iV )  &
+             +  One_FourPi_G  &
+                *  GradPhi_3 ( iV )  *  M_UU_22 ( iV )  *  GradPhi_2 ( iV )
+      end do !-- iV
+      !$OMP end parallel do
+    case ( 3 )
+      !$OMP parallel do private ( iV ) 
+      do iV = 1, nValues
+        F_S_1 ( iV )  &
+          =  F_S_1 ( iV )  &
+             +  One_FourPi_G  &
+                *  GradPhi_1 ( iV )  *  M_UU_33 ( iV )  *  GradPhi_3 ( iV ) 
+        F_S_2 ( iV )  &
+          =  F_S_2 ( iV )  &
+             +  One_FourPi_G  &
+                *  GradPhi_2 ( iV )  *  M_UU_33 ( iV )  *  GradPhi_3 ( iV )
+        F_S_3 ( iV )  &
+          =  F_S_3 ( iV )  &
+             +  One_FourPi_G  &
+                *  GradPhi_3 ( iV )  *  M_UU_33 ( iV )  *  GradPhi_3 ( iV ) &
+             -  One_FourPi_G  *  0.5_KDR  &
+                *  (    GradPhi_1 ( iV ) * GradPhi_1 ( iV ) &
+                     +  GradPhi_2 ( iV ) * M_UU_22 ( iV ) * GradPhi_2 ( iV ) &
+                     +  GradPhi_3 ( iV ) * M_UU_33 ( iV ) * GradPhi_3 ( iV ) )
+      end do !-- iV
+      !$OMP end parallel do
+    end select !-- iDimension
+
+  end subroutine ComputeRawFluxes_N_S_Kernel
 
 
 end module Fluid_D__Form

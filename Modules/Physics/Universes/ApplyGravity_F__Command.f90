@@ -62,41 +62,46 @@ contains
     select type ( C => PS % Chart )
     class is ( Chart_SLD_Form )
 
-    do iD = 1, C % nDimensions
-      call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( iD ), &
-                    iMomentum )
-      if ( iStage == 1 ) &
-        call Clear ( FS % Value ( :, FS % GRAVITATIONAL_S_D ( iD ) ) )
-      call ApplyGravityMomentum &
-             ( Increment % Value ( :, iMomentum ), & 
-               FS % Value ( :, FS % GRAVITATIONAL_S_D ( iD ) ), &
-               C % IsProperCell, &
-               F % Value ( :, F % BARYON_MASS ), &
-               F % Value ( :, F % CONSERVED_BARYON_DENSITY ), &
-               G % Value ( :, G % POTENTIAL_GRADIENT_D ( iD ) ), &
-               TimeStep, S % B ( iStage ) )
-!call Show ( FS % Value ( :, FS % GRAVITATIONAL_S_D ( iD ) ), '>>> Gravitational source' )
-    end do !-- iD
+    if ( trim ( GA % GeometryType ) == 'NEWTONIAN' ) then
+      do iD = 1, C % nDimensions
+        call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( iD ), &
+                      iMomentum )
+        if ( iStage == 1 ) &
+          call Clear ( FS % Value ( :, FS % GRAVITATIONAL_S_D ( iD ) ) )
+        call ApplyGravityMomentum &
+               ( Increment % Value ( :, iMomentum ), & 
+                 FS % Value ( :, FS % GRAVITATIONAL_S_D ( iD ) ), &
+                 C % IsProperCell, &
+                 F % Value ( :, F % BARYON_MASS ), &
+                 F % Value ( :, F % CONSERVED_BARYON_DENSITY ), &
+                 G % Value ( :, G % POTENTIAL_GRADIENT_D ( iD ) ), &
+                 TimeStep, S % B ( iStage ) )
+      end do !-- iD
+    end if
 
-    select type ( F_P => Fluid )
-    class is ( Fluid_P_Template )
-      call Search ( F_P % iaConserved, F_P % CONSERVED_ENERGY, iEnergy )
-      if ( iStage == 1 ) &
-        call Clear ( FS % Value ( :, FS % GRAVITATIONAL_G ) )
-      call ApplyGravityEnergy &
-             ( Increment % Value ( :, iEnergy ), & 
-               FS % Value ( :, FS % GRAVITATIONAL_G ), &
-               C % IsProperCell, &
-               F % Value ( :, F % BARYON_MASS ), &
-               F % Value ( :, F % CONSERVED_BARYON_DENSITY ), &
-               F % Value ( :, F % VELOCITY_U ( 1 ) ), &
-               F % Value ( :, F % VELOCITY_U ( 2 ) ), &
-               F % Value ( :, F % VELOCITY_U ( 3 ) ), &
-               G % Value ( :, G % POTENTIAL_GRADIENT_D ( 1 ) ), &
-               G % Value ( :, G % POTENTIAL_GRADIENT_D ( 2 ) ), &
-               G % Value ( :, G % POTENTIAL_GRADIENT_D ( 3 ) ), &
-               TimeStep, S % B ( iStage ) )
-    end select !-- F_P
+    if ( any ( trim ( GA % GeometryType ) &
+                 == [ 'NEWTONIAN       ', 'NEWTONIAN_STRESS' ] ) ) &
+    then
+      select type ( F_P => Fluid )
+      class is ( Fluid_P_Template )
+        call Search ( F_P % iaConserved, F_P % CONSERVED_ENERGY, iEnergy )
+        if ( iStage == 1 ) &
+          call Clear ( FS % Value ( :, FS % GRAVITATIONAL_G ) )
+        call ApplyGravityEnergy &
+               ( Increment % Value ( :, iEnergy ), & 
+                 FS % Value ( :, FS % GRAVITATIONAL_G ), &
+                 C % IsProperCell, &
+                 F % Value ( :, F % BARYON_MASS ), &
+                 F % Value ( :, F % CONSERVED_BARYON_DENSITY ), &
+                 F % Value ( :, F % VELOCITY_U ( 1 ) ), &
+                 F % Value ( :, F % VELOCITY_U ( 2 ) ), &
+                 F % Value ( :, F % VELOCITY_U ( 3 ) ), &
+                 G % Value ( :, G % POTENTIAL_GRADIENT_D ( 1 ) ), &
+                 G % Value ( :, G % POTENTIAL_GRADIENT_D ( 2 ) ), &
+                 G % Value ( :, G % POTENTIAL_GRADIENT_D ( 3 ) ), &
+                 TimeStep, S % B ( iStage ) )
+      end select !-- F_P
+    end if
 
     end select !-- C
     end select !-- FS

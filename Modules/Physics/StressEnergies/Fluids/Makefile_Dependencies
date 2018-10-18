@@ -6,6 +6,7 @@ FluidFeatures_Template.o: \
 Fluid_D__Form.o: \
   Basics.o \
   Mathematics.o \
+  Spaces.o \
   FluidFeatures_Template.o \
   Fluid_D__Form.f90
 
@@ -124,6 +125,7 @@ Fluid_ASC__Form.o: \
 ApplyCurvilinear_F__Command.o: \
   Basics.o \
   Mathematics.o \
+  Spaces.o \
   Fluid_D__Form.o \
   Fluid_P__Template.o \
   Sources_F__Form.o \

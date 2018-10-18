@@ -47,16 +47,16 @@ contains
              iBaryonMass = F % BARYON_MASS, &
              iBaryonDensity = F % COMOVING_BARYON_DENSITY )
 
-    select type ( G )
-    class is ( Geometry_N_S_Form )
-    select type ( C => PS % Chart )
-    class is ( Chart_SLD_Form )
-      call GradPhi % Initialize &
-             ( G, iaSelectedOption = [ G % POTENTIAL_GRADIENT_D ] )
-      call C % ExchangeGhostData ( GradPhi )
-      call PS % ApplyBoundaryConditionsFaces ( GradPhi )  
-    end select !-- C
-    end select !-- G
+    ! select type ( G )
+    ! class is ( Geometry_N_S_Form )
+    ! select type ( C => PS % Chart )
+    ! class is ( Chart_SLD_Form )
+    !   call GradPhi % Initialize &
+    !          ( G, iaSelectedOption = [ G % POTENTIAL_GRADIENT_D ] )
+    !   call C % ExchangeGhostData ( GradPhi )
+    !   call PS % ApplyBoundaryConditionsFaces ( GradPhi )  
+    ! end select !-- C
+    ! end select !-- G
 
     end select !-- FA
     end select !-- GA
