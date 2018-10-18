@@ -31,12 +31,27 @@ module ODE_Solve_Command
     generic :: &
       Solve => SolveRK4, SolveDP5
     procedure, public, pass :: &
+      IntegrateODE
+    procedure, public, pass :: &
       VariableStepSolve
     procedure, public, pass :: &
-      IntegrateODE
+      VariableStepDoPr
     final :: &
       Finalize
   end type ODEForm
+
+    real ( KDR ), PARAMETER :: &
+      P_Grow    = - 0.2_KDR, &
+      P_Shrink  = - 0.25_KDR, &
+      F_Cor     = 1.0_KDR / 15.0_KDR, &
+      Safety    = 0.9_KDR, &
+      ErrorCon  = ( 4.0_KDR / Safety ) ** ( 1 / P_Grow ), &
+      beta      = 0.4_KDR / 5.0_KDR, &
+      alpha     = - ( 0.2_KDR - 0.75_KDR * beta ), &
+      MinScale = 0.2_KDR, &
+      MaxScale = 10.0_KDR
+
+
 
   abstract interface 
     subroutine DerivativeEvaluatorInterface ( Parameters, X, Y, dYdX )
@@ -86,6 +101,16 @@ contains
     ODEF % FunctionDerivativeEvaluator => FunctionDerivativeEvaluator
 
   end subroutine Initialize
+
+
+  subroutine Finalize ( ODEF )
+    type ( ODEForm ), intent ( inout ) :: &
+      ODEF 
+
+    nullify ( ODEF % FunctionParameters )
+    nullify ( ODEF % FunctionDerivativeEvaluator )
+
+  end subroutine
 
 
   subroutine SolveRK4 ( ODEF, H, X, Y, dYdX, Y_Out ) 
@@ -259,7 +284,7 @@ contains
 
   
   subroutine IntegrateODE &
-               ( ODEF, Y_Start, X1, X2, Epsilon, H1 )
+               ( ODEF, Y_Start, X1, X2, Epsilon, H1, RK4Option )
 
     class ( ODEForm ), intent ( inout ) :: &
       ODEF 
@@ -270,7 +295,12 @@ contains
       X2, &
       Epsilon, &
       H1
+    logical ( KDL ), intent ( in ), optional :: &
+      RK4Option
 
+    logical ( KDL ) :: &
+      RK4, &
+      Reject
     integer ( KDI ) :: &
       nS, &             !-- number of steps
       nOk, &            !-- number of successful steps taken
@@ -280,7 +310,8 @@ contains
       X, &
       H, &
       H_Out, &
-      H_New
+      H_New, &
+      Error
     real ( KDR ), dimension ( : ), allocatable :: &
       Y, &
       Y_Scale, &
@@ -297,18 +328,31 @@ contains
 
     H_Out = 0.0_KDR
     H_New = 0.0_KDR
+    Error = 1.0e-4_KDR
 
     nOk  = 0
     nBad = 0
 
+    RK4 = .true. 
+    if ( present ( RK4Option ) ) &
+      RK4 = RK4Option
+
+    Reject = .true.
+
     do nS = 1, ODEF % MaximumSteps
       call ODEF % FunctionDerivativeEvaluator &
                       ( ODEF % FunctionParameters, X, Y, dYdX )
-      Y_Scale = abs ( Y + abs ( H * dYdX ) ) + sqrt ( tiny ( 0.0_KDR ) )
       if ( X + H > X2 ) &
-        H = X2 - X
-      call ODEF % VariableStepSolve &
-                  ( Y, dYdX, X, H, Epsilon, Y_Scale, H_Out, H_New )
+          H = X2 - X
+      if ( RK4 ) then
+        Y_Scale = abs ( Y + abs ( H * dYdX ) ) + sqrt ( tiny ( 0.0_KDR ) )
+        call ODEF % VariableStepSolve &
+                    ( Y, dYdX, X, H, Epsilon, Y_Scale, H_Out, H_New )
+      else
+        call ODEF % VariableStepDoPr &
+                      ( Y, dYdX, X, Error, Reject, H, &
+                        Epsilon, H_Out, H_New )
+      end if
 
       if ( H_Out == H ) then 
         nOk = nOk + 1
@@ -352,14 +396,7 @@ contains
       H_Out, &
       H_New
 
-    real ( KDR ), PARAMETER :: &
-      P_Grow    = - 0.2_KDR, &
-      P_Shrink  = - 0.25_KDR, &
-      F_Cor     = 1.0_KDR / 15.0_KDR, &
-      Safety    = 0.9_KDR, &
-      ErrorCon  = ( 4.0_KDR / Safety ) ** ( 1 / P_Grow )
-    integer ( KDI ) :: &
-      K
+
     real ( KDR ) :: &
       H_Min, &
       X_Save, &
@@ -417,15 +454,102 @@ contains
     end if
 
   end subroutine VariableStepSolve
+  
 
-  subroutine Finalize ( ODEF )
-    type ( ODEForm ), intent ( inout ) :: &
+  subroutine VariableStepDoPr & 
+               ( ODEF, Y, dYdX, X, Error_Old, Reject, &
+                 H_In, Epsilon_In, H_Out, H_New )
+
+    class ( ODEForm ), intent ( inout ) :: &
       ODEF 
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      Y, &
+      dYdX
+    real ( KDR ), intent ( inout ) :: &
+      X, &
+      Error_Old
+    logical ( KDL ), intent ( inout ) :: &
+      Reject
+    real ( KDR ), intent ( in ) :: &
+      H_In, &
+      Epsilon_In
+    real ( KDR ), intent ( out ) :: &
+      H_Out, &
+      H_New
 
-    nullify ( ODEF % FunctionParameters )
-    nullify ( ODEF % FunctionDerivativeEvaluator )
+    real ( KDR ) :: &
+      X_Save, &
+      H, &
+      Error
+    real ( KDR ), dimension ( size ( Y ) ) :: &
+      Y_Save, &
+      dYdX_Save, &
+      Y_Temp, &
+      Y_Error
 
-  end subroutine
+    H = H_In
+
+    call ODEF % Solve ( H, X, Y, dYdX, Y_Temp, Y_Error ) 
+
+    Error &
+      = Epsilon_In &
+          * ( 1.0_KDR &
+              + max ( maxval ( abs ( Y ) ), maxval ( abs ( Y_Temp ) ) ) ) 
+
+    Error = sqrt ( maxval ( Y_Error ) / Error )
+
+    call EvaluateError ( Error, Error_Old, H, H_New, Reject )
+
+    if ( Reject ) then
+      call ODEF % VariableStepDoPr &
+                    ( Y, dYdX, X, Error, Reject, &
+                      H, Epsilon_In, H_Out, H_New )
+    else
+     H_Out = H
+     Y     = Y_Temp
+     X     = X + H
+    end if
+
+  end subroutine VariableStepDoPr
+
+
+  subroutine EvaluateError &
+               ( Error, Error_Old, H, H_New, Reject )
+    real ( KDR ), intent ( inout ) :: &
+      Error, &
+      Error_Old, &
+      H, &
+      H_New
+    logical ( KDL ), intent ( inout ) :: &
+      Reject
+
+    real ( KDR ) :: &
+      Scale
+
+    if ( Error <= 1.0_KDR ) then
+      if ( Error == 0.0_KDR ) then
+        Scale = MaxScale
+      else
+        Scale = Safety * Error ** alpha * Error_Old ** beta
+        if ( Scale < MinScale ) &
+          Scale = MinScale
+        if ( Scale > MaxScale ) &
+          Scale = MaxScale
+        if ( Reject ) then
+          H_New = H * min ( Scale, 1.0_KDR )
+        else
+          H_New = H * Scale
+          Error_Old = max ( Error, 1.0e-4_KDR )
+        end if
+      end if
+      Reject = .false.
+    else
+      Scale = max ( Safety * Error ** alpha, MinScale )
+      H = H * Scale
+      Reject = .true.
+    end if
+
+  end subroutine EvaluateError
 
 end module ODE_Solve_Command
       

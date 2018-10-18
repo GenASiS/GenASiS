@@ -63,6 +63,8 @@ program ODE_Solve_Command_Test
     epsilon, &
     H1, &
     Parameters
+  logical ( KDL ) :: &
+    RK4
 
   Parameters = 1.0_KDR
 
@@ -72,6 +74,9 @@ program ODE_Solve_Command_Test
   Derivative => MySinusoidalDerivativeFunction
   allocate ( ODEF )
   call ODEF % Initialize ( Parameters, Derivative )
+
+  RK4 = .false.
+  call PROGRAM_HEADER % GetParameter ( RK4, 'RK4' )
 
   Y_Start ( 1 ) = 2.0_KDR
   Y_Start ( 2 ) = 0.0_KDR
@@ -86,9 +91,11 @@ program ODE_Solve_Command_Test
 
   Epsilon = ODEF % RequestedAccuracy
 
-  H1 = ( X2 - X1 ) / ODEF % MaximumSteps
+  H1 = ( X2 - X1 ) / 2
 
-  call ODEF % IntegrateODE ( Y_Start, X1, X2, Epsilon, H1 )
+  call ODEF % IntegrateODE &
+                ( Y_Start, X1, X2, Epsilon, H1, &
+                  RK4Option = RK4 )
 
   call Show ( Y_Start ( 1 ), 'Computed X(pi)' )
   call Show ( Y_Start ( 2 ), 'Computed V(pi)' )
@@ -96,8 +103,11 @@ program ODE_Solve_Command_Test
   call Show ( 2 * cos ( X2 ), 'Analytic X(pi)' )
   call Show ( -2 * sin ( X2 ), 'Analytic V(pi)')
 
-  call Show ( abs ( ( Y_Start ( 1 ) - 2 * cos ( X2 ) ) / ( 2 * cos ( X2 ) ) ), 'Absolute X Error' )
-  call Show ( abs ( ( Y_Start ( 2 ) + 2 * sin ( X2 ) )/ ( 2 * sin ( X2 ) ) ), 'Absolute V Error' )
+  call Show ( abs ( ( Y_Start ( 1 ) - 2 * cos ( X2 ) ) / ( 2 * cos ( X2 ) ) ), 'Relative X Error' )
+  call Show ( abs ( ( Y_Start ( 2 ) + 2 * sin ( X2 ) )/ ( 2 * sin ( X2 ) ) ), 'Relative V Error' )
+
+  call Show ( abs ( Y_Start ( 1 ) - 2 * cos ( X2 ) ), 'Absolute X Error' )
+  call Show ( abs ( Y_Start ( 2 ) + 2 * sin ( X2 ) ), 'Absolute V Error' )
 
   deallocate ( PROGRAM_HEADER )
 
