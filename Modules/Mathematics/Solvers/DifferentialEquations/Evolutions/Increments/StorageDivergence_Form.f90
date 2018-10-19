@@ -112,7 +112,7 @@ contains
     allocate ( SD % GradientPrimitive )
     call SD % GradientPrimitive % Initialize &
 !           ( 'Primitive', [ nValues, nPrimitive ] )
-           ( 'Primitive', [ nValues, nConserved ] )
+           ( 'Primitive', [ nValues, nCurrent ] )
 
   end subroutine Allocate
 
