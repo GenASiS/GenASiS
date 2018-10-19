@@ -650,6 +650,9 @@ contains
         Mu_E  => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_E ), &
         Shock => FF % Value ( oV + 1 : oV + nV, FF % SHOCK ) )
 
+    call Copy ( C % Value ( :, C % PRESSURE ), P )
+    call Copy ( C % Value ( :, C % TEMPERATURE ), T )
+
     call C % Compute_M_Kernel ( M, C % BaryonMassReference )
     call C % Compute_N_V_E_G_Kernel &
                ( N, V_1, V_2, V_3, E, D, S_1, S_2, S_3, G, M, &
