@@ -154,9 +154,9 @@ contains
 
     else
 
-      RadiusCore   =   40.0_KDR  *  UNIT % KILOMETER
+      RadiusCore   =   16.0_KDR  *  UNIT % KILOMETER
       RadiusMax    =  1.0e4_KDR  *  UNIT % KILOMETER
-      RadialRatio  =  2.1_KDR
+      RadialRatio  =  2.4_KDR
 
       call PS % CreateChart_CC &
              ( CoordinateUnitOption = FC % CoordinateUnit, &
