@@ -4,6 +4,7 @@ module Fluid_P_HN__Form
 
   use Basics
   use Mathematics
+!  use FluidFeatures_Template
   use Fluid_P__Template
   use FluidFeatures_P__Form
   
@@ -72,7 +73,8 @@ module Fluid_P_HN__Form
       InitializeBasics, &
       SetUnits, &
       ComputeRawFluxesKernel, &
-      ComputeCenterStatesKernel
+      ComputeCenterStatesKernel!, &
+!      InterpolateSoundSpeed
 
     real ( KDR ), private, protected :: &
       OR_Shift, &
@@ -630,7 +632,7 @@ contains
         S_2   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 2 ) ), &
         S_3   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 3 ) ), &
         E     => FV ( oV + 1 : oV + nV, C % INTERNAL_ENERGY ), &
-        G     => FV ( oV + 1 : oV + nV, C % CONSERVED_ENERGY ), &
+        GE    => FV ( oV + 1 : oV + nV, C % CONSERVED_ENERGY ), &
         P     => FV ( oV + 1 : oV + nV, C % PRESSURE ), &
     !     Gamma => FV ( oV + 1 : oV + nV, C % ADIABATIC_INDEX ), &
         CS    => FV ( oV + 1 : oV + nV, C % SOUND_SPEED ), &
@@ -655,7 +657,7 @@ contains
 
     call C % Compute_M_Kernel ( M, C % BaryonMassReference )
     call C % Compute_N_V_E_G_Kernel &
-               ( N, V_1, V_2, V_3, E, D, S_1, S_2, S_3, G, M, &
+               ( N, V_1, V_2, V_3, E, D, S_1, S_2, S_3, GE, M, &
                  M_UU_22, M_UU_33, C % BaryonDensityMin )
     call C % Compute_YP_G_Kernel &
            ( YE, DP, N )
@@ -666,7 +668,7 @@ contains
              ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
                M, N, YE, Shock )
       call C % Compute_G_G_Kernel &
-             ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
+             ( GE, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
     else
       call C % Apply_EOS_HN_E_Kernel &
              ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
@@ -674,6 +676,11 @@ contains
     end if
     call C % Compute_DS_G_Kernel &
            ( DS, N, SB )
+
+!    if ( associated ( C % Value, Value_C ) ) &
+!      call InterpolateSoundSpeed &
+!             ( CS, P, C % Features, &
+!               GV ( oV + 1 : oV + nV, G % CENTER_U ( 1 ) ) )
     call C % Compute_FE_P_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
              V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33 )
@@ -1253,6 +1260,68 @@ contains
     !$OMP end parallel do
 
   end subroutine ComputeCenterStatesKernel
+
+
+  ! subroutine InterpolateSoundSpeed ( CS, P, FF, R )
+
+  !   real ( KDR ), dimension ( : ), intent ( inout ) :: &
+  !     CS, &
+  !     P
+  !   class ( FluidFeaturesTemplate ), intent ( in ) :: &
+  !     FF
+  !   real ( KDR ), dimension ( : ), intent ( in ) :: &
+  !     R
+
+  !   integer ( KDI ) :: &
+  !     iC, &
+  !     i_1, i_2
+  !   real ( KDR ) :: &
+  !     R_1, R_2, &
+  !     CS_1, CS_2, &
+  !     P_1, P_2
+
+  !   select type ( Grid => FF % Grid )
+  !   class is ( Chart_SL_Template )
+
+  !   select case ( Grid % CoordinateSystem )
+  !   case ( 'SPHERICAL' )
+
+  !   i_1 = size ( R )
+  !   do iC = 1, size ( R )
+  !     if ( R ( iC )  >  8.0_KDR  *  UNIT % KILOMETER ) then
+  !       i_1 = iC
+  !       exit
+  !     end if
+  !   end do !-- iC
+
+  !   i_2 = 1
+  !   do iC = size ( R ), 1, -1
+  !     if ( R ( iC )  <  13.0_KDR  *  UNIT % KILOMETER ) then
+  !       i_2 = iC
+  !       exit
+  !     end if
+  !   end do !-- iC
+
+  !   R_1  =  R ( i_1 )
+  !   R_2  =  R ( i_2 )
+
+  !   CS_1  =  CS ( i_1 )
+  !   CS_2  =  CS ( i_2 )
+
+  !   !P_1  =  P ( i_1 )
+  !   !P_2  =  P ( i_2 )
+
+  !   do iC = i_1 + 1, i_2 - 1
+  !     CS ( iC )  =  CS_1  +  ( CS_2 - CS_1 ) / ( R_2 - R_1 )  &
+  !                            *  ( R ( iC )  -  R_1 )
+  !     !P ( iC )   =  P_1  +  ( P_2 - P_1 ) / ( R_2 - R_1 )  &
+  !     !                       *  ( R ( iC )  -  R_1 )
+  !   end do !-- iC
+
+  !   end select !-- CoordinateSystem
+  !   end select !-- Grid
+
+  ! end subroutine InterpolateSoundSpeed
 
 
 end module Fluid_P_HN__Form
