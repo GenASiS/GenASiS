@@ -285,6 +285,18 @@ contains
           call PROGRAM_HEADER % Abort ( )
         end select !-- C
 
+      case ( 'CUSTOM' )
+
+        if ( associated ( A % ApplyBoundaryConditionsCustom ) ) then
+          call A % ApplyBoundaryConditionsCustom ( F, iDimension, iConnection )
+        else
+          call Show ( 'Custom boundary conditions not set', CONSOLE % ERROR )
+          call Show ( 'Atlas_SC__Template', 'module', CONSOLE % ERROR )
+          call Show ( 'ApplyBoundaryConditions', 'subroutine', &
+                      CONSOLE % ERROR )
+          call PROGRAM_HEADER % Abort ( )
+        end if
+
       case default
         call Show ( 'BoundaryCondition not recognized', CONSOLE % ERROR )
         call Show ( BC, 'BoundaryCondition', CONSOLE % ERROR )
