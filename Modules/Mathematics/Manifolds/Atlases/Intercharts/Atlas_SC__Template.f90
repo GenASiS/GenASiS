@@ -17,6 +17,8 @@ module Atlas_SC__Template
       Chart
     type ( FieldAtlasPointer ), dimension ( : ), allocatable :: &
       Field
+    procedure ( ABCC ), pointer :: &
+      ApplyBoundaryConditionsCustom => null ( )
   contains
     procedure, private, pass :: &
       InitializeBasic
@@ -33,6 +35,22 @@ module Atlas_SC__Template
     procedure, public, pass :: &
       FinalizeTemplate
   end type Atlas_SC_Template
+
+  abstract interface
+
+    subroutine ABCC ( A, F, iDimension, iConnection )
+      use Basics
+      import Atlas_SC_Template
+      class ( Atlas_SC_Template ), intent ( inout ) :: &
+        A
+      class ( StorageForm ), intent ( inout ) :: &
+        F  !-- Field
+      integer ( KDI ), intent ( in ) :: &
+        iDimension, &
+        iConnection
+    end subroutine ABCC
+
+  end interface
 
     private :: &
       Apply_BC_CSL_Outflow, &
@@ -233,8 +251,6 @@ contains
 
     integer ( KDI ) :: &
       iB  !-- iBoundary
-    integer ( KDI ), dimension ( 2 ) :: &
-      iaC
 
     do iB = 1, A % nBoundaries
       associate ( BC => A % BoundaryCondition ( iConnection, iB ) )
