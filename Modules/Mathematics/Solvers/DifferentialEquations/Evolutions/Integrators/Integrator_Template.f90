@@ -39,6 +39,8 @@ module Integrator_Template
     procedure, public, pass :: &  !-- 2
       InitializeTimers
     procedure, private, pass :: &  !-- 2
+      ComputeConstraints
+    procedure, private, pass :: &  !-- 2
       AdministerCheckpoint
 !-- FIXME: Intel compiler fails to recognize concrete overriding in
 !          descendants of Integrator_C_Template. Using an empty routine.
@@ -189,6 +191,7 @@ contains
     call Show ( I % Name, 'Name', I % IGNORABILITY )
 
     I % Time = I % StartTime
+    call I % ComputeConstraints ( )
     call I % AdministerCheckpoint ( ComputeChangeOption = .false. )
 
     do while ( I % Time < I % FinishTime )
@@ -366,6 +369,14 @@ contains
                  Level = BaseLevel + 2 )
 
   end subroutine InitializeTimers
+
+
+  subroutine ComputeConstraints ( I )
+
+    class ( IntegratorTemplate ), intent ( inout ) :: &
+      I
+
+  end subroutine ComputeConstraints
 
 
   subroutine AdministerCheckpoint ( I, ComputeChangeOption )

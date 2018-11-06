@@ -4,6 +4,7 @@ module FluidCentral_Template
   use Mathematics
   use Spaces
   use StressEnergies
+  use ComputeGravity_Command
   use ApplyGravity_F__Command
 
   implicit none
@@ -252,6 +253,7 @@ contains
     class is ( Step_RK2_C_ASC_Form )
 
     call S % Initialize ( FC, FA, Name )
+    S % ComputeConstraints % Pointer => ComputeGravity
     S % ApplySources % Pointer => ApplySources
 
     ! F => FA % Fluid_D ( )
@@ -275,11 +277,12 @@ contains
              CourantFactorOption = CourantFactorOption, &
              nWriteOption = nWriteOption )
 
-    call Show ( FC % Dimensionless, 'Dimensionless' )
-    call Show ( FC % UseCoarsening, 'UseCoarsening' )
+    call Show ( FC % Dimensionless, 'Dimensionless', FC % IGNORABILITY )
+    call Show ( FC % UseCoarsening, 'UseCoarsening', FC % IGNORABILITY )
 
     if ( FC % UseCoarsening ) &
       call FC % SetCoarsening ( )
+
 
     !-- Diagnostics
     

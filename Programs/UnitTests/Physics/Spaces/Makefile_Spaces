@@ -2,8 +2,8 @@ PATH_GENASIS = ../../../../..
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-all: Geometry_G__Form_Test Geometry_N__Form_Test Geometry_CSL__Form_Test \
-     Geometry_ASC__Form_Test
+all: Geometry_G__Form_Test Geometry_N__Form_Test Geometry_N_S__Form_Test \
+     Geometry_CSL__Form_Test Geometry_ASC__Form_Test
 
 Geometry_G__Form_Test: Basics.a Mathematics.a Geometry_G__Form_Test.o
 	$(LINK) $(FLAGS) \
@@ -14,21 +14,30 @@ Geometry_G__Form_Test: Basics.a Mathematics.a Geometry_G__Form_Test.o
 Geometry_N__Form_Test: Basics.a Mathematics.a Geometry_N__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Geometry_N__Form_Test_$(MACHINE) \
-          Geometry_N__Form_Test.o Geometry_N__Form.o \
+          Geometry_N__Form_Test.o Geometry_N__Form.o Geometry_G__Form.o \
+          Mathematics.a Basics.a $(LIBRARIES)
+
+Geometry_N_S__Form_Test: Basics.a Mathematics.a Geometry_N__Form.o \
+  Geometry_N_S__Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o Geometry_N_S__Form_Test_$(MACHINE) \
+          Geometry_N_S__Form_Test.o Geometry_N_S__Form.o \
+          Geometry_N__Form.o Geometry_G__Form.o \
           Mathematics.a Basics.a $(LIBRARIES)
 
 Geometry_CSL__Form_Test: Basics.a Mathematics.a Geometry_CSL__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Geometry_CSL__Form_Test_$(MACHINE) \
-          Geometry_CSL__Form_Test.o Geometry_CSL__Form.o Geometry_N__Form.o \
-          Geometry_G__Form.o \
+          Geometry_CSL__Form_Test.o Geometry_CSL__Form.o Geometry_N_S__Form.o \
+          Geometry_N__Form.o Geometry_G__Form.o \
           Mathematics.a Basics.a $(LIBRARIES)
 
 Geometry_ASC__Form_Test: Basics.a Mathematics.a Geometry_ASC__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Geometry_ASC__Form_Test_$(MACHINE) \
           Geometry_ASC__Form_Test.o Geometry_ASC__Form.o \
-          Geometry_CSL__Form.o Geometry_N__Form.o Geometry_G__Form.o \
+          Geometry_CSL__Form.o Geometry_N_S__Form.o Geometry_N__Form.o \
+          Geometry_G__Form.o \
           Mathematics.a Basics.a $(LIBRARIES)
 
 clean:
@@ -37,6 +46,7 @@ clean:
 clobber: clean
 	rm -f Geometry_G__Form_Test_*
 	rm -f Geometry_N__Form_Test_*
+	rm -f Geometry_N_S__Form_Test_*
 	rm -f Geometry_CSL__Form_Test_*
 	rm -f Geometry_ASC__Form_Test_*
 
@@ -55,6 +65,12 @@ Geometry_N__Form_Test.o: \
   Mathematics.o \
   Geometry_N__Form.o \
   Geometry_N__Form_Test.f90
+
+Geometry_N_S__Form_Test.o: \
+  Basics.o \
+  Mathematics.o \
+  Geometry_N_S__Form.o \
+  Geometry_N_S__Form_Test.f90
 
 Geometry_CSL__Form_Test.o: \
   Basics.o \

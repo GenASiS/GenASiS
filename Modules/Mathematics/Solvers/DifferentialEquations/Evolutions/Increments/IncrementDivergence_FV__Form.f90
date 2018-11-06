@@ -486,8 +486,9 @@ contains
     integer ( KDI ) :: &
       iDD_22, iDD_33, &
       iUU_22, iUU_33
-    type ( StorageForm ) :: &
-      P
+!    type ( StorageForm ) :: &
+!      P
+!      Conserved
     type ( TimerForm ), pointer :: &
       Timer
 
@@ -508,11 +509,16 @@ contains
 !    associate &
 !      ( Timer_G => PROGRAM_HEADER % Timer ( I % iTimerReconstruction_G ) )
 !    call Timer_G % Start ( )
-    call G % ComputeReconstruction ( G_I, I % Chart % nDimensions, iDimension )
+    select type ( CSL => I % Chart )
+    class is ( ChartHeader_SL_Form )
+    call G % ComputeReconstruction &
+           ( G_I, CSL, I % Chart % nDimensions, iDimension )
+    end select !-- CSL
 !    call Timer_G % Stop
 !    end associate !-- Timer_G
 
-    call P % Initialize ( C, iaSelectedOption = C % iaPrimitive )
+!    call P % Initialize ( C, iaSelectedOption = C % iaPrimitive )
+!    call Conserved % Initialize ( C, iaSelectedOption = C % iaConserved )
 
     associate &
       ( iaI => A % Connectivity % iaInner ( iDimension ), &
@@ -523,8 +529,12 @@ contains
 !    call Timer_B % Start ( )
     select type ( A )
     class is ( Atlas_SC_Template )
-      call A % ApplyBoundaryConditions ( P, iDimension, iaI )
-      call A % ApplyBoundaryConditions ( P, iDimension, iaO )
+!      call A % ApplyBoundaryConditions ( P, iDimension, iaI )
+!      call A % ApplyBoundaryConditions ( P, iDimension, iaO )
+!      call A % ApplyBoundaryConditions ( Conserved, iDimension, iaI )
+!      call A % ApplyBoundaryConditions ( Conserved, iDimension, iaO )
+      call A % ApplyBoundaryConditions ( C, iDimension, iaI )
+      call A % ApplyBoundaryConditions ( C, iDimension, iaO )
     class default
       call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
       call Show ( 'IncrementDivergence_FV__Form', 'module', CONSOLE % ERROR )
@@ -535,14 +545,18 @@ contains
 
     select type ( Chart => I % Chart )
     class is ( Chart_SL_Template )
-      call ComputeReconstruction_CSL ( I, P, Chart, iDimension )
+!      call ComputeReconstruction_CSL ( I, P, Chart, iDimension )
+!      call ComputeReconstruction_CSL ( I, Conserved, Chart, iDimension )
+      call ComputeReconstruction_CSL ( I, C, Chart, iDimension )
     end select !-- Grid
 
  !   associate &
  !     ( Timer_FP => PROGRAM_HEADER % Timer ( I % iTimerFromPrimitive ) )
  !   call Timer_FP % Start ( )
-    call C % ComputeFromPrimitive ( C_IL % Value, G, G_I % Value )
-    call C % ComputeFromPrimitive ( C_IR % Value, G, G_I % Value )
+!    call C % ComputeFromPrimitive ( C_IL % Value, G, G_I % Value )
+!    call C % ComputeFromPrimitive ( C_IR % Value, G, G_I % Value )
+!    call C % ComputeFromConserved ( C_IL % Value, G, G_I % Value )
+!    call C % ComputeFromConserved ( C_IR % Value, G, G_I % Value )
 !    call Timer_FP % Stop ( )
 !    end associate !-- Timer_FP
 
@@ -608,7 +622,7 @@ contains
 
     class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
       I
-    type ( StorageForm ), intent ( in ) :: &
+    class ( StorageForm ), intent ( in ) :: &
       P
     class ( Chart_SL_Template ), intent ( in ) :: &
       CSL
@@ -668,8 +682,12 @@ contains
 !                              ( I % iTimerReconstructionKernel ) )
 !    call Timer_RK % Start ( )
 
-    associate ( iaP => C % iaPrimitive )
-    do iF = 1, C % N_PRIMITIVE
+!    associate ( iaP => C % iaPrimitive )
+!    do iF = 1, C % N_PRIMITIVE
+!    associate ( iaP => C % iaConserved )
+!    do iF = 1, C % N_CONSERVED
+    associate ( iaP => C % iaSelected )
+    do iF = 1, C % nVariables
       call CSL % SetVariablePointer &
              ( C % Value ( :, iaP ( iF ) ), V )
       call CSL % SetVariablePointer &
@@ -679,8 +697,8 @@ contains
       call CSL % SetVariablePointer &
              ( C_IR % Value ( :, iaP ( iF ) ), V_IR )
       call ComputeReconstruction_CSL_Kernel &
-             ( V, dVdX, dX_L, dX_R, V_IL, V_IR, iDimension, &
-               CSL % nGhostLayers ( iDimension ) )
+             ( V, dVdX, dX_L, dX_R, iDimension, &
+               CSL % nGhostLayers ( iDimension ), V_IL, V_IR )
     end do !-- iF
     end associate !-- iaP
 
@@ -703,7 +721,7 @@ contains
       end if
     end if
 
-    nullify ( V, dVdX, V_IL, V_IR, A_I, dLVdX )
+    nullify ( dX_L, dX_R, V, dVdX, V_IL, V_IR, A_I, dLVdX )
 
     end associate !-- C, etc.
 
@@ -781,17 +799,17 @@ contains
 
 
   subroutine ComputeReconstruction_CSL_Kernel &
-               ( V, dVdX, dX_L, dX_R, V_IL, V_IR, iD, oV )
+               ( V, dVdX, dX_L, dX_R, iD, oV, V_IL, V_IR )
 
     real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
       V, &
       dVdX, &
       dX_L, dX_R
-    real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
-      V_IL, V_IR
     integer ( KDI ), intent ( in ) :: &
       iD, &
       oV   
+    real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
+      V_IL, V_IR
     
     integer ( KDI ) :: &
       iV, jV, kV

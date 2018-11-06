@@ -8,6 +8,7 @@ module Geometry_CSL__Form
   use Mathematics
   use Geometry_G__Form
   use Geometry_N__Form
+  use Geometry_N_S__Form
 
   implicit none
   private
@@ -116,6 +117,8 @@ contains
       allocate ( Geometry_G_Form :: FC % Field )
     case ( 'NEWTONIAN' )
       allocate ( Geometry_N_Form :: FC % Field )
+    case ( 'NEWTONIAN_STRESS' )
+      allocate ( Geometry_N_S_Form :: FC % Field )
     case default
       call Show ( 'GeometryType not recognized', CONSOLE % ERROR )
       call Show ( FC % GeometryType, 'GeometryType', CONSOLE % ERROR )
@@ -128,11 +131,6 @@ contains
 
     select type ( G => FC % Field )
     class is ( Geometry_G_Form )
-      call G % Initialize &
-             ( FC % Chart % CoordinateSystem, FC % Chart % CoordinateUnit, &
-               FC % nValues, NameOption = FC % NameShort )
-      call G % SetOutput ( FC % FieldOutput )
-    class is ( Geometry_N_Form )
       call G % Initialize &
              ( FC % Chart % CoordinateSystem, FC % Chart % CoordinateUnit, &
                FC % nValues, NameOption = FC % NameShort )

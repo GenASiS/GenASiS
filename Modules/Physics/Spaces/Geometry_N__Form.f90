@@ -6,6 +6,7 @@ module Geometry_N__Form
 
   use Basics
   use Mathematics
+  use Geometry_G__Form
 
   implicit none
   private
@@ -14,7 +15,7 @@ module Geometry_N__Form
       N_FIELDS_NEWTONIAN  = 4, &
       N_VECTORS_NEWTONIAN = 1
 
-  type, public, extends ( GeometryFlatForm ) :: Geometry_N_Form
+  type, public, extends ( Geometry_G_Form ) :: Geometry_N_Form
     integer ( KDI ) :: &
       N_FIELDS_NEWTONIAN  = N_FIELDS_NEWTONIAN, &
       N_VECTORS_NEWTONIAN = N_VECTORS_NEWTONIAN
@@ -31,6 +32,8 @@ module Geometry_N__Form
       Finalize
   end type Geometry_N_Form
 
+    private :: &
+      InitializeBasics
 
 contains
 
@@ -88,8 +91,8 @@ contains
     else
       !-- Dimensionless
     end if
-      
-    call G % GeometryFlatForm % Initialize &
+
+    call G % Geometry_G_Form % Initialize &
            ( CoordinateSystem, CoordinateUnit, nValues, &
              VariableOption = Variable, VectorOption = Vector, &
              NameOption = NameOption, ClearOption = ClearOption, &

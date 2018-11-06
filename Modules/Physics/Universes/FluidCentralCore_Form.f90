@@ -81,7 +81,9 @@ contains
 
     FluidCentralCore => FCC
 
-    if ( trim ( GeometryType ) == 'NEWTONIAN' ) then
+    if ( any ( trim ( GeometryType ) &
+                 == [ 'NEWTONIAN       ', 'NEWTONIAN_STRESS' ] ) ) &
+    then
 
       if ( .not. allocated ( FCC % TimeStepLabel ) ) &
         allocate ( FCC % TimeStepLabel ( 2 ) )
@@ -115,7 +117,8 @@ contains
       S % CoarsenSingularities => CoarsenSingularities
     end select !-- S
 
-    if ( trim ( GeometryType ) == 'NEWTONIAN' ) &
+    if ( any ( trim ( GeometryType ) &
+                 == [ 'NEWTONIAN       ', 'NEWTONIAN_STRESS' ] ) ) &
       call Show ( FCC % GravityFactor, 'GravityFactor' )
 
   end subroutine Initialize
@@ -151,9 +154,9 @@ contains
 
     else
 
-      RadiusCore   =   40.0_KDR  *  UNIT % KILOMETER
+      RadiusCore   =   16.0_KDR  *  UNIT % KILOMETER
       RadiusMax    =  1.0e4_KDR  *  UNIT % KILOMETER
-      RadialRatio  =  2.1_KDR
+      RadialRatio  =  2.4_KDR
 
       call PS % CreateChart_CC &
              ( CoordinateUnitOption = FC % CoordinateUnit, &
@@ -431,7 +434,8 @@ contains
     select type ( GA => PS % Geometry_ASC )
     class is ( Geometry_ASC_Form )
 
-    if ( trim ( GA % GeometryType ) /= 'NEWTONIAN' ) &
+    if ( all ( trim ( GA % GeometryType ) &
+                 /= [ 'NEWTONIAN       ', 'NEWTONIAN_STRESS' ] ) ) &
       return
 
     select type ( CSL => PS % Chart )

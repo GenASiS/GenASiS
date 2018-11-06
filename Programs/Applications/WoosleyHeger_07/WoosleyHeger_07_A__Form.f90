@@ -24,6 +24,9 @@ contains
     character ( * ), intent ( in )  :: &
       Name
 
+    character ( LDL ) :: &
+      GeometryType
+
     if ( WH % Type == '' ) &
       WH % Type = 'a WoosleyHeger_07_A'
 
@@ -31,12 +34,15 @@ contains
 
     !-- Integrator
 
+    GeometryType = 'NEWTONIAN'
+    call PROGRAM_HEADER % GetParameter ( GeometryType, 'GeometryType' )
+
     allocate ( FluidCentralCoreForm :: WH % Integrator )
     select type ( FCC => WH % Integrator )
     type is ( FluidCentralCoreForm )
     call FCC % Initialize &
            ( Name, FluidType = 'HEAVY_NUCLEUS', &
-             GeometryType = 'NEWTONIAN', &
+             GeometryType = GeometryType, &
              ShockThresholdOption = 1.0_KDR, &
              nWriteOption = 30 )
 
