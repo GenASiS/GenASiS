@@ -2657,3 +2657,7 @@ Programs/Examples/Physics/FluidDynamics/Executables/LinMestelShu.o
 Programs/Examples/Physics/FluidDynamics/Executables/LinMestelShu_Form.o
 Programs/Examples/Physics/FluidDynamics/Executables/linmestelshu_form.mod
 Programs/Examples/Physics/FluidDynamics/Output/
+Programs/Examples/Physics/FluidDynamics/Executables/ComputeGravity_Command.o
+Programs/Examples/Physics/FluidDynamics/Executables/Geometry_N_S__Form.o
+Programs/Examples/Physics/FluidDynamics/Executables/computegravity_command.mod
+Programs/Examples/Physics/FluidDynamics/Executables/geometry_n_s__form.mod
