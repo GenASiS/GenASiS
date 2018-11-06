@@ -1,7 +1,8 @@
 PATH_GENASIS = ../../../../..
 
 all: SineWave OppenheimerSnyder RiemannProblem RayleighTaylor \
-     SedovTaylor FishboneMoncrief YahilLattimer SpheroidCollapse ODE_Solve #SawtoothWave 
+     SedovTaylor FishboneMoncrief YahilLattimer LinMestelShu ODE_Solve
+#SawtoothWave 
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
@@ -56,11 +57,11 @@ YahilLattimer: ThirdParty.a GenASiS.a YahilLattimer.o
           YahilLattimer.o YahilLattimer_Form.o \
           GenASiS.a ThirdParty.a $(LIBRARIES)
 
-SpheroidCollapse: ThirdParty.a GenASiS.a SpheroidCollapse.o
+LinMestelShu: ThirdParty.a GenASiS.a LinMestelShu.o
 	$(LINK) $(FFLAGS) \
            -o SpheroidCollapse_$(MACHINE) \
-           ODE_Solve_Command.o SpheroidCollapse.o \
-	   SpheroidCollapse_Form.o \
+           ODE_Solve_Command.o LinMestelShu.o \
+	   LinMestelShu_Form.o \
            GenASiS.a ThirdParty.a $(LIBRARIES)\
 
 ODE_Solve: ThirdParty.a GenASiS.a ODE_Solve_Command_Test.o
@@ -83,7 +84,7 @@ clobber: clean
 	rm -f SedovTaylor_*
 	rm -f FishboneMoncrief_*
 	rm -f YahilLattimer_*
-	rm -f SpheroidCollapse_*
+	rm -f LinMestelShu_*
 	rm -f ODE_Solve_Command_*
 # 	rm -f SawtoothWave_*
 
@@ -175,12 +176,12 @@ ODE_Solve_Command_Test.o: \
   ODE_Solve_Command.o \
   ODE_Solve_Command_Test.f90
 
-SpheroidCollapse_Form.o: \
+LinMestelShu_Form.o: \
   GenASiS.o \
   ODE_Solve_Command.o \
-  SpheroidCollapse_Form.f90
+  LinMestelShu_Form.f90
 
-SpheroidCollapse.o: \
+LinMestelShu.o: \
   GenASiS.o \
-  SpheroidCollapse_Form.o \
-  SpheroidCollapse.f90
+  LinMestelShu_Form.o \
+  LinMestelShu.f90

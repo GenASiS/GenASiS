@@ -1,4 +1,4 @@
-module SpheroidCollapse_Form
+module LinMestelShu_Form
 
 ! From Lin, Mestel, and Shu 1965
 ! "The Gravitational Collapse of a Uniform Spheroid"
@@ -9,15 +9,12 @@ module SpheroidCollapse_Form
   implicit none
   private
 
-  type, public, extends ( UniverseTemplate ) :: SpheroidCollapseForm
+  type, public, extends ( UniverseTemplate ) :: LinMestelShuForm
     Real ( KDR ) :: &
+      Eccentricity, &
       SemiMajor, &
       SemiMinor, &
-      Eccentricity, &
-      InitialDensity
-    real ( KDR ), dimension ( : ), allocatable :: &
-      R0, &
-      Z0
+      DensityInitial
     type ( Real_1D_Form ) :: &
       Parameters
     class ( ODEForm ), allocatable :: &
@@ -34,7 +31,7 @@ module SpheroidCollapse_Form
       ComputeError
     final :: &
       Finalize
-  end type SpheroidCollapseForm
+  end type LinMestelShuForm
 
     private :: &
       SetFluid, &
@@ -44,8 +41,8 @@ module SpheroidCollapse_Form
         SetFluidKernel, &
         SetReferenceKernel
 
-  class ( SpheroidCollapseForm ), private, pointer :: &
-      SpheroidCollapse => null ( )
+  class ( LinMestelShuForm ), private, pointer :: &
+      LinMestelShu => null ( )
 
   interface 
     subroutine DerivativeInterface ( Parameters, X, Y, dYdX )
@@ -64,31 +61,35 @@ module SpheroidCollapse_Form
 contains
 
 
-  subroutine Initialize ( SC, Name )
+  subroutine Initialize ( LMS, Name )
 
-    class ( SpheroidCollapseForm ), intent ( inout ), target :: &
-      SC
+    class ( LinMestelShuForm ), intent ( inout ), target :: &
+      LMS
     character ( * ), intent ( in ) :: &
       Name
 
     class ( Fluid_D_Form ), pointer :: &
       F
-    class ( GeometryFlatForm ), pointer :: &
-      G
+    character ( LDN ):: &
+      OS_Parameter
     real ( KDR ) :: &
-      TimeScale
+      RadiusOppenheimerSnyder, & 
+      DensityFactor, &
+      RadiusFactor, &
+      TimeScale, &
+      Beta
 
-    if ( SC % Type == '' ) &
-      SC % Type = ' a SpheroidCollapse'
+    if ( LMS % Type == '' ) &
+      LMS % Type = ' a LinMestelShu'
 
-    SpheroidCollapse => SC
+    LinMestelShu => LMS
 
-    call SC % InitializeTemplate ( Name )
+    call LMS % InitializeTemplate ( Name )
 
     !-- Integrator
 
-    allocate ( FluidCentralCoreForm :: SC % Integrator )
-    select type ( FCC => SC % Integrator )
+    allocate ( FluidCentralCoreForm :: LMS % Integrator )
+    select type ( FCC => LMS % Integrator )
     type is ( FluidCentralCoreForm )
     call FCC % Initialize &
            ( Name, FluidType = 'DUST' ,&
@@ -101,67 +102,101 @@ contains
 
    select type ( PS => FCC % PositionSpace )
    class is ( Atlas_SC_Form )
-   G => PS % Geometry ( )
 
    select type ( FA => FCC % Current_ASC )
    class is ( Fluid_ASC_Form )
 
-    !-- Initial conditions
-    SC % Eccentricity   = 0.6_KDR
-    SC % SemiMajor      = 8.0_KDR !PS % Chart % MaxCoordinate ( 1 ) / 1.1_KDR
-    SC % InitialDensity = 1.0_KDR
+   associate &
+      ( R0   => LMS % SemiMajor, &
+        Z0   => LMS % SemiMinor, &
+        e0   => LMS % Eccentricity, &
+        D0   => LMS % DensityInitial, &
+        R_OS => RadiusOppenheimerSnyder, &
+        DF   => DensityFactor, &
+        RF   => RadiusFactor, &
+        PI   => CONSTANT % PI )
 
-    call PROGRAM_HEADER % GetParameter ( SC % Eccentricity, 'Eccentricity' )
-    call PROGRAM_HEADER % GetParameter ( SC % InitialDensity, 'rho_0' )
-    call PROGRAM_HEADER % GetParameter ( SC % SemiMajor, 'SemiMajor' )
+   !-- Initial conditions
+   e0 = 0.9_KDR
+   R0 = PS % Chart % MaxCoordinate ( 1 ) / 1.1_KDR
 
-    SC % SemiMinor = SC % SemiMajor * sqrt ( 1.0_KDR - SC % Eccentricity ** 2 )
+   call PROGRAM_HEADER % GetParameter ( e0, 'Eccentricity' )
+   call PROGRAM_HEADER % GetParameter ( R0, 'SemiMajor' )
+
+   Z0 = R0 * sqrt ( 1.0_KDR - e0 ** 2 )
+
+   call PROGRAM_HEADER % GetParameter ( OS_Parameter, 'OS_Parameter' )
+
+   select case ( trim ( OS_Parameter ) )
+   case ( 'RADIUS' )
+     R_OS = R0
+     !--   Find the density needed to have the same mass as the sphere in
+     !-- OppenheimerSnyder (OS) collapse for a spheroid with an initial 
+     !-- semi-major axis equal to the inital radius of the OS sphere.
+     D0   = sqrt ( 1.0_KDR - e0 ** 2 )
+   case default
+     !-- default to density of unity or user input
+     OS_Parameter = 'DENSITY'
+     D0 = 1.0_KDR
+     call PROGRAM_HEADER % GetParameter ( D0, 'DensityInitial' )
+     !-- Find the radius of the OS sphere with M=3/(4piR0^3) and rho=1.0
+     R_OS = R0 * ( 1.0_KDR - e0 ** 2 ) ** ( 3.0_KDR / 2.0_KDR )
+   end select
+
+   DF = 10.0_KDR                               
+
+   RF = DF ** ( - 1.0_KDR / 3.0_KDR )
     
-    TimeScale &
-      = sqrt ( 3.0_KDR / ( 8.0_KDR * CONSTANT % PI * SC % InitialDensity ) )
+   TimeScale = sqrt ( 3.0_KDR / ( 8.0_KDR * PI * D0 ) )
 
-    FCC % FinishTime = 1.51_KDR * TimeScale
-    call Show ( FCC % FinishTime, 'Reset FinishTime' )
+   Beta = acos ( sqrt ( RF ) )
 
-    F => FA % Fluid_D ( )
-    call SetFluid ( SC, F, Time = 0.0_KDR )
+   FCC % FinishTime = ( Beta + sin ( 2 * Beta ) / 2 ) * TimeScale
+    
+   call Show ( 'LinMestelShu parameters' )
+   call Show ( LMS % DensityInitial, 'DensityInitial' )
+   call Show ( 3.0_KDR / ( 4 * PI * R0 ** 2 * Z0 ), 'Mass' )
+   call Show ( LMS % SemiMajor, 'SemiMajorInitial' )
+   call Show ( LMS % SemiMinor, 'SemiMinorInitial' )
+   call Show ( LMS % Eccentricity, 'EccentricityInitial' )
+   call Show ( OS_Parameter, 'OS_Parameter' )
+   call Show ( R_OS, 'OS_Radius (M)' )
+   call Show ( DensityFactor, 'DensityFactor' )
+   call Show ( RadiusFactor, 'RadiusFactor' )
+   call Show ( PI / 2  *  TimeScale, 'CollapseTime' )
+   call Show ( FCC % FinishTime, 'Reset FinishTime' )
+
+   end associate !-- R0, etc.
+   
+   F => FA % Fluid_D ( )
+   call SetFluid ( LMS, F, Time = 0.0_KDR )
 
    !-- ODE Solver
-   SC % DerivativeEvaluator => DerivativeFunction
+   LMS % DerivativeEvaluator => DerivativeFunction
     
-   call SC % Parameters % Initialize ( 3 )
-   SC % Parameters % Value ( 1 ) = 2 * CONSTANT % PI
-   SC % Parameters % Value ( 2 ) = SC % Eccentricity
-   SC % Parameters % Value ( 3 ) = SC % InitialDensity
+   call LMS % Parameters % Initialize ( 3 )
+   LMS % Parameters % Value ( 1 ) = 2 * CONSTANT % PI
+   LMS % Parameters % Value ( 2 ) = LMS % Eccentricity
+   LMS % Parameters % Value ( 3 ) = LMS % DensityInitial
 
-   allocate ( SC % ODEF )
+   allocate ( LMS % ODEF )
     
-   call SC % ODEF % Initialize &
-                      ( SC % Parameters, &
-                        SC % DerivativeEvaluator )
+   call LMS % ODEF % Initialize &
+                      ( LMS % Parameters, &
+                        LMS % DerivativeEvaluator )
    
    !-- Reference Solution
 
-   associate &
-     ( R     => G % Value ( :, G % Center_U ( 1 ) ), &
-       Theta => G % Value ( :, G % Center_U ( 2 ) ) )
 
-   allocate &
-     ( SC % R0 ( size ( R ) ), &
-       SC % Z0 ( size ( R ) ) ) 
+   allocate ( LMS % Reference )
+   allocate ( LMS % Difference )
 
-   SC % R0 = R * sin ( Theta )
-   SC % Z0 = R * cos ( Theta )
-
-   allocate ( SC % Reference )
-   allocate ( SC % Difference )
-
-   call SC % Reference % Initialize &
+   call LMS % Reference % Initialize &
            ( PS, NameShortOption = 'Reference', &
              FluidType = 'DUST', &
              AllocateSourcesOption = .false., &
              IgnorabilityOption = CONSOLE % INFO_2 )
-   call SC % Difference % Initialize &
+   call LMS % Difference % Initialize &
            ( PS, NameShortOption = 'Difference', &
              FluidType = 'DUST', &
              AllocateSourcesOption = .false., &
@@ -169,18 +204,17 @@ contains
 
     !-- Cleanup
 
-    end associate !-- Rho
     end select !-- FA
     end select !-- PS
     end select !-- FCC
-    nullify ( F, G )
+    nullify ( F )
 
   end subroutine Initialize
 
 
-  subroutine ComputeError( SC )
-    class ( SpheroidCollapseForm ), intent ( inout ) :: &
-      SC
+  subroutine ComputeError ( LMS )
+    class ( LinMestelShuForm ), intent ( inout ) :: &
+      LMS
 
     integer ( KDI ) :: &
       nM, &
@@ -196,20 +230,20 @@ contains
     type ( CollectiveOperation_R_Form ) :: &
       CO
     
-    select type ( FCC => SC % Integrator )
+    select type ( FCC => LMS % Integrator )
     type is ( FluidCentralCoreForm )
     select type ( FA => FCC % Current_ASC )
     class is ( Fluid_ASC_Form )
     F => FA % Fluid_D ( )
 
-    F_R => SpheroidCollapse % Reference % Fluid_D ( )
-    call SetReferenceKernel ( SpheroidCollapse, F_R, FCC % Time )
+    F_R => LinMestelShu % Reference % Fluid_D ( )
+    call SetReferenceKernel ( LinMestelShu, F_R, FCC % Time )
 
-    F_D => SpheroidCollapse % Difference % Fluid_D ( )
+    F_D => LinMestelShu % Difference % Fluid_D ( )
     call MultiplyAdd ( F % Value, F_R % Value, -1.0_KDR, F_D % Value )
 
 
-    select type ( PS => SC % Integrator % PositionSpace )
+    select type ( PS => LMS % Integrator % PositionSpace )
     class is ( Atlas_SC_Form )
     
     select type ( C => PS % Chart ) 
@@ -251,20 +285,20 @@ contains
   end subroutine
 
 
-  impure elemental subroutine Finalize ( SC )
+  impure elemental subroutine Finalize ( LMS )
 
-    type ( SpheroidCollapseForm ), intent ( inout ) :: &
-      SC 
+    type ( LinMestelShuForm ), intent ( inout ) :: &
+      LMS 
     
-    call SC % FinalizeTemplate ( )
+    call LMS % FinalizeTemplate ( )
 
   end subroutine Finalize
 
 
-  subroutine SetFluid ( SC, F, Time )
+  subroutine SetFluid ( LMS, F, Time )
 
-    class ( SpheroidCollapseForm ), intent ( inout ) :: &
-      SC
+    class ( LinMestelShuForm ), intent ( inout ) :: &
+      LMS
     class ( Fluid_D_Form ), intent ( inout ) :: &
       F
     real ( KDR ), intent ( in ) :: &
@@ -273,7 +307,7 @@ contains
     class ( GeometryFlatForm ), pointer :: &
       G
 
-    select type ( PS => SC % Integrator % PositionSpace )
+    select type ( PS => LMS % Integrator % PositionSpace )
     class is ( Atlas_SC_Form )
     G => PS % Geometry ( )
 
@@ -282,9 +316,9 @@ contains
 
     call SetFluidKernel &
            (  PS, &
-              a_1 = SC % SemiMajor, &
-              a_3 = SC % SemiMinor, &
-              D0  = SC % InitialDensity, &
+              a_1 = LMS % SemiMajor, &
+              a_3 = LMS % SemiMinor, &
+              D0  = LMS % DensityInitial, &
               N   = F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
               V_1 = F % Value ( :, F % VELOCITY_U ( 1 ) ), &
               V_2 = F % Value ( :, F % VELOCITY_U ( 2 ) ), &
@@ -315,10 +349,10 @@ contains
     class is ( Fluid_ASC_Form )
     F => FA % Fluid_D ( )
 
-    F_R => SpheroidCollapse % Reference % Fluid_D ( )
-    call SetReferenceKernel ( SpheroidCollapse, F_R, FCC % Time )
+    F_R => LinMestelShu % Reference % Fluid_D ( )
+    call SetReferenceKernel ( LinMestelShu, F_R, FCC % Time )
 
-    F_D => SpheroidCollapse % Difference % Fluid_D ( )
+    F_D => LinMestelShu % Difference % Fluid_D ( )
     call MultiplyAdd ( F % Value, F_R % Value, -1.0_KDR, F_D % Value )
 
     F_D % Value = abs ( F_D % Value )
@@ -480,9 +514,9 @@ contains
   end subroutine SetFluidKernel
 
   
-  subroutine SetReferenceKernel ( SC, F, Time )
-    class ( SpheroidCollapseForm ), intent ( inout ) :: &
-      SC
+  subroutine SetReferenceKernel ( LMS, F, Time )
+    class ( LinMestelShuForm ), intent ( inout ) :: &
+      LMS
     class ( Fluid_D_Form ), intent ( inout ) :: &
       F
     real ( KDR ), intent ( in ) :: &
@@ -501,10 +535,10 @@ contains
     real ( KDR ), dimension ( 4 ) :: &
       Y_Start
     real ( KDR ), dimension ( : ), allocatable :: &
-      R, &   !-- Cylindrical coordinates R ** 2 = X ** 2 + Y ** 2
+      R_XY, &   !-- Cylindrical coordinates R ** 2 = X ** 2 + Y ** 2
       Z
 
-    select type ( PS => SC % Integrator % PositionSpace )
+    select type ( PS => LMS % Integrator % PositionSpace )
     class is ( Atlas_SC_Form )
     G => PS % Geometry ( )
     
@@ -513,13 +547,11 @@ contains
 
     associate &
       ( Rho   => F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
-        R_xy  => G % Value ( :, G % CENTER_U ( 1 ) ), &
+        R     => G % Value ( :, G % CENTER_U ( 1 ) ), &
         Theta => G % Value ( :, G % CENTER_U ( 2 ) ), &
-        Rho_0 => SC % InitialDensity, &
-        R0    => SC % R0, &
-        Z0    => SC % Z0, &
-        a     => SC % SemiMajor, &
-        c     => SC % SemiMinor )
+        Rho_0 => LMS % DensityInitial, &
+        a     => LMS % SemiMajor, &
+        c     => LMS % SemiMinor )
 
     X_1 = 0.0_KDR
     X_2 = Time
@@ -533,34 +565,30 @@ contains
 
     if ( Time > 0.0_KDR ) then
       !-- Solve system of ODEs
-      call SC % ODEF % IntegrateODE &
+      call LMS % ODEF % IntegrateODE &
                          ( Y_Start, X_1, X_2, &
-                           SC % ODEF % RequestedAccuracy, &
+                           LMS % ODEF % RequestedAccuracy, &
                            H, RK4Option = .false. ) 
     end if
     
-    allocate &
-      ( R ( size ( G % Value ( :, G % CENTER_U ( 1 ) ) ) ), &
-        Z ( size ( G % Value ( :, G % CENTER_U ( 1 ) ) ) ) )
 
     New_a = Y_Start ( 1 ) * a
     New_c = Y_Start ( 3 ) * c 
     
     Rho = 0.0_KDR
 
-    R = R_xy * sin ( Theta )
-    Z = R_xy * cos ( Theta )
+    R_XY = R * sin ( Theta )
+    Z    = R * cos ( Theta )
  
-    where ( ( R / New_a) ** 2 + ( Z / New_c ) ** 2 <= 1.0_KDR ) 
+    where ( ( R_XY / New_a) ** 2 + ( Z / New_c ) ** 2 <= 1.0_KDR ) 
 
-      Rho = Rho_0 / abs ( ( Y_Start ( 1 ) ** 2 * Y_Start ( 3 ) ) )
+      Rho = Rho_0 / ( Y_Start ( 1 ) ** 2 * Y_Start ( 3 ) )
 
     end where
 
     end associate !-- Rho, etc.
     end select !-- C
     end select !-- PS
-    deallocate ( R, Z )
 
   end subroutine SetReferenceKernel
 
@@ -624,6 +652,6 @@ contains
   
   end subroutine DerivativeFunction
 
-end module SpheroidCollapse_Form
+end module LinMestelShu_Form
 
 
