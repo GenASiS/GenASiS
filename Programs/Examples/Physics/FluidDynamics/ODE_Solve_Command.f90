@@ -249,7 +249,7 @@ contains
                            - 355.0_KDR   / 33.0_KDR    * K2 ( iV ) &
                            + 46732.0_KDR / 5247.0_KDR  * K3 ( iV ) &
                            + 49.0_KDR    / 176.0_KDR   * K4 ( iV ) &
-                           - 5103.0_KDR  / 18656.0_KDr * K5 ( iV ))
+                           - 5103.0_KDR  / 18656.0_KDr * K5 ( iV ) )
     end do
 
     !-- Sixth Step 
@@ -262,7 +262,7 @@ contains
                          * (   35.0_KDR   / 384.0_KDR  * dYdX ( iV ) &
                              + 500.0_KDR  / 1113.0_KDR * K3 ( iV ) &
                              + 125.0_KDR  / 192.0_KDR  * K4 ( iV ) &
-                             - 2187.0_KDR / 6784.0_KDr * K5 ( iV ) &
+                             - 2187.0_KDR / 6784.0_KDR * K5 ( iV ) &
                              + 11.0_KDR   / 84.0_KDR   * K6 ( iV ) )
     end do
 
@@ -362,17 +362,17 @@ contains
       
       if ( X >= X2 ) then
         Y_Start = Y
-        call Show ( 'Solution obtained in')
-        call Show ( nS, 'total steps' )
-        call Show ( nOk, 'good steps' )
-        call Show ( nBad, 'altered steps' )
+        call Show ( 'Solution obtained in', ODEF % IGNORABILITY + 2 )
+        call Show ( nS, 'total steps', ODEF % IGNORABILITY + 2 )
+        call Show ( nOk, 'good steps', ODEF % IGNORABILITY + 2 )
+        call Show ( nBad, 'altered steps', ODEF % IGNORABILITY + 2 )
         return
       end if
 
       H = H_New
     end do
-
-    call Show ( 'Solution obtained in maximum number of steps allowed' )
+    
+    call Show ( '>>> Requested error exceeds maximum number of steps allowed' )
 
   end subroutine IntegrateODE
 
@@ -480,12 +480,15 @@ contains
     real ( KDR ) :: &
       X_Save, &
       H, &
-      Error
+      Error, &
+      SqrtTiny
     real ( KDR ), dimension ( size ( Y ) ) :: &
       Y_Save, &
       dYdX_Save, &
       Y_Temp, &
       Y_Error
+
+    SqrtTiny = sqrt ( tiny ( 0.0_KDR ) )
 
     H = H_In
 
@@ -496,7 +499,7 @@ contains
           * ( 1.0_KDR &
               + max ( maxval ( abs ( Y ) ), maxval ( abs ( Y_Temp ) ) ) ) 
 
-    Error = sqrt ( maxval ( Y_Error ) / Error )
+    Error = sqrt ( maxval ( abs ( Y_Error ) ) / max ( Error, SqrtTiny ) )
 
     call EvaluateError ( Error, Error_Old, H, H_New, Reject )
 

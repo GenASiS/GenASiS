@@ -15,7 +15,7 @@ program SpheroidCollapse
   allocate ( SC )
   call SC % Initialize ( PROGRAM_HEADER % Name )
   call SC % Evolve ( )
-!  call SC % ComputeError ( )
+  call SC % ComputeError ( )
   deallocate ( SC )
 
   deallocate ( PROGRAM_HEADER )

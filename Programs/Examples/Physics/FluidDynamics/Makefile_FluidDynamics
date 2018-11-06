@@ -22,7 +22,8 @@ SineWave: ThirdParty.a GenASiS.a SineWave.o
 OppenheimerSnyder: ThirdParty.a GenASiS.a OppenheimerSnyder.o
 	$(LINK) $(FFLAGS) \
            -o OppenheimerSnyder_$(MACHINE) \
-           OppenheimerSnyder.o OppenheimerSnyder_Form.o \
+           ODE_Solve_Command.o OppenheimerSnyder.o \
+	   OppenheimerSnyder_Form.o \
            GenASiS.a ThirdParty.a $(LIBRARIES)
 
 RiemannProblem: ThirdParty.a GenASiS.a RiemannProblem.o
@@ -58,7 +59,8 @@ YahilLattimer: ThirdParty.a GenASiS.a YahilLattimer.o
 SpheroidCollapse: ThirdParty.a GenASiS.a SpheroidCollapse.o
 	$(LINK) $(FFLAGS) \
            -o SpheroidCollapse_$(MACHINE) \
-           SpheroidCollapse.o SpheroidCollapse_Form.o \
+           ODE_Solve_Command.o SpheroidCollapse.o \
+	   SpheroidCollapse_Form.o \
            GenASiS.a ThirdParty.a $(LIBRARIES)\
 
 ODE_Solve: ThirdParty.a GenASiS.a ODE_Solve_Command_Test.o
@@ -101,6 +103,7 @@ SineWave.o: \
 
 OppenheimerSnyder_Form.o: \
   GenASiS.o \
+  ODE_Solve_Command.o \
   OppenheimerSnyder_Form.f90
 
 OppenheimerSnyder.o: \
@@ -163,15 +166,6 @@ YahilLattimer.o: \
   YahilLattimer_Form.o \
   YahilLattimer.f90
 
-SpheroidCollapse_Form.o: \
-  GenASiS.o \
-  SpheroidCollapse_Form.f90
-
-SpheroidCollapse.o: \
-  GenASiS.o \
-  SpheroidCollapse_Form.o \
-  SpheroidCollapse.f90
-
 ODE_Solve_Command.o: \
   GenASiS.o \
   ODE_Solve_Command.f90
@@ -180,3 +174,13 @@ ODE_Solve_Command_Test.o: \
   GenASiS.o \
   ODE_Solve_Command.o \
   ODE_Solve_Command_Test.f90
+
+SpheroidCollapse_Form.o: \
+  GenASiS.o \
+  ODE_Solve_Command.o \
+  SpheroidCollapse_Form.f90
+
+SpheroidCollapse.o: \
+  GenASiS.o \
+  SpheroidCollapse_Form.o \
+  SpheroidCollapse.f90
