@@ -125,11 +125,14 @@ contains
 
 
   subroutine InitializePositionSpace &
-               ( FC, RadiusMaxOption, RadiusCoreOption, RadiusExcisionOption, &
-                 RadialRatioOption, nCellsPolarOption )
+               ( FC, UseCustomBoundaryInnerOption, RadiusMaxOption, &
+                 RadiusCoreOption, RadiusExcisionOption, RadialRatioOption, &
+                 nCellsPolarOption )
 
     class ( FluidCentralCoreForm ), intent ( inout ) :: &
       FC
+    logical ( KDL ), intent ( in ), optional :: &
+      UseCustomBoundaryInnerOption
     real ( KDR ), intent ( in ), optional :: &
       RadiusMaxOption, &
       RadiusCoreOption, &

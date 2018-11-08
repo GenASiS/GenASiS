@@ -61,13 +61,15 @@ module FluidCentral_Template
 
   abstract interface
 
-    subroutine IPS ( FC, RadiusMaxOption, RadiusCoreOption, &
-                     RadiusExcisionOption, RadialRatioOption, &
-                     nCellsPolarOption )
+    subroutine IPS ( FC, UseCustomBoundaryInnerOption, RadiusMaxOption, &
+                     RadiusCoreOption, RadiusExcisionOption, &
+                     RadialRatioOption, nCellsPolarOption )
       use Basics
       import FluidCentralTemplate
       class ( FluidCentralTemplate ), intent ( inout ) :: &
         FC
+      logical ( KDL ), intent ( in ), optional :: &
+        UseCustomBoundaryInnerOption
       real ( KDR ), intent ( in ), optional :: &
         RadiusMaxOption, &
         RadiusCoreOption, &
@@ -122,7 +124,8 @@ contains
 
   subroutine InitializeTemplate_FC &
                ( FC, Name, FluidType, GeometryType, DimensionlessOption, &
-                 TimeUnitOption, FinishTimeOption, CourantFactorOption, &
+                 UseCustomBoundaryInnerOption, TimeUnitOption, &
+                 FinishTimeOption, CourantFactorOption, &
                  LimiterParameterOption, ShockThresholdOption, &
                  RadiusMaxOption, RadiusCoreOption, RadiusMinOption, &
                  RadialRatioOption, CentralMassOption, nWriteOption, &
@@ -137,7 +140,8 @@ contains
     type ( MeasuredValueForm ), intent ( in ), optional :: &
       TimeUnitOption
     logical ( KDL ), intent ( in ), optional :: &
-      DimensionlessOption
+      DimensionlessOption, &
+      UseCustomBoundaryInnerOption
     real ( KDR ), intent ( in ), optional :: &
       FinishTimeOption, &
       CourantFactorOption, &
@@ -187,8 +191,8 @@ contains
     !-- PositionSpace
 
     call FC % InitializePositionSpace &
-           ( RadiusMaxOption, RadiusCoreOption, RadiusMinOption, &
-             RadialRatioOption, nCellsPolarOption )
+           ( UseCustomBoundaryInnerOption, RadiusMaxOption, RadiusCoreOption, &
+             RadiusMinOption, RadialRatioOption, nCellsPolarOption )
 
     select type ( PS => FC % PositionSpace )
     class is ( Atlas_SC_Form )

@@ -33,7 +33,8 @@ contains
 
   subroutine Initialize &
                ( FCE, Name, FluidType, GeometryType, DimensionlessOption, &
-                 TimeUnitOption, FinishTimeOption, CourantFactorOption, &
+                 UseCustomBoundaryInnerOption, TimeUnitOption, &
+                 FinishTimeOption, CourantFactorOption, &
                  LimiterParameterOption, ShockThresholdOption, &
                  RadiusMaxOption, RadiusMinOption, RadialRatioOption, &
                  CentralMassOption, nWriteOption, nCellsPolarOption )
@@ -45,7 +46,8 @@ contains
       FluidType, &
       GeometryType
     logical ( KDL ), intent ( in ), optional :: &
-      DimensionlessOption
+      DimensionlessOption, &
+      UseCustomBoundaryInnerOption
     type ( MeasuredValueForm ), intent ( in ), optional :: &
       TimeUnitOption
     real ( KDR ), intent ( in ), optional :: &
@@ -68,6 +70,7 @@ contains
 
     call FCE % InitializeTemplate_FC &
                ( Name, FluidType, GeometryType, &
+                 UseCustomBoundaryInnerOption = UseCustomBoundaryInnerOption, &
                  DimensionlessOption = DimensionlessOption, &
                  TimeUnitOption = TimeUnitOption, &
                  FinishTimeOption = FinishTimeOption, &
@@ -100,11 +103,14 @@ contains
 
 
   subroutine InitializePositionSpace &
-               ( FC, RadiusMaxOption, RadiusCoreOption, RadiusExcisionOption, &
-                 RadialRatioOption, nCellsPolarOption )
+               ( FC, UseCustomBoundaryInnerOption, RadiusMaxOption, &
+                 RadiusCoreOption, RadiusExcisionOption, RadialRatioOption, &
+                 nCellsPolarOption )
 
     class ( FluidCentralExcisionForm ), intent ( inout ) :: &
       FC
+    logical ( KDL ), intent ( in ), optional :: &
+      UseCustomBoundaryInnerOption
     real ( KDR ), intent ( in ), optional :: &
       RadiusMaxOption, &
       RadiusCoreOption, &
@@ -126,7 +132,8 @@ contains
     if ( FC % Dimensionless ) then
 
       call PS % CreateChart_CE &
-             ( RadiusMaxOption = RadiusMaxOption, &
+             ( UseCustomBoundaryInnerOption = UseCustomBoundaryInnerOption, &
+               RadiusMaxOption = RadiusMaxOption, &
                RadiusExcisionOption = RadiusExcisionOption, &
                RadialRatioOption = RadialRatioOption )
 
@@ -143,7 +150,8 @@ contains
         RadialRatio = RadialRatioOption
 
       call PS % CreateChart_CE &
-             ( CoordinateUnitOption = FC % CoordinateUnit, &
+             ( UseCustomBoundaryInnerOption = UseCustomBoundaryInnerOption, &
+               CoordinateUnitOption = FC % CoordinateUnit, &
                RadiusMaxOption = RadiusMax, &
                RadiusExcisionOption = RadiusExcision, &
                RadialRatioOption = RadialRatio, &

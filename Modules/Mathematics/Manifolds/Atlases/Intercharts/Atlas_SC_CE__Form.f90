@@ -105,12 +105,14 @@ contains
 
 
   subroutine CreateChart_CE &
-               ( A, CoordinateUnitOption, RadiusMaxOption, &
-                 RadiusExcisionOption, RadialRatioOption, nGhostLayersOption, &
-                 nCellsPolarOption )
+               ( A, UseCustomBoundaryInnerOption, CoordinateUnitOption, &
+                 RadiusMaxOption, RadiusExcisionOption, RadialRatioOption, &
+                 nGhostLayersOption, nCellsPolarOption )
 
     class ( Atlas_SC_CE_Form ), intent ( inout ) :: &
       A
+    logical ( KDL ), intent ( in ), optional :: &
+      UseCustomBoundaryInnerOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       CoordinateUnitOption
     real ( KDR ), intent ( in ), optional :: &
@@ -121,6 +123,17 @@ contains
       nGhostLayersOption
     integer ( KDI ), intent ( in ), optional :: &
       nCellsPolarOption
+
+    if ( present ( UseCustomBoundaryInnerOption ) ) then
+      if ( UseCustomBoundaryInnerOption ) then
+        associate &
+          ( C  => A % Connectivity, &
+            iD => 1, &
+            iB => 1 )
+        A % BoundaryCondition ( C % iaInner ( iD ), iB ) = 'CUSTOM'
+        end associate !-- C, etc.
+      end if
+    end if
 
     allocate ( Chart_SLD_CE_Form :: A % Chart )
 
