@@ -59,7 +59,7 @@ YahilLattimer: ThirdParty.a GenASiS.a YahilLattimer.o
 
 LinMestelShu: ThirdParty.a GenASiS.a LinMestelShu.o
 	$(LINK) $(FFLAGS) \
-           -o SpheroidCollapse_$(MACHINE) \
+           -o LinMestelShu_$(MACHINE) \
            ODE_Solve_Command.o LinMestelShu.o \
 	   LinMestelShu_Form.o \
            GenASiS.a ThirdParty.a $(LIBRARIES)\
