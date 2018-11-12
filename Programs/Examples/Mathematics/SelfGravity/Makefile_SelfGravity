@@ -55,7 +55,7 @@ clobber: clean
 	rm -f SatohDisk_*
 	rm -f LogarithmicPotential_*
 	rm -f TwoPowerDensity_*
-	rm -f CondnesedSphere_*
+	rm -f CondensedSphere_*
 
 HomogeneousSpheroid_Form.o: \
   Basics.a \
