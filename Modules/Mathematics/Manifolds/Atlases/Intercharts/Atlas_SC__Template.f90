@@ -17,8 +17,8 @@ module Atlas_SC__Template
       Chart
     type ( FieldAtlasPointer ), dimension ( : ), allocatable :: &
       Field
-    procedure ( ABCC ), pointer :: &
-      ApplyBoundaryConditionsCustom => null ( )
+    procedure ( ABCCSLC ), pointer, nopass :: &
+      Apply_BC_CSL_Custom => null ( )
   contains
     procedure, private, pass :: &
       InitializeBasic
@@ -38,17 +38,17 @@ module Atlas_SC__Template
 
   abstract interface
 
-    subroutine ABCC ( A, F, iDimension, iConnection )
+    subroutine ABCCSLC ( CSL, F, iDimension, iConnection )
       use Basics
-      import Atlas_SC_Template
-      class ( Atlas_SC_Template ), intent ( inout ) :: &
-        A
+      use Charts
+      class ( Chart_SL_Template ), intent ( inout ) :: &
+        CSL
       class ( StorageForm ), intent ( inout ) :: &
         F  !-- Field
       integer ( KDI ), intent ( in ) :: &
         iDimension, &
         iConnection
-    end subroutine ABCC
+    end subroutine ABCCSLC
 
   end interface
 
@@ -287,15 +287,24 @@ contains
 
       case ( 'CUSTOM' )
 
-        if ( associated ( A % ApplyBoundaryConditionsCustom ) ) then
-          call A % ApplyBoundaryConditionsCustom ( F, iDimension, iConnection )
-        else
-          call Show ( 'Custom boundary conditions not set', CONSOLE % ERROR )
+        select type ( C => A % Chart )
+        class is ( Chart_SL_Template )
+          if ( associated ( A % Apply_BC_CSL_Custom ) ) then
+            call A % Apply_BC_CSL_Custom ( C, F, iDimension, iConnection )
+          else
+            call Show ( 'Custom boundary conditions not set', CONSOLE % ERROR )
+            call Show ( 'Atlas_SC__Template', 'module', CONSOLE % ERROR )
+            call Show ( 'ApplyBoundaryConditions', 'subroutine', &
+                        CONSOLE % ERROR )
+            call PROGRAM_HEADER % Abort ( )
+          end if
+        class default
+          call Show ( 'Chart type not recognized', CONSOLE % ERROR )
           call Show ( 'Atlas_SC__Template', 'module', CONSOLE % ERROR )
           call Show ( 'ApplyBoundaryConditions', 'subroutine', &
                       CONSOLE % ERROR )
           call PROGRAM_HEADER % Abort ( )
-        end if
+        end select !-- C
 
       case default
         call Show ( 'BoundaryCondition not recognized', CONSOLE % ERROR )
