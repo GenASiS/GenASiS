@@ -168,6 +168,10 @@ contains
                RadialRatioOption = RadialRatio, &
                nCellsPolarOption = nCellsPolarOption )
 
+      FC % RadiusPolarMomentum  =  8.0_KDR  *  UNIT % KILOMETER
+      call PROGRAM_HEADER % GetParameter &
+             ( FC % RadiusPolarMomentum, 'RadiusPolarMomentum' )
+
     end if !-- Dimensionless
 
     end select !-- PS

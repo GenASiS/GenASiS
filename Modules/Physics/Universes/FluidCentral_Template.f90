@@ -15,6 +15,8 @@ module FluidCentral_Template
       integer ( KDI ), dimension ( : ), allocatable :: &
         nCoarsen_2, &
         nCoarsen_3
+      real ( KDR ) :: &
+        RadiusPolarMomentum = 0.0_KDR
       type ( MeasuredValueForm ), dimension ( 3 ) :: &
         CoordinateUnit
       logical ( KDL ) :: &
@@ -283,6 +285,8 @@ contains
 
     call Show ( FC % Dimensionless, 'Dimensionless', FC % IGNORABILITY )
     call Show ( FC % UseCoarsening, 'UseCoarsening', FC % IGNORABILITY )
+    call Show ( FC % RadiusPolarMomentum, PS % Chart % CoordinateUnit ( 1 ), &
+                'RadiusPolarMomentum', FC % IGNORABILITY )
 
     if ( FC % UseCoarsening ) &
       call FC % SetCoarsening ( )
@@ -1061,7 +1065,8 @@ contains
       iB, &          !-- iBrick
       iR, &          !-- iRank
       iPS, &         !-- iPillarSegment
-      iP             !-- iPillar
+      iP, &          !-- iPillar
+      iMomentum_2
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       R, &
       Crsn_2, Crsn_3, &
@@ -1118,6 +1123,8 @@ contains
       call C % SetVariablePointer &
              ( G % Value ( :, G % CENTER_U ( 1 ) ), R )
 
+      iMomentum_2 = 3  !-- Fluid
+
       oI = 0
       do kC = 1, nCB ( 3 )
         do iC = 1, nCB ( 1 )
@@ -1129,8 +1136,9 @@ contains
             SV ( iC, 1 : nCB ( 2 ), kC )  &
               =  Incoming ( oI + 1 : oI + nCB ( 2 ) )
             oI = oI + nCB ( 2 )
-if ( iS == 3 .and. R ( iC, 1, kC ) < 8.0_KDR * UNIT % KILOMETER ) &
-  SV ( iC, 1 : nCB ( 2 ), kC ) = 0.0_KDR
+            if ( iS == iMomentum_2 &
+                 .and. R ( iC, 1, kC )  <  FC % RadiusPolarMomentum ) &
+              SV ( iC, 1 : nCB ( 2 ), kC ) = 0.0_KDR
           end do !-- iS
         end do !-- iC
       end do !-- kC
