@@ -1063,6 +1063,7 @@ contains
       iPS, &         !-- iPillarSegment
       iP             !-- iPillar
     real ( KDR ), dimension ( :, :, : ), pointer :: &
+      R, &
       Crsn_2, Crsn_3, &
       SV
     class ( GeometryFlatForm ), pointer :: &
@@ -1114,6 +1115,8 @@ contains
 
       call C % SetVariablePointer &
              ( G % Value ( :, G % COARSENING ( 2 ) ), Crsn_2 )
+      call C % SetVariablePointer &
+             ( G % Value ( :, G % CENTER_U ( 1 ) ), R )
 
       oI = 0
       do kC = 1, nCB ( 3 )
@@ -1126,6 +1129,8 @@ contains
             SV ( iC, 1 : nCB ( 2 ), kC )  &
               =  Incoming ( oI + 1 : oI + nCB ( 2 ) )
             oI = oI + nCB ( 2 )
+if ( iS == 3 .and. R ( iC, 1, kC ) < 8.0_KDR * UNIT % KILOMETER ) &
+  SV ( iC, 1 : nCB ( 2 ), kC ) = 0.0_KDR
           end do !-- iS
         end do !-- iC
       end do !-- kC
@@ -1192,7 +1197,7 @@ contains
     end associate !-- nCB
     end select !-- C
     end select !-- PS
-    nullify ( G, Crsn_2, Crsn_3, SV )
+    nullify ( G, R, Crsn_2, Crsn_3, SV )
 
   end subroutine DecomposePillars
 
