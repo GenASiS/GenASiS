@@ -36,18 +36,6 @@ contains
     character ( LDB ) :: &
       Buffer
                                 
-    !Address = transfer ( Device, 1_KBI )
-    !write ( Buffer, fmt = ' ( z64 ) ' ) Address
-    !Buffer = '0x' //  adjustl ( Buffer )
-    !print*, '1D Pointer: ', trim ( Buffer )
-    
-    !call AssociateHost ( Device, Value, ErrorOption )
-    !print*, 'Done associating'
-    !-- !$OMP target update to ( Value )
-    !print*, 'Done transferring' 
-    !call DisassociateHost ( Value, ErrorOption )
-    !print*, 'Done Disassociation' 
-    
     Error = HostToDeviceCopyDouble &
               ( c_loc ( Value ), Device, size ( Value ), 0, 0 )
     if ( present ( ErrorOption ) ) &
@@ -72,23 +60,10 @@ contains
     character ( LDB ) :: &
       Buffer
                                 
-    !Address = transfer ( Device, 1_KBI )
-    !write ( Buffer, fmt = ' ( z64 ) ' ) Address
-    !Buffer = '0x' //  adjustl ( Buffer )
-    !print*, '2D Pointer: ', trim ( Buffer )
-             
-    !call AssociateHost ( Device, Value, ErrorOption )
-    !!$OMP target update to ( Value ) 
-    !call DisassociateHost ( Value, ErrorOption )
-    
-    
-    !print*, 'Start HostToDeviceCopy'
     Error = HostToDeviceCopyDouble &
               ( c_loc ( Value ), Device, size ( Value ), 0, 0 )
     if ( present ( ErrorOption ) ) &
       ErrorOption = Error
-    !print*, 'Done HostToDeviceCopy: ', Error
-  
   
   end subroutine UpdateDevice_KDR_2D
 

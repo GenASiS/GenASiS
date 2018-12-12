@@ -32,10 +32,6 @@ contains
     integer ( KDI ) :: &
       Error
       
-    !call AssociateHost ( Device, Value, ErrorOption )
-    !!$OMP target update from ( Value )
-    !call DisassociateHost ( Value, ErrorOption )
-        
     Error = DeviceToHostCopyDouble &
               ( Device, c_loc ( Value ), size ( Value ), 0, 0 )
 
@@ -57,10 +53,6 @@ contains
     integer ( KDI ) :: &
       Error
   
-    !call AssociateHost ( Device, Value, ErrorOption )
-    !!$OMP target update from ( Value )
-    !call DisassociateHost ( Value, ErrorOption )
-    
     Error = DeviceToHostCopyDouble &
               ( Device, c_loc ( Value ), size ( Value ), 0, 0 )
 
