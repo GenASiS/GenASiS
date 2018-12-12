@@ -2,6 +2,7 @@ module UpdateHost_Command
   
   use iso_c_binding
   use Specifiers
+  use Device_C
   use AssociateHost_Command
   use DisassociateHost_Command
   
@@ -23,14 +24,23 @@ contains
   
     type ( c_ptr ), intent ( in ) :: &
       Device
-    real ( KDR ), dimension ( : ), intent ( out ) :: &
+    real ( KDR ), dimension ( : ), intent ( out ), target :: &
       Value
     integer ( KDI ), intent ( out ), optional :: &
       ErrorOption
       
-    call AssociateHost ( Device, Value, ErrorOption )
-    !$OMP target update from ( Value )
-    call DisassociateHost ( Value, ErrorOption )
+    integer ( KDI ) :: &
+      Error
+      
+    !call AssociateHost ( Device, Value, ErrorOption )
+    !!$OMP target update from ( Value )
+    !call DisassociateHost ( Value, ErrorOption )
+        
+    Error = DeviceToHostCopyDouble &
+              ( Device, c_loc ( Value ), size ( Value ), 0, 0 )
+
+    if ( present ( ErrorOption ) ) &
+      ErrorOption = Error
   
   end subroutine UpdateHost_KDR_1D
 
@@ -39,14 +49,23 @@ contains
   
     type ( c_ptr ), intent ( in ) :: &
       Device
-    real ( KDR ), dimension ( :, : ), intent ( out ) :: &
+    real ( KDR ), dimension ( :, : ), intent ( out ), target :: &
       Value
     integer ( KDI ), intent ( out ), optional :: &
       ErrorOption
-      
-    call AssociateHost ( Device, Value, ErrorOption )
-    !$OMP target update from ( Value )
-    call DisassociateHost ( Value, ErrorOption )
+    
+    integer ( KDI ) :: &
+      Error
+  
+    !call AssociateHost ( Device, Value, ErrorOption )
+    !!$OMP target update from ( Value )
+    !call DisassociateHost ( Value, ErrorOption )
+    
+    Error = DeviceToHostCopyDouble &
+              ( Device, c_loc ( Value ), size ( Value ), 0, 0 )
+
+    if ( present ( ErrorOption ) ) &
+      ErrorOption = Error
   
   end subroutine UpdateHost_KDR_2D
 

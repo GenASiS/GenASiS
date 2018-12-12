@@ -31,12 +31,14 @@ DisassociateHost_Command.o: \
 
 UpdateDevice_Command.o: \
   Specifiers.o \
+  Device_C_OMP.o \
   AssociateHost_Command.o \
   DisassociateHost_Command.o \
   UpdateDevice_Command.f90
 
 UpdateHost_Command.o: \
   Specifiers.o \
+  Device_C_OMP.o \
   AssociateHost_Command.o \
   DisassociateHost_Command.o \
   UpdateHost_Command.f90

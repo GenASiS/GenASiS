@@ -22,7 +22,7 @@ contains
   
   subroutine UpdateDevice_KDR_1D ( Value, Device, ErrorOption )
   
-    real ( KDR ), dimension ( : ), target, intent ( in ) :: &
+    real ( KDR ), dimension ( : ), intent ( in ), target :: &
       Value
     type ( c_ptr ), intent ( in ) :: &
       Device
@@ -52,13 +52,13 @@ contains
               ( c_loc ( Value ), Device, size ( Value ), 0, 0 )
     if ( present ( ErrorOption ) ) &
       ErrorOption = Error
-  
+      
   end subroutine UpdateDevice_KDR_1D
 
 
   subroutine UpdateDevice_KDR_2D ( Value, Device, ErrorOption )
   
-    real ( KDR ), dimension ( :, : ), target, intent ( in ) :: &
+    real ( KDR ), dimension ( :, : ), intent ( in ), target :: &
       Value
     type ( c_ptr ), intent ( in ) :: &
       Device
