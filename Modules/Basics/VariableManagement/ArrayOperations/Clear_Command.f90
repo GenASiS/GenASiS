@@ -3,6 +3,8 @@
 !   operations to set arrays to zero (or to .false. in the case of logical 
 !   arrays)
 
+#include "Preprocessor"
+
 module Clear_Command
 
   use iso_c_binding
@@ -219,12 +221,12 @@ contains
     
     call AssociateHost ( D_A, A )
     
-    !$OMP  target teams distribute parallel do &
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
     !$OMP& schedule ( static, 1 )
     do iV = 1, nV
       A ( iV ) = 0.0_KDR
     end do
-    !$OMP end target teams distribute parallel do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
     call DisassociateHost ( A )
 

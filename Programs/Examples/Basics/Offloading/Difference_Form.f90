@@ -144,7 +144,7 @@ contains
     iaS = 0
 !;    iaS ( iD ) = -1
 
-    !$OMP target teams distribute 
+    !$OMP OMP_TARGET_DIRECTIVE 
     do kV = lV ( 3 ), uV ( 3 ) 
       !$OMP parallel 
       !$OMP do private ( iaVS ) collapse ( 2 ) schedule (static, 1)
@@ -161,7 +161,7 @@ contains
       !$OMP end do
       !$OMP end parallel
     end do !-- kV
-    !$OMP end target teams distribute
+    !$OMP end OMP_TARGET_DIRECTIVE
     
      
   end subroutine ComputeChart_SL_Kernel

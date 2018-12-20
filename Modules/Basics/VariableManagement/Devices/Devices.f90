@@ -8,5 +8,8 @@ module Devices
   use UpdateHost_Command
   use AllocateHost_Command
   use DeallocateHost_Command
+  
+  logical, parameter :: &
+    DEVICE_TARGET = .false.
 
 end module Devices

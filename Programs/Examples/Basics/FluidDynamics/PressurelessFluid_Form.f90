@@ -1,3 +1,5 @@
+#include "Preprocessor"
+
 module PressurelessFluid_Form
 
   use iso_c_binding
@@ -841,7 +843,7 @@ contains
     call AssociateHost ( D_V_2, V_2 )
     call AssociateHost ( D_V_3, V_3 )
 
-    !$OMP  target teams distribute parallel do &
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
     !$OMP& schedule ( static, 1 )
     do iV = 1, size ( D )
       D   ( iV ) = N ( iV )
@@ -849,7 +851,7 @@ contains
       S_2 ( iV ) = N ( iV ) * V_2 ( iV )
       S_3 ( iV ) = N ( iV ) * V_3 ( iV )
     end do
-    !$OMP end target teams distribute parallel do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
     call DisassociateHost ( V_3 )
     call DisassociateHost ( V_2 )
@@ -921,7 +923,7 @@ contains
     call AssociateHost ( D_S_2, S_2 )
     call AssociateHost ( D_S_3, S_3 )
     
-    !$OMP  target teams distribute parallel do &
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
     !$OMP& schedule ( static, 1 )
     do iV = 1, size ( N )
       if ( N ( iV ) > 0.0_KDR ) then
@@ -939,7 +941,7 @@ contains
         S_3 ( iV ) = 0.0_KDR
       end if
     end do
-    !$OMP end target teams distribute parallel do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
     call DisassociateHost ( S_3 )
     call DisassociateHost ( S_2 )
@@ -999,7 +1001,7 @@ contains
     call AssociateHost ( D_V_2, V_2 )
     call AssociateHost ( D_V_3,  V_3 )
     
-    !$OMP  target teams distribute parallel do &
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
     !$OMP& schedule ( static, 1 )
     do iV = 1, size ( FEP_1 )
       FEP_1 ( iV ) = V_1 ( iV )
@@ -1009,7 +1011,7 @@ contains
       FEM_2 ( iV ) = V_2 ( iV )
       FEM_3 ( iV ) = V_3 ( iV )
     end do
-    !$OMP end target teams distribute parallel do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
     call DisassociateHost ( V_3 )
     call DisassociateHost ( V_2 )
@@ -1102,7 +1104,7 @@ contains
     call AssociateHost ( D_VJ_I, VJ_I )
     call AssociateHost ( D_VK_I, VK_I )
     
-    !$OMP  target teams distribute parallel do collapse ( 3 ) &
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
     !$OMP& schedule ( static, 1 )
     do kV = 1, nB ( 3 )
       do jV = 1, nB ( 2 )
@@ -1123,7 +1125,7 @@ contains
         end do
       end do
     end do
-    !$OMP end target teams distribute parallel do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
                
     call DisassociateHost ( VK_I )
     call DisassociateHost ( VJ_I )
@@ -1214,7 +1216,7 @@ contains
     iaS_P = 0
     iaS_P ( iD ) = + 1
     
-    !$OMP  target teams distribute parallel do collapse ( 3 ) &
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
     !$OMP& schedule ( static, 1 ) private ( iaVS_M, iaVS_P )
     do kV = lV ( 3 ), uV ( 3 )    
       do jV = lV ( 2 ), uV ( 2 )  
@@ -1242,7 +1244,7 @@ contains
         end do
       end do
     end do
-    !$OMP end target teams distribute parallel do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
     call DisassociateHost ( LM_O )
     call DisassociateHost ( LM_I )

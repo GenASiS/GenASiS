@@ -2,6 +2,8 @@
 !   intent(out) arguments of intrinsic data types, so that the compiler will
 !   use fast copy methods. 
 
+#include "Preprocessor"
+
 module Copy_Command
 
   use iso_c_binding
@@ -387,12 +389,12 @@ contains
 
     nV = size ( A )
     
-    !$OMP  target teams distribute parallel do &
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
     !$OMP& schedule ( static, 1 )
     do iV = 1, nV
       B ( iV ) = A ( iV )
     end do
-    !$OMP end target teams distribute parallel do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
     call DisassociateHost ( B )
     call DisassociateHost ( A )
@@ -544,7 +546,7 @@ contains
     call AssociateHost ( D_A, A )
     call AssociateHost ( D_B, B )
 
-    !$OMP  target teams distribute parallel do collapse ( 3 )&
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 )&
     !$OMP& schedule ( static, 1 ) private ( iS, jS, kS, iT )
     do kV = oSource ( 3 ) + 1, oSource ( 3 ) + nSource ( 3 )
       do jV = oSource ( 2 ) + 1, oSource ( 2 ) + nSource ( 2 )
@@ -562,7 +564,7 @@ contains
         end do
       end do
     end do
-    !$OMP  end target teams distribute parallel do
+    !$OMP  end OMP_TARGET_DIRECTIVE parallel do
     
     call DisassociateHost ( B )
     call DisassociateHost ( A )
@@ -628,7 +630,7 @@ contains
     call AssociateHost ( D_A, A )
     call AssociateHost ( D_B, B )
     
-    !$OMP  target teams distribute parallel do collapse ( 3 )&
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 )&
     !$OMP& schedule ( static, 1 ) private ( iT, jT, kT, iS )
     do kV = oTarget ( 3 ) + 1, oTarget ( 3 ) + nTarget ( 3 )
       do jV = oTarget ( 2 ) + 1, oTarget ( 2 ) + nTarget ( 2 )
@@ -646,7 +648,7 @@ contains
         end do
       end do
     end do
-    !$OMP end target teams distribute parallel do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
     call DisassociateHost ( B )
     call DisassociateHost ( A )

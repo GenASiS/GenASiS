@@ -6,7 +6,8 @@ void * AllocateTargetDouble_OMP ( int nValues )
   {
   int iDevice;
   void * D_Pointer;
-  
+
+  #ifdef GPU_NV  
   iDevice = omp_get_default_device();
   
   /*
@@ -16,6 +17,7 @@ void * AllocateTargetDouble_OMP ( int nValues )
   D_Pointer = omp_target_alloc ( sizeof ( double ) * nValues, iDevice );
   
   // printf("D_Pointer : %p\n", D_Pointer);
+  #endif 
   
   return D_Pointer;
   }
@@ -32,7 +34,8 @@ int AssociateTargetDouble_OMP
   printf("Host     : %p\n", Host );
   printf("Device   : %p\n", Device);
   */
-  
+
+  #ifdef GPU_NV    
   Size    = sizeof ( double ) * nValues;
   Offset  = sizeof ( double ) * oValue;
   iDevice = omp_get_default_device();
@@ -46,6 +49,7 @@ int AssociateTargetDouble_OMP
   */
   
   retval = omp_target_associate_ptr ( Host, Device, Size, Offset, iDevice );
+  #endif 
   //printf("retval assoc: %d\n", retval);
   return retval;
   }
@@ -55,19 +59,25 @@ void FreeTarget_OMP ( void * D_Pointer )
   {
   int iDevice;
   
+  #ifdef GPU_NV  
   iDevice = omp_get_default_device();
   omp_target_free ( D_Pointer, iDevice );
+  #endif 
+  
   }
 
   
 int DisassociateTarget_OMP ( void * Host )
   {
   int iDevice, retval;
-  
+
+  #ifdef GPU_NV    
   iDevice = omp_get_default_device();
   
   retval = omp_target_disassociate_ptr ( Host, iDevice );
   //printf("retval disassoc : %d\n", retval);
+  #endif
+  
   return retval;
   }
 
@@ -77,7 +87,8 @@ int HostToDeviceCopyDouble_OMP ( void * Host, void * Device, int nValues,
   {
   int iHost, iDevice, retval;
   size_t Length, oHV, oDV;
-  
+
+  #ifdef GPU_NV    
   iDevice = omp_get_default_device ( );
   iHost   = omp_get_initial_device ( );
   Length  = sizeof ( double ) * nValues;
@@ -86,7 +97,8 @@ int HostToDeviceCopyDouble_OMP ( void * Host, void * Device, int nValues,
   
   retval = omp_target_memcpy 
              ( Device, Host, Length, oDV, oHV, iDevice, iHost ); 
-             
+  #endif
+  
   return retval;
   }
 
@@ -96,6 +108,7 @@ int DeviceToHostCopyDouble_OMP ( void * Device, void * Host, int nValues,
   int iHost, iDevice, retval;
   size_t Length, oHV, oDV;
   
+  #ifdef GPU_NV  
   iDevice = omp_get_default_device ( );
   iHost   = omp_get_initial_device ( );
   Length  = sizeof ( double ) * nValues;
@@ -104,6 +117,7 @@ int DeviceToHostCopyDouble_OMP ( void * Device, void * Host, int nValues,
   
   retval = omp_target_memcpy 
              ( Host, Device, Length, oHV, oDV, iHost, iDevice ); 
+  #endif
   
   return retval;
   }

@@ -263,7 +263,7 @@ contains
     
     call D % T_Compute % Start ( )
     
-    !$OMP target teams distribute 
+    !$OMP OMP_TARGET_DIRECTIVE 
     do kV = lV ( 3 ), uV ( 3 ) 
       !$OMP parallel do 
       do jV = lV ( 2 ), uV ( 2 )
@@ -281,7 +281,7 @@ contains
       end do !-- jV
       !$OMP end parallel do
     end do !-- kV
-    !$OMP end target teams distribute
+    !$OMP end OMP_TARGET_DIRECTIVE
     
     call D % T_Compute % Stop ( )
     

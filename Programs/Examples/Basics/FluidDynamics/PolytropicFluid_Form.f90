@@ -1,3 +1,5 @@
+#include "Preprocessor"
+
 module PolytropicFluid_Form
 
   use iso_c_binding
@@ -799,7 +801,7 @@ contains
     call AssociateHost ( D_V_2, V_2 )
     call AssociateHost ( D_V_3, V_3 )
     
-    !$OMP  target teams distribute parallel do &
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
     !$OMP& schedule ( static, 1 )
     do iV = 1, size ( G )
       G ( iV ) = E ( iV ) + 0.5_KDR * N ( iV ) &
@@ -807,7 +809,7 @@ contains
                      + V_2 ( iV ) * V_2 ( iV ) &
                      + V_3 ( iV ) * V_3 ( iV ) )
     end do
-    !$OMP end target teams distribute parallel do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
     
   end subroutine ComputeConservedKernelDevice
@@ -869,7 +871,7 @@ contains
     call AssociateHost ( D_V_2, V_2 )
     call AssociateHost ( D_V_3, V_3 )
     
-    !$OMP  target teams distribute parallel do &
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
     !$OMP& schedule ( static, 1 ) private ( KE )
     do iV = 1, size ( E )
     
@@ -884,7 +886,7 @@ contains
       end if
 
     end do
-    !$OMP end target teams distribute parallel do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
     call DisassociateHost ( V_3 )
     call DisassociateHost ( V_2 )
@@ -945,7 +947,7 @@ contains
     call AssociateHost ( D_E, E )
     call AssociateHost ( D_Gamma, Gamma )
     
-    !$OMP  target teams distribute parallel do &
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
     !$OMP& schedule ( static, 1 )
     do iV = 1, size ( P )
       P ( iV ) = E ( iV ) * ( Gamma ( iV ) - 1.0_KDR )
@@ -955,7 +957,7 @@ contains
         K ( iV ) = 0.0_KDR
       end if
     end do
-    !$OMP end target teams distribute parallel do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
       
     call DisassociateHost ( Gamma )
     call DisassociateHost ( E )
@@ -1058,7 +1060,7 @@ contains
     call AssociateHost ( D_P, P )
     call AssociateHost ( D_Gamma, Gamma )
     
-    !$OMP  target teams distribute parallel do &
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
     !$OMP& schedule ( static, 1 )
     do iV = 1, size ( N )
       if ( N ( iV ) > 0.0_KDR .and. P ( iV ) > 0.0_KDR ) then
@@ -1067,9 +1069,9 @@ contains
         CS ( iV ) = 0.0_KDR
       end if
     end do
-    !$OMP end target teams distribute parallel do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
-    !$OMP  target teams distribute parallel do &
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
     !$OMP& schedule ( static, 1 )
     do iV = 1, size ( N )
       FEP_1 ( iV ) = V_1 ( iV ) + CS ( iV )
@@ -1079,7 +1081,7 @@ contains
       FEM_2 ( iV ) = V_2 ( iV ) - CS ( iV )
       FEM_3 ( iV ) = V_3 ( iV ) - CS ( iV )
     end do
-    !$OMP end target teams distribute parallel do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
     call DisassociateHost ( Gamma )
     call DisassociateHost ( P )
@@ -1157,7 +1159,7 @@ contains
     call AssociateHost ( D_E_I, E_I )
     call AssociateHost ( D_Gamma_I, Gamma_I )
     
-    !$OMP  target teams distribute parallel do collapse ( 3 ) &
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
     !$OMP& schedule ( static, 1 )
     do kV = 1, nB ( 3 )
       do jV = 1, nB ( 2 )
@@ -1172,7 +1174,7 @@ contains
         end do
       end do
     end do
-    !$OMP end target teams distribute parallel do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
     call DisassociateHost ( Gamma_I )
     call DisassociateHost ( E_I )
@@ -1233,7 +1235,7 @@ contains
     !F_S_Dim = F_S_Dim + P
     !F_G = ( G + P ) * V_Dim
     
-    !$OMP  target teams distribute parallel do &
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
     !$OMP& schedule ( static, 1 )
     do iV = 1, size ( F_D )
       F_D ( iV )     = D ( iV )   * V_Dim ( iV ) 
@@ -1243,7 +1245,7 @@ contains
       F_S_Dim ( iV ) = F_S_Dim ( iV ) + P ( iV ) 
       F_G ( iV )     = ( G ( iV ) + P ( iV ) ) * V_Dim ( iV )
     end do
-    !$OMP end target teams distribute parallel do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
 
     call DisassociateHost ( V_Dim )
     call DisassociateHost ( P )

@@ -1,3 +1,6 @@
+
+#include "Preprocessor"
+
 module ConservationLawStep_Form
 
   use iso_c_binding
@@ -675,7 +678,7 @@ contains
     iaS = 0
     iaS ( iD ) = -1
     
-    !$OMP  target teams distribute parallel do collapse ( 3 ) &
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
     !$OMP& schedule ( static, 1 ) private ( iaVS )
     do kV = lV ( 3 ), uV ( 3 ) 
       do jV = lV ( 2 ), uV ( 2 )
@@ -691,14 +694,14 @@ contains
         end do !-- iV
       end do !-- jV
     end do !-- kV
-    !$OMP end target teams distribute parallel do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
 !    dV_Right = cshift ( V, shift = 1, dim = iD ) - V
 
     iaS = 0
     iaS ( iD ) = +1
     
-    !$OMP  target teams distribute parallel do collapse ( 3 ) &
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
     !$OMP& schedule ( static, 1 ) private ( iaVS )
     do kV = lV ( 3 ), uV ( 3 ) 
       do jV = lV ( 2 ), uV ( 2 )
@@ -714,7 +717,7 @@ contains
         end do !-- iV
       end do !-- jV
     end do !-- kV
-    !$OMP end target teams distribute parallel do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
     call DisassociateHost ( dV_Right )
     call DisassociateHost ( dV_Left )
@@ -765,7 +768,7 @@ contains
     !V_Inner = V - 0.5_KDR * dV
     !V_Outer = V + 0.5_KDR * dV
     
-    !$OMP  target teams distribute parallel do &
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
     !$OMP& schedule ( static, 1 ) private ( dV )
     do iV = 1, size ( V )
       dV = ( sign ( 0.5_KDR, dV_Left ( iV ) ) &
@@ -776,7 +779,7 @@ contains
       V_Inner ( iV ) = V ( iV ) - 0.5_KDR * dV
       V_Outer ( iV ) = V ( iV ) + 0.5_KDR * dV
     end do
-    !$OMP end target teams distribute parallel do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
     call DisassociateHost ( V_Outer )
     call DisassociateHost ( V_Inner )
@@ -850,7 +853,7 @@ contains
     iaS = 0
     iaS ( iD ) = -1
     
-    !$OMP  target teams distribute parallel do collapse ( 3 ) &
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
     !$OMP& schedule ( static, 1 ) private ( iaVS )
     do kV = lV ( 3 ), uV ( 3 ) 
       do jV = lV ( 2 ), uV ( 2 )
@@ -874,7 +877,7 @@ contains
         end do
       end do
     end do
-    !$OMP end target teams distribute parallel do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
     !where ( AP_O + AM_O > 0.0_KDR )
     !  F_O = ( AP_O * RF_O  +  AM_O * cshift ( RF_I, shift = +1, dim = iD ) &
@@ -887,7 +890,7 @@ contains
     iaS = 0
     iaS ( iD ) = +1
     
-    !$OMP  target teams distribute parallel do collapse ( 3 ) &
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
     !$OMP& schedule ( static, 1 ) private ( iaVS )
     do kV = lV ( 3 ), uV ( 3 ) 
       do jV = lV ( 2 ), uV ( 2 )
@@ -911,7 +914,7 @@ contains
         end do
       end do
     end do
-    !$OMP end target teams distribute parallel do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
     call DisassociateHost ( F_O )
     call DisassociateHost ( F_I )
@@ -949,12 +952,12 @@ contains
     call AssociateHost ( D_F_I, F_I )
     call AssociateHost ( D_F_O, F_O )
 
-    !$OMP  target teams distribute parallel do &
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
     !$OMP& schedule ( static, 1 )
     do iV = 1, size ( dU )
       dU ( iV ) = dU ( iV ) - dT * ( F_O ( iV ) - F_I ( iV ) ) * A / V
     end do
-    !$OMP end target teams distribute parallel do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
     call DisassociateHost ( F_O )
     call DisassociateHost ( F_I )
@@ -985,12 +988,12 @@ contains
     
     nV = size ( O )
     
-    !$OMP  target teams distribute parallel do &
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
     !$OMP& schedule ( static, 1 )
     do iV = 1, nV
       C ( iV ) = O ( iV ) + U ( iV )
     end do
-    !$OMP end target teams distribute parallel do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
     call DisassociateHost ( C )
     call DisassociateHost ( U )
@@ -1021,12 +1024,12 @@ contains
     
     nV = size ( O )
     
-    !$OMP  target teams distribute parallel do &
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
     !$OMP& schedule ( static, 1 )
     do iV = 1, nV
       C ( iV ) = 0.5_KDR * ( O ( iV ) + ( C ( iV ) + U ( iV ) ) )
     end do
-    !$OMP end target teams distribute parallel do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
     call DisassociateHost ( U )
     call DisassociateHost ( O )
