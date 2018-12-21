@@ -19,7 +19,7 @@ FORTRAN_PROFILE      =
 CC_COMPILE           = mpicc -c -fopenmp
 NVCC_COMPILE         = nvcc -c
 
-LINK = mpifort -qsmp=omp -qoffload #-qsmp=omp:auto -qoffload
+LINK = mpifort $(FORTRAN_FLAGS) #-qsmp=omp:auto -qoffload
 
 LINK_NVCC = nvcc
 

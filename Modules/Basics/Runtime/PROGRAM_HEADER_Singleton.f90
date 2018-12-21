@@ -84,12 +84,13 @@ module PROGRAM_HEADER_Singleton
       Finalize
   end type ProgramHeaderSingleton
   
+  
   type ( ProgramHeaderSingleton ), public, target, allocatable :: &
     PROGRAM_HEADER
 
     private :: &
       ReadTimers
-
+      
 contains
 
  
@@ -104,7 +105,10 @@ contains
       AppendDimensionalityOption
       
     integer ( KDI )  :: &
-      DisplayRank
+      DisplayRank, &
+      OMP_ScheduleChunkSize
+    integer ( OMP_SCHED_KIND ) :: &
+      OMP_ScheduleType
     character ( LDL )  :: &
       Verbosity
     character ( LDF ) :: &
@@ -112,6 +116,8 @@ contains
     logical ( KDL ) :: &
       AppendDimensionality, &
       DimensionalityFound
+    character ( LDL ), dimension ( 4 ) :: &
+      OMP_ScheduleLabel
     type ( ProgramHeaderSingleton ), pointer :: &
       PH
     procedure ( ), pointer :: &
@@ -126,6 +132,11 @@ contains
     AppendDimensionality = .true.
     if ( present ( AppendDimensionalityOption ) ) &
       AppendDimensionality = AppendDimensionalityOption
+      
+    OMP_ScheduleLabel ( OMP_SCHED_STATIC  ) = 'static'
+    OMP_ScheduleLabel ( OMP_SCHED_DYNAMIC ) = 'dynamic'
+    OMP_ScheduleLabel ( OMP_SCHED_GUIDED  ) = 'guided'
+    OMP_ScheduleLabel ( OMP_SCHED_AUTO )    = 'auto'
 
     PH => PROGRAM_HEADER 
       
@@ -155,8 +166,12 @@ contains
     call CONSOLE % SetDisplayRank ( DisplayRank )
 
     PH % MaxThreads = OMP_GET_MAX_THREADS ( )
-    call Show ( 'OpenMP MAX_THREADS', CONSOLE % INFO_1 )
-    call Show ( PH % MaxThreads, 'MaxThreads', CONSOLE % INFO_1 )
+    call OMP_GET_SCHEDULE ( OMP_ScheduleType, OMP_ScheduleChunkSize )
+    call Show ( 'OpenMP environment', CONSOLE % INFO_1 )
+    call Show ( PH % MaxThreads,  'MaxThreads', CONSOLE % INFO_1 )
+    call Show ( OMP_ScheduleLabel ( OMP_ScheduleType ), 'Schedule', &
+                CONSOLE % INFO_1 )
+    call Show ( OMP_ScheduleChunkSize, 'ChunkSize', CONSOLE % INFO_1 )
     
     if ( AppendDimensionality ) then
       if ( present ( DimensionalityOption ) ) &
