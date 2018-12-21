@@ -313,7 +313,7 @@ contains
 
     nV = size ( A )
 
-    !$OMP parallel do private ( iV )
+    !$OMP parallel do private ( iV ) schedule ( runtime )
     do iV = 1, nV
       B ( iV ) = A ( iV )
     end do
@@ -356,7 +356,7 @@ contains
 
     nV = shape ( A )
 
-    !$OMP parallel do private ( iV, jV, kV )
+    !$OMP parallel do private ( iV, jV, kV ) schedule ( runtime )
     do kV = 1, nV ( 3 )
       do jV = 1, nV ( 2 )
         do iV = 1, nV ( 1 )
@@ -669,7 +669,7 @@ contains
 
     nV = size ( A )
 
-    !$OMP parallel do private ( iV )
+    !$OMP parallel do private ( iV ) schedule ( runtime )
     do iV = 1, nV
       B ( iV ) = A ( iV )
     end do
@@ -818,7 +818,8 @@ contains
 
     nV = shape ( B )
 
-    !$OMP parallel do private ( iV, jV, kV ) collapse ( 3 )
+    !$OMP  parallel do private ( iV, jV, kV ) collapse ( 3 ) &
+    !$OMP& schedule ( runtime )
     do kV = 1, nV ( 3 )
       do jV = 1, nV ( 2 )
         do iV = 1, nV ( 1 )
@@ -847,7 +848,8 @@ contains
 
     nV = shape ( B )
 
-    !$OMP parallel do private ( iV, jV, kV ) collapse ( 3 )
+    !$OMP  parallel do private ( iV, jV, kV ) collapse ( 3 ) &
+    !$OMP& schedule ( runtime )
     do kV = 1, nV ( 3 )
       do jV = 1, nV ( 2 )
         do iV = 1, nV ( 1 )
