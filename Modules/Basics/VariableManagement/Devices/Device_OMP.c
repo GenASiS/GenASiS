@@ -7,7 +7,7 @@ void * AllocateTargetDouble_OMP ( int nValues )
   int iDevice;
   void * D_Pointer;
 
-  #ifdef GPU_NV  
+  #ifdef ENABLE_OMP_OFFLOAD
   iDevice = omp_get_default_device();
   
   /*
@@ -35,7 +35,7 @@ int AssociateTargetDouble_OMP
   printf("Device   : %p\n", Device);
   */
 
-  #ifdef GPU_NV    
+  #ifdef ENABLE_OMP_OFFLOAD
   Size    = sizeof ( double ) * nValues;
   Offset  = sizeof ( double ) * oValue;
   iDevice = omp_get_default_device();
@@ -59,7 +59,7 @@ void FreeTarget_OMP ( void * D_Pointer )
   {
   int iDevice;
   
-  #ifdef GPU_NV  
+  #ifdef ENABLE_OMP_OFFLOAD
   iDevice = omp_get_default_device();
   omp_target_free ( D_Pointer, iDevice );
   #endif 
@@ -71,7 +71,7 @@ int DisassociateTarget_OMP ( void * Host )
   {
   int iDevice, retval;
 
-  #ifdef GPU_NV    
+  #ifdef ENABLE_OMP_OFFLOAD
   iDevice = omp_get_default_device();
   
   retval = omp_target_disassociate_ptr ( Host, iDevice );
@@ -88,7 +88,7 @@ int HostToDeviceCopyDouble_OMP ( void * Host, void * Device, int nValues,
   int iHost, iDevice, retval;
   size_t Length, oHV, oDV;
 
-  #ifdef GPU_NV    
+  #ifdef ENABLE_OMP_OFFLOAD
   iDevice = omp_get_default_device ( );
   iHost   = omp_get_initial_device ( );
   Length  = sizeof ( double ) * nValues;
@@ -108,7 +108,7 @@ int DeviceToHostCopyDouble_OMP ( void * Device, void * Host, int nValues,
   int iHost, iDevice, retval;
   size_t Length, oHV, oDV;
   
-  #ifdef GPU_NV  
+  #ifdef ENABLE_OMP_OFFLOAD
   iDevice = omp_get_default_device ( );
   iHost   = omp_get_initial_device ( );
   Length  = sizeof ( double ) * nValues;

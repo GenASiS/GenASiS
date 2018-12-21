@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#ifdef GPU
+#ifdef ENABLE_OMP_OFFLOAD
 #include <cuda.h>
 #include <cuda_runtime_api.h>
 #endif
@@ -10,7 +10,7 @@ void * AllocateHostDouble_CUDA ( int nValues )
   {
   void * Host;
 
-  #ifdef GPU_NV
+  #ifdef ENABLE_OMP_OFFLOAD
   cudaError_t Status;
   
   Status = cudaHostAlloc ( &Host, sizeof ( double ) * nValues, 
@@ -26,7 +26,7 @@ void * AllocateHostDouble_CUDA ( int nValues )
 
 void FreeHost_CUDA ( void * Host )
   {
-  #ifdef GPU_NV
+  #ifdef ENABLE_OMP_OFFLOAD
   cudaError_t Status;
   
   Status = cudaFreeHost ( Host );

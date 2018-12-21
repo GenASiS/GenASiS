@@ -1,4 +1,4 @@
-#ifdef GPU_NV_OMP
+#ifdef ENABLE_OMP_OFFLOAD
 #define OMP_TARGET_DIRECTIVE target teams distribute
 #else
 #define OMP_TARGET_DIRECTIVE
