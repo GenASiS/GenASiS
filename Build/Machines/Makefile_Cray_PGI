@@ -20,5 +20,3 @@ LIBRARY_SILO =
 #-- link line flag & location below
 LIBRARY_LAPACK = 
 
-#-- Enable unicode
-USE_ISO_10646 = 1
