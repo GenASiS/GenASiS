@@ -1,0 +1,24 @@
+# Makefile for Cray (XT5, XE/XK, XC90) with PGI compiler (PrgEnv-pgi)
+# If PrgEnv-pgi is not the default, use "module swap" to PrgEnv-pgi
+
+FORTRAN_COMPILE      = ftn -c
+FORTRAN_BOUND_CHECK  = -Mbounds
+FORTRAN_DEBUG        = -gopt -Ktrap=fp
+FORTRAN_OPTIMIZE     = -O
+FORTRAN_PROFILE      = 
+
+LINK = ftn -mp
+
+#-- Silo library may be  automatically included & linked by 
+#-- "module load silo" if provided, otherwise, manually put include and 
+#-- link line flag &  location below
+INCLUDE_SILO = 
+LIBRARY_SILO = 
+
+#-- LAPACK library may be automatically linked by 
+#-- "module load lapack" if provided, otherwise, manually put 
+#-- link line flag & location below
+LIBRARY_LAPACK = 
+
+#-- Enable unicode
+USE_ISO_10646 = 1
