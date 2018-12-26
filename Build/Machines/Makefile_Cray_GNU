@@ -1,7 +1,7 @@
 # Makefile for Cray (XT5, XE/XK, XC90) with GNU compiler (PrgEnv-gnu)
 # If PrgEnv-gnu is not the default, use "module swap" to PrgEnv-gnu
 
-FORTRAN_COMPILE      = ftn -c
+FORTRAN_COMPILE      = ftn -c -fopenmp
 FORTRAN_BOUND_CHECK  = -fbounds-check
 FORTRAN_DEBUG        = -g -Og -ffpe-trap=invalid,zero,overflow #-Wall
 FORTRAN_OPTIMIZE     = -Ofast
@@ -15,7 +15,16 @@ LINK = ftn -fopenmp
 INCLUDE_SILO = 
 LIBRARY_SILO = 
 
+#-- HDF5 library may be  automatically included & linked by 
+#-- "module load hdf5" if provided, otherwise, manually put include and 
+#-- link line flag &  location below
+INCLUDE_HDF5 = 
+LIBRARY_HDF5 = 
+
 #-- LAPACK library may be automatically linked by 
 #-- "module load lapack" if provided, otherwise, manually put 
 #-- link line flag & location below
 LIBRARY_LAPACK = 
+
+#-- Enable unicode
+USE_ISO_10646 = 1
