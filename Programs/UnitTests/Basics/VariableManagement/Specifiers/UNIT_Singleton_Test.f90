@@ -7,9 +7,11 @@ program UNIT_Singleton_Test
   
   implicit none
 
-  if ( KBCH == selected_char_kind ( 'ASCII' ) ) then
-    open ( OUTPUT_UNIT, encoding = 'DEFAULT' )
-  else if ( KBCH == selected_char_kind ( 'ISO_10646' ) ) then
+!-- Runtime error with CCE
+!  if ( KBCH == selected_char_kind ( 'ASCII' ) ) then
+!    open ( OUTPUT_UNIT, encoding = 'DEFAULT' )
+!  else if ( KBCH == selected_char_kind ( 'ISO_10646' ) ) then
+  if ( KBCH == selected_char_kind ( 'ISO_10646' ) ) then
     open ( OUTPUT_UNIT, encoding = 'UTF-8' )
   end if
 
