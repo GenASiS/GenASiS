@@ -2,3 +2,7 @@
 *.a
 *.mod
 *_GNU
+*_CCE
+*.acc.s
+*.cub
+*.ptx

@@ -2,7 +2,7 @@ PATH_GENASIS = ../../../../..
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-all: FileDifference
+all: FileDifference DirectoryDifference
 
 FileDifference: Basics.a FileDifference.o
 	$(LINK) $(FLAGS) \
@@ -10,11 +10,18 @@ FileDifference: Basics.a FileDifference.o
           FileDifference.o L1_Norm_Function.o \
           Basics.a $(LIBRARIES)
 
+DirectoryDifference: Basics.a DirectoryDifference.o
+	$(LINK) $(FLAGS) \
+          -o DirectoryDifference_$(MACHINE) \
+          DirectoryDifference.o L1_Norm_Function.o \
+          Basics.a $(LIBRARIES)
+
 clean:
 	rm -f *.o *.mod *.ld
 
 clobber: clean
 	rm -f FileDifference_*
+	rm -f DirectoryDifference_*
 
 include $(PATH_BASICS)/Makefile_Dependencies
 
@@ -25,3 +32,8 @@ FileDifference.o: \
   Basics.o \
   L1_Norm_Function.o \
   FileDifference.f90
+
+DirectoryDifference.o: \
+  Basics.o \
+  L1_Norm_Function.o \
+  DirectoryDifference.f90

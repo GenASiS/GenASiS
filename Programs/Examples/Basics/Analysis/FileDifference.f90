@@ -3,7 +3,10 @@ program FileDifference
   use Basics
   use L1_Norm_Function
   
+  implicit none
+  
   integer ( KDI ) :: &
+    iV, &
     iS, &
     Filenumber_1, &
     Filenumber_2

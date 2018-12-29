@@ -66,11 +66,13 @@ module DistributedMesh_Form
     procedure, public, pass :: &
       SetVariablePointer
     procedure, private, pass :: &
-      StartGhostExchangeSingle
+      SetGhostExchangeSingle
     procedure, private, pass :: &
-      StartGhostExchangeMultiple
+      SetGhostExchangeMultiple
     generic :: &
-      StartGhostExchange => StartGhostExchangeSingle, StartGhostExchangeMultiple
+      SetGhostExchange => SetGhostExchangeSingle, SetGhostExchangeMultiple
+    procedure, public, pass :: &
+      StartGhostExchange
     procedure, public, pass :: &
       FinishGhostExchange
     procedure, public, pass :: &
@@ -121,7 +123,7 @@ contains
       DM % BoundaryCondition = BoundaryConditionOption
 
     call ShowParameters ( DM )
-
+    
   end subroutine Initialize
 
 
@@ -141,29 +143,70 @@ contains
           => Variable_1D
     
   end subroutine SetVariablePointer
-
-
-  subroutine StartGhostExchangeSingle ( DM, S )
-
+  
+  
+  subroutine SetGhostExchangeSingle ( DM, S )
+  
     class ( DistributedMeshForm ), intent ( inout ) :: &
       DM
-    class ( StorageForm ), intent ( inout ) :: &
+    class ( StorageForm ), intent ( in ) :: &
       S
-
+  
     allocate ( DM % ExchangeStorage ( 1 ) )
     call DM % ExchangeStorage ( 1 ) % Initialize ( S )
-
-    call StartGhostExchangeMultiple ( DM, DM % ExchangeStorage )
     
-  end subroutine StartGhostExchangeSingle
+    call SetGhostExchangeMultiple ( DM, DM % ExchangeStorage )
+  
+  end subroutine SetGhostExchangeSingle
+  
+  
+  subroutine SetGhostExchangeMultiple ( DM, S )
+  
+    class ( DistributedMeshForm ), intent ( inout ) :: &
+      DM
+    class ( StorageForm ), dimension ( : ), intent ( in ) :: &
+      S
+  
+    allocate ( DM % Storage )
+    allocate ( DM % IncomingPrevious )
+    allocate ( DM % IncomingNext )
+    allocate ( DM % OutgoingPrevious )
+    allocate ( DM % OutgoingNext )
+
+    associate &
+      ( S_1D  => DM % Storage, &
+        PHP   => DM % PortalHeaderPrevious, &
+        PHN   => DM % PortalHeaderNext )
+
+    call S_1D % Initialize ( S )
+
+    call DM % IncomingPrevious % Initialize &
+           ( DM % Communicator, spread ( TAG_IN_PREV, 1, PHP % nSources ), &
+             PHP % Source, PHP % nChunksFrom * S_1D % nVariablesTotal )
+    call DM % IncomingNext % Initialize &
+           ( DM % Communicator, spread ( TAG_IN_NEXT, 1, PHN % nSources ), &
+             PHN % Source, PHN % nChunksFrom * S_1D % nVariablesTotal )
+    !call DM % IncomingPrevious % AllocateDevice ( )
+    !call DM % IncomingNext % AllocateDevice ( )
+    
+    call DM % OutgoingPrevious % Initialize &
+           ( DM % Communicator, spread ( TAG_OUT_PREV, 1, PHP % nTargets ), &
+             PHP % Target, PHP % nChunksTo * S_1D % nVariablesTotal )
+    call DM % OutgoingNext % Initialize &
+           ( DM % Communicator, spread ( TAG_OUT_NEXT, 1, PHN % nTargets ), &
+             PHN % Target, PHN % nChunksTo * S_1D % nVariablesTotal )
+    !call DM % OutgoingPrevious % AllocateDevice ( )
+    !call DM % OutgoingNext % AllocateDevice ( )
+    
+    end associate
+  
+  end subroutine SetGhostExchangeMultiple
 
 
-  subroutine StartGhostExchangeMultiple ( DM, S )
+  subroutine StartGhostExchange ( DM )
 
     class ( DistributedMeshForm ), intent ( inout ) :: &
       DM
-    class ( StorageForm ), dimension ( : ), intent ( inout ) :: &
-      S
 
     integer ( KDI ) :: &
       iD, jD, kD, &  !-- iDimension, etc.
@@ -177,37 +220,18 @@ contains
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       V  !-- Variable
 
-    allocate ( DM % Storage )
-    allocate ( DM % IncomingPrevious )
-    allocate ( DM % IncomingNext )
-    allocate ( DM % OutgoingPrevious )
-    allocate ( DM % OutgoingNext )
-
     associate &
       ( S_1D  => DM % Storage, &
-        PHP => DM % PortalHeaderPrevious, &
-        PHN => DM % PortalHeaderNext )
-
-    call S_1D % Initialize ( S )
+        PHP   => DM % PortalHeaderPrevious, &
+        PHN   => DM % PortalHeaderNext )
 
     !-- Post Receives
-
-    call DM % IncomingPrevious % Initialize &
-           ( DM % Communicator, spread ( TAG_IN_PREV, 1, PHP % nSources ), &
-             PHP % Source, PHP % nChunksFrom * S_1D % nVariablesTotal )
-    call DM % IncomingNext % Initialize &
-           ( DM % Communicator, spread ( TAG_IN_NEXT, 1, PHN % nSources ), &
-             PHN % Source, PHN % nChunksFrom * S_1D % nVariablesTotal )
-
+    
     call DM % IncomingPrevious % Receive ( )
     call DM % IncomingNext % Receive ( )
 
     !-- Send to Previous
-
-    call DM % OutgoingPrevious % Initialize &
-           ( DM % Communicator, spread ( TAG_OUT_PREV, 1, PHP % nTargets ), &
-             PHP % Target, PHP % nChunksTo * S_1D % nVariablesTotal )
-
+    
     do iD = 1, DM % nDimensions
       jD = mod ( iD, 3 ) + 1
       kD = mod ( jD, 3 ) + 1
@@ -223,7 +247,11 @@ contains
           iV = S_1D % Storage ( iStrg ) % iaSelected ( iS )
           call DM % SetVariablePointer &
                  ( S_1D % Storage ( iStrg ) % Value ( :, iV ), V ) 
+          !call Copy ( V, nSend, oSend, oBuffer, &
+          !            DM % OutgoingPrevious % Message ( iD ) % Value )
           call Copy ( V, nSend, oSend, oBuffer, &
+                      S_1D % Storage ( iStrg ) % D_Selected ( iS ), &
+                      DM % OutgoingPrevious % Message ( iD ) % D_Value, &
                       DM % OutgoingPrevious % Message ( iD ) % Value )
           oBuffer = oBuffer + product ( nSend )
         end do !-- iS
@@ -234,10 +262,6 @@ contains
     end do !-- iD
 
     !--- Send to Next
-
-    call DM % OutgoingNext % Initialize &
-           ( DM % Communicator, spread ( TAG_OUT_NEXT, 1, PHN % nTargets ), &
-             PHN % Target, PHN % nChunksTo * S_1D % nVariablesTotal )
 
     do iD = 1, DM % nDimensions
       jD = mod ( iD, 3 ) + 1
@@ -256,7 +280,11 @@ contains
           iV = S_1D % Storage ( iStrg ) % iaSelected ( iS )
           call DM % SetVariablePointer &
                  ( S_1D % Storage ( iStrg ) % Value ( :, iV ), V ) 
+          !call Copy ( V, nSend, oSend, oBuffer, &
+          !            DM % OutgoingNext % Message ( iD ) % Value )
           call Copy ( V, nSend, oSend, oBuffer, &
+                      S_1D % Storage ( iStrg ) % D_Selected ( iS ), &
+                      DM % OutgoingNext % Message ( iD ) % D_Value, &
                       DM % OutgoingNext % Message ( iD ) % Value )
           oBuffer = oBuffer + product ( nSend )
         end do !-- iS
@@ -269,7 +297,7 @@ contains
     nullify ( V )
     end associate !-- S_1D, etc.
 
-  end subroutine StartGhostExchangeMultiple
+  end subroutine StartGhostExchange
 
 
   subroutine FinishGhostExchange ( DM )
@@ -311,8 +339,12 @@ contains
           iV = S_1D % Storage ( iStrg ) % iaSelected ( iS )
           call DM % SetVariablePointer &
                  ( S_1D % Storage ( iStrg ) % Value ( :, iV ), V ) 
+          !call Copy ( DM % IncomingNext % Message ( iD ) % Value, &
+          !            nReceive, oReceive, oBuffer, V )
           call Copy ( DM % IncomingNext % Message ( iD ) % Value, &
-                      nReceive, oReceive, oBuffer, V )
+                      nReceive, oReceive, oBuffer, &
+                      DM % IncomingNext % Message ( iD ) % D_Value, &
+                      S_1D % Storage ( iStrg ) % D_Selected ( iS ), V )
           oBuffer = oBuffer + product ( nReceive )
         end do !-- iS
       end do !-- iStrg
@@ -339,8 +371,12 @@ contains
           iV = S_1D % Storage ( iStrg ) % iaSelected ( iS )
           call DM % SetVariablePointer &
                  ( S_1D % Storage ( iStrg ) % Value ( :, iV ), V ) 
+          !call Copy ( DM % IncomingPrevious % Message ( iD ) % Value, &
+          !            nReceive, oReceive, oBuffer, V )
           call Copy ( DM % IncomingPrevious % Message ( iD ) % Value, &
-                      nReceive, oReceive, oBuffer, V )
+                      nReceive, oReceive, oBuffer, &
+                      DM % IncomingPrevious % Message ( iD ) % D_Value, &
+                      S_1D % Storage ( iStrg ) % D_Selected ( iS ), V )
           oBuffer = oBuffer + product ( nReceive )
         end do !-- iS
       end do !-- iStrg
@@ -354,15 +390,6 @@ contains
 
     nullify ( V )
     end associate !-- S_1D
-
-    deallocate ( DM % OutgoingNext )
-    deallocate ( DM % OutgoingPrevious )
-    deallocate ( DM % IncomingNext )
-    deallocate ( DM % IncomingPrevious )
-    deallocate ( DM % Storage )
-
-    if ( allocated ( DM % ExchangeStorage ) ) &
-      deallocate ( DM % ExchangeStorage )
 
   end subroutine FinishGhostExchange
 
@@ -502,8 +529,21 @@ contains
     type ( DistributedMeshForm ), intent ( inout ) :: &
       DM
 
-    nullify ( DM % Communicator )
+    if ( allocated ( DM % OutgoingNext ) ) &
+      deallocate ( DM % OutgoingNext )
+    if ( allocated ( DM % OutgoingPrevious ) ) &
+      deallocate ( DM % OutgoingPrevious )
+    if ( allocated ( DM % IncomingNext ) ) &
+      deallocate ( DM % IncomingNext )
+    if ( allocated ( DM % IncomingPrevious ) ) &
+      deallocate ( DM % IncomingPrevious )
+    if ( allocated ( DM % ExchangeStorage ) ) &
+      deallocate ( DM % ExchangeStorage )
+    if ( allocated ( DM % Storage ) ) &
+      deallocate ( DM % Storage )
 
+    nullify ( DM % Communicator )
+    
   end subroutine Finalize
 
 

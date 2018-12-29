@@ -84,12 +84,13 @@ module PROGRAM_HEADER_Singleton
       Finalize
   end type ProgramHeaderSingleton
   
+  
   type ( ProgramHeaderSingleton ), public, target, allocatable :: &
     PROGRAM_HEADER
 
     private :: &
       ReadTimers
-
+      
 contains
 
  
@@ -104,9 +105,13 @@ contains
       AppendDimensionalityOption
       
     integer ( KDI )  :: &
-      DisplayRank
+      DisplayRank, &
+      OMP_ScheduleChunkSize
+    integer ( OMP_SCHED_KIND ) :: &
+      OMP_ScheduleKind
     character ( LDL )  :: &
-      Verbosity
+      Verbosity, &
+      OMP_ScheduleLabel
     character ( LDF ) :: &
       Filename
     logical ( KDL ) :: &
@@ -119,14 +124,14 @@ contains
       
     if ( KBCH == selected_char_kind ( 'ASCII' ) ) then
       open ( OUTPUT_UNIT, encoding = 'DEFAULT' )
-    else if ( KBCH == selected_char_kind ( 'ISO_10646' ) ) then
-      open ( OUTPUT_UNIT, encoding = 'UTF-8' )
+    !else if ( KBCH == selected_char_kind ( 'ISO_10646' ) ) then
+    !  open ( OUTPUT_UNIT, encoding = 'UTF-8' )
     end if
     
     AppendDimensionality = .true.
     if ( present ( AppendDimensionalityOption ) ) &
       AppendDimensionality = AppendDimensionalityOption
-
+      
     PH => PROGRAM_HEADER 
       
     allocate ( PH % Communicator )
@@ -155,8 +160,22 @@ contains
     call CONSOLE % SetDisplayRank ( DisplayRank )
 
     PH % MaxThreads = OMP_GET_MAX_THREADS ( )
-    call Show ( 'OpenMP MAX_THREADS', CONSOLE % INFO_1 )
-    call Show ( PH % MaxThreads, 'MaxThreads', CONSOLE % INFO_1 )
+    call OMP_GET_SCHEDULE ( OMP_ScheduleKind, OMP_ScheduleChunkSize )
+    select case ( OMP_ScheduleKind )
+    case ( OMP_SCHED_STATIC )
+      OMP_ScheduleLabel = 'static'
+    case ( OMP_SCHED_DYNAMIC )
+      OMP_ScheduleLabel = 'dynamic'
+    case ( OMP_SCHED_GUIDED )
+      OMP_ScheduleLabel = 'guided'
+    case ( OMP_SCHED_AUTO )
+      OMP_ScheduleLabel = 'auto'
+    end select    
+    
+    call Show ( 'OpenMP environment', CONSOLE % INFO_1 )
+    call Show ( PH % MaxThreads,  'MaxThreads', CONSOLE % INFO_1 )
+    call Show ( OMP_ScheduleLabel, 'Schedule', CONSOLE % INFO_1 )
+    call Show ( OMP_ScheduleChunkSize, 'ChunkSize', CONSOLE % INFO_1 )
     
     if ( AppendDimensionality ) then
       if ( present ( DimensionalityOption ) ) &

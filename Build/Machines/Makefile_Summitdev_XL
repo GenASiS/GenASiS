@@ -1,0 +1,21 @@
+# Makefile for generic linux with GNU compiler and generic MPI 
+# such as openmpi, mpich, etc.
+
+
+#-- Do the following to compile with XL on Summitdev w/ OpenMP:
+#   module load xl  #-- if not already loaded
+#   export OMPI_FC=`which xlf2008_r`
+#   export OMP_PLACES=threads
+#   export OMP_NUM_THREADS=x
+
+FORTRAN_COMPILE      = mpifort -c -qsmp -qoffload
+FORTRAN_BOUND_CHECK  = -qcheck=bounds
+FORTRAN_DEBUG        = -g #-Wall
+FORTRAN_OPTIMIZE     = -Ofast -qhot
+FORTRAN_PROFILE      = 
+
+LINK = mpifort -qsmp -qoffload
+
+SILO_DIR = /ccs/home/reubendb/projects/swtree/summitdev/silo/4.10.2/xl2017
+INCLUDE_SILO = -I${SILO_DIR}/include
+LIBRARY_SILO = -L${SILO_DIR}/lib -lsilo

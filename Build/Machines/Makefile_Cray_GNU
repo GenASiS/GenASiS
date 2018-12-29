@@ -1,19 +1,22 @@
 # Makefile for Cray (XT5, XE/XK, XC90) with GNU compiler (PrgEnv-gnu)
 # If PrgEnv-gnu is not the default, use "module swap" to PrgEnv-gnu
 
-FORTRAN_COMPILE      = ftn -c
+FORTRAN_COMPILE      = ftn -c -fopenmp
 FORTRAN_BOUND_CHECK  = -fbounds-check
 FORTRAN_DEBUG        = -g -Og -ffpe-trap=invalid,zero,overflow #-Wall
 FORTRAN_OPTIMIZE     = -Ofast
 FORTRAN_PROFILE      = 
 
-LINK = ftn -fopenmp
+CC_COMPILE = cc -c -fopenmp
+
+LINK = ftn -fopenmp 
 
 #-- Silo library may be  automatically included & linked by 
 #-- "module load silo" if provided, otherwise, manually put include and 
 #-- link line flag &  location below
-INCLUDE_SILO = 
-LIBRARY_SILO = 
+SILO_DIR=/ccs/home/reubendb/projects/swtree/xk7/silo/4.10.2/cle5.2_gnu5.3.0/
+INCLUDE_SILO = -I${SILO_DIR}/include
+LIBRARY_SILO = -L${SILO_DIR}/lib -lsiloh5
 
 #-- LAPACK library may be automatically linked by 
 #-- "module load lapack" if provided, otherwise, manually put 

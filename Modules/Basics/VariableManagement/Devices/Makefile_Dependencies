@@ -1,0 +1,68 @@
+Device_OMP.o: \
+  Device_OMP.c
+
+Device_CUDA.o: \
+  Device_CUDA.c
+
+Device_C_OMP.o: \
+  Device_OMP.o \
+  Device_CUDA.o \
+  Device_C_OMP.f90
+
+AllocateDevice_Command.o: \
+  Specifiers.o \
+  Device_C_OMP.o \
+  AllocateDevice_Command.f90
+
+AssociateHost_Command.o: \
+  Specifiers.o \
+  Device_C_OMP.o \
+  AssociateHost_Command.f90
+
+DeallocateDevice_Command.o: \
+  Specifiers.o \
+  Device_C_OMP.o \
+  DeallocateDevice_Command.f90
+
+DisassociateHost_Command.o: \
+  Specifiers.o \
+  Device_C_OMP.o \
+  DisassociateHost_Command.f90
+
+UpdateDevice_Command.o: \
+  Specifiers.o \
+  Device_C_OMP.o \
+  AssociateHost_Command.o \
+  DisassociateHost_Command.o \
+  UpdateDevice_Command.f90
+
+UpdateHost_Command.o: \
+  Specifiers.o \
+  Device_C_OMP.o \
+  AssociateHost_Command.o \
+  DisassociateHost_Command.o \
+  UpdateHost_Command.f90
+
+AllocateHost_Command.o: \
+  Specifiers.o \
+  Device_C_OMP.o \
+  AllocateHost_Command.f90
+
+DeallocateHost_Command.o: \
+  Specifiers.o \
+  Device_C_OMP.o \
+  DeallocateHost_Command.f90
+
+Devices.o: \
+  AllocateDevice_Command.o \
+  AssociateHost_Command.o \
+  DeallocateDevice_Command.o \
+  DisassociateHost_Command.o \
+  UpdateDevice_Command.o \
+  UpdateHost_Command.o \
+  AllocateHost_Command.o \
+  DeallocateHost_Command.o \
+  Devices.f90
+
+Devices.a: $(DEVICES)
+	ar r Devices.a $(DEVICES)

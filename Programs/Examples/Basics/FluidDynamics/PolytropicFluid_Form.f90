@@ -1,5 +1,8 @@
+#include "Preprocessor"
+
 module PolytropicFluid_Form
 
+  use iso_c_binding
   use Basics
   use DistributedMesh_Form
   use PressurelessFluid_Form
@@ -29,15 +32,23 @@ module PolytropicFluid_Form
     procedure, public, pass :: &
       InitializeWithMesh
     procedure, public, pass :: &
-      ComputeConserved
+      ComputeConservedHost
     procedure, public, pass :: &
-      ComputePrimitive
+      ComputeConservedDevice
     procedure, public, pass :: &
-      ComputeAuxiliary
+      ComputePrimitiveHost
+    procedure, public, pass :: &
+      ComputePrimitiveDevice
+    procedure, public, pass :: &
+      ComputeAuxiliaryHost
+    procedure, public, pass :: &
+      ComputeAuxiliaryDevice
     procedure, public, pass :: &
       ComputeAuxiliaryFromPressure
     procedure, public, pass :: &
-      ApplyBoundaryConditions
+      ApplyBoundaryConditionsHost
+    procedure, public, pass :: &
+      ApplyBoundaryConditionsDevice
     procedure, public, pass :: &
       ComputeRawFluxes
     procedure, public, pass :: &
@@ -49,11 +60,15 @@ module PolytropicFluid_Form
     private :: &
       InitializeBasics, &
       ComputeConservedKernel, &
+      ComputeConservedKernelDevice, &
       ComputePrimitiveKernel, &
       ComputeAuxiliaryKernel, &
+      ComputeAuxiliaryKernelDevice, &
       ComputeAuxiliaryFromPressureKernel, &
       ComputeEigenspeedsKernel, &
+      ComputeEigenspeedsKernelDevice, &
       ApplyBoundaryConditionsReflecting, &
+      ApplyBoundaryConditionsReflectingDevice, &
       ComputeRawFluxesKernel
 
 contains
@@ -96,7 +111,7 @@ contains
   end subroutine InitializeWithMesh
 
 
-  subroutine ComputeConserved ( CF, Value )
+  subroutine ComputeConservedHost ( CF, Value )
 
     class ( PolytropicFluidForm ), intent ( inout ) :: &
       CF
@@ -113,10 +128,38 @@ contains
         Value ( :, CF % VELOCITY ( 2 ) ), &   
         Value ( :, CF % VELOCITY ( 3 ) ) )    
 
-  end subroutine ComputeConserved
+  end subroutine ComputeConservedHost
 
 
-  subroutine ComputePrimitive ( CF, Value )
+  subroutine ComputeConservedDevice ( CF, Value, D_Value )
+
+    class ( PolytropicFluidForm ), intent ( inout ) :: &
+      CF
+    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+      Value
+    type ( c_ptr ), dimension ( : ), intent ( in ) :: &
+      D_Value
+    
+    call CF % PressurelessFluidForm % ComputeConserved ( Value, D_Value )
+
+    call ComputeConservedKernelDevice &
+      ( Value ( :, CF % CONSERVED_ENERGY ), &
+        Value ( :, CF % INTERNAL_ENERGY ), &    
+        Value ( :, CF % COMOVING_DENSITY ), &
+        Value ( :, CF % VELOCITY ( 1 ) ), &    
+        Value ( :, CF % VELOCITY ( 2 ) ), &   
+        Value ( :, CF % VELOCITY ( 3 ) ), &
+        D_Value ( CF % CONSERVED_ENERGY ), &
+        D_Value ( CF % INTERNAL_ENERGY ), &    
+        D_Value ( CF % COMOVING_DENSITY ), &
+        D_Value ( CF % VELOCITY ( 1 ) ), &    
+        D_Value ( CF % VELOCITY ( 2 ) ), &   
+        D_Value ( CF % VELOCITY ( 3 ) ) )
+
+  end subroutine ComputeConservedDevice
+
+
+  subroutine ComputePrimitiveHost ( CF, Value )
     
     class ( PolytropicFluidForm ), intent ( inout ) :: &
       CF
@@ -133,10 +176,38 @@ contains
              Value ( :, CF % VELOCITY ( 2 ) ), &
              Value ( :, CF % VELOCITY ( 3 ) ) )
   
-  end subroutine ComputePrimitive
+  end subroutine ComputePrimitiveHost
   
   
-  subroutine ComputeAuxiliary ( CF, Value )
+  subroutine ComputePrimitiveDevice ( CF, Value, D_Value )
+    
+    class ( PolytropicFluidForm ), intent ( inout ) :: &
+      CF
+    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+      Value
+    type ( c_ptr ), dimension ( : ), intent ( in ) :: &
+      D_Value
+    
+    call CF % PressurelessFluidForm % ComputePrimitive ( Value, D_Value )
+
+    call ComputePrimitiveKernelDevice &
+           ( Value ( :, CF % INTERNAL_ENERGY ), &
+             Value ( :, CF % CONSERVED_ENERGY ), &
+             Value ( :, CF % COMOVING_DENSITY ), &
+             Value ( :, CF % VELOCITY ( 1 ) ), &
+             Value ( :, CF % VELOCITY ( 2 ) ), &
+             Value ( :, CF % VELOCITY ( 3 ) ), &
+             D_Value ( CF % INTERNAL_ENERGY ), &
+             D_Value ( CF % CONSERVED_ENERGY ), &
+             D_Value ( CF % COMOVING_DENSITY ), &
+             D_Value ( CF % VELOCITY ( 1 ) ), &
+             D_Value ( CF % VELOCITY ( 2 ) ), &
+             D_Value ( CF % VELOCITY ( 3 ) ) )
+  
+  end subroutine ComputePrimitiveDevice
+  
+  
+  subroutine ComputeAuxiliaryHost ( CF, Value )
     
     class ( PolytropicFluidForm ), intent ( inout ) :: &
       CF
@@ -165,7 +236,59 @@ contains
              Value ( :, CF % PRESSURE ), &
              Value ( :, CF % ADIABATIC_INDEX ) )
     
-  end subroutine ComputeAuxiliary
+  end subroutine ComputeAuxiliaryHost
+  
+  
+  subroutine ComputeAuxiliaryDevice ( CF, Value, D_Value )
+    
+    class ( PolytropicFluidForm ), intent ( inout ) :: &
+      CF
+    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+      Value
+    type ( c_ptr ), dimension ( : ), intent ( in ) :: &
+      D_Value
+    
+    call ComputeAuxiliaryKernelDevice &
+           ( Value ( :, CF % PRESSURE ), &
+             Value ( :, CF % POLYTROPIC_PARAMETER ), &
+             Value ( :, CF % COMOVING_DENSITY ), &
+             Value ( :, CF % INTERNAL_ENERGY ), &
+             Value ( :, CF % ADIABATIC_INDEX ), &
+             D_Value ( CF % PRESSURE ), &
+             D_Value ( CF % POLYTROPIC_PARAMETER ), &
+             D_Value ( CF % COMOVING_DENSITY ), &
+             D_Value ( CF % INTERNAL_ENERGY ), &
+             D_Value ( CF % ADIABATIC_INDEX ) )
+  
+    call ComputeEigenspeedsKernelDevice &
+           ( Value ( :, CF % FAST_EIGENSPEED_PLUS ( 1 ) ), &
+             Value ( :, CF % FAST_EIGENSPEED_PLUS ( 2 ) ), &
+             Value ( :, CF % FAST_EIGENSPEED_PLUS ( 3 ) ), &
+             Value ( :, CF % FAST_EIGENSPEED_MINUS ( 1 ) ), &
+             Value ( :, CF % FAST_EIGENSPEED_MINUS ( 2 ) ), &
+             Value ( :, CF % FAST_EIGENSPEED_MINUS ( 3 ) ), &
+             Value ( :, CF % SOUND_SPEED ), &
+             Value ( :, CF % COMOVING_DENSITY ), &
+             Value ( :, CF % VELOCITY ( 1 ) ), &
+             Value ( :, CF % VELOCITY ( 2 ) ), &
+             Value ( :, CF % VELOCITY ( 3 ) ), &
+             Value ( :, CF % PRESSURE ), &
+             Value ( :, CF % ADIABATIC_INDEX ), &
+             D_Value ( CF % FAST_EIGENSPEED_PLUS ( 1 ) ), &
+             D_Value ( CF % FAST_EIGENSPEED_PLUS ( 2 ) ), &
+             D_Value ( CF % FAST_EIGENSPEED_PLUS ( 3 ) ), &
+             D_Value ( CF % FAST_EIGENSPEED_MINUS ( 1 ) ), &
+             D_Value ( CF % FAST_EIGENSPEED_MINUS ( 2 ) ), &
+             D_Value ( CF % FAST_EIGENSPEED_MINUS ( 3 ) ), &
+             D_Value ( CF % SOUND_SPEED ), &
+             D_Value ( CF % COMOVING_DENSITY ), &
+             D_Value ( CF % VELOCITY ( 1 ) ), &
+             D_Value ( CF % VELOCITY ( 2 ) ), &
+             D_Value ( CF % VELOCITY ( 3 ) ), &
+             D_Value ( CF % PRESSURE ), &
+             D_Value ( CF % ADIABATIC_INDEX ) )
+    
+  end subroutine ComputeAuxiliaryDevice
   
   
   subroutine ComputeAuxiliaryFromPressure ( CF, Value )
@@ -200,7 +323,7 @@ contains
   end subroutine ComputeAuxiliaryFromPressure
   
   
-  subroutine ApplyBoundaryConditions &
+  subroutine ApplyBoundaryConditionsHost &
               ( CF, ExteriorValue, InteriorValue, iDimension, iBoundary, &
                 PrimitiveOnlyOption )
 
@@ -292,10 +415,113 @@ contains
 
     end associate  !-- iD, etc.
   
-  end subroutine ApplyBoundaryConditions
+  end subroutine ApplyBoundaryConditionsHost
 
 
-  subroutine ComputeRawFluxes ( CF, RawFlux, Value, iDimension )
+  subroutine ApplyBoundaryConditionsDevice &
+              ( CF, ExteriorValue, InteriorValue, iDimension, iBoundary, &
+                D_ExteriorValue, D_InteriorValue, PrimitiveOnlyOption )
+
+    class ( PolytropicFluidForm ), intent ( inout ) :: &
+      CF
+    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+      ExteriorValue
+    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+      InteriorValue
+    integer ( KDI ), intent ( in ) :: &
+      iDimension, &
+      iBoundary
+    type ( c_ptr ), dimension ( : ), intent ( in ) :: &
+      D_ExteriorValue, &
+      D_InteriorValue
+    logical ( KDL ), intent ( in ), optional :: &
+      PrimitiveOnlyOption
+
+    integer ( KDI ) :: &
+      jD, kD   !-- jDimension, kDimension
+    integer ( KDI ), dimension ( 3 ) :: &
+      oBI, &  !-- oBoundaryInterior
+      oBE, &  !-- oBoundaryExterior
+      nB      !-- nBoundary
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+      E_I, &
+      Gamma_I, &
+      E_E, &
+      Gamma_E
+    logical ( KDL ) :: &
+      PrimitiveOnly
+
+    call CF % PressurelessFluidForm % ApplyBoundaryConditions &
+           ( ExteriorValue, InteriorValue, iDimension, iBoundary, &
+             D_ExteriorValue, D_InteriorValue, PrimitiveOnlyOption = .true. )
+
+    PrimitiveOnly = .false.
+    if ( present ( PrimitiveOnlyOption ) ) PrimitiveOnly = PrimitiveOnlyOption
+
+    associate &
+      ( iD => iDimension, &
+        iB => iBoundary, &
+        DM => CF % DistributedMesh )
+    
+    if ( iB == -1 .and. DM % iaBrick ( iD ) /= 1 ) return
+    if ( iB == +1 .and. DM % iaBrick ( iD ) /= DM % nBricks ( iD ) ) return
+ 
+    jD = mod ( iD, 3 ) + 1
+    kD = mod ( jD, 3 ) + 1
+
+    call DM % SetVariablePointer &
+           ( InteriorValue ( :, CF % INTERNAL_ENERGY ), E_I )
+    call DM % SetVariablePointer &
+           ( InteriorValue ( :, CF % ADIABATIC_INDEX ), Gamma_I )
+    call DM % SetVariablePointer &
+           ( ExteriorValue ( :, CF % INTERNAL_ENERGY ), E_E )
+    call DM % SetVariablePointer &
+           ( ExteriorValue ( :, CF % ADIABATIC_INDEX ), Gamma_E )
+
+    !-- In setting oBI and oBE, note kernel routine does not inherit lbound
+
+    oBI = DM % nGhostLayers
+    if ( iB == +1 ) then
+      oBI ( iD ) = oBI ( iD ) + DM % nCellsPerBrick ( iD ) - 1
+    end if
+
+    oBE = oBI
+    oBE ( iD ) = oBE ( iD ) + iB
+
+    nB ( iD ) = 1
+    nB ( jD ) = DM % nCellsPerBrick ( jD )
+    nB ( kD ) = DM % nCellsPerBrick ( kD )
+
+    select case ( trim ( DM % BoundaryCondition ) ) 
+    case ( 'PERIODIC' )
+      return
+    case ( 'REFLECTING' )
+      call ApplyBoundaryConditionsReflectingDevice &
+             ( E_E, Gamma_E, E_I, Gamma_I, nB, oBE, oBI, &
+               D_ExteriorValue ( CF % INTERNAL_ENERGY ), &
+               D_ExteriorValue ( CF % ADIABATIC_INDEX ), &
+               D_InteriorValue ( CF % INTERNAL_ENERGY ), &
+               D_InteriorValue ( CF % ADIABATIC_INDEX ) )
+    case default
+      call Show &
+             ( 'This boundary condition is not implemented', CONSOLE % ERROR )
+      call Show &
+             ( DM % BoundaryCondition, 'Name', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select 
+
+    if ( PrimitiveOnly ) return
+
+    call CF % ComputeAuxiliary ( ExteriorValue, D_ExteriorValue )
+    call CF % ComputeConserved ( ExteriorValue, D_ExteriorValue )
+
+    end associate  !-- iD, etc.
+  
+  end subroutine ApplyBoundaryConditionsDevice
+
+
+  subroutine ComputeRawFluxes &
+               ( CF, RawFlux, Value, iDimension, D_RawFlux, D_Value )
     
     class ( PolytropicFluidForm ), intent ( inout ) :: &
       CF
@@ -305,26 +531,61 @@ contains
       Value
     integer ( KDI ), intent ( in ) :: &
       iDimension
+    type ( c_ptr ), dimension ( : ), intent ( in ) :: &
+      D_RawFlux, &
+      D_Value
     
     integer ( KDI ) :: &
+      iDensity, &
       iEnergy, &
+      iMomentumDim
+    integer ( KDI ), dimension ( 3 ) :: &
       iMomentum
 
-    call CF % PressurelessFluidForm % ComputeRawFluxes &
-           ( RawFlux, Value, iDimension ) 
+    !call CF % PressurelessFluidForm % ComputeRawFluxes &
+    !       ( RawFlux, Value, iDimension, D_RawFlux, D_Value ) 
 
+    call Search &
+           ( CF % iaConserved, CF % CONSERVED_DENSITY, iDensity )
+    call Search &
+           ( CF % iaConserved, CF % MOMENTUM_DENSITY ( 1 ), iMomentum ( 1 ) )
+    call Search &
+           ( CF % iaConserved, CF % MOMENTUM_DENSITY ( 2 ), iMomentum ( 2 ) )
+    call Search &
+           ( CF % iaConserved, CF % MOMENTUM_DENSITY ( 3 ), iMomentum ( 3 ) )
     call Search &
            ( CF % iaConserved, CF % CONSERVED_ENERGY, iEnergy )
     call Search &
            ( CF % iaConserved, CF % MOMENTUM_DENSITY ( iDimension ), &
-             iMomentum )
+             iMomentumDim )
     
     call ComputeRawFluxesKernel &
-           ( RawFlux ( :, iMomentum ), &
+           ( RawFlux ( :, iDensity ), &
+             RawFlux ( :, iMomentum ( 1 ) ), &
+             RawFlux ( :, iMomentum ( 2 ) ), &
+             RawFlux ( :, iMomentum ( 3 ) ), &
+             RawFlux ( :, iMomentumDim ), &
              RawFlux ( :, iEnergy ), &
+             Value ( :, CF % CONSERVED_DENSITY ), &
+             Value ( :, CF % MOMENTUM_DENSITY ( 1 ) ), &
+             Value ( :, CF % MOMENTUM_DENSITY ( 2 ) ), &
+             Value ( :, CF % MOMENTUM_DENSITY ( 3 ) ), &
              Value ( :, CF % CONSERVED_ENERGY ), &
              Value ( :, CF % PRESSURE ), &
-             Value ( :, CF % VELOCITY ( iDimension ) ) )
+             Value ( :, CF % VELOCITY ( iDimension ) ), &
+             D_RawFlux ( iDensity ), &
+             D_RawFlux ( iMomentum ( 1 ) ), &
+             D_RawFlux ( iMomentum ( 2 ) ), &
+             D_RawFlux ( iMomentum ( 3 ) ), &
+             D_RawFlux ( iMomentumDim ), &
+             D_RawFlux ( iEnergy ), &
+             D_Value ( CF % CONSERVED_DENSITY ), &
+             D_Value ( CF % MOMENTUM_DENSITY ( 1 ) ), &
+             D_Value ( CF % MOMENTUM_DENSITY ( 2 ) ), &
+             D_Value ( CF % MOMENTUM_DENSITY ( 3 ) ), &
+             D_Value ( CF % CONSERVED_ENERGY ), &
+             D_Value ( CF % PRESSURE ), &
+             D_Value ( CF % VELOCITY ( iDimension ) ) )
                
   end subroutine ComputeRawFluxes
   
@@ -514,6 +775,46 @@ contains
   end subroutine ComputeConservedKernel
 
 
+  subroutine ComputeConservedKernelDevice &
+               ( G, E, N, V_1, V_2, V_3, &
+                 D_G, D_E, D_N, D_V_1, D_V_2, D_V_3 )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      G
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      E, &
+      N, &
+      V_1, V_2, V_3
+    type ( c_ptr ), intent ( in ) :: &
+      D_G, &
+      D_E, &
+      D_N, &
+      D_V_1, D_V_2, D_V_3
+      
+    integer ( KDI ) :: &
+      iV
+    
+    call AssociateHost ( D_G, G )
+    call AssociateHost ( D_E, E )
+    call AssociateHost ( D_N, N )
+    call AssociateHost ( D_V_1, V_1 )
+    call AssociateHost ( D_V_2, V_2 )
+    call AssociateHost ( D_V_3, V_3 )
+    
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+    !$OMP& schedule ( static, 1 )
+    do iV = 1, size ( G )
+      G ( iV ) = E ( iV ) + 0.5_KDR * N ( iV ) &
+                 * ( V_1 ( iV ) * V_1 ( iV ) &
+                     + V_2 ( iV ) * V_2 ( iV ) &
+                     + V_3 ( iV ) * V_3 ( iV ) )
+    end do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    
+    
+  end subroutine ComputeConservedKernelDevice
+
+
   subroutine ComputePrimitiveKernel ( E, G, N, V_1, V_2, V_3 )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -522,18 +823,80 @@ contains
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       N, &
       V_1, V_2, V_3
-
-    associate ( KE => 0.5_KDR * N * ( V_1 ** 2 + V_2 ** 2 + V_3 ** 2 ) )
-
-    E = G - KE
+      
+    real ( KDR ), dimension ( size ( N ) ) :: &
+      KE
+      
+    !-- FIXME: 'associate' construct causes segfault with IBM XL
+    !associate ( KE => 0.5_KDR * N * ( V_1 ** 2 + V_2 ** 2 + V_3 ** 2 ) )
+    
+    KE = 0.5_KDR * N * ( V_1 ** 2 + V_2 ** 2 + V_3 ** 2 )
+    E  = G - KE
     where ( E < 0.0_KDR )
       E = 0.0_KDR
       G = KE
     end where
 
-    end associate !-- KE
+    !end associate !-- KE
 
   end subroutine ComputePrimitiveKernel
+
+
+  subroutine ComputePrimitiveKernelDevice &
+               ( E, G, N, V_1, V_2, V_3, &
+                 D_E, D_G, D_N, D_V_1, D_V_2, D_V_3 )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      E, &
+      G  
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      N, &
+      V_1, V_2, V_3
+    type ( c_ptr ), intent ( in ) :: &
+      D_E, &
+      D_G, &
+      D_N, &
+      D_V_1, D_V_2, D_V_3
+      
+    integer ( KDI ) :: &
+      iV
+    real ( KDR ) :: &
+      KE
+    
+    
+    call AssociateHost ( D_E, E )
+    call AssociateHost ( D_G, G )
+    call AssociateHost ( D_N, N )
+    call AssociateHost ( D_V_1, V_1 )
+    call AssociateHost ( D_V_2, V_2 )
+    call AssociateHost ( D_V_3, V_3 )
+    
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+    !$OMP& schedule ( static, 1 ) private ( KE )
+    do iV = 1, size ( E )
+    
+      KE = 0.5_KDR * N ( iV ) &
+             * ( V_1 ( iV ) * V_1 ( iV )  +  V_2 ( iV ) * V_2 ( iV ) &
+                 + V_3 ( iV ) * V_3 ( iV ) )
+      E ( iV )  = G ( iV ) - KE
+
+      if ( E ( iV ) < 0.0_KDR ) then
+        E ( iV ) = 0.0_KDR
+        G ( iV ) = KE
+      end if
+
+    end do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    
+    call DisassociateHost ( V_3 )
+    call DisassociateHost ( V_2 )
+    call DisassociateHost ( V_1 )
+    call DisassociateHost ( N )
+    call DisassociateHost ( G )
+    call DisassociateHost ( E )
+
+
+  end subroutine ComputePrimitiveKernelDevice
 
 
   subroutine ComputeAuxiliaryKernel ( P, K, N, E, Gamma )
@@ -555,6 +918,54 @@ contains
     end where
 
   end subroutine ComputeAuxiliaryKernel
+
+
+  subroutine ComputeAuxiliaryKernelDevice &
+               ( P, K, N, E, Gamma, &
+                 D_P, D_K, D_N, D_E, D_Gamma )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      P, &
+      K
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      N, &
+      E, &
+      Gamma
+    type ( c_ptr ), intent ( in ) :: &
+      D_P, &
+      D_K, &
+      D_N, &
+      D_E, &
+      D_Gamma
+    
+    integer ( KDI ) :: &
+      iV
+      
+    call AssociateHost ( D_P, P )
+    call AssociateHost ( D_K, K )
+    call AssociateHost ( D_N, N )
+    call AssociateHost ( D_E, E )
+    call AssociateHost ( D_Gamma, Gamma )
+    
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+    !$OMP& schedule ( static, 1 )
+    do iV = 1, size ( P )
+      P ( iV ) = E ( iV ) * ( Gamma ( iV ) - 1.0_KDR )
+      if ( N ( iV ) > 0.0_KDR ) then
+        K ( iV ) = P ( iV ) / ( N ( iV ) ** Gamma ( iV ) )
+      else
+        K ( iV ) = 0.0_KDR
+      end if
+    end do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
+      
+    call DisassociateHost ( Gamma )
+    call DisassociateHost ( E )
+    call DisassociateHost ( N )
+    call DisassociateHost ( K )
+    call DisassociateHost ( P )
+
+  end subroutine ComputeAuxiliaryKernelDevice
 
 
   subroutine ComputeAuxiliaryFromPressureKernel ( E, K, N, P, Gamma )
@@ -608,6 +1019,87 @@ contains
   end subroutine ComputeEigenspeedsKernel
 
 
+  subroutine ComputeEigenspeedsKernelDevice &
+               ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, N, &
+                 V_1, V_2, V_3, P, Gamma, &
+                 D_FEP_1, D_FEP_2, D_FEP_3, D_FEM_1, D_FEM_2, D_FEM_3, &
+                 D_CS, D_N, D_V_1, D_V_2, D_V_3, D_P, D_Gamma )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      FEP_1, FEP_2, FEP_3, &
+      FEM_1, FEM_2, FEM_3, &
+      CS
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      N, &
+      V_1, V_2, V_3, &
+      P, &
+      Gamma
+    type ( c_ptr ), intent ( in ) :: &
+      D_FEP_1, D_FEP_2, D_FEP_3, &
+      D_FEM_1, D_FEM_2, D_FEM_3, &
+      D_CS, &
+      D_N, &
+      D_V_1, D_V_2, D_V_3, &
+      D_P, &
+      D_Gamma
+      
+    integer ( KDI ) :: &
+      iV
+      
+    call AssociateHost ( D_FEP_1, FEP_1 )
+    call AssociateHost ( D_FEP_2, FEP_2 )
+    call AssociateHost ( D_FEP_3, FEP_3 )
+    call AssociateHost ( D_FEM_1, FEM_1 )
+    call AssociateHost ( D_FEM_2, FEM_2 )
+    call AssociateHost ( D_FEM_3, FEM_3 )
+    call AssociateHost ( D_CS, CS )
+    call AssociateHost ( D_N, N )
+    call AssociateHost ( D_V_1, V_1 )
+    call AssociateHost ( D_V_2, V_2 )
+    call AssociateHost ( D_V_3, V_3 )
+    call AssociateHost ( D_P, P )
+    call AssociateHost ( D_Gamma, Gamma )
+    
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+    !$OMP& schedule ( static, 1 )
+    do iV = 1, size ( N )
+      if ( N ( iV ) > 0.0_KDR .and. P ( iV ) > 0.0_KDR ) then
+        CS ( iV ) = sqrt ( Gamma ( iV ) * P ( iV ) / N ( iV ) )
+      else
+        CS ( iV ) = 0.0_KDR
+      end if
+    end do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+    !$OMP& schedule ( static, 1 )
+    do iV = 1, size ( N )
+      FEP_1 ( iV ) = V_1 ( iV ) + CS ( iV )
+      FEP_2 ( iV ) = V_2 ( iV ) + CS ( iV )
+      FEP_3 ( iV ) = V_3 ( iV ) + CS ( iV )
+      FEM_1 ( iV ) = V_1 ( iV ) - CS ( iV )
+      FEM_2 ( iV ) = V_2 ( iV ) - CS ( iV )
+      FEM_3 ( iV ) = V_3 ( iV ) - CS ( iV )
+    end do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    
+    call DisassociateHost ( Gamma )
+    call DisassociateHost ( P )
+    call DisassociateHost ( V_3 )
+    call DisassociateHost ( V_2 )
+    call DisassociateHost ( V_1 )
+    call DisassociateHost ( N )
+    call DisassociateHost ( CS )
+    call DisassociateHost ( FEM_3 )
+    call DisassociateHost ( FEM_2 )
+    call DisassociateHost ( FEM_1 )
+    call DisassociateHost ( FEP_3 )
+    call DisassociateHost ( FEP_2 )
+    call DisassociateHost ( FEP_1 )
+
+  end subroutine ComputeEigenspeedsKernelDevice
+  
+  
   subroutine ApplyBoundaryConditionsReflecting &
                ( E_E, Gamma_E, E_I, Gamma_I, nB, oBE, oBI )
 
@@ -639,19 +1131,136 @@ contains
   end subroutine ApplyBoundaryConditionsReflecting
 
 
-  subroutine ComputeRawFluxesKernel ( F_S_Dim, F_G, G, P, V_Dim )
+  subroutine ApplyBoundaryConditionsReflectingDevice &
+               ( E_E, Gamma_E, E_I, Gamma_I, nB, oBE, oBI, &
+                 D_E_E, D_Gamma_E, D_E_I, D_Gamma_I )
+
+    real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
+      E_E, &
+      Gamma_E
+    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+      E_I, &
+      Gamma_I
+    integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
+      nB,  & 
+      oBE, &
+      oBI
+    type ( c_ptr ), intent ( in ) :: &
+      D_E_E, &
+      D_Gamma_E, &
+      D_E_I, &
+      D_Gamma_I
+      
+    integer ( KDI ) :: &
+      iV, jV, kV
+      
+    call AssociateHost ( D_E_E, E_E )
+    call AssociateHost ( D_Gamma_E, Gamma_E )
+    call AssociateHost ( D_E_I, E_I )
+    call AssociateHost ( D_Gamma_I, Gamma_I )
+    
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
+    !$OMP& schedule ( static, 1 )
+    do kV = 1, nB ( 3 )
+      do jV = 1, nB ( 2 )
+        do iV = 1, nB ( 1 )
+        
+          E_E ( oBE ( 1 ) + iV, oBE ( 2 ) + jV, oBE ( 3 ) + kV ) &
+            = E_I ( oBI ( 1 ) + iV, oBI ( 2 ) + jV, oBI ( 3 ) + kV )
+          
+          Gamma_E ( oBE ( 1 ) + iV, oBE ( 2 ) + jV, oBE ( 3 ) + kV ) &
+            = Gamma_I ( oBI ( 1 ) + iV, oBI ( 2 ) + jV, oBI ( 3 ) + kV )
+            
+        end do
+      end do
+    end do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    
+    call DisassociateHost ( Gamma_I )
+    call DisassociateHost ( E_I )
+    call DisassociateHost ( Gamma_E )
+    call DisassociateHost ( E_E )
+
+  end subroutine ApplyBoundaryConditionsReflectingDevice
+
+
+  subroutine ComputeRawFluxesKernel &
+               ( F_D, F_S_1, F_S_2, F_S_3, F_S_Dim, F_G, D, S_1, S_2, S_3, &
+                 G, P, V_Dim, D_F_D, D_F_S_1, D_F_S_2, D_F_S_3, D_F_S_Dim, &
+                 D_F_G, D_D, D_S_1, D_S_2, D_S_3, D_G, D_P, D_V_Dim )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      F_D, &
+      F_S_1, F_S_2, F_S_3, &
       F_S_Dim, &
       F_G
     real ( KDR ), dimension ( : ), intent ( in ) :: &
+      D, &
+      S_1, S_2, S_3, &
       G, &
       P, &
       V_Dim
+    type ( c_ptr ), intent ( in ) :: &
+      D_F_D, &
+      D_F_S_1, D_F_S_2, D_F_S_3, &
+      D_F_S_Dim, &
+      D_F_G, &
+      D_D, &
+      D_S_1, D_S_2, D_S_3, &
+      D_G, &
+      D_P, &
+      D_V_Dim
+      
+    integer ( KDI ) :: &
+      iV
+      
+    call AssociateHost ( D_F_D, F_D )
+    call AssociateHost ( D_F_S_1, F_S_1 )
+    call AssociateHost ( D_F_S_2, F_S_2 )
+    call AssociateHost ( D_F_S_3, F_S_3 )
+    call AssociateHost ( D_F_S_Dim, F_S_Dim )
+    call AssociateHost ( D_F_G, F_G )
+    call AssociateHost ( D_D, D )
+    call AssociateHost ( D_S_1, S_1 )
+    call AssociateHost ( D_S_2, S_2 )
+    call AssociateHost ( D_S_3, S_3 )
+    call AssociateHost ( D_G, G )
+    call AssociateHost ( D_P, P )
+    call AssociateHost ( D_V_Dim, V_Dim )
+    
+    !F_D   = D   * V_Dim
+    !F_S_1 = S_1 * V_Dim
+    !F_S_2 = S_2 * V_Dim
+    !F_S_3 = S_3 * V_Dim
+    !F_S_Dim = F_S_Dim + P
+    !F_G = ( G + P ) * V_Dim
+    
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+    !$OMP& schedule ( static, 1 )
+    do iV = 1, size ( F_D )
+      F_D ( iV )     = D ( iV )   * V_Dim ( iV ) 
+      F_S_1 ( iV )   = S_1 ( iV ) * V_Dim ( iV ) 
+      F_S_2 ( iV )   = S_2 ( iV ) * V_Dim ( iV ) 
+      F_S_3 ( iV )   = S_3 ( iV ) * V_Dim ( iV ) 
+      F_S_Dim ( iV ) = F_S_Dim ( iV ) + P ( iV ) 
+      F_G ( iV )     = ( G ( iV ) + P ( iV ) ) * V_Dim ( iV )
+    end do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
 
-    F_S_Dim = F_S_Dim + P
-    F_G = ( G + P ) * V_Dim
-
+    call DisassociateHost ( V_Dim )
+    call DisassociateHost ( P )
+    call DisassociateHost ( G )
+    call DisassociateHost ( S_3 )
+    call DisassociateHost ( S_2 )
+    call DisassociateHost ( S_1 )
+    call DisassociateHost ( D )
+    call DisassociateHost ( F_G )
+    call DisassociateHost ( F_S_Dim )
+    call DisassociateHost ( F_S_3 )
+    call DisassociateHost ( F_S_2 )
+    call DisassociateHost ( F_S_1 )
+    call DisassociateHost ( F_D )
+    
   end subroutine ComputeRawFluxesKernel
 
 

@@ -2,6 +2,7 @@ Storage_Form.o: \
   Specifiers.o \
   ArrayOperations.o \
   ArrayArrays.o \
+  Devices.o \
   Storage_Form.f90
 
 PackedStorage_Form.o: \

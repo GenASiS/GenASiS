@@ -39,13 +39,30 @@ module ConservedFields_Template
     procedure, public, pass :: &
       InitializeTemplate
     procedure ( ComputeInterface ), public, pass, deferred :: &
-      ComputeConserved
+      ComputeConservedHost
+    procedure ( ComputeDeviceInterface ), public, pass, deferred :: &
+      ComputeConservedDevice
+    generic :: &
+      ComputeConserved => ComputeConservedHost, ComputeConservedDevice
     procedure ( ComputeInterface ), public, pass, deferred :: &
-      ComputePrimitive
+      ComputePrimitiveHost
+    procedure ( ComputeDeviceInterface ), public, pass, deferred :: &
+      ComputePrimitiveDevice
+    generic :: &
+      ComputePrimitive => ComputePrimitiveHost, ComputePrimitiveDevice
     procedure ( ComputeInterface ), public, pass, deferred :: &
-      ComputeAuxiliary
+      ComputeAuxiliaryHost
+    procedure ( ComputeDeviceInterface ), public, pass, deferred :: &
+      ComputeAuxiliaryDevice
+    generic :: &
+      ComputeAuxiliary => ComputeAuxiliaryHost, ComputeAuxiliaryDevice
     procedure ( ApplyBoundaryConditionsInterface ), public, pass, deferred :: &
-      ApplyBoundaryConditions
+      ApplyBoundaryConditionsHost
+    procedure ( ApplyBoundaryConditionsDeviceInterface ), public, pass, deferred :: &
+      ApplyBoundaryConditionsDevice
+    generic :: &
+      ApplyBoundaryConditions &
+        => ApplyBoundaryConditionsHost, ApplyBoundaryConditionsDevice
     procedure ( ComputeRawFluxesInterface ), public, pass, deferred :: &
       ComputeRawFluxes
     procedure ( ComputeRiemannSolverInputInterface ), public, pass, &
@@ -63,6 +80,18 @@ module ConservedFields_Template
       real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
         Value
     end subroutine ComputeInterface
+    
+    subroutine ComputeDeviceInterface ( CF, Value, D_Value )
+      use iso_c_binding
+      use Basics
+      import ConservedFieldsTemplate
+      class ( ConservedFieldsTemplate ), intent ( inout ) :: &
+        CF
+      real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+        Value
+      type ( c_ptr ), dimension ( : ), intent ( in ) :: &
+        D_Value
+    end subroutine ComputeDeviceInterface
     
     subroutine ApplyBoundaryConditionsInterface &
                  ( CF, ExteriorValue, InteriorValue, iDimension, iBoundary, &
@@ -82,7 +111,31 @@ module ConservedFields_Template
         PrimitiveOnlyOption
     end subroutine ApplyBoundaryConditionsInterface
     
-    subroutine ComputeRawFluxesInterface ( CF, RawFlux, Value, iDimension )
+    subroutine ApplyBoundaryConditionsDeviceInterface &
+                 ( CF, ExteriorValue, InteriorValue, iDimension, iBoundary, &
+                   D_ExteriorValue, D_InteriorValue, PrimitiveOnlyOption )
+      use iso_c_binding
+      use Basics
+      import ConservedFieldsTemplate
+      class ( ConservedFieldsTemplate ), intent ( inout ) :: &
+        CF
+      real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+        ExteriorValue
+      real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+        InteriorValue
+      integer ( KDI ), intent ( in ) :: &
+        iDimension, &
+        iBoundary
+      type ( c_ptr ), dimension ( : ), intent ( in ) :: &
+        D_ExteriorValue, &
+        D_InteriorValue
+      logical ( KDL ), intent ( in ), optional :: &
+        PrimitiveOnlyOption
+    end subroutine ApplyBoundaryConditionsDeviceInterface
+    
+    subroutine ComputeRawFluxesInterface &
+                 ( CF, RawFlux, Value, iDimension, D_RawFlux, D_Value )
+      use iso_c_binding
       use Basics
       import ConservedFieldsTemplate
       class ( ConservedFieldsTemplate ), intent ( inout ) :: &
@@ -93,10 +146,15 @@ module ConservedFields_Template
         Value
       integer ( KDI ), intent ( in ) :: &
         iDimension
+      type ( c_ptr ), dimension ( : ), intent ( in ) :: &
+        D_RawFlux, &
+        D_Value
     end subroutine ComputeRawFluxesInterface
     
     subroutine ComputeRiemannSolverInputInterface &
-                 ( CF, Step, ValueInner, ValueOuter, iDimension )
+                 ( CF, Step, ValueInner, ValueOuter, iDimension, &
+                   D_ValueInner, D_ValueOuter )
+      use iso_c_binding
       use Basics
       import ConservedFieldsTemplate    
       class ( ConservedFieldsTemplate ), intent ( inout ) :: &
@@ -108,6 +166,9 @@ module ConservedFields_Template
         ValueOuter
       integer ( KDI ), intent ( in ) :: &
         iDimension
+      type ( c_ptr ), dimension ( : ), intent ( in ) :: &
+        D_ValueInner, &
+        D_ValueOuter
     end subroutine ComputeRiemannSolverInputInterface
     
   end interface
@@ -150,7 +211,7 @@ contains
              VectorIndicesOption = VectorIndicesOption, &
              UnitOption = VariableUnit, VectorOption = VectorOption, &
              VariableOption = Variable, NameOption = NameOption, &
-             ClearOption = ClearOption )
+             ClearOption = ClearOption, PinnedOption = .true. )
     end associate !-- DM
     
     CF % DistributedMesh => DistributedMesh

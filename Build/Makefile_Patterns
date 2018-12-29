@@ -5,3 +5,10 @@ endif
 
 %.o : %.f90
 	$(FORTRAN_COMPILE) $(DEFINES) $(FFLAGS) $(FORTRAN_BOUND_CHECK) $(INCLUDE) $<
+
+%.o : %.c
+	$(CC_COMPILE) $(DEFINES) $(CFLAGS) $(INCLUDE) $<
+
+%.o : %.cu
+	$(NVCC_COMPILE) $(DEFINES) $(CFLAGS) $(INCLUDE) $<
+

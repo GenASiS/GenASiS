@@ -921,6 +921,7 @@ contains
         call c_f_pointer ( DB_QV % Value, ValueArrays, [ DB_QV % nValues ] )
         
         if ( SetSizes ) then
+          SGI % nCells = 1
           SGI % nCells ( 1 : nDims ) &
             = DB_QV % nElementsPerDimension ( 1 : nDims ) 
           SGI % nTotalCells = product ( SGI % nCells )

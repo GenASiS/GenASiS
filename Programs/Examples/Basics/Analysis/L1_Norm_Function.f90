@@ -129,8 +129,12 @@ contains
     C => PROGRAM_HEADER % Communicator
     if ( present ( CommunicatorOption ) ) C => CommunicatorOption
     
-    call Show ( lbound ( A_Origin ), 'LowerBounds' )
-    call Show ( ubound ( A_Origin ), 'UpperBounds' )
+    call Show &
+           ( lbound ( A_Origin ), 'LowerBounds', &
+             IgnorabilityOption = CONSOLE % INFO_5 )
+    call Show &
+           ( ubound ( A_Origin ), 'UpperBounds', &
+             IgnorabilityOption = CONSOLE % INFO_5 )
     
     MyDistanceSum &
       = sum ( abs ( A_End ( oV ( 1 ) + 1 : oV ( 1 ) + nValues ( 1 ), &

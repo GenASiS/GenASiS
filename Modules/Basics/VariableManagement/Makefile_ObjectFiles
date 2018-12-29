@@ -1,6 +1,7 @@
 include $(PATH_STORAGES)/Makefile_ObjectFiles
 include $(PATH_ARRAY_ARRAYS)/Makefile_ObjectFiles
 include $(PATH_ARRAY_OPERATIONS)/Makefile_ObjectFiles
+include $(PATH_DEVICES)/Makefile_ObjectFiles
 include $(PATH_SPECIFIERS)/Makefile_ObjectFiles
 
 VARIABLE_MANAGEMENT = \
@@ -8,4 +9,5 @@ VARIABLE_MANAGEMENT = \
   $(STORAGES) \
   $(ARRAY_ARRAYS) \
   $(ARRAY_OPERATIONS) \
+  $(DEVICES) \
   $(SPECIFIERS)

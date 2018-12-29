@@ -1,9 +1,11 @@
 Clear_Command.o: \
   Specifiers.o \
+  Devices.o \
   Clear_Command.f90
 
 Copy_Command.o: \
   Specifiers.o \
+  Devices.o \
   Clear_Command.o \
   Copy_Command.f90
 

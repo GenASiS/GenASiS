@@ -1,0 +1,51 @@
+PATH_GENASIS = ../../../../..
+
+all: Difference_Form_Test Jacobi_Test JacobiAsync_Test Async_Test
+
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+Difference_Form_Test: Basics.a Difference_Form_Test.o
+	$(LINK) $(FLAGS) -o Difference_Form_Test_$(MACHINE) \
+          Difference_Form_Test.o Difference_Form.o \
+          Basics.a $(LIBRARIES)
+
+Jacobi_Test: Basics.a Jacobi_Test.o
+	$(LINK) $(FLAGS) -o Jacobi_Test_$(MACHINE) \
+          Jacobi_Test.o Basics.a $(LIBRARIES)
+
+JacobiAsync_Test: Basics.a JacobiAsync_Test.o
+	$(LINK) $(FLAGS) -o JacobiAsync_Test_$(MACHINE) \
+          JacobiAsync_Test.o Basics.a $(LIBRARIES)
+
+Async_Test: async.o
+	$(LINK_NVCC) -o Async_Test_$(MACHINE) async.o
+
+clean:
+	rm -f *.o *.a *.mod *.ld
+
+clobber: clean
+	rm -f Difference_Form_Test_*
+	rm -f Jacobi_Test_*
+
+include $(PATH_BASICS)/Makefile_Dependencies
+
+Difference_Form.o: \
+  Basics.o \
+  Difference_Form.f90
+
+Difference_Form_Test.o: \
+  Basics.o \
+  Difference_Form.o \
+    Difference_Form_Test.f90
+
+Jacobi_Test.o: \
+  Basics.o \
+  Jacobi_Test.f90
+
+JacobiAsync_Test.o: \
+  Basics.o \
+  JacobiAsync_Test.f90
+
+async.o: \
+  async.cu

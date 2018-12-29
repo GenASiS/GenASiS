@@ -3,9 +3,13 @@
 !   operations to set arrays to zero (or to .false. in the case of logical 
 !   arrays)
 
+#include "Preprocessor"
+
 module Clear_Command
 
+  use iso_c_binding
   use Specifiers
+  use Devices
 
   implicit none
   private
@@ -25,6 +29,8 @@ module Clear_Command
     module procedure ClearReal_1D
     module procedure ClearReal_2D
     module procedure ClearReal_3D
+    module procedure ClearReal_1D_Device
+    module procedure ClearReal_2D_Device
     ! module procedure ClearReal_4D
     ! module procedure ClearComplex_1D
     ! module procedure ClearComplex_2D
@@ -148,7 +154,7 @@ contains
 
     nV = size ( A )
 
-    !$OMP parallel do private ( iV )
+    !$OMP parallel do private ( iV ) schedule ( runtime )
     do iV = 1, nV
       A ( iV ) = 0.0_KDR
     end do
@@ -187,7 +193,7 @@ contains
 
     nV = shape ( A )
 
-    !$OMP parallel do private ( iV, jV, kV )
+    !$OMP parallel do private ( iV, jV, kV ) schedule ( runtime )
     do kV = 1, nV ( 3 )
       do jV = 1, nV ( 2 )
         do iV = 1, nV ( 1 )
@@ -198,6 +204,53 @@ contains
     !$OMP end parallel do
 
   end subroutine ClearReal_3D
+  
+  
+  subroutine ClearReal_1D_Device ( D_A, A )
+
+    type ( c_ptr ), intent ( in ) :: &
+      D_A
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      A
+    
+    integer ( KDI ) :: &
+      iV, &
+      nV
+
+    nV = size ( A )
+    
+    call AssociateHost ( D_A, A )
+    
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+    !$OMP& schedule ( static, 1 )
+    do iV = 1, nV
+      A ( iV ) = 0.0_KDR
+    end do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    
+    call DisassociateHost ( A )
+
+  end subroutine ClearReal_1D_Device
+  
+
+  subroutine ClearReal_2D_Device ( D_A, A )
+
+    type ( c_ptr ), dimension ( : ), intent ( in ) :: &
+      D_A
+    real ( KDR ), dimension ( :, : ), intent ( out ) :: &
+      A
+    
+    integer ( KDI ) :: &
+      iV, &
+      nV
+
+    nV = size ( A, dim = 2 )
+
+    do iV = 1, nV
+      call Clear ( D_A ( iV ), A ( :, iV ) )
+    end do
+    
+  end subroutine ClearReal_2D_Device
   
   
   ! subroutine ClearReal_4D ( A )
@@ -248,7 +301,7 @@ contains
 
     nV = shape ( A )
 
-    !$OMP parallel do private ( iV, jV, kV )
+    !$OMP parallel do private ( iV, jV, kV ) schedule ( runtime )
     do kV = 1, nV ( 3 )
       do jV = 1, nV ( 2 )
         do iV = 1, nV ( 1 )
@@ -284,7 +337,7 @@ contains
 
     nV = size ( A )
 
-    !$OMP parallel do private ( iV )
+    !$OMP parallel do private ( iV ) schedule ( runtime )
     do iV = 1, nV
       A ( iV ) = .false.
     end do

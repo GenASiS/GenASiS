@@ -3,6 +3,7 @@
 
 module Show_Command
 
+  use iso_c_binding
   use VariableManagement
   use CONSOLE_Singleton
  
@@ -39,6 +40,8 @@ module Show_Command
 !    module procedure ShowCharacter_KBCH
     module procedure ShowCharacterNoDescription
     module procedure ShowCharacter_1D
+    module procedure Show_C_Pointer
+    module procedure Show_C_Pointer_1D
     module procedure ShowMeasuredValue
     module procedure ShowMeasuredValueConvertUnit
     module procedure ShowMeasuredValue_1D
@@ -1112,6 +1115,101 @@ contains
     call EndShow ( nTrailingLinesOption )
 
   end subroutine ShowCharacter_1D
+
+
+  subroutine Show_C_Pointer &
+               ( Pointer, Description, IgnorabilityOption, &
+                 DisplayRankOption, nLeadingLinesOption, &
+                 nTrailingLinesOption )
+
+    !-- Convention on argument order violated because the Integer being
+    !   "Show"n is more important than the Description.
+
+    type ( c_ptr ), intent ( in ) :: &
+      Pointer
+    character ( * ), intent ( in ) :: &
+      Description
+    integer ( KDI ), intent ( in ), optional :: &
+      IgnorabilityOption, &
+      DisplayRankOption, &
+      nLeadingLinesOption, &
+      nTrailingLinesOption
+
+    integer ( KBI ) :: &
+      Address
+    logical( KDL ) :: &
+      AbortShow
+    character ( LDB ) :: &
+      Buffer
+    
+    call PrepareShow &
+           ( AbortShow, IgnorabilityOption, DisplayRankOption, &
+             nLeadingLinesOption )
+
+    if ( AbortShow ) return
+
+    Address = transfer ( Pointer, 1_KBI )
+    write ( Buffer, fmt = ' ( z64 ) ' ) Address
+    Buffer = '0x' //  adjustl ( Buffer )
+    
+    print '(a35,a3,a32)', trim ( Description ), '  = ', Buffer
+
+    call EndShow ( nTrailingLinesOption )
+
+  end subroutine Show_C_Pointer
+
+
+  subroutine Show_C_Pointer_1D &
+               ( Pointer, Description, IgnorabilityOption, &
+                 DisplayRankOption, nLeadingLinesOption, &
+                 nTrailingLinesOption )
+
+    !-- Convention on argument order violated because the Integer being
+    !   "Show"n is more important than the Description.
+
+    type ( c_ptr ), dimension ( : ), intent ( in ) :: &
+      Pointer
+    character ( * ), intent ( in ) :: &
+      Description
+    integer ( KDI ), intent ( in ), optional :: &
+      IgnorabilityOption, &
+      DisplayRankOption, &
+      nLeadingLinesOption, &
+      nTrailingLinesOption
+
+    integer ( KDI ) :: &
+      i
+    integer ( KBI ) :: &
+      Address
+    logical ( KDL ) :: &
+      AbortShow
+    character ( LDN ) :: &
+      IndexLabel
+    character ( LDB ) :: &
+      Buffer
+    
+    call PrepareShow &
+           ( AbortShow, IgnorabilityOption, DisplayRankOption, &
+             nLeadingLinesOption )
+
+    if ( AbortShow ) return
+
+    print '(a35)', trim ( Description )
+    do i = 1, size ( Pointer )
+      write ( IndexLabel, fmt = '( i7 )' ) i
+      
+      Address = transfer ( Pointer ( i ), 1_KBI )
+      write ( Buffer, fmt = ' ( z64 ) ' ) Address
+      Buffer = '0x' //  adjustl ( Buffer )
+      
+      print &
+        '(a38,a32)', &
+        '( ' // trim ( adjustl ( IndexLabel ) ) // ' ) = ', Buffer
+    end do
+
+    call EndShow ( nTrailingLinesOption )
+
+  end subroutine Show_C_Pointer_1D
 
 
   subroutine ShowMeasuredValue &

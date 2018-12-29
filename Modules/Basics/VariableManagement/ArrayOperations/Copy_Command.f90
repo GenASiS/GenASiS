@@ -2,10 +2,13 @@
 !   intent(out) arguments of intrinsic data types, so that the compiler will
 !   use fast copy methods. 
 
+#include "Preprocessor"
+
 module Copy_Command
 
   use iso_c_binding
   use Specifiers
+  use Devices
 
   implicit none
   private
@@ -30,13 +33,16 @@ module Copy_Command
     module procedure CopyReal_1D
     module procedure CopyReal_2D
     module procedure CopyReal_3D
+    module procedure CopyReal_1D_Device
 !     module procedure CopyReal_1D_Section
 !     module procedure CopyReal_2D_Section
 !     module procedure CopyReal_3D_Section
 ! !-- NOTE: This may be needed if KDR is not double precision
 ! !    module procedure Copy_C_Double_Real_1D
     module procedure CopyReal_3D_1D
+    module procedure CopyReal_3D_1D_Device
     module procedure CopyReal_1D_3D
+    module procedure CopyReal_1D_3D_Device
     module procedure CopyComplex_1D
 !     module procedure CopyComplex_2D
 !     module procedure CopyComplex_3D
@@ -307,7 +313,7 @@ contains
 
     nV = size ( A )
 
-    !$OMP parallel do private ( iV )
+    !$OMP parallel do private ( iV ) schedule ( runtime )
     do iV = 1, nV
       B ( iV ) = A ( iV )
     end do
@@ -350,7 +356,7 @@ contains
 
     nV = shape ( A )
 
-    !$OMP parallel do private ( iV, jV, kV )
+    !$OMP parallel do private ( iV, jV, kV ) schedule ( runtime )
     do kV = 1, nV ( 3 )
       do jV = 1, nV ( 2 )
         do iV = 1, nV ( 1 )
@@ -361,6 +367,40 @@ contains
     !$OMP end parallel do
 
   end subroutine CopyReal_3D
+  
+  
+  subroutine CopyReal_1D_Device ( A, D_A, D_B, B )
+
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      A
+    type ( c_ptr ), intent ( in ) :: &
+      D_A
+    type ( c_ptr ), intent ( in ) :: &
+      D_B
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      B
+    
+    integer ( KDI ) :: &
+      iV, &
+      nV
+      
+    call AssociateHost ( D_A, A )
+    call AssociateHost ( D_B, B )
+
+    nV = size ( A )
+    
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+    !$OMP& schedule ( static, 1 )
+    do iV = 1, nV
+      B ( iV ) = A ( iV )
+    end do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    
+    call DisassociateHost ( B )
+    call DisassociateHost ( A )
+
+  end subroutine CopyReal_1D_Device
+  
   
   
   ! subroutine CopyReal_1D_Section ( A, oSource, oTarget, nValues, B )
@@ -479,6 +519,59 @@ contains
   end subroutine CopyReal_3D_1D
 
 
+  subroutine CopyReal_3D_1D_Device ( A, nSource, oSource, oTarget, D_A, D_B, B )
+
+    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+      A
+    integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
+      nSource, &
+      oSource
+    integer ( KDI ), intent ( in ) :: &
+      oTarget
+    type ( c_ptr ), intent ( in ) :: &
+      D_A
+    type ( c_ptr ), intent ( in ) :: &
+      D_B
+    !-- This argument is last in the spirit of intent ( out ), but should
+    !   remain intent ( inout ) so existing values outside the section
+    !   are not corrupted
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      B
+      
+    integer ( KDI ) :: &
+      iT, &
+      iV, jV, kV, &
+      iS, jS, kS
+    
+    call AssociateHost ( D_A, A )
+    call AssociateHost ( D_B, B )
+
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 )&
+    !$OMP& schedule ( static, 1 ) private ( iS, jS, kS, iT )
+    do kV = oSource ( 3 ) + 1, oSource ( 3 ) + nSource ( 3 )
+      do jV = oSource ( 2 ) + 1, oSource ( 2 ) + nSource ( 2 )
+        do iV = oSource ( 1 ) + 1, oSource ( 1 ) + nSource ( 1 )
+          
+          iS = iV - oSource ( 1 )
+          jS = jV - oSource ( 2 )
+          kS = kV - oSource ( 3 )
+          
+          iT = iS + ( jS - 1 ) * nSource ( 1 ) &
+                  + ( kS - 1 ) * nSource ( 1 ) * nSource ( 2 )
+          
+          B ( oTarget + iT ) = A ( iV, jV, kV )
+          
+        end do
+      end do
+    end do
+    !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+    
+    call DisassociateHost ( B )
+    call DisassociateHost ( A )
+
+  end subroutine CopyReal_3D_1D_Device
+
+
   subroutine CopyReal_1D_3D ( A, nTarget, oTarget, oSource, B )
 
     real ( KDR ), dimension ( : ), intent ( in ) :: &
@@ -503,6 +596,66 @@ contains
   end subroutine CopyReal_1D_3D
 
 
+  subroutine CopyReal_1D_3D_Device &
+               ( A, nTarget, oTarget, oSource, D_A, D_B, B )
+
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      A
+    integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
+      nTarget, &
+      oTarget
+    integer ( KDI ), intent ( in ) :: &
+      oSource
+    type ( c_ptr ), intent ( in ) :: &
+      D_A
+    type ( c_ptr ), intent ( in ) :: &
+      D_B
+    !-- This argument is last in the spirit of intent ( out ), but should
+    !   remain intent ( inout ) so existing values outside the section
+    !   are not corrupted
+    real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
+      B
+    
+    integer ( KDI ) :: &
+      iS, &
+      iV, jV, kV, &
+      iT, jT, kT
+
+    !B ( oTarget ( 1 ) + 1 : oTarget ( 1 ) + nTarget ( 1 ), &
+    !    oTarget ( 2 ) + 1 : oTarget ( 2 ) + nTarget ( 2 ), &
+    !    oTarget ( 3 ) + 1 : oTarget ( 3 ) + nTarget ( 3 ) ) &
+    !  = reshape ( A ( oSource + 1 : oSource + product ( nTarget ) ), &
+    !              nTarget )
+    
+    call AssociateHost ( D_A, A )
+    call AssociateHost ( D_B, B )
+    
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 )&
+    !$OMP& schedule ( static, 1 ) private ( iT, jT, kT, iS )
+    do kV = oTarget ( 3 ) + 1, oTarget ( 3 ) + nTarget ( 3 )
+      do jV = oTarget ( 2 ) + 1, oTarget ( 2 ) + nTarget ( 2 )
+        do iV = oTarget ( 1 ) + 1, oTarget ( 1 ) + nTarget ( 1 )
+        
+          iT = iV - oTarget ( 1 )
+          jT = jV - oTarget ( 2 )
+          kT = kV - oTarget ( 3 )
+          
+          iS = iT + ( jT - 1 ) * nTarget ( 1 ) &
+                  + ( kT - 1 ) * nTarget ( 1 ) * nTarget ( 2 )
+          
+          B ( iV, jV, kV ) = A ( oSource + iS )
+        
+        end do
+      end do
+    end do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    
+    call DisassociateHost ( B )
+    call DisassociateHost ( A )
+
+  end subroutine CopyReal_1D_3D_Device
+
+
   subroutine CopyComplex_1D ( A, B )
 
     complex ( KDC ), dimension ( : ), intent ( in ) :: &
@@ -516,7 +669,7 @@ contains
 
     nV = size ( A )
 
-    !$OMP parallel do private ( iV )
+    !$OMP parallel do private ( iV ) schedule ( runtime )
     do iV = 1, nV
       B ( iV ) = A ( iV )
     end do
@@ -665,7 +818,8 @@ contains
 
     nV = shape ( B )
 
-    !$OMP parallel do private ( iV, jV, kV ) collapse ( 3 )
+    !$OMP  parallel do private ( iV, jV, kV ) collapse ( 3 ) &
+    !$OMP& schedule ( runtime )
     do kV = 1, nV ( 3 )
       do jV = 1, nV ( 2 )
         do iV = 1, nV ( 1 )
@@ -694,7 +848,8 @@ contains
 
     nV = shape ( B )
 
-    !$OMP parallel do private ( iV, jV, kV ) collapse ( 3 )
+    !$OMP  parallel do private ( iV, jV, kV ) collapse ( 3 ) &
+    !$OMP& schedule ( runtime )
     do kV = 1, nV ( 3 )
       do jV = 1, nV ( 2 )
         do iV = 1, nV ( 1 )
