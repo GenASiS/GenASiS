@@ -17,7 +17,7 @@ LINK = ftn
 #-- link line flag &  location below
 SILO_DIR=/ccs/home/reubendb/projects/swtree/xk7/silo/4.10.2/cle5.2_gnu5.3.0
 INCLUDE_SILO = -I${SILO_DIR}/include
-LIBRARY_SILO = -L${SILO_DIR}/lib -lsiloh5 -lz
+LIBRARY_SILO = -L${SILO_DIR}/lib -lsiloh5
 
 #-- HDF5 library may be  automatically included & linked by 
 #-- "module load hdf5" if provided, otherwise, manually put include and 
