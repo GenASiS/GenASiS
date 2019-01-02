@@ -194,7 +194,7 @@ contains
       call CO_Coordinate % Initialize &
              ( GI % Stream % Communicator, nOutgoing = [ GI % nTotalCells ], &
                nIncoming &
-                 = GI % Stream % Communicator % Size * [ GI % nTotalCells ], &
+                 = [ GI % Stream % Communicator % Size * GI % nTotalCells ], &
                RootOption = 0 )
       
       CO_Coordinate % Outgoing % Value = GI % NodeCoordinate_1
@@ -204,7 +204,7 @@ contains
       call CO_Variable % Initialize &
              ( GI % Stream % Communicator, nOutgoing = [ GI % nTotalCells ], & 
                nIncoming &
-                 = GI % Stream % Communicator % Size * [ GI % nTotalCells ], &
+                 = [ GI % Stream % Communicator % Size * GI % nTotalCells ], &
                RootOption = 0 )
       
       do iStrg = 1, GI % nStorages

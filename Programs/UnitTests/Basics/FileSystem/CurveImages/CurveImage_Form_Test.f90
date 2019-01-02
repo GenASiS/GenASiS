@@ -29,7 +29,13 @@ program CurveImage_Form_Test
     CI_Write, &
     CI_Read
   
-  open ( OUTPUT_UNIT, encoding = 'UTF-8' )
+!-- Runtime error with CCE
+!  if ( KBCH == selected_char_kind ( 'ASCII' ) ) then
+!    open ( OUTPUT_UNIT, encoding = 'DEFAULT' )
+!  else if ( KBCH == selected_char_kind ( 'ISO_10646' ) ) then
+  if ( KBCH == selected_char_kind ( 'ISO_10646' ) ) then
+    open ( OUTPUT_UNIT, encoding = 'UTF-8' )
+  end if
 
   call UNIT % Initialize ( )
 
@@ -73,7 +79,7 @@ program CurveImage_Form_Test
   call GIS % Close ( ) 
   
   call Clear ( S % Value )
-  
+
   call GIS % Open ( GIS % ACCESS_READ, NumberOption = 0 )
   
   call CI_Read % Initialize ( GIS )
