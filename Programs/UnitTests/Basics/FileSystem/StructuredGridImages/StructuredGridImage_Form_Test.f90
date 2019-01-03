@@ -111,15 +111,12 @@ program StructuredGridImage_Form_Test
   call Show ( SGI_Read % NodeCoordinate_1, 'NodeCoordinate_1' )
   call Show ( SGI_Read % NodeCoordinate_2, 'NodeCoordinate_2' )
   call Show ( SGI_Read % NodeCoordinate_3, 'NodeCoordinate_3' )
-  call Show &
-         ( SGI_Read % Storage ( 1 ) % Value ( :, 1 ), &
-           SGI_Read % Storage ( 1 ) % Variable ( 1 ) )
-  call Show &
-         ( SGI_Read % Storage ( 1 ) % Value ( :, 2 ), &
-           SGI_Read % Storage ( 1 ) % Variable ( 2 ) )
-  call Show &
-         ( SGI_Read % Storage ( 1 ) % Value ( :, 3 ), &
-           SGI_Read % Storage ( 1 ) % Variable ( 3 ) )
+  call Show ( SGI_Read % Storage ( 1 ) % Value ( :, 1 ), &
+              SGI_Read % Storage ( 1 ) % Variable ( 1 ) )
+  call Show ( SGI_Read % Storage ( 1 ) % Value ( :, 2 ), &
+              SGI_Read % Storage ( 1 ) % Variable ( 2 ) )
+  call Show ( SGI_Read % Storage ( 1 ) % Value ( :, 3 ), &
+              SGI_Read % Storage ( 1 ) % Variable ( 3 ) )
   
   call GIS % Close ( )
 
