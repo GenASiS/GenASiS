@@ -147,7 +147,7 @@ contains
     !$OMP OMP_TARGET_DIRECTIVE 
     do kV = lV ( 3 ), uV ( 3 ) 
       !$OMP parallel 
-      !$OMP do private ( iaVS ) collapse ( 2 ) schedule (static, 1)
+      !$OMP do private ( iaVS ) collapse ( 2 ) schedule (runtime)
       do jV = lV ( 2 ), uV ( 2 )
         do iV = lV ( 1 ), uV ( 1 )
 

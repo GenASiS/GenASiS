@@ -222,7 +222,7 @@ contains
     call AssociateHost ( D_A, A )
     
     !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-    !$OMP& schedule ( static, 1 )
+    !$OMP& schedule ( runtime )
     do iV = 1, nV
       A ( iV ) = 0.0_KDR
     end do

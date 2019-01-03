@@ -390,7 +390,7 @@ contains
     nV = size ( A )
     
     !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-    !$OMP& schedule ( static, 1 )
+    !$OMP& schedule ( runtime )
     do iV = 1, nV
       B ( iV ) = A ( iV )
     end do
@@ -547,7 +547,7 @@ contains
     call AssociateHost ( D_B, B )
 
     !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 )&
-    !$OMP& schedule ( static, 1 ) private ( iS, jS, kS, iT )
+    !$OMP& schedule ( runtime ) private ( iS, jS, kS, iT )
     do kV = oSource ( 3 ) + 1, oSource ( 3 ) + nSource ( 3 )
       do jV = oSource ( 2 ) + 1, oSource ( 2 ) + nSource ( 2 )
         do iV = oSource ( 1 ) + 1, oSource ( 1 ) + nSource ( 1 )
@@ -631,7 +631,7 @@ contains
     call AssociateHost ( D_B, B )
     
     !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 )&
-    !$OMP& schedule ( static, 1 ) private ( iT, jT, kT, iS )
+    !$OMP& schedule ( runtime ) private ( iT, jT, kT, iS )
     do kV = oTarget ( 3 ) + 1, oTarget ( 3 ) + nTarget ( 3 )
       do jV = oTarget ( 2 ) + 1, oTarget ( 2 ) + nTarget ( 2 )
         do iV = oTarget ( 1 ) + 1, oTarget ( 1 ) + nTarget ( 1 )
