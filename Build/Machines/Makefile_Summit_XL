@@ -6,8 +6,10 @@ ENABLE_OMP_OFFLOAD = 1
 endif
 
 FORTRAN_FLAGS = -DENABLE_OMP_OFFLOAD -qsmp=omp -qoffload
+C_FLAGS = -DENABLE_OMP_OFFLOAD -qsmp=omp
 ifeq ($(ENABLE_OMP_OFFLOAD), 0)
   FORTRAN_FLAGS = -qsmp=omp
+  C_FLAGS = -qsmp=omp
 endif
 
 FORTRAN_COMPILE      = mpifort -c -qpreprocess $(FORTRAN_FLAGS)
@@ -16,7 +18,7 @@ FORTRAN_DEBUG        = -g -qsigtrap #-Wall
 FORTRAN_OPTIMIZE     = -Ofast
 FORTRAN_PROFILE      = 
 
-CC_COMPILE           = mpicc -c -fopenmp
+CC_COMPILE           = mpicc -c $(C_FLAGS) -Ofast
 NVCC_COMPILE         = nvcc -c
 
 LINK = mpifort $(FORTRAN_FLAGS) #-qsmp=omp:auto -qoffload
