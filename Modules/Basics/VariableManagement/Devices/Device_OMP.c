@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <omp.h>
 
 void * AllocateTargetDouble_OMP ( int nValues )
@@ -120,4 +121,13 @@ int DeviceToHostCopyDouble_OMP ( void * Device, void * Host, int nValues,
   #endif
   
   return retval;
+  }
+  
+bool OffloadEnabled ( )
+  {
+  #ifdef ENABLE_OMP_OFFLOAD
+  return true;
+  #else
+  return false;
+  #endif
   }

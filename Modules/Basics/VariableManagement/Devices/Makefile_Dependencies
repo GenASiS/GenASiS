@@ -53,6 +53,11 @@ DeallocateHost_Command.o: \
   Device_C_OMP.o \
   DeallocateHost_Command.f90
 
+OffloadEnabled_Function.o: \
+  Specifiers.o \
+  Device_C_OMP.o \
+  OffloadEnabled_Function.f90
+
 Devices.o: \
   AllocateDevice_Command.o \
   AssociateHost_Command.o \
@@ -62,6 +67,7 @@ Devices.o: \
   UpdateHost_Command.o \
   AllocateHost_Command.o \
   DeallocateHost_Command.o \
+  OffloadEnabled_Function.o \
   Devices.f90
 
 Devices.a: $(DEVICES)

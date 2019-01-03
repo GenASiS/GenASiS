@@ -13,7 +13,8 @@ module Device_C
     AllocateHostDouble, &
     FreeHost, &
     HostToDeviceCopyDouble, &
-    DeviceToHostCopyDouble
+    DeviceToHostCopyDouble, &
+    IsOffloadEnabled
   
   interface 
 
@@ -108,7 +109,13 @@ module Device_C
         oDeviceValue, &
         oHostValue
     end function DeviceToHostCopyDouble
-
+    
+    
+    logical ( c_bool ) function IsOffloadEnabled ( ) &
+                           bind ( c, name = 'OffloadEnabled' )
+      use iso_c_binding
+      implicit none
+    end function IsOffloadEnabled
 
   end interface 
 

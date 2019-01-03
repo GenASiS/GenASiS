@@ -111,7 +111,8 @@ contains
       OMP_ScheduleKind
     character ( LDL )  :: &
       Verbosity, &
-      OMP_ScheduleLabel
+      OMP_ScheduleLabel, &
+      OMP_ScheduleLabelPrefix
     character ( LDF ) :: &
       Filename
     logical ( KDL ) :: &
@@ -160,7 +161,16 @@ contains
     call CONSOLE % SetDisplayRank ( DisplayRank )
 
     PH % MaxThreads = OMP_GET_MAX_THREADS ( )
-    call OMP_GET_SCHEDULE ( OMP_ScheduleKind, OMP_ScheduleChunkSize )
+    
+    OMP_ScheduleLabelPrefix = ''
+    if ( OffloadEnabled ( ) ) then
+      OMP_ScheduleKind = OMP_SCHED_STATIC
+      OMP_ScheduleChunkSize = 1
+    else
+      call OMP_GET_SCHEDULE ( OMP_ScheduleKind, OMP_ScheduleChunkSize )
+      OMP_ScheduleLabelPrefix = 'runtime: '
+    end if
+    
     select case ( OMP_ScheduleKind )
     case ( OMP_SCHED_STATIC )
       OMP_ScheduleLabel = 'static'
@@ -174,7 +184,10 @@ contains
     
     call Show ( 'OpenMP environment', CONSOLE % INFO_1 )
     call Show ( PH % MaxThreads,  'MaxThreads', CONSOLE % INFO_1 )
-    call Show ( OMP_ScheduleLabel, 'Schedule', CONSOLE % INFO_1 )
+    call Show ( OMP_GET_NUM_DEVICES ( ), 'nDevices', CONSOLE % INFO_1 )
+    call Show ( OffloadEnabled ( ), 'Offload enabled', CONSOLE % INFO_1 )
+    call Show ( trim ( OMP_ScheduleLabelPrefix ) // OMP_ScheduleLabel, &
+                'Schedule', CONSOLE % INFO_1 )
     call Show ( OMP_ScheduleChunkSize, 'ChunkSize', CONSOLE % INFO_1 )
     
     if ( AppendDimensionality ) then
