@@ -844,7 +844,7 @@ contains
     call AssociateHost ( D_V_3, V_3 )
 
     !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-    !$OMP& schedule ( runtime )
+    !$OMP& schedule ( OMP_SCHEDULE )
     do iV = 1, size ( D )
       D   ( iV ) = N ( iV )
       S_1 ( iV ) = N ( iV ) * V_1 ( iV )
@@ -924,7 +924,7 @@ contains
     call AssociateHost ( D_S_3, S_3 )
     
     !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-    !$OMP& schedule ( runtime )
+    !$OMP& schedule ( OMP_SCHEDULE )
     do iV = 1, size ( N )
       if ( N ( iV ) > 0.0_KDR ) then
         V_1 ( iV ) = S_1 ( iV ) / N ( iV )
@@ -1002,7 +1002,7 @@ contains
     call AssociateHost ( D_V_3,  V_3 )
     
     !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-    !$OMP& schedule ( runtime )
+    !$OMP& schedule ( OMP_SCHEDULE )
     do iV = 1, size ( FEP_1 )
       FEP_1 ( iV ) = V_1 ( iV )
       FEP_2 ( iV ) = V_2 ( iV )
@@ -1105,7 +1105,7 @@ contains
     call AssociateHost ( D_VK_I, VK_I )
     
     !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
-    !$OMP& schedule ( runtime )
+    !$OMP& schedule ( OMP_SCHEDULE )
     do kV = 1, nB ( 3 )
       do jV = 1, nB ( 2 )
         do iV = 1, nB ( 1 )
@@ -1217,7 +1217,7 @@ contains
     iaS_P ( iD ) = + 1
     
     !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
-    !$OMP& schedule ( runtime ) private ( iaVS_M, iaVS_P )
+    !$OMP& schedule ( OMP_SCHEDULE ) private ( iaVS_M, iaVS_P )
     do kV = lV ( 3 ), uV ( 3 )    
       do jV = lV ( 2 ), uV ( 2 )  
         do iV = lV ( 1 ), uV ( 1 )

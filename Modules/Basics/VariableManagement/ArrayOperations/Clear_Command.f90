@@ -154,7 +154,7 @@ contains
 
     nV = size ( A )
 
-    !$OMP parallel do private ( iV ) schedule ( runtime )
+    !$OMP parallel do private ( iV ) schedule ( OMP_SCHEDULE )
     do iV = 1, nV
       A ( iV ) = 0.0_KDR
     end do
@@ -193,7 +193,7 @@ contains
 
     nV = shape ( A )
 
-    !$OMP parallel do private ( iV, jV, kV ) schedule ( runtime )
+    !$OMP parallel do private ( iV, jV, kV ) schedule ( OMP_SCHEDULE )
     do kV = 1, nV ( 3 )
       do jV = 1, nV ( 2 )
         do iV = 1, nV ( 1 )
@@ -222,7 +222,7 @@ contains
     call AssociateHost ( D_A, A )
     
     !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-    !$OMP& schedule ( runtime )
+    !$OMP& schedule ( OMP_SCHEDULE )
     do iV = 1, nV
       A ( iV ) = 0.0_KDR
     end do
@@ -301,7 +301,7 @@ contains
 
     nV = shape ( A )
 
-    !$OMP parallel do private ( iV, jV, kV ) schedule ( runtime )
+    !$OMP parallel do private ( iV, jV, kV ) schedule ( OMP_SCHEDULE )
     do kV = 1, nV ( 3 )
       do jV = 1, nV ( 2 )
         do iV = 1, nV ( 1 )
@@ -337,7 +337,7 @@ contains
 
     nV = size ( A )
 
-    !$OMP parallel do private ( iV ) schedule ( runtime )
+    !$OMP parallel do private ( iV ) schedule ( OMP_SCHEDULE )
     do iV = 1, nV
       A ( iV ) = .false.
     end do

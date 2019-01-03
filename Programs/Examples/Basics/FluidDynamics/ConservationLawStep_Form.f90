@@ -679,7 +679,7 @@ contains
     iaS ( iD ) = -1
     
     !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
-    !$OMP& schedule ( runtime ) private ( iaVS )
+    !$OMP& schedule ( OMP_SCHEDULE ) private ( iaVS )
     do kV = lV ( 3 ), uV ( 3 ) 
       do jV = lV ( 2 ), uV ( 2 )
         do iV = lV ( 1 ), uV ( 1 )
@@ -702,7 +702,7 @@ contains
     iaS ( iD ) = +1
     
     !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
-    !$OMP& schedule ( runtime ) private ( iaVS )
+    !$OMP& schedule ( OMP_SCHEDULE ) private ( iaVS )
     do kV = lV ( 3 ), uV ( 3 ) 
       do jV = lV ( 2 ), uV ( 2 )
         do iV = lV ( 1 ), uV ( 1 )
@@ -769,7 +769,7 @@ contains
     !V_Outer = V + 0.5_KDR * dV
     
     !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-    !$OMP& schedule ( runtime ) private ( dV )
+    !$OMP& schedule ( OMP_SCHEDULE ) private ( dV )
     do iV = 1, size ( V )
       dV = ( sign ( 0.5_KDR, dV_Left ( iV ) ) &
              + sign ( 0.5_KDR, dV_Right ( iV ) ) ) &
@@ -854,7 +854,7 @@ contains
     iaS ( iD ) = -1
     
     !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
-    !$OMP& schedule ( runtime ) private ( iaVS )
+    !$OMP& schedule ( OMP_SCHEDULE ) private ( iaVS )
     do kV = lV ( 3 ), uV ( 3 ) 
       do jV = lV ( 2 ), uV ( 2 )
         do iV = lV ( 1 ), uV ( 1 )
@@ -891,7 +891,7 @@ contains
     iaS ( iD ) = +1
     
     !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
-    !$OMP& schedule ( runtime ) private ( iaVS )
+    !$OMP& schedule ( OMP_SCHEDULE ) private ( iaVS )
     do kV = lV ( 3 ), uV ( 3 ) 
       do jV = lV ( 2 ), uV ( 2 )
         do iV = lV ( 1 ), uV ( 1 )
@@ -953,7 +953,7 @@ contains
     call AssociateHost ( D_F_O, F_O )
 
     !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-    !$OMP& schedule ( runtime )
+    !$OMP& schedule ( OMP_SCHEDULE )
     do iV = 1, size ( dU )
       dU ( iV ) = dU ( iV ) - dT * ( F_O ( iV ) - F_I ( iV ) ) * A / V
     end do
@@ -989,7 +989,7 @@ contains
     nV = size ( O )
     
     !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-    !$OMP& schedule ( runtime )
+    !$OMP& schedule ( OMP_SCHEDULE )
     do iV = 1, nV
       C ( iV ) = O ( iV ) + U ( iV )
     end do
@@ -1025,7 +1025,7 @@ contains
     nV = size ( O )
     
     !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-    !$OMP& schedule ( runtime )
+    !$OMP& schedule ( OMP_SCHEDULE )
     do iV = 1, nV
       C ( iV ) = 0.5_KDR * ( O ( iV ) + ( C ( iV ) + U ( iV ) ) )
     end do

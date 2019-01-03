@@ -1,5 +1,7 @@
 #ifdef ENABLE_OMP_OFFLOAD
 #define OMP_TARGET_DIRECTIVE target teams distribute
+#define OMP_SCHEDULE static, 1
 #else
 #define OMP_TARGET_DIRECTIVE
+#define OMP_SCHEDULE runtime
 #endif

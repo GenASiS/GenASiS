@@ -111,7 +111,7 @@ contains
     call AssociateDevice ( J % D_Input, A_O, ErrorOption = Error )
     
 !    do iI = 1, nIterations
-!      !$OMP OMP_TARGET_DIRECTIVE parallel do collapse ( 2 ) schedule ( runtime )
+!      !$OMP OMP_TARGET_DIRECTIVE parallel do collapse ( 2 ) schedule ( OMP_SCHEDULE )
 !      do jV = 2, nV ( 2 ) - 1
 !        !-- !$OMP parallel do
 !        do iV = 2, nV ( 1 ) - 1
