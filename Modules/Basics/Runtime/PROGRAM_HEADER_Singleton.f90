@@ -89,6 +89,7 @@ module PROGRAM_HEADER_Singleton
     PROGRAM_HEADER
 
     private :: &
+      PrepareAndShow_OMP_Environment, &
       ReadTimers
       
 contains
@@ -159,36 +160,8 @@ contains
     call CLO % Read ( DisplayRank, 'DisplayRank', CONSOLE % INFO_1 )
     call PH % Communicator % Synchronize ( )
     call CONSOLE % SetDisplayRank ( DisplayRank )
-
-    PH % MaxThreads = OMP_GET_MAX_THREADS ( )
     
-    OMP_ScheduleLabelPrefix = ''
-    if ( OffloadEnabled ( ) ) then
-      OMP_ScheduleKind = OMP_SCHED_STATIC
-      OMP_ScheduleChunkSize = 1
-    else
-      call OMP_GET_SCHEDULE ( OMP_ScheduleKind, OMP_ScheduleChunkSize )
-      OMP_ScheduleLabelPrefix = 'runtime: '
-    end if
-    
-    select case ( OMP_ScheduleKind )
-    case ( OMP_SCHED_STATIC )
-      OMP_ScheduleLabel = 'static'
-    case ( OMP_SCHED_DYNAMIC )
-      OMP_ScheduleLabel = 'dynamic'
-    case ( OMP_SCHED_GUIDED )
-      OMP_ScheduleLabel = 'guided'
-    case ( OMP_SCHED_AUTO )
-      OMP_ScheduleLabel = 'auto'
-    end select    
-    
-    call Show ( 'OpenMP environment', CONSOLE % INFO_1 )
-    call Show ( PH % MaxThreads,  'MaxThreads', CONSOLE % INFO_1 )
-    call Show ( OMP_GET_NUM_DEVICES ( ), 'nDevices', CONSOLE % INFO_1 )
-    call Show ( OffloadEnabled ( ), 'Offload enabled', CONSOLE % INFO_1 )
-    call Show ( trim ( OMP_ScheduleLabelPrefix ) // OMP_ScheduleLabel, &
-                'Schedule', CONSOLE % INFO_1 )
-    call Show ( OMP_ScheduleChunkSize, 'ChunkSize', CONSOLE % INFO_1 )
+    call PrepareAndShow_OMP_Environment ( )
     
     if ( AppendDimensionality ) then
       if ( present ( DimensionalityOption ) ) &
@@ -959,6 +932,67 @@ contains
       deallocate ( PH % Communicator )
 
   end subroutine Finalize
+  
+  
+  subroutine PrepareAndShow_OMP_Environment ( )
+  
+    integer ( KDI )  :: &
+      Length, &
+      Status, &
+      OMP_ScheduleChunkSize
+    integer ( OMP_SCHED_KIND ) :: &
+      OMP_ScheduleKind
+    character ( LDL )  :: &
+      OMP_ScheduleLabel, &
+      OMP_ScheduleLabelPrefix
+    character ( LDB ) :: &
+      OMP_SetSchedule 
+    
+    type ( ProgramHeaderSingleton ), pointer :: &
+      PH
+    
+    PH => PROGRAM_HEADER 
+  
+    PH % MaxThreads = OMP_GET_MAX_THREADS ( )
+    
+    call GET_ENVIRONMENT_VARIABLE &
+           ( 'OMP_SCHEDULE', OMP_SetSchedule, Length, Status, .false. )
+    
+    !-- Set default OMP schedule if not in env. var.
+    if ( Length == 0 ) &
+      call OMP_SET_SCHEDULE ( OMP_SCHED_GUIDED, -1 )
+    
+    OMP_ScheduleLabelPrefix = ''
+    if ( OffloadEnabled ( ) ) then  !-- hardcoded to (static, 1) with offload
+      OMP_ScheduleKind = OMP_SCHED_STATIC
+      OMP_ScheduleChunkSize = 1
+    else
+      call OMP_GET_SCHEDULE ( OMP_ScheduleKind, OMP_ScheduleChunkSize )
+      OMP_ScheduleLabelPrefix = 'runtime : '
+    end if
+    
+    select case ( OMP_ScheduleKind )
+    case ( OMP_SCHED_STATIC )
+      OMP_ScheduleLabel = 'static'
+    case ( OMP_SCHED_DYNAMIC )
+      OMP_ScheduleLabel = 'dynamic'
+    case ( OMP_SCHED_GUIDED )
+      OMP_ScheduleLabel = 'guided'
+    case ( OMP_SCHED_AUTO )
+      OMP_ScheduleLabel = 'auto'
+    end select    
+    
+    call Show ( 'OpenMP environment', CONSOLE % INFO_1 )
+    call Show ( PH % MaxThreads,  'MaxThreads', CONSOLE % INFO_1 )
+    call Show ( OMP_GET_NUM_DEVICES ( ), 'nDevices', CONSOLE % INFO_1 )
+    call Show ( OffloadEnabled ( ), 'Offload enabled', CONSOLE % INFO_1 )
+    call Show &
+           ( adjustl ( adjustr ( OMP_ScheduleLabelPrefix ) &
+                    // ' ' // adjustl ( OMP_ScheduleLabel ) ), &
+             'Schedule', CONSOLE % INFO_1 )
+    call Show ( OMP_ScheduleChunkSize, 'ChunkSize', CONSOLE % INFO_1 )
+  
+  end subroutine PrepareAndShow_OMP_Environment
   
 
   subroutine ReadTimers &

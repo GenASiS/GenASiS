@@ -1,5 +1,4 @@
-# Makefile for generic linux with GCC and generic MPI 
-# such as openmpi, mpich, etc.
+# Makefile Summit with GCC compiler
 
 FORTRAN_COMPILE      = mpif90 -c -cpp -fopenmp
 FORTRAN_BOUND_CHECK  = -fbounds-check
