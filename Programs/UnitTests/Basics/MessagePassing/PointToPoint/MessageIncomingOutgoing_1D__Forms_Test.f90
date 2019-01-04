@@ -207,7 +207,7 @@ program MessageIncomingOutgoing_1D__Forms_Test
 
   nReceive = 1000000
   nSend = 1000000
-  nIterationsBig = 100
+  nIterationsBig = 10
   
   do iIB = 1, nIterationsBig
 

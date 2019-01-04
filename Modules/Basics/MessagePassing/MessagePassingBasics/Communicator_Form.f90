@@ -100,17 +100,17 @@ contains
     
     integer ( KDI ) :: &
       iRank, &
-      OldStorage, NewStorage
+      OldGroup, NewGroup
     
     !-- Create subcommunicator
 
-    call MPI_COMM_GROUP ( Parent % Handle, OldStorage, C % Error )
+    call MPI_COMM_GROUP ( Parent % Handle, OldGroup, C % Error )
     call MPI_GROUP_INCL &
-           ( OldStorage, size ( Ranks ), Ranks, NewStorage, C % Error )
+           ( OldGroup, size ( Ranks ), Ranks, NewGroup, C % Error )
     call MPI_COMM_CREATE &
-           ( Parent % Handle, NewStorage, C % Handle, C % Error )
-    call MPI_GROUP_FREE ( NewStorage, C % Error )
-    call MPI_GROUP_FREE ( OldStorage, C % Error )
+           ( Parent % Handle, NewGroup, C % Handle, C % Error )
+    call MPI_GROUP_FREE ( NewGroup, C % Error )
+    call MPI_GROUP_FREE ( OldGroup, C % Error )
 
     C % Name = ''
     if ( present ( NameOption ) ) C % Name = NameOption

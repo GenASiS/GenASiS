@@ -20,7 +20,7 @@ program MessageIncomingOutgoing_Forms_Test
     nSend = 8, &
     nReceiveBig = 1000000, &
     nSendBig = 1000000, &
-    nIterationsBig = 100, &
+    nIterationsBig = 10, &
     Tag = 100
   integer ( KDI ) :: &
     iIB, &  !-- iIterationsBig

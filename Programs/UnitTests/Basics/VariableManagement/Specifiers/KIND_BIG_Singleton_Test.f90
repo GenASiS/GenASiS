@@ -40,7 +40,15 @@ program KIND_BIG_Singleton_Test
   character ( 80, kind = KBCH ) :: &
     Row
 
-  open ( OUTPUT_UNIT, encoding = 'UTF-8' )
+!-- Runtime error with CCE
+!  if ( KBCH == selected_char_kind ( 'ASCII' ) ) then
+!print*, '>>> 1'
+!    open ( OUTPUT_UNIT, encoding = 'DEFAULT' )
+!print*, '>>> 2'
+!  else if ( KBCH == selected_char_kind ( 'ISO_10646' ) ) then
+  if ( KBCH == selected_char_kind ( 'ISO_10646' ) ) then
+    open ( OUTPUT_UNIT, encoding = 'UTF-8' )
+  end if
 
   print *
   print *, 'KIND_BIG % INTEGER   = ', KIND_BIG % INTEGER

@@ -7,16 +7,27 @@ FORTRAN_DEBUG        = -g -warn all -fpe0 -fpe-all=0 -ftrapuv -traceback
 FORTRAN_OPTIMIZE     = -fast
 FORTRAN_PROFILE      = 
 
-LINK = ftn
+CC_COMPILE = cc -c 
+
+LINK = ftn -openmp
 
 #-- Silo library may be automatically included & linked by 
 #-- "module load silo" if provided, otherwise, manually put include and 
 #-- link line flag & location below
 SILO_DIR=/ccs/home/reubendb/projects/swtree/xc30/silo/4.10.2/intel17
 INCLUDE_SILO = -I${SILO_DIR}/include
-LIBRARY_SILO = -L${SILO_DIR}/lib -lsiloh5
+LIBRARY_SILO = -L${SILO_DIR}/lib -lsiloh5 -lstdc++
+
+#-- HDF5 library may be  automatically included & linked by 
+#-- "module load hdf5" if provided, otherwise, manually put include and 
+#-- link line flag &  location below
+INCLUDE_HDF5 = 
+LIBRARY_HDF5 = 
 
 #-- LAPACK library may be automatically linked by 
 #-- "module load lapack" if provided, otherwise, manually put 
 #-- link line flag & location below
 LIBRARY_LAPACK = 
+
+#-- Enable unicode
+USE_ISO_10646 =

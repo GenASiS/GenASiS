@@ -64,11 +64,11 @@ program CollectiveOperation_Form_Test
 
   allocate ( CO_I ) 
   call CO_I % Initialize &
-         ( C, nOutgoing = [ nOutgoing ], nIncoming = C % Size * [ nOutgoing ] ) 
+         ( C, nOutgoing = [ nOutgoing ], nIncoming = [ C % Size * nOutgoing ] ) 
            
   CO_I % Outgoing % Value &
     = ( C % Rank + 1 ) * [ ( iV, iV = 1, nOutgoing ) ]
-             
+
   call CO_I % Gather ( )
   
   call Show ( CO_I % Incoming % Value, 'IncomingValue_1D Integer' )
@@ -81,7 +81,7 @@ program CollectiveOperation_Form_Test
 
   allocate ( CO_BI ) 
   call CO_BI % Initialize &
-         ( C, nOutgoing = [ nOutgoing ], nIncoming = C % Size * [ nOutgoing ] ) 
+         ( C, nOutgoing = [ nOutgoing ], nIncoming = [ C % Size * nOutgoing ] ) 
            
   CO_BI % Outgoing % Value &
     = int ( C % Rank + 1, KBI ) * [ ( iV, iV = 1, nOutgoing ) ]
@@ -98,7 +98,7 @@ program CollectiveOperation_Form_Test
 
   allocate ( CO_R ) 
   call CO_R % Initialize &
-         ( C, nOutgoing = [ nOutgoing ], nIncoming = C % Size * [ nOutgoing ] ) 
+         ( C, nOutgoing = [ nOutgoing ], nIncoming = [ C % Size * nOutgoing ] ) 
            
   CO_R % Outgoing % Value &
     = ( acos ( - 1.0_KDR ) * ( C % Rank + 1 ) * [ ( iV, iV = 1, nOutgoing ) ] )
@@ -115,7 +115,7 @@ program CollectiveOperation_Form_Test
 
   allocate ( CO_R ) 
   call CO_R % Initialize &
-         ( C, nOutgoing = [ nOutgoing ], nIncoming = C % Size * [ nOutgoing ], &
+         ( C, nOutgoing = [ nOutgoing ], nIncoming = [ C % Size * nOutgoing ], &
            RootOption = CONSOLE % DisplayRank ) 
            
   CO_R % Outgoing % Value &
@@ -133,8 +133,8 @@ program CollectiveOperation_Form_Test
 
   allocate ( CO_C ) 
   call CO_C % Initialize & 
-         ( C, nOutgoing = [ nOutgoing ] * C % Size, &
-           nIncoming = [ nOutgoing ] * C % Size )
+         ( C, nOutgoing = [ nOutgoing * C % Size ], &
+           nIncoming = [ nOutgoing * C % Size ] )
 
   ComplexValue &
     = cmplx ( ( C % Rank + 1 ) * 1.0_KDR, &

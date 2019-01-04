@@ -217,9 +217,8 @@ contains
       Value
     character ( * ), intent ( in ) :: &
       Name
-    type ( MeasuredValueForm ), dimension ( : ), intent ( inout ), &
-      optional :: &
-        InputUnitOption
+    type ( MeasuredValueForm ), dimension ( : ), intent ( inout ), optional :: &
+      InputUnitOption
     integer ( KDI ), intent ( inout ), optional :: &
       nValuesOption
     integer ( KDI ), intent ( in ), optional :: &

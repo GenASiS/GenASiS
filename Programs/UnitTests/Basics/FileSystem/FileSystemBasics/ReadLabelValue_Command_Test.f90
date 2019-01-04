@@ -1,5 +1,6 @@
 program ReadLabelValue_Command_Test
 
+  use ISO_FORTRAN_ENV
   use VariableManagement
   use Display
   use MessagePassing
@@ -55,6 +56,14 @@ program ReadLabelValue_Command_Test
   allocate ( C )
   call C % Initialize ( )
   call CONSOLE % Initialize ( C % Rank )
+
+!-- Runtime error with CCE
+!  if ( KBCH == selected_char_kind ( 'ASCII' ) ) then
+!    open ( OUTPUT_UNIT, encoding = 'DEFAULT' )
+!  else if ( KBCH == selected_char_kind ( 'ISO_10646' ) ) then
+  if ( KBCH == selected_char_kind ( 'ISO_10646' ) ) then
+    open ( OUTPUT_UNIT, encoding = 'UTF-8' )
+  end if
 
   call UNIT % Initialize ( )
     
