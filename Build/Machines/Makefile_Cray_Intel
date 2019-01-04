@@ -9,7 +9,7 @@ FORTRAN_PROFILE      =
 
 CC_COMPILE = cc -c 
 
-LINK = ftn
+LINK = ftn -openmp
 
 #-- Silo library may be automatically included & linked by 
 #-- "module load silo" if provided, otherwise, manually put include and 
