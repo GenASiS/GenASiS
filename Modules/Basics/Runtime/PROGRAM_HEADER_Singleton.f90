@@ -955,7 +955,7 @@ contains
   
     PH % MaxThreads = OMP_GET_MAX_THREADS ( )
     
-    call GET_ENVIRONMENT_VARIABLE &
+    call get_environment_variable &
            ( 'OMP_SCHEDULE', OMP_SetSchedule, Length, Status, .false. )
     
     !-- Set default OMP schedule if not in env. var.

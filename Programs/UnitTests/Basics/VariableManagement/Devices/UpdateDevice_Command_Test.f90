@@ -1,7 +1,7 @@
 program UpdateDevice_Command_Test
 
+  use OMP_LIB
   use iso_c_binding
-  use omp_lib
   use Specifiers
   use AllocateDevice_Command
   use DeallocateDevice_Command

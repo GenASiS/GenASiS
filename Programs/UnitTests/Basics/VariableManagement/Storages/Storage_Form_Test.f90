@@ -1,6 +1,6 @@
 program Storage_Form_Test
 
-  use omp_lib
+  use OMP_LIB
   use Specifiers
   use ArrayOperations
   use ArrayArrays
