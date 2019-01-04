@@ -110,6 +110,8 @@ contains
       OMP_ScheduleChunkSize
     integer ( OMP_SCHED_KIND ) :: &
       OMP_ScheduleKind
+    character ( 5 ) :: &
+      Encoding
     character ( LDL )  :: &
       Verbosity, &
       OMP_ScheduleLabel, &
@@ -129,7 +131,8 @@ contains
 !      open ( OUTPUT_UNIT, encoding = 'DEFAULT' )
 !    else if ( KBCH == selected_char_kind ( 'ISO_10646' ) ) then
     if ( KBCH == selected_char_kind ( 'ISO_10646' ) ) then
-      open ( OUTPUT_UNIT, encoding = 'UTF-8' )
+      Encoding = 'UTF-8'
+      open ( OUTPUT_UNIT, encoding = Encoding )
     end if
     
     AppendDimensionality = .true.

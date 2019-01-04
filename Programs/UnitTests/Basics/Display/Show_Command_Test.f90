@@ -12,6 +12,8 @@ program Show_Command_Test
   integer ( KDI ) :: &
     Rank, &
     Error
+  character ( 5 ) :: &
+    Encoding
   type ( MeasuredValueForm ) :: &
     Length
 
@@ -20,7 +22,8 @@ program Show_Command_Test
 !    open ( OUTPUT_UNIT, encoding = 'DEFAULT' )
 !  else if ( KBCH == selected_char_kind ( 'ISO_10646' ) ) then
   if ( KBCH == selected_char_kind ( 'ISO_10646' ) ) then
-    open ( OUTPUT_UNIT, encoding = 'UTF-8' )
+    Encoding = 'UTF-8'
+    open ( OUTPUT_UNIT, encoding = Encoding )
   end if
 
   call MPI_INIT ( Error )

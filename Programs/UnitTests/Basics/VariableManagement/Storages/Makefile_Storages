@@ -6,28 +6,28 @@ all: \
   Storage_Form_Test PackedStorage_Form_Test \
   Storage_1D__Form_Test
 
-Storage_Form_Test: Specifiers.a ArrayOperations.a ArrayArrays.a \
+Storage_Form_Test: Specifiers.a Devices.a ArrayOperations.a ArrayArrays.a \
   Devices.a Storage_Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Storage_Form_Test_$(MACHINE) \
           Storage_Form_Test.o Storage_Form.o \
-          Devices.a ArrayArrays.a ArrayOperations.a Specifiers.a
+          Devices.a ArrayArrays.a ArrayOperations.a Specifiers.a Devices.a
 
-PackedStorage_Form_Test: Specifiers.a ArrayOperations.a ArrayArrays.a \
-  PackedStorage_Form_Test.o
+PackedStorage_Form_Test: Specifiers.a Devices.a ArrayOperations.a \
+  ArrayArrays.a PackedStorage_Form_Test.o
 	$(LINK) $(FLAGS) \
           -o PackedStorage_Form_Test_$(MACHINE) \
           PackedStorage_Form_Test.o PackedStorage_Form.o \
           Storage_Form.o \
-          ArrayArrays.a ArrayOperations.a Specifiers.a
+          ArrayArrays.a ArrayOperations.a Specifiers.a Devices.a
 
-Storage_1D__Form_Test: Specifiers.a ArrayOperations.a ArrayArrays.a \
-  Storage_1D__Form_Test.o 
+Storage_1D__Form_Test: Specifiers.a Devices.a ArrayOperations.a \
+  ArrayArrays.a Storage_1D__Form_Test.o 
 	$(LINK) $(FLAGS) \
           -o Storage_1D__Form_Test_$(MACHINE) \
           Storage_1D__Form_Test.o Storage_1D__Form.o \
           Storage_Form.o \
-          ArrayArrays.a ArrayOperations.a Specifiers.a
+          ArrayArrays.a ArrayOperations.a Specifiers.a Devices.a
 
 clean:
 	rm -f *.o *.a *.mod *.ld
@@ -38,6 +38,7 @@ clobber: clean
 	rm -f Storage_1D__Form_Test_*
 
 include $(PATH_SPECIFIERS)/Makefile_Dependencies
+include $(PATH_DEVICES)/Makefile_Dependencies
 include $(PATH_ARRAY_OPERATIONS)/Makefile_Dependencies
 include $(PATH_ARRAY_ARRAYS)/Makefile_Dependencies
 include $(PATH_DEVICES)/Makefile_Dependencies

@@ -15,6 +15,8 @@ program CurveImage_Form_Test
     DisplayRank = 0
   real ( KDR ), dimension ( 20 ) :: &
     NodeCoordinate
+  character ( 5 ) :: &
+    Encoding
   character ( LDF ) :: &
     Name = 'CurveImage_Form_Test'
   character ( LDL ), dimension ( 1 ) :: &
@@ -34,7 +36,8 @@ program CurveImage_Form_Test
 !    open ( OUTPUT_UNIT, encoding = 'DEFAULT' )
 !  else if ( KBCH == selected_char_kind ( 'ISO_10646' ) ) then
   if ( KBCH == selected_char_kind ( 'ISO_10646' ) ) then
-    open ( OUTPUT_UNIT, encoding = 'UTF-8' )
+    Encoding = 'UTF-8'
+    open ( OUTPUT_UNIT, encoding = Encoding )
   end if
 
   call UNIT % Initialize ( )

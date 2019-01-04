@@ -30,6 +30,8 @@ program ReadLabelValue_Command_Test
     Success
   logical ( KDL ), dimension ( 10 ) :: &
     ArrayLogicalValue
+  character ( 5 ) :: &
+    Encoding
   character ( LDL ) :: &
     ScalarStringValue, &
     Label
@@ -62,7 +64,8 @@ program ReadLabelValue_Command_Test
 !    open ( OUTPUT_UNIT, encoding = 'DEFAULT' )
 !  else if ( KBCH == selected_char_kind ( 'ISO_10646' ) ) then
   if ( KBCH == selected_char_kind ( 'ISO_10646' ) ) then
-    open ( OUTPUT_UNIT, encoding = 'UTF-8' )
+    Encoding = 'UTF-8'
+    open ( OUTPUT_UNIT, encoding = Encoding )
   end if
 
   call UNIT % Initialize ( )

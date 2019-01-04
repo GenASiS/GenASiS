@@ -26,6 +26,8 @@ program FindParameter_Command_Test
     Logical_0D
   logical ( KDL ), dimension ( 10 ) :: &
     Logical_1D
+  character ( 5 ) :: &
+    Encoding
   character ( LDF ) :: &
     Character_0D
   character ( LDF ), dimension ( 10 ) :: &
@@ -40,7 +42,8 @@ program FindParameter_Command_Test
 !    open ( OUTPUT_UNIT, encoding = 'DEFAULT' )
 !  else if ( KBCH == selected_char_kind ( 'ISO_10646' ) ) then
   if ( KBCH == selected_char_kind ( 'ISO_10646' ) ) then
-    open ( OUTPUT_UNIT, encoding = 'UTF-8' )
+    Encoding = 'UTF-8'
+    open ( OUTPUT_UNIT, encoding = Encoding )
   end if
 
   allocate ( C )

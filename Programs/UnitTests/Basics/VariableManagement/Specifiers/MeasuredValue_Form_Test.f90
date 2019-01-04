@@ -9,6 +9,8 @@ program MeasuredValue_Form_Test
 
   real ( KDR ) :: &
     A
+  character ( 5 ) :: &
+    Encoding
   type ( MeasuredValueForm ) :: &
     Length_1, &
     Length_2, &
@@ -19,7 +21,8 @@ program MeasuredValue_Form_Test
 !    open ( OUTPUT_UNIT, encoding = 'DEFAULT' )
 !  else if ( KBCH == selected_char_kind ( 'ISO_10646' ) ) then
   if ( KBCH == selected_char_kind ( 'ISO_10646' ) ) then
-    open ( OUTPUT_UNIT, encoding = 'UTF-8' )
+    Encoding = 'UTF-8'
+    open ( OUTPUT_UNIT, encoding = Encoding )
   end if
 
   print *

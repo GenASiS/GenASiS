@@ -7,41 +7,41 @@ all: \
   Integer_3D__Form_Test Real_1D__Form_Test \
   Real_2D__Form_Test Real_3D__Form_Test Character_1D__Form_Test
 
-Integer_1D__Form_Test: Specifiers.a ArrayOperations.a Integer_1D__Form_Test.o
+Integer_1D__Form_Test: Specifiers.a Devices.a ArrayOperations.a Integer_1D__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Integer_1D__Form_Test_$(MACHINE) \
           Integer_1D__Form_Test.o Integer_1D__Form.o \
-          ArrayOperations.a Specifiers.a 
+          ArrayOperations.a Specifiers.a Devices.a 
 
-Integer_2D__Form_Test: Specifiers.a ArrayOperations.a Integer_2D__Form_Test.o
+Integer_2D__Form_Test: Specifiers.a Devices.a ArrayOperations.a Integer_2D__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Integer_2D__Form_Test_$(MACHINE) \
           Integer_2D__Form_Test.o Integer_2D__Form.o \
-          ArrayOperations.a Specifiers.a 
+          ArrayOperations.a Specifiers.a Devices.a 
 
-Integer_3D__Form_Test: Specifiers.a ArrayOperations.a Integer_3D__Form_Test.o
+Integer_3D__Form_Test: Specifiers.a Devices.a ArrayOperations.a Integer_3D__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Integer_3D__Form_Test_$(MACHINE) \
           Integer_3D__Form_Test.o Integer_3D__Form.o \
-          ArrayOperations.a Specifiers.a 
+          ArrayOperations.a Specifiers.a Devices.a 
 
-Real_1D__Form_Test: Specifiers.a ArrayOperations.a Real_1D__Form_Test.o
+Real_1D__Form_Test: Specifiers.a Devices.a ArrayOperations.a Real_1D__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Real_1D__Form_Test_$(MACHINE) \
           Real_1D__Form_Test.o Real_1D__Form.o \
-          ArrayOperations.a Specifiers.a 
+          ArrayOperations.a Specifiers.a Devices.a 
 
-Real_2D__Form_Test: Specifiers.a ArrayOperations.a Real_2D__Form_Test.o
+Real_2D__Form_Test: Specifiers.a Devices.a ArrayOperations.a Real_2D__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Real_2D__Form_Test_$(MACHINE) \
           Real_2D__Form_Test.o Real_2D__Form.o \
-          ArrayOperations.a Specifiers.a 
+          ArrayOperations.a Specifiers.a Devices.a 
 
-Real_3D__Form_Test: Specifiers.a ArrayOperations.a Real_3D__Form_Test.o
+Real_3D__Form_Test: Specifiers.a Devices.a ArrayOperations.a Real_3D__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Real_3D__Form_Test_$(MACHINE) \
           Real_3D__Form_Test.o Real_3D__Form.o \
-          ArrayOperations.a Specifiers.a 
+          ArrayOperations.a Specifiers.a Devices.a 
 
 Character_1D__Form_Test: Specifiers.a Character_1D__Form_Test.o
 	$(LINK) $(FLAGS) \
@@ -62,6 +62,7 @@ clobber: clean
 	rm -f Character_1D__Form_Test_*
 
 include $(PATH_SPECIFIERS)/Makefile_Dependencies
+include $(PATH_DEVICES)/Makefile_Dependencies
 include $(PATH_ARRAY_OPERATIONS)/Makefile_Dependencies
 include $(PATH_ARRAY_ARRAYS)/Makefile_Dependencies
 

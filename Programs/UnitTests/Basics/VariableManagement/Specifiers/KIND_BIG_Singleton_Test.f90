@@ -39,6 +39,8 @@ program KIND_BIG_Singleton_Test
     iC     !-- iCharacter
   character ( 80, kind = KBCH ) :: &
     Row
+  character ( 5 ) :: &
+    Encoding
 
 !-- Runtime error with CCE
 !  if ( KBCH == selected_char_kind ( 'ASCII' ) ) then
@@ -47,7 +49,8 @@ program KIND_BIG_Singleton_Test
 !print*, '>>> 2'
 !  else if ( KBCH == selected_char_kind ( 'ISO_10646' ) ) then
   if ( KBCH == selected_char_kind ( 'ISO_10646' ) ) then
-    open ( OUTPUT_UNIT, encoding = 'UTF-8' )
+    Encoding = 'UTF-8'
+    open ( OUTPUT_UNIT, encoding = Encoding )
   end if
 
   print *
