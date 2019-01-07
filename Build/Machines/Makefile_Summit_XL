@@ -19,6 +19,9 @@ FORTRAN_OPTIMIZE     = -Ofast
 FORTRAN_PROFILE      = 
 
 CC_COMPILE           = mpicc -c $(C_FLAGS) -Ofast
+CC_DEBUG             = -g
+CC_OPTIMIZE          = $(FORTRAN_OPTIMIZE)
+
 NVCC_COMPILE         = nvcc -c
 
 LINK = mpifort $(FORTRAN_FLAGS) #-qsmp=omp:auto -qoffload

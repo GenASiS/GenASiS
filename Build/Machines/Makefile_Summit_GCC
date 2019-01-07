@@ -7,6 +7,8 @@ FORTRAN_OPTIMIZE     = -O3
 FORTRAN_PROFILE      = 
 
 CC_COMPILE           = mpicc -c -fopenmp
+CC_DEBUG             = -g
+CC_OPTIMIZE          = $(FORTRAN_OPTIMIZE)
 
 LINK = mpif90 -fopenmp
 
@@ -19,3 +21,6 @@ INCLUDE_CUDA =
 LIBRARY_CUDA = 
 
 INCLUDE_PREPROCESSOR = -I$(PATH_GENASIS)/Build
+
+#-- Enable unicode
+USE_ISO_10646 = 1

@@ -4,6 +4,8 @@ include $(PATH_BUILD)/Machines/Makefile_$(MACHINE)
 include $(PATH_BUILD)/Makefile_Path
 include $(PATH_BUILD)/Makefile_ObjectFiles
 
+CFLAGS = $(CC_$(PURPOSE))
+
 INCLUDE = \
   $(INCLUDE_SILO) $(INCLUDE_HDF5) $(INCLUDE_PETSC) $(INCLUDE_FFTW) \
   $(INCLUDE_CUDA) $(INCLUDE_PREPROCESSOR)
