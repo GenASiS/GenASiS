@@ -16,7 +16,7 @@ module CONSTANT_Singleton
       !-- Mathematical
       PI  =  acos ( -1.0_KDR ), &
       !-- Physical SI
-      !   http://pdg.lbl.gov/2016/reviews/rpp2016-rev-phys-constants.pdf
+      !   http://pdg.lbl.gov/2018/reviews/rpp2018-rev-phys-constants.pdf
       SPEED_OF_LIGHT_SI     =  2.99792458e+8_KDR, &
       PLANCK_REDUCED_SI     =  1.054571800e-34_KDR, &
       ELECTRON_CHARGE_SI    =  1.6021766208e-19_KDR, &
@@ -28,17 +28,17 @@ module CONSTANT_Singleton
       AVOGADRO_SI           =  6.022140857e23_KDR, &
       BOLTZMANN_SI          =  1.38064852e-23_KDR, &
       FERMI_HBAR_C_3_GEV_2  =  1.1663787e-5_KDR, &
-      SIN_2_WEINBERG        =  0.23129, &
+      SIN_2_WEINBERG        =  0.23122, &
       !-- Astrophysical SI
-      !   http://pdg.lbl.gov/2016/reviews
-      !          /rpp2016-rev-astrophysical-constants.pdf
+      !   http://pdg.lbl.gov/2018/reviews
+      !          /rpp2018-rev-astrophysical-constants.pdf
       ASTRONOMICAL_UNIT_SI  =  1.49597870700e+11_KDR, &
       PARSEC_SI             =  3.08567758149e+16_KDR, &
       SOLAR_MASS_SI         =  1.98848e+30_KDR, &
       !-- Particles (that are not in the PDG Physical Constants)  
-      !   http://www-pdg.lbl.gov/2016/tables/rpp2016-tab-baryons-N.pdf
+      !   http://www-pdg.lbl.gov/2018/tables/rpp2018-tab-baryons-N.pdf
       NEUTRON_MASS_AMU        =   1.0086649159_KDR, &
-      NEUTRON_AXIAL_COUPLING  =  -1.2723_KDR, &
+      NEUTRON_AXIAL_COUPLING  =  -1.2724_KDR, &
       !-- GenASiS Fundamental
       SPEED_OF_LIGHT  =  1.0_KDR, &
       PLANCK_REDUCED  =  1.0_KDR, &    
