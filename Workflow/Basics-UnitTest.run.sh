@@ -18,7 +18,7 @@ function RunExecutables
 
 
 echo "======================================================"
-echo "       VARIABLE MANAGEMENT UNIT TESTS : DEBUG         "
+echo "           VARIABLE MANAGEMENT UNIT TESTS             "
 echo "======================================================"
 
 cd $GENASIS_WORKSPACE/Programs/UnitTests/Basics/VariableManagement/Specifiers/Executables

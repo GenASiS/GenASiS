@@ -8,7 +8,7 @@ set -o errexit  #-- exit on any error
 PURPOSE=$1
 
 echo "======================================================"
-echo "       VARIABLE MANAGEMENT UNIT TESTS : DEBUG         "
+echo "       VARIABLE MANAGEMENT UNIT TESTS : $PURPOSE      "
 echo "======================================================"
 
 cd $GENASIS_WORKSPACE/Programs/UnitTests/Basics/VariableManagement/Specifiers/Executables
@@ -27,14 +27,14 @@ cd ../../Storages/Executables
 make PURPOSE=${PURPOSE} clobber all
 
 echo "======================================================"
-echo "                  DISPLAY UNIT TESTS                  "
+echo "            DISPLAY UNIT TESTS : $PURPOSE             "
 echo "======================================================"
 
 cd $GENASIS_WORKSPACE/Programs/UnitTests/Basics/Display/Executables
 make PURPOSE=${PURPOSE} clobber all
 
 echo "======================================================"
-echo "             MESSAGE_PASSING UNIT TESTS               "
+echo "        MESSAGE_PASSING UNIT TESTS : $PURPOSE         "
 echo "======================================================"
 
 cd $GENASIS_WORKSPACE/Programs/UnitTests/Basics/MessagePassing/MessagePassingBasics/Executables
@@ -47,7 +47,7 @@ cd ../../Collective/Executables
 make PURPOSE=${PURPOSE} clobber all
 
 echo "======================================================"
-echo "                FILE SYSTEM UNIT TESTS                "
+echo "          FILE SYSTEM UNIT TESTS : $PURPOSE           "
 echo "======================================================"
 
 cd $GENASIS_WORKSPACE/Programs/UnitTests/Basics/FileSystem/FileSystemBasics/Executables
@@ -69,7 +69,7 @@ cd ../../UnstructuredGridImages/Executables
 make PURPOSE=${PURPOSE} clobber all
 
 echo "======================================================"
-echo "                  RUNTIME UNIT TESTS                  "
+echo "           RUNTIME UNIT TESTS : $PURPOSE              "
 echo "======================================================"
 
 cd $GENASIS_WORKSPACE/Programs/UnitTests/Basics/Runtime/Executables
