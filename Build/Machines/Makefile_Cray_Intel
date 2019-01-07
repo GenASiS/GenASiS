@@ -1,13 +1,15 @@
 # Makefile for Cray (XT5, XE/XK, XC90) with Intel compiler (PrgEnv-intel)
 # If PrgEnv-intel is not the default, use "module swap" to PrgEnv-intel
 
-FORTRAN_COMPILE      = ftn -c
+FORTRAN_COMPILE      = ftn -fpp -c -openmp
 FORTRAN_BOUND_CHECK  = -CB
 FORTRAN_DEBUG        = -g -warn all -fpe0 -fpe-all=0 -ftrapuv -traceback
 FORTRAN_OPTIMIZE     = -fast
 FORTRAN_PROFILE      = 
 
-CC_COMPILE = cc -c 
+CC_COMPILE  = cc -c -openmp
+CC_DEBUG    = -g
+CC_OPTIMIZE = $(FORTRAN_OPTIMIZE)
 
 LINK = ftn -openmp
 
@@ -24,10 +26,7 @@ LIBRARY_SILO = -L${SILO_DIR}/lib -lsiloh5 -lstdc++
 INCLUDE_HDF5 = 
 LIBRARY_HDF5 = 
 
-#-- LAPACK library may be automatically linked by 
-#-- "module load lapack" if provided, otherwise, manually put 
-#-- link line flag & location below
-LIBRARY_LAPACK = 
+INCLUDE_PREPROCESSOR = -I$(PATH_GENASIS)/Build
 
 #-- Enable unicode
 USE_ISO_10646 =
