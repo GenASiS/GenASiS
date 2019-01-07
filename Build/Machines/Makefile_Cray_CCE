@@ -1,14 +1,16 @@
 # Makefile for Cray (XT5, XE/XK, XC90) with Cray Compiling Environment (CCE)
 # If PrgEnv-cray is not the default, use "module swap" to PrgEnv-cray
 
-FORTRAN_COMPILE      = ftn -c
+FORTRAN_COMPILE      = ftn -c -eF
 FORTRAN_BOUND_CHECK  = -R bcp
-FORTRAN_DEBUG        = -hdevelop -hfp0 -K trap=fp
+FORTRAN_DEBUG        = -g -hdevelop -hfp0 -K trap=fp
 FORTRAN_OPTIMIZE     = #-Oipa2 #-- Default optimization (O2) but with lower ipa
                        #       #   level (defaupt ipa3 causes issue)
 FORTRAN_PROFILE      = 
 
-CC_COMPILE = cc -c 
+CC_COMPILE  = cc -c -eF
+CC_DEBUG    = -g -hdevelop
+CC_OPTIMIZE = $(FORTRAN_OPTIMIZE)
 
 LINK = ftn
 
@@ -17,7 +19,7 @@ LINK = ftn
 #-- link line flag &  location below
 SILO_DIR=/ccs/home/reubendb/projects/swtree/xk7/silo/4.10.2/cle5.2_gnu5.3.0
 INCLUDE_SILO = -I${SILO_DIR}/include
-LIBRARY_SILO = -L${SILO_DIR}/lib -lsiloh5
+LIBRARY_SILO = -L${SILO_DIR}/lib -lsiloh5 -lz
 
 #-- HDF5 library may be  automatically included & linked by 
 #-- "module load hdf5" if provided, otherwise, manually put include and 
@@ -25,10 +27,13 @@ LIBRARY_SILO = -L${SILO_DIR}/lib -lsiloh5
 INCLUDE_HDF5 = 
 LIBRARY_HDF5 = 
 
-#-- LAPACK library may be automatically linked by 
-#-- "module load lapack" if provided, otherwise, manually put 
-#-- link line flag & location below
-LIBRARY_LAPACK = 
+INCLUDE_PREPROCESSOR = -I$(PATH_GENASIS)/Build
 
 #-- Enable unicode
 USE_ISO_10646 = 
+
+ifdef ENABLE_OMP_OFFLOAD
+  ifeq ($(ENABLE_OMP_OFFLOAD), 1)
+    DEFINES = -DENABLE_OMP_OFFLOAD
+  endif
+endif

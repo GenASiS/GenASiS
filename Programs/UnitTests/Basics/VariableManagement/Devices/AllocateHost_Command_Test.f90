@@ -70,7 +70,7 @@ program AllocateHost_Command_Test
   integer ( KDI ) :: &
     iV, &
     iVrbl, &
-    nValues = 20000, &
+    nValues = 2000, &
     nVrbls
   real ( KDR ) :: &
     StartTime, &

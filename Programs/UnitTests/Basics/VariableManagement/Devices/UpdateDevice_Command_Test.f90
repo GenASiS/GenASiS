@@ -36,7 +36,7 @@ program UpdateDevice_Command_Test
   dValue_1D = C_NULL_PTR
   dValue_2D = C_NULL_PTR
   
-  nValues = 30000
+  nValues = 3000
   
   allocate ( Value_1D ( nValues ) )
   allocate ( Value_2D ( nValues, nValues ) )
