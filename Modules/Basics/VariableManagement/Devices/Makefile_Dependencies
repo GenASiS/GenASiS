@@ -58,6 +58,10 @@ OffloadEnabled_Function.o: \
   Device_C_OMP.o \
   OffloadEnabled_Function.f90
 
+GetNumberOfDevices_Function.o: \
+  Specifiers.o \
+  GetNumberOfDevices_Function.f90
+
 Devices.o: \
   AllocateDevice_Command.o \
   AssociateHost_Command.o \
@@ -68,6 +72,7 @@ Devices.o: \
   AllocateHost_Command.o \
   DeallocateHost_Command.o \
   OffloadEnabled_Function.o \
+  GetNumberOfDevices_Function.o \
   Devices.f90
 
 Devices.a: $(DEVICES)

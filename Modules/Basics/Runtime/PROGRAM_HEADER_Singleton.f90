@@ -989,7 +989,7 @@ contains
     
     call Show ( 'OpenMP environment', CONSOLE % INFO_1 )
     call Show ( PH % MaxThreads,  'MaxThreads', CONSOLE % INFO_1 )
-    call Show ( OMP_GET_NUM_DEVICES ( ), 'nDevices', CONSOLE % INFO_1 )
+    call Show ( GetNumberOfDevices ( ), 'nDevices', CONSOLE % INFO_1 )
     call Show ( OffloadEnabled ( ), 'Offload enabled', CONSOLE % INFO_1 )
     call Show &
            ( adjustl ( adjustr ( OMP_ScheduleLabelPrefix ) &

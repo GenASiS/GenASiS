@@ -9,5 +9,6 @@ module Devices
   use AllocateHost_Command
   use DeallocateHost_Command
   use OffloadEnabled_Function
+  use GetNumberOfDevices_Function
   
 end module Devices
