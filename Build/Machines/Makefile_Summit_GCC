@@ -22,5 +22,10 @@ LIBRARY_CUDA =
 
 INCLUDE_PREPROCESSOR = -I$(PATH_GENASIS)/Build
 
-#-- Enable unicode
+#-- Enable unicode by default
 USE_ISO_10646 = 1
+
+#-- Enable offload if requested
+ifeq ($(ENABLE_OMP_OFFLOAD), 1)
+  DEFINES = -DENABLE_OMP_OFFLOAD
+endif

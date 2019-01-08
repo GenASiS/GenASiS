@@ -1,30 +1,18 @@
 # Makefile for Summit XL compiler 
 
-#-- default to use OpenMP offload for this makefile
-ifndef ENABLE_OMP_OFFLOAD
-ENABLE_OMP_OFFLOAD = 1
-endif
-
-FORTRAN_FLAGS = -DENABLE_OMP_OFFLOAD -qsmp=omp -qoffload
-C_FLAGS = -DENABLE_OMP_OFFLOAD -qsmp=omp
-ifeq ($(ENABLE_OMP_OFFLOAD), 0)
-  FORTRAN_FLAGS = -qsmp=omp
-  C_FLAGS = -qsmp=omp
-endif
-
-FORTRAN_COMPILE      = mpifort -c -qpreprocess $(FORTRAN_FLAGS)
+FORTRAN_COMPILE      = mpifort -c -qpreprocess -qsmp=omp
 FORTRAN_BOUND_CHECK  = -qcheck=bounds
 FORTRAN_DEBUG        = -g -qsigtrap #-Wall
 FORTRAN_OPTIMIZE     = -Ofast
 FORTRAN_PROFILE      = 
 
-CC_COMPILE           = mpicc -c $(C_FLAGS) -Ofast
+CC_COMPILE           = mpicc -c -qsmp=omp
 CC_DEBUG             = -g
 CC_OPTIMIZE          = $(FORTRAN_OPTIMIZE)
 
 NVCC_COMPILE         = nvcc -c
 
-LINK = mpifort $(FORTRAN_FLAGS) #-qsmp=omp:auto -qoffload
+LINK = mpifort -qsmp=omp 
 
 LINK_NVCC = nvcc
 
@@ -39,3 +27,11 @@ LIBRARY_CUDA = -L${OLCF_CUDA_ROOT}/lib64 -lcudart
 endif
 
 INCLUDE_PREPROCESSOR = -I$(PATH_GENASIS)/Build
+
+#-- Enable unicode
+USE_ISO_10646 = 
+
+#-- default to use OpenMP offload for this makefile
+ifneq ($(ENABLE_OMP_OFFLOAD), 0)
+  DEFINES = -DENABLE_OMP_OFFLOAD -qoffload
+endif

@@ -4,7 +4,9 @@ include $(PATH_BUILD)/Machines/Makefile_$(MACHINE)
 include $(PATH_BUILD)/Makefile_Path
 include $(PATH_BUILD)/Makefile_ObjectFiles
 
+FFLAGS = $(FORTRAN_$(PURPOSE))
 CFLAGS = $(CC_$(PURPOSE))
+FLAGS  = $(DEFINES)
 
 INCLUDE = \
   $(INCLUDE_SILO) $(INCLUDE_HDF5) $(INCLUDE_PETSC) $(INCLUDE_FFTW) \
