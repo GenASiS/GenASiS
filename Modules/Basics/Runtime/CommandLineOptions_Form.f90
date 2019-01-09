@@ -3,7 +3,7 @@
 
 module CommandLineOptions_Form
   
-  use VariableManagement
+  use Specifiers
   use FileSystem
 
   implicit none

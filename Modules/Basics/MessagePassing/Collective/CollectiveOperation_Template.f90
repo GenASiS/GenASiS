@@ -5,7 +5,7 @@
 module CollectiveOperation_Template
 
   use MPI
-  use VariableManagement
+  use Specifiers
   use MessagePassingBasics
 
   implicit none

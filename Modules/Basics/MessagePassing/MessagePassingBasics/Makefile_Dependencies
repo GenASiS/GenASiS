@@ -1,10 +1,10 @@
 Communicator_Form.o: \
-  VariableManagement.o \
+  Specifiers.o \
   Display.o \
   Communicator_Form.f90
 
 PortalHeader_Form.o: \
-  VariableManagement.o \
+  Specifiers.o \
   Display.o \
   PortalHeader_Form.f90
 

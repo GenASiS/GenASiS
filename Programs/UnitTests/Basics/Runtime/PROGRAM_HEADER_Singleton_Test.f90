@@ -1,7 +1,7 @@
 program PROGRAM_HEADER_Singleton_Test
 
   use OMP_LIB
-  use VariableManagement
+  use Specifiers
   use Display
   use PROGRAM_HEADER_Singleton
 

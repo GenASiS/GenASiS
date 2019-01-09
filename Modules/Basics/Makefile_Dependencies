@@ -1,11 +1,15 @@
-include $(PATH_VARIABLE_MANAGEMENT)/Makefile_Dependencies
+include $(PATH_SPECIFIERS)/Makefile_Dependencies
+include $(PATH_DEVICES)/Makefile_Dependencies
+include $(PATH_DATA_MANAGEMENT)/Makefile_Dependencies
 include $(PATH_DISPLAY)/Makefile_Dependencies
 include $(PATH_MESSAGE_PASSING)/Makefile_Dependencies
 include $(PATH_FILE_SYSTEM)/Makefile_Dependencies
 include $(PATH_RUNTIME)/Makefile_Dependencies
 
 Basics.o: \
-  VariableManagement.o \
+  Specifiers.o \
+  Devices.o \
+  DataManagement.o \
   Display.o \
   MessagePassing.o \
   FileSystem.o \

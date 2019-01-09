@@ -1,7 +1,7 @@
 program MessageIncomingOutgoing_Forms_Test
 
   use MPI
-  use VariableManagement
+  use Specifiers
   use Display
   use MessagePassingBasics
   use MessageIncoming_I__Form

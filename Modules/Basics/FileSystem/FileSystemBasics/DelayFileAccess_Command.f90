@@ -4,7 +4,7 @@
 
 module DelayFileAccess_Command
 
-  use VariableManagement
+  use Specifiers
 
   implicit none
   private

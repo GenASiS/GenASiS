@@ -4,7 +4,8 @@
 
 module CurveImage_Form
 
-  use VariableManagement
+  use Specifiers
+  use DataManagement
   use Display
   use MessagePassing
   use GridImageBasics

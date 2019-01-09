@@ -4,7 +4,7 @@ subroutine ShowMessage &
              ( Character, IgnorabilityOption, DisplayRankOption, &
                nLeadingLinesOption, nTrailingLinesOption )
 
-    use VariableManagement
+    use Specifiers
     use KIND_DEFAULT_Singleton
     use Show_Command
 

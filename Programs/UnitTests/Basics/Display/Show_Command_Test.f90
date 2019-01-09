@@ -1,7 +1,7 @@
 program Show_Command_Test
 
   use ISO_FORTRAN_ENV
-  use VariableManagement
+  use Specifiers
   use CONSOLE_Singleton
   use Show_Command
 

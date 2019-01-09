@@ -2,7 +2,7 @@
 
 module TableStream_Form
   
-  use VariableManagement
+  use Specifiers
   use Display
   use DelayFileAccess_Command
 

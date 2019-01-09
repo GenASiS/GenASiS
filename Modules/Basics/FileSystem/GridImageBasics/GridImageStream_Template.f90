@@ -6,7 +6,7 @@
 module GridImageStream_Template
 
   use iso_c_binding
-  use VariableManagement
+  use Specifiers
   use Display
   use MessagePassing
   use FileSystemBasics

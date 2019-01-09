@@ -5,13 +5,13 @@ include $(PATH_GENASIS)/Build/Makefile_Build
 all: \
   PointGridImage_Form_Test
 
-PointGridImage_Form_Test: VariableManagement.a Display.a \
+PointGridImage_Form_Test: Specifiers.a Devices.a DataManagement.a Display.a \
   MessagePassing.a FileSystemBasics.a GridImageBasics.a \
   PointGridImage_Form_Test.o
 	$(LINK) $(FLAGS) -o PointGridImage_Form_Test_$(MACHINE) \
           PointGridImage_Form_Test.o PointGridImage_Form.o \
           GridImageBasics.a FileSystemBasics.a MessagePassing.a Display.a \
-          VariableManagement.a $(LIBRARIES)
+          DataManagement.a Devices.a Specifiers.a $(LIBRARIES)
 
 clean:
 	rm -f *.o *.a *.mod *.ld
@@ -19,7 +19,9 @@ clean:
 clobber: clean
 	rm -f PointGridImage_Form_Test_*
 
-include $(PATH_VARIABLE_MANAGEMENT)/Makefile_Dependencies
+include $(PATH_SPECIFIERS)/Makefile_Dependencies
+include $(PATH_DEVICES)/Makefile_Dependencies
+include $(PATH_DATA_MANAGEMENT)/Makefile_Dependencies
 include $(PATH_DISPLAY)/Makefile_Dependencies
 include $(PATH_MESSAGE_PASSING)/Makefile_Dependencies
 include $(PATH_FILE_SYSTEM_BASICS)/Makefile_Dependencies
@@ -27,7 +29,8 @@ include $(PATH_GRID_IMAGE_BASICS)/Makefile_Dependencies
 include $(PATH_POINT_GRID_IMAGES)/Makefile_Dependencies
 
 PointGridImage_Form_Test.o: \
-  VariableManagement.o \
+  Specifiers.o \
+  DataManagement.o \
   Display.o \
   MessagePassing.o \
   GridImageBasics.o \

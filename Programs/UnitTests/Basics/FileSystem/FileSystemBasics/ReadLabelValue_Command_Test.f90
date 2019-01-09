@@ -1,7 +1,7 @@
 program ReadLabelValue_Command_Test
 
   use ISO_FORTRAN_ENV
-  use VariableManagement
+  use Specifiers
   use Display
   use MessagePassing
   use ReadLabelValue_Command

@@ -5,7 +5,8 @@
 module CollectiveOperation_I__Form
 
   use MPI
-  use VariableManagement
+  use Specifiers
+  use DataManagement
   use Display
   use MessagePassingBasics
   use PointToPoint

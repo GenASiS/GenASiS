@@ -6,7 +6,8 @@ module PROGRAM_HEADER_Singleton
 
   use ISO_FORTRAN_ENV
   use OMP_LIB
-  use VariableManagement
+  use Specifiers
+  use Devices
   use Display
   use MessagePassing
   use FileSystem

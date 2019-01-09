@@ -20,14 +20,14 @@ DB_UnstructuredVariableType_Silo_C.o: \
   DB_UnstructuredVariableType_Silo_C.f90
 
 GridImageStream_Template.o: \
-  VariableManagement.o \
+  Specifiers.o \
   Display.o \
   MessagePassing.o \
   FileSystemBasics.o \
   GridImageStream_Template.f90
 
 GridImageStream_Form.o: \
-  VariableManagement.o \
+  Specifiers.o \
   Display.o \
   MessagePassing.o \
   FileSystemBasics.o \
@@ -36,13 +36,13 @@ GridImageStream_Form.o: \
   GridImageStream_Form.f90
 
 GridImage_Template.o: \
-  VariableManagement.o \
+  Specifiers.o \
   Display.o \
   GridImageStream_Template.o \
   GridImage_Template.f90
 
 GridImageSilo_Template.o: \
-  VariableManagement.o \
+  Specifiers.o \
   Display.o \
   GridImageStream_Form.o \
   DB_QuadMeshType_Silo_C.o \

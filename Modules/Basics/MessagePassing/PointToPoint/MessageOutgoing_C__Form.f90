@@ -4,7 +4,7 @@
 module MessageOutgoing_C__Form
 
   use MPI
-  use VariableManagement
+  use Specifiers
   use Message_C__Form
 
   implicit none

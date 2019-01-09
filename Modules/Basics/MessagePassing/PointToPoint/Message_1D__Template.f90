@@ -5,7 +5,8 @@
 module Message_1D__Template
 
   use MPI
-  use VariableManagement
+  use Specifiers
+  use Devices
   use Message_Template
  
   implicit none

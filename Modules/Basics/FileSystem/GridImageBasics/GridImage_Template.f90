@@ -3,7 +3,8 @@
 
 module GridImage_Template
 
-  use VariableManagement
+  use Specifiers
+  use DataManagement
   use Display
   use GridImageStream_Template
         
@@ -54,7 +55,7 @@ module GridImage_Template
   !  
   !  subroutine WriteMultiMeshInterface &
   !               ( GI, Name, TimeOption, CycleNumberOption, HideOption )
-  !    use VariableManagement
+  !    use Specifiers
   !    import GridImageTemplate
   !    class ( GridImageTemplate ), intent ( inout ) :: &
   !      GI
@@ -71,7 +72,7 @@ module GridImage_Template
   !  
   !  subroutine WriteMultiVariableInterface &
   !               ( GI, Name, TimeOption, CycleNumberOption )
-  !    use VariableManagement
+  !    use Specifiers
   !    import GridImageTemplate
   !    class ( GridImageTemplate ), intent ( inout ) :: &
   !      GI

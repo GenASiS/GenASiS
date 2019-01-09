@@ -1,4 +1,4 @@
-module VariableManagement
+module DataManagement
 
   use Specifiers
   use Devices
@@ -6,4 +6,4 @@ module VariableManagement
   use ArrayArrays
   use Storages
 
-end module VariableManagement
+end module DataManagement

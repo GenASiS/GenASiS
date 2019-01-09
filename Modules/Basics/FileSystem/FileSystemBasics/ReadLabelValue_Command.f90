@@ -3,7 +3,7 @@
 
 module ReadLabelValue_Command
   
-  use VariableManagement
+  use Specifiers
 
   implicit none
   private 

@@ -1,6 +1,6 @@
 program WallTime_Function_Test
 
-  use VariableManagement
+  use Specifiers
   use Display
   use MessagePassing
   use WallTime_Function

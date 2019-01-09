@@ -5,7 +5,8 @@
 module GridImageSilo_Template
 
   use iso_c_binding
-  use VariableManagement
+  use Specifiers
+  use DataManagement
   use Display
   use GridImageStream_Form
   use DB_QuadMeshType_Silo_C
@@ -51,7 +52,7 @@ module GridImageSilo_Template
   abstract interface 
   
     subroutine SetReadAttributesInterface ( GI, Directory, oValue )
-      use VariableManagement
+      use Specifiers
       import GridImageSiloTemplate
       class ( GridImageSiloTemplate ), intent ( inout ) :: &
         GI  
@@ -62,7 +63,7 @@ module GridImageSilo_Template
     end subroutine
     
     subroutine WriteInterface ( GI, TimeOption, CycleNumberOption )
-      use VariableManagement
+      use Specifiers
       import GridImageSiloTemplate
       class ( GridImageSiloTemplate ), intent ( inout ) :: &
         GI
@@ -73,7 +74,7 @@ module GridImageSilo_Template
     end subroutine WriteInterface
     
     subroutine ReadInterface ( GI, TimeOption, CycleNumberOption )
-      use VariableManagement
+      use Specifiers
       import GridImageSiloTemplate
       class ( GridImageSiloTemplate ), intent ( inout ) :: &
         GI

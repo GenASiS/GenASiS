@@ -5,8 +5,9 @@ include $(PATH_GENASIS)/Build/Makefile_Build
 all: \
   MessageIncomingOutgoing_Forms_Test MessageIncomingOutgoing_1D__Forms_Test
 
-MessageIncomingOutgoing_Forms_Test: VariableManagement.a Display.a \
-  MessagePassingBasics.a MessageIncomingOutgoing_Forms_Test.o
+MessageIncomingOutgoing_Forms_Test: Specifiers.a Devices.a \
+  DataManagement.a Display.a MessagePassingBasics.a \
+  MessageIncomingOutgoing_Forms_Test.o
 	$(LINK) $(FLAGS) \
           -o MessageIncomingOutgoing_Forms_Test_$(MACHINE) \
           MessageIncomingOutgoing_Forms_Test.o \
@@ -17,10 +18,12 @@ MessageIncomingOutgoing_Forms_Test: VariableManagement.a Display.a \
 	  Message_R__Form.o Message_C__Form.o \
           Message_I__Form.o Message_BI__Form.o \
 	  Message_Template.o \
-          MessagePassingBasics.a Display.a VariableManagement.a
+          MessagePassingBasics.a Display.a DataManagement.a Devices.a \
+          Specifiers.a
 
-MessageIncomingOutgoing_1D__Forms_Test: VariableManagement.a Display.a \
-  MessagePassingBasics.a MessageIncomingOutgoing_1D__Forms_Test.o
+MessageIncomingOutgoing_1D__Forms_Test: Specifiers.a Devices.a \
+  DataManagement.a Display.a MessagePassingBasics.a \
+  MessageIncomingOutgoing_1D__Forms_Test.o
 	$(LINK) $(FLAGS) \
           -o MessageIncomingOutgoing_1D__Forms_Test_$(MACHINE) \
           MessageIncomingOutgoing_1D__Forms_Test.o \
@@ -36,7 +39,8 @@ MessageIncomingOutgoing_1D__Forms_Test: VariableManagement.a Display.a \
 	  Message_R__Form.o Message_C__Form.o \
           Message_I__Form.o Message_BI__Form.o \
 	  Message_Template.o \
-          MessagePassingBasics.a Display.a VariableManagement.a
+          MessagePassingBasics.a Display.a DataManagement.a Devices.a \
+          Specifiers.a
 
 clean:
 	rm -f *.o *.a *.mod *.ld
@@ -45,13 +49,15 @@ clobber: clean
 	rm -f MessageIncomingOutgoing_Forms_Test_*
 	rm -f MessageIncomingOutgoing_1D__Forms_Test_*
 
-include $(PATH_VARIABLE_MANAGEMENT)/Makefile_Dependencies
+include $(PATH_SPECIFIERS)/Makefile_Dependencies
+include $(PATH_DEVICES)/Makefile_Dependencies
+include $(PATH_DATA_MANAGEMENT)/Makefile_Dependencies
 include $(PATH_DISPLAY)/Makefile_Dependencies
 include $(PATH_MESSAGE_PASSING_BASICS)/Makefile_Dependencies
 include $(PATH_POINT_TO_POINT)/Makefile_Dependencies
 
 MessageIncomingOutgoing_Forms_Test.o: \
-  VariableManagement.o \
+  Specifiers.o \
   Display.o \
   MessagePassingBasics.o \
   MessageIncoming_I__Form.o \
@@ -65,7 +71,7 @@ MessageIncomingOutgoing_Forms_Test.o: \
   MessageIncomingOutgoing_Forms_Test.f90
 
 MessageIncomingOutgoing_1D__Forms_Test.o: \
-  VariableManagement.o \
+  Specifiers.o \
   Display.o \
   MessagePassingBasics.o \
   MessageIncoming_1D_I__Form.o \

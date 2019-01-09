@@ -1,5 +1,6 @@
 CurveImage_Form.o: \
-  VariableManagement.o \
+  Specifiers.o \
+  DataManagement.o \
   Display.o \
   MessagePassing.o \
   GridImageBasics.o \

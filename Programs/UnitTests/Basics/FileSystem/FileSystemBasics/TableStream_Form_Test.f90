@@ -1,6 +1,6 @@
 program TableStream_Form_Test
 
-  use VariableManagement
+  use Specifiers
   use Display
   use MessagePassing
   use TableStream_Form

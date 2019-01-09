@@ -4,7 +4,8 @@
 module UnstructuredGridImage_Form
   
   use iso_c_binding
-  use VariableManagement
+  use Specifiers
+  use DataManagement
   use Display
   use GridImageBasics
 

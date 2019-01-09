@@ -1,26 +1,26 @@
 DelayFileAccess_Command.o: \
-  VariableManagement.o \
+  Specifiers.o \
   DelayFileAccess_Command.f90
 
 ReadLabelValue_Command.o: \
-  VariableManagement.o \
+  Specifiers.o \
   ReadLabelValue_Command.f90
 
 FindParameter_Command.o: \
-  VariableManagement.o \
+  Specifiers.o \
   Display.o \
   ReadLabelValue_Command.o \
   FindParameter_Command.f90
 
 ParameterStream_Form.o: \
-  VariableManagement.o \
+  Specifiers.o \
   Display.o \
   DelayFileAccess_Command.o \
   FindParameter_Command.o \
   ParameterStream_Form.f90
 
 TableStream_Form.o: \
-  VariableManagement.o \
+  Specifiers.o \
   Display.o \
   DelayFileAccess_Command.o \
   TableStream_Form.f90

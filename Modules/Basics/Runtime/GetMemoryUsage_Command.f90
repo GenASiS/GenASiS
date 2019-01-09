@@ -4,7 +4,8 @@
 module GetMemoryUsage_Command
   
   use MPI
-  use VariableManagement
+  use Specifiers
+  use DataManagement
   use Display
   use MessagePassing
 

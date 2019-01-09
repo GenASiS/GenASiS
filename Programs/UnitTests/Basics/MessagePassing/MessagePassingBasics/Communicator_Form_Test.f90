@@ -1,6 +1,6 @@
 program Communicator_Form_Test
 
-  use VariableManagement
+  use Specifiers
   use Display
   use Communicator_Form
 

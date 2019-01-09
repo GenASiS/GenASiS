@@ -1,5 +1,6 @@
 UnstructuredGridImage_Form.o: \
-  VariableManagement.o \
+  Specifiers.o \
+  DataManagement.o \
   Display.o \
   GridImageBasics.o \
   UnstructuredGridImage_Form.f90

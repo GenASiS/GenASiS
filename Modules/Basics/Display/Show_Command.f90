@@ -4,7 +4,7 @@
 module Show_Command
 
   use iso_c_binding
-  use VariableManagement
+  use Specifiers
   use CONSOLE_Singleton
  
   implicit none

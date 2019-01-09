@@ -1,6 +1,6 @@
 program Timer_Form_Test
 
-  use VariableManagement
+  use Specifiers
   use Display
   use MessagePassing
   use Timer_Form

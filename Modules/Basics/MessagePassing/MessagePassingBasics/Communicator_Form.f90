@@ -4,7 +4,7 @@
 module Communicator_Form
   
   use MPI
-  use VariableManagement
+  use Specifiers
   use Display
 
   implicit none

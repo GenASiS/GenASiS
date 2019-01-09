@@ -7,7 +7,7 @@ subroutine ShowInteger &
     !-- Convention on argument order violated because the Integer being
     !   "Show"n is more important than the Description.
 
-    use VariableManagement
+    use Specifiers
     use Show_Command
 
     implicit none

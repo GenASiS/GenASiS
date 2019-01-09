@@ -4,7 +4,7 @@ subroutine ShowCharacter &
              ( Character, Description, IgnorabilityOption, &
                DisplayRankOption, nLeadingLinesOption, nTrailingLinesOption )
 
-    use VariableManagement
+    use Specifiers
     use Show_Command
 
     implicit none

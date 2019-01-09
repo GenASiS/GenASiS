@@ -1,0 +1,9 @@
+include $(PATH_STORAGES)/Makefile_ObjectFiles
+include $(PATH_ARRAY_ARRAYS)/Makefile_ObjectFiles
+include $(PATH_ARRAY_OPERATIONS)/Makefile_ObjectFiles
+
+DATA_MANAGEMENT = \
+  DataManagement.o \
+  $(STORAGES) \
+  $(ARRAY_ARRAYS) \
+  $(ARRAY_OPERATIONS)

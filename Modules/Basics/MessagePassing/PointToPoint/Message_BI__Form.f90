@@ -4,7 +4,7 @@
 module Message_BI__Form
 
   use MPI
-  use VariableManagement
+  use Specifiers
   use MessagePassingBasics
   use Message_Template
 

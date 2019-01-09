@@ -1,5 +1,6 @@
 StructuredGridImage_Form.o: \
-  VariableManagement.o \
+  Specifiers.o \
+  DataManagement.o \
   Display.o \
   GridImageBasics.o \
   StructuredGridImage_Form.f90

@@ -1,6 +1,6 @@
 program CONSOLE_Singleton_Test
 
-  use VariableManagement
+  use Specifiers
   use CONSOLE_Singleton
 
   implicit none
@@ -16,7 +16,7 @@ program CONSOLE_Singleton_Test
                  ( Character, IgnorabilityOption, &
                    DisplayRankOption, nLeadingLinesOption, &
                    nTrailingLinesOption )
-      use VariableManagement
+      use Specifiers
       character ( * ), intent ( in ) :: &
         Character
       integer ( KDI ), intent ( in ), optional :: &

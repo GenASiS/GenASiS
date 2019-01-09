@@ -5,7 +5,7 @@ module MessageIncoming_R__Form
 
   use iso_c_binding
   use MPI
-  use VariableManagement
+  use Specifiers
   use Message_R__Form
 
   implicit none

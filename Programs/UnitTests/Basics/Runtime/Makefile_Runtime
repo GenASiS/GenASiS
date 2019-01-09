@@ -6,46 +6,48 @@ all: \
   CommandLineOptions_Form_Test WallTime_Function_Test Timer_Form_Test \
   GetMemoryUsage_Command_Test PROGRAM_HEADER_Singleton_Test
 
-CommandLineOptions_Form_Test: VariableManagement.a Display.a MessagePassing.a \
-  FileSystem.a CommandLineOptions_Form_Test.o
+CommandLineOptions_Form_Test: Specifiers.a Devices.a DataManagement.a \
+  Display.a MessagePassing.a FileSystem.a CommandLineOptions_Form_Test.o
 	$(LINK) $(FLAGS) \
           -o CommandLineOptions_Form_Test_$(MACHINE) \
           CommandLineOptions_Form_Test.o CommandLineOptions_Form.o \
-          FileSystem.a MessagePassing.a Display.a VariableManagement.a \
-          $(LIBRARIES)
+          FileSystem.a MessagePassing.a Display.a DataManagement.a \
+          Devices.a Specifiers.a $(LIBRARIES)
 
-WallTime_Function_Test: VariableManagement.a Display.a MessagePassing.a \
-  WallTime_Function_Test.o
+WallTime_Function_Test: Specifiers.a Devices.a DataManagement.a Display.a \
+  MessagePassing.a WallTime_Function_Test.o
 	$(LINK) $(FLAGS) \
           -o WallTime_Function_Test_$(MACHINE) \
           WallTime_Function_Test.o WallTime_Function.o \
-          MessagePassing.a Display.a VariableManagement.a $(LIBRARIES)
+          MessagePassing.a Display.a DataManagement.a Devices.a \
+          Specifiers.a $(LIBRARIES)
 
-Timer_Form_Test: VariableManagement.a Display.a MessagePassing.a \
-  Timer_Form_Test.o
+Timer_Form_Test: Specifiers.a Devices.a DataManagement.a Display.a \
+  MessagePassing.a Timer_Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Timer_Form_Test_$(MACHINE) \
           Timer_Form_Test.o Timer_Form.o WallTime_Function.o \
-          MessagePassing.a Display.a VariableManagement.a $(LIBRARIES)
+          MessagePassing.a Display.a DataManagement.a Devices.a \
+          Specifiers.a $(LIBRARIES)
 
-GetMemoryUsage_Command_Test: VariableManagement.a Display.a MessagePassing.a \
-  FileSystem.a GetMemoryUsage_Command_Test.o
+GetMemoryUsage_Command_Test: Specifiers.a Devices.a DataManagement.a \
+  Display.a MessagePassing.a FileSystem.a GetMemoryUsage_Command_Test.o
 	$(LINK) $(FLAGS) \
           -o GetMemoryUsage_Command_Test_$(MACHINE) \
           GetMemoryUsage_Command_Test.o GetMemoryUsage_Command.o \
           CommandLineOptions_Form.o \
-          FileSystem.a MessagePassing.a Display.a VariableManagement.a \
-          $(LIBRARIES)
+          FileSystem.a MessagePassing.a Display.a DataManagement.a \
+          Devices.a Specifiers.a $(LIBRARIES)
 
-PROGRAM_HEADER_Singleton_Test: VariableManagement.a Display.a \
-  MessagePassing.a FileSystem.a PROGRAM_HEADER_Singleton_Test.o
+PROGRAM_HEADER_Singleton_Test: Specifiers.a Devices.a DataManagement.a \
+  Display.a MessagePassing.a FileSystem.a PROGRAM_HEADER_Singleton_Test.o
 	$(LINK) $(FLAGS) \
           -o PROGRAM_HEADER_Singleton_Test_$(MACHINE) \
           PROGRAM_HEADER_Singleton_Test.o PROGRAM_HEADER_Singleton.o \
           GetMemoryUsage_Command.o Timer_Form.o WallTime_Function.o \
           CommandLineOptions_Form.o \
-          FileSystem.a MessagePassing.a Display.a VariableManagement.a \
-          $(LIBRARIES)
+          FileSystem.a MessagePassing.a Display.a DataManagement.a \
+          Devices.a Specifiers.a $(LIBRARIES)
 
 clean:
 	rm -f *.o *.a *.mod *.ld
@@ -57,35 +59,37 @@ clobber: clean
 	rm -f GetMemoryUsage_Command_Test_*
 	rm -f PROGRAM_HEADER_Singleton_Test_*
 
-include $(PATH_VARIABLE_MANAGEMENT)/Makefile_Dependencies
+include $(PATH_SPECIFIERS)/Makefile_Dependencies
+include $(PATH_DEVICES)/Makefile_Dependencies
+include $(PATH_DATA_MANAGEMENT)/Makefile_Dependencies
 include $(PATH_DISPLAY)/Makefile_Dependencies
 include $(PATH_MESSAGE_PASSING)/Makefile_Dependencies
 include $(PATH_FILE_SYSTEM)/Makefile_Dependencies
 include $(PATH_RUNTIME)/Makefile_Dependencies
 
 CommandLineOptions_Form_Test.o: \
-  VariableManagement.o \
+  Specifiers.o \
   Display.o \
   MessagePassing.o \
   CommandLineOptions_Form.o \
   CommandLineOptions_Form_Test.f90
 
 WallTime_Function_Test.o: \
-  VariableManagement.o \
+  Specifiers.o \
   Display.o \
   MessagePassing.o \
   WallTime_Function.o \
   WallTime_Function_Test.f90
 
 Timer_Form_Test.o: \
-  VariableManagement.o \
+  Specifiers.o \
   Display.o \
   MessagePassing.o \
   Timer_Form.o \
   Timer_Form_Test.f90
 
 GetMemoryUsage_Command_Test.o: \
-  VariableManagement.o \
+  Specifiers.o \
   Display.o \
   MessagePassing.o \
   CommandLineOptions_Form.o \
@@ -93,7 +97,7 @@ GetMemoryUsage_Command_Test.o: \
   GetMemoryUsage_Command_Test.f90
 
 PROGRAM_HEADER_Singleton_Test.o: \
-  VariableManagement.o \
+  Specifiers.o \
   Display.o \
   MessagePassing.o \
   FileSystem.o \

@@ -1,33 +1,35 @@
 InitializeRandomSeed_Command.o: \
-  VariableManagement.o \
+  Specifiers.o \
   Display.o \
   MessagePassing.o \
   FileSystem.o \
   InitializeRandomSeed_Command.f90
 
 CommandLineOptions_Form.o: \
-  VariableManagement.o \
+  Specifiers.o \
   FileSystem.o \
   CommandLineOptions_Form.f90
 
 WallTime_Function.o: \
-  VariableManagement.o \
+  Specifiers.o \
   WallTime_Function.f90
 
 Timer_Form.o: \
-  VariableManagement.o \
+  Specifiers.o \
   Display.o \
   WallTime_Function.o \
   Timer_Form.f90
 
 GetMemoryUsage_Command.o: \
-  VariableManagement.o \
+  Specifiers.o \
+  DataManagement.o \
   Display.o \
   MessagePassing.o \
   GetMemoryUsage_Command.f90
 
 PROGRAM_HEADER_Singleton.o: \
-  VariableManagement.o \
+  Specifiers.o \
+  Devices.o \
   Display.o \
   MessagePassing.o \
   FileSystem.o \

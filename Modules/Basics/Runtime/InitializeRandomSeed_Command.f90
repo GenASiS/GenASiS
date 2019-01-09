@@ -3,7 +3,7 @@
 
 module InitializeRandomSeed_Command
   
-  use VariableManagement
+  use Specifiers
   use Display
   use MessagePassing
   use FileSystem

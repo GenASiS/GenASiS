@@ -8,16 +8,24 @@ set -o errexit  #-- exit on any error
 PURPOSE=$1
 
 echo "======================================================"
-echo "       VARIABLE MANAGEMENT UNIT TESTS : $PURPOSE      "
+echo "            SPECIFIERS UNIT TESTS : $PURPOSE          "
+echo "======================================================"
+cd $GENASIS_WORKSPACE/Programs/UnitTests/Basics/Specifiers/Executables
+make PURPOSE=${PURPOSE} clobber all
+
+
+echo "======================================================"
+echo "            DEVICES UNIT TESTS : $PURPOSE          "
+echo "======================================================"
+cd $GENASIS_WORKSPACE/Programs/UnitTests/Basics/Devices/Executables
+make PURPOSE=${PURPOSE} clobber all
+
+
+echo "======================================================"
+echo "         DATA MANAGEMENT UNIT TESTS : $PURPOSE        "
 echo "======================================================"
 
-cd $GENASIS_WORKSPACE/Programs/UnitTests/Basics/VariableManagement/Specifiers/Executables
-make PURPOSE=${PURPOSE} clobber all
-
-cd ../../Devices/Executables
-make PURPOSE=${PURPOSE} clobber all
-
-cd ../../ArrayOperations/Executables
+cd $GENASIS_WORKSPACE/Programs/UnitTests/Basics/DataManagement/ArrayOperations/Executables
 make PURPOSE=${PURPOSE} clobber all
 
 cd ../../ArrayArrays/Executables
@@ -74,4 +82,3 @@ echo "======================================================"
 
 cd $GENASIS_WORKSPACE/Programs/UnitTests/Basics/Runtime/Executables
 make PURPOSE=${PURPOSE} clobber all
-

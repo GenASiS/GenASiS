@@ -5,22 +5,24 @@ include $(PATH_GENASIS)/Build/Makefile_Build
 all: \
   REDUCTION_Singleton_Test CollectiveOperation_Form_Test
 
-REDUCTION_Singleton_Test: VariableManagement.a Display.a \
+REDUCTION_Singleton_Test: Specifiers.a Devices.a DataManagement.a Display.a \
   MessagePassingBasics.a REDUCTION_Singleton_Test.o
 	$(LINK) $(FLAGS) \
           -o REDUCTION_Singleton_Test_$(MACHINE) \
 	  REDUCTION_Singleton_Test.o REDUCTION_Singleton.o \
-          MessagePassingBasics.a Display.a VariableManagement.a
+          MessagePassingBasics.a Display.a Specifiers.a
 
-CollectiveOperation_Form_Test: VariableManagement.a Display.a \
-  MessagePassingBasics.a PointToPoint.a CollectiveOperation_Form_Test.o
+CollectiveOperation_Form_Test: Specifiers.a Devices.a DataManagement.a \
+  Display.a MessagePassingBasics.a PointToPoint.a \
+  CollectiveOperation_Form_Test.o
 	$(LINK) $(FLAGS) \
           -o CollectiveOperation_Form_Test_$(MACHINE) \
           CollectiveOperation_Form_Test.o CollectiveOperation_C__Form.o \
           CollectiveOperation_R__Form.o CollectiveOperation_BI__Form.o \
           CollectiveOperation_I__Form.o CollectiveOperation_Template.o \
           REDUCTION_Singleton.o \
-          PointToPoint.a MessagePassingBasics.a Display.a VariableManagement.a
+          PointToPoint.a MessagePassingBasics.a Display.a \
+          DataManagement.a Devices.a Specifiers.a
 
 clean:
 	rm -f *.o *.a *.mod *.ld
@@ -29,21 +31,23 @@ clobber: clean
 	rm -f REDUCTION_Singleton_Test_*
 	rm -f CollectiveOperation_Form_Test_*
 
-include $(PATH_VARIABLE_MANAGEMENT)/Makefile_Dependencies
+include $(PATH_SPECIFIERS)/Makefile_Dependencies
+include $(PATH_DEVICES)/Makefile_Dependencies
+include $(PATH_DATA_MANAGEMENT)/Makefile_Dependencies
 include $(PATH_DISPLAY)/Makefile_Dependencies
 include $(PATH_MESSAGE_PASSING_BASICS)/Makefile_Dependencies
 include $(PATH_POINT_TO_POINT)/Makefile_Dependencies
 include $(PATH_COLLECTIVE)/Makefile_Dependencies
 
 REDUCTION_Singleton_Test.o: \
-  VariableManagement.o \
+  Specifiers.o \
   Display.o \
   MessagePassingBasics.o \
   REDUCTION_Singleton.o \
   REDUCTION_Singleton_Test.f90
 
 CollectiveOperation_Form_Test.o: \
-  VariableManagement.o \
+  Specifiers.o \
   Display.o \
   MessagePassingBasics.o \
   REDUCTION_Singleton.o \

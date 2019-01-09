@@ -1,6 +1,7 @@
 program GetMemoryUsage_Command_Test
 
-  use VariableManagement
+  use Specifiers
+  use DataManagement
   use Display
   use MessagePassing
   use CommandLineOptions_Form

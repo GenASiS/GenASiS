@@ -4,7 +4,7 @@
 module REDUCTION_Singleton
 
   use MPI
-  use VariableManagement
+  use Specifiers
 
   implicit none
   private

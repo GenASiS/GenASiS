@@ -1,6 +1,7 @@
 program GridImageStream_Form_Test
 
-  use VariableManagement
+  use Specifiers
+  use DataManagement
   use Display
   use MessagePassing
   use GridImageStream_Form

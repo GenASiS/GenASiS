@@ -5,7 +5,8 @@ module Message_Template
 
   use iso_c_binding
   use MPI
-  use VariableManagement
+  use Specifiers
+  use Devices
   use MessagePassingBasics
 
   implicit none

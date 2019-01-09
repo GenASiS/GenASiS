@@ -1,6 +1,8 @@
 module Basics
-
-  use VariableManagement
+  
+  use Specifiers
+  use Devices
+  use DataManagement
   use Display
   use MessagePassing
   use FileSystem

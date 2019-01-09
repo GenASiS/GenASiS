@@ -1,15 +1,19 @@
-PATH_VARIABLE_MANAGEMENT   = $(PATH_BASICS)/VariableManagement
+PATH_SPECIFIERS            = $(PATH_BASICS)/Specifiers
+PATH_DEVICES               = $(PATH_BASICS)/Devices
+PATH_DATA_MANAGEMENT       = $(PATH_BASICS)/DataManagement
 PATH_DISPLAY               = $(PATH_BASICS)/Display
 PATH_MESSAGE_PASSING       = $(PATH_BASICS)/MessagePassing
 PATH_FILE_SYSTEM           = $(PATH_BASICS)/FileSystem
 PATH_RUNTIME               = $(PATH_BASICS)/Runtime
 
-include $(PATH_VARIABLE_MANAGEMENT)/Makefile_Path
+include $(PATH_DATA_MANAGEMENT)/Makefile_Path
 include $(PATH_MESSAGE_PASSING)/Makefile_Path
 include $(PATH_FILE_SYSTEM)/Makefile_Path
 
 VPATH_BASICS = \
-  $(VPATH_VARIABLE_MANAGEMENT):\
+  $(PATH_SPECIFIERS):\
+  $(PATH_DEVICES):\
+  $(VPATH_DATA_MANAGEMENT):\
   $(PATH_DISPLAY):\
   $(VPATH_MESSAGE_PASSING):\
   $(VPATH_FILE_SYSTEM):\

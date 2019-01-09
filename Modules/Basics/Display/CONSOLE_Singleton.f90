@@ -4,7 +4,7 @@
 
 module CONSOLE_Singleton
 
-  use VariableManagement
+  use Specifiers
   use ConsoleHeader_Form
 
   implicit none
@@ -45,7 +45,7 @@ module CONSOLE_Singleton
                  ( Integer, Description, IgnorabilityOption, &
                    DisplayRankOption, nLeadingLinesOption, &
                    nTrailingLinesOption )
-      use VariableManagement
+      use Specifiers
       integer ( KDI ), intent ( in ) :: &
         Integer
       character ( * ), intent ( in ) :: &
@@ -61,7 +61,7 @@ module CONSOLE_Singleton
                  ( Character, Description, IgnorabilityOption, &
                    DisplayRankOption, nLeadingLinesOption, &
                    nTrailingLinesOption )
-      use VariableManagement
+      use Specifiers
       character ( * ), intent ( in ) :: &
         Character, &
         Description
@@ -76,7 +76,7 @@ module CONSOLE_Singleton
                  ( Character, IgnorabilityOption, &
                    DisplayRankOption, nLeadingLinesOption, &
                    nTrailingLinesOption )
-      use VariableManagement
+      use Specifiers
       character ( * ), intent ( in ) :: &
         Character
       integer ( KDI ), intent ( in ), optional :: &

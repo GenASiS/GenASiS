@@ -1,5 +1,6 @@
 PointGridImage_Form.o: \
-  VariableManagement.o \
+  Specifiers.o \
+  DataManagement.o \
   Display.o \
   GridImageBasics.o \
   PointGridImage_Form.f90

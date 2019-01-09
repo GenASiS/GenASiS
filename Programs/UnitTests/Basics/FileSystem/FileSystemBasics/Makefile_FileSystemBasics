@@ -6,44 +6,44 @@ all: \
   DelayFileAccess_Command_Test ReadLabelValue_Command_Test \
   FindParameter_Command_Test ParameterStream_Form_Test TableStream_Form_Test
 
-DelayFileAccess_Command_Test: VariableManagement.a Display.a MessagePassing.a \
+DelayFileAccess_Command_Test: Specifiers.a Display.a MessagePassing.a \
   DelayFileAccess_Command_Test.o
 	$(LINK) $(FLAGS) \
           -o DelayFileAccess_Command_Test_$(MACHINE) \
           DelayFileAccess_Command_Test.o DelayFileAccess_Command.o \
-          MessagePassing.a Display.a VariableManagement.a
+          MessagePassing.a Display.a Specifiers.a
 
-ReadLabelValue_Command_Test: VariableManagement.a Display.a MessagePassing.a \
+ReadLabelValue_Command_Test: Specifiers.a Display.a MessagePassing.a \
   ReadLabelValue_Command_Test.o
 	$(LINK) $(FLAGS) \
           -o ReadLabelValue_Command_Test_$(MACHINE) \
           ReadLabelValue_Command_Test.o ReadLabelValue_Command.o \
-          MessagePassing.a Display.a VariableManagement.a
+          MessagePassing.a Display.a Specifiers.a
 
-FindParameter_Command_Test: VariableManagement.a Display.a MessagePassing.a \
+FindParameter_Command_Test: Specifiers.a Display.a MessagePassing.a \
   FindParameter_Command_Test.o
 	$(LINK) $(FLAGS) \
           -o FindParameter_Command_Test_$(MACHINE) \
           FindParameter_Command_Test.o FindParameter_Command.o \
           ReadLabelValue_Command.o \
-          MessagePassing.a Display.a VariableManagement.a
+          MessagePassing.a Display.a Specifiers.a
 
-ParameterStream_Form_Test: VariableManagement.a Display.a MessagePassing.a \
+ParameterStream_Form_Test: Specifiers.a Display.a MessagePassing.a \
   ParameterStream_Form_Test.o
 	$(LINK) $(FLAGS) \
           -o ParameterStream_Form_Test_$(MACHINE) \
           ParameterStream_Form_Test.o ParameterStream_Form.o \
           FindParameter_Command.o ReadLabelValue_Command.o \
           DelayFileAccess_Command.o \
-          MessagePassing.a Display.a VariableManagement.a
+          MessagePassing.a Display.a Specifiers.a
 
-TableStream_Form_Test: VariableManagement.a Display.a MessagePassing.a \
+TableStream_Form_Test: Specifiers.a Display.a MessagePassing.a \
   TableStream_Form_Test.o
 	$(LINK) $(FLAGS) \
           -o TableStream_Form_Test_$(MACHINE) \
           TableStream_Form_Test.o TableStream_Form.o \
           DelayFileAccess_Command.o \
-          MessagePassing.a Display.a VariableManagement.a
+          MessagePassing.a Display.a Specifiers.a
 
 clean:
 	rm -f *.o *.a *.mod *.ld
@@ -55,7 +55,9 @@ clobber: clean
 	rm -f ParameterStream_Form_Test_*
 	rm -f TableStream_Form_Test_*
 
-include $(PATH_VARIABLE_MANAGEMENT)/Makefile_Dependencies
+include $(PATH_SPECIFIERS)/Makefile_Dependencies
+include $(PATH_DEVICES)/Makefile_Dependencies
+include $(PATH_DATA_MANAGEMENT)/Makefile_Dependencies
 include $(PATH_DISPLAY)/Makefile_Dependencies
 include $(PATH_MESSAGE_PASSING)/Makefile_Dependencies
 include $(PATH_FILE_SYSTEM_BASICS)/Makefile_Dependencies
@@ -67,28 +69,28 @@ DelayFileAccess_Command_Test.o: \
   DelayFileAccess_Command_Test.f90
 
 ReadLabelValue_Command_Test.o: \
-  VariableManagement.o \
+  Specifiers.o \
   Display.o \
   MessagePassing.o \
   ReadLabelValue_Command.o \
   ReadLabelValue_Command_Test.f90
 
 FindParameter_Command_Test.o: \
-  VariableManagement.o \
+  Specifiers.o \
   Display.o \
   MessagePassing.o \
   FindParameter_Command.o \
   FindParameter_Command_Test.f90
 
 ParameterStream_Form_Test.o: \
-  VariableManagement.o \
+  Specifiers.o \
   Display.o \
   MessagePassing.o \
   ParameterStream_Form.o \
   ParameterStream_Form_Test.f90
 
 TableStream_Form_Test.o: \
-  VariableManagement.o \
+  Specifiers.o \
   Display.o \
   MessagePassing.o \
   TableStream_Form.o \

@@ -1,7 +1,8 @@
 program CurveImage_Form_Test
 
   use ISO_FORTRAN_ENV
-  use VariableManagement
+  use Specifiers
+  use DataManagement
   use Display
   use MessagePassing
   use GridImageStream_Form

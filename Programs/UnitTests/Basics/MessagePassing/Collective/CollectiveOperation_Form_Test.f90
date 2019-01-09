@@ -1,6 +1,6 @@
 program CollectiveOperation_Form_Test
 
-  use VariableManagement
+  use Specifiers
   use Display
   use MessagePassingBasics
   use REDUCTION_Singleton

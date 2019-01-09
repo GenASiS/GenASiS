@@ -4,7 +4,7 @@
 module WallTime_Function
   
   use MPI
-  use VariableManagement
+  use Specifiers
 
   implicit none
   private

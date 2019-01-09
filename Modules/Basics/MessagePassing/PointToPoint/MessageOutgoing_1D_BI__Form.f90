@@ -5,7 +5,7 @@
 module MessageOutgoing_1D_BI__Form
 
   use MPI
-  use VariableManagement
+  use Specifiers
   use MessagePassingBasics
   use Message_Template
   use MessageOutgoing_BI__Form

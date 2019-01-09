@@ -4,7 +4,8 @@
 module Message_R__Form
 
   use MPI
-  use VariableManagement
+  use Specifiers
+  use Devices
   use MessagePassingBasics
   use Message_Template
 
