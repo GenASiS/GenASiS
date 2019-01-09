@@ -651,7 +651,7 @@ contains
            ( PF, &
              iaSelectedOption &
                = [ PF % COMOVING_DENSITY, PF % VELOCITY, &
-                   PF % PRESSURE ], &
+                   PF % PRESSURE, PF % POLYTROPIC_PARAMETER ], &
              VectorOption = [ 'Velocity                       ' ], &
              VectorIndicesOption = VectorIndices )
 
