@@ -52,6 +52,8 @@ contains
       Wavenumber
     type ( MeasuredValueForm ), dimension ( 3 ) :: &
       VelocityUnit
+    type ( StorageForm ) :: &
+      Primitive
 
     call PWA % Initialize ( PROGRAM_HEADER % Communicator )
 
@@ -62,6 +64,10 @@ contains
     type is ( PressurelessFluidForm )
 
     call PF % Initialize ( DM, NameOption = 'PressurelessFluid' )
+    call PF % AllocateDevice ( )
+
+    call Primitive % Initialize ( PF, iaSelectedOption = PF % iaPrimitive )
+    call DM % SetGhostExchange ( Primitive )
 
     nWavelengths = 0
     nWavelengths ( 1 : DM % nDimensions ) = 1
