@@ -263,7 +263,8 @@ contains
         T_P  => PROGRAM_HEADER % Timer ( CLS % iTimerPrimitive ), &
         T_DT_D  => PROGRAM_HEADER % Timer ( CLS % iTimerDataTransferDevice ), &
         T_DT_H  => PROGRAM_HEADER % Timer ( CLS % iTimerDataTransferHost ) )
-        
+
+    call Show ( 'Preparing Step', CONSOLE % INFO_4 )    
     call Primitive % Initialize &
            ( Current, iaSelectedOption = Current % iaPrimitive )
     
@@ -271,7 +272,7 @@ contains
     !       ( Current, &
     !         iaSelectedOption = [ Current % FAST_EIGENSPEED_PLUS ( : ), &
     !                              Current % FAST_EIGENSPEED_MINUS ( : ) ] )
-    
+
     call T_DT_D % Start ( )
     call Current % UpdateDevice ( )
     call T_DT_D % Stop ( )
@@ -286,8 +287,11 @@ contains
     
     !-- Substep 1
     
+    call Show ( 'Solving Substep 1', CONSOLE % INFO_4 )
+
     call CLS % ComputeUpdate ( TimeStep ) !-- K1 = dT * RHS
     
+    call Show ( 'Adding Update', CONSOLE % INFO_5 )
     call T_RK % Start ( )
     do iV = 1, Current % N_CONSERVED
       !-- Current = Old + K1
@@ -301,6 +305,8 @@ contains
     end do
     call T_RK % Stop ( )
     
+    call Show ( 'Computing Fluid', CONSOLE % INFO_5 )
+
     call T_P % Start ( )
     call Current % ComputePrimitive ( Current % Value, Current % D_Selected )
     call T_P % Stop ( )
@@ -313,6 +319,8 @@ contains
     call Primitive % UpdateHost ( ) 
     call T_DT_H % Stop ( )
     
+    call Show ( 'Ghost Exchange', CONSOLE % INFO_5 )
+
     call T_C % Start ( )
     call DM % StartGhostExchange ( )
     call DM % FinishGhostExchange ( )
@@ -324,8 +332,11 @@ contains
     
     !-- Substep 2
     
+    call Show ( 'Solving Substep 2', CONSOLE % INFO_4 )
+
     call CLS % ComputeUpdate ( TimeStep ) !-- K2 = dT * RHS
     
+    call Show ( 'Combining Updates', CONSOLE % INFO_5 )
     call T_RK % Start ( )
     do iV = 1, Current % N_CONSERVED
       !-- Current = Old + 0.5 * ( k1 + k2 )
@@ -343,6 +354,8 @@ contains
     end do
     call T_RK % Stop ( )
     
+    call Show ( 'Computing Fluid', CONSOLE % INFO_5 )
+
     call T_P % Start ( )
     call Current % ComputePrimitive ( Current % Value, Current % D_Selected )
     call T_P % Stop ( )
@@ -355,6 +368,8 @@ contains
     call Primitive % UpdateHost ( ) 
     call T_DT_H % Stop ( )
     
+    call Show ( 'Ghost Exchange', CONSOLE % INFO_5 )
+
     call T_C % Start ( )
     call DM % StartGhostExchange ( )
     call DM % FinishGhostExchange ( )
@@ -381,6 +396,8 @@ contains
       iD, &  !-- iDimension
       iV
 
+    call Show ( 'Computing Update', CONSOLE % INFO_5 )
+
     associate ( CF => CLS % ConservedFields )
     associate ( DM => CF % DistributedMesh )
     associate ( T_U => PROGRAM_HEADER % Timer ( CLS % iTimerUpdate ) )
@@ -388,6 +405,8 @@ contains
     call Clear ( CLS % Update % D_Selected, CLS % Update % Value )
     
     do iD = 1, DM % nDimensions
+
+      call Show ( iD, 'iD', CONSOLE % INFO_5 )
 
       call CLS % ComputeDifferences ( iD )
       call CLS % ComputeReconstruction ( )

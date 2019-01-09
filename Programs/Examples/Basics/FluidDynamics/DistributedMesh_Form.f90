@@ -220,6 +220,8 @@ contains
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       V  !-- Variable
 
+    call Show ( 'Start Ghost Exchange', CONSOLE % INFO_6 )
+
     associate &
       ( S_1D  => DM % Storage, &
         PHP   => DM % PortalHeaderPrevious, &
@@ -227,12 +229,15 @@ contains
 
     !-- Post Receives
     
+    call Show ( 'Post Receives', CONSOLE % INFO_7 )
     call DM % IncomingPrevious % Receive ( )
     call DM % IncomingNext % Receive ( )
 
     !-- Send to Previous
     
+    call Show ( 'Send to Previous', CONSOLE % INFO_7 )
     do iD = 1, DM % nDimensions
+      call Show ( iD, 'iD', CONSOLE % INFO_7 )
       jD = mod ( iD, 3 ) + 1
       kD = mod ( jD, 3 ) + 1
       oBuffer = 0
@@ -263,7 +268,9 @@ contains
 
     !--- Send to Next
 
+    call Show ( 'Send to Next', CONSOLE % INFO_7 )
     do iD = 1, DM % nDimensions
+      call Show ( iD, 'iD', CONSOLE % INFO_7 )
       jD = mod ( iD, 3 ) + 1
       kD = mod ( jD, 3 ) + 1
       oBuffer = 0
@@ -316,6 +323,8 @@ contains
       nReceive
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       V  !-- Variable
+
+    call Show ( 'Finish Ghost Exchange', CONSOLE % INFO_6 )
 
     associate ( S_1D  => DM % Storage )
 
