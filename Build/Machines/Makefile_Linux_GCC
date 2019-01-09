@@ -29,8 +29,3 @@ INCLUDE_PREPROCESSOR = -I$(PATH_GENASIS)/Build
 #-- Enable unicode
 USE_ISO_10646 = 1
 
-ifdef ENABLE_OMP_OFFLOAD
-  ifeq ($(ENABLE_OMP_OFFLOAD), 1)
-    DEFINES = -DENABLE_OMP_OFFLOAD
-  endif
-endif

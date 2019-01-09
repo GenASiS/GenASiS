@@ -1,13 +1,17 @@
 # Makefile for generic linux with Intel compiler and Intel MPI
 
 
-FORTRAN_COMPILE      = mpif90 -c -qopenmp
+FORTRAN_COMPILE      = mpif90 -fpp -c -openmp
 FORTRAN_BOUND_CHECK  = -CB
 FORTRAN_DEBUG        = -g -warn all -fpe0 -fpe-all=0 -ftrapuv -traceback
-FORTRAN_OPTIMIZE     = -O3 -xHost
+FORTRAN_OPTIMIZE     = -fast
 FORTRAN_PROFILE      = 
 
-LINK = mpif90 -qopenmp
+CC_COMPILE  = icc -c -openmp
+CC_DEBUG    = -g
+CC_OPTIMIZE = $(FORTRAN_OPTIMIZE)
+
+LINK = mpif90 -openmp
 
 #-- Silo library include and link line flag and location
 INCLUDE_SILO = #-I/usr/local/silo/4.10/intel/include
@@ -16,5 +20,17 @@ LIBRARY_SILO = #-L/usr/local/silo/4.10/intel/lib -lsilo
 #INCLUDE_SILO=-I${SILO_DIR}/include
 #LIBRARY_SILO=-L${SILO_DIR}/lib -lsilo
 
+#-- HDF5 library may be  automatically included & linked by 
+#-- "module load hdf5" if provided, otherwise, manually put include and 
+#-- link line flag &  location below
+INCLUDE_HDF5 = 
+LIBRARY_HDF5 = 
+
 #-- LAPACK library link line flag and location
 LIBRARY_LAPACK = #-L/usr/local/lapack-3.7.1/lib -llapack -lrefblas
+
+INCLUDE_PREPROCESSOR = -I$(PATH_GENASIS)/Build
+
+#-- Enable unicode
+USE_ISO_10646 =
+
