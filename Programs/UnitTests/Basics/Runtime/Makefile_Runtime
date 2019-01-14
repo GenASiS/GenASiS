@@ -3,8 +3,18 @@ PATH_GENASIS = ../../../../..
 include $(PATH_GENASIS)/Build/Makefile_Build
 
 all: \
-  CommandLineOptions_Form_Test WallTime_Function_Test Timer_Form_Test \
+  InitializeRandomSeed_Command_Test CommandLineOptions_Form_Test \
+  WallTime_Function_Test Timer_Form_Test \
   GetMemoryUsage_Command_Test PROGRAM_HEADER_Singleton_Test
+
+InitializeRandomSeed_Command_Test: Specifiers.a Devices.a DataManagement.a \
+  Display.a MessagePassing.a FileSystem.a InitializeRandomSeed_Command_Test.o
+	$(LINK) $(FLAGS) \
+          -o InitializeRandomSeed_Command_Test_$(MACHINE) \
+          InitializeRandomSeed_Command_Test.o InitializeRandomSeed_Command.o \
+          FileSystem.a MessagePassing.a Display.a DataManagement.a \
+          Devices.a Specifiers.a $(LIBRARIES)
+
 
 CommandLineOptions_Form_Test: Specifiers.a Devices.a DataManagement.a \
   Display.a MessagePassing.a FileSystem.a CommandLineOptions_Form_Test.o
@@ -67,6 +77,13 @@ include $(PATH_MESSAGE_PASSING)/Makefile_Dependencies
 include $(PATH_FILE_SYSTEM)/Makefile_Dependencies
 include $(PATH_RUNTIME)/Makefile_Dependencies
 
+InitializeRandomSeed_Command_Test.o: \
+  Specifiers.o \
+  Display.o \
+  MessagePassing.o \
+  InitializeRandomSeed_Command.o \
+  InitializeRandomSeed_Command_Test.f90
+ 
 CommandLineOptions_Form_Test.o: \
   Specifiers.o \
   Display.o \

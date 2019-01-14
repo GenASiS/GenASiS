@@ -26,6 +26,7 @@ contains
       C 
 
     integer ( KDI ) :: &
+      iS, &
       FileUnit, &
       Status, &
       SeedSize
@@ -33,17 +34,28 @@ contains
       Seed
     real ( KDR ) :: &
       TestRandom
-
+      
     call random_seed ( size = SeedSize )
     allocate ( Seed ( SeedSize ) )
 
     call DelayFileAccess ( C % Rank )
 
     open ( newunit = FileUnit, file = RANDOM_FILE, access = 'stream', &
-           form = 'UNFORMATTED', iostat = Status )
-    read ( FileUnit ) Seed
-    close ( FileUnit )
-
+           form = 'UNFORMATTED', status = 'old', iostat = Status )
+    if ( Status /= 0 ) & !-- Workaround for IBM XL compiler
+      open ( newunit = FileUnit, file = RANDOM_FILE, access = 'sequential', &
+           form = 'UNFORMATTED', status = 'old', iostat = Status )
+    
+    if ( Status == 0 ) then
+      read ( FileUnit ) Seed
+      close ( FileUnit )
+    else
+      do iS = 1, SeedSize
+        call system_clock ( Seed ( iS ), count_rate = TestRandom )
+      end do
+      Seed = Seed * ( C % Rank + 1 )
+    end if
+    
     call random_seed ( put = Seed )
     call random_number ( TestRandom )
     
