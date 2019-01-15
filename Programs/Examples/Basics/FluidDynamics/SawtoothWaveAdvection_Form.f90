@@ -67,15 +67,17 @@ contains
       W
     
     real ( KDR ) :: &
-      X_Safe
+      X_Safe, &
+      Pi
 
     X_Safe = sign ( max ( tiny ( 0.0_KDR ), abs ( X ) ), X )
     
     associate &
       ( O => PWA % Offset, &
-        A => PWA % Amplitude, &
-        Pi => CONSTANT % PI )
+        A => PWA % Amplitude)
+        ! Pi => CONSTANT % PI ) !-- FIXME: XL bug prevents correct association
 
+    Pi =  CONSTANT % PI
     W  =  O  -  2.0_KDR * A / Pi * atan ( 1.0_KDR / tan ( Pi * X_Safe ) )
 
     end associate !-- O, etc.
