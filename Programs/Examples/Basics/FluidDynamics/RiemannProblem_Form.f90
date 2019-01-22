@@ -62,7 +62,8 @@ contains
     call PF % AllocateDevice ( )
     
     call Primitive % Initialize ( PF, iaSelectedOption = PF % iaPrimitive )
-    call DM % SetGhostExchange ( Primitive )
+    !call DM % SetGhostExchange ( Primitive )
+    call DM % SetGhostExchange ( PF )
 
     !-- Left and Right states
 

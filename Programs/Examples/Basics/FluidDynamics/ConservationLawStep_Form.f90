@@ -303,6 +303,7 @@ contains
                Current % D_Selected ( iaC ( iV ) ), &
                Current % Value ( :, iaC ( iV ) ) )
     end do
+    
     call T_RK % Stop ( )
     
     call Show ( 'Computing Fluid', CONSOLE % INFO_5 )
@@ -316,7 +317,8 @@ contains
     call T_A % Stop ( )
     
     call T_DT_H % Start ( )
-    call Primitive % UpdateHost ( ) 
+    !call Primitive % UpdateHost ( ) 
+    call Current % UpdateHost ( )
     call T_DT_H % Stop ( )
     
     call Show ( 'Ghost Exchange', CONSOLE % INFO_5 )
@@ -327,7 +329,8 @@ contains
     call T_C % Stop ( )
     
     call T_DT_D % Start ( )
-    call Primitive % UpdateDevice ( )
+    !call Primitive % UpdateDevice ( )
+    call Current % UpdateDevice ( )
     call T_DT_D % Stop ( )
     
     !-- Substep 2
@@ -365,7 +368,8 @@ contains
     call T_A % Stop ( )
     
     call T_DT_H % Start ( )
-    call Primitive % UpdateHost ( ) 
+    !call Primitive % UpdateHost ( ) 
+    call Current % UpdateHost ( ) 
     call T_DT_H % Stop ( )
     
     call Show ( 'Ghost Exchange', CONSOLE % INFO_5 )
@@ -374,6 +378,11 @@ contains
     call DM % StartGhostExchange ( )
     call DM % FinishGhostExchange ( )
     call T_C % Stop ( )
+    
+    call T_DT_H % Start ( )
+    !call Primitive % UpdateHost ( ) 
+    call Current % UpdateDevice ( ) 
+    call T_DT_H % Stop ( )
     
     !call T_DT_H % Start ( )
     !call Eigenspeed % UpdateHost ( ) 
@@ -534,7 +543,7 @@ contains
              CLS % ReconstructionInner % D_Selected )
     call CF % ComputeAuxiliary &
            ( CLS % ReconstructionOuter % Value, &
-             CLS % ReconstructionInner % D_Selected )
+             CLS % ReconstructionOuter % D_Selected )
     call T_A % Stop ( )
     
     call T_C % Start ( )
