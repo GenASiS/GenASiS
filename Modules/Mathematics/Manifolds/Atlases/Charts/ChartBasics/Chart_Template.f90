@@ -265,6 +265,7 @@ contains
     C % AllocatedValues  =  .false.  !-- NOT COPIED!
     C % IsPeriodic       => C_Source % IsPeriodic
     C % CoordinateSystem => C_Source % CoordinateSystem
+    C % CoordinateLabel  => C_Source % CoordinateLabel
     C % Spacing          => C_Source % Spacing
     C % Type             => C_Source % Type
     C % Name             => C_Source % Name

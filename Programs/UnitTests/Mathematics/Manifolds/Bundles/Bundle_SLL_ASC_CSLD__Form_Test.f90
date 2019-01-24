@@ -76,7 +76,9 @@ contains
     Spacing ( 1 ) = 'COMPACTIFIED'
 
     call Bundle % CreateChart &
-           ( SpacingOption = Spacing, CoordinateSystemOption = 'SPHERICAL', &
+           ( SpacingOption = Spacing, &
+             CoordinateLabelOption = [ 'Energy  ', 'VarTheta', 'VarPhi  ' ], &
+             CoordinateSystemOption = 'SPHERICAL', &
              CoordinateUnitOption = CoordinateUnit, &
              ScaleOption = Scale, nCellsOption = [ 8, 8, 8 ], &
              nGhostLayersOption = [ 0, 0, 0 ] )
