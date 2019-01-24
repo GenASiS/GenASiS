@@ -1,0 +1,8 @@
+include $(PATH_RADIATION_BASICS)/Makefile_Dependencies
+
+Radiations.o: \
+  RadiationBasics.o \
+  Radiations.f90
+
+Radiations.a: $(RADIATIONS)
+	ar r Radiations.a $(RADIATIONS)

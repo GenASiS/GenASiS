@@ -1,0 +1,4 @@
+RADIATION_BASICS = \
+  RadiationBasics.o \
+  SetFermiDiracSpectrum_Command.o \
+  SetPlanckSpectrum_Command.o

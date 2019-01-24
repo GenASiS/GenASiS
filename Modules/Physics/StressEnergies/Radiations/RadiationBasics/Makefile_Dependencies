@@ -1,0 +1,15 @@
+SetPlanckSpectrum_Command.o: \
+  Basics.o \
+  SetPlanckSpectrum_Command.f90
+
+SetFermiDiracSpectrum_Command.o: \
+  Basics.o \
+  SetFermiDiracSpectrum_Command.f90
+
+RadiationBasics.o: \
+  SetPlanckSpectrum_Command.o \
+  SetFermiDiracSpectrum_Command.o \
+  RadiationBasics.f90
+
+RadiationBasics.a: $(RADIATION_BASICS)
+	ar r RadiationBasics.a $(RADIATION_BASICS)

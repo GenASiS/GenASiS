@@ -1,0 +1,5 @@
+include $(PATH_RADIATION_BASICS)/Makefile_ObjectFiles
+
+RADIATIONS = \
+  Radiations.o \
+  $(RADIATION_BASICS)
