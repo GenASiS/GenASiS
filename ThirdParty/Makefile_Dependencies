@@ -1,4 +1,10 @@
-include $(PATH_OCONNOR_OTT)/Makefile
+include $(PATH_OCONNOR_OTT)/Makefile_Dependencies
 
-ThirdParty.a: $(THIRD_PARTY)
-	ar r ThirdParty.a $(THIRD_PARTY)
+ThirdParty.a: OConnorOtt_EOS
+	mkdir ThirdPartyObjects
+	cd ThirdPartyObjects && ar x ../$(PATH_OCONNOR_OTT_EOS)/nuc_eos.a
+	ar r ThirdParty.a ThirdPartyObjects/*.o
+	rm -rf ThirdPartyObjects
+
+clean_ThirdParty:
+	$(MAKE) -C $(PATH_OCONNOR_OTT_EOS) clean

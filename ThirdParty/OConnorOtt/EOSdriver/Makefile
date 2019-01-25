@@ -1,5 +1,4 @@
 include ./make.inc
-#include $(PATH_OCONNOR_OTT)/make.inc
 
 SOURCES=eosmodule.F90 readtable.F90 nuc_eos.F90 bisection.F90 findtemp.F90 findrho.F90 linterp_many.F90
 FSOURCES=linterp.f
@@ -13,7 +12,7 @@ EXTRADEPS=
 
 MODINC=$(HDF5INCS)
 
-#all: nuc_eos.a driver onezone
+all: nuc_eos.a driver onezone
 
 onezone: nuc_eos.a one_zone.F90
 	$(F90) $(F90FLAGS) -o one_zone one_zone.F90 nuc_eos.a $(HDF5LIBS)
@@ -21,10 +20,8 @@ onezone: nuc_eos.a one_zone.F90
 driver: nuc_eos.a driver.F90
 	$(F90) $(F90FLAGS) -o driver driver.F90 nuc_eos.a $(HDF5LIBS)
 
-#nuc_eos.a: $(OBJECTS) $(FOBJECTS)
-#	ar r nuc_eos.a *.o
 nuc_eos.a: $(OBJECTS) $(FOBJECTS)
-	ar r nuc_eos.a $(OBJECTS) $(FOBJECTS)
+	ar r nuc_eos.a *.o
 
 $(OBJECTS): %.o: %.F90 $(EXTRADEPS)
 	$(F90) $(F90FLAGS) $(DEFS) $(MODINC) -c $< -o $@
@@ -33,5 +30,5 @@ $(FOBJECTS): %.o: %.f $(EXTRADEPS)
 	$(F90) $(F90FLAGS) $(DEFS) $(MODINC) -c $< -o $@
 
 
-#clean: 
-#	$(CLEANSTUFF)
+clean: 
+	$(CLEANSTUFF)
