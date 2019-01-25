@@ -5,7 +5,7 @@
 subroutine read_eos_table(local_eos_filename)
   use nulib
   implicit none
-  character*200, intent(IN) :: local_eos_filename !ignored if Helmholtz
+  character(*), intent(IN) :: local_eos_filename !ignored if Helmholtz
 
 #if HELMHOLTZ_EOS
   include 'other_eos/helmholtz/vector_eos.dek'

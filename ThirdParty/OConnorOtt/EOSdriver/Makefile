@@ -1,5 +1,5 @@
-#include ./make.inc
-include $(PATH_OCONNOR_OTT)/make.inc
+include ./make.inc
+#include $(PATH_OCONNOR_OTT)/make.inc
 
 SOURCES=eosmodule.F90 readtable.F90 nuc_eos.F90 bisection.F90 findtemp.F90 findrho.F90 linterp_many.F90
 FSOURCES=linterp.f

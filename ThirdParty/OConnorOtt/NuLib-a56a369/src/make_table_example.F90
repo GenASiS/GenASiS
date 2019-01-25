@@ -122,7 +122,7 @@ program make_table_example
   outdir="./"
   base="NuLib"
   vnum="1.0"
-  
+
   adhoc_nux_factor = 0.0d0 !increase for adhoc nux heating (also set
                            !add_nux_absorption_on_n_and_p to true)
   !set up table
