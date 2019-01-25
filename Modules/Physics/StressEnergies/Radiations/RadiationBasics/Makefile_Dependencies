@@ -6,9 +6,15 @@ SetFermiDiracSpectrum_Command.o: \
   Basics.o \
   SetFermiDiracSpectrum_Command.f90
 
+Interactions_Template.o: \
+  Basics.o \
+  Fluids.o \
+  Interactions_Template.f90
+
 RadiationBasics.o: \
   SetPlanckSpectrum_Command.o \
   SetFermiDiracSpectrum_Command.o \
+  Interactions_Template.o \
   RadiationBasics.f90
 
 RadiationBasics.a: $(RADIATION_BASICS)
