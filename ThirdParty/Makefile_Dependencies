@@ -1,10 +1,11 @@
-include $(PATH_OCONNOR_OTT)/Makefile_Dependencies
-
-ThirdParty.a: OConnorOtt_Interactions
+ThirdParty.a: OConnorOtt
 	mkdir ThirdPartyObjects
-	cd ThirdPartyObjects && ar x ../$(PATH_OCONNOR_OTT_INTERACTIONS)/nulib.a
+	cd ThirdPartyObjects && ar x ../$(PATH_OCONNOR_OTT)/nulib.a
 	ar r ThirdParty.a ThirdPartyObjects/*.o
 	rm -rf ThirdPartyObjects
 
+OConnorOtt:
+	$(MAKE) -C $(PATH_OCONNOR_OTT) nulib.a
+
 clean_ThirdParty:
-	$(MAKE) -C $(PATH_OCONNOR_OTT_EOS) clean
+	$(MAKE) -C $(PATH_OCONNOR_OTT) clean

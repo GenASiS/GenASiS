@@ -1,5 +1,0 @@
-OConnorOtt_Interactions:
-	$(MAKE) -C $(PATH_OCONNOR_OTT_INTERACTIONS) nulib.a
-
-OConnorOtt_EOS: 
-	$(MAKE) -C $(PATH_OCONNOR_OTT_EOS) nuc_eos.a
