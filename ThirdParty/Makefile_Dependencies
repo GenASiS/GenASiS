@@ -1,8 +1,8 @@
 include $(PATH_OCONNOR_OTT)/Makefile_Dependencies
 
-ThirdParty.a: OConnorOtt_EOS
+ThirdParty.a: OConnorOtt_Interactions
 	mkdir ThirdPartyObjects
-	cd ThirdPartyObjects && ar x ../$(PATH_OCONNOR_OTT_EOS)/nuc_eos.a
+	cd ThirdPartyObjects && ar x ../$(PATH_OCONNOR_OTT_INTERACTIONS)/nulib.a
 	ar r ThirdParty.a ThirdPartyObjects/*.o
 	rm -rf ThirdPartyObjects
 

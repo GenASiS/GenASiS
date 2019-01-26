@@ -128,7 +128,8 @@ $(NT_OBJECTS): %.o: %.F90 $(EXTRADEPS)
 	$(F90) $(F90FLAGS) $(DEFS) $(MODINC) $(EXTRAINCS) -c $< -o $@
 
 nuc_eos/nuc_eos.a: nuc_eos/*.F90 nuc_eos/*.f
-	$(MAKE) -C nuc_eos
+#	$(MAKE) -C nuc_eos
+	$(MAKE) -C nuc_eos nuc_eos.a
 
 clean:
 	rm -rf ../make_table_example

@@ -1,4 +1,3 @@
-!-*-f90-*-
 program driver
 
   use eosmodule
@@ -14,16 +13,15 @@ program driver
   real*8 xabar,xzbar,xmu_e,xmu_n,xmu_p,xmuhat
   real*8 xxa,xxh,xxn,xxp
 
-  integer i
 
-  keytemp = 2
+  keytemp = 1
   keyerr  = 0
 
   xrho = 10.0d0**1.474994d1
-  xtemp = 0.7d0
-  xye = 0.3d0
+  xtemp = 63.0d0
+  xye = 0.2660725d0
 
-  call readtable("/Users/evanoc/research/EOS/HShen_2010.h5")
+  call readtable("myshen_test_220r_180t_50y_extT_20090312.h5")
 
 ! keyerr --> error output; should be 0
 ! rfeps --> root finding relative accuracy, set around 1.0d-10
@@ -42,7 +40,10 @@ program driver
   write(6,*) "######################################"
 
   ! full eos call
-  
+  call nuc_eos_full(xrho,xtemp,xye,xenr,xprs,xent,xcs2,xdedt,&
+       xdpderho,xdpdrhoe,xxa,xxh,xxn,xxp,xabar,xzbar,xmu_e,xmu_n,xmu_p,&
+       xmuhat,keytemp,keyerr,precision)
+
   write(6,*) "Full EOS: ############################"
   write(6,"(1P10E15.6)") xrho,xtemp,xye
   write(6,"(1P10E15.6)") xenr,xprs,xent,sqrt(xcs2)

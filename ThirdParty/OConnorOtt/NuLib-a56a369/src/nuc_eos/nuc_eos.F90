@@ -81,7 +81,9 @@ subroutine nuc_eos_full(xrho,xtemp,xye,xenr,xprs,xent,xcs2,xdedt,&
      !need to find temperature based on xeps
      call findtemp(lr,lt,y,leps,keyerrt,rfeps)
      if(keyerrt.ne.0) then
-        stop "Did not find temperature"
+!        stop "Did not find temperature"
+       keyerr = keyerrt
+       return
      endif
      xtemp = 10.0d0**lt
 
