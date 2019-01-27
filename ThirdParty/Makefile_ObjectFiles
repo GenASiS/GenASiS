@@ -1,4 +1,0 @@
-include $(PATH_TIMMES)/Makefile_ObjectFiles
-
-THIRD_PARTY = \
-  $(TIMMES)

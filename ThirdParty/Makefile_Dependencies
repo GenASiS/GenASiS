@@ -1,11 +1,16 @@
-ThirdParty.a: OConnorOtt
+ThirdParty.a: OConnorOtt Timmes
 	mkdir ThirdPartyObjects
 	cd ThirdPartyObjects && ar x ../$(PATH_OCONNOR_OTT)/nulib.a
+	cd ThirdPartyObjects && cp ../$(PATH_TIMMES)/*.o .
 	ar r ThirdParty.a ThirdPartyObjects/*.o
 	rm -rf ThirdPartyObjects
 
 OConnorOtt:
 	$(MAKE) -C $(PATH_OCONNOR_OTT) nulib.a
 
+Timmes:
+	$(MAKE) -C $(PATH_TIMMES) fermi_dirac_quadrature.o
+
 clean_ThirdParty:
 	$(MAKE) -C $(PATH_OCONNOR_OTT) clean
+	$(MAKE) -C $(PATH_TIMMES) clean

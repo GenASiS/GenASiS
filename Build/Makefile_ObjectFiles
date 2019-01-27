@@ -1,7 +1,4 @@
-include $(PATH_THIRD_PARTY)/Makefile_ObjectFiles
 include $(PATH_MODULES)/Makefile_ObjectFiles
-include $(PATH_THIRD_PARTY)/Makefile_ObjectFiles
 
 OBJECTS = \
-  $(MODULES) \
-  $(THIRD_PARTY)
+  $(MODULES)
