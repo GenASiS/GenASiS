@@ -52,7 +52,7 @@ include $(PATH_MATHEMATICS)/Makefile_Dependencies
 include ../../FluidDynamics/Makefile_Dependencies
 include ../../GreyTransport/Makefile_Dependencies
 
-clean:
+clean: clean_ThirdParty
 	rm -f *.o *.a *.mod *.ld
 
 clobber: clean
