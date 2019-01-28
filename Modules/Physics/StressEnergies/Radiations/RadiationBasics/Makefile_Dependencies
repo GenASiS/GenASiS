@@ -11,10 +11,17 @@ Interactions_Template.o: \
   Fluids.o \
   Interactions_Template.f90
 
+RadiationMoments_Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Interactions_Template.o \
+  RadiationMoments_Form.f90
+
 RadiationBasics.o: \
   SetPlanckSpectrum_Command.o \
   SetFermiDiracSpectrum_Command.o \
   Interactions_Template.o \
+  RadiationMoments_Form.o \
   RadiationBasics.f90
 
 RadiationBasics.a: $(RADIATION_BASICS)
