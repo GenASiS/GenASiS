@@ -7,5 +7,6 @@ module RadiationBasics
   use Sources_RM__Form
   use Sources_RM_CSL__Form
   use Sources_RM_ASC__Form
+  use RadiationMoments_CSL__Form
 
 end module RadiationBasics
