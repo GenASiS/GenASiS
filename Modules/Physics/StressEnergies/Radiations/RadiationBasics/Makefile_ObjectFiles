@@ -1,5 +1,6 @@
 RADIATION_BASICS = \
   RadiationBasics.o \
+  RadiationMoments_ASC__Form.o \
   RadiationMoments_CSL__Form.o \
   Sources_RM_ASC__Form.o \
   Sources_RM_CSL__Form.o \

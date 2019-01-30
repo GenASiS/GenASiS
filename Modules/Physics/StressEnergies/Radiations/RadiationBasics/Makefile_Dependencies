@@ -45,6 +45,15 @@ RadiationMoments_CSL__Form.o: \
   Sources_RM_CSL__Form.o \
   RadiationMoments_CSL__Form.f90
 
+RadiationMoments_ASC__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  RadiationMoments_Form.o \
+  Sources_RM_CSL__Form.o \
+  Sources_RM_ASC__Form.o \
+  RadiationMoments_CSL__Form.o \
+  RadiationMoments_ASC__Form.f90
+
 RadiationBasics.o: \
   SetPlanckSpectrum_Command.o \
   SetFermiDiracSpectrum_Command.o \
@@ -54,6 +63,7 @@ RadiationBasics.o: \
   Sources_RM_CSL__Form.o \
   Sources_RM_ASC__Form.o \
   RadiationMoments_CSL__Form.o \
+  RadiationMoments_ASC__Form.o \
   RadiationBasics.f90
 
 RadiationBasics.a: $(RADIATION_BASICS)
