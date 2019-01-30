@@ -10,6 +10,7 @@ module Step_RK2_C_ASC_1D__Form
 
   use Basics
   use Fields
+  use EvolutionBasics
   use Step_RK_C_ASC_1D__Template
 
   implicit none
@@ -26,10 +27,12 @@ module Step_RK2_C_ASC_1D__Form
 contains
 
 
-  subroutine Initialize ( S, Current_ASC_1D, NameSuffix )
+  subroutine Initialize ( S, I, Current_ASC_1D, NameSuffix )
 
     class ( Step_RK2_C_ASC_1D_Form ), intent ( inout ) :: &
       S
+    class ( IntegratorHeaderForm ), intent ( in ) :: &
+      I
     class ( Current_ASC_ElementForm ), dimension ( : ), intent ( in ) :: &
       Current_ASC_1D
     character ( * ), intent ( in ) :: &
@@ -54,7 +57,7 @@ contains
     C ( 2 ) = 1.0_KDR
     
     call S % InitializeTemplate_C_ASC_1D &
-           ( Current_ASC_1D, NameSuffix, A, B, C )
+           ( I, Current_ASC_1D, NameSuffix, A, B, C )
 
   end subroutine Initialize
 
