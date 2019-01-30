@@ -13,14 +13,15 @@ Step_RK_C_ASC__Template.o: \
   Step_RK__Template.o \
   Step_RK_C_ASC__Template.f90
 
-# Step_RK_C_ASC_1D__Template.o: \
-#   Basics.o \
-#   Manifolds.o \
-#   Operations.o \
-#   Fields.o \
-#   Increments.o \
-#   Step_RK_C_ASC__Template.o \
-#   Step_RK_C_ASC_1D__Template.f90
+Step_RK_C_ASC_1D__Template.o: \
+  Basics.o \
+  Manifolds.o \
+  Operations.o \
+  Fields.o \
+  EvolutionBasics.o \
+  Increments.o \
+  Step_RK_C_ASC__Template.o \
+  Step_RK_C_ASC_1D__Template.f90
 
 Step_RK_C_BSLL_ASC_CSLD__Template.o: \
   Basics.o \
@@ -55,11 +56,11 @@ Step_RK2_C_BSLL_ASC_CSLD__Form.o: \
 Steps.o: \
   Step_RK__Template.o \
   Step_RK_C_ASC__Template.o \
+  Step_RK_C_ASC_1D__Template.o \
   Step_RK_C_BSLL_ASC_CSLD__Template.o \
   Step_RK2_C_ASC__Form.o \
   Step_RK2_C_BSLL_ASC_CSLD__Form.o \
   Steps.f90
-#  Step_RK_C_ASC_1D__Template.o \
 #  Step_RK2_C_ASC_1D__Form.o \
 
 Steps.a: $(STEPS)

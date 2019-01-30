@@ -1,4 +1,4 @@
-!-- Step_RK_C_ASC is a template for a RungeKutta time step of an array of
+!-- Step_RK_C_ASC_1D is a template for a RungeKutta time step of an array of
 !   conserved currents.
 
 module Step_RK_C_ASC_1D__Template
@@ -12,6 +12,7 @@ module Step_RK_C_ASC_1D__Template
   use Manifolds
   use Operations
   use Fields
+  use EvolutionBasics
   use Increments
   use Step_RK_C_ASC__Template
 
@@ -37,6 +38,8 @@ module Step_RK_C_ASC_1D__Template
         StorageDivergence_1D
       type ( IncrementDivergence_FV_Form ), dimension ( : ), allocatable :: &
         IncrementDivergence_1D
+      type ( ComputeConstraints_C_Pointer ), dimension ( : ), allocatable :: &
+        ComputeConstraints_1D
       type ( ApplyDivergence_C_Pointer ), dimension ( : ), allocatable :: &
         ApplyDivergence_1D
       type ( ApplySources_C_Pointer ), dimension ( : ), allocatable :: &
@@ -55,6 +58,10 @@ module Step_RK_C_ASC_1D__Template
     procedure, private, pass :: &
       InitializeTimersDivergence
     procedure, private, pass :: &
+      LoadSolution
+    procedure, private, pass :: &
+      StoreSolution
+    procedure, private, pass :: &
       InitializeIntermediate
     procedure, private, pass :: &
       IncrementIntermediate
@@ -64,12 +71,8 @@ module Step_RK_C_ASC_1D__Template
       IncrementSolution
     procedure, private, pass ( S ) :: &
       LoadSolution_C_1D
-    generic, public :: &
-      LoadSolution => LoadSolution_C_1D
     procedure, private, pass ( S ) :: &
       StoreSolution_C_1D
-    generic, public :: &
-      StoreSolution => StoreSolution_C_1D
     procedure, public, pass :: &
       Allocate_RK_C_1D
     procedure, public, pass :: &
@@ -83,10 +86,12 @@ contains
 
 
   subroutine InitializeTemplate_C_ASC_1D &
-               ( S, Current_ASC_1D, NameSuffix, A, B, C )
+               ( S, I, Current_ASC_1D, NameSuffix, A, B, C )
 
     class ( Step_RK_C_ASC_1D_Template ), intent ( inout ) :: &
       S
+    class ( IntegratorHeaderForm ), intent ( in ) :: &
+      I
     class ( Current_ASC_ElementForm ), dimension ( : ), intent ( in ), &
       target :: &
         Current_ASC_1D
@@ -105,7 +110,7 @@ contains
     if ( S % Type == '' ) &
       S % Type = 'a Step_RK_C_ASC_1D' 
 
-    call S % InitializeTemplate ( NameSuffix, A, B, C )
+    call S % InitializeTemplate ( I, NameSuffix, A, B, C )
 
     S % Current_ASC_1D => Current_ASC_1D
     S % nCurrents = size ( Current_ASC_1D )
@@ -142,14 +147,19 @@ contains
       end associate !-- ID
     end do !-- iC
 
-    allocate ( S % IncrementDamping )
-    associate ( ID => S % IncrementDamping )
-    call ID % Initialize ( S % Name )
-    end associate !-- ID
+!     allocate ( S % IncrementDamping )
+!     associate ( ID => S % IncrementDamping )
+!     call ID % Initialize ( S % Name )
+!     end associate !-- ID
 
+    allocate ( S % ComputeConstraints_1D ( S % nCurrents ) )
     allocate ( S % ApplyDivergence_1D ( S % nCurrents ) )
     allocate ( S % ApplySources_1D ( S % nCurrents ) )
     allocate ( S % ApplyRelaxation_1D ( S % nCurrents ) )
+
+    do iC = 1, S % nCurrents
+      S % ApplyDivergence_1D ( iC ) % Pointer => ApplyDivergence_C
+    end do !-- iC
 
   end subroutine InitializeTemplate_C_ASC_1D
 
@@ -215,10 +225,7 @@ contains
                ( S % BoundaryFluence_CSL_1D ( iC ) % Array )
     end do !-- iC
 
-    call S % LoadSolution ( S % Solution_1D, S % Current_1D )
     call S % ComputeTemplate ( Time, TimeStep )
-    call S % StoreSolution ( S % Current_1D, S % Solution_1D, &
-                             FinalOption = .true. )
 
     do iC = 1, S % nCurrents
       associate ( CA => S % Current_ASC_1D ( iC ) % Element )
@@ -246,6 +253,8 @@ contains
       deallocate ( S % ApplySources_1D )
     if ( allocated ( S % ApplyDivergence_1D ) ) &
       deallocate ( S % ApplyDivergence_1D )
+    if ( allocated ( S % ComputeConstraints_1D ) ) &
+      deallocate ( S % ComputeConstraints_1D )
     if ( allocated ( S % IncrementDivergence_1D ) ) &
       deallocate ( S % IncrementDivergence_1D )
     if ( allocated ( S % StorageDivergence_1D ) ) &
@@ -279,19 +288,38 @@ contains
   end subroutine InitializeTimersDivergence
 
 
-  subroutine InitializeIntermediate ( S )
+  subroutine LoadSolution ( S )
 
     class ( Step_RK_C_ASC_1D_Template ), intent ( inout ) :: &
       S
 
+    call S % LoadSolution_C_1D ( S % Solution_1D, S % Current_1D )
+
+  end subroutine LoadSolution
+
+
+  subroutine StoreSolution ( S )
+
+    class ( Step_RK_C_ASC_1D_Template ), intent ( inout ) :: &
+      S
+
+    call S % StoreSolution_C_1D ( S % Current_1D, S % Solution_1D )
+
+  end subroutine StoreSolution
+
+
+  subroutine InitializeIntermediate ( S, iStage )
+
+    class ( Step_RK_C_ASC_1D_Template ), intent ( inout ) :: &
+      S
+    integer ( KDI ), intent ( in ) :: &
+      iStage
+
     integer ( KDI ) :: &
       iC  !-- iCurrent
-    type ( TimerForm ), pointer :: &
-      Timer
 
-    Timer => PROGRAM_HEADER % TimerPointer &
-               ( S % iTimerInitializeIntermediate )
-    if ( associated ( Timer ) ) call Timer % Start ( )
+    if ( iStage == 1 ) &
+      return
 
     do iC = 1, S % nCurrents
       associate &
@@ -300,8 +328,6 @@ contains
       call Copy ( SV, YV )
       end associate !-- SV, etc.
     end do !-- iC
-
-    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine InitializeIntermediate
 
@@ -317,11 +343,6 @@ contains
 
     integer ( KDI ) :: &
       iC  !-- iCurrent
-    type ( TimerForm ), pointer :: &
-      Timer
-
-    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerIncrementIntermediate )
-    if ( associated ( Timer ) ) call Timer % Start ( )
 
     do iC = 1, S % nCurrents
       associate &
@@ -330,8 +351,6 @@ contains
       call MultiplyAdd ( YV, KV, A )
       end associate !-- YV, etc.
     end do !-- iC
-
-    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine IncrementIntermediate
 
@@ -348,11 +367,6 @@ contains
 
     integer ( KDI ) :: &
       iC  !-- iCurrent
-    type ( TimerForm ), pointer :: &
-      Timer
-
-    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerStage )
-    if ( associated ( Timer ) ) call Timer % Start ( )
 
     do iC = 1, S % nCurrents
       associate &
@@ -362,7 +376,7 @@ contains
           Y     => S % Y_1D ( iC ) )
 
       if ( iStage > 1 ) &
-        call S % StoreSolution ( C, Y, IntermediateOption = .true. )
+        call S % StoreSolution_C ( C, Y )
 
       call Clear ( K % Value )
 
@@ -381,8 +395,6 @@ contains
       end associate !-- C, etc.
     end do !-- iC
 
-    if ( associated ( Timer ) ) call Timer % Stop ( )
-
   end subroutine ComputeStage
 
 
@@ -397,11 +409,6 @@ contains
 
     integer ( KDI ) :: &
       iC  !-- iCurrent
-    type ( TimerForm ), pointer :: &
-      Timer
-
-    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerIncrementSolution )
-    if ( associated ( Timer ) ) call Timer % Start ( )
 
     do iC = 1, S % nCurrents
       associate &
@@ -411,8 +418,6 @@ contains
       end associate !-- SV, etc.
     end do !-- iC
 
-    if ( associated ( Timer ) ) call Timer % Stop ( )
-
   end subroutine IncrementSolution
 
 
@@ -420,7 +425,7 @@ contains
 
     type ( StorageForm ), dimension ( : ), intent ( inout ) :: &
       Solution_1D
-    class ( Step_RK_C_ASC_1D_Template ), intent ( inout ) :: &
+    class ( Step_RK_C_ASC_1D_Template ), intent ( in ) :: &
       S
     type ( CurrentPointerForm ), dimension ( : ), intent ( in ) :: &
       Current_1D
@@ -429,16 +434,14 @@ contains
       iC  !-- iCurrent
 
     do iC = 1, size ( Current_1D )
-      call S % LoadSolution &
+      call S % LoadSolution_C &
              ( Solution_1D ( iC ), Current_1D ( iC ) % Pointer )
     end do !-- iC
 
   end subroutine LoadSolution_C_1D
 
 
-  subroutine StoreSolution_C_1D &
-               ( Current_1D, S, Solution_1D, IntermediateOption, &
-                 FinalOption )
+  subroutine StoreSolution_C_1D ( Current_1D, S, Solution_1D )
 
     type ( CurrentPointerForm ), dimension ( : ), intent ( in ) :: &
       Current_1D
@@ -446,17 +449,13 @@ contains
       S
     type ( StorageForm ), dimension ( : ), intent ( inout ) :: &
       Solution_1D
-    logical ( KDL ), intent ( in ), optional :: &
-      IntermediateOption, &
-      FinalOption
 
     integer ( KDI ) :: &
       iC  !-- iCurrent
 
     do iC = 1, size ( Current_1D )
-      call S % StoreSolution &
-             ( Current_1D ( iC ) % Pointer, Solution_1D ( iC ), &
-               IntermediateOption, FinalOption )
+      call S % StoreSolution_C &
+             ( Current_1D ( iC ) % Pointer, Solution_1D ( iC ) )
     end do !-- iC
 
   end subroutine StoreSolution_C_1D
@@ -552,7 +551,7 @@ contains
 
     class default
       call Show ( 'Grid type not recognized', CONSOLE % ERROR )
-      call Show ( 'Step_RK_C_ASC__Template', 'module', CONSOLE % ERROR )
+      call Show ( 'Step_RK_C_ASC_1D__Template', 'module', CONSOLE % ERROR )
       call Show ( 'AllocateStorage', 'subroutine', CONSOLE % ERROR ) 
       call PROGRAM_HEADER % Abort ( )
     end select !-- Grid

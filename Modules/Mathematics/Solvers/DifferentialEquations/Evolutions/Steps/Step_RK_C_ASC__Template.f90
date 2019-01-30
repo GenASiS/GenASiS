@@ -259,7 +259,8 @@ module Step_RK_C_ASC__Template
 contains
 
 
-  subroutine InitializeTemplate_C_ASC ( S, I, Current_ASC, NameSuffix, A, B, C )
+  subroutine InitializeTemplate_C_ASC &
+               ( S, I, Current_ASC, NameSuffix, A, B, C )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
