@@ -26,7 +26,7 @@ contains
                  BoundaryConditionsFaceOption, GravitySolverTypeOption, &
                  MinCoordinateOption, MaxCoordinateOption, TimeUnitOption, &
                  FinishTimeOption, CourantFactorOption, &
-                 UniformAccelerationOption, nCellsOption )
+                 UniformAccelerationOption, nCellsOption, nWriteOption )
 
     class ( FluidBoxForm ), intent ( inout ) :: &
       FB
@@ -49,6 +49,8 @@ contains
       UniformAccelerationOption
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       nCellsOption
+    integer ( KDI ), intent ( in ), optional :: &
+      nWriteOption
 
     integer ( KDI ) :: &
       iD  !-- iDimension
@@ -107,7 +109,10 @@ contains
     !-- Template
 
     call FB % InitializeTemplate_C_PS &
-           ( Name, FinishTimeOption = FinishTimeOption )
+           ( Name, TimeUnitOption = TimeUnitOption, &
+             FinishTimeOption = FinishTimeOption, &
+             CourantFactorOption = CourantFactorOption, &
+             nWriteOption = nWriteOption )
 
     !-- Cleanup
 
