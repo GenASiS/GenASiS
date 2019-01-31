@@ -100,6 +100,7 @@ contains
         end select !-- RA
       case default
         call Show ( 'RadiationType not implemented', CONSOLE % ERROR )
+        call Show ( RadiationType ( iC ), 'RadiationType', CONSOLE % ERROR )
         call Show ( 'GreyRadiationBox_Form', 'module', CONSOLE % ERROR )
         call Show ( 'Initialize', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
