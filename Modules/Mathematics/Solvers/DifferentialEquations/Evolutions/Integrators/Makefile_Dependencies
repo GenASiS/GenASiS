@@ -33,13 +33,13 @@ Integrator_C_PS_C_PS__Template.o: \
   Integrator_C_PS__Template.o \
   Integrator_C_PS_C_PS__Template.f90
 
-# Integrator_C_1D_PS__Template.o: \
-#   Basics.o \
-#   Manifolds.o \
-#   Fields.o \
-#   Steps.o \
-#   Integrator_C_PS__Template.o \
-#   Integrator_C_1D_PS__Template.f90
+Integrator_C_1D_PS__Template.o: \
+  Basics.o \
+  Manifolds.o \
+  Fields.o \
+  Steps.o \
+  Integrator_C_PS__Template.o \
+  Integrator_C_1D_PS__Template.f90
 
 Integrator_C_MS_C_PS__Template.o: \
   Basics.o \
@@ -55,9 +55,9 @@ Integrators.o: \
   TimeSeries_C__Form.o \
   Integrator_C_PS__Template.o \
   Integrator_C_PS_C_PS__Template.o \
+  Integrator_C_1D_PS__Template.o \
   Integrator_C_MS_C_PS__Template.o \
   Integrators.f90
-#  Integrator_C_1D_PS__Template.o \
 
 Integrators.a: $(INTEGRATORS)
 	ar r Integrators.a $(INTEGRATORS)

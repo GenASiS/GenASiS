@@ -83,7 +83,7 @@ contains
   end subroutine InitializeTemplate_C_1D_PS
 
 
-  subroutine FinalizeTemplate_C_1D_PS ( I )
+  impure elemental subroutine FinalizeTemplate_C_1D_PS ( I )
 
     class ( Integrator_C_1D_PS_Template ), intent ( inout ) :: &
       I
@@ -242,9 +242,14 @@ contains
                C % Value ( :, C % FAST_EIGENSPEED_MINUS ( 1 ) ), &
                C % Value ( :, C % FAST_EIGENSPEED_MINUS ( 2 ) ), &
                C % Value ( :, C % FAST_EIGENSPEED_MINUS ( 3 ) ), &
-               G % Value ( :, G % WIDTH ( 1 ) ), &
-               G % Value ( :, G % WIDTH ( 2 ) ), & 
-               G % Value ( :, G % WIDTH ( 3 ) ), &
+               G % Value ( :, G % WIDTH_LEFT_U ( 1 ) ), &
+               G % Value ( :, G % WIDTH_LEFT_U ( 2 ) ), & 
+               G % Value ( :, G % WIDTH_LEFT_U ( 3 ) ), &
+               G % Value ( :, G % WIDTH_RIGHT_U ( 1 ) ), &
+               G % Value ( :, G % WIDTH_RIGHT_U ( 2 ) ), & 
+               G % Value ( :, G % WIDTH_RIGHT_U ( 3 ) ), &
+               G % Value ( :, G % COARSENING ( 2 ) ), &
+               G % Value ( :, G % COARSENING ( 3 ) ), &
                CSL % nDimensions, TimeStepCandidate ( iC ) )
 
       end associate !-- CA

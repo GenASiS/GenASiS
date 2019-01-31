@@ -121,7 +121,7 @@ contains
   end subroutine InitializeTemplate_C_PS
 
 
-  subroutine FinalizeTemplate_C_PS ( I )
+  impure elemental subroutine FinalizeTemplate_C_PS ( I )
 
     class ( Integrator_C_PS_Template ), intent ( inout ) :: &
       I
@@ -284,7 +284,6 @@ contains
       TimeNew
 
     call I % PrepareCycle ( )
-
     call I % ComputeNewTime ( TimeNew )
 
     associate ( S => I % Step )
