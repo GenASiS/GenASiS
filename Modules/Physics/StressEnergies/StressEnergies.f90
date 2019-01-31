@@ -1,6 +1,6 @@
 module StressEnergies
 
   use Fluids
-!  use Radiations
+  use Radiations
 
 end module StressEnergies
