@@ -1,0 +1,23 @@
+PATH_GENASIS = ../../../../..
+
+all: TableGeneration_NuLib
+
+include $(PATH_GENASIS)/Build/Makefile_Build
+
+TableGeneration_NuLib: ThirdParty.a GenASiS.a TableGeneration_NuLib.o
+	$(LINK) $(FFLAGS) \
+           -o TableGeneration_NuLib_$(MACHINE) \
+           TableGeneration_NuLib.o \
+           GenASiS.a ThirdParty.a $(LIBRARIES)
+
+include $(PATH_GENASIS)/Build/Makefile_Dependencies
+
+clean: clean_ThirdParty
+	rm -f *.o *.a *.mod *.ld
+
+clobber: clean
+	rm -f TableGeneration_NuLib_*
+
+TableGeneration_NuLib.o: \
+  GenASiS.o \
+  TableGeneration_NuLib.f90

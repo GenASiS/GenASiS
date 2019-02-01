@@ -369,6 +369,7 @@ contains
 
     if ( present ( nDimensionsOption ) ) then
       A % nDimensions = nDimensionsOption
+      call Show ( A % nDimensions, 'nDimensions', A % IGNORABILITY )
       return
     end if
 
