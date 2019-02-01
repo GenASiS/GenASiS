@@ -1,8 +1,8 @@
 PATH_GENASIS = ../../../../..
 
 all: SineWave OppenheimerSnyder RiemannProblem RayleighTaylor \
-     SedovTaylor FishboneMoncrief YahilLattimer LinMestelShu ODE_Solve \
-     SASI #SawtoothWave 
+     SedovTaylor FishboneMoncrief YahilLattimer LinMestelShu SASI \
+     #SawtoothWave ODE_Solve 
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
@@ -64,11 +64,11 @@ LinMestelShu: ThirdParty.a GenASiS.a LinMestelShu.o
 	   LinMestelShu_Form.o \
            GenASiS.a ThirdParty.a $(LIBRARIES)\
 
-ODE_Solve: ThirdParty.a GenASiS.a ODE_Solve_Command_Test.o
-	$(LINK) $(FFLAGS) \
-           -o ODE_Solve_Command_Test_$(MACHINE) \
-           ODE_Solve_Command_Test.o ODE_Solve_Command.o \
-           GenASiS.a ThirdParty.a $(LIBRARIES)
+# ODE_Solve: ThirdParty.a GenASiS.a ODE_Solve_Command_Test.o
+# 	$(LINK) $(FFLAGS) \
+#            -o ODE_Solve_Command_Test_$(MACHINE) \
+#            ODE_Solve_Command_Test.o ODE_Solve_Command.o \
+#            GenASiS.a ThirdParty.a $(LIBRARIES)
 
 SASI: ThirdParty.a GenASiS.a SASI.o
 	$(LINK) $(FFLAGS) \
@@ -91,9 +91,9 @@ clobber: clean
 	rm -f FishboneMoncrief_*
 	rm -f YahilLattimer_*
 	rm -f LinMestelShu_*
-	rm -f ODE_Solve_Command_*
 	rm -f SASI_*
 # 	rm -f SawtoothWave_*
+#	rm -f ODE_Solve_Command_*
 
 PlaneWave_Template.o: \
   GenASiS.o \
@@ -174,14 +174,14 @@ YahilLattimer.o: \
   YahilLattimer_Form.o \
   YahilLattimer.f90
 
-ODE_Solve_Command.o: \
-  GenASiS.o \
-  ODE_Solve_Command.f90
+# ODE_Solve_Command.o: \
+#   GenASiS.o \
+#   ODE_Solve_Command.f90
 
-ODE_Solve_Command_Test.o: \
-  GenASiS.o \
-  ODE_Solve_Command.o \
-  ODE_Solve_Command_Test.f90
+# ODE_Solve_Command_Test.o: \
+#   GenASiS.o \
+#   ODE_Solve_Command.o \
+#   ODE_Solve_Command_Test.f90
 
 LinMestelShu_Form.o: \
   GenASiS.o \
