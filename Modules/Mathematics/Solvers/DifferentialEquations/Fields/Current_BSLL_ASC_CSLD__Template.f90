@@ -127,4 +127,15 @@ contains
   end subroutine ComputeTallySections
 
 
+  impure elemental subroutine FinalizeElement ( CBE )
+    
+    type ( Current_BSLL_ASC_CSLD_ElementForm ), intent ( inout ) :: &
+      CBE
+
+    if ( allocated ( CBE % Element ) ) &
+      deallocate ( CBE % Element )
+
+  end subroutine FinalizeElement
+
+
 end module Current_BSLL_ASC_CSLD__Template
