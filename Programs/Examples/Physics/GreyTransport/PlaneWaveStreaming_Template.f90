@@ -17,8 +17,8 @@ module PlaneWaveStreaming_Template
   contains
     procedure, public, pass :: &
       InitializeTemplate_PWS
-  !   procedure, public, pass :: &
-  !     ComputeError
+    procedure, public, pass :: &
+      ComputeError
     procedure, public, pass :: &
       FinalizeTemplate_PWS
     procedure ( Waveform ), private, pass, deferred :: &
@@ -40,14 +40,14 @@ module PlaneWaveStreaming_Template
   end interface
 
     private :: &
-      SetRadiation!, &
-!      SetReference
+      SetRadiation, &
+      SetReference
 
       private :: &
         SetRadiationKernel
 
-!    class ( PlaneWaveStreamingTemplate ), private, pointer :: &
-!      PlaneWaveStreaming => null ( )
+   class ( PlaneWaveStreamingTemplate ), private, pointer :: &
+     PlaneWaveStreaming => null ( )
 
 contains
 
@@ -71,7 +71,7 @@ contains
     if ( PWS % Type == '' ) &
       PWS % Type = 'a PlaneWaveStreaming'
 
-!    PlaneWaveStreaming => PWS
+    PlaneWaveStreaming => PWS
 
     call PWS % InitializeTemplate ( Name )
 
@@ -83,7 +83,7 @@ contains
     type is ( GreyRadiationBoxForm )
     call GRB % Initialize &
            ( RadiationType = [ 'GENERIC' ], Name = Name )
-    ! FB % SetReference => SetReference
+    GRB % SetReference => SetReference
 
     select type ( PS => GRB % PositionSpace )
     class is ( Atlas_SC_Form )
@@ -92,19 +92,18 @@ contains
     class is ( RadiationMoments_ASC_Form )
 
 
-    ! !-- Diagnostics
+    !-- Diagnostics
 
-    ! allocate ( PWS % Reference )
-    ! allocate ( PWS % Difference )
-    ! call PWS % Reference % Initialize &
-    !        ( PS, 'GENERIC', NameShortOption = 'Reference', &
-    !          AllocateSourcesOption = .false., &
-    !          IgnorabilityOption = CONSOLE % INFO_2 )
-    ! call PWS % Difference % Initialize &
-    !        ( PS, 'GENERIC', NameShortOption = 'Difference', &
-    !          AllocateSourcesOption = .false., &
-    !          IgnorabilityOption = CONSOLE % INFO_2 )
-    ! PWS % SetReference => SetReference
+    allocate ( PWS % Reference )
+    allocate ( PWS % Difference )
+    call PWS % Reference % Initialize &
+           ( PS, 'GENERIC', NameShortOption = 'Reference', &
+             AllocateSourcesOption = .false., &
+             IgnorabilityOption = CONSOLE % INFO_2 )
+    call PWS % Difference % Initialize &
+           ( PS, 'GENERIC', NameShortOption = 'Difference', &
+             AllocateSourcesOption = .false., &
+             IgnorabilityOption = CONSOLE % INFO_2 )
 
 
     !-- Parameters
@@ -155,6 +154,49 @@ contains
     nullify ( RM )
 
   end subroutine InitializeTemplate_PWS
+
+
+  subroutine ComputeError ( PWS )
+
+    class ( PlaneWaveStreamingTemplate ), intent ( in ) :: &
+      PWS
+
+    real ( KDR ) :: &
+      L1
+    class ( RadiationMomentsForm ), pointer :: &
+      RM
+    type ( CollectiveOperation_R_Form ) :: &
+      CO
+    
+    select type ( PS => PWS % Integrator % PositionSpace )
+    class is ( Atlas_SC_Form )
+    select type ( C => PS % Chart )
+    class is ( Chart_SL_Template )
+
+    RM => PWS % Difference % RadiationMoments ( )
+
+    associate &
+      ( Difference => RM % Value ( :, RM % COMOVING_ENERGY ) )
+    call CO % Initialize ( PS % Communicator, [ 2 ], [ 2 ] )
+    CO % Outgoing % Value ( 1 ) = sum ( abs ( Difference ), &
+                                        mask = C % IsProperCell )
+    CO % Outgoing % Value ( 2 ) = C % nProperCells
+    call CO % Reduce ( REDUCTION % SUM )
+
+    associate &
+      ( DifferenceSum => CO % Incoming % Value ( 1 ), &
+        nValues => CO % Incoming % Value ( 2 ) )
+    L1 = DifferenceSum / nValues
+
+    call Show ( L1, '*** L1 error', nLeadingLinesOption = 2, &
+                nTrailingLinesOption = 2 )
+
+    end associate !-- DifferenceSum, etc.
+    end associate !-- Difference
+    end select !-- C
+    end select !-- PS
+
+  end subroutine ComputeError
 
 
   impure elemental subroutine FinalizeTemplate_PWS ( PWS )
@@ -209,35 +251,34 @@ contains
   end subroutine SetRadiation
 
 
-!   subroutine SetReference ( PWS )
+  subroutine SetReference ( GRB )
 
-!     class ( IntegratorTemplate ), intent ( inout ) :: &
-!       PWS
+    class ( IntegratorTemplate ), intent ( inout ) :: &
+      GRB
 
-!     class ( RadiationMomentsForm ), pointer :: &
-!       RM, &
-!       RM_R, &  !-- RM_Reference
-!       RM_D     !-- RM_Difference
+    class ( RadiationMomentsForm ), pointer :: &
+      RM, &
+      RM_R, &  !-- RM_Reference
+      RM_D     !-- RM_Difference
 
-!     select type ( PWS )
-!     class is ( PlaneWaveStreamingTemplate )
+    select type ( GRB )
+    class is ( GreyRadiationBoxForm )
 
-!     select type ( RMA => PWS % Current_ASC )
-!     class is ( RadiationMoments_ASC_Form )
-!     RM => RMA % RadiationMoments ( )
-!     end select !-- FA
+    select type ( RMA => GRB % Current_ASC_1D ( 1 ) % Element )
+    class is ( RadiationMoments_ASC_Form )
+    RM => RMA % RadiationMoments ( )
+    end select !-- RMA
 
-!     RM_R => PWS % Reference % RadiationMoments ( )
-!     call SetRadiation ( PWS, RM_R, PWS % Time )
+    RM_R => PlaneWaveStreaming % Reference % RadiationMoments ( )
+    call SetRadiation ( PlaneWaveStreaming, RM_R, GRB % Time )
 
-!     RM_D => PWS % Difference % RadiationMoments ( )
-! !    RM_D % Value  =  RM % Value  -  RM_R % Value
-!     call MultiplyAdd ( RM % Value, RM_R % Value, -1.0_KDR, RM_D % Value )
+    RM_D => PlaneWaveStreaming % Difference % RadiationMoments ( )
+    call MultiplyAdd ( RM % Value, RM_R % Value, -1.0_KDR, RM_D % Value )
 
-!     end select !-- PWS
-!     nullify ( RM, RM_R, RM_D )
+    end select !-- GRB
+    nullify ( RM, RM_R, RM_D )
 
-!   end subroutine SetReference
+  end subroutine SetReference
 
 
   subroutine SetRadiationKernel ( PWS, X, Y, Z, K, V, T, J, HX, HY, HZ )
