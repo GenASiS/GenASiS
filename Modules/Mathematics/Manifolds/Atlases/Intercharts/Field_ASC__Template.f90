@@ -20,7 +20,20 @@ module Field_ASC__Template
       InitializeTemplate_ASC
     procedure, public, pass :: &
       FinalizeTemplate_ASC
+    !-- FIXME: This should be automatically inherited from FieldAtlasTemplate
+    !          but XL compiler got confused
+    procedure ( SF ), private, pass, deferred :: &
+      SetField
   end type Field_ASC_Template
+  
+    abstract interface 
+      subroutine SF ( FA )
+        use Basics
+        import Field_ASC_Template
+        class ( Field_ASC_Template ), intent ( inout ) :: &
+          FA
+      end subroutine
+    end interface
 
 contains
 

@@ -22,7 +22,19 @@ module Field_CSL__Template
       InitializeTemplate_CSL
     procedure, public, pass :: &
       FinalizeTemplate_CSL
+    !-- FIXME: This should be automatically inherited from FieldChartTemplate
+    !          but XL compiler got confused
+    procedure ( SF ), private, pass, deferred :: &
+      SetField
   end type Field_CSL_Template
+  
+    abstract interface 
+      subroutine SF ( FC )
+        import Field_CSL_Template
+        class ( Field_CSL_Template ), intent ( inout ) :: &
+          FC
+      end subroutine
+    end interface
 
 contains
 
@@ -49,8 +61,8 @@ contains
     call FC % InitializeTemplate ( C, NameShort, IgnorabilityOption )
 
   end subroutine InitializeTemplate_CSL
-
-
+  
+  
   impure elemental subroutine FinalizeTemplate_CSL ( FC )
 
     class ( Field_CSL_Template ), intent ( inout ) :: &

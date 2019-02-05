@@ -66,7 +66,7 @@ contains
 
     class ( GeometryFlat_CSL_Form ), intent ( inout ) :: &
       FC
-
+                      
     if ( .not. allocated ( FC % Field ) ) then
       select case ( trim ( FC % GeometryType ) )
       case ( 'FLAT' )

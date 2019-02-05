@@ -8,37 +8,37 @@ include $(PATH_GENASIS)/Build/Makefile_Build
 include ../Makefile_ObjectFiles
 
 SineWave: Basics.a Mathematics.a Fluid.a SineWave.o
-	$(LINK) $(FFLAGS) \
+	$(LINK) $(FLAGS) \
           -o SineWave_$(MACHINE) \
           SineWave.o SineWave_Form.o PlaneWave_Template.o \
           Fluid.a Mathematics.a Basics.a $(LIBRARIES)
 
 SawtoothWave: Basics.a Mathematics.a Fluid.a SawtoothWave.o
-	$(LINK) $(FFLAGS) \
+	$(LINK) $(FLAGS) \
           -o SawtoothWave_$(MACHINE) \
           SawtoothWave.o SawtoothWave_Form.o PlaneWave_Template.o \
           Fluid.a Mathematics.a Basics.a $(LIBRARIES)
 
 RiemannProblem: Basics.a Mathematics.a Fluid.a RiemannProblem.o
-	$(LINK) $(FFLAGS) \
+	$(LINK) $(FLAGS) \
           -o RiemannProblem_$(MACHINE) \
           RiemannProblem.o RiemannProblem_Form.o \
           Fluid.a Mathematics.a Basics.a $(LIBRARIES)
 
 RayleighTaylor: Basics.a Mathematics.a Fluid.a RayleighTaylor.o
-	$(LINK) $(FFLAGS) \
+	$(LINK) $(FLAGS) \
           -o RayleighTaylor_$(MACHINE) \
           RayleighTaylor.o RayleighTaylor_Form.o Tally_RT__Form.o \
           Fluid.a Mathematics.a Basics.a $(LIBRARIES)
 
 SedovTaylor: Basics.a Mathematics.a Fluid.a SedovTaylor.o
-	$(LINK) $(FFLAGS) \
+	$(LINK) $(FLAGS) \
           -o SedovTaylor_$(MACHINE) \
           SedovTaylor.o SedovTaylor_Form.o \
           Fluid.a Mathematics.a Basics.a $(LIBRARIES)
 
 FishboneMoncrief: Basics.a Mathematics.a Fluid.a FishboneMoncrief.o
-	$(LINK) $(FFLAGS) \
+	$(LINK) $(FLAGS) \
           -o FishboneMoncrief_$(MACHINE) \
           FishboneMoncrief.o FishboneMoncrief_Form.o Tally_FM__Form.o \
           Fluid.a Mathematics.a Basics.a $(LIBRARIES)
