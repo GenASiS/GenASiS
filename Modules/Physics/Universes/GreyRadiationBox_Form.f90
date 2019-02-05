@@ -46,8 +46,10 @@ contains
     integer ( KDI ) :: &
       iC  !-- iCurrent
 
+
     if ( GRB % Type == '' ) &
       GRB % Type = 'a GreyRadiationBox'
+
 
     !-- PositionSpace
 
@@ -68,6 +70,7 @@ contains
     call PS % SetGeometry ( GA )
     end select !-- GA
 
+
     !-- Prepare for Currents
 
     GRB % N_CURRENTS_PS = size ( RadiationType )
@@ -77,6 +80,7 @@ contains
       GRB % TimeStepLabel ( iC )  =  RadiationType ( iC )
     end do !-- iC
     
+
     !-- Radiation
 
     do iC = 1, GRB % N_CURRENTS_PS
@@ -107,6 +111,7 @@ contains
       end select
     end do !-- iC
 
+
     !-- Step
 
     allocate ( Step_RK2_C_ASC_1D_Form :: GRB % Step )
@@ -115,6 +120,7 @@ contains
     call S % Initialize ( GRB, GRB % Current_ASC_1D, Name )
     end select !-- S
 
+
     !-- Template
 
     call GRB % InitializeTemplate_C_1D_PS &
@@ -122,6 +128,7 @@ contains
              FinishTimeOption = FinishTimeOption, &
              CourantFactorOption = CourantFactorOption, &
              nWriteOption = nWriteOption )
+
 
     !-- Cleanup
 
