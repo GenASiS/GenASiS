@@ -28,7 +28,7 @@ module PlaneWaveStreaming_Template
   abstract interface
     elemental function Waveform ( PWS, X ) result ( W )
       !-- Waveform with a full period in the range 0 < X < 1
-      use Basics
+      use GenASiS
       import PlaneWaveStreamingTemplate
       class ( PlaneWaveStreamingTemplate ), intent ( in ) :: &
         PWS
@@ -40,8 +40,8 @@ module PlaneWaveStreaming_Template
   end interface
 
     private :: &
-      SetRadiation, &
-      SetReference
+      SetReference, &
+      SetRadiation
 
       private :: &
         SetRadiationKernel
@@ -214,6 +214,36 @@ contains
   end subroutine FinalizeTemplate_PWS
 
 
+  subroutine SetReference ( GRB )
+
+    class ( IntegratorTemplate ), intent ( inout ) :: &
+      GRB
+
+    class ( RadiationMomentsForm ), pointer :: &
+      RM, &
+      RM_R, &  !-- RM_Reference
+      RM_D     !-- RM_Difference
+
+    select type ( GRB )
+    class is ( GreyRadiationBoxForm )
+
+    select type ( RMA => GRB % Current_ASC_1D ( 1 ) % Element )
+    class is ( RadiationMoments_ASC_Form )
+    RM => RMA % RadiationMoments ( )
+    end select !-- RMA
+
+    RM_R => PlaneWaveStreaming % Reference % RadiationMoments ( )
+    call SetRadiation ( PlaneWaveStreaming, RM_R, GRB % Time )
+
+    RM_D => PlaneWaveStreaming % Difference % RadiationMoments ( )
+    call MultiplyAdd ( RM % Value, RM_R % Value, -1.0_KDR, RM_D % Value )
+
+    end select !-- GRB
+    nullify ( RM, RM_R, RM_D )
+
+  end subroutine SetReference
+
+
   subroutine SetRadiation ( PWS, RM, Time )
 
     class ( PlaneWaveStreamingTemplate ), intent ( in ) :: &
@@ -249,36 +279,6 @@ contains
     nullify ( G )
 
   end subroutine SetRadiation
-
-
-  subroutine SetReference ( GRB )
-
-    class ( IntegratorTemplate ), intent ( inout ) :: &
-      GRB
-
-    class ( RadiationMomentsForm ), pointer :: &
-      RM, &
-      RM_R, &  !-- RM_Reference
-      RM_D     !-- RM_Difference
-
-    select type ( GRB )
-    class is ( GreyRadiationBoxForm )
-
-    select type ( RMA => GRB % Current_ASC_1D ( 1 ) % Element )
-    class is ( RadiationMoments_ASC_Form )
-    RM => RMA % RadiationMoments ( )
-    end select !-- RMA
-
-    RM_R => PlaneWaveStreaming % Reference % RadiationMoments ( )
-    call SetRadiation ( PlaneWaveStreaming, RM_R, GRB % Time )
-
-    RM_D => PlaneWaveStreaming % Difference % RadiationMoments ( )
-    call MultiplyAdd ( RM % Value, RM_R % Value, -1.0_KDR, RM_D % Value )
-
-    end select !-- GRB
-    nullify ( RM, RM_R, RM_D )
-
-  end subroutine SetReference
 
 
   subroutine SetRadiationKernel ( PWS, X, Y, Z, K, V, T, J, HX, HY, HZ )
