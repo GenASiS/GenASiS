@@ -192,7 +192,9 @@ contains
 
     I % Time = I % StartTime
     call I % ComputeConstraints ( )
+call Show ( '>>> 1' )
     call I % AdministerCheckpoint ( ComputeChangeOption = .false. )
+call Show ( '>>> 2' )
 
     do while ( I % Time < I % FinishTime )
       call Show ( 'Computing a cycle', I % IGNORABILITY + 1 )
@@ -424,9 +426,11 @@ contains
       StatisticsIgnorability = CONSOLE % INFO_1
       WriteTimeSeries        = .true.
     end if
+call Show ( '>>> 1.1' )
     call I % ComputeTally &
            ( ComputeChangeOption = ComputeChangeOption, &
              IgnorabilityOption  = TallyIgnorability )
+call Show ( '>>> 1.2' )
 
     if ( associated ( I % SetReference ) ) &
       call I % SetReference ( )

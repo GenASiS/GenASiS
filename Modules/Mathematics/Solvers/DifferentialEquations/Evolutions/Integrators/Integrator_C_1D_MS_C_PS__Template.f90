@@ -188,13 +188,13 @@ contains
       end associate !-- CB
     end do !-- iC
 
-    associate ( CA => I % Current_ASC )
-
-    call CA % ComputeTally &
-           ( ComputeChangeOption = ComputeChangeOption, &
-             IgnorabilityOption  = IgnorabilityOption )
-
-    end associate !-- CA
+    if ( allocated ( I % Current_ASC ) ) then 
+      associate ( CA => I % Current_ASC )
+      call CA % ComputeTally &
+             ( ComputeChangeOption = ComputeChangeOption, &
+               IgnorabilityOption  = IgnorabilityOption )
+      end associate !-- CA
+    end if
 
     if ( associated ( Timer ) ) call Timer % Stop ( )
 
