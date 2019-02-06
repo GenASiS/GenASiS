@@ -155,6 +155,7 @@ contains
     S % Allocated = .false.
 
     allocate ( S % StorageDivergence_S )
+    allocate ( S % IncrementDivergence_S ( S % nSections, S % nCurrents ) )
     do iC = 1, S % nCurrents
       associate ( CB => S % Current_BSLL_ASC_CSLD_1D ( iC ) % Element )
       do iS = 1, S % nSections
