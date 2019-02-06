@@ -62,7 +62,7 @@ contains
     class is ( Atlas_SC_Form )
     call PS % Initialize ( 'PositionSpace', PROGRAM_HEADER % Communicator )
 
-    nCellsPosition = 1
+    nCellsPosition = [ 32, 32, 32 ]
     call PROGRAM_HEADER % GetParameter ( nCellsPosition, 'nCellsPosition' )
 
     call PS % CreateChart &

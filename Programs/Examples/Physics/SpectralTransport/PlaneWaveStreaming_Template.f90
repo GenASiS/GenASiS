@@ -13,6 +13,10 @@ module PlaneWaveStreaming_Template
   contains 
     procedure, public, pass :: &
       InitializeTemplate_PWS
+    procedure, public, pass :: &
+      ComputeError
+    procedure, public, pass :: &
+      FinalizeTemplate_PWS
     procedure ( Waveform ), private, pass, deferred :: &
       Waveform
   end type PlaneWaveStreamingTemplate
@@ -117,6 +121,82 @@ contains
     end select !-- SRB
 
   end subroutine InitializeTemplate_PWS
+
+
+  subroutine ComputeError ( PWS )
+
+    class ( PlaneWaveStreamingTemplate ), intent ( in ) :: &
+      PWS
+    
+    integer ( KDI ) :: &
+      iE  !-- iEnergy
+    real ( KDR ) :: &
+      L1
+    type ( CollectiveOperation_R_Form ), allocatable :: &
+      CO
+    class ( RadiationMomentsForm ), pointer :: &
+      RS_D     !-- RM_Difference
+
+    select type ( PS => PWS % Integrator % PositionSpace )
+    class is ( Atlas_SC_Form )
+    select type ( CB => PS % Chart )
+    class is ( Chart_SL_Template )
+
+    select type ( I => PWS % Integrator )
+    class is ( Integrator_C_1D_MS_C_PS_Template )
+
+    select type ( RMB => I % Current_BSLL_ASC_CSLD_1D ( 1 ) % Element )
+    type is ( RadiationMoments_BSLL_ASC_CSLD_Form )
+
+    do iE = 1, RMB % nEnergyValues
+      associate ( RSA_D => PWS % Difference_ASC ( iE ) )
+      RS_D => RSA_D % RadiationMoments ( )
+      allocate ( CO )
+
+      associate &
+        ( Difference => RS_D % Value ( :, RS_D % COMOVING_ENERGY ) )
+      call CO % Initialize ( PS % Communicator, [ 2 ], [ 2 ] )
+      CO % Outgoing % Value ( 1 ) = sum ( abs ( Difference ), &
+                                          mask = CB % IsProperCell )
+      CO % Outgoing % Value ( 2 ) = CB % nProperCells
+      call CO % Reduce ( REDUCTION % SUM )
+      end associate !-- Difference
+
+      associate &
+        ( DifferenceSum => CO % Incoming % Value ( 1 ), &
+          nValues => CO % Incoming % Value ( 2 ) )
+      L1 = DifferenceSum / nValues
+      end associate 
+
+      call Show ( iE, '*** iEnergyBin', nLeadingLinesOption  = 2 ) 
+      call Show ( L1, '*** L1 error',   nTrailingLinesOption = 2 )
+
+      deallocate ( CO )
+      end associate !-- RSA_D
+    end do !-- iE
+
+    end select !-- RMB
+    end select !-- I
+    end select !-- CB
+    end select !-- PS
+    ! nullify ( RS_D )
+
+  end subroutine ComputeError
+
+
+  subroutine FinalizeTemplate_PWS ( PWS )
+
+    class ( PlaneWaveStreamingTemplate ), intent ( inout ) :: &
+      PWS
+
+    if ( allocated ( PWS % Difference_ASC ) ) &
+      deallocate ( PWS % Difference_ASC )
+    if ( allocated ( PWS % Reference_ASC ) ) &
+      deallocate ( PWS % Reference_ASC )
+
+    call PWS % FinalizeTemplate ( )
+
+  end subroutine FinalizeTemplate_PWS
 
 
   subroutine SetReference ( SRB )
