@@ -13,8 +13,12 @@ module RadiationMoments_BSLL_ASC_CSLD__Form
     RadiationMoments_BSLL_ASC_CSLD_Form
       integer ( KDI ) :: &
         nEnergyValues = 0
+      real ( KDR ) :: &
+        LimiterParameter
       real ( KDR ), dimension ( : ), allocatable :: &
         Energy
+      logical ( KDL ) :: &
+        UseLimiter
       type ( MeasuredValueForm ) :: &
         EnergyDensityUnit, &
         EnergyUnit, &
@@ -55,11 +59,12 @@ contains
 
 
   subroutine Initialize &
-               ( RMB, B, RadiationType, NameShortOption, &
+               ( RMB, B, RadiationType, NameShortOption, UseLimiterOption, &
                  Velocity_U_UnitOption, MomentumDensity_U_UnitOption, &
                  MomentumDensity_D_UnitOption, EnergyDensityUnitOption, &
                  TemperatureUnitOption, EnergyUnitOption, MomentumUnitOption, &
-                 AngularMomentumUnitOption, TimeUnitOption )
+                 AngularMomentumUnitOption, TimeUnitOption, &
+                 LimiterParameterOption )
 
     class ( RadiationMoments_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
       RMB
@@ -69,6 +74,8 @@ contains
       RadiationType
     character ( * ), intent ( in ), optional :: &
       NameShortOption
+    logical ( KDL ), intent ( in ), optional :: &
+      UseLimiterOption
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ), optional :: &
       Velocity_U_UnitOption, &
       MomentumDensity_U_UnitOption, &
@@ -80,6 +87,8 @@ contains
       MomentumUnitOption, &
       AngularMomentumUnitOption, &
       TimeUnitOption
+    real ( KDR ), intent ( in ), optional :: &
+      LimiterParameterOption
 
     character ( LDL ) :: &
       NameShort
@@ -89,6 +98,18 @@ contains
     if ( RMB % Type == '' ) &
       RMB % Type = 'a RadiationMoments_BSLL_ASC_CSLD'
     RMB % RadiationType = RadiationType
+
+    RMB % UseLimiter = .false.
+    if ( present ( UseLimiterOption ) ) &
+      RMB % UseLimiter = UseLimiterOption
+    call PROGRAM_HEADER % GetParameter &
+           ( RMB % UseLimiter, 'UseLimiter' )
+
+    RMB % LimiterParameter = 1.4_KDR
+    if ( present ( LimiterParameterOption ) ) &
+      RMB % LimiterParameter = LimiterParameterOption
+    call PROGRAM_HEADER % GetParameter &
+           ( RMB % LimiterParameter, 'LimiterParameter' )
 
     if ( present ( EnergyDensityUnitOption ) ) &
       RMB % EnergyDensityUnit = EnergyDensityUnitOption
@@ -274,121 +295,123 @@ contains
     class ( RadiationMoments_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
       FB
 
-    ! logical ( KDL ) :: &
-    !   SuppressWrite
-    ! integer ( KDI ) :: &
-    !   iF, &  !-- iFiber
-    !   iE     !-- iEnergy
-    ! type ( MeasuredValueForm ) :: &
-    !   EnergyUnit
-    ! character ( 1 + 2 ) :: &
-    !   EnergyNumber
-    ! character ( LDF ) :: &
-    !   RadiationType
+    logical ( KDL ) :: &
+      SuppressWrite
+    integer ( KDI ) :: &
+      iF, &  !-- iFiber
+      iE     !-- iEnergy
+    type ( MeasuredValueForm ) :: &
+      EnergyUnit
+    character ( 1 + 2 ) :: &
+      EnergyNumber
+    character ( LDF ) :: &
+      RadiationType
 
-    ! associate ( B => FB % Bundle_SLL_ASC_CSLD )
+    associate ( B => FB % Bundle_SLL_ASC_CSLD )
 
-    ! !-- Fibers
+    !-- Fibers
 
-    ! allocate ( FB % Fiber )
-    ! associate ( FBF => FB % Fiber )
-    ! call FBF % Initialize ( FB % nFibers )
+    allocate ( FB % Fiber )
+    associate ( FBF => FB % Fiber )
+    call FBF % Initialize ( FB % nFibers )
 
-    ! do iF = 1, FB % nFibers
-    !   allocate ( RadiationMoments_ASC_Form :: FBF % Atlas ( iF ) % Element )
-    !   select type ( RMA => FBF % Atlas ( iF ) % Element )
-    !   class is ( RadiationMoments_ASC_Form )
+    do iF = 1, FB % nFibers
+      allocate ( RadiationMoments_ASC_Form :: FBF % Atlas ( iF ) % Element )
+      select type ( RMA => FBF % Atlas ( iF ) % Element )
+      class is ( RadiationMoments_ASC_Form )
 
-    !   select type ( AF => B % Fiber % Atlas ( iF ) % Element )
-    !   class is ( Atlas_SC_Form )
+      select type ( AF => B % Fiber % Atlas ( iF ) % Element )
+      class is ( Atlas_SC_Form )
 
-    !   call RMA % Initialize &
-    !          ( AF, FB % RadiationType, NameShortOption = FB % NameShort, &
-    !            SuppressWriteSourcesOption = .false., &
-    !            Velocity_U_UnitOption = FB % Velocity_U_Unit, &
-    !            MomentumDensity_U_UnitOption = FB % MomentumDensity_U_Unit, &
-    !            MomentumDensity_D_UnitOption = FB % MomentumDensity_D_Unit, &
-    !            EnergyDensityUnitOption = FB % EnergyDensityUnit, &
-    !            EnergyUnitOption = FB % EnergyUnit, &
-    !            MomentumUnitOption = FB % MomentumUnit, &
-    !            AngularMomentumUnitOption = FB % AngularMomentumUnit, &
-    !            TimeUnitOption = FB % TimeUnit )
+      call RMA % Initialize &
+             ( AF, FB % RadiationType, NameShortOption = FB % NameShort, &
+               SuppressWriteSourcesOption = .false., &
+               UseLimiterOption = FB % UseLimiter, &
+               Velocity_U_UnitOption = FB % Velocity_U_Unit, &
+               MomentumDensity_U_UnitOption = FB % MomentumDensity_U_Unit, &
+               MomentumDensity_D_UnitOption = FB % MomentumDensity_D_Unit, &
+               EnergyDensityUnitOption = FB % EnergyDensityUnit, &
+               EnergyUnitOption = FB % EnergyUnit, &
+               MomentumUnitOption = FB % MomentumUnit, &
+               AngularMomentumUnitOption = FB % AngularMomentumUnit, &
+               TimeUnitOption = FB % TimeUnit, &
+               LimiterParameterOption = FB % LimiterParameter )
 
-    !   end select !-- AF
-    !   end select !-- RMA
-    ! end do !-- iF
+      end select !-- AF
+      end select !-- RMA
+    end do !-- iF
 
-    ! end associate !-- FBF
+    end associate !-- FBF
 
-    ! !-- Sections
+    !-- Sections
 
-    ! allocate ( FB % Section )
-    ! associate ( FBS => FB % Section )
-    ! call FBS % Initialize ( FB % nSections )
+    allocate ( FB % Section )
+    associate ( FBS => FB % Section )
+    call FBS % Initialize ( FB % nSections )
 
-    ! do iE = 1, FB % nEnergyValues
-    !   SuppressWrite  =  ( mod ( iE - 1, B % sSectionsWrite ) /= 0 )
-    !   write ( EnergyNumber, fmt = '(a1,i2.2)' ) '_', iE
-    !   allocate ( RadiationMoments_ASC_Form :: FBS % Atlas ( iE ) % Element )
-    !   select type ( RMA => FBS % Atlas ( iE ) % Element )
-    !   class is ( RadiationMoments_ASC_Form )
-    !     call RMA % Initialize &
-    !            ( B % Base_ASC, FB % RadiationType, &
-    !              NameShortOption = trim ( FB % NameShort ) // EnergyNumber, &
-    !              SuppressWriteOption = SuppressWrite, &
-    !              SuppressWriteSourcesOption = .true., &
-    !              Velocity_U_UnitOption = FB % Velocity_U_Unit, &
-    !              MomentumDensity_U_UnitOption &
-    !                = FB % MomentumDensity_U_Unit, &
-    !              MomentumDensity_D_UnitOption &
-    !                = FB % MomentumDensity_D_Unit, &
-    !              EnergyDensityUnitOption = FB % EnergyDensityUnit, &
-    !              EnergyUnitOption = FB % EnergyUnit, &
-    !              MomentumUnitOption = FB % MomentumUnit, &
-    !              AngularMomentumUnitOption = FB % AngularMomentumUnit, &
-    !              TimeUnitOption = FB % TimeUnit, &
-    !              IgnorabilityOption = CONSOLE % INFO_5 )
-    !   end select !-- RMA
-    ! end do !-- iE
+    do iE = 1, FB % nEnergyValues
+      SuppressWrite  =  ( mod ( iE - 1, B % sSectionsWrite ) /= 0 )
+      write ( EnergyNumber, fmt = '(a1,i2.2)' ) '_', iE
+      allocate ( RadiationMoments_ASC_Form :: FBS % Atlas ( iE ) % Element )
+      select type ( RMA => FBS % Atlas ( iE ) % Element )
+      class is ( RadiationMoments_ASC_Form )
+        call RMA % Initialize &
+               ( B % Base_ASC, FB % RadiationType, &
+                 NameShortOption = trim ( FB % NameShort ) // EnergyNumber, &
+                 SuppressWriteOption = SuppressWrite, &
+                 SuppressWriteSourcesOption = .true., &
+                 Velocity_U_UnitOption = FB % Velocity_U_Unit, &
+                 MomentumDensity_U_UnitOption &
+                   = FB % MomentumDensity_U_Unit, &
+                 MomentumDensity_D_UnitOption &
+                   = FB % MomentumDensity_D_Unit, &
+                 EnergyDensityUnitOption = FB % EnergyDensityUnit, &
+                 EnergyUnitOption = FB % EnergyUnit, &
+                 MomentumUnitOption = FB % MomentumUnit, &
+                 AngularMomentumUnitOption = FB % AngularMomentumUnit, &
+                 TimeUnitOption = FB % TimeUnit, &
+                 IgnorabilityOption = CONSOLE % INFO_5 )
+      end select !-- RMA
+    end do !-- iE
 
-    ! end associate !-- FBS
+    end associate !-- FBS
 
-    ! !-- EnergyIntegral
+    !-- EnergyIntegral
 
-    ! associate ( AF => B % FiberMaster )
-    ! select type ( CF => AF % Chart )
-    ! class is ( Chart_SLL_Form )
-    !   EnergyUnit  =  CF % CoordinateUnit ( 1 )
-    ! end select !--CF
-    ! end associate !-- AF
+    associate ( AF => B % FiberMaster )
+    select type ( CF => AF % Chart )
+    class is ( Chart_SLL_Form )
+      EnergyUnit  =  CF % CoordinateUnit ( 1 )
+    end select !--CF
+    end associate !-- AF
 
-    ! select case ( trim ( FB % RadiationType ) )
-    ! case ( 'PHOTONS_SPECTRAL' )
-    !   RadiationType = 'PHOTONS_GREY'
-    ! case default
-    !   RadiationType = FB % RadiationType
-    ! end select !-- FB % RadiationType
+    select case ( trim ( FB % RadiationType ) )
+    case ( 'PHOTONS_SPECTRAL' )
+      RadiationType = 'PHOTONS_GREY'
+    case default
+      RadiationType = FB % RadiationType
+    end select !-- FB % RadiationType
             
-    ! allocate ( FB % EnergyIntegral )
-    ! associate ( EI => FB % EnergyIntegral )
-    !   call EI % Initialize &
-    !          ( B % Base_ASC, RadiationType, &
-    !            NameShortOption = trim ( FB % NameShort ) // '_Integral', &
-    !            Velocity_U_UnitOption = FB % Velocity_U_Unit, &
-    !            MomentumDensity_U_UnitOption &
-    !              = FB % MomentumDensity_U_Unit * EnergyUnit ** 3, &
-    !            MomentumDensity_D_UnitOption &
-    !              = FB % MomentumDensity_D_Unit * EnergyUnit ** 3, &
-    !            EnergyDensityUnitOption &
-    !              =  FB % EnergyDensityUnit * EnergyUnit ** 3, &
-    !            TemperatureUnitOption = FB % TemperatureUnit, &
-    !            EnergyUnitOption = FB % EnergyUnit, &
-    !            MomentumUnitOption = FB % MomentumUnit, &
-    !            AngularMomentumUnitOption = FB % AngularMomentumUnit, &
-    !            TimeUnitOption = FB % TimeUnit )
-    ! end associate !-- EI
+    allocate ( FB % EnergyIntegral )
+    associate ( EI => FB % EnergyIntegral )
+      call EI % Initialize &
+             ( B % Base_ASC, RadiationType, &
+               NameShortOption = trim ( FB % NameShort ) // '_Integral', &
+               Velocity_U_UnitOption = FB % Velocity_U_Unit, &
+               MomentumDensity_U_UnitOption &
+                 = FB % MomentumDensity_U_Unit * EnergyUnit ** 3, &
+               MomentumDensity_D_UnitOption &
+                 = FB % MomentumDensity_D_Unit * EnergyUnit ** 3, &
+               EnergyDensityUnitOption &
+                 =  FB % EnergyDensityUnit * EnergyUnit ** 3, &
+               TemperatureUnitOption = FB % TemperatureUnit, &
+               EnergyUnitOption = FB % EnergyUnit, &
+               MomentumUnitOption = FB % MomentumUnit, &
+               AngularMomentumUnitOption = FB % AngularMomentumUnit, &
+               TimeUnitOption = FB % TimeUnit )
+    end associate !-- EI
 
-    ! end associate !-- B
+    end associate !-- B
 
   end subroutine SetField
 

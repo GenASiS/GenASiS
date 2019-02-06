@@ -114,19 +114,19 @@ contains
         allocate &
           ( RadiationMoments_BSLL_ASC_CSLD_Form :: &
               SRB % Current_BSLL_ASC_CSLD_1D ( iC ) % Element )
-        ! select type ( RA => SRB % Current_ASC_1D ( iC ) % Element )
-        ! class is ( RadiationMoments_ASC_Form )
-        ! call RA % Initialize &
-        !        ( PS, RadiationType ( iC ), &
-        !          NameShortOption = RadiationType ( iC ), &
-        !          UseLimiterOption = .true., &
-        !          LimiterParameterOption = 1.4_KDR )
-        !          ! Velocity_U_UnitOption = WHH % VelocityUnit, &
-        !          ! MomentumDensity_U_UnitOption = MomentumDensity_U_Unit, &
-        !          ! MomentumDensity_D_UnitOption = MomentumDensity_D_Unit, &
-        !          ! EnergyDensityUnitOption = WHH % EnergyDensityUnit, &
-        !          ! TemperatureUnitOption = WHH % TemperatureUnit )
-        ! end select !-- RA
+        select type ( RMB => SRB % Current_BSLL_ASC_CSLD_1D ( iC ) % Element )
+        class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
+        call RMB % Initialize &
+               ( MS, RadiationType ( iC ), &
+                 NameShortOption = RadiationType ( iC ), &
+                 UseLimiterOption = .true., &
+                 LimiterParameterOption = 1.4_KDR )
+                 ! Velocity_U_UnitOption = WHH % VelocityUnit, &
+                 ! MomentumDensity_U_UnitOption = MomentumDensity_U_Unit, &
+                 ! MomentumDensity_D_UnitOption = MomentumDensity_D_Unit, &
+                 ! EnergyDensityUnitOption = WHH % EnergyDensityUnit, &
+                 ! TemperatureUnitOption = WHH % TemperatureUnit )
+        end select !-- RMB
       case default
         call Show ( 'RadiationType not implemented', CONSOLE % ERROR )
         call Show ( RadiationType ( iC ), 'RadiationType', CONSOLE % ERROR )
@@ -135,6 +135,39 @@ contains
         call PROGRAM_HEADER % Abort ( )
       end select
     end do !-- iC
+
+
+    ! !-- Fluid ( This doesn't do anything, just a Step interface placeholder )
+
+    ! allocate ( Fluid_ASC_Form :: PWS % Current_ASC )
+    ! select type ( FA => PWS % Current_ASC )
+    ! class is ( Fluid_ASC_Form )
+    ! call FA % Initialize ( PS, 'NON_RELATIVISTIC' )
+
+
+    !-- Step
+
+    allocate ( Step_RK2_C_BSLL_ASC_CSLD_1D_Form :: SRB % Step_MS )
+    select type ( S_MS => SRB % Step_MS )
+    class is ( Step_RK2_C_BSLL_ASC_CSLD_1D_Form )
+    call S_MS % Initialize ( SRB, SRB % Current_BSLL_ASC_CSLD_1D, Name )
+    end select !-- S_MS
+
+    ! allocate ( Step_RK2_C_ASC_Form :: PWS % Step_PS )
+    ! select type ( S_PS => PWS % Step_PS )
+    ! class is ( Step_RK2_C_ASC_Form )
+    ! call S_PS % Initialize ( FA, Name )
+    ! S_PS % ApplyDivergence % Pointer => null ( )  !-- Disable fluid evolution
+    ! end select !-- S
+
+
+    !-- Template
+
+    call SRB % InitializeTemplate_C_1D_MS_C_PS &
+           ( Name, TimeUnitOption = TimeUnitOption, &
+             FinishTimeOption = FinishTimeOption, &
+             CourantFactorOption = CourantFactorOption, &
+             nWriteOption = nWriteOption )
 
 
     !-- Cleanup

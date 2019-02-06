@@ -27,7 +27,7 @@ module Integrator_C_1D_MS_C_PS__Template
           Current_BSLL_ASC_CSLD_1D
       class ( Step_RK_C_ASC_Template ), allocatable :: &
         Step_PS
-      class ( Step_RK_C_BSLL_ASC_CSLD_Template ), allocatable :: &
+      class ( Step_RK_C_BSLL_ASC_CSLD_1D_Template ), allocatable :: &
         Step_MS
   contains
     procedure, public, pass :: &  !-- 1
@@ -58,7 +58,7 @@ contains
   subroutine InitializeTemplate_C_1D_MS_C_PS &
                ( I, Name, UseLimiterParameter_S_Option, &
                  UseLimiterParameter_F_Option, TimeUnitOption, &
-                 FinishTimeOption, nWriteOption )
+                 FinishTimeOption, CourantFactorOption, nWriteOption )
 
     class ( Integrator_C_1D_MS_C_PS_Template ), intent ( inout ) :: &
       I
@@ -70,7 +70,8 @@ contains
     type ( MeasuredValueForm ), intent ( in ), optional :: &
       TimeUnitOption
     real ( KDR ), intent ( in ), optional :: &
-      FinishTimeOption
+      FinishTimeOption, &
+      CourantFactorOption
     integer ( KDI ), intent ( in ), optional :: &
       nWriteOption
 
@@ -88,7 +89,9 @@ contains
 
     call I % InitializeTemplate_C_PS &
            ( Name, TimeUnitOption = TimeUnitOption, &
-             FinishTimeOption = FinishTimeOption, nWriteOption = nWriteOption )
+             FinishTimeOption = FinishTimeOption, &
+             CourantFactorOption = CourantFactorOption, &
+             nWriteOption = nWriteOption )
 
     I % UseLimiterParameter_S = .false.
     I % UseLimiterParameter_F = .false.
