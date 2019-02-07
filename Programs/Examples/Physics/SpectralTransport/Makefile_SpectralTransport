@@ -29,7 +29,7 @@ SineWaveStreaming: ThirdParty.a GenASiS.a SineWaveStreaming.o
 
 include $(PATH_GENASIS)/Build/Makefile_Dependencies
 
-clean: #clean_ThirdParty
+clean: clean_ThirdParty
 	rm -f *.o *.a *.mod *.ld
 
 clobber: clean
