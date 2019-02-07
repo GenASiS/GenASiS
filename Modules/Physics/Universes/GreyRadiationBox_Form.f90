@@ -20,13 +20,15 @@ contains
 
 
   subroutine Initialize &
-               ( GRB, RadiationType, Name, MinCoordinateOption, &
-                 MaxCoordinateOption, TimeUnitOption, FinishTimeOption, &
-                 CourantFactorOption, nCellsOption, nWriteOption )
+               ( GRB, RadiationName, RadiationType, Name, &
+                 MinCoordinateOption, MaxCoordinateOption, TimeUnitOption, &
+                 FinishTimeOption, CourantFactorOption, nCellsOption, &
+                 nWriteOption )
 
     class ( GreyRadiationBoxForm ), intent ( inout ) :: &
       GRB
     character ( * ), dimension ( : ), intent ( in )  :: &
+      RadiationName, &
       RadiationType
     character ( * ), intent ( in )  :: &
       Name
@@ -73,11 +75,11 @@ contains
 
     !-- Prepare for Currents
 
-    GRB % N_CURRENTS_PS = size ( RadiationType )
+    GRB % N_CURRENTS_PS = size ( RadiationName )
     allocate ( GRB % Current_ASC_1D ( GRB % N_CURRENTS_PS ) )
     allocate ( GRB % TimeStepLabel ( GRB % N_CURRENTS_PS  ) )
     do iC = 1, GRB % N_CURRENTS_PS
-      GRB % TimeStepLabel ( iC )  =  RadiationType ( iC )
+      GRB % TimeStepLabel ( iC )  =  RadiationName ( iC )
     end do !-- iC
     
 
@@ -93,7 +95,7 @@ contains
         class is ( RadiationMoments_ASC_Form )
         call RA % Initialize &
                ( PS, RadiationType ( iC ), &
-                 NameShortOption = RadiationType ( iC ) )
+                 NameShortOption = RadiationName ( iC ) )
                  ! Velocity_U_UnitOption = WHH % VelocityUnit, &
                  ! MomentumDensity_U_UnitOption = MomentumDensity_U_Unit, &
                  ! MomentumDensity_D_UnitOption = MomentumDensity_D_Unit, &

@@ -82,7 +82,8 @@ contains
     select type ( GRB => PWS % Integrator )
     type is ( GreyRadiationBoxForm )
     call GRB % Initialize &
-           ( RadiationType = [ 'GENERIC' ], Name = Name )
+           ( RadiationName = [ 'Radiation' ], RadiationType = [ 'GENERIC' ], &
+             Name = Name )
     GRB % SetReference => SetReference
 
     select type ( PS => GRB % PositionSpace )

@@ -21,13 +21,15 @@ contains
 
 
   subroutine Initialize &
-               ( SRB, RadiationType, Name, MinCoordinateOption, &
-                 MaxCoordinateOption, TimeUnitOption, FinishTimeOption, &
-                 CourantFactorOption, nCellsPositionOption, nWriteOption )
+               ( SRB, RadiationName, RadiationType, Name, &
+                 MinCoordinateOption, MaxCoordinateOption, TimeUnitOption, &
+                 FinishTimeOption, CourantFactorOption, nCellsPositionOption, &
+                 nWriteOption )
 
     class ( SpectralRadiationBoxForm ), intent ( inout ) :: &
       SRB
     character ( * ), dimension ( : ), intent ( in )  :: &
+      RadiationName, &
       RadiationType
     character ( * ), intent ( in )  :: &
       Name
@@ -98,12 +100,13 @@ contains
 
     !-- Prepare for Currents
 
-    SRB % N_CURRENTS_MS = size ( RadiationType )
+    SRB % N_CURRENTS_MS = size ( RadiationName )
     allocate ( SRB % Current_BSLL_ASC_CSLD_1D ( SRB % N_CURRENTS_MS ) )
     allocate ( SRB % TimeStepLabel ( SRB % N_CURRENTS_MS  +  1 ) )
     do iC = 1, SRB % N_CURRENTS_MS
-      SRB % TimeStepLabel ( iC )  =  RadiationType ( iC )
+      SRB % TimeStepLabel ( iC )  =  RadiationName ( iC )
     end do !-- iC
+    SRB % TimeStepLabel ( SRB % N_CURRENTS_MS  +  1 )  =  'Fluid'
     
 
     !-- Radiation
@@ -118,7 +121,7 @@ contains
         class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
         call RMB % Initialize &
                ( MS, RadiationType ( iC ), &
-                 NameShortOption = RadiationType ( iC ) )
+                 NameShortOption = RadiationName ( iC ) )
                  ! Velocity_U_UnitOption = WHH % VelocityUnit, &
                  ! MomentumDensity_U_UnitOption = MomentumDensity_U_Unit, &
                  ! MomentumDensity_D_UnitOption = MomentumDensity_D_Unit, &

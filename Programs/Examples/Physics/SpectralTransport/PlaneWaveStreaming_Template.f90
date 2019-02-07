@@ -81,7 +81,8 @@ contains
     select type ( SRB => PWS % Integrator )
     type is ( SpectralRadiationBoxForm )
     call SRB % Initialize &
-           ( RadiationType = [ 'GENERIC' ], Name = Name )
+           ( RadiationName = [ 'Radiation' ], RadiationType = [ 'GENERIC' ], &
+             Name = Name )
     SRB % SetReference => SetReference
 
     select type ( PS => SRB % PositionSpace )
