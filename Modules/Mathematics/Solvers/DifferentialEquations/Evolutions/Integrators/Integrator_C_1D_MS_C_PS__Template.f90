@@ -218,18 +218,14 @@ contains
 
     associate ( TimeStep => TimeNew - I % Time )    
 
-    associate &
-      ( S_MS => I % Step_MS, &
-        S_PS => I % Step_PS )
-
     call I % PrepareStep_MS ( )
-    call S_MS % Compute ( I % Time, TimeStep )
-    
-    call I % PrepareStep_PS ( )
-    call S_PS % Compute ( I % Time, TimeStep )
+    call I % Step_MS % Compute ( I % Time, TimeStep )
 
-    end associate !-- S_MS, S_PS
-
+    if ( allocated ( I % Step_PS ) ) then
+      call I % PrepareStep_PS ( )
+      call I % Step_PS % Compute ( I % Time, TimeStep )
+    end if
+      
     I % iCycle = I % iCycle + 1
     I % Time = I % Time + TimeStep
 
@@ -308,7 +304,11 @@ contains
     do iC = 1, N_PS
 
       if ( iC == N_PS ) then
-        CA  =>  I % Current_ASC
+        if ( allocated ( I % Current_ASC ) ) then
+          CA  =>  I % Current_ASC
+        else
+          CA  =>  null ( )
+        end if
       else
         associate ( CB  =>  I % Current_BSLL_ASC_CSLD_1D ( iC ) % Element )
         select type ( CAE => CB % Section % Atlas ( 1 ) % Element )
@@ -317,25 +317,30 @@ contains
         end select !-- CAE
         end associate !-- CB
       end if
-      C => CA % Current ( )
 
-      call I % ComputeTimeStepKernel_CSL &
-             ( CSL % IsProperCell, &
-               C % Value ( :, C % FAST_EIGENSPEED_PLUS ( 1 ) ), &
-               C % Value ( :, C % FAST_EIGENSPEED_PLUS ( 2 ) ), &
-               C % Value ( :, C % FAST_EIGENSPEED_PLUS ( 3 ) ), &
-               C % Value ( :, C % FAST_EIGENSPEED_MINUS ( 1 ) ), &
-               C % Value ( :, C % FAST_EIGENSPEED_MINUS ( 2 ) ), &
-               C % Value ( :, C % FAST_EIGENSPEED_MINUS ( 3 ) ), &
-               G % Value ( :, G % WIDTH_LEFT_U ( 1 ) ), &
-               G % Value ( :, G % WIDTH_LEFT_U ( 2 ) ), & 
-               G % Value ( :, G % WIDTH_LEFT_U ( 3 ) ), &
-               G % Value ( :, G % WIDTH_RIGHT_U ( 1 ) ), &
-               G % Value ( :, G % WIDTH_RIGHT_U ( 2 ) ), & 
-               G % Value ( :, G % WIDTH_RIGHT_U ( 3 ) ), &
-               G % Value ( :, G % COARSENING ( 2 ) ), &
-               G % Value ( :, G % COARSENING ( 3 ) ), &
-               CSL % nDimensions, TimeStepCandidate ( iC ) )
+      if ( associated ( CA ) ) then
+
+        C => CA % Current ( )
+        call I % ComputeTimeStepKernel_CSL &
+               ( CSL % IsProperCell, &
+                 C % Value ( :, C % FAST_EIGENSPEED_PLUS ( 1 ) ), &
+                 C % Value ( :, C % FAST_EIGENSPEED_PLUS ( 2 ) ), &
+                 C % Value ( :, C % FAST_EIGENSPEED_PLUS ( 3 ) ), &
+                 C % Value ( :, C % FAST_EIGENSPEED_MINUS ( 1 ) ), &
+                 C % Value ( :, C % FAST_EIGENSPEED_MINUS ( 2 ) ), &
+                 C % Value ( :, C % FAST_EIGENSPEED_MINUS ( 3 ) ), &
+                 G % Value ( :, G % WIDTH_LEFT_U ( 1 ) ), &
+                 G % Value ( :, G % WIDTH_LEFT_U ( 2 ) ), & 
+                 G % Value ( :, G % WIDTH_LEFT_U ( 3 ) ), &
+                 G % Value ( :, G % WIDTH_RIGHT_U ( 1 ) ), &
+                 G % Value ( :, G % WIDTH_RIGHT_U ( 2 ) ), & 
+                 G % Value ( :, G % WIDTH_RIGHT_U ( 3 ) ), &
+                 G % Value ( :, G % COARSENING ( 2 ) ), &
+                 G % Value ( :, G % COARSENING ( 3 ) ), &
+                 CSL % nDimensions, TimeStepCandidate ( iC ) )
+      else
+        TimeStepCandidate ( iC )  =  huge ( 1.0_KDR )
+      end if
 
     end do !-- iC
 

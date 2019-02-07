@@ -100,7 +100,7 @@ contains
 
     SRB % N_CURRENTS_MS = size ( RadiationType )
     allocate ( SRB % Current_BSLL_ASC_CSLD_1D ( SRB % N_CURRENTS_MS ) )
-    allocate ( SRB % TimeStepLabel ( SRB % N_CURRENTS_MS  ) )
+    allocate ( SRB % TimeStepLabel ( SRB % N_CURRENTS_MS  +  1 ) )
     do iC = 1, SRB % N_CURRENTS_MS
       SRB % TimeStepLabel ( iC )  =  RadiationType ( iC )
     end do !-- iC
