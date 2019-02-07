@@ -55,8 +55,10 @@ contains
     integer ( KDI ) :: &
       iD  !-- iDimension
 
+
     if ( FB % Type == '' ) &
       FB % Type = 'a FluidBox'
+
 
     !-- PositionSpace
 
@@ -88,12 +90,14 @@ contains
     call PS % SetGeometry ( GA )
     end select !-- GA
 
+
     !-- Fluid
 
     allocate ( Fluid_ASC_Form :: FB % Current_ASC )
     select type ( FA => FB % Current_ASC )  !-- FluidAtlas
     class is ( Fluid_ASC_Form )
     call FA % Initialize ( PS, FluidType )
+
 
     !-- Step
 
@@ -106,6 +110,7 @@ contains
       S % ApplySources % Pointer => ApplyGravity_F
     end select !-- S
 
+
     !-- Template
 
     call FB % InitializeTemplate_C_PS &
@@ -113,6 +118,7 @@ contains
              FinishTimeOption = FinishTimeOption, &
              CourantFactorOption = CourantFactorOption, &
              nWriteOption = nWriteOption )
+
 
     !-- Cleanup
 

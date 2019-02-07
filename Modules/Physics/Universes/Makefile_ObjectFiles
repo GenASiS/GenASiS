@@ -1,6 +1,7 @@
 UNIVERSES = \
   Universes.o \
   Universe_Template.o \
+  SpectralRadiationBox_Form.o \
   GreyRadiationBox_Form.o \
   FluidCentralCore_Form.o \
   FluidCentralExcision_Form.o \

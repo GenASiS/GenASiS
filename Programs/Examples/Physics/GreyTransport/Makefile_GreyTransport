@@ -12,37 +12,37 @@ SineWaveStreaming: ThirdParty.a GenASiS.a SineWaveStreaming.o
           PlaneWaveStreaming_Template.o \
           GenASiS.a ThirdParty.a $(LIBRARIES)
 
-SineWaveDiffusion: Basics.a Mathematics.a Fluid.a GreyMoments.a \
-  SineWaveDiffusion.o
-	$(LINK) $(FFLAGS) \
-          -o SineWaveDiffusion_$(MACHINE) \
-          SineWaveDiffusion.o SineWaveDiffusion_Form.o \
-          GreyMoments.a Fluid.a Mathematics.a Basics.a \
-          $(LIBRARIES)
+# SineWaveDiffusion: Basics.a Mathematics.a Fluid.a GreyMoments.a \
+#   SineWaveDiffusion.o
+# 	$(LINK) $(FFLAGS) \
+#           -o SineWaveDiffusion_$(MACHINE) \
+#           SineWaveDiffusion.o SineWaveDiffusion_Form.o \
+#           GreyMoments.a Fluid.a Mathematics.a Basics.a \
+#           $(LIBRARIES)
 
-HomogeneousSphere: Basics.a Mathematics.a Fluid.a GreyMoments.a \
-  HomogeneousSphere.o
-	$(LINK) $(FFLAGS) \
-          -o HomogeneousSphere_$(MACHINE) \
-          HomogeneousSphere.o HomogeneousSphere_Form.o \
-          GreyMoments.a Fluid.a Mathematics.a Basics.a \
-          $(LIBRARIES)
+# HomogeneousSphere: Basics.a Mathematics.a Fluid.a GreyMoments.a \
+#   HomogeneousSphere.o
+# 	$(LINK) $(FFLAGS) \
+#           -o HomogeneousSphere_$(MACHINE) \
+#           HomogeneousSphere.o HomogeneousSphere_Form.o \
+#           GreyMoments.a Fluid.a Mathematics.a Basics.a \
+#           $(LIBRARIES)
 
-MarshakWave: Basics.a Mathematics.a Fluid.a GreyMoments.a \
-  MarshakWave.o
-	$(LINK) $(FFLAGS) \
-          -o MarshakWave_$(MACHINE) \
-          MarshakWave.o MarshakWave_Form.o \
-          GreyMoments.a Fluid.a Mathematics.a Basics.a \
-          $(LIBRARIES)
+# MarshakWave: Basics.a Mathematics.a Fluid.a GreyMoments.a \
+#   MarshakWave.o
+# 	$(LINK) $(FFLAGS) \
+#           -o MarshakWave_$(MACHINE) \
+#           MarshakWave.o MarshakWave_Form.o \
+#           GreyMoments.a Fluid.a Mathematics.a Basics.a \
+#           $(LIBRARIES)
 
-StreamingProfile: Basics.a Mathematics.a Fluid.a GreyMoments.a \
-  StreamingProfile.o
-	$(LINK) $(FFLAGS) \
-          -o StreamingProfile_$(MACHINE) \
-          StreamingProfile.o StreamingProfile_Form.o \
-          GreyMoments.a Fluid.a Mathematics.a Basics.a \
-          $(LIBRARIES)
+# StreamingProfile: Basics.a Mathematics.a Fluid.a GreyMoments.a \
+#   StreamingProfile.o
+# 	$(LINK) $(FFLAGS) \
+#           -o StreamingProfile_$(MACHINE) \
+#           StreamingProfile.o StreamingProfile_Form.o \
+#           GreyMoments.a Fluid.a Mathematics.a Basics.a \
+#           $(LIBRARIES)
 
 include $(PATH_GENASIS)/Build/Makefile_Dependencies
 

@@ -143,6 +143,9 @@ contains
     class ( Integrator_C_PS_Template ), intent ( inout ) :: &
       I
 
+    if ( .not. allocated ( I % Step ) ) &
+      return
+
     select type ( S => I % Step )
     class is ( Step_RK_C_ASC_Template )
 

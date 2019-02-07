@@ -9,6 +9,7 @@ module Universes
   use FluidCentralExcision_Form
   use FluidCentralCore_Form
   use GreyRadiationBox_Form
+  use SpectralRadiationBox_Form
   use Universe_Template
 
 end module Universes

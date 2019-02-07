@@ -64,7 +64,14 @@ GreyRadiationBox_Form.o: \
   Mathematics.o \
   Spaces.o \
   StressEnergies.o \
-  FluidBox_Form.f90
+  GreyRadiationBox_Form.f90
+
+SpectralRadiationBox_Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Spaces.o \
+  StressEnergies.o \
+  SpectralRadiationBox_Form.f90
 
 Universe_Template.o: \
   Basics.o \
@@ -81,6 +88,7 @@ Universes.o: \
   FluidCentralExcision_Form.o \
   FluidCentralCore_Form.o \
   GreyRadiationBox_Form.o \
+  SpectralRadiationBox_Form.o \
   Universe_Template.o \
   Universes.f90
 

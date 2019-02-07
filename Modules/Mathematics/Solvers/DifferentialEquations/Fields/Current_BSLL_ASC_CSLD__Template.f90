@@ -27,6 +27,14 @@ module Current_BSLL_ASC_CSLD__Template
       ComputeTallySections
   end type Current_BSLL_ASC_CSLD_Template
 
+  type, public :: Current_BSLL_ASC_CSLD_ElementForm
+    class ( Current_BSLL_ASC_CSLD_Template ), allocatable :: &
+      Element
+  contains
+    final :: &
+      FinalizeElement
+  end type Current_BSLL_ASC_CSLD_ElementForm
+
 contains
 
 
@@ -117,6 +125,17 @@ contains
     end do !-- iS
 
   end subroutine ComputeTallySections
+
+
+  impure elemental subroutine FinalizeElement ( CBE )
+    
+    type ( Current_BSLL_ASC_CSLD_ElementForm ), intent ( inout ) :: &
+      CBE
+
+    if ( allocated ( CBE % Element ) ) &
+      deallocate ( CBE % Element )
+
+  end subroutine FinalizeElement
 
 
 end module Current_BSLL_ASC_CSLD__Template

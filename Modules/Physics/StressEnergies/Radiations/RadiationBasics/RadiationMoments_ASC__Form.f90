@@ -13,8 +13,6 @@ module RadiationMoments_ASC__Form
   private
   
   type, public, extends ( Current_ASC_Template ) :: RadiationMoments_ASC_Form
-    logical ( KDL ) :: &
-      SuppressWrite
     real ( KDR ) :: &
       LimiterParameter
     type ( MeasuredValueForm ) :: &
@@ -25,7 +23,8 @@ module RadiationMoments_ASC__Form
       MomentumDensity_U_Unit, &
       MomentumDensity_D_Unit
     logical ( KDL ) :: &
-      UseLimiter
+      UseLimiter, &
+      SuppressWrite
     character ( LDF ) :: &
       RadiationMomentsType = '', &
       RiemannSolverType = ''

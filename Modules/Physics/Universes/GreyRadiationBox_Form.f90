@@ -20,13 +20,15 @@ contains
 
 
   subroutine Initialize &
-               ( GRB, RadiationType, Name, MinCoordinateOption, &
-                 MaxCoordinateOption, TimeUnitOption, FinishTimeOption, &
-                 CourantFactorOption, nCellsOption, nWriteOption )
+               ( GRB, RadiationName, RadiationType, Name, &
+                 MinCoordinateOption, MaxCoordinateOption, TimeUnitOption, &
+                 FinishTimeOption, CourantFactorOption, nCellsOption, &
+                 nWriteOption )
 
     class ( GreyRadiationBoxForm ), intent ( inout ) :: &
       GRB
     character ( * ), dimension ( : ), intent ( in )  :: &
+      RadiationName, &
       RadiationType
     character ( * ), intent ( in )  :: &
       Name
@@ -46,8 +48,10 @@ contains
     integer ( KDI ) :: &
       iC  !-- iCurrent
 
+
     if ( GRB % Type == '' ) &
       GRB % Type = 'a GreyRadiationBox'
+
 
     !-- PositionSpace
 
@@ -68,15 +72,17 @@ contains
     call PS % SetGeometry ( GA )
     end select !-- GA
 
+
     !-- Prepare for Currents
 
-    GRB % N_CURRENTS_PS = size ( RadiationType )
+    GRB % N_CURRENTS_PS = size ( RadiationName )
     allocate ( GRB % Current_ASC_1D ( GRB % N_CURRENTS_PS ) )
     allocate ( GRB % TimeStepLabel ( GRB % N_CURRENTS_PS  ) )
     do iC = 1, GRB % N_CURRENTS_PS
-      GRB % TimeStepLabel ( iC )  =  RadiationType ( iC )
+      GRB % TimeStepLabel ( iC )  =  RadiationName ( iC )
     end do !-- iC
     
+
     !-- Radiation
 
     do iC = 1, GRB % N_CURRENTS_PS
@@ -89,9 +95,7 @@ contains
         class is ( RadiationMoments_ASC_Form )
         call RA % Initialize &
                ( PS, RadiationType ( iC ), &
-                 NameShortOption = RadiationType ( iC ), &
-                 UseLimiterOption = .true., &
-                 LimiterParameterOption = 1.4_KDR )
+                 NameShortOption = RadiationName ( iC ) )
                  ! Velocity_U_UnitOption = WHH % VelocityUnit, &
                  ! MomentumDensity_U_UnitOption = MomentumDensity_U_Unit, &
                  ! MomentumDensity_D_UnitOption = MomentumDensity_D_Unit, &
@@ -107,6 +111,7 @@ contains
       end select
     end do !-- iC
 
+
     !-- Step
 
     allocate ( Step_RK2_C_ASC_1D_Form :: GRB % Step )
@@ -115,6 +120,7 @@ contains
     call S % Initialize ( GRB, GRB % Current_ASC_1D, Name )
     end select !-- S
 
+
     !-- Template
 
     call GRB % InitializeTemplate_C_1D_PS &
@@ -122,6 +128,7 @@ contains
              FinishTimeOption = FinishTimeOption, &
              CourantFactorOption = CourantFactorOption, &
              nWriteOption = nWriteOption )
+
 
     !-- Cleanup
 
