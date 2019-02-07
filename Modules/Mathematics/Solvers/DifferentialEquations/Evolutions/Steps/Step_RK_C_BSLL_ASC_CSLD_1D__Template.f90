@@ -750,7 +750,7 @@ contains
     do iC = 1, S % nCurrents
       associate ( KB => S % K_BSLL_ASC_CSLD ( iC, iStage ) )
       do iS = 1, S % nSections
-        associate ( Solution => S % Solution_BSLL_ASC_CSLD_S ( iC, iS ) )
+        associate ( Solution => S % Solution_BSLL_ASC_CSLD_S ( iS, iC ) )
         KS => KB % FieldSection ( iS )
         call MultiplyAdd ( Solution % Value, KS % Value, B )
         end associate !-- Solution
