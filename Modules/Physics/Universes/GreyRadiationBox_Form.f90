@@ -93,9 +93,7 @@ contains
         class is ( RadiationMoments_ASC_Form )
         call RA % Initialize &
                ( PS, RadiationType ( iC ), &
-                 NameShortOption = RadiationType ( iC ), &
-                 UseLimiterOption = .true., &
-                 LimiterParameterOption = 1.4_KDR )
+                 NameShortOption = RadiationType ( iC ) )
                  ! Velocity_U_UnitOption = WHH % VelocityUnit, &
                  ! MomentumDensity_U_UnitOption = MomentumDensity_U_Unit, &
                  ! MomentumDensity_D_UnitOption = MomentumDensity_D_Unit, &

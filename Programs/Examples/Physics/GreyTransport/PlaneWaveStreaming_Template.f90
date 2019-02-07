@@ -122,16 +122,16 @@ contains
 
     PWS % Speed = CONSTANT % SPEED_OF_LIGHT
 
-    nPeriods = 1
-    call PROGRAM_HEADER % GetParameter ( nPeriods, 'nPeriods' )
-    call Show ( nPeriods, 'nPeriods' )
-
     associate &
       ( K     => PWS % Wavenumber, &
         Abs_K => sqrt ( dot_product ( PWS % Wavenumber, PWS % Wavenumber ) ), &
         V     => PWS % Speed )
     Period = 1.0_KDR / ( Abs_K * V )
     call Show ( Period, 'Period' )
+
+    nPeriods = 1
+    call PROGRAM_HEADER % GetParameter ( nPeriods, 'nPeriods' )
+    call Show ( nPeriods, 'nPeriods' )
 
     GRB % FinishTime = nPeriods * Period
     call Show ( GRB % FinishTime, 'Reset FinishTime' )

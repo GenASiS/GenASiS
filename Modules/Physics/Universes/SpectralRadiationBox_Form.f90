@@ -118,9 +118,7 @@ contains
         class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
         call RMB % Initialize &
                ( MS, RadiationType ( iC ), &
-                 NameShortOption = RadiationType ( iC ), &
-                 UseLimiterOption = .true., &
-                 LimiterParameterOption = 1.4_KDR )
+                 NameShortOption = RadiationType ( iC ) )
                  ! Velocity_U_UnitOption = WHH % VelocityUnit, &
                  ! MomentumDensity_U_UnitOption = MomentumDensity_U_Unit, &
                  ! MomentumDensity_D_UnitOption = MomentumDensity_D_Unit, &

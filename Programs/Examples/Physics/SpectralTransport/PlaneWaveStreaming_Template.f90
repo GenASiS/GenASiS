@@ -59,7 +59,8 @@ contains
       Name
 
     integer ( KDI ) :: &
-      iE  !-- iEnergy
+      iE, &  !-- iEnergy
+      nPeriods
     real ( KDR ) :: &
       Period
     character ( 1 + 2 ) :: &
@@ -112,6 +113,13 @@ contains
     !-- Initial conditions
 
     call SetRadiation ( PWS, Time = 0.0_KDR, Period = Period )
+
+    nPeriods = 1
+    call PROGRAM_HEADER % GetParameter ( nPeriods, 'nPeriods' )
+    call Show ( nPeriods, 'nPeriods' )
+
+    SRB % FinishTime = nPeriods * Period
+    call Show ( SRB % FinishTime, 'Reset FinishTime' )
 
 
     !-- Cleanup

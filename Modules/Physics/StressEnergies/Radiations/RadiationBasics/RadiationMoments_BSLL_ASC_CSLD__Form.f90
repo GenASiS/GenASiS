@@ -299,7 +299,8 @@ contains
       SuppressWrite
     integer ( KDI ) :: &
       iF, &  !-- iFiber
-      iE     !-- iEnergy
+      iE, &  !-- iEnergy
+      Ignorability
     type ( MeasuredValueForm ) :: &
       EnergyUnit
     character ( 1 + 2 ) :: &
@@ -326,7 +327,6 @@ contains
       call RMA % Initialize &
              ( AF, FB % RadiationType, NameShortOption = FB % NameShort, &
                SuppressWriteSourcesOption = .false., &
-               UseLimiterOption = FB % UseLimiter, &
                Velocity_U_UnitOption = FB % Velocity_U_Unit, &
                MomentumDensity_U_UnitOption = FB % MomentumDensity_U_Unit, &
                MomentumDensity_D_UnitOption = FB % MomentumDensity_D_Unit, &
@@ -334,8 +334,7 @@ contains
                EnergyUnitOption = FB % EnergyUnit, &
                MomentumUnitOption = FB % MomentumUnit, &
                AngularMomentumUnitOption = FB % AngularMomentumUnit, &
-               TimeUnitOption = FB % TimeUnit, &
-               LimiterParameterOption = FB % LimiterParameter )
+               TimeUnitOption = FB % TimeUnit )
 
       end select !-- AF
       end select !-- RMA
@@ -355,22 +354,32 @@ contains
       allocate ( RadiationMoments_ASC_Form :: FBS % Atlas ( iE ) % Element )
       select type ( RMA => FBS % Atlas ( iE ) % Element )
       class is ( RadiationMoments_ASC_Form )
-        call RMA % Initialize &
-               ( B % Base_ASC, FB % RadiationType, &
-                 NameShortOption = trim ( FB % NameShort ) // EnergyNumber, &
-                 SuppressWriteOption = SuppressWrite, &
-                 SuppressWriteSourcesOption = .true., &
-                 Velocity_U_UnitOption = FB % Velocity_U_Unit, &
-                 MomentumDensity_U_UnitOption &
-                   = FB % MomentumDensity_U_Unit, &
-                 MomentumDensity_D_UnitOption &
-                   = FB % MomentumDensity_D_Unit, &
-                 EnergyDensityUnitOption = FB % EnergyDensityUnit, &
-                 EnergyUnitOption = FB % EnergyUnit, &
-                 MomentumUnitOption = FB % MomentumUnit, &
-                 AngularMomentumUnitOption = FB % AngularMomentumUnit, &
-                 TimeUnitOption = FB % TimeUnit, &
-                 IgnorabilityOption = CONSOLE % INFO_5 )
+
+      Ignorability = CONSOLE % INFO_5
+      if ( iE == 1 ) then
+        Ignorability = B % Base_ASC % Ignorability
+        call Show ( 'Representative position space section', Ignorability )
+      end if
+   
+      call RMA % Initialize &
+             ( B % Base_ASC, FB % RadiationType, &
+               NameShortOption = trim ( FB % NameShort ) // EnergyNumber, &
+               UseLimiterOption = FB % UseLimiter, &
+               SuppressWriteOption = SuppressWrite, &
+               SuppressWriteSourcesOption = .true., &
+               Velocity_U_UnitOption = FB % Velocity_U_Unit, &
+               MomentumDensity_U_UnitOption &
+                 = FB % MomentumDensity_U_Unit, &
+               MomentumDensity_D_UnitOption &
+                 = FB % MomentumDensity_D_Unit, &
+               EnergyDensityUnitOption = FB % EnergyDensityUnit, &
+               EnergyUnitOption = FB % EnergyUnit, &
+               MomentumUnitOption = FB % MomentumUnit, &
+               AngularMomentumUnitOption = FB % AngularMomentumUnit, &
+               TimeUnitOption = FB % TimeUnit, &
+               LimiterParameterOption = FB % LimiterParameter, &
+               IgnorabilityOption = Ignorability )
+
       end select !-- RMA
     end do !-- iE
 
@@ -408,7 +417,8 @@ contains
                EnergyUnitOption = FB % EnergyUnit, &
                MomentumUnitOption = FB % MomentumUnit, &
                AngularMomentumUnitOption = FB % AngularMomentumUnit, &
-               TimeUnitOption = FB % TimeUnit )
+               TimeUnitOption = FB % TimeUnit, &
+               IgnorabilityOption = CONSOLE % INFO_5 )
     end associate !-- EI
 
     end associate !-- B
