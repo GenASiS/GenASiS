@@ -7,6 +7,7 @@ RADIATION_BASICS = \
   Sources_RM_CSL__Form.o \
   Sources_RM__Form.o \
   RadiationMoments_Form.o \
+  Interactions_CSL__Template.o \
   Interactions_Template.o \
   SetFermiDiracSpectrum_Command.o \
   SetPlanckSpectrum_Command.o
