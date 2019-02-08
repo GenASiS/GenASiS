@@ -17,6 +17,8 @@ module Interactions_CSL__Template
       character ( LDL ) :: &
         InteractionsType = ''
   contains
+    procedure ( I ), public, pass, deferred :: &
+      Initialize
     procedure, public, pass :: &
       IntializeTemplate_I_CSL
     procedure, public, pass :: &
@@ -30,6 +32,30 @@ module Interactions_CSL__Template
   end type Interactions_CSL_Template
 
   abstract interface
+
+    subroutine I ( IC, C, NameShort, InteractionsType, LengthUnit, &
+                    EnergyDensityUnit, TemperatureUnit, nValues, &
+                    IgnorabilityOption )
+      use Basics
+      use Mathematics
+      import Interactions_CSL_Template
+      class ( Interactions_CSL_Template ), intent ( inout ) :: &
+        IC
+      class ( ChartHeader_SL_Form ), intent ( in ), target :: &
+        C
+      character ( * ), intent ( in ) :: &
+        NameShort, &
+        InteractionsType
+      type ( MeasuredValueForm ), intent ( in ) :: &
+        LengthUnit, &
+        EnergyDensityUnit, &
+        TemperatureUnit
+      integer ( KDI ), intent ( in ) :: &
+        nValues
+      integer ( KDI ), intent ( in ), optional :: &
+        IgnorabilityOption
+    end subroutine I
+
     subroutine AF ( IC )
       import Interactions_CSL_Template
       class ( Interactions_CSL_Template ), intent ( inout ) :: &

@@ -25,8 +25,21 @@ module Interactions_ASC__Template
       Interactions => Interactions_CSL
     procedure, public, pass :: &
       FinalizeTemplate_I_ASC
+    procedure, public, pass :: &
+      SetField
+    procedure ( AF ), public, pass, deferred :: &
+      AllocateField
   end type Interactions_ASC_Template
 
+  abstract interface
+
+    subroutine AF ( IA )
+      import Interactions_ASC_Template
+      class ( Interactions_ASC_Template ), intent ( inout ) :: &
+        IA
+    end subroutine AF
+
+  end interface
 
 contains
 
@@ -102,6 +115,37 @@ contains
     call IA % FinalizeTemplate_ASC ( )
 
   end subroutine FinalizeTemplate_I_ASC
+
+
+  subroutine SetField ( FA )
+
+    class ( Interactions_ASC_Template ), intent ( inout ) :: &
+      FA
+
+    select type ( A => FA % Atlas )
+    class is ( Atlas_SC_Template )
+
+    select type ( C => A % Chart )
+    class is ( Chart_SL_Template )
+    associate ( nValues => C % nProperCells + C % nGhostCells )
+
+    call FA % AllocateField ( )
+
+    select type ( FC => FA % Chart )
+    class is ( Interactions_CSL_Template )
+      call FC % Initialize &
+             ( C, FA % NameShort, FA % InteractionsType, FA % LengthUnit, &
+               FA % EnergyDensityUnit, FA % TemperatureUnit, nValues, &
+               IgnorabilityOption = FA % IGNORABILITY )
+    end select !-- FC
+
+    call A % AddField ( FA )
+
+    end associate !-- nValues
+    end select !-- C
+    end select !-- A
+
+  end subroutine SetField
 
 
 end module Interactions_ASC__Template
