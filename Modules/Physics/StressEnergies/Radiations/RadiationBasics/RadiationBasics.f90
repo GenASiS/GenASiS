@@ -5,6 +5,7 @@ module RadiationBasics
   use Interactions_Template
   use Interactions_CSL__Template
   use Interactions_ASC__Template
+  use Interactions_BSLL_ASC_CSLD__Template
   use RadiationMoments_Form
   use Sources_RM__Form
   use Sources_RM_CSL__Form

@@ -14,17 +14,22 @@ Interactions_Template.o: \
 Interactions_CSL__Template.o: \
   Basics.o \
   Mathematics.o \
-  Fluids.o \
   Interactions_Template.o \
   Interactions_CSL__Template.f90
 
 Interactions_ASC__Template.o: \
   Basics.o \
   Mathematics.o \
-  Fluids.o \
   Interactions_Template.o \
   Interactions_CSL__Template.o \
   Interactions_ASC__Template.f90
+
+Interactions_BSLL_ASC_CSLD__Template.o: \
+  Basics.o \
+  Mathematics.o \
+  Interactions_Template.o \
+  Interactions_ASC__Template.o \
+  Interactions_BSLL_ASC_CSLD__Template.f90
 
 RadiationMoments_Form.o: \
   Basics.o \
@@ -82,6 +87,7 @@ RadiationBasics.o: \
   Interactions_Template.o \
   Interactions_CSL__Template.o \
   Interactions_ASC__Template.o \
+  Interactions_BSLL_ASC_CSLD__Template.o \
   RadiationMoments_Form.o \
   Sources_RM__Form.o \
   Sources_RM_CSL__Form.o \

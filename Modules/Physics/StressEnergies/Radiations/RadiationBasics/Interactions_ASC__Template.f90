@@ -17,6 +17,8 @@ module Interactions_ASC__Template
       character ( LDL ) :: &
         InteractionsType = ''
   contains
+    procedure ( I ), public, pass, deferred :: &
+      Initialize
     procedure, public, pass :: &
       InitializeTemplate_I_ASC
     procedure, private, pass :: &
@@ -32,6 +34,28 @@ module Interactions_ASC__Template
   end type Interactions_ASC_Template
 
   abstract interface
+
+    subroutine I ( IA, A, InteractionsType, NameShortOption, &
+                   LengthUnitOption, EnergyDensityUnitOption, &
+                   TemperatureUnitOption, IgnorabilityOption )
+      use Basics
+      use Mathematics
+      import Interactions_ASC_Template
+      class ( Interactions_ASC_Template ), intent ( inout ) :: &
+        IA
+      class ( Atlas_SC_Template ), intent ( in ), target :: &
+        A
+      character ( * ), intent ( in ) :: &
+        InteractionsType
+      character ( * ), intent ( in ), optional :: &
+        NameShortOption
+      type ( MeasuredValueForm ), intent ( in ), optional :: &
+        LengthUnitOption, &
+        EnergyDensityUnitOption, &
+        TemperatureUnitOption
+      integer ( KDI ), intent ( in ), optional :: &
+        IgnorabilityOption
+    end subroutine I
 
     subroutine AF ( IA )
       import Interactions_ASC_Template

@@ -2,7 +2,6 @@ module Interactions_CSL__Template
 
   use Basics
   use Mathematics
-  use Fluids
   use Interactions_Template
 
   implicit none
@@ -61,6 +60,7 @@ module Interactions_CSL__Template
       class ( Interactions_CSL_Template ), intent ( inout ) :: &
         IC
     end subroutine AF
+
   end interface
 
 contains
