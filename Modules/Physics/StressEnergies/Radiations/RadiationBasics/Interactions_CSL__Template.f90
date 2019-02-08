@@ -23,8 +23,19 @@ module Interactions_CSL__Template
       Interactions
     procedure, public, pass :: &
       FinalizeTemplate_I_CSL
+    procedure, public, pass :: &
+      SetField
+    procedure ( AF ), public, pass, deferred :: &
+      AllocateField
   end type Interactions_CSL_Template
 
+  abstract interface
+    subroutine AF ( IC )
+      import Interactions_CSL_Template
+      class ( Interactions_CSL_Template ), intent ( inout ) :: &
+        IC
+    end subroutine AF
+  end interface
 
 contains
 
@@ -93,6 +104,27 @@ contains
     call IC % FinalizeTemplate_CSL ( )
 
   end subroutine FinalizeTemplate_I_CSL
+
+
+  subroutine SetField ( FC )
+
+    class ( Interactions_CSL_Template ), intent ( inout ) :: &
+      FC
+
+    allocate ( FC % FieldOutput )
+
+    call FC % AllocateField ( )
+
+    select type ( I => FC % Field )
+    class is ( InteractionsTemplate )
+      call I % Initialize &
+             ( FC % LengthUnit, FC % EnergyDensityUnit, &
+               FC % TemperatureUnit, FC % nValues, &
+               NameOption = FC % NameShort )
+      call I % SetOutput ( FC % FieldOutput )
+    end select !-- I
+
+  end subroutine SetField
 
 
 end module Interactions_CSL__Template

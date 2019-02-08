@@ -25,6 +25,10 @@ module Interactions_Template
     character ( LDL ) :: &
       Type = ''
   contains
+    procedure ( IAI ), private, pass, deferred :: &
+      InitializeAllocate_I
+    generic, public :: &
+      Initialize => InitializeAllocate_I
     procedure, public, pass :: &
       InitializeTemplate
     procedure ( C ), public, pass, deferred :: &
@@ -43,6 +47,30 @@ module Interactions_Template
   end type InteractionsTemplate
 
   abstract interface
+
+    subroutine IAI ( I, LengthUnit, EnergyDensityUnit, TemperatureUnit, &
+                     nValues, VariableOption, NameOption, ClearOption, &
+                     UnitOption )
+      use Basics
+      import InteractionsTemplate
+      class ( InteractionsTemplate ), intent ( inout ) :: &
+        I
+      type ( MeasuredValueForm ), intent ( in ) :: &
+        LengthUnit, &
+        EnergyDensityUnit, &
+        TemperatureUnit
+      integer ( KDI ), intent ( in ) :: &
+        nValues
+      character ( * ), dimension ( : ), intent ( in ), optional :: &
+        VariableOption
+      character ( * ), intent ( in ), optional :: &
+        NameOption
+      logical ( KDL ), intent ( in ), optional :: &
+        ClearOption
+      type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+        UnitOption
+    end subroutine IAI
+
     subroutine C ( I, F )
       use Fluids
       import InteractionsTemplate
@@ -51,6 +79,7 @@ module Interactions_Template
       class ( Fluid_P_Template ), intent ( in ) :: &
         F
     end subroutine C
+
   end interface
 
     private :: &
