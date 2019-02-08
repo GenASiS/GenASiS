@@ -1,0 +1,116 @@
+README: BUILDING GENASIS APPLICATIONS, EXAMPLES, AND/OR UNIT TESTS
+--------------------------------------------------------------------------
+
+A machine-specific Makefile is needed to build GenASiS programs. Several 
+sample Makefiles are provided under the subdirectory Build/Machines. 
+Minor modifications of one of the provided Makefiles that most
+approximates one's computing environment is often sufficient to get started. 
+The essential information needed includes the name of the compiler wrapper
+to compile MPI-based code (e.g. commonly 'mpif90' for Fortran), 
+compiler-specific flags for various debugging and optimization options, and
+the flags and locations to include and link with third-party libraries such
+as Silo. 
+
+Once the machine-specific Makefile is set up, the environment variable 
+GENASIS_MACHINE has to be set to tell the GenASiS build system to use the 
+corresponding Makefile. For example, to use the Makefile for the GCC compiler
+on a Linux machine (i.e. Makefile_Linux_GCC), in a Bash Unix shell one can
+type:
+
+> export GENASIS_MACHINE=Linux_GCC
+
+In most common computing environments with a generic MPI library, the
+fluid dynamics example programs (described in the accompanying paper) can then
+be built and executed (here with 8 MPI processes) with the following commands:
+
+> cd Programs/Examples/Basics/FluidDynamics/Executables
+> make PURPOSE=OPTIMIZE all
+> mpirun -np 8 ./SineWaveAdvection_Linux_GCC nCells=128,128,128
+> mpirun -np 8 ./SawtoothWaveAdvection_Linux_GCC nCells=128,128,128 \
+nWavelengths=2,2,2
+> mpirun -np 8 ./RiemannProblem_Linux_GCC nCells=128,128,128 \
+FinishTime=0.25
+
+(To compile in a manner that is unoptimized but useful for debuggers, 
+replace 'PURPOSE=OPTIMIZE' with 'PURPOSE=DEBUG'. Or omit it altogether; 
+in the absence of a specification of PURPOSE, the Makefile in 
+FluidDynamics/Executables sets PURPOSE=DEBUG as a default.)
+Note that in these examples, the optional non-default parameter values for
+nCells, nWavelengths, and FinishTime---which were used in
+generating the figures in the accompanying paper---are passed
+to the programs in this case via command-line options. The 1D and 2D cases
+of these programs can also be executed by specifying fewer elements for 
+nCells, for example
+
+> mpirun -np 2 ./RiemannProblem_Linux_GCC nCells=128 Dimensionality=1D \
+FinishTime=0.25
+> mpirun -np 4 ./RiemannProblem_Linux_GCC nCells=128,128 Dimensionality=2D \
+FinishTime=0.25
+
+where the 'Dimensionality' option here is only used as an appendix to the 
+name of the output file (it should be consistent with the number of 
+elements given to nCells, which the program uses to determine the 
+desired dimensionality of the mesh).
+ 
+By default the output files are written in the directory "Output"
+that resides on the same level as the "Executables" directory, but
+this can be changed with an optional 'OutputDirectory' command line
+option. 
+
+If the VisIt visualization package is available, plots similar to the Figures 
+in the accompanying paper can be generated using the supplied visualization
+script called from the "Output" directory. The script takes one argument, 
+which is the program name appended with the "Dimensionality" string. Assuming 
+the executable "visit" is available, the visualization script can be called, 
+for example, as the follows:
+
+> cd Programs/Examples/Basics/FluidDynamics/Output
+> visit -cli -s ../PlaneWaveAdvection.visit.py SineWaveAdvection_3D
+> visit -cli -s ../PlaneWaveAdvection.visit.py SawtoothWaveAdvection_2D
+> visit -cli -s ../PlaneWaveAdvection.visit.py RiemannProblem_1D
+
+The molecular dynamics programs described in the accompanying paper can be 
+built and executed in a manner similar to those in FluidDynamics. The 
+directory MolecularDynamics is also found under Programs/Examples/Basics.
+A blanket "make all" command in the Executables subdirectory compiles both 
+ArgonEquilibrium and ClusterFormation}. For both programs, all results 
+presented in the accompanying paper were obtained with parameters 
+nSteps=10000 and nWrite=1000. Various numbers of particles and processes 
+used for different runs are mentioned in the accompanying paper. In the case 
+of ClusterFormation, the number of particles is directly specified by a 
+parameter nParticles. For ArgonEquilibrium a parameter nUnitCellsRoot is 
+used instead; the number of particles is 4 * ( nUnitCellsRoot ** 3 ). Thus 
+the values 8, 12, 16, and 20 for nUnitCellsRoot correspond to 2048, 6912,
+16384, and 32000 particles respectively. Specification of the number density
+and temperature parameters for different phases of argon is discussed in the
+accompanying paper.
+
+Unit test programs exercising individual GenASIS classes can similarly be
+built and executed inside the "Executables" directory of each leaf
+division of the code under "Programs/UnitTests". For example, the following 
+commands build and execute the unit test programs for classes in the 
+"Runtime" division:
+
+> cd Programs/UnitTests/Basics/Runtime/Executables
+> make all
+> mpirun -np 1 [program_name]
+
+This blanket "make all" builds all the unit test targets in the Makefile
+fragment Programs/Basics/Runtime/Makefile_Runtime. Individual targets of
+course also can be built.
+
+FIXME: Need to update supported compiler list
+FIXME: Add a paragraph on enabling OpenMP Offload 
+FIXME: Add references to Basics_1, Basics_2, Basics_3 paper
+
+GenASiS Basics Version 2 has been tested with the following compilers: GCC
+Fortran compiler (gfortran, part of GCC) version 6.1.0, Intel Fortran 16.0.03,
+and Cray Compiler Environment version 8.5.3. Newer versions
+of these compilers are likely to work as well. GenASiS Basics is written in 
+full compliance with the Fortran 2003 standard (with the addition of a couple
+of minor new features of Fortan 2008, including the "impure" attribute and
+finding a new unit number in the "open" statement) to enhance portability.
+
+Authors:
+Christian Cardall (cardallcy@ornl.gov)
+Reuben Budiardja (reubendb@ornl.gov)
