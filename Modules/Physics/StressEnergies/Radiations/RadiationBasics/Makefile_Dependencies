@@ -18,6 +18,14 @@ Interactions_CSL__Template.o: \
   Interactions_Template.o \
   Interactions_CSL__Template.f90
 
+Interactions_ASC__Template.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluids.o \
+  Interactions_Template.o \
+  Interactions_CSL__Template.o \
+  Interactions_ASC__Template.f90
+
 RadiationMoments_Form.o: \
   Basics.o \
   Mathematics.o \
@@ -73,6 +81,7 @@ RadiationBasics.o: \
   SetFermiDiracSpectrum_Command.o \
   Interactions_Template.o \
   Interactions_CSL__Template.o \
+  Interactions_ASC__Template.o \
   RadiationMoments_Form.o \
   Sources_RM__Form.o \
   Sources_RM_CSL__Form.o \
