@@ -79,6 +79,11 @@ Interactions_G_G_CSL__Form.o: \
   Interactions_G_G__Form.o \
   Interactions_G_G_CSL__Form.f90
 
+Interactions_G_G_ASC__Form.o: \
+  GenASiS.o \
+  Interactions_G_G_CSL__Form.o \
+  Interactions_G_G_ASC__Form.f90
+
 # SineWaveDiffusion_Form.o: \
 #   Basics.o \
 #   Mathematics.o \

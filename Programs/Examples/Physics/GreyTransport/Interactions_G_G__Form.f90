@@ -9,7 +9,7 @@ module Interactions_G_G__Form
 
   type, public, extends ( InteractionsTemplate ) :: Interactions_G_G_Form
     real ( KDR ) :: &
-      Opacity = 0.0_KDR
+      OpacityAbsorption = 0.0_KDR
   contains
     procedure, private, pass :: &
       InitializeAllocate_I
@@ -57,14 +57,14 @@ contains
   end subroutine InitializeAllocate_I
 
 
-  subroutine Set_G_G ( I, Opacity )
+  subroutine Set_G_G ( I, OpacityAbsorption )
 
     class ( Interactions_G_G_Form ), intent ( inout ) :: &
       I
     real ( KDR ), intent ( in ) :: &
-      Opacity
+      OpacityAbsorption
 
-    I % Opacity  =  Opacity
+    I % OpacityAbsorption  =  OpacityAbsorption
 
   end subroutine Set_G_G
 
@@ -115,10 +115,10 @@ contains
       nValues
     real ( KDR ) :: &
       a, &
-      Kappa
+      Kappa_A
 
     a      =  4.0_KDR  *  CONSTANT % STEFAN_BOLTZMANN
-    Kappa  =  I % Opacity
+    Kappa_A  =  I % OpacityAbsorption
 
     nValues  =  size ( Xi_J )
 
@@ -127,8 +127,8 @@ contains
 
       J_Eq  ( iV )  =  a  *  T ( iV ) ** 4
 
-      Xi_J  ( iV )  =  Kappa  *  J_Eq ( iV )
-      Chi_J ( iV )  =  Kappa
+      Xi_J  ( iV )  =  Kappa_A  *  J_Eq ( iV )
+      Chi_J ( iV )  =  Kappa_A
 
       Chi_H ( iV )  =  Chi_J ( iV )
 
