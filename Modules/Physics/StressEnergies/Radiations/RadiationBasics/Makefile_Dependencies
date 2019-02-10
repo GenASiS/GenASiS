@@ -8,6 +8,7 @@ SetFermiDiracSpectrum_Command.o: \
 
 Interactions_Template.o: \
   Basics.o \
+  Mathematics.o \
   Fluids.o \
   Interactions_Template.f90
 

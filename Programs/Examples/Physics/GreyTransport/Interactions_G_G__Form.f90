@@ -1,27 +1,27 @@
-module Interactions_G_EA_G__Form
+module Interactions_G_G__Form
 
-  !-- Interactions_Generic_EmissionAbsorption_Grey_Form
+  !-- Interactions_Generic_Grey_Form
 
   use GenASiS
 
   implicit none
   private
 
-  type, public, extends ( InteractionsTemplate ) :: Interactions_G_EA_G_Form
+  type, public, extends ( InteractionsTemplate ) :: Interactions_G_G_Form
     real ( KDR ) :: &
       Opacity = 0.0_KDR
   contains
     procedure, private, pass :: &
       InitializeAllocate_I
     procedure, private, pass :: &
-      Set => Set_G_EA_G
+      Set => Set_G_G
     procedure, public, pass :: &
       Compute
     final :: &
       Finalize
     procedure, private, pass ( I ) :: &
       ComputeKernel
-  end type Interactions_G_EA_G_Form
+  end type Interactions_G_G_Form
 
 contains
 
@@ -30,7 +30,7 @@ contains
                ( I, LengthUnit, EnergyDensityUnit, TemperatureUnit, nValues, &
                  VariableOption, NameOption, ClearOption, UnitOption )
 
-    class ( Interactions_G_EA_G_Form ), intent ( inout ) :: &
+    class ( Interactions_G_G_Form ), intent ( inout ) :: &
       I
     type ( MeasuredValueForm ), intent ( in ) :: &
       LengthUnit, &
@@ -48,7 +48,7 @@ contains
       UnitOption
 
     if ( I % Type == '' ) &
-      I % Type = 'an Interactions_G_EA_G'
+      I % Type = 'an Interactions_G_G'
 
     call I % InitializeTemplate &
            ( LengthUnit, EnergyDensityUnit, TemperatureUnit, nValues, &
@@ -57,21 +57,21 @@ contains
   end subroutine InitializeAllocate_I
 
 
-  subroutine Set_G_EA_G ( I, Opacity )
+  subroutine Set_G_G ( I, Opacity )
 
-    class ( Interactions_G_EA_G_Form ), intent ( inout ) :: &
+    class ( Interactions_G_G_Form ), intent ( inout ) :: &
       I
     real ( KDR ), intent ( in ) :: &
       Opacity
 
     I % Opacity  =  Opacity
 
-  end subroutine Set_G_EA_G
+  end subroutine Set_G_G
 
 
   subroutine Compute ( I, R, F )
 
-    class ( Interactions_G_EA_G_Form ), intent ( inout ) :: &
+    class ( Interactions_G_G_Form ), intent ( inout ) :: &
       I
     class ( CurrentTemplate ), intent ( inout ) :: &
       R
@@ -90,7 +90,7 @@ contains
 
   impure elemental subroutine Finalize ( I )
 
-    type ( Interactions_G_EA_G_Form ), intent ( inout ) :: &
+    type ( Interactions_G_G_Form ), intent ( inout ) :: &
       I
 
     call I % FinalizeTemplate ( )
@@ -102,7 +102,7 @@ contains
 
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       T
-    class ( Interactions_G_EA_G_Form ), intent ( in ) :: &
+    class ( Interactions_G_G_Form ), intent ( in ) :: &
       I
     real ( KDR ), dimension ( : ), intent ( out ) :: &
       Xi_J, &
@@ -138,4 +138,4 @@ contains
   end subroutine ComputeKernel
 
 
-end module Interactions_G_EA_G__Form
+end module Interactions_G_G__Form

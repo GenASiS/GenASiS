@@ -1,6 +1,7 @@
 module Interactions_Template
 
   use Basics
+  use Mathematics
   use Fluids
 
   implicit none
@@ -71,11 +72,14 @@ module Interactions_Template
         UnitOption
     end subroutine IAI
 
-    subroutine C ( I, F )
+    subroutine C ( I, R, F )
+      use Mathematics
       use Fluids
       import InteractionsTemplate
       class ( InteractionsTemplate ), intent ( inout ) :: &
         I
+      class ( CurrentTemplate ), intent ( inout ) :: &
+        R
       class ( Fluid_P_Template ), intent ( in ) :: &
         F
     end subroutine C

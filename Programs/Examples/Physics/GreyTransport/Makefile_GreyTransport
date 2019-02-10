@@ -70,6 +70,15 @@ SineWaveStreaming.o: \
   SineWaveStreaming_Form.o \
   SineWaveStreaming.f90
 
+Interactions_G_G__Form.o: \
+  GenASiS.o \
+  Interactions_G_G__Form.f90
+
+Interactions_G_G_CSL__Form.o: \
+  GenASiS.o \
+  Interactions_G_G__Form.o \
+  Interactions_G_G_CSL__Form.f90
+
 # SineWaveDiffusion_Form.o: \
 #   Basics.o \
 #   Mathematics.o \
