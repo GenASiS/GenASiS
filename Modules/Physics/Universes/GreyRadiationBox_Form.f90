@@ -11,6 +11,8 @@ module GreyRadiationBox_Form
   type, public, extends ( Integrator_C_1D_PS_Template ) :: GreyRadiationBoxForm
     integer ( KDI ) :: &
       FLUID = 0
+    class ( Interactions_ASC_Template ), allocatable :: &
+      Interactions_ASC
   contains
     procedure, public, pass :: &
       Initialize

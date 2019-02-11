@@ -13,7 +13,7 @@ module Interactions_G_G__Form
   contains
     procedure, private, pass :: &
       InitializeAllocate_I
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       Set => Set_G_G
     procedure, public, pass :: &
       Compute

@@ -16,6 +16,8 @@ Thermalization_G_G: ThirdParty.a GenASiS.a Thermalization_G_G.o
 	$(LINK) $(FFLAGS) \
           -o Thermalization_G_G_$(MACHINE) \
           Thermalization_G_G.o Thermalization_G_G__Form.o \
+          Interactions_G_G_ASC__Form.o Interactions_G_G_CSL__Form.o \
+          Interactions_G_G__Form.o \
           GenASiS.a ThirdParty.a $(LIBRARIES)
 
 # SineWaveDiffusion: Basics.a Mathematics.a Fluid.a GreyMoments.a \
@@ -87,11 +89,14 @@ Interactions_G_G_CSL__Form.o: \
 
 Interactions_G_G_ASC__Form.o: \
   GenASiS.o \
+  Interactions_G_G__Form.o \
   Interactions_G_G_CSL__Form.o \
   Interactions_G_G_ASC__Form.f90
 
 Thermalization_G_G__Form.o: \
   GenASiS.o \
+  Interactions_G_G__Form.o \
+  Interactions_G_G_ASC__Form.o \
   Thermalization_G_G__Form.f90
 
 Thermalization_G_G.o: \

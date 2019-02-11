@@ -3,6 +3,7 @@ module Interactions_G_G_ASC__Form
   !-- Interactions_Generic_Grey_AtlasSingleChart_Form
 
   use GenASiS
+  use Interactions_G_G__Form
   use Interactions_G_G_CSL__Form
 
   implicit none
@@ -13,6 +14,8 @@ module Interactions_G_G_ASC__Form
   contains
     procedure, public, pass :: &
       Initialize
+    procedure, public, pass :: &
+      Set => Set_G_G_ASC
     procedure, public, pass :: &
       AllocateField
   end type Interactions_G_G_ASC_Form
@@ -49,6 +52,26 @@ contains
              IgnorabilityOption )
 
   end subroutine Initialize
+
+
+  subroutine Set_G_G_ASC ( IA, OpacityAbsorption )
+
+    class ( Interactions_G_G_ASC_Form ), intent ( inout ) :: &
+      IA
+    real ( KDR ), intent ( in ) :: &
+      OpacityAbsorption
+
+    class ( InteractionsTemplate ), pointer :: &
+      I
+
+    I => IA % Interactions ( )
+    select type ( I )
+    type is ( Interactions_G_G_Form )
+      call I % Set ( OpacityAbsorption = OpacityAbsorption )
+    end select !-- I
+    nullify ( I )
+
+  end subroutine Set_G_G_ASC
 
 
   subroutine AllocateField ( IA )

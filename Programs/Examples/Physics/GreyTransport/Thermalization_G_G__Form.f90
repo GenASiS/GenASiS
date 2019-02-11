@@ -3,6 +3,8 @@ module Thermalization_G_G__Form
   !-- Thermalization_Generic_Grey_Form
 
   use GenASiS
+  use Interactions_G_G__Form
+  use Interactions_G_G_ASC__Form
 
   implicit none
   private
@@ -28,6 +30,7 @@ contains
     character ( * ), intent ( in )  :: &
       Name
 
+
     if ( T % Type == '' ) &
       T % Type = 'a Thermalization_G_G'
 
@@ -52,7 +55,7 @@ contains
     type is ( GreyRadiationBoxForm )
     call GRB % Initialize &
            ( RadiationName = [ 'Radiation' ], RadiationType = [ 'GENERIC' ], &
-             Name = Name )
+             Name = Name, ApplyStreamingOption = .false. )
 !    GRB % SetReference => SetReference
 
     select type ( PS => GRB % PositionSpace )
@@ -60,6 +63,17 @@ contains
 
     select type ( RMA => GRB % Current_ASC_1D ( 1 ) % Element )
     class is ( RadiationMoments_ASC_Form )
+
+
+    !-- Interactions
+
+    allocate ( Interactions_G_G_ASC_Form :: GRB % Interactions_ASC )
+    select type ( IA => GRB % Interactions_ASC )
+    class is ( Interactions_G_G_ASC_Form )
+    call IA % Initialize ( PS, 'GENERIC_GREY' )
+    call IA % Set ( OpacityAbsorption = OpacityAbsorption )
+    call RMA % SetInteractions ( IA )
+    end select !-- IA
 
 
     !-- Cleanup

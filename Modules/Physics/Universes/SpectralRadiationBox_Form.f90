@@ -10,6 +10,8 @@ module SpectralRadiationBox_Form
 
   type, public, extends ( Integrator_C_1D_MS_C_PS_Template ) :: &
     SpectralRadiationBoxForm
+      class ( Interactions_BSLL_ASC_CSLD_Template ), allocatable :: &
+        Interactions_BSLL_ASC_CSLD
   contains
     procedure, public, pass :: &
       Initialize
