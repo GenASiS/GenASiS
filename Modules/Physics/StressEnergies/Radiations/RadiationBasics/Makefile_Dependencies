@@ -82,6 +82,13 @@ RadiationMoments_BSLL_ASC_CSLD__Form.o: \
   RadiationMoments_ASC__Form.o \
   RadiationMoments_BSLL_ASC_CSLD__Form.f90
 
+ApplyRelaxation_RM_G__Command.o: \
+  Basics.o \
+  Mathematics.o \
+  RadiationMoments_Form.o \
+  Sources_RM__Form.o \
+  ApplyRelaxation_RM_G__Command.f90
+
 RadiationBasics.o: \
   SetPlanckSpectrum_Command.o \
   SetFermiDiracSpectrum_Command.o \
@@ -96,6 +103,7 @@ RadiationBasics.o: \
   RadiationMoments_CSL__Form.o \
   RadiationMoments_ASC__Form.o \
   RadiationMoments_BSLL_ASC_CSLD__Form.o \
+  ApplyRelaxation_RM_G__Command.o \
   RadiationBasics.f90
 
 RadiationBasics.a: $(RADIATION_BASICS)

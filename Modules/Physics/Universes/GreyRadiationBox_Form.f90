@@ -159,6 +159,12 @@ contains
       end do !-- iC
     end if
 
+    if ( .not. ApplyInteractions ) then
+      do iC = 1, size ( RadiationName )
+        S % ApplyRelaxation_1D ( iC ) % Pointer  =>  ApplyRelaxation_RM_G  
+      end do !-- iC
+    end if
+
     S % ApplyDivergence_1D ( GRB % FLUID ) % Pointer  =>  null ( )  
       !-- Disable fluid evolution
 

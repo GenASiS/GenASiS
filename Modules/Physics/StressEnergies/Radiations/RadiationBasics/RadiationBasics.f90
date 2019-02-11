@@ -13,5 +13,6 @@ module RadiationBasics
   use RadiationMoments_CSL__Form
   use RadiationMoments_ASC__Form
   use RadiationMoments_BSLL_ASC_CSLD__Form
+  use ApplyRelaxation_RM_G__Command
 
 end module RadiationBasics
