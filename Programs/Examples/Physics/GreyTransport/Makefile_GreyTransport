@@ -1,7 +1,7 @@
 PATH_GENASIS = ../../../../..
 
-all:  SineWaveStreaming #SineWaveDiffusion HomogeneousSphere MarshakWave \
-      StreamingProfile
+all:  SineWaveStreaming Thermalization_G_G #SineWaveDiffusion \
+      HomogeneousSphere MarshakWave StreamingProfile
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
@@ -10,6 +10,12 @@ SineWaveStreaming: ThirdParty.a GenASiS.a SineWaveStreaming.o
           -o SineWaveStreaming_$(MACHINE) \
           SineWaveStreaming.o SineWaveStreaming_Form.o \
           PlaneWaveStreaming_Template.o \
+          GenASiS.a ThirdParty.a $(LIBRARIES)
+
+Thermalization_G_G: ThirdParty.a GenASiS.a Thermalization_G_G.o
+	$(LINK) $(FFLAGS) \
+          -o Thermalization_G_G_$(MACHINE) \
+          Thermalization_G_G.o Thermalization_G_G__Form.o \
           GenASiS.a ThirdParty.a $(LIBRARIES)
 
 # SineWaveDiffusion: Basics.a Mathematics.a Fluid.a GreyMoments.a \
@@ -83,6 +89,15 @@ Interactions_G_G_ASC__Form.o: \
   GenASiS.o \
   Interactions_G_G_CSL__Form.o \
   Interactions_G_G_ASC__Form.f90
+
+Thermalization_G_G__Form.o: \
+  GenASiS.o \
+  Thermalization_G_G__Form.f90
+
+Thermalization_G_G.o: \
+  GenASiS.o \
+  Thermalization_G_G__Form.o \
+  Thermalization_G_G.f90
 
 # SineWaveDiffusion_Form.o: \
 #   Basics.o \
