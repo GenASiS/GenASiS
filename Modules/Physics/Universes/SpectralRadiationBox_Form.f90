@@ -22,6 +22,7 @@ contains
 
   subroutine Initialize &
                ( SRB, RadiationName, RadiationType, Name, &
+                 ApplyStreamingOption, ApplyInteractionsOption, &
                  MinCoordinateOption, MaxCoordinateOption, TimeUnitOption, &
                  FinishTimeOption, CourantFactorOption, nCellsPositionOption, &
                  nWriteOption )
@@ -33,6 +34,9 @@ contains
       RadiationType
     character ( * ), intent ( in )  :: &
       Name
+    logical ( KDL ), intent ( in ), optional :: &
+      ApplyStreamingOption, &
+      ApplyInteractionsOption
     real ( KDR ), dimension ( : ), intent ( in ), optional :: &
       MinCoordinateOption, &
       MaxCoordinateOption
@@ -51,6 +55,9 @@ contains
       nCellsEnergy
     integer ( KDI ), dimension ( 3 ) :: &
       nCellsPosition
+    logical ( KDL ) :: &
+      ApplyStreaming, &
+      ApplyInteractions
 
 
     if ( SRB % Type == '' ) &
@@ -138,28 +145,41 @@ contains
     end do !-- iC
 
 
-    ! !-- Fluid ( This doesn't do anything, just a Step interface placeholder )
+    !-- Fluid
 
-    ! allocate ( Fluid_ASC_Form :: PWS % Current_ASC )
-    ! select type ( FA => PWS % Current_ASC )
-    ! class is ( Fluid_ASC_Form )
-    ! call FA % Initialize ( PS, 'NON_RELATIVISTIC' )
+    allocate ( Fluid_ASC_Form :: SRB % Current_ASC )
+    select type ( FA => SRB % Current_ASC )
+    class is ( Fluid_ASC_Form )
+    call FA % Initialize ( PS, 'IDEAL' )
+    end select !-- FA
 
 
     !-- Step
+
+    ApplyStreaming    = .true.
+    ApplyInteractions = .true.
+    if ( present ( ApplyStreamingOption ) ) &
+      ApplyStreaming = ApplyStreamingOption
+    if ( present ( ApplyInteractionsOption ) ) &
+      ApplyInteractions = ApplyInteractionsOption
 
     allocate ( Step_RK2_C_BSLL_ASC_CSLD_1D_Form :: SRB % Step_MS )
     select type ( S_MS => SRB % Step_MS )
     class is ( Step_RK2_C_BSLL_ASC_CSLD_1D_Form )
     call S_MS % Initialize ( SRB, SRB % Current_BSLL_ASC_CSLD_1D, Name )
+    if ( .not. ApplyStreaming ) then
+      do iC = 1, size ( RadiationName )
+        S_MS % ApplyDivergence_S ( iC ) % Pointer  =>  null ( )  
+      end do !-- iC
+    end if
     end select !-- S_MS
 
-    ! allocate ( Step_RK2_C_ASC_Form :: PWS % Step_PS )
-    ! select type ( S_PS => PWS % Step_PS )
-    ! class is ( Step_RK2_C_ASC_Form )
-    ! call S_PS % Initialize ( FA, Name )
-    ! S_PS % ApplyDivergence % Pointer => null ( )  !-- Disable fluid evolution
-    ! end select !-- S
+    allocate ( Step_RK2_C_ASC_Form :: SRB % Step_PS )
+    select type ( S_PS => SRB % Step_PS )
+    class is ( Step_RK2_C_ASC_Form )
+    call S_PS % Initialize ( SRB, SRB % Current_ASC, Name )
+    S_PS % ApplyDivergence % Pointer => null ( )  !-- Disable fluid evolution
+    end select !-- S
 
 
     !-- Template

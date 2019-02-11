@@ -9,6 +9,8 @@ module GreyRadiationBox_Form
   private
 
   type, public, extends ( Integrator_C_1D_PS_Template ) :: GreyRadiationBoxForm
+    integer ( KDI ) :: &
+      FLUID = 0
   contains
     procedure, public, pass :: &
       Initialize
@@ -21,6 +23,7 @@ contains
 
   subroutine Initialize &
                ( GRB, RadiationName, RadiationType, Name, &
+                 ApplyStreamingOption, ApplyInteractionsOption, &
                  MinCoordinateOption, MaxCoordinateOption, TimeUnitOption, &
                  FinishTimeOption, CourantFactorOption, nCellsOption, &
                  nWriteOption )
@@ -32,6 +35,9 @@ contains
       RadiationType
     character ( * ), intent ( in )  :: &
       Name
+    logical ( KDL ), intent ( in ), optional :: &
+      ApplyStreamingOption, &
+      ApplyInteractionsOption
     real ( KDR ), dimension ( : ), intent ( in ), optional :: &
       MinCoordinateOption, &
       MaxCoordinateOption
@@ -47,6 +53,9 @@ contains
 
     integer ( KDI ) :: &
       iC  !-- iCurrent
+    logical ( KDL ) :: &
+      ApplyStreaming, &
+      ApplyInteractions
 
 
     if ( GRB % Type == '' ) &
@@ -75,17 +84,21 @@ contains
 
     !-- Prepare for Currents
 
-    GRB % N_CURRENTS_PS = size ( RadiationName )
+    GRB % N_CURRENTS_PS  =  size ( RadiationName ) + 1  !-- Radiation + Fluid
     allocate ( GRB % Current_ASC_1D ( GRB % N_CURRENTS_PS ) )
-    allocate ( GRB % TimeStepLabel ( GRB % N_CURRENTS_PS  ) )
-    do iC = 1, GRB % N_CURRENTS_PS
+    allocate ( GRB % TimeStepLabel ( GRB % N_CURRENTS_PS ) )
+
+    do iC = 1, size ( RadiationName )
       GRB % TimeStepLabel ( iC )  =  RadiationName ( iC )
     end do !-- iC
-    
+
+    GRB % FLUID  =  GRB % N_CURRENTS_PS
+    GRB % TimeStepLabel ( GRB % FLUID )  =  'Fluid'
+
 
     !-- Radiation
 
-    do iC = 1, GRB % N_CURRENTS_PS
+    do iC = 1, size ( RadiationName )
       select case ( trim ( RadiationType ( iC ) ) )
       case ( 'GENERIC' )
         allocate &
@@ -112,12 +125,41 @@ contains
     end do !-- iC
 
 
+    !-- Fluid
+
+    allocate ( Fluid_ASC_Form :: &
+                 GRB % Current_ASC_1D ( GRB % FLUID ) % Element )
+    select type ( FA => GRB % Current_ASC_1D ( GRB % FLUID ) % Element )
+    class is ( Fluid_ASC_Form )
+    call FA % Initialize &
+           ( PS, 'IDEAL' )
+!             TemperatureUnitOption = UNIT % MEGA_ELECTRON_VOLT )
+    end select !-- FA
+
+
     !-- Step
+
+    ApplyStreaming    = .true.
+    ApplyInteractions = .true.
+    if ( present ( ApplyStreamingOption ) ) &
+      ApplyStreaming = ApplyStreamingOption
+    if ( present ( ApplyInteractionsOption ) ) &
+      ApplyInteractions = ApplyInteractionsOption
 
     allocate ( Step_RK2_C_ASC_1D_Form :: GRB % Step )
     select type ( S => GRB % Step )
     class is ( Step_RK2_C_ASC_1D_Form )
     call S % Initialize ( GRB, GRB % Current_ASC_1D, Name )
+
+    if ( .not. ApplyStreaming ) then
+      do iC = 1, size ( RadiationName )
+        S % ApplyDivergence_1D ( iC ) % Pointer  =>  null ( )  
+      end do !-- iC
+    end if
+
+    S % ApplyDivergence_1D ( GRB % FLUID ) % Pointer  =>  null ( )  
+      !-- Disable fluid evolution
+
     end select !-- S
 
 
