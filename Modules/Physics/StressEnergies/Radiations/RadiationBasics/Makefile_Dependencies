@@ -82,6 +82,23 @@ RadiationMoments_BSLL_ASC_CSLD__Form.o: \
   RadiationMoments_ASC__Form.o \
   RadiationMoments_BSLL_ASC_CSLD__Form.f90
 
+Relaxation_RM__Template.o: \
+  Basics.o \
+  Mathematics.o \
+  Relaxation_RM__Template.f90 
+
+Relaxation_RM_G__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Relaxation_RM__Template.o \
+  Relaxation_RM_G__Form.f90 
+
+Relaxation_RM_S__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Relaxation_RM__Template.o \
+  Relaxation_RM_S__Form.f90 
+
 ApplyRelaxation_RM_G__Command.o: \
   Basics.o \
   Mathematics.o \
@@ -103,6 +120,9 @@ RadiationBasics.o: \
   RadiationMoments_CSL__Form.o \
   RadiationMoments_ASC__Form.o \
   RadiationMoments_BSLL_ASC_CSLD__Form.o \
+  Relaxation_RM__Template.o \
+  Relaxation_RM_G__Form.o \
+  Relaxation_RM_S__Form.o \
   ApplyRelaxation_RM_G__Command.o \
   RadiationBasics.f90
 

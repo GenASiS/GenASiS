@@ -1,6 +1,9 @@
 RADIATION_BASICS = \
   RadiationBasics.o \
   ApplyRelaxation_RM_G__Command.o \
+  Relaxation_RM_S__Form.o \
+  Relaxation_RM_G__Form.o \
+  Relaxation_RM__Template.o \
   RadiationMoments_BSLL_ASC_CSLD__Form.o \
   RadiationMoments_ASC__Form.o \
   RadiationMoments_CSL__Form.o \
