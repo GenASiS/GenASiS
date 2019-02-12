@@ -1,7 +1,9 @@
 module Relaxation_RM_G__Form
 
+  use OMP_LIB
   use Basics
   use Mathematics
+  use RadiationMoments_ASC__Form
   use Relaxation_RM__Template
 
   implicit none
@@ -11,25 +13,107 @@ module Relaxation_RM_G__Form
   contains
     procedure, public, pass :: &
       Initialize
+    procedure, public, nopass :: &
+      Apply
     final :: &
       Finalize
   end type Relaxation_RM_G_Form
 
+    type ( Relaxation_RM_G_Form ), private, pointer :: &
+      Relaxation => null ( )
+
 contains
 
-  subroutine Initialize ( R, Name )
 
-    class ( Relaxation_RM_G_Form ), intent ( inout ) :: &
+  subroutine Initialize ( R, RMA, Name )
+
+    class ( Relaxation_RM_G_Form ), intent ( inout ), target :: &
       R
+    class ( RadiationMoments_ASC_Form ), intent ( in ) :: &
+      RMA
     character ( * ), intent ( in ) :: &
       Name
+
+    integer ( KDI ) :: &
+      iT  !-- iThread
 
     if ( R % Type == '' ) &
       R % Type  =  'a Relaxation_RM_G'
 
     call R % InitializeTemplate ( Name )
 
+    call R % SetIndices ( RMA )
+
+    allocate ( R % LinearEquations ( 0 : PROGRAM_HEADER % MaxThreads - 1 ) )
+    do iT = 0, size ( R % LinearEquations ) - 1
+      associate ( LE => R % LinearEquations ( iT ) )
+      call LE % Initialize ( nEquations = 4, nSolutions = 1 )
+      end associate !-- LE
+    end do !-- iT
+
+    Relaxation => R
+
   end subroutine Initialize
+
+
+  subroutine Apply ( S, Sources_RM, Increment, RadiationMoments, Chart, &
+                     TimeStep, iStage, GeometryOption, iStrgeometryValueOption )
+
+    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
+      S
+    class ( Sources_C_Form ), intent ( inout ) :: &
+      Sources_RM
+    type ( StorageForm ), intent ( inout ) :: &
+      Increment
+    class ( CurrentTemplate ), intent ( in ), target :: &
+      RadiationMoments
+    class ( ChartTemplate ), intent ( in ) :: &
+      Chart
+    real ( KDR ), intent ( in ) :: &
+      TimeStep
+    integer ( KDI ), intent ( in ) :: &
+      iStage
+    class ( GeometryFlatForm ), intent ( in ), optional :: &
+      GeometryOption
+    integer ( KDI ), intent ( in ), optional :: &
+      iStrgeometryValueOption
+
+    integer ( KDI ) :: &
+      iV, &  !-- iValue
+      nV, &  !-- nValues
+      iThread
+    class ( GeometryFlatForm ), pointer :: &
+      G
+
+    call Show ( 'Relaxation_RM_G % Apply', S % IGNORABILITY + 3 )
+    call Show ( RadiationMoments % Name, 'RadiationMoments', &
+                S % IGNORABILITY + 3 )
+
+    select type ( Chart )
+    class is ( Chart_SL_Template )
+    G => Chart % Geometry ( )
+
+    nV = size ( Increment % Value, dim = 1 )
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nV
+
+      if ( .not. Chart % IsProperCell ( iV ) ) &
+        cycle
+
+      iThread = OMP_GET_THREAD_NUM ( )
+
+      call Relaxation % ComputeIncrements &
+             ( S, Sources_RM, Relaxation % LinearEquations ( iThread ), &
+               Increment, RadiationMoments, TimeStep, iStage, iV, G )
+
+    end do !-- iV
+    !$OMP end parallel do
+
+    end select !-- Chart
+    nullify ( G )
+
+  end subroutine Apply
 
 
   subroutine Finalize ( R )
