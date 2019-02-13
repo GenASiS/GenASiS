@@ -16,6 +16,5 @@ module RadiationBasics
   use Relaxation_RM__Template
   use Relaxation_RM_G__Form
   use Relaxation_RM_S__Form
-  use ApplyRelaxation_RM_G__Command
 
 end module RadiationBasics

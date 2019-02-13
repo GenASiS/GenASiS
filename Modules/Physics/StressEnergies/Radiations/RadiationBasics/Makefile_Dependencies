@@ -105,13 +105,6 @@ Relaxation_RM_S__Form.o: \
   Relaxation_RM__Template.o \
   Relaxation_RM_S__Form.f90 
 
-ApplyRelaxation_RM_G__Command.o: \
-  Basics.o \
-  Mathematics.o \
-  RadiationMoments_Form.o \
-  Sources_RM__Form.o \
-  ApplyRelaxation_RM_G__Command.f90
-
 RadiationBasics.o: \
   SetPlanckSpectrum_Command.o \
   SetFermiDiracSpectrum_Command.o \
@@ -129,7 +122,6 @@ RadiationBasics.o: \
   Relaxation_RM__Template.o \
   Relaxation_RM_G__Form.o \
   Relaxation_RM_S__Form.o \
-  ApplyRelaxation_RM_G__Command.o \
   RadiationBasics.f90
 
 RadiationBasics.a: $(RADIATION_BASICS)
