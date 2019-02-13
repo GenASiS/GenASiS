@@ -1,4 +1,4 @@
-module Relaxation_RM_G__Form
+module Relaxation_RM_ASC__Form
 
   use OMP_LIB
   use Basics
@@ -9,7 +9,7 @@ module Relaxation_RM_G__Form
   implicit none
   private
   
-  type, public, extends ( Relaxation_RM_Template ) :: Relaxation_RM_G_Form
+  type, public, extends ( Relaxation_RM_Template ) :: Relaxation_RM_ASC_Form
   contains
     procedure, public, pass :: &
       Initialize
@@ -17,9 +17,9 @@ module Relaxation_RM_G__Form
       ApplySubroutine
     final :: &
       Finalize
-  end type Relaxation_RM_G_Form
+  end type Relaxation_RM_ASC_Form
 
-    type ( Relaxation_RM_G_Form ), private, pointer :: &
+    type ( Relaxation_RM_ASC_Form ), private, pointer :: &
       Relaxation => null ( )
 
 contains
@@ -27,7 +27,7 @@ contains
 
   subroutine Initialize ( R, RMA, Name )
 
-    class ( Relaxation_RM_G_Form ), intent ( inout ), target :: &
+    class ( Relaxation_RM_ASC_Form ), intent ( inout ), target :: &
       R
     class ( RadiationMoments_ASC_Form ), intent ( in ) :: &
       RMA
@@ -38,7 +38,7 @@ contains
       iT  !-- iThread
 
     if ( R % Type == '' ) &
-      R % Type  =  'a Relaxation_RM_G'
+      R % Type  =  'a Relaxation_RM_ASC'
 
     R % Apply  =>  ApplySubroutine
     call R % InitializeTemplate ( Name )
@@ -87,7 +87,7 @@ contains
     class ( GeometryFlatForm ), pointer :: &
       G
 
-    call Show ( 'Relaxation_RM_G % Apply', S % IGNORABILITY + 3 )
+    call Show ( 'Relaxation_RM_ASC % Apply', S % IGNORABILITY + 3 )
     call Show ( RadiationMoments % Name, 'RadiationMoments', &
                 S % IGNORABILITY + 3 )
 
@@ -120,7 +120,7 @@ contains
 
   subroutine Finalize ( R )
 
-    type ( Relaxation_RM_G_Form ), intent ( inout ) :: &
+    type ( Relaxation_RM_ASC_Form ), intent ( inout ) :: &
       R
 
     call R % FinalizeTemplate ( )
@@ -128,4 +128,4 @@ contains
   end subroutine Finalize
 
 
-end module Relaxation_RM_G__Form
+end module Relaxation_RM_ASC__Form

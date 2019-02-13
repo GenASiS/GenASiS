@@ -1,4 +1,4 @@
-module Relaxation_RM_S__Form
+module Relaxation_RM_BSLL_ASC_CSLD__Form
 
   use Basics
   use Mathematics
@@ -9,7 +9,8 @@ module Relaxation_RM_S__Form
   implicit none
   private
   
-  type, public, extends ( Relaxation_RM_Template ) :: Relaxation_RM_S_Form
+  type, public, extends ( Relaxation_RM_Template ) :: &
+    Relaxation_RM_BSLL_ASC_CSLD_Form
   contains
     procedure, public, pass :: &
       Initialize
@@ -17,9 +18,9 @@ module Relaxation_RM_S__Form
       ApplySubroutine
     final :: &
       Finalize
-  end type Relaxation_RM_S_Form
+  end type Relaxation_RM_BSLL_ASC_CSLD_Form
 
-    type ( Relaxation_RM_S_Form ), private, pointer :: &
+    type ( Relaxation_RM_BSLL_ASC_CSLD_Form ), private, pointer :: &
       Relaxation => null ( )
 
 contains
@@ -27,7 +28,7 @@ contains
 
   subroutine Initialize ( R, RMB, Name )
 
-    class ( Relaxation_RM_S_Form ), intent ( inout ), target :: &
+    class ( Relaxation_RM_BSLL_ASC_CSLD_Form ), intent ( inout ), target :: &
       R
     class ( RadiationMoments_BSLL_ASC_CSLD_Form ), intent ( in ) :: &
       RMB
@@ -35,7 +36,7 @@ contains
       Name
 
     if ( R % Type == '' ) &
-      R % Type  =  'a Relaxation_RM_S'
+      R % Type  =  'a Relaxation_RM_BSLL_ASC_CSLD'
 
     R % Apply  =>  ApplySubroutine
     call R % InitializeTemplate ( Name )
@@ -82,7 +83,7 @@ contains
       iV, &  !-- iValue
       nV     !-- nValues
 
-    call Show ( 'Relaxation_RM_S % Apply', S % IGNORABILITY + 3 )
+    call Show ( 'Relaxation_RM_BSLL_ASC_CSLD % Apply', S % IGNORABILITY + 3 )
     call Show ( RadiationMoments % Name, 'RadiationMoments', &
                 S % IGNORABILITY + 3 )
 
@@ -92,7 +93,7 @@ contains
       call Show ( 'GeometryOption must be present', CONSOLE % ERROR )
       call Show ( 'iStrgeometryValueOption must be present', CONSOLE % ERROR )
       call Show ( 'Apply', 'subroutine', CONSOLE % ERROR )
-      call Show ( 'Relaxation_RM_S__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Relaxation_RM_BSLL_ASC_CSLD__Form', 'module', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end if
 
@@ -120,7 +121,7 @@ contains
 
   subroutine Finalize ( R )
 
-    type ( Relaxation_RM_S_Form ), intent ( inout ) :: &
+    type ( Relaxation_RM_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
       R
 
     call R % FinalizeTemplate ( )
@@ -128,4 +129,4 @@ contains
   end subroutine Finalize
 
 
-end module Relaxation_RM_S__Form
+end module Relaxation_RM_BSLL_ASC_CSLD__Form

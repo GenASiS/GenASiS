@@ -12,8 +12,8 @@ module SpectralRadiationBox_Form
     SpectralRadiationBoxForm
       class ( Interactions_BSLL_ASC_CSLD_Template ), allocatable :: &
         Interactions_BSLL_ASC_CSLD
-      class ( Relaxation_RM_S_Form ), allocatable :: &
-        Relaxation_RM_S
+      class ( Relaxation_RM_BSLL_ASC_CSLD_Form ), allocatable :: &
+        Relaxation_RM_BSLL_ASC_CSLD
   contains
     procedure, public, pass :: &
       Initialize
@@ -160,8 +160,8 @@ contains
 
     !-- Relaxation
 
-    allocate ( SRB % Relaxation_RM_S )
-    associate ( R => SRB % Relaxation_RM_S )
+    allocate ( SRB % Relaxation_RM_BSLL_ASC_CSLD )
+    associate ( R => SRB % Relaxation_RM_BSLL_ASC_CSLD )
     select type ( RMB => SRB % Current_BSLL_ASC_CSLD_1D ( 1 ) % Element )
     class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
       call R % Initialize ( RMB, Name = SRB % Name )
@@ -192,7 +192,7 @@ contains
     if ( ApplyInteractions ) then
       do iC = 1, size ( RadiationName )
         S_MS % ApplyRelaxation_F ( iC ) % Pointer  &
-          =>  SRB % Relaxation_RM_S % Apply 
+          =>  SRB % Relaxation_RM_BSLL_ASC_CSLD % Apply 
       end do !-- iC
     end if
 
@@ -228,8 +228,8 @@ contains
     type ( SpectralRadiationBoxForm ), intent ( inout ) :: &
       SRB
 
-    if ( allocated ( SRB % Relaxation_RM_S ) ) &
-      deallocate ( SRB % Relaxation_RM_S )
+    if ( allocated ( SRB % Relaxation_RM_BSLL_ASC_CSLD ) ) &
+      deallocate ( SRB % Relaxation_RM_BSLL_ASC_CSLD )
     if ( allocated ( SRB % Interactions_BSLL_ASC_CSLD ) ) &
       deallocate ( SRB % Interactions_BSLL_ASC_CSLD )
 

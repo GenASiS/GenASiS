@@ -90,20 +90,20 @@ Relaxation_RM__Template.o: \
   RadiationMoments_ASC__Form.o \
   Relaxation_RM__Template.f90 
 
-Relaxation_RM_G__Form.o: \
+Relaxation_RM_ASC__Form.o: \
   Basics.o \
   Mathematics.o \
   RadiationMoments_ASC__Form.o \
   Relaxation_RM__Template.o \
-  Relaxation_RM_G__Form.f90 
+  Relaxation_RM_ASC__Form.f90 
 
-Relaxation_RM_S__Form.o: \
+Relaxation_RM_BSLL_ASC_CSLD__Form.o: \
   Basics.o \
   Mathematics.o \
   RadiationMoments_ASC__Form.o \
   RadiationMoments_BSLL_ASC_CSLD__Form.o \
   Relaxation_RM__Template.o \
-  Relaxation_RM_S__Form.f90 
+  Relaxation_RM_BSLL_ASC_CSLD__Form.f90 
 
 RadiationBasics.o: \
   SetPlanckSpectrum_Command.o \
@@ -120,8 +120,8 @@ RadiationBasics.o: \
   RadiationMoments_ASC__Form.o \
   RadiationMoments_BSLL_ASC_CSLD__Form.o \
   Relaxation_RM__Template.o \
-  Relaxation_RM_G__Form.o \
-  Relaxation_RM_S__Form.o \
+  Relaxation_RM_ASC__Form.o \
+  Relaxation_RM_BSLL_ASC_CSLD__Form.o \
   RadiationBasics.f90
 
 RadiationBasics.a: $(RADIATION_BASICS)
