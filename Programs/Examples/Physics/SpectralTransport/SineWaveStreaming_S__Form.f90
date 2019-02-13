@@ -1,4 +1,4 @@
-module SineWaveStreaming_Form
+module SineWaveStreaming_S__Form
 
   use Basics
   use PlaneWaveStreaming_Template
@@ -7,7 +7,7 @@ module SineWaveStreaming_Form
   private
 
   type, public, extends ( PlaneWaveStreamingTemplate ) :: &
-    SineWaveStreamingForm
+    SineWaveStreaming_S_Form
       real ( KDR ) :: &
         Offset, &
         Amplitude
@@ -18,14 +18,14 @@ module SineWaveStreaming_Form
       Waveform
     final :: &
       Finalize
-  end type SineWaveStreamingForm
+  end type SineWaveStreaming_S_Form
 
 contains
 
 
   subroutine Initialize ( SWS, Name )
 
-    class ( SineWaveStreamingForm ), intent ( inout ) :: &
+    class ( SineWaveStreaming_S_Form ), intent ( inout ) :: &
       SWS
     character ( * ), intent ( in )  :: &
       Name
@@ -44,7 +44,7 @@ contains
 
     !-- Waveform with a full period in the range 0 < X < 1
 
-    class ( SineWaveStreamingForm ), intent ( in ) :: &
+    class ( SineWaveStreaming_S_Form ), intent ( in ) :: &
       PWS
     real ( KDR ), intent ( in ) :: &
       X
@@ -65,7 +65,7 @@ contains
 
   impure elemental subroutine Finalize ( SWS )
     
-    type ( SineWaveStreamingForm ), intent ( inout ) :: &
+    type ( SineWaveStreaming_S_Form ), intent ( inout ) :: &
       SWS
 
     call SWS % FinalizeTemplate_PWS ( )
@@ -73,4 +73,4 @@ contains
   end subroutine Finalize
 
 
-end module SineWaveStreaming_Form
+end module SineWaveStreaming_S__Form

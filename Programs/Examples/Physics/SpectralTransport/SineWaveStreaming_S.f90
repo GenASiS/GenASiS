@@ -1,16 +1,16 @@
-program SineWaveStreaming
+program SineWaveStreaming_S
 
   use Basics
-  use SineWaveStreaming_Form
+  use SineWaveStreaming_S__Form
 
   implicit none
 
-  type ( SineWaveStreamingForm ), allocatable :: &
+  type ( SineWaveStreaming_S_Form ), allocatable :: &
     SWS
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'SineWaveStreaming', DimensionalityOption = '2D_1D' )
+         ( 'SineWaveStreaming_S', DimensionalityOption = '2D_1D' )
 
   allocate ( SWS )
   call SWS % Initialize ( PROGRAM_HEADER % Name )
@@ -20,4 +20,4 @@ program SineWaveStreaming
 
   deallocate ( PROGRAM_HEADER )
 
-end program SineWaveStreaming
+end program SineWaveStreaming_S
