@@ -3,7 +3,6 @@ module Thermalization_G_G__Form
   !-- Thermalization_Generic_Grey_Form
 
   use GenASiS
-  use Interactions_G_G__Form
   use Interactions_G_G_ASC__Form
 
   implicit none

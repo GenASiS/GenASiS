@@ -1,18 +1,18 @@
-program Thermalization_G_G
+program Thermalization_G_S
 
-  !-- Thermalization_Generic_Grey
+  !-- Thermalization_Generic_Spectral
 
   use GenASiS
-  use Thermalization_G_G__Form
+  use Thermalization_G_S__Form
 
   implicit none
 
-  type ( Thermalization_G_G_Form ), allocatable :: &
+  type ( Thermalization_G_S_Form ), allocatable :: &
     T
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'Thermalization_G_G', DimensionalityOption = '2D' )
+         ( 'Thermalization_G_S', DimensionalityOption = '2D_1D' )
 
   allocate ( T )
   call T % Initialize ( PROGRAM_HEADER % Name )
@@ -21,4 +21,4 @@ program Thermalization_G_G
 
   deallocate ( PROGRAM_HEADER )
 
-end program Thermalization_G_G
+end program Thermalization_G_S

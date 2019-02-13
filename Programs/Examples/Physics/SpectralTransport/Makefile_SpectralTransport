@@ -1,6 +1,6 @@
 PATH_GENASIS = ../../../../..
 
-all: SineWaveStreaming #Thermalization MarshakWave
+all: SineWaveStreaming Thermalization_G_S #MarshakWave
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
@@ -11,13 +11,13 @@ SineWaveStreaming: ThirdParty.a GenASiS.a SineWaveStreaming.o
           PlaneWaveStreaming_Template.o \
           GenASiS.a ThirdParty.a $(LIBRARIES)
 
-# Thermalization: Basics.a Mathematics.a Fluid.a GreyMoments.a \
-#   SpectralMoments.a Thermalization.o
-# 	$(LINK) $(FFLAGS) \
-#           -o Thermalization_$(MACHINE) \
-#           Thermalization.o Thermalization_Form.o \
-#           SpectralMoments.a GreyMoments.a Fluid.a Mathematics.a Basics.a \
-#           $(LIBRARIES)
+Thermalization_G_S: ThirdParty.a GenASiS.a Thermalization_G_S.o
+	$(LINK) $(FFLAGS) \
+          -o Thermalization_G_S_$(MACHINE) \
+          Thermalization_G_S.o Thermalization_G_S__Form.o \
+          Interactions_G_S_BSLL_ASC_CSLD__Form.o Interactions_G_S_ASC__Form.o \
+          Interactions_G_S_CSL__Form.o Interactions_G_S__Form.o \
+          GenASiS.a ThirdParty.a $(LIBRARIES)
 
 # MarshakWave: Basics.a Mathematics.a Fluid.a GreyMoments.a \
 #   SpectralMoments.a MarshakWave.o
@@ -72,24 +72,15 @@ Interactions_G_S_BSLL_ASC_CSLD__Form.o: \
   Interactions_G_S_ASC__Form.o \
   Interactions_G_S_BSLL_ASC_CSLD__Form.f90
 
-# Thermalization_Form.o: \
-#   Basics.o \
-#   Mathematics.o \
-#   Fluid_P_NR__Form.o \
-#   Fluid_ASC__Form.o \
-#   RadiationMoments_Form.o \
-#   RadiationMoments_ASC__Form.o \
-#   Interactions_F__Form.o \
-#   ApplyRelaxation_RM_S__Command.o \
-#   SetPlanckSpectrum_Command.o \
-#   RadiationMoments_BSLL_ASC_CSLD__Form.o \
-#   Interactions_BSLL_ASC_CSLD__Form.o \
-#   Thermalization_Form.f90
+Thermalization_G_S__Form.o: \
+  GenASiS.o \
+  Interactions_G_S_BSLL_ASC_CSLD__Form.o \
+  Thermalization_G_S__Form.f90
 
-# Thermalization.o: \
-#   Basics.o \
-#   Thermalization_Form.o \
-#   Thermalization.f90
+Thermalization_G_S.o: \
+  GenASiS.o \
+  Thermalization_G_S__Form.o \
+  Thermalization_G_S.f90
 
 # MarshakWave_Form.o: \
 #   Basics.o \
