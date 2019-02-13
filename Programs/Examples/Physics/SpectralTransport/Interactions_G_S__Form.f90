@@ -1,27 +1,31 @@
-module Interactions_G_G__Form
+module Interactions_G_S__Form
 
-  !-- Interactions_Generic_Grey_Form
+  !-- Interactions_Generic_Spectral_Form
 
   use GenASiS
 
   implicit none
   private
 
-  type, public, extends ( InteractionsTemplate ) :: Interactions_G_G_Form
+  type, public, extends ( InteractionsTemplate ) :: Interactions_G_S_Form
+    integer ( KDI ) :: &
+      iBaseCell = 0
     real ( KDR ) :: &
       OpacityAbsorption = 0.0_KDR
+    real ( KDR ), dimension ( : ), pointer :: &
+      Energy => null ( )
   contains
     procedure, private, pass :: &
       InitializeAllocate_I
     procedure, public, pass :: &
-      Set => Set_G_G
+      Set => Set_G_S
     procedure, public, pass :: &
       Compute
     final :: &
       Finalize
     procedure, private, pass :: &
       ComputeKernel
-  end type Interactions_G_G_Form
+  end type Interactions_G_S_Form
 
 contains
 
@@ -30,7 +34,7 @@ contains
                ( I, LengthUnit, EnergyDensityUnit, TemperatureUnit, nValues, &
                  VariableOption, NameOption, ClearOption, UnitOption )
 
-    class ( Interactions_G_G_Form ), intent ( inout ) :: &
+    class ( Interactions_G_S_Form ), intent ( inout ) :: &
       I
     type ( MeasuredValueForm ), intent ( in ) :: &
       LengthUnit, &
@@ -48,7 +52,7 @@ contains
       UnitOption
 
     if ( I % Type == '' ) &
-      I % Type = 'an Interactions_G_G'
+      I % Type = 'an Interactions_G_S'
 
     call I % InitializeTemplate &
            ( LengthUnit, EnergyDensityUnit, TemperatureUnit, nValues, &
@@ -57,85 +61,88 @@ contains
   end subroutine InitializeAllocate_I
 
 
-  subroutine Set_G_G ( I, OpacityAbsorption )
+  subroutine Set_G_S ( I, Energy, OpacityAbsorption, iBaseCell )
 
-    class ( Interactions_G_G_Form ), intent ( inout ) :: &
+    class ( Interactions_G_S_Form ), intent ( inout ) :: &
       I
+    real ( KDR ), dimension ( : ), intent ( in ), target :: &
+      Energy
     real ( KDR ), intent ( in ) :: &
       OpacityAbsorption
+    integer ( KDI ), intent ( in ) :: &
+      iBaseCell
 
-    I % OpacityAbsorption  =  OpacityAbsorption
+    I % iBaseCell          =   iBaseCell
+    I % OpacityAbsorption  =   OpacityAbsorption
+    I % Energy             =>  Energy
 
-  end subroutine Set_G_G
+  end subroutine Set_G_S
 
 
   subroutine Compute ( I, R, F )
 
-    class ( Interactions_G_G_Form ), intent ( inout ) :: &
+    class ( Interactions_G_S_Form ), intent ( inout ) :: &
       I
     class ( CurrentTemplate ), intent ( inout ) :: &
       R
     class ( Fluid_P_Template ), intent ( in ) :: &
       F
 
+    associate ( iBC => I % iBaseCell )
+    call SetPlanckSpectrum &
+           ( I % Energy, &
+             F % Value ( iBC, F % TEMPERATURE ), &
+             I % Value ( :, I % EQUILIBRIUM_J ) )
+    end associate !-- iBC
+
     call I % ComputeKernel &
-           ( F % Value ( :, F % TEMPERATURE ), &
+           ( I % Value ( :, I % EQUILIBRIUM_J ), &
              I % Value ( :, I % EMISSIVITY_J ), &
              I % Value ( :, I % OPACITY_J ), &
-             I % Value ( :, I % OPACITY_H ), &
-             I % Value ( :, I % EQUILIBRIUM_J ) )
+             I % Value ( :, I % OPACITY_H ) )
 
   end subroutine Compute
 
 
   impure elemental subroutine Finalize ( I )
 
-    type ( Interactions_G_G_Form ), intent ( inout ) :: &
+    type ( Interactions_G_S_Form ), intent ( inout ) :: &
       I
+
+    nullify ( I % Energy )
 
     call I % FinalizeTemplate ( )
 
   end subroutine Finalize
 
 
-  subroutine ComputeKernel ( I, T, Xi_J, Chi_J, Chi_H, J_Eq )
+  subroutine ComputeKernel ( I, Xi_J, Chi_J, Chi_H, J_Eq )
 
-    class ( Interactions_G_G_Form ), intent ( in ) :: &
+    class ( Interactions_G_S_Form ), intent ( in ) :: &
       I
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      T
+      J_Eq
     real ( KDR ), dimension ( : ), intent ( out ) :: &
       Xi_J, &
       Chi_J, &
-      Chi_H, &
-      J_Eq
+      Chi_H
 
     integer ( KDI ) :: &
       iV, &
       nValues
     real ( KDR ) :: &
-      a, &
       Kappa_A
 
-    a        =  4.0_KDR  *  CONSTANT % STEFAN_BOLTZMANN
     Kappa_A  =  I % OpacityAbsorption
-
     nValues  =  size ( Xi_J )
 
-    !$OMP parallel do private ( iV ) 
     do iV = 1, nValues
-
-      J_Eq  ( iV )  =  a  *  T ( iV ) ** 4
-
       Xi_J  ( iV )  =  Kappa_A  *  J_Eq ( iV )
       Chi_J ( iV )  =  Kappa_A
-
       Chi_H ( iV )  =  Chi_J ( iV )
-
     end do !-- iV
-    !$OMP end parallel do
 
   end subroutine ComputeKernel
 
 
-end module Interactions_G_G__Form
+end module Interactions_G_S__Form

@@ -51,6 +51,10 @@ SineWaveStreaming.o: \
   SineWaveStreaming_Form.o \
   SineWaveStreaming.f90
 
+Interactions_G_S__Form.o: \
+  GenASiS.o \
+  Interactions_G_S__Form.f90
+
 # Thermalization_Form.o: \
 #   Basics.o \
 #   Mathematics.o \
