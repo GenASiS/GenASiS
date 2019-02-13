@@ -20,11 +20,13 @@ module Relaxation_RM__Template
       Type = ''
     type ( LinearEquations_LAPACK_Form ), dimension ( : ), allocatable :: &
       LinearEquations
+    procedure ( AS ), public, nopass, pointer :: &
+      Apply => null ( )
   contains
     procedure, public, pass :: &
       InitializeTemplate
-    procedure ( A ), public, nopass, deferred :: &
-      Apply
+    procedure ( AS ), private, nopass, deferred :: &
+      ApplySubroutine
     procedure, public, pass :: &
       FinalizeTemplate
     procedure, public, pass :: &
@@ -34,7 +36,7 @@ module Relaxation_RM__Template
   end type Relaxation_RM_Template
 
   abstract interface
-    subroutine A ( S, Sources_RM, Increment, RadiationMoments, Chart, &
+    subroutine AS ( S, Sources_RM, Increment, RadiationMoments, Chart, &
                    TimeStep, iStage, GeometryOption, iStrgeometryValueOption )
       use Basics
       use Mathematics
@@ -56,7 +58,7 @@ module Relaxation_RM__Template
         GeometryOption
       integer ( KDI ), intent ( in ), optional :: &
         iStrgeometryValueOption
-    end subroutine A
+    end subroutine AS
   end interface
 
     private :: &
@@ -82,6 +84,14 @@ contains
     R % IGNORABILITY = CONSOLE % INFO_1 
     call Show ( 'Initializing ' // trim ( R % Type ), R % IGNORABILITY )
     call Show ( R % Name, 'Name', R % IGNORABILITY )
+
+    if ( .not. associated ( R % Apply ) ) then
+      call Show ( 'Apply procedure pointer member not set', CONSOLE % ERROR )
+      call Show ( 'Set before calling InitializeTemplate', CONSOLE % ERROR )
+      call Show ( 'InitializeTemplate', 'subroutine', CONSOLE % ERROR )
+      call Show ( 'Relaxation_RM__Template', 'module', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end if
 
   end subroutine InitializeTemplate
 

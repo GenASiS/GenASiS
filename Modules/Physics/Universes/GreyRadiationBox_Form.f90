@@ -13,6 +13,8 @@ module GreyRadiationBox_Form
       FLUID = 0
     class ( Interactions_ASC_Template ), allocatable :: &
       Interactions_ASC
+    class ( Relaxation_RM_G_Form ), allocatable :: &
+      Relaxation_RM_G
   contains
     procedure, public, pass :: &
       Initialize
@@ -30,7 +32,7 @@ contains
                  FinishTimeOption, CourantFactorOption, nCellsOption, &
                  nWriteOption )
 
-    class ( GreyRadiationBoxForm ), intent ( inout ) :: &
+    class ( GreyRadiationBoxForm ), intent ( inout ), target :: &
       GRB
     character ( * ), dimension ( : ), intent ( in )  :: &
       RadiationName, &
@@ -139,6 +141,17 @@ contains
     end select !-- FA
 
 
+    !-- Relaxation
+
+    allocate ( GRB % Relaxation_RM_G )
+    associate ( R => GRB % Relaxation_RM_G )
+    select type ( RMA => GRB % Current_ASC_1D ( 1 ) % Element )
+    class is ( RadiationMoments_ASC_Form )
+      call R % Initialize ( RMA, Name = GRB % Name )
+    end select !-- RMA
+    end associate !-- R
+
+
     !-- Step
 
     ApplyStreaming    = .true.
@@ -159,9 +172,10 @@ contains
       end do !-- iC
     end if
 
-    if ( .not. ApplyInteractions ) then
+    if ( ApplyInteractions ) then
       do iC = 1, size ( RadiationName )
-        S % ApplyRelaxation_1D ( iC ) % Pointer  =>  ApplyRelaxation_RM_G  
+        S % ApplyRelaxation_1D ( iC ) % Pointer  &
+          =>  GRB % Relaxation_RM_G % Apply 
       end do !-- iC
     end if
 
@@ -191,6 +205,11 @@ contains
 
     type ( GreyRadiationBoxForm ), intent ( inout ) :: &
       GRB
+
+    if ( allocated ( GRB % Relaxation_RM_G ) ) &
+      deallocate ( GRB % Relaxation_RM_G )
+    if ( allocated ( GRB % Interactions_ASC ) ) &
+      deallocate ( GRB % Interactions_ASC )
 
     call GRB % FinalizeTemplate_C_1D_PS ( )
 

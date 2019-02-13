@@ -14,7 +14,7 @@ module Relaxation_RM_S__Form
     procedure, public, pass :: &
       Initialize
     procedure, public, nopass :: &
-      Apply
+      ApplySubroutine
     final :: &
       Finalize
   end type Relaxation_RM_S_Form
@@ -37,6 +37,7 @@ contains
     if ( R % Type == '' ) &
       R % Type  =  'a Relaxation_RM_S'
 
+    R % Apply  =>  ApplySubroutine
     call R % InitializeTemplate ( Name )
 
     select type ( RMA  =>  RMB % Fiber % Atlas ( 1 ) % Element )
@@ -54,8 +55,9 @@ contains
   end subroutine Initialize
 
 
-  subroutine Apply ( S, Sources_RM, Increment, RadiationMoments, Chart, &
-                     TimeStep, iStage, GeometryOption, iStrgeometryValueOption )
+  subroutine ApplySubroutine &
+               ( S, Sources_RM, Increment, RadiationMoments, Chart, &
+                 TimeStep, iStage, GeometryOption, iStrgeometryValueOption )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
@@ -113,7 +115,7 @@ contains
 
     end select !-- Chart
 
-  end subroutine Apply
+  end subroutine ApplySubroutine
 
 
   subroutine Finalize ( R )
