@@ -1,5 +1,7 @@
 module Interactions_ASC__Template
 
+  !-- Interactions_AtlasSingleChart_Template
+
   use Basics
   use Mathematics
   use Interactions_Template

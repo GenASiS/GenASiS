@@ -55,6 +55,23 @@ Interactions_G_S__Form.o: \
   GenASiS.o \
   Interactions_G_S__Form.f90
 
+Interactions_G_S_CSL__Form.o: \
+  GenASiS.o \
+  Interactions_G_S__Form.o \
+  Interactions_G_S_CSL__Form.f90
+
+Interactions_G_S_ASC__Form.o: \
+  GenASiS.o \
+  Interactions_G_S__Form.o \
+  Interactions_G_S_CSL__Form.o \
+  Interactions_G_S_ASC__Form.f90
+
+Interactions_G_S_BSLL_ASC_CSLD__Form.o: \
+  GenASiS.o \
+  Interactions_G_S__Form.o \
+  Interactions_G_S_ASC__Form.o \
+  Interactions_G_S_BSLL_ASC_CSLD__Form.f90
+
 # Thermalization_Form.o: \
 #   Basics.o \
 #   Mathematics.o \
