@@ -83,7 +83,7 @@ contains
     call SRB % Initialize &
            ( RadiationName = [ 'Radiation' ], RadiationType = [ 'GENERIC' ], &
              Name = Name, ApplyInteractionsOption = .false., &
-             nCellsEnergyOption = 4 )
+             EvolveFluidOption = .false., nCellsEnergyOption = 4 )
     SRB % SetReference => SetReference
 
     select type ( PS => SRB % PositionSpace )
