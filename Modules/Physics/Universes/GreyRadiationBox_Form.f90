@@ -51,7 +51,7 @@ contains
     real ( KDR ), intent ( in ), optional :: &
       FinishTimeOption, &
       CourantFactorOption
-    integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
+    integer ( KDI ), dimension ( 3 ), intent ( in ), optional :: &
       nCellsOption
     integer ( KDI ), intent ( in ), optional :: &
       nWriteOption

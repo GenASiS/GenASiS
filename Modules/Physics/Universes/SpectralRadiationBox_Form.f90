@@ -29,7 +29,8 @@ contains
                  ApplyStreamingOption, ApplyInteractionsOption, &
                  EvolveFluidOption, MinCoordinateOption, MaxCoordinateOption, &
                  TimeUnitOption, FinishTimeOption, CourantFactorOption, &
-                 nCellsPositionOption, nWriteOption )
+                 EnergyScaleOption, nCellsPositionOption, nCellsEnergyOption, &
+                 nWriteOption )
 
     class ( SpectralRadiationBoxForm ), intent ( inout ) :: &
       SRB
@@ -49,10 +50,12 @@ contains
       TimeUnitOption
     real ( KDR ), intent ( in ), optional :: &
       FinishTimeOption, &
-      CourantFactorOption
-    integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
+      CourantFactorOption, &
+      EnergyScaleOption
+    integer ( KDI ), dimension ( 3 ), intent ( in ), optional :: &
       nCellsPositionOption
     integer ( KDI ), intent ( in ), optional :: &
+      nCellsEnergyOption, &
       nWriteOption
 
     integer ( KDI ) :: &
@@ -60,6 +63,8 @@ contains
       nCellsEnergy
     integer ( KDI ), dimension ( 3 ) :: &
       nCellsPosition
+    real ( KDR ) :: &
+      EnergyScale
     logical ( KDL ) :: &
       ApplyStreaming, &
       ApplyInteractions, &
@@ -78,6 +83,8 @@ contains
     call PS % Initialize ( 'PositionSpace', PROGRAM_HEADER % Communicator )
 
     nCellsPosition = [ 32, 32, 32 ]
+    if ( present ( nCellsPositionOption ) ) &
+      nCellsPosition = nCellsPositionOption
     call PROGRAM_HEADER % GetParameter ( nCellsPosition, 'nCellsPosition' )
 
     call PS % CreateChart &
@@ -102,11 +109,24 @@ contains
     call MS % SetBoundaryConditionsFace &
            ( [ 'REFLECTING', 'REFLECTING' ], iDimension = 1 )
 
-    nCellsEnergy = 4
+    EnergyScale = 10.0_KDR
+    if ( present ( EnergyScaleOption ) ) &
+      EnergyScale = EnergyScaleOption
+    call PROGRAM_HEADER % GetParameter ( EnergyScale, 'EnergyScale' )
+
+!    CoordinateUnit = UNIT % IDENTITY
+!    CoordinateUnit ( 1 ) = UNIT % MEGA_ELECTRON_VOLT
+
+    nCellsEnergy = 16
+    if ( present ( nCellsEnergyOption ) ) &
+      nCellsEnergy = nCellsEnergyOption
     call PROGRAM_HEADER % GetParameter ( nCellsEnergy, 'nCellsEnergy' )
 
     call MS % CreateChart &
-           ( CoordinateSystemOption = 'SPHERICAL', &
+           ( SpacingOption = [ 'COMPACTIFIED' ], &
+             CoordinateSystemOption = 'SPHERICAL', &
+!             CoordinateUnitOption = CoordinateUnit, &
+             ScaleOption = [ EnergyScale ], &
              nCellsOption = [ nCellsEnergy ], &
              nGhostLayersOption = [ 0, 0, 0 ] )
 
