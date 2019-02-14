@@ -1,4 +1,4 @@
-module PlaneWaveStreaming_Template
+module PlaneWaveStreaming_S__Template
 
   use GenASiS
 
@@ -6,7 +6,7 @@ module PlaneWaveStreaming_Template
   private
 
   type, public, extends ( UniverseTemplate ), abstract :: &
-    PlaneWaveStreamingTemplate
+    PlaneWaveStreaming_S_Template
       type ( RadiationMoments_ASC_Form ), dimension ( : ), allocatable :: &
         Reference_ASC, &
         Difference_ASC        
@@ -19,14 +19,14 @@ module PlaneWaveStreaming_Template
       FinalizeTemplate_PWS
     procedure ( Waveform ), private, pass, deferred :: &
       Waveform
-  end type PlaneWaveStreamingTemplate
+  end type PlaneWaveStreaming_S_Template
 
   abstract interface
     elemental function Waveform ( PWS, X ) result ( W )
       !-- Waveform with a full period in the range 0 < X < 1
       use GenASiS
-      import PlaneWaveStreamingTemplate
-      class ( PlaneWaveStreamingTemplate ), intent ( in ) :: &
+      import PlaneWaveStreaming_S_Template
+      class ( PlaneWaveStreaming_S_Template ), intent ( in ) :: &
         PWS
       real ( KDR ), intent ( in ) :: &
         X
@@ -45,7 +45,7 @@ module PlaneWaveStreaming_Template
         private :: &
           SetWaveKernel
 
-   class ( PlaneWaveStreamingTemplate ), private, pointer :: &
+   class ( PlaneWaveStreaming_S_Template ), private, pointer :: &
      PlaneWaveStreaming => null ( )
 
 contains
@@ -53,7 +53,7 @@ contains
 
   subroutine InitializeTemplate_PWS ( PWS, Name )
 
-    class ( PlaneWaveStreamingTemplate ), intent ( inout ), target :: &
+    class ( PlaneWaveStreaming_S_Template ), intent ( inout ), target :: &
       PWS
     character ( * ), intent ( in )  :: &
       Name
@@ -68,7 +68,7 @@ contains
 
 
     if ( PWS % Type == '' ) &
-      PWS % Type = 'a PlaneWaveStreaming'
+      PWS % Type = 'a PlaneWaveStreaming_S'
 
     PlaneWaveStreaming => PWS
 
@@ -134,7 +134,7 @@ contains
 
   subroutine ComputeError ( PWS )
 
-    class ( PlaneWaveStreamingTemplate ), intent ( in ) :: &
+    class ( PlaneWaveStreaming_S_Template ), intent ( in ) :: &
       PWS
     
     integer ( KDI ) :: &
@@ -195,7 +195,7 @@ contains
 
   subroutine FinalizeTemplate_PWS ( PWS )
 
-    class ( PlaneWaveStreamingTemplate ), intent ( inout ) :: &
+    class ( PlaneWaveStreaming_S_Template ), intent ( inout ) :: &
       PWS
 
     if ( allocated ( PWS % Difference_ASC ) ) &
@@ -259,7 +259,7 @@ contains
 
   subroutine SetRadiation ( PWS, Time, Period )
 
-    class ( PlaneWaveStreamingTemplate ), intent ( inout ) :: &
+    class ( PlaneWaveStreaming_S_Template ), intent ( inout ) :: &
       PWS
     real ( KDR ), intent ( in ) :: &
       Time
@@ -308,7 +308,7 @@ contains
 
   subroutine SetWave ( PWS, RS, PSC, Time, nWavelengths, PeriodOption )
 
-    class ( PlaneWaveStreamingTemplate ), intent ( in ) :: &
+    class ( PlaneWaveStreaming_S_Template ), intent ( in ) :: &
       PWS
     type ( RadiationMomentsForm ), intent ( inout ) :: &
       RS  !-- RadiationSection
@@ -370,7 +370,7 @@ contains
 
   subroutine SetWaveKernel ( PWS, X, Y, Z, K, V, T, J, HX, HY, HZ )
 
-    class ( PlaneWaveStreamingTemplate ), intent ( in ) :: &
+    class ( PlaneWaveStreaming_S_Template ), intent ( in ) :: &
       PWS
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       X, Y, Z
@@ -417,4 +417,4 @@ contains
   end subroutine SetWaveKernel
 
 
-end module PlaneWaveStreaming_Template
+end module PlaneWaveStreaming_S__Template

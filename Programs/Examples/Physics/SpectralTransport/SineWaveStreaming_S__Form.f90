@@ -1,12 +1,12 @@
 module SineWaveStreaming_S__Form
 
   use Basics
-  use PlaneWaveStreaming_Template
+  use PlaneWaveStreaming_S__Template
 
   implicit none
   private
 
-  type, public, extends ( PlaneWaveStreamingTemplate ) :: &
+  type, public, extends ( PlaneWaveStreaming_S_Template ) :: &
     SineWaveStreaming_S_Form
       real ( KDR ) :: &
         Offset, &

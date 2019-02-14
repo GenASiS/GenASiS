@@ -9,7 +9,7 @@ SineWaveStreaming_G: ThirdParty.a GenASiS.a SineWaveStreaming_G.o
 	$(LINK) $(FFLAGS) \
           -o SineWaveStreaming_G_$(MACHINE) \
           SineWaveStreaming_G.o SineWaveStreaming_G__Form.o \
-          PlaneWaveStreaming_Template.o \
+          PlaneWaveStreaming_G__Template.o \
           GenASiS.a ThirdParty.a $(LIBRARIES)
 
 Thermalization_G_G: ThirdParty.a GenASiS.a Thermalization_G_G.o
@@ -64,13 +64,13 @@ clobber: clean
 	rm -f MarshakWave_*
 	rm -f StreamingProfile_*
 
-PlaneWaveStreaming_Template.o: \
+PlaneWaveStreaming_G__Template.o: \
   GenASiS.o \
-  PlaneWaveStreaming_Template.f90
+  PlaneWaveStreaming_G__Template.f90
 
 SineWaveStreaming_G__Form.o: \
   GenASiS.o \
-  PlaneWaveStreaming_Template.o \
+  PlaneWaveStreaming_G__Template.o \
   SineWaveStreaming_G__Form.f90
 
 SineWaveStreaming_G.o: \
