@@ -83,7 +83,7 @@ contains
     type is ( GreyRadiationBoxForm )
     call GRB % Initialize &
            ( RadiationName = [ 'Radiation' ], RadiationType = [ 'GENERIC' ], &
-             Name = Name )
+             Name = Name, ApplyInteractionsOption = .false. )
     GRB % SetReference => SetReference
 
     select type ( PS => GRB % PositionSpace )

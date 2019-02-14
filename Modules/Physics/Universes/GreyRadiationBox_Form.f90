@@ -141,18 +141,7 @@ contains
     end select !-- FA
 
 
-    !-- Relaxation
-
-    allocate ( GRB % Relaxation_RM_ASC )
-    associate ( R => GRB % Relaxation_RM_ASC )
-    select type ( RMA => GRB % Current_ASC_1D ( 1 ) % Element )
-    class is ( RadiationMoments_ASC_Form )
-      call R % Initialize ( RMA, Name = GRB % Name )
-    end select !-- RMA
-    end associate !-- R
-
-
-    !-- Step
+    !-- Operators
 
     ApplyStreaming    = .true.
     ApplyInteractions = .true.
@@ -160,6 +149,22 @@ contains
       ApplyStreaming = ApplyStreamingOption
     if ( present ( ApplyInteractionsOption ) ) &
       ApplyInteractions = ApplyInteractionsOption
+
+
+    !-- Relaxation
+
+    if ( ApplyInteractions ) then
+      allocate ( GRB % Relaxation_RM_ASC )
+      associate ( R => GRB % Relaxation_RM_ASC )
+      select type ( RMA => GRB % Current_ASC_1D ( 1 ) % Element )
+      class is ( RadiationMoments_ASC_Form )
+        call R % Initialize ( RMA, Name = GRB % Name )
+      end select !-- RMA
+      end associate !-- R
+    end if !-- ApplyInteractions
+
+
+    !-- Step
 
     allocate ( Step_RK2_C_ASC_1D_Form :: GRB % Step )
     select type ( S => GRB % Step )

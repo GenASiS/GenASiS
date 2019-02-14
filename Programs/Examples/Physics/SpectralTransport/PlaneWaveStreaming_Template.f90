@@ -82,7 +82,7 @@ contains
     type is ( SpectralRadiationBoxForm )
     call SRB % Initialize &
            ( RadiationName = [ 'Radiation' ], RadiationType = [ 'GENERIC' ], &
-             Name = Name )
+             Name = Name, ApplyInteractionsOption = .false. )
     SRB % SetReference => SetReference
 
     select type ( PS => SRB % PositionSpace )

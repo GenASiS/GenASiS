@@ -158,18 +158,7 @@ contains
     end select !-- FA
 
 
-    !-- Relaxation
-
-    allocate ( SRB % Relaxation_RM_BSLL_ASC_CSLD )
-    associate ( R => SRB % Relaxation_RM_BSLL_ASC_CSLD )
-    select type ( RMB => SRB % Current_BSLL_ASC_CSLD_1D ( 1 ) % Element )
-    class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
-      call R % Initialize ( RMB, Name = SRB % Name )
-    end select !-- RMA
-    end associate !-- R
-
-
-    !-- Step
+    !-- Operators
 
     ApplyStreaming    = .true.
     ApplyInteractions = .true.
@@ -177,6 +166,22 @@ contains
       ApplyStreaming = ApplyStreamingOption
     if ( present ( ApplyInteractionsOption ) ) &
       ApplyInteractions = ApplyInteractionsOption
+
+
+    !-- Relaxation
+
+    if ( ApplyInteractions ) then
+      allocate ( SRB % Relaxation_RM_BSLL_ASC_CSLD )
+      associate ( R => SRB % Relaxation_RM_BSLL_ASC_CSLD )
+      select type ( RMB => SRB % Current_BSLL_ASC_CSLD_1D ( 1 ) % Element )
+      class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
+        call R % Initialize ( RMB, Name = SRB % Name )
+      end select !-- RMA
+      end associate !-- R
+    end if !-- ApplyInteractions
+
+
+    !-- Step
 
     allocate ( Step_RK2_C_BSLL_ASC_CSLD_1D_Form :: SRB % Step_MS )
     select type ( S_MS => SRB % Step_MS )
