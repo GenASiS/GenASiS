@@ -27,9 +27,9 @@ contains
   subroutine Initialize &
                ( SRB, RadiationName, RadiationType, Name, &
                  ApplyStreamingOption, ApplyInteractionsOption, &
-                 MinCoordinateOption, MaxCoordinateOption, TimeUnitOption, &
-                 FinishTimeOption, CourantFactorOption, nCellsPositionOption, &
-                 nWriteOption )
+                 EvolveFluidOption, MinCoordinateOption, MaxCoordinateOption, &
+                 TimeUnitOption, FinishTimeOption, CourantFactorOption, &
+                 nCellsPositionOption, nWriteOption )
 
     class ( SpectralRadiationBoxForm ), intent ( inout ) :: &
       SRB
@@ -40,7 +40,8 @@ contains
       Name
     logical ( KDL ), intent ( in ), optional :: &
       ApplyStreamingOption, &
-      ApplyInteractionsOption
+      ApplyInteractionsOption, &
+      EvolveFluidOption
     real ( KDR ), dimension ( : ), intent ( in ), optional :: &
       MinCoordinateOption, &
       MaxCoordinateOption
@@ -61,7 +62,8 @@ contains
       nCellsPosition
     logical ( KDL ) :: &
       ApplyStreaming, &
-      ApplyInteractions
+      ApplyInteractions, &
+      EvolveFluid
 
 
     if ( SRB % Type == '' ) &
@@ -162,11 +164,13 @@ contains
 
     ApplyStreaming    = .true.
     ApplyInteractions = .true.
+    EvolveFluid       = .true.
     if ( present ( ApplyStreamingOption ) ) &
       ApplyStreaming = ApplyStreamingOption
     if ( present ( ApplyInteractionsOption ) ) &
       ApplyInteractions = ApplyInteractionsOption
-
+    if ( present ( EvolveFluidOption ) ) &
+      EvolveFluid = EvolveFluidOption
 
     !-- Relaxation
 
@@ -183,7 +187,7 @@ contains
 
     !-- Step
 
-    allocate ( Step_RK2_C_BSLL_ASC_CSLD_1D_Form :: SRB % Step_MS )
+    allocate ( Step_RK2_C_BSLL_ASC_CSLD_1D_Form :: SRB % Step_MS ) !-- Radiation
     select type ( S_MS => SRB % Step_MS )
     class is ( Step_RK2_C_BSLL_ASC_CSLD_1D_Form )
     call S_MS % Initialize ( SRB, SRB % Current_BSLL_ASC_CSLD_1D, Name )
@@ -203,12 +207,13 @@ contains
 
     end select !-- S_MS
 
-    allocate ( Step_RK2_C_ASC_Form :: SRB % Step_PS )
+    allocate ( Step_RK2_C_ASC_Form :: SRB % Step_PS ) !-- Fluid
     select type ( S_PS => SRB % Step_PS )
     class is ( Step_RK2_C_ASC_Form )
     call S_PS % Initialize ( SRB, SRB % Current_ASC, Name )
-    S_PS % ApplyDivergence % Pointer => null ( )  !-- Disable fluid evolution
-    end select !-- S
+    if ( .not. EvolveFluid ) &
+      S_PS % ApplyDivergence % Pointer => null ( )  !-- Disable fluid evolution
+    end select !-- S_PS
 
 
     !-- Template

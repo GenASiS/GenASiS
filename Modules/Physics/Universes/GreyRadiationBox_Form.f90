@@ -28,9 +28,9 @@ contains
   subroutine Initialize &
                ( GRB, RadiationName, RadiationType, Name, &
                  ApplyStreamingOption, ApplyInteractionsOption, &
-                 MinCoordinateOption, MaxCoordinateOption, TimeUnitOption, &
-                 FinishTimeOption, CourantFactorOption, nCellsOption, &
-                 nWriteOption )
+                 EvolveFluidOption, MinCoordinateOption, MaxCoordinateOption, &
+                 TimeUnitOption, FinishTimeOption, CourantFactorOption, &
+                 nCellsOption, nWriteOption )
 
     class ( GreyRadiationBoxForm ), intent ( inout ), target :: &
       GRB
@@ -41,7 +41,8 @@ contains
       Name
     logical ( KDL ), intent ( in ), optional :: &
       ApplyStreamingOption, &
-      ApplyInteractionsOption
+      ApplyInteractionsOption, &
+      EvolveFluidOption
     real ( KDR ), dimension ( : ), intent ( in ), optional :: &
       MinCoordinateOption, &
       MaxCoordinateOption
@@ -59,7 +60,8 @@ contains
       iC  !-- iCurrent
     logical ( KDL ) :: &
       ApplyStreaming, &
-      ApplyInteractions
+      ApplyInteractions, &
+      EvolveFluid
 
 
     if ( GRB % Type == '' ) &
@@ -145,10 +147,13 @@ contains
 
     ApplyStreaming    = .true.
     ApplyInteractions = .true.
+    EvolveFluid       = .true.
     if ( present ( ApplyStreamingOption ) ) &
       ApplyStreaming = ApplyStreamingOption
     if ( present ( ApplyInteractionsOption ) ) &
       ApplyInteractions = ApplyInteractionsOption
+    if ( present ( EvolveFluidOption ) ) &
+      EvolveFluid = EvolveFluidOption
 
 
     !-- Relaxation
@@ -184,8 +189,8 @@ contains
       end do !-- iC
     end if
 
-    S % ApplyDivergence_1D ( GRB % FLUID ) % Pointer  =>  null ( )  
-      !-- Disable fluid evolution
+    if ( .not. EvolveFluid ) &
+      S % ApplyDivergence_1D ( GRB % FLUID ) % Pointer  =>  null ( )  
 
     end select !-- S
 
