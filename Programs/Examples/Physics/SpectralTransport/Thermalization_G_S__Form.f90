@@ -15,7 +15,8 @@ module Thermalization_G_S__Form
   end type Thermalization_G_S_Form
 
     private :: &
-      SetFluid
+      SetFluid, &
+      SetRadiation
 
     real ( KDR ), private :: &
       TemperatureMin, &
@@ -104,6 +105,7 @@ contains
     !-- Initial conditions
 
     call SetFluid ( SRB )
+    call SetRadiation ( SRB )
 
 
     !-- Cleanup
@@ -191,6 +193,92 @@ contains
     nullify ( G, F )
 
   end subroutine SetFluid
+
+
+  subroutine SetRadiation ( SRB )
+
+    class ( SpectralRadiationBoxForm ), intent ( inout ) :: &
+      SRB
+
+    integer ( KDI ) :: &
+      iF, &  !-- iFiber
+      iE     !-- iEnergy  
+    real ( KDR ) :: &
+      Amplitude, &
+      Perturbation
+    class ( GeometryFlatForm ), pointer :: &
+      G
+    class ( Fluid_P_I_Form ), pointer :: &
+      F
+    class ( RadiationMomentsForm ), pointer :: &
+      RM
+
+    select type ( RMB => SRB % Current_BSLL_ASC_CSLD_1D ( 1 ) % Element )
+    type is ( RadiationMoments_BSLL_ASC_CSLD_Form )
+
+    select type ( FA => SRB % Current_ASC )
+    class is ( Fluid_ASC_Form )
+    F => FA % Fluid_P_I ( )
+
+    select type ( MS => SRB % MomentumSpace )
+    class is ( Bundle_SLL_ASC_CSLD_Form )
+    G => MS % Base_CSLD % Geometry ( )
+
+    call InitializeRandomSeed ( PROGRAM_HEADER % Communicator )
+
+    !$OMP parallel do private ( iF )
+    do iF = 1, MS % nFibers
+      associate ( iBC => MS % iaBaseCell ( iF ) )
+      RM => RMB % RadiationMoments ( iF )
+      associate &
+        ( J     =>  RM % Value ( :, RM % COMOVING_ENERGY ), &
+          H_1   =>  RM % Value ( :, RM % COMOVING_MOMENTUM_U ( 1 ) ), &
+          H_2   =>  RM % Value ( :, RM % COMOVING_MOMENTUM_U ( 2 ) ), &
+          H_3   =>  RM % Value ( :, RM % COMOVING_MOMENTUM_U ( 3 ) ), &
+          T     =>  F % Value ( iBC, F % TEMPERATURE ), &
+          E     =>  RMB % Energy )
+
+      call SetPlanckSpectrum ( E, T, J )
+
+      Amplitude = 0.9_KDR
+      do iE = 1, RMB % nEnergyValues
+
+        call random_number ( Perturbation )
+        Perturbation = Amplitude * 2.0_KDR * ( Perturbation - 0.5_KDR ) 
+        J ( iE ) = ( 1.0_KDR + Perturbation )  *  J ( iE )
+
+        call random_number ( Perturbation )
+        Perturbation &
+          = 0.01_KDR * J ( iE ) * 2.0_KDR * ( Perturbation - 0.5_KDR ) 
+        H_1 ( iE ) = Perturbation
+
+        call random_number ( Perturbation )
+        Perturbation &
+          = 0.01_KDR * J ( iE ) * 2.0_KDR * ( Perturbation - 0.5_KDR ) 
+        H_2 ( iE ) = Perturbation
+
+        call random_number ( Perturbation )
+        Perturbation &
+          = 0.01_KDR * J ( iE ) * 2.0_KDR * ( Perturbation - 0.5_KDR ) 
+        H_3 ( iE ) = Perturbation
+        
+      end do !-- iE
+
+      call RM % ComputeFromPrimitive ( iBC, G )
+
+      end associate !-- J, etc.
+      end associate !-- iBC
+    end do !-- iF
+    !$OMP end parallel do
+
+    call RMB % LoadSections ( )
+
+    end select !-- MS
+    end select !-- FA
+    end select !-- RMB
+    nullify ( G, F, RM )
+
+  end subroutine SetRadiation
 
 
 end module Thermalization_G_S__Form
