@@ -36,18 +36,18 @@ module Relaxation_RM__Template
   end type Relaxation_RM_Template
 
   abstract interface
-    subroutine AS ( S, Sources_RM, Increment, RadiationMoments, Chart, &
+    subroutine AS ( S, RadiationMoments, Sources_RM, Increment, Chart, &
                    TimeStep, iStage, GeometryOption, iStrgeometryValueOption )
       use Basics
       use Mathematics
       class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
         S
+      class ( CurrentTemplate ), intent ( inout ) :: &
+        RadiationMoments
       class ( Sources_C_Form ), intent ( inout ) :: &
         Sources_RM
       type ( StorageForm ), intent ( inout ) :: &
         Increment
-      class ( CurrentTemplate ), intent ( in ), target :: &
-        RadiationMoments
       class ( ChartTemplate ), intent ( in ) :: &
         Chart
       real ( KDR ), intent ( in ) :: &
@@ -184,9 +184,6 @@ contains
     else
       iS = iV
     end if
-
-    if ( iStage == 1 ) &
-      call Clear ( Sources_RM % Value )
 
     call ComputeCoefficients &
            ( RM, &

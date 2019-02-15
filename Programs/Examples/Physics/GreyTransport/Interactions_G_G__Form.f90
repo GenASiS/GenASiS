@@ -66,8 +66,8 @@ contains
     real ( KDR ), intent ( in ) :: &
       OpacityAbsorption
 
-    I % OpacityAbsorption  =  OpacityAbsorption
-    I % Fluid  =>  Fluid
+    I % OpacityAbsorption  =   OpacityAbsorption
+    I % Fluid              =>  Fluid
 
   end subroutine Set_G_G
 
@@ -127,14 +127,10 @@ contains
 
     !$OMP parallel do private ( iV ) 
     do iV = 1, nValues
-
       J_Eq  ( iV )  =  a  *  T ( iV ) ** 4
-
       Xi_J  ( iV )  =  Kappa_A  *  J_Eq ( iV )
       Chi_J ( iV )  =  Kappa_A
-
       Chi_H ( iV )  =  Chi_J ( iV )
-
     end do !-- iV
     !$OMP end parallel do
 

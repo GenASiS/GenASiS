@@ -2,6 +2,7 @@ module Relaxation_RM_BSLL_ASC_CSLD__Form
 
   use Basics
   use Mathematics
+  use RadiationMoments_Form
   use RadiationMoments_ASC__Form
   use RadiationMoments_BSLL_ASC_CSLD__Form
   use Relaxation_RM__Template
@@ -57,17 +58,17 @@ contains
 
 
   subroutine ApplySubroutine &
-               ( S, Sources_RM, Increment, RadiationMoments, Chart, &
+               ( S, RadiationMoments, Sources_RM, Increment, Chart, &
                  TimeStep, iStage, GeometryOption, iStrgeometryValueOption )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
+    class ( CurrentTemplate ), intent ( inout ) :: &
+      RadiationMoments
     class ( Sources_C_Form ), intent ( inout ) :: &
       Sources_RM
     type ( StorageForm ), intent ( inout ) :: &
       Increment
-    class ( CurrentTemplate ), intent ( in ), target :: &
-      RadiationMoments
     class ( ChartTemplate ), intent ( in ) :: &
       Chart
     real ( KDR ), intent ( in ) :: &
@@ -93,9 +94,19 @@ contains
       call Show ( 'GeometryOption must be present', CONSOLE % ERROR )
       call Show ( 'iStrgeometryValueOption must be present', CONSOLE % ERROR )
       call Show ( 'Apply', 'subroutine', CONSOLE % ERROR )
-      call Show ( 'Relaxation_RM_BSLL_ASC_CSLD__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Relaxation_RM_BSLL_ASC_CSLD__Form', 'module', &
+                  CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end if
+
+    if ( iStage == 1 ) &
+      call Clear ( Sources_RM % Value )
+
+    select type ( RM => RadiationMoments )
+    class is ( RadiationMomentsForm )
+
+    associate ( I => RM % Interactions )
+    call I % Compute ( RM )
 
     select type ( Chart )
     class is ( Chart_SL_Template )
@@ -115,6 +126,8 @@ contains
     end do !-- iV
 
     end select !-- Chart
+    end associate !-- I
+    end select !-- RM
 
   end subroutine ApplySubroutine
 

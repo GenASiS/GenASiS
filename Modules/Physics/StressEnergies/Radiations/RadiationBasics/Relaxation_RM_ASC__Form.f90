@@ -3,6 +3,7 @@ module Relaxation_RM_ASC__Form
   use OMP_LIB
   use Basics
   use Mathematics
+  use RadiationMoments_Form
   use RadiationMoments_ASC__Form
   use Relaxation_RM__Template
 
@@ -58,17 +59,17 @@ contains
 
 
   subroutine ApplySubroutine &
-               ( S, Sources_RM, Increment, RadiationMoments, Chart, &
+               ( S, RadiationMoments, Sources_RM, Increment, Chart, &
                  TimeStep, iStage, GeometryOption, iStrgeometryValueOption )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
+    class ( CurrentTemplate ), intent ( inout ) :: &
+      RadiationMoments
     class ( Sources_C_Form ), intent ( inout ) :: &
       Sources_RM
     type ( StorageForm ), intent ( inout ) :: &
       Increment
-    class ( CurrentTemplate ), intent ( in ), target :: &
-      RadiationMoments
     class ( ChartTemplate ), intent ( in ) :: &
       Chart
     real ( KDR ), intent ( in ) :: &
@@ -91,6 +92,15 @@ contains
     call Show ( RadiationMoments % Name, 'RadiationMoments', &
                 S % IGNORABILITY + 3 )
 
+    if ( iStage == 1 ) &
+      call Clear ( Sources_RM % Value )
+
+    select type ( RM => RadiationMoments )
+    class is ( RadiationMomentsForm )
+
+    associate ( I => RM % Interactions )
+    call I % Compute ( RM )
+
     select type ( Chart )
     class is ( Chart_SL_Template )
     G => Chart % Geometry ( )
@@ -112,7 +122,10 @@ contains
     end do !-- iV
     !$OMP end parallel do
 
+
     end select !-- Chart
+    end associate !-- I
+    end select !-- RM
     nullify ( G )
 
   end subroutine ApplySubroutine

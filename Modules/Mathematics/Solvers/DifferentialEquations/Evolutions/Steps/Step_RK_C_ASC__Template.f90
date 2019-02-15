@@ -191,7 +191,7 @@ module Step_RK_C_ASC__Template
         iStage
     end subroutine AS
 
-    subroutine AR ( S, Sources, Increment, Current, Chart, TimeStep, iStage, &
+    subroutine AR ( S, Current, Sources, Increment, Chart, TimeStep, iStage, &
                     GeometryOption, iStrgeometryValueOption )
       use Basics
       use Manifolds
@@ -199,12 +199,12 @@ module Step_RK_C_ASC__Template
       import Step_RK_C_ASC_Template
       class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
         S
+      class ( CurrentTemplate ), intent ( inout ) :: &
+        Current
       class ( Sources_C_Form ), intent ( inout ) :: &
         Sources
       type ( StorageForm ), intent ( inout ) :: &
         Increment
-      class ( CurrentTemplate ), intent ( in ), target :: &
-        Current
       class ( ChartTemplate ), intent ( in ) :: &
         Chart
       real ( KDR ), intent ( in ) :: &
@@ -217,30 +217,6 @@ module Step_RK_C_ASC__Template
         iStrgeometryValueOption
     end subroutine AR
     
-    subroutine HI ( S, Increment, Current, TimeStep )
-      use Basics
-      use Fields
-      import Step_RK_C_ASC_Template
-      class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
-        S
-      type ( StorageForm ), intent ( inout ), target :: &
-        Increment
-      class ( CurrentTemplate ), intent ( inout ) :: &
-        Current
-      real ( KDR ), intent ( in ) :: &
-        TimeStep
-    end subroutine HI
-
-    subroutine HC ( S, Current )
-      use Basics
-      use Fields
-      import Step_RK_C_ASC_Template
-      class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
-        S
-      class ( CurrentTemplate ), intent ( in ) :: &
-        Current
-    end subroutine HC
-
     subroutine CS ( S )
       use Basics
       class ( StorageForm ), intent ( inout ) :: &
@@ -1091,7 +1067,7 @@ contains
       TimerRelaxation => PROGRAM_HEADER % TimerPointer ( S % iTimerRelaxation )
       if ( associated ( TimerRelaxation ) ) call TimerRelaxation % Start ( )
       call S % ApplyRelaxation_C &
-             ( C % Sources, K, C, Chart, TimeStep, iStage, GeometryOption, &
+             ( C, C % Sources, K, Chart, TimeStep, iStage, GeometryOption, &
                iStrgeometryValueOption )
       if ( associated ( TimerRelaxation ) ) call TimerRelaxation % Stop ( )
     end if

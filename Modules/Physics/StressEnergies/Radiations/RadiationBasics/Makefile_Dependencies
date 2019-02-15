@@ -93,6 +93,7 @@ Relaxation_RM__Template.o: \
 Relaxation_RM_ASC__Form.o: \
   Basics.o \
   Mathematics.o \
+  RadiationMoments_Form.o \
   RadiationMoments_ASC__Form.o \
   Relaxation_RM__Template.o \
   Relaxation_RM_ASC__Form.f90 
@@ -100,6 +101,7 @@ Relaxation_RM_ASC__Form.o: \
 Relaxation_RM_BSLL_ASC_CSLD__Form.o: \
   Basics.o \
   Mathematics.o \
+  RadiationMoments_Form.o \
   RadiationMoments_ASC__Form.o \
   RadiationMoments_BSLL_ASC_CSLD__Form.o \
   Relaxation_RM__Template.o \

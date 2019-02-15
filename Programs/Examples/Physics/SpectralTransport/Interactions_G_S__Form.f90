@@ -119,7 +119,7 @@ contains
   end subroutine Finalize
 
 
-  subroutine ComputeKernel ( I, Xi_J, Chi_J, Chi_H, J_Eq )
+  subroutine ComputeKernel ( I, J_Eq, Xi_J, Chi_J, Chi_H )
 
     class ( Interactions_G_S_Form ), intent ( in ) :: &
       I
