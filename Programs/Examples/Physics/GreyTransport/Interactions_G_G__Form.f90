@@ -57,33 +57,36 @@ contains
   end subroutine InitializeAllocate_I
 
 
-  subroutine Set_G_G ( I, OpacityAbsorption )
+  subroutine Set_G_G ( I, Fluid, OpacityAbsorption )
 
     class ( Interactions_G_G_Form ), intent ( inout ) :: &
       I
+    class ( Fluid_P_Template ), intent ( in ), target :: &
+      Fluid
     real ( KDR ), intent ( in ) :: &
       OpacityAbsorption
 
     I % OpacityAbsorption  =  OpacityAbsorption
+    I % Fluid  =>  Fluid
 
   end subroutine Set_G_G
 
 
-  subroutine Compute ( I, R, F )
+  subroutine Compute ( I, R )
 
     class ( Interactions_G_G_Form ), intent ( inout ) :: &
       I
     class ( CurrentTemplate ), intent ( inout ) :: &
       R
-    class ( Fluid_P_Template ), intent ( in ) :: &
-      F
 
+    associate ( F => I % Fluid )
     call I % ComputeKernel &
            ( F % Value ( :, F % TEMPERATURE ), &
              I % Value ( :, I % EMISSIVITY_J ), &
              I % Value ( :, I % OPACITY_J ), &
              I % Value ( :, I % OPACITY_H ), &
              I % Value ( :, I % EQUILIBRIUM_J ) )
+    end associate !-- F
 
   end subroutine Compute
 

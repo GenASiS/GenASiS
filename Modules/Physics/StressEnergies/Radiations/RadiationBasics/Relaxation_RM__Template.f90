@@ -185,6 +185,9 @@ contains
       iS = iV
     end if
 
+    if ( iStage == 1 ) &
+      call Clear ( Sources_RM % Value )
+
     call ComputeCoefficients &
            ( RM, &
              Increment % Value ( iV, R % iEnergy ), &

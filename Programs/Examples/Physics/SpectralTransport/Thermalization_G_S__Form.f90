@@ -74,14 +74,17 @@ contains
              FinishTimeOption = 10.0_KDR * TimeScale )
 !     SRB % SetReference => SetReference
 
-    select type ( PS => SRB % PositionSpace )
-    class is ( Atlas_SC_Form )
+    select type ( RMB => SRB % Current_BSLL_ASC_CSLD_1D ( 1 ) % Element )
+    class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
+
+    select type ( FA => SRB % Current_ASC )
+    class is ( Fluid_ASC_Form )
 
     select type ( MS => SRB % MomentumSpace )
     class is ( Bundle_SLL_ASC_CSLD_Form )
 
-    select type ( RMB => SRB % Current_BSLL_ASC_CSLD_1D ( 1 ) % Element )
-    class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
+    select type ( PS => SRB % PositionSpace )
+    class is ( Atlas_SC_Form )
 
 
     !-- Interactions
@@ -91,7 +94,7 @@ contains
     select type ( IB => SRB % Interactions_BSLL_ASC_CSLD )
     class is ( Interactions_G_S_BSLL_ASC_CSLD_Form )
     call IB % Initialize ( MS, 'GENERIC_SPECTRAL' )
-    call IB % Set ( OpacityAbsorption = OpacityAbsorption )
+    call IB % Set ( FA, OpacityAbsorption = OpacityAbsorption )
     call RMB % SetInteractions ( IB )
     end select !-- IB
 
@@ -122,9 +125,10 @@ contains
 
     !-- Cleanup
 
-    end select !-- RMB
-    end select !-- MS
     end select !-- PS
+    end select !-- MS
+    end select !-- FA
+    end select !-- RMB
     end select !-- SRB
 
   end subroutine Initialize

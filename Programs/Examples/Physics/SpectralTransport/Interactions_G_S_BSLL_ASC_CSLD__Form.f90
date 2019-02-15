@@ -51,10 +51,12 @@ contains
   end subroutine Initialize
 
 
-  subroutine Set_G_S_BSLL_ASC_CSLD ( IB, OpacityAbsorption )
+  subroutine Set_G_S_BSLL_ASC_CSLD ( IB, FA, OpacityAbsorption )
 
     class ( Interactions_G_S_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
       IB
+    class ( Fluid_ASC_Form ), intent ( in ), target :: &
+      FA
     real ( KDR ), intent ( in ) :: &
       OpacityAbsorption
 
@@ -62,11 +64,15 @@ contains
       iF  !-- iFiber
     class ( GeometryFlatForm ), pointer :: &
       GF
+    class ( Fluid_P_I_Form ), pointer :: &
+      Fluid
     class ( InteractionsTemplate ), pointer :: &
       I
 
     select type ( B => IB % Bundle )
     class is ( Bundle_SLL_ASC_CSLD_Form )
+
+    Fluid => FA % Fluid_P_I ( )
 
     GF => B % GeometryFiber ( )
     associate ( Energy => GF % Value ( :, GF % CENTER_U ( 1 ) ) )
@@ -76,7 +82,8 @@ contains
       select type ( I )
       type is ( Interactions_G_S_Form )
         call I % Set &
-               ( Energy = Energy, &
+               ( Fluid = Fluid, &
+                 Energy = Energy, &
                  OpacityAbsorption = OpacityAbsorption, &
                  iBaseCell = B % iaBaseCell ( iF ) )
       end select !-- I

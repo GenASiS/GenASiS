@@ -25,6 +25,8 @@ module Interactions_Template
       EQUILIBRIUM_N     = 0
     character ( LDL ) :: &
       Type = ''
+    class ( Fluid_P_Template ), pointer :: &
+      Fluid => null ( )
   contains
     procedure ( IAI ), private, pass, deferred :: &
       InitializeAllocate_I
@@ -72,7 +74,7 @@ module Interactions_Template
         UnitOption
     end subroutine IAI
 
-    subroutine C ( I, R, F )
+    subroutine C ( I, R )
       use Mathematics
       use Fluids
       import InteractionsTemplate
@@ -80,8 +82,6 @@ module Interactions_Template
         I
       class ( CurrentTemplate ), intent ( inout ) :: &
         R
-      class ( Fluid_P_Template ), intent ( in ) :: &
-        F
     end subroutine C
 
   end interface
@@ -196,6 +196,8 @@ contains
 
     class ( InteractionsTemplate ), intent ( inout ) :: &
       I
+
+    nullify ( I % Fluid )
 
     call Show ( 'Finalizing ' // trim ( I % Type ), I % IGNORABILITY )
     call Show ( I % Name, 'Name', I % IGNORABILITY )

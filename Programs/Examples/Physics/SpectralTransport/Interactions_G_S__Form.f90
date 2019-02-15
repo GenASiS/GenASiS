@@ -61,10 +61,12 @@ contains
   end subroutine InitializeAllocate_I
 
 
-  subroutine Set_G_S ( I, Energy, OpacityAbsorption, iBaseCell )
+  subroutine Set_G_S ( I, Fluid, Energy, OpacityAbsorption, iBaseCell )
 
     class ( Interactions_G_S_Form ), intent ( inout ) :: &
       I
+    class ( Fluid_P_Template ), intent ( in ), target :: &
+      Fluid
     real ( KDR ), dimension ( : ), intent ( in ), target :: &
       Energy
     real ( KDR ), intent ( in ) :: &
@@ -75,25 +77,26 @@ contains
     I % iBaseCell          =   iBaseCell
     I % OpacityAbsorption  =   OpacityAbsorption
     I % Energy             =>  Energy
+    I % Fluid              =>  Fluid
 
   end subroutine Set_G_S
 
 
-  subroutine Compute ( I, R, F )
+  subroutine Compute ( I, R )
 
     class ( Interactions_G_S_Form ), intent ( inout ) :: &
       I
     class ( CurrentTemplate ), intent ( inout ) :: &
       R
-    class ( Fluid_P_Template ), intent ( in ) :: &
-      F
 
-    associate ( iBC => I % iBaseCell )
+    associate &
+      (   F => I % Fluid, &
+        iBC => I % iBaseCell )
     call SetPlanckSpectrum &
            ( I % Energy, &
              F % Value ( iBC, F % TEMPERATURE ), &
              I % Value ( :, I % EQUILIBRIUM_J ) )
-    end associate !-- iBC
+    end associate !-- F, etc.
 
     call I % ComputeKernel &
            ( I % Value ( :, I % EQUILIBRIUM_J ), &

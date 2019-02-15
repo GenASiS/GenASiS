@@ -54,22 +54,27 @@ contains
   end subroutine Initialize
 
 
-  subroutine Set_G_G_ASC ( IA, OpacityAbsorption )
+  subroutine Set_G_G_ASC ( IA, FA, OpacityAbsorption )
 
     class ( Interactions_G_G_ASC_Form ), intent ( inout ) :: &
       IA
+    class ( Fluid_ASC_Form ), intent ( in ), target :: &
+      FA
     real ( KDR ), intent ( in ) :: &
       OpacityAbsorption
 
+    class ( Fluid_P_I_Form ), pointer :: &
+      F
     class ( InteractionsTemplate ), pointer :: &
       I
 
+    F => FA % Fluid_P_I ( )
     I => IA % Interactions ( )
     select type ( I )
     type is ( Interactions_G_G_Form )
-      call I % Set ( OpacityAbsorption = OpacityAbsorption )
+      call I % Set ( Fluid = F, OpacityAbsorption = OpacityAbsorption )
     end select !-- I
-    nullify ( I )
+    nullify ( F, I )
 
   end subroutine Set_G_G_ASC
 

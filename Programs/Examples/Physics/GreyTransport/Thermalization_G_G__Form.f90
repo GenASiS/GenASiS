@@ -74,11 +74,14 @@ contains
              FinishTimeOption = 10.0_KDR * TimeScale )
 !    GRB % SetReference => SetReference
 
-    select type ( PS => GRB % PositionSpace )
-    class is ( Atlas_SC_Form )
-
     select type ( RMA => GRB % Current_ASC_1D ( 1 ) % Element )
     class is ( RadiationMoments_ASC_Form )
+
+    select type ( FA => GRB % Current_ASC_1D ( GRB % FLUID ) % Element )
+    class is ( Fluid_ASC_Form )
+
+    select type ( PS => GRB % PositionSpace )
+    class is ( Atlas_SC_Form )
 
 
     !-- Interactions
@@ -87,7 +90,7 @@ contains
     select type ( IA => GRB % Interactions_ASC )
     class is ( Interactions_G_G_ASC_Form )
     call IA % Initialize ( PS, 'GENERIC_GREY' )
-    call IA % Set ( OpacityAbsorption = OpacityAbsorption )
+    call IA % Set ( FA, OpacityAbsorption = OpacityAbsorption )
     call RMA % SetInteractions ( IA )
     end select !-- IA
 
@@ -118,8 +121,9 @@ contains
 
     !-- Cleanup
 
-    end select !-- RMA
     end select !-- PS
+    end select !-- FA
+    end select !-- RMA
     end select !-- GRB
 
   end subroutine Initialize
