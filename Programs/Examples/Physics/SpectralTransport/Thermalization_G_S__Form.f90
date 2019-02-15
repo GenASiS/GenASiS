@@ -33,6 +33,9 @@ contains
     character ( * ), intent ( in )  :: &
       Name
 
+    real ( KDR ) :: &
+      TimeScale
+
 
     if ( T % Type == '' ) &
       T % Type = 'a Thermalization_G_S'
@@ -50,6 +53,12 @@ contains
     call PROGRAM_HEADER % GetParameter &
            ( OpacityAbsorption, 'OpacityAbsorption' )
 
+    associate &
+      ( c       => CONSTANT % SPEED_OF_LIGHT, &
+        Kappa_A => OpacityAbsorption )
+    TimeScale   =  1.0 / ( c * Kappa_A )
+    end associate !-- c, etc.
+
 
     !-- Integrator
 
@@ -57,9 +66,12 @@ contains
     select type ( SRB => T % Integrator )
     type is ( SpectralRadiationBoxForm )
     call SRB % Initialize &
-           ( RadiationName = [ 'Radiation' ], RadiationType = [ 'GENERIC' ], &
-             Name = Name, ApplyStreamingOption = .false., &
-             EvolveFluidOption = .false. )
+           ( RadiationName = [ 'Radiation' ], &
+             RadiationType = [ 'GENERIC' ], &
+             Name = Name, &
+             ApplyStreamingOption = .false., &
+             EvolveFluidOption = .false., &
+             FinishTimeOption = 10.0_KDR * TimeScale )
 !     SRB % SetReference => SetReference
 
     select type ( PS => SRB % PositionSpace )
