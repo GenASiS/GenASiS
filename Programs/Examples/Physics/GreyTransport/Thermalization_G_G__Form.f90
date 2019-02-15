@@ -126,7 +126,7 @@ contains
     class ( Fluid_P_I_Form ), pointer :: &
       F
 
-    select type ( FA => GRB % Current_ASC )
+    select type ( FA => GRB % Current_ASC_1D ( GRB % FLUID ) % Element )
     class is ( Fluid_ASC_Form )
     F => FA % Fluid_P_I ( )
 
