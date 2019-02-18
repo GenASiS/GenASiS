@@ -1,4 +1,6 @@
-module GreyRadiationBox_Form
+module RadiationBox_G_OS__Form
+
+  !-- RadiationBox_Grey_OperatorSplit_Form
 
   use Basics
   use Mathematics
@@ -8,32 +10,33 @@ module GreyRadiationBox_Form
   implicit none
   private
 
-  type, public, extends ( Integrator_C_1D_PS_Template ) :: GreyRadiationBoxForm
-    integer ( KDI ) :: &
-      FLUID = 0
-    class ( Interactions_ASC_Template ), allocatable :: &
-      Interactions_ASC
-    class ( Relaxation_RM_ASC_Form ), allocatable :: &
-      Relaxation_RM_ASC
+  type, public, extends ( Integrator_C_1D_PS_Template ) :: &
+    RadiationBox_G_OS_Form
+      integer ( KDI ) :: &
+        FLUID = 0
+      class ( Interactions_ASC_Template ), allocatable :: &
+        Interactions_ASC
+      class ( Relaxation_RM_ASC_Form ), allocatable :: &
+        Relaxation_RM_ASC
   contains
     procedure, public, pass :: &
       Initialize
     final :: &
       Finalize
-  end type GreyRadiationBoxForm
+  end type RadiationBox_G_OS_Form
 
 contains
 
 
   subroutine Initialize &
-               ( GRB, RadiationName, RadiationType, Name, &
+               ( RB, RadiationName, RadiationType, Name, &
                  ApplyStreamingOption, ApplyInteractionsOption, &
                  EvolveFluidOption, MinCoordinateOption, MaxCoordinateOption, &
                  TimeUnitOption, FinishTimeOption, CourantFactorOption, &
                  nCellsOption, nWriteOption )
 
-    class ( GreyRadiationBoxForm ), intent ( inout ), target :: &
-      GRB
+    class ( RadiationBox_G_OS_Form ), intent ( inout ), target :: &
+      RB
     character ( * ), dimension ( : ), intent ( in )  :: &
       RadiationName, &
       RadiationType
@@ -64,14 +67,14 @@ contains
       EvolveFluid
 
 
-    if ( GRB % Type == '' ) &
-      GRB % Type = 'a GreyRadiationBox'
+    if ( RB % Type == '' ) &
+      RB % Type = 'a RadiationBox_G_OS'
 
 
     !-- PositionSpace
 
-    allocate ( Atlas_SC_Form :: GRB % PositionSpace )
-    select type ( PS => GRB % PositionSpace )
+    allocate ( Atlas_SC_Form :: RB % PositionSpace )
+    select type ( PS => RB % PositionSpace )
     class is ( Atlas_SC_Form )
     call PS % Initialize ( 'PositionSpace', PROGRAM_HEADER % Communicator )
 
@@ -90,16 +93,16 @@ contains
 
     !-- Prepare for Currents
 
-    GRB % N_CURRENTS_PS  =  size ( RadiationName ) + 1  !-- Radiation + Fluid
-    allocate ( GRB % Current_ASC_1D ( GRB % N_CURRENTS_PS ) )
-    allocate ( GRB % TimeStepLabel ( GRB % N_CURRENTS_PS ) )
+    RB % N_CURRENTS_PS  =  size ( RadiationName ) + 1  !-- Radiation + Fluid
+    allocate ( RB % Current_ASC_1D ( RB % N_CURRENTS_PS ) )
+    allocate ( RB % TimeStepLabel ( RB % N_CURRENTS_PS ) )
 
     do iC = 1, size ( RadiationName )
-      GRB % TimeStepLabel ( iC )  =  RadiationName ( iC )
+      RB % TimeStepLabel ( iC )  =  RadiationName ( iC )
     end do !-- iC
 
-    GRB % FLUID  =  GRB % N_CURRENTS_PS
-    GRB % TimeStepLabel ( GRB % FLUID )  =  'Fluid'
+    RB % FLUID  =  RB % N_CURRENTS_PS
+    RB % TimeStepLabel ( RB % FLUID )  =  'Fluid'
 
 
     !-- Radiation
@@ -109,8 +112,8 @@ contains
       case ( 'GENERIC' )
         allocate &
           ( RadiationMoments_ASC_Form :: &
-              GRB % Current_ASC_1D ( iC ) % Element )
-        select type ( RA => GRB % Current_ASC_1D ( iC ) % Element )
+              RB % Current_ASC_1D ( iC ) % Element )
+        select type ( RA => RB % Current_ASC_1D ( iC ) % Element )
         class is ( RadiationMoments_ASC_Form )
         call RA % Initialize &
                ( PS, RadiationType ( iC ), &
@@ -124,7 +127,7 @@ contains
       case default
         call Show ( 'RadiationType not implemented', CONSOLE % ERROR )
         call Show ( RadiationType ( iC ), 'RadiationType', CONSOLE % ERROR )
-        call Show ( 'GreyRadiationBox_Form', 'module', CONSOLE % ERROR )
+        call Show ( 'RadiationBox_G_OS__Form', 'module', CONSOLE % ERROR )
         call Show ( 'Initialize', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end select
@@ -134,8 +137,8 @@ contains
     !-- Fluid
 
     allocate ( Fluid_ASC_Form :: &
-                 GRB % Current_ASC_1D ( GRB % FLUID ) % Element )
-    select type ( FA => GRB % Current_ASC_1D ( GRB % FLUID ) % Element )
+                 RB % Current_ASC_1D ( RB % FLUID ) % Element )
+    select type ( FA => RB % Current_ASC_1D ( RB % FLUID ) % Element )
     class is ( Fluid_ASC_Form )
     call FA % Initialize &
            ( PS, 'IDEAL' )
@@ -159,11 +162,11 @@ contains
     !-- Relaxation
 
     if ( ApplyInteractions ) then
-      allocate ( GRB % Relaxation_RM_ASC )
-      associate ( R => GRB % Relaxation_RM_ASC )
-      select type ( RMA => GRB % Current_ASC_1D ( 1 ) % Element )
+      allocate ( RB % Relaxation_RM_ASC )
+      associate ( R => RB % Relaxation_RM_ASC )
+      select type ( RMA => RB % Current_ASC_1D ( 1 ) % Element )
       class is ( RadiationMoments_ASC_Form )
-        call R % Initialize ( RMA, Name = GRB % Name )
+        call R % Initialize ( RMA, Name = RB % Name )
       end select !-- RMA
       end associate !-- R
     end if !-- ApplyInteractions
@@ -171,10 +174,10 @@ contains
 
     !-- Step
 
-    allocate ( Step_RK2_C_ASC_1D_Form :: GRB % Step )
-    select type ( S => GRB % Step )
+    allocate ( Step_RK2_C_ASC_1D_Form :: RB % Step )
+    select type ( S => RB % Step )
     class is ( Step_RK2_C_ASC_1D_Form )
-    call S % Initialize ( GRB, GRB % Current_ASC_1D, Name )
+    call S % Initialize ( RB, RB % Current_ASC_1D, Name )
 
     if ( .not. ApplyStreaming ) then
       do iC = 1, size ( RadiationName )
@@ -185,19 +188,19 @@ contains
     if ( ApplyInteractions ) then
       do iC = 1, size ( RadiationName )
         S % ApplyRelaxation_1D ( iC ) % Pointer  &
-          =>  GRB % Relaxation_RM_ASC % Apply 
+          =>  RB % Relaxation_RM_ASC % Apply 
       end do !-- iC
     end if
 
     if ( .not. EvolveFluid ) &
-      S % ApplyDivergence_1D ( GRB % FLUID ) % Pointer  =>  null ( )  
+      S % ApplyDivergence_1D ( RB % FLUID ) % Pointer  =>  null ( )  
 
     end select !-- S
 
 
     !-- Template
 
-    call GRB % InitializeTemplate_C_1D_PS &
+    call RB % InitializeTemplate_C_1D_PS &
            ( Name, TimeUnitOption = TimeUnitOption, &
              FinishTimeOption = FinishTimeOption, &
              CourantFactorOption = CourantFactorOption, &
@@ -211,19 +214,19 @@ contains
   end subroutine Initialize
 
 
-  impure elemental subroutine Finalize ( GRB )
+  impure elemental subroutine Finalize ( RB )
 
-    type ( GreyRadiationBoxForm ), intent ( inout ) :: &
-      GRB
+    type ( RadiationBox_G_OS_Form ), intent ( inout ) :: &
+      RB
 
-    if ( allocated ( GRB % Relaxation_RM_ASC ) ) &
-      deallocate ( GRB % Relaxation_RM_ASC )
-    if ( allocated ( GRB % Interactions_ASC ) ) &
-      deallocate ( GRB % Interactions_ASC )
+    if ( allocated ( RB % Relaxation_RM_ASC ) ) &
+      deallocate ( RB % Relaxation_RM_ASC )
+    if ( allocated ( RB % Interactions_ASC ) ) &
+      deallocate ( RB % Interactions_ASC )
 
-    call GRB % FinalizeTemplate_C_1D_PS ( )
+    call RB % FinalizeTemplate_C_1D_PS ( )
 
   end subroutine Finalize
 
 
-end module GreyRadiationBox_Form
+end module RadiationBox_G_OS__Form

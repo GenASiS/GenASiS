@@ -62,32 +62,32 @@ contains
 
     !-- Integrator
 
-    allocate ( GreyRadiationBoxForm :: T % Integrator )
-    select type ( GRB => T % Integrator )
-    type is ( GreyRadiationBoxForm )
-    call GRB % Initialize &
+    allocate ( RadiationBox_G_OS_Form :: T % Integrator )
+    select type ( RB => T % Integrator )
+    type is ( RadiationBox_G_OS_Form )
+    call RB % Initialize &
            ( RadiationName = [ 'Radiation' ], &
              RadiationType = [ 'GENERIC' ], &
              Name = Name, &
              ApplyStreamingOption = .false., &
              EvolveFluidOption = .false., &
              FinishTimeOption = 10.0_KDR * TimeScale )
-!    GRB % SetReference => SetReference
+!    RB % SetReference => SetReference
 
-    select type ( RMA => GRB % Current_ASC_1D ( 1 ) % Element )
+    select type ( RMA => RB % Current_ASC_1D ( 1 ) % Element )
     class is ( RadiationMoments_ASC_Form )
 
-    select type ( FA => GRB % Current_ASC_1D ( GRB % FLUID ) % Element )
+    select type ( FA => RB % Current_ASC_1D ( RB % FLUID ) % Element )
     class is ( Fluid_ASC_Form )
 
-    select type ( PS => GRB % PositionSpace )
+    select type ( PS => RB % PositionSpace )
     class is ( Atlas_SC_Form )
 
 
     !-- Interactions
 
-    allocate ( Interactions_G_G_ASC_Form :: GRB % Interactions_ASC )
-    select type ( IA => GRB % Interactions_ASC )
+    allocate ( Interactions_G_G_ASC_Form :: RB % Interactions_ASC )
+    select type ( IA => RB % Interactions_ASC )
     class is ( Interactions_G_G_ASC_Form )
     call IA % Initialize ( PS, 'GENERIC_GREY' )
     call IA % Set ( FA, OpacityAbsorption = OpacityAbsorption )
@@ -115,8 +115,8 @@ contains
 
     !-- Initial conditions
 
-    call SetFluid ( GRB )
-    call SetRadiation ( GRB )
+    call SetFluid ( RB )
+    call SetRadiation ( RB )
 
 
     !-- Cleanup
@@ -124,15 +124,15 @@ contains
     end select !-- PS
     end select !-- FA
     end select !-- RMA
-    end select !-- GRB
+    end select !-- RB
 
   end subroutine Initialize
 
 
-  subroutine SetFluid ( GRB )
+  subroutine SetFluid ( RB )
 
-    class ( GreyRadiationBoxForm ), intent ( inout ) :: &
-      GRB
+    class ( RadiationBox_G_OS_Form ), intent ( inout ) :: &
+      RB
 
     real ( KDR ) :: &
       R_Min, R_Max, &
@@ -144,11 +144,11 @@ contains
     class ( Fluid_P_I_Form ), pointer :: &
       F
 
-    select type ( FA => GRB % Current_ASC_1D ( GRB % FLUID ) % Element )
+    select type ( FA => RB % Current_ASC_1D ( RB % FLUID ) % Element )
     class is ( Fluid_ASC_Form )
     F => FA % Fluid_P_I ( )
 
-    select type ( PS => GRB % PositionSpace )
+    select type ( PS => RB % PositionSpace )
     class is ( Atlas_SC_Form )
     G => PS % Geometry ( )
 
@@ -206,10 +206,10 @@ contains
   end subroutine SetFluid
 
 
-  subroutine SetRadiation ( GRB )
+  subroutine SetRadiation ( RB )
 
-    class ( GreyRadiationBoxForm ), intent ( inout ) :: &
-      GRB
+    class ( RadiationBox_G_OS_Form ), intent ( inout ) :: &
+      RB
 
     integer ( KDI ) :: &
       iV  !-- iValue
@@ -224,15 +224,15 @@ contains
     class ( RadiationMomentsForm ), pointer :: &
       RM
 
-    select type ( RMA => GRB % Current_ASC_1D ( 1 ) % Element )
+    select type ( RMA => RB % Current_ASC_1D ( 1 ) % Element )
     type is ( RadiationMoments_ASC_Form )
     RM => RMA % RadiationMoments ( )
 
-    select type ( FA => GRB % Current_ASC_1D ( GRB % FLUID ) % Element )
+    select type ( FA => RB % Current_ASC_1D ( RB % FLUID ) % Element )
     class is ( Fluid_ASC_Form )
     F => FA % Fluid_P_I ( )
 
-    select type ( PS => GRB % PositionSpace )
+    select type ( PS => RB % PositionSpace )
     class is ( Atlas_SC_Form )
     G => PS % Geometry ( )
 

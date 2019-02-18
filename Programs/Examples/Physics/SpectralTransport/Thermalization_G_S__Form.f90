@@ -62,36 +62,36 @@ contains
 
     !-- Integrator
 
-    allocate ( SpectralRadiationBoxForm :: T % Integrator )
-    select type ( SRB => T % Integrator )
-    type is ( SpectralRadiationBoxForm )
-    call SRB % Initialize &
+    allocate ( RadiationBox_S_OS_Form :: T % Integrator )
+    select type ( RB => T % Integrator )
+    type is ( RadiationBox_S_OS_Form )
+    call RB % Initialize &
            ( RadiationName = [ 'Radiation' ], &
              RadiationType = [ 'GENERIC' ], &
              Name = Name, &
              ApplyStreamingOption = .false., &
              EvolveFluidOption = .false., &
              FinishTimeOption = 10.0_KDR * TimeScale )
-!     SRB % SetReference => SetReference
+!     RB % SetReference => SetReference
 
-    select type ( RMB => SRB % Current_BSLL_ASC_CSLD_1D ( 1 ) % Element )
+    select type ( RMB => RB % Current_BSLL_ASC_CSLD_1D ( 1 ) % Element )
     class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
 
-    select type ( FA => SRB % Current_ASC )
+    select type ( FA => RB % Current_ASC )
     class is ( Fluid_ASC_Form )
 
-    select type ( MS => SRB % MomentumSpace )
+    select type ( MS => RB % MomentumSpace )
     class is ( Bundle_SLL_ASC_CSLD_Form )
 
-    select type ( PS => SRB % PositionSpace )
+    select type ( PS => RB % PositionSpace )
     class is ( Atlas_SC_Form )
 
 
     !-- Interactions
 
     allocate ( Interactions_G_S_BSLL_ASC_CSLD_Form :: &
-                 SRB % Interactions_BSLL_ASC_CSLD )
-    select type ( IB => SRB % Interactions_BSLL_ASC_CSLD )
+                 RB % Interactions_BSLL_ASC_CSLD )
+    select type ( IB => RB % Interactions_BSLL_ASC_CSLD )
     class is ( Interactions_G_S_BSLL_ASC_CSLD_Form )
     call IB % Initialize ( MS, 'GENERIC_SPECTRAL' )
     call IB % Set ( FA, OpacityAbsorption = OpacityAbsorption )
@@ -119,8 +119,8 @@ contains
 
     !-- Initial conditions
 
-    call SetFluid ( SRB )
-    call SetRadiation ( SRB )
+    call SetFluid ( RB )
+    call SetRadiation ( RB )
 
 
     !-- Cleanup
@@ -129,15 +129,15 @@ contains
     end select !-- MS
     end select !-- FA
     end select !-- RMB
-    end select !-- SRB
+    end select !-- RB
 
   end subroutine Initialize
 
 
-  subroutine SetFluid ( SRB )
+  subroutine SetFluid ( RB )
 
-    class ( SpectralRadiationBoxForm ), intent ( inout ) :: &
-      SRB
+    class ( RadiationBox_S_OS_Form ), intent ( inout ) :: &
+      RB
 
     real ( KDR ) :: &
       R_Min, R_Max, &
@@ -149,11 +149,11 @@ contains
     class ( Fluid_P_I_Form ), pointer :: &
       F
 
-    select type ( FA => SRB % Current_ASC )
+    select type ( FA => RB % Current_ASC )
     class is ( Fluid_ASC_Form )
     F => FA % Fluid_P_I ( )
 
-    select type ( PS => SRB % PositionSpace )
+    select type ( PS => RB % PositionSpace )
     class is ( Atlas_SC_Form )
     G => PS % Geometry ( )
 
@@ -211,10 +211,10 @@ contains
   end subroutine SetFluid
 
 
-  subroutine SetRadiation ( SRB )
+  subroutine SetRadiation ( RB )
 
-    class ( SpectralRadiationBoxForm ), intent ( inout ) :: &
-      SRB
+    class ( RadiationBox_S_OS_Form ), intent ( inout ) :: &
+      RB
 
     integer ( KDI ) :: &
       iF, &  !-- iFiber
@@ -229,14 +229,14 @@ contains
     class ( RadiationMomentsForm ), pointer :: &
       RM
 
-    select type ( RMB => SRB % Current_BSLL_ASC_CSLD_1D ( 1 ) % Element )
+    select type ( RMB => RB % Current_BSLL_ASC_CSLD_1D ( 1 ) % Element )
     type is ( RadiationMoments_BSLL_ASC_CSLD_Form )
 
-    select type ( FA => SRB % Current_ASC )
+    select type ( FA => RB % Current_ASC )
     class is ( Fluid_ASC_Form )
     F => FA % Fluid_P_I ( )
 
-    select type ( MS => SRB % MomentumSpace )
+    select type ( MS => RB % MomentumSpace )
     class is ( Bundle_SLL_ASC_CSLD_Form )
     G => MS % Base_CSLD % Geometry ( )
 

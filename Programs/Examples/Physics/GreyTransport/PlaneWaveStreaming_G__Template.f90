@@ -78,19 +78,19 @@ contains
 
     !-- Integrator
 
-    allocate ( GreyRadiationBoxForm :: PWS % Integrator )
-    select type ( GRB => PWS % Integrator )
-    type is ( GreyRadiationBoxForm )
-    call GRB % Initialize &
+    allocate ( RadiationBox_G_OS_Form :: PWS % Integrator )
+    select type ( RB => PWS % Integrator )
+    type is ( RadiationBox_G_OS_Form )
+    call RB % Initialize &
            ( RadiationName = [ 'Radiation' ], RadiationType = [ 'GENERIC' ], &
              Name = Name, ApplyInteractionsOption = .false., &
              EvolveFluidOption = .false. )
-    GRB % SetReference => SetReference
+    RB % SetReference => SetReference
 
-    select type ( PS => GRB % PositionSpace )
+    select type ( PS => RB % PositionSpace )
     class is ( Atlas_SC_Form )
 
-    select type ( RMA => GRB % Current_ASC_1D ( 1 ) % Element )
+    select type ( RMA => RB % Current_ASC_1D ( 1 ) % Element )
     class is ( RadiationMoments_ASC_Form )
 
 
@@ -135,8 +135,8 @@ contains
     call PROGRAM_HEADER % GetParameter ( nPeriods, 'nPeriods' )
     call Show ( nPeriods, 'nPeriods' )
 
-    GRB % FinishTime = nPeriods * Period
-    call Show ( GRB % FinishTime, 'Reset FinishTime' )
+    RB % FinishTime = nPeriods * Period
+    call Show ( RB % FinishTime, 'Reset FinishTime' )
 
 
     !-- Initial conditions
@@ -152,7 +152,7 @@ contains
     end associate !-- C
     end select !-- RMA
     end select !-- PS
-    end select !-- GRB
+    end select !-- RB
     nullify ( RM )
 
   end subroutine InitializeTemplate_PWS
@@ -216,31 +216,31 @@ contains
   end subroutine FinalizeTemplate_PWS
 
 
-  subroutine SetReference ( GRB )
+  subroutine SetReference ( RB )
 
     class ( IntegratorTemplate ), intent ( inout ) :: &
-      GRB
+      RB
 
     class ( RadiationMomentsForm ), pointer :: &
       RM, &
       RM_R, &  !-- RM_Reference
       RM_D     !-- RM_Difference
 
-    select type ( GRB )
-    class is ( GreyRadiationBoxForm )
+    select type ( RB )
+    class is ( RadiationBox_G_OS_Form )
 
-    select type ( RMA => GRB % Current_ASC_1D ( 1 ) % Element )
+    select type ( RMA => RB % Current_ASC_1D ( 1 ) % Element )
     class is ( RadiationMoments_ASC_Form )
     RM => RMA % RadiationMoments ( )
     end select !-- RMA
 
     RM_R => PlaneWaveStreaming % Reference % RadiationMoments ( )
-    call SetRadiation ( PlaneWaveStreaming, RM_R, GRB % Time )
+    call SetRadiation ( PlaneWaveStreaming, RM_R, RB % Time )
 
     RM_D => PlaneWaveStreaming % Difference % RadiationMoments ( )
     call MultiplyAdd ( RM % Value, RM_R % Value, -1.0_KDR, RM_D % Value )
 
-    end select !-- GRB
+    end select !-- RB
     nullify ( RM, RM_R, RM_D )
 
   end subroutine SetReference

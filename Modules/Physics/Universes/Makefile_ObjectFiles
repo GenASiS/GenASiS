@@ -1,8 +1,8 @@
 UNIVERSES = \
   Universes.o \
   Universe_Template.o \
-  SpectralRadiationBox_Form.o \
-  GreyRadiationBox_Form.o \
+  RadiationBox_S_OS__Form.o \
+  RadiationBox_G_OS__Form.o \
   FluidCentralCore_Form.o \
   FluidCentralExcision_Form.o \
   FluidCentral_Template.o \

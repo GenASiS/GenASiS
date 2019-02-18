@@ -59,19 +59,19 @@ FluidCentralCore_Form.o: \
   FluidCentral_Template.o \
   FluidCentralCore_Form.f90
 
-GreyRadiationBox_Form.o: \
+RadiationBox_G_OS__Form.o: \
   Basics.o \
   Mathematics.o \
   Spaces.o \
   StressEnergies.o \
-  GreyRadiationBox_Form.f90
+  RadiationBox_G_OS__Form.f90
 
-SpectralRadiationBox_Form.o: \
+RadiationBox_S_OS__Form.o: \
   Basics.o \
   Mathematics.o \
   Spaces.o \
   StressEnergies.o \
-  SpectralRadiationBox_Form.f90
+  RadiationBox_S_OS__Form.f90
 
 Universe_Template.o: \
   Basics.o \
@@ -87,8 +87,8 @@ Universes.o: \
   FluidCentral_Template.o \
   FluidCentralExcision_Form.o \
   FluidCentralCore_Form.o \
-  GreyRadiationBox_Form.o \
-  SpectralRadiationBox_Form.o \
+  RadiationBox_G_OS__Form.o \
+  RadiationBox_S_OS__Form.o \
   Universe_Template.o \
   Universes.f90
 

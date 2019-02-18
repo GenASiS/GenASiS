@@ -77,19 +77,19 @@ contains
 
     !-- Integrator
 
-    allocate ( SpectralRadiationBoxForm :: PWS % Integrator )
-    select type ( SRB => PWS % Integrator )
-    type is ( SpectralRadiationBoxForm )
-    call SRB % Initialize &
+    allocate ( RadiationBox_S_OS_Form :: PWS % Integrator )
+    select type ( RB => PWS % Integrator )
+    type is ( RadiationBox_S_OS_Form )
+    call RB % Initialize &
            ( RadiationName = [ 'Radiation' ], RadiationType = [ 'GENERIC' ], &
              Name = Name, ApplyInteractionsOption = .false., &
              EvolveFluidOption = .false., nCellsEnergyOption = 4 )
-    SRB % SetReference => SetReference
+    RB % SetReference => SetReference
 
-    select type ( PS => SRB % PositionSpace )
+    select type ( PS => RB % PositionSpace )
     class is ( Atlas_SC_Form )
 
-    select type ( RMB => SRB % Current_BSLL_ASC_CSLD_1D ( 1 ) % Element )
+    select type ( RMB => RB % Current_BSLL_ASC_CSLD_1D ( 1 ) % Element )
     class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
 
 
@@ -120,15 +120,15 @@ contains
     call PROGRAM_HEADER % GetParameter ( nPeriods, 'nPeriods' )
     call Show ( nPeriods, 'nPeriods' )
 
-    SRB % FinishTime = nPeriods * Period
-    call Show ( SRB % FinishTime, 'Reset FinishTime' )
+    RB % FinishTime = nPeriods * Period
+    call Show ( RB % FinishTime, 'Reset FinishTime' )
 
 
     !-- Cleanup
 
     end select !-- RMB
     end select !-- PS
-    end select !-- SRB
+    end select !-- RB
 
   end subroutine InitializeTemplate_PWS
 
@@ -209,10 +209,10 @@ contains
   end subroutine FinalizeTemplate_PWS
 
 
-  subroutine SetReference ( SRB )
+  subroutine SetReference ( RB )
 
     class ( IntegratorTemplate ), intent ( inout ) :: &
-      SRB
+      RB
 
     integer ( KDI ) :: &
       iE  !-- iEnergy
@@ -221,13 +221,13 @@ contains
       RS_R, &  !-- RM_Reference
       RS_D     !-- RM_Difference
 
-    select type ( SRB )
-    class is ( SpectralRadiationBoxForm )
+    select type ( RB )
+    class is ( RadiationBox_S_OS_Form )
 
-    select type ( MS => SRB % MomentumSpace )
+    select type ( MS => RB % MomentumSpace )
     class is ( Bundle_SLL_ASC_CSLD_Form )
 
-    select type ( RMB => SRB % Current_BSLL_ASC_CSLD_1D ( 1 ) % Element )
+    select type ( RMB => RB % Current_BSLL_ASC_CSLD_1D ( 1 ) % Element )
     type is ( RadiationMoments_BSLL_ASC_CSLD_Form )
 
     do iE = 1, RMB % nEnergyValues
@@ -241,7 +241,7 @@ contains
       RS_D => RSA_D % RadiationMoments ( )
 
       !-- Reference
-      call SetWave ( PlaneWaveStreaming, RS_R, MS % Base_CSLD, SRB % Time, &
+      call SetWave ( PlaneWaveStreaming, RS_R, MS % Base_CSLD, RB % Time, &
                      nWavelengths = iE )
 
       !-- Difference

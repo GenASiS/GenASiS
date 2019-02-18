@@ -1,4 +1,6 @@
-module SpectralRadiationBox_Form
+module RadiationBox_S_OS__Form
+
+  !-- RadiationBox_Spectral_OperatorSplit_Form
 
   use Basics
   use Mathematics
@@ -9,7 +11,7 @@ module SpectralRadiationBox_Form
   private
 
   type, public, extends ( Integrator_C_1D_MS_C_PS_Template ) :: &
-    SpectralRadiationBoxForm
+    RadiationBox_S_OS_Form
       class ( Interactions_BSLL_ASC_CSLD_Template ), allocatable :: &
         Interactions_BSLL_ASC_CSLD
       class ( Relaxation_RM_BSLL_ASC_CSLD_Form ), allocatable :: &
@@ -19,21 +21,21 @@ module SpectralRadiationBox_Form
       Initialize
     final :: &
       Finalize
-  end type SpectralRadiationBoxForm
+  end type RadiationBox_S_OS_Form
 
 contains
 
 
   subroutine Initialize &
-               ( SRB, RadiationName, RadiationType, Name, &
+               ( RB, RadiationName, RadiationType, Name, &
                  ApplyStreamingOption, ApplyInteractionsOption, &
                  EvolveFluidOption, MinCoordinateOption, MaxCoordinateOption, &
                  TimeUnitOption, FinishTimeOption, CourantFactorOption, &
                  EnergyScaleOption, nCellsPositionOption, nCellsEnergyOption, &
                  nWriteOption )
 
-    class ( SpectralRadiationBoxForm ), intent ( inout ) :: &
-      SRB
+    class ( RadiationBox_S_OS_Form ), intent ( inout ) :: &
+      RB
     character ( * ), dimension ( : ), intent ( in )  :: &
       RadiationName, &
       RadiationType
@@ -71,14 +73,14 @@ contains
       EvolveFluid
 
 
-    if ( SRB % Type == '' ) &
-      SRB % Type = 'a SpectralRadiationBox'
+    if ( RB % Type == '' ) &
+      RB % Type = 'a RadiationBox_S_OS'
 
 
     !-- PositionSpace
 
-    allocate ( Atlas_SC_Form :: SRB % PositionSpace )
-    select type ( PS => SRB % PositionSpace )
+    allocate ( Atlas_SC_Form :: RB % PositionSpace )
+    select type ( PS => RB % PositionSpace )
     class is ( Atlas_SC_Form )
     call PS % Initialize ( 'PositionSpace', PROGRAM_HEADER % Communicator )
 
@@ -102,8 +104,8 @@ contains
 
     !-- MomentumSpace
 
-    allocate ( Bundle_SLL_ASC_CSLD_Form :: SRB % MomentumSpace )
-    select type ( MS => SRB % MomentumSpace )
+    allocate ( Bundle_SLL_ASC_CSLD_Form :: RB % MomentumSpace )
+    select type ( MS => RB % MomentumSpace )
     class is ( Bundle_SLL_ASC_CSLD_Form )
     call MS % Initialize ( PS, 'MomentumSpace' )
     call MS % SetBoundaryConditionsFace &
@@ -133,24 +135,24 @@ contains
 
     !-- Prepare for Currents
 
-    SRB % N_CURRENTS_MS = size ( RadiationName )
-    allocate ( SRB % Current_BSLL_ASC_CSLD_1D ( SRB % N_CURRENTS_MS ) )
-    allocate ( SRB % TimeStepLabel ( SRB % N_CURRENTS_MS  +  1 ) )
-    do iC = 1, SRB % N_CURRENTS_MS
-      SRB % TimeStepLabel ( iC )  =  RadiationName ( iC )
+    RB % N_CURRENTS_MS = size ( RadiationName )
+    allocate ( RB % Current_BSLL_ASC_CSLD_1D ( RB % N_CURRENTS_MS ) )
+    allocate ( RB % TimeStepLabel ( RB % N_CURRENTS_MS  +  1 ) )
+    do iC = 1, RB % N_CURRENTS_MS
+      RB % TimeStepLabel ( iC )  =  RadiationName ( iC )
     end do !-- iC
-    SRB % TimeStepLabel ( SRB % N_CURRENTS_MS  +  1 )  =  'Fluid'
+    RB % TimeStepLabel ( RB % N_CURRENTS_MS  +  1 )  =  'Fluid'
     
 
     !-- Radiation
 
-    do iC = 1, SRB % N_CURRENTS_MS
+    do iC = 1, RB % N_CURRENTS_MS
       select case ( trim ( RadiationType ( iC ) ) )
       case ( 'GENERIC' )
         allocate &
           ( RadiationMoments_BSLL_ASC_CSLD_Form :: &
-              SRB % Current_BSLL_ASC_CSLD_1D ( iC ) % Element )
-        select type ( RMB => SRB % Current_BSLL_ASC_CSLD_1D ( iC ) % Element )
+              RB % Current_BSLL_ASC_CSLD_1D ( iC ) % Element )
+        select type ( RMB => RB % Current_BSLL_ASC_CSLD_1D ( iC ) % Element )
         class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
         call RMB % Initialize &
                ( MS, RadiationType ( iC ), &
@@ -164,7 +166,7 @@ contains
       case default
         call Show ( 'RadiationType not implemented', CONSOLE % ERROR )
         call Show ( RadiationType ( iC ), 'RadiationType', CONSOLE % ERROR )
-        call Show ( 'SpectralRadiationBox_Form', 'module', CONSOLE % ERROR )
+        call Show ( 'RadiationBox_S_OS__Form', 'module', CONSOLE % ERROR )
         call Show ( 'Initialize', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end select
@@ -173,8 +175,8 @@ contains
 
     !-- Fluid
 
-    allocate ( Fluid_ASC_Form :: SRB % Current_ASC )
-    select type ( FA => SRB % Current_ASC )
+    allocate ( Fluid_ASC_Form :: RB % Current_ASC )
+    select type ( FA => RB % Current_ASC )
     class is ( Fluid_ASC_Form )
     call FA % Initialize ( PS, 'IDEAL' )
     end select !-- FA
@@ -195,11 +197,11 @@ contains
     !-- Relaxation
 
     if ( ApplyInteractions ) then
-      allocate ( SRB % Relaxation_RM_BSLL_ASC_CSLD )
-      associate ( R => SRB % Relaxation_RM_BSLL_ASC_CSLD )
-      select type ( RMB => SRB % Current_BSLL_ASC_CSLD_1D ( 1 ) % Element )
+      allocate ( RB % Relaxation_RM_BSLL_ASC_CSLD )
+      associate ( R => RB % Relaxation_RM_BSLL_ASC_CSLD )
+      select type ( RMB => RB % Current_BSLL_ASC_CSLD_1D ( 1 ) % Element )
       class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
-        call R % Initialize ( RMB, Name = SRB % Name )
+        call R % Initialize ( RMB, Name = RB % Name )
       end select !-- RMA
       end associate !-- R
     end if !-- ApplyInteractions
@@ -207,10 +209,10 @@ contains
 
     !-- Step
 
-    allocate ( Step_RK2_C_BSLL_ASC_CSLD_1D_Form :: SRB % Step_MS ) !-- Radiation
-    select type ( S_MS => SRB % Step_MS )
+    allocate ( Step_RK2_C_BSLL_ASC_CSLD_1D_Form :: RB % Step_MS ) !-- Radiation
+    select type ( S_MS => RB % Step_MS )
     class is ( Step_RK2_C_BSLL_ASC_CSLD_1D_Form )
-    call S_MS % Initialize ( SRB, SRB % Current_BSLL_ASC_CSLD_1D, Name )
+    call S_MS % Initialize ( RB, RB % Current_BSLL_ASC_CSLD_1D, Name )
 
     if ( .not. ApplyStreaming ) then
       do iC = 1, size ( RadiationName )
@@ -221,16 +223,16 @@ contains
     if ( ApplyInteractions ) then
       do iC = 1, size ( RadiationName )
         S_MS % ApplyRelaxation_F ( iC ) % Pointer  &
-          =>  SRB % Relaxation_RM_BSLL_ASC_CSLD % Apply 
+          =>  RB % Relaxation_RM_BSLL_ASC_CSLD % Apply 
       end do !-- iC
     end if
 
     end select !-- S_MS
 
-    allocate ( Step_RK2_C_ASC_Form :: SRB % Step_PS ) !-- Fluid
-    select type ( S_PS => SRB % Step_PS )
+    allocate ( Step_RK2_C_ASC_Form :: RB % Step_PS ) !-- Fluid
+    select type ( S_PS => RB % Step_PS )
     class is ( Step_RK2_C_ASC_Form )
-    call S_PS % Initialize ( SRB, SRB % Current_ASC, Name )
+    call S_PS % Initialize ( RB, RB % Current_ASC, Name )
     if ( .not. EvolveFluid ) &
       S_PS % ApplyDivergence % Pointer => null ( )  !-- Disable fluid evolution
     end select !-- S_PS
@@ -238,7 +240,7 @@ contains
 
     !-- Template
 
-    call SRB % InitializeTemplate_C_1D_MS_C_PS &
+    call RB % InitializeTemplate_C_1D_MS_C_PS &
            ( Name, TimeUnitOption = TimeUnitOption, &
              FinishTimeOption = FinishTimeOption, &
              CourantFactorOption = CourantFactorOption, &
@@ -253,19 +255,19 @@ contains
   end subroutine Initialize
 
 
-  impure elemental subroutine Finalize ( SRB )
+  impure elemental subroutine Finalize ( RB )
 
-    type ( SpectralRadiationBoxForm ), intent ( inout ) :: &
-      SRB
+    type ( RadiationBox_S_OS_Form ), intent ( inout ) :: &
+      RB
 
-    if ( allocated ( SRB % Relaxation_RM_BSLL_ASC_CSLD ) ) &
-      deallocate ( SRB % Relaxation_RM_BSLL_ASC_CSLD )
-    if ( allocated ( SRB % Interactions_BSLL_ASC_CSLD ) ) &
-      deallocate ( SRB % Interactions_BSLL_ASC_CSLD )
+    if ( allocated ( RB % Relaxation_RM_BSLL_ASC_CSLD ) ) &
+      deallocate ( RB % Relaxation_RM_BSLL_ASC_CSLD )
+    if ( allocated ( RB % Interactions_BSLL_ASC_CSLD ) ) &
+      deallocate ( RB % Interactions_BSLL_ASC_CSLD )
 
-    call SRB % FinalizeTemplate_C_1D_MS_C_PS ( )
+    call RB % FinalizeTemplate_C_1D_MS_C_PS ( )
 
   end subroutine Finalize
 
   
-end module SpectralRadiationBox_Form
+end module RadiationBox_S_OS__Form
