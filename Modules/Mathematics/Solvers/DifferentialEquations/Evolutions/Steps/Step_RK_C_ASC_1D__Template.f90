@@ -34,7 +34,7 @@ module Step_RK_C_ASC_1D__Template
         Current_1D
       class ( Current_ASC_ElementForm ), dimension ( : ), pointer :: &
         Current_ASC_1D => null ( )
-      type ( StorageDivergenceForm ), dimension ( : ), allocatable :: &
+      type ( StorageDivergenceForm ), allocatable :: &
         StorageDivergence_1D
       type ( IncrementDivergence_FV_Form ), dimension ( : ), allocatable :: &
         IncrementDivergence_1D
@@ -138,12 +138,12 @@ contains
 
     S % Allocated = .false.
 
-    allocate ( S % StorageDivergence_1D ( S % nCurrents ) )
+    allocate ( S % StorageDivergence_1D )
     allocate ( S % IncrementDivergence_1D ( S % nCurrents ) )
     do iC = 1, S % nCurrents
       associate ( ID => S % IncrementDivergence_1D ( iC ) )
       call ID % Initialize ( Current_ASC_1D ( iC ) % Element % Chart )
-      call ID % SetStorage ( S % StorageDivergence_1D ( iC ) )
+      call ID % SetStorage ( S % StorageDivergence_1D )
       end associate !-- ID
     end do !-- iC
 
@@ -182,13 +182,14 @@ contains
     if ( .not. allocated ( S % BoundaryFluence_CSL_1D ) ) &
       return
 
+    associate ( SD => S % StorageDivergence_1D )
+    call S % DeallocateStorageDivergence ( SD )
+    end associate !-- SD
+
     do iC = 1, S % nCurrents
-      associate &
-        ( ID => S % IncrementDivergence_1D ( iC ), &
-          SD => S % StorageDivergence_1D ( iC ) )
+      associate ( ID => S % IncrementDivergence_1D ( iC ) )
       call S % DeallocateBoundaryFluence_CSL &
              ( ID, S % BoundaryFluence_CSL_1D ( iC ) % Array )
-      call S % DeallocateStorageDivergence ( SD )
       end associate !-- ID
     end do !-- iC
 
@@ -276,14 +277,9 @@ contains
     integer ( KDI ), intent ( in ) :: &
       BaseLevel
 
-    integer ( KDI ) :: &
-      iC  !-- iCurrent
-
-    do iC = 1, S % nCurrents
-      associate ( SD => S % StorageDivergence_1D ( iC ) )
-      call SD % InitializeTimers ( BaseLevel )
-      end associate !-- SD, etc.
-    end do
+    associate ( SD => S % StorageDivergence_1D )
+    call SD % InitializeTimers ( BaseLevel )
+    end associate !-- SD, etc.
 
   end subroutine InitializeTimersDivergence
 
@@ -526,15 +522,17 @@ contains
 
       G => Chart % Geometry ( )
 
+      associate &
+        ( SD => S % StorageDivergence_1D, &
+          C  => S % Current_1D ( 1 ) % Pointer )
+      call S % AllocateStorageDivergence ( SD, C, G )
+      end associate !-- SD, etc.
+      
       allocate ( S % BoundaryFluence_CSL_1D ( S % nCurrents ) )
-
       do iC = 1, S % nCurrents
         associate &
           ( ID => S % IncrementDivergence_1D ( iC ), &
-            SD => S % StorageDivergence_1D ( iC ), &
             C  => S % Current_1D ( iC ) % Pointer )
-
-        call S % AllocateStorageDivergence ( SD, C, G )
 
         call S % AllocateBoundaryFluence &
                ( ID, Chart, C % N_CONSERVED, &

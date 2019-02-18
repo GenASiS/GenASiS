@@ -4,7 +4,7 @@
 module Step_RK_C_BSLL_ASC_CSLD_1D__Template
 
   !-- Step_RungeKutta_Current_BundleSingleLevelDistributed_AtlasSingleChart
-  !   _ChartSingleLevelDistributed_Template
+  !   _ChartSingleLevelDistributed_1D_Template
 
   !-- See Wikipedia "Runge-Kutta methods" for explanation of Butcher 
   !   tableau entries A, B, C
@@ -851,14 +851,13 @@ contains
 
       !-- Current_BSLL_ASC_CSLD
 
-      allocate ( S % BoundaryFluence_CSL_S ( S % nSections, S % nCurrents ) )
-
       associate ( SD => S % StorageDivergence_S )
-
       Current_S => S % Current_BSLL_ASC_CSLD_1D ( 1 ) % Element &
                      % CurrentSection ( 1 )
       call S % AllocateStorageDivergence ( SD, Current_S, G )
+      end associate !-- SD
 
+      allocate ( S % BoundaryFluence_CSL_S ( S % nSections, S % nCurrents ) )
       do iC = 1, S % nCurrents
         do iS = 1, S % nSections
           associate ( ID => S % IncrementDivergence_S ( iS, iC ) )
@@ -870,8 +869,6 @@ contains
           end associate !-- ID, etc.
         end do !-- iS
       end do !-- iC
-
-      end associate !-- SD
 
       nullify ( G )
 
