@@ -18,16 +18,22 @@ function RunExecutables
 
 
 echo "======================================================"
-echo "           VARIABLE MANAGEMENT UNIT TESTS             "
+echo "               SPECIFIERS UNIT TESTS                  "
+echo "======================================================"
+cd $GENASIS_WORKSPACE/Programs/UnitTests/Basics/Specifiers/Executables
+RunExecutables
+
+echo "======================================================"
+echo "                  DEVICES UNIT TESTS                  "
+echo "======================================================"
+cd $GENASIS_WORKSPACE/Programs/UnitTests/Basics/Devices/Executables
+RunExecutables
+
+echo "======================================================"
+echo "         DATA MANAGEMENT UNIT TESTS : $PURPOSE        "
 echo "======================================================"
 
-cd $GENASIS_WORKSPACE/Programs/UnitTests/Basics/VariableManagement/Specifiers/Executables
-RunExecutables
-
-cd ../../Devices/Executables
-RunExecutables
-
-cd ../../ArrayOperations/Executables
+cd $GENASIS_WORKSPACE/Programs/UnitTests/Basics/DataManagement/ArrayOperations/Executables
 RunExecutables
 
 cd ../../ArrayArrays/Executables
