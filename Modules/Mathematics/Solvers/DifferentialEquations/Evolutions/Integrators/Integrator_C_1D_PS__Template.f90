@@ -17,7 +17,7 @@ module Integrator_C_1D_PS__Template
   type, public, extends ( Integrator_C_PS_Template ), abstract :: &
     Integrator_C_1D_PS_Template
       integer ( KDI ) :: &
-        N_CURRENTS_PS = 0
+        N_CURRENTS_1D = 0
       type ( Current_ASC_ElementForm ), dimension ( : ), allocatable :: &
         Current_ASC_1D
   contains
@@ -57,10 +57,10 @@ contains
     if ( I % Type == '' ) &
       I % Type = 'an Integrator_C_1D_PS'
 
-    if ( I % N_CURRENTS_PS <= 0 ) then
-      call Show ( 'I % N_CURRENTS_PS not set to a positive integer', &
+    if ( I % N_CURRENTS_1D <= 0 ) then
+      call Show ( 'I % N_CURRENTS_1D not set to a positive integer', &
                   CONSOLE % WARNING )
-      call Show ( I % N_CURRENTS_PS, 'I % N_CURRENTS_PS', CONSOLE % WARNING )
+      call Show ( I % N_CURRENTS_1D, 'I % N_CURRENTS_1D', CONSOLE % WARNING )
       call Show ( 'Integrator_C_1D_PS__Template', 'module', CONSOLE % WARNING )
       call Show ( 'InitializeTemplate_C_1D_PS', 'subroutine', &
                   CONSOLE % WARNING )
@@ -116,7 +116,7 @@ contains
     Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerTally )
     if ( associated ( Timer ) ) call Timer % Start ( )
 
-    do iC = 1, I % N_CURRENTS_PS
+    do iC = 1, I % N_CURRENTS_1D
       associate ( CA => I % Current_ASC_1D ( iC ) % Element )
       call CA % ComputeTally &
              ( ComputeChangeOption = ComputeChangeOption, &
@@ -230,7 +230,7 @@ contains
 
     G => CSL % Geometry ( )
 
-    do iC = 1, I % N_CURRENTS_PS
+    do iC = 1, I % N_CURRENTS_1D
       associate ( CA => I % Current_ASC_1D ( iC ) % Element )
       C => CA % Current ( )
 

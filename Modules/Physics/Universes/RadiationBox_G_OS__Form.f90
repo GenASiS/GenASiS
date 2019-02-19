@@ -93,15 +93,15 @@ contains
 
     !-- Prepare for Currents
 
-    RB % N_CURRENTS_PS  =  size ( RadiationName ) + 1  !-- Radiation + Fluid
-    allocate ( RB % Current_ASC_1D ( RB % N_CURRENTS_PS ) )
-    allocate ( RB % TimeStepLabel ( RB % N_CURRENTS_PS ) )
+    RB % N_CURRENTS_1D  =  size ( RadiationName ) + 1  !-- Radiation + Fluid
+    allocate ( RB % Current_ASC_1D ( RB % N_CURRENTS_1D ) )
+    allocate ( RB % TimeStepLabel ( RB % N_CURRENTS_1D ) )
 
     do iC = 1, size ( RadiationName )
       RB % TimeStepLabel ( iC )  =  RadiationName ( iC )
     end do !-- iC
 
-    RB % FLUID  =  RB % N_CURRENTS_PS
+    RB % FLUID  =  RB % N_CURRENTS_1D
     RB % TimeStepLabel ( RB % FLUID )  =  'Fluid'
 
 

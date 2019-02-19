@@ -135,18 +135,18 @@ contains
 
     !-- Prepare for Currents
 
-    RB % N_CURRENTS_MS = size ( RadiationName )
-    allocate ( RB % Current_BSLL_ASC_CSLD_1D ( RB % N_CURRENTS_MS ) )
-    allocate ( RB % TimeStepLabel ( RB % N_CURRENTS_MS  +  1 ) )
-    do iC = 1, RB % N_CURRENTS_MS
+    RB % N_CURRENTS_1D = size ( RadiationName )
+    allocate ( RB % Current_BSLL_ASC_CSLD_1D ( RB % N_CURRENTS_1D ) )
+    allocate ( RB % TimeStepLabel ( RB % N_CURRENTS_1D  +  1 ) )
+    do iC = 1, RB % N_CURRENTS_1D
       RB % TimeStepLabel ( iC )  =  RadiationName ( iC )
     end do !-- iC
-    RB % TimeStepLabel ( RB % N_CURRENTS_MS  +  1 )  =  'Fluid'
+    RB % TimeStepLabel ( RB % N_CURRENTS_1D  +  1 )  =  'Fluid'
     
 
     !-- Radiation
 
-    do iC = 1, RB % N_CURRENTS_MS
+    do iC = 1, RB % N_CURRENTS_1D
       select case ( trim ( RadiationType ( iC ) ) )
       case ( 'GENERIC' )
         allocate &
@@ -209,8 +209,8 @@ contains
 
     !-- Step
 
-    allocate ( Step_RK2_C_BSLL_ASC_CSLD_1D_Form :: RB % Step_MS ) !-- Radiation
-    select type ( S_MS => RB % Step_MS )
+    allocate ( Step_RK2_C_BSLL_ASC_CSLD_1D_Form :: RB % Step_1D ) !-- Radiation
+    select type ( S_MS => RB % Step_1D )
     class is ( Step_RK2_C_BSLL_ASC_CSLD_1D_Form )
     call S_MS % Initialize ( RB, RB % Current_BSLL_ASC_CSLD_1D, Name )
 
