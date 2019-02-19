@@ -11,6 +11,8 @@ module FieldChart_Template
   type, public, abstract :: FieldChartTemplate
     integer ( KDI ) :: &
       IGNORABILITY = 0
+    logical ( KDL ) :: &
+      UsePinnedMemory
     character ( LDF ) :: &
       Name = '', &
       Type = '', &
@@ -42,7 +44,8 @@ module FieldChart_Template
 contains
 
 
-  subroutine InitializeTemplate ( FC, C, NameShort, IgnorabilityOption )
+  subroutine InitializeTemplate &
+               ( FC, C, NameShort, UsePinnedMemory, IgnorabilityOption )
 
     class ( FieldChartTemplate ), intent ( inout ) :: &
       FC
@@ -50,6 +53,8 @@ contains
       C
     character ( * ), intent ( in ), optional :: &
       NameShort
+    logical ( KDL ), intent ( in ) :: &
+      UsePinnedMemory
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
@@ -60,6 +65,8 @@ contains
     if ( FC % Type == '' ) &
       FC % Type = 'a FieldChart' 
 
+    FC % UsePinnedMemory = UsePinnedMemory
+    
     FC % Name = trim ( NameShort ) // '_' // trim ( C % Name ) 
 
     call Show ( 'Initializing ' // trim ( FC % Type ), FC % IGNORABILITY )

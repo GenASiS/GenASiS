@@ -11,6 +11,9 @@ module FieldBundle_Template
   type, public, abstract :: FieldBundleTemplate
     integer ( KDI ) :: &
       IGNORABILITY = 0
+    logical ( KDL ) :: &
+      UsePinnedMemory_S, &
+      UsePinnedMemory_F
     character ( LDF ) :: &
       Name = '', &
       Type = '', &
@@ -45,7 +48,9 @@ module FieldBundle_Template
 contains
 
 
-  subroutine InitializeTemplate ( FB, B, NameShort, IgnorabilityOption )
+  subroutine InitializeTemplate &
+               ( FB, B, NameShort, UsePinnedMemory_S_Option, &
+                 UsePinnedMemory_F_Option, IgnorabilityOption )
 
     class ( FieldBundleTemplate ), intent ( inout ) :: &
       FB
@@ -53,6 +58,9 @@ contains
       B
     character ( * ), intent ( in ) :: &
       NameShort
+    logical ( KDL ), intent ( in ), optional :: &
+      UsePinnedMemory_S_Option, &
+      UsePinnedMemory_F_Option
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
@@ -62,6 +70,13 @@ contains
 
     if ( FB % Type == '' ) &
       FB % Type = 'a FieldBundle' 
+      
+    FB % UsePinnedMemory_S = .false.
+    FB % UsePinnedMemory_F = .false.
+    if ( present ( UsePinnedMemory_S_Option ) ) &
+      FB % UsePinnedMemory_S = UsePinnedMemory_S_Option
+    if ( present ( UsePinnedMemory_F_Option ) ) &
+      FB % UsePinnedMemory_F = UsePinnedMemory_F_Option
 
     FB % Name = trim ( NameShort ) // '_' // B % Name 
 

@@ -54,7 +54,8 @@ contains
 
 
   subroutine InitializeTemplate_BSLL_ASC_CSLD &
-               ( FB, B, NameShort, IgnorabilityOption )
+               ( FB, B, NameShort, UsePinnedMemory_S_Option, &
+                 UsePinnedMemory_F_Option, IgnorabilityOption )
 
     class ( Field_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
       FB
@@ -62,6 +63,9 @@ contains
       B
     character ( * ), intent ( in ) :: &
       NameShort
+    logical ( KDL ), intent ( in ), optional :: &
+      UsePinnedMemory_S_Option, &
+      UsePinnedMemory_F_Option
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
@@ -69,7 +73,9 @@ contains
     FB % nFibers   = B % nFibers
     FB % nSections = B % nSections
 
-    call FB % InitializeTemplate ( B, NameShort, IgnorabilityOption )
+    call FB % InitializeTemplate &
+           ( B, NameShort, UsePinnedMemory_S_Option, &
+             UsePinnedMemory_F_Option, IgnorabilityOption )
 
   end subroutine InitializeTemplate_BSLL_ASC_CSLD
 

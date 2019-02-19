@@ -69,7 +69,8 @@ contains
 
 
   subroutine InitializeTemplate_ASC_C &
-               ( CA, A, NameShort, AllocateTallyOption, IgnorabilityOption )
+               ( CA, A, NameShort, AllocateTallyOption, &
+                 UsePinnedMemoryOption, IgnorabilityOption )
 
     class ( Current_ASC_Template ), intent ( inout ) :: &
       CA
@@ -78,7 +79,8 @@ contains
     character ( * ), intent ( in ) :: &
       NameShort
     logical ( KDL ), intent ( in ), optional :: &
-      AllocateTallyOption
+      AllocateTallyOption, &
+      UsePinnedMemoryOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
@@ -89,7 +91,8 @@ contains
     class ( CurrentTemplate ), pointer :: &
       C
 
-    call CA % InitializeTemplate_ASC ( A, NameShort, IgnorabilityOption )
+    call CA % InitializeTemplate_ASC &
+           ( A, NameShort, UsePinnedMemoryOption, IgnorabilityOption )
 
     C => CA % Current ( )
     call C % ShowPrimitiveConserved ( CA % IGNORABILITY )

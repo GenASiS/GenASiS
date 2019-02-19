@@ -30,7 +30,9 @@ module Storage_BSLL_ASC_CSLD__Form
 contains
 
 
-  subroutine Initialize ( SB, B, NameShort, nFields, IgnorabilityOption )
+  subroutine Initialize &
+               ( SB, B, NameShort, UsePinnedMemory_S_Option, &
+                 UsePinnedMemory_F_Option, nFields, IgnorabilityOption )
 
     class ( Storage_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
       SB
@@ -38,6 +40,9 @@ contains
       B
     character ( * ), intent ( in ) :: &
       NameShort
+    logical ( KDL ), intent ( in ), optional :: &
+      UsePinnedMemory_S_Option, &
+      UsePinnedMemory_F_Option
     integer ( KDI ), intent ( in ) :: &
       nFields
     integer ( KDI ), intent ( in ), optional :: &
@@ -49,7 +54,8 @@ contains
     SB % nFields = nFields
 
     call SB % InitializeTemplate_BSLL_ASC_CSLD &
-           ( B, NameShort, IgnorabilityOption )
+           ( B, NameShort, UsePinnedMemory_S_Option, &
+             UsePinnedMemory_F_Option, IgnorabilityOption )
 
   end subroutine Initialize
 
@@ -89,7 +95,9 @@ contains
       class is ( Storage_ASC_Form )
         select type ( AF => B % Fiber % Atlas ( iF ) % Element )
         class is ( Atlas_SC_Form )
-          call SA % Initialize ( AF, FB % NameShort, FB % nFields )
+          call SA % Initialize &
+                 ( AF, FB % NameShort, FB % nFields, &
+                   UsePinnedMemoryOption = FB % UsePinnedMemory_F )
         end select !-- AF
       end select !-- SA
     end do !-- iF
@@ -109,7 +117,9 @@ contains
       class is ( Storage_ASC_Form )
         call SA % Initialize &
                ( B % Base_ASC, trim ( FB % NameShort ) // SectionNumber, &
-                 FB % nFields, IgnorabilityOption = CONSOLE % INFO_5 ) 
+                 FB % nFields, &
+                 UsePinnedMemoryOption = FB % UsePinnedMemory_S, &
+                 IgnorabilityOption = CONSOLE % INFO_5 )
       end select !-- SA
     end do !-- iS
 

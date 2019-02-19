@@ -44,7 +44,7 @@ contains
 
   subroutine InitializeAllocate &
                ( SA, A, NameShort, nFields, VariableOption, WriteOption, &
-                 IgnorabilityOption )
+                 UsePinnedMemoryOption, IgnorabilityOption )
 
     class ( Storage_ASC_Form ), intent ( inout ) :: &
       SA
@@ -57,7 +57,8 @@ contains
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       VariableOption
     logical ( KDL ), intent ( in ), optional :: &
-      WriteOption
+      WriteOption, &
+      UsePinnedMemoryOption
     integer ( KDL ), intent ( in ), optional :: &
       IgnorabilityOption
 
@@ -77,13 +78,15 @@ contains
 
     SA % Atlas_SC => A
 
-    call SA % InitializeTemplate_ASC ( A, NameShort, IgnorabilityOption )
+    call SA % InitializeTemplate_ASC &
+           ( A, NameShort, UsePinnedMemoryOption, IgnorabilityOption )
 
   end subroutine InitializeAllocate
 
 
   subroutine InitializeClone &
-               ( SA_Target, FA_Source, NameShort, iaSelectedOption )
+               ( SA_Target, FA_Source, NameShort, UsePinnedMemoryOption, &
+                 iaSelectedOption )
 
     class ( Storage_ASC_Form ), intent ( inout ) :: &
       SA_Target
@@ -91,8 +94,17 @@ contains
       FA_Source
     character ( * ), intent ( in ) :: &
       NameShort
+    logical ( KDL ), intent ( in ), optional :: &
+      UsePinnedMemoryOption
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       iaSelectedOption
+    
+    logical ( KDL ) :: &
+      UsePinnedMemory
+      
+    UsePinnedMemory = .false.
+    if ( present ( UsePinnedMemoryOption ) ) &
+      UsePinnedMemory = UsePinnedMemoryOption
 
     select type ( FC => FA_Source % Chart )
     class is ( Field_CSL_Template )
@@ -104,11 +116,13 @@ contains
       select type ( SC => SA_Target % Chart )
       type is ( Storage_CSL_Form )
       call SC % Initialize &
-             ( FC, NameShort, iaSelectedOption = iaSelectedOption )
+             ( FC, NameShort, UsePinnedMemory, &
+               iaSelectedOption = iaSelectedOption )
       end select !-- SC
 
       call SA_Target % InitializeTemplate_ASC &
              ( FA_Source % Atlas, NameShort, &
+               UsePinnedMemoryOption = UsePinnedMemory, &
                IgnorabilityOption = FA_Source % IGNORABILITY )
 
     class default
@@ -173,8 +187,8 @@ contains
     class is ( Storage_CSL_Form )
       associate ( nValues => C % nProperCells + C % nGhostCells )
       call SC % Initialize &
-                  ( C, FA % NameShort, FA % nFields, nValues, &
-                    VariableOption = FA % Variable, &
+                  ( C, FA % NameShort, FA % UsePinnedMemory, FA % nFields, &
+                    nValues, VariableOption = FA % Variable, &
                     WriteOption = FA % Write, &
                     IgnorabilityOption = FA % IGNORABILITY + 1 )
       end associate !-- nValues

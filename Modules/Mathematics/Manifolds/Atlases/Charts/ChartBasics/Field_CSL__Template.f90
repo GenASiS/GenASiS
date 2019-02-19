@@ -40,7 +40,8 @@ contains
 
 
   subroutine InitializeTemplate_CSL &
-               ( FC, C, NameShort, nValues, IgnorabilityOption )
+               ( FC, C, NameShort, UsePinnedMemory, nValues, &
+                 IgnorabilityOption )
 
     class ( Field_CSL_Template ), intent ( inout ) :: &
       FC
@@ -48,6 +49,8 @@ contains
       C
     character ( * ), intent ( in ) :: &
       NameShort
+    logical ( KDL ), intent ( in ) :: &
+      UsePinnedMemory
     integer ( KDI ), intent ( in ) :: &
       nValues
     integer ( KDI ), intent ( in ), optional :: &
@@ -58,7 +61,8 @@ contains
 
     FC % nValues = nValues
 
-    call FC % InitializeTemplate ( C, NameShort, IgnorabilityOption )
+    call FC % InitializeTemplate &
+           ( C, NameShort, UsePinnedMemory, IgnorabilityOption )
 
   end subroutine InitializeTemplate_CSL
   

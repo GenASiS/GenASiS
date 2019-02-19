@@ -38,7 +38,8 @@ module Field_ASC__Template
 contains
 
 
-  subroutine InitializeTemplate_ASC ( FA, A, NameShort, IgnorabilityOption )
+  subroutine InitializeTemplate_ASC &
+               ( FA, A, NameShort, UsePinnedMemoryOption, IgnorabilityOption )
 
     class ( Field_ASC_Template ), intent ( inout ) :: &
       FA
@@ -46,13 +47,16 @@ contains
       A
     character ( * ), intent ( in ) :: &
       NameShort
+    logical ( KDL ), intent ( in ), optional :: &
+      UsePinnedMemoryOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
     if ( FA % Type == '' ) &
       FA % Type = 'a Field_ASC' 
 
-    call FA % InitializeTemplate ( A, NameShort, IgnorabilityOption )
+    call FA % InitializeTemplate &
+           ( A, NameShort, UsePinnedMemoryOption, IgnorabilityOption )
 
   end subroutine InitializeTemplate_ASC
 

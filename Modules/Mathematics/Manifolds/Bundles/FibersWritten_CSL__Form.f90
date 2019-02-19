@@ -35,7 +35,9 @@ contains
     if ( FWC % Type == '' ) &
       FWC % Type = 'a FibersWritten_CSL'
 
-    call FWC % InitializeTemplate_CSL ( C, 'FibersWritten', nValues )
+    call FWC % InitializeTemplate_CSL &
+           ( C, 'FibersWritten', UsePinnedMemory = .false., &
+             nValues = nValues )
 
   end subroutine Initialize
 
