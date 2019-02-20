@@ -7,9 +7,7 @@ module Integrator_C_1D_PS_C_PS__Template
   !-- Integrator_Current_1D_MomentumSpace_Current_PositionSpace__Template
 
   use Basics
-  use Manifolds
   use Fields
-  use Steps
   use Integrator_C_1D_C_PS__Template
 
   implicit none
