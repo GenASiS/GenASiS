@@ -194,6 +194,7 @@ contains
     if ( present ( EvolveFluidOption ) ) &
       EvolveFluid = EvolveFluidOption
 
+
     !-- Relaxation
 
     if ( ApplyInteractions ) then
@@ -210,32 +211,32 @@ contains
     !-- Step
 
     allocate ( Step_RK2_C_BSLL_ASC_CSLD_1D_Form :: RB % Step_1D ) !-- Radiation
-    select type ( S_MS => RB % Step_1D )
+    select type ( S_1D => RB % Step_1D )
     class is ( Step_RK2_C_BSLL_ASC_CSLD_1D_Form )
-    call S_MS % Initialize ( RB, RB % Current_BSLL_ASC_CSLD_1D, Name )
+    call S_1D % Initialize ( RB, RB % Current_BSLL_ASC_CSLD_1D, Name )
 
     if ( .not. ApplyStreaming ) then
-      do iC = 1, size ( RadiationName )
-        S_MS % ApplyDivergence_S ( iC ) % Pointer  =>  null ( )  
+      do iC = 1, RB % N_CURRENTS_1D
+        S_1D % ApplyDivergence_S ( iC ) % Pointer  =>  null ( )  
       end do !-- iC
     end if
 
     if ( ApplyInteractions ) then
-      do iC = 1, size ( RadiationName )
-        S_MS % ApplyRelaxation_F ( iC ) % Pointer  &
+      do iC = 1, RB % N_CURRENTS_1D
+        S_1D % ApplyRelaxation_F ( iC ) % Pointer  &
           =>  RB % Relaxation_RM_BSLL_ASC_CSLD % Apply 
       end do !-- iC
     end if
 
-    end select !-- S_MS
+    end select !-- S_1D
 
-    allocate ( Step_RK2_C_ASC_Form :: RB % Step_PS ) !-- Fluid
-    select type ( S_PS => RB % Step_PS )
+    allocate ( Step_RK2_C_ASC_Form :: RB % Step ) !-- Fluid
+    select type ( S => RB % Step )
     class is ( Step_RK2_C_ASC_Form )
-    call S_PS % Initialize ( RB, RB % Current_ASC, Name )
+    call S % Initialize ( RB, RB % Current_ASC, Name )
     if ( .not. EvolveFluid ) &
-      S_PS % ApplyDivergence % Pointer => null ( )  !-- Disable fluid evolution
-    end select !-- S_PS
+      S % ApplyDivergence % Pointer => null ( )  !-- Disable fluid evolution
+    end select !-- S
 
 
     !-- Template

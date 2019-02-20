@@ -10,10 +10,8 @@ module RadiationBox_G_OS__Form
   implicit none
   private
 
-  type, public, extends ( Integrator_C_1D_PS_Template ) :: &
+  type, public, extends ( Integrator_C_1D_PS_C_PS_Template ) :: &
     RadiationBox_G_OS_Form
-      integer ( KDI ) :: &
-        FLUID = 0
       class ( Interactions_ASC_Template ), allocatable :: &
         Interactions_ASC
       class ( Relaxation_RM_ASC_Form ), allocatable :: &
@@ -93,21 +91,18 @@ contains
 
     !-- Prepare for Currents
 
-    RB % N_CURRENTS_1D  =  size ( RadiationName ) + 1  !-- Radiation + Fluid
+    RB % N_CURRENTS_1D  =  size ( RadiationName )
     allocate ( RB % Current_ASC_1D ( RB % N_CURRENTS_1D ) )
-    allocate ( RB % TimeStepLabel ( RB % N_CURRENTS_1D ) )
-
-    do iC = 1, size ( RadiationName )
+    allocate ( RB % TimeStepLabel ( RB % N_CURRENTS_1D  +  1 ) )
+    do iC = 1, RB % N_CURRENTS_1D
       RB % TimeStepLabel ( iC )  =  RadiationName ( iC )
     end do !-- iC
-
-    RB % FLUID  =  RB % N_CURRENTS_1D
-    RB % TimeStepLabel ( RB % FLUID )  =  'Fluid'
+    RB % TimeStepLabel ( RB % N_CURRENTS_1D  +  1 )  =  'Fluid'
 
 
     !-- Radiation
 
-    do iC = 1, size ( RadiationName )
+    do iC = 1, RB % N_CURRENTS_1D
       select case ( trim ( RadiationType ( iC ) ) )
       case ( 'GENERIC' )
         allocate &
@@ -136,13 +131,10 @@ contains
 
     !-- Fluid
 
-    allocate ( Fluid_ASC_Form :: &
-                 RB % Current_ASC_1D ( RB % FLUID ) % Element )
-    select type ( FA => RB % Current_ASC_1D ( RB % FLUID ) % Element )
+    allocate ( Fluid_ASC_Form :: RB % Current_ASC )
+    select type ( FA => RB % Current_ASC )
     class is ( Fluid_ASC_Form )
-    call FA % Initialize &
-           ( PS, 'IDEAL' )
-!             TemperatureUnitOption = UNIT % MEGA_ELECTRON_VOLT )
+    call FA % Initialize ( PS, 'IDEAL' )
     end select !-- FA
 
 
@@ -174,33 +166,39 @@ contains
 
     !-- Step
 
-    allocate ( Step_RK2_C_ASC_1D_Form :: RB % Step )
-    select type ( S => RB % Step )
+    allocate ( Step_RK2_C_ASC_1D_Form :: RB % Step_1D ) !-- Radiation
+    select type ( S_1D => RB % Step_1D )
     class is ( Step_RK2_C_ASC_1D_Form )
-    call S % Initialize ( RB, RB % Current_ASC_1D, Name )
+    call S_1D % Initialize ( RB, RB % Current_ASC_1D, Name )
 
     if ( .not. ApplyStreaming ) then
-      do iC = 1, size ( RadiationName )
-        S % ApplyDivergence_1D ( iC ) % Pointer  =>  null ( )  
+      do iC = 1, RB % N_CURRENTS_1D
+        S_1D % ApplyDivergence_1D ( iC ) % Pointer  =>  null ( )  
       end do !-- iC
     end if
 
     if ( ApplyInteractions ) then
-      do iC = 1, size ( RadiationName )
-        S % ApplyRelaxation_1D ( iC ) % Pointer  &
+      do iC = 1, RB % N_CURRENTS_1D
+        S_1D % ApplyRelaxation_1D ( iC ) % Pointer  &
           =>  RB % Relaxation_RM_ASC % Apply 
       end do !-- iC
     end if
 
+    end select !-- S_1D
+
+    allocate ( Step_RK2_C_ASC_Form :: RB % Step ) !-- Fluid
+    select type ( S => RB % Step )
+    class is ( Step_RK2_C_ASC_Form )
+    call S % Initialize ( RB, RB % Current_ASC, Name )
     if ( .not. EvolveFluid ) &
-      S % ApplyDivergence_1D ( RB % FLUID ) % Pointer  =>  null ( )  
+      S % ApplyDivergence % Pointer  =>  null ( )  
 
     end select !-- S
 
 
     !-- Template
 
-    call RB % InitializeTemplate_C_1D_PS &
+    call RB % InitializeTemplate_C_1D_PS_C_PS &
            ( Name, TimeUnitOption = TimeUnitOption, &
              FinishTimeOption = FinishTimeOption, &
              CourantFactorOption = CourantFactorOption, &
@@ -224,7 +222,7 @@ contains
     if ( allocated ( RB % Interactions_ASC ) ) &
       deallocate ( RB % Interactions_ASC )
 
-    call RB % FinalizeTemplate_C_1D_PS ( )
+    call RB % FinalizeTemplate_C_1D_PS_C_PS ( )
 
   end subroutine Finalize
 

@@ -31,6 +31,8 @@ module Integrator_C_1D_PS_C_PS__Template
     procedure, private, pass :: &  !-- 2
       ComputeCycle
     procedure, private, pass :: &  !-- 3
+      InitializeStepTimers
+    procedure, private, pass :: &  !-- 3
       ComputeTally
     procedure, private, pass :: &
       ComputeCycle_ASC_1D
@@ -118,6 +120,21 @@ contains
     if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine ComputeCycle
+
+
+  subroutine InitializeStepTimers ( I, BaseLevel )
+
+    class ( Integrator_C_1D_PS_C_PS_Template ), intent ( inout ) :: &
+      I
+    integer ( KDI ), intent ( in ) :: &
+      BaseLevel
+
+    if ( allocated ( I % Step_1D ) ) &
+      call I % Step_1D % InitializeTimers ( BaseLevel )
+    if ( allocated ( I % Step ) ) &
+      call I % Step % InitializeTimers ( BaseLevel )
+
+  end subroutine InitializeStepTimers
 
 
   subroutine ComputeTally ( I, ComputeChangeOption, IgnorabilityOption )

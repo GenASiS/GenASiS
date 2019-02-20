@@ -77,7 +77,7 @@ contains
     select type ( RMA => RB % Current_ASC_1D ( 1 ) % Element )
     class is ( RadiationMoments_ASC_Form )
 
-    select type ( FA => RB % Current_ASC_1D ( RB % FLUID ) % Element )
+    select type ( FA => RB % Current_ASC )
     class is ( Fluid_ASC_Form )
 
     select type ( PS => RB % PositionSpace )
@@ -144,7 +144,7 @@ contains
     class ( Fluid_P_I_Form ), pointer :: &
       F
 
-    select type ( FA => RB % Current_ASC_1D ( RB % FLUID ) % Element )
+    select type ( FA => RB % Current_ASC )
     class is ( Fluid_ASC_Form )
     F => FA % Fluid_P_I ( )
 
@@ -228,7 +228,7 @@ contains
     type is ( RadiationMoments_ASC_Form )
     RM => RMA % RadiationMoments ( )
 
-    select type ( FA => RB % Current_ASC_1D ( RB % FLUID ) % Element )
+    select type ( FA => RB % Current_ASC )
     class is ( Fluid_ASC_Form )
     F => FA % Fluid_P_I ( )
 
