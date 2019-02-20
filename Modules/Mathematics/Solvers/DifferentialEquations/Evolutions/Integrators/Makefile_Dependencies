@@ -57,17 +57,17 @@ Integrator_C_1D_C_PS__Template.o: \
   Integrator_C_PS__Template.o \
   Integrator_C_1D_C_PS__Template.f90
 
-Integrator_C_1D_PS_C_PS__Template.o: \
+Integrator_C_1D_PS_C_PS__Form.o: \
   Basics.o \
   Fields.o \
   Integrator_C_1D_C_PS__Template.o \
-  Integrator_C_1D_PS_C_PS__Template.f90
+  Integrator_C_1D_PS_C_PS__Form.f90
 
-Integrator_C_1D_MS_C_PS__Template.o: \
+Integrator_C_1D_MS_C_PS__Form.o: \
   Basics.o \
   Fields.o \
   Integrator_C_1D_C_PS__Template.o \
-  Integrator_C_1D_MS_C_PS__Template.f90
+  Integrator_C_1D_MS_C_PS__Form.f90
 
 Integrators.o: \
   Integrator_Template.o \
@@ -78,8 +78,8 @@ Integrators.o: \
   Integrator_C_MS_C_PS__Template.o \
   Integrator_C_1D_PS__Template.o \
   Integrator_C_1D_C_PS__Template.o \
-  Integrator_C_1D_PS_C_PS__Template.o \
-  Integrator_C_1D_MS_C_PS__Template.o \
+  Integrator_C_1D_PS_C_PS__Form.o \
+  Integrator_C_1D_MS_C_PS__Form.o \
   Integrators.f90
 
 Integrators.a: $(INTEGRATORS)

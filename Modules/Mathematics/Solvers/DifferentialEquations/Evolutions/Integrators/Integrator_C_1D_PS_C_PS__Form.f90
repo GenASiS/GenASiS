@@ -2,9 +2,9 @@
 !   similar conserved currents on position space, and an additional conserved
 !   current on position space.
 
-module Integrator_C_1D_PS_C_PS__Template
+module Integrator_C_1D_PS_C_PS__Form
 
-  !-- Integrator_Current_1D_MomentumSpace_Current_PositionSpace__Template
+  !-- Integrator_Current_1D_MomentumSpace_Current_PositionSpace__Form
 
   use Basics
   use Fields
@@ -13,29 +13,29 @@ module Integrator_C_1D_PS_C_PS__Template
   implicit none
   private
 
-  type, public, extends ( Integrator_C_1D_C_PS_Template ), abstract :: &
-    Integrator_C_1D_PS_C_PS_Template
+  type, public, extends ( Integrator_C_1D_C_PS_Template ) :: &
+    Integrator_C_1D_PS_C_PS_Form
       type ( Current_ASC_ElementForm ), dimension ( : ), allocatable :: &
         Current_ASC_1D
   contains
     procedure, public, pass :: &  !-- 1
-      InitializeTemplate_C_1D_PS_C_PS
-    procedure, public, pass :: &  !-- 1
-      FinalizeTemplate_C_1D_PS_C_PS
+      Initialize
+    final :: &  !-- 1
+      Finalize
     procedure, private, pass :: &  !-- 3
       ComputeTally_1D
     procedure, private, pass :: &
       Current_ASC_Pointer   
-  end type Integrator_C_1D_PS_C_PS_Template
+  end type Integrator_C_1D_PS_C_PS_Form
 
 contains
 
 
-  subroutine InitializeTemplate_C_1D_PS_C_PS &
+  subroutine Initialize &
                ( I, Name, TimeUnitOption, FinishTimeOption, &
                  CourantFactorOption, nWriteOption )
 
-    class ( Integrator_C_1D_PS_C_PS_Template ), intent ( inout ) :: &
+    class ( Integrator_C_1D_PS_C_PS_Form ), intent ( inout ) :: &
       I
     character ( * ), intent ( in )  :: &
       Name
@@ -53,9 +53,9 @@ contains
     if ( .not. allocated ( I % Current_ASC_1D ) ) then
       call Show ( 'Current_ASC_1D not allocated by an extension', &
                   CONSOLE % WARNING )
-      call Show ( 'Integrator_C_1D_PS_C_PS__Template', 'module', &
+      call Show ( 'Integrator_C_1D_PS_C_PS__Form', 'module', &
                   CONSOLE % WARNING )
-      call Show ( 'InitializeTemplate_C_1D_PS_C_PS', 'subroutine', &
+      call Show ( 'Initialize', 'subroutine', &
                   CONSOLE % WARNING )
     end if
 
@@ -65,12 +65,12 @@ contains
              CourantFactorOption = CourantFactorOption, &
              nWriteOption = nWriteOption )
 
-  end subroutine InitializeTemplate_C_1D_PS_C_PS
+  end subroutine Initialize
 
 
-  subroutine FinalizeTemplate_C_1D_PS_C_PS ( I )
+  subroutine Finalize ( I )
 
-    class ( Integrator_C_1D_PS_C_PS_Template ), intent ( inout ) :: &
+    type ( Integrator_C_1D_PS_C_PS_Form ), intent ( inout ) :: &
       I
 
     if ( allocated ( I % Current_ASC_1D ) ) &
@@ -78,12 +78,12 @@ contains
 
     call I % FinalizeTemplate_C_1D_C_PS ( )
 
-  end subroutine FinalizeTemplate_C_1D_PS_C_PS
+  end subroutine Finalize
 
 
   subroutine ComputeTally_1D ( I, ComputeChangeOption, IgnorabilityOption )
 
-    class ( Integrator_C_1D_PS_C_PS_Template ), intent ( inout ) :: &
+    class ( Integrator_C_1D_PS_C_PS_Form ), intent ( inout ) :: &
       I
     logical ( KDL ), intent ( in ), optional :: &
       ComputeChangeOption
@@ -109,7 +109,7 @@ contains
 
   function Current_ASC_Pointer ( I, iC ) result ( CA )
 
-    class ( Integrator_C_1D_PS_C_PS_Template ), intent ( inout ), target :: &
+    class ( Integrator_C_1D_PS_C_PS_Form ), intent ( inout ), target :: &
       I
     integer ( KDI ), intent ( in ) :: &
       iC
@@ -121,4 +121,4 @@ contains
   end function Current_ASC_Pointer
 
   
-end module Integrator_C_1D_PS_C_PS__Template
+end module Integrator_C_1D_PS_C_PS__Form

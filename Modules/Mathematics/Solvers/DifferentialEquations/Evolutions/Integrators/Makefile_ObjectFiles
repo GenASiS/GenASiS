@@ -1,7 +1,7 @@
 INTEGRATORS = \
   Integrators.o \
-  Integrator_C_1D_MS_C_PS__Template.o \
-  Integrator_C_1D_PS_C_PS__Template.o \
+  Integrator_C_1D_MS_C_PS__Form.o \
+  Integrator_C_1D_PS_C_PS__Form.o \
   Integrator_C_1D_C_PS__Template.o \
   Integrator_C_1D_PS__Template.o \
   Integrator_C_MS_C_PS__Template.o \
