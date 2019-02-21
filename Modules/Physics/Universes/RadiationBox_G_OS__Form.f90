@@ -10,7 +10,7 @@ module RadiationBox_G_OS__Form
   implicit none
   private
 
-  type, public, extends ( Integrator_C_1D_PS_C_PS_Template ) :: &
+  type, public, extends ( Integrator_C_1D_PS_C_PS_Form ) :: &
     RadiationBox_G_OS_Form
       class ( Interactions_ASC_Template ), allocatable :: &
         Interactions_ASC
@@ -35,10 +35,10 @@ contains
 
     class ( RadiationBox_G_OS_Form ), intent ( inout ), target :: &
       RB
-    character ( * ), dimension ( : ), intent ( in )  :: &
+    character ( * ), dimension ( : ), intent ( in ) :: &
       RadiationName, &
       RadiationType
-    character ( * ), intent ( in )  :: &
+    character ( * ), intent ( in ) :: &
       Name
     logical ( KDL ), intent ( in ), optional :: &
       ApplyStreamingOption, &
@@ -198,7 +198,7 @@ contains
 
     !-- Template
 
-    call RB % InitializeTemplate_C_1D_PS_C_PS &
+    call RB % Initialize &
            ( Name, TimeUnitOption = TimeUnitOption, &
              FinishTimeOption = FinishTimeOption, &
              CourantFactorOption = CourantFactorOption, &
@@ -221,8 +221,6 @@ contains
       deallocate ( RB % Relaxation_RM_ASC )
     if ( allocated ( RB % Interactions_ASC ) ) &
       deallocate ( RB % Interactions_ASC )
-
-    call RB % FinalizeTemplate_C_1D_PS_C_PS ( )
 
   end subroutine Finalize
 

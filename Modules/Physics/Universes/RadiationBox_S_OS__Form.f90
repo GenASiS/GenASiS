@@ -10,7 +10,7 @@ module RadiationBox_S_OS__Form
   implicit none
   private
 
-  type, public, extends ( Integrator_C_1D_MS_C_PS_Template ) :: &
+  type, public, extends ( Integrator_C_1D_MS_C_PS_Form ) :: &
     RadiationBox_S_OS_Form
       class ( Interactions_BSLL_ASC_CSLD_Template ), allocatable :: &
         Interactions_BSLL_ASC_CSLD
@@ -203,7 +203,7 @@ contains
       select type ( RMB => RB % Current_BSLL_ASC_CSLD_1D ( 1 ) % Element )
       class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
         call R % Initialize ( RMB, Name = RB % Name )
-      end select !-- RMA
+      end select !-- RMB
       end associate !-- R
     end if !-- ApplyInteractions
 

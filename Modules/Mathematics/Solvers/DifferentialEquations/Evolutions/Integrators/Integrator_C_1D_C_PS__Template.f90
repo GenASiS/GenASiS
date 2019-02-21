@@ -22,6 +22,10 @@ module Integrator_C_1D_C_PS__Template
       class ( Step_RK_C_ASC_Template ), allocatable :: &
         Step_1D
   contains
+    procedure ( I_1D ), private, pass, deferred :: &
+      Initialize_1D
+    generic, public :: &
+      Initialize => Initialize_1D
     procedure, public, pass :: &  !-- 1
       InitializeTemplate_C_1D_C_PS
     procedure, public, pass :: &  !-- 1
@@ -49,6 +53,23 @@ module Integrator_C_1D_C_PS__Template
   end type Integrator_C_1D_C_PS_Template
 
   abstract interface
+
+    subroutine I_1D ( I, Name, TimeUnitOption, FinishTimeOption, &
+                      CourantFactorOption, nWriteOption )
+      use Basics
+      import Integrator_C_1D_C_PS_Template
+      class ( Integrator_C_1D_C_PS_Template ), intent ( inout ) :: &
+        I
+      character ( * ), intent ( in )  :: &
+        Name
+      type ( MeasuredValueForm ), intent ( in ), optional :: &
+        TimeUnitOption
+      real ( KDR ), intent ( in ), optional :: &
+        FinishTimeOption, &
+        CourantFactorOption
+      integer ( KDI ), intent ( in ), optional :: &
+        nWriteOption
+    end subroutine I_1D
 
     subroutine CT_1D ( I, ComputeChangeOption, IgnorabilityOption )
       use Basics
