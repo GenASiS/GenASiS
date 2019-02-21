@@ -117,7 +117,7 @@ contains
 
     select case ( trim ( I % MomentsType ) )
     case ( 'GREY' )
-      call I % ComputeKernel &
+      call I % ComputeKernel_G &
              ( F % Value ( :, F % TEMPERATURE ), &
                I % Value ( :, I % EMISSIVITY_J ), &
                I % Value ( :, I % OPACITY_J ), &
@@ -128,7 +128,7 @@ contains
              ( I % Energy, &
                F % Value ( iBC, F % TEMPERATURE ), &
                I % Value ( :, I % EQUILIBRIUM_J ) )
-      call I % ComputeKernel &
+      call I % ComputeKernel_S &
              ( I % Value ( :, I % EQUILIBRIUM_J ), &
                I % Value ( :, I % EMISSIVITY_J ), &
                I % Value ( :, I % OPACITY_J ), &
@@ -142,7 +142,7 @@ contains
 
   subroutine ComputeKernel_G ( I, T, Xi_J, Chi_J, Chi_H, J_Eq )
 
-    class ( Interactions_G_G_Form ), intent ( in ) :: &
+    class ( Interactions_G_Form ), intent ( in ) :: &
       I
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       T
@@ -178,7 +178,7 @@ contains
 
   subroutine ComputeKernel_S ( I, J_Eq, Xi_J, Chi_J, Chi_H )
 
-    class ( Interactions_G_S_Form ), intent ( in ) :: &
+    class ( Interactions_G_Form ), intent ( in ) :: &
       I
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       J_Eq

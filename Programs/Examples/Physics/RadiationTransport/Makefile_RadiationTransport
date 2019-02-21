@@ -64,3 +64,20 @@ SineWaveStreaming_S.o: \
 Interactions_G__Form.o: \
   GenASiS.o \
   Interactions_G__Form.f90
+
+Interactions_G_CSL__Form.o: \
+  GenASiS.o \
+  Interactions_G__Form.o \
+  Interactions_G_CSL__Form.f90
+
+Interactions_G_ASC__Form.o: \
+  GenASiS.o \
+  Interactions_G__Form.o \
+  Interactions_G_CSL__Form.o \
+  Interactions_G_ASC__Form.f90
+
+Interactions_G_BSLL_ASC_CSLD__Form.o: \
+  GenASiS.o \
+  Interactions_G__Form.o \
+  Interactions_G_ASC__Form.o \
+  Interactions_G_BSLL_ASC_CSLD__Form.f90
