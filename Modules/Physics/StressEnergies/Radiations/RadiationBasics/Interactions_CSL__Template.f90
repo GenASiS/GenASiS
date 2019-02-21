@@ -16,7 +16,8 @@ module Interactions_CSL__Template
         EnergyDensityUnit, &
         TemperatureUnit
       character ( LDL ) :: &
-        InteractionsType = ''
+        InteractionsType = '', &
+        MomentsType = ''
   contains
     procedure ( I ), public, pass, deferred :: &
       Initialize
@@ -34,9 +35,9 @@ module Interactions_CSL__Template
 
   abstract interface
 
-    subroutine I ( IC, C, NameShort, InteractionsType, LengthUnit, &
-                    EnergyDensityUnit, TemperatureUnit, nValues, &
-                    IgnorabilityOption )
+    subroutine I ( IC, C, NameShort, InteractionsType, MomentsType, &
+                   LengthUnit, EnergyDensityUnit, TemperatureUnit, nValues, &
+                   IgnorabilityOption )
       use Basics
       use Mathematics
       import Interactions_CSL_Template
@@ -46,7 +47,8 @@ module Interactions_CSL__Template
         C
       character ( * ), intent ( in ) :: &
         NameShort, &
-        InteractionsType
+        InteractionsType, &
+        MomentsType
       type ( MeasuredValueForm ), intent ( in ) :: &
         LengthUnit, &
         EnergyDensityUnit, &
@@ -69,7 +71,7 @@ contains
 
 
   subroutine IntializeTemplate_I_CSL &
-               ( IC, C, NameShort, InteractionsType, LengthUnit, &
+               ( IC, C, NameShort, InteractionsType, MomentsType, LengthUnit, &
                  EnergyDensityUnit, TemperatureUnit, nValues, &
                  IgnorabilityOption )
 
@@ -79,7 +81,8 @@ contains
       C
     character ( * ), intent ( in ) :: &
       NameShort, &
-      InteractionsType
+      InteractionsType, &
+      MomentsType
     type ( MeasuredValueForm ), intent ( in ) :: &
       LengthUnit, &
       EnergyDensityUnit, &
@@ -91,7 +94,8 @@ contains
 
     if ( IC % Type == '' ) &
       IC % Type = 'an Interactions_CSL'
-    IC % InteractionsType = InteractionsType    
+    IC % InteractionsType = InteractionsType
+    IC % MomentsType      = MomentsType
 
     IC % LengthUnit        = LengthUnit
     IC % EnergyDensityUnit = EnergyDensityUnit
@@ -146,7 +150,7 @@ contains
     select type ( I => FC % Field )
     class is ( InteractionsTemplate )
       call I % Initialize &
-             ( FC % LengthUnit, FC % EnergyDensityUnit, &
+             ( FC % MomentsType, FC % LengthUnit, FC % EnergyDensityUnit, &
                FC % TemperatureUnit, FC % nValues, &
                NameOption = FC % NameShort )
       call I % SetOutput ( FC % FieldOutput )

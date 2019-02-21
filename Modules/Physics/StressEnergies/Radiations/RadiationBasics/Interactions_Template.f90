@@ -24,7 +24,8 @@ module Interactions_Template
       EQUILIBRIUM_J     = 0, &
       EQUILIBRIUM_N     = 0
     character ( LDL ) :: &
-      Type = ''
+      Type = '', &
+      MomentsType = ''
     class ( Fluid_P_Template ), pointer :: &
       Fluid => null ( )
   contains
@@ -51,13 +52,15 @@ module Interactions_Template
 
   abstract interface
 
-    subroutine IAI ( I, LengthUnit, EnergyDensityUnit, TemperatureUnit, &
-                     nValues, VariableOption, NameOption, ClearOption, &
-                     UnitOption )
+    subroutine IAI ( I, MomentsType, LengthUnit, EnergyDensityUnit, &
+                     TemperatureUnit, nValues, VariableOption, NameOption, &
+                     ClearOption, UnitOption )
       use Basics
       import InteractionsTemplate
       class ( InteractionsTemplate ), intent ( inout ) :: &
         I
+      character ( * ), intent ( in ) :: &
+        MomentsType
       type ( MeasuredValueForm ), intent ( in ) :: &
         LengthUnit, &
         EnergyDensityUnit, &
@@ -95,11 +98,14 @@ contains
 
 
   subroutine InitializeTemplate &
-               ( I, LengthUnit, EnergyDensityUnit, TemperatureUnit, nValues, &
-                 VariableOption, NameOption, ClearOption, UnitOption )
+               ( I, MomentsType, LengthUnit, EnergyDensityUnit, &
+                 TemperatureUnit, nValues, VariableOption, NameOption, &
+                 ClearOption, UnitOption )
 
     class ( InteractionsTemplate ), intent ( inout ) :: &
       I
+    character ( * ), intent ( in ) :: &
+      MomentsType
     type ( MeasuredValueForm ), intent ( in ) :: &
       LengthUnit, &
       EnergyDensityUnit, &
@@ -127,6 +133,8 @@ contains
     call InitializeBasics &
            ( I, Variable, Name, VariableUnit, VariableOption, NameOption, &
              UnitOption )
+
+    I % MomentsType = MomentsType
 
     call SetUnits &
            ( Variableunit, I, LengthUnit, EnergyDensityUnit, TemperatureUnit )

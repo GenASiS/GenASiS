@@ -185,7 +185,7 @@ contains
       class is ( Atlas_SC_Form )
 
       call IA % Initialize &
-             ( AF, FB % InteractionsType, &
+             ( AF, FB % InteractionsType, MomentsType = 'SPECTRAL', &
                NameShortOption = FB % NameShort, & 
                LengthUnitOption = FB % LengthUnit, &
                EnergyDensityUnitOption = FB % EnergyDensityUnit, &

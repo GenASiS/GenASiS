@@ -17,7 +17,8 @@ module Interactions_ASC__Template
         EnergyDensityUnit, &
         TemperatureUnit
       character ( LDL ) :: &
-        InteractionsType = ''
+        InteractionsType = '', &
+        MomentsType = ''
   contains
     procedure ( I ), public, pass, deferred :: &
       Initialize
@@ -37,7 +38,7 @@ module Interactions_ASC__Template
 
   abstract interface
 
-    subroutine I ( IA, A, InteractionsType, NameShortOption, &
+    subroutine I ( IA, A, InteractionsType, MomentsType, NameShortOption, &
                    LengthUnitOption, EnergyDensityUnitOption, &
                    TemperatureUnitOption, IgnorabilityOption )
       use Basics
@@ -48,7 +49,8 @@ module Interactions_ASC__Template
       class ( Atlas_SC_Template ), intent ( in ), target :: &
         A
       character ( * ), intent ( in ) :: &
-        InteractionsType
+        InteractionsType, &
+        MomentsType
       character ( * ), intent ( in ), optional :: &
         NameShortOption
       type ( MeasuredValueForm ), intent ( in ), optional :: &
@@ -71,16 +73,17 @@ contains
 
 
   subroutine InitializeTemplate_I_ASC &
-               ( IA, A, InteractionsType, NameShortOption, LengthUnitOption, &
-                 EnergyDensityUnitOption, TemperatureUnitOption, &
-                 IgnorabilityOption )
+               ( IA, A, InteractionsType, MomentsType, NameShortOption, &
+                 LengthUnitOption, EnergyDensityUnitOption, &
+                 TemperatureUnitOption, IgnorabilityOption )
 
     class ( Interactions_ASC_Template ), intent ( inout ) :: &
       IA
     class ( Atlas_SC_Template ), intent ( in ), target :: &
       A
     character ( * ), intent ( in ) :: &
-      InteractionsType
+      InteractionsType, &
+      MomentsType
     character ( * ), intent ( in ), optional :: &
       NameShortOption
     type ( MeasuredValueForm ), intent ( in ), optional :: &
@@ -96,6 +99,7 @@ contains
     if ( IA % Type == '' ) &
       IA % Type = 'an Interactions_ASC'
     IA % InteractionsType = InteractionsType    
+    IA % MomentsType      = MomentsType
 
     if ( present ( LengthUnitOption ) ) &
       IA % LengthUnit = LengthUnitOption
@@ -160,9 +164,9 @@ contains
     select type ( FC => FA % Chart )
     class is ( Interactions_CSL_Template )
       call FC % Initialize &
-             ( C, FA % NameShort, FA % InteractionsType, FA % LengthUnit, &
-               FA % EnergyDensityUnit, FA % TemperatureUnit, nValues, &
-               IgnorabilityOption = FA % IGNORABILITY )
+             ( C, FA % NameShort, FA % InteractionsType, FA % MomentsType, &
+               FA % LengthUnit, FA % EnergyDensityUnit, FA % TemperatureUnit, &
+               nValues, IgnorabilityOption = FA % IGNORABILITY )
     end select !-- FC
 
     call A % AddField ( FA )

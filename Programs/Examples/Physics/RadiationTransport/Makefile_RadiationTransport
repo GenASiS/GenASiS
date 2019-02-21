@@ -1,6 +1,7 @@
 PATH_GENASIS = ../../../../..
 
-all:  SineWaveStreaming_G SineWaveStreaming_S #Thermalization_G_G
+all:  SineWaveStreaming_G SineWaveStreaming_S Thermalization_G_G \
+      Thermalization_G_S
         #SineWaveDiffusion \
         HomogeneousSphere MarshakWave StreamingProfile
 
@@ -18,6 +19,14 @@ SineWaveStreaming_S: ThirdParty.a GenASiS.a SineWaveStreaming_S.o
           -o SineWaveStreaming_S_$(MACHINE) \
           SineWaveStreaming_S.o SineWaveStreaming_Form.o \
           PlaneWaveStreaming_Template.o \
+          GenASiS.a ThirdParty.a $(LIBRARIES)
+
+Thermalization_G_G: ThirdParty.a GenASiS.a Thermalization_G_G.o
+	$(LINK) $(FFLAGS) \
+          -o Thermalization_G_G_$(MACHINE) \
+          Thermalization_G_G.o Thermalization_G_G__Form.o \
+          Interactions_G_G_ASC__Form.o Interactions_G_G_CSL__Form.o \
+          Interactions_G_G__Form.o \
           GenASiS.a ThirdParty.a $(LIBRARIES)
 
 include $(PATH_GENASIS)/Build/Makefile_Dependencies
