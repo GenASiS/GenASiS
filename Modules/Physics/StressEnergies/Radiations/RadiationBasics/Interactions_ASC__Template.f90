@@ -114,6 +114,9 @@ contains
 
     call IA % InitializeTemplate_ASC ( A, NameShort, IgnorabilityOption )
 
+    call Show ( IA % InteractionsType, 'InteractionsType', IA % IGNORABILITY )
+    call Show ( IA % MomentsType, 'MomentsType', IA % IGNORABILITY )
+
   end subroutine InitializeTemplate_I_ASC
 
 

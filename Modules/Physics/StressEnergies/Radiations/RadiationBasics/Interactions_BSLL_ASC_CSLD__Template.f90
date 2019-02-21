@@ -121,6 +121,8 @@ contains
 
     call IB % InitializeTemplate_BSLL_ASC_CSLD ( B, NameShort )
 
+    call Show ( IB % InteractionsType, 'InteractionsType', IB % IGNORABILITY )
+
     ! nullify ( GF )
 
   end subroutine InitializeTemplate_I_BSLL_ASC_CSLD

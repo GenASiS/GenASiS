@@ -173,6 +173,8 @@ contains
 
     call RMB % InitializeTemplate_BSLL_ASC_CSLD ( B, NameShort )
 
+    call Show ( RMB % RadiationType, 'RadiationType', RMB % IGNORABILITY )
+
     nullify ( GF )
 
   end subroutine Initialize
