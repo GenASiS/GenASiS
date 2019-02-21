@@ -21,8 +21,10 @@ module RadiationBox_Form
     class ( Relaxation_RM_BSLL_ASC_CSLD_Form ), allocatable :: &
       Relaxation_RM_BSLL_ASC_CSLD
   contains
-    procedure, public, pass :: &
-      Initialize
+    procedure, private, pass :: &
+      Initialize_RB
+    generic, public :: &
+      Initialize => Initialize_RB
     final :: &
       Finalize
   end type RadiationBoxForm
@@ -38,7 +40,7 @@ module RadiationBox_Form
 contains
 
   
-  subroutine Initialize &
+  subroutine Initialize_RB &
                ( RB, RadiationName, RadiationType, MomentsType, Name, &
                  ApplyStreamingOption, ApplyInteractionsOption, &
                  EvolveFluidOption, MinCoordinateOption, MaxCoordinateOption, &
@@ -104,7 +106,7 @@ contains
                nWriteOption = nWriteOption )
     end select !-- I
 
-  end subroutine Initialize
+  end subroutine Initialize_RB
 
 
   subroutine Finalize ( RB )
