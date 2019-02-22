@@ -1,17 +1,17 @@
-module Interactions_G_BSLL_ASC_CSLD__Form
+module InteractionsExamples_BSLL_ASC_CSLD__Form
 
-  !-- Interactions_Generic_Spectral_BundleSingleLevelLocal_AtlasSingleChart
+  !-- InteractionsExamples_BundleSingleLevelLocal_AtlasSingleChart
   !   _ChartSingleLevelDistributed_Form
 
   use GenASiS
-  use Interactions_G__Form
-  use Interactions_G_ASC__Form
+  use Interactions_C__Form
+  use InteractionsExamples_ASC__Form
 
   implicit none
   private
 
   type, public, extends ( Interactions_BSLL_ASC_CSLD_Template ) :: &
-    Interactions_G_BSLL_ASC_CSLD_Form
+    InteractionsExamples_BSLL_ASC_CSLD_Form
   contains
     procedure, public, pass :: &
       Initialize
@@ -19,7 +19,7 @@ module Interactions_G_BSLL_ASC_CSLD__Form
       Set => Set_G_BSLL_ASC_CSLD
     procedure, public, pass :: &
       AllocateField
-  end type Interactions_G_BSLL_ASC_CSLD_Form
+  end type InteractionsExamples_BSLL_ASC_CSLD_Form
 
 contains
 
@@ -28,7 +28,7 @@ contains
                ( IB, B, InteractionsType, NameShortOption, LengthUnitOption, &
                  EnergyDensityUnitOption, TemperatureUnitOption )
 
-    class ( Interactions_G_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
+    class ( InteractionsExamples_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
       IB
     class ( Bundle_SLL_ASC_CSLD_Form ), intent ( in ), target :: &
       B
@@ -42,7 +42,7 @@ contains
       TemperatureUnitOption
 
     if ( IB % Type == '' ) &
-      IB % Type = 'an Interactions_G_BSLL_ASC_CSLD'
+      IB % Type = 'an InteractionsExamples_BSLL_ASC_CSLD'
 
     call IB % InitializeTemplate_I_BSLL_ASC_CSLD &
            ( B, InteractionsType, NameShortOption, LengthUnitOption, &
@@ -53,7 +53,7 @@ contains
 
   subroutine Set_G_BSLL_ASC_CSLD ( IB, FA, OpacityAbsorption )
 
-    class ( Interactions_G_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
+    class ( InteractionsExamples_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
       IB
     class ( Fluid_ASC_Form ), intent ( in ), target :: &
       FA
@@ -80,7 +80,7 @@ contains
     do iF = 1, B % nFibers
       I => IB % Interactions ( iF )
       select type ( I )
-      type is ( Interactions_G_Form )
+      type is ( Interactions_C_Form )
         call I % Set &
                ( Fluid = Fluid, &
                  Energy = Energy, &
@@ -99,15 +99,15 @@ contains
 
   subroutine AllocateField ( IB, iF )
 
-    class ( Interactions_G_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
+    class ( InteractionsExamples_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
       IB
     integer ( KDI ), intent ( in ) :: &
       iF  !-- iFiber
 
-    allocate ( Interactions_G_ASC_Form :: &
+    allocate ( InteractionsExamples_ASC_Form :: &
                  IB % Fiber % Atlas ( iF ) % Element )
 
   end subroutine AllocateField
 
 
-end module Interactions_G_BSLL_ASC_CSLD__Form
+end module InteractionsExamples_BSLL_ASC_CSLD__Form

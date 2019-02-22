@@ -5,6 +5,12 @@ all:  SineWaveStreaming_G SineWaveStreaming_S Thermalization_G_G \
         #SineWaveDiffusion \
         HomogeneousSphere MarshakWave StreamingProfile
 
+INTERACTIONS_EXAMPLES = \
+  InteractionsExamples_BSLL_ASC_CSLD__Form.o \
+  InteractionsExamples_ASC__Form.o \
+  InteractionsExamples_CSL__Form.o \
+  Interactions_C__Form.o 
+
 include $(PATH_GENASIS)/Build/Makefile_Build
 
 SineWaveStreaming_G: ThirdParty.a GenASiS.a SineWaveStreaming_G.o
@@ -25,8 +31,14 @@ Thermalization_G_G: ThirdParty.a GenASiS.a Thermalization_G_G.o
 	$(LINK) $(FFLAGS) \
           -o Thermalization_G_G_$(MACHINE) \
           Thermalization_G_G.o Thermalization_G__Form.o \
-          Interactions_G_G_ASC__Form.o Interactions_G_G_CSL__Form.o \
-          Interactions_G_G__Form.o \
+          $(INTERACTIONS_EXAMPLES) \
+          GenASiS.a ThirdParty.a $(LIBRARIES)
+
+Thermalization_G_S: ThirdParty.a GenASiS.a Thermalization_G_S.o
+	$(LINK) $(FFLAGS) \
+          -o Thermalization_G_S_$(MACHINE) \
+          Thermalization_G_S.o Thermalization_G__Form.o \
+          $(INTERACTIONS_EXAMPLES) \
           GenASiS.a ThirdParty.a $(LIBRARIES)
 
 include $(PATH_GENASIS)/Build/Makefile_Dependencies
@@ -61,23 +73,39 @@ SineWaveStreaming_S.o: \
   SineWaveStreaming_Form.o \
   SineWaveStreaming_S.f90
 
-Interactions_G__Form.o: \
+Interactions_C__Form.o: \
   GenASiS.o \
-  Interactions_G__Form.f90
+  Interactions_C__Form.f90
 
-Interactions_G_CSL__Form.o: \
+InteractionsExamples_CSL__Form.o: \
   GenASiS.o \
-  Interactions_G__Form.o \
-  Interactions_G_CSL__Form.f90
+  Interactions_C__Form.o \
+  InteractionsExamples_CSL__Form.f90
 
-Interactions_G_ASC__Form.o: \
+InteractionsExamples_ASC__Form.o: \
   GenASiS.o \
-  Interactions_G__Form.o \
-  Interactions_G_CSL__Form.o \
-  Interactions_G_ASC__Form.f90
+  Interactions_C__Form.o \
+  InteractionsExamples_CSL__Form.o \
+  InteractionsExamples_ASC__Form.f90
 
-Interactions_G_BSLL_ASC_CSLD__Form.o: \
+InteractionsExamples_BSLL_ASC_CSLD__Form.o: \
   GenASiS.o \
-  Interactions_G__Form.o \
-  Interactions_G_ASC__Form.o \
-  Interactions_G_BSLL_ASC_CSLD__Form.f90
+  Interactions_C__Form.o \
+  InteractionsExamples_ASC__Form.o \
+  InteractionsExamples_BSLL_ASC_CSLD__Form.f90
+
+Thermalization_G__Form.o: \
+  GenASiS.o \
+  InteractionsExamples_ASC__Form.o \
+  InteractionsExamples_BSLL_ASC_CSLD__Form.o \
+  Thermalization_G__Form.f90
+
+Thermalization_G_G.o: \
+  GenASiS.o \
+  Thermalization_G__Form.o \
+  Thermalization_G_G.f90
+
+Thermalization_G_S.o: \
+  GenASiS.o \
+  Thermalization_G__Form.o \
+  Thermalization_G_S.f90

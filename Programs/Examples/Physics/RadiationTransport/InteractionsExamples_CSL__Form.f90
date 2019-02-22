@@ -1,21 +1,21 @@
-module Interactions_G_CSL__Form
+module InteractionsExamples_CSL__Form
 
-  !-- Interactions_Generic_ChartSingleLevel_Form
+  !-- InteractionsExamples_ChartSingleLevel_Form
 
   use GenASiS
-  use Interactions_G__Form
+  use Interactions_C__Form
 
   implicit none
   private
 
   type, public, extends ( Interactions_CSL_Template ) :: &
-    Interactions_G_CSL_Form
+    InteractionsExamples_CSL_Form
   contains
     procedure, public, pass :: &
       Initialize
     procedure, public, pass :: &
       AllocateField
-  end type Interactions_G_CSL_Form
+  end type InteractionsExamples_CSL_Form
 
 contains
 
@@ -25,7 +25,7 @@ contains
                  EnergyDensityUnit, TemperatureUnit, nValues, &
                  IgnorabilityOption  )
 
-    class ( Interactions_G_CSL_Form ), intent ( inout ) :: &
+    class ( InteractionsExamples_CSL_Form ), intent ( inout ) :: &
       IC
     class ( ChartHeader_SL_Form ), intent ( in ), target :: &
       C
@@ -43,7 +43,7 @@ contains
       IgnorabilityOption
 
     if ( IC % Type == '' ) &
-      IC % Type = 'an Interactions_G_CSL'
+      IC % Type = 'an InteractionsExamples_CSL'
 
     call IC % IntializeTemplate_I_CSL &
            ( C, NameShort, InteractionsType, MomentsType, LengthUnit, &
@@ -55,17 +55,17 @@ contains
 
   subroutine AllocateField ( IC )
 
-    class ( Interactions_G_CSL_Form ), intent ( inout ) :: &
+    class ( InteractionsExamples_CSL_Form ), intent ( inout ) :: &
       IC
 
     select case ( trim ( IC % InteractionsType ) )
-    case ( 'GENERIC' )
-      allocate ( Interactions_G_Form :: IC % Field )
+    case ( 'CONSTANT' )
+      allocate ( Interactions_C_Form :: IC % Field )
     case default
       call Show ( 'InteractionsType not recognized', CONSOLE % ERROR )
       call Show ( IC % InteractionsType, 'InteractionsType', &
                   CONSOLE % ERROR )
-      call Show ( 'Interactions_G_G_CSL__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'InteractionsExamples_CSL__Form', 'module', CONSOLE % ERROR )
       call Show ( 'AllocateField', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select
@@ -73,4 +73,4 @@ contains
   end subroutine AllocateField
 
 
-end module Interactions_G_CSL__Form
+end module InteractionsExamples_CSL__Form

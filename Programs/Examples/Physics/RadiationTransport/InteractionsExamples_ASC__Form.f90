@@ -1,24 +1,24 @@
-module Interactions_G_ASC__Form
+module InteractionsExamples_ASC__Form
 
-  !-- Interactions_Generic_AtlasSingleChart_Form
+  !-- InteractionsExamples_AtlasSingleChart_Form
 
   use GenASiS
-  use Interactions_G__Form
-  use Interactions_G_CSL__Form
+  use Interactions_C__Form
+  use InteractionsExamples_CSL__Form
 
   implicit none
   private
 
   type, public, extends ( Interactions_ASC_Template ) :: &
-    Interactions_G_ASC_Form
+    InteractionsExamples_ASC_Form
   contains
     procedure, public, pass :: &
       Initialize
     procedure, public, pass :: &
-      Set => Set_G_ASC_G
+      Set => Set_C_ASC_G
     procedure, public, pass :: &
       AllocateField
-  end type Interactions_G_ASC_Form
+  end type InteractionsExamples_ASC_Form
 
 contains
 
@@ -28,7 +28,7 @@ contains
                  LengthUnitOption, EnergyDensityUnitOption, &
                  TemperatureUnitOption, IgnorabilityOption )
 
-    class ( Interactions_G_ASC_Form ), intent ( inout ) :: &
+    class ( InteractionsExamples_ASC_Form ), intent ( inout ) :: &
       IA
     class ( Atlas_SC_Template ), intent ( in ), target :: &
       A
@@ -45,7 +45,7 @@ contains
       IgnorabilityOption
 
     if ( IA % Type == '' ) &
-      IA % Type = 'an Interactions_G_ASC'
+      IA % Type = 'an InteractionsExamples_ASC'
 
     call IA % InitializeTemplate_I_ASC &
            ( A, InteractionsType, MomentsType, NameShortOption, &
@@ -55,9 +55,9 @@ contains
   end subroutine Initialize
 
 
-  subroutine Set_G_ASC_G ( IA, FA, OpacityAbsorption )
+  subroutine Set_C_ASC_G ( IA, FA, OpacityAbsorption )
 
-    class ( Interactions_G_ASC_Form ), intent ( inout ) :: &
+    class ( InteractionsExamples_ASC_Form ), intent ( inout ) :: &
       IA
     class ( Fluid_ASC_Form ), intent ( in ), target :: &
       FA
@@ -74,7 +74,7 @@ contains
       F => FA % Fluid_P_I ( )
       I => IA % Interactions ( )
       select type ( I )
-      type is ( Interactions_G_Form )
+      type is ( Interactions_C_Form )
         call I % Set ( Fluid = F, OpacityAbsorption = OpacityAbsorption )
       end select !-- I
     case ( 'SPECTRAL' )
@@ -82,17 +82,17 @@ contains
     end select !-- MomentsType
     nullify ( F, I )
 
-  end subroutine Set_G_ASC_G
+  end subroutine Set_C_ASC_G
 
 
   subroutine AllocateField ( IA )
 
-    class ( Interactions_G_ASC_Form ), intent ( inout ) :: &
+    class ( InteractionsExamples_ASC_Form ), intent ( inout ) :: &
       IA
 
-    allocate ( Interactions_G_CSL_Form :: IA % Chart )
+    allocate ( InteractionsExamples_CSL_Form :: IA % Chart )
 
   end subroutine AllocateField
 
 
-end module Interactions_G_ASC__Form
+end module InteractionsExamples_ASC__Form

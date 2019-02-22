@@ -1,13 +1,13 @@
-module Interactions_G__Form
+module Interactions_C__Form
 
-  !-- Interactions_Generic_Form
+  !-- Interactions_Constant_Form
 
   use GenASiS
 
   implicit none
   private
 
-  type, public, extends ( InteractionsTemplate ) :: Interactions_G_Form
+  type, public, extends ( InteractionsTemplate ) :: Interactions_C_Form
     integer ( KDI ) :: &
       iBaseCell = 0
     real ( KDR ) :: &
@@ -18,18 +18,18 @@ module Interactions_G__Form
     procedure, private, pass :: &
       InitializeAllocate_I
     procedure, private, pass :: &
-      Set_G_G
+      Set_C_G
     procedure, private, pass :: &
-      Set_G_S
+      Set_C_S
     generic, public :: &
-      Set => Set_G_G, Set_G_S
+      Set => Set_C_G, Set_C_S
     procedure, public, pass :: &
       Compute
     procedure, private, pass :: &
       ComputeKernel_G
     procedure, private, pass :: &
       ComputeKernel_S
-  end type Interactions_G_Form
+  end type Interactions_C_Form
 
 contains
 
@@ -39,7 +39,7 @@ contains
                  TemperatureUnit, nValues, VariableOption, NameOption, &
                  ClearOption, UnitOption )
 
-    class ( Interactions_G_Form ), intent ( inout ) :: &
+    class ( Interactions_C_Form ), intent ( inout ) :: &
       I
     character ( * ), intent ( in ) :: &
       MomentsType
@@ -59,7 +59,7 @@ contains
       UnitOption
 
     if ( I % Type == '' ) &
-      I % Type = 'an Interactions_G'
+      I % Type = 'an Interactions_C'
 
     call I % InitializeTemplate &
            ( MomentsType, LengthUnit, EnergyDensityUnit, TemperatureUnit, &
@@ -68,9 +68,9 @@ contains
   end subroutine InitializeAllocate_I
 
 
-  subroutine Set_G_G ( I, Fluid, OpacityAbsorption )
+  subroutine Set_C_G ( I, Fluid, OpacityAbsorption )
 
-    class ( Interactions_G_Form ), intent ( inout ) :: &
+    class ( Interactions_C_Form ), intent ( inout ) :: &
       I
     class ( Fluid_P_Template ), intent ( in ), target :: &
       Fluid
@@ -80,12 +80,12 @@ contains
     I % OpacityAbsorption  =   OpacityAbsorption
     I % Fluid              =>  Fluid
 
-  end subroutine Set_G_G
+  end subroutine Set_C_G
 
 
-  subroutine Set_G_S ( I, Fluid, Energy, OpacityAbsorption, iBaseCell )
+  subroutine Set_C_S ( I, Fluid, Energy, OpacityAbsorption, iBaseCell )
 
-    class ( Interactions_G_Form ), intent ( inout ) :: &
+    class ( Interactions_C_Form ), intent ( inout ) :: &
       I
     class ( Fluid_P_Template ), intent ( in ), target :: &
       Fluid
@@ -101,12 +101,12 @@ contains
     I % Energy             =>  Energy
     I % Fluid              =>  Fluid
 
-  end subroutine Set_G_S
+  end subroutine Set_C_S
 
 
   subroutine Compute ( I, R )
 
-    class ( Interactions_G_Form ), intent ( inout ) :: &
+    class ( Interactions_C_Form ), intent ( inout ) :: &
       I
     class ( CurrentTemplate ), intent ( inout ) :: &
       R
@@ -142,7 +142,7 @@ contains
 
   subroutine ComputeKernel_G ( I, T, Xi_J, Chi_J, Chi_H, J_Eq )
 
-    class ( Interactions_G_Form ), intent ( in ) :: &
+    class ( Interactions_C_Form ), intent ( in ) :: &
       I
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       T
@@ -178,7 +178,7 @@ contains
 
   subroutine ComputeKernel_S ( I, J_Eq, Xi_J, Chi_J, Chi_H )
 
-    class ( Interactions_G_Form ), intent ( in ) :: &
+    class ( Interactions_C_Form ), intent ( in ) :: &
       I
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       J_Eq
@@ -205,4 +205,4 @@ contains
   end subroutine ComputeKernel_S
 
 
-end module Interactions_G__Form
+end module Interactions_C__Form
