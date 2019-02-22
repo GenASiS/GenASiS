@@ -10,6 +10,9 @@ module Thermalization_G__Form
   private
 
   type, public, extends ( RadiationBoxForm ) :: Thermalization_G_Form
+    type ( RadiationMoments_ASC_Form ), allocatable :: &
+      Reference_ASC, &
+      FractionalDifference_ASC
   contains
     procedure, private, pass :: &
       Initialize_T
@@ -18,9 +21,10 @@ module Thermalization_G__Form
   end type Thermalization_G_Form
 
     private :: &
+      SetReference, &
       InitializeRadiationBox, &
       InitializeInteractions, &
-!      InitializeDiagnostics, &
+      InitializeDiagnostics, &
       SetFluid, &
       SetRadiation
 
@@ -29,13 +33,15 @@ module Thermalization_G__Form
       TemperatureMax, &
       OpacityAbsorption, &
       TimeScale
+    class ( Thermalization_G_Form ), private, pointer :: &
+      Thermalization => null ( )
 
 contains
 
 
   subroutine Initialize_T ( T, MomentsType, Name )
 
-    class ( Thermalization_G_Form ), intent ( inout ) :: &
+    class ( Thermalization_G_Form ), intent ( inout ), target :: &
       T
     character ( * ), intent ( in )  :: &
       MomentsType, &
@@ -45,7 +51,7 @@ contains
     if ( T % Type == '' ) &
       T % Type = 'a Thermalization_G'
 
-!    Thermalization => T
+    Thermalization => T
 
     !-- Parameters
 
@@ -68,11 +74,99 @@ contains
 
     call InitializeRadiationBox ( T, MomentsType, Name )
     call InitializeInteractions ( T )
-!    call InitializeDiagnostics ( T )
+    call InitializeDiagnostics ( T )
     call SetFluid ( T )
     call SetRadiation ( T )
 
   end subroutine Initialize_T
+
+
+  subroutine SetReference ( I )
+
+    class ( IntegratorTemplate ), intent ( inout ) :: &
+      I
+
+    integer ( KDI ) :: &
+      iV  !-- iValue
+    class ( RadiationMomentsForm ), pointer :: &
+      RM_R, &  !-- RM_Reference
+      RM_C, &  !-- RM_Computed
+      RM_FD    !-- RM_FractionalDifference
+    class ( Fluid_P_I_Form ), pointer :: &
+      F
+
+    !-- Reference
+
+    select type ( I )
+    class is ( Integrator_C_1D_C_PS_Template )
+
+    select type ( FA => I % Current_ASC )
+    class is ( Fluid_ASC_Form )
+    F => FA % Fluid_P_I ( )
+
+    RM_R  =>  Thermalization % Reference_ASC % RadiationMoments ( )
+
+    associate &
+      ( J_R  =>  RM_R % Value ( :, RM_R % COMOVING_ENERGY ), &
+        T    =>  F % Value ( :, F % TEMPERATURE ), &
+        a    =>  4.0_KDR  *  CONSTANT % STEFAN_BOLTZMANN )
+
+    do iV = 1, RM_R % nValues
+      J_R ( iV )  =  a  *  T ( iV ) ** 4
+    end do !-- iV
+
+    end associate !-- J_R, etc. 
+    end select !-- FA
+    end select !-- I
+
+    !-- Computed
+
+    select type ( I )
+    class is ( Integrator_C_1D_PS_C_PS_Form )  !-- Grey
+      
+      select type ( RMA => I % Current_ASC_1D ( 1 ) % Element )
+      class is ( RadiationMoments_ASC_Form )
+        RM_C  =>  RMA % RadiationMoments ( )
+      end select !-- RMA
+   
+    class is ( Integrator_C_1D_MS_C_PS_Form )  !-- Spectral
+
+      select type ( RMB => I % Current_BSLL_ASC_CSLD_1D ( 1 ) % Element )
+      type is ( RadiationMoments_BSLL_ASC_CSLD_Form )
+        call RMB % ComputeEnergyIntegral ( )
+        RM_C  =>  RMB % EnergyIntegral % RadiationMoments ( )
+      end select !-- RMB
+
+    end select !-- I
+
+    !-- FractionalDifference
+
+    select type ( I )
+    class is ( Integrator_C_1D_C_PS_Template )
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
+
+    RM_FD => Thermalization % FractionalDifference_ASC % RadiationMoments ( )
+
+    associate &
+      (  J_R  =>  RM_R  % Value ( :, RM_R  % COMOVING_ENERGY ), &
+         J_C  =>  RM_C  % Value ( :, RM_C  % COMOVING_ENERGY ), &
+        J_FD  =>  RM_FD % Value ( :, RM_FD % COMOVING_ENERGY ) )
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, RM_FD % nValues
+      J_FD ( iV )  =  ( J_C ( iV )  -  J_R ( iV ) )  &
+                       /  max ( J_R ( iV ), tiny ( 0.0_KDR ) )
+    end do !-- iV
+    !$OMP end parallel do
+
+    end associate !-- J_R, etc.
+    end select !-- PS
+    end select !-- I
+
+    nullify ( F, RM_R, RM_C, RM_FD )
+
+  end subroutine SetReference
 
 
   subroutine InitializeRadiationBox ( T, MomentsType, Name )
@@ -91,7 +185,7 @@ contains
              ApplyStreamingOption = .false., &
              EvolveFluidOption = .false., &
              FinishTimeOption = 10.0_KDR * TimeScale )
-!    T % Integrator % SetReference => SetReference
+    T % Integrator % SetReference => SetReference
 
   end subroutine InitializeRadiationBox
 
@@ -153,6 +247,30 @@ contains
     end select !-- Integrator
 
   end subroutine InitializeInteractions
+
+
+  subroutine InitializeDiagnostics ( T )
+
+    class ( Thermalization_G_Form ), intent ( inout ) :: &
+      T
+
+    select type ( PS => T % Integrator % PositionSpace )
+    class is ( Atlas_SC_Form )
+
+    allocate ( T % Reference_ASC )
+    allocate ( T % FractionalDifference_ASC )
+    call T % Reference_ASC % Initialize &
+           ( PS, 'GENERIC', NameShortOption = 'Reference', &
+             AllocateSourcesOption = .false., &
+             IgnorabilityOption = CONSOLE % INFO_5 )
+    call T % FractionalDifference_ASC % Initialize &
+           ( PS, 'GENERIC', NameShortOption = 'FractionalDifference', &
+             AllocateSourcesOption = .false., &
+             IgnorabilityOption = CONSOLE % INFO_5 )
+
+    end select !-- PS
+
+  end subroutine InitializeDiagnostics
 
 
   subroutine SetFluid ( T )
