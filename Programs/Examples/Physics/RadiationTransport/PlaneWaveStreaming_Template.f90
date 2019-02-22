@@ -231,7 +231,8 @@ contains
            ( RadiationName = [ 'Radiation' ], &
              RadiationType = [ 'GENERIC' ], &
              MomentsType = MomentsType, &
-             Name = Name, ApplyInteractionsOption = .false., &
+             Name = Name, &
+             ApplyInteractionsOption = .false., &
              EvolveFluidOption = .false., &
              nCellsPositionOption = [ 128, 128, 128 ], &
              nCellsEnergyOption = 4 )
