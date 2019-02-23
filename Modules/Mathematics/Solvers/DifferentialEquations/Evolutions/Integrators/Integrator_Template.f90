@@ -19,6 +19,8 @@ module Integrator_Template
         PositionSpace
       class ( BundleHeaderForm ), allocatable :: &
         MomentumSpace
+      procedure ( CTSL ), pointer :: &
+        ComputeTimeStepLocal => null ( )
       procedure ( SR ), pointer :: &
         SetReference => null ( )
   contains
@@ -77,11 +79,6 @@ module Integrator_Template
       ComputeNewTime
     procedure, public, pass :: &
       ComputeTimeStep
-!-- See FIXME above
-!    procedure ( CTSL ), private, pass, deferred :: &
-!      ComputeTimeStepLocal
-    procedure, private, pass :: &
-      ComputeTimeStepLocal
   end type IntegratorTemplate
 
   abstract interface 
@@ -123,15 +120,14 @@ module Integrator_Template
 !        MeanTime
 !    end subroutine RTS
 
-!-- See FIXME above
-!    subroutine CTSL ( I, TimeStepCandidate )
-!      use Basics
-!      import IntegratorTemplate
-!      class ( IntegratorTemplate ), intent ( in ), target :: &
-!        I
-!      real ( KDR ), dimension ( : ), intent ( inout ) :: &
-!        TimeStepCandidate
-!    end subroutine CTSL
+    subroutine CTSL ( I, TimeStepCandidate )
+      use Basics
+      import IntegratorTemplate
+      class ( IntegratorTemplate ), intent ( inout ), target :: &
+        I
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        TimeStepCandidate
+    end subroutine CTSL
 
   end interface
 
@@ -694,15 +690,6 @@ contains
     end if
 
   end subroutine ComputeTimeStep
-
-
-!-- See FIXME above
-  subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
-    class ( IntegratorTemplate ), intent ( inout ), target :: &
-      I
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      TimeStepCandidate
-  end subroutine ComputeTimeStepLocal
 
 
 end module Integrator_Template

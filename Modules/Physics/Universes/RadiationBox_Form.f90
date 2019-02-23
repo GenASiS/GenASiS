@@ -35,7 +35,8 @@ module RadiationBox_Form
       InitializeMomentumSpace, &
       InitializeRadiation, &
       InitializeFluid, &
-      InitializeSteps
+      InitializeSteps, &
+      ComputeTimeStepLocal
 
 contains
 
@@ -104,6 +105,7 @@ contains
                FinishTimeOption = FinishTimeOption, &
                CourantFactorOption = CourantFactorOption, &
                nWriteOption = nWriteOption )
+      I % ComputeTimeStepLocal => ComputeTimeStepLocal
     end select !-- I
 
   end subroutine Initialize_RB
@@ -487,6 +489,23 @@ contains
 
 
   end subroutine InitializeSteps
+
+
+  subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
+
+    class ( IntegratorTemplate ), intent ( inout ), target :: &
+      I
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      TimeStepCandidate
+
+    select type ( I )
+    class is ( Integrator_C_1D_C_PS_Template )
+
+    call I % ComputeTimeStepLocalTemplate ( TimeStepCandidate )
+
+    end select !-- I
+
+  end subroutine ComputeTimeStepLocal
 
 
 end module RadiationBox_Form

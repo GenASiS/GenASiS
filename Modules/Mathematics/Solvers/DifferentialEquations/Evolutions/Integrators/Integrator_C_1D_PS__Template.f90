@@ -9,6 +9,7 @@ module Integrator_C_1D_PS__Template
   use Manifolds
   use Fields
   use Steps
+  use Integrator_Template
   use Integrator_C_PS__Template
 
   implicit none
@@ -29,11 +30,12 @@ module Integrator_C_1D_PS__Template
       ComputeTally
     procedure, private, pass :: &
       ComputeCycle_ASC
-    procedure, private, pass :: &
-      ComputeTimeStepLocal
     procedure, public, pass :: &
       ComputeTimeStepLocalTemplate
   end type Integrator_C_1D_PS_Template
+
+    private :: &
+      ComputeTimeStepLocal
 
 contains
 
@@ -79,6 +81,8 @@ contains
              FinishTimeOption = FinishTimeOption, &
              CourantFactorOption = CourantFactorOption, &
              nWriteOption = nWriteOption )
+
+    I % ComputeTimeStepLocal => ComputeTimeStepLocal
 
   end subroutine InitializeTemplate_C_1D_PS
 
@@ -193,18 +197,6 @@ contains
   end subroutine ComputeCycle_ASC
 
 
-  subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
-
-    class ( Integrator_C_1D_PS_Template ), intent ( inout ), target :: &
-      I
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      TimeStepCandidate
-
-    call I % ComputeTimeStepLocalTemplate ( TimeStepCandidate )
-
-  end subroutine ComputeTimeStepLocal
-
-
   subroutine ComputeTimeStepLocalTemplate ( I, TimeStepCandidate )
 
     class ( Integrator_C_1D_PS_Template ), intent ( in ), target :: &
@@ -263,6 +255,23 @@ contains
     nullify ( C, G )
 
   end subroutine ComputeTimeStepLocalTemplate
+
+
+  subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
+
+    class ( IntegratorTemplate ), intent ( inout ), target :: &
+      I
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      TimeStepCandidate
+
+    select type ( I )
+    class is ( Integrator_C_1D_PS_Template )
+
+    call I % ComputeTimeStepLocalTemplate ( TimeStepCandidate )
+
+    end select !-- I
+
+  end subroutine ComputeTimeStepLocal
 
 
 end module Integrator_C_1D_PS__Template
