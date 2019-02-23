@@ -10,6 +10,10 @@ module RadiationBox_Form
   private
 
   type, public, extends ( UniverseTemplate ) :: RadiationBoxForm
+    logical ( KDL ) :: &
+      ApplyStreaming, &
+      ApplyInteractions, &
+      EvolveFluid
     character ( LDL ) :: &
       MomentsType = ''
     class ( Interactions_ASC_Template ), allocatable :: &
@@ -38,6 +42,9 @@ module RadiationBox_Form
       InitializeSteps, &
       ComputeTimeStepLocal
 
+    class ( RadiationBoxForm ), pointer :: &
+      RadiationBox => null ( )
+
 contains
 
   
@@ -49,7 +56,7 @@ contains
                  EnergyScaleOption, nCellsPositionOption, nCellsEnergyOption, &
                  nWriteOption )
 
-    class ( RadiationBoxForm ), intent ( inout ) :: &
+    class ( RadiationBoxForm ), intent ( inout ), target :: &
       RB
     character ( * ), dimension ( : ), intent ( in )  :: &
       RadiationName, &
@@ -80,6 +87,8 @@ contains
       RB % Type = 'a RadiationBox'
     
     call RB % InitializeTemplate ( Name )
+
+    RadiationBox => RB
 
     RB % MomentsType  =  MomentsType
 
@@ -159,9 +168,11 @@ contains
       I % N_CURRENTS_1D  =  size ( RadiationName )
       allocate ( I % TimeStepLabel ( I % N_CURRENTS_1D  +  1 ) )
       do iC = 1, I % N_CURRENTS_1D
-        I % TimeStepLabel ( iC )  =  RadiationName ( iC )
+        I % TimeStepLabel ( iC )  &
+          =  trim ( RadiationName ( iC ) ) // ' Streaming'
       end do !-- iC
-      I % TimeStepLabel ( I % N_CURRENTS_1D  +  1 )  =  'Fluid'
+      I % TimeStepLabel ( I % N_CURRENTS_1D  +  1 )  &
+          =  'Fluid Advection'
     end select !-- I
 
     select type ( I => RB % Integrator )
@@ -391,28 +402,24 @@ contains
 
     integer ( KDI ) :: &
       iC  !-- iCurrent
-    logical ( KDL ) :: &
-      ApplyStreaming, &
-      ApplyInteractions, &
-      EvolveFluid
 
 
     !-- Operators
 
-    ApplyStreaming    = .true.
-    ApplyInteractions = .true.
-    EvolveFluid       = .true.
+    RB % ApplyStreaming    = .true.
+    RB % ApplyInteractions = .true.
+    RB % EvolveFluid       = .true.
     if ( present ( ApplyStreamingOption ) ) &
-      ApplyStreaming = ApplyStreamingOption
+      RB % ApplyStreaming = ApplyStreamingOption
     if ( present ( ApplyInteractionsOption ) ) &
-      ApplyInteractions = ApplyInteractionsOption
+      RB % ApplyInteractions = ApplyInteractionsOption
     if ( present ( EvolveFluidOption ) ) &
-      EvolveFluid = EvolveFluidOption
+      RB % EvolveFluid = EvolveFluidOption
 
 
     !-- Relaxation
 
-    if ( ApplyInteractions ) then
+    if ( RB % ApplyInteractions ) then
       select type ( I => RB % Integrator )
       class is ( Integrator_C_1D_PS_C_PS_Form )
 
@@ -448,13 +455,13 @@ contains
       class is ( Step_RK2_C_ASC_1D_Form )
       call S_1D % Initialize ( I, I % Current_ASC_1D, Name )
 
-      if ( .not. ApplyStreaming ) then
+      if ( .not. RB % ApplyStreaming ) then
         do iC = 1, I % N_CURRENTS_1D
           S_1D % ApplyDivergence_1D ( iC ) % Pointer  =>  null ( )  
         end do !-- iC
       end if
 
-      if ( ApplyInteractions ) then
+      if ( RB % ApplyInteractions ) then
         do iC = 1, I % N_CURRENTS_1D
           S_1D % ApplyRelaxation_1D ( iC ) % Pointer  &
             =>  RB % Relaxation_RM_ASC % Apply 
@@ -470,13 +477,13 @@ contains
       class is ( Step_RK2_C_BSLL_ASC_CSLD_1D_Form )
       call S_1D % Initialize ( I, I % Current_BSLL_ASC_CSLD_1D, Name )
 
-      if ( .not. ApplyStreaming ) then
+      if ( .not. RB % ApplyStreaming ) then
         do iC = 1, I % N_CURRENTS_1D
           S_1D % ApplyDivergence_S ( iC ) % Pointer  =>  null ( )  
         end do !-- iC
       end if
 
-      if ( ApplyInteractions ) then
+      if ( RB % ApplyInteractions ) then
         do iC = 1, I % N_CURRENTS_1D
           S_1D % ApplyRelaxation_F ( iC ) % Pointer  &
             =>  RB % Relaxation_RM_BSLL_ASC_CSLD % Apply 
@@ -502,6 +509,9 @@ contains
     class is ( Integrator_C_1D_C_PS_Template )
 
     call I % ComputeTimeStepLocalTemplate ( TimeStepCandidate )
+
+    if ( .not. RadiationBox % EvolveFluid ) &
+      TimeStepCandidate ( I % N_CURRENTS_1D  +  1 )  =  huge ( 1.0_KDR )
 
     end select !-- I
 
