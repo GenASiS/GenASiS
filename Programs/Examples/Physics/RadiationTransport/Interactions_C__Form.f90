@@ -25,10 +25,14 @@ module Interactions_C__Form
       Set => Set_C_G, Set_C_S
     procedure, public, pass :: &
       Compute
+    procedure, public, pass :: &
+      ComputeTimeScale
     procedure, private, pass :: &
       ComputeKernel_G
     procedure, private, pass :: &
       ComputeKernel_S
+    procedure, private, pass :: &
+      ComputeTimeScaleKernel_G
   end type Interactions_C_Form
 
 contains
@@ -108,7 +112,7 @@ contains
 
     class ( Interactions_C_Form ), intent ( inout ) :: &
       I
-    class ( CurrentTemplate ), intent ( inout ) :: &
+    class ( CurrentTemplate ), intent ( in ) :: &
       R
 
     associate &
@@ -138,6 +142,35 @@ contains
     end associate !-- F, etc.
 
   end subroutine Compute
+
+
+  subroutine ComputeTimeScale ( I, R )
+
+    class ( Interactions_C_Form ), intent ( inout ) :: &
+      I
+    class ( CurrentTemplate ), intent ( in ) :: &
+      R
+
+    associate &
+      (   F => I % Fluid, &
+        iBC => I % iBaseCell )
+
+    select type ( R )
+    class is ( RadiationMomentsForm )
+
+    select case ( trim ( I % MomentsType ) )
+    case ( 'GREY' )
+      call I % ComputeTimeScaleKernel_G &
+             ( F % Value ( :, F % TEMPERATURE ), &
+               R % Value ( :, R % COMOVING_ENERGY ), &
+               I % Value ( :, I % TIME_SCALE ) )
+    case ( 'SPECTRAL' )
+    end select !-- MomentsType
+
+    end select !-- R
+    end associate !-- F, etc.
+
+  end subroutine ComputeTimeScale
 
 
   subroutine ComputeKernel_G ( I, T, Xi_J, Chi_J, Chi_H, J_Eq )
@@ -203,6 +236,42 @@ contains
     end do !-- iV
 
   end subroutine ComputeKernel_S
+
+
+  subroutine ComputeTimeScaleKernel_G ( I, T, J, TS )
+
+    class ( Interactions_C_Form ), intent ( in ) :: &
+      I
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      T, &
+      J
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      TS
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+    real ( KDR ) :: &
+      a, &
+      Kappa_A, &
+      J_Eq, &
+      Q
+
+    a        =  4.0_KDR  *  CONSTANT % STEFAN_BOLTZMANN
+    Kappa_A  =  I % OpacityAbsorption
+
+    nValues  =  size ( TS )
+
+    !$OMP parallel do private ( iV ) 
+    do iV = 1, nValues
+      J_Eq  =  a  *  T ( iV ) ** 4
+      Q     =  abs ( Kappa_A * ( J_Eq - J ( iV ) ) )
+      TS    =  J_Eq / Q
+    end do !-- iV
+    !$OMP end parallel do
+
+
+  end subroutine ComputeTimeScaleKernel_G
 
 
 end module Interactions_C__Form

@@ -8,7 +8,7 @@ module Interactions_Template
   private
 
     integer ( KDI ), private, parameter :: &
-      N_FIELDS_TEMPLATE = 8
+      N_FIELDS_TEMPLATE = 9
 
   type, public, extends ( StorageForm ), abstract :: InteractionsTemplate
     integer ( KDI ) :: &
@@ -22,7 +22,8 @@ module Interactions_Template
       OPACITY_H         = 0, &
       OPACITY_N         = 0, &
       EQUILIBRIUM_J     = 0, &
-      EQUILIBRIUM_N     = 0
+      EQUILIBRIUM_N     = 0, &
+      TIME_SCALE        = 0
     character ( LDL ) :: &
       Type = '', &
       MomentsType = ''
@@ -35,6 +36,8 @@ module Interactions_Template
       Initialize => InitializeAllocate_I
     procedure, public, pass :: &
       InitializeTemplate
+    procedure, public, pass :: &
+      SetOutput
     procedure ( C ), public, pass, deferred :: &
       Compute
     procedure, private, pass ( I ) :: &
@@ -44,8 +47,8 @@ module Interactions_Template
     generic, public :: &
       ComputeEquilibriumParameters &
         => ComputeEquilibrium_T, ComputeEquilibrium_T_Eta
-    procedure, public, pass :: &
-      SetOutput
+    procedure ( CTS ), public, pass, deferred :: &
+      ComputeTimeScale
     procedure, public, pass :: &
       FinalizeTemplate
   end type InteractionsTemplate
@@ -79,13 +82,22 @@ module Interactions_Template
 
     subroutine C ( I, R )
       use Mathematics
-      use Fluids
       import InteractionsTemplate
       class ( InteractionsTemplate ), intent ( inout ) :: &
         I
-      class ( CurrentTemplate ), intent ( inout ) :: &
+      class ( CurrentTemplate ), intent ( in ) :: &
         R
     end subroutine C
+
+    subroutine CTS ( I, R )
+      use Basics
+      use Mathematics
+      import InteractionsTemplate
+      class ( InteractionsTemplate ), intent ( inout ) :: &
+        I
+      class ( CurrentTemplate ), intent ( in ) :: &
+        R
+    end subroutine CTS
 
   end interface
 
@@ -151,6 +163,26 @@ contains
   end subroutine InitializeTemplate
 
 
+  subroutine SetOutput ( I, Output )
+
+    class ( InteractionsTemplate ), intent ( inout ) :: &
+      I
+    type ( StorageForm ), intent ( inout ) :: &
+      Output
+
+    call Output % Initialize &
+           ( I, iaSelectedOption = [ I % EMISSIVITY_J, &
+                                     I % EMISSIVITY_H, &
+                                     I % EMISSIVITY_N, &
+                                     I % OPACITY_J, &
+                                     I % OPACITY_H, &
+                                     I % OPACITY_N, &
+                                     I % EQUILIBRIUM_J, &
+                                     I % EQUILIBRIUM_N ] )
+
+  end subroutine SetOutput
+
+
   subroutine ComputeEquilibrium_T ( T_EQ, I, F )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -178,26 +210,6 @@ contains
     !-- Empty interface to be overridden later as needed
 
   end subroutine ComputeEquilibrium_T_Eta
-
-
-  subroutine SetOutput ( I, Output )
-
-    class ( InteractionsTemplate ), intent ( inout ) :: &
-      I
-    type ( StorageForm ), intent ( inout ) :: &
-      Output
-
-    call Output % Initialize &
-           ( I, iaSelectedOption = [ I % EMISSIVITY_J, &
-                                     I % EMISSIVITY_H, &
-                                     I % EMISSIVITY_N, &
-                                     I % OPACITY_J, &
-                                     I % OPACITY_H, &
-                                     I % OPACITY_N, &
-                                     I % EQUILIBRIUM_J, &
-                                     I % EQUILIBRIUM_N ] )
-
-  end subroutine SetOutput
 
 
   impure elemental subroutine FinalizeTemplate ( I )
@@ -257,6 +269,7 @@ contains
     I % OPACITY_N      =  6
     I % EQUILIBRIUM_J  =  7
     I % EQUILIBRIUM_N  =  8
+    I % TIME_SCALE     =  9
 
     !-- variable names 
 
@@ -276,7 +289,8 @@ contains
           'Opacity_H    ', &
           'Opacity_N    ', &
           'Equilibrium_J', &
-          'Equilibrium_N' ]
+          'Equilibrium_N', &
+          'TimeScale    ' ]
           
     !-- units
     

@@ -29,6 +29,8 @@ module Interactions_ASC__Template
     generic, public :: &
       Interactions => Interactions_CSL
     procedure, public, pass :: &
+      ComputeTimeScale
+    procedure, public, pass :: &
       FinalizeTemplate_I_ASC
     procedure, public, pass :: &
       SetField
@@ -68,6 +70,9 @@ module Interactions_ASC__Template
     end subroutine AF
 
   end interface
+
+    private :: &
+      ComputeTimeScaleKernel_CSL_G
 
 contains
 
@@ -140,6 +145,37 @@ contains
   end function Interactions_CSL
 
 
+  subroutine ComputeTimeScale ( IA, R, TimeScale )
+
+    class ( Interactions_ASC_Template ), intent ( in ) :: &
+      IA
+    class ( CurrentTemplate ), intent ( in ) :: &
+      R
+    real ( KDR ), intent ( out ) :: &
+      TimeScale
+
+    class ( InteractionsTemplate ), pointer :: &
+      I
+
+    select type ( A => IA % Atlas )
+    class is ( Atlas_SC_Form )
+    select type ( C => A % Chart )
+    class is ( Chart_SL_Template )
+
+    I => IA % Interactions ( )
+    call I % ComputeTimeScale ( R )
+
+    call ComputeTimeScaleKernel_CSL_G &
+           ( C % IsProperCell, I % Value ( :, I % TIME_SCALE ), &
+             C % nDimensions, TimeScale )
+
+    end select !-- C
+    end select !-- A
+    nullify ( I )
+
+  end subroutine ComputeTimeScale
+
+
   impure elemental subroutine FinalizeTemplate_I_ASC ( IA )
 
     class ( Interactions_ASC_Template ), intent ( inout ) :: &
@@ -179,6 +215,41 @@ contains
     end select !-- A
 
   end subroutine SetField
+
+
+  subroutine ComputeTimeScaleKernel_CSL_G &
+               ( IsProperCell, TS, nDimensions, TimeScale )
+
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      IsProperCell
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      TS
+    integer ( KDI ), intent ( in ) :: &
+      nDimensions
+    real ( KDR ), intent ( out ) :: &
+      TimeScale
+
+    integer ( KDI ) :: &
+      iV, &
+      nV
+
+    nV = size ( TS )
+
+    select case ( nDimensions )
+    case ( 1, 2 )
+      TimeScale = minval ( TS, mask = IsProperCell )
+    case ( 3 )
+      TimeScale = huge ( 1.0_KDR )
+      !$OMP parallel do private ( iV ) &
+      !$OMP reduction ( min : TimeScale )
+      do iV = 1, nV
+        if ( IsProperCell ( iV ) ) &
+          TimeScale = min ( TimeScale, TS ( iV ) )
+      end do
+      !$OMP end parallel do
+    end select !-- nDimensions
+
+  end subroutine ComputeTimeScaleKernel_CSL_G
 
 
 end module Interactions_ASC__Template
