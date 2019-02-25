@@ -529,6 +529,8 @@ contains
     select type ( I )
     class is ( Integrator_C_1D_C_PS_Template )
 
+    !-- Fluid advection and Radiation streaming
+
     call I % ComputeTimeStepLocalTemplate ( TimeStepCandidate )
 
     if ( .not. RadiationBox % ApplyStreaming ) &
@@ -537,6 +539,8 @@ contains
     if ( .not. RadiationBox % EvolveFluid ) &
       TimeStepCandidate ( I % N_CURRENTS_1D  +  1 )  =  huge ( 1.0_KDR )
 
+    !-- Interactions
+
     oC  =  I % N_CURRENTS_1D  +  1
     if ( .not. RadiationBox % ApplyInteractions ) &
       TimeStepCandidate ( oC + 1 : oC + I % N_CURRENTS_1D )  =  huge ( 1.0_KDR )
@@ -544,18 +548,30 @@ contains
     end select !-- I
 
     select type ( I )
-    class is ( Integrator_C_1D_PS_C_PS_Form )
-      associate ( IA => RadiationBox % Interactions_ASC )
+    class is ( Integrator_C_1D_PS_C_PS_Form )  !-- Grey
 
-      do iC = 1, I % N_CURRENTS_1D
+      associate ( IA => RadiationBox % Interactions_ASC )  
+      do iC = 1, I % N_CURRENTS_1D  
         associate ( RA => I % Current_ASC_1D ( iC ) % Element )
         call IA % ComputeTimeScale ( RA, TimeStepCandidate ( oC + iC ) )
         TimeStepCandidate ( oC + iC )  &
           =  RadiationBox % InteractionFactor  *  TimeStepCandidate ( oC + iC )
         end associate !-- RA
       end do !-- iC
-
       end associate !-- IA
+
+    class is ( Integrator_C_1D_MS_C_PS_Form )  !-- Spectral
+
+      associate ( IB => RadiationBox % Interactions_BSLL_ASC_CSLD )
+      do iC = 1, I % N_CURRENTS_1D  
+        associate ( RB => I % Current_BSLL_ASC_CSLD_1D ( iC ) % Element )
+        call IB % ComputeTimeScale ( RB, TimeStepCandidate ( oC + iC ) )
+        TimeStepCandidate ( oC + iC )  &
+          =  RadiationBox % InteractionFactor  *  TimeStepCandidate ( oC + iC )
+        end associate !-- RB
+      end do !-- iC
+      end associate !-- IB
+
     end select !-- I
 
   end subroutine ComputeTimeStepLocal

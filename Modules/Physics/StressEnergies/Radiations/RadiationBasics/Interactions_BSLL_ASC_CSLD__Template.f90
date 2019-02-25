@@ -172,12 +172,15 @@ contains
     TimeScale = huge ( 1.0_KDR )
 
     do iF = 1, IB % nFibers
+!call Show ( iF, '>>> iF' )
       I => IB % FieldFiber ( iF )
       R => RB % CurrentFiber ( iF )    
       select type ( I )
       class is ( InteractionsTemplate )
+        call I % ComputeTimeScale ( R )
         TimeScale = min ( TimeScale, &
                           minval ( I % Value ( :, I % TIME_SCALE ) ) )
+!call Show ( I % Value ( :, I % TIME_SCALE ), '>>> Value % TimeScale' )
       end select !-- I
     end do !-- iF
 
