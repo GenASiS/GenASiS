@@ -145,15 +145,17 @@ contains
   end function Interactions_CSL
 
 
-  subroutine ComputeTimeScale ( IA, R, TimeScale )
+  subroutine ComputeTimeScale ( IA, RA, TimeScale )
 
     class ( Interactions_ASC_Template ), intent ( in ) :: &
       IA
-    class ( CurrentTemplate ), intent ( in ) :: &
-      R
+    class ( Current_ASC_Template ), intent ( in ) :: &
+      RA
     real ( KDR ), intent ( out ) :: &
       TimeScale
 
+    class ( CurrentTemplate ), pointer :: &
+      R
     class ( InteractionsTemplate ), pointer :: &
       I
 
@@ -162,6 +164,7 @@ contains
     select type ( C => A % Chart )
     class is ( Chart_SL_Template )
 
+    R => RA % Current ( )
     I => IA % Interactions ( )
     call I % ComputeTimeScale ( R )
 
@@ -171,7 +174,7 @@ contains
 
     end select !-- C
     end select !-- A
-    nullify ( I )
+    nullify ( R, I )
 
   end subroutine ComputeTimeScale
 

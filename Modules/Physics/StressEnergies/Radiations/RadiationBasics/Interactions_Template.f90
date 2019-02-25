@@ -178,7 +178,8 @@ contains
                                      I % OPACITY_H, &
                                      I % OPACITY_N, &
                                      I % EQUILIBRIUM_J, &
-                                     I % EQUILIBRIUM_N ] )
+                                     I % EQUILIBRIUM_N, &
+                                     I % TIME_SCALE ] )
 
   end subroutine SetOutput
 

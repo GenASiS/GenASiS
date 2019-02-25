@@ -264,9 +264,9 @@ contains
 
     !$OMP parallel do private ( iV ) 
     do iV = 1, nValues
-      J_Eq  =  a  *  T ( iV ) ** 4
-      Q     =  abs ( Kappa_A * ( J_Eq - J ( iV ) ) )
-      TS    =  J_Eq / Q
+      J_Eq       =  a  *  T ( iV ) ** 4
+      Q          =  abs ( Kappa_A * ( J_Eq - J ( iV ) ) )
+      TS ( iV )  =  J_Eq / Q
     end do !-- iV
     !$OMP end parallel do
 
