@@ -403,11 +403,13 @@ contains
     call Show ( I % iCheckpoint, 'iCheckpoint', I % IGNORABILITY )
     call Show ( I % iCycle, 'iCycle', I % IGNORABILITY )
     call Show ( I % Time, I % TimeUnit, 'Time', I % IGNORABILITY )
-    do iTSC = 1, I % nTimeStepCandidates
-      call Show ( I % TimeStepCandidate ( iTSC ), I % TimeUnit, &
-                  trim ( I % TimeStepLabel ( iTSC ) ) // ' TimeStep', &
-                  I % IGNORABILITY )
-    end do !-- iTSC
+    if ( I % iCycle > 0 ) then
+      do iTSC = 1, I % nTimeStepCandidates
+        call Show ( I % TimeStepCandidate ( iTSC ), I % TimeUnit, &
+                    trim ( I % TimeStepLabel ( iTSC ) ) // ' TimeStep', &
+                    I % IGNORABILITY )
+      end do !-- iTSC
+    end if
 
     if ( I % Time > I % StartTime .and. I % Time < I % FinishTime &
          .and. mod ( I % iCheckpoint, I % CheckpointDisplayInterval ) > 0 ) &
