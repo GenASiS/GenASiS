@@ -25,6 +25,8 @@ module Interactions_BSLL_ASC_CSLD__Template
     procedure, public, pass :: &
       Interactions
     procedure, public, pass :: &
+      ComputeTimeScale
+    procedure, public, pass :: &
       FinalizeTemplate_I_BSLL_ASC_CSLD
     procedure, private, pass :: &
       SetField
@@ -149,6 +151,39 @@ contains
     end select !-- IA
 
   end function Interactions
+
+
+  subroutine ComputeTimeScale ( IB, RB, TimeScale )
+
+    class ( Interactions_BSLL_ASC_CSLD_Template ), intent ( in ) :: &
+      IB
+    class ( Current_BSLL_ASC_CSLD_Template ), intent ( in ) :: &
+      RB
+    real ( KDR ), intent ( out ) :: &
+      TimeScale
+
+    integer ( KDI ) :: &
+      iF  !-- iFiber
+    class ( CurrentTemplate ), pointer :: &
+      R
+    class ( StorageForm ), pointer :: &
+      I
+
+    TimeScale = huge ( 1.0_KDR )
+
+    do iF = 1, IB % nFibers
+      I => IB % FieldFiber ( iF )
+      R => RB % CurrentFiber ( iF )    
+      select type ( I )
+      class is ( InteractionsTemplate )
+        TimeScale = min ( TimeScale, &
+                          minval ( I % Value ( :, I % TIME_SCALE ) ) )
+      end select !-- I
+    end do !-- iF
+
+    nullify ( R, I )
+
+  end subroutine ComputeTimeScale
 
 
   impure elemental subroutine FinalizeTemplate_I_BSLL_ASC_CSLD ( IB )

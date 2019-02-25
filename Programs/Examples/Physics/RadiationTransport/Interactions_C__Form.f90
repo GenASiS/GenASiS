@@ -33,6 +33,8 @@ module Interactions_C__Form
       ComputeKernel_S
     procedure, private, pass :: &
       ComputeTimeScaleKernel_G
+    procedure, private, pass :: &
+      ComputeTimeScaleKernel_S
   end type Interactions_C_Form
 
 contains
@@ -165,6 +167,14 @@ contains
                R % Value ( :, R % COMOVING_ENERGY ), &
                I % Value ( :, I % TIME_SCALE ) )
     case ( 'SPECTRAL' )
+      call SetPlanckSpectrum &
+             ( I % Energy, &
+               F % Value ( iBC, F % TEMPERATURE ), &
+               I % Value ( :, I % EQUILIBRIUM_J ) )
+      call I % ComputeTimeScaleKernel_S &
+             ( I % Value ( :, I % EQUILIBRIUM_J ), &
+               R % Value ( :, R % COMOVING_ENERGY ), &
+               I % Value ( :, I % TIME_SCALE ) )
     end select !-- MomentsType
 
     end select !-- R
@@ -173,7 +183,7 @@ contains
   end subroutine ComputeTimeScale
 
 
-  subroutine ComputeKernel_G ( I, T, Xi_J, Chi_J, Chi_H, J_Eq )
+  subroutine ComputeKernel_G ( I, T, Xi_J, Chi_J, Chi_H, J_EQ )
 
     class ( Interactions_C_Form ), intent ( in ) :: &
       I
@@ -183,7 +193,7 @@ contains
       Xi_J, &
       Chi_J, &
       Chi_H, &
-      J_Eq
+      J_EQ
 
     integer ( KDI ) :: &
       iV, &
@@ -199,8 +209,8 @@ contains
 
     !$OMP parallel do private ( iV ) 
     do iV = 1, nValues
-      J_Eq  ( iV )  =  a  *  T ( iV ) ** 4
-      Xi_J  ( iV )  =  Kappa_A  *  J_Eq ( iV )
+      J_EQ  ( iV )  =  a  *  T ( iV ) ** 4
+      Xi_J  ( iV )  =  Kappa_A  *  J_EQ ( iV )
       Chi_J ( iV )  =  Kappa_A
       Chi_H ( iV )  =  Chi_J ( iV )
     end do !-- iV
@@ -209,12 +219,12 @@ contains
   end subroutine ComputeKernel_G
 
 
-  subroutine ComputeKernel_S ( I, J_Eq, Xi_J, Chi_J, Chi_H )
+  subroutine ComputeKernel_S ( I, J_EQ, Xi_J, Chi_J, Chi_H )
 
     class ( Interactions_C_Form ), intent ( in ) :: &
       I
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      J_Eq
+      J_EQ
     real ( KDR ), dimension ( : ), intent ( out ) :: &
       Xi_J, &
       Chi_J, &
@@ -230,7 +240,7 @@ contains
     nValues  =  size ( Xi_J )
 
     do iV = 1, nValues
-      Xi_J  ( iV )  =  Kappa_A  *  J_Eq ( iV )
+      Xi_J  ( iV )  =  Kappa_A  *  J_EQ ( iV )
       Chi_J ( iV )  =  Kappa_A
       Chi_H ( iV )  =  Chi_J ( iV )
     end do !-- iV
@@ -254,24 +264,53 @@ contains
     real ( KDR ) :: &
       a, &
       Kappa_A, &
-      J_Eq, &
+      J_EQ, &
       Q
 
     a        =  4.0_KDR  *  CONSTANT % STEFAN_BOLTZMANN
     Kappa_A  =  I % OpacityAbsorption
 
-    nValues  =  size ( TS )
+    nValues  =  size ( J )
 
     !$OMP parallel do private ( iV ) 
     do iV = 1, nValues
-      J_Eq       =  a  *  T ( iV ) ** 4
-      Q          =  abs ( Kappa_A * ( J_Eq - J ( iV ) ) )
-      TS ( iV )  =  J_Eq / Q
+      J_EQ       =  a  *  T ( iV ) ** 4
+      Q          =  abs ( Kappa_A * ( J_EQ - J ( iV ) ) )
+      TS ( iV )  =  J_EQ / Q
     end do !-- iV
     !$OMP end parallel do
 
 
   end subroutine ComputeTimeScaleKernel_G
+
+
+  subroutine ComputeTimeScaleKernel_S ( I, J_EQ, J, TS )
+
+    class ( Interactions_C_Form ), intent ( in ) :: &
+      I
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      J_EQ, &
+      J
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      TS
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+    real ( KDR ) :: &
+      Kappa_A, &
+      Q
+
+    Kappa_A  =  I % OpacityAbsorption
+
+    nValues  =  size ( J )
+
+    do iV = 1, nValues
+      Q          =  abs ( Kappa_A * ( J_EQ ( iV ) - J ( iV ) ) )
+      TS ( iV )  =  J_EQ ( iV ) / Q
+    end do !-- iV
+
+  end subroutine ComputeTimeScaleKernel_S
 
 
 end module Interactions_C__Form
