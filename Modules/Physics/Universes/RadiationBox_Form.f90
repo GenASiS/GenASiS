@@ -52,11 +52,11 @@ contains
   
   subroutine Initialize_RB &
                ( RB, RadiationName, RadiationType, MomentsType, Name, &
-                 ApplyStreamingOption, ApplyInteractionsOption, &
-                 EvolveFluidOption, MinCoordinateOption, MaxCoordinateOption, &
-                 TimeUnitOption, FinishTimeOption, CourantFactorOption, &
-                 EnergyScaleOption, nCellsPositionOption, nCellsEnergyOption, &
-                 nWriteOption )
+                 BoundaryConditionsFaceOption, ApplyStreamingOption, &
+                 ApplyInteractionsOption, EvolveFluidOption, &
+                 MinCoordinateOption, MaxCoordinateOption, TimeUnitOption, &
+                 FinishTimeOption, CourantFactorOption, EnergyScaleOption, &
+                 nCellsPositionOption, nCellsEnergyOption, nWriteOption )
 
     class ( RadiationBoxForm ), intent ( inout ), target :: &
       RB
@@ -66,6 +66,8 @@ contains
     character ( * ), intent ( in ) :: &
       MomentsType, &
       Name
+    type ( Character_1D_Form ), dimension ( : ), intent ( in ), optional :: &
+      BoundaryConditionsFaceOption
     logical ( KDL ), intent ( in ), optional :: &
       ApplyStreamingOption, &
       ApplyInteractionsOption, &
@@ -97,8 +99,8 @@ contains
     call AllocateIntegrator &
            ( RB, RadiationName )
     call InitializePositionSpace &
-           ( RB, MinCoordinateOption, MaxCoordinateOption, &
-             nCellsPositionOption )
+           ( RB, BoundaryConditionsFaceOption, MinCoordinateOption, &
+             MaxCoordinateOption, nCellsPositionOption )
     call InitializeMomentumSpace &
            ( RB, EnergyScaleOption, nCellsEnergyOption )
     call InitializeRadiation &
@@ -203,17 +205,21 @@ contains
 
 
   subroutine InitializePositionSpace &
-               ( RB, MinCoordinateOption, MaxCoordinateOption, &
-                 nCellsPositionOption )
+               ( RB, BoundaryConditionsFaceOption, MinCoordinateOption, &
+                 MaxCoordinateOption, nCellsPositionOption )
 
     class ( RadiationBoxForm ), intent ( inout ) :: &
       RB
+    type ( Character_1D_Form ), dimension ( : ), intent ( in ), optional :: &
+      BoundaryConditionsFaceOption
     real ( KDR ), dimension ( : ), intent ( in ), optional :: &
       MinCoordinateOption, &
       MaxCoordinateOption
     integer ( KDI ), dimension ( 3 ), intent ( in ), optional :: &
       nCellsPositionOption
 
+    integer ( KDI ) :: &
+      iD  !-- iDimension
     integer ( KDI ), dimension ( 3 ) :: &
       nCellsPosition
 
@@ -224,6 +230,14 @@ contains
     select type ( PS => I % PositionSpace )
     class is ( Atlas_SC_Form )
     call PS % Initialize ( 'PositionSpace', PROGRAM_HEADER % Communicator )
+
+    if ( present ( BoundaryConditionsFaceOption ) ) then
+      do iD = 1, PS % nDimensions
+        call PS % SetBoundaryConditionsFace &
+               ( BoundaryConditionsFaceOption ( iD ) % Value, &
+                 iDimension = iD )
+      end do !-- iD
+    end if
 
     nCellsPosition = [ 32, 32, 32 ]
     if ( present ( nCellsPositionOption ) ) &
