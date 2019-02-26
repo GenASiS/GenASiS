@@ -29,7 +29,7 @@ module MarshakWave_Form
     !   MeanMolecularWeight, &
     !   MassDensity, &
     !   Temperature, &
-    !   TemperatureInner, &
+      TemperatureInner, &
     !   SpecificOpacity, &
     !   SpecificOpacityFloor, &
     !   EnergyScale, &
@@ -63,12 +63,12 @@ contains
     !-- Parameters
 
     associate &
-      ( L      => BoxLength )!, &
+      ( L      => BoxLength, &
         ! Gamma  => AdiabaticIndex, &
         ! C_V    => SpecificHeatCapacity, &
         ! N_0    => MassDensity, &
         ! T_0    => Temperature, &
-        ! T_I    => TemperatureInner, &
+        T_I    => TemperatureInner )!, &
         ! Kappa  => SpecificOpacity, &
         ! Kappa_Min => SpecificOpacityFloor )
 
@@ -77,7 +77,7 @@ contains
     ! C_V    =  1.0_KDR     *  UNIT % ERG / UNIT % KELVIN / UNIT % GRAM
     ! N_0    =  1.0e-3_KDR  *  UNIT % MASS_DENSITY_CGS
     ! T_0    =  3.0e2_KDR   *  UNIT % KELVIN
-    ! T_I    =  1.0e3_KDR   *  UNIT % KELVIN
+    T_I    =  1.0e3_KDR   *  UNIT % KELVIN
     ! Kappa  =  1.0e3_KDR   *  UNIT % CENTIMETER ** 2 / UNIT % GRAM
     ! Kappa_Min    =  10.0_KDR  *  UNIT % CENTIMETER ** 2 / UNIT % GRAM
     ! EnergyScale  =  T_I
@@ -87,7 +87,7 @@ contains
     ! call PROGRAM_HEADER % GetParameter ( C_V,   'SpecificHeatCapacity' )
     ! call PROGRAM_HEADER % GetParameter ( N_0,   'MassDensity' )
     ! call PROGRAM_HEADER % GetParameter ( T_0,   'Temperature' )
-    ! call PROGRAM_HEADER % GetParameter ( T_I,   'TemperatureInner' )
+    call PROGRAM_HEADER % GetParameter ( T_I,   'TemperatureInner' )
     ! call PROGRAM_HEADER % GetParameter ( Kappa, 'SpecificOpacity' )
     ! call PROGRAM_HEADER % GetParameter ( Kappa, 'SpecificOpacity' )
     ! call PROGRAM_HEADER % GetParameter ( Kappa_Min,   'SpecificOpacityFloor' )
@@ -126,11 +126,16 @@ contains
 
     integer ( KDI ) :: &
       iD
+    real ( KDR ) :: &
+      EnergyScale
     type ( MeasuredValueForm ), dimension ( 3 ) :: &
       CoordinateUnit_PS, &
       CoordinateUnit_MS
     type ( Character_1D_Form ), dimension ( 3 ) :: &
       BoundaryConditionsFace
+
+
+    !-- Position space
 
     associate ( BCF => BoundaryConditionsFace )
     do iD = 1, 3
@@ -142,6 +147,17 @@ contains
     MinCoordinate  =  0.0_KDR
     MaxCoordinate  =  BoxLength
 
+
+    !-- Momentum space
+
+    EnergyScale = TemperatureInner
+
+    CoordinateUnit_MS = UNIT % IDENTITY
+    CoordinateUnit_MS ( 1 ) = UNIT % ELECTRON_VOLT
+
+
+    !-- Initialization
+
     call MW % Initialize &
            ( RadiationName = [ 'Radiation' ], &
              RadiationType = [ 'GENERIC' ], &
@@ -149,9 +165,11 @@ contains
              Name = Name, &
              BoundaryConditionsFaceOption = BCF, &
              CoordinateUnit_PS_Option = CoordinateUnit_PS, &
+             CoordinateUnit_MS_Option = CoordinateUnit_MS, &
              MinCoordinateOption = MinCoordinate, &
              MaxCoordinateOption = MaxCoordinate, &
-             FinishTimeOption = FinishTime )
+             FinishTimeOption = FinishTime, &
+             EnergyScaleOption = EnergyScale )
     end associate !-- BCF
 
   end subroutine InitializeRadiationBox

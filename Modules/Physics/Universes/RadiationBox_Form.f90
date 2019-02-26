@@ -106,7 +106,8 @@ contains
            ( RB, BoundaryConditionsFaceOption, CoordinateUnit_PS_Option, &
              MinCoordinateOption, MaxCoordinateOption, nCellsPositionOption )
     call InitializeMomentumSpace &
-           ( RB, EnergyScaleOption, nCellsEnergyOption )
+           ( RB, CoordinateUnit_MS_Option, EnergyScaleOption, &
+             nCellsEnergyOption )
     call InitializeRadiation &
            ( RB, RadiationName, RadiationType )
     call InitializeFluid &
@@ -271,10 +272,13 @@ contains
 
 
   subroutine InitializeMomentumSpace &
-               ( RB, EnergyScaleOption, nCellsEnergyOption )
+               ( RB, CoordinateUnit_MS_Option, EnergyScaleOption, &
+                 nCellsEnergyOption )
 
     class ( RadiationBoxForm ), intent ( inout ) :: &
       RB
+    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+      CoordinateUnit_MS_Option
     real ( KDR ), intent ( in ), optional :: &
       EnergyScaleOption
     integer ( KDI ), intent ( in ), optional :: &
@@ -314,7 +318,7 @@ contains
     call MS % CreateChart &
            ( SpacingOption = [ 'COMPACTIFIED' ], &
              CoordinateSystemOption = 'SPHERICAL', &
-!             CoordinateUnitOption = CoordinateUnit, &
+             CoordinateUnitOption = CoordinateUnit_MS_Option, &
              ScaleOption = [ EnergyScale ], &
              nCellsOption = [ nCellsEnergy ], &
              nGhostLayersOption = [ 0, 0, 0 ] )
