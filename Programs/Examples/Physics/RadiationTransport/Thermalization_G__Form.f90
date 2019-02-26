@@ -18,6 +18,8 @@ module Thermalization_G__Form
       Initialize_T
     generic, public :: &
       Initialize => Initialize_T
+    final :: &
+      Finalize
   end type Thermalization_G_Form
 
     private :: &
@@ -79,6 +81,19 @@ contains
     call SetRadiation ( T )
 
   end subroutine Initialize_T
+
+
+  subroutine Finalize ( T )
+
+    type ( Thermalization_G_Form ), intent ( inout ), target :: &
+      T
+
+    if ( allocated ( T % Reference_ASC ) ) &
+      deallocate ( T % Reference_ASC )
+    if ( allocated ( T % FractionalDifference_ASC ) ) &
+      deallocate ( T % FractionalDifference_ASC )
+
+  end subroutine Finalize
 
 
   subroutine SetReference ( I )
