@@ -54,6 +54,7 @@ contains
                ( RB, RadiationName, RadiationType, MomentsType, Name, &
                  BoundaryConditionsFaceOption, ApplyStreamingOption, &
                  ApplyInteractionsOption, EvolveFluidOption, &
+                 CoordinateUnit_PS_Option, CoordinateUnit_MS_Option, &
                  MinCoordinateOption, MaxCoordinateOption, TimeUnitOption, &
                  FinishTimeOption, CourantFactorOption, EnergyScaleOption, &
                  nCellsPositionOption, nCellsEnergyOption, nWriteOption )
@@ -72,6 +73,9 @@ contains
       ApplyStreamingOption, &
       ApplyInteractionsOption, &
       EvolveFluidOption
+    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+      CoordinateUnit_PS_Option, &
+      CoordinateUnit_MS_Option
     real ( KDR ), dimension ( : ), intent ( in ), optional :: &
       MinCoordinateOption, &
       MaxCoordinateOption
@@ -99,8 +103,8 @@ contains
     call AllocateIntegrator &
            ( RB, RadiationName )
     call InitializePositionSpace &
-           ( RB, BoundaryConditionsFaceOption, MinCoordinateOption, &
-             MaxCoordinateOption, nCellsPositionOption )
+           ( RB, BoundaryConditionsFaceOption, CoordinateUnit_PS_Option, &
+             MinCoordinateOption, MaxCoordinateOption, nCellsPositionOption )
     call InitializeMomentumSpace &
            ( RB, EnergyScaleOption, nCellsEnergyOption )
     call InitializeRadiation &
@@ -205,13 +209,16 @@ contains
 
 
   subroutine InitializePositionSpace &
-               ( RB, BoundaryConditionsFaceOption, MinCoordinateOption, &
-                 MaxCoordinateOption, nCellsPositionOption )
+               ( RB, BoundaryConditionsFaceOption, CoordinateUnit_PS_Option, &
+                 MinCoordinateOption, MaxCoordinateOption, &
+                 nCellsPositionOption )
 
     class ( RadiationBoxForm ), intent ( inout ) :: &
       RB
     type ( Character_1D_Form ), dimension ( : ), intent ( in ), optional :: &
       BoundaryConditionsFaceOption
+    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+      CoordinateUnit_PS_Option
     real ( KDR ), dimension ( : ), intent ( in ), optional :: &
       MinCoordinateOption, &
       MaxCoordinateOption
@@ -245,7 +252,8 @@ contains
     call PROGRAM_HEADER % GetParameter ( nCellsPosition, 'nCellsPosition' )
 
     call PS % CreateChart &
-           ( MinCoordinateOption = MinCoordinateOption, &
+           ( CoordinateUnitOption = CoordinateUnit_PS_Option, &
+             MinCoordinateOption = MinCoordinateOption, &
              MaxCoordinateOption = MaxCoordinateOption, &
              nCellsOption = nCellsPosition )
 
