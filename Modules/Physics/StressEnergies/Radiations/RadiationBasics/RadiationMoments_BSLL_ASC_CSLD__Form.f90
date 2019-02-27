@@ -21,8 +21,8 @@ module RadiationMoments_BSLL_ASC_CSLD__Form
         UseLimiter
       type ( MeasuredValueForm ) :: &
         EnergyDensityUnit, &
-        EnergyUnit, &
         TemperatureUnit, &
+        EnergyUnit, &
         MomentumUnit, &
         AngularMomentumUnit, &
         TimeUnit
@@ -92,6 +92,8 @@ contains
 
     character ( LDL ) :: &
       NameShort
+    type ( MeasuredValueForm ) :: &
+      ParticleEnergyUnit
     class ( GeometryFlatForm ), pointer :: &
       GF
 
@@ -130,6 +132,19 @@ contains
       RMB % AngularMomentumUnit = AngularMomentumUnitOption
     if ( present ( TimeUnitOption ) ) &
       RMB % TimeUnit = TimeUnitOption
+
+    associate ( AF => B % FiberMaster )
+    select type ( CF => AF % Chart )
+    class is ( Chart_SLL_Form )
+      ParticleEnergyUnit  =  CF % CoordinateUnit ( 1 )
+    end select !--CF
+    end associate !-- AF
+    RMB % EnergyDensityUnit &
+      =  RMB % EnergyDensityUnit  *  ParticleEnergyUnit ** (-3)
+    RMB % MomentumDensity_U_Unit &
+      =  RMB % MomentumDensity_U_Unit  *  ParticleEnergyUnit ** (-3)
+    RMB % MomentumDensity_D_Unit &
+      =  RMB % MomentumDensity_D_Unit  *  ParticleEnergyUnit ** (-3)
 
     ! select type ( B )
     ! class is ( Bundle_SLL_ASC_CSLD_Form )
@@ -304,7 +319,7 @@ contains
       iE, &  !-- iEnergy
       Ignorability
     type ( MeasuredValueForm ) :: &
-      EnergyUnit
+      ParticleEnergyUnit
     character ( 1 + 2 ) :: &
       EnergyNumber
     character ( LDF ) :: &
@@ -392,7 +407,7 @@ contains
     associate ( AF => B % FiberMaster )
     select type ( CF => AF % Chart )
     class is ( Chart_SLL_Form )
-      EnergyUnit  =  CF % CoordinateUnit ( 1 )
+      ParticleEnergyUnit  =  CF % CoordinateUnit ( 1 )
     end select !--CF
     end associate !-- AF
 
@@ -410,11 +425,11 @@ contains
                NameShortOption = trim ( FB % NameShort ) // '_Integral', &
                Velocity_U_UnitOption = FB % Velocity_U_Unit, &
                MomentumDensity_U_UnitOption &
-                 = FB % MomentumDensity_U_Unit * EnergyUnit ** 3, &
+                 = FB % MomentumDensity_U_Unit * ParticleEnergyUnit ** 3, &
                MomentumDensity_D_UnitOption &
-                 = FB % MomentumDensity_D_Unit * EnergyUnit ** 3, &
+                 = FB % MomentumDensity_D_Unit * ParticleEnergyUnit ** 3, &
                EnergyDensityUnitOption &
-                 =  FB % EnergyDensityUnit * EnergyUnit ** 3, &
+                 =  FB % EnergyDensityUnit * ParticleEnergyUnit ** 3, &
                TemperatureUnitOption = FB % TemperatureUnit, &
                EnergyUnitOption = FB % EnergyUnit, &
                MomentumUnitOption = FB % MomentumUnit, &

@@ -55,8 +55,12 @@ contains
                  BoundaryConditionsFaceOption, ApplyStreamingOption, &
                  ApplyInteractionsOption, EvolveFluidOption, &
                  CoordinateUnit_PS_Option, CoordinateUnit_MS_Option, &
-                 MinCoordinateOption, MaxCoordinateOption, TimeUnitOption, &
-                 FinishTimeOption, CourantFactorOption, EnergyScaleOption, &
+                 Velocity_U_UnitOption, MomentumDensity_U_UnitOption, &
+                 MomentumDensity_D_UnitOption, MinCoordinateOption, &
+                 MaxCoordinateOption, TimeUnitOption, BaryonMassUnitOption, &
+                 NumberDensityUnitOption, EnergyDensityUnitOption, &
+                 TemperatureUnitOption, FinishTimeOption, CourantFactorOption, &
+                 EnergyScaleOption, BaryonMassReferenceOption, &
                  nCellsPositionOption, nCellsEnergyOption, nWriteOption )
 
     class ( RadiationBoxForm ), intent ( inout ), target :: &
@@ -75,21 +79,40 @@ contains
       EvolveFluidOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       CoordinateUnit_PS_Option, &
-      CoordinateUnit_MS_Option
+      CoordinateUnit_MS_Option, &
+      Velocity_U_UnitOption, &
+      MomentumDensity_U_UnitOption, &
+      MomentumDensity_D_UnitOption
     real ( KDR ), dimension ( : ), intent ( in ), optional :: &
       MinCoordinateOption, &
       MaxCoordinateOption
     type ( MeasuredValueForm ), intent ( in ), optional :: &
-      TimeUnitOption
+      TimeUnitOption, &
+      BaryonMassUnitOption, &
+      NumberDensityUnitOption, &
+      EnergyDensityUnitOption, &
+      TemperatureUnitOption
     real ( KDR ), intent ( in ), optional :: &
       FinishTimeOption, &
       CourantFactorOption, &
-      EnergyScaleOption
+      EnergyScaleOption, &
+      BaryonMassReferenceOption
     integer ( KDI ), dimension ( 3 ), intent ( in ), optional :: &
       nCellsPositionOption
     integer ( KDI ), intent ( in ), optional :: &
       nCellsEnergyOption, &
       nWriteOption
+
+    type ( MeasuredValueForm ) :: &
+      CoordinateUnit_PS, &
+      VelocityUnit, &
+      BaryonMassUnit, &
+      NumberDensityUnit, &
+      EnergyDensityUnit, &
+      NumberUnit, &
+      EnergyUnit, &
+      MomentumUnit, &
+      AngularMomentumUnit
 
     if ( RB % Type == '' ) &
       RB % Type = 'a RadiationBox'
@@ -108,10 +131,39 @@ contains
     call InitializeMomentumSpace &
            ( RB, CoordinateUnit_MS_Option, EnergyScaleOption, &
              nCellsEnergyOption )
+
+    if ( present ( CoordinateUnit_PS_Option ) ) &
+      CoordinateUnit_PS = CoordinateUnit_PS_Option ( 1 )
+    if ( present ( Velocity_U_UnitOption ) ) &
+      VelocityUnit = Velocity_U_UnitOption ( 1 )
+    if ( present ( BaryonMassUnitOption ) ) &
+      BaryonMassUnit = BaryonMassUnitOption
+    if ( present ( NumberDensityUnitOption ) ) &
+      NumberDensityUnit = NumberDensityUnitOption
+    if ( present ( EnergyDensityUnitOption ) ) &
+      EnergyDensityUnit = EnergyDensityUnitOption
+
+    associate ( nD => RB % Integrator % PositionSpace % nDimensions )
+    NumberUnit    =  NumberDensityUnit  *  CoordinateUnit_PS ** nD
+    EnergyUnit    =  EnergyDensityUnit  *  CoordinateUnit_PS ** nD
+    MomentumUnit  =  BaryonMassUnit  *  CoordinateUnit_PS ** (-3) &
+                     *  VelocityUnit  *  CoordinateUnit_PS ** nD
+    end associate !-- nD
+    AngularMomentumUnit  =  MomentumUnit  *  CoordinateUnit_PS
+
     call InitializeRadiation &
-           ( RB, RadiationName, RadiationType )
+           ( RB, RadiationName, RadiationType, Velocity_U_UnitOption, &
+             MomentumDensity_U_UnitOption, MomentumDensity_D_UnitOption, &
+             BaryonMassUnitOption, NumberDensityUnitOption, &
+             EnergyDensityUnitOption, TemperatureUnitOption, &
+             NumberUnit, EnergyUnit, MomentumUnit, AngularMomentumUnit, &
+             TimeUnitOption )
     call InitializeFluid &
-           ( RB )
+           ( RB, Velocity_U_UnitOption, MomentumDensity_D_UnitOption, &
+             BaryonMassUnitOption, NumberDensityUnitOption, &
+             EnergyDensityUnitOption, TemperatureUnitOption, NumberUnit, &
+             EnergyUnit, MomentumUnit, AngularMomentumUnit, &
+             TimeUnitOption, BaryonMassReferenceOption )
     call InitializeSteps &
            ( RB, Name, ApplyStreamingOption, ApplyInteractionsOption, &
              EvolveFluidOption )
@@ -330,13 +382,33 @@ contains
   end subroutine InitializeMomentumSpace
 
 
-  subroutine InitializeRadiation ( RB, RadiationName, RadiationType )
+  subroutine InitializeRadiation &
+               ( RB, RadiationName, RadiationType, Velocity_U_UnitOption, &
+                 MomentumDensity_U_UnitOption, MomentumDensity_D_UnitOption, &
+                 BaryonMassUnitOption, NumberDensityUnitOption, &
+                 EnergyDensityUnitOption, TemperatureUnitOption, &
+                 NumberUnitOption, EnergyUnitOption, MomentumUnitOption, &
+                 AngularMomentumUnitOption, TimeUnitOption )
 
     class ( RadiationBoxForm ), intent ( inout ) :: &
       RB
     character ( * ), dimension ( : ), intent ( in )  :: &
       RadiationName, &
       RadiationType
+    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+      Velocity_U_UnitOption, &
+      MomentumDensity_U_UnitOption, &
+      MomentumDensity_D_UnitOption
+    type ( MeasuredValueForm ), intent ( in ), optional :: &
+      BaryonMassUnitOption, &
+      NumberDensityUnitOption, &
+      EnergyDensityUnitOption, &
+      TemperatureUnitOption, &
+      NumberUnitOption, &
+      EnergyUnitOption, &
+      MomentumUnitOption, &
+      AngularMomentumUnitOption, &
+      TimeUnitOption
 
     integer ( KDI ) :: &
       iC  !-- iCurrent
@@ -361,12 +433,18 @@ contains
           type is ( RadiationMoments_ASC_Form )
           call RA % Initialize &
                  ( PS, RadiationType ( iC ), &
-                   NameShortOption = RadiationName ( iC ) )
-                   ! Velocity_U_UnitOption = WHH % VelocityUnit, &
-                   ! MomentumDensity_U_UnitOption = MomentumDensity_U_Unit, &
-                   ! MomentumDensity_D_UnitOption = MomentumDensity_D_Unit, &
-                   ! EnergyDensityUnitOption = WHH % EnergyDensityUnit, &
-                   ! TemperatureUnitOption = WHH % TemperatureUnit )
+                   NameShortOption = RadiationName ( iC ), &
+                   Velocity_U_UnitOption = Velocity_U_UnitOption, &
+                   MomentumDensity_U_UnitOption &
+                     = MomentumDensity_U_UnitOption, &
+                   MomentumDensity_D_UnitOption &
+                     = MomentumDensity_D_UnitOption, &
+                   EnergyDensityUnitOption = EnergyDensityUnitOption, &
+                   TemperatureUnitOption = TemperatureUnitOption, &
+                   EnergyUnitOption = EnergyUnitOption, &
+                   MomentumUnitOption = MomentumUnitOption, &
+                   AngularMomentumUnitOption = AngularMomentumUnitOption, &
+                   TimeUnitOption = TimeUnitOption )
           end select !-- RA        
           end select !-- PS
 
@@ -382,12 +460,18 @@ contains
           class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
           call RMB % Initialize &
                  ( MS, RadiationType ( iC ), &
-                   NameShortOption = RadiationName ( iC ) )
-                   ! Velocity_U_UnitOption = WHH % VelocityUnit, &
-                   ! MomentumDensity_U_UnitOption = MomentumDensity_U_Unit, &
-                   ! MomentumDensity_D_UnitOption = MomentumDensity_D_Unit, &
-                   ! EnergyDensityUnitOption = WHH % EnergyDensityUnit, &
-                   ! TemperatureUnitOption = WHH % TemperatureUnit )
+                   NameShortOption = RadiationName ( iC ), &
+                   Velocity_U_UnitOption = Velocity_U_UnitOption, &
+                   MomentumDensity_U_UnitOption &
+                     = MomentumDensity_U_UnitOption, &
+                   MomentumDensity_D_UnitOption &
+                     = MomentumDensity_D_UnitOption, &
+                   EnergyDensityUnitOption = EnergyDensityUnitOption, &
+                   TemperatureUnitOption = TemperatureUnitOption, &
+                   EnergyUnitOption = EnergyUnitOption, &
+                   MomentumUnitOption = MomentumUnitOption, &
+                   AngularMomentumUnitOption = AngularMomentumUnitOption, &
+                   TimeUnitOption = TimeUnitOption )
           end select !-- RMB
           end select !-- MS
 
@@ -407,10 +491,31 @@ contains
   end subroutine InitializeRadiation
 
 
-  subroutine InitializeFluid ( RB )
+  subroutine InitializeFluid &
+               ( RB, Velocity_U_UnitOption, MomentumDensity_D_UnitOption, &
+                 BaryonMassUnitOption, NumberDensityUnitOption, &
+                 EnergyDensityUnitOption, TemperatureUnitOption, &
+                 NumberUnitOption, EnergyUnitOption, MomentumUnitOption, &
+                 AngularMomentumUnitOption, TimeUnitOption, &
+                 BaryonMassReferenceOption )
 
     class ( RadiationBoxForm ), intent ( inout ) :: &
       RB
+    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+      Velocity_U_UnitOption, &
+      MomentumDensity_D_UnitOption
+    type ( MeasuredValueForm ), intent ( in ), optional :: &
+      BaryonMassUnitOption, &
+      NumberDensityUnitOption, &
+      EnergyDensityUnitOption, &
+      TemperatureUnitOption, &
+      NumberUnitOption, &
+      EnergyUnitOption, &
+      MomentumUnitOption, &
+      AngularMomentumUnitOption, &
+      TimeUnitOption
+    real ( KDR ), intent ( in ), optional :: &
+      BaryonMassReferenceOption
 
     select type ( I => RB % Integrator )
     class is ( Integrator_C_1D_C_PS_Template )
@@ -421,7 +526,20 @@ contains
     allocate ( Fluid_ASC_Form :: I % Current_ASC )
     select type ( FA => I % Current_ASC )
     class is ( Fluid_ASC_Form )
-    call FA % Initialize ( PS, 'IDEAL' )
+    call FA % Initialize &
+           ( PS, 'IDEAL', &
+             Velocity_U_UnitOption = Velocity_U_UnitOption, &
+             MomentumDensity_D_UnitOption = MomentumDensity_D_UnitOption, &
+             BaryonMassUnitOption = BaryonMassUnitOption, &
+             NumberDensityUnitOption = NumberDensityUnitOption, &
+             EnergyDensityUnitOption = EnergyDensityUnitOption, &
+             TemperatureUnitOption = TemperatureUnitOption, &
+             NumberUnitOption = NumberUnitOption, &
+             EnergyUnitOption = EnergyUnitOption, &
+             MomentumUnitOption = MomentumUnitOption, &
+             AngularMomentumUnitOption = AngularMomentumUnitOption, &
+             TimeUnitOption = TimeUnitOption, &
+             BaryonMassReferenceOption = BaryonMassReferenceOption )
     end select !-- FA
 
     end select !-- PS

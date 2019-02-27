@@ -128,32 +128,58 @@ contains
       iD
     real ( KDR ) :: &
       EnergyScale
+    type ( MeasuredValueForm ) :: &
+      TimeUnit, &
+      BaryonMassUnit, &
+      NumberDensityUnit, &
+      EnergyDensityUnit, &
+      TemperatureUnit
     type ( MeasuredValueForm ), dimension ( 3 ) :: &
       CoordinateUnit_PS, &
-      CoordinateUnit_MS
+      CoordinateUnit_MS, &
+      Velocity_U_Unit, &
+      MomentumDensity_U_Unit, &
+      MomentumDensity_D_Unit
     type ( Character_1D_Form ), dimension ( 3 ) :: &
       BoundaryConditionsFace
 
 
-    !-- Position space
+    !-- Position space parameters
 
     associate ( BCF => BoundaryConditionsFace )
     do iD = 1, 3
       call BCF ( iD ) % Initialize ( [ 'INFLOW', 'INFLOW' ] )     
     end do
 
-    CoordinateUnit_PS  =  UNIT % CENTIMETER
-
     MinCoordinate  =  0.0_KDR
     MaxCoordinate  =  BoxLength
 
 
-    !-- Momentum space
+    !-- Momentum space parameters
 
     EnergyScale = TemperatureInner
 
+
+    !-- Units
+
+    CoordinateUnit_PS  =  UNIT % CENTIMETER
+
     CoordinateUnit_MS = UNIT % IDENTITY
     CoordinateUnit_MS ( 1 ) = UNIT % ELECTRON_VOLT
+
+    TimeUnit = UNIT % SECOND
+
+    BaryonMassUnit     =  UNIT % GRAM
+    NumberDensityUnit  =  UNIT % MOLE  *  UNIT % CENTIMETER ** (-3)
+    EnergyDensityUnit  =  UNIT % ERG   *  UNIT % CENTIMETER ** (-3)
+    TemperatureUnit    =  UNIT % KELVIN
+
+    Velocity_U_Unit  =  UNIT % CENTIMETER  /  UNIT % SECOND 
+
+    MomentumDensity_U_Unit &
+      =  UNIT % GRAM  *  UNIT % CENTIMETER ** (-2)  /  UNIT % SECOND
+    MomentumDensity_D_Unit &
+      =  UNIT % GRAM  *  UNIT % CENTIMETER ** (-2)  /  UNIT % SECOND
 
 
     !-- Initialization
@@ -166,10 +192,19 @@ contains
              BoundaryConditionsFaceOption = BCF, &
              CoordinateUnit_PS_Option = CoordinateUnit_PS, &
              CoordinateUnit_MS_Option = CoordinateUnit_MS, &
+             Velocity_U_UnitOption = Velocity_U_Unit, &
+             MomentumDensity_U_UnitOption = MomentumDensity_U_Unit, &
+             MomentumDensity_D_UnitOption = MomentumDensity_D_Unit, &
              MinCoordinateOption = MinCoordinate, &
              MaxCoordinateOption = MaxCoordinate, &
+             TimeUnitOption = TimeUnit, &
+             BaryonMassUnitOption = BaryonMassUnit, &
+             NumberDensityUnitOption = NumberDensityUnit, &
+             EnergyDensityUnitOption = EnergyDensityUnit, &
+             TemperatureUnitOption = TemperatureUnit, &
              FinishTimeOption = FinishTime, &
-             EnergyScaleOption = EnergyScale )
+             EnergyScaleOption = EnergyScale, &
+             BaryonMassReferenceOption = CONSTANT % ATOMIC_MASS_UNIT )
     end associate !-- BCF
 
   end subroutine InitializeRadiationBox
