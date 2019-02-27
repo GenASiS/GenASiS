@@ -51,6 +51,8 @@ module RadiationMoments_BSLL_ASC_CSLD__Form
       Finalize
     procedure, private, pass :: &
       SetField
+    procedure, private, pass :: &
+      AllocateField
     procedure, public, pass :: &
       ComputeEnergyIntegral
   end type RadiationMoments_BSLL_ASC_CSLD_Form
@@ -334,7 +336,7 @@ contains
     call FBF % Initialize ( FB % nFibers )
 
     do iF = 1, FB % nFibers
-      allocate ( RadiationMoments_ASC_Form :: FBF % Atlas ( iF ) % Element )
+      call FB % AllocateField ( FBF % Atlas ( iF ) % Element )
       select type ( RMA => FBF % Atlas ( iF ) % Element )
       class is ( RadiationMoments_ASC_Form )
 
@@ -368,7 +370,7 @@ contains
     do iE = 1, FB % nEnergyValues
       SuppressWrite  =  ( mod ( iE - 1, B % sSectionsWrite ) /= 0 )
       write ( EnergyNumber, fmt = '(a1,i2.2)' ) '_', iE
-      allocate ( RadiationMoments_ASC_Form :: FBS % Atlas ( iE ) % Element )
+      call FB % AllocateField ( FBS % Atlas ( iE ) % Element )
       select type ( RMA => FBS % Atlas ( iE ) % Element )
       class is ( RadiationMoments_ASC_Form )
 
@@ -417,7 +419,7 @@ contains
     case default
       RadiationType = FB % RadiationType
     end select !-- FB % RadiationType
-            
+  
     allocate ( FB % EnergyIntegral )
     associate ( EI => FB % EnergyIntegral )
       call EI % Initialize &
@@ -441,6 +443,18 @@ contains
     end associate !-- B
 
   end subroutine SetField
+
+
+  subroutine AllocateField ( RMB, RMA )
+
+    class ( RadiationMoments_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
+      RMB
+    class ( FieldAtlasTemplate ), intent ( out ), allocatable :: &
+      RMA
+
+    allocate ( RadiationMoments_ASC_Form :: RMA )
+
+  end subroutine AllocateField
 
 
   subroutine ComputeEnergyIntegral ( RMB )

@@ -9,6 +9,7 @@ INTERACTIONS_EXAMPLES = \
   InteractionsExamples_BSLL_ASC_CSLD__Form.o \
   InteractionsExamples_ASC__Form.o \
   InteractionsExamples_CSL__Form.o \
+  Interactions_MWV_1__Form.o \
   Interactions_C__Form.o 
 
 include $(PATH_GENASIS)/Build/Makefile_Build
@@ -93,9 +94,14 @@ Interactions_C__Form.o: \
   GenASiS.o \
   Interactions_C__Form.f90
 
+Interactions_MWV_1__Form.o: \
+  GenASiS.o \
+  Interactions_MWV_1__Form.f90
+
 InteractionsExamples_CSL__Form.o: \
   GenASiS.o \
   Interactions_C__Form.o \
+  Interactions_MWV_1__Form.o \
   InteractionsExamples_CSL__Form.f90
 
 InteractionsExamples_ASC__Form.o: \

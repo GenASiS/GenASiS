@@ -8,12 +8,8 @@ module Interactions_C__Form
   private
 
   type, public, extends ( InteractionsTemplate ) :: Interactions_C_Form
-    integer ( KDI ) :: &
-      iBaseCell = 0
     real ( KDR ) :: &
       OpacityAbsorption = 0.0_KDR
-    real ( KDR ), dimension ( : ), pointer :: &
-      Energy => null ( )
   contains
     procedure, private, pass :: &
       InitializeAllocate_I

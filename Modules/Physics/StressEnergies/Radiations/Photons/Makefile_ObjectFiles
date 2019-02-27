@@ -1,0 +1,7 @@
+PHOTONS = \
+  Photons.o \
+  PhotonMoments_BSLL_ASC_CSLD__Form.o \
+  PhotonMoments_ASC__Form.o \
+  PhotonMoments_CSL__Form.o \
+  PhotonMoments_S__Form.o \
+  PhotonMoments_G__Form.o \

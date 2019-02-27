@@ -20,7 +20,8 @@ module MarshakWave_Form
   end type MarshakWaveForm
 
     private :: &
-      InitializeRadiationBox
+      InitializeRadiationBox, &
+      InitializeInteractions
 
     real ( KDR ), private :: &
       BoxLength, &
@@ -208,6 +209,65 @@ contains
     end associate !-- BCF
 
   end subroutine InitializeRadiationBox
+
+
+  subroutine InitializeInteractions ( MW )
+
+    class ( MarshakWaveForm ), intent ( inout ) :: &
+      MW
+
+    ! select type ( I => T % Integrator )
+    ! class is ( Integrator_C_1D_PS_C_PS_Form )  !-- Grey
+
+    !   select type ( RMA => I % Current_ASC_1D ( 1 ) % Element )
+    !   class is ( RadiationMoments_ASC_Form )
+
+    !   select type ( FA => I % Current_ASC )
+    !   class is ( Fluid_ASC_Form )
+
+    !   select type ( PS => I % PositionSpace )
+    !   class is ( Atlas_SC_Form )
+
+    !   allocate ( InteractionsExamples_ASC_Form :: T % Interactions_ASC )
+    !   select type ( IA => T % Interactions_ASC )
+    !   class is ( InteractionsExamples_ASC_Form )
+    !   call IA % Initialize &
+    !          ( PS, InteractionsType = 'CONSTANT', MomentsType = 'GREY' )
+    !   call IA % Set ( FA, OpacityAbsorption = OpacityAbsorption )
+    !   call RMA % SetInteractions ( IA )
+    !   end select !-- IA
+
+    !   end select !-- PS
+    !   end select !-- FA
+    !   end select !-- RMA
+
+    ! class is ( Integrator_C_1D_MS_C_PS_Form )  !-- Spectral
+
+    !   select type ( RMB => I % Current_BSLL_ASC_CSLD_1D ( 1 ) % Element )
+    !   class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
+
+    !   select type ( FA => I % Current_ASC )
+    !   class is ( Fluid_ASC_Form )
+
+    !   select type ( MS => I % MomentumSpace )
+    !   class is ( Bundle_SLL_ASC_CSLD_Form )
+
+    !   allocate ( InteractionsExamples_BSLL_ASC_CSLD_Form :: &
+    !                T % Interactions_BSLL_ASC_CSLD )
+    !   select type ( IB => T % Interactions_BSLL_ASC_CSLD )
+    !   class is ( InteractionsExamples_BSLL_ASC_CSLD_Form )
+    !   call IB % Initialize ( MS, InteractionsType = 'CONSTANT' )
+    !   call IB % Set ( FA, OpacityAbsorption = OpacityAbsorption )
+    !   call RMB % SetInteractions ( IB )
+    !   end select !-- IB
+
+    !   end select !-- PS
+    !   end select !-- FA
+    !   end select !-- RMA
+
+    ! end select !-- Integrator
+
+  end subroutine InitializeInteractions
 
 
 end module MarshakWave_Form

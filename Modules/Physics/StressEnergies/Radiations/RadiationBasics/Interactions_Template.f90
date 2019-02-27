@@ -24,6 +24,10 @@ module Interactions_Template
       EQUILIBRIUM_J     = 0, &
       EQUILIBRIUM_N     = 0, &
       TIME_SCALE        = 0
+    integer ( KDI ) :: &
+      iBaseCell = 0
+    real ( KDR ), dimension ( : ), pointer :: &
+      Energy => null ( )
     character ( LDL ) :: &
       Type = '', &
       MomentsType = ''
@@ -184,29 +188,27 @@ contains
   end subroutine SetOutput
 
 
-  subroutine ComputeEquilibrium_T ( T_EQ, I, F )
+  subroutine ComputeEquilibrium_T ( T_EQ, I )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       T_EQ
     class ( InteractionsTemplate ), intent ( in ) :: &
       I
-    class ( Fluid_P_Template ), intent ( in ) :: &
-      F
 
-    !-- Empty interface to be overridden later as needed
+    associate ( F => I % Fluid )
+    call Copy ( F % Value ( :, F % TEMPERATURE ), T_EQ )
+    end associate !-- F
 
   end subroutine ComputeEquilibrium_T
 
 
-  subroutine ComputeEquilibrium_T_Eta ( T_EQ, Eta_EQ, I, F )
+  subroutine ComputeEquilibrium_T_Eta ( T_EQ, Eta_EQ, I )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       T_EQ, &
       Eta_EQ
     class ( InteractionsTemplate ), intent ( in ) :: &
       I
-    class ( Fluid_P_Template ), intent ( in ) :: &
-      F
 
     !-- Empty interface to be overridden later as needed
 

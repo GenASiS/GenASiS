@@ -1,0 +1,44 @@
+PhotonMoments_G__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  RadiationBasics.o \
+  PhotonMoments_G__Form.f90
+
+PhotonMoments_S__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  RadiationBasics.o \
+  PhotonMoments_S__Form.f90
+
+PhotonMoments_CSL__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  RadiationBasics.o \
+  PhotonMoments_G__Form.o \
+  PhotonMoments_S__Form.o \
+  PhotonMoments_CSL__Form.f90
+
+PhotonMoments_ASC__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  RadiationBasics.o \
+  PhotonMoments_CSL__Form.o \
+  PhotonMoments_ASC__Form.f90
+
+PhotonMoments_BSLL_ASC_CSLD__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  RadiationBasics.o \
+  PhotonMoments_ASC__Form.o \
+  PhotonMoments_BSLL_ASC_CSLD__Form.f90
+
+Photons.o: \
+  PhotonMoments_G__Form.o \
+  PhotonMoments_S__Form.o \
+  PhotonMoments_CSL__Form.o \
+  PhotonMoments_ASC__Form.o \
+  PhotonMoments_BSLL_ASC_CSLD__Form.o \
+  Photons.f90
+
+Photons.a: $(PHOTONS)
+	ar r Photons.a $(PHOTONS)

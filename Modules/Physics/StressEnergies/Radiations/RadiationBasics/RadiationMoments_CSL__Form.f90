@@ -245,32 +245,6 @@ contains
         call RM % SetPrimitiveConserved ( )
         call RM % SetOutput ( FC % FieldOutput )
       end select !-- RM
-!     case ( 'PHOTONS_GREY' )
-!       allocate ( PhotonMoments_G_Form :: FC % Field )
-!       select type ( PM => FC % Field )
-!       type is ( PhotonMoments_G_Form )
-!         call PM % Initialize &
-!                ( FC % RiemannSolverType, FC % UseLimiter, &
-!                  FC % Velocity_U_Unit, FC % MomentumDensity_U_Unit, &
-!                  FC % MomentumDensity_D_Unit, FC % EnergyDensityUnit, &
-!                  FC % TemperatureUnit, FC % LimiterParameter, FC % nValues, &
-!                  NameOption = FC % NameShort )
-!         call PM % SetPrimitiveConserved ( )
-!         call PM % SetOutput ( FC % FieldOutput )
-!       end select !-- PM
-!     case ( 'PHOTONS_SPECTRAL' )
-!       allocate ( PhotonMoments_S_Form :: FC % Field )
-!       select type ( PM => FC % Field )
-!       type is ( PhotonMoments_S_Form )
-!         call PM % Initialize &
-!                ( FC % RiemannSolverType, FC % UseLimiter, &
-!                  FC % Velocity_U_Unit, FC % MomentumDensity_U_Unit, &
-!                  FC % MomentumDensity_D_Unit, FC % EnergyDensityUnit, &
-!                  FC % LimiterParameter, FC % nValues, &
-!                  NameOption = FC % NameShort )
-!         call PM % SetPrimitiveConserved ( )
-!         call PM % SetOutput ( FC % FieldOutput )
-!       end select !-- PM
     case default
       call Show ( 'RadiationMomentsType not recognized', CONSOLE % ERROR )
       call Show ( FC % RadiationMomentsType, 'RadiationMomentsType', &
