@@ -8,8 +8,8 @@ module RadiationMoments_CSL__Form
   use RadiationMoments_Form
   use PhotonMoments_G__Form
   use PhotonMoments_S__Form
-  use NeutrinoMoments_G__Form
-  use NeutrinoMoments_S__Form
+!  use NeutrinoMoments_G__Form
+!  use NeutrinoMoments_S__Form
   use Sources_RM__Form
   use Sources_RM_CSL__Form
 
@@ -44,10 +44,10 @@ module RadiationMoments_CSL__Form
       PhotonMoments_G
     procedure, public, pass :: &
       PhotonMoments_S
-    procedure, public, pass :: &
-      NeutrinoMoments_G
-    procedure, public, pass :: &
-      NeutrinoMoments_S
+    ! procedure, public, pass :: &
+    !   NeutrinoMoments_G
+    ! procedure, public, pass :: &
+    !   NeutrinoMoments_S
     procedure, public, pass :: &
       SetSources
     procedure, public, pass :: &
@@ -173,46 +173,46 @@ contains
   end function PhotonMoments_S
 
 
-  function NeutrinoMoments_G ( RMC ) result ( NM )
+  ! function NeutrinoMoments_G ( RMC ) result ( NM )
 
-    class ( RadiationMoments_CSL_Form ), intent ( in ), target :: &
-      RMC
-    class ( NeutrinoMoments_G_Form ), pointer :: &
-      NM
+  !   class ( RadiationMoments_CSL_Form ), intent ( in ), target :: &
+  !     RMC
+  !   class ( NeutrinoMoments_G_Form ), pointer :: &
+  !     NM
 
-    class ( VariableGroupForm ), pointer :: &
-      Field
+  !   class ( StorageForm ), pointer :: &
+  !     Field
 
-    NM => null ( )
+  !   NM => null ( )
 
-    Field => RMC % Field
-    select type ( Field )
-    class is ( NeutrinoMoments_G_Form )
-    NM => Field
-    end select !-- Field
+  !   Field => RMC % Field
+  !   select type ( Field )
+  !   class is ( NeutrinoMoments_G_Form )
+  !   NM => Field
+  !   end select !-- Field
 
-  end function NeutrinoMoments_G
+  ! end function NeutrinoMoments_G
 
 
-  function NeutrinoMoments_S ( RMC ) result ( NM )
+  ! function NeutrinoMoments_S ( RMC ) result ( NM )
 
-    class ( RadiationMoments_CSL_Form ), intent ( in ), target :: &
-      RMC
-    class ( NeutrinoMoments_S_Form ), pointer :: &
-      NM
+  !   class ( RadiationMoments_CSL_Form ), intent ( in ), target :: &
+  !     RMC
+  !   class ( NeutrinoMoments_S_Form ), pointer :: &
+  !     NM
 
-    class ( VariableGroupForm ), pointer :: &
-      Field
+  !   class ( StorageForm ), pointer :: &
+  !     Field
 
-    NM => null ( )
+  !   NM => null ( )
 
-    Field => RMC % Field
-    select type ( Field )
-    class is ( NeutrinoMoments_S_Form )
-    NM => Field
-    end select !-- Field
+  !   Field => RMC % Field
+  !   select type ( Field )
+  !   class is ( NeutrinoMoments_S_Form )
+  !   NM => Field
+  !   end select !-- Field
 
-  end function NeutrinoMoments_S
+  ! end function NeutrinoMoments_S
 
 
   subroutine SetSources ( RMC, SRMC )
@@ -321,34 +321,34 @@ contains
         call PM % SetPrimitiveConserved ( )
         call PM % SetOutput ( FC % FieldOutput )
       end select !-- PM
-    case ( 'NEUTRINOS_GREY' )
-      allocate ( NeutrinoMoments_G_Form :: FC % Field )
-      select type ( NM => FC % Field )
-      type is ( NeutrinoMoments_G_Form )
-        call Show( 'NEUTRINOS_GREY' )
-        call NM % InitializeAllocate_NM &
-               ( FC % RadiationMomentsType, FC % RiemannSolverType, &
-                 FC % UseLimiter, &
-                 FC % Velocity_U_Unit, FC % MomentumDensity_U_Unit, &
-                 FC % MomentumDensity_D_Unit, FC % EnergyDensityUnit, &
-                 FC % TemperatureUnit, FC % LimiterParameter, FC % nValues, &
-                 NameOption = FC % NameShort )
-        call NM % SetPrimitiveConserved ( )
-        call NM % SetOutput ( FC % FieldOutput )
-      end select !-- NM
-    case ( 'NEUTRINOS_SPECTRAL' )
-      allocate ( NeutrinoMoments_S_Form :: FC % Field )
-      select type ( NM => FC % Field )
-      type is ( NeutrinoMoments_S_Form )
-        call NM % Initialize &
-               ( FC % RiemannSolverType, FC % UseLimiter, &
-                 FC % Velocity_U_Unit, FC % MomentumDensity_U_Unit, &
-                 FC % MomentumDensity_D_Unit, FC % EnergyDensityUnit, &
-                 FC % LimiterParameter, FC % nValues, &
-                 NameOption = FC % NameShort )
-        call NM % SetPrimitiveConserved ( )
-        call NM % SetOutput ( FC % FieldOutput )
-      end select !-- NM
+    ! case ( 'NEUTRINOS_GREY' )
+    !   allocate ( NeutrinoMoments_G_Form :: FC % Field )
+    !   select type ( NM => FC % Field )
+    !   type is ( NeutrinoMoments_G_Form )
+    !     call Show( 'NEUTRINOS_GREY' )
+    !     call NM % InitializeAllocate_NM &
+    !            ( FC % RadiationMomentsType, FC % RiemannSolverType, &
+    !              FC % UseLimiter, &
+    !              FC % Velocity_U_Unit, FC % MomentumDensity_U_Unit, &
+    !              FC % MomentumDensity_D_Unit, FC % EnergyDensityUnit, &
+    !              FC % TemperatureUnit, FC % LimiterParameter, FC % nValues, &
+    !              NameOption = FC % NameShort )
+    !     call NM % SetPrimitiveConserved ( )
+    !     call NM % SetOutput ( FC % FieldOutput )
+    !   end select !-- NM
+    ! case ( 'NEUTRINOS_SPECTRAL' )
+    !   allocate ( NeutrinoMoments_S_Form :: FC % Field )
+    !   select type ( NM => FC % Field )
+    !   type is ( NeutrinoMoments_S_Form )
+    !     call NM % Initialize &
+    !            ( FC % RiemannSolverType, FC % UseLimiter, &
+    !              FC % Velocity_U_Unit, FC % MomentumDensity_U_Unit, &
+    !              FC % MomentumDensity_D_Unit, FC % EnergyDensityUnit, &
+    !              FC % LimiterParameter, FC % nValues, &
+    !              NameOption = FC % NameShort )
+    !     call NM % SetPrimitiveConserved ( )
+    !     call NM % SetOutput ( FC % FieldOutput )
+    !   end select !-- NM
     case default
       call Show ( 'RadiationMomentsType not recognized', CONSOLE % ERROR )
       call Show ( FC % RadiationMomentsType, 'RadiationMomentsType', &

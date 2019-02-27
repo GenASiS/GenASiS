@@ -15,11 +15,11 @@ GREY_MOMENTS = \
   Sources_RM_ASC__Form.o \
   Sources_RM_CSL__Form.o \
   Sources_RM__Form.o \
-  NeutrinoMoments_S__Form.o \
-  NeutrinoMoments_G__Form.o \
   PhotonMoments_S__Form.o \
   PhotonMoments_G__Form.o \
   RadiationMoments_Form.o \
   Interactions_Template.o \
   SetFermiDiracSpectrum_Command.o \
   SetPlanckSpectrum_Command.o
+#  NeutrinoMoments_S__Form.o \
+#  NeutrinoMoments_G__Form.o \
