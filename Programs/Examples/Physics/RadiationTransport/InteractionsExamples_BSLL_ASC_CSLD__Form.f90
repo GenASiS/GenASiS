@@ -5,6 +5,7 @@ module InteractionsExamples_BSLL_ASC_CSLD__Form
 
   use GenASiS
   use Interactions_C__Form
+  use Interactions_MWV_1__Form
   use InteractionsExamples_ASC__Form
 
   implicit none
@@ -16,7 +17,11 @@ module InteractionsExamples_BSLL_ASC_CSLD__Form
     procedure, public, pass :: &
       Initialize
     procedure, public, pass :: &
-      Set => Set_G_BSLL_ASC_CSLD
+      Set_C_Spectral
+    procedure, private, pass :: &
+      Set_MWV_1_Spectral
+    generic, public :: &
+      Set_MWV_Spectral => Set_MWV_1_Spectral
     procedure, public, pass :: &
       AllocateField
   end type InteractionsExamples_BSLL_ASC_CSLD_Form
@@ -51,7 +56,7 @@ contains
   end subroutine Initialize
 
 
-  subroutine Set_G_BSLL_ASC_CSLD ( IB, FA, OpacityAbsorption )
+  subroutine Set_C_Spectral ( IB, FA, OpacityAbsorption )
 
     class ( InteractionsExamples_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
       IB
@@ -94,7 +99,53 @@ contains
     end select !-- B
     nullify ( GF )
 
-  end subroutine Set_G_BSLL_ASC_CSLD
+  end subroutine Set_C_Spectral
+
+
+  subroutine Set_MWV_1_Spectral ( IB, FA, SpecificOpacity )
+
+    class ( InteractionsExamples_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
+      IB
+    class ( Fluid_ASC_Form ), intent ( in ), target :: &
+      FA
+    real ( KDR ), intent ( in ) :: &
+      SpecificOpacity
+
+    integer ( KDI ) :: &
+      iF  !-- iFiber
+    class ( GeometryFlatForm ), pointer :: &
+      GF
+    class ( Fluid_P_I_Form ), pointer :: &
+      Fluid
+    class ( InteractionsTemplate ), pointer :: &
+      I
+
+    select type ( B => IB % Bundle )
+    class is ( Bundle_SLL_ASC_CSLD_Form )
+
+    Fluid => FA % Fluid_P_I ( )
+
+    GF => B % GeometryFiber ( )
+    associate ( Energy => GF % Value ( :, GF % CENTER_U ( 1 ) ) )
+
+    do iF = 1, B % nFibers
+      I => IB % Interactions ( iF )
+      select type ( I )
+      type is ( Interactions_MWV_1_Form )
+        call I % Set &
+               ( Fluid = Fluid, &
+                 Energy = Energy, &
+                 SpecificOpacity = SpecificOpacity, &
+                 iBaseCell = B % iaBaseCell ( iF ) )
+      end select !-- I
+      nullify ( I )
+    end do !-- iF
+
+    end associate !-- Energy
+    end select !-- B
+    nullify ( GF )
+
+  end subroutine Set_MWV_1_Spectral
 
 
   subroutine AllocateField ( IB, iF )

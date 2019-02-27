@@ -4,6 +4,7 @@ module InteractionsExamples_ASC__Form
 
   use GenASiS
   use Interactions_C__Form
+  use Interactions_MWV_1__Form
   use InteractionsExamples_CSL__Form
 
   implicit none
@@ -15,7 +16,11 @@ module InteractionsExamples_ASC__Form
     procedure, public, pass :: &
       Initialize
     procedure, public, pass :: &
-      Set => Set_C_ASC_G
+      Set_C_Grey
+    procedure, private, pass :: &
+      Set_MWV_1_Grey
+    generic, public :: &
+      Set_MWV_Grey => Set_MWV_1_Grey
     procedure, public, pass :: &
       AllocateField
   end type InteractionsExamples_ASC_Form
@@ -55,7 +60,7 @@ contains
   end subroutine Initialize
 
 
-  subroutine Set_C_ASC_G ( IA, FA, OpacityAbsorption )
+  subroutine Set_C_Grey ( IA, FA, OpacityAbsorption )
 
     class ( InteractionsExamples_ASC_Form ), intent ( inout ) :: &
       IA
@@ -74,7 +79,7 @@ contains
       F => FA % Fluid_P_I ( )
       I => IA % Interactions ( )
       select type ( I )
-      type is ( Interactions_C_Form )
+      class is ( Interactions_C_Form )
         call I % Set ( Fluid = F, OpacityAbsorption = OpacityAbsorption )
       end select !-- I
     case ( 'SPECTRAL' )
@@ -82,7 +87,37 @@ contains
     end select !-- MomentsType
     nullify ( F, I )
 
-  end subroutine Set_C_ASC_G
+  end subroutine Set_C_Grey
+
+
+  subroutine Set_MWV_1_Grey ( IA, FA, SpecificOpacity )
+
+    class ( InteractionsExamples_ASC_Form ), intent ( inout ) :: &
+      IA
+    class ( Fluid_ASC_Form ), intent ( in ), target :: &
+      FA
+    real ( KDR ), intent ( in ) :: &
+      SpecificOpacity
+
+    class ( Fluid_P_I_Form ), pointer :: &
+      F
+    class ( InteractionsTemplate ), pointer :: &
+      I
+
+    select case ( trim ( IA % MomentsType ) )
+    case ( 'GREY' )
+      F => FA % Fluid_P_I ( )
+      I => IA % Interactions ( )
+      select type ( I )
+      class is ( Interactions_MWV_1_Form )
+        call I % Set ( Fluid = F, SpecificOpacity = SpecificOpacity )
+      end select !-- I
+    case ( 'SPECTRAL' )
+      !-- Set at the Bundle level
+    end select !-- MomentsType
+    nullify ( F, I )
+
+  end subroutine Set_MWV_1_Grey
 
 
   subroutine AllocateField ( IA )

@@ -107,12 +107,14 @@ InteractionsExamples_CSL__Form.o: \
 InteractionsExamples_ASC__Form.o: \
   GenASiS.o \
   Interactions_C__Form.o \
+  Interactions_MWV_1__Form.o \
   InteractionsExamples_CSL__Form.o \
   InteractionsExamples_ASC__Form.f90
 
 InteractionsExamples_BSLL_ASC_CSLD__Form.o: \
   GenASiS.o \
   Interactions_C__Form.o \
+  Interactions_MWV_1__Form.o \
   InteractionsExamples_ASC__Form.o \
   InteractionsExamples_BSLL_ASC_CSLD__Form.f90
 

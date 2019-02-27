@@ -4,6 +4,7 @@ module InteractionsExamples_CSL__Form
 
   use GenASiS
   use Interactions_C__Form
+  use Interactions_MWV_1__Form
 
   implicit none
   private
@@ -61,6 +62,8 @@ contains
     select case ( trim ( IC % InteractionsType ) )
     case ( 'CONSTANT' )
       allocate ( Interactions_C_Form :: IC % Field )
+    case ( 'MARSHAK_WAVE_VAYTET_1' )
+      allocate ( Interactions_MWV_1_Form :: IC % Field )
     case default
       call Show ( 'InteractionsType not recognized', CONSOLE % ERROR )
       call Show ( IC % InteractionsType, 'InteractionsType', &

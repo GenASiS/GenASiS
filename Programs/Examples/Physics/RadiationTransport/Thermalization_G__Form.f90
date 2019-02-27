@@ -227,7 +227,7 @@ contains
       class is ( InteractionsExamples_ASC_Form )
       call IA % Initialize &
              ( PS, InteractionsType = 'CONSTANT', MomentsType = 'GREY' )
-      call IA % Set ( FA, OpacityAbsorption = OpacityAbsorption )
+      call IA % Set_C_Grey ( FA, OpacityAbsorption = OpacityAbsorption )
       call RMA % SetInteractions ( IA )
       end select !-- IA
 
@@ -251,7 +251,7 @@ contains
       select type ( IB => T % Interactions_BSLL_ASC_CSLD )
       class is ( InteractionsExamples_BSLL_ASC_CSLD_Form )
       call IB % Initialize ( MS, InteractionsType = 'CONSTANT' )
-      call IB % Set ( FA, OpacityAbsorption = OpacityAbsorption )
+      call IB % Set_C_Spectral ( FA, OpacityAbsorption = OpacityAbsorption )
       call RMB % SetInteractions ( IB )
       end select !-- IB
 
