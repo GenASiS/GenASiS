@@ -21,20 +21,20 @@ module MarshakWave_Form
 
     private :: &
       InitializeRadiationBox, &
-      InitializeInteractions
+      InitializeInteractions, &
+      SetFluid
 
     real ( KDR ), private :: &
       BoxLength, &
-    !   AdiabaticIndex, &
-    !   SpecificHeatCapacity, &
-    !   MeanMolecularWeight, &
-    !   MassDensity, &
-    !   Temperature, &
+      AdiabaticIndex, &
+      SpecificHeatCapacity, &
+      MassDensity, &
+      Temperature, &
       TemperatureInner, &
       SpecificOpacity, &
       SpecificOpacityFloor, &
       EnergyMax, &
-    !   SoundSpeed
+      SoundSpeed, &
       FinishTime
     real ( KDR ), dimension ( 3 ), private :: &
       MinCoordinate, &
@@ -66,28 +66,28 @@ contains
 
     associate &
       ( L      => BoxLength, &
-        ! Gamma  => AdiabaticIndex, &
-        ! C_V    => SpecificHeatCapacity, &
-        ! Rho_0  => MassDensity, &
-        ! T_0    => Temperature, &
+        Gamma  => AdiabaticIndex, &
+        C_V    => SpecificHeatCapacity, &
+        Rho_0  => MassDensity, &
+        T_0    => Temperature, &
         T_I    => TemperatureInner, &
         Kappa  => SpecificOpacity, &
         Kappa_Min => SpecificOpacityFloor )
 
-    L      =  20.0_KDR    *  UNIT % CENTIMETER
-    ! Gamma  =  1.4_KDR
-    ! C_V    =  1.0_KDR     *  UNIT % ERG / UNIT % KELVIN / UNIT % GRAM
-    ! Rho_0  =  1.0e-3_KDR  *  UNIT % MASS_DENSITY_CGS
-    ! T_0    =  3.0e2_KDR   *  UNIT % KELVIN
-    T_I        =  1.0e3_KDR  *  UNIT % KELVIN
-    Kappa      =  1.0e3_KDR  *  UNIT % CENTIMETER ** 2 / UNIT % GRAM
-    Kappa_Min  =  10.0_KDR   *  UNIT % CENTIMETER ** 2 / UNIT % GRAM
+    L          =  20.0_KDR    *  UNIT % CENTIMETER
+    Gamma      =  1.4_KDR
+    C_V        =  1.0_KDR     *  UNIT % ERG / UNIT % KELVIN / UNIT % GRAM
+    Rho_0      =  1.0e-3_KDR  *  UNIT % MASS_DENSITY_CGS
+    T_0        =  3.0e2_KDR   *  UNIT % KELVIN
+    T_I        =  1.0e3_KDR   *  UNIT % KELVIN
+    Kappa      =  1.0e3_KDR   *  UNIT % CENTIMETER ** 2 / UNIT % GRAM
+    Kappa_Min  =  10.0_KDR    *  UNIT % CENTIMETER ** 2 / UNIT % GRAM
 
-    call PROGRAM_HEADER % GetParameter ( L,     'BoxLength' )
-    ! call PROGRAM_HEADER % GetParameter ( Gamma, 'AdiabaticIndex' )
-    ! call PROGRAM_HEADER % GetParameter ( C_V,   'SpecificHeatCapacity' )
-    ! call PROGRAM_HEADER % GetParameter ( N_0,   'MassDensity' )
-    ! call PROGRAM_HEADER % GetParameter ( T_0,   'Temperature' )
+    call PROGRAM_HEADER % GetParameter ( L,         'BoxLength' )
+    call PROGRAM_HEADER % GetParameter ( Gamma,     'AdiabaticIndex' )
+    call PROGRAM_HEADER % GetParameter ( C_V,       'SpecificHeatCapacity' )
+    call PROGRAM_HEADER % GetParameter ( Rho_0,     'MassDensity' )
+    call PROGRAM_HEADER % GetParameter ( T_0,       'Temperature' )
     call PROGRAM_HEADER % GetParameter ( T_I,       'TemperatureInner' )
     call PROGRAM_HEADER % GetParameter ( Kappa,     'SpecificOpacity' )
     call PROGRAM_HEADER % GetParameter ( Kappa_Min, 'SpecificOpacityFloor' )
@@ -108,6 +108,8 @@ contains
 
     call InitializeRadiationBox ( MW, MomentsType, Name )
     call InitializeInteractions ( MW, MomentsType )
+    call SetFluid ( MW )
+
 
     !-- Cleanup
 
@@ -285,6 +287,80 @@ contains
     end select !-- Integrator
 
   end subroutine InitializeInteractions
+
+
+  subroutine SetFluid ( MW )
+
+    type ( MarshakWaveForm ), intent ( inout ) :: &
+      MW
+
+    class ( GeometryFlatForm ), pointer :: &
+      G
+    class ( Fluid_P_I_Form ), pointer :: &
+      F
+
+    real ( KDR ) :: &
+      m_b, &
+      N_0, &
+      E_0, &
+      P_0
+
+    associate &
+      ( Gamma => AdiabaticIndex, &
+        C_V   => SpecificHeatCapacity, &
+        Rho_0 => MassDensity, &
+        T_0   => Temperature )
+
+    select type ( I => MW % Integrator )
+    class is ( Integrator_C_1D_C_PS_Template )
+
+    select type ( FA => I % Current_ASC )
+    class is ( Fluid_ASC_Form )
+    F => FA % Fluid_P_I ( )
+
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
+    G => PS % Geometry ( )
+
+    m_b  =  CONSTANT % ATOMIC_MASS_UNIT
+    N_0  =  Rho_0 / m_b
+    E_0  =  C_V * N_0 * T_0
+    P_0  =  ( Gamma - 1.0_KDR ) * E_0
+
+    call F % SetAdiabaticIndex ( Gamma )
+    call F % SetSpecificHeatVolume ( C_V )
+    call F % SetFiducialParameters ( N_0, P_0 )
+
+    associate &
+      (   N => F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
+        V_1 => F % Value ( :, F % VELOCITY_U ( 1 ) ), &
+        V_2 => F % Value ( :, F % VELOCITY_U ( 2 ) ), &
+        V_3 => F % Value ( :, F % VELOCITY_U ( 3 ) ), &
+          T => F % Value ( :, F % TEMPERATURE ), &
+        C_S => F % Value ( :, F % SOUND_SPEED ) )
+
+    N  =  N_0
+    T  =  T_0
+
+    V_1  =  0.0_KDR
+    V_2  =  0.0_KDR
+    V_3  =  0.0_KDR
+
+    call F % ComputeFromTemperature ( F % Value, G, G % Value )
+
+    SoundSpeed = maxval ( C_S )
+
+    ! !-- Module variable for accessibility in ApplySources_Fluid below
+    ! Fluid => FA % Fluid_P_NR ( )
+
+    end associate !-- N, etc.
+    end select !-- PS
+    end select !-- FA
+    end select !-- I
+    end associate !-- Gamma, etc.
+    nullify ( F, G )
+
+  end subroutine SetFluid
 
 
 end module MarshakWave_Form
