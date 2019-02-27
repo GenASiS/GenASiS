@@ -717,6 +717,12 @@ contains
     select type ( I )
     class is ( Integrator_C_1D_PS_C_PS_Form )  !-- Grey
 
+      if ( .not. allocated ( RadiationBox % Interactions_ASC ) ) then
+        TimeStepCandidate ( oC + 1 : oC + I % N_CURRENTS_1D )  &
+          =  huge ( 1.0_KDR )
+        return
+      end if
+
       associate ( IA => RadiationBox % Interactions_ASC )  
       do iC = 1, I % N_CURRENTS_1D  
         associate ( RA => I % Current_ASC_1D ( iC ) % Element )
@@ -728,6 +734,12 @@ contains
       end associate !-- IA
 
     class is ( Integrator_C_1D_MS_C_PS_Form )  !-- Spectral
+
+      if ( .not. allocated ( RadiationBox % Interactions_BSLL_ASC_CSLD ) ) then
+        TimeStepCandidate ( oC + 1 : oC + I % N_CURRENTS_1D )  &
+          =  huge ( 1.0_KDR )
+        return
+      end if
 
       associate ( IB => RadiationBox % Interactions_BSLL_ASC_CSLD )
       do iC = 1, I % N_CURRENTS_1D  
