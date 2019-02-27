@@ -23,11 +23,10 @@ module Fluid_P_I__Form
       N_FIELDS_IDEAL    = N_FIELDS_IDEAL, &
       N_VECTORS_IDEAL   = N_VECTORS_IDEAL
     real ( KDR ) :: &
-      AtomicMassUnit, &
       BoltzmannConstant, &
       AdiabaticIndex, &
       MeanMolecularWeight, &
-      SpecificHeatVolume, &
+      SpecificHeatVolume, &  !-- per baryon
       FiducialBaryonDensity, &
       FiducialPressure
   contains
@@ -129,21 +128,12 @@ contains
              VectorIndicesOption = VectorIndicesOption )
 
     associate &
-      ( amu   => F % AtomicMassUnit, &
-        k     => F % BoltzmannConstant, &
+      ( k     => F % BoltzmannConstant, &
         gamma => F % AdiabaticIndex, &
         mu    => F % MeanMolecularWeight, &
         c_v   => F % SpecificHeatVolume, &
         n_0   => F % FiducialBaryonDensity, &
         p_0   => F % FiducialPressure )
-
-    if ( BaryonMassUnit /= UNIT % IDENTITY ) then
-      amu = CONSTANT % ATOMIC_MASS_UNIT
-      call Show ( amu, UNIT % KILOGRAM, 'AtomicMassUnit', F % IGNORABILITY )
-    else !-- Dimensionless
-      amu = 1.0_KDR
-      call Show ( amu, 'AtomicMassUnit', F % IGNORABILITY )
-    end if
 
     if ( TemperatureUnit /= UNIT % IDENTITY ) then
       k = CONSTANT % BOLTZMANN
@@ -329,10 +319,11 @@ contains
 
     call Show ( 'Setting fiducial parameters of a Fluid_P_I', F % IGNORABILITY )
     call Show ( F % Name, 'Name', F % IGNORABILITY )
-    call Show ( F % FiducialBaryonDensity, 'FiducialBaryonDensity', &
-                F % IGNORABILITY )
-    call Show ( F % FiducialPressure, 'FiducialPressure', &
-                F % IGNORABILITY )
+    call Show ( F % FiducialBaryonDensity, &
+                F % Unit ( F % COMOVING_BARYON_DENSITY ), &
+                'FiducialBaryonDensity', F % IGNORABILITY )
+    call Show ( F % FiducialPressure, F % Unit ( F % PRESSURE ), &
+                'FiducialPressure', F % IGNORABILITY )
 
   end subroutine SetFiducialParameters
 
