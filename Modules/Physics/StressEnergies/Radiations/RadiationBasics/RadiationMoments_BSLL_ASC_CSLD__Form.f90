@@ -32,7 +32,7 @@ module RadiationMoments_BSLL_ASC_CSLD__Form
         MomentumDensity_D_Unit
       character ( LDF ) :: &
         RadiationType = ''
-      class ( RadiationMoments_ASC_Form ), allocatable :: &
+      class ( FieldAtlasTemplate ), allocatable :: &
         EnergyIntegral
       class ( Field_BSLL_ASC_CSLD_Template ), pointer :: &
         Interactions_BSLL_ASC_CSLD => null ( )
@@ -257,9 +257,12 @@ contains
 !             IgnorabilityOption  = IgnorabilityOption )
 
     call CB % ComputeEnergyIntegral ( )
-    call CB % EnergyIntegral % ComputeTally &
-           ( ComputeChangeOption = ComputeChangeOption, &
-             IgnorabilityOption  = IgnorabilityOption )
+    select type ( RMA => CB % EnergyIntegral )
+    class is ( RadiationMoments_ASC_Form )
+      call RMA % ComputeTally &
+             ( ComputeChangeOption = ComputeChangeOption, &
+               IgnorabilityOption  = IgnorabilityOption )
+    end select !-- RMA
 
   end subroutine ComputeTally
 
@@ -420,8 +423,9 @@ contains
       RadiationType = FB % RadiationType
     end select !-- FB % RadiationType
   
-    allocate ( FB % EnergyIntegral )
-    associate ( EI => FB % EnergyIntegral )
+    call FB % AllocateField ( FB % EnergyIntegral )
+    select type ( EI => FB % EnergyIntegral )
+    class is ( RadiationMoments_ASC_Form )
       call EI % Initialize &
              ( B % Base_ASC, RadiationType, &
                NameShortOption = trim ( FB % NameShort ) // '_Integral', &
@@ -438,7 +442,7 @@ contains
                AngularMomentumUnitOption = FB % AngularMomentumUnit, &
                TimeUnitOption = FB % TimeUnit, &
                IgnorabilityOption = CONSOLE % INFO_5 )
-    end associate !-- EI
+    end select !-- EI
 
     end associate !-- B
 
@@ -479,8 +483,12 @@ contains
 
     associate ( MS => RMB % Bundle_SLL_ASC_CSLD )
 
-    RMEI => RMB % EnergyIntegral % RadiationMoments ( )
-    G    => MS % Base_CSLD % Geometry ( )
+    select type ( RMA => RMB % EnergyIntegral )
+    class is ( RadiationMoments_ASC_Form )
+      RMEI => RMA % RadiationMoments ( )
+    end select !-- RMA
+
+    G => MS % Base_CSLD % Geometry ( )
 
     allocate ( Integral  ( RMEI % N_CONSERVED ) )
     allocate ( Integrand ( RMEI % N_CONSERVED ) )

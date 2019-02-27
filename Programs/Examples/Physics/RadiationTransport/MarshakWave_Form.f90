@@ -187,7 +187,7 @@ contains
 
     call MW % Initialize &
            ( RadiationName = [ 'Radiation' ], &
-             RadiationType = [ 'GENERIC' ], &
+             RadiationType = [ 'PHOTONS' ], &
              MomentsType = MomentsType, &
              Name = Name, &
              BoundaryConditionsFaceOption = BCF, &

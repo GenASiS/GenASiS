@@ -412,27 +412,41 @@ contains
 
     integer ( KDI ) :: &
       iC  !-- iCurrent
+    character ( LDL ) :: &
+      RadiationTypeLocal
 
     select type ( I_1D => RB % Integrator )
     class is ( Integrator_C_1D_C_PS_Template )
 
     do iC = 1, I_1D % N_CURRENTS_1D
-      select case ( trim ( RadiationType ( iC ) ) )
-      case ( 'GENERIC' )
 
-        select type ( I => I_1D )
-        class is ( Integrator_C_1D_PS_C_PS_Form )
+      select type ( I => I_1D )
+      class is ( Integrator_C_1D_PS_C_PS_Form )
 
-          select type ( PS => I % PositionSpace )
-          class is ( Atlas_SC_Form )
+        select type ( PS => I % PositionSpace )
+        class is ( Atlas_SC_Form )
 
+        select case ( trim ( RadiationType ( iC ) ) )
+        case ( 'GENERIC' )
           allocate &
-            ( RadiationMoments_ASC_Form :: &
-                I % Current_ASC_1D ( iC ) % Element )
-          select type ( RA => I % Current_ASC_1D ( iC ) % Element )
-          type is ( RadiationMoments_ASC_Form )
+            ( RadiationMoments_ASC_Form :: I % Current_ASC_1D ( iC ) % Element )
+          RadiationTypeLocal = 'GENERIC'
+        case ( 'PHOTONS' )
+          allocate &
+            ( PhotonMoments_ASC_Form :: I % Current_ASC_1D ( iC ) % Element )
+          RadiationTypeLocal = 'PHOTONS_GREY'
+        case default
+          call Show ( 'RadiationType not recognized', CONSOLE % ERROR )
+          call Show ( RadiationType ( iC ), 'RadiationType', CONSOLE % ERROR )
+          call Show ( 'RadiationBox_Form', 'module', CONSOLE % ERROR )
+          call Show ( 'InitializeRadiation', 'subroutine', CONSOLE % ERROR )
+          call PROGRAM_HEADER % Abort ( )
+        end select !-- RadiationType
+       
+        select type ( RA => I % Current_ASC_1D ( iC ) % Element )
+        class is ( RadiationMoments_ASC_Form )
           call RA % Initialize &
-                 ( PS, RadiationType ( iC ), &
+                 ( PS, RadiationTypeLocal, &
                    NameShortOption = RadiationName ( iC ), &
                    Velocity_U_UnitOption = Velocity_U_UnitOption, &
                    MomentumDensity_U_UnitOption &
@@ -445,21 +459,37 @@ contains
                    MomentumUnitOption = MomentumUnitOption, &
                    AngularMomentumUnitOption = AngularMomentumUnitOption, &
                    TimeUnitOption = TimeUnitOption )
-          end select !-- RA        
-          end select !-- PS
+        end select !-- RA        
+        end select !-- PS
 
-        class is ( Integrator_C_1D_MS_C_PS_Form )
+      class is ( Integrator_C_1D_MS_C_PS_Form )
 
-          select type ( MS => I % MomentumSpace )
-          class is ( Bundle_SLL_ASC_CSLD_Form )
+        select type ( MS => I % MomentumSpace )
+        class is ( Bundle_SLL_ASC_CSLD_Form )
 
+        select case ( trim ( RadiationType ( iC ) ) )
+        case ( 'GENERIC' )
           allocate &
             ( RadiationMoments_BSLL_ASC_CSLD_Form :: &
                 I % Current_BSLL_ASC_CSLD_1D ( iC ) % Element )
-          select type ( RMB => I % Current_BSLL_ASC_CSLD_1D ( iC ) % Element )
-          class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
+          RadiationTypeLocal = 'GENERIC'
+        case ( 'PHOTONS' )
+          allocate &
+            ( PhotonMoments_BSLL_ASC_CSLD_Form :: &
+                I % Current_BSLL_ASC_CSLD_1D ( iC ) % Element )
+          RadiationTypeLocal = 'PHOTONS_SPECTRAL'
+        case default
+          call Show ( 'RadiationType not recognized', CONSOLE % ERROR )
+          call Show ( RadiationType ( iC ), 'RadiationType', CONSOLE % ERROR )
+          call Show ( 'RadiationBox_Form', 'module', CONSOLE % ERROR )
+          call Show ( 'InitializeRadiation', 'subroutine', CONSOLE % ERROR )
+          call PROGRAM_HEADER % Abort ( )
+        end select !-- RadiationType
+
+        select type ( RMB => I % Current_BSLL_ASC_CSLD_1D ( iC ) % Element )
+        class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
           call RMB % Initialize &
-                 ( MS, RadiationType ( iC ), &
+                 ( MS, RadiationTypeLocal, &
                    NameShortOption = RadiationName ( iC ), &
                    Velocity_U_UnitOption = Velocity_U_UnitOption, &
                    MomentumDensity_U_UnitOption &
@@ -472,18 +502,11 @@ contains
                    MomentumUnitOption = MomentumUnitOption, &
                    AngularMomentumUnitOption = AngularMomentumUnitOption, &
                    TimeUnitOption = TimeUnitOption )
-          end select !-- RMB
-          end select !-- MS
+        end select !-- RMB
+        end select !-- MS
 
         end select !--I
 
-      case default
-        call Show ( 'RadiationType not recognized', CONSOLE % ERROR )
-        call Show ( RadiationType ( iC ), 'RadiationType', CONSOLE % ERROR )
-        call Show ( 'RadiationBox_G_OS__Form', 'module', CONSOLE % ERROR )
-        call Show ( 'Initialize', 'subroutine', CONSOLE % ERROR )
-        call PROGRAM_HEADER % Abort ( )
-      end select
     end do !-- iC
 
     end select !-- I_1D
