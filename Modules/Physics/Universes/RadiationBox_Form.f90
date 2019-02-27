@@ -709,49 +709,48 @@ contains
     !-- Interactions
 
     oC  =  I % N_CURRENTS_1D  +  1
-    if ( .not. RadiationBox % ApplyInteractions ) &
+!    if ( .not. RadiationBox % ApplyInteractions ) &
       TimeStepCandidate ( oC + 1 : oC + I % N_CURRENTS_1D )  =  huge ( 1.0_KDR )
-
     end select !-- I
 
-    select type ( I )
-    class is ( Integrator_C_1D_PS_C_PS_Form )  !-- Grey
+    ! select type ( I )
+    ! class is ( Integrator_C_1D_PS_C_PS_Form )  !-- Grey
 
-      if ( .not. allocated ( RadiationBox % Interactions_ASC ) ) then
-        TimeStepCandidate ( oC + 1 : oC + I % N_CURRENTS_1D )  &
-          =  huge ( 1.0_KDR )
-        return
-      end if
+    !   if ( .not. allocated ( RadiationBox % Interactions_ASC ) ) then
+    !     TimeStepCandidate ( oC + 1 : oC + I % N_CURRENTS_1D )  &
+    !       =  huge ( 1.0_KDR )
+    !     return
+    !   end if
 
-      associate ( IA => RadiationBox % Interactions_ASC )  
-      do iC = 1, I % N_CURRENTS_1D  
-        associate ( RA => I % Current_ASC_1D ( iC ) % Element )
-        call IA % ComputeTimeScale ( RA, TimeStepCandidate ( oC + iC ) )
-        TimeStepCandidate ( oC + iC )  &
-          =  RadiationBox % InteractionFactor  *  TimeStepCandidate ( oC + iC )
-        end associate !-- RA
-      end do !-- iC
-      end associate !-- IA
+    !   associate ( IA => RadiationBox % Interactions_ASC )  
+    !   do iC = 1, I % N_CURRENTS_1D  
+    !     associate ( RA => I % Current_ASC_1D ( iC ) % Element )
+    !     call IA % ComputeTimeScale ( RA, TimeStepCandidate ( oC + iC ) )
+    !     TimeStepCandidate ( oC + iC )  &
+    !       =  RadiationBox % InteractionFactor  *  TimeStepCandidate ( oC + iC )
+    !     end associate !-- RA
+    !   end do !-- iC
+    !   end associate !-- IA
 
-    class is ( Integrator_C_1D_MS_C_PS_Form )  !-- Spectral
+    ! class is ( Integrator_C_1D_MS_C_PS_Form )  !-- Spectral
 
-      if ( .not. allocated ( RadiationBox % Interactions_BSLL_ASC_CSLD ) ) then
-        TimeStepCandidate ( oC + 1 : oC + I % N_CURRENTS_1D )  &
-          =  huge ( 1.0_KDR )
-        return
-      end if
+    !   if ( .not. allocated ( RadiationBox % Interactions_BSLL_ASC_CSLD ) ) then
+    !     TimeStepCandidate ( oC + 1 : oC + I % N_CURRENTS_1D )  &
+    !       =  huge ( 1.0_KDR )
+    !     return
+    !   end if
 
-      associate ( IB => RadiationBox % Interactions_BSLL_ASC_CSLD )
-      do iC = 1, I % N_CURRENTS_1D  
-        associate ( RB => I % Current_BSLL_ASC_CSLD_1D ( iC ) % Element )
-        call IB % ComputeTimeScale ( RB, TimeStepCandidate ( oC + iC ) )
-        TimeStepCandidate ( oC + iC )  &
-          =  RadiationBox % InteractionFactor  *  TimeStepCandidate ( oC + iC )
-        end associate !-- RB
-      end do !-- iC
-      end associate !-- IB
+    !   associate ( IB => RadiationBox % Interactions_BSLL_ASC_CSLD )
+    !   do iC = 1, I % N_CURRENTS_1D  
+    !     associate ( RB => I % Current_BSLL_ASC_CSLD_1D ( iC ) % Element )
+    !     call IB % ComputeTimeScale ( RB, TimeStepCandidate ( oC + iC ) )
+    !     TimeStepCandidate ( oC + iC )  &
+    !       =  RadiationBox % InteractionFactor  *  TimeStepCandidate ( oC + iC )
+    !     end associate !-- RB
+    !   end do !-- iC
+    !   end associate !-- IB
 
-    end select !-- I
+    ! end select !-- I
 
   end subroutine ComputeTimeStepLocal
 
