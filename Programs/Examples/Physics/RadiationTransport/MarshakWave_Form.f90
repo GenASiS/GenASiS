@@ -22,12 +22,13 @@ module MarshakWave_Form
     private :: &
       InitializeRadiationBox, &
       InitializeInteractions, &
-      SetFluid
+      SetFluid, &
+      SetRadiation
 
     real ( KDR ), private :: &
       BoxLength, &
       AdiabaticIndex, &
-      SpecificHeatCapacity, &
+      SpecificHeatCapacity, &  !-- per unit mass
       MassDensity, &
       Temperature, &
       TemperatureInner, &
@@ -55,6 +56,12 @@ contains
     character ( * ), intent ( in )  :: &
       MomentsType, &
       Name
+
+    real ( KDR ) :: &
+      MeanFreePath, &
+      OpticalDepth, &
+      DynamicalTime, &
+      DiffusionTime
 
     if ( MW % Type == '' ) &
       MW % Type = 'a MarshakWave'
@@ -109,10 +116,45 @@ contains
     call InitializeRadiationBox ( MW, MomentsType, Name )
     call InitializeInteractions ( MW, MomentsType )
     call SetFluid ( MW )
+    call SetRadiation ( MW )
+
+    associate &
+      ( c_s    => SoundSpeed, &
+        t_Dyn  => DynamicalTime, &
+        Lambda => MeanFreePath, &
+        Tau    => OpticalDepth, &
+        t_Diff => DiffusionTime, &
+        c      => CONSTANT % SPEED_OF_LIGHT )
+
+    t_Dyn   =  L / c_s
+
+    Lambda  =  1.0_KDR / ( Rho_0 * Kappa )
+    Tau     =  L / Lambda
+    t_Diff  =  L * Tau / c
+
+    call Show ( 'MarshakWave parameters' )
+    call Show ( Gamma, 'Gamma' )
+    call Show ( C_V, UNIT % ERG / UNIT % KELVIN / UNIT % GRAM, 'C_V' )
+    call Show ( Rho_0, UNIT % MASS_DENSITY_CGS, 'Rho_0' )
+    call Show ( T_0, UNIT % KELVIN, 'T_0' )
+    call Show ( c_s, UNIT % CENTIMETER / UNIT % SECOND, 'c_s' )
+    call Show ( t_Dyn, UNIT % SECOND, 't_Dyn' )
+    call Show ( T_I, UNIT % KELVIN, 'T_I' )
+    call Show ( Kappa, UNIT % CENTIMETER ** 2 / UNIT % GRAM, 'Kappa' )
+    call Show ( Lambda, UNIT % CENTIMETER, 'Lambda' )
+    call Show ( Tau, UNIT % IDENTITY, 'Tau' )
+    call Show ( t_Diff, UNIT % SECOND, 't_Diff' )
+    call Show ( InteractionsType, 'InteractionsType' )
+
+    select case ( trim ( InteractionsType ) )
+    case ( 'MARSHAK_WAVE_VAYTET_2_GREY', 'MARSHAK_WAVE_VAYTET_3_GREY' )
+      call Show ( EnergyMax, UNIT % ELECTRON_VOLT, 'EnergyMax' )
+    end select !-- InteractionsType
 
 
     !-- Cleanup
 
+    end associate !-- Mu, etc.
     end associate !-- L, etc.
 
   end subroutine Initialize_MW
@@ -322,13 +364,14 @@ contains
     class is ( Atlas_SC_Form )
     G => PS % Geometry ( )
 
-    m_b  =  CONSTANT % ATOMIC_MASS_UNIT
-    N_0  =  Rho_0 / m_b
-    E_0  =  C_V * N_0 * T_0
+    E_0  =  C_V * Rho_0 * T_0
     P_0  =  ( Gamma - 1.0_KDR ) * E_0
 
+    m_b  =  CONSTANT % ATOMIC_MASS_UNIT
+    N_0  =  Rho_0 / m_b
+
     call F % SetAdiabaticIndex ( Gamma )
-    call F % SetSpecificHeatVolume ( C_V )
+    call F % SetSpecificHeatVolume ( C_V * m_b )
     call F % SetFiducialParameters ( N_0, P_0 )
 
     associate &
@@ -361,6 +404,128 @@ contains
     nullify ( F, G )
 
   end subroutine SetFluid
+
+
+  subroutine SetRadiation ( MW )
+
+    type ( MarshakWaveForm ), intent ( inout ) :: &
+      MW
+
+    integer ( KDI ) :: &
+      iF, &  !-- iFiber
+      iS     !-- iSection
+    real ( KDR ), dimension ( : ), allocatable :: &
+      J_0, &
+      J_I
+    real ( KDR ) :: &
+      a
+    class ( GeometryFlatForm ), pointer :: &
+      G
+    class ( Fluid_P_I_Form ), pointer :: &
+      F
+    class ( RadiationMomentsForm ), pointer :: &
+      RM
+
+    !-- Fluid and Geometry
+
+    select type ( I => MW % Integrator )
+    class is ( Integrator_C_1D_C_PS_Template )
+      select type ( FA => I % Current_ASC )
+      class is ( Fluid_ASC_Form )
+        F => FA % Fluid_P_I ( )
+      end select !-- FA
+      select type ( PS => I % PositionSpace )
+      class is ( Atlas_SC_Form )
+        G => PS % Geometry ( )
+      end select !-- PS
+    end select !-- I
+
+    !-- Radiation
+
+    associate &
+      ( T_0 => Temperature, &
+        T_I => TemperatureInner, &
+          X => G % Value ( :, G % CENTER_U ( 1 ) ), &
+          Y => G % Value ( :, G % CENTER_U ( 2 ) ), &
+          Z => G % Value ( :, G % CENTER_U ( 3 ) ) )
+
+    select type ( I => MW % Integrator )
+    class is ( Integrator_C_1D_PS_C_PS_Form )  !-- Grey
+
+      select type ( RMA => I % Current_ASC_1D ( 1 ) % Element )
+      class is ( RadiationMoments_ASC_Form )
+      RM => RMA % RadiationMoments ( )
+
+      associate &
+        (   J => RM % Value ( :, RM % COMOVING_ENERGY ), &
+          H_1 => RM % Value ( :, RM % COMOVING_MOMENTUM_U ( 1 ) ), &
+          H_2 => RM % Value ( :, RM % COMOVING_MOMENTUM_U ( 2 ) ), &
+          H_3 => RM % Value ( :, RM % COMOVING_MOMENTUM_U ( 3 ) ) )
+      
+      a  =  4.0_KDR * CONSTANT % STEFAN_BOLTZMANN
+
+      J  =  a  *  T_0 ** 4
+
+      H_1  =  0.0_KDR
+      H_2  =  0.0_KDR
+      H_3  =  0.0_KDR
+
+      where ( X < MinCoordinate ( 1 ) .or. Y < MinCoordinate ( 2 ) &
+              .or. Z < MinCoordinate ( 3 ) )
+        J  =  a  *  T_I ** 4
+      end where
+
+      call RM % ComputeFromPrimitive ( G )
+
+      ! !-- Module variable for accessibility
+      ! Radiation => RA % PhotonMoments_G ( )
+
+      end associate !-- J, etc.
+      end select !-- RMA
+
+    class is ( Integrator_C_1D_MS_C_PS_Form )  !-- Spectral
+
+      select type ( RMB => I % Current_BSLL_ASC_CSLD_1D ( 1 ) % Element )
+      class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
+      select type ( MS => I % MomentumSpace )
+      class is ( Bundle_SLL_ASC_CSLD_Form )
+
+      associate ( E => RMB % Energy )
+
+      !-- Proper cells
+
+      do iF = 1, MS % nFibers
+        associate ( iBC => MS % iaBaseCell ( iF ) )
+        RM => RMB % RadiationMoments ( iF )
+        associate &
+          ( J    =>  RM % Value ( :, RM % COMOVING_ENERGY ), &
+            H_1  =>  RM % Value ( :, RM % COMOVING_MOMENTUM_U ( 1 ) ), &
+            H_2  =>  RM % Value ( :, RM % COMOVING_MOMENTUM_U ( 2 ) ), &
+            H_3  =>  RM % Value ( :, RM % COMOVING_MOMENTUM_U ( 3 ) ) )
+
+        call SetPlanckSpectrum ( E, T_0, J )
+
+        H_1  =  0.0_KDR
+        H_2  =  0.0_KDR
+        H_3  =  0.0_KDR
+
+        call RM % ComputeFromPrimitive ( iBC, G )
+ 
+        end associate !-- J, etc.
+        end associate !-- iBC
+      end do !-- iF
+
+      call RMB % LoadSections ( )
+
+      end associate !-- E, etc.
+      end select !-- MS
+      end select !-- RMB
+
+    end select !-- I
+    end associate !-- T_0, etc.
+    nullify ( G, F, RM )
+
+  end subroutine SetRadiation
 
 
 end module MarshakWave_Form

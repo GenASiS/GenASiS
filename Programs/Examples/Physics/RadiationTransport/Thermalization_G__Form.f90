@@ -414,7 +414,7 @@ contains
     class is ( Integrator_C_1D_PS_C_PS_Form )  !-- Grey
 
       select type ( RMA => I % Current_ASC_1D ( 1 ) % Element )
-      type is ( RadiationMoments_ASC_Form )
+      class is ( RadiationMoments_ASC_Form )
         RM => RMA % RadiationMoments ( )
       select type ( PS => I % PositionSpace )
       class is ( Atlas_SC_Form )
@@ -466,7 +466,7 @@ contains
     class is ( Integrator_C_1D_MS_C_PS_Form )  !-- Spectral
 
       select type ( RMB => I % Current_BSLL_ASC_CSLD_1D ( 1 ) % Element )
-      type is ( RadiationMoments_BSLL_ASC_CSLD_Form )
+      class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
       select type ( MS => I % MomentumSpace )
       class is ( Bundle_SLL_ASC_CSLD_Form )
 
