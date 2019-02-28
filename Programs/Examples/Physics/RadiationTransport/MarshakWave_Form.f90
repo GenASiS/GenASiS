@@ -270,6 +270,13 @@ contains
     character ( * ), intent ( in ) :: &
       MomentsType
 
+    type ( MeasuredValueForm ) :: &
+      LengthUnit, &
+      EnergyDensityUnit
+
+    LengthUnit         =  UNIT % CENTIMETER
+    EnergyDensityUnit  =  UNIT % ERG  *  UNIT % CENTIMETER ** (-3)
+
     select type ( I => MW % Integrator )
     class is ( Integrator_C_1D_PS_C_PS_Form )  !-- Grey
 
@@ -287,7 +294,8 @@ contains
       class is ( InteractionsExamples_ASC_Form )
       call IA % Initialize &
              ( PS, InteractionsType = InteractionsType, &
-               MomentsType = MomentsType )
+               MomentsType = MomentsType, LengthUnitOption = LengthUnit, &
+               EnergyDensityUnitOption = EnergyDensityUnit )
       select case ( trim ( InteractionsType ) )
       case ( 'MARSHAK_WAVE_VAYTET_1' )
         call IA % Set_MWV_Grey ( FA, SpecificOpacity = SpecificOpacity )
@@ -314,7 +322,10 @@ contains
                    MW % Interactions_BSLL_ASC_CSLD )
       select type ( IB => MW % Interactions_BSLL_ASC_CSLD )
       class is ( InteractionsExamples_BSLL_ASC_CSLD_Form )
-      call IB % Initialize ( MS, InteractionsType = InteractionsType )
+      call IB % Initialize &
+             ( MS, InteractionsType = InteractionsType, &
+               LengthUnitOption = LengthUnit, &
+               EnergyDensityUnitOption = EnergyDensityUnit )
       select case ( trim ( InteractionsType ) )
       case ( 'MARSHAK_WAVE_VAYTET_1' )
         call IB % Set_MWV_Spectral ( FA, SpecificOpacity = SpecificOpacity )
