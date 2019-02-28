@@ -86,14 +86,15 @@ contains
 
 
   subroutine Set_MWV_1_S &
-               ( I, Fluid, Energy, SpecificOpacity, iBaseCell )
+               ( I, Fluid, Energy, d3_Energy, SpecificOpacity, iBaseCell )
 
     class ( Interactions_MWV_1_Form ), intent ( inout ) :: &
       I
     class ( Fluid_P_Template ), intent ( in ), target :: &
       Fluid
     real ( KDR ), dimension ( : ), intent ( in ), target :: &
-      Energy
+      Energy, &
+      d3_Energy
     real ( KDR ), intent ( in ) :: &
       SpecificOpacity
     integer ( KDI ), intent ( in ) :: &
@@ -102,6 +103,7 @@ contains
     I % iBaseCell        =   iBaseCell
     I % SpecificOpacity  =   SpecificOpacity
     I % Energy           =>  Energy
+    I % d3_Energy        =>  d3_Energy
     I % Fluid            =>  Fluid
 
   end subroutine Set_MWV_1_S
@@ -171,6 +173,7 @@ contains
                ( R % Value ( :, R % TEMPERATURE_PARAMETER ), &
                  F % Value ( :, F % BARYON_MASS ), &
                  F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
+                 F % Value ( :, F % INTERNAL_ENERGY ), &
                  F % Value ( :, F % TEMPERATURE ), &
                  R % Value ( :, R % COMOVING_ENERGY ), &
                  I % Value ( :, I % TIME_SCALE ) )
@@ -185,8 +188,10 @@ contains
         call I % ComputeTimeScaleKernel_S &
                ( I % Value ( :, I % EQUILIBRIUM_J ), &
                  R % Value ( :, R % COMOVING_ENERGY ), &
+                 I % d3_Energy, &
                  F % Value ( iBC, F % BARYON_MASS ), &
                  F % Value ( iBC, F % COMOVING_BARYON_DENSITY ), &
+                 F % Value ( iBC, F % INTERNAL_ENERGY ), &
                  I % Value ( :, I % TIME_SCALE ) )
       end select !-- R
     end select !-- MomentsType
@@ -268,7 +273,7 @@ contains
   end subroutine ComputeKernel_S
 
 
-  subroutine ComputeTimeScaleKernel_G ( I, TP, M, N, T, J, TS )
+  subroutine ComputeTimeScaleKernel_G ( I, TP, M, N, E, T, J, TS )
 
     class ( Interactions_MWV_1_Form ), intent ( in ) :: &
       I
@@ -276,6 +281,7 @@ contains
       TP, &
       M, &
       N, &
+      E, &
       T, &
       J
     real ( KDR ), dimension ( : ), intent ( out ) :: &
@@ -288,10 +294,13 @@ contains
       a, &
       Kappa, &
       J_EQ, &
-      Q
+      Q, &
+      SqrtTiny
 
     a      =  4.0_KDR  *  CONSTANT % STEFAN_BOLTZMANN
     Kappa  =  I % SpecificOpacity
+
+    SqrtTiny = sqrt ( tiny ( 0.0_KDR ) )
 
     nValues  =  size ( J )
 
@@ -300,24 +309,25 @@ contains
       J_EQ       =  a  *  T ( iV ) ** 4
       Q          =  abs ( Kappa  *  M ( iV )  *  N ( iV )  &
                           *  ( J_EQ - J ( iV ) ) )
-      TS ( iV )  =  J_EQ / Q
+      TS ( iV )  =  E ( iV ) / max ( Q, SqrtTiny )
     end do !-- iV
     !$OMP end parallel do
-
 
   end subroutine ComputeTimeScaleKernel_G
 
 
-  subroutine ComputeTimeScaleKernel_S ( I, J_EQ, J, M, N, TS )
+  subroutine ComputeTimeScaleKernel_S ( I, J_EQ, J, dV, M, N, E, TS )
 
     class ( Interactions_MWV_1_Form ), intent ( in ) :: &
       I
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       J_EQ, &
-      J
+      J, &
+      dV
     real ( KDR ), intent ( in ) :: &
       M, &
-      N
+      N, &
+      E
     real ( KDR ), dimension ( : ), intent ( out ) :: &
       TS
 
@@ -326,16 +336,20 @@ contains
       nValues
     real ( KDR ) :: &
       Kappa, &
-      Q
+      Q, &
+      SqrtTiny
 
     Kappa  =  I % SpecificOpacity
 
+    SqrtTiny = sqrt ( tiny ( 0.0_KDR ) )
+
     nValues  =  size ( J )
 
+    Q = 0.0_KDR
     do iV = 1, nValues
-      Q          =  abs ( Kappa * M * N * ( J_EQ ( iV ) - J ( iV ) ) )
-      TS ( iV )  =  J_EQ ( iV ) / Q
+      Q  =  Q  +  abs ( Kappa * M * N * ( J_EQ ( iV ) - J ( iV ) ) ) * dV ( iV )
     end do !-- iV
+    TS  =  E / max ( Q, SqrtTiny )
 
   end subroutine ComputeTimeScaleKernel_S
 

@@ -126,7 +126,9 @@ contains
     Fluid => FA % Fluid_P_I ( )
 
     GF => B % GeometryFiber ( )
-    associate ( Energy => GF % Value ( :, GF % CENTER_U ( 1 ) ) )
+    associate &
+      (    Energy => GF % Value ( :, GF % CENTER_U ( 1 ) ), &
+        d3_Energy => GF % Value ( :, GF % VOLUME ) )
 
     do iF = 1, B % nFibers
       I => IB % Interactions ( iF )
@@ -135,13 +137,14 @@ contains
         call I % Set &
                ( Fluid = Fluid, &
                  Energy = Energy, &
+                 d3_Energy = d3_Energy, &
                  SpecificOpacity = SpecificOpacity, &
                  iBaseCell = B % iaBaseCell ( iF ) )
       end select !-- I
       nullify ( I )
     end do !-- iF
 
-    end associate !-- Energy
+    end associate !-- Energy, etc.
     end select !-- B
     nullify ( GF )
 

@@ -44,6 +44,7 @@ module RadiationBox_Form
       InitializeSteps, &
       ComputeTimeStepLocal, &
       PrepareStep, &
+      IntegrateSources, &
       ApplySources_Fluid
 
       private :: &
@@ -734,48 +735,51 @@ contains
     !-- Interactions
 
     oC  =  I % N_CURRENTS_1D  +  1
-!    if ( .not. RadiationBox % ApplyInteractions ) &
+    if ( .not. RadiationBox % ApplyInteractions ) then
       TimeStepCandidate ( oC + 1 : oC + I % N_CURRENTS_1D )  =  huge ( 1.0_KDR )
+      return
+    end if
+
     end select !-- I
 
-    ! select type ( I )
-    ! class is ( Integrator_C_1D_PS_C_PS_Form )  !-- Grey
+    select type ( I )
+    class is ( Integrator_C_1D_PS_C_PS_Form )  !-- Grey
 
-    !   if ( .not. allocated ( RadiationBox % Interactions_ASC ) ) then
-    !     TimeStepCandidate ( oC + 1 : oC + I % N_CURRENTS_1D )  &
-    !       =  huge ( 1.0_KDR )
-    !     return
-    !   end if
+      if ( .not. allocated ( RadiationBox % Interactions_ASC ) ) then
+        TimeStepCandidate ( oC + 1 : oC + I % N_CURRENTS_1D )  &
+          =  huge ( 1.0_KDR )
+        return
+      end if
 
-    !   associate ( IA => RadiationBox % Interactions_ASC )  
-    !   do iC = 1, I % N_CURRENTS_1D  
-    !     associate ( RA => I % Current_ASC_1D ( iC ) % Element )
-    !     call IA % ComputeTimeScale ( RA, TimeStepCandidate ( oC + iC ) )
-    !     TimeStepCandidate ( oC + iC )  &
-    !       =  RadiationBox % InteractionFactor  *  TimeStepCandidate ( oC + iC )
-    !     end associate !-- RA
-    !   end do !-- iC
-    !   end associate !-- IA
+      associate ( IA => RadiationBox % Interactions_ASC )  
+      do iC = 1, I % N_CURRENTS_1D  
+        associate ( RA => I % Current_ASC_1D ( iC ) % Element )
+        call IA % ComputeTimeScale ( RA, TimeStepCandidate ( oC + iC ) )
+        TimeStepCandidate ( oC + iC )  &
+          =  RadiationBox % InteractionFactor  *  TimeStepCandidate ( oC + iC )
+        end associate !-- RA
+      end do !-- iC
+      end associate !-- IA
 
-    ! class is ( Integrator_C_1D_MS_C_PS_Form )  !-- Spectral
+    class is ( Integrator_C_1D_MS_C_PS_Form )  !-- Spectral
 
-    !   if ( .not. allocated ( RadiationBox % Interactions_BSLL_ASC_CSLD ) ) then
-    !     TimeStepCandidate ( oC + 1 : oC + I % N_CURRENTS_1D )  &
-    !       =  huge ( 1.0_KDR )
-    !     return
-    !   end if
+      if ( .not. allocated ( RadiationBox % Interactions_BSLL_ASC_CSLD ) ) then
+        TimeStepCandidate ( oC + 1 : oC + I % N_CURRENTS_1D )  &
+          =  huge ( 1.0_KDR )
+        return
+      end if
 
-    !   associate ( IB => RadiationBox % Interactions_BSLL_ASC_CSLD )
-    !   do iC = 1, I % N_CURRENTS_1D  
-    !     associate ( RB => I % Current_BSLL_ASC_CSLD_1D ( iC ) % Element )
-    !     call IB % ComputeTimeScale ( RB, TimeStepCandidate ( oC + iC ) )
-    !     TimeStepCandidate ( oC + iC )  &
-    !       =  RadiationBox % InteractionFactor  *  TimeStepCandidate ( oC + iC )
-    !     end associate !-- RB
-    !   end do !-- iC
-    !   end associate !-- IB
+      associate ( IB => RadiationBox % Interactions_BSLL_ASC_CSLD )
+      do iC = 1, I % N_CURRENTS_1D  
+        associate ( RB => I % Current_BSLL_ASC_CSLD_1D ( iC ) % Element )
+        call IB % ComputeTimeScale ( RB, TimeStepCandidate ( oC + iC ) )
+        TimeStepCandidate ( oC + iC )  &
+          =  RadiationBox % InteractionFactor  *  TimeStepCandidate ( oC + iC )
+        end associate !-- RB
+      end do !-- iC
+      end associate !-- IB
 
-    ! end select !-- I
+    end select !-- I
 
   end subroutine ComputeTimeStepLocal
 
@@ -788,7 +792,7 @@ contains
     class ( Fluid_P_I_Form ), pointer :: &
       F
     class ( RadiationMomentsForm ), pointer :: &
-      R
+      RM
     class ( Sources_RM_Form ), pointer :: &
       SR
 
@@ -801,8 +805,20 @@ contains
 
       select type ( RMA => I % Current_ASC_1D ( 1 ) % Element )
       class is ( RadiationMoments_ASC_Form )
-        R => RMA % RadiationMoments ( )
+        RM => RMA % RadiationMoments ( )
       end select !-- RMA
+
+    class is ( Integrator_C_1D_MS_C_PS_Form )  !-- Spectral
+
+      call IntegrateSources ( I )
+
+      select type ( RMB => I % Current_BSLL_ASC_CSLD_1D ( 1 ) % Element )
+      class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
+      select type ( RMA => RMB % EnergyIntegral )
+      class is ( RadiationMoments_ASC_Form )
+        RM => RMA % RadiationMoments ( )
+      end select !-- RMA
+      end select !-- RMB
 
     end select !-- I
 
@@ -811,7 +827,7 @@ contains
       F => FA % Fluid_P_I ( )
     end select !-- FA
 
-    select type ( SR => R % Sources )
+    select type ( SR => RM % Sources )
     class is ( Sources_RM_Form )
 
     select type ( SF => F % Sources )
@@ -840,10 +856,88 @@ contains
     end select !-- PS
     end select !-- SF
     end select !-- SR
-    ! end associate !-- R, F
-    nullify ( R, SR )
+    nullify ( F, RM, SR )
 
   end subroutine PrepareStep
+
+
+  subroutine IntegrateSources ( I )
+
+    type ( Integrator_C_1D_MS_C_PS_Form ), intent ( inout ), target :: &
+      I
+
+    integer ( KDI ) :: &
+      iI, &  !-- iIntegral
+      iF, &  !-- iFiber
+      nIntegrals
+    real ( KDR ), dimension ( : ), allocatable :: &
+      Integral
+    type ( Real_1D_Form ), dimension ( : ), allocatable :: &
+      Integrand
+    type ( VolumeIntegralForm ) :: &
+      VI
+    class ( RadiationMomentsForm ), pointer :: &
+      RMEI, &
+      RMF
+
+    associate ( IB => RadiationBox % Interactions_BSLL_ASC_CSLD ) 
+
+    select type ( RMB => I % Current_BSLL_ASC_CSLD_1D ( 1 ) % Element )
+    class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
+
+    select type ( RMA => RMB % EnergyIntegral )
+    class is ( RadiationMoments_ASC_Form )
+
+    RMEI => RMA % RadiationMoments ( )
+
+    nIntegrals = 4
+
+    allocate ( Integral  ( nIntegrals ) )
+    allocate ( Integrand ( nIntegrals ) )
+    do iI = 1, nIntegrals
+      call Integrand ( iI ) % Initialize ( RMB % nEnergyValues )
+    end do !-- iC
+
+    associate ( MS => RMB % Bundle_SLL_ASC_CSLD )
+    do iF = 1, MS % nFibers
+      associate &
+        ( iBC => MS % iaBaseCell ( iF ), &
+          CF  => MS % Fiber_CSLL )
+
+      RMF => RMB % RadiationMoments ( iF )
+      select type ( SF => RMF % Sources )
+      class is ( Sources_RM_Form )
+        Integrand ( 1 ) % Value  &
+          =  SF % Value ( :, SF % INTERACTIONS_J )
+        Integrand ( 2 ) % Value  &
+          =  SF % Value ( :, SF % INTERACTIONS_H_D ( 1 ) )
+        Integrand ( 3 ) % Value  &
+          =  SF % Value ( :, SF % INTERACTIONS_H_D ( 2 ) )
+        Integrand ( 4 ) % Value  &
+          =  SF % Value ( :, SF % INTERACTIONS_H_D ( 3 ) )
+      end select !-- SF
+
+      call VI % Compute ( CF, Integrand, Integral )
+
+      select type ( SEI => RMEI % Sources )
+      class is ( Sources_RM_Form )
+        SEI % Value ( iBC, SEI % INTERACTIONS_J )         = Integral ( 1 ) 
+        SEI % Value ( iBC, SEI % INTERACTIONS_H_D ( 1 ) ) = Integral ( 2 ) 
+        SEI % Value ( iBC, SEI % INTERACTIONS_H_D ( 2 ) ) = Integral ( 3 ) 
+        SEI % Value ( iBC, SEI % INTERACTIONS_H_D ( 3 ) ) = Integral ( 4 ) 
+      end select !-- SEI
+      
+      end associate !-- iBC, etc.
+    end do !-- iF
+    end associate !-- MS
+
+    end select !-- RMA
+    end select !-- RMB
+    end associate !-- IB
+
+    nullify ( RMEI, RMF )
+ 
+  end subroutine IntegrateSources
 
 
   subroutine ApplySources_Fluid &

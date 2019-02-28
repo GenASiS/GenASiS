@@ -27,7 +27,8 @@ module Interactions_Template
     integer ( KDI ) :: &
       iBaseCell = 0
     real ( KDR ), dimension ( : ), pointer :: &
-      Energy => null ( )
+      Energy => null ( ), &
+      d3_Energy => null ( )
     character ( LDL ) :: &
       Type = '', &
       MomentsType = ''

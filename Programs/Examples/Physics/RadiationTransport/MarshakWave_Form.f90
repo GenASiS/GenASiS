@@ -435,7 +435,8 @@ contains
     class ( Fluid_P_I_Form ), pointer :: &
       F
     class ( RadiationMomentsForm ), pointer :: &
-      RM
+      RM, &
+      RS
 
     !-- Fluid and Geometry
 
@@ -528,13 +529,55 @@ contains
 
       call RMB % LoadSections ( )
 
+      !-- Boundary cells
+
+      allocate &
+        ( J_0 ( MS % nSections ), &
+          J_I ( MS % nSections ) )
+
+      call SetPlanckSpectrum ( E, T_I, J_I )
+      call SetPlanckSpectrum ( E, T_0, J_0 )
+
+      do iS = 1, MS % nSections
+        select type ( RSA => RMB % Section % Atlas ( iS ) % Element )
+        class is ( RadiationMoments_ASC_Form )
+          RS => RSA % RadiationMoments ( )
+          associate &
+            ( J     =>  RS % Value ( :, RS % COMOVING_ENERGY ), &
+              H_1   =>  RS % Value ( :, RS % COMOVING_MOMENTUM_U ( 1 ) ), &
+              H_2   =>  RS % Value ( :, RS % COMOVING_MOMENTUM_U ( 2 ) ), &
+              H_3   =>  RS % Value ( :, RS % COMOVING_MOMENTUM_U ( 3 ) ) )
+          where ( X < MinCoordinate ( 1 ) .or. Y < MinCoordinate ( 2 ) &
+                 .or. Z < MinCoordinate ( 3 ) )
+            J    =  J_I ( iS )
+            H_1  =  0.0_KDR
+            H_2  =  0.0_KDR
+            H_3  =  0.0_KDR
+          end where
+          where ( X > MaxCoordinate ( 1 ) .or. Y > MaxCoordinate ( 2 ) &
+                 .or. Z > MaxCoordinate ( 3 ) )
+            J    =  J_0 ( iS )
+            H_1  =  0.0_KDR
+            H_2  =  0.0_KDR
+            H_3  =  0.0_KDR
+          end where
+          end associate !-- J, etc.
+          call RS % ComputeFromPrimitive ( G )
+        end select
+      end do !-- iS
+
+      deallocate ( J_0, J_I )
+    
+!     !-- Module variable for accessibility
+!     RadiationBundle => RMB
+  
       end associate !-- E, etc.
       end select !-- MS
       end select !-- RMB
 
     end select !-- I
     end associate !-- T_0, etc.
-    nullify ( G, F, RM )
+    nullify ( G, F, RM, RS )
 
   end subroutine SetRadiation
 
