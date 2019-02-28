@@ -5,6 +5,7 @@ module Interactions_BSLL_ASC_CSLD__Template
 
   use Basics
   use Mathematics
+  use Fluids
   use Interactions_Template
   use Interactions_ASC__Template
 
@@ -169,21 +170,34 @@ contains
     class ( StorageForm ), pointer :: &
       I
 
+    associate ( MS => RB % Bundle_SLL_ASC_CSLD )
+
     TimeScale = huge ( 1.0_KDR )
 
     do iF = 1, IB % nFibers
-!call Show ( iF, '>>> iF' )
+      associate ( iBC => MS % iaBaseCell ( iF ) )
+
       I => IB % FieldFiber ( iF )
-      R => RB % CurrentFiber ( iF )    
+      R => RB % CurrentFiber ( iF )
+
       select type ( I )
       class is ( InteractionsTemplate )
+
+      associate ( F => I % Fluid )
+      select type ( SF => F % Sources )
+      class is ( Sources_F_Form )
+
         call I % ComputeTimeScale ( R )
-        TimeScale = min ( TimeScale, &
-                          minval ( I % Value ( :, I % TIME_SCALE ) ) )
-!call Show ( I % Value ( :, I % TIME_SCALE ), '>>> Value % TimeScale' )
+        TimeScale = min ( TimeScale, SF % Value ( iBC, SF % RADIATION_TIME ) )
+
+      end select !-- SF
+      end associate !-- F
       end select !-- I
+
+      end associate !-- iBC
     end do !-- iF
 
+    end associate !-- MS
     nullify ( R, I )
 
   end subroutine ComputeTimeScale

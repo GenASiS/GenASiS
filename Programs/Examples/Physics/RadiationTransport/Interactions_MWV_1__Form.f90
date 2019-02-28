@@ -164,19 +164,21 @@ contains
     associate &
       (   F => I % Fluid, &
         iBC => I % iBaseCell )
+    select type ( SF => F % Sources )
+    class is ( Sources_F_Form )
 
     select case ( trim ( I % MomentsType ) )
     case ( 'GREY' )
       select type ( R )
       class is ( PhotonMoments_G_Form )
         call I % ComputeTimeScaleKernel_G &
-               ( R % Value ( :, R % TEMPERATURE_PARAMETER ), &
-                 F % Value ( :, F % BARYON_MASS ), &
-                 F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
-                 F % Value ( :, F % INTERNAL_ENERGY ), &
-                 F % Value ( :, F % TEMPERATURE ), &
-                 R % Value ( :, R % COMOVING_ENERGY ), &
-                 I % Value ( :, I % TIME_SCALE ) )
+               (  R % Value ( :,  R % TEMPERATURE_PARAMETER ), &
+                  F % Value ( :,  F % BARYON_MASS ), &
+                  F % Value ( :,  F % COMOVING_BARYON_DENSITY ), &
+                  F % Value ( :,  F % INTERNAL_ENERGY ), &
+                  F % Value ( :,  F % TEMPERATURE ), &
+                  R % Value ( :,  R % COMOVING_ENERGY ), &
+                 SF % Value ( :, SF % RADIATION_TIME ) )
       end select !-- R
     case ( 'SPECTRAL' )
       select type ( R )
@@ -186,16 +188,17 @@ contains
                  F % Value ( iBC, F % TEMPERATURE ), &
                  I % Value ( :, I % EQUILIBRIUM_J ) )
         call I % ComputeTimeScaleKernel_S &
-               ( I % Value ( :, I % EQUILIBRIUM_J ), &
-                 R % Value ( :, R % COMOVING_ENERGY ), &
-                 I % d3_Energy, &
-                 F % Value ( iBC, F % BARYON_MASS ), &
-                 F % Value ( iBC, F % COMOVING_BARYON_DENSITY ), &
-                 F % Value ( iBC, F % INTERNAL_ENERGY ), &
-                 I % Value ( :, I % TIME_SCALE ) )
+               (  I % Value ( :, I % EQUILIBRIUM_J ), &
+                  R % Value ( :, R % COMOVING_ENERGY ), &
+                  I % d3_Energy, &
+                  F % Value ( iBC,  F % BARYON_MASS ), &
+                  F % Value ( iBC,  F % COMOVING_BARYON_DENSITY ), &
+                  F % Value ( iBC,  F % INTERNAL_ENERGY ), &
+                 SF % Value ( iBC, SF % RADIATION_TIME ) )
       end select !-- R
     end select !-- MomentsType
 
+    end select !-- SF
     end associate !-- F, etc.
 
   end subroutine ComputeTimeScale
@@ -273,7 +276,7 @@ contains
   end subroutine ComputeKernel_S
 
 
-  subroutine ComputeTimeScaleKernel_G ( I, TP, M, N, E, T, J, TS )
+  subroutine ComputeTimeScaleKernel_G ( I, TP, M, N, E, T, J, RT )
 
     class ( Interactions_MWV_1_Form ), intent ( in ) :: &
       I
@@ -285,7 +288,7 @@ contains
       T, &
       J
     real ( KDR ), dimension ( : ), intent ( out ) :: &
-      TS
+      RT
 
     integer ( KDI ) :: &
       iV, &
@@ -309,14 +312,14 @@ contains
       J_EQ       =  a  *  T ( iV ) ** 4
       Q          =  abs ( Kappa  *  M ( iV )  *  N ( iV )  &
                           *  ( J_EQ - J ( iV ) ) )
-      TS ( iV )  =  E ( iV ) / max ( Q, SqrtTiny )
+      RT ( iV )  =  E ( iV ) / max ( Q, SqrtTiny )
     end do !-- iV
     !$OMP end parallel do
 
   end subroutine ComputeTimeScaleKernel_G
 
 
-  subroutine ComputeTimeScaleKernel_S ( I, J_EQ, J, dV, M, N, E, TS )
+  subroutine ComputeTimeScaleKernel_S ( I, J_EQ, J, dV, M, N, E, RT )
 
     class ( Interactions_MWV_1_Form ), intent ( in ) :: &
       I
@@ -328,8 +331,8 @@ contains
       M, &
       N, &
       E
-    real ( KDR ), dimension ( : ), intent ( out ) :: &
-      TS
+    real ( KDR ), intent ( out ) :: &
+      RT
 
     integer ( KDI ) :: &
       iV, &
@@ -347,9 +350,10 @@ contains
 
     Q = 0.0_KDR
     do iV = 1, nValues
-      Q  =  Q  +  abs ( Kappa * M * N * ( J_EQ ( iV ) - J ( iV ) ) ) * dV ( iV )
+      Q  =  Q  +  abs ( Kappa * M * N * ( J_EQ ( iV ) - J ( iV ) ) ) &
+                  *  dV ( iV )
     end do !-- iV
-    TS  =  E / max ( Q, SqrtTiny )
+    RT  =  E / max ( Q, SqrtTiny )
 
   end subroutine ComputeTimeScaleKernel_S
 

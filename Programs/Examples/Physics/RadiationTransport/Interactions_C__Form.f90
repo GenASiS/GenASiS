@@ -152,6 +152,8 @@ contains
     associate &
       (   F => I % Fluid, &
         iBC => I % iBaseCell )
+    select type ( SF => F % Sources )
+    class is ( Sources_F_Form )
 
     select type ( R )
     class is ( RadiationMomentsForm )
@@ -159,21 +161,25 @@ contains
     select case ( trim ( I % MomentsType ) )
     case ( 'GREY' )
       call I % ComputeTimeScaleKernel_G &
-             ( F % Value ( :, F % TEMPERATURE ), &
-               R % Value ( :, R % COMOVING_ENERGY ), &
-               I % Value ( :, I % TIME_SCALE ) )
+             (  F % Value ( :,  F % INTERNAL_ENERGY ), &
+                F % Value ( :,  F % TEMPERATURE ), &
+                R % Value ( :,  R % COMOVING_ENERGY ), &
+               SF % Value ( :, SF % RADIATION_TIME ) )
     case ( 'SPECTRAL' )
       call SetPlanckSpectrum &
              ( I % Energy, &
                F % Value ( iBC, F % TEMPERATURE ), &
                I % Value ( :, I % EQUILIBRIUM_J ) )
       call I % ComputeTimeScaleKernel_S &
-             ( I % Value ( :, I % EQUILIBRIUM_J ), &
-               R % Value ( :, R % COMOVING_ENERGY ), &
-               I % Value ( :, I % TIME_SCALE ) )
+             (  I % Value ( :, I % EQUILIBRIUM_J ), &
+                R % Value ( :, R % COMOVING_ENERGY ), &
+                I % d3_Energy, &
+                F % Value ( iBC,  F % INTERNAL_ENERGY ), &
+               SF % Value ( iBC, SF % RADIATION_TIME ) )
     end select !-- MomentsType
 
     end select !-- R
+    end select !-- SF
     end associate !-- F, etc.
 
   end subroutine ComputeTimeScale
@@ -244,15 +250,16 @@ contains
   end subroutine ComputeKernel_S
 
 
-  subroutine ComputeTimeScaleKernel_G ( I, T, J, TS )
+  subroutine ComputeTimeScaleKernel_G ( I, E, T, J, RT )
 
     class ( Interactions_C_Form ), intent ( in ) :: &
       I
     real ( KDR ), dimension ( : ), intent ( in ) :: &
+      E, &
       T, &
       J
     real ( KDR ), dimension ( : ), intent ( out ) :: &
-      TS
+      RT
 
     integer ( KDI ) :: &
       iV, &
@@ -261,10 +268,13 @@ contains
       a, &
       Kappa_A, &
       J_EQ, &
-      Q
+      Q, &
+      SqrtTiny
 
     a        =  4.0_KDR  *  CONSTANT % STEFAN_BOLTZMANN
     Kappa_A  =  I % OpacityAbsorption
+
+    SqrtTiny = sqrt ( tiny ( 0.0_KDR ) )
 
     nValues  =  size ( J )
 
@@ -272,7 +282,7 @@ contains
     do iV = 1, nValues
       J_EQ       =  a  *  T ( iV ) ** 4
       Q          =  abs ( Kappa_A * ( J_EQ - J ( iV ) ) )
-      TS ( iV )  =  J_EQ / Q
+      RT ( iV )  =  E ( iV ) / max ( Q, SqrtTiny )
     end do !-- iV
     !$OMP end parallel do
 
@@ -280,31 +290,38 @@ contains
   end subroutine ComputeTimeScaleKernel_G
 
 
-  subroutine ComputeTimeScaleKernel_S ( I, J_EQ, J, TS )
+  subroutine ComputeTimeScaleKernel_S ( I, J_EQ, J, dV, E, RT )
 
     class ( Interactions_C_Form ), intent ( in ) :: &
       I
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       J_EQ, &
-      J
-    real ( KDR ), dimension ( : ), intent ( out ) :: &
-      TS
+      J, &
+      dV
+    real ( KDR ), intent ( in ) :: &
+      E
+    real ( KDR ), intent ( out ) :: &
+      RT
 
     integer ( KDI ) :: &
       iV, &
       nValues
     real ( KDR ) :: &
       Kappa_A, &
-      Q
+      Q, &
+      SqrtTiny
 
     Kappa_A  =  I % OpacityAbsorption
 
+    SqrtTiny = sqrt ( tiny ( 0.0_KDR ) )
+
     nValues  =  size ( J )
 
+    Q = 0.0_KDR
     do iV = 1, nValues
-      Q          =  abs ( Kappa_A * ( J_EQ ( iV ) - J ( iV ) ) )
-      TS ( iV )  =  J_EQ ( iV ) / Q
+      Q  =  Q  +  abs ( Kappa_A * ( J_EQ ( iV ) - J ( iV ) ) )  *  dV ( iV )
     end do !-- iV
+    RT  =  E / max ( Q, SqrtTiny )
 
   end subroutine ComputeTimeScaleKernel_S
 

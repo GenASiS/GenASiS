@@ -4,6 +4,7 @@ module Interactions_ASC__Template
 
   use Basics
   use Mathematics
+  use Fluids
   use Interactions_Template
   use Interactions_CSL__Template
 
@@ -168,10 +169,16 @@ contains
     I => IA % Interactions ( )
     call I % ComputeTimeScale ( R )
 
+    associate ( F => I % Fluid )
+    select type ( SF => F % Sources )
+    class is ( Sources_F_Form )
+
     call ComputeTimeScaleKernel_CSL_G &
-           ( C % IsProperCell, I % Value ( :, I % TIME_SCALE ), &
+           ( C % IsProperCell, SF % Value ( :, SF % RADIATION_TIME ), &
              C % nDimensions, TimeScale )
 
+    end select !-- SF
+    end associate !-- F
     end select !-- C
     end select !-- A
     nullify ( R, I )

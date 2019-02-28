@@ -21,6 +21,7 @@ Interactions_CSL__Template.o: \
 Interactions_ASC__Template.o: \
   Basics.o \
   Mathematics.o \
+  Fluids.o \
   Interactions_Template.o \
   Interactions_CSL__Template.o \
   Interactions_ASC__Template.f90
@@ -28,6 +29,7 @@ Interactions_ASC__Template.o: \
 Interactions_BSLL_ASC_CSLD__Template.o: \
   Basics.o \
   Mathematics.o \
+  Fluids.o \
   Interactions_Template.o \
   Interactions_ASC__Template.o \
   Interactions_BSLL_ASC_CSLD__Template.f90

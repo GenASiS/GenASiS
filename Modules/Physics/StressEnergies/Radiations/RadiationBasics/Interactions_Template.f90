@@ -8,7 +8,7 @@ module Interactions_Template
   private
 
     integer ( KDI ), private, parameter :: &
-      N_FIELDS_TEMPLATE = 9
+      N_FIELDS_TEMPLATE = 8
 
   type, public, extends ( StorageForm ), abstract :: InteractionsTemplate
     integer ( KDI ) :: &
@@ -22,8 +22,7 @@ module Interactions_Template
       OPACITY_H         = 0, &
       OPACITY_N         = 0, &
       EQUILIBRIUM_J     = 0, &
-      EQUILIBRIUM_N     = 0, &
-      TIME_SCALE        = 0
+      EQUILIBRIUM_N     = 0
     integer ( KDI ) :: &
       iBaseCell = 0
     real ( KDR ), dimension ( : ), pointer :: &
@@ -183,8 +182,7 @@ contains
                                      I % OPACITY_H, &
                                      I % OPACITY_N, &
                                      I % EQUILIBRIUM_J, &
-                                     I % EQUILIBRIUM_N, &
-                                     I % TIME_SCALE ] )
+                                     I % EQUILIBRIUM_N ] )
 
   end subroutine SetOutput
 
@@ -273,7 +271,6 @@ contains
     I % OPACITY_N      =  6
     I % EQUILIBRIUM_J  =  7
     I % EQUILIBRIUM_N  =  8
-    I % TIME_SCALE     =  9
 
     !-- variable names 
 
@@ -293,8 +290,7 @@ contains
           'Opacity_H    ', &
           'Opacity_N    ', &
           'Equilibrium_J', &
-          'Equilibrium_N', &
-          'TimeScale    ' ]
+          'Equilibrium_N' ]
           
     !-- units
     
