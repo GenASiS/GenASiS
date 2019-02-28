@@ -24,6 +24,7 @@ module Thermalization_G__Form
 
     private :: &
       SetReference, &
+      ComputeTimeStepLocal, &
       InitializeRadiationBox, &
       InitializeInteractions, &
       InitializeDiagnostics, &
@@ -83,15 +84,15 @@ contains
   end subroutine Initialize_T
 
 
-  subroutine Finalize ( T )
+  impure elemental subroutine Finalize ( T )
 
     type ( Thermalization_G_Form ), intent ( inout ), target :: &
       T
 
-    if ( allocated ( T % Reference_ASC ) ) &
-      deallocate ( T % Reference_ASC )
     if ( allocated ( T % FractionalDifference_ASC ) ) &
       deallocate ( T % FractionalDifference_ASC )
+    if ( allocated ( T % Reference_ASC ) ) &
+      deallocate ( T % Reference_ASC )
 
   end subroutine Finalize
 
@@ -187,6 +188,21 @@ contains
   end subroutine SetReference
 
 
+  subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
+
+    class ( IntegratorTemplate ), intent ( inout ), target :: &
+      I
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      TimeStepCandidate
+    
+    TimeStepCandidate  =  huge ( 1.0_KDR )
+
+    TimeStepCandidate ( size ( TimeStepCandidate ) )  &
+      =  Thermalization % InteractionFactor  *  TimeScale
+
+  end subroutine ComputeTimeStepLocal
+
+
   subroutine InitializeRadiationBox ( T, MomentsType, Name )
 
     class ( Thermalization_G_Form ), intent ( inout ) :: &
@@ -204,6 +220,7 @@ contains
              EvolveFluidOption = .false., &
              FinishTimeOption = 10.0_KDR * TimeScale )
     T % Integrator % SetReference => SetReference
+    T % Integrator % ComputeTimeStepLocal => ComputeTimeStepLocal
 
   end subroutine InitializeRadiationBox
 
