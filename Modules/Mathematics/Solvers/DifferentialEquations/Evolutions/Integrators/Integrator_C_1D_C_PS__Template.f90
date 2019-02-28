@@ -22,6 +22,10 @@ module Integrator_C_1D_C_PS__Template
         N_CURRENTS_1D = 0
       class ( Step_RK_C_ASC_Template ), allocatable :: &
         Step_1D
+    procedure ( PS ), pointer :: &
+      PrepareStep_1D => null ( )
+    procedure ( PS ), pointer :: &
+      PrepareStep => null ( )
   contains
     procedure ( I_1D ), private, pass, deferred :: &
       Initialize_1D
@@ -41,10 +45,6 @@ module Integrator_C_1D_C_PS__Template
       ComputeCycle_C_1D_C_ASC
     procedure ( CT_1D ), private, pass, deferred :: &
       ComputeTally_1D
-    procedure, private, pass :: &
-      PrepareStep_1D
-    procedure, private, pass :: &
-      PrepareStep
     procedure, public, pass :: &
       ComputeTimeStepLocalTemplate
     procedure ( CAP ), private, pass, deferred :: &
@@ -52,6 +52,12 @@ module Integrator_C_1D_C_PS__Template
   end type Integrator_C_1D_C_PS_Template
 
   abstract interface
+
+    subroutine PS ( I )
+      import Integrator_C_1D_C_PS_Template
+      class ( Integrator_C_1D_C_PS_Template ), intent ( inout ) :: &
+        I
+    end subroutine PS
 
     subroutine I_1D ( I, Name, TimeUnitOption, FinishTimeOption, &
                       CourantFactorOption, nWriteOption )
@@ -241,11 +247,13 @@ contains
 
     associate ( TimeStep => TimeNew - I % Time )    
 
-    call I % PrepareStep_1D ( )
+    if ( associated ( I % PrepareStep_1D ) ) &
+      call I % PrepareStep_1D ( )
     call I % Step_1D % Compute ( I % Time, TimeStep )
 
     if ( allocated ( I % Step ) ) then
-      call I % PrepareStep ( )
+      if ( associated ( I % PrepareStep ) ) &
+        call I % PrepareStep ( )
       call I % Step % Compute ( I % Time, TimeStep )
     end if
       
@@ -264,22 +272,6 @@ contains
     end associate !-- TimeStep
 
   end subroutine ComputeCycle_C_1D_C_ASC
-
-
-  subroutine PrepareStep_1D ( I )
-
-    class ( Integrator_C_1D_C_PS_Template ), intent ( inout ) :: &
-      I
-
-  end subroutine PrepareStep_1D
-
-
-  subroutine PrepareStep ( I )
-
-    class ( Integrator_C_1D_C_PS_Template ), intent ( inout ) :: &
-      I
-
-  end subroutine PrepareStep
 
 
   subroutine ComputeTimeStepLocalTemplate ( I, TimeStepCandidate )

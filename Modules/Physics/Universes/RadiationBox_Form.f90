@@ -42,7 +42,13 @@ module RadiationBox_Form
       InitializeRadiation, &
       InitializeFluid, &
       InitializeSteps, &
-      ComputeTimeStepLocal
+      ComputeTimeStepLocal, &
+      PrepareStep, &
+      ApplySources_Fluid
+
+      private :: &
+        ComputeFluidSource_G_S_Radiation_Kernel, &
+        ApplySources_Fluid_Kernel
 
     class ( RadiationBoxForm ), pointer :: &
       RadiationBox => null ( )
@@ -679,6 +685,25 @@ contains
     end select !-- I
 
 
+    !-- Fluid
+
+    if ( RB % EvolveFluid ) then
+      select type ( I => RB % Integrator )
+      class is ( Integrator_C_1D_C_PS_Template )
+
+      allocate ( Step_RK2_C_ASC_Form :: I % Step )
+      select type ( S => I % Step )
+      class is ( Step_RK2_C_ASC_Form )
+        call S % Initialize ( I, I % Current_ASC, 'Fluid' )
+        if ( RB % ApplyInteractions ) &
+          S % ApplySources % Pointer  =>  ApplySources_Fluid
+      end select !-- S
+
+      I % PrepareStep => PrepareStep
+
+      end select !-- I
+    end if !-- EvolveFluid
+
   end subroutine InitializeSteps
 
 
@@ -753,6 +778,195 @@ contains
     ! end select !-- I
 
   end subroutine ComputeTimeStepLocal
+
+
+  subroutine PrepareStep ( I )
+
+    class ( Integrator_C_1D_C_PS_Template ), intent ( inout ) :: &
+      I
+
+    class ( Fluid_P_I_Form ), pointer :: &
+      F
+    class ( RadiationMomentsForm ), pointer :: &
+      R
+    class ( Sources_RM_Form ), pointer :: &
+      SR
+
+    ! associate &
+    !   ( R => Radiation, &
+    !     F => Fluid )
+
+    select type ( I )
+    class is ( Integrator_C_1D_PS_C_PS_Form )  !-- Grey
+
+      select type ( RMA => I % Current_ASC_1D ( 1 ) % Element )
+      class is ( RadiationMoments_ASC_Form )
+        R => RMA % RadiationMoments ( )
+      end select !-- RMA
+
+    end select !-- I
+
+    select type ( FA => I % Current_ASC )
+    class is ( Fluid_ASC_Form )
+      F => FA % Fluid_P_I ( )
+    end select !-- FA
+
+    select type ( SR => R % Sources )
+    class is ( Sources_RM_Form )
+
+    select type ( SF => F % Sources )
+    class is ( Sources_F_Form )
+
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
+
+    select type ( PSC => PS % Chart )
+    class is ( Chart_SL_Template )
+
+    call Clear ( SF % Value )
+
+    call ComputeFluidSource_G_S_Radiation_Kernel &
+           ( SF % Value ( :, SF % RADIATION_G ), & 
+             SF % Value ( :, SF % RADIATION_S_D ( 1 ) ), &
+             SF % Value ( :, SF % RADIATION_S_D ( 2 ) ), &
+             SF % Value ( :, SF % RADIATION_S_D ( 3 ) ), &
+             PSC % IsProperCell, &
+             SR % Value ( :, SR % INTERACTIONS_J ), &
+             SR % Value ( :, SR % INTERACTIONS_H_D ( 1 ) ), &
+             SR % Value ( :, SR % INTERACTIONS_H_D ( 2 ) ), &
+             SR % Value ( :, SR % INTERACTIONS_H_D ( 3 ) ) )
+
+    end select !-- PSC
+    end select !-- PS
+    end select !-- SF
+    end select !-- SR
+    ! end associate !-- R, F
+    nullify ( R, SR )
+
+  end subroutine PrepareStep
+
+
+  subroutine ApplySources_Fluid &
+               ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
+
+    class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
+      S
+    class ( Sources_C_Form ), intent ( inout ) :: &
+      Sources_F
+    type ( StorageForm ), intent ( inout ), target :: &
+      Increment
+    class ( CurrentTemplate ), intent ( in ) :: &
+      Fluid
+    real ( KDR ), intent ( in ) :: &
+      TimeStep
+    integer ( KDI ), intent ( in ) :: &
+      iStage
+
+    integer ( KDI ) :: &
+      iEnergy, &
+      iMomentum_1, &
+      iMomentum_2, &
+      iMomentum_3
+
+    select type ( SF => Sources_F )
+    class is ( Sources_F_Form )
+
+    select type ( F => Fluid )
+    class is ( Fluid_P_I_Form )
+
+    select type ( Chart => S % Chart )
+    class is ( Chart_SL_Template )
+
+    call Search ( F % iaConserved, F % CONSERVED_ENERGY, iEnergy )
+    call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 1 ), iMomentum_1 )
+    call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 2 ), iMomentum_2 )
+    call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 3 ), iMomentum_3 )
+
+    call ApplySources_Fluid_Kernel &
+           ( Increment % Value ( :, iEnergy ), &
+             Increment % Value ( :, iMomentum_1 ), &
+             Increment % Value ( :, iMomentum_2 ), &
+             Increment % Value ( :, iMomentum_3 ), &
+             Chart % IsProperCell, &
+             SF % Value ( :, SF % RADIATION_G ), &
+             SF % Value ( :, SF % RADIATION_S_D ( 1 ) ), &
+             SF % Value ( :, SF % RADIATION_S_D ( 2 ) ), &
+             SF % Value ( :, SF % RADIATION_S_D ( 3 ) ), &
+             TimeStep )
+
+    end select !-- Chart
+    end select !-- F
+    end select !-- SF
+
+  end subroutine ApplySources_Fluid
+
+  
+  subroutine ComputeFluidSource_G_S_Radiation_Kernel &
+               ( FS_R_G, FS_R_S_1, FS_R_S_2, FS_R_S_3, IsProperCell, &
+                 Q, A_1, A_2, A_3 )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      FS_R_G, &
+      FS_R_S_1, FS_R_S_2, FS_R_S_3
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      IsProperCell
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      Q, &
+      A_1, A_2, A_3
+
+    integer ( KDI ) :: &
+      iV, &
+      nV
+
+    nV = size ( FS_R_G )
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nV
+      if ( .not. IsProperCell ( iV ) ) &
+        cycle
+      FS_R_G ( iV )    =    FS_R_G ( iV )  -    Q ( iV ) 
+      FS_R_S_1 ( iV )  =  FS_R_S_1 ( iV )  -  A_1 ( iV )
+      FS_R_S_2 ( iV )  =  FS_R_S_2 ( iV )  -  A_2 ( iV )
+      FS_R_S_3 ( iV )  =  FS_R_S_3 ( iV )  -  A_3 ( iV )
+    end do
+    !$OMP end parallel do
+
+  end subroutine ComputeFluidSource_G_S_Radiation_Kernel
+
+
+  subroutine ApplySources_Fluid_Kernel &
+               ( K_G, K_S_1, K_S_2, K_S_3, IsProperCell, &
+                 FS_R_G, FS_R_S_1, FS_R_S_2, FS_R_S_3, dt )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      K_G, &
+      K_S_1, K_S_2, K_S_3
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      IsProperCell
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      FS_R_G, &
+      FS_R_S_1, FS_R_S_2, FS_R_S_3
+    real ( KDR ), intent ( in ) :: &
+      dt
+
+    integer ( KDI ) :: &
+      iV, &
+      nV
+
+    nV = size ( K_G )
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nV
+      if ( .not. IsProperCell ( iV ) ) &
+        cycle
+      K_G ( iV )    =  K_G ( iV )    +  FS_R_G ( iV )    *  dt
+      K_S_1 ( iV )  =  K_S_1 ( iV )  +  FS_R_S_1 ( iV )  *  dt
+      K_S_2 ( iV )  =  K_S_2 ( iV )  +  FS_R_S_2 ( iV )  *  dt
+      K_S_3 ( iV )  =  K_S_3 ( iV )  +  FS_R_S_3 ( iV )  *  dt
+    end do
+    !$OMP end parallel do
+
+  end subroutine ApplySources_Fluid_Kernel
 
 
 end module RadiationBox_Form
