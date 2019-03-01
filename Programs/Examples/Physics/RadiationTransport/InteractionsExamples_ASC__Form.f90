@@ -5,6 +5,8 @@ module InteractionsExamples_ASC__Form
   use GenASiS
   use Interactions_C__Form
   use Interactions_MWV_1__Form
+  use Interactions_MWV_2__Form
+  use Interactions_MWV_3__Form
   use InteractionsExamples_CSL__Form
 
   implicit none
@@ -19,8 +21,12 @@ module InteractionsExamples_ASC__Form
       Set_C_Grey
     procedure, private, pass :: &
       Set_MWV_1_Grey
+    procedure, private, pass :: &
+      Set_MWV_2_Grey
+    procedure, private, pass :: &
+      Set_MWV_3_Grey
     generic, public :: &
-      Set_MWV_Grey => Set_MWV_1_Grey
+      Set_MWV_Grey => Set_MWV_1_Grey, Set_MWV_2_Grey, Set_MWV_3_Grey
     procedure, public, pass :: &
       AllocateField
   end type InteractionsExamples_ASC_Form
@@ -118,6 +124,73 @@ contains
     nullify ( F, I )
 
   end subroutine Set_MWV_1_Grey
+
+
+  subroutine Set_MWV_2_Grey ( IA, FA, SpecificOpacity, EnergyMax )
+
+    class ( InteractionsExamples_ASC_Form ), intent ( inout ) :: &
+      IA
+    class ( Fluid_ASC_Form ), intent ( in ), target :: &
+      FA
+    real ( KDR ), intent ( in ) :: &
+      SpecificOpacity, &
+      EnergyMax
+
+    class ( Fluid_P_I_Form ), pointer :: &
+      F
+    class ( InteractionsTemplate ), pointer :: &
+      I
+
+    select case ( trim ( IA % MomentsType ) )
+    case ( 'GREY' )
+      F => FA % Fluid_P_I ( )
+      I => IA % Interactions ( )
+      select type ( I )
+      class is ( Interactions_MWV_2_Form )
+        call I % Set ( Fluid = F, SpecificOpacity = SpecificOpacity, &
+                       EnergyMax = EnergyMax )
+      end select !-- I
+    case ( 'SPECTRAL' )
+      !-- Set at the Bundle level
+    end select !-- MomentsType
+    nullify ( F, I )
+
+  end subroutine Set_MWV_2_Grey
+
+
+  subroutine Set_MWV_3_Grey &
+               ( IA, FA, SpecificOpacity, EnergyMax, TemperatureScale )
+
+    class ( InteractionsExamples_ASC_Form ), intent ( inout ) :: &
+      IA
+    class ( Fluid_ASC_Form ), intent ( in ), target :: &
+      FA
+    real ( KDR ), intent ( in ) :: &
+      SpecificOpacity, &
+      EnergyMax, &
+      TemperatureScale
+
+    class ( Fluid_P_I_Form ), pointer :: &
+      F
+    class ( InteractionsTemplate ), pointer :: &
+      I
+
+    select case ( trim ( IA % MomentsType ) )
+    case ( 'GREY' )
+      F => FA % Fluid_P_I ( )
+      I => IA % Interactions ( )
+      select type ( I )
+      class is ( Interactions_MWV_3_Form )
+        call I % Set ( Fluid = F, SpecificOpacity = SpecificOpacity, &
+                       EnergyMax = EnergyMax, &
+                       TemperatureScale = TemperatureScale )
+      end select !-- I
+    case ( 'SPECTRAL' )
+      !-- Set at the Bundle level
+    end select !-- MomentsType
+    nullify ( F, I )
+
+  end subroutine Set_MWV_3_Grey
 
 
   subroutine AllocateField ( IA )

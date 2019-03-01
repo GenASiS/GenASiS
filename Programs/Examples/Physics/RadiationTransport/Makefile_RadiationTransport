@@ -9,6 +9,8 @@ INTERACTIONS_EXAMPLES = \
   InteractionsExamples_BSLL_ASC_CSLD__Form.o \
   InteractionsExamples_ASC__Form.o \
   InteractionsExamples_CSL__Form.o \
+  Interactions_MWV_3__Form.o \
+  Interactions_MWV_2__Form.o \
   Interactions_MWV_1__Form.o \
   Interactions_C__Form.o 
 
@@ -98,16 +100,30 @@ Interactions_MWV_1__Form.o: \
   GenASiS.o \
   Interactions_MWV_1__Form.f90
 
+Interactions_MWV_2__Form.o: \
+  GenASiS.o \
+  Interactions_MWV_1__Form.o \
+  Interactions_MWV_2__Form.f90
+
+Interactions_MWV_3__Form.o: \
+  GenASiS.o \
+  Interactions_MWV_2__Form.o \
+  Interactions_MWV_3__Form.f90
+
 InteractionsExamples_CSL__Form.o: \
   GenASiS.o \
   Interactions_C__Form.o \
   Interactions_MWV_1__Form.o \
+  Interactions_MWV_2__Form.o \
+  Interactions_MWV_3__Form.o \
   InteractionsExamples_CSL__Form.f90
 
 InteractionsExamples_ASC__Form.o: \
   GenASiS.o \
   Interactions_C__Form.o \
   Interactions_MWV_1__Form.o \
+  Interactions_MWV_2__Form.o \
+  Interactions_MWV_3__Form.o \
   InteractionsExamples_CSL__Form.o \
   InteractionsExamples_ASC__Form.f90
 
@@ -115,6 +131,8 @@ InteractionsExamples_BSLL_ASC_CSLD__Form.o: \
   GenASiS.o \
   Interactions_C__Form.o \
   Interactions_MWV_1__Form.o \
+  Interactions_MWV_2__Form.o \
+  Interactions_MWV_3__Form.o \
   InteractionsExamples_ASC__Form.o \
   InteractionsExamples_BSLL_ASC_CSLD__Form.f90
 

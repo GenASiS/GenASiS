@@ -23,6 +23,8 @@ module Interactions_C__Form
       Compute
     procedure, public, pass :: &
       ComputeTimeScale
+    final :: &
+      Finalize
     procedure, private, pass :: &
       ComputeKernel_G
     procedure, private, pass :: &
@@ -185,6 +187,16 @@ contains
   end subroutine ComputeTimeScale
 
 
+  impure elemental subroutine Finalize ( I )
+
+    type ( Interactions_C_Form ), intent ( inout ) :: &
+      I
+
+    call I % FinalizeTemplate ( )
+
+  end subroutine Finalize
+
+
   subroutine ComputeKernel_G ( I, T, Xi_J, Chi_J, Chi_H, J_EQ )
 
     class ( Interactions_C_Form ), intent ( in ) :: &
@@ -250,12 +262,12 @@ contains
   end subroutine ComputeKernel_S
 
 
-  subroutine ComputeTimeScaleKernel_G ( I, E, T, J, RT )
+  subroutine ComputeTimeScaleKernel_G ( I, U, T, J, RT )
 
     class ( Interactions_C_Form ), intent ( in ) :: &
       I
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      E, &
+      U, &
       T, &
       J
     real ( KDR ), dimension ( : ), intent ( out ) :: &
@@ -278,11 +290,11 @@ contains
 
     nValues  =  size ( J )
 
-    !$OMP parallel do private ( iV ) 
+    !$OMP parallel do private ( iV, J_EQ, Q ) 
     do iV = 1, nValues
       J_EQ       =  a  *  T ( iV ) ** 4
       Q          =  abs ( Kappa_A * ( J_EQ - J ( iV ) ) )
-      RT ( iV )  =  E ( iV ) / max ( Q, SqrtTiny )
+      RT ( iV )  =  U ( iV ) / max ( Q, SqrtTiny )
     end do !-- iV
     !$OMP end parallel do
 
@@ -290,7 +302,7 @@ contains
   end subroutine ComputeTimeScaleKernel_G
 
 
-  subroutine ComputeTimeScaleKernel_S ( I, J_EQ, J, dV, E, RT )
+  subroutine ComputeTimeScaleKernel_S ( I, J_EQ, J, dV, U, RT )
 
     class ( Interactions_C_Form ), intent ( in ) :: &
       I
@@ -299,7 +311,7 @@ contains
       J, &
       dV
     real ( KDR ), intent ( in ) :: &
-      E
+      U
     real ( KDR ), intent ( out ) :: &
       RT
 
@@ -321,7 +333,7 @@ contains
     do iV = 1, nValues
       Q  =  Q  +  abs ( Kappa_A * ( J_EQ ( iV ) - J ( iV ) ) )  *  dV ( iV )
     end do !-- iV
-    RT  =  E / max ( Q, SqrtTiny )
+    RT  =  U / max ( Q, SqrtTiny )
 
   end subroutine ComputeTimeScaleKernel_S
 

@@ -23,6 +23,8 @@ module Interactions_MWV_1__Form
       Compute
     procedure, public, pass :: &
       ComputeTimeScale
+    final :: &
+      Finalize
     procedure, private, pass :: &
       ComputeKernel_G
     procedure, private, pass :: &
@@ -194,6 +196,7 @@ contains
                   F % Value ( iBC,  F % BARYON_MASS ), &
                   F % Value ( iBC,  F % COMOVING_BARYON_DENSITY ), &
                   F % Value ( iBC,  F % INTERNAL_ENERGY ), &
+                  F % Value ( iBC,  F % TEMPERATURE ), &
                  SF % Value ( iBC, SF % RADIATION_TIME ) )
       end select !-- R
     end select !-- MomentsType
@@ -202,6 +205,16 @@ contains
     end associate !-- F, etc.
 
   end subroutine ComputeTimeScale
+
+
+  impure elemental subroutine Finalize ( I )
+
+    type ( Interactions_MWV_1_Form ), intent ( inout ) :: &
+      I
+
+    call I % FinalizeTemplate ( )
+
+  end subroutine Finalize
 
 
   subroutine ComputeKernel_G ( I, TP, M, N, T, Xi_J, Chi_J, Chi_H, J_EQ )
@@ -276,7 +289,7 @@ contains
   end subroutine ComputeKernel_S
 
 
-  subroutine ComputeTimeScaleKernel_G ( I, TP, M, N, E, T, J, RT )
+  subroutine ComputeTimeScaleKernel_G ( I, TP, M, N, U, T, J, RT )
 
     class ( Interactions_MWV_1_Form ), intent ( in ) :: &
       I
@@ -284,7 +297,7 @@ contains
       TP, &
       M, &
       N, &
-      E, &
+      U, &
       T, &
       J
     real ( KDR ), dimension ( : ), intent ( out ) :: &
@@ -307,19 +320,19 @@ contains
 
     nValues  =  size ( J )
 
-    !$OMP parallel do private ( iV ) 
+    !$OMP parallel do private ( iV, J_EQ, Q ) 
     do iV = 1, nValues
       J_EQ       =  a  *  T ( iV ) ** 4
       Q          =  abs ( Kappa  *  M ( iV )  *  N ( iV )  &
                           *  ( J_EQ - J ( iV ) ) )
-      RT ( iV )  =  E ( iV ) / max ( Q, SqrtTiny )
+      RT ( iV )  =  U ( iV ) / max ( Q, SqrtTiny )
     end do !-- iV
     !$OMP end parallel do
 
   end subroutine ComputeTimeScaleKernel_G
 
 
-  subroutine ComputeTimeScaleKernel_S ( I, J_EQ, J, dV, M, N, E, RT )
+  subroutine ComputeTimeScaleKernel_S ( I, J_EQ, J, dV, M, N, U, T, RT )
 
     class ( Interactions_MWV_1_Form ), intent ( in ) :: &
       I
@@ -330,7 +343,8 @@ contains
     real ( KDR ), intent ( in ) :: &
       M, &
       N, &
-      E
+      U, &
+      T
     real ( KDR ), intent ( out ) :: &
       RT
 
@@ -353,7 +367,7 @@ contains
       Q  =  Q  +  abs ( Kappa * M * N * ( J_EQ ( iV ) - J ( iV ) ) ) &
                   *  dV ( iV )
     end do !-- iV
-    RT  =  E / max ( Q, SqrtTiny )
+    RT  =  U / max ( Q, SqrtTiny )
 
   end subroutine ComputeTimeScaleKernel_S
 

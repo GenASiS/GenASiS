@@ -147,7 +147,7 @@ contains
     call Show ( InteractionsType, 'InteractionsType' )
 
     select case ( trim ( InteractionsType ) )
-    case ( 'MARSHAK_WAVE_VAYTET_2_GREY', 'MARSHAK_WAVE_VAYTET_3_GREY' )
+    case ( 'MARSHAK_WAVE_VAYTET_2', 'MARSHAK_WAVE_VAYTET_3' )
       call Show ( EnergyMax, UNIT % ELECTRON_VOLT, 'EnergyMax' )
     end select !-- InteractionsType
 
@@ -298,7 +298,15 @@ contains
                EnergyDensityUnitOption = EnergyDensityUnit )
       select case ( trim ( InteractionsType ) )
       case ( 'MARSHAK_WAVE_VAYTET_1' )
-        call IA % Set_MWV_Grey ( FA, SpecificOpacity = SpecificOpacity )
+        call IA % Set_MWV_Grey &
+               ( FA, SpecificOpacity = SpecificOpacity )
+      case ( 'MARSHAK_WAVE_VAYTET_2' )
+        call IA % Set_MWV_Grey &
+               ( FA, SpecificOpacity = SpecificOpacity, EnergyMax = EnergyMax )
+      case ( 'MARSHAK_WAVE_VAYTET_3' )
+        call IA % Set_MWV_Grey &
+               ( FA, SpecificOpacity = SpecificOpacity, EnergyMax = EnergyMax, &
+                 TemperatureScale = Temperature )
       end select !-- InteractionsType
       call RMA % SetInteractions ( IA )
       end select !-- IA
@@ -328,7 +336,18 @@ contains
                EnergyDensityUnitOption = EnergyDensityUnit )
       select case ( trim ( InteractionsType ) )
       case ( 'MARSHAK_WAVE_VAYTET_1' )
-        call IB % Set_MWV_Spectral ( FA, SpecificOpacity = SpecificOpacity )
+        call IB % Set_MWV_Spectral &
+               ( FA, SpecificOpacity = SpecificOpacity )
+      case ( 'MARSHAK_WAVE_VAYTET_2' )
+        call IB % Set_MWV_Spectral &
+               ( FA, SpecificOpacity = SpecificOpacity, &
+                 SpecificOpacityFloor = SpecificOpacityFloor, &
+                 EnergyMax = EnergyMax )
+      case ( 'MARSHAK_WAVE_VAYTET_3' )
+        call IB % Set_MWV_Spectral &
+               ( FA, SpecificOpacity = SpecificOpacity, &
+                 SpecificOpacityFloor = SpecificOpacityFloor, &
+                 EnergyMax = EnergyMax, TemperatureScale = Temperature )
       end select !-- InteractionsType
       call RMB % SetInteractions ( IB )
       end select !-- IB

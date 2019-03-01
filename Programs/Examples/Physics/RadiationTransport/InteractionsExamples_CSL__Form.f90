@@ -5,6 +5,8 @@ module InteractionsExamples_CSL__Form
   use GenASiS
   use Interactions_C__Form
   use Interactions_MWV_1__Form
+  use Interactions_MWV_2__Form
+  use Interactions_MWV_3__Form
 
   implicit none
   private
@@ -64,6 +66,10 @@ contains
       allocate ( Interactions_C_Form :: IC % Field )
     case ( 'MARSHAK_WAVE_VAYTET_1' )
       allocate ( Interactions_MWV_1_Form :: IC % Field )
+    case ( 'MARSHAK_WAVE_VAYTET_2' )
+      allocate ( Interactions_MWV_2_Form :: IC % Field )
+    case ( 'MARSHAK_WAVE_VAYTET_3' )
+      allocate ( Interactions_MWV_3_Form :: IC % Field )
     case default
       call Show ( 'InteractionsType not recognized', CONSOLE % ERROR )
       call Show ( IC % InteractionsType, 'InteractionsType', &
