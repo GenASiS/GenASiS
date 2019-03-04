@@ -81,7 +81,7 @@ contains
         Kappa  => SpecificOpacity, &
         Kappa_Min => SpecificOpacityFloor )
 
-    L          =  20.0_KDR    *  UNIT % CENTIMETER
+    L          =  25.0_KDR    *  UNIT % CENTIMETER
     Gamma      =  1.4_KDR
     C_V        =  1.0_KDR     *  UNIT % ERG / UNIT % KELVIN / UNIT % GRAM
     Rho_0      =  1.0e-3_KDR  *  UNIT % MASS_DENSITY_CGS
