@@ -69,6 +69,7 @@ contains
 
     call PS % CreateChart ( )
     call PS % SetGeometry ( UsePinnedMemoryOption = .true. )
+    call PS % Geometry_ASC % AllocateDevice ( )
 
     !-- Fluid
 
@@ -76,6 +77,7 @@ contains
     select type ( FA => RP % Current_ASC )
     class is ( Fluid_ASC_Form )
     call FA % Initialize ( PS, 'POLYTROPIC', UsePinnedMemoryOption = .true. )
+    call FA % AllocateDevice ( )
 
     !-- Step
 

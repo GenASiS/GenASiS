@@ -19,6 +19,8 @@ module Field_ASC__Template
     procedure, public, pass :: &
       InitializeTemplate_ASC
     procedure, public, pass :: &
+      AllocateDevice => AllocateDevice_ASC
+    procedure, public, pass :: &
       FinalizeTemplate_ASC
     !-- FIXME: This should be automatically inherited from FieldAtlasTemplate
     !          but XL compiler got confused
@@ -59,6 +61,24 @@ contains
            ( A, NameShort, UsePinnedMemoryOption, IgnorabilityOption )
 
   end subroutine InitializeTemplate_ASC
+  
+  
+  subroutine AllocateDevice_ASC ( FA )
+    
+    class ( Field_ASC_Template ), intent ( inout ) :: &
+      FA
+    
+    select type ( FC => FA % Chart ) 
+    class is ( Field_CSL_Template )
+      call FC % AllocateDevice ( )
+    class default
+      call Show ( 'Field type not implemented', CONSOLE % ERROR )
+      call Show ( 'AllocateDevice_ASC', 'subroutine',  CONSOLE % ERROR )
+      call Show ( 'Field_ASC_Template', 'module',  CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select
+  
+  end subroutine AllocateDevice_ASC
 
 
   impure elemental subroutine FinalizeTemplate_ASC ( FA )

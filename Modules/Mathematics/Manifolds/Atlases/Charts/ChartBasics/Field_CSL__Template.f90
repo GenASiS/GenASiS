@@ -21,6 +21,8 @@ module Field_CSL__Template
     procedure, public, pass :: &
       InitializeTemplate_CSL
     procedure, public, pass :: &
+      AllocateDevice => AllocateDevice_CSL
+    procedure, public, pass :: &
       FinalizeTemplate_CSL
     !-- FIXME: This should be automatically inherited from FieldChartTemplate
     !          but XL compiler got confused
@@ -65,6 +67,16 @@ contains
            ( C, NameShort, UsePinnedMemory, IgnorabilityOption )
 
   end subroutine InitializeTemplate_CSL
+  
+  
+  subroutine AllocateDevice_CSL ( FC )
+  
+    class ( Field_CSL_Template ), intent ( inout ) :: &
+      FC
+    
+    call FC % Field % AllocateDevice ( )
+  
+  end subroutine AllocateDevice_CSL
   
   
   impure elemental subroutine FinalizeTemplate_CSL ( FC )
