@@ -70,7 +70,7 @@ contains
                ( F, RiemannSolverType, ReconstructedType, UseLimiter, &
                  VelocityUnit, MassDensityUnit, LimiterParameter, nValues, &
                  VariableOption, VectorOption, NameOption, ClearOption, &
-                 UnitOption, VectorIndicesOption )
+                 PinnedOption, UnitOption, VectorIndicesOption )
 
     class ( Fluid_D_Form ), intent ( inout ) :: &
       F
@@ -93,7 +93,8 @@ contains
     character ( * ), intent ( in ), optional :: &
       NameOption
     logical ( KDL ), intent ( in ), optional :: &
-      ClearOption
+      ClearOption, &
+      PinnedOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       UnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), &
@@ -121,8 +122,8 @@ contains
            ( RiemannSolverType, ReconstructedType, UseLimiter, VelocityUnit, &
              LimiterParameter, nValues, VariableOption = Variable, &
              VectorOption = Vector, NameOption = Name, &
-             ClearOption = ClearOption, UnitOption = VariableUnit, &
-             VectorIndicesOption = VectorIndices )
+             ClearOption = ClearOption, PinnedOption = PinnedOption, &
+             UnitOption = VariableUnit, VectorIndicesOption = VectorIndices )
 
   end subroutine InitializeAllocate_D
   

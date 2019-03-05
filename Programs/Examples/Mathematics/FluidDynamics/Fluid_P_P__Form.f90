@@ -59,8 +59,8 @@ contains
                ( F, RiemannSolverType, ReconstructedType, UseLimiter, &
                  VelocityUnit, MassDensityUnit, EnergyDensityUnit, &
                  TemperatureUnit, LimiterParameter, nValues, VariableOption, &
-                 VectorOption, NameOption, ClearOption, UnitOption, &
-                 VectorIndicesOption )
+                 VectorOption, NameOption, ClearOption, PinnedOption, &
+                 UnitOption, VectorIndicesOption )
 
     class ( Fluid_P_P_Form ), intent ( inout ) :: &
       F
@@ -85,7 +85,8 @@ contains
     character ( * ), intent ( in ), optional :: &
       NameOption
     logical ( KDL ), intent ( in ), optional :: &
-      ClearOption
+      ClearOption, &
+      PinnedOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       UnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), &
@@ -107,7 +108,8 @@ contains
              MassDensityUnit, EnergyDensityUnit, TemperatureUnit, &
              LimiterParameter, nValues, VariableOption = Variable, &
              VectorOption = VectorOption, NameOption = NameOption, &
-             ClearOption = ClearOption, UnitOption = VariableUnit, &
+             ClearOption = ClearOption, PinnedOption = PinnedOption, 
+             UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndicesOption )
 
     !-- Non-standard entropy unit

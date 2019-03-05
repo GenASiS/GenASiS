@@ -48,8 +48,8 @@ contains
 
   subroutine InitializeAllocate_P &
                ( FF, Fluid, Grid, ShockThreshold, nValues, VariableOption, &
-                 VectorOption, NameOption, ClearOption, UnitOption, &
-                 VectorIndicesOption )
+                 VectorOption, NameOption, ClearOption, PinnedOption, &
+                 UnitOption, VectorIndicesOption )
 
     class ( FluidFeatures_P_Form ), intent ( inout ) :: &
       FF
@@ -67,7 +67,8 @@ contains
     character ( * ), intent ( in ), optional :: &
       NameOption
     logical ( KDL ), intent ( in ), optional :: &
-      ClearOption
+      ClearOption, &
+      PinnedOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       UnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), &
@@ -85,7 +86,8 @@ contains
     call FF % InitializeTemplate &
            ( Fluid, Grid, nValues, VariableOption = Variable, &
              VectorOption = VectorOption, NameOption = NameOption, &
-             ClearOption = ClearOption, UnitOption = VariableUnit, &
+             ClearOption = ClearOption, PinnedOption = PinnedOption, &
+             UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndicesOption )
 
     FF % ShockThreshold = ShockThreshold

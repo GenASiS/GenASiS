@@ -59,12 +59,15 @@ module Atlas_SC__Form
 contains
 
 
-  subroutine SetGeometry ( A, GeometryOption, EdgeOption )
+  subroutine SetGeometry &
+               ( A, GeometryOption, UsePinnedMemoryOption, EdgeOption )
 
     class ( Atlas_SC_Form ), intent ( inout ) :: &
       A
     class ( GeometryFlat_ASC_Form ), intent ( in ), target, optional :: &
       GeometryOption
+    logical ( KDL ), intent ( in ), optional :: &
+      UsePinnedMemoryOption
     type ( Real_1D_Form ), dimension ( : ), intent ( in ), optional :: &
       EdgeOption
 
@@ -78,7 +81,8 @@ contains
         A % AllocatedGeometry = .true.
         allocate ( A % Geometry_ASC )
         associate ( GA => A % Geometry_ASC )
-        call GA % InitializeFlat ( A ) 
+        call GA % InitializeFlat &
+               ( A, UsePinnedMemoryOption = UsePinnedMemoryOption ) 
         end associate !-- GA
       end if
     end if

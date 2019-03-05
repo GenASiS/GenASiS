@@ -64,11 +64,12 @@ contains
   subroutine Initialize &
                ( FA, A, FluidType, NameShortOption, RiemannSolverTypeOption, &
                  ReconstructedTypeOption, UseLimiterOption, &
-                 AllocateSourcesOption, VelocityUnitOption, &
-                 MassDensityUnitOption, EnergyDensityUnitOption, &
-                 TemperatureUnitOption, MassUnitOption, EnergyUnitOption, &
-                 MomentumUnitOption, AngularMomentumUnitOption, &
-                 TimeUnitOption, LimiterParameterOption, ShockThresholdOption, &
+                 UsePinnedMemoryOption, AllocateSourcesOption, &
+                 VelocityUnitOption, MassDensityUnitOption, &
+                 EnergyDensityUnitOption, TemperatureUnitOption, &
+                 MassUnitOption, EnergyUnitOption, MomentumUnitOption, &
+                 AngularMomentumUnitOption, TimeUnitOption, &
+                 LimiterParameterOption, ShockThresholdOption, &
                  IgnorabilityOption )
 
     class ( Fluid_ASC_Form ), intent ( inout ) :: &
@@ -83,6 +84,7 @@ contains
       ReconstructedTypeOption
     logical ( KDL ), intent ( in ), optional :: &
       UseLimiterOption, &
+      UsePinnedMemoryOption, &
       AllocateSourcesOption
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ), optional :: &
       VelocityUnitOption
@@ -235,7 +237,8 @@ contains
       NameShort = NameShortOption
 
     call FA % InitializeTemplate_ASC_C &
-           ( A, NameShort, IgnorabilityOption = IgnorabilityOption )
+           ( A, NameShort, UsePinnedMemoryOption = UsePinnedMemoryOption, &
+             IgnorabilityOption = IgnorabilityOption )
 
     call Show ( FA % FluidType, 'FluidType', FA % IGNORABILITY )
     call Show ( FA % RiemannSolverType, 'RiemannSolverType', &
@@ -256,6 +259,7 @@ contains
       associate ( SFA => FA % Sources_ASC )
       call SFA % Initialize &
              ( FA, NameShortOption = trim ( NameShort ) // '_Sources', &
+               UsePinnedMemoryOption = UsePinnedMemoryOption, &
                TimeUnitOption = TimeUnitOption, &
                IgnorabilityOption = IgnorabilityOption )
       select type ( SFC => SFA % Chart )
@@ -276,6 +280,7 @@ contains
       call FFA % Initialize &
              ( FA, FA % FluidType, FA % RiemannSolverType, &
                NameShortOption = trim ( NameShort ) // '_Features', &
+               UsePinnedMemoryOption = UsePinnedMemoryOption, &
                ShockThresholdOption = ShockThresholdOption, &
                IgnorabilityOption = IgnorabilityOption )
       select type ( FFC => FFA % Chart )
@@ -384,7 +389,8 @@ contains
     class is ( Fluid_CSL_Form )
       call FC % Initialize &
              ( C, FA % NameShort, FA % FluidType, FA % RiemannSolverType, &
-               FA % ReconstructedType, FA % UseLimiter, FA % VelocityUnit, &
+               FA % ReconstructedType, FA % UseLimiter, &
+               FA % UsePinnedMemory, FA % VelocityUnit, &
                FA % MassDensityUnit, FA % EnergyDensityUnit, &
                FA % TemperatureUnit, FA % LimiterParameter, nValues, &
                IgnorabilityOption = FA % IGNORABILITY )

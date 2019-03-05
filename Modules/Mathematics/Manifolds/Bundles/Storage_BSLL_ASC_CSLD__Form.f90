@@ -31,8 +31,8 @@ contains
 
 
   subroutine Initialize &
-               ( SB, B, NameShort, UsePinnedMemory_S_Option, &
-                 UsePinnedMemory_F_Option, nFields, IgnorabilityOption )
+               ( SB, B, NameShort, nFields, UsePinnedMemory_S_Option, &
+                 UsePinnedMemory_F_Option, IgnorabilityOption )
 
     class ( Storage_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
       SB
@@ -40,11 +40,11 @@ contains
       B
     character ( * ), intent ( in ) :: &
       NameShort
+    integer ( KDI ), intent ( in ) :: &
+      nFields
     logical ( KDL ), intent ( in ), optional :: &
       UsePinnedMemory_S_Option, &
       UsePinnedMemory_F_Option
-    integer ( KDI ), intent ( in ) :: &
-      nFields
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 

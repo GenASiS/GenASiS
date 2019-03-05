@@ -51,7 +51,8 @@ contains
 
   subroutine InitializeTemplate &
                ( FF, Fluid, Grid, nValues, VariableOption, VectorOption, &
-                 NameOption, ClearOption, UnitOption, VectorIndicesOption )
+                 NameOption, ClearOption, PinnedOption, UnitOption, &
+                 VectorIndicesOption )
 
     class ( FluidFeaturesTemplate ), intent ( inout ) :: &
       FF
@@ -67,7 +68,8 @@ contains
     character ( * ), intent ( in ), optional :: &
       NameOption
     logical ( KDL ), intent ( in ), optional :: &
-      ClearOption
+      ClearOption, &
+      PinnedOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       UnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), &
@@ -94,6 +96,7 @@ contains
            ( [ nValues, FF % N_FIELDS ], &
              VariableOption = Variable, VectorOption = VectorOption, &
              NameOption = Name, ClearOption = Clear, &
+             PinnedOption = PinnedOption, &
              UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndicesOption )
 

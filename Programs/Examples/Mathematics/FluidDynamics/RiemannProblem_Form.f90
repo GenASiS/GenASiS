@@ -68,14 +68,14 @@ contains
     end do !-- iD
 
     call PS % CreateChart ( )
-    call PS % SetGeometry ( )
+    call PS % SetGeometry ( UsePinnedMemoryOption = .true. )
 
     !-- Fluid
 
     allocate ( Fluid_ASC_Form :: RP % Current_ASC )
     select type ( FA => RP % Current_ASC )
     class is ( Fluid_ASC_Form )
-    call FA % Initialize ( PS, 'POLYTROPIC' )
+    call FA % Initialize ( PS, 'POLYTROPIC', UsePinnedMemoryOption = .true. )
 
     !-- Step
 

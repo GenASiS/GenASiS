@@ -179,10 +179,10 @@ contains
 
 
   subroutine InitializeTemplate &
-               ( C, RiemannSolverType, ReconstructedType, UseLimiter, &
-                 Velocity_U_Unit, LimiterParameter, nValues, VariableOption, &
-                 VectorOption, NameOption, ClearOption, UnitOption, &
-                 VectorIndicesOption )
+               ( C, RiemannSolverType, ReconstructedType, UseLimiter, 
+                 Velocity_U_Unit, LimiterParameter, nValues, VariableOption, 
+                 VectorOption, NameOption, ClearOption, PinnedOption, &
+                 UnitOption, VectorIndicesOption )
 
     class ( CurrentTemplate ), intent ( inout ) :: &
       C
@@ -203,7 +203,8 @@ contains
     character ( * ), intent ( in ), optional :: &
       NameOption
     logical ( KDL ), intent ( in ), optional :: &
-      ClearOption
+      ClearOption, &
+      PinnedOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       UnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), &
@@ -237,6 +238,7 @@ contains
            ( [ nValues, C % N_FIELDS ], &
              VariableOption = Variable, VectorOption = Vector, &
              NameOption = Name, ClearOption = Clear, &
+             PinnedOption = PinnedOption, &
              UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndices )
 
