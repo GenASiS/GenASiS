@@ -5,6 +5,7 @@ module Fluid_ASC__Form
   use Basics
   use Mathematics
   use Spaces
+  use StressEnergyBasics
   use Fluid_D__Form
   use Fluid_P_I__Form
   use Fluid_P_HN__Form
@@ -24,6 +25,8 @@ module Fluid_ASC__Form
     real ( KDR ) :: &
       LimiterParameter, &
       BaryonMassReference
+    class ( StressEnergyUnitsForm ), pointer :: &
+      Units => null ( )
     type ( MeasuredValueForm ) :: &
       BaryonMassUnit, &
       NumberDensityUnit, &
@@ -69,16 +72,11 @@ contains
 
 
   subroutine Initialize &
-               ( FA, A, FluidType, NameShortOption, RiemannSolverTypeOption, &
-                 UseEntropyOption, UseLimiterOption, AllocateTallyOption, &
-                 AllocateSourcesOption, Velocity_U_UnitOption, &
-                 MomentumDensity_D_UnitOption, BaryonMassUnitOption, &
-                 NumberDensityUnitOption, EnergyDensityUnitOption, &
-                 TemperatureUnitOption, NumberUnitOption, EnergyUnitOption, &
-                 MomentumUnitOption, AngularMomentumUnitOption, &
-                 TimeUnitOption, BaryonMassReferenceOption, &
-                 LimiterParameterOption, ShockThresholdOption, &
-                 IgnorabilityOption )
+               ( FA, A, FluidType, Units, NameShortOption, &
+                 RiemannSolverTypeOption, UseEntropyOption, UseLimiterOption, &
+                 AllocateTallyOption, AllocateSourcesOption, &
+                 BaryonMassReferenceOption, LimiterParameterOption, &
+                 ShockThresholdOption, IgnorabilityOption )
 
     class ( Fluid_ASC_Form ), intent ( inout ) :: &
       FA
@@ -86,6 +84,8 @@ contains
       A
     character ( * ), intent ( in ) :: &
       FluidType
+    class ( StressEnergyUnitsForm ), intent ( in ), target :: &
+      Units
     character ( * ), intent ( in ), optional :: &
       NameShortOption, &
       RiemannSolverTypeOption
@@ -94,19 +94,6 @@ contains
       UseLimiterOption, &
       AllocateTallyOption, &
       AllocateSourcesOption
-    type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ), optional :: &
-      Velocity_U_UnitOption, &
-      MomentumDensity_D_UnitOption
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
-      BaryonMassUnitOption, &
-      NumberDensityUnitOption, &
-      EnergyDensityUnitOption, &
-      TemperatureUnitOption, &
-      NumberUnitOption, &
-      EnergyUnitOption, &
-      MomentumUnitOption, &
-      AngularMomentumUnitOption, &
-      TimeUnitOption
     real ( KDR ), intent ( in ), optional :: &
       BaryonMassReferenceOption, &
       LimiterParameterOption, &
@@ -125,6 +112,8 @@ contains
     if ( FA % Type == '' ) &
       FA % Type = 'a Fluid_ASC'
     FA % FluidType = FluidType
+
+    FA % Units => Units
 
     select case ( trim ( FA % FluidType ) )
     case ( 'DUST' )
@@ -163,19 +152,6 @@ contains
     FA % BaryonMassReference = 1.0_KDR
     if ( present ( BaryonMassReferenceOption ) ) &
       FA % BaryonMassReference = BaryonMassReferenceOption
-
-    if ( present ( BaryonMassUnitOption ) ) &
-      FA % BaryonMassUnit = BaryonMassUnitOption
-    if ( present ( NumberDensityUnitOption ) ) &
-      FA % NumberDensityUnit = NumberDensityUnitOption
-    if ( present ( EnergyDensityUnitOption ) ) &
-      FA % EnergyDensityUnit = EnergyDensityUnitOption
-    if ( present ( TemperatureUnitOption ) ) &
-      FA % TemperatureUnit = TemperatureUnitOption
-    if ( present ( Velocity_U_UnitOption ) ) &
-      FA % Velocity_U_Unit = Velocity_U_UnitOption
-    if ( present ( MomentumDensity_D_UnitOption ) ) &
-      FA % MomentumDensity_D_Unit = MomentumDensity_D_UnitOption
 
     AllocateTally = .true.
     if ( present ( AllocateTallyOption ) ) &
@@ -233,47 +209,27 @@ contains
       
       select type ( TI => FA % TallyInterior )
       class is ( Tally_F_D_Form )
-        call TI % Initialize &
-               ( A, NumberUnitOption = NumberUnitOption, &
-                 EnergyUnitOption = EnergyUnitOption, &
-                 MomentumUnitOption = MomentumUnitOption, &
-                 AngularMomentumUnitOption = AngularMomentumUnitOption )
+        call TI % Initialize ( A, Units )
       end select !-- TI
 
       select type ( TT => FA % TallyTotal )
       class is ( Tally_F_D_Form )
-        call TT % Initialize &
-               ( A, NumberUnitOption = NumberUnitOption, &
-                 EnergyUnitOption = EnergyUnitOption, &
-                 MomentumUnitOption = MomentumUnitOption, &
-                 AngularMomentumUnitOption = AngularMomentumUnitOption )
+        call TT % Initialize ( A, Units )
       end select !-- TT
 
       select type ( TC => FA % TallyChange )
       class is ( Tally_F_D_Form )
-        call TC % Initialize &
-               ( A, NumberUnitOption = NumberUnitOption, &
-                 EnergyUnitOption = EnergyUnitOption, &
-                 MomentumUnitOption = MomentumUnitOption, &
-                 AngularMomentumUnitOption = AngularMomentumUnitOption )
+        call TC % Initialize ( A, Units )
       end select !-- TC
 
       do iB = 1, A % nBoundaries
         select type ( TB => FA % TallyBoundaryLocal ( iB ) % Element )
         class is ( Tally_F_D_Form )
-          call TB % Initialize &
-                 ( A, NumberUnitOption = NumberUnitOption, &
-                   EnergyUnitOption = EnergyUnitOption, &
-                   MomentumUnitOption = MomentumUnitOption, &
-                   AngularMomentumUnitOption = AngularMomentumUnitOption )
+          call TB % Initialize ( A, Units )
         end select !-- TB
         select type ( TB => FA % TallyBoundaryGlobal ( iB ) % Element )
         class is ( Tally_F_D_Form )
-          call TB % Initialize &
-                 ( A, NumberUnitOption = NumberUnitOption, &
-                   EnergyUnitOption = EnergyUnitOption, &
-                   MomentumUnitOption = MomentumUnitOption, &
-                   AngularMomentumUnitOption = AngularMomentumUnitOption )
+          call TB % Initialize ( A, Units )
         end select !-- TB
       end do !-- iB
 
@@ -305,7 +261,7 @@ contains
       associate ( SFA => FA % Sources_ASC )
       call SFA % Initialize &
              ( FA, NameShortOption = trim ( NameShort ) // '_Sources', &
-               TimeUnitOption = TimeUnitOption, &
+               TimeUnitOption = Units % Time, &
                IgnorabilityOption = IgnorabilityOption )
       select type ( SFC => SFA % Chart )
       class is ( Sources_F_CSL_Form )
@@ -424,6 +380,8 @@ contains
     if ( allocated ( FA % Sources_ASC ) ) &
       deallocate ( FA % Sources_ASC )
 
+    nullify ( FA % Units )
+
     call FA % FinalizeTemplate_ASC_C ( )
 
   end subroutine Finalize
@@ -447,11 +405,8 @@ contains
     class is ( Fluid_CSL_Form )
       call FC % Initialize &
              ( C, FA % NameShort, FA % FluidType, FA % RiemannSolverType, &
-               FA % UseEntropy, FA % UseLimiter, FA % Velocity_U_Unit, &
-               FA % MomentumDensity_D_Unit, FA % BaryonMassUnit, &
-               FA % NumberDensityUnit, FA % EnergyDensityUnit, &
-               FA % TemperatureUnit, FA % BaryonMassReference, &
-               FA % LimiterParameter, nValues, &
+               FA % UseEntropy, FA % UseLimiter, FA % Units, &
+               FA % BaryonMassReference, FA % LimiterParameter, nValues, &
                IgnorabilityOption = FA % IGNORABILITY )
     end select !-- FC
 

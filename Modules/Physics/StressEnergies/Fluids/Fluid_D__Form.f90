@@ -5,6 +5,7 @@ module Fluid_D__Form
   use Basics
   use Mathematics
   use Spaces
+  use StressEnergyBasics
   use FluidFeatures_Template
 
   implicit none
@@ -36,9 +37,7 @@ module Fluid_D__Form
       Features => null ( )
   contains
     procedure, public, pass :: &
-      InitializeAllocate_D
-    generic, public :: &
-      Initialize => InitializeAllocate_D
+      Initialize_D
     procedure, public, pass :: &
       SetPrimitiveConserved
     procedure, public, pass :: &
@@ -74,9 +73,8 @@ module Fluid_D__Form
 contains
 
 
-  subroutine InitializeAllocate_D &
-               ( F, RiemannSolverType, UseLimiter, Velocity_U_Unit, &
-                 MomentumDensity_D_Unit, BaryonMassUnit, NumberDensityUnit, &
+  subroutine Initialize_D &
+               ( F, RiemannSolverType, UseLimiter, Units, &
                  BaryonMassReference, LimiterParameter, nValues, &
                  VariableOption, VectorOption, NameOption, ClearOption, &
                  UnitOption, VectorIndicesOption )
@@ -87,12 +85,8 @@ contains
       RiemannSolverType
     logical ( KDL ), intent ( in ) :: &
       UseLimiter
-    type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
-      Velocity_U_Unit, &
-      MomentumDensity_D_Unit
-    type ( MeasuredValueForm ), intent ( in ) :: &
-      BaryonMassUnit, &
-      NumberDensityUnit
+    class ( StressEnergyUnitsForm ), intent ( in ) :: &
+      Units
     real ( KDR ), intent ( in ) :: &
       BaryonMassReference, &
       LimiterParameter
@@ -126,12 +120,10 @@ contains
              VariableOption, VectorOption, NameOption, UnitOption, &
              VectorIndicesOption )
 
-    call SetUnits &
-           ( VariableUnit, F, Velocity_U_Unit, MomentumDensity_D_Unit, &
-             BaryonMassUnit, NumberDensityUnit )
+    call SetUnits ( VariableUnit, F, Units )
 
     call F % InitializeTemplate &
-           ( RiemannSolverType, UseLimiter, Velocity_U_Unit, &
+           ( RiemannSolverType, UseLimiter, Units % Velocity_U, &
              LimiterParameter, nValues, VariableOption = Variable, &
              VectorOption = Vector, NameOption = Name, &
              ClearOption = ClearOption, UnitOption = VariableUnit, &
@@ -141,7 +133,7 @@ contains
     call Show ( F % BaryonMassReference, F % Unit ( F % BARYON_MASS ), &
                 'BaryonMassReference', F % IGNORABILITY )
 
-  end subroutine InitializeAllocate_D
+  end subroutine Initialize_D
   
 
   subroutine SetPrimitiveConserved ( C )
@@ -743,32 +735,27 @@ contains
   end subroutine InitializeBasics
 
 
-  subroutine SetUnits &
-               ( VariableUnit, F, Velocity_U_Unit, MomentumDensity_D_Unit, &
-                 BaryonMassUnit, NumberDensityUnit )
+  subroutine SetUnits ( VariableUnit, F, Units )
 
     type ( MeasuredValueForm ), dimension ( : ), intent ( inout ) :: &
       VariableUnit
     class ( Fluid_D_Form ), intent ( in ) :: &
       F
-    type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
-      Velocity_U_Unit, &
-      MomentumDensity_D_Unit
-    type ( MeasuredValueForm ), intent ( in ) :: &
-      BaryonMassUnit, &
-      NumberDensityUnit
+    class ( StressEnergyUnitsForm ), intent ( in ) :: &
+      Units
 
     integer ( KDI ) :: &
       iD
 
-    VariableUnit ( F % BARYON_MASS )              = BaryonMassUnit
-    VariableUnit ( F % COMOVING_BARYON_DENSITY )  = NumberDensityUnit
-    VariableUnit ( F % CONSERVED_BARYON_DENSITY ) = NumberDensityUnit
+    VariableUnit ( F % BARYON_MASS )              = Units % BaryonMass
+    VariableUnit ( F % COMOVING_BARYON_DENSITY )  = Units % NumberDensity
+    VariableUnit ( F % CONSERVED_BARYON_DENSITY ) = Units % NumberDensity
 
     do iD = 1, 3
-      VariableUnit ( F % VELOCITY_U ( iD ) ) = Velocity_U_Unit ( iD )
+      VariableUnit ( F % VELOCITY_U ( iD ) ) &
+        = Units % Velocity_U ( iD )
       VariableUnit ( F % MOMENTUM_DENSITY_D ( iD ) ) &
-        = MomentumDensity_D_Unit ( iD )
+        = Units % MomentumDensity_D ( iD )
     end do
 
   end subroutine SetUnits

@@ -5,6 +5,7 @@ module Tally_F_P__Form
   use Basics
   use Mathematics
   use Spaces
+  use StressEnergyBasics
   use Fluid_P__Template
   use Tally_F_D__Form
   
@@ -36,19 +37,14 @@ module Tally_F_P__Form
 contains
 
 
-  subroutine InitializeFluid &
-               ( T, A, NumberUnitOption, EnergyUnitOption, &
-                 MomentumUnitOption, AngularMomentumUnitOption )
+  subroutine InitializeFluid ( T, A, Units )
     
     class ( Tally_F_P_Form ), intent ( inout ) :: &
       T
     class ( AtlasHeaderForm ), intent ( in ), target :: &
       A
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
-      NumberUnitOption, &
-      EnergyUnitOption, &
-      MomentumUnitOption, &
-      AngularMomentumUnitOption
+    class ( StressEnergyUnitsForm ), intent ( in ) :: &
+      Units
 
     integer ( KDI ) :: &
       oI     !-- oIntegral
@@ -57,9 +53,7 @@ contains
     if ( T % N_INTEGRALS == 0 ) &
       T % N_INTEGRALS = oI + T % N_INTEGRALS_PERFECT
     
-    call T % Tally_F_D_Form % Initialize &
-           ( A, NumberUnitOption, EnergyUnitOption, MomentumUnitOption, &
-             AngularMomentumUnitOption )
+    call T % Tally_F_D_Form % Initialize ( A, Units )
     
     T % FLUID_ENERGY     = oI + 1
     T % INTERNAL_ENERGY  = oI + 2
@@ -68,13 +62,8 @@ contains
       = [ 'FluidEnergy   ', &
           'InternalEnergy' ]
 
-    if ( present ( EnergyUnitOption ) ) then
-      T % Unit ( oI + 1 : oI + T % N_INTEGRALS_PERFECT ) &
-        = [ EnergyUnitOption, EnergyUnitOption ]
-    else
-      T % Unit ( oI + 1 : oI + T % N_INTEGRALS_PERFECT ) &
-        = [ UNIT % IDENTITY, UNIT % IDENTITY ]
-    end if
+    T % Unit ( oI + 1 : oI + T % N_INTEGRALS_PERFECT ) &
+      = [ Units % Energy, Units % Energy ]
 
     call T % SelectVariables ( A )
 

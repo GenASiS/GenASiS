@@ -4,6 +4,7 @@ module Fluid_P_HN__Form
 
   use Basics
   use Mathematics
+  use StressEnergyBasics
 !  use FluidFeatures_Template
   use Fluid_P__Template
   use FluidFeatures_P__Form
@@ -38,9 +39,7 @@ module Fluid_P_HN__Form
         !-- Includes m_e.
   contains
     procedure, public, pass :: &
-      InitializeAllocate_P_HN
-    generic, public :: &
-      Initialize => InitializeAllocate_P_HN
+      Initialize_P_HN
     procedure, public, pass :: &
       SetPrimitiveConserved
     procedure, public, pass :: &
@@ -89,10 +88,8 @@ module Fluid_P_HN__Form
 contains
 
 
-  subroutine InitializeAllocate_P_HN &
-               ( F, RiemannSolverType, UseEntropy, UseLimiter, &
-                 Velocity_U_Unit, MomentumDensity_D_Unit, BaryonMassUnit, &
-                 NumberDensityUnit, EnergyDensityUnit, TemperatureUnit, &
+  subroutine Initialize_P_HN &
+               ( F, RiemannSolverType, UseEntropy, UseLimiter, Units, &
                  BaryonMassReference, LimiterParameter, nValues, &
                  VariableOption, VectorOption, NameOption, ClearOption, &
                  UnitOption, VectorIndicesOption )
@@ -104,14 +101,8 @@ contains
     logical ( KDL ), intent ( in ) :: &
       UseEntropy, &
       UseLimiter
-    type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
-      Velocity_U_Unit, &
-      MomentumDensity_D_Unit
-    type ( MeasuredValueForm ), intent ( in ) :: &
-      BaryonMassUnit, &
-      NumberDensityUnit, &
-      EnergyDensityUnit, &
-      TemperatureUnit
+    class ( StressEnergyUnitsForm ), intent ( in ) :: &
+      Units
     real ( KDR ), intent ( in ) :: &
       BaryonMassReference, &
       LimiterParameter
@@ -138,15 +129,14 @@ contains
     call InitializeBasics &
            ( F, Variable, VariableUnit, VariableOption, UnitOption )
 
-    call SetUnits ( VariableUnit, F, NumberDensityUnit, TemperatureUnit )
+    call SetUnits ( VariableUnit, F, Units )
 
     call F % InitializeTemplate_P &
-           ( RiemannSolverType, UseEntropy, UseLimiter, Velocity_U_Unit, &
-             MomentumDensity_D_Unit, BaryonMassUnit, NumberDensityUnit, &
-             EnergyDensityUnit, TemperatureUnit, BaryonMassReference, &
-             LimiterParameter, nValues, VariableOption = Variable, &
-             VectorOption = VectorOption, NameOption = NameOption, &
-             ClearOption = ClearOption, UnitOption = VariableUnit, &
+           ( RiemannSolverType, UseEntropy, UseLimiter, Units, &
+             BaryonMassReference, LimiterParameter, nValues, &
+             VariableOption = Variable, VectorOption = VectorOption, &
+             NameOption = NameOption, ClearOption = ClearOption, &
+             UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndicesOption )
 
     if ( TableInitialized ) &
@@ -173,7 +163,7 @@ contains
 
     TableInitialized  =  .true.
 
-  end subroutine InitializeAllocate_P_HN
+  end subroutine Initialize_P_HN
 
 
   subroutine SetPrimitiveConserved ( C )
@@ -312,22 +302,21 @@ contains
   end subroutine InitializeBasics
 
 
-  subroutine SetUnits ( VariableUnit, F, NumberDensityUnit, TemperatureUnit )
+  subroutine SetUnits ( VariableUnit, F, Units )
 
     type ( MeasuredValueForm ), dimension ( : ), intent ( inout ) :: &
       VariableUnit
     class ( Fluid_P_HN_Form ), intent ( in ) :: &
       F
-    type ( MeasuredValueForm ), intent ( in ) :: &
-      NumberDensityUnit, &
-      TemperatureUnit
+    class ( StressEnergyUnitsForm ), intent ( in ) :: &
+      Units
 
     VariableUnit ( F % CONSERVED_PROTON_DENSITY ) &
-      = NumberDensityUnit
+      = Units % NumberDensity
     VariableUnit ( F % CHEMICAL_POTENTIAL_N_P ) &
-      = TemperatureUnit
+      = Units % Temperature
     VariableUnit ( F % CHEMICAL_POTENTIAL_E ) &
-      = TemperatureUnit
+      = Units % Temperature
 
   end subroutine SetUnits
 
