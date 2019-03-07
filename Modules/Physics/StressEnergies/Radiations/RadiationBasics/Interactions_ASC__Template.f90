@@ -4,6 +4,7 @@ module Interactions_ASC__Template
 
   use Basics
   use Mathematics
+  use StressEnergyBasics
   use Fluids
   use Interactions_Template
   use Interactions_CSL__Template
@@ -13,10 +14,8 @@ module Interactions_ASC__Template
 
   type, public, extends ( Field_ASC_Template ), abstract :: &
     Interactions_ASC_Template
-      type ( MeasuredValueForm ) :: &
-        LengthUnit, &
-        EnergyDensityUnit, &
-        TemperatureUnit
+      class ( StressEnergyUnitsForm ), pointer :: &
+        Units => null ( )
       character ( LDL ) :: &
         InteractionsType = '', &
         MomentsType = ''
@@ -41,25 +40,23 @@ module Interactions_ASC__Template
 
   abstract interface
 
-    subroutine I ( IA, A, InteractionsType, MomentsType, NameShortOption, &
-                   LengthUnitOption, EnergyDensityUnitOption, &
-                   TemperatureUnitOption, IgnorabilityOption )
+    subroutine I ( IA, A, InteractionsType, MomentsType, Units, &
+                   NameShortOption, IgnorabilityOption )
       use Basics
       use Mathematics
+      use StressEnergyBasics
       import Interactions_ASC_Template
       class ( Interactions_ASC_Template ), intent ( inout ) :: &
         IA
-      class ( Atlas_SC_Template ), intent ( in ), target :: &
+      class ( Atlas_SC_Template ), intent ( in ) :: &
         A
       character ( * ), intent ( in ) :: &
         InteractionsType, &
         MomentsType
+      class ( StressEnergyUnitsForm ), intent ( in ) :: &
+        Units
       character ( * ), intent ( in ), optional :: &
         NameShortOption
-      type ( MeasuredValueForm ), intent ( in ), optional :: &
-        LengthUnitOption, &
-        EnergyDensityUnitOption, &
-        TemperatureUnitOption
       integer ( KDI ), intent ( in ), optional :: &
         IgnorabilityOption
     end subroutine I
@@ -79,23 +76,20 @@ contains
 
 
   subroutine InitializeTemplate_I_ASC &
-               ( IA, A, InteractionsType, MomentsType, NameShortOption, &
-                 LengthUnitOption, EnergyDensityUnitOption, &
-                 TemperatureUnitOption, IgnorabilityOption )
+               ( IA, A, InteractionsType, MomentsType, Units, NameShortOption, &
+                 IgnorabilityOption )
 
     class ( Interactions_ASC_Template ), intent ( inout ) :: &
       IA
-    class ( Atlas_SC_Template ), intent ( in ), target :: &
+    class ( Atlas_SC_Template ), intent ( in ) :: &
       A
     character ( * ), intent ( in ) :: &
       InteractionsType, &
       MomentsType
+    class ( StressEnergyUnitsForm ), intent ( in ), target :: &
+      Units
     character ( * ), intent ( in ), optional :: &
       NameShortOption
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
-      LengthUnitOption, &
-      EnergyDensityUnitOption, &
-      TemperatureUnitOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
@@ -107,12 +101,7 @@ contains
     IA % InteractionsType = InteractionsType    
     IA % MomentsType      = MomentsType
 
-    if ( present ( LengthUnitOption ) ) &
-      IA % LengthUnit = LengthUnitOption
-    if ( present ( EnergyDensityUnitOption ) ) &
-      IA % EnergyDensityUnit = EnergyDensityUnitOption
-    if ( present ( TemperatureUnitOption ) ) &
-      IA % TemperatureUnit = TemperatureUnitOption
+    IA % Units => Units
 
     NameShort = 'Interactions'
     if ( present ( NameShortOption ) ) &
@@ -214,8 +203,7 @@ contains
     class is ( Interactions_CSL_Template )
       call FC % Initialize &
              ( C, FA % NameShort, FA % InteractionsType, FA % MomentsType, &
-               FA % LengthUnit, FA % EnergyDensityUnit, FA % TemperatureUnit, &
-               nValues, IgnorabilityOption = FA % IGNORABILITY )
+               FA % Units, nValues, IgnorabilityOption = FA % IGNORABILITY )
     end select !-- FC
 
     call A % AddField ( FA )

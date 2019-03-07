@@ -9,12 +9,14 @@ SetFermiDiracSpectrum_Command.o: \
 Interactions_Template.o: \
   Basics.o \
   Mathematics.o \
+  StressEnergyBasics.o \
   Fluids.o \
   Interactions_Template.f90
 
 Interactions_CSL__Template.o: \
   Basics.o \
   Mathematics.o \
+  StressEnergyBasics.o \
   Interactions_Template.o \
   Interactions_CSL__Template.f90
 

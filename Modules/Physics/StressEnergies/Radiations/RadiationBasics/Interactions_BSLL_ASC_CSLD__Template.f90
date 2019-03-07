@@ -5,6 +5,7 @@ module Interactions_BSLL_ASC_CSLD__Template
 
   use Basics
   use Mathematics
+  use StressEnergyBasics
   use Fluids
   use Interactions_Template
   use Interactions_ASC__Template
@@ -14,13 +15,13 @@ module Interactions_BSLL_ASC_CSLD__Template
 
   type, public, extends ( Field_BSLL_ASC_CSLD_Template ), abstract :: &
     Interactions_BSLL_ASC_CSLD_Template
-      type ( MeasuredValueForm ) :: &
-        LengthUnit, &
-        EnergyDensityUnit, &
-        TemperatureUnit
+      class ( StressEnergyUnitsForm ), pointer :: &
+        Units => null ( )
       character ( LDF ) :: &
         InteractionsType = ''
   contains
+    procedure ( I ), public, pass, deferred :: &
+      Initialize
     procedure, public, pass :: &
       InitializeTemplate_I_BSLL_ASC_CSLD
     procedure, public, pass :: &
@@ -36,6 +37,24 @@ module Interactions_BSLL_ASC_CSLD__Template
   end type Interactions_BSLL_ASC_CSLD_Template
 
   abstract interface
+
+    subroutine I ( IB, B, InteractionsType, Units, NameShortOption )
+      use Basics
+      use Mathematics
+      use StressEnergyBasics
+      import Interactions_BSLL_ASC_CSLD_Template
+      class ( Interactions_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
+        IB
+      class ( Bundle_SLL_ASC_CSLD_Form ), intent ( in ) :: &
+        B
+      character ( * ), intent ( in ) :: &
+        InteractionsType
+      class ( StressEnergyUnitsForm ), intent ( in ) :: &
+        Units
+      character ( * ), intent ( in ), optional :: &
+        NameShortOption
+    end subroutine I
+
     subroutine AF ( IB, iF )
       use Basics
       import Interactions_BSLL_ASC_CSLD_Template
@@ -44,79 +63,34 @@ module Interactions_BSLL_ASC_CSLD__Template
       integer ( KDI ), intent ( in ) :: &
         iF  !-- iFiber
     end subroutine AF
+
   end interface
 
 contains
 
 
   subroutine InitializeTemplate_I_BSLL_ASC_CSLD &
-               ( IB, B, InteractionsType, NameShortOption, LengthUnitOption, &
-                 EnergyDensityUnitOption, TemperatureUnitOption )
+               ( IB, B, InteractionsType, Units, NameShortOption )
 
     class ( Interactions_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
       IB
-    class ( Bundle_SLL_ASC_CSLD_Form ), intent ( in ), target :: &
+    class ( Bundle_SLL_ASC_CSLD_Form ), intent ( in ) :: &
       B
     character ( * ), intent ( in )  :: &
       InteractionsType
+    class ( StressEnergyUnitsForm ), intent ( in ), target :: &
+      Units
     character ( * ), intent ( in ), optional :: &
       NameShortOption
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
-      LengthUnitOption, &
-      EnergyDensityUnitOption, &
-      TemperatureUnitOption
 
     character ( LDL ) :: &
       NameShort
-    ! class ( GeometryFlatForm ), pointer :: &
-    !   GF
 
     if ( IB % Type == '' ) &
       IB % Type = 'an Interactions_BSLL_ASC_CSLD'
     IB % InteractionsType = InteractionsType
 
-    ! select type ( B )
-    ! class is ( Bundle_SLL_ASC_CSLD_Form )
-
-    ! IB % nFibers = B % nFibers
-
-    ! IB % nBaseValues &
-    !   = B % Base_CSLD % nProperCells  +  B % Base_CSLD % nGhostCells
-    ! IB % ChartBase => B % Base_CSLD
-
-    ! allocate ( IB % iaBaseCell ( size ( B % iaBaseCell ) ) )
-    ! IB % iaBaseCell = B % iaBaseCell
-
-    ! GF => B % GeometryFiber ( )
-    ! associate ( Energy => GF % Value ( :, GF % CENTER ( 1 ) ) )
-    ! IB % nEnergyValues = size ( Energy )
-    ! allocate ( IB % Energy ( IB % nEnergyValues ) )
-    ! IB % Energy = Energy
-    ! end associate !-- Energy
-
-    ! IB % EnergyUnit = GF % Unit ( GF % CENTER ( 1 ) )
-
-    ! associate ( AF => B % FiberMaster )
-    ! select type ( CF => AF % Chart )
-    ! class is ( Chart_SLL_Form )
-    !   IB % ChartFiber => CF
-    ! end select !--C
-    ! end associate !-- AF
-
-    ! class default
-    !   call Show ( 'Bundle type not recognized', CONSOLE % ERROR )
-    !   call Show ( 'Interactions_BSLL_ASC_CSLD__Form', 'module', &
-    !               CONSOLE % ERROR )
-    !   call Show ( 'Initialize', 'subroutine', CONSOLE % ERROR )
-    !   call PROGRAM_HEADER % Abort ( )
-    ! end select !-- B
-
-    if ( present ( LengthUnitOption ) ) &
-      IB % LengthUnit = LengthUnitOption
-    if ( present ( EnergyDensityUnitOption ) ) &
-      IB % EnergyDensityUnit = EnergyDensityUnitOption
-    if ( present ( TemperatureUnitOption ) ) &
-      IB % TemperatureUnit = TemperatureUnitOption
+    IB % Units => Units
 
     NameShort = 'Interactions'
     if ( present ( NameShortOption ) ) &
@@ -240,10 +214,7 @@ contains
 
       call IA % Initialize &
              ( AF, FB % InteractionsType, MomentsType = 'SPECTRAL', &
-               NameShortOption = FB % NameShort, & 
-               LengthUnitOption = FB % LengthUnit, &
-               EnergyDensityUnitOption = FB % EnergyDensityUnit, &
-               TemperatureUnitOption = FB % TemperatureUnit )
+               Units = FB % Units, NameShortOption = FB % NameShort )
 
       end select !-- AF
       end select !-- IA

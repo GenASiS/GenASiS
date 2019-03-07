@@ -27,14 +27,6 @@ module Fluid_ASC__Form
       BaryonMassReference
     class ( StressEnergyUnitsForm ), pointer :: &
       Units => null ( )
-    type ( MeasuredValueForm ) :: &
-      BaryonMassUnit, &
-      NumberDensityUnit, &
-      EnergyDensityUnit, &
-      TemperatureUnit
-    type ( MeasuredValueForm ), dimension ( 3 ) :: &
-      Velocity_U_Unit, &
-      MomentumDensity_D_Unit
     logical ( KDL ) :: &
       UseLimiter, &
       UseEntropy
