@@ -2,6 +2,7 @@ module RadiationMoments_Form
 
   use Basics
   use Mathematics
+  use StressEnergyBasics
   use Interactions_Template
 
   implicit none
@@ -73,9 +74,7 @@ contains
 
 
   subroutine InitializeAllocate_RM &
-               ( RM, RiemannSolverType, UseLimiter, Velocity_U_Unit, &
-                 MomentumDensity_U_Unit, MomentumDensity_D_Unit, &
-                 EnergyDensityUnit, LimiterParameter, &
+               ( RM, RiemannSolverType, UseLimiter, Units, LimiterParameter, &
                  nValues, VariableOption, VectorOption, NameOption, &
                  ClearOption, UnitOption, VectorIndicesOption )
 
@@ -85,12 +84,8 @@ contains
       RiemannSolverType
     logical ( KDL ), intent ( in ) :: &
       UseLimiter
-    type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
-      Velocity_U_Unit, &
-      MomentumDensity_U_Unit, &
-      MomentumDensity_D_Unit
-    type ( MeasuredValueForm ), intent ( in ) :: &
-      EnergyDensityUnit
+    class ( StressEnergyUnitsForm ), intent ( in ) :: &
+      Units
     real ( KDR ), intent ( in ) :: &
       LimiterParameter
     integer ( KDI ), intent ( in ) :: &
@@ -122,12 +117,10 @@ contains
              VariableOption, VectorOption, NameOption, UnitOption, &
              VectorIndicesOption )
 
-    call SetUnits &
-           ( VariableUnit, RM, Velocity_U_Unit, MomentumDensity_U_Unit, &
-             MomentumDensity_D_Unit, EnergyDensityUnit )
+    call SetUnits ( VariableUnit, RM, Units )
 
     call RM % InitializeTemplate &
-           ( RiemannSolverType, UseLimiter, Velocity_U_Unit, &
+           ( RiemannSolverType, UseLimiter, Units % Velocity_U, &
              LimiterParameter, nValues, VariableOption = Variable, &
              VectorOption = Vector, NameOption = Name, &
              ClearOption = ClearOption, UnitOption = VariableUnit, &
@@ -699,34 +692,28 @@ contains
   end subroutine InitializeBasics
 
 
-  subroutine SetUnits &
-               ( VariableUnit, RM, Velocity_U_Unit, MomentumDensity_U_Unit, &
-                 MomentumDensity_D_Unit, EnergyDensityUnit )
+  subroutine SetUnits ( VariableUnit, RM, Units )
 
     type ( MeasuredValueForm ), dimension ( : ), intent ( inout ) :: &
       VariableUnit
     class ( RadiationMomentsForm ), intent ( in ) :: &
       RM
-    type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
-      Velocity_U_Unit, &
-      MomentumDensity_U_Unit, &
-      MomentumDensity_D_Unit
-    type ( MeasuredValueForm ), intent ( in ) :: &
-      EnergyDensityUnit
+    class ( StressEnergyUnitsForm ), intent ( in ) :: &
+      Units
 
     integer ( KDI ) :: &
       iD
 
-    VariableUnit ( RM % COMOVING_ENERGY )  = EnergyDensityUnit
-    VariableUnit ( RM % CONSERVED_ENERGY ) = EnergyDensityUnit
+    VariableUnit ( RM % COMOVING_ENERGY )  = Units % EnergyDensity
+    VariableUnit ( RM % CONSERVED_ENERGY ) = Units % EnergyDensity
 
     do iD = 1, 3
       VariableUnit ( RM % COMOVING_MOMENTUM_U ( iD ) ) &
-        = MomentumDensity_U_Unit ( iD )
+        = Units % MomentumDensity_U ( iD )
       VariableUnit ( RM % CONSERVED_MOMENTUM_D ( iD ) ) &
-        = MomentumDensity_D_Unit ( iD )      
+        = Units % MomentumDensity_D ( iD )      
       VariableUnit ( RM % FLUID_VELOCITY_U ( iD ) ) &
-        = Velocity_U_Unit ( iD )
+        = Units % Velocity_U ( iD )
     end do
 
   end subroutine SetUnits

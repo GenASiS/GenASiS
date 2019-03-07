@@ -125,6 +125,8 @@ contains
     class ( Interactions_CSL_Template ), intent ( inout ) :: &
       IC
 
+    nullify ( IC % Units )
+
     call IC % FinalizeTemplate_CSL ( )
 
   end subroutine FinalizeTemplate_I_CSL

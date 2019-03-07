@@ -4,6 +4,7 @@ module RadiationMoments_ASC__Form
 
   use Basics
   use Mathematics
+  use StressEnergyBasics
   use RadiationMoments_Form
   use Sources_RM_CSL__Form
   use Sources_RM_ASC__Form
@@ -15,13 +16,8 @@ module RadiationMoments_ASC__Form
   type, public, extends ( Current_ASC_Template ) :: RadiationMoments_ASC_Form
     real ( KDR ) :: &
       LimiterParameter
-    type ( MeasuredValueForm ) :: &
-      EnergyDensityUnit, &
-      TemperatureUnit
-    type ( MeasuredValueForm ), dimension ( 3 ) :: &
-      Velocity_U_Unit, &
-      MomentumDensity_U_Unit, &
-      MomentumDensity_D_Unit
+    class ( StressEnergyUnitsForm ), pointer :: &
+      Units => null ( )
     logical ( KDL ) :: &
       UseLimiter, &
       SuppressWrite
@@ -61,15 +57,11 @@ contains
 
 
   subroutine Initialize &
-               ( RMA, A, RadiationMomentsType, NameShortOption, &
+               ( RMA, A, RadiationMomentsType, Units, NameShortOption, &
                  RiemannSolverTypeOption, UseLimiterOption, &
                  AllocateSourcesOption, SuppressWriteOption, &
-                 SuppressWriteSourcesOption,  Velocity_U_UnitOption, &
-                 MomentumDensity_U_UnitOption, MomentumDensity_D_UnitOption, &
-                 EnergyDensityUnitOption, TemperatureUnitOption, &
-                 EnergyUnitOption, MomentumUnitOption, &
-                 AngularMomentumUnitOption, TimeUnitOption, &
-                 LimiterParameterOption, IgnorabilityOption )
+                 SuppressWriteSourcesOption, LimiterParameterOption, &
+                 IgnorabilityOption )
 
     class ( RadiationMoments_ASC_Form ), intent ( inout ) :: &
       RMA
@@ -77,6 +69,8 @@ contains
       A
     character ( * ), intent ( in ) :: &
       RadiationMomentsType
+    class ( StressEnergyUnitsForm ), intent ( in ), target :: &
+      Units
     character ( * ), intent ( in ), optional :: &
       NameShortOption, &
       RiemannSolverTypeOption
@@ -85,17 +79,6 @@ contains
       AllocateSourcesOption, &
       SuppressWriteOption, &
       SuppressWriteSourcesOption
-    type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ), optional :: &
-      Velocity_U_UnitOption, &
-      MomentumDensity_U_UnitOption, &
-      MomentumDensity_D_UnitOption
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
-      EnergyDensityUnitOption, &
-      TemperatureUnitOption, &
-      EnergyUnitOption, &
-      MomentumUnitOption, &
-      AngularMomentumUnitOption, &
-      TimeUnitOption
     real ( KDR ), intent ( in ), optional :: &
       LimiterParameterOption
     integer ( KDI ), intent ( in ), optional :: &
@@ -111,6 +94,8 @@ contains
     if ( RMA % Type == '' ) &
       RMA % Type = 'a RadiationMoments_ASC'
     RMA % RadiationMomentsType = RadiationMomentsType
+
+    RMA % Units => Units
 
     RMA % RiemannSolverType = 'HLL'
     if ( present ( RiemannSolverTypeOption ) ) &
@@ -129,17 +114,6 @@ contains
       RMA % LimiterParameter = LimiterParameterOption
     call PROGRAM_HEADER % GetParameter &
            ( RMA % LimiterParameter, 'LimiterParameter' )
-
-    if ( present ( EnergyDensityUnitOption ) ) &
-      RMA % EnergyDensityUnit = EnergyDensityUnitOption
-     if ( present ( TemperatureUnitOption ) ) &
-      RMA % TemperatureUnit = TemperatureUnitOption
-   if ( present ( Velocity_U_UnitOption ) ) &
-      RMA % Velocity_U_Unit = Velocity_U_UnitOption
-    if ( present ( MomentumDensity_U_UnitOption ) ) &
-      RMA % MomentumDensity_U_Unit = MomentumDensity_U_UnitOption
-    if ( present ( MomentumDensity_D_UnitOption ) ) &
-      RMA % MomentumDensity_D_Unit = MomentumDensity_D_UnitOption
 
     ! if ( .not. allocated ( RMA % TallyInterior ) ) then
     !   select case ( trim ( RadiationMomentsType ) )
@@ -239,7 +213,7 @@ contains
       associate ( SRMA => RMA % Sources_ASC )
       call SRMA % Initialize &
              ( RMA, NameShortOption = trim ( NameShort ) // '_Sources', &
-               TimeUnitOption = TimeUnitOption, &
+               TimeUnitOption = Units % Time, &
                IgnorabilityOption = IgnorabilityOption, &
                SuppressWriteOption = SuppressWriteSourcesOption )
       select type ( SRMC => SRMA % Chart )
@@ -350,6 +324,8 @@ contains
     if ( allocated ( RMA % Sources_ASC ) ) &
       deallocate ( RMA % Sources_ASC )
 
+    nullify ( RMA % Units )
+
     call RMA % FinalizeTemplate_ASC_C ( )
 
   end subroutine Finalize
@@ -373,9 +349,7 @@ contains
     class is ( RadiationMoments_CSL_Form )
       call FC % Initialize &
              ( C, FA % NameShort, FA % RadiationMomentsType, &
-               FA % RiemannSolverType, FA % UseLimiter, FA % Velocity_U_Unit, &
-               FA % MomentumDensity_U_Unit, FA % MomentumDensity_D_Unit, &
-               FA % EnergyDensityUnit, FA % TemperatureUnit, &
+               FA % RiemannSolverType, FA % UseLimiter, FA % Units, &
                FA % LimiterParameter, nValues, &
                IgnorabilityOption = FA % IGNORABILITY )
     end select !-- FC

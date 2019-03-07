@@ -1,18 +1,21 @@
 PhotonMoments_G__Form.o: \
   Basics.o \
   Mathematics.o \
+  StressEnergyBasics.o \
   RadiationBasics.o \
   PhotonMoments_G__Form.f90
 
 PhotonMoments_S__Form.o: \
   Basics.o \
   Mathematics.o \
+  StressEnergyBasics.o \
   RadiationBasics.o \
   PhotonMoments_S__Form.f90
 
 PhotonMoments_CSL__Form.o: \
   Basics.o \
   Mathematics.o \
+  StressEnergyBasics.o \
   RadiationBasics.o \
   PhotonMoments_G__Form.o \
   PhotonMoments_S__Form.o \

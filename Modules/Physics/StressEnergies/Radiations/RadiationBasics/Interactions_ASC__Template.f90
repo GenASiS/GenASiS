@@ -180,6 +180,8 @@ contains
     class ( Interactions_ASC_Template ), intent ( inout ) :: &
       IA
 
+    nullify ( IA % Units )
+
     call IA % FinalizeTemplate_ASC ( )
 
   end subroutine FinalizeTemplate_I_ASC

@@ -39,6 +39,7 @@ Interactions_BSLL_ASC_CSLD__Template.o: \
 RadiationMoments_Form.o: \
   Basics.o \
   Mathematics.o \
+  StressEnergyBasics.o \
   Interactions_Template.o \
   RadiationMoments_Form.f90
 
@@ -64,6 +65,7 @@ Sources_RM_ASC__Form.o: \
 RadiationMoments_CSL__Form.o: \
   Basics.o \
   Mathematics.o \
+  StressEnergyBasics.o \
   Interactions_Template.o \
   RadiationMoments_Form.o \
   Sources_RM__Form.o \
@@ -73,6 +75,7 @@ RadiationMoments_CSL__Form.o: \
 RadiationMoments_ASC__Form.o: \
   Basics.o \
   Mathematics.o \
+  StressEnergyBasics.o \
   RadiationMoments_Form.o \
   Sources_RM_CSL__Form.o \
   Sources_RM_ASC__Form.o \
@@ -82,6 +85,7 @@ RadiationMoments_ASC__Form.o: \
 RadiationMoments_BSLL_ASC_CSLD__Form.o: \
   Basics.o \
   Mathematics.o \
+  StressEnergyBasics.o \
   RadiationMoments_Form.o \
   RadiationMoments_ASC__Form.o \
   RadiationMoments_BSLL_ASC_CSLD__Form.f90

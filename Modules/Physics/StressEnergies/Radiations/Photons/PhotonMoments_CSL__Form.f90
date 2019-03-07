@@ -4,6 +4,7 @@ module PhotonMoments_CSL__Form
 
   use Basics
   use Mathematics
+  use StressEnergyBasics
   use RadiationBasics
   use PhotonMoments_G__Form
   use PhotonMoments_S__Form
@@ -33,10 +34,8 @@ contains
       select type ( PM => FC % Field )
       type is ( PhotonMoments_G_Form )
         call PM % Initialize &
-               ( FC % RiemannSolverType, FC % UseLimiter, &
-                 FC % Velocity_U_Unit, FC % MomentumDensity_U_Unit, &
-                 FC % MomentumDensity_D_Unit, FC % EnergyDensityUnit, &
-                 FC % TemperatureUnit, FC % LimiterParameter, FC % nValues, &
+               ( FC % RiemannSolverType, FC % UseLimiter, FC % Units, &
+                 FC % LimiterParameter, FC % nValues, &
                  NameOption = FC % NameShort )
         call PM % SetPrimitiveConserved ( )
         call PM % SetOutput ( FC % FieldOutput )
@@ -46,9 +45,7 @@ contains
       select type ( PM => FC % Field )
       type is ( PhotonMoments_S_Form )
         call PM % Initialize &
-               ( FC % RiemannSolverType, FC % UseLimiter, &
-                 FC % Velocity_U_Unit, FC % MomentumDensity_U_Unit, &
-                 FC % MomentumDensity_D_Unit, FC % EnergyDensityUnit, &
+               ( FC % RiemannSolverType, FC % UseLimiter, FC % Units, &
                  FC % LimiterParameter, FC % nValues, &
                  NameOption = FC % NameShort )
         call PM % SetPrimitiveConserved ( )

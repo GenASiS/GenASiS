@@ -5,6 +5,7 @@ module PhotonMoments_S__Form
 
   use Basics
   use Mathematics
+  use StressEnergyBasics
   use RadiationBasics
 
   implicit none
@@ -22,9 +23,7 @@ contains
 
 
   subroutine InitializeAllocate_RM &
-               ( RM, RiemannSolverType, UseLimiter, Velocity_U_Unit, &
-                 MomentumDensity_U_Unit, MomentumDensity_D_Unit, &
-                 EnergyDensityUnit, LimiterParameter, &
+               ( RM, RiemannSolverType, UseLimiter, Units, LimiterParameter, &
                  nValues, VariableOption, VectorOption, NameOption, &
                  ClearOption, UnitOption, VectorIndicesOption )
 
@@ -34,12 +33,8 @@ contains
       RiemannSolverType
     logical ( KDL ), intent ( in ) :: &
       UseLimiter
-    type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
-      Velocity_U_Unit, &
-      MomentumDensity_U_Unit, &
-      MomentumDensity_D_Unit
-    type ( MeasuredValueForm ), intent ( in ) :: &
-      EnergyDensityUnit
+    class ( StressEnergyUnitsForm ), intent ( in ) :: &
+      Units
     real ( KDR ), intent ( in ) :: &
       LimiterParameter
     integer ( KDI ), intent ( in ) :: &
@@ -60,9 +55,7 @@ contains
       RM % Type = 'PhotonMoments_S'
 
     call RM % RadiationMomentsForm % Initialize &
-           ( RiemannSolverType, UseLimiter, Velocity_U_Unit, &
-             MomentumDensity_U_Unit, MomentumDensity_D_Unit, &
-             EnergyDensityUnit, LimiterParameter, nValues, &
+           ( RiemannSolverType, UseLimiter, Units, LimiterParameter, nValues, &
              VariableOption = VariableOption, VectorOption = VectorOption, &
              NameOption = NameOption, ClearOption = ClearOption, &
              UnitOption = UnitOption, &

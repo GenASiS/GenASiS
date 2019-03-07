@@ -15,6 +15,8 @@ module Interactions_BSLL_ASC_CSLD__Template
 
   type, public, extends ( Field_BSLL_ASC_CSLD_Template ), abstract :: &
     Interactions_BSLL_ASC_CSLD_Template
+      type ( StressEnergyUnitsForm ) :: &
+        UnitsSpectral
       class ( StressEnergyUnitsForm ), pointer :: &
         Units => null ( )
       character ( LDF ) :: &
@@ -83,6 +85,8 @@ contains
     character ( * ), intent ( in ), optional :: &
       NameShortOption
 
+    type ( MeasuredValueForm ) :: &
+      ParticleEnergyUnit
     character ( LDL ) :: &
       NameShort
 
@@ -91,6 +95,20 @@ contains
     IB % InteractionsType = InteractionsType
 
     IB % Units => Units
+
+    associate ( AF => B % FiberMaster )
+    select type ( CF => AF % Chart )
+    class is ( Chart_SLL_Form )
+      ParticleEnergyUnit  =  CF % CoordinateUnit ( 1 )
+    end select !--CF
+    end associate !-- AF
+    IB % UnitsSpectral  =  Units
+    IB % UnitsSpectral % EnergyDensity &
+      =  Units % EnergyDensity  *  ParticleEnergyUnit ** (-3)
+    IB % UnitsSpectral % MomentumDensity_U &
+      =  Units % MomentumDensity_U  *  ParticleEnergyUnit ** (-3)
+    IB % UnitsSpectral % MomentumDensity_D &
+      =  Units % MomentumDensity_D  *  ParticleEnergyUnit ** (-3)
 
     NameShort = 'Interactions'
     if ( present ( NameShortOption ) ) &
@@ -182,6 +200,8 @@ contains
     class ( Interactions_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
       IB
 
+    nullify ( IB % Units )
+
     call IB % FinalizeTemplate_BSLL_ASC_CSLD ( )
 
   end subroutine FinalizeTemplate_I_BSLL_ASC_CSLD
@@ -214,7 +234,7 @@ contains
 
       call IA % Initialize &
              ( AF, FB % InteractionsType, MomentsType = 'SPECTRAL', &
-               Units = FB % Units, NameShortOption = FB % NameShort )
+               Units = FB % UnitsSpectral, NameShortOption = FB % NameShort )
 
       end select !-- AF
       end select !-- IA

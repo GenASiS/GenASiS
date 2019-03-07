@@ -2,8 +2,8 @@ module RadiationMoments_BSLL_ASC_CSLD__Form
 
   use Basics
   use Mathematics
+  use StressEnergyBasics
   use RadiationMoments_Form
-!  use PhotonMoments_S__Form
   use RadiationMoments_ASC__Form
 
   implicit none
@@ -19,19 +19,12 @@ module RadiationMoments_BSLL_ASC_CSLD__Form
         Energy
       logical ( KDL ) :: &
         UseLimiter
-      type ( MeasuredValueForm ) :: &
-        EnergyDensityUnit, &
-        TemperatureUnit, &
-        EnergyUnit, &
-        MomentumUnit, &
-        AngularMomentumUnit, &
-        TimeUnit
-      type ( MeasuredValueForm ), dimension ( 3 ) :: &
-        Velocity_U_Unit, &
-        MomentumDensity_U_Unit, &
-        MomentumDensity_D_Unit
+      type ( StressEnergyUnitsForm ) :: &
+        UnitsSpectral
+      class ( StressEnergyUnitsForm ), pointer :: &
+        Units => null ( )
       character ( LDF ) :: &
-        RadiationType = ''
+        RadiationMomentsType = ''
       class ( FieldAtlasTemplate ), allocatable :: &
         EnergyIntegral
       class ( Field_BSLL_ASC_CSLD_Template ), pointer :: &
@@ -41,8 +34,6 @@ module RadiationMoments_BSLL_ASC_CSLD__Form
       Initialize
     procedure, public, pass :: &
       RadiationMoments
-!    procedure, public, pass :: &
-!      PhotonMoments_S
     procedure, public, pass :: &
       ComputeTally
     procedure, public, pass :: &
@@ -61,47 +52,52 @@ contains
 
 
   subroutine Initialize &
-               ( RMB, B, RadiationType, NameShortOption, UseLimiterOption, &
-                 Velocity_U_UnitOption, MomentumDensity_U_UnitOption, &
-                 MomentumDensity_D_UnitOption, EnergyDensityUnitOption, &
-                 TemperatureUnitOption, EnergyUnitOption, MomentumUnitOption, &
-                 AngularMomentumUnitOption, TimeUnitOption, &
-                 LimiterParameterOption )
+               ( RMB, B, RadiationMomentsType, Units, NameShortOption, &
+                 UseLimiterOption, LimiterParameterOption )
 
     class ( RadiationMoments_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
       RMB
     class ( Bundle_SLL_ASC_CSLD_Form ), intent ( in ), target :: &
       B
     character ( * ), intent ( in )  :: &
-      RadiationType
+      RadiationMomentsType
+    class ( StressEnergyUnitsForm ), intent ( in ), target :: &
+      Units
     character ( * ), intent ( in ), optional :: &
       NameShortOption
     logical ( KDL ), intent ( in ), optional :: &
       UseLimiterOption
-    type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ), optional :: &
-      Velocity_U_UnitOption, &
-      MomentumDensity_U_UnitOption, &
-      MomentumDensity_D_UnitOption
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
-      EnergyDensityUnitOption, &
-      TemperatureUnitOption, &
-      EnergyUnitOption, &
-      MomentumUnitOption, &
-      AngularMomentumUnitOption, &
-      TimeUnitOption
     real ( KDR ), intent ( in ), optional :: &
       LimiterParameterOption
 
-    character ( LDL ) :: &
-      NameShort
     type ( MeasuredValueForm ) :: &
       ParticleEnergyUnit
+    character ( LDL ) :: &
+      NameShort
     class ( GeometryFlatForm ), pointer :: &
       GF
 
     if ( RMB % Type == '' ) &
       RMB % Type = 'a RadiationMoments_BSLL_ASC_CSLD'
-    RMB % RadiationType = RadiationType
+    RMB % RadiationMomentsType = RadiationMomentsType
+
+    RMB % Units => Units
+
+    associate ( AF => B % FiberMaster )
+    select type ( CF => AF % Chart )
+    class is ( Chart_SLL_Form )
+      ParticleEnergyUnit  =  CF % CoordinateUnit ( 1 )
+    end select !--CF
+    end associate !-- AF
+    RMB % UnitsSpectral  =  Units
+    RMB % UnitsSpectral % NumberDensity &
+      =  Units % NumberDensity  *  ParticleEnergyUnit ** (-3)
+    RMB % UnitsSpectral % EnergyDensity &
+      =  Units % EnergyDensity  *  ParticleEnergyUnit ** (-3)
+    RMB % UnitsSpectral % MomentumDensity_U &
+      =  Units % MomentumDensity_U  *  ParticleEnergyUnit ** (-3)
+    RMB % UnitsSpectral % MomentumDensity_D &
+      =  Units % MomentumDensity_D  *  ParticleEnergyUnit ** (-3)
 
     RMB % UseLimiter = .false.
     if ( present ( UseLimiterOption ) ) &
@@ -115,51 +111,6 @@ contains
     call PROGRAM_HEADER % GetParameter &
            ( RMB % LimiterParameter, 'LimiterParameter' )
 
-    if ( present ( EnergyDensityUnitOption ) ) &
-      RMB % EnergyDensityUnit = EnergyDensityUnitOption
-    if ( present ( TemperatureUnitOption ) ) &
-      RMB % TemperatureUnit = TemperatureUnitOption
-    if ( present ( Velocity_U_UnitOption ) ) &
-      RMB % Velocity_U_Unit = Velocity_U_UnitOption
-    if ( present ( MomentumDensity_U_UnitOption ) ) &
-      RMB % MomentumDensity_U_Unit = MomentumDensity_U_UnitOption
-    if ( present ( MomentumDensity_D_UnitOption ) ) &
-      RMB % MomentumDensity_D_Unit = MomentumDensity_D_UnitOption
-
-    if ( present ( EnergyUnitOption ) ) &
-      RMB % EnergyUnit = EnergyUnitOption
-    if ( present ( MomentumUnitOption ) ) &
-      RMB % MomentumUnit = MomentumUnitOption
-    if ( present ( AngularMomentumUnitOption ) ) &
-      RMB % AngularMomentumUnit = AngularMomentumUnitOption
-    if ( present ( TimeUnitOption ) ) &
-      RMB % TimeUnit = TimeUnitOption
-
-    associate ( AF => B % FiberMaster )
-    select type ( CF => AF % Chart )
-    class is ( Chart_SLL_Form )
-      ParticleEnergyUnit  =  CF % CoordinateUnit ( 1 )
-    end select !--CF
-    end associate !-- AF
-    RMB % EnergyDensityUnit &
-      =  RMB % EnergyDensityUnit  *  ParticleEnergyUnit ** (-3)
-    RMB % MomentumDensity_U_Unit &
-      =  RMB % MomentumDensity_U_Unit  *  ParticleEnergyUnit ** (-3)
-    RMB % MomentumDensity_D_Unit &
-      =  RMB % MomentumDensity_D_Unit  *  ParticleEnergyUnit ** (-3)
-
-    ! select type ( B )
-    ! class is ( Bundle_SLL_ASC_CSLD_Form )
-
-    ! RMB % nFibers = B % nFibers
-
-    ! RMB % nBaseValues &
-    !   = B % Base_CSLD % nProperCells  +  B % Base_CSLD % nGhostCells
-    ! RMB % ChartBase => B % Base_CSLD
-
-    ! allocate ( RMB % iaBaseCell ( size ( B % iaBaseCell ) ) )
-    ! RMB % iaBaseCell = B % iaBaseCell
-
     GF => B % GeometryFiber ( )
     associate ( Energy => GF % Value ( :, GF % CENTER_U ( 1 ) ) )
     RMB % nEnergyValues = size ( Energy )
@@ -167,30 +118,14 @@ contains
     RMB % Energy = Energy
     end associate !-- Energy
 
-    ! RMB % EnergyUnit = GF % Unit ( GF % CENTER ( 1 ) )
-
-    ! associate ( AF => B % FiberMaster )
-    ! select type ( CF => AF % Chart )
-    ! class is ( Chart_SLL_Form )
-    !   RMB % ChartFiber => CF
-    ! end select !--C
-    ! end associate !-- AF
-
-    ! class default
-    !   call Show ( 'Bundle type not recognized', CONSOLE % ERROR )
-    !   call Show ( 'RadiationMoments_BSLL_ASC_CSLD__Form', 'module', &
-    !               CONSOLE % ERROR )
-    !   call Show ( 'Initialize', 'subroutine', CONSOLE % ERROR )
-    !   call PROGRAM_HEADER % Abort ( )
-    ! end select !-- B
-
     NameShort = 'RadiationMoments'
     if ( present ( NameShortOption ) ) &
       NameShort = NameShortOption
 
     call RMB % InitializeTemplate_BSLL_ASC_CSLD ( B, NameShort )
 
-    call Show ( RMB % RadiationType, 'RadiationType', RMB % IGNORABILITY )
+    call Show ( RMB % RadiationMomentsType, 'RadiationMomentsType', &
+                RMB % IGNORABILITY )
 
     nullify ( GF )
 
@@ -218,29 +153,6 @@ contains
     end select !-- RMA
 
   end function RadiationMoments
-
-
-  ! function PhotonMoments_S ( RMB, iFiber ) result ( RMF )
-
-  !   class ( RadiationMoments_BSLL_ASC_CSLD_Form ), intent ( in ), target :: &
-  !     RMB
-  !   integer ( KDI ), intent ( in ) :: &
-  !     iFiber
-  !   class ( PhotonMoments_S_Form ), pointer :: &
-  !     RMF
-
-  !   select type ( RMA => RMB % Fiber % Atlas ( iFiber ) % Element )
-  !   class is ( Field_ASC_Template )
-  !     select type ( RMC => RMA % Chart )
-  !     class is ( Field_CSL_Template )   
-  !       select type ( RM => RMC % Field )
-  !       class is ( PhotonMoments_S_Form )
-  !         RMF => RM
-  !       end select !-- RM
-  !     end select !-- RMC
-  !   end select !-- RMA
-
-  ! end function PhotonMoments_S
 
 
   subroutine ComputeTally ( CB, ComputeChangeOption, IgnorabilityOption )
@@ -307,6 +219,8 @@ contains
     if ( allocated ( RMB % Energy ) ) &
       deallocate ( RMB % Energy )
 
+    nullify ( RMB % Units )
+
     call RMB % FinalizeTemplate_BSLL_ASC_CSLD ( )
 
   end subroutine Finalize
@@ -323,12 +237,10 @@ contains
       iF, &  !-- iFiber
       iE, &  !-- iEnergy
       Ignorability
-    type ( MeasuredValueForm ) :: &
-      ParticleEnergyUnit
     character ( 1 + 2 ) :: &
       EnergyNumber
     character ( LDF ) :: &
-      RadiationType
+      RadiationMomentsType
 
     associate ( B => FB % Bundle_SLL_ASC_CSLD )
 
@@ -347,16 +259,9 @@ contains
       class is ( Atlas_SC_Form )
 
       call RMA % Initialize &
-             ( AF, FB % RadiationType, NameShortOption = FB % NameShort, &
-               SuppressWriteSourcesOption = .false., &
-               Velocity_U_UnitOption = FB % Velocity_U_Unit, &
-               MomentumDensity_U_UnitOption = FB % MomentumDensity_U_Unit, &
-               MomentumDensity_D_UnitOption = FB % MomentumDensity_D_Unit, &
-               EnergyDensityUnitOption = FB % EnergyDensityUnit, &
-               EnergyUnitOption = FB % EnergyUnit, &
-               MomentumUnitOption = FB % MomentumUnit, &
-               AngularMomentumUnitOption = FB % AngularMomentumUnit, &
-               TimeUnitOption = FB % TimeUnit )
+             ( AF, FB % RadiationMomentsType, FB % UnitsSpectral, &
+               NameShortOption = FB % NameShort, &
+               SuppressWriteSourcesOption = .false. )
 
       end select !-- AF
       end select !-- RMA
@@ -384,21 +289,11 @@ contains
       end if
    
       call RMA % Initialize &
-             ( B % Base_ASC, FB % RadiationType, &
+             ( B % Base_ASC, FB % RadiationMomentsType, FB % UnitsSpectral, &
                NameShortOption = trim ( FB % NameShort ) // EnergyNumber, &
                UseLimiterOption = FB % UseLimiter, &
                SuppressWriteOption = SuppressWrite, &
                SuppressWriteSourcesOption = .true., &
-               Velocity_U_UnitOption = FB % Velocity_U_Unit, &
-               MomentumDensity_U_UnitOption &
-                 = FB % MomentumDensity_U_Unit, &
-               MomentumDensity_D_UnitOption &
-                 = FB % MomentumDensity_D_Unit, &
-               EnergyDensityUnitOption = FB % EnergyDensityUnit, &
-               EnergyUnitOption = FB % EnergyUnit, &
-               MomentumUnitOption = FB % MomentumUnit, &
-               AngularMomentumUnitOption = FB % AngularMomentumUnit, &
-               TimeUnitOption = FB % TimeUnit, &
                LimiterParameterOption = FB % LimiterParameter, &
                IgnorabilityOption = Ignorability )
 
@@ -409,38 +304,19 @@ contains
 
     !-- EnergyIntegral
 
-    associate ( AF => B % FiberMaster )
-    select type ( CF => AF % Chart )
-    class is ( Chart_SLL_Form )
-      ParticleEnergyUnit  =  CF % CoordinateUnit ( 1 )
-    end select !--CF
-    end associate !-- AF
-
-    select case ( trim ( FB % RadiationType ) )
+    select case ( trim ( FB % RadiationMomentsType ) )
     case ( 'PHOTONS_SPECTRAL' )
-      RadiationType = 'PHOTONS_GREY'
+      RadiationMomentsType = 'PHOTONS_GREY'
     case default
-      RadiationType = FB % RadiationType
-    end select !-- FB % RadiationType
+      RadiationMomentsType = FB % RadiationMomentsType
+    end select !-- FB % RadiationMomentsType
   
     call FB % AllocateField ( FB % EnergyIntegral )
     select type ( EI => FB % EnergyIntegral )
     class is ( RadiationMoments_ASC_Form )
       call EI % Initialize &
-             ( B % Base_ASC, RadiationType, &
+             ( B % Base_ASC, RadiationMomentsType, FB % Units, &
                NameShortOption = trim ( FB % NameShort ) // '_Integral', &
-               Velocity_U_UnitOption = FB % Velocity_U_Unit, &
-               MomentumDensity_U_UnitOption &
-                 = FB % MomentumDensity_U_Unit * ParticleEnergyUnit ** 3, &
-               MomentumDensity_D_UnitOption &
-                 = FB % MomentumDensity_D_Unit * ParticleEnergyUnit ** 3, &
-               EnergyDensityUnitOption &
-                 =  FB % EnergyDensityUnit * ParticleEnergyUnit ** 3, &
-               TemperatureUnitOption = FB % TemperatureUnit, &
-               EnergyUnitOption = FB % EnergyUnit, &
-               MomentumUnitOption = FB % MomentumUnit, &
-               AngularMomentumUnitOption = FB % AngularMomentumUnit, &
-               TimeUnitOption = FB % TimeUnit, &
                IgnorabilityOption = CONSOLE % INFO_5 )
     end select !-- EI
 
