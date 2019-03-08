@@ -2,6 +2,7 @@ module Universe_Template
 
   use Basics
   use Mathematics
+  use StressEnergies
  
   implicit none
   private
@@ -9,9 +10,13 @@ module Universe_Template
   type, public, abstract :: UniverseTemplate
     integer ( KDI ) :: &
       IGNORABILITY = 0
+    type ( StressEnergyUnitsForm ) :: &
+      Units
     character ( LDF ) :: &
       Type = '', &
       Name = ''
+    type ( Character_1D_Form ), dimension ( 3 ) :: &
+      BoundaryConditionsFace
     class ( IntegratorTemplate ), allocatable :: &
       Integrator
   contains

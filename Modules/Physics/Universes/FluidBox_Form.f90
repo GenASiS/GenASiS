@@ -6,27 +6,27 @@ module FluidBox_Form
   use StressEnergies
   use ComputeGravity_Command
   use ApplyGravity_F__Command
+  use Universe_Template
 
   implicit none
   private
 
-  type, public, extends ( Integrator_C_PS_Template ) :: FluidBoxForm
-  contains
-    procedure, public, pass :: &
-      Initialize
-    final :: &
-      Finalize
+  type, public, extends ( UniverseTemplate ) :: FluidBoxForm
+!   contains
+!     procedure, public, pass :: &
+!       Initialize
+!     final :: &
+!       Finalize
   end type FluidBoxForm
 
 contains
 
 
-  subroutine Initialize &
-               ( FB, Name, FluidType, GeometryType, &
-                 BoundaryConditionsFaceOption, GravitySolverTypeOption, &
-                 MinCoordinateOption, MaxCoordinateOption, TimeUnitOption, &
-                 FinishTimeOption, CourantFactorOption, &
-                 UniformAccelerationOption, nCellsOption, nWriteOption )
+  subroutine Initialize_FB &
+               ( FB, Name, FluidType, GeometryType, GravitySolverTypeOption, &
+                 MinCoordinateOption, MaxCoordinateOption, FinishTimeOption, &
+                 CourantFactorOption, UniformAccelerationOption, nCellsOption, &
+                 nWriteOption )
 
     class ( FluidBoxForm ), intent ( inout ) :: &
       FB
@@ -34,15 +34,11 @@ contains
       Name, &
       FluidType, &
       GeometryType
-    type ( Character_1D_Form ), dimension ( : ), intent ( in ), optional :: &
-      BoundaryConditionsFaceOption
     character ( * ), intent ( in ), optional :: &
       GravitySolverTypeOption
     real ( KDR ), dimension ( : ), intent ( in ), optional :: &
       MinCoordinateOption, &
       MaxCoordinateOption
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
-      TimeUnitOption
     real ( KDR ), intent ( in ), optional :: &
       FinishTimeOption, &
       CourantFactorOption, &
@@ -52,90 +48,90 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       nWriteOption
 
-    integer ( KDI ) :: &
-      iD  !-- iDimension
+!     integer ( KDI ) :: &
+!       iD  !-- iDimension
 
 
-    if ( FB % Type == '' ) &
-      FB % Type = 'a FluidBox'
+!     if ( FB % Type == '' ) &
+!       FB % Type = 'a FluidBox'
 
 
-    !-- PositionSpace
+!     !-- PositionSpace
 
-    allocate ( Atlas_SC_Form :: FB % PositionSpace )
-    select type ( PS => FB % PositionSpace )
-    class is ( Atlas_SC_Form )
-    call PS % Initialize ( 'PositionSpace', PROGRAM_HEADER % Communicator )
+!     allocate ( Atlas_SC_Form :: FB % PositionSpace )
+!     select type ( PS => FB % PositionSpace )
+!     class is ( Atlas_SC_Form )
+!     call PS % Initialize ( 'PositionSpace', PROGRAM_HEADER % Communicator )
 
-    if ( present ( BoundaryConditionsFaceOption ) ) then
-      do iD = 1, PS % nDimensions
-        call PS % SetBoundaryConditionsFace &
-               ( BoundaryConditionsFaceOption ( iD ) % Value, &
-                 iDimension = iD )
-      end do !-- iD
-    end if
+!     if ( present ( BoundaryConditionsFaceOption ) ) then
+!       do iD = 1, PS % nDimensions
+!         call PS % SetBoundaryConditionsFace &
+!                ( BoundaryConditionsFaceOption ( iD ) % Value, &
+!                  iDimension = iD )
+!       end do !-- iD
+!     end if
 
-    call PS % CreateChart &
-           ( MinCoordinateOption = MinCoordinateOption, &
-             MaxCoordinateOption = MaxCoordinateOption, &
-             nCellsOption = nCellsOption )
+!     call PS % CreateChart &
+!            ( MinCoordinateOption = MinCoordinateOption, &
+!              MaxCoordinateOption = MaxCoordinateOption, &
+!              nCellsOption = nCellsOption )
 
-    allocate ( Geometry_ASC_Form :: PS % Geometry_ASC )
-    select type ( GA => PS % Geometry_ASC )
-    class is ( Geometry_ASC_Form )
-    call GA % Initialize &
-           ( PS, GeometryType, &
-             GravitySolverTypeOption = GravitySolverTypeOption, &
-             UniformAccelerationOption = UniformAccelerationOption )
-    call PS % SetGeometry ( GA )
-    end select !-- GA
-
-
-    !-- Fluid
-
-    allocate ( Fluid_ASC_Form :: FB % Current_ASC )
-    select type ( FA => FB % Current_ASC )  !-- FluidAtlas
-    class is ( Fluid_ASC_Form )
-    call FA % Initialize ( PS, FluidType )
+!     allocate ( Geometry_ASC_Form :: PS % Geometry_ASC )
+!     select type ( GA => PS % Geometry_ASC )
+!     class is ( Geometry_ASC_Form )
+!     call GA % Initialize &
+!            ( PS, GeometryType, &
+!              GravitySolverTypeOption = GravitySolverTypeOption, &
+!              UniformAccelerationOption = UniformAccelerationOption )
+!     call PS % SetGeometry ( GA )
+!     end select !-- GA
 
 
-    !-- Step
+!     !-- Fluid
 
-    allocate ( Step_RK2_C_ASC_Form :: FB % Step )
-    select type ( S => FB % Step )
-    class is ( Step_RK2_C_ASC_Form )
-    call S % Initialize ( FB, FA, Name )
-    if ( present ( GravitySolverTypeOption ) ) &   
-      S % ComputeConstraints % Pointer => ComputeGravity
-      S % ApplySources % Pointer => ApplyGravity_F
-    end select !-- S
+!     allocate ( Fluid_ASC_Form :: FB % Current_ASC )
+!     select type ( FA => FB % Current_ASC )  !-- FluidAtlas
+!     class is ( Fluid_ASC_Form )
+!     call FA % Initialize ( PS, FluidType )
 
 
-    !-- Template
+!     !-- Step
 
-    call FB % InitializeTemplate_C_PS &
-           ( Name, TimeUnitOption = TimeUnitOption, &
-             FinishTimeOption = FinishTimeOption, &
-             CourantFactorOption = CourantFactorOption, &
-             nWriteOption = nWriteOption )
-
-
-    !-- Cleanup
-
-    end select !-- FA
-    end select !-- PS
-
-  end subroutine Initialize
+!     allocate ( Step_RK2_C_ASC_Form :: FB % Step )
+!     select type ( S => FB % Step )
+!     class is ( Step_RK2_C_ASC_Form )
+!     call S % Initialize ( FB, FA, Name )
+!     if ( present ( GravitySolverTypeOption ) ) &   
+!       S % ComputeConstraints % Pointer => ComputeGravity
+!       S % ApplySources % Pointer => ApplyGravity_F
+!     end select !-- S
 
 
-  impure elemental subroutine Finalize ( FB )
+!     !-- Template
 
-    type ( FluidBoxForm ), intent ( inout ) :: &
-      FB
+!     call FB % InitializeTemplate_C_PS &
+!            ( Name, TimeUnitOption = TimeUnitOption, &
+!              FinishTimeOption = FinishTimeOption, &
+!              CourantFactorOption = CourantFactorOption, &
+!              nWriteOption = nWriteOption )
 
-    call FB % FinalizeTemplate_C_PS ( )
 
-  end subroutine Finalize
+!     !-- Cleanup
+
+!     end select !-- FA
+!     end select !-- PS
+
+  end subroutine Initialize_FB
+
+
+!   impure elemental subroutine Finalize ( FB )
+
+!     type ( FluidBoxForm ), intent ( inout ) :: &
+!       FB
+
+!     call FB % FinalizeTemplate_C_PS ( )
+
+!   end subroutine Finalize
 
 
 end module FluidBox_Form

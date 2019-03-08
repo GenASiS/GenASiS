@@ -6,10 +6,12 @@ module StressEnergyUnits_Form
   private
 
   type, public :: StressEnergyUnitsForm
-    !-- Spacetime
+    !-- Phase space 
     type ( MeasuredValueForm ) :: &
+      Time, &
       Length, &
-      Time
+      Coordinate_PS, &
+      Coordinate_MS
     !-- Local
     type ( MeasuredValueForm ) :: &
       BaryonMass, &

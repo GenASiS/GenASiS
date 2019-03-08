@@ -19,6 +19,12 @@ ApplyDeleptonization_F__Command.o: \
   StressEnergies.o \
   ApplyDeleptonization_F__Command.f90
 
+Universe_Template.o: \
+  Basics.o \
+  Mathematics.o \
+  StressEnergies.o \
+  Universe_Template.f90
+
 FluidBox_Form.o: \
   Basics.o \
   Mathematics.o \
@@ -26,7 +32,16 @@ FluidBox_Form.o: \
   StressEnergies.o \
   ComputeGravity_Command.o \
   ApplyGravity_F__Command.o \
+  Universe_Template.o \
   FluidBox_Form.f90
+
+RadiationBox_Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Spaces.o \
+  StressEnergies.o \
+  Universe_Template.o \
+  RadiationBox_Form.f90
 
 FluidSymmetricCurvilinear_Form.o: \
   Basics.o \
@@ -59,30 +74,17 @@ FluidCentralCore_Form.o: \
   FluidCentral_Template.o \
   FluidCentralCore_Form.f90
 
-Universe_Template.o: \
-  Basics.o \
-  Mathematics.o \
-  Universe_Template.f90
-
-RadiationBox_Form.o: \
-  Basics.o \
-  Mathematics.o \
-  Spaces.o \
-  StressEnergies.o \
-  Universe_Template.o \
-  RadiationBox_Form.f90
-
 Universes.o: \
   ComputeGravity_Command.o \
   ApplyGravity_F__Command.o \
   ApplyDeleptonization_F__Command.o \
+  Universe_Template.o \
   FluidBox_Form.o \
+  RadiationBox_Form.o \
   FluidSymmetricCurvilinear_Form.o \
   FluidCentral_Template.o \
   FluidCentralExcision_Form.o \
   FluidCentralCore_Form.o \
-  Universe_Template.o \
-  RadiationBox_Form.o \
   Universes.f90
 
 Universes.a: $(UNIVERSES)
