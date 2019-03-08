@@ -40,12 +40,14 @@ module RadiationBox_Form
     procedure, public, pass :: &
       InitializePositionSpace
     procedure, public, pass :: &
+      InitializeMomentumSpace
+!    procedure, public, pass :: &
+!      InitializeRadiation
+    procedure, public, pass :: &
       InitializeSteps
   end type RadiationBoxForm
 
     private :: &
-!       InitializeMomentumSpace, &
-!       InitializeRadiation, &
 !       ComputeTimeStepLocal, &
       PrepareStep, &
 !       IntegrateSources, &
@@ -123,9 +125,9 @@ contains
              MinCoordinateOption = MinCoordinateOption, &
              MaxCoordinateOption = MaxCoordinateOption, &
              nCellsOption = nCellsPositionOption )
-!     call InitializeMomentumSpace &
-!            ( RB, CoordinateUnit_MS_Option, EnergyScaleOption, &
-!              nCellsEnergyOption )
+    call RB % InitializeMomentumSpace &
+           ( EnergyScaleOption = EnergyScaleOption, &
+             nCellsEnergyOption = nCellsEnergyOption )
 
 !     if ( present ( CoordinateUnit_PS_Option ) ) &
 !       CoordinateUnit_PS = CoordinateUnit_PS_Option ( 1 )
@@ -292,63 +294,57 @@ contains
   end subroutine InitializePositionSpace
 
 
-!   subroutine InitializeMomentumSpace &
-!                ( RB, CoordinateUnit_MS_Option, EnergyScaleOption, &
-!                  nCellsEnergyOption )
+  subroutine InitializeMomentumSpace &
+               ( RB, EnergyScaleOption, nCellsEnergyOption )
 
-!     class ( RadiationBoxForm ), intent ( inout ) :: &
-!       RB
-!     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
-!       CoordinateUnit_MS_Option
-!     real ( KDR ), intent ( in ), optional :: &
-!       EnergyScaleOption
-!     integer ( KDI ), intent ( in ), optional :: &
-!       nCellsEnergyOption
+    class ( RadiationBoxForm ), intent ( inout ) :: &
+      RB
+    real ( KDR ), intent ( in ), optional :: &
+      EnergyScaleOption
+    integer ( KDI ), intent ( in ), optional :: &
+      nCellsEnergyOption
 
-!     integer ( KDI ) :: &
-!       nCellsEnergy
-!     real ( KDR ) :: &
-!       EnergyScale
+    integer ( KDI ) :: &
+      nCellsEnergy
+    real ( KDR ) :: &
+      EnergyScale
 
-!     select type ( I => RB % Integrator )
-!     class is ( Integrator_C_1D_MS_C_PS_Form )
+    select type ( I => RB % Integrator )
+    class is ( Integrator_C_1D_MS_C_PS_Form )
 
-!     select type ( PS => I % PositionSpace )
-!     class is ( Atlas_SC_Form )
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
 
-!     allocate ( Bundle_SLL_ASC_CSLD_Form :: I % MomentumSpace )
-!     select type ( MS => I % MomentumSpace )
-!     class is ( Bundle_SLL_ASC_CSLD_Form )
-!     call MS % Initialize ( PS, 'MomentumSpace' )
-!     call MS % SetBoundaryConditionsFace &
-!            ( [ 'REFLECTING', 'REFLECTING' ], iDimension = 1 )
+    allocate ( Bundle_SLL_ASC_CSLD_Form :: I % MomentumSpace )
+    select type ( MS => I % MomentumSpace )
+    class is ( Bundle_SLL_ASC_CSLD_Form )
+    call MS % Initialize ( PS, 'MomentumSpace' )
+    call MS % SetBoundaryConditionsFace &
+           ( [ 'REFLECTING', 'REFLECTING' ], iDimension = 1 )
 
-!     EnergyScale = 10.0_KDR
-!     if ( present ( EnergyScaleOption ) ) &
-!       EnergyScale = EnergyScaleOption
-!     call PROGRAM_HEADER % GetParameter ( EnergyScale, 'EnergyScale' )
+    EnergyScale = 10.0_KDR
+    if ( present ( EnergyScaleOption ) ) &
+      EnergyScale = EnergyScaleOption
+    call PROGRAM_HEADER % GetParameter ( EnergyScale, 'EnergyScale' )
 
-! !    CoordinateUnit = UNIT % IDENTITY
-! !    CoordinateUnit ( 1 ) = UNIT % MEGA_ELECTRON_VOLT
+    nCellsEnergy = 16
+    if ( present ( nCellsEnergyOption ) ) &
+      nCellsEnergy = nCellsEnergyOption
+    call PROGRAM_HEADER % GetParameter ( nCellsEnergy, 'nCellsEnergy' )
 
-!     nCellsEnergy = 16
-!     if ( present ( nCellsEnergyOption ) ) &
-!       nCellsEnergy = nCellsEnergyOption
-!     call PROGRAM_HEADER % GetParameter ( nCellsEnergy, 'nCellsEnergy' )
+    call MS % CreateChart &
+           ( SpacingOption = [ 'COMPACTIFIED' ], &
+             CoordinateSystemOption = 'SPHERICAL', &
+             CoordinateUnitOption = RB % Units % Coordinate_MS, &
+             ScaleOption = [ EnergyScale ], &
+             nCellsOption = [ nCellsEnergy ], &
+             nGhostLayersOption = [ 0, 0, 0 ] )
 
-!     call MS % CreateChart &
-!            ( SpacingOption = [ 'COMPACTIFIED' ], &
-!              CoordinateSystemOption = 'SPHERICAL', &
-!              CoordinateUnitOption = CoordinateUnit_MS_Option, &
-!              ScaleOption = [ EnergyScale ], &
-!              nCellsOption = [ nCellsEnergy ], &
-!              nGhostLayersOption = [ 0, 0, 0 ] )
+    end select !-- MS
+    end select !-- PS
+    end select !-- I
 
-!     end select !-- MS
-!     end select !-- PS
-!     end select !-- I
-
-!   end subroutine InitializeMomentumSpace
+  end subroutine InitializeMomentumSpace
 
 
 !   subroutine InitializeRadiation &
