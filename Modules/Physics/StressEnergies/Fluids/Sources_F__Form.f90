@@ -9,7 +9,7 @@ module Sources_F__Form
   private
 
     integer ( KDI ), private, parameter :: &
-      N_FIELDS_F  = 13, &
+      N_FIELDS_F  = 14, &
       N_VECTORS_F = 4
 
   type, public, extends ( Sources_C_Form ) :: Sources_F_Form
@@ -19,7 +19,8 @@ module Sources_F__Form
       GRAVITATIONAL_G  = 0, &
       RADIATION_G      = 0, &
       RADIATION_DS     = 0, &
-      RADIATION_DP     = 0
+      RADIATION_DP     = 0, &
+      RADIATION_TIME   = 0
     integer ( KDI ), dimension ( 3 ) :: &
       CURVILINEAR_S_D   = 0, &
       GRAVITATIONAL_S_D = 0, &
@@ -160,9 +161,10 @@ contains
     SF % RADIATION_G        =  oF + 2
     SF % RADIATION_DS       =  oF + 3
     SF % RADIATION_DP       =  oF + 4
-    SF % CURVILINEAR_S_D    =  oF + [  5,  6,  7 ]
-    SF % GRAVITATIONAL_S_D  =  oF + [  8,  9, 10 ]
-    SF % RADIATION_S_D      =  oF + [ 11, 12, 13 ]
+    SF % RADIATION_TIME     =  oF + 5
+    SF % CURVILINEAR_S_D    =  oF + [  6,  7,  8 ]
+    SF % GRAVITATIONAL_S_D  =  oF + [  9, 10, 11 ]
+    SF % RADIATION_S_D      =  oF + [ 12, 13, 14 ]
 
     !-- variable names 
 
@@ -179,6 +181,7 @@ contains
           'Radiation_G        ', &
           'Radiation_DS       ', &
           'Radiation_DP       ', &
+          'RadiationTime      ', &
           'Curvilinear_S_D_1  ', &
           'Curvilinear_S_D_2  ', &
           'Curvilinear_S_D_3  ', &
@@ -263,6 +266,8 @@ contains
         =  F % Unit ( F % CONSERVED_ENERGY )  /  TimeUnit
       VariableUnit ( SF % RADIATION_G )  &
         =  F % Unit ( F % CONSERVED_ENERGY )  /  TimeUnit
+      VariableUnit ( SF % RADIATION_TIME )  &
+        =  TimeUnit
     end select !-- F
 
     do iD = 1, 3

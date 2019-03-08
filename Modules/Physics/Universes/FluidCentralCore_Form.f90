@@ -29,8 +29,6 @@ module FluidCentralCore_Form
       SetWriteTimeInterval
     procedure, public, pass :: &
       PrepareCycle
-    procedure, private, pass :: &
-      ComputeTimeStepLocal
     procedure, public, pass :: &
       ComputeTimeStep_G_ASC
   end type FluidCentralCoreForm
@@ -39,6 +37,7 @@ module FluidCentralCore_Form
       FluidCentralCore => null ( )
 
       private :: &
+        ComputeTimeStepLocal, &
         LocalMax, &
         ComputeTimeStep_G_CSL
 
@@ -111,6 +110,8 @@ contains
                  RadialRatioOption = RadialRatioOption, &
                  nWriteOption = nWriteOption, &
                  nCellsPolarOption = nCellsPolarOption )
+
+    FCC % ComputeTimeStepLocal => ComputeTimeStepLocal
 
     select type ( S => FCC % Step )
     class is ( Step_RK2_C_ASC_Form )
@@ -409,22 +410,6 @@ contains
   end subroutine PrepareCycle
 
 
-  subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
-
-    class ( FluidCentralCoreForm ), intent ( inout ), target :: &
-      I
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      TimeStepCandidate
-
-    call I % ComputeTimeStep_C_ASC &
-           ( TimeStepCandidate ( 1 ), I % Current_ASC )
-
-    call I % ComputeTimeStep_G_ASC &
-           ( TimeStepCandidate ( 2 ) )
-
-  end subroutine ComputeTimeStepLocal
-
-
   subroutine ComputeTimeStep_G_ASC ( FCC, TimeStepCandidate )
 
     class ( FluidCentralCoreForm ), intent ( inout ), target :: &
@@ -473,6 +458,27 @@ contains
     nullify ( G )
 
   end subroutine ComputeTimeStep_G_ASC
+
+
+  subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
+
+    class ( IntegratorTemplate ), intent ( inout ), target :: &
+      I
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      TimeStepCandidate
+
+    select type ( I )
+    class is ( FluidCentralCoreForm )
+
+    call I % ComputeTimeStep_C_ASC &
+           ( TimeStepCandidate ( 1 ), I % Current_ASC )
+
+    call I % ComputeTimeStep_G_ASC &
+           ( TimeStepCandidate ( 2 ) )
+
+    end select !-- I
+
+  end subroutine ComputeTimeStepLocal
 
 
   function LocalMax ( IsProperCell, V ) result ( ML ) 

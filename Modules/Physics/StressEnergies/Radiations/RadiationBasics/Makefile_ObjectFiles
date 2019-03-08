@@ -1,5 +1,8 @@
 RADIATION_BASICS = \
   RadiationBasics.o \
+  Relaxation_RM_BSLL_ASC_CSLD__Form.o \
+  Relaxation_RM_ASC__Form.o \
+  Relaxation_RM__Template.o \
   RadiationMoments_BSLL_ASC_CSLD__Form.o \
   RadiationMoments_ASC__Form.o \
   RadiationMoments_CSL__Form.o \
@@ -7,6 +10,9 @@ RADIATION_BASICS = \
   Sources_RM_CSL__Form.o \
   Sources_RM__Form.o \
   RadiationMoments_Form.o \
+  Interactions_BSLL_ASC_CSLD__Template.o \
+  Interactions_ASC__Template.o \
+  Interactions_CSL__Template.o \
   Interactions_Template.o \
   SetFermiDiracSpectrum_Command.o \
   SetPlanckSpectrum_Command.o

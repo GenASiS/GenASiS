@@ -24,17 +24,17 @@ contains
 
 
   subroutine ApplyRelaxation_RM_G &
-               ( S, Sources_RM, Increment, RadiationMoments, Chart, &
+               ( S, RadiationMoments, Sources_RM, Increment, Chart, &
                  TimeStep, iStage, GeometryOption, iStrgeometryValueOption )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
+    class ( CurrentTemplate ), intent ( inout ) :: &
+      RadiationMoments
     class ( Sources_C_Form ), intent ( inout ) :: &
       Sources_RM
     type ( StorageForm ), intent ( inout ) :: &
       Increment
-    class ( CurrentTemplate ), intent ( in ), target :: &
-      RadiationMoments
     class ( ChartTemplate ), intent ( in ) :: &
       Chart
     real ( KDR ), intent ( in ) :: &

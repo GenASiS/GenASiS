@@ -12,8 +12,10 @@ module SineWaveStreaming_Form
         Offset, &
         Amplitude
   contains
-    procedure, public, pass :: &
-      Initialize
+    procedure, private, pass :: &
+      Initialize_SWS
+    generic, public :: &
+      Initialize => Initialize_SWS
     procedure, private, pass :: &
       Waveform
     final :: &
@@ -23,11 +25,12 @@ module SineWaveStreaming_Form
 contains
 
 
-  subroutine Initialize ( SWS, Name )
+  subroutine Initialize_SWS ( SWS, MomentsType, Name )
 
     class ( SineWaveStreamingForm ), intent ( inout ) :: &
       SWS
     character ( * ), intent ( in )  :: &
+      MomentsType, &
       Name
 
     SWS % Offset    = 2.0_KDR
@@ -35,9 +38,9 @@ contains
     call PROGRAM_HEADER % GetParameter ( SWS % Offset, 'Offset' )
     call PROGRAM_HEADER % GetParameter ( SWS % Amplitude, 'Amplitude' )
 
-    call SWS % InitializeTemplate_PWS ( Name )
+    call SWS % InitializeTemplate_PWS ( MomentsType, Name )
 
-  end subroutine Initialize
+  end subroutine Initialize_SWS
 
 
   elemental function Waveform ( PWS, X ) result ( W )

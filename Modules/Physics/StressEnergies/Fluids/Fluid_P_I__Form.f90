@@ -23,11 +23,10 @@ module Fluid_P_I__Form
       N_FIELDS_IDEAL    = N_FIELDS_IDEAL, &
       N_VECTORS_IDEAL   = N_VECTORS_IDEAL
     real ( KDR ) :: &
-      AtomicMassUnit, &
       BoltzmannConstant, &
       AdiabaticIndex, &
       MeanMolecularWeight, &
-      SpecificHeatVolume, &
+      SpecificHeatVolume, &  !-- per baryon
       FiducialBaryonDensity, &
       FiducialPressure
   contains
@@ -48,13 +47,17 @@ module Fluid_P_I__Form
     procedure, public, pass :: &
       SetOutput
     procedure, public, pass ( C ) :: &
+      ComputeFromTemperature
+    procedure, public, pass ( C ) :: &
       ComputeFromPrimitiveCommon
     procedure, public, pass ( C ) :: &
       ComputeFromConservedCommon
     procedure, public, pass ( C ) :: &
       ComputeRawFluxes
     procedure, public, nopass :: &
-      Apply_EOS_HN_SB_E_Kernel
+      Apply_EOS_I_T_Kernel
+    procedure, public, nopass :: &
+      Apply_EOS_I_SB_E_Kernel
     procedure, public, nopass :: &
       Apply_EOS_I_E_Kernel
   end type Fluid_P_I_Form
@@ -125,21 +128,12 @@ contains
              VectorIndicesOption = VectorIndicesOption )
 
     associate &
-      ( amu   => F % AtomicMassUnit, &
-        k     => F % BoltzmannConstant, &
+      ( k     => F % BoltzmannConstant, &
         gamma => F % AdiabaticIndex, &
         mu    => F % MeanMolecularWeight, &
         c_v   => F % SpecificHeatVolume, &
         n_0   => F % FiducialBaryonDensity, &
         p_0   => F % FiducialPressure )
-
-    if ( BaryonMassUnit /= UNIT % IDENTITY ) then
-      amu = CONSTANT % ATOMIC_MASS_UNIT
-      call Show ( amu, UNIT % KILOGRAM, 'AtomicMassUnit', F % IGNORABILITY )
-    else !-- Dimensionless
-      amu = 1.0_KDR
-      call Show ( amu, 'AtomicMassUnit', F % IGNORABILITY )
-    end if
 
     if ( TemperatureUnit /= UNIT % IDENTITY ) then
       k = CONSTANT % BOLTZMANN
@@ -325,10 +319,11 @@ contains
 
     call Show ( 'Setting fiducial parameters of a Fluid_P_I', F % IGNORABILITY )
     call Show ( F % Name, 'Name', F % IGNORABILITY )
-    call Show ( F % FiducialBaryonDensity, 'FiducialBaryonDensity', &
-                F % IGNORABILITY )
-    call Show ( F % FiducialPressure, 'FiducialPressure', &
-                F % IGNORABILITY )
+    call Show ( F % FiducialBaryonDensity, &
+                F % Unit ( F % COMOVING_BARYON_DENSITY ), &
+                'FiducialBaryonDensity', F % IGNORABILITY )
+    call Show ( F % FiducialPressure, F % Unit ( F % PRESSURE ), &
+                'FiducialPressure', F % IGNORABILITY )
 
   end subroutine SetFiducialParameters
 
@@ -347,12 +342,102 @@ contains
     call Output % Initialize &
            ( F, iaSelectedOption &
                   = [ F % COMOVING_BARYON_DENSITY, F % VELOCITY_U, &
-                      F % PRESSURE, F % MACH_NUMBER, &
+                      F % PRESSURE, F % TEMPERATURE, F % MACH_NUMBER, &
                       F % ENTROPY_PER_BARYON ], &
              VectorOption = [ 'Velocity' ], &
              VectorIndicesOption = VectorIndices )
 
   end subroutine SetOutput
+
+
+  subroutine ComputeFromTemperature &
+               ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
+
+    real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
+      Value_C
+    class ( Fluid_P_I_Form ), intent ( in ) :: &
+      C
+    class ( GeometryFlatForm ), intent ( in ) :: &
+      G
+    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+      Value_G
+    integer ( KDI ), intent ( in ), optional :: &
+      nValuesOption, &
+      oValueOption
+
+    integer ( KDI ) :: &
+      oV, &  !-- oValue
+      nV     !-- nValues
+      
+    associate &
+      ( FV => Value_C, &
+        GV => Value_G )
+
+    if ( present ( oValueOption ) ) then
+      oV = oValueOption
+    else
+      oV = 0
+    end if
+
+    if ( present ( nValuesOption ) ) then
+      nV = nValuesOption
+    else
+      nV = size ( FV, dim = 1 )
+    end if
+
+    associate &
+      ( M_DD_22 => GV ( oV + 1 : oV + nV, G % METRIC_DD_22 ), &
+        M_DD_33 => GV ( oV + 1 : oV + nV, G % METRIC_DD_33 ), &
+        M_UU_22 => GV ( oV + 1 : oV + nV, G % METRIC_UU_22 ), &
+        M_UU_33 => GV ( oV + 1 : oV + nV, G % METRIC_UU_33 ) )
+    associate &
+      ( FEP_1 => FV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_PLUS ( 1 ) ), &
+        FEP_2 => FV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_PLUS ( 2 ) ), &
+        FEP_3 => FV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_PLUS ( 3 ) ), &
+        FEM_1 => FV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_MINUS ( 1 ) ), &
+        FEM_2 => FV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_MINUS ( 2 ) ), &
+        FEM_3 => FV ( oV + 1 : oV + nV, C % FAST_EIGENSPEED_MINUS ( 3 ) ), &
+        M     => FV ( oV + 1 : oV + nV, C % BARYON_MASS ), &
+        N     => FV ( oV + 1 : oV + nV, C % COMOVING_BARYON_DENSITY ), &
+        V_1   => FV ( oV + 1 : oV + nV, C % VELOCITY_U ( 1 ) ), &
+        V_2   => FV ( oV + 1 : oV + nV, C % VELOCITY_U ( 2 ) ), &
+        V_3   => FV ( oV + 1 : oV + nV, C % VELOCITY_U ( 3 ) ), &
+        D     => FV ( oV + 1 : oV + nV, C % CONSERVED_BARYON_DENSITY ), &
+        S_1   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 1 ) ), &
+        S_2   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 2 ) ), &
+        S_3   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 3 ) ), &
+        E     => FV ( oV + 1 : oV + nV, C % INTERNAL_ENERGY ), &
+        G     => FV ( oV + 1 : oV + nV, C % CONSERVED_ENERGY ), &
+        P     => FV ( oV + 1 : oV + nV, C % PRESSURE ), &
+        T     => FV ( oV + 1 : oV + nV, C % TEMPERATURE ), &
+        SB    => FV ( oV + 1 : oV + nV, C % ENTROPY_PER_BARYON ), &
+        DS    => FV ( oV + 1 : oV + nV, C % CONSERVED_ENTROPY ), &
+        CS    => FV ( oV + 1 : oV + nV, C % SOUND_SPEED ), &
+        MN    => FV ( oV + 1 : oV + nV, C % MACH_NUMBER ) )
+
+    call C % Compute_M_Kernel ( M, C % BaryonMassReference )
+    call C % Apply_EOS_I_T_Kernel &
+           ( P, E, SB, CS, M, N, T, C % AdiabaticIndex, &
+             C % SpecificHeatVolume, C % FiducialBaryonDensity, &
+             C % FiducialPressure )
+    call C % Compute_D_S_G_Kernel &
+           ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
+    call C % Compute_G_G_Kernel &
+           ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
+    call C % Compute_DS_G_Kernel &
+           ( DS, N, SB )
+    call C % Compute_FE_P_G_Kernel &
+           ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
+             V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33 )
+
+    end associate !-- FEP_1, etc.
+    end associate !-- M_DD_22, etc.
+    end associate !-- FV, etc.
+
+    if ( associated ( C % Value, Value_C ) ) &
+      call C % Features % Detect ( )
+
+  end subroutine ComputeFromTemperature
 
 
   subroutine ComputeFromPrimitiveCommon &
@@ -414,6 +499,7 @@ contains
         E     => FV ( oV + 1 : oV + nV, C % INTERNAL_ENERGY ), &
         G     => FV ( oV + 1 : oV + nV, C % CONSERVED_ENERGY ), &
         P     => FV ( oV + 1 : oV + nV, C % PRESSURE ), &
+        T     => FV ( oV + 1 : oV + nV, C % TEMPERATURE ), &
         SB    => FV ( oV + 1 : oV + nV, C % ENTROPY_PER_BARYON ), &
         DS    => FV ( oV + 1 : oV + nV, C % CONSERVED_ENTROPY ), &
         CS    => FV ( oV + 1 : oV + nV, C % SOUND_SPEED ), &
@@ -421,8 +507,9 @@ contains
 
     call C % Compute_M_Kernel ( M, C % BaryonMassReference )
     call C % Apply_EOS_I_E_Kernel &
-           ( P, SB, CS, M, N, E, C % AdiabaticIndex, C % SpecificHeatVolume, &
-             C % FiducialBaryonDensity, C % FiducialPressure )
+           ( P, T, SB, CS, M, N, E, C % AdiabaticIndex, &
+             C % SpecificHeatVolume, C % FiducialBaryonDensity, &
+             C % FiducialPressure )
     call C % Compute_D_S_G_Kernel &
            ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
     call C % Compute_G_G_Kernel &
@@ -505,6 +592,7 @@ contains
         E     => FV ( oV + 1 : oV + nV, C % INTERNAL_ENERGY ), &
         G     => FV ( oV + 1 : oV + nV, C % CONSERVED_ENERGY ), &
         P     => FV ( oV + 1 : oV + nV, C % PRESSURE ), &
+        T     => FV ( oV + 1 : oV + nV, C % TEMPERATURE ), &
         SB    => FV ( oV + 1 : oV + nV, C % ENTROPY_PER_BARYON ), &
         DS    => FV ( oV + 1 : oV + nV, C % CONSERVED_ENTROPY ), &
         CS    => FV ( oV + 1 : oV + nV, C % SOUND_SPEED ), &
@@ -519,15 +607,15 @@ contains
     if ( C % UseEntropy ) then
       call C % Compute_SB_G_Kernel &
              ( SB, DS, N )
-      call C % Apply_EOS_HN_SB_E_Kernel &
-             ( P, E, SB, CS, M, N, Shock, C % AdiabaticIndex, &
+      call C % Apply_EOS_I_SB_E_Kernel &
+             ( P, E, T, SB, CS, M, N, Shock, C % AdiabaticIndex, &
                C % SpecificHeatVolume, C % FiducialBaryonDensity, &
                C % FiducialPressure )
       call C % Compute_G_G_Kernel &
              ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
     else
       call C % Apply_EOS_I_E_Kernel &
-             ( P, SB, CS, M, N, E, C % AdiabaticIndex, &
+             ( P, T, SB, CS, M, N, E, C % AdiabaticIndex, &
                C % SpecificHeatVolume, C % FiducialBaryonDensity, &
                C % FiducialPressure )
     end if
@@ -574,12 +662,66 @@ contains
   end subroutine ComputeRawFluxes
 
 
-  subroutine Apply_EOS_HN_SB_E_Kernel &
-               ( P, E, SB, CS, M, N, Shock, Gamma, C_V, N0, P0 )
+  subroutine Apply_EOS_I_T_Kernel &
+               ( P, E, SB, CS, M, N, T, Gamma, C_V, N0, P0 )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       P, &
       E, &
+      SB, &
+      CS
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      M, &
+      N, &
+      T
+    real ( KDR ), intent ( in ) :: &
+      Gamma, &
+      C_V, &
+      N0, &
+      P0
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+    real ( KDR ) :: &
+      SqrtHuge
+
+    SqrtHuge = sqrt ( huge ( 1.0_KDR ) )
+
+    nValues = size ( P )
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nValues
+
+      E ( iV )  =  C_V  *  N ( iV )  *  T ( iV )
+
+      P ( iV )  =  ( Gamma - 1.0_KDR )  *  E ( iV ) 
+
+      if ( N ( iV ) > 0.0_KDR .and. P ( iV ) > 0.0_KDR ) then
+
+        SB ( iV )  =  C_V  *  log ( P ( iV ) / P0  &
+                                    *  ( N0 / N ( iV ) ) ** Gamma ) 
+
+        CS ( iV )  =  sqrt ( Gamma * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
+
+      else
+        SB ( iV )  =  - SqrtHuge
+        CS ( iV )  =    0.0_KDR
+      end if
+
+    end do !-- iV
+    !$OMP end parallel do
+
+  end subroutine Apply_EOS_I_T_Kernel
+
+
+  subroutine Apply_EOS_I_SB_E_Kernel &
+               ( P, E, T, SB, CS, M, N, Shock, Gamma, C_V, N0, P0 )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      P, &
+      E, &
+      T, &
       SB, &
       CS
     real ( KDR ), dimension ( : ), intent ( in ) :: &
@@ -609,7 +751,7 @@ contains
 
         P ( iV )  =  ( Gamma - 1.0_KDR )  *  E ( iV ) 
 
-        if ( P ( iV ) > 0.0_KDR ) then
+        if ( N ( iV ) > 0.0_KDR .and. P ( iV ) > 0.0_KDR ) then
           SB ( iV )  =  C_V  *  log ( P ( iV ) / P0  &
                                       *  ( N0 / N ( iV ) ) ** Gamma ) 
         else
@@ -626,21 +768,27 @@ contains
       end if
 
       if ( N ( iV ) > 0.0_KDR .and. P ( iV ) > 0.0_KDR ) then
+
+         T ( iV )  =  E ( iV )  /  ( C_V  *  N ( iV ) )
+
         CS ( iV ) = sqrt ( Gamma * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
+
       else
+         T ( iV ) = 0.0_KDR
         CS ( iV ) = 0.0_KDR
       end if 
 
     end do !-- iV
     !$OMP end parallel do
 
-  end subroutine Apply_EOS_HN_SB_E_Kernel
+  end subroutine Apply_EOS_I_SB_E_Kernel
 
 
-  subroutine Apply_EOS_I_E_Kernel ( P, SB, CS, M, N, E, Gamma, C_V, N0, P0 )
+  subroutine Apply_EOS_I_E_Kernel ( P, T, SB, CS, M, N, E, Gamma, C_V, N0, P0 )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       P, &
+      T, &
       SB, &
       CS
     real ( KDR ), dimension ( : ), intent ( in ) :: &
@@ -668,18 +816,20 @@ contains
 
       P ( iV )  =  ( Gamma - 1.0_KDR )  *  E ( iV ) 
 
-      if ( P ( iV ) > 0.0_KDR ) then
+      if ( N ( iV ) > 0.0_KDR .and. P ( iV ) > 0.0_KDR ) then
+
+         T ( iV )  =  E ( iV )  /  ( C_V  *  N ( iV ) )
+
         SB ( iV )  =  C_V  *  log ( P ( iV ) / P0  &
                                     *  ( N0 / N ( iV ) ) ** Gamma ) 
-      else
-        SB ( iV )  =  - SqrtHuge
-      end if
 
-      if ( N ( iV ) > 0.0_KDR .and. P ( iV ) > 0.0_KDR ) then
-        CS ( iV ) = sqrt ( Gamma * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
+        CS ( iV )  =  sqrt ( Gamma * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
+
       else
-        CS ( iV ) = 0.0_KDR
-      end if 
+         T ( iV )  =    0.0_KDR
+        SB ( iV )  =  - SqrtHuge
+        CS ( iV )  =    0.0_KDR
+      end if
 
     end do !-- iV
     !$OMP end parallel do

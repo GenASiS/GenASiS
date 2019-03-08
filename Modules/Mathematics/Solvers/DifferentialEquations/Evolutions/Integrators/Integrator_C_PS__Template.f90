@@ -44,13 +44,14 @@ module Integrator_C_PS__Template
       WriteTimeSeries
     procedure, private, pass :: &
       ComputeCycle_ASC
-    procedure, private, pass :: &
-      ComputeTimeStepLocal
     procedure, public, pass :: &
       ComputeTimeStep_C_ASC
     procedure, public, nopass :: &
       ComputeTimeStepKernel_CSL
   end type Integrator_C_PS_Template
+
+    private :: &
+      ComputeTimeStepLocal
 
 contains
 
@@ -105,6 +106,8 @@ contains
     call I % InitializeTemplate &
            ( Name, TimeUnitOption, FinishTimeOption, nWriteOption )
     call Show ( I % CourantFactor, 'CourantFactor', I % IGNORABILITY )
+
+    I % ComputeTimeStepLocal  =>  ComputeTimeStepLocal
 
     if ( allocated ( I % Current_ASC ) ) then
       allocate ( I % TimeSeries )
@@ -322,19 +325,6 @@ contains
   end subroutine ComputeCycle_ASC
 
 
-  subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
-
-    class ( Integrator_C_PS_Template ), intent ( inout ), target :: &
-      I
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      TimeStepCandidate
-
-    call I % ComputeTimeStep_C_ASC &
-           ( TimeStepCandidate ( 1 ), I % Current_ASC )
-
-  end subroutine ComputeTimeStepLocal
-
-
   subroutine ComputeTimeStep_C_ASC ( I, TimeStepCandidate, CA )
 
     class ( Integrator_C_PS_Template ), intent ( inout ), target :: &
@@ -449,6 +439,24 @@ contains
     TimeStep = min ( TimeStep, 1.0_KDR / TimeStepInverse )
 
   end subroutine ComputeTimeStepKernel_CSL
+
+
+  subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
+
+    class ( IntegratorTemplate ), intent ( inout ), target :: &
+      I
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      TimeStepCandidate
+
+    select type ( I )
+    class is ( Integrator_C_PS_Template )
+
+    call I % ComputeTimeStep_C_ASC &
+           ( TimeStepCandidate ( 1 ), I % Current_ASC )
+
+    end select !-- I
+
+  end subroutine ComputeTimeStepLocal
 
 
 end module Integrator_C_PS__Template

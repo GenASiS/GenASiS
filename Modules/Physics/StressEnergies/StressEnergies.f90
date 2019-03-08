@@ -1,5 +1,6 @@
 module StressEnergies
 
+  use StressEnergyBasics
   use Fluids
   use Radiations
 

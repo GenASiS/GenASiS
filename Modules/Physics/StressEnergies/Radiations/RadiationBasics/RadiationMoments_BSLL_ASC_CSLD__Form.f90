@@ -21,8 +21,8 @@ module RadiationMoments_BSLL_ASC_CSLD__Form
         UseLimiter
       type ( MeasuredValueForm ) :: &
         EnergyDensityUnit, &
-        EnergyUnit, &
         TemperatureUnit, &
+        EnergyUnit, &
         MomentumUnit, &
         AngularMomentumUnit, &
         TimeUnit
@@ -32,7 +32,7 @@ module RadiationMoments_BSLL_ASC_CSLD__Form
         MomentumDensity_D_Unit
       character ( LDF ) :: &
         RadiationType = ''
-      class ( RadiationMoments_ASC_Form ), allocatable :: &
+      class ( FieldAtlasTemplate ), allocatable :: &
         EnergyIntegral
       class ( Field_BSLL_ASC_CSLD_Template ), pointer :: &
         Interactions_BSLL_ASC_CSLD => null ( )
@@ -51,6 +51,8 @@ module RadiationMoments_BSLL_ASC_CSLD__Form
       Finalize
     procedure, private, pass :: &
       SetField
+    procedure, private, pass :: &
+      AllocateField
     procedure, public, pass :: &
       ComputeEnergyIntegral
   end type RadiationMoments_BSLL_ASC_CSLD_Form
@@ -92,6 +94,8 @@ contains
 
     character ( LDL ) :: &
       NameShort
+    type ( MeasuredValueForm ) :: &
+      ParticleEnergyUnit
     class ( GeometryFlatForm ), pointer :: &
       GF
 
@@ -130,6 +134,19 @@ contains
       RMB % AngularMomentumUnit = AngularMomentumUnitOption
     if ( present ( TimeUnitOption ) ) &
       RMB % TimeUnit = TimeUnitOption
+
+    associate ( AF => B % FiberMaster )
+    select type ( CF => AF % Chart )
+    class is ( Chart_SLL_Form )
+      ParticleEnergyUnit  =  CF % CoordinateUnit ( 1 )
+    end select !--CF
+    end associate !-- AF
+    RMB % EnergyDensityUnit &
+      =  RMB % EnergyDensityUnit  *  ParticleEnergyUnit ** (-3)
+    RMB % MomentumDensity_U_Unit &
+      =  RMB % MomentumDensity_U_Unit  *  ParticleEnergyUnit ** (-3)
+    RMB % MomentumDensity_D_Unit &
+      =  RMB % MomentumDensity_D_Unit  *  ParticleEnergyUnit ** (-3)
 
     ! select type ( B )
     ! class is ( Bundle_SLL_ASC_CSLD_Form )
@@ -172,6 +189,8 @@ contains
       NameShort = NameShortOption
 
     call RMB % InitializeTemplate_BSLL_ASC_CSLD ( B, NameShort )
+
+    call Show ( RMB % RadiationType, 'RadiationType', RMB % IGNORABILITY )
 
     nullify ( GF )
 
@@ -238,9 +257,12 @@ contains
 !             IgnorabilityOption  = IgnorabilityOption )
 
     call CB % ComputeEnergyIntegral ( )
-    call CB % EnergyIntegral % ComputeTally &
-           ( ComputeChangeOption = ComputeChangeOption, &
-             IgnorabilityOption  = IgnorabilityOption )
+    select type ( RMA => CB % EnergyIntegral )
+    class is ( RadiationMoments_ASC_Form )
+      call RMA % ComputeTally &
+             ( ComputeChangeOption = ComputeChangeOption, &
+               IgnorabilityOption  = IgnorabilityOption )
+    end select !-- RMA
 
   end subroutine ComputeTally
 
@@ -302,7 +324,7 @@ contains
       iE, &  !-- iEnergy
       Ignorability
     type ( MeasuredValueForm ) :: &
-      EnergyUnit
+      ParticleEnergyUnit
     character ( 1 + 2 ) :: &
       EnergyNumber
     character ( LDF ) :: &
@@ -317,7 +339,7 @@ contains
     call FBF % Initialize ( FB % nFibers )
 
     do iF = 1, FB % nFibers
-      allocate ( RadiationMoments_ASC_Form :: FBF % Atlas ( iF ) % Element )
+      call FB % AllocateField ( FBF % Atlas ( iF ) % Element )
       select type ( RMA => FBF % Atlas ( iF ) % Element )
       class is ( RadiationMoments_ASC_Form )
 
@@ -351,7 +373,7 @@ contains
     do iE = 1, FB % nEnergyValues
       SuppressWrite  =  ( mod ( iE - 1, B % sSectionsWrite ) /= 0 )
       write ( EnergyNumber, fmt = '(a1,i2.2)' ) '_', iE
-      allocate ( RadiationMoments_ASC_Form :: FBS % Atlas ( iE ) % Element )
+      call FB % AllocateField ( FBS % Atlas ( iE ) % Element )
       select type ( RMA => FBS % Atlas ( iE ) % Element )
       class is ( RadiationMoments_ASC_Form )
 
@@ -390,7 +412,7 @@ contains
     associate ( AF => B % FiberMaster )
     select type ( CF => AF % Chart )
     class is ( Chart_SLL_Form )
-      EnergyUnit  =  CF % CoordinateUnit ( 1 )
+      ParticleEnergyUnit  =  CF % CoordinateUnit ( 1 )
     end select !--CF
     end associate !-- AF
 
@@ -400,30 +422,43 @@ contains
     case default
       RadiationType = FB % RadiationType
     end select !-- FB % RadiationType
-            
-    allocate ( FB % EnergyIntegral )
-    associate ( EI => FB % EnergyIntegral )
+  
+    call FB % AllocateField ( FB % EnergyIntegral )
+    select type ( EI => FB % EnergyIntegral )
+    class is ( RadiationMoments_ASC_Form )
       call EI % Initialize &
              ( B % Base_ASC, RadiationType, &
                NameShortOption = trim ( FB % NameShort ) // '_Integral', &
                Velocity_U_UnitOption = FB % Velocity_U_Unit, &
                MomentumDensity_U_UnitOption &
-                 = FB % MomentumDensity_U_Unit * EnergyUnit ** 3, &
+                 = FB % MomentumDensity_U_Unit * ParticleEnergyUnit ** 3, &
                MomentumDensity_D_UnitOption &
-                 = FB % MomentumDensity_D_Unit * EnergyUnit ** 3, &
+                 = FB % MomentumDensity_D_Unit * ParticleEnergyUnit ** 3, &
                EnergyDensityUnitOption &
-                 =  FB % EnergyDensityUnit * EnergyUnit ** 3, &
+                 =  FB % EnergyDensityUnit * ParticleEnergyUnit ** 3, &
                TemperatureUnitOption = FB % TemperatureUnit, &
                EnergyUnitOption = FB % EnergyUnit, &
                MomentumUnitOption = FB % MomentumUnit, &
                AngularMomentumUnitOption = FB % AngularMomentumUnit, &
                TimeUnitOption = FB % TimeUnit, &
                IgnorabilityOption = CONSOLE % INFO_5 )
-    end associate !-- EI
+    end select !-- EI
 
     end associate !-- B
 
   end subroutine SetField
+
+
+  subroutine AllocateField ( RMB, RMA )
+
+    class ( RadiationMoments_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
+      RMB
+    class ( FieldAtlasTemplate ), intent ( out ), allocatable :: &
+      RMA
+
+    allocate ( RadiationMoments_ASC_Form :: RMA )
+
+  end subroutine AllocateField
 
 
   subroutine ComputeEnergyIntegral ( RMB )
@@ -448,8 +483,12 @@ contains
 
     associate ( MS => RMB % Bundle_SLL_ASC_CSLD )
 
-    RMEI => RMB % EnergyIntegral % RadiationMoments ( )
-    G    => MS % Base_CSLD % Geometry ( )
+    select type ( RMA => RMB % EnergyIntegral )
+    class is ( RadiationMoments_ASC_Form )
+      RMEI => RMA % RadiationMoments ( )
+    end select !-- RMA
+
+    G => MS % Base_CSLD % Geometry ( )
 
     allocate ( Integral  ( RMEI % N_CONSERVED ) )
     allocate ( Integrand ( RMEI % N_CONSERVED ) )

@@ -1,7 +1,9 @@
 include $(PATH_RADIATIONS)/Makefile_ObjectFiles
 include $(PATH_FLUIDS)/Makefile_ObjectFiles
+include $(PATH_STRESS_ENERGY_BASICS)/Makefile_ObjectFiles
 
 STRESS_ENERGIES = \
   StressEnergies.o \
   $(RADIATIONS) \
-  $(FLUIDS)
+  $(FLUIDS) \
+  $(STRESS_ENERGY_BASICS)

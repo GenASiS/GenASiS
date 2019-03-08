@@ -8,8 +8,31 @@ SetFermiDiracSpectrum_Command.o: \
 
 Interactions_Template.o: \
   Basics.o \
+  Mathematics.o \
   Fluids.o \
   Interactions_Template.f90
+
+Interactions_CSL__Template.o: \
+  Basics.o \
+  Mathematics.o \
+  Interactions_Template.o \
+  Interactions_CSL__Template.f90
+
+Interactions_ASC__Template.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluids.o \
+  Interactions_Template.o \
+  Interactions_CSL__Template.o \
+  Interactions_ASC__Template.f90
+
+Interactions_BSLL_ASC_CSLD__Template.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluids.o \
+  Interactions_Template.o \
+  Interactions_ASC__Template.o \
+  Interactions_BSLL_ASC_CSLD__Template.f90
 
 RadiationMoments_Form.o: \
   Basics.o \
@@ -61,10 +84,38 @@ RadiationMoments_BSLL_ASC_CSLD__Form.o: \
   RadiationMoments_ASC__Form.o \
   RadiationMoments_BSLL_ASC_CSLD__Form.f90
 
+Relaxation_RM__Template.o: \
+  Basics.o \
+  Mathematics.o \
+  RadiationMoments_Form.o \
+  Sources_RM__Form.o \
+  RadiationMoments_ASC__Form.o \
+  Relaxation_RM__Template.f90 
+
+Relaxation_RM_ASC__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  RadiationMoments_Form.o \
+  RadiationMoments_ASC__Form.o \
+  Relaxation_RM__Template.o \
+  Relaxation_RM_ASC__Form.f90 
+
+Relaxation_RM_BSLL_ASC_CSLD__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  RadiationMoments_Form.o \
+  RadiationMoments_ASC__Form.o \
+  RadiationMoments_BSLL_ASC_CSLD__Form.o \
+  Relaxation_RM__Template.o \
+  Relaxation_RM_BSLL_ASC_CSLD__Form.f90 
+
 RadiationBasics.o: \
   SetPlanckSpectrum_Command.o \
   SetFermiDiracSpectrum_Command.o \
   Interactions_Template.o \
+  Interactions_CSL__Template.o \
+  Interactions_ASC__Template.o \
+  Interactions_BSLL_ASC_CSLD__Template.o \
   RadiationMoments_Form.o \
   Sources_RM__Form.o \
   Sources_RM_CSL__Form.o \
@@ -72,6 +123,9 @@ RadiationBasics.o: \
   RadiationMoments_CSL__Form.o \
   RadiationMoments_ASC__Form.o \
   RadiationMoments_BSLL_ASC_CSLD__Form.o \
+  Relaxation_RM__Template.o \
+  Relaxation_RM_ASC__Form.o \
+  Relaxation_RM_BSLL_ASC_CSLD__Form.o \
   RadiationBasics.f90
 
 RadiationBasics.a: $(RADIATION_BASICS)

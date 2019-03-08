@@ -1,0 +1,10 @@
+StressEnergyUnits_Form.o: \
+  Basics.o \
+  StressEnergyUnits_Form.f90
+
+StressEnergyBasics.o: \
+  StressEnergyUnits_Form.o \
+  StressEnergyBasics.f90
+
+StressEnergyBasics.a: $(STRESS_ENERGY_BASICS)
+	ar r StressEnergyBasics.a $(STRESS_ENERGY_BASICS)

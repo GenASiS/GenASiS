@@ -53,6 +53,8 @@ module RadiationMoments_ASC__Form
       Finalize
     procedure, private, pass :: &
       SetField
+    procedure, private, pass :: &
+      AllocateField
   end type RadiationMoments_ASC_Form
 
 contains
@@ -365,7 +367,7 @@ contains
     class is ( Chart_SL_Template )
     associate ( nValues => C % nProperCells + C % nGhostCells )
 
-    allocate ( RadiationMoments_CSL_Form :: FA % Chart )
+    call FA % AllocateField ( )
 
     select type ( FC => FA % Chart )
     class is ( RadiationMoments_CSL_Form )
@@ -386,6 +388,16 @@ contains
     end select !-- A
 
   end subroutine SetField
+
+
+  subroutine AllocateField ( RMA )
+
+    class ( RadiationMoments_ASC_Form ), intent ( inout ) :: &
+      RMA
+
+    allocate ( RadiationMoments_CSL_Form :: RMA % Chart )
+
+  end subroutine AllocateField
 
 
 end module RadiationMoments_ASC__Form
