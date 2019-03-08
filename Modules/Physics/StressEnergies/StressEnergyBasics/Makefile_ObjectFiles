@@ -1,0 +1,3 @@
+STRESS_ENERGY_BASICS = \
+  StressEnergyBasics.o \
+  StressEnergyUnits_Form.o

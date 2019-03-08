@@ -9,6 +9,7 @@ module Integrator_C_1D_PS__Template
   use Manifolds
   use Fields
   use Steps
+  use Integrator_Template
   use Integrator_C_PS__Template
 
   implicit none
@@ -17,7 +18,7 @@ module Integrator_C_1D_PS__Template
   type, public, extends ( Integrator_C_PS_Template ), abstract :: &
     Integrator_C_1D_PS_Template
       integer ( KDI ) :: &
-        N_CURRENTS_PS = 0
+        N_CURRENTS_1D = 0
       type ( Current_ASC_ElementForm ), dimension ( : ), allocatable :: &
         Current_ASC_1D
   contains
@@ -29,11 +30,12 @@ module Integrator_C_1D_PS__Template
       ComputeTally
     procedure, private, pass :: &
       ComputeCycle_ASC
-    procedure, private, pass :: &
-      ComputeTimeStepLocal
     procedure, public, pass :: &
       ComputeTimeStepLocalTemplate
   end type Integrator_C_1D_PS_Template
+
+    private :: &
+      ComputeTimeStepLocal
 
 contains
 
@@ -57,10 +59,10 @@ contains
     if ( I % Type == '' ) &
       I % Type = 'an Integrator_C_1D_PS'
 
-    if ( I % N_CURRENTS_PS <= 0 ) then
-      call Show ( 'I % N_CURRENTS_PS not set to a positive integer', &
+    if ( I % N_CURRENTS_1D <= 0 ) then
+      call Show ( 'I % N_CURRENTS_1D not set to a positive integer', &
                   CONSOLE % WARNING )
-      call Show ( I % N_CURRENTS_PS, 'I % N_CURRENTS_PS', CONSOLE % WARNING )
+      call Show ( I % N_CURRENTS_1D, 'I % N_CURRENTS_1D', CONSOLE % WARNING )
       call Show ( 'Integrator_C_1D_PS__Template', 'module', CONSOLE % WARNING )
       call Show ( 'InitializeTemplate_C_1D_PS', 'subroutine', &
                   CONSOLE % WARNING )
@@ -79,6 +81,8 @@ contains
              FinishTimeOption = FinishTimeOption, &
              CourantFactorOption = CourantFactorOption, &
              nWriteOption = nWriteOption )
+
+    I % ComputeTimeStepLocal => ComputeTimeStepLocal
 
   end subroutine InitializeTemplate_C_1D_PS
 
@@ -116,7 +120,7 @@ contains
     Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerTally )
     if ( associated ( Timer ) ) call Timer % Start ( )
 
-    do iC = 1, I % N_CURRENTS_PS
+    do iC = 1, I % N_CURRENTS_1D
       associate ( CA => I % Current_ASC_1D ( iC ) % Element )
       call CA % ComputeTally &
              ( ComputeChangeOption = ComputeChangeOption, &
@@ -193,18 +197,6 @@ contains
   end subroutine ComputeCycle_ASC
 
 
-  subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
-
-    class ( Integrator_C_1D_PS_Template ), intent ( inout ), target :: &
-      I
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      TimeStepCandidate
-
-    call I % ComputeTimeStepLocalTemplate ( TimeStepCandidate )
-
-  end subroutine ComputeTimeStepLocal
-
-
   subroutine ComputeTimeStepLocalTemplate ( I, TimeStepCandidate )
 
     class ( Integrator_C_1D_PS_Template ), intent ( in ), target :: &
@@ -230,7 +222,7 @@ contains
 
     G => CSL % Geometry ( )
 
-    do iC = 1, I % N_CURRENTS_PS
+    do iC = 1, I % N_CURRENTS_1D
       associate ( CA => I % Current_ASC_1D ( iC ) % Element )
       C => CA % Current ( )
 
@@ -263,6 +255,23 @@ contains
     nullify ( C, G )
 
   end subroutine ComputeTimeStepLocalTemplate
+
+
+  subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
+
+    class ( IntegratorTemplate ), intent ( inout ), target :: &
+      I
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      TimeStepCandidate
+
+    select type ( I )
+    class is ( Integrator_C_1D_PS_Template )
+
+    call I % ComputeTimeStepLocalTemplate ( TimeStepCandidate )
+
+    end select !-- I
+
+  end subroutine ComputeTimeStepLocal
 
 
 end module Integrator_C_1D_PS__Template

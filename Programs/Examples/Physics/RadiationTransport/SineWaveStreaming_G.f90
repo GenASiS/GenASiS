@@ -1,4 +1,4 @@
-program SineWaveStreaming
+program SineWaveStreaming_G
 
   use Basics
   use SineWaveStreaming_Form
@@ -10,14 +10,14 @@ program SineWaveStreaming
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'SineWaveStreaming', DimensionalityOption = '2D' )
+         ( 'SineWaveStreaming_G', DimensionalityOption = '2D' )
 
   allocate ( SWS )
-  call SWS % Initialize ( PROGRAM_HEADER % Name )
+  call SWS % Initialize ( 'GREY', PROGRAM_HEADER % Name )
   call SWS % Evolve ( )
   call SWS % ComputeError ( )
   deallocate ( SWS )
 
   deallocate ( PROGRAM_HEADER )
 
-end program SineWaveStreaming
+end program SineWaveStreaming_G

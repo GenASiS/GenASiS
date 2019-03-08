@@ -37,6 +37,8 @@ module Fluid_P__Template
       InitializeTemplate_P
     procedure, public, pass :: &
       SetPrimitiveConservedTemplate_P
+    procedure ( CFT ), public, pass ( C ), deferred :: &
+      ComputeFromTemperature
     procedure, public, pass ( C ) :: &
       ComputeFluxes
     procedure, public, pass ( C ) :: &
@@ -56,6 +58,25 @@ module Fluid_P__Template
     procedure, public, nopass :: &
       Compute_FE_P_G_Kernel
   end type Fluid_P_Template
+
+  abstract interface
+    subroutine CFT ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
+      use Basics
+      use Mathematics
+      import Fluid_P_Template
+      real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
+        Value_C
+      class ( Fluid_P_Template ), intent ( in ) :: &
+        C
+      class ( GeometryFlatForm ), intent ( in ) :: &
+        G
+      real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+        Value_G
+      integer ( KDI ), intent ( in ), optional :: &
+        nValuesOption, &
+        oValueOption
+    end subroutine CFT
+  end interface
 
     private :: &
       InitializeBasics, &

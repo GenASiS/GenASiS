@@ -1,6 +1,7 @@
 module Interactions_Template
 
   use Basics
+  use Mathematics
   use Fluids
 
   implicit none
@@ -22,11 +23,25 @@ module Interactions_Template
       OPACITY_N         = 0, &
       EQUILIBRIUM_J     = 0, &
       EQUILIBRIUM_N     = 0
+    integer ( KDI ) :: &
+      iBaseCell = 0
+    real ( KDR ), dimension ( : ), pointer :: &
+      Energy => null ( ), &
+      d3_Energy => null ( )
     character ( LDL ) :: &
-      Type = ''
+      Type = '', &
+      MomentsType = ''
+    class ( Fluid_P_Template ), pointer :: &
+      Fluid => null ( )
   contains
+    procedure ( IAI ), private, pass, deferred :: &
+      InitializeAllocate_I
+    generic, public :: &
+      Initialize => InitializeAllocate_I
     procedure, public, pass :: &
       InitializeTemplate
+    procedure, public, pass :: &
+      SetOutput
     procedure ( C ), public, pass, deferred :: &
       Compute
     procedure, private, pass ( I ) :: &
@@ -36,21 +51,58 @@ module Interactions_Template
     generic, public :: &
       ComputeEquilibriumParameters &
         => ComputeEquilibrium_T, ComputeEquilibrium_T_Eta
-    procedure, public, pass :: &
-      SetOutput
+    procedure ( CTS ), public, pass, deferred :: &
+      ComputeTimeScale
     procedure, public, pass :: &
       FinalizeTemplate
   end type InteractionsTemplate
 
   abstract interface
-    subroutine C ( I, F )
-      use Fluids
+
+    subroutine IAI ( I, MomentsType, LengthUnit, EnergyDensityUnit, &
+                     TemperatureUnit, nValues, VariableOption, NameOption, &
+                     ClearOption, UnitOption )
+      use Basics
       import InteractionsTemplate
       class ( InteractionsTemplate ), intent ( inout ) :: &
         I
-      class ( Fluid_P_Template ), intent ( in ) :: &
-        F
+      character ( * ), intent ( in ) :: &
+        MomentsType
+      type ( MeasuredValueForm ), intent ( in ) :: &
+        LengthUnit, &
+        EnergyDensityUnit, &
+        TemperatureUnit
+      integer ( KDI ), intent ( in ) :: &
+        nValues
+      character ( * ), dimension ( : ), intent ( in ), optional :: &
+        VariableOption
+      character ( * ), intent ( in ), optional :: &
+        NameOption
+      logical ( KDL ), intent ( in ), optional :: &
+        ClearOption
+      type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+        UnitOption
+    end subroutine IAI
+
+    subroutine C ( I, R )
+      use Mathematics
+      import InteractionsTemplate
+      class ( InteractionsTemplate ), intent ( inout ) :: &
+        I
+      class ( CurrentTemplate ), intent ( in ) :: &
+        R
     end subroutine C
+
+    subroutine CTS ( I, R )
+      use Basics
+      use Mathematics
+      import InteractionsTemplate
+      class ( InteractionsTemplate ), intent ( inout ) :: &
+        I
+      class ( CurrentTemplate ), intent ( in ) :: &
+        R
+    end subroutine CTS
+
   end interface
 
     private :: &
@@ -62,11 +114,14 @@ contains
 
 
   subroutine InitializeTemplate &
-               ( I, LengthUnit, EnergyDensityUnit, TemperatureUnit, nValues, &
-                 VariableOption, NameOption, ClearOption, UnitOption )
+               ( I, MomentsType, LengthUnit, EnergyDensityUnit, &
+                 TemperatureUnit, nValues, VariableOption, NameOption, &
+                 ClearOption, UnitOption )
 
     class ( InteractionsTemplate ), intent ( inout ) :: &
       I
+    character ( * ), intent ( in ) :: &
+      MomentsType
     type ( MeasuredValueForm ), intent ( in ) :: &
       LengthUnit, &
       EnergyDensityUnit, &
@@ -95,6 +150,8 @@ contains
            ( I, Variable, Name, VariableUnit, VariableOption, NameOption, &
              UnitOption )
 
+    I % MomentsType = MomentsType
+
     call SetUnits &
            ( Variableunit, I, LengthUnit, EnergyDensityUnit, TemperatureUnit )
 
@@ -108,35 +165,6 @@ contains
              UnitOption = VariableUnit )
 
   end subroutine InitializeTemplate
-
-
-  subroutine ComputeEquilibrium_T ( T_EQ, I, F )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      T_EQ
-    class ( InteractionsTemplate ), intent ( in ) :: &
-      I
-    class ( Fluid_P_Template ), intent ( in ) :: &
-      F
-
-    !-- Empty interface to be overridden later as needed
-
-  end subroutine ComputeEquilibrium_T
-
-
-  subroutine ComputeEquilibrium_T_Eta ( T_EQ, Eta_EQ, I, F )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      T_EQ, &
-      Eta_EQ
-    class ( InteractionsTemplate ), intent ( in ) :: &
-      I
-    class ( Fluid_P_Template ), intent ( in ) :: &
-      F
-
-    !-- Empty interface to be overridden later as needed
-
-  end subroutine ComputeEquilibrium_T_Eta
 
 
   subroutine SetOutput ( I, Output )
@@ -159,10 +187,39 @@ contains
   end subroutine SetOutput
 
 
+  subroutine ComputeEquilibrium_T ( T_EQ, I )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      T_EQ
+    class ( InteractionsTemplate ), intent ( in ) :: &
+      I
+
+    associate ( F => I % Fluid )
+    call Copy ( F % Value ( :, F % TEMPERATURE ), T_EQ )
+    end associate !-- F
+
+  end subroutine ComputeEquilibrium_T
+
+
+  subroutine ComputeEquilibrium_T_Eta ( T_EQ, Eta_EQ, I )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      T_EQ, &
+      Eta_EQ
+    class ( InteractionsTemplate ), intent ( in ) :: &
+      I
+
+    !-- Empty interface to be overridden later as needed
+
+  end subroutine ComputeEquilibrium_T_Eta
+
+
   impure elemental subroutine FinalizeTemplate ( I )
 
     class ( InteractionsTemplate ), intent ( inout ) :: &
       I
+
+    nullify ( I % Fluid )
 
     call Show ( 'Finalizing ' // trim ( I % Type ), I % IGNORABILITY )
     call Show ( I % Name, 'Name', I % IGNORABILITY )

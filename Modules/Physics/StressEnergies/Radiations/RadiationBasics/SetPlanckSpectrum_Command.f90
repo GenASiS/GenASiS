@@ -25,7 +25,7 @@ contains
       hBar_c, &
       hc_M_3, &
       kB, &
-      LogHuge
+      LogSqrtHuge
     real ( KDR ), dimension ( size ( Energy ) ) :: &
       ExpArgument
 
@@ -41,10 +41,10 @@ contains
     hc_M_3  =  ( TwoPi * hBar_c ) ** (-3)
     kB      =  CONSTANT % BOLTZMANN
 
-    LogHuge = log ( huge ( 1.0_KDR ) )
+    LogSqrtHuge = log ( sqrt ( huge ( 1.0_KDR ) ) )
     ExpArgument = E / ( kB * T )
-    where ( ExpArgument > LogHuge )
-      ExpArgument = LogHuge
+    where ( ExpArgument > LogSqrtHuge )
+      ExpArgument = LogSqrtHuge
     end where
 
     J  =  g * hc_M_3  *  E / ( exp ( ExpArgument ) - 1.0_KDR )

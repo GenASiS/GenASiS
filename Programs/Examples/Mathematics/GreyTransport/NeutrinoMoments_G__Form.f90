@@ -182,7 +182,7 @@ contains
 
     class ( NeutrinoMoments_G_Form ), intent ( inout ) :: &
       RM
-    type ( VariableGroupForm ), intent ( inout ) :: &
+    type ( StorageForm ), intent ( inout ) :: &
       Output
 
     type ( Integer_1D_Form ), dimension ( 1 ) :: &
@@ -432,7 +432,7 @@ contains
 
   subroutine ComputeDiffusionFactor_HLL ( DF_I, Grid, C, iDimension )
 
-    type ( VariableGroupForm ), intent ( inout ) :: &
+    type ( StorageForm ), intent ( inout ) :: &
       DF_I
     class ( * ), intent ( in ), target :: &
       Grid

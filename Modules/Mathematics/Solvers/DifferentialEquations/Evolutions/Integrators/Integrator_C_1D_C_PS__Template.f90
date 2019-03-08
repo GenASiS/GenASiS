@@ -1,39 +1,40 @@
 !-- Integrator_C_1D_MS_C_PS is a template for time evolution of multiple
-!   conserved currents on momentum space (and position space), and a conserved
+!   similar conserved currents, and an additional conserved
 !   current on position space.
 
-module Integrator_C_1D_MS_C_PS__Template
+module Integrator_C_1D_C_PS__Template
 
-  !-- Integrator_Current_1D_MomentumSpace_C_PositionSpace__Template
+  !-- Integrator_Current_1D_Current_PositionSpace__Template
 
   use Basics
   use Manifolds
   use Fields
   use Steps
+  use Integrator_Template
   use Integrator_C_PS__Template
 
   implicit none
   private
 
   type, public, extends ( Integrator_C_PS_Template ), abstract :: &
-    Integrator_C_1D_MS_C_PS_Template
+    Integrator_C_1D_C_PS_Template
       integer ( KDI ) :: &
-        N_CURRENTS_MS = 0
-      logical ( KDL ) :: &
-        UseLimiterParameter_S, &
-        UseLimiterParameter_F
-      type ( Current_BSLL_ASC_CSLD_ElementForm ), dimension ( : ), &
-        allocatable :: &
-          Current_BSLL_ASC_CSLD_1D
+        N_CURRENTS_1D = 0
       class ( Step_RK_C_ASC_Template ), allocatable :: &
-        Step_PS
-      class ( Step_RK_C_BSLL_ASC_CSLD_1D_Template ), allocatable :: &
-        Step_MS
+        Step_1D
+    procedure ( PS ), pointer :: &
+      PrepareStep_1D => null ( )
+    procedure ( PS ), pointer :: &
+      PrepareStep => null ( )
   contains
+    procedure ( I_1D ), private, pass, deferred :: &
+      Initialize_1D
+    generic, public :: &
+      Initialize => Initialize_1D
     procedure, public, pass :: &  !-- 1
-      InitializeTemplate_C_1D_MS_C_PS
+      InitializeTemplate_C_1D_C_PS
     procedure, public, pass :: &  !-- 1
-      FinalizeTemplate_C_1D_MS_C_PS
+      FinalizeTemplate_C_1D_C_PS
     procedure, private, pass :: &  !-- 2
       ComputeCycle
     procedure, private, pass :: &  !-- 3
@@ -41,32 +42,79 @@ module Integrator_C_1D_MS_C_PS__Template
     procedure, private, pass :: &  !-- 3
       ComputeTally
     procedure, private, pass :: &
-      ComputeCycle_BSLL_ASC_CSLD_1D
-    procedure, private, pass :: &
-      PrepareStep_MS
-    procedure, private, pass :: &
-      PrepareStep_PS
-    procedure, private, pass :: &
-      ComputeTimeStepLocal
+      ComputeCycle_C_1D_C_ASC
+    procedure ( CT_1D ), private, pass, deferred :: &
+      ComputeTally_1D
     procedure, public, pass :: &
       ComputeTimeStepLocalTemplate
-  end type Integrator_C_1D_MS_C_PS_Template
+    procedure ( CAP ), private, pass, deferred :: &
+      Current_ASC_Pointer   
+  end type Integrator_C_1D_C_PS_Template
+
+  abstract interface
+
+    subroutine PS ( I )
+      import Integrator_C_1D_C_PS_Template
+      class ( Integrator_C_1D_C_PS_Template ), intent ( inout ) :: &
+        I
+    end subroutine PS
+
+    subroutine I_1D ( I, Name, TimeUnitOption, FinishTimeOption, &
+                      CourantFactorOption, nWriteOption )
+      use Basics
+      import Integrator_C_1D_C_PS_Template
+      class ( Integrator_C_1D_C_PS_Template ), intent ( inout ) :: &
+        I
+      character ( * ), intent ( in )  :: &
+        Name
+      type ( MeasuredValueForm ), intent ( in ), optional :: &
+        TimeUnitOption
+      real ( KDR ), intent ( in ), optional :: &
+        FinishTimeOption, &
+        CourantFactorOption
+      integer ( KDI ), intent ( in ), optional :: &
+        nWriteOption
+    end subroutine I_1D
+
+    subroutine CT_1D ( I, ComputeChangeOption, IgnorabilityOption )
+      use Basics
+      import Integrator_C_1D_C_PS_Template
+      class ( Integrator_C_1D_C_PS_Template ), intent ( inout ) :: &
+        I
+      logical ( KDL ), intent ( in ), optional :: &
+        ComputeChangeOption
+      integer ( KDI ), intent ( in ), optional :: &
+        IgnorabilityOption
+    end subroutine CT_1D
+
+    function CAP ( I, iC ) result ( CA )
+      use Basics
+      use Fields
+      import Integrator_C_1D_C_PS_Template
+      class ( Integrator_C_1D_C_PS_Template ), intent ( inout ), target :: &
+        I
+      integer ( KDI ), intent ( in ) :: &
+        iC
+      class ( Current_ASC_Template ), pointer :: &
+        CA
+    end function CAP
+
+  end interface
+
+    private :: &
+      ComputeTimeStepLocal
 
 contains
 
 
-  subroutine InitializeTemplate_C_1D_MS_C_PS &
-               ( I, Name, UseLimiterParameter_S_Option, &
-                 UseLimiterParameter_F_Option, TimeUnitOption, &
-                 FinishTimeOption, CourantFactorOption, nWriteOption )
+  subroutine InitializeTemplate_C_1D_C_PS &
+               ( I, Name, TimeUnitOption, FinishTimeOption, &
+                 CourantFactorOption, nWriteOption )
 
-    class ( Integrator_C_1D_MS_C_PS_Template ), intent ( inout ) :: &
+    class ( Integrator_C_1D_C_PS_Template ), intent ( inout ) :: &
       I
     character ( * ), intent ( in )  :: &
       Name
-    logical ( KDL ), intent ( in ), optional :: &
-      UseLimiterParameter_S_Option, &
-      UseLimiterParameter_F_Option
     type ( MeasuredValueForm ), intent ( in ), optional :: &
       TimeUnitOption
     real ( KDR ), intent ( in ), optional :: &
@@ -76,14 +124,14 @@ contains
       nWriteOption
 
     if ( I % Type == '' ) &
-      I % Type = 'an Integrator_C_1D_MS_C_PS'
+      I % Type = 'an Integrator_C_1D_C_PS'
 
-    if ( .not. allocated ( I % Current_BSLL_ASC_CSLD_1D ) ) then
-      call Show ( 'Current_BSLL_ASC_CSLD_1D not allocated by an extension', &
+    if ( .not. allocated ( I % Step_1D ) ) then
+      call Show ( 'Step_1D not allocated by an extension', &
                   CONSOLE % WARNING )
-      call Show ( 'Integrator_C_1D_MS_C_PS__Template', 'module', &
+      call Show ( 'Integrator_C_1D_C_PS__Template', 'module', &
                   CONSOLE % WARNING )
-      call Show ( 'InitializeTemplate_C_1D_MS_C_PS', 'subroutine', &
+      call Show ( 'InitializeTemplate_C_1D_C_PS', 'subroutine', &
                   CONSOLE % WARNING )
     end if
 
@@ -93,40 +141,27 @@ contains
              CourantFactorOption = CourantFactorOption, &
              nWriteOption = nWriteOption )
 
-    I % UseLimiterParameter_S = .false.
-    I % UseLimiterParameter_F = .false.
-    if ( present ( UseLimiterParameter_S_Option ) ) &
-      I % UseLimiterParameter_S = UseLimiterParameter_S_Option
-    if ( present ( UseLimiterParameter_F_Option ) ) &
-      I % UseLimiterParameter_F = UseLimiterParameter_F_Option
-    call PROGRAM_HEADER % GetParameter &
-           ( I % UseLimiterParameter_S, 'UseLimiterParameter_S' )
-    call PROGRAM_HEADER % GetParameter &
-           ( I % UseLimiterParameter_F, 'UseLimiterParameter_F' )
+    I % ComputeTimeStepLocal => ComputeTimeStepLocal
 
-  end subroutine InitializeTemplate_C_1D_MS_C_PS
+  end subroutine InitializeTemplate_C_1D_C_PS
 
 
-  subroutine FinalizeTemplate_C_1D_MS_C_PS ( I )
+  subroutine FinalizeTemplate_C_1D_C_PS ( I )
 
-    class ( Integrator_C_1D_MS_C_PS_Template ), intent ( inout ) :: &
+    class ( Integrator_C_1D_C_PS_Template ), intent ( inout ) :: &
       I
 
-   if ( allocated ( I % Step_MS ) ) &
-     deallocate ( I % Step_MS )
-   if ( allocated ( I % Step_PS ) ) &
-     deallocate ( I % Step_PS )
-   if ( allocated ( I % Current_BSLL_ASC_CSLD_1D ) ) &
-     deallocate ( I % Current_BSLL_ASC_CSLD_1D )
+    if ( allocated ( I % Step_1D ) ) &
+      deallocate ( I % Step_1D )
 
     call I % FinalizeTemplate_C_PS ( )
 
-  end subroutine FinalizeTemplate_C_1D_MS_C_PS
+  end subroutine FinalizeTemplate_C_1D_C_PS
 
 
   subroutine ComputeCycle ( I )
 
-    class ( Integrator_C_1D_MS_C_PS_Template ), intent ( inout ) :: &
+    class ( Integrator_C_1D_C_PS_Template ), intent ( inout ) :: &
       I
 
     type ( TimerForm ), pointer :: &
@@ -135,10 +170,15 @@ contains
     Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerCycle )
     if ( associated ( Timer ) ) call Timer % Start ( )
 
-    select type ( MS => I % MomentumSpace )
-    class is ( Bundle_SLL_ASC_CSLD_Form )
-      call I % ComputeCycle_BSLL_ASC_CSLD_1D ( MS )
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
+      call I % ComputeCycle_C_1D_C_ASC ( PS )
     end select
+
+!    select type ( MS => I % MomentumSpace )
+!    class is ( Bundle_SLL_ASC_CSLD_Form )
+!      call I % ComputeCycle_BSLL_ASC_CSLD_1D ( MS )
+!    end select
 
     if ( associated ( Timer ) ) call Timer % Stop ( )
 
@@ -147,46 +187,37 @@ contains
 
   subroutine InitializeStepTimers ( I, BaseLevel )
 
-    class ( Integrator_C_1D_MS_C_PS_Template ), intent ( inout ) :: &
+    class ( Integrator_C_1D_C_PS_Template ), intent ( inout ) :: &
       I
     integer ( KDI ), intent ( in ) :: &
       BaseLevel
 
-    if ( allocated ( I % Step_MS ) ) &
-      call I % Step_MS % InitializeTimers ( BaseLevel )
-    if ( allocated ( I % Step_PS ) ) &
-      call I % Step_PS % InitializeTimers ( BaseLevel )
+    if ( allocated ( I % Step_1D ) ) &
+      call I % Step_1D % InitializeTimers ( BaseLevel )
+    if ( allocated ( I % Step ) ) &
+      call I % Step % InitializeTimers ( BaseLevel )
 
   end subroutine InitializeStepTimers
 
 
   subroutine ComputeTally ( I, ComputeChangeOption, IgnorabilityOption )
 
-    class ( Integrator_C_1D_MS_C_PS_Template ), intent ( inout ) :: &
+    class ( Integrator_C_1D_C_PS_Template ), intent ( inout ) :: &
       I
     logical ( KDL ), intent ( in ), optional :: &
       ComputeChangeOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
-    integer ( KDI ) :: &
-      iC  !-- iCurrent
     type ( TimerForm ), pointer :: &
       Timer
-
-    if ( .not. allocated ( I % Current_BSLL_ASC_CSLD_1D ) ) &
-      return
 
     Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerTally )
     if ( associated ( Timer ) ) call Timer % Start ( )
 
-    do iC = 1, I % N_CURRENTS_MS
-      associate ( CB => I % Current_BSLL_ASC_CSLD_1D ( iC ) % Element )
-      call CB % ComputeTally &
-             ( ComputeChangeOption = ComputeChangeOption, &
-               IgnorabilityOption  = IgnorabilityOption )
-      end associate !-- CB
-    end do !-- iC
+    call I % ComputeTally_1D &
+           ( ComputeChangeOption = ComputeChangeOption, &
+             IgnorabilityOption  = IgnorabilityOption )
 
     if ( allocated ( I % Current_ASC ) ) then 
       associate ( CA => I % Current_ASC )
@@ -201,15 +232,13 @@ contains
   end subroutine ComputeTally
 
 
-  subroutine ComputeCycle_BSLL_ASC_CSLD_1D ( I, MS )
+  subroutine ComputeCycle_C_1D_C_ASC ( I, PS )
 
-    class ( Integrator_C_1D_MS_C_PS_Template ), intent ( inout ) :: &
+    class ( Integrator_C_1D_C_PS_Template ), intent ( inout ) :: &
       I
-    class ( Bundle_SLL_ASC_CSLD_Form ), intent ( inout ) :: &
-      MS
+    class ( Atlas_SC_Form ), intent ( inout ) :: &
+      PS
 
-    integer ( KDI ) :: &
-      iS  !-- iSection
     real ( KDR ) :: &
       TimeNew
 
@@ -218,12 +247,14 @@ contains
 
     associate ( TimeStep => TimeNew - I % Time )    
 
-    call I % PrepareStep_MS ( )
-    call I % Step_MS % Compute ( I % Time, TimeStep )
+    if ( associated ( I % PrepareStep_1D ) ) &
+      call I % PrepareStep_1D ( )
+    call I % Step_1D % Compute ( I % Time, TimeStep )
 
-    if ( allocated ( I % Step_PS ) ) then
-      call I % PrepareStep_PS ( )
-      call I % Step_PS % Compute ( I % Time, TimeStep )
+    if ( allocated ( I % Step ) ) then
+      if ( associated ( I % PrepareStep ) ) &
+        call I % PrepareStep ( )
+      call I % Step % Compute ( I % Time, TimeStep )
     end if
       
     I % iCycle = I % iCycle + 1
@@ -240,40 +271,12 @@ contains
 
     end associate !-- TimeStep
 
-  end subroutine ComputeCycle_BSLL_ASC_CSLD_1D
-
-
-  subroutine PrepareStep_MS ( I )
-
-    class ( Integrator_C_1D_MS_C_PS_Template ), intent ( inout ) :: &
-      I
-
-  end subroutine PrepareStep_MS
-
-
-  subroutine PrepareStep_PS ( I )
-
-    class ( Integrator_C_1D_MS_C_PS_Template ), intent ( inout ) :: &
-      I
-
-  end subroutine PrepareStep_PS
-
-
-  subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
-
-    class ( Integrator_C_1D_MS_C_PS_Template ), intent ( inout ), target :: &
-      I
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      TimeStepCandidate
-
-    call I % ComputeTimeStepLocalTemplate ( TimeStepCandidate )
-
-  end subroutine ComputeTimeStepLocal
+  end subroutine ComputeCycle_C_1D_C_ASC
 
 
   subroutine ComputeTimeStepLocalTemplate ( I, TimeStepCandidate )
 
-    class ( Integrator_C_1D_MS_C_PS_Template ), intent ( inout ), target :: &
+    class ( Integrator_C_1D_C_PS_Template ), intent ( inout ), target :: &
       I
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       TimeStepCandidate
@@ -288,10 +291,7 @@ contains
     class ( Current_ASC_Template ), pointer :: &
       CA
 
-    if ( .not. allocated ( I % Current_BSLL_ASC_CSLD_1D ) ) &
-      return
-
-    N_PS  =  I % N_CURRENTS_MS + 1
+    N_PS  =  I % N_CURRENTS_1D + 1
 
     select type ( PS  =>  I % PositionSpace )
     class is ( Atlas_SC_Form )
@@ -310,12 +310,7 @@ contains
           CA  =>  null ( )
         end if
       else
-        associate ( CB  =>  I % Current_BSLL_ASC_CSLD_1D ( iC ) % Element )
-        select type ( CAE => CB % Section % Atlas ( 1 ) % Element )
-        class is ( Current_ASC_Template )
-          CA => CAE
-        end select !-- CAE
-        end associate !-- CB
+        CA  =>  I % Current_ASC_Pointer ( iC )
       end if
 
       if ( associated ( CA ) ) then
@@ -354,4 +349,21 @@ contains
   end subroutine ComputeTimeStepLocalTemplate
 
 
-end module Integrator_C_1D_MS_C_PS__Template
+  subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
+
+    class ( IntegratorTemplate ), intent ( inout ), target :: &
+      I
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      TimeStepCandidate
+
+    select type ( I )
+    class is ( Integrator_C_1D_C_PS_Template )
+
+    call I % ComputeTimeStepLocalTemplate ( TimeStepCandidate )
+
+    end select !-- I
+
+  end subroutine ComputeTimeStepLocal
+
+
+end module Integrator_C_1D_C_PS__Template

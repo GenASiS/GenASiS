@@ -9,6 +9,7 @@ module Integrator_C_MS_C_PS__Template
   use Manifolds
   use Fields
   use Steps
+  use Integrator_Template
   use Integrator_C_PS__Template
 
   implicit none
@@ -42,9 +43,10 @@ module Integrator_C_MS_C_PS__Template
       PrepareStep_MS
     procedure, private, pass :: &
       PrepareStep_PS
-    procedure, private, pass :: &
-      ComputeTimeStepLocal
   end type Integrator_C_MS_C_PS_Template
+
+    private :: &
+      ComputeTimeStepLocal
 
       integer ( KDI ), private, parameter :: &
         iMS_S = 1, &
@@ -88,6 +90,8 @@ contains
     call I % InitializeTemplate_C_PS &
            ( Name, TimeUnitOption = TimeUnitOption, &
              FinishTimeOption = FinishTimeOption, nWriteOption = nWriteOption )
+
+    I % ComputeTimeStepLocal => ComputeTimeStepLocal
 
     I % UseLimiterParameter_S = .false.
     I % UseLimiterParameter_F = .false.
@@ -256,7 +260,7 @@ contains
 
   subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
 
-    class ( Integrator_C_MS_C_PS_Template ), intent ( inout ), target :: &
+    class ( IntegratorTemplate ), intent ( inout ), target :: &
       I
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       TimeStepCandidate
@@ -269,6 +273,9 @@ contains
       C
     class ( Current_ASC_Template ), pointer :: &
       CA
+
+    select type ( I )
+    class is ( Integrator_C_MS_C_PS_Template )
 
     if ( .not. allocated ( I % Current_BSLL_ASC_CSLD ) ) &
       return
@@ -316,6 +323,7 @@ contains
 
     TimeStepCandidate = I % CourantFactor * TimeStepCandidate
 
+    end select !-- I
     nullify ( G, C, CA )
 
   end subroutine ComputeTimeStepLocal
