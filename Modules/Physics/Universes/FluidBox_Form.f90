@@ -60,10 +60,6 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       nWriteOption
 
-!     integer ( KDI ) :: &
-!       iD  !-- iDimension
-
-
     if ( FB % Type == '' ) &
       FB % Type = 'a FluidBox'
 
@@ -83,19 +79,14 @@ contains
     call FB % InitializeStep &
           ( GravitySolverTypeOption )
 
-!     !-- Template
-
-!     call FB % InitializeTemplate_C_PS &
-!            ( Name, TimeUnitOption = TimeUnitOption, &
-!              FinishTimeOption = FinishTimeOption, &
-!              CourantFactorOption = CourantFactorOption, &
-!              nWriteOption = nWriteOption )
-
-
-!     !-- Cleanup
-
-!     end select !-- FA
-!     end select !-- PS
+    select type ( I => FB % Integrator )
+    class is ( Integrator_C_PS_Form )
+      call I % Initialize &
+             ( Name, TimeUnitOption = FB % Units % Time, &
+               FinishTimeOption = FinishTimeOption, &
+               CourantFactorOption = CourantFactorOption, &
+               nWriteOption = nWriteOption )
+    end select !-- I
 
   end subroutine Initialize_FB
 

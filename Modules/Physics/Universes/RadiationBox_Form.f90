@@ -126,21 +126,21 @@ contains
            ( Name, ApplyStreamingOption, ApplyInteractionsOption, &
              EvolveFluidOption )
 
-!     select type ( I => RB % Integrator )
-!     class is ( Integrator_C_1D_C_PS_Template )
-!       call I % Initialize &
-!              ( Name, TimeUnitOption = TimeUnitOption, &
-!                FinishTimeOption = FinishTimeOption, &
-!                CourantFactorOption = CourantFactorOption, &
-!                nWriteOption = nWriteOption )
-!       I % ComputeTimeStepLocal => ComputeTimeStepLocal
-!     end select !-- I
+    select type ( I => RB % Integrator )
+    class is ( Integrator_C_1D_C_PS_Template )
+      call I % Initialize &
+             ( Name, TimeUnitOption = RB % Units % Time, &
+               FinishTimeOption = FinishTimeOption, &
+               CourantFactorOption = CourantFactorOption, &
+               nWriteOption = nWriteOption )
+      I % ComputeTimeStepLocal => ComputeTimeStepLocal
+    end select !-- I
 
-!     RB % InteractionFactor  =  1.0e-2_KDR
-!     call PROGRAM_HEADER % GetParameter &
-!            ( RB % InteractionFactor, 'InteractionFactor' )
-!     call Show ( RB % InteractionFactor, 'InteractionFactor', &
-!                 RB % IGNORABILITY )
+    RB % InteractionFactor  =  1.0e-2_KDR
+    call PROGRAM_HEADER % GetParameter &
+           ( RB % InteractionFactor, 'InteractionFactor' )
+    call Show ( RB % InteractionFactor, 'InteractionFactor', &
+                RB % IGNORABILITY )
 
   end subroutine Initialize_RB
 
