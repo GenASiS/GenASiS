@@ -18,8 +18,8 @@ module Integrator_C_1D_PS_C_PS__Form
       type ( Current_ASC_ElementForm ), dimension ( : ), allocatable :: &
         Current_ASC_1D
   contains
-    procedure, private, pass :: &  !-- 1
-      Initialize_1D
+    procedure, public, pass :: &  !-- 1
+      Initialize
     final :: &  !-- 1
       Finalize
     procedure, private, pass :: &  !-- 3
@@ -31,7 +31,7 @@ module Integrator_C_1D_PS_C_PS__Form
 contains
 
 
-  subroutine Initialize_1D &
+  subroutine Initialize &
                ( I, Name, TimeUnitOption, FinishTimeOption, &
                  CourantFactorOption, nWriteOption )
 
@@ -65,7 +65,7 @@ contains
              CourantFactorOption = CourantFactorOption, &
              nWriteOption = nWriteOption )
 
-  end subroutine Initialize_1D
+  end subroutine Initialize
 
 
   subroutine Finalize ( I )

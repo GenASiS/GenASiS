@@ -10,12 +10,12 @@ module Integrator_C_PS_C_PS__Template
   use Fields
   use Steps
   use Integrator_Template
-  use Integrator_C_PS__Template
+  use Integrator_C_PS__Form
 
   implicit none
   private
 
-  type, public, extends ( Integrator_C_PS_Template ), abstract :: &
+  type, public, extends ( Integrator_C_PS_Form ), abstract :: &
     Integrator_C_PS_C_PS_Template
       class ( Current_ASC_Template ), allocatable :: &
         Current_ASC_1, &
@@ -101,7 +101,7 @@ contains
                   CONSOLE % WARNING )
     end if
 
-    call I % InitializeTemplate_C_PS &
+    call I % Integrator_C_PS_Form % Initialize &
            ( Name, TimeUnitOption = TimeUnitOption, &
              FinishTimeOption = FinishTimeOption, &
              CourantFactorOption = CourantFactorOption, &
@@ -128,8 +128,6 @@ contains
      deallocate ( I % Current_ASC_2 )
    if ( allocated ( I % Current_ASC_1 ) ) &
      deallocate ( I % Current_ASC_1 )
-
-    call I % FinalizeTemplate ( )
 
   end subroutine FinalizeTemplate_C_PS_C_PS
 

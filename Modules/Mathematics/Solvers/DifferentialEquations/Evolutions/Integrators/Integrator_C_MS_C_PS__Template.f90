@@ -10,12 +10,12 @@ module Integrator_C_MS_C_PS__Template
   use Fields
   use Steps
   use Integrator_Template
-  use Integrator_C_PS__Template
+  use Integrator_C_PS__Form
 
   implicit none
   private
 
-  type, public, extends ( Integrator_C_PS_Template ), abstract :: &
+  type, public, extends ( Integrator_C_PS_Form ), abstract :: &
     Integrator_C_MS_C_PS_Template
       logical ( KDL ) :: &
         UseLimiterParameter_S, &
@@ -87,7 +87,7 @@ contains
                   CONSOLE % WARNING )
     end if
 
-    call I % InitializeTemplate_C_PS &
+    call I % Integrator_C_PS_Form % Initialize &
            ( Name, TimeUnitOption = TimeUnitOption, &
              FinishTimeOption = FinishTimeOption, nWriteOption = nWriteOption )
 
@@ -118,8 +118,6 @@ contains
      deallocate ( I % Step_PS )
    if ( allocated ( I % Current_BSLL_ASC_CSLD ) ) &
      deallocate ( I % Current_BSLL_ASC_CSLD )
-
-    call I % FinalizeTemplate_C_PS ( )
 
   end subroutine FinalizeTemplate_C_MS_C_PS
 

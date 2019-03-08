@@ -10,12 +10,12 @@ module Integrator_C_1D_PS__Template
   use Fields
   use Steps
   use Integrator_Template
-  use Integrator_C_PS__Template
+  use Integrator_C_PS__Form
 
   implicit none
   private
 
-  type, public, extends ( Integrator_C_PS_Template ), abstract :: &
+  type, public, extends ( Integrator_C_PS_Form ), abstract :: &
     Integrator_C_1D_PS_Template
       integer ( KDI ) :: &
         N_CURRENTS_1D = 0
@@ -76,7 +76,7 @@ contains
                   CONSOLE % WARNING )
     end if
 
-    call I % InitializeTemplate_C_PS &
+    call I % Integrator_C_PS_Form % Initialize &
            ( Name, TimeUnitOption = TimeUnitOption, &
              FinishTimeOption = FinishTimeOption, &
              CourantFactorOption = CourantFactorOption, &
@@ -95,8 +95,6 @@ contains
     if ( allocated ( I % Current_ASC_1D ) ) &
       deallocate ( I % Current_ASC_1D )
    
-    call I % FinalizeTemplate_C_PS ( )
-
   end subroutine FinalizeTemplate_C_1D_PS
 
 
