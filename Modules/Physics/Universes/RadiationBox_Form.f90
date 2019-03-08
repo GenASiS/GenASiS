@@ -41,8 +41,8 @@ module RadiationBox_Form
       InitializePositionSpace
     procedure, public, pass :: &
       InitializeMomentumSpace
-!    procedure, public, pass :: &
-!      InitializeRadiation
+    procedure, public, pass :: &
+      InitializeRadiation
     procedure, public, pass :: &
       InitializeSteps
   end type RadiationBoxForm
@@ -50,7 +50,7 @@ module RadiationBox_Form
     private :: &
 !       ComputeTimeStepLocal, &
       PrepareStep, &
-!       IntegrateSources, &
+      IntegrateSources, &
       ApplySources_Fluid
 
       private :: &
@@ -724,83 +724,83 @@ contains
   end subroutine PrepareStep
 
 
-!   subroutine IntegrateSources ( I )
+  subroutine IntegrateSources ( I )
 
-!     type ( Integrator_C_1D_MS_C_PS_Form ), intent ( inout ), target :: &
-!       I
+    type ( Integrator_C_1D_MS_C_PS_Form ), intent ( inout ), target :: &
+      I
 
-!     integer ( KDI ) :: &
-!       iI, &  !-- iIntegral
-!       iF, &  !-- iFiber
-!       nIntegrals
-!     real ( KDR ), dimension ( : ), allocatable :: &
-!       Integral
-!     type ( Real_1D_Form ), dimension ( : ), allocatable :: &
-!       Integrand
-!     type ( VolumeIntegralForm ) :: &
-!       VI
-!     class ( RadiationMomentsForm ), pointer :: &
-!       RMEI, &
-!       RMF
+    integer ( KDI ) :: &
+      iI, &  !-- iIntegral
+      iF, &  !-- iFiber
+      nIntegrals
+    real ( KDR ), dimension ( : ), allocatable :: &
+      Integral
+    type ( Real_1D_Form ), dimension ( : ), allocatable :: &
+      Integrand
+    type ( VolumeIntegralForm ) :: &
+      VI
+    class ( RadiationMomentsForm ), pointer :: &
+      RMEI, &
+      RMF
 
-!     associate ( IB => RadiationBox % Interactions_BSLL_ASC_CSLD ) 
+    associate ( IB => RadiationBox % Interactions_BSLL_ASC_CSLD ) 
 
-!     select type ( RMB => I % Current_BSLL_ASC_CSLD_1D ( 1 ) % Element )
-!     class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
+    select type ( RMB => I % Current_BSLL_ASC_CSLD_1D ( 1 ) % Element )
+    class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
 
-!     select type ( RMA => RMB % EnergyIntegral )
-!     class is ( RadiationMoments_ASC_Form )
+    select type ( RMA => RMB % EnergyIntegral )
+    class is ( RadiationMoments_ASC_Form )
 
-!     RMEI => RMA % RadiationMoments ( )
+    RMEI => RMA % RadiationMoments ( )
 
-!     nIntegrals = 4
+    nIntegrals = 4
 
-!     allocate ( Integral  ( nIntegrals ) )
-!     allocate ( Integrand ( nIntegrals ) )
-!     do iI = 1, nIntegrals
-!       call Integrand ( iI ) % Initialize ( RMB % nEnergyValues )
-!     end do !-- iC
+    allocate ( Integral  ( nIntegrals ) )
+    allocate ( Integrand ( nIntegrals ) )
+    do iI = 1, nIntegrals
+      call Integrand ( iI ) % Initialize ( RMB % nEnergyValues )
+    end do !-- iC
 
-!     associate ( MS => RMB % Bundle_SLL_ASC_CSLD )
-!     do iF = 1, MS % nFibers
-!       associate &
-!         ( iBC => MS % iaBaseCell ( iF ), &
-!           CF  => MS % Fiber_CSLL )
+    associate ( MS => RMB % Bundle_SLL_ASC_CSLD )
+    do iF = 1, MS % nFibers
+      associate &
+        ( iBC => MS % iaBaseCell ( iF ), &
+          CF  => MS % Fiber_CSLL )
 
-!       RMF => RMB % RadiationMoments ( iF )
-!       select type ( SF => RMF % Sources )
-!       class is ( Sources_RM_Form )
-!         Integrand ( 1 ) % Value  &
-!           =  SF % Value ( :, SF % INTERACTIONS_J )
-!         Integrand ( 2 ) % Value  &
-!           =  SF % Value ( :, SF % INTERACTIONS_H_D ( 1 ) )
-!         Integrand ( 3 ) % Value  &
-!           =  SF % Value ( :, SF % INTERACTIONS_H_D ( 2 ) )
-!         Integrand ( 4 ) % Value  &
-!           =  SF % Value ( :, SF % INTERACTIONS_H_D ( 3 ) )
-!       end select !-- SF
+      RMF => RMB % RadiationMoments ( iF )
+      select type ( SF => RMF % Sources )
+      class is ( Sources_RM_Form )
+        Integrand ( 1 ) % Value  &
+          =  SF % Value ( :, SF % INTERACTIONS_J )
+        Integrand ( 2 ) % Value  &
+          =  SF % Value ( :, SF % INTERACTIONS_H_D ( 1 ) )
+        Integrand ( 3 ) % Value  &
+          =  SF % Value ( :, SF % INTERACTIONS_H_D ( 2 ) )
+        Integrand ( 4 ) % Value  &
+          =  SF % Value ( :, SF % INTERACTIONS_H_D ( 3 ) )
+      end select !-- SF
 
-!       call VI % Compute ( CF, Integrand, Integral )
+      call VI % Compute ( CF, Integrand, Integral )
 
-!       select type ( SEI => RMEI % Sources )
-!       class is ( Sources_RM_Form )
-!         SEI % Value ( iBC, SEI % INTERACTIONS_J )         = Integral ( 1 ) 
-!         SEI % Value ( iBC, SEI % INTERACTIONS_H_D ( 1 ) ) = Integral ( 2 ) 
-!         SEI % Value ( iBC, SEI % INTERACTIONS_H_D ( 2 ) ) = Integral ( 3 ) 
-!         SEI % Value ( iBC, SEI % INTERACTIONS_H_D ( 3 ) ) = Integral ( 4 ) 
-!       end select !-- SEI
+      select type ( SEI => RMEI % Sources )
+      class is ( Sources_RM_Form )
+        SEI % Value ( iBC, SEI % INTERACTIONS_J )         = Integral ( 1 ) 
+        SEI % Value ( iBC, SEI % INTERACTIONS_H_D ( 1 ) ) = Integral ( 2 ) 
+        SEI % Value ( iBC, SEI % INTERACTIONS_H_D ( 2 ) ) = Integral ( 3 ) 
+        SEI % Value ( iBC, SEI % INTERACTIONS_H_D ( 3 ) ) = Integral ( 4 ) 
+      end select !-- SEI
       
-!       end associate !-- iBC, etc.
-!     end do !-- iF
-!     end associate !-- MS
+      end associate !-- iBC, etc.
+    end do !-- iF
+    end associate !-- MS
 
-!     end select !-- RMA
-!     end select !-- RMB
-!     end associate !-- IB
+    end select !-- RMA
+    end select !-- RMB
+    end associate !-- IB
 
-!     nullify ( RMEI, RMF )
+    nullify ( RMEI, RMF )
  
-!   end subroutine IntegrateSources
+  end subroutine IntegrateSources
 
 
   subroutine ApplySources_Fluid &
@@ -901,37 +901,37 @@ contains
 !   end subroutine ComputeTimeStepInteractions
 
 
-!   subroutine ComputeFluidSource_G_S_Radiation_Kernel &
-!                ( FS_R_G, FS_R_S_1, FS_R_S_2, FS_R_S_3, IsProperCell, &
-!                  Q, A_1, A_2, A_3 )
+  subroutine ComputeFluidSource_G_S_Radiation_Kernel &
+               ( FS_R_G, FS_R_S_1, FS_R_S_2, FS_R_S_3, IsProperCell, &
+                 Q, A_1, A_2, A_3 )
 
-!     real ( KDR ), dimension ( : ), intent ( inout ) :: &
-!       FS_R_G, &
-!       FS_R_S_1, FS_R_S_2, FS_R_S_3
-!     logical ( KDL ), dimension ( : ), intent ( in ) :: &
-!       IsProperCell
-!     real ( KDR ), dimension ( : ), intent ( in ) :: &
-!       Q, &
-!       A_1, A_2, A_3
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      FS_R_G, &
+      FS_R_S_1, FS_R_S_2, FS_R_S_3
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      IsProperCell
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      Q, &
+      A_1, A_2, A_3
 
-!     integer ( KDI ) :: &
-!       iV, &
-!       nV
+    integer ( KDI ) :: &
+      iV, &
+      nV
 
-!     nV = size ( FS_R_G )
+    nV = size ( FS_R_G )
 
-!     !$OMP parallel do private ( iV )
-!     do iV = 1, nV
-!       if ( .not. IsProperCell ( iV ) ) &
-!         cycle
-!       FS_R_G ( iV )    =    FS_R_G ( iV )  -    Q ( iV ) 
-!       FS_R_S_1 ( iV )  =  FS_R_S_1 ( iV )  -  A_1 ( iV )
-!       FS_R_S_2 ( iV )  =  FS_R_S_2 ( iV )  -  A_2 ( iV )
-!       FS_R_S_3 ( iV )  =  FS_R_S_3 ( iV )  -  A_3 ( iV )
-!     end do
-!     !$OMP end parallel do
+    !$OMP parallel do private ( iV )
+    do iV = 1, nV
+      if ( .not. IsProperCell ( iV ) ) &
+        cycle
+      FS_R_G ( iV )    =    FS_R_G ( iV )  -    Q ( iV ) 
+      FS_R_S_1 ( iV )  =  FS_R_S_1 ( iV )  -  A_1 ( iV )
+      FS_R_S_2 ( iV )  =  FS_R_S_2 ( iV )  -  A_2 ( iV )
+      FS_R_S_3 ( iV )  =  FS_R_S_3 ( iV )  -  A_3 ( iV )
+    end do
+    !$OMP end parallel do
 
-!   end subroutine ComputeFluidSource_G_S_Radiation_Kernel
+  end subroutine ComputeFluidSource_G_S_Radiation_Kernel
 
 
   subroutine ApplySources_Fluid_Kernel &
