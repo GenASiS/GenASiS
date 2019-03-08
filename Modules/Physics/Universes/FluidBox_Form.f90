@@ -25,6 +25,10 @@ module FluidBox_Form
       AllocateIntegrator => AllocateIntegrator_FB
     procedure, public, pass :: &
       InitializePositionSpace
+    procedure, public, pass :: &
+      InitializeFluid
+    procedure, public, pass :: &
+      InitializeStep
   end type FluidBoxForm
 
 contains
@@ -74,26 +78,10 @@ contains
              MaxCoordinateOption = MaxCoordinateOption, &
              UniformAccelerationOption = UniformAccelerationOption, &
              nCellsOption = nCellsOption )
-
-!     !-- Fluid
-
-!     allocate ( Fluid_ASC_Form :: FB % Current_ASC )
-!     select type ( FA => FB % Current_ASC )  !-- FluidAtlas
-!     class is ( Fluid_ASC_Form )
-!     call FA % Initialize ( PS, FluidType )
-
-
-!     !-- Step
-
-!     allocate ( Step_RK2_C_ASC_Form :: FB % Step )
-!     select type ( S => FB % Step )
-!     class is ( Step_RK2_C_ASC_Form )
-!     call S % Initialize ( FB, FA, Name )
-!     if ( present ( GravitySolverTypeOption ) ) &   
-!       S % ComputeConstraints % Pointer => ComputeGravity
-!       S % ApplySources % Pointer => ApplyGravity_F
-!     end select !-- S
-
+    call FB % InitializeFluid &
+          ( FluidType )
+    call FB % InitializeStep &
+          ( GravitySolverTypeOption )
 
 !     !-- Template
 
@@ -190,6 +178,61 @@ contains
     end select !-- I
 
   end subroutine InitializePositionSpace
+
+
+  subroutine InitializeFluid ( FB, FluidType, BaryonMassReferenceOption )
+
+    class ( FluidBoxForm ), intent ( inout ) :: &
+      FB
+    character ( * ), intent ( in )  :: &
+      FluidType
+    real ( KDR ), intent ( in ), optional :: &
+      BaryonMassReferenceOption
+
+    select type ( I => FB % Integrator )
+    class is ( Integrator_C_PS_Form )
+
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
+
+    allocate ( Fluid_ASC_Form :: I % Current_ASC )
+    select type ( FA => I % Current_ASC )
+    class is ( Fluid_ASC_Form )
+    call FA % Initialize &
+           ( PS, FluidType, FB % Units, &
+             BaryonMassReferenceOption = BaryonMassReferenceOption )
+    end select !-- FA
+
+    end select !-- PS
+    end select !-- I
+
+  end subroutine InitializeFluid
+
+
+  subroutine InitializeStep ( FB, Name, GravitySolverTypeOption )
+
+    class ( FluidBoxForm ), intent ( inout ) :: &
+      FB
+    character ( * ), intent ( in )  :: &
+      Name
+    character ( * ), intent ( in ), optional :: &
+      GravitySolverTypeOption
+
+    select type ( I => FB % Integrator )
+    class is ( Integrator_C_PS_Form )
+
+    allocate ( Step_RK2_C_ASC_Form :: I % Step )
+    select type ( S => I % Step )
+    class is ( Step_RK2_C_ASC_Form )
+    call S % Initialize ( I, I % Current_ASC, Name )
+    if ( present ( GravitySolverTypeOption ) ) &   
+      S % ComputeConstraints % Pointer => ComputeGravity
+      S % ApplySources % Pointer => ApplyGravity_F
+    end select !-- S
+
+    end select !-- I
+
+  end subroutine InitializeStep
 
 
 end module FluidBox_Form

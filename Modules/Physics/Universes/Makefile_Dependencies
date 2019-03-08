@@ -77,15 +77,15 @@ FluidCentralCore_Form.o: \
 Universes.o: \
   ComputeGravity_Command.o \
   ApplyGravity_F__Command.o \
-  ApplyDeleptonization_F__Command.o \
   Universe_Template.o \
   FluidBox_Form.o \
   RadiationBox_Form.o \
-  FluidSymmetricCurvilinear_Form.o \
-  FluidCentral_Template.o \
-  FluidCentralExcision_Form.o \
-  FluidCentralCore_Form.o \
   Universes.f90
+#  ApplyDeleptonization_F__Command.o \
+#  FluidSymmetricCurvilinear_Form.o \
+#  FluidCentral_Template.o \
+#  FluidCentralExcision_Form.o \
+#  FluidCentralCore_Form.o \
 
 Universes.a: $(UNIVERSES)
 	ar r Universes.a $(UNIVERSES)

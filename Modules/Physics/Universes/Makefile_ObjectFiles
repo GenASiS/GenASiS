@@ -3,10 +3,10 @@ UNIVERSES = \
   RadiationBox_Form.o \
   FluidBox_Form.o \
   Universe_Template.o \
-  FluidCentralCore_Form.o \
+  ApplyGravity_F__Command.o \
+  ComputeGravity_Command.o
+#  FluidCentralCore_Form.o \
   FluidCentralExcision_Form.o \
   FluidCentral_Template.o \
   FluidSymmetricCurvilinear_Form.o \
   ApplyDeleptonization_F__Command.o \
-  ApplyGravity_F__Command.o \
-  ComputeGravity_Command.o

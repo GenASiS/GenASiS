@@ -12,10 +12,10 @@ module RadiationBox_Form
   type, public, extends ( FluidBoxForm ) :: RadiationBoxForm
 !     real ( KDR ) :: &
 !       InteractionFactor
-!     logical ( KDL ) :: &
-!       ApplyStreaming, &
-!       ApplyInteractions, &
-!       EvolveFluid
+    logical ( KDL ) :: &
+      ApplyStreaming, &
+      ApplyInteractions, &
+      EvolveFluid
     character ( LDL ) :: &
       MomentsType = ''
     class ( Interactions_ASC_Template ), allocatable :: &
@@ -39,22 +39,22 @@ module RadiationBox_Form
       AllocateIntegrator => AllocateIntegrator_RB
     procedure, public, pass :: &
       InitializePositionSpace
+    procedure, public, pass :: &
+      InitializeSteps
   end type RadiationBoxForm
 
-!    private :: &
+    private :: &
 !       InitializeMomentumSpace, &
 !       InitializeRadiation, &
-!       InitializeFluid, &
-!       InitializeSteps, &
 !       ComputeTimeStepLocal, &
-!       PrepareStep, &
+      PrepareStep, &
 !       IntegrateSources, &
-!       ApplySources_Fluid
+      ApplySources_Fluid
 
-!     private :: &
+      private :: &
 !         ComputeTimeStepInteractions, &
 !         ComputeFluidSource_G_S_Radiation_Kernel, &
-!         ApplySources_Fluid_Kernel
+        ApplySources_Fluid_Kernel
 
     class ( RadiationBoxForm ), pointer :: &
       RadiationBox => null ( )
@@ -153,15 +153,12 @@ contains
 !              EnergyDensityUnitOption, TemperatureUnitOption, &
 !              NumberUnit, EnergyUnit, MomentumUnit, AngularMomentumUnit, &
 !              TimeUnitOption )
-!     call InitializeFluid &
-!            ( RB, Velocity_U_UnitOption, MomentumDensity_D_UnitOption, &
-!              BaryonMassUnitOption, NumberDensityUnitOption, &
-!              EnergyDensityUnitOption, TemperatureUnitOption, NumberUnit, &
-!              EnergyUnit, MomentumUnit, AngularMomentumUnit, &
-!              TimeUnitOption, BaryonMassReferenceOption )
-!     call InitializeSteps &
-!            ( RB, Name, ApplyStreamingOption, ApplyInteractionsOption, &
-!              EvolveFluidOption )
+    call RB % InitializeFluid &
+           ( FluidType = 'IDEAL', &
+             BaryonMassReferenceOption = BaryonMassReferenceOption )
+    call RB % InitializeSteps &
+           ( Name, ApplyStreamingOption, ApplyInteractionsOption, &
+             EvolveFluidOption )
 
 !     select type ( I => RB % Integrator )
 !     class is ( Integrator_C_1D_C_PS_Template )
@@ -486,191 +483,134 @@ contains
 !   end subroutine InitializeRadiation
 
 
-!   subroutine InitializeFluid &
-!                ( RB, Velocity_U_UnitOption, MomentumDensity_D_UnitOption, &
-!                  BaryonMassUnitOption, NumberDensityUnitOption, &
-!                  EnergyDensityUnitOption, TemperatureUnitOption, &
-!                  NumberUnitOption, EnergyUnitOption, MomentumUnitOption, &
-!                  AngularMomentumUnitOption, TimeUnitOption, &
-!                  BaryonMassReferenceOption )
+  subroutine InitializeSteps &
+               ( RB, Name, ApplyStreamingOption, ApplyInteractionsOption, &
+                 EvolveFluidOption )
 
-!     class ( RadiationBoxForm ), intent ( inout ) :: &
-!       RB
-!     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
-!       Velocity_U_UnitOption, &
-!       MomentumDensity_D_UnitOption
-!     type ( MeasuredValueForm ), intent ( in ), optional :: &
-!       BaryonMassUnitOption, &
-!       NumberDensityUnitOption, &
-!       EnergyDensityUnitOption, &
-!       TemperatureUnitOption, &
-!       NumberUnitOption, &
-!       EnergyUnitOption, &
-!       MomentumUnitOption, &
-!       AngularMomentumUnitOption, &
-!       TimeUnitOption
-!     real ( KDR ), intent ( in ), optional :: &
-!       BaryonMassReferenceOption
+    class ( RadiationBoxForm ), intent ( inout ) :: &
+      RB
+    character ( * ), intent ( in ) :: &
+      Name
+    logical ( KDL ), intent ( in ), optional :: &
+      ApplyStreamingOption, &
+      ApplyInteractionsOption, &
+      EvolveFluidOption
 
-!     select type ( I => RB % Integrator )
-!     class is ( Integrator_C_1D_C_PS_Template )
-
-!     select type ( PS => I % PositionSpace )
-!     class is ( Atlas_SC_Form )
-
-!     allocate ( Fluid_ASC_Form :: I % Current_ASC )
-!     select type ( FA => I % Current_ASC )
-!     class is ( Fluid_ASC_Form )
-!     call FA % Initialize &
-!            ( PS, 'IDEAL', &
-!              Velocity_U_UnitOption = Velocity_U_UnitOption, &
-!              MomentumDensity_D_UnitOption = MomentumDensity_D_UnitOption, &
-!              BaryonMassUnitOption = BaryonMassUnitOption, &
-!              NumberDensityUnitOption = NumberDensityUnitOption, &
-!              EnergyDensityUnitOption = EnergyDensityUnitOption, &
-!              TemperatureUnitOption = TemperatureUnitOption, &
-!              NumberUnitOption = NumberUnitOption, &
-!              EnergyUnitOption = EnergyUnitOption, &
-!              MomentumUnitOption = MomentumUnitOption, &
-!              AngularMomentumUnitOption = AngularMomentumUnitOption, &
-!              TimeUnitOption = TimeUnitOption, &
-!              BaryonMassReferenceOption = BaryonMassReferenceOption )
-!     end select !-- FA
-
-!     end select !-- PS
-!     end select !-- I
-
-!   end subroutine InitializeFluid
+    integer ( KDI ) :: &
+      iC  !-- iCurrent
 
 
-!   subroutine InitializeSteps &
-!                ( RB, Name, ApplyStreamingOption, ApplyInteractionsOption, &
-!                  EvolveFluidOption )
+    !-- Operators
 
-!     class ( RadiationBoxForm ), intent ( inout ) :: &
-!       RB
-!     character ( * ), intent ( in ) :: &
-!       Name
-!     logical ( KDL ), intent ( in ), optional :: &
-!       ApplyStreamingOption, &
-!       ApplyInteractionsOption, &
-!       EvolveFluidOption
-
-!     integer ( KDI ) :: &
-!       iC  !-- iCurrent
+    RB % ApplyStreaming    = .true.
+    RB % ApplyInteractions = .true.
+    RB % EvolveFluid       = .true.
+    if ( present ( ApplyStreamingOption ) ) &
+      RB % ApplyStreaming = ApplyStreamingOption
+    if ( present ( ApplyInteractionsOption ) ) &
+      RB % ApplyInteractions = ApplyInteractionsOption
+    if ( present ( EvolveFluidOption ) ) &
+      RB % EvolveFluid = EvolveFluidOption
 
 
-!     !-- Operators
+    !-- Relaxation
 
-!     RB % ApplyStreaming    = .true.
-!     RB % ApplyInteractions = .true.
-!     RB % EvolveFluid       = .true.
-!     if ( present ( ApplyStreamingOption ) ) &
-!       RB % ApplyStreaming = ApplyStreamingOption
-!     if ( present ( ApplyInteractionsOption ) ) &
-!       RB % ApplyInteractions = ApplyInteractionsOption
-!     if ( present ( EvolveFluidOption ) ) &
-!       RB % EvolveFluid = EvolveFluidOption
+    if ( RB % ApplyInteractions ) then
+      select type ( I => RB % Integrator )
+      class is ( Integrator_C_1D_PS_C_PS_Form )
 
+        allocate ( RB % Relaxation_RM_ASC )
+        associate ( R => RB % Relaxation_RM_ASC )
+        select type ( RMA => I % Current_ASC_1D ( 1 ) % Element )
+        class is ( RadiationMoments_ASC_Form )
+          call R % Initialize ( RMA, Name = RB % Name )
+        end select !-- RMA
+        end associate !-- R
 
-!     !-- Relaxation
+      class is ( Integrator_C_1D_MS_C_PS_Form )
 
-!     if ( RB % ApplyInteractions ) then
-!       select type ( I => RB % Integrator )
-!       class is ( Integrator_C_1D_PS_C_PS_Form )
+        allocate ( RB % Relaxation_RM_BSLL_ASC_CSLD )
+        associate ( R => RB % Relaxation_RM_BSLL_ASC_CSLD )
+        select type ( RMB => I % Current_BSLL_ASC_CSLD_1D ( 1 ) % Element )
+        class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
+          call R % Initialize ( RMB, Name = RB % Name )
+        end select !-- RMB
+        end associate !-- R
 
-!         allocate ( RB % Relaxation_RM_ASC )
-!         associate ( R => RB % Relaxation_RM_ASC )
-!         select type ( RMA => I % Current_ASC_1D ( 1 ) % Element )
-!         class is ( RadiationMoments_ASC_Form )
-!           call R % Initialize ( RMA, Name = RB % Name )
-!         end select !-- RMA
-!         end associate !-- R
-
-!       class is ( Integrator_C_1D_MS_C_PS_Form )
-
-!         allocate ( RB % Relaxation_RM_BSLL_ASC_CSLD )
-!         associate ( R => RB % Relaxation_RM_BSLL_ASC_CSLD )
-!         select type ( RMB => I % Current_BSLL_ASC_CSLD_1D ( 1 ) % Element )
-!         class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
-!           call R % Initialize ( RMB, Name = RB % Name )
-!         end select !-- RMB
-!         end associate !-- R
-
-!       end select !-- I
-!     end if !-- ApplyInteractions
+      end select !-- I
+    end if !-- ApplyInteractions
 
 
-!     !-- Radiation step
+    !-- Radiation step
 
-!     select type ( I => RB % Integrator )
-!     class is ( Integrator_C_1D_PS_C_PS_Form )
+    select type ( I => RB % Integrator )
+    class is ( Integrator_C_1D_PS_C_PS_Form )
 
-!       allocate ( Step_RK2_C_ASC_1D_Form :: I % Step_1D )
-!       select type ( S_1D => I % Step_1D )
-!       class is ( Step_RK2_C_ASC_1D_Form )
-!       call S_1D % Initialize ( I, I % Current_ASC_1D, Name )
+      allocate ( Step_RK2_C_ASC_1D_Form :: I % Step_1D )
+      select type ( S_1D => I % Step_1D )
+      class is ( Step_RK2_C_ASC_1D_Form )
+      call S_1D % Initialize ( I, I % Current_ASC_1D, Name )
 
-!       if ( .not. RB % ApplyStreaming ) then
-!         do iC = 1, I % N_CURRENTS_1D
-!           S_1D % ApplyDivergence_1D ( iC ) % Pointer  =>  null ( )  
-!         end do !-- iC
-!       end if
+      if ( .not. RB % ApplyStreaming ) then
+        do iC = 1, I % N_CURRENTS_1D
+          S_1D % ApplyDivergence_1D ( iC ) % Pointer  =>  null ( )  
+        end do !-- iC
+      end if
 
-!       if ( RB % ApplyInteractions ) then
-!         do iC = 1, I % N_CURRENTS_1D
-!           S_1D % ApplyRelaxation_1D ( iC ) % Pointer  &
-!             =>  RB % Relaxation_RM_ASC % Apply 
-!         end do !-- iC
-!       end if
+      if ( RB % ApplyInteractions ) then
+        do iC = 1, I % N_CURRENTS_1D
+          S_1D % ApplyRelaxation_1D ( iC ) % Pointer  &
+            =>  RB % Relaxation_RM_ASC % Apply 
+        end do !-- iC
+      end if
 
-!       end select !-- S_1D
+      end select !-- S_1D
 
-!     class is ( Integrator_C_1D_MS_C_PS_Form )
+    class is ( Integrator_C_1D_MS_C_PS_Form )
 
-!       allocate ( Step_RK2_C_BSLL_ASC_CSLD_1D_Form :: I % Step_1D )
-!       select type ( S_1D => I % Step_1D )
-!       class is ( Step_RK2_C_BSLL_ASC_CSLD_1D_Form )
-!       call S_1D % Initialize ( I, I % Current_BSLL_ASC_CSLD_1D, Name )
+      allocate ( Step_RK2_C_BSLL_ASC_CSLD_1D_Form :: I % Step_1D )
+      select type ( S_1D => I % Step_1D )
+      class is ( Step_RK2_C_BSLL_ASC_CSLD_1D_Form )
+      call S_1D % Initialize ( I, I % Current_BSLL_ASC_CSLD_1D, Name )
 
-!       if ( .not. RB % ApplyStreaming ) then
-!         do iC = 1, I % N_CURRENTS_1D
-!           S_1D % ApplyDivergence_S ( iC ) % Pointer  =>  null ( )  
-!         end do !-- iC
-!       end if
+      if ( .not. RB % ApplyStreaming ) then
+        do iC = 1, I % N_CURRENTS_1D
+          S_1D % ApplyDivergence_S ( iC ) % Pointer  =>  null ( )  
+        end do !-- iC
+      end if
 
-!       if ( RB % ApplyInteractions ) then
-!         do iC = 1, I % N_CURRENTS_1D
-!           S_1D % ApplyRelaxation_F ( iC ) % Pointer  &
-!             =>  RB % Relaxation_RM_BSLL_ASC_CSLD % Apply 
-!         end do !-- iC
-!       end if
+      if ( RB % ApplyInteractions ) then
+        do iC = 1, I % N_CURRENTS_1D
+          S_1D % ApplyRelaxation_F ( iC ) % Pointer  &
+            =>  RB % Relaxation_RM_BSLL_ASC_CSLD % Apply 
+        end do !-- iC
+      end if
 
-!       end select !-- S_1D
+      end select !-- S_1D
 
-!     end select !-- I
+    end select !-- I
 
 
-!     !-- Fluid
+    !-- Fluid
 
-!     if ( RB % EvolveFluid ) then
-!       select type ( I => RB % Integrator )
-!       class is ( Integrator_C_1D_C_PS_Template )
+    if ( RB % EvolveFluid ) then
+      select type ( I => RB % Integrator )
+      class is ( Integrator_C_1D_C_PS_Template )
 
-!       allocate ( Step_RK2_C_ASC_Form :: I % Step )
-!       select type ( S => I % Step )
-!       class is ( Step_RK2_C_ASC_Form )
-!         call S % Initialize ( I, I % Current_ASC, 'Fluid' )
-!         if ( RB % ApplyInteractions ) &
-!           S % ApplySources % Pointer  =>  ApplySources_Fluid
-!       end select !-- S
+      allocate ( Step_RK2_C_ASC_Form :: I % Step )
+      select type ( S => I % Step )
+      class is ( Step_RK2_C_ASC_Form )
+        call S % Initialize ( I, I % Current_ASC, 'Fluid' )
+        if ( RB % ApplyInteractions ) &
+          S % ApplySources % Pointer  =>  ApplySources_Fluid
+      end select !-- S
 
-!       I % PrepareStep => PrepareStep
+      I % PrepareStep => PrepareStep
 
-!       end select !-- I
-!     end if !-- EvolveFluid
+      end select !-- I
+    end if !-- EvolveFluid
 
-!   end subroutine InitializeSteps
+  end subroutine InitializeSteps
 
 
 !   subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
@@ -715,81 +655,77 @@ contains
 !   end subroutine ComputeTimeStepLocal
 
 
-!   subroutine PrepareStep ( I )
+  subroutine PrepareStep ( I )
 
-!     class ( Integrator_C_1D_C_PS_Template ), intent ( inout ) :: &
-!       I
+    class ( Integrator_C_1D_C_PS_Template ), intent ( inout ) :: &
+      I
 
-!     class ( Fluid_P_I_Form ), pointer :: &
-!       F
-!     class ( RadiationMomentsForm ), pointer :: &
-!       RM
-!     class ( Sources_RM_Form ), pointer :: &
-!       SR
+    class ( Fluid_P_I_Form ), pointer :: &
+      F
+    class ( RadiationMomentsForm ), pointer :: &
+      RM
+    class ( Sources_RM_Form ), pointer :: &
+      SR
 
-!     ! associate &
-!     !   ( R => Radiation, &
-!     !     F => Fluid )
+    select type ( I )
+    class is ( Integrator_C_1D_PS_C_PS_Form )  !-- Grey
 
-!     select type ( I )
-!     class is ( Integrator_C_1D_PS_C_PS_Form )  !-- Grey
+      select type ( RMA => I % Current_ASC_1D ( 1 ) % Element )
+      class is ( RadiationMoments_ASC_Form )
+        RM => RMA % RadiationMoments ( )
+      end select !-- RMA
 
-!       select type ( RMA => I % Current_ASC_1D ( 1 ) % Element )
-!       class is ( RadiationMoments_ASC_Form )
-!         RM => RMA % RadiationMoments ( )
-!       end select !-- RMA
+    class is ( Integrator_C_1D_MS_C_PS_Form )  !-- Spectral
 
-!     class is ( Integrator_C_1D_MS_C_PS_Form )  !-- Spectral
+      call IntegrateSources ( I )
 
-!       call IntegrateSources ( I )
+      select type ( RMB => I % Current_BSLL_ASC_CSLD_1D ( 1 ) % Element )
+      class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
+      select type ( RMA => RMB % EnergyIntegral )
+      class is ( RadiationMoments_ASC_Form )
+        RM => RMA % RadiationMoments ( )
+      end select !-- RMA
+      end select !-- RMB
 
-!       select type ( RMB => I % Current_BSLL_ASC_CSLD_1D ( 1 ) % Element )
-!       class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
-!       select type ( RMA => RMB % EnergyIntegral )
-!       class is ( RadiationMoments_ASC_Form )
-!         RM => RMA % RadiationMoments ( )
-!       end select !-- RMA
-!       end select !-- RMB
+    end select !-- I
 
-!     end select !-- I
+    select type ( FA => I % Current_ASC )
+    class is ( Fluid_ASC_Form )
+      F => FA % Fluid_P_I ( )
+    end select !-- FA
 
-!     select type ( FA => I % Current_ASC )
-!     class is ( Fluid_ASC_Form )
-!       F => FA % Fluid_P_I ( )
-!     end select !-- FA
+    select type ( SR => RM % Sources )
+    class is ( Sources_RM_Form )
 
-!     select type ( SR => RM % Sources )
-!     class is ( Sources_RM_Form )
+    select type ( SF => F % Sources )
+    class is ( Sources_F_Form )
 
-!     select type ( SF => F % Sources )
-!     class is ( Sources_F_Form )
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
 
-!     select type ( PS => I % PositionSpace )
-!     class is ( Atlas_SC_Form )
+    select type ( PSC => PS % Chart )
+    class is ( Chart_SL_Template )
 
-!     select type ( PSC => PS % Chart )
-!     class is ( Chart_SL_Template )
+    call Clear ( SF % Value )
 
-!     call Clear ( SF % Value )
+    call ComputeFluidSource_G_S_Radiation_Kernel &
+           ( SF % Value ( :, SF % RADIATION_G ), & 
+             SF % Value ( :, SF % RADIATION_S_D ( 1 ) ), &
+             SF % Value ( :, SF % RADIATION_S_D ( 2 ) ), &
+             SF % Value ( :, SF % RADIATION_S_D ( 3 ) ), &
+             PSC % IsProperCell, &
+             SR % Value ( :, SR % INTERACTIONS_J ), &
+             SR % Value ( :, SR % INTERACTIONS_H_D ( 1 ) ), &
+             SR % Value ( :, SR % INTERACTIONS_H_D ( 2 ) ), &
+             SR % Value ( :, SR % INTERACTIONS_H_D ( 3 ) ) )
 
-!     call ComputeFluidSource_G_S_Radiation_Kernel &
-!            ( SF % Value ( :, SF % RADIATION_G ), & 
-!              SF % Value ( :, SF % RADIATION_S_D ( 1 ) ), &
-!              SF % Value ( :, SF % RADIATION_S_D ( 2 ) ), &
-!              SF % Value ( :, SF % RADIATION_S_D ( 3 ) ), &
-!              PSC % IsProperCell, &
-!              SR % Value ( :, SR % INTERACTIONS_J ), &
-!              SR % Value ( :, SR % INTERACTIONS_H_D ( 1 ) ), &
-!              SR % Value ( :, SR % INTERACTIONS_H_D ( 2 ) ), &
-!              SR % Value ( :, SR % INTERACTIONS_H_D ( 3 ) ) )
+    end select !-- PSC
+    end select !-- PS
+    end select !-- SF
+    end select !-- SR
+    nullify ( F, RM, SR )
 
-!     end select !-- PSC
-!     end select !-- PS
-!     end select !-- SF
-!     end select !-- SR
-!     nullify ( F, RM, SR )
-
-!   end subroutine PrepareStep
+  end subroutine PrepareStep
 
 
 !   subroutine IntegrateSources ( I )
@@ -871,59 +807,59 @@ contains
 !   end subroutine IntegrateSources
 
 
-!   subroutine ApplySources_Fluid &
-!                ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
+  subroutine ApplySources_Fluid &
+               ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
 
-!     class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
-!       S
-!     class ( Sources_C_Form ), intent ( inout ) :: &
-!       Sources_F
-!     type ( StorageForm ), intent ( inout ), target :: &
-!       Increment
-!     class ( CurrentTemplate ), intent ( in ) :: &
-!       Fluid
-!     real ( KDR ), intent ( in ) :: &
-!       TimeStep
-!     integer ( KDI ), intent ( in ) :: &
-!       iStage
+    class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
+      S
+    class ( Sources_C_Form ), intent ( inout ) :: &
+      Sources_F
+    type ( StorageForm ), intent ( inout ), target :: &
+      Increment
+    class ( CurrentTemplate ), intent ( in ) :: &
+      Fluid
+    real ( KDR ), intent ( in ) :: &
+      TimeStep
+    integer ( KDI ), intent ( in ) :: &
+      iStage
 
-!     integer ( KDI ) :: &
-!       iEnergy, &
-!       iMomentum_1, &
-!       iMomentum_2, &
-!       iMomentum_3
+    integer ( KDI ) :: &
+      iEnergy, &
+      iMomentum_1, &
+      iMomentum_2, &
+      iMomentum_3
 
-!     select type ( SF => Sources_F )
-!     class is ( Sources_F_Form )
+    select type ( SF => Sources_F )
+    class is ( Sources_F_Form )
 
-!     select type ( F => Fluid )
-!     class is ( Fluid_P_I_Form )
+    select type ( F => Fluid )
+    class is ( Fluid_P_I_Form )
 
-!     select type ( Chart => S % Chart )
-!     class is ( Chart_SL_Template )
+    select type ( Chart => S % Chart )
+    class is ( Chart_SL_Template )
 
-!     call Search ( F % iaConserved, F % CONSERVED_ENERGY, iEnergy )
-!     call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 1 ), iMomentum_1 )
-!     call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 2 ), iMomentum_2 )
-!     call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 3 ), iMomentum_3 )
+    call Search ( F % iaConserved, F % CONSERVED_ENERGY, iEnergy )
+    call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 1 ), iMomentum_1 )
+    call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 2 ), iMomentum_2 )
+    call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 3 ), iMomentum_3 )
 
-!     call ApplySources_Fluid_Kernel &
-!            ( Increment % Value ( :, iEnergy ), &
-!              Increment % Value ( :, iMomentum_1 ), &
-!              Increment % Value ( :, iMomentum_2 ), &
-!              Increment % Value ( :, iMomentum_3 ), &
-!              Chart % IsProperCell, &
-!              SF % Value ( :, SF % RADIATION_G ), &
-!              SF % Value ( :, SF % RADIATION_S_D ( 1 ) ), &
-!              SF % Value ( :, SF % RADIATION_S_D ( 2 ) ), &
-!              SF % Value ( :, SF % RADIATION_S_D ( 3 ) ), &
-!              TimeStep )
+    call ApplySources_Fluid_Kernel &
+           ( Increment % Value ( :, iEnergy ), &
+             Increment % Value ( :, iMomentum_1 ), &
+             Increment % Value ( :, iMomentum_2 ), &
+             Increment % Value ( :, iMomentum_3 ), &
+             Chart % IsProperCell, &
+             SF % Value ( :, SF % RADIATION_G ), &
+             SF % Value ( :, SF % RADIATION_S_D ( 1 ) ), &
+             SF % Value ( :, SF % RADIATION_S_D ( 2 ) ), &
+             SF % Value ( :, SF % RADIATION_S_D ( 3 ) ), &
+             TimeStep )
 
-!     end select !-- Chart
-!     end select !-- F
-!     end select !-- SF
+    end select !-- Chart
+    end select !-- F
+    end select !-- SF
 
-!   end subroutine ApplySources_Fluid
+  end subroutine ApplySources_Fluid
 
 
 !   subroutine ComputeTimeStepInteractions ( I, TimeStepCandidate )
@@ -1002,39 +938,39 @@ contains
 !   end subroutine ComputeFluidSource_G_S_Radiation_Kernel
 
 
-!   subroutine ApplySources_Fluid_Kernel &
-!                ( K_G, K_S_1, K_S_2, K_S_3, IsProperCell, &
-!                  FS_R_G, FS_R_S_1, FS_R_S_2, FS_R_S_3, dt )
+  subroutine ApplySources_Fluid_Kernel &
+               ( K_G, K_S_1, K_S_2, K_S_3, IsProperCell, &
+                 FS_R_G, FS_R_S_1, FS_R_S_2, FS_R_S_3, dt )
 
-!     real ( KDR ), dimension ( : ), intent ( inout ) :: &
-!       K_G, &
-!       K_S_1, K_S_2, K_S_3
-!     logical ( KDL ), dimension ( : ), intent ( in ) :: &
-!       IsProperCell
-!     real ( KDR ), dimension ( : ), intent ( in ) :: &
-!       FS_R_G, &
-!       FS_R_S_1, FS_R_S_2, FS_R_S_3
-!     real ( KDR ), intent ( in ) :: &
-!       dt
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      K_G, &
+      K_S_1, K_S_2, K_S_3
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      IsProperCell
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      FS_R_G, &
+      FS_R_S_1, FS_R_S_2, FS_R_S_3
+    real ( KDR ), intent ( in ) :: &
+      dt
 
-!     integer ( KDI ) :: &
-!       iV, &
-!       nV
+    integer ( KDI ) :: &
+      iV, &
+      nV
 
-!     nV = size ( K_G )
+    nV = size ( K_G )
 
-!     !$OMP parallel do private ( iV )
-!     do iV = 1, nV
-!       if ( .not. IsProperCell ( iV ) ) &
-!         cycle
-!       K_G ( iV )    =  K_G ( iV )    +  FS_R_G ( iV )    *  dt
-!       K_S_1 ( iV )  =  K_S_1 ( iV )  +  FS_R_S_1 ( iV )  *  dt
-!       K_S_2 ( iV )  =  K_S_2 ( iV )  +  FS_R_S_2 ( iV )  *  dt
-!       K_S_3 ( iV )  =  K_S_3 ( iV )  +  FS_R_S_3 ( iV )  *  dt
-!     end do
-!     !$OMP end parallel do
+    !$OMP parallel do private ( iV )
+    do iV = 1, nV
+      if ( .not. IsProperCell ( iV ) ) &
+        cycle
+      K_G ( iV )    =  K_G ( iV )    +  FS_R_G ( iV )    *  dt
+      K_S_1 ( iV )  =  K_S_1 ( iV )  +  FS_R_S_1 ( iV )  *  dt
+      K_S_2 ( iV )  =  K_S_2 ( iV )  +  FS_R_S_2 ( iV )  *  dt
+      K_S_3 ( iV )  =  K_S_3 ( iV )  +  FS_R_S_3 ( iV )  *  dt
+    end do
+    !$OMP end parallel do
 
-!   end subroutine ApplySources_Fluid_Kernel
+  end subroutine ApplySources_Fluid_Kernel
 
 
 end module RadiationBox_Form
