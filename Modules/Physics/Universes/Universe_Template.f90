@@ -15,7 +15,7 @@ module Universe_Template
     character ( LDF ) :: &
       Type = '', &
       Name = ''
-    type ( Character_1D_Form ), dimension ( 3 ) :: &
+    type ( Character_1D_Form ), dimension ( : ), allocatable :: &
       BoundaryConditionsFace
     class ( IntegratorTemplate ), allocatable :: &
       Integrator

@@ -12,11 +12,19 @@ module FluidBox_Form
   private
 
   type, public, extends ( UniverseTemplate ) :: FluidBoxForm
-!   contains
-!     procedure, public, pass :: &
-!       Initialize
-!     final :: &
-!       Finalize
+  contains
+    procedure, public, pass :: &
+      Initialize_FB
+    generic, public :: &
+      Initialize => Initialize_FB
+    final :: &
+      Finalize
+    procedure, private, pass :: &
+      AllocateIntegrator_FB
+    generic, public :: &
+      AllocateIntegrator => AllocateIntegrator_FB
+    procedure, public, pass :: &
+      InitializePositionSpace
   end type FluidBoxForm
 
 contains
@@ -52,40 +60,20 @@ contains
 !       iD  !-- iDimension
 
 
-!     if ( FB % Type == '' ) &
-!       FB % Type = 'a FluidBox'
+    if ( FB % Type == '' ) &
+      FB % Type = 'a FluidBox'
 
+    call FB % InitializeTemplate ( Name )
 
-!     !-- PositionSpace
-
-!     allocate ( Atlas_SC_Form :: FB % PositionSpace )
-!     select type ( PS => FB % PositionSpace )
-!     class is ( Atlas_SC_Form )
-!     call PS % Initialize ( 'PositionSpace', PROGRAM_HEADER % Communicator )
-
-!     if ( present ( BoundaryConditionsFaceOption ) ) then
-!       do iD = 1, PS % nDimensions
-!         call PS % SetBoundaryConditionsFace &
-!                ( BoundaryConditionsFaceOption ( iD ) % Value, &
-!                  iDimension = iD )
-!       end do !-- iD
-!     end if
-
-!     call PS % CreateChart &
-!            ( MinCoordinateOption = MinCoordinateOption, &
-!              MaxCoordinateOption = MaxCoordinateOption, &
-!              nCellsOption = nCellsOption )
-
-!     allocate ( Geometry_ASC_Form :: PS % Geometry_ASC )
-!     select type ( GA => PS % Geometry_ASC )
-!     class is ( Geometry_ASC_Form )
-!     call GA % Initialize &
-!            ( PS, GeometryType, &
-!              GravitySolverTypeOption = GravitySolverTypeOption, &
-!              UniformAccelerationOption = UniformAccelerationOption )
-!     call PS % SetGeometry ( GA )
-!     end select !-- GA
-
+    call FB % AllocateIntegrator &
+           ( )
+    call FB % InitializePositionSpace &
+           ( GeometryType, &
+             GravitySolverTypeOption = GravitySolverTypeOption, &
+             MinCoordinateOption = MinCoordinateOption, &
+             MaxCoordinateOption = MaxCoordinateOption, &
+             UniformAccelerationOption = UniformAccelerationOption, &
+             nCellsOption = nCellsOption )
 
 !     !-- Fluid
 
@@ -124,14 +112,84 @@ contains
   end subroutine Initialize_FB
 
 
-!   impure elemental subroutine Finalize ( FB )
+  impure elemental subroutine Finalize ( FB )
 
-!     type ( FluidBoxForm ), intent ( inout ) :: &
-!       FB
+    type ( FluidBoxForm ), intent ( inout ) :: &
+      FB
 
-!     call FB % FinalizeTemplate_C_PS ( )
+    call FB % FinalizeTemplate ( )
 
-!   end subroutine Finalize
+  end subroutine Finalize
+
+
+  subroutine AllocateIntegrator_FB ( FB )
+
+    class ( FluidBoxForm ), intent ( inout ) :: &
+      FB
+
+    allocate ( Integrator_C_PS_Form :: FB % Integrator )
+
+  end subroutine AllocateIntegrator_FB
+
+
+  subroutine InitializePositionSpace &
+               ( FB, GeometryType, GravitySolverTypeOption, &
+                 MinCoordinateOption, MaxCoordinateOption, &
+                 UniformAccelerationOption, nCellsOption )
+
+    class ( FluidBoxForm ), intent ( inout ) :: &
+      FB
+    character ( * ), intent ( in )  :: &
+      GeometryType
+    character ( * ), intent ( in ), optional :: &
+      GravitySolverTypeOption
+    real ( KDR ), dimension ( : ), intent ( in ), optional :: &
+      MinCoordinateOption, &
+      MaxCoordinateOption
+    real ( KDR ), intent ( in ), optional :: &
+      UniformAccelerationOption
+    integer ( KDI ), dimension ( 3 ), intent ( in ), optional :: &
+      nCellsOption
+
+    integer ( KDI ) :: &
+      iD  !-- iDimension
+
+    select type ( I => FB % Integrator )
+    class is ( Integrator_C_PS_Form )
+
+    allocate ( Atlas_SC_Form :: I % PositionSpace )
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
+    call PS % Initialize ( 'PositionSpace', PROGRAM_HEADER % Communicator )
+
+    if ( allocated ( FB % BoundaryConditionsFace ) ) then
+      do iD = 1, PS % nDimensions
+        call PS % SetBoundaryConditionsFace &
+               ( FB % BoundaryConditionsFace ( iD ) % Value, &
+                 iDimension = iD )
+      end do !-- iD
+    end if !-- BoundaryConditions
+
+    call PS % CreateChart &
+           ( CoordinateUnitOption = FB % Units % Coordinate_PS, &
+             MinCoordinateOption = MinCoordinateOption, &
+             MaxCoordinateOption = MaxCoordinateOption, &
+             nCellsOption = nCellsOption )
+
+    allocate ( Geometry_ASC_Form :: PS % Geometry_ASC )
+    select type ( GA => PS % Geometry_ASC )
+    class is ( Geometry_ASC_Form )
+    call GA % Initialize &
+           ( PS, GeometryType, &
+             GravitySolverTypeOption = GravitySolverTypeOption, &
+             UniformAccelerationOption = UniformAccelerationOption )
+    call PS % SetGeometry ( GA )
+
+    end select !-- GA
+    end select !-- PS
+    end select !-- I
+
+  end subroutine InitializePositionSpace
 
 
 end module FluidBox_Form

@@ -4,40 +4,44 @@ module RadiationBox_Form
   use Mathematics
   use Spaces
   use StressEnergies
-  use Universe_Template
+  use FluidBox_Form
 
   implicit none
   private
 
-  type, public, extends ( UniverseTemplate ) :: RadiationBoxForm
+  type, public, extends ( FluidBoxForm ) :: RadiationBoxForm
 !     real ( KDR ) :: &
 !       InteractionFactor
 !     logical ( KDL ) :: &
 !       ApplyStreaming, &
 !       ApplyInteractions, &
 !       EvolveFluid
-!     character ( LDL ) :: &
-!       MomentsType = ''
-!     class ( Interactions_ASC_Template ), allocatable :: &
-!       Interactions_ASC
-!     class ( Interactions_BSLL_ASC_CSLD_Template ), allocatable :: &
-!       Interactions_BSLL_ASC_CSLD
-!     class ( Relaxation_RM_ASC_Form ), allocatable :: &
-!       Relaxation_RM_ASC
-!     class ( Relaxation_RM_BSLL_ASC_CSLD_Form ), allocatable :: &
-!       Relaxation_RM_BSLL_ASC_CSLD
+    character ( LDL ) :: &
+      MomentsType = ''
+    class ( Interactions_ASC_Template ), allocatable :: &
+      Interactions_ASC
+    class ( Interactions_BSLL_ASC_CSLD_Template ), allocatable :: &
+      Interactions_BSLL_ASC_CSLD
+    class ( Relaxation_RM_ASC_Form ), allocatable :: &
+      Relaxation_RM_ASC
+    class ( Relaxation_RM_BSLL_ASC_CSLD_Form ), allocatable :: &
+      Relaxation_RM_BSLL_ASC_CSLD
   contains
     procedure, public, pass :: &
       Initialize_RB
     generic, public :: &
       Initialize => Initialize_RB
-!     final :: &
-!       Finalize
+    final :: &
+      Finalize
+    procedure, private, pass :: &
+      AllocateIntegrator_RB
+    generic, public :: &
+      AllocateIntegrator => AllocateIntegrator_RB
+    procedure, public, pass :: &
+      InitializePositionSpace
   end type RadiationBoxForm
 
-!     private :: &
-!       AllocateIntegrator, &
-!       InitializePositionSpace, &
+!    private :: &
 !       InitializeMomentumSpace, &
 !       InitializeRadiation, &
 !       InitializeFluid, &
@@ -52,8 +56,8 @@ module RadiationBox_Form
 !         ComputeFluidSource_G_S_Radiation_Kernel, &
 !         ApplySources_Fluid_Kernel
 
-!     class ( RadiationBoxForm ), pointer :: &
-!       RadiationBox => null ( )
+    class ( RadiationBoxForm ), pointer :: &
+      RadiationBox => null ( )
 
 contains
 
@@ -103,20 +107,22 @@ contains
 !       MomentumUnit, &
 !       AngularMomentumUnit
 
-!     if ( RB % Type == '' ) &
-!       RB % Type = 'a RadiationBox'
+    if ( RB % Type == '' ) &
+      RB % Type = 'a RadiationBox'
     
-!     call RB % InitializeTemplate ( Name )
+    call RB % InitializeTemplate ( Name )
 
-!     RadiationBox => RB
+    RadiationBox => RB
 
-!     RB % MomentsType  =  MomentsType
+    RB % MomentsType  =  MomentsType
 
-!     call AllocateIntegrator &
-!            ( RB, RadiationName )
-!     call InitializePositionSpace &
-!            ( RB, BoundaryConditionsFaceOption, CoordinateUnit_PS_Option, &
-!              MinCoordinateOption, MaxCoordinateOption, nCellsPositionOption )
+    call RB % AllocateIntegrator &
+           ( RadiationName )
+    call RB % InitializePositionSpace &
+           ( GeometryType = 'GALILEAN', &
+             MinCoordinateOption = MinCoordinateOption, &
+             MaxCoordinateOption = MaxCoordinateOption, &
+             nCellsOption = nCellsPositionOption )
 !     call InitializeMomentumSpace &
 !            ( RB, CoordinateUnit_MS_Option, EnergyScaleOption, &
 !              nCellsEnergyOption )
@@ -176,141 +182,117 @@ contains
   end subroutine Initialize_RB
 
 
-!   subroutine Finalize ( RB )
+  subroutine Finalize ( RB )
 
-!     type ( RadiationBoxForm ), intent ( inout ) :: &
-!       RB
+    type ( RadiationBoxForm ), intent ( inout ) :: &
+      RB
 
-!     if ( allocated ( RB % Relaxation_RM_BSLL_ASC_CSLD ) ) &
-!       deallocate ( RB % Relaxation_RM_BSLL_ASC_CSLD )
-!     if ( allocated ( RB % Relaxation_RM_ASC ) ) &
-!       deallocate ( RB % Relaxation_RM_ASC )
+    if ( allocated ( RB % Relaxation_RM_BSLL_ASC_CSLD ) ) &
+      deallocate ( RB % Relaxation_RM_BSLL_ASC_CSLD )
+    if ( allocated ( RB % Relaxation_RM_ASC ) ) &
+      deallocate ( RB % Relaxation_RM_ASC )
 
-!     if ( allocated ( RB % Interactions_BSLL_ASC_CSLD ) ) &
-!       deallocate ( RB % Interactions_BSLL_ASC_CSLD )
-!     if ( allocated ( RB % Interactions_ASC ) ) &
-!       deallocate ( RB % Interactions_ASC )
+    if ( allocated ( RB % Interactions_BSLL_ASC_CSLD ) ) &
+      deallocate ( RB % Interactions_BSLL_ASC_CSLD )
+    if ( allocated ( RB % Interactions_ASC ) ) &
+      deallocate ( RB % Interactions_ASC )
 
-!     call RB % FinalizeTemplate ( )
+    call RB % FinalizeTemplate ( )
 
-!   end subroutine Finalize
-
-
-!   subroutine AllocateIntegrator ( RB, RadiationName )
-
-!     class ( RadiationBoxForm ), intent ( inout ) :: &
-!       RB
-!     character ( * ), dimension ( : ), intent ( in )  :: &
-!       RadiationName
-
-!     integer ( KDI ) :: &
-!       iC  !-- iCurrent
-
-!     select case ( trim ( RB % MomentsType ) )
-!     case ( 'GREY' )
-!       allocate ( Integrator_C_1D_PS_C_PS_Form :: RB % Integrator )
-!     case ( 'SPECTRAL' )
-!       allocate ( Integrator_C_1D_MS_C_PS_Form :: RB % Integrator )
-!     case default
-!       call Show ( 'MomentsType not recognized', CONSOLE % ERROR )
-!       call Show ( RB % MomentsType, 'MomentsType', CONSOLE % ERROR )
-!       call Show ( 'RadiationBox_Form', 'module', CONSOLE % ERROR )
-!       call Show ( 'AllocateIntegrator', 'subroutine', CONSOLE % ERROR )
-!       call PROGRAM_HEADER % Abort ( )
-!     end select !-- MomentsType
-
-!     select type ( I => RB % Integrator )
-!     class is ( Integrator_C_1D_C_PS_Template )
-
-!       I % N_CURRENTS_1D  =  size ( RadiationName )
-!       allocate ( I % TimeStepLabel &
-!                    ( I % N_CURRENTS_1D  +  1  +  I % N_CURRENTS_1D ) )
-
-!       do iC = 1, I % N_CURRENTS_1D
-!         I % TimeStepLabel ( iC )  &
-!           =  trim ( RadiationName ( iC ) ) // ' Streaming'
-!       end do !-- iC
-
-!       I % TimeStepLabel ( I % N_CURRENTS_1D  +  1 )  &
-!           =  'Fluid Advection'
-
-!       do iC = 1, I % N_CURRENTS_1D
-!         I % TimeStepLabel ( I % N_CURRENTS_1D  +  1  +  iC )  &
-!           =  trim ( RadiationName ( iC ) ) // ' Interactions'
-!       end do !-- iC
-
-!     end select !-- I
-
-!     select type ( I => RB % Integrator )
-!     class is ( Integrator_C_1D_PS_C_PS_Form )
-!       allocate ( I % Current_ASC_1D ( I % N_CURRENTS_1D ) )
-!     class is ( Integrator_C_1D_MS_C_PS_Form )
-!       allocate ( I % Current_BSLL_ASC_CSLD_1D ( I % N_CURRENTS_1D ) )
-!     end select !-- I
-
-!   end subroutine AllocateIntegrator
+  end subroutine Finalize
 
 
-!   subroutine InitializePositionSpace &
-!                ( RB, BoundaryConditionsFaceOption, CoordinateUnit_PS_Option, &
-!                  MinCoordinateOption, MaxCoordinateOption, &
-!                  nCellsPositionOption )
+  subroutine AllocateIntegrator_RB ( RB, RadiationName )
 
-!     class ( RadiationBoxForm ), intent ( inout ) :: &
-!       RB
-!     type ( Character_1D_Form ), dimension ( : ), intent ( in ), optional :: &
-!       BoundaryConditionsFaceOption
-!     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
-!       CoordinateUnit_PS_Option
-!     real ( KDR ), dimension ( : ), intent ( in ), optional :: &
-!       MinCoordinateOption, &
-!       MaxCoordinateOption
-!     integer ( KDI ), dimension ( 3 ), intent ( in ), optional :: &
-!       nCellsPositionOption
+    class ( RadiationBoxForm ), intent ( inout ) :: &
+      RB
+    character ( * ), dimension ( : ), intent ( in )  :: &
+      RadiationName
 
-!     integer ( KDI ) :: &
-!       iD  !-- iDimension
-!     integer ( KDI ), dimension ( 3 ) :: &
-!       nCellsPosition
+    integer ( KDI ) :: &
+      iC  !-- iCurrent
 
-!     select type ( I => RB % Integrator )
-!     class is ( Integrator_C_1D_C_PS_Template )
+    select case ( trim ( RB % MomentsType ) )
+    case ( 'GREY' )
+      allocate ( Integrator_C_1D_PS_C_PS_Form :: RB % Integrator )
+    case ( 'SPECTRAL' )
+      allocate ( Integrator_C_1D_MS_C_PS_Form :: RB % Integrator )
+    case default
+      call Show ( 'MomentsType not recognized', CONSOLE % ERROR )
+      call Show ( RB % MomentsType, 'MomentsType', CONSOLE % ERROR )
+      call Show ( 'RadiationBox_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'AllocateIntegrator', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- MomentsType
 
-!     allocate ( Atlas_SC_Form :: I % PositionSpace )
-!     select type ( PS => I % PositionSpace )
-!     class is ( Atlas_SC_Form )
-!     call PS % Initialize ( 'PositionSpace', PROGRAM_HEADER % Communicator )
+    select type ( I => RB % Integrator )
+    class is ( Integrator_C_1D_C_PS_Template )
 
-!     if ( present ( BoundaryConditionsFaceOption ) ) then
-!       do iD = 1, PS % nDimensions
-!         call PS % SetBoundaryConditionsFace &
-!                ( BoundaryConditionsFaceOption ( iD ) % Value, &
-!                  iDimension = iD )
-!       end do !-- iD
-!     end if
+      I % N_CURRENTS_1D  =  size ( RadiationName )
+      allocate ( I % TimeStepLabel &
+                   ( I % N_CURRENTS_1D  +  1  +  I % N_CURRENTS_1D ) )
 
-!     nCellsPosition = [ 32, 32, 32 ]
-!     if ( present ( nCellsPositionOption ) ) &
-!       nCellsPosition = nCellsPositionOption
-!     call PROGRAM_HEADER % GetParameter ( nCellsPosition, 'nCellsPosition' )
+      do iC = 1, I % N_CURRENTS_1D
+        I % TimeStepLabel ( iC )  &
+          =  trim ( RadiationName ( iC ) ) // ' Streaming'
+      end do !-- iC
 
-!     call PS % CreateChart &
-!            ( CoordinateUnitOption = CoordinateUnit_PS_Option, &
-!              MinCoordinateOption = MinCoordinateOption, &
-!              MaxCoordinateOption = MaxCoordinateOption, &
-!              nCellsOption = nCellsPosition )
+      I % TimeStepLabel ( I % N_CURRENTS_1D  +  1 )  &
+          =  'Fluid Advection'
 
-!     allocate ( Geometry_ASC_Form :: PS % Geometry_ASC )
-!     select type ( GA => PS % Geometry_ASC )
-!     class is ( Geometry_ASC_Form )
-!     call GA % Initialize ( PS, GeometryType = 'GALILEAN' )
-!     call PS % SetGeometry ( GA )
+      do iC = 1, I % N_CURRENTS_1D
+        I % TimeStepLabel ( I % N_CURRENTS_1D  +  1  +  iC )  &
+          =  trim ( RadiationName ( iC ) ) // ' Interactions'
+      end do !-- iC
 
-!     end select !-- GA
-!     end select !-- PS
-!     end select !-- I
+    end select !-- I
 
-!   end subroutine InitializePositionSpace
+    select type ( I => RB % Integrator )
+    class is ( Integrator_C_1D_PS_C_PS_Form )
+      allocate ( I % Current_ASC_1D ( I % N_CURRENTS_1D ) )
+    class is ( Integrator_C_1D_MS_C_PS_Form )
+      allocate ( I % Current_BSLL_ASC_CSLD_1D ( I % N_CURRENTS_1D ) )
+    end select !-- I
+
+  end subroutine AllocateIntegrator_RB
+
+
+  subroutine InitializePositionSpace &
+               ( FB, GeometryType, GravitySolverTypeOption, &
+                 MinCoordinateOption, MaxCoordinateOption, &
+                 UniformAccelerationOption, nCellsOption )
+
+    class ( RadiationBoxForm ), intent ( inout ) :: &
+      FB
+    character ( * ), intent ( in )  :: &
+      GeometryType
+    character ( * ), intent ( in ), optional :: &
+      GravitySolverTypeOption
+    real ( KDR ), dimension ( : ), intent ( in ), optional :: &
+      MinCoordinateOption, &
+      MaxCoordinateOption
+    real ( KDR ), intent ( in ), optional :: &
+      UniformAccelerationOption
+    integer ( KDI ), dimension ( 3 ), intent ( in ), optional :: &
+      nCellsOption
+
+    integer ( KDI ), dimension ( 3 ) :: &
+      nCellsPosition
+
+    nCellsPosition = [ 32, 32, 32 ]
+    if ( present ( nCellsOption ) ) &
+      nCellsPosition = nCellsOption
+    call PROGRAM_HEADER % GetParameter ( nCellsPosition, 'nCellsPosition' )
+
+    call FB % FluidBoxForm % InitializePositionSpace &
+           ( GeometryType, &
+             GravitySolverTypeOption = GravitySolverTypeOption, &
+             MinCoordinateOption = MinCoordinateOption, &
+             MaxCoordinateOption = MaxCoordinateOption, &
+             UniformAccelerationOption = UniformAccelerationOption, &
+             nCellsOption = nCellsPosition )
+
+  end subroutine InitializePositionSpace
 
 
 !   subroutine InitializeMomentumSpace &

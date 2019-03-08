@@ -40,7 +40,7 @@ RadiationBox_Form.o: \
   Mathematics.o \
   Spaces.o \
   StressEnergies.o \
-  Universe_Template.o \
+  FluidBox_Form.o \
   RadiationBox_Form.f90
 
 FluidSymmetricCurvilinear_Form.o: \

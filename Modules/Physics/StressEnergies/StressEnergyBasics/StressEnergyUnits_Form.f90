@@ -9,7 +9,8 @@ module StressEnergyUnits_Form
     !-- Phase space 
     type ( MeasuredValueForm ) :: &
       Time, &
-      Length, &
+      Length
+    type ( MeasuredValueForm ), dimension ( 3 ) :: &
       Coordinate_PS, &
       Coordinate_MS
     !-- Local
