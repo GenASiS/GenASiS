@@ -55,7 +55,7 @@ module RadiationBox_Form
 
       private :: &
 !         ComputeTimeStepInteractions, &
-!         ComputeFluidSource_G_S_Radiation_Kernel, &
+        ComputeFluidSource_G_S_Radiation_Kernel, &
         ApplySources_Fluid_Kernel
 
     class ( RadiationBoxForm ), pointer :: &
@@ -98,17 +98,6 @@ contains
       nCellsEnergyOption, &
       nWriteOption
 
-!     type ( MeasuredValueForm ) :: &
-!       CoordinateUnit_PS, &
-!       VelocityUnit, &
-!       BaryonMassUnit, &
-!       NumberDensityUnit, &
-!       EnergyDensityUnit, &
-!       NumberUnit, &
-!       EnergyUnit, &
-!       MomentumUnit, &
-!       AngularMomentumUnit
-
     if ( RB % Type == '' ) &
       RB % Type = 'a RadiationBox'
     
@@ -128,33 +117,8 @@ contains
     call RB % InitializeMomentumSpace &
            ( EnergyScaleOption = EnergyScaleOption, &
              nCellsEnergyOption = nCellsEnergyOption )
-
-!     if ( present ( CoordinateUnit_PS_Option ) ) &
-!       CoordinateUnit_PS = CoordinateUnit_PS_Option ( 1 )
-!     if ( present ( Velocity_U_UnitOption ) ) &
-!       VelocityUnit = Velocity_U_UnitOption ( 1 )
-!     if ( present ( BaryonMassUnitOption ) ) &
-!       BaryonMassUnit = BaryonMassUnitOption
-!     if ( present ( NumberDensityUnitOption ) ) &
-!       NumberDensityUnit = NumberDensityUnitOption
-!     if ( present ( EnergyDensityUnitOption ) ) &
-!       EnergyDensityUnit = EnergyDensityUnitOption
-
-!     associate ( nD => RB % Integrator % PositionSpace % nDimensions )
-!     NumberUnit    =  NumberDensityUnit  *  CoordinateUnit_PS ** nD
-!     EnergyUnit    =  EnergyDensityUnit  *  CoordinateUnit_PS ** nD
-!     MomentumUnit  =  BaryonMassUnit  *  CoordinateUnit_PS ** (-3) &
-!                      *  VelocityUnit  *  CoordinateUnit_PS ** nD
-!     end associate !-- nD
-!     AngularMomentumUnit  =  MomentumUnit  *  CoordinateUnit_PS
-
-!     call InitializeRadiation &
-!            ( RB, RadiationName, RadiationType, Velocity_U_UnitOption, &
-!              MomentumDensity_U_UnitOption, MomentumDensity_D_UnitOption, &
-!              BaryonMassUnitOption, NumberDensityUnitOption, &
-!              EnergyDensityUnitOption, TemperatureUnitOption, &
-!              NumberUnit, EnergyUnit, MomentumUnit, AngularMomentumUnit, &
-!              TimeUnitOption )
+    call RB % InitializeRadiation &
+           ( RadiationName, RadiationType )
     call RB % InitializeFluid &
            ( FluidType = 'IDEAL', &
              BaryonMassReferenceOption = BaryonMassReferenceOption )
@@ -347,136 +311,94 @@ contains
   end subroutine InitializeMomentumSpace
 
 
-!   subroutine InitializeRadiation &
-!                ( RB, RadiationName, RadiationType, Velocity_U_UnitOption, &
-!                  MomentumDensity_U_UnitOption, MomentumDensity_D_UnitOption, &
-!                  BaryonMassUnitOption, NumberDensityUnitOption, &
-!                  EnergyDensityUnitOption, TemperatureUnitOption, &
-!                  NumberUnitOption, EnergyUnitOption, MomentumUnitOption, &
-!                  AngularMomentumUnitOption, TimeUnitOption )
+  subroutine InitializeRadiation ( RB, RadiationName, RadiationType )
 
-!     class ( RadiationBoxForm ), intent ( inout ) :: &
-!       RB
-!     character ( * ), dimension ( : ), intent ( in )  :: &
-!       RadiationName, &
-!       RadiationType
-!     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
-!       Velocity_U_UnitOption, &
-!       MomentumDensity_U_UnitOption, &
-!       MomentumDensity_D_UnitOption
-!     type ( MeasuredValueForm ), intent ( in ), optional :: &
-!       BaryonMassUnitOption, &
-!       NumberDensityUnitOption, &
-!       EnergyDensityUnitOption, &
-!       TemperatureUnitOption, &
-!       NumberUnitOption, &
-!       EnergyUnitOption, &
-!       MomentumUnitOption, &
-!       AngularMomentumUnitOption, &
-!       TimeUnitOption
+    class ( RadiationBoxForm ), intent ( inout ) :: &
+      RB
+    character ( * ), dimension ( : ), intent ( in )  :: &
+      RadiationName, &
+      RadiationType
 
-!     integer ( KDI ) :: &
-!       iC  !-- iCurrent
-!     character ( LDL ) :: &
-!       RadiationTypeLocal
+    integer ( KDI ) :: &
+      iC  !-- iCurrent
+    character ( LDL ) :: &
+      RadiationTypeLocal
 
-!     select type ( I_1D => RB % Integrator )
-!     class is ( Integrator_C_1D_C_PS_Template )
+    select type ( I_1D => RB % Integrator )
+    class is ( Integrator_C_1D_C_PS_Template )
 
-!     do iC = 1, I_1D % N_CURRENTS_1D
+    do iC = 1, I_1D % N_CURRENTS_1D
 
-!       select type ( I => I_1D )
-!       class is ( Integrator_C_1D_PS_C_PS_Form )
+      select type ( I => I_1D )
+      class is ( Integrator_C_1D_PS_C_PS_Form )
 
-!         select type ( PS => I % PositionSpace )
-!         class is ( Atlas_SC_Form )
+        select type ( PS => I % PositionSpace )
+        class is ( Atlas_SC_Form )
 
-!         select case ( trim ( RadiationType ( iC ) ) )
-!         case ( 'GENERIC' )
-!           allocate &
-!             ( RadiationMoments_ASC_Form :: I % Current_ASC_1D ( iC ) % Element )
-!           RadiationTypeLocal = 'GENERIC'
-!         case ( 'PHOTONS' )
-!           allocate &
-!             ( PhotonMoments_ASC_Form :: I % Current_ASC_1D ( iC ) % Element )
-!           RadiationTypeLocal = 'PHOTONS_GREY'
-!         case default
-!           call Show ( 'RadiationType not recognized', CONSOLE % ERROR )
-!           call Show ( RadiationType ( iC ), 'RadiationType', CONSOLE % ERROR )
-!           call Show ( 'RadiationBox_Form', 'module', CONSOLE % ERROR )
-!           call Show ( 'InitializeRadiation', 'subroutine', CONSOLE % ERROR )
-!           call PROGRAM_HEADER % Abort ( )
-!         end select !-- RadiationType
+        select case ( trim ( RadiationType ( iC ) ) )
+        case ( 'GENERIC' )
+          allocate &
+            ( RadiationMoments_ASC_Form :: I % Current_ASC_1D ( iC ) % Element )
+          RadiationTypeLocal = 'GENERIC'
+        case ( 'PHOTONS' )
+          allocate &
+            ( PhotonMoments_ASC_Form :: I % Current_ASC_1D ( iC ) % Element )
+          RadiationTypeLocal = 'PHOTONS_GREY'
+        case default
+          call Show ( 'RadiationType not recognized', CONSOLE % ERROR )
+          call Show ( RadiationType ( iC ), 'RadiationType', CONSOLE % ERROR )
+          call Show ( 'RadiationBox_Form', 'module', CONSOLE % ERROR )
+          call Show ( 'InitializeRadiation', 'subroutine', CONSOLE % ERROR )
+          call PROGRAM_HEADER % Abort ( )
+        end select !-- RadiationType
        
-!         select type ( RA => I % Current_ASC_1D ( iC ) % Element )
-!         class is ( RadiationMoments_ASC_Form )
-!           call RA % Initialize &
-!                  ( PS, RadiationTypeLocal, &
-!                    NameShortOption = RadiationName ( iC ), &
-!                    Velocity_U_UnitOption = Velocity_U_UnitOption, &
-!                    MomentumDensity_U_UnitOption &
-!                      = MomentumDensity_U_UnitOption, &
-!                    MomentumDensity_D_UnitOption &
-!                      = MomentumDensity_D_UnitOption, &
-!                    EnergyDensityUnitOption = EnergyDensityUnitOption, &
-!                    TemperatureUnitOption = TemperatureUnitOption, &
-!                    EnergyUnitOption = EnergyUnitOption, &
-!                    MomentumUnitOption = MomentumUnitOption, &
-!                    AngularMomentumUnitOption = AngularMomentumUnitOption, &
-!                    TimeUnitOption = TimeUnitOption )
-!         end select !-- RA        
-!         end select !-- PS
+        select type ( RA => I % Current_ASC_1D ( iC ) % Element )
+        class is ( RadiationMoments_ASC_Form )
+          call RA % Initialize &
+                 ( PS, RadiationTypeLocal, RB % Units, &
+                   NameShortOption = RadiationName ( iC ) )
+        end select !-- RA        
+        end select !-- PS
 
-!       class is ( Integrator_C_1D_MS_C_PS_Form )
+      class is ( Integrator_C_1D_MS_C_PS_Form )
 
-!         select type ( MS => I % MomentumSpace )
-!         class is ( Bundle_SLL_ASC_CSLD_Form )
+        select type ( MS => I % MomentumSpace )
+        class is ( Bundle_SLL_ASC_CSLD_Form )
 
-!         select case ( trim ( RadiationType ( iC ) ) )
-!         case ( 'GENERIC' )
-!           allocate &
-!             ( RadiationMoments_BSLL_ASC_CSLD_Form :: &
-!                 I % Current_BSLL_ASC_CSLD_1D ( iC ) % Element )
-!           RadiationTypeLocal = 'GENERIC'
-!         case ( 'PHOTONS' )
-!           allocate &
-!             ( PhotonMoments_BSLL_ASC_CSLD_Form :: &
-!                 I % Current_BSLL_ASC_CSLD_1D ( iC ) % Element )
-!           RadiationTypeLocal = 'PHOTONS_SPECTRAL'
-!         case default
-!           call Show ( 'RadiationType not recognized', CONSOLE % ERROR )
-!           call Show ( RadiationType ( iC ), 'RadiationType', CONSOLE % ERROR )
-!           call Show ( 'RadiationBox_Form', 'module', CONSOLE % ERROR )
-!           call Show ( 'InitializeRadiation', 'subroutine', CONSOLE % ERROR )
-!           call PROGRAM_HEADER % Abort ( )
-!         end select !-- RadiationType
+        select case ( trim ( RadiationType ( iC ) ) )
+        case ( 'GENERIC' )
+          allocate &
+            ( RadiationMoments_BSLL_ASC_CSLD_Form :: &
+                I % Current_BSLL_ASC_CSLD_1D ( iC ) % Element )
+          RadiationTypeLocal = 'GENERIC'
+        case ( 'PHOTONS' )
+          allocate &
+            ( PhotonMoments_BSLL_ASC_CSLD_Form :: &
+                I % Current_BSLL_ASC_CSLD_1D ( iC ) % Element )
+          RadiationTypeLocal = 'PHOTONS_SPECTRAL'
+        case default
+          call Show ( 'RadiationType not recognized', CONSOLE % ERROR )
+          call Show ( RadiationType ( iC ), 'RadiationType', CONSOLE % ERROR )
+          call Show ( 'RadiationBox_Form', 'module', CONSOLE % ERROR )
+          call Show ( 'InitializeRadiation', 'subroutine', CONSOLE % ERROR )
+          call PROGRAM_HEADER % Abort ( )
+        end select !-- RadiationType
 
-!         select type ( RMB => I % Current_BSLL_ASC_CSLD_1D ( iC ) % Element )
-!         class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
-!           call RMB % Initialize &
-!                  ( MS, RadiationTypeLocal, &
-!                    NameShortOption = RadiationName ( iC ), &
-!                    Velocity_U_UnitOption = Velocity_U_UnitOption, &
-!                    MomentumDensity_U_UnitOption &
-!                      = MomentumDensity_U_UnitOption, &
-!                    MomentumDensity_D_UnitOption &
-!                      = MomentumDensity_D_UnitOption, &
-!                    EnergyDensityUnitOption = EnergyDensityUnitOption, &
-!                    TemperatureUnitOption = TemperatureUnitOption, &
-!                    EnergyUnitOption = EnergyUnitOption, &
-!                    MomentumUnitOption = MomentumUnitOption, &
-!                    AngularMomentumUnitOption = AngularMomentumUnitOption, &
-!                    TimeUnitOption = TimeUnitOption )
-!         end select !-- RMB
-!         end select !-- MS
+        select type ( RMB => I % Current_BSLL_ASC_CSLD_1D ( iC ) % Element )
+        class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
+          call RMB % Initialize &
+                 ( MS, RadiationTypeLocal, RB % Units, &
+                   NameShortOption = RadiationName ( iC ) )
+        end select !-- RMB
+        end select !-- MS
 
-!         end select !--I
+        end select !--I
 
-!     end do !-- iC
+    end do !-- iC
 
-!     end select !-- I_1D
+    end select !-- I_1D
 
-!   end subroutine InitializeRadiation
+  end subroutine InitializeRadiation
 
 
   subroutine InitializeSteps &
