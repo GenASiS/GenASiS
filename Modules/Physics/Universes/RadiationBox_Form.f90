@@ -10,8 +10,8 @@ module RadiationBox_Form
   private
 
   type, public, extends ( FluidBoxForm ) :: RadiationBoxForm
-!     real ( KDR ) :: &
-!       InteractionFactor
+    real ( KDR ) :: &
+      InteractionFactor
     logical ( KDL ) :: &
       ApplyStreaming, &
       ApplyInteractions, &
@@ -48,13 +48,13 @@ module RadiationBox_Form
   end type RadiationBoxForm
 
     private :: &
-!       ComputeTimeStepLocal, &
+      ComputeTimeStepLocal, &
       PrepareStep, &
       IntegrateSources, &
       ApplySources_Fluid
 
       private :: &
-!         ComputeTimeStepInteractions, &
+        ComputeTimeStepInteractions, &
         ComputeFluidSource_G_S_Radiation_Kernel, &
         ApplySources_Fluid_Kernel
 
@@ -531,46 +531,46 @@ contains
   end subroutine InitializeSteps
 
 
-!   subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
+  subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
 
-!     class ( IntegratorTemplate ), intent ( inout ), target :: &
-!       I
-!     real ( KDR ), dimension ( : ), intent ( inout ) :: &
-!       TimeStepCandidate
+    class ( IntegratorTemplate ), intent ( inout ), target :: &
+      I
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      TimeStepCandidate
 
-!     integer ( KDI ) :: &
-!       oC  !-- oCandidate
+    integer ( KDI ) :: &
+      oC  !-- oCandidate
 
-!     associate ( RB => RadiationBox )
+    associate ( RB => RadiationBox )
 
-!     select type ( I )
-!     class is ( Integrator_C_1D_C_PS_Template )
+    select type ( I )
+    class is ( Integrator_C_1D_C_PS_Template )
 
-!     !-- Fluid advection and Radiation streaming
+    !-- Fluid advection and Radiation streaming
 
-!     call I % ComputeTimeStepLocalTemplate ( TimeStepCandidate )
+    call I % ComputeTimeStepLocalTemplate ( TimeStepCandidate )
 
-!     if ( .not. RB % ApplyStreaming ) &
-!       TimeStepCandidate ( 1 : I % N_CURRENTS_1D )  =  huge ( 1.0_KDR )
+    if ( .not. RB % ApplyStreaming ) &
+      TimeStepCandidate ( 1 : I % N_CURRENTS_1D )  =  huge ( 1.0_KDR )
 
-!     if ( .not. RB % EvolveFluid ) &
-!       TimeStepCandidate ( I % N_CURRENTS_1D  +  1 )  =  huge ( 1.0_KDR )
+    if ( .not. RB % EvolveFluid ) &
+      TimeStepCandidate ( I % N_CURRENTS_1D  +  1 )  =  huge ( 1.0_KDR )
 
-!     !-- Interactions
+    !-- Interactions
 
-!     oC  =  I % N_CURRENTS_1D  +  1
-!     if ( RB % ApplyInteractions .and. RB % EvolveFluid ) then
-!       call ComputeTimeStepInteractions &
-!              ( I, TimeStepCandidate ( oC + 1 : oC + I % N_CURRENTS_1D ) )
-!     else
-!       TimeStepCandidate ( oC + 1 : oC + I % N_CURRENTS_1D )  &
-!         =  huge ( 1.0_KDR )
-!     end if
+    oC  =  I % N_CURRENTS_1D  +  1
+    if ( RB % ApplyInteractions .and. RB % EvolveFluid ) then
+      call ComputeTimeStepInteractions &
+             ( I, TimeStepCandidate ( oC + 1 : oC + I % N_CURRENTS_1D ) )
+    else
+      TimeStepCandidate ( oC + 1 : oC + I % N_CURRENTS_1D )  &
+        =  huge ( 1.0_KDR )
+    end if
 
-!     end select !-- I
-!     end associate !-- RB
+    end select !-- I
+    end associate !-- RB
 
-!   end subroutine ComputeTimeStepLocal
+  end subroutine ComputeTimeStepLocal
 
 
   subroutine PrepareStep ( I )
@@ -780,47 +780,47 @@ contains
   end subroutine ApplySources_Fluid
 
 
-!   subroutine ComputeTimeStepInteractions ( I, TimeStepCandidate )
+  subroutine ComputeTimeStepInteractions ( I, TimeStepCandidate )
 
-!     class ( Integrator_C_1D_C_PS_Template ), intent ( inout ) :: &
-!       I
-!     real ( KDR ), dimension ( : ), intent ( inout ) :: &
-!       TimeStepCandidate
+    class ( Integrator_C_1D_C_PS_Template ), intent ( inout ) :: &
+      I
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      TimeStepCandidate
 
-!     integer ( KDI ) :: &
-!       iC     !-- iCurrent
+    integer ( KDI ) :: &
+      iC     !-- iCurrent
 
-!     associate ( RB => RadiationBox )
+    associate ( RB => RadiationBox )
 
-!     select type ( I )
-!     class is ( Integrator_C_1D_PS_C_PS_Form )  !-- Grey
+    select type ( I )
+    class is ( Integrator_C_1D_PS_C_PS_Form )  !-- Grey
 
-!       associate ( IA => RB % Interactions_ASC )  
-!       do iC = 1, I % N_CURRENTS_1D  
-!         associate ( RMA => I % Current_ASC_1D ( iC ) % Element )
-!         call IA % ComputeTimeScale ( RMA, TimeStepCandidate ( iC ) )
-!         TimeStepCandidate ( iC )  &
-!           =  RB % InteractionFactor  *  TimeStepCandidate ( iC )
-!         end associate !-- RA
-!       end do !-- iC
-!       end associate !-- IA
+      associate ( IA => RB % Interactions_ASC )  
+      do iC = 1, I % N_CURRENTS_1D  
+        associate ( RMA => I % Current_ASC_1D ( iC ) % Element )
+        call IA % ComputeTimeScale ( RMA, TimeStepCandidate ( iC ) )
+        TimeStepCandidate ( iC )  &
+          =  RB % InteractionFactor  *  TimeStepCandidate ( iC )
+        end associate !-- RA
+      end do !-- iC
+      end associate !-- IA
 
-!     class is ( Integrator_C_1D_MS_C_PS_Form )  !-- Spectral
+    class is ( Integrator_C_1D_MS_C_PS_Form )  !-- Spectral
 
-!       associate ( IB => RB % Interactions_BSLL_ASC_CSLD )
-!       do iC = 1, I % N_CURRENTS_1D  
-!         associate ( RMB => I % Current_BSLL_ASC_CSLD_1D ( iC ) % Element )
-!         call IB % ComputeTimeScale ( RMB, TimeStepCandidate ( iC ) )
-!         TimeStepCandidate ( iC )  &
-!           =  RB % InteractionFactor  *  TimeStepCandidate ( iC )
-!         end associate !-- RB
-!       end do !-- iC
-!       end associate !-- IB
+      associate ( IB => RB % Interactions_BSLL_ASC_CSLD )
+      do iC = 1, I % N_CURRENTS_1D  
+        associate ( RMB => I % Current_BSLL_ASC_CSLD_1D ( iC ) % Element )
+        call IB % ComputeTimeScale ( RMB, TimeStepCandidate ( iC ) )
+        TimeStepCandidate ( iC )  &
+          =  RB % InteractionFactor  *  TimeStepCandidate ( iC )
+        end associate !-- RB
+      end do !-- iC
+      end associate !-- IB
 
-!     end select !-- I
-!     end associate !-- RB
+    end select !-- I
+    end associate !-- RB
 
-!   end subroutine ComputeTimeStepInteractions
+  end subroutine ComputeTimeStepInteractions
 
 
   subroutine ComputeFluidSource_G_S_Radiation_Kernel &
