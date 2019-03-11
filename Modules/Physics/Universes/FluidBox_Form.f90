@@ -13,7 +13,7 @@ module FluidBox_Form
 
   type, public, extends ( UniverseTemplate ) :: FluidBoxForm
   contains
-    procedure, public, pass :: &
+    procedure, private, pass :: &
       Initialize_FB
     generic, public :: &
       Initialize => Initialize_FB
@@ -35,7 +35,7 @@ contains
 
 
   subroutine Initialize_FB &
-               ( FB, Name, FluidType, GeometryType, GravitySolverTypeOption, &
+               ( FB, FluidType, GeometryType, Name, GravitySolverTypeOption, &
                  MinCoordinateOption, MaxCoordinateOption, FinishTimeOption, &
                  CourantFactorOption, UniformAccelerationOption, nCellsOption, &
                  nWriteOption )
@@ -43,9 +43,9 @@ contains
     class ( FluidBoxForm ), intent ( inout ) :: &
       FB
     character ( * ), intent ( in )  :: &
-      Name, &
       FluidType, &
-      GeometryType
+      GeometryType, &
+      Name
     character ( * ), intent ( in ), optional :: &
       GravitySolverTypeOption
     real ( KDR ), dimension ( : ), intent ( in ), optional :: &

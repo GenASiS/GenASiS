@@ -289,7 +289,7 @@ contains
   end subroutine InitializeDiagnostics
 
 
-  subroutine SetRadiation ( PWS, Time, Period )
+  subroutine SetRadiation ( PWS, Period )
 
     class ( PlaneWaveStreamingTemplate ), intent ( inout ) :: &
       PWS
@@ -304,7 +304,7 @@ contains
       RM
 
     select type ( I => PWS % Integrator )
-    class is ( Integrator_C_1D_PS_C_PS_Form )
+    class is ( Integrator_C_1D_PS_C_PS_Form )  !-- Grey
 
       select type ( PS => I % PositionSpace )
       class is ( Atlas_SC_Form )
@@ -316,14 +316,14 @@ contains
       class is ( RadiationMoments_ASC_Form )
 
       RM => RMA % RadiationMoments ( )
-      call SetWave ( PWS, RM, PSC, Time, nWavelengths = 1, &
+      call SetWave ( PWS, RM, PSC, Time = 0.0_KDR, nWavelengths = 1, &
                      PeriodOption = Period )
 
       end select !-- RMA
       end select !-- PSC
       end select !-- PS
 
-    class is ( Integrator_C_1D_MS_C_PS_Form )
+    class is ( Integrator_C_1D_MS_C_PS_Form )  !-- Spectral
 
       select type ( MS => I % MomentumSpace )
       class is ( Bundle_SLL_ASC_CSLD_Form )
@@ -335,8 +335,8 @@ contains
       select type ( RMA => RMB % Section % Atlas ( 1 ) % Element )
       class is ( RadiationMoments_ASC_Form )
         RM => RMA % RadiationMoments ( )
-        call SetWave ( PWS, RM, MS % Base_CSLD, Time, nWavelengths = iE, &
-                       PeriodOption = Period )
+        call SetWave ( PWS, RM, MS % Base_CSLD, Time = 0.0_KDR, &
+                       nWavelengths = iE, PeriodOption = Period )
       end select !-- RMA
 
       do iE = 2, RMB % nEnergyValues

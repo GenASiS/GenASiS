@@ -27,7 +27,7 @@ module RadiationBox_Form
     class ( Relaxation_RM_BSLL_ASC_CSLD_Form ), allocatable :: &
       Relaxation_RM_BSLL_ASC_CSLD
   contains
-    procedure, public, pass :: &
+    procedure, private, pass :: &
       Initialize_RB
     generic, public :: &
       Initialize => Initialize_RB

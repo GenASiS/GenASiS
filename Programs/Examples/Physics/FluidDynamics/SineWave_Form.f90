@@ -11,8 +11,10 @@ module SineWave_Form
       Offset, &
       Amplitude
   contains
-    procedure, public, pass :: &
-      Initialize
+    procedure, private, pass :: &
+      Initialize_SW
+    generic, public :: &
+      Initialize => Initialize_SW
     procedure, private, pass :: &
       Waveform
     final :: &
@@ -22,7 +24,7 @@ module SineWave_Form
 contains
 
 
-  subroutine Initialize ( SW, Name )
+  subroutine Initialize_SW ( SW, Name )
 
     class ( SineWaveForm ), intent ( inout ) :: &
       SW
@@ -36,7 +38,7 @@ contains
 
     call SW % InitializeTemplate_PW ( Name )
 
-  end subroutine Initialize
+  end subroutine Initialize_SW
 
 
   elemental function Waveform ( PW, X ) result ( W )
