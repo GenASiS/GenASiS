@@ -52,6 +52,8 @@ module FluidCentral_Template
       InitializeGeometry
     procedure, public, pass :: &
       InitializeFluid
+    procedure, public, pass :: &
+      InitializeStep
 !     procedure, public, pass :: &
 !       SetCoarseningTemplate
 !     procedure ( SC ), private, pass, deferred :: &
@@ -117,14 +119,14 @@ module FluidCentral_Template
 
   end interface
 
-!     private :: &
+    private :: &
 !       InitializeDiagnostics, &
 !       ComputeSphericalAverage, &
 !       ComputeEnclosedBaryons, &
 !       ComposePillars, &
 !       CoarsenPillars, &
 !       DecomposePillars, &
-!       ApplySources
+      ApplySources
 
 contains
 
@@ -189,27 +191,9 @@ contains
              RadiusMinOption, RadialRatioOption, CentralMassOption, &
              nCellsPolarOption )
     call FC % InitializeFluid &
-            ( FluidType, LimiterParameterOption, ShockThresholdOption )
-
-
-!     !-- Step
-
-!     allocate ( Step_RK2_C_ASC_Form :: FC % Step )
-!     select type ( S => FC % Step )
-!     class is ( Step_RK2_C_ASC_Form )
-
-!     call S % Initialize ( FC, FA, Name )
-!     S % ComputeConstraints % Pointer => ComputeGravity
-!     S % ApplySources % Pointer => ApplySources
-
-!     ! F => FA % Fluid_D ( )
-!     ! select type ( FF => F % Features )
-!     ! class is ( FluidFeatures_P_Form )
-!     ! call S % SetUseLimiter ( FF % Value ( :, FF % SHOCK ) )
-!     ! end select !-- FF
-
-!     end select !-- S
-
+           ( FluidType, LimiterParameterOption, ShockThresholdOption )
+    call FC % InitializeStep &
+           ( Name ) 
 
 !     !-- Template
 
@@ -426,6 +410,40 @@ contains
     end select !-- I
 
   end subroutine InitializeFluid
+
+
+  subroutine InitializeStep ( FC, Name )
+
+    class ( FluidCentralTemplate ), intent ( inout ) :: &
+      FC
+    character ( * ), intent ( in )  :: &
+      Name
+
+    select type ( I => FC % Integrator )
+    class is ( Integrator_C_PS_Form )
+
+    select type ( FA => I % Current_ASC )
+    class is ( Fluid_ASC_Form )
+
+    allocate ( Step_RK2_C_ASC_Form :: I % Step )
+    select type ( S => I % Step )
+    class is ( Step_RK2_C_ASC_Form )
+
+    call S % Initialize ( I, FA, Name )
+    S % ComputeConstraints % Pointer => ComputeGravity
+    S % ApplySources % Pointer => ApplySources
+
+    ! F => FA % Fluid_D ( )
+    ! select type ( FF => F % Features )
+    ! class is ( FluidFeatures_P_Form )
+    ! call S % SetUseLimiter ( FF % Value ( :, FF % SHOCK ) )
+    ! end select !-- FF
+
+    end select !-- S
+    end select !-- FA
+    end select !-- I
+
+  end subroutine InitializeStep
 
 
 !   subroutine SetCoarseningTemplate ( FC, iAngular )
@@ -1289,29 +1307,29 @@ contains
 !   end subroutine DecomposePillars
 
 
-!   subroutine ApplySources &
-!                ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
+  subroutine ApplySources &
+               ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
 
-!     class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
-!       S
-!     class ( Sources_C_Form ), intent ( inout ) :: &
-!       Sources_F
-!     type ( StorageForm ), intent ( inout ), target :: &
-!       Increment
-!     class ( CurrentTemplate ), intent ( in ) :: &
-!       Fluid
-!     real ( KDR ), intent ( in ) :: &
-!       TimeStep
-!     integer ( KDI ), intent ( in ) :: &
-!       iStage
+    class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
+      S
+    class ( Sources_C_Form ), intent ( inout ) :: &
+      Sources_F
+    type ( StorageForm ), intent ( inout ), target :: &
+      Increment
+    class ( CurrentTemplate ), intent ( in ) :: &
+      Fluid
+    real ( KDR ), intent ( in ) :: &
+      TimeStep
+    integer ( KDI ), intent ( in ) :: &
+      iStage
 
-!     call ApplyCurvilinear_F &
-!            ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
+    call ApplyCurvilinear_F &
+           ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
 
-!     call ApplyGravity_F &
-!            ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
+    call ApplyGravity_F &
+           ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
 
-!   end subroutine ApplySources
+  end subroutine ApplySources
 
 
 end module FluidCentral_Template

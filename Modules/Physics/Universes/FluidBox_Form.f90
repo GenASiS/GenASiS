@@ -77,7 +77,7 @@ contains
     call FB % InitializeFluid &
           ( FluidType )
     call FB % InitializeStep &
-          ( GravitySolverTypeOption )
+          ( Name, GravitySolverTypeOption = GravitySolverTypeOption )
 
     select type ( I => FB % Integrator )
     class is ( Integrator_C_PS_Form )
