@@ -242,7 +242,7 @@ contains
     integer ( KDI ), dimension ( 3 ) :: &
       nCellsPosition
 
-    nCellsPosition = [ 32, 32, 32 ]
+    nCellsPosition = [ 128, 128, 128 ]
     if ( present ( nCellsOption ) ) &
       nCellsPosition = nCellsOption
     call PROGRAM_HEADER % GetParameter ( nCellsPosition, 'nCellsPosition' )

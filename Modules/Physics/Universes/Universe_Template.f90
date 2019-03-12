@@ -12,6 +12,8 @@ module Universe_Template
       IGNORABILITY = 0
     type ( StressEnergyUnitsForm ) :: &
       Units
+    logical ( KDL ) :: &
+      UseCustomBoundaryInner = .false.
     character ( LDF ) :: &
       Type = '', &
       Name = ''

@@ -133,8 +133,7 @@ contains
     integer ( KDI ) :: &
       iD  !-- iDimension
 
-    select type ( I => FB % Integrator )
-    class is ( Integrator_C_PS_Form )
+    associate ( I => FB % Integrator )
 
     allocate ( Atlas_SC_Form :: I % PositionSpace )
     select type ( PS => I % PositionSpace )
@@ -166,7 +165,7 @@ contains
 
     end select !-- GA
     end select !-- PS
-    end select !-- I
+    end associate !-- I 
 
   end subroutine InitializePositionSpace
 
