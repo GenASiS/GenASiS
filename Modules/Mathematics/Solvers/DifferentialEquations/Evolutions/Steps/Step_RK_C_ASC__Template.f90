@@ -738,7 +738,8 @@ contains
       associate &
         ( CV => Current % Value ( :, iaC ( iF ) ), &
           SV => Solution % Value ( :, iF ) )
-      call Copy ( CV, SV )
+      call Copy ( CV, Current % D_Selected ( iaC ( iF ) ), &
+                  Solution % D_Selected ( iF ), SV )
       end associate !-- CV, etc.
     end do !-- iF
     end associate !-- iaC
@@ -1130,9 +1131,17 @@ contains
         nValues    => S % Current % nValues )
 
     call S % Solution % Initialize ( [ nValues, nEquations ] )
+    if ( S % Current % AllocatedDevice ) &
+      call S % Solution % AllocateDevice ( ) 
+    
     call S % Y % Initialize ( [ nValues, nEquations ] )
+    if ( S % Current % AllocatedDevice ) &
+      call S % Y % AllocateDevice ( ) 
+    
     do iS = 1, S % nStages
       call S % K ( iS ) % Initialize ( [ nValues, nEquations ] )
+      if ( S % Current % AllocatedDevice ) &
+        call S % K ( iS ) % AllocateDevice ( )
     end do !-- iS
 
     end associate !-- nEquations, etc.

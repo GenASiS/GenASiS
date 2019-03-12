@@ -28,8 +28,9 @@ module Storage_Form
     real ( KDR ), dimension ( :, : ), pointer :: &
       Value => null (  )
     logical ( KDL ) :: &
-      AllocatedValue = .false., &
-      Pinned = .false.
+      AllocatedValue  = .false., &
+      AllocatedDevice = .false., &
+      Pinned          = .false.
     character ( LDF ) :: &
       Name = ''
     character ( LDL ), dimension ( : ), allocatable :: &
@@ -239,7 +240,9 @@ contains
     end if
   
     S_Target % Value => S_Source % Value
-    S_Target % AllocatedValue = .false.
+    S_Target % AllocatedValue   = .false.
+    S_Target % AllocatedDevice  = S_Source % AllocatedDevice
+    S_Target % Pinned           = S_Source % Pinned
     
     if ( .not. present ( NameOption ) ) &
       S_Target % Name = trim ( S_Source % Name )
@@ -315,6 +318,7 @@ contains
       do iV = 2, S % nVariables
         S % D_Selected ( iV ) = c_loc ( Scratch ( :, iV ) )
       end do
+      S % AllocatedDevice = .true.
     end if
   
   end subroutine AllocateDevice_S
