@@ -6,7 +6,7 @@
 
 module Copy_Command
 
-  use iso_c_binding
+  use ISO_C_BINDING
   use Specifiers
   use Devices
 

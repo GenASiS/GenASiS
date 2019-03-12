@@ -602,6 +602,9 @@ contains
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
 
+    if ( S % Current % AllocatedDevice ) &
+      call S % Current % UpdateDevice ( )
+
     call S % LoadSolution_C ( S % Solution, S % Current )
 
   end subroutine LoadSolution
@@ -613,6 +616,9 @@ contains
       S
 
     call S % StoreSolution_C ( S % Current, S % Solution )
+    
+    if ( S % Current % AllocatedDevice ) &
+      call S % Current % UpdateHost ( )
 
   end subroutine StoreSolution
 
@@ -732,20 +738,24 @@ contains
 
     integer ( KDI ) :: &
       iF  !-- iField
-
+      
     associate ( iaC => Current % iaConserved )
     do iF = 1, Current % N_CONSERVED
+      
       associate &
         ( CV  => Current % Value ( :, iaC ( iF ) ), &
           D_C => Current % D_Selected ( iaC ( iF ) ), &
           SV  => Solution % Value ( :, iF ), &
           D_S => Solution % D_Selected ( iF ) )
+      
       if ( Current % AllocatedDevice ) then
         call Copy ( CV, D_C, D_S, SV )
       else
         call Copy ( CV, SV )
       end if
+      
       end associate !-- CV, etc.
+      
     end do !-- iF
     end associate !-- iaC
 
@@ -768,14 +778,24 @@ contains
 
     associate ( iaC => Current % iaConserved )
     do iF = 1, Current % N_CONSERVED
+      
       associate &
-        ( SV => Solution % Value ( :, iF ), &
-          CV => Current % Value ( :, iaC ( iF ) ) )
-      call Copy ( SV, CV )
+        ( SV  => Solution % Value ( :, iF ), &
+          D_S => Solution % D_Selected ( iF ), &
+          CV  => Current % Value ( :, iaC ( iF ) ), &
+          D_C => Current % D_Selected ( iaC ( iF ) ) )
+      
+      if ( Current % AllocatedDevice ) then
+        call Copy ( SV, D_S, D_C, CV )
+      else
+        call Copy ( SV, CV )
+      end if 
+      
       end associate !-- YV, etc.
+   
     end do !-- iF
     end associate !-- iaC
-
+    
     select type ( Chart => S % Chart )
     class is ( Chart_SL_Template )
       G => Chart % Geometry ( )
@@ -1127,9 +1147,17 @@ contains
       iS
 
     associate &
-      ( SV => S % Solution % Value, &
-        KV => S % K ( iS ) % Value )
-    call MultiplyAdd ( SV, KV, B )
+      ( SV  => S % Solution % Value, &
+        D_S => S % Solution % D_Selected, &
+        KV  => S % K ( iS ) % Value, &
+        D_K => S % K ( iS ) % D_Selected )
+    
+    if ( S % Solution % AllocatedDevice ) then
+      call MultiplyAdd ( SV, D_S, D_K, KV, B )
+    else
+      call MultiplyAdd ( SV, KV, B )
+    end if 
+    
     end associate !-- SV, etc.
 
   end subroutine IncrementSolution_C
