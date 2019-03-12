@@ -993,7 +993,7 @@ contains
     associate &
       ( SV => S % Solution % Value, &
         YV => S % Y % Value )
-    call Copy ( SV, YV )
+    call Copy ( SV, S % Solution % D_Selected, S % Y % D_Selected, YV )
     end associate !-- SV, etc.
 
   end subroutine InitializeIntermediate_C

@@ -34,6 +34,7 @@ module Copy_Command
     module procedure CopyReal_2D
     module procedure CopyReal_3D
     module procedure CopyReal_1D_Device
+    module procedure CopyReal_2D_Device
 !     module procedure CopyReal_1D_Section
 !     module procedure CopyReal_2D_Section
 !     module procedure CopyReal_3D_Section
@@ -400,6 +401,31 @@ contains
     call DisassociateHost ( A )
 
   end subroutine CopyReal_1D_Device
+  
+  
+  subroutine CopyReal_2D_Device ( A, D_A, D_B, B )
+
+    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+      A
+    type ( c_ptr ), dimension ( : ), intent ( in ) :: &
+      D_A
+    type ( c_ptr ), dimension ( : ), intent ( in ) :: &
+      D_B
+    real ( KDR ), dimension ( :, : ), intent ( out ) :: &
+      B
+
+    integer ( KDI ) :: &
+      iV, &
+      nV
+
+    nV = size ( A, dim = 2 )
+
+    do iV = 1, nV
+      call Copy ( A ( :, iV ), D_A ( iV ), D_B ( iV ), B ( :, iV ) )
+    end do
+  
+  end subroutine CopyReal_2D_Device
+  
   
   
   
