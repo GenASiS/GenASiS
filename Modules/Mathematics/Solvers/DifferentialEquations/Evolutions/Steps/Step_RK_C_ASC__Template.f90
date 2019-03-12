@@ -736,10 +736,15 @@ contains
     associate ( iaC => Current % iaConserved )
     do iF = 1, Current % N_CONSERVED
       associate &
-        ( CV => Current % Value ( :, iaC ( iF ) ), &
-          SV => Solution % Value ( :, iF ) )
-      call Copy ( CV, Current % D_Selected ( iaC ( iF ) ), &
-                  Solution % D_Selected ( iF ), SV )
+        ( CV  => Current % Value ( :, iaC ( iF ) ), &
+          D_C => Current % D_Selected ( iaC ( iF ) ), &
+          SV  => Solution % Value ( :, iF ), &
+          D_S => Solution % D_Selected ( iF ) )
+      if ( Current % AllocatedDevice ) then
+        call Copy ( CV, D_C, D_S, SV )
+      else
+        call Copy ( CV, SV )
+      end if
       end associate !-- CV, etc.
     end do !-- iF
     end associate !-- iaC
@@ -991,9 +996,17 @@ contains
       S
 
     associate &
-      ( SV => S % Solution % Value, &
-        YV => S % Y % Value )
-    call Copy ( SV, S % Solution % D_Selected, S % Y % D_Selected, YV )
+      ( SV  => S % Solution % Value, &
+        D_S => S % Solution % D_Selected, &
+        YV  => S % Y % Value, &
+        D_Y => S % Y % D_Selected )
+
+    if ( S % Solution % AllocatedDevice ) then
+      call Copy ( SV, D_S, D_Y, YV )
+    else
+      call Copy ( SV, YV )
+    end if
+
     end associate !-- SV, etc.
 
   end subroutine InitializeIntermediate_C
@@ -1009,9 +1022,17 @@ contains
       iK
 
     associate &
-      ( YV => S % Y % Value, &
-        KV => S % K ( iK ) % Value )
-    call MultiplyAdd ( YV, KV, A )
+      ( YV  => S % Y % Value, &
+        D_Y => S % Y % D_Selected, &
+        KV  => S % K ( iK ) % Value, &
+        D_K => S % K ( iK ) % D_Selected )
+    
+    if ( S % Y % AllocatedDevice ) then
+      call MultiplyAdd ( YV, D_Y, D_K, KV, A )
+    else
+      call MultiplyAdd ( YV, KV, A )
+    end if
+    
     end associate !-- YV, etc.
 
   end subroutine IncrementIntermediate_C

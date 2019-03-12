@@ -2,8 +2,11 @@
 !   in order to expose elemental variables to the compiler and include 
 !   threading.
 
+#include "Preprocessor"
+
 module MultiplyAdd_Command
 
+  use ISO_C_BINDING
   use Basics
   
   public :: &
@@ -13,8 +16,10 @@ module MultiplyAdd_Command
   interface MultiplyAdd
     module procedure MultiplyAddReal_1D
     module procedure MultiplyAddReal_1D_InPlace
+    module procedure MultiplyAddReal_1D_InPlace_Device
     module procedure MultiplyAddReal_2D
     module procedure MultiplyAddReal_2D_InPlace
+    module procedure MultiplyAddReal_2D_InPlace_Device
   end interface
 
   interface MultiplyAddCollapse
@@ -74,6 +79,41 @@ contains
   end subroutine MultiplyAddReal_1D_InPlace
 
 
+  subroutine MultiplyAddReal_1D_InPlace_Device ( A, D_A, D_B, B, C )
+  
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      A
+    type ( c_ptr ), intent ( in ) :: &
+      D_A
+    type ( c_ptr ), intent ( in ) :: &
+      D_B
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      B
+    real ( KDR ), intent ( in ) :: &
+      C
+                      
+    integer ( KDI ) :: &
+      iV, &
+      nV
+
+    nV = size ( A )
+    
+    call AssociateHost ( D_A, A )
+    call AssociateHost ( D_B, B )
+
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+    !$OMP& schedule ( OMP_SCHEDULE )
+    do iV = 1, nV
+      A ( iV ) =  A ( iV ) +  C * B ( iV )
+    end do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    
+    call DisassociateHost ( B )
+    call DisassociateHost ( A )
+  
+  end subroutine MultiplyAddReal_1D_InPlace_Device
+
+
   subroutine MultiplyAddReal_2D ( A, B, C, D )
   
     real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
@@ -118,6 +158,32 @@ contains
     end do
   
   end subroutine MultiplyAddReal_2D_InPlace
+
+
+  subroutine MultiplyAddReal_2D_InPlace_Device ( A, D_A, D_B, B, C )
+  
+    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+      A
+    type ( c_ptr ), dimension ( : ), intent ( in ) :: &
+      D_A
+    type ( c_ptr ), dimension ( : ), intent ( in ) :: &
+      D_B
+    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+      B
+    real ( KDR ), intent ( in ) :: &
+      C
+                      
+    integer ( KDI ) :: &
+      iV, &
+      nV
+
+    nV = size ( A, dim = 2 )
+
+    do iV = 1, nV
+      call MultiplyAdd ( A ( :, iV ), D_A ( iV ), D_B ( iV ), B ( :, iV ), C )
+    end do
+  
+  end subroutine MultiplyAddReal_2D_InPlace_Device
 
 
   subroutine MultiplyAddCollapse_3D ( A, B, C, D )
