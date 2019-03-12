@@ -17,8 +17,8 @@ module FluidCentralExcision_Form
   !     Finalize
     procedure, private, pass :: &
       InitializeAtlas
-  !   procedure, private, pass :: &
-  !     InitializeGeometry
+    procedure, private, pass :: &
+      InitializeGeometry
   !   procedure, private, pass :: &
   !     SetCoarsening
   !   procedure, public, nopass :: &
@@ -164,39 +164,39 @@ contains
   end subroutine InitializeAtlas
 
 
-!   subroutine InitializeGeometry &
-!                ( FC, GA, PS, GeometryType, CentralMassOption )
+  subroutine InitializeGeometry &
+               ( FC, GA, PS, GeometryType, CentralMassOption )
 
-!     class ( FluidCentralExcisionForm ), intent ( inout ) :: &
-!       FC
-!     type ( Geometry_ASC_Form ), intent ( inout ) :: &
-!       GA
-!     class ( Atlas_SC_Form ), intent ( in ) :: &
-!       PS
-!     character ( * ), intent ( in )  :: &
-!       GeometryType
-!     real ( KDR ), intent ( in ), optional :: &
-!       CentralMassOption
+    class ( FluidCentralExcisionForm ), intent ( inout ) :: &
+      FC
+    type ( Geometry_ASC_Form ), intent ( inout ) :: &
+      GA
+    class ( Atlas_SC_Form ), intent ( in ) :: &
+      PS
+    character ( * ), intent ( in )  :: &
+      GeometryType
+    real ( KDR ), intent ( in ), optional :: &
+      CentralMassOption
 
-!     real ( KDR ) :: &
-!       CentralMass
+    real ( KDR ) :: &
+      CentralMass
 
-!     if ( FC % Dimensionless ) then
-!       call GA % Initialize &
-!              ( PS, GeometryType, GravitySolverTypeOption = 'CENTRAL_MASS', &
-!                GravitationalConstantOption = 1.0_KDR, &
-!                CentralMassOption = 1.0_KDR )
-!     else
-!       CentralMass  =  1.4_KDR  *  UNIT % SOLAR_MASS
-!       if ( present ( CentralMassOption ) ) &
-!         CentralMass = CentralMassOption
-!       call GA % Initialize &
-!              ( PS, GeometryType, GravitySolverTypeOption = 'CENTRAL_MASS', &
-!                CentralMassUnitOption = UNIT % SOLAR_MASS, &
-!                CentralMassOption = CentralMass )
-!     end if !-- Dimensionless
+    if ( FC % Dimensionless ) then
+      call GA % Initialize &
+             ( PS, GeometryType, GravitySolverTypeOption = 'CENTRAL_MASS', &
+               GravitationalConstantOption = 1.0_KDR, &
+               CentralMassOption = 1.0_KDR )
+    else
+      CentralMass  =  1.4_KDR  *  UNIT % SOLAR_MASS
+      if ( present ( CentralMassOption ) ) &
+        CentralMass = CentralMassOption
+      call GA % Initialize &
+             ( PS, GeometryType, GravitySolverTypeOption = 'CENTRAL_MASS', &
+               CentralMassUnitOption = UNIT % SOLAR_MASS, &
+               CentralMassOption = CentralMass )
+    end if !-- Dimensionless
 
-!   end subroutine InitializeGeometry
+  end subroutine InitializeGeometry
 
 
 !   subroutine SetCoarsening ( FC )

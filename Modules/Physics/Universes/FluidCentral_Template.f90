@@ -48,8 +48,8 @@ module FluidCentral_Template
       InitializePositionSpace
     procedure ( IA ), private, pass, deferred :: &
       InitializeAtlas
-!     procedure ( IG ), private, pass, deferred :: &
-!       InitializeGeometry
+    procedure ( IG ), private, pass, deferred :: &
+      InitializeGeometry
 !     procedure, public, pass :: &
 !       SetCoarseningTemplate
 !     procedure ( SC ), private, pass, deferred :: &
@@ -84,22 +84,22 @@ module FluidCentral_Template
         nCellsPolarOption
     end subroutine IA
 
-!     subroutine IG ( FC, GA, PS, GeometryType, CentralMassOption )
-!       use Basics
-!       use Mathematics
-!       use Spaces
-!       import FluidCentralTemplate
-!       class ( FluidCentralTemplate ), intent ( inout ) :: &
-!         FC
-!       type ( Geometry_ASC_Form ), intent ( inout ) :: &
-!         GA
-!       class ( Atlas_SC_Form ), intent ( in ) :: &
-!         PS
-!       character ( * ), intent ( in )  :: &
-!         GeometryType
-!       real ( KDR ), intent ( in ), optional :: &
-!         CentralMassOption
-!     end subroutine IG
+    subroutine IG ( FC, GA, PS, GeometryType, CentralMassOption )
+      use Basics
+      use Mathematics
+      use Spaces
+      import FluidCentralTemplate
+      class ( FluidCentralTemplate ), intent ( inout ) :: &
+        FC
+      type ( Geometry_ASC_Form ), intent ( inout ) :: &
+        GA
+      class ( Atlas_SC_Form ), intent ( in ) :: &
+        PS
+      character ( * ), intent ( in )  :: &
+        GeometryType
+      real ( KDR ), intent ( in ), optional :: &
+        CentralMassOption
+    end subroutine IG
 
 !     subroutine SC ( FC )
 !       import FluidCentralTemplate
@@ -130,11 +130,10 @@ contains
   subroutine InitializeTemplate_FC &
                ( FC, Name, FluidType, GeometryType, DimensionlessOption, &
                  RadiusMaxOption, RadiusCoreOption, RadiusMinOption, &
-                 RadialRatioOption, &
+                 RadialRatioOption, CentralMassOption, &
                  nWriteOption, nCellsPolarOption )
                !   FinishTimeOption, CourantFactorOption, &
-               !   LimiterParameterOption, ShockThresholdOption, &
-               !   CentralMassOption, 
+               !   LimiterParameterOption, ShockThresholdOption, & 
 
     class ( FluidCentralTemplate ), intent ( inout ) :: &
       FC
@@ -152,8 +151,8 @@ contains
       RadiusMaxOption, &
       RadiusCoreOption, &
       RadiusMinOption, &
-      RadialRatioOption!, &
-    !   CentralMassOption
+      RadialRatioOption, &
+      CentralMassOption
     integer ( KDI ), intent ( in ), optional :: &
       nWriteOption, &
       nCellsPolarOption
@@ -184,8 +183,9 @@ contains
     call FC % AllocateIntegrator &
            ( )
     call FC % InitializePositionSpace &
-           ( RadiusMaxOption, RadiusCoreOption, RadiusMinOption, &
-             RadialRatioOption, nCellsPolarOption )
+           ( GeometryType, RadiusMaxOption, RadiusCoreOption, &
+             RadiusMinOption, RadialRatioOption, CentralMassOption, &
+             nCellsPolarOption )
 
 !     !-- Fluid
 
@@ -334,16 +334,20 @@ contains
 
 
   subroutine InitializePositionSpace &
-               ( FC, RadiusMaxOption, RadiusCoreOption, RadiusMinOption, &
-                 RadialRatioOption, nCellsPolarOption )
+               ( FC, GeometryType, RadiusMaxOption, RadiusCoreOption, &
+                 RadiusMinOption, RadialRatioOption, CentralMassOption, &
+                 nCellsPolarOption )
 
     class ( FluidCentralTemplate ), intent ( inout ) :: &
       FC
+    character ( * ), intent ( in )  :: &
+      GeometryType
     real ( KDR ), intent ( in ), optional :: &
       RadiusMaxOption, &
       RadiusCoreOption, &
       RadiusMinOption, &
-      RadialRatioOption
+      RadialRatioOption, &
+      CentralMassOption
     integer ( KDI ), intent ( in ), optional :: &
       nCellsPolarOption
 
@@ -358,21 +362,24 @@ contains
            ( RadiusMaxOption, RadiusCoreOption, RadiusMinOption, &
              RadialRatioOption, nCellsPolarOption )
 
-!     select type ( PS => FC % PositionSpace )
-!     class is ( Atlas_SC_Form )
+    select type ( PS => FC % Integrator % PositionSpace )
+    class is ( Atlas_SC_Form )
 
-!     allocate ( Geometry_ASC_Form :: PS % Geometry_ASC )
-!     select type ( GA => PS % Geometry_ASC )
-!     class is ( Geometry_ASC_Form )
+    allocate ( Geometry_ASC_Form :: PS % Geometry_ASC )
+    select type ( GA => PS % Geometry_ASC )
+    class is ( Geometry_ASC_Form )
 
-!     call FC % InitializeGeometry ( GA, PS, GeometryType, CentralMassOption )
+    call FC % InitializeGeometry ( GA, PS, GeometryType, CentralMassOption )
 
-!     call PS % SetGeometry ( GA )
+    call PS % SetGeometry ( GA )
 
-!     FC % UseCoarsening = .true.
-!     call PROGRAM_HEADER % GetParameter ( FC % UseCoarsening, 'UseCoarsening' )
-!     if ( FC % UseCoarsening ) &
-!       call PS % SetCoarsening ( )
+    FC % UseCoarsening = .true.
+    call PROGRAM_HEADER % GetParameter ( FC % UseCoarsening, 'UseCoarsening' )
+    if ( FC % UseCoarsening ) &
+      call PS % SetCoarsening ( )
+
+    end select !-- GA
+    end select !-- PS
 
   end subroutine InitializePositionSpace
 

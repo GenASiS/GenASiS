@@ -19,8 +19,8 @@ module FluidCentralCore_Form
   !     Finalize
     procedure, private, pass :: &
       InitializeAtlas
-  !   procedure, private, pass :: &
-  !     InitializeGeometry
+    procedure, private, pass :: &
+      InitializeGeometry
   !   procedure, private, pass :: &
   !     SetCoarsening
   !   procedure, public, nopass :: &
@@ -180,30 +180,30 @@ contains
   end subroutine InitializeAtlas
 
 
-!   subroutine InitializeGeometry &
-!                ( FC, GA, PS, GeometryType, CentralMassOption )
+  subroutine InitializeGeometry &
+               ( FC, GA, PS, GeometryType, CentralMassOption )
 
-!     class ( FluidCentralCoreForm ), intent ( inout ) :: &
-!       FC
-!     type ( Geometry_ASC_Form ), intent ( inout ) :: &
-!       GA
-!     class ( Atlas_SC_Form ), intent ( in ) :: &
-!       PS
-!     character ( * ), intent ( in )  :: &
-!       GeometryType
-!     real ( KDR ), intent ( in ), optional :: &
-!       CentralMassOption
+    class ( FluidCentralCoreForm ), intent ( inout ) :: &
+      FC
+    type ( Geometry_ASC_Form ), intent ( inout ) :: &
+      GA
+    class ( Atlas_SC_Form ), intent ( in ) :: &
+      PS
+    character ( * ), intent ( in )  :: &
+      GeometryType
+    real ( KDR ), intent ( in ), optional :: &
+      CentralMassOption
 
-!     if ( FC % Dimensionless ) then
-!       call GA % Initialize &
-!              ( PS, GeometryType, GravitySolverTypeOption = 'MULTIPOLE', &
-!                GravitationalConstantOption = 1.0_KDR )
-!     else
-!       call GA % Initialize &
-!              ( PS, GeometryType, GravitySolverTypeOption = 'MULTIPOLE' )
-!     end if !-- Dimensionless
+    if ( FC % Dimensionless ) then
+      call GA % Initialize &
+             ( PS, GeometryType, GravitySolverTypeOption = 'MULTIPOLE', &
+               GravitationalConstantOption = 1.0_KDR )
+    else
+      call GA % Initialize &
+             ( PS, GeometryType, GravitySolverTypeOption = 'MULTIPOLE' )
+    end if !-- Dimensionless
 
-!   end subroutine InitializeGeometry
+  end subroutine InitializeGeometry
 
 
 !   impure elemental subroutine Finalize ( FCC )
