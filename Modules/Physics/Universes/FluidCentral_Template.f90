@@ -50,6 +50,8 @@ module FluidCentral_Template
       InitializeAtlas
     procedure ( IG ), private, pass, deferred :: &
       InitializeGeometry
+    procedure, public, pass :: &
+      InitializeFluid
 !     procedure, public, pass :: &
 !       SetCoarseningTemplate
 !     procedure ( SC ), private, pass, deferred :: &
@@ -129,11 +131,11 @@ contains
 
   subroutine InitializeTemplate_FC &
                ( FC, Name, FluidType, GeometryType, DimensionlessOption, &
+                 LimiterParameterOption, ShockThresholdOption, & 
                  RadiusMaxOption, RadiusCoreOption, RadiusMinOption, &
                  RadialRatioOption, CentralMassOption, &
                  nWriteOption, nCellsPolarOption )
                !   FinishTimeOption, CourantFactorOption, &
-               !   LimiterParameterOption, ShockThresholdOption, & 
 
     class ( FluidCentralTemplate ), intent ( inout ) :: &
       FC
@@ -146,8 +148,8 @@ contains
     real ( KDR ), intent ( in ), optional :: &
     !   FinishTimeOption, &
     !   CourantFactorOption, &
-    !   LimiterParameterOption, &
-    !   ShockThresholdOption, &
+      LimiterParameterOption, &
+      ShockThresholdOption, &
       RadiusMaxOption, &
       RadiusCoreOption, &
       RadiusMinOption, &
@@ -186,44 +188,8 @@ contains
            ( GeometryType, RadiusMaxOption, RadiusCoreOption, &
              RadiusMinOption, RadialRatioOption, CentralMassOption, &
              nCellsPolarOption )
-
-!     !-- Fluid
-
-!     allocate ( Fluid_ASC_Form :: FC % Current_ASC )
-!     select type ( FA => FC % Current_ASC )
-!     class is ( Fluid_ASC_Form )
-
-!     if ( FC % Dimensionless ) then
-!       call FA % Initialize ( PS, FluidType )
-!     else
-!       BaryonMassUnit                =  UNIT % ATOMIC_MASS_UNIT
-!       NumberDensityUnit             =  UNIT % NUMBER_DENSITY_NUCLEAR
-!       EnergyDensityUnit             =  UNIT % ENERGY_DENSITY_NUCLEAR
-!       TemperatureUnit               =  UNIT % MEGA_ELECTRON_VOLT
-!       Velocity_U_Unit               =  FC % CoordinateUnit  /  TimeUnit
-!       MomentumDensity_D_Unit        =  BaryonMassUnit * NumberDensityUnit &
-!                                        * Velocity_U_Unit
-!       MomentumDensity_D_Unit ( 2 )  =  MomentumDensity_D_Unit ( 2 ) &
-!                                        *  FC % CoordinateUnit ( 1 ) ** 2
-!       MomentumDensity_D_Unit ( 3 )  =  MomentumDensity_D_Unit ( 3 ) &
-!                                        *  FC % CoordinateUnit ( 1 ) ** 2
-!       call FA % Initialize &
-!              ( PS, FluidType, &
-!                Velocity_U_UnitOption         =  Velocity_U_Unit, &
-!                MomentumDensity_D_UnitOption  =  MomentumDensity_D_Unit, &
-!                BaryonMassUnitOption          =  BaryonMassUnit, &
-!                NumberDensityUnitOption       =  NumberDensityUnit , &
-!                EnergyDensityUnitOption       =  EnergyDensityUnit, &
-!                TemperatureUnitOption         =  TemperatureUnit, &
-!                NumberUnitOption              =  UNIT % SOLAR_BARYON_NUMBER, &
-!                EnergyUnitOption              =  UNIT % ENERGY_SOLAR_MASS, &
-!                MomentumUnitOption            =  UNIT % MOMENTUM_SOLAR_MASS, &
-!                AngularMomentumUnitOption     =  UNIT % SOLAR_KERR_PARAMETER, &
-!                TimeUnitOption                =  TimeUnit, &
-!                BaryonMassReferenceOption     =  CONSTANT % ATOMIC_MASS_UNIT, &
-!                LimiterParameterOption        =  LimiterParameterOption, &
-!                ShockThresholdOption          =  ShockThresholdOption )
-!     end if
+    call FC % InitializeFluid &
+            ( FluidType, LimiterParameterOption, ShockThresholdOption )
 
 
 !     !-- Step
@@ -382,6 +348,84 @@ contains
     end select !-- PS
 
   end subroutine InitializePositionSpace
+
+
+  subroutine InitializeFluid &
+               ( FC, FluidType, LimiterParameterOption, ShockThresholdOption )
+
+    class ( FluidCentralTemplate ), intent ( inout ) :: &
+      FC
+    character ( * ), intent ( in )  :: &
+      FluidType
+    real ( KDR ), intent ( in ), optional :: &
+      LimiterParameterOption, &
+      ShockThresholdOption
+
+    real ( KDR ) :: &
+      BaryonMassReference
+
+    select type ( I => FC % Integrator )
+    class is ( Integrator_C_PS_Form )
+
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
+
+    allocate ( Fluid_ASC_Form :: I % Current_ASC )
+    select type ( FA => I % Current_ASC )
+    class is ( Fluid_ASC_Form )
+
+    if ( .not. FC % Dimensionless ) then
+
+      FC % Units % BaryonMass     =  UNIT % ATOMIC_MASS_UNIT
+      FC % Units % NumberDensity  =  UNIT % NUMBER_DENSITY_NUCLEAR
+      FC % Units % EnergyDensity  =  UNIT % ENERGY_DENSITY_NUCLEAR
+      FC % Units % Temperature    =  UNIT % MEGA_ELECTRON_VOLT
+
+      FC % Units % Velocity_U  &
+        =  FC % Units % Coordinate_PS  /  FC % Units % Time
+
+      FC % Units % MomentumDensity_D  &
+        =  FC % Units % BaryonMass  *  FC % Units % NumberDensity  &
+           *  FC % Units % Velocity_U
+      FC % Units % MomentumDensity_D ( 2 )  &
+        =  FC % Units % MomentumDensity_D ( 2 )  &
+           *  FC % Units % Coordinate_PS ( 1 ) ** 2
+      FC % Units % MomentumDensity_D ( 3 )  &
+        =  FC % Units % MomentumDensity_D ( 3 )  &
+           *  FC % Units % Coordinate_PS ( 1 ) ** 2
+
+      FC % Units % MomentumDensity_U  &
+        =  FC % Units % BaryonMass  *  FC % Units % NumberDensity  &
+           *  FC % Units % Velocity_U
+      FC % Units % MomentumDensity_U ( 2 )  &
+        =  FC % Units % MomentumDensity_U ( 2 )  &
+           /  FC % Units % Coordinate_PS ( 1 ) ** 2
+      FC % Units % MomentumDensity_U ( 3 )  &
+        =  FC % Units % MomentumDensity_U ( 3 )  &
+           /  FC % Units % Coordinate_PS ( 1 ) ** 2
+
+      FC % Units % Number           =  UNIT % SOLAR_BARYON_NUMBER
+      FC % Units % Energy           =  UNIT % ENERGY_SOLAR_MASS
+      FC % Units % Momentum         =  UNIT % MOMENTUM_SOLAR_MASS
+      FC % Units % AngularMomentum  =  UNIT % SOLAR_KERR_PARAMETER
+
+      BaryonMassReference  =  CONSTANT % ATOMIC_MASS_UNIT
+
+    else
+      BaryonMassReference  =  1.0_KDR
+    end if
+
+    call FA % Initialize &
+           ( PS, FluidType, FC % Units, &
+             BaryonMassReferenceOption = BaryonMassReference, &
+             LimiterParameterOption = LimiterParameterOption, &
+             ShockThresholdOption = ShockThresholdOption )
+
+    end select !-- FA
+    end select !-- PS
+    end select !-- I
+
+  end subroutine InitializeFluid
 
 
 !   subroutine SetCoarseningTemplate ( FC, iAngular )
