@@ -25,15 +25,15 @@ module FluidCentralCore_Form
       SetCoarsening
     procedure, public, nopass :: &
       CoarsenSingularities
-  !   procedure, public, pass :: &
-  !     ComputeTimeStep_G_ASC
+    procedure, public, pass :: &
+      ComputeTimeStep_G_ASC
   end type FluidCentralCoreForm
 
       private :: &
         SetWriteTimeInterval, &
         ComputeTimeStepLocal, &
-        LocalMax!, &
-    !     ComputeTimeStep_G_CSL
+        LocalMax, &
+        ComputeTimeStep_G_CSL
 
 contains
 
@@ -388,54 +388,57 @@ contains
   end subroutine SetWriteTimeInterval
 
 
-!   subroutine ComputeTimeStep_G_ASC ( FCC, TimeStepCandidate )
+  subroutine ComputeTimeStep_G_ASC ( FCC, TimeStepCandidate )
 
-!     class ( FluidCentralCoreForm ), intent ( inout ), target :: &
-!       FCC
-!     real ( KDR ), intent ( inout ) :: &
-!       TimeStepCandidate
+    class ( FluidCentralCoreForm ), intent ( inout ), target :: &
+      FCC
+    real ( KDR ), intent ( inout ) :: &
+      TimeStepCandidate
 
-!     class ( Geometry_N_Form ), pointer :: &
-!       G
+    class ( Geometry_N_Form ), pointer :: &
+      G
 
-!     select type ( PS => FCC % PositionSpace )
-!     class is ( Atlas_SC_Form )
+    associate ( I => FCC % Integrator )
 
-!     select type ( GA => PS % Geometry_ASC )
-!     class is ( Geometry_ASC_Form )
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
 
-!     if ( all ( trim ( GA % GeometryType ) &
-!                  /= [ 'NEWTONIAN       ', 'NEWTONIAN_STRESS' ] ) ) &
-!       return
+    select type ( GA => PS % Geometry_ASC )
+    class is ( Geometry_ASC_Form )
 
-!     select type ( CSL => PS % Chart )
-!     class is ( Chart_SL_Template )
+    if ( all ( trim ( GA % GeometryType ) &
+                 /= [ 'NEWTONIAN       ', 'NEWTONIAN_STRESS' ] ) ) &
+      return
 
-!     G  =>  GA % Geometry_N ( )
+    select type ( CSL => PS % Chart )
+    class is ( Chart_SL_Template )
 
-!     call ComputeTimeStep_G_CSL &
-!            ( CSL % IsProperCell, &
-!              G % Value ( :, G % POTENTIAL_GRADIENT_D ( 1 ) ), &
-!              G % Value ( :, G % POTENTIAL_GRADIENT_D ( 2 ) ), &
-!              G % Value ( :, G % POTENTIAL_GRADIENT_D ( 3 ) ), &
-!              G % Value ( :, G % METRIC_UU_22 ), &
-!              G % Value ( :, G % METRIC_UU_33 ), &
-!              G % Value ( :, G % WIDTH_LEFT_U ( 1 ) ), &
-!              G % Value ( :, G % WIDTH_LEFT_U ( 2 ) ), & 
-!              G % Value ( :, G % WIDTH_LEFT_U ( 3 ) ), &
-!              G % Value ( :, G % WIDTH_RIGHT_U ( 1 ) ), &
-!              G % Value ( :, G % WIDTH_RIGHT_U ( 2 ) ), & 
-!              G % Value ( :, G % WIDTH_RIGHT_U ( 3 ) ), &
-!              CSL % nDimensions, TimeStepCandidate )
+    G  =>  GA % Geometry_N ( )
 
-!     TimeStepCandidate  =  FCC % GravityFactor * TimeStepCandidate
+    call ComputeTimeStep_G_CSL &
+           ( CSL % IsProperCell, &
+             G % Value ( :, G % POTENTIAL_GRADIENT_D ( 1 ) ), &
+             G % Value ( :, G % POTENTIAL_GRADIENT_D ( 2 ) ), &
+             G % Value ( :, G % POTENTIAL_GRADIENT_D ( 3 ) ), &
+             G % Value ( :, G % METRIC_UU_22 ), &
+             G % Value ( :, G % METRIC_UU_33 ), &
+             G % Value ( :, G % WIDTH_LEFT_U ( 1 ) ), &
+             G % Value ( :, G % WIDTH_LEFT_U ( 2 ) ), & 
+             G % Value ( :, G % WIDTH_LEFT_U ( 3 ) ), &
+             G % Value ( :, G % WIDTH_RIGHT_U ( 1 ) ), &
+             G % Value ( :, G % WIDTH_RIGHT_U ( 2 ) ), & 
+             G % Value ( :, G % WIDTH_RIGHT_U ( 3 ) ), &
+             CSL % nDimensions, TimeStepCandidate )
 
-!     end select !-- CSL
-!     end select !-- GA
-!     end select !-- PS
-!     nullify ( G )
+    TimeStepCandidate  =  FCC % GravityFactor * TimeStepCandidate
 
-!   end subroutine ComputeTimeStep_G_ASC
+    end select !-- CSL
+    end select !-- GA
+    end select !-- PS
+    end associate !-- I
+    nullify ( G )
+
+  end subroutine ComputeTimeStep_G_ASC
 
 
   subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
@@ -445,16 +448,17 @@ contains
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       TimeStepCandidate
 
-!     select type ( I )
-!     class is ( FluidCentralCoreForm )
+    select type ( I )
+    class is ( Integrator_C_PS_Form )
+      call I % ComputeTimeStep_C_ASC &
+             ( TimeStepCandidate ( 1 ), I % Current_ASC )
+    end select !-- I
 
-!     call I % ComputeTimeStep_C_ASC &
-!            ( TimeStepCandidate ( 1 ), I % Current_ASC )
-
-!     call I % ComputeTimeStep_G_ASC &
-!            ( TimeStepCandidate ( 2 ) )
-
-!     end select !-- I
+    select type ( FCC => I % Universe )
+    class is ( FluidCentralCoreForm )
+      call FCC % ComputeTimeStep_G_ASC &
+             ( TimeStepCandidate ( 2 ) )
+    end select !-- I
 
   end subroutine ComputeTimeStepLocal
 
@@ -483,70 +487,70 @@ contains
   end function LocalMax
 
 
-!   subroutine ComputeTimeStep_G_CSL &
-!                ( IsProperCell, GradPhi_1, GradPhi_2, GradPhi_3, &
-!                  M_UU_22, M_UU_33, dXL_1, dXL_2, dXL_3, dXR_1, dXR_2, dXR_3, &
-!                  nDimensions, TimeStep )
+  subroutine ComputeTimeStep_G_CSL &
+               ( IsProperCell, GradPhi_1, GradPhi_2, GradPhi_3, &
+                 M_UU_22, M_UU_33, dXL_1, dXL_2, dXL_3, dXR_1, dXR_2, dXR_3, &
+                 nDimensions, TimeStep )
 
-!     logical ( KDL ), dimension ( : ), intent ( in ) :: &
-!       IsProperCell
-!     real ( KDR ), dimension ( : ), intent ( in ) :: &
-!       GradPhi_1, GradPhi_2, GradPhi_3, &
-!       M_UU_22, M_UU_33, &
-!       dXL_1, dXL_2, dXL_3, &
-!       dXR_1, dXR_2, dXR_3
-!     integer ( KDI ), intent ( in ) :: &
-!       nDimensions
-!     real ( KDR ), intent ( inout ) :: &
-!       TimeStep
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      IsProperCell
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      GradPhi_1, GradPhi_2, GradPhi_3, &
+      M_UU_22, M_UU_33, &
+      dXL_1, dXL_2, dXL_3, &
+      dXR_1, dXR_2, dXR_3
+    integer ( KDI ), intent ( in ) :: &
+      nDimensions
+    real ( KDR ), intent ( inout ) :: &
+      TimeStep
 
-!     integer ( KDI ) :: &
-!       iV, &
-!       nV
-!     real ( KDR ) :: &
-!       TimeStepInverse
+    integer ( KDI ) :: &
+      iV, &
+      nV
+    real ( KDR ) :: &
+      TimeStepInverse
 
-!     nV = size ( dXL_1 )
+    nV = size ( dXL_1 )
 
-!     select case ( nDimensions )
-!     case ( 1 )
-!       TimeStepInverse &
-!         = maxval ( sqrt ( abs ( GradPhi_1 ) / ( dXL_1 + dXR_1 ) ), &
-!                    mask = IsProperCell )
-!     case ( 2 )
-!       TimeStepInverse &
-!         = maxval ( sqrt (    abs ( GradPhi_1 ) &
-!                              / ( dXL_1 + dXR_1 ) &
-!                           +  abs ( M_UU_22 * GradPhi_2 ) &
-!                              / ( dXL_2 + dXR_2 ) ), &
-!                    mask = IsProperCell )
-!     case ( 3 )
-!       ! TimeStepInverse &
-!       !   = maxval ( sqrt (   abs ( GradPhi_1 ) / dX_1 &
-!       !                     + abs ( M_UU_22 * GradPhi_2 ) / dX_2 &
-!       !                     + abs ( M_UU_33 * GradPhi_3 ) / dX_3 ) ), &
-!       !              mask = IsProperCell )
-!       TimeStepInverse = - huge ( 0.0_KDR )
-!       !$OMP parallel do private ( iV ) &
-!       !$OMP reduction ( max : TimeStepInverse )
-!       do iV = 1, nV
-!         if ( IsProperCell ( iV ) ) &
-!           TimeStepInverse &
-!             = max ( TimeStepInverse, &
-!                     sqrt (   abs ( GradPhi_1 ( iV ) ) &
-!                                    / ( dXL_1 ( iV ) + dXR_1 ( iV ) ) &
-!                            + abs ( M_UU_22 ( iV ) * GradPhi_2 ( iV ) ) &
-!                                    / ( dXL_2 ( iV ) + dXR_2 ( iV ) ) &
-!                            + abs ( M_UU_33 ( iV ) * GradPhi_3 ( iV ) ) &
-!                                    / ( dXL_3 ( iV ) + dXR_3 ( iV ) ) ) )
-!       end do
-!       !$OMP end parallel do
-!     end select !-- nDimensions
+    select case ( nDimensions )
+    case ( 1 )
+      TimeStepInverse &
+        = maxval ( sqrt ( abs ( GradPhi_1 ) / ( dXL_1 + dXR_1 ) ), &
+                   mask = IsProperCell )
+    case ( 2 )
+      TimeStepInverse &
+        = maxval ( sqrt (    abs ( GradPhi_1 ) &
+                             / ( dXL_1 + dXR_1 ) &
+                          +  abs ( M_UU_22 * GradPhi_2 ) &
+                             / ( dXL_2 + dXR_2 ) ), &
+                   mask = IsProperCell )
+    case ( 3 )
+      ! TimeStepInverse &
+      !   = maxval ( sqrt (   abs ( GradPhi_1 ) / dX_1 &
+      !                     + abs ( M_UU_22 * GradPhi_2 ) / dX_2 &
+      !                     + abs ( M_UU_33 * GradPhi_3 ) / dX_3 ) ), &
+      !              mask = IsProperCell )
+      TimeStepInverse = - huge ( 0.0_KDR )
+      !$OMP parallel do private ( iV ) &
+      !$OMP reduction ( max : TimeStepInverse )
+      do iV = 1, nV
+        if ( IsProperCell ( iV ) ) &
+          TimeStepInverse &
+            = max ( TimeStepInverse, &
+                    sqrt (   abs ( GradPhi_1 ( iV ) ) &
+                                   / ( dXL_1 ( iV ) + dXR_1 ( iV ) ) &
+                           + abs ( M_UU_22 ( iV ) * GradPhi_2 ( iV ) ) &
+                                   / ( dXL_2 ( iV ) + dXR_2 ( iV ) ) &
+                           + abs ( M_UU_33 ( iV ) * GradPhi_3 ( iV ) ) &
+                                   / ( dXL_3 ( iV ) + dXR_3 ( iV ) ) ) )
+      end do
+      !$OMP end parallel do
+    end select !-- nDimensions
 
-!     TimeStepInverse = max ( tiny ( 0.0_KDR ), TimeStepInverse )
-!     TimeStep = min ( TimeStep, 1.0_KDR / TimeStepInverse )
+    TimeStepInverse = max ( tiny ( 0.0_KDR ), TimeStepInverse )
+    TimeStep = min ( TimeStep, 1.0_KDR / TimeStepInverse )
 
-!   end subroutine ComputeTimeStep_G_CSL
+  end subroutine ComputeTimeStep_G_CSL
 
 
 end module FluidCentralCore_Form
