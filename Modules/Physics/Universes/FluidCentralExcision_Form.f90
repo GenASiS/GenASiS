@@ -21,12 +21,12 @@ module FluidCentralExcision_Form
       InitializeGeometry
     procedure, private, pass :: &
       SetCoarsening
-  !   procedure, public, nopass :: &
-  !     CoarsenSingularities
+    procedure, public, nopass :: &
+      CoarsenSingularities
   end type FluidCentralExcisionForm
 
-!     class ( FluidCentralExcisionForm ), private, pointer :: &
-!       FluidCentralExcision => null ( )
+    class ( FluidCentralExcisionForm ), private, pointer :: &
+      FluidCentralExcision => null ( )
 
 contains
 
@@ -224,22 +224,22 @@ contains
   end subroutine SetCoarsening
 
 
-!   subroutine CoarsenSingularities ( S )
+  subroutine CoarsenSingularities ( S )
 
-!     class ( StorageForm ), intent ( inout ) :: &
-!       S
+    class ( StorageForm ), intent ( inout ) :: &
+      S
 
-!     associate ( FCE => FluidCentralExcision )
-!     select type ( PS => FCE % PositionSpace )
-!     class is ( Atlas_SC_CE_Form )
+    associate ( FCE => FluidCentralExcision )
+    select type ( PS => FCE % Integrator % PositionSpace )
+    class is ( Atlas_SC_CE_Form )
 
-!     if ( PS % nDimensions > 2 ) &
-!       call FCE % CoarsenSingularityTemplate ( S, iAngular = 3 )
+    if ( PS % nDimensions > 2 ) &
+      call FCE % CoarsenSingularityTemplate ( S, iAngular = 3 )
   
-!     end select !-- PS
-!     end associate !-- FluidCentralExcision
+    end select !-- PS
+    end associate !-- FluidCentralExcision
 
-!   end subroutine CoarsenSingularities
+  end subroutine CoarsenSingularities
 
 
 end module FluidCentralExcision_Form

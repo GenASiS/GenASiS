@@ -23,8 +23,8 @@ module FluidCentralCore_Form
       InitializeGeometry
     procedure, private, pass :: &
       SetCoarsening
-  !   procedure, public, nopass :: &
-  !     CoarsenSingularities
+    procedure, public, nopass :: &
+      CoarsenSingularities
   !   procedure, private, pass :: &
   !     SetWriteTimeInterval
   !   procedure, public, pass :: &
@@ -33,8 +33,8 @@ module FluidCentralCore_Form
   !     ComputeTimeStep_G_ASC
   end type FluidCentralCoreForm
 
-    ! class ( FluidCentralCoreForm ), private, pointer :: &
-    !   FluidCentralCore => null ( )
+    class ( FluidCentralCoreForm ), private, pointer :: &
+      FluidCentralCore => null ( )
 
     !   private :: &
     !     ComputeTimeStepLocal, &
@@ -249,32 +249,32 @@ contains
   end subroutine SetCoarsening
 
 
-!   subroutine CoarsenSingularities ( S )
+  subroutine CoarsenSingularities ( S )
 
-!     class ( StorageForm ), intent ( inout ) :: &
-!       S
+    class ( StorageForm ), intent ( inout ) :: &
+      S
 
-!     associate ( FCC => FluidCentralCore )
-!     select type ( PS => FCC % PositionSpace )
-!     class is ( Atlas_SC_CC_Form )
+    associate ( FCC => FluidCentralCore )
+    select type ( PS => FCC % Integrator % PositionSpace )
+    class is ( Atlas_SC_CC_Form )
 
-!     select case ( mod ( FCC % iCycle, 2 ) )
-!     case ( 0 )
-!       if ( PS % nDimensions > 2 ) &
-!         call FCC % CoarsenSingularityTemplate ( S, iAngular = 3 )
-!       if ( PS % nDimensions > 1 ) &
-!         call FCC % CoarsenSingularityTemplate ( S, iAngular = 2 )
-!     case ( 1 )
-!       if ( PS % nDimensions > 1 ) &
-!         call FCC % CoarsenSingularityTemplate ( S, iAngular = 2 )
-!       if ( PS % nDimensions > 2 ) &
-!         call FCC % CoarsenSingularityTemplate ( S, iAngular = 3 )
-!     end select
+    select case ( mod ( FCC % Integrator % iCycle, 2 ) )
+    case ( 0 )
+      if ( PS % nDimensions > 2 ) &
+        call FCC % CoarsenSingularityTemplate ( S, iAngular = 3 )
+      if ( PS % nDimensions > 1 ) &
+        call FCC % CoarsenSingularityTemplate ( S, iAngular = 2 )
+    case ( 1 )
+      if ( PS % nDimensions > 1 ) &
+        call FCC % CoarsenSingularityTemplate ( S, iAngular = 2 )
+      if ( PS % nDimensions > 2 ) &
+        call FCC % CoarsenSingularityTemplate ( S, iAngular = 3 )
+    end select
   
-!     end select !-- PS
-!     end associate !-- FCC
+    end select !-- PS
+    end associate !-- FCC
 
-!   end subroutine CoarsenSingularities
+  end subroutine CoarsenSingularities
 
 
 !   subroutine SetWriteTimeInterval ( I )

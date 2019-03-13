@@ -58,10 +58,10 @@ module FluidCentral_Template
       SetCoarseningTemplate
    procedure ( SC ), private, pass, deferred :: &
       SetCoarsening
-!     procedure, public, pass :: &
-!       CoarsenSingularityTemplate
-!     procedure ( CS ), public, nopass, deferred :: &
-!       CoarsenSingularities
+    procedure, public, pass :: &
+      CoarsenSingularityTemplate
+    procedure ( CS ), public, nopass, deferred :: &
+      CoarsenSingularities
 !     procedure, public, pass :: &  !-- 2
 !       OpenGridImageStreams
 !     procedure, public, pass :: &  !-- 2
@@ -111,11 +111,11 @@ module FluidCentral_Template
         FC
     end subroutine SC
 
-!     subroutine CS ( S )
-!       use Basics
-!       class ( StorageForm ), intent ( inout ) :: &
-!         S
-!     end subroutine CS
+    subroutine CS ( S )
+      use Basics
+      class ( StorageForm ), intent ( inout ) :: &
+        S
+    end subroutine CS
 
   end interface
 
@@ -123,9 +123,9 @@ module FluidCentral_Template
 !       InitializeDiagnostics, &
 !       ComputeSphericalAverage, &
 !       ComputeEnclosedBaryons, &
-!       ComposePillars, &
-!       CoarsenPillars, &
-!       DecomposePillars, &
+      ComposePillars, &
+      CoarsenPillars, &
+      DecomposePillars, &
       ApplySources
 
 contains
@@ -532,26 +532,26 @@ contains
   end subroutine SetCoarseningTemplate
 
 
-!   subroutine CoarsenSingularityTemplate ( FC, S, iAngular )
+  subroutine CoarsenSingularityTemplate ( FC, S, iAngular )
 
-!     class ( FluidCentralTemplate ), intent ( inout ) :: &
-!       FC
-!     class ( StorageForm ), intent ( inout ) :: &
-!       S
-!     integer ( KDI ), intent ( in ) :: &
-!       iAngular
+    class ( FluidCentralTemplate ), intent ( inout ) :: &
+      FC
+    class ( StorageForm ), intent ( inout ) :: &
+      S
+    integer ( KDI ), intent ( in ) :: &
+      iAngular
 
-!     if ( .not. FC % UseCoarsening ) &
-!       return
+    if ( .not. FC % UseCoarsening ) &
+      return
 
-!     call Show ( 'Coarsening Singularity', FC % IGNORABILITY + 2 )
-!     call Show ( iAngular, 'iAngular', FC % IGNORABILITY + 2 )
+    call Show ( 'Coarsening Singularity', FC % IGNORABILITY + 2 )
+    call Show ( iAngular, 'iAngular', FC % IGNORABILITY + 2 )
 
-!     call ComposePillars ( FC, S, iAngular )
-!     call CoarsenPillars ( FC, iAngular )
-!     call DecomposePillars ( FC, S, iAngular )
+    call ComposePillars ( FC, S, iAngular )
+    call CoarsenPillars ( FC, iAngular )
+    call DecomposePillars ( FC, S, iAngular )
 
-!   end subroutine CoarsenSingularityTemplate
+  end subroutine CoarsenSingularityTemplate
 
 
 !   subroutine OpenGridImageStreams ( I )
@@ -891,406 +891,418 @@ contains
 !   end subroutine ComputeEnclosedBaryons
 
 
-!   subroutine ComposePillars ( FC, S, iAngular )
+  subroutine ComposePillars ( FC, S, iAngular )
 
-!     class ( FluidCentralTemplate ), intent ( inout ) :: &
-!       FC
-!     class ( StorageForm ), intent ( inout ) :: &
-!       S
-!     integer ( KDI ), intent ( in ) :: &
-!       iAngular
+    class ( FluidCentralTemplate ), intent ( inout ) :: &
+      FC
+    class ( StorageForm ), intent ( inout ) :: &
+      S
+    integer ( KDI ), intent ( in ) :: &
+      iAngular
 
-!     integer ( KDI ) :: &
-!       oO, oI, &      !-- oOutgoing, oIncoming
-!       oP, &          !-- oPillar
-!       oC, &          !-- oCell
-!       iC, jC, kC, &  !-- iCell, etc.
-!       iS, &          !-- iSelected
-!       iG, &          !-- iGroup (of pillars/processes)
-!       iB, &          !-- iBrick
-!       iR, &          !-- iRank
-!       iPS, &         !-- iPillarSegment
-!       iP             !-- iPillar
-!     real ( KDR ), dimension ( :, :, : ), pointer :: &
-!       Crsn_2, Crsn_3, &
-!       Vol, &
-!       SV
-!     class ( GeometryFlatForm ), pointer :: &
-!       G
+    integer ( KDI ) :: &
+      oO, oI, &      !-- oOutgoing, oIncoming
+      oP, &          !-- oPillar
+      oC, &          !-- oCell
+      iC, jC, kC, &  !-- iCell, etc.
+      iS, &          !-- iSelected
+      iG, &          !-- iGroup (of pillars/processes)
+      iB, &          !-- iBrick
+      iR, &          !-- iRank
+      iPS, &         !-- iPillarSegment
+      iP             !-- iPillar
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+      Crsn_2, Crsn_3, &
+      Vol, &
+      SV
+    class ( GeometryFlatForm ), pointer :: &
+      G
 
-!     select type ( PS => FC % PositionSpace )
-!     class is ( Atlas_SC_Form )
-!     G => PS % Geometry ( )
+    select type ( I => FC % Integrator )
+    class is ( Integrator_C_PS_Form )
 
-!     select type ( C => PS % Chart )
-!     class is ( Chart_SLD_C_Template )
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
+    G => PS % Geometry ( )
 
-!     associate ( nCB => C % nCellsBrick )
+    select type ( C => PS % Chart )
+    class is ( Chart_SLD_C_Template )
 
-!     select case ( iAngular )
-!     case ( 2 )
+    associate ( nCB => C % nCellsBrick )
 
-!       if ( .not. C % Communicator_2 % Initialized ) &
-!         return
+    select case ( iAngular )
+    case ( 2 )
 
-!       associate &
-!         ( CO => FC % CO_CoarsenForward_2 )
-!       associate &
-!         ( Outgoing => CO % Outgoing % Value, &
-!           Incoming => CO % Incoming % Value )
+      if ( .not. C % Communicator_2 % Initialized ) &
+        return
 
-!       call C % SetVariablePointer &
-!              ( G % Value ( :, G % COARSENING ( 2 ) ), Crsn_2 )
-!       call C % SetVariablePointer &
-!              ( G % Value ( :, G % VOLUME ), Vol )
+      associate &
+        ( CO => FC % CO_CoarsenForward_2 )
+      associate &
+        ( Outgoing => CO % Outgoing % Value, &
+          Incoming => CO % Incoming % Value )
 
-!       oO = 0
-!       do kC = 1, nCB ( 3 )
-!         do iC = 1, nCB ( 1 )
-!           if ( Crsn_2 ( iC, 1, kC ) < 2.0_KDR ) &
-!             cycle
-!           Outgoing ( oO + 1 ) = Crsn_2 ( iC, 1, kC )
-!           oO = oO + 1
-!           Outgoing ( oO + 1 : oO + nCB ( 2 ) ) &
-!             =  Vol ( iC, 1 : nCB ( 2 ), kC )
-!           oO = oO + nCB ( 2 )
-!           do iS = 1, S % nVariables
-!             call C % SetVariablePointer &
-!                    ( S % Value ( :, S % iaSelected ( iS ) ), SV )
-!             Outgoing ( oO + 1 : oO + nCB ( 2 ) ) &
-!               =  SV ( iC, 1 : nCB ( 2 ), kC )
-!             oO = oO + nCB ( 2 )
-!           end do !-- iS
-!         end do !-- iC
-!       end do !-- kC
+      call C % SetVariablePointer &
+             ( G % Value ( :, G % COARSENING ( 2 ) ), Crsn_2 )
+      call C % SetVariablePointer &
+             ( G % Value ( :, G % VOLUME ), Vol )
 
-!       call CO % AllToAll_V ( )
+      oO = 0
+      do kC = 1, nCB ( 3 )
+        do iC = 1, nCB ( 1 )
+          if ( Crsn_2 ( iC, 1, kC ) < 2.0_KDR ) &
+            cycle
+          Outgoing ( oO + 1 ) = Crsn_2 ( iC, 1, kC )
+          oO = oO + 1
+          Outgoing ( oO + 1 : oO + nCB ( 2 ) ) &
+            =  Vol ( iC, 1 : nCB ( 2 ), kC )
+          oO = oO + nCB ( 2 )
+          do iS = 1, S % nVariables
+            call C % SetVariablePointer &
+                   ( S % Value ( :, S % iaSelected ( iS ) ), SV )
+            Outgoing ( oO + 1 : oO + nCB ( 2 ) ) &
+              =  SV ( iC, 1 : nCB ( 2 ), kC )
+            oO = oO + nCB ( 2 )
+          end do !-- iS
+        end do !-- iC
+      end do !-- kC
 
-!       oP = 0
-!       oI = 0
-!       do iG = 1, C % Communicator_2 % Size  /  C % nBricks ( 2 )
-!         oC = 0
-!         do iB = 1, C % nBricks ( 2 )
-!           iR = ( iG - 1 ) * C % nBricks ( 2 )  +  iB  -  1
-!           do iPS = 1, C % nSegmentsFrom_2 ( iR )
-!             iP = oP + iPS
-!             FC % nCoarsen_2 ( iP ) = int ( Incoming ( oI + 1 ) + 0.5_KDR )
-!             oI = oI + 1
-!             associate ( CP => FC % CoarsenPillar_2 ( iP ) )
-!             do iS = 1, CP % nVariables
-!               CP % Value ( oC + 1 : oC + nCB ( 2 ), iS )  &
-!                 =  Incoming ( oI + 1 : oI + nCB ( 2 ) )
-!               oI = oI + nCB ( 2 )
-!             end do !-- iS
-!             end associate !-- CP
-!           end do !-- iPS
-!           oC = oC + nCB ( 2 )
-!         end do !-- iB
-!         oP = oP + C % nSegmentsFrom_2 ( iR )
-!       end do !-- iG
+      call CO % AllToAll_V ( )
 
-!       end associate !-- Outgoing, etc.
-!       end associate !-- CO
+      oP = 0
+      oI = 0
+      do iG = 1, C % Communicator_2 % Size  /  C % nBricks ( 2 )
+        oC = 0
+        do iB = 1, C % nBricks ( 2 )
+          iR = ( iG - 1 ) * C % nBricks ( 2 )  +  iB  -  1
+          do iPS = 1, C % nSegmentsFrom_2 ( iR )
+            iP = oP + iPS
+            FC % nCoarsen_2 ( iP ) = int ( Incoming ( oI + 1 ) + 0.5_KDR )
+            oI = oI + 1
+            associate ( CP => FC % CoarsenPillar_2 ( iP ) )
+            do iS = 1, CP % nVariables
+              CP % Value ( oC + 1 : oC + nCB ( 2 ), iS )  &
+                =  Incoming ( oI + 1 : oI + nCB ( 2 ) )
+              oI = oI + nCB ( 2 )
+            end do !-- iS
+            end associate !-- CP
+          end do !-- iPS
+          oC = oC + nCB ( 2 )
+        end do !-- iB
+        oP = oP + C % nSegmentsFrom_2 ( iR )
+      end do !-- iG
 
-!     case ( 3 )
+      end associate !-- Outgoing, etc.
+      end associate !-- CO
 
-!       if ( .not. C % Communicator_3 % Initialized ) &
-!         return
+    case ( 3 )
 
-!       associate &
-!         ( CO => FC % CO_CoarsenForward_3 )
-!       associate &
-!         ( Outgoing => CO % Outgoing % Value, &
-!           Incoming => CO % Incoming % Value )
+      if ( .not. C % Communicator_3 % Initialized ) &
+        return
 
-!       call C % SetVariablePointer &
-!              ( G % Value ( :, G % COARSENING ( 3 ) ), Crsn_3 )
-!       call C % SetVariablePointer &
-!              ( G % Value ( :, G % VOLUME ), Vol )
+      associate &
+        ( CO => FC % CO_CoarsenForward_3 )
+      associate &
+        ( Outgoing => CO % Outgoing % Value, &
+          Incoming => CO % Incoming % Value )
 
-!       oO = 0
-!       do jC = 1, nCB ( 2 )
-!         do iC = 1, nCB ( 1 )
-!           if ( Crsn_3 ( iC, jC, 1 ) < 2.0_KDR ) &
-!             cycle
-!           Outgoing ( oO + 1 ) = Crsn_3 ( iC, jC, 1 )
-!           oO = oO + 1
-!           Outgoing ( oO + 1 : oO + nCB ( 3 ) ) &
-!             =  Vol ( iC, jC, 1 : nCB ( 3 ) )
-!           oO = oO + nCB ( 3 )
-!           do iS = 1, S % nVariables
-!             call C % SetVariablePointer &
-!                    ( S % Value ( :, S % iaSelected ( iS ) ), SV )
-!             Outgoing ( oO + 1 : oO + nCB ( 3 ) ) &
-!               =  SV ( iC, jC, 1 : nCB ( 3 ) )
-!             oO = oO + nCB ( 3 )
-!           end do !-- iS
-!         end do !-- iC
-!       end do !-- jC
+      call C % SetVariablePointer &
+             ( G % Value ( :, G % COARSENING ( 3 ) ), Crsn_3 )
+      call C % SetVariablePointer &
+             ( G % Value ( :, G % VOLUME ), Vol )
 
-!       call CO % AllToAll_V ( )
+      oO = 0
+      do jC = 1, nCB ( 2 )
+        do iC = 1, nCB ( 1 )
+          if ( Crsn_3 ( iC, jC, 1 ) < 2.0_KDR ) &
+            cycle
+          Outgoing ( oO + 1 ) = Crsn_3 ( iC, jC, 1 )
+          oO = oO + 1
+          Outgoing ( oO + 1 : oO + nCB ( 3 ) ) &
+            =  Vol ( iC, jC, 1 : nCB ( 3 ) )
+          oO = oO + nCB ( 3 )
+          do iS = 1, S % nVariables
+            call C % SetVariablePointer &
+                   ( S % Value ( :, S % iaSelected ( iS ) ), SV )
+            Outgoing ( oO + 1 : oO + nCB ( 3 ) ) &
+              =  SV ( iC, jC, 1 : nCB ( 3 ) )
+            oO = oO + nCB ( 3 )
+          end do !-- iS
+        end do !-- iC
+      end do !-- jC
 
-!       oP = 0
-!       oI = 0
-!       do iG = 1, C % Communicator_3 % Size  /  C % nBricks ( 3 )
-!         oC = 0
-!         do iB = 1, C % nBricks ( 3 )
-!           iR = ( iG - 1 ) * C % nBricks ( 3 )  +  iB  -  1
-!           do iPS = 1, C % nSegmentsFrom_3 ( iR )
-!             iP = oP + iPS
-!             FC % nCoarsen_3 ( iP ) = int ( Incoming ( oI + 1 ) + 0.5_KDR )
-!             oI = oI + 1
-!             associate ( CP => FC % CoarsenPillar_3 ( iP ) )
-!             do iS = 1, CP % nVariables
-!               CP % Value ( oC + 1 : oC + nCB ( 3 ), iS )  &
-!                 =  Incoming ( oI + 1 : oI + nCB ( 3 ) )
-!               oI = oI + nCB ( 3 )
-!             end do !-- iS
-!             end associate !-- CP
-!           end do !-- iPS
-!           oC = oC + nCB ( 3 )
-!         end do !-- iB
-!         oP = oP + C % nSegmentsFrom_3 ( iR )
-!       end do !-- iG
+      call CO % AllToAll_V ( )
 
-!       end associate !-- Outgoing, etc.
-!       end associate !-- CO
+      oP = 0
+      oI = 0
+      do iG = 1, C % Communicator_3 % Size  /  C % nBricks ( 3 )
+        oC = 0
+        do iB = 1, C % nBricks ( 3 )
+          iR = ( iG - 1 ) * C % nBricks ( 3 )  +  iB  -  1
+          do iPS = 1, C % nSegmentsFrom_3 ( iR )
+            iP = oP + iPS
+            FC % nCoarsen_3 ( iP ) = int ( Incoming ( oI + 1 ) + 0.5_KDR )
+            oI = oI + 1
+            associate ( CP => FC % CoarsenPillar_3 ( iP ) )
+            do iS = 1, CP % nVariables
+              CP % Value ( oC + 1 : oC + nCB ( 3 ), iS )  &
+                =  Incoming ( oI + 1 : oI + nCB ( 3 ) )
+              oI = oI + nCB ( 3 )
+            end do !-- iS
+            end associate !-- CP
+          end do !-- iPS
+          oC = oC + nCB ( 3 )
+        end do !-- iB
+        oP = oP + C % nSegmentsFrom_3 ( iR )
+      end do !-- iG
 
-!     end select !-- iAngular
-!     end associate !-- nCB
-!     end select !-- C
-!     end select !-- PS
-!     nullify ( G, Crsn_2, Crsn_3, Vol, SV )
+      end associate !-- Outgoing, etc.
+      end associate !-- CO
 
-!   end subroutine ComposePillars
+    end select !-- iAngular
+    end associate !-- nCB
+    end select !-- C
+    end select !-- PS
+    end select !-- I
+    nullify ( G, Crsn_2, Crsn_3, Vol, SV )
 
-
-!   subroutine CoarsenPillars ( FC, iAngular )
-
-!     class ( FluidCentralTemplate ), intent ( inout ), target :: &
-!       FC
-!     integer ( KDI ), intent ( in ) :: &
-!       iAngular
-
-!     integer ( KDI ) :: &
-!       oC, &  !-- oCell
-!       iP, &  !-- iPillar
-!       iA, &  !-- iAverage
-!       iV     !-- iVariable
-!     integer ( KDI ), dimension ( : ), pointer :: &
-!       nCoarsen
-!     real ( KDR ) :: &
-!       Volume_A, &
-!       Density_A
-!     type ( StorageForm ), dimension ( : ), pointer :: &
-!       CP
-
-!     select type ( PS => FC % PositionSpace )
-!     class is ( Atlas_SC_Form )
-
-!     select type ( C => PS % Chart )
-!     class is ( Chart_SLD_C_Template )
-
-!     select case ( iAngular )
-!     case ( 2 )
-!       if ( .not. C % Communicator_2 % Initialized ) &
-!         return
-!       nCoarsen => FC % nCoarsen_2
-!       CP => FC % CoarsenPillar_2
-!     case ( 3 )
-!       if ( .not. C % Communicator_3 % Initialized ) &
-!         return
-!       nCoarsen => FC % nCoarsen_3
-!       CP => FC % CoarsenPillar_3
-!     end select !-- iAngular
-
-!     do iP = 1, size ( CP )
-!       oC = 0
-!       associate ( Volume => CP ( iP ) % Value ( :, 1 ) )
-!       do iA = 1, CP ( iP ) % nValues / nCoarsen ( iP )
-!         Volume_A = sum ( Volume ( oC + 1 : oC + nCoarsen ( iP ) ) )
-!         do iV = 2, CP ( iP ) % nVariables
-!           associate ( Density => CP ( iP ) % Value ( :, iV ) )
-!           Density_A = sum ( Volume ( oC + 1 : oC + nCoarsen ( iP ) ) &
-!                             *  Density ( oC + 1 : oC + nCoarsen ( iP ) ) )
-!           Density ( oC + 1 : oC + nCoarsen ( iP ) ) &
-!             =  Density_A / Volume_A
-!           end associate !-- Density
-!         end do !-- iV
-!         oC = oC + nCoarsen ( iP )
-!       end do !-- iA
-!       end associate !-- Volume
-!     end do !-- iP
-
-!     end select !-- C
-!     end select !-- PS
-!     nullify ( CP, nCoarsen )
-
-!   end subroutine CoarsenPillars
+  end subroutine ComposePillars
 
 
-!   subroutine DecomposePillars ( FC, S, iAngular )
+  subroutine CoarsenPillars ( FC, iAngular )
 
-!     class ( FluidCentralTemplate ), intent ( inout ) :: &
-!       FC
-!     class ( StorageForm ), intent ( inout ) :: &
-!       S
-!     integer ( KDI ), intent ( in ) :: &
-!       iAngular
+    class ( FluidCentralTemplate ), intent ( inout ), target :: &
+      FC
+    integer ( KDI ), intent ( in ) :: &
+      iAngular
 
-!     integer ( KDI ) :: &
-!       oO, oI, &      !-- oOutgoing, oIncoming
-!       oP, &          !-- oPillar
-!       oC, &          !-- oCell
-!       iC, jC, kC, &  !-- iCell, etc.
-!       iS, &          !-- iSelected
-!       iG, &          !-- iGroup (of pillars/processes)
-!       iB, &          !-- iBrick
-!       iR, &          !-- iRank
-!       iPS, &         !-- iPillarSegment
-!       iP, &          !-- iPillar
-!       iMomentum_2
-!     real ( KDR ), dimension ( :, :, : ), pointer :: &
-!       R, &
-!       Crsn_2, Crsn_3, &
-!       SV
-!     class ( GeometryFlatForm ), pointer :: &
-!       G
+    integer ( KDI ) :: &
+      oC, &  !-- oCell
+      iP, &  !-- iPillar
+      iA, &  !-- iAverage
+      iV     !-- iVariable
+    integer ( KDI ), dimension ( : ), pointer :: &
+      nCoarsen
+    real ( KDR ) :: &
+      Volume_A, &
+      Density_A
+    type ( StorageForm ), dimension ( : ), pointer :: &
+      CP
 
-!     select type ( PS => FC % PositionSpace )
-!     class is ( Atlas_SC_Form )
-!     G => PS % Geometry ( )
+    select type ( I => FC % Integrator )
+    class is ( Integrator_C_PS_Form )
 
-!     select type ( C => PS % Chart )
-!     class is ( Chart_SLD_C_Template )
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
 
-!     associate ( nCB => C % nCellsBrick )
+    select type ( C => PS % Chart )
+    class is ( Chart_SLD_C_Template )
 
-!     select case ( iAngular )
-!     case ( 2 )
+    select case ( iAngular )
+    case ( 2 )
+      if ( .not. C % Communicator_2 % Initialized ) &
+        return
+      nCoarsen => FC % nCoarsen_2
+      CP => FC % CoarsenPillar_2
+    case ( 3 )
+      if ( .not. C % Communicator_3 % Initialized ) &
+        return
+      nCoarsen => FC % nCoarsen_3
+      CP => FC % CoarsenPillar_3
+    end select !-- iAngular
 
-!       if ( .not. C % Communicator_2 % Initialized ) &
-!         return
+    do iP = 1, size ( CP )
+      oC = 0
+      associate ( Volume => CP ( iP ) % Value ( :, 1 ) )
+      do iA = 1, CP ( iP ) % nValues / nCoarsen ( iP )
+        Volume_A = sum ( Volume ( oC + 1 : oC + nCoarsen ( iP ) ) )
+        do iV = 2, CP ( iP ) % nVariables
+          associate ( Density => CP ( iP ) % Value ( :, iV ) )
+          Density_A = sum ( Volume ( oC + 1 : oC + nCoarsen ( iP ) ) &
+                            *  Density ( oC + 1 : oC + nCoarsen ( iP ) ) )
+          Density ( oC + 1 : oC + nCoarsen ( iP ) ) &
+            =  Density_A / Volume_A
+          end associate !-- Density
+        end do !-- iV
+        oC = oC + nCoarsen ( iP )
+      end do !-- iA
+      end associate !-- Volume
+    end do !-- iP
 
-!       associate &
-!         ( CO => FC % CO_CoarsenBackward_2 )
-!       associate &
-!         ( Outgoing => CO % Outgoing % Value, &
-!           Incoming => CO % Incoming % Value )
+    end select !-- C
+    end select !-- PS
+    end select !-- I
+    nullify ( CP, nCoarsen )
 
-!       oP = 0
-!       oO = 0
-!       do iG = 1, C % Communicator_2 % Size  /  C % nBricks ( 2 )
-!         oC = 0
-!         do iB = 1, C % nBricks ( 2 )
-!           iR = ( iG - 1 ) * C % nBricks ( 2 )  +  iB  -  1
-!           do iPS = 1, C % nSegmentsFrom_2 ( iR )
-!             iP = oP + iPS
-!             associate ( CP => FC % CoarsenPillar_2 ( iP ) )
-!             do iS = 2, CP % nVariables
-!               Outgoing ( oO + 1 : oO + nCB ( 2 ) )  &
-!                 =  CP % Value ( oC + 1 : oC + nCB ( 2 ), iS )
-!               oO = oO + nCB ( 2 )
-!             end do !-- iS
-!             end associate !-- CP
-!           end do !-- iPS
-!           oC = oC + nCB ( 2 )
-!         end do !-- iB
-!         oP = oP + C % nSegmentsFrom_2 ( iR )
-!       end do !-- iG
+  end subroutine CoarsenPillars
 
-!       call CO % AllToAll_V ( )
 
-!       call C % SetVariablePointer &
-!              ( G % Value ( :, G % COARSENING ( 2 ) ), Crsn_2 )
-!       call C % SetVariablePointer &
-!              ( G % Value ( :, G % CENTER_U ( 1 ) ), R )
+  subroutine DecomposePillars ( FC, S, iAngular )
 
-!       iMomentum_2 = 3  !-- Fluid
+    class ( FluidCentralTemplate ), intent ( inout ) :: &
+      FC
+    class ( StorageForm ), intent ( inout ) :: &
+      S
+    integer ( KDI ), intent ( in ) :: &
+      iAngular
 
-!       oI = 0
-!       do kC = 1, nCB ( 3 )
-!         do iC = 1, nCB ( 1 )
-!           if ( Crsn_2 ( iC, 1, kC ) < 2.0_KDR ) &
-!             cycle
-!           do iS = 1, S % nVariables
-!             call C % SetVariablePointer &
-!                    ( S % Value ( :, S % iaSelected ( iS ) ), SV )
-!             SV ( iC, 1 : nCB ( 2 ), kC )  &
-!               =  Incoming ( oI + 1 : oI + nCB ( 2 ) )
-!             oI = oI + nCB ( 2 )
-!             if ( iS == iMomentum_2 &
-!                  .and. R ( iC, 1, kC )  <  FC % RadiusPolarMomentum ) &
-!               SV ( iC, 1 : nCB ( 2 ), kC ) = 0.0_KDR
-!           end do !-- iS
-!         end do !-- iC
-!       end do !-- kC
+    integer ( KDI ) :: &
+      oO, oI, &      !-- oOutgoing, oIncoming
+      oP, &          !-- oPillar
+      oC, &          !-- oCell
+      iC, jC, kC, &  !-- iCell, etc.
+      iS, &          !-- iSelected
+      iG, &          !-- iGroup (of pillars/processes)
+      iB, &          !-- iBrick
+      iR, &          !-- iRank
+      iPS, &         !-- iPillarSegment
+      iP, &          !-- iPillar
+      iMomentum_2
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+      R, &
+      Crsn_2, Crsn_3, &
+      SV
+    class ( GeometryFlatForm ), pointer :: &
+      G
 
-!       end associate !-- Outgoing, etc.
-!       end associate !-- CO
+    select type ( I => FC % Integrator )
+    class is ( Integrator_C_PS_Form )
 
-!     case ( 3 )
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
+    G => PS % Geometry ( )
 
-!       if ( .not. C % Communicator_3 % Initialized ) &
-!         return
+    select type ( C => PS % Chart )
+    class is ( Chart_SLD_C_Template )
 
-!       associate &
-!         ( CO => FC % CO_CoarsenBackward_3 )
-!       associate &
-!         ( Outgoing => CO % Outgoing % Value, &
-!           Incoming => CO % Incoming % Value )
+    associate ( nCB => C % nCellsBrick )
 
-!       oP = 0
-!       oO = 0
-!       do iG = 1, C % Communicator_3 % Size  /  C % nBricks ( 3 )
-!         oC = 0
-!         do iB = 1, C % nBricks ( 3 )
-!           iR = ( iG - 1 ) * C % nBricks ( 3 )  +  iB  -  1
-!           do iPS = 1, C % nSegmentsFrom_3 ( iR )
-!             iP = oP + iPS
-!             associate ( CP => FC % CoarsenPillar_3 ( iP ) )
-!             do iS = 2, CP % nVariables
-!               Outgoing ( oO + 1 : oO + nCB ( 3 ) )  &
-!                 =  CP % Value ( oC + 1 : oC + nCB ( 3 ), iS )
-!               oO = oO + nCB ( 3 )
-!             end do !-- iS
-!             end associate !-- CP
-!           end do !-- iPS
-!           oC = oC + nCB ( 3 )
-!         end do !-- iB
-!         oP = oP + C % nSegmentsFrom_3 ( iR )
-!       end do !-- iG
+    select case ( iAngular )
+    case ( 2 )
 
-!       call CO % AllToAll_V ( )
+      if ( .not. C % Communicator_2 % Initialized ) &
+        return
 
-!       call C % SetVariablePointer &
-!              ( G % Value ( :, G % COARSENING ( 3 ) ), Crsn_3 )
+      associate &
+        ( CO => FC % CO_CoarsenBackward_2 )
+      associate &
+        ( Outgoing => CO % Outgoing % Value, &
+          Incoming => CO % Incoming % Value )
 
-!       oI = 0
-!       do jC = 1, nCB ( 2 )
-!         do iC = 1, nCB ( 1 )
-!           if ( Crsn_3 ( iC, jC, 1 ) < 2.0_KDR ) &
-!             cycle
-!           do iS = 1, S % nVariables
-!             call C % SetVariablePointer &
-!                    ( S % Value ( :, S % iaSelected ( iS ) ), SV )
-!             SV ( iC, jC, 1 : nCB ( 3 ) )  &
-!               =  Incoming ( oI + 1 : oI + nCB ( 3 ) )
-!             oI = oI + nCB ( 3 )
-!           end do !-- iS
-!         end do !-- iC
-!       end do !-- jC
+      oP = 0
+      oO = 0
+      do iG = 1, C % Communicator_2 % Size  /  C % nBricks ( 2 )
+        oC = 0
+        do iB = 1, C % nBricks ( 2 )
+          iR = ( iG - 1 ) * C % nBricks ( 2 )  +  iB  -  1
+          do iPS = 1, C % nSegmentsFrom_2 ( iR )
+            iP = oP + iPS
+            associate ( CP => FC % CoarsenPillar_2 ( iP ) )
+            do iS = 2, CP % nVariables
+              Outgoing ( oO + 1 : oO + nCB ( 2 ) )  &
+                =  CP % Value ( oC + 1 : oC + nCB ( 2 ), iS )
+              oO = oO + nCB ( 2 )
+            end do !-- iS
+            end associate !-- CP
+          end do !-- iPS
+          oC = oC + nCB ( 2 )
+        end do !-- iB
+        oP = oP + C % nSegmentsFrom_2 ( iR )
+      end do !-- iG
 
-!       end associate !-- Outgoing, etc.
-!       end associate !-- CO
+      call CO % AllToAll_V ( )
 
-!     end select !-- iAngular
-!     end associate !-- nCB
-!     end select !-- C
-!     end select !-- PS
-!     nullify ( G, R, Crsn_2, Crsn_3, SV )
+      call C % SetVariablePointer &
+             ( G % Value ( :, G % COARSENING ( 2 ) ), Crsn_2 )
+      call C % SetVariablePointer &
+             ( G % Value ( :, G % CENTER_U ( 1 ) ), R )
 
-!   end subroutine DecomposePillars
+      iMomentum_2 = 3  !-- Fluid
+
+      oI = 0
+      do kC = 1, nCB ( 3 )
+        do iC = 1, nCB ( 1 )
+          if ( Crsn_2 ( iC, 1, kC ) < 2.0_KDR ) &
+            cycle
+          do iS = 1, S % nVariables
+            call C % SetVariablePointer &
+                   ( S % Value ( :, S % iaSelected ( iS ) ), SV )
+            SV ( iC, 1 : nCB ( 2 ), kC )  &
+              =  Incoming ( oI + 1 : oI + nCB ( 2 ) )
+            oI = oI + nCB ( 2 )
+            if ( iS == iMomentum_2 &
+                 .and. R ( iC, 1, kC )  <  FC % RadiusPolarMomentum ) &
+              SV ( iC, 1 : nCB ( 2 ), kC ) = 0.0_KDR
+          end do !-- iS
+        end do !-- iC
+      end do !-- kC
+
+      end associate !-- Outgoing, etc.
+      end associate !-- CO
+
+    case ( 3 )
+
+      if ( .not. C % Communicator_3 % Initialized ) &
+        return
+
+      associate &
+        ( CO => FC % CO_CoarsenBackward_3 )
+      associate &
+        ( Outgoing => CO % Outgoing % Value, &
+          Incoming => CO % Incoming % Value )
+
+      oP = 0
+      oO = 0
+      do iG = 1, C % Communicator_3 % Size  /  C % nBricks ( 3 )
+        oC = 0
+        do iB = 1, C % nBricks ( 3 )
+          iR = ( iG - 1 ) * C % nBricks ( 3 )  +  iB  -  1
+          do iPS = 1, C % nSegmentsFrom_3 ( iR )
+            iP = oP + iPS
+            associate ( CP => FC % CoarsenPillar_3 ( iP ) )
+            do iS = 2, CP % nVariables
+              Outgoing ( oO + 1 : oO + nCB ( 3 ) )  &
+                =  CP % Value ( oC + 1 : oC + nCB ( 3 ), iS )
+              oO = oO + nCB ( 3 )
+            end do !-- iS
+            end associate !-- CP
+          end do !-- iPS
+          oC = oC + nCB ( 3 )
+        end do !-- iB
+        oP = oP + C % nSegmentsFrom_3 ( iR )
+      end do !-- iG
+
+      call CO % AllToAll_V ( )
+
+      call C % SetVariablePointer &
+             ( G % Value ( :, G % COARSENING ( 3 ) ), Crsn_3 )
+
+      oI = 0
+      do jC = 1, nCB ( 2 )
+        do iC = 1, nCB ( 1 )
+          if ( Crsn_3 ( iC, jC, 1 ) < 2.0_KDR ) &
+            cycle
+          do iS = 1, S % nVariables
+            call C % SetVariablePointer &
+                   ( S % Value ( :, S % iaSelected ( iS ) ), SV )
+            SV ( iC, jC, 1 : nCB ( 3 ) )  &
+              =  Incoming ( oI + 1 : oI + nCB ( 3 ) )
+            oI = oI + nCB ( 3 )
+          end do !-- iS
+        end do !-- iC
+      end do !-- jC
+
+      end associate !-- Outgoing, etc.
+      end associate !-- CO
+
+    end select !-- iAngular
+    end associate !-- nCB
+    end select !-- C
+    end select !-- PS
+    end select !-- I
+    nullify ( G, R, Crsn_2, Crsn_3, SV )
+
+  end subroutine DecomposePillars
 
 
   subroutine ApplySources &
