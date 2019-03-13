@@ -133,11 +133,11 @@ contains
 
   subroutine InitializeTemplate_FC &
                ( FC, Name, FluidType, GeometryType, DimensionlessOption, &
+                 FinishTimeOption, CourantFactorOption, &
                  LimiterParameterOption, ShockThresholdOption, & 
                  RadiusMaxOption, RadiusCoreOption, RadiusMinOption, &
                  RadialRatioOption, CentralMassOption, &
                  nWriteOption, nCellsPolarOption )
-               !   FinishTimeOption, CourantFactorOption, &
 
     class ( FluidCentralTemplate ), intent ( inout ) :: &
       FC
@@ -148,8 +148,8 @@ contains
     logical ( KDL ), intent ( in ), optional :: &
       DimensionlessOption
     real ( KDR ), intent ( in ), optional :: &
-    !   FinishTimeOption, &
-    !   CourantFactorOption, &
+      FinishTimeOption, &
+      CourantFactorOption, &
       LimiterParameterOption, &
       ShockThresholdOption, &
       RadiusMaxOption, &
@@ -161,19 +161,8 @@ contains
       nWriteOption, &
       nCellsPolarOption
 
-!     real ( KDR ) :: &
-!       FinishTime
-!     type ( MeasuredValueForm ) :: &
-!       TimeUnit, &
-!       BaryonMassUnit, &
-!       NumberDensityUnit, &
-!       EnergyDensityUnit, &
-!       TemperatureUnit
-!     type ( MeasuredValueForm ), dimension ( 3 ) :: &
-!       Velocity_U_Unit, &
-!       MomentumDensity_D_Unit
-!     class ( Fluid_D_Form ), pointer :: &
-!       F
+    real ( KDR ) :: &
+      FinishTime
 
     if ( FC % Type == '' ) &
       FC % Type = 'a FluidCentral'
@@ -195,22 +184,23 @@ contains
     call FC % InitializeStep &
            ( Name ) 
 
-!     !-- Template
+    FinishTime  =  1.0_KDR  *  FC % Units % Time
+    if ( present ( FinishTimeOption ) ) &
+      FinishTime = FinishTimeOption
 
-!     FinishTime = 1.0_KDR * TimeUnit
-!     if ( present ( FinishTimeOption ) ) &
-!       FinishTime = FinishTimeOption
+    select type ( I => FC % Integrator )
+    class is ( Integrator_C_PS_Form )
+      call I % Initialize &
+             ( Name, TimeUnitOption = FC % Units % Time, &
+               FinishTimeOption = FinishTime, &
+               CourantFactorOption = CourantFactorOption, &
+               nWriteOption = nWriteOption )
+    end select !-- I
 
-!     call FC % InitializeTemplate_C_PS &
-!            ( Name, TimeUnitOption = TimeUnit, &
-!              FinishTimeOption = FinishTime, &
-!              CourantFactorOption = CourantFactorOption, &
-!              nWriteOption = nWriteOption )
-
-!     call Show ( FC % Dimensionless, 'Dimensionless', FC % IGNORABILITY )
-!     call Show ( FC % UseCoarsening, 'UseCoarsening', FC % IGNORABILITY )
-!     call Show ( FC % RadiusPolarMomentum, PS % Chart % CoordinateUnit ( 1 ), &
-!                 'RadiusPolarMomentum', FC % IGNORABILITY )
+    call Show ( FC % Dimensionless, 'Dimensionless', FC % IGNORABILITY )
+    call Show ( FC % UseCoarsening, 'UseCoarsening', FC % IGNORABILITY )
+    call Show ( FC % RadiusPolarMomentum, FC % Units % Coordinate_PS ( 1 ), &
+                'RadiusPolarMomentum', FC % IGNORABILITY )
 
 !     if ( FC % UseCoarsening ) &
 !       call FC % SetCoarsening ( )
