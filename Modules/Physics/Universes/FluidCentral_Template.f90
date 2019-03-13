@@ -64,8 +64,6 @@ module FluidCentral_Template
       CoarsenSingularityTemplate
     procedure ( CS ), public, nopass, deferred :: &
       CoarsenSingularities
-!     procedure, public, pass :: &  !-- 3
-!       Write
   end type FluidCentralTemplate
 
   abstract interface
@@ -120,8 +118,9 @@ module FluidCentral_Template
     private :: &
       OpenGridImageStreams, &
       OpenManifoldStreams, &
-!       ComputeSphericalAverage, &
-!       ComputeEnclosedBaryons, &
+      Write, &
+      ComputeSphericalAverage, &
+      ComputeEnclosedBaryons, &
       ComposePillars, &
       CoarsenPillars, &
       DecomposePillars, &
@@ -193,6 +192,7 @@ contains
 
       I % OpenGridImageStreams  =>  OpenGridImageStreams
       I % OpenManifoldStreams   =>  OpenManifoldStreams
+      I % Write                 =>  Write
 
       call I % Initialize &
              ( FC, Name, TimeUnitOption = FC % Units % Time, &
@@ -720,152 +720,161 @@ contains
   end subroutine OpenManifoldStreams
 
 
-!   subroutine Write ( I )
+  subroutine Write ( I )
 
-!     class ( FluidCentralTemplate ), intent ( inout ) :: &
-!       I
+    class ( IntegratorTemplate ), intent ( inout ) :: &
+      I
 
-!     call I % WriteTemplate ( )
+    call I % WriteTemplate ( )
 
-!     call ComputeSphericalAverage ( I )
-!     call ComputeEnclosedBaryons ( I )
+    select type ( FC => I % Universe )
+    class is ( FluidCentralTemplate )
 
-!     if ( I % PositionSpace % Communicator % Rank /= CONSOLE % DisplayRank ) &
-!       return
+    call ComputeSphericalAverage ( FC )
+    call ComputeEnclosedBaryons ( FC )
 
-!     associate &
-!       ( GIS => I % GridImageStream_SA_EB, &
-!         iS  => 1 )  !-- iStream
-!     call GIS % Open ( GIS % ACCESS_CREATE )
+    if ( I % PositionSpace % Communicator % Rank /= CONSOLE % DisplayRank ) &
+      return
 
-!     call I % PositionSpace_SA % Write &
-!            ( iStream = iS, DirectoryOption = 'Chart_SA', &
-!              TimeOption = I % Time / I % TimeUnit, &
-!              CycleNumberOption = I % iCycle )
-!     call I % PositionSpace_EB % Write &
-!            ( iStream = iS, DirectoryOption = 'Chart_EB', &
-!              TimeOption = I % Time / I % TimeUnit, &
-!              CycleNumberOption = I % iCycle )
+    associate &
+      ( GIS => FC % GridImageStream_SA_EB, &
+        iS  => 1 )  !-- iStream
+    call GIS % Open ( GIS % ACCESS_CREATE )
 
-!     call GIS % Close ( )
-!     end associate !-- GIS, etc.
+    call FC % PositionSpace_SA % Write &
+           ( iStream = iS, DirectoryOption = 'Chart_SA', &
+             TimeOption = I % Time / I % TimeUnit, &
+             CycleNumberOption = I % iCycle )
+    call FC % PositionSpace_EB % Write &
+           ( iStream = iS, DirectoryOption = 'Chart_EB', &
+             TimeOption = I % Time / I % TimeUnit, &
+             CycleNumberOption = I % iCycle )
 
-!   end subroutine Write
+    call GIS % Close ( )
+    end associate !-- GIS, etc.
+    end select !-- FC
 
-
-!   subroutine ComputeSphericalAverage ( FC )
-
-!     class ( FluidCentralTemplate ), intent ( inout ) :: &
-!       FC
-
-!     integer ( KDI ) :: &
-!       nAverage
-!     integer ( KDI ), dimension ( : ), allocatable :: &
-!       iaAverage
-!     type ( StorageForm ) :: &
-!       Integrand, &
-!       Average
-!     class ( GeometryFlatForm ), pointer :: &
-!       G_SA
-!     type ( SphericalAverageForm ) :: &
-!       SA
-!     class ( Fluid_D_Form ), pointer :: &
-!       F, &
-!       F_SA
-
-!     select type ( PS => FC % PositionSpace )
-!     class is ( Atlas_SC_Form )
-
-!     select type ( FA => FC % Current_ASC )
-!     class is ( Fluid_ASC_Form )
-!     F => FA % Fluid_D ( )
-
-!     select type ( C => PS % Chart )
-!     class is ( Chart_SLD_Form )
-
-!     select type ( C_SA => FC % PositionSpace_SA % Chart )
-!     type is ( Chart_SLL_Form )
-
-!     G_SA => FC % PositionSpace_SA % Geometry ( )
-!     F_SA => FC % Fluid_ASC_SA % Fluid_D ( )
-
-!     nAverage = F % N_CONSERVED
-!     select type ( F )
-!     class is ( Fluid_P_HN_Form )
-!       nAverage = nAverage + 2  !-- Add pressure, temperature for initial guess
-!     end select !-- F
-
-!     allocate ( iaAverage ( nAverage ) )
-!     iaAverage ( 1 : F % N_CONSERVED ) = F % iaConserved
-!     select type ( F )
-!     class is ( Fluid_P_HN_Form )
-!       iaAverage ( F % N_CONSERVED + 1 )  =  F % PRESSURE
-!       iaAverage ( F % N_CONSERVED + 2 )  =  F % TEMPERATURE
-!     end select !-- F
-
-!     call Integrand % Initialize ( F, iaSelectedOption = iaAverage )
-!     call Average % Initialize ( F_SA, iaSelectedOption = iaAverage )
-
-!     call SA % Compute ( Average, C, C_SA, Integrand )
-
-!     if ( PS % Communicator % Rank == CONSOLE % DisplayRank ) &
-!       call F_SA % ComputeFromConserved ( G_SA )
-
-!     end select !-- C_SA
-!     end select !-- C
-!     end select !-- FA
-!     end select !-- PS
-!     nullify ( G_SA, F, F_SA )
-
-!   end subroutine ComputeSphericalAverage
+  end subroutine Write
 
 
-!   subroutine ComputeEnclosedBaryons ( FC )
+  subroutine ComputeSphericalAverage ( FC )
 
-!     class ( FluidCentralTemplate ), intent ( inout ) :: &
-!       FC
+    class ( FluidCentralTemplate ), intent ( inout ) :: &
+      FC
 
-!     type ( Real_1D_Form ), dimension ( 1 ) :: &
-!       Edge
-!     class ( GeometryFlatForm ), pointer :: &
-!       G_SA
-!     class ( Fluid_D_Form ), pointer :: &
-!       F_SA, &
-!       F_EB
+    integer ( KDI ) :: &
+      nAverage
+    integer ( KDI ), dimension ( : ), allocatable :: &
+      iaAverage
+    type ( StorageForm ) :: &
+      Integrand, &
+      Average
+    class ( GeometryFlatForm ), pointer :: &
+      G_SA
+    type ( SphericalAverageForm ) :: &
+      SA
+    class ( Fluid_D_Form ), pointer :: &
+      F, &
+      F_SA
 
-!     integer ( KDI ) :: &
-!       iV
+    select type ( I => FC % Integrator )
+    class is ( Integrator_C_PS_Form )
 
-!     if ( FC % PositionSpace % Communicator % Rank /= CONSOLE % DisplayRank ) &
-!       return
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
 
-!     G_SA => FC % PositionSpace_SA % Geometry ( )
-!     F_SA => FC % Fluid_ASC_SA % Fluid_D ( )
-!     F_EB => FC % Fluid_ASC_EB % Fluid_D ( )
+    select type ( FA => I % Current_ASC )
+    class is ( Fluid_ASC_Form )
+    F => FA % Fluid_D ( )
 
-!     call Copy ( F_SA % Value, F_EB % Value )
+    select type ( C => PS % Chart )
+    class is ( Chart_SLD_Form )
 
-!     associate &
-!       ( dV => G_SA % Value ( :, G_SA % VOLUME ), &
-!          N => F_SA % Value ( :, F_SA % COMOVING_BARYON_DENSITY ) )
+    select type ( C_SA => FC % PositionSpace_SA % Chart )
+    type is ( Chart_SLL_Form )
 
-!     call Edge ( 1 ) % Initialize ( size ( N ) + 1 )
+    G_SA => FC % PositionSpace_SA % Geometry ( )
+    F_SA => FC % Fluid_ASC_SA % Fluid_D ( )
 
-!     Edge ( 1 ) % Value ( 1 )  =  0.0_KDR
-!     do iV = 1, size ( N )
-!       Edge ( 1 ) % Value ( iV + 1 )  &
-!         =  Edge ( 1 ) % Value ( iV )  +  N ( iV ) * dV ( iV )
-!     end do
+    nAverage = F % N_CONSERVED
+    select type ( F )
+    class is ( Fluid_P_HN_Form )
+      nAverage = nAverage + 2  !-- Add pressure, temperature for initial guess
+    end select !-- F
 
-!     select type ( C_EB => FC % PositionSpace_EB % Chart )
-!     type is ( Chart_SLL_Form )
-!       call C_EB % ResetGeometry ( Edge )
-!     end select !-- C_EB
+    allocate ( iaAverage ( nAverage ) )
+    iaAverage ( 1 : F % N_CONSERVED ) = F % iaConserved
+    select type ( F )
+    class is ( Fluid_P_HN_Form )
+      iaAverage ( F % N_CONSERVED + 1 )  =  F % PRESSURE
+      iaAverage ( F % N_CONSERVED + 2 )  =  F % TEMPERATURE
+    end select !-- F
 
-!     end associate !-- dV, etc.
-!     nullify ( G_SA, F_SA, F_EB )
+    call Integrand % Initialize ( F, iaSelectedOption = iaAverage )
+    call Average % Initialize ( F_SA, iaSelectedOption = iaAverage )
 
-!   end subroutine ComputeEnclosedBaryons
+    call SA % Compute ( Average, C, C_SA, Integrand )
+
+    if ( PS % Communicator % Rank == CONSOLE % DisplayRank ) &
+      call F_SA % ComputeFromConserved ( G_SA )
+
+    end select !-- C_SA
+    end select !-- C
+    end select !-- FA
+    end select !-- PS
+    end select !-- I
+    nullify ( G_SA, F, F_SA )
+
+  end subroutine ComputeSphericalAverage
+
+
+  subroutine ComputeEnclosedBaryons ( FC )
+
+    class ( FluidCentralTemplate ), intent ( inout ) :: &
+      FC
+
+    type ( Real_1D_Form ), dimension ( 1 ) :: &
+      Edge
+    class ( GeometryFlatForm ), pointer :: &
+      G_SA
+    class ( Fluid_D_Form ), pointer :: &
+      F_SA, &
+      F_EB
+
+    integer ( KDI ) :: &
+      iV
+
+    if ( FC % Integrator % PositionSpace % Communicator % Rank &
+           /= CONSOLE % DisplayRank ) &
+      return
+
+    G_SA => FC % PositionSpace_SA % Geometry ( )
+    F_SA => FC % Fluid_ASC_SA % Fluid_D ( )
+    F_EB => FC % Fluid_ASC_EB % Fluid_D ( )
+
+    call Copy ( F_SA % Value, F_EB % Value )
+
+    associate &
+      ( dV => G_SA % Value ( :, G_SA % VOLUME ), &
+         N => F_SA % Value ( :, F_SA % COMOVING_BARYON_DENSITY ) )
+
+    call Edge ( 1 ) % Initialize ( size ( N ) + 1 )
+
+    Edge ( 1 ) % Value ( 1 )  =  0.0_KDR
+    do iV = 1, size ( N )
+      Edge ( 1 ) % Value ( iV + 1 )  &
+        =  Edge ( 1 ) % Value ( iV )  +  N ( iV ) * dV ( iV )
+    end do
+
+    select type ( C_EB => FC % PositionSpace_EB % Chart )
+    type is ( Chart_SLL_Form )
+      call C_EB % ResetGeometry ( Edge )
+    end select !-- C_EB
+
+    end associate !-- dV, etc.
+    nullify ( G_SA, F_SA, F_EB )
+
+  end subroutine ComputeEnclosedBaryons
 
 
   subroutine ComposePillars ( FC, S, iAngular )

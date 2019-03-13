@@ -23,6 +23,8 @@ module Integrator_Template
         OpenGridImageStreams => null ( )
       procedure ( OMS ), pointer :: &
         OpenManifoldStreams => null ( )
+      procedure ( W ), pointer:: &
+        Write => null ( )
       procedure ( CTSL ), pointer :: &
         ComputeTimeStepLocal => null ( )
       procedure ( SR ), pointer :: &
@@ -59,8 +61,6 @@ module Integrator_Template
       ComputeTally
     procedure, public, pass :: &  !-- 3
       WriteTemplate
-    procedure, public, pass :: &  !-- 3
-      Write
 !-- See FIXME above
 !    procedure ( RTS ), private, pass, deferred :: &  !-- 3
 !      RecordTimeSeries
@@ -97,6 +97,12 @@ module Integrator_Template
       logical ( KDL ), intent ( in ), optional :: &
         VerboseStreamOption
     end subroutine OMS
+
+    subroutine W ( I )
+      import IntegratorTemplate
+      class ( IntegratorTemplate ), intent ( inout ) :: &
+        I
+    end subroutine W
 
     subroutine CTSL ( I, TimeStepCandidate )
       use Basics
@@ -148,7 +154,8 @@ module Integrator_Template
 
     private :: &
       OpenGridImageStreams, &
-      OpenManifoldStreams
+      OpenManifoldStreams, &
+      Write
 
 contains
 
@@ -186,6 +193,8 @@ contains
       I % OpenGridImageStreams => OpenGridImageStreams
     if ( .not. associated ( I % OpenManifoldStreams ) ) &
       I % OpenManifoldStreams => OpenManifoldStreams
+    if ( .not. associated ( I % Write ) ) &
+      I % Write => Write
 
     call I % OpenGridImageStreams ( )
 
@@ -550,16 +559,6 @@ contains
   end subroutine WriteTemplate
 
 
-  subroutine Write ( I )
-
-    class ( IntegratorTemplate ), intent ( inout ) :: &
-      I
-
-    call I % WriteTemplate ( )
-
-  end subroutine Write
-
-
 !-- See FIXME above
   subroutine RecordTimeSeries ( I, MaxTime, MinTime, MeanTime )
     class ( IntegratorTemplate ), intent ( inout ) :: &
@@ -717,6 +716,16 @@ contains
     call I % OpenManifoldStreamsTemplate ( VerboseStreamOption )
 
   end subroutine OpenManifoldStreams
+
+
+  subroutine Write ( I )
+
+    class ( IntegratorTemplate ), intent ( inout ) :: &
+      I
+
+    call I % WriteTemplate ( )
+
+  end subroutine Write
 
 
 end module Integrator_Template
