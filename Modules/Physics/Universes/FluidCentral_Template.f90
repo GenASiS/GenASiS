@@ -13,20 +13,20 @@ module FluidCentral_Template
 
   type, public, extends ( UniverseTemplate ), abstract :: &
     FluidCentralTemplate
-!       integer ( KDI ), dimension ( : ), allocatable :: &
-!         nCoarsen_2, &
-!         nCoarsen_3
+      integer ( KDI ), dimension ( : ), allocatable :: &
+        nCoarsen_2, &
+        nCoarsen_3
       real ( KDR ) :: &
         RadiusPolarMomentum = 0.0_KDR
       logical ( KDL ) :: &
         Dimensionless, &
         UseCoarsening
-!       type ( StorageForm ), dimension ( : ), allocatable :: &
-!         CoarsenPillar_2, &
-!         CoarsenPillar_3
-!       type ( CollectiveOperation_R_Form ), allocatable :: &
-!         CO_CoarsenForward_2, CO_CoarsenBackward_2, &
-!         CO_CoarsenForward_3, CO_CoarsenBackward_3
+      type ( StorageForm ), dimension ( : ), allocatable :: &
+        CoarsenPillar_2, &
+        CoarsenPillar_3
+      type ( CollectiveOperation_R_Form ), allocatable :: &
+        CO_CoarsenForward_2, CO_CoarsenBackward_2, &
+        CO_CoarsenForward_3, CO_CoarsenBackward_3
 !       type ( GridImageStreamForm ), allocatable :: &
 !         GridImageStream_SA_EB
 !       type ( Atlas_SC_Form ), allocatable :: &
@@ -54,10 +54,10 @@ module FluidCentral_Template
       InitializeFluid
     procedure, public, pass :: &
       InitializeStep
-!     procedure, public, pass :: &
-!       SetCoarseningTemplate
-!    procedure ( SC ), private, pass, deferred :: &
-!       SetCoarsening
+    procedure, public, pass :: &
+      SetCoarseningTemplate
+   procedure ( SC ), private, pass, deferred :: &
+      SetCoarsening
 !     procedure, public, pass :: &
 !       CoarsenSingularityTemplate
 !     procedure ( CS ), public, nopass, deferred :: &
@@ -105,11 +105,11 @@ module FluidCentral_Template
         CentralMassOption
     end subroutine IG
 
-!     subroutine SC ( FC )
-!       import FluidCentralTemplate
-!       class ( FluidCentralTemplate ), intent ( inout ) :: &
-!         FC
-!     end subroutine SC
+    subroutine SC ( FC )
+      import FluidCentralTemplate
+      class ( FluidCentralTemplate ), intent ( inout ) :: &
+        FC
+    end subroutine SC
 
 !     subroutine CS ( S )
 !       use Basics
@@ -202,8 +202,8 @@ contains
     call Show ( FC % RadiusPolarMomentum, FC % Units % Coordinate_PS ( 1 ), &
                 'RadiusPolarMomentum', FC % IGNORABILITY )
 
-!     if ( FC % UseCoarsening ) &
-!       call FC % SetCoarsening ( )
+    if ( FC % UseCoarsening ) &
+      call FC % SetCoarsening ( )
 
 
 !     !-- Diagnostics
@@ -239,24 +239,24 @@ contains
 !     if ( allocated ( FC % GridImageStream_SA_EB ) ) &
 !       deallocate ( FC % GridImageStream_SA_EB )
 
-!     if ( allocated ( FC % CO_CoarsenBackward_3 ) ) &
-!       deallocate ( FC % CO_CoarsenBackward_3 )
-!     if ( allocated ( FC % CO_CoarsenForward_3 ) ) &
-!       deallocate ( FC % CO_CoarsenForward_3 )
-!     if ( allocated ( FC % CO_CoarsenBackward_2 ) ) &
-!       deallocate ( FC % CO_CoarsenBackward_2 )
-!     if ( allocated ( FC % CO_CoarsenForward_2 ) ) &
-!       deallocate ( FC % CO_CoarsenForward_2 )
+    if ( allocated ( FC % CO_CoarsenBackward_3 ) ) &
+      deallocate ( FC % CO_CoarsenBackward_3 )
+    if ( allocated ( FC % CO_CoarsenForward_3 ) ) &
+      deallocate ( FC % CO_CoarsenForward_3 )
+    if ( allocated ( FC % CO_CoarsenBackward_2 ) ) &
+      deallocate ( FC % CO_CoarsenBackward_2 )
+    if ( allocated ( FC % CO_CoarsenForward_2 ) ) &
+      deallocate ( FC % CO_CoarsenForward_2 )
 
-!     if ( allocated ( FC % CoarsenPillar_3 ) ) &
-!       deallocate ( FC % CoarsenPillar_3 )
-!     if ( allocated ( FC % CoarsenPillar_2 ) ) &
-!       deallocate ( FC % CoarsenPillar_2 )
+    if ( allocated ( FC % CoarsenPillar_3 ) ) &
+      deallocate ( FC % CoarsenPillar_3 )
+    if ( allocated ( FC % CoarsenPillar_2 ) ) &
+      deallocate ( FC % CoarsenPillar_2 )
 
-!     if ( allocated ( FC % nCoarsen_3 ) ) &
-!       deallocate ( FC % nCoarsen_3 )
-!     if ( allocated ( FC % nCoarsen_2 ) ) &
-!       deallocate ( FC % nCoarsen_2 )
+    if ( allocated ( FC % nCoarsen_3 ) ) &
+      deallocate ( FC % nCoarsen_3 )
+    if ( allocated ( FC % nCoarsen_2 ) ) &
+      deallocate ( FC % nCoarsen_2 )
 
     call FC % FinalizeTemplate ( )
 
@@ -428,104 +428,108 @@ contains
   end subroutine InitializeStep
 
 
-!   subroutine SetCoarseningTemplate ( FC, iAngular )
+  subroutine SetCoarseningTemplate ( FC, iAngular )
 
-!     class ( FluidCentralTemplate ), intent ( inout ) :: &
-!       FC
-!     integer ( KDI ), intent ( in ) :: &
-!       iAngular
+    class ( FluidCentralTemplate ), intent ( inout ) :: &
+      FC
+    integer ( KDI ), intent ( in ) :: &
+      iAngular
 
-!     integer ( KDI ) :: &
-!       iP, &  !-- iPillar
-!       nValuesFactor_F_2, nValuesFactor_B_2, &
-!       nValuesFactor_F_3, nValuesFactor_B_3
-!     class ( Fluid_D_Form ), pointer :: &
-!       F
+    integer ( KDI ) :: &
+      iP, &  !-- iPillar
+      nValuesFactor_F_2, nValuesFactor_B_2, &
+      nValuesFactor_F_3, nValuesFactor_B_3
+    class ( Fluid_D_Form ), pointer :: &
+      F
 
-!     select type ( FA => FC % Current_ASC )
-!     class is ( Fluid_ASC_Form )
-!     F => FA % Fluid_D ( )
+    select type ( I => FC % Integrator )
+    class is ( Integrator_C_PS_Form )
 
-!     select type ( PS => FC % PositionSpace )
-!     class is ( Atlas_SC_Form )
+    select type ( FA => I % Current_ASC )
+    class is ( Fluid_ASC_Form )
+    F => FA % Fluid_D ( )
 
-!     select type ( C => PS % Chart )
-!     class is ( Chart_SLD_C_Template )
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
 
-!     select case ( iAngular )
-!     case ( 2 )
+    select type ( C => PS % Chart )
+    class is ( Chart_SLD_C_Template )
 
-!       if ( .not. C % Communicator_2 % Initialized ) &
-!         return
+    select case ( iAngular )
+    case ( 2 )
 
-!       allocate ( FC % CO_CoarsenForward_2 )
-!       allocate ( FC % CO_CoarsenBackward_2 )
-!       associate &
-!         ( CO_F => FC % CO_CoarsenForward_2, &
-!           CO_B => FC % CO_CoarsenBackward_2 )
+      if ( .not. C % Communicator_2 % Initialized ) &
+        return
 
-!       nValuesFactor_F_2  =  ( 1 + F % N_CONSERVED )  *  C % nCellsBrick ( 2 ) &
-!                             +  1
-!       nValuesFactor_B_2  =  F % N_CONSERVED  *  C % nCellsBrick ( 2 )
+      allocate ( FC % CO_CoarsenForward_2 )
+      allocate ( FC % CO_CoarsenBackward_2 )
+      associate &
+        ( CO_F => FC % CO_CoarsenForward_2, &
+          CO_B => FC % CO_CoarsenBackward_2 )
 
-!       call CO_F % Initialize &
-!              ( C % Communicator_2, &
-!                nIncoming  =  C % nSegmentsFrom_2  *  nValuesFactor_F_2, &
-!                nOutgoing  =  C % nSegmentsTo_2    *  nValuesFactor_F_2 )
-!       call CO_B % Initialize &
-!              ( C % Communicator_2, &
-!                nIncoming  =  C % nSegmentsTo_2    *  nValuesFactor_B_2, &
-!                nOutgoing  =  C % nSegmentsFrom_2  *  nValuesFactor_B_2 )
+      nValuesFactor_F_2  =  ( 1 + F % N_CONSERVED )  *  C % nCellsBrick ( 2 ) &
+                            +  1
+      nValuesFactor_B_2  =  F % N_CONSERVED  *  C % nCellsBrick ( 2 )
 
-!       end associate !-- CO_F, etc.
+      call CO_F % Initialize &
+             ( C % Communicator_2, &
+               nIncoming  =  C % nSegmentsFrom_2  *  nValuesFactor_F_2, &
+               nOutgoing  =  C % nSegmentsTo_2    *  nValuesFactor_F_2 )
+      call CO_B % Initialize &
+             ( C % Communicator_2, &
+               nIncoming  =  C % nSegmentsTo_2    *  nValuesFactor_B_2, &
+               nOutgoing  =  C % nSegmentsFrom_2  *  nValuesFactor_B_2 )
 
-!       allocate ( FC % nCoarsen_2 ( C % nPillars_2 ) )
-!       allocate ( FC % CoarsenPillar_2 ( C % nPillars_2 ) )
-!       do iP = 1, C % nPillars_2
-!         call FC % CoarsenPillar_2 ( iP ) % Initialize &
-!                ( [ C % nCells ( 2 ), 1 + F % N_CONSERVED ] )
-!       end do  !-- iP
+      end associate !-- CO_F, etc.
 
-!     case ( 3 )
+      allocate ( FC % nCoarsen_2 ( C % nPillars_2 ) )
+      allocate ( FC % CoarsenPillar_2 ( C % nPillars_2 ) )
+      do iP = 1, C % nPillars_2
+        call FC % CoarsenPillar_2 ( iP ) % Initialize &
+               ( [ C % nCells ( 2 ), 1 + F % N_CONSERVED ] )
+      end do  !-- iP
 
-!       if ( .not. C % Communicator_3 % Initialized ) &
-!         return
+    case ( 3 )
 
-!       allocate ( FC % CO_CoarsenForward_3 )
-!       allocate ( FC % CO_CoarsenBackward_3 )
-!       associate &
-!         ( CO_F => FC % CO_CoarsenForward_3, &
-!           CO_B => FC % CO_CoarsenBackward_3 )
+      if ( .not. C % Communicator_3 % Initialized ) &
+        return
 
-!       nValuesFactor_F_3  =  ( 1 + F % N_CONSERVED )  *  C % nCellsBrick ( 3 ) &
-!                             +  1
-!       nValuesFactor_B_3  =  F % N_CONSERVED  *  C % nCellsBrick ( 3 )
+      allocate ( FC % CO_CoarsenForward_3 )
+      allocate ( FC % CO_CoarsenBackward_3 )
+      associate &
+        ( CO_F => FC % CO_CoarsenForward_3, &
+          CO_B => FC % CO_CoarsenBackward_3 )
+
+      nValuesFactor_F_3  =  ( 1 + F % N_CONSERVED )  *  C % nCellsBrick ( 3 ) &
+                            +  1
+      nValuesFactor_B_3  =  F % N_CONSERVED  *  C % nCellsBrick ( 3 )
   
-!       call CO_F % Initialize &
-!              ( C % Communicator_3, &
-!                nIncoming  =  C % nSegmentsFrom_3  *  nValuesFactor_F_3, &
-!                nOutgoing  =  C % nSegmentsTo_3    *  nValuesFactor_F_3 )
-!       call CO_B % Initialize &
-!              ( C % Communicator_3, &
-!                nIncoming  =  C % nSegmentsTo_3    *  nValuesFactor_B_3, &
-!                nOutgoing  =  C % nSegmentsFrom_3  *  nValuesFactor_B_3 )
+      call CO_F % Initialize &
+             ( C % Communicator_3, &
+               nIncoming  =  C % nSegmentsFrom_3  *  nValuesFactor_F_3, &
+               nOutgoing  =  C % nSegmentsTo_3    *  nValuesFactor_F_3 )
+      call CO_B % Initialize &
+             ( C % Communicator_3, &
+               nIncoming  =  C % nSegmentsTo_3    *  nValuesFactor_B_3, &
+               nOutgoing  =  C % nSegmentsFrom_3  *  nValuesFactor_B_3 )
 
-!       end associate !-- CO_F, etc.
+      end associate !-- CO_F, etc.
 
-!       allocate ( FC % nCoarsen_3 ( C % nPillars_3 ) )
-!       allocate ( FC % CoarsenPillar_3 ( C % nPillars_3 ) )
-!       do iP = 1, C % nPillars_3
-!         call FC % CoarsenPillar_3 ( iP ) % Initialize &
-!                ( [ C % nCells ( 3 ), 1 + F % N_CONSERVED ] )
-!       end do  !-- iP
+      allocate ( FC % nCoarsen_3 ( C % nPillars_3 ) )
+      allocate ( FC % CoarsenPillar_3 ( C % nPillars_3 ) )
+      do iP = 1, C % nPillars_3
+        call FC % CoarsenPillar_3 ( iP ) % Initialize &
+               ( [ C % nCells ( 3 ), 1 + F % N_CONSERVED ] )
+      end do  !-- iP
 
-!     end select !-- iAngular
-!     end select !-- C
-!     end select !-- PS
-!     end select !-- FA
-!     nullify ( F )
+    end select !-- iAngular
+    end select !-- C
+    end select !-- PS
+    end select !-- FA
+    end select !-- I
+    nullify ( F )
 
-!   end subroutine SetCoarseningTemplate
+  end subroutine SetCoarseningTemplate
 
 
 !   subroutine CoarsenSingularityTemplate ( FC, S, iAngular )

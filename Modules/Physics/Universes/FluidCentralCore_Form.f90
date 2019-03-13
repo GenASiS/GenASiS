@@ -21,8 +21,8 @@ module FluidCentralCore_Form
       InitializeAtlas
     procedure, private, pass :: &
       InitializeGeometry
-  !   procedure, private, pass :: &
-  !     SetCoarsening
+    procedure, private, pass :: &
+      SetCoarsening
   !   procedure, public, nopass :: &
   !     CoarsenSingularities
   !   procedure, private, pass :: &
@@ -216,33 +216,37 @@ contains
 !   end subroutine Finalize
 
 
-!   subroutine SetCoarsening ( FC )
+  subroutine SetCoarsening ( FC )
 
-!     class ( FluidCentralCoreForm ), intent ( inout ) :: &
-!       FC
+    class ( FluidCentralCoreForm ), intent ( inout ) :: &
+      FC
 
-!     select type ( PS => FC % PositionSpace )
-!     class is ( Atlas_SC_CC_Form )
+    select type ( I => FC % Integrator )
+    class is ( Integrator_C_PS_Form )
 
-!     !-- Polar coarsening
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_CC_Form )
 
-!     if ( PS % nDimensions < 2 ) &
-!       return
-!     call Show ( 'SetCoarsening_2', FC % IGNORABILITY )
-!     call Show ( FC % Name, 'Universe', FC % IGNORABILITY )
-!     call FC % SetCoarseningTemplate ( iAngular = 2 )
+    !-- Polar coarsening
 
-!     !-- Azimuthal coarsening
+    if ( PS % nDimensions < 2 ) &
+      return
+    call Show ( 'SetCoarsening_2', FC % IGNORABILITY )
+    call Show ( FC % Name, 'Universe', FC % IGNORABILITY )
+    call FC % SetCoarseningTemplate ( iAngular = 2 )
 
-!     if ( PS % nDimensions < 3 ) &
-!       return
-!     call Show ( 'SetCoarsening_3', FC % IGNORABILITY )
-!     call Show ( FC % Name, 'Universe', FC % IGNORABILITY )
-!     call FC % SetCoarseningTemplate ( iAngular = 3 )
+    !-- Azimuthal coarsening
 
-!     end select !-- PS
+    if ( PS % nDimensions < 3 ) &
+      return
+    call Show ( 'SetCoarsening_3', FC % IGNORABILITY )
+    call Show ( FC % Name, 'Universe', FC % IGNORABILITY )
+    call FC % SetCoarseningTemplate ( iAngular = 3 )
 
-!   end subroutine SetCoarsening
+    end select !-- PS
+    end select !-- I
+
+  end subroutine SetCoarsening
 
 
 !   subroutine CoarsenSingularities ( S )

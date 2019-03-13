@@ -19,8 +19,8 @@ module FluidCentralExcision_Form
       InitializeAtlas
     procedure, private, pass :: &
       InitializeGeometry
-  !   procedure, private, pass :: &
-  !     SetCoarsening
+    procedure, private, pass :: &
+      SetCoarsening
   !   procedure, public, nopass :: &
   !     CoarsenSingularities
   end type FluidCentralExcisionForm
@@ -199,25 +199,29 @@ contains
   end subroutine InitializeGeometry
 
 
-!   subroutine SetCoarsening ( FC )
+  subroutine SetCoarsening ( FC )
 
-!     class ( FluidCentralExcisionForm ), intent ( inout ) :: &
-!       FC
+    class ( FluidCentralExcisionForm ), intent ( inout ) :: &
+      FC
 
-!     select type ( PS => FC % PositionSpace )
-!     class is ( Atlas_SC_CE_Form )
+    select type ( I => FC % Integrator )
+    class is ( Integrator_C_PS_Form )
 
-!     !-- Azimuthal coarsening
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_CE_Form )
 
-!     if ( PS % nDimensions < 3 ) &
-!       return
-!     call Show ( 'SetCoarsening_3', FC % IGNORABILITY )
-!     call Show ( FC % Name, 'Universe', FC % IGNORABILITY )
-!     call FC % SetCoarseningTemplate ( iAngular = 3 )
+    !-- Azimuthal coarsening
 
-!     end select !-- PS
+    if ( PS % nDimensions < 3 ) &
+      return
+    call Show ( 'SetCoarsening_3', FC % IGNORABILITY )
+    call Show ( FC % Name, 'Universe', FC % IGNORABILITY )
+    call FC % SetCoarseningTemplate ( iAngular = 3 )
 
-!   end subroutine SetCoarsening
+    end select !-- PS
+    end select !-- I
+
+  end subroutine SetCoarsening
 
 
 !   subroutine CoarsenSingularities ( S )
