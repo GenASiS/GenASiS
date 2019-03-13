@@ -56,7 +56,7 @@ module FluidCentral_Template
       InitializeStep
 !     procedure, public, pass :: &
 !       SetCoarseningTemplate
-!     procedure ( SC ), private, pass, deferred :: &
+!    procedure ( SC ), private, pass, deferred :: &
 !       SetCoarsening
 !     procedure, public, pass :: &
 !       CoarsenSingularityTemplate
@@ -335,9 +335,6 @@ contains
       LimiterParameterOption, &
       ShockThresholdOption
 
-    real ( KDR ) :: &
-      BaryonMassReference
-
     select type ( I => FC % Integrator )
     class is ( Integrator_C_PS_Form )
 
@@ -383,15 +380,10 @@ contains
       FC % Units % Momentum         =  UNIT % MOMENTUM_SOLAR_MASS
       FC % Units % AngularMomentum  =  UNIT % SOLAR_KERR_PARAMETER
 
-      BaryonMassReference  =  CONSTANT % ATOMIC_MASS_UNIT
-
-    else
-      BaryonMassReference  =  1.0_KDR
     end if
 
     call FA % Initialize &
            ( PS, FluidType, FC % Units, &
-             BaryonMassReferenceOption = BaryonMassReference, &
              LimiterParameterOption = LimiterParameterOption, &
              ShockThresholdOption = ShockThresholdOption )
 

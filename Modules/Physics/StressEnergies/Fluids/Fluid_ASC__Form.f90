@@ -67,8 +67,8 @@ contains
                ( FA, A, FluidType, Units, NameShortOption, &
                  RiemannSolverTypeOption, UseEntropyOption, UseLimiterOption, &
                  AllocateTallyOption, AllocateSourcesOption, &
-                 BaryonMassReferenceOption, LimiterParameterOption, &
-                 ShockThresholdOption, IgnorabilityOption )
+                 LimiterParameterOption, ShockThresholdOption, &
+                 IgnorabilityOption )
 
     class ( Fluid_ASC_Form ), intent ( inout ) :: &
       FA
@@ -87,7 +87,6 @@ contains
       AllocateTallyOption, &
       AllocateSourcesOption
     real ( KDR ), intent ( in ), optional :: &
-      BaryonMassReferenceOption, &
       LimiterParameterOption, &
       ShockThresholdOption
     integer ( KDI ), intent ( in ), optional :: &
@@ -106,6 +105,12 @@ contains
     FA % FluidType = FluidType
 
     FA % Units => Units
+
+    if ( Units % BaryonMass == UNIT % IDENTITY ) then
+      FA % BaryonMassReference  =  1.0_KDR
+    else
+      FA % BaryonMassReference  =  CONSTANT % ATOMIC_MASS_UNIT
+    end if
 
     select case ( trim ( FA % FluidType ) )
     case ( 'DUST' )
@@ -140,10 +145,6 @@ contains
       FA % LimiterParameter = LimiterParameterOption
     call PROGRAM_HEADER % GetParameter &
            ( FA % LimiterParameter, 'LimiterParameter' )
-
-    FA % BaryonMassReference = 1.0_KDR
-    if ( present ( BaryonMassReferenceOption ) ) &
-      FA % BaryonMassReference = BaryonMassReferenceOption
 
     AllocateTally = .true.
     if ( present ( AllocateTallyOption ) ) &

@@ -69,8 +69,7 @@ contains
                  ApplyStreamingOption, ApplyInteractionsOption, &
                  EvolveFluidOption, MinCoordinateOption, MaxCoordinateOption, &
                  FinishTimeOption, CourantFactorOption, EnergyScaleOption, &
-                 BaryonMassReferenceOption, nCellsPositionOption, &
-                 nCellsEnergyOption, nWriteOption )
+                 nCellsPositionOption, nCellsEnergyOption, nWriteOption )
 
     class ( RadiationBoxForm ), intent ( inout ), target :: &
       RB
@@ -90,8 +89,7 @@ contains
     real ( KDR ), intent ( in ), optional :: &
       FinishTimeOption, &
       CourantFactorOption, &
-      EnergyScaleOption, &
-      BaryonMassReferenceOption
+      EnergyScaleOption
     integer ( KDI ), dimension ( 3 ), intent ( in ), optional :: &
       nCellsPositionOption
     integer ( KDI ), intent ( in ), optional :: &
@@ -120,8 +118,7 @@ contains
     call RB % InitializeRadiation &
            ( RadiationName, RadiationType )
     call RB % InitializeFluid &
-           ( FluidType = 'IDEAL', &
-             BaryonMassReferenceOption = BaryonMassReferenceOption )
+           ( FluidType = 'IDEAL' )
     call RB % InitializeSteps &
            ( Name, ApplyStreamingOption, ApplyInteractionsOption, &
              EvolveFluidOption )

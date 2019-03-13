@@ -170,14 +170,12 @@ contains
   end subroutine InitializePositionSpace
 
 
-  subroutine InitializeFluid ( FB, FluidType, BaryonMassReferenceOption )
+  subroutine InitializeFluid ( FB, FluidType )
 
     class ( FluidBoxForm ), intent ( inout ) :: &
       FB
     character ( * ), intent ( in )  :: &
       FluidType
-    real ( KDR ), intent ( in ), optional :: &
-      BaryonMassReferenceOption
 
     select type ( I => FB % Integrator )
     class is ( Integrator_C_PS_Form )
@@ -188,9 +186,7 @@ contains
     allocate ( Fluid_ASC_Form :: I % Current_ASC )
     select type ( FA => I % Current_ASC )
     class is ( Fluid_ASC_Form )
-    call FA % Initialize &
-           ( PS, FluidType, FB % Units, &
-             BaryonMassReferenceOption = BaryonMassReferenceOption )
+      call FA % Initialize ( PS, FluidType, FB % Units )
     end select !-- FA
 
     end select !-- PS
