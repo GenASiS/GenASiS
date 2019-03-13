@@ -25,6 +25,8 @@ module Integrator_Template
         OpenManifoldStreams => null ( )
       procedure ( W ), pointer:: &
         Write => null ( )
+      procedure ( SWTI ), pointer :: &
+        SetWriteTimeInterval => null ( )
       procedure ( CTSL ), pointer :: &
         ComputeTimeStepLocal => null ( )
       procedure ( SR ), pointer :: &
@@ -71,8 +73,6 @@ module Integrator_Template
 !      WriteTimeSeries
     procedure, private, pass :: &  !-- 3
       WriteTimeSeries
-    procedure, private, pass :: &  !-- 3
-      SetWriteTimeInterval
     procedure, public, pass :: &
       PrepareCycle
     procedure, public, pass :: &  !-- 3
@@ -103,6 +103,12 @@ module Integrator_Template
       class ( IntegratorTemplate ), intent ( inout ) :: &
         I
     end subroutine W
+
+    subroutine SWTI ( I )
+      import IntegratorTemplate
+      class ( IntegratorTemplate ), intent ( inout ) :: &
+        I
+    end subroutine SWTI
 
     subroutine CTSL ( I, TimeStepCandidate )
       use Basics
@@ -155,7 +161,8 @@ module Integrator_Template
     private :: &
       OpenGridImageStreams, &
       OpenManifoldStreams, &
-      Write
+      Write, &
+      SetWriteTimeInterval
 
 contains
 
@@ -197,6 +204,8 @@ contains
       I % Write => Write
 
     call I % OpenGridImageStreams ( )
+
+    I % SetWriteTimeInterval => SetWriteTimeInterval
 
   end subroutine InitializeTemplate
 
@@ -577,17 +586,6 @@ contains
   end subroutine WriteTimeSeries
 
 
-  subroutine SetWriteTimeInterval ( I )
-
-    class ( IntegratorTemplate ), intent ( inout ) :: &
-      I
-
-    I % WriteTimeInterval &
-      = ( I % FinishTime - I % StartTime ) / I % nWrite
-
-  end subroutine SetWriteTimeInterval
-
-
   subroutine PrepareCycle ( I )
 
     class ( IntegratorTemplate ), intent ( inout ) :: &
@@ -726,6 +724,17 @@ contains
     call I % WriteTemplate ( )
 
   end subroutine Write
+
+
+  subroutine SetWriteTimeInterval ( I )
+
+    class ( IntegratorTemplate ), intent ( inout ) :: &
+      I
+
+    I % WriteTimeInterval &
+      = ( I % FinishTime - I % StartTime ) / I % nWrite
+
+  end subroutine SetWriteTimeInterval
 
 
 end module Integrator_Template
