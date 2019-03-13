@@ -29,12 +29,12 @@ module FluidCentral_Template
         CO_CoarsenForward_3, CO_CoarsenBackward_3
 !       type ( GridImageStreamForm ), allocatable :: &
 !         GridImageStream_SA_EB
-!       type ( Atlas_SC_Form ), allocatable :: &
-!         PositionSpace_SA, &  !-- SphericalAverage
-!         PositionSpace_EB     !-- EnclosedBaryons
-!       type ( Fluid_ASC_Form ), allocatable :: &
-!         Fluid_ASC_SA, &  !-- SphericalAverage
-!         Fluid_ASC_EB     !-- EnclosedBaryons
+      type ( Atlas_SC_Form ), allocatable :: &
+        PositionSpace_SA, &  !-- SphericalAverage
+        PositionSpace_EB     !-- EnclosedBaryons
+      type ( Fluid_ASC_Form ), allocatable :: &
+        Fluid_ASC_SA, &  !-- SphericalAverage
+        Fluid_ASC_EB     !-- EnclosedBaryons
   contains
     procedure, public, pass :: &
       InitializeTemplate_FC
@@ -54,6 +54,8 @@ module FluidCentral_Template
       InitializeFluid
     procedure, public, pass :: &
       InitializeStep
+    procedure, public, pass :: &
+      InitializeDiagnostics
     procedure, public, pass :: &
       SetCoarseningTemplate
    procedure ( SC ), private, pass, deferred :: &
@@ -120,7 +122,6 @@ module FluidCentral_Template
   end interface
 
     private :: &
-!       InitializeDiagnostics, &
 !       ComputeSphericalAverage, &
 !       ComputeEnclosedBaryons, &
       ComposePillars, &
@@ -183,6 +184,7 @@ contains
            ( FluidType, LimiterParameterOption, ShockThresholdOption )
     call FC % InitializeStep &
            ( Name ) 
+    call FC % InitializeDiagnostics ( )
 
     FinishTime  =  1.0_KDR  *  FC % Units % Time
     if ( present ( FinishTimeOption ) ) &
@@ -205,19 +207,6 @@ contains
     if ( FC % UseCoarsening ) &
       call FC % SetCoarsening ( )
 
-
-!     !-- Diagnostics
-    
-!     call InitializeDiagnostics ( FC )
-
-    
-!     !-- Cleanup
-
-!     end select !-- FA
-!     end select !-- GA
-!     end select !-- PS
-!     nullify ( F )
-
   end subroutine InitializeTemplate_FC
 
 
@@ -226,15 +215,15 @@ contains
     class ( FluidCentralTemplate ), intent ( inout ) :: &
       FC
 
-!     if ( allocated ( FC % Fluid_ASC_EB ) ) &
-!       deallocate ( FC % Fluid_ASC_EB )
-!     if ( allocated ( FC % Fluid_ASC_SA ) ) &
-!       deallocate ( FC % Fluid_ASC_SA )
+    if ( allocated ( FC % Fluid_ASC_EB ) ) &
+      deallocate ( FC % Fluid_ASC_EB )
+    if ( allocated ( FC % Fluid_ASC_SA ) ) &
+      deallocate ( FC % Fluid_ASC_SA )
 
-!     if ( allocated ( FC % PositionSpace_EB ) ) &
-!       deallocate ( FC % PositionSpace_EB )
-!     if ( allocated ( FC % PositionSpace_SA ) ) &
-!       deallocate ( FC % PositionSpace_SA )
+    if ( allocated ( FC % PositionSpace_EB ) ) &
+      deallocate ( FC % PositionSpace_EB )
+    if ( allocated ( FC % PositionSpace_SA ) ) &
+      deallocate ( FC % PositionSpace_SA )
 
 !     if ( allocated ( FC % GridImageStream_SA_EB ) ) &
 !       deallocate ( FC % GridImageStream_SA_EB )
@@ -426,6 +415,118 @@ contains
     end select !-- I
 
   end subroutine InitializeStep
+
+
+  subroutine InitializeDiagnostics ( FC )
+
+    class ( FluidCentralTemplate ), intent ( inout ) :: &
+      FC
+
+    type ( Real_1D_Form ), dimension ( 1 ) :: &
+      Edge
+
+    call Show ( 'Initializing FluidCentralCore diagnostics', &
+                FC % IGNORABILITY )
+
+    select type ( I => FC % Integrator )
+    class is ( Integrator_C_PS_Form )
+
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
+
+    select type ( FA => I % Current_ASC )
+    class is ( Fluid_ASC_Form )
+
+
+    !-- Spherical average position space
+
+    allocate ( FC % PositionSpace_SA )
+    associate ( PS_SA => FC % PositionSpace_SA )
+
+    call PS_SA % Initialize ( 'SphericalAverage', nDimensionsOption = 1 )
+
+    select type ( C => PS % Chart )
+    class is ( Chart_SL_Template )
+      if ( FC % Dimensionless ) then
+        call PS_SA % CreateChart &
+               ( CoordinateSystemOption = 'SPHERICAL', &
+                 nCellsOption           = C % nCells ( 1 : 1 ), &
+                 nGhostLayersOption     = [ 0 ] )
+      else
+        call PS_SA % CreateChart &
+               ( CoordinateSystemOption = 'SPHERICAL', &
+                 CoordinateUnitOption   = FC % Units % Coordinate_PS ( 1:1 ), &
+                 nCellsOption           = C % nCells ( 1 : 1 ), &
+                 nGhostLayersOption     = [ 0 ] )
+      end if
+
+      call Edge ( 1 ) % Initialize &
+             ( C % Edge ( 1 ) % Value ( 1 : C % nCells ( 1 ) + 1 ) )
+
+    end select !-- C
+
+    call PS_SA % SetGeometry ( EdgeOption = Edge )
+
+
+    !-- Enclosed baryons position space
+
+    allocate ( FC % PositionSpace_EB )
+    associate ( PS_EB => FC % PositionSpace_EB )
+
+    call PS_EB % Initialize ( 'EnclosedBaryons', nDimensionsOption = 1 )
+
+    select type ( C => PS % Chart )
+    class is ( Chart_SL_Template )
+      if ( FC % Dimensionless ) then
+        call PS_EB % CreateChart &
+               ( CoordinateLabelOption = [ 'BaryonNumber' ], &
+                 nCellsOption          = C % nCells ( 1 : 1 ), &
+                 nGhostLayersOption    = [ 0 ] )
+      else
+        call PS_EB % CreateChart &
+               ( CoordinateLabelOption = [ 'BaryonNumber' ], &
+                 CoordinateUnitOption = [ UNIT % SOLAR_BARYON_NUMBER ], &
+                 nCellsOption         = C % nCells ( 1 : 1 ), &
+                 nGhostLayersOption   = [ 0 ] )
+      end if
+    end select !-- C
+
+    call PS_EB % SetGeometry ( )
+
+
+    !-- Spherical average fluid
+
+    allocate ( FC % Fluid_ASC_SA )
+    associate ( FA_SA => FC % Fluid_ASC_SA )
+
+    call FA_SA % Initialize &
+           ( PS_SA, FA % FluidType, FC % Units, &
+             AllocateTallyOption   = .false., &
+             AllocateSourcesOption = .false. )
+
+
+    !-- Enclosed baryons fluid
+
+    allocate ( FC % Fluid_ASC_EB )
+    associate ( FA_EB => FC % Fluid_ASC_EB )
+
+    call FA_EB % Initialize &
+           ( PS_EB, FA % FluidType, FC % Units, &
+             AllocateTallyOption   = .false., &
+             AllocateSourcesOption = .false. )
+
+
+    !-- Cleanup
+
+    end associate !-- FA_EB
+    end associate !-- FA_SA
+    end associate !-- PS_EB
+    end associate !-- PS_SA
+    end select !-- FA
+    end select !-- PS
+    end select !-- I
+
+  end subroutine InitializeDiagnostics
 
 
   subroutine SetCoarseningTemplate ( FC, iAngular )
@@ -639,141 +740,6 @@ contains
 !     end associate !-- GIS, etc.
 
 !   end subroutine Write
-
-
-!   subroutine InitializeDiagnostics ( FC )
-
-!     class ( FluidCentralTemplate ), intent ( inout ) :: &
-!       FC
-
-!     type ( Real_1D_Form ), dimension ( 1 ) :: &
-!       Edge
-
-!     call Show ( 'Initializing FluidCentralCore diagnostics', &
-!                 FC % IGNORABILITY )
-
-!     select type ( PS => FC % PositionSpace )
-!     class is ( Atlas_SC_Form )
-
-!     select type ( FA => FC % Current_ASC )
-!     class is ( Fluid_ASC_Form )
-
-
-!     !-- Spherical average position space
-
-!     allocate ( FC % PositionSpace_SA )
-!     associate ( PS_SA => FC % PositionSpace_SA )
-
-!     call PS_SA % Initialize ( 'SphericalAverage', nDimensionsOption = 1 )
-
-!     select type ( C => PS % Chart )
-!     class is ( Chart_SL_Template )
-!       if ( FC % Dimensionless ) then
-!         call PS_SA % CreateChart &
-!                ( CoordinateSystemOption = 'SPHERICAL', &
-!                  nCellsOption           = C % nCells ( 1 : 1 ), &
-!                  nGhostLayersOption     = [ 0 ] )
-!       else
-!         call PS_SA % CreateChart &
-!                ( CoordinateSystemOption = 'SPHERICAL', &
-!                  CoordinateUnitOption   = FC % CoordinateUnit ( 1 : 1 ), &
-!                  nCellsOption           = C % nCells ( 1 : 1 ), &
-!                  nGhostLayersOption     = [ 0 ] )
-!       end if
-
-!       call Edge ( 1 ) % Initialize &
-!              ( C % Edge ( 1 ) % Value ( 1 : C % nCells ( 1 ) + 1 ) )
-
-!     end select !-- C
-
-!     call PS_SA % SetGeometry ( EdgeOption = Edge )
-
-
-!     !-- Enclosed baryons position space
-
-!     allocate ( FC % PositionSpace_EB )
-!     associate ( PS_EB => FC % PositionSpace_EB )
-
-!     call PS_EB % Initialize ( 'EnclosedBaryons', nDimensionsOption = 1 )
-
-!     select type ( C => PS % Chart )
-!     class is ( Chart_SL_Template )
-!       if ( FC % Dimensionless ) then
-!         call PS_EB % CreateChart &
-!                ( CoordinateLabelOption = [ 'BaryonNumber' ], &
-!                  nCellsOption          = C % nCells ( 1 : 1 ), &
-!                  nGhostLayersOption    = [ 0 ] )
-!       else
-!         call PS_EB % CreateChart &
-!                ( CoordinateLabelOption = [ 'BaryonNumber' ], &
-!                  CoordinateUnitOption = [ UNIT % SOLAR_BARYON_NUMBER ], &
-!                  nCellsOption         = C % nCells ( 1 : 1 ), &
-!                  nGhostLayersOption   = [ 0 ] )
-!       end if
-!     end select !-- C
-
-!     call PS_EB % SetGeometry ( )
-
-
-!     !-- Spherical average fluid
-
-!     allocate ( FC % Fluid_ASC_SA )
-!     associate ( FA_SA => FC % Fluid_ASC_SA )
-
-!     if ( FC % Dimensionless ) then
-!       call FA_SA % Initialize &
-!              ( PS_SA, FA % FluidType, &
-!                AllocateTallyOption           =  .false., &
-!                AllocateSourcesOption         =  .false. )
-!     else
-!       call FA_SA % Initialize &
-!              ( PS_SA, FA % FluidType, &
-!                AllocateTallyOption           =  .false., &
-!                AllocateSourcesOption         =  .false., &
-!                Velocity_U_UnitOption         =  FA % Velocity_U_Unit, &
-!                MomentumDensity_D_UnitOption  =  FA % MomentumDensity_D_Unit, &
-!                BaryonMassUnitOption          =  FA % BaryonMassUnit, &
-!                NumberDensityUnitOption       =  FA % NumberDensityUnit, &
-!                EnergyDensityUnitOption       =  FA % EnergyDensityUnit, &
-!                TemperatureUnitOption         =  FA % TemperatureUnit, &
-!                BaryonMassReferenceOption     =  FA % BaryonMassReference )
-!     end if
-
-
-!     !-- Enclosed baryons fluid
-
-!     allocate ( FC % Fluid_ASC_EB )
-!     associate ( FA_EB => FC % Fluid_ASC_EB )
-
-!     if ( FC % Dimensionless ) then
-!       call FA_EB % Initialize &
-!              ( PS_EB, FA % FluidType, &
-!                AllocateTallyOption           =  .false., &
-!                AllocateSourcesOption         =  .false. )
-!     else
-!       call FA_EB % Initialize &
-!              ( PS_EB, FA % FluidType, &
-!                AllocateTallyOption           =  .false., &
-!                AllocateSourcesOption         =  .false., &
-!                Velocity_U_UnitOption         =  FA % Velocity_U_Unit, &
-!                MomentumDensity_D_UnitOption  =  FA % MomentumDensity_D_Unit, &
-!                BaryonMassUnitOption          =  FA % BaryonMassUnit, &
-!                NumberDensityUnitOption       =  FA % NumberDensityUnit, &
-!                EnergyDensityUnitOption       =  FA % EnergyDensityUnit, &
-!                BaryonMassReferenceOption     =  CONSTANT % ATOMIC_MASS_UNIT )
-!     end if
-
-
-!     !-- Cleanup
-
-!     end associate !-- FA_EB
-!     end associate !-- FA_SA
-!     end associate !-- PS_EB
-!     end associate !-- PS_SA
-!     end select !-- FA
-!     end select !-- PS
-
-!   end subroutine InitializeDiagnostics
 
 
 !   subroutine ComputeSphericalAverage ( FC )
