@@ -3,6 +3,7 @@
 module IntegratorHeader_Form
 
   use Basics
+  use UniverseHeader_Form
 
   implicit none
   private
@@ -41,6 +42,8 @@ module IntegratorHeader_Form
     character ( LDF ) :: &
       Type = '', &
       Name = ''
+    class ( UniverseHeaderForm ), pointer :: &
+      Universe => null ( )
   contains
     procedure, public, pass :: &
       InitializeHeader
@@ -52,10 +55,12 @@ contains
 
 
   subroutine InitializeHeader &
-               ( I, Name, TimeUnitOption, FinishTimeOption, nWriteOption )
+               ( I, U, Name, TimeUnitOption, FinishTimeOption, nWriteOption )
 
     class ( IntegratorHeaderForm ), intent ( inout ) :: &
       I
+    class ( UniverseHeaderForm ), intent ( in ), target :: &
+      U
     character ( * ), intent ( in )  :: &
       Name
     type ( MeasuredValueForm ), intent ( in ), optional :: &
@@ -121,6 +126,8 @@ contains
     call Show ( I % nWrite, 'nWrite', I % IGNORABILITY )
     call Show ( I % CheckpointDisplayInterval, 'CheckpointDisplayInterval', &
                 I % IGNORABILITY )
+
+    I % Universe  =>  U
 
   end subroutine InitializeHeader
 

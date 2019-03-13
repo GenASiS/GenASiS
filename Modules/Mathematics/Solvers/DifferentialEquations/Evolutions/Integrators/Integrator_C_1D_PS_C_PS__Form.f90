@@ -8,6 +8,7 @@ module Integrator_C_1D_PS_C_PS__Form
 
   use Basics
   use Fields
+  use EvolutionBasics
   use Integrator_C_1D_C_PS__Template
 
   implicit none
@@ -32,11 +33,13 @@ contains
 
 
   subroutine Initialize &
-               ( I, Name, TimeUnitOption, FinishTimeOption, &
+               ( I, U, Name, TimeUnitOption, FinishTimeOption, &
                  CourantFactorOption, nWriteOption )
 
     class ( Integrator_C_1D_PS_C_PS_Form ), intent ( inout ) :: &
       I
+    class ( UniverseHeaderForm ), intent ( in ) :: &
+      U
     character ( * ), intent ( in )  :: &
       Name
     type ( MeasuredValueForm ), intent ( in ), optional :: &
@@ -60,7 +63,7 @@ contains
     end if
 
     call I % InitializeTemplate_C_1D_C_PS &
-           ( Name, TimeUnitOption = TimeUnitOption, &
+           ( U, Name, TimeUnitOption = TimeUnitOption, &
              FinishTimeOption = FinishTimeOption, &
              CourantFactorOption = CourantFactorOption, &
              nWriteOption = nWriteOption )

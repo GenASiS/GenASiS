@@ -50,9 +50,6 @@ module PlaneWave_Template
         private :: &
           SetWaveKernel
 
-    class ( PlaneWaveTemplate ), private, pointer :: &
-      PlaneWave => null ( )
-
 contains
 
 
@@ -70,8 +67,6 @@ contains
 
     if ( PW % Type == '' ) &
       PW % Type = 'a PlaneWave'
-
-    PlaneWave => PW
 
     call InitializeFluidBox ( PW, Name )
     call InitializeDiagnostics ( PW )
@@ -161,17 +156,21 @@ contains
     select type ( I )
     class is ( Integrator_C_PS_Form )
 
+    select type ( PW => I % Universe )
+    class is ( PlaneWaveTemplate )
+
     select type ( FA => I % Current_ASC )
     class is ( Fluid_ASC_Form )
     F => FA % Fluid_D ( )
 
-    F_R => PlaneWave % Reference % Fluid_D ( )
-    call SetWave ( PlaneWave, F_R, I % Time )
+    F_R => PW % Reference % Fluid_D ( )
+    call SetWave ( PW, F_R, I % Time )
 
-    F_D => PlaneWave % Difference % Fluid_D ( )
+    F_D => PW % Difference % Fluid_D ( )
     call MultiplyAdd ( F % Value, F_R % Value, -1.0_KDR, F_D % Value )
 
     end select !-- FA
+    end select !-- PW
     end select !-- I
     nullify ( F, F_R, F_D )
 

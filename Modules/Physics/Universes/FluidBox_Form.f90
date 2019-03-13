@@ -82,7 +82,7 @@ contains
     select type ( I => FB % Integrator )
     class is ( Integrator_C_PS_Form )
       call I % Initialize &
-             ( Name, TimeUnitOption = FB % Units % Time, &
+             ( FB, Name, TimeUnitOption = FB % Units % Time, &
                FinishTimeOption = FinishTimeOption, &
                CourantFactorOption = CourantFactorOption, &
                nWriteOption = nWriteOption )

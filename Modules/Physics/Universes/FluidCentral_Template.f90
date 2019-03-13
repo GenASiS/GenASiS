@@ -27,8 +27,8 @@ module FluidCentral_Template
       type ( CollectiveOperation_R_Form ), allocatable :: &
         CO_CoarsenForward_2, CO_CoarsenBackward_2, &
         CO_CoarsenForward_3, CO_CoarsenBackward_3
-!       type ( GridImageStreamForm ), allocatable :: &
-!         GridImageStream_SA_EB
+      type ( GridImageStreamForm ), allocatable :: &
+        GridImageStream_SA_EB
       type ( Atlas_SC_Form ), allocatable :: &
         PositionSpace_SA, &  !-- SphericalAverage
         PositionSpace_EB     !-- EnclosedBaryons
@@ -64,10 +64,6 @@ module FluidCentral_Template
       CoarsenSingularityTemplate
     procedure ( CS ), public, nopass, deferred :: &
       CoarsenSingularities
-!     procedure, public, pass :: &  !-- 2
-!       OpenGridImageStreams
-!     procedure, public, pass :: &  !-- 2
-!       OpenManifoldStreams
 !     procedure, public, pass :: &  !-- 3
 !       Write
   end type FluidCentralTemplate
@@ -122,6 +118,8 @@ module FluidCentral_Template
   end interface
 
     private :: &
+      OpenGridImageStreams, &
+      OpenManifoldStreams, &
 !       ComputeSphericalAverage, &
 !       ComputeEnclosedBaryons, &
       ComposePillars, &
@@ -192,11 +190,16 @@ contains
 
     select type ( I => FC % Integrator )
     class is ( Integrator_C_PS_Form )
+
+      I % OpenGridImageStreams  =>  OpenGridImageStreams
+      I % OpenManifoldStreams   =>  OpenManifoldStreams
+
       call I % Initialize &
-             ( Name, TimeUnitOption = FC % Units % Time, &
+             ( FC, Name, TimeUnitOption = FC % Units % Time, &
                FinishTimeOption = FinishTime, &
                CourantFactorOption = CourantFactorOption, &
                nWriteOption = nWriteOption )
+
     end select !-- I
 
     call Show ( FC % Dimensionless, 'Dimensionless', FC % IGNORABILITY )
@@ -225,8 +228,8 @@ contains
     if ( allocated ( FC % PositionSpace_SA ) ) &
       deallocate ( FC % PositionSpace_SA )
 
-!     if ( allocated ( FC % GridImageStream_SA_EB ) ) &
-!       deallocate ( FC % GridImageStream_SA_EB )
+    if ( allocated ( FC % GridImageStream_SA_EB ) ) &
+      deallocate ( FC % GridImageStream_SA_EB )
 
     if ( allocated ( FC % CO_CoarsenBackward_3 ) ) &
       deallocate ( FC % CO_CoarsenBackward_3 )
@@ -655,58 +658,66 @@ contains
   end subroutine CoarsenSingularityTemplate
 
 
-!   subroutine OpenGridImageStreams ( I )
+  subroutine OpenGridImageStreams ( I )
 
-!     class ( FluidCentralTemplate ), intent ( inout ) :: &
-!       I
+    class ( IntegratorTemplate ), intent ( inout ) :: &
+      I
 
-!     call I % OpenGridImageStreamsTemplate ( )
+    call I % OpenGridImageStreamsTemplate ( )
 
-!     if ( I % PositionSpace % Communicator % Rank /= CONSOLE % DisplayRank ) &
-!       return
+    if ( I % PositionSpace % Communicator % Rank /= CONSOLE % DisplayRank ) &
+      return
 
-!     allocate ( I % GridImageStream_SA_EB )
-!     associate &
-!       ( GIS_I     => I % GridImageStream, &
-!         GIS_SA_EB => I % GridImageStream_SA_EB )
-!     call GIS_SA_EB % Initialize &
-!            ( trim ( I % Name ) // '_SA_EB', & 
-!              WorkingDirectoryOption = GIS_I % WorkingDirectory )
-!     end associate !-- GIS_I, etc.
+    select type ( FC => I % Universe )
+    class is ( FluidCentralTemplate )
 
-!   end subroutine OpenGridImageStreams
+    allocate ( FC % GridImageStream_SA_EB )
+    associate &
+      ( GIS_I     =>  I % GridImageStream, &
+        GIS_SA_EB => FC % GridImageStream_SA_EB )
+    call GIS_SA_EB % Initialize &
+           ( trim ( I % Name ) // '_SA_EB', & 
+             WorkingDirectoryOption = GIS_I % WorkingDirectory )
+    end associate !-- GIS_I, etc.
+
+    end select !-- FC
+
+  end subroutine OpenGridImageStreams
 
 
-!   subroutine OpenManifoldStreams ( I, VerboseStreamOption )
+  subroutine OpenManifoldStreams ( I, VerboseStreamOption )
 
-!     class ( FluidCentralTemplate ), intent ( inout ) :: &
-!       I
-!     logical ( KDL ), intent ( in ), optional :: &
-!       VerboseStreamOption
+    class ( IntegratorTemplate ), intent ( inout ) :: &
+      I
+    logical ( KDL ), intent ( in ), optional :: &
+      VerboseStreamOption
 
-!     logical ( KDL ) :: &
-!       VerboseStream
+    logical ( KDL ) :: &
+      VerboseStream
 
-!     call I % OpenManifoldStreamsTemplate ( VerboseStreamOption )
+    call I % OpenManifoldStreamsTemplate ( VerboseStreamOption )
 
-!     if ( I % PositionSpace % Communicator % Rank /= CONSOLE % DisplayRank ) &
-!       return
+    if ( I % PositionSpace % Communicator % Rank /= CONSOLE % DisplayRank ) &
+      return
 
-!     VerboseStream = .false.
-!     if ( present ( VerboseStreamOption ) ) &
-!       VerboseStream = VerboseStreamOption
-!     call PROGRAM_HEADER % GetParameter ( VerboseStream, 'VerboseStream' )
+    VerboseStream = .false.
+    if ( present ( VerboseStreamOption ) ) &
+      VerboseStream = VerboseStreamOption
+    call PROGRAM_HEADER % GetParameter ( VerboseStream, 'VerboseStream' )
 
-!     associate ( GIS => I % GridImageStream_SA_EB )
-!     associate ( iS => 1 )  !-- iStream
-!       call I % PositionSpace_SA % OpenStream &
-!              ( GIS, 'Time', iStream = iS, VerboseOption = VerboseStream )
-!       call I % PositionSpace_EB % OpenStream &
-!              ( GIS, 'Time', iStream = iS, VerboseOption = VerboseStream )
-!     end associate !-- iS
-!     end associate !-- GIS
+    select type ( FC => I % Universe )
+    class is ( FluidCentralTemplate )
+    associate ( GIS => FC % GridImageStream_SA_EB )
+    associate ( iS => 1 )  !-- iStream
+      call FC % PositionSpace_SA % OpenStream &
+             ( GIS, 'Time', iStream = iS, VerboseOption = VerboseStream )
+      call FC % PositionSpace_EB % OpenStream &
+             ( GIS, 'Time', iStream = iS, VerboseOption = VerboseStream )
+    end associate !-- iS
+    end associate !-- GIS
+    end select !-- FC
 
-!   end subroutine OpenManifoldStreams
+  end subroutine OpenManifoldStreams
 
 
 !   subroutine Write ( I )

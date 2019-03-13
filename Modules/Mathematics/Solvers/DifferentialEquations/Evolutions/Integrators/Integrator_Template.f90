@@ -19,6 +19,10 @@ module Integrator_Template
         PositionSpace
       class ( BundleHeaderForm ), allocatable :: &
         MomentumSpace
+      procedure ( OGIS ), pointer :: &
+        OpenGridImageStreams => null ( )
+      procedure ( OMS ), pointer :: &
+        OpenManifoldStreams => null ( )
       procedure ( CTSL ), pointer :: &
         ComputeTimeStepLocal => null ( )
       procedure ( SR ), pointer :: &
@@ -33,11 +37,7 @@ module Integrator_Template
     procedure, public, pass :: &  !-- 2
       OpenGridImageStreamsTemplate
     procedure, public, pass :: &  !-- 2
-      OpenGridImageStreams
-    procedure, public, pass :: &  !-- 2
       OpenManifoldStreamsTemplate
-    procedure, public, pass :: &  !-- 2
-      OpenManifoldStreams
     procedure, public, pass :: &  !-- 2
       InitializeTimers
     procedure, private, pass :: &  !-- 2
@@ -83,6 +83,30 @@ module Integrator_Template
 
   abstract interface 
 
+    subroutine OGIS ( I )
+      import IntegratorTemplate
+      class ( IntegratorTemplate ), intent ( inout ) :: &
+        I
+    end subroutine OGIS
+
+    subroutine OMS ( I, VerboseStreamOption )
+      use Basics
+      import IntegratorTemplate  
+      class ( IntegratorTemplate ), intent ( inout ) :: &
+        I
+      logical ( KDL ), intent ( in ), optional :: &
+        VerboseStreamOption
+    end subroutine OMS
+
+    subroutine CTSL ( I, TimeStepCandidate )
+      use Basics
+      import IntegratorTemplate
+      class ( IntegratorTemplate ), intent ( inout ), target :: &
+        I
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        TimeStepCandidate
+    end subroutine CTSL
+
     subroutine SR ( I )
       import IntegratorTemplate
       class ( IntegratorTemplate ), intent ( inout ) :: &
@@ -120,26 +144,22 @@ module Integrator_Template
 !        MeanTime
 !    end subroutine RTS
 
-    subroutine CTSL ( I, TimeStepCandidate )
-      use Basics
-      import IntegratorTemplate
-      class ( IntegratorTemplate ), intent ( inout ), target :: &
-        I
-      real ( KDR ), dimension ( : ), intent ( inout ) :: &
-        TimeStepCandidate
-    end subroutine CTSL
-
   end interface
 
+    private :: &
+      OpenGridImageStreams, &
+      OpenManifoldStreams
 
 contains
 
 
   subroutine InitializeTemplate &
-               ( I, Name, TimeUnitOption, FinishTimeOption, nWriteOption )
+               ( I, U, Name, TimeUnitOption, FinishTimeOption, nWriteOption )
 
     class ( IntegratorTemplate ), intent ( inout ) :: &
       I
+    class ( UniverseHeaderForm ), intent ( in ) :: &
+      U
     character ( * ), intent ( in )  :: &
       Name
     type ( MeasuredValueForm ), intent ( in ), optional :: &
@@ -149,8 +169,8 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       nWriteOption
 
-    call I % IntegratorHeaderForm % InitializeHeader &
-           ( Name, TimeUnitOption, FinishTimeOption, nWriteOption )
+    call I % InitializeHeader &
+           ( U, Name, TimeUnitOption, FinishTimeOption, nWriteOption )
 
     if ( .not. allocated ( I % PositionSpace ) ) then
       call Show ( 'PositionSpace must be allocated by an extension', &
@@ -161,6 +181,11 @@ contains
     else
       I % Communicator => I % PositionSpace % Communicator
     end if
+
+    if ( .not. associated ( I % OpenGridImageStreams ) ) &
+      I % OpenGridImageStreams => OpenGridImageStreams
+    if ( .not. associated ( I % OpenManifoldStreams ) ) &
+      I % OpenManifoldStreams => OpenManifoldStreams
 
     call I % OpenGridImageStreams ( )
 
@@ -262,16 +287,6 @@ contains
   end subroutine OpenGridImageStreamsTemplate
 
 
-  subroutine OpenGridImageStreams ( I )
-
-    class ( IntegratorTemplate ), intent ( inout ) :: &
-      I
-
-    call I % OpenGridImageStreamsTemplate ( )
-
-  end subroutine OpenGridImageStreams
-
-
   subroutine OpenManifoldStreamsTemplate ( I, VerboseStreamOption )
 
     class ( IntegratorTemplate ), intent ( inout ) :: &
@@ -318,18 +333,6 @@ contains
     end associate !-- GIS
 
   end subroutine OpenManifoldStreamsTemplate
-
-
-  subroutine OpenManifoldStreams ( I, VerboseStreamOption )
-
-    class ( IntegratorTemplate ), intent ( inout ) :: &
-      I
-    logical ( KDL ), intent ( in ), optional :: &
-      VerboseStreamOption
-
-    call I % OpenManifoldStreamsTemplate ( VerboseStreamOption )
-
-  end subroutine OpenManifoldStreams
 
 
   subroutine InitializeTimers ( I )
@@ -692,6 +695,28 @@ contains
     end if
 
   end subroutine ComputeTimeStep
+
+
+  subroutine OpenGridImageStreams ( I )
+
+    class ( IntegratorTemplate ), intent ( inout ) :: &
+      I
+
+    call I % OpenGridImageStreamsTemplate ( )
+
+  end subroutine OpenGridImageStreams
+
+
+  subroutine OpenManifoldStreams ( I, VerboseStreamOption )
+
+    class ( IntegratorTemplate ), intent ( inout ) :: &
+      I
+    logical ( KDL ), intent ( in ), optional :: &
+      VerboseStreamOption
+
+    call I % OpenManifoldStreamsTemplate ( VerboseStreamOption )
+
+  end subroutine OpenManifoldStreams
 
 
 end module Integrator_Template

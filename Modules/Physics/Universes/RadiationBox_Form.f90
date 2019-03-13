@@ -126,7 +126,7 @@ contains
     select type ( I => RB % Integrator )
     class is ( Integrator_C_1D_C_PS_Template )
       call I % Initialize &
-             ( Name, TimeUnitOption = RB % Units % Time, &
+             ( RB, Name, TimeUnitOption = RB % Units % Time, &
                FinishTimeOption = FinishTimeOption, &
                CourantFactorOption = CourantFactorOption, &
                nWriteOption = nWriteOption )

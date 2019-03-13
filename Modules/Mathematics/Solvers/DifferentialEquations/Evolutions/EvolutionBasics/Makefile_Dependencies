@@ -1,8 +1,14 @@
+SystemHeader_Form.o: \
+  Basics.o \
+  UniverseHeader_Form.f90
+
 IntegratorHeader_Form.o: \
   Basics.o \
+  UniverseHeader_Form.o \
   IntegratorHeader_Form.f90
 
 EvolutionBasics.o: \
+  UniverseHeader_Form.o \
   IntegratorHeader_Form.o \
   EvolutionBasics.f90
 
