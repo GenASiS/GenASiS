@@ -8,6 +8,8 @@ module Universe_Template
   private
 
   type, public, extends ( UniverseHeaderForm ), abstract :: UniverseTemplate
+    character ( LDL ), dimension ( : ), allocatable :: &
+      TimeStepLabel
     type ( StressEnergyUnitsForm ) :: &
       Units
     class ( IntegratorTemplate ), allocatable :: &
@@ -53,6 +55,8 @@ contains
 
     if ( allocated ( U % Integrator ) ) &
       deallocate ( U % Integrator )
+    if ( allocated ( U % TimeStepLabel ) ) &
+      deallocate ( U % TimeStepLabel )
 
   end subroutine FinalizeTemplate
 

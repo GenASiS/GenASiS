@@ -10,13 +10,13 @@ module FluidCentralCore_Form
   private
 
   type, public, extends ( FluidCentralTemplate ) :: FluidCentralCoreForm
-  !   real ( KDR ) :: &
-  !     GravityFactor
+    real ( KDR ) :: &
+      GravityFactor
   contains
-  !   procedure, public, pass :: &
-  !     Initialize
-  !   final :: &
-  !     Finalize
+    procedure, public, pass :: &
+      Initialize
+    final :: &
+      Finalize
     procedure, private, pass :: &
       InitializeAtlas
     procedure, private, pass :: &
@@ -33,96 +33,92 @@ module FluidCentralCore_Form
   !     ComputeTimeStep_G_ASC
   end type FluidCentralCoreForm
 
-    class ( FluidCentralCoreForm ), private, pointer :: &
-      FluidCentralCore => null ( )
-
-    !   private :: &
-    !     ComputeTimeStepLocal, &
+      private :: &
+        ComputeTimeStepLocal!, &
     !     LocalMax, &
     !     ComputeTimeStep_G_CSL
 
 contains
 
 
-!   subroutine Initialize &
-!                ( FCC, Name, FluidType, GeometryType, &
-!                  DimensionlessOption, TimeUnitOption, FinishTimeOption, &
-!                  CourantFactorOption, GravityFactorOption, &
-!                  LimiterParameterOption, ShockThresholdOption, &
-!                  RadiusMaxOption, RadiusCoreOption, RadialRatioOption, &
-!                  nWriteOption, nCellsPolarOption )
+  subroutine Initialize &
+               ( FCC, Name, FluidType, GeometryType, &
+                 DimensionlessOption, FinishTimeOption, &
+                 CourantFactorOption, GravityFactorOption, &
+                 LimiterParameterOption, ShockThresholdOption, &
+                 RadiusMaxOption, RadiusCoreOption, RadialRatioOption, &
+                 nWriteOption, nCellsPolarOption )
 
-!     class ( FluidCentralCoreForm ), intent ( inout ), target :: &
-!       FCC
-!     character ( * ), intent ( in )  :: &
-!       Name, &
-!       FluidType, &
-!       GeometryType
-!     logical ( KDL ), intent ( in ), optional :: &
-!       DimensionlessOption
-!     type ( MeasuredValueForm ), intent ( in ), optional :: &
-!       TimeUnitOption
-!     real ( KDR ), intent ( in ), optional :: &
-!       FinishTimeOption, &
-!       CourantFactorOption, &
-!       GravityFactorOption, &
-!       LimiterParameterOption, &
-!       ShockThresholdOption, &
-!       RadiusMaxOption, &
-!       RadiusCoreOption, &
-!       RadialRatioOption
-!     integer ( KDI ), intent ( in ), optional :: &
-!       nCellsPolarOption, &
-!       nWriteOption
+    class ( FluidCentralCoreForm ), intent ( inout ), target :: &
+      FCC
+    character ( * ), intent ( in )  :: &
+      Name, &
+      FluidType, &
+      GeometryType
+    logical ( KDL ), intent ( in ), optional :: &
+      DimensionlessOption
+    real ( KDR ), intent ( in ), optional :: &
+      FinishTimeOption, &
+      CourantFactorOption, &
+      GravityFactorOption, &
+      LimiterParameterOption, &
+      ShockThresholdOption, &
+      RadiusMaxOption, &
+      RadiusCoreOption, &
+      RadialRatioOption
+    integer ( KDI ), intent ( in ), optional :: &
+      nCellsPolarOption, &
+      nWriteOption
 
-!     if ( FCC % Type == '' ) &
-!       FCC % Type = 'a FluidCentralCore'
+    if ( FCC % Type == '' ) &
+      FCC % Type = 'a FluidCentralCore'
 
-!     FluidCentralCore => FCC
+    if ( any ( trim ( GeometryType ) &
+                 == [ 'NEWTONIAN       ', 'NEWTONIAN_STRESS' ] ) ) &
+    then
+      if ( .not. allocated ( FCC % TimeStepLabel ) ) &
+        allocate ( FCC % TimeStepLabel ( 2 ) )
+      FCC % TimeStepLabel ( 1 )  =  'Fluid'
+      FCC % TimeStepLabel ( 2 )  =  'Gravity'
+    end if
 
-!     if ( any ( trim ( GeometryType ) &
-!                  == [ 'NEWTONIAN       ', 'NEWTONIAN_STRESS' ] ) ) &
-!     then
+    call FCC % InitializeTemplate_FC &
+               ( Name, FluidType, GeometryType, &
+                 DimensionlessOption = DimensionlessOption, &
+                 FinishTimeOption = FinishTimeOption, &
+                 CourantFactorOption = CourantFactorOption, &
+                 LimiterParameterOption = LimiterParameterOption, &
+                 ShockThresholdOption = ShockThresholdOption, &
+                 RadiusMaxOption = RadiusMaxOption, &
+                 RadiusCoreOption = RadiusCoreOption, &
+                 RadialRatioOption = RadialRatioOption, &
+                 nWriteOption = nWriteOption, &
+                 nCellsPolarOption = nCellsPolarOption )
 
-!       if ( .not. allocated ( FCC % TimeStepLabel ) ) &
-!         allocate ( FCC % TimeStepLabel ( 2 ) )
-!       FCC % TimeStepLabel ( 1 )  =  'Fluid'
-!       FCC % TimeStepLabel ( 2 )  =  'Gravity'
+    select type ( I => FCC % Integrator )
+    class is ( Integrator_C_PS_Form )
 
-!       FCC % GravityFactor = 0.7_KDR
-!       if ( present ( GravityFactorOption ) ) &
-!         FCC % GravityFactor = GravityFactorOption
-!       call PROGRAM_HEADER % GetParameter &
-!              ( FCC % GravityFactor, 'GravityFactor' )
+    I % ComputeTimeStepLocal => ComputeTimeStepLocal
 
-!     end if
+    select type ( S => I % Step )
+    class is ( Step_RK_C_ASC_Template )
+      S % CoarsenSingularities => CoarsenSingularities
+    end select !-- S
 
-!     call FCC % InitializeTemplate_FC &
-!                ( Name, FluidType, GeometryType, &
-!                  DimensionlessOption = DimensionlessOption, &
-!                  TimeUnitOption = TimeUnitOption, &
-!                  FinishTimeOption = FinishTimeOption, &
-!                  CourantFactorOption = CourantFactorOption, &
-!                  LimiterParameterOption = LimiterParameterOption, &
-!                  ShockThresholdOption = ShockThresholdOption, &
-!                  RadiusMaxOption = RadiusMaxOption, &
-!                  RadiusCoreOption = RadiusCoreOption, &
-!                  RadialRatioOption = RadialRatioOption, &
-!                  nWriteOption = nWriteOption, &
-!                  nCellsPolarOption = nCellsPolarOption )
+    end select !-- I
 
-!     FCC % ComputeTimeStepLocal => ComputeTimeStepLocal
+    if ( any ( trim ( GeometryType ) &
+                 == [ 'NEWTONIAN       ', 'NEWTONIAN_STRESS' ] ) ) &
+    then
+      FCC % GravityFactor = 0.7_KDR
+      if ( present ( GravityFactorOption ) ) &
+        FCC % GravityFactor = GravityFactorOption
+      call PROGRAM_HEADER % GetParameter &
+             ( FCC % GravityFactor, 'GravityFactor' )
+      call Show ( FCC % GravityFactor, 'GravityFactor' )
+    end if
 
-!     select type ( S => FCC % Step )
-!     class is ( Step_RK2_C_ASC_Form )
-!       S % CoarsenSingularities => CoarsenSingularities
-!     end select !-- S
-
-!     if ( any ( trim ( GeometryType ) &
-!                  == [ 'NEWTONIAN       ', 'NEWTONIAN_STRESS' ] ) ) &
-!       call Show ( FCC % GravityFactor, 'GravityFactor' )
-
-!   end subroutine Initialize
+  end subroutine Initialize
 
 
   subroutine InitializeAtlas &
@@ -206,14 +202,14 @@ contains
   end subroutine InitializeGeometry
 
 
-!   impure elemental subroutine Finalize ( FCC )
+  impure elemental subroutine Finalize ( FCC )
 
-!     type ( FluidCentralCoreForm ), intent ( inout ) :: &
-!       FCC
+    type ( FluidCentralCoreForm ), intent ( inout ) :: &
+      FCC
 
-!     call FCC % FinalizeTemplate_FC ( )
+    call FCC % FinalizeTemplate_FC ( )
 
-!   end subroutine Finalize
+  end subroutine Finalize
 
 
   subroutine SetCoarsening ( FC )
@@ -249,30 +245,38 @@ contains
   end subroutine SetCoarsening
 
 
-  subroutine CoarsenSingularities ( S )
+  subroutine CoarsenSingularities ( S, Increment )
 
-    class ( StorageForm ), intent ( inout ) :: &
+    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
+    class ( StorageForm ), intent ( inout ) :: &
+      Increment
 
-    associate ( FCC => FluidCentralCore )
+    select type ( FCC => S % Integrator % Universe )
+    class is ( FluidCentralCoreForm )
+
+    select type ( I => S % Integrator )
+    class is ( IntegratorTemplate )
+
     select type ( PS => FCC % Integrator % PositionSpace )
     class is ( Atlas_SC_CC_Form )
 
     select case ( mod ( FCC % Integrator % iCycle, 2 ) )
     case ( 0 )
       if ( PS % nDimensions > 2 ) &
-        call FCC % CoarsenSingularityTemplate ( S, iAngular = 3 )
+        call FCC % CoarsenSingularityTemplate ( Increment, iAngular = 3 )
       if ( PS % nDimensions > 1 ) &
-        call FCC % CoarsenSingularityTemplate ( S, iAngular = 2 )
+        call FCC % CoarsenSingularityTemplate ( Increment, iAngular = 2 )
     case ( 1 )
       if ( PS % nDimensions > 1 ) &
-        call FCC % CoarsenSingularityTemplate ( S, iAngular = 2 )
+        call FCC % CoarsenSingularityTemplate ( Increment, iAngular = 2 )
       if ( PS % nDimensions > 2 ) &
-        call FCC % CoarsenSingularityTemplate ( S, iAngular = 3 )
+        call FCC % CoarsenSingularityTemplate ( Increment, iAngular = 3 )
     end select
   
     end select !-- PS
-    end associate !-- FCC
+    end select !-- I
+    end select !-- FCC
 
   end subroutine CoarsenSingularities
 
@@ -464,12 +468,12 @@ contains
 !   end subroutine ComputeTimeStep_G_ASC
 
 
-!   subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
+  subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
 
-!     class ( IntegratorTemplate ), intent ( inout ), target :: &
-!       I
-!     real ( KDR ), dimension ( : ), intent ( inout ) :: &
-!       TimeStepCandidate
+    class ( IntegratorTemplate ), intent ( inout ), target :: &
+      I
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      TimeStepCandidate
 
 !     select type ( I )
 !     class is ( FluidCentralCoreForm )
@@ -482,7 +486,7 @@ contains
 
 !     end select !-- I
 
-!   end subroutine ComputeTimeStepLocal
+  end subroutine ComputeTimeStepLocal
 
 
 !   function LocalMax ( IsProperCell, V ) result ( ML ) 

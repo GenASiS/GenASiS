@@ -62,8 +62,6 @@ module FluidCentral_Template
       SetCoarsening
     procedure, public, pass :: &
       CoarsenSingularityTemplate
-    procedure ( CS ), public, nopass, deferred :: &
-      CoarsenSingularities
   end type FluidCentralTemplate
 
   abstract interface
@@ -106,12 +104,6 @@ module FluidCentral_Template
       class ( FluidCentralTemplate ), intent ( inout ) :: &
         FC
     end subroutine SC
-
-    subroutine CS ( S )
-      use Basics
-      class ( StorageForm ), intent ( inout ) :: &
-        S
-    end subroutine CS
 
   end interface
 
@@ -261,6 +253,12 @@ contains
       FC
 
     allocate ( Integrator_C_PS_Form :: FC % Integrator )
+
+    if ( allocated ( FC % TimeStepLabel ) ) then
+      associate ( I => FC % Integrator )
+      allocate ( I % TimeStepLabel, source = FC % TimeStepLabel )
+      end associate !-- I
+    end if
 
   end subroutine AllocateIntegrator_FC
 
@@ -636,12 +634,12 @@ contains
   end subroutine SetCoarseningTemplate
 
 
-  subroutine CoarsenSingularityTemplate ( FC, S, iAngular )
+  subroutine CoarsenSingularityTemplate ( FC, Increment, iAngular )
 
     class ( FluidCentralTemplate ), intent ( inout ) :: &
       FC
     class ( StorageForm ), intent ( inout ) :: &
-      S
+      Increment
     integer ( KDI ), intent ( in ) :: &
       iAngular
 
@@ -651,9 +649,9 @@ contains
     call Show ( 'Coarsening Singularity', FC % IGNORABILITY + 2 )
     call Show ( iAngular, 'iAngular', FC % IGNORABILITY + 2 )
 
-    call ComposePillars ( FC, S, iAngular )
+    call ComposePillars ( FC, Increment, iAngular )
     call CoarsenPillars ( FC, iAngular )
-    call DecomposePillars ( FC, S, iAngular )
+    call DecomposePillars ( FC, Increment, iAngular )
 
   end subroutine CoarsenSingularityTemplate
 
