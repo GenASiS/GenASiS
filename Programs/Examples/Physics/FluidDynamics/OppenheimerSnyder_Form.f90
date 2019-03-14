@@ -1,5 +1,7 @@
 module OppenheimerSnyder_Form
 
+  !-- For example, Misner, Thorne, Wheeler p. 663, Eqs. (25.28)-(25.29)
+
   use GenASiS
   use ODE_Solve_Command
 
@@ -8,8 +10,9 @@ module OppenheimerSnyder_Form
 
   type, public, extends ( FluidCentralCoreForm ) :: OppenheimerSnyderForm
     real ( KDR ) :: &
+      RadiusInitial, &
       DensityInitial, &
-      RadiusInitial!, &
+      TimeScale
 !      Density, &
 !      Radius
   !   type ( Real_1D_Form ) :: &
@@ -37,6 +40,12 @@ module OppenheimerSnyder_Form
       InitializeFluidCentralCore, &
       InitializeDiagnostics, &
       SetProblem
+
+      private :: &
+        SetFluid
+
+        private :: &
+          SetFluidKernel
 
 !       private :: &
 !         SetFluidKernel, &
@@ -255,10 +264,12 @@ contains
       OS
 
     real ( KDR ) :: &
-      TimeScale, &
+      Mass, &
       DensityFactor, &
       RadiusFactor, &
-      Beta
+      Eta
+    class ( GeometryFlatForm ), pointer :: &
+      G
     class ( Fluid_D_Form ), pointer :: &
       F
 
@@ -272,125 +283,131 @@ contains
     class is ( Atlas_SC_Form )
 
     associate &
-      ( D0 => OS % DensityInitial, &
-        R0 => OS % RadiusInitial, &
-        DF => DensityFactor, &
-        RF => RadiusFactor, &
-        PI => CONSTANT % PI )
+      ( R_Max => PS % Chart % MaxCoordinate ( 1 ), &
+          R_0 => OS % RadiusInitial, &
+          D_0 => OS % DensityInitial, &
+          Tau => OS % TimeScale, &
+            M => Mass, &
+           DF => DensityFactor, &
+           RF => RadiusFactor, &
+           PI => CONSTANT % PI )
 
-    D0  =   1.0_KDR
-    DF  =  10.0_KDR
-    R0  =  PS % Chart % MaxCoordinate ( 1 ) / 1.1_KDR
-    call PROGRAM_HEADER % GetParameter ( D0, 'DensityInitial' )
-    call PROGRAM_HEADER % GetParameter ( DF, 'DensityFactor' )
-    call PROGRAM_HEADER % GetParameter ( R0, 'RadiusInitial' )
+      M  =  1.0_KDR
+    D_0  =  1.0e-3_KDR
+     DF  =  1.0e2_KDR
+    call PROGRAM_HEADER % GetParameter (   M, 'Mass' )
+    call PROGRAM_HEADER % GetParameter ( D_0, 'DensityInitial' )
+    call PROGRAM_HEADER % GetParameter (  DF, 'DensityFactor' )
 
-    RF = DF ** ( - 1.0_KDR / 3.0_KDR ) 
-
-    TimeScale       =  sqrt ( 3.0 / ( 8.0 * PI * D0 ) )
-    Beta            =  acos ( sqrt ( RF ) )
-    I % FinishTime  =  ( Beta  +  0.5 * sin ( 2 * Beta ) )  *  TimeScale
+               Tau  =  sqrt ( 3.0 / ( 8.0 * PI * D_0 ) )
+               R_0  =  ( 3.0 * M / ( 4.0 * PI * D_0 ) ) ** ( 1.0_KDR / 3.0_KDR )
+                RF  =  DF ** ( - 1.0_KDR / 3.0_KDR ) 
+               Eta  =  acos ( 2.0 * RF  -  1.0 )
+    I % FinishTime  =  0.5 * Tau * ( Eta  +  sin ( Eta ) )
 
     call Show ( 'OppenheimerSnyder parameters' )
-    call Show ( OS % DensityInitial, 'DensityInitial' )
-    call Show ( OS % RadiusInitial, 'RadiusInitial' )
-    call Show ( DensityFactor, 'DensityFactor' )
-    call Show ( RadiusFactor, 'RadiusFactor' )
-    call Show ( PI / 2  *  TimeScale, 'CollapseTime' )
+    call Show ( M, 'Mass' )
+    call Show ( D_0, 'DensityInitial' )
+    call Show ( R_0, 'RadiusInitial' )
+    call Show ( DF, 'DensityFactor' )
+    call Show ( RF, 'RadiusFactor' )
+    call Show ( PI / 2  *  Tau, 'CollapseTime' )
     call Show ( I % FinishTime, 'Reset FinishTime' )
 
+    if ( R_0 > R_Max  ) then
+      call Show ( 'RadiusInitial too large', CONSOLE % ERROR )
+      call Show ( R_0, 'RadiusInitial', CONSOLE % ERROR )
+      call Show ( PS % Chart % MaxCoordinate ( 1 ), 'RadiusMax', &
+                  CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end if
+
+    G => PS % Geometry ( )
     F => FA % Fluid_D ( )
-    call SetFluid ( OS, F, Time = 0.0_KDR )
+    call SetFluid ( OS, F, G, Time = 0.0_KDR )
 
     end associate !-- D0, etc.
     end select !-- PS
     end select !-- FA
     end select !-- I
-    nullify ( F )
+    nullify ( G, F )
 
   end subroutine SetProblem
 
 
-  subroutine SetFluid ( OS, F, Time )
+  subroutine SetFluid ( OS, F, G, Time )
 
     class ( OppenheimerSnyderForm ), intent ( inout ) :: &
       OS
     class ( Fluid_D_Form ), intent ( inout ) :: &
       F
+    class ( GeometryFlatForm ), intent ( in ) :: &
+      G
     real ( KDR ), intent ( in ) :: &
       Time
     
-!     real ( KDR ) :: &
-!       Radius, &
-!       Density
-!     class ( GeometryFlatForm ), pointer :: &
-!       G
+    real ( KDR ) :: &
+      Radius, &
+      Density
 
-!     select type ( PS => OS % Integrator % PositionSpace )
-!     class is ( Atlas_SC_Form )
-!     G => PS % Geometry ( )
+    if ( Time == 0.0_KDR ) then
+      Radius   =  OS % RadiusInitial
+      Density  =  OS % DensityInitial
+    end if
 
-!     if ( Time == 0.0_KDR ) then
-!       OS % Radius   =  OS % RadiusInitial
-!       OS % Density  =  OS % DensityInitial
-!     end if
+    call SetFluidKernel &
+           (    R = G % Value ( :, G % CENTER_U ( 1 ) ), &
+             dR_L = G % Value ( :, G % WIDTH_LEFT_U ( 1 ) ), &
+             dR_R = G % Value ( :, G % WIDTH_RIGHT_U ( 1 ) ), &
+             Density = Density, &
+             RadiusDensity = Radius, &
+              N = F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
+             VX = F % Value ( :, F % VELOCITY_U ( 1 ) ), &
+             VY = F % Value ( :, F % VELOCITY_U ( 2 ) ), &
+             VZ = F % Value ( :, F % VELOCITY_U ( 3 ) ) )
 
-!     call SetFluidKernel &
-!            (    R = G % Value ( :, G % CENTER_U ( 1 ) ), &
-!              dR_L = G % Value ( :, G % WIDTH_LEFT_U ( 1 ) ), &
-!              dR_R = G % Value ( :, G % WIDTH_RIGHT_U ( 1 ) ), &
-!              Density = OS % Density, &
-!              RadiusDensity = OS % Radius, &
-!               N = F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
-!              VX = F % Value ( :, F % VELOCITY_U ( 1 ) ), &
-!              VY = F % Value ( :, F % VELOCITY_U ( 2 ) ), &
-!              VZ = F % Value ( :, F % VELOCITY_U ( 3 ) ) )
-
-!     call F % ComputeFromPrimitive ( G )
-
-!     end select    !-- PS
-!     nullify ( G )
+    call F % ComputeFromPrimitive ( G )
 
   end subroutine SetFluid
 
 
-!   subroutine SetFluidKernel &
-!                ( R, dR_L, dR_R, Density, RadiusDensity, N, VX, VY, VZ )
+  subroutine SetFluidKernel &
+               ( R, dR_L, dR_R, Density, RadiusDensity, N, VX, VY, VZ )
 
-!     real ( KDR ), dimension ( : ), intent ( in ) :: &
-!       R, &
-!       dR_L, &
-!       dR_R
-!     real ( KDR ), intent ( in ) :: &
-!       Density, &
-!       RadiusDensity
-!     real ( KDR ), dimension ( : ), intent ( out ) :: &
-!       N, &
-!       VX, VY, VZ
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      R, &
+      dR_L, &
+      dR_R
+    real ( KDR ), intent ( in ) :: &
+      Density, &
+      RadiusDensity
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      N, &
+      VX, VY, VZ
 
-!     N  = 0.0_KDR
-!     VX = 0.0_KDR
-!     VY = 0.0_KDR
-!     VZ = 0.0_KDR
+    N  = 0.0_KDR
+    VX = 0.0_KDR
+    VY = 0.0_KDR
+    VZ = 0.0_KDR
 
-!     associate &
-!       ( R_In  => R - dR_L, &
-!         R_Out => R + dR_R )
+    associate &
+      ( R_In  => R - dR_L, &
+        R_Out => R + dR_R )
 
-!     where ( R_Out <= RadiusDensity )
-!       N = Density
-!     end where
-!     where ( R_In < RadiusDensity .and. R_Out > RadiusDensity )
-!       N = Density * ( RadiusDensity ** 3  -  R_In ** 3 ) &
-!                     / ( R_Out ** 3  -  R_In ** 3 )
-!     end where
+    where ( R_Out <= RadiusDensity )
+      N = Density
+    end where
+    where ( R_In < RadiusDensity .and. R_Out > RadiusDensity )
+      N = Density * ( RadiusDensity ** 3  -  R_In ** 3 ) &
+                    / ( R_Out ** 3  -  R_In ** 3 )
+    end where
 
-! !    N = Density / ( 1 + exp ( ( R - RadiusDensity ) &
-! !                              / ( 3 * ( dR_L + dR_R ) ) ) ) 
+!    N = Density / ( 1 + exp ( ( R - RadiusDensity ) &
+!                              / ( 3 * ( dR_L + dR_R ) ) ) ) 
  
-!     end associate !-- R_In, etc.
+    end associate !-- R_In, etc.
 
-!   end subroutine SetFluidKernel
+  end subroutine SetFluidKernel
 
 
 !   subroutine SetReferenceKernel ( OS, F, Time )

@@ -132,6 +132,8 @@ contains
     class ( IntegratorTemplate ), intent ( inout ) :: &
       I
 
+    class ( GeometryFlatForm ), pointer :: &
+      G
     class ( Fluid_D_Form ), pointer :: &
       F, &
       F_R, &  !-- F_Reference
@@ -147,16 +149,21 @@ contains
     class is ( Fluid_ASC_Form )
     F => FA % Fluid_D ( )
 
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
+    G => PS % Geometry ( )
+
     F_R => PW % Reference % Fluid_D ( )
-    call SetFluid ( PW, F_R, I % Time )
+    call SetFluid ( PW, F_R, G, I % Time )
 
     F_D => PW % Difference % Fluid_D ( )
     call MultiplyAdd ( F % Value, F_R % Value, -1.0_KDR, F_D % Value )
 
+    end select !-- PS
     end select !-- FA
     end select !-- PW
     end select !-- I
-    nullify ( F, F_R, F_D )
+    nullify ( G, F, F_R, F_D )
 
   end subroutine SetReference
 
@@ -211,6 +218,8 @@ contains
       nWavelengths
     real ( KDR ) :: &
       Period
+    class ( GeometryFlatForm ), pointer :: &
+      G
     class ( Fluid_D_Form ), pointer :: &
       F
 
@@ -252,8 +261,9 @@ contains
     I % FinishTime = nPeriods * Period
     call Show ( I % FinishTime, 'Reset FinishTime' )
 
+    G => PS % Geometry ( )
     F => FA % Fluid_D ( )
-    call SetFluid ( PW, F, Time = 0.0_KDR )
+    call SetFluid ( PW, F, G, Time = 0.0_KDR )
 
     end associate !-- K, etc.
     end associate !-- BoxSize
@@ -261,27 +271,22 @@ contains
     end select !-- PS
     end select !-- FA
     end select !-- I
-    nullify ( F )
+    nullify ( G, F )
 
   end subroutine SetProblem
 
 
-  subroutine SetFluid ( PW, F, Time )
+  subroutine SetFluid ( PW, F, G, Time )
 
     class ( PlaneWaveTemplate ), intent ( in ) :: &
       PW
     class ( Fluid_D_Form ), intent ( inout ) :: &
       F
+    class ( GeometryFlatForm ), intent ( in ) :: &
+      G
     real ( KDR ), intent ( in ) :: &
       Time
     
-    class ( GeometryFlatForm ), pointer :: &
-      G
-
-    select type ( PS => PW % Integrator % PositionSpace )
-    class is ( Atlas_SC_Form )
-    G => PS % Geometry ( )
-
     call SetFluidKernel &
            ( PW, &
              X = G % Value ( :, G % CENTER_U ( 1 ) ), &
@@ -296,9 +301,6 @@ contains
              VZ = F % Value ( :, F % VELOCITY_U ( 3 ) ) )
 
     call F % ComputeFromPrimitive ( G )
-
-    end select    !-- PS
-    nullify ( G )
 
   end subroutine SetFluid
 

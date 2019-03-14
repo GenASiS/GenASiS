@@ -63,7 +63,7 @@ contains
       FCE % Type = 'a FluidCentralExcision'
 
     call FCE % InitializeTemplate_FC &
-               ( Name, FluidType, GeometryType, &
+               ( FluidType, GeometryType, Name, &
                  DimensionlessOption = DimensionlessOption, &
                  FinishTimeOption = FinishTimeOption, &
                  CourantFactorOption = CourantFactorOption, &

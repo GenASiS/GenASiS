@@ -81,7 +81,7 @@ contains
     end if
 
     call FCC % InitializeTemplate_FC &
-               ( Name, FluidType, GeometryType, &
+               ( FluidType, GeometryType, Name, &
                  DimensionlessOption = DimensionlessOption, &
                  FinishTimeOption = FinishTimeOption, &
                  CourantFactorOption = CourantFactorOption, &
