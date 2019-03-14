@@ -10,10 +10,10 @@ program TableGeneration_NuLib
   character ( LDL ), parameter :: vnum = "1.0"
   character ( LDF ), parameter :: &
     eos_table_filename = "./LS220_234r_136t_50y_analmu_20091212_SVNr26.h5"
-  integer ( KDI ),   parameter :: table_size_D = 4!82 ! Mass Density
-  integer ( KDI ),   parameter :: table_size_T = 3!65 ! Temperature
-  integer ( KDI ),   parameter :: table_size_Y = 2!51 ! Electron Fraction
-  integer ( KDI ),   parameter :: table_size_X = 5!   ! Electron Degeneracy
+  integer ( KDI ),   parameter :: table_size_D = 40!82 ! Mass Density
+  integer ( KDI ),   parameter :: table_size_T = 30!65 ! Temperature
+  integer ( KDI ),   parameter :: table_size_Y = 20!51 ! Electron Fraction
+  integer ( KDI ),   parameter :: table_size_X = 20!61 ! Electron Degeneracy
   real ( KDR ),      parameter :: min_LogD =  6.0_KDR
   real ( KDR ),      parameter :: max_LogD = 15.5_KDR
   real ( KDR ),      parameter :: min_LogT = log10( 0.050_KDR )
@@ -672,6 +672,80 @@ subroutine WriteTable
   call h5dclose_f( dset_id, error )
   call h5sclose_f( dspace_id, error )
   cerror = cerror + error
+
+  if( include_NES .or. include_Pair )then
+
+    rank = 1; dims1 = 1
+
+    call h5screate_simple_f( rank, dims1, dspace_id, error )
+    call h5dcreate_f &
+           ( file_id, "Itemp", H5T_NATIVE_INTEGER, dspace_id, dset_id, error )
+    call h5dwrite_f &
+           ( dset_id, H5T_NATIVE_INTEGER, table_size_T, dims1, error )
+    call h5dclose_f( dset_id, error )
+    call h5sclose_f( dspace_id, error )
+    cerror = cerror + error
+
+    rank = 1; dims1 = 1
+    call h5screate_simple_f( rank, dims1, dspace_id, error )
+    call h5dcreate_f &
+           ( file_id, "Ieta", H5T_NATIVE_INTEGER, dspace_id, dset_id, error )
+    call h5dwrite_f( dset_id, H5T_NATIVE_INTEGER, table_size_X, dims1, error )
+    call h5dclose_f( dset_id, error )
+    call h5sclose_f( dspace_id, error )
+    cerror = cerror + error
+
+    rank = 1; dims1 = table_size_T
+    call h5screate_simple_f( rank, dims1, dspace_id, error )
+    call h5dcreate_f &
+           ( file_id, "temp_Ipoints", H5T_NATIVE_DOUBLE, dspace_id, &
+             dset_id, error )
+    call h5dwrite_f( dset_id, H5T_NATIVE_DOUBLE, table_T, dims1, error )
+    call h5dclose_f( dset_id, error )
+    call h5sclose_f( dspace_id, error )
+    cerror = cerror + error
+
+    rank = 1; dims1 = table_size_X
+    call h5screate_simple_f( rank, dims1, dspace_id, error )
+    call h5dcreate_f &
+           ( file_id, "eta_Ipoints", H5T_NATIVE_DOUBLE, dspace_id, &
+             dset_id, error )
+    call h5dwrite_f( dset_id, H5T_NATIVE_DOUBLE, table_X, dims1, error )
+    call h5dclose_f( dset_id, error )
+    call h5sclose_f( dspace_id, error )
+    cerror = cerror + error   
+
+  end if
+
+  if( include_NES )then
+
+    rank = 5
+    dims5(1) = table_size_T
+    dims5(2) = table_size_X
+    dims5(3) = number_groups
+    dims5(4) = number_local_species  
+    dims5(5) = number_groups  
+
+    call h5screate_simple_f( rank, dims5, dspace_id, error )
+    call h5dcreate_f &
+           ( file_id, "inelastic_phi0", H5T_NATIVE_DOUBLE, dspace_id, &
+             dset_id, error )
+    call h5dwrite_f( dset_id, H5T_NATIVE_DOUBLE, table_phi_0, dims5, error )
+    call h5dclose_f( dset_id, error )
+    call h5sclose_f( dspace_id, error )
+    cerror = cerror + error   
+
+    call h5screate_simple_f( rank, dims5, dspace_id, error )
+    call h5dcreate_f &
+           ( file_id, "inelastic_phi1", H5T_NATIVE_DOUBLE, dspace_id, &
+             dset_id, error )
+    call h5dwrite_f( dset_id, H5T_NATIVE_DOUBLE, table_phi_1, dims5, error )
+    call h5dclose_f( dset_id, error )
+    call h5sclose_f( dspace_id, error )
+    cerror = cerror + error
+
+  end if
+
 
   ! --- close h5 files, check for error ---
 
