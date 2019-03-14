@@ -11,8 +11,10 @@ module FluidCentralExcision_Form
   type, public, extends ( FluidCentralTemplate ) :: &
     FluidCentralExcisionForm
   contains
-    procedure, public, pass :: &
-      Initialize
+    procedure, private, pass :: &
+      Initialize_FCE
+    generic, public :: &
+      Initialize => Initialize_FCE
     final :: &
       Finalize
     procedure, private, pass :: &
@@ -29,19 +31,19 @@ module FluidCentralExcision_Form
 contains
 
 
-  subroutine Initialize &
-               ( FCE, Name, FluidType, GeometryType, DimensionlessOption, &
+  subroutine Initialize_FCE &
+               ( FCE, FluidType, GeometryType, Name, DimensionlessOption, &
                  FinishTimeOption, CourantFactorOption, &
                  LimiterParameterOption, ShockThresholdOption, &
                  RadiusMaxOption, RadiusMinOption, RadialRatioOption, &
                  CentralMassOption, nWriteOption, nCellsPolarOption )
 
-    class ( FluidCentralExcisionForm ), intent ( inout ), target :: &
+    class ( FluidCentralExcisionForm ), intent ( inout ) :: &
       FCE
     character ( * ), intent ( in )  :: &
-      Name, &
       FluidType, &
-      GeometryType
+      GeometryType, &
+      Name
     logical ( KDL ), intent ( in ), optional :: &
       DimensionlessOption
     real ( KDR ), intent ( in ), optional :: &
@@ -82,7 +84,7 @@ contains
     end select !-- S
     end select !-- I
 
-  end subroutine Initialize
+  end subroutine Initialize_FCE
 
 
   impure elemental subroutine Finalize ( FCE )

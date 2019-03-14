@@ -42,44 +42,30 @@ module PlaneWave_Template
       SetReference, &
       InitializeFluidBox, &
       InitializeDiagnostics, &
-      SetFluid
+      SetProblem
 
       private :: &
-        SetWave
+        SetFluid
 
         private :: &
-          SetWaveKernel
+          SetFluidKernel
 
 contains
 
 
   subroutine InitializeTemplate_PW ( PW, Name )
 
-    class ( PlaneWaveTemplate ), intent ( inout ), target :: &
+    class ( PlaneWaveTemplate ), intent ( inout ) :: &
       PW
     character ( * ), intent ( in )  :: &
       Name
-
-    integer ( KDI ) :: &
-      nPeriods
-    real ( KDR ) :: &
-      Period
 
     if ( PW % Type == '' ) &
       PW % Type = 'a PlaneWave'
 
     call InitializeFluidBox ( PW, Name )
     call InitializeDiagnostics ( PW )
-    call SetFluid ( PW, Period )
-
-    nPeriods = 1
-    call PROGRAM_HEADER % GetParameter ( nPeriods, 'nPeriods' )
-    call Show ( nPeriods, 'nPeriods' )
-
-    associate ( I => PW % Integrator )
-    I % FinishTime = nPeriods * Period
-    call Show ( I % FinishTime, 'Reset FinishTime' )
-    end associate !-- I
+    call SetProblem ( PW )
 
   end subroutine InitializeTemplate_PW
 
@@ -138,8 +124,6 @@ contains
     if ( allocated ( PW % Reference ) ) &
       deallocate ( PW % Reference )
 
-    call PW % FinalizeTemplate ( )
-
   end subroutine FinalizeTemplate_PW
 
 
@@ -164,7 +148,7 @@ contains
     F => FA % Fluid_D ( )
 
     F_R => PW % Reference % Fluid_D ( )
-    call SetWave ( PW, F_R, I % Time )
+    call SetFluid ( PW, F_R, I % Time )
 
     F_D => PW % Difference % Fluid_D ( )
     call MultiplyAdd ( F % Value, F_R % Value, -1.0_KDR, F_D % Value )
@@ -216,15 +200,17 @@ contains
   end subroutine InitializeDiagnostics
 
 
-  subroutine SetFluid ( PW, Period )
+  subroutine SetProblem ( PW )
 
     class ( PlaneWaveTemplate ), intent ( inout ) :: &
       PW
-    real ( KDR ), intent ( out ) :: &
-      Period
 
+    integer ( KDI ) :: &
+      nPeriods
     integer ( KDI ), dimension ( 3 ) :: &
       nWavelengths
+    real ( KDR ) :: &
+      Period
     class ( Fluid_D_Form ), pointer :: &
       F
 
@@ -259,8 +245,15 @@ contains
     Period = 1.0_KDR / ( Abs_K * V )
     call Show ( Period, 'Period' )
 
+    nPeriods = 1
+    call PROGRAM_HEADER % GetParameter ( nPeriods, 'nPeriods' )
+    call Show ( nPeriods, 'nPeriods' )
+
+    I % FinishTime = nPeriods * Period
+    call Show ( I % FinishTime, 'Reset FinishTime' )
+
     F => FA % Fluid_D ( )
-    call SetWave ( PW, F, Time = 0.0_KDR )
+    call SetFluid ( PW, F, Time = 0.0_KDR )
 
     end associate !-- K, etc.
     end associate !-- BoxSize
@@ -270,10 +263,10 @@ contains
     end select !-- I
     nullify ( F )
 
-  end subroutine SetFluid
+  end subroutine SetProblem
 
 
-  subroutine SetWave ( PW, F, Time )
+  subroutine SetFluid ( PW, F, Time )
 
     class ( PlaneWaveTemplate ), intent ( in ) :: &
       PW
@@ -289,7 +282,7 @@ contains
     class is ( Atlas_SC_Form )
     G => PS % Geometry ( )
 
-    call SetWaveKernel &
+    call SetFluidKernel &
            ( PW, &
              X = G % Value ( :, G % CENTER_U ( 1 ) ), &
              Y = G % Value ( :, G % CENTER_U ( 2 ) ), &
@@ -307,10 +300,10 @@ contains
     end select    !-- PS
     nullify ( G )
 
-  end subroutine SetWave
+  end subroutine SetFluid
 
 
-  subroutine SetWaveKernel ( PW, X, Y, Z, K, V, T, N, VX, VY, VZ )
+  subroutine SetFluidKernel ( PW, X, Y, Z, K, V, T, N, VX, VY, VZ )
 
     class ( PlaneWaveTemplate ), intent ( in ) :: &
       PW
@@ -350,7 +343,7 @@ contains
     end do !-- iV
     !$OMP end parallel do
 
-  end subroutine SetWaveKernel
+  end subroutine SetFluidKernel
 
 
 end module PlaneWave_Template

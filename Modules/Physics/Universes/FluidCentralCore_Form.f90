@@ -13,8 +13,10 @@ module FluidCentralCore_Form
     real ( KDR ) :: &
       GravityFactor
   contains
-    procedure, public, pass :: &
-      Initialize
+    procedure, private, pass :: &
+      Initialize_FCC
+    generic, public :: &
+      Initialize => Initialize_FCC
     final :: &
       Finalize
     procedure, private, pass :: &
@@ -38,20 +40,19 @@ module FluidCentralCore_Form
 contains
 
 
-  subroutine Initialize &
-               ( FCC, Name, FluidType, GeometryType, &
-                 DimensionlessOption, FinishTimeOption, &
-                 CourantFactorOption, GravityFactorOption, &
+  subroutine Initialize_FCC &
+               ( FCC, FluidType, GeometryType, Name, DimensionlessOption, &
+                 FinishTimeOption, CourantFactorOption, GravityFactorOption, &
                  LimiterParameterOption, ShockThresholdOption, &
                  RadiusMaxOption, RadiusCoreOption, RadialRatioOption, &
                  nWriteOption, nCellsPolarOption )
 
-    class ( FluidCentralCoreForm ), intent ( inout ), target :: &
+    class ( FluidCentralCoreForm ), intent ( inout ) :: &
       FCC
     character ( * ), intent ( in )  :: &
-      Name, &
       FluidType, &
-      GeometryType
+      GeometryType, &
+      Name
     logical ( KDL ), intent ( in ), optional :: &
       DimensionlessOption
     real ( KDR ), intent ( in ), optional :: &
@@ -116,7 +117,7 @@ contains
       call Show ( FCC % GravityFactor, 'GravityFactor' )
     end if
 
-  end subroutine Initialize
+  end subroutine Initialize_FCC
 
 
   subroutine InitializeAtlas &

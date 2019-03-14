@@ -37,8 +37,8 @@ contains
   subroutine Initialize_FB &
                ( FB, FluidType, GeometryType, Name, GravitySolverTypeOption, &
                  MinCoordinateOption, MaxCoordinateOption, FinishTimeOption, &
-                 CourantFactorOption, UniformAccelerationOption, nCellsOption, &
-                 nWriteOption )
+                 CourantFactorOption, UniformAccelerationOption, &
+                 nCellsOption, nWriteOption )
 
     class ( FluidBoxForm ), intent ( inout ) :: &
       FB

@@ -122,7 +122,7 @@ contains
 
 
   subroutine InitializeTemplate_FC &
-               ( FC, Name, FluidType, GeometryType, DimensionlessOption, &
+               ( FC, FluidType, GeometryType, Name, DimensionlessOption, &
                  FinishTimeOption, CourantFactorOption, &
                  LimiterParameterOption, ShockThresholdOption, & 
                  RadiusMaxOption, RadiusCoreOption, RadiusMinOption, &
@@ -132,9 +132,9 @@ contains
     class ( FluidCentralTemplate ), intent ( inout ) :: &
       FC
     character ( * ), intent ( in )  :: &
-      Name, &
       FluidType, &
-      GeometryType
+      GeometryType, &
+      Name
     logical ( KDL ), intent ( in ), optional :: &
       DimensionlessOption
     real ( KDR ), intent ( in ), optional :: &
