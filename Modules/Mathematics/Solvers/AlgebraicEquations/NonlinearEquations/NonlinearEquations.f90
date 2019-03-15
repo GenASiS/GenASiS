@@ -1,6 +1,6 @@
 module NonlinearEquations
 
-  use RootFinding_Form
+  use RootFinder_Form
 
 end module NonlinearEquations
 
