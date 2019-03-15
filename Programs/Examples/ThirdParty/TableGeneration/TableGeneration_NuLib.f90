@@ -1,6 +1,5 @@
 program TableGeneration_NuLib
 
-  use nulib
   use GenASiS
 
   implicit none
@@ -63,35 +62,152 @@ contains
 
 subroutine SetEnergyGrid ( MS )
 
-  use GenASiS
-
   type ( Atlas_SC_Form ), intent ( inout ) :: &
     MS
 
   integer ( KDI ) :: &
     nEnergyCells
+  logical ( KDL ) :: &
+    UseNuLibGrid
+  type ( MeasuredValueForm ), dimension ( 1 ) :: &
+    CoordinateUnit
+  character ( LDL ), dimension ( 1 ) :: &
+    CoordinateLabel
+
+  nEnergyCells = 18
+  call PROGRAM_HEADER % GetParameter ( nEnergyCells, 'nEnergyCells' )
+
+  CoordinateUnit   =  UNIT % MEGA_ELECTRON_VOLT
+  CoordinateLabel  =  'Energy'
+
+  UseNuLibGrid = .false.
+  call PROGRAM_HEADER % GetParameter ( UseNuLibGrid, 'UseNuLibGrid' )
+
+  if ( UseNuLibGrid ) then
+    call SetEnergyGridNuLib &
+           ( MS, CoordinateLabel, CoordinateUnit, nEnergyCells )
+  else
+    call SetEnergyGridCompactified &
+           ( MS, CoordinateLabel, CoordinateUnit, nEnergyCells )
+  end if
+
+end subroutine SetEnergyGrid
+
+
+subroutine SetEnergyGridNuLib &
+             ( MS, CoordinateLabel, CoordinateUnit, nEnergyCells )
+
+  type ( Atlas_SC_Form ), intent ( inout ) :: &
+    MS
+  character ( LDL ), dimension ( 1 ), intent ( in ) :: &
+    CoordinateLabel
+  type ( MeasuredValueForm ), dimension ( 1 ), intent ( in ) :: &
+    CoordinateUnit
+  integer ( KDI ), intent ( in ) :: &
+    nEnergyCells
+
+  integer ( KDI ) :: &
+    iE
+  real ( KDR ) :: &
+    MinWidth, &
+    ZoomFactor
+  real ( KDR ), dimension ( nEnergyCells ) :: &
+    Bottom, &
+    Top, &
+    Width, &
+    Center
+  type ( Real_1D_Form ), dimension ( 1 ) :: &
+    Edge
+  class ( GeometryFlatForm ), pointer :: &
+    G
+
+  call Show ( 'Creating NuLib energy grid' )
+
+  call MS % CreateChart &
+         ( CoordinateLabelOption  = CoordinateLabel, &
+           CoordinateSystemOption = 'SPHERICAL', &
+           CoordinateUnitOption   = CoordinateUnit, &
+           nCellsOption           = [ nEnergyCells ], &
+           nGhostLayersOption     = [ 0, 0, 0 ] )
+  call MS % SetGeometry ( )
+
+  MinWidth                 =  2.0_KDR  *  UNIT % MEGA_ELECTRON_VOLT
+  Bottom ( 1 )             =  0.0_KDR
+  Bottom ( 2 )             =  MinWidth
+  Bottom ( 3 )             =  Bottom ( 2 )  +  MinWidth
+  Bottom ( nEnergyCells )  =  250.0_KDR  *  UNIT % MEGA_ELECTRON_VOLT
+
+  !-- Compute zoom factor
+
+  call nulib_series2 &
+         ( nEnergyCells - 1, Bottom ( 2 ), Bottom ( nEnergyCells ), MinWidth, &
+           ZoomFactor )
+
+  !-- Compute bin bottom, top, width, center
+
+  do iE = 4, nEnergyCells
+    Bottom ( iE )  =  Bottom ( iE - 1 )  +  &
+                      ( Bottom ( iE - 1 ) - Bottom ( iE - 2 ) ) * ZoomFactor
+  end do
+
+  do iE = 1, nEnergyCells - 1
+    Top    ( iE )        =  Bottom ( iE + 1 )
+    Width  ( iE )        =  Top ( iE )  -  Bottom ( iE )
+    Center ( iE )        =  ( Bottom ( iE ) + Top ( iE ) )  /  2.0_KDR
+  end do
+  Width ( nEnergyCells )  &
+    =  Width ( nEnergyCells - 1 )  *  ZoomFactor
+  Top ( nEnergyCells )  &
+    =  Bottom ( nEnergyCells )  +  Width ( nEnergyCells )
+  Center ( nEnergyCells )  &
+    =  ( Bottom ( nEnergyCells )  +  Top ( nEnergyCells ) )  /  2.0_KDR
+
+  !-- Hack geometry
+
+  call Edge ( 1 ) % Initialize ( nEnergyCells + 1 )
+  Edge ( 1 ) % Value  =  [ Bottom, Top ( nEnergyCells ) ]
+  select type ( MSC => MS % Chart )
+  class is ( Chart_SL_Template )
+    call MSC % ResetGeometry ( Edge )
+  end select !-- MSC
+
+  G => MS % Geometry ( )
+
+  G % Value ( :, G % CENTER_U ( 1 ) )       =  Center
+  G % Value ( :, G % WIDTH_LEFT_U ( 1 ) )   =  Center - Bottom
+  G % Value ( :, G % WIDTH_RIGHT_U ( 1 ) )  =  Top - Center
+
+  nullify ( G )
+
+end subroutine SetEnergyGridNuLib
+
+
+subroutine SetEnergyGridCompactified &
+             ( MS, CoordinateLabel, CoordinateUnit, nEnergyCells )
+
+  type ( Atlas_SC_Form ), intent ( inout ) :: &
+    MS
+  character ( LDL ), dimension ( 1 ), intent ( in ) :: &
+    CoordinateLabel
+  type ( MeasuredValueForm ), dimension ( 1 ), intent ( in ) :: &
+    CoordinateUnit
+  integer ( KDI ), intent ( in ) :: &
+    nEnergyCells
+
   real ( KDR ) :: &
     EnergyScale
   real ( KDR ), dimension ( 1 ) :: &
     Scale
-  type ( MeasuredValueForm ), dimension ( 1 ) :: &
-    CoordinateUnit
   character ( LDL ), dimension ( 1 ) :: &
-    Spacing, &
-    CoordinateLabel
+    Spacing
 
-  call Show ( 'Creating GenASiS energy grid' )
-
-  nEnergyCells = 20
-  call PROGRAM_HEADER % GetParameter ( nEnergyCells, 'nEnergyCells' )
+  call Show ( 'Creating GenASiS COMPACTIFIED energy grid' )
 
   EnergyScale  =  10.0_KDR  *  UNIT % MEGA_ELECTRON_VOLT
   call PROGRAM_HEADER % GetParameter ( EnergyScale, 'EnergyScale' )
 
-  Scale            =  EnergyScale
-  CoordinateUnit   =  UNIT % MEGA_ELECTRON_VOLT
-  Spacing          =  'COMPACTIFIED'
-  CoordinateLabel  =  'Energy'
+  Scale    =  EnergyScale
+  Spacing  =  'COMPACTIFIED'
   
   call MS % CreateChart &
          ( SpacingOption          = Spacing, &
@@ -103,7 +219,7 @@ subroutine SetEnergyGrid ( MS )
            nGhostLayersOption     = [ 0, 0, 0 ] )
   call MS % SetGeometry ( )
 
-end subroutine SetEnergyGrid
+end subroutine SetEnergyGridCompactified
 
 
 subroutine PrepareNuLib ( MS )
@@ -114,7 +230,6 @@ subroutine PrepareNuLib ( MS )
     bin_bottom, &
     bin_top, &
     initialize_nulib
-  use GenASiS
 
   type ( Atlas_SC_Form ), intent ( inout ) :: &
     MS
@@ -183,8 +298,14 @@ subroutine CreateTable ( )
     rhoindex, &
     tempindex, &
     yeindex, &
-    single_point_return_all
-  use GenASiS
+    single_point_return_all, &
+    single_ipoint_return_all, &
+    add_nue_Iscattering_electrons,   &
+    add_anue_Iscattering_electrons,  &
+    add_numu_Iscattering_electrons,  &
+    add_anumu_Iscattering_electrons, &
+    add_nutau_Iscattering_electrons, &
+    add_anutau_Iscattering_electrons
 
   integer ( KDI ) :: &
     iD, iT, iY, iX, iS, iG, iGp
@@ -431,8 +552,12 @@ end subroutine CreateTable
 subroutine WriteTable
 
   use nulib, only: &
-    number_groups
-  use GenASiS
+    number_groups, &
+    bin_bottom, &
+    bin_top, &
+    bin_widths, &
+    energies
+    
   use hdf5
 
   character ( 8 )     :: date
