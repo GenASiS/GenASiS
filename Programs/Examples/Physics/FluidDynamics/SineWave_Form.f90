@@ -52,10 +52,14 @@ contains
     real ( KDR ) :: &
       W
     
+    real ( KDR ) :: &
+      TwoPi
+
     associate &
       ( O => PW % Offset, &
-        A => PW % Amplitude, &
-        TwoPi => 2.0_KDR * CONSTANT % PI )
+        A => PW % Amplitude )
+
+    TwoPi  =  2.0_KDR * CONSTANT % PI
 
     W  =  O  +  A * sin ( TwoPi * X )
 

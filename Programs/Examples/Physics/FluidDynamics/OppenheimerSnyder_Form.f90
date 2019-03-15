@@ -10,20 +10,14 @@ module OppenheimerSnyder_Form
 
   type, public, extends ( FluidCentralCoreForm ) :: OppenheimerSnyderForm
     real ( KDR ) :: &
-      RadiusInitial, &
       DensityInitial, &
+      RadiusInitial, &
       TimeScale
-!      Density, &
-!      Radius
-  !   type ( Real_1D_Form ) :: &
-  !     Parameters
-  !   class ( ODEForm ), allocatable :: &
-  !     ODEF
+    type ( RootFinderForm ), allocatable :: &
+      RootFinder
     type ( Fluid_ASC_Form ), allocatable :: &
       Reference, &
       Difference
-  !   procedure ( DerivativeInterface ), public, pointer, nopass :: &
-  !     DerivativeEvaluator => null () 
   contains
     procedure, private, pass :: &
       Initialize_OS
@@ -36,34 +30,17 @@ module OppenheimerSnyder_Form
   end type OppenheimerSnyderForm
 
     private :: &
-!       SetReference
+      SetReference, &
       InitializeFluidCentralCore, &
       InitializeDiagnostics, &
       SetProblem
 
       private :: &
+        EvaluateZeroEta, &
         SetFluid
 
         private :: &
           SetFluidKernel
-
-!       private :: &
-!         SetFluidKernel, &
-!         SetReferenceKernel
-
-!   interface 
-!     subroutine DerivativeInterface ( Parameters, X, Y, dYdX )
-!       use GenASiS
-!       class ( * ), intent ( in ) :: &
-!         Parameters
-!       real ( KDR ), intent ( in ) :: &
-!         X
-!       real ( KDR ), dimension ( : ), intent ( in ) :: &
-!         Y
-!       real ( KDR ), dimension ( : ), intent ( out ) :: &
-!         dYdX
-!     end subroutine DerivativeInterface
-!   end interface
 
 contains
 
@@ -82,20 +59,6 @@ contains
     call InitializeDiagnostics ( OS )
     call SetProblem ( OS )
 
-!    !-- ODE Solver
-!    OS % DerivativeEvaluator => DerivativeFunction
-    
-!    call OS % Parameters % Initialize ( 2 )
-!    OS % Parameters % Value ( 1 ) = 1.0_KDR
-!    OS % Parameters % Value ( 2 ) &
-!           = OS % DensityInitial * 4.0_KDR / 3.0_KDR * CONSTANT % PI
-
-!    allocate ( OS % ODEF )
-    
-!    call OS % ODEF % Initialize &
-!                       ( OS % Parameters, &
-!                         OS % DerivativeEvaluator )
-   
   end subroutine Initialize_OS
 
 
@@ -104,72 +67,48 @@ contains
     class ( OppenheimerSnyderForm ), intent ( inout ) :: &
       OS
 
-!     integer ( KDI ) :: &
-!       nM, &
-!       iV, &
-!       iE, &
-!       iM !-- iMessage
-!     real ( KDR ) :: &
-!       L1
-!     class ( Fluid_D_Form ), pointer :: &
-!       F, &
-!       F_R, &  !-- F_Reference
-!       F_D     !-- F_Difference         
-!     type ( CollectiveOperation_R_Form ) :: &
-!       CO
+    real ( KDR ) :: &
+      L1
+    class ( Fluid_D_Form ), pointer :: &
+      F_D, &
+      F_R
+    type ( CollectiveOperation_R_Form ) :: &
+      CO
     
-!     select type ( FCC => OS % Integrator )
-!     type is ( FluidCentralCoreForm )
-!     select type ( FA => FCC % Current_ASC )
-!     class is ( Fluid_ASC_Form )
-!     F => FA % Fluid_D ( )
-
-!     F_R => OppenheimerSnyderCollapse % Reference % Fluid_D ( )
-!     call SetReferenceKernel ( OppenheimerSnyderCollapse, F_R, FCC % Time )
-
-!     F_D => OppenheimerSnyderCollapse % Difference % Fluid_D ( )
-!     call MultiplyAdd ( F % Value, F_R % Value, -1.0_KDR, F_D % Value )
-
-
-!     select type ( PS => OS % Integrator % PositionSpace )
-!     class is ( Atlas_SC_Form )
+    select type ( PS => OS % Integrator % PositionSpace )
+    class is ( Atlas_SC_Form )
     
-!     select type ( C => PS % Chart ) 
-!     class is ( Chart_SLD_Form )
+    select type ( PSC => PS % Chart ) 
+    class is ( Chart_SLD_Form )
     
-!     associate ( D   => F_D % Value ( :, F_D % COMOVING_BARYON_DENSITY ), &
-!                 R   => F_R % Value ( :, F_R % COMOVING_BARYON_DENSITY ) )
+    F_D => OS % Difference % Fluid_D ( )
+    F_R => OS % Reference  % Fluid_D ( )
 
+    call CO % Initialize ( PS % Communicator, [ 2 ], [ 2 ] )
 
-!     call CO % Initialize ( PS % Communicator, [ 2 ], [ 2 ] )
+    associate &
+      ( D => F_D % Value ( :, F_D % COMOVING_BARYON_DENSITY ), &
+        R => F_R % Value ( :, F_R % COMOVING_BARYON_DENSITY ), &
+        Norm_D => CO % Incoming % Value ( 1 ), &
+        Norm_R => CO % Incoming % Value ( 2 ) )
 
-!     CO % Outgoing % Value ( 1 ) &
-!            = sum ( abs ( R ), mask = C % IsProperCell )
-!     CO % Outgoing % Value ( 2 )&
-!            = sum ( abs ( D ), mask = C % IsProperCell )
+    CO % Outgoing % Value ( 1 ) &
+      = sum ( abs ( D ), mask = PSC % IsProperCell )
+    CO % Outgoing % Value ( 2 ) &
+      = sum ( abs ( R ), mask = PSC % IsProperCell )
 
-!     call CO % Reduce ( REDUCTION % SUM )
+    call CO % Reduce ( REDUCTION % SUM )
 
-!     end associate !-- D, etc. 
-    
-!     !-- L1 error
+    L1 = Norm_D / Norm_R
+    call Show ( L1, '*** L1 error', nLeadingLinesOption = 2, &
+                nTrailingLinesOption = 2 )
 
-!     associate ( IN   => CO % Incoming % Value )
+    end associate !-- D, etc.
+    end select !-- PSC
+    end select !-- PS
+    nullify ( F_D, F_R )
 
-!     L1 = IN ( 2 ) / IN ( 1 )
-!     call Show ( L1, '*** L1 error', nLeadingLinesOption = 2, &
-!                 nTrailingLinesOption = 2 )
-
-!     end associate !-- IN 
-
-!     end select !-- C
-!     end select !-- PS
-
-!     end select !-- FA
-!     end select !-- FCC
-!     nullify ( F, F_R, F_D )
-
-  end subroutine
+  end subroutine ComputeError
 
 
   impure elemental subroutine Finalize ( OS )
@@ -181,38 +120,51 @@ contains
       deallocate ( OS % Difference )
     if ( allocated ( OS % Reference ) ) &
       deallocate ( OS % Reference )
+    if ( allocated ( OS % RootFinder ) ) &
+      deallocate ( OS % RootFinder )
 
   end subroutine Finalize
 
 
-!   subroutine SetReference ( FCC )
-!     class ( IntegratorTemplate ), intent ( inout ) :: &
-!       FCC 
+  subroutine SetReference ( I )
 
-!     class ( Fluid_D_Form ), pointer :: &
-!       F, &
-!       F_R, &  !-- F_Reference
-!       F_D     !-- F_Difference
+    class ( IntegratorTemplate ), intent ( inout ) :: &
+      I
 
-!     select type ( FCC )
-!     class is ( FluidCentralCoreForm )
-!     select type ( FA => FCC % Current_ASC )
-!     class is ( Fluid_ASC_Form )
-!     F => FA % Fluid_D ( )
+    class ( GeometryFlatForm ), pointer :: &
+      G
+    class ( Fluid_D_Form ), pointer :: &
+      F, &
+      F_R, &  !-- F_Reference
+      F_D     !-- F_Difference
 
-!     F_R => OppenheimerSnyderCollapse % Reference % Fluid_D ( )
-!     call SetReferenceKernel ( OppenheimerSnyderCollapse, F_R, FCC % Time )
+    select type ( I )
+    class is ( Integrator_C_PS_Form )
 
-!     F_D => OppenheimerSnyderCollapse % Difference % Fluid_D ( )
-!     call MultiplyAdd ( F % Value, F_R % Value, -1.0_KDR, F_D % Value )
+    select type ( OS => I % Universe )
+    class is ( OppenheimerSnyderForm )
 
-!     F_D % Value = abs ( F_D % Value )
+    select type ( FA => I % Current_ASC )
+    class is ( Fluid_ASC_Form )
+    F => FA % Fluid_D ( )
 
-!     end select !-- FA
-!     end select !-- FCC
-!     nullify ( F, F_R, F_D )
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
+    G => PS % Geometry ( )
 
-!   end subroutine SetReference
+    F_R => OS % Reference % Fluid_D ( )
+    call SetFluid ( OS, F_R, G )
+
+    F_D => OS % Difference % Fluid_D ( )
+    call MultiplyAdd ( F % Value, F_R % Value, -1.0_KDR, F_D % Value )
+
+    end select !-- PS
+    end select !-- FA
+    end select !-- OS
+    end select !-- I
+    nullify ( G, F, F_R, F_D )
+
+  end subroutine SetReference
 
 
   subroutine InitializeFluidCentralCore ( OS, Name )
@@ -229,7 +181,7 @@ contains
              DimensionlessOption = .true., &
              GravityFactorOption = 0.01_KDR, &
              LimiterParameterOption = 1.0_KDR )
-!     OS % SetReference => SetReference
+     OS % Integrator % SetReference => SetReference
 
   end subroutine InitializeFluidCentralCore
 
@@ -264,6 +216,7 @@ contains
       OS
 
     real ( KDR ) :: &
+      Pi, &
       Mass, &
       DensityFactor, &
       RadiusFactor, &
@@ -289,9 +242,9 @@ contains
           Tau => OS % TimeScale, &
             M => Mass, &
            DF => DensityFactor, &
-           RF => RadiusFactor, &
-           PI => CONSTANT % PI )
+           RF => RadiusFactor )
 
+     Pi  =  CONSTANT % PI
       M  =  1.0_KDR
     D_0  =  1.0e-3_KDR
      DF  =  1.0e2_KDR
@@ -299,8 +252,8 @@ contains
     call PROGRAM_HEADER % GetParameter ( D_0, 'DensityInitial' )
     call PROGRAM_HEADER % GetParameter (  DF, 'DensityFactor' )
 
-               Tau  =  sqrt ( 3.0 / ( 8.0 * PI * D_0 ) )
-               R_0  =  ( 3.0 * M / ( 4.0 * PI * D_0 ) ) ** ( 1.0_KDR / 3.0_KDR )
+               Tau  =  sqrt ( 3.0 / ( 8.0 * Pi * D_0 ) )
+               R_0  =  ( 3.0 * M / ( 4.0 * Pi * D_0 ) ) ** ( 1.0_KDR / 3.0_KDR )
                 RF  =  DF ** ( - 1.0_KDR / 3.0_KDR ) 
                Eta  =  acos ( 2.0 * RF  -  1.0 )
     I % FinishTime  =  0.5 * Tau * ( Eta  +  sin ( Eta ) )
@@ -311,7 +264,7 @@ contains
     call Show ( R_0, 'RadiusInitial' )
     call Show ( DF, 'DensityFactor' )
     call Show ( RF, 'RadiusFactor' )
-    call Show ( PI / 2  *  Tau, 'CollapseTime' )
+    call Show ( Pi / 2  *  Tau, 'CollapseTime' )
     call Show ( I % FinishTime, 'Reset FinishTime' )
 
     if ( R_0 > R_Max  ) then
@@ -322,10 +275,16 @@ contains
       call PROGRAM_HEADER % Abort ( )
     end if
 
+    allocate ( OS % RootFinder )
+    associate ( RF => OS % RootFinder )
+    call RF % Initialize ( OS )
+    RF % EvaluateZero  =>  EvaluateZeroEta
+
     G => PS % Geometry ( )
     F => FA % Fluid_D ( )
-    call SetFluid ( OS, F, G, Time = 0.0_KDR )
+    call SetFluid ( OS, F, G )
 
+    end associate !-- RF
     end associate !-- D0, etc.
     end select !-- PS
     end select !-- FA
@@ -335,7 +294,31 @@ contains
   end subroutine SetProblem
 
 
-  subroutine SetFluid ( OS, F, G, Time )
+  subroutine EvaluateZeroEta ( OS, Eta, Zero )
+
+    class ( * ), intent ( in ) :: &
+      OS
+    real ( KDR ), intent ( in ) :: &
+      Eta
+    real ( KDR ), intent ( out ) :: &
+      Zero
+
+    select type ( OS )
+    class is ( OppenheimerSnyderForm )
+
+    associate &
+      ( Tau  => OS % TimeScale, &
+        Time => OS % Integrator % Time )
+
+    Zero  =  2.0 * Time / Tau  -  ( Eta  +  sin ( Eta ) )
+
+    end associate !-- Tau, etc.
+    end select !-- OS
+    
+  end subroutine EvaluateZeroEta
+
+
+  subroutine SetFluid ( OS, F, G )
 
     class ( OppenheimerSnyderForm ), intent ( inout ) :: &
       OS
@@ -343,18 +326,28 @@ contains
       F
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), intent ( in ) :: &
-      Time
     
     real ( KDR ) :: &
+      Pi, &
+      Eta, &
       Radius, &
       Density
 
-    if ( Time == 0.0_KDR ) then
-      Radius   =  OS % RadiusInitial
-      Density  =  OS % DensityInitial
-    end if
+    Pi  =  CONSTANT % PI
 
+    associate &
+      ( RF => OS % RootFinder, &
+        D_0 => OS % DensityInitial, &
+        R_0 => OS % RadiusInitial )
+
+    call RF % Solve ( [ 0.0_KDR, Pi ], Eta )
+
+    Radius   =  0.5 * R_0 * ( 1 + cos ( Eta ) )
+    Density  =  D_0 * ( R_0 / Radius ) ** 3
+
+    end associate !-- RF, etc.
+
+  
     call SetFluidKernel &
            (    R = G % Value ( :, G % CENTER_U ( 1 ) ), &
              dR_L = G % Value ( :, G % WIDTH_LEFT_U ( 1 ) ), &
@@ -408,103 +401,6 @@ contains
     end associate !-- R_In, etc.
 
   end subroutine SetFluidKernel
-
-
-!   subroutine SetReferenceKernel ( OS, F, Time )
-!     class ( OppenheimerSnyderForm ), intent ( inout ) :: &
-!       OS
-!     class ( Fluid_D_Form ), intent ( inout ) :: &
-!       F
-!     real ( KDR ), intent ( in ) :: &
-!       Time
-
-!     integer ( KDI ) :: &
-!       iC
-!     real ( KDR ) :: &
-!       X_1, &
-!       X_2, &
-!       H, &
-!       R_New
-!     real ( KDR ), dimension ( 2 ) :: &
-!       Y_Start
-!     class ( GeometryFlatForm ), pointer :: &
-!       G
-
-!     select type ( PS => OS % Integrator % PositionSpace )
-!     class is ( Atlas_SC_Form )
-!     G => PS % Geometry ( )
-    
-!     select type ( C => PS % Chart ) 
-!     class is ( Chart_SLD_Form )
-
-!     associate &
-!       ( Rho   => F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
-!         R     => G % Value ( :, G % CENTER_U ( 1 ) ), &
-!         Rho_0 => OS % DensityInitial, &
-!         R0    => OS % RadiusInitial )
-
-!     X_1 = 0.0_KDR
-!     X_2 = Time
-
-!     H = X_2 / 2
-
-!     Y_Start ( 1 ) = 1.0_KDR
-!     Y_Start ( 2 ) = 0.0_KDR
-
-!     if ( Time > 0.0_KDR ) then 
-!       !-- Solve system of ODEs
-!       call OS % ODEF % IntegrateODE &
-!                          ( Y_Start, X_1, X_2, H, &
-!                            OS % ODEF % RequestedAccuracy, &
-!                            RK4Option = .false. ) 
-!     end if
- 
-!     R_New = R0 * Y_Start ( 1 ) 
-    
-!     Rho = 0.0_KDR
- 
-!     where ( R <= R_New ) 
-
-!       Rho = Rho_0 / ( Y_Start ( 1 ) ** 3 )
-
-!     end where
-
-!     end associate !-- Rho, etc.
-!     end select !-- C
-!     end select !-- PS
-!     nullify ( G )
-
-!   end subroutine SetReferenceKernel
-
-
-!   subroutine DerivativeFunction ( Parameters, X, Y, dYdX )
-!     class ( * ), intent ( in ) :: &
-!       Parameters
-!     real ( KDR ), intent ( in ) :: &
-!       X
-!     real ( KDR ), dimension ( : ), intent ( in ) :: &
-!       Y
-!     real ( KDR ), dimension ( : ), intent ( out ) :: &
-!       dYdX
-
-!     real ( KDR ) :: &
-!       SqrtTiny
-
-!     SqrtTiny = sqrt ( tiny ( 0.0_KDR ) )
-
-!     select type ( P => Parameters ) 
-!     type is ( Real_1D_Form )
-!     associate &
-!       ( G => P % Value ( 1 ), &
-!         M => P % Value ( 2 ) )
-
-!     dYdX ( 1 ) = Y ( 2 )
-!     dYdX ( 2 ) = - G * M / max ( Y ( 1 ) ** 2, SqrtTiny )
-
-!     end associate
-!     end select !-- P
-  
-!   end subroutine DerivativeFunction
 
 
 end module OppenheimerSnyder_Form

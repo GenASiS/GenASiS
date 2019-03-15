@@ -78,38 +78,43 @@ contains
     real ( KDR ) :: &
       L1
     class ( Fluid_D_Form ), pointer :: &
-      F_D
+      F_D, &
+      F_R
     type ( CollectiveOperation_R_Form ) :: &
       CO
     
     select type ( PS => PW % Integrator % PositionSpace )
     class is ( Atlas_SC_Form )
-    select type ( C => PS % Chart )
-    class is ( Chart_SL_Template )
-
+    
+    select type ( PSC => PS % Chart ) 
+    class is ( Chart_SLD_Form )
+    
     F_D => PW % Difference % Fluid_D ( )
+    F_R => PW % Reference  % Fluid_D ( )
+
+    call CO % Initialize ( PS % Communicator, [ 2 ], [ 2 ] )
 
     associate &
-      ( Difference => F_D % Value ( :, F_D % COMOVING_BARYON_DENSITY ) )
-    call CO % Initialize ( PS % Communicator, [ 2 ], [ 2 ] )
-    CO % Outgoing % Value ( 1 ) = sum ( abs ( Difference ), &
-                                        mask = C % IsProperCell )
-    CO % Outgoing % Value ( 2 ) = C % nProperCells
+      ( D => F_D % Value ( :, F_D % COMOVING_BARYON_DENSITY ), &
+        R => F_R % Value ( :, F_R % COMOVING_BARYON_DENSITY ), &
+        Norm_D => CO % Incoming % Value ( 1 ), &
+        Norm_R => CO % Incoming % Value ( 2 ) )
+
+    CO % Outgoing % Value ( 1 ) &
+      = sum ( abs ( D ), mask = PSC % IsProperCell )
+    CO % Outgoing % Value ( 2 ) &
+      = sum ( abs ( R ), mask = PSC % IsProperCell )
+
     call CO % Reduce ( REDUCTION % SUM )
 
-    associate &
-      ( DifferenceSum => CO % Incoming % Value ( 1 ), &
-        nValues => CO % Incoming % Value ( 2 ) )
-    L1 = DifferenceSum / nValues
-
+    L1 = Norm_D / Norm_R
     call Show ( L1, '*** L1 error', nLeadingLinesOption = 2, &
                 nTrailingLinesOption = 2 )
 
-    end associate !-- DifferenceSum, etc.
-    end associate !-- Difference
-    end select !-- C
+    end associate !-- D, etc.
+    end select !-- PSC
     end select !-- PS
-    nullify ( F_D )
+    nullify ( F_D, F_R )
 
   end subroutine ComputeError
 
