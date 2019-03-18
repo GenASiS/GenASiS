@@ -166,11 +166,15 @@ contains
     call FC % AllocateIntegrator &
            ( )
     call FC % InitializePositionSpace &
-           ( GeometryType, RadiusMaxOption, RadiusCoreOption, &
-             RadiusMinOption, RadialRatioOption, CentralMassOption, &
-             nCellsPolarOption )
+           ( GeometryType, RadiusMaxOption = RadiusMaxOption, &
+             RadiusCoreOption = RadiusCoreOption, &
+             RadiusMinOption = RadiusMinOption, &
+             RadialRatioOption = RadialRatioOption, &
+             CentralMassOption = CentralMassOption, &
+             nCellsPolarOption = nCellsPolarOption )
     call FC % InitializeFluid &
-           ( FluidType, LimiterParameterOption, ShockThresholdOption )
+           ( FluidType, LimiterParameterOption = LimiterParameterOption, &
+             ShockThresholdOption = ShockThresholdOption )
     call FC % InitializeStep &
            ( Name ) 
     call FC % InitializeDiagnostics ( )
@@ -289,8 +293,11 @@ contains
     end if
 
     call FC % InitializeAtlas &
-           ( RadiusMaxOption, RadiusCoreOption, RadiusMinOption, &
-             RadialRatioOption, nCellsPolarOption )
+           ( RadiusMaxOption = RadiusMaxOption, &
+             RadiusCoreOption = RadiusCoreOption, &
+             RadiusExcisionOption = RadiusMinOption, &
+             RadialRatioOption = RadialRatioOption, &
+             nCellsPolarOption = nCellsPolarOption )
 
     select type ( PS => FC % Integrator % PositionSpace )
     class is ( Atlas_SC_Form )
@@ -299,7 +306,8 @@ contains
     select type ( GA => PS % Geometry_ASC )
     class is ( Geometry_ASC_Form )
 
-    call FC % InitializeGeometry ( GA, PS, GeometryType, CentralMassOption )
+    call FC % InitializeGeometry &
+           ( GA, PS, GeometryType, CentralMassOption = CentralMassOption )
 
     call PS % SetGeometry ( GA )
 
