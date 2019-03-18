@@ -52,6 +52,9 @@ contains
     type ( UniverseHeaderForm ), intent ( inout ) :: &
       U
 
+    if ( allocated ( U % BoundaryConditionsFace ) ) &
+      deallocate ( U % BoundaryConditionsFace )
+
     if ( U % Name == '' ) return
 
     call Show ( 'Finalizing ' // trim ( U % Type ), U % IGNORABILITY )
