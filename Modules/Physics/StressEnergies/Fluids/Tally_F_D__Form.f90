@@ -694,6 +694,7 @@ contains
         call T % ComputeFacePositions ( CSL, G, iD, iF, X_1, X_2, X_3 )
         select case ( trim ( G % CoordinateSystem ) )
         case ( 'SPHERICAL' )
+
           if ( iD /= 1 ) &
             exit DimensionLoop
 !          if ( iF /= 2 ) &
@@ -708,16 +709,17 @@ contains
               iGravity = iS
             end if !-- iI
           end do !-- iS
-        end select !-- CoordinateSystem
 
-        do iS = 1, T % nSelected
-          iI = T % iaSelected ( iS )
-        if ( iI == T % TOTAL_ENERGY ) then
-          Integrand ( iS, iF ) % Value  &
-            =  Integrand ( iS, iF ) % Value  &
-               +  Integrand ( iGravity, iF ) % Value
-        end if !-- iI
-      end do !-- iS
+          do iS = 1, T % nSelected
+            iI = T % iaSelected ( iS )
+            if ( iI == T % TOTAL_ENERGY ) then
+              Integrand ( iS, iF ) % Value  &
+                =  Integrand ( iS, iF ) % Value  &
+                   +  Integrand ( iGravity, iF ) % Value
+            end if !-- iI
+          end do !-- iS
+
+        end select !-- CoordinateSystem
 
         end associate !-- D, etc.
       end do FaceLoop !-- iF
