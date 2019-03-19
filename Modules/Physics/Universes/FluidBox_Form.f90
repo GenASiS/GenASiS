@@ -75,9 +75,9 @@ contains
              UniformAccelerationOption = UniformAccelerationOption, &
              nCellsOption = nCellsOption )
     call FB % InitializeFluid &
-          ( FluidType )
+           ( FluidType )
     call FB % InitializeStep &
-          ( Name, GravitySolverTypeOption = GravitySolverTypeOption )
+           ( Name, GravitySolverTypeOption = GravitySolverTypeOption )
 
     select type ( I => FB % Integrator )
     class is ( Integrator_C_PS_Form )

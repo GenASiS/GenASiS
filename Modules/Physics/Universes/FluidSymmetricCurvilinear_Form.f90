@@ -24,25 +24,31 @@ module FluidSymmetricCurvilinear_Form
       AllocateIntegrator => AllocateIntegrator_FSC
     procedure, public, pass :: &
       InitializePositionSpace
+    procedure, public, pass :: &
+      InitializeFluid
+    procedure, public, pass :: &
+      InitializeStep
   end type FluidSymmetricCurvilinearForm
 
 contains
 
 
   subroutine Initialize_FSC &
-               ( FSC, Name, FluidType, FinishTimeOption, RadiusMaxOption, &
-                 nCellsRadiusOption )
+               ( FSC, FluidType, Name, FinishTimeOption, CourantFactorOption, &
+                 RadiusMaxOption, nCellsRadiusOption, nWriteOption )
 
     class ( FluidSymmetricCurvilinearForm ), intent ( inout ) :: &
       FSC
     character ( * ), intent ( in )  :: &
-      Name, &
-      FluidType
+      FluidType, &
+      Name
     real ( KDR ), intent ( in ), optional :: &
       FinishTimeOption, &
+      CourantFactorOption, &
       RadiusMaxOption
     integer ( KDI ), intent ( in ), optional :: &
-      nCellsRadiusOption
+      nCellsRadiusOption, &
+      nWriteOption
 
     if ( FSC % Type == '' ) &
       FSC % Type = 'a FluidSymmetricCurvilinear'
@@ -54,35 +60,19 @@ contains
     call FSC % InitializePositionSpace &
            ( RadiusMaxOption = RadiusMaxOption, &
              nCellsRadiusOption = nCellsRadiusOption )
+    call FSC % InitializeFluid &
+           ( FluidType )
+    call FSC % InitializeStep &
+           ( Name ) 
 
-!     !-- Fluid
-
-!     allocate ( Fluid_ASC_Form :: FSC % Current_ASC )
-!     select type ( FA => FSC % Current_ASC )  !-- FluidAtlas
-!     class is ( Fluid_ASC_Form )
-!     call FA % Initialize ( PS, FluidType )
-
-
-!     !-- Step
-
-!     allocate ( Step_RK2_C_ASC_Form :: FSC % Step )
-!     select type ( S => FSC % Step )
-!     class is ( Step_RK2_C_ASC_Form )
-!     call S % Initialize ( FSC, FA, Name )
-!     S % ApplySources % Pointer => ApplyCurvilinear_F
-!     end select !-- S
-
-
-!     !-- Template
-
-!     call FSC % InitializeTemplate_C_PS &
-!            ( Name, FinishTimeOption = FinishTimeOption )
-
-
-!     !-- Cleanup
-
-!     end select !-- FA
-!     end select !-- PS
+    select type ( I => FSC % Integrator )
+    class is ( Integrator_C_PS_Form )
+      call I % Initialize &
+             ( FSC, Name, TimeUnitOption = FSC % Units % Time, &
+               FinishTimeOption = FinishTimeOption, &
+               CourantFactorOption = CourantFactorOption, &
+               nWriteOption = nWriteOption )
+    end select !-- I
 
   end subroutine Initialize_FSC
 
@@ -139,6 +129,57 @@ contains
     end associate !-- I
 
   end subroutine InitializePositionSpace
+
+
+  subroutine InitializeFluid ( FSC, FluidType )
+
+    class ( FluidSymmetricCurvilinearForm ), intent ( inout ) :: &
+      FSC
+    character ( * ), intent ( in )  :: &
+      FluidType
+
+    select type ( I => FSC % Integrator )
+    class is ( Integrator_C_PS_Form )
+
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
+
+    allocate ( Fluid_ASC_Form :: I % Current_ASC )
+    select type ( FA => I % Current_ASC )
+    class is ( Fluid_ASC_Form )
+      call FA % Initialize ( PS, FluidType, FSC % Units )
+    end select !-- FA
+
+    end select !-- PS
+    end select !-- I
+
+  end subroutine InitializeFluid
+
+
+  subroutine InitializeStep ( FSC, Name )
+
+    class ( FluidSymmetricCurvilinearForm ), intent ( inout ) :: &
+      FSC
+    character ( * ), intent ( in )  :: &
+      Name
+
+    select type ( I => FSC % Integrator )
+    class is ( Integrator_C_PS_Form )
+
+    select type ( FA => I % Current_ASC )
+    class is ( Fluid_ASC_Form )
+
+    allocate ( Step_RK2_C_ASC_Form :: I % Step )
+    select type ( S => I % Step )
+    class is ( Step_RK2_C_ASC_Form )
+    call S % Initialize ( I, FA, Name )
+    S % ApplySources % Pointer => ApplyCurvilinear_F
+
+    end select !-- S
+    end select !-- FA
+    end select !-- I
+
+  end subroutine InitializeStep
 
 
 end module FluidSymmetricCurvilinear_Form
