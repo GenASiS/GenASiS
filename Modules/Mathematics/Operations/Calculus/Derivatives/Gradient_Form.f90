@@ -23,6 +23,8 @@ module Gradient_Form
   contains
     procedure, public, pass :: &
       Initialize
+    procedure, public, pass :: &
+      AllocateDevice => AllocateDevice_G
     procedure, private, pass :: &
       ComputeChart_SL
     generic, public :: &
@@ -63,6 +65,18 @@ contains
            ( 'VariableDifference', ValueShape )
 
   end subroutine Initialize
+  
+  
+  subroutine AllocateDevice_G ( G )
+    
+    class ( GradientForm ), intent ( inout ) :: &
+      G
+    
+    call G % Output % AllocateDevice ( )
+    call G % CoordinateDifference % AllocateDevice ( )
+    call G % VariableDifference % AllocateDevice ( )
+  
+  end subroutine AllocateDevice_G
 
 
   subroutine ComputeChart_SL &

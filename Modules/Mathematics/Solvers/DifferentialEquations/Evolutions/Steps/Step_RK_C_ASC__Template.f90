@@ -694,7 +694,11 @@ contains
 
     TimerClear => PROGRAM_HEADER % TimerPointer ( S % iTimerClearIncrement )
     if ( associated ( TimerClear ) ) call TimerClear % Start ( )
-    call Clear ( K % Value )
+    if ( K % AllocatedDevice ) then
+      call Clear ( K % D_Selected, K % Value )
+    else
+      call Clear ( K % Value )
+    end if
     if ( associated ( TimerClear ) ) call TimerClear % Stop ( )    
 
     S % ApplyDivergence_C => S % ApplyDivergence % Pointer
@@ -1117,6 +1121,9 @@ contains
       if ( associated ( TimerRelaxation ) ) call TimerRelaxation % Stop ( )
     end if
 
+    if ( K % AllocatedDevice ) &
+      call K % UpdateHost ( )
+    
     if ( associated ( S % CoarsenSingularities ) ) &
       call S % CoarsenSingularities ( K )
 
@@ -1133,6 +1140,9 @@ contains
         if ( associated ( TimerGhost ) ) call TimerGhost % Stop ( )
       end select !-- Grid
     end if !-- ApplyDivergence_C
+    
+    if ( K % AllocatedDevice ) &
+      call K % UpdateDevice ( )
 
   end subroutine ComputeStage_C
 
@@ -1223,10 +1233,12 @@ contains
       G
 
     call SD % Allocate &
-           ( C % nVariables, C % N_CONSERVED, C % N_RECONSTRUCTED, &
-             C % N_SOLVER_SPEEDS, G % nVariables, C % nValues )
+           ( C % AllocatedDevice, C % nVariables, C % N_CONSERVED, &
+             C % N_RECONSTRUCTED, C % N_SOLVER_SPEEDS, G % nVariables, &
+             C % nValues )
     if ( trim ( C % RiemannSolverType ) == 'HLLC' ) &
-      call SD % Allocate_HLLC ( C % nVariables, C % nValues )
+      call SD % Allocate_HLLC &
+             ( C % AllocatedDevice, C % nVariables, C % nValues )
 
   end subroutine AllocateStorageDivergence
 

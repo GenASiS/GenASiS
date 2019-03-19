@@ -19,6 +19,8 @@ module Difference_Form
   contains
     procedure, public, pass :: &
       Initialize
+    procedure, public, pass :: &
+      AllocateDevice => AllocateDevice_D
     procedure, private, pass :: &
       ComputeChart_SL
     generic, public :: &
@@ -52,6 +54,16 @@ contains
     call D % OutputInner % Initialize ( ValueShape, ClearOption = .true. )
 
   end subroutine Initialize
+  
+  
+  subroutine AllocateDevice_D ( D )
+  
+    class ( DifferenceForm ), intent ( inout ) :: &
+      D
+      
+    call D % OutputInner % AllocateDevice ( )
+    
+  end subroutine AllocateDevice_D
 
 
   subroutine ComputeChart_SL ( D, CSL, Input, iDimension )
