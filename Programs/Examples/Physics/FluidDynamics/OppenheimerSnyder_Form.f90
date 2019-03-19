@@ -174,9 +174,7 @@ contains
       Name
 
     call OS % Initialize &
-           ( FluidType = 'DUST', &
-             GeometryType = 'NEWTONIAN', &
-             Name = Name, &
+           ( FluidType = 'DUST', GeometryType = 'NEWTONIAN', Name = Name, &
              DimensionlessOption = .true., &
              GravityFactorOption = 0.01_KDR, &
              LimiterParameterOption = 1.0_KDR )
@@ -345,7 +343,6 @@ contains
     Density  =  D_0 * ( R_0 / Radius ) ** 3
 
     end associate !-- RF, etc.
-
   
     call SetFluidKernel &
            (    R = G % Value ( :, G % CENTER_U ( 1 ) ), &

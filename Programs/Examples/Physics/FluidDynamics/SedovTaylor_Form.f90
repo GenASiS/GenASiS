@@ -5,40 +5,102 @@ module SedovTaylor_Form
   implicit none
   private
 
-  type, public, extends ( UniverseTemplate ) :: SedovTaylorForm
+  type, public, extends ( FluidSymmetricCurvilinearForm ) :: SedovTaylorForm
     real ( KDR ), private :: &
       AdiabaticIndex, &
       Density, &
       BlastEnergy, &
       BlastRadiusRatio
   contains
-    procedure, public, pass :: &
-      Initialize
+    procedure, private, pass :: &
+      Initialize_ST
+    generic, public :: &
+      Initialize => Initialize_ST
     final :: &
       Finalize
   end type SedovTaylorForm
 
     private :: &
-      SetFluid
+      InitializeFluidSymmetricCurvilinear, &
+      SetProblem
+
+      private :: &
+        SetFluid
+
+        private :: &
+          SetBlastVolumeFraction, &
+          SetFluidKernel
 
 contains
 
 
-  subroutine Initialize ( ST, Name )
+  subroutine Initialize_ST ( ST, Name )
 
     class ( SedovTaylorForm ), intent ( inout ) :: &
       ST
     character ( * ), intent ( in ) :: &
       Name
 
+    if ( ST % Type == '' ) &
+      ST % Type = 'a SedovTaylor'
+
+    call InitializeFluidSymmetricCurvilinear ( ST, Name )
+    call SetProblem ( ST )
+
+  end subroutine Initialize_ST
+
+
+  impure elemental subroutine Finalize ( ST )
+    
+    type ( SedovTaylorForm ), intent ( inout ) :: &
+      ST
+
+  end subroutine Finalize
+
+
+  subroutine InitializeFluidSymmetricCurvilinear ( ST, Name )
+
+    class ( SedovTaylorForm ), intent ( inout ) :: &
+      ST
+    character ( * ), intent ( in )  :: &
+      Name
+
     real ( KDR ) :: &
       RadiusMax, &
       FinishTime
 
-    if ( ST % Type == '' ) &
-      ST % Type = 'a SedovTaylor'
+    RadiusMax  = 0.35_KDR
+    FinishTime = 0.05_KDR
+    call PROGRAM_HEADER % GetParameter ( RadiusMax, 'MaxRadius' )
+    call PROGRAM_HEADER % GetParameter ( FinishTime, 'FinishTime' )
 
-    call ST % InitializeTemplate ( Name )
+    call ST % Initialize &
+           ( FluidType = 'IDEAL', Name = Name, &
+             FinishTimeOption = FinishTime, &
+             RadiusMaxOption = RadiusMax, &
+             nCellsRadiusOption = 64 )
+
+  end subroutine InitializeFluidSymmetricCurvilinear
+
+
+  subroutine SetProblem ( ST )
+
+    class ( SedovTaylorForm ), intent ( inout ) :: &
+      ST
+
+    class ( GeometryFlatForm ), pointer :: &
+      G
+    class ( Fluid_P_I_Form ), pointer :: &
+      F
+
+    select type ( I => ST % Integrator )
+    class is ( Integrator_C_PS_Form )
+
+    select type ( FA => I % Current_ASC )
+    class is ( Fluid_ASC_Form )
+
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
 
     ST % AdiabaticIndex   = 1.4_KDR
     ST % Density          = 1.0_KDR
@@ -54,47 +116,92 @@ contains
     call PROGRAM_HEADER % GetParameter &
            ( ST % BlastRadiusRatio, 'BlastRadiusRatio' )
 
+    G => PS % Geometry ( )
+    F => FA % Fluid_P_I ( )
+    call SetFluid ( ST, F, G )
 
-    !-- Integrator
+    end select !-- PS
+    end select !-- FA
+    end select !-- I
+    nullify ( G, F )
 
-    RadiusMax  = 0.35_KDR
-    FinishTime = 0.05_KDR
-    call PROGRAM_HEADER % GetParameter ( RadiusMax, 'MaxRadius' )
-    call PROGRAM_HEADER % GetParameter ( FinishTime, 'FinishTime' )
-
-    allocate ( FluidSymmetricCurvilinearForm :: ST % Integrator )
-    select type ( FSC => ST % Integrator )
-    type is ( FluidSymmetricCurvilinearForm )
-    call FSC % Initialize &
-           ( Name, FluidType = 'IDEAL', &
-             FinishTimeOption = FinishTime, &
-             RadiusMaxOption = RadiusMax, &
-             nCellsRadiusOption = 64 )
-    end select !-- FSC
+  end subroutine SetProblem
 
 
-    !-- Initial conditions
-
-    call SetFluid ( ST )
-
-
-  end subroutine Initialize
-
-
-  impure elemental subroutine Finalize ( ST )
-    
-    type ( SedovTaylorForm ), intent ( inout ) :: &
-      ST
-
-    call ST % FinalizeTemplate ( )
-
-  end subroutine Finalize
-
-
-  subroutine SetFluid ( ST )
+  subroutine SetFluid ( ST, F, G )
 
     class ( SedovTaylorForm ), intent ( inout ) :: &
       ST
+    class ( Fluid_P_I_Form ), intent ( inout ) :: &
+      F
+    class ( GeometryFlatForm ), intent ( in ) :: &
+      G
+
+    real ( KDR ) :: &
+      BlastVolume, &
+      EnergyDensity
+    real ( KDR ), dimension ( : ), allocatable :: &
+      BVF  !-- BlastVolumeFraction
+    type ( CollectiveOperation_R_Form ) :: &
+      CO
+
+    select type ( I => ST % Integrator )
+    class is ( Integrator_C_PS_Form )
+
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
+
+    select type ( PSC => PS % Chart )
+    class is ( Chart_SLD_Form )
+
+    call F % SetAdiabaticIndex ( ST % AdiabaticIndex )
+
+    !-- Find energy density
+
+    allocate ( BVF ( F % nValues ) )
+    call SetBlastVolumeFraction ( ST, PSC, G, BVF )
+
+    associate ( dV => G % Value ( :, G % VOLUME ) )
+    call CO % Initialize &
+           ( PS % Communicator, nOutgoing = [ 1 ], nIncoming = [ 1 ] )
+    CO % Outgoing % Value ( 1 ) = sum ( dV * BVF )
+    call CO % Reduce ( REDUCTION % SUM )
+    BlastVolume = CO % Incoming % Value ( 1 )
+    call Show ( BlastVolume, 'Discrete BlastVolume' )
+    end associate !-- dV
+
+    EnergyDensity = ST % BlastEnergy / BlastVolume 
+    call Show ( EnergyDensity, 'EnergyDensity' )
+
+    call SetFluidKernel &
+           ( BVF, ST % Density, EnergyDensity, &
+               N = F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
+               E = F % Value ( :, F % INTERNAL_ENERGY ), &
+             V_1 = F % Value ( :, F % VELOCITY_U ( 1 ) ), &
+             V_2 = F % Value ( :, F % VELOCITY_U ( 2 ) ), &
+             V_3 = F % Value ( :, F % VELOCITY_U ( 3 ) ) )
+
+    call F % ComputeFromPrimitive ( G )
+    call PSC % ExchangeGhostData ( F )
+
+!     end associate !-- N, etc.
+    end select !-- PSC
+    end select !-- PS
+    end select !-- I
+
+  end subroutine SetFluid
+
+
+  subroutine SetBlastVolumeFraction ( ST, PSC, G, BVF )
+
+    class ( SedovTaylorForm ), intent ( in ) :: &
+      ST
+    class ( Chart_SL_Template ), intent ( in ) :: &
+      PSC
+    class ( GeometryFlatForm ), intent ( in ) :: &
+      G
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      BVF
 
     integer ( KDI ) :: &
       iC, &  !-- iCell
@@ -102,9 +209,8 @@ contains
     integer ( KDI ), dimension ( 3 ) :: &
       nSubcells
     real ( KDR ) :: &
+      Pi, &
       BlastRadius, &
-      BlastVolume, &
-      EnergyDensity, &
       dVS, &  !-- dVolumeSubcell
       VS      !-- VolumeSubcell
     real ( KDR ), dimension ( 3 ) :: &
@@ -112,62 +218,28 @@ contains
       X_O, &
       dXS, &  !-- dX_Subcell
       XS      !--  X_Subcell
-    real ( KDR ), dimension ( : ), allocatable :: &
-      BVF  !-- VolumeFraction
-    class ( GeometryFlatForm ), pointer :: &
-      G
-    class ( Fluid_P_I_Form ), pointer :: &
-      F
-    type ( CollectiveOperation_R_Form ) :: &
-      CO
 
-    select type ( FSC => ST % Integrator )
-    class is ( FluidSymmetricCurvilinearForm )
-
-    select type ( FA => FSC % Current_ASC )
-    class is ( Fluid_ASC_Form )
-    F => FA % Fluid_P_I ( )
-
-    call F % SetAdiabaticIndex ( ST % AdiabaticIndex )
-
-    select type ( PS => FSC % PositionSpace )
-    class is ( Atlas_SC_Form )
-    G => PS % Geometry ( )
-
-    select type ( C => PS % Chart )
-    class is ( Chart_SLD_Form )
-
-    !-- Find energy density
-
-    BlastRadius  =  ST % BlastRadiusRatio  *  C % MaxCoordinate ( 1 )
-    call Show ( BlastRadius, 'BlastRadius' )
-
-    associate &
-      (   N => F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
-        V_1 => F % Value ( :, F % VELOCITY_U ( 1 ) ), &
-        V_2 => F % Value ( :, F % VELOCITY_U ( 2 ) ), &
-        V_3 => F % Value ( :, F % VELOCITY_U ( 3 ) ), &
-          E => F % Value ( :, F % INTERNAL_ENERGY ), &
-         dV => G % Value ( :, G % VOLUME ) )
-
-    allocate ( BVF ( size ( dV ) ) )
     call Clear ( BVF )
 
     nSubCells = 1
-    nSubcells ( : C % nDimensions ) = 20
+    nSubcells ( : PSC % nDimensions ) = 20
 
-    do iC = 1, size ( dV )
+    Pi = CONSTANT % PI
+
+    BlastRadius  =  ST % BlastRadiusRatio  *  PSC % MaxCoordinate ( 1 )
+    call Show ( BlastRadius, 'BlastRadius' )
+
+    do iC = 1, G % nValues
       associate &
         (  X   => G % Value ( iC, G % CENTER_U ( 1 ) &
                                   : G % CENTER_U ( 3 ) ), &
           dX_L => G % Value ( iC, G % WIDTH_LEFT_U ( 1 ) &
                                   : G % WIDTH_LEFT_U  ( 3 ) ), &
           dX_R => G % Value ( iC, G % WIDTH_RIGHT_U ( 1 ) &
-                                  : G % WIDTH_RIGHT_U  ( 3 ) ), &
-          Pi   => CONSTANT % PI )
+                                  : G % WIDTH_RIGHT_U  ( 3 ) ) )
       associate ( dX => dX_L + dX_R )
 
-      if ( .not. C % IsProperCell ( iC ) ) cycle
+      if ( .not. PSC % IsProperCell ( iC ) ) cycle
 
       if ( sqrt ( dot_product ( X, X ) ) &
            - 0.5_KDR * sqrt ( dot_product ( dX, dX ) ) > BlastRadius ) &
@@ -190,7 +262,7 @@ contains
         do jS = 1, nSubcells ( 2 )
           do iS = 1, nSubcells ( 1 )
             XS  =  X_I  +  ( [ iS, jS, kS ] - 0.5_KDR ) * dXS
-            select case ( C % nDimensions )
+            select case ( PSC % nDimensions )
             case ( 1 ) !-- Spherical coordinates
               dVS = 4.0_KDR * Pi  *  XS ( 1 ) ** 2  *  dXS ( 1 )
             case ( 2 ) !-- Cylindrical coordinates
@@ -211,38 +283,31 @@ contains
       end associate !-- X, etc.
     end do !-- iC
 
-    call CO % Initialize &
-           ( PS % Communicator, nOutgoing = [ 1 ], nIncoming = [ 1 ] )
-    CO % Outgoing % Value ( 1 ) = sum ( dV * BVF )
-    call CO % Reduce ( REDUCTION % SUM )
-    BlastVolume = CO % Incoming % Value ( 1 )
-    call Show ( BlastVolume, 'Discrete BlastVolume' )
     call Show ( 4. / 3. * CONSTANT % Pi  *  BlastRadius ** 3, &
                 'Continuous BlastVolume' )
 
-    EnergyDensity = ST % BlastEnergy / BlastVolume 
-    call Show ( EnergyDensity, 'EnergyDensity' )
+  end subroutine SetBlastVolumeFraction
 
-    !-- Set fluid values
 
-      N = ST % Density
+  subroutine SetFluidKernel ( BVF, N0, E0, N, E, V_1, V_2, V_3 )
+
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      BVF
+    real ( KDR ), intent ( in ) :: &
+      N0, &
+      E0
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      N, &
+      E, &
+      V_1, V_2, V_3
+
+      N = N0
+      E = E0 * BVF
     V_1 = 0.0_KDR
     V_2 = 0.0_KDR
     V_3 = 0.0_KDR
 
-    E = EnergyDensity * BVF
+  end subroutine SetFluidKernel
 
-    call F % ComputeFromPrimitive ( G )
-    call C % ExchangeGhostData ( F )
 
-    end associate !-- N, etc.
-    end select !-- C
-    end select !-- PS
-    end select !-- FA
-    end select !-- FSC
-    nullify ( F, G )
-
-  end subroutine SetFluid
-
-    
 end module SedovTaylor_Form
