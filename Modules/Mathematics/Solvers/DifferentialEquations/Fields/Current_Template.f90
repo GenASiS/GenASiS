@@ -21,9 +21,9 @@ module Current_Template
       IGNORABILITY    = 0, &
       N_PRIMITIVE     = 0, &
       N_CONSERVED     = 0, &
-      N_RECONSTRUCTED = 0, &
       N_FIELDS        = 0, &
       N_VECTORS       = 0, &
+      N_RECONSTRUCTED = 0, &
       N_PRIMITIVE_TEMPLATE = N_PRIMITIVE_TEMPLATE, &
       N_CONSERVED_TEMPLATE = N_CONSERVED_TEMPLATE, &
       N_FIELDS_TEMPLATE    = N_FIELDS_TEMPLATE, &
@@ -55,6 +55,8 @@ module Current_Template
       InitializeTemplate
     procedure ( SPC ), public, pass, deferred :: &
       SetPrimitiveConserved
+    procedure, public, pass :: &
+      SetReconstructed
     procedure, public, pass :: &
       ShowPrimitiveConserved
     procedure, public, pass :: &
@@ -249,6 +251,33 @@ contains
       call Show ( C % LimiterParameter, 'LimiterParameter', C % IGNORABILITY )
 
   end subroutine InitializeTemplate
+
+
+  subroutine SetReconstructed ( C )
+
+    class ( CurrentTemplate ), intent ( inout ) :: &
+      C
+
+    select case ( trim ( C % ReconstructedType ) )
+    case ( 'PRIMITIVE' )
+      C % N_RECONSTRUCTED = C % N_PRIMITIVE
+      allocate ( C % iaReconstructed, source = C % iaPrimitive )
+    case ( 'CONSERVED' )
+      C % N_RECONSTRUCTED = C % N_CONSERVED
+      allocate ( C % iaReconstructed, source = C % iaConserved )
+    case ( 'ALL' )
+      C % N_RECONSTRUCTED = C % N_FIELDS
+      allocate ( C % iaReconstructed, source = C % iaSelected )
+    case default
+      call Show ( 'ReconstructedType not recognized', CONSOLE % ERROR )
+      call Show ( C % ReconstructedType, 'ReconstructedType', &
+                  CONSOLE % ERROR )
+      call Show ( 'SetReconstructed', 'subroutine', CONSOLE % ERROR )
+      call Show ( 'Current_Template', 'module', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select
+
+  end subroutine SetReconstructed
 
 
   subroutine ShowPrimitiveConserved ( C, IgnorabilityOption )
