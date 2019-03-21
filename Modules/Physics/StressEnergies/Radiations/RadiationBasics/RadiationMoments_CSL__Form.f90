@@ -22,6 +22,7 @@ module RadiationMoments_CSL__Form
       UseLimiter
     character ( LDF ) :: &
       RadiationMomentsType = '', &
+      ReconstructedType = '', &
       RiemannSolverType = ''
     class ( Sources_RM_CSL_Form ), pointer :: &
       Sources_CSL => null ( )
@@ -51,8 +52,8 @@ contains
 
   subroutine Initialize &
                ( RMC, C, NameShort, RadiationMomentsType, RiemannSolverType, &
-                 UseLimiter, Units, LimiterParameter, nValues, &
-                 IgnorabilityOption )
+                 ReconstructedType, UseLimiter, Units, LimiterParameter, &
+                 nValues, IgnorabilityOption )
 
     class ( RadiationMoments_CSL_Form ), intent ( inout ) :: &
       RMC
@@ -61,7 +62,8 @@ contains
     character ( * ), intent ( in ) :: &
       NameShort, &
       RadiationMomentsType, &
-      RiemannSolverType
+      RiemannSolverType, &
+      ReconstructedType
     logical ( KDL ), intent ( in ) :: &
       UseLimiter
     class ( StressEnergyUnitsForm ), intent ( in ), target :: &
@@ -76,6 +78,7 @@ contains
     if ( RMC % Type == '' ) &
       RMC % Type = 'a RadiationMoments_CSL'
     RMC % RadiationMomentsType = RadiationMomentsType
+    RMC % ReconstructedType    = ReconstructedType
     RMC % RiemannSolverType    = RiemannSolverType
     RMC % UseLimiter           = UseLimiter
     RMC % LimiterParameter     = LimiterParameter
@@ -224,10 +227,11 @@ contains
       select type ( RM => FC % Field )
       type is ( RadiationMomentsForm )
         call RM % Initialize &
-               ( FC % RiemannSolverType, FC % UseLimiter, FC % Units, &
-                 FC % LimiterParameter, FC % nValues, &
-                 NameOption = FC % NameShort )
+               ( FC % RiemannSolverType, FC % ReconstructedType, &
+                 FC % UseLimiter, FC % Units, FC % LimiterParameter, &
+                 FC % nValues, NameOption = FC % NameShort )
         call RM % SetPrimitiveConserved ( )
+        call RM % SetReconstructed ( )
         call RM % SetOutput ( FC % FieldOutput )
       end select !-- RM
     case default

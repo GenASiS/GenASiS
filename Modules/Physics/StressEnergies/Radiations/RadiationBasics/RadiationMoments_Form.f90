@@ -74,14 +74,15 @@ contains
 
 
   subroutine InitializeAllocate_RM &
-               ( RM, RiemannSolverType, UseLimiter, Units, LimiterParameter, &
-                 nValues, VariableOption, VectorOption, NameOption, &
-                 ClearOption, UnitOption, VectorIndicesOption )
+               ( RM, RiemannSolverType, ReconstructedType, UseLimiter, Units, &
+                 LimiterParameter, nValues, VariableOption, VectorOption, &
+                 NameOption, ClearOption, UnitOption, VectorIndicesOption )
 
     class ( RadiationMomentsForm ), intent ( inout ) :: &
       RM
     character ( * ), intent ( in ) :: &
-      RiemannSolverType
+      RiemannSolverType, &
+      ReconstructedType
     logical ( KDL ), intent ( in ) :: &
       UseLimiter
     class ( StressEnergyUnitsForm ), intent ( in ) :: &
@@ -120,11 +121,11 @@ contains
     call SetUnits ( VariableUnit, RM, Units )
 
     call RM % InitializeTemplate &
-           ( RiemannSolverType, UseLimiter, Units % Velocity_U, &
-             LimiterParameter, nValues, VariableOption = Variable, &
-             VectorOption = Vector, NameOption = Name, &
-             ClearOption = ClearOption, UnitOption = VariableUnit, &
-             VectorIndicesOption = VectorIndices )
+           ( RiemannSolverType, ReconstructedType, UseLimiter, &
+             Units % Velocity_U, LimiterParameter, nValues, &
+             VariableOption = Variable, VectorOption = Vector, &
+             NameOption = Name, ClearOption = ClearOption, &
+             UnitOption = VariableUnit, VectorIndicesOption = VectorIndices )
     
   end subroutine InitializeAllocate_RM
 

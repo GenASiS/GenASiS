@@ -23,6 +23,7 @@ module RadiationMoments_ASC__Form
       SuppressWrite
     character ( LDF ) :: &
       RadiationMomentsType = '', &
+      ReconstructedType = '', &
       RiemannSolverType = ''
     type ( Sources_RM_ASC_Form ), allocatable :: &
       Sources_ASC
@@ -58,8 +59,8 @@ contains
 
   subroutine Initialize &
                ( RMA, A, RadiationMomentsType, Units, NameShortOption, &
-                 RiemannSolverTypeOption, UseLimiterOption, &
-                 AllocateSourcesOption, SuppressWriteOption, &
+                 RiemannSolverTypeOption, ReconstructedTypeOption, &
+                 UseLimiterOption, AllocateSourcesOption, SuppressWriteOption, &
                  SuppressWriteSourcesOption, LimiterParameterOption, &
                  IgnorabilityOption )
 
@@ -73,7 +74,8 @@ contains
       Units
     character ( * ), intent ( in ), optional :: &
       NameShortOption, &
-      RiemannSolverTypeOption
+      RiemannSolverTypeOption, &
+      ReconstructedTypeOption
     logical ( KDL ), intent ( in ), optional :: &
       UseLimiterOption, &
       AllocateSourcesOption, &
@@ -102,6 +104,12 @@ contains
       RMA % RiemannSolverType = RiemannSolverTypeOption
     call PROGRAM_HEADER % GetParameter &
            ( RMA % RiemannSolverType, 'RiemannSolverType' )
+
+    RMA % ReconstructedType = 'PRIMITIVE'
+    if ( present ( ReconstructedTypeOption ) ) &
+      RMA % ReconstructedType = ReconstructedTypeOption
+    call PROGRAM_HEADER % GetParameter &
+           ( RMA % ReconstructedType, 'ReconstructedType' )
 
     RMA % UseLimiter = .false.
     if ( present ( UseLimiterOption ) ) &
@@ -349,8 +357,8 @@ contains
     class is ( RadiationMoments_CSL_Form )
       call FC % Initialize &
              ( C, FA % NameShort, FA % RadiationMomentsType, &
-               FA % RiemannSolverType, FA % UseLimiter, FA % Units, &
-               FA % LimiterParameter, nValues, &
+               FA % RiemannSolverType, FA % ReconstructedType, &
+               FA % UseLimiter, FA % Units, FA % LimiterParameter, nValues, &
                IgnorabilityOption = FA % IGNORABILITY )
     end select !-- FC
 
