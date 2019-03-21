@@ -486,9 +486,8 @@ contains
     integer ( KDI ) :: &
       iDD_22, iDD_33, &
       iUU_22, iUU_33
-!    type ( StorageForm ) :: &
-!      P
-!      Conserved
+   type ( StorageForm ) :: &
+     Reconstructed
     type ( TimerForm ), pointer :: &
       Timer
 
@@ -517,8 +516,8 @@ contains
 !    call Timer_G % Stop
 !    end associate !-- Timer_G
 
-!    call P % Initialize ( C, iaSelectedOption = C % iaPrimitive )
-!    call Conserved % Initialize ( C, iaSelectedOption = C % iaConserved )
+    call Reconstructed % Initialize &
+           ( C, iaSelectedOption = C % iaReconstructed )
 
     associate &
       ( iaI => A % Connectivity % iaInner ( iDimension ), &
@@ -529,12 +528,8 @@ contains
 !    call Timer_B % Start ( )
     select type ( A )
     class is ( Atlas_SC_Template )
-!      call A % ApplyBoundaryConditions ( P, iDimension, iaI )
-!      call A % ApplyBoundaryConditions ( P, iDimension, iaO )
-!      call A % ApplyBoundaryConditions ( Conserved, iDimension, iaI )
-!      call A % ApplyBoundaryConditions ( Conserved, iDimension, iaO )
-      call A % ApplyBoundaryConditions ( C, iDimension, iaI )
-      call A % ApplyBoundaryConditions ( C, iDimension, iaO )
+      call A % ApplyBoundaryConditions ( Reconstructed, iDimension, iaI )
+      call A % ApplyBoundaryConditions ( Reconstructed, iDimension, iaO )
     class default
       call Show ( 'Atlas type not recognized', CONSOLE % ERROR )
       call Show ( 'IncrementDivergence_FV__Form', 'module', CONSOLE % ERROR )
@@ -545,18 +540,20 @@ contains
 
     select type ( Chart => I % Chart )
     class is ( Chart_SL_Template )
-!      call ComputeReconstruction_CSL ( I, P, Chart, iDimension )
-!      call ComputeReconstruction_CSL ( I, Conserved, Chart, iDimension )
       call ComputeReconstruction_CSL ( I, C, Chart, iDimension )
+      call ComputeReconstruction_CSL ( I, Reconstructed, Chart, iDimension )
     end select !-- Grid
 
  !   associate &
  !     ( Timer_FP => PROGRAM_HEADER % Timer ( I % iTimerFromPrimitive ) )
  !   call Timer_FP % Start ( )
-!    call C % ComputeFromPrimitive ( C_IL % Value, G, G_I % Value )
-!    call C % ComputeFromPrimitive ( C_IR % Value, G, G_I % Value )
-!    call C % ComputeFromConserved ( C_IL % Value, G, G_I % Value )
-!    call C % ComputeFromConserved ( C_IR % Value, G, G_I % Value )
+    if ( trim ( C % ReconstructedType ) == 'PRIMITIVE' ) then
+      call C % ComputeFromPrimitive ( C_IL % Value, G, G_I % Value )
+      call C % ComputeFromPrimitive ( C_IR % Value, G, G_I % Value )
+    else if ( trim ( C % ReconstructedType ) == 'CONSERVED' ) then
+      call C % ComputeFromConserved ( C_IL % Value, G, G_I % Value )
+      call C % ComputeFromConserved ( C_IR % Value, G, G_I % Value )
+    end if
 !    call Timer_FP % Stop ( )
 !    end associate !-- Timer_FP
 
@@ -618,12 +615,12 @@ contains
   end subroutine ComputeFluxes
 
 
-  subroutine ComputeReconstruction_CSL ( I, P, CSL, iDimension )
+  subroutine ComputeReconstruction_CSL ( I, Reconstructed, CSL, iDimension )
 
     class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
       I
     class ( StorageForm ), intent ( in ) :: &
-      P
+      Reconstructed
     class ( Chart_SL_Template ), intent ( in ) :: &
       CSL
     integer ( KDI ), intent ( in ) :: &
@@ -647,7 +644,7 @@ contains
     associate &
       ( C    => I % Current, &
         G    => I % Geometry, &
-        Grad => I % Storage % GradientPrimitive, &
+        Grad => I % Storage % GradientReconstructed, &
         C_IL => I % Storage % Current_IL, &
         C_IR => I % Storage % Current_IR, &
         G_I  => I % Storage % Geometry_I )
@@ -657,16 +654,16 @@ contains
     if ( C % UseLimiter ) then
       if ( associated ( I % UseLimiter ) ) then
         call Grad % Compute &
-               ( CSL, P, iDimension, &
+               ( CSL, Reconstructed, iDimension, &
                  UseLimiterOption = I % UseLimiter, &
                  LimiterParameterOption = C % LimiterParameter )
       else
         call Grad % Compute &
-               ( CSL, P, iDimension, &
+               ( CSL, Reconstructed, iDimension, &
                  LimiterParameterOption = C % LimiterParameter )
       end if
     else
-      call Grad % Compute ( CSL, P, iDimension )
+      call Grad % Compute ( CSL, Reconstructed, iDimension )
     end if
 !    call Timer_G % Stop
 !    end associate !-- Timer_G  
@@ -682,25 +679,21 @@ contains
 !                              ( I % iTimerReconstructionKernel ) )
 !    call Timer_RK % Start ( )
 
-!    associate ( iaP => C % iaPrimitive )
-!    do iF = 1, C % N_PRIMITIVE
-!    associate ( iaP => C % iaConserved )
-!    do iF = 1, C % N_CONSERVED
-    associate ( iaP => C % iaSelected )
-    do iF = 1, C % nVariables
+    associate ( iaR => C % iaReconstructed )
+    do iF = 1, C % N_RECONSTRUCTED
       call CSL % SetVariablePointer &
-             ( C % Value ( :, iaP ( iF ) ), V )
+             ( C % Value ( :, iaR ( iF ) ), V )
       call CSL % SetVariablePointer &
              ( Grad % Output % Value ( :, iF ), dVdX )
       call CSL % SetVariablePointer &
-             ( C_IL % Value ( :, iaP ( iF ) ), V_IL )
+             ( C_IL % Value ( :, iaR ( iF ) ), V_IL )
       call CSL % SetVariablePointer &
-             ( C_IR % Value ( :, iaP ( iF ) ), V_IR )
+             ( C_IR % Value ( :, iaR ( iF ) ), V_IR )
       call ComputeReconstruction_CSL_Kernel &
              ( V, dVdX, dX_L, dX_R, iDimension, &
                CSL % nGhostLayers ( iDimension ), V_IL, V_IR )
     end do !-- iF
-    end associate !-- iaP
+    end associate !-- iaR
 
 !    call Timer_RK % Stop
 !    end associate !-- Timer_RK

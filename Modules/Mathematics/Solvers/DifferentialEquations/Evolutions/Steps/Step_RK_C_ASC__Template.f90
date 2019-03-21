@@ -1165,7 +1165,7 @@ contains
       G
 
     call SD % Allocate &
-           ( C % nVariables, C % N_CONSERVED, C % N_PRIMITIVE, &
+           ( C % nVariables, C % N_CONSERVED, C % N_RECONSTRUCTED, &
              C % N_SOLVER_SPEEDS, G % nVariables, C % nValues )
     if ( trim ( C % RiemannSolverType ) == 'HLLC' ) &
       call SD % Allocate_HLLC ( C % nVariables, C % nValues )
