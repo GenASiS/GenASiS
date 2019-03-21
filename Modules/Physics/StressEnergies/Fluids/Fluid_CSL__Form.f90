@@ -27,6 +27,7 @@ module Fluid_CSL__Form
       UseEntropy
     character ( LDF ) :: &
       FluidType = '', &
+      ReconstructedType = '', &
       RiemannSolverType = ''
     class ( Sources_F_CSL_Form ), pointer :: &
       Sources_CSL => null ( )
@@ -55,9 +56,10 @@ contains
 
 
   subroutine Initialize &
-               ( FC, C, NameShort, FluidType, RiemannSolverType, UseEntropy, &
-                 UseLimiter, Units, BaryonMassReference, LimiterParameter, &
-                 nValues, IgnorabilityOption )
+               ( FC, C, NameShort, FluidType, RiemannSolverType, &
+                 ReconstructedType, UseEntropy, UseLimiter, Units, &
+                 BaryonMassReference, LimiterParameter, nValues, &
+                 IgnorabilityOption )
 
     class ( Fluid_CSL_Form ), intent ( inout ) :: &
       FC
@@ -66,7 +68,8 @@ contains
     character ( * ), intent ( in ) :: &
       NameShort, &
       FluidType, &
-      RiemannSolverType
+      RiemannSolverType, &
+      ReconstructedType
     logical ( KDL ), intent ( in ) :: &
       UseEntropy, &
       UseLimiter
@@ -83,6 +86,7 @@ contains
     if ( FC % Type == '' ) &
       FC % Type = 'a Fluid_CSL'
     FC % FluidType           = FluidType
+    FC % ReconstructedType   = ReconstructedType
     FC % RiemannSolverType   = RiemannSolverType
     FC % UseLimiter          = UseLimiter
     FC % UseEntropy          = UseEntropy
@@ -241,10 +245,12 @@ contains
       select type ( F => FC % Field )
       type is ( Fluid_D_Form )
         call F % Initialize_D &
-               ( FC % RiemannSolverType, FC % UseLimiter, &
-                 FC % Units, FC % BaryonMassReference, FC % LimiterParameter, &
-                 FC % nValues, NameOption = FC % NameShort )
+               ( FC % RiemannSolverType, FC % ReconstructedType, &
+                 FC % UseLimiter, FC % Units, FC % BaryonMassReference, &
+                 FC % LimiterParameter, FC % nValues, &
+                 NameOption = FC % NameShort )
         call F % SetPrimitiveConserved ( )
+        call F % SetReconstructed ( )
         call F % SetOutput ( FC % FieldOutput )
       end select !-- F
     case ( 'IDEAL' )
@@ -252,10 +258,12 @@ contains
       select type ( F => FC % Field )
       type is ( Fluid_P_I_Form )
         call F % Initialize_P_I &
-               ( FC % RiemannSolverType, FC % UseEntropy, FC % UseLimiter, &
-                 FC % Units, FC % BaryonMassReference, FC % LimiterParameter, &
+               ( FC % RiemannSolverType, FC % ReconstructedType, &
+                 FC % UseEntropy, FC % UseLimiter, FC % Units, &
+                 FC % BaryonMassReference, FC % LimiterParameter, &
                  FC % nValues, NameOption = FC % NameShort )
         call F % SetPrimitiveConserved ( )
+        call F % SetReconstructed ( )
         call F % SetOutput ( FC % FieldOutput )
       end select !-- F
     case ( 'HEAVY_NUCLEUS' )
@@ -263,10 +271,12 @@ contains
       select type ( F => FC % Field )
       type is ( Fluid_P_HN_Form )
         call F % Initialize_P_HN &
-               ( FC % RiemannSolverType, FC % UseEntropy, FC % UseLimiter, &
-                 FC % Units, FC % BaryonMassReference, FC % LimiterParameter, &
+               ( FC % RiemannSolverType, FC % ReconstructedType, &
+                 FC % UseEntropy, FC % UseLimiter, FC % Units, &
+                 FC % BaryonMassReference, FC % LimiterParameter, &
                  FC % nValues, NameOption = FC % NameShort )
         call F % SetPrimitiveConserved ( )
+        call F % SetReconstructed ( )
         call F % SetOutput ( FC % FieldOutput )
       end select !-- F
     case default

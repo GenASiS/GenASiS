@@ -32,6 +32,7 @@ module Fluid_ASC__Form
       UseEntropy
     character ( LDF ) :: &
       FluidType         = '', &
+      ReconstructedType = '', &
       RiemannSolverType = ''
     type ( Sources_F_ASC_Form ), allocatable :: &
       Sources_ASC
@@ -65,10 +66,10 @@ contains
 
   subroutine Initialize &
                ( FA, A, FluidType, Units, NameShortOption, &
-                 RiemannSolverTypeOption, UseEntropyOption, UseLimiterOption, &
-                 AllocateTallyOption, AllocateSourcesOption, &
-                 LimiterParameterOption, ShockThresholdOption, &
-                 IgnorabilityOption )
+                 RiemannSolverTypeOption, ReconstructedTypeOption, &
+                 UseEntropyOption, UseLimiterOption, AllocateTallyOption, &
+                 AllocateSourcesOption, LimiterParameterOption, &
+                 ShockThresholdOption, IgnorabilityOption )
 
     class ( Fluid_ASC_Form ), intent ( inout ) :: &
       FA
@@ -80,7 +81,8 @@ contains
       Units
     character ( * ), intent ( in ), optional :: &
       NameShortOption, &
-      RiemannSolverTypeOption
+      RiemannSolverTypeOption, &
+      ReconstructedTypeOption
     logical ( KDL ), intent ( in ), optional :: &
       UseEntropyOption, &
       UseLimiterOption, &
@@ -133,6 +135,17 @@ contains
       FA % UseEntropy = UseEntropyOption
     call PROGRAM_HEADER % GetParameter &
            ( FA % UseEntropy, 'UseEntropy' )
+
+    select case ( trim ( FA % FluidType ) )
+    case ( 'HEAVY_NUCLEUS' )
+      FA % ReconstructedType = 'ALL'
+    case default
+      FA % ReconstructedType = 'PRIMITIVE'
+    end select
+    if ( present ( ReconstructedTypeOption ) ) &
+      FA % ReconstructedType = ReconstructedTypeOption
+    call PROGRAM_HEADER % GetParameter &
+           ( FA % ReconstructedType, 'ReconstructedType' )
 
     FA % UseLimiter = .true.
     if ( present ( UseLimiterOption ) ) &
@@ -398,9 +411,9 @@ contains
     class is ( Fluid_CSL_Form )
       call FC % Initialize &
              ( C, FA % NameShort, FA % FluidType, FA % RiemannSolverType, &
-               FA % UseEntropy, FA % UseLimiter, FA % Units, &
-               FA % BaryonMassReference, FA % LimiterParameter, nValues, &
-               IgnorabilityOption = FA % IGNORABILITY )
+               FA % ReconstructedType, FA % UseEntropy, FA % UseLimiter, &
+               FA % Units, FA % BaryonMassReference, FA % LimiterParameter, &
+               nValues, IgnorabilityOption = FA % IGNORABILITY )
     end select !-- FC
 
     call A % AddField ( FA )
