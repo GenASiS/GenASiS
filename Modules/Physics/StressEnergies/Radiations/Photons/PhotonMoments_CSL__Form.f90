@@ -34,10 +34,11 @@ contains
       select type ( PM => FC % Field )
       type is ( PhotonMoments_G_Form )
         call PM % Initialize &
-               ( FC % RiemannSolverType, FC % UseLimiter, FC % Units, &
-                 FC % LimiterParameter, FC % nValues, &
-                 NameOption = FC % NameShort )
+               ( FC % RiemannSolverType, FC % ReconstructedType, &
+                 FC % UseLimiter, FC % Units, FC % LimiterParameter, &
+                 FC % nValues, NameOption = FC % NameShort )
         call PM % SetPrimitiveConserved ( )
+        call PM % SetReconstructed ( )
         call PM % SetOutput ( FC % FieldOutput )
       end select !-- PM
     case ( 'PHOTONS_SPECTRAL' )
@@ -45,10 +46,11 @@ contains
       select type ( PM => FC % Field )
       type is ( PhotonMoments_S_Form )
         call PM % Initialize &
-               ( FC % RiemannSolverType, FC % UseLimiter, FC % Units, &
-                 FC % LimiterParameter, FC % nValues, &
-                 NameOption = FC % NameShort )
+               ( FC % RiemannSolverType, FC % ReconstructedType, &
+                 FC % UseLimiter, FC % Units, FC % LimiterParameter, &
+                 FC % nValues, NameOption = FC % NameShort )
         call PM % SetPrimitiveConserved ( )
+        call PM % SetReconstructed ( )
         call PM % SetOutput ( FC % FieldOutput )
       end select !-- PM
     case default
