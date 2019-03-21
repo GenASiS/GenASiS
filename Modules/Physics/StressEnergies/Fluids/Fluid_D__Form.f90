@@ -74,7 +74,7 @@ contains
 
 
   subroutine Initialize_D &
-               ( F, RiemannSolverType, UseLimiter, Units, &
+               ( F, RiemannSolverType, ReconstructedType, UseLimiter, Units, &
                  BaryonMassReference, LimiterParameter, nValues, &
                  VariableOption, VectorOption, NameOption, ClearOption, &
                  UnitOption, VectorIndicesOption )
@@ -82,7 +82,8 @@ contains
     class ( Fluid_D_Form ), intent ( inout ) :: &
       F
     character ( * ), intent ( in ) :: &
-      RiemannSolverType
+      RiemannSolverType, &
+      ReconstructedType
     logical ( KDL ), intent ( in ) :: &
       UseLimiter
     class ( StressEnergyUnitsForm ), intent ( in ) :: &
@@ -123,11 +124,11 @@ contains
     call SetUnits ( VariableUnit, F, Units )
 
     call F % InitializeTemplate &
-           ( RiemannSolverType, UseLimiter, Units % Velocity_U, &
-             LimiterParameter, nValues, VariableOption = Variable, &
-             VectorOption = Vector, NameOption = Name, &
-             ClearOption = ClearOption, UnitOption = VariableUnit, &
-             VectorIndicesOption = VectorIndices )
+           ( RiemannSolverType, ReconstructedType, &
+             UseLimiter, Units % Velocity_U, LimiterParameter, nValues, &
+             VariableOption = Variable, VectorOption = Vector, &
+             NameOption = Name, ClearOption = ClearOption, &
+             UnitOption = VariableUnit, VectorIndicesOption = VectorIndices )
 
     F % BaryonMassReference = BaryonMassReference
     call Show ( F % BaryonMassReference, F % Unit ( F % BARYON_MASS ), &
@@ -166,7 +167,7 @@ contains
     end if
     C % iaConserved ( oC + 1 : oC + C % N_CONSERVED_DUST ) &
       = [ C % CONSERVED_BARYON_DENSITY, C % MOMENTUM_DENSITY_D ]
-    
+
     do iF = 1, C % N_PRIMITIVE_DUST
       PrimitiveName ( iF )  =  C % Variable ( C % iaPrimitive ( oP + iF ) )
     end do
@@ -177,7 +178,7 @@ contains
                 C % IGNORABILITY, oIndexOption = oP )
     call Show ( ConservedName, 'Adding conserved variables', &
                 C % IGNORABILITY, oIndexOption = oC )
-    
+
   end subroutine SetPrimitiveConserved
 
 
