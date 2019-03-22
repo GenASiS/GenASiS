@@ -24,6 +24,7 @@ PhotonMoments_CSL__Form.o: \
 PhotonMoments_ASC__Form.o: \
   Basics.o \
   Mathematics.o \
+  StressEnergyBasics.o \
   RadiationBasics.o \
   PhotonMoments_CSL__Form.o \
   PhotonMoments_ASC__Form.f90
@@ -31,6 +32,7 @@ PhotonMoments_ASC__Form.o: \
 PhotonMoments_BSLL_ASC_CSLD__Form.o: \
   Basics.o \
   Mathematics.o \
+  StressEnergyBasics.o \
   RadiationBasics.o \
   PhotonMoments_ASC__Form.o \
   PhotonMoments_BSLL_ASC_CSLD__Form.f90

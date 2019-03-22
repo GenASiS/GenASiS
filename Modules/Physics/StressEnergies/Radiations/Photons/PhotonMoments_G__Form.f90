@@ -299,6 +299,9 @@ contains
       oF, &  !-- oField
       oV     !-- oVector
 
+    if ( PM % Type == '' ) &
+      PM % Type = 'a PhotonMoments_G'
+
     !-- variable indices
 
     oF = PM % N_FIELDS_TEMPLATE + PM % N_FIELDS_RM

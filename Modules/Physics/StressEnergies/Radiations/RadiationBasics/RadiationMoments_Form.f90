@@ -29,6 +29,8 @@ module RadiationMoments_Form
       COMOVING_MOMENTUM_U  = 0, &
       CONSERVED_MOMENTUM_D = 0, &
       FLUID_VELOCITY_U     = 0
+    character ( LDL ) :: &
+      RadiationMomentsType = ''
     class ( InteractionsTemplate ), pointer :: &
       Interactions => null ( )
   contains
@@ -115,12 +117,10 @@ contains
       Variable, &
       Vector
 
-    RM % Type = RadiationMomentsType
-
     call InitializeBasics &
-           ( RM, Variable, Vector, Name, VariableUnit, VectorIndices, &
-             VariableOption, VectorOption, NameOption, UnitOption, &
-             VectorIndicesOption )
+           ( RM, RadiationMomentsType, Variable, Vector, Name, VariableUnit, &
+             VectorIndices, VariableOption, VectorOption, NameOption, &
+             UnitOption, VectorIndicesOption )
 
     call SetUnits ( VariableUnit, RM, Units )
 
@@ -566,12 +566,14 @@ contains
 
 
   subroutine InitializeBasics &
-               ( RM, Variable, Vector, Name, VariableUnit, VectorIndices, &
-                 VariableOption, VectorOption, NameOption, &
-                 VariableUnitOption, VectorIndicesOption )
+               ( RM, RadiationMomentsType, Variable, Vector, Name, &
+                 VariableUnit, VectorIndices, VariableOption, VectorOption, &
+                 NameOption, VariableUnitOption, VectorIndicesOption )
 
     class ( RadiationMomentsForm ), intent ( inout ) :: &
       RM
+    character ( * ), intent ( in ) :: &
+      RadiationMomentsType
     character ( LDL ), dimension ( : ), allocatable, intent ( out ) :: &
       Variable, &
       Vector
@@ -602,9 +604,14 @@ contains
       oF, &  !-- oField
       oV     !-- oVector
 
+    if ( RM % Type == '' ) &
+      RM % Type = 'a RadiationMoments'
+
     Name = 'Radiation'
     if ( present ( NameOption ) ) &
       Name = NameOption
+
+    RM % RadiationMomentsType = RadiationMomentsType
 
     !-- variable indices
 
