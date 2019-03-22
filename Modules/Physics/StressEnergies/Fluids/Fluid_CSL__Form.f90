@@ -27,8 +27,8 @@ module Fluid_CSL__Form
       UseEntropy
     character ( LDF ) :: &
       FluidType = '', &
-      ReconstructedType = '', &
-      RiemannSolverType = ''
+      RiemannSolverType = '', &
+      ReconstructedType = ''
     class ( Sources_F_CSL_Form ), pointer :: &
       Sources_CSL => null ( )
     class ( FluidFeatures_CSL_Form ), pointer :: &

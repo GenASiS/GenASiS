@@ -63,8 +63,8 @@ contains
 
 
   subroutine InitializeTemplate_P &
-               ( F, RiemannSolverType, UseLimiter, VelocityUnit, &
-                 MassDensityUnit, EnergyDensityUnit, &
+               ( F, RiemannSolverType, ReconstructedType, UseLimiter, &
+                 VelocityUnit, MassDensityUnit, EnergyDensityUnit, &
                  TemperatureUnit, LimiterParameter, nValues, VariableOption, &
                  VectorOption, NameOption, ClearOption, UnitOption, &
                  VectorIndicesOption )
@@ -72,7 +72,8 @@ contains
     class ( Fluid_P_Template ), intent ( inout ) :: &
       F
     character ( * ), intent ( in ) :: &
-      RiemannSolverType
+      RiemannSolverType, &
+      ReconstructedType
     logical ( KDL ), intent ( in ) :: &
       UseLimiter
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
@@ -111,10 +112,11 @@ contains
              EnergyDensityUnit, TemperatureUnit )
 
     call F % Fluid_D_Form % Initialize &
-           ( RiemannSolverType, UseLimiter, VelocityUnit, MassDensityUnit, &
-             LimiterParameter, nValues, VariableOption = Variable, &
-             VectorOption = VectorOption, NameOption = NameOption, &
-             ClearOption = ClearOption, UnitOption = VariableUnit, &
+           ( RiemannSolverType, ReconstructedType, UseLimiter, VelocityUnit, &
+             MassDensityUnit, LimiterParameter, nValues, &
+             VariableOption = Variable, VectorOption = VectorOption, &
+             NameOption = NameOption, ClearOption = ClearOption, &
+             UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndicesOption )
 
   end subroutine InitializeTemplate_P

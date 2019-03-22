@@ -32,8 +32,8 @@ module Fluid_ASC__Form
       UseEntropy
     character ( LDF ) :: &
       FluidType         = '', &
-      ReconstructedType = '', &
-      RiemannSolverType = ''
+      RiemannSolverType = '', &
+      ReconstructedType = ''
     type ( Sources_F_ASC_Form ), allocatable :: &
       Sources_ASC
     type ( FluidFeatures_ASC_Form ), allocatable :: &
@@ -251,6 +251,8 @@ contains
 
     call Show ( FA % FluidType, 'FluidType', FA % IGNORABILITY )
     call Show ( FA % RiemannSolverType, 'RiemannSolverType', &
+                FA % IGNORABILITY )
+    call Show ( FA % ReconstructedType, 'ReconstructedType', &
                 FA % IGNORABILITY )
     call Show ( FA % UseEntropy, 'UseEntropy', FA % IGNORABILITY )
     call Show ( FA % UseLimiter, 'UseLimiter', FA % IGNORABILITY )

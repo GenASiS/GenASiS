@@ -28,7 +28,8 @@ module Fluid_CSL__Form
       UseLimiter
     character ( LDF ) :: &
       FluidType = '', &
-      RiemannSolverType = ''
+      RiemannSolverType = '', &
+      ReconstructedType = ''
     class ( Sources_F_CSL_Form ), pointer :: &
       Sources_CSL => null ( )
     class ( FluidFeatures_CSL_Form ), pointer :: &
@@ -56,10 +57,10 @@ contains
 
 
   subroutine Initialize &
-               ( FC, C, NameShort, FluidType, RiemannSolverType, UseLimiter, &
-                 VelocityUnit, MassDensityUnit, EnergyDensityUnit, &
-                 TemperatureUnit, LimiterParameter, nValues, &
-                 IgnorabilityOption )
+               ( FC, C, NameShort, FluidType, RiemannSolverType, &
+                 ReconstructedType, UseLimiter, VelocityUnit, MassDensityUnit, &
+                 EnergyDensityUnit, TemperatureUnit, LimiterParameter, &
+                 nValues, IgnorabilityOption )
 
     class ( Fluid_CSL_Form ), intent ( inout ) :: &
       FC
@@ -68,7 +69,8 @@ contains
     character ( * ), intent ( in ) :: &
       NameShort, &
       FluidType, &
-      RiemannSolverType
+      RiemannSolverType, &
+      ReconstructedType
     logical ( KDL ), intent ( in ) :: &
       UseLimiter
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
@@ -88,6 +90,7 @@ contains
       FC % Type = 'a Fluid_CSL'
     FC % FluidType         = FluidType
     FC % RiemannSolverType = RiemannSolverType
+    FC % ReconstructedType = ReconstructedType
     FC % UseLimiter        = UseLimiter
     FC % LimiterParameter  = LimiterParameter
 
@@ -234,10 +237,12 @@ contains
       select type ( F => FC % Field )
       type is ( Fluid_D_Form )
         call F % Initialize &
-               ( FC % RiemannSolverType, FC % UseLimiter, FC % VelocityUnit, &
-                 FC % MassDensityUnit, FC % LimiterParameter, FC % nValues, &
+               ( FC % RiemannSolverType, FC % ReconstructedType, &
+                 FC % UseLimiter, FC % VelocityUnit, FC % MassDensityUnit, &
+                 FC % LimiterParameter, FC % nValues, &
                  NameOption = FC % NameShort )
         call F % SetPrimitiveConserved ( )
+        call F % SetReconstructed ( )
         call F % SetOutput ( FC % FieldOutput )
       end select !-- F
     case ( 'POLYTROPIC' )
@@ -245,11 +250,13 @@ contains
       select type ( F => FC % Field )
       type is ( Fluid_P_P_Form )
         call F % Initialize &
-               ( FC % RiemannSolverType, FC % UseLimiter, FC % VelocityUnit, &
-                 FC % MassDensityUnit, FC % EnergyDensityUnit, &
-                 FC % TemperatureUnit, FC % LimiterParameter, FC % nValues, &
+               ( FC % RiemannSolverType, FC % ReconstructedType, &
+                 FC % UseLimiter, FC % VelocityUnit, FC % MassDensityUnit, &
+                 FC % EnergyDensityUnit, FC % TemperatureUnit, &
+                 FC % LimiterParameter, FC % nValues, &
                  NameOption = FC % NameShort )
         call F % SetPrimitiveConserved ( )
+        call F % SetReconstructed ( )
         call F % SetOutput ( FC % FieldOutput )
       end select !-- F
     case ( 'NON_RELATIVISTIC' )
@@ -257,11 +264,13 @@ contains
       select type ( F => FC % Field )
       type is ( Fluid_P_NR_Form )
         call F % Initialize &
-               ( FC % RiemannSolverType, FC % UseLimiter, FC % VelocityUnit, &
-                 FC % MassDensityUnit, FC % EnergyDensityUnit, &
-                 FC % TemperatureUnit, FC % LimiterParameter, FC % nValues, &
+               ( FC % RiemannSolverType, FC % ReconstructedType, &
+                 FC % UseLimiter, FC % VelocityUnit, FC % MassDensityUnit, &
+                 FC % EnergyDensityUnit, FC % TemperatureUnit, &
+                 FC % LimiterParameter, FC % nValues, &
                  NameOption = FC % NameShort )
         call F % SetPrimitiveConserved ( )
+        call F % SetReconstructed ( )
         call F % SetOutput ( FC % FieldOutput )
       end select !-- F
     case default
