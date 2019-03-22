@@ -89,14 +89,15 @@ contains
 
 
   subroutine Initialize_P_HN &
-               ( F, RiemannSolverType, ReconstructedType, UseEntropy, &
-                 UseLimiter, Units, BaryonMassReference, LimiterParameter, &
-                 nValues, VariableOption, VectorOption, NameOption, &
-                 ClearOption, UnitOption, VectorIndicesOption )
+               ( F, FluidType, RiemannSolverType, ReconstructedType, &
+                 UseEntropy, UseLimiter, Units, BaryonMassReference, &
+                 LimiterParameter, nValues, VariableOption, VectorOption, &
+                 NameOption, ClearOption, UnitOption, VectorIndicesOption )
 
     class ( Fluid_P_HN_Form ), intent ( inout ) :: &
       F
     character ( * ), intent ( in ) :: &
+      FluidType, &
       RiemannSolverType, &
       ReconstructedType
     logical ( KDL ), intent ( in ) :: &
@@ -133,9 +134,9 @@ contains
     call SetUnits ( VariableUnit, F, Units )
 
     call F % InitializeTemplate_P &
-           ( RiemannSolverType, ReconstructedType, UseEntropy, UseLimiter, &
-             Units, BaryonMassReference, LimiterParameter, nValues, &
-             VariableOption = Variable, VectorOption = VectorOption, &
+           ( FluidType, RiemannSolverType, ReconstructedType, UseEntropy, &
+             UseLimiter, Units, BaryonMassReference, LimiterParameter, &
+             nValues, VariableOption = Variable, VectorOption = VectorOption, &
              NameOption = NameOption, ClearOption = ClearOption, &
              UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndicesOption )

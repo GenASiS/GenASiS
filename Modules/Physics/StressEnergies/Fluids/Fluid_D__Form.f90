@@ -33,6 +33,8 @@ module Fluid_D__Form
     real ( KDR ) :: &
       BaryonMassReference = 1.0_KDR, &
       BaryonDensityMin = 0.0_KDR
+    character ( LDL ) :: &
+      FluidType = ''
     class ( FluidFeaturesTemplate ), pointer :: &
       Features => null ( )
   contains
@@ -74,14 +76,15 @@ contains
 
 
   subroutine Initialize_D &
-               ( F, RiemannSolverType, ReconstructedType, UseLimiter, Units, &
-                 BaryonMassReference, LimiterParameter, nValues, &
-                 VariableOption, VectorOption, NameOption, ClearOption, &
-                 UnitOption, VectorIndicesOption )
+               ( F, FluidType, RiemannSolverType, ReconstructedType, &
+                 UseLimiter, Units, BaryonMassReference, LimiterParameter, &
+                 nValues, VariableOption, VectorOption, NameOption, &
+                 ClearOption, UnitOption, VectorIndicesOption )
 
     class ( Fluid_D_Form ), intent ( inout ) :: &
       F
     character ( * ), intent ( in ) :: &
+      FluidType, &
       RiemannSolverType, &
       ReconstructedType
     logical ( KDL ), intent ( in ) :: &
@@ -117,9 +120,9 @@ contains
       Vector
 
     call InitializeBasics &
-           ( F, Variable, Vector, Name, VariableUnit, VectorIndices, &
-             VariableOption, VectorOption, NameOption, UnitOption, &
-             VectorIndicesOption )
+           ( F, FluidType, Variable, Vector, Name, VariableUnit, &
+             VectorIndices, VariableOption, VectorOption, NameOption, &
+             UnitOption, VectorIndicesOption )
 
     call SetUnits ( VariableUnit, F, Units )
 
@@ -615,12 +618,14 @@ contains
 
 
   subroutine InitializeBasics &
-               ( F, Variable, Vector, Name, VariableUnit, VectorIndices, &
-                 VariableOption, VectorOption, NameOption, &
+               ( F, FluidType, Variable, Vector, Name, VariableUnit, &
+                 VectorIndices, VariableOption, VectorOption, NameOption, &
                  VariableUnitOption, VectorIndicesOption )
 
     class ( Fluid_D_Form ), intent ( inout ) :: &
       F
+    character ( * ), intent ( in ) :: &
+      FluidType
     character ( LDL ), dimension ( : ), allocatable, intent ( out ) :: &
       Variable, &
       Vector
@@ -657,6 +662,8 @@ contains
     Name = 'Fluid'
     if ( present ( NameOption ) ) &
       Name = NameOption
+
+    F % FluidType = FluidType
 
     !-- variable indices
 

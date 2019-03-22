@@ -245,10 +245,10 @@ contains
       select type ( F => FC % Field )
       type is ( Fluid_D_Form )
         call F % Initialize_D &
-               ( FC % RiemannSolverType, FC % ReconstructedType, &
-                 FC % UseLimiter, FC % Units, FC % BaryonMassReference, &
-                 FC % LimiterParameter, FC % nValues, &
-                 NameOption = FC % NameShort )
+               ( FC % FluidType, FC % RiemannSolverType, &
+                 FC % ReconstructedType, FC % UseLimiter, FC % Units, &
+                 FC % BaryonMassReference, FC % LimiterParameter, &
+                 FC % nValues, NameOption = FC % NameShort )
         call F % SetPrimitiveConserved ( )
         call F % SetReconstructed ( )
         call F % SetOutput ( FC % FieldOutput )
@@ -258,9 +258,9 @@ contains
       select type ( F => FC % Field )
       type is ( Fluid_P_I_Form )
         call F % Initialize_P_I &
-               ( FC % RiemannSolverType, FC % ReconstructedType, &
-                 FC % UseEntropy, FC % UseLimiter, FC % Units, &
-                 FC % BaryonMassReference, FC % LimiterParameter, &
+               ( FC % FluidType, FC % RiemannSolverType, &
+                 FC % ReconstructedType, FC % UseEntropy, FC % UseLimiter, &
+                 FC % Units, FC % BaryonMassReference, FC % LimiterParameter, &
                  FC % nValues, NameOption = FC % NameShort )
         call F % SetPrimitiveConserved ( )
         call F % SetReconstructed ( )
@@ -271,9 +271,9 @@ contains
       select type ( F => FC % Field )
       type is ( Fluid_P_HN_Form )
         call F % Initialize_P_HN &
-               ( FC % RiemannSolverType, FC % ReconstructedType, &
-                 FC % UseEntropy, FC % UseLimiter, FC % Units, &
-                 FC % BaryonMassReference, FC % LimiterParameter, &
+               ( FC % FluidType, FC % RiemannSolverType, &
+                 FC % ReconstructedType, FC % UseEntropy, FC % UseLimiter, &
+                 FC % Units, FC % BaryonMassReference, FC % LimiterParameter, &
                  FC % nValues, NameOption = FC % NameShort )
         call F % SetPrimitiveConserved ( )
         call F % SetReconstructed ( )
