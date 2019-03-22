@@ -6,10 +6,17 @@ NeutrinoMoments_G__Form.o: \
   Photons.o \
   NeutrinoMoments_G__Form.f90
 
+NeutrinoMoments_S__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  StressEnergyBasics.o \
+  RadiationBasics.o \
+  NeutrinoMoments_S__Form.f90
+
 Neutrinos.o: \
   NeutrinoMoments_G__Form.o \
+  NeutrinoMoments_S__Form.o \
   Neutrinos.f90
-#  NeutrinoMoments_S__Form.o \
 #  NeutrinoMoments_CSL__Form.o \
 #  NeutrinoMoments_ASC__Form.o \
 #  NeutrinoMoments_BSLL_ASC_CSLD__Form.o \
