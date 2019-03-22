@@ -31,8 +31,8 @@ module NeutrinoMoments_G__Form
       OCCUPANCY_AVERAGE       = 0!, &
   !     BETA_EQUILIBRIUM        = 0
   contains
-    procedure, public, pass :: &
-      InitializeAllocate_NM
+    procedure, private, pass :: &
+      InitializeAllocate_RM
     procedure, public, pass :: &
       SetPrimitiveConserved
     procedure, public, pass :: &
@@ -62,16 +62,16 @@ module NeutrinoMoments_G__Form
 contains
 
 
-  subroutine InitializeAllocate_NM &
-               ( NM, NeutrinoType, RiemannSolverType, ReconstructedType, &
-                 UseLimiter, Units, LimiterParameter, nValues, VariableOption, &
-                 VectorOption, NameOption, ClearOption, UnitOption, &
-                 VectorIndicesOption )
+  subroutine InitializeAllocate_RM &
+               ( RM, RadiationMomentsType, RiemannSolverType, &
+                 ReconstructedType, UseLimiter, Units, LimiterParameter, &
+                 nValues, VariableOption, VectorOption, NameOption, &
+                 ClearOption, UnitOption, VectorIndicesOption )
 
     class ( NeutrinoMoments_G_Form ), intent ( inout ) :: &
-      NM
+      RM
     character ( * ), intent ( in ) :: &
-      NeutrinoType, &
+      RadiationMomentsType, &
       RiemannSolverType, &
       ReconstructedType
     logical ( KDL ), intent ( in ) :: &
@@ -99,21 +99,20 @@ contains
     type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
       VariableUnit
 
-    NM % Type = NeutrinoType
-
     call InitializeBasics &
-           ( NM, Variable, VariableUnit, VariableOption, UnitOption )
+           ( RM, Variable, VariableUnit, VariableOption, UnitOption )
 
-    call SetUnits ( VariableUnit, NM, Units )
+    call SetUnits ( VariableUnit, RM, Units )
 
-    call NM % PhotonMoments_G_Form % InitializeAllocate_PM &
-           ( RiemannSolverType, ReconstructedType, UseLimiter, Units, &
-             LimiterParameter, nValues, VariableOption = Variable, &
-             VectorOption = VectorOption, NameOption = NameOption, &
-             ClearOption = ClearOption, UnitOption = VariableUnit, &
+    call RM % PhotonMoments_G_Form % Initialize &
+           ( RadiationMomentsType, RiemannSolverType, ReconstructedType, &
+             UseLimiter, Units, LimiterParameter, nValues, &
+             VariableOption = Variable, VectorOption = VectorOption, &
+             NameOption = NameOption, ClearOption = ClearOption, &
+             UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndicesOption )
 
-  end subroutine InitializeAllocate_NM
+  end subroutine InitializeAllocate_RM
 
 
   subroutine SetPrimitiveConserved ( C )
@@ -639,9 +638,6 @@ call Show ( Eta_ED, '>>> Falling back to Eta_ED', CONSOLE % ERROR )
     integer ( KDI ) :: &
       oF, &  !-- oField
       oV     !-- oVector
-
-    if ( NM % Type == '' ) &
-      NM % Type = 'NeutrinoMoments_G'
 
     !-- variable indices
 

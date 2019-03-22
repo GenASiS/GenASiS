@@ -25,8 +25,8 @@ module PhotonMoments_G__Form
       TEMPERATURE_PARAMETER    = 0, &
       TEMPERATURE_PARAMETER_EQ = 0
   contains
-    procedure, public, pass :: &
-      InitializeAllocate_PM
+    procedure, private, pass :: &
+      InitializeAllocate_RM
     procedure, public, pass :: &
       SetOutput
     final :: &
@@ -48,14 +48,16 @@ module PhotonMoments_G__Form
 contains
 
 
-  subroutine InitializeAllocate_PM &
-               ( RM, RiemannSolverType, ReconstructedType, UseLimiter, Units, &
+  subroutine InitializeAllocate_RM &
+               ( RM, RadiationMomentsType, RiemannSolverType, &
+                 ReconstructedType, UseLimiter, Units, &
                  LimiterParameter, nValues, VariableOption, VectorOption, &
                  NameOption, ClearOption, UnitOption, VectorIndicesOption )
 
     class ( PhotonMoments_G_Form ), intent ( inout ) :: &
       RM
     character ( * ), intent ( in ) :: &
+      RadiationMomentsType, &
       RiemannSolverType, &
       ReconstructedType
     logical ( KDL ), intent ( in ) :: &
@@ -88,14 +90,15 @@ contains
 
     call SetUnits ( VariableUnit, RM, Units )
 
-    call RM % RadiationMomentsForm % InitializeAllocate_RM &
-           ( RiemannSolverType, ReconstructedType, UseLimiter, Units, &
-             LimiterParameter, nValues, VariableOption = Variable, &
-             VectorOption = VectorOption, NameOption = NameOption, &
-             ClearOption = ClearOption, UnitOption = VariableUnit, &
+    call RM % RadiationMomentsForm % Initialize &
+           ( RadiationMomentsType, RiemannSolverType, ReconstructedType, &
+             UseLimiter, Units, LimiterParameter, nValues, &
+             VariableOption = Variable, VectorOption = VectorOption, &
+             NameOption = NameOption, ClearOption = ClearOption, &
+             UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndicesOption )
 
-  end subroutine InitializeAllocate_PM
+  end subroutine InitializeAllocate_RM
 
 
   subroutine SetOutput ( RM, Output )
@@ -295,9 +298,6 @@ contains
     integer ( KDI ) :: &
       oF, &  !-- oField
       oV     !-- oVector
-
-    if ( PM % Type == '' ) &
-      PM % Type = 'PhotonMoments_G'
 
     !-- variable indices
 

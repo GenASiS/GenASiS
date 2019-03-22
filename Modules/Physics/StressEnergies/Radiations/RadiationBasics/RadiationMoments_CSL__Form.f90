@@ -226,10 +226,11 @@ contains
       allocate ( RadiationMomentsForm :: FC % Field )
       select type ( RM => FC % Field )
       type is ( RadiationMomentsForm )
-        call RM % InitializeAllocate_RM &
-               ( FC % RiemannSolverType, FC % ReconstructedType, &
-                 FC % UseLimiter, FC % Units, FC % LimiterParameter, &
-                 FC % nValues, NameOption = FC % NameShort )
+        call RM % Initialize &
+               ( FC % RadiationMomentsType, FC % RiemannSolverType, &
+                 FC % ReconstructedType, FC % UseLimiter, FC % Units, &
+                 FC % LimiterParameter, FC % nValues, &
+                 NameOption = FC % NameShort )
         call RM % SetPrimitiveConserved ( )
         call RM % SetReconstructed ( )
         call RM % SetOutput ( FC % FieldOutput )

@@ -32,8 +32,10 @@ module RadiationMoments_Form
     class ( InteractionsTemplate ), pointer :: &
       Interactions => null ( )
   contains
-    procedure, public, pass :: &
+    procedure, private, pass :: &
       InitializeAllocate_RM
+    generic, public :: &
+      Initialize => InitializeAllocate_RM
     procedure, public, pass :: &
       SetPrimitiveConserved
     procedure, public, pass :: &
@@ -72,13 +74,15 @@ contains
 
 
   subroutine InitializeAllocate_RM &
-               ( RM, RiemannSolverType, ReconstructedType, UseLimiter, Units, &
-                 LimiterParameter, nValues, VariableOption, VectorOption, &
-                 NameOption, ClearOption, UnitOption, VectorIndicesOption )
+               ( RM, RadiationMomentsType, RiemannSolverType, &
+                 ReconstructedType, UseLimiter, Units, LimiterParameter, &
+                 nValues, VariableOption, VectorOption, NameOption, &
+                 ClearOption, UnitOption, VectorIndicesOption )
 
     class ( RadiationMomentsForm ), intent ( inout ) :: &
       RM
     character ( * ), intent ( in ) :: &
+      RadiationMomentsType, &
       RiemannSolverType, &
       ReconstructedType
     logical ( KDL ), intent ( in ) :: &
@@ -110,6 +114,8 @@ contains
     character ( LDL ), dimension ( : ), allocatable :: &
       Variable, &
       Vector
+
+    RM % Type = RadiationMomentsType
 
     call InitializeBasics &
            ( RM, Variable, Vector, Name, VariableUnit, VectorIndices, &
@@ -595,9 +601,6 @@ contains
       iV, &  !-- iVector
       oF, &  !-- oField
       oV     !-- oVector
-
-    if ( RM % Type == '' ) &
-      RM % Type = 'RadiationMoments'
 
     Name = 'Radiation'
     if ( present ( NameOption ) ) &

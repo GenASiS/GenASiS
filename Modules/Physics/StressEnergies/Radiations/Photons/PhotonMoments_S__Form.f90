@@ -13,56 +13,11 @@ module PhotonMoments_S__Form
 
   type, public, extends ( RadiationMomentsForm ) :: PhotonMoments_S_Form
   contains
-    procedure, public, pass :: &
-      InitializeAllocate_PM
     final :: &
       Finalize
   end type PhotonMoments_S_Form
 
 contains
-
-
-  subroutine InitializeAllocate_PM &
-               ( RM, RiemannSolverType, ReconstructedType, UseLimiter, Units, &
-                 LimiterParameter, nValues, VariableOption, VectorOption, &
-                 NameOption, ClearOption, UnitOption, VectorIndicesOption )
-
-    class ( PhotonMoments_S_Form ), intent ( inout ) :: &
-      RM
-    character ( * ), intent ( in ) :: &
-      RiemannSolverType, &
-      ReconstructedType
-    logical ( KDL ), intent ( in ) :: &
-      UseLimiter
-    class ( StressEnergyUnitsForm ), intent ( in ) :: &
-      Units
-    real ( KDR ), intent ( in ) :: &
-      LimiterParameter
-    integer ( KDI ), intent ( in ) :: &
-      nValues
-    character ( * ), dimension ( : ), intent ( in ), optional :: &
-      VariableOption, &
-      VectorOption
-    character ( * ), intent ( in ), optional :: &
-      NameOption
-    logical ( KDL ), intent ( in ), optional :: &
-      ClearOption
-    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
-      UnitOption
-    type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
-      VectorIndicesOption
-
-    if ( RM % Type == '' ) &
-      RM % Type = 'PhotonMoments_S'
-
-    call RM % RadiationMomentsForm % InitializeAllocate_RM &
-           ( RiemannSolverType, ReconstructedType, UseLimiter, Units, &
-             LimiterParameter, nValues, VariableOption = VariableOption, &
-             VectorOption = VectorOption, NameOption = NameOption, &
-             ClearOption = ClearOption, UnitOption = UnitOption, &
-             VectorIndicesOption = VectorIndicesOption )
-
-  end subroutine InitializeAllocate_PM
 
 
   impure elemental subroutine Finalize ( PM )

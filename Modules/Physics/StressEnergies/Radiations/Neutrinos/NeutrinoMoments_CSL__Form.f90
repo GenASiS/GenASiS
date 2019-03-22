@@ -30,11 +30,12 @@ contains
     allocate ( FC % FieldOutput )
 
     select case ( trim ( FC % RadiationMomentsType ) )
-    case ( 'NEUTRINOS_GREY' )
+    case ( 'NEUTRINOS_ELECTRON_GREY', 'ANTINEUTRINOS_ELECTRON_GREY', &
+           'NEUTRINOS_X_GREY' )
       allocate ( NeutrinoMoments_G_Form :: FC % Field )
       select type ( NM => FC % Field )
       type is ( NeutrinoMoments_G_Form )
-        call NM % InitializeAllocate_NM &
+        call NM % Initialize &
                ( FC % RadiationMomentsType, FC % RiemannSolverType, &
                  FC % ReconstructedType, FC % UseLimiter, FC % Units, &
                  FC % LimiterParameter, FC % nValues, &
@@ -43,11 +44,12 @@ contains
         call NM % SetReconstructed ( )
         call NM % SetOutput ( FC % FieldOutput )
       end select !-- NM
-    case ( 'NEUTRINOS_SPECTRAL' )
+    case ( 'NEUTRINOS_ELECTRON_SPECTRAL', 'ANTINEUTRINOS_ELECTRON_SPECTRAL', &
+           'NEUTRINOS_X_SPECTRAL' )
       allocate ( NeutrinoMoments_S_Form :: FC % Field )
       select type ( NM => FC % Field )
       type is ( NeutrinoMoments_S_Form )
-        call NM % InitializeAllocate_NM &
+        call NM % Initialize &
                ( FC % RadiationMomentsType, FC % RiemannSolverType, &
                  FC % ReconstructedType, FC % UseLimiter, FC % Units, &
                  FC % LimiterParameter, FC % nValues, &
