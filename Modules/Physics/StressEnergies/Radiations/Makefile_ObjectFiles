@@ -1,7 +1,9 @@
 include $(PATH_RADIATION_BASICS)/Makefile_ObjectFiles
 include $(PATH_PHOTONS)/Makefile_ObjectFiles
+include $(PATH_NEUTRINOS)/Makefile_ObjectFiles
 
 RADIATIONS = \
   Radiations.o \
+  $(NEUTRINOS) \
   $(PHOTONS) \
   $(RADIATION_BASICS)

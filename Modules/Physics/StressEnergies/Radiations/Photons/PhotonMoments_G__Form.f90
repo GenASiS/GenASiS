@@ -25,8 +25,8 @@ module PhotonMoments_G__Form
       TEMPERATURE_PARAMETER    = 0, &
       TEMPERATURE_PARAMETER_EQ = 0
   contains
-    procedure, private, pass :: &
-      InitializeAllocate_RM
+    procedure, public, pass :: &
+      InitializeAllocate_PM
     procedure, public, pass :: &
       SetOutput
     final :: &
@@ -48,7 +48,7 @@ module PhotonMoments_G__Form
 contains
 
 
-  subroutine InitializeAllocate_RM &
+  subroutine InitializeAllocate_PM &
                ( RM, RiemannSolverType, ReconstructedType, UseLimiter, Units, &
                  LimiterParameter, nValues, VariableOption, VectorOption, &
                  NameOption, ClearOption, UnitOption, VectorIndicesOption )
@@ -88,14 +88,14 @@ contains
 
     call SetUnits ( VariableUnit, RM, Units )
 
-    call RM % RadiationMomentsForm % Initialize &
+    call RM % RadiationMomentsForm % InitializeAllocate_RM &
            ( RiemannSolverType, ReconstructedType, UseLimiter, Units, &
              LimiterParameter, nValues, VariableOption = Variable, &
              VectorOption = VectorOption, NameOption = NameOption, &
              ClearOption = ClearOption, UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndicesOption )
 
-  end subroutine InitializeAllocate_RM
+  end subroutine InitializeAllocate_PM
 
 
   subroutine SetOutput ( RM, Output )

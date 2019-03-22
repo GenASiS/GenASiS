@@ -24,7 +24,7 @@ module PhotonMoments_G__Form
       TEMPERATURE_PARAMETER    = 0, &
       TEMPERATURE_PARAMETER_EQ = 0
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       InitializeAllocate_PM
     generic, public :: &
       Initialize => InitializeAllocate_PM

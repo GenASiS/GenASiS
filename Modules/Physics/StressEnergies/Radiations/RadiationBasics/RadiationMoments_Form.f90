@@ -32,10 +32,8 @@ module RadiationMoments_Form
     class ( InteractionsTemplate ), pointer :: &
       Interactions => null ( )
   contains
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       InitializeAllocate_RM
-    generic, public :: &
-      Initialize => InitializeAllocate_RM
     procedure, public, pass :: &
       SetPrimitiveConserved
     procedure, public, pass :: &

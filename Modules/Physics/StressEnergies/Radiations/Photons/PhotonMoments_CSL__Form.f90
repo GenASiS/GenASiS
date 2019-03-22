@@ -33,7 +33,7 @@ contains
       allocate ( PhotonMoments_G_Form :: FC % Field )
       select type ( PM => FC % Field )
       type is ( PhotonMoments_G_Form )
-        call PM % Initialize &
+        call PM % InitializeAllocate_PM &
                ( FC % RiemannSolverType, FC % ReconstructedType, &
                  FC % UseLimiter, FC % Units, FC % LimiterParameter, &
                  FC % nValues, NameOption = FC % NameShort )
@@ -45,7 +45,7 @@ contains
       allocate ( PhotonMoments_S_Form :: FC % Field )
       select type ( PM => FC % Field )
       type is ( PhotonMoments_S_Form )
-        call PM % Initialize &
+        call PM % InitializeAllocate_PM &
                ( FC % RiemannSolverType, FC % ReconstructedType, &
                  FC % UseLimiter, FC % Units, FC % LimiterParameter, &
                  FC % nValues, NameOption = FC % NameShort )

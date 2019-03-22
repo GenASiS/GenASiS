@@ -13,8 +13,8 @@ module PhotonMoments_S__Form
 
   type, public, extends ( RadiationMomentsForm ) :: PhotonMoments_S_Form
   contains
-    procedure, private, pass :: &
-      InitializeAllocate_RM
+    procedure, public, pass :: &
+      InitializeAllocate_PM
     final :: &
       Finalize
   end type PhotonMoments_S_Form
@@ -22,7 +22,7 @@ module PhotonMoments_S__Form
 contains
 
 
-  subroutine InitializeAllocate_RM &
+  subroutine InitializeAllocate_PM &
                ( RM, RiemannSolverType, ReconstructedType, UseLimiter, Units, &
                  LimiterParameter, nValues, VariableOption, VectorOption, &
                  NameOption, ClearOption, UnitOption, VectorIndicesOption )
@@ -55,14 +55,14 @@ contains
     if ( RM % Type == '' ) &
       RM % Type = 'PhotonMoments_S'
 
-    call RM % RadiationMomentsForm % Initialize &
+    call RM % RadiationMomentsForm % InitializeAllocate_RM &
            ( RiemannSolverType, ReconstructedType, UseLimiter, Units, &
              LimiterParameter, nValues, VariableOption = VariableOption, &
              VectorOption = VectorOption, NameOption = NameOption, &
              ClearOption = ClearOption, UnitOption = UnitOption, &
              VectorIndicesOption = VectorIndicesOption )
 
-  end subroutine InitializeAllocate_RM
+  end subroutine InitializeAllocate_PM
 
 
   impure elemental subroutine Finalize ( PM )
