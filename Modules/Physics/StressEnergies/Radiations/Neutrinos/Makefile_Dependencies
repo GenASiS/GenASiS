@@ -22,13 +22,29 @@ NeutrinoMoments_CSL__Form.o: \
   NeutrinoMoments_S__Form.o \
   NeutrinoMoments_CSL__Form.f90
 
+NeutrinoMoments_ASC__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  StressEnergyBasics.o \
+  RadiationBasics.o \
+  NeutrinoMoments_CSL__Form.o \
+  NeutrinoMoments_ASC__Form.f90
+
+NeutrinoMoments_BSLL_ASC_CSLD__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  StressEnergyBasics.o \
+  RadiationBasics.o \
+  NeutrinoMoments_ASC__Form.o \
+  NeutrinoMoments_BSLL_ASC_CSLD__Form.f90
+
 Neutrinos.o: \
   NeutrinoMoments_G__Form.o \
   NeutrinoMoments_S__Form.o \
   NeutrinoMoments_CSL__Form.o \
+  NeutrinoMoments_ASC__Form.o \
+  NeutrinoMoments_BSLL_ASC_CSLD__Form.o \
   Neutrinos.f90
-#  NeutrinoMoments_ASC__Form.o \
-#  NeutrinoMoments_BSLL_ASC_CSLD__Form.o \
 
 Neutrinos.a: $(NEUTRINOS)
 	ar r Neutrinos.a $(NEUTRINOS)

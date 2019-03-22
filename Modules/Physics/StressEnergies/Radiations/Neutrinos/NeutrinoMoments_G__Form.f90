@@ -639,6 +639,9 @@ call Show ( Eta_ED, '>>> Falling back to Eta_ED', CONSOLE % ERROR )
       oF, &  !-- oField
       oV     !-- oVector
 
+    if ( NM % Type == '' ) &
+      NM % Type = 'a NeutrinoMoments_G'
+
     !-- variable indices
 
     oF = NM % N_FIELDS_TEMPLATE + NM % N_FIELDS_RM + NM % N_FIELDS_PM
