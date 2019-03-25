@@ -10,10 +10,12 @@ module SedovTaylor_Form
   implicit none
   private
 
-  type, public, extends ( Integrator_C_PS_Template ) :: SedovTaylorForm
+  type, public, extends ( Integrator_C_PS_Form ) :: SedovTaylorForm
   contains
-    procedure, public, pass :: &
-      Initialize
+    procedure, private, pass :: &
+      Initialize_ST
+    generic, public :: &
+      Initialize => Initialize_ST
     final :: &
       Finalize  
   end type SedovTaylorForm
@@ -27,10 +29,13 @@ module SedovTaylor_Form
       BlastEnergy, &
       BlastRadiusRatio
 
+    type ( UniverseHeaderForm ), private :: &
+      Universe  !-- Non-functional dummy argument
+
 contains
 
 
-  subroutine Initialize ( ST, Name )
+  subroutine Initialize_ST ( ST, Name )
 
     class ( SedovTaylorForm ), intent ( inout ) :: &
       ST
@@ -146,22 +151,20 @@ contains
     !-- Set fluid and initialize Integrator template
 
     call SetFluid ( ST )
-    call ST % InitializeTemplate_C_PS ( Name, FinishTimeOption = FinishTime )
+    call ST % Initialize ( Universe, Name, FinishTimeOption = FinishTime )
 
     !-- Cleanup
 
     end select !-- FA
     end select !-- PS
 
-  end subroutine Initialize
+  end subroutine Initialize_ST
 
 
   subroutine Finalize ( ST )
 
     type ( SedovTaylorForm ), intent ( inout ) :: &
       ST
-
-    call ST % FinalizeTemplate_C_PS ( )
 
   end subroutine Finalize
 

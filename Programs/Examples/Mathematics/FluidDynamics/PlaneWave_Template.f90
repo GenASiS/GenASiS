@@ -8,7 +8,7 @@ module PlaneWave_Template
   implicit none
   private
 
-  type, public, extends ( Integrator_C_PS_Template ), abstract :: &
+  type, public, extends ( Integrator_C_PS_Form ), abstract :: &
     PlaneWaveTemplate
       real ( KDR ) :: &
         Speed
@@ -48,6 +48,9 @@ module PlaneWave_Template
 
       private :: &
         SetFluidKernel
+
+    type ( UniverseHeaderForm ), private :: &
+      Universe  !-- Non-functional dummy argument
 
 contains
 
@@ -141,8 +144,8 @@ contains
 
     !-- Initialize template
 
-    call PW % InitializeTemplate_C_PS &
-           ( Name, FinishTimeOption = nPeriods * Period )
+    call PW % Initialize &
+           ( Universe, Name, FinishTimeOption = nPeriods * Period )
 
     !-- Cleanup
 
@@ -204,8 +207,6 @@ contains
       deallocate ( PW % Difference )
     if ( allocated ( PW % Reference ) ) &
       deallocate ( PW % Reference )
-
-    call PW % FinalizeTemplate_C_PS ( )
 
   end subroutine FinalizeTemplate_PW
 

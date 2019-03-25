@@ -26,8 +26,10 @@ module Integrator_C_PS__Form
     class ( TimeSeries_C_Form ), allocatable :: &
       TimeSeries
   contains
-    procedure, public, pass :: &  !-- 1
-      Initialize
+    procedure, private, pass :: &  !-- 1
+      Initialize_I
+    generic, public :: &
+      Initialize => Initialize_I
     final :: &  !-- 1
       Finalize
     procedure, private, pass :: &  !-- 2
@@ -56,7 +58,7 @@ module Integrator_C_PS__Form
 contains
 
 
-  subroutine Initialize &
+  subroutine Initialize_I &
                ( I, U, Name, TimeUnitOption, FinishTimeOption, &
                  CourantFactorOption, nWriteOption )
 
@@ -123,7 +125,7 @@ contains
       end associate !-- TS, etc.
     end if
 
-  end subroutine Initialize
+  end subroutine Initialize_I
 
 
   impure elemental subroutine Finalize ( I )

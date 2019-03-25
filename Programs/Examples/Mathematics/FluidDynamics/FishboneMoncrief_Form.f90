@@ -12,10 +12,12 @@ module FishboneMoncrief_Form
   implicit none
   private
 
-  type, public, extends ( Integrator_C_PS_Template ) :: FishboneMoncriefForm
+  type, public, extends ( Integrator_C_PS_Form ) :: FishboneMoncriefForm
   contains
-    procedure, public, pass :: &
-      Initialize
+    procedure, private, pass :: &
+      Initialize_FM
+    generic, public :: &
+      Initialize => Initialize_FM
     final :: &
       Finalize  
   end type FishboneMoncriefForm
@@ -33,10 +35,13 @@ module FishboneMoncrief_Form
       DensityMax, &
       AtmosphereParameter
 
+    type ( UniverseHeaderForm ), private :: &
+      Universe  !-- Non-functional dummy argument
+
 contains
 
 
-  subroutine Initialize ( FM, Name )
+  subroutine Initialize_FM ( FM, Name )
 
     class ( FishboneMoncriefForm ), intent ( inout ) :: &
       FM
@@ -210,23 +215,22 @@ contains
     FinishTime = 1.0e-3_KDR * UNIT % SECOND
 
     call SetFluid ( FM )
-    call FM % InitializeTemplate_C_PS &
-           ( Name, TimeUnitOption = TimeUnit, FinishTimeOption = FinishTime )
+    call FM % Initialize &
+           ( Universe, Name, TimeUnitOption = TimeUnit, &
+             FinishTimeOption = FinishTime )
 
     !-- Cleanup
 
     end select !-- FA
     end select !-- PS
 
-  end subroutine Initialize
+  end subroutine Initialize_FM
 
 
   subroutine Finalize ( FM )
 
     type ( FishboneMoncriefForm ), intent ( inout ) :: &
       FM
-
-    call FM % FinalizeTemplate_C_PS ( )
 
   end subroutine Finalize
 
