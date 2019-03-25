@@ -518,7 +518,6 @@ contains
 
     call Reconstructed % Initialize &
            ( C, iaSelectedOption = C % iaReconstructed )
-
     associate &
       ( iaI => A % Connectivity % iaInner ( iDimension ), &
         iaO => A % Connectivity % iaOuter ( iDimension ) )
@@ -540,7 +539,6 @@ contains
 
     select type ( Chart => I % Chart )
     class is ( Chart_SL_Template )
-      call ComputeReconstruction_CSL ( I, C, Chart, iDimension )
       call ComputeReconstruction_CSL ( I, Reconstructed, Chart, iDimension )
     end select !-- Grid
 
