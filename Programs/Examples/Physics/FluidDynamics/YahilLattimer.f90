@@ -10,7 +10,7 @@ program YahilLattimer
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'YahilLattimer', DimensionalityOption = '1D' )
+         ( 'YahilLattimer', DimensionalityOption = '2D' )
 
   allocate ( YL )
   call YL % Initialize ( PROGRAM_HEADER % Name )
