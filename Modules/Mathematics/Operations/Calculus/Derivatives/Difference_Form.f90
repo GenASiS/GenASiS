@@ -1,8 +1,11 @@
 !-- Differences computes variable differentials on a chart: cell centered
 !   values on input yield differences on the inner face on output.
 
+#include "Preprocessor"
+
 module Difference_Form
 
+  use iso_c_binding
   use Basics
   use Manifolds
 
@@ -30,7 +33,8 @@ module Difference_Form
   end type DifferenceForm
 
     private :: &
-      ComputeChart_SL_Kernel
+      ComputeChart_SL_KernelHost, &
+      ComputeChart_SL_KernelDevice
 
 contains
 
@@ -90,16 +94,25 @@ contains
     associate &
       ( I  => Input, &
         OI => D % OutputInner )
-
+    associate &
+      ( D_I  => I % D_Selected, &
+        D_OI => OI % D_Selected, &
+        iaS  => I % iaSelected )
+    
     do iS = 1, I % nVariables
-      call CSL % SetVariablePointer &
-             ( I % Value ( :, I % iaSelected ( iS ) ), V )
-      call CSL % SetVariablePointer &
-             ( OI % Value ( :, iS ), dV_I )
-      call ComputeChart_SL_Kernel &
-             ( V, iDimension, CSL % nGhostLayers ( iDimension ), dV_I )
+      call CSL % SetVariablePointer ( I % Value ( :, iaS ( iS ) ), V )
+      call CSL % SetVariablePointer ( OI % Value ( :, iS ), dV_I )
+      if ( OI % AllocatedDevice ) then
+        call ComputeChart_SL_KernelDevice &
+               ( V, iDimension, CSL % nGhostLayers ( iDimension ), &
+                 D_I ( iaS ( iS ) ), D_OI ( iS ), dV_I )
+      else
+        call ComputeChart_SL_KernelHost &
+               ( V, iDimension, CSL % nGhostLayers ( iDimension ), dV_I )
+      end if
     end do !-- iS
-
+    
+    end associate !-- D_I, etc
     end associate !-- I, etc.
 
     nullify ( V, dV_I )
@@ -121,7 +134,7 @@ contains
   end subroutine Finalize
 
 
-  subroutine ComputeChart_SL_Kernel ( V, iD, oV, dV_I )
+  subroutine ComputeChart_SL_KernelHost ( V, iD, oV, dV_I )
 
     real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
       V
@@ -155,7 +168,8 @@ contains
     iaS = 0
     iaS ( iD ) = -1
 
-    !$OMP parallel do private ( iV, jV, kV, iaVS )
+    !$OMP  parallel do collapse ( 3 ) &
+    !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, jV, kV, iaVS )
     do kV = lV ( 3 ), uV ( 3 ) 
       do jV = lV ( 2 ), uV ( 2 )
         do iV = lV ( 1 ), uV ( 1 )
@@ -168,9 +182,72 @@ contains
         end do !-- iV
       end do !-- jV
     end do !-- kV
-    !$OMP end parallel do
+    !$OMP  end parallel do
      
-  end subroutine ComputeChart_SL_Kernel
+  end subroutine ComputeChart_SL_KernelHost
+
+
+  subroutine ComputeChart_SL_KernelDevice ( V, iD, oV, D_V, D_dV_I, dV_I )
+
+    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+      V
+    integer ( KDI ), intent ( in ) :: &
+      iD, &
+      oV
+    type ( c_ptr ), intent ( in ) :: &
+      D_V, &
+      D_dV_I   
+    real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
+      dV_I
+
+    integer ( KDI ) :: &
+      iV, jV, kV
+    integer ( KDI ), dimension ( 3 ) :: &
+      iaS, &
+      iaVS, &   
+      lV, uV
+      
+    call AssociateHost ( D_V, V )
+    call AssociateHost ( D_dV_I, dV_I )
+    
+!    dV_I = V - cshift ( V, shift = -1, dim = iD )
+
+    lV = 1
+    where ( shape ( V ) > 1 )
+      lV = oV + 1
+    end where
+    lV ( iD ) = oV
+
+    uV = 1
+    where ( shape ( V ) > 1 )
+      uV = shape ( V ) - oV
+    end where
+    uV ( iD ) = size ( V, dim = iD )
+    
+    iaS = 0
+    iaS ( iD ) = -1
+
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
+    !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, jV, kV, iaVS )
+    do kV = lV ( 3 ), uV ( 3 ) 
+      do jV = lV ( 2 ), uV ( 2 )
+        do iV = lV ( 1 ), uV ( 1 )
+
+          iaVS = [ iV, jV, kV ] + iaS
+
+          dV_I ( iV, jV, kV )  &
+            =  V ( iV, jV, kV )  -  V ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) )
+
+        end do !-- iV
+      end do !-- jV
+    end do !-- kV
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    
+    call DisassociateHost ( dV_I )
+    call DisassociateHost ( V )
+    
+     
+  end subroutine ComputeChart_SL_KernelDevice
 
 
 end module Difference_Form
