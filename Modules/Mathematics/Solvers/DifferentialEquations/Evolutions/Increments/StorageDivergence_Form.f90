@@ -124,7 +124,7 @@ contains
       call SD % Flux_IL % AllocateDevice ( )
       call SD % Flux_IR % AllocateDevice ( )
       call SD % Flux_I % AllocateDevice ( )
-      call SD % GradientPrimitive % AllocateDevice ( )
+      call SD % GradientReconstructed % AllocateDevice ( )
     end if
 
   end subroutine Allocate

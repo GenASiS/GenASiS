@@ -54,6 +54,8 @@ contains
     real ( KDR ), dimension ( 3 ) :: &
       Normal, &
       UnitNormal
+    class ( GeometryFlatForm ), pointer :: &
+      G  
 
     !-- PositionSpace
 
@@ -70,6 +72,8 @@ contains
     call PS % CreateChart ( )
     call PS % SetGeometry ( UsePinnedMemoryOption = .true. )
     call PS % Geometry_ASC % AllocateDevice ( )
+    G => PS % Geometry ( )
+    call G % UpdateDevice ( )
 
     !-- Fluid
 
@@ -181,7 +185,9 @@ contains
     call RP % Initialize ( Universe, Name )
     
     !-- Cleanup
-
+    
+    nullify ( G )
+    
     end select !-- FA
     end select !-- PS
 

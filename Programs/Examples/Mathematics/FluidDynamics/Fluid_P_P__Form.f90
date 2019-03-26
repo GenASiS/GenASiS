@@ -108,7 +108,7 @@ contains
              MassDensityUnit, EnergyDensityUnit, TemperatureUnit, &
              LimiterParameter, nValues, VariableOption = Variable, &
              VectorOption = VectorOption, NameOption = NameOption, &
-             ClearOption = ClearOption, PinnedOption = PinnedOption, 
+             ClearOption = ClearOption, PinnedOption = PinnedOption, &
              UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndicesOption )
 
