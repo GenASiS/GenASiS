@@ -179,8 +179,8 @@ contains
 
 
   subroutine InitializeTemplate &
-               ( C, RiemannSolverType, ReconstructedType, UseLimiter, 
-                 Velocity_U_Unit, LimiterParameter, nValues, VariableOption, 
+               ( C, RiemannSolverType, ReconstructedType, UseLimiter, &
+                 Velocity_U_Unit, LimiterParameter, nValues, VariableOption, &
                  VectorOption, NameOption, ClearOption, PinnedOption, &
                  UnitOption, VectorIndicesOption )
 
