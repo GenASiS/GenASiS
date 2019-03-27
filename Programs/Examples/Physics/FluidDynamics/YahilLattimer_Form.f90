@@ -1,23 +1,33 @@
 module YahilLattimer_Form
 
+  !-- Yahil and Lattimer 1982, in Supernovae: A Survey of Current Research,
+  !   ed. M. J. Rees and R. J. Stoneham, 53-70
+
+  !-- Yahil 1983, ApJ 265, 1047-1055
+
+  !-- (-t) = Minus_t_YL = CollapseTime - Time.
+  !   Here (-t) is the time expression appearing in the above papers, in 
+  !   terms of which infinite density ("catastrophe") occurs at t = 0. 
+  !   "Time" ( >= 0 ) is the time variable in the code ("code time"),
+  !   which begins at Time = 0. "CollapseTime" ( > 0 ) is the code time at 
+  !   which catastrophe would be reached.
+
   use GenASiS
 
   implicit none
   private
 
   type, public, extends ( FluidCentralCoreForm ) :: YahilLattimerForm
-  !   real ( KDR ) :: &
-  !     AdiabaticIndex, &
-  !     CentralDensity, &
-  !     CentralPressure, &
-  !     Kappa, &
-  !     t_collapse, &
-  !     t_end
-  !   real ( KDR ), dimension ( :, : ), allocatable :: &
-  !     AnalyticProfile
-  !   type ( Fluid_ASC_Form ), allocatable :: &
-  !     Reference, &
-  !     Difference
+    real ( KDR ) :: &
+      AdiabaticIndex, &
+      PolytropicConstant, &
+      DensityDimensionless, &
+      CollapseTime
+    type ( SplineInterpolationForm ), dimension ( : ), allocatable :: &
+      SplineInterpolation
+    type ( Fluid_ASC_Form ), allocatable :: &
+      Reference, &
+      Difference
   contains
     procedure, private, pass :: &
       Initialize_YL
@@ -31,24 +41,24 @@ module YahilLattimer_Form
 
     private :: &
       SetReference, &
-      InitializeFluidCentralCore
+      InitializeFluidCentralCore, &
+      InitializeDiagnostics, &
+      SetProblem
 
-!     private :: &
-!       SetFluid, &
-!       ReadTable, &
-!       PrepareInterpolation, &
+      private :: &
+        PrepareInterpolation, &
+        SetFluid
 
-! !      private :: &
-! !        SetFluidKernel
+        private :: &
+          SetFluidKernel
 
-!     integer ( KDI ), private, parameter :: &
-!       iX_TS  = 1, &  !-- must match the profile file columns
-!       iD_TS  = 2, &
-!       iV_TS  = 3, &
-!       iM_TS  = 4
-!     integer ( KDI ), private, parameter :: &
-!       iRho_SI  = 1, & !-- spline interpolation
-!       iV_SI    = 2
+    integer ( KDI ), private, parameter :: &
+      iProfile_X = 1, &  !-- must match the Profile file columns
+      iProfile_D = 2, &
+      iProfile_V = 3
+    integer ( KDI ), private, parameter :: &
+      iSpline_D = 1, & !-- spline interpolation
+      iSpline_V = 2
 
 contains
 
@@ -60,108 +70,12 @@ contains
     character ( * ), intent ( in ) :: &
       Name
 
-!     class ( Fluid_P_I_Form ), pointer :: &
-!       F, &
-!       F_R, &  !-- F_Reference
-!       F_D     !-- F_Difference
-!     real ( KDR ) :: &
-!       Rho_final, &
-!       FinishTime
-!     type ( MeasuredValueForm ), dimension ( 3 ) :: &
-!       CoordinateUnit
-!     class ( GeometryFlatForm ), pointer :: &
-!       G
-
     if ( YL % Type == '' ) &
       YL % Type = 'a YahilLattimer'
 
-!     !--Set default parameters, read parameters
-    
-!     YL % AdiabaticIndex  = 1.3_KDR
-!     YL % CentralDensity  = 7e9_KDR * UNIT % MASS_DENSITY_CGS
-!     YL % CentralPressure = 6e27_KDR * UNIT % BARYE
-    
-!     call PROGRAM_HEADER % GetParameter ( YL % AdiabaticIndex, &
-!                                          'AdiabaticIndex' )
-!     call PROGRAM_HEADER % GetParameter ( YL % CentralDensity, &
-!                                          'CentralDensity' )
-!     call PROGRAM_HEADER % GetParameter ( YL % CentralPressure, &
-!                                          'CentralPressure' )
-
-!     call Show &
-!          ( YL % CentralDensity, UNIT % MASS_DENSITY_CGS, 'CentralDensity' )
-!     call Show &
-!          ( YL % CentralPressure, UNIT % BARYE, 'CentralPressure' )
-
-!     YL % Kappa= YL % CentralPressure &
-!                   / ( YL % CentralDensity ** YL % AdiabaticIndex )
-
-!     YL % t_collapse = 0.2_KDR * UNIT % SECOND
-!     call PROGRAM_HEADER % GetParameter ( YL % t_collapse, 't_collapse' )
-!     call Show ( YL % t_collapse, UNIT % SECOND, 't_collapse' )
-
-!     Rho_final = 1e14_KDR * UNIT % MASS_DENSITY_CGS
-!     call PROGRAM_HEADER % GetParameter ( Rho_final, 'Rho_final' )
-!     call Show ( Rho_final, UNIT % MASS_DENSITY_CGS, 'Rho_final' )
-
-!     call ReadTable ( YL, YL % AnalyticProfile, Rho_final )
-!     call PROGRAM_HEADER % GetParameter ( YL % t_end, 't_end' )
-
-!     FinishTime = YL % t_collapse - YL % t_end
-!     Call Show ( FinishTime, UNIT % SECOND, 'FinishTime')
-
-!     !-- Initial Conditions
-
-!     F => FA % Fluid_P_I ( )
-!     call F % SetAdiabaticIndex ( YL % AdiabaticIndex )
-
-!     call SetFluid ( YL, F, Time = 0.0_KDR )
-
-
-!     !-- Diagnostics
-
-!     CoordinateUnit  =  [ UNIT % KILOMETER, UNIT % RADIAN, UNIT % RADIAN ]
-
-!     allocate ( YL % Reference )
-!     allocate ( YL % Difference )
-!     call YL % Reference % Initialize &
-!            ( PS, 'IDEAL', NameShortOption = 'Reference', &
-!                Velocity_U_UnitOption &
-!                  =  CoordinateUnit / UNIT % SECOND, &
-!                BaryonMassUnitOption &
-!                  =  UNIT % ATOMIC_MASS_UNIT, &
-!                NumberDensityUnitOption &
-!                  =  UNIT % FEMTOMETER ** ( -3 ), &
-!                EnergyDensityUnitOption &
-!                  =  UNIT % MEGA_ELECTRON_VOLT  &
-!                     *  UNIT % FEMTOMETER ** ( -3 ), &
-!                BaryonMassReferenceOption = CONSTANT % ATOMIC_MASS_UNIT, &
-!              AllocateSourcesOption = .false., &
-!              IgnorabilityOption = CONSOLE % INFO_2 )
-!     call YL % Difference % Initialize &
-!            ( PS, 'IDEAL', NameShortOption = 'Difference', &
-!               ! Velocity_U_UnitOption &
-!               !   =  CoordinateUnit / UNIT % SECOND, &
-!                BaryonMassUnitOption &
-!                  =  UNIT % ATOMIC_MASS_UNIT, &
-!               ! NumberDensityUnitOption &
-!               !   =  UNIT % FEMTOMETER ** ( -3 ), &
-!               ! EnergyDensityUnitOption &
-!               !   =  UNIT % MEGA_ELECTRON_VOLT  &
-!               !      *  UNIT % FEMTOMETER ** ( -3 ), &
-!                BaryonMassReferenceOption = CONSTANT % ATOMIC_MASS_UNIT, &
-!              AllocateSourcesOption = .false., &
-!              IgnorabilityOption = CONSOLE % INFO_2 )
-
-!     F_R => YahilLattimer % Reference % Fluid_P_I ( )
-!     call F_R % SetAdiabaticIndex ( YL % AdiabaticIndex )
-
-!     !-- Cleanup
-
-!     end select !-- FA
-!     end select !-- PS
-!     end select !-- FCC
-!     nullify ( F, F_R )
+    call InitializeFluidCentralCore ( YL, Name )
+    call InitializeDiagnostics ( YL )
+    call SetProblem ( YL )
 
   end subroutine Initialize_YL
 
@@ -170,6 +84,13 @@ contains
     
     type ( YahilLattimerForm ), intent ( inout ) :: &
       YL
+
+    if ( allocated ( YL % Difference ) ) &
+      deallocate ( YL % Difference )
+    if ( allocated ( YL % Reference ) ) &
+      deallocate ( YL % Reference )
+    if ( allocated ( YL % SplineInterpolation ) ) &
+      deallocate ( YL % SplineInterpolation )
 
   end subroutine Finalize
 
@@ -223,6 +144,204 @@ contains
     YL % Integrator % SetReference => SetReference
 
   end subroutine InitializeFluidCentralCore
+
+
+  subroutine InitializeDiagnostics ( YL )
+
+    class ( YahilLattimerForm ), intent ( inout ) :: &
+      YL
+
+    class ( Fluid_P_I_Form ), pointer :: &
+      F_R  !-- F_Reference
+
+    select type ( PS => YL % Integrator % PositionSpace )
+    class is ( Atlas_SC_Form )
+
+    allocate ( YL % Reference )
+    allocate ( YL % Difference )
+    call YL % Reference % Initialize &
+           ( PS, 'IDEAL', YL % Units, NameShortOption = 'Reference', &
+             AllocateSourcesOption = .false., &
+             IgnorabilityOption = CONSOLE % INFO_2 )
+    call YL % Difference % Initialize &
+           ( PS, 'IDEAL', YL % Units, NameShortOption = 'Difference', &
+             AllocateSourcesOption = .false., &
+             IgnorabilityOption = CONSOLE % INFO_2 )
+
+    end select !-- PS
+
+    F_R => YL % Reference % Fluid_P_I ( )
+    call F_R % SetAdiabaticIndex ( YL % AdiabaticIndex )
+    nullify ( F_R )
+
+  end subroutine InitializeDiagnostics
+
+
+  subroutine SetProblem ( YL )
+
+    class ( YahilLattimerForm ), intent ( inout ) :: &
+      YL
+
+    real ( KDR ) :: &
+      GC, &
+      DensityInitial, &
+      PressureInitial, &
+      DensityFinal, &
+      CollapseTime
+    class ( GeometryFlatForm ), pointer :: &
+      G
+    class ( Fluid_P_I_Form ), pointer :: &
+      F
+
+    select type ( I => YL % Integrator )
+    class is ( Integrator_C_PS_Form )
+
+    select type ( FA => I % Current_ASC )
+    class is ( Fluid_ASC_Form )
+
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
+
+    call PrepareInterpolation ( YL )
+
+    GC  =  CONSTANT % GRAVITATIONAL
+
+    associate &
+      ( Gamma => YL % AdiabaticIndex, &
+        Kappa => YL % PolytropicConstant, &
+          T_C => YL % CollapseTime, &
+          D_0 => YL % DensityDimensionless, &
+        Rho_I => DensityInitial, &
+          P_I => PressureInitial, &
+        Rho_F => DensityFinal, &
+          T_F => I % FinishTime )
+
+    Gamma  =  1.30_KDR
+    Rho_I  =  7.0e9_KDR * UNIT % MASS_DENSITY_CGS
+      P_I  =  6.0e27_KDR * UNIT % BARYE
+    Rho_F  =  1.0e14_KDR * UNIT % MASS_DENSITY_CGS
+    call PROGRAM_HEADER % GetParameter ( Gamma, 'AdiabaticIndex' )
+    call PROGRAM_HEADER % GetParameter ( Rho_I, 'DensityInitial' )
+    call PROGRAM_HEADER % GetParameter ( P_I, 'PressureInitial' )
+    call PROGRAM_HEADER % GetParameter ( Rho_F, 'DensityFinal' )
+
+    Kappa  =  P_I  /  Rho_I ** Gamma
+      T_C  =  sqrt ( D_0 / ( GC * Rho_I ) ) 
+      T_F  =  T_C  -  sqrt ( D_0 / ( GC * Rho_F ) ) 
+
+    call Show ( Gamma, 'AdiabaticIndex' )
+    call Show ( Rho_I, UNIT % MASS_DENSITY_CGS, 'DensityInitial' )
+    call Show ( P_I, UNIT % BARYE, 'PressureInitial' )
+    call Show ( Rho_F, UNIT % MASS_DENSITY_CGS, 'DensityFinal' )
+    call Show ( T_C, UNIT % SECOND, 'CollapseTime' )
+    call Show ( T_F, UNIT % SECOND, 'Reset FinishTime' )
+
+    select type ( PSC => PS % Chart )
+    class is ( Chart_SL_Template )
+
+    G => PS % Geometry ( )
+    F => FA % Fluid_P_I ( )
+    call SetFluid ( YL, F, G, PSC % IsProperCell )
+
+    end select !-- PSC
+    end associate !-- Gamma, etc.
+    end select !-- PS
+    end select !-- FA
+    end select !-- I
+    nullify ( G, F )
+
+  end subroutine SetProblem
+
+
+  subroutine PrepareInterpolation ( YL )
+
+    class ( YahilLattimerForm ), intent ( inout ) :: &
+      YL
+
+    real ( KDR ), dimension ( : ), allocatable :: &
+      X, &
+      D, &
+      V
+    real ( KDR ), dimension ( :, : ), allocatable :: &
+      Profile
+    character ( LDF ) :: &
+      Path, &
+      Filename
+    type ( TableStreamForm ) :: &
+      TS
+
+    call Show ( 'Preparing Interpolation' )
+
+    Path = '../Parameters/'
+    FileName = 'YahilLattimerCollapse_Gm_130.dat'
+    
+    call PROGRAM_HEADER % GetParameter ( Filename, 'Filename' )
+    call Show ( Filename, 'Filename' )
+
+    call TS % Initialize &
+           ( Filename, PROGRAM_HEADER % Communicator % Rank, &
+             PathOption = Path )
+    call TS % Read ( Profile, oRowOption = 1 )
+
+    YL % DensityDimensionless  =  Profile ( 1, iProfile_D )
+
+    allocate ( YL % SplineInterpolation ( 2 ) )
+    associate &
+      ( SI => YL % SplineInterpolation, &
+        nProfile => size ( Profile, dim = 1 ) )
+
+    allocate ( X ( nProfile + 1 ) )
+    allocate ( D ( nProfile + 1 ) ) 
+    allocate ( V ( nProfile + 1 ) )
+
+    X ( 2 : )  =  Profile ( :, iProfile_X )
+    D ( 2 : )  =  Profile ( :, iProfile_D )
+    V ( 2 : )  =  Profile ( :, iProfile_V )
+
+    X ( 1 )  =  0.0_KDR
+    D ( 1 )  =  D ( 2 )
+    V ( 1 )  =  0.0_KDR
+
+    call SI ( iSpline_D ) % Initialize &
+           ( X, D, VerbosityOption = CONSOLE % INFO_3 )
+    call SI ( iSpline_V ) % Initialize &
+           ( X, V, VerbosityOption = CONSOLE % INFO_3 )
+
+    end associate !-- SI, etc.
+
+  end subroutine PrepareInterpolation
+
+
+  subroutine SetFluid ( YL, F, G, IsProperCell )
+
+    class ( YahilLattimerForm ), intent ( inout ) :: &
+      YL
+    class ( Fluid_P_I_Form ), intent ( inout ) :: &
+      F
+    class ( GeometryFlatForm ), intent ( in ) :: &
+      G
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      IsProperCell
+
+    call SetFluidKernel &
+           (    N = F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
+                E = F % Value ( :, F % INTERNAL_ENERGY ), &
+              V_1 = F % Value ( :, F % VELOCITY_U ( 1 ) ), &
+              V_2 = F % Value ( :, F % VELOCITY_U ( 2 ) ), &
+              V_3 = F % Value ( :, F % VELOCITY_U ( 3 ) ), &
+             SI_D = YL % SplineInterpolation ( iSpline_D ), &
+             SI_V = YL % SplineInterpolation ( iSpline_V ), &
+             IsProperCell = IsProperCell, &
+                        R = G % Value ( :, G % CENTER_U ( 1 ) ), &
+               Minus_t_YL = YL % CollapseTime - YL % Integrator % Time, &
+                    Gamma = YL % AdiabaticIndex, &
+                    Kappa = YL % PolytropicConstant, &
+                        G = CONSTANT % GRAVITATIONAL, &
+                      amu = CONSTANT % ATOMIC_MASS_UNIT )
+
+    call F % ComputeFromPrimitive ( G )
+
+  end subroutine SetFluid
 
 
 !   subroutine SetFluid ( YL, F, Time )
@@ -303,104 +422,65 @@ contains
 !   end subroutine SetFluid
 
 
-!   subroutine ReadTable ( YL, AP, Rho_final )
-    
-!     class ( YahilLattimerForm ), intent ( inout ) :: &
-!       YL
-!     real ( KDR ), dimension ( :, : ), allocatable, intent ( inout ) :: &
-!       AP
-!     real ( KDR ), intent ( in ) :: &
-!       Rho_final
-   
-!     character ( LDF ) :: &
-!       Path, &
-!       FileName
-!     type ( TableStreamForm ) :: &
-!       TS
+  subroutine SetFluidKernel &
+               ( N, E, V_1, V_2, V_3, SI_D, SI_V, IsProperCell, R, &
+                 Minus_t_YL, Gamma, Kappa, G, amu )
 
-!     Path = '../Parameters/'
-!     FileName = 'YahilLattimerCollapse_Gm_130.dat'
-    
-!     call PROGRAM_HEADER % GetParameter &
-!            ( FileName, 'FileName' )
-!     call Show ( FileName, 'FileName' )
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      N, &
+      E, &
+      V_1, V_2, V_3
+    type ( SplineInterpolationForm ), intent ( in ) :: &
+      SI_D, &
+      SI_V
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      IsProperCell
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      R
+    real ( KDR ) :: &
+      Minus_t_YL, &
+      Gamma, &
+      Kappa, &
+      G, &
+      amu
 
-!     call TS % Initialize &
-!            ( Filename, PROGRAM_HEADER % Communicator % Rank, &
-!              PathOption = Path )
-!     call TS % Read ( AP, oRowOption = 1 )
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+    real ( KDR ) :: &
+      X, &
+      D, &
+      V
 
-!     YL % t_end &
-!          = sqrt ( AP ( 1, iD_TS ) / ( Rho_final * CONSTANT % GRAVITATIONAL ) )
+    nValues = size ( N )
+      
+    !$OMP parallel do private ( iV )
+    do iV = 1, nValues
 
-!   end subroutine ReadTable
+      if ( .not. IsProperCell ( iV ) ) &
+        cycle
 
+      X  =  Kappa ** ( -0.5_KDR )  *  G ** ( ( Gamma - 1.0_KDR ) / 2.0_KDR )  &
+            *  R ( iV )  *  Minus_t_YL ** ( Gamma - 2.0_KDR )
+ 
+      call SI_D % Evaluate ( X, D )
+      call SI_V % Evaluate ( X, V )
 
-!   subroutine PrepareInterpolation ( SI, AP, Kappa, Gamma, T )
+      N ( iV )  =  D / ( amu  *  G  *  Minus_t_YL ** 2 )
 
-!     type ( SplineInterpolationForm ), dimension ( 2 ), intent ( inout ) :: &
-!       SI
-!     real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-!       AP
-!     real ( KDR ), intent ( in ) :: &
-!       Kappa, &
-!       Gamma, &
-!       T
+      E ( iV )  =  Kappa  *  D ** Gamma  /  ( Gamma - 1.0_KDR )
 
-!     integer ( KDI ) :: &
-!       iV
-!     real ( KDR ) :: &
-!       Slope_Rho, &
-!       Slope_V
-!     real ( KDR ), dimension ( : ), allocatable :: &
-!       R, &   !-- RCenter
-!       R_Edge, &
-!       dR, &  !-- CellWidth
-!       Rho, &
-!       V
+      V_1 ( iV )  =  V  *  Kappa ** ( 0.5_KDR )  &
+                     *  G ** ( ( 1.0_KDR - Gamma ) / 2.0_KDR )  &
+                     *  Minus_t_YL ** ( 1.0_KDR - Gamma )
 
-!     associate &
-!       ( X   => AP ( :, iX_TS ), &  !-- cell center
-!         D   => AP ( :, iD_TS ), &  !-- cell center 
-!         V_P => AP ( :, iV_TS ), &  !-- cell center
-!         M   => AP ( :, iM_TS ), &  !-- cell center
-!         nProfile => size ( AP, dim = 1 ) )
-    
-!     allocate ( R      ( nProfile + 1 ), &
-!                Rho    ( nProfile + 1 ), &
-!                V      ( nProfile + 1 ) )
-    
-!     R ( 2 : nProfile + 1 ) &
-!       = ( sqrt ( Kappa ) * CONSTANT % GRAVITATIONAL &
-!                              ** ( ( 1.0_KDR - Gamma ) / 2 ) &
-!          * T ** ( 2.0_KDR - Gamma ) ) * X 
+      V_2 ( iV )  =  0.0_KDR
+      V_3 ( iV )  =  0.0_KDR
 
-!     Rho ( 2 : nProfile + 1 ) &
-!       = D / ( CONSTANT % GRAVITATIONAL * T * T ) 
+    end do
+    !$OMP end parallel do
 
-!     V ( 2 : nProfile + 1 ) &
-!       = ( sqrt ( Kappa ) * CONSTANT % GRAVITATIONAL &
-!                              ** ( ( 1.0 - Gamma ) / 2 ) &
-!           * T ** ( 1.0_KDR - Gamma ) ) * V_P 
-
-!     R ( 1 ) = 0.0_KDR
-    
-!     Slope_Rho = ( Rho ( 3 ) - Rho ( 2 ) ) / ( R ( 3 ) - R ( 2 ) )
-!     Slope_V   = ( V   ( 3 ) - V   ( 2 ) ) / ( R ( 3 ) - R ( 2 ) )
-
-!      Rho ( 1 ) = Rho ( 2 ) - Slope_Rho * R ( 2 )
-!      V   ( 1 ) = V   ( 2 ) - Slope_V   * R ( 2 ) 
-
-!    !-- SplineInterpolation initialization
-
-!     call SI ( iRho_SI ) % Initialize &
-!            ( R, Rho, VerbosityOption = CONSOLE % INFO_3 )
-!     call SI ( iV_SI ) % Initialize &
-!            ( R, V, VerbosityOption = CONSOLE % INFO_3 )
-
-!     end associate !-- R, etc
-
-!   end subroutine PrepareInterpolation
+  end subroutine SetFluidKernel
 
 
   subroutine ComputeError ( YL )
