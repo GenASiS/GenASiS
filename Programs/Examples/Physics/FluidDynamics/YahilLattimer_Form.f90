@@ -151,9 +151,6 @@ contains
     class ( YahilLattimerForm ), intent ( inout ) :: &
       YL
 
-    class ( Fluid_P_I_Form ), pointer :: &
-      F_R  !-- F_Reference
-
     select type ( PS => YL % Integrator % PositionSpace )
     class is ( Atlas_SC_Form )
 
@@ -169,10 +166,6 @@ contains
              IgnorabilityOption = CONSOLE % INFO_2 )
 
     end select !-- PS
-
-    F_R => YL % Reference % Fluid_P_I ( )
-    call F_R % SetAdiabaticIndex ( YL % AdiabaticIndex )
-    nullify ( F_R )
 
   end subroutine InitializeDiagnostics
 
@@ -322,6 +315,8 @@ contains
       G
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       IsProperCell
+
+    call F % SetAdiabaticIndex ( YL % AdiabaticIndex )
 
     call SetFluidKernel &
            (    N = F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
