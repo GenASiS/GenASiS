@@ -159,7 +159,7 @@ contains
     G => PS % Geometry ( )
 
     F_R => PW % Reference % Fluid_D ( )
-    call SetFluid ( PW, F_R, G, I % Time )
+    call SetFluid ( PW, F_R, G )
 
     F_D => PW % Difference % Fluid_D ( )
     call MultiplyAdd ( F % Value, F_R % Value, -1.0_KDR, F_D % Value )
@@ -268,7 +268,7 @@ contains
 
     G => PS % Geometry ( )
     F => FA % Fluid_D ( )
-    call SetFluid ( PW, F, G, Time = 0.0_KDR )
+    call SetFluid ( PW, F, G )
 
     end associate !-- K, etc.
     end associate !-- BoxSize
@@ -281,7 +281,7 @@ contains
   end subroutine SetProblem
 
 
-  subroutine SetFluid ( PW, F, G, Time )
+  subroutine SetFluid ( PW, F, G )
 
     class ( PlaneWaveTemplate ), intent ( in ) :: &
       PW
@@ -289,8 +289,6 @@ contains
       F
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), intent ( in ) :: &
-      Time
     
     call SetFluidKernel &
            ( PW, &
@@ -299,7 +297,7 @@ contains
              Z = G % Value ( :, G % CENTER_U ( 3 ) ), &
              K = PW % Wavenumber, &
              V = PW % Speed, &
-             T = Time, &
+             T = PW % Integrator % Time, &
              N  = F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
              VX = F % Value ( :, F % VELOCITY_U ( 1 ) ), &
              VY = F % Value ( :, F % VELOCITY_U ( 2 ) ), &
