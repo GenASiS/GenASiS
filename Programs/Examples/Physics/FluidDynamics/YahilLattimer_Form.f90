@@ -82,6 +82,80 @@ contains
   end subroutine Initialize_YL
 
 
+  subroutine ComputeError ( YL )
+
+    class ( YahilLattimerForm ) , intent ( in ) :: &
+      YL
+    
+    real ( KDR ) :: &
+      L1_Rho, &
+      L1_V, &
+      L1_P
+    class ( Fluid_P_I_Form ), pointer :: &
+      F_D, &
+      F_R
+    type ( CollectiveOperation_R_Form ) :: &
+      CO
+
+    select type ( PS => YL % Integrator % PositionSpace )
+    class is ( Atlas_SC_Form )
+    
+    select type ( PSC => PS % Chart ) 
+    class is ( Chart_SLD_Form )
+    
+    F_D => YL % Difference % Fluid_P_I ( )
+    F_R => YL % Reference % Fluid_P_I ( )
+    
+    call CO % Initialize ( PS % Communicator, [ 6 ], [ 6 ] )
+
+    associate &
+      ( D_Rho => F_D % Value ( :, F_D % COMOVING_BARYON_DENSITY ), &
+        R_Rho => F_R % Value ( :, F_R % COMOVING_BARYON_DENSITY ), &
+          D_V => F_D % Value ( :, F_D % VELOCITY_U ( 1 ) ), &
+          R_V => F_R % Value ( :, F_R % VELOCITY_U ( 1 ) ), &
+          D_P => F_D % Value ( :, F_D % PRESSURE ), &
+          R_P => F_R % Value ( :, F_R % PRESSURE ), &
+        Norm_D_Rho => CO % Incoming % Value ( 1 ), &
+        Norm_R_Rho => CO % Incoming % Value ( 2 ), &
+          Norm_D_V => CO % Incoming % Value ( 3 ), &
+          Norm_R_V => CO % Incoming % Value ( 4 ), &
+          Norm_D_P => CO % Incoming % Value ( 5 ), &
+          Norm_R_P => CO % Incoming % Value ( 6 ) )
+
+    CO % Outgoing % Value ( 1 ) &
+      = sum ( abs ( D_Rho ), mask = PSC % IsProperCell )
+    CO % Outgoing % Value ( 2 ) &
+      = sum ( abs ( R_Rho ), mask = PSC % IsProperCell )
+    CO % Outgoing % Value ( 3 ) &
+      = sum ( abs ( D_V ), mask = PSC % IsProperCell )
+    CO % Outgoing % Value ( 4 ) &
+      = sum ( abs ( R_V ), mask = PSC % IsProperCell )
+    CO % Outgoing % Value ( 5 ) &
+      = sum ( abs ( D_P ), mask = PSC % IsProperCell )
+    CO % Outgoing % Value ( 6 ) &
+      = sum ( abs ( R_P ), mask = PSC % IsProperCell )
+
+    call CO % Reduce ( REDUCTION % SUM )
+
+    L1_Rho = Norm_D_Rho / Norm_R_Rho
+      L1_V = Norm_D_V / Norm_R_V
+      L1_P = Norm_D_P / Norm_R_P
+
+    call Show ( L1_Rho, '*** L1_Rho error', nLeadingLinesOption = 2, &
+                nTrailingLinesOption = 2 )
+    call Show ( L1_V, '*** L1_V error', nLeadingLinesOption = 2, &
+                nTrailingLinesOption = 2 )
+    call Show ( L1_P, '*** L1_P error', nLeadingLinesOption = 2, &
+                nTrailingLinesOption = 2 )
+
+    end associate !-- D_Rho, etc.
+    end select !-- PSC
+    end select !-- PS
+    nullify ( F_D, F_R )
+
+  end subroutine ComputeError
+
+
   impure elemental subroutine Finalize ( YL )
     
     type ( YahilLattimerForm ), intent ( inout ) :: &
@@ -102,34 +176,42 @@ contains
     class ( IntegratorTemplate ), intent ( inout ) :: &
       I
 
-!     class ( Fluid_P_I_Form ), pointer :: &
-!       F, &
-!       F_R, &  !-- F_Reference
-!       F_D     !-- F_Difference
-!     integer ( KDI ) :: &
-!       iV
-!     real ( KDR ) :: &
-!       R_Max
+    class ( GeometryFlatForm ), pointer :: &
+      G
+    class ( Fluid_P_I_Form ), pointer :: &
+      F, &
+      F_R, &  !-- F_Reference
+      F_D     !-- F_Difference
 
-!     select type ( FCC )
-!     class is ( FluidCentralCoreForm )
-!     select type ( FA => FCC % Current_ASC )
-!     class is ( Fluid_ASC_Form )
-!     F => FA % Fluid_P_I ( )
+    select type ( I )
+    class is ( Integrator_C_PS_Form )
 
-!     F_R => YahilLattimer % Reference % Fluid_P_I ( )
-!     call SetFluid ( YahilLattimer, F_R, FCC % Time )
+    select type ( YL => I % Universe )
+    class is ( YahilLattimerForm )
 
-!     F_D => YahilLattimer % Difference % Fluid_P_I ( )
-!     call MultiplyAdd ( F % Value, F_R % Value, -1.0_KDR, F_D % Value )
+    select type ( FA => I % Current_ASC )
+    class is ( Fluid_ASC_Form )
+    F => FA % Fluid_P_I ( )
 
-!     F_D % Value = abs ( F_D % Value &
-!                           / max ( abs ( F_R % Value ), &
-!                                     sqrt ( tiny ( 0.0_KDR ) ) ) )
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
+    G => PS % Geometry ( )
 
-!     end select !-- FA
-!     end select !-- FCC
-!     nullify ( F, F_R, F_D )
+    select type ( PSC => PS % Chart )
+    class is ( Chart_SLD_Form )
+
+    F_R => YL % Reference % Fluid_P_I ( )
+    call SetFluid ( YL, F_R, G, PSC )
+
+    F_D => YL % Difference % Fluid_P_I ( )
+    call MultiplyAdd ( F % Value, F_R % Value, -1.0_KDR, F_D % Value )
+
+    end select !-- PSC
+    end select !-- PS
+    end select !-- FA
+    end select !-- OS
+    end select !-- I
+    nullify ( G, F, F_R, F_D )
 
   end subroutine SetReference
 
@@ -230,11 +312,11 @@ contains
     call Show ( T_F, UNIT % SECOND, 'Reset FinishTime' )
 
     select type ( PSC => PS % Chart )
-    class is ( Chart_SL_Template )
+    class is ( Chart_SLD_Form )
 
     G => PS % Geometry ( )
     F => FA % Fluid_P_I ( )
-    call SetFluid ( YL, F, G, PSC % IsProperCell )
+    call SetFluid ( YL, F, G, PSC )
 
     end select !-- PSC
     end associate !-- Gamma, etc.
@@ -305,16 +387,16 @@ contains
   end subroutine PrepareInterpolation
 
 
-  subroutine SetFluid ( YL, F, G, IsProperCell )
+  subroutine SetFluid ( YL, F, G, PSC )
 
     class ( YahilLattimerForm ), intent ( inout ) :: &
       YL
     class ( Fluid_P_I_Form ), intent ( inout ) :: &
       F
+    class ( Chart_SLD_Form ), intent ( inout ) :: &
+      PSC
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    logical ( KDL ), dimension ( : ), intent ( in ) :: &
-      IsProperCell
 
     call F % SetAdiabaticIndex ( YL % AdiabaticIndex )
     call F % SetFiducialParameters &
@@ -329,7 +411,7 @@ contains
               V_3 = F % Value ( :, F % VELOCITY_U ( 3 ) ), &
              SI_D = YL % SplineInterpolation ( iSpline_D ), &
              SI_V = YL % SplineInterpolation ( iSpline_V ), &
-             IsProperCell = IsProperCell, &
+             IsProperCell = PSC % IsProperCell, &
                         R = G % Value ( :, G % CENTER_U ( 1 ) ), &
                Minus_t_YL = YL % CollapseTime - YL % Integrator % Time, &
                     Gamma = YL % AdiabaticIndex, &
@@ -338,86 +420,9 @@ contains
                       amu = CONSTANT % ATOMIC_MASS_UNIT )
 
     call F % ComputeFromPrimitive ( G )
+    call PSC % ExchangeGhostData ( F )
 
   end subroutine SetFluid
-
-
-!   subroutine SetFluid ( YL, F, Time )
-
-!     class ( YahilLattimerForm ), intent ( inout ) :: &
-!       YL
-!     class ( Fluid_P_I_Form ), intent ( inout ) :: &
-!       F
-!     real ( KDR ), intent ( in ) :: &
-!       Time
-
-!     class ( GeometryFlatForm ), pointer :: &
-!       G
-!     integer ( KDI ) :: &
-!       iV
-!     real ( KDR ) :: &
-!       T, &
-!       R_TM
-!     real ( KDR ), dimension ( : ), allocatable :: &
-!       R, &
-!       Rho, &
-!       V
-!     type ( SplineInterpolationForm ), dimension ( 2 ) :: &
-!       SI
-
-!     !-- Interpolate self similar solution
-
-!     T = YL % t_collapse - Time
-
-!     call PrepareInterpolation &
-!            ( SI, YL % AnalyticProfile, YL % Kappa, &
-!              YL % AdiabaticIndex, T )
-
-!     select type ( PS => YL % Integrator % PositionSpace )
-!     class is ( Atlas_SC_Form )
-!     G => PS % Geometry ( )
-
-!     select type ( Grid => PS % Chart )
-!     class is ( Chart_SL_Template )
-
-!     select type ( C => PS % Chart )
-!     class is ( Chart_SLD_Form )
-
-!     associate &
-!       ( R    => G % Value ( :, G % CENTER_U ( 1 ) ), &
-!         Rho  => F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
-!         V_1  => F % Value ( :, F % VELOCITY_U ( 1 ) ), &
-!         V_2  => F % Value ( :, F % VELOCITY_U ( 2 ) ), &
-!         V_3  => F % Value ( :, F % VELOCITY_U ( 3 ) ), &
-!         E    => F % Value ( :, F % INTERNAL_ENERGY ), &
-!         P    => F % Value ( :, F % PRESSURE ) )
-
-!     V_2 = 0.0_KDR
-!     V_3 = 0.0_KDR
-
-!       do iV = 1, size ( R )
-!         if ( R ( iV ) < 0.0_KDR ) &
-!              cycle
-!         call SI ( iRHO_SI ) &
-!                 % Evaluate ( R ( iV ), Rho ( iV ) )
-!         call SI ( iV_SI ) &
-!                 % Evaluate ( R ( iV ), V_1 ( iV ) )
-!         P ( iV ) = YL % Kappa * Rho ( iV ) ** ( YL % AdiabaticIndex )
-!         E ( iV ) = P ( iV ) / ( YL % AdiabaticIndex - 1.0_KDR )
-!       end do
-      
-!       Rho = Rho / CONSTANT % ATOMIC_MASS_UNIT
-
-!       call F % ComputeFromPrimitive ( G )
-
-!     end associate !-- R, etc.
-!     end select    !-- C
-!     end select    !-- Grid
-!     end select    !-- PS
-
-!     nullify ( G )
-
-!   end subroutine SetFluid
 
 
   subroutine SetFluidKernel &
@@ -480,102 +485,6 @@ contains
     !$OMP end parallel do
 
   end subroutine SetFluidKernel
-
-
-  subroutine ComputeError ( YL )
-
-    class ( YahilLattimerForm ) , intent ( in ) :: &
-      YL
-    
-!     real ( KDR ) :: &
-!       L1_Rho, &
-!       L1_V, &
-!       L1_P
-!     class ( Fluid_P_I_Form ), pointer :: &
-!       F, &
-!       F_D, &
-!       F_R
-!     type ( CollectiveOperation_R_Form ) :: &
-!       CO
-
-!     select type ( FCC => YL % Integrator )
-!     type is ( FluidCentralCoreForm )
-!     select type ( PS => FCC % PositionSpace )
-!     class is ( Atlas_SC_Form ) 
-!     select type ( C => PS % Chart )
-!     class is ( Chart_SL_Template )
-!     select type ( FA => FCC % Current_ASC )
-!     class is ( Fluid_ASC_Form )
-!     F => FA % Fluid_P_I ( )
-
-!     F_R => YL % Reference % Fluid_P_I ( )
-!     call SetFluid ( YahilLattimer, F_R, FCC % Time )
-
-!     F_D => YL % Difference % Fluid_P_I ( )
-!     call MultiplyAdd ( F % Value, F_R % Value, -1.0_KDR, F_D % Value )
-       
-    
-!     associate &
-!       ( Difference_Rho &
-!           => F_D % Value ( :, F_D % COMOVING_BARYON_DENSITY ), &
-!         Reference_Rho &
-!           => F_R % Value ( :, F_R % COMOVING_BARYON_DENSITY ), &
-!         Difference_V   &
-!           => F_D % Value ( :, F_D % VELOCITY_U ( 1 ) ), &
-!         Reference_V   &
-!           => F_R % Value ( :, F_R % VELOCITY_U ( 1 ) ), &
-!         Difference_P   &
-!           => F_D % Value ( :, F_D % PRESSURE ), &
-!         Reference_P   &
-!           => F_R % Value ( :, F_R % PRESSURE ) )
-
-!     call CO % Initialize ( PS % Communicator, [ 6 ], [ 6 ] )
-
-!     CO % Outgoing % Value ( 1 ) = sum ( abs ( Difference_Rho ), &
-!                                         mask = C % IsProperCell )
-!     CO % Outgoing % Value ( 2 ) = sum ( abs ( Reference_Rho ), &
-!                                         mask = C % IsProperCell )
-!     CO % Outgoing % Value ( 3 ) = sum ( abs ( Difference_V ), &
-!                                         mask = C % IsProperCell )
-!     CO % Outgoing % Value ( 4 ) = sum ( abs ( Reference_V ), &
-!                                         mask = C % IsProperCell )
-!     CO % Outgoing % Value ( 5 ) = sum ( abs ( Difference_P ), &
-!                                         mask = C % IsProperCell )
-!     CO % Outgoing % Value ( 6 ) = sum ( abs ( Reference_P ), &
-!                                         mask = C % IsProperCell )
-
-!     call CO % Reduce ( REDUCTION % SUM )
-
-!     end associate !-- Difference_Rho, etc.
-    
-!     associate &
-!       ( DifferenceSum_Rho  => CO % Incoming % Value ( 1 ), &
-!         ReferenceSum_Rho   => CO % Incoming % Value ( 2 ), &
-!         DifferenceSum_V    => CO % Incoming % Value ( 3 ), &
-!         ReferenceSum_V     => CO % Incoming % Value ( 4 ), &
-!         DifferenceSum_P    => CO % Incoming % Value ( 5 ), &
-!         ReferenceSum_P     => CO % Incoming % Value ( 6 ) )
-
-!     L1_Rho = DifferenceSum_Rho / ReferenceSum_Rho
-!     L1_V   = DifferenceSum_V   / ReferenceSum_V
-!     L1_P   = DifferenceSum_P   / ReferenceSum_P
-!     end associate
-
-!     call Show ( L1_Rho, '*** L1_Rho error', nLeadingLinesOption = 2, &
-!                 nTrailingLinesOption = 2 )
-!     call Show ( L1_V, '*** L1_V error', nLeadingLinesOption = 2, &
-!                 nTrailingLinesOption = 2 )
-!     call Show ( L1_P, '*** L1_P error', nLeadingLinesOption = 2, &
-!                 nTrailingLinesOption = 2 )
-
-!     end select !-- FA
-!     end select !-- C
-!     end select !-- PS
-!     end select !--FCC
-
-!     nullify ( F, F_R, F_D )
-
-  end subroutine ComputeError
 
 
 end module YahilLattimer_Form
