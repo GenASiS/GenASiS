@@ -39,18 +39,15 @@ contains
 
 
   subroutine InitializeAllocate_I &
-               ( I, MomentsType, LengthUnit, EnergyDensityUnit, &
-                 TemperatureUnit, nValues, VariableOption, NameOption, &
+               ( I, MomentsType, Units, nValues, VariableOption, NameOption, &
                  ClearOption, UnitOption )
 
     class ( Interactions_MWV_1_Form ), intent ( inout ) :: &
       I
     character ( * ), intent ( in ) :: &
       MomentsType
-    type ( MeasuredValueForm ), intent ( in ) :: &
-      LengthUnit, &
-      EnergyDensityUnit, &
-      TemperatureUnit
+    class ( StressEnergyUnitsForm ), intent ( in ) :: &
+      Units
     integer ( KDI ), intent ( in ) :: &
       nValues
     character ( * ), dimension ( : ), intent ( in ), optional :: &
@@ -66,8 +63,8 @@ contains
       I % Type = 'an Interactions_MWV_1'
 
     call I % InitializeTemplate &
-           ( MomentsType, LengthUnit, EnergyDensityUnit, TemperatureUnit, &
-             nValues, VariableOption, NameOption, ClearOption, UnitOption )
+           ( MomentsType, Units, nValues, VariableOption, NameOption, &
+             ClearOption, UnitOption )
 
   end subroutine InitializeAllocate_I
 

@@ -24,22 +24,19 @@ contains
 
 
   subroutine Initialize &
-               ( IC, C, NameShort, InteractionsType, MomentsType, LengthUnit, &
-                 EnergyDensityUnit, TemperatureUnit, nValues, &
-                 IgnorabilityOption  )
+               ( IC, C, NameShort, InteractionsType, MomentsType, Units, &
+                 nValues, IgnorabilityOption  )
 
     class ( InteractionsExamples_CSL_Form ), intent ( inout ) :: &
       IC
-    class ( ChartHeader_SL_Form ), intent ( in ), target :: &
+    class ( ChartHeader_SL_Form ), intent ( in ) :: &
       C
     character ( * ), intent ( in ) :: &
       NameShort, &
       InteractionsType, &
       MomentsType
-    type ( MeasuredValueForm ), intent ( in ) :: &
-      LengthUnit, &
-      EnergyDensityUnit, &
-      TemperatureUnit
+    class ( StressEnergyUnitsForm ), intent ( in ) :: &
+      Units
     integer ( KDI ), intent ( in ) :: &
       nValues
     integer ( KDI ), intent ( in ), optional :: &
@@ -49,8 +46,7 @@ contains
       IC % Type = 'an InteractionsExamples_CSL'
 
     call IC % IntializeTemplate_I_CSL &
-           ( C, NameShort, InteractionsType, MomentsType, LengthUnit, &
-             EnergyDensityUnit, TemperatureUnit, nValues, &
+           ( C, NameShort, InteractionsType, MomentsType, Units, nValues, &
              IgnorabilityOption )
 
   end subroutine Initialize

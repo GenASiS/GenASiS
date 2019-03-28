@@ -37,28 +37,24 @@ contains
 
 
   subroutine Initialize &
-               ( IB, B, InteractionsType, NameShortOption, LengthUnitOption, &
-                 EnergyDensityUnitOption, TemperatureUnitOption )
+               ( IB, B, InteractionsType, Units, NameShortOption )
 
     class ( InteractionsExamples_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
       IB
-    class ( Bundle_SLL_ASC_CSLD_Form ), intent ( in ), target :: &
+    class ( Bundle_SLL_ASC_CSLD_Form ), intent ( in ) :: &
       B
     character ( * ), intent ( in ) :: &
       InteractionsType
+    class ( StressEnergyUnitsForm ), intent ( in ) :: &
+      Units
     character ( * ), intent ( in ), optional :: &
       NameShortOption
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
-      LengthUnitOption, &
-      EnergyDensityUnitOption, &
-      TemperatureUnitOption
 
     if ( IB % Type == '' ) &
       IB % Type = 'an InteractionsExamples_BSLL_ASC_CSLD'
 
     call IB % InitializeTemplate_I_BSLL_ASC_CSLD &
-           ( B, InteractionsType, NameShortOption, LengthUnitOption, &
-             EnergyDensityUnitOption, TemperatureUnitOption )
+           ( B, InteractionsType, Units, NameShortOption )
 
   end subroutine Initialize
 

@@ -35,23 +35,20 @@ contains
 
 
   subroutine Initialize &
-               ( IA, A, InteractionsType, MomentsType, NameShortOption, &
-                 LengthUnitOption, EnergyDensityUnitOption, &
-                 TemperatureUnitOption, IgnorabilityOption )
+               ( IA, A, InteractionsType, MomentsType, Units, NameShortOption, &
+                 IgnorabilityOption )
 
     class ( InteractionsExamples_ASC_Form ), intent ( inout ) :: &
       IA
-    class ( Atlas_SC_Template ), intent ( in ), target :: &
+    class ( Atlas_SC_Template ), intent ( in ) :: &
       A
     character ( * ), intent ( in ) :: &
       InteractionsType, &
       MomentsType
+    class ( StressEnergyUnitsForm ), intent ( in ) :: &
+      Units
     character ( * ), intent ( in ), optional :: &
       NameShortOption
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
-      LengthUnitOption, &
-      EnergyDensityUnitOption, &
-      TemperatureUnitOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
@@ -59,8 +56,7 @@ contains
       IA % Type = 'an InteractionsExamples_ASC'
 
     call IA % InitializeTemplate_I_ASC &
-           ( A, InteractionsType, MomentsType, NameShortOption, &
-             LengthUnitOption, EnergyDensityUnitOption, TemperatureUnitOption, &
+           ( A, InteractionsType, MomentsType, Units, NameShortOption, &
              IgnorabilityOption )
 
   end subroutine Initialize
