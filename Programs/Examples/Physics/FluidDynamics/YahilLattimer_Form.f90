@@ -22,6 +22,8 @@ module YahilLattimer_Form
       AdiabaticIndex, &
       PolytropicConstant, &
       DensityDimensionless, &
+      DensityInitial, &
+      PressureInitial, &
       CollapseTime
     type ( SplineInterpolationForm ), dimension ( : ), allocatable :: &
       SplineInterpolation
@@ -177,8 +179,6 @@ contains
 
     real ( KDR ) :: &
       GC, &
-      DensityInitial, &
-      PressureInitial, &
       DensityFinal, &
       CollapseTime
     class ( GeometryFlatForm ), pointer :: &
@@ -204,8 +204,8 @@ contains
         Kappa => YL % PolytropicConstant, &
           T_C => YL % CollapseTime, &
           D_0 => YL % DensityDimensionless, &
-        Rho_I => DensityInitial, &
-          P_I => PressureInitial, &
+        Rho_I => YL % DensityInitial, &
+          P_I => YL % PressureInitial, &
         Rho_F => DensityFinal, &
           T_F => I % FinishTime )
 
@@ -317,6 +317,9 @@ contains
       IsProperCell
 
     call F % SetAdiabaticIndex ( YL % AdiabaticIndex )
+    call F % SetFiducialParameters &
+           ( FiducialBaryonDensity = YL % DensityInitial, &
+             FiducialPressure = YL % PressureInitial )
 
     call SetFluidKernel &
            (    N = F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
@@ -463,7 +466,8 @@ contains
 
       N ( iV )  =  D / ( amu  *  G  *  Minus_t_YL ** 2 )
 
-      E ( iV )  =  Kappa  *  D ** Gamma  /  ( Gamma - 1.0_KDR )
+      E ( iV )  =  ( Kappa  *  ( amu * N ( iV ) ) ** Gamma )  &
+                   /  ( Gamma - 1.0_KDR )
 
       V_1 ( iV )  =  V  *  Kappa ** ( 0.5_KDR )  &
                      *  G ** ( ( 1.0_KDR - Gamma ) / 2.0_KDR )  &
