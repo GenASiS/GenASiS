@@ -12,7 +12,15 @@ module MarshakWave_Form
   type, public, extends ( RadiationBoxForm ) :: MarshakWaveForm
     real ( KDR ) :: &
       BoxLength, &
-      AdiabaticIndex!, &
+      AdiabaticIndex, &
+      SpecificHeatCapacity, &  !-- per unit mass
+      MassDensity, &
+      Temperature, &
+      TemperatureInner, &
+      SpecificOpacity, &
+      SpecificOpacityFloor, &
+      EnergyMax, &
+      SoundSpeed
     real ( KDR ), dimension ( 3 ) :: &
       MinCoordinate, &
       MaxCoordinate
@@ -34,15 +42,6 @@ module MarshakWave_Form
         SetFluid, &
         SetRadiation
 
-    real ( KDR ), private :: &
-      SpecificHeatCapacity, &  !-- per unit mass
-      MassDensity, &
-      Temperature, &
-      TemperatureInner, &
-      SpecificOpacity, &
-      SpecificOpacityFloor, &
-      EnergyMax, &
-      SoundSpeed
     character ( LDF ) :: &
       InteractionsType
 
@@ -112,7 +111,7 @@ contains
 
     !-- Momentum space parameters
 
-    EnergyScale = TemperatureInner
+    EnergyScale  =  1.0e3_KDR  *  UNIT % KELVIN
     call PROGRAM_HEADER % GetParameter ( EnergyScale, 'EnergyScale' )
 
 
@@ -173,12 +172,12 @@ contains
 
     associate &
       ( Gamma  => MW % AdiabaticIndex, &
-        C_V    => SpecificHeatCapacity, &
-        Rho_0  => MassDensity, &
-        T_0    => Temperature, &
-        T_I    => TemperatureInner, &
-        Kappa  => SpecificOpacity, &
-        Kappa_Min => SpecificOpacityFloor )
+        C_V    => MW % SpecificHeatCapacity, &
+        Rho_0  => MW % MassDensity, &
+        T_0    => MW % Temperature, &
+        T_I    => MW % TemperatureInner, &
+        Kappa  => MW % SpecificOpacity, &
+        Kappa_Min => MW % SpecificOpacityFloor )
 
     Gamma      =  1.4_KDR
     C_V        =  1.0_KDR     *  UNIT % ERG / UNIT % KELVIN / UNIT % GRAM
@@ -205,7 +204,7 @@ contains
 
     associate &
       ( L      => MW % BoxLength, &
-        c_s    => SoundSpeed, &
+        c_s    => MW % SoundSpeed, &
         t_Dyn  => DynamicalTime, &
         Lambda => MeanFreePath, &
         Tau    => OpticalDepth, &
@@ -235,7 +234,7 @@ contains
 
     select case ( trim ( InteractionsType ) )
     case ( 'MARSHAK_WAVE_VAYTET_2', 'MARSHAK_WAVE_VAYTET_3' )
-      call Show ( EnergyMax, UNIT % ELECTRON_VOLT, 'EnergyMax' )
+      call Show ( MW % EnergyMax, UNIT % ELECTRON_VOLT, 'EnergyMax' )
     end select !-- InteractionsType
 
 
@@ -259,8 +258,8 @@ contains
 
     select case ( trim ( InteractionsType ) )
     case ( 'MARSHAK_WAVE_VAYTET_2', 'MARSHAK_WAVE_VAYTET_3' )
-      EnergyMax  =  0.620_KDR * UNIT % ELECTRON_VOLT
-      call PROGRAM_HEADER % GetParameter ( EnergyMax, 'EnergyMax' )
+      MW % EnergyMax  =  0.620_KDR * UNIT % ELECTRON_VOLT
+      call PROGRAM_HEADER % GetParameter ( MW % EnergyMax, 'EnergyMax' )
     end select !-- InteractionsType
 
     select type ( I => MW % Integrator )
@@ -284,14 +283,16 @@ contains
       select case ( trim ( InteractionsType ) )
       case ( 'MARSHAK_WAVE_VAYTET_1' )
         call IA % Set_MWV_Grey &
-               ( FA, SpecificOpacity = SpecificOpacity )
+               ( FA, SpecificOpacity = MW % SpecificOpacity )
       case ( 'MARSHAK_WAVE_VAYTET_2' )
         call IA % Set_MWV_Grey &
-               ( FA, SpecificOpacity = SpecificOpacity, EnergyMax = EnergyMax )
+               ( FA, SpecificOpacity = MW % SpecificOpacity, &
+                 EnergyMax = MW % EnergyMax )
       case ( 'MARSHAK_WAVE_VAYTET_3' )
         call IA % Set_MWV_Grey &
-               ( FA, SpecificOpacity = SpecificOpacity, EnergyMax = EnergyMax, &
-                 TemperatureScale = Temperature )
+               ( FA, SpecificOpacity = MW % SpecificOpacity, &
+                 EnergyMax = MW % EnergyMax, &
+                 TemperatureScale = MW % Temperature )
       end select !-- InteractionsType
       call RMA % SetInteractions ( IA )
       end select !-- IA
@@ -320,17 +321,18 @@ contains
       select case ( trim ( InteractionsType ) )
       case ( 'MARSHAK_WAVE_VAYTET_1' )
         call IB % Set_MWV_Spectral &
-               ( FA, SpecificOpacity = SpecificOpacity )
+               ( FA, SpecificOpacity = MW % SpecificOpacity )
       case ( 'MARSHAK_WAVE_VAYTET_2' )
         call IB % Set_MWV_Spectral &
-               ( FA, SpecificOpacity = SpecificOpacity, &
-                 SpecificOpacityFloor = SpecificOpacityFloor, &
-                 EnergyMax = EnergyMax )
+               ( FA, SpecificOpacity = MW % SpecificOpacity, &
+                 SpecificOpacityFloor = MW % SpecificOpacityFloor, &
+                 EnergyMax = MW % EnergyMax )
       case ( 'MARSHAK_WAVE_VAYTET_3' )
         call IB % Set_MWV_Spectral &
-               ( FA, SpecificOpacity = SpecificOpacity, &
-                 SpecificOpacityFloor = SpecificOpacityFloor, &
-                 EnergyMax = EnergyMax, TemperatureScale = Temperature )
+               ( FA, SpecificOpacity = MW % SpecificOpacity, &
+                 SpecificOpacityFloor = MW % SpecificOpacityFloor, &
+                 EnergyMax = MW % EnergyMax, &
+                 TemperatureScale = MW % Temperature )
       end select !-- InteractionsType
       call RMB % SetInteractions ( IB )
       end select !-- IB
@@ -362,9 +364,9 @@ contains
 
     associate &
       ( Gamma => MW % AdiabaticIndex, &
-        C_V   => SpecificHeatCapacity, &
-        Rho_0 => MassDensity, &
-        T_0   => Temperature )
+        C_V   => MW % SpecificHeatCapacity, &
+        Rho_0 => MW % MassDensity, &
+        T_0   => MW % Temperature )
 
     select type ( I => MW % Integrator )
     class is ( Integrator_C_1D_C_PS_Template )
@@ -404,7 +406,7 @@ contains
 
     call F % ComputeFromTemperature ( F % Value, G, G % Value )
 
-    SoundSpeed = maxval ( C_S )
+    MW % SoundSpeed = maxval ( C_S )
 
     end associate !-- N, etc.
     end select !-- PS
@@ -454,8 +456,8 @@ contains
     !-- Radiation
 
     associate &
-      ( T_0 => Temperature, &
-        T_I => TemperatureInner, &
+      ( T_0 => MW % Temperature, &
+        T_I => MW % TemperatureInner, &
           X => G % Value ( :, G % CENTER_U ( 1 ) ), &
           Y => G % Value ( :, G % CENTER_U ( 2 ) ), &
           Z => G % Value ( :, G % CENTER_U ( 3 ) ) )
