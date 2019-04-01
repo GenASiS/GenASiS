@@ -41,6 +41,8 @@ module RadiationMoments_BSLL_ASC_CSLD__Form
     final :: &
       Finalize
     procedure, private, pass :: &
+      SetType
+    procedure, private, pass :: &
       SetField
     procedure, private, pass :: &
       AllocateField
@@ -77,8 +79,8 @@ contains
     class ( GeometryFlatForm ), pointer :: &
       GF
 
-    if ( RMB % Type == '' ) &
-      RMB % Type = 'a RadiationMoments_BSLL_ASC_CSLD'
+    call RMB % SetType ( )
+
     RMB % RadiationMomentsType = RadiationMomentsType
 
     RMB % Units => Units
@@ -224,6 +226,17 @@ contains
     call RMB % FinalizeTemplate_BSLL_ASC_CSLD ( )
 
   end subroutine Finalize
+
+
+  subroutine SetType ( RMB )
+
+    class ( RadiationMoments_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
+      RMB
+
+    if ( RMB % Type == '' ) &
+      RMB % Type = 'a RadiationMoments_BSLL_ASC_CSLD'
+
+  end subroutine SetType
 
 
   subroutine SetField ( FB )

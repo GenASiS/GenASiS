@@ -49,6 +49,8 @@ module RadiationMoments_ASC__Form
     final :: &
       Finalize
     procedure, private, pass :: &
+      SetType
+    procedure, private, pass :: &
       SetField
     procedure, private, pass :: &
       AllocateField
@@ -60,9 +62,9 @@ contains
   subroutine Initialize &
                ( RMA, A, RadiationMomentsType, Units, NameShortOption, &
                  RiemannSolverTypeOption, ReconstructedTypeOption, &
-                 UseLimiterOption, AllocateSourcesOption, SuppressWriteOption, &
-                 SuppressWriteSourcesOption, LimiterParameterOption, &
-                 IgnorabilityOption )
+                 UseLimiterOption, AllocateSourcesOption, &
+                 SuppressWriteOption, SuppressWriteSourcesOption, &
+                 LimiterParameterOption, IgnorabilityOption )
 
     class ( RadiationMoments_ASC_Form ), intent ( inout ) :: &
       RMA
@@ -93,8 +95,8 @@ contains
     logical ( KDL ) :: &
       AllocateSources
 
-    if ( RMA % Type == '' ) &
-      RMA % Type = 'a RadiationMoments_ASC'
+    call RMA % SetType ( )
+
     RMA % RadiationMomentsType = RadiationMomentsType
 
     RMA % Units => Units
@@ -337,6 +339,16 @@ contains
     call RMA % FinalizeTemplate_ASC_C ( )
 
   end subroutine Finalize
+
+
+  subroutine SetType ( RMA )
+
+    class ( RadiationMoments_ASC_Form ), intent ( inout ) :: &
+      RMA
+
+    RMA % Type = 'a RadiationMoments_ASC'
+
+  end subroutine SetType
 
 
   subroutine SetField ( FA )

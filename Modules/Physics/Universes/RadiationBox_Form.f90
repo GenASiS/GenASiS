@@ -335,7 +335,8 @@ contains
         select case ( trim ( RadiationType ( iC ) ) )
         case ( 'GENERIC' )
           allocate &
-            ( RadiationMoments_ASC_Form :: I % Current_ASC_1D ( iC ) % Element )
+            ( RadiationMoments_ASC_Form :: &
+                I % Current_ASC_1D ( iC ) % Element )
           RadiationTypeLocal = 'GENERIC'
         case ( 'PHOTONS' )
           allocate &

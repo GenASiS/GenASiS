@@ -15,8 +15,8 @@ module NeutrinoMoments_CSL__Form
   type, public, extends ( RadiationMoments_CSL_Form ) :: &
     NeutrinoMoments_CSL_Form
   contains
-    procedure, public, pass :: &
-      Initialize
+    procedure, private, pass :: &
+      SetType
     procedure, private, pass :: &
       SetField
   end type NeutrinoMoments_CSL_Form
@@ -24,40 +24,14 @@ module NeutrinoMoments_CSL__Form
 contains
 
 
-  subroutine Initialize &
-               ( RMC, C, NameShort, RadiationMomentsType, RiemannSolverType, &
-                 ReconstructedType, UseLimiter, Units, LimiterParameter, &
-                 nValues, IgnorabilityOption )
+  subroutine SetType ( RMC )
 
     class ( NeutrinoMoments_CSL_Form ), intent ( inout ) :: &
       RMC
-    class ( ChartTemplate ), intent ( in ) :: &
-      C
-    character ( * ), intent ( in ) :: &
-      NameShort, &
-      RadiationMomentsType, &
-      RiemannSolverType, &
-      ReconstructedType
-    logical ( KDL ), intent ( in ) :: &
-      UseLimiter
-    class ( StressEnergyUnitsForm ), intent ( in ), target :: &
-      Units
-    real ( KDR ), intent ( in ) :: &
-      LimiterParameter
-    integer ( KDI ), intent ( in ) :: &
-      nValues
-    integer ( KDI ), intent ( in ), optional :: &
-      IgnorabilityOption
 
-    if ( RMC % Type == '' ) &
-      RMC % Type = 'a NeutrinoMoments_CSL'
+    RMC % Type = 'a NeutrinoMoments_CSL'
 
-    call RMC % RadiationMoments_CSL_Form % Initialize &
-           ( C, NameShort, RadiationMomentsType, RiemannSolverType, &
-             ReconstructedType, UseLimiter, Units, LimiterParameter, &
-             nValues, IgnorabilityOption )
-
-  end subroutine Initialize
+  end subroutine SetType
 
 
   subroutine SetField ( FC )
