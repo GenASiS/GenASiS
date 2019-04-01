@@ -18,43 +18,21 @@ module Interactions_CSL__Template
         InteractionsType = '', &
         MomentsType = ''
   contains
-    procedure ( I ), public, pass, deferred :: &
-      Initialize
     procedure, public, pass :: &
-      IntializeTemplate_I_CSL
+      Initialize => IntializeTemplate_I_CSL
     procedure, public, pass :: &
       Interactions
     procedure, public, pass :: &
       FinalizeTemplate_I_CSL
-    procedure, public, pass :: &
+    procedure, private, pass :: &
+      SetType
+    procedure, private, pass :: &
       SetField
-    procedure ( AF ), public, pass, deferred :: &
+    procedure ( AF ), private, pass, deferred :: &
       AllocateField
   end type Interactions_CSL_Template
 
   abstract interface
-
-    subroutine I ( IC, C, NameShort, InteractionsType, MomentsType, Units, &
-                   nValues, IgnorabilityOption )
-      use Basics
-      use Mathematics
-      use StressEnergyBasics
-      import Interactions_CSL_Template
-      class ( Interactions_CSL_Template ), intent ( inout ) :: &
-        IC
-      class ( ChartHeader_SL_Form ), intent ( in ) :: &
-        C
-      character ( * ), intent ( in ) :: &
-        NameShort, &
-        InteractionsType, &
-        MomentsType
-      class ( StressEnergyUnitsForm ), intent ( in ) :: &
-        Units
-      integer ( KDI ), intent ( in ) :: &
-        nValues
-      integer ( KDI ), intent ( in ), optional :: &
-        IgnorabilityOption
-    end subroutine I
 
     subroutine AF ( IC )
       import Interactions_CSL_Template
@@ -86,8 +64,8 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
-    if ( IC % Type == '' ) &
-      IC % Type = 'an Interactions_CSL'
+    call IC % SetType ( )
+
     IC % InteractionsType = InteractionsType
     IC % MomentsType      = MomentsType
 
@@ -130,6 +108,16 @@ contains
     call IC % FinalizeTemplate_CSL ( )
 
   end subroutine FinalizeTemplate_I_CSL
+
+
+  subroutine SetType ( IC )
+
+    class ( Interactions_CSL_Template ), intent ( inout ) :: &
+      IC
+
+    IC % Type = 'an Interactions_CSL'
+
+  end subroutine SetType
 
 
   subroutine SetField ( FC )

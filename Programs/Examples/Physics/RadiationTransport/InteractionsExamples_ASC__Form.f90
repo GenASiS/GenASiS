@@ -16,8 +16,6 @@ module InteractionsExamples_ASC__Form
     InteractionsExamples_ASC_Form
   contains
     procedure, public, pass :: &
-      Initialize
-    procedure, public, pass :: &
       Set_C_Grey
     procedure, private, pass :: &
       Set_MWV_1_Grey
@@ -27,39 +25,15 @@ module InteractionsExamples_ASC__Form
       Set_MWV_3_Grey
     generic, public :: &
       Set_MWV_Grey => Set_MWV_1_Grey, Set_MWV_2_Grey, Set_MWV_3_Grey
-    procedure, public, pass :: &
+    final :: &
+      Finalize
+    procedure, private, pass :: &
+      SetType
+    procedure, private, pass :: &
       AllocateField
   end type InteractionsExamples_ASC_Form
 
 contains
-
-
-  subroutine Initialize &
-               ( IA, A, InteractionsType, MomentsType, Units, NameShortOption, &
-                 IgnorabilityOption )
-
-    class ( InteractionsExamples_ASC_Form ), intent ( inout ) :: &
-      IA
-    class ( Atlas_SC_Template ), intent ( in ) :: &
-      A
-    character ( * ), intent ( in ) :: &
-      InteractionsType, &
-      MomentsType
-    class ( StressEnergyUnitsForm ), intent ( in ) :: &
-      Units
-    character ( * ), intent ( in ), optional :: &
-      NameShortOption
-    integer ( KDI ), intent ( in ), optional :: &
-      IgnorabilityOption
-
-    if ( IA % Type == '' ) &
-      IA % Type = 'an InteractionsExamples_ASC'
-
-    call IA % InitializeTemplate_I_ASC &
-           ( A, InteractionsType, MomentsType, Units, NameShortOption, &
-             IgnorabilityOption )
-
-  end subroutine Initialize
 
 
   subroutine Set_C_Grey ( IA, FA, OpacityAbsorption )
@@ -187,6 +161,27 @@ contains
     nullify ( F, I )
 
   end subroutine Set_MWV_3_Grey
+
+
+  impure elemental subroutine Finalize ( IA )
+
+    type ( InteractionsExamples_ASC_Form ), intent ( inout ) :: &
+      IA
+
+    call IA % FinalizeTemplate_I_ASC ( )
+
+  end subroutine Finalize
+
+
+  subroutine SetType ( IA )
+
+    class ( InteractionsExamples_ASC_Form ), intent ( inout ) :: &
+      IA
+
+    if ( IA % Type == '' ) &
+      IA % Type = 'an InteractionsExamples_ASC'
+
+  end subroutine SetType
 
 
   subroutine AllocateField ( IA )
