@@ -58,9 +58,6 @@ module RadiationBox_Form
         ComputeFluidSource_G_S_Radiation_Kernel, &
         ApplySources_Fluid_Kernel
 
-    class ( RadiationBoxForm ), pointer :: &
-      RadiationBox => null ( )
-
 contains
 
   
@@ -100,8 +97,6 @@ contains
       RB % Type = 'a RadiationBox'
     
     call RB % InitializeTemplate ( Name )
-
-    RadiationBox => RB
 
     RB % MomentsType  =  MomentsType
 
@@ -539,10 +534,11 @@ contains
     integer ( KDI ) :: &
       oC  !-- oCandidate
 
-    associate ( RB => RadiationBox )
-
     select type ( I )
     class is ( Integrator_C_1D_C_PS_Template )
+
+    select type ( RB => I % Universe )
+    class is ( RadiationBoxForm )
 
     !-- Fluid advection and Radiation streaming
 
@@ -565,8 +561,8 @@ contains
         =  huge ( 1.0_KDR )
     end if
 
+    end select !-- RB
     end select !-- I
-    end associate !-- RB
 
   end subroutine ComputeTimeStepLocal
 
@@ -663,8 +659,6 @@ contains
       RMEI, &
       RMF
 
-    associate ( IB => RadiationBox % Interactions_BSLL_ASC_CSLD ) 
-
     select type ( RMB => I % Current_BSLL_ASC_CSLD_1D ( 1 ) % Element )
     class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
 
@@ -716,7 +710,6 @@ contains
 
     end select !-- RMA
     end select !-- RMB
-    end associate !-- IB
 
     nullify ( RMEI, RMF )
  
@@ -788,7 +781,8 @@ contains
     integer ( KDI ) :: &
       iC     !-- iCurrent
 
-    associate ( RB => RadiationBox )
+    select type ( RB => I % Universe )
+    class is ( RadiationBoxForm )
 
     select type ( I )
     class is ( Integrator_C_1D_PS_C_PS_Form )  !-- Grey
@@ -816,7 +810,7 @@ contains
       end associate !-- IB
 
     end select !-- I
-    end associate !-- RB
+    end select !-- RB
 
   end subroutine ComputeTimeStepInteractions
 
