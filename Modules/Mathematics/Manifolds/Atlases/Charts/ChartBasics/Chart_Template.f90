@@ -71,6 +71,7 @@ module Chart_Template
   ! end type ChartElementForm
 
     private :: &
+      ComputeGeometricRatio, &
       BrickIndex, &
       SetEdgeEqual, &
       SetEdgeGeometric, &
@@ -301,7 +302,8 @@ contains
          .or. any ( C % Spacing == 'PROPORTIONAL' ) ) &
       call Show ( C % Ratio, 'Ratio', C % IGNORABILITY )
 
-    if ( any ( C % Spacing == 'COMPACTIFIED' ) &
+    if ( any ( C % Spacing == 'GEOMETRIC' ) &
+         .or. any ( C % Spacing == 'COMPACTIFIED' ) &
          .or. any ( C % Spacing == 'PROPORTIONAL' ) ) &
       call Show ( C % Scale, C % CoordinateUnit, 'Scale', C % IGNORABILITY )
 
@@ -482,6 +484,11 @@ contains
                ( C % Edge ( iD ) % Value ( 1 : nC + 1 ), &
                  C % MinCoordinate ( iD ), C % MaxCoordinate ( iD ), nC )
       case ( 'GEOMETRIC' )
+        if ( C % Scale ( iD ) > 0.0_KDR ) &
+          call ComputeGeometricRatio &
+                 ( C % CoordinateUnit ( iD ), C % MinCoordinate ( iD ), &
+                   C % MaxCoordinate ( iD ), C % Scale ( iD ), nC, &
+                   C % Ratio ( iD ) )
         call SetEdgeGeometric &
                ( C % Edge ( iD ) % Value ( 1 : nC + 1 ), &
                  C % MinCoordinate ( iD ), C % MaxCoordinate ( iD ), &
@@ -560,6 +567,51 @@ contains
              C % Edge ( iD ) % Value, C % Center ( iD ) % Value )
 
   end subroutine SetGeometryCell
+
+
+  subroutine ComputeGeometricRatio &
+               ( CoordinateUnit, MinCoordinate, MaxCoordinate, MinWidth, &
+                 nCells, Ratio )
+
+    type ( MeasuredValueForm ), intent ( in ) :: &
+      CoordinateUnit
+    real ( KDR ), intent ( in ) :: &
+      MinCoordinate, &
+      MaxCoordinate, &
+      MinWidth
+    integer ( KDI ), intent ( in ) :: &
+      nCells
+    real ( KDR ), intent ( out ) :: &
+      Ratio
+
+    integer ( KDI ) :: &
+      i
+    real ( KDR ) :: &
+      RatioOld
+
+    Ratio = 1.01_KDR
+
+    do i = 1, 100
+      RatioOld  =  Ratio
+      Ratio  =  1.0_KDR  +  ( RatioOld ** nCells  -  1.0_KDR )  *  MinWidth  &
+                            /  ( MaxCoordinate  -  MinCoordinate )
+      if ( abs ( Ratio - RatioOld ) / RatioOld  <  1.0e-10_KDR ) &
+        return
+    end do !-- i
+
+    call Show ( 'GeometricRatio failed to converge', CONSOLE % ERROR )
+    call Show ( 'Chart_Template', 'module', CONSOLE % ERROR )
+    call Show ( 'ComputeGeometricRatio', 'subroutine', CONSOLE % ERROR )
+    call Show ( MinCoordinate, CoordinateUnit, 'MinCoordinate', &
+                CONSOLE % ERROR )
+    call Show ( MaxCoordinate, CoordinateUnit, 'MaxCoordinate', &
+                CONSOLE % ERROR )
+    call Show ( MinWidth, CoordinateUnit, 'MinWidth', &
+                CONSOLE % ERROR )
+    call Show ( Ratio, 'Ratio', CONSOLE % ERROR )
+    call PROGRAM_HEADER % Abort ( )
+
+  end subroutine ComputeGeometricRatio
 
 
   function BrickIndex ( nBricks, nCells, MyRank )  result ( BI ) 
