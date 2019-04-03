@@ -251,11 +251,17 @@ contains
 
 
   subroutine InitializeMomentumSpace &
-               ( RB, EnergyScaleOption, nCellsEnergyOption )
+               ( RB, EnergySpacingOption, MinEnergyOption, MaxEnergyOption, &
+                 MinWidthEnergyOption, EnergyScaleOption, nCellsEnergyOption )
 
     class ( RadiationBoxForm ), intent ( inout ) :: &
       RB
+    character ( * ), intent ( in ), optional :: &
+      EnergySpacingOption
     real ( KDR ), intent ( in ), optional :: &
+      MinEnergyOption, &
+      MaxEnergyOption, &
+      MinWidthEnergyOption, &
       EnergyScaleOption
     integer ( KDI ), intent ( in ), optional :: &
       nCellsEnergyOption
@@ -263,7 +269,12 @@ contains
     integer ( KDI ) :: &
       nCellsEnergy
     real ( KDR ) :: &
+      MinEnergy, &
+      MaxEnergy, &
+      MinWidthEnergy, &
       EnergyScale
+    character ( LDL ) :: &
+      EnergySpacing
 
     select type ( I => RB % Integrator )
     class is ( Integrator_C_1D_MS_C_PS_Form )
@@ -278,23 +289,66 @@ contains
     call MS % SetBoundaryConditionsFace &
            ( [ 'REFLECTING', 'REFLECTING' ], iDimension = 1 )
 
-    EnergyScale = 10.0_KDR
-    if ( present ( EnergyScaleOption ) ) &
-      EnergyScale = EnergyScaleOption
-    call PROGRAM_HEADER % GetParameter ( EnergyScale, 'EnergyScale' )
-
     nCellsEnergy = 16
     if ( present ( nCellsEnergyOption ) ) &
       nCellsEnergy = nCellsEnergyOption
     call PROGRAM_HEADER % GetParameter ( nCellsEnergy, 'nCellsEnergy' )
 
-    call MS % CreateChart &
-           ( SpacingOption = [ 'COMPACTIFIED' ], &
-             CoordinateSystemOption = 'SPHERICAL', &
-             CoordinateUnitOption = RB % Units % Coordinate_MS, &
-             ScaleOption = [ EnergyScale ], &
-             nCellsOption = [ nCellsEnergy ], &
-             nGhostLayersOption = [ 0, 0, 0 ] )
+    EnergySpacing = 'GEOMETRIC'
+    if ( present ( EnergySpacingOption ) ) &
+      EnergySpacing = EnergySpacingOption
+    call PROGRAM_HEADER % GetParameter ( EnergySpacing, 'EnergySpacing' )
+
+    select case ( trim ( EnergySpacing ) )
+    case ( 'GEOMETRIC' )
+
+      MinEnergy       =    0.0_KDR
+      MaxEnergy       =  100.0_KDR
+      MinWidthEnergy  =    0.1_KDR
+      if ( present ( MinEnergyOption ) ) &
+        MinEnergy = MinEnergyOption
+      if ( present ( MaxEnergyOption ) ) &
+        MaxEnergy = MaxEnergyOption
+      if ( present ( MinWidthEnergyOption ) ) &
+        MinWidthEnergy = MinWidthEnergyOption
+      call PROGRAM_HEADER % GetParameter ( MinEnergy, 'MinEnergy' )
+      call PROGRAM_HEADER % GetParameter ( MaxEnergy, 'MaxEnergy' )
+      call PROGRAM_HEADER % GetParameter ( MinWidthEnergy, 'MinWidthEnergy' )
+
+      call MS % CreateChart &
+             ( SpacingOption = [ 'GEOMETRIC' ], &
+               CoordinateSystemOption = 'SPHERICAL', &
+               CoordinateUnitOption = RB % Units % Coordinate_MS, &
+               MinCoordinateOption = [ MinEnergy ], &
+               MaxCoordinateOption = [ MaxEnergy ], &
+               ScaleOption = [ MinWidthEnergy ], &
+               nCellsOption = [ nCellsEnergy ], &
+               nGhostLayersOption = [ 0, 0, 0 ] )
+
+    case ( 'COMPACTIFIED' )
+
+      EnergyScale = 10.0_KDR
+      if ( present ( EnergyScaleOption ) ) &
+        EnergyScale = EnergyScaleOption
+      call PROGRAM_HEADER % GetParameter ( EnergyScale, 'EnergyScale' )
+
+      call MS % CreateChart &
+             ( SpacingOption = [ 'COMPACTIFIED' ], &
+               CoordinateSystemOption = 'SPHERICAL', &
+               CoordinateUnitOption = RB % Units % Coordinate_MS, &
+               ScaleOption = [ EnergyScale ], &
+               nCellsOption = [ nCellsEnergy ], &
+               nGhostLayersOption = [ 0, 0, 0 ] )
+
+    case default
+
+      call Show ( 'EnergySpacing not recognized', CONSOLE % ERROR )
+      call Show ( EnergySpacing, 'EnergySpacing', CONSOLE % ERROR )
+      call Show ( 'RadiationBox_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'InitializeMomentumSpace', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+
+    end select !-- Spacing
 
     end select !-- MS
     end select !-- PS
