@@ -241,7 +241,7 @@ contains
     class ( Thermalization_G_Form ), intent ( inout ) :: &
       T
 
-    T % TemperatureMin  =   0.1_KDR
+    T % TemperatureMin  =   1.0_KDR
     T % TemperatureMax  =  10.0_KDR
     call PROGRAM_HEADER % GetParameter ( T % TemperatureMin, 'TemperatureMin' )
     call PROGRAM_HEADER % GetParameter ( T % TemperatureMax, 'TemperatureMax' )
