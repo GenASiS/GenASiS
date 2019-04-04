@@ -20,10 +20,8 @@ module Interactions_ASC__Template
         InteractionsType = '', &
         MomentsType = ''
   contains
-    procedure ( I ), public, pass, deferred :: &
-      Initialize
     procedure, public, pass :: &
-      InitializeTemplate_I_ASC
+      Initialize => InitializeTemplate_I_ASC
     procedure, private, pass :: &
       Interactions_CSL
     generic, public :: &
@@ -32,34 +30,15 @@ module Interactions_ASC__Template
       ComputeTimeScale
     procedure, public, pass :: &
       FinalizeTemplate_I_ASC
-    procedure, public, pass :: &
+    procedure, private, pass :: &
+      SetType
+    procedure, private, pass :: &
       SetField
-    procedure ( AF ), public, pass, deferred :: &
+    procedure ( AF ), private, pass, deferred :: &
       AllocateField
   end type Interactions_ASC_Template
 
   abstract interface
-
-    subroutine I ( IA, A, InteractionsType, MomentsType, Units, &
-                   NameShortOption, IgnorabilityOption )
-      use Basics
-      use Mathematics
-      use StressEnergyBasics
-      import Interactions_ASC_Template
-      class ( Interactions_ASC_Template ), intent ( inout ) :: &
-        IA
-      class ( Atlas_SC_Template ), intent ( in ) :: &
-        A
-      character ( * ), intent ( in ) :: &
-        InteractionsType, &
-        MomentsType
-      class ( StressEnergyUnitsForm ), intent ( in ) :: &
-        Units
-      character ( * ), intent ( in ), optional :: &
-        NameShortOption
-      integer ( KDI ), intent ( in ), optional :: &
-        IgnorabilityOption
-    end subroutine I
 
     subroutine AF ( IA )
       import Interactions_ASC_Template
@@ -76,8 +55,8 @@ contains
 
 
   subroutine InitializeTemplate_I_ASC &
-               ( IA, A, InteractionsType, MomentsType, Units, NameShortOption, &
-                 IgnorabilityOption )
+               ( IA, A, InteractionsType, MomentsType, Units, &
+                 NameShortOption, IgnorabilityOption )
 
     class ( Interactions_ASC_Template ), intent ( inout ) :: &
       IA
@@ -96,8 +75,8 @@ contains
     character ( LDL ) :: &
       NameShort
 
-    if ( IA % Type == '' ) &
-      IA % Type = 'an Interactions_ASC'
+    call IA % SetType ( )
+
     IA % InteractionsType = InteractionsType    
     IA % MomentsType      = MomentsType
 
@@ -185,6 +164,16 @@ contains
     call IA % FinalizeTemplate_ASC ( )
 
   end subroutine FinalizeTemplate_I_ASC
+
+
+  subroutine SetType ( IA )
+
+    class ( Interactions_ASC_Template ), intent ( inout ) :: &
+      IA
+
+    IA % Type = 'an Interactions_ASC'
+
+  end subroutine SetType
 
 
   subroutine SetField ( FA )

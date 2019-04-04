@@ -17,8 +17,6 @@ module InteractionsExamples_BSLL_ASC_CSLD__Form
     InteractionsExamples_BSLL_ASC_CSLD_Form
   contains
     procedure, public, pass :: &
-      Initialize
-    procedure, public, pass :: &
       Set_C_Spectral
     procedure, private, pass :: &
       Set_MWV_1_Spectral
@@ -29,38 +27,15 @@ module InteractionsExamples_BSLL_ASC_CSLD__Form
     generic, public :: &
       Set_MWV_Spectral &
         => Set_MWV_1_Spectral, Set_MWV_2_Spectral, Set_MWV_3_Spectral
-    procedure, public, pass :: &
+    final :: &
+      Finalize
+    procedure, private, pass :: &
+      SetType
+    procedure, private, pass :: &
       AllocateField
   end type InteractionsExamples_BSLL_ASC_CSLD_Form
 
 contains
-
-
-  subroutine Initialize &
-               ( IB, B, InteractionsType, NameShortOption, LengthUnitOption, &
-                 EnergyDensityUnitOption, TemperatureUnitOption )
-
-    class ( InteractionsExamples_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
-      IB
-    class ( Bundle_SLL_ASC_CSLD_Form ), intent ( in ), target :: &
-      B
-    character ( * ), intent ( in ) :: &
-      InteractionsType
-    character ( * ), intent ( in ), optional :: &
-      NameShortOption
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
-      LengthUnitOption, &
-      EnergyDensityUnitOption, &
-      TemperatureUnitOption
-
-    if ( IB % Type == '' ) &
-      IB % Type = 'an InteractionsExamples_BSLL_ASC_CSLD'
-
-    call IB % InitializeTemplate_I_BSLL_ASC_CSLD &
-           ( B, InteractionsType, NameShortOption, LengthUnitOption, &
-             EnergyDensityUnitOption, TemperatureUnitOption )
-
-  end subroutine Initialize
 
 
   subroutine Set_C_Spectral ( IB, FA, OpacityAbsorption )
@@ -267,6 +242,26 @@ contains
     nullify ( GF )
 
   end subroutine Set_MWV_3_Spectral
+
+
+  impure elemental subroutine Finalize ( IB )
+
+    type ( InteractionsExamples_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
+      IB
+
+    call IB % FinalizeTemplate_I_BSLL_ASC_CSLD ( )
+
+  end subroutine Finalize
+
+
+  subroutine SetType ( IB )
+
+    class ( InteractionsExamples_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
+      IB
+
+    IB % Type = 'an InteractionsExamples_BSLL_ASC_CSLD'
+
+  end subroutine SetType
 
 
   subroutine AllocateField ( IB, iF )

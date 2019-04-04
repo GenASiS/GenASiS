@@ -22,10 +22,8 @@ module Interactions_BSLL_ASC_CSLD__Template
       character ( LDF ) :: &
         InteractionsType = ''
   contains
-    procedure ( I ), public, pass, deferred :: &
-      Initialize
     procedure, public, pass :: &
-      InitializeTemplate_I_BSLL_ASC_CSLD
+      Initialize => InitializeTemplate_I_BSLL_ASC_CSLD
     procedure, public, pass :: &
       Interactions
     procedure, public, pass :: &
@@ -33,29 +31,14 @@ module Interactions_BSLL_ASC_CSLD__Template
     procedure, public, pass :: &
       FinalizeTemplate_I_BSLL_ASC_CSLD
     procedure, private, pass :: &
+      SetType
+    procedure, private, pass :: &
       SetField
-    procedure ( AF ), public, pass, deferred :: &
+    procedure ( AF ), private, pass, deferred :: &
       AllocateField
   end type Interactions_BSLL_ASC_CSLD_Template
 
   abstract interface
-
-    subroutine I ( IB, B, InteractionsType, Units, NameShortOption )
-      use Basics
-      use Mathematics
-      use StressEnergyBasics
-      import Interactions_BSLL_ASC_CSLD_Template
-      class ( Interactions_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
-        IB
-      class ( Bundle_SLL_ASC_CSLD_Form ), intent ( in ) :: &
-        B
-      character ( * ), intent ( in ) :: &
-        InteractionsType
-      class ( StressEnergyUnitsForm ), intent ( in ) :: &
-        Units
-      character ( * ), intent ( in ), optional :: &
-        NameShortOption
-    end subroutine I
 
     subroutine AF ( IB, iF )
       use Basics
@@ -90,8 +73,8 @@ contains
     character ( LDL ) :: &
       NameShort
 
-    if ( IB % Type == '' ) &
-      IB % Type = 'an Interactions_BSLL_ASC_CSLD'
+    call IB % SetType ( )
+
     IB % InteractionsType = InteractionsType
 
     IB % Units => Units
@@ -205,6 +188,16 @@ contains
     call IB % FinalizeTemplate_BSLL_ASC_CSLD ( )
 
   end subroutine FinalizeTemplate_I_BSLL_ASC_CSLD
+
+
+  subroutine SetType ( IB )
+
+    class ( Interactions_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
+      IB
+
+    IB % Type = 'an Interactions_BSLL_ASC_CSLD'
+
+  end subroutine SetType
 
 
   subroutine SetField ( FB )

@@ -14,46 +14,35 @@ module InteractionsExamples_CSL__Form
   type, public, extends ( Interactions_CSL_Template ) :: &
     InteractionsExamples_CSL_Form
   contains
-    procedure, public, pass :: &
-      Initialize
-    procedure, public, pass :: &
+    final :: &
+      Finalize
+    procedure, private, pass :: &
+      SetType
+    procedure, private, pass :: &
       AllocateField
   end type InteractionsExamples_CSL_Form
 
 contains
 
+  
+  impure elemental subroutine Finalize ( IC )
 
-  subroutine Initialize &
-               ( IC, C, NameShort, InteractionsType, MomentsType, LengthUnit, &
-                 EnergyDensityUnit, TemperatureUnit, nValues, &
-                 IgnorabilityOption  )
+    type ( InteractionsExamples_CSL_Form ), intent ( inout ) :: &
+      IC
+
+    call IC % FinalizeTemplate_I_CSL ( )
+
+  end subroutine Finalize
+
+
+  subroutine SetType ( IC )
 
     class ( InteractionsExamples_CSL_Form ), intent ( inout ) :: &
       IC
-    class ( ChartHeader_SL_Form ), intent ( in ), target :: &
-      C
-    character ( * ), intent ( in ) :: &
-      NameShort, &
-      InteractionsType, &
-      MomentsType
-    type ( MeasuredValueForm ), intent ( in ) :: &
-      LengthUnit, &
-      EnergyDensityUnit, &
-      TemperatureUnit
-    integer ( KDI ), intent ( in ) :: &
-      nValues
-    integer ( KDI ), intent ( in ), optional :: &
-      IgnorabilityOption
 
-    if ( IC % Type == '' ) &
-      IC % Type = 'an InteractionsExamples_CSL'
+    IC % Type = 'an InteractionsExamples_CSL'
 
-    call IC % IntializeTemplate_I_CSL &
-           ( C, NameShort, InteractionsType, MomentsType, LengthUnit, &
-             EnergyDensityUnit, TemperatureUnit, nValues, &
-             IgnorabilityOption )
-
-  end subroutine Initialize
+  end subroutine SetType
 
 
   subroutine AllocateField ( IC )
