@@ -605,6 +605,8 @@ contains
       call Show ( b, 'b', CONSOLE % ERROR )
       call Show ( fa, 'f(a)', CONSOLE % ERROR )
       call Show ( fb, 'f(b)', CONSOLE % ERROR )
+      call Show ( 'Chart_Template', 'module', CONSOLE % ERROR )
+      call Show ( 'ComputeGeometricRatio', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end if
 

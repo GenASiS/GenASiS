@@ -65,7 +65,8 @@ contains
                ( RB, RadiationName, RadiationType, MomentsType, Name, &
                  ApplyStreamingOption, ApplyInteractionsOption, &
                  EvolveFluidOption, MinCoordinateOption, MaxCoordinateOption, &
-                 FinishTimeOption, CourantFactorOption, EnergyScaleOption, &
+                 FinishTimeOption, CourantFactorOption, MinEnergyOption, &
+                 MaxEnergyOption, MinWidthEnergyOption, EnergyScaleOption, &
                  nCellsPositionOption, nCellsEnergyOption, nWriteOption )
 
     class ( RadiationBoxForm ), intent ( inout ), target :: &
@@ -86,6 +87,9 @@ contains
     real ( KDR ), intent ( in ), optional :: &
       FinishTimeOption, &
       CourantFactorOption, &
+      MinEnergyOption, &
+      MaxEnergyOption, &
+      MinWidthEnergyOption, &
       EnergyScaleOption
     integer ( KDI ), dimension ( 3 ), intent ( in ), optional :: &
       nCellsPositionOption
@@ -108,7 +112,10 @@ contains
              MaxCoordinateOption = MaxCoordinateOption, &
              nCellsOption = nCellsPositionOption )
     call RB % InitializeMomentumSpace &
-           ( EnergyScaleOption = EnergyScaleOption, &
+           ( MinEnergyOption = MinEnergyOption, &
+             MaxEnergyOption = MaxEnergyOption, &
+             MinWidthEnergyOption = MinWidthEnergyOption, &
+             EnergyScaleOption = EnergyScaleOption, &
              nCellsEnergyOption = nCellsEnergyOption )
     call RB % InitializeRadiation &
            ( RadiationName, RadiationType )

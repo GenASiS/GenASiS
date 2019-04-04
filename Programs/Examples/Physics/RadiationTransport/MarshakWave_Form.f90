@@ -85,6 +85,8 @@ contains
       iD
     real ( KDR ) :: &
       FinishTime, &
+      MaxEnergy, &
+      MinWidthEnergy, &
       EnergyScale
 
 
@@ -111,8 +113,12 @@ contains
 
     !-- Momentum space parameters
 
-    EnergyScale  =  1.0e3_KDR  *  UNIT % KELVIN
-    call PROGRAM_HEADER % GetParameter ( EnergyScale, 'EnergyScale' )
+    !-- Geometric spacing
+    MinWidthEnergy  =  3.0e1_KDR  *  UNIT % KELVIN
+    MaxEnergy       =  1.0e4_KDR  *  UNIT % KELVIN
+
+    !-- Compactified spacing
+    EnergyScale     =  1.0e3_KDR  *  UNIT % KELVIN
 
 
     !-- Units
@@ -148,6 +154,8 @@ contains
              MinCoordinateOption = MW % MinCoordinate, &
              MaxCoordinateOption = MW % MaxCoordinate, &
              FinishTimeOption = FinishTime, &
+             MinWidthEnergyOption = MinWidthEnergy, &
+             MaxEnergyOption = MaxEnergy, &
              EnergyScaleOption = EnergyScale )
 
 
