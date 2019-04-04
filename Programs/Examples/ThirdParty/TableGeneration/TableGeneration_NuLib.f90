@@ -67,10 +67,10 @@ subroutine SetEnergyGrid ( MS )
 
   integer ( KDI ) :: &
     nEnergyCells
-  logical ( KDL ) :: &
-    UseNuLibGrid
   type ( MeasuredValueForm ), dimension ( 1 ) :: &
     CoordinateUnit
+  character ( LDL ) :: &
+    EnergyGrid
   character ( LDL ), dimension ( 1 ) :: &
     CoordinateLabel
 
@@ -80,16 +80,27 @@ subroutine SetEnergyGrid ( MS )
   CoordinateUnit   =  UNIT % MEGA_ELECTRON_VOLT
   CoordinateLabel  =  'Energy'
 
-  UseNuLibGrid = .false.
-  call PROGRAM_HEADER % GetParameter ( UseNuLibGrid, 'UseNuLibGrid' )
+  EnergyGrid = 'GEOMETRIC'
+  call PROGRAM_HEADER % GetParameter ( EnergyGrid, 'EnergyGrid' )
 
-  if ( UseNuLibGrid ) then
+  call Show ( 'Selecting EnergyGrid' )
+  call Show ( EnergyGrid, 'EnergyGrid' )
+
+  select case ( trim ( EnergyGrid ) )
+  case ( 'NU_LIB' )
     call SetEnergyGridNuLib &
            ( MS, CoordinateLabel, CoordinateUnit, nEnergyCells )
-  else
+  case ( 'GEOMETRIC' )
+    call SetEnergyGridGeometric &
+           ( MS, CoordinateLabel, CoordinateUnit, nEnergyCells )
+  case ( 'COMPACTIFIED' )
     call SetEnergyGridCompactified &
            ( MS, CoordinateLabel, CoordinateUnit, nEnergyCells )
-  end if
+  case default
+    call Show ( 'EnergyGrid not recognized', CONSOLE % ERROR )
+    call Show ( EnergyGrid, 'EnergyGrid', CONSOLE % ERROR )
+    call PROGRAM_HEADER % Abort ( )
+  end select !-- EnergyGrid
 
 end subroutine SetEnergyGrid
 
@@ -180,6 +191,52 @@ subroutine SetEnergyGridNuLib &
   nullify ( G )
 
 end subroutine SetEnergyGridNuLib
+
+
+subroutine SetEnergyGridGeometric &
+             ( MS, CoordinateLabel, CoordinateUnit, nEnergyCells )
+
+  type ( Atlas_SC_Form ), intent ( inout ) :: &
+    MS
+  character ( LDL ), dimension ( 1 ), intent ( in ) :: &
+    CoordinateLabel
+  type ( MeasuredValueForm ), dimension ( 1 ), intent ( in ) :: &
+    CoordinateUnit
+  integer ( KDI ), intent ( in ) :: &
+    nEnergyCells
+
+  real ( KDR ) :: &
+    MinWidth, &
+    MaxEnergy
+  real ( KDR ), dimension ( 1 ) :: &
+    MaxCoordinate, &
+    Scale
+  character ( LDL ), dimension ( 1 ) :: &
+    Spacing
+
+  call Show ( 'Creating GenASiS GEOMETRIC energy grid' )
+
+  MinWidth   =  2.0_KDR    *  UNIT % MEGA_ELECTRON_VOLT
+  MaxEnergy  =  310.0_KDR  *  UNIT % MEGA_ELECTRON_VOLT
+  call PROGRAM_HEADER % GetParameter ( MinWidth, 'MinWidth' )
+  call PROGRAM_HEADER % GetParameter ( MaxEnergy, 'MaxEnergy' )
+
+  MaxCoordinate  =  MaxEnergy
+  Scale          =  MinWidth
+  Spacing        =  'GEOMETRIC'
+  
+  call MS % CreateChart &
+         ( SpacingOption          = Spacing, &
+           CoordinateLabelOption  = CoordinateLabel, &
+           CoordinateSystemOption = 'SPHERICAL', &
+           CoordinateUnitOption   = CoordinateUnit, &
+           MaxCoordinateOption    = MaxCoordinate, &
+           ScaleOption            = Scale, &
+           nCellsOption           = [ nEnergyCells ], &
+           nGhostLayersOption     = [ 0, 0, 0 ] )
+  call MS % SetGeometry ( )
+
+end subroutine SetEnergyGridGeometric
 
 
 subroutine SetEnergyGridCompactified &
