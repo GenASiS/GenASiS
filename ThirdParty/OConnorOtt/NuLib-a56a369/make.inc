@@ -1,5 +1,5 @@
 include ../../../../Build/Machines/Makefile_$(GENASIS_MACHINE)
-F90=$(FORTRAN_COMPILE) $(FFLAGS) $(FORTRAN_BOUND_CHECK)
+F90 := $(shell echo $(FORTRAN_COMPILE) $(FFLAGS) $(FORTRAN_BOUND_CHECK )| sed 's/-c //g')
 #F90= mpif90
 #F90FLAGS= -O3
 #F90FLAGS= -g -Og -ffpe-trap=invalid,zero,overflow -fbounds-check

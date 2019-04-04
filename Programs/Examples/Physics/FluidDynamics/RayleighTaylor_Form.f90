@@ -5,71 +5,74 @@ module RayleighTaylor_Form
   implicit none
   private
 
-  type, public, extends ( UniverseTemplate ) :: RayleighTaylorForm
+  type, public, extends ( FluidBoxForm ) :: RayleighTaylorForm
     real ( KDR ), private :: &
+      Acceleration, &
       DensityAbove, DensityBelow, &
       PressureBase, &   
-      AdiabaticIndex, &
-      Acceleration
+      AdiabaticIndex
   contains
-    procedure, public, pass :: &
-      Initialize
+    procedure, private, pass :: &
+      Initialize_RT
+    generic, public :: &
+      Initialize => Initialize_RT
     final :: &
       Finalize
   end type RayleighTaylorForm
 
     private :: &
-      SetFluid
+      InitializeFluidBox, &
+      SetProblem
 
+      private :: &
+        SetFluid
+
+        private :: &
+          SetFluidKernel_2D, &
+          SetFluidKernel_3D
+    
 contains
 
 
-  subroutine Initialize ( RT, Name )
+  subroutine Initialize_RT ( RT, Name )
 
     class ( RayleighTaylorForm ), intent ( inout ) :: &
       RT
     character ( * ), intent ( in )  :: &
       Name
 
-    integer ( KDI ) :: &
-      iD  !-- iDimension
+    if ( RT % Type == '' ) &
+      RT % Type = 'a RayleighTaylor'
+
+    call InitializeFluidBox ( RT, Name )
+    call SetProblem ( RT )
+
+  end subroutine Initialize_RT
+
+
+  subroutine Finalize ( RT )
+
+    type ( RayleighTaylorForm ), intent ( inout ) :: &
+      RT
+
+  end subroutine Finalize
+
+
+  subroutine InitializeFluidBox ( RT, Name )
+
+    class ( RayleighTaylorForm ), intent ( inout ) :: &
+      RT
+    character ( * ), intent ( in )  :: &
+      Name
+
     integer ( KDI ), dimension ( 3 ) :: &
       nCells
     real ( KDR ), dimension ( 3 ) :: &
       MinCoordinate, &
       MaxCoordinate
-    type ( Character_1D_Form ), dimension ( 3 ) :: &
-      BoundaryConditionsFace
 
-    if ( RT % Type == '' ) &
-      RT % Type = 'a RayleighTaylor'
-
-    call RT % InitializeTemplate ( Name )
-
-    RT % DensityAbove   = 2.0_KDR
-    RT % DensityBelow   = 1.0_KDR
-    RT % PressureBase   = 2.5_KDR
-    RT % AdiabaticIndex = 1.4_KDR
-    RT % Acceleration   = 0.1_KDR
-
-    call PROGRAM_HEADER % GetParameter &
-           ( RT % DensityAbove, 'DensityAbove' )
-    call PROGRAM_HEADER % GetParameter &
-           ( RT % DensityBelow, 'DensityBelow' )
-    call PROGRAM_HEADER % GetParameter &
-           ( RT % AdiabaticIndex, 'AdiabaticIndex' )
-    call PROGRAM_HEADER % GetParameter &
-           ( RT % Acceleration, 'Acceleration' )    
-    call PROGRAM_HEADER % GetParameter &
-           ( RT % Acceleration, 'Acceleration' )
-
-    !-- Integrator
-
-    allocate ( FluidBoxForm :: RT % Integrator )
-    select type ( FB => RT % Integrator )
-    type is ( FluidBoxForm )
-
-    associate ( BCF => BoundaryConditionsFace )
+    allocate ( RT % BoundaryConditionsFace ( 3 ) )
+    associate ( BCF => RT % BoundaryConditionsFace )
     select case ( trim ( PROGRAM_HEADER % Dimensionality ) )
     case ( '2D' )
       MinCoordinate = [ -0.25_KDR, -0.75_KDR, 0.0_KDR ]
@@ -85,10 +88,14 @@ contains
       call BCF ( 2 ) % Initialize ( [ 'PERIODIC', 'PERIODIC' ] )
       call BCF ( 3 ) % Initialize ( [ 'REFLECTING', 'REFLECTING' ] )
     end select
+    end associate !-- BCF
 
-    call FB % Initialize &
-           ( Name, FluidType = 'IDEAL', GeometryType = 'NEWTONIAN', &
-             BoundaryConditionsFaceOption = BCF, &
+    RT % Acceleration  =  0.1_KDR
+    call PROGRAM_HEADER % GetParameter &
+           ( RT % Acceleration, 'Acceleration' )
+
+    call RT % Initialize &
+           ( FluidType = 'IDEAL', GeometryType = 'NEWTONIAN', Name = Name, &
              GravitySolverTypeOption = 'UNIFORM', &
              MinCoordinateOption = MinCoordinate, &
              MaxCoordinateOption = MaxCoordinate, &
@@ -96,109 +103,180 @@ contains
              UniformAccelerationOption = RT % Acceleration, &
              nCellsOption = nCells )
 
-    end associate !-- BCF
-    end select !-- FB
+  end subroutine InitializeFluidBox
 
 
-    !-- Initial conditions
-
-    call SetFluid ( RT )
-
-
-  end subroutine Initialize
-
-
-  subroutine Finalize ( RT )
-
-    type ( RayleighTaylorForm ), intent ( inout ) :: &
-      RT
-
-    call RT % FinalizeTemplate ( )
-
-  end subroutine Finalize
-
-
-  subroutine SetFluid ( RT )
+  subroutine SetProblem ( RT )
 
     class ( RayleighTaylorForm ), intent ( inout ) :: &
       RT
 
-    integer ( KDI ) :: &
-      iB  !-- iBoundary
     class ( GeometryFlatForm ), pointer :: &
       G
     class ( Fluid_P_I_Form ), pointer :: &
       F
 
-    select type ( FB => RT % Integrator )
-    class is ( FluidBoxForm )
+    select type ( I => RT % Integrator )
+    class is ( Integrator_C_PS_Form )
 
-    select type ( FA => FB % Current_ASC )
+    select type ( FA => I % Current_ASC )
     class is ( Fluid_ASC_Form )
 
-    !-- Initial conditions
-       
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
+
+    RT % DensityAbove   = 2.0_KDR
+    RT % DensityBelow   = 1.0_KDR
+    RT % PressureBase   = 2.5_KDR
+    RT % AdiabaticIndex = 1.4_KDR
+
+    call PROGRAM_HEADER % GetParameter &
+           ( RT % DensityAbove, 'DensityAbove' )
+    call PROGRAM_HEADER % GetParameter &
+           ( RT % DensityBelow, 'DensityBelow' )
+    call PROGRAM_HEADER % GetParameter &
+           ( RT % AdiabaticIndex, 'AdiabaticIndex' )
+    call PROGRAM_HEADER % GetParameter &
+           ( RT % Acceleration, 'Acceleration' )    
+
+    G => PS % Geometry ( )
     F => FA % Fluid_P_I ( )
+    call SetFluid ( RT, F, G )
+
+    end select !-- PS
+    end select !-- FA
+    end select !-- I
+    nullify ( G, F )
+
+  end subroutine SetProblem
+
+
+  subroutine SetFluid ( RT, F, G )
+
+    class ( RayleighTaylorForm ), intent ( inout ) :: &
+      RT
+    class ( Fluid_P_I_Form ), intent ( inout ) :: &
+      F
+    class ( GeometryFlatForm ), intent ( in ) :: &
+      G
+
+    select type ( I => RT % Integrator )
+    class is ( Integrator_C_PS_Form )
+
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
 
     call F % SetAdiabaticIndex ( RT % AdiabaticIndex )
-
-    select type ( PS => FB % PositionSpace )
-    class is ( Atlas_SC_Form )
-    G => PS % Geometry ( )
-
-    associate &
-      ( X  => G % Value ( :, G % CENTER_U ( 1 ) ), &
-        Y  => G % Value ( :, G % CENTER_U ( 2 ) ), &
-        Z  => G % Value ( :, G % CENTER_U ( 3 ) ), &
-        N  => F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
-        E  => F % Value ( :, F % INTERNAL_ENERGY ), &
-        VY => F % Value ( :, F % VELOCITY_U ( 2 ) ), &
-        VZ => F % Value ( :, F % VELOCITY_U ( 3 ) ), &
-        Pi => CONSTANT % PI )
 
     select case ( PS % nDimensions )
     case ( 2 )
 
-      where ( Y > 0.0_KDR )     
-        N  = RT % DensityAbove
-      elsewhere
-        N  = RT % DensityBelow
-      end where
+      call SetFluidKernel_2D &
+             (       X = G % Value ( :, G % CENTER_U ( 1 ) ), &
+                     Y = G % Value ( :, G % CENTER_U ( 2 ) ), &
+               N_Above = RT % DensityAbove, &
+               N_Below = RT % DensityBelow, &
+                     A = RT % Acceleration, &
+                 Gamma =  F % AdiabaticIndex, &
+                   P_0 = RT % PressureBase, &
+                     N =  F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
+                     E =  F % Value ( :, F % INTERNAL_ENERGY ), &
+                    VY = F % Value ( :, F % VELOCITY_U ( 2 ) ) )
 
-      E  =  ( RT % PressureBase  -  N  *  RT % Acceleration  *  Y ) &
-            / ( RT % AdiabaticIndex  -  1.0_KDR )
-
-      VY  =  ( 0.01_KDR / 4.0_KDR ) &
-             *  ( 1.0_KDR  +  cos ( 4.0_KDR * Pi * X ) ) &
-             *  ( 1.0_KDR  +  cos ( 3.0_KDR * Pi * Y ) )
-    
     case ( 3 )
 
-      where ( Z > 0.0_KDR )     
-        N  = RT % DensityAbove
-      elsewhere
-        N  = RT % DensityBelow
-      end where
+      call SetFluidKernel_3D &
+             (       X = G % Value ( :, G % CENTER_U ( 1 ) ), &
+                     Y = G % Value ( :, G % CENTER_U ( 2 ) ), &
+                     Z = G % Value ( :, G % CENTER_U ( 3 ) ), &
+               N_Above = RT % DensityAbove, &
+               N_Below = RT % DensityBelow, &
+                     A = RT % Acceleration, &
+                 Gamma =  F % AdiabaticIndex, &
+                   P_0 = RT % PressureBase, &
+                     N =  F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
+                     E =  F % Value ( :, F % INTERNAL_ENERGY ), &
+                    VZ =  F % Value ( :, F % VELOCITY_U ( 3 ) ) )
 
-      E  =  ( RT % PressureBase  -  N  *  RT % Acceleration  *  Z ) &
-            / ( RT % AdiabaticIndex  -  1.0_KDR )
-
-      VZ  =  ( 0.01_KDR / 4.0_KDR ) &
-             *  ( 1.0_KDR  +  cos ( 4.0_KDR * Pi &
-                                    * sqrt ( X ** 2  +  Y ** 2 ) ) ) &
-             *  ( 1.0_KDR  +  cos ( 3.0_KDR * Pi * Z ) )
-    
     end select !-- nDimensions
 
     call F % ComputeFromPrimitive ( G )
 
-    end associate !-- X, etc.
     end select !-- PS
-    end select !-- FA
-    end select !-- FB
-    nullify ( F, G )
-    
+    end select !-- I
+
   end subroutine SetFluid
 
-  
+
+  subroutine SetFluidKernel_2D &
+               ( X, Y, N_Above, N_Below, A, Gamma, P_0, N, E, VY )
+
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      X, Y
+    real ( KDR ) :: &
+      N_Above, N_Below, &
+      A, &
+      Gamma, &
+      P_0
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      N, &
+      E, &
+      VY
+
+    real ( KDR ) :: &
+      Pi
+
+    Pi  =  CONSTANT % PI
+
+    where ( Y > 0.0_KDR )     
+      N  = N_Above
+    elsewhere
+      N  = N_Below
+    end where
+
+    E  =  ( P_0  -  N * A * Y )  /  ( Gamma  -  1.0_KDR )
+
+    VY  =  ( 0.01_KDR / 4.0_KDR ) &
+           *  ( 1.0_KDR  +  cos ( 4.0_KDR * Pi * X ) ) &
+           *  ( 1.0_KDR  +  cos ( 3.0_KDR * Pi * Y ) )
+    
+  end subroutine SetFluidKernel_2D
+
+
+  subroutine SetFluidKernel_3D &
+               ( X, Y, Z, N_Above, N_Below, A, Gamma, P_0, N, E, VZ )
+
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      X, Y, Z
+    real ( KDR ) :: &
+      N_Above, N_Below, &
+      A, &
+      Gamma, &
+      P_0
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      N, &
+      E, &
+      VZ
+
+    real ( KDR ) :: &
+      Pi
+
+    Pi  =  CONSTANT % PI
+
+    where ( Z > 0.0_KDR )     
+      N  = N_Above
+    elsewhere
+      N  = N_Below
+    end where
+    
+    E  =  ( P_0  -  N * A * Z )  /  ( Gamma  -  1.0_KDR )
+
+    VZ  =  ( 0.01_KDR / 4.0_KDR ) &
+           *  ( 1.0_KDR  +  cos ( 4.0_KDR * Pi &
+                                  * sqrt ( X ** 2  +  Y ** 2 ) ) ) &
+           *  ( 1.0_KDR  +  cos ( 3.0_KDR * Pi * Z ) )
+
+  end subroutine SetFluidKernel_3D
+
+
 end module RayleighTaylor_Form

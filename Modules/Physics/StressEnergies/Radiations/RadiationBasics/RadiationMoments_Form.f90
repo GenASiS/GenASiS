@@ -2,6 +2,7 @@ module RadiationMoments_Form
 
   use Basics
   use Mathematics
+  use StressEnergyBasics
   use Interactions_Template
 
   implicit none
@@ -28,6 +29,8 @@ module RadiationMoments_Form
       COMOVING_MOMENTUM_U  = 0, &
       CONSERVED_MOMENTUM_D = 0, &
       FLUID_VELOCITY_U     = 0
+    character ( LDL ) :: &
+      RadiationMomentsType = ''
     class ( InteractionsTemplate ), pointer :: &
       Interactions => null ( )
   contains
@@ -73,24 +76,21 @@ contains
 
 
   subroutine InitializeAllocate_RM &
-               ( RM, RiemannSolverType, UseLimiter, Velocity_U_Unit, &
-                 MomentumDensity_U_Unit, MomentumDensity_D_Unit, &
-                 EnergyDensityUnit, LimiterParameter, &
+               ( RM, RadiationMomentsType, RiemannSolverType, &
+                 ReconstructedType, UseLimiter, Units, LimiterParameter, &
                  nValues, VariableOption, VectorOption, NameOption, &
                  ClearOption, UnitOption, VectorIndicesOption )
 
     class ( RadiationMomentsForm ), intent ( inout ) :: &
       RM
     character ( * ), intent ( in ) :: &
-      RiemannSolverType
+      RadiationMomentsType, &
+      RiemannSolverType, &
+      ReconstructedType
     logical ( KDL ), intent ( in ) :: &
       UseLimiter
-    type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
-      Velocity_U_Unit, &
-      MomentumDensity_U_Unit, &
-      MomentumDensity_D_Unit
-    type ( MeasuredValueForm ), intent ( in ) :: &
-      EnergyDensityUnit
+    class ( StressEnergyUnitsForm ), intent ( in ) :: &
+      Units
     real ( KDR ), intent ( in ) :: &
       LimiterParameter
     integer ( KDI ), intent ( in ) :: &
@@ -118,20 +118,18 @@ contains
       Vector
 
     call InitializeBasics &
-           ( RM, Variable, Vector, Name, VariableUnit, VectorIndices, &
-             VariableOption, VectorOption, NameOption, UnitOption, &
-             VectorIndicesOption )
+           ( RM, RadiationMomentsType, Variable, Vector, Name, VariableUnit, &
+             VectorIndices, VariableOption, VectorOption, NameOption, &
+             UnitOption, VectorIndicesOption )
 
-    call SetUnits &
-           ( VariableUnit, RM, Velocity_U_Unit, MomentumDensity_U_Unit, &
-             MomentumDensity_D_Unit, EnergyDensityUnit )
+    call SetUnits ( VariableUnit, RM, Units )
 
     call RM % InitializeTemplate &
-           ( RiemannSolverType, UseLimiter, Velocity_U_Unit, &
-             LimiterParameter, nValues, VariableOption = Variable, &
-             VectorOption = Vector, NameOption = Name, &
-             ClearOption = ClearOption, UnitOption = VariableUnit, &
-             VectorIndicesOption = VectorIndices )
+           ( RiemannSolverType, ReconstructedType, UseLimiter, &
+             Units % Velocity_U, LimiterParameter, nValues, &
+             VariableOption = Variable, VectorOption = Vector, &
+             NameOption = Name, ClearOption = ClearOption, &
+             UnitOption = VariableUnit, VectorIndicesOption = VectorIndices )
     
   end subroutine InitializeAllocate_RM
 
@@ -568,12 +566,14 @@ contains
 
 
   subroutine InitializeBasics &
-               ( RM, Variable, Vector, Name, VariableUnit, VectorIndices, &
-                 VariableOption, VectorOption, NameOption, &
-                 VariableUnitOption, VectorIndicesOption )
+               ( RM, RadiationMomentsType, Variable, Vector, Name, &
+                 VariableUnit, VectorIndices, VariableOption, VectorOption, &
+                 NameOption, VariableUnitOption, VectorIndicesOption )
 
     class ( RadiationMomentsForm ), intent ( inout ) :: &
       RM
+    character ( * ), intent ( in ) :: &
+      RadiationMomentsType
     character ( LDL ), dimension ( : ), allocatable, intent ( out ) :: &
       Variable, &
       Vector
@@ -605,11 +605,13 @@ contains
       oV     !-- oVector
 
     if ( RM % Type == '' ) &
-      RM % Type = 'RadiationMoments'
+      RM % Type = 'a RadiationMoments'
 
     Name = 'Radiation'
     if ( present ( NameOption ) ) &
       Name = NameOption
+
+    RM % RadiationMomentsType = RadiationMomentsType
 
     !-- variable indices
 
@@ -699,34 +701,28 @@ contains
   end subroutine InitializeBasics
 
 
-  subroutine SetUnits &
-               ( VariableUnit, RM, Velocity_U_Unit, MomentumDensity_U_Unit, &
-                 MomentumDensity_D_Unit, EnergyDensityUnit )
+  subroutine SetUnits ( VariableUnit, RM, Units )
 
     type ( MeasuredValueForm ), dimension ( : ), intent ( inout ) :: &
       VariableUnit
     class ( RadiationMomentsForm ), intent ( in ) :: &
       RM
-    type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
-      Velocity_U_Unit, &
-      MomentumDensity_U_Unit, &
-      MomentumDensity_D_Unit
-    type ( MeasuredValueForm ), intent ( in ) :: &
-      EnergyDensityUnit
+    class ( StressEnergyUnitsForm ), intent ( in ) :: &
+      Units
 
     integer ( KDI ) :: &
       iD
 
-    VariableUnit ( RM % COMOVING_ENERGY )  = EnergyDensityUnit
-    VariableUnit ( RM % CONSERVED_ENERGY ) = EnergyDensityUnit
+    VariableUnit ( RM % COMOVING_ENERGY )  = Units % EnergyDensity
+    VariableUnit ( RM % CONSERVED_ENERGY ) = Units % EnergyDensity
 
     do iD = 1, 3
       VariableUnit ( RM % COMOVING_MOMENTUM_U ( iD ) ) &
-        = MomentumDensity_U_Unit ( iD )
+        = Units % MomentumDensity_U ( iD )
       VariableUnit ( RM % CONSERVED_MOMENTUM_D ( iD ) ) &
-        = MomentumDensity_D_Unit ( iD )      
+        = Units % MomentumDensity_D ( iD )      
       VariableUnit ( RM % FLUID_VELOCITY_U ( iD ) ) &
-        = Velocity_U_Unit ( iD )
+        = Units % Velocity_U ( iD )
     end do
 
   end subroutine SetUnits

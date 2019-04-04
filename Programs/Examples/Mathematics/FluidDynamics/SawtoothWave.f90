@@ -9,7 +9,8 @@ program SawtoothWave
     SW
 
   allocate ( PROGRAM_HEADER )
-  call PROGRAM_HEADER % Initialize ( 'SawtoothWave' )
+  call PROGRAM_HEADER % Initialize &
+         ( 'SawtoothWave', DimensionalityOption = '2D' )
 
   allocate ( SW )
   call SW % Initialize ( PROGRAM_HEADER % Name )

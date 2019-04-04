@@ -2,6 +2,7 @@ module Interactions_Template
 
   use Basics
   use Mathematics
+  use StressEnergyBasics
   use Fluids
 
   implicit none
@@ -59,19 +60,17 @@ module Interactions_Template
 
   abstract interface
 
-    subroutine IAI ( I, MomentsType, LengthUnit, EnergyDensityUnit, &
-                     TemperatureUnit, nValues, VariableOption, NameOption, &
-                     ClearOption, UnitOption )
+    subroutine IAI ( I, MomentsType, Units, nValues, VariableOption, &
+                     NameOption, ClearOption, UnitOption )
       use Basics
+      use StressEnergyBasics
       import InteractionsTemplate
       class ( InteractionsTemplate ), intent ( inout ) :: &
         I
       character ( * ), intent ( in ) :: &
         MomentsType
-      type ( MeasuredValueForm ), intent ( in ) :: &
-        LengthUnit, &
-        EnergyDensityUnit, &
-        TemperatureUnit
+      class ( StressEnergyUnitsForm ), intent ( in ) :: &
+        Units
       integer ( KDI ), intent ( in ) :: &
         nValues
       character ( * ), dimension ( : ), intent ( in ), optional :: &
@@ -114,18 +113,15 @@ contains
 
 
   subroutine InitializeTemplate &
-               ( I, MomentsType, LengthUnit, EnergyDensityUnit, &
-                 TemperatureUnit, nValues, VariableOption, NameOption, &
+               ( I, MomentsType, Units, nValues, VariableOption, NameOption, &
                  ClearOption, UnitOption )
 
     class ( InteractionsTemplate ), intent ( inout ) :: &
       I
     character ( * ), intent ( in ) :: &
       MomentsType
-    type ( MeasuredValueForm ), intent ( in ) :: &
-      LengthUnit, &
-      EnergyDensityUnit, &
-      TemperatureUnit
+    class ( StressEnergyUnitsForm ), intent ( in ) :: &
+      Units
     integer ( KDI ), intent ( in ) :: &
       nValues
     character ( * ), dimension ( : ), intent ( in ), optional :: &
@@ -152,8 +148,7 @@ contains
 
     I % MomentsType = MomentsType
 
-    call SetUnits &
-           ( Variableunit, I, LengthUnit, EnergyDensityUnit, TemperatureUnit )
+    call SetUnits ( Variableunit, I, Units )
 
     Clear = .true.
     if ( present ( ClearOption ) ) &
@@ -305,35 +300,31 @@ contains
   end subroutine InitializeBasics
 
 
-  subroutine SetUnits &
-               ( VariableUnit, I, LengthUnit, EnergyDensityUnit, &
-                 TemperatureUnit )
+  subroutine SetUnits ( VariableUnit, I, Units )
 
     type ( MeasuredValueForm ), dimension ( : ), intent ( inout ) :: &
       VariableUnit
     class ( InteractionsTemplate ), intent ( in ) :: &
       I
-    type ( MeasuredValueForm ), intent ( in ) :: &
-      LengthUnit, &
-      EnergyDensityUnit, &
-      TemperatureUnit
+    class ( StressEnergyUnitsForm ), intent ( in ) :: &
+      Units
 
     VariableUnit ( I % EMISSIVITY_J ) &
-      =  EnergyDensityUnit  *  LengthUnit ** (-1)
+      =  Units % EnergyDensity  *  Units % Length ** (-1)
     VariableUnit ( I % EMISSIVITY_H ) &
-      =  EnergyDensityUnit  *  LengthUnit ** (-1)
+      =  Units % EnergyDensity  *  Units % Length ** (-1)
     VariableUnit ( I % EMISSIVITY_N ) &
-      =  EnergyDensityUnit  *  TemperatureUnit ** (-1)  *  LengthUnit ** (-1)
+      =  Units % NumberDensity  *  Units % Length ** (-1)
     VariableUnit ( I % OPACITY_J ) &
-      =  LengthUnit ** (-1)
+      =  Units % Length ** (-1)
     VariableUnit ( I % OPACITY_H ) &
-      =  LengthUnit ** (-1)
+      =  Units % Length ** (-1)
     VariableUnit ( I % OPACITY_N ) &
-      =  LengthUnit ** (-1)
+      =  Units % Length ** (-1)
     VariableUnit ( I % EQUILIBRIUM_J ) &
-      =  EnergyDensityUnit
+      =  Units % EnergyDensity
     VariableUnit ( I % EQUILIBRIUM_N ) &
-      =  EnergyDensityUnit  *  TemperatureUnit ** (-1)
+      =  Units % NumberDensity
 
   end subroutine SetUnits
 

@@ -71,6 +71,7 @@ module Chart_Template
   ! end type ChartElementForm
 
     private :: &
+      ComputeGeometricRatio, &
       BrickIndex, &
       SetEdgeEqual, &
       SetEdgeGeometric, &
@@ -81,6 +82,9 @@ module Chart_Template
       SetCenterSpherical_1, &
       SetCenterSpherical_2, &
       SetWidthLeftRight
+
+      private :: &
+        ZeroGeometricRatio
 
     integer ( KDI ), private, parameter :: &
       MAX_DIMENSIONS = ATLAS % MAX_DIMENSIONS
@@ -301,7 +305,8 @@ contains
          .or. any ( C % Spacing == 'PROPORTIONAL' ) ) &
       call Show ( C % Ratio, 'Ratio', C % IGNORABILITY )
 
-    if ( any ( C % Spacing == 'COMPACTIFIED' ) &
+    if ( any ( C % Spacing == 'GEOMETRIC' ) &
+         .or. any ( C % Spacing == 'COMPACTIFIED' ) &
          .or. any ( C % Spacing == 'PROPORTIONAL' ) ) &
       call Show ( C % Scale, C % CoordinateUnit, 'Scale', C % IGNORABILITY )
 
@@ -482,6 +487,11 @@ contains
                ( C % Edge ( iD ) % Value ( 1 : nC + 1 ), &
                  C % MinCoordinate ( iD ), C % MaxCoordinate ( iD ), nC )
       case ( 'GEOMETRIC' )
+        if ( C % Scale ( iD ) > 0.0_KDR ) &
+          call ComputeGeometricRatio &
+                 ( C % CoordinateUnit ( iD ), C % MinCoordinate ( iD ), &
+                   C % MaxCoordinate ( iD ), C % Scale ( iD ), nC, &
+                   C % Ratio ( iD ) )
         call SetEdgeGeometric &
                ( C % Edge ( iD ) % Value ( 1 : nC + 1 ), &
                  C % MinCoordinate ( iD ), C % MaxCoordinate ( iD ), &
@@ -560,6 +570,77 @@ contains
              C % Edge ( iD ) % Value, C % Center ( iD ) % Value )
 
   end subroutine SetGeometryCell
+
+
+  subroutine ComputeGeometricRatio &
+               ( CoordinateUnit, MinCoordinate, MaxCoordinate, MinWidth, &
+                 nCells, Ratio )
+
+    type ( MeasuredValueForm ), intent ( in ) :: &
+      CoordinateUnit
+    real ( KDR ), intent ( in ) :: &
+      MinCoordinate, &
+      MaxCoordinate, &
+      MinWidth
+    integer ( KDI ), intent ( in ) :: &
+      nCells
+    real ( KDR ), intent ( out ) :: &
+      Ratio
+
+    integer ( KDI ) :: &
+      i
+    real ( KDR ) :: &
+      a, b, c, &
+      fa, fb, fc
+
+    a  = 1.000001_KDR
+    b  = 2.0_KDR
+    fa = ZeroGeometricRatio &
+           ( a, MinCoordinate, MaxCoordinate, MinWidth, nCells )
+    fb = ZeroGeometricRatio &
+           ( b, MinCoordinate, MaxCoordinate, MinWidth, nCells )
+    if ( fa * fb > 0.0_KDR ) then
+      call Show ( 'Solution not bracketed', CONSOLE % ERROR )
+      call Show ( a, 'a', CONSOLE % ERROR )
+      call Show ( b, 'b', CONSOLE % ERROR )
+      call Show ( fa, 'f(a)', CONSOLE % ERROR )
+      call Show ( fb, 'f(b)', CONSOLE % ERROR )
+      call Show ( 'Chart_Template', 'module', CONSOLE % ERROR )
+      call Show ( 'ComputeGeometricRatio', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end if
+
+    !-- Bisection
+    do i = 1, 100
+      c  = 0.5_KDR * ( a + b )
+      if ( ( b - a ) / c  <  1.0e-10_KDR ) then
+        Ratio = c
+        return
+      end if
+      fc = ZeroGeometricRatio &
+           ( c, MinCoordinate, MaxCoordinate, MinWidth, nCells )
+      if ( sign ( 1.0_KDR, fc )  ==  sign ( 1.0_KDR, fa ) ) then
+        a  = c
+        fa = fc
+      else
+        b  = c
+        fb = fc
+      end if
+    end do !-- i
+
+    call Show ( 'GeometricRatio failed to converge', CONSOLE % ERROR )
+    call Show ( MinCoordinate, CoordinateUnit, 'MinCoordinate', &
+                CONSOLE % ERROR )
+    call Show ( MaxCoordinate, CoordinateUnit, 'MaxCoordinate', &
+                CONSOLE % ERROR )
+    call Show ( MinWidth, CoordinateUnit, 'MinWidth', &
+                CONSOLE % ERROR )
+    call Show ( Ratio, 'Ratio', CONSOLE % ERROR )
+    call Show ( 'Chart_Template', 'module', CONSOLE % ERROR )
+    call Show ( 'ComputeGeometricRatio', 'subroutine', CONSOLE % ERROR )
+    call PROGRAM_HEADER % Abort ( )
+
+  end subroutine ComputeGeometricRatio
 
 
   function BrickIndex ( nBricks, nCells, MyRank )  result ( BI ) 
@@ -885,6 +966,27 @@ contains
     end do
 
   end subroutine SetWidthLeftRight
+
+
+  function ZeroGeometricRatio &
+             ( Ratio, MinCoordinate, MaxCoordinate, MinWidth, nCells) &
+             result ( ZGR )
+
+    real ( KDR ), intent ( in ) :: &
+      Ratio, &
+      MinCoordinate, &
+      MaxCoordinate, &
+      MinWidth
+    integer ( KDI ), intent ( in ) :: &
+      nCells
+    real ( KDR ) :: &
+      ZGR
+
+    ZGR  =  ( MaxCoordinate - MinCoordinate ) * ( Ratio - 1.0_KDR ) &
+              /  ( Ratio ** nCells  -  1.0_KDR ) &
+            -  MinWidth
+
+  end function ZeroGeometricRatio
 
 
 end module Chart_Template

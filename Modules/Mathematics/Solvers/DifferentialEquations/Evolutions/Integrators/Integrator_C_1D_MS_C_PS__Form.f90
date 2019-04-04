@@ -8,6 +8,7 @@ module Integrator_C_1D_MS_C_PS__Form
 
   use Basics
   use Fields
+  use EvolutionBasics
   use Integrator_C_1D_C_PS__Template
 
   implicit none
@@ -20,7 +21,7 @@ module Integrator_C_1D_MS_C_PS__Form
           Current_BSLL_ASC_CSLD_1D
   contains
     procedure, private, pass :: &  !-- 1
-      Initialize_1D
+      Initialize_I
     final :: &  !-- 1
       Finalize
     procedure, private, pass :: &  !-- 3
@@ -32,12 +33,14 @@ module Integrator_C_1D_MS_C_PS__Form
 contains
 
 
-  subroutine Initialize_1D &
-               ( I, Name, TimeUnitOption, FinishTimeOption, &
+  subroutine Initialize_I &
+               ( I, U, Name, TimeUnitOption, FinishTimeOption, &
                  CourantFactorOption, nWriteOption )
 
     class ( Integrator_C_1D_MS_C_PS_Form ), intent ( inout ) :: &
       I
+    class ( UniverseHeaderForm ), intent ( in ) :: &
+      U
     character ( * ), intent ( in )  :: &
       Name
     type ( MeasuredValueForm ), intent ( in ), optional :: &
@@ -61,12 +64,12 @@ contains
     end if
 
     call I % InitializeTemplate_C_1D_C_PS &
-           ( Name, TimeUnitOption = TimeUnitOption, &
+           ( U, Name, TimeUnitOption = TimeUnitOption, &
              FinishTimeOption = FinishTimeOption, &
              CourantFactorOption = CourantFactorOption, &
              nWriteOption = nWriteOption )
 
-  end subroutine Initialize_1D
+  end subroutine Initialize_I
 
 
   subroutine Finalize ( I )

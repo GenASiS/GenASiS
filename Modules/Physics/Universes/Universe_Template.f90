@@ -2,16 +2,16 @@ module Universe_Template
 
   use Basics
   use Mathematics
+  use StressEnergies
  
   implicit none
   private
 
-  type, public, abstract :: UniverseTemplate
-    integer ( KDI ) :: &
-      IGNORABILITY = 0
-    character ( LDF ) :: &
-      Type = '', &
-      Name = ''
+  type, public, extends ( UniverseHeaderForm ), abstract :: UniverseTemplate
+    character ( LDL ), dimension ( : ), allocatable :: &
+      TimeStepLabel
+    type ( StressEnergyUnitsForm ) :: &
+      Units
     class ( IntegratorTemplate ), allocatable :: &
       Integrator
   contains
@@ -33,15 +33,7 @@ contains
     character ( * ), intent ( in )  :: &
       Name
 
-    U % IGNORABILITY = CONSOLE % INFO_1
-
-    if ( U % Type == '' ) &
-      U % Type = 'a Universe' 
-
-    U % Name = Name
-
-    call Show ( 'Initializing ' // trim ( U % Type ), U % IGNORABILITY )
-    call Show ( U % Name, 'Name', U % IGNORABILITY )
+    call U % InitializeHeader ( Name )
 
   end subroutine InitializeTemplate
 
@@ -63,11 +55,8 @@ contains
 
     if ( allocated ( U % Integrator ) ) &
       deallocate ( U % Integrator )
-
-    if ( U % Name == '' ) return
-
-    call Show ( 'Finalizing ' // trim ( U % Type ), U % IGNORABILITY )
-    call Show ( U % Name, 'Name', U % IGNORABILITY )
+    if ( allocated ( U % TimeStepLabel ) ) &
+      deallocate ( U % TimeStepLabel )
 
   end subroutine FinalizeTemplate
 

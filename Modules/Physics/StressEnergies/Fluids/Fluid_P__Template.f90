@@ -4,6 +4,7 @@ module Fluid_P__Template
 
   use Basics
   use Mathematics
+  use StressEnergyBasics
   use Fluid_D__Form
   use FluidFeatures_Template
 
@@ -90,28 +91,22 @@ contains
 
 
   subroutine InitializeTemplate_P &
-               ( F, RiemannSolverType, UseEntropy, UseLimiter, &
-                 Velocity_U_Unit, MomentumDensity_D_Unit, BaryonMassUnit, &
-                 NumberDensityUnit, EnergyDensityUnit, TemperatureUnit, &
-                 BaryonMassReference, LimiterParameter, nValues, &
-                 VariableOption, VectorOption, NameOption, ClearOption, &
-                 UnitOption, VectorIndicesOption )
+               ( F, FluidType, RiemannSolverType, ReconstructedType, &
+                 UseEntropy, UseLimiter, Units, BaryonMassReference, &
+                 LimiterParameter, nValues, VariableOption, VectorOption, &
+                 NameOption, ClearOption, UnitOption, VectorIndicesOption )
 
     class ( Fluid_P_Template ), intent ( inout ) :: &
       F
     character ( * ), intent ( in ) :: &
-      RiemannSolverType
+      FluidType, &
+      RiemannSolverType, &
+      ReconstructedType
     logical ( KDL ), intent ( in ) :: &
       UseEntropy, &
       UseLimiter
-    type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
-      Velocity_U_Unit, &
-      MomentumDensity_D_Unit
-    type ( MeasuredValueForm ), intent ( in ) :: &
-      BaryonMassUnit, &
-      NumberDensityUnit, &
-      EnergyDensityUnit, &
-      TemperatureUnit
+    class ( StressEnergyUnitsForm ), intent ( in ) :: &
+      Units
     real ( KDR ), intent ( in ) :: &
       BaryonMassReference, &
       LimiterParameter
@@ -138,14 +133,11 @@ contains
     call InitializeBasics &
            ( F, Variable, VariableUnit, VariableOption, UnitOption )
 
-    call SetUnits &
-           ( VariableUnit, F, Velocity_U_Unit, EnergyDensityUnit, &
-             TemperatureUnit, NumberDensityUnit )
+    call SetUnits ( VariableUnit, F, Units )
 
-    call F % Fluid_D_Form % Initialize &
-           ( RiemannSolverType, UseLimiter, Velocity_U_Unit, &
-             MomentumDensity_D_Unit, BaryonMassUnit, NumberDensityUnit, &
-             BaryonMassReference, LimiterParameter, nValues, &
+    call F % Initialize_D &
+           ( FluidType, RiemannSolverType, ReconstructedType, UseLimiter, &
+             Units, BaryonMassReference, LimiterParameter, nValues, &
              VariableOption = Variable, VectorOption = VectorOption, &
              NameOption = NameOption, ClearOption = ClearOption, &
              UnitOption = VariableUnit, &
@@ -771,32 +763,26 @@ contains
   end subroutine InitializeBasics
   
   
-  subroutine SetUnits &
-               ( VariableUnit, F, Velocity_U_Unit, EnergyDensityUnit, &
-                 TemperatureUnit, NumberDensityUnit )
+  subroutine SetUnits ( VariableUnit, F, Units )
 
     type ( MeasuredValueForm ), dimension ( : ), intent ( inout ) :: &
       VariableUnit
     class ( Fluid_P_Template ), intent ( in ) :: &
       F
-    type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
-      Velocity_U_Unit
-    type ( MeasuredValueForm ), intent ( in ) :: &
-      EnergyDensityUnit, &
-      TemperatureUnit, &
-      NumberDensityUnit
+    class ( StressEnergyUnitsForm ), intent ( in ) :: &
+      Units
 
-    VariableUnit ( F % INTERNAL_ENERGY )    = EnergyDensityUnit
-    VariableUnit ( F % CONSERVED_ENERGY )   = EnergyDensityUnit
-    VariableUnit ( F % PRESSURE )           = EnergyDensityUnit
-    VariableUnit ( F % TEMPERATURE )        = TemperatureUnit
-    if ( TemperatureUnit % Label /= '' ) then
+    VariableUnit ( F % INTERNAL_ENERGY )    = Units % EnergyDensity
+    VariableUnit ( F % CONSERVED_ENERGY )   = Units % EnergyDensity
+    VariableUnit ( F % PRESSURE )           = Units % EnergyDensity
+    VariableUnit ( F % TEMPERATURE )        = Units % Temperature
+    if ( Units % Temperature % Label /= '' ) then
       VariableUnit ( F % ENTROPY_PER_BARYON ) = UNIT % BOLTZMANN
       VariableUnit ( F % CONSERVED_ENTROPY )  = UNIT % BOLTZMANN &
-                                                * NumberDensityUnit
+                                                * Units % NumberDensity
     end if
-    VariableUnit ( F % SOUND_SPEED )        = Velocity_U_Unit ( 1 )
-    VariableUnit ( F % MACH_NUMBER )        = UNIT % IDENTITY
+    VariableUnit ( F % SOUND_SPEED ) = Units % Velocity_U ( 1 )
+    VariableUnit ( F % MACH_NUMBER ) = UNIT % IDENTITY
 
   end subroutine SetUnits
 

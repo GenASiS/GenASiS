@@ -5,7 +5,7 @@ module RiemannProblem_Form
   implicit none
   private
 
-  type, public, extends ( UniverseTemplate ) :: RiemannProblemForm
+  type, public, extends ( FluidBoxForm ) :: RiemannProblemForm
     real ( KDR ) :: &
       Density_L, Density_R, &  !-- Left and Right
       Pressure_L, Pressure_R, &
@@ -17,61 +17,96 @@ module RiemannProblem_Form
     real ( KDR ), dimension ( 3 ) :: &
       DP_1, DP_2, DP_3  !-- DiscontinuityPoint_1, etc.
   contains
-    procedure, public, pass :: &
-      Initialize
+    procedure, private, pass :: &
+      Initialize_RP
+    generic, public :: &
+      Initialize => Initialize_RP
     final :: &
       Finalize
   end type RiemannProblemForm
 
     private :: &
+      InitializeFluidBox, &
+      SetProblem
+
+    private :: &
       SetFluid
 
+        private :: &
+          SetFluidKernel
+    
 contains
 
 
-  subroutine Initialize ( RP, Name )
+  subroutine Initialize_RP ( RP, Name )
 
     class ( RiemannProblemForm ), intent ( inout ) :: &
       RP
     character ( * ), intent ( in ) :: &
       Name
 
-    integer ( KDI ) :: &
-      iD  !-- iDimension
-    real ( KDR ), dimension ( 3 ) :: &
-      Normal, &
-      UnitNormal
-    type ( Character_1D_Form ), dimension ( 3 ) :: &
-      BoundaryConditionsFace
-
-
     if ( RP % Type == '' ) &
       RP % Type = 'a RiemannProblem'
 
-    call RP % InitializeTemplate ( Name )
+    call InitializeFluidBox ( RP, Name )
+    call SetProblem ( RP )
+
+  end subroutine Initialize_RP
 
 
-    !-- Integrator
+  subroutine Finalize ( RP )
 
-    allocate ( FluidBoxForm :: RP % Integrator )
-    select type ( FB => RP % Integrator )
-    type is ( FluidBoxForm )
+    type ( RiemannProblemForm ), intent ( inout ) :: &
+      RP
 
-    associate ( BCF => BoundaryConditionsFace )
+  end subroutine Finalize
+
+
+  subroutine InitializeFluidBox ( RP, Name )
+
+    class ( RiemannProblemForm ), intent ( inout ) :: &
+      RP
+    character ( * ), intent ( in )  :: &
+      Name
+
+    integer ( KDI ) :: &
+      iD  !-- iDimension
+
+    allocate ( RP % BoundaryConditionsFace ( 3 ) )
+    associate ( BCF => RP % BoundaryConditionsFace )
     do iD = 1, 3
       call BCF ( iD ) % Initialize ( [ 'REFLECTING', 'REFLECTING' ] )     
     end do
-    call FB % Initialize &
-           ( Name, FluidType = 'IDEAL', GeometryType = 'GALILEAN', &
-             BoundaryConditionsFaceOption = BCF )
-    ! FB % SetReference => SetReference
     end associate !-- BCF
 
-    select type ( PS => FB % PositionSpace )
+    call RP % Initialize &
+           ( FluidType = 'IDEAL', GeometryType = 'GALILEAN', Name = Name, &
+             nCellsOption = [ 128, 128, 128 ] )
+
+  end subroutine InitializeFluidBox
+
+
+  subroutine SetProblem ( RP )
+
+    class ( RiemannProblemForm ), intent ( inout ) :: &
+      RP
+
+    real ( KDR ), dimension ( 3 ) :: &
+      Normal, &
+      UnitNormal
+    class ( GeometryFlatForm ), pointer :: &
+      G
+    class ( Fluid_P_I_Form ), pointer :: &
+      F
+
+    select type ( I => RP % Integrator )
+    class is ( Integrator_C_PS_Form )
+
+    select type ( FA => I % Current_ASC )
+    class is ( Fluid_ASC_Form )
+
+    select type ( PS => I % PositionSpace )
     class is ( Atlas_SC_Form )
-
-
-    !-- Parameters
 
     RP % Density_L      = 1.0_KDR
     RP % Pressure_L     = 1.0_KDR
@@ -152,91 +187,94 @@ contains
     call Show ( RP % SinPhi, 'SinPhi', CONSOLE % INFO_3 )
     call Show ( RP % CosPhi, 'CosPhi', CONSOLE % INFO_3 )
 
-
-    !-- Initial conditions
-
-    call SetFluid ( RP )
-
-
-    !-- Cleanup
+    G => PS % Geometry ( )
+    F => FA % Fluid_P_I ( )
+    call SetFluid ( RP, F, G )
 
     end select !-- PS
-    end select !-- FB
+    end select !-- FA
+    end select !-- I
+    nullify ( G, F )
 
-  end subroutine Initialize
-
-
-  subroutine Finalize ( RP )
-
-    type ( RiemannProblemForm ), intent ( inout ) :: &
-      RP
-
-    call RP % FinalizeTemplate ( )
-
-  end subroutine Finalize
+  end subroutine SetProblem
 
 
-  subroutine SetFluid ( RP )
+  subroutine SetFluid ( RP, F, G )
 
     class ( RiemannProblemForm ), intent ( inout ) :: &
       RP
-
-    class ( GeometryFlatForm ), pointer :: &
-      G
-    class ( Fluid_P_I_Form ), pointer :: &
+    class ( Fluid_P_I_Form ), intent ( inout ) :: &
       F
-
-    select type ( FB => RP % Integrator )
-    class is ( FluidBoxForm )
-
-    select type ( PS => FB % PositionSpace )
-    class is ( Atlas_SC_Form )
-    G => PS % Geometry ( )
-
-    select type ( FA => FB % Current_ASC )
-    class is ( Fluid_ASC_Form )
-
-    F => FA % Fluid_P_I ( )
+    class ( GeometryFlatForm ), intent ( in ) :: &
+      G
 
     call F % SetAdiabaticIndex ( RP % AdiabaticIndex )
 
-    !-- Translate to origin, rotate normal to xz plane and then to x axis
-
-    associate &
-      ( X  => G % Value ( :, G % CENTER_U ( 1 ) ), &
-        Y  => G % Value ( :, G % CENTER_U ( 2 ) ), &
-        Z  => G % Value ( :, G % CENTER_U ( 3 ) ), &
-        N  => F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
-        VX => F % Value ( :, F % VELOCITY_U ( 1 ) ), &
-        VY => F % Value ( :, F % VELOCITY_U ( 2 ) ), &
-        VZ => F % Value ( :, F % VELOCITY_U ( 3 ) ), &
-        E  => F % Value ( :, F % INTERNAL_ENERGY ) )
-
-    where ( RP % SinTheta  *  RP % CosPhi  *  ( X  -  RP % DP_1 ( 1 ) ) &
-              + RP % SinTheta  *  RP % SinPhi *  ( Y  -  RP % DP_1 ( 2 ) ) &
-              + RP % CosTheta  *  ( Z  -  RP % DP_1 ( 3 ) ) <= 1.e-10_KDR )     
-      N   =  RP % Density_L
-      E   =  RP % Energy_L 
-      VX  =  RP % Speed_L  *  RP % SinTheta  *  RP % CosPhi
-      VY  =  RP % Speed_L  *  RP % SinTheta  *  RP % SinPhi
-      VZ  =  RP % Speed_L  *  RP % CosTheta
-    elsewhere
-      N   =  RP % Density_R  
-      E   =  RP % Energy_R 
-      VX  =  RP % Speed_R  *  RP % SinTheta  *  RP % CosPhi
-      VY  =  RP % Speed_R  *  RP % SinTheta  *  RP % SinPhi
-      VZ  =  RP % Speed_R  *  RP % CosTheta
-    end where
+    call SetFluidKernel &
+           (      X = G % Value ( :, G % CENTER_U ( 1 ) ), &
+                  Y = G % Value ( :, G % CENTER_U ( 2 ) ), &
+                  Z = G % Value ( :, G % CENTER_U ( 3 ) ), &
+               DP_1 = RP % DP_1, &
+             sTheta = RP % SinTheta, &
+             cTheta = RP % CosTheta, &
+               sPhi = RP % SinPhi, &
+               cPhi = RP % CosPhi, &
+                N_L = RP % Density_L, &
+                N_R = RP % Density_R, &
+                E_L = RP % Energy_L, &
+                E_R = RP % Energy_R, &
+                V_L = RP % Speed_L, &
+                V_R = RP % Speed_R, &
+                  N = F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
+                  E = F % Value ( :, F % INTERNAL_ENERGY ), &
+                 VX = F % Value ( :, F % VELOCITY_U ( 1 ) ), &
+                 VY = F % Value ( :, F % VELOCITY_U ( 2 ) ), &
+                 VZ = F % Value ( :, F % VELOCITY_U ( 3 ) ) )
 
     call F % ComputeFromPrimitive ( G )
 
-    end associate !-- X, etc.
-    end select !-- FA
-    end select !-- PS
-    end select !-- FB
-    nullify ( F, G )
-    
   end subroutine SetFluid
 
-  
+
+  subroutine SetFluidKernel &
+               ( X, Y, Z, DP_1, sTheta, cTheta, sPhi, cPhi, N_L, N_R, &
+                 E_L, E_R, V_L, V_R, N, E, VX, VY, VZ )
+
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      X, Y, Z
+    real ( KDR ), dimension ( 3 ), intent ( in ) :: &
+      DP_1
+    real ( KDR ), intent ( in ) :: &
+      sTheta, cTheta, &
+      sPhi, cPhi, &
+      N_L, N_R, &
+      E_L, E_R, &
+      V_L, V_R
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      N, &
+      E, &
+      VX, VY, VZ
+
+!     !-- Translate to origin, rotate normal to xz plane and then to x axis
+
+    where (     sTheta  *  cPhi  *  ( X  -  DP_1 ( 1 ) ) &
+              + sTheta  *  sPhi  *  ( Y  -  DP_1 ( 2 ) ) &
+              + cTheta  *           ( Z  -  DP_1 ( 3 ) ) &
+           <=  1.e-10_KDR )     
+      N   =  N_L
+      E   =  E_L 
+      VX  =  V_L  *  sTheta  *  cPhi
+      VY  =  V_L  *  sTheta  *  sPhi
+      VZ  =  V_L  *  cTheta
+    elsewhere
+      N   =  N_R  
+      E   =  E_R 
+      VX  =  V_R  *  sTheta  *  cPhi
+      VY  =  V_R  *  sTheta  *  sPhi
+      VZ  =  V_R  *  cTheta
+    end where
+
+  end subroutine SetFluidKernel
+
+
 end module RiemannProblem_Form

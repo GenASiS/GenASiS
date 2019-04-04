@@ -1,9 +1,11 @@
 include $(PATH_RADIATION_BASICS)/Makefile_Dependencies
 include $(PATH_PHOTONS)/Makefile_Dependencies
+include $(PATH_NEUTRINOS)/Makefile_Dependencies
 
 Radiations.o: \
   RadiationBasics.o \
   Photons.o \
+  Neutrinos.o \
   Radiations.f90
 
 Radiations.a: $(RADIATIONS)

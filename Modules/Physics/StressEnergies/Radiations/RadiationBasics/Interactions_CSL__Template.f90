@@ -4,6 +4,7 @@ module Interactions_CSL__Template
 
   use Basics
   use Mathematics
+  use StressEnergyBasics
   use Interactions_Template
 
   implicit none
@@ -11,53 +12,27 @@ module Interactions_CSL__Template
 
   type, public, extends ( Field_CSL_Template ), abstract :: &
     Interactions_CSL_Template
-      type ( MeasuredValueForm ) :: &
-        LengthUnit, &
-        EnergyDensityUnit, &
-        TemperatureUnit
+      class ( StressEnergyUnitsForm ), pointer :: &
+        Units => null ( )
       character ( LDL ) :: &
         InteractionsType = '', &
         MomentsType = ''
   contains
-    procedure ( I ), public, pass, deferred :: &
-      Initialize
     procedure, public, pass :: &
-      IntializeTemplate_I_CSL
+      Initialize => IntializeTemplate_I_CSL
     procedure, public, pass :: &
       Interactions
     procedure, public, pass :: &
       FinalizeTemplate_I_CSL
-    procedure, public, pass :: &
+    procedure, private, pass :: &
+      SetType
+    procedure, private, pass :: &
       SetField
-    procedure ( AF ), public, pass, deferred :: &
+    procedure ( AF ), private, pass, deferred :: &
       AllocateField
   end type Interactions_CSL_Template
 
   abstract interface
-
-    subroutine I ( IC, C, NameShort, InteractionsType, MomentsType, &
-                   LengthUnit, EnergyDensityUnit, TemperatureUnit, nValues, &
-                   IgnorabilityOption )
-      use Basics
-      use Mathematics
-      import Interactions_CSL_Template
-      class ( Interactions_CSL_Template ), intent ( inout ) :: &
-        IC
-      class ( ChartHeader_SL_Form ), intent ( in ), target :: &
-        C
-      character ( * ), intent ( in ) :: &
-        NameShort, &
-        InteractionsType, &
-        MomentsType
-      type ( MeasuredValueForm ), intent ( in ) :: &
-        LengthUnit, &
-        EnergyDensityUnit, &
-        TemperatureUnit
-      integer ( KDI ), intent ( in ) :: &
-        nValues
-      integer ( KDI ), intent ( in ), optional :: &
-        IgnorabilityOption
-    end subroutine I
 
     subroutine AF ( IC )
       import Interactions_CSL_Template
@@ -71,35 +46,30 @@ contains
 
 
   subroutine IntializeTemplate_I_CSL &
-               ( IC, C, NameShort, InteractionsType, MomentsType, LengthUnit, &
-                 EnergyDensityUnit, TemperatureUnit, nValues, &
-                 IgnorabilityOption )
+               ( IC, C, NameShort, InteractionsType, MomentsType, Units, &
+                 nValues, IgnorabilityOption )
 
     class ( Interactions_CSL_Template ), intent ( inout ) :: &
       IC
-    class ( ChartHeader_SL_Form ), intent ( in ), target :: &
+    class ( ChartHeader_SL_Form ), intent ( in ) :: &
       C
     character ( * ), intent ( in ) :: &
       NameShort, &
       InteractionsType, &
       MomentsType
-    type ( MeasuredValueForm ), intent ( in ) :: &
-      LengthUnit, &
-      EnergyDensityUnit, &
-      TemperatureUnit
+    class ( StressEnergyUnitsForm ), intent ( in ), target :: &
+      Units
     integer ( KDI ), intent ( in ) :: &
       nValues
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
-    if ( IC % Type == '' ) &
-      IC % Type = 'an Interactions_CSL'
+    call IC % SetType ( )
+
     IC % InteractionsType = InteractionsType
     IC % MomentsType      = MomentsType
 
-    IC % LengthUnit        = LengthUnit
-    IC % EnergyDensityUnit = EnergyDensityUnit
-    IC % TemperatureUnit   = TemperatureUnit
+    IC % Units => Units
 
     call IC % InitializeTemplate_CSL &
            ( C, NameShort, nValues, IgnorabilityOption )
@@ -133,9 +103,21 @@ contains
     class ( Interactions_CSL_Template ), intent ( inout ) :: &
       IC
 
+    nullify ( IC % Units )
+
     call IC % FinalizeTemplate_CSL ( )
 
   end subroutine FinalizeTemplate_I_CSL
+
+
+  subroutine SetType ( IC )
+
+    class ( Interactions_CSL_Template ), intent ( inout ) :: &
+      IC
+
+    IC % Type = 'an Interactions_CSL'
+
+  end subroutine SetType
 
 
   subroutine SetField ( FC )
@@ -150,8 +132,7 @@ contains
     select type ( I => FC % Field )
     class is ( InteractionsTemplate )
       call I % Initialize &
-             ( FC % MomentsType, FC % LengthUnit, FC % EnergyDensityUnit, &
-               FC % TemperatureUnit, FC % nValues, &
+             ( FC % MomentsType, FC % Units, FC % nValues, &
                NameOption = FC % NameShort )
       call I % SetOutput ( FC % FieldOutput )
     end select !-- I

@@ -5,7 +5,7 @@ module FishboneMoncrief_Form
   implicit none
   private
 
-  type, public, extends ( UniverseTemplate ) :: FishboneMoncriefForm
+  type, public, extends ( FluidCentralExcisionForm ) :: FishboneMoncriefForm
     real ( KDR ), private :: &
       AngularMomentumParameter, &
       CentralMass, &
@@ -14,110 +14,42 @@ module FishboneMoncrief_Form
       DensityMax, &
       AtmosphereParameter
   contains
-    procedure, public, pass :: &
-      Initialize
+    procedure, private, pass :: &
+      Initialize_FM
+    generic, public :: &
+      Initialize => Initialize_FM
     final :: &
       Finalize
   end type FishboneMoncriefForm
 
     private :: &
-      SetFluid, &
-      SetBaryonDensityMin
+      InitializeFluidCentralExcision, &
+      SetProblem
+
+      private :: &
+        SetFluid, &
+        SetBaryonDensityMin
+
+        private :: &
+          SetFluidKernel
 
 contains
 
 
-  subroutine Initialize ( FM, Name )
+  subroutine Initialize_FM ( FM, Name )
 
     class ( FishboneMoncriefForm ), intent ( inout ) :: &
       FM
     character ( * ), intent ( in ) :: &
       Name
 
-    real ( KDR ) :: &
-      RadiusMin, &
-      RadiusOuter, &
-      SpecificAngularMomentum, &
-      FinishTime
-
-
     if ( FM % Type == '' ) &
       FM % Type = 'a FishboneMoncrief'
 
-    call FM % InitializeTemplate ( Name )
+    call InitializeFluidCentralExcision ( FM, Name )
+    call SetProblem ( FM )
 
-    associate &
-      ( Kappa  => FM % AngularMomentumParameter, &  !-- Between 1 and 2
-        M      => FM % CentralMass, &
-        R_In   => FM % RadiusInner, &
-        Gamma  => FM % AdiabaticIndex, &
-        N_Max  => FM % DensityMax, &
-        AP     => FM % AtmosphereParameter, &
-        R_Out  => RadiusOuter, &
-        L      => SpecificAngularMomentum, &
-        G      => CONSTANT % GRAVITATIONAL, &
-        c      => CONSTANT % SPEED_OF_LIGHT, &
-        amu    => CONSTANT % ATOMIC_MASS_UNIT )
-
-    Kappa  =  1.85_KDR
-    M      =  3.0_KDR * UNIT % SOLAR_MASS
-    call PROGRAM_HEADER % GetParameter ( Kappa, 'AngularMomentumParameter' )
-    call PROGRAM_HEADER % GetParameter ( M, 'CentralMass' )
-
-    R_In   =  6.0_KDR * G * M  /  c ** 2
-    Gamma  =  1.4_KDR
-    N_Max  =  1.0e12_KDR * UNIT % MASS_DENSITY_CGS / amu
-    AP     =  1.0e-6_KDR
-    call PROGRAM_HEADER % GetParameter ( R_In,  'RadiusInner' )
-    call PROGRAM_HEADER % GetParameter ( Gamma, 'AdiabaticIndex' )
-    call PROGRAM_HEADER % GetParameter ( N_Max, 'DensityMax' )
-    call PROGRAM_HEADER % GetParameter ( AP,    'AtmosphereParameter' )
-
-    R_Out  =  R_In * Kappa / ( 2.0_KDR - Kappa )
-    L      =  sqrt ( Kappa * G * M * R_In )
-
-    call Show ( 'FishboneMoncrief parameters' )
-    call Show ( Kappa, 'Kappa' ) 
-    call Show ( M,     UNIT % SOLAR_MASS, 'M' )
-    call Show ( R_In,  UNIT % KILOMETER, 'R_In' )
-    call Show ( R_Out, UNIT % KILOMETER, 'R_Out' )
-    call Show ( L,     UNIT % KILOMETER * UNIT % SPEED_OF_LIGHT, 'L' )
-    call Show ( Gamma, 'Gamma' )
-    call Show ( N_Max, UNIT % FEMTOMETER ** (-3), 'N_Max' )
-    call Show ( amu * N_Max, UNIT % MASS_DENSITY_CGS, 'Rho_Max' )
-    call Show ( AP, 'AtmosphereParameter' )
-
-    RadiusMin  =  ( 2.0_KDR / 3.0_KDR ) * R_In
-    call PROGRAM_HEADER % GetParameter ( RadiusMin, 'RadiusMin' )
-    end associate !-- Kappa, etc.
-
-    FinishTime  =  1.0e-3_KDR * UNIT % SECOND
-
-
-    !-- Integrator
-
-    allocate ( FluidCentralExcisionForm :: FM % Integrator )
-    select type ( FCE => FM % Integrator )
-    type is ( FluidCentralExcisionForm )
-    call FCE % Initialize &
-           ( Name, FluidType = 'IDEAL', &
-             GeometryType = 'NEWTONIAN', &
-             FinishTimeOption = FinishTime, &
-             LimiterParameterOption = 1.8_KDR, &
-             RadiusMaxOption = RadiusOuter, &
-             RadiusMinOption = RadiusMin, &
-             CentralMassOption = FM % CentralMass, &
-             nCellsPolarOption = 128 )
-    end select !-- FCE
-
-
-    !-- Initial conditions
-
-    call SetFluid ( FM )
-    call SetBaryonDensityMin ( FM )
-
-
-  end subroutine Initialize
+  end subroutine Initialize_FM
 
 
   impure elemental subroutine Finalize ( FM )
@@ -125,27 +57,138 @@ contains
     type ( FishboneMoncriefForm ), intent ( inout ) :: &
       FM
 
-    call FM % FinalizeTemplate ( )
-
   end subroutine Finalize
 
 
-  subroutine SetFluid ( FM )
+  subroutine InitializeFluidCentralExcision ( FM, Name )
 
-    type ( FishboneMoncriefForm ), intent ( inout ) :: &
+    class ( FishboneMoncriefForm ), intent ( inout ) :: &
+      FM
+    character ( * ), intent ( in )  :: &
+      Name
+
+    real ( KDR ) :: &
+      R_Min, &
+      R_Out, &
+      FinishTime, &
+      SpecificAngularMomentum, &
+      G, c
+
+    associate &
+      ( Kappa => FM % AngularMomentumParameter, &  !-- Between 1 and 2
+        M     => FM % CentralMass, &
+        R_In  => FM % RadiusInner, &
+        L     => SpecificAngularMomentum )
+
+    G  =  CONSTANT % GRAVITATIONAL
+    c  =  CONSTANT % SPEED_OF_LIGHT
+
+    Kappa  =  1.85_KDR
+    M      =  3.0_KDR * UNIT % SOLAR_MASS
+    call PROGRAM_HEADER % GetParameter ( Kappa, 'AngularMomentumParameter' )
+    call PROGRAM_HEADER % GetParameter ( M, 'CentralMass' )
+
+    R_In   =  6.0_KDR * G * M  /  c ** 2
+    call PROGRAM_HEADER % GetParameter ( R_In,  'RadiusInner' )
+
+    R_Min  =  ( 2.0_KDR / 3.0_KDR ) * R_In
+    R_Out  =  R_In * Kappa / ( 2.0_KDR - Kappa )
+    L      =  sqrt ( Kappa * G * M * R_In )
+
+    FinishTime  =  1.0e-3_KDR * UNIT % SECOND
+
+    call FM % Initialize &
+           ( FluidType = 'IDEAL', GeometryType = 'NEWTONIAN', Name = Name, &
+             FinishTimeOption = FinishTime, &
+             LimiterParameterOption = 1.8_KDR, &
+             RadiusMaxOption = R_Out, &
+             RadiusMinOption = R_Min, &
+             CentralMassOption = FM % CentralMass, &
+             nCellsPolarOption = 128 )
+
+    call Show ( 'FishboneMoncrief parameters' )
+    call Show ( Kappa, 'Kappa' ) 
+    call Show ( M,     UNIT % SOLAR_MASS, 'M' )
+    call Show ( R_In,  UNIT % KILOMETER, 'R_In' )
+    call Show ( R_Out, UNIT % KILOMETER, 'R_Out' )
+    call Show ( L,     UNIT % KILOMETER * UNIT % SPEED_OF_LIGHT, 'L' )
+
+    end associate !-- Kappa, etc.
+
+  end subroutine InitializeFluidCentralExcision
+
+
+  subroutine SetProblem ( FM )
+
+    class ( FishboneMoncriefForm ), intent ( inout ) :: &
       FM
 
-    integer ( KDI ) :: &
-      iB  !-- iBoundary
     real ( KDR ) :: &
-      EnthalpyMax, &
-      PolytropicParameter
-    real ( KDR ), dimension ( : ), allocatable :: &
-      Enthalpy
+      amu
     class ( GeometryFlatForm ), pointer :: &
       G
     class ( Fluid_P_I_Form ), pointer :: &
       F
+
+    select type ( I => FM % Integrator )
+    class is ( Integrator_C_PS_Form )
+
+    select type ( FA => I % Current_ASC )
+    class is ( Fluid_ASC_Form )
+
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
+
+    associate &
+      ( Gamma => FM % AdiabaticIndex, &
+        N_Max => FM % DensityMax, &
+        AP    => FM % AtmosphereParameter )
+
+    amu  =  CONSTANT % ATOMIC_MASS_UNIT
+
+    Gamma  =  1.4_KDR
+    N_Max  =  1.0e12_KDR * UNIT % MASS_DENSITY_CGS / amu
+    AP     =  1.0e-6_KDR
+    call PROGRAM_HEADER % GetParameter ( Gamma, 'AdiabaticIndex' )
+    call PROGRAM_HEADER % GetParameter ( N_Max, 'DensityMax' )
+    call PROGRAM_HEADER % GetParameter ( AP,    'AtmosphereParameter' )
+
+    call Show ( Gamma, 'Gamma' )
+    call Show ( N_Max, UNIT % FEMTOMETER ** (-3), 'N_Max' )
+    call Show ( amu * N_Max, UNIT % MASS_DENSITY_CGS, 'Rho_Max' )
+    call Show ( AP, 'AtmosphereParameter' )
+
+    end associate !-- Gamma, etc.
+
+    G => PS % Geometry ( )
+    F => FA % Fluid_P_I ( )
+    call SetFluid ( FM, F, G )
+
+    call SetBaryonDensityMin ( FM, F )
+
+    end select !-- PS
+    end select !-- FA
+    end select !-- I
+    nullify ( G, F )
+
+  end subroutine SetProblem
+
+
+  subroutine SetFluid ( FM, F, G )
+
+    type ( FishboneMoncriefForm ), intent ( inout ) :: &
+      FM
+    class ( Fluid_P_I_Form ), intent ( inout ) :: &
+      F
+    class ( GeometryFlatForm ), intent ( in ) :: &
+      G
+
+    real ( KDR ) :: &
+      EnthalpyMax, &
+      PolytropicParameter, &
+      GC, c, amu
+    real ( KDR ), dimension ( : ), allocatable :: &
+      Enthalpy
 
     associate &
       ( Kappa => FM % AngularMomentumParameter, &
@@ -155,19 +198,11 @@ contains
         N_Max => FM % DensityMax, &
         AP    => FM % AtmosphereParameter, &
         W_Max => EnthalpyMax, &
-        K     => PolytropicParameter, &
-        GC    => CONSTANT % GRAVITATIONAL, &
-        c     => CONSTANT % SPEED_OF_LIGHT, &
-        amu   => CONSTANT % ATOMIC_MASS_UNIT )
+        K     => PolytropicParameter )
 
-    select type ( FCE => FM % Integrator )
-    class is ( FluidCentralExcisionForm )
-
-    select type ( FA => FCE % Current_ASC )
-    class is ( Fluid_ASC_Form )
-    F => FA % Fluid_P_I ( )
-
-    !-- Fluid
+    GC   =  CONSTANT % GRAVITATIONAL
+    c    =  CONSTANT % SPEED_OF_LIGHT
+    amu  =  CONSTANT % ATOMIC_MASS_UNIT
 
     call F % SetAdiabaticIndex ( Gamma )
 
@@ -179,26 +214,92 @@ contains
 
     allocate ( Enthalpy ( F % nValues ) )
 
-    select type ( PS => FCE % PositionSpace )
+    call SetFluidKernel &
+           ( G % Value ( :, G % CENTER_U ( 1 ) ), &
+             G % Value ( :, G % CENTER_U ( 2 ) ), &
+             Kappa, M, R_In, Gamma, N_Max, K, AP, GC, c, amu, &
+             Enthalpy, &
+             F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
+             F % Value ( :, F % INTERNAL_ENERGY ), &
+             F % Value ( :, F % VELOCITY_U ( 1 ) ), &
+             F % Value ( :, F % VELOCITY_U ( 2 ) ), &
+             F % Value ( :, F % VELOCITY_U ( 3 ) ) )
+
+    call F % ComputeFromPrimitive ( G )
+
+    end associate !-- Kappa, etc.
+
+  end subroutine SetFluid
+
+
+  subroutine SetBaryonDensityMin ( FM, F )
+
+    class ( FishboneMoncriefForm ), intent ( inout ) :: &
+      FM
+    class ( Fluid_P_I_Form ), intent ( inout ) :: &
+      F
+
+    type ( CollectiveOperation_R_Form ) :: &
+      CO
+
+    select type ( I => FM % Integrator )
+    class is ( Integrator_C_PS_Form )
+
+    select type ( PS => I % PositionSpace )
     class is ( Atlas_SC_Form )
-    G => PS % Geometry ( )
+
+    select type ( PSC => PS % Chart )
+    class is ( Chart_SLD_Form )
+
+    call CO % Initialize &
+           ( PS % Communicator, nOutgoing = [ 1 ], nIncoming = [ 1 ] )
 
     associate &
-      (     W => Enthalpy, &
-            N => F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
-          V_1 => F % Value ( :, F % VELOCITY_U ( 1 ) ), &
-          V_2 => F % Value ( :, F % VELOCITY_U ( 2 ) ), &
-          V_3 => F % Value ( :, F % VELOCITY_U ( 3 ) ), &
-            E => F % Value ( :, F % INTERNAL_ENERGY ), &
-            R => G % Value ( :, G % CENTER_U ( 1 ) ), &
-        Theta => G % Value ( :, G % CENTER_U ( 2 ) ) )
+      ( My_N_Min => CO % Outgoing % Value ( 1 ), &
+           N_Min => CO % Incoming % Value ( 1 ) )
+ 
+    My_N_Min  =  minval ( F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
+                          mask = PSC % IsProperCell )
 
-    W = max ( 0.0_KDR, &
-              GC * M / ( c ** 2  *  R_In )  &
-              * ( R_In / R  -  1.0_KDR  +  0.5_KDR * Kappa &
-                  -  0.5_KDR * Kappa  *  R_In ** 2  &
-                     /  ( R * sin ( Theta ) ) ** 2 ) )
+    call CO % Reduce ( REDUCTION % MIN )
 
+    call F % SetBaryonDensityMin ( N_Min )
+
+    end associate !-- My_N_Min, etc.
+    end select !-- PSC
+    end select !-- PS
+    end select !-- I
+
+  end subroutine SetBaryonDensityMin
+
+
+  subroutine SetFluidKernel &
+               ( R, Theta, Kappa, M, R_In, Gamma, N_Max, K, AP, GC, c, amu, &
+                 W, N, E, V_1, V_2, V_3 )
+
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      R, &
+      Theta
+    real ( KDR ), intent ( in ) :: &
+      Kappa, &
+      M, &
+      R_In, &
+      Gamma, &
+      N_Max, &
+      K, &
+      AP, &
+      GC, c, amu
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      W, &
+      N, &
+      E, &
+      V_1, V_2, V_3
+
+    W  =  max ( 0.0_KDR, &
+                GC * M / ( c ** 2  *  R_In )  &
+                * ( R_In / R  -  1.0_KDR  +  0.5_KDR * Kappa &
+                    -  0.5_KDR * Kappa  *  R_In ** 2  &
+                       /  ( R * sin ( Theta ) ) ** 2 ) )
     N  =  ( ( ( Gamma - 1.0_KDR ) / ( Gamma * K ) * W ) &
           ** ( 1.0_KDR / ( Gamma - 1.0_KDR ) ) ) &
           / amu
@@ -216,63 +317,7 @@ contains
       V_3  =    0.0_KDR
     end where
 
-    call F % ComputeFromPrimitive ( G )
-
-    end associate !-- W, etc.
-    end select !-- PS
-    end select !-- FA
-    end select !-- FCE
-    end associate !-- Kappa, etc.
-    nullify ( F, G )
-
-  end subroutine SetFluid
-
-
-  subroutine SetBaryonDensityMin ( FM )
-
-    type ( FishboneMoncriefForm ), intent ( inout ) :: &
-      FM
-
-    type ( CollectiveOperation_R_Form ) :: &
-      CO
-    class ( Fluid_P_I_Form ), pointer :: &
-      F
-
-    select type ( FCE => FM % Integrator )
-    class is ( FluidCentralExcisionForm )
-
-    select type ( FA => FCE % Current_ASC )
-    class is ( Fluid_ASC_Form )
-    F => FA % Fluid_P_I ( )
-
-    select type ( PS => FCE % PositionSpace )
-    class is ( Atlas_SC_Form )
-
-    select type ( CSL => PS % Chart )
-    class is ( Chart_SLD_Form )
-
-    call CO % Initialize &
-           ( PS % Communicator, nOutgoing = [ 1 ], nIncoming = [ 1 ] )
-
-    associate &
-      ( My_N_Min => CO % Outgoing % Value ( 1 ), &
-           N_Min => CO % Incoming % Value ( 1 ) )
- 
-    My_N_Min  =  minval ( F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
-                          mask = CSL % IsProperCell )
-
-    call CO % Reduce ( REDUCTION % MIN )
-
-    call F % SetBaryonDensityMin ( N_Min )
-
-    end associate !-- My_N_Min, etc.
-    end select !-- CSL
-    end select !-- PS
-    end select !-- FA
-    end select !-- FCE
-    nullify ( F )
-
-  end subroutine SetBaryonDensityMin
+  end subroutine SetFluidKernel
 
 
 end module FishboneMoncrief_Form

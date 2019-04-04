@@ -8,14 +8,15 @@ module Integrator_C_MS_C_PS__Template
   use Basics
   use Manifolds
   use Fields
+  use EvolutionBasics
   use Steps
   use Integrator_Template
-  use Integrator_C_PS__Template
+  use Integrator_C_PS__Form
 
   implicit none
   private
 
-  type, public, extends ( Integrator_C_PS_Template ), abstract :: &
+  type, public, extends ( Integrator_C_PS_Form ), abstract :: &
     Integrator_C_MS_C_PS_Template
       logical ( KDL ) :: &
         UseLimiterParameter_S, &
@@ -57,12 +58,14 @@ contains
 
 
   subroutine InitializeTemplate_C_MS_C_PS &
-               ( I, Name, UseLimiterParameter_S_Option, &
+               ( I, U, Name, UseLimiterParameter_S_Option, &
                  UseLimiterParameter_F_Option, TimeUnitOption, &
                  FinishTimeOption, nWriteOption )
 
     class ( Integrator_C_MS_C_PS_Template ), intent ( inout ) :: &
       I
+    class ( UniverseHeaderForm ), intent ( in ) :: &
+      U
     character ( * ), intent ( in )  :: &
       Name
     logical ( KDL ), intent ( in ), optional :: &
@@ -87,8 +90,8 @@ contains
                   CONSOLE % WARNING )
     end if
 
-    call I % InitializeTemplate_C_PS &
-           ( Name, TimeUnitOption = TimeUnitOption, &
+    call I % Integrator_C_PS_Form % Initialize &
+           ( U, Name, TimeUnitOption = TimeUnitOption, &
              FinishTimeOption = FinishTimeOption, nWriteOption = nWriteOption )
 
     I % ComputeTimeStepLocal => ComputeTimeStepLocal
@@ -118,8 +121,6 @@ contains
      deallocate ( I % Step_PS )
    if ( allocated ( I % Current_BSLL_ASC_CSLD ) ) &
      deallocate ( I % Current_BSLL_ASC_CSLD )
-
-    call I % FinalizeTemplate_C_PS ( )
 
   end subroutine FinalizeTemplate_C_MS_C_PS
 

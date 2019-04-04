@@ -5,6 +5,7 @@ module Tally_F_D__Form
   use Basics
   use Mathematics
   use Spaces
+  use StressEnergyBasics
   use Fluid_D__Form
 
   implicit none
@@ -64,19 +65,14 @@ module Tally_F_D__Form
 contains
 
 
-  subroutine InitializeFluid &
-               ( T, A, NumberUnitOption, EnergyUnitOption, &
-                 MomentumUnitOption, AngularMomentumUnitOption )
+  subroutine InitializeFluid ( T, A, Units )
     
     class ( Tally_F_D_Form ), intent ( inout ) :: &
       T
     class ( AtlasHeaderForm ), intent ( in ), target :: &
       A
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
-      NumberUnitOption, &
-      EnergyUnitOption, &
-      MomentumUnitOption, &
-      AngularMomentumUnitOption
+    class ( StressEnergyUnitsForm ), intent ( in ) :: &
+      Units
 
     integer ( KDI ) :: &
       iU  !-- iUnit
@@ -114,20 +110,10 @@ contains
     if ( .not. allocated ( T % Unit ) ) &
       allocate ( T % Unit ( T % N_INTEGRALS ) )
     
-    if ( present ( NumberUnitOption ) .and. present ( MomentumUnitOption ) &
-         .and. present ( AngularMomentumUnitOption ) ) &
-    then
-      T % Unit ( 1 : T % N_INTEGRALS_DUST ) &
-        = [ NumberUnitOption, spread ( MomentumUnitOption, 1, 3 ), &
-            EnergyUnitOption, spread ( AngularMomentumUnitOption, 1, 3 ), &
-            EnergyUnitOption, EnergyUnitOption ]
-    else
-!-- FIXME: NAG chokes on this, so use explicit loop
-!      T % Unit ( 1 : T % N_FIELDS_DUST ) = UNIT % IDENTITY
-      do iU = 1, T % N_INTEGRALS_DUST
-        T % Unit ( iU ) = UNIT % IDENTITY
-      end do
-    end if
+    T % Unit ( 1 : T % N_INTEGRALS_DUST ) &
+      = [ Units % Number, spread ( Units % Momentum, 1, 3 ), Units % Energy, &
+          spread ( Units % AngularMomentum, 1, 3 ), Units % Energy, &
+          Units % Energy ]
     
     call T % SelectVariables ( A )
 
@@ -708,6 +694,7 @@ contains
         call T % ComputeFacePositions ( CSL, G, iD, iF, X_1, X_2, X_3 )
         select case ( trim ( G % CoordinateSystem ) )
         case ( 'SPHERICAL' )
+
           if ( iD /= 1 ) &
             exit DimensionLoop
 !          if ( iF /= 2 ) &
@@ -722,16 +709,17 @@ contains
               iGravity = iS
             end if !-- iI
           end do !-- iS
-        end select !-- CoordinateSystem
 
-        do iS = 1, T % nSelected
-          iI = T % iaSelected ( iS )
-        if ( iI == T % TOTAL_ENERGY ) then
-          Integrand ( iS, iF ) % Value  &
-            =  Integrand ( iS, iF ) % Value  &
-               +  Integrand ( iGravity, iF ) % Value
-        end if !-- iI
-      end do !-- iS
+          do iS = 1, T % nSelected
+            iI = T % iaSelected ( iS )
+            if ( iI == T % TOTAL_ENERGY ) then
+              Integrand ( iS, iF ) % Value  &
+                =  Integrand ( iS, iF ) % Value  &
+                   +  Integrand ( iGravity, iF ) % Value
+            end if !-- iI
+          end do !-- iS
+
+        end select !-- CoordinateSystem
 
         end associate !-- D, etc.
       end do FaceLoop !-- iF

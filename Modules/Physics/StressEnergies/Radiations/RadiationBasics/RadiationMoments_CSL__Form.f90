@@ -4,6 +4,7 @@ module RadiationMoments_CSL__Form
 
   use Basics
   use Mathematics
+  use StressEnergyBasics
   use Interactions_Template
   use RadiationMoments_Form
   use Sources_RM__Form
@@ -15,17 +16,13 @@ module RadiationMoments_CSL__Form
   type, public, extends ( Field_CSL_Template ) :: RadiationMoments_CSL_Form
     real ( KDR ) :: &
       LimiterParameter
-    type ( MeasuredValueForm ) :: &
-      EnergyDensityUnit, &
-      TemperatureUnit
-    type ( MeasuredValueForm ), dimension ( 3 ) :: &
-      Velocity_U_Unit, &
-      MomentumDensity_U_Unit, &
-      MomentumDensity_D_Unit
+    class ( StressEnergyUnitsForm ), pointer :: &
+      Units => null ( )
     logical ( KDL ) :: &
       UseLimiter
     character ( LDF ) :: &
       RadiationMomentsType = '', &
+      ReconstructedType = '', &
       RiemannSolverType = ''
     class ( Sources_RM_CSL_Form ), pointer :: &
       Sources_CSL => null ( )
@@ -47,6 +44,8 @@ module RadiationMoments_CSL__Form
     final :: &
       Finalize
     procedure, private, pass :: &
+      SetType
+    procedure, private, pass :: &
       SetField
   end type RadiationMoments_CSL_Form
 
@@ -55,9 +54,8 @@ contains
 
   subroutine Initialize &
                ( RMC, C, NameShort, RadiationMomentsType, RiemannSolverType, &
-                 UseLimiter, Velocity_U_Unit, MomentumDensity_U_Unit, &
-                 MomentumDensity_D_Unit, EnergyDensityUnit, TemperatureUnit, &
-                 LimiterParameter, nValues, IgnorabilityOption )
+                 ReconstructedType, UseLimiter, Units, LimiterParameter, &
+                 nValues, IgnorabilityOption )
 
     class ( RadiationMoments_CSL_Form ), intent ( inout ) :: &
       RMC
@@ -66,16 +64,12 @@ contains
     character ( * ), intent ( in ) :: &
       NameShort, &
       RadiationMomentsType, &
-      RiemannSolverType
+      RiemannSolverType, &
+      ReconstructedType
     logical ( KDL ), intent ( in ) :: &
       UseLimiter
-    type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
-      Velocity_U_Unit, &
-      MomentumDensity_U_Unit, &
-      MomentumDensity_D_Unit
-    type ( MeasuredValueForm ), intent ( in ) :: &
-      EnergyDensityUnit, &
-      TemperatureUnit
+    class ( StressEnergyUnitsForm ), intent ( in ), target :: &
+      Units
     real ( KDR ), intent ( in ) :: &
       LimiterParameter
     integer ( KDI ), intent ( in ) :: &
@@ -83,18 +77,15 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
-    if ( RMC % Type == '' ) &
-      RMC % Type = 'a RadiationMoments_CSL'
+    call RMC % SetType ( )
+
     RMC % RadiationMomentsType = RadiationMomentsType
+    RMC % ReconstructedType    = ReconstructedType
     RMC % RiemannSolverType    = RiemannSolverType
     RMC % UseLimiter           = UseLimiter
     RMC % LimiterParameter     = LimiterParameter
 
-    RMC % EnergyDensityUnit      = EnergyDensityUnit
-    RMC % TemperatureUnit        = TemperatureUnit
-    RMC % Velocity_U_Unit        = Velocity_U_Unit
-    RMC % MomentumDensity_U_Unit = MomentumDensity_U_Unit
-    RMC % MomentumDensity_D_Unit = MomentumDensity_D_Unit
+    RMC % Units => Units
 
     call RMC % InitializeTemplate_CSL &
            ( C, NameShort, nValues, IgnorabilityOption )
@@ -218,10 +209,21 @@ contains
 
     nullify ( RMC % Interactions_CSL )
     nullify ( RMC % Sources_CSL )
+    nullify ( RMC % Units )
 
     call RMC % FinalizeTemplate ( )
 
   end subroutine Finalize
+
+
+  subroutine SetType ( RMC )
+
+    class ( RadiationMoments_CSL_Form ), intent ( inout ) :: &
+      RMC
+
+    RMC % Type = 'a RadiationMoments_CSL'
+
+  end subroutine SetType
 
 
   subroutine SetField ( FC )
@@ -237,12 +239,12 @@ contains
       select type ( RM => FC % Field )
       type is ( RadiationMomentsForm )
         call RM % Initialize &
-               ( FC % RiemannSolverType, FC % UseLimiter, &
-                 FC % Velocity_U_Unit, FC % MomentumDensity_U_Unit, &
-                 FC % MomentumDensity_D_Unit, FC % EnergyDensityUnit, &
+               ( FC % RadiationMomentsType, FC % RiemannSolverType, &
+                 FC % ReconstructedType, FC % UseLimiter, FC % Units, &
                  FC % LimiterParameter, FC % nValues, &
                  NameOption = FC % NameShort )
         call RM % SetPrimitiveConserved ( )
+        call RM % SetReconstructed ( )
         call RM % SetOutput ( FC % FieldOutput )
       end select !-- RM
     case default

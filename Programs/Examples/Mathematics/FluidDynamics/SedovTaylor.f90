@@ -9,7 +9,8 @@ program SedovTaylor
     ST
 
   allocate ( PROGRAM_HEADER )
-  call PROGRAM_HEADER % Initialize ( 'SedovTaylor' )
+  call PROGRAM_HEADER % Initialize &
+         ( 'SedovTaylor', DimensionalityOption = '2D' )
 
   allocate ( ST )
   call ST % Initialize ( PROGRAM_HEADER % Name )

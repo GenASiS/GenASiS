@@ -5,6 +5,7 @@ module PhotonMoments_BSLL_ASC_CSLD__Form
 
   use Basics
   use Mathematics
+  use StressEnergyBasics
   use RadiationBasics
   use PhotonMoments_ASC__Form
 
@@ -15,10 +16,23 @@ module PhotonMoments_BSLL_ASC_CSLD__Form
     PhotonMoments_BSLL_ASC_CSLD_Form
   contains
     procedure, private, pass :: &
+      SetType
+    procedure, private, pass :: &
       AllocateField
   end type PhotonMoments_BSLL_ASC_CSLD_Form
 
 contains
+
+
+  subroutine SetType ( RMB )
+
+    class ( PhotonMoments_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
+      RMB
+
+    if ( RMB % Type == '' ) &
+      RMB % Type = 'a PhotonMoments_BSLL_ASC_CSLD'
+
+  end subroutine SetType
 
 
   subroutine AllocateField ( RMB, RMA )

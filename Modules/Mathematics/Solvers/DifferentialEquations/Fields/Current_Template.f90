@@ -11,18 +11,19 @@ module Current_Template
   private
 
     integer ( KDI ), private, parameter :: &
-      N_PRIMITIVE_TEMPLATE = 0, &
-      N_CONSERVED_TEMPLATE = 0, &
-      N_FIELDS_TEMPLATE    = 6, &
-      N_VECTORS_TEMPLATE   = 2
+      N_PRIMITIVE_TEMPLATE     = 0, &
+      N_CONSERVED_TEMPLATE     = 0, &
+      N_FIELDS_TEMPLATE        = 6, &
+      N_VECTORS_TEMPLATE       = 2
 
   type, public, extends ( StorageForm ), abstract :: CurrentTemplate
     integer ( KDI ) :: &
-      IGNORABILITY = 0, &
-      N_PRIMITIVE  = 0, &
-      N_CONSERVED  = 0, &
-      N_FIELDS     = 0, &
-      N_VECTORS    = 0, &
+      IGNORABILITY    = 0, &
+      N_PRIMITIVE     = 0, &
+      N_CONSERVED     = 0, &
+      N_FIELDS        = 0, &
+      N_VECTORS       = 0, &
+      N_RECONSTRUCTED = 0, &
       N_PRIMITIVE_TEMPLATE = N_PRIMITIVE_TEMPLATE, &
       N_CONSERVED_TEMPLATE = N_CONSERVED_TEMPLATE, &
       N_FIELDS_TEMPLATE    = N_FIELDS_TEMPLATE, &
@@ -37,13 +38,15 @@ module Current_Template
       N_SOLVER_SPEEDS = 3
     integer ( KDI ), dimension ( : ), allocatable :: &
       iaPrimitive, &
-      iaConserved
+      iaConserved, &
+      iaReconstructed
     real ( KDR ) :: &
       LimiterParameter
     logical ( KDL ) :: &
       UseLimiter
     character ( LDL ) :: &
       Type = '', &
+      ReconstructedType = '', &
       RiemannSolverType = ''
     class ( Sources_C_Form ), pointer :: &
       Sources => null ( )
@@ -52,6 +55,8 @@ module Current_Template
       InitializeTemplate
     procedure ( SPC ), public, pass, deferred :: &
       SetPrimitiveConserved
+    procedure, public, pass :: &
+      SetReconstructed
     procedure, public, pass :: &
       ShowPrimitiveConserved
     procedure, public, pass :: &
@@ -174,14 +179,16 @@ contains
 
 
   subroutine InitializeTemplate &
-               ( C, RiemannSolverType, UseLimiter, Velocity_U_Unit, &
-                 LimiterParameter, nValues, VariableOption, VectorOption, &
-                 NameOption, ClearOption, UnitOption, VectorIndicesOption )
+               ( C, RiemannSolverType, ReconstructedType, UseLimiter, &
+                 Velocity_U_Unit, LimiterParameter, nValues, VariableOption, &
+                 VectorOption, NameOption, ClearOption, UnitOption, &
+                 VectorIndicesOption )
 
     class ( CurrentTemplate ), intent ( inout ) :: &
       C
     character ( * ), intent ( in ) :: &
-      RiemannSolverType
+      RiemannSolverType, &
+      ReconstructedType
     logical ( KDL ), intent ( in ) :: &
       UseLimiter
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
@@ -234,14 +241,43 @@ contains
              VectorIndicesOption = VectorIndices )
 
     C % RiemannSolverType = RiemannSolverType
+    C % ReconstructedType = ReconstructedType
     C % UseLimiter        = UseLimiter
     C % LimiterParameter  = LimiterParameter
     call Show ( C % RiemannSolverType, 'RiemannSolverType', C % IGNORABILITY )
+    call Show ( C % ReconstructedType, 'ReconstructedType', C % IGNORABILITY )
     call Show ( C % UseLimiter, 'UseLimiter', C % IGNORABILITY )
     if ( C % UseLimiter ) &
       call Show ( C % LimiterParameter, 'LimiterParameter', C % IGNORABILITY )
 
   end subroutine InitializeTemplate
+
+
+  subroutine SetReconstructed ( C )
+
+    class ( CurrentTemplate ), intent ( inout ) :: &
+      C
+
+    select case ( trim ( C % ReconstructedType ) )
+    case ( 'PRIMITIVE' )
+      C % N_RECONSTRUCTED = C % N_PRIMITIVE
+      allocate ( C % iaReconstructed, source = C % iaPrimitive )
+    case ( 'CONSERVED' )
+      C % N_RECONSTRUCTED = C % N_CONSERVED
+      allocate ( C % iaReconstructed, source = C % iaConserved )
+    case ( 'ALL' )
+      C % N_RECONSTRUCTED = C % N_FIELDS
+      allocate ( C % iaReconstructed, source = C % iaSelected )
+    case default
+      call Show ( 'ReconstructedType not recognized', CONSOLE % ERROR )
+      call Show ( C % ReconstructedType, 'ReconstructedType', &
+                  CONSOLE % ERROR )
+      call Show ( 'SetReconstructed', 'subroutine', CONSOLE % ERROR )
+      call Show ( 'Current_Template', 'module', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select
+
+  end subroutine SetReconstructed
 
 
   subroutine ShowPrimitiveConserved ( C, IgnorabilityOption )
@@ -258,6 +294,8 @@ contains
       PrimitiveName
     character ( LDL ), dimension ( C % N_CONSERVED ) :: &
       ConservedName
+    character ( LDL ), dimension ( C % N_RECONSTRUCTED ) :: &
+      ReconstructedName
 
     Ignorability = C % IGNORABILITY
     if ( present ( IgnorabilityOption ) ) &
@@ -269,8 +307,12 @@ contains
     do iF = 1, C % N_CONSERVED
       ConservedName ( iF )  =  C % Variable ( C % iaConserved ( iF ) )
     end do
-    call Show ( PrimitiveName, 'Primitive variables', Ignorability )
-    call Show ( ConservedName, 'Conserved variables', Ignorability )
+    do iF = 1, C % N_RECONSTRUCTED
+      ReconstructedName ( iF )  =  C % Variable ( C % iaReconstructed ( iF ) )
+    end do
+    call Show ( PrimitiveName,     'Primitive variables',     Ignorability )
+    call Show ( ConservedName,     'Conserved variables',     Ignorability )
+    call Show ( ReconstructedName, 'Reconstructed variables', Ignorability )
     
   end subroutine ShowPrimitiveConserved
 
@@ -462,6 +504,8 @@ contains
 
     nullify ( C % Sources )
 
+    if ( allocated ( C % iaReconstructed ) ) &
+      deallocate ( C % iaReconstructed )
     if ( allocated ( C % iaConserved ) ) &
       deallocate ( C % iaConserved )
     if ( allocated ( C % iaPrimitive ) ) &

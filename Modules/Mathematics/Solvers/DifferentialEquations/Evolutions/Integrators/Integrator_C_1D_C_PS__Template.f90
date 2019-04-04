@@ -9,14 +9,15 @@ module Integrator_C_1D_C_PS__Template
   use Basics
   use Manifolds
   use Fields
+  use EvolutionBasics
   use Steps
   use Integrator_Template
-  use Integrator_C_PS__Template
+  use Integrator_C_PS__Form
 
   implicit none
   private
 
-  type, public, extends ( Integrator_C_PS_Template ), abstract :: &
+  type, public, extends ( Integrator_C_PS_Form ), abstract :: &
     Integrator_C_1D_C_PS_Template
       integer ( KDI ) :: &
         N_CURRENTS_1D = 0
@@ -27,10 +28,6 @@ module Integrator_C_1D_C_PS__Template
     procedure ( PS ), pointer :: &
       PrepareStep => null ( )
   contains
-    procedure ( I_1D ), private, pass, deferred :: &
-      Initialize_1D
-    generic, public :: &
-      Initialize => Initialize_1D
     procedure, public, pass :: &  !-- 1
       InitializeTemplate_C_1D_C_PS
     procedure, public, pass :: &  !-- 1
@@ -58,23 +55,6 @@ module Integrator_C_1D_C_PS__Template
       class ( Integrator_C_1D_C_PS_Template ), intent ( inout ) :: &
         I
     end subroutine PS
-
-    subroutine I_1D ( I, Name, TimeUnitOption, FinishTimeOption, &
-                      CourantFactorOption, nWriteOption )
-      use Basics
-      import Integrator_C_1D_C_PS_Template
-      class ( Integrator_C_1D_C_PS_Template ), intent ( inout ) :: &
-        I
-      character ( * ), intent ( in )  :: &
-        Name
-      type ( MeasuredValueForm ), intent ( in ), optional :: &
-        TimeUnitOption
-      real ( KDR ), intent ( in ), optional :: &
-        FinishTimeOption, &
-        CourantFactorOption
-      integer ( KDI ), intent ( in ), optional :: &
-        nWriteOption
-    end subroutine I_1D
 
     subroutine CT_1D ( I, ComputeChangeOption, IgnorabilityOption )
       use Basics
@@ -108,11 +88,13 @@ contains
 
 
   subroutine InitializeTemplate_C_1D_C_PS &
-               ( I, Name, TimeUnitOption, FinishTimeOption, &
+               ( I, U, Name, TimeUnitOption, FinishTimeOption, &
                  CourantFactorOption, nWriteOption )
 
     class ( Integrator_C_1D_C_PS_Template ), intent ( inout ) :: &
       I
+    class ( UniverseHeaderForm ), intent ( in ) :: &
+      U
     character ( * ), intent ( in )  :: &
       Name
     type ( MeasuredValueForm ), intent ( in ), optional :: &
@@ -135,8 +117,8 @@ contains
                   CONSOLE % WARNING )
     end if
 
-    call I % InitializeTemplate_C_PS &
-           ( Name, TimeUnitOption = TimeUnitOption, &
+    call I % Integrator_C_PS_Form % Initialize &
+           ( U, Name, TimeUnitOption = TimeUnitOption, &
              FinishTimeOption = FinishTimeOption, &
              CourantFactorOption = CourantFactorOption, &
              nWriteOption = nWriteOption )
@@ -153,8 +135,6 @@ contains
 
     if ( allocated ( I % Step_1D ) ) &
       deallocate ( I % Step_1D )
-
-    call I % FinalizeTemplate_C_PS ( )
 
   end subroutine FinalizeTemplate_C_1D_C_PS
 

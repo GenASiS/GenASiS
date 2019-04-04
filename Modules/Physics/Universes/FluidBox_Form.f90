@@ -6,43 +6,51 @@ module FluidBox_Form
   use StressEnergies
   use ComputeGravity_Command
   use ApplyGravity_F__Command
+  use Universe_Template
 
   implicit none
   private
 
-  type, public, extends ( Integrator_C_PS_Template ) :: FluidBoxForm
+  type, public, extends ( UniverseTemplate ) :: FluidBoxForm
   contains
-    procedure, public, pass :: &
-      Initialize
+    procedure, private, pass :: &
+      Initialize_FB
+    generic, public :: &
+      Initialize => Initialize_FB
     final :: &
       Finalize
+    procedure, private, pass :: &
+      AllocateIntegrator_FB
+    generic, public :: &
+      AllocateIntegrator => AllocateIntegrator_FB
+    procedure, public, pass :: &
+      InitializePositionSpace
+    procedure, public, pass :: &
+      InitializeFluid
+    procedure, public, pass :: &
+      InitializeStep
   end type FluidBoxForm
 
 contains
 
 
-  subroutine Initialize &
-               ( FB, Name, FluidType, GeometryType, &
-                 BoundaryConditionsFaceOption, GravitySolverTypeOption, &
-                 MinCoordinateOption, MaxCoordinateOption, TimeUnitOption, &
-                 FinishTimeOption, CourantFactorOption, &
-                 UniformAccelerationOption, nCellsOption, nWriteOption )
+  subroutine Initialize_FB &
+               ( FB, FluidType, GeometryType, Name, GravitySolverTypeOption, &
+                 MinCoordinateOption, MaxCoordinateOption, FinishTimeOption, &
+                 CourantFactorOption, UniformAccelerationOption, &
+                 nCellsOption, nWriteOption )
 
     class ( FluidBoxForm ), intent ( inout ) :: &
       FB
     character ( * ), intent ( in )  :: &
-      Name, &
       FluidType, &
-      GeometryType
-    type ( Character_1D_Form ), dimension ( : ), intent ( in ), optional :: &
-      BoundaryConditionsFaceOption
+      GeometryType, &
+      Name
     character ( * ), intent ( in ), optional :: &
       GravitySolverTypeOption
     real ( KDR ), dimension ( : ), intent ( in ), optional :: &
       MinCoordinateOption, &
       MaxCoordinateOption
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
-      TimeUnitOption
     real ( KDR ), intent ( in ), optional :: &
       FinishTimeOption, &
       CourantFactorOption, &
@@ -52,31 +60,97 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       nWriteOption
 
-    integer ( KDI ) :: &
-      iD  !-- iDimension
-
-
     if ( FB % Type == '' ) &
       FB % Type = 'a FluidBox'
 
+    call FB % InitializeTemplate ( Name )
 
-    !-- PositionSpace
+    call FB % AllocateIntegrator &
+           ( )
+    call FB % InitializePositionSpace &
+           ( GeometryType, &
+             GravitySolverTypeOption = GravitySolverTypeOption, &
+             MinCoordinateOption = MinCoordinateOption, &
+             MaxCoordinateOption = MaxCoordinateOption, &
+             UniformAccelerationOption = UniformAccelerationOption, &
+             nCellsOption = nCellsOption )
+    call FB % InitializeFluid &
+           ( FluidType )
+    call FB % InitializeStep &
+           ( Name, GravitySolverTypeOption = GravitySolverTypeOption )
 
-    allocate ( Atlas_SC_Form :: FB % PositionSpace )
-    select type ( PS => FB % PositionSpace )
+    select type ( I => FB % Integrator )
+    class is ( Integrator_C_PS_Form )
+      call I % Initialize &
+             ( FB, Name, TimeUnitOption = FB % Units % Time, &
+               FinishTimeOption = FinishTimeOption, &
+               CourantFactorOption = CourantFactorOption, &
+               nWriteOption = nWriteOption )
+    end select !-- I
+
+  end subroutine Initialize_FB
+
+
+  impure elemental subroutine Finalize ( FB )
+
+    type ( FluidBoxForm ), intent ( inout ) :: &
+      FB
+
+    call FB % FinalizeTemplate ( )
+
+  end subroutine Finalize
+
+
+  subroutine AllocateIntegrator_FB ( FB )
+
+    class ( FluidBoxForm ), intent ( inout ) :: &
+      FB
+
+    allocate ( Integrator_C_PS_Form :: FB % Integrator )
+
+  end subroutine AllocateIntegrator_FB
+
+
+  subroutine InitializePositionSpace &
+               ( FB, GeometryType, GravitySolverTypeOption, &
+                 MinCoordinateOption, MaxCoordinateOption, &
+                 UniformAccelerationOption, nCellsOption )
+
+    class ( FluidBoxForm ), intent ( inout ) :: &
+      FB
+    character ( * ), intent ( in )  :: &
+      GeometryType
+    character ( * ), intent ( in ), optional :: &
+      GravitySolverTypeOption
+    real ( KDR ), dimension ( : ), intent ( in ), optional :: &
+      MinCoordinateOption, &
+      MaxCoordinateOption
+    real ( KDR ), intent ( in ), optional :: &
+      UniformAccelerationOption
+    integer ( KDI ), dimension ( 3 ), intent ( in ), optional :: &
+      nCellsOption
+
+    integer ( KDI ) :: &
+      iD  !-- iDimension
+
+    associate ( I => FB % Integrator )
+
+    allocate ( Atlas_SC_Form :: I % PositionSpace )
+    select type ( PS => I % PositionSpace )
     class is ( Atlas_SC_Form )
     call PS % Initialize ( 'PositionSpace', PROGRAM_HEADER % Communicator )
 
-    if ( present ( BoundaryConditionsFaceOption ) ) then
+    if ( allocated ( FB % BoundaryConditionsFace ) ) then
       do iD = 1, PS % nDimensions
         call PS % SetBoundaryConditionsFace &
-               ( BoundaryConditionsFaceOption ( iD ) % Value, &
+               ( FB % BoundaryConditionsFace ( iD ) % Value, &
                  iDimension = iD )
       end do !-- iD
-    end if
+    end if !-- BoundaryConditions
 
     call PS % CreateChart &
-           ( MinCoordinateOption = MinCoordinateOption, &
+           ( CoordinateUnitOption = FB % Units % Coordinate_PS, &
+             MinCoordinateOption = MinCoordinateOption, &
              MaxCoordinateOption = MaxCoordinateOption, &
              nCellsOption = nCellsOption )
 
@@ -88,54 +162,63 @@ contains
              GravitySolverTypeOption = GravitySolverTypeOption, &
              UniformAccelerationOption = UniformAccelerationOption )
     call PS % SetGeometry ( GA )
+
     end select !-- GA
+    end select !-- PS
+    end associate !-- I 
+
+  end subroutine InitializePositionSpace
 
 
-    !-- Fluid
+  subroutine InitializeFluid ( FB, FluidType )
 
-    allocate ( Fluid_ASC_Form :: FB % Current_ASC )
-    select type ( FA => FB % Current_ASC )  !-- FluidAtlas
+    class ( FluidBoxForm ), intent ( inout ) :: &
+      FB
+    character ( * ), intent ( in )  :: &
+      FluidType
+
+    select type ( I => FB % Integrator )
+    class is ( Integrator_C_PS_Form )
+
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
+
+    allocate ( Fluid_ASC_Form :: I % Current_ASC )
+    select type ( FA => I % Current_ASC )
     class is ( Fluid_ASC_Form )
-    call FA % Initialize ( PS, FluidType )
+      call FA % Initialize ( PS, FluidType, FB % Units )
+    end select !-- FA
+
+    end select !-- PS
+    end select !-- I
+
+  end subroutine InitializeFluid
 
 
-    !-- Step
+  subroutine InitializeStep ( FB, Name, GravitySolverTypeOption )
 
-    allocate ( Step_RK2_C_ASC_Form :: FB % Step )
-    select type ( S => FB % Step )
+    class ( FluidBoxForm ), intent ( inout ) :: &
+      FB
+    character ( * ), intent ( in )  :: &
+      Name
+    character ( * ), intent ( in ), optional :: &
+      GravitySolverTypeOption
+
+    select type ( I => FB % Integrator )
+    class is ( Integrator_C_PS_Form )
+
+    allocate ( Step_RK2_C_ASC_Form :: I % Step )
+    select type ( S => I % Step )
     class is ( Step_RK2_C_ASC_Form )
-    call S % Initialize ( FB, FA, Name )
+    call S % Initialize ( I, I % Current_ASC, Name )
     if ( present ( GravitySolverTypeOption ) ) &   
       S % ComputeConstraints % Pointer => ComputeGravity
       S % ApplySources % Pointer => ApplyGravity_F
     end select !-- S
 
+    end select !-- I
 
-    !-- Template
-
-    call FB % InitializeTemplate_C_PS &
-           ( Name, TimeUnitOption = TimeUnitOption, &
-             FinishTimeOption = FinishTimeOption, &
-             CourantFactorOption = CourantFactorOption, &
-             nWriteOption = nWriteOption )
-
-
-    !-- Cleanup
-
-    end select !-- FA
-    end select !-- PS
-
-  end subroutine Initialize
-
-
-  impure elemental subroutine Finalize ( FB )
-
-    type ( FluidBoxForm ), intent ( inout ) :: &
-      FB
-
-    call FB % FinalizeTemplate_C_PS ( )
-
-  end subroutine Finalize
+  end subroutine InitializeStep
 
 
 end module FluidBox_Form

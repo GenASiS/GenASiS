@@ -1,13 +1,14 @@
-!-- Integrator_C_PS is a template for time evolution of a conserved current
+!-- Integrator_C_PS is a class for time evolution of a conserved current
 !   on position space.
 
-module Integrator_C_PS__Template
+module Integrator_C_PS__Form
 
   !-- Integrator_Current_PositionSpace_Template
 
   use Basics
   use Manifolds
   use Fields
+  use EvolutionBasics
   use Steps
   use Integrator_Template
   use TimeSeries_C__Form
@@ -15,21 +16,22 @@ module Integrator_C_PS__Template
   implicit none
   private
 
-  type, public, extends ( IntegratorTemplate ), abstract :: &
-    Integrator_C_PS_Template
-      real ( KDR ) :: &
-        CourantFactor
-      class ( Current_ASC_Template ), allocatable :: &
-        Current_ASC
-      class ( Step_RK_C_ASC_Template ), allocatable :: &
-        Step
-      class ( TimeSeries_C_Form ), allocatable :: &
-        TimeSeries
+  type, public, extends ( IntegratorTemplate ) :: Integrator_C_PS_Form
+    real ( KDR ) :: &
+      CourantFactor
+    class ( Current_ASC_Template ), allocatable :: &
+      Current_ASC
+    class ( Step_RK_C_ASC_Template ), allocatable :: &
+      Step
+    class ( TimeSeries_C_Form ), allocatable :: &
+      TimeSeries
   contains
-    procedure, public, pass :: &  !-- 1
-      InitializeTemplate_C_PS
-    procedure, public, pass :: &  !-- 1
-      FinalizeTemplate_C_PS
+    procedure, private, pass :: &  !-- 1
+      Initialize_I
+    generic, public :: &
+      Initialize => Initialize_I
+    final :: &  !-- 1
+      Finalize
     procedure, private, pass :: &  !-- 2
       ComputeConstraints
     procedure, private, pass :: &  !-- 2
@@ -48,7 +50,7 @@ module Integrator_C_PS__Template
       ComputeTimeStep_C_ASC
     procedure, public, nopass :: &
       ComputeTimeStepKernel_CSL
-  end type Integrator_C_PS_Template
+  end type Integrator_C_PS_Form
 
     private :: &
       ComputeTimeStepLocal
@@ -56,12 +58,14 @@ module Integrator_C_PS__Template
 contains
 
 
-  subroutine InitializeTemplate_C_PS &
-               ( I, Name, TimeUnitOption, FinishTimeOption, &
+  subroutine Initialize_I &
+               ( I, U, Name, TimeUnitOption, FinishTimeOption, &
                  CourantFactorOption, nWriteOption )
 
-    class ( Integrator_C_PS_Template ), intent ( inout ) :: &
+    class ( Integrator_C_PS_Form ), intent ( inout ) :: &
       I
+    class ( UniverseHeaderForm ), intent ( in ) :: &
+      U
     character ( * ), intent ( in )  :: &
       Name
     type ( MeasuredValueForm ), intent ( in ), optional :: &
@@ -104,7 +108,7 @@ contains
            ( I % CourantFactor, 'CourantFactor' )
 
     call I % InitializeTemplate &
-           ( Name, TimeUnitOption, FinishTimeOption, nWriteOption )
+           ( U, Name, TimeUnitOption, FinishTimeOption, nWriteOption )
     call Show ( I % CourantFactor, 'CourantFactor', I % IGNORABILITY )
 
     I % ComputeTimeStepLocal  =>  ComputeTimeStepLocal
@@ -121,12 +125,12 @@ contains
       end associate !-- TS, etc.
     end if
 
-  end subroutine InitializeTemplate_C_PS
+  end subroutine Initialize_I
 
 
-  impure elemental subroutine FinalizeTemplate_C_PS ( I )
+  impure elemental subroutine Finalize ( I )
 
-    class ( Integrator_C_PS_Template ), intent ( inout ) :: &
+    type ( Integrator_C_PS_Form ), intent ( inout ) :: &
       I
 
    if ( allocated ( I % TimeSeries ) ) &
@@ -138,12 +142,12 @@ contains
 
     call I % FinalizeTemplate ( )
 
-  end subroutine FinalizeTemplate_C_PS
+  end subroutine Finalize
 
 
   subroutine ComputeConstraints ( I )
 
-    class ( Integrator_C_PS_Template ), intent ( inout ) :: &
+    class ( Integrator_C_PS_Form ), intent ( inout ) :: &
       I
 
     if ( .not. allocated ( I % Step ) ) &
@@ -162,7 +166,7 @@ contains
 
   subroutine ComputeCycle ( I )
 
-    class ( Integrator_C_PS_Template ), intent ( inout ) :: &
+    class ( Integrator_C_PS_Form ), intent ( inout ) :: &
       I
 
     type ( TimerForm ), pointer :: &
@@ -183,7 +187,7 @@ contains
 
   subroutine InitializeStepTimers ( I, BaseLevel )
 
-    class ( Integrator_C_PS_Template ), intent ( inout ) :: &
+    class ( Integrator_C_PS_Form ), intent ( inout ) :: &
       I
     integer ( KDI ), intent ( in ) :: &
       BaseLevel
@@ -196,7 +200,7 @@ contains
 
   subroutine ComputeTally ( I, ComputeChangeOption, IgnorabilityOption )
 
-    class ( Integrator_C_PS_Template ), intent ( inout ) :: &
+    class ( Integrator_C_PS_Form ), intent ( inout ) :: &
       I
     logical ( KDL ), intent ( in ), optional :: &
       ComputeChangeOption
@@ -225,7 +229,7 @@ contains
 
   subroutine RecordTimeSeries ( I, MaxTime, MinTime, MeanTime )
 
-    class ( Integrator_C_PS_Template ), intent ( inout ) :: &
+    class ( Integrator_C_PS_Form ), intent ( inout ) :: &
       I
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       MaxTime, &
@@ -268,7 +272,7 @@ contains
 
   subroutine WriteTimeSeries ( I )
 
-    class ( Integrator_C_PS_Template ), intent ( inout ) :: &
+    class ( Integrator_C_PS_Form ), intent ( inout ) :: &
       I
 
     if ( .not. allocated ( I % TimeSeries ) ) &
@@ -281,7 +285,7 @@ contains
 
   subroutine ComputeCycle_ASC ( I, PS )
 
-    class ( Integrator_C_PS_Template ), intent ( inout ) :: &
+    class ( Integrator_C_PS_Form ), intent ( inout ) :: &
       I
     class ( Atlas_SC_Form ), intent ( inout ) :: &
       PS
@@ -327,7 +331,7 @@ contains
 
   subroutine ComputeTimeStep_C_ASC ( I, TimeStepCandidate, CA )
 
-    class ( Integrator_C_PS_Template ), intent ( inout ), target :: &
+    class ( Integrator_C_PS_Form ), intent ( inout ), target :: &
       I
     real ( KDR ), intent ( inout ) :: &
       TimeStepCandidate
@@ -449,7 +453,7 @@ contains
       TimeStepCandidate
 
     select type ( I )
-    class is ( Integrator_C_PS_Template )
+    class is ( Integrator_C_PS_Form )
 
     call I % ComputeTimeStep_C_ASC &
            ( TimeStepCandidate ( 1 ), I % Current_ASC )
@@ -459,4 +463,4 @@ contains
   end subroutine ComputeTimeStepLocal
 
 
-end module Integrator_C_PS__Template
+end module Integrator_C_PS__Form
