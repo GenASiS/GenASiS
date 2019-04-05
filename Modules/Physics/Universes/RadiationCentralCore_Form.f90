@@ -2,6 +2,7 @@ module RadiationCentralCore_Form
 
   use Basics
   use Mathematics
+  use StressEnergies
   use FluidCentralCore_Form
 
   implicit none
@@ -23,6 +24,10 @@ module RadiationCentralCore_Form
       AllocateIntegrator => AllocateIntegrator_RCC
     procedure, public, pass :: &
       InitializeMomentumSpace
+    procedure, public, pass :: &
+      InitializeRadiation
+    procedure, public, pass :: &
+      InitializeSteps
   end type RadiationCentralCoreForm
 
 contains
@@ -85,6 +90,8 @@ contains
              MinWidthEnergyOption = MinWidthEnergyOption, &
              EnergyScaleOption = EnergyScaleOption, &
              nCellsEnergyOption = nCellsEnergyOption )
+    call RCC % InitializeRadiation &
+           ( RadiationName, RadiationType )
     call RCC % InitializeFluid &
            ( FluidType, LimiterParameterOption = LimiterParameterOption, &
              ShockThresholdOption = ShockThresholdOption )
@@ -265,6 +272,198 @@ contains
     end select !-- I
 
   end subroutine InitializeMomentumSpace
+
+
+  subroutine InitializeRadiation ( RCC, RadiationName, RadiationType )
+
+    class ( RadiationCentralCoreForm ), intent ( inout ) :: &
+      RCC
+    character ( * ), dimension ( : ), intent ( in )  :: &
+      RadiationName, &
+      RadiationType
+
+    integer ( KDI ) :: &
+      iC  !-- iCurrent
+    character ( LDL ) :: &
+      RadiationTypeLocal
+
+    select type ( I_1D => RCC % Integrator )
+    class is ( Integrator_C_1D_C_PS_Template )
+
+    do iC = 1, I_1D % N_CURRENTS_1D
+
+      select type ( I => I_1D )
+      class is ( Integrator_C_1D_PS_C_PS_Form )
+
+        select type ( PS => I % PositionSpace )
+        class is ( Atlas_SC_Form )
+
+        select case ( trim ( RadiationType ( iC ) ) )
+        case ( 'NEUTRINOS' )
+          allocate &
+            ( NeutrinoMoments_ASC_Form :: I % Current_ASC_1D ( iC ) % Element )
+          RadiationTypeLocal = 'NEUTRINOS_GREY'
+        case default
+          call Show ( 'RadiationType not recognized', CONSOLE % ERROR )
+          call Show ( RadiationType ( iC ), 'RadiationType', CONSOLE % ERROR )
+          call Show ( 'RadiationCentralCore_Form', 'module', CONSOLE % ERROR )
+          call Show ( 'InitializeRadiation', 'subroutine', CONSOLE % ERROR )
+          call PROGRAM_HEADER % Abort ( )
+        end select !-- RadiationType
+       
+        select type ( RA => I % Current_ASC_1D ( iC ) % Element )
+        class is ( RadiationMoments_ASC_Form )
+          call RA % Initialize &
+                 ( PS, RadiationTypeLocal, RCC % Units, &
+                   NameShortOption = RadiationName ( iC ) )
+        end select !-- RA        
+        end select !-- PS
+
+      class is ( Integrator_C_1D_MS_C_PS_Form )
+
+        select type ( MS => I % MomentumSpace )
+        class is ( Bundle_SLL_ASC_CSLD_Form )
+
+        select case ( trim ( RadiationType ( iC ) ) )
+        case ( 'NEUTRINOS' )
+          allocate &
+            ( NeutrinoMoments_BSLL_ASC_CSLD_Form :: &
+                I % Current_BSLL_ASC_CSLD_1D ( iC ) % Element )
+          RadiationTypeLocal = 'NEUTRINOS_SPECTRAL'
+        case default
+          call Show ( 'RadiationType not recognized', CONSOLE % ERROR )
+          call Show ( RadiationType ( iC ), 'RadiationType', CONSOLE % ERROR )
+          call Show ( 'RadiationCentralCore_Form', 'module', CONSOLE % ERROR )
+          call Show ( 'InitializeRadiation', 'subroutine', CONSOLE % ERROR )
+          call PROGRAM_HEADER % Abort ( )
+        end select !-- RadiationType
+
+        select type ( RMB => I % Current_BSLL_ASC_CSLD_1D ( iC ) % Element )
+        class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
+          call RMB % Initialize &
+                 ( MS, RadiationTypeLocal, RCC % Units, &
+                   NameShortOption = RadiationName ( iC ) )
+        end select !-- RMB
+        end select !-- MS
+
+      end select !--I
+
+    end do !-- iC
+
+    end select !-- I_1D
+
+  end subroutine InitializeRadiation
+
+
+  subroutine InitializeSteps ( RCC, Name )
+
+    class ( RadiationCentralCoreForm ), intent ( inout ) :: &
+      RCC
+    character ( * ), intent ( in ) :: &
+      Name
+
+    integer ( KDI ) :: &
+      iC  !-- iCurrent
+
+
+    ! !-- Relaxation
+
+    ! if ( RCC % ApplyInteractions ) then
+    !   select type ( I => RCC % Integrator )
+    !   class is ( Integrator_C_1D_PS_C_PS_Form )
+
+    !     allocate ( RCC % Relaxation_RM_ASC )
+    !     associate ( R => RCC % Relaxation_RM_ASC )
+    !     select type ( RMA => I % Current_ASC_1D ( 1 ) % Element )
+    !     class is ( RadiationMoments_ASC_Form )
+    !       call R % Initialize ( RMA, Name = RCC % Name )
+    !     end select !-- RMA
+    !     end associate !-- R
+
+    !   class is ( Integrator_C_1D_MS_C_PS_Form )
+
+    !     allocate ( RCC % Relaxation_RM_BSLL_ASC_CSLD )
+    !     associate ( R => RCC % Relaxation_RM_BSLL_ASC_CSLD )
+    !     select type ( RMB => I % Current_BSLL_ASC_CSLD_1D ( 1 ) % Element )
+    !     class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
+    !       call R % Initialize ( RMB, Name = RCC % Name )
+    !     end select !-- RMB
+    !     end associate !-- R
+
+    !   end select !-- I
+    ! end if !-- ApplyInteractions
+
+
+    ! !-- Radiation step
+
+    ! select type ( I => RCC % Integrator )
+    ! class is ( Integrator_C_1D_PS_C_PS_Form )
+
+    !   allocate ( Step_RK2_C_ASC_1D_Form :: I % Step_1D )
+    !   select type ( S_1D => I % Step_1D )
+    !   class is ( Step_RK2_C_ASC_1D_Form )
+    !   call S_1D % Initialize ( I, I % Current_ASC_1D, Name )
+
+    !   if ( .not. RCC % ApplyStreaming ) then
+    !     do iC = 1, I % N_CURRENTS_1D
+    !       S_1D % ApplyDivergence_1D ( iC ) % Pointer  =>  null ( )  
+    !     end do !-- iC
+    !   end if
+
+    !   if ( RCC % ApplyInteractions ) then
+    !     do iC = 1, I % N_CURRENTS_1D
+    !       S_1D % ApplyRelaxation_1D ( iC ) % Pointer  &
+    !         =>  RCC % Relaxation_RM_ASC % Apply 
+    !     end do !-- iC
+    !   end if
+
+    !   end select !-- S_1D
+
+    ! class is ( Integrator_C_1D_MS_C_PS_Form )
+
+    !   allocate ( Step_RK2_C_BSLL_ASC_CSLD_1D_Form :: I % Step_1D )
+    !   select type ( S_1D => I % Step_1D )
+    !   class is ( Step_RK2_C_BSLL_ASC_CSLD_1D_Form )
+    !   call S_1D % Initialize ( I, I % Current_BSLL_ASC_CSLD_1D, Name )
+
+    !   if ( .not. RCC % ApplyStreaming ) then
+    !     do iC = 1, I % N_CURRENTS_1D
+    !       S_1D % ApplyDivergence_S ( iC ) % Pointer  =>  null ( )  
+    !     end do !-- iC
+    !   end if
+
+    !   if ( RCC % ApplyInteractions ) then
+    !     do iC = 1, I % N_CURRENTS_1D
+    !       S_1D % ApplyRelaxation_F ( iC ) % Pointer  &
+    !         =>  RCC % Relaxation_RM_BSLL_ASC_CSLD % Apply 
+    !     end do !-- iC
+    !   end if
+
+    !   end select !-- S_1D
+
+    ! end select !-- I
+
+
+    ! !-- Fluid
+
+    ! if ( RCC % EvolveFluid ) then
+    !   select type ( I => RCC % Integrator )
+    !   class is ( Integrator_C_1D_C_PS_Template )
+
+    !   allocate ( Step_RK2_C_ASC_Form :: I % Step )
+    !   select type ( S => I % Step )
+    !   class is ( Step_RK2_C_ASC_Form )
+    !     call S % Initialize ( I, I % Current_ASC, 'Fluid' )
+    !     if ( RCC % ApplyInteractions ) &
+    !       S % ApplySources % Pointer  =>  ApplySources_Fluid
+    !   end select !-- S
+
+    !   I % PrepareStep => PrepareStep
+
+    !   end select !-- I
+    ! end if !-- EvolveFluid
+
+  end subroutine InitializeSteps
 
 
 end module RadiationCentralCore_Form

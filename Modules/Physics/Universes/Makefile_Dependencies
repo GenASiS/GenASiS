@@ -78,6 +78,7 @@ RadiationBox_Form.o: \
 RadiationCentralCore_Form.o: \
   Basics.o \
   Mathematics.o \
+  StressEnergies.o \
   FluidCentralCore_Form.o \
   RadiationCentralCore_Form.f90
 

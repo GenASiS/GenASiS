@@ -434,7 +434,7 @@ contains
     type ( Real_1D_Form ), dimension ( 1 ) :: &
       Edge
 
-    call Show ( 'Initializing FluidCentralCore diagnostics', &
+    call Show ( 'Initializing FluidCentral diagnostics', &
                 FC % IGNORABILITY )
 
     select type ( I => FC % Integrator )
