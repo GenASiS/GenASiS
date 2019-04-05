@@ -144,7 +144,7 @@ contains
   end subroutine Initialize_RB
 
 
-  subroutine Finalize ( RB )
+  impure elemental subroutine Finalize ( RB )
 
     type ( RadiationBoxForm ), intent ( inout ) :: &
       RB
@@ -158,8 +158,6 @@ contains
       deallocate ( RB % Interactions_BSLL_ASC_CSLD )
     if ( allocated ( RB % Interactions_ASC ) ) &
       deallocate ( RB % Interactions_ASC )
-
-    call RB % FinalizeTemplate ( )
 
   end subroutine Finalize
 
@@ -183,7 +181,7 @@ contains
       call Show ( 'MomentsType not recognized', CONSOLE % ERROR )
       call Show ( RB % MomentsType, 'MomentsType', CONSOLE % ERROR )
       call Show ( 'RadiationBox_Form', 'module', CONSOLE % ERROR )
-      call Show ( 'AllocateIntegrator', 'subroutine', CONSOLE % ERROR )
+      call Show ( 'AllocateIntegrator_RB', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- MomentsType
 

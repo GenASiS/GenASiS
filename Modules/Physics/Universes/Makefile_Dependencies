@@ -75,6 +75,12 @@ RadiationBox_Form.o: \
   FluidBox_Form.o \
   RadiationBox_Form.f90
 
+RadiationCentralCore_Form.o: \
+  Basics.o \
+  Mathematics.o \
+  FluidCentralCore_Form.o \
+  RadiationCentralCore_Form.f90
+
 Universes.o: \
   ComputeGravity_Command.o \
   ApplyGravity_F__Command.o \
@@ -85,6 +91,7 @@ Universes.o: \
   FluidCentralExcision_Form.o \
   FluidCentralCore_Form.o \
   RadiationBox_Form.o \
+  RadiationCentralCore_Form.o \
   Universes.f90
 #  ApplyDeleptonization_F__Command.o \
 

@@ -1,5 +1,6 @@
 UNIVERSES = \
   Universes.o \
+  RadiationCentralCore_Form.o \
   RadiationBox_Form.o \
   FluidCentralCore_Form.o \
   FluidCentralExcision_Form.o \
