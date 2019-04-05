@@ -27,7 +27,11 @@ contains
 
 
   subroutine Initialize_RCC &
-               ( RCC, RadiationName, RadiationType, MomentsType, Name )
+               ( RCC, RadiationName, RadiationType, MomentsType, GeometryType, &
+                 Name, FinishTimeOption, CourantFactorOption, &
+                 GravityFactorOption, LimiterParameterOption, &
+                 ShockThresholdOption, RadiusMaxOption, RadiusCoreOption, &
+                 RadialRatioOption, nCellsPolarOption, nWriteOption )
 
     class ( RadiationCentralCoreForm ), intent ( inout ) :: &
       RCC
@@ -36,7 +40,20 @@ contains
       RadiationType
     character ( * ), intent ( in ) :: &
       MomentsType, &
+      GeometryType, &
       Name
+    real ( KDR ), intent ( in ), optional :: &
+      FinishTimeOption, &
+      CourantFactorOption, &
+      GravityFactorOption, &
+      LimiterParameterOption, &
+      ShockThresholdOption, &
+      RadiusMaxOption, &
+      RadiusCoreOption, &
+      RadialRatioOption
+    integer ( KDI ), intent ( in ), optional :: &
+      nCellsPolarOption, &
+      nWriteOption
 
     if ( RCC % Type == '' ) &
       RCC % Type = 'a RadiationCentralCore'
@@ -47,6 +64,11 @@ contains
 
     call RCC % AllocateIntegrator &
            ( RadiationName )
+    call RCC % InitializePositionSpace &
+           ( GeometryType, RadiusMaxOption = RadiusMaxOption, &
+             RadiusCoreOption = RadiusCoreOption, &
+             RadialRatioOption = RadialRatioOption, &
+             nCellsPolarOption = nCellsPolarOption )
 
   end subroutine Initialize_RCC
 

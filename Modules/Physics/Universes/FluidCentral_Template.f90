@@ -127,7 +127,7 @@ contains
                  LimiterParameterOption, ShockThresholdOption, & 
                  RadiusMaxOption, RadiusCoreOption, RadiusMinOption, &
                  RadialRatioOption, CentralMassOption, &
-                 nWriteOption, nCellsPolarOption )
+                 nCellsPolarOption, nWriteOption )
 
     class ( FluidCentralTemplate ), intent ( inout ) :: &
       FC
@@ -148,8 +148,8 @@ contains
       RadialRatioOption, &
       CentralMassOption
     integer ( KDI ), intent ( in ), optional :: &
-      nWriteOption, &
-      nCellsPolarOption
+      nCellsPolarOption, &
+      nWriteOption
 
     real ( KDR ) :: &
       FinishTime

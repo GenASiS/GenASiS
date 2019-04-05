@@ -45,7 +45,7 @@ contains
                  FinishTimeOption, CourantFactorOption, GravityFactorOption, &
                  LimiterParameterOption, ShockThresholdOption, &
                  RadiusMaxOption, RadiusCoreOption, RadialRatioOption, &
-                 nWriteOption, nCellsPolarOption )
+                 nCellsPolarOption, nWriteOption )
 
     class ( FluidCentralCoreForm ), intent ( inout ) :: &
       FCC
