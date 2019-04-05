@@ -9,7 +9,8 @@ program SineWave
     SW
 
   allocate ( PROGRAM_HEADER )
-  call PROGRAM_HEADER % Initialize ( 'SineWave' )
+  call PROGRAM_HEADER % Initialize &
+         ( 'SineWave', DimensionalityOption = '2D' )
 
   allocate ( SW )
   call SW % Initialize ( PROGRAM_HEADER % Name )

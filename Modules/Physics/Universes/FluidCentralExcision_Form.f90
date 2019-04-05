@@ -11,45 +11,41 @@ module FluidCentralExcision_Form
   type, public, extends ( FluidCentralTemplate ) :: &
     FluidCentralExcisionForm
   contains
-    procedure, public, pass :: &
-      Initialize
+    procedure, private, pass :: &
+      Initialize_FCE
+    generic, public :: &
+      Initialize => Initialize_FCE
     final :: &
       Finalize
     procedure, private, pass :: &
-      InitializePositionSpace
+      InitializeAtlas
     procedure, private, pass :: &
       InitializeGeometry
     procedure, private, pass :: &
       SetCoarsening
-    procedure, public, nopass :: &
-      CoarsenSingularities
   end type FluidCentralExcisionForm
 
-    class ( FluidCentralExcisionForm ), private, pointer :: &
-      FluidCentralExcision => null ( )
+    private :: &
+      CoarsenSingularities
 
 contains
 
 
-  subroutine Initialize &
-               ( FCE, Name, FluidType, GeometryType, DimensionlessOption, &
-                 UseCustomBoundaryInnerOption, TimeUnitOption, &
+  subroutine Initialize_FCE &
+               ( FCE, FluidType, GeometryType, Name, DimensionlessOption, &
                  FinishTimeOption, CourantFactorOption, &
                  LimiterParameterOption, ShockThresholdOption, &
                  RadiusMaxOption, RadiusMinOption, RadialRatioOption, &
                  CentralMassOption, nWriteOption, nCellsPolarOption )
 
-    class ( FluidCentralExcisionForm ), intent ( inout ), target :: &
+    class ( FluidCentralExcisionForm ), intent ( inout ) :: &
       FCE
     character ( * ), intent ( in )  :: &
-      Name, &
       FluidType, &
-      GeometryType
+      GeometryType, &
+      Name
     logical ( KDL ), intent ( in ), optional :: &
-      DimensionlessOption, &
-      UseCustomBoundaryInnerOption
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
-      TimeUnitOption
+      DimensionlessOption
     real ( KDR ), intent ( in ), optional :: &
       FinishTimeOption, &
       CourantFactorOption, &
@@ -66,13 +62,9 @@ contains
     if ( FCE % Type == '' ) &
       FCE % Type = 'a FluidCentralExcision'
 
-    FluidCentralExcision => FCE
-
     call FCE % InitializeTemplate_FC &
-               ( Name, FluidType, GeometryType, &
-                 UseCustomBoundaryInnerOption = UseCustomBoundaryInnerOption, &
+               ( FluidType, GeometryType, Name, &
                  DimensionlessOption = DimensionlessOption, &
-                 TimeUnitOption = TimeUnitOption, &
                  FinishTimeOption = FinishTimeOption, &
                  CourantFactorOption = CourantFactorOption, &
                  LimiterParameterOption = LimiterParameterOption, &
@@ -84,12 +76,15 @@ contains
                  nWriteOption = nWriteOption, &
                  nCellsPolarOption = nCellsPolarOption )
 
-    select type ( S => FCE % Step )
-    class is ( Step_RK2_C_ASC_Form )
+    select type ( I => FCE % Integrator )
+    class is ( Integrator_C_PS_Form )
+    select type ( S => I % Step )
+    class is ( Step_RK_C_ASC_Template )
       S % CoarsenSingularities => CoarsenSingularities
     end select !-- S
+    end select !-- I
 
-  end subroutine Initialize
+  end subroutine Initialize_FCE
 
 
   impure elemental subroutine Finalize ( FCE )
@@ -102,15 +97,12 @@ contains
   end subroutine Finalize
 
 
-  subroutine InitializePositionSpace &
-               ( FC, UseCustomBoundaryInnerOption, RadiusMaxOption, &
-                 RadiusCoreOption, RadiusExcisionOption, RadialRatioOption, &
-                 nCellsPolarOption )
+  subroutine InitializeAtlas &
+               ( FC, RadiusMaxOption, RadiusCoreOption, RadiusExcisionOption, &
+                 RadialRatioOption, nCellsPolarOption )
 
     class ( FluidCentralExcisionForm ), intent ( inout ) :: &
       FC
-    logical ( KDL ), intent ( in ), optional :: &
-      UseCustomBoundaryInnerOption
     real ( KDR ), intent ( in ), optional :: &
       RadiusMaxOption, &
       RadiusCoreOption, &
@@ -124,15 +116,17 @@ contains
       RadiusExcision, &
       RadialRatio
 
-    allocate ( Atlas_SC_CE_Form :: FC % PositionSpace )
-    select type ( PS => FC % PositionSpace )
+    associate ( I => FC % Integrator )
+
+    allocate ( Atlas_SC_CE_Form :: I % PositionSpace )
+    select type ( PS => I % PositionSpace )
     class is ( Atlas_SC_CE_Form )
     call PS % Initialize ( 'PositionSpace', PROGRAM_HEADER % Communicator )
 
     if ( FC % Dimensionless ) then
 
       call PS % CreateChart_CE &
-             ( UseCustomBoundaryInnerOption = UseCustomBoundaryInnerOption, &
+             ( UseCustomBoundaryInnerOption = FC % UseCustomBoundaryInner, &
                RadiusMaxOption = RadiusMaxOption, &
                RadiusExcisionOption = RadiusExcisionOption, &
                RadialRatioOption = RadialRatioOption )
@@ -150,8 +144,8 @@ contains
         RadialRatio = RadialRatioOption
 
       call PS % CreateChart_CE &
-             ( UseCustomBoundaryInnerOption = UseCustomBoundaryInnerOption, &
-               CoordinateUnitOption = FC % CoordinateUnit, &
+             ( UseCustomBoundaryInnerOption = FC % UseCustomBoundaryInner, &
+               CoordinateUnitOption = FC % Units % Coordinate_PS, &
                RadiusMaxOption = RadiusMax, &
                RadiusExcisionOption = RadiusExcision, &
                RadialRatioOption = RadialRatio, &
@@ -160,8 +154,9 @@ contains
     end if !-- Dimensionless
 
     end select !-- PS
+    end associate !-- I
 
-  end subroutine InitializePositionSpace
+  end subroutine InitializeAtlas
 
 
   subroutine InitializeGeometry &
@@ -204,7 +199,10 @@ contains
     class ( FluidCentralExcisionForm ), intent ( inout ) :: &
       FC
 
-    select type ( PS => FC % PositionSpace )
+    select type ( I => FC % Integrator )
+    class is ( Integrator_C_PS_Form )
+
+    select type ( PS => I % PositionSpace )
     class is ( Atlas_SC_CE_Form )
 
     !-- Azimuthal coarsening
@@ -216,24 +214,33 @@ contains
     call FC % SetCoarseningTemplate ( iAngular = 3 )
 
     end select !-- PS
+    end select !-- I
 
   end subroutine SetCoarsening
 
 
-  subroutine CoarsenSingularities ( S )
+  subroutine CoarsenSingularities ( S, Increment )
 
-    class ( StorageForm ), intent ( inout ) :: &
+    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
+    class ( StorageForm ), intent ( inout ) :: &
+      Increment
 
-    associate ( FCE => FluidCentralExcision )
-    select type ( PS => FCE % PositionSpace )
+    select type ( FCE => S % Integrator % Universe )
+    class is ( FluidCentralExcisionForm )
+
+    select type ( I => S % Integrator )
+    class is ( IntegratorTemplate )
+
+    select type ( PS => I % PositionSpace )
     class is ( Atlas_SC_CE_Form )
 
     if ( PS % nDimensions > 2 ) &
-      call FCE % CoarsenSingularityTemplate ( S, iAngular = 3 )
+      call FCE % CoarsenSingularityTemplate ( Increment, iAngular = 3 )
   
     end select !-- PS
-    end associate !-- FluidCentralExcision
+    end select !-- I
+    end select !-- FCE
 
   end subroutine CoarsenSingularities
 

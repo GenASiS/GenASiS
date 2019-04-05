@@ -1,7 +1,7 @@
 PATH_GENASIS = ../../../../..
 
 all: SineWave OppenheimerSnyder RiemannProblem RayleighTaylor \
-     SedovTaylor FishboneMoncrief YahilLattimer LinMestelShu SASI \
+     SedovTaylor FishboneMoncrief YahilLattimer #LinMestelShu SASI \
      #SawtoothWave ODE_Solve 
 
 include $(PATH_GENASIS)/Build/Makefile_Build
@@ -57,12 +57,12 @@ YahilLattimer: ThirdParty.a GenASiS.a YahilLattimer.o
           YahilLattimer.o YahilLattimer_Form.o \
           GenASiS.a ThirdParty.a $(LIBRARIES)
 
-LinMestelShu: ThirdParty.a GenASiS.a LinMestelShu.o
-	$(LINK) $(FFLAGS) \
-           -o LinMestelShu_$(MACHINE) \
-           ODE_Solve_Command.o LinMestelShu.o \
-	   LinMestelShu_Form.o \
-           GenASiS.a ThirdParty.a $(LIBRARIES)\
+# LinMestelShu: ThirdParty.a GenASiS.a LinMestelShu.o
+# 	$(LINK) $(FFLAGS) \
+#            -o LinMestelShu_$(MACHINE) \
+#            ODE_Solve_Command.o LinMestelShu.o \
+# 	   LinMestelShu_Form.o \
+#            GenASiS.a ThirdParty.a $(LIBRARIES)\
 
 # ODE_Solve: ThirdParty.a GenASiS.a ODE_Solve_Command_Test.o
 # 	$(LINK) $(FFLAGS) \
@@ -70,11 +70,11 @@ LinMestelShu: ThirdParty.a GenASiS.a LinMestelShu.o
 #            ODE_Solve_Command_Test.o ODE_Solve_Command.o \
 #            GenASiS.a ThirdParty.a $(LIBRARIES)
 
-SASI: ThirdParty.a GenASiS.a SASI.o
-	$(LINK) $(FFLAGS) \
-          -o SASI_$(MACHINE) \
-          SASI.o SASI_Form.o \
-          GenASiS.a ThirdParty.a $(LIBRARIES)
+# SASI: ThirdParty.a GenASiS.a SASI.o
+# 	$(LINK) $(FFLAGS) \
+#           -o SASI_$(MACHINE) \
+#           SASI.o SASI_Form.o \
+#           GenASiS.a ThirdParty.a $(LIBRARIES)
 
 include $(PATH_GENASIS)/Build/Makefile_Dependencies
 # include ../Makefile_Dependencies
@@ -183,21 +183,21 @@ YahilLattimer.o: \
 #   ODE_Solve_Command.o \
 #   ODE_Solve_Command_Test.f90
 
-LinMestelShu_Form.o: \
-  GenASiS.o \
-  ODE_Solve_Command.o \
-  LinMestelShu_Form.f90
+# LinMestelShu_Form.o: \
+#   GenASiS.o \
+#   ODE_Solve_Command.o \
+#   LinMestelShu_Form.f90
 
-LinMestelShu.o: \
-  GenASiS.o \
-  LinMestelShu_Form.o \
-  LinMestelShu.f90
+# LinMestelShu.o: \
+#   GenASiS.o \
+#   LinMestelShu_Form.o \
+#   LinMestelShu.f90
 
-SASI_Form.o: \
-  GenASiS.o \
-  SASI_Form.f90
+# SASI_Form.o: \
+#   GenASiS.o \
+#   SASI_Form.f90
 
-SASI.o: \
-  GenASiS.o \
-  SASI_Form.o \
-  SASI.f90
+# SASI.o: \
+#   GenASiS.o \
+#   SASI_Form.o \
+#   SASI.f90

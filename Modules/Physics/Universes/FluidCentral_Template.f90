@@ -6,19 +6,18 @@ module FluidCentral_Template
   use StressEnergies
   use ComputeGravity_Command
   use ApplyGravity_F__Command
+  use Universe_Template
 
   implicit none
   private
 
-  type, public, extends ( Integrator_C_PS_Template ), abstract :: &
+  type, public, extends ( UniverseTemplate ), abstract :: &
     FluidCentralTemplate
       integer ( KDI ), dimension ( : ), allocatable :: &
         nCoarsen_2, &
         nCoarsen_3
       real ( KDR ) :: &
         RadiusPolarMomentum = 0.0_KDR
-      type ( MeasuredValueForm ), dimension ( 3 ) :: &
-        CoordinateUnit
       logical ( KDL ) :: &
         Dimensionless, &
         UseCoarsening
@@ -41,37 +40,39 @@ module FluidCentral_Template
       InitializeTemplate_FC
     procedure, public, pass :: &
       FinalizeTemplate_FC
-    procedure ( IPS ), private, pass, deferred :: &
+    procedure, private, pass :: &
+      AllocateIntegrator_FC
+    generic, public :: &
+      AllocateIntegrator => AllocateIntegrator_FC
+    procedure, public, pass :: &
       InitializePositionSpace
+    procedure ( IA ), private, pass, deferred :: &
+      InitializeAtlas
     procedure ( IG ), private, pass, deferred :: &
       InitializeGeometry
     procedure, public, pass :: &
+      InitializeFluid
+    procedure, public, pass :: &
+      InitializeStep
+    procedure, public, pass :: &
+      InitializeDiagnostics
+    procedure, public, pass :: &
       SetCoarseningTemplate
-    procedure ( SC ), private, pass, deferred :: &
+   procedure ( SC ), private, pass, deferred :: &
       SetCoarsening
     procedure, public, pass :: &
       CoarsenSingularityTemplate
-    procedure ( CS ), public, nopass, deferred :: &
-      CoarsenSingularities
-    procedure, public, pass :: &  !-- 2
-      OpenGridImageStreams
-    procedure, public, pass :: &  !-- 2
-      OpenManifoldStreams
-    procedure, public, pass :: &  !-- 3
-      Write
   end type FluidCentralTemplate
 
   abstract interface
 
-    subroutine IPS ( FC, UseCustomBoundaryInnerOption, RadiusMaxOption, &
-                     RadiusCoreOption, RadiusExcisionOption, &
-                     RadialRatioOption, nCellsPolarOption )
+    subroutine IA ( FC, RadiusMaxOption, RadiusCoreOption, &
+                    RadiusExcisionOption, RadialRatioOption, &
+                    nCellsPolarOption )
       use Basics
       import FluidCentralTemplate
       class ( FluidCentralTemplate ), intent ( inout ) :: &
         FC
-      logical ( KDL ), intent ( in ), optional :: &
-        UseCustomBoundaryInnerOption
       real ( KDR ), intent ( in ), optional :: &
         RadiusMaxOption, &
         RadiusCoreOption, &
@@ -79,7 +80,7 @@ module FluidCentral_Template
         RadialRatioOption
       integer ( KDI ), intent ( in ), optional :: &
         nCellsPolarOption
-    end subroutine IPS
+    end subroutine IA
 
     subroutine IG ( FC, GA, PS, GeometryType, CentralMassOption )
       use Basics
@@ -104,16 +105,12 @@ module FluidCentral_Template
         FC
     end subroutine SC
 
-    subroutine CS ( S )
-      use Basics
-      class ( StorageForm ), intent ( inout ) :: &
-        S
-    end subroutine CS
-
   end interface
 
     private :: &
-      InitializeDiagnostics, &
+      OpenGridImageStreams, &
+      OpenManifoldStreams, &
+      Write, &
       ComputeSphericalAverage, &
       ComputeEnclosedBaryons, &
       ComposePillars, &
@@ -125,25 +122,21 @@ contains
 
 
   subroutine InitializeTemplate_FC &
-               ( FC, Name, FluidType, GeometryType, DimensionlessOption, &
-                 UseCustomBoundaryInnerOption, TimeUnitOption, &
+               ( FC, FluidType, GeometryType, Name, DimensionlessOption, &
                  FinishTimeOption, CourantFactorOption, &
-                 LimiterParameterOption, ShockThresholdOption, &
+                 LimiterParameterOption, ShockThresholdOption, & 
                  RadiusMaxOption, RadiusCoreOption, RadiusMinOption, &
-                 RadialRatioOption, CentralMassOption, nWriteOption, &
-                 nCellsPolarOption )
+                 RadialRatioOption, CentralMassOption, &
+                 nWriteOption, nCellsPolarOption )
 
     class ( FluidCentralTemplate ), intent ( inout ) :: &
       FC
     character ( * ), intent ( in )  :: &
-      Name, &
       FluidType, &
-      GeometryType
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
-      TimeUnitOption
+      GeometryType, &
+      Name
     logical ( KDL ), intent ( in ), optional :: &
-      DimensionlessOption, &
-      UseCustomBoundaryInnerOption
+      DimensionlessOption
     real ( KDR ), intent ( in ), optional :: &
       FinishTimeOption, &
       CourantFactorOption, &
@@ -160,17 +153,6 @@ contains
 
     real ( KDR ) :: &
       FinishTime
-    type ( MeasuredValueForm ) :: &
-      TimeUnit, &
-      BaryonMassUnit, &
-      NumberDensityUnit, &
-      EnergyDensityUnit, &
-      TemperatureUnit
-    type ( MeasuredValueForm ), dimension ( 3 ) :: &
-      Velocity_U_Unit, &
-      MomentumDensity_D_Unit
-    class ( Fluid_D_Form ), pointer :: &
-      F
 
     if ( FC % Type == '' ) &
       FC % Type = 'a FluidCentral'
@@ -179,130 +161,50 @@ contains
     if ( present ( DimensionlessOption ) ) &
       FC % Dimensionless = DimensionlessOption
 
-    if ( .not. FC % Dimensionless ) then
-      FC % CoordinateUnit  &
-        =  [ UNIT % KILOMETER, UNIT % RADIAN, UNIT % RADIAN ]
-      TimeUnit &
-        = UNIT % SECOND
-    end if
+    call FC % InitializeTemplate ( Name )
 
-    if ( present ( TimeUnitOption ) ) &
-      TimeUnit = TimeUnitOption
-
-
-    !-- PositionSpace
-
+    call FC % AllocateIntegrator &
+           ( )
     call FC % InitializePositionSpace &
-           ( UseCustomBoundaryInnerOption, RadiusMaxOption, RadiusCoreOption, &
-             RadiusMinOption, RadialRatioOption, nCellsPolarOption )
+           ( GeometryType, RadiusMaxOption = RadiusMaxOption, &
+             RadiusCoreOption = RadiusCoreOption, &
+             RadiusMinOption = RadiusMinOption, &
+             RadialRatioOption = RadialRatioOption, &
+             CentralMassOption = CentralMassOption, &
+             nCellsPolarOption = nCellsPolarOption )
+    call FC % InitializeFluid &
+           ( FluidType, LimiterParameterOption = LimiterParameterOption, &
+             ShockThresholdOption = ShockThresholdOption )
+    call FC % InitializeStep &
+           ( Name ) 
+    call FC % InitializeDiagnostics ( )
 
-    select type ( PS => FC % PositionSpace )
-    class is ( Atlas_SC_Form )
-
-    allocate ( Geometry_ASC_Form :: PS % Geometry_ASC )
-    select type ( GA => PS % Geometry_ASC )
-    class is ( Geometry_ASC_Form )
-
-    call FC % InitializeGeometry ( GA, PS, GeometryType, CentralMassOption )
-
-    call PS % SetGeometry ( GA )
-
-    FC % UseCoarsening = .true.
-    call PROGRAM_HEADER % GetParameter ( FC % UseCoarsening, 'UseCoarsening' )
-    if ( FC % UseCoarsening ) &
-      call PS % SetCoarsening ( )
-
-
-    !-- Fluid
-
-    allocate ( Fluid_ASC_Form :: FC % Current_ASC )
-    select type ( FA => FC % Current_ASC )
-    class is ( Fluid_ASC_Form )
-
-    if ( FC % Dimensionless ) then
-      call FA % Initialize ( PS, FluidType )
-    else
-      BaryonMassUnit                =  UNIT % ATOMIC_MASS_UNIT
-      NumberDensityUnit             =  UNIT % NUMBER_DENSITY_NUCLEAR
-      EnergyDensityUnit             =  UNIT % ENERGY_DENSITY_NUCLEAR
-      TemperatureUnit               =  UNIT % MEGA_ELECTRON_VOLT
-      Velocity_U_Unit               =  FC % CoordinateUnit  /  TimeUnit
-      MomentumDensity_D_Unit        =  BaryonMassUnit * NumberDensityUnit &
-                                       * Velocity_U_Unit
-      MomentumDensity_D_Unit ( 2 )  =  MomentumDensity_D_Unit ( 2 ) &
-                                       *  FC % CoordinateUnit ( 1 ) ** 2
-      MomentumDensity_D_Unit ( 3 )  =  MomentumDensity_D_Unit ( 3 ) &
-                                       *  FC % CoordinateUnit ( 1 ) ** 2
-      call FA % Initialize &
-             ( PS, FluidType, &
-               Velocity_U_UnitOption         =  Velocity_U_Unit, &
-               MomentumDensity_D_UnitOption  =  MomentumDensity_D_Unit, &
-               BaryonMassUnitOption          =  BaryonMassUnit, &
-               NumberDensityUnitOption       =  NumberDensityUnit , &
-               EnergyDensityUnitOption       =  EnergyDensityUnit, &
-               TemperatureUnitOption         =  TemperatureUnit, &
-               NumberUnitOption              =  UNIT % SOLAR_BARYON_NUMBER, &
-               EnergyUnitOption              =  UNIT % ENERGY_SOLAR_MASS, &
-               MomentumUnitOption            =  UNIT % MOMENTUM_SOLAR_MASS, &
-               AngularMomentumUnitOption     =  UNIT % SOLAR_KERR_PARAMETER, &
-               TimeUnitOption                =  TimeUnit, &
-               BaryonMassReferenceOption     =  CONSTANT % ATOMIC_MASS_UNIT, &
-               LimiterParameterOption        =  LimiterParameterOption, &
-               ShockThresholdOption          =  ShockThresholdOption )
-    end if
-
-
-    !-- Step
-
-    allocate ( Step_RK2_C_ASC_Form :: FC % Step )
-    select type ( S => FC % Step )
-    class is ( Step_RK2_C_ASC_Form )
-
-    call S % Initialize ( FC, FA, Name )
-    S % ComputeConstraints % Pointer => ComputeGravity
-    S % ApplySources % Pointer => ApplySources
-
-    ! F => FA % Fluid_D ( )
-    ! select type ( FF => F % Features )
-    ! class is ( FluidFeatures_P_Form )
-    ! call S % SetUseLimiter ( FF % Value ( :, FF % SHOCK ) )
-    ! end select !-- FF
-
-    end select !-- S
-
-
-    !-- Template
-
-    FinishTime = 1.0_KDR * TimeUnit
+    FinishTime  =  1.0_KDR  *  FC % Units % Time
     if ( present ( FinishTimeOption ) ) &
       FinishTime = FinishTimeOption
 
-    call FC % InitializeTemplate_C_PS &
-           ( Name, TimeUnitOption = TimeUnit, &
-             FinishTimeOption = FinishTime, &
-             CourantFactorOption = CourantFactorOption, &
-             nWriteOption = nWriteOption )
+    select type ( I => FC % Integrator )
+    class is ( Integrator_C_PS_Form )
+
+      I % OpenGridImageStreams  =>  OpenGridImageStreams
+      I % OpenManifoldStreams   =>  OpenManifoldStreams
+      I % Write                 =>  Write
+
+      call I % Initialize &
+             ( FC, Name, TimeUnitOption = FC % Units % Time, &
+               FinishTimeOption = FinishTime, &
+               CourantFactorOption = CourantFactorOption, &
+               nWriteOption = nWriteOption )
+
+    end select !-- I
 
     call Show ( FC % Dimensionless, 'Dimensionless', FC % IGNORABILITY )
     call Show ( FC % UseCoarsening, 'UseCoarsening', FC % IGNORABILITY )
-    call Show ( FC % RadiusPolarMomentum, PS % Chart % CoordinateUnit ( 1 ), &
+    call Show ( FC % RadiusPolarMomentum, FC % Units % Coordinate_PS ( 1 ), &
                 'RadiusPolarMomentum', FC % IGNORABILITY )
 
     if ( FC % UseCoarsening ) &
       call FC % SetCoarsening ( )
-
-
-    !-- Diagnostics
-    
-    call InitializeDiagnostics ( FC )
-
-    
-    !-- Cleanup
-
-    end select !-- FA
-    end select !-- GA
-    end select !-- PS
-    nullify ( F )
 
   end subroutine InitializeTemplate_FC
 
@@ -344,9 +246,296 @@ contains
     if ( allocated ( FC % nCoarsen_2 ) ) &
       deallocate ( FC % nCoarsen_2 )
 
-    call FC % FinalizeTemplate_C_PS ( )
+    call FC % FinalizeTemplate ( )
 
   end subroutine FinalizeTemplate_FC
+
+
+  subroutine AllocateIntegrator_FC ( FC )
+
+    class ( FluidCentralTemplate ), intent ( inout ) :: &
+      FC
+
+    allocate ( Integrator_C_PS_Form :: FC % Integrator )
+
+    if ( allocated ( FC % TimeStepLabel ) ) then
+      associate ( I => FC % Integrator )
+      allocate ( I % TimeStepLabel, source = FC % TimeStepLabel )
+      end associate !-- I
+    end if
+
+  end subroutine AllocateIntegrator_FC
+
+
+  subroutine InitializePositionSpace &
+               ( FC, GeometryType, RadiusMaxOption, RadiusCoreOption, &
+                 RadiusMinOption, RadialRatioOption, CentralMassOption, &
+                 nCellsPolarOption )
+
+    class ( FluidCentralTemplate ), intent ( inout ) :: &
+      FC
+    character ( * ), intent ( in )  :: &
+      GeometryType
+    real ( KDR ), intent ( in ), optional :: &
+      RadiusMaxOption, &
+      RadiusCoreOption, &
+      RadiusMinOption, &
+      RadialRatioOption, &
+      CentralMassOption
+    integer ( KDI ), intent ( in ), optional :: &
+      nCellsPolarOption
+
+    if ( .not. FC % Dimensionless ) then
+      FC % Units % Coordinate_PS  &
+        =  [ UNIT % KILOMETER, UNIT % RADIAN, UNIT % RADIAN ]
+      FC % Units % Time &
+        =  UNIT % SECOND
+    end if
+
+    call FC % InitializeAtlas &
+           ( RadiusMaxOption = RadiusMaxOption, &
+             RadiusCoreOption = RadiusCoreOption, &
+             RadiusExcisionOption = RadiusMinOption, &
+             RadialRatioOption = RadialRatioOption, &
+             nCellsPolarOption = nCellsPolarOption )
+
+    select type ( PS => FC % Integrator % PositionSpace )
+    class is ( Atlas_SC_Form )
+
+    allocate ( Geometry_ASC_Form :: PS % Geometry_ASC )
+    select type ( GA => PS % Geometry_ASC )
+    class is ( Geometry_ASC_Form )
+
+    call FC % InitializeGeometry &
+           ( GA, PS, GeometryType, CentralMassOption = CentralMassOption )
+
+    call PS % SetGeometry ( GA )
+
+    FC % UseCoarsening = .true.
+    call PROGRAM_HEADER % GetParameter ( FC % UseCoarsening, 'UseCoarsening' )
+    if ( FC % UseCoarsening ) &
+      call PS % SetCoarsening ( )
+
+    end select !-- GA
+    end select !-- PS
+
+  end subroutine InitializePositionSpace
+
+
+  subroutine InitializeFluid &
+               ( FC, FluidType, LimiterParameterOption, ShockThresholdOption )
+
+    class ( FluidCentralTemplate ), intent ( inout ) :: &
+      FC
+    character ( * ), intent ( in )  :: &
+      FluidType
+    real ( KDR ), intent ( in ), optional :: &
+      LimiterParameterOption, &
+      ShockThresholdOption
+
+    select type ( I => FC % Integrator )
+    class is ( Integrator_C_PS_Form )
+
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
+
+    allocate ( Fluid_ASC_Form :: I % Current_ASC )
+    select type ( FA => I % Current_ASC )
+    class is ( Fluid_ASC_Form )
+
+    if ( .not. FC % Dimensionless ) then
+
+      FC % Units % BaryonMass     =  UNIT % ATOMIC_MASS_UNIT
+      FC % Units % NumberDensity  =  UNIT % NUMBER_DENSITY_NUCLEAR
+      FC % Units % EnergyDensity  =  UNIT % ENERGY_DENSITY_NUCLEAR
+      FC % Units % Temperature    =  UNIT % MEGA_ELECTRON_VOLT
+
+      FC % Units % Velocity_U  &
+        =  FC % Units % Coordinate_PS  /  FC % Units % Time
+
+      FC % Units % MomentumDensity_D  &
+        =  FC % Units % BaryonMass  *  FC % Units % NumberDensity  &
+           *  FC % Units % Velocity_U
+      FC % Units % MomentumDensity_D ( 2 )  &
+        =  FC % Units % MomentumDensity_D ( 2 )  &
+           *  FC % Units % Coordinate_PS ( 1 ) ** 2
+      FC % Units % MomentumDensity_D ( 3 )  &
+        =  FC % Units % MomentumDensity_D ( 3 )  &
+           *  FC % Units % Coordinate_PS ( 1 ) ** 2
+
+      FC % Units % MomentumDensity_U  &
+        =  FC % Units % BaryonMass  *  FC % Units % NumberDensity  &
+           *  FC % Units % Velocity_U
+      FC % Units % MomentumDensity_U ( 2 )  &
+        =  FC % Units % MomentumDensity_U ( 2 )  &
+           /  FC % Units % Coordinate_PS ( 1 ) ** 2
+      FC % Units % MomentumDensity_U ( 3 )  &
+        =  FC % Units % MomentumDensity_U ( 3 )  &
+           /  FC % Units % Coordinate_PS ( 1 ) ** 2
+
+      FC % Units % Number           =  UNIT % SOLAR_BARYON_NUMBER
+      FC % Units % Energy           =  UNIT % ENERGY_SOLAR_MASS
+      FC % Units % Momentum         =  UNIT % MOMENTUM_SOLAR_MASS
+      FC % Units % AngularMomentum  =  UNIT % SOLAR_KERR_PARAMETER
+
+    end if
+
+    call FA % Initialize &
+           ( PS, FluidType, FC % Units, &
+             LimiterParameterOption = LimiterParameterOption, &
+             ShockThresholdOption = ShockThresholdOption )
+
+    end select !-- FA
+    end select !-- PS
+    end select !-- I
+
+  end subroutine InitializeFluid
+
+
+  subroutine InitializeStep ( FC, Name )
+
+    class ( FluidCentralTemplate ), intent ( inout ) :: &
+      FC
+    character ( * ), intent ( in )  :: &
+      Name
+
+    select type ( I => FC % Integrator )
+    class is ( Integrator_C_PS_Form )
+
+    select type ( FA => I % Current_ASC )
+    class is ( Fluid_ASC_Form )
+
+    allocate ( Step_RK2_C_ASC_Form :: I % Step )
+    select type ( S => I % Step )
+    class is ( Step_RK2_C_ASC_Form )
+
+    call S % Initialize ( I, FA, Name )
+    S % ComputeConstraints % Pointer => ComputeGravity
+    S % ApplySources % Pointer => ApplySources
+
+    ! F => FA % Fluid_D ( )
+    ! select type ( FF => F % Features )
+    ! class is ( FluidFeatures_P_Form )
+    ! call S % SetUseLimiter ( FF % Value ( :, FF % SHOCK ) )
+    ! end select !-- FF
+
+    end select !-- S
+    end select !-- FA
+    end select !-- I
+
+  end subroutine InitializeStep
+
+
+  subroutine InitializeDiagnostics ( FC )
+
+    class ( FluidCentralTemplate ), intent ( inout ) :: &
+      FC
+
+    type ( Real_1D_Form ), dimension ( 1 ) :: &
+      Edge
+
+    call Show ( 'Initializing FluidCentralCore diagnostics', &
+                FC % IGNORABILITY )
+
+    select type ( I => FC % Integrator )
+    class is ( Integrator_C_PS_Form )
+
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
+
+    select type ( FA => I % Current_ASC )
+    class is ( Fluid_ASC_Form )
+
+
+    !-- Spherical average position space
+
+    allocate ( FC % PositionSpace_SA )
+    associate ( PS_SA => FC % PositionSpace_SA )
+
+    call PS_SA % Initialize ( 'SphericalAverage', nDimensionsOption = 1 )
+
+    select type ( C => PS % Chart )
+    class is ( Chart_SL_Template )
+      if ( FC % Dimensionless ) then
+        call PS_SA % CreateChart &
+               ( CoordinateSystemOption = 'SPHERICAL', &
+                 nCellsOption           = C % nCells ( 1 : 1 ), &
+                 nGhostLayersOption     = [ 0 ] )
+      else
+        call PS_SA % CreateChart &
+               ( CoordinateSystemOption = 'SPHERICAL', &
+                 CoordinateUnitOption   = FC % Units % Coordinate_PS ( 1:1 ), &
+                 nCellsOption           = C % nCells ( 1 : 1 ), &
+                 nGhostLayersOption     = [ 0 ] )
+      end if
+
+      call Edge ( 1 ) % Initialize &
+             ( C % Edge ( 1 ) % Value ( 1 : C % nCells ( 1 ) + 1 ) )
+
+    end select !-- C
+
+    call PS_SA % SetGeometry ( EdgeOption = Edge )
+
+
+    !-- Enclosed baryons position space
+
+    allocate ( FC % PositionSpace_EB )
+    associate ( PS_EB => FC % PositionSpace_EB )
+
+    call PS_EB % Initialize ( 'EnclosedBaryons', nDimensionsOption = 1 )
+
+    select type ( C => PS % Chart )
+    class is ( Chart_SL_Template )
+      if ( FC % Dimensionless ) then
+        call PS_EB % CreateChart &
+               ( CoordinateLabelOption = [ 'BaryonNumber' ], &
+                 nCellsOption          = C % nCells ( 1 : 1 ), &
+                 nGhostLayersOption    = [ 0 ] )
+      else
+        call PS_EB % CreateChart &
+               ( CoordinateLabelOption = [ 'BaryonNumber' ], &
+                 CoordinateUnitOption = [ UNIT % SOLAR_BARYON_NUMBER ], &
+                 nCellsOption         = C % nCells ( 1 : 1 ), &
+                 nGhostLayersOption   = [ 0 ] )
+      end if
+    end select !-- C
+
+    call PS_EB % SetGeometry ( )
+
+
+    !-- Spherical average fluid
+
+    allocate ( FC % Fluid_ASC_SA )
+    associate ( FA_SA => FC % Fluid_ASC_SA )
+
+    call FA_SA % Initialize &
+           ( PS_SA, FA % FluidType, FC % Units, &
+             AllocateTallyOption   = .false., &
+             AllocateSourcesOption = .false. )
+
+
+    !-- Enclosed baryons fluid
+
+    allocate ( FC % Fluid_ASC_EB )
+    associate ( FA_EB => FC % Fluid_ASC_EB )
+
+    call FA_EB % Initialize &
+           ( PS_EB, FA % FluidType, FC % Units, &
+             AllocateTallyOption   = .false., &
+             AllocateSourcesOption = .false. )
+
+
+    !-- Cleanup
+
+    end associate !-- FA_EB
+    end associate !-- FA_SA
+    end associate !-- PS_EB
+    end associate !-- PS_SA
+    end select !-- FA
+    end select !-- PS
+    end select !-- I
+
+  end subroutine InitializeDiagnostics
 
 
   subroutine SetCoarseningTemplate ( FC, iAngular )
@@ -363,11 +552,14 @@ contains
     class ( Fluid_D_Form ), pointer :: &
       F
 
-    select type ( FA => FC % Current_ASC )
+    select type ( I => FC % Integrator )
+    class is ( Integrator_C_PS_Form )
+
+    select type ( FA => I % Current_ASC )
     class is ( Fluid_ASC_Form )
     F => FA % Fluid_D ( )
 
-    select type ( PS => FC % PositionSpace )
+    select type ( PS => I % PositionSpace )
     class is ( Atlas_SC_Form )
 
     select type ( C => PS % Chart )
@@ -444,17 +636,18 @@ contains
     end select !-- C
     end select !-- PS
     end select !-- FA
+    end select !-- I
     nullify ( F )
 
   end subroutine SetCoarseningTemplate
 
 
-  subroutine CoarsenSingularityTemplate ( FC, S, iAngular )
+  subroutine CoarsenSingularityTemplate ( FC, Increment, iAngular )
 
     class ( FluidCentralTemplate ), intent ( inout ) :: &
       FC
     class ( StorageForm ), intent ( inout ) :: &
-      S
+      Increment
     integer ( KDI ), intent ( in ) :: &
       iAngular
 
@@ -464,16 +657,16 @@ contains
     call Show ( 'Coarsening Singularity', FC % IGNORABILITY + 2 )
     call Show ( iAngular, 'iAngular', FC % IGNORABILITY + 2 )
 
-    call ComposePillars ( FC, S, iAngular )
+    call ComposePillars ( FC, Increment, iAngular )
     call CoarsenPillars ( FC, iAngular )
-    call DecomposePillars ( FC, S, iAngular )
+    call DecomposePillars ( FC, Increment, iAngular )
 
   end subroutine CoarsenSingularityTemplate
 
 
   subroutine OpenGridImageStreams ( I )
 
-    class ( FluidCentralTemplate ), intent ( inout ) :: &
+    class ( IntegratorTemplate ), intent ( inout ) :: &
       I
 
     call I % OpenGridImageStreamsTemplate ( )
@@ -481,21 +674,26 @@ contains
     if ( I % PositionSpace % Communicator % Rank /= CONSOLE % DisplayRank ) &
       return
 
-    allocate ( I % GridImageStream_SA_EB )
+    select type ( FC => I % Universe )
+    class is ( FluidCentralTemplate )
+
+    allocate ( FC % GridImageStream_SA_EB )
     associate &
-      ( GIS_I     => I % GridImageStream, &
-        GIS_SA_EB => I % GridImageStream_SA_EB )
+      ( GIS_I     =>  I % GridImageStream, &
+        GIS_SA_EB => FC % GridImageStream_SA_EB )
     call GIS_SA_EB % Initialize &
            ( trim ( I % Name ) // '_SA_EB', & 
              WorkingDirectoryOption = GIS_I % WorkingDirectory )
     end associate !-- GIS_I, etc.
+
+    end select !-- FC
 
   end subroutine OpenGridImageStreams
 
 
   subroutine OpenManifoldStreams ( I, VerboseStreamOption )
 
-    class ( FluidCentralTemplate ), intent ( inout ) :: &
+    class ( IntegratorTemplate ), intent ( inout ) :: &
       I
     logical ( KDL ), intent ( in ), optional :: &
       VerboseStreamOption
@@ -513,184 +711,56 @@ contains
       VerboseStream = VerboseStreamOption
     call PROGRAM_HEADER % GetParameter ( VerboseStream, 'VerboseStream' )
 
-    associate ( GIS => I % GridImageStream_SA_EB )
+    select type ( FC => I % Universe )
+    class is ( FluidCentralTemplate )
+    associate ( GIS => FC % GridImageStream_SA_EB )
     associate ( iS => 1 )  !-- iStream
-      call I % PositionSpace_SA % OpenStream &
+      call FC % PositionSpace_SA % OpenStream &
              ( GIS, 'Time', iStream = iS, VerboseOption = VerboseStream )
-      call I % PositionSpace_EB % OpenStream &
+      call FC % PositionSpace_EB % OpenStream &
              ( GIS, 'Time', iStream = iS, VerboseOption = VerboseStream )
     end associate !-- iS
     end associate !-- GIS
+    end select !-- FC
 
   end subroutine OpenManifoldStreams
 
 
   subroutine Write ( I )
 
-    class ( FluidCentralTemplate ), intent ( inout ) :: &
+    class ( IntegratorTemplate ), intent ( inout ) :: &
       I
 
     call I % WriteTemplate ( )
 
-    call ComputeSphericalAverage ( I )
-    call ComputeEnclosedBaryons ( I )
+    select type ( FC => I % Universe )
+    class is ( FluidCentralTemplate )
+
+    call ComputeSphericalAverage ( FC )
+    call ComputeEnclosedBaryons ( FC )
 
     if ( I % PositionSpace % Communicator % Rank /= CONSOLE % DisplayRank ) &
       return
 
     associate &
-      ( GIS => I % GridImageStream_SA_EB, &
+      ( GIS => FC % GridImageStream_SA_EB, &
         iS  => 1 )  !-- iStream
     call GIS % Open ( GIS % ACCESS_CREATE )
 
-    call I % PositionSpace_SA % Write &
+    call FC % PositionSpace_SA % Write &
            ( iStream = iS, DirectoryOption = 'Chart_SA', &
              TimeOption = I % Time / I % TimeUnit, &
              CycleNumberOption = I % iCycle )
-    call I % PositionSpace_EB % Write &
+    call FC % PositionSpace_EB % Write &
            ( iStream = iS, DirectoryOption = 'Chart_EB', &
              TimeOption = I % Time / I % TimeUnit, &
              CycleNumberOption = I % iCycle )
 
     call GIS % Close ( )
     end associate !-- GIS, etc.
+    end select !-- FC
 
   end subroutine Write
-
-
-  subroutine InitializeDiagnostics ( FC )
-
-    class ( FluidCentralTemplate ), intent ( inout ) :: &
-      FC
-
-    type ( Real_1D_Form ), dimension ( 1 ) :: &
-      Edge
-
-    call Show ( 'Initializing FluidCentralCore diagnostics', &
-                FC % IGNORABILITY )
-
-    select type ( PS => FC % PositionSpace )
-    class is ( Atlas_SC_Form )
-
-    select type ( FA => FC % Current_ASC )
-    class is ( Fluid_ASC_Form )
-
-
-    !-- Spherical average position space
-
-    allocate ( FC % PositionSpace_SA )
-    associate ( PS_SA => FC % PositionSpace_SA )
-
-    call PS_SA % Initialize ( 'SphericalAverage', nDimensionsOption = 1 )
-
-    select type ( C => PS % Chart )
-    class is ( Chart_SL_Template )
-      if ( FC % Dimensionless ) then
-        call PS_SA % CreateChart &
-               ( CoordinateSystemOption = 'SPHERICAL', &
-                 nCellsOption           = C % nCells ( 1 : 1 ), &
-                 nGhostLayersOption     = [ 0 ] )
-      else
-        call PS_SA % CreateChart &
-               ( CoordinateSystemOption = 'SPHERICAL', &
-                 CoordinateUnitOption   = FC % CoordinateUnit ( 1 : 1 ), &
-                 nCellsOption           = C % nCells ( 1 : 1 ), &
-                 nGhostLayersOption     = [ 0 ] )
-      end if
-
-      call Edge ( 1 ) % Initialize &
-             ( C % Edge ( 1 ) % Value ( 1 : C % nCells ( 1 ) + 1 ) )
-
-    end select !-- C
-
-    call PS_SA % SetGeometry ( EdgeOption = Edge )
-
-
-    !-- Enclosed baryons position space
-
-    allocate ( FC % PositionSpace_EB )
-    associate ( PS_EB => FC % PositionSpace_EB )
-
-    call PS_EB % Initialize ( 'EnclosedBaryons', nDimensionsOption = 1 )
-
-    select type ( C => PS % Chart )
-    class is ( Chart_SL_Template )
-      if ( FC % Dimensionless ) then
-        call PS_EB % CreateChart &
-               ( CoordinateLabelOption = [ 'BaryonNumber' ], &
-                 nCellsOption          = C % nCells ( 1 : 1 ), &
-                 nGhostLayersOption    = [ 0 ] )
-      else
-        call PS_EB % CreateChart &
-               ( CoordinateLabelOption = [ 'BaryonNumber' ], &
-                 CoordinateUnitOption = [ UNIT % SOLAR_BARYON_NUMBER ], &
-                 nCellsOption         = C % nCells ( 1 : 1 ), &
-                 nGhostLayersOption   = [ 0 ] )
-      end if
-    end select !-- C
-
-    call PS_EB % SetGeometry ( )
-
-
-    !-- Spherical average fluid
-
-    allocate ( FC % Fluid_ASC_SA )
-    associate ( FA_SA => FC % Fluid_ASC_SA )
-
-    if ( FC % Dimensionless ) then
-      call FA_SA % Initialize &
-             ( PS_SA, FA % FluidType, &
-               AllocateTallyOption           =  .false., &
-               AllocateSourcesOption         =  .false. )
-    else
-      call FA_SA % Initialize &
-             ( PS_SA, FA % FluidType, &
-               AllocateTallyOption           =  .false., &
-               AllocateSourcesOption         =  .false., &
-               Velocity_U_UnitOption         =  FA % Velocity_U_Unit, &
-               MomentumDensity_D_UnitOption  =  FA % MomentumDensity_D_Unit, &
-               BaryonMassUnitOption          =  FA % BaryonMassUnit, &
-               NumberDensityUnitOption       =  FA % NumberDensityUnit, &
-               EnergyDensityUnitOption       =  FA % EnergyDensityUnit, &
-               TemperatureUnitOption         =  FA % TemperatureUnit, &
-               BaryonMassReferenceOption     =  FA % BaryonMassReference )
-    end if
-
-
-    !-- Enclosed baryons fluid
-
-    allocate ( FC % Fluid_ASC_EB )
-    associate ( FA_EB => FC % Fluid_ASC_EB )
-
-    if ( FC % Dimensionless ) then
-      call FA_EB % Initialize &
-             ( PS_EB, FA % FluidType, &
-               AllocateTallyOption           =  .false., &
-               AllocateSourcesOption         =  .false. )
-    else
-      call FA_EB % Initialize &
-             ( PS_EB, FA % FluidType, &
-               AllocateTallyOption           =  .false., &
-               AllocateSourcesOption         =  .false., &
-               Velocity_U_UnitOption         =  FA % Velocity_U_Unit, &
-               MomentumDensity_D_UnitOption  =  FA % MomentumDensity_D_Unit, &
-               BaryonMassUnitOption          =  FA % BaryonMassUnit, &
-               NumberDensityUnitOption       =  FA % NumberDensityUnit, &
-               EnergyDensityUnitOption       =  FA % EnergyDensityUnit, &
-               BaryonMassReferenceOption     =  CONSTANT % ATOMIC_MASS_UNIT )
-    end if
-
-
-    !-- Cleanup
-
-    end associate !-- FA_EB
-    end associate !-- FA_SA
-    end associate !-- PS_EB
-    end associate !-- PS_SA
-    end select !-- FA
-    end select !-- PS
-
-  end subroutine InitializeDiagnostics
 
 
   subroutine ComputeSphericalAverage ( FC )
@@ -713,10 +783,13 @@ contains
       F, &
       F_SA
 
-    select type ( PS => FC % PositionSpace )
+    select type ( I => FC % Integrator )
+    class is ( Integrator_C_PS_Form )
+
+    select type ( PS => I % PositionSpace )
     class is ( Atlas_SC_Form )
 
-    select type ( FA => FC % Current_ASC )
+    select type ( FA => I % Current_ASC )
     class is ( Fluid_ASC_Form )
     F => FA % Fluid_D ( )
 
@@ -755,6 +828,7 @@ contains
     end select !-- C
     end select !-- FA
     end select !-- PS
+    end select !-- I
     nullify ( G_SA, F, F_SA )
 
   end subroutine ComputeSphericalAverage
@@ -776,7 +850,8 @@ contains
     integer ( KDI ) :: &
       iV
 
-    if ( FC % PositionSpace % Communicator % Rank /= CONSOLE % DisplayRank ) &
+    if ( FC % Integrator % PositionSpace % Communicator % Rank &
+           /= CONSOLE % DisplayRank ) &
       return
 
     G_SA => FC % PositionSpace_SA % Geometry ( )
@@ -835,7 +910,10 @@ contains
     class ( GeometryFlatForm ), pointer :: &
       G
 
-    select type ( PS => FC % PositionSpace )
+    select type ( I => FC % Integrator )
+    class is ( Integrator_C_PS_Form )
+
+    select type ( PS => I % PositionSpace )
     class is ( Atlas_SC_Form )
     G => PS % Geometry ( )
 
@@ -977,6 +1055,7 @@ contains
     end associate !-- nCB
     end select !-- C
     end select !-- PS
+    end select !-- I
     nullify ( G, Crsn_2, Crsn_3, Vol, SV )
 
   end subroutine ComposePillars
@@ -1002,7 +1081,10 @@ contains
     type ( StorageForm ), dimension ( : ), pointer :: &
       CP
 
-    select type ( PS => FC % PositionSpace )
+    select type ( I => FC % Integrator )
+    class is ( Integrator_C_PS_Form )
+
+    select type ( PS => I % PositionSpace )
     class is ( Atlas_SC_Form )
 
     select type ( C => PS % Chart )
@@ -1041,6 +1123,7 @@ contains
 
     end select !-- C
     end select !-- PS
+    end select !-- I
     nullify ( CP, nCoarsen )
 
   end subroutine CoarsenPillars
@@ -1074,7 +1157,10 @@ contains
     class ( GeometryFlatForm ), pointer :: &
       G
 
-    select type ( PS => FC % PositionSpace )
+    select type ( I => FC % Integrator )
+    class is ( Integrator_C_PS_Form )
+
+    select type ( PS => I % PositionSpace )
     class is ( Atlas_SC_Form )
     G => PS % Geometry ( )
 
@@ -1205,6 +1291,7 @@ contains
     end associate !-- nCB
     end select !-- C
     end select !-- PS
+    end select !-- I
     nullify ( G, R, Crsn_2, Crsn_3, SV )
 
   end subroutine DecomposePillars

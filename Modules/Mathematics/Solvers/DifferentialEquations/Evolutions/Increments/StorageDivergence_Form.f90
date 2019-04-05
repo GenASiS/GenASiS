@@ -23,7 +23,7 @@ module StorageDivergence_Form
       Flux_I, &                  !-- Flux_Inner
       Current_ICL, Current_ICR   !-- Current_InnerCenterLeft, _InnerCenterRight
     type ( GradientForm ), allocatable :: &
-      GradientPrimitive
+      GradientReconstructed
   contains
     procedure, public, pass :: &
       InitializeTimers
@@ -68,7 +68,7 @@ contains
 
 
   subroutine Allocate &
-              ( SD, nCurrent, nConserved, nPrimitive, nSolverSpeeds, &
+              ( SD, nCurrent, nConserved, nReconstructed, nSolverSpeeds, &
                 nGeometry, nValues )
 
     class ( StorageDivergenceForm ), intent ( inout ) :: &
@@ -76,7 +76,7 @@ contains
     integer ( KDI ), intent ( in ) :: &
       nCurrent, &
       nConserved, &
-      nPrimitive, &
+      nReconstructed, &
       nSolverSpeeds, &
       nGeometry, &
       nValues
@@ -109,10 +109,9 @@ contains
     call SD % Flux_I % Initialize &
            ( [ nValues, nConserved ], ClearOption = .true. )
 
-    allocate ( SD % GradientPrimitive )
-    call SD % GradientPrimitive % Initialize &
-!           ( 'Primitive', [ nValues, nPrimitive ] )
-           ( 'Primitive', [ nValues, nCurrent ] )
+    allocate ( SD % GradientReconstructed )
+    call SD % GradientReconstructed % Initialize &
+           ( 'Reconstructed', [ nValues, nReconstructed ] )
 
   end subroutine Allocate
 
@@ -139,8 +138,8 @@ contains
     class ( StorageDivergenceForm ), intent ( inout ) :: &
       SD
 
-    if ( allocated ( SD % GradientPrimitive ) ) &
-      deallocate ( SD % GradientPrimitive )
+    if ( allocated ( SD % GradientReconstructed ) ) &
+      deallocate ( SD % GradientReconstructed )
     if ( allocated ( SD % DiffusionFactor_I ) ) &
       deallocate ( SD % DiffusionFactor_I )
     if ( allocated ( SD % SolverSpeeds_I ) ) &

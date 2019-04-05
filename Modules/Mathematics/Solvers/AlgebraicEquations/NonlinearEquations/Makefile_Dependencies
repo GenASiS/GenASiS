@@ -1,9 +1,9 @@
-RootFinding_Form.o: \
+RootFinder_Form.o: \
   Basics.o \
-  RootFinding_Form.f90
+  RootFinder_Form.f90
 
 NonlinearEquations.o: \
-  RootFinding_Form.o \
+  RootFinder_Form.o \
   NonlinearEquations.f90
 
 NonlinearEquations.a: $(NONLINEAR_EQUATIONS)

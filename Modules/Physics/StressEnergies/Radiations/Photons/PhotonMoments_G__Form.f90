@@ -4,6 +4,7 @@ module PhotonMoments_G__Form
 
   use Basics
   use Mathematics
+  use StressEnergyBasics
   use RadiationBasics
 
   implicit none
@@ -25,9 +26,7 @@ module PhotonMoments_G__Form
       TEMPERATURE_PARAMETER_EQ = 0
   contains
     procedure, private, pass :: &
-      InitializeAllocate_PM
-    generic, public :: &
-      Initialize => InitializeAllocate_PM
+      InitializeAllocate_RM
     procedure, public, pass :: &
       SetOutput
     final :: &
@@ -49,26 +48,22 @@ module PhotonMoments_G__Form
 contains
 
 
-  subroutine InitializeAllocate_PM &
-               ( PM, RiemannSolverType, UseLimiter, Velocity_U_Unit, &
-                 MomentumDensity_U_Unit, MomentumDensity_D_Unit, &
-                 EnergyDensityUnit, TemperatureUnit, LimiterParameter, &
-                 nValues, VariableOption, VectorOption, NameOption, &
-                 ClearOption, UnitOption, VectorIndicesOption )
+  subroutine InitializeAllocate_RM &
+               ( RM, RadiationMomentsType, RiemannSolverType, &
+                 ReconstructedType, UseLimiter, Units, &
+                 LimiterParameter, nValues, VariableOption, VectorOption, &
+                 NameOption, ClearOption, UnitOption, VectorIndicesOption )
 
     class ( PhotonMoments_G_Form ), intent ( inout ) :: &
-      PM
+      RM
     character ( * ), intent ( in ) :: &
-      RiemannSolverType
+      RadiationMomentsType, &
+      RiemannSolverType, &
+      ReconstructedType
     logical ( KDL ), intent ( in ) :: &
       UseLimiter
-    type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
-      Velocity_U_Unit, &
-      MomentumDensity_U_Unit, &
-      MomentumDensity_D_Unit
-    type ( MeasuredValueForm ), intent ( in ) :: &
-      EnergyDensityUnit, &
-      TemperatureUnit
+    class ( StressEnergyUnitsForm ), intent ( in ) :: &
+      Units
     real ( KDR ), intent ( in ) :: &
       LimiterParameter
     integer ( KDI ), intent ( in ) :: &
@@ -91,20 +86,19 @@ contains
       VariableUnit
 
     call InitializeBasics &
-           ( PM, Variable, VariableUnit, VariableOption, UnitOption )
+           ( RM, Variable, VariableUnit, VariableOption, UnitOption )
 
-    call SetUnits ( VariableUnit, PM, TemperatureUnit )
+    call SetUnits ( VariableUnit, RM, Units )
 
-    call PM % RadiationMomentsForm % Initialize &
-           ( RiemannSolverType, UseLimiter, Velocity_U_Unit, &
-             MomentumDensity_U_Unit, MomentumDensity_D_Unit, &
-             EnergyDensityUnit, LimiterParameter, &
-             nValues, VariableOption = Variable, VectorOption = VectorOption, &
+    call RM % RadiationMomentsForm % Initialize &
+           ( RadiationMomentsType, RiemannSolverType, ReconstructedType, &
+             UseLimiter, Units, LimiterParameter, nValues, &
+             VariableOption = Variable, VectorOption = VectorOption, &
              NameOption = NameOption, ClearOption = ClearOption, &
              UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndicesOption )
 
-  end subroutine InitializeAllocate_PM
+  end subroutine InitializeAllocate_RM
 
 
   subroutine SetOutput ( RM, Output )
@@ -306,7 +300,7 @@ contains
       oV     !-- oVector
 
     if ( PM % Type == '' ) &
-      PM % Type = 'PhotonMoments_G'
+      PM % Type = 'a PhotonMoments_G'
 
     !-- variable indices
 
@@ -350,17 +344,17 @@ contains
   end subroutine InitializeBasics
 
 
-  subroutine SetUnits ( VariableUnit, PM, TemperatureUnit )
+  subroutine SetUnits ( VariableUnit, PM, Units )
 
     type ( MeasuredValueForm ), dimension ( : ), intent ( inout ) :: &
       VariableUnit
     class ( PhotonMoments_G_Form ), intent ( in ) :: &
       PM
-    type ( MeasuredValueForm ), intent ( in ) :: &
-      TemperatureUnit
+    class ( StressEnergyUnitsForm ), intent ( in ) :: &
+      Units
 
-    VariableUnit ( PM % TEMPERATURE_PARAMETER )     =  TemperatureUnit
-    VariableUnit ( PM % TEMPERATURE_PARAMETER_EQ )  =  TemperatureUnit
+    VariableUnit ( PM % TEMPERATURE_PARAMETER )     =  Units % Temperature
+    VariableUnit ( PM % TEMPERATURE_PARAMETER_EQ )  =  Units % Temperature
 
   end subroutine SetUnits
 

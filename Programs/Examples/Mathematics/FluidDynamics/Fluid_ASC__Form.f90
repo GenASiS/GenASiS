@@ -31,7 +31,8 @@ module Fluid_ASC__Form
       UseLimiter
     character ( LDF ) :: &
       FluidType         = '', &
-      RiemannSolverType = ''
+      RiemannSolverType = '', &
+      ReconstructedType = ''
     type ( Sources_F_ASC_Form ), allocatable :: &
       Sources_ASC
     type ( FluidFeatures_ASC_Form ), allocatable :: &
@@ -62,7 +63,8 @@ contains
 
   subroutine Initialize &
                ( FA, A, FluidType, NameShortOption, RiemannSolverTypeOption, &
-                 UseLimiterOption, AllocateSourcesOption, VelocityUnitOption, &
+                 ReconstructedTypeOption, UseLimiterOption, &
+                 AllocateSourcesOption, VelocityUnitOption, &
                  MassDensityUnitOption, EnergyDensityUnitOption, &
                  TemperatureUnitOption, MassUnitOption, EnergyUnitOption, &
                  MomentumUnitOption, AngularMomentumUnitOption, &
@@ -77,7 +79,8 @@ contains
       FluidType
     character ( * ), intent ( in ), optional :: &
       NameShortOption, &
-      RiemannSolverTypeOption
+      RiemannSolverTypeOption, &
+      ReconstructedTypeOption
     logical ( KDL ), intent ( in ), optional :: &
       UseLimiterOption, &
       AllocateSourcesOption
@@ -119,6 +122,12 @@ contains
       FA % RiemannSolverType = RiemannSolverTypeOption
     call PROGRAM_HEADER % GetParameter &
            ( FA % RiemannSolverType, 'RiemannSolverType' )
+
+    FA % ReconstructedType = 'PRIMITIVE'
+    if ( present ( ReconstructedTypeOption ) ) &
+      FA % ReconstructedType = ReconstructedTypeOption
+    call PROGRAM_HEADER % GetParameter &
+           ( FA % ReconstructedType, 'ReconstructedType' )
 
     FA % UseLimiter = .true.
     if ( present ( UseLimiterOption ) ) &
@@ -230,6 +239,8 @@ contains
 
     call Show ( FA % FluidType, 'FluidType', FA % IGNORABILITY )
     call Show ( FA % RiemannSolverType, 'RiemannSolverType', &
+                FA % IGNORABILITY )
+    call Show ( FA % ReconstructedType, 'ReconstructedType', &
                 FA % IGNORABILITY )
     call Show ( FA % UseLimiter, 'UseLimiter', FA % IGNORABILITY )
     call Show ( FA % LimiterParameter, 'LimiterParameter', FA % IGNORABILITY )
@@ -373,9 +384,9 @@ contains
     class is ( Fluid_CSL_Form )
       call FC % Initialize &
              ( C, FA % NameShort, FA % FluidType, FA % RiemannSolverType, &
-               FA % UseLimiter, FA % VelocityUnit, FA % MassDensityUnit, &
-               FA % EnergyDensityUnit, FA % TemperatureUnit, &
-               FA % LimiterParameter, nValues, &
+               FA % ReconstructedType, FA % UseLimiter, FA % VelocityUnit, &
+               FA % MassDensityUnit, FA % EnergyDensityUnit, &
+               FA % TemperatureUnit, FA % LimiterParameter, nValues, &
                IgnorabilityOption = FA % IGNORABILITY )
     end select !-- FC
 

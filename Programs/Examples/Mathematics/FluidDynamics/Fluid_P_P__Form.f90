@@ -56,15 +56,17 @@ contains
 
 
   subroutine InitializeAllocate_P_P &
-               ( F, RiemannSolverType, UseLimiter, VelocityUnit, &
-                 MassDensityUnit, EnergyDensityUnit, TemperatureUnit, &
-                 LimiterParameter, nValues, VariableOption, VectorOption, &
-                 NameOption, ClearOption, UnitOption, VectorIndicesOption )
+               ( F, RiemannSolverType, ReconstructedType, UseLimiter, &
+                 VelocityUnit, MassDensityUnit, EnergyDensityUnit, &
+                 TemperatureUnit, LimiterParameter, nValues, VariableOption, &
+                 VectorOption, NameOption, ClearOption, UnitOption, &
+                 VectorIndicesOption )
 
     class ( Fluid_P_P_Form ), intent ( inout ) :: &
       F
     character ( * ), intent ( in ) :: &
-      RiemannSolverType
+      RiemannSolverType, &
+      ReconstructedType
     logical ( KDL ), intent ( in ) :: &
       UseLimiter
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
@@ -101,11 +103,11 @@ contains
     call SetUnits ( VariableUnit, F, MassDensityUnit, EnergyDensityUnit )
 
     call F % InitializeTemplate_P &
-           ( RiemannSolverType, UseLimiter, VelocityUnit, MassDensityUnit, &
-             EnergyDensityUnit, TemperatureUnit, LimiterParameter, nValues, &
-             VariableOption = Variable, VectorOption = VectorOption, &
-             NameOption = NameOption, ClearOption = ClearOption, &
-             UnitOption = VariableUnit, &
+           ( RiemannSolverType, ReconstructedType, UseLimiter, VelocityUnit, &
+             MassDensityUnit, EnergyDensityUnit, TemperatureUnit, &
+             LimiterParameter, nValues, VariableOption = Variable, &
+             VectorOption = VectorOption, NameOption = NameOption, &
+             ClearOption = ClearOption, UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndicesOption )
 
     !-- Non-standard entropy unit

@@ -4,12 +4,12 @@ module RadiationBox_Form
   use Mathematics
   use Spaces
   use StressEnergies
-  use Universe_Template
+  use FluidBox_Form
 
   implicit none
   private
 
-  type, public, extends ( UniverseTemplate ) :: RadiationBoxForm
+  type, public, extends ( FluidBoxForm ) :: RadiationBoxForm
     real ( KDR ) :: &
       InteractionFactor
     logical ( KDL ) :: &
@@ -33,42 +33,40 @@ module RadiationBox_Form
       Initialize => Initialize_RB
     final :: &
       Finalize
+    procedure, private, pass :: &
+      AllocateIntegrator_RB
+    generic, public :: &
+      AllocateIntegrator => AllocateIntegrator_RB
+    procedure, public, pass :: &
+      InitializePositionSpace
+    procedure, public, pass :: &
+      InitializeMomentumSpace
+    procedure, public, pass :: &
+      InitializeRadiation
+    procedure, public, pass :: &
+      InitializeSteps
   end type RadiationBoxForm
 
     private :: &
-      AllocateIntegrator, &
-      InitializePositionSpace, &
-      InitializeMomentumSpace, &
-      InitializeRadiation, &
-      InitializeFluid, &
-      InitializeSteps, &
       ComputeTimeStepLocal, &
       PrepareStep, &
       IntegrateSources, &
       ApplySources_Fluid
 
-    private :: &
+      private :: &
         ComputeTimeStepInteractions, &
         ComputeFluidSource_G_S_Radiation_Kernel, &
         ApplySources_Fluid_Kernel
-
-    class ( RadiationBoxForm ), pointer :: &
-      RadiationBox => null ( )
 
 contains
 
   
   subroutine Initialize_RB &
                ( RB, RadiationName, RadiationType, MomentsType, Name, &
-                 BoundaryConditionsFaceOption, ApplyStreamingOption, &
-                 ApplyInteractionsOption, EvolveFluidOption, &
-                 CoordinateUnit_PS_Option, CoordinateUnit_MS_Option, &
-                 Velocity_U_UnitOption, MomentumDensity_U_UnitOption, &
-                 MomentumDensity_D_UnitOption, MinCoordinateOption, &
-                 MaxCoordinateOption, TimeUnitOption, BaryonMassUnitOption, &
-                 NumberDensityUnitOption, EnergyDensityUnitOption, &
-                 TemperatureUnitOption, FinishTimeOption, CourantFactorOption, &
-                 EnergyScaleOption, BaryonMassReferenceOption, &
+                 ApplyStreamingOption, ApplyInteractionsOption, &
+                 EvolveFluidOption, MinCoordinateOption, MaxCoordinateOption, &
+                 FinishTimeOption, CourantFactorOption, MinEnergyOption, &
+                 MaxEnergyOption, MinWidthEnergyOption, EnergyScaleOption, &
                  nCellsPositionOption, nCellsEnergyOption, nWriteOption )
 
     class ( RadiationBoxForm ), intent ( inout ), target :: &
@@ -79,107 +77,58 @@ contains
     character ( * ), intent ( in ) :: &
       MomentsType, &
       Name
-    type ( Character_1D_Form ), dimension ( : ), intent ( in ), optional :: &
-      BoundaryConditionsFaceOption
     logical ( KDL ), intent ( in ), optional :: &
       ApplyStreamingOption, &
       ApplyInteractionsOption, &
       EvolveFluidOption
-    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
-      CoordinateUnit_PS_Option, &
-      CoordinateUnit_MS_Option, &
-      Velocity_U_UnitOption, &
-      MomentumDensity_U_UnitOption, &
-      MomentumDensity_D_UnitOption
     real ( KDR ), dimension ( : ), intent ( in ), optional :: &
       MinCoordinateOption, &
       MaxCoordinateOption
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
-      TimeUnitOption, &
-      BaryonMassUnitOption, &
-      NumberDensityUnitOption, &
-      EnergyDensityUnitOption, &
-      TemperatureUnitOption
     real ( KDR ), intent ( in ), optional :: &
       FinishTimeOption, &
       CourantFactorOption, &
-      EnergyScaleOption, &
-      BaryonMassReferenceOption
+      MinEnergyOption, &
+      MaxEnergyOption, &
+      MinWidthEnergyOption, &
+      EnergyScaleOption
     integer ( KDI ), dimension ( 3 ), intent ( in ), optional :: &
       nCellsPositionOption
     integer ( KDI ), intent ( in ), optional :: &
       nCellsEnergyOption, &
       nWriteOption
 
-    type ( MeasuredValueForm ) :: &
-      CoordinateUnit_PS, &
-      VelocityUnit, &
-      BaryonMassUnit, &
-      NumberDensityUnit, &
-      EnergyDensityUnit, &
-      NumberUnit, &
-      EnergyUnit, &
-      MomentumUnit, &
-      AngularMomentumUnit
-
     if ( RB % Type == '' ) &
       RB % Type = 'a RadiationBox'
     
     call RB % InitializeTemplate ( Name )
 
-    RadiationBox => RB
-
     RB % MomentsType  =  MomentsType
 
-    call AllocateIntegrator &
-           ( RB, RadiationName )
-    call InitializePositionSpace &
-           ( RB, BoundaryConditionsFaceOption, CoordinateUnit_PS_Option, &
-             MinCoordinateOption, MaxCoordinateOption, nCellsPositionOption )
-    call InitializeMomentumSpace &
-           ( RB, CoordinateUnit_MS_Option, EnergyScaleOption, &
-             nCellsEnergyOption )
-
-    if ( present ( CoordinateUnit_PS_Option ) ) &
-      CoordinateUnit_PS = CoordinateUnit_PS_Option ( 1 )
-    if ( present ( Velocity_U_UnitOption ) ) &
-      VelocityUnit = Velocity_U_UnitOption ( 1 )
-    if ( present ( BaryonMassUnitOption ) ) &
-      BaryonMassUnit = BaryonMassUnitOption
-    if ( present ( NumberDensityUnitOption ) ) &
-      NumberDensityUnit = NumberDensityUnitOption
-    if ( present ( EnergyDensityUnitOption ) ) &
-      EnergyDensityUnit = EnergyDensityUnitOption
-
-    associate ( nD => RB % Integrator % PositionSpace % nDimensions )
-    NumberUnit    =  NumberDensityUnit  *  CoordinateUnit_PS ** nD
-    EnergyUnit    =  EnergyDensityUnit  *  CoordinateUnit_PS ** nD
-    MomentumUnit  =  BaryonMassUnit  *  CoordinateUnit_PS ** (-3) &
-                     *  VelocityUnit  *  CoordinateUnit_PS ** nD
-    end associate !-- nD
-    AngularMomentumUnit  =  MomentumUnit  *  CoordinateUnit_PS
-
-    call InitializeRadiation &
-           ( RB, RadiationName, RadiationType, Velocity_U_UnitOption, &
-             MomentumDensity_U_UnitOption, MomentumDensity_D_UnitOption, &
-             BaryonMassUnitOption, NumberDensityUnitOption, &
-             EnergyDensityUnitOption, TemperatureUnitOption, &
-             NumberUnit, EnergyUnit, MomentumUnit, AngularMomentumUnit, &
-             TimeUnitOption )
-    call InitializeFluid &
-           ( RB, Velocity_U_UnitOption, MomentumDensity_D_UnitOption, &
-             BaryonMassUnitOption, NumberDensityUnitOption, &
-             EnergyDensityUnitOption, TemperatureUnitOption, NumberUnit, &
-             EnergyUnit, MomentumUnit, AngularMomentumUnit, &
-             TimeUnitOption, BaryonMassReferenceOption )
-    call InitializeSteps &
-           ( RB, Name, ApplyStreamingOption, ApplyInteractionsOption, &
+    call RB % AllocateIntegrator &
+           ( RadiationName )
+    call RB % InitializePositionSpace &
+           ( GeometryType = 'GALILEAN', &
+             MinCoordinateOption = MinCoordinateOption, &
+             MaxCoordinateOption = MaxCoordinateOption, &
+             nCellsOption = nCellsPositionOption )
+    call RB % InitializeMomentumSpace &
+           ( MinEnergyOption = MinEnergyOption, &
+             MaxEnergyOption = MaxEnergyOption, &
+             MinWidthEnergyOption = MinWidthEnergyOption, &
+             EnergyScaleOption = EnergyScaleOption, &
+             nCellsEnergyOption = nCellsEnergyOption )
+    call RB % InitializeRadiation &
+           ( RadiationName, RadiationType )
+    call RB % InitializeFluid &
+           ( FluidType = 'IDEAL' )
+    call RB % InitializeSteps &
+           ( Name, ApplyStreamingOption, ApplyInteractionsOption, &
              EvolveFluidOption )
 
     select type ( I => RB % Integrator )
     class is ( Integrator_C_1D_C_PS_Template )
       call I % Initialize &
-             ( Name, TimeUnitOption = TimeUnitOption, &
+             ( RB, Name, TimeUnitOption = RB % Units % Time, &
                FinishTimeOption = FinishTimeOption, &
                CourantFactorOption = CourantFactorOption, &
                nWriteOption = nWriteOption )
@@ -215,7 +164,7 @@ contains
   end subroutine Finalize
 
 
-  subroutine AllocateIntegrator ( RB, RadiationName )
+  subroutine AllocateIntegrator_RB ( RB, RadiationName )
 
     class ( RadiationBoxForm ), intent ( inout ) :: &
       RB
@@ -267,80 +216,59 @@ contains
       allocate ( I % Current_BSLL_ASC_CSLD_1D ( I % N_CURRENTS_1D ) )
     end select !-- I
 
-  end subroutine AllocateIntegrator
+  end subroutine AllocateIntegrator_RB
 
 
   subroutine InitializePositionSpace &
-               ( RB, BoundaryConditionsFaceOption, CoordinateUnit_PS_Option, &
+               ( FB, GeometryType, GravitySolverTypeOption, &
                  MinCoordinateOption, MaxCoordinateOption, &
-                 nCellsPositionOption )
+                 UniformAccelerationOption, nCellsOption )
 
     class ( RadiationBoxForm ), intent ( inout ) :: &
-      RB
-    type ( Character_1D_Form ), dimension ( : ), intent ( in ), optional :: &
-      BoundaryConditionsFaceOption
-    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
-      CoordinateUnit_PS_Option
+      FB
+    character ( * ), intent ( in )  :: &
+      GeometryType
+    character ( * ), intent ( in ), optional :: &
+      GravitySolverTypeOption
     real ( KDR ), dimension ( : ), intent ( in ), optional :: &
       MinCoordinateOption, &
       MaxCoordinateOption
+    real ( KDR ), intent ( in ), optional :: &
+      UniformAccelerationOption
     integer ( KDI ), dimension ( 3 ), intent ( in ), optional :: &
-      nCellsPositionOption
+      nCellsOption
 
-    integer ( KDI ) :: &
-      iD  !-- iDimension
     integer ( KDI ), dimension ( 3 ) :: &
       nCellsPosition
 
-    select type ( I => RB % Integrator )
-    class is ( Integrator_C_1D_C_PS_Template )
-
-    allocate ( Atlas_SC_Form :: I % PositionSpace )
-    select type ( PS => I % PositionSpace )
-    class is ( Atlas_SC_Form )
-    call PS % Initialize ( 'PositionSpace', PROGRAM_HEADER % Communicator )
-
-    if ( present ( BoundaryConditionsFaceOption ) ) then
-      do iD = 1, PS % nDimensions
-        call PS % SetBoundaryConditionsFace &
-               ( BoundaryConditionsFaceOption ( iD ) % Value, &
-                 iDimension = iD )
-      end do !-- iD
-    end if
-
-    nCellsPosition = [ 32, 32, 32 ]
-    if ( present ( nCellsPositionOption ) ) &
-      nCellsPosition = nCellsPositionOption
+    nCellsPosition = [ 128, 128, 128 ]
+    if ( present ( nCellsOption ) ) &
+      nCellsPosition = nCellsOption
     call PROGRAM_HEADER % GetParameter ( nCellsPosition, 'nCellsPosition' )
 
-    call PS % CreateChart &
-           ( CoordinateUnitOption = CoordinateUnit_PS_Option, &
+    call FB % FluidBoxForm % InitializePositionSpace &
+           ( GeometryType, &
+             GravitySolverTypeOption = GravitySolverTypeOption, &
              MinCoordinateOption = MinCoordinateOption, &
              MaxCoordinateOption = MaxCoordinateOption, &
+             UniformAccelerationOption = UniformAccelerationOption, &
              nCellsOption = nCellsPosition )
-
-    allocate ( Geometry_ASC_Form :: PS % Geometry_ASC )
-    select type ( GA => PS % Geometry_ASC )
-    class is ( Geometry_ASC_Form )
-    call GA % Initialize ( PS, GeometryType = 'GALILEAN' )
-    call PS % SetGeometry ( GA )
-
-    end select !-- GA
-    end select !-- PS
-    end select !-- I
 
   end subroutine InitializePositionSpace
 
 
   subroutine InitializeMomentumSpace &
-               ( RB, CoordinateUnit_MS_Option, EnergyScaleOption, &
-                 nCellsEnergyOption )
+               ( RB, EnergySpacingOption, MinEnergyOption, MaxEnergyOption, &
+                 MinWidthEnergyOption, EnergyScaleOption, nCellsEnergyOption )
 
     class ( RadiationBoxForm ), intent ( inout ) :: &
       RB
-    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
-      CoordinateUnit_MS_Option
+    character ( * ), intent ( in ), optional :: &
+      EnergySpacingOption
     real ( KDR ), intent ( in ), optional :: &
+      MinEnergyOption, &
+      MaxEnergyOption, &
+      MinWidthEnergyOption, &
       EnergyScaleOption
     integer ( KDI ), intent ( in ), optional :: &
       nCellsEnergyOption
@@ -348,7 +276,12 @@ contains
     integer ( KDI ) :: &
       nCellsEnergy
     real ( KDR ) :: &
+      MinEnergy, &
+      MaxEnergy, &
+      MinWidthEnergy, &
       EnergyScale
+    character ( LDL ) :: &
+      EnergySpacing
 
     select type ( I => RB % Integrator )
     class is ( Integrator_C_1D_MS_C_PS_Form )
@@ -363,26 +296,66 @@ contains
     call MS % SetBoundaryConditionsFace &
            ( [ 'REFLECTING', 'REFLECTING' ], iDimension = 1 )
 
-    EnergyScale = 10.0_KDR
-    if ( present ( EnergyScaleOption ) ) &
-      EnergyScale = EnergyScaleOption
-    call PROGRAM_HEADER % GetParameter ( EnergyScale, 'EnergyScale' )
-
-!    CoordinateUnit = UNIT % IDENTITY
-!    CoordinateUnit ( 1 ) = UNIT % MEGA_ELECTRON_VOLT
-
     nCellsEnergy = 16
     if ( present ( nCellsEnergyOption ) ) &
       nCellsEnergy = nCellsEnergyOption
     call PROGRAM_HEADER % GetParameter ( nCellsEnergy, 'nCellsEnergy' )
 
-    call MS % CreateChart &
-           ( SpacingOption = [ 'COMPACTIFIED' ], &
-             CoordinateSystemOption = 'SPHERICAL', &
-             CoordinateUnitOption = CoordinateUnit_MS_Option, &
-             ScaleOption = [ EnergyScale ], &
-             nCellsOption = [ nCellsEnergy ], &
-             nGhostLayersOption = [ 0, 0, 0 ] )
+    EnergySpacing = 'GEOMETRIC'
+    if ( present ( EnergySpacingOption ) ) &
+      EnergySpacing = EnergySpacingOption
+    call PROGRAM_HEADER % GetParameter ( EnergySpacing, 'EnergySpacing' )
+
+    select case ( trim ( EnergySpacing ) )
+    case ( 'GEOMETRIC' )
+
+      MinEnergy       =    0.0_KDR
+      MaxEnergy       =  100.0_KDR
+      MinWidthEnergy  =    0.1_KDR
+      if ( present ( MinEnergyOption ) ) &
+        MinEnergy = MinEnergyOption
+      if ( present ( MaxEnergyOption ) ) &
+        MaxEnergy = MaxEnergyOption
+      if ( present ( MinWidthEnergyOption ) ) &
+        MinWidthEnergy = MinWidthEnergyOption
+      call PROGRAM_HEADER % GetParameter ( MinEnergy, 'MinEnergy' )
+      call PROGRAM_HEADER % GetParameter ( MaxEnergy, 'MaxEnergy' )
+      call PROGRAM_HEADER % GetParameter ( MinWidthEnergy, 'MinWidthEnergy' )
+
+      call MS % CreateChart &
+             ( SpacingOption = [ 'GEOMETRIC' ], &
+               CoordinateSystemOption = 'SPHERICAL', &
+               CoordinateUnitOption = RB % Units % Coordinate_MS, &
+               MinCoordinateOption = [ MinEnergy ], &
+               MaxCoordinateOption = [ MaxEnergy ], &
+               ScaleOption = [ MinWidthEnergy ], &
+               nCellsOption = [ nCellsEnergy ], &
+               nGhostLayersOption = [ 0, 0, 0 ] )
+
+    case ( 'COMPACTIFIED' )
+
+      EnergyScale = 10.0_KDR
+      if ( present ( EnergyScaleOption ) ) &
+        EnergyScale = EnergyScaleOption
+      call PROGRAM_HEADER % GetParameter ( EnergyScale, 'EnergyScale' )
+
+      call MS % CreateChart &
+             ( SpacingOption = [ 'COMPACTIFIED' ], &
+               CoordinateSystemOption = 'SPHERICAL', &
+               CoordinateUnitOption = RB % Units % Coordinate_MS, &
+               ScaleOption = [ EnergyScale ], &
+               nCellsOption = [ nCellsEnergy ], &
+               nGhostLayersOption = [ 0, 0, 0 ] )
+
+    case default
+
+      call Show ( 'EnergySpacing not recognized', CONSOLE % ERROR )
+      call Show ( EnergySpacing, 'EnergySpacing', CONSOLE % ERROR )
+      call Show ( 'RadiationBox_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'InitializeMomentumSpace', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+
+    end select !-- Spacing
 
     end select !-- MS
     end select !-- PS
@@ -391,33 +364,13 @@ contains
   end subroutine InitializeMomentumSpace
 
 
-  subroutine InitializeRadiation &
-               ( RB, RadiationName, RadiationType, Velocity_U_UnitOption, &
-                 MomentumDensity_U_UnitOption, MomentumDensity_D_UnitOption, &
-                 BaryonMassUnitOption, NumberDensityUnitOption, &
-                 EnergyDensityUnitOption, TemperatureUnitOption, &
-                 NumberUnitOption, EnergyUnitOption, MomentumUnitOption, &
-                 AngularMomentumUnitOption, TimeUnitOption )
+  subroutine InitializeRadiation ( RB, RadiationName, RadiationType )
 
     class ( RadiationBoxForm ), intent ( inout ) :: &
       RB
     character ( * ), dimension ( : ), intent ( in )  :: &
       RadiationName, &
       RadiationType
-    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
-      Velocity_U_UnitOption, &
-      MomentumDensity_U_UnitOption, &
-      MomentumDensity_D_UnitOption
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
-      BaryonMassUnitOption, &
-      NumberDensityUnitOption, &
-      EnergyDensityUnitOption, &
-      TemperatureUnitOption, &
-      NumberUnitOption, &
-      EnergyUnitOption, &
-      MomentumUnitOption, &
-      AngularMomentumUnitOption, &
-      TimeUnitOption
 
     integer ( KDI ) :: &
       iC  !-- iCurrent
@@ -438,7 +391,8 @@ contains
         select case ( trim ( RadiationType ( iC ) ) )
         case ( 'GENERIC' )
           allocate &
-            ( RadiationMoments_ASC_Form :: I % Current_ASC_1D ( iC ) % Element )
+            ( RadiationMoments_ASC_Form :: &
+                I % Current_ASC_1D ( iC ) % Element )
           RadiationTypeLocal = 'GENERIC'
         case ( 'PHOTONS' )
           allocate &
@@ -455,19 +409,8 @@ contains
         select type ( RA => I % Current_ASC_1D ( iC ) % Element )
         class is ( RadiationMoments_ASC_Form )
           call RA % Initialize &
-                 ( PS, RadiationTypeLocal, &
-                   NameShortOption = RadiationName ( iC ), &
-                   Velocity_U_UnitOption = Velocity_U_UnitOption, &
-                   MomentumDensity_U_UnitOption &
-                     = MomentumDensity_U_UnitOption, &
-                   MomentumDensity_D_UnitOption &
-                     = MomentumDensity_D_UnitOption, &
-                   EnergyDensityUnitOption = EnergyDensityUnitOption, &
-                   TemperatureUnitOption = TemperatureUnitOption, &
-                   EnergyUnitOption = EnergyUnitOption, &
-                   MomentumUnitOption = MomentumUnitOption, &
-                   AngularMomentumUnitOption = AngularMomentumUnitOption, &
-                   TimeUnitOption = TimeUnitOption )
+                 ( PS, RadiationTypeLocal, RB % Units, &
+                   NameShortOption = RadiationName ( iC ) )
         end select !-- RA        
         end select !-- PS
 
@@ -498,19 +441,8 @@ contains
         select type ( RMB => I % Current_BSLL_ASC_CSLD_1D ( iC ) % Element )
         class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
           call RMB % Initialize &
-                 ( MS, RadiationTypeLocal, &
-                   NameShortOption = RadiationName ( iC ), &
-                   Velocity_U_UnitOption = Velocity_U_UnitOption, &
-                   MomentumDensity_U_UnitOption &
-                     = MomentumDensity_U_UnitOption, &
-                   MomentumDensity_D_UnitOption &
-                     = MomentumDensity_D_UnitOption, &
-                   EnergyDensityUnitOption = EnergyDensityUnitOption, &
-                   TemperatureUnitOption = TemperatureUnitOption, &
-                   EnergyUnitOption = EnergyUnitOption, &
-                   MomentumUnitOption = MomentumUnitOption, &
-                   AngularMomentumUnitOption = AngularMomentumUnitOption, &
-                   TimeUnitOption = TimeUnitOption )
+                 ( MS, RadiationTypeLocal, RB % Units, &
+                   NameShortOption = RadiationName ( iC ) )
         end select !-- RMB
         end select !-- MS
 
@@ -521,63 +453,6 @@ contains
     end select !-- I_1D
 
   end subroutine InitializeRadiation
-
-
-  subroutine InitializeFluid &
-               ( RB, Velocity_U_UnitOption, MomentumDensity_D_UnitOption, &
-                 BaryonMassUnitOption, NumberDensityUnitOption, &
-                 EnergyDensityUnitOption, TemperatureUnitOption, &
-                 NumberUnitOption, EnergyUnitOption, MomentumUnitOption, &
-                 AngularMomentumUnitOption, TimeUnitOption, &
-                 BaryonMassReferenceOption )
-
-    class ( RadiationBoxForm ), intent ( inout ) :: &
-      RB
-    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
-      Velocity_U_UnitOption, &
-      MomentumDensity_D_UnitOption
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
-      BaryonMassUnitOption, &
-      NumberDensityUnitOption, &
-      EnergyDensityUnitOption, &
-      TemperatureUnitOption, &
-      NumberUnitOption, &
-      EnergyUnitOption, &
-      MomentumUnitOption, &
-      AngularMomentumUnitOption, &
-      TimeUnitOption
-    real ( KDR ), intent ( in ), optional :: &
-      BaryonMassReferenceOption
-
-    select type ( I => RB % Integrator )
-    class is ( Integrator_C_1D_C_PS_Template )
-
-    select type ( PS => I % PositionSpace )
-    class is ( Atlas_SC_Form )
-
-    allocate ( Fluid_ASC_Form :: I % Current_ASC )
-    select type ( FA => I % Current_ASC )
-    class is ( Fluid_ASC_Form )
-    call FA % Initialize &
-           ( PS, 'IDEAL', &
-             Velocity_U_UnitOption = Velocity_U_UnitOption, &
-             MomentumDensity_D_UnitOption = MomentumDensity_D_UnitOption, &
-             BaryonMassUnitOption = BaryonMassUnitOption, &
-             NumberDensityUnitOption = NumberDensityUnitOption, &
-             EnergyDensityUnitOption = EnergyDensityUnitOption, &
-             TemperatureUnitOption = TemperatureUnitOption, &
-             NumberUnitOption = NumberUnitOption, &
-             EnergyUnitOption = EnergyUnitOption, &
-             MomentumUnitOption = MomentumUnitOption, &
-             AngularMomentumUnitOption = AngularMomentumUnitOption, &
-             TimeUnitOption = TimeUnitOption, &
-             BaryonMassReferenceOption = BaryonMassReferenceOption )
-    end select !-- FA
-
-    end select !-- PS
-    end select !-- I
-
-  end subroutine InitializeFluid
 
 
   subroutine InitializeSteps &
@@ -720,10 +595,11 @@ contains
     integer ( KDI ) :: &
       oC  !-- oCandidate
 
-    associate ( RB => RadiationBox )
-
     select type ( I )
     class is ( Integrator_C_1D_C_PS_Template )
+
+    select type ( RB => I % Universe )
+    class is ( RadiationBoxForm )
 
     !-- Fluid advection and Radiation streaming
 
@@ -746,8 +622,8 @@ contains
         =  huge ( 1.0_KDR )
     end if
 
+    end select !-- RB
     end select !-- I
-    end associate !-- RB
 
   end subroutine ComputeTimeStepLocal
 
@@ -763,10 +639,6 @@ contains
       RM
     class ( Sources_RM_Form ), pointer :: &
       SR
-
-    ! associate &
-    !   ( R => Radiation, &
-    !     F => Fluid )
 
     select type ( I )
     class is ( Integrator_C_1D_PS_C_PS_Form )  !-- Grey
@@ -848,8 +720,6 @@ contains
       RMEI, &
       RMF
 
-    associate ( IB => RadiationBox % Interactions_BSLL_ASC_CSLD ) 
-
     select type ( RMB => I % Current_BSLL_ASC_CSLD_1D ( 1 ) % Element )
     class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
 
@@ -901,7 +771,6 @@ contains
 
     end select !-- RMA
     end select !-- RMB
-    end associate !-- IB
 
     nullify ( RMEI, RMF )
  
@@ -973,7 +842,8 @@ contains
     integer ( KDI ) :: &
       iC     !-- iCurrent
 
-    associate ( RB => RadiationBox )
+    select type ( RB => I % Universe )
+    class is ( RadiationBoxForm )
 
     select type ( I )
     class is ( Integrator_C_1D_PS_C_PS_Form )  !-- Grey
@@ -1001,7 +871,7 @@ contains
       end associate !-- IB
 
     end select !-- I
-    end associate !-- RB
+    end select !-- RB
 
   end subroutine ComputeTimeStepInteractions
 

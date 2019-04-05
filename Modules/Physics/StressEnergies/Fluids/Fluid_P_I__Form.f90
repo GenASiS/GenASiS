@@ -4,6 +4,7 @@ module Fluid_P_I__Form
 
   use Basics
   use Mathematics
+  use StressEnergyBasics
   use Fluid_P__Template
   use FluidFeatures_P__Form
   
@@ -31,9 +32,7 @@ module Fluid_P_I__Form
       FiducialPressure
   contains
     procedure, public, pass :: &
-      InitializeAllocate_P_I
-    generic, public :: &
-      Initialize => InitializeAllocate_P_I
+      Initialize_P_I
     procedure, public, pass :: &
       SetPrimitiveConserved
     procedure, public, pass :: &
@@ -69,29 +68,23 @@ module Fluid_P_I__Form
 contains
 
 
-  subroutine InitializeAllocate_P_I &
-               ( F, RiemannSolverType, UseEntropy, UseLimiter, &
-                 Velocity_U_Unit, MomentumDensity_D_Unit, BaryonMassUnit, &
-                 NumberDensityUnit, EnergyDensityUnit, TemperatureUnit, &
-                 BaryonMassReference, LimiterParameter, nValues, &
-                 VariableOption, VectorOption, NameOption, ClearOption, &
-                 UnitOption, VectorIndicesOption )
+  subroutine Initialize_P_I &
+               ( F, FluidType, RiemannSolverType, ReconstructedType, &
+                 UseEntropy, UseLimiter, Units, BaryonMassReference, &
+                 LimiterParameter, nValues, VariableOption, VectorOption, &
+                 NameOption, ClearOption, UnitOption, VectorIndicesOption )
 
     class ( Fluid_P_I_Form ), intent ( inout ) :: &
       F
     character ( * ), intent ( in ) :: &
-      RiemannSolverType
+      FluidType, &
+      RiemannSolverType, &
+      ReconstructedType
     logical ( KDL ), intent ( in ) :: &
       UseEntropy, &
       UseLimiter
-    type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
-      Velocity_U_Unit, &
-      MomentumDensity_D_Unit
-    type ( MeasuredValueForm ), intent ( in ) :: &
-      BaryonMassUnit, &
-      NumberDensityUnit, &
-      EnergyDensityUnit, &
-      TemperatureUnit
+    class ( StressEnergyUnitsForm ), intent ( in ) :: &
+      Units
     real ( KDR ), intent ( in ) :: &
       BaryonMassReference, &
       LimiterParameter
@@ -119,12 +112,11 @@ contains
            ( F, Variable, VariableUnit, VariableOption, UnitOption )
 
     call F % InitializeTemplate_P &
-           ( RiemannSolverType, UseEntropy, UseLimiter, Velocity_U_Unit, &
-             MomentumDensity_D_Unit, BaryonMassUnit, NumberDensityUnit, &
-             EnergyDensityUnit, TemperatureUnit, BaryonMassReference, &
-             LimiterParameter, nValues, VariableOption = Variable, &
-             VectorOption = VectorOption, NameOption = NameOption, &
-             ClearOption = ClearOption, UnitOption = VariableUnit, &
+           ( FluidType, RiemannSolverType, ReconstructedType, UseEntropy, &
+             UseLimiter, Units, BaryonMassReference, LimiterParameter, &
+             nValues, VariableOption = Variable, VectorOption = VectorOption, &
+             NameOption = NameOption, ClearOption = ClearOption, &
+             UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndicesOption )
 
     associate &
@@ -135,7 +127,7 @@ contains
         n_0   => F % FiducialBaryonDensity, &
         p_0   => F % FiducialPressure )
 
-    if ( TemperatureUnit /= UNIT % IDENTITY ) then
+    if ( Units % Temperature /= UNIT % IDENTITY ) then
       k = CONSTANT % BOLTZMANN
       call Show ( k, UNIT % JOULE / UNIT % KELVIN, 'BoltzmannConstant', &
                   F % IGNORABILITY )
@@ -149,7 +141,7 @@ contains
     c_v    =  k / ( mu * ( gamma - 1.0_KDR ) )
     call Show ( gamma, 'AdiabaticIndex', F % IGNORABILITY )
     call Show ( mu, 'MeanMolecularWeight', F % IGNORABILITY )
-    if ( TemperatureUnit /= UNIT % IDENTITY ) then
+    if ( Units % Temperature /= UNIT % IDENTITY ) then
       call Show ( c_v, UNIT % BOLTZMANN, 'SpecificHeatVolume', &
                   F % IGNORABILITY )
     else
@@ -158,14 +150,14 @@ contains
 
     n_0  =  1.0_KDR
     p_0  =  1.0_KDR
-    call Show ( n_0, NumberDensityUnit, 'FiducialBaryonDensity', &
+    call Show ( n_0, Units % NumberDensity, 'FiducialBaryonDensity', &
                 F % IGNORABILITY )
-    call Show ( p_0, EnergyDensityUnit, 'FiducialPressure', &
+    call Show ( p_0, Units % EnergyDensity, 'FiducialPressure', &
                 F % IGNORABILITY )
 
     end associate !-- amu, etc.
 
-  end subroutine InitializeAllocate_P_I
+  end subroutine Initialize_P_I
 
 
   subroutine SetPrimitiveConserved ( C )

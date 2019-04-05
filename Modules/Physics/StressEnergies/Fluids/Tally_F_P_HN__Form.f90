@@ -5,6 +5,7 @@ module Tally_F_P_HN__Form
   use Basics
   use Mathematics
   use Spaces
+  use StressEnergyBasics
   use Fluid_P_HN__Form
   use Tally_F_P__Form
 
@@ -35,19 +36,14 @@ module Tally_F_P_HN__Form
 contains
 
 
-  subroutine InitializeFluid &
-               ( T, A, NumberUnitOption, EnergyUnitOption, &
-                 MomentumUnitOption, AngularMomentumUnitOption )
+  subroutine InitializeFluid ( T, A, Units )
     
     class ( Tally_F_P_HN_Form ), intent ( inout ) :: &
       T
     class ( AtlasHeaderForm ), intent ( in ), target :: &
       A
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
-      NumberUnitOption, &
-      EnergyUnitOption, &
-      MomentumUnitOption, &
-      AngularMomentumUnitOption
+    class ( StressEnergyUnitsForm ), intent ( in ) :: &
+      Units
 
     integer ( KDI ) :: &
       oI     !-- oIntegral
@@ -56,22 +52,15 @@ contains
     if ( T % N_INTEGRALS == 0 ) &
       T % N_INTEGRALS = oI + T % N_INTEGRALS_HEAVY_NUCLEUS
     
-    call T % Tally_F_P_Form % Initialize &
-           ( A, NumberUnitOption, EnergyUnitOption, MomentumUnitOption, &
-             AngularMomentumUnitOption )
+    call T % Tally_F_P_Form % Initialize ( A, Units )
     
     T % PROTON_NUMBER  =  oI + 1
     
     T % Variable ( oI + 1 : oI + T % N_INTEGRALS_HEAVY_NUCLEUS ) &
       = [ 'ProtonNumber' ]
 
-    if ( present ( NumberUnitOption ) ) then
-      T % Unit ( oI + 1 : oI + T % N_INTEGRALS_HEAVY_NUCLEUS ) &
-        = [ NumberUnitOption ]
-    else
-      T % Unit ( oI + 1 : oI + T % N_INTEGRALS_HEAVY_NUCLEUS ) &
-        = [ UNIT % IDENTITY ]
-    end if
+    T % Unit ( oI + 1 : oI + T % N_INTEGRALS_HEAVY_NUCLEUS ) &
+      = [ Units % Number ]
 
     call T % SelectVariables ( A )
 

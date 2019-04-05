@@ -9,12 +9,12 @@ program RiemannProblem
     RP
 
   allocate ( PROGRAM_HEADER )
-  call PROGRAM_HEADER % Initialize ( 'RiemannProblem' )
+  call PROGRAM_HEADER % Initialize &
+         ( 'RiemannProblem', DimensionalityOption = '2D' )
 
   allocate ( RP )
   call RP % Initialize ( PROGRAM_HEADER % Name )
   call RP % Evolve ( )
-!  call RP % ComputeError ( )
   deallocate ( RP )
 
   deallocate ( PROGRAM_HEADER )

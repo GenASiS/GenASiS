@@ -10,7 +10,7 @@ program OppenheimerSnyder
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'OppenheimerSnyder', DimensionalityOption = '1D' )
+         ( 'OppenheimerSnyder', DimensionalityOption = '2D' )
 
   allocate ( OS )
   call OS % Initialize ( PROGRAM_HEADER % Name )

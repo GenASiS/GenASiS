@@ -13,30 +13,26 @@ module FluidCentralCore_Form
     real ( KDR ) :: &
       GravityFactor
   contains
-    procedure, public, pass :: &
-      Initialize
+    procedure, private, pass :: &
+      Initialize_FCC
+    generic, public :: &
+      Initialize => Initialize_FCC
     final :: &
       Finalize
     procedure, private, pass :: &
-      InitializePositionSpace
+      InitializeAtlas
     procedure, private, pass :: &
       InitializeGeometry
     procedure, private, pass :: &
       SetCoarsening
     procedure, public, nopass :: &
       CoarsenSingularities
-    procedure, private, pass :: &
-      SetWriteTimeInterval
-    procedure, public, pass :: &
-      PrepareCycle
     procedure, public, pass :: &
       ComputeTimeStep_G_ASC
   end type FluidCentralCoreForm
 
-    class ( FluidCentralCoreForm ), private, pointer :: &
-      FluidCentralCore => null ( )
-
       private :: &
+        SetWriteTimeInterval, &
         ComputeTimeStepLocal, &
         LocalMax, &
         ComputeTimeStep_G_CSL
@@ -44,24 +40,21 @@ module FluidCentralCore_Form
 contains
 
 
-  subroutine Initialize &
-               ( FCC, Name, FluidType, GeometryType, &
-                 DimensionlessOption, TimeUnitOption, FinishTimeOption, &
-                 CourantFactorOption, GravityFactorOption, &
+  subroutine Initialize_FCC &
+               ( FCC, FluidType, GeometryType, Name, DimensionlessOption, &
+                 FinishTimeOption, CourantFactorOption, GravityFactorOption, &
                  LimiterParameterOption, ShockThresholdOption, &
                  RadiusMaxOption, RadiusCoreOption, RadialRatioOption, &
                  nWriteOption, nCellsPolarOption )
 
-    class ( FluidCentralCoreForm ), intent ( inout ), target :: &
+    class ( FluidCentralCoreForm ), intent ( inout ) :: &
       FCC
     character ( * ), intent ( in )  :: &
-      Name, &
       FluidType, &
-      GeometryType
+      GeometryType, &
+      Name
     logical ( KDL ), intent ( in ), optional :: &
       DimensionlessOption
-    type ( MeasuredValueForm ), intent ( in ), optional :: &
-      TimeUnitOption
     real ( KDR ), intent ( in ), optional :: &
       FinishTimeOption, &
       CourantFactorOption, &
@@ -78,29 +71,18 @@ contains
     if ( FCC % Type == '' ) &
       FCC % Type = 'a FluidCentralCore'
 
-    FluidCentralCore => FCC
-
     if ( any ( trim ( GeometryType ) &
                  == [ 'NEWTONIAN       ', 'NEWTONIAN_STRESS' ] ) ) &
     then
-
       if ( .not. allocated ( FCC % TimeStepLabel ) ) &
         allocate ( FCC % TimeStepLabel ( 2 ) )
       FCC % TimeStepLabel ( 1 )  =  'Fluid'
       FCC % TimeStepLabel ( 2 )  =  'Gravity'
-
-      FCC % GravityFactor = 0.7_KDR
-      if ( present ( GravityFactorOption ) ) &
-        FCC % GravityFactor = GravityFactorOption
-      call PROGRAM_HEADER % GetParameter &
-             ( FCC % GravityFactor, 'GravityFactor' )
-
     end if
 
     call FCC % InitializeTemplate_FC &
-               ( Name, FluidType, GeometryType, &
+               ( FluidType, GeometryType, Name, &
                  DimensionlessOption = DimensionlessOption, &
-                 TimeUnitOption = TimeUnitOption, &
                  FinishTimeOption = FinishTimeOption, &
                  CourantFactorOption = CourantFactorOption, &
                  LimiterParameterOption = LimiterParameterOption, &
@@ -111,29 +93,39 @@ contains
                  nWriteOption = nWriteOption, &
                  nCellsPolarOption = nCellsPolarOption )
 
-    FCC % ComputeTimeStepLocal => ComputeTimeStepLocal
+    select type ( I => FCC % Integrator )
+    class is ( Integrator_C_PS_Form )
 
-    select type ( S => FCC % Step )
-    class is ( Step_RK2_C_ASC_Form )
+    I % SetWriteTimeInterval => SetWriteTimeInterval
+    I % ComputeTimeStepLocal => ComputeTimeStepLocal
+
+    select type ( S => I % Step )
+    class is ( Step_RK_C_ASC_Template )
       S % CoarsenSingularities => CoarsenSingularities
     end select !-- S
 
+    end select !-- I
+
     if ( any ( trim ( GeometryType ) &
                  == [ 'NEWTONIAN       ', 'NEWTONIAN_STRESS' ] ) ) &
+    then
+      FCC % GravityFactor = 0.7_KDR
+      if ( present ( GravityFactorOption ) ) &
+        FCC % GravityFactor = GravityFactorOption
+      call PROGRAM_HEADER % GetParameter &
+             ( FCC % GravityFactor, 'GravityFactor' )
       call Show ( FCC % GravityFactor, 'GravityFactor' )
+    end if
 
-  end subroutine Initialize
+  end subroutine Initialize_FCC
 
 
-  subroutine InitializePositionSpace &
-               ( FC, UseCustomBoundaryInnerOption, RadiusMaxOption, &
-                 RadiusCoreOption, RadiusExcisionOption, RadialRatioOption, &
-                 nCellsPolarOption )
+  subroutine InitializeAtlas &
+               ( FC, RadiusMaxOption, RadiusCoreOption, RadiusExcisionOption, &
+                 RadialRatioOption, nCellsPolarOption )
 
     class ( FluidCentralCoreForm ), intent ( inout ) :: &
       FC
-    logical ( KDL ), intent ( in ), optional :: &
-      UseCustomBoundaryInnerOption
     real ( KDR ), intent ( in ), optional :: &
       RadiusMaxOption, &
       RadiusCoreOption, &
@@ -147,8 +139,10 @@ contains
       RadiusCore, &
       RadialRatio
 
-    allocate ( Atlas_SC_CC_Form :: FC % PositionSpace )
-    select type ( PS => FC % PositionSpace )
+    associate ( I => FC % Integrator )
+
+    allocate ( Atlas_SC_CC_Form :: I % PositionSpace )
+    select type ( PS => I % PositionSpace )
     class is ( Atlas_SC_CC_Form )
     call PS % Initialize ( 'PositionSpace', PROGRAM_HEADER % Communicator )
 
@@ -163,7 +157,7 @@ contains
       RadialRatio  =  2.4_KDR
 
       call PS % CreateChart_CC &
-             ( CoordinateUnitOption = FC % CoordinateUnit, &
+             ( CoordinateUnitOption = FC % Units % Coordinate_PS, &
                RadiusCoreOption = RadiusCore, &
                RadiusMaxOption = RadiusMax, &
                RadialRatioOption = RadialRatio, &
@@ -176,8 +170,9 @@ contains
     end if !-- Dimensionless
 
     end select !-- PS
+    end associate !-- I
 
-  end subroutine InitializePositionSpace
+  end subroutine InitializeAtlas
 
 
   subroutine InitializeGeometry &
@@ -221,7 +216,10 @@ contains
     class ( FluidCentralCoreForm ), intent ( inout ) :: &
       FC
 
-    select type ( PS => FC % PositionSpace )
+    select type ( I => FC % Integrator )
+    class is ( Integrator_C_PS_Form )
+
+    select type ( PS => I % PositionSpace )
     class is ( Atlas_SC_CC_Form )
 
     !-- Polar coarsening
@@ -241,41 +239,50 @@ contains
     call FC % SetCoarseningTemplate ( iAngular = 3 )
 
     end select !-- PS
+    end select !-- I
 
   end subroutine SetCoarsening
 
 
-  subroutine CoarsenSingularities ( S )
+  subroutine CoarsenSingularities ( S, Increment )
 
-    class ( StorageForm ), intent ( inout ) :: &
+    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
+    class ( StorageForm ), intent ( inout ) :: &
+      Increment
 
-    associate ( FCC => FluidCentralCore )
-    select type ( PS => FCC % PositionSpace )
+    select type ( FCC => S % Integrator % Universe )
+    class is ( FluidCentralCoreForm )
+
+    select type ( I => S % Integrator )
+    class is ( IntegratorTemplate )
+
+    select type ( PS => FCC % Integrator % PositionSpace )
     class is ( Atlas_SC_CC_Form )
 
-    select case ( mod ( FCC % iCycle, 2 ) )
+    select case ( mod ( FCC % Integrator % iCycle, 2 ) )
     case ( 0 )
       if ( PS % nDimensions > 2 ) &
-        call FCC % CoarsenSingularityTemplate ( S, iAngular = 3 )
+        call FCC % CoarsenSingularityTemplate ( Increment, iAngular = 3 )
       if ( PS % nDimensions > 1 ) &
-        call FCC % CoarsenSingularityTemplate ( S, iAngular = 2 )
+        call FCC % CoarsenSingularityTemplate ( Increment, iAngular = 2 )
     case ( 1 )
       if ( PS % nDimensions > 1 ) &
-        call FCC % CoarsenSingularityTemplate ( S, iAngular = 2 )
+        call FCC % CoarsenSingularityTemplate ( Increment, iAngular = 2 )
       if ( PS % nDimensions > 2 ) &
-        call FCC % CoarsenSingularityTemplate ( S, iAngular = 3 )
+        call FCC % CoarsenSingularityTemplate ( Increment, iAngular = 3 )
     end select
   
     end select !-- PS
-    end associate !-- FCC
+    end select !-- I
+    end select !-- FCC
 
   end subroutine CoarsenSingularities
 
 
   subroutine SetWriteTimeInterval ( I )
 
-    class ( FluidCentralCoreForm ), intent ( inout ) :: &
+    class ( IntegratorTemplate ), intent ( inout ) :: &
       I
 
     integer ( KDI ) :: &
@@ -293,6 +300,9 @@ contains
       G
     class ( Fluid_D_Form ), pointer :: &
       F
+
+    select type ( I )
+    class is ( Integrator_C_PS_Form )
 
     select type ( FA => I % Current_ASC )
     class is ( Fluid_ASC_Form )
@@ -373,41 +383,10 @@ contains
     end select !-- GA
     end select !-- PS
     end select !-- FA
+    end select !-- I
     nullify ( G, F )
 
   end subroutine SetWriteTimeInterval
-
-
-  subroutine PrepareCycle ( I )
-
-    class ( FluidCentralCoreForm ), intent ( inout ) :: &
-      I
-
-    ! class ( Fluid_D_Form ), pointer :: &
-    !   F
-
-    ! select type ( FA => I % Current_ASC )
-    ! class is ( Fluid_ASC_Form )
-
-    ! select type ( PS => I % PositionSpace )
-    ! class is ( Atlas_SC_Form )
-
-    ! select type ( GA => PS % Geometry_ASC )
-    ! class is ( Geometry_ASC_Form )
-
-    ! F => FA % Fluid_D ( )
-
-    ! call GA % ComputeGravity &
-    !       ( I % Current_ASC, &
-    !         iBaryonMass = F % BARYON_MASS, &
-    !         iBaryonDensity = F % COMOVING_BARYON_DENSITY )
-
-    ! end select !-- GA
-    ! end select !-- PS
-    ! end select !-- FA
-    ! nullify ( F )
-
-  end subroutine PrepareCycle
 
 
   subroutine ComputeTimeStep_G_ASC ( FCC, TimeStepCandidate )
@@ -420,7 +399,9 @@ contains
     class ( Geometry_N_Form ), pointer :: &
       G
 
-    select type ( PS => FCC % PositionSpace )
+    associate ( I => FCC % Integrator )
+
+    select type ( PS => I % PositionSpace )
     class is ( Atlas_SC_Form )
 
     select type ( GA => PS % Geometry_ASC )
@@ -455,6 +436,7 @@ contains
     end select !-- CSL
     end select !-- GA
     end select !-- PS
+    end associate !-- I
     nullify ( G )
 
   end subroutine ComputeTimeStep_G_ASC
@@ -468,14 +450,15 @@ contains
       TimeStepCandidate
 
     select type ( I )
+    class is ( Integrator_C_PS_Form )
+      call I % ComputeTimeStep_C_ASC &
+             ( TimeStepCandidate ( 1 ), I % Current_ASC )
+    end select !-- I
+
+    select type ( FCC => I % Universe )
     class is ( FluidCentralCoreForm )
-
-    call I % ComputeTimeStep_C_ASC &
-           ( TimeStepCandidate ( 1 ), I % Current_ASC )
-
-    call I % ComputeTimeStep_G_ASC &
-           ( TimeStepCandidate ( 2 ) )
-
+      call FCC % ComputeTimeStep_G_ASC &
+             ( TimeStepCandidate ( 2 ) )
     end select !-- I
 
   end subroutine ComputeTimeStepLocal

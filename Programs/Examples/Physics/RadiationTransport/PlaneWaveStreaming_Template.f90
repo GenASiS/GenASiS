@@ -7,6 +7,8 @@ module PlaneWaveStreaming_Template
 
   type, public, extends ( RadiationBoxForm ), abstract :: &
     PlaneWaveStreamingTemplate
+      integer ( KDI ) :: &
+        nWaves
       real ( KDR ) :: &
         Speed
       real ( KDR ), dimension ( 3 ) :: &
@@ -43,18 +45,13 @@ module PlaneWaveStreaming_Template
       SetReference, &
       InitializeRadiationBox, &
       InitializeDiagnostics, &
-      SetRadiation
+      SetProblem
 
       private :: &
-        SetWave
+        SetRadiation
 
         private :: &
-          SetWaveKernel
-
-    integer ( KDI ), private :: &
-      nWaves
-    class ( PlaneWaveStreamingTemplate ), private, pointer :: &
-      PlaneWaveStreaming => null ( )
+          SetRadiationKernel
 
 contains
 
@@ -67,29 +64,13 @@ contains
       MomentsType, &
       Name
 
-    integer ( KDI ) :: &
-      nPeriods
-    real ( KDR ) :: &
-      Period
-
     if ( PWS % Type == '' ) &
       PWS % Type = 'a PlaneWaveStreaming'
 
-    PlaneWaveStreaming => PWS
-
     call InitializeRadiationBox ( PWS, MomentsType, Name )
     call InitializeDiagnostics ( PWS )
-    call SetRadiation ( PWS, Time = 0.0_KDR, Period = Period )
+    call SetProblem ( PWS )
  
-    nPeriods = 1
-    call PROGRAM_HEADER % GetParameter ( nPeriods, 'nPeriods' )
-    call Show ( nPeriods, 'nPeriods' )
-
-    associate ( I => PWS % Integrator )
-    I % FinishTime = nPeriods * Period
-    call Show ( I % FinishTime, 'Reset FinishTime' )
-    end associate !-- I
-
   end subroutine InitializeTemplate_PWS
 
 
@@ -112,7 +93,7 @@ contains
     select type ( PSC => PS % Chart )
     class is ( Chart_SL_Template )
 
-    do iW = 1, nWaves
+    do iW = 1, PWS % nWaves
       associate ( RMA_D => PWS % Difference_ASC ( iW ) )
       RM_D => RMA_D % RadiationMoments ( )
       allocate ( CO )
@@ -172,13 +153,16 @@ contains
       RM_R, &  !-- RM_Reference
       RM_D     !-- RM_Difference
 
+    select type ( PWS => I % Universe )
+    class is ( PlaneWaveStreamingTemplate )
+    
     select type ( PS => I % PositionSpace )
     class is ( Atlas_SC_Form )
 
     select type ( PSC => PS % Chart )
     class is ( Chart_SL_Template )
 
-    do iW = 1, nWaves
+    do iW = 1, PWS % nWaves
 
       select type ( I )
       class is ( Integrator_C_1D_PS_C_PS_Form )
@@ -197,14 +181,13 @@ contains
       end select !-- I
 
       associate &
-        ( RMA_R => PlaneWaveStreaming % Reference_ASC ( iW ), &
-          RMA_D => PlaneWaveStreaming % Difference_ASC ( iW ) )
+        ( RMA_R => PWS % Reference_ASC ( iW ), &
+          RMA_D => PWS % Difference_ASC ( iW ) )
       RM_R => RMA_R % RadiationMoments ( )
       RM_D => RMA_D % RadiationMoments ( )
 
       !-- Reference
-      call SetWave ( PlaneWaveStreaming, RM_R, PSC, I % Time, &
-                     nWavelengths = iW )
+      call SetRadiation ( PWS, RM_R, PSC, nWavelengths = iW )
 
       !-- Difference
       call MultiplyAdd ( RM % Value, RM_R % Value, -1.0_KDR, RM_D % Value )
@@ -214,6 +197,7 @@ contains
 
     end select !-- PSC
     end select !-- PS
+    end select !-- PWS
     nullify ( RM, RM_R, RM_D )
 
   end subroutine SetReference
@@ -240,11 +224,11 @@ contains
 
     select type ( I => PWS % Integrator )
     class is ( Integrator_C_1D_PS_C_PS_Form )
-      nWaves  =  1
+      PWS % nWaves  =  1
     class is ( Integrator_C_1D_MS_C_PS_Form )
       select type ( MS => I % MomentumSpace )
       class is ( Bundle_SLL_ASC_CSLD_Form )
-        nWaves  =  MS % nSections 
+        PWS % nWaves  =  MS % nSections 
       end select !
     end select !-- I
 
@@ -264,21 +248,21 @@ contains
     select type ( PS => PWS % Integrator % PositionSpace )
     class is ( Atlas_SC_Form )
 
-    allocate ( PWS % Reference_ASC ( nWaves ) )
-    allocate ( PWS % Difference_ASC ( nWaves ) )
-    do iW = 1, nWaves
-      if ( nWaves > 1 ) then
+    allocate ( PWS % Reference_ASC ( PWS % nWaves ) )
+    allocate ( PWS % Difference_ASC ( PWS % nWaves ) )
+    do iW = 1, PWS % nWaves
+      if ( PWS % nWaves > 1 ) then
         write ( WaveIndex, fmt = '(a1,i2.2)' ) '_', iW
       else
         WaveIndex = ''
       end if
       call PWS % Reference_ASC ( iW ) % Initialize &
-             ( PS, 'GENERIC', &
+             ( PS, 'GENERIC', PWS % Units, &
                NameShortOption = 'Reference' // WaveIndex, &
                AllocateSourcesOption = .false., &
                IgnorabilityOption = CONSOLE % INFO_5 )
       call PWS % Difference_ASC ( iW ) % Initialize &
-             ( PS, 'GENERIC', &
+             ( PS, 'GENERIC', PWS % Units, &
                NameShortOption = 'Difference' // WaveIndex, &
                AllocateSourcesOption = .false., &
                IgnorabilityOption = CONSOLE % INFO_5 )
@@ -289,22 +273,21 @@ contains
   end subroutine InitializeDiagnostics
 
 
-  subroutine SetRadiation ( PWS, Time, Period )
+  subroutine SetProblem ( PWS )
 
     class ( PlaneWaveStreamingTemplate ), intent ( inout ) :: &
       PWS
-    real ( KDR ), intent ( in ) :: &
-      Time
-    real ( KDR ), intent ( out ) :: &
-      Period
     
     integer ( KDI ) :: &
-      iE  !-- iEnergy
+      iE, &  !-- iEnergy
+      nPeriods
+    real ( KDR ) :: &
+      Period
     class ( RadiationMomentsForm ), pointer :: &
       RM
 
     select type ( I => PWS % Integrator )
-    class is ( Integrator_C_1D_PS_C_PS_Form )
+    class is ( Integrator_C_1D_PS_C_PS_Form )  !-- Grey
 
       select type ( PS => I % PositionSpace )
       class is ( Atlas_SC_Form )
@@ -316,14 +299,14 @@ contains
       class is ( RadiationMoments_ASC_Form )
 
       RM => RMA % RadiationMoments ( )
-      call SetWave ( PWS, RM, PSC, Time, nWavelengths = 1, &
-                     PeriodOption = Period )
+      call SetRadiation &
+             ( PWS, RM, PSC, nWavelengths = 1, PeriodOption = Period )
 
       end select !-- RMA
       end select !-- PSC
       end select !-- PS
 
-    class is ( Integrator_C_1D_MS_C_PS_Form )
+    class is ( Integrator_C_1D_MS_C_PS_Form )  !-- Spectral
 
       select type ( MS => I % MomentumSpace )
       class is ( Bundle_SLL_ASC_CSLD_Form )
@@ -335,30 +318,42 @@ contains
       select type ( RMA => RMB % Section % Atlas ( 1 ) % Element )
       class is ( RadiationMoments_ASC_Form )
         RM => RMA % RadiationMoments ( )
-        call SetWave ( PWS, RM, MS % Base_CSLD, Time, nWavelengths = iE, &
-                       PeriodOption = Period )
+        call SetRadiation &
+               ( PWS, RM, MS % Base_CSLD, nWavelengths = iE, &
+                 PeriodOption = Period )
       end select !-- RMA
 
       do iE = 2, RMB % nEnergyValues
         select type ( RMA => RMB % Section % Atlas ( iE ) % Element )
         class is ( RadiationMoments_ASC_Form )
           RM => RMA % RadiationMoments ( )
-          call SetWave ( PWS, RM, MS % Base_CSLD, Time, nWavelengths = iE )
+          call SetRadiation &
+                 ( PWS, RM, MS % Base_CSLD, nWavelengths = iE )
         end select !-- RMA
       end do !-- iE
 
-    call RMB % StoreSections ( )
+      call RMB % StoreSections ( )
 
-    end select !-- MS
-    end select !-- RMB
+      end select !-- MS
+      end select !-- RMB
 
     end select !-- I
+
+    nPeriods = 1
+    call PROGRAM_HEADER % GetParameter ( nPeriods, 'nPeriods' )
+    call Show ( nPeriods, 'nPeriods' )
+
+    associate ( I => PWS % Integrator )
+    I % FinishTime = nPeriods * Period
+    call Show ( I % FinishTime, 'Reset FinishTime' )
+    end associate !-- I
+
     nullify ( RM )
 
-  end subroutine SetRadiation
+  end subroutine SetProblem
 
 
-  subroutine SetWave ( PWS, RM, PSC, Time, nWavelengths, PeriodOption )
+  subroutine SetRadiation ( PWS, RM, PSC, nWavelengths, PeriodOption )
 
     class ( PlaneWaveStreamingTemplate ), intent ( in ) :: &
       PWS
@@ -366,8 +361,6 @@ contains
       RM  !-- RadiationSection
     class ( Chart_SL_Template ), intent ( in ) :: &
       PSC  !-- PositionSpaceChart
-    real ( KDR ), intent ( in ) :: &
-      Time
     integer ( KDI ), intent ( in ) :: &
       nWavelengths
     real ( KDR ), intent ( out ), optional :: &
@@ -398,14 +391,14 @@ contains
 
     G => PSC % Geometry ( )
 
-    call SetWaveKernel &
+    call SetRadiationKernel &
            ( PWS, &
              X  = G % Value ( :, G % CENTER_U ( 1 ) ), &
              Y  = G % Value ( :, G % CENTER_U ( 2 ) ), &
              Z  = G % Value ( :, G % CENTER_U ( 3 ) ), &
              K  = K, &
              V  = c, &
-             T  = Time, &
+             T  = PWS % Integrator % Time, &
              J  = RM % Value ( :, RM % COMOVING_ENERGY ), &
              HX = RM % Value ( :, RM % COMOVING_MOMENTUM_U ( 1 ) ), &
              HY = RM % Value ( :, RM % COMOVING_MOMENTUM_U ( 2 ) ), &
@@ -417,10 +410,10 @@ contains
     end associate !-- K, etc.
     nullify ( G )
 
-  end subroutine SetWave
+  end subroutine SetRadiation
 
 
-  subroutine SetWaveKernel ( PWS, X, Y, Z, K, V, T, J, HX, HY, HZ )
+  subroutine SetRadiationKernel ( PWS, X, Y, Z, K, V, T, J, HX, HY, HZ )
 
     class ( PlaneWaveStreamingTemplate ), intent ( in ) :: &
       PWS
@@ -464,7 +457,7 @@ contains
     end do !-- iV
     !$OMP end parallel do
 
-  end subroutine SetWaveKernel
+  end subroutine SetRadiationKernel
 
 
 end module PlaneWaveStreaming_Template

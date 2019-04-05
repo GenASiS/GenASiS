@@ -8,10 +8,12 @@ module RiemannProblem_Form
   implicit none
   private
   
-  type, public, extends ( Integrator_C_PS_Template ) :: RiemannProblemForm
+  type, public, extends ( Integrator_C_PS_Form ) :: RiemannProblemForm
   contains
-    procedure, public, pass :: &
-      Initialize
+    procedure, private, pass :: &
+      Initialize_RP
+    generic, public :: &
+      Initialize => Initialize_RP
     final :: &
       Finalize  
   end type RiemannProblemForm
@@ -34,10 +36,13 @@ module RiemannProblem_Form
       EnergyUnit, &
       SpeedUnit
 
+    type ( UniverseHeaderForm ), private :: &
+      Universe  !-- Non-functional dummy argument
+
 contains
 
 
-  subroutine Initialize ( RP, Name )
+  subroutine Initialize_RP ( RP, Name )
 
     class ( RiemannProblemForm ), intent ( inout ) :: &
       RP
@@ -171,22 +176,20 @@ contains
     !-- Set fluid and initialize Integrator template
 
     call SetFluid ( RP )
-    call RP % InitializeTemplate_C_PS ( Name )
+    call RP % Initialize ( Universe, Name )
     
     !-- Cleanup
 
     end select !-- FA
     end select !-- PS
 
-  end subroutine Initialize
+  end subroutine Initialize_RP
 
   
   subroutine Finalize ( RP )
 
     type ( RiemannProblemForm ), intent ( inout ) :: &
       RP
-
-    call RP % FinalizeTemplate_C_PS ( )
 
   end subroutine Finalize
 

@@ -10,10 +10,12 @@ module RayleighTaylor_Form
   implicit none
   private
   
-  type, public, extends ( Integrator_C_PS_Template ) :: RayleighTaylorForm
+  type, public, extends ( Integrator_C_PS_Form ) :: RayleighTaylorForm
   contains
-    procedure, public, pass :: &
-      Initialize
+    procedure, private, pass :: &
+      Initialize_RT
+    generic, public :: &
+      Initialize => Initialize_RT
     final :: &
       Finalize  
   end type RayleighTaylorForm
@@ -28,10 +30,13 @@ module RayleighTaylor_Form
       AdiabaticIndex, &
       Acceleration
 
+    type ( UniverseHeaderForm ), private :: &
+      Universe  !-- Non-functional dummy argument
+
 contains
 
   
-  subroutine Initialize ( RT, Name )
+  subroutine Initialize_RT ( RT, Name )
 
     class ( RayleighTaylorForm ), intent ( inout ) :: &
       RT
@@ -103,22 +108,20 @@ contains
     !-- Set fluid and initialize template
 
     call SetFluid ( RT )
-    call RT % InitializeTemplate_C_PS ( Name, FinishTimeOption = 8.5_KDR )
+    call RT % Initialize ( Universe, Name, FinishTimeOption = 8.5_KDR )
     
     !-- Cleanup
 
     end select !-- FA
     end select !-- PS
 
-  end subroutine Initialize
+  end subroutine Initialize_RT
 
   
   subroutine Finalize ( RT )
 
     type ( RayleighTaylorForm ), intent ( inout ) :: &
       RT
-
-    call RT % FinalizeTemplate_C_PS ( )
 
   end subroutine Finalize
 

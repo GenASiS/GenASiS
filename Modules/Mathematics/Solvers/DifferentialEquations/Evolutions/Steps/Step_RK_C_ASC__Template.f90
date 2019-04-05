@@ -90,7 +90,7 @@ module Step_RK_C_ASC__Template
         ApplySources
       type ( ApplyRelaxation_C_Pointer ) :: &
         ApplyRelaxation
-      procedure ( CS ), pointer, nopass :: &
+      procedure ( CS ), pointer, pass :: &
         CoarsenSingularities => null ( )
   contains
     procedure, public, pass :: &
@@ -217,10 +217,13 @@ module Step_RK_C_ASC__Template
         iStrgeometryValueOption
     end subroutine AR
     
-    subroutine CS ( S )
+    subroutine CS ( S, Increment )
       use Basics
-      class ( StorageForm ), intent ( inout ) :: &
+      import Step_RK_C_ASC_Template
+      class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
         S
+      class ( StorageForm ), intent ( inout ) :: &
+        Increment
     end subroutine CS
 
   end interface
@@ -1162,7 +1165,7 @@ contains
       G
 
     call SD % Allocate &
-           ( C % nVariables, C % N_CONSERVED, C % N_PRIMITIVE, &
+           ( C % nVariables, C % N_CONSERVED, C % N_RECONSTRUCTED, &
              C % N_SOLVER_SPEEDS, G % nVariables, C % nValues )
     if ( trim ( C % RiemannSolverType ) == 'HLLC' ) &
       call SD % Allocate_HLLC ( C % nVariables, C % nValues )

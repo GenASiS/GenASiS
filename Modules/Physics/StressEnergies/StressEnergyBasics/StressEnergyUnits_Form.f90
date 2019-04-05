@@ -6,26 +6,29 @@ module StressEnergyUnits_Form
   private
 
   type, public :: StressEnergyUnitsForm
-    !-- Spacetime
+    !-- Phase space 
     type ( MeasuredValueForm ) :: &
-      Length, &
-      Time
+      Time, &
+      Length
+    type ( MeasuredValueForm ), dimension ( 3 ) :: &
+      Coordinate_PS, &
+      Coordinate_MS
     !-- Local
     type ( MeasuredValueForm ) :: &
-      BaryonMassUnit, &
-      NumberDensityUnit, &
-      EnergyDensityUnit, &
-      TemperatureUnit
+      BaryonMass, &
+      NumberDensity, &
+      EnergyDensity, &
+      Temperature
     type ( MeasuredValueForm ), dimension ( 3 ) :: &
-      Velocity_U_Unit, &
-      MomentumDensity_U_Unit, &
-      MomentumDensity_D_Unit
+      Velocity_U, &
+      MomentumDensity_U, &
+      MomentumDensity_D
     !-- Global
     type ( MeasuredValueForm ) :: &
-      NumberUnit, &
-      EnergyUnit, &
-      MomentumUnit, &
-      AngularMomentumUnit
+      Number, &
+      Energy, &
+      Momentum, &
+      AngularMomentum
   end type StressEnergyUnitsForm
 
 end module StressEnergyUnits_Form

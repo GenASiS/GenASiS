@@ -10,6 +10,11 @@ module Thermalization_G__Form
   private
 
   type, public, extends ( RadiationBoxForm ) :: Thermalization_G_Form
+    real ( KDR ) :: &
+      TemperatureMin, &
+      TemperatureMax, &
+      OpacityAbsorption, &
+      TimeScale
     type ( RadiationMoments_ASC_Form ), allocatable :: &
       Reference_ASC, &
       FractionalDifference_ASC
@@ -26,18 +31,13 @@ module Thermalization_G__Form
       SetReference, &
       ComputeTimeStepLocal, &
       InitializeRadiationBox, &
-      InitializeInteractions, &
       InitializeDiagnostics, &
-      SetFluid, &
-      SetRadiation
+      SetProblem
 
-    real ( KDR ), private :: &
-      TemperatureMin, &
-      TemperatureMax, &
-      OpacityAbsorption, &
-      TimeScale
-    class ( Thermalization_G_Form ), private, pointer :: &
-      Thermalization => null ( )
+      private :: &
+        InitializeInteractions, &
+        SetFluid, &
+        SetRadiation
 
 contains
 
@@ -50,36 +50,12 @@ contains
       MomentsType, &
       Name
 
-
     if ( T % Type == '' ) &
       T % Type = 'a Thermalization_G'
 
-    Thermalization => T
-
-    !-- Parameters
-
-    TemperatureMin  =   0.1_KDR
-    TemperatureMax  =  10.0_KDR
-    call PROGRAM_HEADER % GetParameter ( TemperatureMin, 'TemperatureMin' )
-    call PROGRAM_HEADER % GetParameter ( TemperatureMax, 'TemperatureMax' )
-
-    OpacityAbsorption = 1.0_KDR
-    call PROGRAM_HEADER % GetParameter &
-           ( OpacityAbsorption, 'OpacityAbsorption' )
-
-    associate &
-      ( c       => CONSTANT % SPEED_OF_LIGHT, &
-        Kappa_A => OpacityAbsorption )
-    TimeScale   =  1.0 / ( c * Kappa_A )
-    end associate !-- c, etc.
-
-    !-- Initialization
-
     call InitializeRadiationBox ( T, MomentsType, Name )
-    call InitializeInteractions ( T )
     call InitializeDiagnostics ( T )
-    call SetFluid ( T )
-    call SetRadiation ( T )
+    call SetProblem ( T )
 
   end subroutine Initialize_T
 
@@ -111,6 +87,9 @@ contains
     class ( Fluid_P_I_Form ), pointer :: &
       F
 
+    select type ( Thermalization => I % Universe )
+    class is ( Thermalization_G_Form )
+    
     !-- Reference
 
     select type ( I )
@@ -182,6 +161,7 @@ contains
     end associate !-- J_R, etc.
     end select !-- PS
     end select !-- I
+    end select !-- Thermalization
 
     nullify ( F, RM_R, RM_C, RM_FD )
 
@@ -194,11 +174,16 @@ contains
       I
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       TimeStepCandidate
-    
+
+    select type ( T => I % Universe )
+    class is ( Thermalization_G_Form )
+
     TimeStepCandidate  =  huge ( 1.0_KDR )
 
     TimeStepCandidate ( size ( TimeStepCandidate ) )  &
-      =  Thermalization % InteractionFactor  *  TimeScale
+      =  T % InteractionFactor  *  T % TimeScale
+
+    end select !-- Thermalization
 
   end subroutine ComputeTimeStepLocal
 
@@ -218,11 +203,69 @@ contains
              Name = Name, &
              ApplyStreamingOption = .false., &
              EvolveFluidOption = .false., &
-             FinishTimeOption = 10.0_KDR * TimeScale )
+             nCellsPositionOption = [ 32, 32, 32 ] )
     T % Integrator % SetReference => SetReference
     T % Integrator % ComputeTimeStepLocal => ComputeTimeStepLocal
 
   end subroutine InitializeRadiationBox
+
+
+  subroutine InitializeDiagnostics ( T )
+
+    class ( Thermalization_G_Form ), intent ( inout ) :: &
+      T
+
+    select type ( PS => T % Integrator % PositionSpace )
+    class is ( Atlas_SC_Form )
+
+    allocate ( T % Reference_ASC )
+    allocate ( T % FractionalDifference_ASC )
+    call T % Reference_ASC % Initialize &
+           ( PS, 'GENERIC', T % Units, &
+             NameShortOption = 'Reference', &
+             AllocateSourcesOption = .false., &
+             IgnorabilityOption = CONSOLE % INFO_5 )
+    call T % FractionalDifference_ASC % Initialize &
+           ( PS, 'GENERIC', T % Units, &
+             NameShortOption = 'FractionalDifference', &
+             AllocateSourcesOption = .false., &
+             IgnorabilityOption = CONSOLE % INFO_5 )
+
+    end select !-- PS
+
+  end subroutine InitializeDiagnostics
+
+
+  subroutine SetProblem ( T )
+
+    class ( Thermalization_G_Form ), intent ( inout ) :: &
+      T
+
+    T % TemperatureMin  =   1.0_KDR
+    T % TemperatureMax  =  10.0_KDR
+    call PROGRAM_HEADER % GetParameter ( T % TemperatureMin, 'TemperatureMin' )
+    call PROGRAM_HEADER % GetParameter ( T % TemperatureMax, 'TemperatureMax' )
+
+    T % OpacityAbsorption = 1.0_KDR
+    call PROGRAM_HEADER % GetParameter &
+           ( T % OpacityAbsorption, 'OpacityAbsorption' )
+
+    associate &
+      ( c       => CONSTANT % SPEED_OF_LIGHT, &
+        Kappa_A => T % OpacityAbsorption )
+    T % TimeScale   =  1.0 / ( c * Kappa_A )
+    end associate !-- c, etc.
+
+    call InitializeInteractions ( T )
+    call SetFluid ( T )
+    call SetRadiation ( T )
+
+    associate ( I => T % Integrator )
+    I % FinishTime  =  10.0_KDR  *  T % TimeScale
+    call Show ( I % FinishTime, 'Reset FinishTime' )
+    end associate !-- I
+
+  end subroutine SetProblem
 
 
   subroutine InitializeInteractions ( T )
@@ -246,8 +289,9 @@ contains
       select type ( IA => T % Interactions_ASC )
       class is ( InteractionsExamples_ASC_Form )
       call IA % Initialize &
-             ( PS, InteractionsType = 'CONSTANT', MomentsType = 'GREY' )
-      call IA % Set_C_Grey ( FA, OpacityAbsorption = OpacityAbsorption )
+             ( PS, InteractionsType = 'CONSTANT', MomentsType = 'GREY', &
+               Units = T % Units )
+      call IA % Set_C_Grey ( FA, OpacityAbsorption = T % OpacityAbsorption )
       call RMA % SetInteractions ( IA )
       end select !-- IA
 
@@ -270,8 +314,9 @@ contains
                    T % Interactions_BSLL_ASC_CSLD )
       select type ( IB => T % Interactions_BSLL_ASC_CSLD )
       class is ( InteractionsExamples_BSLL_ASC_CSLD_Form )
-      call IB % Initialize ( MS, InteractionsType = 'CONSTANT' )
-      call IB % Set_C_Spectral ( FA, OpacityAbsorption = OpacityAbsorption )
+      call IB % Initialize &
+             ( MS, InteractionsType = 'CONSTANT', Units = T % Units )
+      call IB % Set_C_Spectral ( FA, OpacityAbsorption = T % OpacityAbsorption )
       call RMB % SetInteractions ( IB )
       end select !-- IB
 
@@ -282,30 +327,6 @@ contains
     end select !-- Integrator
 
   end subroutine InitializeInteractions
-
-
-  subroutine InitializeDiagnostics ( T )
-
-    class ( Thermalization_G_Form ), intent ( inout ) :: &
-      T
-
-    select type ( PS => T % Integrator % PositionSpace )
-    class is ( Atlas_SC_Form )
-
-    allocate ( T % Reference_ASC )
-    allocate ( T % FractionalDifference_ASC )
-    call T % Reference_ASC % Initialize &
-           ( PS, 'GENERIC', NameShortOption = 'Reference', &
-             AllocateSourcesOption = .false., &
-             IgnorabilityOption = CONSOLE % INFO_5 )
-    call T % FractionalDifference_ASC % Initialize &
-           ( PS, 'GENERIC', NameShortOption = 'FractionalDifference', &
-             AllocateSourcesOption = .false., &
-             IgnorabilityOption = CONSOLE % INFO_5 )
-
-    end select !-- PS
-
-  end subroutine InitializeDiagnostics
 
 
   subroutine SetFluid ( T )
@@ -360,8 +381,8 @@ contains
     R_Min = CO % Incoming % Value ( 1 )
     R_Max = 1.0_KDR / CO % Incoming % Value ( 2 )
 
-    T_Min = TemperatureMin
-    T_Max = TemperatureMax
+    T_Min = T % TemperatureMin
+    T_Max = T % TemperatureMax
 
 !    Temperature &
 !      = T_Max  -  ( T_Max - T_Min ) / ( R_Max - R_Min ) * ( R - R_Min )
