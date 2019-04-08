@@ -58,7 +58,7 @@ module FluidCentral_Template
       InitializeDiagnostics
     procedure, public, pass :: &
       SetCoarseningTemplate
-   procedure ( SC ), private, pass, deferred :: &
+    procedure ( SC ), private, pass, deferred :: &
       SetCoarsening
     procedure, public, pass :: &
       CoarsenSingularityTemplate
