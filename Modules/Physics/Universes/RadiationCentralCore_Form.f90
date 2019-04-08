@@ -37,7 +37,7 @@ module RadiationCentralCore_Form
     private :: &
 !      ComputeTimeStepLocal, &
 !      PrepareStep, &
-!      IntegrateSources, &
+      IntegrateSources, &
       ApplySources_Radiation, &
       ApplySources_Fluid
 
@@ -470,6 +470,84 @@ contains
     end select !-- I
 
   end subroutine InitializeSteps
+
+
+  subroutine IntegrateSources ( I, iC )
+
+    type ( Integrator_C_1D_MS_C_PS_Form ), intent ( inout ), target :: &
+      I
+    integer ( KDI ), intent ( in ) :: &
+      iC  !-- iCurrent
+
+    integer ( KDI ) :: &
+      iI, &  !-- iIntegral
+      iF, &  !-- iFiber
+      nIntegrals
+    real ( KDR ), dimension ( : ), allocatable :: &
+      Integral
+    type ( Real_1D_Form ), dimension ( : ), allocatable :: &
+      Integrand
+    type ( VolumeIntegralForm ) :: &
+      VI
+    class ( RadiationMomentsForm ), pointer :: &
+      RMEI, &
+      RMF
+
+    select type ( RMB => I % Current_BSLL_ASC_CSLD_1D ( iC ) % Element )
+    class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
+
+    select type ( RMA => RMB % EnergyIntegral )
+    class is ( RadiationMoments_ASC_Form )
+
+    RMEI => RMA % RadiationMoments ( )
+
+    nIntegrals = 4
+
+    allocate ( Integral  ( nIntegrals ) )
+    allocate ( Integrand ( nIntegrals ) )
+    do iI = 1, nIntegrals
+      call Integrand ( iI ) % Initialize ( RMB % nEnergyValues )
+    end do !-- iC
+
+    associate ( MS => RMB % Bundle_SLL_ASC_CSLD )
+    do iF = 1, MS % nFibers
+      associate &
+        ( iBC => MS % iaBaseCell ( iF ), &
+          CF  => MS % Fiber_CSLL )
+
+      RMF => RMB % RadiationMoments ( iF )
+      select type ( SF => RMF % Sources )
+      class is ( Sources_RM_Form )
+        Integrand ( 1 ) % Value  &
+          =  SF % Value ( :, SF % INTERACTIONS_J )
+        Integrand ( 2 ) % Value  &
+          =  SF % Value ( :, SF % INTERACTIONS_H_D ( 1 ) )
+        Integrand ( 3 ) % Value  &
+          =  SF % Value ( :, SF % INTERACTIONS_H_D ( 2 ) )
+        Integrand ( 4 ) % Value  &
+          =  SF % Value ( :, SF % INTERACTIONS_H_D ( 3 ) )
+      end select !-- SF
+
+      call VI % Compute ( CF, Integrand, Integral )
+
+      select type ( SEI => RMEI % Sources )
+      class is ( Sources_RM_Form )
+        SEI % Value ( iBC, SEI % INTERACTIONS_J )         = Integral ( 1 ) 
+        SEI % Value ( iBC, SEI % INTERACTIONS_H_D ( 1 ) ) = Integral ( 2 ) 
+        SEI % Value ( iBC, SEI % INTERACTIONS_H_D ( 2 ) ) = Integral ( 3 ) 
+        SEI % Value ( iBC, SEI % INTERACTIONS_H_D ( 3 ) ) = Integral ( 4 ) 
+      end select !-- SEI
+      
+      end associate !-- iBC, etc.
+    end do !-- iF
+    end associate !-- MS
+
+    end select !-- RMA
+    end select !-- RMB
+
+    nullify ( RMEI, RMF )
+ 
+  end subroutine IntegrateSources
 
 
   subroutine ApplySources_Radiation &
