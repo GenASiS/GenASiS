@@ -43,7 +43,8 @@ module RadiationCentralCore_Form
 
       private :: &
 !        ComputeTimeStepInteractions, &
-!        ComputeFluidSource_G_S_Radiation_Kernel, &
+        ComputeFluidSource_G_S_Radiation_Kernel, &
+        ComputeFluidSource_DP_Radiation_Kernel, &
         ApplySources_Fluid_Kernel
 
 contains
@@ -646,6 +647,80 @@ contains
     end select !-- I
 
   end subroutine ApplySources_Fluid
+
+
+  subroutine ComputeFluidSource_G_S_Radiation_Kernel &
+               ( FS_R_G, FS_R_S_1, FS_R_S_2, FS_R_S_3, IsProperCell, &
+                 Q, A_1, A_2, A_3 )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      FS_R_G, &
+      FS_R_S_1, FS_R_S_2, FS_R_S_3
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      IsProperCell
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      Q, &
+      A_1, A_2, A_3
+
+    integer ( KDI ) :: &
+      iV, &
+      nV
+
+    nV = size ( FS_R_G )
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nV
+      if ( .not. IsProperCell ( iV ) ) &
+        cycle
+      FS_R_G ( iV )    =    FS_R_G ( iV )  -    Q ( iV ) 
+      FS_R_S_1 ( iV )  =  FS_R_S_1 ( iV )  -  A_1 ( iV )
+      FS_R_S_2 ( iV )  =  FS_R_S_2 ( iV )  -  A_2 ( iV )
+      FS_R_S_3 ( iV )  =  FS_R_S_3 ( iV )  -  A_3 ( iV )
+    end do
+    !$OMP end parallel do
+
+  end subroutine ComputeFluidSource_G_S_Radiation_Kernel
+
+
+  subroutine ComputeFluidSource_DP_Radiation_Kernel &
+               ( FS_R_DP, FS_R_DS, IsProperCell, R, T, Mu_e, Mu_n_p, Sign )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      FS_R_DP, &
+      FS_R_DS
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      IsProperCell
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      R, &
+      T, Mu_e, Mu_n_p
+    real ( KDR ), intent ( in ) :: &
+      Sign
+
+    integer ( KDI ) :: &
+      iV, &
+      nV
+
+    nV = size ( FS_R_DP )
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nV
+
+      if ( .not. IsProperCell ( iV ) ) &
+        cycle
+
+      FS_R_DP ( iV )  &
+        =  FS_R_DP ( iV )  &
+           -  Sign  *  R ( iV )
+
+      FS_R_DS ( iV )  &
+        =  FS_R_DS ( iV )  &
+           +  Sign  *  ( Mu_e ( iV )  -  Mu_n_p ( iV ) )  /  T ( iV )  &
+                    *  R ( iV )
+
+    end do
+    !$OMP end parallel do
+
+  end subroutine ComputeFluidSource_DP_Radiation_Kernel
 
 
   subroutine ApplySources_Fluid_Kernel &
