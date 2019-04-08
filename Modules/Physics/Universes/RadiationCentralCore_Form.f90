@@ -501,7 +501,7 @@ contains
 
     RMEI => RMA % RadiationMoments ( )
 
-    nIntegrals = 4
+    nIntegrals = 5
 
     allocate ( Integral  ( nIntegrals ) )
     allocate ( Integrand ( nIntegrals ) )
@@ -526,6 +526,8 @@ contains
           =  SF % Value ( :, SF % INTERACTIONS_H_D ( 2 ) )
         Integrand ( 4 ) % Value  &
           =  SF % Value ( :, SF % INTERACTIONS_H_D ( 3 ) )
+        Integrand ( 5 ) % Value  &
+          =  SF % Value ( :, SF % INTERACTIONS_N )
       end select !-- SF
 
       call VI % Compute ( CF, Integrand, Integral )
@@ -536,6 +538,7 @@ contains
         SEI % Value ( iBC, SEI % INTERACTIONS_H_D ( 1 ) ) = Integral ( 2 ) 
         SEI % Value ( iBC, SEI % INTERACTIONS_H_D ( 2 ) ) = Integral ( 3 ) 
         SEI % Value ( iBC, SEI % INTERACTIONS_H_D ( 3 ) ) = Integral ( 4 ) 
+        SEI % Value ( iBC, SEI % INTERACTIONS_N )         = Integral ( 5 ) 
       end select !-- SEI
       
       end associate !-- iBC, etc.
@@ -592,7 +595,9 @@ contains
       iEnergy, &
       iMomentum_1, &
       iMomentum_2, &
-      iMomentum_3
+      iMomentum_3, &
+      iEntropy, &
+      iProton
 
     call ApplyCurvilinear_F &
            ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
@@ -607,7 +612,7 @@ contains
     class is ( Sources_F_Form )
 
     select type ( F => Fluid )
-    class is ( Fluid_P_I_Form )
+    class is ( Fluid_P_HN_Form )
 
     select type ( Chart => S % Chart )
     class is ( Chart_SL_Template )
@@ -616,17 +621,23 @@ contains
     call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 1 ), iMomentum_1 )
     call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 2 ), iMomentum_2 )
     call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 3 ), iMomentum_3 )
+    call Search ( F % iaConserved, F % CONSERVED_ENTROPY, iEntropy )
+    call Search ( F % iaConserved, F % CONSERVED_PROTON_DENSITY, iProton )
 
     call ApplySources_Fluid_Kernel &
            ( Increment % Value ( :, iEnergy ), &
              Increment % Value ( :, iMomentum_1 ), &
              Increment % Value ( :, iMomentum_2 ), &
              Increment % Value ( :, iMomentum_3 ), &
+             Increment % Value ( :, iProton ), &
+             Increment % Value ( :, iEntropy ), &
              Chart % IsProperCell, &
              SF % Value ( :, SF % RADIATION_G ), &
              SF % Value ( :, SF % RADIATION_S_D ( 1 ) ), &
              SF % Value ( :, SF % RADIATION_S_D ( 2 ) ), &
              SF % Value ( :, SF % RADIATION_S_D ( 3 ) ), &
+             SF % Value ( :, SF % RADIATION_DP ), &
+             SF % Value ( :, SF % RADIATION_DS ), &
              TimeStep )
 
     end select !-- Chart
@@ -638,17 +649,21 @@ contains
 
 
   subroutine ApplySources_Fluid_Kernel &
-               ( K_G, K_S_1, K_S_2, K_S_3, IsProperCell, &
-                 FS_R_G, FS_R_S_1, FS_R_S_2, FS_R_S_3, dt )
+               ( K_G, K_S_1, K_S_2, K_S_3, K_DP, K_DS, IsProperCell, FS_R_G, &
+                 FS_R_S_1, FS_R_S_2, FS_R_S_3, FS_R_DP, FS_R_DS, dt )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       K_G, &
-      K_S_1, K_S_2, K_S_3
+      K_S_1, K_S_2, K_S_3, &
+      K_DP, &
+      K_DS
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       IsProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       FS_R_G, &
-      FS_R_S_1, FS_R_S_2, FS_R_S_3
+      FS_R_S_1, FS_R_S_2, FS_R_S_3, &
+      FS_R_DP, &
+      FS_R_DS
     real ( KDR ), intent ( in ) :: &
       dt
 
@@ -666,6 +681,8 @@ contains
       K_S_1 ( iV )  =  K_S_1 ( iV )  +  FS_R_S_1 ( iV )  *  dt
       K_S_2 ( iV )  =  K_S_2 ( iV )  +  FS_R_S_2 ( iV )  *  dt
       K_S_3 ( iV )  =  K_S_3 ( iV )  +  FS_R_S_3 ( iV )  *  dt
+      K_DP ( iV )   =  K_DP ( iV )   +  FS_R_DP ( iV )   *  dt
+      K_DS ( iV )   =  K_DS ( iV )   +  FS_R_DS ( iV )   *  dt
     end do
     !$OMP end parallel do
 
