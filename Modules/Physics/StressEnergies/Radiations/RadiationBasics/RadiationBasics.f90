@@ -13,6 +13,7 @@ module RadiationBasics
   use RadiationMoments_CSL__Form
   use RadiationMoments_ASC__Form
   use RadiationMoments_BSLL_ASC_CSLD__Form
+  use ApplyCurvilinear_RM__Command
   use Relaxation_RM__Template
   use Relaxation_RM_ASC__Form
   use Relaxation_RM_BSLL_ASC_CSLD__Form

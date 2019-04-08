@@ -90,6 +90,13 @@ RadiationMoments_BSLL_ASC_CSLD__Form.o: \
   RadiationMoments_ASC__Form.o \
   RadiationMoments_BSLL_ASC_CSLD__Form.f90
 
+ApplyCurvilinear_RM__Command.o: \
+  Basics.o \
+  Mathematics.o \
+  RadiationMoments_Form.o \
+  Sources_RM__Form.o \
+  ApplyCurvilinear_RM__Command.f90
+
 Relaxation_RM__Template.o: \
   Basics.o \
   Mathematics.o \
@@ -129,6 +136,7 @@ RadiationBasics.o: \
   RadiationMoments_CSL__Form.o \
   RadiationMoments_ASC__Form.o \
   RadiationMoments_BSLL_ASC_CSLD__Form.o \
+  ApplyCurvilinear_RM__Command.o \
   Relaxation_RM__Template.o \
   Relaxation_RM_ASC__Form.o \
   Relaxation_RM_BSLL_ASC_CSLD__Form.o \

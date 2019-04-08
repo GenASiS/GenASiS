@@ -3,6 +3,7 @@ RADIATION_BASICS = \
   Relaxation_RM_BSLL_ASC_CSLD__Form.o \
   Relaxation_RM_ASC__Form.o \
   Relaxation_RM__Template.o \
+  ApplyCurvilinear_RM__Command.o \
   RadiationMoments_BSLL_ASC_CSLD__Form.o \
   RadiationMoments_ASC__Form.o \
   RadiationMoments_CSL__Form.o \
