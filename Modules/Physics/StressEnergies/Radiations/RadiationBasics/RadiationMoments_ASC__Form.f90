@@ -22,7 +22,8 @@ module RadiationMoments_ASC__Form
       UseLimiter, &
       SuppressWrite
     character ( LDF ) :: &
-      RadiationMomentsType = '', &
+      RadiationType = '', &
+      MomentsType = '', &
       ReconstructedType = '', &
       RiemannSolverType = ''
     type ( Sources_RM_ASC_Form ), allocatable :: &
@@ -36,14 +37,6 @@ module RadiationMoments_ASC__Form
       RadiationMoments_CSL
     generic, public :: &
       RadiationMoments => RadiationMoments_CSL
-!     procedure, private, pass :: &
-!       PhotonMoments_G_CSL
-!     generic, public :: &
-!       PhotonMoments_G => PhotonMoments_G_CSL
-!     procedure, private, pass :: &
-!       PhotonMoments_S_CSL
-!     generic, public :: &
-!       PhotonMoments_S => PhotonMoments_G_CSL
     procedure, public, pass :: &
       SetInteractions
     final :: &
@@ -60,7 +53,7 @@ contains
 
 
   subroutine Initialize &
-               ( RMA, A, RadiationMomentsType, Units, NameShortOption, &
+               ( RMA, A, RadiationType, MomentsType, Units, NameShortOption, &
                  RiemannSolverTypeOption, ReconstructedTypeOption, &
                  UseLimiterOption, AllocateSourcesOption, &
                  SuppressWriteOption, SuppressWriteSourcesOption, &
@@ -71,7 +64,8 @@ contains
     class ( Atlas_SC_Form ), intent ( in ) :: &
       A
     character ( * ), intent ( in ) :: &
-      RadiationMomentsType
+      RadiationType, &
+      MomentsType
     class ( StressEnergyUnitsForm ), intent ( in ), target :: &
       Units
     character ( * ), intent ( in ), optional :: &
@@ -97,7 +91,8 @@ contains
 
     call RMA % SetType ( )
 
-    RMA % RadiationMomentsType = RadiationMomentsType
+    RMA % RadiationType = RadiationType
+    RMA % MomentsType   = MomentsType
 
     RMA % Units => Units
 
@@ -204,7 +199,9 @@ contains
     call RMA % InitializeTemplate_ASC_C &
            ( A, NameShort, IgnorabilityOption = IgnorabilityOption )
 
-    call Show ( RMA % RadiationMomentsType, 'RadiationMomentsType', &
+    call Show ( RMA % RadiationType, 'RadiationType', &
+                RMA % IGNORABILITY )
+    call Show ( RMA % MomentsType, 'MomentsType', &
                 RMA % IGNORABILITY )
     call Show ( RMA % RiemannSolverType, 'RiemannSolverType', &
                 RMA % IGNORABILITY )
@@ -258,48 +255,6 @@ contains
     end select !-- FC
 
   end function RadiationMoments_CSL
-
-
-!   function PhotonMoments_G_CSL ( RMA ) result ( PM )
-
-!     class ( RadiationMoments_ASC_Form ), intent ( in ) :: &
-!       RMA
-!     class ( PhotonMoments_G_Form ), pointer :: &
-!       PM
-
-!     select type ( RMC => RMA % Chart )
-!     class is ( RadiationMoments_CSL_Form )
-!       PM => RMC % PhotonMoments_G ( )
-!     class default
-!       call Show ( 'RadiationMoments Chart type not recognized', &
-!                   CONSOLE % ERROR )
-!       call Show ( 'RadiationMoments_ASC__Form', 'module', CONSOLE % ERROR )
-!       call Show ( 'PhotonMoments_G_CSL', 'function', CONSOLE % ERROR )
-!       call PROGRAM_HEADER % Abort ( )
-!     end select !-- FC
-
-!   end function PhotonMoments_G_CSL
-
-
-!   function PhotonMoments_S_CSL ( RMA ) result ( PM )
-
-!     class ( RadiationMoments_ASC_Form ), intent ( in ) :: &
-!       RMA
-!     class ( PhotonMoments_S_Form ), pointer :: &
-!       PM
-
-!     select type ( RMC => RMA % Chart )
-!     class is ( RadiationMoments_CSL_Form )
-!       PM => RMC % PhotonMoments_S ( )
-!     class default
-!       call Show ( 'RadiationMoments Chart type not recognized', &
-!                   CONSOLE % ERROR )
-!       call Show ( 'RadiationMoments_ASC__Form', 'module', CONSOLE % ERROR )
-!       call Show ( 'PhotonMoments_S_CSL', 'function', CONSOLE % ERROR )
-!       call PROGRAM_HEADER % Abort ( )
-!     end select !-- FC
-
-!   end function PhotonMoments_S_CSL
 
 
   subroutine SetInteractions ( RMA, IA )
@@ -368,7 +323,7 @@ contains
     select type ( FC => FA % Chart )
     class is ( RadiationMoments_CSL_Form )
       call FC % Initialize &
-             ( C, FA % NameShort, FA % RadiationMomentsType, &
+             ( C, FA % NameShort, FA % RadiationType, FA % MomentsType, &
                FA % RiemannSolverType, FA % ReconstructedType, &
                FA % UseLimiter, FA % Units, FA % LimiterParameter, nValues, &
                IgnorabilityOption = FA % IGNORABILITY )

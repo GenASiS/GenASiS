@@ -68,7 +68,7 @@ contains
       PWS % Type = 'a PlaneWaveStreaming'
 
     call InitializeRadiationBox ( PWS, MomentsType, Name )
-    call InitializeDiagnostics ( PWS )
+    call InitializeDiagnostics ( PWS, MomentsType )
     call SetProblem ( PWS )
  
   end subroutine InitializeTemplate_PWS
@@ -216,6 +216,7 @@ contains
              RadiationType = [ 'GENERIC' ], &
              MomentsType = MomentsType, &
              Name = Name, &
+             EnergySpacingOption = 'COMPACTIFIED', &
              ApplyInteractionsOption = .false., &
              EvolveFluidOption = .false., &
              nCellsPositionOption = [ 128, 128, 128 ], &
@@ -235,10 +236,12 @@ contains
   end subroutine InitializeRadiationBox
 
 
-  subroutine InitializeDiagnostics ( PWS )
+  subroutine InitializeDiagnostics ( PWS, MomentsType )
 
     class ( PlaneWaveStreamingTemplate ), intent ( inout ) :: &
       PWS
+    character ( * ), intent ( in ) :: &
+      MomentsType
 
     integer ( KDI ) :: &
       iW  !-- iWave
@@ -257,12 +260,12 @@ contains
         WaveIndex = ''
       end if
       call PWS % Reference_ASC ( iW ) % Initialize &
-             ( PS, 'GENERIC', PWS % Units, &
+             ( PS, 'GENERIC', MomentsType = MomentsType, Units = PWS % Units, &
                NameShortOption = 'Reference' // WaveIndex, &
                AllocateSourcesOption = .false., &
                IgnorabilityOption = CONSOLE % INFO_5 )
       call PWS % Difference_ASC ( iW ) % Initialize &
-             ( PS, 'GENERIC', PWS % Units, &
+             ( PS, 'GENERIC', MomentsType = MomentsType, Units = PWS % Units, &
                NameShortOption = 'Difference' // WaveIndex, &
                AllocateSourcesOption = .false., &
                IgnorabilityOption = CONSOLE % INFO_5 )

@@ -23,7 +23,7 @@ contains
 
 
   subroutine InitializeAllocate_RM &
-               ( RM, RadiationMomentsType, RiemannSolverType, &
+               ( RM, RadiationType, MomentsType, RiemannSolverType, &
                  ReconstructedType, UseLimiter, Units, LimiterParameter, &
                  nValues, VariableOption, VectorOption, NameOption, &
                  ClearOption, UnitOption, VectorIndicesOption )
@@ -31,7 +31,8 @@ contains
     class ( PhotonMoments_S_Form ), intent ( inout ) :: &
       RM
     character ( * ), intent ( in ) :: &
-      RadiationMomentsType, &
+      RadiationType, &
+      MomentsType, &
       RiemannSolverType, &
       ReconstructedType
     logical ( KDL ), intent ( in ) :: &
@@ -58,7 +59,7 @@ contains
       RM % Type = 'PhotonMoments_S'
 
     call RM % RadiationMomentsForm % Initialize &
-           ( RadiationMomentsType, RiemannSolverType, ReconstructedType, &
+           ( RadiationType, MomentsType, RiemannSolverType, ReconstructedType, &
              UseLimiter, Units, LimiterParameter, nValues, &
              VariableOption = VariableOption, VectorOption = VectorOption, &
              NameOption = NameOption, ClearOption = ClearOption, &

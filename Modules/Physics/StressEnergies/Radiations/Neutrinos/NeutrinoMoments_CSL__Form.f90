@@ -41,14 +41,13 @@ contains
 
     allocate ( FC % FieldOutput )
 
-    select case ( trim ( FC % RadiationMomentsType ) )
-    case ( 'NEUTRINOS_ELECTRON_GREY', 'ANTINEUTRINOS_ELECTRON_GREY', &
-           'NEUTRINOS_X_GREY' )
+    select case ( trim ( FC % MomentsType ) )
+    case ( 'GREY' )
       allocate ( NeutrinoMoments_G_Form :: FC % Field )
       select type ( NM => FC % Field )
       type is ( NeutrinoMoments_G_Form )
         call NM % Initialize &
-               ( FC % RadiationMomentsType, FC % RiemannSolverType, &
+               ( FC % RadiationType, FC % MomentsType, FC % RiemannSolverType, &
                  FC % ReconstructedType, FC % UseLimiter, FC % Units, &
                  FC % LimiterParameter, FC % nValues, &
                  NameOption = FC % NameShort )
@@ -56,13 +55,12 @@ contains
         call NM % SetReconstructed ( )
         call NM % SetOutput ( FC % FieldOutput )
       end select !-- NM
-    case ( 'NEUTRINOS_ELECTRON_SPECTRAL', 'ANTINEUTRINOS_ELECTRON_SPECTRAL', &
-           'NEUTRINOS_X_SPECTRAL' )
+    case ( 'SPECTRAL' )
       allocate ( NeutrinoMoments_S_Form :: FC % Field )
       select type ( NM => FC % Field )
       type is ( NeutrinoMoments_S_Form )
         call NM % Initialize &
-               ( FC % RadiationMomentsType, FC % RiemannSolverType, &
+               ( FC % RadiationType, FC % MomentsType, FC % RiemannSolverType, &
                  FC % ReconstructedType, FC % UseLimiter, FC % Units, &
                  FC % LimiterParameter, FC % nValues, &
                  NameOption = FC % NameShort )
@@ -71,8 +69,8 @@ contains
         call NM % SetOutput ( FC % FieldOutput )
       end select !-- NM
     case default
-      call Show ( 'RadiationMomentsType not recognized', CONSOLE % ERROR )
-      call Show ( FC % RadiationMomentsType, 'RadiationMomentsType', &
+      call Show ( 'MomentsType not recognized', CONSOLE % ERROR )
+      call Show ( FC % MomentsType, 'MomentsType', &
                   CONSOLE % ERROR )
       call Show ( 'NeutrinoMoments_CSL__Form', 'module', CONSOLE % ERROR )
       call Show ( 'SetField', 'subroutine', CONSOLE % ERROR )

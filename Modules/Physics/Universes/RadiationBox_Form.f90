@@ -63,10 +63,11 @@ contains
   
   subroutine Initialize_RB &
                ( RB, RadiationName, RadiationType, MomentsType, Name, &
-                 ApplyStreamingOption, ApplyInteractionsOption, &
-                 EvolveFluidOption, MinCoordinateOption, MaxCoordinateOption, &
-                 FinishTimeOption, CourantFactorOption, MinEnergyOption, &
-                 MaxEnergyOption, MinWidthEnergyOption, EnergyScaleOption, &
+                 EnergySpacingOption, ApplyStreamingOption, &
+                 ApplyInteractionsOption, EvolveFluidOption, &
+                 MinCoordinateOption, MaxCoordinateOption, FinishTimeOption, &
+                 CourantFactorOption, MinEnergyOption, MaxEnergyOption, &
+                 MinWidthEnergyOption, EnergyScaleOption, &
                  nCellsPositionOption, nCellsEnergyOption, nWriteOption )
 
     class ( RadiationBoxForm ), intent ( inout ), target :: &
@@ -77,6 +78,8 @@ contains
     character ( * ), intent ( in ) :: &
       MomentsType, &
       Name
+    character ( * ), intent ( in ), optional :: &
+      EnergySpacingOption
     logical ( KDL ), intent ( in ), optional :: &
       ApplyStreamingOption, &
       ApplyInteractionsOption, &
@@ -112,7 +115,8 @@ contains
              MaxCoordinateOption = MaxCoordinateOption, &
              nCellsOption = nCellsPositionOption )
     call RB % InitializeMomentumSpace &
-           ( MinEnergyOption = MinEnergyOption, &
+           ( EnergySpacingOption = EnergySpacingOption, &
+             MinEnergyOption = MinEnergyOption, &
              MaxEnergyOption = MaxEnergyOption, &
              MinWidthEnergyOption = MinWidthEnergyOption, &
              EnergyScaleOption = EnergyScaleOption, &
@@ -372,8 +376,6 @@ contains
 
     integer ( KDI ) :: &
       iC  !-- iCurrent
-    character ( LDL ) :: &
-      RadiationTypeLocal
 
     select type ( I_1D => RB % Integrator )
     class is ( Integrator_C_1D_C_PS_Template )
@@ -391,11 +393,9 @@ contains
           allocate &
             ( RadiationMoments_ASC_Form :: &
                 I % Current_ASC_1D ( iC ) % Element )
-          RadiationTypeLocal = 'GENERIC'
         case ( 'PHOTONS' )
           allocate &
             ( PhotonMoments_ASC_Form :: I % Current_ASC_1D ( iC ) % Element )
-          RadiationTypeLocal = 'PHOTONS_GREY'
         case default
           call Show ( 'RadiationType not recognized', CONSOLE % ERROR )
           call Show ( RadiationType ( iC ), 'RadiationType', CONSOLE % ERROR )
@@ -407,7 +407,8 @@ contains
         select type ( RA => I % Current_ASC_1D ( iC ) % Element )
         class is ( RadiationMoments_ASC_Form )
           call RA % Initialize &
-                 ( PS, RadiationTypeLocal, RB % Units, &
+                 ( PS, RadiationType = RadiationType ( iC ), &
+                   MomentsType = 'GREY', Units = RB % Units, &
                    NameShortOption = RadiationName ( iC ) )
         end select !-- RA        
         end select !-- PS
@@ -422,12 +423,10 @@ contains
           allocate &
             ( RadiationMoments_BSLL_ASC_CSLD_Form :: &
                 I % Current_BSLL_ASC_CSLD_1D ( iC ) % Element )
-          RadiationTypeLocal = 'GENERIC'
         case ( 'PHOTONS' )
           allocate &
             ( PhotonMoments_BSLL_ASC_CSLD_Form :: &
                 I % Current_BSLL_ASC_CSLD_1D ( iC ) % Element )
-          RadiationTypeLocal = 'PHOTONS_SPECTRAL'
         case default
           call Show ( 'RadiationType not recognized', CONSOLE % ERROR )
           call Show ( RadiationType ( iC ), 'RadiationType', CONSOLE % ERROR )
@@ -439,8 +438,8 @@ contains
         select type ( RMB => I % Current_BSLL_ASC_CSLD_1D ( iC ) % Element )
         class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
           call RMB % Initialize &
-                 ( MS, RadiationTypeLocal, RB % Units, &
-                   NameShortOption = RadiationName ( iC ) )
+                 ( MS, RadiationType = RadiationType ( iC ), &
+                   Units = RB % Units, NameShortOption = RadiationName ( iC ) )
         end select !-- RMB
         end select !-- MS
 
@@ -635,8 +634,6 @@ contains
       F
     class ( RadiationMomentsForm ), pointer :: &
       RM
-    class ( Sources_RM_Form ), pointer :: &
-      SR
 
     select type ( I )
     class is ( Integrator_C_1D_PS_C_PS_Form )  !-- Grey
@@ -694,7 +691,7 @@ contains
     end select !-- PS
     end select !-- SF
     end select !-- SR
-    nullify ( F, RM, SR )
+    nullify ( F, RM )
 
   end subroutine PrepareStep
 

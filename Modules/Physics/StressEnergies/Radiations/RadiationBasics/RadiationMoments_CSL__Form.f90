@@ -21,7 +21,8 @@ module RadiationMoments_CSL__Form
     logical ( KDL ) :: &
       UseLimiter
     character ( LDF ) :: &
-      RadiationMomentsType = '', &
+      RadiationType = '', &
+      MomentsType = '', &
       ReconstructedType = '', &
       RiemannSolverType = ''
     class ( Sources_RM_CSL_Form ), pointer :: &
@@ -33,10 +34,6 @@ module RadiationMoments_CSL__Form
       Initialize
     procedure, public, pass :: &
       RadiationMoments
-!     procedure, public, pass :: &
-!       PhotonMoments_G
-!     procedure, public, pass :: &
-!       PhotonMoments_S
     procedure, public, pass :: &
       SetSources
     procedure, public, pass :: &
@@ -53,9 +50,9 @@ contains
 
 
   subroutine Initialize &
-               ( RMC, C, NameShort, RadiationMomentsType, RiemannSolverType, &
-                 ReconstructedType, UseLimiter, Units, LimiterParameter, &
-                 nValues, IgnorabilityOption )
+               ( RMC, C, NameShort, RadiationType, MomentsType, &
+                 RiemannSolverType, ReconstructedType, UseLimiter, Units, &
+                 LimiterParameter, nValues, IgnorabilityOption )
 
     class ( RadiationMoments_CSL_Form ), intent ( inout ) :: &
       RMC
@@ -63,7 +60,8 @@ contains
       C
     character ( * ), intent ( in ) :: &
       NameShort, &
-      RadiationMomentsType, &
+      RadiationType, &
+      MomentsType, &
       RiemannSolverType, &
       ReconstructedType
     logical ( KDL ), intent ( in ) :: &
@@ -79,7 +77,8 @@ contains
 
     call RMC % SetType ( )
 
-    RMC % RadiationMomentsType = RadiationMomentsType
+    RMC % RadiationType        = RadiationType
+    RMC % MomentsType          = MomentsType
     RMC % ReconstructedType    = ReconstructedType
     RMC % RiemannSolverType    = RiemannSolverType
     RMC % UseLimiter           = UseLimiter
@@ -112,48 +111,6 @@ contains
     end select !-- Field
 
   end function RadiationMoments
-
-
-!   function PhotonMoments_G ( RMC ) result ( PM )
-
-!     class ( RadiationMoments_CSL_Form ), intent ( in ), target :: &
-!       RMC
-!     class ( PhotonMoments_G_Form ), pointer :: &
-!       PM
-      
-!     class ( StorageForm ), pointer :: &
-!       Field
-
-!     PM => null ( )
-
-!     Field => RMC % Field
-!     select type ( Field )
-!     class is ( PhotonMoments_G_Form )
-!     PM => Field
-!     end select !-- Field
-
-!   end function PhotonMoments_G
-
-
-!   function PhotonMoments_S ( RMC ) result ( PM )
-
-!     class ( RadiationMoments_CSL_Form ), intent ( in ), target :: &
-!       RMC
-!     class ( PhotonMoments_S_Form ), pointer :: &
-!       PM
-      
-!     class ( StorageForm ), pointer :: &
-!       Field
-
-!     PM => null ( )
-
-!     Field => RMC % Field
-!     select type ( Field )
-!     class is ( PhotonMoments_S_Form )
-!     PM => Field
-!     end select !-- Field
-
-!   end function PhotonMoments_S
 
 
   subroutine SetSources ( RMC, SRMC )
@@ -233,13 +190,13 @@ contains
 
     allocate ( FC % FieldOutput )
 
-    select case ( trim ( FC % RadiationMomentsType ) )
+    select case ( trim ( FC % RadiationType ) )
     case ( 'GENERIC' )
       allocate ( RadiationMomentsForm :: FC % Field )
       select type ( RM => FC % Field )
       type is ( RadiationMomentsForm )
         call RM % Initialize &
-               ( FC % RadiationMomentsType, FC % RiemannSolverType, &
+               ( FC % RadiationType, FC % MomentsType, FC % RiemannSolverType, &
                  FC % ReconstructedType, FC % UseLimiter, FC % Units, &
                  FC % LimiterParameter, FC % nValues, &
                  NameOption = FC % NameShort )
@@ -248,8 +205,8 @@ contains
         call RM % SetOutput ( FC % FieldOutput )
       end select !-- RM
     case default
-      call Show ( 'RadiationMomentsType not recognized', CONSOLE % ERROR )
-      call Show ( FC % RadiationMomentsType, 'RadiationMomentsType', &
+      call Show ( 'RadiationType not recognized', CONSOLE % ERROR )
+      call Show ( FC % RadiationType, 'RadiationType', &
                   CONSOLE % ERROR )
       call Show ( 'RadiationMoments_CSL__Form', 'module', CONSOLE % ERROR )
       call Show ( 'SetField', 'subroutine', CONSOLE % ERROR )

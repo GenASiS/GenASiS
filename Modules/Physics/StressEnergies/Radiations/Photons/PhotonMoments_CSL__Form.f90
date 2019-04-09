@@ -40,13 +40,13 @@ contains
 
     allocate ( FC % FieldOutput )
 
-    select case ( trim ( FC % RadiationMomentsType ) )
-    case ( 'PHOTONS_GREY' )
+    select case ( trim ( FC % MomentsType ) )
+    case ( 'GREY' )
       allocate ( PhotonMoments_G_Form :: FC % Field )
       select type ( PM => FC % Field )
       type is ( PhotonMoments_G_Form )
         call PM % Initialize &
-               ( FC % RadiationMomentsType, FC % RiemannSolverType, &
+               ( FC % RadiationType, FC % MomentsType, FC % RiemannSolverType, &
                  FC % ReconstructedType, FC % UseLimiter, FC % Units, &
                  FC % LimiterParameter, FC % nValues, &
                  NameOption = FC % NameShort )
@@ -54,12 +54,12 @@ contains
         call PM % SetReconstructed ( )
         call PM % SetOutput ( FC % FieldOutput )
       end select !-- PM
-    case ( 'PHOTONS_SPECTRAL' )
+    case ( 'SPECTRAL' )
       allocate ( PhotonMoments_S_Form :: FC % Field )
       select type ( PM => FC % Field )
       type is ( PhotonMoments_S_Form )
         call PM % Initialize &
-               ( FC % RadiationMomentsType, FC % RiemannSolverType, &
+               ( FC % RadiationType, FC % MomentsType, FC % RiemannSolverType, &
                  FC % ReconstructedType, FC % UseLimiter, FC % Units, &
                  FC % LimiterParameter, FC % nValues, &
                  NameOption = FC % NameShort )
@@ -68,9 +68,8 @@ contains
         call PM % SetOutput ( FC % FieldOutput )
       end select !-- PM
     case default
-      call Show ( 'RadiationMomentsType not recognized', CONSOLE % ERROR )
-      call Show ( FC % RadiationMomentsType, 'RadiationMomentsType', &
-                  CONSOLE % ERROR )
+      call Show ( 'MomentsType not recognized', CONSOLE % ERROR )
+      call Show ( FC % MomentsType, 'MomentsType', CONSOLE % ERROR )
       call Show ( 'PhotonMoments_CSL__Form', 'module', CONSOLE % ERROR )
       call Show ( 'SetField', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )

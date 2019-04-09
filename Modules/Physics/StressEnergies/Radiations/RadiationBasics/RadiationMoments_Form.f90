@@ -30,7 +30,8 @@ module RadiationMoments_Form
       CONSERVED_MOMENTUM_D = 0, &
       FLUID_VELOCITY_U     = 0
     character ( LDL ) :: &
-      RadiationMomentsType = ''
+      RadiationType = '', &
+      MomentsType = ''
     class ( InteractionsTemplate ), pointer :: &
       Interactions => null ( )
   contains
@@ -76,7 +77,7 @@ contains
 
 
   subroutine InitializeAllocate_RM &
-               ( RM, RadiationMomentsType, RiemannSolverType, &
+               ( RM, RadiationType, MomentsType, RiemannSolverType, &
                  ReconstructedType, UseLimiter, Units, LimiterParameter, &
                  nValues, VariableOption, VectorOption, NameOption, &
                  ClearOption, UnitOption, VectorIndicesOption )
@@ -84,7 +85,8 @@ contains
     class ( RadiationMomentsForm ), intent ( inout ) :: &
       RM
     character ( * ), intent ( in ) :: &
-      RadiationMomentsType, &
+      RadiationType, &
+      MomentsType, &
       RiemannSolverType, &
       ReconstructedType
     logical ( KDL ), intent ( in ) :: &
@@ -118,9 +120,9 @@ contains
       Vector
 
     call InitializeBasics &
-           ( RM, RadiationMomentsType, Variable, Vector, Name, VariableUnit, &
-             VectorIndices, VariableOption, VectorOption, NameOption, &
-             UnitOption, VectorIndicesOption )
+           ( RM, RadiationType, MomentsType, Variable, Vector, Name, &
+             VariableUnit, VectorIndices, VariableOption, VectorOption, &
+             NameOption, UnitOption, VectorIndicesOption )
 
     call SetUnits ( VariableUnit, RM, Units )
 
@@ -566,14 +568,15 @@ contains
 
 
   subroutine InitializeBasics &
-               ( RM, RadiationMomentsType, Variable, Vector, Name, &
+               ( RM, RadiationType, MomentsType, Variable, Vector, Name, &
                  VariableUnit, VectorIndices, VariableOption, VectorOption, &
                  NameOption, VariableUnitOption, VectorIndicesOption )
 
     class ( RadiationMomentsForm ), intent ( inout ) :: &
       RM
     character ( * ), intent ( in ) :: &
-      RadiationMomentsType
+      RadiationType, &
+      MomentsType
     character ( LDL ), dimension ( : ), allocatable, intent ( out ) :: &
       Variable, &
       Vector
@@ -611,7 +614,8 @@ contains
     if ( present ( NameOption ) ) &
       Name = NameOption
 
-    RM % RadiationMomentsType = RadiationMomentsType
+    RM % RadiationType = RadiationType
+    RM % MomentsType   = MomentsType
 
     !-- variable indices
 

@@ -24,7 +24,7 @@ module RadiationMoments_BSLL_ASC_CSLD__Form
       class ( StressEnergyUnitsForm ), pointer :: &
         Units => null ( )
       character ( LDF ) :: &
-        RadiationMomentsType = ''
+        RadiationType = ''
       class ( FieldAtlasTemplate ), allocatable :: &
         EnergyIntegral
       class ( Field_BSLL_ASC_CSLD_Template ), pointer :: &
@@ -54,7 +54,7 @@ contains
 
 
   subroutine Initialize &
-               ( RMB, B, RadiationMomentsType, Units, NameShortOption, &
+               ( RMB, B, RadiationType, Units, NameShortOption, &
                  UseLimiterOption, LimiterParameterOption )
 
     class ( RadiationMoments_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
@@ -62,7 +62,7 @@ contains
     class ( Bundle_SLL_ASC_CSLD_Form ), intent ( in ), target :: &
       B
     character ( * ), intent ( in )  :: &
-      RadiationMomentsType
+      RadiationType
     class ( StressEnergyUnitsForm ), intent ( in ), target :: &
       Units
     character ( * ), intent ( in ), optional :: &
@@ -81,7 +81,7 @@ contains
 
     call RMB % SetType ( )
 
-    RMB % RadiationMomentsType = RadiationMomentsType
+    RMB % RadiationType = RadiationType
 
     RMB % Units => Units
 
@@ -126,7 +126,7 @@ contains
 
     call RMB % InitializeTemplate_BSLL_ASC_CSLD ( B, NameShort )
 
-    call Show ( RMB % RadiationMomentsType, 'RadiationMomentsType', &
+    call Show ( RMB % RadiationType, 'RadiationType', &
                 RMB % IGNORABILITY )
 
     nullify ( GF )
@@ -252,8 +252,6 @@ contains
       Ignorability
     character ( 1 + 2 ) :: &
       EnergyNumber
-    character ( LDF ) :: &
-      RadiationMomentsType
 
     associate ( B => FB % Bundle_SLL_ASC_CSLD )
 
@@ -272,7 +270,8 @@ contains
       class is ( Atlas_SC_Form )
 
       call RMA % Initialize &
-             ( AF, FB % RadiationMomentsType, FB % UnitsSpectral, &
+             ( AF, RadiationType = FB % RadiationType, &
+               MomentsType = 'SPECTRAL', Units = FB % UnitsSpectral, &
                NameShortOption = FB % NameShort, &
                SuppressWriteSourcesOption = .false. )
 
@@ -302,7 +301,8 @@ contains
       end if
    
       call RMA % Initialize &
-             ( B % Base_ASC, FB % RadiationMomentsType, FB % UnitsSpectral, &
+             ( B % Base_ASC, RadiationType = FB % RadiationType, &
+               MomentsType = 'SPECTRAL', Units = FB % UnitsSpectral, &
                NameShortOption = trim ( FB % NameShort ) // EnergyNumber, &
                UseLimiterOption = FB % UseLimiter, &
                SuppressWriteOption = SuppressWrite, &
@@ -317,18 +317,12 @@ contains
 
     !-- EnergyIntegral
 
-    select case ( trim ( FB % RadiationMomentsType ) )
-    case ( 'PHOTONS_SPECTRAL' )
-      RadiationMomentsType = 'PHOTONS_GREY'
-    case default
-      RadiationMomentsType = FB % RadiationMomentsType
-    end select !-- FB % RadiationMomentsType
-  
     call FB % AllocateField ( FB % EnergyIntegral )
     select type ( EI => FB % EnergyIntegral )
     class is ( RadiationMoments_ASC_Form )
       call EI % Initialize &
-             ( B % Base_ASC, RadiationMomentsType, FB % Units, &
+             ( B % Base_ASC, RadiationType = FB % RadiationType, &
+               MomentsType = 'GREY', Units = FB % Units, &
                NameShortOption = trim ( FB % NameShort ) // '_Integral', &
                IgnorabilityOption = CONSOLE % INFO_5 )
     end select !-- EI

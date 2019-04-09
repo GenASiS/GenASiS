@@ -221,12 +221,12 @@ contains
     allocate ( T % Reference_ASC )
     allocate ( T % FractionalDifference_ASC )
     call T % Reference_ASC % Initialize &
-           ( PS, 'GENERIC', T % Units, &
+           ( PS, 'GENERIC', 'GREY', T % Units, &
              NameShortOption = 'Reference', &
              AllocateSourcesOption = .false., &
              IgnorabilityOption = CONSOLE % INFO_5 )
     call T % FractionalDifference_ASC % Initialize &
-           ( PS, 'GENERIC', T % Units, &
+           ( PS, 'GENERIC', 'GREY', T % Units, &
              NameShortOption = 'FractionalDifference', &
              AllocateSourcesOption = .false., &
              IgnorabilityOption = CONSOLE % INFO_5 )
