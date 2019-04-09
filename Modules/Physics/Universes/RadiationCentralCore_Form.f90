@@ -36,7 +36,7 @@ module RadiationCentralCore_Form
 
     private :: &
 !      ComputeTimeStepLocal, &
-!      PrepareStep, &
+      PrepareStep, &
       IntegrateSources, &
       ApplySources_Radiation, &
       ApplySources_Fluid
@@ -52,12 +52,13 @@ contains
 
   subroutine Initialize_RCC &
                ( RCC, RadiationName, RadiationType, MomentsType, FluidType, &
-                 GeometryType, Name, FinishTimeOption, CourantFactorOption, &
-                 GravityFactorOption, LimiterParameterOption, &
-                 ShockThresholdOption, MinEnergyOption, MaxEnergyOption, &
-                 MinWidthEnergyOption, EnergyScaleOption, RadiusMaxOption, &
-                 RadiusCoreOption, RadialRatioOption, nCellsEnergyOption, &
-                 nCellsPolarOption, nWriteOption )
+                 GeometryType, Name, EnergySpacingOption, FinishTimeOption, &
+                 CourantFactorOption, GravityFactorOption, &
+                 LimiterParameterOption, ShockThresholdOption, &
+                 MinEnergyOption, MaxEnergyOption, MinWidthEnergyOption, &
+                 EnergyScaleOption, RadiusMaxOption, RadiusCoreOption, &
+                 RadialRatioOption, nCellsEnergyOption, nCellsPolarOption, &
+                 nWriteOption )
 
     class ( RadiationCentralCoreForm ), intent ( inout ) :: &
       RCC
@@ -69,6 +70,8 @@ contains
       FluidType, &
       GeometryType, &
       Name
+    character ( * ), intent ( in ), optional :: &
+      EnergySpacingOption
     real ( KDR ), intent ( in ), optional :: &
       FinishTimeOption, &
       CourantFactorOption, &
@@ -102,7 +105,8 @@ contains
              RadialRatioOption = RadialRatioOption, &
              nCellsPolarOption = nCellsPolarOption )
     call RCC % InitializeMomentumSpace &
-           ( MinEnergyOption = MinEnergyOption, &
+           ( EnergySpacingOption = EnergySpacingOption, &
+             MinEnergyOption = MinEnergyOption, &
              MaxEnergyOption = MaxEnergyOption, &
              MinWidthEnergyOption = MinWidthEnergyOption, &
              EnergyScaleOption = EnergyScaleOption, &
@@ -308,8 +312,6 @@ contains
 
     integer ( KDI ) :: &
       iC  !-- iCurrent
-    character ( LDL ) :: &
-      RadiationTypeLocal
 
     select type ( I_1D => RCC % Integrator )
     class is ( Integrator_C_1D_C_PS_Template )
@@ -323,10 +325,9 @@ contains
         class is ( Atlas_SC_Form )
 
         select case ( trim ( RadiationType ( iC ) ) )
-        case ( 'NEUTRINOS' )
+        case ( 'NEUTRINOS_E', 'NEUTRINOS_E_BAR', 'NEUTRINOS_X' )
           allocate &
             ( NeutrinoMoments_ASC_Form :: I % Current_ASC_1D ( iC ) % Element )
-          RadiationTypeLocal = 'NEUTRINOS_GREY'
         case default
           call Show ( 'RadiationType not recognized', CONSOLE % ERROR )
           call Show ( RadiationType ( iC ), 'RadiationType', CONSOLE % ERROR )
@@ -338,7 +339,8 @@ contains
         select type ( RA => I % Current_ASC_1D ( iC ) % Element )
         class is ( RadiationMoments_ASC_Form )
           call RA % Initialize &
-                 ( PS, RadiationTypeLocal, RCC % Units, &
+                 ( PS, RadiationType = RadiationType ( iC ), &
+                   MomentsType = 'GREY', Units = RCC % Units, &
                    NameShortOption = RadiationName ( iC ) )
         end select !-- RA        
         end select !-- PS
@@ -349,11 +351,10 @@ contains
         class is ( Bundle_SLL_ASC_CSLD_Form )
 
         select case ( trim ( RadiationType ( iC ) ) )
-        case ( 'NEUTRINOS' )
+        case ( 'NEUTRINOS_E', 'NEUTRINOS_E_BAR', 'NEUTRINOS_X' )
           allocate &
             ( NeutrinoMoments_BSLL_ASC_CSLD_Form :: &
                 I % Current_BSLL_ASC_CSLD_1D ( iC ) % Element )
-          RadiationTypeLocal = 'NEUTRINOS_SPECTRAL'
         case default
           call Show ( 'RadiationType not recognized', CONSOLE % ERROR )
           call Show ( RadiationType ( iC ), 'RadiationType', CONSOLE % ERROR )
@@ -365,8 +366,8 @@ contains
         select type ( RMB => I % Current_BSLL_ASC_CSLD_1D ( iC ) % Element )
         class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
           call RMB % Initialize &
-                 ( MS, RadiationTypeLocal, RCC % Units, &
-                   NameShortOption = RadiationName ( iC ) )
+                 ( MS, RadiationType = RadiationType ( iC ), &
+                   Units = RCC % Units, NameShortOption = RadiationName ( iC ) )
         end select !-- RMB
         end select !-- MS
 
@@ -471,6 +472,106 @@ contains
     end select !-- I
 
   end subroutine InitializeSteps
+
+
+  subroutine PrepareStep ( I )
+
+    class ( Integrator_C_1D_C_PS_Template ), intent ( inout ) :: &
+      I
+
+    integer ( KDI ) :: &
+      iC  !-- iCurrent
+    class ( Fluid_P_HN_Form ), pointer :: &
+      F
+    class ( RadiationMomentsForm ), pointer :: &
+      RM
+
+    do iC = 1, I % N_CURRENTS_1D
+
+      select type ( I )
+      class is ( Integrator_C_1D_PS_C_PS_Form )  !-- Grey
+
+        select type ( RMA => I % Current_ASC_1D ( iC ) % Element )
+        class is ( RadiationMoments_ASC_Form )
+          RM => RMA % RadiationMoments ( )
+        end select !-- RMA
+
+      class is ( Integrator_C_1D_MS_C_PS_Form )  !-- Spectral
+
+        call IntegrateSources ( I, iC )
+
+        select type ( RMB => I % Current_BSLL_ASC_CSLD_1D ( iC ) % Element )
+        class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
+        select type ( RMA => RMB % EnergyIntegral )
+        class is ( RadiationMoments_ASC_Form )
+          RM => RMA % RadiationMoments ( )
+        end select !-- RMA
+        end select !-- RMB
+
+      end select !-- I
+
+      select type ( FA => I % Current_ASC )
+      class is ( Fluid_ASC_Form )
+        F => FA % Fluid_P_HN ( )
+      end select !-- FA
+
+      select type ( SR => RM % Sources )
+      class is ( Sources_RM_Form )
+
+      select type ( SF => F % Sources )
+      class is ( Sources_F_Form )
+
+      select type ( PS => I % PositionSpace )
+      class is ( Atlas_SC_Form )
+
+      select type ( PSC => PS % Chart )
+      class is ( Chart_SL_Template )
+
+      call Clear ( SF % Value )
+
+      call ComputeFluidSource_G_S_Radiation_Kernel &
+             ( SF % Value ( :, SF % RADIATION_G ), & 
+               SF % Value ( :, SF % RADIATION_S_D ( 1 ) ), &
+               SF % Value ( :, SF % RADIATION_S_D ( 2 ) ), &
+               SF % Value ( :, SF % RADIATION_S_D ( 3 ) ), &
+               PSC % IsProperCell, &
+               SR % Value ( :, SR % INTERACTIONS_J ), &
+               SR % Value ( :, SR % INTERACTIONS_H_D ( 1 ) ), &
+               SR % Value ( :, SR % INTERACTIONS_H_D ( 2 ) ), &
+               SR % Value ( :, SR % INTERACTIONS_H_D ( 3 ) ) )
+
+      select case ( trim ( RM % RadiationType ) )
+      case ( 'NEUTRINOS_E' )
+        call ComputeFluidSource_DP_Radiation_Kernel &
+               ( SF % Value ( :, SF % RADIATION_DP ), & 
+                 SF % Value ( :, SF % RADIATION_DS ), &
+                 PSC % IsProperCell, &
+                 SR % Value ( :, SR % INTERACTIONS_N ), &
+                 F % Value ( :, F % TEMPERATURE ), &
+                 F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
+                 F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
+                 Sign  =  + 1.0_KDR )
+      case ( 'NEUTRINOS_E_BAR' )
+        call ComputeFluidSource_DP_Radiation_Kernel &
+               ( SF % Value ( :, SF % RADIATION_DP ), & 
+                 SF % Value ( :, SF % RADIATION_DS ), &
+                 PSC % IsProperCell, &
+                 SR % Value ( :, SR % INTERACTIONS_N ), &
+                 F % Value ( :, F % TEMPERATURE ), &
+                 F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
+                 F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
+                 Sign  =  - 1.0_KDR )
+      end select !-- RadiationType
+
+      end select !-- PSC
+      end select !-- PS
+      end select !-- SF
+      end select !-- SR
+      nullify ( F, RM )
+
+    end do !-- iC
+
+  end subroutine PrepareStep
 
 
   subroutine IntegrateSources ( I, iC )
