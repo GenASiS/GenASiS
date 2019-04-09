@@ -153,13 +153,14 @@ contains
   end subroutine ExchangeGhostMultiple
 
 
-  subroutine CopyBoundary ( Value, C, iDimension, iConnection )
+  subroutine CopyBoundary ( F, C, iField, iDimension, iConnection )
 
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      Value
+    class ( StorageForm ), intent ( inout ) :: &
+      F
     class ( Chart_SLD_Form ), intent ( in ) :: &
       C
     integer ( KDI ), intent ( in ) :: &
+      iField, &
       iDimension, &
       iConnection
 
@@ -174,18 +175,19 @@ contains
     end associate !-- Connectivity, etc.
 
     call C % CopyBoundaryTemplate &
-           ( Value, C % nCellsBrick, iDimension, iConnection )
+           ( F, C % nCellsBrick, iField, iDimension, iConnection )
 
   end subroutine CopyBoundary
 
 
-  subroutine ReverseBoundary ( Value, C, iDimension, iConnection )
+  subroutine ReverseBoundary ( F, C, iField, iDimension, iConnection )
 
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      Value
+    class ( StorageForm ), intent ( inout ) :: &
+      F
     class ( Chart_SLD_Form ), intent ( in ) :: &
       C
     integer ( KDI ), intent ( in ) :: &
+      iField, &
       iDimension, &
       iConnection
 
@@ -200,7 +202,7 @@ contains
     end associate !-- Connectivity, etc.
 
     call C % ReverseBoundaryTemplate &
-           ( Value, C % nCellsBrick, iDimension, iConnection )
+           ( F, C % nCellsBrick, iField, iDimension, iConnection )
 
   end subroutine ReverseBoundary
 

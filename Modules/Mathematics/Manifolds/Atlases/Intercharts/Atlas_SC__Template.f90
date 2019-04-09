@@ -359,7 +359,7 @@ contains
 
     do iS = 1, F % nVariables
       iF = F % iaSelected ( iS )
-      call CSL % CopyBoundary ( F % Value ( :, iF ), iDimension, iConnection )
+      call CSL % CopyBoundary ( F, iF, iDimension, iConnection )
     end do !-- iS
 
   end subroutine Apply_BC_CSL_Outflow
@@ -382,11 +382,10 @@ contains
 
     do iS = 1, F % nVariables
       iF = F % iaSelected ( iS )
-      call CSL % CopyBoundary ( F % Value ( :, iF ), iDimension, iConnection )
+      call CSL % CopyBoundary ( F, iF, iDimension, iConnection )
       do iV = 1, F % nVectors
         if ( iF == F % VectorIndices ( iV ) % Value ( iDimension ) ) &
-          call CSL % ReverseBoundary &
-                 ( F % Value ( :, iF ), iDimension, iConnection )
+          call CSL % ReverseBoundary ( F, iF, iDimension, iConnection )
       end do !-- iV
     end do !-- iS
 
