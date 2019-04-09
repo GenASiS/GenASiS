@@ -1,8 +1,11 @@
 !-- GeometryFlat extends Storage to include functionality related to
 !   flat geometry, though with possibly curvilinear coordinates.
 
-module GeometryFlat_Form
+#include "Preprocessor"
 
+module GeometryFlat_Form
+  
+  use iso_c_binding
   use Basics
   use ChartHeader_SL__Form
 
@@ -62,10 +65,14 @@ module GeometryFlat_Form
       SetFiniteVolumeRectangular, &
       SetFiniteVolumeCylindrical, &
       SetFiniteVolumeSpherical, &
-      SetMetricRectangular, &
-      SetMetricCylindrical, &
-      SetMetricSpherical, &
-      ComputeEdges
+      SetMetricRectangularHost, &
+      SetMetricRectangularDevice, &
+      SetMetricCylindricalHost, &
+      SetMetricCylindricalDevice, &
+      SetMetricSphericalHost, &
+      SetMetricSphericalDevice, &
+      ComputeEdgesHost, &
+      ComputeEdgesDevice
 
 contains
 
@@ -158,7 +165,7 @@ contains
                G % Value ( :, G % WIDTH_RIGHT_U ( 2 ) ), &
                G % Value ( :, G % WIDTH_RIGHT_U ( 3 ) ), &
                nDimensions, nValues, oValue )
-      call SetMetricRectangular &
+      call SetMetricRectangularHost &
              ( G % Value ( :, G % METRIC_DD_22 ), &
                G % Value ( :, G % METRIC_DD_33 ), &
                G % Value ( :, G % METRIC_UU_22 ), &
@@ -178,7 +185,7 @@ contains
                G % Value ( :, G % WIDTH_RIGHT_U ( 3 ) ), &
                G % Value ( :, G % CENTER_U ( 1 ) ), &
                nDimensions, nValues, oValue )
-      call SetMetricCylindrical &
+      call SetMetricCylindricalHost &
              ( G % Value ( :, G % METRIC_DD_22 ), &
                G % Value ( :, G % METRIC_DD_33 ), &
                G % Value ( :, G % METRIC_UU_22 ), &
@@ -200,7 +207,7 @@ contains
                G % Value ( :, G % CENTER_U ( 1 ) ), &
                G % Value ( :, G % CENTER_U ( 2 ) ), &
                nDimensions, nValues, oValue )
-      call SetMetricSpherical &
+      call SetMetricSphericalHost &
              ( G % Value ( :, G % METRIC_DD_22 ), &
                G % Value ( :, G % METRIC_DD_33 ), &
                G % Value ( :, G % METRIC_UU_22 ), &
@@ -251,40 +258,111 @@ contains
     do iD = 1, 3
       if ( iD == iDimension ) &
         cycle
-      call Copy ( G   % Value ( :, G % CENTER_U ( iD ) ), &
-                  G_I % Value ( :, G % CENTER_U ( iD ) ) )
+      if ( G % AllocatedDevice .and. G_I % AllocatedDevice ) then
+        call Copy ( G   % Value ( :, G % CENTER_U ( iD ) ), &
+                    G   % D_Selected ( G % CENTER_U ( iD ) ), &
+                    G_I % D_Selected ( G % CENTER_U ( iD ) ), &
+                    G_I % Value ( :, G % CENTER_U ( iD ) ) )
+      else if ( .not. ( G % AllocatedDevice .and. G_I % AllocatedDevice ) ) &
+      then
+        call Copy ( G   % Value ( :, G % CENTER_U ( iD ) ), &
+                    G_I % Value ( :, G % CENTER_U ( iD ) ) )
+      else
+        call Show ( 'Geometry not allocated consistently on Host or Device', &
+                    CONSOLE % ERROR )
+        call Show ( 'GeometryFlat_Form', 'module', &
+                    CONSOLE % ERROR )
+        call Show ( 'ComputeReconstruction_CSL', 'subroutine', &
+                    CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end if
     end do
 
-    call ComputeEdges &
-           ( G   % Value ( :, G % CENTER_U ( iDimension ) ), &
-             G   % Value ( :, G % WIDTH_LEFT_U ( iDimension ) ), &
-             G_I % Value ( :, G % CENTER_U ( iDimension ) ) )
+    if ( G % AllocatedDevice ) then
+      call ComputeEdgesDevice &
+             ( G   % Value ( :, G % CENTER_U ( iDimension ) ), &
+               G   % Value ( :, G % WIDTH_LEFT_U ( iDimension ) ), &
+               G   % D_Selected ( G % CENTER_U ( iDimension ) ), &
+               G   % D_Selected ( G % WIDTH_LEFT_U ( iDimension ) ), &
+               G_I % D_Selected ( G % CENTER_U ( iDimension ) ), &
+               G_I % Value ( :, G % CENTER_U ( iDimension ) ) )
+    else
+      call ComputeEdgesHost &
+             ( G   % Value ( :, G % CENTER_U ( iDimension ) ), &
+               G   % Value ( :, G % WIDTH_LEFT_U ( iDimension ) ), &
+               G_I % Value ( :, G % CENTER_U ( iDimension ) ) )
+    end if
 
     select case ( trim ( G % CoordinateSystem ) )
     case ( 'RECTANGULAR' )
-      call SetMetricRectangular &
-             ( G_I % Value ( :, G % METRIC_DD_22 ), &
-               G_I % Value ( :, G % METRIC_DD_33 ), &
-               G_I % Value ( :, G % METRIC_UU_22 ), &
-               G_I % Value ( :, G % METRIC_UU_33 ), &
-               nDimensions, nValues = G % nValues, oValue = 0 )
+      if ( G % AllocatedDevice ) then
+        call SetMetricRectangularDevice &
+               ( G_I % Value ( :, G % METRIC_DD_22 ), &
+                 G_I % Value ( :, G % METRIC_DD_33 ), &
+                 G_I % Value ( :, G % METRIC_UU_22 ), &
+                 G_I % Value ( :, G % METRIC_UU_33 ), &
+                 nDimensions, G % nValues, 0, &
+                 G_I % D_Selected ( G % METRIC_DD_22 ), &
+                 G_I % D_Selected ( G % METRIC_DD_33 ), &
+                 G_I % D_Selected ( G % METRIC_UU_22 ), &
+                 G_I % D_Selected ( G % METRIC_UU_33 ) )
+      else
+        call SetMetricRectangularHost &
+               ( G_I % Value ( :, G % METRIC_DD_22 ), &
+                 G_I % Value ( :, G % METRIC_DD_33 ), &
+                 G_I % Value ( :, G % METRIC_UU_22 ), &
+                 G_I % Value ( :, G % METRIC_UU_33 ), &
+                 nDimensions, nValues = G % nValues, oValue = 0 )
+      end if
     case ( 'CYLINDRICAL' )
-      call SetMetricCylindrical &
-             ( G_I % Value ( :, G % METRIC_DD_22 ), &
-               G_I % Value ( :, G % METRIC_DD_33 ), &
-               G_I % Value ( :, G % METRIC_UU_22 ), &
-               G_I % Value ( :, G % METRIC_UU_33 ), &
-               G_I % Value ( :, G % CENTER_U ( 1 ) ), &
-               nDimensions, nValues = G % nValues, oValue = 0 )
+      if ( G % AllocatedDevice ) then
+        call SetMetricCylindricalDevice &
+               ( G_I % Value ( :, G % METRIC_DD_22 ), &
+                 G_I % Value ( :, G % METRIC_DD_33 ), &
+                 G_I % Value ( :, G % METRIC_UU_22 ), &
+                 G_I % Value ( :, G % METRIC_UU_33 ), &
+                 G_I % Value ( :, G % CENTER_U ( 1 ) ), &
+                 nDimensions, G % nValues, 0, &
+                 G_I % D_Selected ( G % METRIC_DD_22 ), &
+                 G_I % D_Selected ( G % METRIC_DD_33 ), &
+                 G_I % D_Selected ( G % METRIC_UU_22 ), &
+                 G_I % D_Selected ( G % METRIC_UU_33 ), &
+                 G_I % D_Selected ( G % CENTER_U ( 1 ) ) )
+      else 
+        call SetMetricCylindricalHost &
+               ( G_I % Value ( :, G % METRIC_DD_22 ), &
+                 G_I % Value ( :, G % METRIC_DD_33 ), &
+                 G_I % Value ( :, G % METRIC_UU_22 ), &
+                 G_I % Value ( :, G % METRIC_UU_33 ), &
+                 G_I % Value ( :, G % CENTER_U ( 1 ) ), &
+                 nDimensions, nValues = G % nValues, oValue = 0 )
+      end if
     case ( 'SPHERICAL' )
-      call SetMetricSpherical &
-             ( G_I % Value ( :, G % METRIC_DD_22 ), &
-               G_I % Value ( :, G % METRIC_DD_33 ), &
-               G_I % Value ( :, G % METRIC_UU_22 ), &
-               G_I % Value ( :, G % METRIC_UU_33 ), &
-               G_I % Value ( :, G % CENTER_U ( 1 ) ), &
-               G_I % Value ( :, G % CENTER_U ( 2 ) ), &
-               nDimensions, nValues = G % nValues, oValue = 0 )
+      if ( G % AllocatedDevice ) then
+        call SetMetricSphericalDevice &
+               ( G_I % Value ( :, G % METRIC_DD_22 ), &
+                 G_I % Value ( :, G % METRIC_DD_33 ), &
+                 G_I % Value ( :, G % METRIC_UU_22 ), &
+                 G_I % Value ( :, G % METRIC_UU_33 ), &
+                 G_I % Value ( :, G % CENTER_U ( 1 ) ), &
+                 G_I % Value ( :, G % CENTER_U ( 2 ) ), &
+                 nDimensions, G % nValues, 0, &
+                 G_I % D_Selected ( G % METRIC_DD_22 ), &
+                 G_I % D_Selected ( G % METRIC_DD_33 ), &
+                 G_I % D_Selected ( G % METRIC_UU_22 ), &
+                 G_I % D_Selected ( G % METRIC_UU_33 ), &
+                 G_I % D_Selected ( G % CENTER_U ( 1 ) ), &
+                 G_I % D_Selected ( G % CENTER_U ( 2 ) ) )
+      else
+        call SetMetricSphericalHost &
+               ( G_I % Value ( :, G % METRIC_DD_22 ), &
+                 G_I % Value ( :, G % METRIC_DD_33 ), &
+                 G_I % Value ( :, G % METRIC_UU_22 ), &
+                 G_I % Value ( :, G % METRIC_UU_33 ), &
+                 G_I % Value ( :, G % CENTER_U ( 1 ) ), &
+                 G_I % Value ( :, G % CENTER_U ( 2 ) ), &
+                 nDimensions, nValues = G % nValues, oValue = 0 )
+      end if
     end select
 
   end subroutine ComputeReconstruction_CSL
@@ -696,7 +774,7 @@ contains
   end subroutine SetFiniteVolumeSpherical
 
 
-  subroutine SetMetricRectangular &
+  subroutine SetMetricRectangularHost &
                ( M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
                  nDimensions, nValues, oValue )
 
@@ -711,7 +789,7 @@ contains
     integer ( KDI ) :: &
       iV  !-- iValue
 
-    !$OMP parallel do private ( iV )
+    !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV ) 
     do iV = oValue + 1, oValue + nValues
       M_DD_22 ( iV )  =  1.0_KDR
       M_DD_33 ( iV )  =  1.0_KDR
@@ -720,10 +798,54 @@ contains
     end do
     !$OMP end parallel do
 
-  end subroutine SetMetricRectangular
+  end subroutine SetMetricRectangularHost
 
 
-  subroutine SetMetricCylindrical &
+  subroutine SetMetricRectangularDevice &
+               ( M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
+                 nDimensions, nValues, oValue, &
+                 D_M_DD_22, D_M_DD_33, D_M_UU_22, D_M_UU_33 )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      M_DD_22, M_DD_33, &
+      M_UU_22, M_UU_33
+    integer ( KDI ), intent ( in ) :: &
+      nDimensions, &
+      nValues, &
+      oValue
+    type ( c_ptr ), intent ( in ) :: &
+      D_M_DD_22, &
+      D_M_DD_33, &
+      D_M_UU_22, &
+      D_M_UU_33
+
+    integer ( KDI ) :: &
+      iV  !-- iValue
+      
+    call AssociateHost ( D_M_DD_22, M_DD_22 )
+    call AssociateHost ( D_M_DD_33, M_DD_33 )
+    call AssociateHost ( D_M_UU_22, M_UU_22 )
+    call AssociateHost ( D_M_UU_33, M_UU_33 )
+
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+    !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+    do iV = oValue + 1, oValue + nValues
+      M_DD_22 ( iV )  =  1.0_KDR
+      M_DD_33 ( iV )  =  1.0_KDR
+      M_UU_22 ( iV )  =  1.0_KDR
+      M_UU_33 ( iV )  =  1.0_KDR
+    end do
+    !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+    
+    call DisassociateHost ( M_UU_33 )
+    call DisassociateHost ( M_UU_22 )
+    call DisassociateHost ( M_DD_33 )
+    call DisassociateHost ( M_DD_22 )
+
+  end subroutine SetMetricRectangularDevice
+  
+  
+  subroutine SetMetricCylindricalHost &
                ( M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
                  RP, nDimensions, nValues, oValue )
 
@@ -740,7 +862,7 @@ contains
     integer ( KDI ) :: &
       iV  !-- iValue
 
-    !$OMP parallel do private ( iV )
+    !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV )
     do iV = oValue + 1, oValue + nValues
       M_DD_22 ( iV )  =  1.0_KDR
       M_DD_33 ( iV )  =  RP ( iV ) ** 2 
@@ -753,10 +875,63 @@ contains
     end do
     !$OMP end parallel do
 
-  end subroutine SetMetricCylindrical
+  end subroutine SetMetricCylindricalHost
 
 
-  subroutine SetMetricSpherical &
+  subroutine SetMetricCylindricalDevice &
+               ( M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
+                 RP, nDimensions, nValues, oValue, &
+                 D_M_DD_22, D_M_DD_33, D_M_UU_22, D_M_UU_33, D_RP )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      M_DD_22, M_DD_33, &
+      M_UU_22, M_UU_33
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      RP
+    integer ( KDI ), intent ( in ) :: &
+      nDimensions, &
+      nValues, &
+      oValue
+    type ( c_ptr ), intent ( in ) :: &
+      D_M_DD_22, &
+      D_M_DD_33, &
+      D_M_UU_22, &
+      D_M_UU_33, &
+      D_RP
+    
+    integer ( KDI ) :: &
+      iV  !-- iValue
+ 
+    call AssociateHost ( D_M_DD_22, M_DD_22 )
+    call AssociateHost ( D_M_DD_33, M_DD_33 )
+    call AssociateHost ( D_M_UU_22, M_UU_22 )
+    call AssociateHost ( D_M_UU_33, M_UU_33 )
+    call AssociateHost ( D_RP, RP )
+
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+    !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+    do iV = oValue + 1, oValue + nValues
+      M_DD_22 ( iV )  =  1.0_KDR
+      M_DD_33 ( iV )  =  RP ( iV ) ** 2 
+      M_UU_22 ( iV )  =  1.0_KDR
+      if ( RP ( iV )  >  0.0_KDR ) then
+        M_UU_33 ( iV )  =  1.0_KDR  /  RP ( iV ) ** 2
+      else
+        M_UU_33 ( iV )  =  0.0_KDR
+      end if
+    end do
+    !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+    
+    call DisassociateHost ( RP )
+    call DisassociateHost ( M_UU_33 )
+    call DisassociateHost ( M_UU_22 )
+    call DisassociateHost ( M_DD_33 )
+    call DisassociateHost ( M_DD_22 )
+
+  end subroutine SetMetricCylindricalDevice
+
+  
+  subroutine SetMetricSphericalHost &
                ( M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
                  R, Th, nDimensions, nValues, oValue )
 
@@ -775,7 +950,7 @@ contains
     real ( KDR ) :: &
       Sin_Th
 
-    !$OMP parallel do private ( iV, Sin_Th )
+    !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV, Sin_Th )
     do iV = oValue + 1, oValue + nValues
 
       select case ( nDimensions )
@@ -800,10 +975,79 @@ contains
     end do
     !$OMP end parallel do
 
-  end subroutine SetMetricSpherical
+  end subroutine SetMetricSphericalHost
+  
+  
+  subroutine SetMetricSphericalDevice &
+               ( M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
+                 R, Th, nDimensions, nValues, oValue, &
+                 D_M_DD_22, D_M_DD_33, D_M_UU_22, D_M_UU_33, D_R, D_Th )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      M_DD_22, M_DD_33, &
+      M_UU_22, M_UU_33
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      R, Th
+    integer ( KDI ), intent ( in ) :: &
+      nDimensions, &
+      nValues, &
+      oValue
+    type ( c_ptr ), intent ( in ) :: &
+      D_M_DD_22, &
+      D_M_DD_33, &
+      D_M_UU_22, &
+      D_M_UU_33, &
+      D_R, D_Th
+
+    integer ( KDI ) :: &
+      iV  !-- iValue
+    real ( KDR ) :: &
+      Sin_Th
+      
+    call AssociateHost ( D_M_DD_22, M_DD_22 )
+    call AssociateHost ( D_M_DD_33, M_DD_33 )
+    call AssociateHost ( D_M_UU_22, M_UU_22 )
+    call AssociateHost ( D_M_UU_33, M_UU_33 )
+    call AssociateHost ( D_R, R )
+    call AssociateHost ( D_Th, Th )
+
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+    !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, Sin_Th )
+    do iV = oValue + 1, oValue + nValues
+
+      select case ( nDimensions )
+      case ( 1 )
+        Sin_Th  =  1.0_KDR
+      case ( 2 )
+        Sin_Th  =  sin ( Th ( iV ) )
+      case ( 3 )
+        Sin_Th  =  sin ( Th ( iV ) )
+      end select
+
+      M_DD_22 ( iV )  =  R ( iV ) ** 2
+      M_DD_33 ( iV )  =  ( R ( iV )  *  Sin_Th ) ** 2
+      if ( R ( iV )  *  Sin_Th  >  0.0_KDR ) then
+        M_UU_22 ( iV )  =  R ( iV ) ** ( -2 )
+        M_UU_33 ( iV )  =  ( R ( iV )  *  Sin_Th ) ** ( -2 )
+      else
+        M_UU_22 ( iV )  =  0.0_KDR
+        M_UU_33 ( iV )  =  0.0_KDR
+      end if
+
+    end do
+    !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+    
+    call DisassociateHost ( Th )
+    call DisassociateHost ( R )
+    call DisassociateHost ( M_UU_33 )
+    call DisassociateHost ( M_UU_22 )
+    call DisassociateHost ( M_DD_33 )
+    call DisassociateHost ( M_DD_22 )
+
+  end subroutine SetMetricSphericalDevice
 
 
-  subroutine ComputeEdges ( X, dX_L, X_I )
+  subroutine ComputeEdgesHost ( X, dX_L, X_I )
 
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       X, &
@@ -817,13 +1061,49 @@ contains
 
     nV = size ( X )
 
-    !$OMP parallel do private ( iV )
+    !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV ) 
     do iV = 1, nV
       X_I ( iV )  =  X ( iV )  -  dX_L ( iV )
     end do
     !$OMP end parallel do
     
-  end subroutine ComputeEdges
+  end subroutine ComputeEdgesHost
+
+  
+  subroutine ComputeEdgesDevice ( X, dX_L, D_X, D_dX_L, D_X_I, X_I )
+
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      X, &
+      dX_L
+    type ( c_ptr ), intent ( in ) :: &
+      D_X, &
+      D_dX_L, &
+      D_X_I
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      X_I
+
+    integer ( KDI ) :: &
+      iV, &
+      nV
+      
+    call AssociateHost ( D_X, X )
+    call AssociateHost ( D_dX_L, dX_L )
+    call AssociateHost ( D_X_I, X_I )
+
+    nV = size ( X )
+
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do private ( iV ) &
+    !$OMP& schedule ( OMP_SCHEDULE )
+    do iV = 1, nV
+      X_I ( iV )  =  X ( iV )  -  dX_L ( iV )
+    end do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    
+    call DisassociateHost ( X_I )
+    call DisassociateHost ( dX_L )
+    call DisassociateHost ( X )
+    
+  end subroutine ComputeEdgesDevice
 
 
 end module GeometryFlat_Form
