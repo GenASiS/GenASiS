@@ -57,6 +57,8 @@ module NeutrinoMoments_G__Form
       InitializeBasics, &
       SetUnits, &
       ComputeConservedNumber, &
+      ComputeComovingNumber, &
+      ComputeRawFluxesKernel, &
       EvaluateZeroEta
 
 contains
@@ -751,6 +753,75 @@ call Show ( Eta_ED, '>>> Falling back to Eta_ED', CONSOLE % ERROR )
     !$OMP end parallel do
 
   end subroutine ComputeConservedNumber
+
+
+  subroutine ComputeComovingNumber &
+               ( N, D, H_1, H_2, H_3, E_Ave, M_DD_22, M_DD_33, V_1, V_2, V_3 )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      N
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      D
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      H_1, H_2, H_3, &
+      E_Ave, &
+      M_DD_22, M_DD_33, &
+      V_1, V_2, V_3
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+
+    nValues = size ( N )
+
+    !$OMP parallel do private ( iV )
+    do iV = 1, nValues
+      if ( D ( iV )  >  0.0_KDR ) then
+        N ( iV )  =  D ( iV )
+        if ( E_Ave ( iV ) > 0.0_KDR ) &
+          N ( iV )  =  N ( iV )  &
+                       -  (                       V_1 ( iV )  *  H_1 ( iV )  &
+                            +  M_DD_22 ( iV )  *  V_2 ( iV )  *  H_2 ( iV )  &
+                            +  M_DD_33 ( iV )  *  V_3 ( iV )  *  H_3 ( iV ) ) &
+                          /  E_Ave ( iV )
+      else
+        N ( iV )  =  0.0_KDR
+        D ( iV )  =  0.0_KDR
+      end if
+    end do !-- iV
+    !$OMP end parallel do
+
+  end subroutine ComputeComovingNumber
+
+
+  subroutine ComputeRawFluxesKernel ( F_D, J, H_Dim, N, V_Dim )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      F_D
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      J, &
+      H_Dim, &
+      N, &
+      V_Dim
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+    real ( KDR ) :: &
+      ff_D
+
+    nValues = size ( F_D )
+
+    !$OMP parallel do private ( iV ) 
+    do iV = 1, nValues
+      F_D ( iV )  =  N ( iV )  *  V_Dim ( iV )
+      if ( J ( iV ) > 0.0_KDR ) &
+        F_D ( iV )  =  F_D ( iV )  &
+                       +  ( H_Dim ( iV )  /  J ( iV ) )  *  N ( iV )
+    end do !-- iV
+    !$OMP end parallel do
+
+  end subroutine ComputeRawFluxesKernel
 
 
   subroutine EvaluateZeroEta ( Parameters, Input, Result )
