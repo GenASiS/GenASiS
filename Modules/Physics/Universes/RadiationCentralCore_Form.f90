@@ -530,18 +530,13 @@ contains
 
     select type ( I )
     class is ( Integrator_C_1D_C_PS_Template )
-
-    !-- Fluid advection and Radiation streaming
-
-    call I % ComputeTimeStepLocalTemplate &
-           ( TimeStepCandidate ( 1 + 1  :  1  +  I % N_CURRENTS_1D ) )
-
-    !-- Interactions
-
-    oC  =  1  +  1  +  I % N_CURRENTS_1D
-    call ComputeTimeStepInteractions &
-           ( I, TimeStepCandidate ( oC + 1  :  oC  +  I % N_CURRENTS_1D ) )
-
+      !-- Fluid advection and Radiation streaming
+      call I % ComputeTimeStepLocalTemplate &
+             ( TimeStepCandidate ( 1 + 1  :  1  +  I % N_CURRENTS_1D ) )
+      !-- Interactions
+      oC  =  1  +  1  +  I % N_CURRENTS_1D
+      call ComputeTimeStepInteractions &
+             ( I, TimeStepCandidate ( oC + 1  :  oC  +  I % N_CURRENTS_1D ) )
     end select !-- I
 
   end subroutine ComputeTimeStepLocal
