@@ -5,7 +5,7 @@ module WoosleyHeger_07__Template
   implicit none
   private
 
-  type, public, extends ( UniverseTemplate ), abstract :: &
+  type, public, extends ( RadiationCentralCoreForm ), abstract :: &
     WoosleyHeger_07_Template
   contains
     procedure, public, pass :: &
@@ -55,7 +55,7 @@ contains
     call PrepareInterpolation ( SI )
 
     select type ( I => WH % Integrator )
-    class is ( Integrator_C_PS_Template )
+    class is ( Integrator_C_PS_Form )
 
     select type ( FA => I % Current_ASC )
     class is ( Fluid_ASC_Form )
@@ -65,7 +65,7 @@ contains
     class is ( Atlas_SC_Form )
     G => PS % Geometry ( )
 
-    select type ( C => PS % Chart )
+    select type ( PSC => PS % Chart )
     class is ( Chart_SLD_Form )
 
     associate &
@@ -80,7 +80,7 @@ contains
 
     do iV = 1, size ( N )
 
-      if ( .not. C % IsProperCell ( iV ) ) &
+      if ( .not. PSC % IsProperCell ( iV ) ) &
         cycle
 
       call SI ( iDENSITY_SI ) % Evaluate ( R ( iV ), MD ) 
@@ -97,7 +97,7 @@ contains
     V_2 = 0.0_KDR
     V_3 = 0.0_KDR
 
-    call C % ExchangeGhostData ( F )
+    call PSC % ExchangeGhostData ( F )
 
     do iD = 1, PS % nDimensions
       associate &
@@ -111,7 +111,7 @@ contains
     call F % ComputeFromTemperature ( F % Value, G, G % Value )
 
     end associate !-- N, etc.
-    end select !-- C
+    end select !-- PSC
     end select !-- PS
     end select !-- FA
     end select !-- I
@@ -148,6 +148,8 @@ contains
       Filename
     type ( TableStreamForm ) :: &
       TS
+
+    call Show ( 'Preparing Interpolation' )
 
     Path = '../Parameters/'
     Filename = 'WH07_S12_08.d.stripped'
