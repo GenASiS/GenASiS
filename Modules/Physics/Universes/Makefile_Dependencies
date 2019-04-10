@@ -79,6 +79,8 @@ RadiationCentralCore_Form.o: \
   Basics.o \
   Mathematics.o \
   StressEnergies.o \
+  ComputeGravity_Command.o \
+  ApplyGravity_F__Command.o \
   FluidCentralCore_Form.o \
   RadiationCentralCore_Form.f90
 

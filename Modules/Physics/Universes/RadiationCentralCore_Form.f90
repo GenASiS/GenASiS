@@ -3,6 +3,8 @@ module RadiationCentralCore_Form
   use Basics
   use Mathematics
   use StressEnergies
+  use ComputeGravity_Command
+  use ApplyGravity_F__Command
   use FluidCentralCore_Form
 
   implicit none
@@ -481,6 +483,8 @@ contains
 
       end select !-- S_1D
 
+      I % PrepareStep => PrepareStep
+
     end select !-- I
 
 
@@ -493,10 +497,9 @@ contains
       select type ( S => I % Step )
       class is ( Step_RK2_C_ASC_Form )
         call S % Initialize ( I, I % Current_ASC, 'Fluid' )
+        S % ComputeConstraints % Pointer  =>  ComputeGravity
         S % ApplySources % Pointer  =>  ApplySources_Fluid
       end select !-- S
-
-!    I % PrepareStep => PrepareStep
 
     end select !-- I
 
