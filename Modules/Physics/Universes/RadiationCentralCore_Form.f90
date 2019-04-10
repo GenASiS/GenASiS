@@ -9,8 +9,14 @@ module RadiationCentralCore_Form
   private
 
   type, public, extends ( FluidCentralCoreForm ) :: RadiationCentralCoreForm
+    real ( KDR ) :: &
+      InteractionFactor
     character ( LDL ) :: &
       MomentsType = ''
+    class ( Interactions_ASC_Template ), allocatable :: &
+      Interactions_ASC
+    class ( Interactions_BSLL_ASC_CSLD_Template ), allocatable :: &
+      Interactions_BSLL_ASC_CSLD
     class ( Relaxation_RM_ASC_Form ), allocatable :: &
       Relaxation_RM_ASC
     class ( Relaxation_RM_BSLL_ASC_CSLD_Form ), allocatable :: &
@@ -35,14 +41,14 @@ module RadiationCentralCore_Form
   end type RadiationCentralCoreForm
 
     private :: &
-!      ComputeTimeStepLocal, &
+      ComputeTimeStepLocal, &
       PrepareStep, &
       IntegrateSources, &
       ApplySources_Radiation, &
       ApplySources_Fluid
 
       private :: &
-!        ComputeTimeStepInteractions, &
+        ComputeTimeStepInteractions, &
         ComputeFluidSource_G_S_Radiation_Kernel, &
         ComputeFluidSource_DP_Radiation_Kernel, &
         ApplySources_Fluid_Kernel
@@ -119,6 +125,22 @@ contains
     call RCC % InitializeSteps &
            ( Name )
 
+    select type ( I => RCC % Integrator )
+    class is ( Integrator_C_PS_Form )
+      call I % Initialize &
+             ( RCC, Name, TimeUnitOption = RCC % Units % Time, &
+               FinishTimeOption = FinishTimeOption, &
+               CourantFactorOption = CourantFactorOption, &
+               nWriteOption = nWriteOption )
+      I % ComputeTimeStepLocal => ComputeTimeStepLocal
+    end select !-- I
+
+    RCC % InteractionFactor  =  1.0e-2_KDR
+    call PROGRAM_HEADER % GetParameter &
+           ( RCC % InteractionFactor, 'InteractionFactor' )
+    call Show ( RCC % InteractionFactor, 'InteractionFactor', &
+                RCC % IGNORABILITY )
+
   end subroutine Initialize_RCC
 
 
@@ -131,6 +153,11 @@ contains
       deallocate ( RCC % Relaxation_RM_BSLL_ASC_CSLD )
     if ( allocated ( RCC % Relaxation_RM_ASC ) ) &
       deallocate ( RCC % Relaxation_RM_ASC )
+
+    if ( allocated ( RCC % Interactions_BSLL_ASC_CSLD ) ) &
+      deallocate ( RCC % Interactions_BSLL_ASC_CSLD )
+    if ( allocated ( RCC % Interactions_ASC ) ) &
+      deallocate ( RCC % Interactions_ASC )
 
   end subroutine Finalize
 
@@ -161,28 +188,30 @@ contains
     end select !-- MomentsType
 
     select type ( I => RCC % Integrator )
+    type is ( Integrator_C_PS_Form )
+      allocate ( I % TimeStepLabel ( 1 + 1 ) )
     class is ( Integrator_C_1D_C_PS_Template )
-
       I % N_CURRENTS_1D  =  size ( RadiationName )
       allocate ( I % TimeStepLabel &
-                   ( I % N_CURRENTS_1D  +  1  +  1  +  I % N_CURRENTS_1D ) )
+                   ( 1  +  1  +  I % N_CURRENTS_1D  +  I % N_CURRENTS_1D ) )
+    end select !-- I
 
+    select type ( I => RCC % Integrator )
+    class is ( Integrator_C_PS_Form )
+      I % TimeStepLabel ( 1 )      =  'Gravity'
+      I % TimeStepLabel ( 1 + 1 )  =  'Fluid Advection'
+    end select !-- I
+
+    select type ( I => RCC % Integrator )
+    class is ( Integrator_C_1D_C_PS_Template )
       do iC = 1, I % N_CURRENTS_1D
-        I % TimeStepLabel ( iC )  &
+        I % TimeStepLabel ( 1 + 1 + iC )  &
           =  trim ( RadiationName ( iC ) ) // ' Streaming'
       end do !-- iC
-
-      I % TimeStepLabel ( I % N_CURRENTS_1D  +  1 )  &
-          =  'Fluid Advection'
-
-      I % TimeStepLabel ( I % N_CURRENTS_1D  +  1  +  1 )  &
-          =  'Gravity'
-
       do iC = 1, I % N_CURRENTS_1D
-        I % TimeStepLabel ( I % N_CURRENTS_1D  +  1  +  iC )  &
+        I % TimeStepLabel ( 1  +  1  +  I % N_CURRENTS_1D  +  iC )  &
           =  trim ( RadiationName ( iC ) ) // ' Interactions'
       end do !-- iC
-
     end select !-- I
 
     select type ( I => RCC % Integrator )
@@ -474,6 +503,50 @@ contains
   end subroutine InitializeSteps
 
 
+  subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
+
+    class ( IntegratorTemplate ), intent ( inout ), target :: &
+      I
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      TimeStepCandidate
+
+    integer ( KDI ) :: &
+      oC  !-- oCandidate
+
+    TimeStepCandidate  =  huge ( 1.0_KDR )
+
+    !-- Gravity
+    select type ( RCC => I % Universe )
+    class is ( RadiationCentralCoreForm )
+      call RCC % ComputeTimeStep_G_ASC ( TimeStepCandidate ( 1 ) )
+    end select !-- I
+
+    !-- Fluid advection, no radiation
+    select type ( I )
+    type is ( Integrator_C_PS_Form )
+      call I % ComputeTimeStep_C_ASC &
+             ( TimeStepCandidate ( 1 + 1 ), I % Current_ASC )
+    end select !-- I
+
+    select type ( I )
+    class is ( Integrator_C_1D_C_PS_Template )
+
+    !-- Fluid advection and Radiation streaming
+
+    call I % ComputeTimeStepLocalTemplate &
+           ( TimeStepCandidate ( 1 + 1  :  1  +  I % N_CURRENTS_1D ) )
+
+    !-- Interactions
+
+    oC  =  1  +  1  +  I % N_CURRENTS_1D
+    call ComputeTimeStepInteractions &
+           ( I, TimeStepCandidate ( oC + 1  :  oC  +  I % N_CURRENTS_1D ) )
+
+    end select !-- I
+
+  end subroutine ComputeTimeStepLocal
+
+
   subroutine PrepareStep ( I )
 
     class ( Integrator_C_1D_C_PS_Template ), intent ( inout ) :: &
@@ -748,6 +821,50 @@ contains
     end select !-- I
 
   end subroutine ApplySources_Fluid
+
+
+  subroutine ComputeTimeStepInteractions ( I, TimeStepCandidate )
+
+    class ( Integrator_C_1D_C_PS_Template ), intent ( inout ) :: &
+      I
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      TimeStepCandidate
+
+    integer ( KDI ) :: &
+      iC     !-- iCurrent
+
+    select type ( RCC => I % Universe )
+    class is ( RadiationCentralCoreForm )
+
+    select type ( I )
+    class is ( Integrator_C_1D_PS_C_PS_Form )  !-- Grey
+
+      associate ( IA => RCC % Interactions_ASC )  
+      do iC = 1, I % N_CURRENTS_1D  
+        associate ( RMA => I % Current_ASC_1D ( iC ) % Element )
+        call IA % ComputeTimeScale ( RMA, TimeStepCandidate ( iC ) )
+        TimeStepCandidate ( iC )  &
+          =  RCC % InteractionFactor  *  TimeStepCandidate ( iC )
+        end associate !-- RA
+      end do !-- iC
+      end associate !-- IA
+
+    class is ( Integrator_C_1D_MS_C_PS_Form )  !-- Spectral
+
+      associate ( IB => RCC % Interactions_BSLL_ASC_CSLD )
+      do iC = 1, I % N_CURRENTS_1D  
+        associate ( RMB => I % Current_BSLL_ASC_CSLD_1D ( iC ) % Element )
+        call IB % ComputeTimeScale ( RMB, TimeStepCandidate ( iC ) )
+        TimeStepCandidate ( iC )  &
+          =  RCC % InteractionFactor  *  TimeStepCandidate ( iC )
+        end associate !-- RCC
+      end do !-- iC
+      end associate !-- IB
+
+    end select !-- I
+    end select !-- RCC
+
+  end subroutine ComputeTimeStepInteractions
 
 
   subroutine ComputeFluidSource_G_S_Radiation_Kernel &

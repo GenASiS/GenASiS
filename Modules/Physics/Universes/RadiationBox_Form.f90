@@ -153,15 +153,15 @@ contains
     type ( RadiationBoxForm ), intent ( inout ) :: &
       RB
 
-    if ( allocated ( RB % Interactions_BSLL_ASC_CSLD ) ) &
-      deallocate ( RB % Interactions_BSLL_ASC_CSLD )
-    if ( allocated ( RB % Interactions_ASC ) ) &
-      deallocate ( RB % Interactions_ASC )
-
     if ( allocated ( RB % Relaxation_RM_BSLL_ASC_CSLD ) ) &
       deallocate ( RB % Relaxation_RM_BSLL_ASC_CSLD )
     if ( allocated ( RB % Relaxation_RM_ASC ) ) &
       deallocate ( RB % Relaxation_RM_ASC )
+
+    if ( allocated ( RB % Interactions_BSLL_ASC_CSLD ) ) &
+      deallocate ( RB % Interactions_BSLL_ASC_CSLD )
+    if ( allocated ( RB % Interactions_ASC ) ) &
+      deallocate ( RB % Interactions_ASC )
 
   end subroutine Finalize
 
