@@ -10,8 +10,8 @@ module WoosleyHeger_07_D__Form
 
   type, public, extends ( WoosleyHeger_07_A_Form ) :: WoosleyHeger_07_D_Form
   contains
-    procedure, public, pass :: &
-      Initialize
+    procedure, private, pass :: &
+      Initialize_WH
   end type WoosleyHeger_07_D_Form
 
     private :: &
@@ -20,7 +20,7 @@ module WoosleyHeger_07_D__Form
 contains
 
 
-  subroutine Initialize ( WH, Name )
+  subroutine Initialize_WH ( WH, Name )
 
     class ( WoosleyHeger_07_D_Form ), intent ( inout ), target :: &
       WH
@@ -32,18 +32,17 @@ contains
 
     call WH % WoosleyHeger_07_A_Form % Initialize ( Name )
 
-    select type ( FCC => WH % Integrator )
-    type is ( FluidCentralCoreForm )
+    select type ( I => WH % Integrator )
+    class is ( Integrator_C_PS_Form )
 
-    select type ( S => FCC % Step )
+    select type ( S => I % Step )
     class is ( Step_RK2_C_ASC_Form )
-
-    S % ApplySources % Pointer => ApplySources
-
+      S % ApplySources % Pointer => ApplySources
     end select !-- S
-    end select !-- FCC
 
-  end subroutine Initialize
+    end select !-- I
+
+  end subroutine Initialize_WH
 
 
   subroutine ApplySources &

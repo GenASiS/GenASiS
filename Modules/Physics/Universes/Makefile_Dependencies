@@ -87,6 +87,7 @@ RadiationCentralCore_Form.o: \
 Universes.o: \
   ComputeGravity_Command.o \
   ApplyGravity_F__Command.o \
+  ApplyDeleptonization_F__Command.o \
   Universe_Template.o \
   FluidBox_Form.o \
   FluidSymmetricCurvilinear_Form.o \
@@ -96,7 +97,6 @@ Universes.o: \
   RadiationBox_Form.o \
   RadiationCentralCore_Form.o \
   Universes.f90
-#  ApplyDeleptonization_F__Command.o \
 
 Universes.a: $(UNIVERSES)
 	ar r Universes.a $(UNIVERSES)
