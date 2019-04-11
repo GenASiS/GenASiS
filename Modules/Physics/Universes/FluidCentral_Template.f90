@@ -57,7 +57,7 @@ module FluidCentral_Template
     procedure, public, pass :: &
       InitializeDiagnostics
     procedure, public, pass :: &
-      SetPointersCentral
+      SetCentralTemplate
     procedure, public, pass :: &
       SetCoarseningTemplate
     procedure ( SC ), public, pass, deferred :: &
@@ -182,11 +182,11 @@ contains
     call FC % InitializeDiagnostics &
            ( )
 
+    call FC % SetCentralTemplate ( )
+
     FinishTime  =  1.0_KDR  *  FC % Units % Time
     if ( present ( FinishTimeOption ) ) &
       FinishTime = FinishTimeOption
-
-    call FC % SetPointersCentral ( )
 
     select type ( I => FC % Integrator )
     class is ( Integrator_C_PS_Form )
@@ -198,14 +198,6 @@ contains
                nWriteOption = nWriteOption )
 
     end select !-- I
-
-    call Show ( FC % Dimensionless, 'Dimensionless', FC % IGNORABILITY )
-    call Show ( FC % UseCoarsening, 'UseCoarsening', FC % IGNORABILITY )
-    call Show ( FC % RadiusPolarMomentum, FC % Units % Coordinate_PS ( 1 ), &
-                'RadiusPolarMomentum', FC % IGNORABILITY )
-
-    if ( FC % UseCoarsening ) &
-      call FC % SetCoarsening ( )
 
   end subroutine InitializeTemplate_FC
 
@@ -539,7 +531,7 @@ contains
   end subroutine InitializeDiagnostics
 
 
-  subroutine SetPointersCentral ( FC )
+  subroutine SetCentralTemplate ( FC )
 
     class ( FluidCentralTemplate ), intent ( inout ) :: &
       FC
@@ -553,7 +545,16 @@ contains
 
     end select !-- I
 
-  end subroutine SetPointersCentral
+    call Show ( 'FluidCentral parameters', FC % IGNORABILITY )
+    call Show ( FC % Dimensionless, 'Dimensionless', FC % IGNORABILITY )
+    call Show ( FC % UseCoarsening, 'UseCoarsening', FC % IGNORABILITY )
+    call Show ( FC % RadiusPolarMomentum, FC % Units % Coordinate_PS ( 1 ), &
+                'RadiusPolarMomentum', FC % IGNORABILITY )
+
+    if ( FC % UseCoarsening ) &
+      call FC % SetCoarsening ( )
+
+  end subroutine SetCentralTemplate
 
 
   subroutine SetCoarseningTemplate ( FC, iAngular )

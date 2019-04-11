@@ -205,7 +205,8 @@ contains
 
     call I % OpenGridImageStreams ( )
 
-    I % SetWriteTimeInterval => SetWriteTimeInterval
+    if ( .not. associated ( I % SetWriteTimeInterval ) ) &
+      I % SetWriteTimeInterval => SetWriteTimeInterval
 
   end subroutine InitializeTemplate
 

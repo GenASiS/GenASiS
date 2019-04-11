@@ -111,7 +111,8 @@ contains
            ( U, Name, TimeUnitOption, FinishTimeOption, nWriteOption )
     call Show ( I % CourantFactor, 'CourantFactor', I % IGNORABILITY )
 
-    I % ComputeTimeStepLocal  =>  ComputeTimeStepLocal
+    if ( .not. associated ( I % ComputeTimeStepLocal ) ) &
+      I % ComputeTimeStepLocal  =>  ComputeTimeStepLocal
 
     if ( allocated ( I % Current_ASC ) ) then
       allocate ( I % TimeSeries )

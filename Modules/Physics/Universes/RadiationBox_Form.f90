@@ -131,12 +131,12 @@ contains
 
     select type ( I => RB % Integrator )
     class is ( Integrator_C_1D_C_PS_Template )
+      I % ComputeTimeStepLocal => ComputeTimeStepLocal
       call I % Initialize &
              ( RB, Name, TimeUnitOption = RB % Units % Time, &
                FinishTimeOption = FinishTimeOption, &
                CourantFactorOption = CourantFactorOption, &
                nWriteOption = nWriteOption )
-      I % ComputeTimeStepLocal => ComputeTimeStepLocal
     end select !-- I
 
     RB % InteractionFactor  =  1.0e-2_KDR

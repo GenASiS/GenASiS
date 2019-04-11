@@ -132,8 +132,8 @@ contains
     call RCC % InitializeDiagnostics &
            ( )
 
-    call RCC % SetPointersCentral ( )
-    call RCC % SetPointersCore ( GeometryType, GravityFactorOption )
+    call RCC % SetCentralTemplate ( )
+    call RCC % SetCentralCore ( GeometryType, GravityFactorOption )
 
     FinishTime  =  1.0_KDR  *  RCC % Units % Time
     if ( present ( FinishTimeOption ) ) &
@@ -141,27 +141,20 @@ contains
 
     select type ( I => RCC % Integrator )
     class is ( Integrator_C_PS_Form )
+      I % ComputeTimeStepLocal => ComputeTimeStepLocal
       call I % Initialize &
              ( RCC, Name, TimeUnitOption = RCC % Units % Time, &
                FinishTimeOption = FinishTime, &
                CourantFactorOption = CourantFactorOption, &
                nWriteOption = nWriteOption )
-      I % ComputeTimeStepLocal => ComputeTimeStepLocal
     end select !-- I
 
+    call Show ( 'RadiationCentralCore parameter', RCC % IGNORABILITY )
     RCC % InteractionFactor  =  1.0e-2_KDR
     call PROGRAM_HEADER % GetParameter &
            ( RCC % InteractionFactor, 'InteractionFactor' )
     call Show ( RCC % InteractionFactor, 'InteractionFactor', &
                 RCC % IGNORABILITY )
-
-    call Show ( RCC % Dimensionless, 'Dimensionless', RCC % IGNORABILITY )
-    call Show ( RCC % UseCoarsening, 'UseCoarsening', RCC % IGNORABILITY )
-    call Show ( RCC % RadiusPolarMomentum, RCC % Units % Coordinate_PS ( 1 ), &
-                'RadiusPolarMomentum', RCC % IGNORABILITY )
-
-    if ( RCC % UseCoarsening ) &
-      call RCC % SetCoarsening ( )
 
   end subroutine Initialize_RCC
 

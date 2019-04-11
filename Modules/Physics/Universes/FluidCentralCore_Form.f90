@@ -24,7 +24,7 @@ module FluidCentralCore_Form
     procedure, private, pass :: &
       InitializeGeometry
     procedure, public, pass :: &
-      SetPointersCore
+      SetCentralCore
     procedure, public, pass :: &
       SetCoarsening
     procedure, public, nopass :: &
@@ -95,7 +95,7 @@ contains
              nWriteOption = nWriteOption, &
              nCellsPolarOption = nCellsPolarOption )
 
-    call FCC % SetPointersCore ( GeometryType, GravityFactorOption )
+    call FCC % SetCentralCore ( GeometryType, GravityFactorOption )
 
   end subroutine Initialize_FCC
 
@@ -181,7 +181,7 @@ contains
   end subroutine InitializeGeometry
 
 
-  subroutine SetPointersCore ( FCC, GeometryType, GravityFactorOption )
+  subroutine SetCentralCore ( FCC, GeometryType, GravityFactorOption )
 
     class ( FluidCentralCoreForm ), intent ( inout ) :: &
       FCC
@@ -203,6 +203,7 @@ contains
 
     end select !-- I
 
+    call Show ( 'FluidCentralCore parameter' )
     if ( any ( trim ( GeometryType ) &
                  == [ 'NEWTONIAN       ', 'NEWTONIAN_STRESS' ] ) ) &
     then
@@ -211,10 +212,10 @@ contains
         FCC % GravityFactor = GravityFactorOption
       call PROGRAM_HEADER % GetParameter &
              ( FCC % GravityFactor, 'GravityFactor' )
-      call Show ( FCC % GravityFactor, 'GravityFactor' )
+      call Show ( FCC % GravityFactor, 'GravityFactor', FCC % IGNORABILITY )
     end if
 
-  end subroutine SetPointersCore
+  end subroutine SetCentralCore
 
 
   impure elemental subroutine Finalize ( FCC )
