@@ -10,14 +10,35 @@ module WoosleyHeger_07_A__Form
 
   type, public, extends ( WoosleyHeger_07_Template ) :: WoosleyHeger_07_A_Form
   contains
-    procedure, public, pass :: &
-      Initialize
+    procedure, private, pass :: &
+      Initialize_WH
+    generic, public :: &
+      Initialize => Initialize_WH
   end type WoosleyHeger_07_A_Form
+
+    private :: &
+      InitializeRadiationCentralCore
 
 contains
 
 
-  subroutine Initialize ( WH, Name )
+  subroutine Initialize_WH ( WH, Name )
+
+    class ( WoosleyHeger_07_A_Form ), intent ( inout ), target :: &
+      WH
+    character ( * ), intent ( in )  :: &
+      Name
+
+    if ( WH % Type == '' ) &
+      WH % Type = 'a WoosleyHeger_07_A'
+
+    call InitializeRadiationCentralCore ( WH, Name )
+    call WH % SetFluid ( )
+
+  end subroutine Initialize_WH
+
+
+  subroutine InitializeRadiationCentralCore ( WH, Name )
 
     class ( WoosleyHeger_07_A_Form ), intent ( inout ), target :: &
       WH
@@ -27,34 +48,16 @@ contains
     character ( LDL ) :: &
       GeometryType
 
-    if ( WH % Type == '' ) &
-      WH % Type = 'a WoosleyHeger_07_A'
-
-    call WH % InitializeTemplate ( Name )
-
-    !-- Integrator
-
     GeometryType = 'NEWTONIAN'
     call PROGRAM_HEADER % GetParameter ( GeometryType, 'GeometryType' )
 
-    allocate ( FluidCentralCoreForm :: WH % Integrator )
-    select type ( FCC => WH % Integrator )
-    type is ( FluidCentralCoreForm )
-    call FCC % Initialize &
-           ( Name, FluidType = 'HEAVY_NUCLEUS', &
-             GeometryType = GeometryType, &
-             ShockThresholdOption = 1.0_KDR, &
-             nWriteOption = 30 )
+    call WH % Initialize &
+           ( RadiationName = [ 'None' ], RadiationType = [ 'NONE' ], &
+             MomentsType = 'NONE', FluidType = 'HEAVY_NUCLEUS', &
+             GeometryType = GeometryType, Name = Name, &
+             ShockThresholdOption = 1.0_KDR, nWriteOption = 30 )
 
-    !-- Initial Conditions
-
-    call WH % SetFluid ( )
-
-    !-- Cleanup
-
-    end select !-- FCC
-
-  end subroutine Initialize
+  end subroutine InitializeRadiationCentralCore
 
 
 end module WoosleyHeger_07_A__Form
