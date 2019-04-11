@@ -21,7 +21,7 @@ module FluidCentralExcision_Form
       InitializeAtlas
     procedure, private, pass :: &
       InitializeGeometry
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       SetCoarsening
   end type FluidCentralExcisionForm
 

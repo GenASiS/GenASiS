@@ -23,7 +23,9 @@ module FluidCentralCore_Form
       InitializeAtlas
     procedure, private, pass :: &
       InitializeGeometry
-    procedure, private, pass :: &
+    procedure, public, pass :: &
+      SetPointersCore
+    procedure, public, pass :: &
       SetCoarsening
     procedure, public, nopass :: &
       CoarsenSingularities
@@ -93,29 +95,7 @@ contains
              nWriteOption = nWriteOption, &
              nCellsPolarOption = nCellsPolarOption )
 
-    select type ( I => FCC % Integrator )
-    class is ( Integrator_C_PS_Form )
-
-    I % SetWriteTimeInterval => SetWriteTimeInterval
-    I % ComputeTimeStepLocal => ComputeTimeStepLocal
-
-    select type ( S => I % Step )
-    class is ( Step_RK_C_ASC_Template )
-      S % CoarsenSingularities => CoarsenSingularities
-    end select !-- S
-
-    end select !-- I
-
-    if ( any ( trim ( GeometryType ) &
-                 == [ 'NEWTONIAN       ', 'NEWTONIAN_STRESS' ] ) ) &
-    then
-      FCC % GravityFactor = 0.7_KDR
-      if ( present ( GravityFactorOption ) ) &
-        FCC % GravityFactor = GravityFactorOption
-      call PROGRAM_HEADER % GetParameter &
-             ( FCC % GravityFactor, 'GravityFactor' )
-      call Show ( FCC % GravityFactor, 'GravityFactor' )
-    end if
+    call FCC % SetPointersCore ( GeometryType, GravityFactorOption )
 
   end subroutine Initialize_FCC
 
@@ -199,6 +179,42 @@ contains
     end if !-- Dimensionless
 
   end subroutine InitializeGeometry
+
+
+  subroutine SetPointersCore ( FCC, GeometryType, GravityFactorOption )
+
+    class ( FluidCentralCoreForm ), intent ( inout ) :: &
+      FCC
+    character ( * ), intent ( in ) :: &
+      GeometryType
+    real ( KDR ), intent ( in ), optional :: &
+      GravityFactorOption
+
+    select type ( I => FCC % Integrator )
+    class is ( Integrator_C_PS_Form )
+
+    I % SetWriteTimeInterval => SetWriteTimeInterval
+    I % ComputeTimeStepLocal => ComputeTimeStepLocal
+
+    select type ( S => I % Step )
+    class is ( Step_RK_C_ASC_Template )
+      S % CoarsenSingularities => CoarsenSingularities
+    end select !-- S
+
+    end select !-- I
+
+    if ( any ( trim ( GeometryType ) &
+                 == [ 'NEWTONIAN       ', 'NEWTONIAN_STRESS' ] ) ) &
+    then
+      FCC % GravityFactor = 0.7_KDR
+      if ( present ( GravityFactorOption ) ) &
+        FCC % GravityFactor = GravityFactorOption
+      call PROGRAM_HEADER % GetParameter &
+             ( FCC % GravityFactor, 'GravityFactor' )
+      call Show ( FCC % GravityFactor, 'GravityFactor' )
+    end if
+
+  end subroutine SetPointersCore
 
 
   impure elemental subroutine Finalize ( FCC )

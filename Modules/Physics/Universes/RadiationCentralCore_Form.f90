@@ -98,6 +98,9 @@ contains
       nCellsPolarOption, &
       nWriteOption
 
+    real ( KDR ) :: &
+      FinishTime
+
     if ( RCC % Type == '' ) &
       RCC % Type = 'a RadiationCentralCore'
     
@@ -126,12 +129,21 @@ contains
              ShockThresholdOption = ShockThresholdOption )
     call RCC % InitializeSteps &
            ( Name )
+    call RCC % InitializeDiagnostics &
+           ( )
+
+    call RCC % SetPointersCentral ( )
+    call RCC % SetPointersCore ( GeometryType, GravityFactorOption )
+
+    FinishTime  =  1.0_KDR  *  RCC % Units % Time
+    if ( present ( FinishTimeOption ) ) &
+      FinishTime = FinishTimeOption
 
     select type ( I => RCC % Integrator )
     class is ( Integrator_C_PS_Form )
       call I % Initialize &
              ( RCC, Name, TimeUnitOption = RCC % Units % Time, &
-               FinishTimeOption = FinishTimeOption, &
+               FinishTimeOption = FinishTime, &
                CourantFactorOption = CourantFactorOption, &
                nWriteOption = nWriteOption )
       I % ComputeTimeStepLocal => ComputeTimeStepLocal
@@ -142,6 +154,14 @@ contains
            ( RCC % InteractionFactor, 'InteractionFactor' )
     call Show ( RCC % InteractionFactor, 'InteractionFactor', &
                 RCC % IGNORABILITY )
+
+    call Show ( RCC % Dimensionless, 'Dimensionless', RCC % IGNORABILITY )
+    call Show ( RCC % UseCoarsening, 'UseCoarsening', RCC % IGNORABILITY )
+    call Show ( RCC % RadiusPolarMomentum, RCC % Units % Coordinate_PS ( 1 ), &
+                'RadiusPolarMomentum', RCC % IGNORABILITY )
+
+    if ( RCC % UseCoarsening ) &
+      call RCC % SetCoarsening ( )
 
   end subroutine Initialize_RCC
 

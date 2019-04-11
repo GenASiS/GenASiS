@@ -57,8 +57,10 @@ module FluidCentral_Template
     procedure, public, pass :: &
       InitializeDiagnostics
     procedure, public, pass :: &
+      SetPointersCentral
+    procedure, public, pass :: &
       SetCoarseningTemplate
-    procedure ( SC ), private, pass, deferred :: &
+    procedure ( SC ), public, pass, deferred :: &
       SetCoarsening
     procedure, public, pass :: &
       CoarsenSingularityTemplate
@@ -177,18 +179,17 @@ contains
              ShockThresholdOption = ShockThresholdOption )
     call FC % InitializeStep &
            ( Name ) 
-    call FC % InitializeDiagnostics ( )
+    call FC % InitializeDiagnostics &
+           ( )
 
     FinishTime  =  1.0_KDR  *  FC % Units % Time
     if ( present ( FinishTimeOption ) ) &
       FinishTime = FinishTimeOption
 
+    call FC % SetPointersCentral ( )
+
     select type ( I => FC % Integrator )
     class is ( Integrator_C_PS_Form )
-
-      I % OpenGridImageStreams  =>  OpenGridImageStreams
-      I % OpenManifoldStreams   =>  OpenManifoldStreams
-      I % Write                 =>  Write
 
       call I % Initialize &
              ( FC, Name, TimeUnitOption = FC % Units % Time, &
@@ -536,6 +537,23 @@ contains
     end select !-- I
 
   end subroutine InitializeDiagnostics
+
+
+  subroutine SetPointersCentral ( FC )
+
+    class ( FluidCentralTemplate ), intent ( inout ) :: &
+      FC
+
+    select type ( I => FC % Integrator )
+    class is ( Integrator_C_PS_Form )
+
+      I % OpenGridImageStreams  =>  OpenGridImageStreams
+      I % OpenManifoldStreams   =>  OpenManifoldStreams
+      I % Write                 =>  Write
+
+    end select !-- I
+
+  end subroutine SetPointersCentral
 
 
   subroutine SetCoarseningTemplate ( FC, iAngular )
