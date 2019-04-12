@@ -1253,15 +1253,14 @@ contains
   end subroutine DeallocateStorageDivergence
 
 
-  subroutine AllocateBoundaryFluence_CSL &
-               ( IncrementDivergence, CSL, nEquations, BF )
+  subroutine AllocateBoundaryFluence_CSL ( IncrementDivergence, C, CSL, BF )
 
     class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
       IncrementDivergence
+    class ( CurrentTemplate ), intent ( in ) :: &
+      C
     class ( Chart_SL_Template ), intent ( in ) :: &
       CSL
-    integer ( KDI ), intent ( in ) :: &
-      nEquations
     type ( Real_3D_Form ), dimension ( :, : ), intent ( out ), &
       allocatable :: &
         BF
@@ -1273,10 +1272,11 @@ contains
       nSurface
 
     associate &
-      ( C => CSL % Atlas % Connectivity, &
-        nDimensions => CSL % nDimensions )
+      ( Connectivity => CSL % Atlas % Connectivity, &
+        nDimensions => CSL % nDimensions, &
+        nEquations => C % N_CONSERVED )
 
-    allocate ( BF ( nEquations, C % nFaces ) )
+    allocate ( BF ( nEquations, Connectivity % nFaces ) )
 
     do iD = 1, nDimensions
       jD = mod ( iD, 3 ) + 1
@@ -1291,10 +1291,14 @@ contains
         nSurface ( kD ) = CSL % nCellsBrick ( kD )
       end select !-- CSL
       do iE = 1, nEquations
-        call BF ( iE, C % iaInner ( iD ) ) &
+        call BF ( iE, Connectivity % iaInner ( iD ) ) &
                % Initialize ( nSurface, ClearOption = .true. )
-        call BF ( iE, C % iaOuter ( iD ) ) &
+        call BF ( iE, Connectivity % iaOuter ( iD ) ) &
                % Initialize ( nSurface, ClearOption = .true. )
+        if ( C % AllocatedDevice ) then
+          call BF ( iE, Connectivity % iaInner ( iD ) ) % AllocateDevice ( )
+          call BF ( iE, Connectivity % iaOuter ( iD ) ) % AllocateDevice ( )
+        end if
       end do !-- iE
     end do !-- iD
     end associate !-- C, etc.
@@ -1338,21 +1342,25 @@ contains
   end subroutine DeallocateBoundaryFluence_CSL
 
   
-  subroutine AllocateMetricDerivatives ( S, ID, nValues )
+  subroutine AllocateMetricDerivatives ( S, ID, C )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
     class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
       ID
-    integer ( KDI ), intent ( in ) :: &
-      nValues
+    class ( CurrentTemplate ), intent ( in ) :: &
+      C
 
     if ( ( trim ( S % Chart % CoordinateSystem ) == 'SPHERICAL' &
            .or. trim ( S % Chart % CoordinateSystem ) == 'CYLINDRICAL' ) ) &
     then
       allocate ( S % dLogVolumeJacobian_dX ( 2 ) )
-      call S % dLogVolumeJacobian_dX ( 1 ) % Initialize ( nValues )
-      call S % dLogVolumeJacobian_dX ( 2 ) % Initialize ( nValues )
+      call S % dLogVolumeJacobian_dX ( 1 ) % Initialize ( C % nValues )
+      call S % dLogVolumeJacobian_dX ( 2 ) % Initialize ( C % nValues )
+      if ( C % AllocatedDevice ) then
+        call S % dLogVolumeJacobian_dX ( 1 ) % AllocateDevice ( )
+        call S % dLogVolumeJacobian_dX ( 2 ) % AllocateDevice ( )
+      end if
       call ID % SetMetricDerivatives ( S % dLogVolumeJacobian_dX )
     end if
 
@@ -1398,9 +1406,9 @@ contains
       call S % AllocateStorageDivergence ( SD, C, G )
 
       call S % AllocateBoundaryFluence &
-             ( ID, Chart, C % N_CONSERVED, S % BoundaryFluence_CSL )
+             ( ID, C, Chart, S % BoundaryFluence_CSL )
 
-      call S % AllocateMetricDerivatives ( ID, C % nValues )
+      call S % AllocateMetricDerivatives ( ID, C )
 
       end associate !-- ID, etc.
       nullify ( G )

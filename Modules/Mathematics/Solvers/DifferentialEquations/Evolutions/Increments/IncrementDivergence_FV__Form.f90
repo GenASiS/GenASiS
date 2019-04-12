@@ -1,10 +1,13 @@
 !-- IncrementDivergence_FV computes a first-order (in time) update due the
 !   divergence in a conservation law.
 
+#include "Preprocessor"
+
 module IncrementDivergence_FV__Form
 
   !-- IncrementDivergence_FiniteVolume_Form
-
+  
+  use iso_c_binding
   use Basics
   use Manifolds
   use Operations
@@ -89,8 +92,10 @@ module IncrementDivergence_FV__Form
         ComputeIncrement_CSL
 
         private :: &
-          ComputeReconstruction_CSL_Kernel, &
-          ComputeLogDerivative_CSL_Kernel, &
+          ComputeReconstruction_CSL_KernelHost, &
+          ComputeReconstruction_CSL_KernelDevice, &
+          ComputeLogDerivative_CSL_KernelHost, &
+          ComputeLogDerivative_CSL_KernelDevice, &
           ComputeIncrement_CSL_Kernel, &
           RecordBoundaryFluence_CSL
 
@@ -687,9 +692,22 @@ contains
              ( C_IL % Value ( :, iaR ( iF ) ), V_IL )
       call CSL % SetVariablePointer &
              ( C_IR % Value ( :, iaR ( iF ) ), V_IR )
-      call ComputeReconstruction_CSL_Kernel &
-             ( V, dVdX, dX_L, dX_R, iDimension, &
-               CSL % nGhostLayers ( iDimension ), V_IL, V_IR )
+      if ( C % AllocatedDevice ) then
+        call ComputeReconstruction_CSL_KernelDevice &
+               ( V, dVdX, dX_L, dX_R, iDimension, &
+                 CSL % nGhostLayers ( iDimension ), &
+                 C % D_Selected ( iaR ( iF ) ), &
+                 Grad % Output % D_Selected ( iF ), &
+                 G % D_Selected ( G % WIDTH_LEFT_U ( iDimension ) ), &
+                 G % D_Selected ( G % WIDTH_RIGHT_U ( iDimension ) ), &
+                 C_IL % D_Selected ( iaR ( iF ) ), &
+                 C_IR % D_Selected ( iaR ( iF ) ), &
+                 V_IL, V_IR )
+      else 
+        call ComputeReconstruction_CSL_KernelHost &
+               ( V, dVdX, dX_L, dX_R, iDimension, &
+                 CSL % nGhostLayers ( iDimension ), V_IL, V_IR )
+      end if
     end do !-- iF
     end associate !-- iaR
 
@@ -706,9 +724,18 @@ contains
                ( G % Value ( :, G % AREA_INNER_D ( iDimension ) ), A_I )
         call CSL % SetVariablePointer &
                ( I % dLogVolumeJacobian_dX ( iDimension ) % Value, dLVdX )
-        call ComputeLogDerivative_CSL_Kernel &
-               ( A_I, V, iDimension, CSL % nGhostLayers ( iDimension ), &
-                 dLVdX )
+        if ( G % AllocatedDevice ) then
+          call ComputeLogDerivative_CSL_KernelDevice &
+                 ( A_I, V, iDimension, CSL % nGhostLayers ( iDimension ), &
+                   G % D_Selected ( G % AREA_INNER_D ( iDimension ) ), &
+                   G % D_Selected ( G % VOLUME ), &
+                   I % dLogVolumeJacobian_dX ( iDimension ) % D_Value, &
+                   dLVdX )
+        else
+          call ComputeLogDerivative_CSL_KernelHost &
+                 ( A_I, V, iDimension, CSL % nGhostLayers ( iDimension ), &
+                   dLVdX )
+        end if
       end if
     end if
 
@@ -789,7 +816,7 @@ contains
   end subroutine ComputeIncrement_CSL
 
 
-  subroutine ComputeReconstruction_CSL_Kernel &
+  subroutine ComputeReconstruction_CSL_KernelHost &
                ( V, dVdX, dX_L, dX_R, iD, oV, V_IL, V_IR )
 
     real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
@@ -827,7 +854,8 @@ contains
     iaS = 0
     iaS ( iD ) = -1
       
-    !$OMP parallel do private ( iV, jV, kV, iaVS )
+    !$OMP  parallel do collapse ( 3 ) &
+    !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, jV, kV, iaVS )
     do kV = lV ( 3 ), uV ( 3 ) 
       do jV = lV ( 2 ), uV ( 2 )
         do iV = lV ( 1 ), uV ( 1 )
@@ -838,17 +866,7 @@ contains
             =  V ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) )  &
                +  dX_R ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ) &
                   *  dVdX ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) )
-
-        end do !-- iV
-      end do !-- jV
-    end do !-- kV
-    !$OMP end parallel do
-      
-    !$OMP parallel do private ( iV, jV, kV )
-    do kV = lV ( 3 ), uV ( 3 ) 
-      do jV = lV ( 2 ), uV ( 2 )
-        do iV = lV ( 1 ), uV ( 1 )
-
+                  
           V_IR ( iV, jV, kV )  &
             =  V ( iV, jV, kV )  &
                -  dX_L ( iV, jV, kV )  *  dVdX ( iV, jV, kV )
@@ -857,11 +875,94 @@ contains
       end do !-- jV
     end do !-- kV
     !$OMP end parallel do
+      
+  end subroutine ComputeReconstruction_CSL_KernelHost
+
+
+  subroutine ComputeReconstruction_CSL_KernelDevice &
+               ( V, dVdX, dX_L, dX_R, iD, oV, D_V, D_dVdX, D_dX_L, D_dX_R, &
+                 D_V_IL, D_V_IR, V_IL, V_IR )
+
+    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+      V, &
+      dVdX, &
+      dX_L, dX_R
+    integer ( KDI ), intent ( in ) :: &
+      iD, &
+      oV   
+    type ( c_ptr ), intent ( in ) :: &
+      D_V, &
+      D_dVdX, &
+      D_dX_L, D_dX_R, &
+      D_V_IL, D_V_IR
+    real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
+      V_IL, V_IR
     
-  end subroutine ComputeReconstruction_CSL_Kernel
+    integer ( KDI ) :: &
+      iV, jV, kV
+    integer ( KDI ), dimension ( 3 ) :: &
+      iaS, &
+      iaVS, &
+      lV, uV
+      
+    call AssociateHost ( D_V, V )
+    call AssociateHost ( D_dVdX, dVdX )
+    call AssociateHost ( D_dX_L, dX_L )
+    call AssociateHost ( D_dX_R, dX_R )
+    call AssociateHost ( D_V_IL, V_IL )
+    call AssociateHost ( D_V_IR, V_IR )
 
+!    V_IL  =  cshift ( V  +  0.5_KDR * dX * dVdX, shift = -1, dim = iD )
 
-  subroutine ComputeLogDerivative_CSL_Kernel ( A_I, V, iD, oV, dLVdX )
+!    V_IR  =  V  -  0.5_KDR * dX * dVdX
+
+    lV = 1
+    where ( shape ( V ) > 1 )
+      lV = oV + 1
+    end where
+    
+    uV = 1
+    where ( shape ( V ) > 1 )
+      uV = shape ( V ) - oV
+    end where
+    uV ( iD ) = size ( V, dim = iD ) - oV + 1 
+      
+    iaS = 0
+    iaS ( iD ) = -1
+      
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
+    !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, jV, kV, iaVS )
+    do kV = lV ( 3 ), uV ( 3 ) 
+      do jV = lV ( 2 ), uV ( 2 )
+        do iV = lV ( 1 ), uV ( 1 )
+
+          iaVS = [ iV, jV, kV ] + iaS
+
+          V_IL ( iV, jV, kV )  &
+            =  V ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) )  &
+               +  dX_R ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ) &
+                  *  dVdX ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) )
+          
+          V_IR ( iV, jV, kV )  &
+            =  V ( iV, jV, kV )  &
+               -  dX_L ( iV, jV, kV )  *  dVdX ( iV, jV, kV )
+
+        end do !-- iV
+      end do !-- jV
+    end do !-- kV
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
+      
+    call DisassociateHost ( V_IR )
+    call DisassociateHost ( V_IL )
+    call DisassociateHost ( dX_R )
+    call DisassociateHost ( dX_L )
+    call DisassociateHost ( dVdX )
+    call DisassociateHost ( V )
+    
+  end subroutine ComputeReconstruction_CSL_KernelDevice
+  
+  
+  subroutine ComputeLogDerivative_CSL_KernelHost ( A_I, V, iD, oV, dLVdX )
 
     real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
       A_I, &
@@ -892,7 +993,8 @@ contains
     iaS = 0
     iaS ( iD ) = +1
       
-    !$OMP parallel do private ( iV, jV, kV, iaVS )
+    !$OMP  parallel do collapse ( 3 ) &
+    !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, jV, kV, iaVS )
     do kV = lV ( 3 ), uV ( 3 ) 
       do jV = lV ( 2 ), uV ( 2 )
         do iV = lV ( 1 ), uV ( 1 )
@@ -909,7 +1011,72 @@ contains
     end do !-- kV
     !$OMP end parallel do
     
-  end subroutine ComputeLogDerivative_CSL_Kernel
+  end subroutine ComputeLogDerivative_CSL_KernelHost
+
+  
+  subroutine ComputeLogDerivative_CSL_KernelDevice &
+               ( A_I, V, iD, oV, D_A_I, D_V, D_dLVdX, dLVdX )
+
+    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+      A_I, &
+      V
+    integer ( KDI ), intent ( in ) :: &
+      iD, &
+      oV
+    type ( c_ptr ), intent ( in ) :: &
+      D_A_I, &
+      D_V, &
+      D_dLVdX
+    real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
+      dLVdX
+
+    integer ( KDI ) :: &
+      iV, jV, kV
+    integer ( KDI ), dimension ( 3 ) :: &
+      iaS, &
+      iaVS, &
+      lV, uV
+      
+    call AssociateHost ( D_A_I, A_I )
+    call AssociateHost ( D_V, V )
+    call AssociateHost ( D_dLVdX, dLVdX )
+    
+    lV = 1
+    where ( shape ( V ) > 1 )
+      lV = oV + 1
+    end where
+    
+    uV = 1
+    where ( shape ( V ) > 1 )
+      uV = shape ( V ) - oV
+    end where
+      
+    iaS = 0
+    iaS ( iD ) = +1
+      
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
+    !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, jV, kV, iaVS )
+    do kV = lV ( 3 ), uV ( 3 ) 
+      do jV = lV ( 2 ), uV ( 2 )
+        do iV = lV ( 1 ), uV ( 1 )
+
+          iaVS = [ iV, jV, kV ] + iaS
+
+          dLVdX ( iV, jV, kV ) &
+            =  (    A_I ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ) &
+                 -  A_I ( iV, jV, kV )  ) &
+               /  V ( iV, jV, kV )
+
+        end do !-- iV
+      end do !-- jV
+    end do !-- kV
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    
+    call DisassociateHost ( dLVdX )
+    call DisassociateHost ( V )
+    call DisassociateHost ( A_I )
+    
+  end subroutine ComputeLogDerivative_CSL_KernelDevice
 
 
   subroutine ComputeIncrement_CSL_Kernel ( dU, F_I, A_I, V, dT, iD, oV )
