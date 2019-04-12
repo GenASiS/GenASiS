@@ -3,6 +3,7 @@
 
 module Real_3D__Form
 
+  use iso_c_binding
   use Specifiers
   use ArrayOperations
 
@@ -10,8 +11,12 @@ module Real_3D__Form
   private
 
   type, public :: Real_3D_Form
+    type ( c_ptr ) :: &
+      D_Value = c_null_ptr
     real ( KDR ), dimension ( :, :, : ), allocatable :: &
       Value
+    logical ( KDL ) :: &
+      AllocatedDevice = .false. 
   contains
     procedure, private, pass :: &
       Initialize_R_3D
@@ -22,6 +27,8 @@ module Real_3D__Form
     generic :: &
       Initialize &
         => Initialize_R_3D, Initialize_R_3D_FromValue, Initialize_R_3D_Copy
+    procedure, public, pass :: &
+      AllocateDevice => AllocateDevice_R_3D 
     final :: &
       Finalize_R_3D
   end type Real_3D_Form
@@ -101,16 +108,36 @@ contains
     if ( present ( iaLowerBoundOption ) ) iaLB = iaLowerBoundOption
 
     call A % Initialize_R_3D_FromValue ( B % Value, iaLowerBoundOption = iaLB )
+    
+    if ( B % AllocatedDevice ) then
+      call A % AllocateDevice ( )
+      call Copy ( B % Value, B % D_Value, A % D_Value, A % Value )
+    end if
   
   end subroutine Initialize_R_3D_Copy 
   
   
-  elemental subroutine Finalize_R_3D ( A )
+  subroutine AllocateDevice_R_3D ( A )
+  
+    class ( Real_3D_Form ), intent ( inout ) :: &
+      A
+      
+    call AllocateDevice ( size ( A % Value ), A % D_Value )
+    A % AllocatedDevice = .true.
+  
+  end subroutine AllocateDevice_R_3D
+  
+
+  impure elemental subroutine Finalize_R_3D ( A )
 
     type ( Real_3D_Form ), intent ( inout ) :: &
       A
 
-    if ( allocated ( A % Value ) ) deallocate ( A % Value )
+    if ( allocated ( A % Value ) ) &
+      deallocate ( A % Value )
+    
+    if ( A % AllocatedDevice ) &
+      call DeallocateDevice ( A % D_Value )
 
   end subroutine Finalize_R_3D
   

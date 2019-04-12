@@ -35,6 +35,7 @@ module Copy_Command
     module procedure CopyReal_3D
     module procedure CopyReal_1D_Device
     module procedure CopyReal_2D_Device
+    module procedure CopyReal_3D_Device
 !     module procedure CopyReal_1D_Section
 !     module procedure CopyReal_2D_Section
 !     module procedure CopyReal_3D_Section
@@ -427,7 +428,43 @@ contains
   end subroutine CopyReal_2D_Device
   
   
-  
+  subroutine CopyReal_3D_Device ( A, D_A, D_B, B )
+
+    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+      A
+    type ( c_ptr ), dimension ( : ), intent ( in ) :: &
+      D_A
+    type ( c_ptr ), dimension ( : ), intent ( in ) :: &
+      D_B
+    real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
+      B
+
+    integer ( KDI ) :: &
+      iV, jV, kV
+    integer ( KDI ), dimension ( 3 ) :: &
+      nV
+      
+    call AssociateHost ( D_A, A )
+    call AssociateHost ( D_B, B )
+
+    nV = shape ( A )
+
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
+    !$OMP& schedule ( OMP_SCHEDULE )
+    do kV = 1, nV ( 3 )
+      do jV = 1, nV ( 2 )
+        do iV = 1, nV ( 1 )
+          B ( iV, jV, kV ) = A ( iV, jV, kV )
+        end do
+      end do
+    end do
+    !$OMP end parallel do
+    
+    call DisassociateHost ( B )
+    call DisassociateHost ( A )
+
+  end subroutine CopyReal_3D_Device
+
   
   ! subroutine CopyReal_1D_Section ( A, oSource, oTarget, nValues, B )
     

@@ -15,6 +15,8 @@ module Storage_Form
   private
   
   type, public :: StorageForm
+    type ( c_ptr ), dimension ( : ), allocatable :: &
+      D_Selected     !-- Device pointer for Selected Value
     integer ( KDI ) :: &
       nValues     = 0, &
       nVariables  = 0, &
@@ -36,8 +38,6 @@ module Storage_Form
     character ( LDL ), dimension ( : ), allocatable :: &
       Variable, &
       Vector
-    type ( c_ptr ), dimension ( : ), allocatable :: &
-      D_Selected     !-- Device pointer for Selected Value
     type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
       Unit
     type ( Integer_1D_Form ), dimension ( : ), allocatable :: &
@@ -417,10 +417,8 @@ contains
     if ( allocated ( S % Unit ) )       deallocate ( S % Unit )
     
     if ( allocated ( S % D_Selected ) ) then
-      if ( S % AllocatedValue ) then
-        do iV = 1, S % nVariables
-          call DeallocateDevice ( S % D_Selected ( iV ) )
-        end do
+      if ( S % AllocatedValue .and. S % AllocatedDevice ) then
+        call DeallocateDevice ( S % D_Selected ( 1 ) )
       end if
       deallocate ( S % D_Selected )
     end if
