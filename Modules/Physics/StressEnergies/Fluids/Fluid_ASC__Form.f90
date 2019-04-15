@@ -137,8 +137,8 @@ contains
            ( FA % UseEntropy, 'UseEntropy' )
 
     select case ( trim ( FA % FluidType ) )
-    case ( 'HEAVY_NUCLEUS' )
-      FA % ReconstructedType = 'ALL'
+!    case ( 'HEAVY_NUCLEUS' )
+!      FA % ReconstructedType = 'ALL'
     case default
       FA % ReconstructedType = 'PRIMITIVE'
     end select
