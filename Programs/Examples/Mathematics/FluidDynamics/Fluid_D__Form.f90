@@ -1,7 +1,10 @@
 module Fluid_D__Form
 
+#include "Preprocessor"
+
   !-- Fluid_Dust__Form
 
+  use iso_c_binding
   use Basics
   use Mathematics
   use FluidFeatures_Template
@@ -49,7 +52,8 @@ module Fluid_D__Form
     procedure, public, pass ( C ) :: &
       ComputeRawFluxes
     procedure, public, nopass :: &
-      ComputeBaryonMassKernel
+      ComputeBaryonMassKernelHost, &
+      ComputeBaryonMassKernelDevice
     procedure, public, nopass :: &
       ComputeDensityMomentumKernel
     procedure, public, nopass :: &
@@ -215,16 +219,16 @@ contains
 
 
   subroutine ComputeFromPrimitiveCommon &
-               ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
+               ( Storage_C, C, G, Storage_G, nValuesOption, oValueOption )
 
-    real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
-      Value_C
+    class ( StorageForm ), intent ( inout ), target :: &
+      Storage_C
     class ( Fluid_D_Form ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_G
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
@@ -234,8 +238,8 @@ contains
       nV     !-- nValues
       
     associate &
-      ( FV => Value_C, &
-        GV => Value_G )
+      ( FV => Storage_C % Value, &
+        GV => Storage_G % Value )
 
     if ( present ( oValueOption ) ) then
       oV = oValueOption
@@ -269,7 +273,7 @@ contains
         S_2   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 2 ) ), &
         S_3   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 3 ) ) )
 
-    call C % ComputeBaryonMassKernel &
+    call C % ComputeBaryonMassKernelHost &
            ( M )
     call C % ComputeDensityMomentumKernel &
            ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
@@ -338,7 +342,7 @@ contains
         S_2   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 2 ) ), &
         S_3   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 3 ) ) )
 
-    call C % ComputeBaryonMassKernel &
+    call C % ComputeBaryonMassKernelHost &
            ( M )
     call C % ComputeDensityVelocityKernel &
            ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33 )
@@ -419,7 +423,7 @@ contains
   end subroutine ComputeRawFluxes
   
   
-  subroutine ComputeBaryonMassKernel ( M )
+  subroutine ComputeBaryonMassKernelHost ( M )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       M
@@ -430,13 +434,40 @@ contains
 
     nValues = size ( M )
 
-    !$OMP parallel do private ( iV )
+    !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV )
     do iV = 1, nValues
       M ( iV ) = 1.0_KDR
     end do !-- iV
     !$OMP end parallel do
 
-  end subroutine ComputeBaryonMassKernel
+  end subroutine ComputeBaryonMassKernelHost
+
+
+  subroutine ComputeBaryonMassKernelDevice ( M, D_M )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      M
+    type ( c_ptr ), intent ( in ) :: &
+      D_M 
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+      
+    call AssociateHost ( D_M, M )
+
+    nValues = size ( M )
+    
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+    !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+    do iV = 1, nValues
+      M ( iV ) = 1.0_KDR
+    end do !-- iV
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    
+    call DisassociateHost ( M )
+
+  end subroutine ComputeBaryonMassKernelDevice
 
 
   subroutine ComputeDensityMomentumKernel & 	 	 

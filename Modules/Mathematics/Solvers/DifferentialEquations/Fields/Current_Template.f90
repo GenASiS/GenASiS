@@ -107,18 +107,18 @@ module Current_Template
         C
     end subroutine SPC
 
-    subroutine CFPC ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
+    subroutine CFPC ( Storage_C, C, G, Storage_G, nValuesOption, oValueOption )
       use Basics
       use Manifolds
       import CurrentTemplate
-      real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
-        Value_C
+      class ( StorageForm ), intent ( inout ), target :: &
+        Storage_C
       class ( CurrentTemplate ), intent ( in ) :: &
         C
       class ( GeometryFlatForm ), intent ( in ) :: &
         G
-      real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-        Value_G
+      class ( StorageForm ), intent ( in ) :: &
+        Storage_G
       integer ( KDI ), intent ( in ), optional :: &
         nValuesOption, &
         oValueOption
@@ -346,28 +346,28 @@ contains
       oValueOption
 
     call C % ComputeFromPrimitiveCommon &
-           ( C % Value, G, G % Value, nValuesOption, oValueOption )
+           ( C, G, G, nValuesOption, oValueOption )
     
   end subroutine ComputeFromPrimitiveSelf
 
 
   subroutine ComputeFromPrimitiveOther &
-               ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
+               ( Storage_C, C, G, Storage_G, nValuesOption, oValueOption )
 
-    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
-      Value_C
+    class ( StorageForm ), intent ( inout ) :: &
+      Storage_C
     class ( CurrentTemplate ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_G
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
 
     call C % ComputeFromPrimitiveCommon &
-           ( Value_C, G, Value_G, nValuesOption, oValueOption )
+           ( Storage_C, G, Storage_G, nValuesOption, oValueOption )
     
   end subroutine ComputeFromPrimitiveOther
 
@@ -387,15 +387,24 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
+      
+    type ( StorageForm ) :: &
+      Storage_G
 
     associate &
       ( nV => C % nValues, &
         iV => iStrgeometryValue, &
         iD => 1 )
-
+    
+    call Storage_G % Initialize ( [ nV, G % nVariables ] )
+    Storage_G % Value = spread ( G % Value ( iV, : ), iD, nV )
+    if ( C % AllocatedDevice ) then
+      call Storage_G % AllocateDevice ( )
+      call Storage_G % UpdateDevice ( )
+    end if
+    
     call C % ComputeFromPrimitiveCommon &
-           ( C % Value, G, spread ( G % Value ( iV, : ), iD, nV ), &
-             nValuesOption, oValueOption )
+           ( C, G, Storage_G, nValuesOption, oValueOption )
     
     end associate !-- nV, etc.
 
