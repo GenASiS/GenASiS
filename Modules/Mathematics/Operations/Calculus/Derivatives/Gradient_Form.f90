@@ -33,7 +33,6 @@ module Gradient_Form
 
     private :: &
       ComputeSlopeFactorKernel, &
-      ComputeChart_SL_Kernel_SF, &
       ComputeChart_SL_Kernel
 
 contains
@@ -121,23 +120,24 @@ contains
 
     !-- Slope factor
 
-    allocate ( SlopeFactor )
-    call SlopeFactor % Initialize &
-           ( [ Input % nValues, Input % nVariables ] )
+    if ( present ( LimiterParameterOption ) ) then
 
-    do iV = 1, Input % nVariables
-      call CSL % SetVariablePointer &
-             ( VD % OutputInner % Value ( :, iV ), dV_I )
-      call CSL % SetVariablePointer &
-             ( SlopeFactor % Value ( :, iV ), SF )
-      if ( present ( LimiterParameterOption ) ) &
+      allocate ( SlopeFactor )
+      call SlopeFactor % Initialize &
+             ( [ Input % nValues, Input % nVariables ] )
+
+      do iV = 1, Input % nVariables
+        call CSL % SetVariablePointer &
+               ( VD % OutputInner % Value ( :, iV ), dV_I )
+        call CSL % SetVariablePointer &
+               ( SlopeFactor % Value ( :, iV ), SF )
         call ComputeSlopeFactorKernel &
                ( Input % Variable ( Input % iaSelected ( iV ) ), dV_I, &
                  LimiterParameterOption, iDimension, &
                  CSL % nGhostLayers ( iDimension ), SF )
-    end do !-- iV
+      end do !-- iV
 
-    call SetSlopeFactorKernel ( SlopeFactor % Value )
+    end if !-- Limiter
 
     !-- Compute gradient
 
@@ -148,23 +148,18 @@ contains
              ( VD % OutputInner % Value ( :, iV ), dV_I )
       call CSL % SetVariablePointer &
              ( G % Output % Value ( :, iV ), dVdX )
-      ! if ( present ( UseLimiterOption ) ) then
-      !   call CSL % SetVariablePointer &
-      !          ( UseLimiterOption, UL_Option )
-      !   call ComputeChart_SL_Kernel &
-      !          ( dV_I, dX_I, iDimension, CSL % nGhostLayers ( iDimension ), &
-      !            dVdX, UseLimiterOption = UL_Option, &
-      !            ThetaOption = LimiterParameterOption )
-      ! else
-      !   call ComputeChart_SL_Kernel &
-      !          ( dV_I, dX_I, iDimension, CSL % nGhostLayers ( iDimension ), &
-      !            dVdX, ThetaOption = LimiterParameterOption )
-      ! end if
-      call CSL % SetVariablePointer &
-             ( SlopeFactor % Value ( :, iV ), SF )
-      call ComputeChart_SL_Kernel_SF &
-             ( dV_I, dX_I, SF, iDimension, CSL % nGhostLayers ( iDimension ), &
-               dVdX, ThetaOption = LimiterParameterOption )
+      if ( present ( UseLimiterOption ) ) then
+        call CSL % SetVariablePointer &
+               ( UseLimiterOption, UL_Option )
+        call ComputeChart_SL_Kernel &
+               ( dV_I, dX_I, iDimension, CSL % nGhostLayers ( iDimension ), &
+                 dVdX, UseLimiterOption = UL_Option, &
+                 ThetaOption = LimiterParameterOption )
+      else
+        call ComputeChart_SL_Kernel &
+               ( dV_I, dX_I, iDimension, CSL % nGhostLayers ( iDimension ), &
+                 dVdX, ThetaOption = LimiterParameterOption )
+      end if
     end do !-- iV
 
     end associate !-- VD, etc.
@@ -241,11 +236,11 @@ contains
               
           SF ( iV, jV, kV ) = sign ( 0.5_KDR, dV_L ) + sign ( 0.5_KDR, dV_R )
 
-          ! if ( abs ( SF ( iV, jV, kV ) ) < 1.0_KDR ) then
-          !   call Show ( Variable, '>>> Variable' )
-          !   call Show ( iV, '>>> iV' )
-          !   call Show ( SF ( iV, jV, kV ), '>>> SF' )
-          ! end if
+          if ( abs ( SF ( iV, jV, kV ) ) < 1.0_KDR ) then
+            call Show ( Variable, '>>> Variable' )
+            call Show ( iV, '>>> iV' )
+            call Show ( SF ( iV, jV, kV ), '>>> SF' )
+          end if
 
         end do !-- iV
       end do !-- jV
@@ -253,123 +248,6 @@ contains
     !$OMP end parallel do
 
   end subroutine ComputeSlopeFactorKernel
-
-
-  subroutine SetSlopeFactorKernel ( SF )
-
-    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
-      SF
-
-    integer ( KDI ) :: &
-      iV, &
-      nV
-
-    nV = size ( SF, dim = 1 )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nV
-      if ( any ( SF ( iV, : ) == 0.0_KDR ) ) &
-        SF ( iV, : ) = 0.0_KDR
-    end do
-    !$OMP end parallel do
-
-  end subroutine SetSlopeFactorKernel
-
-
-  subroutine ComputeChart_SL_Kernel_SF &
-               ( dV_I, dX_I, SF, iD, oV, dVdX, ThetaOption )
-
-    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
-      dV_I, &
-      dX_I, &
-      SF
-    integer ( KDI ), intent ( in ) :: &
-      iD, &
-      oV
-    real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
-      dVdX
-    real ( KDR ), intent ( in ), optional :: &
-      ThetaOption
-
-    integer ( KDI ) :: &
-      iV, jV, kV
-    integer ( KDI ), dimension ( 3 ) :: &
-      iaS, &
-      iaVS, &
-      lV, uV
-    real ( KDR ) :: &
-      dX_L, dX_R, &
-      dV_L, dV_R
-    
-    lV = 1
-    where ( shape ( dV_I ) > 1 )
-      lV = oV + 1
-    end where
-    lV ( iD ) = oV
-    
-    uV = 1
-    where ( shape ( dV_I ) > 1 )
-      uV = shape ( dV_I ) - oV
-    end where
-    uV ( iD ) = size ( dV_I, dim = iD ) - oV + 1 
-      
-    iaS = 0
-    iaS ( iD ) = +1
-
-    if ( present ( ThetaOption ) ) then
-      associate ( Theta => ThetaOption )
-
-      !$OMP parallel do private ( iV, jV, kV, iaVS, dV_L, dV_R, dX_L, dX_R )
-      do kV = lV ( 3 ), uV ( 3 ) 
-        do jV = lV ( 2 ), uV ( 2 )
-          do iV = lV ( 1 ), uV ( 1 )
-
-            iaVS = [ iV, jV, kV ] + iaS
-
-            dV_L = dV_I ( iV, jV, kV )
-            dV_R = dV_I ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) )
-            dX_L = dX_I ( iV, jV, kV )
-            dX_R = dX_I ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) )
-              
-            dVdX ( iV, jV, kV ) &
-              = SF ( iV, jV, kV ) &
-                * min ( abs ( Theta * dV_L / dX_L ), &
-                        abs ( Theta * dV_R / dX_R ), &
-                        abs ( ( dX_R ** 2  *  dV_L  +  dX_L ** 2  *  dV_R ) &
-                              / ( dX_L * dX_R * ( dX_L + dX_R ) ) ) )
-
-          end do !-- iV
-        end do !-- jV
-      end do !-- kV
-      !$OMP end parallel do
-
-      end associate !-- Theta
-    else
-
-      !$OMP parallel do private ( iV, jV, kV, iaVS, dV_L, dV_R, dX_L, dX_R )
-      do kV = lV ( 3 ), uV ( 3 ) 
-        do jV = lV ( 2 ), uV ( 2 )
-          do iV = lV ( 1 ), uV ( 1 )
-
-            iaVS = [ iV, jV, kV ] + iaS
-
-            dV_L = dV_I ( iV, jV, kV )
-            dV_R = dV_I ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) )
-            dX_L = dX_I ( iV, jV, kV )
-            dX_R = dX_I ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) )
-              
-            dVdX ( iV, jV, kV )&
-              =  ( dX_R ** 2  *  dV_L  +  dX_L ** 2  *  dV_R ) &
-                 / ( dX_L * dX_R * ( dX_L + dX_R ) )
-            
-          end do !-- iV
-        end do !-- jV
-      end do !-- kV
-      !$OMP end parallel do
-
-    end if
-    
-  end subroutine ComputeChart_SL_Kernel_SF
 
 
   subroutine ComputeChart_SL_Kernel &
