@@ -55,7 +55,8 @@ module Fluid_D__Form
       ComputeBaryonMassKernelHost, &
       ComputeBaryonMassKernelDevice
     procedure, public, nopass :: &
-      ComputeDensityMomentumKernel
+      ComputeDensityMomentumKernelHost, &
+      ComputeDensityMomentumKernelDevice
     procedure, public, nopass :: &
       ComputeDensityVelocityKernel
     procedure, public, nopass :: &
@@ -275,7 +276,7 @@ contains
 
     call C % ComputeBaryonMassKernelHost &
            ( M )
-    call C % ComputeDensityMomentumKernel &
+    call C % ComputeDensityMomentumKernelHost &
            ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
     call C % ComputeEigenspeedsKernel_D &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3 )
@@ -470,7 +471,7 @@ contains
   end subroutine ComputeBaryonMassKernelDevice
 
 
-  subroutine ComputeDensityMomentumKernel & 	 	 
+  subroutine ComputeDensityMomentumKernelHost &
 	       ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
  	 
     real ( KDR ), dimension ( : ), intent ( inout ) :: & 	 	 
@@ -488,14 +489,14 @@ contains
 
     nValues = size ( D )
 
-    !$OMP parallel do private ( iV )
+    !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV )
     do iV = 1, nValues
       if ( N ( iV )  <  0.0_KDR ) &
         N ( iV )  =  0.0_KDR
     end do !-- iV
     !$OMP end parallel do
 
-    !$OMP parallel do private ( iV )
+    !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV )
     do iV = 1, nValues
 
       D ( iV ) = N ( iV ) 	 	 
@@ -507,7 +508,82 @@ contains
     end do !-- iV
     !$OMP end parallel do
 
-  end subroutine ComputeDensityMomentumKernel 	 	 
+  end subroutine ComputeDensityMomentumKernelHost
+
+
+  subroutine ComputeDensityMomentumKernelDevice &
+	       ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33, &
+	         D_D, D_S_1, D_S_2, D_S_3, D_N, D_M, D_V_1, D_V_2, D_V_3, &
+	         D_M_DD_22, D_M_DD_33 )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      D, &
+      S_1, S_2, S_3, &
+      N
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      M, &
+      V_1, V_2, V_3, &
+      M_DD_22, M_DD_33
+    type ( c_ptr ), intent ( in ) :: &
+      D_D, &
+      D_S_1, D_S_2, D_S_3, &
+      D_N, &
+      D_M, &
+      D_V_1, D_V_2, D_V_3, &
+      D_M_DD_22, D_M_DD_33
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+
+    call AssociateHost ( D_D, D )
+    call AssociateHost ( D_S_1, S_1 )
+    call AssociateHost ( D_S_2, S_2 )
+    call AssociateHost ( D_S_3, S_3 )
+    call AssociateHost ( D_N, N )
+    call AssociateHost ( D_M, M )
+    call AssociateHost ( D_V_1, V_1 )
+    call AssociateHost ( D_V_2, V_2 )
+    call AssociateHost ( D_V_3, V_3 )
+    call AssociateHost ( D_M_DD_22, M_DD_22 )
+    call AssociateHost ( D_M_DD_33, M_DD_33 )
+
+    nValues = size ( D )
+
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+    !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+    do iV = 1, nValues
+      if ( N ( iV )  <  0.0_KDR ) &
+        N ( iV )  =  0.0_KDR
+    end do !-- iV
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
+
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+    !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+    do iV = 1, nValues
+
+      D ( iV ) = N ( iV ) 	 	 
+ 	 	 
+      S_1 ( iV )  =  M ( iV ) * N ( iV ) * V_1 ( iV )	 	 
+      S_2 ( iV )  =  M ( iV ) * N ( iV ) * M_DD_22 ( iV ) * V_2 ( iV )
+      S_3 ( iV )  =  M ( iV ) * N ( iV ) * M_DD_33 ( iV ) * V_3 ( iV )
+
+    end do !-- iV
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    
+    call DisassociateHost ( D )
+    call DisassociateHost ( S_1 )
+    call DisassociateHost ( S_2 )
+    call DisassociateHost ( S_3 )
+    call DisassociateHost ( N )
+    call DisassociateHost ( M )
+    call DisassociateHost ( V_1 )
+    call DisassociateHost ( V_2 )
+    call DisassociateHost ( V_3 )
+    call DisassociateHost ( M_DD_22 )
+    call DisassociateHost ( M_DD_33 )
+
+  end subroutine ComputeDensityMomentumKernelDevice
 
 
   subroutine ComputeDensityVelocityKernel &

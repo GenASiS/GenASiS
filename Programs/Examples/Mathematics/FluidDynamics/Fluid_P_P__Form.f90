@@ -288,6 +288,7 @@ contains
         K     => FV ( oV + 1 : oV + nV, C % POLYTROPIC_PARAMETER ) )
 
     if ( C % AllocatedDevice ) then
+
       associate &
         ( D_M_DD_22 => D_S_G ( I_DD_22 ), &
           D_M_DD_33 => D_S_G ( I_DD_33 ), &
@@ -323,23 +324,40 @@ contains
              ( P, Gamma, SB, K, N, E, &
                D_P, D_Gamma, D_SB, D_K, D_N, D_E, &
                C % AdiabaticIndex, C % FiducialPolytropicParameter )
-               
+      call C % ComputeDensityMomentumKernelDevice &
+             ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 , &
+               D_D, D_S_1, D_S_2, D_S_3, D_N, D_M, D_V_1, D_V_2, D_V_3, &
+               D_M_DD_22, D_M_DD_33 )
+      call C % ComputeConservedEnergyKernelDevice &
+             ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E, &
+               D_G, D_M, D_N, D_V_1, D_V_2, D_V_3, D_S_1, D_S_2, D_S_3, D_E )
+      call C % ComputeEigenspeedsFluidKernelDevice &
+             ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, MN, &
+               M, N, V_1, V_2, V_3, S_1, S_2, S_3, P, Gamma, &
+               M_UU_22, M_UU_33, &
+               D_FEP_1, D_FEP_2, D_FEP_3, D_FEM_1, D_FEM_2, D_FEM_3, &
+               D_CS, D_MN, D_M, D_N, D_V_1, D_V_2, D_V_3, D_S_1, D_S_2, &
+               D_S_3, D_P, D_Gamma, D_M_UU_22, D_M_UU_33 )
+
       end associate !-- D_FEP_1, etc.
       end associate !-- D_MM_DD_22, etc.
+
     else
+
       call C % ComputeBaryonMassKernelHost ( M )
       call C % Apply_EOS_P_KernelHost &
              ( P, Gamma, SB, K, N, E, C % AdiabaticIndex, &
                C % FiducialPolytropicParameter )
-      call C % ComputeDensityMomentumKernel &
+      call C % ComputeDensityMomentumKernelHost &
              ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
-      call C % ComputeConservedEnergyKernel &
+      call C % ComputeConservedEnergyKernelHost &
              ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
-      call C % ComputeEigenspeedsFluidKernel &
+      call C % ComputeEigenspeedsFluidKernelHost &
              ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, MN, &
                M, N, V_1, V_2, V_3, S_1, S_2, S_3, P, Gamma, &
                M_UU_22, M_UU_33 )
-    end if
+    
+end if
 
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
@@ -422,7 +440,7 @@ contains
     call C % Apply_EOS_P_KernelHost &
            ( P, Gamma, SB, K, N, E, C % AdiabaticIndex, &
              C % FiducialPolytropicParameter )
-    call C % ComputeEigenspeedsFluidKernel &
+    call C % ComputeEigenspeedsFluidKernelHost &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, MN, &
              M, N, V_1, V_2, V_3, S_1, S_2, S_3, P, Gamma, M_UU_22, M_UU_33 )
 
