@@ -20,19 +20,19 @@ module Fluid_P_HN__Form
 
   type, public, extends ( Fluid_P_Template ) :: Fluid_P_HN_Form
     integer ( KDI ) :: &
-      N_PRIMITIVE_HEAVY_NUCLEUS = N_PRIMITIVE_HEAVY_NUCLEUS, &
-      N_CONSERVED_HEAVY_NUCLEUS = N_CONSERVED_HEAVY_NUCLEUS, &
-      N_FIELDS_HEAVY_NUCLEUS    = N_FIELDS_HEAVY_NUCLEUS, &
-      N_VECTORS_HEAVY_NUCLEUS   = N_VECTORS_HEAVY_NUCLEUS, &
-      PROTON_FRACTION           = 0, &
-      CONSERVED_PROTON_DENSITY  = 0, &
-      MASS_FRACTION_PROTON      = 0, &
-      MASS_FRACTION_NEUTRON     = 0, &
-      MASS_FRACTION_ALPHA       = 0, &
-      MASS_FRACTION_HEAVY       = 0, &
-      ATOMIC_NUMBER_HEAVY       = 0, &
-      MASS_NUMBER_HEAVY         = 0, &
-      CHEMICAL_POTENTIAL_N_P    = 0, &  
+      N_PRIMITIVE_HEAVY_NUCLEUS   = N_PRIMITIVE_HEAVY_NUCLEUS, &
+      N_CONSERVED_HEAVY_NUCLEUS   = N_CONSERVED_HEAVY_NUCLEUS, &
+      N_FIELDS_HEAVY_NUCLEUS      = N_FIELDS_HEAVY_NUCLEUS, &
+      N_VECTORS_HEAVY_NUCLEUS     = N_VECTORS_HEAVY_NUCLEUS, &
+      ELECTRON_FRACTION           = 0, &
+      CONSERVED_ELECTRON_DENSITY  = 0, &
+      MASS_FRACTION_PROTON        = 0, &
+      MASS_FRACTION_NEUTRON       = 0, &
+      MASS_FRACTION_ALPHA         = 0, &
+      MASS_FRACTION_HEAVY         = 0, &
+      ATOMIC_NUMBER_HEAVY         = 0, &
+      MASS_NUMBER_HEAVY           = 0, &
+      CHEMICAL_POTENTIAL_N_P      = 0, &  
         !-- a.k.a. mu_hat. Includes m_n - m_p. (mu_n and mu_p both
         !   measured with respect to m_n.)
       CHEMICAL_POTENTIAL_E      = 0     
@@ -55,9 +55,9 @@ module Fluid_P_HN__Form
     procedure, public, pass ( C ) :: &
       ComputeCenterStates
     procedure, public, nopass :: &
-      Compute_DP_G_Kernel
+      Compute_DE_G_Kernel
     procedure, public, nopass :: &
-      Compute_YP_G_Kernel
+      Compute_YE_G_Kernel
     procedure, public, nopass :: &
       Apply_EOS_HN_T_Kernel
     procedure, public, nopass :: &
@@ -192,14 +192,14 @@ contains
       allocate ( C % iaPrimitive ( C % N_PRIMITIVE ) )
     end if
     C % iaPrimitive ( oP + 1 : oP + C % N_PRIMITIVE_HEAVY_NUCLEUS ) &
-      = [ C % PROTON_FRACTION ]
+      = [ C % ELECTRON_FRACTION ]
 
     if ( .not. allocated ( C % iaConserved ) ) then
       C % N_CONSERVED = oC + C % N_CONSERVED_HEAVY_NUCLEUS
       allocate ( C % iaConserved ( C % N_CONSERVED ) )
     end if
     C % iaConserved ( oC + 1 : oC + C % N_CONSERVED_HEAVY_NUCLEUS ) &
-      = [ C % CONSERVED_PROTON_DENSITY ]
+      = [ C % CONSERVED_ELECTRON_DENSITY ]
     
     do iF = 1, C % N_PRIMITIVE_HEAVY_NUCLEUS
       PrimitiveName ( iF )  =  C % Variable ( C % iaPrimitive ( oP + iF ) )
@@ -249,16 +249,16 @@ contains
     if ( F % N_FIELDS == 0 ) F % N_FIELDS &
       = oF + F % N_FIELDS_HEAVY_NUCLEUS
 
-    F % PROTON_FRACTION          =  oF +  1
-    F % CONSERVED_PROTON_DENSITY =  oF +  2
-    F % MASS_FRACTION_PROTON     =  oF +  3
-    F % MASS_FRACTION_NEUTRON    =  oF +  4
-    F % MASS_FRACTION_ALPHA      =  oF +  5
-    F % MASS_FRACTION_HEAVY      =  oF +  6
-    F % ATOMIC_NUMBER_HEAVY      =  oF +  7
-    F % MASS_NUMBER_HEAVY        =  oF +  8
-    F % CHEMICAL_POTENTIAL_N_P   =  oF +  9
-    F % CHEMICAL_POTENTIAL_E     =  oF + 10
+    F % ELECTRON_FRACTION           =  oF +  1
+    F % CONSERVED_ELECTRON_DENSITY  =  oF +  2
+    F % MASS_FRACTION_PROTON        =  oF +  3
+    F % MASS_FRACTION_NEUTRON       =  oF +  4
+    F % MASS_FRACTION_ALPHA         =  oF +  5
+    F % MASS_FRACTION_HEAVY         =  oF +  6
+    F % ATOMIC_NUMBER_HEAVY         =  oF +  7
+    F % MASS_NUMBER_HEAVY           =  oF +  8
+    F % CHEMICAL_POTENTIAL_N_P      =  oF +  9
+    F % CHEMICAL_POTENTIAL_E        =  oF + 10
 
     !-- variable names 
 
@@ -271,16 +271,16 @@ contains
     end if
 
     Variable ( oF + 1 : oF + F % N_FIELDS_HEAVY_NUCLEUS ) &
-      = [ 'ProtonFraction        ', &
-          'ConservedProtonDensity', &
-          'MassFractionProton    ', &
-          'MassFractionNeutron   ', &
-          'MassFractionAlpha     ', &
-          'MassFractionHeavy     ', &
-          'AtomicNumberHeavy     ', &
-          'MassNumberHeavy       ', &
-          'ChemicalPotential_N_P ', &
-          'ChemicalPotential_E   ' ]
+      = [ 'ElectronFraction        ', &
+          'ConservedElectronDensity', &
+          'MassFractionProton      ', &
+          'MassFractionNeutron     ', &
+          'MassFractionAlpha       ', &
+          'MassFractionHeavy       ', &
+          'AtomicNumberHeavy       ', &
+          'MassNumberHeavy         ', &
+          'ChemicalPotential_N_P   ', &
+          'ChemicalPotential_E     ' ]
     
     !-- units
 
@@ -313,7 +313,7 @@ contains
     class ( StressEnergyUnitsForm ), intent ( in ) :: &
       Units
 
-    VariableUnit ( F % CONSERVED_PROTON_DENSITY ) &
+    VariableUnit ( F % CONSERVED_ELECTRON_DENSITY ) &
       = Units % NumberDensity
     VariableUnit ( F % CHEMICAL_POTENTIAL_N_P ) &
       = Units % Temperature
@@ -338,7 +338,7 @@ contains
            ( F, iaSelectedOption &
                   = [ F % COMOVING_BARYON_DENSITY, F % VELOCITY_U, &
                       F % PRESSURE, F % MACH_NUMBER, F % TEMPERATURE, &
-                      F % ENTROPY_PER_BARYON, F % PROTON_FRACTION, &
+                      F % ENTROPY_PER_BARYON, F % ELECTRON_FRACTION, &
                       F % MASS_FRACTION_PROTON, F % MASS_FRACTION_NEUTRON, &
                       F % MASS_FRACTION_ALPHA, F % MASS_FRACTION_HEAVY, &
                       F % ATOMIC_NUMBER_HEAVY, F % MASS_NUMBER_HEAVY, &
@@ -415,8 +415,8 @@ contains
     !    Gamma => FV ( oV + 1 : oV + nV, C % ADIABATIC_INDEX ), &
         CS    => FV ( oV + 1 : oV + nV, C % SOUND_SPEED ), &
         MN    => FV ( oV + 1 : oV + nV, C % MACH_NUMBER ), &
-        YE    => FV ( oV + 1 : oV + nV, C % PROTON_FRACTION ), &
-        DP    => FV ( oV + 1 : oV + nV, C % CONSERVED_PROTON_DENSITY ), &
+        YE    => FV ( oV + 1 : oV + nV, C % ELECTRON_FRACTION ), &
+        DE    => FV ( oV + 1 : oV + nV, C % CONSERVED_ELECTRON_DENSITY ), &
         X_P   => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_PROTON ), &
         X_N   => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_NEUTRON ), &
         X_He  => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_ALPHA ), &
@@ -436,8 +436,8 @@ contains
            ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
     call C % Compute_DS_G_Kernel &
            ( DS, N, SB )
-    call C % Compute_DP_G_Kernel &
-           ( DP, N, YE )
+    call C % Compute_DE_G_Kernel &
+           ( DE, N, YE )
     call C % Compute_FE_P_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
              V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33 )
@@ -517,8 +517,8 @@ contains
     !    Gamma => FV ( oV + 1 : oV + nV, C % ADIABATIC_INDEX ), &
         CS    => FV ( oV + 1 : oV + nV, C % SOUND_SPEED ), &
         MN    => FV ( oV + 1 : oV + nV, C % MACH_NUMBER ), &
-        YE    => FV ( oV + 1 : oV + nV, C % PROTON_FRACTION ), &
-        DP    => FV ( oV + 1 : oV + nV, C % CONSERVED_PROTON_DENSITY ), &
+        YE    => FV ( oV + 1 : oV + nV, C % ELECTRON_FRACTION ), &
+        DE    => FV ( oV + 1 : oV + nV, C % CONSERVED_ELECTRON_DENSITY ), &
         X_P   => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_PROTON ), &
         X_N   => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_NEUTRON ), &
         X_He  => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_ALPHA ), &
@@ -547,8 +547,8 @@ contains
            ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
     call C % Compute_DS_G_Kernel &
            ( DS, N, SB )
-    call C % Compute_DP_G_Kernel &
-           ( DP, N, YE )
+    call C % Compute_DE_G_Kernel &
+           ( DE, N, YE )
     call C % Compute_FE_P_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
              V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33 )
@@ -631,8 +631,8 @@ contains
         T     => FV ( oV + 1 : oV + nV, C % TEMPERATURE ), &
         SB    => FV ( oV + 1 : oV + nV, C % ENTROPY_PER_BARYON ), &
         DS    => FV ( oV + 1 : oV + nV, C % CONSERVED_ENTROPY ), &
-        YE    => FV ( oV + 1 : oV + nV, C % PROTON_FRACTION ), &
-        DP    => FV ( oV + 1 : oV + nV, C % CONSERVED_PROTON_DENSITY ), &
+        YE    => FV ( oV + 1 : oV + nV, C % ELECTRON_FRACTION ), &
+        DE    => FV ( oV + 1 : oV + nV, C % CONSERVED_ELECTRON_DENSITY ), &
         X_P   => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_PROTON ), &
         X_N   => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_NEUTRON ), &
         X_He  => FV ( oV + 1 : oV + nV, C % MASS_FRACTION_ALPHA ), &
@@ -650,8 +650,8 @@ contains
     call C % Compute_N_V_E_G_Kernel &
                ( N, V_1, V_2, V_3, E, D, S_1, S_2, S_3, GE, M, &
                  M_UU_22, M_UU_33, C % BaryonDensityMin )
-    call C % Compute_YP_G_Kernel &
-           ( YE, DP, N )
+    call C % Compute_YE_G_Kernel &
+           ( YE, DE, N )
     if ( C % UseEntropy ) then
       call C % Compute_SB_G_Kernel &
              ( SB, DS, N )
@@ -707,7 +707,7 @@ contains
       oValueOption
 
     integer ( KDI ) :: &
-      iProton, &
+      iElectron, &
       oV, &  !-- oValue
       nV     !-- nValues
 
@@ -727,18 +727,18 @@ contains
       nV = size ( Value_C, dim = 1 )
     end if
 
-    call Search ( C % iaConserved, C % CONSERVED_PROTON_DENSITY, iProton )
+    call Search ( C % iaConserved, C % CONSERVED_ELECTRON_DENSITY, iElectron )
 
     associate &
-      ( F_DP  => RawFlux ( oV + 1 : oV + nV, iProton ), &
-        DP    => Value_C ( oV + 1 : oV + nV, &
-                           C % CONSERVED_PROTON_DENSITY ), &
+      ( F_DE  => RawFlux ( oV + 1 : oV + nV, iElectron ), &
+        DE    => Value_C ( oV + 1 : oV + nV, &
+                           C % CONSERVED_ELECTRON_DENSITY ), &
         V_Dim => Value_C ( oV + 1 : oV + nV, &
                            C % VELOCITY_U ( iDimension ) ) )
 
-    call ComputeRawFluxesKernel ( F_DP, DP, V_Dim )
+    call ComputeRawFluxesKernel ( F_DE, DE, V_Dim )
 
-    end associate !-- F_DP, etc.
+    end associate !-- F_DE, etc.
 
   end subroutine ComputeRawFluxes
 
@@ -762,10 +762,10 @@ contains
            ( C_ICL, C_ICR, C_IL, C_IR, SS_I, M_DD_22, M_DD_33, iD )
 
     call ComputeCenterStatesKernel &
-           ( C_ICL % Value ( :, C % CONSERVED_PROTON_DENSITY ), &
-             C_ICR % Value ( :, C % CONSERVED_PROTON_DENSITY ), &
-             C_IL % Value ( :, C % CONSERVED_PROTON_DENSITY ), &
-             C_IR % Value ( :, C % CONSERVED_PROTON_DENSITY ), &
+           ( C_ICL % Value ( :, C % CONSERVED_ELECTRON_DENSITY ), &
+             C_ICR % Value ( :, C % CONSERVED_ELECTRON_DENSITY ), &
+             C_IL % Value ( :, C % CONSERVED_ELECTRON_DENSITY ), &
+             C_IR % Value ( :, C % CONSERVED_ELECTRON_DENSITY ), &
              C_IL % Value ( :, C % VELOCITY_U ( iD ) ), &
              C_IR % Value ( :, C % VELOCITY_U ( iD ) ), &
              SS_I % Value ( :, C % ALPHA_PLUS ), &
@@ -775,10 +775,10 @@ contains
   end subroutine ComputeCenterStates
 
 
-  subroutine Compute_DP_G_Kernel ( DP, N, YE )
+  subroutine Compute_DE_G_Kernel ( DE, N, YE )
  	 
     real ( KDR ), dimension ( : ), intent ( inout ) :: & 	 	 
-      DP
+      DE
     real ( KDR ), dimension ( : ), intent ( in ) :: & 	 	 
       N, &
       YE 	 	 
@@ -787,24 +787,24 @@ contains
       iV, &
       nValues
 
-    nValues = size ( DP )
+    nValues = size ( DE )
 
     !$OMP parallel do private ( iV )
     do iV = 1, nValues
-      DP ( iV )  =  YE ( iV )  *  N ( iV )
+      DE ( iV )  =  YE ( iV )  *  N ( iV )
     end do !-- iV
     !$OMP end parallel do
 
-  end subroutine Compute_DP_G_Kernel
+  end subroutine Compute_DE_G_Kernel
 
 
-  subroutine Compute_YP_G_Kernel ( YE, DP, N )
+  subroutine Compute_YE_G_Kernel ( YE, DE, N )
  	 
     !-- Compute_ProtonFraction_Galilean_Kernel
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       YE, &
-      DP
+      DE
     real ( KDR ), dimension ( : ), intent ( in ) :: & 	 	 
       N 	 	 
  	 	 
@@ -816,22 +816,22 @@ contains
 
     !$OMP parallel do private ( iV )
     do iV = 1, nValues
-      if ( DP ( iV ) < 0.0_KDR ) &
-        DP ( iV )  =  0.0_KDR
+      if ( DE ( iV ) < 0.0_KDR ) &
+        DE ( iV )  =  0.0_KDR
     end do !-- iV
     !$OMP end parallel do
 
     !$OMP parallel do private ( iV )
     do iV = 1, nValues
       if ( N ( iV ) > 0.0_KDR ) then
-        YE ( iV ) = DP ( iV ) / N ( iV )
+        YE ( iV ) = DE ( iV ) / N ( iV )
       else
         YE ( iV ) = 0.0_KDR
       end if
     end do !-- iV
     !$OMP end parallel do
 
-  end subroutine Compute_YP_G_Kernel
+  end subroutine Compute_YE_G_Kernel
   
   
   subroutine Apply_EOS_HN_T_Kernel &
@@ -1175,23 +1175,23 @@ contains
   end subroutine Apply_EOS_HN_SB_Kernel
 
 
-  subroutine ComputeRawFluxesKernel ( F_DP, DP, V_Dim )
+  subroutine ComputeRawFluxesKernel ( F_DE, DE, V_Dim )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      F_DP
+      F_DE
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      DP, &
+      DE, &
       V_Dim
     
     integer ( KDI ) :: &
       iV, &
       nValues
 
-    nValues = size ( F_DP )
+    nValues = size ( F_DE )
 
     !$OMP parallel do private ( iV ) 
     do iV = 1, nValues
-      F_DP ( iV )  =  DP ( iV )  *  V_Dim ( iV ) 
+      F_DE ( iV )  =  DE ( iV )  *  V_Dim ( iV ) 
     end do !-- iV
     !$OMP end parallel do
 
@@ -1199,13 +1199,13 @@ contains
 
 
   subroutine ComputeCenterStatesKernel &
-               ( DP_ICL, DP_ICR, DP_IL, DP_IR, V_Dim_IL, V_Dim_IR, &
+               ( DE_ICL, DE_ICR, DE_IL, DE_IR, V_Dim_IL, V_Dim_IR, &
                  AP_I, AM_I, AC_I )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      DP_ICL, DP_ICR
+      DE_ICL, DE_ICR
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      DP_IL, DP_IR, &
+      DE_IL, DE_IR, &
       V_Dim_IL, V_Dim_IR, &
       AP_I, &
       AM_I, &
@@ -1244,8 +1244,8 @@ contains
       AP_AC_Inv =  1.0_KDR &
                    / max ( abs ( AP_AC ), SqrtTiny )
 
-      DP_ICL ( iV )  =  DP_IL ( iV ) * AM_VL * AM_AC_Inv
-      DP_ICR ( iV )  =  DP_IR ( iV ) * AP_VR * AP_AC_Inv
+      DE_ICL ( iV )  =  DE_IL ( iV ) * AM_VL * AM_AC_Inv
+      DE_ICR ( iV )  =  DE_IR ( iV ) * AP_VR * AP_AC_Inv
 
     end do !-- iV
     !$OMP end parallel do

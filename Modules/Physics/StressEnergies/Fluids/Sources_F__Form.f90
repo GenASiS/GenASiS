@@ -19,7 +19,7 @@ module Sources_F__Form
       GRAVITATIONAL_G  = 0, &
       RADIATION_G      = 0, &
       RADIATION_DS     = 0, &
-      RADIATION_DP     = 0, &
+      RADIATION_DE     = 0, &
       RADIATION_TIME   = 0
     integer ( KDI ), dimension ( 3 ) :: &
       CURVILINEAR_S_D   = 0, &
@@ -160,7 +160,7 @@ contains
     SF % GRAVITATIONAL_G    =  oF + 1
     SF % RADIATION_G        =  oF + 2
     SF % RADIATION_DS       =  oF + 3
-    SF % RADIATION_DP       =  oF + 4
+    SF % RADIATION_DE       =  oF + 4
     SF % RADIATION_TIME     =  oF + 5
     SF % CURVILINEAR_S_D    =  oF + [  6,  7,  8 ]
     SF % GRAVITATIONAL_S_D  =  oF + [  9, 10, 11 ]
@@ -180,7 +180,7 @@ contains
       = [ 'Gravitational_G    ', &
           'Radiation_G        ', &
           'Radiation_DS       ', &
-          'Radiation_DP       ', &
+          'Radiation_DE       ', &
           'RadiationTime      ', &
           'Curvilinear_S_D_1  ', &
           'Curvilinear_S_D_2  ', &

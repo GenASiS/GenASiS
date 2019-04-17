@@ -75,7 +75,7 @@ contains
           V_2 => F % Value ( :, F % VELOCITY_U ( 2 ) ), &
           V_3 => F % Value ( :, F % VELOCITY_U ( 3 ) ), &
             E => F % Value ( :, F % INTERNAL_ENERGY ), &
-          Y_E => F % Value ( :, F % PROTON_FRACTION ), &
+          Y_E => F % Value ( :, F % ELECTRON_FRACTION ), &
             R => G % Value ( :, G % CENTER_U ( 1 ) ) )
 
     do iV = 1, size ( N )

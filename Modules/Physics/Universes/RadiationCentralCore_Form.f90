@@ -52,7 +52,7 @@ module RadiationCentralCore_Form
       private :: &
         ComputeTimeStepInteractions, &
         ComputeFluidSource_G_S_Radiation_Kernel, &
-        ComputeFluidSource_DP_Radiation_Kernel, &
+        ComputeFluidSource_DE_Radiation_Kernel, &
         ApplySources_Fluid_Kernel
 
 contains
@@ -626,8 +626,8 @@ contains
 
       select case ( trim ( RM % RadiationType ) )
       case ( 'NEUTRINOS_E' )
-        call ComputeFluidSource_DP_Radiation_Kernel &
-               ( SF % Value ( :, SF % RADIATION_DP ), & 
+        call ComputeFluidSource_DE_Radiation_Kernel &
+               ( SF % Value ( :, SF % RADIATION_DE ), & 
                  SF % Value ( :, SF % RADIATION_DS ), &
                  PSC % IsProperCell, &
                  SR % Value ( :, SR % INTERACTIONS_N ), &
@@ -636,8 +636,8 @@ contains
                  F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
                  Sign  =  + 1.0_KDR )
       case ( 'NEUTRINOS_E_BAR' )
-        call ComputeFluidSource_DP_Radiation_Kernel &
-               ( SF % Value ( :, SF % RADIATION_DP ), & 
+        call ComputeFluidSource_DE_Radiation_Kernel &
+               ( SF % Value ( :, SF % RADIATION_DE ), & 
                  SF % Value ( :, SF % RADIATION_DS ), &
                  PSC % IsProperCell, &
                  SR % Value ( :, SR % INTERACTIONS_N ), &
@@ -783,7 +783,7 @@ contains
       iMomentum_2, &
       iMomentum_3, &
       iEntropy, &
-      iProton
+      iElectron
 
     call ApplyCurvilinear_F &
            ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
@@ -808,21 +808,21 @@ contains
     call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 2 ), iMomentum_2 )
     call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 3 ), iMomentum_3 )
     call Search ( F % iaConserved, F % CONSERVED_ENTROPY, iEntropy )
-    call Search ( F % iaConserved, F % CONSERVED_PROTON_DENSITY, iProton )
+    call Search ( F % iaConserved, F % CONSERVED_ELECTRON_DENSITY, iElectron )
 
     call ApplySources_Fluid_Kernel &
            ( Increment % Value ( :, iEnergy ), &
              Increment % Value ( :, iMomentum_1 ), &
              Increment % Value ( :, iMomentum_2 ), &
              Increment % Value ( :, iMomentum_3 ), &
-             Increment % Value ( :, iProton ), &
+             Increment % Value ( :, iElectron ), &
              Increment % Value ( :, iEntropy ), &
              Chart % IsProperCell, &
              SF % Value ( :, SF % RADIATION_G ), &
              SF % Value ( :, SF % RADIATION_S_D ( 1 ) ), &
              SF % Value ( :, SF % RADIATION_S_D ( 2 ) ), &
              SF % Value ( :, SF % RADIATION_S_D ( 3 ) ), &
-             SF % Value ( :, SF % RADIATION_DP ), &
+             SF % Value ( :, SF % RADIATION_DE ), &
              SF % Value ( :, SF % RADIATION_DS ), &
              TimeStep )
 
@@ -911,11 +911,11 @@ contains
   end subroutine ComputeFluidSource_G_S_Radiation_Kernel
 
 
-  subroutine ComputeFluidSource_DP_Radiation_Kernel &
-               ( FS_R_DP, FS_R_DS, IsProperCell, R, T, Mu_e, Mu_n_p, Sign )
+  subroutine ComputeFluidSource_DE_Radiation_Kernel &
+               ( FS_R_DE, FS_R_DS, IsProperCell, R, T, Mu_e, Mu_n_p, Sign )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      FS_R_DP, &
+      FS_R_DE, &
       FS_R_DS
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       IsProperCell
@@ -929,7 +929,7 @@ contains
       iV, &
       nV
 
-    nV = size ( FS_R_DP )
+    nV = size ( FS_R_DE )
 
     !$OMP parallel do private ( iV )
     do iV = 1, nV
@@ -937,8 +937,8 @@ contains
       if ( .not. IsProperCell ( iV ) ) &
         cycle
 
-      FS_R_DP ( iV )  &
-        =  FS_R_DP ( iV )  &
+      FS_R_DE ( iV )  &
+        =  FS_R_DE ( iV )  &
            -  Sign  *  R ( iV )
 
       FS_R_DS ( iV )  &
@@ -949,24 +949,24 @@ contains
     end do
     !$OMP end parallel do
 
-  end subroutine ComputeFluidSource_DP_Radiation_Kernel
+  end subroutine ComputeFluidSource_DE_Radiation_Kernel
 
 
   subroutine ApplySources_Fluid_Kernel &
-               ( K_G, K_S_1, K_S_2, K_S_3, K_DP, K_DS, IsProperCell, FS_R_G, &
-                 FS_R_S_1, FS_R_S_2, FS_R_S_3, FS_R_DP, FS_R_DS, dt )
+               ( K_G, K_S_1, K_S_2, K_S_3, K_DE, K_DS, IsProperCell, FS_R_G, &
+                 FS_R_S_1, FS_R_S_2, FS_R_S_3, FS_R_DE, FS_R_DS, dt )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       K_G, &
       K_S_1, K_S_2, K_S_3, &
-      K_DP, &
+      K_DE, &
       K_DS
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       IsProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       FS_R_G, &
       FS_R_S_1, FS_R_S_2, FS_R_S_3, &
-      FS_R_DP, &
+      FS_R_DE, &
       FS_R_DS
     real ( KDR ), intent ( in ) :: &
       dt
@@ -985,7 +985,7 @@ contains
       K_S_1 ( iV )  =  K_S_1 ( iV )  +  FS_R_S_1 ( iV )  *  dt
       K_S_2 ( iV )  =  K_S_2 ( iV )  +  FS_R_S_2 ( iV )  *  dt
       K_S_3 ( iV )  =  K_S_3 ( iV )  +  FS_R_S_3 ( iV )  *  dt
-      K_DP ( iV )   =  K_DP ( iV )   +  FS_R_DP ( iV )   *  dt
+      K_DE ( iV )   =  K_DE ( iV )   +  FS_R_DE ( iV )   *  dt
       K_DS ( iV )   =  K_DS ( iV )   +  FS_R_DS ( iV )   *  dt
     end do
     !$OMP end parallel do

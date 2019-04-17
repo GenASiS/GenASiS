@@ -19,7 +19,7 @@ module ApplyDeleptonization_F__Command
     ApplyDeleptonization_F
 
     private :: &
-      Apply_DP_DS_Kernel!, &
+      Apply_DE_DS_Kernel!, &
 !      Apply_S_D_Kernel, &
 !      ComputeNeutrinoPressure
 
@@ -60,7 +60,7 @@ contains
 
     integer ( KDI ) :: &
       iD, &
-      iProton, &
+      iElectron, &
       iEntropy, &
       iMomentum
     type ( StorageForm ) :: &
@@ -91,23 +91,23 @@ contains
     select type ( Chart => S % Chart )
     class is ( Chart_SL_Template )
 
-    call Search ( F % iaConserved, F % CONSERVED_PROTON_DENSITY, iProton )
+    call Search ( F % iaConserved, F % CONSERVED_ELECTRON_DENSITY, iElectron )
     call Search ( F % iaConserved, F % CONSERVED_ENTROPY, iEntropy )
 
     if ( iStage == 1 ) then
-      call Clear ( S_F % Value ( :, S_F % RADIATION_DP ) )
+      call Clear ( S_F % Value ( :, S_F % RADIATION_DE ) )
       call Clear ( S_F % Value ( :, S_F % RADIATION_DS ) )
     end if
 
-    call Apply_DP_DS_Kernel &
-           ( Increment % Value ( :, iProton ), &
+    call Apply_DE_DS_Kernel &
+           ( Increment % Value ( :, iElectron ), &
              Increment % Value ( :, iEntropy ), &
-             S_F % Value ( :, S_F % RADIATION_DP ), &
+             S_F % Value ( :, S_F % RADIATION_DE ), &
              S_F % Value ( :, S_F % RADIATION_DS ), &
              Chart % IsProperCell, &
              F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
              F % Value ( :, F % TEMPERATURE ), &
-             F % Value ( :, F % PROTON_FRACTION ), &
+             F % Value ( :, F % ELECTRON_FRACTION ), &
              F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
              F % Value ( :, F % CHEMICAL_POTENTIAL_E ), &
              F % Value ( :, F % CONSERVED_ENTROPY ), &
@@ -149,21 +149,21 @@ contains
   end subroutine ApplyDeleptonization_F
 
 
-  subroutine Apply_DP_DS_Kernel &
-               ( K_DP, K_DS, S_DP, S_DS, IsProperCell, N, T, YP, &
+  subroutine Apply_DE_DS_Kernel &
+               ( K_DE, K_DS, S_DE, S_DS, IsProperCell, N, T, YE, &
                  Mu_NP, Mu_E, DS, dt, Weight_RK )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      K_DP, &
+      K_DE, &
       K_DS, &
-      S_DP, &
+      S_DE, &
       S_DS
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       IsProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       N, &
       T, &
-      YP, &
+      YE, &
       Mu_NP, &
       Mu_E, &
       DS
@@ -177,12 +177,12 @@ contains
     real ( KDR ) :: &
       X, &
       abs_X, &
-      YP_bar, &
-      dYP, &
-      dDP, &
+      YE_bar, &
+      dYE, &
+      dDE, &
       dDS
 
-    nValues = size ( K_DP )
+    nValues = size ( K_DE )
 
     !$OMP parallel do private ( iV )
     do iV = 1, nValues
@@ -197,24 +197,24 @@ contains
                         / ( log10 ( N_2 ) - log10 ( N_1 ) ) ) )
       abs_X  =  abs ( X )
 
-      YP_bar  =  0.5_KDR * ( Y_1 + Y_2 )  +  0.5_KDR * X * ( Y_2 - Y_1 ) &
+      YE_bar  =  0.5_KDR * ( Y_1 + Y_2 )  +  0.5_KDR * X * ( Y_2 - Y_1 ) &
                   +  Y_C * ( 1.0_KDR - abs_X  +  4.0_KDR * abs_X &
                                                  * ( abs_X - 0.5_KDR ) &
                                                  * ( abs_X - 1.0_KDR ) )
 
-      dYP  =  min ( 0.0_KDR, YP_bar - YP ( iV ) )
-      dDP  =  N ( iV ) * dYP
+      dYE  =  min ( 0.0_KDR, YE_bar - YE ( iV ) )
+      dDE  =  N ( iV ) * dYE
 
       if ( Mu_E ( iV ) - Mu_NP ( iV ) - E_Esc  >  0.0_KDR &
            .and. N ( iV ) < N_Trap ) &
       then
-        dDS  =  - dDP * ( Mu_E ( iV ) - Mu_NP ( iV ) - E_Esc )  /  T ( iV )
+        dDS  =  - dDE * ( Mu_E ( iV ) - Mu_NP ( iV ) - E_Esc )  /  T ( iV )
       else
         dDS  =  0.0_KDR
       end if
 
-      K_DP ( iV )  =  K_DP ( iV )  +  dDP
-      S_DP ( iV )  =  S_DP ( iV )  +  Weight_RK * dDP / dt
+      K_DE ( iV )  =  K_DE ( iV )  +  dDE
+      S_DE ( iV )  =  S_DE ( iV )  +  Weight_RK * dDE / dt
 
       K_DS ( iV )  =  K_DS ( iV )  +  dDS
       S_DS ( iV )  =  S_DS ( iV )  +  Weight_RK * dDS / dt
@@ -222,7 +222,7 @@ contains
     end do
     !$OMP end parallel do
 
-  end subroutine Apply_DP_DS_Kernel
+  end subroutine Apply_DE_DS_Kernel
 
 
   ! subroutine Apply_S_D_Kernel &

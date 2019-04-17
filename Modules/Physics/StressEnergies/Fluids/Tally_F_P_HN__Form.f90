@@ -18,7 +18,7 @@ module Tally_F_P_HN__Form
   type, public, extends ( Tally_F_P_Form ) :: Tally_F_P_HN_Form
     integer ( KDI ) :: &
       N_INTEGRALS_HEAVY_NUCLEUS = N_INTEGRALS_HEAVY_NUCLEUS, &
-      PROTON_NUMBER = 0
+      ELECTRON_NUMBER = 0
   contains
     procedure, public, pass :: &
       InitializeFluid
@@ -54,7 +54,7 @@ contains
     
     call T % Tally_F_P_Form % Initialize ( A, Units )
     
-    T % PROTON_NUMBER  =  oI + 1
+    T % ELECTRON_NUMBER  =  oI + 1
     
     T % Variable ( oI + 1 : oI + T % N_INTEGRALS_HEAVY_NUCLEUS ) &
       = [ 'ProtonNumber' ]
@@ -92,7 +92,7 @@ contains
       T % nSelected = 11
       allocate ( T % iaSelected ( T % nSelected ) )
       T % iaSelected &
-        = [ T % BARYON_NUMBER, T % PROTON_NUMBER, T % MOMENTUM, &
+        = [ T % BARYON_NUMBER, T % ELECTRON_NUMBER, T % MOMENTUM, &
             T % FLUID_ENERGY, T % INTERNAL_ENERGY, T % KINETIC_ENERGY, &
             T % ANGULAR_MOMENTUM ]
     
@@ -100,7 +100,7 @@ contains
       T % nSelected = 13
       allocate ( T % iaSelected ( T % nSelected ) )
       T % iaSelected &
-        = [ T % BARYON_NUMBER, T % PROTON_NUMBER, T % MOMENTUM, &
+        = [ T % BARYON_NUMBER, T % ELECTRON_NUMBER, T % MOMENTUM, &
             T % FLUID_ENERGY, T % INTERNAL_ENERGY, T % KINETIC_ENERGY, &
             T % ANGULAR_MOMENTUM, T % GRAVITATIONAL_ENERGY, &
             T % TOTAL_ENERGY ]
@@ -157,16 +157,16 @@ contains
     call T % Tally_F_P_Form &
            % ComputeInteriorIntegrand_G ( Integrand, C, G, nDimensions )
 
-    associate ( DP => C % Value ( :, C % CONSERVED_PROTON_DENSITY ) )
+    associate ( DE => C % Value ( :, C % CONSERVED_ELECTRON_DENSITY ) )
     
     do iS = 1, T % nSelected
       iI = T % iaSelected ( iS )
-      if ( iI == T % PROTON_NUMBER ) then
-        call Copy ( DP, Integrand ( iS ) % Value )
+      if ( iI == T % ELECTRON_NUMBER ) then
+        call Copy ( DE, Integrand ( iS ) % Value )
       end if !-- iI
     end do !-- iS
 
-    end associate !-- DP
+    end associate !-- DE
     end select !-- C
 
   end subroutine ComputeInteriorIntegrand_G
@@ -202,7 +202,7 @@ contains
            ( Integrand, C, CSL, G, BoundaryFluence )
 
     do iFluence = 1, C % N_CONSERVED
-      if ( C % iaConserved ( iFluence ) == C % CONSERVED_PROTON_DENSITY ) &
+      if ( C % iaConserved ( iFluence ) == C % CONSERVED_ELECTRON_DENSITY ) &
         iProton = iFluence
     end do !-- iFluence
 
@@ -212,7 +212,7 @@ contains
       associate ( CE => BoundaryFluence ( iProton, iF ) % Value )
       do iS = 1, T % nSelected
         iI = T % iaSelected ( iS )
-        if ( iI == T % PROTON_NUMBER ) then
+        if ( iI == T % ELECTRON_NUMBER ) then
           call CopyCollapse ( CE, Integrand ( iS, iF ) % Value )
         end if !-- iI
       end do !-- iS
