@@ -50,7 +50,8 @@ module Fluid_P__Template
       ComputeConservedEnergyKernelHost, &
       ComputeConservedEnergyKernelDevice
     procedure, public, nopass :: &
-      ComputeInternalEnergyKernel
+      ComputeInternalEnergyKernelHost, &
+      ComputeInternalEnergyKernelDevice
     procedure, public, nopass :: &
       ComputeEigenspeedsFluidKernelHost, &
       ComputeEigenspeedsFluidKernelDevice
@@ -591,7 +592,7 @@ contains
   end subroutine ComputeConservedEnergyKernelDevice
 
 
-  subroutine ComputeInternalEnergyKernel &
+  subroutine ComputeInternalEnergyKernelHost &
                ( E, G, M, N, V_1, V_2, V_3, S_1, S_2, S_3 )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -609,7 +610,7 @@ contains
 
     nValues = size ( E )
 
-    !$OMP parallel do private ( iV )
+    !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV )
     do iV = 1, nValues
       E ( iV )  =  G ( iV )  -  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV ) &
                                             +  S_2 ( iV ) * V_2 ( iV ) &
@@ -617,7 +618,7 @@ contains
     end do
     !$OMP end parallel do
 
-    !$OMP parallel do private ( iV )
+    !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV )
     do iV = 1, nValues
       if ( E ( iV ) < 0.0_KDR ) then
         E ( iV ) = 0.0_KDR
@@ -628,7 +629,80 @@ contains
     end do
     !$OMP end parallel do
 
-  end subroutine ComputeInternalEnergyKernel
+  end subroutine ComputeInternalEnergyKernelHost
+
+
+  subroutine ComputeInternalEnergyKernelDevice &
+               ( E, G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, &
+                 D_E, D_G, D_M, D_N, D_V_1, D_V_2, D_V_3, &
+                 D_S_1, D_S_2, D_S_3 )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      E, &
+      G
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      M, &
+      N, &
+      V_1, V_2, V_3, &
+      S_1, S_2, S_3
+    type ( c_ptr ), intent ( inout ) :: &
+      D_E, &
+      D_G, &
+      D_M, &
+      D_N, &
+      D_V_1, D_V_2, D_V_3, &
+      D_S_1, D_S_2, D_S_3
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+      
+    call AssociateHost ( D_E, E )
+    call AssociateHost ( D_G, G )
+    call AssociateHost ( D_M, M )
+    call AssociateHost ( D_N, N )
+    call AssociateHost ( D_V_1, V_1 )
+    call AssociateHost ( D_V_2, V_2 )
+    call AssociateHost ( D_V_3, V_3 )
+    call AssociateHost ( D_S_1, S_1 )
+    call AssociateHost ( D_S_2, S_2 )
+    call AssociateHost ( D_S_3, S_3 )
+
+    nValues = size ( E )
+
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+    !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+    do iV = 1, nValues
+      E ( iV )  =  G ( iV )  -  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV ) &
+                                            +  S_2 ( iV ) * V_2 ( iV ) &
+                                            +  S_3 ( iV ) * V_3 ( iV ) )
+    end do
+    !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+    !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+    do iV = 1, nValues
+      if ( E ( iV ) < 0.0_KDR ) then
+        E ( iV ) = 0.0_KDR
+        G ( iV ) = E ( iV )  +  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV ) &
+                                            +  S_2 ( iV ) * V_2 ( iV ) &
+                                            +  S_3 ( iV ) * V_3 ( iV ) )
+      end if
+    end do
+    !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+    
+    call DisassociateHost ( S_3 )
+    call DisassociateHost ( S_2 )
+    call DisassociateHost ( S_1 )
+    call DisassociateHost ( V_3 )
+    call DisassociateHost ( V_2 )
+    call DisassociateHost ( V_1 )
+    call DisassociateHost ( N )
+    call DisassociateHost ( M )
+    call DisassociateHost ( G )
+    call DisassociateHost ( E )
+    
+  end subroutine ComputeInternalEnergyKernelDevice
 
 
   subroutine ComputeEigenspeedsFluidKernelHost &

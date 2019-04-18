@@ -370,16 +370,16 @@ end if
 
 
   subroutine ComputeFromConservedCommon &
-               ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
+               ( Storage_C, C, G, Storage_G, nValuesOption, oValueOption )
 
-    real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
-      Value_C
+    class ( StorageForm ), intent ( inout ), target :: &
+      Storage_C
     class ( Fluid_P_P_Form ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_G
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
@@ -389,8 +389,14 @@ end if
       nV     !-- nValues
 
     associate &
-      ( FV => Value_C, &
-        GV => Value_G )
+      ( FV => Storage_C % Value, &
+        GV => Storage_G % Value, &
+        D_S_C => Storage_C % D_Selected, &
+        D_S_G => Storage_G % D_Selected, &
+        I_DD_22 => G % METRIC_DD_22, &
+        I_DD_33 => G % METRIC_DD_33, &        
+        I_UU_22 => G % METRIC_UU_22, &
+        I_UU_33 => G % METRIC_UU_33 )
 
     if ( present ( oValueOption ) ) then
       oV = oValueOption
@@ -432,23 +438,82 @@ end if
         SB    => FV ( oV + 1 : oV + nV, C % ENTROPY_PER_BARYON ), &
         K     => FV ( oV + 1 : oV + nV, C % POLYTROPIC_PARAMETER ) )
 
-    call C % ComputeBaryonMassKernelHost ( M )
-    call C % ComputeDensityVelocityKernel &
-           ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33 )
-    call C % ComputeInternalEnergyKernel &
-           ( E, G, M, N, V_1, V_2, V_3, S_1, S_2, S_3 )
-    call C % Apply_EOS_P_KernelHost &
-           ( P, Gamma, SB, K, N, E, C % AdiabaticIndex, &
-             C % FiducialPolytropicParameter )
-    call C % ComputeEigenspeedsFluidKernelHost &
-           ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, MN, &
-             M, N, V_1, V_2, V_3, S_1, S_2, S_3, P, Gamma, M_UU_22, M_UU_33 )
+    if ( C % AllocatedDevice ) then
+    
+      associate &
+        ( D_M_DD_22 => D_S_G ( I_DD_22 ), &
+          D_M_DD_33 => D_S_G ( I_DD_33 ), &
+          D_M_UU_22 => D_S_G ( I_UU_22 ), &
+          D_M_UU_33 => D_S_G ( I_UU_33 ) )
+      associate &
+        ( D_FEP_1 => D_S_C ( C % FAST_EIGENSPEED_PLUS ( 1 ) ), &
+          D_FEP_2 => D_S_C ( C % FAST_EIGENSPEED_PLUS ( 2 ) ), &
+          D_FEP_3 => D_S_C ( C % FAST_EIGENSPEED_PLUS ( 3 ) ), &
+          D_FEM_1 => D_S_C ( C % FAST_EIGENSPEED_MINUS ( 1 ) ), &
+          D_FEM_2 => D_S_C ( C % FAST_EIGENSPEED_MINUS ( 2 ) ), &
+          D_FEM_3 => D_S_C ( C % FAST_EIGENSPEED_MINUS ( 3 ) ), &
+          D_M     => D_S_C ( C % BARYON_MASS ), &
+          D_N     => D_S_C ( C % COMOVING_DENSITY ), &
+          D_V_1   => D_S_C ( C % VELOCITY_U ( 1 ) ), &
+          D_V_2   => D_S_C ( C % VELOCITY_U ( 2 ) ), &
+          D_V_3   => D_S_C ( C % VELOCITY_U ( 3 ) ), &
+          D_D     => D_S_C ( C % CONSERVED_DENSITY ), &
+          D_S_1   => D_S_C ( C % MOMENTUM_DENSITY_D ( 1 ) ), &
+          D_S_2   => D_S_C ( C % MOMENTUM_DENSITY_D ( 2 ) ), &
+          D_S_3   => D_S_C ( C % MOMENTUM_DENSITY_D ( 3 ) ), &
+          D_E     => D_S_C ( C % INTERNAL_ENERGY ), &
+          D_G     => D_S_C ( C % CONSERVED_ENERGY ), &   
+          D_P     => D_S_C ( C % PRESSURE ), &
+          D_Gamma => D_S_C ( C % ADIABATIC_INDEX ), &
+          D_CS    => D_S_C ( C % SOUND_SPEED ), &
+          D_MN    => D_S_C ( C % MACH_NUMBER ), &
+          D_SB    => D_S_C ( C % ENTROPY_PER_BARYON ), &
+          D_K     => D_S_C ( C % POLYTROPIC_PARAMETER ) )
+          
+      call C % ComputeBaryonMassKernelDevice ( M, D_M )
+      call C % ComputeDensityVelocityKernelDevice &
+             ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33, &
+               D_N, D_V_1, D_V_2, D_V_3, D_D, D_S_1, D_S_2, D_S_3, D_M, &
+               D_M_UU_22, D_M_UU_33 )
+      call C % ComputeInternalEnergyKernelDevice &
+             ( E, G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, &
+               D_E, D_G, D_M, D_N, D_V_1, D_V_2, D_V_3, D_S_1, D_S_2, D_S_3 )
+      call C % Apply_EOS_P_KernelDevice &
+             ( P, Gamma, SB, K, N, E, &
+               D_P, D_Gamma, D_SB, D_K, D_N, D_E, &
+               C % AdiabaticIndex, C % FiducialPolytropicParameter )
+      call C % ComputeEigenspeedsFluidKernelDevice &
+             ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, MN, &
+               M, N, V_1, V_2, V_3, S_1, S_2, S_3, P, Gamma, &
+               M_UU_22, M_UU_33, &
+               D_FEP_1, D_FEP_2, D_FEP_3, D_FEM_1, D_FEM_2, D_FEM_3, D_CS, &
+               D_MN, D_M, D_N, D_V_1, D_V_2, D_V_3, D_S_1, D_S_2, D_S_3, &
+               D_P, D_Gamma, D_M_UU_22, D_M_UU_33 )
+      
+      end associate   !-- D_FEP_1, etc
+      end associate   !-- D_MM_DD_22, etc
+
+    else
+    
+      call C % ComputeBaryonMassKernelHost ( M )
+      call C % ComputeDensityVelocityKernelHost &
+             ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33 )
+      call C % ComputeInternalEnergyKernelHost &
+             ( E, G, M, N, V_1, V_2, V_3, S_1, S_2, S_3 )
+      call C % Apply_EOS_P_KernelHost &
+             ( P, Gamma, SB, K, N, E, C % AdiabaticIndex, &
+               C % FiducialPolytropicParameter )
+      call C % ComputeEigenspeedsFluidKernelHost &
+             ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, MN, &
+               M, N, V_1, V_2, V_3, S_1, S_2, S_3, P, Gamma, M_UU_22, M_UU_33 )
+    
+    end if
 
     end associate !-- FEP_1, etc.
     end associate !-- M_UU_22, etc.
     end associate !-- FV, etc.
     
-    if ( associated ( C % Value, Value_C ) ) &
+    if ( associated ( C % Value, Storage_C % Value ) ) &
       call C % Features % Detect ( )
 
   end subroutine ComputeFromConservedCommon

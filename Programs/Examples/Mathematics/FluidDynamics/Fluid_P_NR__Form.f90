@@ -401,16 +401,16 @@ contains
 
 
   subroutine ComputeFromConservedCommon &
-               ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
+               ( Storage_C, C, G, Storage_G, nValuesOption, oValueOption )
 
-    real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
-      Value_C
+    class ( StorageForm ), intent ( inout ), target :: &
+      Storage_C
     class ( Fluid_P_NR_Form ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_G
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
@@ -420,8 +420,8 @@ contains
       nV     !-- nValues
 
     associate &
-      ( FV => Value_C, &
-        GV => Value_G )
+      ( FV => Storage_C % Value, &
+        GV => Storage_G % Value )
 
     if ( present ( oValueOption ) ) then
       oV = oValueOption
@@ -464,9 +464,9 @@ contains
         T     => FV ( oV + 1 : oV + nV, C % TEMPERATURE ) )
 
     call C % ComputeBaryonMassKernelHost ( M )
-    call C % ComputeDensityVelocityKernel &
+    call C % ComputeDensityVelocityKernelHost &
            ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33 )
-    call C % ComputeInternalEnergyKernel &
+    call C % ComputeInternalEnergyKernelHost &
            ( E, G, M, N, V_1, V_2, V_3, S_1, S_2, S_3 )
     call C % Apply_EOS_NR_E_Kernel &
            ( P, Gamma, SB, T, M, N, E, C % AdiabaticIndex, &

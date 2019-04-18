@@ -554,8 +554,8 @@ contains
       call C % ComputeFromPrimitive ( C_IL, G, G_I )
       call C % ComputeFromPrimitive ( C_IR, G, G_I )
     else if ( trim ( C % ReconstructedType ) == 'CONSERVED' ) then
-      call C % ComputeFromConserved ( C_IL % Value, G, G_I % Value )
-      call C % ComputeFromConserved ( C_IR % Value, G, G_I % Value )
+      call C % ComputeFromConserved ( C_IL, G, G_I )
+      call C % ComputeFromConserved ( C_IR, G, G_I )
     end if
 !    call Timer_FP % Stop ( )
 !    end associate !-- Timer_FP
