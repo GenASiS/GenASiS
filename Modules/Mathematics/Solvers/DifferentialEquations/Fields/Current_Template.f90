@@ -1,8 +1,11 @@
 !-- Current is a template for a 4-current, of the type appearing in
 !   conservation laws.
 
+#include "Preprocessor"
+
 module Current_Template
 
+  use iso_c_binding
   use Basics
   use Manifolds
   use Sources_C__Form
@@ -156,7 +159,8 @@ module Current_Template
     private :: &
       InitializeBasics, &
       SetUnits, &
-      ComputeSolverSpeeds_HLL_Kernel, &
+      ComputeSolverSpeeds_HLL_KernelHost, &
+      ComputeSolverSpeeds_HLL_KernelDevice, &
       ComputeFluxes_HLL_Kernel
 
 contains
@@ -551,14 +555,40 @@ contains
            ( F_IL, G, C_IL, G_I, iDimension )
     call C % ComputeRawFluxes &
            ( F_IR, G, C_IR, G_I, iDimension )
-
-    call ComputeSolverSpeeds_HLL_Kernel &
-           ( SS_I % Value ( :, C % ALPHA_PLUS ), &
-             SS_I % Value ( :, C % ALPHA_MINUS ), &
-             C_IL % Value ( :, C % FAST_EIGENSPEED_PLUS ( iDimension ) ), &
-             C_IR % Value ( :, C % FAST_EIGENSPEED_PLUS ( iDimension ) ), &
-             C_IL % Value ( :, C % FAST_EIGENSPEED_MINUS ( iDimension ) ), &
-             C_IR % Value ( :, C % FAST_EIGENSPEED_MINUS ( iDimension ) ) )
+           
+    associate &
+      ( SS_I_V => SS_I % Value, &
+        C_IL_V => C_IL % Value, &
+        C_IR_V => C_IR % Value, &
+        SS_I_D => SS_I % D_Selected, &
+        C_IL_D => C_IL % D_Selected, &
+        C_IR_D => C_IR % D_Selected )
+        
+    if ( C % AllocatedDevice ) then
+      call ComputeSolverSpeeds_HLL_KernelDevice &
+             ( SS_I_V ( :, C % ALPHA_PLUS ), &
+               SS_I_V ( :, C % ALPHA_MINUS ), &
+               C_IL_V ( :, C % FAST_EIGENSPEED_PLUS ( iDimension ) ), &
+               C_IR_V ( :, C % FAST_EIGENSPEED_PLUS ( iDimension ) ), &
+               C_IL_V ( :, C % FAST_EIGENSPEED_MINUS ( iDimension ) ), &
+               C_IR_V ( :, C % FAST_EIGENSPEED_MINUS ( iDimension ) ), &
+               SS_I_D ( C % ALPHA_PLUS ), &
+               SS_I_D ( C % ALPHA_MINUS ), &
+               C_IL_D ( C % FAST_EIGENSPEED_PLUS ( iDimension ) ), &
+               C_IR_D ( C % FAST_EIGENSPEED_PLUS ( iDimension ) ), &
+               C_IL_D ( C % FAST_EIGENSPEED_MINUS ( iDimension ) ), &
+               C_IR_D ( C % FAST_EIGENSPEED_MINUS ( iDimension ) ) )
+    else
+      call ComputeSolverSpeeds_HLL_KernelHost &
+             ( SS_I_V ( :, C % ALPHA_PLUS ), &
+               SS_I_V ( :, C % ALPHA_MINUS ), &
+               C_IL_V ( :, C % FAST_EIGENSPEED_PLUS ( iDimension ) ), &
+               C_IR_V ( :, C % FAST_EIGENSPEED_PLUS ( iDimension ) ), &
+               C_IL_V ( :, C % FAST_EIGENSPEED_MINUS ( iDimension ) ), &
+               C_IR_V ( :, C % FAST_EIGENSPEED_MINUS ( iDimension ) ) )
+    end if
+    
+    end associate   !-- SS_I_V
 
     call C % ComputeDiffusionFactor_HLL ( DF_I, Grid, iDimension )
 
@@ -755,7 +785,7 @@ contains
   end subroutine SetUnits
 
 
-  subroutine ComputeSolverSpeeds_HLL_Kernel &
+  subroutine ComputeSolverSpeeds_HLL_KernelHost &
                ( AP_I, AM_I, LP_IL, LP_IR, LM_IL, LM_IR )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -771,14 +801,61 @@ contains
 
     nValues = size ( AP_I )
 
-    !$OMP parallel do private ( iV ) 
+    !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV ) 
     do iV = 1, nValues
       AP_I ( iV ) = max ( 0.0_KDR, + LP_IL ( iV ), + LP_IR ( iV ) )
       AM_I ( iV ) = max ( 0.0_KDR, - LM_IL ( iV ), - LM_IR ( iV ) )
     end do !-- iV
     !$OMP end parallel do
 
-  end subroutine ComputeSolverSpeeds_HLL_Kernel
+  end subroutine ComputeSolverSpeeds_HLL_KernelHost
+
+
+  subroutine ComputeSolverSpeeds_HLL_KernelDevice &
+               ( AP_I, AM_I, LP_IL, LP_IR, LM_IL, LM_IR, &
+                 D_AP_I, D_AM_I, D_LP_IL, D_LP_IR, D_LM_IL, D_LM_IR )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      AP_I, &
+      AM_I
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      LP_IL, LP_IR, &
+      LM_IL, LM_IR
+    type ( c_ptr ), intent ( in ) :: &
+      D_AP_I, &
+      D_AM_I, &
+      D_LP_IL, D_LP_IR, &
+      D_LM_IL, D_LM_IR
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+    
+    call AssociateHost ( D_AP_I,  AP_I )
+    call AssociateHost ( D_AM_I,  AM_I )
+    call AssociateHost ( D_LP_IL, LP_IL )
+    call AssociateHost ( D_LP_IR, LP_IR )
+    call AssociateHost ( D_LM_IL, LM_IL )
+    call AssociateHost ( D_LM_IR, LM_IR )
+
+    nValues = size ( AP_I )
+
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+    !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+    do iV = 1, nValues
+      AP_I ( iV ) = max ( 0.0_KDR, + LP_IL ( iV ), + LP_IR ( iV ) )
+      AM_I ( iV ) = max ( 0.0_KDR, - LM_IL ( iV ), - LM_IR ( iV ) )
+    end do !-- iV
+    !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+    
+    call DisassociateHost ( LM_IR )
+    call DisassociateHost ( LM_IL )
+    call DisassociateHost ( LP_IR )
+    call DisassociateHost ( LP_IL )
+    call DisassociateHost ( AM_I )
+    call DisassociateHost ( AP_I )
+    
+  end subroutine ComputeSolverSpeeds_HLL_KernelDevice
 
 
   subroutine ComputeFluxes_HLL_Kernel &
