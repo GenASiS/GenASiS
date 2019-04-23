@@ -63,7 +63,8 @@ module Fluid_P__Template
       ComputeCenterSpeedKernel, &
       ComputeCenterStatesKernel, &
       ComputeFluxes_HLLC_Kernel, &
-      ComputeRawFluxesTemplate_P_Kernel
+      ComputeRawFluxesTemplate_P_KernelHost, &
+      ComputeRawFluxesTemplate_P_KernelDevice
 
 contains
 
@@ -405,7 +406,10 @@ contains
     associate &
       ( Value_RF => RawFlux % Value, &
         Value_C  => Storage_C % Value, &
-        Value_G  => Storage_G % Value )
+        Value_G  => Storage_G % Value, &
+        D_S_RF   => RawFlux % D_Selected, &
+        D_S_C    => Storage_C % D_Selected, &
+        D_S_G    => Storage_G % D_Selected )
 
     if ( present ( oValueOption ) ) then
       oV = oValueOption
@@ -431,8 +435,22 @@ contains
         G       => Value_C ( oV + 1 : oV + nV, C % CONSERVED_ENERGY ), &
         P       => Value_C ( oV + 1 : oV + nV, C % PRESSURE ), &
         V_Dim   => Value_C ( oV + 1 : oV + nV, C % VELOCITY_U ( iDimension ) ))
-
-    call ComputeRawFluxesTemplate_P_Kernel ( F_S_Dim, F_G, G, P, V_Dim )
+    
+    if ( C % AllocatedDevice ) then
+      associate &
+        ( D_F_S_Dim => D_S_RF ( iMomentum ), &
+          D_F_G     => D_S_RF ( iEnergy ), &
+          D_G       => D_S_C ( C % CONSERVED_ENERGY ), &
+          D_P       => D_S_C ( C % PRESSURE ), &
+          D_V_Dim   => D_S_C ( C % VELOCITY_U ( iDimension ) ))
+      call ComputeRawFluxesTemplate_P_KernelDevice &
+             ( F_S_Dim, F_G, G, P, V_Dim, &
+               D_F_S_Dim, D_F_G, D_G, D_P, D_V_Dim )
+      end associate
+    else
+      call ComputeRawFluxesTemplate_P_KernelHost &
+             ( F_S_Dim, F_G, G, P, V_Dim )
+    end if
 
     end associate !-- F_S_Dim, etc.
     
@@ -1208,7 +1226,8 @@ contains
   end subroutine ComputeFluxes_HLLC_Kernel
 
 
-  subroutine ComputeRawFluxesTemplate_P_Kernel ( F_S_Dim, F_G, G, P, V_Dim )
+  subroutine ComputeRawFluxesTemplate_P_KernelHost &
+               ( F_S_Dim, F_G, G, P, V_Dim )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       F_S_Dim, &
@@ -1224,14 +1243,61 @@ contains
 
     nValues = size ( F_S_Dim )
 
-    !$OMP parallel do private ( iV )
+    !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV )
     do iV = 1, nValues
       F_S_Dim ( iV ) = F_S_Dim ( iV )  +  P ( iV )
       F_G     ( iV ) =     ( G ( iV )  +  P ( iV ) ) * V_Dim ( iV )
     end do
     !$OMP end parallel do
 
-  end subroutine ComputeRawFluxesTemplate_P_Kernel
+  end subroutine ComputeRawFluxesTemplate_P_KernelHost
+
+  
+  subroutine ComputeRawFluxesTemplate_P_KernelDevice &
+               ( F_S_Dim, F_G, G, P, V_Dim, D_F_S_Dim, D_F_G, D_G, D_P, &
+                 D_V_Dim )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      F_S_Dim, &
+      F_G
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      G, &
+      P, &
+      V_Dim
+    type ( c_ptr ), intent ( in ) :: &
+      D_F_S_Dim, &
+      D_F_G, &
+      D_G, &
+      D_P, &
+      D_V_Dim
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+      
+    call AssociateHost ( D_F_S_Dim, F_S_Dim )
+    call AssociateHost ( D_F_G, F_G )
+    call AssociateHost ( D_G, G )
+    call AssociateHost ( D_P, P )
+    call AssociateHost ( D_V_Dim, V_Dim )
+
+    nValues = size ( F_S_Dim )
+
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+    !$OMP& schedule ( OMP_SCHEDULE )
+    do iV = 1, nValues
+      F_S_Dim ( iV ) = F_S_Dim ( iV )  +  P ( iV )
+      F_G     ( iV ) =     ( G ( iV )  +  P ( iV ) ) * V_Dim ( iV )
+    end do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    
+    call DisassociateHost ( V_Dim )
+    call DisassociateHost ( P )
+    call DisassociateHost ( G )
+    call DisassociateHost ( F_G )
+    call DisassociateHost ( F_S_Dim )
+    
+  end subroutine ComputeRawFluxesTemplate_P_KernelDevice
 
 
 end module Fluid_P__Template

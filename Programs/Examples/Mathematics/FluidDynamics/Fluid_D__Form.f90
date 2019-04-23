@@ -67,8 +67,9 @@ module Fluid_D__Form
     private :: &
       InitializeBasics, &
       SetUnits, &
-      ComputeRawFluxesKernel
-
+      ComputeRawFluxesKernelHost, &
+      ComputeRawFluxesKernelDevice
+      
 contains
 
 
@@ -388,7 +389,11 @@ contains
     associate &
       ( Value_RF => RawFlux % Value, &
         Value_C  => Storage_C % Value, &
-        Value_G  => Storage_G % Value )
+        Value_G  => Storage_G % Value, &
+        D_S_RF   => RawFlux % D_Selected, &
+        D_S_C    => Storage_C % D_Selected, &
+        D_S_G    => Storage_G % D_Selected )
+        
       
     if ( present ( oValueOption ) ) then
       oV = oValueOption
@@ -422,8 +427,27 @@ contains
         S_3   => Value_C ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 3 ) ), &
         V_Dim => Value_C ( oV + 1 : oV + nV, C % VELOCITY_U ( iDimension ) ) )
 
-    call ComputeRawFluxesKernel &
-           ( F_D, F_S_1, F_S_2, F_S_3, D, S_1, S_2, S_3, V_Dim )
+    
+    if ( C % AllocatedDevice ) then
+      associate & 
+        ( D_F_D   => D_S_RF ( iDensity ), &
+          D_F_S_1 => D_S_RF ( iMomentum ( 1 ) ), &
+          D_F_S_2 => D_S_RF ( iMomentum ( 2 ) ), &
+          D_F_S_3 => D_S_RF ( iMomentum ( 3 ) ), &
+          D_D     => D_S_C ( C % CONSERVED_DENSITY ), &
+          D_S_1   => D_S_C ( C % MOMENTUM_DENSITY_D ( 1 ) ), &
+          D_S_2   => D_S_C ( C % MOMENTUM_DENSITY_D ( 2 ) ), &
+          D_S_3   => D_S_C ( C % MOMENTUM_DENSITY_D ( 3 ) ), &
+          D_V_Dim => D_S_C ( C % VELOCITY_U ( iDimension ) ) )
+      call ComputeRawFluxesKernelDevice &
+             ( F_D, F_S_1, F_S_2, F_S_3, D, S_1, S_2, S_3, V_Dim, &
+               D_F_D, D_F_S_1, D_F_S_2, D_F_S_3, D_D, &
+               D_S_1, D_S_2, D_S_3, D_V_Dim )
+      end associate
+    else
+      call ComputeRawFluxesKernelHost &
+             ( F_D, F_S_1, F_S_2, F_S_3, D, S_1, S_2, S_3, V_Dim )
+    end if
 
     end associate !-- F_D, etc.
     
@@ -887,7 +911,7 @@ contains
   end subroutine SetUnits
 
 
-  subroutine ComputeRawFluxesKernel &
+  subroutine ComputeRawFluxesKernelHost &
                ( F_D, F_S_1, F_S_2, F_S_3, D, S_1, S_2, S_3, V_Dim )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -904,7 +928,7 @@ contains
 
     nValues = size ( F_D )
 
-    !$OMP parallel do private ( iV ) 
+    !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV ) 
     do iV = 1, nValues
       F_D   ( iV ) = D   ( iV ) * V_Dim ( iV ) 
       F_S_1 ( iV ) = S_1 ( iV ) * V_Dim ( iV ) 
@@ -913,7 +937,65 @@ contains
     end do !-- iV
     !$OMP end parallel do
 
-  end subroutine ComputeRawFluxesKernel
+  end subroutine ComputeRawFluxesKernelHost
+
+
+  subroutine ComputeRawFluxesKernelDevice &
+               ( F_D, F_S_1, F_S_2, F_S_3, D, S_1, S_2, S_3, V_Dim, &
+                 D_F_D, D_F_S_1, D_F_S_2, D_F_S_3, D_D, &
+                 D_S_1, D_S_2, D_S_3, D_V_Dim )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      F_D, &
+      F_S_1, F_S_2, F_S_3
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      D, &
+      S_1, S_2, S_3, &
+      V_Dim
+    type ( c_ptr ), intent ( in ) :: &
+      D_F_D, &
+      D_F_S_1, D_F_S_2, D_F_S_3, &
+      D_D, &
+      D_S_1, D_S_2, D_S_3, &
+      D_V_Dim
+    
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+    
+    call AssociateHost ( D_F_D, F_D )
+    call AssociateHost ( D_F_S_1, F_S_1 )
+    call AssociateHost ( D_F_S_2, F_S_2 )
+    call AssociateHost ( D_F_S_3, F_S_3 )
+    call AssociateHost ( D_D, D )
+    call AssociateHost ( D_S_1, S_1 )
+    call AssociateHost ( D_S_2, S_2 )
+    call AssociateHost ( D_S_3, S_3 )
+    call AssociateHost ( D_V_Dim, V_Dim )
+
+    nValues = size ( F_D )
+
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+    !$OMP& schedule ( OMP_SCHEDULE ) private ( iV ) 
+    do iV = 1, nValues
+      F_D   ( iV ) = D   ( iV ) * V_Dim ( iV ) 
+      F_S_1 ( iV ) = S_1 ( iV ) * V_Dim ( iV ) 
+      F_S_2 ( iV ) = S_2 ( iV ) * V_Dim ( iV ) 
+      F_S_3 ( iV ) = S_3 ( iV ) * V_Dim ( iV ) 
+    end do !-- iV
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    
+    call DisassociateHost ( V_Dim )
+    call DisassociateHost ( S_3 )
+    call DisassociateHost ( S_2 )
+    call DisassociateHost ( S_1 )
+    call DisassociateHost ( D )
+    call DisassociateHost ( F_S_3 )
+    call DisassociateHost ( F_S_2 )
+    call DisassociateHost ( F_S_1 )
+    call DisassociateHost ( F_D )
+
+  end subroutine ComputeRawFluxesKernelDevice
 
 
 end module Fluid_D__Form
