@@ -125,20 +125,20 @@ module Current_Template
         oValueOption
     end subroutine CFPCC
 
-    subroutine CRF ( RawFlux, C, G, Value_C, Value_G, iDimension, &
+    subroutine CRF ( RawFlux, C, G, Storage_C, Storage_G, iDimension, &
                      nValuesOption, oValueOption )
       use Basics
       use Manifolds
       import CurrentTemplate
-      real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+      class ( StorageForm ), intent ( inout ) :: &
         RawFlux
       class ( CurrentTemplate ), intent ( in ) :: &
         C
       class ( GeometryFlatForm ), intent ( in ) :: &
         G
-      real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-        Value_C, &
-        Value_G
+      class ( StorageForm ), intent ( in ) :: &
+        Storage_C, &
+        Storage_G
       integer ( KDI ), intent ( in ) :: &
         iDimension
       integer ( KDI ), intent ( in ), optional :: &
@@ -548,9 +548,9 @@ contains
       iF  !-- iField
 
     call C % ComputeRawFluxes &
-           ( F_IL % Value, G, C_IL % Value, G_I % Value, iDimension )
+           ( F_IL, G, C_IL, G_I, iDimension )
     call C % ComputeRawFluxes &
-           ( F_IR % Value, G, C_IR % Value, G_I % Value, iDimension )
+           ( F_IR, G, C_IR, G_I, iDimension )
 
     call ComputeSolverSpeeds_HLL_Kernel &
            ( SS_I % Value ( :, C % ALPHA_PLUS ), &

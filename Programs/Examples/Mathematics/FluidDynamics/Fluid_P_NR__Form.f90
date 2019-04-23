@@ -485,18 +485,18 @@ contains
 
 
   subroutine ComputeRawFluxes &
-               ( RawFlux, C, G, Value_C, Value_G, iDimension, &
+               ( RawFlux, C, G, Storage_C, Storage_G, iDimension, &
                  nValuesOption, oValueOption )
     
-    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+    class ( StorageForm ), intent ( inout ) :: &
       RawFlux
     class ( Fluid_P_NR_Form ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_C, &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_C, &
+      Storage_G
     integer ( KDI ), intent ( in ) :: &
       iDimension
     integer ( KDI ), intent ( in ), optional :: &
@@ -504,7 +504,7 @@ contains
       oValueOption
 
     call C % ComputeRawFluxesTemplate_P &
-           ( RawFlux, G, Value_C, Value_G, iDimension, nValuesOption, &
+           ( RawFlux, G, Storage_C, Storage_G, iDimension, nValuesOption, &
              oValueOption )
 
   end subroutine ComputeRawFluxes

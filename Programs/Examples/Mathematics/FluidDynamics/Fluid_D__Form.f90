@@ -359,18 +359,18 @@ contains
 
 
   subroutine ComputeRawFluxes &
-               ( RawFlux, C, G, Value_C, Value_G, iDimension, &
+               ( RawFlux, C, G, Storage_C, Storage_G, iDimension, &
                  nValuesOption, oValueOption )
     
-    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+    class ( StorageForm ), intent ( inout ) :: &
       RawFlux
     class ( Fluid_D_Form ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_C, &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_C, &
+      Storage_G
     integer ( KDI ), intent ( in ) :: &
       iDimension
     integer ( KDI ), intent ( in ), optional :: &
@@ -384,6 +384,11 @@ contains
     integer ( KDI ) :: &
       oV, &  !-- oValue
       nV     !-- nValues
+      
+    associate &
+      ( Value_RF => RawFlux % Value, &
+        Value_C  => Storage_C % Value, &
+        Value_G  => Storage_G % Value )
       
     if ( present ( oValueOption ) ) then
       oV = oValueOption
@@ -407,10 +412,10 @@ contains
            ( C % iaConserved, C % MOMENTUM_DENSITY_D ( 3 ), iMomentum ( 3 ) )
     
     associate &
-      ( F_D   => RawFlux ( oV + 1 : oV + nV, iDensity ), &
-        F_S_1 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 1 ) ), &
-        F_S_2 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 2 ) ), &
-        F_S_3 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 3 ) ), &
+      ( F_D   => Value_RF ( oV + 1 : oV + nV, iDensity ), &
+        F_S_1 => Value_RF ( oV + 1 : oV + nV, iMomentum ( 1 ) ), &
+        F_S_2 => Value_RF ( oV + 1 : oV + nV, iMomentum ( 2 ) ), &
+        F_S_3 => Value_RF ( oV + 1 : oV + nV, iMomentum ( 3 ) ), &
         D     => Value_C ( oV + 1 : oV + nV, C % CONSERVED_DENSITY ), &
         S_1   => Value_C ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 1 ) ), &
         S_2   => Value_C ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 2 ) ), &
@@ -421,6 +426,8 @@ contains
            ( F_D, F_S_1, F_S_2, F_S_3, D, S_1, S_2, S_3, V_Dim )
 
     end associate !-- F_D, etc.
+    
+    end associate !-- Value_RF
 
   end subroutine ComputeRawFluxes
   
