@@ -563,6 +563,8 @@ contains
     end associate !-- iaI, iaO
 
     if ( I % UseIncrementStream ) then
+      call C_IL % UpdateHost ( )
+      call C_IR % UpdateHost ( )
       call Copy ( C_IL % Value, I % Output ( iCURRENT_IL ) % Value )
       call Copy ( C_IR % Value, I % Output ( iCURRENT_IR ) % Value )
     end if

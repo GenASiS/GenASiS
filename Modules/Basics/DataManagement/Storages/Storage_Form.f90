@@ -331,6 +331,9 @@ contains
     integer ( KDI ) :: &
       iS
       
+    if ( .not. S % AllocatedDevice ) &
+      return
+      
     if ( S % AllocatedValue ) then
       call UpdateDevice &
              ( S % Value, S % D_Selected ( 1 ), &
@@ -355,6 +358,9 @@ contains
     
     integer ( KDI ) :: &
       iS
+      
+    if ( .not. S % AllocatedDevice ) &
+      return
     
     call Search ( S % iaSelected, iV, iS )
     call UpdateDevice &
@@ -371,6 +377,9 @@ contains
       
     integer ( KDI ) :: &
       iS
+    
+    if ( .not. S % AllocatedDevice ) &
+      return
       
     if ( S % AllocatedValue ) then
       call UpdateHost ( S % D_Selected ( 1 ), S % Value )
@@ -393,6 +402,9 @@ contains
     
     integer ( KDI ) :: &
       iS
+      
+    if ( .not. S % AllocatedDevice ) &
+      return
     
     call Search ( S % iaSelected, iV, iS )
     call UpdateHost ( S % D_Selected ( iS ), S % Value ( :, iV ) )

@@ -401,7 +401,7 @@ contains
     
     if ( F % AllocatedDevice ) then
       call ReverseBoundaryKernelDevice &
-             ( V, nB, dBE, oBE,F % D_Selected ( iField ) )
+             ( V, nB, dBE, oBE, F % D_Selected ( iField ) )
     else
       call ReverseBoundaryKernelHost ( V, nB, dBE, oBE )
     end if
