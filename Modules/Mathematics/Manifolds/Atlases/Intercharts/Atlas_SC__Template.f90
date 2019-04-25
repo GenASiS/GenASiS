@@ -253,8 +253,10 @@ contains
       iB  !-- iBoundary
 
     do iB = 1, A % nBoundaries
-      associate ( BC => A % BoundaryCondition ( iConnection, iB ) )
-      select case ( trim ( BC ) )
+      !-- FIXME: GCC has trouble with associate to string here
+      !associate ( BC => A % BoundaryCondition ( iConnection, iB ) )
+      !select case ( trim ( BC ) )
+      select case ( trim ( A % BoundaryCondition ( iConnection, iB ) ) )
       case ( 'PERIODIC', 'INFLOW' )
 
         cycle
@@ -299,12 +301,13 @@ contains
 
       case default
         call Show ( 'BoundaryCondition not recognized', CONSOLE % ERROR )
-        call Show ( BC, 'BoundaryCondition', CONSOLE % ERROR )
+        call Show ( A % BoundaryCondition ( iConnection, iB ), &
+                    'BoundaryCondition', CONSOLE % ERROR )
         call Show ( 'Atlas_SC__Template', 'module', CONSOLE % ERROR )
         call Show ( 'ApplyBoundaryConditions', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end select !-- BC
-      end associate !-- BC
+      ! end associate !-- BC
     end do !-- iB
 
   end subroutine ApplyBoundaryConditions
