@@ -7,7 +7,9 @@ void * AllocateTargetDouble_OMP ( int nValues )
   {
   int iDevice;
   void * D_Pointer;
-
+  
+  D_Pointer = NULL; 
+  
   #ifdef ENABLE_OMP_OFFLOAD
   iDevice = omp_get_default_device();
   
@@ -29,6 +31,8 @@ int AssociateTargetDouble_OMP
   {    
   int iDevice, retval;
   size_t Size, Offset;
+  
+  retval = -1;
   
   /*
   printf("nValues Assoc: %d\n", nValues );
@@ -71,6 +75,8 @@ void FreeTarget_OMP ( void * D_Pointer )
 int DisassociateTarget_OMP ( void * Host )
   {
   int iDevice, retval;
+  
+  retval = -1;
 
   #ifdef ENABLE_OMP_OFFLOAD
   iDevice = omp_get_default_device();
@@ -88,6 +94,8 @@ int HostToDeviceCopyDouble_OMP ( void * Host, void * Device, int nValues,
   {
   int iHost, iDevice, retval;
   size_t Length, oHV, oDV;
+  
+  retval = -1;
 
   #ifdef ENABLE_OMP_OFFLOAD
   iDevice = omp_get_default_device ( );
@@ -108,6 +116,8 @@ int DeviceToHostCopyDouble_OMP ( void * Device, void * Host, int nValues,
   {
   int iHost, iDevice, retval;
   size_t Length, oHV, oDV;
+  
+  retval = -1;
   
   #ifdef ENABLE_OMP_OFFLOAD
   iDevice = omp_get_default_device ( );

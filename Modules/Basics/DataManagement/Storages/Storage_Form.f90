@@ -311,14 +311,20 @@ contains
       Scratch
     
     if ( S % AllocatedValue ) then
+      
       call AllocateDevice &
              ( S % nValues * S % nVariables, S % D_Selected ( 1 ) )
+      
+      if ( .not. c_associated ( S % D_Selected ( 1 ) ) ) &
+        return
+      
       call c_f_pointer &
              ( S % D_Selected ( 1 ), Scratch, [ S % nValues, S % nVariables ] )
       do iV = 2, S % nVariables
         S % D_Selected ( iV ) = c_loc ( Scratch ( :, iV ) )
       end do
       S % AllocatedDevice = .true.
+    
     end if
   
   end subroutine AllocateDevice_S
