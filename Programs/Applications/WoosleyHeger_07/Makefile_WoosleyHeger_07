@@ -1,6 +1,6 @@
 PATH_GENASIS = ../../../..
 
-all: WoosleyHeger_07_A WoosleyHeger_07_D
+all: WoosleyHeger_07_A WoosleyHeger_07_D WoosleyHeger_07_G
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
@@ -16,6 +16,13 @@ WoosleyHeger_07_D: ThirdParty.a GenASiS.a WoosleyHeger_07_D.o
            -o WoosleyHeger_07_D_$(MACHINE) \
            WoosleyHeger_07_D.o WoosleyHeger_07_D__Form.o \
            WoosleyHeger_07_A__Form.o WoosleyHeger_07__Template.o \
+           GenASiS.a ThirdParty.a $(LIBRARIES)
+
+WoosleyHeger_07_G: ThirdParty.a GenASiS.a WoosleyHeger_07_G.o
+	$(LINK) $(FFLAGS) \
+           -o WoosleyHeger_07_G_$(MACHINE) \
+           WoosleyHeger_07_G.o WoosleyHeger_07_G__Form.o \
+           WoosleyHeger_07__Template.o \
            GenASiS.a ThirdParty.a $(LIBRARIES)
 
 include $(PATH_GENASIS)/Build/Makefile_Dependencies
@@ -49,3 +56,13 @@ WoosleyHeger_07_D.o: \
   GenASiS.o \
   WoosleyHeger_07_D__Form.o \
   WoosleyHeger_07_D.f90
+
+WoosleyHeger_07_G__Form.o: \
+  GenASiS.o \
+  WoosleyHeger_07__Template.o \
+  WoosleyHeger_07_G__Form.f90
+
+WoosleyHeger_07_G.o: \
+  GenASiS.o \
+  WoosleyHeger_07_G__Form.o \
+  WoosleyHeger_07_G.f90
