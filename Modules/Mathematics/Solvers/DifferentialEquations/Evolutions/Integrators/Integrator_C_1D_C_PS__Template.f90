@@ -117,13 +117,14 @@ contains
                   CONSOLE % WARNING )
     end if
 
+    if ( .not. associated ( I % ComputeTimeStepLocal ) ) &
+      I % ComputeTimeStepLocal => ComputeTimeStepLocal
+
     call I % Integrator_C_PS_Form % Initialize &
            ( U, Name, TimeUnitOption = TimeUnitOption, &
              FinishTimeOption = FinishTimeOption, &
              CourantFactorOption = CourantFactorOption, &
              nWriteOption = nWriteOption )
-
-    I % ComputeTimeStepLocal => ComputeTimeStepLocal
 
   end subroutine InitializeTemplate_C_1D_C_PS
 
