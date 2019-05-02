@@ -548,7 +548,7 @@ contains
     class is ( Integrator_C_1D_C_PS_Template )
       !-- Fluid advection and Radiation streaming
       call I % ComputeTimeStepLocalTemplate &
-             ( TimeStepCandidate ( 1 + 1  :  1  +  I % N_CURRENTS_1D ) )
+             ( TimeStepCandidate ( 1 + 1  :  1  +  1  +  I % N_CURRENTS_1D ) )
       !-- Interactions
       oC  =  1  +  1  +  I % N_CURRENTS_1D
       call ComputeTimeStepInteractions &
@@ -850,6 +850,14 @@ contains
     select type ( I )
     class is ( Integrator_C_1D_PS_C_PS_Form )  !-- Grey
 
+      if ( .not. allocated ( RCC % Interactions_ASC ) ) then
+        call Show ( 'Interactions_ASC not allocated', CONSOLE % ERROR )
+        call Show ( 'RadiationCentralCore_Form', 'module', CONSOLE % ERROR )
+        call Show ( 'ComputeTimeStepInteractions', 'subroutine', &
+                    CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end if
+
       associate ( IA => RCC % Interactions_ASC )  
       do iC = 1, I % N_CURRENTS_1D  
         associate ( RMA => I % Current_ASC_1D ( iC ) % Element )
@@ -861,6 +869,15 @@ contains
       end associate !-- IA
 
     class is ( Integrator_C_1D_MS_C_PS_Form )  !-- Spectral
+
+      if ( .not. allocated ( RCC % Interactions_BSLL_ASC_CSLD ) ) then
+        call Show ( 'Interactions_BSLL_ASC_CSLD not allocated', &
+                    CONSOLE % ERROR )
+        call Show ( 'RadiationCentralCore_Form', 'module', CONSOLE % ERROR )
+        call Show ( 'ComputeTimeStepInteractions', 'subroutine', &
+                    CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end if
 
       associate ( IB => RCC % Interactions_BSLL_ASC_CSLD )
       do iC = 1, I % N_CURRENTS_1D  
