@@ -1,38 +1,15 @@
 #include "Preprocessor"
 
-module ConservationLawStep_Kernel
+submodule ( ConservationLawStep_Form ) ConservationLawStep_Kernel
 
-  use iso_c_binding
   use Basics
-
   implicit none
-  private
-  
-  public :: &
-    ComputeDifferencesKernel, &
-    ComputeReconstructionKernel, &
-    ComputeFluxesKernel, &
-    AddUpdateKernel, &
-    ComputeUpdateKernel, &
-    CombineUpdatesKernel
     
 contains
 
   
-    subroutine ComputeDifferencesKernel &
-               ( V, oV, iD, D_V, D_dV_Left, D_dV_Right, dV_Left, dV_Right )
+  module procedure ComputeDifferencesKernel
 
-    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
-      V
-    integer ( KDI ), intent ( in ) :: &
-      oV, &
-      iD
-    type ( c_ptr ), intent ( in ) :: &
-      D_V, &
-      D_dV_Left, D_dV_Right
-    real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
-      dV_Left, dV_Right
-      
     integer ( KDI ) :: &
       iV, jV, kV
     integer ( KDI ), dimension ( 3 ) :: &
@@ -106,24 +83,10 @@ contains
     call DisassociateHost ( dV_Left )
     call DisassociateHost ( V )
     
-  end subroutine ComputeDifferencesKernel
+  end procedure ComputeDifferencesKernel
 
 
-  subroutine ComputeReconstructionKernel &
-               ( V, dV_Left, dV_Right, Theta, D_V, D_dV_Left, D_dV_Right, &
-                 D_V_Inner, D_V_Outer, V_Inner, V_Outer )
-
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      V, &
-      dV_Left, dV_Right
-    real ( KDR ), intent ( in ) :: &
-      Theta
-    type ( c_ptr ), intent ( in ) :: &
-      D_V, &
-      D_dV_Left, D_dV_Right, &
-      D_V_Inner, D_V_Outer
-    real ( KDR ), dimension ( : ), intent ( out ) :: &
-      V_Inner, V_Outer
+  module procedure ComputeReconstructionKernel
 
     !real ( KDR ), dimension ( size ( V ) ) :: &
     !  dV
@@ -170,31 +133,11 @@ contains
     call DisassociateHost ( dV_Left )
     call DisassociateHost ( V )
     
-  end subroutine ComputeReconstructionKernel
+  end procedure ComputeReconstructionKernel
 
 
-  subroutine ComputeFluxesKernel &
-               ( AP_I, AP_O, AM_I, AM_O, RF_I, RF_O, U_I, U_O, oV, iD, &
-                 D_AP_I, D_AP_O, D_AM_I, D_AM_O, D_RF_I, D_RF_O, &
-                 D_U_I, D_U_O, D_F_I, D_F_O, F_I, F_O )
+  module procedure ComputeFluxesKernel
 
-    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
-      AP_I, AP_O, &
-      AM_I, AM_O, &
-      RF_I, RF_O, &
-      U_I, U_O
-    integer ( KDI ), intent ( in ) :: &
-      oV, &
-      iD
-    type ( c_ptr ), intent ( in ) :: &
-      D_AP_I, D_AP_O, &
-      D_AM_I, D_AM_O, &
-      D_RF_I, D_RF_O, &
-      D_U_I, D_U_O, &
-      D_F_I, D_F_O
-    real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
-      F_I, F_O
-      
     integer ( KDI ) :: &
       iV, jV, kV
     integer ( KDI ), dimension ( 3 ) :: &
@@ -310,23 +253,10 @@ contains
     call DisassociateHost ( AP_O )
     call DisassociateHost ( AP_I )
     
-  end subroutine ComputeFluxesKernel
+  end procedure ComputeFluxesKernel
 
 
-  subroutine ComputeUpdateKernel &
-               ( dU, F_I, F_O, V, A, dT, D_dU, D_F_I, D_F_O )
-    
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      dU
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      F_I, F_O
-    real ( KDR ), intent ( in ) :: &
-      V, &
-      A, &
-      dT
-    type ( c_ptr ), intent ( in ) :: &
-      D_dU, &
-      D_F_I, D_F_O
+  module procedure ComputeUpdateKernel
     
     integer ( KDI ) :: &
       iV
@@ -346,21 +276,11 @@ contains
     call DisassociateHost ( F_I )
     call DisassociateHost ( dU )
 
-  end subroutine ComputeUpdateKernel
+  end procedure ComputeUpdateKernel
   
   
-  subroutine AddUpdateKernel ( O, U, D_O, D_U, D_C, C )
+  module procedure AddUpdateKernel
     
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      O, &
-      U
-    type ( c_ptr ), intent ( in ) :: &
-      D_O, &
-      D_U, &
-      D_C
-    real ( KDR ), dimension ( : ), intent ( out ) :: &
-      C 
-      
     integer ( KDI ) :: &
       iV, &
       nV
@@ -382,21 +302,11 @@ contains
     call DisassociateHost ( U )
     call DisassociateHost ( O )
 
-  end subroutine AddUpdateKernel
+  end procedure AddUpdateKernel
   
   
-  subroutine CombineUpdatesKernel ( C, O, U, D_C, D_O, D_U )
+  module procedure CombineUpdatesKernel
     
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      C 
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      O, &
-      U
-    type ( c_ptr ), intent ( in ) :: &
-      D_C, &
-      D_O, &
-      D_U
-      
     integer ( KDI ) :: &
       iV, &
       nV
@@ -418,7 +328,7 @@ contains
     call DisassociateHost ( O )
     call DisassociateHost ( C )
 
-  end subroutine CombineUpdatesKernel
+  end procedure CombineUpdatesKernel
   
 
-end module ConservationLawStep_Kernel
+end submodule ConservationLawStep_Kernel

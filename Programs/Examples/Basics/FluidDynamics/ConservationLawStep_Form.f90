@@ -3,7 +3,6 @@ module ConservationLawStep_Form
   use iso_c_binding
   use Basics
   use ConservedFields_Template
-  use ConservationLawStep_Kernel
 
   implicit none
   private
@@ -58,6 +57,151 @@ module ConservationLawStep_Form
     procedure, private, pass :: &
       ComputeFluxes
   end type ConservationLawStepForm
+  
+    private :: &
+      ComputeDifferencesKernel, &
+      ComputeReconstructionKernel, &
+      ComputeFluxesKernel, &
+      AddUpdateKernel, &
+      ComputeUpdateKernel, &
+      CombineUpdatesKernel
+      
+      
+    interface
+    
+      module subroutine ComputeDifferencesKernel &
+                   ( V, oV, iD, D_V, D_dV_Left, D_dV_Right, dV_Left, dV_Right )
+
+        use iso_c_binding
+        use Basics
+        implicit none
+               
+        real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+          V
+        integer ( KDI ), intent ( in ) :: &
+          oV, &
+          iD
+        type ( c_ptr ), intent ( in ) :: &
+          D_V, &
+          D_dV_Left, D_dV_Right
+        real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
+          dV_Left, dV_Right
+          
+      end subroutine ComputeDifferencesKernel
+
+
+      module subroutine ComputeReconstructionKernel &
+                   ( V, dV_Left, dV_Right, Theta, D_V, D_dV_Left, D_dV_Right, &
+                     D_V_Inner, D_V_Outer, V_Inner, V_Outer )
+
+        use iso_c_binding
+        use Basics
+        implicit none
+               
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          V, &
+          dV_Left, dV_Right
+        real ( KDR ), intent ( in ) :: &
+          Theta
+        type ( c_ptr ), intent ( in ) :: &
+          D_V, &
+          D_dV_Left, D_dV_Right, &
+          D_V_Inner, D_V_Outer
+        real ( KDR ), dimension ( : ), intent ( out ) :: &
+          V_Inner, V_Outer
+
+      end subroutine ComputeReconstructionKernel
+
+
+      module subroutine ComputeFluxesKernel &
+                   ( AP_I, AP_O, AM_I, AM_O, RF_I, RF_O, U_I, U_O, oV, iD, &
+                     D_AP_I, D_AP_O, D_AM_I, D_AM_O, D_RF_I, D_RF_O, &
+                     D_U_I, D_U_O, D_F_I, D_F_O, F_I, F_O )
+
+        use iso_c_binding
+        use Basics
+        implicit none
+               
+        real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+          AP_I, AP_O, &
+          AM_I, AM_O, &
+          RF_I, RF_O, &
+          U_I, U_O
+        integer ( KDI ), intent ( in ) :: &
+          oV, &
+          iD
+        type ( c_ptr ), intent ( in ) :: &
+          D_AP_I, D_AP_O, &
+          D_AM_I, D_AM_O, &
+          D_RF_I, D_RF_O, &
+          D_U_I, D_U_O, &
+          D_F_I, D_F_O
+        real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
+          F_I, F_O
+          
+      end subroutine ComputeFluxesKernel
+
+
+      module subroutine ComputeUpdateKernel &
+                   ( dU, F_I, F_O, V, A, dT, D_dU, D_F_I, D_F_O )
+        
+        use iso_c_binding
+        use Basics
+        implicit none
+               
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          dU
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          F_I, F_O
+        real ( KDR ), intent ( in ) :: &
+          V, &
+          A, &
+          dT
+        type ( c_ptr ), intent ( in ) :: &
+          D_dU, &
+          D_F_I, D_F_O
+        
+      end subroutine ComputeUpdateKernel
+      
+      
+      module subroutine AddUpdateKernel ( O, U, D_O, D_U, D_C, C )
+        
+        use iso_c_binding
+        use Basics
+        implicit none
+               
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          O, &
+          U
+        type ( c_ptr ), intent ( in ) :: &
+          D_O, &
+          D_U, &
+          D_C
+        real ( KDR ), dimension ( : ), intent ( out ) :: &
+          C 
+          
+      end subroutine AddUpdateKernel
+      
+      
+      module subroutine CombineUpdatesKernel ( C, O, U, D_C, D_O, D_U )
+        
+        use iso_c_binding
+        use Basics
+        implicit none
+               
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          C 
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          O, &
+          U
+        type ( c_ptr ), intent ( in ) :: &
+          D_C, &
+          D_O, &
+          D_U
+          
+      end subroutine CombineUpdatesKernel
+      
+    end interface
 
 contains
 

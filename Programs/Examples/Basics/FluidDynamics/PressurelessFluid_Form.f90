@@ -5,7 +5,6 @@ module PressurelessFluid_Form
   use DistributedMesh_Form
   use ConservedFields_Template
   use ConservationLawStep_Form
-  use PressurelessFluid_Kernel
 
   implicit none
   private
@@ -60,7 +59,228 @@ module PressurelessFluid_Form
   end type PressurelessFluidForm
 
     private :: &
-      InitializeBasics
+      InitializeBasics, &
+      ComputeConservedKernelDevice, &
+      ComputePrimitiveKernel, &
+      ComputePrimitiveKernelDevice, &
+      ComputeEigenspeedsKernel, &
+      ComputeEigenspeedsKernelDevice, &
+      ApplyBoundaryConditionsReflecting, &
+      ApplyBoundaryConditionsReflectingDevice, &
+      ComputeRawFluxesKernel, &
+      ComputeRiemannSolverInputKernel
+      
+    
+    interface
+    
+      module subroutine ComputeConservedKernel &
+                          ( D, S_1, S_2, S_3, N, V_1, V_2, V_3 )
+        
+        use Basics
+        implicit none
+        
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          D, &
+          S_1, S_2, S_3
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          N, &
+          V_1, V_2, V_3
+
+      end subroutine ComputeConservedKernel
+
+
+      module subroutine ComputeConservedKernelDevice &
+                   ( D, S_1, S_2, S_3, N, V_1, V_2, V_3, &
+                     D_D, D_S_1, D_S_2, D_S_3, D_N, D_V_1, D_V_2, D_V_3 )
+
+        use iso_c_binding
+        use Basics
+        implicit none
+        
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          D, &
+          S_1, S_2, S_3
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          N, &
+          V_1, V_2, V_3
+        type ( c_ptr ), intent ( in ) :: &
+          D_D, &
+          D_S_1, D_S_2, D_S_3, &
+          D_N, &
+          D_V_1, D_V_2, D_V_3
+        
+      end subroutine ComputeConservedKernelDevice
+
+
+      module subroutine ComputePrimitiveKernel &
+                          ( N, V_1, V_2, V_3, D, S_1, S_2, S_3 )
+
+        use Basics
+        implicit none
+        
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          N, &
+          V_1, V_2, V_3, &
+          D, &
+          S_1, S_2, S_3
+
+      end subroutine ComputePrimitiveKernel
+
+
+      module subroutine ComputePrimitiveKernelDevice &
+                   ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, &
+                     D_N, D_V_1, D_V_2, D_V_3, D_D, D_S_1, D_S_2, D_S_3 )
+
+        use iso_c_binding
+        use Basics
+        implicit none
+        
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          N, &
+          V_1, V_2, V_3, &
+          D, &
+          S_1, S_2, S_3
+        type ( c_ptr ), intent ( in ) :: &
+          D_N, &
+          D_V_1, D_V_2, D_V_3, &
+          D_D, &
+          D_S_1, D_S_2, D_S_3
+          
+      end subroutine ComputePrimitiveKernelDevice
+
+      
+      module subroutine ComputeEigenspeedsKernel &
+                   ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3 )
+
+        use Basics
+        implicit none
+        
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          FEP_1, FEP_2, FEP_3, &
+          FEM_1, FEM_2, FEM_3
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          V_1, V_2, V_3
+
+      end subroutine ComputeEigenspeedsKernel
+
+
+      module subroutine ComputeEigenspeedsKernelDevice &
+                   ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, &
+                     V_1, V_2, V_3, D_FEP_1, D_FEP_2, D_FEP_3, &
+                     D_FEM_1, D_FEM_2, D_FEM_3, D_V_1, D_V_2, D_V_3 )
+
+        use iso_c_binding
+        use Basics
+        implicit none
+        
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          FEP_1, FEP_2, FEP_3, &
+          FEM_1, FEM_2, FEM_3
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          V_1, V_2, V_3
+        type ( c_ptr ), intent ( in ) :: &
+          D_FEP_1, D_FEP_2, D_FEP_3, &
+          D_FEM_1, D_FEM_2, D_FEM_3, &
+          D_V_1, D_V_2, D_V_3
+
+      end subroutine ComputeEigenspeedsKernelDevice
+
+
+      module subroutine ApplyBoundaryConditionsReflecting &
+                   ( N_E, VI_E, VJ_E, VK_E, N_I, VI_I, VJ_I, VK_I, &
+                     nB, oBE, oBI )
+
+        use Basics
+        implicit none
+        
+        real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
+          N_E, &
+          VI_E, VJ_E, VK_E
+        real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+          N_I, &
+          VI_I, VJ_I, VK_I
+        integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
+          nB,  & 
+          oBE, &
+          oBI
+
+      end subroutine ApplyBoundaryConditionsReflecting
+
+
+      module subroutine ApplyBoundaryConditionsReflectingDevice &
+                   ( N_E, VI_E, VJ_E, VK_E, N_I, VI_I, VJ_I, VK_I, &
+                     nB, oBE, oBI, &
+                     D_N_E, D_VI_E, D_VJ_E, D_VK_E, D_N_I, D_VI_I, D_VJ_I, &
+                     D_VK_I )
+
+        use iso_c_binding
+        use Basics
+        implicit none
+        
+        real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
+          N_E, &
+          VI_E, VJ_E, VK_E
+        real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+          N_I, &
+          VI_I, VJ_I, VK_I
+        integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
+          nB,  & 
+          oBE, &
+          oBI
+        type ( c_ptr ), intent ( in ) :: &
+          D_N_E, &
+          D_VI_E, D_VJ_E, D_VK_E, &
+          D_N_I, &
+          D_VI_I, D_VJ_I, D_VK_I
+          
+      end subroutine ApplyBoundaryConditionsReflectingDevice
+
+
+      module subroutine ComputeRawFluxesKernel &
+                   ( F_D, F_S_1, F_S_2, F_S_3, D, S_1, S_2, S_3, V_Dim )
+
+        use Basics
+        implicit none
+        
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          F_D, &
+          F_S_1, F_S_2, F_S_3
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          D, &
+          S_1, S_2, S_3, &
+          V_Dim
+
+      end subroutine ComputeRawFluxesKernel
+
+
+      module subroutine ComputeRiemannSolverInputKernel &
+                   ( AP_I, AP_O, AM_I, AM_O, LP_I, LP_O, LM_I, LM_O, oV, iD, &
+                     D_AP_I, D_AP_O, D_AM_I, D_AM_O, D_LP_I, D_LP_O, &
+                     D_LM_I, D_LM_O )
+
+        use iso_c_binding
+        use Basics
+        implicit none
+        
+        real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
+          AP_I, AP_O, &
+          AM_I, AM_O
+        real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+          LP_I, LP_O, &
+          LM_I, LM_O
+        integer ( KDI ), intent ( in ) :: &
+          oV, &
+          iD
+        type ( c_ptr ), intent ( in ) :: &
+          D_AP_I, D_AP_O, &
+          D_AM_I, D_AM_O, &
+          D_LP_I, D_LP_O, &
+          D_LM_I, D_LM_O
+          
+      end subroutine ComputeRiemannSolverInputKernel
+
+    end interface
+
       
 contains
 

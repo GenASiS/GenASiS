@@ -1,61 +1,27 @@
 #include "Preprocessor"
 
-module PressurelessFluid_Kernel
+submodule ( PressurelessFluid_Form ) PressurelessFluid_Kernel
 
   use iso_c_binding
   use Basics
   
   implicit none
-  private
-  
-  public :: &
-    ComputeConservedKernel, &
-    ComputeConservedKernelDevice, &
-    ComputePrimitiveKernel, &
-    ComputePrimitiveKernelDevice, &
-    ComputeEigenspeedsKernel, &
-    ComputeEigenspeedsKernelDevice, &
-    ApplyBoundaryConditionsReflecting, &
-    ApplyBoundaryConditionsReflectingDevice, &
-    ComputeRawFluxesKernel, &
-    ComputeRiemannSolverInputKernel
     
 contains
 
 
-  subroutine ComputeConservedKernel ( D, S_1, S_2, S_3, N, V_1, V_2, V_3 )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      D, &
-      S_1, S_2, S_3
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      N, &
-      V_1, V_2, V_3
+  module procedure ComputeConservedKernel
 
     D   = N
     S_1 = N * V_1
     S_2 = N * V_2
     S_3 = N * V_3
 
-  end subroutine ComputeConservedKernel
+  end procedure ComputeConservedKernel
 
 
-  subroutine ComputeConservedKernelDevice &
-               ( D, S_1, S_2, S_3, N, V_1, V_2, V_3, &
-                 D_D, D_S_1, D_S_2, D_S_3, D_N, D_V_1, D_V_2, D_V_3 )
+  module procedure ComputeConservedKernelDevice
 
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      D, &
-      S_1, S_2, S_3
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      N, &
-      V_1, V_2, V_3
-    type ( c_ptr ), intent ( in ) :: &
-      D_D, &
-      D_S_1, D_S_2, D_S_3, &
-      D_N, &
-      D_V_1, D_V_2, D_V_3
-    
     integer ( KDI ) :: &
       iV
     
@@ -87,16 +53,10 @@ contains
     call DisassociateHost ( S_1 )
     call DisassociateHost ( D )
 
-  end subroutine ComputeConservedKernelDevice
+  end procedure ComputeConservedKernelDevice
 
 
-  subroutine ComputePrimitiveKernel ( N, V_1, V_2, V_3, D, S_1, S_2, S_3 )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      N, &
-      V_1, V_2, V_3, &
-      D, &
-      S_1, S_2, S_3
+  module procedure ComputePrimitiveKernel
 
     N = D
 
@@ -115,27 +75,13 @@ contains
       S_3 = 0.0_KDR
     end where
 
-  end subroutine ComputePrimitiveKernel
+  end procedure ComputePrimitiveKernel
 
 
-  subroutine ComputePrimitiveKernelDevice &
-               ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, &
-                 D_N, D_V_1, D_V_2, D_V_3, D_D, D_S_1, D_S_2, D_S_3 )
+  module procedure ComputePrimitiveKernelDevice
 
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      N, &
-      V_1, V_2, V_3, &
-      D, &
-      S_1, S_2, S_3
-    type ( c_ptr ), intent ( in ) :: &
-      D_N, &
-      D_V_1, D_V_2, D_V_3, &
-      D_D, &
-      D_S_1, D_S_2, D_S_3
-      
     integer ( KDI ) :: &
       iV
-
 
     call Copy ( D, D_D, D_N, N )
     
@@ -177,17 +123,10 @@ contains
     call DisassociateHost ( V_1 )
     call DisassociateHost ( N )
     
-  end subroutine ComputePrimitiveKernelDevice
+  end procedure ComputePrimitiveKernelDevice
 
   
-  subroutine ComputeEigenspeedsKernel &
-               ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3 )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      FEP_1, FEP_2, FEP_3, &
-      FEM_1, FEM_2, FEM_3
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      V_1, V_2, V_3
+  module procedure ComputeEigenspeedsKernel
 
     FEP_1 = V_1
     FEP_2 = V_2
@@ -196,23 +135,11 @@ contains
     FEM_2 = V_2
     FEM_3 = V_3
 
-  end subroutine ComputeEigenspeedsKernel
+  end procedure ComputeEigenspeedsKernel
 
 
-  subroutine ComputeEigenspeedsKernelDevice &
-               ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3, &
-                 D_FEP_1, D_FEP_2, D_FEP_3, D_FEM_1, D_FEM_2, D_FEM_3, &
-                 D_V_1, D_V_2, D_V_3 )
+  module procedure ComputeEigenspeedsKernelDevice
 
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      FEP_1, FEP_2, FEP_3, &
-      FEM_1, FEM_2, FEM_3
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      V_1, V_2, V_3
-    type ( c_ptr ), intent ( in ) :: &
-      D_FEP_1, D_FEP_2, D_FEP_3, &
-      D_FEM_1, D_FEM_2, D_FEM_3, &
-      D_V_1, D_V_2, D_V_3
     integer ( KDI ) :: &
       iV
       
@@ -248,22 +175,10 @@ contains
     call DisassociateHost ( FEP_2 )
     call DisassociateHost ( FEP_1 )
 
-  end subroutine ComputeEigenspeedsKernelDevice
+  end procedure ComputeEigenspeedsKernelDevice
 
 
-  subroutine ApplyBoundaryConditionsReflecting &
-               ( N_E, VI_E, VJ_E, VK_E, N_I, VI_I, VJ_I, VK_I, nB, oBE, oBI )
-
-    real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
-      N_E, &
-      VI_E, VJ_E, VK_E
-    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
-      N_I, &
-      VI_I, VJ_I, VK_I
-    integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
-      nB,  & 
-      oBE, &
-      oBI
+  module procedure ApplyBoundaryConditionsReflecting
 
     N_E ( oBE ( 1 ) + 1 : oBE ( 1 ) + nB ( 1 ), &
           oBE ( 2 ) + 1 : oBE ( 2 ) + nB ( 2 ), &
@@ -293,30 +208,11 @@ contains
                oBI ( 2 ) + 1 : oBI ( 2 ) + nB ( 2 ), &
                oBI ( 3 ) + 1 : oBI ( 3 ) + nB ( 3 ) )
 
-  end subroutine ApplyBoundaryConditionsReflecting
+  end procedure ApplyBoundaryConditionsReflecting
 
 
-  subroutine ApplyBoundaryConditionsReflectingDevice &
-               ( N_E, VI_E, VJ_E, VK_E, N_I, VI_I, VJ_I, VK_I, nB, oBE, oBI, &
-                 D_N_E, D_VI_E, D_VJ_E, D_VK_E, D_N_I, D_VI_I, D_VJ_I, &
-                 D_VK_I )
+  module procedure ApplyBoundaryConditionsReflectingDevice
 
-    real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
-      N_E, &
-      VI_E, VJ_E, VK_E
-    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
-      N_I, &
-      VI_I, VJ_I, VK_I
-    integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
-      nB,  & 
-      oBE, &
-      oBI
-    type ( c_ptr ), intent ( in ) :: &
-      D_N_E, &
-      D_VI_E, D_VJ_E, D_VK_E, &
-      D_N_I, &
-      D_VI_I, D_VJ_I, D_VK_I
-      
     integer ( KDI ) :: &
       iV, jV, kV
       
@@ -361,48 +257,21 @@ contains
     call DisassociateHost ( VI_E )
     call DisassociateHost ( N_E )
     
-  end subroutine ApplyBoundaryConditionsReflectingDevice
+  end procedure ApplyBoundaryConditionsReflectingDevice
 
 
-  subroutine ComputeRawFluxesKernel &
-               ( F_D, F_S_1, F_S_2, F_S_3, D, S_1, S_2, S_3, V_Dim )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      F_D, &
-      F_S_1, F_S_2, F_S_3
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      D, &
-      S_1, S_2, S_3, &
-      V_Dim
+  module procedure ComputeRawFluxesKernel
 
     F_D   = D   * V_Dim
     F_S_1 = S_1 * V_Dim
     F_S_2 = S_2 * V_Dim
     F_S_3 = S_3 * V_Dim
 
-  end subroutine ComputeRawFluxesKernel
+  end procedure ComputeRawFluxesKernel
 
 
-  subroutine ComputeRiemannSolverInputKernel &
-               ( AP_I, AP_O, AM_I, AM_O, LP_I, LP_O, LM_I, LM_O, oV, iD, &
-                 D_AP_I, D_AP_O, D_AM_I, D_AM_O, D_LP_I, D_LP_O, &
-                 D_LM_I, D_LM_O )
+  module procedure ComputeRiemannSolverInputKernel
 
-    real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
-      AP_I, AP_O, &
-      AM_I, AM_O
-    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
-      LP_I, LP_O, &
-      LM_I, LM_O
-    integer ( KDI ), intent ( in ) :: &
-      oV, &
-      iD
-    type ( c_ptr ), intent ( in ) :: &
-      D_AP_I, D_AP_O, &
-      D_AM_I, D_AM_O, &
-      D_LP_I, D_LP_O, &
-      D_LM_I, D_LM_O
-      
     integer ( KDI ) :: &
       iV, jV, kV
     integer ( KDI ), dimension ( 3 ) :: &
@@ -480,7 +349,7 @@ contains
     call DisassociateHost ( AP_O )
     call DisassociateHost ( AP_I )
     
-  end subroutine ComputeRiemannSolverInputKernel
+  end procedure ComputeRiemannSolverInputKernel
 
 
-end module PressurelessFluid_Kernel
+end submodule PressurelessFluid_Kernel
