@@ -3,8 +3,14 @@ ifneq ($(PURPOSE),DEBUG)
 	FORTRAN_BOUND_CHECK = 
 endif
 
-%.o : %.f90
+%.o : ArrayOperations/%.f90
 	$(FORTRAN_COMPILE) $(DEFINES) $(FFLAGS) $(FORTRAN_BOUND_CHECK) $(INCLUDE) $<
+
+%_Kernel.o : %_Kernel.f90
+	$(FORTRAN_COMPILE) $(DEFINES) $(FFLAGS) $(FORTRAN_BOUND_CHECK) $(INCLUDE) $<
+
+%.o : %.f90
+	$(FORTRAN_COMPILE) $(FFLAGS) $(FORTRAN_BOUND_CHECK) $(INCLUDE) $<
 
 %.o : %.c
 	$(CC_COMPILE) $(DEFINES) $(CFLAGS) $(INCLUDE) $<
