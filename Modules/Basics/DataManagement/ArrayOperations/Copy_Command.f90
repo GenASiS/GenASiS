@@ -384,9 +384,6 @@ contains
       iV, &
       nV
       
-    call AssociateHost ( D_A, A )
-    call AssociateHost ( D_B, B )
-
     nV = size ( A )
     
     !$OMP  OMP_TARGET_DIRECTIVE parallel do &
@@ -396,9 +393,6 @@ contains
     end do
     !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
-    call DisassociateHost ( B )
-    call DisassociateHost ( A )
-
   end subroutine CopyReal_1D_Device
   
   
@@ -543,9 +537,6 @@ contains
       iV, jV, kV, &
       iS, jS, kS
     
-    call AssociateHost ( D_A, A )
-    call AssociateHost ( D_B, B )
-
     !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 )&
     !$OMP& schedule ( OMP_SCHEDULE ) private ( iS, jS, kS, iT )
     do kV = oSource ( 3 ) + 1, oSource ( 3 ) + nSource ( 3 )
@@ -566,9 +557,6 @@ contains
     end do
     !$OMP  end OMP_TARGET_DIRECTIVE parallel do
     
-    call DisassociateHost ( B )
-    call DisassociateHost ( A )
-
   end subroutine CopyReal_3D_1D_Device
 
 
@@ -627,9 +615,6 @@ contains
     !  = reshape ( A ( oSource + 1 : oSource + product ( nTarget ) ), &
     !              nTarget )
     
-    call AssociateHost ( D_A, A )
-    call AssociateHost ( D_B, B )
-    
     !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 )&
     !$OMP& schedule ( OMP_SCHEDULE ) private ( iT, jT, kT, iS )
     do kV = oTarget ( 3 ) + 1, oTarget ( 3 ) + nTarget ( 3 )
@@ -650,9 +635,6 @@ contains
     end do
     !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
-    call DisassociateHost ( B )
-    call DisassociateHost ( A )
-
   end subroutine CopyReal_1D_3D_Device
 
 

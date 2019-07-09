@@ -219,8 +219,6 @@ contains
 
     nV = size ( A )
     
-    call AssociateHost ( D_A, A )
-    
     !$OMP  OMP_TARGET_DIRECTIVE parallel do &
     !$OMP& schedule ( OMP_SCHEDULE )
     do iV = 1, nV
@@ -228,8 +226,6 @@ contains
     end do
     !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
-    call DisassociateHost ( A )
-
   end subroutine ClearReal_1D_Device
   
 

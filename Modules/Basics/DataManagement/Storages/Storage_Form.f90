@@ -304,6 +304,8 @@ contains
       
     integer ( KDI ) :: &
       iV
+    real ( KDR ), dimension ( : ), pointer :: &
+      Variable
     real ( KDR ), dimension ( :, : ), pointer :: &
       Scratch
     
@@ -312,9 +314,16 @@ contains
              ( S % nValues * S % nVariables, S % D_Selected ( 1 ) )
       call c_f_pointer &
              ( S % D_Selected ( 1 ), Scratch, [ S % nValues, S % nVariables ] )
+      
+      Variable => S % Value ( :, 1 )
+      call AssociateHost ( S % D_Selected ( 1 ), Variable )
+      
       do iV = 2, S % nVariables
         S % D_Selected ( iV ) = c_loc ( Scratch ( :, iV ) )
+        Variable => S % Value ( :, iV )
+        call AssociateHost ( S % D_Selected ( iV ), Variable )
       end do
+    
     end if
   
   end subroutine AllocateDevice_S

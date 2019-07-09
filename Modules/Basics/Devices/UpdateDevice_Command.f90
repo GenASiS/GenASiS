@@ -3,8 +3,6 @@ module UpdateDevice_Command
   use iso_c_binding
   use Specifiers
   use Device_C
-  use AssociateHost_Command
-  use DisassociateHost_Command
   
   implicit none
   private

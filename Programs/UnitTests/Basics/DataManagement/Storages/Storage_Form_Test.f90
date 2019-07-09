@@ -24,7 +24,7 @@ program Storage_Form_Test
     VariableUnit
   type ( Integer_1D_Form ), dimension ( 1 ) :: &
     VectorIndices
-  type ( StorageForm ), dimension ( 5 ) :: &
+  type ( StorageForm ), dimension ( 6 ) :: &
     S
 
   do i = 1, size ( VariableUnit ) 
@@ -121,6 +121,30 @@ program Storage_Form_Test
   print*, 'Device-to-Host Time (s)        :', TotalTime
   print*, 'Device-to-Host Bandwith (GB/s) :', DataSize_GB / TotalTime
   print*, ''
+  
+  
+  !-- Re-initialize S ( 4 )
+  call S ( 6 ) % Initialize &
+         ( ValueShape = [ 4, 2 ], PinnedOption = .true., &
+           NameOption = 'Storage 6', VariableOption = Variable ( 1 : 2 ) )
+  S ( 6 ) % Value = 1.0_KDR
+  call S ( 6 ) % AllocateDevice ( )
+  call S ( 6 ) % UpdateDevice ( )
+  S ( 6 ) % Value = - huge ( 1.0_KDR )
+  
+  call Compute ( S ( 6 ) % Value ( :, 1 ) )
+  
+  print*
+  print*, 'After Compute:', S ( 6 ) % Value
+  
+  !call PrintStorage ( S ( 6 ) )
+  
+  call S ( 6 ) % UpdateHost ( )
+  
+  print*
+  print*, 'After UpdateHost:', S ( 6 ) % Value
+  !call PrintStorage ( S ( 6 ) )
+  
 
 contains
 
@@ -191,6 +215,23 @@ contains
     end if
 
   end subroutine PrintStorage
-
+  
+  
+  subroutine Compute ( A )
+    
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      A
+      
+    integer ( KDI ) :: &
+      iV
+    
+    !$OMP target teams distribute parallel do   
+    do iV = 1, size ( A )
+      A ( iV ) = A ( iV ) * iV
+    end do
+    !$OMP end target teams distribute parallel do   
+  
+  end subroutine
+  
 
 end program Storage_Form_Test
