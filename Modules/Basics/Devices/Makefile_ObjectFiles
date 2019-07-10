@@ -1,6 +1,7 @@
 DEVICES = \
   Devices.o \
   GetNumberOfDevices_Function.o \
+  OnDevice_Function.o \
   OffloadEnabled_Function.o \
   DeallocateHost_Command.o \
   AllocateHost_Command.o \

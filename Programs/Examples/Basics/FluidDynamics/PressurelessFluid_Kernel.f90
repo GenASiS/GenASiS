@@ -25,15 +25,6 @@ contains
     integer ( KDI ) :: &
       iV
     
-    call AssociateHost ( D_D, D )
-    call AssociateHost ( D_S_1, S_1 )
-    call AssociateHost ( D_S_2, S_2 )
-    call AssociateHost ( D_S_3, S_3 )
-    call AssociateHost ( D_N, N )
-    call AssociateHost ( D_V_1, V_1 )
-    call AssociateHost ( D_V_2, V_2 )
-    call AssociateHost ( D_V_3, V_3 )
-
     !$OMP  OMP_TARGET_DIRECTIVE parallel do &
     !$OMP& schedule ( OMP_SCHEDULE )
     do iV = 1, size ( D )
@@ -44,15 +35,6 @@ contains
     end do
     !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
-    call DisassociateHost ( V_3 )
-    call DisassociateHost ( V_2 )
-    call DisassociateHost ( V_1 )
-    call DisassociateHost ( N )
-    call DisassociateHost ( S_3 )
-    call DisassociateHost ( S_2 )
-    call DisassociateHost ( S_1 )
-    call DisassociateHost ( D )
-
   end procedure ComputeConservedKernelDevice
 
 
@@ -85,15 +67,6 @@ contains
 
     call Copy ( D, D_D, D_N, N )
     
-    call AssociateHost ( D_N, N )
-    call AssociateHost ( D_V_1, V_1 )
-    call AssociateHost ( D_V_2, V_2 )
-    call AssociateHost ( D_V_3, V_3 )
-    call AssociateHost ( D_D, D )
-    call AssociateHost ( D_S_1, S_1 )
-    call AssociateHost ( D_S_2, S_2 )
-    call AssociateHost ( D_S_3, S_3 )
-    
     !$OMP  OMP_TARGET_DIRECTIVE parallel do &
     !$OMP& schedule ( OMP_SCHEDULE )
     do iV = 1, size ( N )
@@ -113,15 +86,6 @@ contains
       end if
     end do
     !$OMP end OMP_TARGET_DIRECTIVE parallel do
-    
-    call DisassociateHost ( S_3 )
-    call DisassociateHost ( S_2 )
-    call DisassociateHost ( S_1 )
-    call DisassociateHost ( D )
-    call DisassociateHost ( V_3 )
-    call DisassociateHost ( V_2 )
-    call DisassociateHost ( V_1 )
-    call DisassociateHost ( N )
     
   end procedure ComputePrimitiveKernelDevice
 
@@ -143,16 +107,6 @@ contains
     integer ( KDI ) :: &
       iV
       
-    call AssociateHost ( D_FEP_1, FEP_1 )
-    call AssociateHost ( D_FEP_2, FEP_2 )
-    call AssociateHost ( D_FEP_3, FEP_3 )
-    call AssociateHost ( D_FEM_1, FEM_1 )
-    call AssociateHost ( D_FEM_2, FEM_2 )
-    call AssociateHost ( D_FEM_3, FEM_3 )
-    call AssociateHost ( D_V_1, V_1 )
-    call AssociateHost ( D_V_2, V_2 )
-    call AssociateHost ( D_V_3,  V_3 )
-    
     !$OMP  OMP_TARGET_DIRECTIVE parallel do &
     !$OMP& schedule ( OMP_SCHEDULE )
     do iV = 1, size ( FEP_1 )
@@ -165,16 +119,6 @@ contains
     end do
     !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
-    call DisassociateHost ( V_3 )
-    call DisassociateHost ( V_2 )
-    call DisassociateHost ( V_1 )
-    call DisassociateHost ( FEM_3 )
-    call DisassociateHost ( FEM_2 )
-    call DisassociateHost ( FEM_1 )
-    call DisassociateHost ( FEP_3 )
-    call DisassociateHost ( FEP_2 )
-    call DisassociateHost ( FEP_1 )
-
   end procedure ComputeEigenspeedsKernelDevice
 
 
@@ -216,15 +160,6 @@ contains
     integer ( KDI ) :: &
       iV, jV, kV
       
-    call AssociateHost ( D_N_E, N_E )
-    call AssociateHost ( D_VI_E, VI_E )
-    call AssociateHost ( D_VJ_E, VJ_E )
-    call AssociateHost ( D_VK_E, VK_E )
-    call AssociateHost ( D_N_I, N_I )
-    call AssociateHost ( D_VI_I, VI_I )
-    call AssociateHost ( D_VJ_I, VJ_I )
-    call AssociateHost ( D_VK_I, VK_I )
-    
     !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
     !$OMP& schedule ( OMP_SCHEDULE )
     do kV = 1, nB ( 3 )
@@ -248,15 +183,6 @@ contains
     end do
     !$OMP end OMP_TARGET_DIRECTIVE parallel do
                
-    call DisassociateHost ( VK_I )
-    call DisassociateHost ( VJ_I )
-    call DisassociateHost ( VI_I )
-    call DisassociateHost ( N_I )
-    call DisassociateHost ( VK_E )
-    call DisassociateHost ( VJ_E )
-    call DisassociateHost ( VI_E )
-    call DisassociateHost ( N_E )
-    
   end procedure ApplyBoundaryConditionsReflectingDevice
 
 
@@ -284,15 +210,6 @@ contains
     !AM_I = max ( 0.0_KDR, - cshift ( LM_O, shift = -1, dim = iD ), - LM_I )
     !AM_O = max ( 0.0_KDR, - LM_O, - cshift ( LM_I, shift = +1, dim = iD ) )
     
-    call AssociateHost ( D_AP_I, AP_I )
-    call AssociateHost ( D_AP_O, AP_O )
-    call AssociateHost ( D_AM_I, AM_I )
-    call AssociateHost ( D_AM_O, AM_O )
-    call AssociateHost ( D_LP_I, LP_I )
-    call AssociateHost ( D_LP_O, LP_O )
-    call AssociateHost ( D_LM_I, LM_I )
-    call AssociateHost ( D_LM_O, LM_O )
-
     lV = 1
     where ( shape ( LP_O ) > 1 )
       lV = oV + 1
@@ -339,15 +256,6 @@ contains
       end do
     end do
     !$OMP end OMP_TARGET_DIRECTIVE parallel do
-    
-    call DisassociateHost ( LM_O )
-    call DisassociateHost ( LM_I )
-    call DisassociateHost ( LP_O )
-    call DisassociateHost ( LP_I )
-    call DisassociateHost ( AM_O )
-    call DisassociateHost ( AM_I )
-    call DisassociateHost ( AP_O )
-    call DisassociateHost ( AP_I )
     
   end procedure ComputeRiemannSolverInputKernel
 

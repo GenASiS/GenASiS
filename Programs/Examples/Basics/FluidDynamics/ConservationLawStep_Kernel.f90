@@ -17,10 +17,6 @@ contains
       iaVS, &   
       lV, uV
       
-    call AssociateHost ( D_V, V )
-    call AssociateHost ( D_dV_Left, dV_Left )
-    call AssociateHost ( D_dV_Right, dV_Right )
-
     lV = 1
     where ( shape ( V ) > 1 )
       lV = oV + 1
@@ -79,10 +75,6 @@ contains
     end do !-- kV
     !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
-    call DisassociateHost ( dV_Right )
-    call DisassociateHost ( dV_Left )
-    call DisassociateHost ( V )
-    
   end procedure ComputeDifferencesKernel
 
 
@@ -95,12 +87,6 @@ contains
     real ( KDR ) :: &
       dV
       
-    call AssociateHost ( D_V, V )
-    call AssociateHost ( D_dV_Left, dV_Left )
-    call AssociateHost ( D_dV_Right, dV_Right )
-    call AssociateHost ( D_V_Inner, V_Inner )
-    call AssociateHost ( D_V_Outer, V_Outer )
-
     !where ( dV_Left > 0.0_KDR .and. dV_Right > 0.0_KDR )
     !  dV = min ( Theta * dV_Left, Theta * dV_Right, &
     !               0.5_KDR * ( dV_Left + dV_Right ) )
@@ -127,12 +113,6 @@ contains
     end do
     !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
-    call DisassociateHost ( V_Outer )
-    call DisassociateHost ( V_Inner )
-    call DisassociateHost ( dV_Right )
-    call DisassociateHost ( dV_Left )
-    call DisassociateHost ( V )
-    
   end procedure ComputeReconstructionKernel
 
 
@@ -145,17 +125,6 @@ contains
       iaVS, &   
       lV, uV
       
-    call AssociateHost ( D_AP_I, AP_I )
-    call AssociateHost ( D_AP_O, AP_O )
-    call AssociateHost ( D_AM_I, AM_I )
-    call AssociateHost ( D_AM_O, AM_O )
-    call AssociateHost ( D_RF_I, RF_I )
-    call AssociateHost ( D_RF_O, RF_O )
-    call AssociateHost ( D_U_I, U_I )
-    call AssociateHost ( D_U_O, U_O )
-    call AssociateHost ( D_F_I, F_I )
-    call AssociateHost ( D_F_O, F_O )
-            
     lV = 1
     where ( shape ( F_I ) > 1 )
       lV = oV + 1
@@ -242,17 +211,6 @@ contains
     end do
     !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
-    call DisassociateHost ( F_O )
-    call DisassociateHost ( F_I )
-    call DisassociateHost ( U_O )
-    call DisassociateHost ( U_I )
-    call DisassociateHost ( RF_O )
-    call DisassociateHost ( RF_I )
-    call DisassociateHost ( AM_O )
-    call DisassociateHost ( AM_I )
-    call DisassociateHost ( AP_O )
-    call DisassociateHost ( AP_I )
-    
   end procedure ComputeFluxesKernel
 
 
@@ -260,11 +218,7 @@ contains
     
     integer ( KDI ) :: &
       iV
-      
-    call AssociateHost ( D_dU, dU )
-    call AssociateHost ( D_F_I, F_I )
-    call AssociateHost ( D_F_O, F_O )
-
+    
     !$OMP  OMP_TARGET_DIRECTIVE parallel do &
     !$OMP& schedule ( OMP_SCHEDULE )
     do iV = 1, size ( dU )
@@ -272,10 +226,6 @@ contains
     end do
     !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
-    call DisassociateHost ( F_O )
-    call DisassociateHost ( F_I )
-    call DisassociateHost ( dU )
-
   end procedure ComputeUpdateKernel
   
   
@@ -284,10 +234,6 @@ contains
     integer ( KDI ) :: &
       iV, &
       nV
-    
-    call AssociateHost ( D_O, O )
-    call AssociateHost ( D_U, U )
-    call AssociateHost ( D_C, C )
     
     nV = size ( O )
     
@@ -298,10 +244,6 @@ contains
     end do
     !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
-    call DisassociateHost ( C )
-    call DisassociateHost ( U )
-    call DisassociateHost ( O )
-
   end procedure AddUpdateKernel
   
   
@@ -310,10 +252,6 @@ contains
     integer ( KDI ) :: &
       iV, &
       nV
-    
-    call AssociateHost ( D_C, C )    
-    call AssociateHost ( D_O, O )
-    call AssociateHost ( D_U, U )
     
     nV = size ( O )
     
@@ -324,10 +262,6 @@ contains
     end do
     !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
-    call DisassociateHost ( U )
-    call DisassociateHost ( O )
-    call DisassociateHost ( C )
-
   end procedure CombineUpdatesKernel
   
 

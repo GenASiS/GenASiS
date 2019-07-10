@@ -6,6 +6,9 @@ endif
 %.o : ArrayOperations/%.f90
 	$(FORTRAN_COMPILE) $(DEFINES) $(FFLAGS) $(FORTRAN_BOUND_CHECK) $(INCLUDE) $<
 
+%.o : Devices/%.f90
+	$(FORTRAN_COMPILE) $(DEFINES) $(FFLAGS) $(FORTRAN_BOUND_CHECK) $(INCLUDE) $<
+
 %_Kernel.o : %_Kernel.f90
 	$(FORTRAN_COMPILE) $(DEFINES) $(FFLAGS) $(FORTRAN_BOUND_CHECK) $(INCLUDE) $<
 

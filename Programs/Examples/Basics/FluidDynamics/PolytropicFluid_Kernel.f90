@@ -21,14 +21,7 @@ contains
 
     integer ( KDI ) :: &
       iV
-    
-    call AssociateHost ( D_G, G )
-    call AssociateHost ( D_E, E )
-    call AssociateHost ( D_N, N )
-    call AssociateHost ( D_V_1, V_1 )
-    call AssociateHost ( D_V_2, V_2 )
-    call AssociateHost ( D_V_3, V_3 )
-    
+      
     !$OMP  OMP_TARGET_DIRECTIVE parallel do &
     !$OMP& schedule ( OMP_SCHEDULE )
     do iV = 1, size ( G )
@@ -70,13 +63,6 @@ contains
     real ( KDR ) :: &
       KE
     
-    call AssociateHost ( D_E, E )
-    call AssociateHost ( D_G, G )
-    call AssociateHost ( D_N, N )
-    call AssociateHost ( D_V_1, V_1 )
-    call AssociateHost ( D_V_2, V_2 )
-    call AssociateHost ( D_V_3, V_3 )
-    
     !$OMP  OMP_TARGET_DIRECTIVE parallel do &
     !$OMP& schedule ( OMP_SCHEDULE ) private ( KE )
     do iV = 1, size ( E )
@@ -94,14 +80,6 @@ contains
     end do
     !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
-    call DisassociateHost ( V_3 )
-    call DisassociateHost ( V_2 )
-    call DisassociateHost ( V_1 )
-    call DisassociateHost ( N )
-    call DisassociateHost ( G )
-    call DisassociateHost ( E )
-
-
   end procedure ComputePrimitiveKernelDevice
 
 
@@ -123,12 +101,6 @@ contains
     integer ( KDI ) :: &
       iV
       
-    call AssociateHost ( D_P, P )
-    call AssociateHost ( D_K, K )
-    call AssociateHost ( D_N, N )
-    call AssociateHost ( D_E, E )
-    call AssociateHost ( D_Gamma, Gamma )
-    
     !$OMP  OMP_TARGET_DIRECTIVE parallel do &
     !$OMP& schedule ( OMP_SCHEDULE )
     do iV = 1, size ( P )
@@ -141,12 +113,6 @@ contains
     end do
     !$OMP end OMP_TARGET_DIRECTIVE parallel do
       
-    call DisassociateHost ( Gamma )
-    call DisassociateHost ( E )
-    call DisassociateHost ( N )
-    call DisassociateHost ( K )
-    call DisassociateHost ( P )
-
   end procedure ComputeAuxiliaryKernelDevice
 
 
@@ -186,20 +152,6 @@ contains
     integer ( KDI ) :: &
       iV
       
-    call AssociateHost ( D_FEP_1, FEP_1 )
-    call AssociateHost ( D_FEP_2, FEP_2 )
-    call AssociateHost ( D_FEP_3, FEP_3 )
-    call AssociateHost ( D_FEM_1, FEM_1 )
-    call AssociateHost ( D_FEM_2, FEM_2 )
-    call AssociateHost ( D_FEM_3, FEM_3 )
-    call AssociateHost ( D_CS, CS )
-    call AssociateHost ( D_N, N )
-    call AssociateHost ( D_V_1, V_1 )
-    call AssociateHost ( D_V_2, V_2 )
-    call AssociateHost ( D_V_3, V_3 )
-    call AssociateHost ( D_P, P )
-    call AssociateHost ( D_Gamma, Gamma )
-    
     !$OMP  OMP_TARGET_DIRECTIVE parallel do &
     !$OMP& schedule ( OMP_SCHEDULE )
     do iV = 1, size ( N )
@@ -223,20 +175,6 @@ contains
     end do
     !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
-    call DisassociateHost ( Gamma )
-    call DisassociateHost ( P )
-    call DisassociateHost ( V_3 )
-    call DisassociateHost ( V_2 )
-    call DisassociateHost ( V_1 )
-    call DisassociateHost ( N )
-    call DisassociateHost ( CS )
-    call DisassociateHost ( FEM_3 )
-    call DisassociateHost ( FEM_2 )
-    call DisassociateHost ( FEM_1 )
-    call DisassociateHost ( FEP_3 )
-    call DisassociateHost ( FEP_2 )
-    call DisassociateHost ( FEP_1 )
-
   end procedure ComputeEigenspeedsKernelDevice
   
   
@@ -264,11 +202,6 @@ contains
     integer ( KDI ) :: &
       iV, jV, kV
       
-    call AssociateHost ( D_E_E, E_E )
-    call AssociateHost ( D_Gamma_E, Gamma_E )
-    call AssociateHost ( D_E_I, E_I )
-    call AssociateHost ( D_Gamma_I, Gamma_I )
-    
     !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
     !$OMP& schedule ( OMP_SCHEDULE )
     do kV = 1, nB ( 3 )
@@ -286,11 +219,6 @@ contains
     end do
     !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
-    call DisassociateHost ( Gamma_I )
-    call DisassociateHost ( E_I )
-    call DisassociateHost ( Gamma_E )
-    call DisassociateHost ( E_E )
-
   end procedure ApplyBoundaryConditionsReflectingDevice
 
 
@@ -299,20 +227,6 @@ contains
     integer ( KDI ) :: &
       iV
       
-    call AssociateHost ( D_F_D, F_D )
-    call AssociateHost ( D_F_S_1, F_S_1 )
-    call AssociateHost ( D_F_S_2, F_S_2 )
-    call AssociateHost ( D_F_S_3, F_S_3 )
-    call AssociateHost ( D_F_S_Dim, F_S_Dim )
-    call AssociateHost ( D_F_G, F_G )
-    call AssociateHost ( D_D, D )
-    call AssociateHost ( D_S_1, S_1 )
-    call AssociateHost ( D_S_2, S_2 )
-    call AssociateHost ( D_S_3, S_3 )
-    call AssociateHost ( D_G, G )
-    call AssociateHost ( D_P, P )
-    call AssociateHost ( D_V_Dim, V_Dim )
-    
     !F_D   = D   * V_Dim
     !F_S_1 = S_1 * V_Dim
     !F_S_2 = S_2 * V_Dim
@@ -332,20 +246,6 @@ contains
     end do
     !$OMP end OMP_TARGET_DIRECTIVE parallel do
 
-    call DisassociateHost ( V_Dim )
-    call DisassociateHost ( P )
-    call DisassociateHost ( G )
-    call DisassociateHost ( S_3 )
-    call DisassociateHost ( S_2 )
-    call DisassociateHost ( S_1 )
-    call DisassociateHost ( D )
-    call DisassociateHost ( F_G )
-    call DisassociateHost ( F_S_Dim )
-    call DisassociateHost ( F_S_3 )
-    call DisassociateHost ( F_S_2 )
-    call DisassociateHost ( F_S_1 )
-    call DisassociateHost ( F_D )
-    
   end procedure ComputeRawFluxesKernel
 
 

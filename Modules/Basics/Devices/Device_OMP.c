@@ -3,6 +3,18 @@
 #include <stdbool.h>
 #include <omp.h>
 
+int OnTarget_OMP ( void * Host )
+  {
+  int iDevice;
+  #ifdef ENABLE_OMP_OFFLOAD
+  iDevice = omp_get_default_device();
+  return omp_target_is_present ( Host, iDevice );
+  #else
+  return 0;
+  #endif
+  }
+
+
 void * AllocateTargetDouble_OMP ( int nValues )
   {
   int iDevice;

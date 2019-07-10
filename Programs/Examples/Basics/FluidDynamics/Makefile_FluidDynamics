@@ -36,7 +36,7 @@ RiemannProblem: Basics.a Fluid.a RiemannProblem.o
           Fluid.a Basics.a $(LIBRARIES)
 
 clean:
-	rm -f *.o *.a *.mod *.ld
+	rm -f *.o *.a *.mod *.ld *.smod
 
 clobber: clean
 	rm -f SineWaveAdvection_*
