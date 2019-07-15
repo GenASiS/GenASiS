@@ -65,11 +65,10 @@ contains
     integer ( KDI ) :: &
       iV
 
-    call Copy ( D, D_D, D_N, N )
-    
     !$OMP  OMP_TARGET_DIRECTIVE parallel do &
     !$OMP& schedule ( OMP_SCHEDULE )
     do iV = 1, size ( N )
+      N ( iV ) = D ( iV )
       if ( N ( iV ) > 0.0_KDR ) then
         V_1 ( iV ) = S_1 ( iV ) / N ( iV )
         V_2 ( iV ) = S_2 ( iV ) / N ( iV )

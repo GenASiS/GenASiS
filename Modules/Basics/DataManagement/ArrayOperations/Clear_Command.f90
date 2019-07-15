@@ -7,7 +7,6 @@
 
 module Clear_Command
 
-  use iso_c_binding
   use Specifiers
   use Devices
 
@@ -206,10 +205,10 @@ contains
   end subroutine ClearReal_3D
   
   
-  subroutine ClearReal_1D_Device ( D_A, A )
+  subroutine ClearReal_1D_Device ( ClearDevice, A )
 
-    type ( c_ptr ), intent ( in ) :: &
-      D_A
+    logical ( KDL ), intent ( in ) :: &
+      ClearDevice
     real ( KDR ), dimension ( : ), intent ( out ) :: &
       A
     
@@ -229,10 +228,10 @@ contains
   end subroutine ClearReal_1D_Device
   
 
-  subroutine ClearReal_2D_Device ( D_A, A )
+  subroutine ClearReal_2D_Device ( ClearDevice, A )
 
-    type ( c_ptr ), dimension ( : ), intent ( in ) :: &
-      D_A
+    logical ( KDL ), intent ( in ) :: &
+      ClearDevice
     real ( KDR ), dimension ( :, : ), intent ( out ) :: &
       A
     
@@ -243,7 +242,7 @@ contains
     nV = size ( A, dim = 2 )
 
     do iV = 1, nV
-      call Clear ( D_A ( iV ), A ( :, iV ) )
+      call Clear ( ClearDevice, A ( :, iV ) )
     end do
     
   end subroutine ClearReal_2D_Device

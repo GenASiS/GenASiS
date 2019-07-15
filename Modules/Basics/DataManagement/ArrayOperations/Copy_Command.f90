@@ -6,7 +6,6 @@
 
 module Copy_Command
 
-  use iso_c_binding
   use Specifiers
   use Devices
 
@@ -369,14 +368,12 @@ contains
   end subroutine CopyReal_3D
   
   
-  subroutine CopyReal_1D_Device ( A, D_A, D_B, B )
+  subroutine CopyReal_1D_Device ( A, CopyDevice, B )
 
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       A
-    type ( c_ptr ), intent ( in ) :: &
-      D_A
-    type ( c_ptr ), intent ( in ) :: &
-      D_B
+    logical ( KDL ), intent ( in ) :: &
+      CopyDevice
     real ( KDR ), dimension ( : ), intent ( out ) :: &
       B
     
@@ -513,19 +510,17 @@ contains
   end subroutine CopyReal_3D_1D
 
 
-  subroutine CopyReal_3D_1D_Device ( A, nSource, oSource, oTarget, D_A, D_B, B )
+  subroutine CopyReal_3D_1D_Device ( A, CopyDevice, nSource, oSource, oTarget, B )
 
     real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
       A
+    logical ( KDL ), intent ( in ) :: &
+      CopyDevice
     integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
       nSource, &
       oSource
     integer ( KDI ), intent ( in ) :: &
       oTarget
-    type ( c_ptr ), intent ( in ) :: &
-      D_A
-    type ( c_ptr ), intent ( in ) :: &
-      D_B
     !-- This argument is last in the spirit of intent ( out ), but should
     !   remain intent ( inout ) so existing values outside the section
     !   are not corrupted
@@ -585,19 +580,17 @@ contains
 
 
   subroutine CopyReal_1D_3D_Device &
-               ( A, nTarget, oTarget, oSource, D_A, D_B, B )
+               ( A, CopyDevice, nTarget, oTarget, oSource, B )
 
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       A
+    logical ( KDL ), intent ( in ) :: &
+      CopyDevice
     integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
       nTarget, &
       oTarget
     integer ( KDI ), intent ( in ) :: &
       oSource
-    type ( c_ptr ), intent ( in ) :: &
-      D_A
-    type ( c_ptr ), intent ( in ) :: &
-      D_B
     !-- This argument is last in the spirit of intent ( out ), but should
     !   remain intent ( inout ) so existing values outside the section
     !   are not corrupted

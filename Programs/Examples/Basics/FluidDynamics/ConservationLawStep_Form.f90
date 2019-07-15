@@ -1,6 +1,5 @@
 module ConservationLawStep_Form
 
-  use iso_c_binding
   use Basics
   use ConservedFields_Template
 
@@ -70,9 +69,8 @@ module ConservationLawStep_Form
     interface
     
       module subroutine ComputeDifferencesKernel &
-                   ( V, oV, iD, D_V, D_dV_Left, D_dV_Right, dV_Left, dV_Right )
+                   ( V, oV, iD, dV_Left, dV_Right )
 
-        use iso_c_binding
         use Basics
         implicit none
                
@@ -81,9 +79,6 @@ module ConservationLawStep_Form
         integer ( KDI ), intent ( in ) :: &
           oV, &
           iD
-        type ( c_ptr ), intent ( in ) :: &
-          D_V, &
-          D_dV_Left, D_dV_Right
         real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
           dV_Left, dV_Right
           
@@ -91,10 +86,8 @@ module ConservationLawStep_Form
 
 
       module subroutine ComputeReconstructionKernel &
-                   ( V, dV_Left, dV_Right, Theta, D_V, D_dV_Left, D_dV_Right, &
-                     D_V_Inner, D_V_Outer, V_Inner, V_Outer )
+                   ( V, dV_Left, dV_Right, Theta, V_Inner, V_Outer )
 
-        use iso_c_binding
         use Basics
         implicit none
                
@@ -103,10 +96,6 @@ module ConservationLawStep_Form
           dV_Left, dV_Right
         real ( KDR ), intent ( in ) :: &
           Theta
-        type ( c_ptr ), intent ( in ) :: &
-          D_V, &
-          D_dV_Left, D_dV_Right, &
-          D_V_Inner, D_V_Outer
         real ( KDR ), dimension ( : ), intent ( out ) :: &
           V_Inner, V_Outer
 
@@ -115,10 +104,8 @@ module ConservationLawStep_Form
 
       module subroutine ComputeFluxesKernel &
                    ( AP_I, AP_O, AM_I, AM_O, RF_I, RF_O, U_I, U_O, oV, iD, &
-                     D_AP_I, D_AP_O, D_AM_I, D_AM_O, D_RF_I, D_RF_O, &
-                     D_U_I, D_U_O, D_F_I, D_F_O, F_I, F_O )
+                     F_I, F_O )
 
-        use iso_c_binding
         use Basics
         implicit none
                
@@ -130,22 +117,14 @@ module ConservationLawStep_Form
         integer ( KDI ), intent ( in ) :: &
           oV, &
           iD
-        type ( c_ptr ), intent ( in ) :: &
-          D_AP_I, D_AP_O, &
-          D_AM_I, D_AM_O, &
-          D_RF_I, D_RF_O, &
-          D_U_I, D_U_O, &
-          D_F_I, D_F_O
         real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
           F_I, F_O
           
       end subroutine ComputeFluxesKernel
 
 
-      module subroutine ComputeUpdateKernel &
-                   ( dU, F_I, F_O, V, A, dT, D_dU, D_F_I, D_F_O )
+      module subroutine ComputeUpdateKernel ( dU, F_I, F_O, V, A, dT )
         
-        use iso_c_binding
         use Basics
         implicit none
                
@@ -157,33 +136,25 @@ module ConservationLawStep_Form
           V, &
           A, &
           dT
-        type ( c_ptr ), intent ( in ) :: &
-          D_dU, &
-          D_F_I, D_F_O
         
       end subroutine ComputeUpdateKernel
       
       
-      module subroutine AddUpdateKernel ( O, U, D_O, D_U, D_C, C )
+      module subroutine AddUpdateKernel ( O, U, C )
         
-        use iso_c_binding
         use Basics
         implicit none
                
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           O, &
           U
-        type ( c_ptr ), intent ( in ) :: &
-          D_O, &
-          D_U, &
-          D_C
         real ( KDR ), dimension ( : ), intent ( out ) :: &
           C 
           
       end subroutine AddUpdateKernel
       
       
-      module subroutine CombineUpdatesKernel ( C, O, U, D_C, D_O, D_U )
+      module subroutine CombineUpdatesKernel ( C, O, U )
         
         use iso_c_binding
         use Basics
@@ -194,10 +165,6 @@ module ConservationLawStep_Form
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           O, &
           U
-        type ( c_ptr ), intent ( in ) :: &
-          D_C, &
-          D_O, &
-          D_U
           
       end subroutine CombineUpdatesKernel
       
@@ -215,6 +182,10 @@ contains
 
     integer ( KDI ) :: &
       iV  !-- iVariable
+    logical ( KDL ) :: &
+      ClearDevice
+      
+    ClearDevice = .true.
 
     call Show ( 'Initializing a ConservationLawStep', CONSOLE % INFO_3 )
 
@@ -243,10 +214,8 @@ contains
 
     call CLS % DifferenceLeft  % AllocateDevice ( )
     call CLS % DifferenceRight % AllocateDevice ( )
-    call Clear ( CLS % DifferenceLeft % D_Selected, &
-                 CLS % DifferenceLeft % Value )
-    call Clear ( CLS % DifferenceRight % D_Selected, &
-                 CLS % DifferenceRight % Value )
+    call Clear ( ClearDevice, CLS % DifferenceLeft % Value )
+    call Clear ( ClearDevice, CLS % DifferenceRight % Value )
 
     !-- Reconstruction
 
@@ -263,10 +232,8 @@ contains
     
     call CLS % ReconstructionInner % AllocateDevice ( )
     call CLS % ReconstructionOuter % AllocateDevice ( )
-    call Clear ( CLS % ReconstructionInner % D_Selected, &
-                 CLS % ReconstructionInner % Value ) 
-    call Clear ( CLS % ReconstructionOuter % D_Selected, &
-                 CLS % ReconstructionOuter % Value ) 
+    call Clear ( ClearDevice, CLS % ReconstructionInner % Value ) 
+    call Clear ( ClearDevice, CLS % ReconstructionOuter % Value ) 
 
     !-- Riemann solver
 
@@ -285,10 +252,8 @@ contains
     
     call CLS % ModifiedSpeedsInner % AllocateDevice ( )
     call CLS % ModifiedSpeedsOuter % AllocateDevice ( )
-    call Clear ( CLS % ModifiedSpeedsInner % D_Selected, &
-                 CLS % ModifiedSpeedsInner % Value )
-    call Clear ( CLS % ModifiedSpeedsOuter % D_Selected, &
-                 CLS % ModifiedSpeedsOuter % Value )
+    call Clear ( ClearDevice, CLS % ModifiedSpeedsInner % Value )
+    call Clear ( ClearDevice, CLS % ModifiedSpeedsOuter % Value )
 
     call CLS % RawFluxInner % Initialize &
            ( [ nCells, CF % N_CONSERVED ], NameOption = 'RawFluxInner', &
@@ -302,10 +267,8 @@ contains
                      iV = 1, CF % N_CONSERVED ) ] )
     call CLS % RawFluxInner % AllocateDevice ( )
     call CLS % RawFluxOuter % AllocateDevice ( )
-    call Clear ( CLS % RawFluxInner % D_Selected, &
-                 CLS % RawFluxInner % Value )
-    call Clear ( CLS % RawFluxOuter % D_Selected, &
-                 CLS % RawFluxOuter % Value )
+    call Clear ( ClearDevice, CLS % RawFluxInner % Value )
+    call Clear ( ClearDevice, CLS % RawFluxOuter % Value )
 
     call CLS % FluxInner % Initialize &
            ( [ nCells, CF % N_CONSERVED ], NameOption = 'FluxInner', &
@@ -319,10 +282,8 @@ contains
                      iV = 1, CF % N_CONSERVED ) ] )
     call CLS % FluxInner % AllocateDevice ( )
     call CLS % FluxOuter % AllocateDevice ( )
-    call Clear ( CLS % FluxInner % D_Selected, &
-                 CLS % FluxInner % Value )
-    call Clear ( CLS % FluxOuter % D_Selected, &
-                 CLS % FluxOuter % Value )
+    call Clear ( ClearDevice, CLS % FluxInner % Value )
+    call Clear ( ClearDevice, CLS % FluxOuter % Value )
     
     !-- Update
 
@@ -380,6 +341,8 @@ contains
 
     integer ( KDI ) :: &
       iV  !-- iVariable
+    logical ( KDL ) :: &
+      CopyDevice
     type ( StorageForm ) :: &
       Primitive!, &
       !Eigenspeed
@@ -415,8 +378,7 @@ contains
     call T_RK % Start ( )
     do iV = 1, Current % N_CONSERVED
       call Copy ( Current % Value ( :, iaC ( iV ) ), &
-                  Current % D_Selected ( iaC ( iV ) ), &
-                  Old % D_Selected ( iV ), Old % Value ( :, iV ) )
+                  CopyDevice, Old % Value ( :, iV ) )
     end do
     call T_RK % Stop ( )
     
@@ -434,8 +396,6 @@ contains
     !    = Old % Value ( :, iV ) + Update % Value ( :, iV )
       call AddUpdateKernel &
              ( Old % Value ( :, iV ), Update % Value ( :, iV ), &
-               Old % D_Selected ( iV ), Update % D_Selected ( iV ), &
-               Current % D_Selected ( iaC ( iV ) ), &
                Current % Value ( :, iaC ( iV ) ) )
     end do
     
@@ -486,9 +446,7 @@ contains
       !                + Current % Value ( :, iaC ( iV ) ) )
       call CombineUpdatesKernel &
              ( Current % Value ( :, iaC ( iV ) ), &
-               Old % Value ( :, iV ), Update % Value ( :, iV ), &
-               Current % D_Selected ( iaC ( iV ) ), &
-               Old % D_Selected ( iV ), Update % D_Selected ( iV ) )
+               Old % Value ( :, iV ), Update % Value ( :, iV ) )
     end do
     call T_RK % Stop ( )
     
@@ -539,14 +497,18 @@ contains
     integer ( KDI ) :: &
       iD, &  !-- iDimension
       iV
+    logical ( KDL ) :: &
+      ClearDevice
 
     call Show ( 'Computing Update', CONSOLE % INFO_5 )
+    
+    ClearDevice = .true.
 
     associate ( CF => CLS % ConservedFields )
     associate ( DM => CF % DistributedMesh )
     associate ( T_U => PROGRAM_HEADER % Timer ( CLS % iTimerUpdate ) )
 
-    call Clear ( CLS % Update % D_Selected, CLS % Update % Value )
+    call Clear ( ClearDevice, CLS % Update % Value )
     
     do iD = 1, DM % nDimensions
 
@@ -562,10 +524,7 @@ contains
                ( CLS % Update % Value ( :, iV ), &
                  CLS % FluxInner % Value ( :, iV ), &
                  CLS % FluxOuter % Value ( :, iV ), DM % CellVolume, &
-                 DM % CellArea ( iD ), TimeStep, &
-                 CLS % Update % D_Selected ( iV ), &
-                 CLS % FluxInner % D_Selected ( iV ), &
-                 CLS % FluxOuter % D_Selected ( iV ) )
+                 DM % CellArea ( iD ), TimeStep )
       end do
       call T_U % Stop ( )
 
@@ -620,11 +579,7 @@ contains
              ( CLS % DifferenceRight % Value ( :, iP ), dV_Right )
       call T_D % Start ( )
       call ComputeDifferencesKernel &
-             ( V, DM % nGhostLayers ( iD ), iD, &
-               CF % D_Selected ( CF % iaPrimitive ( iP ) ), &
-               CLS % DifferenceLeft % D_Selected ( iP ), &
-               CLS % DifferenceRight % D_Selected ( iP ), &
-               dV_Left, dV_Right )
+             ( V, DM % nGhostLayers ( iD ), iD, dV_Left, dV_Right )
       call T_D % Stop ( )
     end do
     
@@ -662,11 +617,6 @@ contains
                CLS % DifferenceLeft % Value ( :, iP ), &
                CLS % DifferenceRight % Value ( :, iP ), &
                CLS % LimiterParameter, &
-               CF % D_Selected ( iaP ( iP ) ), &
-               CLS % DifferenceLeft % D_Selected ( iP ), &
-               CLS % DifferenceRight % D_Selected ( iP ), &
-               CLS % ReconstructionInner % D_Selected ( iaP ( iP ) ), &
-               CLS % ReconstructionOuter % D_Selected ( iaP ( iP ) ), &
                CLS % ReconstructionInner % Value ( :, iaP ( iP ) ), &
                CLS % ReconstructionOuter % Value ( :, iaP ( iP ) ) )
       call T_R % Stop ( )
@@ -777,18 +727,7 @@ contains
       call T_F % Start ( )
       call ComputeFluxesKernel &
              ( AP_I, AP_O, AM_I, AM_O, RF_I, RF_O, U_I, U_O, &
-               DM % nGhostLayers ( iDimension ), iDimension, &
-               CLS % ModifiedSpeedsInner % D_Selected ( CLS % ALPHA_PLUS ), &
-               CLS % ModifiedSpeedsOuter % D_Selected ( CLS % ALPHA_PLUS ), &
-               CLS % ModifiedSpeedsInner % D_Selected ( CLS % ALPHA_MINUS ), &
-               CLS % ModifiedSpeedsOuter % D_Selected ( CLS % ALPHA_MINUS ), &
-               CLS % RawFluxInner % D_Selected ( iV ), &
-               CLS % RawFluxOuter % D_Selected ( iV ), &
-               CLS % ReconstructionInner % D_Selected ( iaC ( iV ) ), &
-               CLS % ReconstructionOuter % D_Selected ( iaC ( iV ) ), &
-               CLS % FluxInner % D_Selected ( iV ), &
-               CLS % FluxOuter % D_Selected ( iV ), &
-               F_I, F_O )
+               DM % nGhostLayers ( iDimension ), iDimension, F_I, F_O )
       call T_F % Stop ( )
     end do
     
