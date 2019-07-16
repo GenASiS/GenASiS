@@ -182,11 +182,7 @@ contains
 
     integer ( KDI ) :: &
       iV  !-- iVariable
-    logical ( KDL ) :: &
-      ClearDevice
       
-    ClearDevice = .true.
-
     call Show ( 'Initializing a ConservationLawStep', CONSOLE % INFO_3 )
 
     CLS % ConservedFields => CF
@@ -214,8 +210,8 @@ contains
 
     call CLS % DifferenceLeft  % AllocateDevice ( )
     call CLS % DifferenceRight % AllocateDevice ( )
-    call Clear ( ClearDevice, CLS % DifferenceLeft % Value )
-    call Clear ( ClearDevice, CLS % DifferenceRight % Value )
+    call Clear ( CLS % DifferenceLeft % Value, UseDeviceOption = .true. )
+    call Clear ( CLS % DifferenceRight % Value, UseDeviceOption = .true. )
 
     !-- Reconstruction
 
@@ -232,8 +228,8 @@ contains
     
     call CLS % ReconstructionInner % AllocateDevice ( )
     call CLS % ReconstructionOuter % AllocateDevice ( )
-    call Clear ( ClearDevice, CLS % ReconstructionInner % Value ) 
-    call Clear ( ClearDevice, CLS % ReconstructionOuter % Value ) 
+    call Clear ( CLS % ReconstructionInner % Value, UseDeviceOption = .true. ) 
+    call Clear ( CLS % ReconstructionOuter % Value, UseDeviceOption = .true. ) 
 
     !-- Riemann solver
 
@@ -252,8 +248,8 @@ contains
     
     call CLS % ModifiedSpeedsInner % AllocateDevice ( )
     call CLS % ModifiedSpeedsOuter % AllocateDevice ( )
-    call Clear ( ClearDevice, CLS % ModifiedSpeedsInner % Value )
-    call Clear ( ClearDevice, CLS % ModifiedSpeedsOuter % Value )
+    call Clear ( CLS % ModifiedSpeedsInner % Value, UseDeviceOption = .true. )
+    call Clear ( CLS % ModifiedSpeedsOuter % Value, UseDeviceOption = .true. )
 
     call CLS % RawFluxInner % Initialize &
            ( [ nCells, CF % N_CONSERVED ], NameOption = 'RawFluxInner', &
@@ -267,8 +263,8 @@ contains
                      iV = 1, CF % N_CONSERVED ) ] )
     call CLS % RawFluxInner % AllocateDevice ( )
     call CLS % RawFluxOuter % AllocateDevice ( )
-    call Clear ( ClearDevice, CLS % RawFluxInner % Value )
-    call Clear ( ClearDevice, CLS % RawFluxOuter % Value )
+    call Clear ( CLS % RawFluxInner % Value, UseDeviceOption = .true. )
+    call Clear ( CLS % RawFluxOuter % Value, UseDeviceOption = .true. )
 
     call CLS % FluxInner % Initialize &
            ( [ nCells, CF % N_CONSERVED ], NameOption = 'FluxInner', &
@@ -282,8 +278,8 @@ contains
                      iV = 1, CF % N_CONSERVED ) ] )
     call CLS % FluxInner % AllocateDevice ( )
     call CLS % FluxOuter % AllocateDevice ( )
-    call Clear ( ClearDevice, CLS % FluxInner % Value )
-    call Clear ( ClearDevice, CLS % FluxOuter % Value )
+    call Clear ( CLS % FluxInner % Value, UseDeviceOption = .true. )
+    call Clear ( CLS % FluxOuter % Value, UseDeviceOption = .true. )
     
     !-- Update
 
@@ -341,8 +337,6 @@ contains
 
     integer ( KDI ) :: &
       iV  !-- iVariable
-    logical ( KDL ) :: &
-      CopyDevice
     type ( StorageForm ) :: &
       Primitive!, &
       !Eigenspeed
@@ -378,7 +372,7 @@ contains
     call T_RK % Start ( )
     do iV = 1, Current % N_CONSERVED
       call Copy ( Current % Value ( :, iaC ( iV ) ), &
-                  CopyDevice, Old % Value ( :, iV ) )
+                  Old % Value ( :, iV ), UseDeviceOption = .true. )
     end do
     call T_RK % Stop ( )
     
@@ -497,18 +491,14 @@ contains
     integer ( KDI ) :: &
       iD, &  !-- iDimension
       iV
-    logical ( KDL ) :: &
-      ClearDevice
 
     call Show ( 'Computing Update', CONSOLE % INFO_5 )
     
-    ClearDevice = .true.
-
     associate ( CF => CLS % ConservedFields )
     associate ( DM => CF % DistributedMesh )
     associate ( T_U => PROGRAM_HEADER % Timer ( CLS % iTimerUpdate ) )
 
-    call Clear ( ClearDevice, CLS % Update % Value )
+    call Clear ( CLS % Update % Value, UseDeviceOption = .true. )
     
     do iD = 1, DM % nDimensions
 

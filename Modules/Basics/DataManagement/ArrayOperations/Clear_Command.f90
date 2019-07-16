@@ -28,8 +28,6 @@ module Clear_Command
     module procedure ClearReal_1D
     module procedure ClearReal_2D
     module procedure ClearReal_3D
-    module procedure ClearReal_1D_Device
-    module procedure ClearReal_2D_Device
     ! module procedure ClearReal_4D
     ! module procedure ClearComplex_1D
     ! module procedure ClearComplex_2D
@@ -142,39 +140,58 @@ contains
   ! end subroutine ClearBigInteger_4D
 
 
-  subroutine ClearReal_1D ( A )
+  subroutine ClearReal_1D ( A, UseDeviceOption )
 
     real ( KDR ), dimension ( : ), intent ( out ) :: &
       A
+    logical ( KDL ), intent ( in ), optional :: &
+      UseDeviceOption
 
     integer ( KDI ) :: &
       iV, &
       nV
+    logical ( KDL ) :: &
+      UseDevice
+      
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
 
     nV = size ( A )
-
-    !$OMP parallel do private ( iV ) schedule ( OMP_SCHEDULE )
-    do iV = 1, nV
-      A ( iV ) = 0.0_KDR
-    end do
-    !$OMP end parallel do
+    
+    if ( UseDevice ) then
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP& schedule ( OMP_SCHEDULE )
+      do iV = 1, nV
+        A ( iV ) = 0.0_KDR
+      end do
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    else
+      !$OMP parallel do private ( iV ) schedule ( OMP_SCHEDULE )
+      do iV = 1, nV
+        A ( iV ) = 0.0_KDR
+      end do
+      !$OMP end parallel do
+    end if
 
   end subroutine ClearReal_1D
   
   
-  subroutine ClearReal_2D ( A )
+  subroutine ClearReal_2D ( A, UseDeviceOption )
 
     real ( KDR ), dimension ( :, : ), intent ( out ) :: &
       A
+    logical ( KDL ), intent ( in ), optional :: &
+      UseDeviceOption
 
     integer ( KDI ) :: &
       iV, &
       nV
-
+      
     nV = size ( A, dim = 2 )
 
     do iV = 1, nV
-      call Clear ( A ( :, iV ) )
+      call Clear ( A ( :, iV ), UseDeviceOption )
     end do
   
   end subroutine ClearReal_2D
@@ -203,49 +220,6 @@ contains
     !$OMP end parallel do
 
   end subroutine ClearReal_3D
-  
-  
-  subroutine ClearReal_1D_Device ( ClearDevice, A )
-
-    logical ( KDL ), intent ( in ) :: &
-      ClearDevice
-    real ( KDR ), dimension ( : ), intent ( out ) :: &
-      A
-    
-    integer ( KDI ) :: &
-      iV, &
-      nV
-
-    nV = size ( A )
-    
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-    !$OMP& schedule ( OMP_SCHEDULE )
-    do iV = 1, nV
-      A ( iV ) = 0.0_KDR
-    end do
-    !$OMP end OMP_TARGET_DIRECTIVE parallel do
-    
-  end subroutine ClearReal_1D_Device
-  
-
-  subroutine ClearReal_2D_Device ( ClearDevice, A )
-
-    logical ( KDL ), intent ( in ) :: &
-      ClearDevice
-    real ( KDR ), dimension ( :, : ), intent ( out ) :: &
-      A
-    
-    integer ( KDI ) :: &
-      iV, &
-      nV
-
-    nV = size ( A, dim = 2 )
-
-    do iV = 1, nV
-      call Clear ( ClearDevice, A ( :, iV ) )
-    end do
-    
-  end subroutine ClearReal_2D_Device
   
   
   ! subroutine ClearReal_4D ( A )
