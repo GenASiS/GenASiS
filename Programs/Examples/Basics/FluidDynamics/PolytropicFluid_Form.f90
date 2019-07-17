@@ -89,10 +89,8 @@ module PolytropicFluid_Form
       
      
       module subroutine ComputeConservedKernelDevice &
-                   ( G, E, N, V_1, V_2, V_3, &
-                     D_G, D_E, D_N, D_V_1, D_V_2, D_V_3 )
+                   ( G, E, N, V_1, V_2, V_3 )
         
-        use iso_c_binding
         use Basics
         implicit none
         
@@ -102,11 +100,6 @@ module PolytropicFluid_Form
           E, &
           N, &
           V_1, V_2, V_3
-        type ( c_ptr ), intent ( in ) :: &
-          D_G, &
-          D_E, &
-          D_N, &
-          D_V_1, D_V_2, D_V_3
       
       end subroutine ComputeConservedKernelDevice
       
@@ -128,10 +121,9 @@ module PolytropicFluid_Form
       
       
       module subroutine ComputePrimitiveKernelDevice &
-                   ( E, G, N, V_1, V_2, V_3, &
-                     D_E, D_G, D_N, D_V_1, D_V_2, D_V_3 )
+                   ( E, G, N, V_1, V_2, V_3 )
+                     
         
-        use iso_c_binding
         use Basics
         implicit none
         
@@ -141,11 +133,6 @@ module PolytropicFluid_Form
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           N, &
           V_1, V_2, V_3
-        type ( c_ptr ), intent ( in ) :: &
-          D_E, &
-          D_G, &
-          D_N, &
-          D_V_1, D_V_2, D_V_3
           
       end subroutine ComputePrimitiveKernelDevice
 
@@ -168,8 +155,7 @@ module PolytropicFluid_Form
 
 
       module subroutine ComputeAuxiliaryKernelDevice &
-                   ( P, K, N, E, Gamma, &
-                     D_P, D_K, D_N, D_E, D_Gamma )
+                   ( P, K, N, E, Gamma )
 
         use iso_c_binding
         use Basics
@@ -182,12 +168,6 @@ module PolytropicFluid_Form
           N, &
           E, &
           Gamma
-        type ( c_ptr ), intent ( in ) :: &
-          D_P, &
-          D_K, &
-          D_N, &
-          D_E, &
-          D_Gamma
         
       end subroutine ComputeAuxiliaryKernelDevice
 
@@ -232,11 +212,8 @@ module PolytropicFluid_Form
 
       module subroutine ComputeEigenspeedsKernelDevice &
                    ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, N, &
-                     V_1, V_2, V_3, P, Gamma, &
-                     D_FEP_1, D_FEP_2, D_FEP_3, D_FEM_1, D_FEM_2, D_FEM_3, &
-                     D_CS, D_N, D_V_1, D_V_2, D_V_3, D_P, D_Gamma )
+                     V_1, V_2, V_3, P, Gamma )
 
-        use iso_c_binding
         use Basics
         implicit none
         
@@ -249,14 +226,6 @@ module PolytropicFluid_Form
           V_1, V_2, V_3, &
           P, &
           Gamma
-        type ( c_ptr ), intent ( in ) :: &
-          D_FEP_1, D_FEP_2, D_FEP_3, &
-          D_FEM_1, D_FEM_2, D_FEM_3, &
-          D_CS, &
-          D_N, &
-          D_V_1, D_V_2, D_V_3, &
-          D_P, &
-          D_Gamma
           
       end subroutine ComputeEigenspeedsKernelDevice
       
@@ -283,8 +252,8 @@ module PolytropicFluid_Form
 
 
       module subroutine ApplyBoundaryConditionsReflectingDevice &
-                   ( E_E, Gamma_E, E_I, Gamma_I, nB, oBE, oBI, &
-                     D_E_E, D_Gamma_E, D_E_I, D_Gamma_I )
+                   ( E_E, Gamma_E, E_I, Gamma_I, nB, oBE, oBI )
+                     
 
         use iso_c_binding
         use Basics
@@ -300,11 +269,6 @@ module PolytropicFluid_Form
           nB,  & 
           oBE, &
           oBI
-        type ( c_ptr ), intent ( in ) :: &
-          D_E_E, &
-          D_Gamma_E, &
-          D_E_I, &
-          D_Gamma_I
           
       end subroutine ApplyBoundaryConditionsReflectingDevice
 
@@ -422,13 +386,7 @@ contains
         Value ( :, CF % COMOVING_DENSITY ), &
         Value ( :, CF % VELOCITY ( 1 ) ), &    
         Value ( :, CF % VELOCITY ( 2 ) ), &   
-        Value ( :, CF % VELOCITY ( 3 ) ), &
-        D_Value ( CF % CONSERVED_ENERGY ), &
-        D_Value ( CF % INTERNAL_ENERGY ), &    
-        D_Value ( CF % COMOVING_DENSITY ), &
-        D_Value ( CF % VELOCITY ( 1 ) ), &    
-        D_Value ( CF % VELOCITY ( 2 ) ), &   
-        D_Value ( CF % VELOCITY ( 3 ) ) )
+        Value ( :, CF % VELOCITY ( 3 ) ) )
 
   end subroutine ComputeConservedDevice
 
@@ -470,14 +428,8 @@ contains
              Value ( :, CF % COMOVING_DENSITY ), &
              Value ( :, CF % VELOCITY ( 1 ) ), &
              Value ( :, CF % VELOCITY ( 2 ) ), &
-             Value ( :, CF % VELOCITY ( 3 ) ), &
-             D_Value ( CF % INTERNAL_ENERGY ), &
-             D_Value ( CF % CONSERVED_ENERGY ), &
-             D_Value ( CF % COMOVING_DENSITY ), &
-             D_Value ( CF % VELOCITY ( 1 ) ), &
-             D_Value ( CF % VELOCITY ( 2 ) ), &
-             D_Value ( CF % VELOCITY ( 3 ) ) )
-  
+             Value ( :, CF % VELOCITY ( 3 ) ) )
+               
   end subroutine ComputePrimitiveDevice
   
   
@@ -527,12 +479,7 @@ contains
              Value ( :, CF % POLYTROPIC_PARAMETER ), &
              Value ( :, CF % COMOVING_DENSITY ), &
              Value ( :, CF % INTERNAL_ENERGY ), &
-             Value ( :, CF % ADIABATIC_INDEX ), &
-             D_Value ( CF % PRESSURE ), &
-             D_Value ( CF % POLYTROPIC_PARAMETER ), &
-             D_Value ( CF % COMOVING_DENSITY ), &
-             D_Value ( CF % INTERNAL_ENERGY ), &
-             D_Value ( CF % ADIABATIC_INDEX ) )
+             Value ( :, CF % ADIABATIC_INDEX ) )
   
     call ComputeEigenspeedsKernelDevice &
            ( Value ( :, CF % FAST_EIGENSPEED_PLUS ( 1 ) ), &
@@ -547,20 +494,7 @@ contains
              Value ( :, CF % VELOCITY ( 2 ) ), &
              Value ( :, CF % VELOCITY ( 3 ) ), &
              Value ( :, CF % PRESSURE ), &
-             Value ( :, CF % ADIABATIC_INDEX ), &
-             D_Value ( CF % FAST_EIGENSPEED_PLUS ( 1 ) ), &
-             D_Value ( CF % FAST_EIGENSPEED_PLUS ( 2 ) ), &
-             D_Value ( CF % FAST_EIGENSPEED_PLUS ( 3 ) ), &
-             D_Value ( CF % FAST_EIGENSPEED_MINUS ( 1 ) ), &
-             D_Value ( CF % FAST_EIGENSPEED_MINUS ( 2 ) ), &
-             D_Value ( CF % FAST_EIGENSPEED_MINUS ( 3 ) ), &
-             D_Value ( CF % SOUND_SPEED ), &
-             D_Value ( CF % COMOVING_DENSITY ), &
-             D_Value ( CF % VELOCITY ( 1 ) ), &
-             D_Value ( CF % VELOCITY ( 2 ) ), &
-             D_Value ( CF % VELOCITY ( 3 ) ), &
-             D_Value ( CF % PRESSURE ), &
-             D_Value ( CF % ADIABATIC_INDEX ) )
+             Value ( :, CF % ADIABATIC_INDEX ) )
     
   end subroutine ComputeAuxiliaryDevice
   
@@ -771,11 +705,7 @@ contains
       return
     case ( 'REFLECTING' )
       call ApplyBoundaryConditionsReflectingDevice &
-             ( E_E, Gamma_E, E_I, Gamma_I, nB, oBE, oBI, &
-               D_ExteriorValue ( CF % INTERNAL_ENERGY ), &
-               D_ExteriorValue ( CF % ADIABATIC_INDEX ), &
-               D_InteriorValue ( CF % INTERNAL_ENERGY ), &
-               D_InteriorValue ( CF % ADIABATIC_INDEX ) )
+             ( E_E, Gamma_E, E_I, Gamma_I, nB, oBE, oBI )
     case default
       call Show &
              ( 'This boundary condition is not implemented', CONSOLE % ERROR )
