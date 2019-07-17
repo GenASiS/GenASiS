@@ -2,7 +2,6 @@
 
 submodule ( PressurelessFluid_Form ) PressurelessFluid_Kernel
 
-  use iso_c_binding
   use Basics
   
   implicit none
@@ -12,177 +11,190 @@ contains
 
   module procedure ComputeConservedKernel
 
-    D   = N
-    S_1 = N * V_1
-    S_2 = N * V_2
-    S_3 = N * V_3
-
-  end procedure ComputeConservedKernel
-
-
-  module procedure ComputeConservedKernelDevice
-
     integer ( KDI ) :: &
       iV
     
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-    !$OMP& schedule ( OMP_SCHEDULE )
-    do iV = 1, size ( D )
-      D   ( iV ) = N ( iV )
-      S_1 ( iV ) = N ( iV ) * V_1 ( iV )
-      S_2 ( iV ) = N ( iV ) * V_2 ( iV )
-      S_3 ( iV ) = N ( iV ) * V_3 ( iV )
-    end do
-    !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    if ( UseDevice ) then 
     
-  end procedure ComputeConservedKernelDevice
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP& schedule ( OMP_SCHEDULE )
+      do iV = 1, size ( D )
+        D   ( iV ) = N ( iV )
+        S_1 ( iV ) = N ( iV ) * V_1 ( iV )
+        S_2 ( iV ) = N ( iV ) * V_2 ( iV )
+        S_3 ( iV ) = N ( iV ) * V_3 ( iV )
+      end do
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    
+    else 
+    
+      !$OMP  parallel do &
+      !$OMP& schedule ( OMP_SCHEDULE )
+      do iV = 1, size ( D )
+        D   ( iV ) = N ( iV )
+        S_1 ( iV ) = N ( iV ) * V_1 ( iV )
+        S_2 ( iV ) = N ( iV ) * V_2 ( iV )
+        S_3 ( iV ) = N ( iV ) * V_3 ( iV )
+      end do
+      !$OMP end parallel do
+    
+    end if
+    
+  end procedure ComputeConservedKernel
 
 
   module procedure ComputePrimitiveKernel
 
-    N = D
-
-    where ( N > 0.0_KDR )
-      V_1 = S_1 / N 
-      V_2 = S_2 / N
-      V_3 = S_3 / N
-    elsewhere
-      N   = 0.0_KDR
-      V_1 = 0.0_KDR
-      V_2 = 0.0_KDR
-      V_3 = 0.0_KDR
-      D   = 0.0_KDR
-      S_1 = 0.0_KDR
-      S_2 = 0.0_KDR
-      S_3 = 0.0_KDR
-    end where
-
-  end procedure ComputePrimitiveKernel
-
-
-  module procedure ComputePrimitiveKernelDevice
-
-    integer ( KDI ) :: &
-      iV
-
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-    !$OMP& schedule ( OMP_SCHEDULE )
-    do iV = 1, size ( N )
-      N ( iV ) = D ( iV )
-      if ( N ( iV ) > 0.0_KDR ) then
-        V_1 ( iV ) = S_1 ( iV ) / N ( iV )
-        V_2 ( iV ) = S_2 ( iV ) / N ( iV )
-        V_3 ( iV ) = S_3 ( iV ) / N ( iV )
-      else
-        N   ( iV )= 0.0_KDR
-        V_1 ( iV ) = 0.0_KDR
-        V_2 ( iV ) = 0.0_KDR
-        V_3 ( iV ) = 0.0_KDR
-        D   ( iV ) = 0.0_KDR
-        S_1 ( iV ) = 0.0_KDR
-        S_2 ( iV ) = 0.0_KDR
-        S_3 ( iV ) = 0.0_KDR
-      end if
-    end do
-    !$OMP end OMP_TARGET_DIRECTIVE parallel do
-    
-  end procedure ComputePrimitiveKernelDevice
-
-  
-  module procedure ComputeEigenspeedsKernel
-
-    FEP_1 = V_1
-    FEP_2 = V_2
-    FEP_3 = V_3
-    FEM_1 = V_1
-    FEM_2 = V_2
-    FEM_3 = V_3
-
-  end procedure ComputeEigenspeedsKernel
-
-
-  module procedure ComputeEigenspeedsKernelDevice
-
     integer ( KDI ) :: &
       iV
       
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-    !$OMP& schedule ( OMP_SCHEDULE )
-    do iV = 1, size ( FEP_1 )
-      FEP_1 ( iV ) = V_1 ( iV )
-      FEP_2 ( iV ) = V_2 ( iV )
-      FEP_3 ( iV ) = V_3 ( iV )
-      FEM_1 ( iV ) = V_1 ( iV )
-      FEM_2 ( iV ) = V_2 ( iV )
-      FEM_3 ( iV ) = V_3 ( iV )
-    end do
-    !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    if ( UseDevice ) then
+
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP& schedule ( OMP_SCHEDULE )
+      do iV = 1, size ( N )
+        N ( iV ) = D ( iV )
+        if ( N ( iV ) > 0.0_KDR ) then
+          V_1 ( iV ) = S_1 ( iV ) / N ( iV )
+          V_2 ( iV ) = S_2 ( iV ) / N ( iV )
+          V_3 ( iV ) = S_3 ( iV ) / N ( iV )
+        else
+          N   ( iV )= 0.0_KDR
+          V_1 ( iV ) = 0.0_KDR
+          V_2 ( iV ) = 0.0_KDR
+          V_3 ( iV ) = 0.0_KDR
+          D   ( iV ) = 0.0_KDR
+          S_1 ( iV ) = 0.0_KDR
+          S_2 ( iV ) = 0.0_KDR
+          S_3 ( iV ) = 0.0_KDR
+        end if
+      end do
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
-  end procedure ComputeEigenspeedsKernelDevice
+    else
+      
+      !$OMP  parallel do &
+      !$OMP& schedule ( OMP_SCHEDULE )
+      do iV = 1, size ( N )
+        N ( iV ) = D ( iV )
+        if ( N ( iV ) > 0.0_KDR ) then
+          V_1 ( iV ) = S_1 ( iV ) / N ( iV )
+          V_2 ( iV ) = S_2 ( iV ) / N ( iV )
+          V_3 ( iV ) = S_3 ( iV ) / N ( iV )
+        else
+          N   ( iV )= 0.0_KDR
+          V_1 ( iV ) = 0.0_KDR
+          V_2 ( iV ) = 0.0_KDR
+          V_3 ( iV ) = 0.0_KDR
+          D   ( iV ) = 0.0_KDR
+          S_1 ( iV ) = 0.0_KDR
+          S_2 ( iV ) = 0.0_KDR
+          S_3 ( iV ) = 0.0_KDR
+        end if
+      end do
+      !$OMP end parallel do
+    
+    end if
+      
+  end procedure ComputePrimitiveKernel
+
+
+  module procedure ComputeEigenspeedsKernel
+
+    integer ( KDI ) :: &
+      iV
+    
+    if ( UseDevice ) then
+    
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP& schedule ( OMP_SCHEDULE )
+      do iV = 1, size ( FEP_1 )
+        FEP_1 ( iV ) = V_1 ( iV )
+        FEP_2 ( iV ) = V_2 ( iV )
+        FEP_3 ( iV ) = V_3 ( iV )
+        FEM_1 ( iV ) = V_1 ( iV )
+        FEM_2 ( iV ) = V_2 ( iV )
+        FEM_3 ( iV ) = V_3 ( iV )
+      end do
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+      
+    else 
+    
+      !$OMP  parallel do &
+      !$OMP& schedule ( OMP_SCHEDULE )
+      do iV = 1, size ( FEP_1 )
+        FEP_1 ( iV ) = V_1 ( iV )
+        FEP_2 ( iV ) = V_2 ( iV )
+        FEP_3 ( iV ) = V_3 ( iV )
+        FEM_1 ( iV ) = V_1 ( iV )
+        FEM_2 ( iV ) = V_2 ( iV )
+        FEM_3 ( iV ) = V_3 ( iV )
+      end do
+      !$OMP end parallel do
+    
+    end if
+    
+  end procedure ComputeEigenspeedsKernel
 
 
   module procedure ApplyBoundaryConditionsReflecting
 
-    N_E ( oBE ( 1 ) + 1 : oBE ( 1 ) + nB ( 1 ), &
-          oBE ( 2 ) + 1 : oBE ( 2 ) + nB ( 2 ), &
-          oBE ( 3 ) + 1 : oBE ( 3 ) + nB ( 3 ) ) &
-      = N_I ( oBI ( 1 ) + 1 : oBI ( 1 ) + nB ( 1 ), &
-              oBI ( 2 ) + 1 : oBI ( 2 ) + nB ( 2 ), &
-              oBI ( 3 ) + 1 : oBI ( 3 ) + nB ( 3 ) )
-
-    VI_E ( oBE ( 1 ) + 1 : oBE ( 1 ) + nB ( 1 ), &
-           oBE ( 2 ) + 1 : oBE ( 2 ) + nB ( 2 ), &
-           oBE ( 3 ) + 1 : oBE ( 3 ) + nB ( 3 ) ) &
-      = - VI_I ( oBI ( 1 ) + 1 : oBI ( 1 ) + nB ( 1 ), &
-                 oBI ( 2 ) + 1 : oBI ( 2 ) + nB ( 2 ), &
-                 oBI ( 3 ) + 1 : oBI ( 3 ) + nB ( 3 ) )
-
-    VJ_E ( oBE ( 1 ) + 1 : oBE ( 1 ) + nB ( 1 ), &
-           oBE ( 2 ) + 1 : oBE ( 2 ) + nB ( 2 ), &
-           oBE ( 3 ) + 1 : oBE ( 3 ) + nB ( 3 ) ) &
-      = VJ_I ( oBI ( 1 ) + 1 : oBI ( 1 ) + nB ( 1 ), &
-               oBI ( 2 ) + 1 : oBI ( 2 ) + nB ( 2 ), &
-               oBI ( 3 ) + 1 : oBI ( 3 ) + nB ( 3 ) )
-
-    VK_E ( oBE ( 1 ) + 1 : oBE ( 1 ) + nB ( 1 ), &
-           oBE ( 2 ) + 1 : oBE ( 2 ) + nB ( 2 ), &
-           oBE ( 3 ) + 1 : oBE ( 3 ) + nB ( 3 ) ) &
-      = VK_I ( oBI ( 1 ) + 1 : oBI ( 1 ) + nB ( 1 ), &
-               oBI ( 2 ) + 1 : oBI ( 2 ) + nB ( 2 ), &
-               oBI ( 3 ) + 1 : oBI ( 3 ) + nB ( 3 ) )
-
-  end procedure ApplyBoundaryConditionsReflecting
-
-
-  module procedure ApplyBoundaryConditionsReflectingDevice
-
     integer ( KDI ) :: &
       iV, jV, kV
       
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
-    !$OMP& schedule ( OMP_SCHEDULE )
-    do kV = 1, nB ( 3 )
-      do jV = 1, nB ( 2 )
-        do iV = 1, nB ( 1 )
+    if ( UseDevice ) then
+      
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
+      !$OMP& schedule ( OMP_SCHEDULE )
+      do kV = 1, nB ( 3 )
+        do jV = 1, nB ( 2 )
+          do iV = 1, nB ( 1 )
 
-          N_E ( oBE ( 1 ) + iV, oBE ( 2 ) + jV, oBE ( 3 ) + kV ) &
-            = N_I ( oBI ( 1 ) + iV, oBI ( 2 ) + jV, oBI ( 3 ) + kV )
+            N_E ( oBE ( 1 ) + iV, oBE ( 2 ) + jV, oBE ( 3 ) + kV ) &
+              = N_I ( oBI ( 1 ) + iV, oBI ( 2 ) + jV, oBI ( 3 ) + kV )
 
-          VI_E ( oBE ( 1 ) + iV, oBE ( 2 ) + jV, oBE ( 3 ) + kV ) &
-            = - VI_I ( oBI ( 1 ) + iV, oBI ( 2 ) + jV, oBI ( 3 ) + kV )
+            VI_E ( oBE ( 1 ) + iV, oBE ( 2 ) + jV, oBE ( 3 ) + kV ) &
+              = - VI_I ( oBI ( 1 ) + iV, oBI ( 2 ) + jV, oBI ( 3 ) + kV )
 
-          VJ_E ( oBE ( 1 ) + iV, oBE ( 2 ) + jV, oBE ( 3 ) + kV ) &
-            = VJ_I ( oBI ( 1 ) + iV, oBI ( 2 ) + jV, oBI ( 3 ) + kV )
+            VJ_E ( oBE ( 1 ) + iV, oBE ( 2 ) + jV, oBE ( 3 ) + kV ) &
+              = VJ_I ( oBI ( 1 ) + iV, oBI ( 2 ) + jV, oBI ( 3 ) + kV )
 
-          VK_E ( oBE ( 1 ) + iV, oBE ( 2 ) + jV, oBE ( 3 ) + kV ) &
-            = VK_I ( oBI ( 1 ) + iV, oBI ( 2 ) + jV, oBI ( 3 ) + kV )
+            VK_E ( oBE ( 1 ) + iV, oBE ( 2 ) + jV, oBE ( 3 ) + kV ) &
+              = VK_I ( oBI ( 1 ) + iV, oBI ( 2 ) + jV, oBI ( 3 ) + kV )
 
+          end do
         end do
       end do
-    end do
-    !$OMP end OMP_TARGET_DIRECTIVE parallel do
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    
+    else 
+    
+      !$OMP  parallel do collapse ( 3 ) &
+      !$OMP& schedule ( OMP_SCHEDULE )
+      do kV = 1, nB ( 3 )
+        do jV = 1, nB ( 2 )
+          do iV = 1, nB ( 1 )
+
+            N_E ( oBE ( 1 ) + iV, oBE ( 2 ) + jV, oBE ( 3 ) + kV ) &
+              = N_I ( oBI ( 1 ) + iV, oBI ( 2 ) + jV, oBI ( 3 ) + kV )
+
+            VI_E ( oBE ( 1 ) + iV, oBE ( 2 ) + jV, oBE ( 3 ) + kV ) &
+              = - VI_I ( oBI ( 1 ) + iV, oBI ( 2 ) + jV, oBI ( 3 ) + kV )
+
+            VJ_E ( oBE ( 1 ) + iV, oBE ( 2 ) + jV, oBE ( 3 ) + kV ) &
+              = VJ_I ( oBI ( 1 ) + iV, oBI ( 2 ) + jV, oBI ( 3 ) + kV )
+
+            VK_E ( oBE ( 1 ) + iV, oBE ( 2 ) + jV, oBE ( 3 ) + kV ) &
+              = VK_I ( oBI ( 1 ) + iV, oBI ( 2 ) + jV, oBI ( 3 ) + kV )
+
+          end do
+        end do
+      end do
+      !$OMP end parallel do    
+    
+    end if
                
-  end procedure ApplyBoundaryConditionsReflectingDevice
+  end procedure ApplyBoundaryConditionsReflecting
 
 
   module procedure ComputeRawFluxesKernel
@@ -226,36 +238,72 @@ contains
     iaS_P = 0
     iaS_P ( iD ) = + 1
     
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
-    !$OMP& schedule ( OMP_SCHEDULE ) private ( iaVS_M, iaVS_P )
-    do kV = lV ( 3 ), uV ( 3 )    
-      do jV = lV ( 2 ), uV ( 2 )  
-        do iV = lV ( 1 ), uV ( 1 )
-        
-          iaVS_M = [ iV, jV, kV ] + iaS_M
-          iaVS_P = [ iV, jV, kV ] + iaS_P
+    if ( UseDevice ) then
+    
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
+      !$OMP& schedule ( OMP_SCHEDULE ) private ( iaVS_M, iaVS_P )
+      do kV = lV ( 3 ), uV ( 3 )    
+        do jV = lV ( 2 ), uV ( 2 )  
+          do iV = lV ( 1 ), uV ( 1 )
           
-          AP_I ( iV, jV, KV ) &
-            = max ( 0.0_KDR, &
-                    + LP_O ( iaVS_M ( 1 ), iaVS_M ( 2 ), iaVS_M ( 3 ) ), &
-                    + LP_I ( iV, jV, kV ) )
-          AP_O ( iV, jV, KV ) &
-            = max ( 0.0_KDR, &
-                    + LP_O ( iV, jV, kV ), &
-                    + LP_I ( iaVS_P ( 1 ), iaVS_P ( 2 ), iaVS_P ( 3 ) ) )
-          AM_I ( iV, jV, KV ) &
-            = max ( 0.0_KDR, &
-                    - LM_O ( iaVS_M ( 1 ), iaVS_M ( 2 ), iaVS_M ( 3 ) ), &
-                    - LM_I ( iV, jV, kV ) )
-          AM_O ( iV, jV, KV ) &
-            = max ( 0.0_KDR, &
-                    - LM_O ( iV, jV, kV ), &
-                    - LM_I ( iaVS_P ( 1 ), iaVS_P ( 2 ), iaVS_P ( 3 ) ) )
+            iaVS_M = [ iV, jV, kV ] + iaS_M
+            iaVS_P = [ iV, jV, kV ] + iaS_P
+            
+            AP_I ( iV, jV, KV ) &
+              = max ( 0.0_KDR, &
+                      + LP_O ( iaVS_M ( 1 ), iaVS_M ( 2 ), iaVS_M ( 3 ) ), &
+                      + LP_I ( iV, jV, kV ) )
+            AP_O ( iV, jV, KV ) &
+              = max ( 0.0_KDR, &
+                      + LP_O ( iV, jV, kV ), &
+                      + LP_I ( iaVS_P ( 1 ), iaVS_P ( 2 ), iaVS_P ( 3 ) ) )
+            AM_I ( iV, jV, KV ) &
+              = max ( 0.0_KDR, &
+                      - LM_O ( iaVS_M ( 1 ), iaVS_M ( 2 ), iaVS_M ( 3 ) ), &
+                      - LM_I ( iV, jV, kV ) )
+            AM_O ( iV, jV, KV ) &
+              = max ( 0.0_KDR, &
+                      - LM_O ( iV, jV, kV ), &
+                      - LM_I ( iaVS_P ( 1 ), iaVS_P ( 2 ), iaVS_P ( 3 ) ) )
+          end do
         end do
       end do
-    end do
-    !$OMP end OMP_TARGET_DIRECTIVE parallel do
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+      
+    else 
     
+      !$OMP  parallel do collapse ( 3 ) &
+      !$OMP& schedule ( OMP_SCHEDULE ) private ( iaVS_M, iaVS_P )
+      do kV = lV ( 3 ), uV ( 3 )    
+        do jV = lV ( 2 ), uV ( 2 )  
+          do iV = lV ( 1 ), uV ( 1 )
+          
+            iaVS_M = [ iV, jV, kV ] + iaS_M
+            iaVS_P = [ iV, jV, kV ] + iaS_P
+            
+            AP_I ( iV, jV, KV ) &
+              = max ( 0.0_KDR, &
+                      + LP_O ( iaVS_M ( 1 ), iaVS_M ( 2 ), iaVS_M ( 3 ) ), &
+                      + LP_I ( iV, jV, kV ) )
+            AP_O ( iV, jV, KV ) &
+              = max ( 0.0_KDR, &
+                      + LP_O ( iV, jV, kV ), &
+                      + LP_I ( iaVS_P ( 1 ), iaVS_P ( 2 ), iaVS_P ( 3 ) ) )
+            AM_I ( iV, jV, KV ) &
+              = max ( 0.0_KDR, &
+                      - LM_O ( iaVS_M ( 1 ), iaVS_M ( 2 ), iaVS_M ( 3 ) ), &
+                      - LM_I ( iV, jV, kV ) )
+            AM_O ( iV, jV, KV ) &
+              = max ( 0.0_KDR, &
+                      - LM_O ( iV, jV, kV ), &
+                      - LM_I ( iaVS_P ( 1 ), iaVS_P ( 2 ), iaVS_P ( 3 ) ) )
+          end do
+        end do
+      end do
+      !$OMP end parallel do
+      
+    end if
+      
   end procedure ComputeRiemannSolverInputKernel
 
 

@@ -1,6 +1,5 @@
 module PolytropicFluid_Form
 
-  use iso_c_binding
   use Basics
   use DistributedMesh_Form
   use PressurelessFluid_Form
@@ -30,23 +29,15 @@ module PolytropicFluid_Form
     procedure, public, pass :: &
       InitializeWithMesh
     procedure, public, pass :: &
-      ComputeConservedHost
+      ComputeConserved
     procedure, public, pass :: &
-      ComputeConservedDevice
+      ComputePrimitive
     procedure, public, pass :: &
-      ComputePrimitiveHost
-    procedure, public, pass :: &
-      ComputePrimitiveDevice
-    procedure, public, pass :: &
-      ComputeAuxiliaryHost
-    procedure, public, pass :: &
-      ComputeAuxiliaryDevice
+      ComputeAuxiliary
     procedure, public, pass :: &
       ComputeAuxiliaryFromPressure
     procedure, public, pass :: &
-      ApplyBoundaryConditionsHost
-    procedure, public, pass :: &
-      ApplyBoundaryConditionsDevice
+      ApplyBoundaryConditions
     procedure, public, pass :: &
       ComputeRawFluxes
     procedure, public, pass :: &
@@ -58,91 +49,48 @@ module PolytropicFluid_Form
     private :: &
       InitializeBasics, &
       ComputeConservedKernel, &
-      ComputeConservedKernelDevice, &
       ComputePrimitiveKernel, &
-      ComputePrimitiveKernelDevice, &
       ComputeAuxiliaryKernel, &
-      ComputeAuxiliaryKernelDevice, &
       ComputeAuxiliaryFromPressureKernel, &
       ComputeEigenspeedsKernel, &
-      ComputeEigenspeedsKernelDevice, &
       ApplyBoundaryConditionsReflecting, &
-      ApplyBoundaryConditionsReflectingDevice, &
       ComputeRawFluxesKernel
       
 
     interface
     
-      module subroutine ComputeConservedKernel ( G, E, N, V_1, V_2, V_3 )
-      
+      module subroutine ComputeConservedKernel &
+                   ( G, E, N, V_1, V_2, V_3, UseDevice )
         use Basics
         implicit none
-
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
           G
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           E, &
           N, &
           V_1, V_2, V_3
-      
+        logical ( KDL ), intent ( in ) :: &
+          UseDevice
       end subroutine ComputeConservedKernel
       
-     
-      module subroutine ComputeConservedKernelDevice &
-                   ( G, E, N, V_1, V_2, V_3 )
-        
+      module subroutine ComputePrimitiveKernel &
+                   ( E, G, N, V_1, V_2, V_3, UseDevice )
         use Basics
         implicit none
-        
-        real ( KDR ), dimension ( : ), intent ( inout ) :: &
-          G
-        real ( KDR ), dimension ( : ), intent ( in ) :: &
-          E, &
-          N, &
-          V_1, V_2, V_3
-      
-      end subroutine ComputeConservedKernelDevice
-      
-      
-      module subroutine ComputePrimitiveKernel ( E, G, N, V_1, V_2, V_3 )
-
-        use iso_c_binding
-        use Basics
-        implicit none
-        
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
           E, &
           G  
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           N, &
           V_1, V_2, V_3
-        
-      end subroutine ComputePrimitiveKernel    
-      
-      
-      module subroutine ComputePrimitiveKernelDevice &
-                   ( E, G, N, V_1, V_2, V_3 )
-                     
-        
+        logical ( KDL ), intent ( in ) :: &
+          UseDevice
+      end subroutine ComputePrimitiveKernel
+
+      module subroutine ComputeAuxiliaryKernel &
+                   ( P, K, N, E, Gamma, UseDevice )
         use Basics
         implicit none
-        
-        real ( KDR ), dimension ( : ), intent ( inout ) :: &
-          E, &
-          G  
-        real ( KDR ), dimension ( : ), intent ( in ) :: &
-          N, &
-          V_1, V_2, V_3
-          
-      end subroutine ComputePrimitiveKernelDevice
-
-
-      module subroutine ComputeAuxiliaryKernel ( P, K, N, E, Gamma )
-
-        use iso_c_binding
-        use Basics
-        implicit none
-        
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
           P, &
           K
@@ -150,34 +98,13 @@ module PolytropicFluid_Form
           N, &
           E, &
           Gamma
-
+        logical ( KDL ), intent ( in ) :: &
+          UseDevice
       end subroutine ComputeAuxiliaryKernel
 
-
-      module subroutine ComputeAuxiliaryKernelDevice &
-                   ( P, K, N, E, Gamma )
-
-        use iso_c_binding
-        use Basics
-        implicit none
-        
-        real ( KDR ), dimension ( : ), intent ( inout ) :: &
-          P, &
-          K
-        real ( KDR ), dimension ( : ), intent ( in ) :: &
-          N, &
-          E, &
-          Gamma
-        
-      end subroutine ComputeAuxiliaryKernelDevice
-
-
       module subroutine ComputeAuxiliaryFromPressureKernel ( E, K, N, P, Gamma )
-
-        use iso_c_binding
         use Basics
         implicit none
-        
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
           E, &
           K
@@ -185,18 +112,13 @@ module PolytropicFluid_Form
           N, &
           P, &
           Gamma
-
       end subroutine ComputeAuxiliaryFromPressureKernel
-
 
       module subroutine ComputeEigenspeedsKernel &
                    ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, N, &
-                     V_1, V_2, V_3, P, Gamma )
-
-        use iso_c_binding
+                     V_1, V_2, V_3, P, Gamma, UseDevice )
         use Basics
         implicit none
-        
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
           FEP_1, FEP_2, FEP_3, &
           FEM_1, FEM_2, FEM_3, &
@@ -206,37 +128,14 @@ module PolytropicFluid_Form
           V_1, V_2, V_3, &
           P, &
           Gamma
-
+        logical ( KDL ), intent ( in ) :: &
+          UseDevice
       end subroutine ComputeEigenspeedsKernel
-
-
-      module subroutine ComputeEigenspeedsKernelDevice &
-                   ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, N, &
-                     V_1, V_2, V_3, P, Gamma )
-
-        use Basics
-        implicit none
-        
-        real ( KDR ), dimension ( : ), intent ( inout ) :: &
-          FEP_1, FEP_2, FEP_3, &
-          FEM_1, FEM_2, FEM_3, &
-          CS
-        real ( KDR ), dimension ( : ), intent ( in ) :: &
-          N, &
-          V_1, V_2, V_3, &
-          P, &
-          Gamma
-          
-      end subroutine ComputeEigenspeedsKernelDevice
-      
       
       module subroutine ApplyBoundaryConditionsReflecting &
-                   ( E_E, Gamma_E, E_I, Gamma_I, nB, oBE, oBI )
-
-        use iso_c_binding
+                   ( E_E, Gamma_E, E_I, Gamma_I, nB, oBE, oBI, UseDevice )
         use Basics
         implicit none
-        
         real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
           E_E, &
           Gamma_E
@@ -247,41 +146,15 @@ module PolytropicFluid_Form
           nB,  & 
           oBE, &
           oBI
-
+        logical ( KDL ), intent ( in ) :: &
+          UseDevice
       end subroutine ApplyBoundaryConditionsReflecting
-
-
-      module subroutine ApplyBoundaryConditionsReflectingDevice &
-                   ( E_E, Gamma_E, E_I, Gamma_I, nB, oBE, oBI )
-                     
-
-        use iso_c_binding
-        use Basics
-        implicit none
-        
-        real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
-          E_E, &
-          Gamma_E
-        real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
-          E_I, &
-          Gamma_I
-        integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
-          nB,  & 
-          oBE, &
-          oBI
-          
-      end subroutine ApplyBoundaryConditionsReflectingDevice
-
 
       module subroutine ComputeRawFluxesKernel &
                    ( F_D, F_S_1, F_S_2, F_S_3, F_S_Dim, F_G, D, S_1, S_2, S_3, &
-                     G, P, V_Dim, D_F_D, D_F_S_1, D_F_S_2, D_F_S_3, D_F_S_Dim, &
-                     D_F_G, D_D, D_S_1, D_S_2, D_S_3, D_G, D_P, D_V_Dim )
-
-        use iso_c_binding
+                     G, P, V_Dim, UseDevice )
         use Basics
         implicit none
-        
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
           F_D, &
           F_S_1, F_S_2, F_S_3, &
@@ -293,17 +166,8 @@ module PolytropicFluid_Form
           G, &
           P, &
           V_Dim
-        type ( c_ptr ), intent ( in ) :: &
-          D_F_D, &
-          D_F_S_1, D_F_S_2, D_F_S_3, &
-          D_F_S_Dim, &
-          D_F_G, &
-          D_D, &
-          D_S_1, D_S_2, D_S_3, &
-          D_G, &
-          D_P, &
-          D_V_Dim
-          
+        logical ( KDL ), intent ( in ) :: &
+          UseDevice
       end subroutine ComputeRawFluxesKernel
 
     end interface
@@ -349,14 +213,23 @@ contains
   end subroutine InitializeWithMesh
 
 
-  subroutine ComputeConservedHost ( CF, Value )
+  subroutine ComputeConserved ( CF, Value, UseDeviceOption )
 
     class ( PolytropicFluidForm ), intent ( inout ) :: &
       CF
     real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
       Value
+    logical ( KDL ), intent ( in ), optional :: &
+      UseDeviceOption
+      
+    logical ( KDL ) :: &
+      UseDevice
+      
+    UseDevice = OnDevice ( Value ( :, CF % CONSERVED_DENSITY ) )
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
     
-    call CF % PressurelessFluidForm % ComputeConserved ( Value )
+    call CF % PressurelessFluidForm % ComputeConserved ( Value, UseDeviceOption )
 
     call ComputeConservedKernel &
       ( Value ( :, CF % CONSERVED_ENERGY ), &
@@ -364,41 +237,29 @@ contains
         Value ( :, CF % COMOVING_DENSITY ), &
         Value ( :, CF % VELOCITY ( 1 ) ), &    
         Value ( :, CF % VELOCITY ( 2 ) ), &   
-        Value ( :, CF % VELOCITY ( 3 ) ) )    
+        Value ( :, CF % VELOCITY ( 3 ) ), &
+        UseDevice )
 
-  end subroutine ComputeConservedHost
-
-
-  subroutine ComputeConservedDevice ( CF, Value, D_Value )
-
-    class ( PolytropicFluidForm ), intent ( inout ) :: &
-      CF
-    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
-      Value
-    type ( c_ptr ), dimension ( : ), intent ( in ) :: &
-      D_Value
-    
-    call CF % PressurelessFluidForm % ComputeConserved ( Value, D_Value )
-
-    call ComputeConservedKernelDevice &
-      ( Value ( :, CF % CONSERVED_ENERGY ), &
-        Value ( :, CF % INTERNAL_ENERGY ), &    
-        Value ( :, CF % COMOVING_DENSITY ), &
-        Value ( :, CF % VELOCITY ( 1 ) ), &    
-        Value ( :, CF % VELOCITY ( 2 ) ), &   
-        Value ( :, CF % VELOCITY ( 3 ) ) )
-
-  end subroutine ComputeConservedDevice
+  end subroutine ComputeConserved
 
 
-  subroutine ComputePrimitiveHost ( CF, Value )
+  subroutine ComputePrimitive ( CF, Value, UseDeviceOption )
     
     class ( PolytropicFluidForm ), intent ( inout ) :: &
       CF
     real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
       Value
+    logical ( KDL ), intent ( in ), optional :: &
+      UseDeviceOption
+      
+    logical ( KDL ) :: &
+      UseDevice
+      
+    UseDevice = OnDevice ( Value ( :, CF % CONSERVED_DENSITY ) )
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
     
-    call CF % PressurelessFluidForm % ComputePrimitive ( Value )
+    call CF % PressurelessFluidForm % ComputePrimitive ( Value, UseDeviceOption )
 
     call ComputePrimitiveKernel &
            ( Value ( :, CF % INTERNAL_ENERGY ), &
@@ -406,46 +267,35 @@ contains
              Value ( :, CF % COMOVING_DENSITY ), &
              Value ( :, CF % VELOCITY ( 1 ) ), &
              Value ( :, CF % VELOCITY ( 2 ) ), &
-             Value ( :, CF % VELOCITY ( 3 ) ) )
-  
-  end subroutine ComputePrimitiveHost
-  
-  
-  subroutine ComputePrimitiveDevice ( CF, Value, D_Value )
-    
-    class ( PolytropicFluidForm ), intent ( inout ) :: &
-      CF
-    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
-      Value
-    type ( c_ptr ), dimension ( : ), intent ( in ) :: &
-      D_Value
-    
-    call CF % PressurelessFluidForm % ComputePrimitive ( Value, D_Value )
-
-    call ComputePrimitiveKernelDevice &
-           ( Value ( :, CF % INTERNAL_ENERGY ), &
-             Value ( :, CF % CONSERVED_ENERGY ), &
-             Value ( :, CF % COMOVING_DENSITY ), &
-             Value ( :, CF % VELOCITY ( 1 ) ), &
-             Value ( :, CF % VELOCITY ( 2 ) ), &
-             Value ( :, CF % VELOCITY ( 3 ) ) )
+             Value ( :, CF % VELOCITY ( 3 ) ), &
+             UseDevice )
                
-  end subroutine ComputePrimitiveDevice
+  end subroutine ComputePrimitive
   
   
-  subroutine ComputeAuxiliaryHost ( CF, Value )
+  subroutine ComputeAuxiliary ( CF, Value, UseDeviceOption )
     
     class ( PolytropicFluidForm ), intent ( inout ) :: &
       CF
     real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
       Value
+    logical ( KDL ), intent ( in ), optional :: &
+      UseDeviceOption
+      
+    logical ( KDL ) :: &
+      UseDevice
+      
+    UseDevice = OnDevice ( Value ( :, CF % PRESSURE ) )
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
     
     call ComputeAuxiliaryKernel &
            ( Value ( :, CF % PRESSURE ), &
              Value ( :, CF % POLYTROPIC_PARAMETER ), &
              Value ( :, CF % COMOVING_DENSITY ), &
              Value ( :, CF % INTERNAL_ENERGY ), &
-             Value ( :, CF % ADIABATIC_INDEX ) )
+             Value ( :, CF % ADIABATIC_INDEX ), &
+             UseDevice )
   
     call ComputeEigenspeedsKernel &
            ( Value ( :, CF % FAST_EIGENSPEED_PLUS ( 1 ) ), &
@@ -460,43 +310,10 @@ contains
              Value ( :, CF % VELOCITY ( 2 ) ), &
              Value ( :, CF % VELOCITY ( 3 ) ), &
              Value ( :, CF % PRESSURE ), &
-             Value ( :, CF % ADIABATIC_INDEX ) )
+             Value ( :, CF % ADIABATIC_INDEX ), &
+             UseDevice )
     
-  end subroutine ComputeAuxiliaryHost
-  
-  
-  subroutine ComputeAuxiliaryDevice ( CF, Value, D_Value )
-    
-    class ( PolytropicFluidForm ), intent ( inout ) :: &
-      CF
-    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
-      Value
-    type ( c_ptr ), dimension ( : ), intent ( in ) :: &
-      D_Value
-    
-    call ComputeAuxiliaryKernelDevice &
-           ( Value ( :, CF % PRESSURE ), &
-             Value ( :, CF % POLYTROPIC_PARAMETER ), &
-             Value ( :, CF % COMOVING_DENSITY ), &
-             Value ( :, CF % INTERNAL_ENERGY ), &
-             Value ( :, CF % ADIABATIC_INDEX ) )
-  
-    call ComputeEigenspeedsKernelDevice &
-           ( Value ( :, CF % FAST_EIGENSPEED_PLUS ( 1 ) ), &
-             Value ( :, CF % FAST_EIGENSPEED_PLUS ( 2 ) ), &
-             Value ( :, CF % FAST_EIGENSPEED_PLUS ( 3 ) ), &
-             Value ( :, CF % FAST_EIGENSPEED_MINUS ( 1 ) ), &
-             Value ( :, CF % FAST_EIGENSPEED_MINUS ( 2 ) ), &
-             Value ( :, CF % FAST_EIGENSPEED_MINUS ( 3 ) ), &
-             Value ( :, CF % SOUND_SPEED ), &
-             Value ( :, CF % COMOVING_DENSITY ), &
-             Value ( :, CF % VELOCITY ( 1 ) ), &
-             Value ( :, CF % VELOCITY ( 2 ) ), &
-             Value ( :, CF % VELOCITY ( 3 ) ), &
-             Value ( :, CF % PRESSURE ), &
-             Value ( :, CF % ADIABATIC_INDEX ) )
-    
-  end subroutine ComputeAuxiliaryDevice
+  end subroutine ComputeAuxiliary
   
   
   subroutine ComputeAuxiliaryFromPressure ( CF, Value )
@@ -526,14 +343,15 @@ contains
              Value ( :, CF % VELOCITY ( 2 ) ), &
              Value ( :, CF % VELOCITY ( 3 ) ), &
              Value ( :, CF % PRESSURE ), &
-             Value ( :, CF % ADIABATIC_INDEX ) )
+             Value ( :, CF % ADIABATIC_INDEX ), &
+             UseDevice = .false. )  !-- Only called at initialization
     
   end subroutine ComputeAuxiliaryFromPressure
   
   
-  subroutine ApplyBoundaryConditionsHost &
+  subroutine ApplyBoundaryConditions &
               ( CF, ExteriorValue, InteriorValue, iDimension, iBoundary, &
-                PrimitiveOnlyOption )
+                PrimitiveOnlyOption, UseDeviceOption )
 
     class ( PolytropicFluidForm ), intent ( inout ) :: &
       CF
@@ -545,7 +363,8 @@ contains
       iDimension, &
       iBoundary
     logical ( KDL ), intent ( in ), optional :: &
-      PrimitiveOnlyOption
+      PrimitiveOnlyOption, &
+      UseDeviceOption
 
     integer ( KDI ) :: &
       jD, kD   !-- jDimension, kDimension
@@ -559,14 +378,19 @@ contains
       E_E, &
       Gamma_E
     logical ( KDL ) :: &
-      PrimitiveOnly
+      PrimitiveOnly, &
+      UseDevice
 
     call CF % PressurelessFluidForm % ApplyBoundaryConditions &
            ( ExteriorValue, InteriorValue, iDimension, iBoundary, &
-             PrimitiveOnlyOption = .true. )
+             PrimitiveOnlyOption = .true., UseDeviceOption = UseDeviceOption )
 
     PrimitiveOnly = .false.
     if ( present ( PrimitiveOnlyOption ) ) PrimitiveOnly = PrimitiveOnlyOption
+    
+    UseDevice = OnDevice ( InteriorValue ( :, CF % INTERNAL_ENERGY ) )
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
 
     associate &
       ( iD => iDimension, &
@@ -607,7 +431,7 @@ contains
       return
     case ( 'REFLECTING' )
       call ApplyBoundaryConditionsReflecting &
-             ( E_E, Gamma_E, E_I, Gamma_I, nB, oBE, oBI )
+             ( E_E, Gamma_E, E_I, Gamma_I, nB, oBE, oBI, UseDevice )
     case default
       call Show &
              ( 'This boundary condition is not implemented', CONSOLE % ERROR )
@@ -618,114 +442,16 @@ contains
 
     if ( PrimitiveOnly ) return
 
-    call CF % ComputeAuxiliary ( ExteriorValue )
-    call CF % ComputeConserved ( ExteriorValue )
+    call CF % ComputeAuxiliary ( ExteriorValue, UseDeviceOption )
+    call CF % ComputeConserved ( ExteriorValue, UseDeviceOption )
 
     end associate  !-- iD, etc.
   
-  end subroutine ApplyBoundaryConditionsHost
-
-
-  subroutine ApplyBoundaryConditionsDevice &
-              ( CF, ExteriorValue, InteriorValue, iDimension, iBoundary, &
-                D_ExteriorValue, D_InteriorValue, PrimitiveOnlyOption )
-
-    class ( PolytropicFluidForm ), intent ( inout ) :: &
-      CF
-    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
-      ExteriorValue
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      InteriorValue
-    integer ( KDI ), intent ( in ) :: &
-      iDimension, &
-      iBoundary
-    type ( c_ptr ), dimension ( : ), intent ( in ) :: &
-      D_ExteriorValue, &
-      D_InteriorValue
-    logical ( KDL ), intent ( in ), optional :: &
-      PrimitiveOnlyOption
-
-    integer ( KDI ) :: &
-      jD, kD   !-- jDimension, kDimension
-    integer ( KDI ), dimension ( 3 ) :: &
-      oBI, &  !-- oBoundaryInterior
-      oBE, &  !-- oBoundaryExterior
-      nB      !-- nBoundary
-    real ( KDR ), dimension ( :, :, : ), pointer :: &
-      E_I, &
-      Gamma_I, &
-      E_E, &
-      Gamma_E
-    logical ( KDL ) :: &
-      PrimitiveOnly
-
-    call CF % PressurelessFluidForm % ApplyBoundaryConditions &
-           ( ExteriorValue, InteriorValue, iDimension, iBoundary, &
-             D_ExteriorValue, D_InteriorValue, PrimitiveOnlyOption = .true. )
-
-    PrimitiveOnly = .false.
-    if ( present ( PrimitiveOnlyOption ) ) PrimitiveOnly = PrimitiveOnlyOption
-
-    associate &
-      ( iD => iDimension, &
-        iB => iBoundary, &
-        DM => CF % DistributedMesh )
-    
-    if ( iB == -1 .and. DM % iaBrick ( iD ) /= 1 ) return
-    if ( iB == +1 .and. DM % iaBrick ( iD ) /= DM % nBricks ( iD ) ) return
- 
-    jD = mod ( iD, 3 ) + 1
-    kD = mod ( jD, 3 ) + 1
-
-    call DM % SetVariablePointer &
-           ( InteriorValue ( :, CF % INTERNAL_ENERGY ), E_I )
-    call DM % SetVariablePointer &
-           ( InteriorValue ( :, CF % ADIABATIC_INDEX ), Gamma_I )
-    call DM % SetVariablePointer &
-           ( ExteriorValue ( :, CF % INTERNAL_ENERGY ), E_E )
-    call DM % SetVariablePointer &
-           ( ExteriorValue ( :, CF % ADIABATIC_INDEX ), Gamma_E )
-
-    !-- In setting oBI and oBE, note kernel routine does not inherit lbound
-
-    oBI = DM % nGhostLayers
-    if ( iB == +1 ) then
-      oBI ( iD ) = oBI ( iD ) + DM % nCellsPerBrick ( iD ) - 1
-    end if
-
-    oBE = oBI
-    oBE ( iD ) = oBE ( iD ) + iB
-
-    nB ( iD ) = 1
-    nB ( jD ) = DM % nCellsPerBrick ( jD )
-    nB ( kD ) = DM % nCellsPerBrick ( kD )
-
-    select case ( trim ( DM % BoundaryCondition ) ) 
-    case ( 'PERIODIC' )
-      return
-    case ( 'REFLECTING' )
-      call ApplyBoundaryConditionsReflectingDevice &
-             ( E_E, Gamma_E, E_I, Gamma_I, nB, oBE, oBI )
-    case default
-      call Show &
-             ( 'This boundary condition is not implemented', CONSOLE % ERROR )
-      call Show &
-             ( DM % BoundaryCondition, 'Name', CONSOLE % ERROR )
-      call PROGRAM_HEADER % Abort ( )
-    end select 
-
-    if ( PrimitiveOnly ) return
-
-    call CF % ComputeAuxiliary ( ExteriorValue, D_ExteriorValue )
-    call CF % ComputeConserved ( ExteriorValue, D_ExteriorValue )
-
-    end associate  !-- iD, etc.
-  
-  end subroutine ApplyBoundaryConditionsDevice
+  end subroutine ApplyBoundaryConditions
 
 
   subroutine ComputeRawFluxes &
-               ( CF, RawFlux, Value, iDimension, D_RawFlux, D_Value )
+               ( CF, RawFlux, Value, iDimension, UseDeviceOption )
     
     class ( PolytropicFluidForm ), intent ( inout ) :: &
       CF
@@ -735,9 +461,8 @@ contains
       Value
     integer ( KDI ), intent ( in ) :: &
       iDimension
-    type ( c_ptr ), dimension ( : ), intent ( in ) :: &
-      D_RawFlux, &
-      D_Value
+    logical ( KDL ), intent ( in ), optional :: &
+      UseDeviceOption
     
     integer ( KDI ) :: &
       iDensity, &
@@ -745,6 +470,12 @@ contains
       iMomentumDim
     integer ( KDI ), dimension ( 3 ) :: &
       iMomentum
+    logical ( KDL ) :: &
+      UseDevice
+      
+    UseDevice = OnDevice ( Value ( :, CF % CONSERVED_DENSITY ) )
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
 
     !call CF % PressurelessFluidForm % ComputeRawFluxes &
     !       ( RawFlux, Value, iDimension, D_RawFlux, D_Value ) 
@@ -777,19 +508,7 @@ contains
              Value ( :, CF % CONSERVED_ENERGY ), &
              Value ( :, CF % PRESSURE ), &
              Value ( :, CF % VELOCITY ( iDimension ) ), &
-             D_RawFlux ( iDensity ), &
-             D_RawFlux ( iMomentum ( 1 ) ), &
-             D_RawFlux ( iMomentum ( 2 ) ), &
-             D_RawFlux ( iMomentum ( 3 ) ), &
-             D_RawFlux ( iMomentumDim ), &
-             D_RawFlux ( iEnergy ), &
-             D_Value ( CF % CONSERVED_DENSITY ), &
-             D_Value ( CF % MOMENTUM_DENSITY ( 1 ) ), &
-             D_Value ( CF % MOMENTUM_DENSITY ( 2 ) ), &
-             D_Value ( CF % MOMENTUM_DENSITY ( 3 ) ), &
-             D_Value ( CF % CONSERVED_ENERGY ), &
-             D_Value ( CF % PRESSURE ), &
-             D_Value ( CF % VELOCITY ( iDimension ) ) )
+             UseDevice )
                
   end subroutine ComputeRawFluxes
   

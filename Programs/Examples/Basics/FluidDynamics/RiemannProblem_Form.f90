@@ -195,7 +195,7 @@ contains
     Gamma = AdiabaticIndex
 
     call PF % ComputeAuxiliaryFromPressure ( PF % Value )
-    call PF % ComputeConserved ( PF % Value )
+    call PF % ComputeConserved ( PF % Value, UseDeviceOption = .false. )
 
     call PF % SetOutputPolytropic &
            ( VelocityUnitOption = spread ( SpeedUnit, 1, 3 ), &

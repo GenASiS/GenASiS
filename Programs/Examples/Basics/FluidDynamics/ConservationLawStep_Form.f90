@@ -70,10 +70,8 @@ module ConservationLawStep_Form
     
       module subroutine ComputeDifferencesKernel &
                    ( V, oV, iD, dV_Left, dV_Right )
-
         use Basics
         implicit none
-               
         real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
           V
         integer ( KDI ), intent ( in ) :: &
@@ -81,16 +79,12 @@ module ConservationLawStep_Form
           iD
         real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
           dV_Left, dV_Right
-          
       end subroutine ComputeDifferencesKernel
-
 
       module subroutine ComputeReconstructionKernel &
                    ( V, dV_Left, dV_Right, Theta, V_Inner, V_Outer )
-
         use Basics
         implicit none
-               
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           V, &
           dV_Left, dV_Right
@@ -98,17 +92,13 @@ module ConservationLawStep_Form
           Theta
         real ( KDR ), dimension ( : ), intent ( out ) :: &
           V_Inner, V_Outer
-
       end subroutine ComputeReconstructionKernel
-
 
       module subroutine ComputeFluxesKernel &
                    ( AP_I, AP_O, AM_I, AM_O, RF_I, RF_O, U_I, U_O, oV, iD, &
                      F_I, F_O )
-
         use Basics
         implicit none
-               
         real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
           AP_I, AP_O, &
           AM_I, AM_O, &
@@ -119,15 +109,11 @@ module ConservationLawStep_Form
           iD
         real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
           F_I, F_O
-          
       end subroutine ComputeFluxesKernel
 
-
       module subroutine ComputeUpdateKernel ( dU, F_I, F_O, V, A, dT )
-        
         use Basics
         implicit none
-               
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
           dU
         real ( KDR ), dimension ( : ), intent ( in ) :: &
@@ -136,36 +122,26 @@ module ConservationLawStep_Form
           V, &
           A, &
           dT
-        
       end subroutine ComputeUpdateKernel
       
-      
       module subroutine AddUpdateKernel ( O, U, C )
-        
         use Basics
         implicit none
-               
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           O, &
           U
         real ( KDR ), dimension ( : ), intent ( out ) :: &
           C 
-          
       end subroutine AddUpdateKernel
       
-      
       module subroutine CombineUpdatesKernel ( C, O, U )
-        
-        use iso_c_binding
         use Basics
         implicit none
-               
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
           C 
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           O, &
           U
-          
       end subroutine CombineUpdatesKernel
       
     end interface
@@ -398,11 +374,11 @@ contains
     call Show ( 'Computing Fluid', CONSOLE % INFO_5 )
 
     call T_P % Start ( )
-    call Current % ComputePrimitive ( Current % Value, Current % D_Selected )
+    call Current % ComputePrimitive ( Current % Value )
     call T_P % Stop ( )
     
     call T_A % Start ( )
-    call Current % ComputeAuxiliary ( Current % Value, Current % D_Selected )
+    call Current % ComputeAuxiliary ( Current % Value )
     call T_A % Stop ( )
     
     call T_DT_H % Start ( )
@@ -447,11 +423,11 @@ contains
     call Show ( 'Computing Fluid', CONSOLE % INFO_5 )
 
     call T_P % Start ( )
-    call Current % ComputePrimitive ( Current % Value, Current % D_Selected )
+    call Current % ComputePrimitive ( Current % Value )
     call T_P % Stop ( )
     
     call T_A % Start ( )
-    call Current % ComputeAuxiliary ( Current % Value, Current % D_Selected )
+    call Current % ComputeAuxiliary ( Current % Value )
     call T_A % Stop ( )
     
     call T_DT_H % Start ( )
@@ -551,13 +527,9 @@ contains
     
     call T_BC % Start ( )
     call CF % ApplyBoundaryConditions &
-           ( CF % Value, CF % Value, iD, iBoundary = -1, &
-             D_ExteriorValue = CF % D_Selected, &
-             D_InteriorValue = CF % D_Selected )
+           ( CF % Value, CF % Value, iD, iBoundary = -1 )
     call CF % ApplyBoundaryConditions &
-           ( CF % Value, CF % Value, iD, iBoundary = +1, &
-             D_ExteriorValue = CF % D_Selected, &
-             D_InteriorValue = CF % D_Selected )
+           ( CF % Value, CF % Value, iD, iBoundary = +1 )
     call T_BC % Stop ( )
            
     do iP = 1, CF % N_PRIMITIVE
@@ -614,20 +586,18 @@ contains
 
     call T_A % Start ( )
     call CF % ComputeAuxiliary &
-           ( CLS % ReconstructionInner % Value, &
-             CLS % ReconstructionInner % D_Selected )
+           ( CLS % ReconstructionInner % Value )
     call CF % ComputeAuxiliary &
-           ( CLS % ReconstructionOuter % Value, &
-             CLS % ReconstructionOuter % D_Selected )
+           ( CLS % ReconstructionOuter % Value )
+             
     call T_A % Stop ( )
     
     call T_C % Start ( )
     call CF % ComputeConserved &
-           ( CLS % ReconstructionInner % Value, &
-             CLS % ReconstructionInner % D_Selected )
+           ( CLS % ReconstructionInner % Value )
     call CF % ComputeConserved &
-           ( CLS % ReconstructionOuter % Value, &
-             CLS % ReconstructionOuter % D_Selected )
+           ( CLS % ReconstructionOuter % Value )
+             
     call T_C % Stop ( )
     
     end associate !-- Timer
@@ -667,33 +637,26 @@ contains
     call T_BC % Start ( )
     call CF % ApplyBoundaryConditions &
            ( CLS % ReconstructionOuter % Value, &
-             CLS % ReconstructionInner % Value, iDimension, iBoundary = -1, &
-             D_ExteriorValue = CLS % ReconstructionOuter % D_Selected, &
-             D_InteriorValue = CLS % ReconstructionInner % D_Selected )
+             CLS % ReconstructionInner % Value, iDimension, iBoundary = -1 )
+             
     call CF % ApplyBoundaryConditions &
            ( CLS % ReconstructionInner % Value, &
-             CLS % ReconstructionOuter % Value, iDimension, iBoundary = +1, &
-             D_ExteriorValue = CLS % ReconstructionInner % D_Selected, &
-             D_InteriorValue = CLS % ReconstructionOuter % D_Selected )
+             CLS % ReconstructionOuter % Value, iDimension, iBoundary = +1 )
     call T_BC % Stop ( )
 
     call T_RSI % Start ( )
     call CF % ComputeRiemannSolverInput &
            ( CLS, CLS % ReconstructionInner % Value, &
-             CLS % ReconstructionOuter % Value, iDimension, &
-             CLS % ReconstructionInner % D_Selected, &
-             CLS % ReconstructionOuter % D_Selected )
+             CLS % ReconstructionOuter % Value, iDimension )
     call T_RSI % Stop ( )
 
     call T_RF % Start ( )
     call CF % ComputeRawFluxes &
            ( CLS % RawFluxInner % Value, CLS % ReconstructionInner % Value, &
-             iDimension, CLS % RawFluxInner % D_Selected, &
-             CLS % ReconstructionInner % D_Selected )
+             iDimension )
     call CF % ComputeRawFluxes &
            ( CLS % RawFluxOuter % Value, CLS % ReconstructionOuter % Value, &
-             iDimension, CLS % RawFluxOuter % D_Selected, &
-             CLS % ReconstructionOuter % D_Selected )
+             iDimension )
     call T_RF % Stop ( )
     
     call DM % SetVariablePointer &
