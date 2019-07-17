@@ -90,10 +90,8 @@ module PressurelessFluid_Form
 
 
       module subroutine ComputeConservedKernelDevice &
-                   ( D, S_1, S_2, S_3, N, V_1, V_2, V_3, &
-                     D_D, D_S_1, D_S_2, D_S_3, D_N, D_V_1, D_V_2, D_V_3 )
+                   ( D, S_1, S_2, S_3, N, V_1, V_2, V_3 )
 
-        use iso_c_binding
         use Basics
         implicit none
         
@@ -103,11 +101,6 @@ module PressurelessFluid_Form
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           N, &
           V_1, V_2, V_3
-        type ( c_ptr ), intent ( in ) :: &
-          D_D, &
-          D_S_1, D_S_2, D_S_3, &
-          D_N, &
-          D_V_1, D_V_2, D_V_3
         
       end subroutine ComputeConservedKernelDevice
 
@@ -128,8 +121,7 @@ module PressurelessFluid_Form
 
 
       module subroutine ComputePrimitiveKernelDevice &
-                   ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, &
-                     D_N, D_V_1, D_V_2, D_V_3, D_D, D_S_1, D_S_2, D_S_3 )
+                   ( N, V_1, V_2, V_3, D, S_1, S_2, S_3 )
 
         use iso_c_binding
         use Basics
@@ -140,11 +132,6 @@ module PressurelessFluid_Form
           V_1, V_2, V_3, &
           D, &
           S_1, S_2, S_3
-        type ( c_ptr ), intent ( in ) :: &
-          D_N, &
-          D_V_1, D_V_2, D_V_3, &
-          D_D, &
-          D_S_1, D_S_2, D_S_3
           
       end subroutine ComputePrimitiveKernelDevice
 
@@ -166,8 +153,7 @@ module PressurelessFluid_Form
 
       module subroutine ComputeEigenspeedsKernelDevice &
                    ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, &
-                     V_1, V_2, V_3, D_FEP_1, D_FEP_2, D_FEP_3, &
-                     D_FEM_1, D_FEM_2, D_FEM_3, D_V_1, D_V_2, D_V_3 )
+                     V_1, V_2, V_3 )
 
         use iso_c_binding
         use Basics
@@ -178,10 +164,6 @@ module PressurelessFluid_Form
           FEM_1, FEM_2, FEM_3
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           V_1, V_2, V_3
-        type ( c_ptr ), intent ( in ) :: &
-          D_FEP_1, D_FEP_2, D_FEP_3, &
-          D_FEM_1, D_FEM_2, D_FEM_3, &
-          D_V_1, D_V_2, D_V_3
 
       end subroutine ComputeEigenspeedsKernelDevice
 
@@ -209,11 +191,8 @@ module PressurelessFluid_Form
 
       module subroutine ApplyBoundaryConditionsReflectingDevice &
                    ( N_E, VI_E, VJ_E, VK_E, N_I, VI_I, VJ_I, VK_I, &
-                     nB, oBE, oBI, &
-                     D_N_E, D_VI_E, D_VJ_E, D_VK_E, D_N_I, D_VI_I, D_VJ_I, &
-                     D_VK_I )
+                     nB, oBE, oBI )
 
-        use iso_c_binding
         use Basics
         implicit none
         
@@ -227,11 +206,6 @@ module PressurelessFluid_Form
           nB,  & 
           oBE, &
           oBI
-        type ( c_ptr ), intent ( in ) :: &
-          D_N_E, &
-          D_VI_E, D_VJ_E, D_VK_E, &
-          D_N_I, &
-          D_VI_I, D_VJ_I, D_VK_I
           
       end subroutine ApplyBoundaryConditionsReflectingDevice
 
@@ -254,11 +228,8 @@ module PressurelessFluid_Form
 
 
       module subroutine ComputeRiemannSolverInputKernel &
-                   ( AP_I, AP_O, AM_I, AM_O, LP_I, LP_O, LM_I, LM_O, oV, iD, &
-                     D_AP_I, D_AP_O, D_AM_I, D_AM_O, D_LP_I, D_LP_O, &
-                     D_LM_I, D_LM_O )
+                   ( AP_I, AP_O, AM_I, AM_O, LP_I, LP_O, LM_I, LM_O, oV, iD )
 
-        use iso_c_binding
         use Basics
         implicit none
         
@@ -271,11 +242,6 @@ module PressurelessFluid_Form
         integer ( KDI ), intent ( in ) :: &
           oV, &
           iD
-        type ( c_ptr ), intent ( in ) :: &
-          D_AP_I, D_AP_O, &
-          D_AM_I, D_AM_O, &
-          D_LP_I, D_LP_O, &
-          D_LM_I, D_LM_O
           
       end subroutine ComputeRiemannSolverInputKernel
 
@@ -364,15 +330,7 @@ contains
         Value ( :, CF % COMOVING_DENSITY ), &
         Value ( :, CF % VELOCITY ( 1 ) ), &    
         Value ( :, CF % VELOCITY ( 2 ) ), &   
-        Value ( :, CF % VELOCITY ( 3 ) ), &
-        D_Value ( CF % CONSERVED_DENSITY ), &
-        D_Value ( CF % MOMENTUM_DENSITY ( 1 ) ), &
-        D_Value ( CF % MOMENTUM_DENSITY ( 2 ) ), &
-        D_Value ( CF % MOMENTUM_DENSITY ( 3 ) ), &
-        D_Value ( CF % COMOVING_DENSITY ), &
-        D_Value ( CF % VELOCITY ( 1 ) ), &    
-        D_Value ( CF % VELOCITY ( 2 ) ), &   
-        D_Value ( CF % VELOCITY ( 3 ) ) )
+        Value ( :, CF % VELOCITY ( 3 ) ) )
 
   end subroutine ComputeConservedDevice
   
@@ -414,15 +372,8 @@ contains
              Value ( :, CF % CONSERVED_DENSITY ), &
              Value ( :, CF % MOMENTUM_DENSITY ( 1 ) ), &
              Value ( :, CF % MOMENTUM_DENSITY ( 2 ) ), &
-             Value ( :, CF % MOMENTUM_DENSITY ( 3 ) ), &
-             D_Value ( CF % COMOVING_DENSITY ), &
-             D_Value ( CF % VELOCITY ( 1 ) ), &
-             D_Value ( CF % VELOCITY ( 2 ) ), &
-             D_Value ( CF % VELOCITY ( 3 ) ), &
-             D_Value ( CF % CONSERVED_DENSITY ), &
-             D_Value ( CF % MOMENTUM_DENSITY ( 1 ) ), &
-             D_Value ( CF % MOMENTUM_DENSITY ( 2 ) ), &
-             D_Value ( CF % MOMENTUM_DENSITY ( 3 ) ) )
+             Value ( :, CF % MOMENTUM_DENSITY ( 3 ) ) )
+             
   
   end subroutine ComputePrimitiveDevice
   
@@ -456,7 +407,7 @@ contains
       CF
     real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
       Value
-    type ( c_ptr ), dimension ( : ), intent ( in ) :: &
+    type  ( c_ptr ), dimension ( : ), intent ( in ) :: &
       D_Value
     
     !-- No auxiliary variables besides eigenspeeds
@@ -470,16 +421,7 @@ contains
              Value ( :, CF % FAST_EIGENSPEED_MINUS ( 3 ) ), &
              Value ( :, CF % VELOCITY ( 1 ) ), &
              Value ( :, CF % VELOCITY ( 2 ) ), &
-             Value ( :, CF % VELOCITY ( 3 ) ), &
-             D_Value ( CF % FAST_EIGENSPEED_PLUS ( 1 ) ), &
-             D_Value ( CF % FAST_EIGENSPEED_PLUS ( 2 ) ), &
-             D_Value ( CF % FAST_EIGENSPEED_PLUS ( 3 ) ), &
-             D_Value ( CF % FAST_EIGENSPEED_MINUS ( 1 ) ), &
-             D_Value ( CF % FAST_EIGENSPEED_MINUS ( 2 ) ), &
-             D_Value ( CF % FAST_EIGENSPEED_MINUS ( 3 ) ), &
-             D_Value ( CF % VELOCITY ( 1 ) ), &
-             D_Value ( CF % VELOCITY ( 2 ) ), &
-             D_Value ( CF % VELOCITY ( 3 ) ) )
+             Value ( :, CF % VELOCITY ( 3 ) ) )
     
   end subroutine ComputeAuxiliaryDevice
   
@@ -599,7 +541,6 @@ contains
     type ( c_ptr ), dimension ( : ), intent ( in ) :: &
       D_ExteriorValue, &
       D_InteriorValue
-    
     logical ( KDL ), intent ( in ), optional :: &
       PrimitiveOnlyOption
       
@@ -667,15 +608,8 @@ contains
       return
     case ( 'REFLECTING' )
       call ApplyBoundaryConditionsReflectingDevice &
-             ( N_E, VI_E, VJ_E, VK_E, N_I, VI_I, VJ_I, VK_I, nB, oBE, oBI, &
-               D_ExteriorValue ( CF % COMOVING_DENSITY ), &
-               D_ExteriorValue ( CF % VELOCITY ( iD ) ), &
-               D_ExteriorValue ( CF % VELOCITY ( jD ) ), &
-               D_ExteriorValue ( CF % VELOCITY ( kD ) ), &
-               D_InteriorValue ( CF % COMOVING_DENSITY ), &
-               D_InteriorValue ( CF % VELOCITY ( iD ) ), &
-               D_InteriorValue ( CF % VELOCITY ( jD ) ), &
-               D_InteriorValue ( CF % VELOCITY ( kD ) ) )
+             ( N_E, VI_E, VJ_E, VK_E, N_I, VI_I, VJ_I, VK_I, nB, oBE, oBI )
+               
     case default
       call Show &
              ( 'This boundary condition is not implemented', CONSOLE % ERROR )
@@ -705,7 +639,7 @@ contains
       Value
     integer ( KDI ), intent ( in ) :: &
       iDimension
-    type ( c_ptr ), dimension ( : ), intent ( in ) :: &
+    type  ( c_ptr ), dimension ( : ), intent ( in ) :: &
       D_RawFlux, &
       D_Value
     
@@ -782,15 +716,7 @@ contains
 
     call ComputeRiemannSolverInputKernel &
            ( AP_I, AP_O, AM_I, AM_O, LP_I, LP_O, LM_I, LM_O, &
-             CF % DistributedMesh % nGhostLayers ( iDimension ), iDimension, &
-             S % ModifiedSpeedsInner % D_Selected ( S % ALPHA_PLUS ), &
-             S % ModifiedSpeedsOuter % D_Selected ( S % ALPHA_PLUS ), &
-             S % ModifiedSpeedsInner % D_Selected ( S % ALPHA_MINUS ), &
-             S % ModifiedSpeedsOuter % D_Selected ( S % ALPHA_MINUS ), &
-             D_ValueInner ( CF % FAST_EIGENSPEED_PLUS ( iDimension ) ), &
-             D_ValueOuter ( CF % FAST_EIGENSPEED_PLUS ( iDimension ) ), &
-             D_ValueInner ( CF % FAST_EIGENSPEED_MINUS ( iDimension ) ), &
-             D_ValueOuter ( CF % FAST_EIGENSPEED_MINUS ( iDimension ) ) )
+             CF % DistributedMesh % nGhostLayers ( iDimension ), iDimension )
              
     end select !-- S
       
