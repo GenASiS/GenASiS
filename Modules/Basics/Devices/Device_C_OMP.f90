@@ -6,6 +6,7 @@ module Device_C
   private
   
   public :: &
+    OnTarget, &
     AllocateTargetDouble, &
     AssociateTargetDouble, &
     DeallocateTarget, &
@@ -17,6 +18,15 @@ module Device_C
     IsOffloadEnabled
   
   interface 
+  
+    integer ( c_int ) function OnTarget ( Host ) &
+                                 bind ( c, name = 'OnTarget_OMP' )
+      use iso_c_binding
+      implicit none
+      type ( c_ptr ), value :: &
+        Host
+    end function OnTarget
+
 
     type ( c_ptr ) function AllocateTargetDouble ( nValues ) &
                               bind ( c, name = 'AllocateTargetDouble_OMP' )

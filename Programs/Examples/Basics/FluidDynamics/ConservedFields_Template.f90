@@ -39,30 +39,13 @@ module ConservedFields_Template
     procedure, public, pass :: &
       InitializeTemplate
     procedure ( ComputeInterface ), public, pass, deferred :: &
-      ComputeConservedHost
-    procedure ( ComputeDeviceInterface ), public, pass, deferred :: &
-      ComputeConservedDevice
-    generic :: &
-      ComputeConserved => ComputeConservedHost, ComputeConservedDevice
+      ComputeConserved
     procedure ( ComputeInterface ), public, pass, deferred :: &
-      ComputePrimitiveHost
-    procedure ( ComputeDeviceInterface ), public, pass, deferred :: &
-      ComputePrimitiveDevice
-    generic :: &
-      ComputePrimitive => ComputePrimitiveHost, ComputePrimitiveDevice
+      ComputePrimitive
     procedure ( ComputeInterface ), public, pass, deferred :: &
-      ComputeAuxiliaryHost
-    procedure ( ComputeDeviceInterface ), public, pass, deferred :: &
-      ComputeAuxiliaryDevice
-    generic :: &
-      ComputeAuxiliary => ComputeAuxiliaryHost, ComputeAuxiliaryDevice
+      ComputeAuxiliary
     procedure ( ApplyBoundaryConditionsInterface ), public, pass, deferred :: &
-      ApplyBoundaryConditionsHost
-    procedure ( ApplyBoundaryConditionsDeviceInterface ), public, pass, deferred :: &
-      ApplyBoundaryConditionsDevice
-    generic :: &
-      ApplyBoundaryConditions &
-        => ApplyBoundaryConditionsHost, ApplyBoundaryConditionsDevice
+      ApplyBoundaryConditions
     procedure ( ComputeRawFluxesInterface ), public, pass, deferred :: &
       ComputeRawFluxes
     procedure ( ComputeRiemannSolverInputInterface ), public, pass, &
@@ -72,30 +55,20 @@ module ConservedFields_Template
 
   abstract interface 
 
-    subroutine ComputeInterface ( CF, Value )
+    subroutine ComputeInterface ( CF, Value, UseDeviceOption )
       use Basics
       import ConservedFieldsTemplate
       class ( ConservedFieldsTemplate ), intent ( inout ) :: &
         CF
       real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
         Value
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
     end subroutine ComputeInterface
-    
-    subroutine ComputeDeviceInterface ( CF, Value, D_Value )
-      use iso_c_binding
-      use Basics
-      import ConservedFieldsTemplate
-      class ( ConservedFieldsTemplate ), intent ( inout ) :: &
-        CF
-      real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
-        Value
-      type ( c_ptr ), dimension ( : ), intent ( in ) :: &
-        D_Value
-    end subroutine ComputeDeviceInterface
     
     subroutine ApplyBoundaryConditionsInterface &
                  ( CF, ExteriorValue, InteriorValue, iDimension, iBoundary, &
-                   PrimitiveOnlyOption )
+                   PrimitiveOnlyOption, UseDeviceOption )
       use Basics
       import ConservedFieldsTemplate
       class ( ConservedFieldsTemplate ), intent ( inout ) :: &
@@ -108,34 +81,12 @@ module ConservedFields_Template
         iDimension, &
         iBoundary
       logical ( KDL ), intent ( in ), optional :: &
-        PrimitiveOnlyOption
+        PrimitiveOnlyOption, &
+        UseDeviceOption
     end subroutine ApplyBoundaryConditionsInterface
     
-    subroutine ApplyBoundaryConditionsDeviceInterface &
-                 ( CF, ExteriorValue, InteriorValue, iDimension, iBoundary, &
-                   D_ExteriorValue, D_InteriorValue, PrimitiveOnlyOption )
-      use iso_c_binding
-      use Basics
-      import ConservedFieldsTemplate
-      class ( ConservedFieldsTemplate ), intent ( inout ) :: &
-        CF
-      real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
-        ExteriorValue
-      real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-        InteriorValue
-      integer ( KDI ), intent ( in ) :: &
-        iDimension, &
-        iBoundary
-      type ( c_ptr ), dimension ( : ), intent ( in ) :: &
-        D_ExteriorValue, &
-        D_InteriorValue
-      logical ( KDL ), intent ( in ), optional :: &
-        PrimitiveOnlyOption
-    end subroutine ApplyBoundaryConditionsDeviceInterface
-    
     subroutine ComputeRawFluxesInterface &
-                 ( CF, RawFlux, Value, iDimension, D_RawFlux, D_Value )
-      use iso_c_binding
+                 ( CF, RawFlux, Value, iDimension, UseDeviceOption )
       use Basics
       import ConservedFieldsTemplate
       class ( ConservedFieldsTemplate ), intent ( inout ) :: &
@@ -146,15 +97,13 @@ module ConservedFields_Template
         Value
       integer ( KDI ), intent ( in ) :: &
         iDimension
-      type ( c_ptr ), dimension ( : ), intent ( in ) :: &
-        D_RawFlux, &
-        D_Value
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
     end subroutine ComputeRawFluxesInterface
     
     subroutine ComputeRiemannSolverInputInterface &
                  ( CF, Step, ValueInner, ValueOuter, iDimension, &
-                   D_ValueInner, D_ValueOuter )
-      use iso_c_binding
+                   UseDeviceOption )
       use Basics
       import ConservedFieldsTemplate    
       class ( ConservedFieldsTemplate ), intent ( inout ) :: &
@@ -166,9 +115,8 @@ module ConservedFields_Template
         ValueOuter
       integer ( KDI ), intent ( in ) :: &
         iDimension
-      type ( c_ptr ), dimension ( : ), intent ( in ) :: &
-        D_ValueInner, &
-        D_ValueOuter
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
     end subroutine ComputeRiemannSolverInputInterface
     
   end interface

@@ -15,8 +15,8 @@ module PhotonMoments_BSLL_ASC_CSLD__Form
   type, public, extends ( RadiationMoments_BSLL_ASC_CSLD_Form ) :: &
     PhotonMoments_BSLL_ASC_CSLD_Form
   contains
-    procedure, public, pass :: &
-      Initialize
+    procedure, private, pass :: &
+      SetType
     procedure, private, pass :: &
       AllocateField
   end type PhotonMoments_BSLL_ASC_CSLD_Form
@@ -24,33 +24,15 @@ module PhotonMoments_BSLL_ASC_CSLD__Form
 contains
 
 
-  subroutine Initialize &
-               ( RMB, B, RadiationMomentsType, Units, NameShortOption, &
-                 UseLimiterOption, LimiterParameterOption )
+  subroutine SetType ( RMB )
 
     class ( PhotonMoments_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
       RMB
-    class ( Bundle_SLL_ASC_CSLD_Form ), intent ( in ), target :: &
-      B
-    character ( * ), intent ( in )  :: &
-      RadiationMomentsType
-    class ( StressEnergyUnitsForm ), intent ( in ), target :: &
-      Units
-    character ( * ), intent ( in ), optional :: &
-      NameShortOption
-    logical ( KDL ), intent ( in ), optional :: &
-      UseLimiterOption
-    real ( KDR ), intent ( in ), optional :: &
-      LimiterParameterOption
 
     if ( RMB % Type == '' ) &
       RMB % Type = 'a PhotonMoments_BSLL_ASC_CSLD'
 
-    call RMB % RadiationMoments_BSLL_ASC_CSLD_Form % Initialize &
-           ( B, RadiationMomentsType, Units, NameShortOption, &
-             UseLimiterOption, LimiterParameterOption )
-
-  end subroutine Initialize
+  end subroutine SetType
 
 
   subroutine AllocateField ( RMB, RMA )

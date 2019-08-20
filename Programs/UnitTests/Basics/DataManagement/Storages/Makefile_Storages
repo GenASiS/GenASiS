@@ -7,11 +7,11 @@ all: \
   Storage_1D__Form_Test
 
 Storage_Form_Test: Specifiers.a Devices.a ArrayOperations.a ArrayArrays.a \
-  Devices.a Storage_Form_Test.o
+  Storage_Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Storage_Form_Test_$(MACHINE) \
           Storage_Form_Test.o Storage_Form.o \
-          Devices.a ArrayArrays.a ArrayOperations.a Specifiers.a Devices.a
+          ArrayArrays.a ArrayOperations.a Devices.a Specifiers.a
 
 PackedStorage_Form_Test: Specifiers.a Devices.a ArrayOperations.a \
   ArrayArrays.a PackedStorage_Form_Test.o
@@ -19,7 +19,7 @@ PackedStorage_Form_Test: Specifiers.a Devices.a ArrayOperations.a \
           -o PackedStorage_Form_Test_$(MACHINE) \
           PackedStorage_Form_Test.o PackedStorage_Form.o \
           Storage_Form.o \
-          ArrayArrays.a ArrayOperations.a Specifiers.a Devices.a
+          ArrayArrays.a ArrayOperations.a Devices.a Specifiers.a 
 
 Storage_1D__Form_Test: Specifiers.a Devices.a ArrayOperations.a \
   ArrayArrays.a Storage_1D__Form_Test.o 
@@ -27,7 +27,7 @@ Storage_1D__Form_Test: Specifiers.a Devices.a ArrayOperations.a \
           -o Storage_1D__Form_Test_$(MACHINE) \
           Storage_1D__Form_Test.o Storage_1D__Form.o \
           Storage_Form.o \
-          ArrayArrays.a ArrayOperations.a Specifiers.a Devices.a
+          ArrayArrays.a ArrayOperations.a Devices.a Specifiers.a 
 
 clean:
 	rm -f *.o *.a *.mod *.ld

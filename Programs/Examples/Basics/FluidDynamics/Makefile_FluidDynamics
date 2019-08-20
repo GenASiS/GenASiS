@@ -5,9 +5,12 @@ all: SineWaveAdvection SawtoothWaveAdvection RiemannProblem
 include $(PATH_GENASIS)/Build/Makefile_Build
 
 FLUID = \
+  PolytropicFluid_Kernel.o \
   PolytropicFluid_Form.o \
+  PressurelessFluid_Kernel.o \
   PressurelessFluid_Form.o \
   ConservationLawEvolution_Template.o \
+  ConservationLawStep_Kernel.o \
   ConservationLawStep_Form.o \
   ConservedFields_Template.o \
   DistributedMesh_Form.o
@@ -33,7 +36,7 @@ RiemannProblem: Basics.a Fluid.a RiemannProblem.o
           Fluid.a Basics.a $(LIBRARIES)
 
 clean:
-	rm -f *.o *.a *.mod *.ld
+	rm -f *.o *.a *.mod *.ld *.smod
 
 clobber: clean
 	rm -f SineWaveAdvection_*
@@ -51,10 +54,16 @@ ConservedFields_Template.o: \
   DistributedMesh_Form.o \
   ConservedFields_Template.f90
 
+
 ConservationLawStep_Form.o: \
   Basics.o \
   ConservedFields_Template.o \
   ConservationLawStep_Form.f90
+
+ConservationLawStep_Kernel.o: \
+  Basics.o \
+  ConservationLawStep_Form.o \
+  ConservationLawStep_Kernel.f90
 
 ConservationLawEvolution_Template.o: \
   Basics.o \
@@ -70,11 +79,21 @@ PressurelessFluid_Form.o: \
   ConservationLawStep_Form.o \
   PressurelessFluid_Form.f90
 
+PressurelessFluid_Kernel.o: \
+  Basics.o \
+  PressurelessFluid_Form.o \
+  PressurelessFluid_Kernel.f90
+
 PolytropicFluid_Form.o: \
   Basics.o \
   DistributedMesh_Form.o \
   PressurelessFluid_Form.o \
   PolytropicFluid_Form.f90
+
+PolytropicFluid_Kernel.o: \
+  Basics.o \
+  PolytropicFluid_Form.o \
+  PolytropicFluid_Kernel.f90
 
 Fluid.a: $(FLUID)
 	ar r Fluid.a $(FLUID)

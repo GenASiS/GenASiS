@@ -32,15 +32,11 @@ DisassociateHost_Command.o: \
 UpdateDevice_Command.o: \
   Specifiers.o \
   Device_C_OMP.o \
-  AssociateHost_Command.o \
-  DisassociateHost_Command.o \
   UpdateDevice_Command.f90
 
 UpdateHost_Command.o: \
   Specifiers.o \
   Device_C_OMP.o \
-  AssociateHost_Command.o \
-  DisassociateHost_Command.o \
   UpdateHost_Command.f90
 
 AllocateHost_Command.o: \
@@ -58,6 +54,11 @@ OffloadEnabled_Function.o: \
   Device_C_OMP.o \
   OffloadEnabled_Function.f90
 
+OnDevice_Function.o: \
+  Specifiers.o \
+  Device_C_OMP.o \
+  OnDevice_Function.f90
+
 GetNumberOfDevices_Function.o: \
   Specifiers.o \
   GetNumberOfDevices_Function.f90
@@ -72,6 +73,7 @@ Devices.o: \
   AllocateHost_Command.o \
   DeallocateHost_Command.o \
   OffloadEnabled_Function.o \
+  OnDevice_Function.o \
   GetNumberOfDevices_Function.o \
   Devices.f90
 

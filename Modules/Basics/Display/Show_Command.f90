@@ -1152,7 +1152,7 @@ contains
     write ( Buffer, fmt = ' ( z64 ) ' ) Address
     Buffer = '0x' //  adjustl ( Buffer )
     
-    print '(a35,a3,a32)', trim ( Description ), '  = ', Buffer
+    print '(a35,a5,a32)', trim ( Description ), '  =  ', Buffer
 
     call EndShow ( nTrailingLinesOption )
 
@@ -1204,7 +1204,7 @@ contains
       
       print &
         '(a38,a32)', &
-        '( ' // trim ( adjustl ( IndexLabel ) ) // ' ) = ', Buffer
+        '( ' // trim ( adjustl ( IndexLabel ) ) // ' ) =  ', Buffer
     end do
 
     call EndShow ( nTrailingLinesOption )

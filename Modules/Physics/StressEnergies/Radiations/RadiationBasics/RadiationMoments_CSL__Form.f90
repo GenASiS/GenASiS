@@ -44,6 +44,8 @@ module RadiationMoments_CSL__Form
     final :: &
       Finalize
     procedure, private, pass :: &
+      SetType
+    procedure, private, pass :: &
       SetField
   end type RadiationMoments_CSL_Form
 
@@ -75,8 +77,8 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
-    if ( RMC % Type == '' ) &
-      RMC % Type = 'a RadiationMoments_CSL'
+    call RMC % SetType ( )
+
     RMC % RadiationMomentsType = RadiationMomentsType
     RMC % ReconstructedType    = ReconstructedType
     RMC % RiemannSolverType    = RiemannSolverType
@@ -212,6 +214,16 @@ contains
     call RMC % FinalizeTemplate ( )
 
   end subroutine Finalize
+
+
+  subroutine SetType ( RMC )
+
+    class ( RadiationMoments_CSL_Form ), intent ( inout ) :: &
+      RMC
+
+    RMC % Type = 'a RadiationMoments_CSL'
+
+  end subroutine SetType
 
 
   subroutine SetField ( FC )

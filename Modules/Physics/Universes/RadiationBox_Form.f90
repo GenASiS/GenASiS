@@ -58,9 +58,6 @@ module RadiationBox_Form
         ComputeFluidSource_G_S_Radiation_Kernel, &
         ApplySources_Fluid_Kernel
 
-    class ( RadiationBoxForm ), pointer :: &
-      RadiationBox => null ( )
-
 contains
 
   
@@ -68,7 +65,8 @@ contains
                ( RB, RadiationName, RadiationType, MomentsType, Name, &
                  ApplyStreamingOption, ApplyInteractionsOption, &
                  EvolveFluidOption, MinCoordinateOption, MaxCoordinateOption, &
-                 FinishTimeOption, CourantFactorOption, EnergyScaleOption, &
+                 FinishTimeOption, CourantFactorOption, MinEnergyOption, &
+                 MaxEnergyOption, MinWidthEnergyOption, EnergyScaleOption, &
                  nCellsPositionOption, nCellsEnergyOption, nWriteOption )
 
     class ( RadiationBoxForm ), intent ( inout ), target :: &
@@ -89,6 +87,9 @@ contains
     real ( KDR ), intent ( in ), optional :: &
       FinishTimeOption, &
       CourantFactorOption, &
+      MinEnergyOption, &
+      MaxEnergyOption, &
+      MinWidthEnergyOption, &
       EnergyScaleOption
     integer ( KDI ), dimension ( 3 ), intent ( in ), optional :: &
       nCellsPositionOption
@@ -101,8 +102,6 @@ contains
     
     call RB % InitializeTemplate ( Name )
 
-    RadiationBox => RB
-
     RB % MomentsType  =  MomentsType
 
     call RB % AllocateIntegrator &
@@ -113,7 +112,10 @@ contains
              MaxCoordinateOption = MaxCoordinateOption, &
              nCellsOption = nCellsPositionOption )
     call RB % InitializeMomentumSpace &
-           ( EnergyScaleOption = EnergyScaleOption, &
+           ( MinEnergyOption = MinEnergyOption, &
+             MaxEnergyOption = MaxEnergyOption, &
+             MinWidthEnergyOption = MinWidthEnergyOption, &
+             EnergyScaleOption = EnergyScaleOption, &
              nCellsEnergyOption = nCellsEnergyOption )
     call RB % InitializeRadiation &
            ( RadiationName, RadiationType )
@@ -256,11 +258,17 @@ contains
 
 
   subroutine InitializeMomentumSpace &
-               ( RB, EnergyScaleOption, nCellsEnergyOption )
+               ( RB, EnergySpacingOption, MinEnergyOption, MaxEnergyOption, &
+                 MinWidthEnergyOption, EnergyScaleOption, nCellsEnergyOption )
 
     class ( RadiationBoxForm ), intent ( inout ) :: &
       RB
+    character ( * ), intent ( in ), optional :: &
+      EnergySpacingOption
     real ( KDR ), intent ( in ), optional :: &
+      MinEnergyOption, &
+      MaxEnergyOption, &
+      MinWidthEnergyOption, &
       EnergyScaleOption
     integer ( KDI ), intent ( in ), optional :: &
       nCellsEnergyOption
@@ -268,7 +276,12 @@ contains
     integer ( KDI ) :: &
       nCellsEnergy
     real ( KDR ) :: &
+      MinEnergy, &
+      MaxEnergy, &
+      MinWidthEnergy, &
       EnergyScale
+    character ( LDL ) :: &
+      EnergySpacing
 
     select type ( I => RB % Integrator )
     class is ( Integrator_C_1D_MS_C_PS_Form )
@@ -283,23 +296,66 @@ contains
     call MS % SetBoundaryConditionsFace &
            ( [ 'REFLECTING', 'REFLECTING' ], iDimension = 1 )
 
-    EnergyScale = 10.0_KDR
-    if ( present ( EnergyScaleOption ) ) &
-      EnergyScale = EnergyScaleOption
-    call PROGRAM_HEADER % GetParameter ( EnergyScale, 'EnergyScale' )
-
     nCellsEnergy = 16
     if ( present ( nCellsEnergyOption ) ) &
       nCellsEnergy = nCellsEnergyOption
     call PROGRAM_HEADER % GetParameter ( nCellsEnergy, 'nCellsEnergy' )
 
-    call MS % CreateChart &
-           ( SpacingOption = [ 'COMPACTIFIED' ], &
-             CoordinateSystemOption = 'SPHERICAL', &
-             CoordinateUnitOption = RB % Units % Coordinate_MS, &
-             ScaleOption = [ EnergyScale ], &
-             nCellsOption = [ nCellsEnergy ], &
-             nGhostLayersOption = [ 0, 0, 0 ] )
+    EnergySpacing = 'GEOMETRIC'
+    if ( present ( EnergySpacingOption ) ) &
+      EnergySpacing = EnergySpacingOption
+    call PROGRAM_HEADER % GetParameter ( EnergySpacing, 'EnergySpacing' )
+
+    select case ( trim ( EnergySpacing ) )
+    case ( 'GEOMETRIC' )
+
+      MinEnergy       =    0.0_KDR
+      MaxEnergy       =  100.0_KDR
+      MinWidthEnergy  =    0.1_KDR
+      if ( present ( MinEnergyOption ) ) &
+        MinEnergy = MinEnergyOption
+      if ( present ( MaxEnergyOption ) ) &
+        MaxEnergy = MaxEnergyOption
+      if ( present ( MinWidthEnergyOption ) ) &
+        MinWidthEnergy = MinWidthEnergyOption
+      call PROGRAM_HEADER % GetParameter ( MinEnergy, 'MinEnergy' )
+      call PROGRAM_HEADER % GetParameter ( MaxEnergy, 'MaxEnergy' )
+      call PROGRAM_HEADER % GetParameter ( MinWidthEnergy, 'MinWidthEnergy' )
+
+      call MS % CreateChart &
+             ( SpacingOption = [ 'GEOMETRIC' ], &
+               CoordinateSystemOption = 'SPHERICAL', &
+               CoordinateUnitOption = RB % Units % Coordinate_MS, &
+               MinCoordinateOption = [ MinEnergy ], &
+               MaxCoordinateOption = [ MaxEnergy ], &
+               ScaleOption = [ MinWidthEnergy ], &
+               nCellsOption = [ nCellsEnergy ], &
+               nGhostLayersOption = [ 0, 0, 0 ] )
+
+    case ( 'COMPACTIFIED' )
+
+      EnergyScale = 10.0_KDR
+      if ( present ( EnergyScaleOption ) ) &
+        EnergyScale = EnergyScaleOption
+      call PROGRAM_HEADER % GetParameter ( EnergyScale, 'EnergyScale' )
+
+      call MS % CreateChart &
+             ( SpacingOption = [ 'COMPACTIFIED' ], &
+               CoordinateSystemOption = 'SPHERICAL', &
+               CoordinateUnitOption = RB % Units % Coordinate_MS, &
+               ScaleOption = [ EnergyScale ], &
+               nCellsOption = [ nCellsEnergy ], &
+               nGhostLayersOption = [ 0, 0, 0 ] )
+
+    case default
+
+      call Show ( 'EnergySpacing not recognized', CONSOLE % ERROR )
+      call Show ( EnergySpacing, 'EnergySpacing', CONSOLE % ERROR )
+      call Show ( 'RadiationBox_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'InitializeMomentumSpace', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+
+    end select !-- Spacing
 
     end select !-- MS
     end select !-- PS
@@ -335,7 +391,8 @@ contains
         select case ( trim ( RadiationType ( iC ) ) )
         case ( 'GENERIC' )
           allocate &
-            ( RadiationMoments_ASC_Form :: I % Current_ASC_1D ( iC ) % Element )
+            ( RadiationMoments_ASC_Form :: &
+                I % Current_ASC_1D ( iC ) % Element )
           RadiationTypeLocal = 'GENERIC'
         case ( 'PHOTONS' )
           allocate &
@@ -538,10 +595,11 @@ contains
     integer ( KDI ) :: &
       oC  !-- oCandidate
 
-    associate ( RB => RadiationBox )
-
     select type ( I )
     class is ( Integrator_C_1D_C_PS_Template )
+
+    select type ( RB => I % Universe )
+    class is ( RadiationBoxForm )
 
     !-- Fluid advection and Radiation streaming
 
@@ -564,8 +622,8 @@ contains
         =  huge ( 1.0_KDR )
     end if
 
+    end select !-- RB
     end select !-- I
-    end associate !-- RB
 
   end subroutine ComputeTimeStepLocal
 
@@ -662,8 +720,6 @@ contains
       RMEI, &
       RMF
 
-    associate ( IB => RadiationBox % Interactions_BSLL_ASC_CSLD ) 
-
     select type ( RMB => I % Current_BSLL_ASC_CSLD_1D ( 1 ) % Element )
     class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
 
@@ -715,7 +771,6 @@ contains
 
     end select !-- RMA
     end select !-- RMB
-    end associate !-- IB
 
     nullify ( RMEI, RMF )
  
@@ -787,7 +842,8 @@ contains
     integer ( KDI ) :: &
       iC     !-- iCurrent
 
-    associate ( RB => RadiationBox )
+    select type ( RB => I % Universe )
+    class is ( RadiationBoxForm )
 
     select type ( I )
     class is ( Integrator_C_1D_PS_C_PS_Form )  !-- Grey
@@ -815,7 +871,7 @@ contains
       end associate !-- IB
 
     end select !-- I
-    end associate !-- RB
+    end select !-- RB
 
   end subroutine ComputeTimeStepInteractions
 

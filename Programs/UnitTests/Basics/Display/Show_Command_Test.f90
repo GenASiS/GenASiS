@@ -1,6 +1,7 @@
 program Show_Command_Test
 
-  use ISO_FORTRAN_ENV
+  use iso_fortran_env
+  use iso_c_binding
   use Specifiers
   use CONSOLE_Singleton
   use Show_Command
@@ -10,12 +11,17 @@ program Show_Command_Test
   include 'mpif.h'
 
   integer ( KDI ) :: &
+    iV, &
     Rank, &
     Error
   character ( 5 ) :: &
     Encoding
   type ( MeasuredValueForm ) :: &
     Length
+  real ( KDR ), dimension ( 5 ), target :: &
+    A
+  type ( c_ptr ), dimension ( 5 ) :: &
+    Addresses
 
 !-- Runtime error with CCE
 !  if ( KBCH == selected_char_kind ( 'ASCII' ) ) then
@@ -71,6 +77,10 @@ program Show_Command_Test
   call Show ( Length, UNIT % SECOND,  'Length in second' )
   call Show ( spread ( Length % Number, 1, 10 ), UNIT % PARSEC, &
               'Length in pc' )
+  
+  Addresses = [ ( c_loc ( A ( iV ) ), iV = 1, size ( A ) ) ]
+  call Show ( c_loc ( A ), 'Address of A' )
+  call SHow ( Addresses, 'Elements of A' )
   
   call MPI_FINALIZE ( Error )
 

@@ -1,9 +1,5 @@
-
-#include "Preprocessor"
-
 module ConservationLawStep_Form
 
-  use iso_c_binding
   use Basics
   use ConservedFields_Template
 
@@ -60,13 +56,95 @@ module ConservationLawStep_Form
     procedure, private, pass :: &
       ComputeFluxes
   end type ConservationLawStepForm
-
+  
     private :: &
       ComputeDifferencesKernel, &
       ComputeReconstructionKernel, &
       ComputeFluxesKernel, &
       AddUpdateKernel, &
+      ComputeUpdateKernel, &
       CombineUpdatesKernel
+      
+      
+    interface
+    
+      module subroutine ComputeDifferencesKernel &
+                   ( V, oV, iD, dV_Left, dV_Right )
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+          V
+        integer ( KDI ), intent ( in ) :: &
+          oV, &
+          iD
+        real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
+          dV_Left, dV_Right
+      end subroutine ComputeDifferencesKernel
+
+      module subroutine ComputeReconstructionKernel &
+                   ( V, dV_Left, dV_Right, Theta, V_Inner, V_Outer )
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          V, &
+          dV_Left, dV_Right
+        real ( KDR ), intent ( in ) :: &
+          Theta
+        real ( KDR ), dimension ( : ), intent ( out ) :: &
+          V_Inner, V_Outer
+      end subroutine ComputeReconstructionKernel
+
+      module subroutine ComputeFluxesKernel &
+                   ( AP_I, AP_O, AM_I, AM_O, RF_I, RF_O, U_I, U_O, oV, iD, &
+                     F_I, F_O )
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+          AP_I, AP_O, &
+          AM_I, AM_O, &
+          RF_I, RF_O, &
+          U_I, U_O
+        integer ( KDI ), intent ( in ) :: &
+          oV, &
+          iD
+        real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
+          F_I, F_O
+      end subroutine ComputeFluxesKernel
+
+      module subroutine ComputeUpdateKernel ( dU, F_I, F_O, V, A, dT )
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          dU
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          F_I, F_O
+        real ( KDR ), intent ( in ) :: &
+          V, &
+          A, &
+          dT
+      end subroutine ComputeUpdateKernel
+      
+      module subroutine AddUpdateKernel ( O, U, C )
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          O, &
+          U
+        real ( KDR ), dimension ( : ), intent ( out ) :: &
+          C 
+      end subroutine AddUpdateKernel
+      
+      module subroutine CombineUpdatesKernel ( C, O, U )
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          C 
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          O, &
+          U
+      end subroutine CombineUpdatesKernel
+      
+    end interface
 
 contains
 
@@ -80,7 +158,7 @@ contains
 
     integer ( KDI ) :: &
       iV  !-- iVariable
-
+      
     call Show ( 'Initializing a ConservationLawStep', CONSOLE % INFO_3 )
 
     CLS % ConservedFields => CF
@@ -108,10 +186,8 @@ contains
 
     call CLS % DifferenceLeft  % AllocateDevice ( )
     call CLS % DifferenceRight % AllocateDevice ( )
-    call Clear ( CLS % DifferenceLeft % D_Selected, &
-                 CLS % DifferenceLeft % Value )
-    call Clear ( CLS % DifferenceRight % D_Selected, &
-                 CLS % DifferenceRight % Value )
+    call Clear ( CLS % DifferenceLeft % Value, UseDeviceOption = .true. )
+    call Clear ( CLS % DifferenceRight % Value, UseDeviceOption = .true. )
 
     !-- Reconstruction
 
@@ -128,10 +204,8 @@ contains
     
     call CLS % ReconstructionInner % AllocateDevice ( )
     call CLS % ReconstructionOuter % AllocateDevice ( )
-    call Clear ( CLS % ReconstructionInner % D_Selected, &
-                 CLS % ReconstructionInner % Value ) 
-    call Clear ( CLS % ReconstructionOuter % D_Selected, &
-                 CLS % ReconstructionOuter % Value ) 
+    call Clear ( CLS % ReconstructionInner % Value, UseDeviceOption = .true. ) 
+    call Clear ( CLS % ReconstructionOuter % Value, UseDeviceOption = .true. ) 
 
     !-- Riemann solver
 
@@ -150,10 +224,8 @@ contains
     
     call CLS % ModifiedSpeedsInner % AllocateDevice ( )
     call CLS % ModifiedSpeedsOuter % AllocateDevice ( )
-    call Clear ( CLS % ModifiedSpeedsInner % D_Selected, &
-                 CLS % ModifiedSpeedsInner % Value )
-    call Clear ( CLS % ModifiedSpeedsOuter % D_Selected, &
-                 CLS % ModifiedSpeedsOuter % Value )
+    call Clear ( CLS % ModifiedSpeedsInner % Value, UseDeviceOption = .true. )
+    call Clear ( CLS % ModifiedSpeedsOuter % Value, UseDeviceOption = .true. )
 
     call CLS % RawFluxInner % Initialize &
            ( [ nCells, CF % N_CONSERVED ], NameOption = 'RawFluxInner', &
@@ -167,10 +239,8 @@ contains
                      iV = 1, CF % N_CONSERVED ) ] )
     call CLS % RawFluxInner % AllocateDevice ( )
     call CLS % RawFluxOuter % AllocateDevice ( )
-    call Clear ( CLS % RawFluxInner % D_Selected, &
-                 CLS % RawFluxInner % Value )
-    call Clear ( CLS % RawFluxOuter % D_Selected, &
-                 CLS % RawFluxOuter % Value )
+    call Clear ( CLS % RawFluxInner % Value, UseDeviceOption = .true. )
+    call Clear ( CLS % RawFluxOuter % Value, UseDeviceOption = .true. )
 
     call CLS % FluxInner % Initialize &
            ( [ nCells, CF % N_CONSERVED ], NameOption = 'FluxInner', &
@@ -184,10 +254,8 @@ contains
                      iV = 1, CF % N_CONSERVED ) ] )
     call CLS % FluxInner % AllocateDevice ( )
     call CLS % FluxOuter % AllocateDevice ( )
-    call Clear ( CLS % FluxInner % D_Selected, &
-                 CLS % FluxInner % Value )
-    call Clear ( CLS % FluxOuter % D_Selected, &
-                 CLS % FluxOuter % Value )
+    call Clear ( CLS % FluxInner % Value, UseDeviceOption = .true. )
+    call Clear ( CLS % FluxOuter % Value, UseDeviceOption = .true. )
     
     !-- Update
 
@@ -280,8 +348,7 @@ contains
     call T_RK % Start ( )
     do iV = 1, Current % N_CONSERVED
       call Copy ( Current % Value ( :, iaC ( iV ) ), &
-                  Current % D_Selected ( iaC ( iV ) ), &
-                  Old % D_Selected ( iV ), Old % Value ( :, iV ) )
+                  Old % Value ( :, iV ), UseDeviceOption = .true. )
     end do
     call T_RK % Stop ( )
     
@@ -299,8 +366,6 @@ contains
     !    = Old % Value ( :, iV ) + Update % Value ( :, iV )
       call AddUpdateKernel &
              ( Old % Value ( :, iV ), Update % Value ( :, iV ), &
-               Old % D_Selected ( iV ), Update % D_Selected ( iV ), &
-               Current % D_Selected ( iaC ( iV ) ), &
                Current % Value ( :, iaC ( iV ) ) )
     end do
     
@@ -309,11 +374,11 @@ contains
     call Show ( 'Computing Fluid', CONSOLE % INFO_5 )
 
     call T_P % Start ( )
-    call Current % ComputePrimitive ( Current % Value, Current % D_Selected )
+    call Current % ComputePrimitive ( Current % Value )
     call T_P % Stop ( )
     
     call T_A % Start ( )
-    call Current % ComputeAuxiliary ( Current % Value, Current % D_Selected )
+    call Current % ComputeAuxiliary ( Current % Value )
     call T_A % Stop ( )
     
     call T_DT_H % Start ( )
@@ -351,20 +416,18 @@ contains
       !                + Current % Value ( :, iaC ( iV ) ) )
       call CombineUpdatesKernel &
              ( Current % Value ( :, iaC ( iV ) ), &
-               Old % Value ( :, iV ), Update % Value ( :, iV ), &
-               Current % D_Selected ( iaC ( iV ) ), &
-               Old % D_Selected ( iV ), Update % D_Selected ( iV ) )
+               Old % Value ( :, iV ), Update % Value ( :, iV ) )
     end do
     call T_RK % Stop ( )
     
     call Show ( 'Computing Fluid', CONSOLE % INFO_5 )
 
     call T_P % Start ( )
-    call Current % ComputePrimitive ( Current % Value, Current % D_Selected )
+    call Current % ComputePrimitive ( Current % Value )
     call T_P % Stop ( )
     
     call T_A % Start ( )
-    call Current % ComputeAuxiliary ( Current % Value, Current % D_Selected )
+    call Current % ComputeAuxiliary ( Current % Value )
     call T_A % Stop ( )
     
     call T_DT_H % Start ( )
@@ -406,12 +469,12 @@ contains
       iV
 
     call Show ( 'Computing Update', CONSOLE % INFO_5 )
-
+    
     associate ( CF => CLS % ConservedFields )
     associate ( DM => CF % DistributedMesh )
     associate ( T_U => PROGRAM_HEADER % Timer ( CLS % iTimerUpdate ) )
 
-    call Clear ( CLS % Update % D_Selected, CLS % Update % Value )
+    call Clear ( CLS % Update % Value, UseDeviceOption = .true. )
     
     do iD = 1, DM % nDimensions
 
@@ -427,10 +490,7 @@ contains
                ( CLS % Update % Value ( :, iV ), &
                  CLS % FluxInner % Value ( :, iV ), &
                  CLS % FluxOuter % Value ( :, iV ), DM % CellVolume, &
-                 DM % CellArea ( iD ), TimeStep, &
-                 CLS % Update % D_Selected ( iV ), &
-                 CLS % FluxInner % D_Selected ( iV ), &
-                 CLS % FluxOuter % D_Selected ( iV ) )
+                 DM % CellArea ( iD ), TimeStep )
       end do
       call T_U % Stop ( )
 
@@ -467,13 +527,9 @@ contains
     
     call T_BC % Start ( )
     call CF % ApplyBoundaryConditions &
-           ( CF % Value, CF % Value, iD, iBoundary = -1, &
-             D_ExteriorValue = CF % D_Selected, &
-             D_InteriorValue = CF % D_Selected )
+           ( CF % Value, CF % Value, iD, iBoundary = -1 )
     call CF % ApplyBoundaryConditions &
-           ( CF % Value, CF % Value, iD, iBoundary = +1, &
-             D_ExteriorValue = CF % D_Selected, &
-             D_InteriorValue = CF % D_Selected )
+           ( CF % Value, CF % Value, iD, iBoundary = +1 )
     call T_BC % Stop ( )
            
     do iP = 1, CF % N_PRIMITIVE
@@ -485,11 +541,7 @@ contains
              ( CLS % DifferenceRight % Value ( :, iP ), dV_Right )
       call T_D % Start ( )
       call ComputeDifferencesKernel &
-             ( V, DM % nGhostLayers ( iD ), iD, &
-               CF % D_Selected ( CF % iaPrimitive ( iP ) ), &
-               CLS % DifferenceLeft % D_Selected ( iP ), &
-               CLS % DifferenceRight % D_Selected ( iP ), &
-               dV_Left, dV_Right )
+             ( V, DM % nGhostLayers ( iD ), iD, dV_Left, dV_Right )
       call T_D % Stop ( )
     end do
     
@@ -527,11 +579,6 @@ contains
                CLS % DifferenceLeft % Value ( :, iP ), &
                CLS % DifferenceRight % Value ( :, iP ), &
                CLS % LimiterParameter, &
-               CF % D_Selected ( iaP ( iP ) ), &
-               CLS % DifferenceLeft % D_Selected ( iP ), &
-               CLS % DifferenceRight % D_Selected ( iP ), &
-               CLS % ReconstructionInner % D_Selected ( iaP ( iP ) ), &
-               CLS % ReconstructionOuter % D_Selected ( iaP ( iP ) ), &
                CLS % ReconstructionInner % Value ( :, iaP ( iP ) ), &
                CLS % ReconstructionOuter % Value ( :, iaP ( iP ) ) )
       call T_R % Stop ( )
@@ -539,20 +586,18 @@ contains
 
     call T_A % Start ( )
     call CF % ComputeAuxiliary &
-           ( CLS % ReconstructionInner % Value, &
-             CLS % ReconstructionInner % D_Selected )
+           ( CLS % ReconstructionInner % Value )
     call CF % ComputeAuxiliary &
-           ( CLS % ReconstructionOuter % Value, &
-             CLS % ReconstructionOuter % D_Selected )
+           ( CLS % ReconstructionOuter % Value )
+             
     call T_A % Stop ( )
     
     call T_C % Start ( )
     call CF % ComputeConserved &
-           ( CLS % ReconstructionInner % Value, &
-             CLS % ReconstructionInner % D_Selected )
+           ( CLS % ReconstructionInner % Value )
     call CF % ComputeConserved &
-           ( CLS % ReconstructionOuter % Value, &
-             CLS % ReconstructionOuter % D_Selected )
+           ( CLS % ReconstructionOuter % Value )
+             
     call T_C % Stop ( )
     
     end associate !-- Timer
@@ -592,33 +637,26 @@ contains
     call T_BC % Start ( )
     call CF % ApplyBoundaryConditions &
            ( CLS % ReconstructionOuter % Value, &
-             CLS % ReconstructionInner % Value, iDimension, iBoundary = -1, &
-             D_ExteriorValue = CLS % ReconstructionOuter % D_Selected, &
-             D_InteriorValue = CLS % ReconstructionInner % D_Selected )
+             CLS % ReconstructionInner % Value, iDimension, iBoundary = -1 )
+             
     call CF % ApplyBoundaryConditions &
            ( CLS % ReconstructionInner % Value, &
-             CLS % ReconstructionOuter % Value, iDimension, iBoundary = +1, &
-             D_ExteriorValue = CLS % ReconstructionInner % D_Selected, &
-             D_InteriorValue = CLS % ReconstructionOuter % D_Selected )
+             CLS % ReconstructionOuter % Value, iDimension, iBoundary = +1 )
     call T_BC % Stop ( )
 
     call T_RSI % Start ( )
     call CF % ComputeRiemannSolverInput &
            ( CLS, CLS % ReconstructionInner % Value, &
-             CLS % ReconstructionOuter % Value, iDimension, &
-             CLS % ReconstructionInner % D_Selected, &
-             CLS % ReconstructionOuter % D_Selected )
+             CLS % ReconstructionOuter % Value, iDimension )
     call T_RSI % Stop ( )
 
     call T_RF % Start ( )
     call CF % ComputeRawFluxes &
            ( CLS % RawFluxInner % Value, CLS % ReconstructionInner % Value, &
-             iDimension, CLS % RawFluxInner % D_Selected, &
-             CLS % ReconstructionInner % D_Selected )
+             iDimension )
     call CF % ComputeRawFluxes &
            ( CLS % RawFluxOuter % Value, CLS % ReconstructionOuter % Value, &
-             iDimension, CLS % RawFluxOuter % D_Selected, &
-             CLS % ReconstructionOuter % D_Selected )
+             iDimension )
     call T_RF % Stop ( )
     
     call DM % SetVariablePointer &
@@ -642,18 +680,7 @@ contains
       call T_F % Start ( )
       call ComputeFluxesKernel &
              ( AP_I, AP_O, AM_I, AM_O, RF_I, RF_O, U_I, U_O, &
-               DM % nGhostLayers ( iDimension ), iDimension, &
-               CLS % ModifiedSpeedsInner % D_Selected ( CLS % ALPHA_PLUS ), &
-               CLS % ModifiedSpeedsOuter % D_Selected ( CLS % ALPHA_PLUS ), &
-               CLS % ModifiedSpeedsInner % D_Selected ( CLS % ALPHA_MINUS ), &
-               CLS % ModifiedSpeedsOuter % D_Selected ( CLS % ALPHA_MINUS ), &
-               CLS % RawFluxInner % D_Selected ( iV ), &
-               CLS % RawFluxOuter % D_Selected ( iV ), &
-               CLS % ReconstructionInner % D_Selected ( iaC ( iV ) ), &
-               CLS % ReconstructionOuter % D_Selected ( iaC ( iV ) ), &
-               CLS % FluxInner % D_Selected ( iV ), &
-               CLS % FluxOuter % D_Selected ( iV ), &
-               F_I, F_O )
+               DM % nGhostLayers ( iDimension ), iDimension, F_I, F_O )
       call T_F % Stop ( )
     end do
     
@@ -663,407 +690,5 @@ contains
 
   end subroutine ComputeFluxes
 
-
-  subroutine ComputeDifferencesKernel &
-               ( V, oV, iD, D_V, D_dV_Left, D_dV_Right, dV_Left, dV_Right )
-
-    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
-      V
-    integer ( KDI ), intent ( in ) :: &
-      oV, &
-      iD
-    type ( c_ptr ), intent ( in ) :: &
-      D_V, &
-      D_dV_Left, D_dV_Right
-    real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
-      dV_Left, dV_Right
-      
-    integer ( KDI ) :: &
-      iV, jV, kV
-    integer ( KDI ), dimension ( 3 ) :: &
-      iaS, &
-      iaVS, &   
-      lV, uV
-      
-    call AssociateHost ( D_V, V )
-    call AssociateHost ( D_dV_Left, dV_Left )
-    call AssociateHost ( D_dV_Right, dV_Right )
-
-    lV = 1
-    where ( shape ( V ) > 1 )
-      lV = oV + 1
-    end where
-    lV ( iD ) = oV
-
-    uV = 1
-    where ( shape ( V ) > 1 )
-      uV = shape ( V ) - oV
-    end where
-    uV ( iD ) = size ( V, dim = iD ) - 1
-    
-!    dV_Left  = V - cshift ( V, shift = -1, dim = iD )    
-
-    iaS = 0
-    iaS ( iD ) = -1
-    
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
-    !$OMP& schedule ( OMP_SCHEDULE ) private ( iaVS )
-    do kV = lV ( 3 ), uV ( 3 ) 
-      do jV = lV ( 2 ), uV ( 2 )
-        do iV = lV ( 1 ), uV ( 1 )
-        
-          !call Show ( [ iV, jV, kV ], '<<< iV, jV, kV: 1' )
-
-          iaVS = [ iV, jV, kV ] + iaS
-
-          dV_Left ( iV, jV, kV )  &
-            =  V ( iV, jV, kV )  -  V ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) )
-
-        end do !-- iV
-      end do !-- jV
-    end do !-- kV
-    !$OMP end OMP_TARGET_DIRECTIVE parallel do
-    
-!    dV_Right = cshift ( V, shift = 1, dim = iD ) - V
-
-    iaS = 0
-    iaS ( iD ) = +1
-    
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
-    !$OMP& schedule ( OMP_SCHEDULE ) private ( iaVS )
-    do kV = lV ( 3 ), uV ( 3 ) 
-      do jV = lV ( 2 ), uV ( 2 )
-        do iV = lV ( 1 ), uV ( 1 )
-          
-          !call Show ( [ iV, jV, kV ], '<<< iV, jV, kV: 2' )
-
-          iaVS = [ iV, jV, kV ] + iaS
-
-          dV_Right ( iV, jV, kV )  &
-            =  V ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ) - V ( iV, jV, kV )
-
-        end do !-- iV
-      end do !-- jV
-    end do !-- kV
-    !$OMP end OMP_TARGET_DIRECTIVE parallel do
-    
-    call DisassociateHost ( dV_Right )
-    call DisassociateHost ( dV_Left )
-    call DisassociateHost ( V )
-    
-  end subroutine ComputeDifferencesKernel
-
-
-  subroutine ComputeReconstructionKernel &
-               ( V, dV_Left, dV_Right, Theta, D_V, D_dV_Left, D_dV_Right, &
-                 D_V_Inner, D_V_Outer, V_Inner, V_Outer )
-
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      V, &
-      dV_Left, dV_Right
-    real ( KDR ), intent ( in ) :: &
-      Theta
-    type ( c_ptr ), intent ( in ) :: &
-      D_V, &
-      D_dV_Left, D_dV_Right, &
-      D_V_Inner, D_V_Outer
-    real ( KDR ), dimension ( : ), intent ( out ) :: &
-      V_Inner, V_Outer
-
-    !real ( KDR ), dimension ( size ( V ) ) :: &
-    !  dV
-    integer ( KDI ) :: &
-      iV
-    real ( KDR ) :: &
-      dV
-      
-    call AssociateHost ( D_V, V )
-    call AssociateHost ( D_dV_Left, dV_Left )
-    call AssociateHost ( D_dV_Right, dV_Right )
-    call AssociateHost ( D_V_Inner, V_Inner )
-    call AssociateHost ( D_V_Outer, V_Outer )
-
-    !where ( dV_Left > 0.0_KDR .and. dV_Right > 0.0_KDR )
-    !  dV = min ( Theta * dV_Left, Theta * dV_Right, &
-    !               0.5_KDR * ( dV_Left + dV_Right ) )
-    !elsewhere ( dV_Left < 0.0_KDR .and. dV_Right < 0.0_KDR )
-    !  dV = max ( Theta * dV_Left, Theta * dV_Right, &
-    !               0.5_KDR * ( dV_Left + dV_Right ) )      
-    !elsewhere
-    !  dV = 0.0_KDR
-    !endwhere
-
-    !V_Inner = V - 0.5_KDR * dV
-    !V_Outer = V + 0.5_KDR * dV
-    
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-    !$OMP& schedule ( OMP_SCHEDULE ) private ( dV )
-    do iV = 1, size ( V )
-      dV = ( sign ( 0.5_KDR, dV_Left ( iV ) ) &
-             + sign ( 0.5_KDR, dV_Right ( iV ) ) ) &
-             * min ( abs ( Theta * dV_Left ( iV ) ), &
-                     abs ( Theta * dV_Right ( iV ) ), &
-                     abs ( 0.5_KDR * ( dV_Left ( iV ) + dV_Right ( iV ) ) ) )
-      V_Inner ( iV ) = V ( iV ) - 0.5_KDR * dV
-      V_Outer ( iV ) = V ( iV ) + 0.5_KDR * dV
-    end do
-    !$OMP end OMP_TARGET_DIRECTIVE parallel do
-    
-    call DisassociateHost ( V_Outer )
-    call DisassociateHost ( V_Inner )
-    call DisassociateHost ( dV_Right )
-    call DisassociateHost ( dV_Left )
-    call DisassociateHost ( V )
-    
-  end subroutine ComputeReconstructionKernel
-
-
-  subroutine ComputeFluxesKernel &
-               ( AP_I, AP_O, AM_I, AM_O, RF_I, RF_O, U_I, U_O, oV, iD, &
-                 D_AP_I, D_AP_O, D_AM_I, D_AM_O, D_RF_I, D_RF_O, &
-                 D_U_I, D_U_O, D_F_I, D_F_O, F_I, F_O )
-
-    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
-      AP_I, AP_O, &
-      AM_I, AM_O, &
-      RF_I, RF_O, &
-      U_I, U_O
-    integer ( KDI ), intent ( in ) :: &
-      oV, &
-      iD
-    type ( c_ptr ), intent ( in ) :: &
-      D_AP_I, D_AP_O, &
-      D_AM_I, D_AM_O, &
-      D_RF_I, D_RF_O, &
-      D_U_I, D_U_O, &
-      D_F_I, D_F_O
-    real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
-      F_I, F_O
-      
-    integer ( KDI ) :: &
-      iV, jV, kV
-    integer ( KDI ), dimension ( 3 ) :: &
-      iaS, &
-      iaVS, &   
-      lV, uV
-      
-    call AssociateHost ( D_AP_I, AP_I )
-    call AssociateHost ( D_AP_O, AP_O )
-    call AssociateHost ( D_AM_I, AM_I )
-    call AssociateHost ( D_AM_O, AM_O )
-    call AssociateHost ( D_RF_I, RF_I )
-    call AssociateHost ( D_RF_O, RF_O )
-    call AssociateHost ( D_U_I, U_I )
-    call AssociateHost ( D_U_O, U_O )
-    call AssociateHost ( D_F_I, F_I )
-    call AssociateHost ( D_F_O, F_O )
-            
-    lV = 1
-    where ( shape ( F_I ) > 1 )
-      lV = oV + 1
-    end where
-    lV ( iD ) = oV
-
-    uV = 1
-    where ( shape ( F_I ) > 1 )
-      uV = shape ( F_I ) - oV
-    end where
-    uV ( iD ) = size ( F_I, dim = iD ) - 1
-    
-    !where ( AP_I + AM_I > 0.0_KDR )
-    !  F_I = ( AP_I * cshift ( RF_O, shift = -1, dim = iD )  +  AM_I * RF_I &
-    !          - AP_I * AM_I * ( U_I - cshift ( U_O, shift = -1, dim = iD ) ) ) &
-    !        / ( AP_I + AM_I )
-    !elsewhere
-    !  F_I = 0.0_KDR
-    !end where
-    
-    iaS = 0
-    iaS ( iD ) = -1
-    
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
-    !$OMP& schedule ( OMP_SCHEDULE ) private ( iaVS )
-    do kV = lV ( 3 ), uV ( 3 ) 
-      do jV = lV ( 2 ), uV ( 2 )
-        do iV = lV ( 1 ), uV ( 1 )
-            
-          iaVS = [ iV, jV, kV ] + iaS
-          
-          if ( AP_I ( iV, jV, kV ) + AM_I ( iV, jV, kV ) > 0.0_KDR ) then
-            F_I ( iV, jV, kV ) &
-              = ( AP_I ( iV, jV, kV ) &
-                    * RF_O ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ) &
-                  + AM_I ( iV, jV, kV ) * RF_I ( iV, jV, kV ) &
-                  - AP_I ( iV, jV, kV ) * AM_I ( iV, jV, kV ) &
-                    * ( U_I ( iV, jV, kV ) &
-                        -  U_O ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ) ) ) &
-                / ( AP_I ( iV, jV, kV ) + AM_I ( iV, jV, kV ) )
-          else
-            F_I ( iV, jV, kV ) = 0.0_KDR
-          end if
-
-        end do
-      end do
-    end do
-    !$OMP end OMP_TARGET_DIRECTIVE parallel do
-    
-    !where ( AP_O + AM_O > 0.0_KDR )
-    !  F_O = ( AP_O * RF_O  +  AM_O * cshift ( RF_I, shift = +1, dim = iD ) &
-    !          - AP_O * AM_O * ( cshift ( U_I, shift = +1, dim = iD ) - U_O ) ) &
-    !        / ( AP_O + AM_O )
-    !elsewhere
-    !  F_O = 0.0_KDR
-    !end where
-    
-    iaS = 0
-    iaS ( iD ) = +1
-    
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
-    !$OMP& schedule ( OMP_SCHEDULE ) private ( iaVS )
-    do kV = lV ( 3 ), uV ( 3 ) 
-      do jV = lV ( 2 ), uV ( 2 )
-        do iV = lV ( 1 ), uV ( 1 )
-            
-          iaVS = [ iV, jV, kV ] + iaS
-          
-          if ( AP_O ( iV, jV, kV ) + AM_O ( iV, jV, kV ) > 0.0_KDR ) then
-            F_O ( iV, jV, kV ) &
-              = ( AP_O ( iV, jV, kV ) * RF_O ( iV, jV, kV ) &
-                  +  AM_O ( iV, jV, kV ) &
-                     * RF_I ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ) &
-                  - AP_O ( iV, jV, kV ) * AM_O ( iV, jV, kV ) &
-                    * ( U_I ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ) &
-                        - U_O ( iV, jV, kV ) ) ) &
-                / ( AP_O ( iV, jV, kV ) + AM_O ( iV, jV, kV ) )
-          else
-            F_O ( iV, jV, kV ) = 0.0_KDR
-          end if
-          
-        end do
-      end do
-    end do
-    !$OMP end OMP_TARGET_DIRECTIVE parallel do
-    
-    call DisassociateHost ( F_O )
-    call DisassociateHost ( F_I )
-    call DisassociateHost ( U_O )
-    call DisassociateHost ( U_I )
-    call DisassociateHost ( RF_O )
-    call DisassociateHost ( RF_I )
-    call DisassociateHost ( AM_O )
-    call DisassociateHost ( AM_I )
-    call DisassociateHost ( AP_O )
-    call DisassociateHost ( AP_I )
-    
-  end subroutine ComputeFluxesKernel
-
-
-  subroutine ComputeUpdateKernel &
-               ( dU, F_I, F_O, V, A, dT, D_dU, D_F_I, D_F_O )
-    
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      dU
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      F_I, F_O
-    real ( KDR ), intent ( in ) :: &
-      V, &
-      A, &
-      dT
-    type ( c_ptr ), intent ( in ) :: &
-      D_dU, &
-      D_F_I, D_F_O
-    
-    integer ( KDI ) :: &
-      iV
-      
-    call AssociateHost ( D_dU, dU )
-    call AssociateHost ( D_F_I, F_I )
-    call AssociateHost ( D_F_O, F_O )
-
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-    !$OMP& schedule ( OMP_SCHEDULE )
-    do iV = 1, size ( dU )
-      dU ( iV ) = dU ( iV ) - dT * ( F_O ( iV ) - F_I ( iV ) ) * A / V
-    end do
-    !$OMP end OMP_TARGET_DIRECTIVE parallel do
-    
-    call DisassociateHost ( F_O )
-    call DisassociateHost ( F_I )
-    call DisassociateHost ( dU )
-
-  end subroutine ComputeUpdateKernel
-  
-  
-  subroutine AddUpdateKernel ( O, U, D_O, D_U, D_C, C )
-    
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      O, &
-      U
-    type ( c_ptr ), intent ( in ) :: &
-      D_O, &
-      D_U, &
-      D_C
-    real ( KDR ), dimension ( : ), intent ( out ) :: &
-      C 
-      
-    integer ( KDI ) :: &
-      iV, &
-      nV
-    
-    call AssociateHost ( D_O, O )
-    call AssociateHost ( D_U, U )
-    call AssociateHost ( D_C, C )
-    
-    nV = size ( O )
-    
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-    !$OMP& schedule ( OMP_SCHEDULE )
-    do iV = 1, nV
-      C ( iV ) = O ( iV ) + U ( iV )
-    end do
-    !$OMP end OMP_TARGET_DIRECTIVE parallel do
-    
-    call DisassociateHost ( C )
-    call DisassociateHost ( U )
-    call DisassociateHost ( O )
-
-  end subroutine AddUpdateKernel
-  
-  
-  subroutine CombineUpdatesKernel ( C, O, U, D_C, D_O, D_U )
-    
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      C 
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      O, &
-      U
-    type ( c_ptr ), intent ( in ) :: &
-      D_C, &
-      D_O, &
-      D_U
-      
-    integer ( KDI ) :: &
-      iV, &
-      nV
-    
-    call AssociateHost ( D_C, C )    
-    call AssociateHost ( D_O, O )
-    call AssociateHost ( D_U, U )
-    
-    nV = size ( O )
-    
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-    !$OMP& schedule ( OMP_SCHEDULE )
-    do iV = 1, nV
-      C ( iV ) = 0.5_KDR * ( O ( iV ) + ( C ( iV ) + U ( iV ) ) )
-    end do
-    !$OMP end OMP_TARGET_DIRECTIVE parallel do
-    
-    call DisassociateHost ( U )
-    call DisassociateHost ( O )
-    call DisassociateHost ( C )
-
-  end subroutine CombineUpdatesKernel
-  
 
 end module ConservationLawStep_Form

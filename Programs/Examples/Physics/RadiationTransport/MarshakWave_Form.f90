@@ -10,6 +10,20 @@ module MarshakWave_Form
   private
 
   type, public, extends ( RadiationBoxForm ) :: MarshakWaveForm
+    real ( KDR ) :: &
+      BoxLength, &
+      AdiabaticIndex, &
+      SpecificHeatCapacity, &  !-- per unit mass
+      MassDensity, &
+      Temperature, &
+      TemperatureInner, &
+      SpecificOpacity, &
+      SpecificOpacityFloor, &
+      EnergyMax, &
+      SoundSpeed
+    real ( KDR ), dimension ( 3 ) :: &
+      MinCoordinate, &
+      MaxCoordinate
   contains
     procedure, private, pass :: &
       Initialize_MW
@@ -21,30 +35,15 @@ module MarshakWave_Form
 
     private :: &
       InitializeRadiationBox, &
-      InitializeInteractions, &
-      SetFluid, &
-      SetRadiation
+      SetProblem
 
-    real ( KDR ), private :: &
-      BoxLength, &
-      AdiabaticIndex, &
-      SpecificHeatCapacity, &  !-- per unit mass
-      MassDensity, &
-      Temperature, &
-      TemperatureInner, &
-      SpecificOpacity, &
-      SpecificOpacityFloor, &
-      EnergyMax, &
-      SoundSpeed, &
-      FinishTime
-    real ( KDR ), dimension ( 3 ), private :: &
-      MinCoordinate, &
-      MaxCoordinate
+      private :: &
+        InitializeInteractions, &
+        SetFluid, &
+        SetRadiation
+
     character ( LDF ) :: &
       InteractionsType
-
-!    class ( MarshakWaveForm ), private, pointer :: &
-!      MarshakWave => null ( )
 
 contains
 
@@ -57,105 +56,11 @@ contains
       MomentsType, &
       Name
 
-    real ( KDR ) :: &
-      MeanFreePath, &
-      OpticalDepth, &
-      DynamicalTime, &
-      DiffusionTime
-
     if ( MW % Type == '' ) &
       MW % Type = 'a MarshakWave'
 
-!    MarshakWave => MW
-
-
-    !-- Parameters
-
-    associate &
-      ( L      => BoxLength, &
-        Gamma  => AdiabaticIndex, &
-        C_V    => SpecificHeatCapacity, &
-        Rho_0  => MassDensity, &
-        T_0    => Temperature, &
-        T_I    => TemperatureInner, &
-        Kappa  => SpecificOpacity, &
-        Kappa_Min => SpecificOpacityFloor )
-
-    L          =  25.0_KDR    *  UNIT % CENTIMETER
-    Gamma      =  1.4_KDR
-    C_V        =  1.0_KDR     *  UNIT % ERG / UNIT % KELVIN / UNIT % GRAM
-    Rho_0      =  1.0e-3_KDR  *  UNIT % MASS_DENSITY_CGS
-    T_0        =  3.0e2_KDR   *  UNIT % KELVIN
-    T_I        =  1.0e3_KDR   *  UNIT % KELVIN
-    Kappa      =  1.0e3_KDR   *  UNIT % CENTIMETER ** 2 / UNIT % GRAM
-    Kappa_Min  =  10.0_KDR    *  UNIT % CENTIMETER ** 2 / UNIT % GRAM
-
-    call PROGRAM_HEADER % GetParameter ( L,         'BoxLength' )
-    call PROGRAM_HEADER % GetParameter ( Gamma,     'AdiabaticIndex' )
-    call PROGRAM_HEADER % GetParameter ( C_V,       'SpecificHeatCapacity' )
-    call PROGRAM_HEADER % GetParameter ( Rho_0,     'MassDensity' )
-    call PROGRAM_HEADER % GetParameter ( T_0,       'Temperature' )
-    call PROGRAM_HEADER % GetParameter ( T_I,       'TemperatureInner' )
-    call PROGRAM_HEADER % GetParameter ( Kappa,     'SpecificOpacity' )
-    call PROGRAM_HEADER % GetParameter ( Kappa_Min, 'SpecificOpacityFloor' )
-
-    InteractionsType = 'MARSHAK_WAVE_VAYTET_1'
-    call PROGRAM_HEADER % GetParameter ( InteractionsType, 'InteractionsType' )
-
-    select case ( trim ( InteractionsType ) )
-    case ( 'MARSHAK_WAVE_VAYTET_2', 'MARSHAK_WAVE_VAYTET_3' )
-      EnergyMax  =  0.620_KDR * UNIT % ELECTRON_VOLT
-      call PROGRAM_HEADER % GetParameter ( EnergyMax, 'EnergyMax' )
-    end select !-- InteractionsType
-
-    FinishTime  =  1.36e-7_KDR  *  UNIT % SECOND
-
-
-    !-- Initialization
-
     call InitializeRadiationBox ( MW, MomentsType, Name )
-    call InitializeInteractions ( MW, MomentsType )
-    call SetFluid ( MW )
-    call SetRadiation ( MW )
-
-    associate &
-      ( c_s    => SoundSpeed, &
-        t_Dyn  => DynamicalTime, &
-        Lambda => MeanFreePath, &
-        Tau    => OpticalDepth, &
-        t_Diff => DiffusionTime, &
-        c      => CONSTANT % SPEED_OF_LIGHT )
-
-    t_Dyn   =  L / c_s
-
-    Lambda  =  1.0_KDR / ( Rho_0 * Kappa )
-    Tau     =  L / Lambda
-    t_Diff  =  L * Tau / c
-
-    call Show ( 'MarshakWave parameters' )
-    call Show ( Gamma, 'Gamma' )
-    call Show ( C_V, UNIT % ERG / UNIT % KELVIN / UNIT % GRAM, 'C_V' )
-    call Show ( Rho_0, UNIT % MASS_DENSITY_CGS, 'Rho_0' )
-    call Show ( T_0, UNIT % KELVIN, 'T_0' )
-    call Show ( c_s, UNIT % CENTIMETER / UNIT % SECOND, 'c_s' )
-    call Show ( t_Dyn, UNIT % SECOND, 't_Dyn' )
-    call Show ( T_I, UNIT % KELVIN, 'T_I' )
-    call Show ( Kappa, UNIT % CENTIMETER ** 2 / UNIT % GRAM, 'Kappa' )
-    call Show ( Lambda, UNIT % CENTIMETER, 'Lambda' )
-    call Show ( Tau, UNIT % IDENTITY, 'Tau' )
-    call Show ( t_Diff, UNIT % SECOND, 't_Diff' )
-    call Show ( InteractionsType, 'InteractionsType' )
-
-    select case ( trim ( InteractionsType ) )
-    case ( 'MARSHAK_WAVE_VAYTET_2', 'MARSHAK_WAVE_VAYTET_3' )
-      call Show ( EnergyMax, UNIT % ELECTRON_VOLT, 'EnergyMax' )
-    end select !-- InteractionsType
-
-
-    !-- Cleanup
-
-    end associate !-- Mu, etc.
-    end associate !-- L, etc.
+    call SetProblem ( MW, MomentsType )
 
   end subroutine Initialize_MW
 
@@ -179,59 +84,63 @@ contains
     integer ( KDI ) :: &
       iD
     real ( KDR ) :: &
+      FinishTime, &
+      MaxEnergy, &
+      MinWidthEnergy, &
       EnergyScale
-    type ( MeasuredValueForm ) :: &
-      TimeUnit, &
-      BaryonMassUnit, &
-      NumberDensityUnit, &
-      EnergyDensityUnit, &
-      TemperatureUnit
-    type ( MeasuredValueForm ), dimension ( 3 ) :: &
-      CoordinateUnit_PS, &
-      CoordinateUnit_MS, &
-      Velocity_U_Unit, &
-      MomentumDensity_U_Unit, &
-      MomentumDensity_D_Unit
-    type ( Character_1D_Form ), dimension ( 3 ) :: &
-      BoundaryConditionsFace
+
+
+    !-- FinishTime
+
+    FinishTime  =  1.36e-7_KDR  *  UNIT % SECOND
 
 
     !-- Position space parameters
 
-    associate ( BCF => BoundaryConditionsFace )
+    allocate ( MW % BoundaryConditionsFace ( 3 ) )
+    associate ( BCF => MW % BoundaryConditionsFace )
     do iD = 1, 3
       call BCF ( iD ) % Initialize ( [ 'INFLOW', 'INFLOW' ] )     
     end do
+    end associate !-- BCF
 
-    MinCoordinate  =  0.0_KDR
-    MaxCoordinate  =  BoxLength
+    MW % BoxLength  =  25.0_KDR  *  UNIT % CENTIMETER
+    call PROGRAM_HEADER % GetParameter ( MW % BoxLength, 'BoxLength' )
+
+    MW % MinCoordinate  =  0.0_KDR
+    MW % MaxCoordinate  =  MW % BoxLength
 
 
     !-- Momentum space parameters
 
-    EnergyScale = TemperatureInner
-    call PROGRAM_HEADER % GetParameter ( EnergyScale, 'EnergyScale' )
+    !-- Geometric spacing
+    MinWidthEnergy  =  3.0e1_KDR  *  UNIT % KELVIN
+    MaxEnergy       =  1.0e4_KDR  *  UNIT % KELVIN
+
+    !-- Compactified spacing
+    EnergyScale     =  1.0e3_KDR  *  UNIT % KELVIN
 
 
     !-- Units
 
-    CoordinateUnit_PS  =  UNIT % CENTIMETER
+    MW % Units % Time    =  UNIT % SECOND
+    MW % Units % Length  =  UNIT % CENTIMETER
 
-    CoordinateUnit_MS = UNIT % IDENTITY
-    CoordinateUnit_MS ( 1 ) = UNIT % ELECTRON_VOLT
+    MW % Units % Coordinate_PS  =  UNIT % CENTIMETER
 
-    TimeUnit = UNIT % SECOND
+    MW % Units % Coordinate_MS        =  UNIT % IDENTITY
+    MW % Units % Coordinate_MS ( 1 )  =  UNIT % ELECTRON_VOLT
 
-    BaryonMassUnit     =  UNIT % GRAM
-    NumberDensityUnit  =  UNIT % MOLE  *  UNIT % CENTIMETER ** (-3)
-    EnergyDensityUnit  =  UNIT % ERG   *  UNIT % CENTIMETER ** (-3)
-    TemperatureUnit    =  UNIT % KELVIN
+    MW % Units % BaryonMass     =  UNIT % GRAM
+    MW % Units % NumberDensity  =  UNIT % MOLE  *  UNIT % CENTIMETER ** (-3)
+    MW % Units % EnergyDensity  =  UNIT % ERG   *  UNIT % CENTIMETER ** (-3)
+    MW % Units % Temperature    =  UNIT % KELVIN
 
-    Velocity_U_Unit  =  UNIT % CENTIMETER  /  UNIT % SECOND 
+    MW % Units % Velocity_U  =  UNIT % CENTIMETER  /  UNIT % SECOND 
 
-    MomentumDensity_U_Unit &
+    MW % Units % MomentumDensity_U &
       =  UNIT % GRAM  *  UNIT % CENTIMETER ** (-2)  /  UNIT % SECOND
-    MomentumDensity_D_Unit &
+    MW % Units % MomentumDensity_D &
       =  UNIT % GRAM  *  UNIT % CENTIMETER ** (-2)  /  UNIT % SECOND
 
 
@@ -242,25 +151,107 @@ contains
              RadiationType = [ 'PHOTONS' ], &
              MomentsType = MomentsType, &
              Name = Name, &
-             BoundaryConditionsFaceOption = BCF, &
-             CoordinateUnit_PS_Option = CoordinateUnit_PS, &
-             CoordinateUnit_MS_Option = CoordinateUnit_MS, &
-             Velocity_U_UnitOption = Velocity_U_Unit, &
-             MomentumDensity_U_UnitOption = MomentumDensity_U_Unit, &
-             MomentumDensity_D_UnitOption = MomentumDensity_D_Unit, &
-             MinCoordinateOption = MinCoordinate, &
-             MaxCoordinateOption = MaxCoordinate, &
-             TimeUnitOption = TimeUnit, &
-             BaryonMassUnitOption = BaryonMassUnit, &
-             NumberDensityUnitOption = NumberDensityUnit, &
-             EnergyDensityUnitOption = EnergyDensityUnit, &
-             TemperatureUnitOption = TemperatureUnit, &
+             MinCoordinateOption = MW % MinCoordinate, &
+             MaxCoordinateOption = MW % MaxCoordinate, &
              FinishTimeOption = FinishTime, &
-             EnergyScaleOption = EnergyScale, &
-             BaryonMassReferenceOption = CONSTANT % ATOMIC_MASS_UNIT )
-    end associate !-- BCF
+             MinWidthEnergyOption = MinWidthEnergy, &
+             MaxEnergyOption = MaxEnergy, &
+             EnergyScaleOption = EnergyScale )
+
 
   end subroutine InitializeRadiationBox
+
+
+  subroutine SetProblem ( MW, MomentsType )
+
+    class ( MarshakWaveForm ), intent ( inout ) :: &
+      MW
+    character ( * ), intent ( in )  :: &
+      MomentsType
+
+    real ( KDR ) :: &
+      MeanFreePath, &
+      OpticalDepth, &
+      DynamicalTime, &
+      DiffusionTime
+
+
+    !-- Parameters
+
+    associate &
+      ( Gamma  => MW % AdiabaticIndex, &
+        C_V    => MW % SpecificHeatCapacity, &
+        Rho_0  => MW % MassDensity, &
+        T_0    => MW % Temperature, &
+        T_I    => MW % TemperatureInner, &
+        Kappa  => MW % SpecificOpacity, &
+        Kappa_Min => MW % SpecificOpacityFloor )
+
+    Gamma      =  1.4_KDR
+    C_V        =  1.0_KDR     *  UNIT % ERG / UNIT % KELVIN / UNIT % GRAM
+    Rho_0      =  1.0e-3_KDR  *  UNIT % MASS_DENSITY_CGS
+    T_0        =  3.0e2_KDR   *  UNIT % KELVIN
+    T_I        =  1.0e3_KDR   *  UNIT % KELVIN
+    Kappa      =  1.0e3_KDR   *  UNIT % CENTIMETER ** 2 / UNIT % GRAM
+    Kappa_Min  =  10.0_KDR    *  UNIT % CENTIMETER ** 2 / UNIT % GRAM
+
+    call PROGRAM_HEADER % GetParameter ( Gamma,     'AdiabaticIndex' )
+    call PROGRAM_HEADER % GetParameter ( C_V,       'SpecificHeatCapacity' )
+    call PROGRAM_HEADER % GetParameter ( Rho_0,     'MassDensity' )
+    call PROGRAM_HEADER % GetParameter ( T_0,       'Temperature' )
+    call PROGRAM_HEADER % GetParameter ( T_I,       'TemperatureInner' )
+    call PROGRAM_HEADER % GetParameter ( Kappa,     'SpecificOpacity' )
+    call PROGRAM_HEADER % GetParameter ( Kappa_Min, 'SpecificOpacityFloor' )
+
+
+    !-- Initialization
+
+    call InitializeInteractions ( MW, MomentsType )
+    call SetFluid ( MW )
+    call SetRadiation ( MW )
+
+    associate &
+      ( L      => MW % BoxLength, &
+        c_s    => MW % SoundSpeed, &
+        t_Dyn  => DynamicalTime, &
+        Lambda => MeanFreePath, &
+        Tau    => OpticalDepth, &
+        t_Diff => DiffusionTime, &
+        c      => CONSTANT % SPEED_OF_LIGHT )
+
+    t_Dyn   =  L / c_s
+
+    Lambda  =  1.0_KDR / ( Rho_0 * Kappa )
+    Tau     =  L / Lambda
+    t_Diff  =  L * Tau / c
+
+    call Show ( 'MarshakWave parameters' )
+    call Show ( L, 'L' )
+    call Show ( Gamma, 'Gamma' )
+    call Show ( C_V, UNIT % ERG / UNIT % KELVIN / UNIT % GRAM, 'C_V' )
+    call Show ( Rho_0, UNIT % MASS_DENSITY_CGS, 'Rho_0' )
+    call Show ( T_0, UNIT % KELVIN, 'T_0' )
+    call Show ( c_s, UNIT % CENTIMETER / UNIT % SECOND, 'c_s' )
+    call Show ( t_Dyn, UNIT % SECOND, 't_Dyn' )
+    call Show ( T_I, UNIT % KELVIN, 'T_I' )
+    call Show ( Kappa, UNIT % CENTIMETER ** 2 / UNIT % GRAM, 'Kappa' )
+    call Show ( Lambda, UNIT % CENTIMETER, 'Lambda' )
+    call Show ( Tau, UNIT % IDENTITY, 'Tau' )
+    call Show ( t_Diff, UNIT % SECOND, 't_Diff' )
+    call Show ( InteractionsType, 'InteractionsType' )
+
+    select case ( trim ( InteractionsType ) )
+    case ( 'MARSHAK_WAVE_VAYTET_2', 'MARSHAK_WAVE_VAYTET_3' )
+      call Show ( MW % EnergyMax, UNIT % ELECTRON_VOLT, 'EnergyMax' )
+    end select !-- InteractionsType
+
+
+    !-- Cleanup
+
+    end associate !-- Mu, etc.
+    end associate !-- Gamma, etc.
+
+  end subroutine SetProblem
 
 
   subroutine InitializeInteractions ( MW, MomentsType )
@@ -270,12 +261,14 @@ contains
     character ( * ), intent ( in ) :: &
       MomentsType
 
-    type ( MeasuredValueForm ) :: &
-      LengthUnit, &
-      EnergyDensityUnit
+    InteractionsType = 'MARSHAK_WAVE_VAYTET_1'
+    call PROGRAM_HEADER % GetParameter ( InteractionsType, 'InteractionsType' )
 
-    LengthUnit         =  UNIT % CENTIMETER
-    EnergyDensityUnit  =  UNIT % ERG  *  UNIT % CENTIMETER ** (-3)
+    select case ( trim ( InteractionsType ) )
+    case ( 'MARSHAK_WAVE_VAYTET_2', 'MARSHAK_WAVE_VAYTET_3' )
+      MW % EnergyMax  =  0.620_KDR * UNIT % ELECTRON_VOLT
+      call PROGRAM_HEADER % GetParameter ( MW % EnergyMax, 'EnergyMax' )
+    end select !-- InteractionsType
 
     select type ( I => MW % Integrator )
     class is ( Integrator_C_1D_PS_C_PS_Form )  !-- Grey
@@ -294,19 +287,20 @@ contains
       class is ( InteractionsExamples_ASC_Form )
       call IA % Initialize &
              ( PS, InteractionsType = InteractionsType, &
-               MomentsType = MomentsType, LengthUnitOption = LengthUnit, &
-               EnergyDensityUnitOption = EnergyDensityUnit )
+               MomentsType = MomentsType, Units = MW % Units )
       select case ( trim ( InteractionsType ) )
       case ( 'MARSHAK_WAVE_VAYTET_1' )
         call IA % Set_MWV_Grey &
-               ( FA, SpecificOpacity = SpecificOpacity )
+               ( FA, SpecificOpacity = MW % SpecificOpacity )
       case ( 'MARSHAK_WAVE_VAYTET_2' )
         call IA % Set_MWV_Grey &
-               ( FA, SpecificOpacity = SpecificOpacity, EnergyMax = EnergyMax )
+               ( FA, SpecificOpacity = MW % SpecificOpacity, &
+                 EnergyMax = MW % EnergyMax )
       case ( 'MARSHAK_WAVE_VAYTET_3' )
         call IA % Set_MWV_Grey &
-               ( FA, SpecificOpacity = SpecificOpacity, EnergyMax = EnergyMax, &
-                 TemperatureScale = Temperature )
+               ( FA, SpecificOpacity = MW % SpecificOpacity, &
+                 EnergyMax = MW % EnergyMax, &
+                 TemperatureScale = MW % Temperature )
       end select !-- InteractionsType
       call RMA % SetInteractions ( IA )
       end select !-- IA
@@ -331,23 +325,22 @@ contains
       select type ( IB => MW % Interactions_BSLL_ASC_CSLD )
       class is ( InteractionsExamples_BSLL_ASC_CSLD_Form )
       call IB % Initialize &
-             ( MS, InteractionsType = InteractionsType, &
-               LengthUnitOption = LengthUnit, &
-               EnergyDensityUnitOption = EnergyDensityUnit )
+             ( MS, InteractionsType = InteractionsType, Units = MW % Units )
       select case ( trim ( InteractionsType ) )
       case ( 'MARSHAK_WAVE_VAYTET_1' )
         call IB % Set_MWV_Spectral &
-               ( FA, SpecificOpacity = SpecificOpacity )
+               ( FA, SpecificOpacity = MW % SpecificOpacity )
       case ( 'MARSHAK_WAVE_VAYTET_2' )
         call IB % Set_MWV_Spectral &
-               ( FA, SpecificOpacity = SpecificOpacity, &
-                 SpecificOpacityFloor = SpecificOpacityFloor, &
-                 EnergyMax = EnergyMax )
+               ( FA, SpecificOpacity = MW % SpecificOpacity, &
+                 SpecificOpacityFloor = MW % SpecificOpacityFloor, &
+                 EnergyMax = MW % EnergyMax )
       case ( 'MARSHAK_WAVE_VAYTET_3' )
         call IB % Set_MWV_Spectral &
-               ( FA, SpecificOpacity = SpecificOpacity, &
-                 SpecificOpacityFloor = SpecificOpacityFloor, &
-                 EnergyMax = EnergyMax, TemperatureScale = Temperature )
+               ( FA, SpecificOpacity = MW % SpecificOpacity, &
+                 SpecificOpacityFloor = MW % SpecificOpacityFloor, &
+                 EnergyMax = MW % EnergyMax, &
+                 TemperatureScale = MW % Temperature )
       end select !-- InteractionsType
       call RMB % SetInteractions ( IB )
       end select !-- IB
@@ -378,10 +371,10 @@ contains
       P_0
 
     associate &
-      ( Gamma => AdiabaticIndex, &
-        C_V   => SpecificHeatCapacity, &
-        Rho_0 => MassDensity, &
-        T_0   => Temperature )
+      ( Gamma => MW % AdiabaticIndex, &
+        C_V   => MW % SpecificHeatCapacity, &
+        Rho_0 => MW % MassDensity, &
+        T_0   => MW % Temperature )
 
     select type ( I => MW % Integrator )
     class is ( Integrator_C_1D_C_PS_Template )
@@ -421,10 +414,7 @@ contains
 
     call F % ComputeFromTemperature ( F % Value, G, G % Value )
 
-    SoundSpeed = maxval ( C_S )
-
-    ! !-- Module variable for accessibility in ApplySources_Fluid below
-    ! Fluid => FA % Fluid_P_NR ( )
+    MW % SoundSpeed = maxval ( C_S )
 
     end associate !-- N, etc.
     end select !-- PS
@@ -474,8 +464,8 @@ contains
     !-- Radiation
 
     associate &
-      ( T_0 => Temperature, &
-        T_I => TemperatureInner, &
+      ( T_0 => MW % Temperature, &
+        T_I => MW % TemperatureInner, &
           X => G % Value ( :, G % CENTER_U ( 1 ) ), &
           Y => G % Value ( :, G % CENTER_U ( 2 ) ), &
           Z => G % Value ( :, G % CENTER_U ( 3 ) ) )
@@ -501,8 +491,9 @@ contains
       H_2  =  0.0_KDR
       H_3  =  0.0_KDR
 
-      where ( X < MinCoordinate ( 1 ) .or. Y < MinCoordinate ( 2 ) &
-              .or. Z < MinCoordinate ( 3 ) )
+      where ( X  <  MW % MinCoordinate ( 1 ) &
+              .or. Y  <  MW % MinCoordinate ( 2 ) &
+              .or. Z  <  MW % MinCoordinate ( 3 ) )
         J  =  a  *  T_I ** 4
       end where
 
@@ -566,15 +557,17 @@ contains
               H_1   =>  RS % Value ( :, RS % COMOVING_MOMENTUM_U ( 1 ) ), &
               H_2   =>  RS % Value ( :, RS % COMOVING_MOMENTUM_U ( 2 ) ), &
               H_3   =>  RS % Value ( :, RS % COMOVING_MOMENTUM_U ( 3 ) ) )
-          where ( X < MinCoordinate ( 1 ) .or. Y < MinCoordinate ( 2 ) &
-                 .or. Z < MinCoordinate ( 3 ) )
+          where ( X  <  MW % MinCoordinate ( 1 ) &
+                  .or. Y  <  MW % MinCoordinate ( 2 ) &
+                  .or. Z  <  MW % MinCoordinate ( 3 ) )
             J    =  J_I ( iS )
             H_1  =  0.0_KDR
             H_2  =  0.0_KDR
             H_3  =  0.0_KDR
           end where
-          where ( X > MaxCoordinate ( 1 ) .or. Y > MaxCoordinate ( 2 ) &
-                 .or. Z > MaxCoordinate ( 3 ) )
+          where ( X  >  MW % MaxCoordinate ( 1 ) &
+                 .or. Y  >  MW % MaxCoordinate ( 2 ) &
+                 .or. Z  >  MW % MaxCoordinate ( 3 ) )
             J    =  J_0 ( iS )
             H_1  =  0.0_KDR
             H_2  =  0.0_KDR
