@@ -12,7 +12,7 @@ module Real_1D__Form
   private
 
   type, public :: Real_1D_Form
-    type ( c_ptr ) :: &
+    type ( c_ptr ), private :: &
       D_Value = c_null_ptr
     real ( KDR ), dimension ( : ), allocatable :: &
       Value
@@ -108,7 +108,7 @@ contains
     
     if ( B % AllocatedDevice ) then
       call A % AllocateDevice ( )
-      call Copy ( B % Value, B % D_Value, A % D_Value, A % Value )
+      call Copy ( B % Value, A % Value, UseDeviceOption = B % AllocatedDevice )
     end if
   
   end subroutine Initialize_R_1D_Copy

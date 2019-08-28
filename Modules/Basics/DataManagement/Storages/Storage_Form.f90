@@ -15,7 +15,7 @@ module Storage_Form
   private
   
   type, public :: StorageForm
-    type ( c_ptr ), dimension ( : ), allocatable :: &
+    type ( c_ptr ), dimension ( : ), allocatable, private :: &
       D_Selected     !-- Device pointer for Selected Value
     integer ( KDI ) :: &
       nValues     = 0, &

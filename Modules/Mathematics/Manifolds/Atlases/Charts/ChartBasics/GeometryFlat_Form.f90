@@ -65,14 +65,10 @@ module GeometryFlat_Form
       SetFiniteVolumeRectangular, &
       SetFiniteVolumeCylindrical, &
       SetFiniteVolumeSpherical, &
-      SetMetricRectangularHost, &
-      SetMetricRectangularDevice, &
-      SetMetricCylindricalHost, &
-      SetMetricCylindricalDevice, &
-      SetMetricSphericalHost, &
-      SetMetricSphericalDevice, &
-      ComputeEdgesHost, &
-      ComputeEdgesDevice
+      SetMetricRectangular, &
+      SetMetricCylindrical, &
+      SetMetricSpherical, &
+      ComputeEdges
 
 contains
 
@@ -254,115 +250,59 @@ contains
 
     integer ( KDI ) :: &
       iD
+      
+    if ( G % AllocatedDevice .neqv. G_I % AllocatedDevice ) then
+      call Show ( 'Geometry not allocated consistently on Host or Device', &
+                  CONSOLE % ERROR )
+      call Show ( 'GeometryFlat_Form', 'module', &
+                  CONSOLE % ERROR )
+      call Show ( 'ComputeReconstruction_CSL', 'subroutine', &
+                  CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end if
 
     do iD = 1, 3
       if ( iD == iDimension ) &
         cycle
-      if ( G % AllocatedDevice .and. G_I % AllocatedDevice ) then
-        call Copy ( G   % Value ( :, G % CENTER_U ( iD ) ), &
-                    G   % D_Selected ( G % CENTER_U ( iD ) ), &
-                    G_I % D_Selected ( G % CENTER_U ( iD ) ), &
-                    G_I % Value ( :, G % CENTER_U ( iD ) ) )
-      else if ( .not. ( G % AllocatedDevice .and. G_I % AllocatedDevice ) ) &
-      then
-        call Copy ( G   % Value ( :, G % CENTER_U ( iD ) ), &
-                    G_I % Value ( :, G % CENTER_U ( iD ) ) )
-      else
-        call Show ( 'Geometry not allocated consistently on Host or Device', &
-                    CONSOLE % ERROR )
-        call Show ( 'GeometryFlat_Form', 'module', &
-                    CONSOLE % ERROR )
-        call Show ( 'ComputeReconstruction_CSL', 'subroutine', &
-                    CONSOLE % ERROR )
-        call PROGRAM_HEADER % Abort ( )
-      end if
+      call Copy ( G   % Value ( :, G % CENTER_U ( iD ) ), &
+                  G_I % Value ( :, G % CENTER_U ( iD ) ), &
+                  UseDeviceOption = G % AllocatedDevice )
     end do
-
-    if ( G % AllocatedDevice ) then
-      call ComputeEdgesDevice &
-             ( G   % Value ( :, G % CENTER_U ( iDimension ) ), &
-               G   % Value ( :, G % WIDTH_LEFT_U ( iDimension ) ), &
-               G   % D_Selected ( G % CENTER_U ( iDimension ) ), &
-               G   % D_Selected ( G % WIDTH_LEFT_U ( iDimension ) ), &
-               G_I % D_Selected ( G % CENTER_U ( iDimension ) ), &
-               G_I % Value ( :, G % CENTER_U ( iDimension ) ) )
-    else
-      call ComputeEdgesHost &
-             ( G   % Value ( :, G % CENTER_U ( iDimension ) ), &
-               G   % Value ( :, G % WIDTH_LEFT_U ( iDimension ) ), &
-               G_I % Value ( :, G % CENTER_U ( iDimension ) ) )
-    end if
+    
+    call ComputeEdges &
+           ( G   % Value ( :, G % CENTER_U ( iDimension ) ), &
+             G   % Value ( :, G % WIDTH_LEFT_U ( iDimension ) ), &
+             G_I % Value ( :, G % CENTER_U ( iDimension ) ), &
+             UseDeviceOption = G % AllocatedDevice )
 
     select case ( trim ( G % CoordinateSystem ) )
     case ( 'RECTANGULAR' )
-      if ( G % AllocatedDevice ) then
-        call SetMetricRectangularDevice &
-               ( G_I % Value ( :, G % METRIC_DD_22 ), &
-                 G_I % Value ( :, G % METRIC_DD_33 ), &
-                 G_I % Value ( :, G % METRIC_UU_22 ), &
-                 G_I % Value ( :, G % METRIC_UU_33 ), &
-                 nDimensions, G % nValues, 0, &
-                 G_I % D_Selected ( G % METRIC_DD_22 ), &
-                 G_I % D_Selected ( G % METRIC_DD_33 ), &
-                 G_I % D_Selected ( G % METRIC_UU_22 ), &
-                 G_I % D_Selected ( G % METRIC_UU_33 ) )
-      else
-        call SetMetricRectangularHost &
-               ( G_I % Value ( :, G % METRIC_DD_22 ), &
-                 G_I % Value ( :, G % METRIC_DD_33 ), &
-                 G_I % Value ( :, G % METRIC_UU_22 ), &
-                 G_I % Value ( :, G % METRIC_UU_33 ), &
-                 nDimensions, nValues = G % nValues, oValue = 0 )
-      end if
+      call SetMetricRectangular &
+             ( G_I % Value ( :, G % METRIC_DD_22 ), &
+               G_I % Value ( :, G % METRIC_DD_33 ), &
+               G_I % Value ( :, G % METRIC_UU_22 ), &
+               G_I % Value ( :, G % METRIC_UU_33 ), &
+               nDimensions, nValues = G % nValues, oValue = 0, &
+               UseDeviceOption = G % AllocatedDevice )
     case ( 'CYLINDRICAL' )
-      if ( G % AllocatedDevice ) then
-        call SetMetricCylindricalDevice &
-               ( G_I % Value ( :, G % METRIC_DD_22 ), &
-                 G_I % Value ( :, G % METRIC_DD_33 ), &
-                 G_I % Value ( :, G % METRIC_UU_22 ), &
-                 G_I % Value ( :, G % METRIC_UU_33 ), &
-                 G_I % Value ( :, G % CENTER_U ( 1 ) ), &
-                 nDimensions, G % nValues, 0, &
-                 G_I % D_Selected ( G % METRIC_DD_22 ), &
-                 G_I % D_Selected ( G % METRIC_DD_33 ), &
-                 G_I % D_Selected ( G % METRIC_UU_22 ), &
-                 G_I % D_Selected ( G % METRIC_UU_33 ), &
-                 G_I % D_Selected ( G % CENTER_U ( 1 ) ) )
-      else 
-        call SetMetricCylindricalHost &
-               ( G_I % Value ( :, G % METRIC_DD_22 ), &
-                 G_I % Value ( :, G % METRIC_DD_33 ), &
-                 G_I % Value ( :, G % METRIC_UU_22 ), &
-                 G_I % Value ( :, G % METRIC_UU_33 ), &
-                 G_I % Value ( :, G % CENTER_U ( 1 ) ), &
-                 nDimensions, nValues = G % nValues, oValue = 0 )
-      end if
+      call SetMetricCylindrical &
+             ( G_I % Value ( :, G % METRIC_DD_22 ), &
+               G_I % Value ( :, G % METRIC_DD_33 ), &
+               G_I % Value ( :, G % METRIC_UU_22 ), &
+               G_I % Value ( :, G % METRIC_UU_33 ), &
+               G_I % Value ( :, G % CENTER_U ( 1 ) ), &
+               nDimensions, nValues = G % nValues, oValue = 0, &
+               UseDeviceOption = G % AllocatedDevice )
     case ( 'SPHERICAL' )
-      if ( G % AllocatedDevice ) then
-        call SetMetricSphericalDevice &
-               ( G_I % Value ( :, G % METRIC_DD_22 ), &
-                 G_I % Value ( :, G % METRIC_DD_33 ), &
-                 G_I % Value ( :, G % METRIC_UU_22 ), &
-                 G_I % Value ( :, G % METRIC_UU_33 ), &
-                 G_I % Value ( :, G % CENTER_U ( 1 ) ), &
-                 G_I % Value ( :, G % CENTER_U ( 2 ) ), &
-                 nDimensions, G % nValues, 0, &
-                 G_I % D_Selected ( G % METRIC_DD_22 ), &
-                 G_I % D_Selected ( G % METRIC_DD_33 ), &
-                 G_I % D_Selected ( G % METRIC_UU_22 ), &
-                 G_I % D_Selected ( G % METRIC_UU_33 ), &
-                 G_I % D_Selected ( G % CENTER_U ( 1 ) ), &
-                 G_I % D_Selected ( G % CENTER_U ( 2 ) ) )
-      else
-        call SetMetricSphericalHost &
-               ( G_I % Value ( :, G % METRIC_DD_22 ), &
-                 G_I % Value ( :, G % METRIC_DD_33 ), &
-                 G_I % Value ( :, G % METRIC_UU_22 ), &
-                 G_I % Value ( :, G % METRIC_UU_33 ), &
-                 G_I % Value ( :, G % CENTER_U ( 1 ) ), &
-                 G_I % Value ( :, G % CENTER_U ( 2 ) ), &
-                 nDimensions, nValues = G % nValues, oValue = 0 )
-      end if
+      call SetMetricSpherical &
+             ( G_I % Value ( :, G % METRIC_DD_22 ), &
+               G_I % Value ( :, G % METRIC_DD_33 ), &
+               G_I % Value ( :, G % METRIC_UU_22 ), &
+               G_I % Value ( :, G % METRIC_UU_33 ), &
+               G_I % Value ( :, G % CENTER_U ( 1 ) ), &
+               G_I % Value ( :, G % CENTER_U ( 2 ) ), &
+               nDimensions, nValues = G % nValues, oValue = 0, &
+               UseDeviceOption = G % AllocatedDevice )
     end select
 
   end subroutine ComputeReconstruction_CSL
@@ -774,9 +714,9 @@ contains
   end subroutine SetFiniteVolumeSpherical
 
 
-  subroutine SetMetricRectangularHost &
+  subroutine SetMetricRectangular &
                ( M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
-                 nDimensions, nValues, oValue )
+                 nDimensions, nValues, oValue, UseDeviceOption )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       M_DD_22, M_DD_33, &
@@ -785,69 +725,49 @@ contains
       nDimensions, &
       nValues, &
       oValue
+    logical ( KDL ), intent ( in ), optional :: &
+      UseDeviceOption
 
     integer ( KDI ) :: &
       iV  !-- iValue
+    logical ( KDL ) :: &
+      UseDevice
 
-    !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV ) 
-    do iV = oValue + 1, oValue + nValues
-      M_DD_22 ( iV )  =  1.0_KDR
-      M_DD_33 ( iV )  =  1.0_KDR
-      M_UU_22 ( iV )  =  1.0_KDR
-      M_UU_33 ( iV )  =  1.0_KDR
-    end do
-    !$OMP end parallel do
-
-  end subroutine SetMetricRectangularHost
-
-
-  subroutine SetMetricRectangularDevice &
-               ( M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
-                 nDimensions, nValues, oValue, &
-                 D_M_DD_22, D_M_DD_33, D_M_UU_22, D_M_UU_33 )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      M_DD_22, M_DD_33, &
-      M_UU_22, M_UU_33
-    integer ( KDI ), intent ( in ) :: &
-      nDimensions, &
-      nValues, &
-      oValue
-    type ( c_ptr ), intent ( in ) :: &
-      D_M_DD_22, &
-      D_M_DD_33, &
-      D_M_UU_22, &
-      D_M_UU_33
-
-    integer ( KDI ) :: &
-      iV  !-- iValue
-      
-    call AssociateHost ( D_M_DD_22, M_DD_22 )
-    call AssociateHost ( D_M_DD_33, M_DD_33 )
-    call AssociateHost ( D_M_UU_22, M_UU_22 )
-    call AssociateHost ( D_M_UU_33, M_UU_33 )
-
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-    !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
-    do iV = oValue + 1, oValue + nValues
-      M_DD_22 ( iV )  =  1.0_KDR
-      M_DD_33 ( iV )  =  1.0_KDR
-      M_UU_22 ( iV )  =  1.0_KDR
-      M_UU_33 ( iV )  =  1.0_KDR
-    end do
-    !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
     
-    call DisassociateHost ( M_UU_33 )
-    call DisassociateHost ( M_UU_22 )
-    call DisassociateHost ( M_DD_33 )
-    call DisassociateHost ( M_DD_22 )
+    if ( UseDevice ) then
 
-  end subroutine SetMetricRectangularDevice
-  
-  
-  subroutine SetMetricCylindricalHost &
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+      do iV = oValue + 1, oValue + nValues
+        M_DD_22 ( iV )  =  1.0_KDR
+        M_DD_33 ( iV )  =  1.0_KDR
+        M_UU_22 ( iV )  =  1.0_KDR
+        M_UU_33 ( iV )  =  1.0_KDR
+      end do
+      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+
+    else
+
+      !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV ) 
+      do iV = oValue + 1, oValue + nValues
+        M_DD_22 ( iV )  =  1.0_KDR
+        M_DD_33 ( iV )  =  1.0_KDR
+        M_UU_22 ( iV )  =  1.0_KDR
+        M_UU_33 ( iV )  =  1.0_KDR
+      end do
+      !$OMP end parallel do
+
+    end if
+
+  end subroutine SetMetricRectangular
+
+
+  subroutine SetMetricCylindrical &
                ( M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
-                 RP, nDimensions, nValues, oValue )
+                 RP, nDimensions, nValues, oValue, UseDeviceOption )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       M_DD_22, M_DD_33, &
@@ -858,82 +778,57 @@ contains
       nDimensions, &
       nValues, &
       oValue
+    logical ( KDL ), intent ( in ), optional :: &
+      UseDeviceOption
 
     integer ( KDI ) :: &
       iV  !-- iValue
+    logical ( KDL ) :: &
+      UseDevice
 
-    !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV )
-    do iV = oValue + 1, oValue + nValues
-      M_DD_22 ( iV )  =  1.0_KDR
-      M_DD_33 ( iV )  =  RP ( iV ) ** 2 
-      M_UU_22 ( iV )  =  1.0_KDR
-      if ( RP ( iV )  >  0.0_KDR ) then
-        M_UU_33 ( iV )  =  1.0_KDR  /  RP ( iV ) ** 2
-      else
-        M_UU_33 ( iV )  =  0.0_KDR
-      end if
-    end do
-    !$OMP end parallel do
-
-  end subroutine SetMetricCylindricalHost
-
-
-  subroutine SetMetricCylindricalDevice &
-               ( M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
-                 RP, nDimensions, nValues, oValue, &
-                 D_M_DD_22, D_M_DD_33, D_M_UU_22, D_M_UU_33, D_RP )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      M_DD_22, M_DD_33, &
-      M_UU_22, M_UU_33
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      RP
-    integer ( KDI ), intent ( in ) :: &
-      nDimensions, &
-      nValues, &
-      oValue
-    type ( c_ptr ), intent ( in ) :: &
-      D_M_DD_22, &
-      D_M_DD_33, &
-      D_M_UU_22, &
-      D_M_UU_33, &
-      D_RP
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
     
-    integer ( KDI ) :: &
-      iV  !-- iValue
- 
-    call AssociateHost ( D_M_DD_22, M_DD_22 )
-    call AssociateHost ( D_M_DD_33, M_DD_33 )
-    call AssociateHost ( D_M_UU_22, M_UU_22 )
-    call AssociateHost ( D_M_UU_33, M_UU_33 )
-    call AssociateHost ( D_RP, RP )
+    if ( UseDevice ) then
 
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-    !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
-    do iV = oValue + 1, oValue + nValues
-      M_DD_22 ( iV )  =  1.0_KDR
-      M_DD_33 ( iV )  =  RP ( iV ) ** 2 
-      M_UU_22 ( iV )  =  1.0_KDR
-      if ( RP ( iV )  >  0.0_KDR ) then
-        M_UU_33 ( iV )  =  1.0_KDR  /  RP ( iV ) ** 2
-      else
-        M_UU_33 ( iV )  =  0.0_KDR
-      end if
-    end do
-    !$OMP  end OMP_TARGET_DIRECTIVE parallel do
-    
-    call DisassociateHost ( RP )
-    call DisassociateHost ( M_UU_33 )
-    call DisassociateHost ( M_UU_22 )
-    call DisassociateHost ( M_DD_33 )
-    call DisassociateHost ( M_DD_22 )
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+      do iV = oValue + 1, oValue + nValues
+        M_DD_22 ( iV )  =  1.0_KDR
+        M_DD_33 ( iV )  =  RP ( iV ) ** 2 
+        M_UU_22 ( iV )  =  1.0_KDR
+        if ( RP ( iV )  >  0.0_KDR ) then
+          M_UU_33 ( iV )  =  1.0_KDR  /  RP ( iV ) ** 2
+        else
+          M_UU_33 ( iV )  =  0.0_KDR
+        end if
+      end do
+      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
 
-  end subroutine SetMetricCylindricalDevice
+    else
 
-  
-  subroutine SetMetricSphericalHost &
+      !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV )
+      do iV = oValue + 1, oValue + nValues
+        M_DD_22 ( iV )  =  1.0_KDR
+        M_DD_33 ( iV )  =  RP ( iV ) ** 2 
+        M_UU_22 ( iV )  =  1.0_KDR
+        if ( RP ( iV )  >  0.0_KDR ) then
+          M_UU_33 ( iV )  =  1.0_KDR  /  RP ( iV ) ** 2
+        else
+          M_UU_33 ( iV )  =  0.0_KDR
+        end if
+      end do
+      !$OMP end parallel do
+
+    end if
+
+  end subroutine SetMetricCylindrical
+
+
+  subroutine SetMetricSpherical &
                ( M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
-                 R, Th, nDimensions, nValues, oValue )
+                 R, Th, nDimensions, nValues, oValue, UseDeviceOption )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       M_DD_22, M_DD_33, &
@@ -944,166 +839,118 @@ contains
       nDimensions, &
       nValues, &
       oValue
+    logical ( KDL ), intent ( in ), optional :: &
+      UseDeviceOption
 
     integer ( KDI ) :: &
       iV  !-- iValue
     real ( KDR ) :: &
       Sin_Th
+    logical ( KDL ) :: &
+      UseDevice
 
-    !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV, Sin_Th )
-    do iV = oValue + 1, oValue + nValues
-
-      select case ( nDimensions )
-      case ( 1 )
-        Sin_Th  =  1.0_KDR
-      case ( 2 )
-        Sin_Th  =  sin ( Th ( iV ) )
-      case ( 3 )
-        Sin_Th  =  sin ( Th ( iV ) )
-      end select
-
-      M_DD_22 ( iV )  =  R ( iV ) ** 2
-      M_DD_33 ( iV )  =  ( R ( iV )  *  Sin_Th ) ** 2
-      if ( R ( iV )  *  Sin_Th  >  0.0_KDR ) then
-        M_UU_22 ( iV )  =  R ( iV ) ** ( -2 )
-        M_UU_33 ( iV )  =  ( R ( iV )  *  Sin_Th ) ** ( -2 )
-      else
-        M_UU_22 ( iV )  =  0.0_KDR
-        M_UU_33 ( iV )  =  0.0_KDR
-      end if
-
-    end do
-    !$OMP end parallel do
-
-  end subroutine SetMetricSphericalHost
-  
-  
-  subroutine SetMetricSphericalDevice &
-               ( M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
-                 R, Th, nDimensions, nValues, oValue, &
-                 D_M_DD_22, D_M_DD_33, D_M_UU_22, D_M_UU_33, D_R, D_Th )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      M_DD_22, M_DD_33, &
-      M_UU_22, M_UU_33
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      R, Th
-    integer ( KDI ), intent ( in ) :: &
-      nDimensions, &
-      nValues, &
-      oValue
-    type ( c_ptr ), intent ( in ) :: &
-      D_M_DD_22, &
-      D_M_DD_33, &
-      D_M_UU_22, &
-      D_M_UU_33, &
-      D_R, D_Th
-
-    integer ( KDI ) :: &
-      iV  !-- iValue
-    real ( KDR ) :: &
-      Sin_Th
-      
-    call AssociateHost ( D_M_DD_22, M_DD_22 )
-    call AssociateHost ( D_M_DD_33, M_DD_33 )
-    call AssociateHost ( D_M_UU_22, M_UU_22 )
-    call AssociateHost ( D_M_UU_33, M_UU_33 )
-    call AssociateHost ( D_R, R )
-    call AssociateHost ( D_Th, Th )
-
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-    !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, Sin_Th )
-    do iV = oValue + 1, oValue + nValues
-
-      select case ( nDimensions )
-      case ( 1 )
-        Sin_Th  =  1.0_KDR
-      case ( 2 )
-        Sin_Th  =  sin ( Th ( iV ) )
-      case ( 3 )
-        Sin_Th  =  sin ( Th ( iV ) )
-      end select
-
-      M_DD_22 ( iV )  =  R ( iV ) ** 2
-      M_DD_33 ( iV )  =  ( R ( iV )  *  Sin_Th ) ** 2
-      if ( R ( iV )  *  Sin_Th  >  0.0_KDR ) then
-        M_UU_22 ( iV )  =  R ( iV ) ** ( -2 )
-        M_UU_33 ( iV )  =  ( R ( iV )  *  Sin_Th ) ** ( -2 )
-      else
-        M_UU_22 ( iV )  =  0.0_KDR
-        M_UU_33 ( iV )  =  0.0_KDR
-      end if
-
-    end do
-    !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
     
-    call DisassociateHost ( Th )
-    call DisassociateHost ( R )
-    call DisassociateHost ( M_UU_33 )
-    call DisassociateHost ( M_UU_22 )
-    call DisassociateHost ( M_DD_33 )
-    call DisassociateHost ( M_DD_22 )
+    if ( UseDevice ) then      
+    
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, Sin_Th )
+      do iV = oValue + 1, oValue + nValues
 
-  end subroutine SetMetricSphericalDevice
+        select case ( nDimensions )
+        case ( 1 )
+          Sin_Th  =  1.0_KDR
+        case ( 2 )
+          Sin_Th  =  sin ( Th ( iV ) )
+        case ( 3 )
+          Sin_Th  =  sin ( Th ( iV ) )
+        end select
 
+        M_DD_22 ( iV )  =  R ( iV ) ** 2
+        M_DD_33 ( iV )  =  ( R ( iV )  *  Sin_Th ) ** 2
+        if ( R ( iV )  *  Sin_Th  >  0.0_KDR ) then
+          M_UU_22 ( iV )  =  R ( iV ) ** ( -2 )
+          M_UU_33 ( iV )  =  ( R ( iV )  *  Sin_Th ) ** ( -2 )
+        else
+          M_UU_22 ( iV )  =  0.0_KDR
+          M_UU_33 ( iV )  =  0.0_KDR
+        end if
 
-  subroutine ComputeEdgesHost ( X, dX_L, X_I )
+      end do
+      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+    
+    else
+    
+      !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV, Sin_Th )
+      do iV = oValue + 1, oValue + nValues
+
+        select case ( nDimensions )
+        case ( 1 )
+          Sin_Th  =  1.0_KDR
+        case ( 2 )
+          Sin_Th  =  sin ( Th ( iV ) )
+        case ( 3 )
+          Sin_Th  =  sin ( Th ( iV ) )
+        end select
+
+        M_DD_22 ( iV )  =  R ( iV ) ** 2
+        M_DD_33 ( iV )  =  ( R ( iV )  *  Sin_Th ) ** 2
+        if ( R ( iV )  *  Sin_Th  >  0.0_KDR ) then
+          M_UU_22 ( iV )  =  R ( iV ) ** ( -2 )
+          M_UU_33 ( iV )  =  ( R ( iV )  *  Sin_Th ) ** ( -2 )
+        else
+          M_UU_22 ( iV )  =  0.0_KDR
+          M_UU_33 ( iV )  =  0.0_KDR
+        end if
+
+      end do
+      !$OMP end parallel do
+      
+    end if
+
+  end subroutine SetMetricSpherical
+  
+
+  subroutine ComputeEdges ( X, dX_L, X_I, UseDeviceOption )
 
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       X, &
       dX_L
     real ( KDR ), dimension ( : ), intent ( out ) :: &
       X_I
+    logical ( KDL ), intent ( in ), optional :: &
+      UseDeviceOption
 
     integer ( KDI ) :: &
       iV, &
       nV
+    logical ( KDL ) :: &
+      UseDevice
 
-    nV = size ( X )
-
-    !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV ) 
-    do iV = 1, nV
-      X_I ( iV )  =  X ( iV )  -  dX_L ( iV )
-    end do
-    !$OMP end parallel do
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
     
-  end subroutine ComputeEdgesHost
+    nV = size ( X )
+    
+    if ( UseDevice ) then
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do private ( iV ) &
+      !$OMP& schedule ( OMP_SCHEDULE )
+      do iV = 1, nV
+        X_I ( iV )  =  X ( iV )  -  dX_L ( iV )
+      end do
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    else      
+      !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV ) 
+      do iV = 1, nV
+        X_I ( iV )  =  X ( iV )  -  dX_L ( iV )
+      end do
+      !$OMP end parallel do
+    end if
+    
+  end subroutine ComputeEdges
 
   
-  subroutine ComputeEdgesDevice ( X, dX_L, D_X, D_dX_L, D_X_I, X_I )
-
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      X, &
-      dX_L
-    type ( c_ptr ), intent ( in ) :: &
-      D_X, &
-      D_dX_L, &
-      D_X_I
-    real ( KDR ), dimension ( : ), intent ( out ) :: &
-      X_I
-
-    integer ( KDI ) :: &
-      iV, &
-      nV
-      
-    call AssociateHost ( D_X, X )
-    call AssociateHost ( D_dX_L, dX_L )
-    call AssociateHost ( D_X_I, X_I )
-
-    nV = size ( X )
-
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do private ( iV ) &
-    !$OMP& schedule ( OMP_SCHEDULE )
-    do iV = 1, nV
-      X_I ( iV )  =  X ( iV )  -  dX_L ( iV )
-    end do
-    !$OMP end OMP_TARGET_DIRECTIVE parallel do
-    
-    call DisassociateHost ( X_I )
-    call DisassociateHost ( dX_L )
-    call DisassociateHost ( X )
-    
-  end subroutine ComputeEdgesDevice
-
-
 end module GeometryFlat_Form

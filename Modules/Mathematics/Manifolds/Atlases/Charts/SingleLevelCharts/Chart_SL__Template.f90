@@ -85,10 +85,8 @@ module Chart_SL__Template
 
     private :: &
       SetBoundaryLimits, &
-      CopyBoundaryKernelHost, &
-      CopyBoundaryKernelDevice, &
-      ReverseBoundaryKernelHost, &
-      ReverseBoundaryKernelDevice
+      CopyBoundaryKernel, &
+      ReverseBoundaryKernel
 
 contains
 
@@ -359,12 +357,9 @@ contains
 
     call C % SetVariablePointer ( F % Value ( :, iField ), V )
 
-    if ( F % AllocatedDevice ) then
-      call CopyBoundaryKernelDevice &
-             ( V, nB, dBE, dBI, oBE, oBI, F % D_Selected ( iField ) )
-    else
-      call CopyBoundaryKernelHost ( V, nB, dBE, dBI, oBE, oBI )
-    end if
+    call CopyBoundaryKernel &
+           ( V, nB, dBE, dBI, oBE, oBI, &
+             UseDeviceOption = F % AllocatedDevice )
 
     nullify ( V )
 
@@ -399,12 +394,8 @@ contains
 
     call C % SetVariablePointer ( F % Value ( :, iField ), V )
     
-    if ( F % AllocatedDevice ) then
-      call ReverseBoundaryKernelDevice &
-             ( V, nB, dBE, oBE, F % D_Selected ( iField ) )
-    else
-      call ReverseBoundaryKernelHost ( V, nB, dBE, oBE )
-    end if
+    call ReverseBoundaryKernel &
+           ( V, nB, dBE, oBE, UseDeviceOption = F % AllocatedDevice )
 
     nullify ( V )
 
@@ -478,7 +469,7 @@ contains
   end subroutine SetBoundaryLimits
 
 
-  subroutine CopyBoundaryKernelHost ( V, nB, dBE, dBI, oBE, oBI )
+  subroutine CopyBoundaryKernel ( V, nB, dBE, dBI, oBE, oBI, UseDeviceOption )
 
     real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
       V
@@ -488,69 +479,60 @@ contains
       dBI, &
       oBE, &
       oBI
+    logical ( KDL ), intent ( in ), optional :: &
+      UseDeviceOption
 
     integer ( KDI ) :: &
       iV, jV, kV
+    logical ( KDL ) :: &
+      UseDevice
+      
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
 
-    !$OMP  parallel do collapse ( 3 ) &
-    !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, jV, kV ) 
-    do kV = 1, nB ( 3 )
-      do jV = 1, nB ( 2 )
-        do iV = 1, nB ( 1 )
-          V ( oBE ( 1 )  +  dBE ( 1 ) * iV, &
-              oBE ( 2 )  +  dBE ( 2 ) * jV, &
-              oBE ( 3 )  +  dBE ( 3 ) * kV ) &
-            = V ( oBI ( 1 )  +  dBI ( 1 ) * iV, &
-                  oBI ( 2 )  +  dBI ( 2 ) * jV, &
-                  oBI ( 3 )  +  dBI ( 3 ) * kV )
-        end do 
+    if ( UseDevice ) then
+    
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
+      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, jV, kV ) 
+      do kV = 1, nB ( 3 )
+        do jV = 1, nB ( 2 )
+          do iV = 1, nB ( 1 )
+            V ( oBE ( 1 )  +  dBE ( 1 ) * iV, &
+                oBE ( 2 )  +  dBE ( 2 ) * jV, &
+                oBE ( 3 )  +  dBE ( 3 ) * kV ) &
+              = V ( oBI ( 1 )  +  dBI ( 1 ) * iV, &
+                    oBI ( 2 )  +  dBI ( 2 ) * jV, &
+                    oBI ( 3 )  +  dBI ( 3 ) * kV )
+          end do 
+        end do
       end do
-    end do
-    !$OMP end parallel do
-
-  end subroutine CopyBoundaryKernelHost
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+      
+    else
+      
+      !$OMP  parallel do collapse ( 3 ) &
+      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, jV, kV ) 
+      do kV = 1, nB ( 3 )
+        do jV = 1, nB ( 2 )
+          do iV = 1, nB ( 1 )
+            V ( oBE ( 1 )  +  dBE ( 1 ) * iV, &
+                oBE ( 2 )  +  dBE ( 2 ) * jV, &
+                oBE ( 3 )  +  dBE ( 3 ) * kV ) &
+              = V ( oBI ( 1 )  +  dBI ( 1 ) * iV, &
+                    oBI ( 2 )  +  dBI ( 2 ) * jV, &
+                    oBI ( 3 )  +  dBI ( 3 ) * kV )
+          end do 
+        end do
+      end do
+      !$OMP end parallel do
+    
+    end if
+      
+  end subroutine CopyBoundaryKernel
 
   
-  subroutine CopyBoundaryKernelDevice ( V, nB, dBE, dBI, oBE, oBI, D_V )
-
-    real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
-      V
-    integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
-      nB,  & 
-      dBE, &
-      dBI, &
-      oBE, &
-      oBI
-    type ( c_ptr ), intent ( in ) :: &
-      D_V
-
-    integer ( KDI ) :: &
-      iV, jV, kV
-      
-    call AssociateHost ( D_V, V )
-
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
-    !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, jV, kV ) 
-    do kV = 1, nB ( 3 )
-      do jV = 1, nB ( 2 )
-        do iV = 1, nB ( 1 )
-          V ( oBE ( 1 )  +  dBE ( 1 ) * iV, &
-              oBE ( 2 )  +  dBE ( 2 ) * jV, &
-              oBE ( 3 )  +  dBE ( 3 ) * kV ) &
-            = V ( oBI ( 1 )  +  dBI ( 1 ) * iV, &
-                  oBI ( 2 )  +  dBI ( 2 ) * jV, &
-                  oBI ( 3 )  +  dBI ( 3 ) * kV )
-        end do 
-      end do
-    end do
-    !$OMP end OMP_TARGET_DIRECTIVE parallel do
-    
-    call DisassociateHost ( V ) 
-
-  end subroutine CopyBoundaryKernelDevice
-
-
-  subroutine ReverseBoundaryKernelHost ( V, nB, dBE, oBE )
+  subroutine ReverseBoundaryKernel ( V, nB, dBE, oBE, UseDeviceOption )
 
     real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
       V
@@ -558,64 +540,57 @@ contains
       nB,  & 
       dBE, &
       oBE
+    logical ( KDL ), intent ( in ), optional :: &
+      UseDeviceOption
 
     integer ( KDI ) :: &
       iV, jV, kV
+    logical ( KDL ) :: &
+      UseDevice
+      
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
 
-    !$OMP  parallel do collapse ( 3 ) &
-    !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, jV, kV ) 
-    do kV = 1, nB ( 3 )
-      do jV = 1, nB ( 2 )
-        do iV = 1, nB ( 1 )
-          V ( oBE ( 1 )  +  dBE ( 1 ) * iV, &
-              oBE ( 2 )  +  dBE ( 2 ) * jV, &
-              oBE ( 3 )  +  dBE ( 3 ) * kV ) &
-            = - V ( oBE ( 1 )  +  dBE ( 1 ) * iV, &
-                    oBE ( 2 )  +  dBE ( 2 ) * jV, &
-                    oBE ( 3 )  +  dBE ( 3 ) * kV )
-        end do 
+    if ( UseDevice ) then
+    
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
+      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, jV, kV ) 
+      do kV = 1, nB ( 3 )
+        do jV = 1, nB ( 2 )
+          do iV = 1, nB ( 1 )
+            V ( oBE ( 1 )  +  dBE ( 1 ) * iV, &
+                oBE ( 2 )  +  dBE ( 2 ) * jV, &
+                oBE ( 3 )  +  dBE ( 3 ) * kV ) &
+              = - V ( oBE ( 1 )  +  dBE ( 1 ) * iV, &
+                      oBE ( 2 )  +  dBE ( 2 ) * jV, &
+                      oBE ( 3 )  +  dBE ( 3 ) * kV )
+          end do 
+        end do
       end do
-    end do
-    !$OMP end parallel do
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    
+    else
 
-  end subroutine ReverseBoundaryKernelHost
+      !$OMP  parallel do collapse ( 3 ) &
+      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, jV, kV ) 
+      do kV = 1, nB ( 3 )
+        do jV = 1, nB ( 2 )
+          do iV = 1, nB ( 1 )
+            V ( oBE ( 1 )  +  dBE ( 1 ) * iV, &
+                oBE ( 2 )  +  dBE ( 2 ) * jV, &
+                oBE ( 3 )  +  dBE ( 3 ) * kV ) &
+              = - V ( oBE ( 1 )  +  dBE ( 1 ) * iV, &
+                      oBE ( 2 )  +  dBE ( 2 ) * jV, &
+                      oBE ( 3 )  +  dBE ( 3 ) * kV )
+          end do 
+        end do
+      end do
+      !$OMP end parallel do
+    
+    end if
+
+  end subroutine ReverseBoundaryKernel
 
   
-  subroutine ReverseBoundaryKernelDevice ( V, nB, dBE, oBE, D_V )
-
-    real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
-      V
-    integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
-      nB,  & 
-      dBE, &
-      oBE
-    type ( c_ptr ), intent ( in ) :: &
-      D_V
-
-    integer ( KDI ) :: &
-      iV, jV, kV
-      
-    call AssociateHost ( D_V, V )
-
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
-    !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, jV, kV ) 
-    do kV = 1, nB ( 3 )
-      do jV = 1, nB ( 2 )
-        do iV = 1, nB ( 1 )
-          V ( oBE ( 1 )  +  dBE ( 1 ) * iV, &
-              oBE ( 2 )  +  dBE ( 2 ) * jV, &
-              oBE ( 3 )  +  dBE ( 3 ) * kV ) &
-            = - V ( oBE ( 1 )  +  dBE ( 1 ) * iV, &
-                    oBE ( 2 )  +  dBE ( 2 ) * jV, &
-                    oBE ( 3 )  +  dBE ( 3 ) * kV )
-        end do 
-      end do
-    end do
-    !$OMP end OMP_TARGET_DIRECTIVE parallel do
-    
-    call DisassociateHost ( V )
-
-  end subroutine ReverseBoundaryKernelDevice
-
-
 end module Chart_SL__Template

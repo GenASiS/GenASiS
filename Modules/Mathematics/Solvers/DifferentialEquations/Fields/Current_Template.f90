@@ -5,7 +5,6 @@
 
 module Current_Template
 
-  use iso_c_binding
   use Basics
   use Manifolds
   use Sources_C__Form
@@ -99,8 +98,7 @@ module Current_Template
     procedure, public, pass ( C ) :: &
       ComputeDiffusionFactor_HLL
     procedure, public, nopass :: &
-      SetDiffusionFactorUnityHost, &
-      SetDiffusionFactorUnityDevice
+      SetDiffusionFactorUnity
   end type CurrentTemplate
 
   abstract interface
@@ -160,10 +158,8 @@ module Current_Template
     private :: &
       InitializeBasics, &
       SetUnits, &
-      ComputeSolverSpeeds_HLL_KernelHost, &
-      ComputeSolverSpeeds_HLL_KernelDevice, &
-      ComputeFluxes_HLL_KernelHost, &
-      ComputeFluxes_HLL_KernelDevice
+      ComputeSolverSpeeds_HLL_Kernel, &
+      ComputeFluxes_HLL_Kernel
 
 contains
 
@@ -561,73 +557,36 @@ contains
     associate &
       ( SS_I_V => SS_I % Value, &
         C_IL_V => C_IL % Value, &
-        C_IR_V => C_IR % Value, &
-        SS_I_D => SS_I % D_Selected, &
-        C_IL_D => C_IL % D_Selected, &
-        C_IR_D => C_IR % D_Selected )
-        
-    if ( C % AllocatedDevice ) then
-      call ComputeSolverSpeeds_HLL_KernelDevice &
-             ( SS_I_V ( :, C % ALPHA_PLUS ), &
-               SS_I_V ( :, C % ALPHA_MINUS ), &
-               C_IL_V ( :, C % FAST_EIGENSPEED_PLUS ( iDimension ) ), &
-               C_IR_V ( :, C % FAST_EIGENSPEED_PLUS ( iDimension ) ), &
-               C_IL_V ( :, C % FAST_EIGENSPEED_MINUS ( iDimension ) ), &
-               C_IR_V ( :, C % FAST_EIGENSPEED_MINUS ( iDimension ) ), &
-               SS_I_D ( C % ALPHA_PLUS ), &
-               SS_I_D ( C % ALPHA_MINUS ), &
-               C_IL_D ( C % FAST_EIGENSPEED_PLUS ( iDimension ) ), &
-               C_IR_D ( C % FAST_EIGENSPEED_PLUS ( iDimension ) ), &
-               C_IL_D ( C % FAST_EIGENSPEED_MINUS ( iDimension ) ), &
-               C_IR_D ( C % FAST_EIGENSPEED_MINUS ( iDimension ) ) )
-    else
-      call ComputeSolverSpeeds_HLL_KernelHost &
-             ( SS_I_V ( :, C % ALPHA_PLUS ), &
-               SS_I_V ( :, C % ALPHA_MINUS ), &
-               C_IL_V ( :, C % FAST_EIGENSPEED_PLUS ( iDimension ) ), &
-               C_IR_V ( :, C % FAST_EIGENSPEED_PLUS ( iDimension ) ), &
-               C_IL_V ( :, C % FAST_EIGENSPEED_MINUS ( iDimension ) ), &
-               C_IR_V ( :, C % FAST_EIGENSPEED_MINUS ( iDimension ) ) )
-    end if
+        C_IR_V => C_IR % Value )
+            
+    call ComputeSolverSpeeds_HLL_Kernel &
+           ( SS_I_V ( :, C % ALPHA_PLUS ), &
+             SS_I_V ( :, C % ALPHA_MINUS ), &
+             C_IL_V ( :, C % FAST_EIGENSPEED_PLUS ( iDimension ) ), &
+             C_IR_V ( :, C % FAST_EIGENSPEED_PLUS ( iDimension ) ), &
+             C_IL_V ( :, C % FAST_EIGENSPEED_MINUS ( iDimension ) ), &
+             C_IR_V ( :, C % FAST_EIGENSPEED_MINUS ( iDimension ) ), &
+             UseDeviceOption = C % AllocatedDevice )
     
     end associate   !-- SS_I_V
 
     call C % ComputeDiffusionFactor_HLL ( DF_I, Grid, iDimension )
 
     associate ( iaC => C % iaConserved )
-    if ( C % AllocatedDevice ) then
-      do iF = 1, C % N_CONSERVED
-        call ComputeFluxes_HLL_KernelDevice &
-               ( F_IL % Value ( :, iF ), &
-                 F_IR % Value ( :, iF ), &
-                 C_IL % Value ( :, iaC ( iF ) ), &
-                 C_IR % Value ( :, iaC ( iF ) ), &
-                 SS_I % Value ( :, C % ALPHA_PLUS ), &
-                 SS_I % Value ( :, C % ALPHA_MINUS ), &
-                 DF_I % Value ( :, iF ), &
-                 F_IL % D_Selected ( iF ), &
-                 F_IR % D_Selected ( iF ), &
-                 C_IL % D_Selected ( iaC ( iF ) ), &
-                 C_IR % D_Selected ( iaC ( iF ) ), &
-                 SS_I % D_Selected ( C % ALPHA_PLUS ), &
-                 SS_I % D_Selected ( C % ALPHA_MINUS ), &
-                 DF_I % D_Selected ( iF ), &
-                 F_I  % D_Selected ( iF ), &
-                 F_I  % Value ( :, iF ) )
-      end do !-- iF
-    else
-      do iF = 1, C % N_CONSERVED
-        call ComputeFluxes_HLL_KernelHost &
-               ( F_IL % Value ( :, iF ), &
-                 F_IR % Value ( :, iF ), &
-                 C_IL % Value ( :, iaC ( iF ) ), &
-                 C_IR % Value ( :, iaC ( iF ) ), &
-                 SS_I % Value ( :, C % ALPHA_PLUS ), &
-                 SS_I % Value ( :, C % ALPHA_MINUS ), &
-                 DF_I % Value ( :, iF ), &
-                 F_I % Value ( :, iF ) )
-      end do !-- iF
-    end if
+    
+    do iF = 1, C % N_CONSERVED
+      call ComputeFluxes_HLL_Kernel &
+             ( F_IL % Value ( :, iF ), &
+               F_IR % Value ( :, iF ), &
+               C_IL % Value ( :, iaC ( iF ) ), &
+               C_IR % Value ( :, iaC ( iF ) ), &
+               SS_I % Value ( :, C % ALPHA_PLUS ), &
+               SS_I % Value ( :, C % ALPHA_MINUS ), &
+               DF_I % Value ( :, iF ), &
+               F_I % Value ( :, iF ), &
+               UseDeviceOption = C % AllocatedDevice )
+    end do !-- iF
+    
     end associate !-- iaC
 
   end subroutine ComputeFluxes_HLL
@@ -644,73 +603,60 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iDimension
       
-    if ( DF_I % AllocatedDevice ) then
-      call C % SetDiffusionFactorUnityDevice &
-             ( DF_I % Value, DF_I % D_Selected ( 1 ) )
-    else
-      call C % SetDiffusionFactorUnityHost &
-             ( DF_I % Value )
-    end if
+    call C % SetDiffusionFactorUnity &
+           ( DF_I % Value, UseDeviceOption = DF_I % AllocatedDevice )
 
   end subroutine ComputeDiffusionFactor_HLL
 
 
-  subroutine SetDiffusionFactorUnityHost ( DFV_I )
+  subroutine SetDiffusionFactorUnity ( DFV_I, UseDeviceOption )
 
     real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
       DFV_I
+    logical ( KDL ), intent ( in ), optional :: &
+      UseDeviceOption
 
     integer ( KDI ) :: &
       iV, jV, &
       nValues, &
       nVariables
+    logical ( KDL ) :: &
+      UseDevice
+
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
 
     nValues    = size ( DFV_I, dim = 1 )
     nVariables = size ( DFV_I, dim = 2 )
     
-    !$OMP  parallel do collapse ( 2 ) &
-    !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, jV ) 
-    do jV = 1, nVariables
-      do iV = 1, nValues
-        DFV_I ( iV, jV )  =  1.0_KDR
-      end do !-- iV
-    end do !-- jV
-    !$OMP end parallel do
-
-  end subroutine SetDiffusionFactorUnityHost
-  
-  
-  subroutine SetDiffusionFactorUnityDevice ( DFV_I, D_DFV_I )
-
-    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
-      DFV_I
-    type ( c_ptr ), intent ( in ) :: &
-      D_DFV_I
-
-    integer ( KDI ) :: &
-      iV, jV, &
-      nValues, &
-      nVariables
+    if ( UseDevice ) then
+    
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 2 ) &
+      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, jV ) 
+      do jV = 1, nVariables
+        do iV = 1, nValues
+          DFV_I ( iV, jV )  =  1.0_KDR
+        end do !-- iV
+      end do !-- jV
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    
+    else
       
-    call AssociateHost ( D_DFV_I, DFV_I )
+      !$OMP  parallel do collapse ( 2 ) &
+      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, jV ) 
+      do jV = 1, nVariables
+        do iV = 1, nValues
+          DFV_I ( iV, jV )  =  1.0_KDR
+        end do !-- iV
+      end do !-- jV
+      !$OMP end parallel do
+      
+    end if
 
-    nValues    = size ( DFV_I, dim = 1 )
-    nVariables = size ( DFV_I, dim = 2 )
-    
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 2 ) &
-    !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, jV ) 
-    do jV = 1, nVariables
-      do iV = 1, nValues
-        DFV_I ( iV, jV )  =  1.0_KDR
-      end do !-- iV
-    end do !-- jV
-    !$OMP end OMP_TARGET_DIRECTIVE parallel do
-    
-    call DisassociateHost ( DFV_I )
-
-  end subroutine SetDiffusionFactorUnityDevice
-
-
+  end subroutine SetDiffusionFactorUnity
+  
+  
   subroutine InitializeBasics &
                ( C, Variable, Vector, Name, VariableUnit, VectorIndices, &
                  VariableOption, VectorOption, NameOption, &
@@ -849,8 +795,8 @@ contains
   end subroutine SetUnits
 
 
-  subroutine ComputeSolverSpeeds_HLL_KernelHost &
-               ( AP_I, AM_I, LP_IL, LP_IR, LM_IL, LM_IR )
+  subroutine ComputeSolverSpeeds_HLL_Kernel &
+               ( AP_I, AM_I, LP_IL, LP_IR, LM_IL, LM_IR, UseDeviceOption )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       AP_I, &
@@ -858,72 +804,48 @@ contains
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       LP_IL, LP_IR, &
       LM_IL, LM_IR
+    logical ( KDL ), intent ( in ), optional :: &
+      UseDeviceOption
 
     integer ( KDI ) :: &
       iV, &
       nValues
+    logical ( KDL ) :: &
+      UseDevice
 
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+    
     nValues = size ( AP_I )
-
-    !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV ) 
-    do iV = 1, nValues
-      AP_I ( iV ) = max ( 0.0_KDR, + LP_IL ( iV ), + LP_IR ( iV ) )
-      AM_I ( iV ) = max ( 0.0_KDR, - LM_IL ( iV ), - LM_IR ( iV ) )
-    end do !-- iV
-    !$OMP end parallel do
-
-  end subroutine ComputeSolverSpeeds_HLL_KernelHost
-
-
-  subroutine ComputeSolverSpeeds_HLL_KernelDevice &
-               ( AP_I, AM_I, LP_IL, LP_IR, LM_IL, LM_IR, &
-                 D_AP_I, D_AM_I, D_LP_IL, D_LP_IR, D_LM_IL, D_LM_IR )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      AP_I, &
-      AM_I
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      LP_IL, LP_IR, &
-      LM_IL, LM_IR
-    type ( c_ptr ), intent ( in ) :: &
-      D_AP_I, &
-      D_AM_I, &
-      D_LP_IL, D_LP_IR, &
-      D_LM_IL, D_LM_IR
-
-    integer ( KDI ) :: &
-      iV, &
-      nValues
     
-    call AssociateHost ( D_AP_I,  AP_I )
-    call AssociateHost ( D_AM_I,  AM_I )
-    call AssociateHost ( D_LP_IL, LP_IL )
-    call AssociateHost ( D_LP_IR, LP_IR )
-    call AssociateHost ( D_LM_IL, LM_IL )
-    call AssociateHost ( D_LM_IR, LM_IR )
-
-    nValues = size ( AP_I )
-
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-    !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
-    do iV = 1, nValues
-      AP_I ( iV ) = max ( 0.0_KDR, + LP_IL ( iV ), + LP_IR ( iV ) )
-      AM_I ( iV ) = max ( 0.0_KDR, - LM_IL ( iV ), - LM_IR ( iV ) )
-    end do !-- iV
-    !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+    if ( UseDevice ) then
     
-    call DisassociateHost ( LM_IR )
-    call DisassociateHost ( LM_IL )
-    call DisassociateHost ( LP_IR )
-    call DisassociateHost ( LP_IL )
-    call DisassociateHost ( AM_I )
-    call DisassociateHost ( AP_I )
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+      do iV = 1, nValues
+        AP_I ( iV ) = max ( 0.0_KDR, + LP_IL ( iV ), + LP_IR ( iV ) )
+        AM_I ( iV ) = max ( 0.0_KDR, - LM_IL ( iV ), - LM_IR ( iV ) )
+      end do !-- iV
+      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
     
-  end subroutine ComputeSolverSpeeds_HLL_KernelDevice
+    else
+    
+      !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV ) 
+      do iV = 1, nValues
+        AP_I ( iV ) = max ( 0.0_KDR, + LP_IL ( iV ), + LP_IR ( iV ) )
+        AM_I ( iV ) = max ( 0.0_KDR, - LM_IL ( iV ), - LM_IR ( iV ) )
+      end do !-- iV
+      !$OMP end parallel do
+      
+    end if
+
+  end subroutine ComputeSolverSpeeds_HLL_Kernel
 
 
-  subroutine ComputeFluxes_HLL_KernelHost &
-               ( F_IL, F_IR, U_IL, U_IR, AP_I, AM_I, DF_I, F_I )
+  subroutine ComputeFluxes_HLL_Kernel &
+               ( F_IL, F_IR, U_IL, U_IR, AP_I, AM_I, DF_I, F_I, &
+                 UseDeviceOption )
 
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       F_IL, F_IR, &
@@ -933,85 +855,51 @@ contains
       DF_I
     real ( KDR ), dimension ( : ), intent ( out ) :: &
       F_I
-
-    integer ( KDI ) :: &
-      iV, &
-      nV  
-
-    nV = size ( F_I )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nV
-      F_I ( iV ) &
-        =  (    AP_I ( iV ) * F_IL ( iV ) &
-             +  AM_I ( iV ) * F_IR ( iV ) &
-             -  DF_I ( iV ) * AP_I ( iV ) * AM_I ( iV ) &
-                * ( U_IR ( iV ) - U_IL ( iV ) ) ) &
-           /  max ( AP_I ( iV ) + AM_I ( iV ), tiny ( 0.0_KDR ) )
-    end do
-    !$OMP end parallel do
-
-  end subroutine ComputeFluxes_HLL_KernelHost
-
-
-  subroutine ComputeFluxes_HLL_KernelDevice &
-               ( F_IL, F_IR, U_IL, U_IR, AP_I, AM_I, DF_I, &
-                 D_F_IL, D_F_IR, D_U_IL, D_U_IR, D_AP_I, D_AM_I, &
-                 D_DF_I, D_F_I, F_I )
-
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      F_IL, F_IR, &
-      U_IL, U_IR, &
-      AP_I, &
-      AM_I, &
-      DF_I
-    type ( c_ptr ), intent ( in ) :: &
-      D_F_IL, D_F_IR, &
-      D_U_IL, D_U_IR, &
-      D_AP_I, &
-      D_AM_I, &
-      D_DF_I, &
-      D_F_I
-    real ( KDR ), dimension ( : ), intent ( out ) :: &
-      F_I
+    logical ( KDL ), intent ( in ), optional :: &
+      UseDeviceOption
 
     integer ( KDI ) :: &
       iV, &
       nV
-      
-    call AssociateHost ( D_F_IL, F_IL )
-    call AssociateHost ( D_F_IR, F_IR )
-    call AssociateHost ( D_U_IL, U_IL )
-    call AssociateHost ( D_U_IR, U_IR )
-    call AssociateHost ( D_AP_I, AP_I )
-    call AssociateHost ( D_AM_I, AM_I )
-    call AssociateHost ( D_DF_I, DF_I )
-    call AssociateHost ( D_F_I,  F_I )
+    logical ( KDL ) :: &
+      UseDevice
 
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+     
     nV = size ( F_I )
     
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-    !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
-    do iV = 1, nV
-      F_I ( iV ) &
-        =  (    AP_I ( iV ) * F_IL ( iV ) &
-             +  AM_I ( iV ) * F_IR ( iV ) &
-             -  DF_I ( iV ) * AP_I ( iV ) * AM_I ( iV ) &
-                * ( U_IR ( iV ) - U_IL ( iV ) ) ) &
-           /  max ( AP_I ( iV ) + AM_I ( iV ), tiny ( 0.0_KDR ) )
-    end do
-    !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+    if ( UseDevice ) then
     
-    call DisassociateHost ( F_I )
-    call DisassociateHost ( DF_I )
-    call DisassociateHost ( AM_I )
-    call DisassociateHost ( AP_I )
-    call DisassociateHost ( U_IR )
-    call DisassociateHost ( U_IL )
-    call DisassociateHost ( F_IR )
-    call DisassociateHost ( F_IL )
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+      do iV = 1, nV
+        F_I ( iV ) &
+          =  (    AP_I ( iV ) * F_IL ( iV ) &
+               +  AM_I ( iV ) * F_IR ( iV ) &
+               -  DF_I ( iV ) * AP_I ( iV ) * AM_I ( iV ) &
+                  * ( U_IR ( iV ) - U_IL ( iV ) ) ) &
+             /  max ( AP_I ( iV ) + AM_I ( iV ), tiny ( 0.0_KDR ) )
+      end do
+      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
     
-  end subroutine ComputeFluxes_HLL_KernelDevice
+    else
+
+      !$OMP parallel do private ( iV )
+      do iV = 1, nV
+        F_I ( iV ) &
+          =  (    AP_I ( iV ) * F_IL ( iV ) &
+               +  AM_I ( iV ) * F_IR ( iV ) &
+               -  DF_I ( iV ) * AP_I ( iV ) * AM_I ( iV ) &
+                  * ( U_IR ( iV ) - U_IL ( iV ) ) ) &
+             /  max ( AP_I ( iV ) + AM_I ( iV ), tiny ( 0.0_KDR ) )
+      end do
+      !$OMP end parallel do
+    
+    end if
+
+  end subroutine ComputeFluxes_HLL_Kernel
 
 
 end module Current_Template
