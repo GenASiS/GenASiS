@@ -16,10 +16,8 @@ module MultiplyAdd_Command
   interface MultiplyAdd
     module procedure MultiplyAddReal_1D
     module procedure MultiplyAddReal_1D_InPlace
-    module procedure MultiplyAddReal_1D_InPlace_Device
     module procedure MultiplyAddReal_2D
     module procedure MultiplyAddReal_2D_InPlace
-    module procedure MultiplyAddReal_2D_InPlace_Device
   end interface
 
   interface MultiplyAddCollapse
@@ -55,7 +53,7 @@ contains
   end subroutine MultiplyAddReal_1D
 
 
-  subroutine MultiplyAddReal_1D_InPlace ( A, B, C )
+  subroutine MultiplyAddReal_1D_InPlace ( A, B, C, UseDeviceOption )
   
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       A
@@ -63,55 +61,37 @@ contains
       B
     real ( KDR ), intent ( in ) :: &
       C
+    logical ( KDL ), intent ( in ), optional :: &
+      UseDeviceOption
                       
     integer ( KDI ) :: &
       iV, &
       nV
+    logical ( KDL ) :: &
+      UseDevice
+      
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
 
     nV = size ( A )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nV
-      A ( iV ) =  A ( iV ) +  C * B ( iV )
-    end do
-    !$OMP end parallel do
-  
+    
+    if ( UseDevice ) then
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP& schedule ( OMP_SCHEDULE )
+      do iV = 1, nV
+        A ( iV ) =  A ( iV ) +  C * B ( iV )
+      end do
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    else 
+      !$OMP parallel do private ( iV )
+      do iV = 1, nV
+        A ( iV ) =  A ( iV ) +  C * B ( iV )
+      end do
+      !$OMP end parallel do
+    end if
+    
   end subroutine MultiplyAddReal_1D_InPlace
-
-
-  subroutine MultiplyAddReal_1D_InPlace_Device ( A, D_A, D_B, B, C )
-  
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      A
-    type ( c_ptr ), intent ( in ) :: &
-      D_A
-    type ( c_ptr ), intent ( in ) :: &
-      D_B
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      B
-    real ( KDR ), intent ( in ) :: &
-      C
-                      
-    integer ( KDI ) :: &
-      iV, &
-      nV
-
-    nV = size ( A )
-    
-    call AssociateHost ( D_A, A )
-    call AssociateHost ( D_B, B )
-
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-    !$OMP& schedule ( OMP_SCHEDULE )
-    do iV = 1, nV
-      A ( iV ) =  A ( iV ) +  C * B ( iV )
-    end do
-    !$OMP end OMP_TARGET_DIRECTIVE parallel do
-    
-    call DisassociateHost ( B )
-    call DisassociateHost ( A )
-  
-  end subroutine MultiplyAddReal_1D_InPlace_Device
 
 
   subroutine MultiplyAddReal_2D ( A, B, C, D )
@@ -138,7 +118,7 @@ contains
   end subroutine MultiplyAddReal_2D
 
 
-  subroutine MultiplyAddReal_2D_InPlace ( A, B, C )
+  subroutine MultiplyAddReal_2D_InPlace ( A, B, C, UseDeviceOption )
   
     real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
       A
@@ -146,6 +126,8 @@ contains
       B
     real ( KDR ), intent ( in ) :: &
       C
+    logical ( KDL ), intent ( in ), optional :: &
+      UseDeviceOption
                       
     integer ( KDI ) :: &
       iV, &
@@ -154,36 +136,12 @@ contains
     nV = size ( A, dim = 2 )
 
     do iV = 1, nV
-      call MultiplyAdd ( A ( :, iV ), B ( :, iV ), C )
+      call MultiplyAdd &
+             ( A ( :, iV ), B ( :, iV ), C, &
+               UseDeviceOption = UseDeviceOption )
     end do
   
   end subroutine MultiplyAddReal_2D_InPlace
-
-
-  subroutine MultiplyAddReal_2D_InPlace_Device ( A, D_A, D_B, B, C )
-  
-    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
-      A
-    type ( c_ptr ), dimension ( : ), intent ( in ) :: &
-      D_A
-    type ( c_ptr ), dimension ( : ), intent ( in ) :: &
-      D_B
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      B
-    real ( KDR ), intent ( in ) :: &
-      C
-                      
-    integer ( KDI ) :: &
-      iV, &
-      nV
-
-    nV = size ( A, dim = 2 )
-
-    do iV = 1, nV
-      call MultiplyAdd ( A ( :, iV ), D_A ( iV ), D_B ( iV ), B ( :, iV ), C )
-    end do
-  
-  end subroutine MultiplyAddReal_2D_InPlace_Device
 
 
   subroutine MultiplyAddCollapse_3D ( A, B, C, D )

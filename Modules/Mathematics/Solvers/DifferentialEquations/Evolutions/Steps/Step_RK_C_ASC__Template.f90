@@ -694,11 +694,9 @@ contains
 
     TimerClear => PROGRAM_HEADER % TimerPointer ( S % iTimerClearIncrement )
     if ( associated ( TimerClear ) ) call TimerClear % Start ( )
-    if ( K % AllocatedDevice ) then
-      call Clear ( K % D_Selected, K % Value )
-    else
-      call Clear ( K % Value )
-    end if
+    
+    call Clear ( K % Value, UseDeviceOption = K % AllocatedDevice )
+
     if ( associated ( TimerClear ) ) call TimerClear % Stop ( )    
 
     S % ApplyDivergence_C => S % ApplyDivergence % Pointer
@@ -748,15 +746,9 @@ contains
       
       associate &
         ( CV  => Current % Value ( :, iaC ( iF ) ), &
-          D_C => Current % D_Selected ( iaC ( iF ) ), &
-          SV  => Solution % Value ( :, iF ), &
-          D_S => Solution % D_Selected ( iF ) )
+          SV  => Solution % Value ( :, iF ) )
       
-      if ( Current % AllocatedDevice ) then
-        call Copy ( CV, D_C, D_S, SV )
-      else
-        call Copy ( CV, SV )
-      end if
+      call Copy ( CV, SV, UseDeviceOption = Current % AllocatedDevice )
       
       end associate !-- CV, etc.
       
@@ -785,15 +777,9 @@ contains
       
       associate &
         ( SV  => Solution % Value ( :, iF ), &
-          D_S => Solution % D_Selected ( iF ), &
-          CV  => Current % Value ( :, iaC ( iF ) ), &
-          D_C => Current % D_Selected ( iaC ( iF ) ) )
+          CV  => Current % Value ( :, iaC ( iF ) ) )
       
-      if ( Current % AllocatedDevice ) then
-        call Copy ( SV, D_S, D_C, CV )
-      else
-        call Copy ( SV, CV )
-      end if 
+      call Copy ( SV, CV, UseDeviceOption = Current % AllocatedDevice )
       
       end associate !-- YV, etc.
    
@@ -1021,15 +1007,9 @@ contains
 
     associate &
       ( SV  => S % Solution % Value, &
-        D_S => S % Solution % D_Selected, &
-        YV  => S % Y % Value, &
-        D_Y => S % Y % D_Selected )
+        YV  => S % Y % Value )
 
-    if ( S % Solution % AllocatedDevice ) then
-      call Copy ( SV, D_S, D_Y, YV )
-    else
-      call Copy ( SV, YV )
-    end if
+    call Copy ( SV, YV, UseDeviceOption = S % Solution % AllocatedDevice )
 
     end associate !-- SV, etc.
 
@@ -1047,15 +1027,9 @@ contains
 
     associate &
       ( YV  => S % Y % Value, &
-        D_Y => S % Y % D_Selected, &
-        KV  => S % K ( iK ) % Value, &
-        D_K => S % K ( iK ) % D_Selected )
+        KV  => S % K ( iK ) % Value )
     
-    if ( S % Y % AllocatedDevice ) then
-      call MultiplyAdd ( YV, D_Y, D_K, KV, A )
-    else
-      call MultiplyAdd ( YV, KV, A )
-    end if
+    call MultiplyAdd ( YV, KV, A, UseDeviceOption = S % Y % AllocatedDevice )
     
     end associate !-- YV, etc.
 
@@ -1158,15 +1132,10 @@ contains
 
     associate &
       ( SV  => S % Solution % Value, &
-        D_S => S % Solution % D_Selected, &
-        KV  => S % K ( iS ) % Value, &
-        D_K => S % K ( iS ) % D_Selected )
+        KV  => S % K ( iS ) % Value )
     
-    if ( S % Solution % AllocatedDevice ) then
-      call MultiplyAdd ( SV, D_S, D_K, KV, B )
-    else
-      call MultiplyAdd ( SV, KV, B )
-    end if 
+    call MultiplyAdd &
+           ( SV, KV, B, UseDeviceOption = S % Solution % AllocatedDevice )
     
     end associate !-- SV, etc.
 

@@ -293,17 +293,17 @@ contains
         SB    => FV ( oV + 1 : oV + nV, F % ENTROPY_PER_BARYON ), &
         T     => FV ( oV + 1 : oV + nV, F % TEMPERATURE ) )
 
-    call F % ComputeBaryonMassKernelHost ( M )
+    call F % ComputeBaryonMassKernel ( M )
     call F % Apply_EOS_NR_T_Kernel &
            ( P, Gamma, SB, E, M, N, T, F % AdiabaticIndex, &
              F % MeanMolecularWeight, F % FiducialBaryonDensity, &
              F % FiducialTemperature, CONSTANT % ATOMIC_MASS_UNIT, &
              CONSTANT % BOLTZMANN )
-    call F % ComputeDensityMomentumKernelHost &
+    call F % ComputeDensityMomentumKernel &
            ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
-    call F % ComputeConservedEnergyKernelHost &
+    call F % ComputeConservedEnergyKernel &
            ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
-    call F % ComputeEigenspeedsFluidKernelHost &
+    call F % ComputeEigenspeedsFluidKernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, MN, &
              M, N, V_1, V_2, V_3, S_1, S_2, S_3, P, Gamma, M_UU_22, M_UU_33 )
 
@@ -379,17 +379,17 @@ contains
         SB    => FV ( oV + 1 : oV + nV, C % ENTROPY_PER_BARYON ), &
         T     => FV ( oV + 1 : oV + nV, C % TEMPERATURE ) )
 
-    call C % ComputeBaryonMassKernelHost ( M )
-    call C % ComputeDensityMomentumKernelHost &
+    call C % ComputeBaryonMassKernel ( M )
+    call C % ComputeDensityMomentumKernel &
            ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
-    call C % ComputeConservedEnergyKernelHost &
+    call C % ComputeConservedEnergyKernel &
            ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
     call C % Apply_EOS_NR_E_Kernel &
            ( P, Gamma, SB, T, M, N, E, C % AdiabaticIndex, &
              C % MeanMolecularWeight, C % FiducialBaryonDensity, &
              C % FiducialTemperature, CONSTANT % ATOMIC_MASS_UNIT, &
              CONSTANT % BOLTZMANN )
-    call C % ComputeEigenspeedsFluidKernelHost &
+    call C % ComputeEigenspeedsFluidKernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, MN, &
              M, N, V_1, V_2, V_3, S_1, S_2, S_3, P, Gamma, M_UU_22, M_UU_33 )
 
@@ -463,17 +463,17 @@ contains
         SB    => FV ( oV + 1 : oV + nV, C % ENTROPY_PER_BARYON ), &
         T     => FV ( oV + 1 : oV + nV, C % TEMPERATURE ) )
 
-    call C % ComputeBaryonMassKernelHost ( M )
-    call C % ComputeDensityVelocityKernelHost &
+    call C % ComputeBaryonMassKernel ( M )
+    call C % ComputeDensityVelocityKernel &
            ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33 )
-    call C % ComputeInternalEnergyKernelHost &
+    call C % ComputeInternalEnergyKernel &
            ( E, G, M, N, V_1, V_2, V_3, S_1, S_2, S_3 )
     call C % Apply_EOS_NR_E_Kernel &
            ( P, Gamma, SB, T, M, N, E, C % AdiabaticIndex, &
              C % MeanMolecularWeight, C % FiducialBaryonDensity, &
              C % FiducialTemperature, CONSTANT % ATOMIC_MASS_UNIT, &
              CONSTANT % BOLTZMANN )
-    call C % ComputeEigenspeedsFluidKernelHost &
+    call C % ComputeEigenspeedsFluidKernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, MN, &
              M, N, V_1, V_2, V_3, S_1, S_2, S_3, P, Gamma, M_UU_22, M_UU_33 )
 

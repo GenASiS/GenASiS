@@ -4,7 +4,6 @@ module Fluid_P__Template
 
   !-- Fluid_Perfect__Template
 
-  use iso_c_binding
   use Basics
   use Mathematics
   use Fluid_D__Form
@@ -47,14 +46,11 @@ module Fluid_P__Template
     procedure, public, pass ( C ) :: &
       ComputeCenterStatesTemplate_P
     procedure, public, nopass :: &
-      ComputeConservedEnergyKernelHost, &
-      ComputeConservedEnergyKernelDevice
+      ComputeConservedEnergyKernel
     procedure, public, nopass :: &
-      ComputeInternalEnergyKernelHost, &
-      ComputeInternalEnergyKernelDevice
+      ComputeInternalEnergyKernel
     procedure, public, nopass :: &
-      ComputeEigenspeedsFluidKernelHost, &
-      ComputeEigenspeedsFluidKernelDevice
+      ComputeEigenspeedsFluidKernel
   end type Fluid_P_Template
 
     private :: &
@@ -63,8 +59,7 @@ module Fluid_P__Template
       ComputeCenterSpeedKernel, &
       ComputeCenterStatesKernel, &
       ComputeFluxes_HLLC_Kernel, &
-      ComputeRawFluxesTemplate_P_KernelHost, &
-      ComputeRawFluxesTemplate_P_KernelDevice
+      ComputeRawFluxesTemplate_P_Kernel
 
 contains
 
@@ -406,10 +401,7 @@ contains
     associate &
       ( Value_RF => RawFlux % Value, &
         Value_C  => Storage_C % Value, &
-        Value_G  => Storage_G % Value, &
-        D_S_RF   => RawFlux % D_Selected, &
-        D_S_C    => Storage_C % D_Selected, &
-        D_S_G    => Storage_G % D_Selected )
+        Value_G  => Storage_G % Value )
 
     if ( present ( oValueOption ) ) then
       oV = oValueOption
@@ -436,21 +428,8 @@ contains
         P       => Value_C ( oV + 1 : oV + nV, C % PRESSURE ), &
         V_Dim   => Value_C ( oV + 1 : oV + nV, C % VELOCITY_U ( iDimension ) ))
     
-    if ( C % AllocatedDevice ) then
-      associate &
-        ( D_F_S_Dim => D_S_RF ( iMomentum ), &
-          D_F_G     => D_S_RF ( iEnergy ), &
-          D_G       => D_S_C ( C % CONSERVED_ENERGY ), &
-          D_P       => D_S_C ( C % PRESSURE ), &
-          D_V_Dim   => D_S_C ( C % VELOCITY_U ( iDimension ) ))
-      call ComputeRawFluxesTemplate_P_KernelDevice &
-             ( F_S_Dim, F_G, G, P, V_Dim, &
-               D_F_S_Dim, D_F_G, D_G, D_P, D_V_Dim )
-      end associate
-    else
-      call ComputeRawFluxesTemplate_P_KernelHost &
-             ( F_S_Dim, F_G, G, P, V_Dim )
-    end if
+    call ComputeRawFluxesTemplate_P_Kernel &
+           ( F_S_Dim, F_G, G, P, V_Dim, UseDeviceOption = C % AllocatedDevice )
 
     end associate !-- F_S_Dim, etc.
     
@@ -527,8 +506,9 @@ contains
   end subroutine ComputeCenterStatesTemplate_P
 
 
-  subroutine ComputeConservedEnergyKernelHost &
-               ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
+  subroutine ComputeConservedEnergyKernel &
+               ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E, &
+                 UseDeviceOption )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       G
@@ -538,129 +518,46 @@ contains
       V_1, V_2, V_3, &
       S_1, S_2, S_3, &
       E
+    logical ( KDL ), intent ( in ), optional :: &
+      UseDeviceOption
 
     integer ( KDI ) :: &
       iV, &
       nValues
-
-    nValues = size ( G )
-
-    !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV )
-    do iV = 1, nValues 
-      G ( iV )  =  E ( iV )  +  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV )  &
-                                            +  S_2 ( iV ) * V_2 ( iV )  &
-                                            +  S_3 ( iV ) * V_3 ( iV ) )
-    end do !-- iV
-    !$OMP end parallel do
-
-  end subroutine ComputeConservedEnergyKernelHost
-
-
-  subroutine ComputeConservedEnergyKernelDevice &
-               ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E , &
-                 D_G, D_M, D_N, D_V_1, D_V_2, D_V_3, &
-                 D_S_1, D_S_2, D_S_3, D_E )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      G
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      M, &
-      N, &
-      V_1, V_2, V_3, &
-      S_1, S_2, S_3, &
-      E
-    type ( c_ptr ), intent ( in ) :: &
-      D_G, &
-      D_M, &
-      D_N, &
-      D_V_1, D_V_2, D_V_3, &
-      D_S_1, D_S_2, D_S_3, &
-      D_E
-
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-
-    call AssociateHost ( D_G, G )
-    call AssociateHost ( D_M, M )
-    call AssociateHost ( D_N, N )
-    call AssociateHost ( D_V_1, V_1 )
-    call AssociateHost ( D_V_2, V_2 )
-    call AssociateHost ( D_V_3, V_3 )
-    call AssociateHost ( D_S_1, S_1 )
-    call AssociateHost ( D_S_2, S_2 )
-    call AssociateHost ( D_S_3, S_3 )
-    call AssociateHost ( D_E, E )
-
-    nValues = size ( G )
-
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-    !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
-    do iV = 1, nValues
-      G ( iV )  =  E ( iV )  +  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV )  &
-                                            +  S_2 ( iV ) * V_2 ( iV )  &
-                                            +  S_3 ( iV ) * V_3 ( iV ) )
-    end do !-- iV
-    !$OMP  end OMP_TARGET_DIRECTIVE parallel do
-
-    call DisassociateHost ( E )
-    call DisassociateHost ( S_3 )
-    call DisassociateHost ( S_2 )
-    call DisassociateHost ( S_1 )
-    call DisassociateHost ( V_3 )
-    call DisassociateHost ( V_2 )
-    call DisassociateHost ( V_1 )
-    call DisassociateHost ( N )
-    call DisassociateHost ( M )
-    call DisassociateHost ( G )
+    logical ( KDL ) :: &
+      UseDevice
     
-  end subroutine ComputeConservedEnergyKernelDevice
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+    
+    nValues = size ( G )
+    
+    if ( UseDevice ) then
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+      do iV = 1, nValues
+        G ( iV )  =  E ( iV )  +  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV )  &
+                                              +  S_2 ( iV ) * V_2 ( iV )  &
+                                              +  S_3 ( iV ) * V_3 ( iV ) )
+      end do !-- iV
+      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+    else
+      !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV )
+      do iV = 1, nValues 
+        G ( iV )  =  E ( iV )  +  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV )  &
+                                              +  S_2 ( iV ) * V_2 ( iV )  &
+                                              +  S_3 ( iV ) * V_3 ( iV ) )
+      end do !-- iV
+      !$OMP end parallel do
+    end if
+
+  end subroutine ComputeConservedEnergyKernel
 
 
-  subroutine ComputeInternalEnergyKernelHost &
-               ( E, G, M, N, V_1, V_2, V_3, S_1, S_2, S_3 )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      E, &
-      G
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      M, &
-      N, &
-      V_1, V_2, V_3, &
-      S_1, S_2, S_3
-
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-
-    nValues = size ( E )
-
-    !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV )
-    do iV = 1, nValues
-      E ( iV )  =  G ( iV )  -  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV ) &
-                                            +  S_2 ( iV ) * V_2 ( iV ) &
-                                            +  S_3 ( iV ) * V_3 ( iV ) )
-    end do
-    !$OMP end parallel do
-
-    !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV )
-    do iV = 1, nValues
-      if ( E ( iV ) < 0.0_KDR ) then
-        E ( iV ) = 0.0_KDR
-        G ( iV ) = E ( iV )  +  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV ) &
-                                            +  S_2 ( iV ) * V_2 ( iV ) &
-                                            +  S_3 ( iV ) * V_3 ( iV ) )
-      end if
-    end do
-    !$OMP end parallel do
-
-  end subroutine ComputeInternalEnergyKernelHost
-
-
-  subroutine ComputeInternalEnergyKernelDevice &
+  subroutine ComputeInternalEnergyKernel &
                ( E, G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, &
-                 D_E, D_G, D_M, D_N, D_V_1, D_V_2, D_V_3, &
-                 D_S_1, D_S_2, D_S_3 )
+                 UseDeviceOption )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       E, &
@@ -670,248 +567,181 @@ contains
       N, &
       V_1, V_2, V_3, &
       S_1, S_2, S_3
-    type ( c_ptr ), intent ( inout ) :: &
-      D_E, &
-      D_G, &
-      D_M, &
-      D_N, &
-      D_V_1, D_V_2, D_V_3, &
-      D_S_1, D_S_2, D_S_3
+    logical ( KDL ), intent ( in ), optional :: &
+      UseDeviceOption
 
     integer ( KDI ) :: &
       iV, &
       nValues
-      
-    call AssociateHost ( D_E, E )
-    call AssociateHost ( D_G, G )
-    call AssociateHost ( D_M, M )
-    call AssociateHost ( D_N, N )
-    call AssociateHost ( D_V_1, V_1 )
-    call AssociateHost ( D_V_2, V_2 )
-    call AssociateHost ( D_V_3, V_3 )
-    call AssociateHost ( D_S_1, S_1 )
-    call AssociateHost ( D_S_2, S_2 )
-    call AssociateHost ( D_S_3, S_3 )
+    logical ( KDL ) :: &
+      UseDevice
+
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
 
     nValues = size ( E )
-
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-    !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
-    do iV = 1, nValues
-      E ( iV )  =  G ( iV )  -  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV ) &
-                                            +  S_2 ( iV ) * V_2 ( iV ) &
-                                            +  S_3 ( iV ) * V_3 ( iV ) )
-    end do
-    !$OMP  end OMP_TARGET_DIRECTIVE parallel do
-
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-    !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
-    do iV = 1, nValues
-      if ( E ( iV ) < 0.0_KDR ) then
-        E ( iV ) = 0.0_KDR
-        G ( iV ) = E ( iV )  +  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV ) &
-                                            +  S_2 ( iV ) * V_2 ( iV ) &
-                                            +  S_3 ( iV ) * V_3 ( iV ) )
-      end if
-    end do
-    !$OMP  end OMP_TARGET_DIRECTIVE parallel do
     
-    call DisassociateHost ( S_3 )
-    call DisassociateHost ( S_2 )
-    call DisassociateHost ( S_1 )
-    call DisassociateHost ( V_3 )
-    call DisassociateHost ( V_2 )
-    call DisassociateHost ( V_1 )
-    call DisassociateHost ( N )
-    call DisassociateHost ( M )
-    call DisassociateHost ( G )
-    call DisassociateHost ( E )
+    if ( UseDevice ) then
     
-  end subroutine ComputeInternalEnergyKernelDevice
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+      do iV = 1, nValues
+        E ( iV )  =  G ( iV )  -  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV ) &
+                                              +  S_2 ( iV ) * V_2 ( iV ) &
+                                              +  S_3 ( iV ) * V_3 ( iV ) )
+      end do
+      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
 
-
-  subroutine ComputeEigenspeedsFluidKernelHost &
-               ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, MN, &
-                 M, N, V_1, V_2, V_3, S_1, S_2, S_3, P, Gamma, &
-                 M_UU_22, M_UU_33 )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      FEP_1, FEP_2, FEP_3, &
-      FEM_1, FEM_2, FEM_3, &
-      CS, &
-      MN
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      M, &
-      N, &
-      V_1, V_2, V_3, &
-      S_1, S_2, S_3, &
-      P, &
-      Gamma, &
-      M_UU_22, M_UU_33
-
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-
-    nValues = size ( FEP_1 )
-
-    !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV )
-    do iV = 1, nValues
-      if ( N ( iV ) > 0.0_KDR .and. P ( iV ) > 0.0_KDR ) then
-        CS ( iV ) = sqrt ( Gamma ( iV ) * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
-      else
-        CS ( iV ) = 0.0_KDR
-      end if 
-    end do
-    !$OMP end parallel do
-
-    !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV )
-    do iV = 1, nValues
-      if ( P ( iV ) > 0.0_KDR ) then
-        MN ( iV ) = sqrt ( (    S_1 ( iV ) * V_1 ( iV )  &
-                             +  S_2 ( iV ) * V_2 ( iV )  &
-                             +  S_3 ( iV ) * V_3 ( iV ) ) &
-                           / ( Gamma ( iV ) * P ( iV ) ) )
-      else
-        MN ( iV ) = 0.0_KDR
-      end if 
-    end do
-    !$OMP end parallel do
-
-    !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV )
-    do iV = 1, nValues
-      FEP_1 ( iV )  =  V_1 ( iV )  +  CS ( iV ) 
-      FEP_2 ( iV )  =  V_2 ( iV )  +  sqrt ( M_UU_22 ( iV ) ) * CS ( iV ) 
-      FEP_3 ( iV )  =  V_3 ( iV )  +  sqrt ( M_UU_33 ( iV ) ) * CS ( iV )
-      FEM_1 ( iV )  =  V_1 ( iV )  -  CS ( iV )
-      FEM_2 ( iV )  =  V_2 ( iV )  -  sqrt ( M_UU_22 ( iV ) ) * CS ( iV )
-      FEM_3 ( iV )  =  V_3 ( iV )  -  sqrt ( M_UU_33 ( iV ) ) * CS ( iV )
-    end do
-    !$OMP end parallel do
-
-  end subroutine ComputeEigenspeedsFluidKernelHost
-
-
-  subroutine ComputeEigenspeedsFluidKernelDevice &
-               ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, MN, &
-                 M, N, V_1, V_2, V_3, S_1, S_2, S_3, P, Gamma, &
-                 M_UU_22, M_UU_33, &
-                 D_FEP_1, D_FEP_2, D_FEP_3, D_FEM_1, D_FEM_2, D_FEM_3, &
-                 D_CS, D_MN, D_M, D_N, D_V_1, D_V_2, D_V_3, D_S_1, D_S_2, &
-                 D_S_3, D_P, D_Gamma, D_M_UU_22, D_M_UU_33 )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      FEP_1, FEP_2, FEP_3, &
-      FEM_1, FEM_2, FEM_3, &
-      CS, &
-      MN
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      M, &
-      N, &
-      V_1, V_2, V_3, &
-      S_1, S_2, S_3, &
-      P, &
-      Gamma, &
-      M_UU_22, M_UU_33
-    type ( c_ptr ), intent ( in ) :: &
-      D_FEP_1, D_FEP_2, D_FEP_3, &
-      D_FEM_1, D_FEM_2, D_FEM_3, &
-      D_CS, &
-      D_MN, &
-      D_M, &
-      D_N, &
-      D_V_1, D_V_2, D_V_3, &
-      D_S_1, D_S_2, D_S_3, &
-      D_P, &
-      D_Gamma, &
-      D_M_UU_22, D_M_UU_33
-
-    integer ( KDI ) :: &
-      iV, &
-      nValues
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+      do iV = 1, nValues
+        if ( E ( iV ) < 0.0_KDR ) then
+          E ( iV ) = 0.0_KDR
+          G ( iV ) = E ( iV )  +  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV ) &
+                                              +  S_2 ( iV ) * V_2 ( iV ) &
+                                              +  S_3 ( iV ) * V_3 ( iV ) )
+        end if
+      end do
+      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
       
-    call AssociateHost ( D_FEP_1, FEP_1 )
-    call AssociateHost ( D_FEP_2, FEP_2 )
-    call AssociateHost ( D_FEP_3, FEP_3 )
-    call AssociateHost ( D_FEM_1, FEM_1 )
-    call AssociateHost ( D_FEM_2, FEM_2 )
-    call AssociateHost ( D_FEM_3, FEM_3 )
-    call AssociateHost ( D_CS, CS )
-    call AssociateHost ( D_MN, MN )
-    call AssociateHost ( D_M, M )
-    call AssociateHost ( D_N, N )
-    call AssociateHost ( D_V_1, V_1 )
-    call AssociateHost ( D_V_2, V_2 )
-    call AssociateHost ( D_V_3, V_3 )
-    call AssociateHost ( D_S_1, S_1 )
-    call AssociateHost ( D_S_2, S_2 )
-    call AssociateHost ( D_S_3, S_3 )
-    call AssociateHost ( D_P, P )
-    call AssociateHost ( D_Gamma, Gamma )
-    call AssociateHost ( D_M_UU_22, M_UU_22 )
-    call AssociateHost ( D_M_UU_33, M_UU_33 )
+    else
+
+      !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV )
+      do iV = 1, nValues
+        E ( iV )  =  G ( iV )  -  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV ) &
+                                              +  S_2 ( iV ) * V_2 ( iV ) &
+                                              +  S_3 ( iV ) * V_3 ( iV ) )
+      end do
+      !$OMP end parallel do
+
+      !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV )
+      do iV = 1, nValues
+        if ( E ( iV ) < 0.0_KDR ) then
+          E ( iV ) = 0.0_KDR
+          G ( iV ) = E ( iV )  +  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV ) &
+                                              +  S_2 ( iV ) * V_2 ( iV ) &
+                                              +  S_3 ( iV ) * V_3 ( iV ) )
+        end if
+      end do
+      !$OMP end parallel do
+    
+    end if
+
+  end subroutine ComputeInternalEnergyKernel
+
+
+  subroutine ComputeEigenspeedsFluidKernel &
+               ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, MN, &
+                 M, N, V_1, V_2, V_3, S_1, S_2, S_3, P, Gamma, &
+                 M_UU_22, M_UU_33, UseDeviceOption )
+
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      FEP_1, FEP_2, FEP_3, &
+      FEM_1, FEM_2, FEM_3, &
+      CS, &
+      MN
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      M, &
+      N, &
+      V_1, V_2, V_3, &
+      S_1, S_2, S_3, &
+      P, &
+      Gamma, &
+      M_UU_22, M_UU_33
+    logical ( KDL ), intent ( in ), optional :: &
+      UseDeviceOption
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+    logical ( KDL ) :: &
+      UseDevice
+
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
 
     nValues = size ( FEP_1 )
-
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-    !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
-    do iV = 1, nValues
-      if ( N ( iV ) > 0.0_KDR .and. P ( iV ) > 0.0_KDR ) then
-        CS ( iV ) = sqrt ( Gamma ( iV ) * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
-      else
-        CS ( iV ) = 0.0_KDR
-      end if
-    end do
-    !$OMP  end OMP_TARGET_DIRECTIVE parallel do
-
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-    !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
-    do iV = 1, nValues
-      if ( P ( iV ) > 0.0_KDR ) then
-        MN ( iV ) = sqrt ( (    S_1 ( iV ) * V_1 ( iV )  &
-                             +  S_2 ( iV ) * V_2 ( iV )  &
-                             +  S_3 ( iV ) * V_3 ( iV ) ) &
-                           / ( Gamma ( iV ) * P ( iV ) ) )
-      else
-        MN ( iV ) = 0.0_KDR
-      end if
-    end do
-    !$OMP end parallel do
-
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-    !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
-    do iV = 1, nValues
-      FEP_1 ( iV )  =  V_1 ( iV )  +  CS ( iV ) 
-      FEP_2 ( iV )  =  V_2 ( iV )  +  sqrt ( M_UU_22 ( iV ) ) * CS ( iV ) 
-      FEP_3 ( iV )  =  V_3 ( iV )  +  sqrt ( M_UU_33 ( iV ) ) * CS ( iV )
-      FEM_1 ( iV )  =  V_1 ( iV )  -  CS ( iV )
-      FEM_2 ( iV )  =  V_2 ( iV )  -  sqrt ( M_UU_22 ( iV ) ) * CS ( iV )
-      FEM_3 ( iV )  =  V_3 ( iV )  -  sqrt ( M_UU_33 ( iV ) ) * CS ( iV )
-    end do
-    !$OMP  end OMP_TARGET_DIRECTIVE parallel do
     
-    call DisassociateHost ( M_UU_33 )
-    call DisassociateHost ( M_UU_22 )
-    call DisassociateHost ( Gamma )
-    call DisassociateHost ( P )
-    call DisassociateHost ( S_3 )
-    call DisassociateHost ( S_2 )
-    call DisassociateHost ( S_1 )
-    call DisassociateHost ( V_3 )
-    call DisassociateHost ( V_2 )
-    call DisassociateHost ( V_1 )
-    call DisassociateHost ( N )
-    call DisassociateHost ( M )
-    call DisassociateHost ( MN )
-    call DisassociateHost ( CS )
-    call DisassociateHost ( FEM_3 )
-    call DisassociateHost ( FEM_2 )
-    call DisassociateHost ( FEM_1 )
-    call DisassociateHost ( FEP_3 )
-    call DisassociateHost ( FEP_2 )
-    call DisassociateHost ( FEP_1 )
+    if ( UseDevice ) then
+    
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+      do iV = 1, nValues
+        if ( N ( iV ) > 0.0_KDR .and. P ( iV ) > 0.0_KDR ) then
+          CS ( iV ) = sqrt ( Gamma ( iV ) * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
+        else
+          CS ( iV ) = 0.0_KDR
+        end if
+      end do
+      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
 
-  end subroutine ComputeEigenspeedsFluidKernelDevice
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+      do iV = 1, nValues
+        if ( P ( iV ) > 0.0_KDR ) then
+          MN ( iV ) = sqrt ( (    S_1 ( iV ) * V_1 ( iV )  &
+                               +  S_2 ( iV ) * V_2 ( iV )  &
+                               +  S_3 ( iV ) * V_3 ( iV ) ) &
+                             / ( Gamma ( iV ) * P ( iV ) ) )
+        else
+          MN ( iV ) = 0.0_KDR
+        end if
+      end do
+      !$OMP end parallel do
+
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+      do iV = 1, nValues
+        FEP_1 ( iV )  =  V_1 ( iV )  +  CS ( iV ) 
+        FEP_2 ( iV )  =  V_2 ( iV )  +  sqrt ( M_UU_22 ( iV ) ) * CS ( iV ) 
+        FEP_3 ( iV )  =  V_3 ( iV )  +  sqrt ( M_UU_33 ( iV ) ) * CS ( iV )
+        FEM_1 ( iV )  =  V_1 ( iV )  -  CS ( iV )
+        FEM_2 ( iV )  =  V_2 ( iV )  -  sqrt ( M_UU_22 ( iV ) ) * CS ( iV )
+        FEM_3 ( iV )  =  V_3 ( iV )  -  sqrt ( M_UU_33 ( iV ) ) * CS ( iV )
+      end do
+      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+      
+    else 
+    
+      !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV )
+      do iV = 1, nValues
+        if ( N ( iV ) > 0.0_KDR .and. P ( iV ) > 0.0_KDR ) then
+          CS ( iV ) = sqrt ( Gamma ( iV ) * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
+        else
+          CS ( iV ) = 0.0_KDR
+        end if 
+      end do
+      !$OMP end parallel do
+
+      !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV )
+      do iV = 1, nValues
+        if ( P ( iV ) > 0.0_KDR ) then
+          MN ( iV ) = sqrt ( (    S_1 ( iV ) * V_1 ( iV )  &
+                               +  S_2 ( iV ) * V_2 ( iV )  &
+                               +  S_3 ( iV ) * V_3 ( iV ) ) &
+                             / ( Gamma ( iV ) * P ( iV ) ) )
+        else
+          MN ( iV ) = 0.0_KDR
+        end if 
+      end do
+      !$OMP end parallel do
+
+      !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV )
+      do iV = 1, nValues
+        FEP_1 ( iV )  =  V_1 ( iV )  +  CS ( iV ) 
+        FEP_2 ( iV )  =  V_2 ( iV )  +  sqrt ( M_UU_22 ( iV ) ) * CS ( iV ) 
+        FEP_3 ( iV )  =  V_3 ( iV )  +  sqrt ( M_UU_33 ( iV ) ) * CS ( iV )
+        FEM_1 ( iV )  =  V_1 ( iV )  -  CS ( iV )
+        FEM_2 ( iV )  =  V_2 ( iV )  -  sqrt ( M_UU_22 ( iV ) ) * CS ( iV )
+        FEM_3 ( iV )  =  V_3 ( iV )  -  sqrt ( M_UU_33 ( iV ) ) * CS ( iV )
+      end do
+      !$OMP end parallel do
+    
+    end if
+
+  end subroutine ComputeEigenspeedsFluidKernel
 
 
   subroutine InitializeBasics &
@@ -1226,8 +1056,8 @@ contains
   end subroutine ComputeFluxes_HLLC_Kernel
 
 
-  subroutine ComputeRawFluxesTemplate_P_KernelHost &
-               ( F_S_Dim, F_G, G, P, V_Dim )
+  subroutine ComputeRawFluxesTemplate_P_Kernel &
+               ( F_S_Dim, F_G, G, P, V_Dim, UseDeviceOption )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       F_S_Dim, &
@@ -1236,68 +1066,39 @@ contains
       G, &
       P, &
       V_Dim
+    logical ( KDL ), intent ( in ), optional :: &
+      UseDeviceOption
 
     integer ( KDI ) :: &
       iV, &
       nValues
+    logical ( KDL ) :: &
+      UseDevice
 
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+    
     nValues = size ( F_S_Dim )
+    
+    if ( UseDevice ) then
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP& schedule ( OMP_SCHEDULE )
+      do iV = 1, nValues
+        F_S_Dim ( iV ) = F_S_Dim ( iV )  +  P ( iV )
+        F_G     ( iV ) =     ( G ( iV )  +  P ( iV ) ) * V_Dim ( iV )
+      end do
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    else
+      !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV )
+      do iV = 1, nValues
+        F_S_Dim ( iV ) = F_S_Dim ( iV )  +  P ( iV )
+        F_G     ( iV ) =     ( G ( iV )  +  P ( iV ) ) * V_Dim ( iV )
+      end do
+      !$OMP end parallel do
+    end if
 
-    !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV )
-    do iV = 1, nValues
-      F_S_Dim ( iV ) = F_S_Dim ( iV )  +  P ( iV )
-      F_G     ( iV ) =     ( G ( iV )  +  P ( iV ) ) * V_Dim ( iV )
-    end do
-    !$OMP end parallel do
-
-  end subroutine ComputeRawFluxesTemplate_P_KernelHost
+  end subroutine ComputeRawFluxesTemplate_P_Kernel
 
   
-  subroutine ComputeRawFluxesTemplate_P_KernelDevice &
-               ( F_S_Dim, F_G, G, P, V_Dim, D_F_S_Dim, D_F_G, D_G, D_P, &
-                 D_V_Dim )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      F_S_Dim, &
-      F_G
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      G, &
-      P, &
-      V_Dim
-    type ( c_ptr ), intent ( in ) :: &
-      D_F_S_Dim, &
-      D_F_G, &
-      D_G, &
-      D_P, &
-      D_V_Dim
-
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-      
-    call AssociateHost ( D_F_S_Dim, F_S_Dim )
-    call AssociateHost ( D_F_G, F_G )
-    call AssociateHost ( D_G, G )
-    call AssociateHost ( D_P, P )
-    call AssociateHost ( D_V_Dim, V_Dim )
-
-    nValues = size ( F_S_Dim )
-
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-    !$OMP& schedule ( OMP_SCHEDULE )
-    do iV = 1, nValues
-      F_S_Dim ( iV ) = F_S_Dim ( iV )  +  P ( iV )
-      F_G     ( iV ) =     ( G ( iV )  +  P ( iV ) ) * V_Dim ( iV )
-    end do
-    !$OMP end OMP_TARGET_DIRECTIVE parallel do
-    
-    call DisassociateHost ( V_Dim )
-    call DisassociateHost ( P )
-    call DisassociateHost ( G )
-    call DisassociateHost ( F_G )
-    call DisassociateHost ( F_S_Dim )
-    
-  end subroutine ComputeRawFluxesTemplate_P_KernelDevice
-
-
 end module Fluid_P__Template

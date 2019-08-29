@@ -161,7 +161,7 @@ contains
                G % Value ( :, G % WIDTH_RIGHT_U ( 2 ) ), &
                G % Value ( :, G % WIDTH_RIGHT_U ( 3 ) ), &
                nDimensions, nValues, oValue )
-      call SetMetricRectangularHost &
+      call SetMetricRectangular &
              ( G % Value ( :, G % METRIC_DD_22 ), &
                G % Value ( :, G % METRIC_DD_33 ), &
                G % Value ( :, G % METRIC_UU_22 ), &
@@ -181,7 +181,7 @@ contains
                G % Value ( :, G % WIDTH_RIGHT_U ( 3 ) ), &
                G % Value ( :, G % CENTER_U ( 1 ) ), &
                nDimensions, nValues, oValue )
-      call SetMetricCylindricalHost &
+      call SetMetricCylindrical &
              ( G % Value ( :, G % METRIC_DD_22 ), &
                G % Value ( :, G % METRIC_DD_33 ), &
                G % Value ( :, G % METRIC_UU_22 ), &
@@ -203,7 +203,7 @@ contains
                G % Value ( :, G % CENTER_U ( 1 ) ), &
                G % Value ( :, G % CENTER_U ( 2 ) ), &
                nDimensions, nValues, oValue )
-      call SetMetricSphericalHost &
+      call SetMetricSpherical &
              ( G % Value ( :, G % METRIC_DD_22 ), &
                G % Value ( :, G % METRIC_DD_33 ), &
                G % Value ( :, G % METRIC_UU_22 ), &
