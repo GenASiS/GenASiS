@@ -11,6 +11,11 @@ IncrementDivergence_FV__Form.o: \
   StorageDivergence_Form.o \
   IncrementDivergence_FV__Form.f90
 
+IncrementDivergence_FV__Kernel.o: \
+  Basics.o \
+  IncrementDivergence_FV__Form.o \
+  IncrementDivergence_FV__Kernel.o \
+
 IncrementDamping_Form.o: \
   Basics.o \
   Operations.o \

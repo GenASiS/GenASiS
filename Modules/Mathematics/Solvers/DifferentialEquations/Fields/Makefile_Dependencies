@@ -8,6 +8,11 @@ Current_Template.o: \
   Sources_C__Form.o \
   Current_Template.f90
 
+Current_Kernel.o: \
+  Basics.o \
+  Current_Template.o \
+  Current_Kernel.f90
+
 Tally_C__Form.o: \
   Basics.o \
   Manifolds.o \

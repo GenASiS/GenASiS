@@ -3,10 +3,10 @@ ifneq ($(PURPOSE),DEBUG)
 	FORTRAN_BOUND_CHECK = 
 endif
 
-%.o : ArrayOperations/%.f90
+%_Command.o : %_Command.f90
 	$(FORTRAN_COMPILE) $(DEFINES) $(FFLAGS) $(FORTRAN_BOUND_CHECK) $(INCLUDE) $<
 
-%.o : Devices/%.f90
+%_Function.o : %_Function.f90
 	$(FORTRAN_COMPILE) $(DEFINES) $(FFLAGS) $(FORTRAN_BOUND_CHECK) $(INCLUDE) $<
 
 %_Kernel.o : %_Kernel.f90
@@ -23,4 +23,3 @@ endif
 
 %.o : %.cu
 	$(NVCC_COMPILE) $(DEFINES) $(CFLAGS) $(INCLUDE) $<
-

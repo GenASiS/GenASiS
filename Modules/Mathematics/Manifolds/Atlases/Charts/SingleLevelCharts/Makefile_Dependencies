@@ -12,6 +12,11 @@ Chart_SL__Template.o: \
   ChartStream_SL__Form.o \
   Chart_SL__Template.f90
 
+Chart_SL__Kernel.o: \
+  Basics.o \
+  Chart_SL__Template.o \
+  Chart_SL__Kernel.f90
+
 Storage_CSL__Form.o: \
   Basics.o \
   ChartBasics.o \

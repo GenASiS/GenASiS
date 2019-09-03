@@ -3,11 +3,21 @@ Difference_Form.o: \
   Manifolds.o \
   Difference_Form.f90
 
+Difference_Kernel.o: \
+  Basics.o \
+  Difference_Form.o \
+  Difference_Kernel.f90
+
 Gradient_Form.o: \
   Basics.o \
   Manifolds.o \
   Difference_Form.o \
   Gradient_Form.f90
+
+Gradient_Kernel.o: \
+  Basics.o \
+  Gradient_Form.o \
+  Gradient_Kernel.f90
 
 Derivatives.o: \
   Difference_Form.o \

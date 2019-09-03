@@ -160,6 +160,39 @@ module Current_Template
       SetUnits, &
       ComputeSolverSpeeds_HLL_Kernel, &
       ComputeFluxes_HLL_Kernel
+      
+  interface
+  
+    module subroutine ComputeSolverSpeeds_HLL_Kernel &
+                 ( AP_I, AM_I, LP_IL, LP_IR, LM_IL, LM_IR, UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        AP_I, &
+        AM_I
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        LP_IL, LP_IR, &
+        LM_IL, LM_IR
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine ComputeSolverSpeeds_HLL_Kernel
+
+    module subroutine ComputeFluxes_HLL_Kernel &
+                 ( F_IL, F_IR, U_IL, U_IR, AP_I, AM_I, DF_I, F_I, &
+                   UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        F_IL, F_IR, &
+        U_IL, U_IR, &
+        AP_I, &
+        AM_I, &
+        DF_I
+      real ( KDR ), dimension ( : ), intent ( out ) :: &
+        F_I
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine ComputeFluxes_HLL_Kernel
+  
+  end interface
 
 contains
 
@@ -793,113 +826,6 @@ contains
     end do
 
   end subroutine SetUnits
-
-
-  subroutine ComputeSolverSpeeds_HLL_Kernel &
-               ( AP_I, AM_I, LP_IL, LP_IR, LM_IL, LM_IR, UseDeviceOption )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      AP_I, &
-      AM_I
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      LP_IL, LP_IR, &
-      LM_IL, LM_IR
-    logical ( KDL ), intent ( in ), optional :: &
-      UseDeviceOption
-
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-    logical ( KDL ) :: &
-      UseDevice
-
-    UseDevice = .false.
-    if ( present ( UseDeviceOption ) ) &
-      UseDevice = UseDeviceOption
-    
-    nValues = size ( AP_I )
-    
-    if ( UseDevice ) then
-    
-      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
-      do iV = 1, nValues
-        AP_I ( iV ) = max ( 0.0_KDR, + LP_IL ( iV ), + LP_IR ( iV ) )
-        AM_I ( iV ) = max ( 0.0_KDR, - LM_IL ( iV ), - LM_IR ( iV ) )
-      end do !-- iV
-      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
-    
-    else
-    
-      !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV ) 
-      do iV = 1, nValues
-        AP_I ( iV ) = max ( 0.0_KDR, + LP_IL ( iV ), + LP_IR ( iV ) )
-        AM_I ( iV ) = max ( 0.0_KDR, - LM_IL ( iV ), - LM_IR ( iV ) )
-      end do !-- iV
-      !$OMP end parallel do
-      
-    end if
-
-  end subroutine ComputeSolverSpeeds_HLL_Kernel
-
-
-  subroutine ComputeFluxes_HLL_Kernel &
-               ( F_IL, F_IR, U_IL, U_IR, AP_I, AM_I, DF_I, F_I, &
-                 UseDeviceOption )
-
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      F_IL, F_IR, &
-      U_IL, U_IR, &
-      AP_I, &
-      AM_I, &
-      DF_I
-    real ( KDR ), dimension ( : ), intent ( out ) :: &
-      F_I
-    logical ( KDL ), intent ( in ), optional :: &
-      UseDeviceOption
-
-    integer ( KDI ) :: &
-      iV, &
-      nV
-    logical ( KDL ) :: &
-      UseDevice
-
-    UseDevice = .false.
-    if ( present ( UseDeviceOption ) ) &
-      UseDevice = UseDeviceOption
-     
-    nV = size ( F_I )
-    
-    if ( UseDevice ) then
-    
-      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
-      do iV = 1, nV
-        F_I ( iV ) &
-          =  (    AP_I ( iV ) * F_IL ( iV ) &
-               +  AM_I ( iV ) * F_IR ( iV ) &
-               -  DF_I ( iV ) * AP_I ( iV ) * AM_I ( iV ) &
-                  * ( U_IR ( iV ) - U_IL ( iV ) ) ) &
-             /  max ( AP_I ( iV ) + AM_I ( iV ), tiny ( 0.0_KDR ) )
-      end do
-      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
-    
-    else
-
-      !$OMP parallel do private ( iV )
-      do iV = 1, nV
-        F_I ( iV ) &
-          =  (    AP_I ( iV ) * F_IL ( iV ) &
-               +  AM_I ( iV ) * F_IR ( iV ) &
-               -  DF_I ( iV ) * AP_I ( iV ) * AM_I ( iV ) &
-                  * ( U_IR ( iV ) - U_IL ( iV ) ) ) &
-             /  max ( AP_I ( iV ) + AM_I ( iV ), tiny ( 0.0_KDR ) )
-      end do
-      !$OMP end parallel do
-    
-    end if
-
-  end subroutine ComputeFluxes_HLL_Kernel
 
 
 end module Current_Template

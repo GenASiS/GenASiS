@@ -1,13 +1,10 @@
 !-- Chart_SL contains functionality common to local and distributed
 !   single-level charts.
 
-#include "Preprocessor"
-
 module Chart_SL__Template
 
   !-- Chart_SingleLevel_Template
   
-  use iso_c_binding
   use Basics
   use AtlasBasics
   use ChartBasics
@@ -87,6 +84,38 @@ module Chart_SL__Template
       SetBoundaryLimits, &
       CopyBoundaryKernel, &
       ReverseBoundaryKernel
+      
+    interface
+
+      module subroutine CopyBoundaryKernel &
+                          ( V, nB, dBE, dBI, oBE, oBI, UseDeviceOption )
+        use Basics
+        real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
+          V
+        integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
+          nB,  & 
+          dBE, &
+          dBI, &
+          oBE, &
+          oBI
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine CopyBoundaryKernel
+      
+      module subroutine ReverseBoundaryKernel &
+                          ( V, nB, dBE, oBE, UseDeviceOption )
+        use Basics
+        real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
+          V
+        integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
+          nB,  & 
+          dBE, &
+          oBE
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine ReverseBoundaryKernel
+    
+    end interface
 
 contains
 
@@ -467,130 +496,6 @@ contains
     end associate !-- Connectivity, etc.
     
   end subroutine SetBoundaryLimits
-
-
-  subroutine CopyBoundaryKernel ( V, nB, dBE, dBI, oBE, oBI, UseDeviceOption )
-
-    real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
-      V
-    integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
-      nB,  & 
-      dBE, &
-      dBI, &
-      oBE, &
-      oBI
-    logical ( KDL ), intent ( in ), optional :: &
-      UseDeviceOption
-
-    integer ( KDI ) :: &
-      iV, jV, kV
-    logical ( KDL ) :: &
-      UseDevice
-      
-    UseDevice = .false.
-    if ( present ( UseDeviceOption ) ) &
-      UseDevice = UseDeviceOption
-
-    if ( UseDevice ) then
-    
-      !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, jV, kV ) 
-      do kV = 1, nB ( 3 )
-        do jV = 1, nB ( 2 )
-          do iV = 1, nB ( 1 )
-            V ( oBE ( 1 )  +  dBE ( 1 ) * iV, &
-                oBE ( 2 )  +  dBE ( 2 ) * jV, &
-                oBE ( 3 )  +  dBE ( 3 ) * kV ) &
-              = V ( oBI ( 1 )  +  dBI ( 1 ) * iV, &
-                    oBI ( 2 )  +  dBI ( 2 ) * jV, &
-                    oBI ( 3 )  +  dBI ( 3 ) * kV )
-          end do 
-        end do
-      end do
-      !$OMP end OMP_TARGET_DIRECTIVE parallel do
-      
-    else
-      
-      !$OMP  parallel do collapse ( 3 ) &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, jV, kV ) 
-      do kV = 1, nB ( 3 )
-        do jV = 1, nB ( 2 )
-          do iV = 1, nB ( 1 )
-            V ( oBE ( 1 )  +  dBE ( 1 ) * iV, &
-                oBE ( 2 )  +  dBE ( 2 ) * jV, &
-                oBE ( 3 )  +  dBE ( 3 ) * kV ) &
-              = V ( oBI ( 1 )  +  dBI ( 1 ) * iV, &
-                    oBI ( 2 )  +  dBI ( 2 ) * jV, &
-                    oBI ( 3 )  +  dBI ( 3 ) * kV )
-          end do 
-        end do
-      end do
-      !$OMP end parallel do
-    
-    end if
-      
-  end subroutine CopyBoundaryKernel
-
-  
-  subroutine ReverseBoundaryKernel ( V, nB, dBE, oBE, UseDeviceOption )
-
-    real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
-      V
-    integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
-      nB,  & 
-      dBE, &
-      oBE
-    logical ( KDL ), intent ( in ), optional :: &
-      UseDeviceOption
-
-    integer ( KDI ) :: &
-      iV, jV, kV
-    logical ( KDL ) :: &
-      UseDevice
-      
-    UseDevice = .false.
-    if ( present ( UseDeviceOption ) ) &
-      UseDevice = UseDeviceOption
-
-    if ( UseDevice ) then
-    
-      !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, jV, kV ) 
-      do kV = 1, nB ( 3 )
-        do jV = 1, nB ( 2 )
-          do iV = 1, nB ( 1 )
-            V ( oBE ( 1 )  +  dBE ( 1 ) * iV, &
-                oBE ( 2 )  +  dBE ( 2 ) * jV, &
-                oBE ( 3 )  +  dBE ( 3 ) * kV ) &
-              = - V ( oBE ( 1 )  +  dBE ( 1 ) * iV, &
-                      oBE ( 2 )  +  dBE ( 2 ) * jV, &
-                      oBE ( 3 )  +  dBE ( 3 ) * kV )
-          end do 
-        end do
-      end do
-      !$OMP end OMP_TARGET_DIRECTIVE parallel do
-    
-    else
-
-      !$OMP  parallel do collapse ( 3 ) &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, jV, kV ) 
-      do kV = 1, nB ( 3 )
-        do jV = 1, nB ( 2 )
-          do iV = 1, nB ( 1 )
-            V ( oBE ( 1 )  +  dBE ( 1 ) * iV, &
-                oBE ( 2 )  +  dBE ( 2 ) * jV, &
-                oBE ( 3 )  +  dBE ( 3 ) * kV ) &
-              = - V ( oBE ( 1 )  +  dBE ( 1 ) * iV, &
-                      oBE ( 2 )  +  dBE ( 2 ) * jV, &
-                      oBE ( 3 )  +  dBE ( 3 ) * kV )
-          end do 
-        end do
-      end do
-      !$OMP end parallel do
-    
-    end if
-
-  end subroutine ReverseBoundaryKernel
 
   
 end module Chart_SL__Template
