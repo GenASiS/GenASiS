@@ -1,4 +1,5 @@
 include ../../../../Build/Machines/Makefile_$(GENASIS_MACHINE)
+FFLAGS = $(FORTRAN_$(PURPOSE))
 F90 := $(shell echo $(FORTRAN_COMPILE) $(FFLAGS) $(FORTRAN_BOUND_CHECK )| sed 's/-c //g')
 #F90= mpif90
 #F90FLAGS= -O3
