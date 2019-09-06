@@ -9,10 +9,10 @@ program TableGeneration_NuLib
   character ( LDL ), parameter :: vnum = "1.0"
   character ( LDF ), parameter :: &
     eos_table_filename = "./LS220_234r_136t_50y_analmu_20091212_SVNr26.h5"
-  integer ( KDI ),   parameter :: table_size_D = 4!82 ! Mass Density
-  integer ( KDI ),   parameter :: table_size_T = 3!65 ! Temperature
-  integer ( KDI ),   parameter :: table_size_Y = 2!51 ! Electron Fraction
-  integer ( KDI ),   parameter :: table_size_X = 5!   ! Electron Degeneracy
+  integer ( KDI ),   parameter :: table_size_D = 82 ! Mass Density
+  integer ( KDI ),   parameter :: table_size_T = 65 ! Temperature
+  integer ( KDI ),   parameter :: table_size_Y = 51 ! Electron Fraction
+  integer ( KDI ),   parameter :: table_size_X = 61 ! Electron Degeneracy
   real ( KDR ),      parameter :: min_LogD =  6.0_KDR
   real ( KDR ),      parameter :: max_LogD = 15.5_KDR
   real ( KDR ),      parameter :: min_LogT = log10( 0.050_KDR )
@@ -37,8 +37,11 @@ program TableGeneration_NuLib
     table_emission, &
     table_absopacity, &
     table_scatopacity, &
-    table_phi_0, &
-    table_phi_1
+    table_nes_phi_0, &
+    table_nes_phi_1
+  real ( KDR ), dimension( :, :, :, :, :, : ), allocatable :: &
+    table_pair_phi_0, &
+    table_pair_phi_1
   type ( Atlas_SC_Form ), allocatable :: &
     MomentumSpace
 
@@ -357,13 +360,19 @@ subroutine CreateTable ( )
     yeindex, &
     single_point_return_all, &
     single_ipoint_return_all, &
-    add_nue_Iscattering_electrons,   &
-    add_anue_Iscattering_electrons,  &
-    add_numu_Iscattering_electrons,  &
+    single_epannihil_kernel_point_return_all, &
+    add_nue_Iscattering_electrons, &
+    add_anue_Iscattering_electrons, &
+    add_numu_Iscattering_electrons, &
     add_anumu_Iscattering_electrons, &
     add_nutau_Iscattering_electrons, &
-    add_anutau_Iscattering_electrons
-
+    add_anutau_Iscattering_electrons, &
+    add_nue_kernel_epannihil, &
+    add_anue_kernel_epannihil, &
+    add_numu_kernel_epannihil, &
+    add_anumu_kernel_epannihil, &
+    add_nutau_kernel_epannihil, &
+    add_anutau_kernel_epannihil
   integer ( KDI ) :: &
     iD, iT, iY, iX, iS, iG, iGp
   real( KDR ) :: &
@@ -372,8 +381,11 @@ subroutine CreateTable ( )
     emission, &
     absopacity, &
     scatopacity, &
-    phi_0, &
-    phi_1
+    nes_phi_0, &
+    nes_phi_1
+  real ( KDR ), dimension( :, :, : ), allocatable :: &
+    pair_phi_0, &
+    pair_phi_1
 
   select case ( neutrino_scheme )
 
@@ -405,7 +417,12 @@ subroutine CreateTable ( )
              add_anutau_Iscattering_electrons ] )
 
   include_Pair &
-    = .FALSE. ! --- For now
+    = any( [ add_nue_kernel_epannihil,   &
+             add_anue_kernel_epannihil,  &
+             add_numu_kernel_epannihil,  &
+             add_anumu_kernel_epannihil, &
+             add_nutau_kernel_epannihil, &
+             add_anutau_kernel_epannihil ] )
 
   call Show ( 'Creating NuLib table' )
   call Show ( neutrino_scheme, 'neutrino_scheme' )
@@ -532,17 +549,17 @@ subroutine CreateTable ( )
     call Show ( 'Computing NES Kernels' )
 
     allocate &
-      ( table_phi_0 &
+      ( table_nes_phi_0 &
           (table_size_T,table_size_X,number_groups,number_local_species, &
            number_groups) )
 
     allocate &
-      ( table_phi_1 &
+      ( table_nes_phi_1 &
           (table_size_T,table_size_X,number_groups,number_local_species, &
            number_groups) )
 
-    allocate( phi_0(number_local_species,number_groups) )
-    allocate( phi_1(number_local_species,number_groups) )
+    allocate( nes_phi_0(number_local_species,number_groups) )
+    allocate( nes_phi_1(number_local_species,number_groups) )
 
     do iT = 1, table_size_T
     do iX = 1, table_size_X
@@ -552,18 +569,19 @@ subroutine CreateTable ( )
       do iGp = number_groups, 1, - 1
 
         call single_Ipoint_return_all &
-               ( iGp, table_X(iX), table_T(iT), phi_0, phi_1, neutrino_scheme )
+               ( iGp, table_X(iX), table_T(iT), nes_phi_0, nes_phi_1, &
+                 neutrino_scheme )
 
         do iS = 1, number_local_species
         do iG = iGp+1, number_groups
 
-          phi_0(iS,iG) &
+          nes_phi_0(iS,iG) &
             = exp( - ( energies(iG) - energies(iGp) ) / table_T(iT) ) &
-                * table_phi_0(iT,iX,iG,iS,iGp)
+                * table_nes_phi_0(iT,iX,iG,iS,iGp)
 
-          phi_1(iS,iG) &
+          nes_phi_1(iS,iG) &
             = exp( - ( energies(iG) - energies(iGp) ) / table_T(iT) ) &
-                * table_phi_1(iT,iX,iG,iS,iGp)
+                * table_nes_phi_1(iT,iX,iG,iS,iGp)
 
         end do
         end do
@@ -571,9 +589,8 @@ subroutine CreateTable ( )
         do iS = 1, number_local_species
         do iG = 1, number_groups
 
-          table_phi_0(iT,iX,iGp,iS,iG) = phi_0(iS,iG)
-
-          table_phi_1(iT,iX,iGp,iS,iG) = phi_1(iS,iG)
+          table_nes_phi_0(iT,iX,iGp,iS,iG) = nes_phi_0(iS,iG)
+          table_nes_phi_1(iT,iX,iGp,iS,iG) = nes_phi_1(iS,iG)
 
         end do
         end do
@@ -583,7 +600,55 @@ subroutine CreateTable ( )
     end do
     end do
 
-    deallocate( phi_0, phi_1 )
+    deallocate( nes_phi_0, nes_phi_1 )
+
+  end if
+
+  if( include_Pair )then
+
+    call Show ( 'Computing Pair Kernels' )
+
+    allocate &
+      ( table_pair_phi_0 &
+          (table_size_T,table_size_X,number_groups,number_local_species, &
+           number_groups,2) )
+
+    allocate &
+      ( table_pair_phi_1 &
+          (table_size_T,table_size_X,number_groups,number_local_species, &
+           number_groups,2) )
+
+    allocate( pair_phi_0(number_local_species,number_groups,2) )
+    allocate( pair_phi_1(number_local_species,number_groups,2) )
+
+    do iT = 1, table_size_T
+    do iX = 1, table_size_X
+
+      call Show( [ iT, iX ], '[ iT, iX ]' )
+
+      do iGp = number_groups, 1, - 1
+
+        call single_epannihil_kernel_point_return_all &
+               ( iGp, table_X(iX), table_T(iT), pair_phi_0, pair_phi_1, &
+                 neutrino_scheme )
+
+        do iS = 1, number_local_species
+        do iG = 1, number_groups
+
+          table_pair_phi_0(iT,iX,iGp,iS,iG,1) = pair_phi_0(iS,iG,1)
+          table_pair_phi_0(iT,iX,iGp,iS,iG,2) = pair_phi_0(iS,iG,2)
+          table_pair_phi_1(iT,iX,iGp,iS,iG,1) = pair_phi_1(iS,iG,1)
+          table_pair_phi_1(iT,iX,iGp,iS,iG,2) = pair_phi_1(iS,iG,2)
+
+        end do
+        end do
+
+      end do
+
+    end do
+    end do
+
+    deallocate( pair_phi_0, pair_phi_1 )
 
   end if
 
@@ -599,7 +664,13 @@ subroutine CreateTable ( )
 
   if( include_NES )then
 
-    deallocate( table_phi_0, table_phi_1 )
+    deallocate( table_nes_phi_0, table_nes_phi_1 )
+
+  end if
+
+  if( include_Pair )then
+
+    deallocate( table_pair_phi_0, table_pair_phi_1 )
 
   end if
 
@@ -627,7 +698,7 @@ subroutine WriteTable
   character ( LDF )   :: table_filename
   integer ( KDI )     :: error, cerror, rank, values(8)
   integer ( HID_T )   :: file_id, dset_id, dspace_id
-  integer ( HSIZE_T ) :: dims1(1), dims5(5)
+  integer ( HSIZE_T ) :: dims1(1), dims5(5), dims6(6)
   real ( KDR )        :: timestamp
 
   call date_and_time( DATE = date, VALUES = values )
@@ -645,7 +716,7 @@ subroutine WriteTable
                 + ( dble( values(5) ) + dble( values(6) ) / 60.0d0 &
                       + dble( values(7) ) / 3600.0d0 ) / 24.0
 
-  if( include_NES )then
+  if( include_NES .or. include_Pair )then
 
     table_filename &
       = trim( adjustl( outdir ) ) &
@@ -854,6 +925,113 @@ subroutine WriteTable
   call h5dclose_f( dset_id, error )
   call h5sclose_f( dspace_id, error )
   cerror = cerror + error
+
+  if( include_NES .or. include_Pair )then
+
+    rank = 1; dims1 = 1
+
+    call h5screate_simple_f( rank, dims1, dspace_id, error )
+    call h5dcreate_f &
+           ( file_id, "Itemp", H5T_NATIVE_INTEGER, dspace_id, dset_id, error )
+    call h5dwrite_f &
+           ( dset_id, H5T_NATIVE_INTEGER, table_size_T, dims1, error )
+    call h5dclose_f( dset_id, error )
+    call h5sclose_f( dspace_id, error )
+    cerror = cerror + error
+
+    rank = 1; dims1 = 1
+    call h5screate_simple_f( rank, dims1, dspace_id, error )
+    call h5dcreate_f &
+           ( file_id, "Ieta", H5T_NATIVE_INTEGER, dspace_id, dset_id, error )
+    call h5dwrite_f( dset_id, H5T_NATIVE_INTEGER, table_size_X, dims1, error )
+    call h5dclose_f( dset_id, error )
+    call h5sclose_f( dspace_id, error )
+    cerror = cerror + error
+
+    rank = 1; dims1 = table_size_T
+    call h5screate_simple_f( rank, dims1, dspace_id, error )
+    call h5dcreate_f &
+           ( file_id, "temp_Ipoints", H5T_NATIVE_DOUBLE, dspace_id, &
+             dset_id, error )
+    call h5dwrite_f( dset_id, H5T_NATIVE_DOUBLE, table_T, dims1, error )
+    call h5dclose_f( dset_id, error )
+    call h5sclose_f( dspace_id, error )
+    cerror = cerror + error
+
+    rank = 1; dims1 = table_size_X
+    call h5screate_simple_f( rank, dims1, dspace_id, error )
+    call h5dcreate_f &
+           ( file_id, "eta_Ipoints", H5T_NATIVE_DOUBLE, dspace_id, &
+             dset_id, error )
+    call h5dwrite_f( dset_id, H5T_NATIVE_DOUBLE, table_X, dims1, error )
+    call h5dclose_f( dset_id, error )
+    call h5sclose_f( dspace_id, error )
+    cerror = cerror + error   
+
+  end if
+
+  if( include_NES )then
+
+    rank = 5
+    dims5(1) = table_size_T
+    dims5(2) = table_size_X
+    dims5(3) = number_groups
+    dims5(4) = number_local_species  
+    dims5(5) = number_groups  
+
+    call h5screate_simple_f( rank, dims5, dspace_id, error )
+    call h5dcreate_f &
+           ( file_id, "inelastic_phi0", H5T_NATIVE_DOUBLE, dspace_id, &
+             dset_id, error )
+    call h5dwrite_f &
+           ( dset_id, H5T_NATIVE_DOUBLE, table_nes_phi_0, dims5, error )
+    call h5dclose_f( dset_id, error )
+    call h5sclose_f( dspace_id, error )
+    cerror = cerror + error   
+
+    call h5screate_simple_f( rank, dims5, dspace_id, error )
+    call h5dcreate_f &
+           ( file_id, "inelastic_phi1", H5T_NATIVE_DOUBLE, dspace_id, &
+             dset_id, error )
+    call h5dwrite_f &
+           ( dset_id, H5T_NATIVE_DOUBLE, table_nes_phi_1, dims5, error )
+    call h5dclose_f( dset_id, error )
+    call h5sclose_f( dspace_id, error )
+    cerror = cerror + error
+
+  end if
+
+  if( include_Pair )then
+
+    rank = 6
+    dims6(1) = table_size_T
+    dims6(2) = table_size_X
+    dims6(3) = number_groups
+    dims6(4) = number_local_species  
+    dims6(5) = number_groups
+    dims6(6) = 2
+       
+    call h5screate_simple_f( rank, dims6, dspace_id, error )
+    call h5dcreate_f &
+           ( file_id, "epannihil_phi0", H5T_NATIVE_DOUBLE, dspace_id, &
+             dset_id, error )
+    call h5dwrite_f &
+           ( dset_id, H5T_NATIVE_DOUBLE, table_pair_phi_0, dims6, error )
+    call h5dclose_f( dset_id, error )
+    call h5sclose_f( dspace_id, error )
+    cerror = cerror + error   
+
+    call h5screate_simple_f( rank, dims6, dspace_id, error )
+    call h5dcreate_f &
+           ( file_id, "epannihil_phi1", H5T_NATIVE_DOUBLE, dspace_id, &
+             dset_id, error )
+    call h5dwrite_f &
+           ( dset_id, H5T_NATIVE_DOUBLE, table_pair_phi_1, dims6, error )
+    call h5dclose_f( dset_id, error )
+    call h5sclose_f( dspace_id, error )
+    cerror = cerror + error
+
+  end if
 
   ! --- close h5 files, check for error ---
 
