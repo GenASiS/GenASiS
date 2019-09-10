@@ -53,7 +53,7 @@ contains
                ( FF, Fluid, Grid, nValues, VariableOption, VectorOption, &
                  NameOption, ClearOption, PinnedOption, UnitOption, &
                  VectorIndicesOption )
-
+                 
     class ( FluidFeaturesTemplate ), intent ( inout ) :: &
       FF
     class ( StorageForm ), intent ( in ), target :: &
@@ -107,7 +107,7 @@ contains
 
 
   impure elemental subroutine FinalizeTemplate ( FF )
-
+  
     class ( FluidFeaturesTemplate ), intent ( inout ) :: &
       FF
 

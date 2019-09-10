@@ -32,7 +32,7 @@ contains
                ( FFA, Fluid_ASC, FluidType, RiemannSolverType, &
                  NameShortOption, UsePinnedMemoryOption, &
                  ShockThresholdOption, IgnorabilityOption )
-
+    
     class ( FluidFeatures_ASC_Form ), intent ( inout ) :: &
       FFA
     class ( Field_ASC_Template ), intent ( in ), target :: &
@@ -80,7 +80,7 @@ contains
 
 
   impure elemental subroutine Finalize ( FFA )
-
+    
     type ( FluidFeatures_ASC_Form ), intent ( inout ) :: &
       FFA
 
@@ -92,7 +92,7 @@ contains
 
 
   subroutine SetField ( FA )
-
+    
     class ( FluidFeatures_ASC_Form ), intent ( inout ) :: &
       FA
 
