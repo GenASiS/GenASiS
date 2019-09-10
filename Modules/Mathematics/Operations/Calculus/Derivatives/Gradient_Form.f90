@@ -52,9 +52,9 @@ module Gradient_Form
           dVdX
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
-        real ( KDR ), dimension ( :, :, : ), intent ( in ), optional :: &
+        real ( KDR ), dimension ( :, :, : ), intent ( in ), optional, target :: &
           UseLimiterOption
-        real ( KDR ), intent ( in ), optional :: &
+        real ( KDR ), intent ( in ), optional, target :: &
           ThetaOption
       end subroutine ComputeChart_SL_Kernel
     

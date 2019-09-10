@@ -537,7 +537,7 @@ contains
 
 
   impure elemental subroutine FinalizeTemplate ( C )
-
+    
     class ( CurrentTemplate ), intent ( inout ) :: &
       C
 

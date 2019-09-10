@@ -22,6 +22,11 @@ contains
     logical ( KDL ) :: &
       UseDevice
       
+    real ( KDR ), pointer :: &
+      Theta
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+      UseLimiter
+      
     UseDevice = .false.
     if ( present ( UseDeviceOption ) ) &
       UseDevice = UseDeviceOption
@@ -42,9 +47,13 @@ contains
     iaS ( iD ) = +1
 
     if ( present ( ThetaOption ) .and. present ( UseLimiterOption ) ) then
-      associate &
-        ( Theta => ThetaOption, &
-          UseLimiter => UseLimiterOption )
+      !-- FIXME: XL refuses to compile association with optional variable
+      !associate &
+      !  ( Theta => ThetaOption, &
+      !    UseLimiter => UseLimiterOption )
+      
+      Theta => ThetaOption
+      UseLimiter => UseLimiterOption
       
       if ( UseDevice ) then
 
@@ -79,7 +88,8 @@ contains
           end do !-- jV
         end do !-- kV
         !$OMP end OMP_TARGET_DIRECTIVE parallel do
-
+      
+      
       else
 
         !$OMP  parallel do collapse ( 3 ) &
@@ -115,10 +125,13 @@ contains
         !$OMP end parallel do
 
       end if
-
-      end associate !-- Theta    
+      
+      !-- FIXME: see above
+      !end associate !-- Theta
     else if ( present ( ThetaOption ) ) then
-      associate ( Theta => ThetaOption )
+      !-- FIXME: see above
+      !associate ( Theta => ThetaOption )
+      Theta => ThetaOption
       
       if ( UseDevice ) then
       
@@ -147,7 +160,7 @@ contains
           end do !-- jV
         end do !-- kV
         !$OMP end OMP_TARGET_DIRECTIVE parallel do
-
+      
       else
 
         !$OMP parallel do collapse ( 3 ) &
@@ -178,8 +191,8 @@ contains
 
       end if
 
-      end associate !-- Theta
-
+      !-- FIXME: see above
+      !end associate !-- Theta
     else
     
       if ( UseDevice ) then

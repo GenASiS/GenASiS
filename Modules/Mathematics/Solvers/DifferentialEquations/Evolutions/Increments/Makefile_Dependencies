@@ -14,7 +14,7 @@ IncrementDivergence_FV__Form.o: \
 IncrementDivergence_FV__Kernel.o: \
   Basics.o \
   IncrementDivergence_FV__Form.o \
-  IncrementDivergence_FV__Kernel.o \
+  IncrementDivergence_FV__Kernel.f90 \
 
 IncrementDamping_Form.o: \
   Basics.o \
