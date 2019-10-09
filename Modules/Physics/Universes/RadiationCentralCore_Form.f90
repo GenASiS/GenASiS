@@ -265,6 +265,11 @@ contains
     character ( LDL ) :: &
       EnergySpacing
 
+    if ( .not. RCC % Dimensionless ) then
+      RCC % Units % Coordinate_MS        =  UNIT % IDENTITY
+      RCC % Units % Coordinate_MS ( 1 )  =  UNIT % MEGA_ELECTRON_VOLT
+    end if
+
     select type ( I => RCC % Integrator )
     class is ( Integrator_C_1D_MS_C_PS_Form )
 

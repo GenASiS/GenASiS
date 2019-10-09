@@ -279,10 +279,12 @@ contains
       nCellsPolarOption
 
     if ( .not. FC % Dimensionless ) then
-      FC % Units % Coordinate_PS  &
-        =  [ UNIT % KILOMETER, UNIT % RADIAN, UNIT % RADIAN ]
       FC % Units % Time &
         =  UNIT % SECOND
+      FC % Units % Length &
+        =  UNIT % KILOMETER
+      FC % Units % Coordinate_PS  &
+        =  [ UNIT % KILOMETER, UNIT % RADIAN, UNIT % RADIAN ]
     end if
 
     call FC % InitializeAtlas &

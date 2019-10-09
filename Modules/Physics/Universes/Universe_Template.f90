@@ -43,6 +43,7 @@ contains
     class ( UniverseTemplate ), intent ( inout ) :: &
       U
 
+    call U % Units % Show ( )
     call U % Integrator % Evolve ( )
 
   end subroutine Evolve
