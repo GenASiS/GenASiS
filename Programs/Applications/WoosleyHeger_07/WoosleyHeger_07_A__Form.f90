@@ -14,6 +14,8 @@ module WoosleyHeger_07_A__Form
       Initialize_WH
     generic, public :: &
       Initialize => Initialize_WH
+    final :: &
+      Finalize
   end type WoosleyHeger_07_A_Form
 
     private :: &
@@ -36,6 +38,14 @@ contains
     call WH % SetFluid ( )
 
   end subroutine Initialize_WH
+
+
+  subroutine Finalize ( WH )
+
+    type ( WoosleyHeger_07_A_Form ), intent ( inout ) :: &
+      WH
+
+  end subroutine Finalize
 
 
   subroutine InitializeRadiationCentralCore ( WH, Name )

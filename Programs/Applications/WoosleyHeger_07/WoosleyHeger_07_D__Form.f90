@@ -12,6 +12,8 @@ module WoosleyHeger_07_D__Form
   contains
     procedure, private, pass :: &
       Initialize_WH
+    final :: &
+      Finalize
   end type WoosleyHeger_07_D_Form
 
     private :: &
@@ -43,6 +45,14 @@ contains
     end select !-- I
 
   end subroutine Initialize_WH
+
+
+  subroutine Finalize ( WH )
+
+    type ( WoosleyHeger_07_D_Form ), intent ( inout ) :: &
+      WH
+
+  end subroutine Finalize
 
 
   subroutine ApplySources &
