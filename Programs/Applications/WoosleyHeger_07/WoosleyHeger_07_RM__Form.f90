@@ -19,7 +19,8 @@ module WoosleyHeger_07_RM__Form
   end type WoosleyHeger_07_RM_Form
 
     private :: &
-      InitializeRadiationCentralCore
+      InitializeRadiationCentralCore, &
+      SetProblem
 
 contains
 
@@ -36,7 +37,7 @@ contains
       WH % Type = 'a WoosleyHeger_07_RM'
 
     call InitializeRadiationCentralCore ( WH, MomentsType, Name )
-    call WH % SetFluid ( )
+    call SetProblem ( WH, MomentsType )
 
   end subroutine Initialize_WH
 
@@ -78,6 +79,18 @@ contains
              ShockThresholdOption = 1.0_KDR, nWriteOption = 30 )
 
   end subroutine InitializeRadiationCentralCore
+
+
+  subroutine SetProblem ( WH, MomentsType )
+
+    class ( WoosleyHeger_07_RM_Form ), intent ( inout ) :: &
+      WH
+    character ( * ), intent ( in )  :: &
+      MomentsType
+
+    call WH % SetFluid ( )
+
+  end subroutine SetProblem
 
 
 end module WoosleyHeger_07_RM__Form
