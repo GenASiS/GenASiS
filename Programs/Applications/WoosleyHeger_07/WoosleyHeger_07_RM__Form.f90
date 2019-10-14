@@ -58,6 +58,10 @@ contains
       MomentsType, &
       Name
 
+    real ( KDR ) :: &
+      MaxEnergy, &
+      MinWidthEnergy, &
+      EnergyScale
     character ( LDL ) :: &
       GeometryType
     character ( LDL ), dimension ( : ), allocatable :: &
@@ -72,11 +76,20 @@ contains
     RadiationName  =  [ 'Nu_E   ', 'NuBar_E' ]
     RadiationType  =  [ 'NEUTRINOS_E    ', 'NEUTRINOS_E_BAR' ]
 
+    MinWidthEnergy  =  2.0_KDR    *  UNIT % MEGA_ELECTRON_VOLT  !-- Geometric
+    MaxEnergy       =  310.0_KDR  *  UNIT % MEGA_ELECTRON_VOLT
+
+    EnergyScale  =  10.0_KDR  *  UNIT % MEGA_ELECTRON_VOLT  !-- Compactified
+
     call WH % Initialize &
            ( RadiationName = RadiationName, RadiationType = RadiationType, &
              MomentsType = MomentsType, FluidType = 'HEAVY_NUCLEUS', &
              GeometryType = GeometryType, Name = Name, &
-             ShockThresholdOption = 1.0_KDR, nWriteOption = 30 )
+             ShockThresholdOption = 1.0_KDR, &
+             MinWidthEnergyOption = MinWidthEnergy, &
+             MaxEnergyOption = MaxEnergy, &
+             EnergyScaleOption = EnergyScale, &
+             nWriteOption = 30 )
 
   end subroutine InitializeRadiationCentralCore
 
