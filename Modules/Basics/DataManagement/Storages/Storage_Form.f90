@@ -32,6 +32,7 @@ module Storage_Form
     logical ( KDL ) :: &
       AllocatedValue  = .false., &
       AllocatedDevice = .false., &
+      ClearRequested  = .false., &
       Pinned          = .false.
     character ( LDF ) :: &
       Name = ''
@@ -104,8 +105,6 @@ contains
     
     integer ( KDI ) :: &
       iVrbl
-    logical ( KDL ) :: &
-      ClearRequested
 
     S % nValues = ValueShape ( 1 )
     
@@ -123,9 +122,8 @@ contains
     end if
     S % AllocatedValue = .true.
     
-    ClearRequested = .false.
-    if ( present ( ClearOption ) ) ClearRequested = ClearOption
-    if ( ClearRequested ) call Clear ( S % Value )  
+    if ( present ( ClearOption ) ) S % ClearRequested = ClearOption
+    if ( S % ClearRequested ) call Clear ( S % Value )  
     
     allocate ( S % D_Selected ( S % nVariables ) )
     S % D_Selected = c_null_ptr
@@ -332,6 +330,9 @@ contains
         call AssociateHost ( S % D_Selected ( iV ), Variable )
       end do
       S % AllocatedDevice = .true.
+      
+      if ( S % ClearRequested ) &
+        call Clear ( S % Value, UseDeviceOption = .true. )
     
     end if
   
