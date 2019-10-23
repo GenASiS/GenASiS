@@ -83,7 +83,11 @@ contains
     associate ( S_Increment => DW % Increment_S )
     call S_Increment % Initialize &
            ( [ PC % nValues, PC % N_CONSERVED ], &
-             VariableOption = ConservedVariable, NameOption = 'Increment' )
+             VariableOption = ConservedVariable, &
+             ClearOption = .true., NameOption = 'Increment' )
+    
+    if ( PC % AllocatedDevice ) &
+      call S_Increment % AllocateDevice ( )
 
     call C % AddFieldImage ( S_Increment, iStream = 1 )
 
@@ -102,8 +106,11 @@ contains
         Weight_RK => 0.5_KDR )
 
     call S % Allocate &
-           ( PC % nVariables, PC % N_CONSERVED, PC % N_PRIMITIVE, &
-             PC % N_SOLVER_SPEEDS, G % nVariables, PC % nValues )
+           ( AllocateDevice = .true., nCurrent = PC % nVariables, &
+             nConserved = PC % N_CONSERVED, &
+             nReconstructed = PC % N_PRIMITIVE, &
+             nSolverSpeeds = PC % N_SOLVER_SPEEDS, &
+             nGeometry = G % nVariables, nValues = PC % nValues )
 
     call I % Initialize ( DW % ProtoCurrent % Chart )
     call I % SetStorage ( DW % Storage )

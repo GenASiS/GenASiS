@@ -5,6 +5,7 @@ DensityWaveIncrement_Form.o: \
   ProtoFields.o \
   StorageDivergence_Form.o \
   IncrementDivergence_FV__Form.o \
+  IncrementDivergence_FV__Kernel.o \
   DensityWaveIncrement_Form.f90
 
 ProtoIncrements.o: \

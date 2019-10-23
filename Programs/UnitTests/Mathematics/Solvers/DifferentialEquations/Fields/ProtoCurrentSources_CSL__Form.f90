@@ -52,7 +52,9 @@ contains
     PCSC % ProtoCurrent_CSL => ProtoCurrent_CSL
 
     call PCSC % InitializeTemplate_CSL &
-           ( ProtoCurrent_CSL % Chart, NameShort, nValues, IgnorabilityOption )
+           ( ProtoCurrent_CSL % Chart, NameShort, &
+             UsePinnedMemory = .true., nValues = nValues, &
+             IgnorabilityOption = IgnorabilityOption )
 
   end subroutine Initialize
 
