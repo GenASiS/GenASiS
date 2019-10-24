@@ -250,8 +250,11 @@ contains
       VY = Speed_R * SinTheta * SinPhi
       VZ = Speed_R * CosTheta
     end where
-
+    
+    call F % UpdateDevice ( )
+    call G % UpdateDevice ( )
     call F % ComputeFromPrimitive ( G )
+    call F % UpdateHost ( )
 
     end associate !-- X, etc.
     end select !-- FA

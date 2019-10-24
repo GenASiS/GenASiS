@@ -6,7 +6,7 @@
 
 module MultiplyAdd_Command
 
-  use ISO_C_BINDING
+  use iso_c_binding
   use Basics
   
   public :: &

@@ -9,6 +9,49 @@ submodule ( Current_Template ) Current_Kernel
 contains
 
 
+  module procedure SetDiffusionFactorUnity
+
+    integer ( KDI ) :: &
+      iV, jV, &
+      nValues, &
+      nVariables
+    logical ( KDL ) :: &
+      UseDevice
+
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+
+    nValues    = size ( DFV_I, dim = 1 )
+    nVariables = size ( DFV_I, dim = 2 )
+    
+    if ( UseDevice ) then
+    
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 2 ) &
+      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, jV ) 
+      do jV = 1, nVariables
+        do iV = 1, nValues
+          DFV_I ( iV, jV )  =  1.0_KDR
+        end do !-- iV
+      end do !-- jV
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    
+    else
+      
+      !$OMP  parallel do collapse ( 2 ) &
+      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, jV ) 
+      do jV = 1, nVariables
+        do iV = 1, nValues
+          DFV_I ( iV, jV )  =  1.0_KDR
+        end do !-- iV
+      end do !-- jV
+      !$OMP end parallel do
+      
+    end if
+
+  end procedure SetDiffusionFactorUnity
+
+
   module procedure ComputeSolverSpeeds_HLL_Kernel
   
     integer ( KDI ) :: &

@@ -1,8 +1,6 @@
 !-- Current is a template for a 4-current, of the type appearing in
 !   conservation laws.
 
-#include "Preprocessor"
-
 module Current_Template
 
   use Basics
@@ -162,6 +160,14 @@ module Current_Template
       ComputeFluxes_HLL_Kernel
       
   interface
+  
+    module subroutine SetDiffusionFactorUnity ( DFV_I, UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+        DFV_I
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine SetDiffusionFactorUnity
   
     module subroutine ComputeSolverSpeeds_HLL_Kernel &
                  ( AP_I, AM_I, LP_IL, LP_IR, LM_IL, LM_IR, UseDeviceOption )
@@ -602,7 +608,7 @@ contains
              UseDeviceOption = C % AllocatedDevice )
     
     end associate   !-- SS_I_V
-
+    
     call C % ComputeDiffusionFactor_HLL ( DF_I, Grid, iDimension )
 
     associate ( iaC => C % iaConserved )
@@ -636,60 +642,16 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iDimension
       
-    call C % SetDiffusionFactorUnity &
-           ( DF_I % Value, UseDeviceOption = DF_I % AllocatedDevice )
+    !-- FIXME: This somehow gets error about ambiguous map
+    !call C % SetDiffusionFactorUnity &
+    !       ( DF_I % Value, UseDeviceOption = DF_I % AllocatedDevice )
+    
+    call C % SetDiffusionFactorUnity ( DF_I % Value )
+    call DF_I % UpdateDevice ( ) 
 
   end subroutine ComputeDiffusionFactor_HLL
 
 
-  subroutine SetDiffusionFactorUnity ( DFV_I, UseDeviceOption )
-
-    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
-      DFV_I
-    logical ( KDL ), intent ( in ), optional :: &
-      UseDeviceOption
-
-    integer ( KDI ) :: &
-      iV, jV, &
-      nValues, &
-      nVariables
-    logical ( KDL ) :: &
-      UseDevice
-
-    UseDevice = .false.
-    if ( present ( UseDeviceOption ) ) &
-      UseDevice = UseDeviceOption
-
-    nValues    = size ( DFV_I, dim = 1 )
-    nVariables = size ( DFV_I, dim = 2 )
-    
-    if ( UseDevice ) then
-    
-      !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 2 ) &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, jV ) 
-      do jV = 1, nVariables
-        do iV = 1, nValues
-          DFV_I ( iV, jV )  =  1.0_KDR
-        end do !-- iV
-      end do !-- jV
-      !$OMP end OMP_TARGET_DIRECTIVE parallel do
-    
-    else
-      
-      !$OMP  parallel do collapse ( 2 ) &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, jV ) 
-      do jV = 1, nVariables
-        do iV = 1, nValues
-          DFV_I ( iV, jV )  =  1.0_KDR
-        end do !-- iV
-      end do !-- jV
-      !$OMP end parallel do
-      
-    end if
-
-  end subroutine SetDiffusionFactorUnity
-  
-  
   subroutine InitializeBasics &
                ( C, Variable, Vector, Name, VariableUnit, VectorIndices, &
                  VariableOption, VectorOption, NameOption, &

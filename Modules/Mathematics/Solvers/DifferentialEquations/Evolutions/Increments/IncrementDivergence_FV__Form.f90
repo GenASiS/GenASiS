@@ -355,11 +355,12 @@ contains
 
       call ComputeReconstruction ( I, iD )
       call ComputeFluxes ( I, iD )
+      
       select type ( Chart => I % Chart )
       class is ( Chart_SL_Template )
         call ComputeIncrement_CSL ( I, Increment, Chart, TimeStep, iD )
       end select !-- Grid
-
+      
       if ( I % UseIncrementStream ) then
         call I % Current % UpdateHost ( )
         call Increment % UpdateHost ( )

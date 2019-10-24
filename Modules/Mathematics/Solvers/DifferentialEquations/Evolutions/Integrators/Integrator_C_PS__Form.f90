@@ -369,12 +369,12 @@ contains
              G % Value ( :, G % COARSENING ( 2 ) ), &
              G % Value ( :, G % COARSENING ( 3 ) ), &
              CSL % nDimensions, TimeStepCandidate )
-
+    
     end select !-- CSL
     end select !-- PS
 
     TimeStepCandidate = I % CourantFactor * TimeStepCandidate
-
+    
     nullify ( C, G )
 
   end subroutine ComputeTimeStep_C_ASC

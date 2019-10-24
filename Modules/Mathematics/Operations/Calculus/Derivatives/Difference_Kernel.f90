@@ -60,7 +60,6 @@ contains
       !$OMP end OMP_TARGET_DIRECTIVE parallel do
       
     else 
-    
       !$OMP  parallel do collapse ( 3 ) &
       !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, jV, kV, iaVS )
       do kV = lV ( 3 ), uV ( 3 ) 
