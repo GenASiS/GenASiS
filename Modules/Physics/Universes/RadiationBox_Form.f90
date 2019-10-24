@@ -139,7 +139,7 @@ contains
                nWriteOption = nWriteOption )
     end select !-- I
 
-    call Show ( 'RadiationBox parameter', RCC % IGNORABILITY )
+    call Show ( 'RadiationBox parameter', RB % IGNORABILITY )
     RB % InteractionFactor  =  1.0e-2_KDR
     call PROGRAM_HEADER % GetParameter &
            ( RB % InteractionFactor, 'InteractionFactor' )

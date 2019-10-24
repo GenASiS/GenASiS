@@ -38,12 +38,20 @@ NeutrinoMoments_BSLL_ASC_CSLD__Form.o: \
   NeutrinoMoments_ASC__Form.o \
   NeutrinoMoments_BSLL_ASC_CSLD__Form.f90
 
+Interactions_B85__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  StressEnergyBasics.o \
+  RadiationBasics.o \
+  Interactions_B85__Form.f90
+
 Neutrinos.o: \
   NeutrinoMoments_G__Form.o \
   NeutrinoMoments_S__Form.o \
   NeutrinoMoments_CSL__Form.o \
   NeutrinoMoments_ASC__Form.o \
   NeutrinoMoments_BSLL_ASC_CSLD__Form.o \
+  Interactions_B85__Form.o \
   Neutrinos.f90
 
 Neutrinos.a: $(NEUTRINOS)

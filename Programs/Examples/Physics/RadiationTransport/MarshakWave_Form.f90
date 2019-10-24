@@ -42,7 +42,7 @@ module MarshakWave_Form
         SetFluid, &
         SetRadiation
 
-    character ( LDF ) :: &
+    character ( LDF ), private :: &
       InteractionsType
 
 contains

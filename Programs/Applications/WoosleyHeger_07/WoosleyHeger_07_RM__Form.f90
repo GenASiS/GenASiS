@@ -22,6 +22,12 @@ module WoosleyHeger_07_RM__Form
       InitializeRadiationCentralCore, &
       SetProblem
 
+      private :: &
+        InitializeInteractions
+
+    character ( LDF ), private :: &
+      InteractionsType
+
 contains
 
 
@@ -104,6 +110,16 @@ contains
     call WH % SetFluid ( )
 
   end subroutine SetProblem
+
+
+  subroutine InitializeInteractions ( WH, MomentsType )
+
+    class ( WoosleyHeger_07_RM_Form ), intent ( inout ) :: &
+      WH
+    character ( * ), intent ( in )  :: &
+      MomentsType
+
+  end subroutine InitializeInteractions
 
 
 end module WoosleyHeger_07_RM__Form
