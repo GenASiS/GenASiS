@@ -117,7 +117,7 @@ module Fluid_P__Template
 
     module subroutine ComputeCenterSpeedKernel &
                  ( AC_I, F_D_IL, F_D_IR, F_S_IL, F_S_IR, D_IL, D_IR, &
-                   S_IL, S_IR, AP_I, AM_I, M_UU )
+                   S_IL, S_IR, AP_I, AM_I, M_UU, UseDeviceOption )
       use Basics
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         AC_I
@@ -129,6 +129,8 @@ module Fluid_P__Template
         AP_I, &
         AM_I, &
         M_UU
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
     end subroutine ComputeCenterSpeedKernel
 
     module subroutine ComputeCenterStatesKernel &
@@ -140,7 +142,7 @@ module Fluid_P__Template
                    V_Dim_IL, V_Dim_IR, D_IL, D_IR, S_1_IL, S_1_IR, &
                    S_2_IL, S_2_IR, S_3_IL, S_3_IR, S_Dim_IL, S_Dim_IR, &
                    G_IL, G_IR, P_IL, P_IR, &
-                   AP_I, AM_I, AC_I, M_DD_22, M_DD_33 )
+                   AP_I, AM_I, AC_I, M_DD_22, M_DD_33, UseDeviceOption )
       use Basics
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         V_1_ICL, V_1_ICR, &
@@ -170,10 +172,13 @@ module Fluid_P__Template
         AM_I, &
         AC_I, &
         M_DD_22, M_DD_33
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
     end subroutine ComputeCenterStatesKernel
 
     module subroutine ComputeFluxes_HLLC_Kernel &
-                 ( F_I, F_ICL, F_ICR, AP_I, AM_I, AC_I, DF_I )
+                 ( F_I, F_ICL, F_ICR, AP_I, AM_I, AC_I, DF_I, &
+                   UseDeviceOption )
       use Basics
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         F_I
@@ -183,6 +188,8 @@ module Fluid_P__Template
         AM_I, &
         AC_I, &
         DF_I
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
     end subroutine ComputeFluxes_HLLC_Kernel
 
     module subroutine ComputeRawFluxesTemplate_P_Kernel &
@@ -442,7 +449,7 @@ contains
                C_IR % Value ( :, C % MOMENTUM_DENSITY_D ( iDimension ) ), &
                SS_I % Value ( :, C % ALPHA_PLUS ), &
                SS_I % Value ( :, C % ALPHA_MINUS ), &
-               M_UU )
+               M_UU, UseDeviceOption = SS_I % AllocatedDevice )
 
       associate &
         ( C_ICL => I % Storage % Current_ICL, &
@@ -641,7 +648,7 @@ contains
              SS_I % Value ( :, C % ALPHA_PLUS ), &
              SS_I % Value ( :, C % ALPHA_MINUS ), &
              SS_I % Value ( :, C % ALPHA_CENTER ), &
-             M_DD_22, M_DD_33 )
+             M_DD_22, M_DD_33, UseDeviceOption = SS_I % AllocatedDevice )
 
   end subroutine ComputeCenterStatesTemplate_P
 
