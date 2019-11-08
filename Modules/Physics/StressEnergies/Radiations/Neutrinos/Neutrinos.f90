@@ -6,5 +6,6 @@ module Neutrinos
   use NeutrinoMoments_ASC__Form
   use NeutrinoMoments_BSLL_ASC_CSLD__Form
   use Interactions_B85__Form
+  use Interactions_OCO__Form
 
 end module Neutrinos
