@@ -49,8 +49,30 @@ Interactions_OCO__Form.o: \
   Basics.o \
   Mathematics.o \
   StressEnergyBasics.o \
+  Fluids.o \
   RadiationBasics.o \
   Interactions_OCO__Form.f90
+
+InteractionsNeutrinos_CSL__Form.o: \
+  Basics.o \
+  RadiationBasics.o \
+  Interactions_B85__Form.o \
+  Interactions_OCO__Form.o \
+  InteractionsNeutrinos_CSL__Form.f90
+
+InteractionsNeutrinos_ASC__Form.o: \
+  RadiationBasics.o \
+  InteractionsNeutrinos_CSL__Form.o \
+  InteractionsNeutrinos_ASC__Form.f90
+
+InteractionsNeutrinos_BSLL_ASC_CSLD__Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Fluids.o \
+  RadiationBasics.o \
+  Interactions_OCO__Form.o \
+  InteractionsNeutrinos_ASC__Form.o \
+  InteractionsNeutrinos_BSLL_ASC_CSLD__Form.f90
 
 Neutrinos.o: \
   NeutrinoMoments_G__Form.o \
@@ -60,6 +82,9 @@ Neutrinos.o: \
   NeutrinoMoments_BSLL_ASC_CSLD__Form.o \
   Interactions_B85__Form.o \
   Interactions_OCO__Form.o \
+  InteractionsNeutrinos_CSL__Form.o \
+  InteractionsNeutrinos_ASC__Form.o \
+  InteractionsNeutrinos_BSLL_ASC_CSLD__Form.o \
   Neutrinos.f90
 
 Neutrinos.a: $(NEUTRINOS)

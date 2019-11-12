@@ -144,14 +144,15 @@ contains
     if ( TableInitialized ) &
       return
 
-!    call READTABLE &
-!           ( '../Parameters/LS220_234r_136t_50y_analmu_20091212_SVNr26.h5' )
+    call DelayFileAccess ( PROGRAM_HEADER % Communicator % Rank )
+    call READTABLE &
+           ( '../Parameters/LS220_234r_136t_50y_analmu_20091212_SVNr26.h5' )
 !    call READTABLE &
 !           ( '../Parameters/HShenEOS_rho220_temp180_ye65_version_1.1' &
 !             // '_20120817.h5' )
-    call READTABLE &
-           ( '../Parameters/Hempel_SFHoEOS_rho222_temp180_ye60_version_1.1' &
-             // '_20120817.h5' )
+!    call READTABLE &
+!           ( '../Parameters/Hempel_SFHoEOS_rho222_temp180_ye60_version_1.1' &
+!             // '_20120817.h5' )
 
     !-- Historical Oak Ridge Shift, accounting for nuclear binding energy
     OR_Shift = 8.9_KDR * UNIT % MEGA_ELECTRON_VOLT &

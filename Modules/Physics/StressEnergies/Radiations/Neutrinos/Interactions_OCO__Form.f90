@@ -2,11 +2,10 @@ module Interactions_OCO__Form
 
   !-- Interactions_OConnorOtt__Form
 
-  use NULIBTABLE_INTERFACE, only: &
-    NULIBTABLE_READER
   use Basics
   use Mathematics
   use StressEnergyBasics
+  use Fluids
   use RadiationBasics
 
   implicit none
@@ -19,8 +18,10 @@ module Interactions_OCO__Form
   contains
     procedure, private, pass :: &
       InitializeAllocate_I
-    procedure, public, pass :: &
-      Set
+    procedure, private, pass :: &
+      Set_S
+    generic, public :: &
+      Set => Set_S
     procedure, public, pass :: &
       Compute
     procedure, public, pass :: &
@@ -61,27 +62,31 @@ contains
   end subroutine InitializeAllocate_I
 
 
-  subroutine Set ( I, Include_NES_Option, IncludePairsOption )
+  subroutine Set_S ( I, Fluid, Energy, d3_Energy, Include_NES, IncludePairs, &
+                     iBaseCell )
 
     class ( Interactions_OCO_Form ), intent ( inout ) :: &
       I
-    logical ( KDL ), intent ( in ), optional :: &
-      Include_NES_Option, &
-      IncludePairsOption
+    class ( Fluid_P_Template ), intent ( in ), target :: &
+      Fluid
+    real ( KDR ), dimension ( : ), intent ( in ), target :: &
+      Energy, &
+      d3_Energy
+    logical ( KDL ), intent ( in ) :: &
+      Include_NES, &
+      IncludePairs
+    integer ( KDI ), intent ( in ) :: &
+      iBaseCell
 
-    I % Include_NES    =  .true.
-    I % IncludePairs  =  .true.
-    if ( present ( Include_NES_Option ) ) &
-      I % Include_NES  =  Include_NES_Option
-    if ( present ( IncludePairsOption ) ) &
-      I % IncludePairs  =  IncludePairsOption
+    I % iBaseCell     =   iBaseCell
+    I % Energy        =>  Energy
+    I % d3_Energy     =>  d3_Energy
+    I % Fluid         =>  Fluid
 
-    call NULIBTABLE_READER &
-           ( filename                   =  'NuLibOpacityTable.h5', &
-             include_Ielectron          =  I % Include_NES, &
-             include_epannihil_kernels  =  I % IncludePairs )
+    I % Include_NES   =  Include_NES
+    I % IncludePairs  =  IncludePairs
 
-  end subroutine Set
+  end subroutine Set_S
 
 
   subroutine Compute ( I, R )
