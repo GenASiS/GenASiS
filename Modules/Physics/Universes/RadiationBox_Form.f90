@@ -195,15 +195,15 @@ contains
 
       I % N_CURRENTS_1D  =  size ( RadiationName )
       allocate ( I % TimeStepLabel &
-                   ( I % N_CURRENTS_1D  +  1  +  I % N_CURRENTS_1D ) )
+                   ( 1  +  I % N_CURRENTS_1D  +  I % N_CURRENTS_1D ) )
+
+      I % TimeStepLabel ( 1 )  &
+          =  'Fluid Advection'
 
       do iC = 1, I % N_CURRENTS_1D
-        I % TimeStepLabel ( iC )  &
+        I % TimeStepLabel ( 1 + iC )  &
           =  trim ( RadiationName ( iC ) ) // ' Streaming'
       end do !-- iC
-
-      I % TimeStepLabel ( I % N_CURRENTS_1D  +  1 )  &
-          =  'Fluid Advection'
 
       do iC = 1, I % N_CURRENTS_1D
         I % TimeStepLabel ( I % N_CURRENTS_1D  +  1  +  iC )  &
@@ -604,14 +604,14 @@ contains
     call I % ComputeTimeStepLocalTemplate ( TimeStepCandidate )
 
     if ( .not. RB % ApplyStreaming ) &
-      TimeStepCandidate ( 1 : I % N_CURRENTS_1D )  =  huge ( 1.0_KDR )
+      TimeStepCandidate ( 1 + 1 : 1 + I % N_CURRENTS_1D )  =  huge ( 1.0_KDR )
 
     if ( .not. RB % EvolveFluid ) &
-      TimeStepCandidate ( I % N_CURRENTS_1D  +  1 )  =  huge ( 1.0_KDR )
+      TimeStepCandidate ( 1 )  =  huge ( 1.0_KDR )
 
     !-- Interactions
 
-    oC  =  I % N_CURRENTS_1D  +  1
+    oC  =  1  +  I % N_CURRENTS_1D
     if ( RB % ApplyInteractions .and. RB % EvolveFluid ) then
       call ComputeTimeStepInteractions &
              ( I, TimeStepCandidate ( oC + 1 : oC + I % N_CURRENTS_1D ) )

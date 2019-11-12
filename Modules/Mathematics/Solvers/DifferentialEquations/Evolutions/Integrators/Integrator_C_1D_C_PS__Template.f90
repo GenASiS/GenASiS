@@ -272,7 +272,7 @@ contains
     class ( Current_ASC_Template ), pointer :: &
       CA
 
-    N_PS  =  I % N_CURRENTS_1D + 1
+    N_PS  =  1 + I % N_CURRENTS_1D  !-- e.g. Fluid + Radiations
 
     select type ( PS  =>  I % PositionSpace )
     class is ( Atlas_SC_Form )
@@ -284,14 +284,14 @@ contains
 
     do iC = 1, N_PS
 
-      if ( iC == N_PS ) then
+      if ( iC == 1 ) then !-- e.g. Fluid
         if ( allocated ( I % Current_ASC ) ) then
           CA  =>  I % Current_ASC
         else
           CA  =>  null ( )
         end if
-      else
-        CA  =>  I % Current_ASC_Pointer ( iC )
+      else !-- e.g. Radiations
+        CA  =>  I % Current_ASC_Pointer ( iC - 1 )
       end if
 
       if ( associated ( CA ) ) then

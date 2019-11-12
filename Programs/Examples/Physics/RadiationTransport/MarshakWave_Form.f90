@@ -345,9 +345,9 @@ contains
       call RMB % SetInteractions ( IB )
       end select !-- IB
 
-      end select !-- PS
+      end select !-- MS
       end select !-- FA
-      end select !-- RMA
+      end select !-- RMB
 
     end select !-- Integrator
 
