@@ -135,25 +135,23 @@ module Fluid_P__Template
 
     module subroutine ComputeCenterStatesKernel &
                  ( V_1_ICL, V_1_ICR, V_2_ICL, V_2_ICR, V_3_ICL, V_3_ICR, &
-                   V_Dim_ICL, V_Dim_ICR, D_ICL, D_ICR, S_1_ICL, S_1_ICR, &
-                   S_2_ICL, S_2_ICR, S_3_ICL, S_3_ICR, S_Dim_ICL, S_Dim_ICR, &
+                   D_ICL, D_ICR, S_1_ICL, S_1_ICR, &
+                   S_2_ICL, S_2_ICR, S_3_ICL, S_3_ICR, &
                    G_ICL, G_ICR, P_ICL, P_ICR, &
                    V_1_IL, V_1_IR, V_2_IL, V_2_IR, V_3_IL, V_3_IR, &
                    V_Dim_IL, V_Dim_IR, D_IL, D_IR, S_1_IL, S_1_IR, &
                    S_2_IL, S_2_IR, S_3_IL, S_3_IR, S_Dim_IL, S_Dim_IR, &
                    G_IL, G_IR, P_IL, P_IR, &
-                   AP_I, AM_I, AC_I, M_DD_22, M_DD_33, UseDeviceOption )
+                   AP_I, AM_I, AC_I, M_DD_22, M_DD_33, iDim, UseDeviceOption )
       use Basics
-      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      real ( KDR ), dimension ( : ), intent ( inout ), target :: &
         V_1_ICL, V_1_ICR, &
         V_2_ICL, V_2_ICR, &
         V_3_ICL, V_3_ICR, &
-        V_Dim_ICL, V_Dim_ICR, &
         D_ICL, D_ICR, &
         S_1_ICL, S_1_ICR, &
         S_2_ICL, S_2_ICR, &
         S_3_ICL, S_3_ICR, &
-        S_Dim_ICL, S_Dim_ICR, &
         G_ICL, G_ICR, &
         P_ICL, P_ICR
       real ( KDR ), dimension ( : ), intent ( in ) :: &
@@ -172,6 +170,8 @@ module Fluid_P__Template
         AM_I, &
         AC_I, &
         M_DD_22, M_DD_33
+      integer ( KDI ), intent ( in ) :: &
+        iDim
       logical ( KDL ), intent ( in ), optional :: &
         UseDeviceOption
     end subroutine ComputeCenterStatesKernel
@@ -632,8 +632,6 @@ contains
              C_ICR % Value ( :, C % VELOCITY_U ( 2 ) ), &
              C_ICL % Value ( :, C % VELOCITY_U ( 3 ) ), &
              C_ICR % Value ( :, C % VELOCITY_U ( 3 ) ), &
-             C_ICL % Value ( :, C % VELOCITY_U ( iD ) ), &
-             C_ICR % Value ( :, C % VELOCITY_U ( iD ) ), &
              C_ICL % Value ( :, C % CONSERVED_DENSITY ), &
              C_ICR % Value ( :, C % CONSERVED_DENSITY ), &
              C_ICL % Value ( :, C % MOMENTUM_DENSITY_D ( 1 ) ), &
@@ -642,8 +640,6 @@ contains
              C_ICR % Value ( :, C % MOMENTUM_DENSITY_D ( 2 ) ), &
              C_ICL % Value ( :, C % MOMENTUM_DENSITY_D ( 3 ) ), &
              C_ICR % Value ( :, C % MOMENTUM_DENSITY_D ( 3 ) ), &
-             C_ICL % Value ( :, C % MOMENTUM_DENSITY_D ( iD ) ), &
-             C_ICR % Value ( :, C % MOMENTUM_DENSITY_D ( iD ) ), &
              C_ICL % Value ( :, C % CONSERVED_ENERGY ), &
              C_ICR % Value ( :, C % CONSERVED_ENERGY ), &
              C_ICL % Value ( :, C % PRESSURE ), &
@@ -673,7 +669,7 @@ contains
              SS_I % Value ( :, C % ALPHA_PLUS ), &
              SS_I % Value ( :, C % ALPHA_MINUS ), &
              SS_I % Value ( :, C % ALPHA_CENTER ), &
-             M_DD_22, M_DD_33, UseDeviceOption = SS_I % AllocatedDevice )
+             M_DD_22, M_DD_33, iD, UseDeviceOption = SS_I % AllocatedDevice )
 
   end subroutine ComputeCenterStatesTemplate_P
 

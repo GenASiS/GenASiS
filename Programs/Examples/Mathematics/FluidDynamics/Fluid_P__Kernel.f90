@@ -288,17 +288,39 @@ contains
       AP_AC, &
       AP_AC_Inv, &
       SqrtTiny
+    real ( KDR ), dimension ( : ), pointer :: &
+      V_Dim_ICL, &
+      V_Dim_ICR, &
+      S_Dim_ICL, &
+      S_Dim_ICR
     logical ( KDL ) :: &
       UseDevice
 
     UseDevice = .false.
     if ( present ( UseDeviceOption ) ) &
       UseDevice = UseDeviceOption
-
+      
     nValues = size ( AC_I )
-
     SqrtTiny = sqrt ( tiny ( 0.0_KDR ) )
     
+    select case ( iDim )
+    case ( 1 )
+      V_Dim_ICL => V_1_ICL
+      V_Dim_ICR => V_1_ICR
+      S_Dim_ICL => S_1_ICL
+      S_Dim_ICR => S_1_ICR
+    case ( 2 )
+      V_Dim_ICL => V_2_ICL
+      V_Dim_ICR => V_2_ICR
+      S_Dim_ICL => S_2_ICL
+      S_Dim_ICR => S_2_ICR
+    case ( 3 )
+      V_Dim_ICL => V_3_ICL
+      V_Dim_ICR => V_3_ICR
+      S_Dim_ICL => S_3_ICL
+      S_Dim_ICR => S_3_ICR
+    end select 
+
     if ( UseDevice ) then
     
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
