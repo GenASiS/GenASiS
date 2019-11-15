@@ -25,10 +25,12 @@ RiemannProblem: Basics.a Mathematics.a Fluid.a RiemannProblem.o
           RiemannProblem.o RiemannProblem_Form.o \
           Fluid.a Mathematics.a Basics.a $(LIBRARIES)
 
-RayleighTaylor: Basics.a Mathematics.a Fluid.a RayleighTaylor.o
+RayleighTaylor: Basics.a Mathematics.a Fluid.a RayleighTaylor.o \
+                RayleighTaylor_Kernel.o
 	$(LINK) $(FLAGS) \
           -o RayleighTaylor_$(MACHINE) \
-          RayleighTaylor.o RayleighTaylor_Form.o Tally_RT__Form.o \
+          RayleighTaylor.o RayleighTaylor_Kernel.o RayleighTaylor_Form.o \
+          Tally_RT__Form.o \
           Fluid.a Mathematics.a Basics.a $(LIBRARIES)
 
 SedovTaylor: Basics.a Mathematics.a Fluid.a SedovTaylor.o
@@ -112,6 +114,10 @@ RayleighTaylor_Form.o: \
   Fluid_ASC__Form.o \
   Tally_RT__Form.o \
   RayleighTaylor_Form.f90
+
+RayleighTaylor_Kernel.o: \
+  RayleighTaylor_Form.o \
+  RayleighTaylor_Kernel.f90
 
 RayleighTaylor.o: \
   Basics.o \

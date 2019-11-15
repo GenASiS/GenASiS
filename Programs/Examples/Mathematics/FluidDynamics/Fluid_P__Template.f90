@@ -450,19 +450,40 @@ contains
                SS_I % Value ( :, C % ALPHA_PLUS ), &
                SS_I % Value ( :, C % ALPHA_MINUS ), &
                M_UU, UseDeviceOption = SS_I % AllocatedDevice )
+      
+      !call SS_I % UpdateHost ( )
+      !call Show ( SS_I % AllocatedDevice, '==== SS_I % AllocatedDevice ====' )
+      
+      !!call Show ( iDimension , '==== Fluid_P % ComplueFluxes iD ====' )
+      !!call Show ( SS_I % Value ( :, C % ALPHA_CENTER ) , '==== Alpha_Center Value ====' )
 
       associate &
         ( C_ICL => I % Storage % Current_ICL, &
           C_ICR => I % Storage % Current_ICR )
-
+      
+      !!call Show ( C % Variable, '==== C_ICL % Variable ====' )
+      
+      !!call Show ( C_ICL % Value, '==== C_ICL % Value 1 ====' )
+      !!call Show ( C_ICR % Value, '==== C_ICR % Value 1 ====' )
+      
       call C % ComputeCenterStates &
              ( C_ICL, C_ICR, C_IL, C_IR, SS_I, M_DD_22, M_DD_33, iDimension )
+
+      !call C_ICL % UpdateHost ( )
+      !call C_ICR % UpdateHost ( )
+      !!call Show ( C_ICL % Value, '==== C_ICL % Value 2 ====' )
+      !!call Show ( C_ICR % Value, '==== C_ICR % Value 2 ====' )
 
       !-- Overwrite F_IL and F_IR with F_ICL and F_ICR
       call C % ComputeRawFluxes &
              ( F_IL, G, C_ICL, G_I, iDimension )
       call C % ComputeRawFluxes &
              ( F_IR, G, C_ICR, G_I, iDimension )
+      
+      !call F_IL % UpdateHost ( )
+      !call F_IR % UpdateHost ( )       
+      !!call Show ( F_IL % Value, '==== F_IL % Value ====' )
+      !!call Show ( F_IR % Value, '==== F_IR % Value ====' )
 
       select type ( FF => C % Features )
       class is ( FluidFeaturesTemplate )
@@ -474,10 +495,14 @@ contains
                  SS_I % Value ( :, C % ALPHA_PLUS ), &
                  SS_I % Value ( :, C % ALPHA_MINUS ), &
                  SS_I % Value ( :, C % ALPHA_CENTER ), &
-                 FF   % Value ( :, FF % DIFFUSIVE_FLUX_I ( iDimension ) ) )
+                 FF   % Value ( :, FF % DIFFUSIVE_FLUX_I ( iDimension ) ), &
+                 UseDeviceOption = F_I % AllocatedDevice )
+        !call F_I % UpdateHost ( iF )
+        !call Show ( iF, '==== F_I % Value iF ====' )
+        !call Show ( F_I % Value ( :, iF ), '==== F_I % Value ====' )
       end do !-- iF
       end select !-- FF
-
+      
       end associate !-- C_ICL, etc.
 
     end select !-- RiemannSolverType

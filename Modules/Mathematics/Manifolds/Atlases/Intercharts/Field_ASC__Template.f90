@@ -19,6 +19,8 @@ module Field_ASC__Template
     procedure, public, pass :: &
       InitializeTemplate_ASC
     procedure, public, pass :: &
+      AllocateDevice_ASC
+    procedure, public, pass :: &
       AllocateDevice => AllocateDevice_ASC
     procedure, public, pass :: &
       FinalizeTemplate_ASC

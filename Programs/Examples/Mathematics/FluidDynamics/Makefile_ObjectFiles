@@ -9,6 +9,7 @@ FLUID = \
   Sources_F__Form.o \
   Tally_F_P__Form.o \
   Tally_F_D__Form.o \
+  FluidFeatures_P__Kernel.o \
   FluidFeatures_P__Form.o \
   Fluid_P_NR__Form.o \
   Fluid_P_P__Kernel.o \
