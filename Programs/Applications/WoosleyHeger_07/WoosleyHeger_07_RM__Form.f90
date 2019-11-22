@@ -23,7 +23,8 @@ module WoosleyHeger_07_RM__Form
       SetProblem
 
       private :: &
-        InitializeInteractions
+        InitializeInteractions, &
+        SetRadiation
 
     character ( LDF ), private :: &
       InteractionsType
@@ -109,6 +110,7 @@ contains
 
     call InitializeInteractions ( WH, MomentsType )
     call WH % SetFluid ( )
+    call SetRadiation ( WH )
 
   end subroutine SetProblem
 
@@ -207,6 +209,73 @@ contains
     end select !-- Integrator
 
   end subroutine InitializeInteractions
+
+
+  subroutine SetRadiation ( WH )
+
+    class ( WoosleyHeger_07_RM_Form ), intent ( inout ) :: &
+      WH
+
+    integer ( KDI ) :: &
+      iF, &  !-- iFiber
+      iN     !-- iNeutrino
+    class ( GeometryFlatForm ), pointer :: &
+      G
+    class ( RadiationMomentsForm ), pointer :: &
+      RM
+
+    !-- Geometry
+
+    select type ( I => WH % Integrator )
+    class is ( Integrator_C_1D_C_PS_Template )
+      select type ( PS => I % PositionSpace )
+      class is ( Atlas_SC_Form )
+        G => PS % Geometry ( )
+      end select !-- PS
+    end select !-- I
+
+    !-- Radiation
+
+    select type ( I => WH % Integrator )
+    class is ( Integrator_C_1D_PS_C_PS_Form )  !-- Grey
+
+      do iN  =  1, I % N_CURRENTS_1D
+        select type ( RMA => I % Current_ASC_1D ( iN ) % Element )
+        class is ( RadiationMoments_ASC_Form )
+        RM => RMA % RadiationMoments ( )
+          call RM % ComputeFromPrimitive ( G )
+        end select !-- RMA
+      end do !-- iN
+
+    class is ( Integrator_C_1D_MS_C_PS_Form )  !-- Spectral
+
+      do iN  =  1, I % N_CURRENTS_1D
+
+        select type ( RMB => I % Current_BSLL_ASC_CSLD_1D ( iN ) % Element )
+        class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
+        select type ( MS => I % MomentumSpace )
+        class is ( Bundle_SLL_ASC_CSLD_Form )
+
+        !-- Proper cells
+
+        do iF = 1, MS % nFibers
+          associate ( iBC => MS % iaBaseCell ( iF ) )
+          RM => RMB % RadiationMoments ( iF )
+          call RM % ComputeFromPrimitive ( iBC, G )
+          end associate !-- iBC
+        end do !-- iF
+
+        call RMB % LoadSections ( )
+
+        end select !-- MS
+        end select !-- RMB
+
+      end do !-- iN
+
+    end select !-- I
+    nullify ( G, RM )
+
+  end subroutine SetRadiation
 
 
 end module WoosleyHeger_07_RM__Form

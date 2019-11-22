@@ -53,6 +53,7 @@ contains
 
     select case ( trim ( IB % InteractionsType ) )
     case ( 'O_CONNOR_OTT' )
+      call Show ( 'Reading OConnorOtt interactions', IB % IGNORABILITY )
       call DelayFileAccess ( PROGRAM_HEADER % Communicator % Rank )
       call NULIBTABLE_READER &
            ( filename                   =  Filename, &
