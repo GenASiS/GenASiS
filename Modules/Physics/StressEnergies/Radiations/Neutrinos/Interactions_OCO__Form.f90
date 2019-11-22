@@ -7,6 +7,7 @@ module Interactions_OCO__Form
   use StressEnergyBasics
   use Fluids
   use RadiationBasics
+  use NeutrinoMoments_S__Form
 
   implicit none
   private
@@ -99,6 +100,8 @@ contains
     associate &
       (   F => I % Fluid, &
         iBC => I % iBaseCell )
+    select type ( R )
+    class is ( RadiationMomentsForm )
 
     select case ( trim ( I % MomentsType ) )
     case ( 'GREY' )
@@ -133,7 +136,7 @@ contains
       !          I % Value ( :, I % OPACITY_J ), &
       !          I % Value ( :, I % OPACITY_H ) )
 
-      select case ( trim ( R % Type ) )
+      select case ( trim ( R % RadiationType ) )
       case ( 'NEUTRINOS_E' )
 
       case ( 'NEUTRINOS_E_BAR' )
@@ -142,15 +145,15 @@ contains
 
       case default
         call Show ( 'Radiation Type not recognized', CONSOLE % ERROR )
+        call Show ( R % RadiationType, 'RadiationType', CONSOLE % ERROR )
         call Show ( 'Interactions_OCO_Form', 'module', CONSOLE % ERROR )
         call Show ( 'Compute', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
-      end select !-- R % Type
+      end select !-- R % RadiationType
 
     end select !-- MomentsType
 
-    !-- FIXME: fill in
-
+    end select !-- R
     end associate !-- F, etc.
 
   end subroutine Compute
@@ -163,7 +166,83 @@ contains
     class ( CurrentTemplate ), intent ( in ) :: &
       R
 
-    !-- FIXME: fill in
+    associate ( iBC => I % iBaseCell )
+    select type ( F => I % Fluid )
+    class is ( Fluid_P_HN_Form )
+    select type ( SF => F % Sources )
+    class is ( Sources_F_Form )
+    select type ( R )
+    class is ( RadiationMomentsForm )
+
+    select case ( trim ( I % MomentsType ) )
+    case ( 'GREY' )
+      ! select type ( R )
+      ! class is ( PhotonMoments_G_Form )
+      !   call I % ComputeTimeScaleKernel_G &
+      !          (  R % Value ( :,  R % TEMPERATURE_PARAMETER ), &
+      !             F % Value ( :,  F % BARYON_MASS ), &
+      !             F % Value ( :,  F % COMOVING_BARYON_DENSITY ), &
+      !             F % Value ( :,  F % INTERNAL_ENERGY ), &
+      !             F % Value ( :,  F % TEMPERATURE ), &
+      !             R % Value ( :,  R % COMOVING_ENERGY ), &
+      !            SF % Value ( :, SF % RADIATION_TIME ) )
+      ! end select !-- R
+      call Show ( 'GREY not implemented', CONSOLE % ERROR )
+      call Show ( 'Interactions_OCO_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'ComputeTimeScale', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    case ( 'SPECTRAL' )
+
+      select type ( R )
+      class is ( NeutrinoMoments_S_Form )
+
+      !   call I % ComputeTimeScaleKernel_S &
+      !          (  I % Value ( :, I % EQUILIBRIUM_J ), &
+      !             R % Value ( :, R % COMOVING_ENERGY ), &
+      !             I % d3_Energy, &
+      !             F % Value ( iBC,  F % BARYON_MASS ), &
+      !             F % Value ( iBC,  F % COMOVING_BARYON_DENSITY ), &
+      !             F % Value ( iBC,  F % INTERNAL_ENERGY ), &
+      !             F % Value ( iBC,  F % TEMPERATURE ), &
+      !            SF % Value ( iBC, SF % RADIATION_TIME ) )
+
+      select case ( trim ( R % RadiationType ) )
+      case ( 'NEUTRINOS_E' )
+
+        call SetFermiDiracSpectrum &
+               ( I % Energy, &
+                 F % Value ( iBC, F % TEMPERATURE ), &
+                 F % Value ( iBC, F % CHEMICAL_POTENTIAL_E ) &
+                   -  F % Value ( iBC, F % CHEMICAL_POTENTIAL_N_P ), &
+                 I % Value ( :, I % EQUILIBRIUM_J ) )
+
+      case ( 'NEUTRINOS_E_BAR' )
+
+        call SetFermiDiracSpectrum &
+               ( I % Energy, &
+                 F % Value ( iBC, F % TEMPERATURE ), &
+                 F % Value ( iBC, F % CHEMICAL_POTENTIAL_N_P ) &
+                   -  F % Value ( iBC, F % CHEMICAL_POTENTIAL_E ), &
+                 I % Value ( :, I % EQUILIBRIUM_J ) )
+
+      case ( 'NEUTRINOS_X' )
+
+      case default
+        call Show ( 'Radiation Type not recognized', CONSOLE % ERROR )
+        call Show ( R % RadiationType, 'RadiationType', CONSOLE % ERROR )
+        call Show ( 'Interactions_OCO_Form', 'module', CONSOLE % ERROR )
+        call Show ( 'ComputeTimeScale', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end select !-- R % RadiationType
+
+      end select !-- R
+
+    end select !-- MomentsType
+
+    end select !-- R
+    end select !-- SF
+    end select !-- F
+    end associate !-- iBC
 
   end subroutine ComputeTimeScale
 

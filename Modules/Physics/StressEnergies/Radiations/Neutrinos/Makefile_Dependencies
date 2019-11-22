@@ -51,6 +51,7 @@ Interactions_OCO__Form.o: \
   StressEnergyBasics.o \
   Fluids.o \
   RadiationBasics.o \
+  NeutrinoMoments_S__Form.o \
   Interactions_OCO__Form.f90
 
 InteractionsNeutrinos_CSL__Form.o: \
