@@ -288,11 +288,6 @@ contains
       AP_AC, &
       AP_AC_Inv, &
       SqrtTiny
-    real ( KDR ), dimension ( : ), pointer :: &
-      V_Dim_ICL, &
-      V_Dim_ICR, &
-      S_Dim_ICL, &
-      S_Dim_ICR
     logical ( KDL ) :: &
       UseDevice
 
@@ -303,23 +298,39 @@ contains
     nValues = size ( AC_I )
     SqrtTiny = sqrt ( tiny ( 0.0_KDR ) )
     
-    select case ( iDim )
-    case ( 1 )
-      V_Dim_ICL => V_1_ICL
-      V_Dim_ICR => V_1_ICR
-      S_Dim_ICL => S_1_ICL
-      S_Dim_ICR => S_1_ICR
-    case ( 2 )
-      V_Dim_ICL => V_2_ICL
-      V_Dim_ICR => V_2_ICR
-      S_Dim_ICL => S_2_ICL
-      S_Dim_ICR => S_2_ICR
-    case ( 3 )
-      V_Dim_ICL => V_3_ICL
-      V_Dim_ICR => V_3_ICR
-      S_Dim_ICL => S_3_ICL
-      S_Dim_ICR => S_3_ICR
-    end select 
+    associate &
+      ( V_1_ICL   => V_ICL ( :, 1 ), &
+        V_2_ICL   => V_ICL ( :, 2 ), &
+        V_3_ICL   => V_ICL ( :, 3 ), &
+        V_Dim_ICL => V_ICL ( :, iD ), &
+        V_1_ICR   => V_ICR ( :, 1 ), &
+        V_2_ICR   => V_ICR ( :, 2 ), &
+        V_3_ICR   => V_ICR ( :, 3 ), &
+        V_Dim_ICR => V_ICR ( :, iD ), &
+        S_1_ICL   => S_ICL ( :, 1 ), &
+        S_2_ICL   => S_ICL ( :, 2 ), &
+        S_3_ICL   => S_ICL ( :, 3 ), &
+        S_Dim_ICL => S_ICL ( :, iD ), &
+        S_1_ICR   => S_ICR ( :, 1 ), &
+        S_2_ICR   => S_ICR ( :, 2 ), &
+        S_3_ICR   => S_ICR ( :, 3 ), &
+        S_Dim_ICR => S_ICR ( :, iD ), &
+        V_1_IL    => V_IL  ( :, 1 ), &
+        V_2_IL    => V_IL  ( :, 2 ), &
+        V_3_IL    => V_IL  ( :, 3 ), &
+        V_Dim_IL  => V_IL  ( :, iD ), &
+        V_1_IR    => V_IR  ( :, 1 ), &
+        V_2_IR    => V_IR  ( :, 2 ), &
+        V_3_IR    => V_IR  ( :, 3 ), &
+        V_Dim_IR  => V_IR  ( :, iD ), &
+        S_1_IL    => S_IL  ( :, 1 ), &
+        S_2_IL    => S_IL  ( :, 2 ), &
+        S_3_IL    => S_IL  ( :, 3 ), &
+        S_Dim_IL  => S_IL  ( :, iD ), &
+        S_1_IR    => S_IR  ( :, 1 ), &
+        S_2_IR    => S_IR  ( :, 2 ), &
+        S_3_IR    => S_IR  ( :, 3 ), &
+        S_Dim_IR  => S_IR  ( :, iD ) )
 
     if ( UseDevice ) then
     
@@ -381,7 +392,7 @@ contains
 
       end do !-- iV
       !$OMP end OMP_TARGET_DIRECTIVE parallel do
-    
+      
     else
 
       !$OMP parallel do private ( iV ) 
@@ -443,6 +454,8 @@ contains
       !$OMP end parallel do
       
     end if
+    
+    end associate
 
   end procedure ComputeCenterStatesKernel
 
