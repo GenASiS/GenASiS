@@ -23,11 +23,6 @@ contains
 
     nValues = size ( N )
     
-    !call Show ( UseDevice, '==== UseDevice ====')
-    !call Show ( OnDevice ( KVM ), '==== onDevice KVM ====')
-    !call Show ( OnDevice ( N ), '==== onDevice N ====')
-    !call Show ( OnDevice ( VY ), '==== onDevice VY ====')
-    
     if ( UseDevice ) then
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
       !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
