@@ -3,6 +3,8 @@ module InteractionsNeutrinos_BSLL_ASC_CSLD__Form
   !-- InteractionsNeutrinos_BundleSingleLevelLocal_AtlasSingleChart
   !   _ChartSingleLevelDistributed_Form
 
+  use NULIBTABLE, only: &
+    NULIBTABLE_ENERGIES
   use NULIBTABLE_INTERFACE, only: &
     NULIBTABLE_READER
   use Basics
@@ -70,6 +72,11 @@ contains
     associate &
       (    Energy => GF % Value ( :, GF % CENTER_U ( 1 ) ), &
         d3_Energy => GF % Value ( :, GF % VOLUME ) )
+
+    call Show ( NULIBTABLE_ENERGIES, UNIT % MEGA_ELECTRON_VOLT, &
+                'OConnorOtt Energy', IB % IGNORABILITY )
+    call Show ( Energy, UNIT % MEGA_ELECTRON_VOLT, 'GenASiS Energy', &
+                IB % IGNORABILITY )
 
     do iF = 1, B % nFibers
       I => IB % Interactions ( iF )

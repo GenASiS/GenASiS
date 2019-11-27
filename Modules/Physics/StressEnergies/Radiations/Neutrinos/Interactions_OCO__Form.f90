@@ -2,6 +2,9 @@ module Interactions_OCO__Form
 
   !-- Interactions_OConnorOtt__Form
 
+  use NULIBTABLE, only: &
+    NULIBTABLE_NUMBER_GROUPS, &
+    NULIBTABLE_NUMBER_EASVARIABLES
   use Basics
   use Mathematics
   use StressEnergyBasics
@@ -13,6 +16,8 @@ module Interactions_OCO__Form
   private
 
   type, public, extends ( InteractionsTemplate ) :: Interactions_OCO_Form
+    real ( KDR ), dimension ( :, : ), private, allocatable :: &
+      EmissionAbsorption  !-- includes also elastic scattering
     logical ( KDL ), private :: &
       Include_NES, &
       IncludePairs
@@ -27,7 +32,16 @@ module Interactions_OCO__Form
       Compute
     procedure, public, pass :: &
       ComputeTimeScale
+    final :: &
+      Finalize
   end type Interactions_OCO_Form
+
+    private :: &
+      ComputeTimeScaleKernel_S
+
+    real ( KDR ), private, protected :: &
+      MassDensity_CGS, &
+      MeV
 
 contains
 
@@ -86,6 +100,13 @@ contains
 
     I % Include_NES   =  Include_NES
     I % IncludePairs  =  IncludePairs
+
+    allocate ( I % EmissionAbsorption &
+                 ( NULIBTABLE_NUMBER_GROUPS, &
+                   NULIBTABLE_NUMBER_EASVARIABLES ) )
+
+    MassDensity_CGS  =  UNIT % MASS_DENSITY_CGS
+    MeV              =  UNIT % MEGA_ELECTRON_VOLT
 
   end subroutine Set_S
 
@@ -245,6 +266,46 @@ contains
     end associate !-- iBC
 
   end subroutine ComputeTimeScale
+
+
+  impure elemental subroutine Finalize ( I )
+
+    type ( Interactions_OCO_Form ), intent ( inout ) :: &
+      I
+
+    if ( allocated ( I % EmissionAbsorption ) ) &
+      deallocate ( I % EmissionAbsorption )
+
+  end subroutine Finalize
+
+
+  subroutine ComputeTimeScaleKernel_S ( I, M, N, U, T, Y, iS, TS )
+
+    class ( Interactions_OCO_Form ), intent ( in ) :: &
+      I
+    real ( KDR ), intent ( in ) :: &
+      M, &
+      N, &
+      U, &
+      T, &
+      Y
+    integer ( KDI ), intent ( in ) :: &
+      iS
+    real ( KDR ), intent ( out ) :: &
+      TS
+
+    real ( KDR ) :: &
+      Rho_CGS, &
+      T_MeV
+
+    Rho_CGS = M * N / MassDensity_CGS
+    T_MeV   = T / MeV
+
+    call NULIBTABLE_SINGLE_SPECIES_RANGE_ENERGY &
+           ( Rho_CGS, T_MeV, Y, iS, I % EmissionAbsorption, &
+             NULIBTABLE_NUMBER_GROUPS, NULIBTABLE_NUMBER_EASVARIABLES )
+
+  end subroutine ComputeTimeScaleKernel_S
 
 
 end module Interactions_OCO__Form
