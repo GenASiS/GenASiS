@@ -4,7 +4,8 @@ module Interactions_OCO__Form
 
   use NULIBTABLE, only: &
     NULIBTABLE_NUMBER_GROUPS, &
-    NULIBTABLE_NUMBER_EASVARIABLES
+    NULIBTABLE_NUMBER_EASVARIABLES, &
+    NULIBTABLE_LOGRHO_MIN
   use Basics
   use Mathematics
   use StressEnergyBasics
@@ -17,7 +18,12 @@ module Interactions_OCO__Form
 
   type, public, extends ( InteractionsTemplate ) :: Interactions_OCO_Form
     real ( KDR ), dimension ( :, : ), private, allocatable :: &
-      EmissionAbsorption  !-- includes also elastic scattering
+      EmissionAbsorptionScattering  
+      !-- 1st dimension: Energy
+      !-- 2nd dimension: Variable 1-3
+      !     1: Emissivity (ergs/cm^3/s/srad)
+      !     2: Absorption opacity (cm^-1)
+      !     3: Scattering opacity (cm^-1)
     logical ( KDL ), private :: &
       Include_NES, &
       IncludePairs
@@ -34,10 +40,9 @@ module Interactions_OCO__Form
       ComputeTimeScale
     final :: &
       Finalize
-  end type Interactions_OCO_Form
-
-    private :: &
+    procedure, private, pass :: &
       ComputeTimeScaleKernel_S
+  end type Interactions_OCO_Form
 
     real ( KDR ), private, protected :: &
       MassDensity_CGS, &
@@ -101,7 +106,7 @@ contains
     I % Include_NES   =  Include_NES
     I % IncludePairs  =  IncludePairs
 
-    allocate ( I % EmissionAbsorption &
+    allocate ( I % EmissionAbsorptionScattering &
                  ( NULIBTABLE_NUMBER_GROUPS, &
                    NULIBTABLE_NUMBER_EASVARIABLES ) )
 
@@ -237,6 +242,15 @@ contains
                    -  F % Value ( iBC, F % CHEMICAL_POTENTIAL_N_P ), &
                  I % Value ( :, I % EQUILIBRIUM_J ) )
 
+        call I % ComputeTimeScaleKernel_S &
+               (  F % Value ( iBC,  F % BARYON_MASS ), &
+                  F % Value ( iBC,  F % COMOVING_BARYON_DENSITY ), &
+                  F % Value ( iBC,  F % INTERNAL_ENERGY ), &
+                  F % Value ( iBC,  F % TEMPERATURE ), &
+                  F % Value ( iBC,  F % ELECTRON_FRACTION ), &
+                  iS  =  1, &  !-- Electron neutrinos
+                  RT  =  SF % Value ( iBC, SF % RADIATION_TIME ) ) 
+             
       case ( 'NEUTRINOS_E_BAR' )
 
         call SetFermiDiracSpectrum &
@@ -246,6 +260,15 @@ contains
                    -  F % Value ( iBC, F % CHEMICAL_POTENTIAL_E ), &
                  I % Value ( :, I % EQUILIBRIUM_J ) )
 
+        call I % ComputeTimeScaleKernel_S &
+               (  F % Value ( iBC,  F % BARYON_MASS ), &
+                  F % Value ( iBC,  F % COMOVING_BARYON_DENSITY ), &
+                  F % Value ( iBC,  F % INTERNAL_ENERGY ), &
+                  F % Value ( iBC,  F % TEMPERATURE ), &
+                  F % Value ( iBC,  F % ELECTRON_FRACTION ), &
+                  iS  =  2, &  !-- Electron antineutrinos
+                  RT  =  SF % Value ( iBC, SF % RADIATION_TIME ) ) 
+             
       case ( 'NEUTRINOS_X' )
 
       case default
@@ -273,13 +296,13 @@ contains
     type ( Interactions_OCO_Form ), intent ( inout ) :: &
       I
 
-    if ( allocated ( I % EmissionAbsorption ) ) &
-      deallocate ( I % EmissionAbsorption )
+    if ( allocated ( I % EmissionAbsorptionScattering ) ) &
+      deallocate ( I % EmissionAbsorptionScattering )
 
   end subroutine Finalize
 
 
-  subroutine ComputeTimeScaleKernel_S ( I, M, N, U, T, Y, iS, TS )
+  subroutine ComputeTimeScaleKernel_S ( I, M, N, U, T, Y, iS, RT )
 
     class ( Interactions_OCO_Form ), intent ( in ) :: &
       I
@@ -292,17 +315,19 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iS
     real ( KDR ), intent ( out ) :: &
-      TS
+      RT
 
     real ( KDR ) :: &
       Rho_CGS, &
       T_MeV
 
-    Rho_CGS = M * N / MassDensity_CGS
-    T_MeV   = T / MeV
+    Rho_CGS  =  M * N / MassDensity_CGS
+    T_MeV    =  T / MeV
+
+    Rho_CGS  =  max ( Rho_CGS, 1.00001 * 10.0_KDR ** NULIBTABLE_LOGRHO_MIN )
 
     call NULIBTABLE_SINGLE_SPECIES_RANGE_ENERGY &
-           ( Rho_CGS, T_MeV, Y, iS, I % EmissionAbsorption, &
+           ( Rho_CGS, T_MeV, Y, iS, I % EmissionAbsorptionScattering, &
              NULIBTABLE_NUMBER_GROUPS, NULIBTABLE_NUMBER_EASVARIABLES )
 
   end subroutine ComputeTimeScaleKernel_S
