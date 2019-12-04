@@ -321,6 +321,10 @@ contains
       S
 
     S % Allocated = .false.
+    
+    call Show ( 'Before deallocating Step_RK_C_ASC storage', &
+                 S % IGNORABILITY + 2 )
+    call PROGRAM_HEADER % ShowStatistics ( S % IGNORABILITY + 2 )
 
     if ( .not. allocated ( S % IncrementDivergence_C ) ) &
       return
@@ -333,6 +337,10 @@ contains
     call S % DeallocateStorageDivergence ( SD )
     call S % Deallocate_RK_C ( )
     end associate !-- ID, etc.
+    
+    call Show ( 'After deallocating Step_RK_C_ASC storage', &
+                 S % IGNORABILITY + 2 )
+    call PROGRAM_HEADER % ShowStatistics ( S % IGNORABILITY + 2 )
 
   end subroutine DeallocateStorage
 
@@ -1360,6 +1368,10 @@ contains
       G
 
     S % Allocated = .true.
+    
+    call Show ( 'Before allocating Step_RK_C_ASC storage', &
+                 S % IGNORABILITY + 2 )
+    call PROGRAM_HEADER % ShowStatistics ( S % IGNORABILITY + 2 )
 
     call S % Allocate_RK_C ( )
 
@@ -1388,6 +1400,10 @@ contains
       call Show ( 'AllocateStorage', 'subroutine', CONSOLE % ERROR ) 
       call PROGRAM_HEADER % Abort ( )
     end select !-- Grid
+    
+    call Show ( 'After allocating Step_RK_C_ASC storage', &
+                 S % IGNORABILITY + 2 )
+    call PROGRAM_HEADER % ShowStatistics ( S % IGNORABILITY + 2 )
 
   end subroutine AllocateStorage
 

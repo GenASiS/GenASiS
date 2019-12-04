@@ -879,8 +879,8 @@ contains
              ( HighWaterMark, ResidentSetSize, Ignorability )
     end if
     
-    call Show ( HighWaterMark, 'This process HWM', Ignorability + 1 )
-    call Show ( ResidentSetSize, 'This process RSS', Ignorability + 1 )
+    call Show ( HighWaterMark, 'This process HWM', Ignorability )
+    call Show ( ResidentSetSize, 'This process RSS', Ignorability )
     
     if ( present ( CommunicatorOption ) ) then
       
@@ -905,11 +905,11 @@ contains
       call GetDeviceMemoryInfo &
              ( DeviceMemoryTotal, DeviceMemoryUsed, DeviceMemoryFree )
       call Show ( DeviceMemoryTotal, 'This process device memory', &
-                  Ignorability + 1 )
+                  Ignorability )
       call Show ( DeviceMemoryUsed,  'This process device memory used', &
-                  Ignorability + 1 )
+                  Ignorability )
       call Show ( DeviceMemoryFree,  'This process device memory free', &
-                  Ignorability + 1 )
+                  Ignorability )
     end if
     
     nullify ( PH )
