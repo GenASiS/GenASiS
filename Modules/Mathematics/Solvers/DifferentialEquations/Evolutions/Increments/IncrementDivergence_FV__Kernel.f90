@@ -262,7 +262,7 @@ contains
       UseDevice = UseDeviceOption
     
     if ( UseDevice ) then 
-    
+      
       !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
       !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, jV, kV ) 
       do kV = 1, nB ( 3 )

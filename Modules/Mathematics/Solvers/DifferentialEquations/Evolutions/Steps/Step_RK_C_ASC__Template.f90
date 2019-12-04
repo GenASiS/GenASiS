@@ -321,13 +321,13 @@ contains
       S
 
     S % Allocated = .false.
-    
-    call Show ( 'Before deallocating Step_RK_C_ASC storage', &
-                 S % IGNORABILITY + 2 )
-    call PROGRAM_HEADER % ShowStatistics ( S % IGNORABILITY + 2 )
 
     if ( .not. allocated ( S % IncrementDivergence_C ) ) &
       return
+
+    call Show ( 'Before deallocating Step_RK_C_ASC storage', &
+                 S % IGNORABILITY + 2 )
+    call PROGRAM_HEADER % ShowStatistics ( S % IGNORABILITY + 2 )
 
     associate &
       ( ID => S % IncrementDivergence_C, &
@@ -610,8 +610,8 @@ contains
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
 
-    if ( S % Current % AllocatedDevice ) &
-      call S % Current % UpdateDevice ( )
+    call S % BoundaryFluence_CSL % UpdateDevice ( )
+    call S % Current % UpdateDevice ( )
 
     call S % LoadSolution_C ( S % Solution, S % Current )
 
@@ -625,8 +625,8 @@ contains
 
     call S % StoreSolution_C ( S % Current, S % Solution )
     
-    if ( S % Current % AllocatedDevice ) &
-      call S % Current % UpdateHost ( )
+    call S % Current % UpdateHost ( )
+    call S % BoundaryFluence_CSL % UpdateHost ( )
 
   end subroutine StoreSolution
 

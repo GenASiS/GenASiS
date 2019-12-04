@@ -14,6 +14,8 @@ module Real_1D__Form
   type, public :: Real_1D_Form
     type ( c_ptr ), private :: &
       D_Value = c_null_ptr
+    integer ( KDI ) :: &
+      ErrorDevice
     real ( KDR ), dimension ( : ), allocatable :: &
       Value
     logical ( KDL ) :: &
@@ -30,6 +32,10 @@ module Real_1D__Form
         => Initialize_R_1D, Initialize_R_1D_FromValue, Initialize_R_1D_Copy
     procedure, public, pass :: &
       AllocateDevice => AllocateDevice_R_1D
+    procedure, public, pass :: &
+      UpdateDevice => UpdateDevice_R_1D
+    procedure, public, pass :: &
+      UpdateHost => UpdateHost_R_1D
     final :: &
       Finalize_R_1D
   end type Real_1D_Form
@@ -114,16 +120,45 @@ contains
   end subroutine Initialize_R_1D_Copy
   
   
-  subroutine AllocateDevice_R_1D ( A )
+  impure elemental subroutine AllocateDevice_R_1D ( A )
   
     class ( Real_1D_Form ), intent ( inout ) :: &
       A
       
     call AllocateDevice ( size ( A % Value ), A % D_Value )
     A % AllocatedDevice = .true.
+    call AssociateHost ( A % D_Value, A % Value )
   
   end subroutine AllocateDevice_R_1D
   
+  
+  impure elemental subroutine UpdateDevice_R_1D ( A )
+  
+    class ( Real_1D_Form ), intent ( inout ) :: &
+      A
+    
+    if ( .not. A % AllocatedDevice ) &
+      return
+    
+    call UpdateDevice &
+           ( A % Value, A % D_Value, ErrorOption = A % ErrorDevice )
+  
+  end subroutine UpdateDevice_R_1D
+  
+
+  impure elemental subroutine UpdateHost_R_1D ( A )
+  
+    class ( Real_1D_Form ), intent ( inout ) :: &
+      A
+    
+    if ( .not. A % AllocatedDevice ) &
+      return
+    
+    call UpdateHost &
+           ( A % D_Value, A % Value, ErrorOption = A % ErrorDevice )
+  
+  end subroutine UpdateHost_R_1D
+
   
   impure elemental subroutine Finalize_R_1D ( A )
 
