@@ -15,7 +15,8 @@ module Device_C
     FreeHost, &
     HostToDeviceCopyDouble, &
     DeviceToHostCopyDouble, &
-    IsOffloadEnabled
+    IsOffloadEnabled, &
+    DeviceMemGetInfo
   
   interface 
   
@@ -126,6 +127,17 @@ module Device_C
       use iso_c_binding
       implicit none
     end function IsOffloadEnabled
+    
+    
+    integer ( c_int ) function DeviceMemGetInfo ( Free, Total ) &
+                        bind ( c, name = 'DeviceMemGetInfo_CUDA' )
+      use iso_c_binding
+      implicit none
+      integer ( c_size_t ) :: &
+        Free, &
+        Total
+    end function DeviceMemGetInfo 
+    
 
   end interface 
 

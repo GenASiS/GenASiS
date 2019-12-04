@@ -847,7 +847,10 @@ contains
       ResidentSetSize, &
       MaxResidentSetSize, &
       MinResidentSetSize, &
-      MeanResidentSetSize
+      MeanResidentSetSize, &
+      DeviceMemoryTotal, &
+      DeviceMemoryFree, &
+      DeviceMemoryUsed
     type ( ProgramHeaderSingleton ), pointer :: &
       PH
       
@@ -895,6 +898,18 @@ contains
       call Show ( MeanResidentSetSize, 'Across processes mean RSS', &
                   Ignorability + 1 )
     
+    end if
+    
+    if ( OffloadEnabled ( ) ) then
+      call Show ( 'Device memory info', Ignorability )
+      call GetDeviceMemoryInfo &
+             ( DeviceMemoryTotal, DeviceMemoryUsed, DeviceMemoryFree )
+      call Show ( DeviceMemoryTotal, 'This process device memory', &
+                  Ignorability + 1 )
+      call Show ( DeviceMemoryUsed,  'This process device memory used', &
+                  Ignorability + 1 )
+      call Show ( DeviceMemoryFree,  'This process device memory free', &
+                  Ignorability + 1 )
     end if
     
     nullify ( PH )

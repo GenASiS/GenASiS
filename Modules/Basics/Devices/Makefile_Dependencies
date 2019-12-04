@@ -63,6 +63,11 @@ GetNumberOfDevices_Function.o: \
   Specifiers.o \
   GetNumberOfDevices_Function.f90
 
+GetDeviceMemoryInfo_Command.o: \
+  Specifiers.o \
+  Device_C_OMP.o \
+  GetDeviceMemoryInfo_Command.f90
+
 Devices.o: \
   AllocateDevice_Command.o \
   AssociateHost_Command.o \
@@ -75,6 +80,7 @@ Devices.o: \
   OffloadEnabled_Function.o \
   OnDevice_Function.o \
   GetNumberOfDevices_Function.o \
+  GetDeviceMemoryInfo_Command.o \
   Devices.f90
 
 Devices.a: $(DEVICES)
