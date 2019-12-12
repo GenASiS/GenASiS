@@ -233,7 +233,7 @@ contains
     call I % ComputeConstraints ( )
     call I % AdministerCheckpoint ( ComputeChangeOption = .false. )
 
-    do while ( I % Time < I % FinishTime )
+    do while ( I % Time < I % FinishTime .and. I % iCycle < I % FinishCycle )
       call Show ( 'Computing a cycle', I % IGNORABILITY + 1 )
 
       call I % ComputeCycle ( )
@@ -416,7 +416,7 @@ contains
       MeanTime
     type ( TimerForm ), pointer :: &
       Timer
-
+    
     Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerCheckpoint )
     if ( associated ( Timer ) ) call Timer % Start ( )   
 
@@ -449,14 +449,15 @@ contains
 
     if ( associated ( I % SetReference ) ) &
       call I % SetReference ( )
-    call I % Write ( )
+    if ( .not. I % NoWrite ) &
+      call I % Write ( )
     call PROGRAM_HEADER % ShowStatistics &
            ( StatisticsIgnorability, &
              CommunicatorOption = PROGRAM_HEADER % Communicator, &
              MaxTimeOption = MaxTime, MinTimeOption = MinTime, &
              MeanTimeOption = MeanTime )
     call I % RecordTimeSeries ( MaxTime, MinTime, MeanTime )
-    if ( WriteTimeSeries ) &
+    if ( WriteTimeSeries .and. .not. I % NoWrite ) &
       call I % WriteTimeSeries ( )
 
     I % IsCheckpointTime = .false.
@@ -514,8 +515,6 @@ contains
 
     type ( TimerForm ), pointer :: &
       Timer
-
-    if ( I % NoWrite ) return
 
     Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerWrite )
     if ( associated ( Timer ) ) call Timer % Start ( )

@@ -22,6 +22,7 @@ module IntegratorHeader_Form
       nRampCycles, &
       nWrite, &
       nTimeStepCandidates, &
+      FinishCycle, &
       CheckpointDisplayInterval
     real ( KDR ) :: &
       StartTime, &
@@ -96,6 +97,9 @@ contains
            ( I % StartTime, 'StartTime', InputUnitOption = I % TimeUnit )    
     call PROGRAM_HEADER % GetParameter &
            ( I % FinishTime, 'FinishTime', InputUnitOption = I % TimeUnit )
+           
+    I % FinishCycle = huge ( 1 )
+    call PROGRAM_HEADER % GetParameter ( I % FinishCycle, 'FinishCycle' )
 
     I % nWrite = 100
     if ( present ( nWriteOption ) ) &
