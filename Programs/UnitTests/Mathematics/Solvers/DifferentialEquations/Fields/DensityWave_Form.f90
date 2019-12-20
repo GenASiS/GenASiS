@@ -108,14 +108,15 @@ contains
 
     N = DW % Waveform ( K ( 1 ) * X  +  K ( 2 ) * Y  +  K ( 3 ) * Z )
 
-    call PC % ComputeFromPrimitive ( G )
-    
     call PC % AllocateDevice ( )
     call PC % UpdateDevice ( )
     
     call G % AllocateDevice ( )
-    call G  % UpdateDevice ( )
+    call G % UpdateDevice ( )
 
+    call PC % ComputeFromPrimitive ( G )
+    
+    
     OutputDirectory = '../Output/'
     call PROGRAM_HEADER % GetParameter ( OutputDirectory, 'OutputDirectory' )
 

@@ -1,3 +1,5 @@
+#include "Preprocessor"
+
 module ApplyCurvilinear_F__Command
 
   use Basics
@@ -46,8 +48,10 @@ contains
 
     select type ( F => Fluid )
     class is ( Fluid_D_Form )
-      call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 1 ), iMomentum_1 )
-      call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 2 ), iMomentum_2 )
+      call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 1 ), &
+                    iMomentum_1 )
+      call Search ( F % iaConserved, F % MOMENTUM_DENSITY_D ( 2 ), &
+                    iMomentum_2 )
     end select !-- F
 
     select type ( S_F => Sources_F )
@@ -58,7 +62,7 @@ contains
 
     if ( trim ( Chart % CoordinateSystem ) == 'RECTANGULAR' ) &
       return
-
+    
     select type ( F => Fluid )
     class is ( Fluid_D_Form )
       call ApplyCurvilinear_F_D_Kernel &
@@ -73,7 +77,8 @@ contains
                F % Value ( :, F % VELOCITY_U ( 3 ) ), &
                S % dLogVolumeJacobian_dX ( 1 ) % Value, &
                S % dLogVolumeJacobian_dX ( 2 ) % Value, &
-               TimeStep, S % B ( iStage ), Chart % nDimensions )
+               TimeStep, S % B ( iStage ), Chart % nDimensions, &
+               UseDeviceOption = Increment % AllocatedDevice )
     class is ( Fluid_P_Template )
       call ApplyCurvilinear_F_P_Kernel &
              ( Increment % Value ( :, iMomentum_1 ), &
@@ -88,7 +93,8 @@ contains
                F % Value ( :, F % VELOCITY_U ( 3 ) ), &
                S % dLogVolumeJacobian_dX ( 1 ) % Value, &
                S % dLogVolumeJacobian_dX ( 2 ) % Value, &
-               TimeStep, S % B ( iStage ), Chart % nDimensions )
+               TimeStep, S % B ( iStage ), Chart % nDimensions, &
+               UseDeviceOption = Increment % AllocatedDevice )
     end select !-- F
 
     class default
@@ -108,7 +114,7 @@ contains
   subroutine ApplyCurvilinear_F_D_Kernel &
                ( KVM_1, KVM_2, SVM_1, SVM_2, CoordinateSystem, IsProperCell, &
                  S_2, S_3, V_2, V_3, dLVJ_dX1, dLVJ_dX2, dT, Weight_RK, &
-                 nDimensions )
+                 nDimensions, UseDeviceOption )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       KVM_1, KVM_2, &
@@ -126,52 +132,112 @@ contains
       Weight_RK
     integer ( KDI ), intent ( in ) :: &
       nDimensions
+    logical ( KDL ), intent ( in ), optional :: &
+      UseDeviceOption
 
     integer ( KDI ) :: &
       iV, &
       nV
     real ( KDR ) :: &
       Curvilinear
+    logical ( KDL ) :: &
+      UseDevice
+      
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
 
     nV = size ( KVM_1 )
 
     select case ( trim ( CoordinateSystem ) )
     case ( 'CYLINDRICAL' )
 
-      !$OMP parallel do private ( iV, Curvilinear )
-      do iV = 1, nV
-        if ( .not. IsProperCell ( iV ) ) &
-          cycle
-        Curvilinear   =  ( V_3 ( iV ) * S_3 ( iV ) )  *  dLVJ_dX1 ( iV )
-        KVM_1 ( iV )  =  KVM_1 ( iV )  +  Curvilinear * dT
-        SVM_1 ( iV )  =  SVM_1 ( iV )  +  Weight_RK * Curvilinear
-      end do
-      !$OMP end parallel do
-
-    case ( 'SPHERICAL' )
-
-      !$OMP parallel do private ( iV, Curvilinear )
-      do iV = 1, nV
-        if ( .not. IsProperCell ( iV ) ) &
-          cycle
-        Curvilinear  &
-          =  ( V_2 ( iV ) * S_2 ( iV )  +  V_3 ( iV ) * S_3 ( iV ) ) &
-             * 0.5_KDR * dLVJ_dX1 ( iV )
-        KVM_1 ( iV )  =  KVM_1 ( iV )  +  Curvilinear * dT
-        SVM_1 ( iV )  =  SVM_1 ( iV )  +  Weight_RK * Curvilinear
-      end do
-      !$OMP end parallel do
-
-      if ( nDimensions > 1 ) then
-        !$OMP parallel do private ( iV, Curvilinear )
+      if ( UseDevice ) then
+      
+        !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+        !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, Curvilinear )
         do iV = 1, nV
           if ( .not. IsProperCell ( iV ) ) &
             cycle
-          Curvilinear  =  ( V_3 ( iV ) * S_3 ( iV ) ) * dLVJ_dX2 ( iV )
-          KVM_2 ( iV )  =  KVM_2 ( iV )  +  Curvilinear * dT
-          SVM_2 ( iV )  =  SVM_2 ( iV )  +  Weight_RK * Curvilinear
+          Curvilinear   =  ( V_3 ( iV ) * S_3 ( iV ) )  *  dLVJ_dX1 ( iV )
+          KVM_1 ( iV )  =  KVM_1 ( iV )  +  Curvilinear * dT
+          SVM_1 ( iV )  =  SVM_1 ( iV )  +  Weight_RK * Curvilinear
+        end do
+        !$OMP end OMP_TARGET_DIRECTIVE parallel do
+      
+      else
+      
+        !$OMP  parallel do &
+        !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, Curvilinear )
+        do iV = 1, nV
+          if ( .not. IsProperCell ( iV ) ) &
+            cycle
+          Curvilinear   =  ( V_3 ( iV ) * S_3 ( iV ) )  *  dLVJ_dX1 ( iV )
+          KVM_1 ( iV )  =  KVM_1 ( iV )  +  Curvilinear * dT
+          SVM_1 ( iV )  =  SVM_1 ( iV )  +  Weight_RK * Curvilinear
         end do
         !$OMP end parallel do
+        
+      end if
+
+    case ( 'SPHERICAL' )
+    
+      if ( UseDevice ) then
+        
+        !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+        !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, Curvilinear )
+        do iV = 1, nV
+          if ( .not. IsProperCell ( iV ) ) &
+            cycle
+          Curvilinear  &
+            =  ( V_2 ( iV ) * S_2 ( iV )  +  V_3 ( iV ) * S_3 ( iV ) ) &
+               * 0.5_KDR * dLVJ_dX1 ( iV )
+          KVM_1 ( iV )  =  KVM_1 ( iV )  +  Curvilinear * dT
+          SVM_1 ( iV )  =  SVM_1 ( iV )  +  Weight_RK * Curvilinear
+        end do
+        !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+
+        if ( nDimensions > 1 ) then
+          !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+          !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, Curvilinear )
+          do iV = 1, nV
+            if ( .not. IsProperCell ( iV ) ) &
+              cycle
+            Curvilinear  =  ( V_3 ( iV ) * S_3 ( iV ) ) * dLVJ_dX2 ( iV )
+            KVM_2 ( iV )  =  KVM_2 ( iV )  +  Curvilinear * dT
+            SVM_2 ( iV )  =  SVM_2 ( iV )  +  Weight_RK * Curvilinear
+          end do
+          !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+        end if
+      
+      else 
+
+        !$OMP  parallel do &
+        !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, Curvilinear )
+        do iV = 1, nV
+          if ( .not. IsProperCell ( iV ) ) &
+            cycle
+          Curvilinear  &
+            =  ( V_2 ( iV ) * S_2 ( iV )  +  V_3 ( iV ) * S_3 ( iV ) ) &
+               * 0.5_KDR * dLVJ_dX1 ( iV )
+          KVM_1 ( iV )  =  KVM_1 ( iV )  +  Curvilinear * dT
+          SVM_1 ( iV )  =  SVM_1 ( iV )  +  Weight_RK * Curvilinear
+        end do
+        !$OMP  end parallel do
+
+        if ( nDimensions > 1 ) then
+          !$OMP  parallel do &
+          !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, Curvilinear )
+          do iV = 1, nV
+            if ( .not. IsProperCell ( iV ) ) &
+              cycle
+            Curvilinear  =  ( V_3 ( iV ) * S_3 ( iV ) ) * dLVJ_dX2 ( iV )
+            KVM_2 ( iV )  =  KVM_2 ( iV )  +  Curvilinear * dT
+            SVM_2 ( iV )  =  SVM_2 ( iV )  +  Weight_RK * Curvilinear
+          end do
+          !$OMP  end parallel do
+        end if
+      
       end if
 
     end select !-- CoordinateSystem
@@ -182,7 +248,7 @@ contains
   subroutine ApplyCurvilinear_F_P_Kernel &
                ( KVM_1, KVM_2, SVM_1, SVM_2, CoordinateSystem, IsProperCell, &
                  P, S_2, S_3, V_2, V_3, dLVJ_dX1, dLVJ_dX2, dT, Weight_RK, &
-                 nDimensions )
+                 nDimensions, UseDeviceOption )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       KVM_1, KVM_2, &
@@ -201,55 +267,119 @@ contains
       Weight_RK
     integer ( KDI ), intent ( in ) :: &
       nDimensions
+    logical ( KDL ), intent ( in ), optional :: &
+      UseDeviceOption
 
     integer ( KDI ) :: &
       iV, &
       nV
     real ( KDR ) :: &
       Curvilinear
+    logical ( KDL ) :: &
+      UseDevice
+      
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
 
     nV = size ( KVM_1 )
 
     select case ( trim ( CoordinateSystem ) )
     case ( 'CYLINDRICAL' )
-
-      !$OMP parallel do private ( iV, Curvilinear )
-      do iV = 1, nV
-        if ( .not. IsProperCell ( iV ) ) &
-          cycle
-        Curvilinear &
-          =  ( V_3 ( iV ) * S_3 ( iV )  +  P ( iV ) )  *  dLVJ_dX1 ( iV )
-        KVM_1 ( iV )  =  KVM_1 ( iV )  +  Curvilinear * dT
-        SVM_1 ( iV )  =  SVM_1 ( iV )  +  Weight_RK * Curvilinear
-      end do
-      !$OMP end parallel do
-
-    case ( 'SPHERICAL' )
-      !$OMP parallel do private ( iV, Curvilinear )
-      do iV = 1, nV
-        if ( .not. IsProperCell ( iV ) ) &
-          cycle
-        Curvilinear &
-          =  (    V_2 ( iV ) * S_2 ( iV )  &
-               +  V_3 ( iV ) * S_3 ( iV )  &
-               +  2.0 * P ( iV ) ) &
-             * 0.5_KDR * dLVJ_dX1 ( iV ) 
-        KVM_1 ( iV )  =  KVM_1 ( iV )  +  Curvilinear * dT
-        SVM_1 ( iV )  =  SVM_1 ( iV )  +  Weight_RK * Curvilinear
-      end do
-      !$OMP end parallel do
-
-      if ( nDimensions > 1 ) then
-        !$OMP parallel do private ( iV, Curvilinear )
+    
+      if ( UseDevice ) then
+        
+        !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+        !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, Curvilinear )
         do iV = 1, nV
           if ( .not. IsProperCell ( iV ) ) &
             cycle
           Curvilinear &
-            =  ( V_3 ( iV ) * S_3 ( iV )  +  P ( iV ) )  *  dLVJ_dX2 ( iV )
-          KVM_2 ( iV )  =  KVM_2 ( iV )  +  Curvilinear * dT
-          SVM_2 ( iV )  =  SVM_2 ( iV )  +  Weight_RK * Curvilinear
+            =  ( V_3 ( iV ) * S_3 ( iV )  +  P ( iV ) )  *  dLVJ_dX1 ( iV )
+          KVM_1 ( iV )  =  KVM_1 ( iV )  +  Curvilinear * dT
+          SVM_1 ( iV )  =  SVM_1 ( iV )  +  Weight_RK * Curvilinear
         end do
-        !$OMP end parallel do
+        !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+      
+      else
+
+        !$OMP  parallel do &
+        !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, Curvilinear )
+        do iV = 1, nV
+          if ( .not. IsProperCell ( iV ) ) &
+            cycle
+          Curvilinear &
+            =  ( V_3 ( iV ) * S_3 ( iV )  +  P ( iV ) )  *  dLVJ_dX1 ( iV )
+          KVM_1 ( iV )  =  KVM_1 ( iV )  +  Curvilinear * dT
+          SVM_1 ( iV )  =  SVM_1 ( iV )  +  Weight_RK * Curvilinear
+        end do
+        !$OMP  end parallel do
+      end if
+
+    case ( 'SPHERICAL' )
+    
+      if ( UseDevice ) then
+      
+        !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+        !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, Curvilinear )
+        do iV = 1, nV
+          if ( .not. IsProperCell ( iV ) ) &
+            cycle
+          Curvilinear &
+            =  (    V_2 ( iV ) * S_2 ( iV )  &
+                 +  V_3 ( iV ) * S_3 ( iV )  &
+                 +  2.0 * P ( iV ) ) &
+               * 0.5_KDR * dLVJ_dX1 ( iV ) 
+          KVM_1 ( iV )  =  KVM_1 ( iV )  +  Curvilinear * dT
+          SVM_1 ( iV )  =  SVM_1 ( iV )  +  Weight_RK * Curvilinear
+        end do
+        !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+      
+        if ( nDimensions > 1 ) then
+          !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+          !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, Curvilinear )
+          do iV = 1, nV
+            if ( .not. IsProperCell ( iV ) ) &
+              cycle
+            Curvilinear &
+              =  ( V_3 ( iV ) * S_3 ( iV )  +  P ( iV ) )  *  dLVJ_dX2 ( iV )
+            KVM_2 ( iV )  =  KVM_2 ( iV )  +  Curvilinear * dT
+            SVM_2 ( iV )  =  SVM_2 ( iV )  +  Weight_RK * Curvilinear
+          end do
+          !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+        end if
+      
+      else 
+      
+        !$OMP  parallel do &
+        !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, Curvilinear )
+        do iV = 1, nV
+          if ( .not. IsProperCell ( iV ) ) &
+            cycle
+          Curvilinear &
+            =  (    V_2 ( iV ) * S_2 ( iV )  &
+                 +  V_3 ( iV ) * S_3 ( iV )  &
+                 +  2.0 * P ( iV ) ) &
+               * 0.5_KDR * dLVJ_dX1 ( iV ) 
+          KVM_1 ( iV )  =  KVM_1 ( iV )  +  Curvilinear * dT
+          SVM_1 ( iV )  =  SVM_1 ( iV )  +  Weight_RK * Curvilinear
+        end do
+        !$OMP  end parallel do
+      
+        if ( nDimensions > 1 ) then
+          !$OMP  parallel do &
+          !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, Curvilinear )
+          do iV = 1, nV
+            if ( .not. IsProperCell ( iV ) ) &
+              cycle
+            Curvilinear &
+              =  ( V_3 ( iV ) * S_3 ( iV )  +  P ( iV ) )  *  dLVJ_dX2 ( iV )
+            KVM_2 ( iV )  =  KVM_2 ( iV )  +  Curvilinear * dT
+            SVM_2 ( iV )  =  SVM_2 ( iV )  +  Weight_RK * Curvilinear
+          end do
+          !$OMP  end parallel do
+        end if
+      
       end if
 
     end select !-- CoordinateSystem

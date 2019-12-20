@@ -39,10 +39,12 @@ SedovTaylor: Basics.a Mathematics.a Fluid.a SedovTaylor.o
           SedovTaylor.o SedovTaylor_Form.o \
           Fluid.a Mathematics.a Basics.a $(LIBRARIES)
 
-FishboneMoncrief: Basics.a Mathematics.a Fluid.a FishboneMoncrief.o
+FishboneMoncrief: Basics.a Mathematics.a Fluid.a FishboneMoncrief.o \
+                  FishboneMoncrief_Kernel.o
 	$(LINK) $(FLAGS) \
           -o FishboneMoncrief_$(MACHINE) \
-          FishboneMoncrief.o FishboneMoncrief_Form.o Tally_FM__Form.o \
+          FishboneMoncrief.o FishboneMoncrief_Kernel.o \
+          FishboneMoncrief_Form.o Tally_FM__Form.o \
           Fluid.a Mathematics.a Basics.a $(LIBRARIES)
 
 include $(PATH_BASICS)/Makefile_Dependencies
@@ -155,6 +157,10 @@ FishboneMoncrief_Form.o: \
   ApplyCurvilinear_F__Command.o \
   Tally_FM__Form.o \
   FishboneMoncrief_Form.f90
+
+FishboneMoncrief_Kernel.o: \
+  FishboneMoncrief_Form.o \
+  FishboneMoncrief_Kernel.f90
 
 FishboneMoncrief.o: \
   Basics.o \
