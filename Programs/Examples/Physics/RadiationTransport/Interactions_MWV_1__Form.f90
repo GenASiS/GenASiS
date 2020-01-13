@@ -359,11 +359,7 @@ contains
 
     nValues  =  size ( J )
 
-    Q = 0.0_KDR
-    do iV = 1, nValues
-      Q  =  Q  +  abs ( Kappa * M * N * ( J_EQ ( iV ) - J ( iV ) ) ) &
-                  *  dV ( iV )
-    end do !-- iV
+    Q   =  abs ( sum ( Kappa * M * N * ( J_EQ - J ) * dV ) )
     RT  =  U / max ( Q, SqrtTiny )
 
   end subroutine ComputeTimeScaleKernel_S

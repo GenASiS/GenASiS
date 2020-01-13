@@ -21,8 +21,8 @@ module Interactions_OCO__Form
       EmissionAbsorptionScattering  
       !-- 1st dimension: Energy
       !-- 2nd dimension: Variable 1-3
-      !     1: Emissivity (ergs/cm^3/s/srad)
-      !     2: Absorption opacity (cm^-1)
+      !     1: Emissivity * bin widths (ergs/cm^3/s/srad)
+      !     2: Absorption opacity (cm^-1)  !-- Includes "stimulated absorption"
       !     3: Scattering opacity (cm^-1)
     logical ( KDL ), private :: &
       Include_NES, &
@@ -46,7 +46,8 @@ module Interactions_OCO__Form
 
     real ( KDR ), private, protected :: &
       MassDensity_CGS, &
-      MeV
+      MeV, &
+      cm
 
 contains
 
@@ -112,6 +113,7 @@ contains
 
     MassDensity_CGS  =  UNIT % MASS_DENSITY_CGS
     MeV              =  UNIT % MEGA_ELECTRON_VOLT
+    cm               =  UNIT % CENTIMETER
 
   end subroutine Set_S
 
@@ -192,6 +194,9 @@ contains
     class ( CurrentTemplate ), intent ( in ) :: &
       R
 
+    integer ( KDI ) :: &
+      iSpecies_OCO
+
     associate ( iBC => I % iBaseCell )
     select type ( F => I % Fluid )
     class is ( Fluid_P_HN_Form )
@@ -235,6 +240,8 @@ contains
       select case ( trim ( R % RadiationType ) )
       case ( 'NEUTRINOS_E' )
 
+        iSpecies_OCO  =  1  
+
         call SetFermiDiracSpectrum &
                ( I % Energy, &
                  F % Value ( iBC, F % TEMPERATURE ), &
@@ -242,16 +249,9 @@ contains
                    -  F % Value ( iBC, F % CHEMICAL_POTENTIAL_N_P ), &
                  I % Value ( :, I % EQUILIBRIUM_J ) )
 
-        call I % ComputeTimeScaleKernel_S &
-               (  F % Value ( iBC,  F % BARYON_MASS ), &
-                  F % Value ( iBC,  F % COMOVING_BARYON_DENSITY ), &
-                  F % Value ( iBC,  F % INTERNAL_ENERGY ), &
-                  F % Value ( iBC,  F % TEMPERATURE ), &
-                  F % Value ( iBC,  F % ELECTRON_FRACTION ), &
-                  iS  =  1, &  !-- Electron neutrinos
-                  RT  =  SF % Value ( iBC, SF % RADIATION_TIME ) ) 
-             
       case ( 'NEUTRINOS_E_BAR' )
+
+        iSpecies_OCO  =  2  
 
         call SetFermiDiracSpectrum &
                ( I % Energy, &
@@ -259,17 +259,6 @@ contains
                  F % Value ( iBC, F % CHEMICAL_POTENTIAL_N_P ) &
                    -  F % Value ( iBC, F % CHEMICAL_POTENTIAL_E ), &
                  I % Value ( :, I % EQUILIBRIUM_J ) )
-
-        call I % ComputeTimeScaleKernel_S &
-               (  F % Value ( iBC,  F % BARYON_MASS ), &
-                  F % Value ( iBC,  F % COMOVING_BARYON_DENSITY ), &
-                  F % Value ( iBC,  F % INTERNAL_ENERGY ), &
-                  F % Value ( iBC,  F % TEMPERATURE ), &
-                  F % Value ( iBC,  F % ELECTRON_FRACTION ), &
-                  iS  =  2, &  !-- Electron antineutrinos
-                  RT  =  SF % Value ( iBC, SF % RADIATION_TIME ) ) 
-             
-      case ( 'NEUTRINOS_X' )
 
       case default
         call Show ( 'Radiation Type not recognized', CONSOLE % ERROR )
@@ -279,6 +268,18 @@ contains
         call PROGRAM_HEADER % Abort ( )
       end select !-- R % RadiationType
 
+      call I % ComputeTimeScaleKernel_S &
+             (  I % Value ( :, I % EQUILIBRIUM_J ), &
+                R % Value ( :, R % COMOVING_ENERGY ), &
+                I % d3_Energy, &
+                F % Value ( iBC,  F % BARYON_MASS ), &
+                F % Value ( iBC,  F % COMOVING_BARYON_DENSITY ), &
+                F % Value ( iBC,  F % INTERNAL_ENERGY ), &
+                F % Value ( iBC,  F % TEMPERATURE ), &
+                F % Value ( iBC,  F % ELECTRON_FRACTION ), &
+                iS  =  iSpecies_OCO, &
+                RT  =  SF % Value ( iBC, SF % RADIATION_TIME ) ) 
+             
       end select !-- R
 
     end select !-- MomentsType
@@ -302,10 +303,14 @@ contains
   end subroutine Finalize
 
 
-  subroutine ComputeTimeScaleKernel_S ( I, M, N, U, T, Y, iS, RT )
+  subroutine ComputeTimeScaleKernel_S ( I, J_EQ, J, dV, M, N, U, T, Y, iS, RT )
 
     class ( Interactions_OCO_Form ), intent ( in ) :: &
       I
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      J_EQ, &
+      J, &
+      dV
     real ( KDR ), intent ( in ) :: &
       M, &
       N, &
@@ -319,16 +324,31 @@ contains
 
     real ( KDR ) :: &
       Rho_CGS, &
-      T_MeV
+      T_MeV, &
+      Q, &
+      SqrtTiny
+    real ( KDR ), dimension ( size ( J ) ) :: &
+      Kappa_Star  !-- includes stimulated absoprtion, Burrows et al. (2006)
 
     Rho_CGS  =  M * N / MassDensity_CGS
     T_MeV    =  T / MeV
 
-    Rho_CGS  =  max ( Rho_CGS, 1.00001 * 10.0_KDR ** NULIBTABLE_LOGRHO_MIN )
+    SqrtTiny = sqrt ( tiny ( 0.0_KDR ) )
 
-    call NULIBTABLE_SINGLE_SPECIES_RANGE_ENERGY &
-           ( Rho_CGS, T_MeV, Y, iS, I % EmissionAbsorptionScattering, &
-             NULIBTABLE_NUMBER_GROUPS, NULIBTABLE_NUMBER_EASVARIABLES )
+    if ( Rho_CGS  >  10.0_KDR ** NULIBTABLE_LOGRHO_MIN ) then
+
+      call NULIBTABLE_SINGLE_SPECIES_RANGE_ENERGY &
+             ( Rho_CGS, T_MeV, Y, iS, I % EmissionAbsorptionScattering, &
+               NULIBTABLE_NUMBER_GROUPS, NULIBTABLE_NUMBER_EASVARIABLES )
+
+      Kappa_Star  =  I % EmissionAbsorptionScattering ( :, 2 )  *  cm ** (-1)
+
+      Q   =  abs ( sum ( Kappa_Star * ( J_EQ - J ) * dV ) )
+      RT  =  U / max ( Q, SqrtTiny )
+
+    else      
+      RT  =  huge ( 1.0_KDR )
+    end if
 
   end subroutine ComputeTimeScaleKernel_S
 
