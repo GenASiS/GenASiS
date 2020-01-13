@@ -41,6 +41,8 @@ module Interactions_OCO__Form
     final :: &
       Finalize
     procedure, private, pass :: &
+      ComputeKernel_S
+    procedure, private, pass :: &
       ComputeTimeScaleKernel_S
   end type Interactions_OCO_Form
 
@@ -227,16 +229,6 @@ contains
       select type ( R )
       class is ( NeutrinoMoments_S_Form )
 
-      !   call I % ComputeTimeScaleKernel_S &
-      !          (  I % Value ( :, I % EQUILIBRIUM_J ), &
-      !             R % Value ( :, R % COMOVING_ENERGY ), &
-      !             I % d3_Energy, &
-      !             F % Value ( iBC,  F % BARYON_MASS ), &
-      !             F % Value ( iBC,  F % COMOVING_BARYON_DENSITY ), &
-      !             F % Value ( iBC,  F % INTERNAL_ENERGY ), &
-      !             F % Value ( iBC,  F % TEMPERATURE ), &
-      !            SF % Value ( iBC, SF % RADIATION_TIME ) )
-
       select case ( trim ( R % RadiationType ) )
       case ( 'NEUTRINOS_E' )
 
@@ -301,6 +293,69 @@ contains
       deallocate ( I % EmissionAbsorptionScattering )
 
   end subroutine Finalize
+
+
+  subroutine ComputeKernel_S &
+               ( I, J_EQ, N_EQ, E, M, N, T, Y, iS, Xi_J, Xi_H, Xi_N, &
+                 Chi_J, Chi_H, Chi_N )
+
+    class ( Interactions_OCO_Form ), intent ( in ) :: &
+      I
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      J_EQ, N_EQ, &
+      E
+    real ( KDR ), intent ( in ) :: &
+      M, &
+      N, &
+      T, &
+      Y
+    integer ( KDI ), intent ( in ) :: &
+      iS
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+       Xi_J,  Xi_H,  Xi_N, &
+      Chi_J, Chi_H, Chi_N  !-- includes stimulated absoprtion, 
+                           !   Burrows et al. (2006)
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+    real ( KDR ) :: &
+      Rho_CGS, &
+      T_MeV, &
+      SqrtTiny
+
+    Rho_CGS  =  M * N / MassDensity_CGS
+    T_MeV    =  T / MeV
+
+    SqrtTiny = sqrt ( tiny ( 0.0_KDR ) )
+
+    if ( Rho_CGS  >  10.0_KDR ** NULIBTABLE_LOGRHO_MIN ) then
+
+      call NULIBTABLE_SINGLE_SPECIES_RANGE_ENERGY &
+             ( Rho_CGS, T_MeV, Y, iS, I % EmissionAbsorptionScattering, &
+               NULIBTABLE_NUMBER_GROUPS, NULIBTABLE_NUMBER_EASVARIABLES )
+
+      Chi_J  =  I % EmissionAbsorptionScattering ( :, 2 )  *  cm ** (-1)
+      Chi_H  =  Chi_J
+      Chi_N  =  Chi_J / E
+
+      Xi_J  =  Chi_J * J_EQ
+      Xi_H  =  0.0_KDR
+      Xi_N  =  Chi_N * N_EQ
+
+    else      
+
+      Chi_J  =  0.0_KDR
+      Chi_H  =  0.0_KDR
+      Chi_N  =  0.0_KDR
+
+      Xi_J  =  0.0_KDR
+      Xi_H  =  0.0_KDR
+      Xi_N  =  0.0_KDR
+
+    end if
+
+  end subroutine ComputeKernel_S
 
 
   subroutine ComputeTimeScaleKernel_S ( I, J_EQ, J, dV, M, N, U, T, Y, iS, RT )
