@@ -127,9 +127,12 @@ contains
     class ( CurrentTemplate ), intent ( in ) :: &
       R
 
-    associate &
-      (   F => I % Fluid, &
-        iBC => I % iBaseCell )
+    integer ( KDI ) :: &
+      iSpecies_OCO
+
+    associate ( iBC => I % iBaseCell )
+    select type ( F => I % Fluid )
+    class is ( Fluid_P_HN_Form )
     select type ( R )
     class is ( RadiationMomentsForm )
 
@@ -153,23 +156,35 @@ contains
       call PROGRAM_HEADER % Abort ( )
     case ( 'SPECTRAL' )
 
-      ! call SetPlanckSpectrum &
-      !        ( I % Energy, &
-      !          F % Value ( iBC, F % TEMPERATURE ), &
-      !          I % Value ( :, I % EQUILIBRIUM_J ) )
-      ! call I % ComputeKernel_S &
-      !        ( I % Value ( :, I % EQUILIBRIUM_J ), &
-      !          F % Value ( iBC, F % BARYON_MASS ), &
-      !          F % Value ( iBC, F % COMOVING_BARYON_DENSITY ), &
-      !          F % Value ( iBC, F % TEMPERATURE ), &
-      !          I % Value ( :, I % EMISSIVITY_J ), &
-      !          I % Value ( :, I % OPACITY_J ), &
-      !          I % Value ( :, I % OPACITY_H ) )
+      select type ( R )
+      class is ( NeutrinoMoments_S_Form )
 
       select case ( trim ( R % RadiationType ) )
       case ( 'NEUTRINOS_E' )
 
+!call Show ( '>>> NEUTRINOS_E' )
+        iSpecies_OCO  =  1  
+
+        call SetFermiDiracSpectrum &
+               ( I % Energy, &
+                 F % Value ( iBC, F % TEMPERATURE ), &
+                 F % Value ( iBC, F % CHEMICAL_POTENTIAL_E ) &
+                   -  F % Value ( iBC, F % CHEMICAL_POTENTIAL_N_P ), &
+                 I % Value ( :, I % EQUILIBRIUM_J ), &
+                 I % Value ( :, I % EQUILIBRIUM_N ) )
+
       case ( 'NEUTRINOS_E_BAR' )
+
+!call Show ( '>>> NEUTRINOS_E_BAR' )
+        iSpecies_OCO  =  2  
+
+        call SetFermiDiracSpectrum &
+               ( I % Energy, &
+                 F % Value ( iBC, F % TEMPERATURE ), &
+                 F % Value ( iBC, F % CHEMICAL_POTENTIAL_N_P ) &
+                   -  F % Value ( iBC, F % CHEMICAL_POTENTIAL_E ), &
+                 I % Value ( :, I % EQUILIBRIUM_J ), &
+                 I % Value ( :, I % EQUILIBRIUM_N ) )
 
       case ( 'NEUTRINOS_X' )
 
@@ -181,10 +196,35 @@ contains
         call PROGRAM_HEADER % Abort ( )
       end select !-- R % RadiationType
 
+      call I % ComputeKernel_S &
+             (  J_EQ  =  I % Value ( :, I % EQUILIBRIUM_J ), &
+                N_EQ  =  I % Value ( :, I % EQUILIBRIUM_N ), &
+                   E  =  I % Energy, &
+                   M  =  F % Value ( iBC,  F % BARYON_MASS ), &
+                   N  =  F % Value ( iBC,  F % COMOVING_BARYON_DENSITY ), &
+                   T  =  F % Value ( iBC,  F % TEMPERATURE ), &
+                   Y  =  F % Value ( iBC,  F % ELECTRON_FRACTION ), &
+                  iS  =  iSpecies_OCO, &
+                Xi_J  =  I % Value ( :, I % EMISSIVITY_J ), &
+                Xi_H  =  I % Value ( :, I % EMISSIVITY_H ), &
+                Xi_N  =  I % Value ( :, I % EMISSIVITY_N ), &
+               Chi_J  =  I % Value ( :, I % OPACITY_J ), &
+               Chi_H  =  I % Value ( :, I % OPACITY_H ), &
+               Chi_N  =  I % Value ( :, I % OPACITY_N ) )
+
+! call Show ( iBC, '>>> iBC' )
+! call Show ( R % Value ( :, R % COMOVING_ENERGY ), &
+!             R % Unit ( R % COMOVING_ENERGY ), '>>> J' )
+! call Show ( I % Value ( :, I % EMISSIVITY_J ), &
+!             I % Unit ( I % EMISSIVITY_J ), '>>> Xi_J' )
+
+      end select !-- R
+
     end select !-- MomentsType
 
     end select !-- R
-    end associate !-- F, etc.
+    end select !-- F
+    end associate !-- iBC
 
   end subroutine Compute
 
@@ -263,16 +303,16 @@ contains
       end select !-- R % RadiationType
 
       call I % ComputeTimeScaleKernel_S &
-             (  I % Value ( :, I % EQUILIBRIUM_J ), &
-                R % Value ( :, R % COMOVING_ENERGY ), &
-                I % d3_Energy, &
-                F % Value ( iBC,  F % BARYON_MASS ), &
-                F % Value ( iBC,  F % COMOVING_BARYON_DENSITY ), &
-                F % Value ( iBC,  F % INTERNAL_ENERGY ), &
-                F % Value ( iBC,  F % TEMPERATURE ), &
-                F % Value ( iBC,  F % ELECTRON_FRACTION ), &
-                iS  =  iSpecies_OCO, &
-                RT  =  SF % Value ( iBC, SF % RADIATION_TIME ) ) 
+             (  J_EQ  =  I % Value ( :, I % EQUILIBRIUM_J ), &
+                   J  =  R % Value ( :, R % COMOVING_ENERGY ), &
+                  dV  =  I % d3_Energy, &
+                   M  =  F % Value ( iBC,  F % BARYON_MASS ), &
+                   N  =  F % Value ( iBC,  F % COMOVING_BARYON_DENSITY ), &
+                   U  =  F % Value ( iBC,  F % INTERNAL_ENERGY ), &
+                   T  =  F % Value ( iBC,  F % TEMPERATURE ), &
+                   Y  =  F % Value ( iBC,  F % ELECTRON_FRACTION ), &
+                  iS  =  iSpecies_OCO, &
+                  RT  =  SF % Value ( iBC, SF % RADIATION_TIME ) ) 
              
       end select !-- R
 
