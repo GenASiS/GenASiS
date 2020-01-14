@@ -12,7 +12,8 @@ contains
 
 
   subroutine SetFermiDiracSpectrum &
-               ( Energy, Temperature, ChemicalPotential, EnergyDensity )
+               ( Energy, Temperature, ChemicalPotential, EnergyDensity, &
+                 NumberDensity )
 
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       Energy
@@ -20,7 +21,8 @@ contains
       Temperature, &
       ChemicalPotential
     real ( KDR ), dimension ( : ), intent ( out ) :: &
-      EnergyDensity
+      EnergyDensity, &
+      NumberDensity
 
     real ( KDR ) :: &
       TwoPi, &
@@ -32,7 +34,8 @@ contains
       ExpArgument
 
     associate &
-      ( J   =>  EnergyDensity, &
+      ( N   =>  NumberDensity, &
+        J   =>  EnergyDensity, &
         E   =>  Energy, &
         T   =>  Temperature, &
         Mu  =>  ChemicalPotential, &
@@ -50,7 +53,9 @@ contains
       ExpArgument = LogSqrtHuge
     end where
 
-    J  =  g * hc_M_3  *  E / ( exp ( ExpArgument ) + 1.0_KDR )
+    N  =  g * hc_M_3  /  ( exp ( ExpArgument ) + 1.0_KDR )
+
+    J  =  E  *  N
 
     end associate !-- J, etc.
 

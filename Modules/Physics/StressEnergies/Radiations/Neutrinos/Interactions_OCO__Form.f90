@@ -239,7 +239,8 @@ contains
                  F % Value ( iBC, F % TEMPERATURE ), &
                  F % Value ( iBC, F % CHEMICAL_POTENTIAL_E ) &
                    -  F % Value ( iBC, F % CHEMICAL_POTENTIAL_N_P ), &
-                 I % Value ( :, I % EQUILIBRIUM_J ) )
+                 I % Value ( :, I % EQUILIBRIUM_J ), &
+                 I % Value ( :, I % EQUILIBRIUM_N ) )
 
       case ( 'NEUTRINOS_E_BAR' )
 
@@ -250,7 +251,8 @@ contains
                  F % Value ( iBC, F % TEMPERATURE ), &
                  F % Value ( iBC, F % CHEMICAL_POTENTIAL_N_P ) &
                    -  F % Value ( iBC, F % CHEMICAL_POTENTIAL_E ), &
-                 I % Value ( :, I % EQUILIBRIUM_J ) )
+                 I % Value ( :, I % EQUILIBRIUM_J ), &
+                 I % Value ( :, I % EQUILIBRIUM_N ) )
 
       case default
         call Show ( 'Radiation Type not recognized', CONSOLE % ERROR )
