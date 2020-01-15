@@ -162,7 +162,6 @@ contains
       select case ( trim ( R % RadiationType ) )
       case ( 'NEUTRINOS_E' )
 
-!call Show ( '>>> NEUTRINOS_E' )
         iSpecies_OCO  =  1  
 
         call SetFermiDiracSpectrum &
@@ -175,7 +174,6 @@ contains
 
       case ( 'NEUTRINOS_E_BAR' )
 
-!call Show ( '>>> NEUTRINOS_E_BAR' )
         iSpecies_OCO  =  2  
 
         call SetFermiDiracSpectrum &
@@ -198,7 +196,6 @@ contains
 
       call I % ComputeKernel_S &
              (  J_EQ  =  I % Value ( :, I % EQUILIBRIUM_J ), &
-                N_EQ  =  I % Value ( :, I % EQUILIBRIUM_N ), &
                    E  =  I % Energy, &
                    M  =  F % Value ( iBC,  F % BARYON_MASS ), &
                    N  =  F % Value ( iBC,  F % COMOVING_BARYON_DENSITY ), &
@@ -207,16 +204,8 @@ contains
                   iS  =  iSpecies_OCO, &
                 Xi_J  =  I % Value ( :, I % EMISSIVITY_J ), &
                 Xi_H  =  I % Value ( :, I % EMISSIVITY_H ), &
-                Xi_N  =  I % Value ( :, I % EMISSIVITY_N ), &
                Chi_J  =  I % Value ( :, I % OPACITY_J ), &
-               Chi_H  =  I % Value ( :, I % OPACITY_H ), &
-               Chi_N  =  I % Value ( :, I % OPACITY_N ) )
-
-! call Show ( iBC, '>>> iBC' )
-! call Show ( R % Value ( :, R % COMOVING_ENERGY ), &
-!             R % Unit ( R % COMOVING_ENERGY ), '>>> J' )
-! call Show ( I % Value ( :, I % EMISSIVITY_J ), &
-!             I % Unit ( I % EMISSIVITY_J ), '>>> Xi_J' )
+               Chi_H  =  I % Value ( :, I % OPACITY_H ) )
 
       end select !-- R
 
@@ -338,13 +327,12 @@ contains
 
 
   subroutine ComputeKernel_S &
-               ( I, J_EQ, N_EQ, E, M, N, T, Y, iS, Xi_J, Xi_H, Xi_N, &
-                 Chi_J, Chi_H, Chi_N )
+               ( I, J_EQ, E, M, N, T, Y, iS, Xi_J, Xi_H, Chi_J, Chi_H )
 
     class ( Interactions_OCO_Form ), intent ( in ) :: &
       I
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      J_EQ, N_EQ, &
+      J_EQ, &
       E
     real ( KDR ), intent ( in ) :: &
       M, &
@@ -354,9 +342,9 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iS
     real ( KDR ), dimension ( : ), intent ( out ) :: &
-       Xi_J,  Xi_H,  Xi_N, &
-      Chi_J, Chi_H, Chi_N  !-- includes stimulated absoprtion, 
-                           !   Burrows et al. (2006)
+       Xi_J,  Xi_H, &
+      Chi_J, Chi_H  !-- includes stimulated absoprtion, 
+                    !   Burrows et al. (2006)
 
     integer ( KDI ) :: &
       iV, &
@@ -379,21 +367,17 @@ contains
 
       Chi_J  =  I % EmissionAbsorptionScattering ( :, 2 )  *  cm ** (-1)
       Chi_H  =  Chi_J
-      Chi_N  =  Chi_J / E
 
       Xi_J  =  Chi_J * J_EQ
       Xi_H  =  0.0_KDR
-      Xi_N  =  Chi_N * N_EQ
 
     else      
 
       Chi_J  =  0.0_KDR
       Chi_H  =  0.0_KDR
-      Chi_N  =  0.0_KDR
 
       Xi_J  =  0.0_KDR
       Xi_H  =  0.0_KDR
-      Xi_N  =  0.0_KDR
 
     end if
 

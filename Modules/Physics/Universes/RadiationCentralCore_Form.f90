@@ -709,6 +709,7 @@ contains
       RMF => RMB % RadiationMoments ( iF )
       select type ( SF => RMF % Sources )
       class is ( Sources_RM_Form )
+
         Integrand ( 1 ) % Value  &
           =  SF % Value ( :, SF % INTERACTIONS_J )
         Integrand ( 2 ) % Value  &
@@ -717,8 +718,12 @@ contains
           =  SF % Value ( :, SF % INTERACTIONS_H_D ( 2 ) )
         Integrand ( 4 ) % Value  &
           =  SF % Value ( :, SF % INTERACTIONS_H_D ( 3 ) )
+
+        SF % Value ( :, SF % INTERACTIONS_N ) &
+          =  SF % Value ( :, SF % INTERACTIONS_J )  /  RMB % Energy
         Integrand ( 5 ) % Value  &
           =  SF % Value ( :, SF % INTERACTIONS_N )
+
       end select !-- SF
 
       call VI % Compute ( CF, Integrand, Integral )
