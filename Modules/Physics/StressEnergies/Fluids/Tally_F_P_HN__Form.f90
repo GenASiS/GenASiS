@@ -57,7 +57,7 @@ contains
     T % ELECTRON_NUMBER  =  oI + 1
     
     T % Variable ( oI + 1 : oI + T % N_INTEGRALS_HEAVY_NUCLEUS ) &
-      = [ 'ProtonNumber' ]
+      = [ 'ElectronNumber' ]
 
     T % Unit ( oI + 1 : oI + T % N_INTEGRALS_HEAVY_NUCLEUS ) &
       = [ Units % Number ]
