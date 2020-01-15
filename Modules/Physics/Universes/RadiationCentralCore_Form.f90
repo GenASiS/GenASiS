@@ -122,11 +122,11 @@ contains
              MinWidthEnergyOption = MinWidthEnergyOption, &
              EnergyScaleOption = EnergyScaleOption, &
              nCellsEnergyOption = nCellsEnergyOption )
-    call RCC % InitializeRadiation &
-           ( RadiationName, RadiationType )
     call RCC % InitializeFluid &
            ( FluidType, LimiterParameterOption = LimiterParameterOption, &
              ShockThresholdOption = ShockThresholdOption )
+    call RCC % InitializeRadiation &
+           ( RadiationName, RadiationType )
     call RCC % InitializeSteps &
            ( Name )
     call RCC % InitializeDiagnostics &
