@@ -121,10 +121,10 @@ contains
              MinWidthEnergyOption = MinWidthEnergyOption, &
              EnergyScaleOption = EnergyScaleOption, &
              nCellsEnergyOption = nCellsEnergyOption )
-    call RB % InitializeRadiation &
-           ( RadiationName, RadiationType )
     call RB % InitializeFluid &
            ( FluidType = 'IDEAL' )
+    call RB % InitializeRadiation &
+           ( RadiationName, RadiationType )
     call RB % InitializeSteps &
            ( Name, ApplyStreamingOption, ApplyInteractionsOption, &
              EvolveFluidOption )
