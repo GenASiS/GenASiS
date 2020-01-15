@@ -343,16 +343,16 @@ contains
 
 
   subroutine ComputeFromTemperature &
-               ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
+               ( Storage_C, C, G, Storage_G, nValuesOption, oValueOption )
 
-    real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
-      Value_C
+    class ( StorageForm ), intent ( inout ), target :: &
+      Storage_C
     class ( Fluid_P_I_Form ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_G
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
@@ -362,8 +362,8 @@ contains
       nV     !-- nValues
       
     associate &
-      ( FV => Value_C, &
-        GV => Value_G )
+      ( FV => Storage_C % Value, &
+        GV => Storage_G % Value )
 
     if ( present ( oValueOption ) ) then
       oV = oValueOption
@@ -426,23 +426,23 @@ contains
     end associate !-- M_DD_22, etc.
     end associate !-- FV, etc.
 
-    if ( associated ( C % Value, Value_C ) ) &
+    if ( associated ( C % Value, Storage_C % Value ) ) &
       call C % Features % Detect ( )
 
   end subroutine ComputeFromTemperature
 
 
   subroutine ComputeFromPrimitiveCommon &
-               ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
+               ( Storage_C, C, G, Storage_G, nValuesOption, oValueOption )
 
-    real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
-      Value_C
+    class ( StorageForm ), intent ( inout ), target :: &
+      Storage_C
     class ( Fluid_P_I_Form ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_G
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
@@ -452,8 +452,8 @@ contains
       nV     !-- nValues
       
     associate &
-      ( FV => Value_C, &
-        GV => Value_G )
+      ( FV => Storage_C % Value, &
+        GV => Storage_G % Value )
 
     if ( present ( oValueOption ) ) then
       oV = oValueOption
@@ -516,23 +516,23 @@ contains
     end associate !-- M_DD_22, etc.
     end associate !-- FV, etc.
 
-    if ( associated ( C % Value, Value_C ) ) &
+    if ( associated ( C % Value, Storage_C % Value ) ) &
       call C % Features % Detect ( )
 
   end subroutine ComputeFromPrimitiveCommon
 
 
   subroutine ComputeFromConservedCommon &
-               ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
+               ( Storage_C, C, G, Storage_G, nValuesOption, oValueOption )
 
-    real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
-      Value_C
+    class ( StorageForm ), intent ( inout ), target :: &
+      Storage_C
     class ( Fluid_P_I_Form ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_G
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
@@ -542,8 +542,8 @@ contains
       nV     !-- nValues
 
     associate &
-      ( FV => Value_C, &
-        GV => Value_G )
+      ( FV => Storage_C % Value, &
+        GV => Storage_G % Value )
 
     if ( present ( oValueOption ) ) then
       oV = oValueOption
@@ -622,25 +622,25 @@ contains
     end select !-- FF
     end associate !-- FV, etc.
     
-    if ( associated ( C % Value, Value_C ) ) &
+    if ( associated ( C % Value, Storage_C % Value ) ) &
       call C % Features % Detect ( )
 
   end subroutine ComputeFromConservedCommon
 
   
   subroutine ComputeRawFluxes &
-               ( RawFlux, C, G, Value_C, Value_G, iDimension, &
+               ( RawFlux, C, G, Storage_C, Storage_G, iDimension, &
                  nValuesOption, oValueOption )
     
-    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+    class ( StorageForm ), intent ( inout ) :: &
       RawFlux
     class ( Fluid_P_I_Form ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_C, &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_C, &
+      Storage_G
     integer ( KDI ), intent ( in ) :: &
       iDimension
     integer ( KDI ), intent ( in ), optional :: &
@@ -648,7 +648,7 @@ contains
       oValueOption
 
     call C % ComputeRawFluxesTemplate_P &
-           ( RawFlux, G, Value_C, Value_G, iDimension, nValuesOption, &
+           ( RawFlux, G, Storage_C, Storage_G, iDimension, nValuesOption, &
              oValueOption )
 
   end subroutine ComputeRawFluxes

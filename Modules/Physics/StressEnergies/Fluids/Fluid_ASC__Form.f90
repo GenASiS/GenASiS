@@ -67,9 +67,9 @@ contains
   subroutine Initialize &
                ( FA, A, FluidType, Units, NameShortOption, &
                  RiemannSolverTypeOption, ReconstructedTypeOption, &
-                 UseEntropyOption, UseLimiterOption, AllocateTallyOption, &
-                 AllocateSourcesOption, LimiterParameterOption, &
-                 ShockThresholdOption, IgnorabilityOption )
+                 UseEntropyOption, UseLimiterOption, UsePinnedMemoryOption, &
+                 AllocateTallyOption, AllocateSourcesOption, &
+                 LimiterParameterOption, ShockThresholdOption, IgnorabilityOption )
 
     class ( Fluid_ASC_Form ), intent ( inout ) :: &
       FA
@@ -86,6 +86,7 @@ contains
     logical ( KDL ), intent ( in ), optional :: &
       UseEntropyOption, &
       UseLimiterOption, &
+      UsePinnedMemoryOption, &
       AllocateTallyOption, &
       AllocateSourcesOption
     real ( KDR ), intent ( in ), optional :: &
@@ -246,7 +247,8 @@ contains
       NameShort = NameShortOption
 
     call FA % InitializeTemplate_ASC_C &
-           ( A, NameShort, AllocateTallyOption = AllocateTallyOption, &
+           ( A, NameShort, UsePinnedMemoryOption = UsePinnedMemoryOption, &
+             AllocateTallyOption = AllocateTallyOption, &
              IgnorabilityOption = IgnorabilityOption )
 
     call Show ( FA % FluidType, 'FluidType', FA % IGNORABILITY )
@@ -269,6 +271,7 @@ contains
       associate ( SFA => FA % Sources_ASC )
       call SFA % Initialize &
              ( FA, NameShortOption = trim ( NameShort ) // '_Sources', &
+               UsePinnedMemoryOption = UsePinnedMemoryOption, &
                TimeUnitOption = Units % Time, &
                IgnorabilityOption = IgnorabilityOption )
       select type ( SFC => SFA % Chart )
@@ -289,6 +292,7 @@ contains
       call FFA % Initialize &
              ( FA, FA % FluidType, FA % RiemannSolverType, &
                NameShortOption = trim ( NameShort ) // '_Features', &
+               UsePinnedMemoryOption = UsePinnedMemoryOption, &
                ShockThresholdOption = ShockThresholdOption, &
                IgnorabilityOption = IgnorabilityOption )
       select type ( FFC => FFA % Chart )
@@ -414,8 +418,9 @@ contains
       call FC % Initialize &
              ( C, FA % NameShort, FA % FluidType, FA % RiemannSolverType, &
                FA % ReconstructedType, FA % UseEntropy, FA % UseLimiter, &
-               FA % Units, FA % BaryonMassReference, FA % LimiterParameter, &
-               nValues, IgnorabilityOption = FA % IGNORABILITY )
+               FA % UsePinnedMemory, FA % Units, FA % BaryonMassReference, &
+               FA % LimiterParameter, nValues, &
+               IgnorabilityOption = FA % IGNORABILITY )
     end select !-- FC
 
     call A % AddField ( FA )

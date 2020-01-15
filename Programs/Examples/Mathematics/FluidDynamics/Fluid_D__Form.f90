@@ -108,13 +108,16 @@ module Fluid_D__Form
     end subroutine ComputeDensityVelocityKernel
 
     module subroutine ComputeEigenspeedsKernel_D &
-                 ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3 )
+                 ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3, &
+                   UseDeviceOption )
       use Basics
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         FEP_1, FEP_2, FEP_3, &
         FEM_1, FEM_2, FEM_3
       real ( KDR ), dimension ( : ), intent ( in ) :: &
         V_1, V_2, V_3
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
     end subroutine ComputeEigenspeedsKernel_D
 
     module subroutine ComputeRawFluxesKernel &

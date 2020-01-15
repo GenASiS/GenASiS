@@ -71,6 +71,92 @@ module Fluid_D__Form
       SetUnits, &
       ComputeRawFluxes_G_Kernel, &
       ComputeRawFluxes_N_S_Kernel
+      
+  interface
+  
+    module subroutine Compute_M_Kernel ( M, BaryonMassReference )
+      !-- Compute_BaryonMass_Kernel
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        M
+      real ( KDR ), intent ( in ) :: &
+        BaryonMassReference
+    end subroutine Compute_M_Kernel
+
+
+    module subroutine Compute_D_S_G_Kernel & 	 	 
+           ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
+      !-- Compute_ConservedDensity_Momentum_Galilean_Kernel
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: & 	 	 
+        D, & 	 	 
+        S_1, S_2, S_3, & 	 	 
+        N 	 	 
+      real ( KDR ), dimension ( : ), intent ( in ) :: & 	 	 
+        M, & 	 	 
+        V_1, V_2, V_3, &
+        M_DD_22, M_DD_33
+    end subroutine Compute_D_S_G_Kernel 	 	 
+
+
+    module subroutine Compute_N_V_G_Kernel &
+                 ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33, &
+                   N_Min )
+      !-- Compute_ComovingBaryonDensity_Velocity_Galilean
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        N, &
+        V_1, V_2, V_3, &
+        D, &
+        S_1, S_2, S_3
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        M, &
+        M_UU_22, M_UU_33
+      real ( KDR ), intent ( in ) :: &
+        N_Min
+    end subroutine Compute_N_V_G_Kernel
+
+
+    module subroutine Compute_FE_D_G_Kernel &
+                 ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3 )
+      !-- Compute_FastEigenspeeds_Dust_Galilean_Kernel
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        FEP_1, FEP_2, FEP_3, &
+        FEM_1, FEM_2, FEM_3
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        V_1, V_2, V_3
+    end subroutine Compute_FE_D_G_Kernel
+    
+
+    module subroutine ComputeRawFluxes_G_Kernel &
+                 ( F_D, F_S_1, F_S_2, F_S_3, D, S_1, S_2, S_3, V_Dim )
+      !-- Galilean
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        F_D, &
+        F_S_1, F_S_2, F_S_3
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        D, &
+        S_1, S_2, S_3, &
+        V_Dim
+    end subroutine ComputeRawFluxes_G_Kernel
+
+
+    module subroutine ComputeRawFluxes_N_S_Kernel &
+                 ( F_S_1, F_S_2, F_S_3, GradPhi_1, GradPhi_2, GradPhi_3, &
+                   M_UU_22, M_UU_33, iDimension )
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        F_S_1, F_S_2, F_S_3
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        GradPhi_1, GradPhi_2, GradPhi_3, &
+        M_UU_22, M_UU_33
+      integer ( KDI ), intent ( in ) :: &
+        iDimension
+    end subroutine ComputeRawFluxes_N_S_Kernel
+  
+  end interface
 
 contains
 
@@ -250,16 +336,16 @@ contains
 
 
   subroutine ComputeFromPrimitiveCommon &
-               ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
+               ( Storage_C, C, G, Storage_G, nValuesOption, oValueOption )
 
-    real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
-      Value_C
+    class ( StorageForm ), intent ( inout ), target :: &
+      Storage_C
     class ( Fluid_D_Form ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_G
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
@@ -269,8 +355,8 @@ contains
       nV     !-- nValues
       
     associate &
-      ( FV => Value_C, &
-        GV => Value_G )
+      ( FV => Storage_C % Value, &
+        GV => Storage_G % Value )
 
     if ( present ( oValueOption ) ) then
       oV = oValueOption
@@ -319,16 +405,16 @@ contains
 
 
   subroutine ComputeFromConservedCommon &
-               ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
+               ( Storage_C, C, G, Storage_G, nValuesOption, oValueOption )
 
-    real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
-      Value_C
+    class ( StorageForm ), intent ( inout ), target :: &
+      Storage_C
     class ( Fluid_D_Form ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_G
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
@@ -338,8 +424,8 @@ contains
       nV     !-- nValues
       
     associate &
-      ( FV => Value_C, &
-        GV => Value_G )
+      ( FV => Storage_C % Value, &
+        GV => Storage_G % Value )
 
     if ( present ( oValueOption ) ) then
       oV = oValueOption
@@ -389,18 +475,18 @@ contains
 
 
   subroutine ComputeRawFluxes &
-               ( RawFlux, C, G, Value_C, Value_G, iDimension, &
+               ( RawFlux, C, G, Storage_C, Storage_G, iDimension, &
                  nValuesOption, oValueOption )
     
-    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+    class ( StorageForm ), intent ( inout ) :: &
       RawFlux
     class ( Fluid_D_Form ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_C, &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_C, &
+      Storage_G
     integer ( KDI ), intent ( in ) :: &
       iDimension
     integer ( KDI ), intent ( in ), optional :: &
@@ -414,6 +500,11 @@ contains
     integer ( KDI ) :: &
       oV, &  !-- oValue
       nV     !-- nValues
+      
+    associate &
+      ( Value_RF => RawFlux % Value, &
+        Value_C  => Storage_C % Value, & 
+        Value_G  => Storage_G % Value )
       
     if ( present ( oValueOption ) ) then
       oV = oValueOption
@@ -437,10 +528,10 @@ contains
            ( C % iaConserved, C % MOMENTUM_DENSITY_D ( 3 ), iMomentum ( 3 ) )
     
     associate &
-      ( F_D   => RawFlux ( oV + 1 : oV + nV, iDensity ), &
-        F_S_1 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 1 ) ), &
-        F_S_2 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 2 ) ), &
-        F_S_3 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 3 ) ), &
+      ( F_D   => Value_RF ( oV + 1 : oV + nV, iDensity ), &
+        F_S_1 => Value_RF ( oV + 1 : oV + nV, iMomentum ( 1 ) ), &
+        F_S_2 => Value_RF ( oV + 1 : oV + nV, iMomentum ( 2 ) ), &
+        F_S_3 => Value_RF ( oV + 1 : oV + nV, iMomentum ( 3 ) ), &
         D     => Value_C ( oV + 1 : oV + nV, C % CONSERVED_BARYON_DENSITY ), &
         S_1   => Value_C ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 1 ) ), &
         S_2   => Value_C ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 2 ) ), &
@@ -470,153 +561,12 @@ contains
     end select
 
     end associate !-- F_D, etc.
+    
+    end associate !-- Value_C, etc
 
   end subroutine ComputeRawFluxes
   
   
-  subroutine Compute_M_Kernel ( M, BaryonMassReference )
-
-    !-- Compute_BaryonMass_Kernel
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      M
-    real ( KDR ), intent ( in ) :: &
-      BaryonMassReference
-
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-
-    nValues = size ( M )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-      M ( iV )  =  BaryonMassReference
-    end do !-- iV
-    !$OMP end parallel do
-
-  end subroutine Compute_M_Kernel
-
-
-  subroutine Compute_D_S_G_Kernel & 	 	 
-	       ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
- 	 
-    !-- Compute_ConservedDensity_Momentum_Galilean_Kernel
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: & 	 	 
-      D, & 	 	 
-      S_1, S_2, S_3, & 	 	 
-      N 	 	 
-    real ( KDR ), dimension ( : ), intent ( in ) :: & 	 	 
-      M, & 	 	 
-      V_1, V_2, V_3, &
-      M_DD_22, M_DD_33
- 	 	 
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-
-    nValues = size ( D )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-      if ( N ( iV )  <  0.0_KDR ) &
-        N ( iV )  =  0.0_KDR
-    end do !-- iV
-    !$OMP end parallel do
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-
-      D ( iV ) = N ( iV ) 	 	 
- 	 	 
-      S_1 ( iV )  =  M ( iV ) * N ( iV ) * V_1 ( iV )	 	 
-      S_2 ( iV )  =  M ( iV ) * N ( iV ) * M_DD_22 ( iV ) * V_2 ( iV )
-      S_3 ( iV )  =  M ( iV ) * N ( iV ) * M_DD_33 ( iV ) * V_3 ( iV )
-
-    end do !-- iV
-    !$OMP end parallel do
-
-  end subroutine Compute_D_S_G_Kernel 	 	 
-
-
-  subroutine Compute_N_V_G_Kernel &
-               ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33, &
-                 N_Min )
-
-    !-- Compute_ComovingBaryonDensity_Velocity_Galilean
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      N, &
-      V_1, V_2, V_3, &
-      D, &
-      S_1, S_2, S_3
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      M, &
-      M_UU_22, M_UU_33
-    real ( KDR ), intent ( in ) :: &
-      N_Min
-
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-
-    nValues = size ( N )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-      if ( D ( iV )  >  N_Min ) then
-        N ( iV )    =  D ( iV )
-        V_1 ( iV )  =  S_1 ( iV ) / ( M ( iV ) * D ( iV ) )
-        V_2 ( iV )  =  M_UU_22 ( iV ) * S_2 ( iV ) / ( M ( iV ) * D ( iV ) )
-        V_3 ( iV )  =  M_UU_33 ( iV ) * S_3 ( iV ) / ( M ( iV ) * D ( iV ) )
-      else
-        N   ( iV )  =  N_Min
-        V_1 ( iV )  =  0.0_KDR
-        V_2 ( iV )  =  0.0_KDR
-        V_3 ( iV )  =  0.0_KDR
-        D   ( iV )  =  N_Min
-        S_1 ( iV )  =  0.0_KDR
-        S_2 ( iV )  =  0.0_KDR
-        S_3 ( iV )  =  0.0_KDR
-      end if
-    end do !-- iV
-    !$OMP end parallel do
-
-  end subroutine Compute_N_V_G_Kernel
-
-
-  subroutine Compute_FE_D_G_Kernel &
-               ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3 )
-
-    !-- Compute_FastEigenspeeds_Dust_Galilean_Kernel
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      FEP_1, FEP_2, FEP_3, &
-      FEM_1, FEM_2, FEM_3
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      V_1, V_2, V_3
-
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-
-    nValues = size ( FEP_1 )
-
-    !$OMP parallel do private ( iV ) 
-    do iV = 1, nValues
-      FEP_1 ( iV )  =  V_1 ( iV ) 
-      FEP_2 ( iV )  =  V_2 ( iV ) 
-      FEP_3 ( iV )  =  V_3 ( iV ) 
-      FEM_1 ( iV )  =  V_1 ( iV ) 
-      FEM_2 ( iV )  =  V_2 ( iV ) 
-      FEM_3 ( iV )  =  V_3 ( iV ) 
-    end do !-- iV
-    !$OMP end parallel do
-
-  end subroutine Compute_FE_D_G_Kernel
-
-
   subroutine InitializeBasics &
                ( F, FluidType, Variable, Vector, Name, VariableUnit, &
                  VectorIndices, VariableOption, VectorOption, NameOption, &
@@ -768,128 +718,6 @@ contains
 
   end subroutine SetUnits
 
-
-  subroutine ComputeRawFluxes_G_Kernel &
-               ( F_D, F_S_1, F_S_2, F_S_3, D, S_1, S_2, S_3, V_Dim )
-
-    !-- Galilean
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      F_D, &
-      F_S_1, F_S_2, F_S_3
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      D, &
-      S_1, S_2, S_3, &
-      V_Dim
-    
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-
-    nValues = size ( F_D )
-
-    !$OMP parallel do private ( iV ) 
-    do iV = 1, nValues
-      F_D   ( iV )  =  D   ( iV )  *  V_Dim ( iV ) 
-      F_S_1 ( iV )  =  S_1 ( iV )  *  V_Dim ( iV ) 
-      F_S_2 ( iV )  =  S_2 ( iV )  *  V_Dim ( iV ) 
-      F_S_3 ( iV )  =  S_3 ( iV )  *  V_Dim ( iV ) 
-    end do !-- iV
-    !$OMP end parallel do
-
-  end subroutine ComputeRawFluxes_G_Kernel
-
-
-  subroutine ComputeRawFluxes_N_S_Kernel &
-               ( F_S_1, F_S_2, F_S_3, GradPhi_1, GradPhi_2, GradPhi_3, &
-                 M_UU_22, M_UU_33, iDimension )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      F_S_1, F_S_2, F_S_3
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      GradPhi_1, GradPhi_2, GradPhi_3, &
-      M_UU_22, M_UU_33
-    integer ( KDI ) :: &
-      iDimension
-
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-    real ( KDR ) :: &
-      One_FourPi_G
-
-    One_FourPi_G  =  1.0_KDR  /  ( 4.0_KDR  *  CONSTANT % PI  &
-                                   *  CONSTANT % GRAVITATIONAL )
-
-    nValues = size ( F_S_1 )
-
-    select case ( iDimension )
-    case ( 1 )
-      !$OMP parallel do private ( iV ) 
-      do iV = 1, nValues
-        F_S_1 ( iV )  &
-          =  F_S_1 ( iV )  &
-             +  One_FourPi_G  &
-                *  GradPhi_1 ( iV )  *  GradPhi_1 ( iV ) &
-             -  One_FourPi_G  *  0.5_KDR  &
-                *  (    GradPhi_1 ( iV ) * GradPhi_1 ( iV ) &
-                     +  GradPhi_2 ( iV ) * M_UU_22 ( iV ) * GradPhi_2 ( iV ) &
-                     +  GradPhi_3 ( iV ) * M_UU_33 ( iV ) * GradPhi_3 ( iV ) )
-        F_S_2 ( iV )  &
-          =  F_S_2 ( iV )  &
-             +  One_FourPi_G  &
-                *  GradPhi_2 ( iV )  *  GradPhi_1 ( iV ) 
-        F_S_3 ( iV )  &
-          =  F_S_3 ( iV )  &
-             +  One_FourPi_G  &
-                *  GradPhi_3 ( iV )  *  GradPhi_1 ( iV ) 
-      end do !-- iV
-      !$OMP end parallel do
-    case ( 2 )
-      !$OMP parallel do private ( iV ) 
-      do iV = 1, nValues
-        F_S_1 ( iV )  &
-          =  F_S_1 ( iV )  &
-             +  One_FourPi_G  &
-                *  GradPhi_1 ( iV )  *  M_UU_22 ( iV )  *  GradPhi_2 ( iV ) 
-        F_S_2 ( iV )  &
-          =  F_S_2 ( iV )  &
-             +  One_FourPi_G  &
-                *  GradPhi_2 ( iV )  *  M_UU_22 ( iV )  *  GradPhi_2 ( iV ) &
-             -  One_FourPi_G  *  0.5_KDR  &
-                *  (    GradPhi_1 ( iV ) * GradPhi_1 ( iV ) &
-                     +  GradPhi_2 ( iV ) * M_UU_22 ( iV ) * GradPhi_2 ( iV ) &
-                     +  GradPhi_3 ( iV ) * M_UU_33 ( iV ) * GradPhi_3 ( iV ) )
-        F_S_3 ( iV )  &
-          =  F_S_3 ( iV )  &
-             +  One_FourPi_G  &
-                *  GradPhi_3 ( iV )  *  M_UU_22 ( iV )  *  GradPhi_2 ( iV )
-      end do !-- iV
-      !$OMP end parallel do
-    case ( 3 )
-      !$OMP parallel do private ( iV ) 
-      do iV = 1, nValues
-        F_S_1 ( iV )  &
-          =  F_S_1 ( iV )  &
-             +  One_FourPi_G  &
-                *  GradPhi_1 ( iV )  *  M_UU_33 ( iV )  *  GradPhi_3 ( iV ) 
-        F_S_2 ( iV )  &
-          =  F_S_2 ( iV )  &
-             +  One_FourPi_G  &
-                *  GradPhi_2 ( iV )  *  M_UU_33 ( iV )  *  GradPhi_3 ( iV )
-        F_S_3 ( iV )  &
-          =  F_S_3 ( iV )  &
-             +  One_FourPi_G  &
-                *  GradPhi_3 ( iV )  *  M_UU_33 ( iV )  *  GradPhi_3 ( iV ) &
-             -  One_FourPi_G  *  0.5_KDR  &
-                *  (    GradPhi_1 ( iV ) * GradPhi_1 ( iV ) &
-                     +  GradPhi_2 ( iV ) * M_UU_22 ( iV ) * GradPhi_2 ( iV ) &
-                     +  GradPhi_3 ( iV ) * M_UU_33 ( iV ) * GradPhi_3 ( iV ) )
-      end do !-- iV
-      !$OMP end parallel do
-    end select !-- iDimension
-
-  end subroutine ComputeRawFluxes_N_S_Kernel
 
 
 end module Fluid_D__Form

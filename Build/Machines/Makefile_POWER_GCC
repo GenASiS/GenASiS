@@ -17,6 +17,9 @@ SILO_DIR=/sw/peak/caascade/silo/4.10.2/gcc8.1.0
 INCLUDE_SILO = -I${SILO_DIR}/include
 LIBRARY_SILO = -L${SILO_DIR}/lib -lsilo
 
+INCLUDE_HDF5 = -I${OLCF_HDF5_ROOT}/include
+LIBRARY_HDF5 = -L${OLCF_HDF5_ROOT}/lib -lhdf5_fortran -lhdf5
+
 INCLUDE_CUDA = 
 LIBRARY_CUDA = 
 

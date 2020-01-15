@@ -61,18 +61,18 @@ module Fluid_P__Template
   end type Fluid_P_Template
 
   abstract interface
-    subroutine CFT ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
+    subroutine CFT ( Storage_C, C, G, Storage_G, nValuesOption, oValueOption )
       use Basics
       use Mathematics
       import Fluid_P_Template
-      real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
-        Value_C
+      class ( StorageForm ), intent ( inout ), target :: &
+        Storage_C
       class ( Fluid_P_Template ), intent ( in ) :: &
         C
       class ( GeometryFlatForm ), intent ( in ) :: &
         G
-      real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-        Value_G
+      class ( StorageForm ), intent ( in ) :: &
+        Storage_G
       integer ( KDI ), intent ( in ), optional :: &
         nValuesOption, &
         oValueOption
@@ -293,9 +293,9 @@ contains
 
       !-- Overwrite F_IL and F_IR with F_ICL and F_ICR
       call C % ComputeRawFluxes &
-             ( F_IL % Value, G, C_ICL % Value, G_I % Value, iDimension )
+             ( F_IL, G, C_ICL, G_I, iDimension )
       call C % ComputeRawFluxes &
-             ( F_IR % Value, G, C_ICR % Value, G_I % Value, iDimension )
+             ( F_IR, G, C_ICR, G_I, iDimension )
 
       associate ( FF => C % Features )
       do iF = 1, C % N_CONSERVED
@@ -348,18 +348,18 @@ contains
 
 
   subroutine ComputeRawFluxesTemplate_P &
-               ( RawFlux, C, G, Value_C, Value_G, iDimension, &
+               ( RawFlux, C, G, Storage_C, Storage_G, iDimension, &
                  nValuesOption, oValueOption )
     
-    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+    class ( StorageForm ), intent ( inout ) :: &
       RawFlux
     class ( Fluid_P_Template ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_C, &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_C, &
+      Storage_G
     integer ( KDI ), intent ( in ) :: &
       iDimension
     integer ( KDI ), intent ( in ), optional :: &
@@ -372,9 +372,13 @@ contains
       iEntropy, &
       oV, &  !-- oValue
       nV     !-- nValues
+      
+    associate &
+      ( Value_RF => RawFlux % Value, &
+        Value_C  => Storage_C % Value )
 
     call C % Fluid_D_Form % ComputeRawFluxes &
-           ( RawFlux, G, Value_C, Value_G, iDimension, nValuesOption, &
+           ( RawFlux, G, Storage_C, Storage_G, iDimension, nValuesOption, &
              oValueOption )
 
     if ( present ( oValueOption ) ) then
@@ -398,9 +402,9 @@ contains
            ( C % iaConserved, C % CONSERVED_ENTROPY, iEntropy )
     
     associate &
-      ( F_S_Dim => RawFlux ( oV + 1 : oV + nV, iMomentum ), &
-        F_G     => RawFlux ( oV + 1 : oV + nV, iEnergy ), &
-        F_DS    => RawFlux ( oV + 1 : oV + nV, iEntropy ), &
+      ( F_S_Dim => Value_RF ( oV + 1 : oV + nV, iMomentum ), &
+        F_G     => Value_RF ( oV + 1 : oV + nV, iEnergy ), &
+        F_DS    => Value_RF ( oV + 1 : oV + nV, iEntropy ), &
         G       => Value_C ( oV + 1 : oV + nV, C % CONSERVED_ENERGY ), &
         P       => Value_C ( oV + 1 : oV + nV, C % PRESSURE ), &
         DS      => Value_C ( oV + 1 : oV + nV, C % CONSERVED_ENTROPY ), &
@@ -410,6 +414,8 @@ contains
            ( F_S_Dim, F_G, F_DS, G, P, DS, V_Dim )
 
     end associate !-- F_S_Dim, etc.
+    
+    end associate !-- Value_RF, Value_C
 
   end subroutine ComputeRawFluxesTemplate_P
   

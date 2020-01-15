@@ -173,19 +173,44 @@ contains
     integer ( KDI ) :: &
       iV, &
       nValues
+    logical ( KDL ) :: &
+      UseDevice
+      
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
 
     nValues = size ( FEP_1 )
+    
+    if ( UseDevice ) then
 
-    !$OMP parallel do private ( iV ) 
-    do iV = 1, nValues
-      FEP_1 ( iV ) = V_1 ( iV ) 
-      FEP_2 ( iV ) = V_2 ( iV ) 
-      FEP_3 ( iV ) = V_3 ( iV ) 
-      FEM_1 ( iV ) = V_1 ( iV ) 
-      FEM_2 ( iV ) = V_2 ( iV ) 
-      FEM_3 ( iV ) = V_3 ( iV ) 
-    end do !-- iV
-    !$OMP end parallel do
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do 
+      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV ) 
+      do iV = 1, nValues
+        FEP_1 ( iV ) = V_1 ( iV ) 
+        FEP_2 ( iV ) = V_2 ( iV ) 
+        FEP_3 ( iV ) = V_3 ( iV ) 
+        FEM_1 ( iV ) = V_1 ( iV ) 
+        FEM_2 ( iV ) = V_2 ( iV ) 
+        FEM_3 ( iV ) = V_3 ( iV ) 
+      end do !-- iV
+      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+      
+    else
+    
+      !$OMP  parallel do 
+      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV ) 
+      do iV = 1, nValues
+        FEP_1 ( iV ) = V_1 ( iV ) 
+        FEP_2 ( iV ) = V_2 ( iV ) 
+        FEP_3 ( iV ) = V_3 ( iV ) 
+        FEM_1 ( iV ) = V_1 ( iV ) 
+        FEM_2 ( iV ) = V_2 ( iV ) 
+        FEM_3 ( iV ) = V_3 ( iV ) 
+      end do !-- iV
+      !$OMP  end parallel do
+    
+    end if
 
   end procedure ComputeEigenspeedsKernel_D
 
