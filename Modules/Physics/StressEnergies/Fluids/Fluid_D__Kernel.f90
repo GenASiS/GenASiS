@@ -196,7 +196,7 @@ contains
 
     if ( UseDevice ) then
     
-      !$OMP  OMP_TARGET_DIRECTIVE parallel do 
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
       !$OMP& schedule ( OMP_SCHEDULE ) private ( iV ) 
       do iV = 1, nValues
         FEP_1 ( iV )  =  V_1 ( iV ) 
@@ -210,7 +210,7 @@ contains
     
     else
     
-      !$OMP  parallel do 
+      !$OMP  parallel do &
       !$OMP& schedule ( OMP_SCHEDULE ) private ( iV ) 
       do iV = 1, nValues
         FEP_1 ( iV )  =  V_1 ( iV ) 
@@ -245,7 +245,7 @@ contains
     
     if ( UseDevice ) then
     
-      !$OMP  OMP_TARGET_DIRECTIVE parallel do 
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
       !$OMP& schedule ( OMP_SCHEDULE ) private ( iV ) 
       do iV = 1, nValues
         F_D   ( iV )  =  D   ( iV )  *  V_Dim ( iV ) 
@@ -257,7 +257,7 @@ contains
     
     else
 
-      !$OMP  parallel do 
+      !$OMP  parallel do &
       !$OMP& schedule ( OMP_SCHEDULE ) private ( iV ) 
       do iV = 1, nValues
         F_D   ( iV )  =  D   ( iV )  *  V_Dim ( iV ) 
@@ -272,7 +272,7 @@ contains
   end procedure ComputeRawFluxes_G_Kernel
 
 
-  module procedure ComputeRawFluxes_N_S_Kernel &
+  module procedure ComputeRawFluxes_N_S_Kernel
 
     integer ( KDI ) :: &
       iV, &
@@ -293,8 +293,8 @@ contains
 
     select case ( iDimension )
     case ( 1 )
-      if ( UseDevice ) 
-        !$OMP  OMP_TARGET_DIRECTIVE parallel do 
+      if ( UseDevice ) then
+        !$OMP  OMP_TARGET_DIRECTIVE parallel do &
         !$OMP& schedule ( OMP_SCHEDULE ) private ( iV ) 
         do iV = 1, nValues
           F_S_1 ( iV )  &
@@ -316,7 +316,7 @@ contains
         end do !-- iV
         !$OMP  end OMP_TARGET_DIRECTIVE parallel do
       else
-        !$OMP  parallel do 
+        !$OMP  parallel do &
         !$OMP& schedule ( OMP_SCHEDULE ) private ( iV ) 
         do iV = 1, nValues
           F_S_1 ( iV )  &
@@ -339,8 +339,8 @@ contains
         !$OMP  end parallel do
       end if
     case ( 2 )
-      if ( UseDevice ) 
-        !$OMP  OMP_TARGET_DIRECTIVE parallel do 
+      if ( UseDevice ) then
+        !$OMP  OMP_TARGET_DIRECTIVE parallel do &
         !$OMP& schedule ( OMP_SCHEDULE ) private ( iV ) 
         do iV = 1, nValues
           F_S_1 ( iV )  &
@@ -362,7 +362,7 @@ contains
         end do !-- iV
         !$OMP  end OMP_TARGET_DIRECTIVE parallel do
       else
-        !$OMP  parallel do 
+        !$OMP  parallel do &
         !$OMP& schedule ( OMP_SCHEDULE ) private ( iV ) 
         do iV = 1, nValues
           F_S_1 ( iV )  &
@@ -386,7 +386,7 @@ contains
       end if
     case ( 3 )
       if ( UseDevice ) then
-        !$OMP  OMP_TARGET_DIRECTIVE parallel do 
+        !$OMP  OMP_TARGET_DIRECTIVE parallel do &
         !$OMP& schedule ( OMP_SCHEDULE ) private ( iV ) 
         do iV = 1, nValues
           F_S_1 ( iV )  &
@@ -408,7 +408,7 @@ contains
         end do !-- iV
         !$OMP  end OMP_TARGET_DIRECTIVE parallel do
       else
-        !$OMP  parallel do 
+        !$OMP  parallel do &
         !$OMP& schedule ( OMP_SCHEDULE ) private ( iV ) 
         do iV = 1, nValues
           F_S_1 ( iV )  &

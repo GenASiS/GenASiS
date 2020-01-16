@@ -74,18 +74,22 @@ module Fluid_D__Form
       
   interface
   
-    module subroutine Compute_M_Kernel ( M, BaryonMassReference )
+    module subroutine Compute_M_Kernel &
+                        ( M, BaryonMassReference, UseDeviceOption )
       !-- Compute_BaryonMass_Kernel
       use Basics
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         M
       real ( KDR ), intent ( in ) :: &
         BaryonMassReference
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
     end subroutine Compute_M_Kernel
 
 
     module subroutine Compute_D_S_G_Kernel & 	 	 
-           ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
+           ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33, &
+             UseDeviceOption )
       !-- Compute_ConservedDensity_Momentum_Galilean_Kernel
       use Basics
       real ( KDR ), dimension ( : ), intent ( inout ) :: & 	 	 
@@ -96,12 +100,14 @@ module Fluid_D__Form
         M, & 	 	 
         V_1, V_2, V_3, &
         M_DD_22, M_DD_33
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
     end subroutine Compute_D_S_G_Kernel 	 	 
 
 
     module subroutine Compute_N_V_G_Kernel &
                  ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33, &
-                   N_Min )
+                   N_Min, UseDeviceOption )
       !-- Compute_ComovingBaryonDensity_Velocity_Galilean
       use Basics
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -114,11 +120,14 @@ module Fluid_D__Form
         M_UU_22, M_UU_33
       real ( KDR ), intent ( in ) :: &
         N_Min
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
     end subroutine Compute_N_V_G_Kernel
 
 
     module subroutine Compute_FE_D_G_Kernel &
-                 ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3 )
+                 ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3, &
+                   UseDeviceOption )
       !-- Compute_FastEigenspeeds_Dust_Galilean_Kernel
       use Basics
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -126,11 +135,14 @@ module Fluid_D__Form
         FEM_1, FEM_2, FEM_3
       real ( KDR ), dimension ( : ), intent ( in ) :: &
         V_1, V_2, V_3
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
     end subroutine Compute_FE_D_G_Kernel
     
 
     module subroutine ComputeRawFluxes_G_Kernel &
-                 ( F_D, F_S_1, F_S_2, F_S_3, D, S_1, S_2, S_3, V_Dim )
+                 ( F_D, F_S_1, F_S_2, F_S_3, D, S_1, S_2, S_3, V_Dim, &
+                   UseDeviceOption )
       !-- Galilean
       use Basics
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -140,12 +152,14 @@ module Fluid_D__Form
         D, &
         S_1, S_2, S_3, &
         V_Dim
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
     end subroutine ComputeRawFluxes_G_Kernel
 
 
     module subroutine ComputeRawFluxes_N_S_Kernel &
                  ( F_S_1, F_S_2, F_S_3, GradPhi_1, GradPhi_2, GradPhi_3, &
-                   M_UU_22, M_UU_33, iDimension )
+                   M_UU_22, M_UU_33, iDimension, UseDeviceOption )
       use Basics
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         F_S_1, F_S_2, F_S_3
@@ -154,6 +168,8 @@ module Fluid_D__Form
         M_UU_22, M_UU_33
       integer ( KDI ), intent ( in ) :: &
         iDimension
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
     end subroutine ComputeRawFluxes_N_S_Kernel
   
   end interface
