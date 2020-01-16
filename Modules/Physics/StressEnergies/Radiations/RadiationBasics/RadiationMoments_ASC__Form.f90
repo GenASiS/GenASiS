@@ -62,9 +62,10 @@ contains
   subroutine Initialize &
                ( RMA, A, RadiationMomentsType, Units, NameShortOption, &
                  RiemannSolverTypeOption, ReconstructedTypeOption, &
-                 UseLimiterOption, AllocateSourcesOption, &
-                 SuppressWriteOption, SuppressWriteSourcesOption, &
-                 LimiterParameterOption, IgnorabilityOption )
+                 UseLimiterOption, UsePinnedMemoryOption, &
+                 AllocateSourcesOption, SuppressWriteOption, &
+                 SuppressWriteSourcesOption, LimiterParameterOption, &
+                 IgnorabilityOption )
 
     class ( RadiationMoments_ASC_Form ), intent ( inout ) :: &
       RMA
@@ -80,6 +81,7 @@ contains
       ReconstructedTypeOption
     logical ( KDL ), intent ( in ), optional :: &
       UseLimiterOption, &
+      UsePinnedMemoryOption, &
       AllocateSourcesOption, &
       SuppressWriteOption, &
       SuppressWriteSourcesOption
@@ -202,7 +204,8 @@ contains
       RMA % SuppressWrite = SuppressWriteOption
 
     call RMA % InitializeTemplate_ASC_C &
-           ( A, NameShort, IgnorabilityOption = IgnorabilityOption )
+           ( A, NameShort, UsePinnedMemoryOption = UsePinnedMemoryOption, &
+             IgnorabilityOption = IgnorabilityOption )
 
     call Show ( RMA % RadiationMomentsType, 'RadiationMomentsType', &
                 RMA % IGNORABILITY )
@@ -370,7 +373,8 @@ contains
       call FC % Initialize &
              ( C, FA % NameShort, FA % RadiationMomentsType, &
                FA % RiemannSolverType, FA % ReconstructedType, &
-               FA % UseLimiter, FA % Units, FA % LimiterParameter, nValues, &
+               FA % UseLimiter, FA % UsePinnedMemory, FA % Units, &
+               FA % LimiterParameter, nValues, &
                IgnorabilityOption = FA % IGNORABILITY )
     end select !-- FC
 

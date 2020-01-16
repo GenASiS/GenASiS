@@ -46,8 +46,8 @@ contains
 
 
   subroutine IntializeTemplate_I_CSL &
-               ( IC, C, NameShort, InteractionsType, MomentsType, Units, &
-                 nValues, IgnorabilityOption )
+               ( IC, C, NameShort, InteractionsType, MomentsType, &
+                 UsePinnedMemory, Units, nValues, IgnorabilityOption )
 
     class ( Interactions_CSL_Template ), intent ( inout ) :: &
       IC
@@ -57,6 +57,8 @@ contains
       NameShort, &
       InteractionsType, &
       MomentsType
+    logical ( KDL ), intent ( in ) :: &
+      UsePinnedMemory
     class ( StressEnergyUnitsForm ), intent ( in ), target :: &
       Units
     integer ( KDI ), intent ( in ) :: &
@@ -72,7 +74,7 @@ contains
     IC % Units => Units
 
     call IC % InitializeTemplate_CSL &
-           ( C, NameShort, nValues, IgnorabilityOption )
+           ( C, NameShort, UsePinnedMemory, nValues, IgnorabilityOption )
 
   end subroutine IntializeTemplate_I_CSL
 

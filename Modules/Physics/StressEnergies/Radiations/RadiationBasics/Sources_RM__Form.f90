@@ -38,7 +38,7 @@ contains
 
   subroutine InitializeAllocate_SRM &
                ( SRM, RM, TimeUnit, VariableOption, VectorOption, NameOption, &
-                 ClearOption, UnitOption, VectorIndicesOption )
+                 ClearOption, PinnedOption, UnitOption, VectorIndicesOption )
 
     class ( Sources_RM_Form ), intent ( inout ) :: &
       SRM
@@ -52,7 +52,8 @@ contains
     character ( * ), intent ( in ), optional :: &
       NameOption
     logical ( KDL ), intent ( in ), optional :: &
-      ClearOption
+      ClearOption, &
+      PinnedOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       UnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), &
@@ -81,8 +82,8 @@ contains
     call SRM % Sources_C_Form % Initialize &
            ( RM, TimeUnit, RM % iaConserved, VariableOption = Variable, &
              VectorOption = Vector, NameOption = Name, &
-             ClearOption = ClearOption, UnitOption = VariableUnit, &
-             VectorIndicesOption = VectorIndices )
+             ClearOption = ClearOption, PinnedOption = PinnedOption, &
+             UnitOption = VariableUnit, VectorIndicesOption = VectorIndices )
 
   end subroutine InitializeAllocate_SRM
 

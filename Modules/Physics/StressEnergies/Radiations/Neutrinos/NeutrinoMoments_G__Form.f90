@@ -66,7 +66,7 @@ contains
                ( RM, RadiationMomentsType, RiemannSolverType, &
                  ReconstructedType, UseLimiter, Units, LimiterParameter, &
                  nValues, VariableOption, VectorOption, NameOption, &
-                 ClearOption, UnitOption, VectorIndicesOption )
+                 ClearOption, PinnedOption, UnitOption, VectorIndicesOption )
 
     class ( NeutrinoMoments_G_Form ), intent ( inout ) :: &
       RM
@@ -88,7 +88,8 @@ contains
     character ( * ), intent ( in ), optional :: &
       NameOption
     logical ( KDL ), intent ( in ), optional :: &
-      ClearOption
+      ClearOption, &
+      PinnedOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       UnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
@@ -109,7 +110,7 @@ contains
              UseLimiter, Units, LimiterParameter, nValues, &
              VariableOption = Variable, VectorOption = VectorOption, &
              NameOption = NameOption, ClearOption = ClearOption, &
-             UnitOption = VariableUnit, &
+             PinnedOption = PinnedOption, UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndicesOption )
 
   end subroutine InitializeAllocate_RM
@@ -214,16 +215,16 @@ contains
 
 
   subroutine ComputeFromPrimitiveCommon &
-               ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
+               ( Storage_C, C, G, Storage_G, nValuesOption, oValueOption )
 
-    real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
-      Value_C
+    class ( StorageForm ), intent ( inout ), target :: &
+      Storage_C
     class ( NeutrinoMoments_G_Form ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_G
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
@@ -235,10 +236,10 @@ contains
       RMV
       
     call C % RadiationMomentsForm % ComputeFromPrimitiveCommon &
-           ( Value_C, G, Value_G, nValuesOption, oValueOption )
+           ( Storage_C, G, Storage_G, nValuesOption, oValueOption )
 
-    RMV => Value_C
-    associate ( GV => Value_G )
+    RMV => Storage_C % Value
+    associate ( GV => Storage_G % Value )
 
     if ( present ( oValueOption ) ) then
       oV = oValueOption
@@ -296,16 +297,16 @@ contains
 
 
   subroutine ComputeFromConservedCommon &
-               ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
+               ( Storage_C, C, G, Storage_G, nValuesOption, oValueOption )
 
-    real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
-      Value_C
+    class ( StorageForm ), intent ( inout ), target :: &
+      Storage_C
     class ( NeutrinoMoments_G_Form ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_G
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
@@ -317,10 +318,10 @@ contains
       RMV
       
     call C % RadiationMomentsForm % ComputeFromConservedCommon &
-           ( Value_C, G, Value_G, nValuesOption, oValueOption )
+           ( Storage_C, G, Storage_G, nValuesOption, oValueOption )
 
-    RMV => Value_C
-    associate ( GV => Value_G )
+    RMV => Storage_C % Value
+    associate ( GV => Storage_G % Value )
 
     if ( present ( oValueOption ) ) then
       oV = oValueOption
@@ -378,18 +379,18 @@ contains
 
 
   subroutine ComputeRawFluxes &
-               ( RawFlux, C, G, Value_C, Value_G, iDimension, &
+               ( RawFlux, C, G, Storage_C, Storage_G, iDimension, &
                  nValuesOption, oValueOption )
     
-    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+    class ( StorageForm ), intent ( inout ) :: &
       RawFlux
     class ( NeutrinoMoments_G_Form ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_C, &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_C, &
+      Storage_G
     integer ( KDI ), intent ( in ) :: &
       iDimension
     integer ( KDI ), intent ( in ), optional :: &
@@ -403,9 +404,13 @@ contains
       nV     !-- nValues
 
     call C % PhotonMoments_G_Form % ComputeRawFluxes &
-           ( RawFlux, G, Value_C, Value_G, iDimension, &
+           ( RawFlux, G, Storage_C, Storage_G, iDimension, &
              nValuesOption, oValueOption )
-
+    
+    associate &
+      ( Value_RF => RawFlux % Value, &
+        Value_C  => Storage_C % Value )
+    
     if ( present ( oValueOption ) ) then
       oV = oValueOption
     else
@@ -421,7 +426,7 @@ contains
     call Search ( C % iaConserved, C % CONSERVED_NUMBER, iNumber )
     
     associate &
-      ( F_D   => RawFlux ( oV + 1 : oV + nV, iNumber ), &
+      ( F_D   => Value_RF ( oV + 1 : oV + nV, iNumber ), &
         J     => Value_C ( oV + 1 : oV + nV, C % COMOVING_ENERGY ), &
         H_Dim => Value_C ( oV + 1 : oV + nV, &
                            C % COMOVING_MOMENTUM_U ( iDimension ) ), &
@@ -432,6 +437,8 @@ contains
     call ComputeRawFluxesKernel ( F_D, J, H_Dim, N, V_Dim )
 
     end associate !-- F_E, etc.
+    
+    end associate
 
   end subroutine ComputeRawFluxes
   

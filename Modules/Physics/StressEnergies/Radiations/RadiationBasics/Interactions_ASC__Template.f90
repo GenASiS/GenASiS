@@ -56,7 +56,7 @@ contains
 
   subroutine InitializeTemplate_I_ASC &
                ( IA, A, InteractionsType, MomentsType, Units, &
-                 NameShortOption, IgnorabilityOption )
+                 NameShortOption, UsePinnedMemoryOption, IgnorabilityOption )
 
     class ( Interactions_ASC_Template ), intent ( inout ) :: &
       IA
@@ -69,6 +69,8 @@ contains
       Units
     character ( * ), intent ( in ), optional :: &
       NameShortOption
+    logical ( KDL ), intent ( in ), optional :: &
+      UsePinnedMemoryOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
@@ -86,7 +88,8 @@ contains
     if ( present ( NameShortOption ) ) &
       NameShort = NameShortOption
 
-    call IA % InitializeTemplate_ASC ( A, NameShort, IgnorabilityOption )
+    call IA % InitializeTemplate_ASC &
+           ( A, NameShort, UsePinnedMemoryOption, IgnorabilityOption )
 
     call Show ( IA % InteractionsType, 'InteractionsType', IA % IGNORABILITY )
     call Show ( IA % MomentsType, 'MomentsType', IA % IGNORABILITY )
@@ -194,7 +197,8 @@ contains
     class is ( Interactions_CSL_Template )
       call FC % Initialize &
              ( C, FA % NameShort, FA % InteractionsType, FA % MomentsType, &
-               FA % Units, nValues, IgnorabilityOption = FA % IGNORABILITY )
+               FA % UsePinnedMemory, FA % Units, nValues, &
+               IgnorabilityOption = FA % IGNORABILITY )
     end select !-- FC
 
     call A % AddField ( FA )
