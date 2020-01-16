@@ -266,6 +266,10 @@ contains
         =  F % Unit ( F % CONSERVED_ENERGY )  /  TimeUnit
       VariableUnit ( SF % RADIATION_G )  &
         =  F % Unit ( F % CONSERVED_ENERGY )  /  TimeUnit
+      VariableUnit ( SF % RADIATION_DS )  &
+        =  F % Unit ( F % CONSERVED_ENTROPY )  /  TimeUnit
+      VariableUnit ( SF % RADIATION_DE )  &
+        =  F % Unit ( F % CONSERVED_BARYON_DENSITY )  /  TimeUnit
       VariableUnit ( SF % RADIATION_TIME )  &
         =  TimeUnit
     end select !-- F

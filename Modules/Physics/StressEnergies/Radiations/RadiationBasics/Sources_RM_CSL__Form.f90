@@ -12,7 +12,8 @@ module Sources_RM_CSL__Form
 
   type, public, extends ( Field_CSL_Template ) :: Sources_RM_CSL_Form
     type ( MeasuredValueForm ) :: &
-      TimeUnit
+      TimeUnit, &
+      EnergyUnit
     class ( Field_CSL_Template ), pointer :: &
       RadiationMoments_CSL => null ( )
   contains
@@ -28,8 +29,8 @@ contains
 
 
   subroutine Initialize &
-               ( SRMC, RadiationMoments_CSL, NameShort, TimeUnit, nValues, &
-                 IgnorabilityOption )
+               ( SRMC, RadiationMoments_CSL, NameShort, TimeUnit, EnergyUnit, &
+                 nValues, IgnorabilityOption )
 
     class ( Sources_RM_CSL_Form ), intent ( inout ) :: &
       SRMC
@@ -38,7 +39,8 @@ contains
     character ( * ), intent ( in ) :: &
       NameShort
     type ( MeasuredValueForm ) :: &
-      TimeUnit
+      TimeUnit, &
+      EnergyUnit
     integer ( KDI ), intent ( in ) :: &
       nValues
     integer ( KDI ), intent ( in ), optional :: &
@@ -47,7 +49,8 @@ contains
     if ( SRMC % Type == '' ) &
       SRMC % Type = 'a Sources_RM_CSL'
 
-    SRMC % TimeUnit = TimeUnit
+    SRMC % TimeUnit   = TimeUnit
+    SRMC % EnergyUnit = EnergyUnit
 
     SRMC % RadiationMoments_CSL => RadiationMoments_CSL
 
@@ -82,7 +85,8 @@ contains
     class is ( Sources_RM_Form )
     select type ( RM => FC % RadiationMoments_CSL % Field )
     class is ( RadiationMomentsForm )
-      call SRM % Initialize ( RM, FC % TimeUnit, NameOption = FC % NameShort )
+      call SRM % Initialize &
+             ( RM, FC % TimeUnit, FC % EnergyUnit, NameOption = FC % NameShort )
       call SRM % SetOutput ( FC % FieldOutput )
     end select !-- RM
     end select !-- SRM

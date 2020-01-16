@@ -11,7 +11,8 @@ module Sources_RM_ASC__Form
 
   type, public, extends ( Field_ASC_Template ) :: Sources_RM_ASC_Form
     type ( MeasuredValueForm ) :: &
-      TimeUnit
+      TimeUnit, &
+      EnergyUnit
     logical ( KDL ) :: &
       SuppressWrite
     class ( Field_ASC_Template ), pointer :: &
@@ -30,7 +31,7 @@ contains
 
   subroutine Initialize &
                ( SRMA, RadiationMoments_ASC, NameShortOption, TimeUnitOption, &
-                 IgnorabilityOption, SuppressWriteOption )
+                 EnergyUnitOption, IgnorabilityOption, SuppressWriteOption )
 
     class ( Sources_RM_ASC_Form ), intent ( inout ) :: &
       SRMA
@@ -39,7 +40,8 @@ contains
     character ( * ), intent ( in ), optional :: &
       NameShortOption
     type ( MeasuredValueForm ), intent ( in ), optional :: &
-      TimeUnitOption
+      TimeUnitOption, &
+      EnergyUnitOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
     logical ( KDL ), intent ( in ), optional :: &
@@ -53,6 +55,8 @@ contains
 
     if ( present ( TimeUnitOption ) ) &
       SRMA % TimeUnit = TimeUnitOption
+    if ( present ( EnergyUnitOption ) ) &
+      SRMA % EnergyUnit = EnergyUnitOption
 
     SRMA % RadiationMoments_ASC => RadiationMoments_ASC
 
@@ -102,7 +106,7 @@ contains
     select type ( SRMC => FA % Chart )
     class is ( Sources_RM_CSL_Form )
       call SRMC % Initialize &
-             ( RMC, FA % NameShort, FA % TimeUnit, nValues, &
+             ( RMC, FA % NameShort, FA % TimeUnit, FA % EnergyUnit, nValues, &
                IgnorabilityOption = FA % IGNORABILITY )
     end select !-- SRMC
 

@@ -221,6 +221,7 @@ contains
       call SRMA % Initialize &
              ( RMA, NameShortOption = trim ( NameShort ) // '_Sources', &
                TimeUnitOption = Units % Time, &
+               EnergyUnitOption = Units % Coordinate_MS ( 1 ), &
                IgnorabilityOption = IgnorabilityOption, &
                SuppressWriteOption = SuppressWriteSourcesOption )
       select type ( SRMC => SRMA % Chart )

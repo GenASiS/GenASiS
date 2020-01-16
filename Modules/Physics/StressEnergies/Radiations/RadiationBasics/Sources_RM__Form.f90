@@ -37,15 +37,16 @@ contains
 
 
   subroutine InitializeAllocate_SRM &
-               ( SRM, RM, TimeUnit, VariableOption, VectorOption, NameOption, &
-                 ClearOption, UnitOption, VectorIndicesOption )
+               ( SRM, RM, TimeUnit, EnergyUnit, VariableOption, VectorOption, &
+                 NameOption, ClearOption, UnitOption, VectorIndicesOption )
 
     class ( Sources_RM_Form ), intent ( inout ) :: &
       SRM
     class ( RadiationMomentsForm ), intent ( in ) :: &
       RM
     type ( MeasuredValueForm ), intent ( in ) :: &
-      TimeUnit
+      TimeUnit, &
+      EnergyUnit   
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       VariableOption, &
       VectorOption
@@ -76,7 +77,7 @@ contains
              VariableOption, VectorOption, NameOption, UnitOption, &
              VectorIndicesOption )
 
-    call SetUnits ( VariableUnit, SRM, RM, TimeUnit )
+    call SetUnits ( VariableUnit, SRM, RM, TimeUnit, EnergyUnit )
 
     call SRM % Sources_C_Form % Initialize &
            ( RM, TimeUnit, RM % iaConserved, VariableOption = Variable, &
@@ -230,7 +231,7 @@ contains
   end subroutine InitializeBasics
 
 
-  subroutine SetUnits ( VariableUnit, SRM, RM, TimeUnit )
+  subroutine SetUnits ( VariableUnit, SRM, RM, TimeUnit, EnergyUnit )
 
     type ( MeasuredValueForm ), dimension ( : ), intent ( inout ) :: &
       VariableUnit
@@ -239,13 +240,16 @@ contains
     class ( RadiationMomentsForm ), intent ( in ) :: &
       RM
     type ( MeasuredValueForm ), intent ( in ) :: &
-      TimeUnit
+      TimeUnit, &
+      EnergyUnit
 
     integer ( KDI ) :: &
       iD
 
     VariableUnit ( SRM % INTERACTIONS_J )  &
-      =  RM % Unit ( RM % CONSERVED_ENERGY )  /  TimeUnit
+      =  RM % Unit ( RM % COMOVING_ENERGY )  /  TimeUnit
+    VariableUnit ( SRM % INTERACTIONS_N )  &
+      =  RM % Unit ( RM % COMOVING_ENERGY )  /  EnergyUnit  /  TimeUnit
 
     do iD = 1, 3
       VariableUnit ( SRM % CURVILINEAR_S_D ( iD ) )  &
