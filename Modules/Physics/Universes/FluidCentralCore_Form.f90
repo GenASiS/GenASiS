@@ -311,6 +311,8 @@ contains
       DensityAve, &
       TimeScaleDensityAve, &
       TimeScaleVelocityMax
+    type ( MeasuredValueForm ) :: &
+      DensityUnit
     type ( CollectiveOperation_R_Form ), allocatable :: &
       CO
     class ( GeometryFlatForm ), pointer :: &
@@ -371,6 +373,10 @@ contains
     DensityAve  =  F % BaryonMassReference &
                    * TI % Value ( TI % BARYON_NUMBER ) &
                    / ( 4.0 / 3.0  *  CONSTANT % PI  *  VelocityMaxRadius ** 3 )
+    select type ( FC => I % Universe )
+    class is ( FluidCentralTemplate )
+      DensityUnit  =  FC % Units % MassDensity
+    end select
 
     !-- Time scales
     TimeScaleVelocityMax &
@@ -386,7 +392,7 @@ contains
                 'VelocityMax', I % IGNORABILITY )
     call Show ( VelocityMaxRadius, Chart % CoordinateUnit ( 1 ), &
                 'VelocityMaxRadius', I % IGNORABILITY )
-    call Show ( DensityAve, UNIT % IDENTITY, 'DensityAve', &
+    call Show ( DensityAve, DensityUnit, 'DensityAve', &
                 I % IGNORABILITY )
     call Show ( TimeScaleDensityAve, I % TimeUnit, 'TimeScaleDensityAve', &
                 I % IGNORABILITY )

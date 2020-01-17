@@ -342,6 +342,7 @@ contains
 
       FC % Units % BaryonMass     =  UNIT % ATOMIC_MASS_UNIT
       FC % Units % NumberDensity  =  UNIT % NUMBER_DENSITY_NUCLEAR
+      FC % Units % MassDensity    =  UNIT % MASS_DENSITY_CGS
       FC % Units % EnergyDensity  =  UNIT % ENERGY_DENSITY_NUCLEAR
       FC % Units % Temperature    =  UNIT % MEGA_ELECTRON_VOLT
 

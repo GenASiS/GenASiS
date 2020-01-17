@@ -133,6 +133,7 @@ contains
 
     MW % Units % BaryonMass     =  UNIT % GRAM
     MW % Units % NumberDensity  =  UNIT % MOLE  *  UNIT % CENTIMETER ** (-3)
+    MW % Units % MassDensity    =  UNIT % MASS_DENSITY_CGS
     MW % Units % EnergyDensity  =  UNIT % ERG   *  UNIT % CENTIMETER ** (-3)
     MW % Units % Temperature    =  UNIT % KELVIN
 

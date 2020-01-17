@@ -17,6 +17,7 @@ module StressEnergyUnits_Form
     type ( MeasuredValueForm ) :: &
       BaryonMass, &
       NumberDensity, &
+      MassDensity, &
       EnergyDensity, &
       Temperature
     type ( MeasuredValueForm ), dimension ( 3 ) :: &
