@@ -32,7 +32,9 @@ module Interactions_BSLL_ASC_CSLD__Template
       FinalizeTemplate_I_BSLL_ASC_CSLD
     procedure, private, pass :: &
       SetType
-    procedure, private, pass :: &
+    !-- FIXME: 'private' on this overriding procedure confuses XL
+    !procedure, private, pass :: &
+    procedure, public, pass :: &
       SetField
     procedure ( AF ), private, pass, deferred :: &
       AllocateField

@@ -23,7 +23,9 @@ module Storage_BSLL_ASC_CSLD__Form
       Initialize
     final :: &
       Finalize
-    procedure, private, pass :: &
+    !-- FIXME: 'private' on this overriding procedure confuses XL
+    !procedure, private, pass :: &
+    procedure, public, pass :: &
       SetField
   end type Storage_BSLL_ASC_CSLD_Form
 

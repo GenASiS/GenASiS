@@ -365,7 +365,7 @@ contains
       =  min ( TimeScaleDensityAve, TimeScaleVelocityMax )  /  I % nWrite
 
     call Show ( 'Time Scales', I % IGNORABILITY )
-    call Show ( VelocityMax, Chart % CoordinateUnit ( 1 ) / I % TimeUnit, &
+    call Show ( VelocityMax, ( Chart % CoordinateUnit ( 1 ) / I % TimeUnit ), &
                 'VelocityMax', I % IGNORABILITY )
     call Show ( VelocityMaxRadius, Chart % CoordinateUnit ( 1 ), &
                 'VelocityMaxRadius', I % IGNORABILITY )

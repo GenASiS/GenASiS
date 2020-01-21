@@ -25,7 +25,9 @@ module FieldBundle_Template
       InitializeTemplate
     procedure, public, pass :: &
       FinalizeTemplate
-    procedure ( SF ), private, pass, deferred :: &
+    !-- FIXME: 'private' on this deferred procedure seems to confuse XL
+    !procedure ( SF ), private, pass, deferred :: &
+    procedure ( SF ), public, pass, deferred :: &
       SetField
   end type FieldBundleTemplate
 

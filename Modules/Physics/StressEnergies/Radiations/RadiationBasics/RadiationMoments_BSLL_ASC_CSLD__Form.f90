@@ -42,7 +42,9 @@ module RadiationMoments_BSLL_ASC_CSLD__Form
       Finalize
     procedure, private, pass :: &
       SetType
-    procedure, private, pass :: &
+    !-- FIXME: 'private' on this overriding procedure confuses XL
+    !procedure, private, pass :: &
+    procedure, public, pass :: &
       SetField
     procedure, private, pass :: &
       AllocateField

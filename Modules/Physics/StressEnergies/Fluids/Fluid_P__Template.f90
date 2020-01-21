@@ -210,7 +210,10 @@ module Fluid_P__Template
         G_ICL, G_ICR, &
         P_ICL, P_ICR, &
         DS_ICL, DS_ICR
-      real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+      !-- FIXME: IBM XL compiler produces bogus error message
+      !          with intent ( in ); changed to intent ( inout )
+      !          as temporarily workaround. OLCF RT #415080
+      real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
         V_IL, V_IR, &
         S_IL, S_IR
       real ( KDR ), dimension ( : ), intent ( in ) :: &
