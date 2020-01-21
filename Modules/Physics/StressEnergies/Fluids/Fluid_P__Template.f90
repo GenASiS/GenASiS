@@ -459,7 +459,7 @@ contains
                C_IR % Value ( :, C % MOMENTUM_DENSITY_D ( iDimension ) ), &
                SS_I % Value ( :, C % ALPHA_PLUS ), &
                SS_I % Value ( :, C % ALPHA_MINUS ), &
-               M_UU )
+               M_UU, UseDeviceOption = C % AllocatedDevice )
 
       associate &
         ( C_ICL => I % Storage % Current_ICL, &
@@ -483,7 +483,8 @@ contains
                  SS_I % Value ( :, C % ALPHA_PLUS ), &
                  SS_I % Value ( :, C % ALPHA_MINUS ), &
                  SS_I % Value ( :, C % ALPHA_CENTER ), &
-                 FF   % Value ( :, FF % DIFFUSIVE_FLUX_I ( iDimension ) ) )
+                 FF   % Value ( :, FF % DIFFUSIVE_FLUX_I ( iDimension ) ), &
+                 UseDeviceOption = C % AllocatedDevice )
       end do !-- iF
       end associate !-- FF
 
@@ -588,7 +589,8 @@ contains
         V_Dim   => Value_C ( oV + 1 : oV + nV, C % VELOCITY_U ( iDimension ) ))
 
     call ComputeRawFluxesTemplate_P_Kernel &
-           ( F_S_Dim, F_G, F_DS, G, P, DS, V_Dim )
+           ( F_S_Dim, F_G, F_DS, G, P, DS, V_Dim, &
+             UseDeviceOption = C % AllocatedDevice )
 
     end associate !-- F_S_Dim, etc.
     
@@ -653,7 +655,7 @@ contains
              SS_I % Value ( :, C % ALPHA_PLUS ), &
              SS_I % Value ( :, C % ALPHA_MINUS ), &
              SS_I % Value ( :, C % ALPHA_CENTER ), &
-             M_DD_22, M_DD_33, iD )
+             M_DD_22, M_DD_33, iD, UseDeviceOption = C % AllocatedDevice )
 
   end subroutine ComputeCenterStatesTemplate_P
 

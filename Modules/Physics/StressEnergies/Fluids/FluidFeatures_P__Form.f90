@@ -299,7 +299,8 @@ contains
                CSL % nGhostLayers ( iD ), &
                InnerBoundary = ( CSL % iaBrick ( iD ) == 1 ), &
                OuterBoundary = ( CSL % iaBrick ( iD ) &
-                                   == CSL % nBricks ( iD ) ) )
+                                   == CSL % nBricks ( iD ) ), &
+               UseDeviceOption = FF % AllocatedDevice )
 
     end do !-- iD
 

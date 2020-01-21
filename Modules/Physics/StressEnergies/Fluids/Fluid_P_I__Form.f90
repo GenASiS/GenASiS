@@ -476,20 +476,25 @@ contains
         CS    => FV ( oV + 1 : oV + nV, C % SOUND_SPEED ), &
         MN    => FV ( oV + 1 : oV + nV, C % MACH_NUMBER ) )
 
-    call C % Compute_M_Kernel ( M, C % BaryonMassReference )
+    call C % Compute_M_Kernel &
+           ( M, C % BaryonMassReference, &
+             UseDeviceOption = C % AllocatedDevice )
     call C % Apply_EOS_I_T_Kernel &
            ( P, E, SB, CS, M, N, T, C % AdiabaticIndex, &
              C % SpecificHeatVolume, C % FiducialBaryonDensity, &
-             C % FiducialPressure )
+             C % FiducialPressure, UseDeviceOption = C % AllocatedDevice )
     call C % Compute_D_S_G_Kernel &
-           ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
+           ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33, &
+             UseDeviceOption = C % AllocatedDevice )
     call C % Compute_G_G_Kernel &
-           ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
+           ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E, &
+             UseDeviceOption = C % AllocatedDevice )
     call C % Compute_DS_G_Kernel &
-           ( DS, N, SB )
+           ( DS, N, SB, UseDeviceOption = C % AllocatedDevice )
     call C % Compute_FE_P_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
-             V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33 )
+             V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
+             UseDeviceOption = C % AllocatedDevice )
 
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
@@ -566,20 +571,25 @@ contains
         CS    => FV ( oV + 1 : oV + nV, C % SOUND_SPEED ), &
         MN    => FV ( oV + 1 : oV + nV, C % MACH_NUMBER ) )
 
-    call C % Compute_M_Kernel ( M, C % BaryonMassReference )
+    call C % Compute_M_Kernel &
+           ( M, C % BaryonMassReference, &
+             UseDeviceOption = C % AllocatedDevice )
     call C % Apply_EOS_I_E_Kernel &
            ( P, T, SB, CS, M, N, E, C % AdiabaticIndex, &
              C % SpecificHeatVolume, C % FiducialBaryonDensity, &
-             C % FiducialPressure )
+             C % FiducialPressure, UseDeviceOption = C % AllocatedDevice )
     call C % Compute_D_S_G_Kernel &
-           ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
+           ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33, &
+             UseDeviceOption = C % AllocatedDevice )
     call C % Compute_G_G_Kernel &
-           ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
+           ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E, &
+             UseDeviceOption = C % AllocatedDevice )
     call C % Compute_DS_G_Kernel &
-           ( DS, N, SB )
+           ( DS, N, SB, UseDeviceOption = C % AllocatedDevice )
     call C % Compute_FE_P_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
-             V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33 )
+             V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
+             UseDeviceOption = C % AllocatedDevice )
 
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
@@ -661,30 +671,34 @@ contains
         Shock => FF % Value ( oV + 1 : oV + nV, FF % SHOCK ) )
 
     call C % Compute_M_Kernel &
-           ( M, C % BaryonMassReference )
+           ( M, C % BaryonMassReference, &
+             UseDeviceOption = C % AllocatedDevice )
     call C % Compute_N_V_E_G_Kernel &
-               ( N, V_1, V_2, V_3, E, D, S_1, S_2, S_3, G, M, &
-                 M_UU_22, M_UU_33, C % BaryonDensityMin )
+           ( N, V_1, V_2, V_3, E, D, S_1, S_2, S_3, G, M, &
+             M_UU_22, M_UU_33, C % BaryonDensityMin, &
+             UseDeviceOption = C % AllocatedDevice )
     if ( C % UseEntropy ) then
       call C % Compute_SB_G_Kernel &
-             ( SB, DS, N )
+             ( SB, DS, N, UseDeviceOption = C % AllocatedDevice )
       call C % Apply_EOS_I_SB_E_Kernel &
              ( P, E, T, SB, CS, M, N, Shock, C % AdiabaticIndex, &
                C % SpecificHeatVolume, C % FiducialBaryonDensity, &
-               C % FiducialPressure )
+               C % FiducialPressure, UseDeviceOption = C % AllocatedDevice )
       call C % Compute_G_G_Kernel &
-             ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
+             ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E, &
+               UseDeviceOption = C % AllocatedDevice )
     else
       call C % Apply_EOS_I_E_Kernel &
              ( P, T, SB, CS, M, N, E, C % AdiabaticIndex, &
                C % SpecificHeatVolume, C % FiducialBaryonDensity, &
-               C % FiducialPressure )
+               C % FiducialPressure, UseDeviceOption = C % AllocatedDevice )
     end if
     call C % Compute_DS_G_Kernel &
-           ( DS, N, SB )
+           ( DS, N, SB, UseDeviceOption = C % AllocatedDevice )
     call C % Compute_FE_P_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
-             V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33 )
+             V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
+             UseDeviceOption = C % AllocatedDevice )
 
     end associate !-- FEP_1, etc.
     end associate !-- M_UU_22, etc.

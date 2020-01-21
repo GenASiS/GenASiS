@@ -407,11 +407,14 @@ contains
         S_3   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 3 ) ) )
 
     call C % Compute_M_Kernel &
-           ( M, C % BaryonMassReference )
+           ( M, C % BaryonMassReference, &
+             UseDeviceOption = C % AllocatedDevice )
     call C % Compute_D_S_G_Kernel &
-           ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
+           ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33, &
+             UseDeviceOption = C % AllocatedDevice )
     call C % Compute_FE_D_G_Kernel &
-           ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3 )
+           ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3, &
+             UseDeviceOption = C % AllocatedDevice ) 
 
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
@@ -476,12 +479,14 @@ contains
         S_3   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 3 ) ) )
 
     call C % Compute_M_Kernel &
-           ( M, C % BaryonMassReference )
+           ( M, C % BaryonMassReference, &
+             UseDeviceOption = C % AllocatedDevice )
     call C % Compute_N_V_G_Kernel &
            ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33, &
-             C % BaryonDensityMin )
+             C % BaryonDensityMin, UseDeviceOption = C % AllocatedDevice )
     call C % Compute_FE_D_G_Kernel &
-           ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3 )
+           ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3, &
+             UseDeviceOption = C % AllocatedDevice )
 
     end associate !-- FEP_1, etc.
     end associate !-- M_UU_22, etc.
@@ -555,7 +560,8 @@ contains
         V_Dim => Value_C ( oV + 1 : oV + nV, C % VELOCITY_U ( iDimension ) ) )
 
     call ComputeRawFluxes_G_Kernel &
-           ( F_D, F_S_1, F_S_2, F_S_3, D, S_1, S_2, S_3, V_Dim )
+           ( F_D, F_S_1, F_S_2, F_S_3, D, S_1, S_2, S_3, V_Dim, &
+             UseDeviceOption = C % AllocatedDevice )
 
     select type ( G )
     class is ( Geometry_N_S_Form )
@@ -572,7 +578,8 @@ contains
             => Value_G ( oV + 1 : oV + nV, G % METRIC_UU_33 ) )
       call ComputeRawFluxes_N_S_Kernel &
              ( F_S_1, F_S_2, F_S_3, GradPhi_1, GradPhi_2, GradPhi_3, &
-               M_UU_22, M_UU_33, iDimension )
+               M_UU_22, M_UU_33, iDimension, &
+               UseDeviceOption = C % AllocatedDevice )
       end associate !-- GradPhi_1, etc.
     end select
 
