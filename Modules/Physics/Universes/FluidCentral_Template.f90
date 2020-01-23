@@ -82,7 +82,8 @@ module FluidCentral_Template
         nCellsPolarOption
     end subroutine IA
 
-    subroutine IG ( FC, GA, PS, GeometryType, CentralMassOption )
+    subroutine IG ( FC, GA, PS, GeometryType, UsePinnedMemoryOption, &
+                    CentralMassOption )
       use Basics
       use Mathematics
       use Spaces
@@ -95,6 +96,8 @@ module FluidCentral_Template
         PS
       character ( * ), intent ( in )  :: &
         GeometryType
+      logical ( KDL ), intent ( in ), optional :: &
+        UsePinnedMemoryOption
       real ( KDR ), intent ( in ), optional :: &
         CentralMassOption
     end subroutine IG
@@ -123,6 +126,7 @@ contains
 
   subroutine InitializeTemplate_FC &
                ( FC, FluidType, GeometryType, Name, DimensionlessOption, &
+                 FluidUseDeviceOption, GeometryUseDeviceOption, &
                  FinishTimeOption, CourantFactorOption, &
                  LimiterParameterOption, ShockThresholdOption, & 
                  RadiusMaxOption, RadiusCoreOption, RadiusMinOption, &
@@ -136,7 +140,9 @@ contains
       GeometryType, &
       Name
     logical ( KDL ), intent ( in ), optional :: &
-      DimensionlessOption
+      DimensionlessOption, &
+      FluidUseDeviceOption, &
+      GeometryUseDeviceOption
     real ( KDR ), intent ( in ), optional :: &
       FinishTimeOption, &
       CourantFactorOption, &
@@ -166,14 +172,17 @@ contains
     call FC % AllocateIntegrator &
            ( )
     call FC % InitializePositionSpace &
-           ( GeometryType, RadiusMaxOption = RadiusMaxOption, &
+           ( GeometryType, &
+             GeometryUseDeviceOption = GeometryUseDeviceOption, &
+             RadiusMaxOption = RadiusMaxOption, &
              RadiusCoreOption = RadiusCoreOption, &
              RadiusMinOption = RadiusMinOption, &
              RadialRatioOption = RadialRatioOption, &
              CentralMassOption = CentralMassOption, &
              nCellsPolarOption = nCellsPolarOption )
     call FC % InitializeFluid &
-           ( FluidType, LimiterParameterOption = LimiterParameterOption, &
+           ( FluidType, FluidUseDeviceOption = FluidUseDeviceOption, &
+             LimiterParameterOption = LimiterParameterOption, &
              ShockThresholdOption = ShockThresholdOption )
     call FC % InitializeStep &
            ( Name ) 
@@ -268,7 +277,8 @@ contains
 
 
   subroutine InitializePositionSpace &
-               ( FC, GeometryType, RadiusMaxOption, RadiusCoreOption, &
+               ( FC, GeometryType, GeometryUseDeviceOption, &
+                 RadiusMaxOption, RadiusCoreOption, &
                  RadiusMinOption, RadialRatioOption, CentralMassOption, &
                  nCellsPolarOption )
 
@@ -276,6 +286,8 @@ contains
       FC
     character ( * ), intent ( in )  :: &
       GeometryType
+    logical ( KDL ), intent ( in ), optional :: &
+      GeometryUseDeviceOption
     real ( KDR ), intent ( in ), optional :: &
       RadiusMaxOption, &
       RadiusCoreOption, &
@@ -284,6 +296,9 @@ contains
       CentralMassOption
     integer ( KDI ), intent ( in ), optional :: &
       nCellsPolarOption
+    
+    class ( StorageForm ), pointer :: &
+      Storage_G
 
     if ( .not. FC % Dimensionless ) then
       FC % Units % Coordinate_PS  &
@@ -307,9 +322,19 @@ contains
     class is ( Geometry_ASC_Form )
 
     call FC % InitializeGeometry &
-           ( GA, PS, GeometryType, CentralMassOption = CentralMassOption )
+           ( GA, PS, GeometryType, &
+             UsePinnedMemoryOption = GeometryUseDeviceOption, &
+             CentralMassOption = CentralMassOption )
 
     call PS % SetGeometry ( GA )
+    
+    if ( present ( GeometryUseDeviceOption ) ) then
+      if ( GeometryUseDeviceOption ) then
+        call GA % AllocateDevice ( )
+        Storage_G => PS % Geometry ( )
+        call Storage_G % UpdateDevice ( )
+      end if
+    end if
 
     FC % UseCoarsening = .true.
     call PROGRAM_HEADER % GetParameter ( FC % UseCoarsening, 'UseCoarsening' )
@@ -323,16 +348,19 @@ contains
 
 
   subroutine InitializeFluid &
-               ( FC, FluidType, LimiterParameterOption, ShockThresholdOption )
+               ( FC, FluidType, FluidUseDeviceOption, &
+                 LimiterParameterOption, ShockThresholdOption )
 
     class ( FluidCentralTemplate ), intent ( inout ) :: &
       FC
     character ( * ), intent ( in )  :: &
       FluidType
+    logical ( KDL ), intent ( in ), optional :: &
+      FluidUseDeviceOption
     real ( KDR ), intent ( in ), optional :: &
       LimiterParameterOption, &
       ShockThresholdOption
-
+    
     select type ( I => FC % Integrator )
     class is ( Integrator_C_PS_Form )
 
@@ -382,8 +410,15 @@ contains
 
     call FA % Initialize &
            ( PS, FluidType, FC % Units, &
+             UsePinnedMemoryOption = FluidUseDeviceOption, &
              LimiterParameterOption = LimiterParameterOption, &
              ShockThresholdOption = ShockThresholdOption )
+    
+    if ( present ( FluidUseDeviceOption ) ) then
+      if ( FluidUseDeviceOption ) then
+        call FA % AllocateDevice ( )
+      end if
+    end if
 
     end select !-- FA
     end select !-- PS

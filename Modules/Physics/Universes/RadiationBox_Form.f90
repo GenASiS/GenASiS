@@ -221,8 +221,9 @@ contains
 
   subroutine InitializePositionSpace &
                ( FB, GeometryType, GravitySolverTypeOption, &
-                 MinCoordinateOption, MaxCoordinateOption, &
-                 UniformAccelerationOption, nCellsOption )
+                 GeometryUseDeviceOption, MinCoordinateOption, &
+                 MaxCoordinateOption, UniformAccelerationOption, &
+                 nCellsOption )
 
     class ( RadiationBoxForm ), intent ( inout ) :: &
       FB
@@ -230,6 +231,8 @@ contains
       GeometryType
     character ( * ), intent ( in ), optional :: &
       GravitySolverTypeOption
+    logical ( KDL ), intent ( in ), optional :: &
+      GeometryUseDeviceOption
     real ( KDR ), dimension ( : ), intent ( in ), optional :: &
       MinCoordinateOption, &
       MaxCoordinateOption
@@ -249,6 +252,7 @@ contains
     call FB % FluidBoxForm % InitializePositionSpace &
            ( GeometryType, &
              GravitySolverTypeOption = GravitySolverTypeOption, &
+             GeometryUseDeviceOption = GeometryUseDeviceOption, &
              MinCoordinateOption = MinCoordinateOption, &
              MaxCoordinateOption = MaxCoordinateOption, &
              UniformAccelerationOption = UniformAccelerationOption, &
