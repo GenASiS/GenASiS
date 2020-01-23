@@ -575,6 +575,22 @@ contains
     class ( RadiationMomentsForm ), pointer :: &
       RM
 
+    select type ( FA => I % Current_ASC )
+    class is ( Fluid_ASC_Form )
+      F => FA % Fluid_P_HN ( )
+    end select !-- FA
+
+    select type ( SF => F % Sources )
+    class is ( Sources_F_Form )
+
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
+
+    select type ( PSC => PS % Chart )
+    class is ( Chart_SL_Template )
+
+    call Clear ( SF % Value )
+
     do iC = 1, I % N_CURRENTS_1D
 
       select type ( I )
@@ -599,24 +615,8 @@ contains
 
       end select !-- I
 
-      select type ( FA => I % Current_ASC )
-      class is ( Fluid_ASC_Form )
-        F => FA % Fluid_P_HN ( )
-      end select !-- FA
-
       select type ( SR => RM % Sources )
       class is ( Sources_RM_Form )
-
-      select type ( SF => F % Sources )
-      class is ( Sources_F_Form )
-
-      select type ( PS => I % PositionSpace )
-      class is ( Atlas_SC_Form )
-
-      select type ( PSC => PS % Chart )
-      class is ( Chart_SL_Template )
-
-      call Clear ( SF % Value )
 
       call ComputeFluidSource_G_S_Radiation_Kernel &
              ( SF % Value ( :, SF % RADIATION_G ), & 
@@ -652,13 +652,14 @@ contains
                  Sign  =  - 1.0_KDR )
       end select !-- RadiationType
 
-      end select !-- PSC
-      end select !-- PS
-      end select !-- SF
       end select !-- SR
-      nullify ( F, RM )
 
     end do !-- iC
+
+    end select !-- PSC
+    end select !-- PS
+    end select !-- SF
+    nullify ( F, RM )
 
   end subroutine PrepareStep
 
