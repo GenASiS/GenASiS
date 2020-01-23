@@ -303,7 +303,7 @@ contains
     class ( Fluid_ASC_Form ), intent ( inout ) :: &
       FA
     
-    call FA % AllocateDevice_ASC ( )
+    call FA % AllocateDevice_ASC_Template ( )
 
     if ( allocated ( FA % Sources_ASC ) ) &
       call FA % Sources_ASC % AllocateDevice ( )

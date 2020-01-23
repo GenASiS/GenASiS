@@ -19,9 +19,9 @@ module Field_ASC__Template
     procedure, public, pass :: &
       InitializeTemplate_ASC
     procedure, public, pass :: &
-      AllocateDevice_ASC
+      AllocateDevice_ASC_Template
     procedure, public, pass :: &
-      AllocateDevice => AllocateDevice_ASC
+      AllocateDevice => AllocateDevice_ASC_Template
     procedure, public, pass :: &
       FinalizeTemplate_ASC
     !-- FIXME: This should be automatically inherited from FieldAtlasTemplate
@@ -65,7 +65,7 @@ contains
   end subroutine InitializeTemplate_ASC
   
   
-  subroutine AllocateDevice_ASC ( FA )
+  subroutine AllocateDevice_ASC_Template ( FA )
     
     class ( Field_ASC_Template ), intent ( inout ) :: &
       FA
@@ -80,7 +80,7 @@ contains
       call PROGRAM_HEADER % Abort ( )
     end select
   
-  end subroutine AllocateDevice_ASC
+  end subroutine AllocateDevice_ASC_Template
 
 
   impure elemental subroutine FinalizeTemplate_ASC ( FA )

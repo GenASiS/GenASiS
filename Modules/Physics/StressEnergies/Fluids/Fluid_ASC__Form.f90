@@ -41,6 +41,8 @@ module Fluid_ASC__Form
   contains
     procedure, public, pass :: &
       Initialize
+    procedure, public, pass :: &   
+      AllocateDevice => AllocateDevice_F_ASC
     procedure, private, pass :: &
       Fluid_D_CSL
     generic, public :: &
@@ -306,6 +308,22 @@ contains
     end if !-- not DUST
 
   end subroutine Initialize
+
+
+  subroutine AllocateDevice_F_ASC ( FA )
+  
+    class ( Fluid_ASC_Form ), intent ( inout ) :: &
+      FA
+    
+    call FA % AllocateDevice_ASC_Template ( )
+
+    if ( allocated ( FA % Sources_ASC ) ) &
+      call FA % Sources_ASC % AllocateDevice ( )
+    
+    if ( allocated ( FA % Features_ASC ) ) &
+      call FA % Features_ASC % AllocateDevice ( )
+  
+  end subroutine AllocateDevice_F_ASC
 
 
   function Fluid_D_CSL ( FA ) result ( F )
