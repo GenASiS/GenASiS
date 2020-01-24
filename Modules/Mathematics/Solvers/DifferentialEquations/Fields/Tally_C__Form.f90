@@ -99,7 +99,8 @@ contains
       allocate ( T % Variable ( T % N_INTEGRALS ) )
 
     if ( present ( VariableOption ) ) then
-      T % Variable ( 1 : C % N_CONSERVED ) = VariableOption
+      T % Variable ( 1 : C % N_CONSERVED ) &
+        =  VariableOption ( 1 : C % N_CONSERVED )
     else
       associate ( iaC => C % iaConserved )
       do iF = 1, C % N_CONSERVED
@@ -114,7 +115,7 @@ contains
 
     if ( present ( UnitOption ) ) then
 
-      T % Unit ( 1 : C % N_CONSERVED ) = UnitOption
+      T % Unit ( 1 : C % N_CONSERVED ) = UnitOption ( 1 : C % N_CONSERVED )
 
     else 
 

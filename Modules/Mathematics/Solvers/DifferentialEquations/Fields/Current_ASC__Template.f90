@@ -56,7 +56,8 @@ contains
 
 
   subroutine InitializeTemplate_ASC_C &
-               ( CA, A, NameShort, AllocateTallyOption, IgnorabilityOption )
+       ( CA, A, NameShort, TallyVariableOption, AllocateTallyOption, &
+         TallyUnitOption, IgnorabilityOption )
 
     class ( Current_ASC_Template ), intent ( inout ) :: &
       CA
@@ -64,8 +65,12 @@ contains
       A
     character ( * ), intent ( in ) :: &
       NameShort
+    character ( * ), dimension ( : ), intent ( in ), optional :: &
+      TallyVariableOption
     logical ( KDL ), intent ( in ), optional :: &
       AllocateTallyOption
+    type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
+      TallyUnitOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
@@ -99,12 +104,22 @@ contains
         allocate ( CA % TallyBoundaryGlobal ( iB ) % Element )
       end do !-- iB
 
-      call CA % TallyInterior % Initialize ( C, A )
-      call CA % TallyTotal % Initialize ( C, A )
-      call CA % TallyChange % Initialize ( C, A )
+      call CA % TallyInterior % Initialize &
+           ( C, A, VariableOption = TallyVariableOption, &
+             UnitOption = TallyUnitOption )
+      call CA % TallyTotal % Initialize &
+           ( C, A, VariableOption = TallyVariableOption, &
+             UnitOption = TallyUnitOption )
+      call CA % TallyChange % Initialize &
+           ( C, A, VariableOption = TallyVariableOption, &
+             UnitOption = TallyUnitOption )
       do iB = 1, A % nBoundaries
-        call CA % TallyBoundaryLocal  ( iB ) % Element % Initialize ( C, A )
-        call CA % TallyBoundaryGlobal ( iB ) % Element % Initialize ( C, A )
+        call CA % TallyBoundaryLocal  ( iB ) % Element % Initialize &
+               ( C, A, VariableOption = TallyVariableOption, &
+                 UnitOption = TallyUnitOption )
+        call CA % TallyBoundaryGlobal ( iB ) % Element % Initialize &
+               ( C, A, VariableOption = TallyVariableOption, &
+                 UnitOption = TallyUnitOption )
       end do !-- iB
 
     end if
