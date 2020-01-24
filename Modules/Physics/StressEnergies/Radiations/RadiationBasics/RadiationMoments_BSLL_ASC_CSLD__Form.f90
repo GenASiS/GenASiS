@@ -273,6 +273,7 @@ contains
              ( AF, RadiationType = FB % RadiationType, &
                MomentsType = 'SPECTRAL', Units = FB % UnitsSpectral, &
                NameShortOption = FB % NameShort, &
+               AllocateTallyOption = .false., &
                SuppressWriteSourcesOption = .false. )
 
       end select !-- AF

@@ -55,7 +55,7 @@ contains
   subroutine Initialize &
                ( RMA, A, RadiationType, MomentsType, Units, NameShortOption, &
                  RiemannSolverTypeOption, ReconstructedTypeOption, &
-                 UseLimiterOption, AllocateSourcesOption, &
+                 UseLimiterOption, AllocateTallyOption, AllocateSourcesOption, &
                  SuppressWriteOption, SuppressWriteSourcesOption, &
                  LimiterParameterOption, IgnorabilityOption )
 
@@ -74,6 +74,7 @@ contains
       ReconstructedTypeOption
     logical ( KDL ), intent ( in ), optional :: &
       UseLimiterOption, &
+      AllocateTallyOption, &
       AllocateSourcesOption, &
       SuppressWriteOption, &
       SuppressWriteSourcesOption
@@ -146,6 +147,7 @@ contains
 
     call RMA % InitializeTemplate_ASC_C &
            ( A, NameShort, TallyVariableOption = TallyVariable, &
+             AllocateTallyOption = AllocateTallyOption, &
              TallyUnitOption = TallyUnit, &
              IgnorabilityOption = IgnorabilityOption )
 
