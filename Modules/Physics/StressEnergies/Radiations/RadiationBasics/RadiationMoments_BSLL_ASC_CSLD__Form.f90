@@ -351,7 +351,9 @@ contains
 
     integer ( KDI ) :: &
       iC, &  !-- iConserved
-      iF     !-- iFiber
+      iF, &  !-- iFiber
+      iNumber, &
+      iEnergy
     real ( KDR ), dimension ( : ), allocatable :: &
       Integral
     type ( Real_1D_Form ), dimension ( : ), allocatable :: &
@@ -364,12 +366,14 @@ contains
       RMEI, &
       RMF
 
-    associate ( MS => RMB % Bundle_SLL_ASC_CSLD )
-
     select type ( RMA => RMB % EnergyIntegral )
     class is ( RadiationMoments_ASC_Form )
       RMEI => RMA % RadiationMoments ( )
     end select !-- RMA
+
+    associate &
+      (  MS => RMB % Bundle_SLL_ASC_CSLD, &
+        iaC => RMEI % iaConserved )
 
     G => MS % Base_CSLD % Geometry ( )
 
@@ -379,16 +383,28 @@ contains
       call Integrand ( iC ) % Initialize ( RMB % nEnergyValues )
     end do !-- iC
 
+    !-- Radiation number?
+    iNumber = 0
+    iEnergy = 0
+    do iC = 1, RMEI % N_CONSERVED
+      if ( trim ( RMEI % Variable ( iaC ( iC ) ) )  ==  'ConservedNumber' ) &
+        iNumber = iaC ( iC )
+      if ( trim ( RMEI % Variable ( iaC ( iC ) ) )  ==  'ConservedEnergy' ) &
+        iEnergy = iaC ( iC )
+    end do !-- iC
+
     do iF = 1, MS % nFibers
       associate &
-        ( iaC => RMEI % iaConserved, &
-          iBC => MS % iaBaseCell ( iF ), &
+        ( iBC => MS % iaBaseCell ( iF ), &
           CF  => MS % Fiber_CSLL )
 
       RMF => RMB % RadiationMoments ( iF )
       do iC = 1, RMF % N_CONSERVED
-        Integrand ( iC ) % Value = RMF % Value ( :, iaC ( iC ) )
+        Integrand ( iC ) % Value  =  RMF % Value ( :, iaC ( iC ) )
       end do !-- iC
+      if ( iNumber > 0 ) &  !-- Number
+        Integrand ( RMEI % N_CONSERVED ) % Value &
+          =  RMF % Value ( :, iEnergy )  /  RMB % Energy
 
       call VI % Compute ( CF, Integrand, Integral )
 
@@ -401,7 +417,7 @@ contains
 
     call RMEI % ComputeFromConserved ( G )
 
-    end associate !-- MS
+    end associate !-- MS, etc.
     nullify ( G, RMEI, RMF )
     
   end subroutine ComputeEnergyIntegral
