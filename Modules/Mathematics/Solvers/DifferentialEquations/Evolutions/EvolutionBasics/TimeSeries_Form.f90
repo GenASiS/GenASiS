@@ -36,7 +36,7 @@ module TimeSeries_Form
       GridImageStream
     type ( CurveImageForm ), allocatable :: &
       CurveImage
-    class ( IntegratorTemplate ), pointer :: &
+    class ( IntegratorHeaderForm ), pointer :: &
       Integrator => null ( )
   contains
     procedure, private, pass :: &

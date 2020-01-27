@@ -114,14 +114,15 @@ contains
 
     if ( allocated ( I % Current_ASC ) ) then
       allocate ( TimeSeries_C_Form :: I % TimeSeries )
-      associate &
-        ( TS => I % TimeSeries, &
-          CA => I % Current_ASC )
+      select type ( TS => I % TimeSeries )
+      type is ( TimeSeries_C_Form )
+      associate ( CA => I % Current_ASC )
       call TS % Initialize &
              ( I, CA % TallyInterior, &
                CA % TallyBoundaryGlobal ( 1 ) % Element, &
                CA % TallyTotal, CA % TallyChange, CA % Name )
-      end associate !-- TS, etc.
+      end associate !-- CA
+      end select !-- TS
     end if
 
   end subroutine Initialize_I
