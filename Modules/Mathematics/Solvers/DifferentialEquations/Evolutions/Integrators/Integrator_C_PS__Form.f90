@@ -23,8 +23,6 @@ module Integrator_C_PS__Form
       Current_ASC
     class ( Step_RK_C_ASC_Template ), allocatable :: &
       Step
-    class ( TimeSeries_C_Form ), allocatable :: &
-      TimeSeries
   contains
     procedure, private, pass :: &  !-- 1
       Initialize_I
@@ -115,7 +113,7 @@ contains
       I % ComputeTimeStepLocal  =>  ComputeTimeStepLocal
 
     if ( allocated ( I % Current_ASC ) ) then
-      allocate ( I % TimeSeries )
+      allocate ( TimeSeries_C_Form :: I % TimeSeries )
       associate &
         ( TS => I % TimeSeries, &
           CA => I % Current_ASC )

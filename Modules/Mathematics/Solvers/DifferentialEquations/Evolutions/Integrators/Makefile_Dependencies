@@ -4,11 +4,6 @@ Integrator_Template.o: \
   EvolutionBasics.o \
   Integrator_Template.f90
 
-TimeSeries_Form.o: \
-  Basics.o \
-  Integrator_Template.o \
-  TimeSeries_Form.f90
-
 TimeSeries_C__Form.o: \
   Basics.o \
   Fields.o \
@@ -82,7 +77,6 @@ Integrator_C_1D_MS_C_PS__Form.o: \
 
 Integrators.o: \
   Integrator_Template.o \
-  TimeSeries_Form.o \
   TimeSeries_C__Form.o \
   Integrator_C_PS__Form.o \
   Integrator_C_PS_C_PS__Template.o \

@@ -11,14 +11,12 @@ module Integrator_Template
 
   type, public, extends ( IntegratorHeaderForm ), abstract :: &
     IntegratorTemplate
-      type ( CommunicatorForm ), pointer :: &
-        Communicator => null ( )
-      type ( GridImageStreamForm ), allocatable :: &
-        GridImageStream
       class ( AtlasHeaderForm ), allocatable :: &
         PositionSpace
       class ( BundleHeaderForm ), allocatable :: &
         MomentumSpace
+      class ( TimeSeriesForm ), allocatable :: &
+        TimeSeries
       procedure ( OGIS ), pointer :: &
         OpenGridImageStreams => null ( )
       procedure ( OMS ), pointer :: &
@@ -273,14 +271,10 @@ contains
       deallocate ( I % MomentumSpace ) 
     if ( allocated ( I % PositionSpace ) ) &
       deallocate ( I % PositionSpace ) 
-    if ( allocated ( I % GridImageStream ) ) &
-      deallocate ( I % GridImageStream )
     if ( allocated ( I % TimeStepLabel ) ) &
       deallocate ( I % TimeStepLabel )
     if ( allocated ( I % TimeStepCandidate ) ) &
       deallocate ( I % TimeStepCandidate )
-
-    nullify ( I % Communicator )
 
   end subroutine FinalizeTemplate
 

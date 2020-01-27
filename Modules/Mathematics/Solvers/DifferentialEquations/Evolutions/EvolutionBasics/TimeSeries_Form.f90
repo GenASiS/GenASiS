@@ -3,7 +3,7 @@
 module TimeSeries_Form
 
   use Basics
-  use Integrator_Template
+  use IntegratorHeader_Form
 
   implicit none
   private
@@ -58,7 +58,7 @@ contains
 
     class ( TimeSeriesForm ), intent ( inout ) :: &
       TS
-    class ( IntegratorTemplate ), intent ( in ), target :: &
+    class ( IntegratorHeaderForm ), intent ( in ), target :: &
       I
 
     integer ( KDI ) :: &

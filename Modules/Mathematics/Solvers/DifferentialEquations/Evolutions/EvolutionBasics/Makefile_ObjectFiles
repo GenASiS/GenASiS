@@ -1,3 +1,4 @@
 EVOLUTION_BASICS = \
+  TimeSeries_Form.o \
   IntegratorHeader_Form.o \
   UniverseHeader_Form.o \

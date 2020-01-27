@@ -42,6 +42,10 @@ module IntegratorHeader_Form
     character ( LDF ) :: &
       Type = '', &
       Name = ''
+    type ( CommunicatorForm ), pointer :: &
+      Communicator => null ( )
+    type ( GridImageStreamForm ), allocatable :: &
+      GridImageStream
     class ( UniverseHeaderForm ), pointer :: &
       Universe => null ( )
   contains
@@ -141,6 +145,11 @@ contains
 
     call Show ( 'Finalizing ' // trim ( I % Type ), I % IGNORABILITY )
     call Show ( I % Name, 'Name', I % IGNORABILITY )
+
+    if ( allocated ( I % GridImageStream ) ) &
+      deallocate ( I % GridImageStream )
+
+    nullify ( I % Communicator )
 
   end subroutine Finalize
 

@@ -1,4 +1,4 @@
-SystemHeader_Form.o: \
+UniverseHeader_Form.o: \
   Basics.o \
   UniverseHeader_Form.f90
 
@@ -7,9 +7,15 @@ IntegratorHeader_Form.o: \
   UniverseHeader_Form.o \
   IntegratorHeader_Form.f90
 
+TimeSeries_Form.o: \
+  Basics.o \
+  IntegratorHeader_Form.o \
+  TimeSeries_Form.f90
+
 EvolutionBasics.o: \
   UniverseHeader_Form.o \
   IntegratorHeader_Form.o \
+  TimeSeries_Form.o \
   EvolutionBasics.f90
 
 EvolutionBasics.a: $(EVOLUTION_BASICS)
