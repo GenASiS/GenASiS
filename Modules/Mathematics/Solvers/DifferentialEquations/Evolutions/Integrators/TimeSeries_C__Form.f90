@@ -40,7 +40,7 @@ contains
 
   subroutine Initialize_C &
                ( TS, I, TallyInterior, TallyBoundary, TallyTotal, &
-                 TallyChange )
+                 TallyChange, CurrentName )
 
     class ( TimeSeries_C_Form ), intent ( inout ) :: &
       TS
@@ -51,6 +51,8 @@ contains
       TallyBoundary, &
       TallyTotal, &
       TallyChange
+    character ( * ), intent ( in ) :: &
+      CurrentName
 
     integer ( KDI ) :: &
       iS, &  !-- iSelected
@@ -93,19 +95,19 @@ contains
     call SI % Initialize &
            ( [ SBsc % nValues, TT % nSelected ], &
              VariableOption = SeriesName, UnitOption = SeriesUnit, &
-             NameOption = 'Interior_' // I % Name, ClearOption = .true. )
+             NameOption = 'Interior_' // CurrentName, ClearOption = .true. )
     call SB % Initialize &
            ( [ SBsc % nValues, TT % nSelected ], &
              VariableOption = SeriesName, UnitOption = SeriesUnit, &
-             NameOption = 'Boundary_' // I % Name, ClearOption = .true. )
+             NameOption = 'Boundary_' // CurrentName, ClearOption = .true. )
     call ST % Initialize &
            ( [ SBsc % nValues, TT % nSelected ], &
              VariableOption = SeriesName, UnitOption = SeriesUnit, &
-             NameOption = 'Total_' // I % Name, ClearOption = .true. )
+             NameOption = 'Total_' // CurrentName, ClearOption = .true. )
     call SC % Initialize &
            ( [ SBsc % nValues, TT % nSelected ], &
              VariableOption = SeriesName, UnitOption = SeriesUnit, &
-             NameOption = 'Change_' // I % Name, ClearOption = .true. )
+             NameOption = 'Change_' // CurrentName, ClearOption = .true. )
     if ( allocated ( TS % CurveImage ) ) then
       associate ( CI => TS % CurveImage )
       call CI % AddStorage ( SI )

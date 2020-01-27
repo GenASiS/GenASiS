@@ -122,7 +122,7 @@ contains
       call TS % Initialize &
              ( I, CA % TallyInterior, &
                CA % TallyBoundaryGlobal ( 1 ) % Element, &
-               CA % TallyTotal, CA % TallyChange )
+               CA % TallyTotal, CA % TallyChange, CA % Name )
       end associate !-- TS, etc.
     end if
 
