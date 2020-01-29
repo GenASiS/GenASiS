@@ -180,6 +180,10 @@ contains
       FinishTimeOption
     integer ( KDI ), intent ( in ), optional :: &
       nWriteOption
+    
+    if ( .not. allocated ( I % TimeSeries ) ) &
+      allocate ( TimeSeriesForm :: I % TimeSeries )
+      !-- Initialized below
 
     call I % InitializeHeader &
            ( U, Name, TimeUnitOption, FinishTimeOption, nWriteOption )
@@ -205,6 +209,12 @@ contains
 
     if ( .not. associated ( I % SetWriteTimeInterval ) ) &
       I % SetWriteTimeInterval => SetWriteTimeInterval
+
+    !-- if allocated above, initialize
+    select type ( TS => I % TimeSeries )
+    type is ( TimeSeriesForm )
+      call TS % Initialize ( I )
+    end select !-- TS
 
   end subroutine InitializeTemplate
 

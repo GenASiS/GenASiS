@@ -99,6 +99,13 @@ contains
       call Show ( 'InitializeTemplate_C_PS', 'subroutine', CONSOLE % WARNING )
     end if
 
+    if ( .not. allocated ( I % TimeSeries ) &
+         .and. allocated ( I % Current_ASC ) ) &
+    then
+      allocate ( TimeSeries_C_Form :: I % TimeSeries )
+      !-- Initialized below after call to I % InitializeTemplate
+    end if
+
     I % CourantFactor = 0.7_KDR
     if ( present ( CourantFactorOption ) ) &
       I % CourantFactor = CourantFactorOption
@@ -112,18 +119,16 @@ contains
     if ( .not. associated ( I % ComputeTimeStepLocal ) ) &
       I % ComputeTimeStepLocal  =>  ComputeTimeStepLocal
 
-    if ( allocated ( I % Current_ASC ) ) then
-      allocate ( TimeSeries_C_Form :: I % TimeSeries )
-      select type ( TS => I % TimeSeries )
-      type is ( TimeSeries_C_Form )
+    !-- if allocated above, initialize
+    select type ( TS => I % TimeSeries )
+    type is ( TimeSeries_C_Form )
       associate ( CA => I % Current_ASC )
       call TS % Initialize &
              ( I, CA % TallyInterior, &
                CA % TallyBoundaryGlobal ( 1 ) % Element, &
                CA % TallyTotal, CA % TallyChange, CA % Name )
       end associate !-- CA
-      end select !-- TS
-    end if
+    end select !-- TS
 
   end subroutine Initialize_I
 
