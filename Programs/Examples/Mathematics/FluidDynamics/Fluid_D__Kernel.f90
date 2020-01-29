@@ -184,7 +184,7 @@ contains
     
     if ( UseDevice ) then
 
-      !$OMP  OMP_TARGET_DIRECTIVE parallel do 
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
       !$OMP& schedule ( OMP_SCHEDULE ) private ( iV ) 
       do iV = 1, nValues
         FEP_1 ( iV ) = V_1 ( iV ) 
@@ -198,7 +198,7 @@ contains
       
     else
     
-      !$OMP  parallel do 
+      !$OMP  parallel do &
       !$OMP& schedule ( OMP_SCHEDULE ) private ( iV ) 
       do iV = 1, nValues
         FEP_1 ( iV ) = V_1 ( iV ) 
