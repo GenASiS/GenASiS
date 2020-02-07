@@ -65,6 +65,11 @@ module Tally_C__Form
       FinalizeElement
   end type Tally_C_Element_Form
 
+  type, public :: Tally_C_Pointer_Form
+    class ( Tally_C_Form ), pointer :: &
+      Pointer => null ( )
+  end type Tally_C_Pointer_Form
+
 contains
 
 

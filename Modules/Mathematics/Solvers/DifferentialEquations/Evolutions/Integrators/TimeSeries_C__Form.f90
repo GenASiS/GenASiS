@@ -38,21 +38,14 @@ module TimeSeries_C__Form
 contains
 
 
-  subroutine Initialize_C &
-               ( TS, I, TallyInterior, TallyBoundary, TallyTotal, &
-                 TallyChange, CurrentName )
+  subroutine Initialize_C ( TS, I, CA )
 
     class ( TimeSeries_C_Form ), intent ( inout ) :: &
       TS
     class ( IntegratorTemplate ), intent ( in ) :: &
       I
-    class ( Tally_C_Form ), intent ( in ), target :: &
-      TallyInterior, &
-      TallyBoundary, &
-      TallyTotal, &
-      TallyChange
-    character ( * ), intent ( in ) :: &
-      CurrentName
+    class ( Current_ASC_Template ), intent ( in ), target :: &
+      CA
 
     integer ( KDI ) :: &
       iS, &  !-- iSelected
@@ -67,10 +60,10 @@ contains
 
     call TS % Initialize ( I )
 
-    TS % TallyInterior => TallyInterior
-    TS % TallyBoundary => TallyBoundary
-    TS % TallyTotal    => TallyTotal
-    TS % TallyChange   => TallyChange
+    TS % TallyInterior  =>  CA % TallyInterior
+    TS % TallyBoundary  =>  CA % TallyBoundaryGlobal ( 1 ) % Element
+    TS % TallyTotal     =>  CA % TallyTotal
+    TS % TallyChange    =>  CA % TallyChange
 
     associate &
       ( TT  => TS % TallyTotal, &
@@ -95,19 +88,19 @@ contains
     call SI % Initialize &
            ( [ SBsc % nValues, TT % nSelected ], &
              VariableOption = SeriesName, UnitOption = SeriesUnit, &
-             NameOption = 'Interior_' // CurrentName, ClearOption = .true. )
+             NameOption = 'Interior_' // CA % Name, ClearOption = .true. )
     call SB % Initialize &
            ( [ SBsc % nValues, TT % nSelected ], &
              VariableOption = SeriesName, UnitOption = SeriesUnit, &
-             NameOption = 'Boundary_' // CurrentName, ClearOption = .true. )
+             NameOption = 'Boundary_' // CA % Name, ClearOption = .true. )
     call ST % Initialize &
            ( [ SBsc % nValues, TT % nSelected ], &
              VariableOption = SeriesName, UnitOption = SeriesUnit, &
-             NameOption = 'Total_' // CurrentName, ClearOption = .true. )
+             NameOption = 'Total_' // CA % Name, ClearOption = .true. )
     call SC % Initialize &
            ( [ SBsc % nValues, TT % nSelected ], &
              VariableOption = SeriesName, UnitOption = SeriesUnit, &
-             NameOption = 'Change_' // CurrentName, ClearOption = .true. )
+             NameOption = 'Change_' // CA % Name, ClearOption = .true. )
     if ( allocated ( TS % CurveImage ) ) then
       associate ( CI => TS % CurveImage )
       call CI % AddStorage ( SI )

@@ -123,10 +123,7 @@ contains
     select type ( TS => I % TimeSeries )
     type is ( TimeSeries_C_Form )
       associate ( CA => I % Current_ASC )
-      call TS % Initialize &
-             ( I, CA % TallyInterior, &
-               CA % TallyBoundaryGlobal ( 1 ) % Element, &
-               CA % TallyTotal, CA % TallyChange, CA % Name )
+      call TS % Initialize ( I, CA )
       end associate !-- CA
     end select !-- TS
 
