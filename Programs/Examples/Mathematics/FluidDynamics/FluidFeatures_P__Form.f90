@@ -146,10 +146,12 @@ contains
 
       select type ( Grid_SLD => FF % Grid )
       class is ( Chart_SLD_Form )
-        call FF % UpdateHost ( FF % SHOCK )
-        call S_Shock % Initialize ( FF, iaSelectedOption = [ FF % SHOCK ] )
+        call S_Shock % Initialize &
+               ( FF, iaSelectedOption = &
+                       [ FF % SHOCK, FF % DIFFUSIVE_FLUX_I ( 1 : 3 ) ] )
+        call S_Shock % UpdateHost ( )
         call Grid_SLD % ExchangeGhostData ( S_Shock )
-        call FF % UpdateDevice ( FF % SHOCK )
+        call S_Shock % UpdateDevice ( )
       end select
 
     class default
