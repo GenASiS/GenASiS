@@ -155,7 +155,7 @@ contains
       if ( UseDevice ) then
       
         !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-        !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, Curvilinear )
+        !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV, Curvilinear )
         do iV = 1, nV
           if ( .not. IsProperCell ( iV ) ) &
             cycle
@@ -168,7 +168,7 @@ contains
       else
       
         !$OMP  parallel do &
-        !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, Curvilinear )
+        !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV, Curvilinear )
         do iV = 1, nV
           if ( .not. IsProperCell ( iV ) ) &
             cycle
@@ -185,7 +185,7 @@ contains
       if ( UseDevice ) then
         
         !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-        !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, Curvilinear )
+        !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV, Curvilinear )
         do iV = 1, nV
           if ( .not. IsProperCell ( iV ) ) &
             cycle
@@ -199,7 +199,7 @@ contains
 
         if ( nDimensions > 1 ) then
           !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-          !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, Curvilinear )
+          !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV, Curvilinear )
           do iV = 1, nV
             if ( .not. IsProperCell ( iV ) ) &
               cycle
@@ -213,7 +213,7 @@ contains
       else 
 
         !$OMP  parallel do &
-        !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, Curvilinear )
+        !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV, Curvilinear )
         do iV = 1, nV
           if ( .not. IsProperCell ( iV ) ) &
             cycle
@@ -227,7 +227,7 @@ contains
 
         if ( nDimensions > 1 ) then
           !$OMP  parallel do &
-          !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, Curvilinear )
+          !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV, Curvilinear )
           do iV = 1, nV
             if ( .not. IsProperCell ( iV ) ) &
               cycle
@@ -290,7 +290,7 @@ contains
       if ( UseDevice ) then
         
         !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-        !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, Curvilinear )
+        !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV, Curvilinear )
         do iV = 1, nV
           if ( .not. IsProperCell ( iV ) ) &
             cycle
@@ -304,7 +304,7 @@ contains
       else
 
         !$OMP  parallel do &
-        !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, Curvilinear )
+        !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV, Curvilinear )
         do iV = 1, nV
           if ( .not. IsProperCell ( iV ) ) &
             cycle
@@ -321,7 +321,7 @@ contains
       if ( UseDevice ) then
       
         !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-        !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, Curvilinear )
+        !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV, Curvilinear )
         do iV = 1, nV
           if ( .not. IsProperCell ( iV ) ) &
             cycle
@@ -337,7 +337,7 @@ contains
       
         if ( nDimensions > 1 ) then
           !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-          !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, Curvilinear )
+          !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV, Curvilinear )
           do iV = 1, nV
             if ( .not. IsProperCell ( iV ) ) &
               cycle
@@ -352,7 +352,7 @@ contains
       else 
       
         !$OMP  parallel do &
-        !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, Curvilinear )
+        !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV, Curvilinear )
         do iV = 1, nV
           if ( .not. IsProperCell ( iV ) ) &
             cycle
@@ -368,7 +368,7 @@ contains
       
         if ( nDimensions > 1 ) then
           !$OMP  parallel do &
-          !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, Curvilinear )
+          !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV, Curvilinear )
           do iV = 1, nV
             if ( .not. IsProperCell ( iV ) ) &
               cycle

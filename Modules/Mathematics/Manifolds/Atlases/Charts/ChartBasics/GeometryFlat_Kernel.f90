@@ -159,7 +159,7 @@ contains
     if ( UseDevice ) then
 
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV )
       do iV = oValue + 1, oValue + nValues
         M_DD_22 ( iV )  =  1.0_KDR
         M_DD_33 ( iV )  =  1.0_KDR
@@ -170,7 +170,7 @@ contains
 
     else
 
-      !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV ) 
+      !$OMP parallel do schedule ( OMP_SCHEDULE_HOST ) private ( iV ) 
       do iV = oValue + 1, oValue + nValues
         M_DD_22 ( iV )  =  1.0_KDR
         M_DD_33 ( iV )  =  1.0_KDR
@@ -198,7 +198,7 @@ contains
     if ( UseDevice ) then
 
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV )
       do iV = oValue + 1, oValue + nValues
         M_DD_22 ( iV )  =  1.0_KDR
         M_DD_33 ( iV )  =  RP ( iV ) ** 2 
@@ -213,7 +213,7 @@ contains
 
     else
 
-      !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV )
+      !$OMP parallel do schedule ( OMP_SCHEDULE_HOST ) private ( iV )
       do iV = oValue + 1, oValue + nValues
         M_DD_22 ( iV )  =  1.0_KDR
         M_DD_33 ( iV )  =  RP ( iV ) ** 2 
@@ -247,7 +247,7 @@ contains
     if ( UseDevice ) then      
     
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, Sin_Th )
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV, Sin_Th )
       do iV = oValue + 1, oValue + nValues
 
         select case ( nDimensions )
@@ -274,7 +274,7 @@ contains
     
     else
     
-      !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV, Sin_Th )
+      !$OMP parallel do schedule ( OMP_SCHEDULE_HOST ) private ( iV, Sin_Th )
       do iV = oValue + 1, oValue + nValues
 
         select case ( nDimensions )
@@ -320,13 +320,13 @@ contains
     
     if ( UseDevice ) then
       !$OMP  OMP_TARGET_DIRECTIVE parallel do private ( iV ) &
-      !$OMP& schedule ( OMP_SCHEDULE )
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET )
       do iV = 1, nV
         X_I ( iV )  =  X ( iV )  -  dX_L ( iV )
       end do
       !$OMP end OMP_TARGET_DIRECTIVE parallel do
     else      
-      !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV ) 
+      !$OMP parallel do schedule ( OMP_SCHEDULE_HOST ) private ( iV ) 
       do iV = 1, nV
         X_I ( iV )  =  X ( iV )  -  dX_L ( iV )
       end do

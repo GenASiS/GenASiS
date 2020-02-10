@@ -78,7 +78,7 @@ contains
     
     if ( UseDevice ) then
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE )
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET )
       do iV = 1, nV
         A ( iV ) =  A ( iV ) +  C * B ( iV )
       end do

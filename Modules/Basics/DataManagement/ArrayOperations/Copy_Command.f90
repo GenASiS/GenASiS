@@ -319,13 +319,13 @@ contains
     
     if ( UseDevice ) then 
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE )
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET )
       do iV = 1, nV
         B ( iV ) = A ( iV )
       end do
       !$OMP end OMP_TARGET_DIRECTIVE parallel do
     else
-      !$OMP parallel do private ( iV ) schedule ( OMP_SCHEDULE )
+      !$OMP parallel do private ( iV ) schedule ( OMP_SCHEDULE_HOST )
       do iV = 1, nV
         B ( iV ) = A ( iV )
       end do
@@ -381,7 +381,7 @@ contains
 
     if ( UseDevice ) then
       !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
-      !$OMP& private ( iV, jV, kV ) schedule ( OMP_SCHEDULE )
+      !$OMP& private ( iV, jV, kV ) schedule ( OMP_SCHEDULE_TARGET )
       do kV = 1, nV ( 3 )
         do jV = 1, nV ( 2 )
           do iV = 1, nV ( 1 )
@@ -392,7 +392,7 @@ contains
       !$OMP  end OMP_TARGET_DIRECTIVE parallel do
     else 
       !$OMP  parallel do private ( iV, jV, kV ) collapse ( 3 ) & 
-      !$OMP& schedule ( OMP_SCHEDULE )
+      !$OMP& schedule ( OMP_SCHEDULE_HOST )
       do kV = 1, nV ( 3 )
         do jV = 1, nV ( 2 )
           do iV = 1, nV ( 1 )
@@ -530,7 +530,7 @@ contains
     if ( UseDevice ) then
       
       !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iS, jS, kS, iT )
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iS, jS, kS, iT )
       do kV = oSource ( 3 ) + 1, oSource ( 3 ) + nSource ( 3 )
         do jV = oSource ( 2 ) + 1, oSource ( 2 ) + nSource ( 2 )
           do iV = oSource ( 1 ) + 1, oSource ( 1 ) + nSource ( 1 )
@@ -552,7 +552,7 @@ contains
     else
 
       !$OMP  parallel do collapse ( 3 ) &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iS, jS, kS, iT )
+      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iS, jS, kS, iT )
       do kV = oSource ( 3 ) + 1, oSource ( 3 ) + nSource ( 3 )
         do jV = oSource ( 2 ) + 1, oSource ( 2 ) + nSource ( 2 )
           do iV = oSource ( 1 ) + 1, oSource ( 1 ) + nSource ( 1 )
@@ -608,7 +608,7 @@ contains
     if ( UseDevice ) then
     
       !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 )&
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iT, jT, kT, iS )
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iT, jT, kT, iS )
       do kV = oTarget ( 3 ) + 1, oTarget ( 3 ) + nTarget ( 3 )
         do jV = oTarget ( 2 ) + 1, oTarget ( 2 ) + nTarget ( 2 )
           do iV = oTarget ( 1 ) + 1, oTarget ( 1 ) + nTarget ( 1 )
@@ -630,7 +630,7 @@ contains
     else
       
       !$OMP  parallel do collapse ( 3 )&
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iT, jT, kT, iS )
+      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iT, jT, kT, iS )
       do kV = oTarget ( 3 ) + 1, oTarget ( 3 ) + nTarget ( 3 )
         do jV = oTarget ( 2 ) + 1, oTarget ( 2 ) + nTarget ( 2 )
           do iV = oTarget ( 1 ) + 1, oTarget ( 1 ) + nTarget ( 1 )
@@ -667,7 +667,7 @@ contains
 
     nV = size ( A )
 
-    !$OMP parallel do private ( iV ) schedule ( OMP_SCHEDULE )
+    !$OMP parallel do private ( iV ) schedule ( OMP_SCHEDULE_HOST )
     do iV = 1, nV
       B ( iV ) = A ( iV )
     end do
@@ -817,7 +817,7 @@ contains
     nV = shape ( B )
 
     !$OMP  parallel do private ( iV, jV, kV ) collapse ( 3 ) &
-    !$OMP& schedule ( OMP_SCHEDULE )
+    !$OMP& schedule ( OMP_SCHEDULE_HOST )
     do kV = 1, nV ( 3 )
       do jV = 1, nV ( 2 )
         do iV = 1, nV ( 1 )
@@ -847,7 +847,7 @@ contains
     nV = shape ( B )
 
     !$OMP  parallel do private ( iV, jV, kV ) collapse ( 3 ) &
-    !$OMP& schedule ( OMP_SCHEDULE )
+    !$OMP& schedule ( OMP_SCHEDULE_HOST )
     do kV = 1, nV ( 3 )
       do jV = 1, nV ( 2 )
         do iV = 1, nV ( 1 )

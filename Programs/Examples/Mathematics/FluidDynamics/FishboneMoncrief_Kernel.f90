@@ -28,14 +28,14 @@ contains
     if ( UseDevice ) then
 
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV )
       do iV = 1, nV
         F_1 ( iV )  =  - G * M * N ( iV )  /  R ( iV ) ** 2
       end do
       !$OMP  end OMP_TARGET_DIRECTIVE parallel do
 
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV )
       do iV = 1, nV
         if ( .not. IsProperCell ( iV ) ) &
           cycle
@@ -48,13 +48,13 @@ contains
     
     else
     
-      !$OMP  parallel do schedule ( OMP_SCHEDULE ) private ( iV )
+      !$OMP  parallel do schedule ( OMP_SCHEDULE_HOST ) private ( iV )
       do iV = 1, nV
         F_1 ( iV )  =  - G * M * N ( iV )  /  R ( iV ) ** 2
       end do
       !$OMP  end parallel do
 
-      !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV )
+      !$OMP parallel do schedule ( OMP_SCHEDULE_HOST ) private ( iV )
       do iV = 1, nV
         if ( .not. IsProperCell ( iV ) ) &
           cycle

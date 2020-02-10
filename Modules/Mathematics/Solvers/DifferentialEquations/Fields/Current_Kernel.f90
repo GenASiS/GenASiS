@@ -28,7 +28,7 @@ contains
     if ( UseDevice ) then
     
       !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 2 ) &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, jV ) 
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV, jV ) 
       do jV = 1, nVariables
         do iV = 1, nValues
           DFV_I ( iV, jV )  =  1.0_KDR
@@ -39,7 +39,7 @@ contains
     else
       
       !$OMP  parallel do collapse ( 2 ) &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV, jV ) 
+      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV, jV ) 
       do jV = 1, nVariables
         do iV = 1, nValues
           DFV_I ( iV, jV )  =  1.0_KDR
@@ -69,7 +69,7 @@ contains
     if ( UseDevice ) then
     
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV )
       do iV = 1, nValues
         AP_I ( iV ) = max ( 0.0_KDR, + LP_IL ( iV ), + LP_IR ( iV ) )
         AM_I ( iV ) = max ( 0.0_KDR, - LM_IL ( iV ), - LM_IR ( iV ) )
@@ -78,7 +78,7 @@ contains
     
     else
     
-      !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV ) 
+      !$OMP parallel do schedule ( OMP_SCHEDULE_HOST ) private ( iV ) 
       do iV = 1, nValues
         AP_I ( iV ) = max ( 0.0_KDR, + LP_IL ( iV ), + LP_IR ( iV ) )
         AM_I ( iV ) = max ( 0.0_KDR, - LM_IL ( iV ), - LM_IR ( iV ) )
@@ -107,7 +107,7 @@ contains
     if ( UseDevice ) then
     
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV )
       do iV = 1, nV
         F_I ( iV ) &
           =  (    AP_I ( iV ) * F_IL ( iV ) &

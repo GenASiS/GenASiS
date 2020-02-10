@@ -25,7 +25,7 @@ contains
     
     if ( UseDevice ) then
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV )
       do iV = 1, size ( N )
         KVM ( iV ) = KVM ( iV )  -  dT * N ( iV ) * A
         KVE ( iV ) = KVE ( iV )  -  dT * N ( iV ) * A * VY ( iV )
@@ -35,7 +35,7 @@ contains
       !$OMP  end OMP_TARGET_DIRECTIVE parallel do
     
     else
-      !$OMP parallel do schedule ( OMP_SCHEDULE ) private ( iV )
+      !$OMP parallel do schedule ( OMP_SCHEDULE_HOST ) private ( iV )
       do iV = 1, size ( N )
         KVM ( iV ) = KVM ( iV )  -  dT * N ( iV ) * A
         KVE ( iV ) = KVE ( iV )  -  dT * N ( iV ) * A * VY ( iV )

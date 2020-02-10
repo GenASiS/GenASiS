@@ -28,7 +28,7 @@ contains
     if ( UseDevice ) then
     
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV )
       do iV = 1, nValues
         G ( iV )  =  E ( iV )  +  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV )  &
                                               +  S_2 ( iV ) * V_2 ( iV )  &
@@ -39,7 +39,7 @@ contains
     else
       
       !$OMP  parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV )
       do iV = 1, nValues
         G ( iV )  =  E ( iV )  +  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV )  &
                                               +  S_2 ( iV ) * V_2 ( iV )  &
@@ -71,7 +71,7 @@ contains
     if ( UseDevice ) then
 
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV )
       do iV = 1, nValues
         DS ( iV )  =  SB ( iV )  *  N ( iV )
       end do !-- iV
@@ -80,7 +80,7 @@ contains
     else
       
       !$OMP  parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV )
       do iV = 1, nValues
         DS ( iV )  =  SB ( iV )  *  N ( iV )
       end do !-- iV
@@ -110,7 +110,7 @@ contains
     if ( UseDevice ) then
 
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV )
       do iV = 1, nValues
         if ( D ( iV )  >  N_Min ) then
             N ( iV )  =  D ( iV )
@@ -136,7 +136,7 @@ contains
       !$OMP  end OMP_TARGET_DIRECTIVE parallel do
       
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV )
       do iV = 1, nValues
         if ( E ( iV ) < 0.0_KDR ) then
           E ( iV ) = 0.0_KDR
@@ -150,7 +150,7 @@ contains
     else 
       
       !$OMP  parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV )
       do iV = 1, nValues
         if ( D ( iV )  >  N_Min ) then
             N ( iV )  =  D ( iV )
@@ -176,7 +176,7 @@ contains
       !$OMP  end parallel do
         
       !$OMP  parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV )
       do iV = 1, nValues
         if ( E ( iV ) < 0.0_KDR ) then
           E ( iV ) = 0.0_KDR
@@ -211,7 +211,7 @@ contains
     if ( UseDevice ) then
 
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV )
       do iV = 1, nValues
         if ( N ( iV ) > 0.0_KDR ) then
           SB ( iV ) = DS ( iV ) / N ( iV )
@@ -224,7 +224,7 @@ contains
     else
     
       !$OMP  parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV )
       do iV = 1, nValues
         if ( N ( iV ) > 0.0_KDR ) then
           SB ( iV ) = DS ( iV ) / N ( iV )
@@ -258,7 +258,7 @@ contains
     if ( UseDevice ) then
 
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV )
       do iV = 1, nValues
         if ( CS ( iV ) > 0.0_KDR ) then
           MN ( iV ) = sqrt (                      V_1 ( iV ) * V_1 ( iV )  &
@@ -272,7 +272,7 @@ contains
       !$OMP  end OMP_TARGET_DIRECTIVE parallel do
 
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV )
       do iV = 1, nValues
         FEP_1 ( iV )  =  V_1 ( iV )  +  CS ( iV ) 
         FEP_2 ( iV )  =  V_2 ( iV )  +  sqrt ( M_UU_22 ( iV ) ) * CS ( iV ) 
@@ -286,7 +286,7 @@ contains
     else
     
       !$OMP  parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV )
       do iV = 1, nValues
         if ( CS ( iV ) > 0.0_KDR ) then
           MN ( iV ) = sqrt (                      V_1 ( iV ) * V_1 ( iV )  &
@@ -300,7 +300,7 @@ contains
       !$OMP  end parallel do
 
       !$OMP  parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV )
       do iV = 1, nValues
         FEP_1 ( iV )  =  V_1 ( iV )  +  CS ( iV ) 
         FEP_2 ( iV )  =  V_2 ( iV )  +  sqrt ( M_UU_22 ( iV ) ) * CS ( iV ) 
@@ -337,7 +337,7 @@ contains
     if ( UseDevice ) then
 
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) &
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) &
       !$OMP& private ( iV, MD_Numerator, S_Numerator, MD_Numerator_Inv )
       do iV = 1, nValues
 
@@ -363,7 +363,7 @@ contains
     else 
 
       !$OMP  parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) &
+      !$OMP& schedule ( OMP_SCHEDULE_HOST ) &
       !$OMP& private ( iV, MD_Numerator, S_Numerator, MD_Numerator_Inv )
       do iV = 1, nValues
 
@@ -451,7 +451,7 @@ contains
     if ( UseDevice ) then
             
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV )
       do iV = 1, nValues
 
         V_1_ICL ( iV )  =  V_1_IL ( iV )
@@ -522,7 +522,7 @@ contains
     else 
 
       !$OMP  parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV )
       do iV = 1, nValues
 
         V_1_ICL ( iV )  =  V_1_IL ( iV )
@@ -614,7 +614,7 @@ contains
     if ( UseDevice ) then
 
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV )
       do iV = 1, nValues
 
         !-- If flagged for diffusive flux, leave HLL flux in place
@@ -638,7 +638,7 @@ contains
     else
 
       !$OMP  parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV )
       do iV = 1, nValues
 
         !-- If flagged for diffusive flux, leave HLL flux in place
@@ -681,7 +681,7 @@ contains
     if ( UseDevice ) then
 
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV )
       do iV = 1, nValues
         F_S_Dim ( iV )  =  F_S_Dim ( iV )  +  P ( iV )
         F_G     ( iV )  =  ( G ( iV )  +  P ( iV ) ) * V_Dim ( iV )
@@ -692,7 +692,7 @@ contains
     else
 
       !$OMP  parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) private ( iV )
+      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV )
       do iV = 1, nValues
         F_S_Dim ( iV )  =  F_S_Dim ( iV )  +  P ( iV )
         F_G     ( iV )  =  ( G ( iV )  +  P ( iV ) ) * V_Dim ( iV )

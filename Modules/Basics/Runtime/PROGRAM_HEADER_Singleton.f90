@@ -979,12 +979,13 @@ contains
     call get_environment_variable &
            ( 'OMP_SCHEDULE', OMP_SetSchedule, Length, Status, .false. )
     
-    !-- Set default OMP schedule if not in env. var.
+    !-- Set default OMP schedule to "guided" if not set in env. var.
     if ( Length == 0 ) &
       call OMP_SET_SCHEDULE ( OMP_SCHED_GUIDED, -1 )
     
     OMP_ScheduleLabelPrefix = ''
-    if ( OffloadEnabled ( ) ) then  !-- hardcoded to (static, 1) with offload
+    if ( OffloadEnabled ( ) .and. GetNumberOfDevices ( ) >= 1 ) then  
+      !-- per Build/Preprocessor, hardcoded to "(static, 1)" for offload
       OMP_ScheduleKind = OMP_SCHED_STATIC
       OMP_ScheduleChunkSize = 1
     else
