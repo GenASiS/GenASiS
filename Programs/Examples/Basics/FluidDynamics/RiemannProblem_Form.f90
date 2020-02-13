@@ -201,8 +201,6 @@ contains
            ( VelocityUnitOption = spread ( SpeedUnit, 1, 3 ), &
              DensityUnitOption = DensityUnit, EnergyUnitOption = EnergyUnit )
 
-    call PF % UpdateDevice ( )
-    
     end associate !-- X, etc.
     end select !-- PF
     end associate !-- DM

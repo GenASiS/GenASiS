@@ -122,7 +122,8 @@ contains
         CLS => CLE % ConservationLawStep, &
         T => PROGRAM_HEADER % Timer ( iTimerComputation ) )
 
-    call CLS % Initialize ( CLE % ConservedFields )    
+    call CLS % Initialize ( CLE % ConservedFields )
+    call CLE % ConservedFields % UpdateDevice ( )
 
     CLE % Time = CLE % StartTime
 
@@ -157,7 +158,7 @@ contains
       if ( CLE % Time >= CLE % WriteTime ) then
 
         call T % Stop ( )
-
+        
         call DM % Write &
                ( TimeOption = CLE % Time / CLE % TimeUnit, &
                  CycleNumberOption = CLE % iCycle )
@@ -190,16 +191,28 @@ contains
       FEM_1, FEM_2, FEM_3
     real ( KDR ) :: &
       RampFactor
+    type ( StorageForm ) :: &
+      Eigenspeed
     type ( CollectiveOperation_R_Form ) :: &
       CO
-
+    
     associate &
       ( DM => CLE % DistributedMesh, &
-        CF => CLE % ConservedFields )
+        CF => CLE % ConservedFields, &
+        T_DT_H  => PROGRAM_HEADER % Timer & 
+                     ( CLE % ConservationLawStep % iTimerDataTransferHost ) )
 
     RampFactor &
       = min ( real ( CLE % iCycle + 1, KDR ) / CLE % nRampCycles, 1.0_KDR )
-
+      
+    call Eigenspeed % Initialize &
+           ( CF, iaSelectedOption = [ CF % FAST_EIGENSPEED_PLUS ( : ), &
+                                      CF % FAST_EIGENSPEED_MINUS ( : ) ] )
+    
+    call T_DT_H % Start ( )
+    call Eigenspeed % UpdateHost ( )
+    call T_DT_H % Stop ( )
+    
     !-- Only proper cells!
 
     call DM % SetVariablePointer &
