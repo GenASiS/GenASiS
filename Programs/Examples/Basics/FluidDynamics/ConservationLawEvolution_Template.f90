@@ -69,6 +69,24 @@ module ConservationLawEvolution_Template
         TimeStepLocal
     end subroutine ComputeTimeStepKernel
 
+
+    module subroutine ComputeTimeStepKernel_OMP &
+                 ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, &
+                   CellWidth, nDimensions, oV, TimeStepLocal )
+      use Basics
+      implicit none
+      real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+        FEP_1, FEP_2, FEP_3, &
+        FEM_1, FEM_2, FEM_3
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        CellWidth
+      integer ( KDI ), intent ( in ) :: &
+        nDimensions, &
+        oV
+      real ( KDR ), intent ( out ) :: &
+        TimeStepLocal
+    end subroutine ComputeTimeStepKernel_OMP
+
   end interface 
 
 contains
@@ -235,15 +253,15 @@ contains
     RampFactor &
       = min ( real ( CLE % iCycle + 1, KDR ) / CLE % nRampCycles, 1.0_KDR )
       
-    call Eigenspeed % Initialize &
-           ( CF, iaSelectedOption = [ CF % FAST_EIGENSPEED_PLUS ( : ), &
-                                      CF % FAST_EIGENSPEED_MINUS ( : ) ] )
+    !call Eigenspeed % Initialize &
+    !       ( CF, iaSelectedOption = [ CF % FAST_EIGENSPEED_PLUS ( : ), &
+    !                                  CF % FAST_EIGENSPEED_MINUS ( : ) ] )
     
     call T_TS % Stop ( )
     
-    call T_DT_E % Start ( )
-    call Eigenspeed % UpdateHost ( )
-    call T_DT_E % Stop ( )
+    !call T_DT_E % Start ( )
+    !call Eigenspeed % UpdateHost ( )
+    !call T_DT_E % Stop ( )
     
     call T_TS % Start ( )
     
@@ -266,14 +284,19 @@ contains
            ( PROGRAM_HEADER % Communicator, &
              nOutgoing = [ 1 ], nIncoming = [ 1 ] )
     associate ( nCPB => DM % nCellsPerBrick )
-    call ComputeTimeStepKernel &
-           ( FEP_1 ( 1 : nCPB ( 1 ), 1 : nCPB ( 2 ), 1 : nCPB ( 3 ) ), &
-             FEP_2 ( 1 : nCPB ( 1 ), 1 : nCPB ( 2 ), 1 : nCPB ( 3 ) ), &
-             FEP_3 ( 1 : nCPB ( 1 ), 1 : nCPB ( 2 ), 1 : nCPB ( 3 ) ), &
-             FEM_1 ( 1 : nCPB ( 1 ), 1 : nCPB ( 2 ), 1 : nCPB ( 3 ) ), &
-             FEM_2 ( 1 : nCPB ( 1 ), 1 : nCPB ( 2 ), 1 : nCPB ( 3 ) ), &
-             FEM_3 ( 1 : nCPB ( 1 ), 1 : nCPB ( 2 ), 1 : nCPB ( 3 ) ), &
-             DM % CellWidth, DM % nDimensions, CO % Outgoing % Value ( 1 ) )
+    !call ComputeTimeStepKernel &
+    !       ( FEP_1 ( 1 : nCPB ( 1 ), 1 : nCPB ( 2 ), 1 : nCPB ( 3 ) ), &
+    !         FEP_2 ( 1 : nCPB ( 1 ), 1 : nCPB ( 2 ), 1 : nCPB ( 3 ) ), &
+    !         FEP_3 ( 1 : nCPB ( 1 ), 1 : nCPB ( 2 ), 1 : nCPB ( 3 ) ), &
+    !         FEM_1 ( 1 : nCPB ( 1 ), 1 : nCPB ( 2 ), 1 : nCPB ( 3 ) ), &
+    !         FEM_2 ( 1 : nCPB ( 1 ), 1 : nCPB ( 2 ), 1 : nCPB ( 3 ) ), &
+    !         FEM_3 ( 1 : nCPB ( 1 ), 1 : nCPB ( 2 ), 1 : nCPB ( 3 ) ), &
+    !         DM % CellWidth, DM % nDimensions, CO % Outgoing % Value ( 1 ) )
+    call ComputeTimeStepKernel_OMP &
+           ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, DM % CellWidth, &
+             DM % nDimensions, DM % nGhostLayers ( 1 ), &
+             CO % Outgoing % Value ( 1 ) )
+    
     end associate !-- nCPB
     call CO % Reduce ( REDUCTION % MIN )
 
