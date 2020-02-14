@@ -10,26 +10,6 @@ contains
 
   module procedure ComputeTimeStepKernel
   
-    select case ( nDimensions ) 
-    case ( 1 ) 
-      TimeStepLocal &
-        = CellWidth ( 1 ) &
-          / maxval ( max ( FEP_1, -FEM_1 ) )
-    case ( 2 ) 
-      TimeStepLocal &
-        = minval ( CellWidth ( 1 : 2 ) ) &
-          / maxval ( max ( FEP_1, FEP_2, -FEM_1, -FEM_2 ) )
-    case ( 3 ) 
-      TimeStepLocal &
-        = minval ( CellWidth ) &
-          / maxval ( max ( FEP_1, FEP_2, FEP_3, -FEM_1, -FEM_2, -FEM_3 ) )
-    end select
-
-  end procedure ComputeTimeStepKernel
-
-
-  module procedure ComputeTimeStepKernel_OMP
-  
     integer ( KDI ) :: &
       iV, jV, kV
     integer ( KDI ), dimension ( 3 ) :: &
@@ -46,18 +26,9 @@ contains
     where ( shape ( FEP_1 ) > 1 )
       uV = shape ( FEP_1 ) - oV
     end where
-  
-    select case ( nDimensions ) 
-    case ( 1 ) 
-      TimeStepLocal &
-        = CellWidth ( 1 ) &
-          / maxval ( max ( FEP_1, -FEM_1 ) )
-    case ( 2 ) 
-      TimeStepLocal &
-        = minval ( CellWidth ( 1 : 2 ) ) &
-          / maxval ( max ( FEP_1, FEP_2, -FEM_1, -FEM_2 ) )
-    case ( 3 ) 
+    
     MaxSpeed = - huge ( 1.0_KDR )
+
     !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
     !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV, jV, kV) &
     !$OMP& reduction ( max : MaxSpeed )
@@ -73,15 +44,9 @@ contains
     end do
     !$OMP  end OMP_TARGET_DIRECTIVE parallel do
     
-    !call Show ( MaxSpeed, 'MaxSpeed OMP', CONSOLE % INFO_2 )
-    !call Show &
-    !       ( maxval ( max ( FEP_1, FEP_2, FEP_3, -FEM_1, -FEM_2, -FEM_3 ) ), &
-    !         'MaxSpeed Fortran', CONSOLE % INFO_2 )
-    
-    TimeStepLocal = minval ( CellWidth ) / MaxSpeed
-    end select
+    TimeStepLocal = minval ( CellWidth ( 1 : nDimensions ) ) / MaxSpeed
 
-  end procedure ComputeTimeStepKernel_OMP
+  end procedure ComputeTimeStepKernel
 
 
 end submodule ConservationLawEvolution_Kernel
