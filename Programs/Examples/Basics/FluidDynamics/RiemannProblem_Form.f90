@@ -43,6 +43,8 @@ contains
       DensityUnit, &
       EnergyUnit, &
       SpeedUnit
+    type ( StorageForm ) :: &
+      Primitive
 
     RP % Type = 'a RiemannProblem' 
 
@@ -59,7 +61,8 @@ contains
     call PF % Initialize ( DM, NameOption = 'PolytropicFluid' )
     call PF % AllocateDevice ( )
     
-    call DM % SetGhostExchange ( PF )
+    call Primitive % Initialize ( PF, iaSelectedOption = PF % iaPrimitive )
+    call DM % SetGhostExchange ( Primitive )
 
     !-- Left and Right states
 
