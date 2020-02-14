@@ -51,6 +51,26 @@ module ConservationLawEvolution_Template
       private :: &
         ComputeTimeStepKernel
 
+  interface
+  
+    module subroutine ComputeTimeStepKernel &
+                 ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, &
+                   CellWidth, nDimensions, TimeStepLocal )
+      use Basics
+      implicit none
+      real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+        FEP_1, FEP_2, FEP_3, &
+        FEM_1, FEM_2, FEM_3
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        CellWidth
+      integer ( KDI ), intent ( in ) :: &
+        nDimensions
+      real ( KDR ), intent ( out ) :: &
+        TimeStepLocal
+    end subroutine ComputeTimeStepKernel
+
+  end interface 
+
 contains
 
 
@@ -265,38 +285,6 @@ contains
     end associate !-- DM, etc.
 
   end subroutine ComputeTimeStep
-
-
-  subroutine ComputeTimeStepKernel &
-               ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, &
-                 CellWidth, nDimensions, TimeStepLocal )
-
-    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
-      FEP_1, FEP_2, FEP_3, &
-      FEM_1, FEM_2, FEM_3
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      CellWidth
-    integer ( KDI ), intent ( in ) :: &
-      nDimensions
-    real ( KDR ), intent ( out ) :: &
-      TimeStepLocal
-
-    select case ( nDimensions ) 
-    case ( 1 ) 
-      TimeStepLocal &
-        = CellWidth ( 1 ) &
-          / maxval ( max ( FEP_1, -FEM_1 ) )
-    case ( 2 ) 
-      TimeStepLocal &
-        = minval ( CellWidth ( 1 : 2 ) ) &
-          / maxval ( max ( FEP_1, FEP_2, -FEM_1, -FEM_2 ) )
-    case ( 3 ) 
-      TimeStepLocal &
-        = minval ( CellWidth ) &
-          / maxval ( max ( FEP_1, FEP_2, FEP_3, -FEM_1, -FEM_2, -FEM_3 ) )
-    end select
-
-  end subroutine ComputeTimeStepKernel
 
 
 end module ConservationLawEvolution_Template

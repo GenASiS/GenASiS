@@ -9,6 +9,7 @@ FLUID = \
   PolytropicFluid_Form.o \
   PressurelessFluid_Kernel.o \
   PressurelessFluid_Form.o \
+  ConservationLawEvolution_Kernel.o \
   ConservationLawEvolution_Template.o \
   ConservationLawStep_Kernel.o \
   ConservationLawStep_Form.o \
@@ -70,6 +71,11 @@ ConservationLawEvolution_Template.o: \
   ConservedFields_Template.o \
   ConservationLawStep_Form.o \
   ConservationLawEvolution_Template.f90
+
+ConservationLawEvolution_Kernel.o: \
+  Basics.o \
+  ConservationLawEvolution_Template.o \
+  ConservationLawEvolution_Kernel.f90
 
 PressurelessFluid_Form.o: \
   Basics.o \
