@@ -14,6 +14,10 @@ module ConservationLawEvolution_Template
       nRampCycles, &
       nWrite, &
       nCycles
+    integer ( KDI ), private :: &
+      iTimerComputation, &
+      iTimer_DT_Eigenspeed, &
+      iTimerTimeStep
     real ( KDR ) :: &
       CourantFactor, &
       StartTime, &
@@ -96,7 +100,7 @@ contains
     CLE % WriteTimeInterval = ( CLE % FinishTime - CLE % StartTime ) / CLE % nWrite
     call PROGRAM_HEADER % GetParameter &
            ( CLE % WriteTimeInterval, 'WriteTimeInterval' )
-
+           
     !-- Extensions are responsible for initializing CLE % ConservedFields
 
     !-- CLE % ConservationLawStep initialized below in CLE % Evolve
@@ -111,16 +115,20 @@ contains
     class ( ConservationLawEvolutionTemplate ), intent ( inout ) :: &
       CLE
       
-    integer ( KDI ) :: &
-      iTimerComputation
-      
     call PROGRAM_HEADER % AddTimer &
-           ( 'Computational', iTimerComputation, Level = 1 )
-    
+           ( 'Computational', &
+             CLE % iTimerComputation, Level = 1 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'DataTransfer Eigenspeed', &
+             CLE % iTimer_DT_Eigenspeed, Level = 2 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'ComputeTimeStep', &
+             CLE % iTimerTimeStep, Level = 2 )
+
     associate &
       ( DM  => CLE % DistributedMesh, &
         CLS => CLE % ConservationLawStep, &
-        T => PROGRAM_HEADER % Timer ( iTimerComputation ) )
+        T => PROGRAM_HEADER % Timer ( CLE % iTimerComputation ) )
 
     call CLS % Initialize ( CLE % ConservedFields )
     call CLE % ConservedFields % UpdateDevice ( )
@@ -195,13 +203,15 @@ contains
       Eigenspeed
     type ( CollectiveOperation_R_Form ) :: &
       CO
-    
+      
     associate &
       ( DM => CLE % DistributedMesh, &
         CF => CLE % ConservedFields, &
-        T_DT_H  => PROGRAM_HEADER % Timer & 
-                     ( CLE % ConservationLawStep % iTimerDataTransferHost ) )
-
+        T_DT_E  => PROGRAM_HEADER % Timer ( CLE % iTimer_DT_Eigenspeed ), &
+        T_TS    => PROGRAM_HEADER % Timer ( CLE % iTimerTimeStep ) )
+    
+    call T_TS % Start ( )
+    
     RampFactor &
       = min ( real ( CLE % iCycle + 1, KDR ) / CLE % nRampCycles, 1.0_KDR )
       
@@ -209,9 +219,13 @@ contains
            ( CF, iaSelectedOption = [ CF % FAST_EIGENSPEED_PLUS ( : ), &
                                       CF % FAST_EIGENSPEED_MINUS ( : ) ] )
     
-    call T_DT_H % Start ( )
+    call T_TS % Stop ( )
+    
+    call T_DT_E % Start ( )
     call Eigenspeed % UpdateHost ( )
-    call T_DT_H % Stop ( )
+    call T_DT_E % Stop ( )
+    
+    call T_TS % Start ( )
     
     !-- Only proper cells!
 
@@ -246,6 +260,8 @@ contains
     CLE % TimeStep &
       = RampFactor * CLE % CourantFactor * CO % Incoming % Value ( 1 )
 
+    call T_TS % Stop ( )
+ 
     end associate !-- DM, etc.
 
   end subroutine ComputeTimeStep
