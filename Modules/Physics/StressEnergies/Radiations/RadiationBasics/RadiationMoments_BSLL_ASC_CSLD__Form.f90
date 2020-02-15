@@ -25,8 +25,6 @@ module RadiationMoments_BSLL_ASC_CSLD__Form
         Units => null ( )
       character ( LDF ) :: &
         RadiationType = ''
-      class ( FieldAtlasTemplate ), allocatable :: &
-        EnergyIntegral
       class ( Field_BSLL_ASC_CSLD_Template ), pointer :: &
         Interactions_BSLL_ASC_CSLD => null ( )
   contains
@@ -171,7 +169,7 @@ contains
 !             IgnorabilityOption  = IgnorabilityOption )
 
     call CB % ComputeEnergyIntegral ( )
-    select type ( RMA => CB % EnergyIntegral )
+    select type ( RMA => CB % BundleIntegral )
     class is ( RadiationMoments_ASC_Form )
       call RMA % ComputeTally &
              ( ComputeChangeOption = ComputeChangeOption, &
@@ -318,15 +316,15 @@ contains
 
     !-- EnergyIntegral
 
-    call FB % AllocateField ( FB % EnergyIntegral )
-    select type ( EI => FB % EnergyIntegral )
+    call FB % AllocateField ( FB % BundleIntegral )
+    select type ( BI => FB % BundleIntegral )
     class is ( RadiationMoments_ASC_Form )
-      call EI % Initialize &
+      call BI % Initialize &
              ( B % Base_ASC, RadiationType = FB % RadiationType, &
                MomentsType = 'GREY', Units = FB % Units, &
                NameShortOption = trim ( FB % NameShort ) // '_Integral', &
                IgnorabilityOption = CONSOLE % INFO_5 )
-    end select !-- EI
+    end select !-- BI
 
     end associate !-- B
 
@@ -367,7 +365,7 @@ contains
       RMEI, &
       RMF
 
-    select type ( RMA => RMB % EnergyIntegral )
+    select type ( RMA => RMB % BundleIntegral )
     class is ( RadiationMoments_ASC_Form )
       RMEI => RMA % RadiationMoments ( )
     end select !-- RMA

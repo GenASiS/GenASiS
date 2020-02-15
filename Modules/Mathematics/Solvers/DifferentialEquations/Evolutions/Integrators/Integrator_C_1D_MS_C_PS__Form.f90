@@ -9,6 +9,7 @@ module Integrator_C_1D_MS_C_PS__Form
   use Basics
   use Fields
   use EvolutionBasics
+  use TimeSeries_C_1D_C__Form
   use Integrator_C_1D_C_PS__Template
 
   implicit none
@@ -68,6 +69,13 @@ contains
              FinishTimeOption = FinishTimeOption, &
              CourantFactorOption = CourantFactorOption, &
              nWriteOption = nWriteOption )
+
+    select type ( TS  =>  I % TimeSeries )
+    type is ( TimeSeries_C_1D_C_Form )
+      associate ( CA_1D  =>  I % Current_BSLL_ASC_CSLD_1D )
+      call TS % Initialize ( I, CA_1D )
+      end associate !-- CA_1D
+    end select !-- TS
 
   end subroutine Initialize_I
 

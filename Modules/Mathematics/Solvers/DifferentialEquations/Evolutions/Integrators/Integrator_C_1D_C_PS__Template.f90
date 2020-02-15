@@ -13,6 +13,7 @@ module Integrator_C_1D_C_PS__Template
   use Steps
   use Integrator_Template
   use Integrator_C_PS__Form
+  use TimeSeries_C_1D_C__Form
 
   implicit none
   private
@@ -115,6 +116,11 @@ contains
                   CONSOLE % WARNING )
       call Show ( 'InitializeTemplate_C_1D_C_PS', 'subroutine', &
                   CONSOLE % WARNING )
+    end if
+
+    if ( .not. allocated ( I % TimeSeries ) ) then
+      allocate ( TimeSeries_C_1D_C_Form :: I % TimeSeries )
+      !-- Initialized in MS or PS extension of this class
     end if
 
     if ( .not. associated ( I % ComputeTimeStepLocal ) ) &

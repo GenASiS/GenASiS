@@ -650,7 +650,7 @@ contains
 
       select type ( RMB => I % Current_BSLL_ASC_CSLD_1D ( 1 ) % Element )
       class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
-      select type ( RMA => RMB % EnergyIntegral )
+      select type ( RMA => RMB % BundleIntegral )
       class is ( RadiationMoments_ASC_Form )
         RM => RMA % RadiationMoments ( )
       end select !-- RMA
@@ -719,7 +719,7 @@ contains
     select type ( RMB => I % Current_BSLL_ASC_CSLD_1D ( 1 ) % Element )
     class is ( RadiationMoments_BSLL_ASC_CSLD_Form )
 
-    select type ( RMA => RMB % EnergyIntegral )
+    select type ( RMA => RMB % BundleIntegral )
     class is ( RadiationMoments_ASC_Form )
 
     RMEI => RMA % RadiationMoments ( )

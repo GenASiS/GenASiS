@@ -57,18 +57,18 @@ module Tally_C__Form
       ComputeFacePositions
   end type Tally_C_Form
 
-  type, public :: Tally_C_Element_Form
+  type, public :: Tally_C_ElementForm
     class ( Tally_C_Form ), allocatable :: &
       Element
   contains
     final :: &
       FinalizeElement
-  end type Tally_C_Element_Form
+  end type Tally_C_ElementForm
 
-  type, public :: Tally_C_Pointer_Form
+  type, public :: Tally_C_PointerForm
     class ( Tally_C_Form ), pointer :: &
       Pointer => null ( )
-  end type Tally_C_Pointer_Form
+  end type Tally_C_PointerForm
 
 contains
 
@@ -344,7 +344,7 @@ contains
 
   impure elemental subroutine FinalizeElement ( TE )
     
-    type ( Tally_C_Element_Form ), intent ( inout ) :: &
+    type ( Tally_C_ElementForm ), intent ( inout ) :: &
       TE
 
     if ( allocated ( TE % Element ) ) deallocate ( TE % Element )

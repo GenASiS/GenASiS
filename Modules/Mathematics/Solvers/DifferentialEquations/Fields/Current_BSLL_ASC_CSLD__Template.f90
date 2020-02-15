@@ -16,6 +16,8 @@ module Current_BSLL_ASC_CSLD__Template
 
   type, public, extends ( Field_BSLL_ASC_CSLD_Template ), abstract :: &
     Current_BSLL_ASC_CSLD_Template
+      class ( FieldAtlasTemplate ), allocatable :: &
+        BundleIntegral
   contains
     procedure, public, pass :: &
       CurrentFiber

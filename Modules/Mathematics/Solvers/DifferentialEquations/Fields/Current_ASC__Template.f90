@@ -20,7 +20,7 @@ module Current_ASC__Template
         TallyInterior, &
         TallyTotal, &
         TallyChange
-      class ( Tally_C_Element_Form ), dimension ( : ), allocatable :: &
+      class ( Tally_C_ElementForm ), dimension ( : ), allocatable :: &
         TallyBoundaryLocal, &
         TallyBoundaryGlobal
 !         TallySources
