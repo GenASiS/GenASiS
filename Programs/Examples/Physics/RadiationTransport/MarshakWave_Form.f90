@@ -144,6 +144,12 @@ contains
     MW % Units % MomentumDensity_D &
       =  UNIT % GRAM  *  UNIT % CENTIMETER ** (-2)  /  UNIT % SECOND
 
+    MW % Units % Number           =  UNIT % MOLE
+    MW % Units % Energy           =  UNIT % ERG
+    MW % Units % Momentum         =  UNIT % GRAM  *  UNIT % CENTIMETER  &
+                                     /  UNIT % SECOND
+    MW % Units % AngularMomentum  =  UNIT % GRAM  *  UNIT % CENTIMETER ** 2  &
+                                     /  UNIT % SECOND
 
     !-- Initialization
 
