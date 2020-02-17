@@ -329,7 +329,8 @@ contains
     integer ( KDI ) :: &
       iD  !-- iDimension
     type ( TimerForm ), pointer :: &
-      Timer
+      Timer, &
+      Timer_DTH
 
     Timer => PROGRAM_HEADER % TimerPointer ( I % Storage % iTimerDivergence )
     if ( associated ( Timer ) ) call Timer % Start ( )
@@ -362,8 +363,12 @@ contains
       end select !-- Grid
       
       if ( I % UseIncrementStream ) then
+        Timer_DTH => PROGRAM_HEADER % TimerPointer &
+                       ( I % Storage % iTimerDataToHost )
+        call Timer_DTH % Start ( )
         call I % Current % UpdateHost ( )
         call Increment % UpdateHost ( )
+        call Timer_DTH % Stop ( )
         call Copy ( I % Current % Value, &
                     I % Output ( iCURRENT ) % Value )
         call Copy ( Increment % Value, &
@@ -561,7 +566,8 @@ contains
    type ( StorageForm ) :: &
      Reconstructed
     type ( TimerForm ), pointer :: &
-      Timer
+      Timer, &
+      Timer_DTH
 
     Timer => PROGRAM_HEADER % TimerPointer &
                ( I % Storage % iTimerReconstruction )
@@ -630,8 +636,12 @@ contains
     end associate !-- iaI, iaO
 
     if ( I % UseIncrementStream ) then
+      Timer_DTH => PROGRAM_HEADER % TimerPointer &
+                     ( I % Storage % iTimerDataToHost )
+      call Timer_DTH % Start ( )
       call C_IL % UpdateHost ( )
       call C_IR % UpdateHost ( )
+      call Timer_DTH % Stop ( )
       call Copy ( C_IL % Value, I % Output ( iCURRENT_IL ) % Value )
       call Copy ( C_IR % Value, I % Output ( iCURRENT_IR ) % Value )
     end if
@@ -651,7 +661,8 @@ contains
       iDimension
 
     type ( TimerForm ), pointer :: &
-      Timer
+      Timer, &
+      Timer_DTH
 
     Timer => PROGRAM_HEADER % TimerPointer ( I % Storage % iTimerFluxes )
     if ( associated ( Timer ) ) call Timer % Start ( )
@@ -675,9 +686,13 @@ contains
              iDimension )
 
     if ( I % UseIncrementStream ) then
+      Timer_DTH => PROGRAM_HEADER % TimerPointer &
+                     ( I % Storage % iTimerDataToHost )
+      call Timer_DTH % Start ( )
       call F_IL % UpdateHost ( )
       call F_IR % UpdateHost ( )
-      call F_I % UpdateHost ( )
+      call F_I  % UpdateHost ( )
+      call Timer_DTH % Stop ( )
       call Copy ( F_IL % Value, I % Output ( iFLUX_IL ) % Value )
       call Copy ( F_IR % Value, I % Output ( iFLUX_IR ) % Value )
       call Copy ( F_I % Value, I % Output ( iFLUX_I ) % Value )

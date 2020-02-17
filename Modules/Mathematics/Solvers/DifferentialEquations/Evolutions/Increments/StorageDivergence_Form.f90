@@ -13,7 +13,9 @@ module StorageDivergence_Form
       iTimerDivergence     = 0, &
       iTimerReconstruction = 0, &
       iTimerFluxes         = 0, &
-      iTimerIncrement      = 0
+      iTimerIncrement      = 0, &
+      iTimerDataToDevice   = 0, &
+      iTimerDataToHost     = 0
     type ( StorageForm ), allocatable :: &
       Geometry_I, &              !-- Geometry_Inner
       Current_IL, Current_IR, &  !-- Current_InnerLeft, Current_InnerRight
@@ -62,6 +64,12 @@ contains
                Level = BaseLevel + 1 )
       call PROGRAM_HEADER % AddTimer &
              ( 'Increment', SD % iTimerIncrement, &
+               Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'DataToDevice', SD % iTimerDataToDevice, &
+               Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'DataToHost', SD % iTimerDataToHost, &
                Level = BaseLevel + 1 )
 
   end subroutine InitializeTimers

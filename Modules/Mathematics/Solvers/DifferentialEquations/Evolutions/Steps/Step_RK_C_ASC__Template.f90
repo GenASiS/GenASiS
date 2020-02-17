@@ -49,7 +49,9 @@ module Step_RK_C_ASC__Template
         iTimerSources           = 0, &
         iTimerRelaxation        = 0, &
         iTimerGhost             = 0, &
-        iTimerBoundaryFluence   = 0
+        iTimerBoundaryFluence   = 0, &
+        iTimerDataToDevice      = 0, &
+        iTimerDataToHost        = 0
 !         iStrgeometryValue
       type ( Real_1D_Form ), dimension ( : ), allocatable :: &
         dLogVolumeJacobian_dX
@@ -584,6 +586,12 @@ contains
       call PROGRAM_HEADER % AddTimer &
              ( 'GhostIncrement', S % iTimerGhost, &
                Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'DataToDevice', S % iTimerDataToDevice, &
+               Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'DataToHost', S % iTimerDataToHost, &
+               Level = BaseLevel + 1 )
 
   end subroutine InitializeTimersStage
 
@@ -609,9 +617,18 @@ contains
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
-
+      
+    type ( TimerForm ), pointer :: &
+      Timer_DTD
+      
+    Timer_DTD => PROGRAM_HEADER % TimerPointer ( S % iTimerDataToDevice )
+    
+    call Timer_DTD % Start ( )
+    
     call S % BoundaryFluence_CSL % UpdateDevice ( )
-    call S % Current % UpdateDevice ( )
+    !call S % Current % UpdateDevice ( )
+    
+    call Timer_DTD % Stop ( )
 
     call S % LoadSolution_C ( S % Solution, S % Current )
 
@@ -622,11 +639,20 @@ contains
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
+      
+    type ( TimerForm ), pointer :: &
+      Timer_DTH
 
     call S % StoreSolution_C ( S % Current, S % Solution )
     
-    call S % Current % UpdateHost ( )
+    Timer_DTH => PROGRAM_HEADER % TimerPointer ( S % iTimerDataToHost )
+    
+    call Timer_DTH % Start ( )
+    
+    !call S % Current % UpdateHost ( )
     call S % BoundaryFluence_CSL % UpdateHost ( )
+    
+    call Timer_DTH % Stop ( )
 
   end subroutine StoreSolution
 
@@ -1075,7 +1101,9 @@ contains
       TimerDivergence, &
       TimerSources, &
       TimerRelaxation, &
-      TimerGhost
+      TimerGhost, &
+      Timer_DTD, &
+      Timer_DTH
 
     !-- Divergence
     if ( associated ( S % ApplyDivergence_C ) ) then
@@ -1102,9 +1130,15 @@ contains
                iStrgeometryValueOption )
       if ( associated ( TimerRelaxation ) ) call TimerRelaxation % Stop ( )
     end if
-
+    
+    Timer_DTH => PROGRAM_HEADER % TimerPointer ( S % iTimerDataToHost )
+    
+    call Timer_DTH % Start ( )
+    
     if ( K % AllocatedDevice ) &
       call K % UpdateHost ( )
+    
+    call Timer_DTH % Stop ( )
     
     if ( associated ( S % CoarsenSingularities ) ) &
       call S % CoarsenSingularities ( K )
@@ -1123,8 +1157,12 @@ contains
       end select !-- Grid
     end if !-- ApplyDivergence_C
     
+    Timer_DTD => PROGRAM_HEADER % TimerPointer ( S % iTimerDataToDevice )
+    
+    call Timer_DTD % Start ( )
     if ( K % AllocatedDevice ) &
       call K % UpdateDevice ( )
+    call Timer_DTD % Stop ( )
 
   end subroutine ComputeStage_C
 
@@ -1430,9 +1468,11 @@ contains
     associate ( C => ID % Current )
 
     if ( iStage == 1 ) &
+      !-- FIXME: We need UseDevice for sources
       call Clear ( C % Sources % Value ( :, : C % N_CONSERVED ) )
 
     do iC = 1, C % N_CONSERVED
+      !-- FIXME: We need UseDevice for sources
       call RecordDivergence &
              ( C % Sources % Value ( :, iC ), Increment % Value ( :, iC ), &
                TimeStep, Weight_RK = S % B ( iStage ) )
