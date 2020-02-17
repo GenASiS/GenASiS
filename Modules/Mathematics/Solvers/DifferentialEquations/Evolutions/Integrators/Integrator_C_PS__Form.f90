@@ -119,7 +119,7 @@ contains
     if ( .not. associated ( I % ComputeTimeStepLocal ) ) &
       I % ComputeTimeStepLocal  =>  ComputeTimeStepLocal
 
-    !-- if allocated above, initialize
+    !-- if TimeSeries allocated above, initialize
     select type ( TS => I % TimeSeries )
     type is ( TimeSeries_C_Form )
       associate ( CA => I % Current_ASC )

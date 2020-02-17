@@ -48,8 +48,7 @@ contains
       CA
 
     integer ( KDI ) :: &
-      iS, &  !-- iSelected
-      iSS    !-- iSelectedSeries
+      iS  !-- iSelected
     type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
       SeriesUnit
     character ( LDL ), dimension ( : ), allocatable :: &
@@ -109,7 +108,7 @@ contains
       call CI % AddStorage ( SC )
       end associate !-- CI
     end if
-    end associate !-- ST, etc.
+    end associate !-- SI, etc.
 
     end associate !-- TT, etc.
 
