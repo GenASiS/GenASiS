@@ -30,6 +30,8 @@ module TimeSeries_C_1D_C__Form
       Initialize_C_1D_C
     generic, public :: &
       Initialize => Initialize_C_1D_C
+    procedure, public, pass :: &
+      Record
     final :: &
       Finalize
   end type TimeSeries_C_1D_C_Form
@@ -153,6 +155,46 @@ contains
     nullify ( CA )
 
   end subroutine Initialize_C_1D_C
+
+
+  subroutine Record ( TS, MaxTime, MinTime, MeanTime )
+
+    class ( TimeSeries_C_1D_C_Form ), intent ( inout ) :: &
+      TS
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      MaxTime, &
+      MinTime, &
+      MeanTime
+
+    integer ( KDI ) :: &
+      iS, &  !-- iSelected
+      iCA
+
+    call TS % TimeSeries_C_Form % Record ( MaxTime, MinTime, MeanTime )
+
+    do iCA = 1, size ( TS % SeriesInterior_1D )
+      associate &
+        ( SIV => TS % SeriesInterior_1D ( iCA ) % Value, &
+          SBV => TS % SeriesBoundary_1D ( iCA ) % Value, &
+          STV => TS % SeriesTotal_1D ( iCA ) % Value, &
+          SCV => TS % SeriesChange_1D ( iCA ) % Value, &
+          iV  => TS % iTime, &
+          TIV => TS % TallyInterior_1D ( iCA ) % Pointer % Value, &
+          TBV => TS % TallyBoundary_1D ( iCA ) % Pointer % Value, &
+          TTV => TS % TallyTotal_1D ( iCA ) % Pointer % Value, &
+          TCV => TS % TallyChange_1D ( iCA ) % Pointer % Value, &
+          nS  => TS % TallyTotal_1D ( iCA ) % Pointer % nSelected, &
+          iaS => TS % TallyTotal_1D ( iCA ) % Pointer % iaSelected )
+      do iS = 1, nS
+        SIV ( iV, iS ) = TIV ( iaS ( iS ) )
+        SBV ( iV, iS ) = TBV ( iaS ( iS ) )
+        STV ( iV, iS ) = TTV ( iaS ( iS ) )
+        SCV ( iV, iS ) = TCV ( iaS ( iS ) )
+      end do !-- iS
+      end associate !-- STV, etc.
+    end do !-- iCA
+
+  end subroutine Record
 
 
   impure elemental subroutine Finalize ( TS )
