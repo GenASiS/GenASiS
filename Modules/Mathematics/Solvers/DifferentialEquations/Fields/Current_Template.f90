@@ -36,6 +36,13 @@ module Current_Template
       ALPHA_MINUS     = 2, &
       ALPHA_CENTER    = 3, &
       N_SOLVER_SPEEDS = 3
+    integer ( KDI ), private :: &
+      iTimerComputeFromPrimitive, &
+      iTimerComputeFromConserved, &
+      iTimerComputeSolverSpeeds_HLL, &
+      iTimerComputeFluxes_HLL, &
+      iTimerComputeRawFluxes, &
+      iTimerComputeDiffusionFactor_HLL
     integer ( KDI ), dimension ( : ), allocatable :: &
       iaPrimitive, &
       iaConserved, &
@@ -276,6 +283,25 @@ contains
     call Show ( C % UseLimiter, 'UseLimiter', C % IGNORABILITY )
     if ( C % UseLimiter ) &
       call Show ( C % LimiterParameter, 'LimiterParameter', C % IGNORABILITY )
+      
+    call PROGRAM_HEADER % AddTimer &
+           ( 'ComputeFromPrimitive', C % iTimerComputeFromPrimitive, &
+             Level = 6 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'ComputeFromConserved', C % iTimerComputeFromConserved, &
+             Level = 6 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'ComputeSolverSpeeds_HLL', C % iTimerComputeSolverSpeeds_HLL, &
+             Level = 6 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'ComputeFluxes_HLL', C % iTimerComputeFluxes_HLL, &
+             Level = 6 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'ComputeRawFluxes', C % iTimerComputeRawFluxes, &
+             Level = 6 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'ComputeDiffusionFactor_HLL', &
+             C % iTimerComputeDiffusionFactor_HLL, Level = 6 )
 
   end subroutine InitializeTemplate
 
@@ -594,10 +620,16 @@ contains
            ( F_IR, G, C_IR, G_I, iDimension )
            
     associate &
+      ( T_SS => PROGRAM_HEADER % Timer ( C % iTimerComputeSolverSpeeds_HLL ), &
+        T_F => PROGRAM_HEADER % Timer ( C % iTimerComputeFluxes_HLL ) )
+      
+    associate &
       ( SS_I_V => SS_I % Value, &
         C_IL_V => C_IL % Value, &
         C_IR_V => C_IR % Value )
-            
+    
+    call T_SS % Start ( )
+    
     call ComputeSolverSpeeds_HLL_Kernel &
            ( SS_I_V ( :, C % ALPHA_PLUS ), &
              SS_I_V ( :, C % ALPHA_MINUS ), &
@@ -607,11 +639,15 @@ contains
              C_IR_V ( :, C % FAST_EIGENSPEED_MINUS ( iDimension ) ), &
              UseDeviceOption = C % AllocatedDevice )
     
+    call T_SS % Stop ( )
+    
     end associate   !-- SS_I_V
     
     call C % ComputeDiffusionFactor_HLL ( DF_I, Grid, iDimension )
 
     associate ( iaC => C % iaConserved )
+    
+    call T_F % Start ( )
     
     do iF = 1, C % N_CONSERVED
       call ComputeFluxes_HLL_Kernel &
@@ -626,7 +662,11 @@ contains
                UseDeviceOption = C % AllocatedDevice )
     end do !-- iF
     
+    call T_F % Stop ( )
+    
     end associate !-- iaC
+    
+    end associate !-- T_SS, T_F
 
   end subroutine ComputeFluxes_HLL
 
@@ -641,13 +681,22 @@ contains
       C
     integer ( KDI ), intent ( in ) :: &
       iDimension
-      
+    
+    associate &
+      ( T_CDF => PROGRAM_HEADER % Timer &
+                  ( C % iTimerComputeDiffusionFactor_HLL ) )
+    
+    call T_CDF % Start ( )
     !-- FIXME: This somehow gets error about ambiguous map
     !call C % SetDiffusionFactorUnity &
     !       ( DF_I % Value, UseDeviceOption = DF_I % AllocatedDevice )
     
     call C % SetDiffusionFactorUnity ( DF_I % Value )
     call DF_I % UpdateDevice ( ) 
+    
+    call T_CDF % Stop ( )
+    
+    end associate !-- T_CDF
 
   end subroutine ComputeDiffusionFactor_HLL
 
