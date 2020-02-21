@@ -22,29 +22,24 @@ contains
     if ( present ( UseDeviceOption ) ) &
       UseDevice = UseDeviceOption
 
-    nValues    = size ( DFV_I, dim = 1 )
-    nVariables = size ( DFV_I, dim = 2 )
+    nValues = size ( DFV_I )
     
     if ( UseDevice ) then
     
-      !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 2 ) &
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
       !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV, jV ) 
-      do jV = 1, nVariables
-        do iV = 1, nValues
-          DFV_I ( iV, jV )  =  1.0_KDR
-        end do !-- iV
-      end do !-- jV
+      do iV = 1, nValues
+        DFV_I ( iV )  =  1.0_KDR
+      end do !-- iV
       !$OMP end OMP_TARGET_DIRECTIVE parallel do
     
     else
       
-      !$OMP  parallel do collapse ( 2 ) &
+      !$OMP  parallel do &
       !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV, jV ) 
-      do jV = 1, nVariables
-        do iV = 1, nValues
-          DFV_I ( iV, jV )  =  1.0_KDR
-        end do !-- iV
-      end do !-- jV
+      do iV = 1, nValues
+        DFV_I ( iV )  =  1.0_KDR
+      end do !-- iV
       !$OMP end parallel do
       
     end if

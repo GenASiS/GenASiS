@@ -72,22 +72,22 @@ module Current_Template
       ComputeFromPrimitiveSelf
     procedure, private, pass ( C ) :: &
       ComputeFromPrimitiveOther
-    procedure, private, pass :: &
-      ComputeFromPrimitiveSelectGeometry
+    !procedure, private, pass :: &
+    !  ComputeFromPrimitiveSelectGeometry
     generic, public :: &
       ComputeFromPrimitive &
-        => ComputeFromPrimitiveSelf, ComputeFromPrimitiveOther, &
-           ComputeFromPrimitiveSelectGeometry
+        => ComputeFromPrimitiveSelf, ComputeFromPrimitiveOther !, &
+           !ComputeFromPrimitiveSelectGeometry
     procedure, private, pass :: &
       ComputeFromConservedSelf
     procedure, private, pass ( C ) :: &
       ComputeFromConservedOther
-    procedure, private, pass :: &
-      ComputeFromConservedSelectGeometry
+    !procedure, private, pass :: &
+    !  ComputeFromConservedSelectGeometry
     generic, public :: &
       ComputeFromConserved &
-        => ComputeFromConservedSelf, ComputeFromConservedOther, &
-           ComputeFromConservedSelectGeometry
+        => ComputeFromConservedSelf, ComputeFromConservedOther !, &
+           !ComputeFromConservedSelectGeometry
     procedure, public, pass ( C ) :: &
       ComputeFluxes
     procedure, public, pass :: &
@@ -170,7 +170,7 @@ module Current_Template
   
     module subroutine SetDiffusionFactorUnity ( DFV_I, UseDeviceOption )
       use Basics
-      real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
         DFV_I
       logical ( KDL ), intent ( in ), optional :: &
         UseDeviceOption
@@ -681,18 +681,21 @@ contains
       C
     integer ( KDI ), intent ( in ) :: &
       iDimension
+      
+    integer ( KDI ) :: &
+      iVariable
     
     associate &
       ( T_CDF => PROGRAM_HEADER % Timer &
                   ( C % iTimerComputeDiffusionFactor_HLL ) )
     
     call T_CDF % Start ( )
-    !-- FIXME: This somehow gets error about ambiguous map
-    !call C % SetDiffusionFactorUnity &
-    !       ( DF_I % Value, UseDeviceOption = DF_I % AllocatedDevice )
     
-    call C % SetDiffusionFactorUnity ( DF_I % Value )
-    call DF_I % UpdateDevice ( ) 
+    do iVariable = 1, DF_I % nVariables
+      call C % SetDiffusionFactorUnity &
+             ( DF_I % Value ( :, iVariable ), &
+               UseDeviceOption = DF_I % AllocatedDevice )
+    end do
     
     call T_CDF % Stop ( )
     
