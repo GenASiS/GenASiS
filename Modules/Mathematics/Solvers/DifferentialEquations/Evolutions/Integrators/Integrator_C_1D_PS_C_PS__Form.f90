@@ -1,10 +1,10 @@
-!-- Integrator_C_1D_MS_C_PS is a template for time evolution of multiple
+!-- Integrator_C_1D_PS_C_PS is a template for time evolution of multiple
 !   similar conserved currents on position space, and an additional conserved
 !   current on position space.
 
 module Integrator_C_1D_PS_C_PS__Form
 
-  !-- Integrator_Current_1D_MomentumSpace_Current_PositionSpace__Form
+  !-- Integrator_Current_1D_PositionSpace_Current_PositionSpace__Form
 
   use Basics
   use Fields
