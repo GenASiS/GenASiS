@@ -344,11 +344,13 @@ contains
         S_3   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 3 ) ) )
 
     call C % ComputeBaryonMassKernel &
-           ( M )
+           ( M, UseDeviceOption = C % AllocatedDevice )
     call C % ComputeDensityMomentumKernel &
-           ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
+           ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33, &
+             UseDeviceOption = C % AllocatedDevice )
     call C % ComputeEigenspeedsKernel_D &
-           ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3 )
+           ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3, &
+             UseDeviceOption = C % AllocatedDevice )
 
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
@@ -413,11 +415,13 @@ contains
         S_3   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 3 ) ) )
 
     call C % ComputeBaryonMassKernel &
-           ( M )
+           ( M, UseDeviceOption = C % AllocatedDevice )
     call C % ComputeDensityVelocityKernel &
-           ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33 )
+           ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33, &
+             UseDeviceOption = C % AllocatedDevice )
     call C % ComputeEigenspeedsKernel_D &
-           ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3 )
+           ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3, &
+             UseDeviceOption = C % AllocatedDevice )
 
     end associate !-- FEP_1, etc.
     end associate !-- M_UU_22, etc.
@@ -457,7 +461,6 @@ contains
       ( Value_RF => RawFlux % Value, &
         Value_C  => Storage_C % Value, &
         Value_G  => Storage_G % Value )
-        
       
     if ( present ( oValueOption ) ) then
       oV = oValueOption
