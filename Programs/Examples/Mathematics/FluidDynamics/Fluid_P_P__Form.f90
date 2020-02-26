@@ -303,6 +303,11 @@ contains
         SB    => FV ( oV + 1 : oV + nV, C % ENTROPY_PER_BARYON ), &
         K     => FV ( oV + 1 : oV + nV, C % POLYTROPIC_PARAMETER ) )
 
+    associate &
+      ( T_CFP => PROGRAM_HEADER % Timer ( C % iTimerComputeFromPrimitive ) )
+ 
+    call T_CFP % Start ( )
+    
     call C % ComputeBaryonMassKernel &
            ( M, UseDeviceOption = C % AllocatedDevice )
     call C % Apply_EOS_P_Kernel &
@@ -319,6 +324,10 @@ contains
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, MN, &
              M, N, V_1, V_2, V_3, S_1, S_2, S_3, P, Gamma, &
              M_UU_22, M_UU_33, UseDeviceOption = C % AllocatedDevice )
+    
+    call T_CFP % Stop ( )
+
+    end associate !-- T_CFP
 
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
@@ -396,6 +405,11 @@ contains
         MN    => FV ( oV + 1 : oV + nV, C % MACH_NUMBER ), &
         SB    => FV ( oV + 1 : oV + nV, C % ENTROPY_PER_BARYON ), &
         K     => FV ( oV + 1 : oV + nV, C % POLYTROPIC_PARAMETER ) )
+    
+    associate &
+      ( T_CFC => PROGRAM_HEADER % Timer ( C % iTimerComputeFromConserved ) )
+    
+    call T_CFC % Start ( )
 
     call C % ComputeBaryonMassKernel & 
            ( M, UseDeviceOption = C % AllocatedDevice )
@@ -414,6 +428,10 @@ contains
              M, N, V_1, V_2, V_3, S_1, S_2, S_3, P, Gamma, &
              M_UU_22, M_UU_33, UseDeviceOption = C % AllocatedDevice )
     
+    call T_CFC % Stop ( )
+    
+    end associate !-- T_CFC
+
     end associate !-- FEP_1, etc.
     end associate !-- M_UU_22, etc.
     end associate !-- FV, etc.

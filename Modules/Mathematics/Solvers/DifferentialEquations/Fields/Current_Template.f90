@@ -36,7 +36,7 @@ module Current_Template
       ALPHA_MINUS     = 2, &
       ALPHA_CENTER    = 3, &
       N_SOLVER_SPEEDS = 3
-    integer ( KDI ), private :: &
+    integer ( KDI ) :: &
       iTimerComputeFromPrimitive, &
       iTimerComputeFromConserved, &
       iTimerComputeSolverSpeeds_HLL, &
