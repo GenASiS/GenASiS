@@ -78,6 +78,7 @@ RadiationBox_Form.o: \
   Mathematics.o \
   Spaces.o \
   StressEnergies.o \
+  TimeSeriesRadiationFluid_Form.o \
   FluidBox_Form.o \
   RadiationBox_Form.f90
 

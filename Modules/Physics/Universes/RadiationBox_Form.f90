@@ -4,6 +4,7 @@ module RadiationBox_Form
   use Mathematics
   use Spaces
   use StressEnergies
+  use TimeSeriesRadiationFluid_Form
   use FluidBox_Form
 
   implicit none
@@ -131,12 +132,26 @@ contains
 
     select type ( I => RB % Integrator )
     class is ( Integrator_C_1D_C_PS_Template )
+
       I % ComputeTimeStepLocal => ComputeTimeStepLocal
+
+      if ( .not. allocated ( I % TimeSeries ) ) then
+        allocate ( TimeSeriesRadiationFluidForm :: I % TimeSeries )
+        !-- Initialized below after call to I % Initialize        
+      end if
+
       call I % Initialize &
              ( RB, Name, TimeUnitOption = RB % Units % Time, &
                FinishTimeOption = FinishTimeOption, &
                CourantFactorOption = CourantFactorOption, &
                nWriteOption = nWriteOption )
+
+      !-- if TimeSeries allocated above, initialize
+      select type ( TS => I % TimeSeries )
+      type is ( TimeSeriesRadiationFluidForm )
+        call TS % Initialize ( RB )
+      end select !-- TS
+
     end select !-- I
 
     call Show ( 'RadiationBox parameter', RB % IGNORABILITY )
