@@ -522,15 +522,9 @@ contains
 
     select case ( DM % nDimensions )
     case ( 1 ) 
-      do iS = 1, size ( DM % CurveImage % Storage )
-        call DM % CurveImage % Storage ( iS ) % UpdateHost ( )
-      end do
       call DM % CurveImage % Write &
              ( TimeOption = TimeOption, CycleNumberOption = CycleNumberOption )
     case default
-      do iS = 1, size ( DM % GridImage % Storage )
-        call DM % GridImage % Storage ( iS ) % UpdateHost ( )
-      end do
       call DM % GridImage % Write &
              ( TimeOption = TimeOption, CycleNumberOption = CycleNumberOption )
     end select
