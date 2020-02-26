@@ -188,12 +188,17 @@ module Fluid_P__Template
     end subroutine ComputeFluxes_HLLC_Kernel
 
     module subroutine ComputeRawFluxesTemplate_P_Kernel &
-                 ( F_S_Dim, F_G, G, P, V_Dim, UseDeviceOption )
+                 ( F_D, F_S_1, F_S_2, F_S_3, F_S_Dim, F_G, D, S_1, S_2, S_3, &
+                   G, P, V_Dim, UseDeviceOption )
       use Basics
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        F_D, &
+        F_S_1, F_S_2, F_S_3, &
         F_S_Dim, &
         F_G
       real ( KDR ), dimension ( : ), intent ( in ) :: &
+        D, &
+        S_1, S_2, S_3, &
         G, &
         P, &
         V_Dim
@@ -551,16 +556,15 @@ contains
       oValueOption
 
     integer ( KDI ) :: &
-      iMomentum, &
+      iDensity, &
+      iMomentumDim, &
       iEnergy
     integer ( KDI ) :: &
       oV, &  !-- oValue
       nV     !-- nValues
-
-    call C % Fluid_D_Form % ComputeRawFluxes &
-           ( RawFlux, G, Storage_C, Storage_G, iDimension, nValuesOption, &
-             oValueOption )
-             
+    integer ( KDI ), dimension ( 3 ) :: &
+      iMomentum
+    
     associate &
       ( Value_RF => RawFlux % Value, &
         Value_C  => Storage_C % Value, &
@@ -584,20 +588,37 @@ contains
     call T_CRF % Start ( )
     
     call Search &
+           ( C % iaConserved, C % CONSERVED_DENSITY, iDensity )
+    call Search &
+           ( C % iaConserved, C % MOMENTUM_DENSITY_D ( 1 ), iMomentum ( 1 ) )
+    call Search &
+           ( C % iaConserved, C % MOMENTUM_DENSITY_D ( 2 ), iMomentum ( 2 ) )
+    call Search &
+           ( C % iaConserved, C % MOMENTUM_DENSITY_D ( 3 ), iMomentum ( 3 ) )
+    call Search &
            ( C % iaConserved, C % MOMENTUM_DENSITY_D ( iDimension ), &
-             iMomentum )
+             iMomentumDim )
     call Search &
            ( C % iaConserved, C % CONSERVED_ENERGY, iEnergy )
     
     associate &
-      ( F_S_Dim => Value_RF ( oV + 1 : oV + nV, iMomentum ), &
+      ( F_D     => Value_RF ( oV + 1 : oV + nV, iDensity ), &
+        F_S_1   => Value_RF ( oV + 1 : oV + nV, iMomentum ( 1 ) ), &
+        F_S_2   => Value_RF ( oV + 1 : oV + nV, iMomentum ( 2 ) ), &
+        F_S_3   => Value_RF ( oV + 1 : oV + nV, iMomentum ( 3 ) ), &
+        F_S_Dim => Value_RF ( oV + 1 : oV + nV, iMomentumDim ), &
         F_G     => Value_RF ( oV + 1 : oV + nV, iEnergy ), &
-        G       => Value_C ( oV + 1 : oV + nV, C % CONSERVED_ENERGY ), &
-        P       => Value_C ( oV + 1 : oV + nV, C % PRESSURE ), &
-        V_Dim   => Value_C ( oV + 1 : oV + nV, C % VELOCITY_U ( iDimension ) ))
+        D     => Value_C ( oV + 1 : oV + nV, C % CONSERVED_DENSITY ), &
+        S_1   => Value_C ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 1 ) ), &
+        S_2   => Value_C ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 2 ) ), &
+        S_3   => Value_C ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 3 ) ), &
+        G     => Value_C ( oV + 1 : oV + nV, C % CONSERVED_ENERGY ), &
+        P     => Value_C ( oV + 1 : oV + nV, C % PRESSURE ), &
+        V_Dim => Value_C ( oV + 1 : oV + nV, C % VELOCITY_U ( iDimension ) ) )
     
     call ComputeRawFluxesTemplate_P_Kernel &
-           ( F_S_Dim, F_G, G, P, V_Dim, UseDeviceOption = C % AllocatedDevice )
+           ( F_D, F_S_1, F_S_2, F_S_3, F_S_Dim, F_G, D, S_1, S_2, S_3, &
+             G, P, V_Dim, UseDeviceOption = C % AllocatedDevice )
 
     end associate !-- F_S_Dim, etc.
     

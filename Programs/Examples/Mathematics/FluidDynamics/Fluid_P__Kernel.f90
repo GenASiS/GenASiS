@@ -547,6 +547,10 @@ contains
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
       !$OMP& schedule ( OMP_SCHEDULE_TARGET )
       do iV = 1, nValues
+        F_D   ( iV )   = D   ( iV ) * V_Dim ( iV ) 
+        F_S_1 ( iV )   = S_1 ( iV ) * V_Dim ( iV ) 
+        F_S_2 ( iV )   = S_2 ( iV ) * V_Dim ( iV ) 
+        F_S_3 ( iV )   = S_3 ( iV ) * V_Dim ( iV ) 
         F_S_Dim ( iV ) = F_S_Dim ( iV )  +  P ( iV )
         F_G     ( iV ) =     ( G ( iV )  +  P ( iV ) ) * V_Dim ( iV )
       end do
@@ -554,6 +558,10 @@ contains
     else
       !$OMP parallel do schedule ( OMP_SCHEDULE_HOST ) private ( iV )
       do iV = 1, nValues
+        F_D   ( iV )   = D   ( iV ) * V_Dim ( iV ) 
+        F_S_1 ( iV )   = S_1 ( iV ) * V_Dim ( iV ) 
+        F_S_2 ( iV )   = S_2 ( iV ) * V_Dim ( iV ) 
+        F_S_3 ( iV )   = S_3 ( iV ) * V_Dim ( iV ) 
         F_S_Dim ( iV ) = F_S_Dim ( iV )  +  P ( iV )
         F_G     ( iV ) =     ( G ( iV )  +  P ( iV ) ) * V_Dim ( iV )
       end do
