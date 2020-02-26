@@ -19,15 +19,17 @@ ApplyDeleptonization_F__Command.o: \
   StressEnergies.o \
   ApplyDeleptonization_F__Command.f90
 
-TimeSeriesRadiationFluid_Form.o: \
-  Mathematics.o \
-  TimeSeriesRadiationFluid_Form.f90
-
 Universe_Template.o: \
   Basics.o \
   Mathematics.o \
   StressEnergies.o \
   Universe_Template.f90
+
+TimeSeriesRadiationFluid_Form.o: \
+  Basics.o \
+  Mathematics.o \
+  Universe_Template.o \
+  TimeSeriesRadiationFluid_Form.f90
 
 FluidBox_Form.o: \
   Basics.o \
