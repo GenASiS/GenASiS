@@ -138,6 +138,27 @@ contains
     end associate !-- iaS
     end associate !-- TC
 
+    !-- Radiation indices
+
+    associate ( TC => TS % TallyChange_1D ( 1 ) % Pointer )
+    associate ( iaS => TC % iaSelected )
+    do iS = 1, TC % nSelected
+      if ( trim ( TC % Variable ( iaS ( iS ) ) )  ==  'Energy' ) then
+        TS % iEnergy_R  =  iaS ( iS )
+      else if ( trim ( TC % Variable ( iaS ( iS ) ) )  ==  'Momentum_1' ) then
+        TS % iMomentum_1_R  =  iaS ( iS )
+      else if ( trim ( TC % Variable ( iaS ( iS ) ) )  ==  'Momentum_2' ) then
+        TS % iMomentum_2_R  =  iaS ( iS )
+      else if ( trim ( TC % Variable ( iaS ( iS ) ) )  ==  'Momentum_3' ) then
+        TS % iMomentum_3_R  =  iaS ( iS )
+      else if ( trim ( TC % Variable ( iaS ( iS ) ) )  ==  'Number' ) &
+      then
+        TS % iNumber_R  =  iaS ( iS )
+      end if
+    end do !-- iS
+    end associate !-- iaS
+    end associate
+
   end subroutine Initialize_RF
 
 
@@ -170,20 +191,24 @@ contains
       SCRFV ( iV, 5 )  =  TCV ( TS % iNumber_F )
     end associate !-- TCV
 
-call Show ( '>>> Recording' )
-call Show ( TS % TallyChange % Variable, '>>> Variable_F' )
-call Show ( TS % iEnergy_F, '>>> iEnergy_F' )
-call Show ( TS % iMomentum_1_F, '>>> iMomentum_1_F' )
-call Show ( TS % iMomentum_2_F, '>>> iMomentum_2_F' )
-call Show ( TS % iMomentum_3_F, '>>> iMomentum_3_F' )
-call Show ( TS % iNumber_F, '>>> iNumber_F' )
-call Show ( SCRFV ( iV, 1 ), TS % SeriesChangeRadiationFluid % Unit ( 1 ), '>>> Energy fluid change' )
-call Show ( SCRFV ( iV, 2 ), TS % SeriesChangeRadiationFluid % Unit ( 2 ), '>>> Momentum_1 fluid change' )
-call Show ( SCRFV ( iV, 3 ), TS % SeriesChangeRadiationFluid % Unit ( 3 ), '>>> Momentum_2 fluid change' )
-call Show ( SCRFV ( iV, 4 ), TS % SeriesChangeRadiationFluid % Unit ( 4 ), '>>> Momentum_3 fluid change' )
-
     !-- Radiation contribution
 
+    do iR = 1, size ( TS % TallyChange_1D )
+
+      associate ( TCV => TS % TallyChange_1D ( iR ) % Pointer % Value )
+      SCRFV ( iV, 1 )  =  SCRFV ( iV, 1 )  +  TCV ( TS % iEnergy_R )
+      SCRFV ( iV, 2 )  =  SCRFV ( iV, 2 )  +  TCV ( TS % iMomentum_1_R )
+      SCRFV ( iV, 3 )  =  SCRFV ( iV, 3 )  +  TCV ( TS % iMomentum_2_R )
+      SCRFV ( iV, 4 )  =  SCRFV ( iV, 4 )  +  TCV ( TS % iMomentum_3_R )
+      if ( TS % iNumber_R > 0 ) then
+        if ( iR == TS % iSpeciesNumberPlus ) &
+          SCRFV ( iV, 5 )  =  SCRFV ( iV, 5 )  +  TCV ( TS % iNumber_R )
+        if ( iR == TS % iSpeciesNumberMinus ) &
+          SCRFV ( iV, 5 )  =  SCRFV ( iV, 5 )  -  TCV ( TS % iNumber_R )
+      end if
+      end associate !-- TCV
+
+    end do !-- iR
 
     end associate !-- SCRF, etc.
 
