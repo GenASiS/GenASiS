@@ -9,6 +9,15 @@ module TimeSeriesRadiationFluid_Form
 
   type, public, extends ( TimeSeries_C_1D_C_Form ) :: &
     TimeSeriesRadiationFluidForm
+      integer ( KDI ) :: &
+        iEnergy_F, &
+        iEnergy_R, &
+        iMomentum_1_F, iMomentum_2_F, iMomentum_3_F, &
+        iMomentum_1_R, iMomentum_2_R, iMomentum_3_R, &
+        iNumber_F = 0, &
+        iNumber_R = 0, &
+        iSpeciesNumberPlus = 0, &
+        iSpeciesNumberMinus = 0
       type ( StorageForm ), allocatable :: &
         SeriesChangeRadiationFluid
   contains
@@ -25,20 +34,24 @@ module TimeSeriesRadiationFluid_Form
 contains
 
 
-  subroutine Initialize_RF ( TS, U, iNumberPlusOption, iNumberMinusOption )
+  subroutine Initialize_RF &
+               ( TS, U, iSpeciesNumberPlusOption, iSpeciesNumberMinusOption )
 
     class ( TimeSeriesRadiationFluidForm ), intent ( inout ) :: &
       TS
     class ( UniverseTemplate ), intent ( in ) :: &
       U
     integer ( KDI ), intent ( in ), optional :: &
-      iNumberPlusOption, &
-      iNumberMinusOption
+      iSpeciesNumberPlusOption, &
+      iSpeciesNumberMinusOption
 
     integer ( KDI ) :: &
+      iS, &  !-- iSelected
       nVariables
     type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
       Unit
+    logical ( KDL ) :: &
+      TotalEnergyFound
     character ( LDL ), dimension ( : ), allocatable :: &
       Variable
 
@@ -53,9 +66,12 @@ contains
     end select !-- I
 
     nVariables = 4
-    if ( present ( iNumberPlusOption ) .or. present ( iNumberMinusOption ) ) &
+    if ( present ( iSpeciesNumberPlusOption ) &
+         .and. present ( iSpeciesNumberMinusOption ) ) &
     then
       nVariables = 5
+      TS % iSpeciesNumberPlus   =  iSpeciesNumberPlusOption
+      TS % iSpeciesNumberMinus  =  iSpeciesNumberMinusOption
     end if
 
     allocate ( Variable ( nVariables ) )
@@ -86,6 +102,42 @@ contains
     end if
     end associate !-- STC, etc.
 
+    !-- Fluid indices
+
+    associate ( TC => TS % TallyChange )
+    associate ( iaS => TC % iaSelected )
+
+    !-- Check for Fluid TotalEnergy, Momentum, and ElectronNumber
+    TotalEnergyFound = .false.
+    do iS = 1, TC % nSelected
+      if ( trim ( TC % Variable ( iaS ( iS ) ) )  ==  'TotalEnergy' ) then
+        TS % iEnergy_F  =  iaS ( iS )
+        TotalEnergyFound  =  .true.
+      else if ( trim ( TC % Variable ( iaS ( iS ) ) )  ==  'Momentum_1' ) then
+        TS % iMomentum_1_F  =  iaS ( iS )
+      else if ( trim ( TC % Variable ( iaS ( iS ) ) )  ==  'Momentum_2' ) then
+        TS % iMomentum_2_F  =  iaS ( iS )
+      else if ( trim ( TC % Variable ( iaS ( iS ) ) )  ==  'Momentum_3' ) then
+        TS % iMomentum_3_F  =  iaS ( iS )
+      else if ( trim ( TC % Variable ( iaS ( iS ) ) )  ==  'ElectronNumber' ) &
+      then
+        TS % iNumber_F  =  iaS ( iS )
+      end if
+    end do !-- iS
+
+    !-- If TotalEnergy not there, use FluidEnergy
+    if ( .not. TotalEnergyFound ) then
+      do iS = 1, TC % nSelected
+        if ( trim ( TC % Variable ( iaS ( iS ) ) )  ==  'FluidEnergy' ) then
+          TS % iEnergy_F  =  iaS ( iS )
+          exit
+        end if
+      end do !-- iS
+    end if
+
+    end associate !-- iaS
+    end associate !-- TC
+
   end subroutine Initialize_RF
 
 
@@ -99,68 +151,40 @@ contains
       MeanTime
 
     integer ( KDI ) :: &
-      iS, &  !-- iSelected
-      iEnergy, &
-      iMomentum_1, iMomentum_2, iMomentum_3
-    logical ( KDL ) :: &
-      TotalEnergyFound
+      iR  !-- iRadiation
 
     call TS % TimeSeries_C_1D_C_Form % Record ( MaxTime, MinTime, MeanTime )
 
     associate &
-      ( SCRF => TS % SeriesChangeRadiationFluid % Value, &
-          iV => TS % iTime )
+      ( SCRFV => TS % SeriesChangeRadiationFluid % Value, &
+           iV => TS % iTime )
+    !-- See SCRFV indices in Initialize_RF above
 
     !-- Fluid contribution
-
-    associate ( TC_F => TS % TallyChange )
-    associate ( iaS => TC_F % iaSelected )
-
-    !-- Check for Fluid TotalEnergy and Momentum
-    TotalEnergyFound = .false.
-    do iS = 1, TC_F % nSelected
-      if ( trim ( TC_F % Variable ( iaS ( iS ) ) )  ==  'TotalEnergy' ) then
-        iEnergy  =  iaS ( iS )
-        TotalEnergyFound  =  .true.
-      else if ( trim ( TC_F % Variable ( iaS ( iS ) ) )  ==  'Momentum_1' ) then
-        iMomentum_1  =  iaS ( iS )
-      else if ( trim ( TC_F % Variable ( iaS ( iS ) ) )  ==  'Momentum_2' ) then
-        iMomentum_2  =  iaS ( iS )
-      else if ( trim ( TC_F % Variable ( iaS ( iS ) ) )  ==  'Momentum_3' ) then
-        iMomentum_3  =  iaS ( iS )
-      end if
-    end do !-- iS
-
-    !-- If not there, use FluidEnergy
-    if ( .not. TotalEnergyFound ) then
-      do iS = 1, TC_F % nSelected
-        if ( trim ( TC_F % Variable ( iaS ( iS ) ) )  ==  'FluidEnergy' ) then
-          iEnergy  =  iaS ( iS )
-          exit
-        end if
-      end do !-- iS
-    end if
-
-    !-- See SCRF indices in Initialize_RF above
-    SCRF ( iV, 1 )  =  TC_F % Value ( iEnergy )
-    SCRF ( iV, 2 )  =  TC_F % Value ( iMomentum_1 )
-    SCRF ( iV, 3 )  =  TC_F % Value ( iMomentum_2 )
-    SCRF ( iV, 4 )  =  TC_F % Value ( iMomentum_3 )
+    associate ( TCV => TS % TallyChange % Value )
+    SCRFV ( iV, 1 )  =  TCV ( TS % iEnergy_F )
+    SCRFV ( iV, 2 )  =  TCV ( TS % iMomentum_1_F )
+    SCRFV ( iV, 3 )  =  TCV ( TS % iMomentum_2_F )
+    SCRFV ( iV, 4 )  =  TCV ( TS % iMomentum_3_F )
+    if ( TS % iNumber_F > 0 ) &
+      SCRFV ( iV, 5 )  =  TCV ( TS % iNumber_F )
+    end associate !-- TCV
 
 call Show ( '>>> Recording' )
-call Show ( TC_F % Variable, '>>> Variable_F' )
-call Show ( TotalEnergyFound, '>>> TotalEnergyFound' )
-call Show ( iEnergy, '>>> iEnergy' )
-call Show ( iMomentum_1, '>>> iMomentum_1' )
-call Show ( iMomentum_2, '>>> iMomentum_2' )
-call Show ( iMomentum_3, '>>> iMomentum_3' )
-call Show ( SCRF ( iV, 1 ), TS % SeriesChangeRadiationFluid % Unit ( 1 ), '>>> Energy fluid change' )
-call Show ( SCRF ( iV, 2 ), TS % SeriesChangeRadiationFluid % Unit ( 2 ), '>>> Momentum_1 fluid change' )
-call Show ( SCRF ( iV, 3 ), TS % SeriesChangeRadiationFluid % Unit ( 3 ), '>>> Momentum_2 fluid change' )
-call Show ( SCRF ( iV, 4 ), TS % SeriesChangeRadiationFluid % Unit ( 4 ), '>>> Momentum_3 fluid change' )
+call Show ( TS % TallyChange % Variable, '>>> Variable_F' )
+call Show ( TS % iEnergy_F, '>>> iEnergy_F' )
+call Show ( TS % iMomentum_1_F, '>>> iMomentum_1_F' )
+call Show ( TS % iMomentum_2_F, '>>> iMomentum_2_F' )
+call Show ( TS % iMomentum_3_F, '>>> iMomentum_3_F' )
+call Show ( TS % iNumber_F, '>>> iNumber_F' )
+call Show ( SCRFV ( iV, 1 ), TS % SeriesChangeRadiationFluid % Unit ( 1 ), '>>> Energy fluid change' )
+call Show ( SCRFV ( iV, 2 ), TS % SeriesChangeRadiationFluid % Unit ( 2 ), '>>> Momentum_1 fluid change' )
+call Show ( SCRFV ( iV, 3 ), TS % SeriesChangeRadiationFluid % Unit ( 3 ), '>>> Momentum_2 fluid change' )
+call Show ( SCRFV ( iV, 4 ), TS % SeriesChangeRadiationFluid % Unit ( 4 ), '>>> Momentum_3 fluid change' )
 
-    end associate !-- iaS
-    end associate !-- TC_F
+    !-- Radiation contribution
+
+
     end associate !-- SCRF, etc.
 
   end subroutine Record
