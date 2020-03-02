@@ -333,8 +333,10 @@ contains
     end associate !-- M_DD_22, etc.
     end associate !-- FV, etc.
 
-    if ( associated ( C % Value, Storage_C % Value ) ) &
-      call C % Features % Detect ( )
+    if ( associated ( C % Value, Storage_C % Value ) ) then
+      if ( trim ( C % RiemannSolverType ) == 'HLLC' ) &
+        call C % Features % Detect ( )
+    end if
 
   end subroutine ComputeFromPrimitiveCommon
 
@@ -436,8 +438,10 @@ contains
     end associate !-- M_UU_22, etc.
     end associate !-- FV, etc.
     
-    if ( associated ( C % Value, Storage_C % Value ) ) &
-      call C % Features % Detect ( )
+    if ( associated ( C % Value, Storage_C % Value ) ) then
+      if ( trim ( C % RiemannSolverType ) == 'HLLC' ) &
+        call C % Features % Detect ( )
+    end if
 
   end subroutine ComputeFromConservedCommon
 
