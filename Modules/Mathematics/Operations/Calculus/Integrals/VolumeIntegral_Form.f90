@@ -22,7 +22,8 @@ module VolumeIntegral_Form
 contains
 
 
-  subroutine Compute_CSL ( CSL, Integrand, Integral, IgnorabilityOption )
+  subroutine Compute_CSL &
+               ( CSL, Integrand, Integral, ReduceOption, IgnorabilityOption )
 
     class ( Chart_SL_Template ), intent ( in ) :: &
       CSL
@@ -30,6 +31,8 @@ contains
       Integrand
     real ( KDR ), dimension ( : ), intent ( out ) :: &
       Integral
+    logical ( KDL ), intent ( in ), optional :: &
+      ReduceOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
@@ -38,10 +41,15 @@ contains
       Ignorability
     real ( KDR ), dimension ( size ( Integral ) ) :: &
       MyIntegral
+    logical ( KDR ) :: &
+      Reduce
     type ( CollectiveOperation_R_Form ) :: &
       CO
     class ( GeometryFlatForm ), pointer :: &
       G
+
+    Reduce = .true.
+    if ( present ( ReduceOption ) ) Reduce = ReduceOption
 
     Ignorability = CONSOLE % INFO_5
     if ( present ( IgnorabilityOption ) ) Ignorability = IgnorabilityOption
@@ -52,7 +60,7 @@ contains
 
     associate ( A => CSL % Atlas )
 
-    if ( A % IsDistributed ) then
+    if ( A % IsDistributed .and. Reduce ) then
       call CO % Initialize &
              ( CSL % Atlas % Communicator, &
                nOutgoing = [ nI ], nIncoming = [ nI ] )
@@ -66,7 +74,7 @@ contains
     call Show ( 'Local contribution to VolumeIntegral', Ignorability )
     call Show ( MyIntegral, 'MyIntegral', Ignorability )
 
-    if ( A % IsDistributed ) then
+    if ( A % IsDistributed .and. Reduce ) then
       CO % Outgoing % Value = MyIntegral
       call CO % Reduce ( REDUCTION % SUM )
       Integral = CO % Incoming % Value
