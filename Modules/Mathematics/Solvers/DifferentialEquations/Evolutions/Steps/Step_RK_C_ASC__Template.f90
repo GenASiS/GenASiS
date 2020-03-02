@@ -50,8 +50,10 @@ module Step_RK_C_ASC__Template
         iTimerRelaxation        = 0, &
         iTimerGhost             = 0, &
         iTimerBoundaryFluence   = 0, &
-        iTimerDataToDevice      = 0, &
-        iTimerDataToHost        = 0
+        iTimerStepDataToDevice  = 0, &
+        iTimerStepDataToHost    = 0, &
+        iTimer_BF_DataToDevice  = 0, &
+        iTimer_BF_DataToHost    = 0
 !         iStrgeometryValue
       type ( Real_1D_Form ), dimension ( : ), allocatable :: &
         dLogVolumeJacobian_dX
@@ -587,10 +589,16 @@ contains
              ( 'GhostIncrement', S % iTimerGhost, &
                Level = BaseLevel + 1 )
       call PROGRAM_HEADER % AddTimer &
-             ( 'DataToDevice', S % iTimerDataToDevice, &
+             ( 'StepDataToDevice', S % iTimerStepDataToDevice, &
                Level = BaseLevel + 1 )
       call PROGRAM_HEADER % AddTimer &
-             ( 'DataToHost', S % iTimerDataToHost, &
+             ( 'StepDataToHost', S % iTimerStepDataToHost, &
+               Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'BF_DataToDevice', S % iTimer_BF_DataToDevice, &
+               Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'BF_DataToHost', S % iTimer_BF_DataToHost, &
                Level = BaseLevel + 1 )
 
   end subroutine InitializeTimersStage
@@ -621,7 +629,7 @@ contains
     type ( TimerForm ), pointer :: &
       Timer_DTD
       
-    Timer_DTD => PROGRAM_HEADER % TimerPointer ( S % iTimerDataToDevice )
+    Timer_DTD => PROGRAM_HEADER % TimerPointer ( S % iTimer_BF_DataToDevice )
     
     call Timer_DTD % Start ( )
     
@@ -645,7 +653,7 @@ contains
 
     call S % StoreSolution_C ( S % Current, S % Solution )
     
-    Timer_DTH => PROGRAM_HEADER % TimerPointer ( S % iTimerDataToHost )
+    Timer_DTH => PROGRAM_HEADER % TimerPointer ( S % iTimer_BF_DataToHost )
     
     call Timer_DTH % Start ( )
     
@@ -1131,7 +1139,7 @@ contains
       if ( associated ( TimerRelaxation ) ) call TimerRelaxation % Stop ( )
     end if
     
-    Timer_DTH => PROGRAM_HEADER % TimerPointer ( S % iTimerDataToHost )
+    Timer_DTH => PROGRAM_HEADER % TimerPointer ( S % iTimerStepDataToHost )
     
     call Timer_DTH % Start ( )
     
@@ -1157,7 +1165,7 @@ contains
       end select !-- Grid
     end if !-- ApplyDivergence_C
     
-    Timer_DTD => PROGRAM_HEADER % TimerPointer ( S % iTimerDataToDevice )
+    Timer_DTD => PROGRAM_HEADER % TimerPointer ( S % iTimerStepDataToDevice )
     
     call Timer_DTD % Start ( )
     if ( K % AllocatedDevice ) &

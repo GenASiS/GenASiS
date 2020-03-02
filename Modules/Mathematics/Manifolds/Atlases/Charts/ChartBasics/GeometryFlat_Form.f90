@@ -22,6 +22,11 @@ module GeometryFlat_Form
       N_VECTORS_FLAT = N_VECTORS_FLAT
     integer ( KDI ) :: &
       VOLUME = 0
+    integer ( KDI ) :: &
+      iTimerSetFiniteVolume, &
+      iTimerSetMetric, &
+      iTimerCopyGeometry, &
+      iTimerComputeEdges
     integer ( KDI ), dimension ( 3 ) :: &
       CENTER_U      = 0, &
       WIDTH_LEFT_U  = 0, &
@@ -253,6 +258,15 @@ contains
     G % Value ( :, G % COARSENING ( 1 ) )  =  1.0_KDR
     G % Value ( :, G % COARSENING ( 2 ) )  =  1.0_KDR
     G % Value ( :, G % COARSENING ( 3 ) )  =  1.0_KDR
+    
+    call PROGRAM_HEADER % AddTimer &
+           ( 'SetMetricFixed', G % iTimerSetMetric, Level = 6 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'SetFiniteVolume', G % iTimerSetFiniteVolume, Level = 6 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'CopyGeometry', G % iTimerCopyGeometry, Level = 6 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'ComputeEdges', G % iTimerComputeEdges, Level = 6 )
 
   end subroutine InitializeAllocate_G
 
@@ -265,9 +279,14 @@ contains
       nDimensions, &
       nValues, &
       oValue
+      
+    associate & 
+      ( T_FV => PROGRAM_HEADER % Timer ( G % iTimerSetFiniteVolume ), &
+        T_SM => PROGRAM_HEADER % Timer ( G % iTimerSetMetric ) )
 
     select case ( trim ( G % CoordinateSystem ) )
     case ( 'RECTANGULAR' )
+      call T_FV % Start ( )
       call SetFiniteVolumeRectangularKernel &
              ( G % Value ( :, G % VOLUME ), &
                G % Value ( :, G % AREA_INNER_D ( 1 ) ), &
@@ -280,13 +299,17 @@ contains
                G % Value ( :, G % WIDTH_RIGHT_U ( 2 ) ), &
                G % Value ( :, G % WIDTH_RIGHT_U ( 3 ) ), &
                nDimensions, nValues, oValue )
+      call T_FV % Stop ( )
+      call T_SM % Start ( )
       call SetMetricRectangularKernel &
              ( G % Value ( :, G % METRIC_DD_22 ), &
                G % Value ( :, G % METRIC_DD_33 ), &
                G % Value ( :, G % METRIC_UU_22 ), &
                G % Value ( :, G % METRIC_UU_33 ), &
                nDimensions, nValues, oValue )
+      call T_SM % Stop ( )
     case ( 'CYLINDRICAL' )
+      call T_FV % Start ( )
       call SetFiniteVolumeCylindricalKernel &
              ( G % Value ( :, G % VOLUME ), &
                G % Value ( :, G % AREA_INNER_D ( 1 ) ), &
@@ -300,6 +323,8 @@ contains
                G % Value ( :, G % WIDTH_RIGHT_U ( 3 ) ), &
                G % Value ( :, G % CENTER_U ( 1 ) ), &
                nDimensions, nValues, oValue )
+      call T_FV % Stop ( )
+      call T_SM % Start ( )
       call SetMetricCylindricalKernel &
              ( G % Value ( :, G % METRIC_DD_22 ), &
                G % Value ( :, G % METRIC_DD_33 ), &
@@ -307,7 +332,9 @@ contains
                G % Value ( :, G % METRIC_UU_33 ), &
                G % Value ( :, G % CENTER_U ( 1 ) ), &
                nDimensions, nValues, oValue )
+      call T_SM % Stop ( )
     case ( 'SPHERICAL' )
+      call T_FV % Start ( )
       call SetFiniteVolumeSphericalKernel &
              ( G % Value ( :, G % VOLUME ), &
                G % Value ( :, G % AREA_INNER_D ( 1 ) ), &
@@ -322,6 +349,8 @@ contains
                G % Value ( :, G % CENTER_U ( 1 ) ), &
                G % Value ( :, G % CENTER_U ( 2 ) ), &
                nDimensions, nValues, oValue )
+      call T_FV % Stop ( )
+      call T_SM % Start ( )
       call SetMetricSphericalKernel &
              ( G % Value ( :, G % METRIC_DD_22 ), &
                G % Value ( :, G % METRIC_DD_33 ), &
@@ -330,6 +359,7 @@ contains
                G % Value ( :, G % CENTER_U ( 1 ) ), &
                G % Value ( :, G % CENTER_U ( 2 ) ), &
                nDimensions, nValues, oValue )
+      call T_SM % Stop ( )
     case default
       call Show ( 'CoordinateSystem not recognized', CONSOLE % ERROR )
       call Show ( G % CoordinateSystem, 'CoordinateSystem', CONSOLE % ERROR )
@@ -337,6 +367,8 @@ contains
       call Show ( 'SetMetricFixed', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select
+    
+    end associate !-- T_FV, T_SM
 
   end subroutine SetMetricFixed
 
@@ -379,6 +411,14 @@ contains
                   CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end if
+    
+    
+    associate & 
+      ( T_C   => PROGRAM_HEADER % Timer ( G % iTimerCopyGeometry ), &
+        T_CE  => PROGRAM_HEADER % Timer ( G % iTimerComputeEdges ), & 
+        T_SM  => PROGRAM_HEADER % Timer ( G % iTimerSetMetric ) )  
+        
+    call T_C % Start ( )
 
     do iD = 1, 3
       if ( iD == iDimension ) &
@@ -388,12 +428,18 @@ contains
                   UseDeviceOption = G % AllocatedDevice )
     end do
     
+    call T_C % Stop ( )
+    
+    call T_CE % Start ( )
     call ComputeEdgesKernel &
            ( G   % Value ( :, G % CENTER_U ( iDimension ) ), &
              G   % Value ( :, G % WIDTH_LEFT_U ( iDimension ) ), &
              G_I % Value ( :, G % CENTER_U ( iDimension ) ), &
              UseDeviceOption = G % AllocatedDevice )
-
+    call T_CE % Stop ( )
+    
+    call T_SM % Start ( )
+    
     select case ( trim ( G % CoordinateSystem ) )
     case ( 'RECTANGULAR' )
       call SetMetricRectangularKernel &
@@ -423,6 +469,10 @@ contains
                nDimensions, nValues = G % nValues, oValue = 0, &
                UseDeviceOption = G % AllocatedDevice )
     end select
+    
+    call T_SM % Stop ( )
+    
+    end associate !-- T_C, T_CE, T_SM
 
   end subroutine ComputeReconstruction_CSL
 

@@ -15,6 +15,9 @@ module Chart_SL__Template
 
   type, public, extends ( ChartHeader_SL_Form ), abstract :: &
     Chart_SL_Template
+      integer ( KDI ) :: &
+        iTimerCopyBoundary, &
+        iTimerReverseBoundary
       class ( GeometryFlat_CSL_Form ), pointer :: &
         Geometry_CSL => null ( )
       type ( ChartStream_SL_ElementForm ), dimension ( : ), allocatable :: &
@@ -214,6 +217,11 @@ contains
     end do !-- iD
 
     call G % SetMetricFixed ( C % nDimensions, G % nValues, oValue = 0 )
+    
+    call PROGRAM_HEADER % AddTimer &
+           ( 'CopyBoundary', C % iTimerCopyBoundary, Level = 6 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'ReverseBoundary', C % iTimerReverseBoundary, Level = 6 )
 
     nullify ( G )
     nullify ( Width_R_3D )
@@ -386,9 +394,15 @@ contains
 
     call C % SetVariablePointer ( F % Value ( :, iField ), V )
 
+    associate ( T => PROGRAM_HEADER % Timer ( C % iTimerCopyBoundary ) )
+    call T % Start ( )
+    
     call CopyBoundaryKernel &
            ( V, nB, dBE, dBI, oBE, oBI, &
              UseDeviceOption = F % AllocatedDevice )
+             
+    call T % Stop ( )
+    end associate 
 
     nullify ( V )
 
@@ -423,8 +437,14 @@ contains
 
     call C % SetVariablePointer ( F % Value ( :, iField ), V )
     
+    associate ( T => PROGRAM_HEADER % Timer ( C % iTimerReverseBoundary ) )
+    call T % Start ( )
+    
     call ReverseBoundaryKernel &
            ( V, nB, dBE, oBE, UseDeviceOption = F % AllocatedDevice )
+           
+    call T % Stop ( )
+    end associate
 
     nullify ( V )
 
