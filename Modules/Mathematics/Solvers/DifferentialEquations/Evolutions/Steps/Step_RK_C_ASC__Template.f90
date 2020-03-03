@@ -657,7 +657,7 @@ contains
     
     call Timer_DTH % Start ( )
     
-    !call S % Current % UpdateHost ( )
+    call S % Current % UpdateHost ( )
     call S % BoundaryFluence_CSL % UpdateHost ( )
     
     call Timer_DTH % Stop ( )
