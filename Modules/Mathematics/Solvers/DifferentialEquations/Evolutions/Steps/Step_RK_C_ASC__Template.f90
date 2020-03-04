@@ -657,7 +657,7 @@ contains
     
     call Timer_DTH % Start ( )
     
-    call S % Current % UpdateHost ( )
+    !call S % Current % UpdateHost ( )
     call S % BoundaryFluence_CSL % UpdateHost ( )
     
     call Timer_DTH % Stop ( )
@@ -1221,7 +1221,8 @@ contains
       call S % Y % AllocateDevice ( ) 
     
     do iS = 1, S % nStages
-      call S % K ( iS ) % Initialize ( [ nValues, nEquations ] )
+      call S % K ( iS ) % Initialize &
+             ( [ nValues, nEquations ], PinnedOption = .true. )
       if ( S % Current % AllocatedDevice ) &
         call S % K ( iS ) % AllocateDevice ( )
     end do !-- iS
