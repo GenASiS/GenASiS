@@ -29,56 +29,28 @@ contains
       do iV = 1, nValues
         Gamma ( iV )  =  Gamma_0
         P     ( iV )  =  E ( iV )  *  ( Gamma_0 - 1.0_KDR ) 
-      end do !-- iV
-      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
-
-      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV )
-      do iV = 1, nValues
         if ( N ( iV ) > 0.0_KDR ) then
           K ( iV )  =  P ( iV ) / ( N ( iV ) ** Gamma_0 )
+          SB ( iV ) = log ( K ( iV ) / K0 ) / ( Gamma_0 - 1.0_KDR )
         else
           K ( iV )  =  0.0_KDR
+          SB ( iV ) =  - 0.1 * huge ( 1.0_KDR )
         end if
       end do !-- iV
       !$OMP  end OMP_TARGET_DIRECTIVE parallel do
 
-      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV )
-      do iV = 1, nValues
-        if ( K ( iV ) > 0.0_KDR ) then
-          SB ( iV )  =    log ( K ( iV ) / K0 ) / ( Gamma_0 - 1.0_KDR )
-        else
-          SB ( iV )  =  - 0.1 * huge ( 1.0_KDR )
-        end if
-      end do !-- iV
-      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
-      
     else
     
       !$OMP parallel do schedule ( OMP_SCHEDULE_HOST ) private ( iV )
       do iV = 1, nValues
         Gamma ( iV )  =  Gamma_0
         P     ( iV )  =  E ( iV )  *  ( Gamma_0 - 1.0_KDR ) 
-      end do !-- iV
-      !$OMP end parallel do
-
-      !$OMP parallel do schedule ( OMP_SCHEDULE_HOST ) private ( iV )
-      do iV = 1, nValues
         if ( N ( iV ) > 0.0_KDR ) then
           K ( iV )  =  P ( iV ) / ( N ( iV ) ** Gamma_0 )
+          SB ( iV ) =  log ( K ( iV ) / K0 ) / ( Gamma_0 - 1.0_KDR )
         else
           K ( iV )  =  0.0_KDR
-        end if
-      end do !-- iV
-      !$OMP end parallel do
-
-      !$OMP parallel do schedule ( OMP_SCHEDULE_HOST ) private ( iV )
-      do iV = 1, nValues
-        if ( K ( iV ) > 0.0_KDR ) then
-          SB ( iV )  =    log ( K ( iV ) / K0 ) / ( Gamma_0 - 1.0_KDR )
-        else
-          SB ( iV )  =  - 0.1 * huge ( 1.0_KDR )
+          SB ( iV ) =  - 0.1 * huge ( 1.0_KDR )
         end if
       end do !-- iV
       !$OMP end parallel do

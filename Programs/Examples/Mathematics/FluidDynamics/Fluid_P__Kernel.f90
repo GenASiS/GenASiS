@@ -129,25 +129,16 @@ contains
       do iV = 1, nValues
         if ( N ( iV ) > 0.0_KDR .and. P ( iV ) > 0.0_KDR ) then
           CS ( iV ) = sqrt ( Gamma ( iV ) * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
-        else
-          CS ( iV ) = 0.0_KDR
-        end if
-      end do
-      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
-
-      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV )
-      do iV = 1, nValues
-        if ( P ( iV ) > 0.0_KDR ) then
           MN ( iV ) = sqrt ( (    S_1 ( iV ) * V_1 ( iV )  &
                                +  S_2 ( iV ) * V_2 ( iV )  &
                                +  S_3 ( iV ) * V_3 ( iV ) ) &
                              / ( Gamma ( iV ) * P ( iV ) ) )
         else
+          CS ( iV ) = 0.0_KDR
           MN ( iV ) = 0.0_KDR
         end if
       end do
-      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
 
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
       !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV )
@@ -167,20 +158,12 @@ contains
       do iV = 1, nValues
         if ( N ( iV ) > 0.0_KDR .and. P ( iV ) > 0.0_KDR ) then
           CS ( iV ) = sqrt ( Gamma ( iV ) * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
-        else
-          CS ( iV ) = 0.0_KDR
-        end if 
-      end do
-      !$OMP end parallel do
-
-      !$OMP parallel do schedule ( OMP_SCHEDULE_HOST ) private ( iV )
-      do iV = 1, nValues
-        if ( P ( iV ) > 0.0_KDR ) then
           MN ( iV ) = sqrt ( (    S_1 ( iV ) * V_1 ( iV )  &
                                +  S_2 ( iV ) * V_2 ( iV )  &
                                +  S_3 ( iV ) * V_3 ( iV ) ) &
                              / ( Gamma ( iV ) * P ( iV ) ) )
         else
+          CS ( iV ) = 0.0_KDR
           MN ( iV ) = 0.0_KDR
         end if 
       end do
