@@ -33,6 +33,8 @@ module Integrator_C_PS__Form
     final :: &  !-- 1
       Finalize
     procedure, private, pass :: &  !-- 2
+      UpdateDevice => UpdateDevice_I
+    procedure, private, pass :: &  !-- 2
       ComputeConstraints
     procedure, private, pass :: &  !-- 2
       ComputeCycle
@@ -143,6 +145,45 @@ contains
     call I % FinalizeTemplate ( )
 
   end subroutine Finalize
+  
+  
+  subroutine UpdateDevice_I ( I )
+
+    class ( Integrator_C_PS_Form ), intent ( inout ) :: &
+      I
+    
+    class ( CurrentTemplate ), pointer :: &
+      C
+    class ( GeometryFlatForm ), pointer :: &
+      G
+
+    if ( .not. allocated ( I % Current_ASC ) ) &
+      return
+
+    associate ( CA => I % Current_ASC )
+    
+    C => CA % Current ( )
+    call C % UpdateDevice ( ) 
+    nullify ( C )
+    
+    end associate !-- CA
+    
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
+
+    select type ( CSL => PS % Chart )
+    class is ( Chart_SL_Template )
+
+    G => CSL % Geometry ( )
+    call G % UpdateDevice ( )
+    
+    nullify ( G )
+    
+    end select !-- CSL
+    end select !-- PS
+    
+
+  end subroutine UpdateDevice_I
 
 
   subroutine ComputeConstraints ( I )
@@ -209,6 +250,8 @@ contains
 
     type ( TimerForm ), pointer :: &
       Timer
+    class ( CurrentTemplate ), pointer :: &
+      C
 
     if ( .not. allocated ( I % Current_ASC ) ) &
       return
@@ -217,9 +260,12 @@ contains
     if ( associated ( Timer ) ) call Timer % Start ( )
 
     associate ( CA => I % Current_ASC )
+    C => CA % Current ( )
+    call C % UpdateHost ( ) 
     call CA % ComputeTally &
            ( ComputeChangeOption = ComputeChangeOption, &
              IgnorabilityOption = IgnorabilityOption )
+    nullify ( C )
     end associate !-- CA
 
     if ( associated ( Timer ) ) call Timer % Stop ( )
@@ -351,6 +397,8 @@ contains
 
     G => CSL % Geometry ( )
     C => CA % Current ( )
+    
+    call C % UpdateHost ( )
     
     call I % ComputeTimeStepKernel_CSL &
            ( CSL % IsProperCell, &

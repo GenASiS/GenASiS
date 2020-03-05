@@ -44,6 +44,8 @@ module Integrator_Template
       OpenManifoldStreamsTemplate
     procedure, public, pass :: &  !-- 2
       InitializeTimers
+    procedure ( UD ), private, pass, deferred :: &
+      UpdateDevice
     procedure, private, pass :: &  !-- 2
       ComputeConstraints
     procedure, private, pass :: &  !-- 2
@@ -124,6 +126,12 @@ module Integrator_Template
       class ( IntegratorTemplate ), intent ( inout ) :: &
         I
     end subroutine SR
+    
+    subroutine UD ( I )
+      import IntegratorTemplate
+      class ( IntegratorTemplate ), intent ( inout ) :: &
+        I
+    end subroutine UD
 
 !-- See FIXME above
 !    subroutine CC ( I )
@@ -222,6 +230,7 @@ contains
 
     call I % OpenManifoldStreams ( )
     call I % InitializeTimers ( )
+    call I % UpdateDevice ( )
 
     Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerEvolve )
     if ( associated ( Timer ) ) call Timer % Start ( )   
