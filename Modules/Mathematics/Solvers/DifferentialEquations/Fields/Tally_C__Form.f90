@@ -167,12 +167,14 @@ contains
   end subroutine SelectVariables
 
 
-  subroutine ComputeInterior_CSL ( T, FC )
+  subroutine ComputeInterior_CSL ( T, FC, ReduceOption )
 
     class ( Tally_C_Form ), intent ( inout ) :: &
       T
     class ( Field_CSL_Template ), intent ( in ) :: &
       FC
+    logical ( KDL ), intent ( in ), optional :: &
+      ReduceOption
 
     integer ( KDI ) :: &
       iS  !-- iSelected
@@ -199,7 +201,7 @@ contains
     call T % ComputeInteriorIntegrand &
            ( Integrand, C, G, CSL % nDimensions ) 
     
-    call VI % Compute ( CSL, Integrand, Integral )
+    call VI % Compute ( CSL, Integrand, Integral, ReduceOption )
 
     do iS = 1, T % nSelected
       T % Value ( T % iaSelected ( iS ) ) = Integral ( iS )

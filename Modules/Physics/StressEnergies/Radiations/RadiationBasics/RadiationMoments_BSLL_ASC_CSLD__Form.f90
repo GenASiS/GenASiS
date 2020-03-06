@@ -349,10 +349,19 @@ contains
       RMB
 
     integer ( KDI ) :: &
+      iP, &  !-- iPrimitive
       iC, &  !-- iConserved
       iF, &  !-- iFiber
-      iNumber, &
-      iEnergy
+      iB, &  !-- iBoundary
+      iE, &  !-- iEnergy
+      iNumber_RM, &  !-- iNumber_RadiationMoments
+      iEnergy_RM, &  !-- iEnergy_RadiationMoments
+      iNumber_T,  &  !-- iNumber_Tally
+      iEnergy_T,  &  !-- iEnergy_Tally
+      nPrimitiveIntegral, &
+      nPrimitiveSpectral, &
+      nConservedIntegral, &
+      nConservedSpectral
     real ( KDR ), dimension ( : ), allocatable :: &
       Integral
     type ( Real_1D_Form ), dimension ( : ), allocatable :: &
@@ -361,62 +370,126 @@ contains
       G
     type ( VolumeIntegralForm ) :: &
       VI
+    class ( CurrentTemplate ), pointer :: &
+      RMS
     class ( RadiationMomentsForm ), pointer :: &
       RMEI, &
       RMF
 
-    select type ( RMA => RMB % BundleIntegral )
+    select type ( RMEIA => RMB % BundleIntegral )
     class is ( RadiationMoments_ASC_Form )
-      RMEI => RMA % RadiationMoments ( )
-    end select !-- RMA
+
+    RMEI => RMEIA % RadiationMoments ( )
 
     associate &
       (  MS => RMB % Bundle_SLL_ASC_CSLD, &
-        iaC => RMEI % iaConserved )
+        iaP => RMEI % iaPrimitive )
 
     G => MS % Base_CSLD % Geometry ( )
 
-    allocate ( Integral  ( RMEI % N_CONSERVED ) )
-    allocate ( Integrand ( RMEI % N_CONSERVED ) )
-    do iC = 1, RMEI % N_CONSERVED
-      call Integrand ( iC ) % Initialize ( RMB % nEnergyValues )
-    end do !-- iC
+    nPrimitiveIntegral = RMEI % N_PRIMITIVE
+    nConservedIntegral = RMEI % N_CONSERVED
+
+    allocate ( Integral  ( nPrimitiveIntegral ) )
+    allocate ( Integrand ( nPrimitiveIntegral ) )
+    do iP = 1, nPrimitiveIntegral
+      call Integrand ( iP ) % Initialize ( RMB % nEnergyValues )
+    end do !-- iP
 
     !-- Radiation number?
-    iNumber = 0
-    iEnergy = 0
-    do iC = 1, RMEI % N_CONSERVED
-      if ( trim ( RMEI % Variable ( iaC ( iC ) ) )  ==  'ConservedNumber' ) &
-        iNumber = iaC ( iC )
-      if ( trim ( RMEI % Variable ( iaC ( iC ) ) )  ==  'ConservedEnergy' ) &
-        iEnergy = iaC ( iC )
+
+    iNumber_RM = 0
+    iEnergy_RM = 0
+    do iP = 1, nPrimitiveIntegral
+      if ( trim ( RMEI % Variable ( iaP ( iP ) ) )  ==  'ComovingNumber' ) &
+        iNumber_RM = iaP ( iP )
+      if ( trim ( RMEI % Variable ( iaP ( iP ) ) )  ==  'ComovingEnergy' ) &
+        iEnergy_RM = iaP ( iP )
+    end do !-- iP
+
+    iNumber_T = 0
+    iEnergy_T = 0
+    do iC = 1, nConservedIntegral
+      if ( trim ( RMEIA % TallyInterior % Variable ( iC ) )  ==  'Number' ) &
+        iNumber_T = iC
+      if ( trim ( RMEIA % TallyInterior % Variable ( iC ) )  ==  'Energy' ) &
+        iEnergy_T = iC
     end do !-- iC
+
+    !-- Interior
 
     do iF = 1, MS % nFibers
       associate &
         ( iBC => MS % iaBaseCell ( iF ), &
           CF  => MS % Fiber_CSLL )
 
-      RMF => RMB % RadiationMoments ( iF )
-      do iC = 1, RMF % N_CONSERVED
-        Integrand ( iC ) % Value  =  RMF % Value ( :, iaC ( iC ) )
-      end do !-- iC
-      if ( iNumber > 0 ) &  !-- Number
-        Integrand ( RMEI % N_CONSERVED ) % Value &
-          =  RMF % Value ( :, iEnergy )  /  RMB % Energy
+      RMF  =>  RMB % RadiationMoments ( iF )
+      nPrimitiveSpectral  =  RMF % N_PRIMITIVE
+
+      do iP = 1, nPrimitiveSpectral
+        Integrand ( iP ) % Value  =  RMF % Value ( :, iaP ( iP ) )
+      end do !-- iP
+      if ( iNumber_RM > 0 ) &  !-- Number
+        Integrand ( nPrimitiveIntegral ) % Value &
+          =  RMF % Value ( :, iEnergy_RM )  /  RMB % Energy
 
       call VI % Compute ( CF, Integrand, Integral )
 
-      do iC = 1, RMEI % N_CONSERVED
-        RMEI % Value ( iBC, iaC ( iC ) ) = Integral ( iC ) 
-      end do !-- iC
+      do iP = 1, nPrimitiveIntegral
+        RMEI % Value ( iBC, iaP ( iP ) ) = Integral ( iP ) 
+      end do !-- iP
       
-      end associate !-- iaC, etc.
+      end associate !-- iBC, etc.
     end do !-- iF
 
-    call RMEI % ComputeFromConserved ( G )
+    call RMEI % ComputeFromPrimitive ( G )
+
+    !-- Boundary
+    !-- Use conserved variables for simplicity, assuming v small at boundary
+
+    associate &
+      ( RMBS => RMB % Section, &
+        A => MS % Base_ASC )
+    do iB = 1, A % nBoundaries
+
+      do iE = 1, RMB % nEnergyValues
+        select type ( RMSA => RMBS % Atlas ( iE ) % Element )
+        class is ( RadiationMoments_ASC_Form )
+
+        RMS => RMSA % Current ( )
+        select type ( RMS )
+        class is ( RadiationMomentsForm )
+        nConservedSpectral = RMS % N_CONSERVED
+        do iC = 1, nConservedSpectral
+          Integrand ( iC ) % Value ( iE ) &
+            =  RMSA % TallyBoundaryLocal ( iB ) % Element % Value ( iC )
+        end do !-- iC
+        if ( iNumber_T > 0 ) &  !-- Number
+          Integrand ( iNumber_T ) % Value ( iE )  &
+            =  RMSA % TallyBoundaryLocal ( iB ) % Element &
+                 % Value ( iEnergy_T ) &
+               /  RMB % Energy ( iE )
+        end select !-- RMS
+  
+        end select !-- RMS
+      end do !-- iE
+
+      associate ( CF  => MS % Fiber_CSLL )
+      call VI % Compute ( CF, Integrand, Integral )
+      end associate !-- CF
+
+      do iC = 1, nConservedIntegral
+        RMEIA % TallyBoundaryLocal ( iB ) % Element % Value ( iC )  &
+          =  Integral ( iC )
+      end do !-- iC
+
+    end do !-- iB
+    end associate !-- RMBS, etc.
+
+    !-- Finish up
 
     end associate !-- MS, etc.
+    end select !-- RMA
     nullify ( G, RMEI, RMF )
     
   end subroutine ComputeEnergyIntegral
