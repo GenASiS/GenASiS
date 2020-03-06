@@ -27,6 +27,11 @@ Integrator_C_PS__Form.o: \
   TimeSeries_C__Form.o \
   Integrator_C_PS__Form.f90
 
+Integrator_C_PS__Kernel.o: \
+  Basics.o \
+  Integrator_C_PS__Form.o \
+  Integrator_C_PS__Kernel.f90
+
 Integrator_C_PS_C_PS__Template.o: \
   Basics.o \
   Manifolds.o \

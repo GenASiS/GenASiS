@@ -56,6 +56,32 @@ module Integrator_C_PS__Form
 
     private :: &
       ComputeTimeStepLocal
+      
+  interface 
+
+    module subroutine ComputeTimeStepKernel_CSL &
+                 ( IsProperCell, FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, &
+                   dXL_1, dXL_2, dXL_3, dXR_1, dXR_2, dXR_3, Crsn_2, Crsn_3, &
+                   nDimensions, TimeStep, UseDeviceOption )
+      use Basics
+      implicit none
+      logical ( KDL ), dimension ( : ), intent ( in ) :: &
+        IsProperCell
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        FEP_1, FEP_2, FEP_3, &
+        FEM_1, FEM_2, FEM_3, &
+        dXL_1, dXL_2, dXL_3, &
+        dXR_1, dXR_2, dXR_3, &
+        Crsn_2, Crsn_3
+      integer ( KDI ), intent ( in ) :: &
+        nDimensions
+      real ( KDR ), intent ( inout ) :: &
+        TimeStep
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine ComputeTimeStepKernel_CSL
+
+  end interface
 
 contains
 
@@ -398,8 +424,6 @@ contains
     G => CSL % Geometry ( )
     C => CA % Current ( )
     
-    call C % UpdateHost ( )
-    
     call I % ComputeTimeStepKernel_CSL &
            ( CSL % IsProperCell, &
              C % Value ( :, C % FAST_EIGENSPEED_PLUS ( 1 ) ), &
@@ -416,7 +440,8 @@ contains
              G % Value ( :, G % WIDTH_RIGHT_U ( 3 ) ), &
              G % Value ( :, G % COARSENING ( 2 ) ), &
              G % Value ( :, G % COARSENING ( 3 ) ), &
-             CSL % nDimensions, TimeStepCandidate )
+             CSL % nDimensions, TimeStepCandidate, &
+             UseDeviceOption = C % AllocatedDevice )
     
     end select !-- CSL
     end select !-- PS
@@ -426,71 +451,6 @@ contains
     nullify ( C, G )
 
   end subroutine ComputeTimeStep_C_ASC
-
-
-  subroutine ComputeTimeStepKernel_CSL &
-               ( IsProperCell, FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, &
-                 dXL_1, dXL_2, dXL_3, dXR_1, dXR_2, dXR_3, Crsn_2, Crsn_3, &
-                 nDimensions, TimeStep )
-
-    logical ( KDL ), dimension ( : ), intent ( in ) :: &
-      IsProperCell
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      FEP_1, FEP_2, FEP_3, &
-      FEM_1, FEM_2, FEM_3, &
-      dXL_1, dXL_2, dXL_3, &
-      dXR_1, dXR_2, dXR_3, &
-      Crsn_2, Crsn_3
-    integer ( KDI ), intent ( in ) :: &
-      nDimensions
-    real ( KDR ), intent ( inout ) :: &
-      TimeStep
-
-    integer ( KDI ) :: &
-      iV, &
-      nV
-    real ( KDR ) :: &
-      TimeStepInverse
-
-    nV = size ( FEP_1 )
-
-    select case ( nDimensions )
-    case ( 1 )
-      TimeStepInverse &
-        = maxval ( max ( FEP_1, -FEM_1 ) / ( dXL_1 + dXR_1 ), &
-                   mask = IsProperCell )
-    case ( 2 )
-      TimeStepInverse &
-        = maxval (   max ( FEP_1, -FEM_1 ) / ( dXL_1 + dXR_1 ) &
-                   + max ( FEP_2, -FEM_2 ) / ( Crsn_2 * ( dXL_2 + dXR_2 ) ), &
-                   mask = IsProperCell )
-    case ( 3 )
-      ! TimeStepInverse &
-      !   = maxval (   max ( FEP_1, -FEM_1 ) / dX_1 &
-      !              + max ( FEP_2, -FEM_2 ) / dX_2 &
-      !              + max ( FEP_3, -FEM_3 ) / dX_3, &
-      !              mask = IsProperCell )
-      TimeStepInverse = - huge ( 0.0_KDR )
-      !$OMP parallel do private ( iV ) &
-      !$OMP reduction ( max : TimeStepInverse )
-      do iV = 1, nV
-        if ( IsProperCell ( iV ) ) &
-          TimeStepInverse &
-            = max ( TimeStepInverse, &
-                      max ( FEP_1 ( iV ), -FEM_1 ( iV ) ) &
-                      / ( dXL_1 ( iV ) + dXR_1 ( iV ) ) &
-                    + max ( FEP_2 ( iV ), -FEM_2 ( iV ) ) &
-                      / ( Crsn_2 ( iV ) * ( dXL_2 ( iV ) + dXR_2 ( iV ) ) ) &
-                    + max ( FEP_3 ( iV ), -FEM_3 ( iV ) ) &
-                      / ( Crsn_3 ( iV ) * ( dXL_3 ( iV ) + dXR_3 ( iV ) ) ) )
-      end do
-      !$OMP end parallel do
-    end select !-- nDimensions
-
-    TimeStepInverse = max ( tiny ( 0.0_KDR ), TimeStepInverse )
-    TimeStep = min ( TimeStep, 1.0_KDR / TimeStepInverse )
-
-  end subroutine ComputeTimeStepKernel_CSL
 
 
   subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )
