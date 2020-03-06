@@ -22,12 +22,16 @@ module Integrator_C_1D_C_PS__Template
     Integrator_C_1D_C_PS_Template
       integer ( KDI ) :: &
         N_CURRENTS_1D = 0
+      integer ( KDI ), pointer :: &
+        iTime => null ( )
+      class ( StorageForm ), pointer :: &
+        SeriesChangeGrandTotal => null ( )
       class ( Step_RK_C_ASC_Template ), allocatable :: &
         Step_1D
-    procedure ( PS ), pointer :: &
-      PrepareStep_1D => null ( )
-    procedure ( PS ), pointer :: &
-      PrepareStep => null ( )
+      procedure ( PS ), pointer :: &
+        PrepareStep_1D => null ( )
+      procedure ( PS ), pointer :: &
+        PrepareStep => null ( )
   contains
     procedure, public, pass :: &  !-- 1
       InitializeTemplate_C_1D_C_PS
@@ -140,6 +144,11 @@ contains
     class ( Integrator_C_1D_C_PS_Template ), intent ( inout ) :: &
       I
 
+    nullify ( I % PrepareStep )
+    nullify ( I % PrepareStep_1D )
+    nullify ( I % SeriesChangeGrandTotal )
+    nullify ( I % iTime )
+
     if ( allocated ( I % Step_1D ) ) &
       deallocate ( I % Step_1D )
 
@@ -196,6 +205,9 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
+    integer ( KDI ) :: &
+      iV, &
+      iS
     type ( TimerForm ), pointer :: &
       Timer
 
@@ -212,6 +224,17 @@ contains
              ( ComputeChangeOption = ComputeChangeOption, &
                IgnorabilityOption  = IgnorabilityOption )
       end associate !-- CA
+    end if
+
+    if ( associated ( I % SeriesChangeGrandTotal ) ) then
+      associate ( SCGT => I % SeriesChangeGrandTotal )
+      call Show ( 'Change in Grand Total Tally', IgnorabilityOption )
+      do iV = 1, SCGT % nVariables
+        iS = SCGT % iaSelected ( iV )
+        call Show ( SCGT % Value ( I % iTime, iS ), SCGT % Unit ( iS ), &
+                    SCGT % Variable ( iS ), IgnorabilityOption )
+      end do !-- iV
+      end associate !-- SCGT, etc.
     end if
 
     if ( associated ( Timer ) ) call Timer % Stop ( )

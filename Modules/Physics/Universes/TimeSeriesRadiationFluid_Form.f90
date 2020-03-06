@@ -37,7 +37,7 @@ contains
   subroutine Initialize_RF &
                ( TS, U, iSpeciesNumberPlusOption, iSpeciesNumberMinusOption )
 
-    class ( TimeSeriesRadiationFluidForm ), intent ( inout ) :: &
+    class ( TimeSeriesRadiationFluidForm ), intent ( inout ), target :: &
       TS
     class ( UniverseTemplate ), intent ( in ) :: &
       U
@@ -158,6 +158,14 @@ contains
     end do !-- iS
     end associate !-- iaS
     end associate
+
+    !-- Set pointer for grand total tally
+
+    select type ( I => TS % Integrator )
+    class is ( Integrator_C_1D_C_PS_Template )
+      I % iTime  =>  TS % iTime
+      I % SeriesChangeGrandTotal  =>  TS % SeriesChangeRadiationFluid 
+    end select
 
   end subroutine Initialize_RF
 
