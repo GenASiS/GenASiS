@@ -5,6 +5,7 @@ module RadiationCentralCore_Form
   use StressEnergies
   use ComputeGravity_Command
   use ApplyGravity_F__Command
+  use TimeSeriesRadiationFluid_Form
   use FluidCentralCore_Form
 
   implicit none
@@ -66,7 +67,8 @@ contains
                  MinEnergyOption, MaxEnergyOption, MinWidthEnergyOption, &
                  EnergyScaleOption, RadiusMaxOption, RadiusCoreOption, &
                  RadialRatioOption, nCellsEnergyOption, nCellsPolarOption, &
-                 nWriteOption )
+                 nWriteOption, iSpeciesNumberPlusOption, &
+                 iSpeciesNumberMinusOption )
 
     class ( RadiationCentralCoreForm ), intent ( inout ) :: &
       RCC
@@ -96,7 +98,9 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       nCellsEnergyOption, &
       nCellsPolarOption, &
-      nWriteOption
+      nWriteOption, &
+      iSpeciesNumberPlusOption, &
+      iSpeciesNumberMinusOption
 
     real ( KDR ) :: &
       FinishTime
@@ -141,12 +145,29 @@ contains
 
     select type ( I => RCC % Integrator )
     class is ( Integrator_C_PS_Form )
+
       I % ComputeTimeStepLocal => ComputeTimeStepLocal
+
+      if ( .not. allocated ( I % TimeSeries ) &
+           .and. trim ( MomentsType ) /= 'NONE' ) &
+      then
+        allocate ( TimeSeriesRadiationFluidForm :: I % TimeSeries )
+        !-- Initialized below after call to I % Initialize        
+      end if
+
       call I % Initialize &
              ( RCC, Name, TimeUnitOption = RCC % Units % Time, &
                FinishTimeOption = FinishTime, &
                CourantFactorOption = CourantFactorOption, &
                nWriteOption = nWriteOption )
+
+      !-- if TimeSeries allocated above, initialize
+      select type ( TS => I % TimeSeries )
+      type is ( TimeSeriesRadiationFluidForm )
+        call TS % Initialize &
+               ( RCC, iSpeciesNumberPlusOption, iSpeciesNumberMinusOption )
+      end select !-- TS
+
     end select !-- I
 
     call Show ( 'RadiationCentralCore parameter', RCC % IGNORABILITY )

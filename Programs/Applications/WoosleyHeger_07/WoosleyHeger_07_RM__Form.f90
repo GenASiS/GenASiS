@@ -96,7 +96,9 @@ contains
              MinWidthEnergyOption = MinWidthEnergy, &
              MaxEnergyOption = MaxEnergy, &
              EnergyScaleOption = EnergyScale, &
-             nWriteOption = 30 )
+             nWriteOption = 30, &
+             iSpeciesNumberPlusOption = 1, &  !-- See RadiationType above
+             iSpeciesNumberMinusOption = 2 )
 
   end subroutine InitializeRadiationCentralCore
 
