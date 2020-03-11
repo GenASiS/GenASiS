@@ -53,7 +53,7 @@ module RadiationCentralCore_Form
       private :: &
         ComputeTimeStepInteractions, &
         ComputeFluidSource_G_S_Radiation_Kernel, &
-        ComputeFluidSource_DE_Radiation_Kernel, &
+        ComputeFluidSource_DE_S_Radiation_Kernel, &
         ApplySources_Fluid_Kernel
 
 contains
@@ -644,15 +644,17 @@ contains
                SF % Value ( :, SF % RADIATION_S_D ( 1 ) ), &
                SF % Value ( :, SF % RADIATION_S_D ( 2 ) ), &
                SF % Value ( :, SF % RADIATION_S_D ( 3 ) ), &
+               SF % Value ( :, SF % RADIATION_DS ), &
                PSC % IsProperCell, &
                SR % Value ( :, SR % INTERACTIONS_J ), &
                SR % Value ( :, SR % INTERACTIONS_H_D ( 1 ) ), &
                SR % Value ( :, SR % INTERACTIONS_H_D ( 2 ) ), &
-               SR % Value ( :, SR % INTERACTIONS_H_D ( 3 ) ) )
+               SR % Value ( :, SR % INTERACTIONS_H_D ( 3 ) ), &
+               F % Value ( :, F % TEMPERATURE ) )
 
       select case ( trim ( RM % RadiationType ) )
       case ( 'NEUTRINOS_E' )
-        call ComputeFluidSource_DE_Radiation_Kernel &
+        call ComputeFluidSource_DE_S_Radiation_Kernel &
                ( SF % Value ( :, SF % RADIATION_DE ), & 
                  SF % Value ( :, SF % RADIATION_DS ), &
                  PSC % IsProperCell, &
@@ -662,7 +664,7 @@ contains
                  F % Value ( :, F % CHEMICAL_POTENTIAL_N_P ), &
                  Sign  =  + 1.0_KDR )
       case ( 'NEUTRINOS_E_BAR' )
-        call ComputeFluidSource_DE_Radiation_Kernel &
+        call ComputeFluidSource_DE_S_Radiation_Kernel &
                ( SF % Value ( :, SF % RADIATION_DE ), & 
                  SF % Value ( :, SF % RADIATION_DS ), &
                  PSC % IsProperCell, &
@@ -928,17 +930,19 @@ contains
 
 
   subroutine ComputeFluidSource_G_S_Radiation_Kernel &
-               ( FS_R_G, FS_R_S_1, FS_R_S_2, FS_R_S_3, IsProperCell, &
-                 Q, A_1, A_2, A_3 )
+               ( FS_R_G, FS_R_S_1, FS_R_S_2, FS_R_S_3, FS_R_DS, IsProperCell, &
+                 Q, A_1, A_2, A_3, T )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       FS_R_G, &
-      FS_R_S_1, FS_R_S_2, FS_R_S_3
+      FS_R_S_1, FS_R_S_2, FS_R_S_3, &
+      FS_R_DS
     logical ( KDL ), dimension ( : ), intent ( in ) :: &
       IsProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       Q, &
-      A_1, A_2, A_3
+      A_1, A_2, A_3, &
+      T
 
     integer ( KDI ) :: &
       iV, &
@@ -954,13 +958,15 @@ contains
       FS_R_S_1 ( iV )  =  FS_R_S_1 ( iV )  -  A_1 ( iV )
       FS_R_S_2 ( iV )  =  FS_R_S_2 ( iV )  -  A_2 ( iV )
       FS_R_S_3 ( iV )  =  FS_R_S_3 ( iV )  -  A_3 ( iV )
+      FS_R_DS ( iV )   =  FS_R_DS ( iV )   -  Q ( iV )  /  T ( iV )
+
     end do
     !$OMP end parallel do
 
   end subroutine ComputeFluidSource_G_S_Radiation_Kernel
 
 
-  subroutine ComputeFluidSource_DE_Radiation_Kernel &
+  subroutine ComputeFluidSource_DE_S_Radiation_Kernel &
                ( FS_R_DE, FS_R_DS, IsProperCell, R, T, Mu_e, Mu_n_p, Sign )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -998,7 +1004,7 @@ contains
     end do
     !$OMP end parallel do
 
-  end subroutine ComputeFluidSource_DE_Radiation_Kernel
+  end subroutine ComputeFluidSource_DE_S_Radiation_Kernel
 
 
   subroutine ApplySources_Fluid_Kernel &
