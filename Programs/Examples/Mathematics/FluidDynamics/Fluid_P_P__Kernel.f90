@@ -25,7 +25,7 @@ contains
     if ( UseDevice ) then
     
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV )
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV )
       do iV = 1, nValues
         Gamma ( iV )  =  Gamma_0
         P     ( iV )  =  E ( iV )  *  ( Gamma_0 - 1.0_KDR ) 
