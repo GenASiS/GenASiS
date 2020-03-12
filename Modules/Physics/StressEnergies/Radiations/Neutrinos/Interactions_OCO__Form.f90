@@ -366,7 +366,8 @@ contains
                NULIBTABLE_NUMBER_GROUPS, NULIBTABLE_NUMBER_EASVARIABLES )
 
       Chi_J  =  I % EmissionAbsorptionScattering ( :, 2 )  *  cm ** (-1)
-      Chi_H  =  Chi_J
+      Chi_H  =  Chi_J  &
+                +  I % EmissionAbsorptionScattering ( :, 3 )  *  cm ** (-1)
 
       Xi_J  =  Chi_J * J_EQ
       Xi_H  =  0.0_KDR
