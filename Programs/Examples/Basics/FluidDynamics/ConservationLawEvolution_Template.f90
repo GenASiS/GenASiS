@@ -52,7 +52,6 @@ module ConservationLawEvolution_Template
 
   interface
   
-
     module subroutine ComputeTimeStepKernel &
                  ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, &
                    CellWidth, nDimensions, oV, TimeStepLocal )

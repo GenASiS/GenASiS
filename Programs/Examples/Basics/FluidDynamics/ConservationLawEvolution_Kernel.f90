@@ -30,7 +30,7 @@ contains
     MaxSpeed = - huge ( 1.0_KDR )
 
     !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
-    !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV, jV, kV) &
+    !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV, jV, kV ) &
     !$OMP& reduction ( max : MaxSpeed )
     do kV = lV ( 3 ) , uV ( 3 )
       do jV = lV ( 2 ), uV ( 2 )    
