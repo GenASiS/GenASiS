@@ -9,7 +9,7 @@ submodule ( Fluid_P__Template ) Fluid_P__Kernel
 contains
 
 
-  module procedure ComputeConservedEnergyKernel
+  module procedure ComputeFromPrimitiveKernel
 
     integer ( KDI ) :: &
       iV, &
@@ -27,25 +27,35 @@ contains
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
       !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV )
       do iV = 1, nValues
-        G ( iV )  =  E ( iV )  +  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV )  &
-                                              +  S_2 ( iV ) * V_2 ( iV )  &
-                                              +  S_3 ( iV ) * V_3 ( iV ) )
+        M ( iV )    =  1.0_KDR
+        D ( iV )    =  N ( iV )
+        S_1 ( iV )  =  M ( iV ) * N ( iV ) * V_1 ( iV )
+        S_2 ( iV )  =  M ( iV ) * N ( iV ) * M_DD_22 ( iV ) * V_2 ( iV )
+        S_3 ( iV )  =  M ( iV ) * N ( iV ) * M_DD_33 ( iV ) * V_3 ( iV )
+        G ( iV )    =  E ( iV )  +  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV )  &
+                                                +  S_2 ( iV ) * V_2 ( iV )  &
+                                                +  S_3 ( iV ) * V_3 ( iV ) )
       end do !-- iV
       !$OMP  end OMP_TARGET_DIRECTIVE parallel do
     else
       !$OMP parallel do schedule ( OMP_SCHEDULE_HOST ) private ( iV )
       do iV = 1, nValues 
-        G ( iV )  =  E ( iV )  +  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV )  &
-                                              +  S_2 ( iV ) * V_2 ( iV )  &
-                                              +  S_3 ( iV ) * V_3 ( iV ) )
+        M ( iV )    =  1.0_KDR
+        D ( iV )    =  N ( iV )
+        S_1 ( iV )  =  M ( iV ) * N ( iV ) * V_1 ( iV )
+        S_2 ( iV )  =  M ( iV ) * N ( iV ) * M_DD_22 ( iV ) * V_2 ( iV )
+        S_3 ( iV )  =  M ( iV ) * N ( iV ) * M_DD_33 ( iV ) * V_3 ( iV )
+        G ( iV )    =  E ( iV )  +  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV )  &
+                                                +  S_2 ( iV ) * V_2 ( iV )  &
+                                                +  S_3 ( iV ) * V_3 ( iV ) )
       end do !-- iV
       !$OMP end parallel do
     end if
 
-  end procedure ComputeConservedEnergyKernel
+  end procedure ComputeFromPrimitiveKernel
 
 
-  module procedure ComputeInternalEnergyKernel
+  module procedure ComputeFromConservedKernel
 
     integer ( KDI ) :: &
       iV, &
@@ -64,15 +74,25 @@ contains
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
       !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV )
       do iV = 1, nValues
+        M ( iV )  = 1.0_KDR
+        if ( D ( iV )  >  0.0_KDR ) then
+          N ( iV )    =  D ( iV )
+          V_1 ( iV )  =  S_1 ( iV ) / ( M ( iV ) * D ( iV ) )
+          V_2 ( iV )  =  M_UU_22 ( iV ) * S_2 ( iV ) / ( M ( iV ) * D ( iV ) )
+          V_3 ( iV )  =  M_UU_33 ( iV ) * S_3 ( iV ) / ( M ( iV ) * D ( iV ) )
+        else
+          N   ( iV ) = 0.0_KDR
+          V_1 ( iV ) = 0.0_KDR
+          V_2 ( iV ) = 0.0_KDR
+          V_3 ( iV ) = 0.0_KDR
+          D   ( iV ) = 0.0_KDR
+          S_1 ( iV ) = 0.0_KDR
+          S_2 ( iV ) = 0.0_KDR
+          S_3 ( iV ) = 0.0_KDR
+        end if
         E ( iV )  =  G ( iV )  -  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV ) &
                                               +  S_2 ( iV ) * V_2 ( iV ) &
                                               +  S_3 ( iV ) * V_3 ( iV ) )
-      end do
-      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
-
-      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV )
-      do iV = 1, nValues
         if ( E ( iV ) < 0.0_KDR ) then
           E ( iV ) = 0.0_KDR
           G ( iV ) = E ( iV )  +  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV ) &
@@ -81,19 +101,30 @@ contains
         end if
       end do
       !$OMP  end OMP_TARGET_DIRECTIVE parallel do
-      
+
     else
 
       !$OMP parallel do schedule ( OMP_SCHEDULE_HOST ) private ( iV )
       do iV = 1, nValues
+        M ( iV )  = 1.0_KDR
+        if ( D ( iV )  >  0.0_KDR ) then
+          N ( iV )    =  D ( iV )
+          V_1 ( iV )  =  S_1 ( iV ) / ( M ( iV ) * D ( iV ) )
+          V_2 ( iV )  =  M_UU_22 ( iV ) * S_2 ( iV ) / ( M ( iV ) * D ( iV ) )
+          V_3 ( iV )  =  M_UU_33 ( iV ) * S_3 ( iV ) / ( M ( iV ) * D ( iV ) )
+        else
+          N   ( iV ) = 0.0_KDR
+          V_1 ( iV ) = 0.0_KDR
+          V_2 ( iV ) = 0.0_KDR
+          V_3 ( iV ) = 0.0_KDR
+          D   ( iV ) = 0.0_KDR
+          S_1 ( iV ) = 0.0_KDR
+          S_2 ( iV ) = 0.0_KDR
+          S_3 ( iV ) = 0.0_KDR
+        end if
         E ( iV )  =  G ( iV )  -  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV ) &
                                               +  S_2 ( iV ) * V_2 ( iV ) &
                                               +  S_3 ( iV ) * V_3 ( iV ) )
-      end do
-      !$OMP end parallel do
-
-      !$OMP parallel do schedule ( OMP_SCHEDULE_HOST ) private ( iV )
-      do iV = 1, nValues
         if ( E ( iV ) < 0.0_KDR ) then
           E ( iV ) = 0.0_KDR
           G ( iV ) = E ( iV )  +  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV ) &
@@ -105,7 +136,7 @@ contains
     
     end if
 
-  end procedure ComputeInternalEnergyKernel
+  end procedure ComputeFromConservedKernel
 
 
   module procedure ComputeEigenspeedsFluidKernel

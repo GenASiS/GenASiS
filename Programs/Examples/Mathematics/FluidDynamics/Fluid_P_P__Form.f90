@@ -316,14 +316,14 @@ contains
     call T_AE % Stop ( )
     
     call T_CFP % Start ( )
-    call C % ComputeBaryonMassKernel &
-           ( M, UseDeviceOption = C % AllocatedDevice )
-    call C % ComputeDensityMomentumKernel &
-           ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33, &
-             UseDeviceOption = C % AllocatedDevice )
-    call C % ComputeConservedEnergyKernel &
-           ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E, &
-             UseDeviceOption = C % AllocatedDevice )
+    !call C % ComputeBaryonMassKernel &
+    !       ( M, UseDeviceOption = C % AllocatedDevice )
+    !call C % ComputeDensityMomentumKernel &
+    !       ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33, &
+    !         UseDeviceOption = C % AllocatedDevice )
+    call C % ComputeFromPrimitiveKernel &
+           ( M, D, S_1, S_2, S_3, G, N, V_1, V_2, V_3, E, &
+             M_DD_22, M_DD_33, UseDeviceOption = C % AllocatedDevice )
     call T_CFP % Stop ( )
     
     call T_CE % Start ( )
@@ -420,14 +420,14 @@ contains
         T_AE  => PROGRAM_HEADER % Timer ( C % iTimerApply_EOS ) ) 
     
     call T_CFC % Start ( )
-    call C % ComputeBaryonMassKernel & 
-           ( M, UseDeviceOption = C % AllocatedDevice )
-    call C % ComputeDensityVelocityKernel &
-           ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33, &
-             UseDeviceOption = C % AllocatedDevice )
-    call C % ComputeInternalEnergyKernel &
-           ( E, G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, &
-             UseDeviceOption = C % AllocatedDevice )
+    !call C % ComputeBaryonMassKernel & 
+    !       ( M, UseDeviceOption = C % AllocatedDevice )
+    !call C % ComputeDensityVelocityKernel &
+    !       ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33, &
+    !         UseDeviceOption = C % AllocatedDevice )
+    call C % ComputeFromConservedKernel &
+           ( E, G, M, N, D, V_1, V_2, V_3, S_1, S_2, S_3, &
+             M_UU_22, M_UU_33, UseDeviceOption = C % AllocatedDevice )
     call T_CFC % Stop ( )
     
     call T_AE % Start ( )

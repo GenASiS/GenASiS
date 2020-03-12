@@ -48,9 +48,9 @@ module Fluid_P__Template
     procedure, public, pass ( C ) :: &
       ComputeCenterStatesTemplate_P
     procedure, public, nopass :: &
-      ComputeConservedEnergyKernel
+      ComputeFromPrimitiveKernel
     procedure, public, nopass :: &
-      ComputeInternalEnergyKernel
+      ComputeFromConservedKernel
     procedure, public, nopass :: &
       ComputeEigenspeedsFluidKernel
   end type Fluid_P_Template
@@ -65,25 +65,27 @@ module Fluid_P__Template
       
   interface
   
-    module subroutine ComputeConservedEnergyKernel &
-                 ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E, &
-                   UseDeviceOption )
+    module subroutine ComputeFromPrimitiveKernel &
+                 ( M, D, S_1, S_2, S_3, G, N, V_1, V_2, V_3, E, &
+                   M_DD_22, M_DD_33, UseDeviceOption )
       use Basics
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        M, &
+        D, &
+        S_1, S_2, S_3, &
         G
       real ( KDR ), dimension ( : ), intent ( in ) :: &
-        M, &
         N, &
         V_1, V_2, V_3, &
-        S_1, S_2, S_3, &
-        E
+        E, &
+        M_DD_22, M_DD_33
       logical ( KDL ), intent ( in ), optional :: &
         UseDeviceOption
-    end subroutine ComputeConservedEnergyKernel
+    end subroutine ComputeFromPrimitiveKernel
 
-    module subroutine ComputeInternalEnergyKernel &
-                 ( E, G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, &
-                   UseDeviceOption )
+    module subroutine ComputeFromConservedKernel &
+                 ( E, G, M, N, D, V_1, V_2, V_3, S_1, S_2, S_3, &
+                   M_UU_22, M_UU_33, UseDeviceOption )
       use Basics
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         E, &
@@ -91,11 +93,14 @@ module Fluid_P__Template
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         M, &
         N, &
+        D, &
         V_1, V_2, V_3, &
         S_1, S_2, S_3
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        M_UU_22, M_UU_33
       logical ( KDL ), intent ( in ), optional :: &
         UseDeviceOption
-    end subroutine ComputeInternalEnergyKernel
+    end subroutine ComputeFromConservedKernel
 
     module subroutine ComputeEigenspeedsFluidKernel &
                  ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, MN, &
