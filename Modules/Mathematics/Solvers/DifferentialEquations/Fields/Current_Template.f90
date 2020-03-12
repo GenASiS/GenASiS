@@ -39,6 +39,8 @@ module Current_Template
     integer ( KDI ) :: &
       iTimerComputeFromPrimitive, &
       iTimerComputeFromConserved, &
+      iTimerComputeEigenspeed, &
+      iTimerApply_EOS, &
       iTimerComputeSolverSpeeds_HLL, &
       iTimerComputeFluxes_HLL, &
       iTimerComputeRawFluxes, &
@@ -289,6 +291,12 @@ contains
              Level = 6 )
     call PROGRAM_HEADER % AddTimer &
            ( 'ComputeFromConserved', C % iTimerComputeFromConserved, &
+             Level = 6 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'ComputeEigenspeed', C % iTimerComputeEigenspeed, &
+             Level = 6 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'Apply_EOS', C % iTimerApply_EOS, &
              Level = 6 )
     call PROGRAM_HEADER % AddTimer &
            ( 'ComputeSolverSpeeds_HLL', C % iTimerComputeSolverSpeeds_HLL, &
