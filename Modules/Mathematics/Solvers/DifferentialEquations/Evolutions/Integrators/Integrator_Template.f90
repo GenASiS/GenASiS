@@ -413,8 +413,6 @@ contains
       iTSC, &
       TallyIgnorability, &
       StatisticsIgnorability
-    logical ( KDL ) :: &
-      WriteTimeSeries
     real ( KDR ), dimension ( PROGRAM_HEADER % nTimers ) :: &
       MaxTime, &
       MinTime, &
@@ -442,11 +440,9 @@ contains
     then
       TallyIgnorability      = I % IGNORABILITY + 2
       StatisticsIgnorability = I % IGNORABILITY + 2
-      WriteTimeSeries        = .false.
     else
       TallyIgnorability      = CONSOLE % INFO_1
       StatisticsIgnorability = CONSOLE % INFO_1
-      WriteTimeSeries        = .true.
     end if
     call I % ComputeTally &
            ( ComputeChangeOption = ComputeChangeOption, &
@@ -461,8 +457,7 @@ contains
              MaxTimeOption = MaxTime, MinTimeOption = MinTime, &
              MeanTimeOption = MeanTime )
     call I % RecordTimeSeries ( MaxTime, MinTime, MeanTime )
-    if ( WriteTimeSeries ) &
-      call I % WriteTimeSeries ( )
+    call I % WriteTimeSeries ( )
 
     I % IsCheckpointTime = .false.
     if ( I % Time < I % FinishTime ) then
