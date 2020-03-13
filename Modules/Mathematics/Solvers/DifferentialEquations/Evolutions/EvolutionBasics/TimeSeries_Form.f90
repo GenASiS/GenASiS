@@ -11,8 +11,9 @@ module TimeSeries_Form
   type, public :: TimeSeriesForm
     integer ( KDI ) :: &
       IGNORABILITY, &
-      N_SERIES_BASIC  = 0, &
-      N_SERIES_TIMER = 0
+      N_SERIES_BASIC     = 0, &
+      N_SERIES_TIMER     = 0, &
+      N_SERIES_TIME_STEP = 0
     integer ( KDI ) :: &
       TIME, &
       CYCLE, &
@@ -28,7 +29,8 @@ module TimeSeries_Form
       SeriesBasic, &
       SeriesTimerMax, &
       SeriesTimerMin, &
-      SeriesTimerMean
+      SeriesTimerMean, &
+      SeriesTimeStep
     character ( LDF ) :: &
       Type = '', &
       Name = ''
@@ -140,10 +142,12 @@ contains
     allocate ( TS % SeriesTimerMax )
     allocate ( TS % SeriesTimerMin )
     allocate ( TS % SeriesTimerMean )
+    allocate ( TS % SeriesTimeStep )
     associate &
       ( ST_Max  => TS % SeriesTimerMax, &
         ST_Min  => TS % SeriesTimerMin, &
-        ST_Mean => TS % SeriesTimerMean )
+        ST_Mean => TS % SeriesTimerMean, &
+        ST_Step => TS % SeriesTimeStep )
     call ST_Max % Initialize &
            ( [ nTimes, TS % N_SERIES_TIMER ], VariableOption = SeriesName, &
              UnitOption = SeriesUnit, NameOption = 'Max_WallTimePerCycle', &
@@ -155,6 +159,24 @@ contains
     call ST_Mean % Initialize &
            ( [ nTimes, TS % N_SERIES_TIMER ], VariableOption = SeriesName, &
              UnitOption = SeriesUnit, NameOption = 'Mean_WallTimePerCycle', &
+             ClearOption = .true. )
+
+    deallocate ( SeriesUnit )
+    deallocate ( SeriesName )
+
+    !-- SeriesTimeStep
+
+    TS % N_SERIES_TIME_STEP  =  I % nTimeStepCandidates
+
+    allocate ( SeriesName ( TS % N_SERIES_TIME_STEP ) )
+    allocate ( SeriesUnit ( TS % N_SERIES_TIME_STEP ) )
+
+    SeriesName  =  I % TimeStepLabel
+    SeriesUnit  =  I % TimeUnit
+
+    call ST_Step % Initialize &
+           ( [ nTimes, TS % N_SERIES_TIME_STEP ], VariableOption = SeriesName, &
+             UnitOption = SeriesUnit, NameOption = 'TimeStep', &
              ClearOption = .true. )
 
     deallocate ( SeriesUnit )
@@ -179,6 +201,7 @@ contains
       call CI % AddStorage ( ST_Max )
       call CI % AddStorage ( ST_Min )
       call CI % AddStorage ( ST_Mean )
+      call CI % AddStorage ( ST_Step )
       end associate !-- GIS_TS, etc.
     end if !-- output rank
 
@@ -219,6 +242,7 @@ contains
         STV_Max  => TS % SeriesTimerMax % Value, &
         STV_Min  => TS % SeriesTimerMin % Value, &
         STV_Mean => TS % SeriesTimerMean % Value, &
+        STSV => TS % SeriesTimeStep % Value, &
         iV  => TS % iTime )
 
     iV = iV + 1
@@ -255,6 +279,7 @@ contains
     SBV ( iV, TS % MEMORY_MEAN_RSS ) = Memory_Mean_RSS
 
     if ( I % iCycle > 0 ) then
+
       do iT = 1, TS % N_SERIES_TIMER
         STV_Max  ( iV, iT ) = MaxTime  ( iT ) / I % iCycle
         STV_Min  ( iV, iT ) = MinTime  ( iT ) / I % iCycle
@@ -263,6 +288,9 @@ contains
                     trim ( ST_Max % Variable ( iT ) ) // ' per cycle', &
                     TS % IGNORABILITY )
       end do !-- iT
+
+      STSV ( iV, : )  =  I % TimeStepCandidate
+
     end if
 
     end associate !-- I, etc.
@@ -310,6 +338,8 @@ contains
       deallocate ( TS % CurveImage )
     if ( allocated ( TS % GridImageStream ) ) &
       deallocate ( TS % GridImageStream )
+    if ( allocated ( TS % SeriesTimeStep ) ) &
+      deallocate ( TS % SeriesTimeStep )
     if ( allocated ( TS % SeriesTimerMean ) ) &
       deallocate ( TS % SeriesTimerMean )
     if ( allocated ( TS % SeriesTimerMin ) ) &

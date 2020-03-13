@@ -235,18 +235,18 @@ contains
     select type ( I => RCC % Integrator )
     class is ( Integrator_C_PS_Form )
       I % TimeStepLabel ( 1 )      =  'Gravity'
-      I % TimeStepLabel ( 1 + 1 )  =  'Fluid Advection'
+      I % TimeStepLabel ( 1 + 1 )  =  'Fluid_Advection'
     end select !-- I
 
     select type ( I => RCC % Integrator )
     class is ( Integrator_C_1D_C_PS_Template )
       do iC = 1, I % N_CURRENTS_1D
         I % TimeStepLabel ( 1 + 1 + iC )  &
-          =  trim ( RadiationName ( iC ) ) // ' Streaming'
+          =  trim ( RadiationName ( iC ) ) // '_Streaming'
       end do !-- iC
       do iC = 1, I % N_CURRENTS_1D
         I % TimeStepLabel ( 1  +  1  +  I % N_CURRENTS_1D  +  iC )  &
-          =  trim ( RadiationName ( iC ) ) // ' Interactions'
+          =  trim ( RadiationName ( iC ) ) // '_Interactions'
       end do !-- iC
     end select !-- I
 
