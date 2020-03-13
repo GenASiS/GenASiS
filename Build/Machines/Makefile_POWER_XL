@@ -1,6 +1,7 @@
 # Makefile for Summit XL compiler 
 
-FORTRAN_COMPILE      = mpifort -c -qpreprocess -qsmp=omp
+FORTRAN_COMPILE      = mpifort -c -qpreprocess
+FORTRAN_FIXEDFORM    = -qfixed
 FORTRAN_BOUND_CHECK  = -qcheck=bounds
 FORTRAN_DEBUG        = -g -qsigtrap #-Wall
 FORTRAN_OPTIMIZE     = -Ofast
@@ -21,6 +22,9 @@ SILO_DIR = /sw/peak/caascade/silo/4.10.2/xl20180502
 INCLUDE_SILO = -I${SILO_DIR}/include
 LIBRARY_SILO = -L${SILO_DIR}/lib -lsilo
 
+INCLUDE_HDF5 = -I${OLCF_HDF5_ROOT}/include
+LIBRARY_HDF5 = -L${OLCF_HDF5_ROOT}/lib -lhdf5_fortran -lhdf5
+
 ifeq ($(ENABLE_OMP_OFFLOAD), 1)
 INCLUDE_CUDA = -I${OLCF_CUDA_ROOT}/include
 LIBRARY_CUDA = -L${OLCF_CUDA_ROOT}/lib64 -lcudart
@@ -31,7 +35,8 @@ INCLUDE_PREPROCESSOR = -I$(PATH_GENASIS)/Build
 #-- Enable unicode
 USE_ISO_10646 = 
 
+DEFINES = -qsmp=omp
 #-- default to use OpenMP offload for this makefile
 ifneq ($(ENABLE_OMP_OFFLOAD), 0)
-  DEFINES = -DENABLE_OMP_OFFLOAD -qoffload
+  DEFINES = -DENABLE_OMP_OFFLOAD  -qsmp=omp -qoffload
 endif

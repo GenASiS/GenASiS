@@ -27,7 +27,7 @@ $(OBJECTS): %.o: %.F90 $(EXTRADEPS)
 	$(F90) $(F90FLAGS) $(DEFS) $(MODINC) -c $< -o $@
 
 $(FOBJECTS): %.o: %.f $(EXTRADEPS)
-	$(F90) $(F90FLAGS) $(DEFS) $(MODINC) -c $< -o $@
+	$(F77) $(DEFS) $(MODINC) -c $< -o $@
 
 
 clean: 

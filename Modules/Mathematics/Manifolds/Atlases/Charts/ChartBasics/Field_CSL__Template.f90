@@ -22,7 +22,19 @@ module Field_CSL__Template
       InitializeTemplate_CSL
     procedure, public, pass :: &
       FinalizeTemplate_CSL
+!-- FIXME: Copied from FieldChart_Template for XL compiler
+    procedure ( SF ), private, pass, deferred :: &
+      SetField
   end type Field_CSL_Template
+
+!-- FIXME: Copied from FieldChart_Template for XL compiler
+    abstract interface 
+      subroutine SF ( FC )
+        import Field_CSL_Template
+        class ( Field_CSL_Template ), intent ( inout ) :: &
+          FC
+      end subroutine
+    end interface
 
 contains
 
