@@ -50,8 +50,8 @@ contains
     class ( InteractionsTemplate ), pointer :: &
       I
 
-    Filename = '../Parameters/NuLib_rho82_temp65_ye51_ng16_ns3_' &
-               // 'Itemp65_Ieta61_version1.0_20190829.h5'
+    Filename = '../Parameters/NuLib_rho120_temp70_ye30_ng16_ns3_' &
+               // 'Itemp70_Ieta30_version1.0_20200117.h5'
 
     select case ( trim ( IB % InteractionsType ) )
     case ( 'O_CONNOR_OTT' )
