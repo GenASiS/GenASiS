@@ -1,6 +1,6 @@
 # Makefile Summit with GCC compiler
 
-FORTRAN_COMPILE      = mpif90 -c -cpp -fopenmp
+FORTRAN_COMPILE      = mpif90 -c -cpp 
 FORTRAN_BOUND_CHECK  = -fbounds-check
 FORTRAN_DEBUG        = -g -ffpe-trap=invalid,zero,overflow #-Wall
 FORTRAN_OPTIMIZE     = -O3
@@ -17,6 +17,13 @@ SILO_DIR=/sw/peak/caascade/silo/4.10.2/gcc8.1.0
 INCLUDE_SILO = -I${SILO_DIR}/include
 LIBRARY_SILO = -L${SILO_DIR}/lib -lsilo
 
+#-- HDF5 library include and link line flag and location
+INCLUDE_HDF5 = -I${OLCF_HDF5_ROOT}/include
+LIBRARY_HDF5 = -L${OLCF_HDF5_ROOT}/lib -lhdf5_fortran -lhdf5
+
+#-- LAPACK library link line flag and location
+LIBRARY_LAPACK = -L${OLCF_NETLIB_LAPACK_ROOT}/lib -llapack -lblas
+
 INCLUDE_CUDA = 
 LIBRARY_CUDA = 
 
@@ -25,7 +32,8 @@ INCLUDE_PREPROCESSOR = -I$(PATH_GENASIS)/Build
 #-- Enable unicode by default
 USE_ISO_10646 = 1
 
+DEFINES = -fopenmp
 #-- Enable offload if requested
 ifeq ($(ENABLE_OMP_OFFLOAD), 1)
-  DEFINES = -DENABLE_OMP_OFFLOAD
+  DEFINES = -fopenmp -DENABLE_OMP_OFFLOAD
 endif
