@@ -607,7 +607,7 @@ contains
     
     if ( UseDevice ) then
     
-      !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 )&
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
       !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iT, jT, kT, iS )
       do kV = oTarget ( 3 ) + 1, oTarget ( 3 ) + nTarget ( 3 )
         do jV = oTarget ( 2 ) + 1, oTarget ( 2 ) + nTarget ( 2 )
@@ -629,7 +629,7 @@ contains
     
     else
       
-      !$OMP  parallel do collapse ( 3 )&
+      !$OMP  parallel do collapse ( 3 ) &
       !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iT, jT, kT, iS )
       do kV = oTarget ( 3 ) + 1, oTarget ( 3 ) + nTarget ( 3 )
         do jV = oTarget ( 2 ) + 1, oTarget ( 2 ) + nTarget ( 2 )
@@ -647,7 +647,7 @@ contains
           end do
         end do
       end do
-      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+      !$OMP end parallel do
     
     end if
 
