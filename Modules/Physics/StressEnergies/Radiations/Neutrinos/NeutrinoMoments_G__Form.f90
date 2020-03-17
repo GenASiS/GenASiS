@@ -285,10 +285,14 @@ contains
         ( J_EQ => I % Value ( :, I % EQUILIBRIUM_J ), &
           N_EQ => I % Value ( :, I % EQUILIBRIUM_N ) )
       call C % ComputeSpectralParameters &
-             ( T, Eta, E_Ave, F_Ave, J_EQ, N_EQ, J, N, T_EQ, Eta_EQ )
+             ( T, Eta, J, N, E_Ave_Option = E_Ave, F_Ave_Option = F_Ave, &
+               J_EQ_Option = J_EQ, N_EQ_Option = N_EQ, T_EQ_Option = T_EQ, &
+               Eta_EQ_Option = Eta_EQ )
       end associate !-- J_EQ, etc.
       end associate !-- I
-    end if
+    else
+      call C % ComputeSpectralParameters ( T, Eta, J, N )
+    end if  !-- associated C % Interactions
 
     end associate !-- J, etc.
     end associate !-- M_DD_22, etc.
@@ -367,10 +371,14 @@ contains
         ( J_EQ => I % Value ( :, I % EQUILIBRIUM_J ), &
           N_EQ => I % Value ( :, I % EQUILIBRIUM_N ) )
       call C % ComputeSpectralParameters &
-             ( T, Eta, E_Ave, F_Ave, J_EQ, N_EQ, J, N, T_EQ, Eta_EQ )
+             ( T, Eta, J, N, E_Ave_Option = E_Ave, F_Ave_Option = F_Ave, &
+               J_EQ_Option = J_EQ, N_EQ_Option = N_EQ, T_EQ_Option = T_EQ, &
+               Eta_EQ_Option = Eta_EQ )
       end associate !-- J_EQ, etc.
       end associate !-- I
-    end if
+    else
+      call C % ComputeSpectralParameters ( T, Eta, J, N )
+    end if  !-- associated C % Interactions
 
     end associate !-- J, etc.
     end associate !-- M_DD_22, etc.
@@ -469,22 +477,25 @@ contains
 
 
   subroutine ComputeSpectralParameters_NM &
-               ( T, Eta, E_Ave, F_Ave, J_EQ, N_EQ, NM, J, N, T_EQ, Eta_EQ )
+               ( T, Eta, NM, J, N, E_Ave_Option, F_Ave_Option, &
+                 J_EQ_Option, N_EQ_Option, T_EQ_Option, Eta_EQ_Option )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       T, &
-      Eta, &
-      E_Ave, &
-      F_Ave, &
-      J_EQ, &
-      N_EQ
+      Eta
     class ( NeutrinoMoments_G_Form ), intent ( in ) :: &
       NM
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       J, &
-      N, &
-      T_EQ, &
-      Eta_EQ
+      N
+    real ( KDR ), dimension ( : ), intent ( inout ), optional :: &
+      E_Ave_Option, &
+      F_Ave_Option, &
+      J_EQ_Option, &
+      N_EQ_Option
+    real ( KDR ), dimension ( : ), intent ( in ), optional :: &
+      T_EQ_Option, &
+      Eta_EQ_Option
 
     integer ( KDI ) :: &
       iV, &
@@ -526,8 +537,8 @@ contains
 !call Show ( minval ( pack ( J / N ** (4./3.), mask = N > 0.0_KDR ) ), '>>> min MomentRatio' )
 
     !$OMP parallel do &
-    !$OMP   private ( iV, Eta_ND, Eta_ED, Eta_Sol, &
-    !$OMP             Fermi_2, Fermi_3, Fermi_2_EQ, Fermi_3_EQ, &
+    !$OMP   private ( iV, MomentRatio, Eta_ND, Eta_ED, Eta_Sol, &
+    !$OMP             Fermi_2, Fermi_3, &
     !$OMP             fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta )
     do iV = 1, nValues
 
@@ -585,7 +596,7 @@ call Show ( Eta_ED, '>>> Falling back to Eta_ED', CONSOLE % ERROR )
 !call Show ( Eta ( iV ), '>>> Eta post' )
       else
         Eta ( iV )  =  log ( tiny ( 0.0_KDR ) )  *  10.0_KDR
-      end if
+      end if  !-- N > 0 and J > 0
 
 !      if ( trim ( NM % Type ) == 'NEUTRINOS_E_NU' ) then
 !        Eta ( iV )  =  min ( Eta ( iV ), Eta_EQ ( iV ) )
@@ -596,28 +607,50 @@ call Show ( Eta_ED, '>>> Falling back to Eta_ED', CONSOLE % ERROR )
       call DFERMI ( 3.0_KDR, Eta ( iV ), 0.0_KDR, Fermi_3, &
                     fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
 
-      call DFERMI ( 2.0_KDR, Eta_EQ ( iV ), 0.0_KDR, Fermi_2_EQ, &
-                    fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
-      call DFERMI ( 3.0_KDR, Eta_EQ ( iV ), 0.0_KDR, Fermi_3_EQ, &
-                    fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
-
       if ( N ( iV ) > 0.0_KDR .and. J ( iV ) > 0.0_KDR ) then
         T  ( iV )     =  J ( iV )  /  N ( iV )  *  Fermi_2 / Fermi_3
-        E_Ave ( iV )  =  J ( iV )  /  N ( iV )
-        F_Ave ( iV )  &
-          =  1.0_KDR &
-             /  ( exp ( E_Ave ( iV ) / T ( iV )  -  Eta ( iV ) )  +  1.0_KDR )
       else
         T ( iV )      =  0.0_KDR
-        E_Ave ( iV )  =  0.0_KDR
-        F_Ave ( iV )  =  0.0_KDR
       end if
-
-      N_EQ ( iV )  =  Factor_J_N  *  T_EQ ( iV ) ** 3  *  Fermi_2_EQ
-      J_EQ ( iV )  =  Factor_J_N  *  T_EQ ( iV ) ** 4  *  Fermi_3_EQ
 
     end do !-- iV
     !$OMP end parallel do
+
+    if ( present ( E_Ave_Option ) .and. present ( F_Ave_Option ) &
+         .and. present ( J_EQ_Option ) .and. present ( N_EQ_Option ) &
+         .and. present ( T_EQ_Option ) .and. present ( Eta_EQ_Option ) ) &
+    then
+
+      !$OMP parallel do &
+      !$OMP   private ( iV, Fermi_2_EQ, Fermi_3_EQ, &
+      !$OMP             fdeta, fdeta2, fdtheta, fdtheta2, fdetadtheta )
+      do iV = 1, nValues
+
+        call DFERMI ( 2.0_KDR, Eta_EQ_Option ( iV ), 0.0_KDR, Fermi_2_EQ, &
+                      fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+        call DFERMI ( 3.0_KDR, Eta_EQ_Option ( iV ), 0.0_KDR, Fermi_3_EQ, &
+                      fdeta, fdtheta, fdeta2, fdtheta2, fdetadtheta )
+
+        if ( N ( iV ) > 0.0_KDR .and. J ( iV ) > 0.0_KDR ) then
+          E_Ave_Option ( iV )  =  J ( iV )  /  N ( iV )
+          F_Ave_Option ( iV )  &
+            =  1.0_KDR &
+               /  ( exp ( E_Ave_Option ( iV ) / T ( iV )  &
+                          -  Eta ( iV ) )  +  1.0_KDR )
+        else
+          E_Ave_Option ( iV )  =  0.0_KDR
+          F_Ave_Option ( iV )  =  0.0_KDR
+        end if
+
+        N_EQ_Option ( iV )  &
+          =  Factor_J_N  *  T_EQ_Option ( iV ) ** 3  *  Fermi_2_EQ
+        J_EQ_Option ( iV )  &
+          =  Factor_J_N  *  T_EQ_Option ( iV ) ** 4  *  Fermi_3_EQ
+
+      end do !-- iV
+      !$OMP end parallel do
+
+    end if !-- options present
 
   end subroutine ComputeSpectralParameters_NM
 

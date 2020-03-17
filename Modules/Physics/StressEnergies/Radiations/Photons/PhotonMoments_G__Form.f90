@@ -183,7 +183,7 @@ contains
 
     if ( associated ( C % Interactions ) ) &
       call C % Interactions % ComputeEquilibriumParameters ( T_EQ )
-    call C % ComputeSpectralParameters ( T, J, T_EQ )
+    call C % ComputeSpectralParameters ( T, J )
 
     end associate !-- J, etc.
     nullify ( RMV )
@@ -236,7 +236,7 @@ contains
 
     if ( associated ( C % Interactions ) ) &
       call C % Interactions % ComputeEquilibriumParameters ( T_EQ )
-    call C % ComputeSpectralParameters ( T, J, T_EQ )
+    call C % ComputeSpectralParameters ( T, J )
 
     end associate !-- J, etc.
     nullify ( RMV )
@@ -246,7 +246,7 @@ contains
 
   subroutine ComputeSpectralParameters_PM &
 !               ( T, Eta, E_Ave, F_Ave, J_EQ, RM, J, N, T_EQ, Eta_EQ )
-               ( T, PM, J, T_EQ )
+               ( T, PM, J )!, T_EQ )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       T
@@ -256,9 +256,9 @@ contains
     class ( PhotonMoments_G_Form ), intent ( in ) :: &
       PM
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      J, &
+      J!, &
 !       N, &
-      T_EQ!, &
+!      T_EQ!, &
 !       Eta_EQ
 
     integer ( KDI ) :: &
