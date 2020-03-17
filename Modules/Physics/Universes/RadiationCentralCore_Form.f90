@@ -107,7 +107,9 @@ contains
 
     if ( RCC % Type == '' ) &
       RCC % Type = 'a RadiationCentralCore'
-    
+
+    RCC % Dimensionless  =  .false.
+
     call RCC % InitializeTemplate ( Name )
 
     RCC % MomentsType  =  MomentsType
