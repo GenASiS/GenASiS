@@ -430,52 +430,36 @@ contains
       iD
 
     call ComputeCenterStatesKernel &
-           ( C_ICL % Value ( :, C % VELOCITY_U ( 1 ) ), &
-             C_ICR % Value ( :, C % VELOCITY_U ( 1 ) ), &
-             C_ICL % Value ( :, C % VELOCITY_U ( 2 ) ), &
-             C_ICR % Value ( :, C % VELOCITY_U ( 2 ) ), &
-             C_ICL % Value ( :, C % VELOCITY_U ( 3 ) ), &
-             C_ICR % Value ( :, C % VELOCITY_U ( 3 ) ), &
-             C_ICL % Value ( :, C % VELOCITY_U ( iD ) ), &
-             C_ICR % Value ( :, C % VELOCITY_U ( iD ) ), &
+           ( C_ICL % Value ( :, C % VELOCITY_U ( 1 ) &
+                                  : C % VELOCITY_U ( 3 ) ), &
+             C_ICR % Value ( :, C % VELOCITY_U ( 1 ) &
+                                  : C % VELOCITY_U ( 3 ) ), &
+             C_ICL % Value ( :, C % MOMENTUM_DENSITY_D ( 1 ) &
+                                  : C % MOMENTUM_DENSITY_D ( 3 ) ), &
+             C_ICR % Value ( :, C % MOMENTUM_DENSITY_D ( 1 ) &
+                                  : C % MOMENTUM_DENSITY_D ( 3 ) ), &
              C_ICL % Value ( :, C % BARYON_MASS ), &
              C_ICR % Value ( :, C % BARYON_MASS ), &
              C_ICL % Value ( :, C % CONSERVED_BARYON_DENSITY ), &
              C_ICR % Value ( :, C % CONSERVED_BARYON_DENSITY ), &
-             C_ICL % Value ( :, C % MOMENTUM_DENSITY_D ( 1 ) ), &
-             C_ICR % Value ( :, C % MOMENTUM_DENSITY_D ( 1 ) ), &
-             C_ICL % Value ( :, C % MOMENTUM_DENSITY_D ( 2 ) ), &
-             C_ICR % Value ( :, C % MOMENTUM_DENSITY_D ( 2 ) ), &
-             C_ICL % Value ( :, C % MOMENTUM_DENSITY_D ( 3 ) ), &
-             C_ICR % Value ( :, C % MOMENTUM_DENSITY_D ( 3 ) ), &
-             C_ICL % Value ( :, C % MOMENTUM_DENSITY_D ( iD ) ), &
-             C_ICR % Value ( :, C % MOMENTUM_DENSITY_D ( iD ) ), &
              C_ICL % Value ( :, C % CONSERVED_ENERGY ), &
              C_ICR % Value ( :, C % CONSERVED_ENERGY ), &
              C_ICL % Value ( :, C % PRESSURE ), &
              C_ICR % Value ( :, C % PRESSURE ), &
              C_ICL % Value ( :, C % CONSERVED_ENTROPY ), &
              C_ICR % Value ( :, C % CONSERVED_ENTROPY ), &
-             C_IL % Value ( :, C % VELOCITY_U ( 1 ) ), &
-             C_IR % Value ( :, C % VELOCITY_U ( 1 ) ), &
-             C_IL % Value ( :, C % VELOCITY_U ( 2 ) ), &
-             C_IR % Value ( :, C % VELOCITY_U ( 2 ) ), &
-             C_IL % Value ( :, C % VELOCITY_U ( 3 ) ), &
-             C_IR % Value ( :, C % VELOCITY_U ( 3 ) ), &
-             C_IL % Value ( :, C % VELOCITY_U ( iD ) ), &
-             C_IR % Value ( :, C % VELOCITY_U ( iD ) ), &
+             C_IL % Value ( :, C % VELOCITY_U ( 1 ) &
+                                 : C % VELOCITY_U ( 3 ) ), &
+             C_IR % Value ( :, C % VELOCITY_U ( 1 ) &
+                                 : C % VELOCITY_U ( 3 ) ), &
+             C_IL % Value ( :, C % MOMENTUM_DENSITY_D ( 1 ) &
+                                 : C % MOMENTUM_DENSITY_D ( 3 ) ), &
+             C_IR % Value ( :, C % MOMENTUM_DENSITY_D ( 1 ) &
+                                 : C % MOMENTUM_DENSITY_D ( 3 ) ), &
              C_IL % Value ( :, C % BARYON_MASS ), &
              C_IR % Value ( :, C % BARYON_MASS ), &
              C_IL % Value ( :, C % CONSERVED_BARYON_DENSITY ), &
              C_IR % Value ( :, C % CONSERVED_BARYON_DENSITY ), &
-             C_IL % Value ( :, C % MOMENTUM_DENSITY_D ( 1 ) ), &
-             C_IR % Value ( :, C % MOMENTUM_DENSITY_D ( 1 ) ), &
-             C_IL % Value ( :, C % MOMENTUM_DENSITY_D ( 2 ) ), &
-             C_IR % Value ( :, C % MOMENTUM_DENSITY_D ( 2 ) ), &
-             C_IL % Value ( :, C % MOMENTUM_DENSITY_D ( 3 ) ), &
-             C_IR % Value ( :, C % MOMENTUM_DENSITY_D ( 3 ) ), &
-             C_IL % Value ( :, C % MOMENTUM_DENSITY_D ( iD ) ), &
-             C_IR % Value ( :, C % MOMENTUM_DENSITY_D ( iD ) ), &
              C_IL % Value ( :, C % CONSERVED_ENERGY ), &
              C_IR % Value ( :, C % CONSERVED_ENERGY ), &
              C_IL % Value ( :, C % PRESSURE ), &
@@ -485,7 +469,7 @@ contains
              SS_I % Value ( :, C % ALPHA_PLUS ), &
              SS_I % Value ( :, C % ALPHA_MINUS ), &
              SS_I % Value ( :, C % ALPHA_CENTER ), &
-             M_DD_22, M_DD_33 )
+             M_DD_22, M_DD_33, iD )
 
   end subroutine ComputeCenterStatesTemplate_P
 
@@ -839,41 +823,30 @@ contains
 
 
   subroutine ComputeCenterStatesKernel &
-               ( V_1_ICL, V_1_ICR, V_2_ICL, V_2_ICR, V_3_ICL, V_3_ICR, &
-                 V_Dim_ICL, V_Dim_ICR, M_ICL, M_ICR, D_ICL, D_ICR, &
-                 S_1_ICL, S_1_ICR, S_2_ICL, S_2_ICR, S_3_ICL, S_3_ICR, &
-                 S_Dim_ICL, S_Dim_ICR, G_ICL, G_ICR, P_ICL, P_ICR, &
-                 DS_ICL, DS_ICR, V_1_IL, V_1_IR, V_2_IL, V_2_IR, &
-                 V_3_IL, V_3_IR, V_Dim_IL, V_Dim_IR, M_IL, M_IR, D_IL, D_IR, &
-                 S_1_IL, S_1_IR, S_2_IL, S_2_IR, S_3_IL, S_3_IR, &
-                 S_Dim_IL, S_Dim_IR, G_IL, G_IR, P_IL, P_IR, DS_IL, DS_IR, &
-                 AP_I, AM_I, AC_I, M_DD_22, M_DD_33 )
+               ( V_ICL, V_ICR, S_ICL, S_ICR, M_ICL, M_ICR, D_ICL, D_ICR, &
+                 G_ICL, G_ICR, P_ICL, P_ICR, DS_ICL, DS_ICR, &
+                 V_IL, V_IR, S_IL, S_IR, M_IL, M_IR, D_IL, D_IR, &
+                 G_IL, G_IR, P_IL, P_IR, DS_IL, DS_IR, &
+                 AP_I, AM_I, AC_I, M_DD_22, M_DD_33, iD )
 
+    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+      V_ICL, V_ICR, &
+      S_ICL, S_ICR
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      V_1_ICL, V_1_ICR, &
-      V_2_ICL, V_2_ICR, &
-      V_3_ICL, V_3_ICR, &
-      V_Dim_ICL, V_Dim_ICR, &
       M_ICL, M_ICR, &
       D_ICL, D_ICR, &
-      S_1_ICL, S_1_ICR, &
-      S_2_ICL, S_2_ICR, &
-      S_3_ICL, S_3_ICR, &
-      S_Dim_ICL, S_Dim_ICR, &
       G_ICL, G_ICR, &
       P_ICL, P_ICR, &
       DS_ICL, DS_ICR
+    !-- FIXME: IBM XL compiler produces bogus error message
+    !          with intent ( in ); changed to intent ( inout )
+    !          as temporarily workaround. OLCF RT #415080
+    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+      V_IL, V_IR, &
+      S_IL, S_IR
     real ( KDR ), dimension ( : ), intent ( in ) :: &
-      V_1_IL, V_1_IR, &
-      V_2_IL, V_2_IR, &
-      V_3_IL, V_3_IR, &
-      V_Dim_IL, V_Dim_IR, &
       M_IL, M_IR, &
       D_IL, D_IR, &
-      S_1_IL, S_1_IR, &
-      S_2_IL, S_2_IR, &
-      S_3_IL, S_3_IR, &
-      S_Dim_IL, S_Dim_IR, &
       G_IL, G_IR, &
       P_IL, P_IR, &
       DS_IL, DS_IR, &
@@ -881,6 +854,8 @@ contains
       AM_I, &
       AC_I, &
       M_DD_22, M_DD_33
+    integer ( KDI ), intent ( in ) :: &
+      iD
 
     integer ( KDI ) :: &
       iV, &
@@ -897,6 +872,40 @@ contains
     nValues = size ( AC_I )
 
     SqrtTiny = sqrt ( tiny ( 0.0_KDR ) )
+
+    associate &
+      ( V_1_ICL   => V_ICL ( :, 1 ), &
+        V_2_ICL   => V_ICL ( :, 2 ), &  
+        V_3_ICL   => V_ICL ( :, 3 ), &
+        V_Dim_ICL => V_ICL ( :, iD ), &
+        V_1_ICR   => V_ICR ( :, 1 ), &
+        V_2_ICR   => V_ICR ( :, 2 ), &  
+        V_3_ICR   => V_ICR ( :, 3 ), &
+        V_Dim_ICR => V_ICR ( :, iD ), &
+        S_1_ICL   => S_ICL ( :, 1 ), &
+        S_2_ICL   => S_ICL ( :, 2 ), &  
+        S_3_ICL   => S_ICL ( :, 3 ), &
+        S_Dim_ICL => S_ICL ( :, iD ), &
+        S_1_ICR   => S_ICR ( :, 1 ), &
+        S_2_ICR   => S_ICR ( :, 2 ), &  
+        S_3_ICR   => S_ICR ( :, 3 ), &
+        S_Dim_ICR => S_ICR ( :, iD ), &
+        V_1_IL    => V_IL ( :, 1 ), &
+        V_2_IL    => V_IL ( :, 2 ), &  
+        V_3_IL    => V_IL ( :, 3 ), &
+        V_Dim_IL  => V_IL ( :, iD ), &
+        V_1_IR    => V_IR ( :, 1 ), &
+        V_2_IR    => V_IR ( :, 2 ), &  
+        V_3_IR    => V_IR ( :, 3 ), &
+        V_Dim_IR  => V_IR ( :, iD ), &
+        S_1_IL    => S_IL ( :, 1 ), &
+        S_2_IL    => S_IL ( :, 2 ), &  
+        S_3_IL    => S_IL ( :, 3 ), &
+        S_Dim_IL  => S_IL ( :, iD ), &
+        S_1_IR    => S_IR ( :, 1 ), &
+        S_2_IR    => S_IR ( :, 2 ), &  
+        S_3_IR    => S_IR ( :, 3 ), &
+        S_Dim_IR  => S_IR ( :, iD ) )
 
     !$OMP parallel do private ( iV ) 
     do iV = 1, nValues
@@ -965,6 +974,8 @@ contains
 
     end do !-- iV
     !$OMP end parallel do
+
+    end associate
 
   end subroutine ComputeCenterStatesKernel
 
