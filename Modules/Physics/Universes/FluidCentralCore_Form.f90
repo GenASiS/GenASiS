@@ -78,7 +78,7 @@ contains
     then
       if ( .not. allocated ( FCC % TimeStepLabel ) ) &
         allocate ( FCC % TimeStepLabel ( 2 ) )
-      FCC % TimeStepLabel ( 1 )  =  'Fluid Advection'
+      FCC % TimeStepLabel ( 1 )  =  'Fluid_Advection'
       FCC % TimeStepLabel ( 2 )  =  'Gravity'
     end if
 
