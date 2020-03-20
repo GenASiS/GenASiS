@@ -114,7 +114,9 @@ contains
 
       select type ( Grid_SLD => FF % Grid )
       class is ( Chart_SLD_Form )
-        call S_Shock % Initialize ( FF, iaSelectedOption = [ FF % SHOCK ] )
+        call S_Shock % Initialize &
+               ( FF, iaSelectedOption = &
+                       [ FF % SHOCK, FF % DIFFUSIVE_FLUX_I ( 1 : 3 ) ] )
         call Grid_SLD % ExchangeGhostData ( S_Shock )
       end select
 
