@@ -158,12 +158,16 @@ contains
     class is ( Atlas_SC_Form )
     G => PS % Geometry ( )
 
+    select type ( PSC => PS % Chart )
+    class is ( Chart_SLD_Form )
+
     F_R => PW % Reference % Fluid_D ( )
-    call SetFluid ( PW, F_R, G )
+    call SetFluid ( PW, F_R, PSC, G )
 
     F_D => PW % Difference % Fluid_D ( )
     call MultiplyAdd ( F % Value, F_R % Value, -1.0_KDR, F_D % Value )
 
+    end select !-- PSC
     end select !-- PS
     end select !-- FA
     end select !-- PW
@@ -266,10 +270,14 @@ contains
     I % FinishTime = nPeriods * Period
     call Show ( I % FinishTime, 'Reset FinishTime' )
 
+    select type ( PSC => PS % Chart )
+    class is ( Chart_SLD_Form )
+
     G => PS % Geometry ( )
     F => FA % Fluid_D ( )
-    call SetFluid ( PW, F, G )
+    call SetFluid ( PW, F, PSC, G )
 
+    end select !-- PSC
     end associate !-- K, etc.
     end associate !-- BoxSize
     end associate !-- PSC
@@ -281,37 +289,47 @@ contains
   end subroutine SetProblem
 
 
-  subroutine SetFluid ( PW, F, G )
+  subroutine SetFluid ( PW, F, PSC, G )
 
-    class ( PlaneWaveTemplate ), intent ( in ) :: &
+    class ( PlaneWaveTemplate ), intent ( inout ) :: &
       PW
     class ( Fluid_D_Form ), intent ( inout ) :: &
       F
+    class ( Chart_SLD_Form ), intent ( inout ) :: &
+      PSC
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
     
     call SetFluidKernel &
-           ( PW, &
+           (  N = F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
+             VX = F % Value ( :, F % VELOCITY_U ( 1 ) ), &
+             VY = F % Value ( :, F % VELOCITY_U ( 2 ) ), &
+             VZ = F % Value ( :, F % VELOCITY_U ( 3 ) ), &
+             PW = PW, &
+             IsProperCell = PSC % IsProperCell, &
              X = G % Value ( :, G % CENTER_U ( 1 ) ), &
              Y = G % Value ( :, G % CENTER_U ( 2 ) ), &
              Z = G % Value ( :, G % CENTER_U ( 3 ) ), &
              K = PW % Wavenumber, &
              V = PW % Speed, &
-             T = PW % Integrator % Time, &
-             N  = F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
-             VX = F % Value ( :, F % VELOCITY_U ( 1 ) ), &
-             VY = F % Value ( :, F % VELOCITY_U ( 2 ) ), &
-             VZ = F % Value ( :, F % VELOCITY_U ( 3 ) ) )
+             T = PW % Integrator % Time )
 
     call F % ComputeFromPrimitive ( G )
+    call PSC % ExchangeGhostData ( F )
 
   end subroutine SetFluid
 
 
-  subroutine SetFluidKernel ( PW, X, Y, Z, K, V, T, N, VX, VY, VZ )
+  subroutine SetFluidKernel &
+               ( N, VX, VY, VZ, PW, IsProperCell, X, Y, Z, K, V, T )
 
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      N, &
+      VX, VY, VZ
     class ( PlaneWaveTemplate ), intent ( in ) :: &
       PW
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      IsProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       X, Y, Z
     real ( KDR ), dimension ( 3 ), intent ( in ) :: &
@@ -319,9 +337,6 @@ contains
     real ( KDR ), intent ( in ) :: &
       V, &
       T
-    real ( KDR ), dimension ( : ), intent ( out ) :: &
-      N, &
-      VX, VY, VZ
 
     integer ( KDI ) :: &
       iV, &  !-- iValue
@@ -335,6 +350,9 @@ contains
 
     !$OMP parallel do private ( iV )
     do iV = 1, nValues
+
+      if ( .not. IsProperCell ( iV ) ) &
+        cycle
 
       VX ( iV ) = V * K ( 1 ) / Abs_K
       VY ( iV ) = V * K ( 2 ) / Abs_K

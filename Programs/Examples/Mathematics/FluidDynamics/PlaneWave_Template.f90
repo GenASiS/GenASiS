@@ -139,8 +139,11 @@ contains
     call Show ( Period, 'Period' )
     end associate !-- K, etc.
 
+    select type ( PSC => PS % Chart )
+    class is ( Chart_SLD_Form )
     F => FA % Fluid_D ( )
-    call SetFluid ( PW, F, Time = 0.0_KDR )
+    call SetFluid ( PW, F, PSC, Time = 0.0_KDR )
+    end select !-- PSC
 
     !-- Initialize template
 
@@ -211,12 +214,14 @@ contains
   end subroutine FinalizeTemplate_PW
 
 
-  subroutine SetFluid ( PW, F, Time )
+  subroutine SetFluid ( PW, F, PSC, Time )
 
-    class ( PlaneWaveTemplate ), intent ( in ) :: &
+    class ( PlaneWaveTemplate ), intent ( inout ) :: &
       PW
     class ( Fluid_D_Form ), intent ( inout ) :: &
       F
+    class ( Chart_SLD_Form ), intent ( inout ) :: &
+      PSC
     real ( KDR ), intent ( in ) :: &
       Time
     
@@ -228,19 +233,21 @@ contains
     G => PS % Geometry ( )
 
     call SetFluidKernel &
-           ( PW, &
+           (  N = F % Value ( :, F % COMOVING_DENSITY ), &
+             VX = F % Value ( :, F % VELOCITY_U ( 1 ) ), &
+             VY = F % Value ( :, F % VELOCITY_U ( 2 ) ), &
+             VZ = F % Value ( :, F % VELOCITY_U ( 3 ) ), &
+             PW = PW, &
+             IsProperCell = PSC % IsProperCell, &
              X = G % Value ( :, G % CENTER_U ( 1 ) ), &
              Y = G % Value ( :, G % CENTER_U ( 2 ) ), &
              Z = G % Value ( :, G % CENTER_U ( 3 ) ), &
              K = PW % Wavenumber, &
              V = PW % Speed, &
-             T = Time, &
-             N  = F % Value ( :, F % COMOVING_DENSITY ), &
-             VX = F % Value ( :, F % VELOCITY_U ( 1 ) ), &
-             VY = F % Value ( :, F % VELOCITY_U ( 2 ) ), &
-             VZ = F % Value ( :, F % VELOCITY_U ( 3 ) ) )
+             T = Time )
 
     call F % ComputeFromPrimitive ( G )
+    call PSC % ExchangeGhostData ( F )
 
     end select    !-- PS
     nullify ( G )
@@ -266,23 +273,37 @@ contains
     F => FA % Fluid_D ( )
     end select !-- FA
 
+    select type ( PS => PW % PositionSpace )
+    class is ( Atlas_SC_Form )
+
+    select type ( PSC => PS % Chart )
+    class is ( Chart_SLD_Form )
+
     F_R => PW % Reference % Fluid_D ( )
-    call SetFluid ( PW, F_R, PW % Time )
+    call SetFluid ( PW, F_R, PSC, PW % Time )
 
     F_D => PW % Difference % Fluid_D ( )
 !    F_D % Value  =  F % Value  -  F_R % Value
     call MultiplyAdd ( F % Value, F_R % Value, -1.0_KDR, F_D % Value )
 
+    end select !-- PSC
+    end select !-- PS
     end select !-- PW
     nullify ( F, F_R, F_D )
 
   end subroutine SetReference
 
 
-  subroutine SetFluidKernel ( PW, X, Y, Z, K, V, T, N, VX, VY, VZ )
+  subroutine SetFluidKernel &
+               ( N, VX, VY, VZ, PW, IsProperCell, X, Y, Z, K, V, T )
 
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      N, &
+      VX, VY, VZ
     class ( PlaneWaveTemplate ), intent ( in ) :: &
       PW
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      IsProperCell
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       X, Y, Z
     real ( KDR ), dimension ( 3 ), intent ( in ) :: &
@@ -290,9 +311,6 @@ contains
     real ( KDR ), intent ( in ) :: &
       V, &
       T
-    real ( KDR ), dimension ( : ), intent ( out ) :: &
-      N, &
-      VX, VY, VZ
 
     integer ( KDI ) :: &
       iV, &  !-- iValue
@@ -306,18 +324,19 @@ contains
 
     !$OMP parallel do private ( iV )
     do iV = 1, nValues
+
+      if ( .not. IsProperCell ( iV ) ) &
+        cycle
+
       VX ( iV ) = V * K ( 1 ) / Abs_K
       VY ( iV ) = V * K ( 2 ) / Abs_K
       VZ ( iV ) = V * K ( 3 ) / Abs_K
-    end do !-- iV
-    !$OMP end parallel do
 
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
       N ( iV ) = PW % Waveform &
                    (    K ( 1 ) * ( X ( iV )  -  VX ( iV ) * T ) &
                      +  K ( 2 ) * ( Y ( iV )  -  VY ( iV ) * T ) &
                      +  K ( 3 ) * ( Z ( iV )  -  VZ ( iV ) * T ) )
+
     end do !-- iV
     !$OMP end parallel do
 

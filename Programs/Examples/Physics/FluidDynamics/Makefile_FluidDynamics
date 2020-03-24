@@ -1,8 +1,8 @@
 PATH_GENASIS = ../../../../..
 
-all: SineWave OppenheimerSnyder RiemannProblem RayleighTaylor \
+all: SineWave SawtoothWave OppenheimerSnyder RiemannProblem RayleighTaylor \
      SedovTaylor FishboneMoncrief YahilLattimer #LinMestelShu SASI \
-     #SawtoothWave ODE_Solve 
+     ODE_Solve 
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
@@ -14,11 +14,11 @@ SineWave: ThirdParty.a GenASiS.a SineWave.o
            SineWave.o SineWave_Form.o PlaneWave_Template.o \
            GenASiS.a ThirdParty.a $(LIBRARIES)
 
-# SawtoothWave: Basics.a Mathematics.a Fluid.a SawtoothWave.o
-# 	$(LINK) $(FFLAGS) \
-#           -o SawtoothWave_$(MACHINE) \
-#           SawtoothWave.o SawtoothWave_Form.o PlaneWave_Template.o \
-#           Fluid.a Mathematics.a Basics.a $(LIBRARIES)
+SawtoothWave: ThirdParty.a GenASiS.a SawtoothWave.o
+	$(LINK) $(FFLAGS) \
+          -o SawtoothWave_$(MACHINE) \
+          SawtoothWave.o SawtoothWave_Form.o PlaneWave_Template.o \
+          GenASiS.a ThirdParty.a $(LIBRARIES)
 
 OppenheimerSnyder: ThirdParty.a GenASiS.a OppenheimerSnyder.o
 	$(LINK) $(FFLAGS) \
@@ -109,6 +109,16 @@ SineWave.o: \
   SineWave_Form.o \
   SineWave.f90
 
+SawtoothWave_Form.o: \
+  Basics.o \
+  PlaneWave_Template.o \
+  SawtoothWave_Form.f90
+
+SawtoothWave.o: \
+  Basics.o \
+  SawtoothWave_Form.o \
+  SawtoothWave.f90
+
 OppenheimerSnyder_Form.o: \
   GenASiS.o \
   ODE_Solve_Command.o \
@@ -118,16 +128,6 @@ OppenheimerSnyder.o: \
   GenASiS.o \
   OppenheimerSnyder_Form.o \
   OppenheimerSnyder.f90
-
-# SawtoothWave_Form.o: \
-#   Basics.o \
-#   PlaneWave_Template.o \
-#   SawtoothWave_Form.f90
-
-# SawtoothWave.o: \
-#   Basics.o \
-#   SawtoothWave_Form.o \
-#   SawtoothWave.f90
 
 RiemannProblem_Form.o: \
   GenASiS.o \
