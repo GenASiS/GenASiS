@@ -299,7 +299,8 @@ contains
     class ( Step_RK_C_ASC_1D_Template ), intent ( inout ) :: &
       S
 
-    call S % StoreSolution_C_1D ( S % Current_1D, S % Solution_1D )
+    call S % StoreSolution_C_1D &
+           ( S % Current_1D, S % Solution_1D, DetectFeatures = .true. )
 
   end subroutine StoreSolution
 
@@ -372,7 +373,7 @@ contains
           Y     => S % Y_1D ( iC ) )
 
       if ( iStage > 1 ) &
-        call S % StoreSolution_C ( C, Y )
+        call S % StoreSolution_C ( C, Y, DetectFeatures = .false. )
 
       call Clear ( K % Value )
 
@@ -437,7 +438,7 @@ contains
   end subroutine LoadSolution_C_1D
 
 
-  subroutine StoreSolution_C_1D ( Current_1D, S, Solution_1D )
+  subroutine StoreSolution_C_1D ( Current_1D, S, Solution_1D, DetectFeatures )
 
     type ( CurrentPointerForm ), dimension ( : ), intent ( in ) :: &
       Current_1D
@@ -445,13 +446,16 @@ contains
       S
     type ( StorageForm ), dimension ( : ), intent ( inout ) :: &
       Solution_1D
+    logical ( KDL ), intent ( in ) :: &
+      DetectFeatures
 
     integer ( KDI ) :: &
       iC  !-- iCurrent
 
     do iC = 1, size ( Current_1D )
       call S % StoreSolution_C &
-             ( Current_1D ( iC ) % Pointer, Solution_1D ( iC ) )
+             ( Current_1D ( iC ) % Pointer, Solution_1D ( iC ), &
+               DetectFeatures )
     end do !-- iC
 
   end subroutine StoreSolution_C_1D

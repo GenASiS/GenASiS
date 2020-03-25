@@ -319,7 +319,8 @@ contains
 
 
   subroutine ComputeFromConservedCommon &
-               ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
+               ( Value_C, C, G, Value_G, DetectFeaturesOption, &
+                 nValuesOption, oValueOption )
 
     real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
       Value_C
@@ -329,6 +330,8 @@ contains
       G
     real ( KDR ), dimension ( :, : ), intent ( in ) :: &
       Value_G
+    logical ( KDL ), intent ( in ), optional :: &
+      DetectFeaturesOption
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption

@@ -565,7 +565,8 @@ contains
 
 
   subroutine ComputeFromConservedCommon &
-               ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
+               ( Value_C, C, G, Value_G, DetectFeaturesOption, &
+                 nValuesOption, oValueOption )
 
     real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
       Value_C
@@ -575,6 +576,8 @@ contains
       G
     real ( KDR ), dimension ( :, : ), intent ( in ) :: &
       Value_G
+    logical ( KDL ), intent ( in ), optional :: &
+      DetectFeaturesOption
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
@@ -582,6 +585,8 @@ contains
     integer ( KDI ) :: &
       oV, &  !-- oValue
       nV     !-- nValues
+    logical ( KDL ) :: &
+      DetectFeatures
 
     associate &
       ( FV => Value_C, &
@@ -682,8 +687,12 @@ contains
     end select !-- FF
     end associate !-- FV, etc.
     
-    if ( associated ( C % Value, Value_C ) ) &
+    DetectFeatures = .false.
+    if ( present ( DetectFeaturesOption ) ) &
+      DetectFeatures = DetectFeaturesOption
+    if ( DetectFeatures ) &
       call C % Features % Detect ( )
+
 
   end subroutine ComputeFromConservedCommon
 

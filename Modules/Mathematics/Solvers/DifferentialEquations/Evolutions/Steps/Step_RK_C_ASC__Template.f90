@@ -612,7 +612,8 @@ contains
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
 
-    call S % StoreSolution_C ( S % Current, S % Solution )
+    call S % StoreSolution_C &
+           ( S % Current, S % Solution, DetectFeatures = .true. )
 
   end subroutine StoreSolution
 
@@ -682,7 +683,7 @@ contains
       TimerStore => PROGRAM_HEADER % TimerPointer &
                       ( S % iTimerStoreIntermediate )
       if ( associated ( TimerStore ) ) call TimerStore % Start ( )
-      call S % StoreSolution_C ( C, Y )
+      call S % StoreSolution_C ( C, Y, DetectFeatures = .false. )
       if ( associated ( TimerStore ) ) call TimerStore % Stop ( )
     end if
 
@@ -746,7 +747,7 @@ contains
   end subroutine LoadSolution_C
 
 
-  subroutine StoreSolution_C ( Current, S, Solution )
+  subroutine StoreSolution_C ( Current, S, Solution, DetectFeatures )
 
     class ( CurrentTemplate ), intent ( inout ) :: &
       Current
@@ -754,6 +755,8 @@ contains
       S
     type ( StorageForm ), intent ( in ) :: &
       Solution
+    logical ( KDL ), intent ( in ) :: &
+      DetectFeatures
 
     integer ( KDI ) :: &
       iF  !-- iField
@@ -779,7 +782,8 @@ contains
       call Show ( 'StoreSolution_C', 'subroutine', CONSOLE % ERROR ) 
       call PROGRAM_HEADER % Abort ( )
     end select !-- Grid
-    call Current % ComputeFromConserved ( G )
+    call Current % ComputeFromConserved &
+           ( G, DetectFeaturesOption = DetectFeatures )
 
     if ( associated ( S % ComputeConstraints % Pointer ) ) &
       call S % ComputeConstraints % Pointer ( S )

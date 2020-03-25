@@ -335,7 +335,8 @@ contains
       S
 
     call S % StoreSolution_C_BSLL_ASC_CSLD &
-           ( S % Current_BSLL_ASC_CSLD, S % Solution_BSLL_ASC_CSLD_S )
+           ( S % Current_BSLL_ASC_CSLD, S % Solution_BSLL_ASC_CSLD_S, &
+             DetectFeatures = .true. )
 
   end subroutine StoreSolution
 
@@ -429,7 +430,8 @@ contains
 
 
   subroutine StoreSolution_C_BSLL_ASC_CSLD &
-               ( Current_BSLL_ASC_CSLD, S, Solution_BSLL_ASC_CSLD_S )
+               ( Current_BSLL_ASC_CSLD, S, Solution_BSLL_ASC_CSLD_S, &
+                 DetectFeatures )
 
     class ( Current_BSLL_ASC_CSLD_Template ), intent ( inout ) :: &
       Current_BSLL_ASC_CSLD
@@ -437,6 +439,8 @@ contains
       S
     type ( StorageForm ), dimension ( : ), intent ( in ) :: &
       Solution_BSLL_ASC_CSLD_S
+    logical ( KDL ), intent ( in ) :: &
+      DetectFeatures
 
     integer ( KDI ) :: &
       iS     !-- iSection
@@ -450,7 +454,7 @@ contains
     do iS = 1, S % nSections
       associate ( Solution => Solution_BSLL_ASC_CSLD_S ( iS ) )
       Current  => CB % CurrentSection ( iS )
-      call S % StoreSolution_C ( Current, Solution )
+      call S % StoreSolution_C ( Current, Solution, DetectFeatures )
       end associate !-- Solution
     end do !-- iS
 
@@ -558,7 +562,7 @@ contains
                       ( S % iTimerStoreIntermediate )
       if ( associated ( TimerStore ) ) call TimerStore % Start ( )
       call S % StoreSolution_C_BSLL_ASC_CSLD &
-             ( C_BSLL_ASC_CSLD, Y_BSLL_ASC_CSLD_S )
+             ( C_BSLL_ASC_CSLD, Y_BSLL_ASC_CSLD_S, DetectFeatures = .false. )
       if ( associated ( TimerStore ) ) call TimerStore % Stop ( )
     end if
 

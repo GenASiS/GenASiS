@@ -124,7 +124,8 @@ module Current_Template
         oValueOption
     end subroutine CFPC
 
-    subroutine CFCC ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
+    subroutine CFCC ( Value_C, C, G, Value_G, DetectFeaturesOption, &
+                      nValuesOption, oValueOption )
       use Basics
       use Manifolds
       import CurrentTemplate
@@ -136,6 +137,8 @@ module Current_Template
         G
       real ( KDR ), dimension ( :, : ), intent ( in ) :: &
         Value_G
+      logical ( KDL ), intent ( in ), optional :: &
+        DetectFeaturesOption
       integer ( KDI ), intent ( in ), optional :: &
         nValuesOption, &
         oValueOption
@@ -400,24 +403,29 @@ contains
   end subroutine ComputeFromPrimitiveSelectGeometry
 
 
-  subroutine ComputeFromConservedSelf ( C, G, nValuesOption, oValueOption )
+  subroutine ComputeFromConservedSelf &
+               ( C, G, DetectFeaturesOption, nValuesOption, oValueOption )
 
     class ( CurrentTemplate ), intent ( inout ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
+    logical ( KDL ), intent ( in ), optional :: &
+      DetectFeaturesOption
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
 
     call C % ComputeFromConservedCommon &
-           ( C % Value, G, G % Value, nValuesOption, oValueOption )
+           ( C % Value, G, G % Value, DetectFeaturesOption, nValuesOption, &
+             oValueOption )
     
   end subroutine ComputeFromConservedSelf
 
 
   subroutine ComputeFromConservedOther &
-               ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
+               ( Value_C, C, G, Value_G, DetectFeaturesOption, &
+                 nValuesOption, oValueOption )
 
     real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
       Value_C
@@ -427,18 +435,22 @@ contains
       G
     real ( KDR ), dimension ( :, : ), intent ( in ) :: &
       Value_G
+    logical ( KDL ), intent ( in ), optional :: &
+      DetectFeaturesOption
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
 
     call C % ComputeFromConservedCommon &
-           ( Value_C, G, Value_G, nValuesOption, oValueOption )
+           ( Value_C, G, Value_G, DetectFeaturesOption, nValuesOption, &
+             oValueOption )
     
   end subroutine ComputeFromConservedOther
 
 
   subroutine ComputeFromConservedSelectGeometry &
-               ( C, iStrgeometryValue, G, nValuesOption, oValueOption )
+               ( C, iStrgeometryValue, G, DetectFeaturesOption, &
+                 nValuesOption, oValueOption )
 
     !-- Violating argument position for iStrgeometryValue to distinguish
     !   overloaded interface
@@ -449,6 +461,8 @@ contains
       iStrgeometryValue
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
+    logical ( KDL ), intent ( in ), optional :: &
+      DetectFeaturesOption
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
@@ -460,7 +474,7 @@ contains
 
     call C % ComputeFromConservedCommon &
            ( C % Value, G, spread ( G % Value ( iV, : ), iD, nV ), &
-             nValuesOption, oValueOption )
+             DetectFeaturesOption, nValuesOption, oValueOption )
     
     end associate !-- nV, etc.
 
