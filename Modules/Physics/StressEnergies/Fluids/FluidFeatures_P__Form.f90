@@ -311,8 +311,6 @@ contains
       InnerBoundary, &
       OuterBoundary
 
-    InnerBoundary = .true.
-    OuterBoundary = .true.
     select type ( CSL )
     class is ( Chart_SLD_Form )
       InnerBoundary  =  ( CSL % iaBrick ( iD ) == 1 )
