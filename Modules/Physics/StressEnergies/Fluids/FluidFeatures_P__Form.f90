@@ -102,6 +102,8 @@ contains
     type ( StorageForm ) :: &
       S_Shock
 
+    call Show ( 'Detecting Fluid features', CONSOLE % INFO_3 )
+
     call Clear ( FF % Value )
 
     select type ( F => FF % Fluid )

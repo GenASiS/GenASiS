@@ -426,9 +426,6 @@ contains
     end associate !-- M_DD_22, etc.
     end associate !-- FV, etc.
 
-    if ( associated ( C % Value, Value_C ) ) &
-      call C % Features % Detect ( )
-
   end subroutine ComputeFromTemperature
 
 
@@ -515,9 +512,6 @@ contains
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
     end associate !-- FV, etc.
-
-    if ( associated ( C % Value, Value_C ) ) &
-      call C % Features % Detect ( )
 
   end subroutine ComputeFromPrimitiveCommon
 
