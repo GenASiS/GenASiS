@@ -25,7 +25,8 @@ contains
     if ( UseDevice ) then
     
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV )
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV ) &
+      !$OMP& firstprivate ( Gamma_0, K0 )
       do iV = 1, nValues
         Gamma ( iV )  =  Gamma_0
         P     ( iV )  =  E ( iV )  *  ( Gamma_0 - 1.0_KDR ) 
@@ -41,7 +42,9 @@ contains
 
     else
     
-      !$OMP parallel do schedule ( OMP_SCHEDULE_HOST ) private ( iV )
+      !$OMP  parallel do &
+      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV ) &
+      !$OMP& firstprivate ( Gamma_0, K0 )
       do iV = 1, nValues
         Gamma ( iV )  =  Gamma_0
         P     ( iV )  =  E ( iV )  *  ( Gamma_0 - 1.0_KDR ) 
@@ -53,8 +56,8 @@ contains
           SB ( iV ) =  - 0.1 * huge ( 1.0_KDR )
         end if
       end do !-- iV
-      !$OMP end parallel do
-      
+      !$OMP  end parallel do
+
     end if
 
   end procedure Apply_EOS_P_Kernel

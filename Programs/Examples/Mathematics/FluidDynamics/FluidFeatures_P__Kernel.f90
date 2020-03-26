@@ -61,7 +61,9 @@ contains
 
       !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
       !$OMP& schedule ( OMP_SCHEDULE_TARGET ) &
-      !$OMP& private ( iV, jV, kV, iaV_i, iaV_j, iaV_ij, iaV_k, iaV_ik )
+      !$OMP& private ( iV, jV, kV, iaV_i, iaV_j, iaV_ij, iaV_k, iaV_ik ) &
+      !$OMP& private ( dP, P_Min, dLnP, dV_iD ) &
+      !$OMP& firstprivate ( SqrtTiny, lV, uV )
       do kV = lV ( 3 ), uV ( 3 ) 
         do jV = lV ( 2 ), uV ( 2 )
           do iV = lV ( 1 ), uV ( 1 )
@@ -123,8 +125,9 @@ contains
 
       !$OMP  parallel do collapse ( 3 ) &
       !$OMP& schedule ( OMP_SCHEDULE_HOST ) &
-      !$OMP& private ( iV, jV, kV, iaV_i, iaV_j, iaV_ij, iaV_k, iaV_ik )
-
+      !$OMP& private ( iV, jV, kV, iaV_i, iaV_j, iaV_ij, iaV_k, iaV_ik ) &
+      !$OMP& private ( dP, P_Min, dLnP, dV_iD ) &
+      !$OMP& firstprivate ( SqrtTiny, lV, uV )
       do kV = lV ( 3 ), uV ( 3 ) 
         do jV = lV ( 2 ), uV ( 2 )
           do iV = lV ( 1 ), uV ( 1 )
