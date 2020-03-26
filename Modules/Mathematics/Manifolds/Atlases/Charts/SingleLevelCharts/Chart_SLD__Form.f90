@@ -18,8 +18,8 @@ module Chart_SLD__Form
     type ( Storage_1D_Form ), allocatable :: &
       Storage_1D
     type ( PortalHeaderForm ), allocatable :: &
-      PortalPreviousNext, &
-      PortalNextPrevious
+      PortalFace_L_R, &
+      PortalFace_R_L
     type ( MessageIncoming_1D_R_Form ), allocatable :: &
       Incoming
     type ( MessageOutgoing_1D_R_Form ), allocatable :: &
@@ -53,10 +53,10 @@ module Chart_SLD__Form
         StoreMessage
 
     integer ( KDI ), dimension ( 3 ), private, parameter :: &
-      TAG_RECEIVE_PREVIOUS = [ 99, 98, 97 ], &
-      TAG_RECEIVE_NEXT     = [ 96, 95, 94 ], &
-      TAG_SEND_PREVIOUS    = TAG_RECEIVE_NEXT, &
-      TAG_SEND_NEXT        = TAG_RECEIVE_PREVIOUS
+      TAG_RECEIVE_FACE_L = [ 99, 98, 97 ], &
+      TAG_RECEIVE_FACE_R = [ 96, 95, 94 ], &
+      TAG_SEND_FACE_L    = TAG_RECEIVE_FACE_R, &
+      TAG_SEND_FACE_R    = TAG_RECEIVE_FACE_L
 
 contains
 
@@ -138,14 +138,14 @@ contains
       S
 
     call StartExchange &
-           ( C, C % PortalPreviousNext, S, TAG_RECEIVE_PREVIOUS, &
-             TAG_SEND_NEXT )
-    call FinishExchange ( C, TAG_RECEIVE_PREVIOUS )
+           ( C, C % PortalFace_L_R, S, TAG_RECEIVE_FACE_L, &
+             TAG_SEND_FACE_R )
+    call FinishExchange ( C, TAG_RECEIVE_FACE_L )
 
     call StartExchange &
-           ( C, C % PortalNextPrevious, S, TAG_RECEIVE_NEXT, &
-             TAG_SEND_PREVIOUS )
-    call FinishExchange ( C, TAG_RECEIVE_NEXT )
+           ( C, C % PortalFace_R_L, S, TAG_RECEIVE_FACE_R, &
+             TAG_SEND_FACE_L )
+    call FinishExchange ( C, TAG_RECEIVE_FACE_R )
 
     if ( allocated ( C % ExchangeStorage ) ) &
       deallocate ( C % ExchangeStorage )
@@ -214,10 +214,10 @@ contains
       deallocate ( C % Outgoing )
     if ( allocated ( C % Incoming ) ) &
       deallocate ( C % Incoming )
-    if ( allocated ( C % PortalNextPrevious ) ) &
-      deallocate ( C % PortalNextPrevious )
-    if ( allocated ( C % PortalPreviousNext ) ) &
-      deallocate ( C % PortalPreviousNext )
+    if ( allocated ( C % PortalFace_R_L ) ) &
+      deallocate ( C % PortalFace_R_L )
+    if ( allocated ( C % PortalFace_L_R ) ) &
+      deallocate ( C % PortalFace_L_R )
     if ( allocated ( C % Storage_1D ) ) &
       deallocate ( C % Storage_1D )
     if ( allocated ( C % ExchangeStorage ) ) &
@@ -292,9 +292,9 @@ contains
       iaB
     integer ( KDI ), dimension ( : ), allocatable :: &
       nCells, &
-      Source_PN, &
+      Source_L_R, &
       Source_NP, &
-      Target_PN, &
+      Target_L_R, &
       Target_NP
     integer ( KDI ), dimension ( :, :, : ), allocatable :: &
       Process
@@ -316,9 +316,9 @@ contains
     end do !-- kB
 
     allocate ( nCells ( nD ) )
-    allocate ( Source_PN ( nD ) )
+    allocate ( Source_L_R ( nD ) )
     allocate ( Source_NP ( nD ) )
-    allocate ( Target_PN ( nD ) )
+    allocate ( Target_L_R ( nD ) )
     allocate ( Target_NP ( nD ) )
     
     !-- Face sibling bricks
@@ -335,30 +335,30 @@ contains
       !-- Previous brick
 
       iaB ( iD ) = mod ( C % iaBrick ( iD ) - 1 + nB ( iD ) - 1, nB ( iD ) ) + 1
-      Source_PN ( iD ) = Process ( iaB ( 1 ), iaB ( 2 ), iaB ( 3 ) )
+      Source_L_R ( iD ) = Process ( iaB ( 1 ), iaB ( 2 ), iaB ( 3 ) )
       Target_NP ( iD ) = Process ( iaB ( 1 ), iaB ( 2 ), iaB ( 3 ) )
 
       !-- Next brick
 
       iaB ( iD ) = mod ( C % iaBrick ( iD ), nB ( iD ) ) + 1
       Source_NP ( iD ) = Process ( iaB ( 1 ), iaB ( 2 ), iaB ( 3 ) )
-      Target_PN ( iD ) = Process ( iaB ( 1 ), iaB ( 2 ), iaB ( 3 ) )
+      Target_L_R ( iD ) = Process ( iaB ( 1 ), iaB ( 2 ), iaB ( 3 ) )
 
     end do !-- iD
 
     !-- Set portals
     
-    allocate ( C % PortalPreviousNext )
-    associate ( PPN => C % PortalPreviousNext )
-    call PPN % Initialize ( Source_PN, Target_PN, nCells, nCells )
-    call PPN % Show ( 'DistributedMesh PortalPreviousNext', &
+    allocate ( C % PortalFace_L_R )
+    associate ( PPN => C % PortalFace_L_R )
+    call PPN % Initialize ( Source_L_R, Target_L_R, nCells, nCells )
+    call PPN % Show ( 'DistributedMesh PortalFace_L_R', &
                       C % IGNORABILITY + 2 )
     end associate !-- PPN
 
-    allocate ( C % PortalNextPrevious )
-    associate ( PNP => C % PortalNextPrevious )
+    allocate ( C % PortalFace_R_L )
+    associate ( PNP => C % PortalFace_R_L )
     call PNP % Initialize ( Source_NP, Target_NP, nCells, nCells )
-    call PNP % Show ( 'DistributedMesh PortalNextPrevious', &
+    call PNP % Show ( 'DistributedMesh PortalFace_R_L', &
                       C % IGNORABILITY + 2 )
     end associate !-- PNP
 
@@ -417,10 +417,10 @@ contains
       nSend ( iD ) = nGL ( iD )
 
       !-- In setting oSend, note Copy command does not inherit lbound
-      if ( all ( TagSend == TAG_SEND_NEXT ) ) then
+      if ( all ( TagSend == TAG_SEND_FACE_R ) ) then
         oSend        = nGL
         oSend ( iD ) = oSend ( iD ) + nCB ( iD ) - nGL ( iD )
-      else if ( all ( TagSend == TAG_SEND_PREVIOUS ) ) then
+      else if ( all ( TagSend == TAG_SEND_FACE_L ) ) then
         oSend = nGL
       else
         call Show ( 'Tags not recognized', CONSOLE % ERROR )
@@ -470,13 +470,13 @@ contains
       nReceive ( iD ) = nGL ( iD )
 
       !-- In setting oReceive, note Copy command does not inherit lbound
-      if ( all ( TagReceive == TAG_RECEIVE_PREVIOUS ) ) then
+      if ( all ( TagReceive == TAG_RECEIVE_FACE_L ) ) then
         if ( C % iaBrick ( iD ) == 1 &
              .and. .not. C % IsPeriodic ( iD ) ) &
           cycle
         oReceive        = nGL
         oReceive ( iD ) = oReceive ( iD ) - nGL ( iD )
-      else if ( all ( TagReceive == TAG_RECEIVE_NEXT ) ) then
+      else if ( all ( TagReceive == TAG_RECEIVE_FACE_R ) ) then
         if ( C % iaBrick ( iD ) == C % nBricks ( iD ) &
              .and. .not. C % IsPeriodic ( iD ) ) &
           cycle
