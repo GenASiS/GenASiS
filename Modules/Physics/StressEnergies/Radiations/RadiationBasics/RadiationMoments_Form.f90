@@ -486,7 +486,8 @@ contains
       iV, &
       iD, &
       iEnergy, &
-      iMomentum
+      iMomentum, &
+      iVariable
     real ( KDR ), dimension ( : ), allocatable :: &
       M_DD_11
     real ( KDR ), dimension ( :, :, : ), pointer :: &
@@ -498,7 +499,9 @@ contains
     class ( GeometryFlatForm ), pointer :: &
       G
 
-    call C % SetDiffusionFactorUnity ( DF_I % Value )
+    do iVariable = 1, DF_I % nVariables
+      call C % SetDiffusionFactorUnity ( DF_I % Value ( :, iVariable ) )
+    end do
 
     if ( .not. associated ( C % Interactions ) ) &
       return
