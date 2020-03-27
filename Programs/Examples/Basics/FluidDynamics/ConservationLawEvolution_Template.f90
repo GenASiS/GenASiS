@@ -13,7 +13,7 @@ module ConservationLawEvolution_Template
       iCycle, &
       nRampCycles, &
       nWrite, &
-      nCycles
+      FinishCycle
     integer ( KDI ), private :: &
       iTimerComputation, &
       iTimerTimeStep
@@ -29,6 +29,8 @@ module ConservationLawEvolution_Template
       TimeUnit
     character ( LDF ) :: &
       Type = ''
+    logical ( KDL ) :: &
+      NoWrite = .false.
     type ( DistributedMeshForm ) :: &
       DistributedMesh
     class ( ConservedFieldsTemplate ), allocatable :: &
@@ -103,16 +105,16 @@ contains
     call PROGRAM_HEADER % GetParameter &
            ( CLE % CourantFactor, 'CourantFactor' )
 
-    CLE % StartTime  = 0.0_KDR
-    CLE % FinishTime = 1.0_KDR
-    CLE % TimeUnit   = UNIT % IDENTITY
-    CLE % nCycles    = huge ( 1 )
+    CLE % StartTime   = 0.0_KDR
+    CLE % FinishTime  = 1.0_KDR
+    CLE % TimeUnit    = UNIT % IDENTITY
+    CLE % FinishCycle = huge ( 1 )
     call PROGRAM_HEADER % GetParameter &
            ( CLE % StartTime, 'StartTime', InputUnitOption = CLE % TimeUnit )    
     call PROGRAM_HEADER % GetParameter &
            ( CLE % FinishTime, 'FinishTime', InputUnitOption = CLE % TimeUnit )
     call PROGRAM_HEADER % GetParameter &
-           ( CLE % nCycles, 'nCycles' )
+           ( CLE % FinishCycle, 'FinishCycle' )
 
     CLE % nWrite = 100
     call PROGRAM_HEADER % GetParameter ( CLE % nWrite, 'nWrite' )
@@ -120,6 +122,9 @@ contains
     CLE % WriteTimeInterval = ( CLE % FinishTime - CLE % StartTime ) / CLE % nWrite
     call PROGRAM_HEADER % GetParameter &
            ( CLE % WriteTimeInterval, 'WriteTimeInterval' )
+           
+    CLE % NoWrite = .false.
+    call PROGRAM_HEADER % GetParameter ( CLE % NoWrite, 'NoWrite' )
            
     !-- Extensions are responsible for initializing CLE % ConservedFields
 
@@ -152,9 +157,10 @@ contains
 
     CLE % Time = CLE % StartTime
 
-    call DM % Write &
-           ( TimeOption = CLE % Time / CLE % TimeUnit, &
-             CycleNumberOption = CLE % iCycle )
+    if ( .not. CLE % NoWrite ) &
+      call DM % Write &
+             ( TimeOption = CLE % Time / CLE % TimeUnit, &
+               CycleNumberOption = CLE % iCycle )
     CLE % WriteTime &
       = min ( CLE % Time + CLE % WriteTimeInterval, CLE % FinishTime )
 
@@ -163,7 +169,7 @@ contains
     call T % Start ( ) 
 
     do while ( CLE % Time < CLE % FinishTime &
-               .and. CLE % iCycle < CLE % nCycles )
+               .and. CLE % iCycle < CLE % FinishCycle )
 
       call Show ( 'Solving Conservation Equations', CONSOLE % INFO_2 )
 
@@ -184,9 +190,10 @@ contains
 
         call T % Stop ( )
         
-        call DM % Write &
-               ( TimeOption = CLE % Time / CLE % TimeUnit, &
-                 CycleNumberOption = CLE % iCycle )
+        if ( .not. CLE % NoWrite ) &
+          call DM % Write &
+                 ( TimeOption = CLE % Time / CLE % TimeUnit, &
+                   CycleNumberOption = CLE % iCycle )
         CLE % WriteTime &
           = min ( CLE % Time + CLE % WriteTimeInterval, CLE % FinishTime )
         
