@@ -19,13 +19,25 @@ module Chart_SLD__Form
       Storage_1D
     type ( PortalHeaderForm ), allocatable :: &
       PortalFace_L_R, &
-      PortalFace_R_L
+      PortalFace_R_L, &
+      PortalEdge_LL_RR, &
+      PortalEdge_RR_LL, &
+      PortalEdge_LR_RL, &
+      PortalEdge_RL_LR
     type ( MessageIncoming_1D_R_Form ), allocatable :: &
       IncomingFace_L_R, &
-      IncomingFace_R_L
+      IncomingFace_R_L, &
+      IncomingEdge_LL_RR, &
+      IncomingEdge_RR_LL, &
+      IncomingEdge_LR_RL, &
+      IncomingEdge_RL_LR
     type ( MessageOutgoing_1D_R_Form ), allocatable :: &
       OutgoingFace_L_R, &
-      OutgoingFace_R_L
+      OutgoingFace_R_L, &
+      OutgoingEdge_LL_RR, &
+      OutgoingEdge_RR_LL, &
+      OutgoingEdge_LR_RL, &
+      OutgoingEdge_RL_LR
   contains
     procedure, private, pass :: &
       InitializeBasic
@@ -55,10 +67,16 @@ module Chart_SLD__Form
         StoreMessage
 
     integer ( KDI ), dimension ( 3 ), private, parameter :: &
-      TAG_RECEIVE_FACE_L = [ 99, 98, 97 ], &
-      TAG_RECEIVE_FACE_R = [ 96, 95, 94 ], &
-      TAG_SEND_FACE_L    = TAG_RECEIVE_FACE_R, &
-      TAG_SEND_FACE_R    = TAG_RECEIVE_FACE_L
+      !-- Faces
+      TAG_RECEIVE_FACE_L  = [ 99, 98, 97 ], &
+      TAG_RECEIVE_FACE_R  = [ 96, 95, 94 ], &
+      TAG_SEND_FACE_L     = TAG_RECEIVE_FACE_R, &
+      TAG_SEND_FACE_R     = TAG_RECEIVE_FACE_L, &
+      !-- Edges
+      TAG_RECEIVE_EDGE_LL = [ 93, 92, 91 ], &
+      TAG_RECEIVE_EDGE_RR = [ 90, 89, 88 ], &
+      TAG_SEND_EDGE_LL    = TAG_RECEIVE_EDGE_RR, &
+      TAG_SEND_EDGE_RR    = TAG_RECEIVE_EDGE_LL
 
 contains
 
@@ -295,11 +313,22 @@ contains
     integer ( KDI ), dimension ( ATLAS % MAX_DIMENSIONS ) :: &
       iaB
     integer ( KDI ), dimension ( : ), allocatable :: &
-      nCells, &
+      !-- Faces
+      nCellsFace, &
       Source_L_R, &
       Source_R_L, &
       Target_L_R, &
-      Target_R_L
+      Target_R_L, &
+      !-- Edges
+      nCellsEdge, &
+      Source_LL_RR, &
+      Source_RR_LL, &
+      Source_LR_RL, &
+      Source_RL_LR, &
+      Target_LL_RR, &
+      Target_RR_LL, &
+      Target_LR_RL, &
+      Target_RL_LR
     integer ( KDI ), dimension ( :, :, : ), allocatable :: &
       Process
 
@@ -319,21 +348,27 @@ contains
       end do !-- jB
     end do !-- kB
 
-    allocate ( nCells ( nD ) )
+
+    !-- Face sibling bricks
+
+    allocate ( nCellsFace ( nD ) )
     allocate ( Source_L_R ( nD ) )
     allocate ( Source_R_L ( nD ) )
     allocate ( Target_L_R ( nD ) )
     allocate ( Target_R_L ( nD ) )
+    nCellsFace =  0
+    Source_L_R = -1
+    Source_R_L = -1
+    Target_L_R = -1
+    Target_R_L = -1
     
-    !-- Face sibling bricks
-
     do iD = 1, nD
 
       jD  =  mod ( iD, 3 ) + 1
       kD  =  mod ( jD, 3 ) + 1
 
-      nCells ( iD )  =  C % nGhostLayers ( iD ) &
-                        * C % nCellsBrick ( jD ) * C % nCellsBrick ( kD )
+      nCellsFace ( iD )  =  C % nGhostLayers ( iD ) &
+                            * C % nCellsBrick ( jD ) * C % nCellsBrick ( kD )
 
       iaB  =  C % iaBrick
 
@@ -353,21 +388,144 @@ contains
 
     end do !-- iD
 
-    !-- Set portals
+
+    !-- Edge sibling bricks
+
+    allocate ( nCellsEdge ( 3 ) )
+    allocate ( Source_LL_RR ( 3 ) )
+    allocate ( Source_RR_LL ( 3 ) )
+    allocate ( Source_LR_RL ( 3 ) )
+    allocate ( Source_RL_LR ( 3 ) )
+    allocate ( Target_LL_RR ( 3 ) )
+    allocate ( Target_RR_LL ( 3 ) )
+    allocate ( Target_LR_RL ( 3 ) )
+    allocate ( Target_RL_LR ( 3 ) )
+    nCellsEdge =  0
+    Source_LL_RR = -1
+    Source_RR_LL = -1
+    Source_LR_RL = -1
+    Source_RL_LR = -1
+    Target_LL_RR = -1
+    Target_RR_LL = -1
+    Target_LR_RL = -1
+    Target_RL_LR = -1
+
+    do kD = 3, 1, -1
+
+      iD  =  mod ( kD, 3 ) + 1
+      jD  =  mod ( iD, 3 ) + 1
+
+      if ( iD > nD .or. jD > nD ) &
+        cycle
+
+      nCellsEdge ( kD )  &
+        =  C % nGhostLayers ( iD )  *  C % nGhostLayers ( jD )  &
+           *  C % nCellsBrick ( kD )
+
+      iaB  =  C % iaBrick
+
+      !-- LeftLeft brick
+
+      iaB ( iD )  &
+        =  mod ( C % iaBrick ( iD ) - 1 + nB ( iD ) - 1, nB ( iD ) ) + 1
+      iaB ( jD )  &
+        =  mod ( C % iaBrick ( jD ) - 1 + nB ( jD ) - 1, nB ( jD ) ) + 1
+      Source_LL_RR ( kD )  =  Process ( iaB ( 1 ), iaB ( 2 ), iaB ( 3 ) )
+      Target_RR_LL ( kD )  =  Process ( iaB ( 1 ), iaB ( 2 ), iaB ( 3 ) )
+
+      !-- RightRight brick
+
+      iaB ( iD )  &
+        =  mod ( C % iaBrick ( iD ), nB ( iD ) ) + 1
+      iaB ( jD )  &
+        =  mod ( C % iaBrick ( jD ), nB ( jD ) ) + 1
+      Source_RR_LL ( kD )  =  Process ( iaB ( 1 ), iaB ( 2 ), iaB ( 3 ) )
+      Target_LL_RR ( KD )  =  Process ( iaB ( 1 ), iaB ( 2 ), iaB ( 3 ) )
+
+      !-- LeftRight brick
+
+      iaB ( iD )  &
+        =  mod ( C % iaBrick ( iD ) - 1 + nB ( iD ) - 1, nB ( iD ) ) + 1
+      iaB ( jD )  &
+        =  mod ( C % iaBrick ( jD ), nB ( jD ) ) + 1
+      Source_LR_RL ( kD )  =  Process ( iaB ( 1 ), iaB ( 2 ), iaB ( 3 ) )
+      Target_RL_LR ( KD )  =  Process ( iaB ( 1 ), iaB ( 2 ), iaB ( 3 ) )
+
+      !-- RightLeft brick
+
+      iaB ( iD )  &
+        =  mod ( C % iaBrick ( iD ), nB ( iD ) ) + 1
+      iaB ( jD )  &
+        =  mod ( C % iaBrick ( jD ) - 1 + nB ( jD ) - 1, nB ( jD ) ) + 1
+      Source_RL_LR ( kD )  =  Process ( iaB ( 1 ), iaB ( 2 ), iaB ( 3 ) )
+      Target_LR_RL ( kD )  =  Process ( iaB ( 1 ), iaB ( 2 ), iaB ( 3 ) )
+
+    end do !-- kD
+
+
+    !-- Set face portals
     
     allocate ( C % PortalFace_L_R )
-    associate ( PPN => C % PortalFace_L_R )
-    call PPN % Initialize ( Source_L_R, Target_L_R, nCells, nCells )
-    call PPN % Show ( 'DistributedMesh PortalFace_L_R', &
-                      C % IGNORABILITY + 2 )
-    end associate !-- PPN
+    associate ( PFLR => C % PortalFace_L_R )
+    call PFLR % Initialize ( Source_L_R, Target_L_R, nCellsFace, nCellsFace )
+    call PFLR % Show ( 'Chart_SLD PortalFace_L_R', &
+                       C % IGNORABILITY + 2 )
+    end associate !-- PFLR
 
     allocate ( C % PortalFace_R_L )
-    associate ( PNP => C % PortalFace_R_L )
-    call PNP % Initialize ( Source_R_L, Target_R_L, nCells, nCells )
-    call PNP % Show ( 'DistributedMesh PortalFace_R_L', &
-                      C % IGNORABILITY + 2 )
-    end associate !-- PNP
+    associate ( PFRL => C % PortalFace_R_L )
+    call PFRL % Initialize ( Source_R_L, Target_R_L, nCellsFace, nCellsFace )
+    call PFRL % Show ( 'Chart_SLD PortalFace_R_L', &
+                       C % IGNORABILITY + 2 )
+    end associate !-- PFRL
+
+
+    !-- Set edge portals
+    
+    allocate ( C % PortalEdge_LL_RR )
+    associate ( PELLRR => C % PortalEdge_LL_RR )
+    call PELLRR % Initialize &
+           ( pack ( Source_LL_RR, Source_LL_RR > 0 ), &
+             pack ( Target_LL_RR, Target_LL_RR > 0 ), &
+             pack ( nCellsEdge, nCellsEdge > 0 ), &
+             pack ( nCellsEdge, nCellsEdge > 0 ) ) 
+    call PELLRR % Show ( 'Chart_SLD PortalEdge_LL_RR', &
+                         C % IGNORABILITY + 2 )
+    end associate !-- PELLRR
+
+    allocate ( C % PortalEdge_RR_LL )
+    associate ( PERRLL => C % PortalEdge_RR_LL )
+    call PERRLL % Initialize &
+           ( pack ( Source_RR_LL, Source_RR_LL > 0 ), &
+             pack ( Target_RR_LL, Target_RR_LL > 0 ), &
+             pack ( nCellsEdge, nCellsEdge > 0 ), &
+             pack ( nCellsEdge, nCellsEdge > 0 ) ) 
+    call PERRLL % Show ( 'Chart_SLD PortalEdge_RR_LL', &
+                         C % IGNORABILITY + 2 )
+    end associate !-- PERRLL
+
+    allocate ( C % PortalEdge_LR_RL )
+    associate ( PELRRL => C % PortalEdge_LR_RL )
+    call PELRRL % Initialize &
+           ( pack ( Source_LR_RL, Source_LR_RL > 0 ), &
+             pack ( Target_LR_RL, Target_LR_RL > 0 ), &
+             pack ( nCellsEdge, nCellsEdge > 0 ), &
+             pack ( nCellsEdge, nCellsEdge > 0 ) ) 
+    call PELRRL % Show ( 'Chart_SLD PortalEdge_LR_RL', &
+                         C % IGNORABILITY + 2 )
+    end associate !-- PELRRL
+
+    allocate ( C % PortalEdge_RL_LR )
+    associate ( PERLLR => C % PortalEdge_RL_LR )
+    call PERLLR % Initialize &
+           ( pack ( Source_RL_LR, Source_RL_LR > 0 ), &
+             pack ( Target_RL_LR, Target_RL_LR > 0 ), &
+             pack ( nCellsEdge, nCellsEdge > 0 ), &
+             pack ( nCellsEdge, nCellsEdge > 0 ) ) 
+    call PERLLR % Show ( 'Chart_SLD PortalEdge_RL_LR', &
+                         C % IGNORABILITY + 2 )
+    end associate !-- PELRRL
+
 
     !-- Cleanup
 
