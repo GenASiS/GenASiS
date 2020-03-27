@@ -451,7 +451,9 @@ contains
     if ( UseDevice ) then
             
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV )
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV ) &
+      !$OMP& private (  AM_VL, AM_AC, AM_AC_Inv, AP_VR, AP_AC, AP_AC_Inv ) &
+      !$OMP& firstprivate ( SqrtTiny )
       do iV = 1, nValues
 
         V_1_ICL ( iV )  =  V_1_IL ( iV )
@@ -520,9 +522,11 @@ contains
       !$OMP  end OMP_TARGET_DIRECTIVE parallel do
     
     else 
-
+      
       !$OMP  parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV )
+      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV ) &
+      !$OMP& private (  AM_VL, AM_AC, AM_AC_Inv, AP_VR, AP_AC, AP_AC_Inv ) &
+      !$OMP& firstprivate ( SqrtTiny )
       do iV = 1, nValues
 
         V_1_ICL ( iV )  =  V_1_IL ( iV )
