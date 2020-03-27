@@ -21,9 +21,11 @@ module Chart_SLD__Form
       PortalFace_L_R, &
       PortalFace_R_L
     type ( MessageIncoming_1D_R_Form ), allocatable :: &
-      Incoming
+      IncomingFace_L_R, &
+      IncomingFace_R_L
     type ( MessageOutgoing_1D_R_Form ), allocatable :: &
-      Outgoing
+      OutgoingFace_L_R, &
+      OutgoingFace_R_L
   contains
     procedure, private, pass :: &
       InitializeBasic
@@ -45,8 +47,8 @@ module Chart_SLD__Form
 
     private :: &
       SetGhostExchangePortals, &
-      StartExchange, &
-      FinishExchange
+      StartExchangeFace, &
+      FinishExchangeFace
 
       private :: &
         LoadMessage, &
@@ -127,6 +129,8 @@ contains
 
     call ExchangeGhostMultiple ( C, C % ExchangeStorage )
     
+    deallocate ( C % ExchangeStorage )
+
   end subroutine ExchangeGhostSingle
 
 
@@ -137,18 +141,26 @@ contains
     type ( StorageForm ), dimension ( : ), intent ( in ) :: &
       S
 
-    call StartExchange &
-           ( C, C % PortalFace_L_R, S, TAG_RECEIVE_FACE_L, &
-             TAG_SEND_FACE_R )
-    call FinishExchange ( C, TAG_RECEIVE_FACE_L )
+    allocate ( C % Storage_1D )
+    call C % Storage_1D % Initialize ( S )
 
-    call StartExchange &
-           ( C, C % PortalFace_R_L, S, TAG_RECEIVE_FACE_R, &
-             TAG_SEND_FACE_L )
-    call FinishExchange ( C, TAG_RECEIVE_FACE_R )
+    !-- Start faces
 
-    if ( allocated ( C % ExchangeStorage ) ) &
-      deallocate ( C % ExchangeStorage )
+    call StartExchangeFace &
+           ( C, C % PortalFace_L_R, TAG_RECEIVE_FACE_L, TAG_SEND_FACE_R, &
+             C % IncomingFace_L_R, C % OutgoingFace_L_R )
+    call StartExchangeFace &
+           ( C, C % PortalFace_R_L, TAG_RECEIVE_FACE_R, TAG_SEND_FACE_L, &
+             C % IncomingFace_R_L, C % OutgoingFace_R_L )
+
+    !-- Finish faces
+
+    call FinishExchangeFace &
+           ( C, C % IncomingFace_L_R, C % OutgoingFace_L_R, TAG_RECEIVE_FACE_L )
+    call FinishExchangeFace &
+           ( C, C % IncomingFace_R_L, C % OutgoingFace_R_L, TAG_RECEIVE_FACE_R )
+
+    deallocate ( C % Storage_1D )
 
   end subroutine ExchangeGhostMultiple
 
@@ -210,18 +222,10 @@ contains
     type ( Chart_SLD_Form ), intent ( inout ) :: &
       C
 
-    if ( allocated ( C % Outgoing ) ) &
-      deallocate ( C % Outgoing )
-    if ( allocated ( C % Incoming ) ) &
-      deallocate ( C % Incoming )
     if ( allocated ( C % PortalFace_R_L ) ) &
       deallocate ( C % PortalFace_R_L )
     if ( allocated ( C % PortalFace_L_R ) ) &
       deallocate ( C % PortalFace_L_R )
-    if ( allocated ( C % Storage_1D ) ) &
-      deallocate ( C % Storage_1D )
-    if ( allocated ( C % ExchangeStorage ) ) &
-      deallocate ( C % ExchangeStorage )
 
     call C % FinalizeTemplate_CSL ( )
 
@@ -293,9 +297,9 @@ contains
     integer ( KDI ), dimension ( : ), allocatable :: &
       nCells, &
       Source_L_R, &
-      Source_NP, &
+      Source_R_L, &
       Target_L_R, &
-      Target_NP
+      Target_R_L
     integer ( KDI ), dimension ( :, :, : ), allocatable :: &
       Process
 
@@ -317,32 +321,35 @@ contains
 
     allocate ( nCells ( nD ) )
     allocate ( Source_L_R ( nD ) )
-    allocate ( Source_NP ( nD ) )
+    allocate ( Source_R_L ( nD ) )
     allocate ( Target_L_R ( nD ) )
-    allocate ( Target_NP ( nD ) )
+    allocate ( Target_R_L ( nD ) )
     
     !-- Face sibling bricks
 
     do iD = 1, nD
-      jD = mod ( iD, 3 ) + 1
-      kD = mod ( jD, 3 ) + 1
 
-      nCells ( iD ) = C % nGhostLayers ( iD ) &
+      jD  =  mod ( iD, 3 ) + 1
+      kD  =  mod ( jD, 3 ) + 1
+
+      nCells ( iD )  =  C % nGhostLayers ( iD ) &
                         * C % nCellsBrick ( jD ) * C % nCellsBrick ( kD )
 
-      iaB = C % iaBrick
+      iaB  =  C % iaBrick
 
-      !-- Previous brick
+      !-- Left brick
 
-      iaB ( iD ) = mod ( C % iaBrick ( iD ) - 1 + nB ( iD ) - 1, nB ( iD ) ) + 1
-      Source_L_R ( iD ) = Process ( iaB ( 1 ), iaB ( 2 ), iaB ( 3 ) )
-      Target_NP ( iD ) = Process ( iaB ( 1 ), iaB ( 2 ), iaB ( 3 ) )
+      iaB ( iD )  &
+        =  mod ( C % iaBrick ( iD ) - 1 + nB ( iD ) - 1, nB ( iD ) ) + 1
+      Source_L_R ( iD )  =  Process ( iaB ( 1 ), iaB ( 2 ), iaB ( 3 ) )
+      Target_R_L ( iD )  =  Process ( iaB ( 1 ), iaB ( 2 ), iaB ( 3 ) )
 
-      !-- Next brick
+      !-- Right brick
 
-      iaB ( iD ) = mod ( C % iaBrick ( iD ), nB ( iD ) ) + 1
-      Source_NP ( iD ) = Process ( iaB ( 1 ), iaB ( 2 ), iaB ( 3 ) )
-      Target_L_R ( iD ) = Process ( iaB ( 1 ), iaB ( 2 ), iaB ( 3 ) )
+      iaB ( iD )  &
+        =  mod ( C % iaBrick ( iD ), nB ( iD ) ) + 1
+      Source_R_L ( iD )  =  Process ( iaB ( 1 ), iaB ( 2 ), iaB ( 3 ) )
+      Target_L_R ( iD )  =  Process ( iaB ( 1 ), iaB ( 2 ), iaB ( 3 ) )
 
     end do !-- iD
 
@@ -357,27 +364,32 @@ contains
 
     allocate ( C % PortalFace_R_L )
     associate ( PNP => C % PortalFace_R_L )
-    call PNP % Initialize ( Source_NP, Target_NP, nCells, nCells )
+    call PNP % Initialize ( Source_R_L, Target_R_L, nCells, nCells )
     call PNP % Show ( 'DistributedMesh PortalFace_R_L', &
                       C % IGNORABILITY + 2 )
     end associate !-- PNP
 
-    end associate !-- nB
+    !-- Cleanup
+
+    end associate !-- nB, etc.
     
   end subroutine SetGhostExchangePortals
 
 
-  subroutine StartExchange ( C, PH, S, TagReceive, TagSend )
+  subroutine StartExchangeFace &
+               ( C, PH, TagReceive, TagSend, IncomingFace, OutgoingFace )
 
     class ( Chart_SLD_Form ), intent ( inout ) :: &
       C
     type ( PortalHeaderForm ), intent ( in ) :: &
       PH
-    type ( StorageForm ), dimension ( : ), intent ( in ) :: &
-      S
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
       TagReceive, &
       TagSend
+    type ( MessageIncoming_1D_R_Form ), intent ( out ), allocatable :: &
+      IncomingFace
+    type ( MessageOutgoing_1D_R_Form ), intent ( out ), allocatable :: &
+      OutgoingFace
 
     integer ( KDI ) :: &
       iD !-- iDimension
@@ -385,9 +397,8 @@ contains
       oSend, &
       nSend
 
-    allocate ( C % Storage_1D )
-    allocate ( C % Incoming )
-    allocate ( C % Outgoing )
+    allocate ( IncomingFace )
+    allocate ( OutgoingFace )
 
     associate &
       ( S_1D  => C % Storage_1D, &
@@ -396,18 +407,16 @@ contains
         nGL => C % nGhostLayers, &
         nD  => C % nDimensions )
 
-    call S_1D % Initialize ( S )
-
     !-- Post Receives
 
-    call C % Incoming % Initialize &
+    call IncomingFace % Initialize &
            ( Communicator, TagReceive ( : nD ), PH % Source, &
              PH % nChunksFrom * S_1D % nVariablesTotal )
-    call C % Incoming % Receive ( )
+    call IncomingFace % Receive ( )
 
     !-- Post Sends
 
-    call C % Outgoing % Initialize &
+    call OutgoingFace % Initialize &
            ( Communicator, TagSend ( : nD ), PH % Target, &
              PH % nChunksTo * S_1D % nVariablesTotal )
 
@@ -425,24 +434,28 @@ contains
       else
         call Show ( 'Tags not recognized', CONSOLE % ERROR )
         call Show ( 'Chart_SLD__Form', 'module', CONSOLE % ERROR )
-        call Show ( 'StartExchange', 'subroutine', CONSOLE % ERROR )
+        call Show ( 'StartExchangeFace', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end if !-- TagSend
 
-      call LoadMessage ( C, S_1D, nSend, oSend, iD )
-      call C % Outgoing % Send ( iD )
+      call LoadMessage ( C, OutgoingFace % Message ( iD ), S_1D, nSend, oSend )
+      call OutgoingFace % Send ( iD )
 
     end do !-- iD
 
     end associate !-- S_1D, etc.
 
-  end subroutine StartExchange
+  end subroutine StartExchangeFace
 
 
-  subroutine FinishExchange ( C, TagReceive )
+  subroutine FinishExchangeFace ( C, IncomingFace, OutgoingFace, TagReceive )
 
     class ( Chart_SLD_Form ), intent ( inout ) :: &
       C
+    type ( MessageIncoming_1D_R_Form ), intent ( inout ), allocatable :: &
+      IncomingFace
+    type ( MessageOutgoing_1D_R_Form ), intent ( inout ), allocatable :: &
+      OutgoingFace
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
       TagReceive
 
@@ -463,7 +476,7 @@ contains
 
     do 
 
-      call C % Incoming % Wait ( AllFinished, iD )
+      call IncomingFace % Wait ( AllFinished, iD )
       if ( AllFinished ) exit
 
       nReceive        = nCB
@@ -485,40 +498,40 @@ contains
       else
         call Show ( 'Tags not recognized', CONSOLE % ERROR )
         call Show ( 'Chart_SLD__Form', 'module', CONSOLE % ERROR )
-        call Show ( 'FinishExchange', 'subroutine', CONSOLE % ERROR )
+        call Show ( 'FinishExchangeFace', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end if !-- TagReceive
 
-      call StoreMessage ( C, S_1D, nReceive, oReceive, iD )
+      call StoreMessage &
+             ( C, S_1D, IncomingFace % Message ( iD ), nReceive, oReceive )
 
     end do
 
     !-- Wait for Sends
 
-    call C % Outgoing % Wait ( )
+    call OutgoingFace % Wait ( )
 
     !-- Cleanup
 
     end associate !-- S_1D, etc.
 
-    deallocate ( C % Outgoing )
-    deallocate ( C % Incoming )
-    deallocate ( C % Storage_1D )
+    deallocate ( OutgoingFace )
+    deallocate ( IncomingFace )
 
-  end subroutine FinishExchange
+  end subroutine FinishExchangeFace
 
 
-  subroutine LoadMessage ( C, S_1D, nSend, oSend, iM )
+  subroutine LoadMessage ( C, OutgoingMessage, S_1D, nSend, oSend )
 
     class ( Chart_SLD_Form ), intent ( inout ) :: &
       C
+    type ( MessageOutgoing_R_Form ), intent ( in ) :: &
+      OutgoingMessage
     type ( Storage_1D_Form ), intent ( in ) :: &
       S_1D
     integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
       nSend, &
       oSend
-    integer ( KDI ), intent ( in ) :: &
-      iM
 
     integer ( KDI ) :: &
       iStrg, &  !-- iStorage
@@ -534,8 +547,7 @@ contains
         iV = S_1D % Storage ( iStrg ) % iaSelected ( iS )
         call C % SetVariablePointer &
                ( S_1D % Storage ( iStrg ) % Value ( :, iV ), V ) 
-        call Copy ( V, nSend, oSend, oBuffer, &
-                    C % Outgoing % Message ( iM ) % Value )
+        call Copy ( V, nSend, oSend, oBuffer, OutgoingMessage % Value )
         oBuffer = oBuffer + product ( nSend )
       end do !-- iS
     end do !-- iStrg
@@ -545,17 +557,17 @@ contains
   end subroutine LoadMessage
 
 
-  subroutine StoreMessage ( C, S_1D, nReceive, oReceive, iM )
+  subroutine StoreMessage ( C, S_1D, IncomingMessage, nReceive, oReceive )
 
     class ( Chart_SLD_Form ), intent ( in ) :: &
       C
     type ( Storage_1D_Form ), intent ( inout ) :: &
       S_1D
+    type ( MessageIncoming_R_Form ), intent ( in ) :: &
+      IncomingMessage
     integer ( KDI ), dimension ( 3 ), intent ( in )  :: &
       nReceive, &
       oReceive
-    integer ( KDI ), intent ( in ) :: &
-      iM
 
     integer ( KDI ) :: &
       iStrg, &  !-- iStorage
@@ -571,8 +583,7 @@ contains
         iV = S_1D % Storage ( iStrg ) % iaSelected ( iS )
         call C % SetVariablePointer &
                ( S_1D % Storage ( iStrg ) % Value ( :, iV ), V ) 
-        call Copy ( C % Incoming % Message ( iM ) % Value, &
-                    nReceive, oReceive, oBuffer, V )
+        call Copy ( IncomingMessage % Value, nReceive, oReceive, oBuffer, V )
         oBuffer = oBuffer + product ( nReceive )
       end do !-- iS
     end do !-- iStrg
