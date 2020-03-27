@@ -60,7 +60,9 @@ module Chart_SLD__Form
     private :: &
       SetGhostExchangePortals, &
       StartExchangeFace, &
-      FinishExchangeFace
+      FinishExchangeFace, &
+      StartExchangeEdge, &
+      FinishExchangeEdge
 
       private :: &
         LoadMessage, &
@@ -75,8 +77,12 @@ module Chart_SLD__Form
       !-- Edges
       TAG_RECEIVE_EDGE_LL = [ 93, 92, 91 ], &
       TAG_RECEIVE_EDGE_RR = [ 90, 89, 88 ], &
+      TAG_RECEIVE_EDGE_LR = [ 87, 86, 85 ], &
+      TAG_RECEIVE_EDGE_RL = [ 84, 83, 82 ], &
       TAG_SEND_EDGE_LL    = TAG_RECEIVE_EDGE_RR, &
-      TAG_SEND_EDGE_RR    = TAG_RECEIVE_EDGE_LL
+      TAG_SEND_EDGE_RR    = TAG_RECEIVE_EDGE_LL, &
+      TAG_SEND_EDGE_LR    = TAG_RECEIVE_EDGE_RL, &
+      TAG_SEND_EDGE_RL    = TAG_RECEIVE_EDGE_LR
 
 contains
 
@@ -163,7 +169,6 @@ contains
     call C % Storage_1D % Initialize ( S )
 
     !-- Start faces
-
     call StartExchangeFace &
            ( C, C % PortalFace_L_R, TAG_RECEIVE_FACE_L, TAG_SEND_FACE_R, &
              C % IncomingFace_L_R, C % OutgoingFace_L_R )
@@ -171,12 +176,39 @@ contains
            ( C, C % PortalFace_R_L, TAG_RECEIVE_FACE_R, TAG_SEND_FACE_L, &
              C % IncomingFace_R_L, C % OutgoingFace_R_L )
 
-    !-- Finish faces
+    !-- Start edges
+    call StartExchangeEdge &
+           ( C, C % PortalEdge_LL_RR, TAG_RECEIVE_EDGE_LL, TAG_SEND_EDGE_RR, &
+             C % IncomingEdge_LL_RR, C % OutgoingEdge_LL_RR )
+    call StartExchangeEdge &
+           ( C, C % PortalEdge_RR_LL, TAG_RECEIVE_EDGE_RR, TAG_SEND_EDGE_LL, &
+             C % IncomingEdge_RR_LL, C % OutgoingEdge_RR_LL )
+    call StartExchangeEdge &
+           ( C, C % PortalEdge_LR_RL, TAG_RECEIVE_EDGE_LR, TAG_SEND_EDGE_RL, &
+             C % IncomingEdge_LR_RL, C % OutgoingEdge_LR_RL )
+    call StartExchangeEdge &
+           ( C, C % PortalEdge_RL_LR, TAG_RECEIVE_EDGE_RL, TAG_SEND_EDGE_LR, &
+             C % IncomingEdge_RL_LR, C % OutgoingEdge_RL_LR )
 
+    !-- Finish faces
     call FinishExchangeFace &
            ( C, C % IncomingFace_L_R, C % OutgoingFace_L_R, TAG_RECEIVE_FACE_L )
     call FinishExchangeFace &
            ( C, C % IncomingFace_R_L, C % OutgoingFace_R_L, TAG_RECEIVE_FACE_R )
+
+    !-- Finish edges
+    call FinishExchangeEdge &
+           ( C, C % IncomingEdge_LL_RR, C % OutgoingEdge_LL_RR, &
+             TAG_RECEIVE_EDGE_LL )
+    call FinishExchangeEdge &
+           ( C, C % IncomingEdge_RR_LL, C % OutgoingEdge_RR_LL, &
+             TAG_RECEIVE_EDGE_RR )
+    call FinishExchangeEdge &
+           ( C, C % IncomingEdge_LR_RL, C % OutgoingEdge_LR_RL, &
+             TAG_RECEIVE_EDGE_LR )
+    call FinishExchangeEdge &
+           ( C, C % IncomingEdge_RL_LR, C % OutgoingEdge_RL_LR, &
+             TAG_RECEIVE_EDGE_RL )
 
     deallocate ( C % Storage_1D )
 
@@ -309,7 +341,7 @@ contains
     integer ( KDI ) :: &
       iP, &  !-- iProcess
       iB, jB, kB, &  !-- iBrick, jBrick, kBrick
-      iD, jD, kD!, &  !-- iDimension, etc.
+      iD, jD, kD     !-- iDimension, etc.
     integer ( KDI ), dimension ( ATLAS % MAX_DIMENSIONS ) :: &
       iaB
     integer ( KDI ), dimension ( : ), allocatable :: &
@@ -580,14 +612,14 @@ contains
 
     do iD = 1, nD
 
-      nSend        = nCB
-      nSend ( iD ) = nGL ( iD )
+      nSend         =  nCB
+      nSend ( iD )  =  nGL ( iD )
 
       !-- In setting oSend, note Copy command does not inherit lbound
-      if ( all ( TagSend == TAG_SEND_FACE_R ) ) then
+      if ( TagSend ( iD )  ==  TAG_SEND_FACE_R ( iD ) ) then
         oSend        = nGL
         oSend ( iD ) = oSend ( iD ) + nCB ( iD ) - nGL ( iD )
-      else if ( all ( TagSend == TAG_SEND_FACE_L ) ) then
+      else if ( TagSend ( iD )  ==  TAG_SEND_FACE_L ( iD ) ) then
         oSend = nGL
       else
         call Show ( 'Tags not recognized', CONSOLE % ERROR )
@@ -641,13 +673,13 @@ contains
       nReceive ( iD ) = nGL ( iD )
 
       !-- In setting oReceive, note Copy command does not inherit lbound
-      if ( all ( TagReceive == TAG_RECEIVE_FACE_L ) ) then
+      if ( TagReceive ( iD )  == TAG_RECEIVE_FACE_L ( iD ) ) then
         if ( C % iaBrick ( iD ) == 1 &
              .and. .not. C % IsPeriodic ( iD ) ) &
           cycle
         oReceive        = nGL
         oReceive ( iD ) = oReceive ( iD ) - nGL ( iD )
-      else if ( all ( TagReceive == TAG_RECEIVE_FACE_R ) ) then
+      else if ( TagReceive ( iD ) == TAG_RECEIVE_FACE_R ( iD ) ) then
         if ( C % iaBrick ( iD ) == C % nBricks ( iD ) &
              .and. .not. C % IsPeriodic ( iD ) ) &
           cycle
@@ -677,6 +709,215 @@ contains
     deallocate ( IncomingFace )
 
   end subroutine FinishExchangeFace
+
+
+  subroutine StartExchangeEdge &
+               ( C, PH, TagReceive, TagSend, IncomingEdge, OutgoingEdge )
+
+    class ( Chart_SLD_Form ), intent ( inout ) :: &
+      C
+    type ( PortalHeaderForm ), intent ( in ) :: &
+      PH
+    integer ( KDI ), dimension ( : ), intent ( in ) :: &
+      TagReceive, &
+      TagSend
+    type ( MessageIncoming_1D_R_Form ), intent ( out ), allocatable :: &
+      IncomingEdge
+    type ( MessageOutgoing_1D_R_Form ), intent ( out ), allocatable :: &
+      OutgoingEdge
+
+    integer ( KDI ) :: &
+      iD, jD, kD  !-- iDimension, etc.
+    integer ( KDI ), dimension ( 3 ) :: &
+      oSend, &
+      nSend
+    logical ( KDL ), dimension ( 3 ) :: &
+      DimensionMask
+
+    allocate ( IncomingEdge )
+    allocate ( OutgoingEdge )
+
+    associate &
+      ( S_1D  => C % Storage_1D, &
+        Communicator => C % Atlas % Communicator, &
+        nCB => C % nCellsBrick, &
+        nGL => C % nGhostLayers, &
+        nD  => C % nDimensions )
+
+    select case ( nD )
+    case ( 1 ) 
+      return
+    case ( 2 )
+      DimensionMask = [ .true., .false., .false. ]
+    case ( 3 )
+      DimensionMask = [ .true., .true., .true. ]
+    end select !-- nD
+
+    !-- Post Receives
+
+    call IncomingEdge % Initialize &
+           ( Communicator, pack ( TagReceive, DimensionMask ), PH % Source, &
+             PH % nChunksFrom * S_1D % nVariablesTotal )
+    call IncomingEdge % Receive ( )
+
+    !-- Post Sends
+
+    call OutgoingEdge % Initialize &
+           ( Communicator, pack ( TagSend, DimensionMask ), PH % Target, &
+             PH % nChunksTo * S_1D % nVariablesTotal )
+
+    do kD = 3, 1, -1
+
+      iD  =  mod ( kD, 3 ) + 1
+      jD  =  mod ( iD, 3 ) + 1
+
+      if ( iD > nD .or. jD > nD ) &
+        cycle
+
+      nSend ( iD )  =  nGL ( iD )
+      nSend ( jD )  =  nGL ( jD )
+      nSend ( kD )  =  nCB ( kD )
+
+      !-- In setting oSend, note Copy command does not inherit lbound
+      if ( TagSend ( kD )  ==  TAG_SEND_EDGE_RR ( kD ) ) then
+        oSend         =  nGL
+        oSend ( iD )  =  oSend ( iD ) + nCB ( iD ) - nGL ( iD )
+        oSend ( jD )  =  oSend ( jD ) + nCB ( jD ) - nGL ( jD )
+      else if ( TagSend ( kD )  ==  TAG_SEND_EDGE_LL ( kD ) ) then
+        oSend         =  nGL
+      else if ( TagSend ( kD )  ==  TAG_SEND_EDGE_RL ( kD ) ) then
+        oSend         =  nGL
+        oSend ( iD )  =  oSend ( iD ) + nCB ( iD ) - nGL ( iD )
+      else if ( TagSend ( kD )  ==  TAG_SEND_EDGE_LR ( kD ) ) then
+        oSend         =  nGL
+        oSend ( jD )  =  oSend ( jD ) + nCB ( jD ) - nGL ( jD )
+      else
+        call Show ( 'Tags not recognized', CONSOLE % ERROR )
+        call Show ( 'Chart_SLD__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'StartExchangeEdge', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end if !-- TagSend
+
+      call LoadMessage ( C, OutgoingEdge % Message ( kD ), S_1D, nSend, oSend )
+      call OutgoingEdge % Send ( kD )
+
+    end do !-- kD
+
+    end associate !-- S_1D, etc.
+
+  end subroutine StartExchangeEdge
+
+
+  subroutine FinishExchangeEdge ( C, IncomingEdge, OutgoingEdge, TagReceive )
+
+    class ( Chart_SLD_Form ), intent ( inout ) :: &
+      C
+    type ( MessageIncoming_1D_R_Form ), intent ( inout ), allocatable :: &
+      IncomingEdge
+    type ( MessageOutgoing_1D_R_Form ), intent ( inout ), allocatable :: &
+      OutgoingEdge
+    integer ( KDI ), dimension ( : ), intent ( in ) :: &
+      TagReceive
+
+    integer ( KDI ) :: &
+      kM, &   !-- kMessage
+      iD, jD  !-- iDimension, etc.
+    integer ( KDI ), dimension ( 3 ) :: &
+      oReceive, &
+      nReceive
+    logical ( KDL ) :: &
+      AllFinished
+
+    associate &
+      ( S_1D => C % Storage_1D, &
+        nCB => C % nCellsBrick, &
+        nGL => C % nGhostLayers, &
+        nD  => C % nDimensions )
+
+    if ( nD == 1 ) &
+      return
+
+    !-- Wait for Receives
+
+    do 
+
+      call IncomingEdge % Wait ( AllFinished, kM )
+      if ( AllFinished ) exit
+
+      select case ( nD )
+      case ( 2 )
+        iD = 1
+        jD = 2
+      case ( 3 )
+        iD = mod ( kM, 3 ) + 1
+        jD = mod ( iD, 3 ) + 1
+      end select !-- nD
+
+      nReceive         =  nCB
+      nReceive ( iD )  =  nGL ( iD )
+      nReceive ( jD )  =  nGL ( jD )
+
+      !-- In setting oReceive, note Copy command does not inherit lbound
+      if ( TagReceive ( kM )  ==  TAG_RECEIVE_EDGE_LL ( kM ) ) then
+        if ( C % iaBrick ( iD ) == 1 &
+             .and. C % iaBrick ( jD ) == 1 &
+             .and. .not. C % IsPeriodic ( iD ) &
+             .and. .not. C % IsPeriodic ( jD ) ) &
+          cycle
+        oReceive        = nGL
+        oReceive ( iD ) = oReceive ( iD ) - nGL ( iD )
+        oReceive ( jD ) = oReceive ( jD ) - nGL ( jD )
+      else if ( TagReceive ( kM )  ==  TAG_RECEIVE_EDGE_RR ( kM ) ) then
+        if ( C % iaBrick ( iD ) == C % nBricks ( iD ) &
+             .and. C % iaBrick ( jD ) == C % nBricks ( jD ) &
+             .and. .not. C % IsPeriodic ( iD ) &
+             .and. .not. C % IsPeriodic ( jD ) ) &
+          cycle
+        oReceive        = nGL
+        oReceive ( iD ) = oReceive ( iD ) + nCB ( iD )
+        oReceive ( jD ) = oReceive ( jD ) + nCB ( jD )
+      else if ( TagReceive ( kM )  ==  TAG_RECEIVE_EDGE_LR ( kM ) ) then
+        if ( C % iaBrick ( iD ) == 1 &
+             .and. C % iaBrick ( jD ) == C % nBricks ( jD ) &
+             .and. .not. C % IsPeriodic ( iD ) &
+             .and. .not. C % IsPeriodic ( jD ) ) &
+          cycle
+        oReceive        = nGL
+        oReceive ( iD ) = oReceive ( iD ) - nGL ( iD )
+        oReceive ( jD ) = oReceive ( jD ) + nCB ( jD )
+      else if ( TagReceive ( kM )  ==  TAG_RECEIVE_EDGE_RL ( kM ) ) then
+        if ( C % iaBrick ( iD ) == C % nBricks ( iD ) &
+             .and. C % iaBrick ( jD ) == 1 &
+             .and. .not. C % IsPeriodic ( iD ) &
+             .and. .not. C % IsPeriodic ( jD ) ) &
+          cycle
+        oReceive        = nGL
+        oReceive ( iD ) = oReceive ( iD ) + nCB ( iD )
+        oReceive ( jD ) = oReceive ( jD ) - nGL ( jD )
+      else
+        call Show ( 'Tags not recognized', CONSOLE % ERROR )
+        call Show ( 'Chart_SLD__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'FinishExchangeEdge', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end if !-- TagReceive
+
+      call StoreMessage &
+             ( C, S_1D, IncomingEdge % Message ( kM ), nReceive, oReceive )
+
+    end do
+
+    !-- Wait for Sends
+
+    call OutgoingEdge % Wait ( )
+
+    !-- Cleanup
+
+    end associate !-- S_1D, etc.
+
+    deallocate ( OutgoingEdge )
+    deallocate ( IncomingEdge )
+
+  end subroutine FinishExchangeEdge
 
 
   subroutine LoadMessage ( C, OutgoingMessage, S_1D, nSend, oSend )
