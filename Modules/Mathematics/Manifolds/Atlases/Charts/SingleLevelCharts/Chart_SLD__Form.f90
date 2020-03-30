@@ -517,8 +517,8 @@ contains
     allocate ( C % PortalEdge_LL_RR )
     associate ( PELLRR => C % PortalEdge_LL_RR )
     call PELLRR % Initialize &
-           ( pack ( Source_LL_RR, Source_LL_RR > 0 ), &
-             pack ( Target_LL_RR, Target_LL_RR > 0 ), &
+           ( pack ( Source_LL_RR, Source_LL_RR >= 0 ), &
+             pack ( Target_LL_RR, Target_LL_RR >= 0 ), &
              pack ( nCellsEdge, nCellsEdge > 0 ), &
              pack ( nCellsEdge, nCellsEdge > 0 ) ) 
     call PELLRR % Show ( 'Chart_SLD PortalEdge_LL_RR', &
@@ -528,8 +528,8 @@ contains
     allocate ( C % PortalEdge_RR_LL )
     associate ( PERRLL => C % PortalEdge_RR_LL )
     call PERRLL % Initialize &
-           ( pack ( Source_RR_LL, Source_RR_LL > 0 ), &
-             pack ( Target_RR_LL, Target_RR_LL > 0 ), &
+           ( pack ( Source_RR_LL, Source_RR_LL >= 0 ), &
+             pack ( Target_RR_LL, Target_RR_LL >= 0 ), &
              pack ( nCellsEdge, nCellsEdge > 0 ), &
              pack ( nCellsEdge, nCellsEdge > 0 ) ) 
     call PERRLL % Show ( 'Chart_SLD PortalEdge_RR_LL', &
@@ -539,8 +539,8 @@ contains
     allocate ( C % PortalEdge_LR_RL )
     associate ( PELRRL => C % PortalEdge_LR_RL )
     call PELRRL % Initialize &
-           ( pack ( Source_LR_RL, Source_LR_RL > 0 ), &
-             pack ( Target_LR_RL, Target_LR_RL > 0 ), &
+           ( pack ( Source_LR_RL, Source_LR_RL >= 0 ), &
+             pack ( Target_LR_RL, Target_LR_RL >= 0 ), &
              pack ( nCellsEdge, nCellsEdge > 0 ), &
              pack ( nCellsEdge, nCellsEdge > 0 ) ) 
     call PELRRL % Show ( 'Chart_SLD PortalEdge_LR_RL', &
@@ -550,8 +550,8 @@ contains
     allocate ( C % PortalEdge_RL_LR )
     associate ( PERLLR => C % PortalEdge_RL_LR )
     call PERLLR % Initialize &
-           ( pack ( Source_RL_LR, Source_RL_LR > 0 ), &
-             pack ( Target_RL_LR, Target_RL_LR > 0 ), &
+           ( pack ( Source_RL_LR, Source_RL_LR >= 0 ), &
+             pack ( Target_RL_LR, Target_RL_LR >= 0 ), &
              pack ( nCellsEdge, nCellsEdge > 0 ), &
              pack ( nCellsEdge, nCellsEdge > 0 ) ) 
     call PERLLR % Show ( 'Chart_SLD PortalEdge_RL_LR', &
@@ -727,7 +727,8 @@ contains
       OutgoingEdge
 
     integer ( KDI ) :: &
-      iD, jD, kD  !-- iDimension, etc.
+      iD, jD, kD, &  !-- iDimension, etc.
+      kM  !-- kMessage
     integer ( KDI ), dimension ( 3 ) :: &
       oSend, &
       nSend
@@ -798,8 +799,15 @@ contains
         call PROGRAM_HEADER % Abort ( )
       end if !-- TagSend
 
-      call LoadMessage ( C, OutgoingEdge % Message ( kD ), S_1D, nSend, oSend )
-      call OutgoingEdge % Send ( kD )
+      select case ( nD )
+      case ( 2 )
+        kM = 1
+      case ( 3 )
+        kM = kD
+      end select !-- nD
+
+      call LoadMessage ( C, OutgoingEdge % Message ( kM ), S_1D, nSend, oSend )
+      call OutgoingEdge % Send ( kM )
 
     end do !-- kD
 
