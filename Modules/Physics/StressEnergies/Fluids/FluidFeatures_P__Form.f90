@@ -41,7 +41,8 @@ module FluidFeatures_P__Form
       DetectShocks_CSL
 
       private :: &
-        DetectShocks_CSL_Kernel
+        DetectShocks_CSL_Kernel, &
+        ClearBoundary_CSL_Kernel
 
 contains
 
@@ -113,14 +114,6 @@ contains
     class is ( Chart_SL_Template )
 
       call DetectShocks_CSL ( FF, F, Grid )
-
-      select type ( Grid_SLD => FF % Grid )
-      class is ( Chart_SLD_Form )
-        call S_Shock % Initialize &
-               ( FF, iaSelectedOption = &
-                       [ FF % SHOCK, FF % DIFFUSIVE_FLUX_I ( 1 : 3 ) ] )
-        call Grid_SLD % ExchangeGhostData ( S_Shock )
-      end select
 
     class default
       call Show ( 'Grid type not recognized', CONSOLE % ERROR )
@@ -237,6 +230,7 @@ contains
     integer ( KDI ) :: &
       iD, jD, kD
     real ( KDR ), dimension ( :, :, : ), pointer :: &
+      DF_I_iD, &
       DF_I_jD, &
       DF_I_kD, &
       S, &
@@ -272,7 +266,29 @@ contains
 
     end do !-- iD
 
-    nullify ( S_I_iD, P, V_iD )
+    !-- Separate dimension loop needed to avoid transverse effects
+    !   (i.e. setting previously cleared cells) 
+    do iD = 1, CSL % nDimensions
+
+      jD = mod ( iD, 3 ) + 1
+      kD = mod ( jD, 3 ) + 1
+
+      call CSL % SetVariablePointer &
+             ( FF % Value ( :, FF % DIFFUSIVE_FLUX_I ( iD ) ), DF_I_iD )
+      call CSL % SetVariablePointer &
+             ( FF % Value ( :, FF % DIFFUSIVE_FLUX_I ( jD ) ), DF_I_jD )
+      call CSL % SetVariablePointer &
+             ( FF % Value ( :, FF % DIFFUSIVE_FLUX_I ( kD ) ), DF_I_kD )
+      call CSL % SetVariablePointer &
+             ( FF % Value ( :, FF % SHOCK_I ( iD ) ), S_I_iD )
+
+      call ClearBoundary_CSL_Kernel &
+             ( S, S_I_iD, DF_I_iD, DF_I_jD, DF_I_kD, CSL, iD, jD, kD, &
+               CSL % nGhostLayers ( iD ) )
+
+    end do !-- iD
+
+    nullify ( DF_I_jD, DF_I_kD, S, S_I_iD, P, V_iD )
 
   end subroutine DetectShocks_CSL
 
@@ -309,29 +325,16 @@ contains
       dLnP, &
       dV_iD, &
       SqrtTiny
-    logical ( KDL ) :: &
-      InnerBoundary, &
-      OuterBoundary
-
-    select type ( CSL )
-    class is ( Chart_SLD_Form )
-      InnerBoundary  =  ( CSL % iaBrick ( iD ) == 1 )
-      OuterBoundary  =  ( CSL % iaBrick ( iD ) == CSL % nBricks ( iD ) )
-    end select !-- CSL
 
     lV = 1
     where ( shape ( S ) > 1 )
-      lV = oV + 1
+      lV = oV
     end where
-    if ( InnerBoundary ) &  !-- Don't detect shocks at boundary
-      lV ( iD )  =  lV ( iD ) + 1  
-    
+
     uV = 1
     where ( shape ( S ) > 1 )
-      uV = shape ( S ) - oV
+      uV = shape ( S ) - oV + 1
     end where
-    if ( .not. OuterBoundary ) &  !-- Don't detect shocks at boundary
-      uV ( iD ) = size ( S, dim = iD ) - oV + 1 
       
     iaS_i = 0
     iaS_i ( iD ) = -1
@@ -406,6 +409,101 @@ contains
     !$OMP end parallel do
       
   end subroutine DetectShocks_CSL_Kernel
+
+
+  subroutine ClearBoundary_CSL_Kernel &
+               ( S, S_I_iD, DF_I_iD, DF_I_jD, DF_I_kD, CSL, iD, jD, kD, oV )
+
+    real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
+      S, &
+      S_I_iD, &
+      DF_I_iD, &
+      DF_I_jD, &
+      DF_I_kD
+    class ( Chart_SL_Template ), intent ( in ) :: &
+      CSL
+    integer ( KDI ), intent ( in ) :: &
+      iD, jD, kD, &
+      oV
+
+    integer ( KDI ) :: &
+      iV, jV, kV
+    integer ( KDI ), dimension ( 3 ) :: &
+      lV, &
+      uV
+    logical ( KDL ) :: &
+      InnerBoundary, &
+      OuterBoundary
+
+    select type ( CSL )
+    class is ( Chart_SLD_Form )
+      InnerBoundary  =  ( CSL % iaBrick ( iD ) == 1 )
+      OuterBoundary  =  ( CSL % iaBrick ( iD ) == CSL % nBricks ( iD ) )
+    end select !-- CSL
+
+    if ( InnerBoundary ) then
+
+      lV = 1
+      where ( shape ( S ) > 1 )
+        lV = oV
+      end where
+
+      uV = 1
+      where ( shape ( S ) > 1 )
+        uV = shape ( S ) - oV + 1 
+      end where
+      uV ( iD ) = lV ( iD ) + 1
+
+      !$OMP parallel do private ( iV, jV, kV )
+      do kV = lV ( 3 ), uV ( 3 ) 
+        do jV = lV ( 2 ), uV ( 2 )
+          do iV = lV ( 1 ), uV ( 1 )
+
+                  S ( iV, jV, kV )  =  0.0_KDR
+             S_I_iD ( iV, jV, kV )  =  0.0_KDR
+            DF_I_iD ( iV, jV, kV )  =  0.0_KDR
+            DF_I_jD ( iV, jV, kV )  =  0.0_KDR
+            DF_I_kD ( iV, jV, kV )  =  0.0_KDR
+
+          end do !-- iV
+        end do !-- jV
+      end do !-- kV
+      !$OMP end parallel do
+
+    end if !-- InnerBoundary
+       
+    if ( OuterBoundary ) then
+
+      lV = 1
+      where ( shape ( S ) > 1 )
+        lV = oV - 1
+      end where
+      lV ( iD ) = size ( S, dim = iD ) - oV
+
+      uV = 1
+      where ( shape ( S ) > 1 )
+        uV = shape ( S ) - oV + 1 
+      end where
+
+      !$OMP parallel do private ( iV, jV, kV )
+      do kV = lV ( 3 ), uV ( 3 ) 
+        do jV = lV ( 2 ), uV ( 2 )
+          do iV = lV ( 1 ), uV ( 1 )
+
+                  S ( iV, jV, kV )  =  0.0_KDR
+             S_I_iD ( iV, jV, kV )  =  0.0_KDR
+            DF_I_iD ( iV, jV, kV )  =  0.0_KDR
+            DF_I_jD ( iV, jV, kV )  =  0.0_KDR
+            DF_I_kD ( iV, jV, kV )  =  0.0_KDR
+
+          end do !-- iV
+        end do !-- jV
+      end do !-- kV
+      !$OMP end parallel do
+
+    end if !-- OuterBoundary
+       
+  end subroutine ClearBoundary_CSL_Kernel
 
 
 end module FluidFeatures_P__Form
