@@ -32,7 +32,7 @@ contains
   subroutine Initialize &
                ( SRMA, RadiationMoments_ASC, NameShortOption, &
                  UsePinnedMemoryOption, SuppressWriteOption, TimeUnitOption, &
-                 EnergyUnitOption, IgnorabilityOption, SuppressWriteOption )
+                 EnergyUnitOption, IgnorabilityOption )
 
     class ( Sources_RM_ASC_Form ), intent ( inout ) :: &
       SRMA

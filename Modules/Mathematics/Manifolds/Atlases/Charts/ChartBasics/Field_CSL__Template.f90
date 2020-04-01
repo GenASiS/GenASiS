@@ -30,15 +30,7 @@ module Field_CSL__Template
       SetField
   end type Field_CSL_Template
   
-    abstract interface 
-      subroutine SF ( FC )
-        import Field_CSL_Template
-        class ( Field_CSL_Template ), intent ( inout ) :: &
-          FC
-      end subroutine
-    end interface
-
-!-- FIXME: Copied from FieldChart_Template for XL compiler
+    !-- FIXME: see above
     abstract interface 
       subroutine SF ( FC )
         import Field_CSL_Template

@@ -216,7 +216,7 @@ contains
       if ( UseDevice ) then
         !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
         !$OMP& schedule ( OMP_SCHEDULE_TARGET ) &
-        !$OMP& private ( iV, jV, kV )
+        !$OMP& private ( iV, jV, kV ) &
         !$OMP& firstprivate ( lV, uV )
         do kV = lV ( 3 ), uV ( 3 ) 
           do jV = lV ( 2 ), uV ( 2 )
@@ -231,7 +231,7 @@ contains
             end do !-- iV
           end do !-- jV
         end do !-- kV
-        !$OMP  end OMP_TARGET_DIRECTIVE
+        !$OMP  end OMP_TARGET_DIRECTIVE parallel do
       else
         !$OMP  parallel do collapse ( 3 ) &
         !$OMP& schedule ( OMP_SCHEDULE_HOST ) &
@@ -271,7 +271,7 @@ contains
       if ( UseDevice ) then 
         !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
         !$OMP& schedule ( OMP_SCHEDULE_TARGET ) &
-        !$OMP& private ( iV, jV, kV )
+        !$OMP& private ( iV, jV, kV ) &
         !$OMP& firstprivate ( lV, uV )
         do kV = lV ( 3 ), uV ( 3 ) 
           do jV = lV ( 2 ), uV ( 2 )
@@ -286,7 +286,7 @@ contains
             end do !-- iV
           end do !-- jV
         end do !-- kV
-        !$OMP  end OMP_TARGET_DIRECTIVE
+        !$OMP  end OMP_TARGET_DIRECTIVE parallel do
       else
         !$OMP  parallel do collapse ( 3 ) &
         !$OMP& schedule ( OMP_SCHEDULE_HOST ) &
@@ -310,7 +310,7 @@ contains
 
     end if !-- OuterBoundary
        
-  end subroutine ClearBoundary_CSL_Kernel
+  end procedure ClearBoundary_CSL_Kernel
 
 
 end submodule FluidFeatures_P__Kernel

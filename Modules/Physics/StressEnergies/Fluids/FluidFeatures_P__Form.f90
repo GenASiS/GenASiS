@@ -331,7 +331,7 @@ contains
                InnerBoundary = ( CSL % iaBrick ( iD ) == 1 ), &
                OuterBoundary = ( CSL % iaBrick ( iD ) &
                                    == CSL % nBricks ( iD ) ), &
-               iD, jD, kD, CSL % nGhostLayers ( iD ), &
+               iD = iD, jD = jD, kD = kD, oV = CSL % nGhostLayers ( iD ), &
                UseDeviceOption = FF % AllocatedDevice )
 
     end do !-- iD

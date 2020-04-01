@@ -94,9 +94,9 @@ module Current_Template
       ComputeFluxes
     procedure, public, pass :: &
       FinalizeTemplate
-    procedure ( CFPCC ), public, pass ( C ), deferred :: &
+    procedure ( CFPC ), public, pass ( C ), deferred :: &
       ComputeFromPrimitiveCommon
-    procedure ( CFPCC ), public, pass ( C ), deferred :: &
+    procedure ( CFCC ), public, pass ( C ), deferred :: &
       ComputeFromConservedCommon
     procedure, public, pass ( C ) :: &
       ComputeFluxes_HLL
@@ -115,10 +115,26 @@ module Current_Template
       class ( CurrentTemplate ), intent ( inout ) :: &
         C
     end subroutine SPC
+    
+    subroutine CFPC ( Storage_C, C, G, Storage_G, nValuesOption, oValueOption )
+      use Basics
+      use Manifolds
+      import CurrentTemplate
+      class ( StorageForm ), intent ( inout ), target :: &
+        Storage_C
+      class ( CurrentTemplate ), intent ( in ) :: &
+        C
+      class ( GeometryFlatForm ), intent ( in ) :: &
+        G
+      class ( StorageForm ), intent ( in ) :: &
+        Storage_G
+      integer ( KDI ), intent ( in ), optional :: &
+        nValuesOption, &
+        oValueOption
+    end subroutine CFPC
 
-    !-- ComputeFromPrimitive-or-ConservedCommon
-    subroutine CFPCC ( Storage_C, C, G, Storage_G, DetectFeaturesOption, &
-                       nValuesOption, oValueOption )
+    subroutine CFCC ( Storage_C, C, G, Storage_G, DetectFeaturesOption, &
+                      nValuesOption, oValueOption )
       use Basics
       use Manifolds
       import CurrentTemplate
@@ -135,7 +151,7 @@ module Current_Template
       integer ( KDI ), intent ( in ), optional :: &
         nValuesOption, &
         oValueOption
-    end subroutine CFPCC
+    end subroutine CFCC
 
     subroutine CRF ( RawFlux, C, G, Storage_C, Storage_G, iDimension, &
                      nValuesOption, oValueOption )
