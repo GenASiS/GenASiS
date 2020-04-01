@@ -61,18 +61,18 @@ module Fluid_P__Template
   end type Fluid_P_Template
 
   abstract interface
-    subroutine CFT ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
+    subroutine CFT ( Storage_C, C, G, Storage_G, nValuesOption, oValueOption )
       use Basics
       use Mathematics
       import Fluid_P_Template
-      real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
-        Value_C
+      class ( StorageForm ), intent ( inout ), target :: &
+        Storage_C
       class ( Fluid_P_Template ), intent ( in ) :: &
         C
       class ( GeometryFlatForm ), intent ( in ) :: &
         G
-      real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-        Value_G
+      class ( StorageForm ), intent ( in ) :: &
+        Storage_G
       integer ( KDI ), intent ( in ), optional :: &
         nValuesOption, &
         oValueOption
@@ -86,6 +86,186 @@ module Fluid_P__Template
       ComputeCenterStatesKernel, &
       ComputeFluxes_HLLC_Kernel, &
       ComputeRawFluxesTemplate_P_Kernel
+      
+  interface
+  
+    module subroutine Compute_G_G_Kernel &
+                 ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E, UseDeviceOption )
+      !-- Compute_ConservedEnergy_Galilean_Kernel
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        G
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        M, &
+        N, &
+        V_1, V_2, V_3, &
+        S_1, S_2, S_3, &
+        E
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine Compute_G_G_Kernel
+
+
+    module subroutine Compute_DS_G_Kernel ( DS, N, SB, UseDeviceOption )
+      !-- Compute_ConservedEntropy_Galilean_Kernel
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: & 	 	 
+        DS
+      real ( KDR ), dimension ( : ), intent ( in ) :: & 	 	 
+        N, &
+        SB 	 	 
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine Compute_DS_G_Kernel
+
+
+    module subroutine Compute_N_V_E_G_Kernel &
+                 ( N, V_1, V_2, V_3, E, D, S_1, S_2, S_3, G, M, &
+                   M_UU_22, M_UU_33, N_Min, UseDeviceOption )
+      !-- Compute_ComovingBaryonDensity_Velocity_InternalEnergyDensity_Galilean
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        N, &
+        V_1, V_2, V_3, &
+        E, &
+        D, &
+        S_1, S_2, S_3, &
+        G
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        M, &
+        M_UU_22, M_UU_33
+      real ( KDR ), intent ( in ) :: &
+        N_Min
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine Compute_N_V_E_G_Kernel
+
+
+    module subroutine Compute_SB_G_Kernel ( SB, DS, N, UseDeviceOption )
+      !-- Compute_EntropyPerBaryon_Galilean_Kernel
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        SB, &
+        DS
+      real ( KDR ), dimension ( : ), intent ( in ) :: & 	 	 
+        N 	 	 
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine Compute_SB_G_Kernel
+    
+    
+    module subroutine Compute_FE_P_G_Kernel &
+                 ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
+                   V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
+                   UseDeviceOption )
+      !-- Compute_FastEigenspeeds_Perfect_Galilean_Kernel
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        FEP_1, FEP_2, FEP_3, &
+        FEM_1, FEM_2, FEM_3, &
+        MN
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        V_1, V_2, V_3, & 
+        CS, &
+        M_DD_22, M_DD_33, &
+        M_UU_22, M_UU_33
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine Compute_FE_P_G_Kernel
+    
+    
+    module subroutine ComputeCenterSpeedKernel &
+                 ( AC_I, F_D_IL, F_D_IR, F_S_IL, F_S_IR, M_IL, M_IR, &
+                   D_IL, D_IR, S_IL, S_IR, AP_I, AM_I, M_UU, UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        AC_I
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        F_D_IL, F_D_IR, &
+        F_S_IL, F_S_IR, &
+        M_IL, M_IR, &
+        D_IL, D_IR, &
+        S_IL, S_IR, &
+        AP_I, &
+        AM_I, &
+        M_UU
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine ComputeCenterSpeedKernel
+
+
+    module subroutine ComputeCenterStatesKernel &
+                 ( V_ICL, V_ICR, S_ICL, S_ICR, M_ICL, M_ICR, D_ICL, D_ICR, &
+                   G_ICL, G_ICR, P_ICL, P_ICR, DS_ICL, DS_ICR, &
+                   V_IL, V_IR, S_IL, S_IR, M_IL, M_IR, D_IL, D_IR, &
+                   G_IL, G_IR, P_IL, P_IR, DS_IL, DS_IR, &
+                   AP_I, AM_I, AC_I, M_DD_22, M_DD_33, iD, UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+        V_ICL, V_ICR, &
+        S_ICL, S_ICR
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        M_ICL, M_ICR, &
+        D_ICL, D_ICR, &
+        G_ICL, G_ICR, &
+        P_ICL, P_ICR, &
+        DS_ICL, DS_ICR
+      !-- FIXME: IBM XL compiler produces bogus error message
+      !          with intent ( in ); changed to intent ( inout )
+      !          as temporarily workaround. OLCF RT #415080
+      real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+        V_IL, V_IR, &
+        S_IL, S_IR
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        M_IL, M_IR, &
+        D_IL, D_IR, &
+        G_IL, G_IR, &
+        P_IL, P_IR, &
+        DS_IL, DS_IR, &
+        AP_I, &
+        AM_I, &
+        AC_I, &
+        M_DD_22, M_DD_33
+      integer ( KDI ), intent ( in ) :: &
+        iD
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine ComputeCenterStatesKernel
+
+
+    module subroutine ComputeFluxes_HLLC_Kernel &
+                 ( F_I, F_ICL, F_ICR, AP_I, AM_I, AC_I, DF_I, UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        F_I
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        F_ICL, F_ICR, &
+        AP_I, &
+        AM_I, &
+        AC_I, &
+        DF_I
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine ComputeFluxes_HLLC_Kernel
+
+
+    module subroutine ComputeRawFluxesTemplate_P_Kernel &
+                 ( F_S_Dim, F_G, F_DS, G, P, DS, V_Dim, UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        F_S_Dim, &
+        F_G, &
+        F_DS
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        G, &
+        P, &
+        DS, &
+        V_Dim
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine ComputeRawFluxesTemplate_P_Kernel
+
+  end interface
 
 contains
 
@@ -282,7 +462,7 @@ contains
                C_IR % Value ( :, C % MOMENTUM_DENSITY_D ( iDimension ) ), &
                SS_I % Value ( :, C % ALPHA_PLUS ), &
                SS_I % Value ( :, C % ALPHA_MINUS ), &
-               M_UU )
+               M_UU, UseDeviceOption = C % AllocatedDevice )
 
       associate &
         ( C_ICL => I % Storage % Current_ICL, &
@@ -293,9 +473,9 @@ contains
 
       !-- Overwrite F_IL and F_IR with F_ICL and F_ICR
       call C % ComputeRawFluxes &
-             ( F_IL % Value, G, C_ICL % Value, G_I % Value, iDimension )
+             ( F_IL, G, C_ICL, G_I, iDimension )
       call C % ComputeRawFluxes &
-             ( F_IR % Value, G, C_ICR % Value, G_I % Value, iDimension )
+             ( F_IR, G, C_ICR, G_I, iDimension )
 
       associate ( FF => C % Features )
       do iF = 1, C % N_CONSERVED
@@ -306,7 +486,8 @@ contains
                  SS_I % Value ( :, C % ALPHA_PLUS ), &
                  SS_I % Value ( :, C % ALPHA_MINUS ), &
                  SS_I % Value ( :, C % ALPHA_CENTER ), &
-                 FF   % Value ( :, FF % DIFFUSIVE_FLUX_I ( iDimension ) ) )
+                 FF   % Value ( :, FF % DIFFUSIVE_FLUX_I ( iDimension ) ), &
+                 UseDeviceOption = C % AllocatedDevice )
       end do !-- iF
       end associate !-- FF
 
@@ -348,18 +529,18 @@ contains
 
 
   subroutine ComputeRawFluxesTemplate_P &
-               ( RawFlux, C, G, Value_C, Value_G, iDimension, &
+               ( RawFlux, C, G, Storage_C, Storage_G, iDimension, &
                  nValuesOption, oValueOption )
     
-    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+    class ( StorageForm ), intent ( inout ) :: &
       RawFlux
     class ( Fluid_P_Template ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_C, &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_C, &
+      Storage_G
     integer ( KDI ), intent ( in ) :: &
       iDimension
     integer ( KDI ), intent ( in ), optional :: &
@@ -372,9 +553,13 @@ contains
       iEntropy, &
       oV, &  !-- oValue
       nV     !-- nValues
+      
+    associate &
+      ( Value_RF => RawFlux % Value, &
+        Value_C  => Storage_C % Value )
 
     call C % Fluid_D_Form % ComputeRawFluxes &
-           ( RawFlux, G, Value_C, Value_G, iDimension, nValuesOption, &
+           ( RawFlux, G, Storage_C, Storage_G, iDimension, nValuesOption, &
              oValueOption )
 
     if ( present ( oValueOption ) ) then
@@ -398,18 +583,21 @@ contains
            ( C % iaConserved, C % CONSERVED_ENTROPY, iEntropy )
     
     associate &
-      ( F_S_Dim => RawFlux ( oV + 1 : oV + nV, iMomentum ), &
-        F_G     => RawFlux ( oV + 1 : oV + nV, iEnergy ), &
-        F_DS    => RawFlux ( oV + 1 : oV + nV, iEntropy ), &
+      ( F_S_Dim => Value_RF ( oV + 1 : oV + nV, iMomentum ), &
+        F_G     => Value_RF ( oV + 1 : oV + nV, iEnergy ), &
+        F_DS    => Value_RF ( oV + 1 : oV + nV, iEntropy ), &
         G       => Value_C ( oV + 1 : oV + nV, C % CONSERVED_ENERGY ), &
         P       => Value_C ( oV + 1 : oV + nV, C % PRESSURE ), &
         DS      => Value_C ( oV + 1 : oV + nV, C % CONSERVED_ENTROPY ), &
         V_Dim   => Value_C ( oV + 1 : oV + nV, C % VELOCITY_U ( iDimension ) ))
 
     call ComputeRawFluxesTemplate_P_Kernel &
-           ( F_S_Dim, F_G, F_DS, G, P, DS, V_Dim )
+           ( F_S_Dim, F_G, F_DS, G, P, DS, V_Dim, &
+             UseDeviceOption = C % AllocatedDevice )
 
     end associate !-- F_S_Dim, etc.
+    
+    end associate !-- Value_RF, Value_C
 
   end subroutine ComputeRawFluxesTemplate_P
   
@@ -469,205 +657,9 @@ contains
              SS_I % Value ( :, C % ALPHA_PLUS ), &
              SS_I % Value ( :, C % ALPHA_MINUS ), &
              SS_I % Value ( :, C % ALPHA_CENTER ), &
-             M_DD_22, M_DD_33, iD )
+             M_DD_22, M_DD_33, iD, UseDeviceOption = C % AllocatedDevice )
 
   end subroutine ComputeCenterStatesTemplate_P
-
-
-  subroutine Compute_G_G_Kernel &
-               ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
-
-    !-- Compute_ConservedEnergy_Galilean_Kernel
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      G
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      M, &
-      N, &
-      V_1, V_2, V_3, &
-      S_1, S_2, S_3, &
-      E
-
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-
-    nValues = size ( G )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-      G ( iV )  =  E ( iV )  +  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV )  &
-                                            +  S_2 ( iV ) * V_2 ( iV )  &
-                                            +  S_3 ( iV ) * V_3 ( iV ) )
-    end do !-- iV
-    !$OMP end parallel do
-
-  end subroutine Compute_G_G_Kernel
-
-
-  subroutine Compute_DS_G_Kernel ( DS, N, SB )
- 	 
-    !-- Compute_ConservedEntropy_Galilean_Kernel
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: & 	 	 
-      DS
-    real ( KDR ), dimension ( : ), intent ( in ) :: & 	 	 
-      N, &
-      SB 	 	 
- 	 	 
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-
-    nValues = size ( DS )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-      DS ( iV )  =  SB ( iV )  *  N ( iV )
-    end do !-- iV
-    !$OMP end parallel do
-
-  end subroutine Compute_DS_G_Kernel
-
-
-  subroutine Compute_N_V_E_G_Kernel &
-               ( N, V_1, V_2, V_3, E, D, S_1, S_2, S_3, G, M, &
-                 M_UU_22, M_UU_33, N_Min )
-
-    !-- Compute_ComovingBaryonDensity_Velocity_InternalEnergyDensity_Galilean
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      N, &
-      V_1, V_2, V_3, &
-      E, &
-      D, &
-      S_1, S_2, S_3, &
-      G
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      M, &
-      M_UU_22, M_UU_33
-    real ( KDR ), intent ( in ) :: &
-      N_Min
-
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-
-    nValues = size ( N )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-
-      if ( D ( iV )  >  N_Min ) then
-          N ( iV )  =  D ( iV )
-        V_1 ( iV )  =  S_1 ( iV ) / ( M ( iV ) * D ( iV ) )
-        V_2 ( iV )  =  M_UU_22 ( iV ) * S_2 ( iV ) / ( M ( iV ) * D ( iV ) )
-        V_3 ( iV )  =  M_UU_33 ( iV ) * S_3 ( iV ) / ( M ( iV ) * D ( iV ) )
-          E ( iV )  =  G ( iV )  -  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV ) &
-                                                +  S_2 ( iV ) * V_2 ( iV ) &
-                                                +  S_3 ( iV ) * V_3 ( iV ) )
-      else
-          N ( iV )  =  N_Min
-        V_1 ( iV )  =  0.0_KDR
-        V_2 ( iV )  =  0.0_KDR
-        V_3 ( iV )  =  0.0_KDR
-          E ( iV )  =  0.0_KDR
-          D ( iV )  =  N_Min
-        S_1 ( iV )  =  0.0_KDR
-        S_2 ( iV )  =  0.0_KDR
-        S_3 ( iV )  =  0.0_KDR
-          G ( iV )  =  0.0_KDR
-      end if
-
-      if ( E ( iV ) < 0.0_KDR ) then
-        E ( iV ) = 0.0_KDR
-        G ( iV ) = E ( iV )  +  0.5_KDR * (    S_1 ( iV ) * V_1 ( iV ) &
-                                            +  S_2 ( iV ) * V_2 ( iV ) &
-                                            +  S_3 ( iV ) * V_3 ( iV ) )
-      end if
-
-    end do !-- iV
-    !$OMP end parallel do
-
-  end subroutine Compute_N_V_E_G_Kernel
-
-
-  subroutine Compute_SB_G_Kernel ( SB, DS, N )
- 	 
-    !-- Compute_EntropyPerBaryon_Galilean_Kernel
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      SB, &
-      DS
-    real ( KDR ), dimension ( : ), intent ( in ) :: & 	 	 
-      N 	 	 
- 	 	 
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-
-    nValues = size ( SB )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-      if ( N ( iV ) > 0.0_KDR ) then
-        SB ( iV ) = DS ( iV ) / N ( iV )
-      else
-        SB ( iV ) = 0.0_KDR
-      end if
-    end do !-- iV
-    !$OMP end parallel do
-
-  end subroutine Compute_SB_G_Kernel
-  
-  
-  subroutine Compute_FE_P_G_Kernel &
-               ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
-                 V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33 )
-
-    !-- Compute_FastEigenspeeds_Perfect_Galilean_Kernel
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      FEP_1, FEP_2, FEP_3, &
-      FEM_1, FEM_2, FEM_3, &
-      MN
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      V_1, V_2, V_3, & 
-      CS, &
-      M_DD_22, M_DD_33, &
-      M_UU_22, M_UU_33
-
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-
-    nValues = size ( FEP_1 )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-      if ( CS ( iV ) > 0.0_KDR ) then
-        MN ( iV ) = sqrt (                      V_1 ( iV ) * V_1 ( iV )  &
-                            +  M_DD_22 ( iV ) * V_2 ( iV ) * V_2 ( iV )  &
-                            +  M_DD_33 ( iV ) * V_3 ( iV ) * V_3 ( iV ) ) &
-                    /  CS ( iV )
-      else
-        MN ( iV ) = 0.0_KDR
-      end if 
-    end do
-    !$OMP end parallel do
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-      FEP_1 ( iV )  =  V_1 ( iV )  +  CS ( iV ) 
-      FEP_2 ( iV )  =  V_2 ( iV )  +  sqrt ( M_UU_22 ( iV ) ) * CS ( iV ) 
-      FEP_3 ( iV )  =  V_3 ( iV )  +  sqrt ( M_UU_33 ( iV ) ) * CS ( iV )
-      FEM_1 ( iV )  =  V_1 ( iV )  -  CS ( iV )
-      FEM_2 ( iV )  =  V_2 ( iV )  -  sqrt ( M_UU_22 ( iV ) ) * CS ( iV )
-      FEM_3 ( iV )  =  V_3 ( iV )  -  sqrt ( M_UU_33 ( iV ) ) * CS ( iV )
-    end do
-    !$OMP end parallel do
-
-  end subroutine Compute_FE_P_G_Kernel
 
 
   subroutine InitializeBasics &
@@ -769,287 +761,6 @@ contains
     VariableUnit ( F % MACH_NUMBER ) = UNIT % IDENTITY
 
   end subroutine SetUnits
-
-
-  subroutine ComputeCenterSpeedKernel &
-               ( AC_I, F_D_IL, F_D_IR, F_S_IL, F_S_IR, M_IL, M_IR, &
-                 D_IL, D_IR, S_IL, S_IR, AP_I, AM_I, M_UU )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      AC_I
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      F_D_IL, F_D_IR, &
-      F_S_IL, F_S_IR, &
-      M_IL, M_IR, &
-      D_IL, D_IR, &
-      S_IL, S_IR, &
-      AP_I, &
-      AM_I, &
-      M_UU
-
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-    real ( KDR ) :: &
-      MD_Numerator, &
-      S_Numerator, &
-      MD_Numerator_Inv
-
-    nValues = size ( AC_I )
-
-    !$OMP parallel do private ( iV ) 
-    do iV = 1, nValues
-
-      MD_Numerator &
-        =  AP_I ( iV ) * M_IR ( iV ) * D_IR ( iV )  &
-           +  AM_I ( iV ) * M_IL ( iV ) * D_IL ( iV ) &
-           -  F_D_IR ( iV )  +  F_D_IL ( iV )
-
-      S_Numerator &
-        =  AP_I ( iV ) * S_IR ( iV )  +  AM_I ( iV ) * S_IL ( iV ) &
-           -  F_S_IR ( iV )  +  F_S_IL ( iV )
-
-      MD_Numerator_Inv  &
-        =  max ( MD_Numerator, 0.0_KDR )  &
-           /  max ( MD_Numerator ** 2, tiny ( 0.0_KDR ) )
-
-      AC_I ( iV )  &
-        =  M_UU ( iV )  *  S_Numerator  *  MD_Numerator_Inv
-
-    end do !-- iV
-    !$OMP end parallel do
-
-  end subroutine ComputeCenterSpeedKernel
-
-
-  subroutine ComputeCenterStatesKernel &
-               ( V_ICL, V_ICR, S_ICL, S_ICR, M_ICL, M_ICR, D_ICL, D_ICR, &
-                 G_ICL, G_ICR, P_ICL, P_ICR, DS_ICL, DS_ICR, &
-                 V_IL, V_IR, S_IL, S_IR, M_IL, M_IR, D_IL, D_IR, &
-                 G_IL, G_IR, P_IL, P_IR, DS_IL, DS_IR, &
-                 AP_I, AM_I, AC_I, M_DD_22, M_DD_33, iD )
-
-    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
-      V_ICL, V_ICR, &
-      S_ICL, S_ICR
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      M_ICL, M_ICR, &
-      D_ICL, D_ICR, &
-      G_ICL, G_ICR, &
-      P_ICL, P_ICR, &
-      DS_ICL, DS_ICR
-    !-- FIXME: IBM XL compiler produces bogus error message
-    !          with intent ( in ); changed to intent ( inout )
-    !          as temporarily workaround. OLCF RT #415080
-    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
-      V_IL, V_IR, &
-      S_IL, S_IR
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      M_IL, M_IR, &
-      D_IL, D_IR, &
-      G_IL, G_IR, &
-      P_IL, P_IR, &
-      DS_IL, DS_IR, &
-      AP_I, &
-      AM_I, &
-      AC_I, &
-      M_DD_22, M_DD_33
-    integer ( KDI ), intent ( in ) :: &
-      iD
-
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-    real ( KDR ) :: &
-      AM_VL, &
-      AM_AC, &
-      AM_AC_Inv, &
-      AP_VR, &
-      AP_AC, &
-      AP_AC_Inv, &
-      SqrtTiny
-
-    nValues = size ( AC_I )
-
-    SqrtTiny = sqrt ( tiny ( 0.0_KDR ) )
-
-    associate &
-      ( V_1_ICL   => V_ICL ( :, 1 ), &
-        V_2_ICL   => V_ICL ( :, 2 ), &  
-        V_3_ICL   => V_ICL ( :, 3 ), &
-        V_Dim_ICL => V_ICL ( :, iD ), &
-        V_1_ICR   => V_ICR ( :, 1 ), &
-        V_2_ICR   => V_ICR ( :, 2 ), &  
-        V_3_ICR   => V_ICR ( :, 3 ), &
-        V_Dim_ICR => V_ICR ( :, iD ), &
-        S_1_ICL   => S_ICL ( :, 1 ), &
-        S_2_ICL   => S_ICL ( :, 2 ), &  
-        S_3_ICL   => S_ICL ( :, 3 ), &
-        S_Dim_ICL => S_ICL ( :, iD ), &
-        S_1_ICR   => S_ICR ( :, 1 ), &
-        S_2_ICR   => S_ICR ( :, 2 ), &  
-        S_3_ICR   => S_ICR ( :, 3 ), &
-        S_Dim_ICR => S_ICR ( :, iD ), &
-        V_1_IL    => V_IL ( :, 1 ), &
-        V_2_IL    => V_IL ( :, 2 ), &  
-        V_3_IL    => V_IL ( :, 3 ), &
-        V_Dim_IL  => V_IL ( :, iD ), &
-        V_1_IR    => V_IR ( :, 1 ), &
-        V_2_IR    => V_IR ( :, 2 ), &  
-        V_3_IR    => V_IR ( :, 3 ), &
-        V_Dim_IR  => V_IR ( :, iD ), &
-        S_1_IL    => S_IL ( :, 1 ), &
-        S_2_IL    => S_IL ( :, 2 ), &  
-        S_3_IL    => S_IL ( :, 3 ), &
-        S_Dim_IL  => S_IL ( :, iD ), &
-        S_1_IR    => S_IR ( :, 1 ), &
-        S_2_IR    => S_IR ( :, 2 ), &  
-        S_3_IR    => S_IR ( :, 3 ), &
-        S_Dim_IR  => S_IR ( :, iD ) )
-
-    !$OMP parallel do private ( iV ) 
-    do iV = 1, nValues
-
-      V_1_ICL ( iV )  =  V_1_IL ( iV )
-      V_1_ICR ( iV )  =  V_1_IR ( iV )
-
-      V_2_ICL ( iV )  =  V_2_IL ( iV )
-      V_2_ICR ( iV )  =  V_2_IR ( iV )
-
-      V_3_ICL ( iV )  =  V_3_IL ( iV )
-      V_3_ICR ( iV )  =  V_3_IR ( iV )
-
-      V_Dim_ICL ( iV )  =  AC_I ( iV )
-      V_Dim_ICR ( iV )  =  AC_I ( iV )
-
-      AM_VL     =  AM_I ( iV )  +  V_Dim_IL ( iV )
-      AM_AC     =  AM_I ( iV )  +  AC_I ( iV )
-!      AM_AC_Inv =  1.0_KDR &
-!                   / sign ( max ( abs ( AM_AC ), SqrtTiny ), AM_AC )
-      AM_AC_Inv =  1.0_KDR &
-                   / max ( abs ( AM_AC ), SqrtTiny )
-
-      AP_VR     =  AP_I ( iV )  -  V_Dim_IR ( iV )
-      AP_AC     =  AP_I ( iV )  -  AC_I ( iV )
-!      AP_AC_Inv =  1.0_KDR &
-!                   / sign ( max ( abs ( AP_AC ), SqrtTiny ), AP_AC )
-      AP_AC_Inv =  1.0_KDR &
-                   / max ( abs ( AP_AC ), SqrtTiny )
-
-      M_ICL ( iV )  =  M_IL ( iV )
-      M_ICR ( iV )  =  M_IR ( iV )
-
-      D_ICL ( iV )  =  D_IL ( iV ) * AM_VL * AM_AC_Inv
-      D_ICR ( iV )  =  D_IR ( iV ) * AP_VR * AP_AC_Inv
-
-      S_1_ICL ( iV )  =  M_ICL ( iV )  *  D_ICL ( iV )  *  V_1_ICL ( iV )
-      S_1_ICR ( iV )  =  M_ICR ( iV )  *  D_ICR ( iV )  *  V_1_ICR ( iV )
-
-      S_2_ICL ( iV )  =  M_DD_22 ( iV )  &
-                         *  M_ICL ( iV )  *  D_ICL ( iV )  *  V_2_ICL ( iV )
-      S_2_ICR ( iV )  =  M_DD_22 ( iV )  &
-                         *  M_ICR ( iV )  *  D_ICR ( iV )  *  V_2_ICR ( iV )
-
-      S_3_ICL ( iV )  =  M_DD_33 ( iV )  &
-                         *  M_ICL ( iV )  *  D_ICL ( iV )  *  V_3_ICL ( iV )
-      S_3_ICR ( iV )  =  M_DD_33 ( iV )  &
-                         *  M_ICR ( iV )  *  D_ICR ( iV )  *  V_3_ICR ( iV )
-
-      P_ICL ( iV )  =  P_IL ( iV )  +  S_Dim_IL  ( iV ) * AM_VL &
-                                    -  S_Dim_ICL ( iV ) * AM_AC
-      P_ICR ( iV )  =  P_IR ( iV )  -  S_Dim_IR  ( iV ) * AP_VR &
-                                    +  S_Dim_ICR ( iV ) * AP_AC
-
-      G_ICL ( iV )  =  ( G_IL ( iV ) * AM_VL &
-                         +  V_Dim_IL ( iV ) * P_IL ( iV ) &
-                         -  AC_I ( iV ) * P_ICL ( iV ) ) &
-                       * AM_AC_Inv
-      G_ICR ( iV )  =  ( G_IR ( iV ) * AP_VR &
-                         -  V_Dim_IR ( iV ) * P_IR ( iV ) &
-                         +  AC_I ( iV ) * P_ICR ( iV ) ) &
-                       * AP_AC_Inv
-
-      DS_ICL ( iV )  =  DS_IL ( iV ) * AM_VL * AM_AC_Inv
-      DS_ICR ( iV )  =  DS_IR ( iV ) * AP_VR * AP_AC_Inv
-
-    end do !-- iV
-    !$OMP end parallel do
-
-    end associate
-
-  end subroutine ComputeCenterStatesKernel
-
-
-  subroutine ComputeFluxes_HLLC_Kernel &
-               ( F_I, F_ICL, F_ICR, AP_I, AM_I, AC_I, DF_I )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      F_I
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      F_ICL, F_ICR, &
-      AP_I, &
-      AM_I, &
-      AC_I, &
-      DF_I
-
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-    
-    nValues = size ( F_I )
-
-    !$OMP parallel do private ( iV ) 
-    do iV = 1, nValues
-
-      !-- If flagged for diffusive flux, leave HLL flux in place
-      if ( DF_I ( iV ) > 0.0_KDR ) &
-        cycle
-
-      if ( AP_I ( iV ) /= 0.0_KDR .and. AM_I ( iV ) /= 0.0_KDR ) then
-        !-- Use the appropriate center state flux
-        if ( AC_I ( iV ) >= 0.0_KDR ) then
-          F_I ( iV )  =  F_ICL ( iV )
-        else !-- AC < 0
-          F_I ( iV )  =  F_ICR ( iV )
-        end if !-- AC >= 0
-      else  !-- AP or AM == 0
-        !-- Leave HLL flux in place (which is upwind in this case)
-      end if !-- AP and AM /= 0
-
-    end do !-- iV
-    !$OMP end parallel do
-
-  end subroutine ComputeFluxes_HLLC_Kernel
-
-
-  subroutine ComputeRawFluxesTemplate_P_Kernel &
-               ( F_S_Dim, F_G, F_DS, G, P, DS, V_Dim )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      F_S_Dim, &
-      F_G, &
-      F_DS
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      G, &
-      P, &
-      DS, &
-      V_Dim
-
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-
-    nValues = size ( F_S_Dim )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-      F_S_Dim ( iV )  =  F_S_Dim ( iV )  +  P ( iV )
-      F_G     ( iV )  =  ( G ( iV )  +  P ( iV ) ) * V_Dim ( iV )
-      F_DS    ( iV )  =  DS ( iV )  *  V_Dim ( iV ) 
-    end do
-    !$OMP end parallel do
-
-  end subroutine ComputeRawFluxesTemplate_P_Kernel
 
 
 end module Fluid_P__Template

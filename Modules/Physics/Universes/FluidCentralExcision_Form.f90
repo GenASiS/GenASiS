@@ -160,7 +160,8 @@ contains
 
 
   subroutine InitializeGeometry &
-               ( FC, GA, PS, GeometryType, CentralMassOption )
+               ( FC, GA, PS, GeometryType, UsePinnedMemoryOption, &
+                 CentralMassOption )
 
     class ( FluidCentralExcisionForm ), intent ( inout ) :: &
       FC
@@ -170,6 +171,8 @@ contains
       PS
     character ( * ), intent ( in )  :: &
       GeometryType
+    logical ( KDL ), intent ( in ), optional :: &
+      UsePinnedMemoryOption
     real ( KDR ), intent ( in ), optional :: &
       CentralMassOption
 
@@ -179,6 +182,7 @@ contains
     if ( FC % Dimensionless ) then
       call GA % Initialize &
              ( PS, GeometryType, GravitySolverTypeOption = 'CENTRAL_MASS', &
+               UsePinnedMemoryOption = UsePinnedMemoryOption, &
                GravitationalConstantOption = 1.0_KDR, &
                CentralMassOption = 1.0_KDR )
     else
@@ -187,6 +191,7 @@ contains
         CentralMass = CentralMassOption
       call GA % Initialize &
              ( PS, GeometryType, GravitySolverTypeOption = 'CENTRAL_MASS', &
+               UsePinnedMemoryOption = UsePinnedMemoryOption, &
                CentralMassUnitOption = UNIT % SOLAR_MASS, &
                CentralMassOption = CentralMass )
     end if !-- Dimensionless

@@ -41,6 +41,8 @@ module Fluid_ASC__Form
   contains
     procedure, public, pass :: &
       Initialize
+    procedure, public, pass :: &   
+      AllocateDevice => AllocateDevice_F_ASC
     procedure, private, pass :: &
       Fluid_D_CSL
     generic, public :: &
@@ -67,9 +69,9 @@ contains
   subroutine Initialize &
                ( FA, A, FluidType, Units, NameShortOption, &
                  RiemannSolverTypeOption, ReconstructedTypeOption, &
-                 UseEntropyOption, UseLimiterOption, AllocateTallyOption, &
-                 AllocateSourcesOption, LimiterParameterOption, &
-                 ShockThresholdOption, IgnorabilityOption )
+                 UseEntropyOption, UseLimiterOption, UsePinnedMemoryOption, &
+                 AllocateTallyOption, AllocateSourcesOption, &
+                 LimiterParameterOption, ShockThresholdOption, IgnorabilityOption )
 
     class ( Fluid_ASC_Form ), intent ( inout ) :: &
       FA
@@ -86,6 +88,7 @@ contains
     logical ( KDL ), intent ( in ), optional :: &
       UseEntropyOption, &
       UseLimiterOption, &
+      UsePinnedMemoryOption, &
       AllocateTallyOption, &
       AllocateSourcesOption
     real ( KDR ), intent ( in ), optional :: &
@@ -246,7 +249,8 @@ contains
       NameShort = NameShortOption
 
     call FA % InitializeTemplate_ASC_C &
-           ( A, NameShort, AllocateTallyOption = AllocateTallyOption, &
+           ( A, NameShort, UsePinnedMemoryOption = UsePinnedMemoryOption, &
+             AllocateTallyOption = AllocateTallyOption, &
              IgnorabilityOption = IgnorabilityOption )
 
     call Show ( FA % FluidType, 'FluidType', FA % IGNORABILITY )
@@ -269,6 +273,7 @@ contains
       associate ( SFA => FA % Sources_ASC )
       call SFA % Initialize &
              ( FA, NameShortOption = trim ( NameShort ) // '_Sources', &
+               UsePinnedMemoryOption = UsePinnedMemoryOption, &
                TimeUnitOption = Units % Time, &
                IgnorabilityOption = IgnorabilityOption )
       select type ( SFC => SFA % Chart )
@@ -289,6 +294,7 @@ contains
       call FFA % Initialize &
              ( FA, FA % FluidType, FA % RiemannSolverType, &
                NameShortOption = trim ( NameShort ) // '_Features', &
+               UsePinnedMemoryOption = UsePinnedMemoryOption, &
                ShockThresholdOption = ShockThresholdOption, &
                IgnorabilityOption = IgnorabilityOption )
       select type ( FFC => FFA % Chart )
@@ -302,6 +308,22 @@ contains
     end if !-- not DUST
 
   end subroutine Initialize
+
+
+  subroutine AllocateDevice_F_ASC ( FA )
+  
+    class ( Fluid_ASC_Form ), intent ( inout ) :: &
+      FA
+    
+    call FA % AllocateDevice_ASC_Template ( )
+
+    if ( allocated ( FA % Sources_ASC ) ) &
+      call FA % Sources_ASC % AllocateDevice ( )
+    
+    if ( allocated ( FA % Features_ASC ) ) &
+      call FA % Features_ASC % AllocateDevice ( )
+  
+  end subroutine AllocateDevice_F_ASC
 
 
   function Fluid_D_CSL ( FA ) result ( F )
@@ -414,8 +436,9 @@ contains
       call FC % Initialize &
              ( C, FA % NameShort, FA % FluidType, FA % RiemannSolverType, &
                FA % ReconstructedType, FA % UseEntropy, FA % UseLimiter, &
-               FA % Units, FA % BaryonMassReference, FA % LimiterParameter, &
-               nValues, IgnorabilityOption = FA % IGNORABILITY )
+               FA % UsePinnedMemory, FA % Units, FA % BaryonMassReference, &
+               FA % LimiterParameter, nValues, &
+               IgnorabilityOption = FA % IGNORABILITY )
     end select !-- FC
 
     call A % AddField ( FA )

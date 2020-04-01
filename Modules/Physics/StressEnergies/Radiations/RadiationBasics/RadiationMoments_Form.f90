@@ -80,7 +80,7 @@ contains
                ( RM, RadiationType, MomentsType, RiemannSolverType, &
                  ReconstructedType, UseLimiter, Units, LimiterParameter, &
                  nValues, VariableOption, VectorOption, NameOption, &
-                 ClearOption, UnitOption, VectorIndicesOption )
+                 ClearOption, PinnedOption, UnitOption, VectorIndicesOption )
 
     class ( RadiationMomentsForm ), intent ( inout ) :: &
       RM
@@ -103,7 +103,8 @@ contains
     character ( * ), intent ( in ), optional :: &
       NameOption
     logical ( KDL ), intent ( in ), optional :: &
-      ClearOption
+      ClearOption, &
+      PinnedOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       UnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
@@ -131,7 +132,8 @@ contains
              Units % Velocity_U, LimiterParameter, nValues, &
              VariableOption = Variable, VectorOption = Vector, &
              NameOption = Name, ClearOption = ClearOption, &
-             UnitOption = VariableUnit, VectorIndicesOption = VectorIndices )
+             PinnedOption = PinnedOption, UnitOption = VariableUnit, &
+             VectorIndicesOption = VectorIndices )
     
   end subroutine InitializeAllocate_RM
 
@@ -230,16 +232,16 @@ contains
 
 
   subroutine ComputeFromPrimitiveCommon &
-               ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
+               ( Storage_C, C, G, Storage_G, nValuesOption, oValueOption )
 
-    real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
-      Value_C
+    class ( StorageForm ), intent ( inout ), target :: &
+      Storage_C
     class ( RadiationMomentsForm ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_G
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
@@ -250,8 +252,8 @@ contains
     real ( KDR ), dimension ( :, : ), pointer :: &
       RMV
       
-    RMV => Value_C
-    associate ( GV => Value_G )
+    RMV => Storage_C % Value
+    associate ( GV => Storage_G % Value )
 
     if ( present ( oValueOption ) ) then
       oV = oValueOption
@@ -307,17 +309,17 @@ contains
 
 
   subroutine ComputeFromConservedCommon &
-               ( Value_C, C, G, Value_G, DetectFeaturesOption, &
+               ( Storage_C, C, G, Storage_G, DetectFeaturesOption, &
                  nValuesOption, oValueOption )
 
-    real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
-      Value_C
+    class ( StorageForm ), intent ( inout ), target :: &
+      Storage_C
     class ( RadiationMomentsForm ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_G
     logical ( KDL ), intent ( in ), optional :: &
       DetectFeaturesOption
     integer ( KDI ), intent ( in ), optional :: &
@@ -330,8 +332,8 @@ contains
     real ( KDR ), dimension ( :, : ), pointer :: &
       RMV
       
-    RMV => Value_C
-    associate ( GV => Value_G )
+    RMV => Storage_C % Value
+    associate ( GV => Storage_G % Value )
 
     if ( present ( oValueOption ) ) then
       oV = oValueOption
@@ -387,18 +389,18 @@ contains
 
 
   subroutine ComputeRawFluxes &
-               ( RawFlux, C, G, Value_C, Value_G, iDimension, &
+               ( RawFlux, C, G, Storage_C, Storage_G, iDimension, &
                  nValuesOption, oValueOption )
     
-    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+    class ( StorageForm ), intent ( inout ) :: &
       RawFlux
     class ( RadiationMomentsForm ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_C, &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_C, &
+      Storage_G
     integer ( KDI ), intent ( in ) :: &
       iDimension
     integer ( KDI ), intent ( in ), optional :: &
@@ -412,6 +414,11 @@ contains
     integer ( KDI ) :: &
       oV, &  !-- oValue
       nV     !-- nValues
+      
+    associate &
+      ( Value_RF => RawFlux % Value, &
+        Value_C  => Storage_C % Value, &
+        Value_G  => Storage_G % Value )
       
     if ( present ( oValueOption ) ) then
       oV = oValueOption
@@ -438,11 +445,11 @@ contains
       ( M_DD_22 => Value_G ( oV + 1 : oV + nV, G % METRIC_DD_22 ), &
         M_DD_33 => Value_G ( oV + 1 : oV + nV, G % METRIC_DD_33 ) )
     associate &
-      ( F_E   => RawFlux ( oV + 1 : oV + nV, iEnergy ), &
-        F_S_1 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 1 ) ), &
-        F_S_2 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 2 ) ), &
-        F_S_3 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 3 ) ), &
-        F_S_Dim => RawFlux ( oV + 1 : oV + nV, iMomentum ( iDimension ) ), & 
+      ( F_E   => Value_RF ( oV + 1 : oV + nV, iEnergy ), &
+        F_S_1 => Value_RF ( oV + 1 : oV + nV, iMomentum ( 1 ) ), &
+        F_S_2 => Value_RF ( oV + 1 : oV + nV, iMomentum ( 2 ) ), &
+        F_S_3 => Value_RF ( oV + 1 : oV + nV, iMomentum ( 3 ) ), &
+        F_S_Dim => Value_RF ( oV + 1 : oV + nV, iMomentum ( iDimension ) ), & 
         J   => Value_C ( oV + 1 : oV + nV, C % COMOVING_ENERGY ), &
         H_1 => Value_C ( oV + 1 : oV + nV, C % COMOVING_MOMENTUM_U ( 1 ) ), &
         H_2 => Value_C ( oV + 1 : oV + nV, C % COMOVING_MOMENTUM_U ( 2 ) ), &
@@ -463,6 +470,8 @@ contains
 
     end associate !-- F_E, etc.
     end associate !-- M_DD_33, etc.
+    
+    end associate !-- Value_RF, etc.
 
   end subroutine ComputeRawFluxes
   
@@ -482,7 +491,8 @@ contains
       iV, &
       iD, &
       iEnergy, &
-      iMomentum
+      iMomentum, &
+      iVariable
     real ( KDR ), dimension ( : ), allocatable :: &
       M_DD_11
     real ( KDR ), dimension ( :, :, : ), pointer :: &
@@ -494,7 +504,9 @@ contains
     class ( GeometryFlatForm ), pointer :: &
       G
 
-    call C % SetDiffusionFactorUnity ( DF_I % Value )
+    do iVariable = 1, DF_I % nVariables
+      call C % SetDiffusionFactorUnity ( DF_I % Value ( :, iVariable ) )
+    end do
 
     if ( .not. associated ( C % Interactions ) ) &
       return

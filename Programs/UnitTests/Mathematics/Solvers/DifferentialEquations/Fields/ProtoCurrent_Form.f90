@@ -56,6 +56,73 @@ module ProtoCurrent_Form
       InitializeBasics, &
       ComputeVelocityKernel, &
       ComputeRawFluxesKernel
+    
+    interface
+    
+      module subroutine ComputeConservedDensityKernel &
+               ( D, N, UseDeviceOption )
+        use Basics
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          D
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          N
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine ComputeConservedDensityKernel
+
+
+      module subroutine ComputeComovingDensityKernel ( N, D, UseDeviceOption )
+        use Basics
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          N
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          D
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine ComputeComovingDensityKernel
+
+
+      module subroutine ComputeEigenspeedsKernel &
+               ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3, &
+                 UseDeviceOption )
+        use Basics
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          FEP_1, FEP_2, FEP_3, &
+          FEM_1, FEM_2, FEM_3
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          V_1, V_2, V_3
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine ComputeEigenspeedsKernel
+
+
+      module subroutine ComputeVelocityKernel &
+               ( V_1, V_2, V_3, K, V, UseDeviceOption )
+        use Basics
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          V_1, V_2, V_3
+        real ( KDR ), dimension ( 3 ), intent ( in ) :: &
+          K
+        real ( KDR ), intent ( in ) :: &
+          V
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine ComputeVelocityKernel
+
+
+      module subroutine ComputeRawFluxesKernel &
+                ( F_D, D, V_Dim, UseDeviceOption )
+        use Basics
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          F_D
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          D, &
+          V_Dim
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine ComputeRawFluxesKernel
+    
+    end interface
 
 contains
 
@@ -98,12 +165,12 @@ contains
              VectorIndicesOption )
 
     call PC % InitializeTemplate &
-           ( RiemannSolverType = 'HLL', UseLimiter = .true., &
-             Velocity_U_Unit = Velocity_U_Unit, LimiterParameter = 2.0_KDR, &
-             nValues = nValues, VariableOption = Variable, &
-             VectorOption = Vector, NameOption = Name, &
-             ClearOption = ClearOption, UnitOption = VariableUnit, &
-             VectorIndicesOption = VectorIndices )
+           ( RiemannSolverType = 'HLL', ReconstructedType = 'PRIMITIVE', &
+             UseLimiter = .true., Velocity_U_Unit = Velocity_U_Unit, &
+             LimiterParameter = 2.0_KDR, nValues = nValues, &
+             VariableOption = Variable, VectorOption = Vector, &
+             NameOption = Name, ClearOption = ClearOption, &
+             UnitOption = VariableUnit, VectorIndicesOption = VectorIndices )
 
     call PC % SetPrimitiveConserved ( )
 
@@ -157,18 +224,18 @@ contains
 
 
   subroutine ComputeRawFluxes &
-               ( RawFlux, C, G, Value_C, Value_G, iDimension, &
+               ( RawFlux, C, G, Storage_C, Storage_G, iDimension, &
                  nValuesOption, oValueOption )
     
-    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+    class ( StorageForm ), intent ( inout ) :: &
       RawFlux
     class ( ProtoCurrentForm ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_C, &
-      Value_G
+    class ( StorageForm ), intent ( inout ) :: &
+      Storage_C, &
+      Storage_G
     integer ( KDI ), intent ( in ) :: &
       iDimension
     integer ( KDI ), intent ( in ), optional :: &
@@ -190,17 +257,18 @@ contains
     if ( present ( nValuesOption ) ) then
       nV = nValuesOption
     else
-      nV = size ( Value_C, dim = 1 )
+      nV = size ( Storage_C % Value, dim = 1 )
     end if
     
     call Search ( C % iaConserved, C % CONSERVED_DENSITY, iDensity )
     
     associate &
-      ( F_D   => RawFlux ( oV + 1 : oV + nV, iDensity ), &
-        D     => Value_C ( oV + 1 : oV + nV, C % CONSERVED_DENSITY ), &
-        V_Dim => Value_C ( oV + 1 : oV + nV, C % VELOCITY ( iDimension ) ) )
+      ( F_D   => RawFlux % Value ( oV + 1 : oV + nV, iDensity ), &
+        D     => Storage_C % Value ( oV + 1 : oV + nV, C % CONSERVED_DENSITY ), &
+        V_Dim => Storage_C % Value ( oV + 1 : oV + nV, C % VELOCITY ( iDimension ) ) )
 
-    call ComputeRawFluxesKernel ( F_D, D, V_Dim )
+    call ComputeRawFluxesKernel &
+           ( F_D, D, V_Dim, UseDeviceOption = Storage_C % AllocatedDevice )
 
     end associate !-- F_D, etc.
 
@@ -237,16 +305,16 @@ contains
 
 
   subroutine ComputeFromPrimitiveCommon &
-               ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
+               ( Storage_C, C, G, Storage_G, nValuesOption, oValueOption )
 
-    real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
-      Value_C
+    class ( StorageForm ), intent ( inout ), target :: &
+      Storage_C
     class ( ProtoCurrentForm ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_G
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
@@ -256,8 +324,8 @@ contains
       nV     !-- nValues
       
     associate &
-      ( FV => Value_C, &
-        GV => Value_G )
+      ( FV => Storage_C % Value, &
+        GV => Storage_G % Value )
 
     if ( present ( oValueOption ) ) then
       oV = oValueOption
@@ -287,11 +355,14 @@ contains
         V_3   => FV ( oV + 1 : oV + nV, C % VELOCITY ( 3 ) ), &
         D     => FV ( oV + 1 : oV + nV, C % CONSERVED_DENSITY ) )
 
-    call ComputeVelocityKernel ( V_1, V_2, V_3, C % Wavenumber, C % Speed )
+    call ComputeVelocityKernel &
+           ( V_1, V_2, V_3, C % Wavenumber, C % Speed, &
+             UseDeviceOption = Storage_C % AllocatedDevice )
     call C % ComputeConservedDensityKernel &
-           ( D, N )
+           ( D, N, UseDeviceOption = Storage_C % AllocatedDevice )
     call C % ComputeEigenspeedsKernel &
-           ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3 )
+           ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3, &
+             UseDeviceOption = Storage_C % AllocatedDevice )
 
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
@@ -301,16 +372,16 @@ contains
 
 
   subroutine ComputeFromConservedCommon &
-               ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
+               ( Storage_C, C, G, Storage_G, nValuesOption, oValueOption )
 
-    real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
-      Value_C
+    class ( StorageForm ), intent ( inout ), target :: &
+      Storage_C
     class ( ProtoCurrentForm ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_G
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
@@ -320,8 +391,8 @@ contains
       nV     !-- nValues
       
     associate &
-      ( FV => Value_C, &
-        GV => Value_G )
+      ( FV => Storage_C % Value, &
+        GV => Storage_G % Value )
 
     if ( present ( oValueOption ) ) then
       oV = oValueOption
@@ -351,11 +422,14 @@ contains
         V_3   => FV ( oV + 1 : oV + nV, C % VELOCITY ( 3 ) ), &
         D     => FV ( oV + 1 : oV + nV, C % CONSERVED_DENSITY ) )
 
-    call ComputeVelocityKernel ( V_1, V_2, V_3, C % Wavenumber, C % Speed )
+    call ComputeVelocityKernel &
+           ( V_1, V_2, V_3, C % Wavenumber, C % Speed, &
+             UseDeviceOption = Storage_C % AllocatedDevice )
     call C % ComputeComovingDensityKernel &
-           ( N, D )
+           ( N, D, UseDeviceOption = Storage_C % AllocatedDevice )
     call C % ComputeEigenspeedsKernel &
-           ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3 )
+           ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3, &
+             UseDeviceOption = Storage_C % AllocatedDevice )
 
     end associate !-- FEP_1, etc.
     end associate !-- M_UU_22, etc.
@@ -475,81 +549,6 @@ contains
     call VectorIndices ( oV + 1 ) % Initialize ( PC % VELOCITY )
 
   end subroutine InitializeBasics
-
-
-  subroutine ComputeConservedDensityKernel ( D, N )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      D
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      N
-
-    D = N
-
-  end subroutine ComputeConservedDensityKernel
-
-
-  subroutine ComputeComovingDensityKernel ( N, D )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      N
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      D
-
-    N = D
-
-  end subroutine ComputeComovingDensityKernel
-
-
-  subroutine ComputeEigenspeedsKernel &
-               ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3 )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      FEP_1, FEP_2, FEP_3, &
-      FEM_1, FEM_2, FEM_3
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      V_1, V_2, V_3
-
-    FEP_1 = V_1
-    FEP_2 = V_2
-    FEP_3 = V_3
-    FEM_1 = V_1
-    FEM_2 = V_2
-    FEM_3 = V_3
-
-  end subroutine ComputeEigenspeedsKernel
-
-
-  subroutine ComputeVelocityKernel ( V_1, V_2, V_3, K, V )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      V_1, V_2, V_3
-    real ( KDR ), dimension ( 3 ), intent ( in ) :: &
-      K
-    real ( KDR ), intent ( in ) :: &
-      V
-
-    associate &
-      ( Abs_K => sqrt ( dot_product ( K, K ) ) )
-    V_1 = V * K ( 1 ) / Abs_K
-    V_2 = V * K ( 2 ) / Abs_K
-    V_3 = V * K ( 3 ) / Abs_K
-    end associate !-- Abs_K
-
-  end subroutine ComputeVelocityKernel
-
-
-  subroutine ComputeRawFluxesKernel ( F_D, D, V_Dim )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      F_D
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      D, &
-      V_Dim
-    
-    F_D  =  D * V_Dim
-
-  end subroutine ComputeRawFluxesKernel
 
 
 end module ProtoCurrent_Form

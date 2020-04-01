@@ -15,6 +15,8 @@ module Storage_Form
   private
   
   type, public :: StorageForm
+    type ( c_ptr ), dimension ( : ), allocatable, private :: &
+      D_Selected     !-- Device pointer for Selected Value
     integer ( KDI ) :: &
       nValues     = 0, &
       nVariables  = 0, &
@@ -28,15 +30,15 @@ module Storage_Form
     real ( KDR ), dimension ( :, : ), pointer :: &
       Value => null (  )
     logical ( KDL ) :: &
-      AllocatedValue = .false., &
-      Pinned = .false.
+      AllocatedValue  = .false., &
+      AllocatedDevice = .false., &
+      ClearRequested  = .false., &
+      Pinned          = .false.
     character ( LDF ) :: &
       Name = ''
     character ( LDL ), dimension ( : ), allocatable :: &
       Variable, &
       Vector
-    type ( c_ptr ), dimension ( : ), allocatable :: &
-      D_Selected     !-- Device pointer for Selected Value
     type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
       Unit
     type ( Integer_1D_Form ), dimension ( : ), allocatable :: &
@@ -103,8 +105,6 @@ contains
     
     integer ( KDI ) :: &
       iVrbl
-    logical ( KDL ) :: &
-      ClearRequested
 
     S % nValues = ValueShape ( 1 )
     
@@ -122,9 +122,8 @@ contains
     end if
     S % AllocatedValue = .true.
     
-    ClearRequested = .false.
-    if ( present ( ClearOption ) ) ClearRequested = ClearOption
-    if ( ClearRequested ) call Clear ( S % Value )  
+    if ( present ( ClearOption ) ) S % ClearRequested = ClearOption
+    if ( S % ClearRequested ) call Clear ( S % Value )  
     
     allocate ( S % D_Selected ( S % nVariables ) )
     S % D_Selected = c_null_ptr
@@ -239,7 +238,9 @@ contains
     end if
   
     S_Target % Value => S_Source % Value
-    S_Target % AllocatedValue = .false.
+    S_Target % AllocatedValue   = .false.
+    S_Target % AllocatedDevice  = S_Source % AllocatedDevice
+    S_Target % Pinned           = S_Source % Pinned
     
     if ( .not. present ( NameOption ) ) &
       S_Target % Name = trim ( S_Source % Name )
@@ -310,8 +311,13 @@ contains
       Scratch
     
     if ( S % AllocatedValue ) then
+      
       call AllocateDevice &
              ( S % nValues * S % nVariables, S % D_Selected ( 1 ) )
+      
+      if ( .not. c_associated ( S % D_Selected ( 1 ) ) ) &
+        return
+      
       call c_f_pointer &
              ( S % D_Selected ( 1 ), Scratch, [ S % nValues, S % nVariables ] )
       
@@ -323,6 +329,10 @@ contains
         Variable => S % Value ( :, iV )
         call AssociateHost ( S % D_Selected ( iV ), Variable )
       end do
+      S % AllocatedDevice = .true.
+      
+      if ( S % ClearRequested ) &
+        call Clear ( S % Value, UseDeviceOption = .true. )
     
     end if
   
@@ -335,6 +345,9 @@ contains
       S
     integer ( KDI ) :: &
       iS
+      
+    if ( .not. S % AllocatedDevice ) &
+      return
       
     if ( S % AllocatedValue ) then
       call UpdateDevice &
@@ -360,6 +373,9 @@ contains
     
     integer ( KDI ) :: &
       iS
+      
+    if ( .not. S % AllocatedDevice ) &
+      return
     
     call Search ( S % iaSelected, iV, iS )
     call UpdateDevice &
@@ -376,6 +392,9 @@ contains
       
     integer ( KDI ) :: &
       iS
+    
+    if ( .not. S % AllocatedDevice ) &
+      return
       
     if ( S % AllocatedValue ) then
       call UpdateHost ( S % D_Selected ( 1 ), S % Value )
@@ -398,6 +417,9 @@ contains
     
     integer ( KDI ) :: &
       iS
+      
+    if ( .not. S % AllocatedDevice ) &
+      return
     
     call Search ( S % iaSelected, iV, iS )
     call UpdateHost ( S % D_Selected ( iS ), S % Value ( :, iV ) )
@@ -422,10 +444,8 @@ contains
     if ( allocated ( S % Unit ) )       deallocate ( S % Unit )
     
     if ( allocated ( S % D_Selected ) ) then
-      if ( S % AllocatedValue ) then
-        do iV = 1, S % nVariables
-          call DeallocateDevice ( S % D_Selected ( iV ) )
-        end do
+      if ( S % AllocatedValue .and. S % AllocatedDevice ) then
+        call DeallocateDevice ( S % D_Selected ( 1 ) )
       end if
       deallocate ( S % D_Selected )
     end if

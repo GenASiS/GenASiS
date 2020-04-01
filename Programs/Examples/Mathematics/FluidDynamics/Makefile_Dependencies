@@ -9,12 +9,22 @@ Fluid_D__Form.o: \
   FluidFeatures_Template.o \
   Fluid_D__Form.f90
 
+Fluid_D__Kernel.o: \
+  Basics.o \
+  Fluid_D__Form.o \
+  Fluid_D__Kernel.f90\
+
 Fluid_P__Template.o: \
   Basics.o \
   Mathematics.o \
   FluidFeatures_Template.o \
   Fluid_D__Form.o \
   Fluid_P__Template.f90
+
+Fluid_P__Kernel.o: \
+  Basics.o \
+  Fluid_P__Template.o \
+  Fluid_P__Kernel.f90
 
 FluidFeatures_P__Form.o: \
   Basics.o \
@@ -23,11 +33,21 @@ FluidFeatures_P__Form.o: \
   Fluid_P__Template.o \
   FluidFeatures_P__Form.f90
 
+FluidFeatures_P__Kernel.o: \
+  Basics.o \
+  FluidFeatures_P__Form.o \
+  FluidFeatures_P__Kernel.f90
+
 Fluid_P_P__Form.o: \
   Basics.o \
   Mathematics.o \
   Fluid_P__Template.o \
   Fluid_P_P__Form.f90
+
+Fluid_P_P__Kernel.o: \
+  Basics.o \
+  Fluid_P_P__Form.o \
+  Fluid_P_P__Kernel.f90
 
 Fluid_P_NR__Form.o: \
   Basics.o \

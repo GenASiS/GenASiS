@@ -30,7 +30,8 @@ contains
 
 
   subroutine Initialize &
-               ( SRMA, RadiationMoments_ASC, NameShortOption, TimeUnitOption, &
+               ( SRMA, RadiationMoments_ASC, NameShortOption, &
+                 UsePinnedMemoryOption, SuppressWriteOption, TimeUnitOption, &
                  EnergyUnitOption, IgnorabilityOption, SuppressWriteOption )
 
     class ( Sources_RM_ASC_Form ), intent ( inout ) :: &
@@ -39,13 +40,14 @@ contains
       RadiationMoments_ASC
     character ( * ), intent ( in ), optional :: &
       NameShortOption
+    logical ( KDL ), intent ( in ), optional :: &
+      UsePinnedMemoryOption, &
+      SuppressWriteOption
     type ( MeasuredValueForm ), intent ( in ), optional :: &
       TimeUnitOption, &
       EnergyUnitOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
-    logical ( KDL ), intent ( in ), optional :: &
-      SuppressWriteOption
 
     character ( LDL ) :: &
       NameShort
@@ -69,7 +71,8 @@ contains
       SRMA % SuppressWrite = SuppressWriteOption
 
     call SRMA % InitializeTemplate_ASC &
-           ( RadiationMoments_ASC % Atlas, NameShort, IgnorabilityOption )
+           ( RadiationMoments_ASC % Atlas, NameShort, UsePinnedMemoryOption, &
+             IgnorabilityOption )
 
   end subroutine Initialize
 
@@ -106,7 +109,8 @@ contains
     select type ( SRMC => FA % Chart )
     class is ( Sources_RM_CSL_Form )
       call SRMC % Initialize &
-             ( RMC, FA % NameShort, FA % TimeUnit, FA % EnergyUnit, nValues, &
+             ( RMC, FA % NameShort, FA % UsePinnedMemory, &
+               FA % TimeUnit, FA % EnergyUnit, nValues, &
                IgnorabilityOption = FA % IGNORABILITY )
     end select !-- SRMC
 

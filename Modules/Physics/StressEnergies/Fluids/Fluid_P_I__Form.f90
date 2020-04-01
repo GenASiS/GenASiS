@@ -63,6 +63,75 @@ module Fluid_P_I__Form
 
     private :: &
       InitializeBasics
+      
+  interface
+  
+    module subroutine Apply_EOS_I_T_Kernel &
+                 ( P, E, SB, CS, M, N, T, Gamma, C_V, N0, P0, UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        P, &
+        E, &
+        SB, &
+        CS
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        M, &
+        N, &
+        T
+      real ( KDR ), intent ( in ) :: &
+        Gamma, &
+        C_V, &
+        N0, &
+        P0
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine Apply_EOS_I_T_Kernel
+
+    module subroutine Apply_EOS_I_SB_E_Kernel &
+                 ( P, E, T, SB, CS, M, N, Shock, Gamma, C_V, N0, P0, &
+                   UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        P, &
+        E, &
+        T, &
+        SB, &
+        CS
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        M, &
+        N, &
+        Shock
+      real ( KDR ), intent ( in ) :: &
+        Gamma, &
+        C_V, &
+        N0, &
+        P0
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine Apply_EOS_I_SB_E_Kernel
+
+    module subroutine Apply_EOS_I_E_Kernel &
+                 ( P, T, SB, CS, M, N, E, Gamma, C_V, N0, P0, UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        P, &
+        T, &
+        SB, &
+        CS
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        M, &
+        N, &
+        E
+      real ( KDR ), intent ( in ) :: &
+        Gamma, &
+        C_V, &
+        N0, &
+        P0
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine Apply_EOS_I_E_Kernel
+
+  end interface
 
 
 contains
@@ -343,16 +412,16 @@ contains
 
 
   subroutine ComputeFromTemperature &
-               ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
+               ( Storage_C, C, G, Storage_G, nValuesOption, oValueOption )
 
-    real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
-      Value_C
+    class ( StorageForm ), intent ( inout ), target :: &
+      Storage_C
     class ( Fluid_P_I_Form ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_G
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
@@ -362,8 +431,8 @@ contains
       nV     !-- nValues
       
     associate &
-      ( FV => Value_C, &
-        GV => Value_G )
+      ( FV => Storage_C % Value, &
+        GV => Storage_G % Value )
 
     if ( present ( oValueOption ) ) then
       oV = oValueOption
@@ -407,20 +476,25 @@ contains
         CS    => FV ( oV + 1 : oV + nV, C % SOUND_SPEED ), &
         MN    => FV ( oV + 1 : oV + nV, C % MACH_NUMBER ) )
 
-    call C % Compute_M_Kernel ( M, C % BaryonMassReference )
+    call C % Compute_M_Kernel &
+           ( M, C % BaryonMassReference, &
+             UseDeviceOption = C % AllocatedDevice )
     call C % Apply_EOS_I_T_Kernel &
            ( P, E, SB, CS, M, N, T, C % AdiabaticIndex, &
              C % SpecificHeatVolume, C % FiducialBaryonDensity, &
-             C % FiducialPressure )
+             C % FiducialPressure, UseDeviceOption = C % AllocatedDevice )
     call C % Compute_D_S_G_Kernel &
-           ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
+           ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33, &
+             UseDeviceOption = C % AllocatedDevice )
     call C % Compute_G_G_Kernel &
-           ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
+           ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E, &
+             UseDeviceOption = C % AllocatedDevice )
     call C % Compute_DS_G_Kernel &
-           ( DS, N, SB )
+           ( DS, N, SB, UseDeviceOption = C % AllocatedDevice )
     call C % Compute_FE_P_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
-             V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33 )
+             V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
+             UseDeviceOption = C % AllocatedDevice )
 
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
@@ -430,16 +504,16 @@ contains
 
 
   subroutine ComputeFromPrimitiveCommon &
-               ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
+               ( Storage_C, C, G, Storage_G, nValuesOption, oValueOption )
 
-    real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
-      Value_C
+    class ( StorageForm ), intent ( inout ), target :: &
+      Storage_C
     class ( Fluid_P_I_Form ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_G
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
@@ -449,8 +523,8 @@ contains
       nV     !-- nValues
       
     associate &
-      ( FV => Value_C, &
-        GV => Value_G )
+      ( FV => Storage_C % Value, &
+        GV => Storage_G % Value )
 
     if ( present ( oValueOption ) ) then
       oV = oValueOption
@@ -494,20 +568,25 @@ contains
         CS    => FV ( oV + 1 : oV + nV, C % SOUND_SPEED ), &
         MN    => FV ( oV + 1 : oV + nV, C % MACH_NUMBER ) )
 
-    call C % Compute_M_Kernel ( M, C % BaryonMassReference )
+    call C % Compute_M_Kernel &
+           ( M, C % BaryonMassReference, &
+             UseDeviceOption = C % AllocatedDevice )
     call C % Apply_EOS_I_E_Kernel &
            ( P, T, SB, CS, M, N, E, C % AdiabaticIndex, &
              C % SpecificHeatVolume, C % FiducialBaryonDensity, &
-             C % FiducialPressure )
+             C % FiducialPressure, UseDeviceOption = C % AllocatedDevice )
     call C % Compute_D_S_G_Kernel &
-           ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
+           ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33, &
+             UseDeviceOption = C % AllocatedDevice )
     call C % Compute_G_G_Kernel &
-           ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
+           ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E, &
+             UseDeviceOption = C % AllocatedDevice )
     call C % Compute_DS_G_Kernel &
-           ( DS, N, SB )
+           ( DS, N, SB, UseDeviceOption = C % AllocatedDevice )
     call C % Compute_FE_P_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
-             V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33 )
+             V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
+             UseDeviceOption = C % AllocatedDevice )
 
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
@@ -517,17 +596,17 @@ contains
 
 
   subroutine ComputeFromConservedCommon &
-               ( Value_C, C, G, Value_G, DetectFeaturesOption, &
+               ( Storage_C, C, G, Storage_G, DetectFeaturesOption, &
                  nValuesOption, oValueOption )
 
-    real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
-      Value_C
+    class ( StorageForm ), intent ( inout ), target :: &
+      Storage_C
     class ( Fluid_P_I_Form ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_G
     logical ( KDL ), intent ( in ), optional :: &
       DetectFeaturesOption
     integer ( KDI ), intent ( in ), optional :: &
@@ -541,8 +620,8 @@ contains
       DetectFeatures
 
     associate &
-      ( FV => Value_C, &
-        GV => Value_G )
+      ( FV => Storage_C % Value, &
+        GV => Storage_G % Value )
 
     if ( present ( oValueOption ) ) then
       oV = oValueOption
@@ -591,30 +670,34 @@ contains
         Shock => FF % Value ( oV + 1 : oV + nV, FF % SHOCK ) )
 
     call C % Compute_M_Kernel &
-           ( M, C % BaryonMassReference )
+           ( M, C % BaryonMassReference, &
+             UseDeviceOption = C % AllocatedDevice )
     call C % Compute_N_V_E_G_Kernel &
-               ( N, V_1, V_2, V_3, E, D, S_1, S_2, S_3, G, M, &
-                 M_UU_22, M_UU_33, C % BaryonDensityMin )
+           ( N, V_1, V_2, V_3, E, D, S_1, S_2, S_3, G, M, &
+             M_UU_22, M_UU_33, C % BaryonDensityMin, &
+             UseDeviceOption = C % AllocatedDevice )
     if ( C % UseEntropy ) then
       call C % Compute_SB_G_Kernel &
-             ( SB, DS, N )
+             ( SB, DS, N, UseDeviceOption = C % AllocatedDevice )
       call C % Apply_EOS_I_SB_E_Kernel &
              ( P, E, T, SB, CS, M, N, Shock, C % AdiabaticIndex, &
                C % SpecificHeatVolume, C % FiducialBaryonDensity, &
-               C % FiducialPressure )
+               C % FiducialPressure, UseDeviceOption = C % AllocatedDevice )
       call C % Compute_G_G_Kernel &
-             ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
+             ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E, &
+               UseDeviceOption = C % AllocatedDevice )
     else
       call C % Apply_EOS_I_E_Kernel &
              ( P, T, SB, CS, M, N, E, C % AdiabaticIndex, &
                C % SpecificHeatVolume, C % FiducialBaryonDensity, &
-               C % FiducialPressure )
+               C % FiducialPressure, UseDeviceOption = C % AllocatedDevice )
     end if
     call C % Compute_DS_G_Kernel &
-           ( DS, N, SB )
+           ( DS, N, SB, UseDeviceOption = C % AllocatedDevice )
     call C % Compute_FE_P_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
-             V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33 )
+             V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
+             UseDeviceOption = C % AllocatedDevice )
 
     end associate !-- FEP_1, etc.
     end associate !-- M_UU_22, etc.
@@ -631,18 +714,18 @@ contains
 
   
   subroutine ComputeRawFluxes &
-               ( RawFlux, C, G, Value_C, Value_G, iDimension, &
+               ( RawFlux, C, G, Storage_C, Storage_G, iDimension, &
                  nValuesOption, oValueOption )
     
-    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+    class ( StorageForm ), intent ( inout ) :: &
       RawFlux
     class ( Fluid_P_I_Form ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_C, &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_C, &
+      Storage_G
     integer ( KDI ), intent ( in ) :: &
       iDimension
     integer ( KDI ), intent ( in ), optional :: &
@@ -650,185 +733,10 @@ contains
       oValueOption
 
     call C % ComputeRawFluxesTemplate_P &
-           ( RawFlux, G, Value_C, Value_G, iDimension, nValuesOption, &
+           ( RawFlux, G, Storage_C, Storage_G, iDimension, nValuesOption, &
              oValueOption )
 
   end subroutine ComputeRawFluxes
-
-
-  subroutine Apply_EOS_I_T_Kernel &
-               ( P, E, SB, CS, M, N, T, Gamma, C_V, N0, P0 )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      P, &
-      E, &
-      SB, &
-      CS
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      M, &
-      N, &
-      T
-    real ( KDR ), intent ( in ) :: &
-      Gamma, &
-      C_V, &
-      N0, &
-      P0
-
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-    real ( KDR ) :: &
-      SqrtHuge
-
-    SqrtHuge = sqrt ( huge ( 1.0_KDR ) )
-
-    nValues = size ( P )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-
-      E ( iV )  =  C_V  *  N ( iV )  *  T ( iV )
-
-      P ( iV )  =  ( Gamma - 1.0_KDR )  *  E ( iV ) 
-
-      if ( N ( iV ) > 0.0_KDR .and. P ( iV ) > 0.0_KDR ) then
-
-        SB ( iV )  =  C_V  *  log ( P ( iV ) / P0  &
-                                    *  ( N0 / N ( iV ) ) ** Gamma ) 
-
-        CS ( iV )  =  sqrt ( Gamma * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
-
-      else
-        SB ( iV )  =  - SqrtHuge
-        CS ( iV )  =    0.0_KDR
-      end if
-
-    end do !-- iV
-    !$OMP end parallel do
-
-  end subroutine Apply_EOS_I_T_Kernel
-
-
-  subroutine Apply_EOS_I_SB_E_Kernel &
-               ( P, E, T, SB, CS, M, N, Shock, Gamma, C_V, N0, P0 )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      P, &
-      E, &
-      T, &
-      SB, &
-      CS
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      M, &
-      N, &
-      Shock
-    real ( KDR ), intent ( in ) :: &
-      Gamma, &
-      C_V, &
-      N0, &
-      P0
-
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-    real ( KDR ) :: &
-      SqrtHuge
-
-    SqrtHuge = sqrt ( huge ( 1.0_KDR ) )
-
-    nValues = size ( P )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-
-      if ( Shock ( iV ) > 0.0_KDR ) then
-
-        P ( iV )  =  ( Gamma - 1.0_KDR )  *  E ( iV ) 
-
-        if ( N ( iV ) > 0.0_KDR .and. P ( iV ) > 0.0_KDR ) then
-          SB ( iV )  =  C_V  *  log ( P ( iV ) / P0  &
-                                      *  ( N0 / N ( iV ) ) ** Gamma ) 
-        else
-          SB ( iV )  =  - SqrtHuge
-        end if
-
-      else
-
-        P ( iV )  =  P0  *  ( N ( iV ) / N0 ) ** Gamma  &
-                     *  exp ( SB ( iV ) / C_V )
-
-        E ( iV )  =  P ( iV )  /  ( Gamma - 1.0_KDR )
-
-      end if
-
-      if ( N ( iV ) > 0.0_KDR .and. P ( iV ) > 0.0_KDR ) then
-
-         T ( iV )  =  E ( iV )  /  ( C_V  *  N ( iV ) )
-
-        CS ( iV ) = sqrt ( Gamma * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
-
-      else
-         T ( iV ) = 0.0_KDR
-        CS ( iV ) = 0.0_KDR
-      end if 
-
-    end do !-- iV
-    !$OMP end parallel do
-
-  end subroutine Apply_EOS_I_SB_E_Kernel
-
-
-  subroutine Apply_EOS_I_E_Kernel ( P, T, SB, CS, M, N, E, Gamma, C_V, N0, P0 )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      P, &
-      T, &
-      SB, &
-      CS
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      M, &
-      N, &
-      E
-    real ( KDR ), intent ( in ) :: &
-      Gamma, &
-      C_V, &
-      N0, &
-      P0
-
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-    real ( KDR ) :: &
-      SqrtHuge
-
-    SqrtHuge = sqrt ( huge ( 1.0_KDR ) )
-
-    nValues = size ( P )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-
-      P ( iV )  =  ( Gamma - 1.0_KDR )  *  E ( iV ) 
-
-      if ( N ( iV ) > 0.0_KDR .and. P ( iV ) > 0.0_KDR ) then
-
-         T ( iV )  =  E ( iV )  /  ( C_V  *  N ( iV ) )
-
-        SB ( iV )  =  C_V  *  log ( P ( iV ) / P0  &
-                                    *  ( N0 / N ( iV ) ) ** Gamma ) 
-
-        CS ( iV )  =  sqrt ( Gamma * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
-
-      else
-         T ( iV )  =    0.0_KDR
-        SB ( iV )  =  - SqrtHuge
-        CS ( iV )  =    0.0_KDR
-      end if
-
-    end do !-- iV
-    !$OMP end parallel do
-
-  end subroutine Apply_EOS_I_E_Kernel
 
 
   subroutine InitializeBasics &

@@ -33,7 +33,7 @@ contains
   subroutine InitializeAllocate_G &
                ( G, CoordinateSystem, CoordinateUnit, nValues, &
                  VariableOption, VectorOption, NameOption, ClearOption, &
-                 UnitOption, VectorIndicesOption )
+                 PinnedOption, UnitOption, VectorIndicesOption )
 
     class ( Geometry_N_S_Form ), intent ( inout ) :: &
       G
@@ -49,7 +49,8 @@ contains
     character ( * ), intent ( in ), optional :: &
       NameOption
     logical ( KDL ), intent ( in ), optional :: &
-      ClearOption
+      ClearOption, &
+      PinnedOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       UnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
@@ -61,7 +62,7 @@ contains
     call G % Geometry_N_Form % Initialize &
            ( CoordinateSystem, CoordinateUnit, nValues, &
              VariableOption, VectorOption, NameOption, ClearOption, &
-             UnitOption, VectorIndicesOption )
+             PinnedOption, UnitOption, VectorIndicesOption )
 
   end subroutine InitializeAllocate_G
 

@@ -63,9 +63,10 @@ contains
 
   subroutine Initialize &
                ( GA, A, GeometryType, NameShortOption, &
-                 GravitySolverTypeOption, CentralMassUnitOption, &
-                 GravitationalConstantOption, UniformAccelerationOption, &
-                 CentralMassOption, IgnorabilityOption )
+                 GravitySolverTypeOption, UsePinnedMemoryOption, &
+                 CentralMassUnitOption, GravitationalConstantOption, &
+                 UniformAccelerationOption, CentralMassOption, &
+                 IgnorabilityOption )
 
     class ( Geometry_ASC_Form ), intent ( inout ) :: &
       GA
@@ -76,6 +77,8 @@ contains
     character ( * ), intent ( in ), optional :: &
       NameShortOption, &
       GravitySolverTypeOption
+    logical ( KDL ), intent ( in ), optional :: &
+      UsePinnedMemoryOption
     type ( MeasuredValueForm ), intent ( in ), optional :: &
       CentralMassUnitOption
     real ( KDR ), intent ( in ), optional :: &
@@ -95,7 +98,10 @@ contains
 
     GA % GeometryType = GeometryType    
 
-    call GA % InitializeFlat ( A, NameShortOption, IgnorabilityOption )
+    call GA % InitializeFlat &
+          ( A, NameShortOption = NameShortOption, &
+            UsePinnedMemoryOption = UsePinnedMemoryOption, &
+            IgnorabilityOption = IgnorabilityOption )
 
     select case ( trim ( GA % GeometryType ) )
     case ( 'NEWTONIAN', 'NEWTONIAN_STRESS' )
@@ -287,8 +293,8 @@ contains
     select type ( FC => FA % Chart )
     class is ( Geometry_CSL_Form )
       call FC % Initialize &
-             ( C, FA % NameShort, FA % GeometryType, nValues, &
-               IgnorabilityOption = FA % IGNORABILITY )
+             ( C, FA % NameShort, FA % GeometryType, FA % UsePinnedMemory, &
+               nValues, IgnorabilityOption = FA % IGNORABILITY )
     end select !-- FC
 
     end associate !-- nValues

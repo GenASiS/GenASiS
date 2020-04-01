@@ -11,7 +11,8 @@ IncrementDivergence_FV__Form_Test: Basics.a Manifolds.a Operations.a \
 	$(LINK) $(FLAGS) \
           -o IncrementDivergence_FV__Form_Test_$(MACHINE) \
           IncrementDivergence_FV__Form_Test.o DensityWaveIncrement_Form.o \
-          IncrementDivergence_FV__Form.o StorageDivergence_Form.o \
+          IncrementDivergence_FV__Kernel.o IncrementDivergence_FV__Form.o \
+          StorageDivergence_Form.o \
           ProtoFields.a Fields.a Operations.a Manifolds.a Basics.a \
           $(LIBRARIES)
 

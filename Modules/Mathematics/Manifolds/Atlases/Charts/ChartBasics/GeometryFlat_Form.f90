@@ -2,7 +2,7 @@
 !   flat geometry, though with possibly curvilinear coordinates.
 
 module GeometryFlat_Form
-
+  
   use Basics
   use ChartHeader_SL__Form
 
@@ -22,6 +22,11 @@ module GeometryFlat_Form
       N_VECTORS_FLAT = N_VECTORS_FLAT
     integer ( KDI ) :: &
       VOLUME = 0
+    integer ( KDI ) :: &
+      iTimerSetFiniteVolume, &
+      iTimerSetMetric, &
+      iTimerCopyGeometry, &
+      iTimerComputeEdges
     integer ( KDI ), dimension ( 3 ) :: &
       CENTER_U      = 0, &
       WIDTH_LEFT_U  = 0, &
@@ -59,13 +64,135 @@ module GeometryFlat_Form
       InitializeBasics, &
       SetCoordinateSystem, &
       SetUnits, &
-      SetFiniteVolumeRectangular, &
-      SetFiniteVolumeCylindrical, &
-      SetFiniteVolumeSpherical, &
-      SetMetricRectangular, &
-      SetMetricCylindrical, &
-      SetMetricSpherical, &
-      ComputeEdges
+      SetFiniteVolumeRectangularKernel, &
+      SetFiniteVolumeCylindricalKernel, &
+      SetFiniteVolumeSphericalKernel, &
+      SetMetricRectangularKernel, &
+      SetMetricCylindricalKernel, &
+      SetMetricSphericalKernel, &
+      ComputeEdgesKernel
+    
+    interface
+      
+      module subroutine SetFiniteVolumeRectangularKernel &
+                   ( V, A_I_1, A_I_2, A_I_3, &
+                     W_L_1, W_L_2, W_L_3, W_R_1, W_R_2, W_R_3, &
+                     nDimensions, nValues, oValue )
+        use Basics
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          V, &
+          A_I_1, A_I_2, A_I_3
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          W_L_1, W_L_2, W_L_3, &
+          W_R_1, W_R_2, W_R_3
+        integer ( KDI ), intent ( in ) :: &
+          nDimensions, &
+          nValues, &
+          oValue
+      end subroutine SetFiniteVolumeRectangularKernel
+
+      module subroutine SetFiniteVolumeCylindricalKernel &
+                   ( V, A_I_1, A_I_2, A_I_3, &
+                     W_L_1, W_L_2, W_L_3, W_R_1, W_R_2, W_R_3, RP_C, &
+                     nDimensions, nValues, oValue )
+        use Basics
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          V, &
+          A_I_1, A_I_2, A_I_3
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          W_L_1, W_L_2, W_L_3, &
+          W_R_1, W_R_2, W_R_3, &
+          RP_C
+        integer ( KDI ), intent ( in ) :: &
+          nDimensions, &
+          nValues, &
+          oValue
+      end subroutine SetFiniteVolumeCylindricalKernel
+
+
+      module subroutine SetFiniteVolumeSphericalKernel &
+                   ( V, A_I_1, A_I_2, A_I_3, &
+                     W_L_1, W_L_2, W_L_3, W_R_1, W_R_2, W_R_3, R_C, Th_C, &
+                     nDimensions, nValues, oValue )
+        use Basics
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          V, &
+          A_I_1, A_I_2, A_I_3
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          W_L_1, W_L_2, W_L_3, &
+          W_R_1, W_R_2, W_R_3, &
+          R_C, Th_C
+        integer ( KDI ), intent ( in ) :: &
+          nDimensions, &
+          nValues, &
+          oValue
+      end subroutine SetFiniteVolumeSphericalKernel
+
+
+      module subroutine SetMetricRectangularKernel &
+                   ( M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
+                     nDimensions, nValues, oValue, UseDeviceOption )
+        use Basics
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          M_DD_22, M_DD_33, &
+          M_UU_22, M_UU_33
+        integer ( KDI ), intent ( in ) :: &
+          nDimensions, &
+          nValues, &
+          oValue
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine SetMetricRectangularKernel
+
+
+      module subroutine SetMetricCylindricalKernel &
+                   ( M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
+                     RP, nDimensions, nValues, oValue, UseDeviceOption )
+        use Basics
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          M_DD_22, M_DD_33, &
+          M_UU_22, M_UU_33
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          RP
+        integer ( KDI ), intent ( in ) :: &
+          nDimensions, &
+          nValues, &
+          oValue
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine SetMetricCylindricalKernel
+
+
+      module subroutine SetMetricSphericalKernel &
+                   ( M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
+                     R, Th, nDimensions, nValues, oValue, UseDeviceOption )
+        use Basics
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          M_DD_22, M_DD_33, &
+          M_UU_22, M_UU_33
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          R, Th
+        integer ( KDI ), intent ( in ) :: &
+          nDimensions, &
+          nValues, &
+          oValue
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine SetMetricSphericalKernel
+      
+
+      module subroutine ComputeEdgesKernel ( X, dX_L, X_I, UseDeviceOption )
+        use Basics
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          X, &
+          dX_L
+        real ( KDR ), dimension ( : ), intent ( out ) :: &
+          X_I
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine ComputeEdgesKernel
+    
+    end interface
 
 contains
 
@@ -73,7 +200,7 @@ contains
   subroutine InitializeAllocate_G &
                ( G, CoordinateSystem, CoordinateUnit, nValues, &
                  VariableOption, VectorOption, NameOption, ClearOption, &
-                 UnitOption, VectorIndicesOption )
+                 PinnedOption, UnitOption, VectorIndicesOption )
 
     class ( GeometryFlatForm ), intent ( inout ) :: &
       G
@@ -89,7 +216,8 @@ contains
     character ( * ), intent ( in ), optional :: &
       NameOption
     logical ( KDL ), intent ( in ), optional :: &
-      ClearOption
+      ClearOption, &
+      PinnedOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       UnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
@@ -123,12 +251,22 @@ contains
            ( [ nValues, G % N_FIELDS ], &
              VariableOption = Variable, VectorOption = Vector, &
              NameOption = Name, ClearOption = Clear, &
+             PinnedOption = PinnedOption, &
              UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndices )
 
     G % Value ( :, G % COARSENING ( 1 ) )  =  1.0_KDR
     G % Value ( :, G % COARSENING ( 2 ) )  =  1.0_KDR
     G % Value ( :, G % COARSENING ( 3 ) )  =  1.0_KDR
+    
+    call PROGRAM_HEADER % AddTimer &
+           ( 'SetMetricFixed', G % iTimerSetMetric, Level = 6 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'SetFiniteVolume', G % iTimerSetFiniteVolume, Level = 6 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'CopyGeometry', G % iTimerCopyGeometry, Level = 6 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'ComputeEdges', G % iTimerComputeEdges, Level = 6 )
 
   end subroutine InitializeAllocate_G
 
@@ -141,10 +279,15 @@ contains
       nDimensions, &
       nValues, &
       oValue
+      
+    associate & 
+      ( T_FV => PROGRAM_HEADER % Timer ( G % iTimerSetFiniteVolume ), &
+        T_SM => PROGRAM_HEADER % Timer ( G % iTimerSetMetric ) )
 
     select case ( trim ( G % CoordinateSystem ) )
     case ( 'RECTANGULAR' )
-      call SetFiniteVolumeRectangular &
+      call T_FV % Start ( )
+      call SetFiniteVolumeRectangularKernel &
              ( G % Value ( :, G % VOLUME ), &
                G % Value ( :, G % AREA_INNER_D ( 1 ) ), &
                G % Value ( :, G % AREA_INNER_D ( 2 ) ), &
@@ -156,14 +299,18 @@ contains
                G % Value ( :, G % WIDTH_RIGHT_U ( 2 ) ), &
                G % Value ( :, G % WIDTH_RIGHT_U ( 3 ) ), &
                nDimensions, nValues, oValue )
-      call SetMetricRectangular &
+      call T_FV % Stop ( )
+      call T_SM % Start ( )
+      call SetMetricRectangularKernel &
              ( G % Value ( :, G % METRIC_DD_22 ), &
                G % Value ( :, G % METRIC_DD_33 ), &
                G % Value ( :, G % METRIC_UU_22 ), &
                G % Value ( :, G % METRIC_UU_33 ), &
                nDimensions, nValues, oValue )
+      call T_SM % Stop ( )
     case ( 'CYLINDRICAL' )
-      call SetFiniteVolumeCylindrical &
+      call T_FV % Start ( )
+      call SetFiniteVolumeCylindricalKernel &
              ( G % Value ( :, G % VOLUME ), &
                G % Value ( :, G % AREA_INNER_D ( 1 ) ), &
                G % Value ( :, G % AREA_INNER_D ( 2 ) ), &
@@ -176,15 +323,19 @@ contains
                G % Value ( :, G % WIDTH_RIGHT_U ( 3 ) ), &
                G % Value ( :, G % CENTER_U ( 1 ) ), &
                nDimensions, nValues, oValue )
-      call SetMetricCylindrical &
+      call T_FV % Stop ( )
+      call T_SM % Start ( )
+      call SetMetricCylindricalKernel &
              ( G % Value ( :, G % METRIC_DD_22 ), &
                G % Value ( :, G % METRIC_DD_33 ), &
                G % Value ( :, G % METRIC_UU_22 ), &
                G % Value ( :, G % METRIC_UU_33 ), &
                G % Value ( :, G % CENTER_U ( 1 ) ), &
                nDimensions, nValues, oValue )
+      call T_SM % Stop ( )
     case ( 'SPHERICAL' )
-      call SetFiniteVolumeSpherical &
+      call T_FV % Start ( )
+      call SetFiniteVolumeSphericalKernel &
              ( G % Value ( :, G % VOLUME ), &
                G % Value ( :, G % AREA_INNER_D ( 1 ) ), &
                G % Value ( :, G % AREA_INNER_D ( 2 ) ), &
@@ -198,7 +349,9 @@ contains
                G % Value ( :, G % CENTER_U ( 1 ) ), &
                G % Value ( :, G % CENTER_U ( 2 ) ), &
                nDimensions, nValues, oValue )
-      call SetMetricSpherical &
+      call T_FV % Stop ( )
+      call T_SM % Start ( )
+      call SetMetricSphericalKernel &
              ( G % Value ( :, G % METRIC_DD_22 ), &
                G % Value ( :, G % METRIC_DD_33 ), &
                G % Value ( :, G % METRIC_UU_22 ), &
@@ -206,6 +359,7 @@ contains
                G % Value ( :, G % CENTER_U ( 1 ) ), &
                G % Value ( :, G % CENTER_U ( 2 ) ), &
                nDimensions, nValues, oValue )
+      call T_SM % Stop ( )
     case default
       call Show ( 'CoordinateSystem not recognized', CONSOLE % ERROR )
       call Show ( G % CoordinateSystem, 'CoordinateSystem', CONSOLE % ERROR )
@@ -213,6 +367,8 @@ contains
       call Show ( 'SetMetricFixed', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select
+    
+    end associate !-- T_FV, T_SM
 
   end subroutine SetMetricFixed
 
@@ -245,45 +401,78 @@ contains
 
     integer ( KDI ) :: &
       iD
+      
+    if ( G % AllocatedDevice .neqv. G_I % AllocatedDevice ) then
+      call Show ( 'Geometry not allocated consistently on Host or Device', &
+                  CONSOLE % ERROR )
+      call Show ( 'GeometryFlat_Form', 'module', &
+                  CONSOLE % ERROR )
+      call Show ( 'ComputeReconstruction_CSL', 'subroutine', &
+                  CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end if
+    
+    
+    associate & 
+      ( T_C   => PROGRAM_HEADER % Timer ( G % iTimerCopyGeometry ), &
+        T_CE  => PROGRAM_HEADER % Timer ( G % iTimerComputeEdges ), & 
+        T_SM  => PROGRAM_HEADER % Timer ( G % iTimerSetMetric ) )  
+        
+    call T_C % Start ( )
 
     do iD = 1, 3
       if ( iD == iDimension ) &
         cycle
       call Copy ( G   % Value ( :, G % CENTER_U ( iD ) ), &
-                  G_I % Value ( :, G % CENTER_U ( iD ) ) )
+                  G_I % Value ( :, G % CENTER_U ( iD ) ), &
+                  UseDeviceOption = G % AllocatedDevice )
     end do
-
-    call ComputeEdges &
+    
+    call T_C % Stop ( )
+    
+    call T_CE % Start ( )
+    call ComputeEdgesKernel &
            ( G   % Value ( :, G % CENTER_U ( iDimension ) ), &
              G   % Value ( :, G % WIDTH_LEFT_U ( iDimension ) ), &
-             G_I % Value ( :, G % CENTER_U ( iDimension ) ) )
-
+             G_I % Value ( :, G % CENTER_U ( iDimension ) ), &
+             UseDeviceOption = G % AllocatedDevice )
+    call T_CE % Stop ( )
+    
+    call T_SM % Start ( )
+    
     select case ( trim ( G % CoordinateSystem ) )
     case ( 'RECTANGULAR' )
-      call SetMetricRectangular &
+      call SetMetricRectangularKernel &
              ( G_I % Value ( :, G % METRIC_DD_22 ), &
                G_I % Value ( :, G % METRIC_DD_33 ), &
                G_I % Value ( :, G % METRIC_UU_22 ), &
                G_I % Value ( :, G % METRIC_UU_33 ), &
-               nDimensions, nValues = G % nValues, oValue = 0 )
+               nDimensions, nValues = G % nValues, oValue = 0, &
+               UseDeviceOption = G % AllocatedDevice )
     case ( 'CYLINDRICAL' )
-      call SetMetricCylindrical &
+      call SetMetricCylindricalKernel &
              ( G_I % Value ( :, G % METRIC_DD_22 ), &
                G_I % Value ( :, G % METRIC_DD_33 ), &
                G_I % Value ( :, G % METRIC_UU_22 ), &
                G_I % Value ( :, G % METRIC_UU_33 ), &
                G_I % Value ( :, G % CENTER_U ( 1 ) ), &
-               nDimensions, nValues = G % nValues, oValue = 0 )
+               nDimensions, nValues = G % nValues, oValue = 0, &
+               UseDeviceOption = G % AllocatedDevice )
     case ( 'SPHERICAL' )
-      call SetMetricSpherical &
+      call SetMetricSphericalKernel &
              ( G_I % Value ( :, G % METRIC_DD_22 ), &
                G_I % Value ( :, G % METRIC_DD_33 ), &
                G_I % Value ( :, G % METRIC_UU_22 ), &
                G_I % Value ( :, G % METRIC_UU_33 ), &
                G_I % Value ( :, G % CENTER_U ( 1 ) ), &
                G_I % Value ( :, G % CENTER_U ( 2 ) ), &
-               nDimensions, nValues = G % nValues, oValue = 0 )
+               nDimensions, nValues = G % nValues, oValue = 0, &
+               UseDeviceOption = G % AllocatedDevice )
     end select
+    
+    call T_SM % Stop ( )
+    
+    end associate !-- T_C, T_CE, T_SM
 
   end subroutine ComputeReconstruction_CSL
 
@@ -513,315 +702,5 @@ contains
 
   end subroutine SetUnits
 
-
-  subroutine SetFiniteVolumeRectangular &
-               ( V, A_I_1, A_I_2, A_I_3, &
-                 W_L_1, W_L_2, W_L_3, W_R_1, W_R_2, W_R_3, &
-                 nDimensions, nValues, oValue )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      V, &
-      A_I_1, A_I_2, A_I_3
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      W_L_1, W_L_2, W_L_3, &
-      W_R_1, W_R_2, W_R_3
-    integer ( KDI ), intent ( in ) :: &
-      nDimensions, &
-      nValues, &
-      oValue
-
-    integer ( KDI ) :: &
-      iV  !-- iValue
-    real ( KDR ) :: &
-      dX, dY, dZ
-
-    !$OMP parallel do private ( iV, dX, dY, dZ )
-    do iV = oValue + 1, oValue + nValues
-
-      dX  =  W_L_1 ( iV )  +  W_R_1 ( iV )
-      dY  =  W_L_2 ( iV )  +  W_R_2 ( iV )
-      dZ  =  W_L_3 ( iV )  +  W_R_3 ( iV )
-
-      select case ( nDimensions )
-      case ( 1 )
-        V ( iV )      =  dX
-        A_I_1 ( iV )  =  1.0_KDR
-        A_I_2 ( iV )  =  dX
-        A_I_3 ( iV )  =  dX
-      case ( 2 )
-        V ( iV )      =  dX * dY
-        A_I_1 ( iV )  =  dY
-        A_I_2 ( iV )  =  dX
-        A_I_3 ( iV )  =  dX * dY
-      case ( 3 )
-        V ( iV )      =  dX * dY * dZ
-        A_I_1 ( iV )  =  dY * dZ
-        A_I_2 ( iV )  =  dZ * dX
-        A_I_3 ( iV )  =  dX * dY
-      end select
-
-    end do
-    !$OMP end parallel do
-
-  end subroutine SetFiniteVolumeRectangular
-
-
-  subroutine SetFiniteVolumeCylindrical &
-               ( V, A_I_1, A_I_2, A_I_3, &
-                 W_L_1, W_L_2, W_L_3, W_R_1, W_R_2, W_R_3, RP_C, &
-                 nDimensions, nValues, oValue )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      V, &
-      A_I_1, A_I_2, A_I_3
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      W_L_1, W_L_2, W_L_3, &
-      W_R_1, W_R_2, W_R_3, &
-      RP_C
-    integer ( KDI ), intent ( in ) :: &
-      nDimensions, &
-      nValues, &
-      oValue
-
-    integer ( KDI ) :: &
-      iV  !-- iValue
-    real ( KDR ) :: &
-      Pi, &
-      RP_I, RP_O, &
-      dZ, dPh
-
-    Pi  =  CONSTANT % PI
-
-    !$OMP parallel do private ( iV, RP_I, RP_O, dZ, dPh )
-    do iV = oValue + 1, oValue + nValues
-
-      RP_I  =  RP_C ( iV )  -  W_L_1 ( iV )
-      RP_O  =  RP_C ( iV )  +  W_R_1 ( iV )
-
-        dZ  =  W_L_2 ( iV )  +  W_R_2 ( iV ) 
-       dPh  =  W_L_3 ( iV )  +  W_R_3 ( iV ) 
-
-      select case ( nDimensions )
-      case ( 1 )
-        V ( iV )      =  Pi  *  ( RP_O ** 2  -  RP_I ** 2 )  
-        A_I_1 ( iV )  =  2.0_KDR  *  Pi  *  RP_I  
-        A_I_2 ( iV )  =  Pi  *  ( RP_O ** 2  -  RP_I ** 2 )
-        A_I_3 ( iV )  =  0.5_KDR  *  ( RP_O ** 2  -  RP_I ** 2 )
-      case ( 2 )
-        V ( iV )      =  Pi  *  ( RP_O ** 2  -  RP_I ** 2 )  *  dZ
-        A_I_1 ( iV )  =  2.0_KDR  *  Pi  *  RP_I  *  dZ  
-        A_I_2 ( iV )  =  Pi  *  ( RP_O ** 2  -  RP_I ** 2 )
-        A_I_3 ( iV )  =  0.5_KDR  *  ( RP_O ** 2  -  RP_I ** 2 ) * dZ
-      case ( 3 )
-        V ( iV )      =  0.5_KDR  *  ( RP_O ** 2  -  RP_I ** 2 )  *  dZ * dPh
-        A_I_1 ( iV )  =  RP_I * dZ * dPh  
-        A_I_2 ( iV )  =  0.5_KDR  *  ( RP_O ** 2  -  RP_I ** 2 )  *  dPh
-        A_I_3 ( iV )  =  0.5_KDR  *  ( RP_O ** 2  -  RP_I ** 2 ) * dZ
-      end select
-
-    end do
-    !$OMP end parallel do
-
-  end subroutine SetFiniteVolumeCylindrical
-
-
-  subroutine SetFiniteVolumeSpherical &
-               ( V, A_I_1, A_I_2, A_I_3, &
-                 W_L_1, W_L_2, W_L_3, W_R_1, W_R_2, W_R_3, R_C, Th_C, &
-                 nDimensions, nValues, oValue )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      V, &
-      A_I_1, A_I_2, A_I_3
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      W_L_1, W_L_2, W_L_3, &
-      W_R_1, W_R_2, W_R_3, &
-      R_C, Th_C
-    integer ( KDI ), intent ( in ) :: &
-      nDimensions, &
-      nValues, &
-      oValue
-
-    integer ( KDI ) :: &
-      iV  !-- iValue
-    real ( KDR ) :: &
-      Pi, &
-      R_I, R_O, &
-      Th_I, Th_O, &
-      dPh
-
-    Pi  =  CONSTANT % PI
-
-    !$OMP parallel do private ( iV, R_I, R_O, Th_I, Th_O, dPh )
-    do iV = oValue + 1, oValue + nValues
-
-      R_I  =  R_C ( iV )  -  W_L_1 ( iV )
-      R_O  =  R_C ( iV )  +  W_R_1 ( iV )
-
-      Th_I  =  Th_C ( iV )  -  W_L_2 ( iV )
-      Th_O  =  Th_C ( iV )  +  W_R_2 ( iV )
-
-      dPh  =  W_L_3 ( iV )  +  W_R_3 ( iV ) 
-
-      select case ( nDimensions )
-      case ( 1 )
-        V ( iV )      =  4.0_KDR / 3.0_KDR * Pi *  ( R_O ** 3  -  R_I ** 3 )
-        A_I_1 ( iV )  =  4.0_KDR  *  Pi  *  R_I ** 2
-        A_I_2 ( iV )  =  2.0_KDR / 3.0_KDR * Pi *  ( R_O ** 3  -  R_I ** 3 )
-        A_I_3 ( iV )  =  2.0_KDR / 3.0_KDR  *  ( R_O ** 3  -  R_I ** 3 )
-      case ( 2 )
-        V ( iV )      =  2.0_KDR / 3.0_KDR * Pi *  ( R_O ** 3  -  R_I ** 3 ) &
-                         *  ( cos ( Th_I )  -  cos ( Th_O ) )
-        A_I_1 ( iV )  =  2.0_KDR  *  Pi  *  R_I ** 2  &
-                         *  ( cos ( Th_I )  -  cos ( Th_O ) )
-        A_I_2 ( iV )  =  2.0_KDR / 3.0_KDR * Pi *  ( R_O ** 3  -  R_I ** 3 ) &
-                         *  sin ( Th_I )
-        A_I_3 ( iV )  =  1.0_KDR / 3.0_KDR  *  ( R_O ** 3  -  R_I ** 3 )  &
-                         *  ( cos ( Th_I )  -  cos ( Th_O ) )
-      case ( 3 )
-        V ( iV )      =  1.0_KDR / 3.0_KDR  *  ( R_O ** 3  -  R_I ** 3 ) &
-                         *  ( cos ( Th_I )  -  cos ( Th_O ) )  *  dPh
-        A_I_1 ( iV )  =  R_I ** 2  *  ( cos ( Th_I )  -  cos ( Th_O ) )  * dPh 
-        A_I_2 ( iV )  =  1.0_KDR / 3.0_KDR  *  ( R_O ** 3  -  R_I ** 3 )  &
-                         *  sin ( Th_I )  *  dPh
-        A_I_3 ( iV )  =  1.0_KDR / 3.0_KDR  *  ( R_O ** 3  -  R_I ** 3 )  &
-                         *  ( cos ( Th_I )  -  cos ( Th_O ) )
-      end select
-
-    end do
-    !$OMP end parallel do
-
-  end subroutine SetFiniteVolumeSpherical
-
-
-  subroutine SetMetricRectangular &
-               ( M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
-                 nDimensions, nValues, oValue )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      M_DD_22, M_DD_33, &
-      M_UU_22, M_UU_33
-    integer ( KDI ), intent ( in ) :: &
-      nDimensions, &
-      nValues, &
-      oValue
-
-    integer ( KDI ) :: &
-      iV  !-- iValue
-
-    !$OMP parallel do private ( iV )
-    do iV = oValue + 1, oValue + nValues
-      M_DD_22 ( iV )  =  1.0_KDR
-      M_DD_33 ( iV )  =  1.0_KDR
-      M_UU_22 ( iV )  =  1.0_KDR
-      M_UU_33 ( iV )  =  1.0_KDR
-    end do
-    !$OMP end parallel do
-
-  end subroutine SetMetricRectangular
-
-
-  subroutine SetMetricCylindrical &
-               ( M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
-                 RP, nDimensions, nValues, oValue )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      M_DD_22, M_DD_33, &
-      M_UU_22, M_UU_33
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      RP
-    integer ( KDI ), intent ( in ) :: &
-      nDimensions, &
-      nValues, &
-      oValue
-
-    integer ( KDI ) :: &
-      iV  !-- iValue
-
-    !$OMP parallel do private ( iV )
-    do iV = oValue + 1, oValue + nValues
-      M_DD_22 ( iV )  =  1.0_KDR
-      M_DD_33 ( iV )  =  RP ( iV ) ** 2 
-      M_UU_22 ( iV )  =  1.0_KDR
-      if ( RP ( iV )  >  0.0_KDR ) then
-        M_UU_33 ( iV )  =  1.0_KDR  /  RP ( iV ) ** 2
-      else
-        M_UU_33 ( iV )  =  0.0_KDR
-      end if
-    end do
-    !$OMP end parallel do
-
-  end subroutine SetMetricCylindrical
-
-
-  subroutine SetMetricSpherical &
-               ( M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
-                 R, Th, nDimensions, nValues, oValue )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      M_DD_22, M_DD_33, &
-      M_UU_22, M_UU_33
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      R, Th
-    integer ( KDI ), intent ( in ) :: &
-      nDimensions, &
-      nValues, &
-      oValue
-
-    integer ( KDI ) :: &
-      iV  !-- iValue
-    real ( KDR ) :: &
-      Sin_Th
-
-    !$OMP parallel do private ( iV, Sin_Th )
-    do iV = oValue + 1, oValue + nValues
-
-      select case ( nDimensions )
-      case ( 1 )
-        Sin_Th  =  1.0_KDR
-      case ( 2 )
-        Sin_Th  =  sin ( Th ( iV ) )
-      case ( 3 )
-        Sin_Th  =  sin ( Th ( iV ) )
-      end select
-
-      M_DD_22 ( iV )  =  R ( iV ) ** 2
-      M_DD_33 ( iV )  =  ( R ( iV )  *  Sin_Th ) ** 2
-      if ( R ( iV )  *  Sin_Th  >  0.0_KDR ) then
-        M_UU_22 ( iV )  =  R ( iV ) ** ( -2 )
-        M_UU_33 ( iV )  =  ( R ( iV )  *  Sin_Th ) ** ( -2 )
-      else
-        M_UU_22 ( iV )  =  0.0_KDR
-        M_UU_33 ( iV )  =  0.0_KDR
-      end if
-
-    end do
-    !$OMP end parallel do
-
-  end subroutine SetMetricSpherical
-
-
-  subroutine ComputeEdges ( X, dX_L, X_I )
-
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      X, &
-      dX_L
-    real ( KDR ), dimension ( : ), intent ( out ) :: &
-      X_I
-
-    integer ( KDI ) :: &
-      iV, &
-      nV
-
-    nV = size ( X )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nV
-      X_I ( iV )  =  X ( iV )  -  dX_L ( iV )
-    end do
-    !$OMP end parallel do
-    
-  end subroutine ComputeEdges
-
-
+  
 end module GeometryFlat_Form

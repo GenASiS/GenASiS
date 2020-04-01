@@ -47,7 +47,8 @@ contains
       PCC % Type = 'a ProtoCurrent_CSL'
 
     call PCC % InitializeTemplate_CSL &
-           ( C, NameShort, nValues, IgnorabilityOption )
+           ( C, NameShort, UsePinnedMemory = .true., &
+             nValues = nValues, IgnorabilityOption = IgnorabilityOption )
 
   end subroutine Initialize
 

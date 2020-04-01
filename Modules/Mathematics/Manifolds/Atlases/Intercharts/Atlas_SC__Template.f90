@@ -253,8 +253,10 @@ contains
       iB  !-- iBoundary
 
     do iB = 1, A % nBoundaries
-      associate ( BC => A % BoundaryCondition ( iConnection, iB ) )
-      select case ( trim ( BC ) )
+      !-- FIXME: GCC has trouble with associate to string here
+      !associate ( BC => A % BoundaryCondition ( iConnection, iB ) )
+      !select case ( trim ( BC ) )
+      select case ( trim ( A % BoundaryCondition ( iConnection, iB ) ) )
       case ( 'PERIODIC', 'INFLOW' )
 
         cycle
@@ -299,12 +301,13 @@ contains
 
       case default
         call Show ( 'BoundaryCondition not recognized', CONSOLE % ERROR )
-        call Show ( BC, 'BoundaryCondition', CONSOLE % ERROR )
+        call Show ( A % BoundaryCondition ( iConnection, iB ), &
+                    'BoundaryCondition', CONSOLE % ERROR )
         call Show ( 'Atlas_SC__Template', 'module', CONSOLE % ERROR )
         call Show ( 'ApplyBoundaryConditions', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end select !-- BC
-      end associate !-- BC
+      ! end associate !-- BC
     end do !-- iB
 
   end subroutine ApplyBoundaryConditions
@@ -359,7 +362,7 @@ contains
 
     do iS = 1, F % nVariables
       iF = F % iaSelected ( iS )
-      call CSL % CopyBoundary ( F % Value ( :, iF ), iDimension, iConnection )
+      call CSL % CopyBoundary ( F, iF, iDimension, iConnection )
     end do !-- iS
 
   end subroutine Apply_BC_CSL_Outflow
@@ -382,11 +385,10 @@ contains
 
     do iS = 1, F % nVariables
       iF = F % iaSelected ( iS )
-      call CSL % CopyBoundary ( F % Value ( :, iF ), iDimension, iConnection )
+      call CSL % CopyBoundary ( F, iF, iDimension, iConnection )
       do iV = 1, F % nVectors
         if ( iF == F % VectorIndices ( iV ) % Value ( iDimension ) ) &
-          call CSL % ReverseBoundary &
-                 ( F % Value ( :, iF ), iDimension, iConnection )
+          call CSL % ReverseBoundary ( F, iF, iDimension, iConnection )
       end do !-- iV
     end do !-- iS
 

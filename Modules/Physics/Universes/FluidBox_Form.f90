@@ -36,6 +36,7 @@ contains
 
   subroutine Initialize_FB &
                ( FB, FluidType, GeometryType, Name, GravitySolverTypeOption, &
+                 FluidUseDeviceOption, GeometryUseDeviceOption, &
                  MinCoordinateOption, MaxCoordinateOption, FinishTimeOption, &
                  CourantFactorOption, UniformAccelerationOption, &
                  nCellsOption, nWriteOption )
@@ -48,6 +49,9 @@ contains
       Name
     character ( * ), intent ( in ), optional :: &
       GravitySolverTypeOption
+    logical ( KDL ), intent ( in ), optional :: &
+      FluidUseDeviceOption, &
+      GeometryUseDeviceOption
     real ( KDR ), dimension ( : ), intent ( in ), optional :: &
       MinCoordinateOption, &
       MaxCoordinateOption
@@ -70,12 +74,13 @@ contains
     call FB % InitializePositionSpace &
            ( GeometryType, &
              GravitySolverTypeOption = GravitySolverTypeOption, &
+             GeometryUseDeviceOption = GeometryUseDeviceOption, &
              MinCoordinateOption = MinCoordinateOption, &
              MaxCoordinateOption = MaxCoordinateOption, &
              UniformAccelerationOption = UniformAccelerationOption, &
              nCellsOption = nCellsOption )
     call FB % InitializeFluid &
-           ( FluidType )
+           ( FluidType, FluidUseDeviceOption = FluidUseDeviceOption )
     call FB % InitializeStep &
            ( Name, GravitySolverTypeOption = GravitySolverTypeOption )
 
@@ -113,8 +118,9 @@ contains
 
   subroutine InitializePositionSpace &
                ( FB, GeometryType, GravitySolverTypeOption, &
-                 MinCoordinateOption, MaxCoordinateOption, &
-                 UniformAccelerationOption, nCellsOption )
+                 GeometryUseDeviceOption, MinCoordinateOption, &
+                 MaxCoordinateOption, UniformAccelerationOption, &
+                 nCellsOption )
 
     class ( FluidBoxForm ), intent ( inout ) :: &
       FB
@@ -122,6 +128,8 @@ contains
       GeometryType
     character ( * ), intent ( in ), optional :: &
       GravitySolverTypeOption
+    logical ( KDL ), intent ( in ), optional :: &
+      GeometryUseDeviceOption
     real ( KDR ), dimension ( : ), intent ( in ), optional :: &
       MinCoordinateOption, &
       MaxCoordinateOption
@@ -132,7 +140,11 @@ contains
 
     integer ( KDI ) :: &
       iD  !-- iDimension
-
+    logical ( KDL ) :: &
+      GeometryUseDevice
+    class ( StorageForm ), pointer :: &
+      Storage_G
+      
     associate ( I => FB % Integrator )
 
     allocate ( Atlas_SC_Form :: I % PositionSpace )
@@ -160,8 +172,18 @@ contains
     call GA % Initialize &
            ( PS, GeometryType, &
              GravitySolverTypeOption = GravitySolverTypeOption, &
-             UniformAccelerationOption = UniformAccelerationOption )
+             UniformAccelerationOption = UniformAccelerationOption, &
+             UsePinnedMemoryOption = GeometryUseDeviceOption )
+      
     call PS % SetGeometry ( GA )
+    
+    if ( present ( GeometryUseDeviceOption ) ) then
+      if ( GeometryUseDeviceOption ) then
+        call GA % AllocateDevice ( )
+        Storage_G => PS % Geometry ( )
+        call Storage_G % UpdateDevice ( )
+      end if
+    end if
 
     end select !-- GA
     end select !-- PS
@@ -170,12 +192,14 @@ contains
   end subroutine InitializePositionSpace
 
 
-  subroutine InitializeFluid ( FB, FluidType )
+  subroutine InitializeFluid ( FB, FluidType, FluidUseDeviceOption )
 
     class ( FluidBoxForm ), intent ( inout ) :: &
       FB
     character ( * ), intent ( in )  :: &
       FluidType
+    logical ( KDL ), intent ( in ), optional :: &
+      FluidUseDeviceOption
 
     select type ( I => FB % Integrator )
     class is ( Integrator_C_PS_Form )
@@ -186,7 +210,14 @@ contains
     allocate ( Fluid_ASC_Form :: I % Current_ASC )
     select type ( FA => I % Current_ASC )
     class is ( Fluid_ASC_Form )
-      call FA % Initialize ( PS, FluidType, FB % Units )
+      call FA % Initialize &
+             ( PS, FluidType, FB % Units, &
+               UsePinnedMemoryOption = FluidUseDeviceOption )
+      if ( present ( FluidUseDeviceOption ) ) then
+        if ( FluidUseDeviceOption ) then
+          call FA % AllocateDevice ( )
+        end if
+      end if
     end select !-- FA
 
     end select !-- PS

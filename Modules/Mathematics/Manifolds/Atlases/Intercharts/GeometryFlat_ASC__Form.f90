@@ -28,7 +28,9 @@ module GeometryFlat_ASC__Form
 contains
 
 
-  subroutine InitializeFlat ( GA, A, NameShortOption, IgnorabilityOption )
+  subroutine InitializeFlat &
+               ( GA, A, NameShortOption, UsePinnedMemoryOption, &
+                 IgnorabilityOption )
 
     class ( GeometryFlat_ASC_Form ), intent ( inout ) :: &
       GA
@@ -36,6 +38,8 @@ contains
       A
     character ( * ), intent ( in ), optional :: &
       NameShortOption
+    logical ( KDL ), intent ( in ), optional :: &
+      UsePinnedMemoryOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
@@ -52,7 +56,8 @@ contains
     if ( present ( NameShortOption ) ) &
       NameShort = NameShortOption
 
-    call GA % InitializeTemplate_ASC ( A, NameShort, IgnorabilityOption )
+    call GA % InitializeTemplate_ASC &
+           ( A, NameShort, UsePinnedMemoryOption, IgnorabilityOption )
 
     call Show ( GA % GeometryType, 'GeometryType', GA % IGNORABILITY )
 
@@ -90,7 +95,7 @@ contains
           class is ( GeometryFlat_CSL_Form )
             associate ( nValues => C % nProperCells + C % nGhostCells )
             call GC % InitializeFlat &
-                   ( C, FA % NameShort, nValues, &
+                   ( C, FA % NameShort, FA % UsePinnedMemory, nValues, &
                      IgnorabilityOption = FA % IGNORABILITY )
             end associate !-- nValues
           end select !-- GC

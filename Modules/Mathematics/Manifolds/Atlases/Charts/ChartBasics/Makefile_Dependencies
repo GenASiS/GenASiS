@@ -27,6 +27,11 @@ GeometryFlat_Form.o: \
   ChartHeader_SL__Form.o \
   GeometryFlat_Form.f90
 
+GeometryFlat_Kernel.o: \
+  Basics.o \
+  GeometryFlat_Form.o \
+  GeometryFlat_Kernel.f90
+
 GeometryFlat_CSL__Form.o: \
   Basics.o \
   ChartHeader_SL__Form.o \

@@ -161,13 +161,13 @@ contains
     
     if ( UseDevice ) then
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE )
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET )
       do iV = 1, nV
         A ( iV ) = 0.0_KDR
       end do
       !$OMP end OMP_TARGET_DIRECTIVE parallel do
     else
-      !$OMP parallel do private ( iV ) schedule ( OMP_SCHEDULE )
+      !$OMP parallel do private ( iV ) schedule ( OMP_SCHEDULE_HOST )
       do iV = 1, nV
         A ( iV ) = 0.0_KDR
       end do
@@ -209,7 +209,7 @@ contains
 
     nV = shape ( A )
 
-    !$OMP parallel do private ( iV, jV, kV ) schedule ( OMP_SCHEDULE )
+    !$OMP parallel do private ( iV, jV, kV ) schedule ( OMP_SCHEDULE_HOST )
     do kV = 1, nV ( 3 )
       do jV = 1, nV ( 2 )
         do iV = 1, nV ( 1 )
@@ -270,7 +270,7 @@ contains
 
     nV = shape ( A )
 
-    !$OMP parallel do private ( iV, jV, kV ) schedule ( OMP_SCHEDULE )
+    !$OMP parallel do private ( iV, jV, kV ) schedule ( OMP_SCHEDULE_HOST )
     do kV = 1, nV ( 3 )
       do jV = 1, nV ( 2 )
         do iV = 1, nV ( 1 )
@@ -306,7 +306,7 @@ contains
 
     nV = size ( A )
 
-    !$OMP parallel do private ( iV ) schedule ( OMP_SCHEDULE )
+    !$OMP parallel do private ( iV ) schedule ( OMP_SCHEDULE_HOST )
     do iV = 1, nV
       A ( iV ) = .false.
     end do

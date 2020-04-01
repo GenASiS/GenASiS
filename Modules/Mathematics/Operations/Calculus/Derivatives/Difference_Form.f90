@@ -12,6 +12,8 @@ module Difference_Form
   type, public :: DifferenceForm
     integer ( KDI ) :: &
       IGNORABILITY = 0
+    integer ( KDI ) :: &
+      iTimerComputeDifference
     character ( LDF ) :: &
       Name = ''
     type ( StorageForm ), allocatable :: &
@@ -19,6 +21,8 @@ module Difference_Form
   contains
     procedure, public, pass :: &
       Initialize
+    procedure, public, pass :: &
+      AllocateDevice => AllocateDevice_D
     procedure, private, pass :: &
       ComputeChart_SL
     generic, public :: &
@@ -29,6 +33,24 @@ module Difference_Form
 
     private :: &
       ComputeChart_SL_Kernel
+      
+    interface
+      
+      module subroutine ComputeChart_SL_Kernel &
+                          ( V, iD, oV, dV_I, UseDeviceOption )
+        use Basics
+        real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+          V
+        integer ( KDI ), intent ( in ) :: &
+          iD, &
+          oV   
+        real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
+          dV_I
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine ComputeChart_SL_Kernel
+    
+    end interface
 
 contains
 
@@ -50,8 +72,21 @@ contains
 
     allocate ( D % OutputInner )
     call D % OutputInner % Initialize ( ValueShape, ClearOption = .true. )
+    
+    call PROGRAM_HEADER % AddTimer &
+           ( 'ComputeDifference', D % iTimerComputeDifference, Level = 6 )
 
   end subroutine Initialize
+  
+  
+  subroutine AllocateDevice_D ( D )
+  
+    class ( DifferenceForm ), intent ( inout ) :: &
+      D
+      
+    call D % OutputInner % AllocateDevice ( )
+    
+  end subroutine AllocateDevice_D
 
 
   subroutine ComputeChart_SL ( D, CSL, Input, iDimension )
@@ -78,16 +113,23 @@ contains
     associate &
       ( I  => Input, &
         OI => D % OutputInner )
-
+    associate &
+      ( iaS  => I % iaSelected, &
+        T_D  => PROGRAM_HEADER % Timer ( D % iTimerComputeDifference ) )
+    
+    call T_D % Start ( )
+    
     do iS = 1, I % nVariables
-      call CSL % SetVariablePointer &
-             ( I % Value ( :, I % iaSelected ( iS ) ), V )
-      call CSL % SetVariablePointer &
-             ( OI % Value ( :, iS ), dV_I )
+      call CSL % SetVariablePointer ( I % Value ( :, iaS ( iS ) ), V )
+      call CSL % SetVariablePointer ( OI % Value ( :, iS ), dV_I )
       call ComputeChart_SL_Kernel &
-             ( V, iDimension, CSL % nGhostLayers ( iDimension ), dV_I )
+             ( V, iDimension, CSL % nGhostLayers ( iDimension ), dV_I, &
+               UseDeviceOption = OI % AllocatedDevice )
     end do !-- iS
-
+    
+    call T_D % Stop ( )
+    
+    end associate !-- D_I, etc
     end associate !-- I, etc.
 
     nullify ( V, dV_I )
@@ -107,58 +149,6 @@ contains
     call Show ( trim ( D % Name ), 'Name', D % IGNORABILITY )
 
   end subroutine Finalize
-
-
-  subroutine ComputeChart_SL_Kernel ( V, iD, oV, dV_I )
-
-    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
-      V
-    integer ( KDI ), intent ( in ) :: &
-      iD, &
-      oV   
-    real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
-      dV_I
-
-    integer ( KDI ) :: &
-      iV, jV, kV
-    integer ( KDI ), dimension ( 3 ) :: &
-      iaS, &
-      iaVS, &   
-      lV, uV
-    
-!    dV_I = V - cshift ( V, shift = -1, dim = iD )
-
-    lV = 1
-    where ( shape ( V ) > 1 )
-      lV = oV + 1
-    end where
-    lV ( iD ) = oV
-
-    uV = 1
-    where ( shape ( V ) > 1 )
-      uV = shape ( V ) - oV
-    end where
-    uV ( iD ) = size ( V, dim = iD )
-    
-    iaS = 0
-    iaS ( iD ) = -1
-
-    !$OMP parallel do private ( iV, jV, kV, iaVS )
-    do kV = lV ( 3 ), uV ( 3 ) 
-      do jV = lV ( 2 ), uV ( 2 )
-        do iV = lV ( 1 ), uV ( 1 )
-
-          iaVS = [ iV, jV, kV ] + iaS
-
-          dV_I ( iV, jV, kV )  &
-            =  V ( iV, jV, kV )  -  V ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) )
-
-        end do !-- iV
-      end do !-- jV
-    end do !-- kV
-    !$OMP end parallel do
-     
-  end subroutine ComputeChart_SL_Kernel
 
 
 end module Difference_Form

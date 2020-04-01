@@ -28,8 +28,8 @@ contains
 
 
   subroutine Initialize &
-               ( SFC, Fluid_CSL, NameShort, TimeUnit, nValues, &
-                 IgnorabilityOption )
+               ( SFC, Fluid_CSL, NameShort, UsePinnedMemory, TimeUnit, &
+                 nValues, IgnorabilityOption )
 
     class ( Sources_F_CSL_Form ), intent ( inout ) :: &
       SFC
@@ -37,6 +37,8 @@ contains
       Fluid_CSL
     character ( * ), intent ( in ) :: &
       NameShort
+    logical ( KDL ), intent ( in ) :: &
+      UsePinnedMemory
     type ( MeasuredValueForm ) :: &
       TimeUnit
     integer ( KDI ), intent ( in ) :: &
@@ -52,7 +54,8 @@ contains
     SFC % Fluid_CSL => Fluid_CSL
 
     call SFC % InitializeTemplate_CSL &
-           ( Fluid_CSL % Chart, NameShort, nValues, IgnorabilityOption )
+           ( Fluid_CSL % Chart, NameShort, UsePinnedMemory, nValues, &
+             IgnorabilityOption )
 
   end subroutine Initialize
 

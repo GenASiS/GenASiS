@@ -51,8 +51,9 @@ contains
 
   subroutine Initialize &
                ( RMC, C, NameShort, RadiationType, MomentsType, &
-                 RiemannSolverType, ReconstructedType, UseLimiter, Units, &
-                 LimiterParameter, nValues, IgnorabilityOption )
+                 RiemannSolverType, ReconstructedType, UseLimiter, &
+                 UsePinnedMemory, Units, LimiterParameter, nValues, &
+                 IgnorabilityOption )
 
     class ( RadiationMoments_CSL_Form ), intent ( inout ) :: &
       RMC
@@ -65,7 +66,8 @@ contains
       RiemannSolverType, &
       ReconstructedType
     logical ( KDL ), intent ( in ) :: &
-      UseLimiter
+      UseLimiter, &
+      UsePinnedMemory
     class ( StressEnergyUnitsForm ), intent ( in ), target :: &
       Units
     real ( KDR ), intent ( in ) :: &
@@ -87,7 +89,7 @@ contains
     RMC % Units => Units
 
     call RMC % InitializeTemplate_CSL &
-           ( C, NameShort, nValues, IgnorabilityOption )
+           ( C, NameShort, UsePinnedMemory, nValues, IgnorabilityOption )
 
   end subroutine Initialize
 
@@ -199,6 +201,7 @@ contains
                ( FC % RadiationType, FC % MomentsType, FC % RiemannSolverType, &
                  FC % ReconstructedType, FC % UseLimiter, FC % Units, &
                  FC % LimiterParameter, FC % nValues, &
+                 PinnedOption = FC % UsePinnedMemory, &
                  NameOption = FC % NameShort )
         call RM % SetPrimitiveConserved ( )
         call RM % SetReconstructed ( )

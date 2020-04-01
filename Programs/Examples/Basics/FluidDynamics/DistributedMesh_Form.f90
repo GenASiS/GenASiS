@@ -508,11 +508,16 @@ contains
       TimeOption
     integer ( KDI ), intent ( in ), optional :: &
       CycleNumberOption
+      
+    integer ( KDI ) :: &
+      iS
           
     call PROGRAM_HEADER % Timer ( DM % iTimer_IO ) % Start ( )
     call Show ( 'Writing image', CONSOLE % INFO_1 )
 
     associate ( GIS => DM % GridImageStream )
+    
+    
     call GIS % Open ( GIS % ACCESS_CREATE )
 
     select case ( DM % nDimensions )

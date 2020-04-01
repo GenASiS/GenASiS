@@ -352,16 +352,16 @@ contains
   
   
   subroutine ComputeFromTemperature &
-               ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
+               ( Storage_C, C, G, Storage_G, nValuesOption, oValueOption )
 
-    real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
-      Value_C
+    class ( StorageForm ), intent ( inout ), target :: &
+      Storage_C
     class ( Fluid_P_HN_Form ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_G
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
@@ -371,8 +371,8 @@ contains
       nV     !-- nValues
       
     associate &
-      ( FV => Value_C, &
-        GV => Value_G )
+      ( FV => Storage_C % Value, &
+        GV => Storage_G % Value )
 
     if ( present ( oValueOption ) ) then
       oV = oValueOption
@@ -451,16 +451,16 @@ contains
 
 
   subroutine ComputeFromPrimitiveCommon &
-               ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
+               ( Storage_C, C, G, Storage_G, nValuesOption, oValueOption )
 
-    real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
-      Value_C
+    class ( StorageForm ), intent ( inout ), target :: &
+      Storage_C
     class ( Fluid_P_HN_Form ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_G
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
@@ -470,8 +470,8 @@ contains
       nV     !-- nValues
       
     associate &
-      ( FV => Value_C, &
-        GV => Value_G )
+      ( FV => Storage_C % Value, &
+        GV => Storage_G % Value )
 
     if ( present ( oValueOption ) ) then
       oV = oValueOption
@@ -559,17 +559,17 @@ contains
 
 
   subroutine ComputeFromConservedCommon &
-               ( Value_C, C, G, Value_G, DetectFeaturesOption, &
+               ( Storage_C, C, G, Storage_G, DetectFeaturesOption, &
                  nValuesOption, oValueOption )
 
-    real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
-      Value_C
+    class ( StorageForm ), intent ( inout ), target :: &
+      Storage_C
     class ( Fluid_P_HN_Form ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_G
     logical ( KDL ), intent ( in ), optional :: &
       DetectFeaturesOption
     integer ( KDI ), intent ( in ), optional :: &
@@ -583,8 +583,8 @@ contains
       DetectFeatures
 
     associate &
-      ( FV => Value_C, &
-        GV => Value_G )
+      ( FV => Storage_C % Value, &
+        GV => Storage_G % Value )
 
     if ( present ( oValueOption ) ) then
       oV = oValueOption
@@ -691,18 +691,18 @@ contains
 
 
   subroutine ComputeRawFluxes &
-               ( RawFlux, C, G, Value_C, Value_G, iDimension, &
+               ( RawFlux, C, G, Storage_C, Storage_G, iDimension, &
                  nValuesOption, oValueOption )
     
-    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+    class ( StorageForm ), intent ( inout ) :: &
       RawFlux
     class ( Fluid_P_HN_Form ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_C, &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_C, &
+      Storage_G
     integer ( KDI ), intent ( in ) :: &
       iDimension
     integer ( KDI ), intent ( in ), optional :: &
@@ -715,7 +715,7 @@ contains
       nV     !-- nValues
 
     call C % ComputeRawFluxesTemplate_P &
-           ( RawFlux, G, Value_C, Value_G, iDimension, nValuesOption, &
+           ( RawFlux, G, Storage_C, Storage_G, iDimension, nValuesOption, &
              oValueOption )
 
     if ( present ( oValueOption ) ) then
@@ -727,17 +727,17 @@ contains
     if ( present ( nValuesOption ) ) then
       nV = nValuesOption
     else
-      nV = size ( Value_C, dim = 1 )
+      nV = size ( Storage_C % Value, dim = 1 )
     end if
 
     call Search ( C % iaConserved, C % CONSERVED_ELECTRON_DENSITY, iElectron )
 
     associate &
-      ( F_DE  => RawFlux ( oV + 1 : oV + nV, iElectron ), &
-        DE    => Value_C ( oV + 1 : oV + nV, &
-                           C % CONSERVED_ELECTRON_DENSITY ), &
-        V_Dim => Value_C ( oV + 1 : oV + nV, &
-                           C % VELOCITY_U ( iDimension ) ) )
+      ( F_DE  => RawFlux % Value ( oV + 1 : oV + nV, iElectron ), &
+        DE    => Storage_C % Value ( oV + 1 : oV + nV, &
+                                     C % CONSERVED_ELECTRON_DENSITY ), &
+        V_Dim => Storage_C % Value ( oV + 1 : oV + nV, &
+                                     C % VELOCITY_U ( iDimension ) ) )
 
     call ComputeRawFluxesKernel ( F_DE, DE, V_Dim )
 

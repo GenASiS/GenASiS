@@ -3,15 +3,23 @@
 
 module Real_3D__Form
 
+  use iso_c_binding
   use Specifiers
+  use Devices
   use ArrayOperations
 
   implicit none
   private
 
   type, public :: Real_3D_Form
+    type ( c_ptr ), private :: &
+      D_Value = c_null_ptr
+    integer ( KDI ) :: &
+      ErrorDevice
     real ( KDR ), dimension ( :, :, : ), allocatable :: &
       Value
+    logical ( KDL ) :: &
+      AllocatedDevice = .false. 
   contains
     procedure, private, pass :: &
       Initialize_R_3D
@@ -22,6 +30,12 @@ module Real_3D__Form
     generic :: &
       Initialize &
         => Initialize_R_3D, Initialize_R_3D_FromValue, Initialize_R_3D_Copy
+    procedure, public, pass :: &
+      AllocateDevice => AllocateDevice_R_3D 
+    procedure, public, pass :: &
+      UpdateDevice => UpdateDevice_R_3D
+    procedure, public, pass :: &
+      UpdateHost => UpdateHost_R_3D
     final :: &
       Finalize_R_3D
   end type Real_3D_Form
@@ -101,16 +115,65 @@ contains
     if ( present ( iaLowerBoundOption ) ) iaLB = iaLowerBoundOption
 
     call A % Initialize_R_3D_FromValue ( B % Value, iaLowerBoundOption = iaLB )
+    
+    if ( B % AllocatedDevice ) then
+      call A % AllocateDevice ( )
+      call Copy ( B % Value, A % Value, UseDeviceOption = B % AllocatedDevice )
+    end if
   
   end subroutine Initialize_R_3D_Copy 
   
   
-  elemental subroutine Finalize_R_3D ( A )
+  impure elemental subroutine AllocateDevice_R_3D ( A )
+  
+    class ( Real_3D_Form ), intent ( inout ) :: &
+      A
+      
+    call AllocateDevice ( size ( A % Value ), A % D_Value )
+    A % AllocatedDevice = .true.
+    call AssociateHost ( A % D_Value, A % Value )
+  
+  end subroutine AllocateDevice_R_3D
+  
+  
+  impure elemental subroutine UpdateDevice_R_3D ( A )
+  
+    class ( Real_3D_Form ), intent ( inout ) :: &
+      A
+    
+    if ( .not. A % AllocatedDevice ) &
+      return
+    
+    call UpdateDevice &
+           ( A % Value, A % D_Value, ErrorOption = A % ErrorDevice )
+  
+  end subroutine UpdateDevice_R_3D
+
+
+  impure elemental subroutine UpdateHost_R_3D ( A )
+  
+    class ( Real_3D_Form ), intent ( inout ) :: &
+      A
+    
+    if ( .not. A % AllocatedDevice ) &
+      return
+    
+    call UpdateHost &
+           ( A % D_Value, A % Value, ErrorOption = A % ErrorDevice )
+  
+  end subroutine UpdateHost_R_3D
+
+
+  impure elemental subroutine Finalize_R_3D ( A )
 
     type ( Real_3D_Form ), intent ( inout ) :: &
       A
 
-    if ( allocated ( A % Value ) ) deallocate ( A % Value )
+    if ( allocated ( A % Value ) ) &
+      deallocate ( A % Value )
+    
+    if ( A % AllocatedDevice ) &
+      call DeallocateDevice ( A % D_Value )
 
   end subroutine Finalize_R_3D
   

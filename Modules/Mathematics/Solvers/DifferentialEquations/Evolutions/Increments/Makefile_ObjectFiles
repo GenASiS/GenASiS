@@ -1,5 +1,6 @@
 INCREMENTS = \
   Increments.o \
   IncrementDamping_Form.o \
+  IncrementDivergence_FV__Kernel.o \
   IncrementDivergence_FV__Form.o \
   StorageDivergence_Form.o

@@ -42,7 +42,20 @@ module Current_ASC__Template
       ComputeTallyTemplate
     procedure, public, pass :: &
       FinalizeTemplate_ASC_C
+    !-- FIXME: This should be automatically inherited from FieldAtlasTemplate
+    !          but XL compiler got confused
+    procedure ( SF ), private, pass, deferred :: &
+      SetField
   end type Current_ASC_Template
+  
+    abstract interface 
+      subroutine SF ( FA )
+        use Basics
+        import Current_ASC_Template
+        class ( Current_ASC_Template ), intent ( inout ) :: &
+          FA
+      end subroutine
+    end interface
 
   type, public :: Current_ASC_ElementForm
     class ( Current_ASC_Template ), allocatable :: &
@@ -57,7 +70,7 @@ contains
 
   subroutine InitializeTemplate_ASC_C &
        ( CA, A, NameShort, TallyVariableOption, AllocateTallyOption, &
-         TallyUnitOption, IgnorabilityOption )
+         UsePinnedMemoryOption, TallyUnitOption, IgnorabilityOption )
 
     class ( Current_ASC_Template ), intent ( inout ) :: &
       CA
@@ -68,7 +81,8 @@ contains
     character ( * ), dimension ( : ), intent ( in ), optional :: &
       TallyVariableOption
     logical ( KDL ), intent ( in ), optional :: &
-      AllocateTallyOption
+      AllocateTallyOption, &
+      UsePinnedMemoryOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       TallyUnitOption
     integer ( KDI ), intent ( in ), optional :: &
@@ -81,7 +95,8 @@ contains
     class ( CurrentTemplate ), pointer :: &
       C
 
-    call CA % InitializeTemplate_ASC ( A, NameShort, IgnorabilityOption )
+    call CA % InitializeTemplate_ASC &
+           ( A, NameShort, UsePinnedMemoryOption, IgnorabilityOption )
 
     C => CA % Current ( )
     call C % ShowPrimitiveConserved ( CA % IGNORABILITY )

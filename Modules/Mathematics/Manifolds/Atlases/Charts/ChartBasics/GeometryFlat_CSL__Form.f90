@@ -27,7 +27,9 @@ module GeometryFlat_CSL__Form
 contains
 
 
-  subroutine InitializeFlat ( GC, C, NameShort, nValues, IgnorabilityOption )
+  subroutine InitializeFlat &
+               ( GC, C, NameShort, UsePinnedMemory, nValues, &
+                 IgnorabilityOption )
 
     class ( GeometryFlat_CSL_Form ), intent ( inout ) :: &
       GC
@@ -35,6 +37,8 @@ contains
       C
     character ( * ), intent ( in ) :: &
       NameShort
+    logical ( KDL ), intent ( in ) :: &
+      UsePinnedMemory
     integer ( KDI ), intent ( in ) :: &
       nValues
     integer ( KDI ), intent ( in ), optional :: &
@@ -47,7 +51,7 @@ contains
       GC % GeometryType = 'FLAT'    
 
     call GC % InitializeTemplate_CSL &
-           ( C, NameShort, nValues, IgnorabilityOption )
+           ( C, NameShort, UsePinnedMemory, nValues, IgnorabilityOption )
 
   end subroutine InitializeFlat
 
@@ -66,7 +70,7 @@ contains
 
     class ( GeometryFlat_CSL_Form ), intent ( inout ) :: &
       FC
-
+                      
     if ( .not. allocated ( FC % Field ) ) then
       select case ( trim ( FC % GeometryType ) )
       case ( 'FLAT' )

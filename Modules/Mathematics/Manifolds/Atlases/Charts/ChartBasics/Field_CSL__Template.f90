@@ -21,11 +21,22 @@ module Field_CSL__Template
     procedure, public, pass :: &
       InitializeTemplate_CSL
     procedure, public, pass :: &
+      AllocateDevice => AllocateDevice_CSL
+    procedure, public, pass :: &
       FinalizeTemplate_CSL
-!-- FIXME: Copied from FieldChart_Template for XL compiler
+    !-- FIXME: This should be automatically inherited from FieldChartTemplate
+    !          but XL compiler got confused
     procedure ( SF ), private, pass, deferred :: &
       SetField
   end type Field_CSL_Template
+  
+    abstract interface 
+      subroutine SF ( FC )
+        import Field_CSL_Template
+        class ( Field_CSL_Template ), intent ( inout ) :: &
+          FC
+      end subroutine
+    end interface
 
 !-- FIXME: Copied from FieldChart_Template for XL compiler
     abstract interface 
@@ -40,7 +51,8 @@ contains
 
 
   subroutine InitializeTemplate_CSL &
-               ( FC, C, NameShort, nValues, IgnorabilityOption )
+               ( FC, C, NameShort, UsePinnedMemory, nValues, &
+                 IgnorabilityOption )
 
     class ( Field_CSL_Template ), intent ( inout ) :: &
       FC
@@ -48,6 +60,8 @@ contains
       C
     character ( * ), intent ( in ) :: &
       NameShort
+    logical ( KDL ), intent ( in ) :: &
+      UsePinnedMemory
     integer ( KDI ), intent ( in ) :: &
       nValues
     integer ( KDI ), intent ( in ), optional :: &
@@ -58,11 +72,22 @@ contains
 
     FC % nValues = nValues
 
-    call FC % InitializeTemplate ( C, NameShort, IgnorabilityOption )
+    call FC % InitializeTemplate &
+           ( C, NameShort, UsePinnedMemory, IgnorabilityOption )
 
   end subroutine InitializeTemplate_CSL
-
-
+  
+  
+  subroutine AllocateDevice_CSL ( FC )
+  
+    class ( Field_CSL_Template ), intent ( inout ) :: &
+      FC
+    
+    call FC % Field % AllocateDevice ( )
+  
+  end subroutine AllocateDevice_CSL
+  
+  
   impure elemental subroutine FinalizeTemplate_CSL ( FC )
 
     class ( Field_CSL_Template ), intent ( inout ) :: &

@@ -11,6 +11,8 @@ module FieldAtlas_Template
   type, public, abstract :: FieldAtlasTemplate
     integer ( KDI ) :: &
       IGNORABILITY = 0
+    logical ( KDL ) :: &
+      UsePinnedMemory
     character ( LDF ) :: &
       Name = '', &
       Type = '', &
@@ -60,7 +62,8 @@ module FieldAtlas_Template
 contains
 
 
-  subroutine InitializeTemplate ( FA, A, NameShort, IgnorabilityOption )
+  subroutine InitializeTemplate &
+               ( FA, A, NameShort, UsePinnedMemoryOption, IgnorabilityOption )
 
     class ( FieldAtlasTemplate ), intent ( inout ) :: &
       FA
@@ -68,6 +71,8 @@ contains
       A
     character ( * ), intent ( in ) :: &
       NameShort
+    logical ( KDL ), intent ( in ), optional :: &
+      UsePinnedMemoryOption
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
@@ -77,7 +82,11 @@ contains
 
     if ( FA % Type == '' ) &
       FA % Type = 'a FieldAtlas' 
-
+    
+    FA % UsePinnedMemory = .false.
+    if ( present ( UsePinnedMemoryOption ) ) &
+      FA % UsePinnedMemory = UsePinnedMemoryOption
+    
     FA % Name = trim ( NameShort ) // '_' // trim ( A % Name ) 
 
     call Show ( 'Initializing ' // trim ( FA % Type ), FA % IGNORABILITY )

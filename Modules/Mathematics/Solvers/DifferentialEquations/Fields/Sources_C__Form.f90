@@ -11,11 +11,11 @@ module Sources_C__Form
 
   type, public, extends ( StorageForm ) :: Sources_C_Form
     integer ( KDI ) :: &
-      IGNORABILITY        = 0, &
-      N_FIELDS_C  = 0, &
-      N_VECTORS_C = 0, &
-      N_FIELDS            = 0, &
-      N_VECTORS           = 0
+      IGNORABILITY  = 0, &
+      N_FIELDS_C    = 0, &
+      N_VECTORS_C   = 0, &
+      N_FIELDS      = 0, &
+      N_VECTORS     = 0
     character ( LDL ) :: &
       Type = ''
   contains
@@ -38,8 +38,8 @@ contains
 
   subroutine InitializeAllocate_SC &
                ( SC, Current, TimeUnit, iaConserved, VariableOption, &
-                 VectorOption, NameOption, ClearOption, UnitOption, &
-                 VectorIndicesOption )
+                 VectorOption, NameOption, ClearOption, PinnedOption, &
+                 UnitOption, VectorIndicesOption )
 
     class ( Sources_C_Form ), intent ( inout ) :: &
       SC
@@ -55,7 +55,8 @@ contains
     character ( * ), intent ( in ), optional :: &
       NameOption
     logical ( KDL ), intent ( in ), optional :: &
-      ClearOption
+      ClearOption, &
+      PinnedOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       UnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), &
@@ -91,6 +92,7 @@ contains
            ( [ Current % nValues, SC % N_FIELDS ], &
              VariableOption = Variable, VectorOption = Vector, &
              NameOption = Name, ClearOption = Clear, &
+             PinnedOption = PinnedOption, &
              UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndices )
 

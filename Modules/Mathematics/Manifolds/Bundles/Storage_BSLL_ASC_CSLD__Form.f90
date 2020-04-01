@@ -23,14 +23,18 @@ module Storage_BSLL_ASC_CSLD__Form
       Initialize
     final :: &
       Finalize
-    procedure, private, pass :: &
+    !-- FIXME: 'private' on this overriding procedure confuses XL
+    !procedure, private, pass :: &
+    procedure, public, pass :: &
       SetField
   end type Storage_BSLL_ASC_CSLD_Form
 
 contains
 
 
-  subroutine Initialize ( SB, B, NameShort, nFields, IgnorabilityOption )
+  subroutine Initialize &
+               ( SB, B, NameShort, nFields, UsePinnedMemory_S_Option, &
+                 UsePinnedMemory_F_Option, IgnorabilityOption )
 
     class ( Storage_BSLL_ASC_CSLD_Form ), intent ( inout ) :: &
       SB
@@ -40,6 +44,9 @@ contains
       NameShort
     integer ( KDI ), intent ( in ) :: &
       nFields
+    logical ( KDL ), intent ( in ), optional :: &
+      UsePinnedMemory_S_Option, &
+      UsePinnedMemory_F_Option
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
@@ -49,7 +56,8 @@ contains
     SB % nFields = nFields
 
     call SB % InitializeTemplate_BSLL_ASC_CSLD &
-           ( B, NameShort, IgnorabilityOption )
+           ( B, NameShort, UsePinnedMemory_S_Option, &
+             UsePinnedMemory_F_Option, IgnorabilityOption )
 
   end subroutine Initialize
 
@@ -89,7 +97,9 @@ contains
       class is ( Storage_ASC_Form )
         select type ( AF => B % Fiber % Atlas ( iF ) % Element )
         class is ( Atlas_SC_Form )
-          call SA % Initialize ( AF, FB % NameShort, FB % nFields )
+          call SA % Initialize &
+                 ( AF, FB % NameShort, FB % nFields, &
+                   UsePinnedMemoryOption = FB % UsePinnedMemory_F )
         end select !-- AF
       end select !-- SA
     end do !-- iF
@@ -109,7 +119,9 @@ contains
       class is ( Storage_ASC_Form )
         call SA % Initialize &
                ( B % Base_ASC, trim ( FB % NameShort ) // SectionNumber, &
-                 FB % nFields, IgnorabilityOption = CONSOLE % INFO_5 ) 
+                 FB % nFields, &
+                 UsePinnedMemoryOption = FB % UsePinnedMemory_S, &
+                 IgnorabilityOption = CONSOLE % INFO_5 )
       end select !-- SA
     end do !-- iS
 

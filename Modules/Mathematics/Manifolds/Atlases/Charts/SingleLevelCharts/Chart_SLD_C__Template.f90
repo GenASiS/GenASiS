@@ -247,7 +247,7 @@ contains
           exit Coarsen_2
         Crsn_2 ( iV )  =  2.0_KDR  *  Crsn_2 ( iV )
       end do Coarsen_2
-      Crsn_2 ( iV )  =  min ( Crsn_2 ( iV ), real ( C % nCells ( 2 ) ) )
+      Crsn_2 ( iV ) =  min ( Crsn_2 ( iV ), C % nCells ( 2 ) * 1.0_KDR )
     end do !-- iV
 
     !-- Count coarsening pillars in transverse brick space 
@@ -317,9 +317,9 @@ contains
       C % nSegmentsFrom_2 = 0
       C % nSegmentsTo_2   = 0
       do kB = 1, nB ( 3 )
-        iLoop: do iB = 1, nB ( 1 )
+        iLoop_2: do iB = 1, nB ( 1 )
           if ( nPillarsTransverse_2 ( iB, kB ) == 0 ) &
-            cycle iLoop
+            cycle iLoop_2
           do kC = ( kB - 1 ) * nCB ( 3 ) + 1, kB * nCB ( 3 )
             do iC = ( iB - 1 ) * nCB ( 1 ) + 1, iB * nCB ( 1 )
               if ( R_G ( iC ) * dTheta  <  C % MinWidth ) then
@@ -340,7 +340,7 @@ contains
             end do !-- iC
           end do !-- kC
           iRB = iRB + nB ( 2 )
-        end do iLoop !-- iB
+        end do iLoop_2 !-- iB
       end do !-- kB
       call Show ( 'Communication counting', C % IGNORABILITY + 1 )
       call Show ( C % nSegmentsFrom_2, 'nSegmentsFrom_2', C % IGNORABILITY + 1 )
@@ -413,7 +413,7 @@ contains
           exit Coarsen_3
         Crsn_3 ( iV )  =  2.0_KDR  *  Crsn_3 ( iV )
       end do Coarsen_3
-      Crsn_3 ( iV )  =  min ( Crsn_3 ( iV ), real ( C % nCells ( 3 ) ) )
+      Crsn_3 ( iV )  =  min ( Crsn_3 ( iV ), C % nCells ( 3 ) * 1.0_KDR )
     end do !-- iV
 
     !-- Count coarsening pillars in transverse brick space 
@@ -484,9 +484,9 @@ contains
       C % nSegmentsFrom_3 = 0
       C % nSegmentsTo_3   = 0
       do jB = 1, nB ( 2 )
-        iLoop: do iB = 1, nB ( 1 )
+        iLoop_2: do iB = 1, nB ( 1 )
           if ( nPillarsTransverse_3 ( iB, jB ) == 0 ) &
-            cycle iLoop
+            cycle iLoop_2
           do jC = ( jB - 1 ) * nCB ( 2 ) + 1, jB * nCB ( 2 )
             do iC = ( iB - 1 ) * nCB ( 1 ) + 1, iB * nCB ( 1 )
               if ( R_G ( iC ) * sin ( Theta_G ( jC ) ) * dPhi  &
@@ -509,7 +509,7 @@ contains
             end do !-- iC
           end do !-- jC
           iRB = iRB + nB ( 3 )
-        end do iLoop !-- iB
+        end do iLoop_2 !-- iB
       end do !-- jB
       call Show ( 'Communication counting', C % IGNORABILITY + 1 )
       call Show ( C % nSegmentsFrom_3, 'C % nSegmentsFrom_3', &

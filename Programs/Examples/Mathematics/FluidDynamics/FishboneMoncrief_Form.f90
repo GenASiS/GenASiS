@@ -37,6 +37,34 @@ module FishboneMoncrief_Form
 
     type ( UniverseHeaderForm ), private :: &
       Universe  !-- Non-functional dummy argument
+    
+    interface 
+      
+      module subroutine ApplySourcesKernel &
+               ( KV_M_1, KV_E, SV_M_1, SV_E, IsProperCell, N, V_1, R, G, M, &
+                 dT, Weight_RK, UseDeviceOption )
+        use Basics
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          KV_M_1, &
+          KV_E, &
+          SV_M_1, &
+          SV_E
+        logical ( KDL ), dimension ( : ), intent ( in ) :: &
+          IsProperCell
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          N, &
+          V_1, &
+          R
+        real ( KDR ) :: &
+          G, &
+          M, &
+          dT, &
+          Weight_RK
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine ApplySourcesKernel
+    
+    end interface 
 
 contains
 
@@ -57,6 +85,11 @@ contains
       RadiusOuter, &
       SpecificAngularMomentum, &
       FinishTime
+    !-- FIXME: XL Bug with associating to CONSTANT singleton
+    real ( KDR ) :: &
+      G, &
+      c, &
+      Pi
     real ( KDR ), dimension ( 3 ) :: &
       MinCoordinate, &
       MaxCoordinate, &
@@ -76,6 +109,8 @@ contains
       CoordinateSystem
     character ( LDL ), dimension ( 3 ) :: &
       Spacing
+    class ( GeometryFlatForm ), pointer :: &
+      Geometry  
 
     associate &
       ( Kappa  => AngularMomentumParameter, &  !-- Between 1 and 2
@@ -85,9 +120,13 @@ contains
         N_Max  => DensityMax, &
         AP     => AtmosphereParameter, &
         R_Out  => RadiusOuter, &
-        L      => SpecificAngularMomentum, &
-        G      => CONSTANT % GRAVITATIONAL, &
-        c      => CONSTANT % SPEED_OF_LIGHT )
+        L      => SpecificAngularMomentum ) 
+        !-- FIXME: XL Bug with associating to CONSTANT singleton
+        !          use assignment for now
+        !G      => CONSTANT % GRAVITATIONAL, &
+        !c      => CONSTANT % SPEED_OF_LIGHT )
+        G = CONSTANT % GRAVITATIONAL
+        c = CONSTANT % SPEED_OF_LIGHT
 
     Kappa  =  1.85_KDR
     M      =  3.0_KDR * UNIT % SOLAR_MASS
@@ -136,11 +175,13 @@ contains
            ( [ 'OUTFLOW', 'INFLOW ' ], iDimension = 1 )
     call PS % SetBoundaryConditionsFace &
            ( [ 'REFLECTING', 'REFLECTING' ], iDimension = 2 )
-
-    associate ( Pi => CONSTANT % PI )
+    
+    !-- FIXME: see FIXME above
+    !associate ( Pi => CONSTANT % PI )
+    Pi = CONSTANT % PI
     MinCoordinate = [   RadiusMin, 0.0_KDR,      0.0_KDR ]
     MaxCoordinate = [ RadiusOuter,      Pi, 2.0_KDR * Pi ]
-    end associate !-- Pi
+    !end associate !-- Pi
 
     associate &
       ( dTheta => ( MaxCoordinate ( 2 )  -  MinCoordinate ( 2 ) ) &
@@ -158,7 +199,10 @@ contains
              RatioOption = Ratio, &
              nCellsOption = nCells )
 
-    call PS % SetGeometry ( )
+    call PS % SetGeometry ( UsePinnedMemoryOption = .true. )
+    call PS % Geometry_ASC % AllocateDevice ( )
+    Geometry => PS % Geometry ( )
+    call Geometry % UpdateDevice ( )
 
     !-- Fluid
 
@@ -199,7 +243,9 @@ contains
              MomentumUnitOption = MomentumUnit, &
              AngularMomentumUnitOption = AngularMomentumUnit, &
              TimeUnitOption = TimeUnit, &
-             LimiterParameterOption = 1.8_KDR )
+             LimiterParameterOption = 1.8_KDR, &
+             UsePinnedMemoryOption = .true. )
+    call FA % AllocateDevice ( )
 
     !-- Step
 
@@ -245,6 +291,11 @@ contains
     real ( KDR ) :: &
       EnthalpyMax, &
       PolytropicParameter
+    !-- FIXME: See FIXME above on XL bug with association
+    real ( KDR ) :: &
+      GC, &
+      c, &
+      Pi
     real ( KDR ), dimension ( : ), allocatable :: &
       Enthalpy
     class ( GeometryFlatForm ), pointer :: &
@@ -260,9 +311,10 @@ contains
         N_Max => DensityMax, &
         AP    => AtmosphereParameter, &
         W_Max => EnthalpyMax, &
-        K     => PolytropicParameter, &
-        GC    => CONSTANT % GRAVITATIONAL, &
-        c     => CONSTANT % SPEED_OF_LIGHT )
+        K     => PolytropicParameter )
+        !-- FIXME: See FIXME above on XL bug with association
+        GC    = CONSTANT % GRAVITATIONAL
+        c     = CONSTANT % SPEED_OF_LIGHT
 
     select type ( FA => FM % Current_ASC )
     class is ( Fluid_ASC_Form )
@@ -316,7 +368,10 @@ contains
       V_3  =    0.0_KDR
     end where
 
+    call F % UpdateDevice ( )
+    call G % UpdateDevice ( )
     call F % ComputeFromPrimitive ( G )
+    call F % UpdateHost ( )
 
     !-- Tally
 
@@ -409,7 +464,7 @@ contains
              F % Value ( :, F % VELOCITY_U ( 1 ) ), &
              G % Value ( :, G % CENTER_U ( 1 ) ), &
              CONSTANT % GRAVITATIONAL, CentralMass, TimeStep, &
-             S % B ( iStage ) ) 
+             S % B ( iStage ), UseDeviceOption = Increment % AllocatedDevice ) 
 
     end select !-- Grid
     end select !-- FS
@@ -422,53 +477,6 @@ contains
   end subroutine ApplySources
 
   
-  subroutine ApplySourcesKernel &
-               ( KV_M_1, KV_E, SV_M_1, SV_E, IsProperCell, N, V_1, R, G, M, &
-                 dT, Weight_RK )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      KV_M_1, &
-      KV_E, &
-      SV_M_1, &
-      SV_E
-    logical ( KDL ), dimension ( : ), intent ( in ) :: &
-      IsProperCell
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      N, &
-      V_1, &
-      R
-    real ( KDR ) :: &
-      G, &
-      M, &
-      dT, &
-      Weight_RK
-
-    integer ( KDI ) :: &
-      iV, &
-      nV
-    real ( KDR ), dimension ( size ( N ) ) :: &
-      F_1
-
-    nV = size ( N )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nV
-      F_1 ( iV )  =  - G * M * N ( iV )  /  R ( iV ) ** 2
-    end do
-    !$OMP end parallel do
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nV
-      if ( .not. IsProperCell ( iV ) ) &
-        cycle
-      KV_M_1 ( iV )  =  KV_M_1 ( iV )  +  dT * F_1 ( iV )
-      KV_E   ( iV )  =  KV_E   ( iV )  +  dT * F_1 ( iV ) * V_1 ( iV ) 
-      SV_M_1 ( iV )  =  SV_M_1 ( iV )  +  F_1 ( iV ) * Weight_RK
-      SV_E   ( iV )  =  SV_E   ( iV )  +  F_1 ( iV ) * V_1 ( iV ) * Weight_RK 
-    end do
-    !$OMP end parallel do
-
-  end subroutine ApplySourcesKernel
 
 
 end module FishboneMoncrief_Form

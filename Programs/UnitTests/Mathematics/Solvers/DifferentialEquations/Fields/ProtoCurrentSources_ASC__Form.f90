@@ -57,7 +57,9 @@ contains
       NameShort = NameShortOption
 
     call PCSA % InitializeTemplate_ASC &
-           ( ProtoCurrent_ASC % Atlas, NameShort, IgnorabilityOption )
+           ( ProtoCurrent_ASC % Atlas, NameShort, &
+             UsePinnedMemoryOption = .true., &
+             IgnorabilityOption = IgnorabilityOption )
 
   end subroutine Initialize
 

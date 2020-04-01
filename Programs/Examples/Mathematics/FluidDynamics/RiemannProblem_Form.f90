@@ -54,6 +54,8 @@ contains
     real ( KDR ), dimension ( 3 ) :: &
       Normal, &
       UnitNormal
+    class ( GeometryFlatForm ), pointer :: &
+      G  
 
     !-- PositionSpace
 
@@ -68,14 +70,18 @@ contains
     end do !-- iD
 
     call PS % CreateChart ( )
-    call PS % SetGeometry ( )
+    call PS % SetGeometry ( UsePinnedMemoryOption = .true. )
+    call PS % Geometry_ASC % AllocateDevice ( )
+    G => PS % Geometry ( )
+    call G % UpdateDevice ( )
 
     !-- Fluid
 
     allocate ( Fluid_ASC_Form :: RP % Current_ASC )
     select type ( FA => RP % Current_ASC )
     class is ( Fluid_ASC_Form )
-    call FA % Initialize ( PS, 'POLYTROPIC' )
+    call FA % Initialize ( PS, 'POLYTROPIC', UsePinnedMemoryOption = .true. )
+    call FA % AllocateDevice ( )
 
     !-- Step
 
@@ -179,7 +185,9 @@ contains
     call RP % Initialize ( Universe, Name )
     
     !-- Cleanup
-
+    
+    nullify ( G )
+    
     end select !-- FA
     end select !-- PS
 
@@ -242,8 +250,11 @@ contains
       VY = Speed_R * SinTheta * SinPhi
       VZ = Speed_R * CosTheta
     end where
-
+    
+    call F % UpdateDevice ( )
+    call G % UpdateDevice ( )
     call F % ComputeFromPrimitive ( G )
+    call F % UpdateHost ( )
 
     end associate !-- X, etc.
     end select !-- FA
