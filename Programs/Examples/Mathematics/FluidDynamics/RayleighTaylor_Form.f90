@@ -32,6 +32,30 @@ module RayleighTaylor_Form
 
     type ( UniverseHeaderForm ), private :: &
       Universe  !-- Non-functional dummy argument
+      
+    interface
+    
+      module subroutine ApplySourcesKernel &
+               ( KVM, KVE, SVM, SVE, N, VY, dT, A, B, &
+                 UseDeviceOption )
+        use Basics
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          KVM, &
+          KVE, &
+          SVM, &
+          SVE
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          N, &
+          VY
+        real ( KDR ), intent ( in ) :: &
+          dT, &
+          A, &
+          B
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine ApplySourcesKernel  
+    
+    end interface
 
 contains
 
@@ -45,6 +69,8 @@ contains
 
     integer ( KDI ) :: &
       iB  !-- iBoundary
+    class ( GeometryFlatForm ), pointer :: &
+      G  
 
     !-- PositionSpace
 
@@ -63,7 +89,10 @@ contains
              MaxCoordinateOption = [ +0.25_KDR, +0.75_KDR ], &
              nCellsOption = [ 64, 192 ] )
 
-    call PS % SetGeometry ( )
+    call PS % SetGeometry ( UsePinnedMemoryOption = .true. )
+    call PS % Geometry_ASC % AllocateDevice ( )
+    G => PS % Geometry ( )
+    call G % UpdateDevice ( )
 
     !-- Fluid
 
@@ -81,7 +110,8 @@ contains
       allocate ( Tally_RT_Form :: FA % TallyBoundaryGlobal ( iB ) % Element )
     end do !-- iB
        
-    call FA % Initialize ( PS, 'POLYTROPIC' )
+    call FA % Initialize ( PS, 'POLYTROPIC', UsePinnedMemoryOption = .true. )
+    call FA % AllocateDevice ( )
 
     !-- Step
 
@@ -109,9 +139,11 @@ contains
 
     call SetFluid ( RT )
     call RT % Initialize ( Universe, Name, FinishTimeOption = 8.5_KDR )
-    
-    !-- Cleanup
 
+    !-- Cleanup
+    
+    nullify ( G )
+    
     end select !-- FA
     end select !-- PS
 
@@ -137,6 +169,9 @@ contains
       G
     class ( Fluid_P_P_Form ), pointer :: &
       F
+      
+    real ( KDR ) :: &
+      Pi
 
     select type ( FA => RT % Current_ASC )
     class is ( Fluid_ASC_Form )
@@ -156,8 +191,11 @@ contains
         Y  => G % Value ( :, G % CENTER_U ( 2 ) ), &
         N  => F % Value ( :, F % COMOVING_DENSITY ), &
         E  => F % Value ( :, F % INTERNAL_ENERGY ), &
-        VY => F % Value ( :, F % VELOCITY_U ( 2 ) ), &
-        Pi => CONSTANT % PI )
+        VY => F % Value ( :, F % VELOCITY_U ( 2 ) ) )
+    
+    !-- FIXME: Association to CONSTANT singleton gives wrong value
+    !          with optimization on XL
+    Pi = CONSTANT % PI 
 
     where ( Y > 0.0_KDR )     
       N  = DensityAbove
@@ -172,7 +210,10 @@ contains
            *  ( 1.0_KDR  +  cos ( 4.0_KDR * Pi * X ) ) &
            *  ( 1.0_KDR  +  cos ( 3.0_KDR * Pi * Y ) )
     
+    call F % UpdateDevice ( )
+    call G % UpdateDevice ( )
     call F % ComputeFromPrimitive ( G )
+    call F % UpdateHost ( )
 
     end associate !-- X, etc.
     end select !-- PS
@@ -250,16 +291,37 @@ contains
         A   => Acceleration, &
         dT  => TimeStep )
     
-    KVM  =  KVM  -  dT * N * A
-    KVE  =  KVE  -  dT * N * A * VY
+    !KVM  =  KVM  -  dT * N * A
+    !KVE  =  KVE  -  dT * N * A * VY
 
     select type ( FS => Sources_F )
     class is ( Sources_F_Form )
       associate &
         ( SVM => FS % Value ( :, FS % GRAVITATIONAL_S_D ( 2 ) ), &
           SVE => FS % Value ( :, FS % GRAVITATIONAL_G ) )
-      SVM  =  SVM  -  S % B ( iStage ) * N * A 
-      SVE  =  SVE  -  S % B ( iStage ) * N * A * VY 
+      !SVM  =  SVM  -  S % B ( iStage ) * N * A 
+      !SVE  =  SVE  -  S % B ( iStage ) * N * A * VY 
+      
+      !call Increment % UpdateHost ( )
+      !call Show &
+      !      ( Increment % Value ( :, iMomentum_2 ), &
+      !        '==== Increment iMomentum2 A ====' )
+              
+      call ApplySourcesKernel &
+             ( Increment % Value ( :, iMomentum_2 ), &
+               Increment % Value ( :, iEnergy ), &
+               FS % Value ( :, FS % GRAVITATIONAL_S_D ( 2 ) ), &
+               FS % Value ( :, FS % GRAVITATIONAL_G ), &
+               F % Value ( :, F % COMOVING_DENSITY ), &
+               F % Value ( :, F % VELOCITY_U ( 2 ) ), &
+               TimeStep, Acceleration, S % B ( iStage ), &
+               UseDeviceOption = F % AllocatedDevice )
+      
+      !call Increment % UpdateHost ( )
+      !call Show &
+      !      ( Increment % Value ( :, iMomentum_2 ), &
+      !        '==== Increment iMomentum2 B ====' )
+      
       end associate !-- SVM, etc.
     end select !-- FS
 

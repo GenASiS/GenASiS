@@ -42,6 +42,8 @@ module Integrator_Template
       OpenManifoldStreamsTemplate
     procedure, public, pass :: &  !-- 2
       InitializeTimers
+    procedure ( UD ), private, pass, deferred :: &
+      UpdateDevice
     procedure, private, pass :: &  !-- 2
       ComputeConstraints
     procedure, private, pass :: &  !-- 2
@@ -122,6 +124,12 @@ module Integrator_Template
       class ( IntegratorTemplate ), intent ( inout ) :: &
         I
     end subroutine SR
+    
+    subroutine UD ( I )
+      import IntegratorTemplate
+      class ( IntegratorTemplate ), intent ( inout ) :: &
+        I
+    end subroutine UD
 
 !-- See FIXME above
 !    subroutine CC ( I )
@@ -231,6 +239,7 @@ contains
 
     call I % OpenManifoldStreams ( )
     call I % InitializeTimers ( )
+    call I % UpdateDevice ( )
 
     Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerEvolve )
     if ( associated ( Timer ) ) call Timer % Start ( )   
@@ -242,7 +251,7 @@ contains
     call I % ComputeConstraints ( )
     call I % AdministerCheckpoint ( ComputeChangeOption = .false. )
 
-    do while ( I % Time < I % FinishTime )
+    do while ( I % Time < I % FinishTime .and. I % iCycle < I % FinishCycle )
       call Show ( 'Computing a cycle', I % IGNORABILITY + 1 )
 
       call I % ComputeCycle ( )
@@ -419,7 +428,7 @@ contains
       MeanTime
     type ( TimerForm ), pointer :: &
       Timer
-
+    
     Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerCheckpoint )
     if ( associated ( Timer ) ) call Timer % Start ( )   
 
@@ -450,14 +459,16 @@ contains
 
     if ( associated ( I % SetReference ) ) &
       call I % SetReference ( )
-    call I % Write ( )
+    if ( .not. I % NoWrite ) &
+      call I % Write ( )
     call PROGRAM_HEADER % ShowStatistics &
            ( StatisticsIgnorability, &
              CommunicatorOption = PROGRAM_HEADER % Communicator, &
              MaxTimeOption = MaxTime, MinTimeOption = MinTime, &
              MeanTimeOption = MeanTime )
     call I % RecordTimeSeries ( MaxTime, MinTime, MeanTime )
-    call I % WriteTimeSeries ( )
+    if ( .not. I % NoWrite ) &
+      call I % WriteTimeSeries ( )
 
     I % IsCheckpointTime = .false.
     if ( I % Time < I % FinishTime ) then
@@ -514,8 +525,6 @@ contains
 
     type ( TimerForm ), pointer :: &
       Timer
-
-    if ( I % NoWrite ) return
 
     Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerWrite )
     if ( associated ( Timer ) ) call Timer % Start ( )

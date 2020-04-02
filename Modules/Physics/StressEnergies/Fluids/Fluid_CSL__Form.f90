@@ -57,8 +57,8 @@ contains
 
   subroutine Initialize &
                ( FC, C, NameShort, FluidType, RiemannSolverType, &
-                 ReconstructedType, UseEntropy, UseLimiter, Units, &
-                 BaryonMassReference, LimiterParameter, nValues, &
+                 ReconstructedType, UseEntropy, UseLimiter, UsePinnedMemory, &
+                 Units, BaryonMassReference, LimiterParameter, nValues, &
                  IgnorabilityOption )
 
     class ( Fluid_CSL_Form ), intent ( inout ) :: &
@@ -72,7 +72,8 @@ contains
       ReconstructedType
     logical ( KDL ), intent ( in ) :: &
       UseEntropy, &
-      UseLimiter
+      UseLimiter, &
+      UsePinnedMemory
     class ( StressEnergyUnitsForm ), intent ( in ), target :: &
       Units
     real ( KDR ), intent ( in ) :: &
@@ -96,7 +97,7 @@ contains
     FC % Units => Units
 
     call FC % InitializeTemplate_CSL &
-           ( C, NameShort, nValues, IgnorabilityOption )
+           ( C, NameShort, UsePinnedMemory, nValues, IgnorabilityOption )
 
   end subroutine Initialize
 

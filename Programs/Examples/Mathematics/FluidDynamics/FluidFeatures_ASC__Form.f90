@@ -30,8 +30,9 @@ contains
 
   subroutine Initialize &
                ( FFA, Fluid_ASC, FluidType, RiemannSolverType, &
-                 NameShortOption, ShockThresholdOption, IgnorabilityOption )
-
+                 NameShortOption, UsePinnedMemoryOption, &
+                 ShockThresholdOption, IgnorabilityOption )
+    
     class ( FluidFeatures_ASC_Form ), intent ( inout ) :: &
       FFA
     class ( Field_ASC_Template ), intent ( in ), target :: &
@@ -41,6 +42,8 @@ contains
       RiemannSolverType
     character ( * ), intent ( in ), optional :: &
       NameShortOption
+    logical ( KDL ), intent ( in ), optional :: &
+      UsePinnedMemoryOption
     real ( KDR ), intent ( in ), optional :: &
       ShockThresholdOption
     integer ( KDL ), intent ( in ), optional :: &
@@ -68,7 +71,8 @@ contains
       NameShort = NameShortOption
 
     call FFA % InitializeTemplate_ASC &
-           ( Fluid_ASC % Atlas, NameShort, IgnorabilityOption )
+           ( Fluid_ASC % Atlas, NameShort, UsePinnedMemoryOption, &
+             IgnorabilityOption )
 
     call Show ( FFA % ShockThreshold, 'ShockThreshold', FFA % IGNORABILITY )
 
@@ -76,7 +80,7 @@ contains
 
 
   impure elemental subroutine Finalize ( FFA )
-
+    
     type ( FluidFeatures_ASC_Form ), intent ( inout ) :: &
       FFA
 
@@ -88,7 +92,7 @@ contains
 
 
   subroutine SetField ( FA )
-
+    
     class ( FluidFeatures_ASC_Form ), intent ( inout ) :: &
       FA
 
@@ -107,8 +111,9 @@ contains
     select type ( FFC => FA % Chart )
     class is ( FluidFeatures_CSL_Form )
       call FFC % Initialize &
-             ( FC, FA % NameShort, FA % FluidType, FA % ShockThreshold, &
-               nValues, IgnorabilityOption = FA % IGNORABILITY )
+             ( FC, FA % NameShort, FA % FluidType, FA % UsePinnedMemory, &
+               FA % ShockThreshold, nValues, &
+               IgnorabilityOption = FA % IGNORABILITY )
     end select !-- FFC
 
     call A % AddField ( FA )

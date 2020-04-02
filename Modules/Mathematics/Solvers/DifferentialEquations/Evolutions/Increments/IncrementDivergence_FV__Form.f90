@@ -4,7 +4,7 @@
 module IncrementDivergence_FV__Form
 
   !-- IncrementDivergence_FiniteVolume_Form
-
+  
   use Basics
   use Manifolds
   use Operations
@@ -24,6 +24,11 @@ module IncrementDivergence_FV__Form
 ! !       iTimerGradient, &
 ! !       iTimerReconstructionKernel, &
       iStream
+    integer ( KDI ), private :: &
+      iTimerReconstructionKernel, &
+      iTimerLogDerivativeKernel, &
+      iTimerIncrementKernel, &
+      iTimerBoundaryFluenceKernel
     real ( KDR ) :: &
       Weight_RK = - huge ( 0.0_KDR ) !-- RungeKutta weight
     real ( KDR ), dimension ( : ), pointer :: &
@@ -106,6 +111,75 @@ module IncrementDivergence_FV__Form
     iFLUX_I     = 6, &
     iINCREMENT  = 7, &
     nOUTPUT = 7
+    
+  interface
+  
+    module subroutine ComputeReconstruction_CSL_Kernel &
+                 ( V, dVdX, dX_L, dX_R, iD, oV, V_IL, V_IR, UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+        V, &
+        dVdX, &
+        dX_L, dX_R
+      integer ( KDI ), intent ( in ) :: &
+        iD, &
+        oV   
+      real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
+        V_IL, V_IR
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine ComputeReconstruction_CSL_Kernel
+
+    module subroutine ComputeLogDerivative_CSL_Kernel &
+                 ( A_I, V, iD, oV, dLVdX, UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+        A_I, &
+        V
+      integer ( KDI ), intent ( in ) :: &
+        iD, &
+        oV   
+      real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
+        dLVdX
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine ComputeLogDerivative_CSL_Kernel
+    
+    module subroutine ComputeIncrement_CSL_Kernel &
+                 ( dU, F_I, A_I, V, dT, iD, oV, UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
+        dU
+      real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+        F_I, &
+        A_I, &
+        V
+      real ( KDR ), intent ( in ) :: &
+        dT
+      integer ( KDI ), intent ( in ) :: &
+        iD, &
+        oV
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine ComputeIncrement_CSL_Kernel
+    
+    module subroutine RecordBoundaryFluence_CSL_Kernel &
+                 ( BF, F, Factor, nB, oB, UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
+        BF
+      real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+        F
+      real ( KDR ), intent ( in ) :: &
+        Factor
+      integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
+        nB, &
+        oB
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine RecordBoundaryFluence_CSL_Kernel
+      
+  end interface
 
 contains
 
@@ -144,6 +218,19 @@ contains
     !        ( 'Gradient', I % iTimerGradient )
     ! call PROGRAM_HEADER % AddTimer &
     !        ( 'ReconstructionKernel', I % iTimerReconstructionKernel )
+    
+    call PROGRAM_HEADER % AddTimer &
+           ( 'ReconstructionKernel', I % iTimerReconstructionKernel, &
+              Level = 6 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'LogDerivativeKernel', I % iTimerLogDerivativeKernel, &
+              Level = 6 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'IncrementKernel', I % iTimerIncrementKernel, &
+              Level = 6 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'BoundaryFluenceKernel', I % iTimerBoundaryFluenceKernel, &
+              Level = 6 )
 
     I % UseIncrementStream = .false.
     call PROGRAM_HEADER % GetParameter &
@@ -198,7 +285,7 @@ contains
         BoundaryFluence_CSL
 
     I % BoundaryFluence_CSL => BoundaryFluence_CSL
-
+    
   end subroutine SetBoundaryFluence_CSL
 
 
@@ -260,7 +347,8 @@ contains
     integer ( KDI ) :: &
       iD  !-- iDimension
     type ( TimerForm ), pointer :: &
-      Timer
+      Timer, &
+      Timer_DTH
 
     Timer => PROGRAM_HEADER % TimerPointer ( I % Storage % iTimerDivergence )
     if ( associated ( Timer ) ) call Timer % Start ( )
@@ -286,12 +374,19 @@ contains
 
       call ComputeReconstruction ( I, iD )
       call ComputeFluxes ( I, iD )
+      
       select type ( Chart => I % Chart )
       class is ( Chart_SL_Template )
         call ComputeIncrement_CSL ( I, Increment, Chart, TimeStep, iD )
       end select !-- Grid
-
+      
       if ( I % UseIncrementStream ) then
+        Timer_DTH => PROGRAM_HEADER % TimerPointer &
+                       ( I % Storage % iTimerDataToHost )
+        call Timer_DTH % Start ( )
+        call I % Current % UpdateHost ( )
+        call Increment % UpdateHost ( )
+        call Timer_DTH % Stop ( )
         call Copy ( I % Current % Value, &
                     I % Output ( iCURRENT ) % Value )
         call Copy ( Increment % Value, &
@@ -489,7 +584,8 @@ contains
    type ( StorageForm ) :: &
      Reconstructed
     type ( TimerForm ), pointer :: &
-      Timer
+      Timer, &
+      Timer_DTH
 
     Timer => PROGRAM_HEADER % TimerPointer &
                ( I % Storage % iTimerReconstruction )
@@ -546,11 +642,11 @@ contains
  !     ( Timer_FP => PROGRAM_HEADER % Timer ( I % iTimerFromPrimitive ) )
  !   call Timer_FP % Start ( )
     if ( trim ( C % ReconstructedType ) == 'PRIMITIVE' ) then
-      call C % ComputeFromPrimitive ( C_IL % Value, G, G_I % Value )
-      call C % ComputeFromPrimitive ( C_IR % Value, G, G_I % Value )
+      call C % ComputeFromPrimitive ( C_IL, G, G_I )
+      call C % ComputeFromPrimitive ( C_IR, G, G_I )
     else if ( trim ( C % ReconstructedType ) == 'CONSERVED' ) then
-      call C % ComputeFromConserved ( C_IL % Value, G, G_I % Value )
-      call C % ComputeFromConserved ( C_IR % Value, G, G_I % Value )
+      call C % ComputeFromConserved ( C_IL, G, G_I )
+      call C % ComputeFromConserved ( C_IR, G, G_I )
     end if
 !    call Timer_FP % Stop ( )
 !    end associate !-- Timer_FP
@@ -558,6 +654,12 @@ contains
     end associate !-- iaI, iaO
 
     if ( I % UseIncrementStream ) then
+      Timer_DTH => PROGRAM_HEADER % TimerPointer &
+                     ( I % Storage % iTimerDataToHost )
+      call Timer_DTH % Start ( )
+      call C_IL % UpdateHost ( )
+      call C_IR % UpdateHost ( )
+      call Timer_DTH % Stop ( )
       call Copy ( C_IL % Value, I % Output ( iCURRENT_IL ) % Value )
       call Copy ( C_IR % Value, I % Output ( iCURRENT_IR ) % Value )
     end if
@@ -577,7 +679,8 @@ contains
       iDimension
 
     type ( TimerForm ), pointer :: &
-      Timer
+      Timer, &
+      Timer_DTH
 
     Timer => PROGRAM_HEADER % TimerPointer ( I % Storage % iTimerFluxes )
     if ( associated ( Timer ) ) call Timer % Start ( )
@@ -601,6 +704,13 @@ contains
              iDimension )
 
     if ( I % UseIncrementStream ) then
+      Timer_DTH => PROGRAM_HEADER % TimerPointer &
+                     ( I % Storage % iTimerDataToHost )
+      call Timer_DTH % Start ( )
+      call F_IL % UpdateHost ( )
+      call F_IR % UpdateHost ( )
+      call F_I  % UpdateHost ( )
+      call Timer_DTH % Stop ( )
       call Copy ( F_IL % Value, I % Output ( iFLUX_IL ) % Value )
       call Copy ( F_IR % Value, I % Output ( iFLUX_IR ) % Value )
       call Copy ( F_I % Value, I % Output ( iFLUX_I ) % Value )
@@ -673,9 +783,9 @@ contains
 
     !-- Reconstruct Current
 
-!    associate ( Timer_RK => PROGRAM_HEADER % Timer &
-!                              ( I % iTimerReconstructionKernel ) )
-!    call Timer_RK % Start ( )
+    associate ( Timer_RK => PROGRAM_HEADER % Timer &
+                              ( I % iTimerReconstructionKernel ) )
+    call Timer_RK % Start ( )
 
     associate ( iaR => C % iaReconstructed )
     do iF = 1, C % N_RECONSTRUCTED
@@ -689,14 +799,19 @@ contains
              ( C_IR % Value ( :, iaR ( iF ) ), V_IR )
       call ComputeReconstruction_CSL_Kernel &
              ( V, dVdX, dX_L, dX_R, iDimension, &
-               CSL % nGhostLayers ( iDimension ), V_IL, V_IR )
+               CSL % nGhostLayers ( iDimension ), V_IL, V_IR, &
+               UseDeviceOption = C % AllocatedDevice )
     end do !-- iF
     end associate !-- iaR
 
-!    call Timer_RK % Stop
-!    end associate !-- Timer_RK
+    call Timer_RK % Stop ( )
+    end associate !-- Timer_RK
 
     !-- VolumeJacobian derivative
+
+    associate ( Timer_LDK => PROGRAM_HEADER % Timer &
+                              ( I % iTimerLogDerivativeKernel ) )
+    call Timer_LDK % Start ( )
 
     if ( associated ( I % dLogVolumeJacobian_dX ) ) then
       if ( size ( I % dLogVolumeJacobian_dX ) >= iDimension ) then
@@ -708,9 +823,12 @@ contains
                ( I % dLogVolumeJacobian_dX ( iDimension ) % Value, dLVdX )
         call ComputeLogDerivative_CSL_Kernel &
                ( A_I, V, iDimension, CSL % nGhostLayers ( iDimension ), &
-                 dLVdX )
+                 dLVdX, UseDeviceOption = G % AllocatedDevice )
       end if
     end if
+    
+    call Timer_LDK % Stop ( )
+    end associate !-- Timer_LDK
 
     nullify ( dX_L, dX_R, V, dVdX, V_IL, V_IR, A_I, dLVdX )
 
@@ -766,20 +884,33 @@ contains
       call Show ( 'ComputeIncrement_CSL', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end if
-
+    
+    associate &
+      ( Timer_IK &
+          => PROGRAM_HEADER % Timer ( I % iTimerIncrementKernel ), &
+        Timer_BK & 
+          => PROGRAM_HEADER % Timer ( I % iTimerBoundaryFluenceKernel ) )
+          
     do iF = 1, C % N_CONSERVED
       call CSL % SetVariablePointer &
              ( Increment % Value ( :, iF ), dU )
       call CSL % SetVariablePointer &
              ( I % Storage % Flux_I % Value ( :, iF ), F_I )
+      call Timer_IK % Start ( )
       call ComputeIncrement_CSL_Kernel &
              ( dU, F_I, A_I, V, TimeStep, iDimension, &
-               CSL % nGhostLayers ( iDimension ) )
+               CSL % nGhostLayers ( iDimension ), &
+               UseDeviceOption = Increment % AllocatedDevice )
+      call Timer_IK % Stop ( )
+      call Timer_BK % Start ( ) 
       if ( associated ( I % BoundaryFluence_CSL ) ) &
         call RecordBoundaryFluence_CSL &
                ( I % BoundaryFluence_CSL, CSL, F_I, I % Weight_RK, &
                  TimeStep, iDimension, iF )
+      call Timer_BK % Stop ( ) 
     end do !-- iF
+    
+    end associate !-- Timer_IK, Timer_BK
 
     end associate !-- C, etc.
     nullify ( dU, F_I, A_I, V )
@@ -787,190 +918,6 @@ contains
     if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine ComputeIncrement_CSL
-
-
-  subroutine ComputeReconstruction_CSL_Kernel &
-               ( V, dVdX, dX_L, dX_R, iD, oV, V_IL, V_IR )
-
-    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
-      V, &
-      dVdX, &
-      dX_L, dX_R
-    integer ( KDI ), intent ( in ) :: &
-      iD, &
-      oV   
-    real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
-      V_IL, V_IR
-    
-    integer ( KDI ) :: &
-      iV, jV, kV
-    integer ( KDI ), dimension ( 3 ) :: &
-      iaS, &
-      iaVS, &
-      lV, uV
-
-!    V_IL  =  cshift ( V  +  0.5_KDR * dX * dVdX, shift = -1, dim = iD )
-
-!    V_IR  =  V  -  0.5_KDR * dX * dVdX
-
-    lV = 1
-    where ( shape ( V ) > 1 )
-      lV = oV + 1
-    end where
-    
-    uV = 1
-    where ( shape ( V ) > 1 )
-      uV = shape ( V ) - oV
-    end where
-    uV ( iD ) = size ( V, dim = iD ) - oV + 1 
-      
-    iaS = 0
-    iaS ( iD ) = -1
-      
-    !$OMP parallel do private ( iV, jV, kV, iaVS )
-    do kV = lV ( 3 ), uV ( 3 ) 
-      do jV = lV ( 2 ), uV ( 2 )
-        do iV = lV ( 1 ), uV ( 1 )
-
-          iaVS = [ iV, jV, kV ] + iaS
-
-          V_IL ( iV, jV, kV )  &
-            =  V ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) )  &
-               +  dX_R ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ) &
-                  *  dVdX ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) )
-
-        end do !-- iV
-      end do !-- jV
-    end do !-- kV
-    !$OMP end parallel do
-      
-    !$OMP parallel do private ( iV, jV, kV )
-    do kV = lV ( 3 ), uV ( 3 ) 
-      do jV = lV ( 2 ), uV ( 2 )
-        do iV = lV ( 1 ), uV ( 1 )
-
-          V_IR ( iV, jV, kV )  &
-            =  V ( iV, jV, kV )  &
-               -  dX_L ( iV, jV, kV )  *  dVdX ( iV, jV, kV )
-
-        end do !-- iV
-      end do !-- jV
-    end do !-- kV
-    !$OMP end parallel do
-    
-  end subroutine ComputeReconstruction_CSL_Kernel
-
-
-  subroutine ComputeLogDerivative_CSL_Kernel ( A_I, V, iD, oV, dLVdX )
-
-    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
-      A_I, &
-      V
-    integer ( KDI ), intent ( in ) :: &
-      iD, &
-      oV   
-    real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
-      dLVdX
-
-    integer ( KDI ) :: &
-      iV, jV, kV
-    integer ( KDI ), dimension ( 3 ) :: &
-      iaS, &
-      iaVS, &
-      lV, uV
-
-    lV = 1
-    where ( shape ( V ) > 1 )
-      lV = oV + 1
-    end where
-    
-    uV = 1
-    where ( shape ( V ) > 1 )
-      uV = shape ( V ) - oV
-    end where
-      
-    iaS = 0
-    iaS ( iD ) = +1
-      
-    !$OMP parallel do private ( iV, jV, kV, iaVS )
-    do kV = lV ( 3 ), uV ( 3 ) 
-      do jV = lV ( 2 ), uV ( 2 )
-        do iV = lV ( 1 ), uV ( 1 )
-
-          iaVS = [ iV, jV, kV ] + iaS
-
-          dLVdX ( iV, jV, kV ) &
-            =  (    A_I ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ) &
-                 -  A_I ( iV, jV, kV )  ) &
-               /  V ( iV, jV, kV )
-
-        end do !-- iV
-      end do !-- jV
-    end do !-- kV
-    !$OMP end parallel do
-    
-  end subroutine ComputeLogDerivative_CSL_Kernel
-
-
-  subroutine ComputeIncrement_CSL_Kernel ( dU, F_I, A_I, V, dT, iD, oV )
-    
-    real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
-      dU
-    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
-      F_I, &
-      A_I, &
-      V
-    real ( KDR ), intent ( in ) :: &
-      dT
-    integer ( KDI ), intent ( in ) :: &
-      iD, &
-      oV   
-
-    integer ( KDI ) :: &
-      iV, jV, kV
-    integer ( KDI ), dimension ( 3 ) :: &
-      iaS, &
-      iaVS, &
-      lV, uV
-
-!    dU  =  dU  +  dT * ( VJ_I * F_I  &
-!                         -  cshift ( VJ_I * F_I, shift = +1, dim = iD ) ) &
-!                       / ( VJ * dX )
-
-    lV = 1
-    where ( shape ( dU ) > 1 )
-      lV = oV + 1
-    end where
-    
-    uV = 1
-    where ( shape ( dU ) > 1 )
-      uV = shape ( dU ) - oV
-    end where
-      
-    iaS = 0
-    iaS ( iD ) = +1
-      
-    !$OMP parallel do private ( iV, jV, kV, iaVS )
-    do kV = lV ( 3 ), uV ( 3 ) 
-      do jV = lV ( 2 ), uV ( 2 )
-        do iV = lV ( 1 ), uV ( 1 )
-
-          iaVS = [ iV, jV, kV ] + iaS
-
-          dU ( iV, jV, kV ) &
-            = dU ( iV, jV, kV )  &
-              +  dT * (    A_I ( iV, jV, kV ) &
-                           *  F_I ( iV, jV, kV ) &
-                        -  A_I ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ) &
-                           *  F_I ( iaVS ( 1 ), iaVS ( 2 ), iaVS ( 3 ) ) ) &
-                      /  V ( iV, jV, kV )
-
-        end do !-- iV
-      end do !-- jV
-    end do !-- kV
-    !$OMP end parallel do
-    
-  end subroutine ComputeIncrement_CSL_Kernel
 
 
   subroutine RecordBoundaryFluence_CSL &
@@ -1022,7 +969,8 @@ contains
       associate ( BF_Inner => BF ( iC, iCI ) % Value )
       oB = CSL % nGhostLayers
       call RecordBoundaryFluence_CSL_Kernel &
-             ( BF_Inner, F_I, Weight_RK * dT, nB, oB )
+             ( BF_Inner, F_I, Weight_RK * dT, nB, oB, &
+               UseDeviceOption = BF ( iC, iCI ) % AllocatedDevice )
       end associate !-- BF_Inner
       end associate !-- iCI
     end if !-- iaBrick ( iD ) == 1
@@ -1033,43 +981,13 @@ contains
       oB        = CSL % nGhostLayers
       oB ( iD ) =  oB ( iD ) + nCells
       call RecordBoundaryFluence_CSL_Kernel &
-             ( BF_Outer, F_I, Weight_RK * dT, nB, oB )
+             ( BF_Outer, F_I, Weight_RK * dT, nB, oB, &
+               UseDeviceOption = BF ( iC, iCO ) % AllocatedDevice )
       end associate !-- BF_Outer
       end associate !-- iCO
     end if !-- iaBrick ( iD ) == nBricks ( iD )
 
   end subroutine RecordBoundaryFluence_CSL
-
-
-  subroutine RecordBoundaryFluence_CSL_Kernel ( BF, F, Factor, nB, oB )
-
-    real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
-      BF
-    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
-      F
-    real ( KDR ), intent ( in ) :: &
-      Factor
-    integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
-      nB, &
-      oB
-
-    integer ( KDI ) :: &
-      iV, jV, kV
-
-    !$OMP parallel do private ( iV, jV, kV ) collapse ( 3 )
-    do kV = 1, nB ( 3 )
-      do jV = 1, nB ( 2 )
-        do iV = 1, nB ( 1 )
-          BF ( iV, jV, kV ) &
-            =  BF ( iV, jV, kV ) &
-               +  Factor &
-                  *   F ( oB ( 1 ) + iV, oB ( 2 ) + jV, oB ( 3 ) + kV )
-        end do !-- iV
-      end do !-- jV
-    end do !-- kV
-    !$OMP end parallel do
-
-  end subroutine RecordBoundaryFluence_CSL_Kernel
 
 
 end module IncrementDivergence_FV__Form

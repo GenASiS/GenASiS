@@ -36,7 +36,7 @@ contains
   end subroutine Initialize_R_3D_2D
   
   
-  elemental subroutine Finalize_R_3D_2D ( A )
+  impure elemental subroutine Finalize_R_3D_2D ( A )
 
     type ( Real_3D_2D_Form ), intent ( inout ) :: &
       A

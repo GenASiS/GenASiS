@@ -29,8 +29,8 @@ contains
 
 
   subroutine Initialize &
-               ( FFC, Fluid_CSL, NameShort, FluidType, ShockThreshold, &
-                 nValues, IgnorabilityOption )
+               ( FFC, Fluid_CSL, NameShort, FluidType, UsePinnedMemory, &
+                 ShockThreshold, nValues, IgnorabilityOption )
 
     class ( FluidFeatures_CSL_Form ), intent ( inout ) :: &
       FFC
@@ -39,6 +39,8 @@ contains
     character ( * ), intent ( in ) :: &
       NameShort, &
       FluidType
+    logical ( KDL ), intent ( in ) :: &
+      UsePinnedMemory
     real ( KDR ), intent ( in ) :: &
       ShockThreshold
     integer ( KDI ), intent ( in ) :: &
@@ -54,7 +56,8 @@ contains
     FFC % Fluid_CSL => Fluid_CSL
 
     call FFC % InitializeTemplate_CSL &
-           ( Fluid_CSL % Chart, NameShort, nValues, IgnorabilityOption )
+           ( Fluid_CSL % Chart, NameShort, UsePinnedMemory, nValues, &
+             IgnorabilityOption )
 
   end subroutine Initialize
 

@@ -1,3 +1,5 @@
+#include "Preprocessor"
+
 module Fluid_D__Form
 
   !-- Fluid_Dust__Form
@@ -62,7 +64,79 @@ module Fluid_D__Form
       InitializeBasics, &
       SetUnits, &
       ComputeRawFluxesKernel
+      
+  interface
+  
+    module subroutine ComputeBaryonMassKernel ( M, UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        M
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine ComputeBaryonMassKernel
 
+    module subroutine ComputeDensityMomentumKernel &
+           ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33, &
+             UseDeviceOption )
+      use Basics     
+      real ( KDR ), dimension ( : ), intent ( inout ) :: & 	 	 
+        D, & 	 	 
+        S_1, S_2, S_3, & 	 	 
+        N 	 	 
+      real ( KDR ), dimension ( : ), intent ( in ) :: & 	 	 
+        M, & 	 	 
+        V_1, V_2, V_3, &
+        M_DD_22, M_DD_33
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine ComputeDensityMomentumKernel
+
+    module subroutine ComputeDensityVelocityKernel &
+                 ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33, &
+                   UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        N, &
+        V_1, V_2, V_3, &
+        D, &
+        S_1, S_2, S_3
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        M, &
+        M_UU_22, M_UU_33
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine ComputeDensityVelocityKernel
+
+    module subroutine ComputeEigenspeedsKernel_D &
+                 ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3, &
+                   UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        FEP_1, FEP_2, FEP_3, &
+        FEM_1, FEM_2, FEM_3
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        V_1, V_2, V_3
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine ComputeEigenspeedsKernel_D
+
+    module subroutine ComputeRawFluxesKernel &
+                 ( F_D, F_S_1, F_S_2, F_S_3, D, S_1, S_2, S_3, V_Dim, &
+                   UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        F_D, &
+        F_S_1, F_S_2, F_S_3
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        D, &
+        S_1, S_2, S_3, &
+        V_Dim
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine ComputeRawFluxesKernel
+
+  end interface
+      
 contains
 
 
@@ -70,8 +144,8 @@ contains
                ( F, RiemannSolverType, ReconstructedType, UseLimiter, &
                  VelocityUnit, MassDensityUnit, LimiterParameter, nValues, &
                  VariableOption, VectorOption, NameOption, ClearOption, &
-                 UnitOption, VectorIndicesOption )
-
+                 PinnedOption, UnitOption, VectorIndicesOption )
+    
     class ( Fluid_D_Form ), intent ( inout ) :: &
       F
     character ( * ), intent ( in ) :: &
@@ -93,7 +167,8 @@ contains
     character ( * ), intent ( in ), optional :: &
       NameOption
     logical ( KDL ), intent ( in ), optional :: &
-      ClearOption
+      ClearOption, &
+      PinnedOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       UnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), &
@@ -121,8 +196,8 @@ contains
            ( RiemannSolverType, ReconstructedType, UseLimiter, VelocityUnit, &
              LimiterParameter, nValues, VariableOption = Variable, &
              VectorOption = Vector, NameOption = Name, &
-             ClearOption = ClearOption, UnitOption = VariableUnit, &
-             VectorIndicesOption = VectorIndices )
+             ClearOption = ClearOption, PinnedOption = PinnedOption, &
+             UnitOption = VariableUnit, VectorIndicesOption = VectorIndices )
 
   end subroutine InitializeAllocate_D
   
@@ -214,16 +289,16 @@ contains
 
 
   subroutine ComputeFromPrimitiveCommon &
-               ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
+               ( Storage_C, C, G, Storage_G, nValuesOption, oValueOption )
 
-    real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
-      Value_C
+    class ( StorageForm ), intent ( inout ), target :: &
+      Storage_C
     class ( Fluid_D_Form ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_G
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
@@ -233,8 +308,8 @@ contains
       nV     !-- nValues
       
     associate &
-      ( FV => Value_C, &
-        GV => Value_G )
+      ( FV => Storage_C % Value, &
+        GV => Storage_G % Value )
 
     if ( present ( oValueOption ) ) then
       oV = oValueOption
@@ -267,13 +342,24 @@ contains
         S_1   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 1 ) ), &
         S_2   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 2 ) ), &
         S_3   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 3 ) ) )
+    
+    associate &
+      ( T_CFP => PROGRAM_HEADER % Timer ( C % iTimerComputeFromPrimitive ) )
 
+    call T_CFP % Start ( )
+    
     call C % ComputeBaryonMassKernel &
-           ( M )
+           ( M, UseDeviceOption = C % AllocatedDevice )
     call C % ComputeDensityMomentumKernel &
-           ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
+           ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33, &
+             UseDeviceOption = C % AllocatedDevice )
     call C % ComputeEigenspeedsKernel_D &
-           ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3 )
+           ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3, &
+             UseDeviceOption = C % AllocatedDevice )
+    
+    call T_CFP % Stop ( )
+
+    end associate !-- T_CFP
 
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
@@ -283,16 +369,16 @@ contains
 
 
   subroutine ComputeFromConservedCommon &
-               ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
+               ( Storage_C, C, G, Storage_G, nValuesOption, oValueOption )
 
-    real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
-      Value_C
+    class ( StorageForm ), intent ( inout ), target :: &
+      Storage_C
     class ( Fluid_D_Form ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_G
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
@@ -302,8 +388,8 @@ contains
       nV     !-- nValues
       
     associate &
-      ( FV => Value_C, &
-        GV => Value_G )
+      ( FV => Storage_C % Value, &
+        GV => Storage_G % Value )
 
     if ( present ( oValueOption ) ) then
       oV = oValueOption
@@ -337,12 +423,23 @@ contains
         S_2   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 2 ) ), &
         S_3   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 3 ) ) )
 
+    associate &
+      ( T_CFC => PROGRAM_HEADER % Timer ( C % iTimerComputeFromConserved ) )
+
+    call T_CFC % Start ( )
+    
     call C % ComputeBaryonMassKernel &
-           ( M )
+           ( M, UseDeviceOption = C % AllocatedDevice )
     call C % ComputeDensityVelocityKernel &
-           ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33 )
+           ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33, &
+             UseDeviceOption = C % AllocatedDevice )
     call C % ComputeEigenspeedsKernel_D &
-           ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3 )
+           ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3, &
+             UseDeviceOption = C % AllocatedDevice )
+    
+    call T_CFC % Stop ( )
+
+    end associate !-- T_CFC
 
     end associate !-- FEP_1, etc.
     end associate !-- M_UU_22, etc.
@@ -352,18 +449,18 @@ contains
 
 
   subroutine ComputeRawFluxes &
-               ( RawFlux, C, G, Value_C, Value_G, iDimension, &
+               ( RawFlux, C, G, Storage_C, Storage_G, iDimension, &
                  nValuesOption, oValueOption )
     
-    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+    class ( StorageForm ), intent ( inout ) :: &
       RawFlux
     class ( Fluid_D_Form ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_C, &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_C, &
+      Storage_G
     integer ( KDI ), intent ( in ) :: &
       iDimension
     integer ( KDI ), intent ( in ), optional :: &
@@ -378,6 +475,11 @@ contains
       oV, &  !-- oValue
       nV     !-- nValues
       
+    associate &
+      ( Value_RF => RawFlux % Value, &
+        Value_C  => Storage_C % Value, &
+        Value_G  => Storage_G % Value )
+      
     if ( present ( oValueOption ) ) then
       oV = oValueOption
     else
@@ -390,6 +492,11 @@ contains
       nV = size ( Value_C, dim = 1 )
     end if
     
+    associate &
+      ( T_CRF => PROGRAM_HEADER % Timer ( C % iTimerComputeRawFluxes ) )
+
+    call T_CRF % Start ( )
+    
     call Search &
            ( C % iaConserved, C % CONSERVED_DENSITY, iDensity )
     call Search &
@@ -400,10 +507,10 @@ contains
            ( C % iaConserved, C % MOMENTUM_DENSITY_D ( 3 ), iMomentum ( 3 ) )
     
     associate &
-      ( F_D   => RawFlux ( oV + 1 : oV + nV, iDensity ), &
-        F_S_1 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 1 ) ), &
-        F_S_2 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 2 ) ), &
-        F_S_3 => RawFlux ( oV + 1 : oV + nV, iMomentum ( 3 ) ), &
+      ( F_D   => Value_RF ( oV + 1 : oV + nV, iDensity ), &
+        F_S_1 => Value_RF ( oV + 1 : oV + nV, iMomentum ( 1 ) ), &
+        F_S_2 => Value_RF ( oV + 1 : oV + nV, iMomentum ( 2 ) ), &
+        F_S_3 => Value_RF ( oV + 1 : oV + nV, iMomentum ( 3 ) ), &
         D     => Value_C ( oV + 1 : oV + nV, C % CONSERVED_DENSITY ), &
         S_1   => Value_C ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 1 ) ), &
         S_2   => Value_C ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 2 ) ), &
@@ -411,143 +518,20 @@ contains
         V_Dim => Value_C ( oV + 1 : oV + nV, C % VELOCITY_U ( iDimension ) ) )
 
     call ComputeRawFluxesKernel &
-           ( F_D, F_S_1, F_S_2, F_S_3, D, S_1, S_2, S_3, V_Dim )
+           ( F_D, F_S_1, F_S_2, F_S_3, D, S_1, S_2, S_3, V_Dim, &
+             UseDeviceOption = C % AllocatedDevice )
 
     end associate !-- F_D, etc.
+    
+    call T_CRF % Stop ( )
+
+    end associate !- T_CRF
+    
+    end associate !-- Value_RF
 
   end subroutine ComputeRawFluxes
   
   
-  subroutine ComputeBaryonMassKernel ( M )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      M
-
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-
-    nValues = size ( M )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-      M ( iV ) = 1.0_KDR
-    end do !-- iV
-    !$OMP end parallel do
-
-  end subroutine ComputeBaryonMassKernel
-
-
-  subroutine ComputeDensityMomentumKernel & 	 	 
-	       ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
- 	 
-    real ( KDR ), dimension ( : ), intent ( inout ) :: & 	 	 
-      D, & 	 	 
-      S_1, S_2, S_3, & 	 	 
-      N 	 	 
-    real ( KDR ), dimension ( : ), intent ( in ) :: & 	 	 
-      M, & 	 	 
-      V_1, V_2, V_3, &
-      M_DD_22, M_DD_33
- 	 	 
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-
-    nValues = size ( D )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-      if ( N ( iV )  <  0.0_KDR ) &
-        N ( iV )  =  0.0_KDR
-    end do !-- iV
-    !$OMP end parallel do
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-
-      D ( iV ) = N ( iV ) 	 	 
- 	 	 
-      S_1 ( iV )  =  M ( iV ) * N ( iV ) * V_1 ( iV )	 	 
-      S_2 ( iV )  =  M ( iV ) * N ( iV ) * M_DD_22 ( iV ) * V_2 ( iV )
-      S_3 ( iV )  =  M ( iV ) * N ( iV ) * M_DD_33 ( iV ) * V_3 ( iV )
-
-    end do !-- iV
-    !$OMP end parallel do
-
-  end subroutine ComputeDensityMomentumKernel 	 	 
-
-
-  subroutine ComputeDensityVelocityKernel &
-               ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33 )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      N, &
-      V_1, V_2, V_3, &
-      D, &
-      S_1, S_2, S_3
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      M, &
-      M_UU_22, M_UU_33
-
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-
-    nValues = size ( N )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-      if ( D ( iV )  >  0.0_KDR ) then
-        N ( iV )    =  D ( iV )
-        V_1 ( iV )  =  S_1 ( iV ) / ( M ( iV ) * D ( iV ) )
-        V_2 ( iV )  =  M_UU_22 ( iV ) * S_2 ( iV ) / ( M ( iV ) * D ( iV ) )
-        V_3 ( iV )  =  M_UU_33 ( iV ) * S_3 ( iV ) / ( M ( iV ) * D ( iV ) )
-      else
-        N   ( iV ) = 0.0_KDR
-        V_1 ( iV ) = 0.0_KDR
-        V_2 ( iV ) = 0.0_KDR
-        V_3 ( iV ) = 0.0_KDR
-        D   ( iV ) = 0.0_KDR
-        S_1 ( iV ) = 0.0_KDR
-        S_2 ( iV ) = 0.0_KDR
-        S_3 ( iV ) = 0.0_KDR
-      end if
-    end do !-- iV
-    !$OMP end parallel do
-
-  end subroutine ComputeDensityVelocityKernel
-
-
-  subroutine ComputeEigenspeedsKernel_D &
-               ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3 )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      FEP_1, FEP_2, FEP_3, &
-      FEM_1, FEM_2, FEM_3
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      V_1, V_2, V_3
-
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-
-    nValues = size ( FEP_1 )
-
-    !$OMP parallel do private ( iV ) 
-    do iV = 1, nValues
-      FEP_1 ( iV ) = V_1 ( iV ) 
-      FEP_2 ( iV ) = V_2 ( iV ) 
-      FEP_3 ( iV ) = V_3 ( iV ) 
-      FEM_1 ( iV ) = V_1 ( iV ) 
-      FEM_2 ( iV ) = V_2 ( iV ) 
-      FEM_3 ( iV ) = V_3 ( iV ) 
-    end do !-- iV
-    !$OMP end parallel do
-
-  end subroutine ComputeEigenspeedsKernel_D
-
-
   subroutine InitializeBasics &
                ( F, Variable, Vector, Name, VariableUnit, VectorIndices, &
                  VariableOption, VectorOption, NameOption, &
@@ -694,35 +678,6 @@ contains
     end do
 
   end subroutine SetUnits
-
-
-  subroutine ComputeRawFluxesKernel &
-               ( F_D, F_S_1, F_S_2, F_S_3, D, S_1, S_2, S_3, V_Dim )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      F_D, &
-      F_S_1, F_S_2, F_S_3
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      D, &
-      S_1, S_2, S_3, &
-      V_Dim
-    
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-
-    nValues = size ( F_D )
-
-    !$OMP parallel do private ( iV ) 
-    do iV = 1, nValues
-      F_D   ( iV ) = D   ( iV ) * V_Dim ( iV ) 
-      F_S_1 ( iV ) = S_1 ( iV ) * V_Dim ( iV ) 
-      F_S_2 ( iV ) = S_2 ( iV ) * V_Dim ( iV ) 
-      F_S_3 ( iV ) = S_3 ( iV ) * V_Dim ( iV ) 
-    end do !-- iV
-    !$OMP end parallel do
-
-  end subroutine ComputeRawFluxesKernel
 
 
 end module Fluid_D__Form

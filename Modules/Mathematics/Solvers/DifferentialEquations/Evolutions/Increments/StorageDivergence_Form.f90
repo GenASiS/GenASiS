@@ -13,7 +13,9 @@ module StorageDivergence_Form
       iTimerDivergence     = 0, &
       iTimerReconstruction = 0, &
       iTimerFluxes         = 0, &
-      iTimerIncrement      = 0
+      iTimerIncrement      = 0, &
+      iTimerDataToDevice   = 0, &
+      iTimerDataToHost     = 0
     type ( StorageForm ), allocatable :: &
       Geometry_I, &              !-- Geometry_Inner
       Current_IL, Current_IR, &  !-- Current_InnerLeft, Current_InnerRight
@@ -63,16 +65,24 @@ contains
       call PROGRAM_HEADER % AddTimer &
              ( 'Increment', SD % iTimerIncrement, &
                Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'SD_DataToDevice', SD % iTimerDataToDevice, &
+               Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'SD_DataToHost', SD % iTimerDataToHost, &
+               Level = BaseLevel + 1 )
 
   end subroutine InitializeTimers
 
 
   subroutine Allocate &
-              ( SD, nCurrent, nConserved, nReconstructed, nSolverSpeeds, &
-                nGeometry, nValues )
+              ( SD, AllocateDevice, nCurrent, nConserved, nReconstructed, &
+                nSolverSpeeds, nGeometry, nValues )
 
     class ( StorageDivergenceForm ), intent ( inout ) :: &
       SD
+    logical ( KDL ), intent ( in ) :: &
+      AllocateDevice
     integer ( KDI ), intent ( in ) :: &
       nCurrent, &
       nConserved, &
@@ -112,14 +122,28 @@ contains
     allocate ( SD % GradientReconstructed )
     call SD % GradientReconstructed % Initialize &
            ( 'Reconstructed', [ nValues, nReconstructed ] )
+           
+    if ( AllocateDevice ) then
+      call SD % Geometry_I % AllocateDevice ( )
+      call SD % Current_IL % AllocateDevice ( )
+      call SD % Current_IR % AllocateDevice ( )
+      call SD % SolverSpeeds_I % AllocateDevice ( )
+      call SD % DiffusionFactor_I % AllocateDevice ( )
+      call SD % Flux_IL % AllocateDevice ( )
+      call SD % Flux_IR % AllocateDevice ( )
+      call SD % Flux_I % AllocateDevice ( )
+      call SD % GradientReconstructed % AllocateDevice ( )
+    end if
 
   end subroutine Allocate
 
 
-  subroutine Allocate_HLLC ( SD, nCurrent, nValues )
+  subroutine Allocate_HLLC ( SD, AllocateDevice, nCurrent, nValues )
 
     class ( StorageDivergenceForm ), intent ( inout ) :: &
       SD
+    logical ( KDL ), intent ( in ) :: &
+      AllocateDevice
     integer ( KDI ), intent ( in ) :: &
       nCurrent, &
       nValues
@@ -129,6 +153,11 @@ contains
            ( [ nValues, nCurrent ], ClearOption = .true. )
     call SD % Current_ICR % Initialize &
            ( [ nValues, nCurrent ], ClearOption = .true. )
+    
+    if ( AllocateDevice ) then
+      call SD % Current_ICL % AllocateDevice ( )
+      call SD % Current_ICR % AllocateDevice ( )
+    end if
 
   end subroutine Allocate_HLLC
 

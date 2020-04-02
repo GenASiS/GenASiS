@@ -9,7 +9,7 @@ include $(PATH_GENASIS)/Build/Makefile_Build
 # include ../Makefile_ObjectFiles
 
 SineWave: ThirdParty.a GenASiS.a SineWave.o
-	$(LINK) $(FFLAGS) \
+	$(LINK) $(FLAGS) \
            -o SineWave_$(MACHINE) \
            SineWave.o SineWave_Form.o PlaneWave_Template.o \
            GenASiS.a ThirdParty.a $(LIBRARIES)
@@ -21,57 +21,57 @@ SawtoothWave: ThirdParty.a GenASiS.a SawtoothWave.o
           GenASiS.a ThirdParty.a $(LIBRARIES)
 
 OppenheimerSnyder: ThirdParty.a GenASiS.a OppenheimerSnyder.o
-	$(LINK) $(FFLAGS) \
+	$(LINK) $(FLAGS) \
            -o OppenheimerSnyder_$(MACHINE) \
            ODE_Solve_Command.o OppenheimerSnyder.o \
 	   OppenheimerSnyder_Form.o \
            GenASiS.a ThirdParty.a $(LIBRARIES)
 
 RiemannProblem: ThirdParty.a GenASiS.a RiemannProblem.o
-	$(LINK) $(FFLAGS) \
+	$(LINK) $(FLAGS) \
           -o RiemannProblem_$(MACHINE) \
           RiemannProblem.o RiemannProblem_Form.o \
           GenASiS.a ThirdParty.a $(LIBRARIES)
 
 RayleighTaylor: ThirdParty.a GenASiS.a RayleighTaylor.o
-	$(LINK) $(FFLAGS) \
+	$(LINK) $(FLAGS) \
            -o RayleighTaylor_$(MACHINE) \
            RayleighTaylor.o RayleighTaylor_Form.o \
            GenASiS.a ThirdParty.a $(LIBRARIES)
 
 SedovTaylor: ThirdParty.a GenASiS.a SedovTaylor.o
-	$(LINK) $(FFLAGS) \
+	$(LINK) $(FLAGS) \
           -o SedovTaylor_$(MACHINE) \
           SedovTaylor.o SedovTaylor_Form.o \
           GenASiS.a ThirdParty.a $(LIBRARIES)
 
 FishboneMoncrief: ThirdParty.a GenASiS.a FishboneMoncrief.o
-	$(LINK) $(FFLAGS) \
+	$(LINK) $(FLAGS) \
            -o FishboneMoncrief_$(MACHINE) \
            FishboneMoncrief.o FishboneMoncrief_Form.o \
            GenASiS.a ThirdParty.a $(LIBRARIES)
 
 YahilLattimer: ThirdParty.a GenASiS.a YahilLattimer.o
-	$(LINK) $(FFLAGS) \
+	$(LINK) $(FLAGS) \
           -o YahilLattimer_$(MACHINE) \
           YahilLattimer.o YahilLattimer_Form.o \
           GenASiS.a ThirdParty.a $(LIBRARIES)
 
 # LinMestelShu: ThirdParty.a GenASiS.a LinMestelShu.o
-# 	$(LINK) $(FFLAGS) \
+# 	$(LINK) $(FLAGS) \
 #            -o LinMestelShu_$(MACHINE) \
 #            ODE_Solve_Command.o LinMestelShu.o \
 # 	   LinMestelShu_Form.o \
 #            GenASiS.a ThirdParty.a $(LIBRARIES)\
 
 # ODE_Solve: ThirdParty.a GenASiS.a ODE_Solve_Command_Test.o
-# 	$(LINK) $(FFLAGS) \
+# 	$(LINK) $(FLAGS) \
 #            -o ODE_Solve_Command_Test_$(MACHINE) \
 #            ODE_Solve_Command_Test.o ODE_Solve_Command.o \
 #            GenASiS.a ThirdParty.a $(LIBRARIES)
 
 # SASI: ThirdParty.a GenASiS.a SASI.o
-# 	$(LINK) $(FFLAGS) \
+# 	$(LINK) $(FLAGS) \
 #           -o SASI_$(MACHINE) \
 #           SASI.o SASI_Form.o \
 #           GenASiS.a ThirdParty.a $(LIBRARIES)

@@ -81,34 +81,36 @@ contains
   end subroutine InitializeBasic
 
 
-  subroutine CopyBoundary ( Value, C, iDimension, iConnection )
+  subroutine CopyBoundary ( F, C, iField, iDimension, iConnection )
 
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      Value
+    class ( StorageForm ), intent ( inout ) :: &
+      F
     class ( Chart_SLL_Form ), intent ( in ) :: &
       C
     integer ( KDI ), intent ( in ) :: &
+      iField, &
       iDimension, &
       iConnection
 
     call C % CopyBoundaryTemplate &
-           ( Value, C % nCells, iDimension, iConnection )
+           ( F, C % nCells, iField, iDimension, iConnection )
 
   end subroutine CopyBoundary
 
 
-  subroutine ReverseBoundary ( Value, C, iDimension, iConnection )
+  subroutine ReverseBoundary ( F, C, iField, iDimension, iConnection )
 
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      Value
+    class ( StorageForm ), intent ( inout ) :: &
+      F
     class ( Chart_SLL_Form ), intent ( in ) :: &
       C
     integer ( KDI ), intent ( in ) :: &
+      iField, &
       iDimension, &
       iConnection
 
     call C % ReverseBoundaryTemplate &
-           ( Value, C % nCells, iDimension, iConnection )
+           ( F, C % nCells, iField, iDimension, iConnection )
 
   end subroutine ReverseBoundary
 

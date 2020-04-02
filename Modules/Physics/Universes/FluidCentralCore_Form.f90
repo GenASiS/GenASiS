@@ -156,7 +156,8 @@ contains
 
 
   subroutine InitializeGeometry &
-               ( FC, GA, PS, GeometryType, CentralMassOption )
+               ( FC, GA, PS, GeometryType, UsePinnedMemoryOption, &
+                 CentralMassOption )
 
     class ( FluidCentralCoreForm ), intent ( inout ) :: &
       FC
@@ -166,16 +167,22 @@ contains
       PS
     character ( * ), intent ( in )  :: &
       GeometryType
+    logical ( KDL ), intent ( in ), optional :: &
+      UsePinnedMemoryOption
     real ( KDR ), intent ( in ), optional :: &
       CentralMassOption
 
     if ( FC % Dimensionless ) then
       call GA % Initialize &
-             ( PS, GeometryType, GravitySolverTypeOption = 'MULTIPOLE', &
+             ( PS, GeometryType, & 
+               UsePinnedMemoryOption = UsePinnedMemoryOption, &
+               GravitySolverTypeOption = 'MULTIPOLE', &
                GravitationalConstantOption = 1.0_KDR )
     else
       call GA % Initialize &
-             ( PS, GeometryType, GravitySolverTypeOption = 'MULTIPOLE' )
+             ( PS, GeometryType, &
+               UsePinnedMemoryOption = UsePinnedMemoryOption, &
+               GravitySolverTypeOption = 'MULTIPOLE' )
     end if !-- Dimensionless
 
   end subroutine InitializeGeometry
@@ -388,7 +395,7 @@ contains
       =  min ( TimeScaleDensityAve, TimeScaleVelocityMax )  /  I % nWrite
 
     call Show ( 'Time Scales', I % IGNORABILITY )
-    call Show ( VelocityMax, Chart % CoordinateUnit ( 1 ) / I % TimeUnit, &
+    call Show ( VelocityMax, ( Chart % CoordinateUnit ( 1 ) / I % TimeUnit ), &
                 'VelocityMax', I % IGNORABILITY )
     call Show ( VelocityMaxRadius, Chart % CoordinateUnit ( 1 ), &
                 'VelocityMaxRadius', I % IGNORABILITY )

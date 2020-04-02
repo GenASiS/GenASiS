@@ -1,5 +1,6 @@
 DERIVATIVES = \
   Derivatives.o \
+  Gradient_Kernel.o \
   Gradient_Form.o \
+  Difference_Kernel.o \
   Difference_Form.o
-#  Difference_GPU__Form.o \

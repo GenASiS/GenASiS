@@ -785,7 +785,7 @@ contains
         associate ( ID => S % IncrementDivergence_S ( iS ) )
         Current_S => S % Current_BSLL_ASC_CSLD % CurrentSection ( iS )
         call S % AllocateBoundaryFluence &
-               ( ID, Chart, Current_S % N_CONSERVED, &
+               ( ID, Current_S, Chart, &
                  S % BoundaryFluence_CSL_S ( iS ) % Array )
         end associate !-- ID, etc.
       end do !-- iS
@@ -804,7 +804,7 @@ contains
 
     Current_S => S % Current_BSLL_ASC_CSLD % CurrentSection ( 1 )
     call S % AllocateMetricDerivatives &
-           ( S % IncrementDivergence_S ( 1 ), Current_S % nValues )
+           ( S % IncrementDivergence_S ( 1 ), Current_S )
 
     nullify ( Current_S )
 

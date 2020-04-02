@@ -26,7 +26,7 @@ contains
                ( RM, RadiationType, MomentsType, RiemannSolverType, &
                  ReconstructedType, UseLimiter, Units, LimiterParameter, &
                  nValues, VariableOption, VectorOption, NameOption, &
-                 ClearOption, UnitOption, VectorIndicesOption )
+                 ClearOption, PinnedOption, UnitOption, VectorIndicesOption )
 
     class ( PhotonMoments_S_Form ), intent ( inout ) :: &
       RM
@@ -49,7 +49,8 @@ contains
     character ( * ), intent ( in ), optional :: &
       NameOption
     logical ( KDL ), intent ( in ), optional :: &
-      ClearOption
+      ClearOption, &
+      PinnedOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       UnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
@@ -63,7 +64,7 @@ contains
              UseLimiter, Units, LimiterParameter, nValues, &
              VariableOption = VariableOption, VectorOption = VectorOption, &
              NameOption = NameOption, ClearOption = ClearOption, &
-             UnitOption = UnitOption, &
+             PinnedOption = PinnedOption, UnitOption = UnitOption, &
              VectorIndicesOption = VectorIndicesOption )
 
   end subroutine InitializeAllocate_RM

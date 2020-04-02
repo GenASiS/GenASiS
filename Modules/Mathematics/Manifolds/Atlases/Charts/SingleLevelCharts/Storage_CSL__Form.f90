@@ -39,8 +39,8 @@ contains
 
 
   subroutine InitializeAllocate &
-               ( SC, C, NameShort, nFields, nValues, VariableOption, &
-                 WriteOption, IgnorabilityOption )
+               ( SC, C, NameShort, UsePinnedMemory, nFields, nValues, &
+                 VariableOption, WriteOption, IgnorabilityOption )
 
     class ( Storage_CSL_Form ), intent ( inout ) :: &
       SC
@@ -48,6 +48,8 @@ contains
       C
     character ( * ), intent ( in ) :: &
       NameShort
+    logical ( KDL ), intent ( in ) :: &
+      UsePinnedMemory
     integer ( KDI ), intent ( in ) :: &
       nFields, &
       nValues
@@ -60,7 +62,7 @@ contains
 
     if ( SC % Type == '' ) &
       SC % Type = 'a Storage_CSL' 
-
+    
     SC % nFields = nFields
 
     SC % Write = .false.
@@ -75,13 +77,14 @@ contains
     SC % Chart_SL => C
 
     call SC % InitializeTemplate_CSL &
-           ( C, NameShort, nValues, IgnorabilityOption )
+           ( C, NameShort, UsePinnedMemory, nValues, IgnorabilityOption )
 
   end subroutine InitializeAllocate
 
 
   subroutine InitializeClone &
-               ( SC_Target, FC_Source, NameShort, iaSelectedOption )
+               ( SC_Target, FC_Source, NameShort, UsePinnedMemory, &
+                  iaSelectedOption )
 
     class ( Storage_CSL_Form ), intent ( inout ) :: &
       SC_Target
@@ -89,6 +92,8 @@ contains
       FC_Source
     character ( * ), intent ( in ) :: &
       NameShort
+    logical ( KDL ), intent ( in ) :: &
+      UsePinnedMemory
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       iaSelectedOption
 
@@ -100,9 +105,8 @@ contains
     call F % Initialize &
            ( FC_Source % Field, NameOption = NameShort, &
              iaSelectedOption = iaSelectedOption )
-
     call SC_Target % InitializeTemplate_CSL &
-           ( FC_Source % Chart, NameShort, F % nValues, &
+           ( FC_Source % Chart, NameShort, UsePinnedMemory, F % nValues, &
              IgnorabilityOption = FC_Source % IGNORABILITY )
 
     end associate !-- F
@@ -158,7 +162,8 @@ contains
 
     call FC % Field % Initialize &
            ( [ FC % nValues, FC % nFields ], &
-             VariableOption = FC % Variable, NameOption = FC % NameShort )
+             VariableOption = FC % Variable, NameOption = FC % NameShort, &
+             PinnedOption = FC % UsePinnedMemory )
 
     if ( FC % Write ) then
       allocate ( FC % FieldOutput )

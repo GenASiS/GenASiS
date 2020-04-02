@@ -29,6 +29,7 @@ module ConservationLawStep_Form
       LimiterParameter
     type ( StorageForm ) :: &
       Old, &
+      Primitive, &
       DifferenceLeft, &
       DifferenceRight, &
       ReconstructionInner, &
@@ -170,6 +171,10 @@ contains
     
     call CLS % Old % Initialize ( [ nCells, CF % N_CONSERVED ] )
     call CLS % Old % AllocateDevice ( )
+    
+    !-- Primitive, an overlay storage
+    call CLS % Primitive % Initialize &
+           ( CF, iaSelectedOption = CF % iaPrimitive )
 
     !-- Differences
 
@@ -313,18 +318,16 @@ contains
 
     integer ( KDI ) :: &
       iV  !-- iVariable
-    type ( StorageForm ) :: &
-      Primitive!, &
-      !Eigenspeed
 
     associate &
       ( CF => CLS % ConservedFields )
     associate &
-      ( DM => CF % DistributedMesh, &
-        Current => CF, &
-        Old => CLS % Old, &
-        Update  => CLS % Update, &
-        iaC => CF % iaConserved, &
+      ( DM          => CF % DistributedMesh, &
+        Current     => CF, &
+        Old         => CLS % Old, &
+        Primitive   => CLS % Primitive, &
+        Update      => CLS % Update, &
+        iaC  => CF % iaConserved, &
         T_C  => PROGRAM_HEADER % Timer ( CLS % iTimerCommunication ), &
         T_RK => PROGRAM_HEADER % Timer ( CLS % iTimerRKStep ), &
         T_A  => PROGRAM_HEADER % Timer ( CLS % iTimerAuxiliary ), &
@@ -333,17 +336,6 @@ contains
         T_DT_H  => PROGRAM_HEADER % Timer ( CLS % iTimerDataTransferHost ) )
 
     call Show ( 'Preparing Step', CONSOLE % INFO_4 )    
-    call Primitive % Initialize &
-           ( Current, iaSelectedOption = Current % iaPrimitive )
-    
-    !call Eigenspeed % Initialize &
-    !       ( Current, &
-    !         iaSelectedOption = [ Current % FAST_EIGENSPEED_PLUS ( : ), &
-    !                              Current % FAST_EIGENSPEED_MINUS ( : ) ] )
-
-    call T_DT_D % Start ( )
-    call Current % UpdateDevice ( )
-    call T_DT_D % Stop ( )
     
     call T_RK % Start ( )
     do iV = 1, Current % N_CONSERVED
@@ -352,6 +344,7 @@ contains
     end do
     call T_RK % Stop ( )
     
+
     !-- Substep 1
     
     call Show ( 'Solving Substep 1', CONSOLE % INFO_4 )
@@ -382,11 +375,8 @@ contains
     call T_A % Stop ( )
     
     call T_DT_H % Start ( )
-    !call Primitive % UpdateHost ( ) 
-    call Current % UpdateHost ( )
+    call Primitive % UpdateHost ( ) 
     call T_DT_H % Stop ( )
-    
-    call Show ( 'Ghost Exchange', CONSOLE % INFO_5 )
 
     call T_C % Start ( )
     call DM % StartGhostExchange ( )
@@ -394,9 +384,9 @@ contains
     call T_C % Stop ( )
     
     call T_DT_D % Start ( )
-    !call Primitive % UpdateDevice ( )
-    call Current % UpdateDevice ( )
+    call Primitive % UpdateDevice ( )
     call T_DT_D % Stop ( )
+    
     
     !-- Substep 2
     
@@ -431,25 +421,17 @@ contains
     call T_A % Stop ( )
     
     call T_DT_H % Start ( )
-    !call Primitive % UpdateHost ( ) 
-    call Current % UpdateHost ( ) 
+    call Primitive % UpdateHost ( ) 
     call T_DT_H % Stop ( )
     
-    call Show ( 'Ghost Exchange', CONSOLE % INFO_5 )
-
     call T_C % Start ( )
     call DM % StartGhostExchange ( )
     call DM % FinishGhostExchange ( )
     call T_C % Stop ( )
     
-    call T_DT_H % Start ( )
-    !call Primitive % UpdateHost ( ) 
-    call Current % UpdateDevice ( ) 
-    call T_DT_H % Stop ( )
-    
-    !call T_DT_H % Start ( )
-    !call Eigenspeed % UpdateHost ( ) 
-    !call T_DT_H % Stop ( )
+    call T_DT_D % Start ( )
+    call Primitive % UpdateDevice ( ) 
+    call T_DT_D % Stop ( )
     
     end associate !-- DM, etc.
     end associate !-- CF
@@ -527,9 +509,11 @@ contains
     
     call T_BC % Start ( )
     call CF % ApplyBoundaryConditions &
-           ( CF % Value, CF % Value, iD, iBoundary = -1 )
+           ( CF % Value, CF % Value, iD, iBoundary = -1, &
+             PrimitiveOnlyOption = .true. )
     call CF % ApplyBoundaryConditions &
-           ( CF % Value, CF % Value, iD, iBoundary = +1 )
+           ( CF % Value, CF % Value, iD, iBoundary = +1, &
+             PrimitiveOnlyOption = .true. )
     call T_BC % Stop ( )
            
     do iP = 1, CF % N_PRIMITIVE

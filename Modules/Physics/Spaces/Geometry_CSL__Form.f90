@@ -31,7 +31,8 @@ contains
 
 
   subroutine Initialize &
-               ( GC, C, NameShort, GeometryType, nValues, IgnorabilityOption )
+               ( GC, C, NameShort, GeometryType, UsePinnedMemory, nValues, &
+                 IgnorabilityOption )
 
     class ( Geometry_CSL_Form ), intent ( inout ) :: &
       GC
@@ -40,6 +41,8 @@ contains
     character ( * ), intent ( in ) :: &
       NameShort, &
       GeometryType
+    logical ( KDL ), intent ( in ) :: &
+      UsePinnedMemory
     integer ( KDI ), intent ( in ) :: &
       nValues
     integer ( KDI ), intent ( in ), optional :: &
@@ -50,7 +53,8 @@ contains
 
     GC % GeometryType = GeometryType    
 
-    call GC % InitializeFlat ( C, NameShort, nValues, IgnorabilityOption )
+    call GC % InitializeFlat &
+           ( C, NameShort, UsePinnedMemory, nValues, IgnorabilityOption )
 
   end subroutine Initialize
 

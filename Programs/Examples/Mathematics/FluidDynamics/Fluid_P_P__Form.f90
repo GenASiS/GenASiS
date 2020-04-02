@@ -51,6 +51,28 @@ module Fluid_P_P__Form
     private :: &
       InitializeBasics, &
       SetUnits
+  
+  interface
+  
+    module subroutine Apply_EOS_P_Kernel &
+                 ( P, Gamma, SB, K, N, E, Gamma_0, K0, UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        P, &
+        Gamma, &
+        SB, &
+        K
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        N, &
+        E
+      real ( KDR ), intent ( in ) :: &
+        Gamma_0, &
+        K0
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine Apply_EOS_P_Kernel
+  
+  end interface
 
 contains
 
@@ -59,8 +81,8 @@ contains
                ( F, RiemannSolverType, ReconstructedType, UseLimiter, &
                  VelocityUnit, MassDensityUnit, EnergyDensityUnit, &
                  TemperatureUnit, LimiterParameter, nValues, VariableOption, &
-                 VectorOption, NameOption, ClearOption, UnitOption, &
-                 VectorIndicesOption )
+                 VectorOption, NameOption, ClearOption, PinnedOption, &
+                 UnitOption, VectorIndicesOption )
 
     class ( Fluid_P_P_Form ), intent ( inout ) :: &
       F
@@ -85,7 +107,8 @@ contains
     character ( * ), intent ( in ), optional :: &
       NameOption
     logical ( KDL ), intent ( in ), optional :: &
-      ClearOption
+      ClearOption, &
+      PinnedOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       UnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), &
@@ -107,7 +130,8 @@ contains
              MassDensityUnit, EnergyDensityUnit, TemperatureUnit, &
              LimiterParameter, nValues, VariableOption = Variable, &
              VectorOption = VectorOption, NameOption = NameOption, &
-             ClearOption = ClearOption, UnitOption = VariableUnit, &
+             ClearOption = ClearOption, PinnedOption = PinnedOption, &
+             UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndicesOption )
 
     !-- Non-standard entropy unit
@@ -211,16 +235,16 @@ contains
 
 
   subroutine ComputeFromPrimitiveCommon &
-               ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
+               ( Storage_C, C, G, Storage_G, nValuesOption, oValueOption )
 
-    real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
-      Value_C
+    class ( StorageForm ), intent ( inout ), target :: &
+      Storage_C
     class ( Fluid_P_P_Form ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_G
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
@@ -230,9 +254,13 @@ contains
       nV     !-- nValues
       
     associate &
-      ( FV => Value_C, &
-        GV => Value_G )
-
+      ( FV => Storage_C % Value, &
+        GV => Storage_G % Value, &
+        I_DD_22 => G % METRIC_DD_22, &
+        I_DD_33 => G % METRIC_DD_33, &        
+        I_UU_22 => G % METRIC_UU_22, &
+        I_UU_33 => G % METRIC_UU_33 )
+        
     if ( present ( oValueOption ) ) then
       oV = oValueOption
     else
@@ -275,39 +303,61 @@ contains
         SB    => FV ( oV + 1 : oV + nV, C % ENTROPY_PER_BARYON ), &
         K     => FV ( oV + 1 : oV + nV, C % POLYTROPIC_PARAMETER ) )
 
-    call C % ComputeBaryonMassKernel ( M )
+    associate &
+      ( T_CFP => PROGRAM_HEADER % Timer ( C % iTimerComputeFromPrimitive ), &
+        T_CE  => PROGRAM_HEADER % Timer ( C % iTimerComputeEigenspeed ), &
+        T_AE  => PROGRAM_HEADER % Timer ( C % iTimerApply_EOS ) ) 
+
+    call T_AE % Start ( )
     call C % Apply_EOS_P_Kernel &
            ( P, Gamma, SB, K, N, E, C % AdiabaticIndex, &
-             C % FiducialPolytropicParameter )
-    call C % ComputeDensityMomentumKernel &
-           ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
-    call C % ComputeConservedEnergyKernel &
-           ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
+             C % FiducialPolytropicParameter, &
+             UseDeviceOption = C % AllocatedDevice )
+    call T_AE % Stop ( )
+    
+    call T_CFP % Start ( )
+    !call C % ComputeBaryonMassKernel &
+    !       ( M, UseDeviceOption = C % AllocatedDevice )
+    !call C % ComputeDensityMomentumKernel &
+    !       ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33, &
+    !         UseDeviceOption = C % AllocatedDevice )
+    call C % ComputeFromPrimitiveKernel &
+           ( M, D, S_1, S_2, S_3, G, N, V_1, V_2, V_3, E, &
+             M_DD_22, M_DD_33, UseDeviceOption = C % AllocatedDevice )
+    call T_CFP % Stop ( )
+    
+    call T_CE % Start ( )
     call C % ComputeEigenspeedsFluidKernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, MN, &
-             M, N, V_1, V_2, V_3, S_1, S_2, S_3, P, Gamma, M_UU_22, M_UU_33 )
+             M, N, V_1, V_2, V_3, S_1, S_2, S_3, P, Gamma, &
+             M_UU_22, M_UU_33, UseDeviceOption = C % AllocatedDevice )
+    call T_CE % Stop ( )
+
+    end associate !-- T_CFP, T_CE, T_AE
 
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
     end associate !-- FV, etc.
 
-    if ( associated ( C % Value, Value_C ) ) &
-      call C % Features % Detect ( )
+    if ( associated ( C % Value, Storage_C % Value ) ) then
+      if ( trim ( C % RiemannSolverType ) == 'HLLC' ) &
+        call C % Features % Detect ( )
+    end if
 
   end subroutine ComputeFromPrimitiveCommon
 
 
   subroutine ComputeFromConservedCommon &
-               ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
+               ( Storage_C, C, G, Storage_G, nValuesOption, oValueOption )
 
-    real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
-      Value_C
+    class ( StorageForm ), intent ( inout ), target :: &
+      Storage_C
     class ( Fluid_P_P_Form ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_G
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
@@ -317,8 +367,12 @@ contains
       nV     !-- nValues
 
     associate &
-      ( FV => Value_C, &
-        GV => Value_G )
+      ( FV => Storage_C % Value, &
+        GV => Storage_G % Value, &
+        I_DD_22 => G % METRIC_DD_22, &
+        I_DD_33 => G % METRIC_DD_33, &        
+        I_UU_22 => G % METRIC_UU_22, &
+        I_UU_33 => G % METRIC_UU_33 )
 
     if ( present ( oValueOption ) ) then
       oV = oValueOption
@@ -359,42 +413,64 @@ contains
         MN    => FV ( oV + 1 : oV + nV, C % MACH_NUMBER ), &
         SB    => FV ( oV + 1 : oV + nV, C % ENTROPY_PER_BARYON ), &
         K     => FV ( oV + 1 : oV + nV, C % POLYTROPIC_PARAMETER ) )
-
-    call C % ComputeBaryonMassKernel ( M )
-    call C % ComputeDensityVelocityKernel &
-           ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33 )
-    call C % ComputeInternalEnergyKernel &
-           ( E, G, M, N, V_1, V_2, V_3, S_1, S_2, S_3 )
+    
+    associate &
+      ( T_CFC => PROGRAM_HEADER % Timer ( C % iTimerComputeFromConserved ), &
+        T_CE  => PROGRAM_HEADER % Timer ( C % iTimerComputeEigenspeed ), &
+        T_AE  => PROGRAM_HEADER % Timer ( C % iTimerApply_EOS ) ) 
+    
+    call T_CFC % Start ( )
+    !call C % ComputeBaryonMassKernel & 
+    !       ( M, UseDeviceOption = C % AllocatedDevice )
+    !call C % ComputeDensityVelocityKernel &
+    !       ( N, V_1, V_2, V_3, D, S_1, S_2, S_3, M, M_UU_22, M_UU_33, &
+    !         UseDeviceOption = C % AllocatedDevice )
+    call C % ComputeFromConservedKernel &
+           ( E, G, M, N, D, V_1, V_2, V_3, S_1, S_2, S_3, &
+             M_UU_22, M_UU_33, UseDeviceOption = C % AllocatedDevice )
+    call T_CFC % Stop ( )
+    
+    call T_AE % Start ( )
     call C % Apply_EOS_P_Kernel &
            ( P, Gamma, SB, K, N, E, C % AdiabaticIndex, &
-             C % FiducialPolytropicParameter )
+             C % FiducialPolytropicParameter, &
+             UseDeviceOption = C % AllocatedDevice )
+    call T_AE % Stop ( )
+    
+    call T_CE % Start ( )
     call C % ComputeEigenspeedsFluidKernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, MN, &
-             M, N, V_1, V_2, V_3, S_1, S_2, S_3, P, Gamma, M_UU_22, M_UU_33 )
+             M, N, V_1, V_2, V_3, S_1, S_2, S_3, P, Gamma, &
+             M_UU_22, M_UU_33, UseDeviceOption = C % AllocatedDevice )
+    call T_CE % Stop ( )
+    
+    end associate !-- T_CFC
 
     end associate !-- FEP_1, etc.
     end associate !-- M_UU_22, etc.
     end associate !-- FV, etc.
     
-    if ( associated ( C % Value, Value_C ) ) &
-      call C % Features % Detect ( )
+    if ( associated ( C % Value, Storage_C % Value ) ) then
+      if ( trim ( C % RiemannSolverType ) == 'HLLC' ) &
+        call C % Features % Detect ( )
+    end if
 
   end subroutine ComputeFromConservedCommon
 
 
   subroutine ComputeRawFluxes &
-               ( RawFlux, C, G, Value_C, Value_G, iDimension, &
+               ( RawFlux, C, G, Storage_C, Storage_G, iDimension, &
                  nValuesOption, oValueOption )
     
-    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+    class ( StorageForm ), intent ( inout ) :: &
       RawFlux
     class ( Fluid_P_P_Form ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_C, &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_C, &
+      Storage_G
     integer ( KDI ), intent ( in ) :: &
       iDimension
     integer ( KDI ), intent ( in ), optional :: &
@@ -402,60 +478,10 @@ contains
       oValueOption
 
     call C % ComputeRawFluxesTemplate_P &
-           ( RawFlux, G, Value_C, Value_G, iDimension, nValuesOption, &
+           ( RawFlux, G, Storage_C, Storage_G, iDimension, nValuesOption, &
              oValueOption )
 
   end subroutine ComputeRawFluxes
-
-
-  subroutine Apply_EOS_P_Kernel ( P, Gamma, SB, K, N, E, Gamma_0, K0 )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      P, &
-      Gamma, &
-      SB, &
-      K
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      N, &
-      E
-    real ( KDR ), intent ( in ) :: &
-      Gamma_0, &
-      K0
-
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-
-    nValues = size ( P )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-      Gamma ( iV )  =  Gamma_0
-      P     ( iV )  =  E ( iV )  *  ( Gamma_0 - 1.0_KDR ) 
-    end do !-- iV
-    !$OMP end parallel do
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-      if ( N ( iV ) > 0.0_KDR ) then
-        K ( iV )  =  P ( iV ) / ( N ( iV ) ** Gamma_0 )
-      else
-        K ( iV )  =  0.0_KDR
-      end if
-    end do !-- iV
-    !$OMP end parallel do
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-      if ( K ( iV ) > 0.0_KDR ) then
-        SB ( iV )  =    log ( K ( iV ) / K0 ) / ( Gamma_0 - 1.0_KDR )
-      else
-        SB ( iV )  =  - 0.1 * huge ( 1.0_KDR )
-      end if
-    end do !-- iV
-    !$OMP end parallel do
-
-  end subroutine Apply_EOS_P_Kernel
 
 
   subroutine InitializeBasics &

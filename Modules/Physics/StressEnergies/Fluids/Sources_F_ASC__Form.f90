@@ -27,8 +27,8 @@ contains
 
 
   subroutine Initialize &
-               ( SFA, Fluid_ASC, NameShortOption, TimeUnitOption, &
-                 IgnorabilityOption )
+               ( SFA, Fluid_ASC, NameShortOption, UsePinnedMemoryOption, &
+                 TimeUnitOption, IgnorabilityOption )
 
     class ( Sources_F_ASC_Form ), intent ( inout ) :: &
       SFA
@@ -36,6 +36,8 @@ contains
       Fluid_ASC
     character ( * ), intent ( in ), optional :: &
       NameShortOption
+    logical ( KDL ), intent ( in ), optional :: &
+      UsePinnedMemoryOption
     type ( MeasuredValueForm ), intent ( in ), optional :: &
       TimeUnitOption
     integer ( KDI ), intent ( in ), optional :: &
@@ -57,7 +59,8 @@ contains
       NameShort = NameShortOption
 
     call SFA % InitializeTemplate_ASC &
-           ( Fluid_ASC % Atlas, NameShort, IgnorabilityOption )
+           ( Fluid_ASC % Atlas, NameShort, UsePinnedMemoryOption, &
+             IgnorabilityOption )
 
   end subroutine Initialize
 
@@ -94,8 +97,8 @@ contains
     select type ( SFC => FA % Chart )
     class is ( Sources_F_CSL_Form )
       call SFC % Initialize &
-             ( FC, FA % NameShort, FA % TimeUnit, nValues, &
-               IgnorabilityOption = FA % IGNORABILITY )
+             ( FC, FA % NameShort, FA % UsePinnedMemory, FA % TimeUnit, &
+               nValues, IgnorabilityOption = FA % IGNORABILITY )
     end select !-- SFC
 
     call A % AddField ( FA )

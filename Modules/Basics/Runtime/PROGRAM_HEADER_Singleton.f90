@@ -847,7 +847,10 @@ contains
       ResidentSetSize, &
       MaxResidentSetSize, &
       MinResidentSetSize, &
-      MeanResidentSetSize
+      MeanResidentSetSize, &
+      DeviceMemoryTotal, &
+      DeviceMemoryFree, &
+      DeviceMemoryUsed
     type ( ProgramHeaderSingleton ), pointer :: &
       PH
       
@@ -876,8 +879,8 @@ contains
              ( HighWaterMark, ResidentSetSize, Ignorability )
     end if
     
-    call Show ( HighWaterMark, 'This process HWM', Ignorability + 1 )
-    call Show ( ResidentSetSize, 'This process RSS', Ignorability + 1 )
+    call Show ( HighWaterMark, 'This process HWM', Ignorability )
+    call Show ( ResidentSetSize, 'This process RSS', Ignorability )
     
     if ( present ( CommunicatorOption ) ) then
       
@@ -895,6 +898,18 @@ contains
       call Show ( MeanResidentSetSize, 'Across processes mean RSS', &
                   Ignorability + 1 )
     
+    end if
+    
+    if ( OffloadEnabled ( ) ) then
+      call Show ( 'Device memory info', Ignorability )
+      call GetDeviceMemoryInfo &
+             ( DeviceMemoryTotal, DeviceMemoryUsed, DeviceMemoryFree )
+      call Show ( DeviceMemoryTotal, 'This process device memory', &
+                  Ignorability )
+      call Show ( DeviceMemoryUsed,  'This process device memory used', &
+                  Ignorability )
+      call Show ( DeviceMemoryFree,  'This process device memory free', &
+                  Ignorability )
     end if
     
     nullify ( PH )
@@ -964,12 +979,13 @@ contains
     call get_environment_variable &
            ( 'OMP_SCHEDULE', OMP_SetSchedule, Length, Status, .false. )
     
-    !-- Set default OMP schedule if not in env. var.
+    !-- Set default OMP schedule to "guided" if not set in env. var.
     if ( Length == 0 ) &
       call OMP_SET_SCHEDULE ( OMP_SCHED_GUIDED, -1 )
     
     OMP_ScheduleLabelPrefix = ''
-    if ( OffloadEnabled ( ) ) then  !-- hardcoded to (static, 1) with offload
+    if ( OffloadEnabled ( ) .and. GetNumberOfDevices ( ) >= 1 ) then  
+      !-- per Build/Preprocessor, hardcoded to "(static, 1)" for offload
       OMP_ScheduleKind = OMP_SCHED_STATIC
       OMP_ScheduleChunkSize = 1
     else

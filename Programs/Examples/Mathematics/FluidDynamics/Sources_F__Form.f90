@@ -42,7 +42,7 @@ contains
 
   subroutine InitializeAllocate_SF &
                ( SF, F, TimeUnit, VariableOption, VectorOption, NameOption, &
-                 ClearOption, UnitOption, VectorIndicesOption )
+                 ClearOption, PinnedOption, UnitOption, VectorIndicesOption )
 
     class ( Sources_F_Form ), intent ( inout ) :: &
       SF
@@ -56,7 +56,8 @@ contains
     character ( * ), intent ( in ), optional :: &
       NameOption
     logical ( KDL ), intent ( in ), optional :: &
-      ClearOption
+      ClearOption, & 
+      PinnedOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       UnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), &
@@ -85,8 +86,8 @@ contains
     call SF % Sources_C_Form % Initialize &
            ( F, TimeUnit, F % iaConserved, VariableOption = Variable, &
              VectorOption = Vector, NameOption = Name, &
-             ClearOption = ClearOption, UnitOption = VariableUnit, &
-             VectorIndicesOption = VectorIndices )
+             ClearOption = ClearOption, PinnedOption = PinnedOption, &
+             UnitOption = VariableUnit, VectorIndicesOption = VectorIndices )
 
   end subroutine InitializeAllocate_SF
 

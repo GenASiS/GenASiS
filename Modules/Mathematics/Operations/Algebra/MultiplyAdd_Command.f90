@@ -2,8 +2,11 @@
 !   in order to expose elemental variables to the compiler and include 
 !   threading.
 
+#include "Preprocessor"
+
 module MultiplyAdd_Command
 
+  use iso_c_binding
   use Basics
   
   public :: &
@@ -50,7 +53,7 @@ contains
   end subroutine MultiplyAddReal_1D
 
 
-  subroutine MultiplyAddReal_1D_InPlace ( A, B, C )
+  subroutine MultiplyAddReal_1D_InPlace ( A, B, C, UseDeviceOption )
   
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       A
@@ -58,19 +61,36 @@ contains
       B
     real ( KDR ), intent ( in ) :: &
       C
+    logical ( KDL ), intent ( in ), optional :: &
+      UseDeviceOption
                       
     integer ( KDI ) :: &
       iV, &
       nV
+    logical ( KDL ) :: &
+      UseDevice
+      
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
 
     nV = size ( A )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nV
-      A ( iV ) =  A ( iV ) +  C * B ( iV )
-    end do
-    !$OMP end parallel do
-  
+    
+    if ( UseDevice ) then
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET )
+      do iV = 1, nV
+        A ( iV ) =  A ( iV ) +  C * B ( iV )
+      end do
+      !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    else 
+      !$OMP parallel do private ( iV )
+      do iV = 1, nV
+        A ( iV ) =  A ( iV ) +  C * B ( iV )
+      end do
+      !$OMP end parallel do
+    end if
+    
   end subroutine MultiplyAddReal_1D_InPlace
 
 
@@ -98,7 +118,7 @@ contains
   end subroutine MultiplyAddReal_2D
 
 
-  subroutine MultiplyAddReal_2D_InPlace ( A, B, C )
+  subroutine MultiplyAddReal_2D_InPlace ( A, B, C, UseDeviceOption )
   
     real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
       A
@@ -106,6 +126,8 @@ contains
       B
     real ( KDR ), intent ( in ) :: &
       C
+    logical ( KDL ), intent ( in ), optional :: &
+      UseDeviceOption
                       
     integer ( KDI ) :: &
       iV, &
@@ -114,7 +136,9 @@ contains
     nV = size ( A, dim = 2 )
 
     do iV = 1, nV
-      call MultiplyAdd ( A ( :, iV ), B ( :, iV ), C )
+      call MultiplyAdd &
+             ( A ( :, iV ), B ( :, iV ), C, &
+               UseDeviceOption = UseDeviceOption )
     end do
   
   end subroutine MultiplyAddReal_2D_InPlace

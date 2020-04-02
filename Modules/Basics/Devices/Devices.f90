@@ -1,5 +1,5 @@
 module Devices
-
+  
   use AllocateDevice_Command
   use AssociateHost_Command
   use DeallocateDevice_Command
@@ -11,5 +11,6 @@ module Devices
   use OffloadEnabled_Function
   use OnDevice_Function
   use GetNumberOfDevices_Function
+  use GetDeviceMemoryInfo_Command
   
 end module Devices

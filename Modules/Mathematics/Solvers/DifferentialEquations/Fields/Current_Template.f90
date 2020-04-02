@@ -36,6 +36,15 @@ module Current_Template
       ALPHA_MINUS     = 2, &
       ALPHA_CENTER    = 3, &
       N_SOLVER_SPEEDS = 3
+    integer ( KDI ) :: &
+      iTimerComputeFromPrimitive, &
+      iTimerComputeFromConserved, &
+      iTimerComputeEigenspeed, &
+      iTimerApply_EOS, &
+      iTimerComputeSolverSpeeds_HLL, &
+      iTimerComputeFluxes_HLL, &
+      iTimerComputeRawFluxes, &
+      iTimerComputeDiffusionFactor_HLL
     integer ( KDI ), dimension ( : ), allocatable :: &
       iaPrimitive, &
       iaConserved, &
@@ -65,22 +74,22 @@ module Current_Template
       ComputeFromPrimitiveSelf
     procedure, private, pass ( C ) :: &
       ComputeFromPrimitiveOther
-    procedure, private, pass :: &
-      ComputeFromPrimitiveSelectGeometry
+    !procedure, private, pass :: &
+    !  ComputeFromPrimitiveSelectGeometry
     generic, public :: &
       ComputeFromPrimitive &
-        => ComputeFromPrimitiveSelf, ComputeFromPrimitiveOther, &
-           ComputeFromPrimitiveSelectGeometry
+        => ComputeFromPrimitiveSelf, ComputeFromPrimitiveOther !, &
+           !ComputeFromPrimitiveSelectGeometry
     procedure, private, pass :: &
       ComputeFromConservedSelf
     procedure, private, pass ( C ) :: &
       ComputeFromConservedOther
-    procedure, private, pass :: &
-      ComputeFromConservedSelectGeometry
+    !procedure, private, pass :: &
+    !  ComputeFromConservedSelectGeometry
     generic, public :: &
       ComputeFromConserved &
-        => ComputeFromConservedSelf, ComputeFromConservedOther, &
-           ComputeFromConservedSelectGeometry
+        => ComputeFromConservedSelf, ComputeFromConservedOther !, &
+           !ComputeFromConservedSelectGeometry
     procedure, public, pass ( C ) :: &
       ComputeFluxes
     procedure, public, pass :: &
@@ -106,37 +115,37 @@ module Current_Template
       class ( CurrentTemplate ), intent ( inout ) :: &
         C
     end subroutine SPC
-
-    subroutine CFPC ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
+    
+    subroutine CFPC ( Storage_C, C, G, Storage_G, nValuesOption, oValueOption )
       use Basics
       use Manifolds
       import CurrentTemplate
-      real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
-        Value_C
+      class ( StorageForm ), intent ( inout ), target :: &
+        Storage_C
       class ( CurrentTemplate ), intent ( in ) :: &
         C
       class ( GeometryFlatForm ), intent ( in ) :: &
         G
-      real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-        Value_G
+      class ( StorageForm ), intent ( in ) :: &
+        Storage_G
       integer ( KDI ), intent ( in ), optional :: &
         nValuesOption, &
         oValueOption
     end subroutine CFPC
 
-    subroutine CFCC ( Value_C, C, G, Value_G, DetectFeaturesOption, &
+    subroutine CFCC ( Storage_C, C, G, Storage_G, DetectFeaturesOption, &
                       nValuesOption, oValueOption )
       use Basics
       use Manifolds
       import CurrentTemplate
-      real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
-        Value_C
+      class ( StorageForm ), intent ( inout ), target :: &
+        Storage_C
       class ( CurrentTemplate ), intent ( in ) :: &
         C
       class ( GeometryFlatForm ), intent ( in ) :: &
         G
-      real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-        Value_G
+      class ( StorageForm ), intent ( in ) :: &
+        Storage_G
       logical ( KDL ), intent ( in ), optional :: &
         DetectFeaturesOption
       integer ( KDI ), intent ( in ), optional :: &
@@ -144,20 +153,20 @@ module Current_Template
         oValueOption
     end subroutine CFCC
 
-    subroutine CRF ( RawFlux, C, G, Value_C, Value_G, iDimension, &
+    subroutine CRF ( RawFlux, C, G, Storage_C, Storage_G, iDimension, &
                      nValuesOption, oValueOption )
       use Basics
       use Manifolds
       import CurrentTemplate
-      real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+      class ( StorageForm ), intent ( inout ) :: &
         RawFlux
       class ( CurrentTemplate ), intent ( in ) :: &
         C
       class ( GeometryFlatForm ), intent ( in ) :: &
         G
-      real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-        Value_C, &
-        Value_G
+      class ( StorageForm ), intent ( in ) :: &
+        Storage_C, &
+        Storage_G
       integer ( KDI ), intent ( in ) :: &
         iDimension
       integer ( KDI ), intent ( in ), optional :: &
@@ -177,6 +186,47 @@ module Current_Template
       SetUnits, &
       ComputeSolverSpeeds_HLL_Kernel, &
       ComputeFluxes_HLL_Kernel
+      
+  interface
+  
+    module subroutine SetDiffusionFactorUnity ( DFV_I, UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        DFV_I
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine SetDiffusionFactorUnity
+  
+    module subroutine ComputeSolverSpeeds_HLL_Kernel &
+                 ( AP_I, AM_I, LP_IL, LP_IR, LM_IL, LM_IR, UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        AP_I, &
+        AM_I
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        LP_IL, LP_IR, &
+        LM_IL, LM_IR
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine ComputeSolverSpeeds_HLL_Kernel
+
+    module subroutine ComputeFluxes_HLL_Kernel &
+                 ( F_IL, F_IR, U_IL, U_IR, AP_I, AM_I, DF_I, F_I, &
+                   UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        F_IL, F_IR, &
+        U_IL, U_IR, &
+        AP_I, &
+        AM_I, &
+        DF_I
+      real ( KDR ), dimension ( : ), intent ( out ) :: &
+        F_I
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine ComputeFluxes_HLL_Kernel
+  
+  end interface
 
 contains
 
@@ -184,8 +234,8 @@ contains
   subroutine InitializeTemplate &
                ( C, RiemannSolverType, ReconstructedType, UseLimiter, &
                  Velocity_U_Unit, LimiterParameter, nValues, VariableOption, &
-                 VectorOption, NameOption, ClearOption, UnitOption, &
-                 VectorIndicesOption )
+                 VectorOption, NameOption, ClearOption, PinnedOption, &
+                 UnitOption, VectorIndicesOption )
 
     class ( CurrentTemplate ), intent ( inout ) :: &
       C
@@ -206,7 +256,8 @@ contains
     character ( * ), intent ( in ), optional :: &
       NameOption
     logical ( KDL ), intent ( in ), optional :: &
-      ClearOption
+      ClearOption, &
+      PinnedOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       UnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), &
@@ -240,6 +291,7 @@ contains
            ( [ nValues, C % N_FIELDS ], &
              VariableOption = Variable, VectorOption = Vector, &
              NameOption = Name, ClearOption = Clear, &
+             PinnedOption = PinnedOption, &
              UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndices )
 
@@ -252,6 +304,31 @@ contains
     call Show ( C % UseLimiter, 'UseLimiter', C % IGNORABILITY )
     if ( C % UseLimiter ) &
       call Show ( C % LimiterParameter, 'LimiterParameter', C % IGNORABILITY )
+      
+    call PROGRAM_HEADER % AddTimer &
+           ( 'ComputeFromPrimitive', C % iTimerComputeFromPrimitive, &
+             Level = 6 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'ComputeFromConserved', C % iTimerComputeFromConserved, &
+             Level = 6 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'ComputeEigenspeed', C % iTimerComputeEigenspeed, &
+             Level = 6 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'Apply_EOS', C % iTimerApply_EOS, &
+             Level = 6 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'ComputeSolverSpeeds_HLL', C % iTimerComputeSolverSpeeds_HLL, &
+             Level = 6 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'ComputeFluxes_HLL', C % iTimerComputeFluxes_HLL, &
+             Level = 6 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'ComputeRawFluxes', C % iTimerComputeRawFluxes, &
+             Level = 6 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'ComputeDiffusionFactor_HLL', &
+             C % iTimerComputeDiffusionFactor_HLL, Level = 6 )
 
   end subroutine InitializeTemplate
 
@@ -347,28 +424,28 @@ contains
       oValueOption
 
     call C % ComputeFromPrimitiveCommon &
-           ( C % Value, G, G % Value, nValuesOption, oValueOption )
+           ( C, G, G, nValuesOption, oValueOption )
     
   end subroutine ComputeFromPrimitiveSelf
 
 
   subroutine ComputeFromPrimitiveOther &
-               ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
+               ( Storage_C, C, G, Storage_G, nValuesOption, oValueOption )
 
-    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
-      Value_C
+    class ( StorageForm ), intent ( inout ) :: &
+      Storage_C
     class ( CurrentTemplate ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_G
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
 
     call C % ComputeFromPrimitiveCommon &
-           ( Value_C, G, Value_G, nValuesOption, oValueOption )
+           ( Storage_C, G, Storage_G, nValuesOption, oValueOption )
     
   end subroutine ComputeFromPrimitiveOther
 
@@ -388,15 +465,24 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
+      
+    type ( StorageForm ) :: &
+      Storage_G
 
     associate &
       ( nV => C % nValues, &
         iV => iStrgeometryValue, &
         iD => 1 )
-
+    
+    call Storage_G % Initialize ( [ nV, G % nVariables ] )
+    Storage_G % Value = spread ( G % Value ( iV, : ), iD, nV )
+    if ( C % AllocatedDevice ) then
+      call Storage_G % AllocateDevice ( )
+      call Storage_G % UpdateDevice ( )
+    end if
+    
     call C % ComputeFromPrimitiveCommon &
-           ( C % Value, G, spread ( G % Value ( iV, : ), iD, nV ), &
-             nValuesOption, oValueOption )
+           ( C, G, Storage_G, nValuesOption, oValueOption )
     
     end associate !-- nV, etc.
 
@@ -417,24 +503,23 @@ contains
       oValueOption
 
     call C % ComputeFromConservedCommon &
-           ( C % Value, G, G % Value, DetectFeaturesOption, nValuesOption, &
-             oValueOption )
+           ( C, G, G, DetectFeaturesOption, nValuesOption, oValueOption )
     
   end subroutine ComputeFromConservedSelf
 
 
   subroutine ComputeFromConservedOther &
-               ( Value_C, C, G, Value_G, DetectFeaturesOption, &
+               ( Storage_C, C, G, Storage_G, DetectFeaturesOption, &
                  nValuesOption, oValueOption )
 
-    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
-      Value_C
+    class ( StorageForm ), intent ( inout ) :: &
+      Storage_C
     class ( CurrentTemplate ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_G
     logical ( KDL ), intent ( in ), optional :: &
       DetectFeaturesOption
     integer ( KDI ), intent ( in ), optional :: &
@@ -442,8 +527,8 @@ contains
       oValueOption
 
     call C % ComputeFromConservedCommon &
-           ( Value_C, G, Value_G, DetectFeaturesOption, nValuesOption, &
-             oValueOption )
+           ( Storage_C, G, Storage_G, DetectFeaturesOption, &
+             nValuesOption, oValueOption )
     
   end subroutine ComputeFromConservedOther
 
@@ -466,15 +551,25 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
+      
+    type ( StorageForm ) :: &
+      Storage_G
 
     associate &
       ( nV => C % nValues, &
         iV => iStrgeometryValue, &
         iD => 1 )
-
+        
+    call Storage_G % Initialize ( [ nV, G % nVariables ] )
+    Storage_G % Value = spread ( G % Value ( iV, : ), iD, nV )
+    if ( C % AllocatedDevice ) then
+      call Storage_G % AllocateDevice ( )
+      call Storage_G % UpdateDevice ( )
+    end if
+    
     call C % ComputeFromConservedCommon &
-           ( C % Value, G, spread ( G % Value ( iV, : ), iD, nV ), &
-             DetectFeaturesOption, nValuesOption, oValueOption )
+           ( C, G, Storage_G, DetectFeaturesOption, nValuesOption, &
+             oValueOption )
     
     end associate !-- nV, etc.
 
@@ -512,7 +607,7 @@ contains
 
 
   impure elemental subroutine FinalizeTemplate ( C )
-
+    
     class ( CurrentTemplate ), intent ( inout ) :: &
       C
 
@@ -558,21 +653,40 @@ contains
       iF  !-- iField
 
     call C % ComputeRawFluxes &
-           ( F_IL % Value, G, C_IL % Value, G_I % Value, iDimension )
+           ( F_IL, G, C_IL, G_I, iDimension )
     call C % ComputeRawFluxes &
-           ( F_IR % Value, G, C_IR % Value, G_I % Value, iDimension )
-
+           ( F_IR, G, C_IR, G_I, iDimension )
+           
+    associate &
+      ( T_SS => PROGRAM_HEADER % Timer ( C % iTimerComputeSolverSpeeds_HLL ), &
+        T_F => PROGRAM_HEADER % Timer ( C % iTimerComputeFluxes_HLL ) )
+      
+    associate &
+      ( SS_I_V => SS_I % Value, &
+        C_IL_V => C_IL % Value, &
+        C_IR_V => C_IR % Value )
+    
+    call T_SS % Start ( )
+    
     call ComputeSolverSpeeds_HLL_Kernel &
-           ( SS_I % Value ( :, C % ALPHA_PLUS ), &
-             SS_I % Value ( :, C % ALPHA_MINUS ), &
-             C_IL % Value ( :, C % FAST_EIGENSPEED_PLUS ( iDimension ) ), &
-             C_IR % Value ( :, C % FAST_EIGENSPEED_PLUS ( iDimension ) ), &
-             C_IL % Value ( :, C % FAST_EIGENSPEED_MINUS ( iDimension ) ), &
-             C_IR % Value ( :, C % FAST_EIGENSPEED_MINUS ( iDimension ) ) )
-
+           ( SS_I_V ( :, C % ALPHA_PLUS ), &
+             SS_I_V ( :, C % ALPHA_MINUS ), &
+             C_IL_V ( :, C % FAST_EIGENSPEED_PLUS ( iDimension ) ), &
+             C_IR_V ( :, C % FAST_EIGENSPEED_PLUS ( iDimension ) ), &
+             C_IL_V ( :, C % FAST_EIGENSPEED_MINUS ( iDimension ) ), &
+             C_IR_V ( :, C % FAST_EIGENSPEED_MINUS ( iDimension ) ), &
+             UseDeviceOption = C % AllocatedDevice )
+    
+    call T_SS % Stop ( )
+    
+    end associate   !-- SS_I_V
+    
     call C % ComputeDiffusionFactor_HLL ( DF_I, Grid, iDimension )
 
-    associate ( iaC => C % iaConserved )    
+    associate ( iaC => C % iaConserved )
+    
+    call T_F % Start ( )
+    
     do iF = 1, C % N_CONSERVED
       call ComputeFluxes_HLL_Kernel &
              ( F_IL % Value ( :, iF ), &
@@ -582,9 +696,15 @@ contains
                SS_I % Value ( :, C % ALPHA_PLUS ), &
                SS_I % Value ( :, C % ALPHA_MINUS ), &
                DF_I % Value ( :, iF ), &
-               F_I % Value ( :, iF ) )
+               F_I % Value ( :, iF ), &
+               UseDeviceOption = C % AllocatedDevice )
     end do !-- iF
+    
+    call T_F % Stop ( )
+    
     end associate !-- iaC
+    
+    end associate !-- T_SS, T_F
 
   end subroutine ComputeFluxes_HLL
 
@@ -599,32 +719,27 @@ contains
       C
     integer ( KDI ), intent ( in ) :: &
       iDimension
-
-    call C % SetDiffusionFactorUnity ( DF_I % Value )
+      
+    integer ( KDI ) :: &
+      iVariable
+    
+    associate &
+      ( T_CDF => PROGRAM_HEADER % Timer &
+                  ( C % iTimerComputeDiffusionFactor_HLL ) )
+    
+    call T_CDF % Start ( )
+    
+    do iVariable = 1, DF_I % nVariables
+      call C % SetDiffusionFactorUnity &
+             ( DF_I % Value ( :, iVariable ), &
+               UseDeviceOption = DF_I % AllocatedDevice )
+    end do
+    
+    call T_CDF % Stop ( )
+    
+    end associate !-- T_CDF
 
   end subroutine ComputeDiffusionFactor_HLL
-
-
-  subroutine SetDiffusionFactorUnity ( DFV_I )
-
-    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
-      DFV_I
-
-    integer ( KDI ) :: &
-      iV, jV, &
-      nValues
-
-    nValues = size ( DFV_I, dim = 1 )
-
-    do jV = 1, size ( DFV_I, dim = 2 )
-      !$OMP parallel do private ( iV ) 
-      do iV = 1, nValues
-        DFV_I ( iV, jV )  =  1.0_KDR
-      end do !-- iV
-      !$OMP end parallel do
-    end do !-- jV
-
-  end subroutine SetDiffusionFactorUnity
 
 
   subroutine InitializeBasics &
@@ -763,64 +878,6 @@ contains
     end do
 
   end subroutine SetUnits
-
-
-  subroutine ComputeSolverSpeeds_HLL_Kernel &
-               ( AP_I, AM_I, LP_IL, LP_IR, LM_IL, LM_IR )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      AP_I, &
-      AM_I
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      LP_IL, LP_IR, &
-      LM_IL, LM_IR
-
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-
-    nValues = size ( AP_I )
-
-    !$OMP parallel do private ( iV ) 
-    do iV = 1, nValues
-      AP_I ( iV ) = max ( 0.0_KDR, + LP_IL ( iV ), + LP_IR ( iV ) )
-      AM_I ( iV ) = max ( 0.0_KDR, - LM_IL ( iV ), - LM_IR ( iV ) )
-    end do !-- iV
-    !$OMP end parallel do
-
-  end subroutine ComputeSolverSpeeds_HLL_Kernel
-
-
-  subroutine ComputeFluxes_HLL_Kernel &
-               ( F_IL, F_IR, U_IL, U_IR, AP_I, AM_I, DF_I, F_I )
-
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      F_IL, F_IR, &
-      U_IL, U_IR, &
-      AP_I, &
-      AM_I, &
-      DF_I
-    real ( KDR ), dimension ( : ), intent ( out ) :: &
-      F_I
-
-    integer ( KDI ) :: &
-      iV, &
-      nV  
-
-    nV = size ( F_I )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nV
-      F_I ( iV ) &
-        =  (    AP_I ( iV ) * F_IL ( iV ) &
-             +  AM_I ( iV ) * F_IR ( iV ) &
-             -  DF_I ( iV ) * AP_I ( iV ) * AM_I ( iV ) &
-                * ( U_IR ( iV ) - U_IL ( iV ) ) ) &
-           /  max ( AP_I ( iV ) + AM_I ( iV ), tiny ( 0.0_KDR ) )
-    end do
-    !$OMP end parallel do
-
-  end subroutine ComputeFluxes_HLL_Kernel
 
 
 end module Current_Template

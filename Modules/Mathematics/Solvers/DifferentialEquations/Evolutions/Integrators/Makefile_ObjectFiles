@@ -7,6 +7,7 @@ INTEGRATORS = \
   Integrator_C_1D_PS__Template.o \
   Integrator_C_MS_C_PS__Template.o \
   Integrator_C_PS_C_PS__Template.o \
+  Integrator_C_PS__Kernel.o \
   Integrator_C_PS__Form.o \
   TimeSeries_C__Form.o \
   Integrator_Template.o

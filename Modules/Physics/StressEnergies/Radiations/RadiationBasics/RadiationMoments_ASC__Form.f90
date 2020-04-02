@@ -55,7 +55,8 @@ contains
   subroutine Initialize &
                ( RMA, A, RadiationType, MomentsType, Units, NameShortOption, &
                  RiemannSolverTypeOption, ReconstructedTypeOption, &
-                 UseLimiterOption, AllocateTallyOption, AllocateSourcesOption, &
+                 UseLimiterOption, UsePinnedMemoryOption, &
+                 AllocateTallyOption, AllocateSourcesOption, &
                  SuppressWriteOption, SuppressWriteSourcesOption, &
                  LimiterParameterOption, IgnorabilityOption )
 
@@ -74,6 +75,7 @@ contains
       ReconstructedTypeOption
     logical ( KDL ), intent ( in ), optional :: &
       UseLimiterOption, &
+      UsePinnedMemoryOption, &
       AllocateTallyOption, &
       AllocateSourcesOption, &
       SuppressWriteOption, &
@@ -147,6 +149,7 @@ contains
 
     call RMA % InitializeTemplate_ASC_C &
            ( A, NameShort, TallyVariableOption = TallyVariable, &
+             UsePinnedMemoryOption = UsePinnedMemoryOption, &
              AllocateTallyOption = AllocateTallyOption, &
              TallyUnitOption = TallyUnit, &
              IgnorabilityOption = IgnorabilityOption )
@@ -278,7 +281,8 @@ contains
       call FC % Initialize &
              ( C, FA % NameShort, FA % RadiationType, FA % MomentsType, &
                FA % RiemannSolverType, FA % ReconstructedType, &
-               FA % UseLimiter, FA % Units, FA % LimiterParameter, nValues, &
+               FA % UseLimiter, FA % UsePinnedMemory, FA % Units, &
+               FA % LimiterParameter, nValues, &
                IgnorabilityOption = FA % IGNORABILITY )
     end select !-- FC
 

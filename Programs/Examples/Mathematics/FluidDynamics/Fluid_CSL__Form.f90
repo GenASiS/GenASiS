@@ -58,9 +58,9 @@ contains
 
   subroutine Initialize &
                ( FC, C, NameShort, FluidType, RiemannSolverType, &
-                 ReconstructedType, UseLimiter, VelocityUnit, MassDensityUnit, &
-                 EnergyDensityUnit, TemperatureUnit, LimiterParameter, &
-                 nValues, IgnorabilityOption )
+                 ReconstructedType, UseLimiter, UsePinnedMemory, &
+                 VelocityUnit, MassDensityUnit, EnergyDensityUnit, &
+                 TemperatureUnit, LimiterParameter, nValues, IgnorabilityOption )
 
     class ( Fluid_CSL_Form ), intent ( inout ) :: &
       FC
@@ -72,7 +72,8 @@ contains
       RiemannSolverType, &
       ReconstructedType
     logical ( KDL ), intent ( in ) :: &
-      UseLimiter
+      UseLimiter, &
+      UsePinnedMemory
     type ( MeasuredValueForm ), dimension ( 3 ), intent ( in ) :: &
       VelocityUnit
     type ( MeasuredValueForm ), intent ( in ) :: &
@@ -100,7 +101,7 @@ contains
     FC % VelocityUnit      = VelocityUnit
 
     call FC % InitializeTemplate_CSL &
-           ( C, NameShort, nValues, IgnorabilityOption )
+           ( C, NameShort, UsePinnedMemory, nValues, IgnorabilityOption )
 
   end subroutine Initialize
 
@@ -240,7 +241,8 @@ contains
                ( FC % RiemannSolverType, FC % ReconstructedType, &
                  FC % UseLimiter, FC % VelocityUnit, FC % MassDensityUnit, &
                  FC % LimiterParameter, FC % nValues, &
-                 NameOption = FC % NameShort )
+                 NameOption = FC % NameShort, &
+                 PinnedOption = FC % UsePinnedMemory )
         call F % SetPrimitiveConserved ( )
         call F % SetReconstructed ( )
         call F % SetOutput ( FC % FieldOutput )
@@ -254,7 +256,8 @@ contains
                  FC % UseLimiter, FC % VelocityUnit, FC % MassDensityUnit, &
                  FC % EnergyDensityUnit, FC % TemperatureUnit, &
                  FC % LimiterParameter, FC % nValues, &
-                 NameOption = FC % NameShort )
+                 NameOption = FC % NameShort, &
+                 PinnedOption = FC % UsePinnedMemory )
         call F % SetPrimitiveConserved ( )
         call F % SetReconstructed ( )
         call F % SetOutput ( FC % FieldOutput )
@@ -268,7 +271,8 @@ contains
                  FC % UseLimiter, FC % VelocityUnit, FC % MassDensityUnit, &
                  FC % EnergyDensityUnit, FC % TemperatureUnit, &
                  FC % LimiterParameter, FC % nValues, &
-                 NameOption = FC % NameShort )
+                 NameOption = FC % NameShort, &
+                 PinnedOption = FC % UsePinnedMemory )
         call F % SetPrimitiveConserved ( )
         call F % SetReconstructed ( )
         call F % SetOutput ( FC % FieldOutput )

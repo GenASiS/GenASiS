@@ -12,8 +12,12 @@ FLUIDS = \
   Tally_F_P__Form.o \
   Tally_F_D__Form.o \
   Fluid_P_HN__Form.o \
+  Fluid_P_I__Kernel.o \
   Fluid_P_I__Form.o \
+  FluidFeatures_P__Kernel.o \
   FluidFeatures_P__Form.o \
+  Fluid_P__Kernel.o \
   Fluid_P__Template.o \
+  Fluid_D__Kernel.o \
   Fluid_D__Form.o \
   FluidFeatures_Template.o

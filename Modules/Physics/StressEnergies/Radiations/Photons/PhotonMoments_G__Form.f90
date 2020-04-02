@@ -52,7 +52,8 @@ contains
                ( RM, RadiationType, MomentsType, RiemannSolverType, &
                  ReconstructedType, UseLimiter, Units, &
                  LimiterParameter, nValues, VariableOption, VectorOption, &
-                 NameOption, ClearOption, UnitOption, VectorIndicesOption )
+                 NameOption, ClearOption, PinnedOption, UnitOption, &
+                 VectorIndicesOption )
 
     class ( PhotonMoments_G_Form ), intent ( inout ) :: &
       RM
@@ -75,7 +76,8 @@ contains
     character ( * ), intent ( in ), optional :: &
       NameOption
     logical ( KDL ), intent ( in ), optional :: &
-      ClearOption
+      ClearOption, &
+      PinnedOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       UnitOption
     type ( Integer_1D_Form ), dimension ( : ), intent ( in ), optional ::&
@@ -96,7 +98,7 @@ contains
              UseLimiter, Units, LimiterParameter, nValues, &
              VariableOption = Variable, VectorOption = VectorOption, &
              NameOption = NameOption, ClearOption = ClearOption, &
-             UnitOption = VariableUnit, &
+             PinnedOption = PinnedOption, UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndicesOption )
 
   end subroutine InitializeAllocate_RM
@@ -139,16 +141,16 @@ contains
 
 
   subroutine ComputeFromPrimitiveCommon &
-               ( Value_C, C, G, Value_G, nValuesOption, oValueOption )
+               ( Storage_C, C, G, Storage_G, nValuesOption, oValueOption )
 
-    real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
-      Value_C
+    class ( StorageForm ), intent ( inout ), target :: &
+      Storage_C
     class ( PhotonMoments_G_Form ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_G
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
@@ -160,9 +162,9 @@ contains
       RMV
       
     call C % RadiationMomentsForm % ComputeFromPrimitiveCommon &
-           ( Value_C, G, Value_G, nValuesOption, oValueOption )
+           ( Storage_C, G, Storage_G, nValuesOption, oValueOption )
 
-    RMV => Value_C
+    RMV => Storage_C % Value
 
     if ( present ( oValueOption ) ) then
       oV = oValueOption
@@ -192,17 +194,17 @@ contains
 
 
   subroutine ComputeFromConservedCommon &
-               ( Value_C, C, G, Value_G, DetectFeaturesOption, &
+               ( Storage_C, C, G, Storage_G, DetectFeaturesOption, &
                  nValuesOption, oValueOption )
 
-    real ( KDR ), dimension ( :, : ), intent ( inout ), target :: &
-      Value_C
+    class ( StorageForm ), intent ( inout ), target :: &
+      Storage_C
     class ( PhotonMoments_G_Form ), intent ( in ) :: &
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-      Value_G
+    class ( StorageForm ), intent ( in ) :: &
+      Storage_G
     logical ( KDL ), intent ( in ), optional :: &
       DetectFeaturesOption
     integer ( KDI ), intent ( in ), optional :: &
@@ -216,10 +218,10 @@ contains
       RMV
       
     call C % RadiationMomentsForm % ComputeFromConservedCommon &
-           ( Value_C, G, Value_G, DetectFeaturesOption, nValuesOption, &
-             oValueOption )
+           ( Storage_C, G, Storage_G, DetectFeaturesOption, &
+             nValuesOption, oValueOption )
 
-    RMV => Value_C
+    RMV => Storage_C % Value
 
     if ( present ( oValueOption ) ) then
       oV = oValueOption

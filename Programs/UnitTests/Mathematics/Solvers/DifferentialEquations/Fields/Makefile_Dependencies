@@ -1,8 +1,14 @@
 ProtoCurrent_Form.o: \
   Basics.o \
   Manifolds.o \
+  Current_Kernel.o \
   Current_Template.o \
   ProtoCurrent_Form.f90
+
+ProtoCurrent_Kernel.o: \
+  Basics.o \
+  ProtoCurrent_Form.o \
+  ProtoCurrent_Kernel.f90
 
 ProtoCurrentSources_CSL__Form.o: \
   Basics.o \

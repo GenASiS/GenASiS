@@ -539,15 +539,14 @@ contains
             C  => S % Current_1D ( iC ) % Pointer )
 
         call S % AllocateBoundaryFluence &
-               ( ID, Chart, C % N_CONSERVED, &
-                 S % BoundaryFluence_CSL_1D ( iC ) % Array )
+               ( ID, C, Chart, S % BoundaryFluence_CSL_1D ( iC ) % Array )
 
         end associate !-- ID, etc.
       end do !-- iC
 
       call S % AllocateMetricDerivatives &
              ( S % IncrementDivergence_1D ( 1 ), &
-               S % Current_1D ( 1 ) % Pointer % nValues )
+               S % Current_1D ( 1 ) % Pointer )
 
       nullify ( G )
 

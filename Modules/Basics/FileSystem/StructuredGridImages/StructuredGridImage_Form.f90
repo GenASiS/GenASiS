@@ -756,7 +756,9 @@ contains
       call Show ( 'Writing a Storage (structured)', CONSOLE % INFO_5 )
       call Show ( iStrg, 'iStorage', CONSOLE % INFO_5 )
       call Show ( S % Name, 'Name', CONSOLE % INFO_5 )
-
+      
+      call S % UpdateHost ( )
+      
       call SGI % Stream % MakeDirectory ( S % Name ) 
     
       do iS = 1, S % nVariables

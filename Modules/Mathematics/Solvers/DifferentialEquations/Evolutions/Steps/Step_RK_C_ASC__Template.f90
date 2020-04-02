@@ -49,7 +49,11 @@ module Step_RK_C_ASC__Template
         iTimerSources           = 0, &
         iTimerRelaxation        = 0, &
         iTimerGhost             = 0, &
-        iTimerBoundaryFluence   = 0
+        iTimerBoundaryFluence   = 0, &
+        iTimerStepDataToDevice  = 0, &
+        iTimerStepDataToHost    = 0, &
+        iTimer_BF_DataToDevice  = 0, &
+        iTimer_BF_DataToHost    = 0
 !         iStrgeometryValue
       type ( Real_1D_Form ), dimension ( : ), allocatable :: &
         dLogVolumeJacobian_dX
@@ -325,6 +329,10 @@ contains
     if ( .not. allocated ( S % IncrementDivergence_C ) ) &
       return
 
+    call Show ( 'Before deallocating Step_RK_C_ASC storage', &
+                 S % IGNORABILITY + 2 )
+    call PROGRAM_HEADER % ShowStatistics ( S % IGNORABILITY + 2 )
+
     associate &
       ( ID => S % IncrementDivergence_C, &
         SD => S % StorageDivergence_C )
@@ -333,6 +341,10 @@ contains
     call S % DeallocateStorageDivergence ( SD )
     call S % Deallocate_RK_C ( )
     end associate !-- ID, etc.
+    
+    call Show ( 'After deallocating Step_RK_C_ASC storage', &
+                 S % IGNORABILITY + 2 )
+    call PROGRAM_HEADER % ShowStatistics ( S % IGNORABILITY + 2 )
 
   end subroutine DeallocateStorage
 
@@ -576,6 +588,18 @@ contains
       call PROGRAM_HEADER % AddTimer &
              ( 'GhostIncrement', S % iTimerGhost, &
                Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'StepDataToDevice', S % iTimerStepDataToDevice, &
+               Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'StepDataToHost', S % iTimerStepDataToHost, &
+               Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'BF_DataToDevice', S % iTimer_BF_DataToDevice, &
+               Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'BF_DataToHost', S % iTimer_BF_DataToHost, &
+               Level = BaseLevel + 1 )
 
   end subroutine InitializeTimersStage
 
@@ -601,6 +625,18 @@ contains
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
+      
+    type ( TimerForm ), pointer :: &
+      Timer_DTD
+      
+    Timer_DTD => PROGRAM_HEADER % TimerPointer ( S % iTimer_BF_DataToDevice )
+    
+    call Timer_DTD % Start ( )
+    
+    call S % BoundaryFluence_CSL % UpdateDevice ( )
+    !call S % Current % UpdateDevice ( )
+    
+    call Timer_DTD % Stop ( )
 
     call S % LoadSolution_C ( S % Solution, S % Current )
 
@@ -611,9 +647,21 @@ contains
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
+      
+    type ( TimerForm ), pointer :: &
+      Timer_DTH
 
     call S % StoreSolution_C &
            ( S % Current, S % Solution, DetectFeatures = .true. )
+    
+    Timer_DTH => PROGRAM_HEADER % TimerPointer ( S % iTimer_BF_DataToHost )
+    
+    call Timer_DTH % Start ( )
+    
+    !call S % Current % UpdateHost ( )
+    call S % BoundaryFluence_CSL % UpdateHost ( )
+    
+    call Timer_DTH % Stop ( )
 
   end subroutine StoreSolution
 
@@ -689,7 +737,9 @@ contains
 
     TimerClear => PROGRAM_HEADER % TimerPointer ( S % iTimerClearIncrement )
     if ( associated ( TimerClear ) ) call TimerClear % Start ( )
-    call Clear ( K % Value )
+    
+    call Clear ( K % Value, UseDeviceOption = K % AllocatedDevice )
+
     if ( associated ( TimerClear ) ) call TimerClear % Stop ( )    
 
     S % ApplyDivergence_C => S % ApplyDivergence % Pointer
@@ -733,14 +783,18 @@ contains
 
     integer ( KDI ) :: &
       iF  !-- iField
-
+      
     associate ( iaC => Current % iaConserved )
     do iF = 1, Current % N_CONSERVED
+      
       associate &
-        ( CV => Current % Value ( :, iaC ( iF ) ), &
-          SV => Solution % Value ( :, iF ) )
-      call Copy ( CV, SV )
+        ( CV  => Current % Value ( :, iaC ( iF ) ), &
+          SV  => Solution % Value ( :, iF ) )
+      
+      call Copy ( CV, SV, UseDeviceOption = Current % AllocatedDevice )
+      
       end associate !-- CV, etc.
+      
     end do !-- iF
     end associate !-- iaC
 
@@ -765,14 +819,18 @@ contains
 
     associate ( iaC => Current % iaConserved )
     do iF = 1, Current % N_CONSERVED
+      
       associate &
-        ( SV => Solution % Value ( :, iF ), &
-          CV => Current % Value ( :, iaC ( iF ) ) )
-      call Copy ( SV, CV )
+        ( SV  => Solution % Value ( :, iF ), &
+          CV  => Current % Value ( :, iaC ( iF ) ) )
+      
+      call Copy ( SV, CV, UseDeviceOption = Current % AllocatedDevice )
+      
       end associate !-- YV, etc.
+   
     end do !-- iF
     end associate !-- iaC
-
+    
     select type ( Chart => S % Chart )
     class is ( Chart_SL_Template )
       G => Chart % Geometry ( )
@@ -994,9 +1052,11 @@ contains
       S
 
     associate &
-      ( SV => S % Solution % Value, &
-        YV => S % Y % Value )
-    call Copy ( SV, YV )
+      ( SV  => S % Solution % Value, &
+        YV  => S % Y % Value )
+
+    call Copy ( SV, YV, UseDeviceOption = S % Solution % AllocatedDevice )
+
     end associate !-- SV, etc.
 
   end subroutine InitializeIntermediate_C
@@ -1012,9 +1072,11 @@ contains
       iK
 
     associate &
-      ( YV => S % Y % Value, &
-        KV => S % K ( iK ) % Value )
-    call MultiplyAdd ( YV, KV, A )
+      ( YV  => S % Y % Value, &
+        KV  => S % K ( iK ) % Value )
+    
+    call MultiplyAdd ( YV, KV, A, UseDeviceOption = S % Y % AllocatedDevice )
+    
     end associate !-- YV, etc.
 
   end subroutine IncrementIntermediate_C
@@ -1051,7 +1113,9 @@ contains
       TimerDivergence, &
       TimerSources, &
       TimerRelaxation, &
-      TimerGhost
+      TimerGhost, &
+      Timer_DTD, &
+      Timer_DTH
 
     !-- Divergence
     if ( associated ( S % ApplyDivergence_C ) ) then
@@ -1078,7 +1142,16 @@ contains
                iStrgeometryValueOption )
       if ( associated ( TimerRelaxation ) ) call TimerRelaxation % Stop ( )
     end if
-
+    
+    Timer_DTH => PROGRAM_HEADER % TimerPointer ( S % iTimerStepDataToHost )
+    
+    call Timer_DTH % Start ( )
+    
+    if ( K % AllocatedDevice ) &
+      call K % UpdateHost ( )
+    
+    call Timer_DTH % Stop ( )
+    
     if ( associated ( S % CoarsenSingularities ) ) &
       call S % CoarsenSingularities ( K )
 
@@ -1095,6 +1168,13 @@ contains
         if ( associated ( TimerGhost ) ) call TimerGhost % Stop ( )
       end select !-- Grid
     end if !-- ApplyDivergence_C
+    
+    Timer_DTD => PROGRAM_HEADER % TimerPointer ( S % iTimerStepDataToDevice )
+    
+    call Timer_DTD % Start ( )
+    if ( K % AllocatedDevice ) &
+      call K % UpdateDevice ( )
+    call Timer_DTD % Stop ( )
 
   end subroutine ComputeStage_C
 
@@ -1109,9 +1189,12 @@ contains
       iS
 
     associate &
-      ( SV => S % Solution % Value, &
-        KV => S % K ( iS ) % Value )
-    call MultiplyAdd ( SV, KV, B )
+      ( SV  => S % Solution % Value, &
+        KV  => S % K ( iS ) % Value )
+    
+    call MultiplyAdd &
+           ( SV, KV, B, UseDeviceOption = S % Solution % AllocatedDevice )
+    
     end associate !-- SV, etc.
 
   end subroutine IncrementSolution_C
@@ -1134,9 +1217,18 @@ contains
         nValues    => S % Current % nValues )
 
     call S % Solution % Initialize ( [ nValues, nEquations ] )
+    if ( S % Current % AllocatedDevice ) &
+      call S % Solution % AllocateDevice ( ) 
+    
     call S % Y % Initialize ( [ nValues, nEquations ] )
+    if ( S % Current % AllocatedDevice ) &
+      call S % Y % AllocateDevice ( ) 
+    
     do iS = 1, S % nStages
-      call S % K ( iS ) % Initialize ( [ nValues, nEquations ] )
+      call S % K ( iS ) % Initialize &
+             ( [ nValues, nEquations ], PinnedOption = .true. )
+      if ( S % Current % AllocatedDevice ) &
+        call S % K ( iS ) % AllocateDevice ( )
     end do !-- iS
 
     end associate !-- nEquations, etc.
@@ -1169,10 +1261,12 @@ contains
       G
 
     call SD % Allocate &
-           ( C % nVariables, C % N_CONSERVED, C % N_RECONSTRUCTED, &
-             C % N_SOLVER_SPEEDS, G % nVariables, C % nValues )
+           ( C % AllocatedDevice, C % nVariables, C % N_CONSERVED, &
+             C % N_RECONSTRUCTED, C % N_SOLVER_SPEEDS, G % nVariables, &
+             C % nValues )
     if ( trim ( C % RiemannSolverType ) == 'HLLC' ) &
-      call SD % Allocate_HLLC ( C % nVariables, C % nValues )
+      call SD % Allocate_HLLC &
+             ( C % AllocatedDevice, C % nVariables, C % nValues )
 
   end subroutine AllocateStorageDivergence
 
@@ -1187,15 +1281,14 @@ contains
   end subroutine DeallocateStorageDivergence
 
 
-  subroutine AllocateBoundaryFluence_CSL &
-               ( IncrementDivergence, CSL, nEquations, BF )
+  subroutine AllocateBoundaryFluence_CSL ( IncrementDivergence, C, CSL, BF )
 
     class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
       IncrementDivergence
+    class ( CurrentTemplate ), intent ( in ) :: &
+      C
     class ( Chart_SL_Template ), intent ( in ) :: &
       CSL
-    integer ( KDI ), intent ( in ) :: &
-      nEquations
     type ( Real_3D_Form ), dimension ( :, : ), intent ( out ), &
       allocatable :: &
         BF
@@ -1207,10 +1300,11 @@ contains
       nSurface
 
     associate &
-      ( C => CSL % Atlas % Connectivity, &
-        nDimensions => CSL % nDimensions )
+      ( Connectivity => CSL % Atlas % Connectivity, &
+        nDimensions => CSL % nDimensions, &
+        nEquations => C % N_CONSERVED )
 
-    allocate ( BF ( nEquations, C % nFaces ) )
+    allocate ( BF ( nEquations, Connectivity % nFaces ) )
 
     do iD = 1, nDimensions
       jD = mod ( iD, 3 ) + 1
@@ -1225,10 +1319,14 @@ contains
         nSurface ( kD ) = CSL % nCellsBrick ( kD )
       end select !-- CSL
       do iE = 1, nEquations
-        call BF ( iE, C % iaInner ( iD ) ) &
+        call BF ( iE, Connectivity % iaInner ( iD ) ) &
                % Initialize ( nSurface, ClearOption = .true. )
-        call BF ( iE, C % iaOuter ( iD ) ) &
+        call BF ( iE, Connectivity % iaOuter ( iD ) ) &
                % Initialize ( nSurface, ClearOption = .true. )
+        if ( C % AllocatedDevice ) then
+          call BF ( iE, Connectivity % iaInner ( iD ) ) % AllocateDevice ( )
+          call BF ( iE, Connectivity % iaOuter ( iD ) ) % AllocateDevice ( )
+        end if
       end do !-- iE
     end do !-- iD
     end associate !-- C, etc.
@@ -1272,21 +1370,25 @@ contains
   end subroutine DeallocateBoundaryFluence_CSL
 
   
-  subroutine AllocateMetricDerivatives ( S, ID, nValues )
+  subroutine AllocateMetricDerivatives ( S, ID, C )
 
     class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
       S
     class ( IncrementDivergence_FV_Form ), intent ( inout ) :: &
       ID
-    integer ( KDI ), intent ( in ) :: &
-      nValues
+    class ( CurrentTemplate ), intent ( in ) :: &
+      C
 
     if ( ( trim ( S % Chart % CoordinateSystem ) == 'SPHERICAL' &
            .or. trim ( S % Chart % CoordinateSystem ) == 'CYLINDRICAL' ) ) &
     then
       allocate ( S % dLogVolumeJacobian_dX ( 2 ) )
-      call S % dLogVolumeJacobian_dX ( 1 ) % Initialize ( nValues )
-      call S % dLogVolumeJacobian_dX ( 2 ) % Initialize ( nValues )
+      call S % dLogVolumeJacobian_dX ( 1 ) % Initialize ( C % nValues )
+      call S % dLogVolumeJacobian_dX ( 2 ) % Initialize ( C % nValues )
+      if ( C % AllocatedDevice ) then
+        call S % dLogVolumeJacobian_dX ( 1 ) % AllocateDevice ( )
+        call S % dLogVolumeJacobian_dX ( 2 ) % AllocateDevice ( )
+      end if
       call ID % SetMetricDerivatives ( S % dLogVolumeJacobian_dX )
     end if
 
@@ -1317,6 +1419,10 @@ contains
       G
 
     S % Allocated = .true.
+    
+    call Show ( 'Before allocating Step_RK_C_ASC storage', &
+                 S % IGNORABILITY + 2 )
+    call PROGRAM_HEADER % ShowStatistics ( S % IGNORABILITY + 2 )
 
     call S % Allocate_RK_C ( )
 
@@ -1332,9 +1438,9 @@ contains
       call S % AllocateStorageDivergence ( SD, C, G )
 
       call S % AllocateBoundaryFluence &
-             ( ID, Chart, C % N_CONSERVED, S % BoundaryFluence_CSL )
+             ( ID, C, Chart, S % BoundaryFluence_CSL )
 
-      call S % AllocateMetricDerivatives ( ID, C % nValues )
+      call S % AllocateMetricDerivatives ( ID, C )
 
       end associate !-- ID, etc.
       nullify ( G )
@@ -1345,6 +1451,10 @@ contains
       call Show ( 'AllocateStorage', 'subroutine', CONSOLE % ERROR ) 
       call PROGRAM_HEADER % Abort ( )
     end select !-- Grid
+    
+    call Show ( 'After allocating Step_RK_C_ASC storage', &
+                 S % IGNORABILITY + 2 )
+    call PROGRAM_HEADER % ShowStatistics ( S % IGNORABILITY + 2 )
 
   end subroutine AllocateStorage
 
@@ -1371,9 +1481,11 @@ contains
     associate ( C => ID % Current )
 
     if ( iStage == 1 ) &
+      !-- FIXME: We need UseDevice for sources
       call Clear ( C % Sources % Value ( :, : C % N_CONSERVED ) )
 
     do iC = 1, C % N_CONSERVED
+      !-- FIXME: We need UseDevice for sources
       call RecordDivergence &
              ( C % Sources % Value ( :, iC ), Increment % Value ( :, iC ), &
                TimeStep, Weight_RK = S % B ( iStage ) )

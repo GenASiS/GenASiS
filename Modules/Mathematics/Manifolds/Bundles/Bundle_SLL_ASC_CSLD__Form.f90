@@ -120,10 +120,10 @@ contains
 
   subroutine CreateChart &
                ( B, SpacingOption, CoordinateLabelOption, &
-                 CoordinateSystemOption, CoordinateUnitOption, &
-                 MinCoordinateOption, MaxCoordinateOption, RatioOption, &
-                 ScaleOption, nCellsOption, nGhostLayersOption, &
-                 nDimensionsOption )
+                 CoordinateSystemOption, UsePinnedMemoryOption, &
+                 CoordinateUnitOption, MinCoordinateOption, &
+                 MaxCoordinateOption, RatioOption, ScaleOption, nCellsOption, &
+                 nGhostLayersOption, nDimensionsOption )
 
     class ( Bundle_SLL_ASC_CSLD_Form ), intent ( inout ), target :: &
       B
@@ -132,6 +132,8 @@ contains
       CoordinateLabelOption
     character ( * ), intent ( in ), optional :: &
       CoordinateSystemOption
+    logical ( KDL ), intent ( in ), optional :: &
+      UsePinnedMemoryOption
     type ( MeasuredValueForm ), dimension ( : ), intent ( in ), optional :: &
       CoordinateUnitOption
     real ( KDR ), dimension ( : ), intent ( in ), optional :: &
@@ -152,8 +154,6 @@ contains
       iCell, jCell, kCell
     integer ( KDI ), dimension ( 3 ) :: &
       iaCell
-    class ( GeometryFlatForm ), pointer :: &
-      GF
 
     associate ( FM => B % FiberMaster )
     call FM % CreateChart &
@@ -164,7 +164,8 @@ contains
 
     allocate ( B % Geometry )
     associate ( GAF => B % Geometry )
-    call GAF % InitializeFlat ( FM )
+    call GAF % InitializeFlat &
+           ( FM, UsePinnedMemoryOption = UsePinnedMemoryOption )
 
     select type ( CF => B % FiberMaster % Chart )
     class is ( Chart_SLL_Form )
@@ -237,8 +238,6 @@ contains
       end do !-- jCell
     end do !-- kCell
     end associate !-- CB
-
-    nullify ( GF )
 
   end subroutine CreateChart
 
