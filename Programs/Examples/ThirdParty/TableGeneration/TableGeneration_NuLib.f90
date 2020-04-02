@@ -9,14 +9,14 @@ program TableGeneration_NuLib
   character ( LDL ), parameter :: vnum = "1.0"
   character ( LDF ), parameter :: &
     eos_table_filename = "./LS220_234r_136t_50y_analmu_20091212_SVNr26.h5"
-  integer ( KDI ),   parameter :: table_size_D = 82 ! Mass Density
-  integer ( KDI ),   parameter :: table_size_T = 65 ! Temperature
-  integer ( KDI ),   parameter :: table_size_Y = 51 ! Electron Fraction
-  integer ( KDI ),   parameter :: table_size_X = 61 ! Electron Degeneracy
-  real ( KDR ),      parameter :: min_LogD =  6.0_KDR
-  real ( KDR ),      parameter :: max_LogD = 15.5_KDR
-  real ( KDR ),      parameter :: min_LogT = log10( 0.050_KDR )
-  real ( KDR ),      parameter :: max_LogT = log10( 150.0_KDR )
+  integer ( KDI ),   parameter :: table_size_D = 120 ! Mass Density
+  integer ( KDI ),   parameter :: table_size_T =  70 ! Temperature
+  integer ( KDI ),   parameter :: table_size_Y =  30 ! Electron Fraction
+  integer ( KDI ),   parameter :: table_size_X =  30 ! Electron Degeneracy
+  real ( KDR ),      parameter :: min_LogD =  3.0_KDR
+  real ( KDR ),      parameter :: max_LogD = 15.9_KDR
+  real ( KDR ),      parameter :: min_LogT = - 2.0_KDR
+  real ( KDR ),      parameter :: max_LogT = 2.35_KDR
   real ( KDR ),      parameter :: min_Y = 0.035_KDR
   real ( KDR ),      parameter :: max_Y = 0.550_KDR
   real ( KDR ),      parameter :: min_LogX = log10( 0.100_KDR )
@@ -77,7 +77,7 @@ subroutine SetEnergyGrid ( MS )
   character ( LDL ), dimension ( 1 ) :: &
     CoordinateLabel
 
-  nEnergyCells = 18
+  nEnergyCells = 16
   call PROGRAM_HEADER % GetParameter ( nEnergyCells, 'nEnergyCells' )
 
   CoordinateUnit   =  UNIT % MEGA_ELECTRON_VOLT
