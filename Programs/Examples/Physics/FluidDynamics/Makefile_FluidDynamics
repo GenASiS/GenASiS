@@ -84,6 +84,7 @@ clean: clean_ThirdParty
 
 clobber: clean
 	rm -f SineWave_*
+	rm -f SawtoothWave_*
 	rm -f OppenheimerSnyder_*
 	rm -f RiemannProblem_*
 	rm -f RayleighTaylor_*
@@ -92,7 +93,6 @@ clobber: clean
 	rm -f YahilLattimer_*
 	rm -f LinMestelShu_*
 	rm -f SASI_*
-# 	rm -f SawtoothWave_*
 #	rm -f ODE_Solve_Command_*
 
 PlaneWave_Template.o: \
