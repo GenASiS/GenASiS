@@ -22,7 +22,8 @@ module SASI_Form
 
     private :: &
       SetFluid, &
-      SetVelocityProfile
+      SetVelocityProfile, &
+      Apply_BC_CSL_PowerLaw
         
         private :: &
           IntroduceDensityRingsPerturbation
@@ -103,18 +104,29 @@ contains
     call FCE % Initialize &
            ( Name, FluidType = 'IDEAL', &
              GeometryType = 'NEWTONIAN', &
+             UseCustomBoundaryInnerOption = .true., &
              FinishTimeOption = FinishTime, &
              LimiterParameterOption = 1.8_KDR, &
              RadiusMaxOption = RadiusOuter, &
              RadiusMinOption = RadiusIn, &
              CentralMassOption = SF % CentralMass )
-    end select !-- FCE
+
+    !-- Custom boundary condition
+    
+    select type ( PS => FCE % PositionSpace )
+    class is ( Atlas_SC_CE_Form )
+    PS % Apply_BC_CSL_Custom => Apply_BC_CSL_PowerLaw
 
     !-- Initial conditions
 
     call SetFluid ( SF )
 
     !call IntroduceDensityRingsPerturbation ( SF )
+
+    !-- Cleanup
+
+    end select !-- PS
+    end select !-- FCE
 
   end subroutine Initialize
 
@@ -341,6 +353,102 @@ contains
    end associate !-- M, etc.
 call Show ( 'end of Velocity' )
   end subroutine SetVelocityProfile 
+
+
+  subroutine Apply_BC_CSL_PowerLaw ( CSL, F, iDimension, iConnection )
+
+    class ( Chart_SL_Template ), intent ( inout ) :: &
+      CSL
+    class ( StorageForm ), intent ( inout ) :: &
+      F  !-- Field
+    integer ( KDI ), intent ( in ) :: &
+      iDimension, &
+      iConnection
+
+    integer ( KDI ) :: &
+      !-- FIXME: hard coding OUTFLOW for the moment
+      iS, &  !-- iSelected
+      iF     !-- iField
+    class ( GeometryFlatForm ), pointer :: &
+      G
+
+    !-- FIXME: hard coding OUTFLOW for the moment
+
+    do iS = 1, F % nVariables
+      iF = F % iaSelected ( iS )
+      call CSL % CopyBoundary ( F % Value ( :, iF ), iDimension, iConnection )
+    end do !-- iS
+    
+    !-- Begin PowerLaw
+
+    select type ( PS => CSL % Atlas )
+    class is ( Atlas_SC_Form )
+    G => PS % Geometry ( )
+
+    select type ( F )
+    class is ( Fluid_P_I_Form )
+
+    select type ( CSL )
+    class is ( Chart_SLD_Form )
+
+      associate &
+        ( Connectivity => CSL % Atlas % Connectivity, &
+          iD => iDimension, &
+          iC => iConnection )
+      if ( trim ( CSL % CoordinateSystem ) /= 'SPHERICAL' ) then
+        call Show ( 'PowerLaw only implemented for spherical coordinates', &
+                    CONSOLE % ERROR )
+        call Show ( 'SASI_Form', 'module', CONSOLE % ERROR )
+        call Show ( 'Apply_BC_CSL_PowerLaw', 'subroutine', &
+                    CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end if
+      if ( iD /= 1 ) then
+        call Show ( 'PowerLaw only implemented for radial direction', &
+                    CONSOLE % ERROR )
+        call Show ( 'SASI_Form', 'module', CONSOLE % ERROR )
+        call Show ( 'Apply_BC_CSL_PowerLaw', 'subroutine', &
+                    CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end if
+      if ( iC /= Connectivity % iaInner ( iD ) ) then
+        call Show ( 'PowerLaw only implemented for inner boundary', &
+                    CONSOLE % ERROR )
+        call Show ( 'SASI_Form', 'module', CONSOLE % ERROR )
+        call Show ( 'Apply_BC_CSL_PowerLaw', 'subroutine', &
+                    CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end if
+      if ( CSL % iaBrick ( iD ) /= 1 ) &
+        return
+      end associate !-- Connectivity, etc.
+
+call Show ( '>>> Implement power law' )
+call Show ( '>>>>>> See e.g. Chart_SL_Template' ) 
+call Show ( '>>>>>>>>> CopyBoundaryTemplate' )
+call Show ( '>>>>>>>>> CopyBoundaryKernel' )
+!    call F % ComputeFromPrimitive ( G )
+
+    class default
+      call Show ( 'Chart type not implemented', CONSOLE % ERROR )
+      call Show ( 'SASI_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Apply_BC_CSL_PowerLaw', 'subroutine', &
+                  CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- CSL
+
+    class default
+      call Show ( 'Power law boundary only for ideal gas', CONSOLE % ERROR )
+      call Show ( 'SASI_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Apply_BC_CSL_PowerLaw', 'subroutine', &
+                  CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- F
+
+    end select !-- PS
+    nullify ( G )
+
+  end subroutine Apply_BC_CSL_PowerLaw
 
 
   subroutine IntroduceDensityRingsPerturbation ( SF )
