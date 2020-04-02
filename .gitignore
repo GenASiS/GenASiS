@@ -1,9 +1,11 @@
 *.o
 *.a
 *.mod
+*_GCC
 *_GNU
 *_CCE
 *.acc.s
 *.cub
 *.ptx
 *.smod
+*.h5
