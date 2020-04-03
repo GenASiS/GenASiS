@@ -403,7 +403,8 @@ contains
 
 
   subroutine ComputeFromConservedCommon &
-               ( Storage_C, C, G, Storage_G, nValuesOption, oValueOption )
+               ( Storage_C, C, G, Storage_G, DetectFeaturesOption, &
+                 nValuesOption, oValueOption )
 
     class ( StorageForm ), intent ( inout ), target :: &
       Storage_C
@@ -413,6 +414,8 @@ contains
       G
     class ( StorageForm ), intent ( in ) :: &
       Storage_G
+    logical ( KDL ), intent ( in ), optional :: &
+      DetectFeaturesOption
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
@@ -420,6 +423,8 @@ contains
     integer ( KDI ) :: &
       oV, &  !-- oValue
       nV     !-- nValues
+    logical ( KDL ) :: &
+      DetectFeatures
 
     associate &
       ( FV => Storage_C % Value, &
@@ -484,6 +489,12 @@ contains
     end associate !-- M_UU_22, etc.
     end associate !-- FV, etc.
     
+    DetectFeatures = .false.
+    if ( present ( DetectFeaturesOption ) ) &
+      DetectFeatures = DetectFeaturesOption
+    if ( DetectFeatures ) &
+      call C % Features % Detect ( )
+
   end subroutine ComputeFromConservedCommon
 
 

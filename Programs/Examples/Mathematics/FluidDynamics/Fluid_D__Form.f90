@@ -1,5 +1,3 @@
-#include "Preprocessor"
-
 module Fluid_D__Form
 
   !-- Fluid_Dust__Form
@@ -369,7 +367,8 @@ contains
 
 
   subroutine ComputeFromConservedCommon &
-               ( Storage_C, C, G, Storage_G, nValuesOption, oValueOption )
+               ( Storage_C, C, G, Storage_G, DetectFeaturesOption, &
+                 nValuesOption, oValueOption )
 
     class ( StorageForm ), intent ( inout ), target :: &
       Storage_C
@@ -379,6 +378,8 @@ contains
       G
     class ( StorageForm ), intent ( in ) :: &
       Storage_G
+    logical ( KDL ), intent ( in ), optional :: &
+      DetectFeaturesOption
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption
