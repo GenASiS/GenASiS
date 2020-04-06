@@ -28,19 +28,21 @@ module Gradient_Form
     procedure, public, pass :: &
       AllocateDevice => AllocateDevice_G
     procedure, private, pass :: &
-      ComputeChart_SL
+      ComputeChart_SL_G
     generic, public :: &
-      Compute => ComputeChart_SL
+      Compute => ComputeChart_SL_G
     final :: &
       Finalize
   end type GradientForm
 
-    private :: &
-      ComputeChart_SL_Kernel
+!    FIXME: required to generate .smod with GCC 6.1.0  
+!    private :: &
+    public :: &
+      ComputeChart_SL_G_Kernel
       
     interface
       
-      module subroutine ComputeChart_SL_Kernel &
+      module subroutine ComputeChart_SL_G_Kernel &
                    ( dV_I, dX_I, iD, oV, dVdX, UseDeviceOption, &
                      UseLimiterOption, ThetaOption )
         use Basics
@@ -58,7 +60,7 @@ module Gradient_Form
           UseLimiterOption
         real ( KDR ), intent ( in ), optional, target :: &
           ThetaOption
-      end subroutine ComputeChart_SL_Kernel
+      end subroutine ComputeChart_SL_G_Kernel
     
     end interface
 
@@ -108,7 +110,7 @@ contains
   end subroutine AllocateDevice_G
 
 
-  subroutine ComputeChart_SL &
+  subroutine ComputeChart_SL_G &
                ( G, CSL, Input, iDimension, UseLimiterOption, &
                  LimiterParameterOption )
 
@@ -176,13 +178,13 @@ contains
       
       if ( present ( UseLimiterOption ) ) then
         call CSL % SetVariablePointer ( UseLimiterOption, UL_Option )
-        call ComputeChart_SL_Kernel &
+        call ComputeChart_SL_G_Kernel &
                ( dV_I, dX_I, iDimension, CSL % nGhostLayers ( iDimension ), &
                  dVdX, UseLimiterOption = UL_Option, &
                  ThetaOption = LimiterParameterOption, &
                  UseDeviceOption = G % Output % AllocatedDevice )
       else
-        call ComputeChart_SL_Kernel &
+        call ComputeChart_SL_G_Kernel &
                ( dV_I, dX_I, iDimension, CSL % nGhostLayers ( iDimension ), &
                  dVdX, ThetaOption = LimiterParameterOption, &
                  UseDeviceOption = G % Output % AllocatedDevice )
@@ -197,7 +199,7 @@ contains
     end associate !-- VD, etc.
     nullify ( dV_I, dX_I, dVdX, Gmtry )
 
-  end subroutine ComputeChart_SL
+  end subroutine ComputeChart_SL_G
 
 
   impure elemental subroutine Finalize ( G )

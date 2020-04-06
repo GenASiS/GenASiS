@@ -24,19 +24,21 @@ module Difference_Form
     procedure, public, pass :: &
       AllocateDevice => AllocateDevice_D
     procedure, private, pass :: &
-      ComputeChart_SL
+      ComputeChart_SL_D
     generic, public :: &
-      Compute => ComputeChart_SL
+      Compute => ComputeChart_SL_D
     final :: &
       Finalize
   end type DifferenceForm
 
-    private :: &
-      ComputeChart_SL_Kernel
+!    FIXME: required to generate .smod with GCC 6.1.0  
+!    private :: &
+    public :: &
+      ComputeChart_SL_D_Kernel
       
     interface
       
-      module subroutine ComputeChart_SL_Kernel &
+      module subroutine ComputeChart_SL_D_Kernel &
                           ( V, iD, oV, dV_I, UseDeviceOption )
         use Basics
         real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
@@ -48,7 +50,7 @@ module Difference_Form
           dV_I
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
-      end subroutine ComputeChart_SL_Kernel
+      end subroutine ComputeChart_SL_D_Kernel
     
     end interface
 
@@ -89,7 +91,7 @@ contains
   end subroutine AllocateDevice_D
 
 
-  subroutine ComputeChart_SL ( D, CSL, Input, iDimension )
+  subroutine ComputeChart_SL_D ( D, CSL, Input, iDimension )
 
     class ( DifferenceForm ), intent ( inout ) :: &
       D
@@ -122,7 +124,7 @@ contains
     do iS = 1, I % nVariables
       call CSL % SetVariablePointer ( I % Value ( :, iaS ( iS ) ), V )
       call CSL % SetVariablePointer ( OI % Value ( :, iS ), dV_I )
-      call ComputeChart_SL_Kernel &
+      call ComputeChart_SL_D_Kernel &
              ( V, iDimension, CSL % nGhostLayers ( iDimension ), dV_I, &
                UseDeviceOption = OI % AllocatedDevice )
     end do !-- iS
@@ -134,7 +136,7 @@ contains
 
     nullify ( V, dV_I )
 
-  end subroutine ComputeChart_SL
+  end subroutine ComputeChart_SL_D
 
 
   impure elemental subroutine Finalize ( D )

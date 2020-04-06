@@ -8,7 +8,7 @@ submodule ( Gradient_Form ) Gradient_Kernel
   
 contains 
 
-  module procedure ComputeChart_SL_Kernel 
+  module procedure ComputeChart_SL_G_Kernel 
 
     integer ( KDI ) :: &
       iV, jV, kV
@@ -249,7 +249,7 @@ contains
 
     end if
     
-  end procedure ComputeChart_SL_Kernel
+  end procedure ComputeChart_SL_G_Kernel
 
 
 end submodule Gradient_Kernel

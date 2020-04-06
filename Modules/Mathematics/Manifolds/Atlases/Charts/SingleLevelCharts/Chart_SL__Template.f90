@@ -84,7 +84,9 @@ module Chart_SL__Template
   end interface
 
     private :: &
-      SetBoundaryLimits, &
+      SetBoundaryLimits!, &
+!    FIXME: required to generate .smod with GCC 6.1.0  
+    public :: &
       CopyBoundaryKernel, &
       ReverseBoundaryKernel
       
