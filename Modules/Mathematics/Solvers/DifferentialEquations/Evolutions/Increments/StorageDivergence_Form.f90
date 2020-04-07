@@ -49,8 +49,7 @@ contains
     integer ( KDI ), intent ( in ) :: &
       BaseLevel
 
-    if ( SD % iTimerDivergence > 0  &
-         .or.  BaseLevel > PROGRAM_HEADER % TimerLevel ) &
+    if ( SD % iTimerDivergence > 0 ) &
       return
 
     call PROGRAM_HEADER % AddTimer &

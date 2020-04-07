@@ -26,7 +26,8 @@ module PROGRAM_HEADER_Singleton
     integer ( KDI ) :: &
       nTimers = 0, &
       MaxThreads = 0, &
-      TimerLevel = 0, &
+      TimerMinLevel = 0, &
+      TimerMaxLevel = 0, &
       ExecutionTimeHandle
     real ( KDR ) :: &
       TimerDisplayFraction
@@ -197,9 +198,13 @@ contains
     call Show ( 'Setting Timer parameters', CONSOLE % INFO_1 )
     allocate ( PH % Timer ( MAX_TIMERS ) )
 
-    PH % TimerLevel = 8
-    call PROGRAM_HEADER % GetParameter ( PH % TimerLevel, 'TimerLevel' )
-    call Show ( PH % TimerLevel, 'TimerLevel', CONSOLE % INFO_1 )
+    PH % TimerMinLevel = 2
+    call PROGRAM_HEADER % GetParameter ( PH % TimerMinLevel, 'TimerMinLevel' )
+    call Show ( PH % TimerMinLevel, 'TimerMinLevel', CONSOLE % INFO_1 )
+
+    PH % TimerMaxLevel = huge ( 1_KDI )
+    call PROGRAM_HEADER % GetParameter ( PH % TimerMaxLevel, 'TimerMaxLevel' )
+    call Show ( PH % TimerMaxLevel, 'TimerMaxLevel', CONSOLE % INFO_1 )
 
     PH % TimerDisplayFraction = 0.1_KDR
     call PROGRAM_HEADER % GetParameter &
@@ -797,9 +802,6 @@ contains
     
     PH => PROGRAM_HEADER 
       
-    if ( Level > PH % TimerLevel ) &
-      return
-
     PH % nTimers = PH % nTimers + 1
     Handle = PH % nTimers
 
@@ -1103,8 +1105,11 @@ contains
                       / CommunicatorOption % Size )
         if ( iT == 1 ) &
           ExecutionTime = MeanTimer ( iT ) % TotalTime
-        if ( MeanTimer ( iT ) % TotalTime / ExecutionTime &
-             >= PH % TimerDisplayFraction ) &
+        if ( MeanTimer ( iT ) % Level  &
+               <=  min ( PH % TimerMinLevel, PH % TimerMaxLevel ) &
+             .or. ( MeanTimer ( iT ) % Level  <=  PH % TimerMaxLevel &
+                    .and. MeanTimer ( iT ) % TotalTime / ExecutionTime &
+                           >=  PH % TimerDisplayFraction ) ) &
         then
           call MeanTimer ( iT ) % ShowTotal ( Ignorability )
         else

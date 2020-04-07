@@ -304,8 +304,7 @@ contains
     integer ( KDI ), intent ( in ) :: &
       BaseLevel
 
-    if ( S % iTimerStep > 0  &
-         .or.  BaseLevel > PROGRAM_HEADER % TimerLevel ) &
+    if ( S % iTimerStep > 0 ) &
       return
 
     call PROGRAM_HEADER % AddTimer &

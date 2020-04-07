@@ -377,8 +377,7 @@ contains
 
     BaseLevel = 0
 
-    if ( I % iTimerEvolve > 0  &
-         .or.  BaseLevel > PROGRAM_HEADER % TimerLevel ) &
+    if ( I % iTimerEvolve > 0 ) &
       return
 
     call PROGRAM_HEADER % AddTimer &
