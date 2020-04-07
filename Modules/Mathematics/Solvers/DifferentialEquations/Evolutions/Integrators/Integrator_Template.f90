@@ -24,7 +24,7 @@ module Integrator_Template
       procedure ( W ), pointer:: &
         Write => null ( )
       procedure ( SWTI ), pointer :: &
-        SetWriteTimeInterval => null ( )
+        SetCheckpointTimeInterval => null ( )
       procedure ( CTSL ), pointer :: &
         ComputeTimeStepLocal => null ( )
       procedure ( SR ), pointer :: &
@@ -168,7 +168,7 @@ module Integrator_Template
       OpenGridImageStreams, &
       OpenManifoldStreams, &
       Write, &
-      SetWriteTimeInterval
+      SetCheckpointTimeInterval
 
 contains
 
@@ -215,8 +215,8 @@ contains
 
     call I % OpenGridImageStreams ( )
 
-    if ( .not. associated ( I % SetWriteTimeInterval ) ) &
-      I % SetWriteTimeInterval => SetWriteTimeInterval
+    if ( .not. associated ( I % SetCheckpointTimeInterval ) ) &
+      I % SetCheckpointTimeInterval => SetCheckpointTimeInterval
 
     !-- if allocated above, initialize
     select type ( TS => I % TimeSeries )
@@ -262,7 +262,7 @@ contains
 
       TimeStepRatio  &
         =  minval ( I % TimeStepCandidate ) &
-             / max ( I % WriteTimeInterval, sqrt ( tiny ( 0.0_KDR ) ) )
+             / max ( I % CheckpointTimeInterval, sqrt ( tiny ( 0.0_KDR ) ) )
       if ( TimeStepRatio  <  1.0e-6  *  I % nWrite ) then
         call I % AdministerCheckpoint ( )
         call Show ( 'TimeStepRatio too small', CONSOLE % WARNING )
@@ -472,14 +472,14 @@ contains
 
     I % IsCheckpointTime = .false.
     if ( I % Time < I % FinishTime ) then
-      call I % SetWriteTimeInterval ( )
-      I % WriteTime &
-        = min ( I % Time + I % WriteTimeInterval, I % FinishTime )
-      if ( I % WriteTime == I % FinishTime ) &
-        I % WriteTimeExact = .true.
-      call Show ( I % WriteTimeInterval, I % TimeUnit, 'WriteTimeInterval', &
+      call I % SetCheckpointTimeInterval ( )
+      I % CheckpointTime &
+        = min ( I % Time + I % CheckpointTimeInterval, I % FinishTime )
+      if ( I % CheckpointTime == I % FinishTime ) &
+        I % CheckpointTimeExact = .true.
+      call Show ( I % CheckpointTimeInterval, I % TimeUnit, 'CheckpointTimeInterval', &
                   I % IGNORABILITY )
-      call Show ( I % WriteTime, I % TimeUnit, 'Next WriteTime', &
+      call Show ( I % CheckpointTime, I % TimeUnit, 'Next CheckpointTime', &
                   I % IGNORABILITY + 1 )
     else 
       call Show ( 'FinishTime reached', I % IGNORABILITY )
@@ -636,12 +636,12 @@ contains
 
 !    associate ( C => I % Atlas % Chart ( 1 ) % Element )
 
-    if ( I % WriteTimeExact ) then
-      if ( I % Time + TimeStep > I % WriteTime ) then
-        call Show ( 'WriteTime encountered', I % IGNORABILITY ) 
+    if ( I % CheckpointTimeExact ) then
+      if ( I % Time + TimeStep > I % CheckpointTime ) then
+        call Show ( 'CheckpointTime encountered', I % IGNORABILITY ) 
 !        if ( present ( HoldCheckpointSolveOption ) ) &
 !          HoldCheckpointSolveOption ( 2 : C % nLevels ) = .true.
-        TimeStep = I % WriteTime - I % Time
+        TimeStep = I % CheckpointTime - I % Time
         call Show ( TimeStep, I % TimeUnit, 'Modified TimeStep', &
                     I % IGNORABILITY + 1 )
       end if
@@ -735,15 +735,15 @@ contains
   end subroutine Write
 
 
-  subroutine SetWriteTimeInterval ( I )
+  subroutine SetCheckpointTimeInterval ( I )
 
     class ( IntegratorTemplate ), intent ( inout ) :: &
       I
 
-    I % WriteTimeInterval &
+    I % CheckpointTimeInterval &
       = ( I % FinishTime - I % StartTime ) / I % nWrite
 
-  end subroutine SetWriteTimeInterval
+  end subroutine SetCheckpointTimeInterval
 
 
 end module Integrator_Template

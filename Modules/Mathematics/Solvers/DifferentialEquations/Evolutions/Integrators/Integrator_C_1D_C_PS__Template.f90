@@ -270,12 +270,12 @@ contains
     I % iCycle = I % iCycle + 1
     I % Time = I % Time + TimeStep
 
-    if ( I % WriteTimeExact ) then
-      if ( I % Time == I % WriteTime ) &
+    if ( I % CheckpointTimeExact ) then
+      if ( I % Time == I % CheckpointTime ) &
         I % IsCheckpointTime = .true.
     else 
-      if ( I % Time  >  I % WriteTime &
-           .or. abs ( I % Time - I % WriteTime )  <  0.5_KDR * TimeStep ) &
+      if ( I % Time  >  I % CheckpointTime &
+           .or. abs ( I % Time - I % CheckpointTime )  <  0.5_KDR * TimeStep ) &
         I % IsCheckpointTime = .true.
     end if
 

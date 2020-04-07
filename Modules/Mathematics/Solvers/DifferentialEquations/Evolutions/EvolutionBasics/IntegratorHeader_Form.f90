@@ -27,15 +27,15 @@ module IntegratorHeader_Form
     real ( KDR ) :: &
       StartTime, &
       FinishTime, &
-      WriteTimeInterval, &
-      WriteTime, &
+      CheckpointTimeInterval, &
+      CheckpointTime, &
       Time
     real ( KDR ), dimension ( : ), allocatable :: &
       TimeStepCandidate
     logical ( KDL ) :: &
       IsCheckpointTime, &
       NoWrite, &
-      WriteTimeExact
+      CheckpointTimeExact
     character ( LDL ), dimension ( : ), allocatable :: &
       TimeStepLabel
     type ( MeasuredValueForm ) :: &
@@ -117,9 +117,9 @@ contains
     I % NoWrite = .false.
     call PROGRAM_HEADER % GetParameter ( I % NoWrite, 'NoWrite' )
 
-    I % WriteTimeExact = .false.
+    I % CheckpointTimeExact = .false.
     call PROGRAM_HEADER % GetParameter &
-           ( I % WriteTimeExact, 'WriteTimeExact' )
+           ( I % CheckpointTimeExact, 'CheckpointTimeExact' )
 
     if ( .not. allocated ( I % TimeStepLabel ) ) then
       allocate ( I % TimeStepLabel ( 1 ) )

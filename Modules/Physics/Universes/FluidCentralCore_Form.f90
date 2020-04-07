@@ -34,7 +34,7 @@ module FluidCentralCore_Form
   end type FluidCentralCoreForm
 
       private :: &
-        SetWriteTimeInterval, &
+        SetCheckpointTimeInterval, &
         ComputeTimeStepLocal, &
         LocalMax, &
         ComputeTimeStep_G_CSL
@@ -200,7 +200,7 @@ contains
     select type ( I => FCC % Integrator )
     class is ( Integrator_C_PS_Form )
 
-    I % SetWriteTimeInterval => SetWriteTimeInterval
+    I % SetCheckpointTimeInterval => SetCheckpointTimeInterval
     I % ComputeTimeStepLocal => ComputeTimeStepLocal
 
     select type ( S => I % Step )
@@ -304,7 +304,7 @@ contains
   end subroutine CoarsenSingularities
 
 
-  subroutine SetWriteTimeInterval ( I )
+  subroutine SetCheckpointTimeInterval ( I )
 
     class ( IntegratorTemplate ), intent ( inout ) :: &
       I
@@ -391,7 +391,7 @@ contains
     TimeScaleDensityAve &
       =  ( GA % GravitationalConstant  *  DensityAve ) ** ( -0.5_KDR )
 
-    I % WriteTimeInterval  &
+    I % CheckpointTimeInterval  &
       =  min ( TimeScaleDensityAve, TimeScaleVelocityMax )  /  I % nWrite
 
     call Show ( 'Time Scales', I % IGNORABILITY )
@@ -416,7 +416,7 @@ contains
     end select !-- I
     nullify ( G, F )
 
-  end subroutine SetWriteTimeInterval
+  end subroutine SetCheckpointTimeInterval
 
 
   subroutine ComputeTimeStep_G_ASC ( FCC, TimeStepCandidate )
