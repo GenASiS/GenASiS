@@ -320,27 +320,6 @@ contains
 
     call I % TimeSeries % Record ( MaxTime, MinTime, MeanTime )
 
-    if ( I % TimeSeries % iTime <= 1 ) &
-      return  !-- no Reconstruction yet
-    if ( PROGRAM_HEADER % Communicator % Rank /= CONSOLE % DisplayRank ) &
-      return  !-- only DisplayRank has MinTime, MaxTime
-
-    ! do iT = 1, PROGRAM_HEADER % nTimers
-    !   if ( PROGRAM_HEADER % Timer ( iT ) % Name == 'ComputeReconstruction' ) &
-    !     exit
-    ! end do !-- iT
-
-    ! ReconstructionImbalance &
-    !   = ( MaxTime ( iT ) - MinTime ( iT ) ) / MinTime ( iT )
-    ! call Show ( ReconstructionImbalance, 'ReconstructionImbalance', &
-    !             I % IGNORABILITY + 2 )
-    ! if ( ReconstructionImbalance > 0.5_KDR .and. MaxTime ( iT ) > 10.0 ) then
-    !   call Show ( 'ReconstructionBalance > 0.5', CONSOLE % ERROR )
-    !   call Show ( 'Integrator_C_PS__Template', 'module', CONSOLE % ERROR )
-    !   call Show ( 'RecordTimeSeries', 'subroutine', CONSOLE % ERROR )
-    !   call PROGRAM_HEADER % Abort ( )
-    ! end if
-
   end subroutine RecordTimeSeries
 
 
@@ -349,10 +328,18 @@ contains
     class ( Integrator_C_PS_Form ), intent ( inout ) :: &
       I
 
+    type ( TimerForm ), pointer :: &
+      Timer
+
     if ( .not. allocated ( I % TimeSeries ) ) &
       return
 
+    Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerWriteSeries )
+    if ( associated ( Timer ) ) call Timer % Start ( )
+
     call I % TimeSeries % Write ( )
+
+    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine WriteTimeSeries
 

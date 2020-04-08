@@ -17,6 +17,7 @@ module IntegratorHeader_Form
       iTimerCheckpoint = 0, &
       iTimerTally = 0, &
       iTimerWrite = 0, &
+      iTimerWriteSeries = 0, &
       iCycle, &
       iCheckpoint, &
       nRampCycles, &

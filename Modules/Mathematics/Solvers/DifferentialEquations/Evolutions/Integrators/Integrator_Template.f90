@@ -398,6 +398,9 @@ contains
         call PROGRAM_HEADER % AddTimer &
                ( 'Write', I % iTimerWrite, &
                  Level = BaseLevel + 2 )
+        call PROGRAM_HEADER % AddTimer &
+               ( 'WriteSeries', I % iTimerWriteSeries, &
+                 Level = BaseLevel + 2 )
 
   end subroutine InitializeTimers
 
@@ -452,6 +455,7 @@ contains
       TallyIgnorability      = CONSOLE % INFO_1
       StatisticsIgnorability = CONSOLE % INFO_1
     end if
+
     call I % ComputeTally &
            ( ComputeChangeOption = ComputeChangeOption, &
              IgnorabilityOption  = TallyIgnorability )
@@ -476,7 +480,8 @@ contains
         = min ( I % Time + I % CheckpointTimeInterval, I % FinishTime )
       if ( I % CheckpointTime == I % FinishTime ) &
         I % CheckpointTimeExact = .true.
-      call Show ( I % CheckpointTimeInterval, I % TimeUnit, 'CheckpointTimeInterval', &
+      call Show ( I % CheckpointTimeInterval, I % TimeUnit, &
+                  'CheckpointTimeInterval', &
                   I % IGNORABILITY )
       call Show ( I % CheckpointTime, I % TimeUnit, 'Next CheckpointTime', &
                   I % IGNORABILITY + 1 )
