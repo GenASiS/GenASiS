@@ -63,14 +63,8 @@ module Integrator_Template
       ComputeTally
     procedure, public, pass :: &  !-- 3
       WriteTemplate
-!-- See FIXME above
-!    procedure ( RTS ), private, pass, deferred :: &  !-- 3
-!      RecordTimeSeries
     procedure, private, pass :: &  !-- 3
       RecordTimeSeries
-!-- See FIXME above
-!    procedure ( CC ), private, pass, deferred :: &  !-- 3
-!      WriteTimeSeries
     procedure, private, pass :: &  !-- 3
       WriteTimeSeries
     procedure, public, pass :: &
@@ -149,18 +143,6 @@ module Integrator_Template
 !      integer ( KDI ), intent ( in ), optional :: &
 !        IgnorabilityOption
 !    end subroutine CT
-
-!-- See FIXME above
-!    subroutine RTS ( I, MaxTime, MinTime, MeanTime )
-!      use Basics
-!      import IntegratorTemplate
-!      class ( IntegratorTemplate ), intent ( inout ) :: &
-!        I
-!      real ( KDR ), dimension ( : ), intent ( in ) :: &
-!        MaxTime, &
-!        MinTime, &
-!        MeanTime
-!    end subroutine RTS
 
   end interface
 
@@ -581,21 +563,46 @@ contains
   end subroutine WriteTemplate
 
 
-!-- See FIXME above
   subroutine RecordTimeSeries ( I, MaxTime, MinTime, MeanTime )
+
     class ( IntegratorTemplate ), intent ( inout ) :: &
       I
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       MaxTime, &
       MinTime, &
       MeanTime
+
+    integer ( KDI ) :: &
+      iT  !-- iTimer
+    real ( KDR ) :: &
+      ReconstructionImbalance
+
+    if ( .not. allocated ( I % TimeSeries ) ) &
+      return
+
+    call I % TimeSeries % Record ( MaxTime, MinTime, MeanTime )
+
   end subroutine RecordTimeSeries
 
 
-!-- See FIXME above
   subroutine WriteTimeSeries ( I )
+
     class ( IntegratorTemplate ), intent ( inout ) :: &
       I
+
+    type ( TimerForm ), pointer :: &
+      Timer
+
+    if ( .not. allocated ( I % TimeSeries ) ) &
+      return
+
+    Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerWriteSeries )
+    if ( associated ( Timer ) ) call Timer % Start ( )
+
+    call I % TimeSeries % Write ( )
+
+    if ( associated ( Timer ) ) call Timer % Stop ( )
+
   end subroutine WriteTimeSeries
 
 

@@ -40,10 +40,6 @@ module Integrator_C_PS__Form
       InitializeStepTimers
     procedure, private, pass :: &  !-- 3
       ComputeTally
-    procedure, private, pass :: &  !-- 3
-      RecordTimeSeries
-    procedure, private, pass :: &  !-- 3
-      WriteTimeSeries
     procedure, private, pass :: &
       ComputeCycle_ASC
     procedure, public, pass :: &
@@ -299,49 +295,6 @@ contains
     if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine ComputeTally
-
-
-  subroutine RecordTimeSeries ( I, MaxTime, MinTime, MeanTime )
-
-    class ( Integrator_C_PS_Form ), intent ( inout ) :: &
-      I
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      MaxTime, &
-      MinTime, &
-      MeanTime
-
-    integer ( KDI ) :: &
-      iT  !-- iTimer
-    real ( KDR ) :: &
-      ReconstructionImbalance
-
-    if ( .not. allocated ( I % TimeSeries ) ) &
-      return
-
-    call I % TimeSeries % Record ( MaxTime, MinTime, MeanTime )
-
-  end subroutine RecordTimeSeries
-
-
-  subroutine WriteTimeSeries ( I )
-
-    class ( Integrator_C_PS_Form ), intent ( inout ) :: &
-      I
-
-    type ( TimerForm ), pointer :: &
-      Timer
-
-    if ( .not. allocated ( I % TimeSeries ) ) &
-      return
-
-    Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerWriteSeries )
-    if ( associated ( Timer ) ) call Timer % Start ( )
-
-    call I % TimeSeries % Write ( )
-
-    if ( associated ( Timer ) ) call Timer % Stop ( )
-
-  end subroutine WriteTimeSeries
 
 
   subroutine ComputeCycle_ASC ( I, PS )
