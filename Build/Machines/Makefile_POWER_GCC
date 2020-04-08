@@ -4,7 +4,7 @@ FORTRAN_COMPILE      = mpif90 -c -cpp
 FORTRAN_BOUND_CHECK  = -fbounds-check
 FORTRAN_DEBUG        = -g -ffpe-trap=invalid,zero,overflow #-Wall
 FORTRAN_OPTIMIZE     = -O3
-FORTRAN_PROFILE      = 
+FORTRAN_PROFILE      = -O2 -g
 
 CC_COMPILE           = mpicc -c -fopenmp
 CC_DEBUG             = -g

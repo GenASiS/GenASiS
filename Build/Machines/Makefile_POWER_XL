@@ -5,7 +5,7 @@ FORTRAN_FIXEDFORM    = -qfixed
 FORTRAN_BOUND_CHECK  = -qcheck=bounds
 FORTRAN_DEBUG        = -g -qsigtrap #-Wall
 FORTRAN_OPTIMIZE     = -Ofast
-FORTRAN_PROFILE      = 
+FORTRAN_PROFILE      = -O2 -g2
 
 CC_COMPILE           = mpicc -c -qsmp=omp
 CC_DEBUG             = -g
