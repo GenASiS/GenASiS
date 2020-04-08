@@ -21,6 +21,8 @@ module FluidFeatures_P__Form
       SHOCK = 0
     integer ( KDI ), dimension ( 3 ) :: &
       SHOCK_I = 0
+    integer ( KDI ) :: &
+      iTimerDetectShock
     real ( KDR ) :: &
       ShockThreshold
   contains
@@ -137,6 +139,9 @@ contains
 
     FF % ShockThreshold = ShockThreshold
     call Show ( FF % ShockThreshold, 'ShockThreshold', FF % IGNORABILITY )
+     
+    call PROGRAM_HEADER % AddTimer &
+           ( 'DetectAndExchangeShock', FF % iTimerDetectShock, Level = 6 )
 
   end subroutine InitializeAllocate_P
 
@@ -147,8 +152,12 @@ contains
       FF
 
     call Show ( 'Detecting Fluid features', CONSOLE % INFO_3 )
+    
+    associate ( T_D => PROGRAM_HEADER % Timer ( FF % iTimerDetectShock ) )
+    
+    call T_D % Start ( )
 
-    call Clear ( FF % Value )
+    call Clear ( FF % Value, UseDeviceOption = FF % AllocatedDevice )
 
     select type ( F => FF % Fluid )
     class is ( Fluid_P_Template )
@@ -166,6 +175,10 @@ contains
     end select !-- Grid
 
     end select !-- F
+    
+    call T_D % Stop ( )
+    
+    end associate 
 
   end subroutine Detect
 

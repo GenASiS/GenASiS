@@ -31,6 +31,10 @@ module Fluid_P__Template
       CONSERVED_ENTROPY   = 0, &
       SOUND_SPEED         = 0, &
       MACH_NUMBER         = 0
+    integer ( KDI ) :: &
+      iTimerComputeFluxes_HLLC, &
+      iTimerComputeCenterStates, &
+      iTimerComputeCenterSpeed      
     logical ( KDL ) :: &
       UseEntropy
   contains
@@ -325,6 +329,16 @@ contains
 
     F % UseEntropy  =  UseEntropy
 
+    call PROGRAM_HEADER % AddTimer &
+           ( 'ComputeFluxes_HLCC', F % iTimerComputeFluxes_HLLC, &
+             Level = 6 )
+    call PROGRAM_HEADER % AddTimer &  
+           ( 'ComputeCenterStates', F % iTimerComputeCenterStates, &
+             Level = 6 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'ComputeCenterSpeed', F % iTimerComputeCenterSpeed, &
+             Level = 6 )
+
   end subroutine InitializeTemplate_P
 
 
@@ -410,6 +424,11 @@ contains
       M_DD_22, &
       M_DD_33
 
+    associate &
+      ( T_CFHLL  => PROGRAM_HEADER % Timer ( C % iTimerComputeFluxes_HLL ), &
+        T_CFHLLC => PROGRAM_HEADER % Timer ( C % iTimerComputeFluxes_HLLC ), &
+        T_CCS    => PROGRAM_HEADER % Timer ( C % iTimerComputeCenterSpeed ) )
+
     select type ( I => Increment )
     class is ( IncrementDivergence_FV_Form )
 
@@ -444,6 +463,8 @@ contains
       M_DD_22 => G_I % Value ( :, G % METRIC_DD_22 )
       M_DD_33 => G_I % Value ( :, G % METRIC_DD_33 )
 
+      call T_CCS % Start ( )
+      
       call Search ( C % iaConserved, C % CONSERVED_BARYON_DENSITY, &
                     iDensity )
       call Search ( C % iaConserved, C % MOMENTUM_DENSITY_D ( iDimension ), &
@@ -464,6 +485,8 @@ contains
                SS_I % Value ( :, C % ALPHA_MINUS ), &
                M_UU, UseDeviceOption = C % AllocatedDevice )
 
+      call T_CCS % Stop ( )
+      
       associate &
         ( C_ICL => I % Storage % Current_ICL, &
           C_ICR => I % Storage % Current_ICR )
@@ -478,6 +501,9 @@ contains
              ( F_IR, G, C_ICR, G_I, iDimension )
 
       associate ( FF => C % Features )
+      
+      call T_CFHLLC % Start ( )
+      
       do iF = 1, C % N_CONSERVED
         call ComputeFluxes_HLLC_Kernel &
                ( F_I  % Value ( :, iF ), &
@@ -489,6 +515,9 @@ contains
                  FF   % Value ( :, FF % DIFFUSIVE_FLUX_I ( iDimension ) ), &
                  UseDeviceOption = C % AllocatedDevice )
       end do !-- iF
+      
+      call T_CFHLLC % Stop ( )
+      
       end associate !-- FF
 
       end associate !-- C_ICL, etc.
@@ -503,6 +532,8 @@ contains
     end select !-- Increment
 
     nullify ( M_UU, M_DD_22, M_DD_33 )
+    
+    end associate !-- T_CFHLL, etc.
 
   end subroutine ComputeFluxes
 
@@ -557,10 +588,17 @@ contains
     associate &
       ( Value_RF => RawFlux % Value, &
         Value_C  => Storage_C % Value )
+    
+    associate &
+      ( T_CRF => PROGRAM_HEADER % Timer ( C % iTimerComputeRawFluxes ) )
+
+    call T_CRF % Start ( )
 
     call C % Fluid_D_Form % ComputeRawFluxes &
            ( RawFlux, G, Storage_C, Storage_G, iDimension, nValuesOption, &
              oValueOption )
+             
+    call T_CRF % Stop ( )
 
     if ( present ( oValueOption ) ) then
       oV = oValueOption
@@ -573,6 +611,8 @@ contains
     else
       nV = size ( Value_C, dim = 1 )
     end if
+    
+    call T_CRF % Start ( )
     
     call Search &
            ( C % iaConserved, C % MOMENTUM_DENSITY_D ( iDimension ), &
@@ -597,6 +637,10 @@ contains
 
     end associate !-- F_S_Dim, etc.
     
+    call T_CRF % Stop ( )
+    
+    end associate !-- T_CRF
+    
     end associate !-- Value_RF, Value_C
 
   end subroutine ComputeRawFluxesTemplate_P
@@ -616,6 +660,11 @@ contains
       M_DD_22, M_DD_33
     integer ( KDI ), intent ( in ) :: &
       iD
+
+    associate &
+      ( T_CCS => PROGRAM_HEADER % Timer ( C % iTimerComputeCenterStates ) )
+
+    call T_CCS % Start ( )
 
     call ComputeCenterStatesKernel &
            ( C_ICL % Value ( :, C % VELOCITY_U ( 1 ) &
@@ -658,6 +707,10 @@ contains
              SS_I % Value ( :, C % ALPHA_MINUS ), &
              SS_I % Value ( :, C % ALPHA_CENTER ), &
              M_DD_22, M_DD_33, iD, UseDeviceOption = C % AllocatedDevice )
+
+    call T_CCS % Stop ( )
+
+    end associate
 
   end subroutine ComputeCenterStatesTemplate_P
 

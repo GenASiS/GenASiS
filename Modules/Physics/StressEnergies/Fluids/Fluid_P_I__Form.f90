@@ -568,13 +568,25 @@ contains
         CS    => FV ( oV + 1 : oV + nV, C % SOUND_SPEED ), &
         MN    => FV ( oV + 1 : oV + nV, C % MACH_NUMBER ) )
 
+    associate &
+      ( T_CFP => PROGRAM_HEADER % Timer ( C % iTimerComputeFromPrimitive ), &
+        T_CE  => PROGRAM_HEADER % Timer ( C % iTimerComputeEigenspeed ), &
+        T_AE  => PROGRAM_HEADER % Timer ( C % iTimerApply_EOS ) )
+    
+    call T_CFP % Start ( )
     call C % Compute_M_Kernel &
            ( M, C % BaryonMassReference, &
              UseDeviceOption = C % AllocatedDevice )
+    call T_CFP % Stop ( )
+    
+    call T_AE % Start ( )
     call C % Apply_EOS_I_E_Kernel &
            ( P, T, SB, CS, M, N, E, C % AdiabaticIndex, &
              C % SpecificHeatVolume, C % FiducialBaryonDensity, &
              C % FiducialPressure, UseDeviceOption = C % AllocatedDevice )
+    call T_AE % Stop ( )
+    
+    call T_CFP % Start ( )
     call C % Compute_D_S_G_Kernel &
            ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33, &
              UseDeviceOption = C % AllocatedDevice )
@@ -583,10 +595,16 @@ contains
              UseDeviceOption = C % AllocatedDevice )
     call C % Compute_DS_G_Kernel &
            ( DS, N, SB, UseDeviceOption = C % AllocatedDevice )
+    call T_CFP % Stop ( )
+    
+    call T_CE % Start ( )
     call C % Compute_FE_P_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
              V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
              UseDeviceOption = C % AllocatedDevice )
+    call T_CE % Stop ( )
+
+    end associate !-- T_CFP
 
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
@@ -668,7 +686,13 @@ contains
         CS    => FV ( oV + 1 : oV + nV, C % SOUND_SPEED ), &
         MN    => FV ( oV + 1 : oV + nV, C % MACH_NUMBER ), &
         Shock => FF % Value ( oV + 1 : oV + nV, FF % SHOCK ) )
+    
+    associate &
+      ( T_CFC => PROGRAM_HEADER % Timer ( C % iTimerComputeFromConserved ), &
+        T_CE  => PROGRAM_HEADER % Timer ( C % iTimerComputeEigenspeed ), &   
+        T_AE  => PROGRAM_HEADER % Timer ( C % iTimerApply_EOS ) ) 
 
+    call T_CFC % Start ( )
     call C % Compute_M_Kernel &
            ( M, C % BaryonMassReference, &
              UseDeviceOption = C % AllocatedDevice )
@@ -676,6 +700,9 @@ contains
            ( N, V_1, V_2, V_3, E, D, S_1, S_2, S_3, G, M, &
              M_UU_22, M_UU_33, C % BaryonDensityMin, &
              UseDeviceOption = C % AllocatedDevice )
+    call T_CFC % Stop ( )
+
+    call T_AE % Start ( )
     if ( C % UseEntropy ) then
       call C % Compute_SB_G_Kernel &
              ( SB, DS, N, UseDeviceOption = C % AllocatedDevice )
@@ -692,12 +719,21 @@ contains
                C % SpecificHeatVolume, C % FiducialBaryonDensity, &
                C % FiducialPressure, UseDeviceOption = C % AllocatedDevice )
     end if
+    call T_AE % Stop ( )
+    
+    call T_CFC % Start ( )
     call C % Compute_DS_G_Kernel &
            ( DS, N, SB, UseDeviceOption = C % AllocatedDevice )
+    call T_CFC % Stop ( )
+    
+    call T_CE % Start ( )
     call C % Compute_FE_P_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
              V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
              UseDeviceOption = C % AllocatedDevice )
+    call T_CE % Stop ( )
+    
+    end associate !-- T_CFC, etc.
 
     end associate !-- FEP_1, etc.
     end associate !-- M_UU_22, etc.
