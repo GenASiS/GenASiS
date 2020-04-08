@@ -53,7 +53,8 @@ module Step_RK_C_ASC__Template
         iTimerStepDataToDevice  = 0, &
         iTimerStepDataToHost    = 0, &
         iTimer_BF_DataToDevice  = 0, &
-        iTimer_BF_DataToHost    = 0
+        iTimer_BF_DataToHost    = 0, &
+        iTimerRecordDivergence  = 0
 !         iStrgeometryValue
       type ( Real_1D_Form ), dimension ( : ), allocatable :: &
         dLogVolumeJacobian_dX
@@ -231,13 +232,31 @@ module Step_RK_C_ASC__Template
     end subroutine CS
 
   end interface
-
+  
   public :: &
     ApplyDivergence_C
 
     private :: &
       AllocateStorage, &
-      RecordDivergence
+      RecordDivergenceKernel
+  
+  interface
+  
+    module subroutine RecordDivergenceKernel &
+             ( SDV, IDV, TimeStep, Weight_RK, UseDeviceOption )
+
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        SDV 
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        IDV 
+      real ( KDR ), intent ( in ) :: &
+        TimeStep, &
+        Weight_RK
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine RecordDivergenceKernel
+  
+  end interface
 
 contains
 
@@ -315,7 +334,7 @@ contains
       call PROGRAM_HEADER % AddTimer &
              ( 'BoundaryFluence', S % iTimerBoundaryFluence, &
                Level = BaseLevel + 1 )
-
+      
   end subroutine InitializeTimers
 
 
@@ -600,6 +619,9 @@ contains
       call PROGRAM_HEADER % AddTimer &
              ( 'BF_DataToHost', S % iTimer_BF_DataToHost, &
                Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'RecordDivergence', S % iTimerRecordDivergence, &
+               Level = 6 )
 
   end subroutine InitializeTimersStage
 
@@ -1474,52 +1496,39 @@ contains
 
     integer ( KDI ) :: &
       iC  !-- iConserved
+    type ( TimerForm ), pointer :: &
+      Timer_RD
 
     call ID % Compute ( Increment, TimeStep, Weight_RK = S % B ( iStage ) )
 
     !-- ID % Current is not necessarily associated until after ID % Compute
     associate ( C => ID % Current )
-
+    
+    Timer_RD &
+      => PROGRAM_HEADER % TimerPointer ( S % iTimerRecordDivergence )
+    
+    call Timer_RD % Start ( )
+    
     if ( iStage == 1 ) &
-      !-- FIXME: We need UseDevice for sources
-      call Clear ( C % Sources % Value ( :, : C % N_CONSERVED ) )
+      call Clear &
+             ( C % Sources % Value ( :, : C % N_CONSERVED ), &
+               UseDeviceOption = C % Sources % AllocatedDevice )
 
     do iC = 1, C % N_CONSERVED
-      !-- FIXME: We need UseDevice for sources
-      call RecordDivergence &
+      call RecordDivergenceKernel &
              ( C % Sources % Value ( :, iC ), Increment % Value ( :, iC ), &
-               TimeStep, Weight_RK = S % B ( iStage ) )
+               TimeStep, Weight_RK = S % B ( iStage ), &
+               UseDeviceOption &
+                 = ( C % Sources % AllocatedDevice &
+                     .and. Increment % AllocatedDevice ) )
     end do !-- iC
 !call Show ( C % Sources % Value ( :, 2 ), '>>> Divergence source' )
 
+    call Timer_RD % Stop ( )
+    
     end associate !-- C
 
   end subroutine ApplyDivergence_C
-
-
-  subroutine RecordDivergence ( SDV, IDV, TimeStep, Weight_RK )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      SDV 
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      IDV 
-    real ( KDR ), intent ( in ) :: &
-      TimeStep, &
-      Weight_RK
-
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-
-    nValues = size ( SDV )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-      SDV ( iV )  =  SDV ( iV )  +  Weight_RK  *  IDV ( iV )  /  TimeStep
-    end do !-- iV
-    !$OMP end parallel do
-
-  end subroutine RecordDivergence
 
 
 end module Step_RK_C_ASC__Template
