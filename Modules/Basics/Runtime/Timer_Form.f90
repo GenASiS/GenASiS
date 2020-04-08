@@ -9,14 +9,13 @@ module Timer_Form
 
   type, public :: TimerForm
     integer ( KDI ) :: &
+      iStart = 0, &
       Level
     type ( MeasuredValueForm ) :: &
       StartTime, &
       StopTime, &
       TimeInterval, &
       TotalTime
-    logical ( KDL ) :: &
-      Running = .false.
     character ( LDL ) :: &
       Name = ''
   contains
@@ -85,11 +84,10 @@ contains
     class ( TimerForm ), intent ( inout ) :: &
       T
 
-    if ( T % Running ) return
+    if ( T % iStart  ==  0 ) &
+      T % StartTime  =  WallTime ( )
 
-    T % StartTime = WallTime ( )
-
-    T % Running = .true.
+    T % iStart  =  T % iStart + 1
 
   end subroutine Start
 
@@ -99,14 +97,16 @@ contains
     class ( TimerForm ), intent ( inout ) :: &
       T
 
-    if ( .not. T % Running ) return
+    T % iStart  =  max ( T % iStart - 1, 0 )
 
-    T % StopTime = WallTime ( )
+    if ( T % iStart == 0 ) then
 
-    T % TimeInterval  =  T % StopTime   -  T % StartTime
-    T % TotalTime     =  T % TotalTime  +  T % TimeInterval
+      T % StopTime = WallTime ( )
 
-    T % Running = .false.
+      T % TimeInterval  =  T % StopTime   -  T % StartTime
+      T % TotalTime     =  T % TotalTime  +  T % TimeInterval
+
+    end if
 
   end subroutine Stop
 

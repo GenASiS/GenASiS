@@ -1052,7 +1052,7 @@ contains
     call Show ( 'Running timer intervals', Ignorability + 2 )
     Running = .false.
     do iT = 1, PH % nTimers
-      if ( PH % Timer ( iT ) % Running ) then
+      if ( PH % Timer ( iT ) % iStart  >  0 ) then
         Running ( iT ) = .true.
         call PH % Timer ( iT ) % Stop ( )
         call PH % Timer ( iT ) % ShowInterval ( Ignorability + 2 )
