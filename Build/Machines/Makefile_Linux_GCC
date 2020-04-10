@@ -1,4 +1,4 @@
-# Makefile for generic linux with GNU compiler and generic MPI 
+# Makefile for generic linux with GCC compiler and generic MPI 
 # such as openmpi, mpich, etc.
 
 FORTRAN_COMPILE      = mpif90 -c -cpp #-fopenmp
@@ -29,3 +29,8 @@ INCLUDE_PREPROCESSOR = -I$(PATH_GENASIS)/Build
 #-- Enable unicode
 USE_ISO_10646 = 1
 
+DEFINES = #-fopenmp
+#-- Enable offload if requested
+ifeq ($(ENABLE_OMP_OFFLOAD), 1)
+  DEFINES = -fopenmp -DENABLE_OMP_OFFLOAD
+endif
