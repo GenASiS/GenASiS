@@ -35,8 +35,12 @@ INCLUDE_PREPROCESSOR = -I$(PATH_GENASIS)/Build
 #-- Enable unicode
 USE_ISO_10646 = 
 
-DEFINES = -qsmp=omp
-#-- default to use OpenMP offload for this makefile
+#-- Enable OpenMP by default
+ifneq ($(ENABLE_OMP), 0)
+  DEFINES = -qsmp=omp
+endif
+
+#-- Enable offload by default
 ifneq ($(ENABLE_OMP_OFFLOAD), 0)
-  DEFINES = -DENABLE_OMP_OFFLOAD  -qsmp=omp -qoffload
+  DEFINES = -qsmp=omp -qoffload -DENABLE_OMP_OFFLOAD
 endif

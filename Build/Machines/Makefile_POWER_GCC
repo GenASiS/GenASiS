@@ -1,12 +1,12 @@
 # Makefile Summit with GCC compiler
 
-FORTRAN_COMPILE      = mpif90 -c -cpp #-fopenmp
+FORTRAN_COMPILE      = mpif90 -c -cpp
 FORTRAN_BOUND_CHECK  = -fbounds-check
 FORTRAN_DEBUG        = -g -ffpe-trap=invalid,zero,overflow #-Wall
 FORTRAN_OPTIMIZE     = -Ofast
 FORTRAN_PROFILE      = 
 
-CC_COMPILE           = mpicc -c #-fopenmp
+CC_COMPILE           = mpicc -c
 CC_DEBUG             = -g
 CC_OPTIMIZE          = $(FORTRAN_OPTIMIZE)
 
@@ -29,10 +29,14 @@ LIBRARY_CUDA =
 
 INCLUDE_PREPROCESSOR = -I$(PATH_GENASIS)/Build
 
-#-- Enable unicode by default
+#-- Enable unicode
 USE_ISO_10646 = 1
 
-DEFINES = -fopenmp
+#-- Enable OpenMP by default
+ifneq ($(ENABLE_OMP), 0)
+  DEFINES = -fopenmp
+endif
+
 #-- Enable offload if requested
 ifeq ($(ENABLE_OMP_OFFLOAD), 1)
   DEFINES = -fopenmp -DENABLE_OMP_OFFLOAD
