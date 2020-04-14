@@ -15,7 +15,7 @@ SineWave: ThirdParty.a GenASiS.a SineWave.o
            GenASiS.a ThirdParty.a $(LIBRARIES)
 
 SawtoothWave: ThirdParty.a GenASiS.a SawtoothWave.o
-	$(LINK) $(FFLAGS) \
+	$(LINK) $(FLAGS) \
           -o SawtoothWave_$(MACHINE) \
           SawtoothWave.o SawtoothWave_Form.o PlaneWave_Template.o \
           GenASiS.a ThirdParty.a $(LIBRARIES)
