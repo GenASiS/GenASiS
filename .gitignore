@@ -2,7 +2,7 @@
 *.a
 *.mod
 *_GCC
-*_GNU
+*_XL
 *_CCE
 *.acc.s
 *.cub
