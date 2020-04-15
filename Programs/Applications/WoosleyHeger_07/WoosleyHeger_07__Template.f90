@@ -108,7 +108,7 @@ contains
       end associate !-- iaI, etc.
     end do !-- iD
 
-    call F % ComputeFromTemperature ( F % Value, G, G % Value )
+    call F % ComputeFromTemperature ( F, G, G )
 
     end associate !-- N, etc.
     end select !-- PSC

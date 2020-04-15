@@ -74,12 +74,12 @@ module Current_Template
       ComputeFromPrimitiveSelf
     procedure, private, pass ( C ) :: &
       ComputeFromPrimitiveOther
-    !procedure, private, pass :: &
-    !  ComputeFromPrimitiveSelectGeometry
+    procedure, private, pass :: &
+      ComputeFromPrimitiveSelectGeometry
     generic, public :: &
       ComputeFromPrimitive &
-        => ComputeFromPrimitiveSelf, ComputeFromPrimitiveOther !, &
-           !ComputeFromPrimitiveSelectGeometry
+        => ComputeFromPrimitiveSelf, ComputeFromPrimitiveOther, &
+           ComputeFromPrimitiveSelectGeometry
     procedure, private, pass :: &
       ComputeFromConservedSelf
     procedure, private, pass ( C ) :: &
