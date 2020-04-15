@@ -17,6 +17,8 @@ module Poisson_ASC__Form
     procedure, public, pass :: &
       Initialize
     procedure, public, pass :: &
+      InitializeTimers
+    procedure, public, pass :: &
       Solve
     final :: &
       Finalize
@@ -67,6 +69,19 @@ contains
   end subroutine Initialize
 
 
+  subroutine InitializeTimers ( P, BaseLevel )
+
+    class ( Poisson_ASC_Form ), intent ( inout ) :: &
+      P
+    integer ( KDI ), intent ( in ) :: &
+      BaseLevel
+
+    call PROGRAM_HEADER % AddTimer &
+           ( 'PoissonSolve', P % iTimerSolve, Level = BaseLevel )
+
+  end subroutine InitializeTimers
+
+
   subroutine Solve ( P, Solution, Source )
 
     class ( Poisson_ASC_Form ), intent ( inout ) :: &
@@ -79,6 +94,11 @@ contains
     class ( StorageForm ), pointer :: &
       Source_S, &
       Solution_S
+    type ( TimerForm ), pointer :: &
+      Timer
+
+    Timer  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerSolve )
+    if ( associated ( Timer ) ) call Timer % Start ( )
 
     select type ( Source )
     class is ( Storage_ASC_Form )
@@ -109,6 +129,8 @@ contains
 
     end select !-- Solution
     end select !-- Source
+
+    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine Solve
 

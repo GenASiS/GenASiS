@@ -10,6 +10,7 @@ module Poisson_Template
   type, public, abstract :: PoissonTemplate
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
+      iTimerSolve = 0, &
       nEquations = 0, &
       MaxDegree = 0
     character ( LDF ) :: &
@@ -21,6 +22,8 @@ module Poisson_Template
   contains
     procedure, public, pass :: &
       InitializeTemplate
+    procedure ( IT ), public, pass, deferred :: &
+      InitializeTimers
     procedure ( S ), public, pass, deferred :: &
       Solve
     procedure, public, pass :: &
@@ -40,6 +43,15 @@ module Poisson_Template
       class ( FieldAtlasTemplate ), intent ( in ) :: &
         Source
     end subroutine S
+
+    subroutine IT ( P, BaseLevel )
+      use Basics
+      import PoissonTemplate
+      class ( PoissonTemplate ), intent ( inout ) :: &
+        P
+      integer ( KDI ), intent ( in ) :: &
+        BaseLevel
+    end subroutine IT
 
   end interface
 

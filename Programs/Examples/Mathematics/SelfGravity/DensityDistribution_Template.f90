@@ -85,6 +85,7 @@ contains
     call P % Initialize &
            ( A, SolverType = 'MULTIPOLE', MaxDegreeOption = MaxDegree, &
              nEquationsOption = DD % N_Equations )
+    call P % InitializeTimers ( BaseLevel = 0 )
     end associate !-- P
 
     !-- Source, Reference
