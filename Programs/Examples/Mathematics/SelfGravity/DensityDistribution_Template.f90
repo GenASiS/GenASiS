@@ -38,6 +38,7 @@ contains
 
 
   subroutine Initialize ( DD, Name, N_Eq, Variable, RadiusMaxOption )
+
     class ( DensityDistributionTemplate ) :: &
       DD
     character ( * ), intent ( in ) :: &
@@ -129,11 +130,15 @@ contains
 
 
   subroutine Compute ( DD, ShiftSolutionOption )
+
     class ( DensityDistributionTemplate ), intent ( inout ) :: &
       DD
     logical ( KDL ), optional :: &
       ShiftSolutionOption
 
+    integer ( KDI ) :: &
+      iS, &  !-- iSolve
+      nSolve
     logical ( KDL ) :: &
       ShiftSolution, &
       NormalizeSolution
@@ -145,16 +150,30 @@ contains
 
     associate ( P => DD % Poisson )
 
-    call P % Solve ( DD % Solution, DD % Source )
+    nSolve = 1
+    call PROGRAM_HEADER % GetParameter ( nSolve, 'nSolve' )
+
+    call Show ( 'Solving Poisson equation' )
+    call Show ( nSolve, 'nSolve' )
+    do iS = 1, nSolve
+      call Show ( iS, 'iS' )
+      call P % Solve ( DD % Solution, DD % Source )
+    end do !-- iS
 
     if ( present ( ShiftSolutionOption )  ) &
       ShiftSolution = ShiftSolutionOption
     if ( ShiftSolution ) call ShiftSolutionKernel ( DD )
 
+    call Show ( 'Computing error' )
     call ComputeError ( DD, NormalizeSolution ) 
+
+    call PROGRAM_HEADER % ShowStatistics &
+           ( CONSOLE % INFO_1, &
+             CommunicatorOption = PROGRAM_HEADER % Communicator )
 
     !-- Write
 
+    call Show ( 'Writing results' )
     allocate ( DD % Stream )
     call DD % Stream % Initialize &
            ( A % Name, CommunicatorOption = PROGRAM_HEADER % Communicator )    

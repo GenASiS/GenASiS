@@ -20,6 +20,12 @@ program HomogeneousSpheroid
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize ( 'HomogeneousSphereoid_Test' )
 
+  if ( trim ( PROGRAM_HEADER % Dimensionality ) == '1D' ) then
+    call Show ( 'This program must be run in 2D or 3D', CONSOLE % ERROR )
+    call Show ( 'HomogeneousSpheroid', 'program', CONSOLE % ERROR )
+    call PROGRAM_HEADER % Abort ( )
+  end if
+
   allocate &
     ( VARIABLE    ( N_EQUATIONS ), &
       SemiMajor   ( N_EQUATIONS ), &
