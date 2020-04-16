@@ -47,7 +47,7 @@ include $(PATH_MATHEMATICS)/Makefile_Dependencies
 include ../Makefile_Dependencies
 
 clean:
-	rm -f *.o *.a *.mod *.ld
+	rm -f *.o *.a *.mod *.smod *.ld
 
 clobber: clean
 	rm -f HomogeneousSpheroid_*

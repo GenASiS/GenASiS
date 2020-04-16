@@ -149,6 +149,8 @@ contains
       iR     !-- iRadius
     real ( KDR ) :: &
       R
+    logical ( KDL ) :: &
+      GridError
     class ( GeometryFlatForm ), pointer :: &
       G
 
@@ -161,10 +163,15 @@ contains
       do iC = 1, G % nValues
         if ( .not. C % IsProperCell ( iC ) ) &
           cycle
-        call LM % ComputeSolidHarmonics &
+        call ComputeSolidHarmonicsKernel &
                ( C % CoordinateSystem, &
                  G % Value ( iC, G % CENTER_U ( 1 ) : G % CENTER_U ( 3 ) ), &
-                 C % nDimensions, R, iR )
+                 LM % Origin, LM % RadialEdge, C % nDimensions, &
+                 LM % MaxDegree, LM % SolidHarmonic_RC, LM % SolidHarmonic_IC, &
+                 LM % SolidHarmonic_RS, LM % SolidHarmonic_IS, GridError, &
+                 R, iR )
+        if ( GridError ) &
+          call PROGRAM_HEADER % Abort ( )
         call LM % ComputeMomentContributions &
                ( Source % Value ( iC, : ), &
                  G % Value ( iC, G % VOLUME ), &

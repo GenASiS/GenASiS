@@ -4,6 +4,7 @@ module Poisson_ASC__Form
 
   use Basics
   use Manifolds
+  use LaplacianMultipole_Template
   use LaplacianMultipole_ASC__Form
   use Poisson_Template
 
@@ -17,8 +18,6 @@ module Poisson_ASC__Form
     procedure, public, pass :: &
       Initialize
     procedure, public, pass :: &
-      InitializeTimers
-    procedure, public, pass :: &
       Solve
     final :: &
       Finalize
@@ -26,6 +25,32 @@ module Poisson_ASC__Form
 
     private :: &
       SolveMultipole_CSL
+
+!-- FIXME: With GCC 6.1.0, must be public to trigger .smod generation
+!    private :: &
+    public :: &
+      SolveCells_CSL_Kernel
+
+    interface
+
+      module subroutine SolveCells_CSL_Kernel &
+                          ( CoordinateSystem, IsProperCell, Center, &
+                            nDimensions, nCells, ComputeSolidHarmonics )
+        use Basics
+        character ( * ), intent ( in ) :: &
+          CoordinateSystem
+        logical ( KDL ), dimension ( : ), intent ( in ) :: &
+          IsProperCell
+        real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+          Center
+        integer ( KDI ), intent ( in ) :: &
+          nDimensions, &
+          nCells
+        procedure ( ), pointer :: &
+          ComputeSolidHarmonics
+      end subroutine SolveCells_CSL_Kernel
+
+    end interface
 
 contains
 
@@ -67,19 +92,6 @@ contains
     end select
 
   end subroutine Initialize
-
-
-  subroutine InitializeTimers ( P, BaseLevel )
-
-    class ( Poisson_ASC_Form ), intent ( inout ) :: &
-      P
-    integer ( KDI ), intent ( in ) :: &
-      BaseLevel
-
-    call PROGRAM_HEADER % AddTimer &
-           ( 'PoissonSolve', P % iTimerSolve, Level = BaseLevel )
-
-  end subroutine InitializeTimers
 
 
   subroutine Solve ( P, Solution, Source )
@@ -165,13 +177,23 @@ contains
       S     !-- Solution
     real ( KDR ), dimension ( : ), allocatable :: &
       Zero
+    logical ( KDL ) :: &
+      GridError
+    type ( TimerForm ), pointer :: &
+      Timer_SC, &
+      Timer_ES, &
+      Timer_BS
     class ( GeometryFlatForm ), pointer :: &
       G
+
+    Timer_SC  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerSolveCells )
+    Timer_ES  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerExchangeSolution )
+    Timer_BS  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerBoundarySolution )
 
     call Show ( 'Poisson solve, multipole', P % IGNORABILITY + 2 )
     call Show ( P % Name, 'Name', P % IGNORABILITY + 2 )
 
-    associate ( L => P % LaplacianMultipole )
+    associate ( L  =>  P % LaplacianMultipole )
 
     call L % ComputeMoments ( Source )
 
@@ -182,16 +204,30 @@ contains
 
     do iE = 1, L % nEquations
 
+      if ( associated ( Timer_SC ) ) call Timer_SC % Start ( )
+
+!      call SolveCells_CSL_Kernel &
+!             ( C % CoordinateSystem, C % IsProperCell, &
+!               G % Value ( :, G % CENTER_U ( 1 ) : G % CENTER_U ( 3 ) ), &
+!               C % nDimensions, G % nValues, L % ComputeSolidHarmonicsKernel )
+!      if ( GridError ) &
+!        call PROGRAM_HEADER % Abort ( )
+
       !$OMP parallel do private ( iC, iR, R, S )
       do iC = 1, G % nValues
 
         if ( .not. C % IsProperCell ( iC ) ) &
           cycle
 
-        call L % ComputeSolidHarmonics &
+        call ComputeSolidHarmonicsKernel &
                ( C % CoordinateSystem, &
                  G % Value ( iC, G % CENTER_U ( 1 ) : G % CENTER_U ( 3 ) ), &
-                 C % nDimensions, R, iR )
+                 L % Origin, L % RadialEdge, C % nDimensions, &
+                 L % MaxDegree, L % SolidHarmonic_RC, L % SolidHarmonic_IC, &
+                 L % SolidHarmonic_RS, L % SolidHarmonic_IS, GridError, &
+                 R, iR )
+        if ( GridError ) &
+          call PROGRAM_HEADER % Abort ( )
 
         S = 0.0_KDR
 
@@ -254,10 +290,18 @@ contains
 
       end do !-- iC
       !$OMP end parallel do
+
+      if ( associated ( Timer_SC ) ) call Timer_SC % Stop ( )
+
     end do !-- iE
 
+    if ( associated ( Timer_ES ) ) call Timer_ES % Start ( )
     call C % ExchangeGhostData ( Solution )
+    if ( associated ( Timer_ES ) ) call Timer_ES % Stop ( )
+
+    if ( associated ( Timer_BS ) ) call Timer_BS % Start ( )
     call P % Atlas % ApplyBoundaryConditionsFaces ( Solution )
+    if ( associated ( Timer_BS ) ) call Timer_BS % Stop ( )
 
     end associate !-- L
 

@@ -11,6 +11,9 @@ module Poisson_Template
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
       iTimerSolve = 0, &
+      iTimerSolveCells = 0, &
+      iTimerExchangeSolution = 0, &
+      iTimerBoundarySolution = 0, &
       nEquations = 0, &
       MaxDegree = 0
     character ( LDF ) :: &
@@ -22,7 +25,7 @@ module Poisson_Template
   contains
     procedure, public, pass :: &
       InitializeTemplate
-    procedure ( IT ), public, pass, deferred :: &
+    procedure, public, pass :: &
       InitializeTimers
     procedure ( S ), public, pass, deferred :: &
       Solve
@@ -43,15 +46,6 @@ module Poisson_Template
       class ( FieldAtlasTemplate ), intent ( in ) :: &
         Source
     end subroutine S
-
-    subroutine IT ( P, BaseLevel )
-      use Basics
-      import PoissonTemplate
-      class ( PoissonTemplate ), intent ( inout ) :: &
-        P
-      integer ( KDI ), intent ( in ) :: &
-        BaseLevel
-    end subroutine IT
 
   end interface
 
@@ -92,6 +86,35 @@ contains
       P % MaxDegree = MaxDegreeOption
 
   end subroutine InitializeTemplate
+
+
+  subroutine InitializeTimers ( P, BaseLevel )
+
+    class ( PoissonTemplate ), intent ( inout ) :: &
+      P
+    integer ( KDI ), intent ( in ) :: &
+      BaseLevel
+
+    call PROGRAM_HEADER % AddTimer &
+           ( 'PoissonSolve', P % iTimerSolve, Level = BaseLevel )
+
+    if ( allocated ( P % LaplacianMultipole ) ) then
+
+      associate ( LM => P % LaplacianMultipole )
+      call LM % InitializeTimers ( BaseLevel + 1 )
+      end associate !-- LM
+
+      call PROGRAM_HEADER % AddTimer &
+             ( 'SolveCells', P % iTimerSolveCells, Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'ExchangeSolution', P % iTimerExchangeSolution, &
+               Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'BoundarySolution', P % iTimerBoundarySolution, &
+               Level = BaseLevel + 1 )
+
+    end if
+  end subroutine InitializeTimers
 
 
   impure elemental subroutine FinalizeTemplate ( P )

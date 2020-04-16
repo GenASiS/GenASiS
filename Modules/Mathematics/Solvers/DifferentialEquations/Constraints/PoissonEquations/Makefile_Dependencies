@@ -3,6 +3,11 @@ LaplacianMultipole_Template.o: \
   Manifolds.o \
   LaplacianMultipole_Template.f90 
 
+LaplacianMultipole_Kernel.o: \
+  Basics.o \
+  LaplacianMultipole_Template.o \
+  LaplacianMultipole_Kernel.f90
+
 LaplacianMultipole_ASC__Form.o: \
   Basics.o \
   Manifolds.o \
@@ -18,9 +23,15 @@ Poisson_Template.o: \
 Poisson_ASC__Form.o: \
   Basics.o \
   Manifolds.o \
+  LaplacianMultipole_Template.o \
   LaplacianMultipole_ASC__Form.o \
   Poisson_Template.o \
   Poisson_ASC__Form.f90
+
+Poisson_ASC__Kernel.o: \
+  Basics.o \
+  Poisson_ASC__Form.o \
+  Poisson_ASC__Kernel.f90
 
 PoissonEquations.o: \
   LaplacianMultipole_Template.o \
