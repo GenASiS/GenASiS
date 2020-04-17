@@ -64,8 +64,6 @@ module LaplacianMultipole_Template
       SetMomentStorage
     procedure ( CML ), private, pass, deferred :: &
       ComputeMomentsLocal
-    procedure, public, pass :: &
-      ComputeMomentContributions
   end type LaplacianMultipoleTemplate
 
   abstract interface
@@ -109,8 +107,26 @@ module LaplacianMultipole_Template
 
     interface 
 
-      module subroutine ComputeMomentContributionsKernel ( )
-
+      module subroutine ComputeMomentContributionsKernel &
+                          ( MyM_RC, MyM_IC, MyM_RS, MyM_IS, &
+                            SH_RC, SH_IC, SH_RS, SH_IS, &
+                            Source, Volume, iaSource, L, nE, nA, iR )
+        real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
+          MyM_RC, MyM_IC, &  !-- MyMoment_RealCosine, etc.
+          MyM_RS, MyM_IS
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          SH_RC, SH_IC, &  !-- SolidHarmonic_RealCosine, etc.
+          SH_RS, SH_IS, &
+          Source
+        real ( KDR ), intent ( in ) :: &
+          Volume
+        integer ( KDI ), dimension ( : ), intent ( in ) :: &
+          iaSource
+        integer ( KDI ), intent ( in ) :: &
+          L,  &  !-- MaxOrder
+          nE, &  !-- nEquations
+          nA, &  !-- nAngular
+          iR     !-- iRadius
       end subroutine ComputeMomentContributionsKernel
 
       module subroutine ComputeSolidHarmonicsKernel &
@@ -426,41 +442,6 @@ contains
     end associate !-- PHC
 
   end subroutine SetMomentStorage
-
-
-  subroutine ComputeMomentContributions ( LM, Source, Volume, iaSource, iR )
-
-    class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
-      LM
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      Source
-    real ( KDR ), intent ( in ) :: &
-      Volume
-    integer ( KDI ), dimension ( : ), intent ( in ) :: &
-      iaSource
-    integer ( KDI ) :: &
-      iR  !-- iRadius
-
-    integer ( KDI ) :: &
-      iE  !-- iEquation
-    real ( KDR ), dimension ( LM % nEquations ) :: &
-      Source_dV
-
-    Source_dV  =  [ ( Source ( iaSource ( iE ) )  *  Volume, &
-                      iE = 1, LM % nEquations ) ] 
-!call Show ( Source_dV, 'Source_dV' )
-
-    call ComputeMomentContributions_MR_MI_Kernel &
-           ( LM % MyM_RC, LM % MyM_IC, &
-             LM % SolidHarmonic_RC, LM % SolidHarmonic_IC, &
-             Source_dV, LM % nEquations, LM % nAngularMomentCells, iR )
-    if ( LM % MaxOrder > 0 ) &
-      call ComputeMomentContributions_MR_MI_Kernel &
-             ( LM % MyM_RS, LM % MyM_IS, &
-               LM % SolidHarmonic_RS, LM % SolidHarmonic_IS, &
-               Source_dV, LM % nEquations, LM % nAngularMomentCells, iR )
-
-  end subroutine ComputeMomentContributions
 
 
   subroutine AssignPointers &

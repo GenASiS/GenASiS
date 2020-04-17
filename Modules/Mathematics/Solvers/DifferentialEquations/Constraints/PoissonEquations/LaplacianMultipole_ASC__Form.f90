@@ -172,10 +172,13 @@ contains
                  R, iR )
         if ( GridError ) &
           call PROGRAM_HEADER % Abort ( )
-        call LM % ComputeMomentContributions &
-               ( Source % Value ( iC, : ), &
-                 G % Value ( iC, G % VOLUME ), &
-                 Source % iaSelected, iR )
+        call ComputeMomentContributionsKernel &
+               ( LM % MyM_RC, LM % MyM_IC, LM % MyM_RS, LM % MyM_IS, &
+                 LM % SolidHarmonic_RC, LM % SolidHarmonic_IC, &
+                 LM % SolidHarmonic_RS, LM % SolidHarmonic_IS, &
+                 Source % Value ( iC, : ), G % Value ( iC, G % VOLUME ), &
+                 Source % iaSelected, LM % MaxDegree, LM % nEquations, &
+                 LM % nAngularMomentCells, iR )
       end do
       !$OMP end parallel do
 

@@ -11,6 +11,21 @@ contains
   
   module procedure ComputeMomentContributionsKernel
 
+    integer ( KDI ) :: &
+      iE  !-- iEquation
+    real ( KDR ), dimension ( nE ) :: &
+      Source_dV
+
+    Source_dV  =  [ ( Source ( iaSource ( iE ) )  *  Volume, &
+                      iE = 1, nE ) ] 
+!call Show ( Source_dV, 'Source_dV' )
+
+    call ComputeMomentContributions_MR_MI_Kernel &
+           ( MyM_RC, MyM_IC, SH_RC, SH_IC, Source_dV, nE, nA, iR )
+    if ( L > 0 ) &
+      call ComputeMomentContributions_MR_MI_Kernel &
+             ( MyM_RS, MyM_IS, SH_RS, SH_IS, Source_dV, nE, nA, iR )
+
   end procedure ComputeMomentContributionsKernel
 
 
