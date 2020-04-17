@@ -9,6 +9,11 @@ submodule ( LaplacianMultipole_Template ) LaplacianMultipole_Kernel
 contains
 
   
+  module procedure ComputeMomentContributionsKernel
+
+  end procedure ComputeMomentContributionsKernel
+
+
   module procedure ComputeSolidHarmonicsKernel
 
     real ( KDR ) :: &
@@ -70,6 +75,24 @@ contains
 !call Show ( RadialEdge ( iR + 1 ), 'R_out' )
 
   end procedure ComputeSolidHarmonicsKernel
+
+
+  module procedure ComputeMomentContributions_MR_MI_Kernel
+
+    integer ( KDI ) :: &
+      iA, &  !-- iAngular
+      iE     !-- iEquation   
+
+    do iE = 1, nE
+      do iA = 1, nA
+        MyMR ( iA, iRS, iE )  &
+          =  MyMR ( iA, iRS, iE )  +  SH_R ( iA )  *  Source_dV ( iE ) 
+        MyMI ( iA, iRS, iE )  &
+          =  MyMI ( iA, iRS, iE )  +  SH_I ( iA )  *  Source_dV ( iE )
+      end do
+    end do
+
+  end procedure ComputeMomentContributions_MR_MI_Kernel
 
 
   module procedure ComputeSolidHarmonics_C_M_0_Kernel

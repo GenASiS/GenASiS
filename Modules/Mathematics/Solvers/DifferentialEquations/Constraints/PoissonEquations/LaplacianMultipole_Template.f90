@@ -47,6 +47,8 @@ module LaplacianMultipole_Template
     !-- FIXME: This does not work with GCC 6.1.0
 !    procedure ( ), pointer, nopass :: &
 !      ComputeSolidHarmonicsKernel => ComputeSolidHarmonicsKernel
+!    procedure ( ), pointer, nopass :: &
+!      ComputeMomentContributionsKernel => ComputeMomentContributionsKernel
   contains
     procedure, public, pass :: &
       InitializeTemplate
@@ -95,15 +97,21 @@ module LaplacianMultipole_Template
 !-- FIXME: With GCC 6.1.0, must be public to trigger .smod generation
 !    private :: &
     public :: &
+      ComputeMomentContributionsKernel, &
       ComputeSolidHarmonicsKernel
 
 !-- FIXME: With GCC 6.1.0, must be public to trigger .smod generation
 !      private :: &
       public :: &
+        ComputeMomentContributions_MR_MI_Kernel, &
         ComputeSolidHarmonics_C_M_0_Kernel, &
         ComputeSolidHarmonics_C_S_Kernel
 
     interface 
+
+      module subroutine ComputeMomentContributionsKernel ( )
+
+      end subroutine ComputeMomentContributionsKernel
 
       module subroutine ComputeSolidHarmonicsKernel &
                           ( CoordinateSystem, Position, Origin, RadialEdge, &
@@ -128,6 +136,21 @@ module LaplacianMultipole_Template
         integer ( KDI ), intent ( out ) :: &
           iR
       end subroutine ComputeSolidHarmonicsKernel
+
+      module subroutine ComputeMomentContributions_MR_MI_Kernel &
+                          ( MyMR, MyMI, SH_R, SH_I, Source_dV, nE, nA, iRS )
+        use Basics
+        real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
+          MyMR, MyMI
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          SH_R, SH_I
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          Source_dV
+        integer ( KDI ), intent ( in ) :: &
+          nE, &
+          nA, &
+          iRS
+      end subroutine ComputeMomentContributions_MR_MI_Kernel
 
       module subroutine ComputeSolidHarmonics_C_M_0_Kernel &
                           ( X, Z, L, R_C, I_C )
@@ -156,8 +179,7 @@ module LaplacianMultipole_Template
 
     private :: &
       AssignPointers, &
-      AddMomentShells, &
-      ComputeMomentContributionsKernel
+      AddMomentShells
 
 contains
 
@@ -428,12 +450,12 @@ contains
                       iE = 1, LM % nEquations ) ] 
 !call Show ( Source_dV, 'Source_dV' )
 
-    call ComputeMomentContributionsKernel &
+    call ComputeMomentContributions_MR_MI_Kernel &
            ( LM % MyM_RC, LM % MyM_IC, &
              LM % SolidHarmonic_RC, LM % SolidHarmonic_IC, &
              Source_dV, LM % nEquations, LM % nAngularMomentCells, iR )
     if ( LM % MaxOrder > 0 ) &
-      call ComputeMomentContributionsKernel &
+      call ComputeMomentContributions_MR_MI_Kernel &
              ( LM % MyM_RS, LM % MyM_IS, &
                LM % SolidHarmonic_RS, LM % SolidHarmonic_IS, &
                Source_dV, LM % nEquations, LM % nAngularMomentCells, iR )
@@ -507,36 +529,6 @@ contains
     end do
 
   end subroutine AddMomentShells
-
-
-  subroutine ComputeMomentContributionsKernel &
-               ( MyMR, MyMI, SH_R, SH_I, Source_dV, nE, nA, iRS )
-
-    real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
-      MyMR, MyMI
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      SH_R, SH_I
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      Source_dV
-    integer ( KDI ), intent ( in ) :: &
-      nE, &
-      nA, &
-      iRS
-
-    integer ( KDI ) :: &
-      iA, &  !-- iAngular
-      iE     !-- iEquation   
-
-    do iE = 1, nE
-      do iA = 1, nA
-        MyMR ( iA, iRS, iE )  &
-          =  MyMR ( iA, iRS, iE )  +  SH_R ( iA )  *  Source_dV ( iE ) 
-        MyMI ( iA, iRS, iE )  &
-          =  MyMI ( iA, iRS, iE )  +  SH_I ( iA )  *  Source_dV ( iE )
-      end do
-    end do
-
-  end subroutine ComputeMomentContributionsKernel
 
 
 end module LaplacianMultipole_Template
