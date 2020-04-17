@@ -62,6 +62,11 @@ Fluid_P_HN__Form.o: \
   FluidFeatures_P__Form.o \
   Fluid_P_HN__Form.f90
 
+Fluid_P_HN__Kernel.o: \
+  Basics.o \
+  Fluid_P_HN__Form.o \
+  Fluid_P_HN__Kernel.f90
+
 Tally_F_D__Form.o: \
   Basics.o \
   Mathematics.o \
