@@ -10,6 +10,10 @@ module LaplacianMultipole_Template
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
       iTimerMoments = 0, &
+      iTimerClearMoments = 0, &
+      iTimerLocalMoments = 0, &
+      iTimerReduceMoments = 0, &
+      iTimerAddMoments = 0, &
       nRadialCells = 0, &
       nAngularMomentCells = 0, &
       nEquations = 0, &
@@ -131,7 +135,7 @@ module LaplacianMultipole_Template
 
       module subroutine ComputeSolidHarmonicsKernel &
                           ( CoordinateSystem, Position, Origin, RadialEdge, &
-                            nDimensions, L, R_C, I_C, R_S, I_S, GridError, &
+                            L, nDimensions, GridError, R_C, I_C, R_S, I_S, &
                             R, iR )
         use Basics
         character ( * ), intent ( in ) :: &
@@ -143,10 +147,10 @@ module LaplacianMultipole_Template
         integer ( KDI ), intent ( in ) :: &
           nDimensions, &
           L
-        real ( KDR ), dimension ( : ), intent ( out ) :: &
-          R_C, I_C, R_S, I_S
         logical ( KDL ), intent ( out ) :: &
           GridError
+        real ( KDR ), dimension ( : ), intent ( out ) :: &
+          R_C, I_C, R_S, I_S
         real ( KDR ), intent ( out ) :: &
           R
         integer ( KDI ), intent ( out ) :: &
@@ -264,6 +268,15 @@ contains
 
     call PROGRAM_HEADER % AddTimer &
            ( 'Moments', LM % iTimerMoments, Level = BaseLevel )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'ClearMoments', LM % iTimerClearMoments, Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'LocalMoments', LM % iTimerLocalMoments, Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'ReduceMoments', LM % iTimerReduceMoments, &
+               Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'AddMoments', LM % iTimerAddMoments, Level = BaseLevel + 1 )
 
   end subroutine InitializeTimers
 
@@ -279,29 +292,45 @@ contains
     !   iL, &  !-- iLevel
     !   iC     !-- iCell
     type ( TimerForm ), pointer :: &
-      Timer
+      Timer, &
+      Timer_CM, &
+      Timer_LM, &
+      Timer_RM, &
+      Timer_AM
 
-    Timer  =>  PROGRAM_HEADER % TimerPointer ( LM % iTimerMoments )
+    Timer     =>  PROGRAM_HEADER % TimerPointer ( LM % iTimerMoments )
+    Timer_CM  =>  PROGRAM_HEADER % TimerPointer ( LM % iTimerClearMoments )
+    Timer_LM  =>  PROGRAM_HEADER % TimerPointer ( LM % iTimerLocalMoments )
+    Timer_RM  =>  PROGRAM_HEADER % TimerPointer ( LM % iTimerReduceMoments )
+    Timer_AM  =>  PROGRAM_HEADER % TimerPointer ( LM % iTimerAddMoments )
+
     if ( associated ( Timer ) ) call Timer % Start ( )
 
     call Show ( 'Computing Moments', CONSOLE % INFO_3 )
 
+    if ( associated ( Timer_CM ) ) call Timer_CM % Start ( )
     call Clear ( LM % MyM_RC )
     call Clear ( LM % MyM_IC )
     if ( LM % MaxOrder > 0 ) then
       call Clear ( LM % MyM_RS )
       call Clear ( LM % MyM_IS )
     end if
+    if ( associated ( Timer_CM ) ) call Timer_CM % Stop ( )
 
+    if ( associated ( Timer_LM ) ) call Timer_LM % Start ( )
     call LM % ComputeMomentsLocal ( Source )
+    if ( associated ( Timer_LM ) ) call Timer_LM % Stop ( )
 
+    if ( associated ( Timer_RM ) ) call Timer_RM % Start ( )
     call LM % Reduction_RC % Reduce ( REDUCTION % SUM )
     call LM % Reduction_IC % Reduce ( REDUCTION % SUM )
     if ( LM % MaxOrder > 0 ) then
       call LM % Reduction_RS % Reduce ( REDUCTION % SUM )
       call LM % Reduction_IS % Reduce ( REDUCTION % SUM )
     end if
+    if ( associated ( Timer_RM ) ) call Timer_RM % Stop ( )
 
+    if ( associated ( Timer_AM ) ) call Timer_AM % Start ( )
     call AddMomentShells &
            ( LM % M_RC, LM % M_IC, &
              LM % nEquations, LM % nRadialCells, LM % nAngularMomentCells )
@@ -309,6 +338,7 @@ contains
       call AddMomentShells &
              ( LM % M_RS, LM % M_IS, &
                LM % nEquations, LM % nRadialCells, LM % nAngularMomentCells )
+    if ( associated ( Timer_AM ) ) call Timer_AM % Stop ( )
 
     if ( associated ( Timer ) ) call Timer % Stop ( )
 

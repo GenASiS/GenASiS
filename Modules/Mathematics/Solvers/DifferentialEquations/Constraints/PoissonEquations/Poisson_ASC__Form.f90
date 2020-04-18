@@ -213,7 +213,7 @@ contains
 !      if ( GridError ) &
 !        call PROGRAM_HEADER % Abort ( )
 
-      !$OMP parallel do private ( iC, iR, R, S )
+!      !$OMP parallel do private ( iC, iR, R, S )
       do iC = 1, G % nValues
 
         if ( .not. C % IsProperCell ( iC ) ) &
@@ -222,10 +222,9 @@ contains
         call ComputeSolidHarmonicsKernel &
                ( C % CoordinateSystem, &
                  G % Value ( iC, G % CENTER_U ( 1 ) : G % CENTER_U ( 3 ) ), &
-                 L % Origin, L % RadialEdge, C % nDimensions, &
-                 L % MaxDegree, L % SolidHarmonic_RC, L % SolidHarmonic_IC, &
-                 L % SolidHarmonic_RS, L % SolidHarmonic_IS, GridError, &
-                 R, iR )
+                 L % Origin, L % RadialEdge, L % MaxDegree, C % nDimensions, &
+                 GridError, L % SolidHarmonic_RC, L % SolidHarmonic_IC, &
+                 L % SolidHarmonic_RS, L % SolidHarmonic_IS, R, iR )
         if ( GridError ) &
           call PROGRAM_HEADER % Abort ( )
 
@@ -289,7 +288,7 @@ contains
           =  - S / ( 4.0_KDR  *  CONSTANT % PI )
 
       end do !-- iC
-      !$OMP end parallel do
+!      !$OMP end parallel do
 
       if ( associated ( Timer_SC ) ) call Timer_SC % Stop ( )
 

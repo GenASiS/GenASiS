@@ -29,8 +29,8 @@ INCLUDE_PREPROCESSOR = -I$(PATH_GENASIS)/Build
 #-- Enable unicode
 USE_ISO_10646 = 1
 
-#-- Enable OpenMP if requested
-ifeq ($(ENABLE_OMP), 1)
+#-- Enable OpenMP by default
+ifneq ($(ENABLE_OMP), 0)
   DEFINES = -fopenmp
 endif
 

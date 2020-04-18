@@ -2,6 +2,7 @@ POISSON_EQUATIONS = \
   Poisson_ASC__Kernel.o \
   Poisson_ASC__Form.o \
   Poisson_Template.o \
+  LaplacianMultipole_ASC__Kernel.o \
   LaplacianMultipole_ASC__Form.o \
   LaplacianMultipole_Kernel.o \
   LaplacianMultipole_Template.o \

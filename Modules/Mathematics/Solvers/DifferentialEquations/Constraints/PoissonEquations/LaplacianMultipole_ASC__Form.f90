@@ -27,6 +27,50 @@ module LaplacianMultipole_ASC__Form
     private :: &
       SetRadialEdgeSpherical
 
+!-- FIXME: With GCC 6.1.0, must be public to trigger .smod generation
+!    private :: &
+    public :: &
+      ComputeMomentsLocal_CSL_Kernel
+
+    interface
+
+      module subroutine ComputeMomentsLocal_CSL_Kernel &
+                          ( MyM_RC, MyM_RS, MyM_IC, MyM_IS, &
+                            CoordinateSystem, IsProperCell, Center, Source, &
+                            Origin, RadialEdge, Volume, iaSelectedSource, &
+                            MaxDegree, nDimensions, nCells, nEquations, &
+                            nAngularMomentCells, GridError, &
+                            SH_RC, SH_IC, SH_RS, SH_IS )
+        use Basics
+        real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
+          MyM_RC, MyM_IC, &  !--MyMoments
+          MyM_RS, MyM_IS
+        character ( * ), intent ( in ) :: &
+          CoordinateSystem
+        logical ( KDL ), dimension ( : ), intent ( in ) :: &
+          IsProperCell
+        real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+          Center, &
+          Source
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          Origin, &
+          RadialEdge, &
+          Volume
+        integer ( KDI ), dimension ( : ), intent ( in ) :: &
+          iaSelectedSource
+        integer ( KDI ), intent ( in ) :: &
+          MaxDegree, &
+          nDimensions, &
+          nCells
+        logical ( KDL ), intent ( out ) :: &
+          GridError
+        real ( KDR ), dimension ( : ), intent ( out ) :: &
+          SH_RC, SH_IC, &  !-- SolidHarmonics
+          SH_RS, SH_IS  
+      end subroutine ComputeMomentsLocal_CSL_Kernel
+
+    end interface
+
 contains
 
 
@@ -159,28 +203,40 @@ contains
 
       G => C % Geometry ( )
 
-      !$OMP parallel do private ( iC )
-      do iC = 1, G % nValues
-        if ( .not. C % IsProperCell ( iC ) ) &
-          cycle
-        call ComputeSolidHarmonicsKernel &
-               ( C % CoordinateSystem, &
-                 G % Value ( iC, G % CENTER_U ( 1 ) : G % CENTER_U ( 3 ) ), &
-                 LM % Origin, LM % RadialEdge, C % nDimensions, &
-                 LM % MaxDegree, LM % SolidHarmonic_RC, LM % SolidHarmonic_IC, &
-                 LM % SolidHarmonic_RS, LM % SolidHarmonic_IS, GridError, &
-                 R, iR )
-        if ( GridError ) &
-          call PROGRAM_HEADER % Abort ( )
-        call ComputeMomentContributionsKernel &
-               ( LM % MyM_RC, LM % MyM_IC, LM % MyM_RS, LM % MyM_IS, &
-                 LM % SolidHarmonic_RC, LM % SolidHarmonic_IC, &
-                 LM % SolidHarmonic_RS, LM % SolidHarmonic_IS, &
-                 Source % Value ( iC, : ), G % Value ( iC, G % VOLUME ), &
-                 Source % iaSelected, LM % MaxDegree, LM % nEquations, &
-                 LM % nAngularMomentCells, iR )
-      end do
-      !$OMP end parallel do
+      call ComputeMomentsLocal_CSL_Kernel &
+             ( LM % MyM_RC, LM % MyM_RS, LM % MyM_IC, LM % MyM_IS, &
+               C % CoordinateSystem, C % IsProperCell, &
+               G % Value ( :, G % CENTER_U ( 1 ) : G % CENTER_U ( 3 ) ), &
+               Source % Value, LM % Origin, LM % RadialEdge, &
+               G % Value ( :, G % VOLUME ), Source % iaSelected, &
+               LM % MaxDegree, C % nDimensions, G % nValues, LM % nEquations, &
+               LM % nAngularMomentCells, GridError, &
+               LM % SolidHarmonic_RC, LM % SolidHarmonic_IC, &
+               LM % SolidHarmonic_RS, LM % SolidHarmonic_IS )
+      if ( GridError ) &
+        call PROGRAM_HEADER % Abort ( )
+
+      ! !$OMP parallel do private ( iC )
+      ! do iC = 1, G % nValues
+      !   if ( .not. C % IsProperCell ( iC ) ) &
+      !     cycle
+      !   call ComputeSolidHarmonicsKernel &
+      !          ( C % CoordinateSystem, &
+      !            G % Value ( iC, G % CENTER_U ( 1 ) : G % CENTER_U ( 3 ) ), &
+      !            LM % Origin, LM % RadialEdge, LM % MaxDegree, C % nDimensions,&
+      !            GridError, LM % SolidHarmonic_RC, LM % SolidHarmonic_IC, &
+      !            LM % SolidHarmonic_RS, LM % SolidHarmonic_IS, R, iR )
+      !   if ( GridError ) &
+      !     call PROGRAM_HEADER % Abort ( )
+      !   call ComputeMomentContributionsKernel &
+      !          ( LM % MyM_RC, LM % MyM_IC, LM % MyM_RS, LM % MyM_IS, &
+      !            LM % SolidHarmonic_RC, LM % SolidHarmonic_IC, &
+      !            LM % SolidHarmonic_RS, LM % SolidHarmonic_IS, &
+      !            Source % Value ( iC, : ), G % Value ( iC, G % VOLUME ), &
+      !            Source % iaSelected, LM % MaxDegree, LM % nEquations, &
+      !            LM % nAngularMomentCells, iR )
+      ! end do
+      ! !$OMP end parallel do
 
     class default
       call Show ( 'Chart type not supported', CONSOLE % ERROR )

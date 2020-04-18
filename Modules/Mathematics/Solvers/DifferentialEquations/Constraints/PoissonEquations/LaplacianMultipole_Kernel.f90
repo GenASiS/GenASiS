@@ -101,7 +101,7 @@ contains
     do iE = 1, nE
       do iA = 1, nA
         MyMR ( iA, iRS, iE )  &
-          =  MyMR ( iA, iRS, iE )  +  SH_R ( iA )  *  Source_dV ( iE ) 
+          =  MyMR ( iA, iRS, iE )  +  SH_R ( iA )  *  Source_dV ( iE )
         MyMI ( iA, iRS, iE )  &
           =  MyMI ( iA, iRS, iE )  +  SH_I ( iA )  *  Source_dV ( iE )
       end do
