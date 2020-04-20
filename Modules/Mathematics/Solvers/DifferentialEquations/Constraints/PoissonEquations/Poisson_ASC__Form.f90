@@ -202,8 +202,6 @@ contains
     allocate ( Zero ( L % nAngularMomentCells ) )
     Zero = 0.0_KDR
 
-    do iE = 1, L % nEquations
-
       if ( associated ( Timer_SC ) ) call Timer_SC % Start ( )
 
 !      call SolveCells_CSL_Kernel &
@@ -213,20 +211,22 @@ contains
 !      if ( GridError ) &
 !        call PROGRAM_HEADER % Abort ( )
 
-!      !$OMP parallel do private ( iC, iR, R, S )
-      do iC = 1, G % nValues
+!    !$OMP parallel do private ( iC, iR, R, S )
+    do iC = 1, G % nValues
 
-        if ( .not. C % IsProperCell ( iC ) ) &
-          cycle
+      if ( .not. C % IsProperCell ( iC ) ) &
+        cycle
 
-        call ComputeSolidHarmonicsKernel &
-               ( C % CoordinateSystem, &
-                 G % Value ( iC, G % CENTER_U ( 1 ) : G % CENTER_U ( 3 ) ), &
-                 L % Origin, L % RadialEdge, L % MaxDegree, C % nDimensions, &
-                 GridError, L % SolidHarmonic_RC, L % SolidHarmonic_IC, &
-                 L % SolidHarmonic_RS, L % SolidHarmonic_IS, R, iR )
-        if ( GridError ) &
-          call PROGRAM_HEADER % Abort ( )
+      call ComputeSolidHarmonicsKernel &
+             ( C % CoordinateSystem, &
+               G % Value ( iC, G % CENTER_U ( 1 ) : G % CENTER_U ( 3 ) ), &
+               L % Origin, L % RadialEdge, L % MaxDegree, C % nDimensions, &
+               GridError, L % SolidHarmonic_RC, L % SolidHarmonic_IC, &
+               L % SolidHarmonic_RS, L % SolidHarmonic_IS, R, iR )
+      if ( GridError ) &
+        call PROGRAM_HEADER % Abort ( )
+
+      do iE = 1, L % nEquations
 
         S = 0.0_KDR
 
@@ -287,12 +287,12 @@ contains
         Solution % Value ( iC, Solution % iaSelected ( iE ) )  &
           =  - S / ( 4.0_KDR  *  CONSTANT % PI )
 
-      end do !-- iC
-!      !$OMP end parallel do
+      end do !-- iE
+
+    end do !-- iC
+!    !$OMP end parallel do
 
       if ( associated ( Timer_SC ) ) call Timer_SC % Stop ( )
-
-    end do !-- iE
 
     if ( associated ( Timer_ES ) ) call Timer_ES % Start ( )
     call C % ExchangeGhostData ( Solution )

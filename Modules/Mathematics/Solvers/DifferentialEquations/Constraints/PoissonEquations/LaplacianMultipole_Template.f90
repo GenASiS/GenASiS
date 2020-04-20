@@ -76,6 +76,7 @@ module LaplacianMultipole_Template
       use Basics
       use Manifolds
       import LaplacianMultipoleTemplate
+      implicit none
       class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
         LM
       class ( AtlasHeaderForm ), intent ( in ), target :: &
@@ -88,6 +89,7 @@ module LaplacianMultipole_Template
     subroutine CML ( LM, Source )
       use Basics
       import LaplacianMultipoleTemplate
+      implicit none
       class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
         LM
       type ( StorageForm ), intent ( in ) :: &
@@ -116,6 +118,8 @@ module LaplacianMultipole_Template
                           ( MyM_RC, MyM_IC, MyM_RS, MyM_IS, &
                             SH_RC, SH_IC, SH_RS, SH_IS, &
                             Source, Volume, iaSource, L, nE, nA, iR )
+        use Basics
+        implicit none
         real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
           MyM_RC, MyM_IC, &  !-- MyMoment_RealCosine, etc.
           MyM_RS, MyM_IS
@@ -136,6 +140,7 @@ module LaplacianMultipole_Template
 
       module subroutine AddMomentShellsKernel ( MR, MI, nE, nR, nA )
         use Basics
+        implicit none
         real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
           MR, MI
         integer ( KDI ), intent ( in ) :: &
@@ -147,6 +152,7 @@ module LaplacianMultipole_Template
                             L, nDimensions, GridError, R_C, I_C, R_S, I_S, &
                             R, iR )
         use Basics
+        implicit none
         character ( * ), intent ( in ) :: &
           CoordinateSystem
         real ( KDR ), dimension ( : ), intent ( in ) :: &
@@ -169,6 +175,7 @@ module LaplacianMultipole_Template
       module subroutine ComputeMomentContributions_MR_MI_Kernel &
                           ( MyMR, MyMI, SH_R, SH_I, Source_dV, nE, nA, iRS )
         use Basics
+        implicit none
         real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
           MyMR, MyMI
         real ( KDR ), dimension ( : ), intent ( in ) :: &
@@ -184,6 +191,7 @@ module LaplacianMultipole_Template
       module subroutine ComputeSolidHarmonics_C_M_0_Kernel &
                           ( X, Z, L, R_C, I_C )
         use Basics
+        implicit none
         real ( KDR ), intent ( in ) :: &
           X, Z
         integer ( KDI ), intent ( in ) :: &
@@ -195,6 +203,7 @@ module LaplacianMultipole_Template
       module subroutine ComputeSolidHarmonics_C_S_Kernel &
                ( X, Y, Z, L, R_C, I_C, R_S, I_S )
         use Basics
+        implicit none
         real ( KDR ), intent ( in ) :: &
           X, Y, Z
         integer ( KDI ), intent ( in ) :: &

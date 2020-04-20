@@ -36,7 +36,7 @@ contains
       iR, &  !-- radial index
       iE     !-- equation index
 
-    !-- No OMP directives for now because of iR dependency; takes very little
+    !-- No OMP directives for now because of dependencies; takes very little
     !   time anyway.
 
     do iE = 1, nE

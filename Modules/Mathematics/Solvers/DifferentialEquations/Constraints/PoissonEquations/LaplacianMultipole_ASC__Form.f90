@@ -42,6 +42,7 @@ module LaplacianMultipole_ASC__Form
                             nAngularMomentCells, GridError, &
                             SH_RC, SH_IC, SH_RS, SH_IS )
         use Basics
+        implicit none
         real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
           MyM_RC, MyM_IC, &  !--MyMoments
           MyM_RS, MyM_IS
@@ -61,7 +62,9 @@ module LaplacianMultipole_ASC__Form
         integer ( KDI ), intent ( in ) :: &
           MaxDegree, &
           nDimensions, &
-          nCells
+          nCells, &
+          nEquations, &
+          nAngularMomentCells
         logical ( KDL ), intent ( out ) :: &
           GridError
         real ( KDR ), dimension ( : ), intent ( out ) :: &
