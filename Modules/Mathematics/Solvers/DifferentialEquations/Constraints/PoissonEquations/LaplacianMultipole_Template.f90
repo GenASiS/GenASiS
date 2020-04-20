@@ -100,6 +100,7 @@ module LaplacianMultipole_Template
 !    private :: &
     public :: &
       ComputeMomentContributionsKernel, &
+      AddMomentShellsKernel, &
       ComputeSolidHarmonicsKernel
 
 !-- FIXME: With GCC 6.1.0, must be public to trigger .smod generation
@@ -133,6 +134,14 @@ module LaplacianMultipole_Template
           iR     !-- iRadius
       end subroutine ComputeMomentContributionsKernel
 
+      module subroutine AddMomentShellsKernel ( MR, MI, nE, nR, nA )
+        use Basics
+        real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
+          MR, MI
+        integer ( KDI ), intent ( in ) :: &
+          nE, nR, nA
+      end subroutine AddMomentShellsKernel
+        
       module subroutine ComputeSolidHarmonicsKernel &
                           ( CoordinateSystem, Position, Origin, RadialEdge, &
                             L, nDimensions, GridError, R_C, I_C, R_S, I_S, &
@@ -198,8 +207,7 @@ module LaplacianMultipole_Template
     end interface
 
     private :: &
-      AssignPointers, &
-      AddMomentShells
+      AssignPointers
 
 contains
 
@@ -331,11 +339,11 @@ contains
     if ( associated ( Timer_RM ) ) call Timer_RM % Stop ( )
 
     if ( associated ( Timer_AM ) ) call Timer_AM % Start ( )
-    call AddMomentShells &
+    call AddMomentShellsKernel &
            ( LM % M_RC, LM % M_IC, &
              LM % nEquations, LM % nRadialCells, LM % nAngularMomentCells )
     if ( LM % MaxOrder > 0 ) &
-      call AddMomentShells &
+      call AddMomentShellsKernel &
              ( LM % M_RS, LM % M_IS, &
                LM % nEquations, LM % nRadialCells, LM % nAngularMomentCells )
     if ( associated ( Timer_AM ) ) call Timer_AM % Stop ( )
@@ -505,41 +513,6 @@ contains
     end associate !-- nR, nA
 
   end subroutine AssignPointers
-
-
-  subroutine AddMomentShells ( MR, MI, nE, nR, nA )
-
-    real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
-      MR, MI
-    integer ( KDI ), intent ( in ) :: &
-      nE, nR, nA
-
-    integer ( KDI ) :: &
-      iA, &  !-- angular index
-      iR, &  !-- radial index
-      iE     !-- equation index
-
-    do iE = 1, nE
-      !$OMP parallel do private ( iR, iA )
-      do iR = 2, nR
-        do iA = 1, nA
-          MR ( iA, iR, iE )  =  MR ( iA, iR - 1, iE )  +  MR ( iA, iR, iE )
-        end do
-      end do
-      !$OMP end parallel do
-    end do
-
-    do iE = 1, nE
-      !$OMP parallel do private ( iR, iA )
-      do iR = nR - 1, 1, -1
-        do iA = 1, nA
-          MI ( iA, iR, iE )  =  MI ( iA, iR + 1, iE )  +  MI ( iA, iR, iE )
-        end do
-      end do
-      !$OMP end parallel do
-    end do
-
-  end subroutine AddMomentShells
 
 
 end module LaplacianMultipole_Template

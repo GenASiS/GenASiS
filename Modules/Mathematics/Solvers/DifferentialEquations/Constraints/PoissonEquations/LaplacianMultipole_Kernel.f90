@@ -29,6 +29,35 @@ contains
   end procedure ComputeMomentContributionsKernel
 
 
+  module procedure AddMomentShellsKernel
+
+    integer ( KDI ) :: &
+      iA, &  !-- angular index
+      iR, &  !-- radial index
+      iE     !-- equation index
+
+    !-- No OMP directives for now because of iR dependency; takes very little
+    !   time anyway.
+
+    do iE = 1, nE
+      do iR = 2, nR
+        do iA = 1, nA
+          MR ( iA, iR, iE )  =  MR ( iA, iR - 1, iE )  +  MR ( iA, iR, iE )
+        end do
+      end do
+    end do
+
+    do iE = 1, nE
+      do iR = nR - 1, 1, -1
+        do iA = 1, nA
+          MI ( iA, iR, iE )  =  MI ( iA, iR + 1, iE )  +  MI ( iA, iR, iE )
+        end do
+      end do
+    end do
+
+  end procedure AddMomentShellsKernel
+
+
   module procedure ComputeSolidHarmonicsKernel
 
     real ( KDR ) :: &

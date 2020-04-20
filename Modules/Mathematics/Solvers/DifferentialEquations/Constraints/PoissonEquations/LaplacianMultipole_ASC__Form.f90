@@ -216,28 +216,6 @@ contains
       if ( GridError ) &
         call PROGRAM_HEADER % Abort ( )
 
-      ! !$OMP parallel do private ( iC )
-      ! do iC = 1, G % nValues
-      !   if ( .not. C % IsProperCell ( iC ) ) &
-      !     cycle
-      !   call ComputeSolidHarmonicsKernel &
-      !          ( C % CoordinateSystem, &
-      !            G % Value ( iC, G % CENTER_U ( 1 ) : G % CENTER_U ( 3 ) ), &
-      !            LM % Origin, LM % RadialEdge, LM % MaxDegree, C % nDimensions,&
-      !            GridError, LM % SolidHarmonic_RC, LM % SolidHarmonic_IC, &
-      !            LM % SolidHarmonic_RS, LM % SolidHarmonic_IS, R, iR )
-      !   if ( GridError ) &
-      !     call PROGRAM_HEADER % Abort ( )
-      !   call ComputeMomentContributionsKernel &
-      !          ( LM % MyM_RC, LM % MyM_IC, LM % MyM_RS, LM % MyM_IS, &
-      !            LM % SolidHarmonic_RC, LM % SolidHarmonic_IC, &
-      !            LM % SolidHarmonic_RS, LM % SolidHarmonic_IS, &
-      !            Source % Value ( iC, : ), G % Value ( iC, G % VOLUME ), &
-      !            Source % iaSelected, LM % MaxDegree, LM % nEquations, &
-      !            LM % nAngularMomentCells, iR )
-      ! end do
-      ! !$OMP end parallel do
-
     class default
       call Show ( 'Chart type not supported', CONSOLE % ERROR )
       call Show ( 'ComputeMomentsLocal', 'subroutine', CONSOLE % ERROR )
