@@ -231,7 +231,7 @@ contains
         S = 0.0_KDR
 
         if ( iR > 1 .and. iR < L % nRadialCells ) then
-          call SolveKernel &
+          call AssembleSolutionKernel &
                  ( S, &
                    L % M_RC ( :, iR - 1, iE ), L % M_IC ( :, iR, iE ), &
                    L % M_RC ( :, iR, iE ), L % M_IC ( :, iR + 1, iE ), &
@@ -239,7 +239,7 @@ contains
                    L % Delta, L % RadialEdge ( iR ), &
                    L % RadialEdge ( iR + 1 ), R )
         else if ( iR == 1 ) then
-          call SolveKernel &
+          call AssembleSolutionKernel &
                  ( S, &
                    Zero, L % M_IC ( :, iR, iE ), &
                    L % M_RC ( :, iR, iE ), L % M_IC ( :, iR + 1, iE ), &
@@ -247,7 +247,7 @@ contains
                    L % Delta, L % RadialEdge ( iR ), &
                    L % RadialEdge ( iR + 1 ), R )
         else if ( iR == L % nRadialCells ) then
-          call SolveKernel &
+          call AssembleSolutionKernel &
                  ( S, &
                    L % M_RC ( :, iR - 1, iE ), L % M_IC ( :, iR, iE ), &
                    L % M_RC ( :, iR, iE ), Zero, &
@@ -258,7 +258,7 @@ contains
 
         if ( L % MaxOrder > 0 ) then
           if ( iR > 1 .and. iR < L % nRadialCells ) then
-            call SolveKernel &
+            call AssembleSolutionKernel &
                    ( S, &
                      L % M_RS ( :, iR - 1, iE ), L % M_IS ( :, iR, iE ), &
                      L % M_RS ( :, iR, iE ), L % M_IS ( :, iR + 1, iE ), &
@@ -266,7 +266,7 @@ contains
                      L % Delta, L % RadialEdge ( iR ), &
                      L % RadialEdge ( iR + 1 ), R )
           else if ( iR == 1 ) then
-            call SolveKernel &
+            call AssembleSolutionKernel &
                    ( S, &
                      Zero, L % M_IS ( :, iR, iE ), &
                      L % M_RS ( :, iR, iE ), L % M_IS ( :, iR + 1, iE ), &
@@ -274,7 +274,7 @@ contains
                      L % Delta, L % RadialEdge ( iR ), &
                      L % RadialEdge ( iR + 1 ), R )
           else if ( iR == L % nRadialCells ) then
-            call SolveKernel &
+            call AssembleSolutionKernel &
                    ( S, &
                      L % M_RS ( :, iR - 1, iE ), L % M_IS ( :, iR, iE ), &
                      L % M_RS ( :, iR, iE ), Zero, &
@@ -309,7 +309,7 @@ contains
   end subroutine SolveMultipole_CSL
 
 
-  subroutine SolveKernel &
+  subroutine AssembleSolutionKernel &
                ( S, M_R_In, M_I_In, M_R_Out, M_I_Out, SH_R, SH_I, Delta, &
                  R_In, R_Out, R )
 
@@ -341,7 +341,7 @@ contains
 
     end do
 
-  end subroutine SolveKernel
+  end subroutine AssembleSolutionKernel
 
 
 end module Poisson_ASC__Form
