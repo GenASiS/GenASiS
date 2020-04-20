@@ -37,7 +37,7 @@ module LaplacianMultipole_ASC__Form
       module subroutine ComputeMomentsLocal_CSL_Kernel &
                           ( MyM_RC, MyM_RS, MyM_IC, MyM_IS, &
                             CoordinateSystem, IsProperCell, Center, Source, &
-                            Origin, RadialEdge, Volume, iaSelectedSource, &
+                            Origin, RadialEdge, Volume, iaSource, &
                             MaxDegree, nDimensions, nCells, nEquations, &
                             nAngularMomentCells, GridError, &
                             SH_RC, SH_IC, SH_RS, SH_IS )
@@ -58,7 +58,7 @@ module LaplacianMultipole_ASC__Form
           RadialEdge, &
           Volume
         integer ( KDI ), dimension ( : ), intent ( in ) :: &
-          iaSelectedSource
+          iaSource
         integer ( KDI ), intent ( in ) :: &
           MaxDegree, &
           nDimensions, &

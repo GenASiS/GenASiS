@@ -36,6 +36,7 @@ Poisson_ASC__Form.o: \
 
 Poisson_ASC__Kernel.o: \
   Basics.o \
+  LaplacianMultipole_Template.o \
   Poisson_ASC__Form.o \
   Poisson_ASC__Kernel.f90
 

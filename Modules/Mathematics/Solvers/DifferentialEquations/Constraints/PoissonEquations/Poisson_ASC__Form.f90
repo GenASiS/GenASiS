@@ -29,27 +29,71 @@ module Poisson_ASC__Form
 !-- FIXME: With GCC 6.1.0, must be public to trigger .smod generation
 !    private :: &
     public :: &
-      SolveCells_CSL_Kernel
+      SolveCells_CSL_Kernel, &
+      AssembleSolutionKernel
 
     interface
 
       module subroutine SolveCells_CSL_Kernel &
-                          ( CoordinateSystem, IsProperCell, Center, &
-                            nDimensions, nCells, ComputeSolidHarmonics )
+                          ( Solution, CoordinateSystem, IsProperCell, &
+                            M_RC, M_IC, M_RS, M_IS, Center, Origin, Delta, &
+                            RadialEdge, FourPi, iaSolution, MaxDegree, &
+                            nDimensions, nCells, nEquations, nRadialCells, &
+                            nAngularMomentCells, GridError, &
+                            SH_RC, SH_IC, SH_RS, SH_IS )
         use Basics
+        implicit none
+        real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+          Solution
         character ( * ), intent ( in ) :: &
           CoordinateSystem
         logical ( KDL ), dimension ( : ), intent ( in ) :: &
           IsProperCell
+        real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+          M_RC, M_IC, &
+          M_RS, M_IS
         real ( KDR ), dimension ( :, : ), intent ( in ) :: &
           Center
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          Origin, &
+          Delta, &
+          RadialEdge
+        real ( KDR ), intent ( in ) :: &
+          FourPi
+        integer ( KDI ), dimension ( : ), intent ( in ) :: &
+          iaSolution
         integer ( KDI ), intent ( in ) :: &
+          MaxDegree, &
           nDimensions, &
-          nCells
-        procedure ( ), pointer :: &
-          ComputeSolidHarmonics
+          nCells, &
+          nEquations, &
+          nRadialCells, &
+          nAngularMomentCells
+        logical ( KDL ), intent ( out ) :: &
+          GridError
+        real ( KDR ), dimension ( : ), intent ( out ) :: &
+          SH_RC, SH_IC, &  !-- SolidHarmonics
+          SH_RS, SH_IS  
       end subroutine SolveCells_CSL_Kernel
 
+      module subroutine AssembleSolutionKernel &
+                          ( S, M_R_In, M_I_In, M_R_Out, M_I_Out, SH_R, SH_I, &
+                            Delta, R_In, R_Out, R, nA )
+        use Basics
+        implicit none
+        real ( KDR ), intent ( inout ) :: &
+          S
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          M_R_In, M_I_In, &
+          M_R_Out, M_I_Out, &
+          SH_R, SH_I, &
+          Delta
+        real ( KDR ), intent ( in ) :: &
+          R_In, R_Out, R
+        integer ( KDI ), intent ( in ) :: &
+          nA
+      end subroutine AssembleSolutionKernel
+      
     end interface
 
 contains
@@ -168,15 +212,6 @@ contains
     class ( StorageForm ), intent ( in ) :: &
       Source
 
-    integer ( KDI ) :: &
-      iC, &  !-- iCell
-      iR, &  !-- iRadius
-      iE     !-- iEquation
-    real ( KDR ) :: &
-      R, &  !-- Radius
-      S     !-- Solution
-    real ( KDR ), dimension ( : ), allocatable :: &
-      Zero
     logical ( KDL ) :: &
       GridError
     type ( TimerForm ), pointer :: &
@@ -199,100 +234,20 @@ contains
 
     G => C % Geometry ( )
 
-    allocate ( Zero ( L % nAngularMomentCells ) )
-    Zero = 0.0_KDR
-
-      if ( associated ( Timer_SC ) ) call Timer_SC % Start ( )
-
-!      call SolveCells_CSL_Kernel &
-!             ( C % CoordinateSystem, C % IsProperCell, &
-!               G % Value ( :, G % CENTER_U ( 1 ) : G % CENTER_U ( 3 ) ), &
-!               C % nDimensions, G % nValues, L % ComputeSolidHarmonicsKernel )
-!      if ( GridError ) &
-!        call PROGRAM_HEADER % Abort ( )
-
-!    !$OMP parallel do private ( iC, iR, R, S )
-    do iC = 1, G % nValues
-
-      if ( .not. C % IsProperCell ( iC ) ) &
-        cycle
-
-      call ComputeSolidHarmonicsKernel &
-             ( C % CoordinateSystem, &
-               G % Value ( iC, G % CENTER_U ( 1 ) : G % CENTER_U ( 3 ) ), &
-               L % Origin, L % RadialEdge, L % MaxDegree, C % nDimensions, &
-               GridError, L % SolidHarmonic_RC, L % SolidHarmonic_IC, &
-               L % SolidHarmonic_RS, L % SolidHarmonic_IS, R, iR )
-      if ( GridError ) &
-        call PROGRAM_HEADER % Abort ( )
-
-      do iE = 1, L % nEquations
-
-        S = 0.0_KDR
-
-        if ( iR > 1 .and. iR < L % nRadialCells ) then
-          call AssembleSolutionKernel &
-                 ( S, &
-                   L % M_RC ( :, iR - 1, iE ), L % M_IC ( :, iR, iE ), &
-                   L % M_RC ( :, iR, iE ), L % M_IC ( :, iR + 1, iE ), &
-                   L % SolidHarmonic_RC ( : ), L % SolidHarmonic_IC ( : ), &
-                   L % Delta, L % RadialEdge ( iR ), &
-                   L % RadialEdge ( iR + 1 ), R )
-        else if ( iR == 1 ) then
-          call AssembleSolutionKernel &
-                 ( S, &
-                   Zero, L % M_IC ( :, iR, iE ), &
-                   L % M_RC ( :, iR, iE ), L % M_IC ( :, iR + 1, iE ), &
-                   L % SolidHarmonic_RC ( : ), L % SolidHarmonic_IC ( : ), &
-                   L % Delta, L % RadialEdge ( iR ), &
-                   L % RadialEdge ( iR + 1 ), R )
-        else if ( iR == L % nRadialCells ) then
-          call AssembleSolutionKernel &
-                 ( S, &
-                   L % M_RC ( :, iR - 1, iE ), L % M_IC ( :, iR, iE ), &
-                   L % M_RC ( :, iR, iE ), Zero, &
-                   L % SolidHarmonic_RC ( : ), L % SolidHarmonic_IC ( : ), &
-                   L % Delta, L % RadialEdge ( iR ), &
-                   L % RadialEdge ( iR + 1 ), R )
-        end if !-- iR
-
-        if ( L % MaxOrder > 0 ) then
-          if ( iR > 1 .and. iR < L % nRadialCells ) then
-            call AssembleSolutionKernel &
-                   ( S, &
-                     L % M_RS ( :, iR - 1, iE ), L % M_IS ( :, iR, iE ), &
-                     L % M_RS ( :, iR, iE ), L % M_IS ( :, iR + 1, iE ), &
-                     L % SolidHarmonic_RS ( : ), L % SolidHarmonic_IS ( : ), &
-                     L % Delta, L % RadialEdge ( iR ), &
-                     L % RadialEdge ( iR + 1 ), R )
-          else if ( iR == 1 ) then
-            call AssembleSolutionKernel &
-                   ( S, &
-                     Zero, L % M_IS ( :, iR, iE ), &
-                     L % M_RS ( :, iR, iE ), L % M_IS ( :, iR + 1, iE ), &
-                     L % SolidHarmonic_RS ( : ), L % SolidHarmonic_IS ( : ), &
-                     L % Delta, L % RadialEdge ( iR ), &
-                     L % RadialEdge ( iR + 1 ), R )
-          else if ( iR == L % nRadialCells ) then
-            call AssembleSolutionKernel &
-                   ( S, &
-                     L % M_RS ( :, iR - 1, iE ), L % M_IS ( :, iR, iE ), &
-                     L % M_RS ( :, iR, iE ), Zero, &
-                     L % SolidHarmonic_RS ( : ), L % SolidHarmonic_IS ( : ), &
-                     L % Delta, L % RadialEdge ( iR ), &
-                     L % RadialEdge ( iR + 1 ), R )
-          end if !-- iR
-        end if !-- MaxOrder
-
-        Solution % Value ( iC, Solution % iaSelected ( iE ) )  &
-          =  - S / ( 4.0_KDR  *  CONSTANT % PI )
-
-      end do !-- iE
-
-    end do !-- iC
-!    !$OMP end parallel do
-
-      if ( associated ( Timer_SC ) ) call Timer_SC % Stop ( )
+    if ( associated ( Timer_SC ) ) call Timer_SC % Start ( )
+     call SolveCells_CSL_Kernel &
+            ( Solution % Value, C % CoordinateSystem, C % IsProperCell, &
+              L % M_RC, L % M_IC, L % M_RS, L % M_IS, &
+              G % Value ( :, G % CENTER_U ( 1 ) : G % CENTER_U ( 3 ) ), &
+              L % Origin, L % Delta, L % RadialEdge, 4.0_KDR * CONSTANT % PI, &
+              Solution % iaSelected, L % MaxDegree, C % nDimensions, &
+              G % nValues, L % nEquations, L % nRadialCells, &
+              L % nAngularMomentCells, GridError, &
+              L % SolidHarmonic_RC, L % SolidHarmonic_IC, &
+              L % SolidHarmonic_RS, L % SolidHarmonic_IS )
+     if ( GridError ) &
+       call PROGRAM_HEADER % Abort ( )
+    if ( associated ( Timer_SC ) ) call Timer_SC % Stop ( )
 
     if ( associated ( Timer_ES ) ) call Timer_ES % Start ( )
     call C % ExchangeGhostData ( Solution )
@@ -307,41 +262,6 @@ contains
     nullify ( G )
 
   end subroutine SolveMultipole_CSL
-
-
-  subroutine AssembleSolutionKernel &
-               ( S, M_R_In, M_I_In, M_R_Out, M_I_Out, SH_R, SH_I, Delta, &
-                 R_In, R_Out, R )
-
-    real ( KDR ), intent ( inout ) :: &
-      S
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      M_R_In, M_I_In, &
-      M_R_Out, M_I_Out, &
-      SH_R, SH_I, &
-      Delta
-    real ( KDR ), intent ( in ) :: &
-      R_In, R_Out, R
-
-    integer ( KDI ) :: &
-      iA  !-- iAngular
-    real ( KDR ) :: &
-      F, &  !-- Fraction
-      M_R, M_I
-
-    F  =  ( R - R_In ) / ( R_Out - R_in )
-
-    do iA = 1, size ( Delta )
-
-      M_R  =  F  *  M_R_In ( iA )   +   ( 1.0_KDR - F )  *  M_R_Out ( iA )
-      M_I  =  F  *  M_I_In ( iA )   +   ( 1.0_KDR - F )  *  M_I_Out ( iA )
-
-      S  =  S   +   Delta ( iA )  &
-                    *  ( M_R  *  SH_I ( iA )  +  M_I  *  SH_R ( iA ) )
-
-    end do
-
-  end subroutine AssembleSolutionKernel
 
 
 end module Poisson_ASC__Form

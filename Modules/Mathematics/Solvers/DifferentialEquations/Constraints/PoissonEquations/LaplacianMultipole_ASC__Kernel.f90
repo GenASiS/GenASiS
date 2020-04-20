@@ -37,8 +37,8 @@ contains
 
       call ComputeMomentContributionsKernel &
              ( MyM_RC, MyM_IC, MyM_RS, MyM_IS, SH_RC, SH_IC, SH_RS, SH_IS, &
-                 Source ( iC, : ), Volume ( iC ), iaSelectedSource, &
-                 MaxDegree, nEquations, nAngularMomentCells, iR )
+               Source ( iC, : ), Volume ( iC ), iaSource, MaxDegree, &
+               nEquations, nAngularMomentCells, iR )
 
     end do !-- iC
     !$OMP  end parallel do
