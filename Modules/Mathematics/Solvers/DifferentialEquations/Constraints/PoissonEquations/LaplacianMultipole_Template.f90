@@ -54,8 +54,8 @@ module LaplacianMultipole_Template
       Name = ''
     type ( StorageForm ), allocatable :: &
       SolidHarmonics, &
-      MyMoment, &
-      Moment
+      MyMoments, &
+      Moments
     type ( CollectiveOperation_R_Form ), allocatable :: &
       Reduction_RC, Reduction_IC, &
       Reduction_RS, Reduction_IS
@@ -399,6 +399,8 @@ contains
     if ( allocated ( LM % Reduction_IC ) ) deallocate ( LM % Reduction_IC )
     if ( allocated ( LM % Reduction_IS ) ) deallocate ( LM % Reduction_IS )
 
+    if ( allocated ( LM % MyMoments ) ) deallocate ( LM % MyMoments )
+    if ( allocated ( LM % Moments ) ) deallocate ( LM % Moments )
     if ( allocated ( LM % SolidHarmonics ) ) deallocate ( LM % SolidHarmonics )
 
     nullify ( LM % M_IS )
@@ -410,22 +412,14 @@ contains
     nullify ( LM % MyM_IC )
     nullify ( LM % MyM_RC )
 
-    if ( associated ( LM % Moment_IS_1D ) ) &
-       deallocate ( LM % Moment_IS_1D )
-    if ( associated ( LM % Moment_IC_1D ) ) &
-       deallocate ( LM % Moment_IC_1D )
-    if ( associated ( LM % Moment_RS_1D ) ) &
-       deallocate ( LM % Moment_RS_1D )
-    if ( associated ( LM % Moment_RC_1D ) ) &
-       deallocate ( LM % Moment_RC_1D )
-    if ( associated ( LM % MyMoment_IS_1D ) ) &
-       deallocate ( LM % MyMoment_IS_1D )
-    if ( associated ( LM % MyMoment_IC_1D ) ) &
-       deallocate ( LM % MyMoment_IC_1D )
-    if ( associated ( LM % MyMoment_RS_1D ) ) &
-       deallocate ( LM % MyMoment_RS_1D )
-    if ( associated ( LM % MyMoment_RC_1D ) ) &
-       deallocate ( LM % MyMoment_RC_1D )
+    nullify ( LM % Moment_IS_1D )
+    nullify ( LM % Moment_IC_1D )
+    nullify ( LM % Moment_RS_1D )
+    nullify ( LM % Moment_RC_1D )
+    nullify ( LM % MyMoment_IS_1D )
+    nullify ( LM % MyMoment_IC_1D )
+    nullify ( LM % MyMoment_RS_1D )
+    nullify ( LM % MyMoment_RC_1D )
 
     nullify ( LM % SolidHarmonic_IS )
     nullify ( LM % SolidHarmonic_RS )
@@ -449,37 +443,31 @@ contains
     class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
       LM
 
-    if ( associated ( LM % Moment_IS_1D ) ) &
-       deallocate ( LM % Moment_IS_1D )
-    if ( associated ( LM % Moment_IC_1D ) ) &
-       deallocate ( LM % Moment_IC_1D )
-    if ( associated ( LM % Moment_RS_1D ) ) &
-       deallocate ( LM % Moment_RS_1D )
-    if ( associated ( LM % Moment_RC_1D ) ) &
-       deallocate ( LM % Moment_RC_1D )
-    if ( associated ( LM % MyMoment_IS_1D ) ) &
-       deallocate ( LM % MyMoment_IS_1D )
-    if ( associated ( LM % MyMoment_IC_1D ) ) &
-       deallocate ( LM % MyMoment_IC_1D )
-    if ( associated ( LM % MyMoment_RS_1D ) ) &
-       deallocate ( LM % MyMoment_RS_1D )
-    if ( associated ( LM % MyMoment_RC_1D ) ) &
-       deallocate ( LM % MyMoment_RC_1D )
+    if ( allocated ( LM % MyMoments ) ) deallocate ( LM % MyMoments )
+    if ( allocated ( LM % Moments ) ) deallocate ( LM % Moments )
 
+    allocate ( LM % Moments )
+    allocate ( LM % MyMoments )
     associate &
-      ( nR_nA_nE => LM % nRadialCells * LM % nAngularMomentCells &
-                    * LM % nEquations )
-    allocate ( LM % MyMoment_RC_1D ( nR_nA_nE ) )
-    allocate ( LM % MyMoment_IC_1D ( nR_nA_nE ) )
-    allocate ( LM % Moment_RC_1D ( nR_nA_nE ) )
-    allocate ( LM % Moment_IC_1D ( nR_nA_nE ) )
+      (        M  =>  LM % Moments, &
+             MyM  =>  LM % MyMoments, &
+        nA_nR_nE  =>  LM % nAngularMomentCells  *  LM % nRadialCells &
+                      *  LM % nEquations )
+    call   M % Initialize ( [ nA_nR_nE, LM % N_SOLID_HARMONICS ] )
+    call MyM % Initialize ( [ nA_nR_nE, LM % N_SOLID_HARMONICS ] )
+
+      LM % Moment_RC_1D  =>    M % Value ( :, LM % REGULAR_COSINE ) 
+      LM % Moment_IC_1D  =>    M % Value ( :, LM % IRREGULAR_COSINE ) 
+    LM % MyMoment_RC_1D  =>  MyM % Value ( :, LM % REGULAR_COSINE ) 
+    LM % MyMoment_IC_1D  =>  MyM % Value ( :, LM % IRREGULAR_COSINE ) 
     if ( LM % MaxOrder > 0 ) then
-      allocate ( LM % MyMoment_RS_1D ( nR_nA_nE ) )
-      allocate ( LM % MyMoment_IS_1D ( nR_nA_nE ) )
-      allocate ( LM % Moment_RS_1D ( nR_nA_nE ) )
-      allocate ( LM % Moment_IS_1D ( nR_nA_nE ) )
+        LM % Moment_RS_1D  =>    M % Value ( :, LM % REGULAR_SINE ) 
+        LM % Moment_IS_1D  =>    M % Value ( :, LM % IRREGULAR_SINE ) 
+      LM % MyMoment_RS_1D  =>  MyM % Value ( :, LM % REGULAR_SINE ) 
+      LM % MyMoment_IS_1D  =>  MyM % Value ( :, LM % IRREGULAR_SINE ) 
     end if
-    end associate !-- nR_nA_nE
+
+    end associate !-- M, etc.
 
     !-- FIXME: NAG has trouble with pointer rank reassignment when the 
     !          left-hand side is a member
