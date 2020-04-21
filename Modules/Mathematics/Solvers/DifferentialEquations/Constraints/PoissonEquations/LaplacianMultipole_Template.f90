@@ -19,16 +19,23 @@ module LaplacianMultipole_Template
       nEquations = 0, &
       MaxDegree = 0, &  !-- Max L
       MaxOrder  = 0     !-- Max M
+    integer ( KDI ) :: &
+      REGULAR_COSINE    = 1, &
+      IRREGULAR_COSINE  = 2, &
+      REGULAR_SINE      = 3, &
+      IRREGULAR_SINE    = 4, &
+      N_SOLID_HARMONICS = 0, & 
+      DELTA_FACTOR      = 0
     real ( KDR ), dimension ( 3 ) :: &
       Origin = 0.0_KDR
     real ( KDR ), dimension ( : ), allocatable :: &
-      RadialEdge, &
-      Delta
+      RadialEdge
     real ( KDR ), dimension ( : ), pointer :: &
       SolidHarmonic_RC => null ( ), &  !-- Regular Cos
       SolidHarmonic_IC => null ( ), &  !-- Irregular Cos
       SolidHarmonic_RS => null ( ), &  !-- Regular Sin
       SolidHarmonic_IS => null ( ), &  !-- Irregular Sin
+      Delta            => null ( ), &
       MyMoment_RC_1D   => null ( ), &
       MyMoment_IC_1D   => null ( ), &
       MyMoment_RS_1D   => null ( ), &
@@ -45,6 +52,10 @@ module LaplacianMultipole_Template
     character ( LDF ) :: &
       Type = '', &
       Name = ''
+    type ( StorageForm ), allocatable :: &
+      SolidHarmonics, &
+      MyMoment, &
+      Moment
     type ( CollectiveOperation_R_Form ), allocatable :: &
       Reduction_RC, Reduction_IC, &
       Reduction_RS, Reduction_IS
@@ -248,15 +259,31 @@ contains
 
     call LM % SetParameters ( A, MaxDegree, nEquations )
 
-    allocate ( LM % SolidHarmonic_RC ( LM % nAngularMomentCells ) )
-    allocate ( LM % SolidHarmonic_IC ( LM % nAngularMomentCells ) )
-
-    if ( LM % MaxOrder > 0 ) then
-      allocate ( LM % SolidHarmonic_RS ( LM % nAngularMomentCells ) )
-      allocate ( LM % SolidHarmonic_IS ( LM % nAngularMomentCells ) )
+    if ( MaxDegree > 0 ) then
+      LM % N_SOLID_HARMONICS  =  4  !-- Regular and Irregular Cosine and Sine
+    else
+      LM % N_SOLID_HARMONICS  =  2  !-- Regular and Irregular Cosine
     end if
+    LM % DELTA_FACTOR  =  LM % N_SOLID_HARMONICS + 1
 
-    allocate ( LM % Delta ( LM % nAngularMomentCells ) )
+    allocate ( LM % SolidHarmonics )
+    associate ( SH  =>  LM % SolidHarmonics )
+
+      call SH % Initialize &
+             ( [ LM % nAngularMomentCells, LM % N_SOLID_HARMONICS + 1 ] )
+
+      LM % SolidHarmonic_RC  =>  SH % Value ( :, LM % REGULAR_COSINE ) 
+      LM % SolidHarmonic_IC  =>  SH % Value ( :, LM % IRREGULAR_COSINE ) 
+
+      if ( LM % MaxOrder > 0 ) then
+        LM % SolidHarmonic_RS  =>  SH % Value ( :, LM % REGULAR_SINE ) 
+        LM % SolidHarmonic_IS  =>  SH % Value ( :, LM % IRREGULAR_SINE ) 
+      end if
+
+      LM % Delta  =>  SH % Value ( :, LM % DELTA_FACTOR )
+
+    end associate !-- SH
+    
     associate &
       ( L => LM % MaxDegree, &
         M => LM % MaxOrder )
@@ -372,6 +399,8 @@ contains
     if ( allocated ( LM % Reduction_IC ) ) deallocate ( LM % Reduction_IC )
     if ( allocated ( LM % Reduction_IS ) ) deallocate ( LM % Reduction_IS )
 
+    if ( allocated ( LM % SolidHarmonics ) ) deallocate ( LM % SolidHarmonics )
+
     nullify ( LM % M_IS )
     nullify ( LM % M_RS )
     nullify ( LM % M_IC )
@@ -397,17 +426,13 @@ contains
        deallocate ( LM % MyMoment_RS_1D )
     if ( associated ( LM % MyMoment_RC_1D ) ) &
        deallocate ( LM % MyMoment_RC_1D )
-    if ( associated ( LM % SolidHarmonic_IS ) ) &
-      deallocate ( LM % SolidHarmonic_IS )
-    if ( associated ( LM % SolidHarmonic_RS ) ) &
-      deallocate ( LM % SolidHarmonic_RS )
-    if ( associated ( LM % SolidHarmonic_IC ) ) &
-      deallocate ( LM % SolidHarmonic_IC )
-    if ( associated ( LM % SolidHarmonic_RC ) ) &
-      deallocate ( LM % SolidHarmonic_RC )
 
-    if ( allocated ( LM % Delta ) ) &
-      deallocate ( LM % Delta )
+    nullify ( LM % SolidHarmonic_IS )
+    nullify ( LM % SolidHarmonic_RS )
+    nullify ( LM % SolidHarmonic_IC )
+    nullify ( LM % SolidHarmonic_RC )
+    nullify ( LM % Delta )
+
     if ( allocated ( LM % RadialEdge ) ) &
       deallocate ( LM % RadialEdge )
 
