@@ -574,21 +574,26 @@ contains
         Mu_NP => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_N_P ), &
         Mu_E  => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_E ) )
 
-    call C % Compute_M_Kernel ( M, C % BaryonMassReference )
+    call C % Compute_M_Kernel &
+           ( M, C % BaryonMassReference, &
+             UseDeviceOption = C % AllocatedDevice )
     call C % Apply_EOS_HN_T_Kernel &
            ( P, E, CS, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-             M, N, T, YE )
+             M, N, T, YE, UseDeviceOption = C % AllocatedDevice )
     call C % Compute_D_S_G_Kernel &
-           ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
+           ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33, &
+             UseDeviceOption = C % AllocatedDevice )
     call C % Compute_G_G_Kernel &
-           ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
+           ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E, &
+             UseDeviceOption = C % AllocatedDevice )
     call C % Compute_DS_G_Kernel &
-           ( DS, N, SB )
+           ( DS, N, SB, UseDeviceOption = C % AllocatedDevice )
     call C % Compute_DE_G_Kernel &
-           ( DE, N, YE )
+           ( DE, N, YE, UseDeviceOption = C % AllocatedDevice )
     call C % Compute_FE_P_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
-             V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33 )
+             V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
+             UseDeviceOption = C % AllocatedDevice )
 
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
@@ -679,10 +684,14 @@ contains
         T_AE  => PROGRAM_HEADER % Timer ( C % iTimerApply_EOS ) )
 
     call T_CFP % Start ( )
-    call Copy ( C % Value ( :, C % PRESSURE ), P )
-    call Copy ( C % Value ( :, C % TEMPERATURE ), T )
+    call Copy ( C % Value ( :, C % PRESSURE ), P, &
+                UseDeviceOption = C % AllocatedDevice )
+    call Copy ( C % Value ( :, C % TEMPERATURE ), T, &
+                UseDeviceOption = C % AllocatedDevice )
 
-    call C % Compute_M_Kernel ( M, C % BaryonMassReference )
+    call C % Compute_M_Kernel &
+           ( M, C % BaryonMassReference, &
+             UseDeviceOption = C % AllocatedDevice )
     call T_CFP % Stop ( )
     
     call T_AE % Start ( )
@@ -691,7 +700,7 @@ contains
 !             M, N, T, YE )
     call C % Apply_EOS_HN_E_Kernel &
            ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-             M, N, YE )
+             M, N, YE, UseDeviceOption = C % AllocatedDevice )
 !    call C % Apply_EOS_HN_SB_Kernel &
 !           ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
 !             M, N, YE )
@@ -699,19 +708,22 @@ contains
     
     call T_CFP % Start ( )
     call C % Compute_D_S_G_Kernel &
-           ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
+           ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33, &
+             UseDeviceOption = C % AllocatedDevice )
     call C % Compute_G_G_Kernel &
-           ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
+           ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E, &
+             UseDeviceOption = C % AllocatedDevice )
     call C % Compute_DS_G_Kernel &
-           ( DS, N, SB )
+           ( DS, N, SB, UseDeviceOption = C % AllocatedDevice )
     call C % Compute_DE_G_Kernel &
-           ( DE, N, YE )
+           ( DE, N, YE, UseDeviceOption = C % AllocatedDevice )
     call T_CFP % Stop ( )
     
     call T_CE % Start ( )
     call C % Compute_FE_P_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
-             V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33 )
+             V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
+             UseDeviceOption = C % AllocatedDevice )
     call T_CE % Stop ( )
     
     end associate !-- T_CFP, etc.
@@ -814,33 +826,39 @@ contains
         T_AE  => PROGRAM_HEADER % Timer ( C % iTimerApply_EOS ) )
     
     call T_CFP % Start ( )
-    call Copy ( C % Value ( :, C % PRESSURE ), P )
-    call Copy ( C % Value ( :, C % TEMPERATURE ), T )
+    call Copy ( C % Value ( :, C % PRESSURE ), P, &
+                UseDeviceOption = C % AllocatedDevice )
+    call Copy ( C % Value ( :, C % TEMPERATURE ), T, &
+                UseDeviceOption = C % AllocatedDevice )
 
-    call C % Compute_M_Kernel ( M, C % BaryonMassReference )
+    call C % Compute_M_Kernel &
+           ( M, C % BaryonMassReference, &
+             UseDeviceOption = C % AllocatedDevice )
     call C % Compute_N_V_E_G_Kernel &
                ( N, V_1, V_2, V_3, E, D, S_1, S_2, S_3, GE, M, &
-                 M_UU_22, M_UU_33, C % BaryonDensityMin )
+                 M_UU_22, M_UU_33, C % BaryonDensityMin, &
+                 UseDeviceOption = C % AllocatedDevice )
     call C % Compute_YE_G_Kernel &
-           ( YE, DE, N )
+           ( YE, DE, N, UseDeviceOption = C % AllocatedDevice )
     call T_CFP % Stop ( )
     
     call T_AE % Start ( )
     if ( C % UseEntropy ) then
       call C % Compute_SB_G_Kernel &
-             ( SB, DS, N )
+             ( SB, DS, N, UseDeviceOption = C % AllocatedDevice )
       call C % Apply_EOS_HN_SB_E_Kernel &
              ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-               M, N, YE, Shock )
+               M, N, YE, Shock, UseDeviceOption = C % AllocatedDevice )
       call C % Compute_G_G_Kernel &
-             ( GE, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
+             ( GE, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E, &
+               UseDeviceOption = C % AllocatedDevice )
     else
       call C % Apply_EOS_HN_E_Kernel &
              ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-               M, N, YE )
+               M, N, YE, UseDeviceOption = C % AllocatedDevice )
     end if
     call C % Compute_DS_G_Kernel &
-           ( DS, N, SB )
+           ( DS, N, SB, UseDeviceOption = C % AllocatedDevice )
     call T_AE % Stop ( )
 
 !    if ( associated ( C % Value, Value_C ) ) &
@@ -851,7 +869,8 @@ contains
     call T_CE % Start ( )
     call C % Compute_FE_P_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
-             V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33 )
+             V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
+             UseDeviceOption = C % AllocatedDevice )
     call T_CE % Stop ( )
     
     end associate !-- T_CFP, etc.
@@ -924,7 +943,8 @@ contains
         V_Dim => Storage_C % Value ( oV + 1 : oV + nV, &
                                      C % VELOCITY_U ( iDimension ) ) )
 
-    call ComputeRawFluxesKernel ( F_DE, DE, V_Dim )
+    call ComputeRawFluxesKernel &
+           ( F_DE, DE, V_Dim, UseDeviceOption = C % AllocatedDevice )
 
     end associate !-- F_DE, etc.
     
@@ -966,7 +986,8 @@ contains
              C_IR % Value ( :, C % VELOCITY_U ( iD ) ), &
              SS_I % Value ( :, C % ALPHA_PLUS ), &
              SS_I % Value ( :, C % ALPHA_MINUS ), &
-             SS_I % Value ( :, C % ALPHA_CENTER ) )
+             SS_I % Value ( :, C % ALPHA_CENTER ), &
+             UseDeviceOption = C % AllocatedDevice )
     call T_CCS % Stop ( )
     
     end associate
