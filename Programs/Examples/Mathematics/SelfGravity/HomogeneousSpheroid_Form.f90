@@ -21,7 +21,7 @@ module HomogeneousSpheroid_Form
   end type HomogeneousSpheroidForm
 
     private :: &
-      SetHomogeneousSpheroidKernal
+      SetHomogeneousSpheroidKernel
 
 contains
 
@@ -41,6 +41,8 @@ contains
       ProlateMajor
     real ( KDR ), dimension ( HS % N_Equations ) :: &
       SemiMinor
+    type ( StorageForm ), pointer :: &
+      S
 
     SemiMinor = sqrt ( 1.0_KDR - Eccentricity ** 2 ) * SemiMajor
 
@@ -54,18 +56,23 @@ contains
     associate ( RA => HS % Reference )
 
     do iE = 1, HS % N_Equations
-      call SetHomogeneousSpheroidKernal &
+      call SetHomogeneousSpheroidKernel &
              ( SA, RA, A, Density, SemiMajor ( iE), SemiMinor ( iE ), iE )
     end do
+
+    S => SA % Storage ( )
+    call S % UpdateDevice ( )
 
     end associate !-- RA
     end associate !-- SA
     end associate !-- A
 
+    nullify ( S )
+
   end subroutine SetHomogeneousSpheroid 
 
 
-  subroutine SetHomogeneousSpheroidKernal &
+  subroutine SetHomogeneousSpheroidKernel &
                ( Source_ASC, Reference_ASC, A, Density, a_1, a_3, &
                  iVariable )
 
@@ -245,6 +252,8 @@ contains
 
     D = Density * BVF * FourPi
 
+    
+
     !-- Reference
 
     Reference => Reference_ASC % Storage ( )
@@ -324,7 +333,7 @@ contains
     nullify ( G, Source, Reference )
     end select !-- C
 
-  end subroutine SetHomogeneousSpheroidKernal
+  end subroutine SetHomogeneousSpheroidKernel
 
 
 end module HomogeneousSpheroid_Form

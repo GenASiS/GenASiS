@@ -40,7 +40,7 @@ module LaplacianMultipole_ASC__Form
                             Origin, RadialEdge, Volume, iaSource, &
                             MaxDegree, MaxOrder, nDimensions, nCells, &
                             nEquations, nAngularMomentCells, GridError, &
-                            SH_RC, SH_IC, SH_RS, SH_IS )
+                            SH_RC, SH_IC, SH_RS, SH_IS, UseDeviceOption )
         use Basics
         implicit none
         real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
@@ -71,6 +71,8 @@ module LaplacianMultipole_ASC__Form
         real ( KDR ), dimension ( : ), intent ( out ) :: &
           SH_RC, SH_IC, &  !-- SolidHarmonics
           SH_RS, SH_IS  
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
       end subroutine ComputeMomentsLocal_CSL_Kernel
 
     end interface
@@ -133,6 +135,8 @@ contains
     integer ( KDI ) :: &
       iL, &
       iM
+    class ( GeometryFlatForm ), pointer :: &
+      G
 
     LM % nEquations  =   nEquations
     LM % MaxDegree   =   MaxDegree
@@ -140,7 +144,12 @@ contains
 
     select type ( A )
     class is ( Atlas_SC_Form )
+
       LM % Chart  =>  A % Chart
+
+      G => A % Geometry ( )
+      LM % UseDevice = G % AllocatedDevice
+
     end select !-- A
 
     select type ( C => LM % Chart )
@@ -181,6 +190,9 @@ contains
     call Show ( LM % MaxOrder, 'MaxOrder (m)', LM % IGNORABILITY )
     call Show ( LM % nAngularMomentCells, 'nAngularMomentCells', &
                 LM % IGNORABILITY )
+    call Show ( LM % UseDevice, 'UseDevice', LM % IGNORABILITY )
+
+    nullify ( G )
 
   end subroutine SetParameters
 
@@ -216,9 +228,17 @@ contains
                LM % MaxDegree, LM % MaxOrder, C % nDimensions, G % nValues, &
                LM % nEquations, LM % nAngularMomentCells, GridError, &
                LM % SolidHarmonic_RC, LM % SolidHarmonic_IC, &
-               LM % SolidHarmonic_RS, LM % SolidHarmonic_IS )
-      if ( GridError ) &
+               LM % SolidHarmonic_RS, LM % SolidHarmonic_IS, &
+               UseDeviceOption = LM % UseDevice )
+      if ( GridError ) then
+        call Show ( 'Radial grid not large enough', CONSOLE % ERROR )
+      ! call Show ( R, 'R', CONSOLE % ERROR )
+      ! call Show ( RadialEdge ( size ( RadialEdge ) ), 'R_Max', &
+      !             CONSOLE % ERROR )
+        call Show ( 'ComputeMomentsLocal', 'subroutine', CONSOLE % ERROR )
+        call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
+      end if
 
     class default
       call Show ( 'Chart type not supported', CONSOLE % ERROR )

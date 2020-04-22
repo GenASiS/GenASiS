@@ -51,7 +51,7 @@ contains
       RadiusMaxOption
     
     integer ( KDI ) :: &
-      iE, & !iEquation
+      iE, &  !-- iEquation
       MaxDegree
     real ( KDR ) :: &
       Density, &
@@ -61,6 +61,8 @@ contains
       Eccentricity, &
       SemiMajor, &
       SemiMinor
+    class ( GeometryFlatForm ), pointer :: &
+      G
 
     DD % N_Equations = N_eq
     DD % Variable = Variable
@@ -74,9 +76,13 @@ contains
     associate ( A => DD % Atlas )
     call A % Initialize ( Name, PROGRAM_HEADER % Communicator )
     call A % CreateChart_CC ( RadiusMaxOption = RadiusMax )
-    call A % SetGeometry ( )
+    call A % SetGeometry ( UsePinnedMemoryOption = .true. )
+    call A % Geometry_ASC % AllocateDevice ( )
+    G => A % Geometry ( )
+    call G % UpdateDevice ( )
 
     !-- Poisson
+
     MaxDegree = 10
     !-- FIXME: XL 16.1.1-5 does not work without association.
     associate ( PH => PROGRAM_HEADER )
@@ -99,7 +105,10 @@ contains
     call SA % Initialize &
            ( A, 'Source', DD % N_Equations, &
              VariableOption = DD % Variable, &
-             WriteOption = .true. )
+             WriteOption = .true., &
+             UsePinnedMemoryOption = .true. )
+    call SA % AllocateDevice ( )
+    end associate !-- SA
 
     allocate ( DD % Reference )
     associate ( RA => DD % Reference )
@@ -107,8 +116,6 @@ contains
            ( A, 'Reference', DD % N_Equations, &
              VariableOption = DD % Variable, &
              WriteOption = .true. )
-
-    end associate !-- SA
     end associate !-- RA
 
     !-- Solution, Difference
@@ -118,7 +125,9 @@ contains
     call SA % Initialize &
            ( A, 'Solution', DD % N_Equations, &
              VariableOption = DD % Variable, &
-             WriteOption = .true. )
+             WriteOption = .true., &
+             UsePinnedMemoryOption = .true. )
+    call SA % AllocateDevice ( )
     end associate !-- SA
 
     allocate ( DD % Difference)
@@ -131,6 +140,8 @@ contains
 
     end associate !-- A
   
+    nullify ( G )
+
   end subroutine Initialize 
 
 
@@ -205,6 +216,7 @@ contains
 
 
   subroutine Finalize ( DD )
+
     type ( DensityDistributionTemplate ) :: &
       DD
 
@@ -351,5 +363,6 @@ contains
     nullify ( Solution, Reference )
 
   end subroutine ShiftSolutionKernel
+
 
 end module DensityDistribution_Template

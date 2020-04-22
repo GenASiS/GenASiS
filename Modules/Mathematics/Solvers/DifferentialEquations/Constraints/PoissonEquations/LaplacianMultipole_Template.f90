@@ -47,6 +47,8 @@ module LaplacianMultipole_Template
       MyM_RS => null ( ), MyM_IS => null ( ), &
       M_RC   => null ( ), M_IC   => null ( ), &
       M_RS   => null ( ), M_IS   => null ( )
+    logical ( KDL ) :: &
+      UseDevice = .false.
     character ( LDF ) :: &
       Type = '', &
       Name = ''
@@ -267,7 +269,6 @@ contains
     LM % SolidHarmonic_RS  =>  SH % Value ( :, LM % REGULAR_SINE ) 
     LM % SolidHarmonic_IS  =>  SH % Value ( :, LM % IRREGULAR_SINE ) 
                LM % Delta  =>  SH % Value ( :, LM % DELTA_FACTOR )
-
     end associate !-- SH
     
     associate &
@@ -338,13 +339,10 @@ contains
 
     call Show ( 'Computing Moments', CONSOLE % INFO_3 )
 
+    associate ( MyM  =>  LM % MyMoments )
+
     if ( associated ( Timer_CM ) ) call Timer_CM % Start ( )
-    call Clear ( LM % MyM_RC )
-    call Clear ( LM % MyM_IC )
-    if ( LM % MaxOrder > 0 ) then
-      call Clear ( LM % MyM_RS )
-      call Clear ( LM % MyM_IS )
-    end if
+      call Clear ( MyM % Value, UseDeviceOption = MyM % AllocatedDevice )
     if ( associated ( Timer_CM ) ) call Timer_CM % Stop ( )
 
     if ( associated ( Timer_LM ) ) call Timer_LM % Start ( )
@@ -352,6 +350,7 @@ contains
     if ( associated ( Timer_LM ) ) call Timer_LM % Stop ( )
 
     if ( associated ( Timer_RM ) ) call Timer_RM % Start ( )
+    call MyM % UpdateHost ( )
     call LM % ReductionMoments % Reduce ( REDUCTION % SUM )
     if ( associated ( Timer_RM ) ) call Timer_RM % Stop ( )
 
@@ -364,6 +363,8 @@ contains
              ( LM % M_RS, LM % M_IS, &
                LM % nEquations, LM % nRadialCells, LM % nAngularMomentCells )
     if ( associated ( Timer_AM ) ) call Timer_AM % Stop ( )
+
+    end associate !-- MyM
 
     if ( associated ( Timer ) ) call Timer % Stop ( )
 
@@ -432,8 +433,15 @@ contains
              MyM  =>  LM % MyMoments, &
         nA_nR_nE  =>  LM % nAngularMomentCells  *  LM % nRadialCells &
                       *  LM % nEquations )
-    call   M % Initialize ( [ nA_nR_nE, 4 ], ClearOption = .true. )
-    call MyM % Initialize ( [ nA_nR_nE, 4 ], ClearOption = .true. )
+
+    call   M % Initialize ( [ nA_nR_nE, 4 ], ClearOption = .true., &
+                            PinnedOption = LM % UseDevice )
+    call MyM % Initialize ( [ nA_nR_nE, 4 ], ClearOption = .true., &
+                            PinnedOption = LM % UseDevice )
+    if ( LM % UseDevice ) then
+      call   M % AllocateDevice ( )
+      call MyM % AllocateDevice ( )
+    end if
 
       LM % Moment_RC_1D  =>    M % Value ( :, LM % REGULAR_COSINE ) 
       LM % Moment_IC_1D  =>    M % Value ( :, LM % IRREGULAR_COSINE ) 

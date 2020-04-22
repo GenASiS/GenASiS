@@ -11,6 +11,10 @@ contains
   
   module procedure ComputeMomentContributionsKernel
 
+#ifdef ENABLE_OMP_OFFLOAD                                                      
+    !$OMP declare target
+#endif
+
     integer ( KDI ) :: &
       iE  !-- iEquation
     real ( KDR ), dimension ( nE ) :: &
@@ -60,26 +64,29 @@ contains
 
   module procedure ComputeSolidHarmonicsKernel
 
+#ifdef ENABLE_OMP_OFFLOAD                                                          !$OMP declare target
+#endif
+
     real ( KDR ) :: &
       X, Y, Z
 
 !    call Show ( '>>> Hello world from ComputeSolidHarmonicsKernel' )
 
-    select case ( trim ( CoordinateSystem ) )
-    case ( 'RECTANGULAR' )
-      X  =  Position ( 1 )  -  Origin ( 1 )
-      Y  =  Position ( 2 )  -  Origin ( 2 )
-      Z  =  Position ( 3 )  -  Origin ( 3 )
-    case ( 'CYLINDRICAL' )
-      if ( nDimensions < 3 ) then
-        X  =  Position ( 1 )
-        Y  =  0.0_KDR
-      else
-        X  =  Position ( 1 )  *  cos ( Position ( 3 ) )
-        Y  =  Position ( 1 )  *  sin ( Position ( 3 ) )
-      end if
-      Z  =  Position ( 2 )  -  Origin ( 2 )
-    case ( 'SPHERICAL' )
+    ! select case ( trim ( CoordinateSystem ) )
+    ! case ( 'RECTANGULAR' )
+    !   X  =  Position ( 1 )  -  Origin ( 1 )
+    !   Y  =  Position ( 2 )  -  Origin ( 2 )
+    !   Z  =  Position ( 3 )  -  Origin ( 3 )
+    ! case ( 'CYLINDRICAL' )
+    !   if ( nDimensions < 3 ) then
+    !     X  =  Position ( 1 )
+    !     Y  =  0.0_KDR
+    !   else
+    !     X  =  Position ( 1 )  *  cos ( Position ( 3 ) )
+    !     Y  =  Position ( 1 )  *  sin ( Position ( 3 ) )
+    !   end if
+    !   Z  =  Position ( 2 )  -  Origin ( 2 )
+    ! case ( 'SPHERICAL' )
       if ( nDimensions < 3 ) then
         X  =  Position ( 1 )  *  sin ( Position ( 2 ) )
         Y  =  0.0_KDR
@@ -90,7 +97,7 @@ contains
                               *  sin ( Position ( 3 ) )
       end if
       Z  =  Position ( 1 )  *  cos ( Position ( 2 ) )
-    end select !-- CoordinateSystem
+!    end select !-- CoordinateSystem
 
     if ( nDimensions < 3 ) then
       call ComputeSolidHarmonics_C_M_0_Kernel ( X, Z, L, R_C, I_C )
@@ -102,13 +109,13 @@ contains
 
     GridError = .false.
     if ( R > RadialEdge ( size ( RadialEdge ) ) ) then
-      call Show ( 'Radial grid not large enough', CONSOLE % ERROR )
-      call Show ( R, 'R', CONSOLE % ERROR )
-      call Show ( RadialEdge ( size ( RadialEdge ) ), 'R_Max', &
-                  CONSOLE % ERROR )
-      call Show ( 'ComputeSolidHarmonicsKernel', 'subroutine', &
-                  CONSOLE % ERROR )
-      call Show ( 'LaplacianMultipole_Kernel', 'submodule', CONSOLE % ERROR )
+      ! call Show ( 'Radial grid not large enough', CONSOLE % ERROR )
+      ! call Show ( R, 'R', CONSOLE % ERROR )
+      ! call Show ( RadialEdge ( size ( RadialEdge ) ), 'R_Max', &
+      !             CONSOLE % ERROR )
+      ! call Show ( 'ComputeSolidHarmonicsKernel', 'subroutine', &
+      !             CONSOLE % ERROR )
+      ! call Show ( 'LaplacianMultipole_Kernel', 'submodule', CONSOLE % ERROR )
       GridError = .true.
     end if
 
@@ -122,6 +129,10 @@ contains
 
 
   module procedure ComputeMomentContributions_MR_MI_Kernel
+
+#ifdef ENABLE_OMP_OFFLOAD                                                      
+    !$OMP declare target
+#endif
 
     integer ( KDI ) :: &
       iA, &  !-- iAngular
@@ -140,6 +151,10 @@ contains
 
 
   module procedure ComputeSolidHarmonics_C_M_0_Kernel
+
+#ifdef ENABLE_OMP_OFFLOAD                                                      
+    !$OMP declare target
+#endif
 
     integer ( KDI ) :: &
       iV, &  !-- iValue
@@ -192,6 +207,10 @@ contains
 
 
   module procedure ComputeSolidHarmonics_C_S_Kernel
+
+#ifdef ENABLE_OMP_OFFLOAD                                                      
+    !$OMP declare target
+#endif
 
     integer ( KDI ) :: &
       iV, &  !-- iValue
