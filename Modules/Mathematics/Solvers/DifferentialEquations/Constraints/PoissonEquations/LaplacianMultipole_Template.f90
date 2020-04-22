@@ -57,8 +57,7 @@ module LaplacianMultipole_Template
       MyMoments, &
       Moments
     type ( CollectiveOperation_R_Form ), allocatable :: &
-      Reduction_RC, Reduction_IC, &
-      Reduction_RS, Reduction_IS
+      ReductionMoments
     !-- FIXME: This does not work with GCC 6.1.0
 !    procedure ( ), pointer, nopass :: &
 !      ComputeSolidHarmonicsKernel => ComputeSolidHarmonicsKernel
@@ -227,6 +226,7 @@ module LaplacianMultipole_Template
     end interface
 
     private :: &
+      SetReduction, &
       AssignPointers
 
 contains
@@ -366,12 +366,7 @@ contains
     if ( associated ( Timer_LM ) ) call Timer_LM % Stop ( )
 
     if ( associated ( Timer_RM ) ) call Timer_RM % Start ( )
-    call LM % Reduction_RC % Reduce ( REDUCTION % SUM )
-    call LM % Reduction_IC % Reduce ( REDUCTION % SUM )
-    if ( LM % MaxOrder > 0 ) then
-      call LM % Reduction_RS % Reduce ( REDUCTION % SUM )
-      call LM % Reduction_IS % Reduce ( REDUCTION % SUM )
-    end if
+    call LM % ReductionMoments % Reduce ( REDUCTION % SUM )
     if ( associated ( Timer_RM ) ) call Timer_RM % Stop ( )
 
     if ( associated ( Timer_AM ) ) call Timer_AM % Start ( )
@@ -394,10 +389,8 @@ contains
     class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
       LM
 
-    if ( allocated ( LM % Reduction_RC ) ) deallocate ( LM % Reduction_RC )
-    if ( allocated ( LM % Reduction_RS ) ) deallocate ( LM % Reduction_RS )
-    if ( allocated ( LM % Reduction_IC ) ) deallocate ( LM % Reduction_IC )
-    if ( allocated ( LM % Reduction_IS ) ) deallocate ( LM % Reduction_IS )
+    if ( allocated ( LM % ReductionMoments ) ) &
+      deallocate ( LM % ReductionMoments )
 
     if ( allocated ( LM % MyMoments ) ) deallocate ( LM % MyMoments )
     if ( allocated ( LM % Moments ) ) deallocate ( LM % Moments )
@@ -467,6 +460,8 @@ contains
       LM % MyMoment_IS_1D  =>  MyM % Value ( :, LM % IRREGULAR_SINE ) 
     end if
 
+    call SetReduction ( LM, MyM % Value, M % Value )
+
     end associate !-- M, etc.
 
     !-- FIXME: NAG has trouble with pointer rank reassignment when the 
@@ -475,33 +470,38 @@ contains
            ( LM, LM % MyM_RC, LM % MyM_IC, LM % MyM_RS, LM % MyM_IS, &
              LM % M_RC, LM % M_IC, LM % M_RS, LM % M_IS )
 
-    if ( allocated ( LM % Reduction_RC ) ) deallocate ( LM % Reduction_RC )
-    if ( allocated ( LM % Reduction_IC ) ) deallocate ( LM % Reduction_IC )
-    if ( allocated ( LM % Reduction_RS ) ) deallocate ( LM % Reduction_RS )
-    if ( allocated ( LM % Reduction_IS ) ) deallocate ( LM % Reduction_IS )
-
-    associate ( PHC => PROGRAM_HEADER % Communicator )
-    allocate ( LM % Reduction_RC )
-    allocate ( LM % Reduction_IC )
-    call LM % Reduction_RC % Initialize &
-           ( PHC, OutgoingValue = LM % MyMoment_RC_1D, &
-             IncomingValue = LM % Moment_RC_1D )
-    call LM % Reduction_IC % Initialize &
-           ( PHC, OutgoingValue = LM % MyMoment_IC_1D, &
-             IncomingValue = LM % Moment_IC_1D )
-    if ( LM % MaxOrder > 0 ) then
-      allocate ( LM % Reduction_RS )
-      allocate ( LM % Reduction_IS )
-      call LM % Reduction_RS % Initialize &
-             ( PHC, OutgoingValue = LM % MyMoment_RS_1D, &
-               IncomingValue = LM % Moment_RS_1D )
-      call LM % Reduction_IS % Initialize &
-             ( PHC, OutgoingValue = LM % MyMoment_IS_1D, &
-               IncomingValue = LM % Moment_IS_1D )
-    end if
-    end associate !-- PHC
-
   end subroutine SetMomentStorage
+
+
+  subroutine SetReduction ( LM, MyM_Value, M_Value )
+
+    class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+      LM
+    real ( KDR ), dimension ( :, : ), intent ( in ), target, contiguous :: &
+      MyM_Value, &
+        M_Value
+
+    real ( KDR ), dimension ( : ), pointer :: &
+      MyMoment_1D, &
+        Moment_1D
+
+    MyMoment_1D ( 1 : size ( MyM_Value ) )  =>  MyM_Value
+      Moment_1D ( 1 : size (   M_Value ) )  =>    M_Value
+
+    if ( allocated ( LM % ReductionMoments ) ) &
+      deallocate ( LM % ReductionMoments )
+    allocate ( LM % ReductionMoments )
+    associate &
+      (  RM  =>  LM % ReductionMoments, &
+        PHC  =>  PROGRAM_HEADER % Communicator )
+      call RM % Initialize &
+             ( PHC, OutgoingValue = MyMoment_1D, &
+               IncomingValue = Moment_1D )
+    end associate !-- RM, etc.
+
+    nullify ( Moment_1D, MyMoment_1D )
+
+  end subroutine SetReduction
 
 
   subroutine AssignPointers &
