@@ -1248,7 +1248,8 @@ contains
     
     do iS = 1, S % nStages
       call S % K ( iS ) % Initialize &
-             ( [ nValues, nEquations ], PinnedOption = .true. )
+             ( [ nValues, nEquations ], &
+               PinnedOption = S % Current % AllocatedDevice )
       if ( S % Current % AllocatedDevice ) &
         call S % K ( iS ) % AllocateDevice ( )
     end do !-- iS
