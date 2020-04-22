@@ -10,7 +10,7 @@ CC_COMPILE           = mpicc -c -fopenmp
 CC_DEBUG             = -g
 CC_OPTIMIZE          = $(FORTRAN_OPTIMIZE)
 
-LINK = mpif90 -fopenmp
+LINK = mpif90
 
 #-- Silo library include and link line flag and location
 SILO_DIR=/sw/peak/caascade/silo/4.10.2/gcc8.1.0

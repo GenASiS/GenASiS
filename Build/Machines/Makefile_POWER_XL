@@ -13,7 +13,7 @@ CC_OPTIMIZE          = $(FORTRAN_OPTIMIZE)
 
 NVCC_COMPILE         = nvcc -c
 
-LINK = mpifort -qsmp=omp 
+LINK = mpifort
 
 LINK_NVCC = nvcc
 
@@ -24,6 +24,9 @@ LIBRARY_SILO = -L${SILO_DIR}/lib -lsilo
 
 INCLUDE_HDF5 = -I${OLCF_HDF5_ROOT}/include
 LIBRARY_HDF5 = -L${OLCF_HDF5_ROOT}/lib -lhdf5_fortran -lhdf5
+
+#-- LAPACK library link line flag and location
+LIBRARY_LAPACK = -L${OLCF_NETLIB_LAPACK_ROOT}/lib -llapack -lblas
 
 ifeq ($(ENABLE_OMP_OFFLOAD), 1)
 INCLUDE_CUDA = -I${OLCF_CUDA_ROOT}/include
