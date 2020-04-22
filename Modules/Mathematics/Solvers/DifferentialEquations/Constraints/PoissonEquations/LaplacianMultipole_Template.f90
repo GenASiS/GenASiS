@@ -24,8 +24,7 @@ module LaplacianMultipole_Template
       IRREGULAR_COSINE  = 2, &
       REGULAR_SINE      = 3, &
       IRREGULAR_SINE    = 4, &
-      N_SOLID_HARMONICS = 0, & 
-      DELTA_FACTOR      = 0
+      DELTA_FACTOR      = 5
     real ( KDR ), dimension ( 3 ) :: &
       Origin = 0.0_KDR
     real ( KDR ), dimension ( : ), pointer :: &
@@ -127,7 +126,7 @@ module LaplacianMultipole_Template
       module subroutine ComputeMomentContributionsKernel &
                           ( MyM_RC, MyM_IC, MyM_RS, MyM_IS, &
                             SH_RC, SH_IC, SH_RS, SH_IS, &
-                            Source, Volume, iaSource, L, nE, nA, iR )
+                            Source, Volume, iaSource, M, nE, nA, iR )
         use Basics
         implicit none
         real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
@@ -142,7 +141,7 @@ module LaplacianMultipole_Template
         integer ( KDI ), dimension ( : ), intent ( in ) :: &
           iaSource
         integer ( KDI ), intent ( in ) :: &
-          L,  &  !-- MaxOrder
+          M,  &  !-- MaxOrder
           nE, &  !-- nEquations
           nA, &  !-- nAngular
           iR     !-- iRadius
@@ -259,28 +258,15 @@ contains
 
     call LM % SetParameters ( A, MaxDegree, nEquations )
 
-    if ( MaxDegree > 0 ) then
-      LM % N_SOLID_HARMONICS  =  4  !-- Regular and Irregular Cosine and Sine
-    else
-      LM % N_SOLID_HARMONICS  =  2  !-- Regular and Irregular Cosine
-    end if
-    LM % DELTA_FACTOR  =  LM % N_SOLID_HARMONICS + 1
-
     allocate ( LM % SolidHarmonics )
     associate ( SH  =>  LM % SolidHarmonics )
-
-      call SH % Initialize &
-             ( [ LM % nAngularMomentCells, LM % N_SOLID_HARMONICS + 1 ] )
-
-      LM % SolidHarmonic_RC  =>  SH % Value ( :, LM % REGULAR_COSINE ) 
-      LM % SolidHarmonic_IC  =>  SH % Value ( :, LM % IRREGULAR_COSINE ) 
-
-      if ( LM % MaxOrder > 0 ) then
-        LM % SolidHarmonic_RS  =>  SH % Value ( :, LM % REGULAR_SINE ) 
-        LM % SolidHarmonic_IS  =>  SH % Value ( :, LM % IRREGULAR_SINE ) 
-      end if
-
-      LM % Delta  =>  SH % Value ( :, LM % DELTA_FACTOR )
+    call SH % Initialize &
+           ( [ LM % nAngularMomentCells, 5 ], ClearOption = .true. )
+    LM % SolidHarmonic_RC  =>  SH % Value ( :, LM % REGULAR_COSINE ) 
+    LM % SolidHarmonic_IC  =>  SH % Value ( :, LM % IRREGULAR_COSINE ) 
+    LM % SolidHarmonic_RS  =>  SH % Value ( :, LM % REGULAR_SINE ) 
+    LM % SolidHarmonic_IS  =>  SH % Value ( :, LM % IRREGULAR_SINE ) 
+               LM % Delta  =>  SH % Value ( :, LM % DELTA_FACTOR )
 
     end associate !-- SH
     
@@ -446,19 +432,17 @@ contains
              MyM  =>  LM % MyMoments, &
         nA_nR_nE  =>  LM % nAngularMomentCells  *  LM % nRadialCells &
                       *  LM % nEquations )
-    call   M % Initialize ( [ nA_nR_nE, LM % N_SOLID_HARMONICS ] )
-    call MyM % Initialize ( [ nA_nR_nE, LM % N_SOLID_HARMONICS ] )
+    call   M % Initialize ( [ nA_nR_nE, 4 ], ClearOption = .true. )
+    call MyM % Initialize ( [ nA_nR_nE, 4 ], ClearOption = .true. )
 
       LM % Moment_RC_1D  =>    M % Value ( :, LM % REGULAR_COSINE ) 
       LM % Moment_IC_1D  =>    M % Value ( :, LM % IRREGULAR_COSINE ) 
+      LM % Moment_RS_1D  =>    M % Value ( :, LM % REGULAR_SINE ) 
+      LM % Moment_IS_1D  =>    M % Value ( :, LM % IRREGULAR_SINE ) 
     LM % MyMoment_RC_1D  =>  MyM % Value ( :, LM % REGULAR_COSINE ) 
     LM % MyMoment_IC_1D  =>  MyM % Value ( :, LM % IRREGULAR_COSINE ) 
-    if ( LM % MaxOrder > 0 ) then
-        LM % Moment_RS_1D  =>    M % Value ( :, LM % REGULAR_SINE ) 
-        LM % Moment_IS_1D  =>    M % Value ( :, LM % IRREGULAR_SINE ) 
-      LM % MyMoment_RS_1D  =>  MyM % Value ( :, LM % REGULAR_SINE ) 
-      LM % MyMoment_IS_1D  =>  MyM % Value ( :, LM % IRREGULAR_SINE ) 
-    end if
+    LM % MyMoment_RS_1D  =>  MyM % Value ( :, LM % REGULAR_SINE ) 
+    LM % MyMoment_IS_1D  =>  MyM % Value ( :, LM % IRREGULAR_SINE ) 
 
     call SetReduction ( LM, MyM % Value, M % Value )
 
@@ -520,17 +504,14 @@ contains
         nR => LM % nRadialCells, &
         nA => LM % nAngularMomentCells )
 
-    MyM_RC ( 1 : nA, 1 : nR, 1 : nE ) => LM % MyMoment_RC_1D
-    MyM_IC ( 1 : nA, 1 : nR, 1 : nE ) => LM % MyMoment_IC_1D
       M_RC ( 1 : nA, 1 : nR, 1 : nE ) => LM % Moment_RC_1D
       M_IC ( 1 : nA, 1 : nR, 1 : nE ) => LM % Moment_IC_1D
-
-    if ( LM % MaxOrder > 0 ) then
-      MyM_RS ( 1 : nA, 1 : nR, 1 : nE ) => LM % MyMoment_RS_1D
-      MyM_IS ( 1 : nA, 1 : nR, 1 : nE ) => LM % MyMoment_IS_1D
-        M_RS ( 1 : nA, 1 : nR, 1 : nE ) => LM % Moment_RS_1D
-        M_IS ( 1 : nA, 1 : nR, 1 : nE ) => LM % Moment_IS_1D
-    end if
+      M_RS ( 1 : nA, 1 : nR, 1 : nE ) => LM % Moment_RS_1D
+      M_IS ( 1 : nA, 1 : nR, 1 : nE ) => LM % Moment_IS_1D
+    MyM_RC ( 1 : nA, 1 : nR, 1 : nE ) => LM % MyMoment_RC_1D
+    MyM_IC ( 1 : nA, 1 : nR, 1 : nE ) => LM % MyMoment_IC_1D
+    MyM_RS ( 1 : nA, 1 : nR, 1 : nE ) => LM % MyMoment_RS_1D
+    MyM_IS ( 1 : nA, 1 : nR, 1 : nE ) => LM % MyMoment_IS_1D
 
     end associate !-- nR, nA
 

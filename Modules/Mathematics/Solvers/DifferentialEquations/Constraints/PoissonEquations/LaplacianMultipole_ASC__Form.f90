@@ -38,8 +38,8 @@ module LaplacianMultipole_ASC__Form
                           ( MyM_RC, MyM_RS, MyM_IC, MyM_IS, &
                             CoordinateSystem, IsProperCell, Center, Source, &
                             Origin, RadialEdge, Volume, iaSource, &
-                            MaxDegree, nDimensions, nCells, nEquations, &
-                            nAngularMomentCells, GridError, &
+                            MaxDegree, MaxOrder, nDimensions, nCells, &
+                            nEquations, nAngularMomentCells, GridError, &
                             SH_RC, SH_IC, SH_RS, SH_IS )
         use Basics
         implicit none
@@ -61,6 +61,7 @@ module LaplacianMultipole_ASC__Form
           iaSource
         integer ( KDI ), intent ( in ) :: &
           MaxDegree, &
+          MaxOrder, &
           nDimensions, &
           nCells, &
           nEquations, &
@@ -212,8 +213,8 @@ contains
                G % Value ( :, G % CENTER_U ( 1 ) : G % CENTER_U ( 3 ) ), &
                Source % Value, LM % Origin, LM % RadialEdge, &
                G % Value ( :, G % VOLUME ), Source % iaSelected, &
-               LM % MaxDegree, C % nDimensions, G % nValues, LM % nEquations, &
-               LM % nAngularMomentCells, GridError, &
+               LM % MaxDegree, LM % MaxOrder, C % nDimensions, G % nValues, &
+               LM % nEquations, LM % nAngularMomentCells, GridError, &
                LM % SolidHarmonic_RC, LM % SolidHarmonic_IC, &
                LM % SolidHarmonic_RS, LM % SolidHarmonic_IS )
       if ( GridError ) &

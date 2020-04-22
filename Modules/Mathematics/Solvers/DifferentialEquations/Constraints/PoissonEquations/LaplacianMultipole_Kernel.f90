@@ -22,7 +22,7 @@ contains
 
     call ComputeMomentContributions_MR_MI_Kernel &
            ( MyM_RC, MyM_IC, SH_RC, SH_IC, Source_dV, nE, nA, iR )
-    if ( L > 0 ) &
+    if ( M > 0 ) &
       call ComputeMomentContributions_MR_MI_Kernel &
              ( MyM_RS, MyM_IS, SH_RS, SH_IS, Source_dV, nE, nA, iR )
 

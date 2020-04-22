@@ -61,7 +61,7 @@ contains
                    RadialEdge ( iR + 1 ), R, nAngularMomentCells )
         end if !-- iR
 
-        if ( MaxDegree > 0 ) then
+        if ( MaxOrder > 0 ) then
           if ( iR > 1 .and. iR < nRadialCells ) then
             call AssembleSolutionKernel &
                    ( S, M_RS ( :, iR - 1, iE ), M_IS ( :, iR, iE ), &

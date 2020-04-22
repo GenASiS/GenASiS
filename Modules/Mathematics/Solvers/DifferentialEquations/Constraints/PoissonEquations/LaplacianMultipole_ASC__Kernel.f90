@@ -37,7 +37,7 @@ contains
 
       call ComputeMomentContributionsKernel &
              ( MyM_RC, MyM_IC, MyM_RS, MyM_IS, SH_RC, SH_IC, SH_RS, SH_IS, &
-               Source ( iC, : ), Volume ( iC ), iaSource, MaxDegree, &
+               Source ( iC, : ), Volume ( iC ), iaSource, MaxOrder, &
                nEquations, nAngularMomentCells, iR )
 
     end do !-- iC

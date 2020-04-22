@@ -38,8 +38,8 @@ module Poisson_ASC__Form
                           ( Solution, CoordinateSystem, IsProperCell, &
                             M_RC, M_IC, M_RS, M_IS, Center, Origin, Delta, &
                             RadialEdge, FourPi, iaSolution, MaxDegree, &
-                            nDimensions, nCells, nEquations, nRadialCells, &
-                            nAngularMomentCells, GridError, &
+                            MaxOrder, nDimensions, nCells, nEquations, &
+                            nRadialCells, nAngularMomentCells, GridError, &
                             SH_RC, SH_IC, SH_RS, SH_IS )
         use Basics
         implicit none
@@ -64,6 +64,7 @@ module Poisson_ASC__Form
           iaSolution
         integer ( KDI ), intent ( in ) :: &
           MaxDegree, &
+          MaxOrder, &
           nDimensions, &
           nCells, &
           nEquations, &
@@ -240,8 +241,8 @@ contains
               L % M_RC, L % M_IC, L % M_RS, L % M_IS, &
               G % Value ( :, G % CENTER_U ( 1 ) : G % CENTER_U ( 3 ) ), &
               L % Origin, L % Delta, L % RadialEdge, 4.0_KDR * CONSTANT % PI, &
-              Solution % iaSelected, L % MaxDegree, C % nDimensions, &
-              G % nValues, L % nEquations, L % nRadialCells, &
+              Solution % iaSelected, L % MaxDegree, L % MaxOrder, &
+              C % nDimensions, G % nValues, L % nEquations, L % nRadialCells, &
               L % nAngularMomentCells, GridError, &
               L % SolidHarmonic_RC, L % SolidHarmonic_IC, &
               L % SolidHarmonic_RS, L % SolidHarmonic_IS )
