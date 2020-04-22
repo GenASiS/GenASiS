@@ -247,12 +247,20 @@ contains
       LM % Origin        =  0.0_KDR
       LM % nRadialCells  =  C % nCells ( 1 )
 
-      associate ( nRC  =>  LM % nRadialCells )
-      allocate ( LM % RadialEdge ( nRC + 1 ) )
+      allocate ( LM % RadialEdges )
+      associate &
+        ( nRC  =>  LM % nRadialCells, &
+           RE  =>  LM % RadialEdges )
+
+      call RE % Initialize ( [ nRC + 1, 1 ] )
+
+      LM % RadialEdge  =>  RE % Value ( :, 1 )
+
       do iC = 1, nRC + 1
         LM % RadialEdge ( iC )  =  C % Edge ( 1 ) % Value ( iC )
       end do !-- iC
-      end associate !-- nRC
+
+      end associate !-- nRC, etc.
 
     class default
       call Show ( 'Chart type not supported', CONSOLE % ERROR )

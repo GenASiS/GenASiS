@@ -28,9 +28,8 @@ module LaplacianMultipole_Template
       DELTA_FACTOR      = 0
     real ( KDR ), dimension ( 3 ) :: &
       Origin = 0.0_KDR
-    real ( KDR ), dimension ( : ), allocatable :: &
-      RadialEdge
     real ( KDR ), dimension ( : ), pointer :: &
+      RadialEdge       => null ( ), &
       SolidHarmonic_RC => null ( ), &  !-- Regular Cos
       SolidHarmonic_IC => null ( ), &  !-- Irregular Cos
       SolidHarmonic_RS => null ( ), &  !-- Regular Sin
@@ -53,6 +52,7 @@ module LaplacianMultipole_Template
       Type = '', &
       Name = ''
     type ( StorageForm ), allocatable :: &
+      RadialEdges, &
       SolidHarmonics, &
       MyMoments, &
       Moments
@@ -402,6 +402,7 @@ contains
     if ( allocated ( LM % MyMoments ) ) deallocate ( LM % MyMoments )
     if ( allocated ( LM % Moments ) ) deallocate ( LM % Moments )
     if ( allocated ( LM % SolidHarmonics ) ) deallocate ( LM % SolidHarmonics )
+    if ( allocated ( LM % RadialEdges ) ) deallocate ( LM % RadialEdges )
 
     nullify ( LM % M_IS )
     nullify ( LM % M_RS )
@@ -421,14 +422,13 @@ contains
     nullify ( LM % MyMoment_RS_1D )
     nullify ( LM % MyMoment_RC_1D )
 
+    nullify ( LM % Delta )
     nullify ( LM % SolidHarmonic_IS )
     nullify ( LM % SolidHarmonic_RS )
     nullify ( LM % SolidHarmonic_IC )
     nullify ( LM % SolidHarmonic_RC )
-    nullify ( LM % Delta )
 
-    if ( allocated ( LM % RadialEdge ) ) &
-      deallocate ( LM % RadialEdge )
+    nullify ( LM % RadialEdge )
 
     if ( LM % Name == '' ) return
 
