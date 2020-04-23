@@ -269,6 +269,8 @@ contains
     LM % SolidHarmonic_RS  =>  SH % Value ( :, LM % REGULAR_SINE ) 
     LM % SolidHarmonic_IS  =>  SH % Value ( :, LM % IRREGULAR_SINE ) 
                LM % Delta  =>  SH % Value ( :, LM % DELTA_FACTOR )
+    if ( LM % UseDevice ) &
+      call SH % AllocateDevice ( )
     end associate !-- SH
     
     associate &
