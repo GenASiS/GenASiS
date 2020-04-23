@@ -42,5 +42,5 @@ endif
 
 #-- Enable offload by default
 ifneq ($(ENABLE_OMP_OFFLOAD), 0)
-  DEFINES = -qsmp=omp -qoffload -DENABLE_OMP_OFFLOAD
+  DEFINES = -qsmp=omp -qoffload -DENABLE_OMP_OFFLOAD -qinfo=omperrtrace 
 endif
