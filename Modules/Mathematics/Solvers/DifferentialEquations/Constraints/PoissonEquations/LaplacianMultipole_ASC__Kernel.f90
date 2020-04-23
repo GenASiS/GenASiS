@@ -14,6 +14,7 @@ contains
 
     integer ( KDI ) :: &
       iC, &  !-- iCell
+      iE, &  !-- iEquation
       iR     !-- iRadius
     real ( KDR ) :: &
       R  !-- Radius
@@ -28,7 +29,7 @@ contains
 
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
       !$OMP& schedule ( OMP_SCHEDULE_TARGET ) &
-      !$OMP& private ( iC, iR, R, SH_RC, SH_IC, SH_RS, SH_IS ) &
+      !$OMP& private ( iC, iE, iR, R, SH_RC, SH_IC, SH_RS, SH_IS ) &
       !$OMP& reduction ( + : MyM_RC ) &
       !$OMP& reduction ( + : MyM_IC ) &
       !$OMP& reduction ( + : MyM_RS ) &
@@ -39,8 +40,9 @@ contains
           cycle
 
         call ComputeSolidHarmonicsKernel &
-               ( CoordinateSystem, Center ( iC, : ), Origin, RadialEdge, &
-                 MaxDegree, nDimensions, GridError, &
+               ( CoordinateSystem, &
+                 [ Center_1 ( iC ), Center_2 ( iC ), Center_3 ( iC ) ], &
+                 Origin, RadialEdge, MaxDegree, nDimensions, GridError, &
                  SH_RC, SH_IC, SH_RS, SH_IS, R, iR )
 
         call ComputeMomentContributionsKernel &
@@ -66,8 +68,9 @@ contains
           cycle
 
         call ComputeSolidHarmonicsKernel &
-               ( CoordinateSystem, Center ( iC, : ), Origin, RadialEdge, &
-                 MaxDegree, nDimensions, GridError, &
+               ( CoordinateSystem, &
+                 [ Center_1 ( iC ), Center_2 ( iC ), Center_3 ( iC ) ], &
+                 Origin, RadialEdge, MaxDegree, nDimensions, GridError, &
                  SH_RC, SH_IC, SH_RS, SH_IS, R, iR )
 
         call ComputeMomentContributionsKernel &

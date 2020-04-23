@@ -36,11 +36,12 @@ module LaplacianMultipole_ASC__Form
 
       module subroutine ComputeMomentsLocal_CSL_Kernel &
                           ( MyM_RC, MyM_RS, MyM_IC, MyM_IS, &
-                            CoordinateSystem, IsProperCell, Center, Source, &
-                            Origin, RadialEdge, Volume, iaSource, &
-                            MaxDegree, MaxOrder, nDimensions, nCells, &
-                            nEquations, nAngularMomentCells, GridError, &
-                            SH_RC, SH_IC, SH_RS, SH_IS, UseDeviceOption )
+                            CoordinateSystem, IsProperCell, Source, Origin, &
+                            RadialEdge, Center_1, Center_2, Center_3, Volume, &
+                            iaSource, MaxDegree, MaxOrder, nDimensions, &
+                            nCells, nEquations, nAngularMomentCells, &
+                            GridError, SH_RC, SH_IC, SH_RS, SH_IS, &
+                            UseDeviceOption )
         use Basics
         implicit none
         real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
@@ -51,11 +52,11 @@ module LaplacianMultipole_ASC__Form
         logical ( KDL ), dimension ( : ), intent ( in ) :: &
           IsProperCell
         real ( KDR ), dimension ( :, : ), intent ( in ) :: &
-          Center, &
           Source
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           Origin, &
           RadialEdge, &
+          Center_1, Center_2, Center_3, &
           Volume
         integer ( KDI ), dimension ( : ), intent ( in ) :: &
           iaSource
@@ -222,8 +223,10 @@ contains
       call ComputeMomentsLocal_CSL_Kernel &
              ( LM % MyM_RC, LM % MyM_RS, LM % MyM_IC, LM % MyM_IS, &
                C % CoordinateSystem, C % IsProperCell, &
-               G % Value ( :, G % CENTER_U ( 1 ) : G % CENTER_U ( 3 ) ), &
                Source % Value, LM % Origin, LM % RadialEdge, &
+               G % Value ( :, G % CENTER_U ( 1 ) ), &
+               G % Value ( :, G % CENTER_U ( 2 ) ), &
+               G % Value ( :, G % CENTER_U ( 3 ) ), &
                G % Value ( :, G % VOLUME ), Source % iaSelected, &
                LM % MaxDegree, LM % MaxOrder, C % nDimensions, G % nValues, &
                LM % nEquations, LM % nAngularMomentCells, GridError, &
