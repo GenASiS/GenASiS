@@ -65,14 +65,16 @@ contains
   end subroutine InitializeTemplate_ASC
   
   
-  subroutine AllocateDevice_ASC_Template ( FA )
+  subroutine AllocateDevice_ASC_Template ( FA, AssociateVariablesOption )
     
     class ( Field_ASC_Template ), intent ( inout ) :: &
       FA
+    logical ( KDL ), intent ( in ), optional :: &
+      AssociateVariablesOption
     
     select type ( FC => FA % Chart ) 
     class is ( Field_CSL_Template )
-      call FC % AllocateDevice ( )
+      call FC % AllocateDevice ( AssociateVariablesOption )
     class default
       call Show ( 'Field type not implemented', CONSOLE % ERROR )
       call Show ( 'AllocateDevice_ASC', 'subroutine',  CONSOLE % ERROR )

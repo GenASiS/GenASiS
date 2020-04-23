@@ -298,10 +298,12 @@ contains
   end subroutine InitializeClone
   
   
-  subroutine AllocateDevice_S ( S )
+  subroutine AllocateDevice_S ( S, AssociateVariablesOption )
   
     class ( StorageForm ), intent ( inout ) :: &
       S
+    logical ( KDL ), intent ( in ), optional :: &
+      AssociateVariablesOption
       
     integer ( KDI ) :: &
       iV
@@ -309,26 +311,48 @@ contains
       Variable
     real ( KDR ), dimension ( :, : ), pointer :: &
       Scratch
+    logical ( KDL ) :: &
+      AssociateVariables
     
     if ( S % AllocatedValue ) then
       
+      AssociateVariables = .true.
+      if ( present ( AssociateVariablesOption ) ) &
+        AssociateVariables = AssociateVariablesOption
+
       call AllocateDevice &
              ( S % nValues * S % nVariables, S % D_Selected ( 1 ) )
       
       if ( .not. c_associated ( S % D_Selected ( 1 ) ) ) &
         return
       
-      call c_f_pointer &
-             ( S % D_Selected ( 1 ), Scratch, [ S % nValues, S % nVariables ] )
+      if ( AssociateVariables ) then
+
+        !-- Associate individual variables (columns of S % Value ) on host
+        !   to locations on device
+
+        call c_f_pointer &
+               ( S % D_Selected ( 1 ), Scratch, &
+                 [ S % nValues, S % nVariables ] )
+
+        Variable => S % Value ( :, 1 )
+        call AssociateHost ( S % D_Selected ( 1 ), Variable )
       
-      Variable => S % Value ( :, 1 )
-      call AssociateHost ( S % D_Selected ( 1 ), Variable )
-      
-      do iV = 2, S % nVariables
-        S % D_Selected ( iV ) = c_loc ( Scratch ( :, iV ) )
-        Variable => S % Value ( :, iV )
-        call AssociateHost ( S % D_Selected ( iV ), Variable )
-      end do
+        do iV = 2, S % nVariables
+          S % D_Selected ( iV ) = c_loc ( Scratch ( :, iV ) )
+          Variable => S % Value ( :, iV )
+          call AssociateHost ( S % D_Selected ( iV ), Variable )
+        end do
+
+      else
+
+        !-- Associate S % Value (as an entire block) on host to the head
+        !   location on the device
+
+        call AssociateHost ( S % D_Selected ( 1 ), S % Value )        
+
+      end if
+
       S % AllocatedDevice = .true.
       
       if ( S % ClearRequested ) &

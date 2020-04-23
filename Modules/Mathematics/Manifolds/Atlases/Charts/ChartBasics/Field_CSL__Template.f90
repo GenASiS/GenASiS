@@ -70,12 +70,14 @@ contains
   end subroutine InitializeTemplate_CSL
   
   
-  subroutine AllocateDevice_CSL ( FC )
+  subroutine AllocateDevice_CSL ( FC, AssociateVariablesOption )
   
     class ( Field_CSL_Template ), intent ( inout ) :: &
       FC
+    logical ( KDL ), intent ( in ), optional :: &
+      AssociateVariablesOption
     
-    call FC % Field % AllocateDevice ( )
+    call FC % Field % AllocateDevice ( AssociateVariablesOption )
   
   end subroutine AllocateDevice_CSL
   
