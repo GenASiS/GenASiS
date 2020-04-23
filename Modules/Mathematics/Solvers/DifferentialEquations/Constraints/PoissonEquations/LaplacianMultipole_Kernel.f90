@@ -11,9 +11,7 @@ contains
   
   module procedure ComputeMomentContributionsKernel
 
-#ifdef ENABLE_OMP_OFFLOAD                                                      
     !$OMP declare target
-#endif
 
     integer ( KDI ) :: &
       iE  !-- iEquation
@@ -64,8 +62,7 @@ contains
 
   module procedure ComputeSolidHarmonicsKernel
 
-#ifdef ENABLE_OMP_OFFLOAD                                                          !$OMP declare target
-#endif
+    !$OMP declare target
 
     real ( KDR ) :: &
       X, Y, Z
@@ -130,9 +127,7 @@ contains
 
   module procedure ComputeMomentContributions_MR_MI_Kernel
 
-#ifdef ENABLE_OMP_OFFLOAD                                                      
     !$OMP declare target
-#endif
 
     integer ( KDI ) :: &
       iA, &  !-- iAngular
@@ -152,9 +147,7 @@ contains
 
   module procedure ComputeSolidHarmonics_C_M_0_Kernel
 
-#ifdef ENABLE_OMP_OFFLOAD                                                      
     !$OMP declare target
-#endif
 
     integer ( KDI ) :: &
       iV, &  !-- iValue
@@ -208,9 +201,7 @@ contains
 
   module procedure ComputeSolidHarmonics_C_S_Kernel
 
-#ifdef ENABLE_OMP_OFFLOAD                                                      
     !$OMP declare target
-#endif
 
     integer ( KDI ) :: &
       iV, &  !-- iValue
