@@ -78,7 +78,11 @@ contains
 
     !-- Poisson
     MaxDegree = 10
-    call PROGRAM_HEADER % GetParameter ( MaxDegree, 'MaxDegree' )
+    !-- FIXME: XL 16.1.1-5 does not work without association.
+    associate ( PH => PROGRAM_HEADER )
+!    call PROGRAM_HEADER % GetParameter ( MaxDegree, 'MaxDegree' )
+    call PH % GetParameter ( MaxDegree, 'MaxDegree' )
+    end associate !-- PH
 
     allocate ( DD % Poisson )
     associate ( P => DD % Poisson )
@@ -152,7 +156,11 @@ contains
     associate ( P => DD % Poisson )
 
     nSolve = 1
-    call PROGRAM_HEADER % GetParameter ( nSolve, 'nSolve' )
+    !-- FIXME: XL 16.1.1-5 does not work without association.
+    associate ( PH => PROGRAM_HEADER )
+!    call PROGRAM_HEADER % GetParameter ( nSolve, 'nSolve' )
+    call PH % GetParameter ( nSolve, 'nSolve' )
+    end associate !-- PH
 
     call Show ( 'Solving Poisson equation' )
     call Show ( nSolve, 'nSolve' )
@@ -289,7 +297,7 @@ contains
       Difference % Value ( iV, iE) &
         = abs ( Difference % Value ( iV, iE) ) &
                   / max ( abs ( Reference % Value ( iV, iE ) ), &
-                          sqrt ( tiny ( 0.0 ) ) )
+                          sqrt ( tiny ( 0.0_KDR ) ) )
       end do
     end do
 
