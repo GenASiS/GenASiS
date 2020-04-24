@@ -61,6 +61,8 @@ contains
       Eccentricity, &
       SemiMajor, &
       SemiMinor
+    character ( LDL ) :: &
+      PoissonSolverType
     class ( GeometryFlatForm ), pointer :: &
       G
 
@@ -74,7 +76,7 @@ contains
     
     allocate ( DD % Atlas )
     associate ( A => DD % Atlas )
-    call A % Initialize ( Name, PROGRAM_HEADER % Communicator )
+    call A % Initialize ( 'PositionSpace', PROGRAM_HEADER % Communicator )
     call A % CreateChart_CC ( RadiusMaxOption = RadiusMax )
     call A % SetGeometry ( UsePinnedMemoryOption = .true. )
     call A % Geometry_ASC % AllocateDevice ( )
@@ -84,16 +86,18 @@ contains
     !-- Poisson
 
     MaxDegree = 10
+    PoissonSolverType = 'MULTIPOLE_OLD'
     !-- FIXME: XL 16.1.1-5 does not work without association.
     associate ( PH => PROGRAM_HEADER )
 !    call PROGRAM_HEADER % GetParameter ( MaxDegree, 'MaxDegree' )
     call PH % GetParameter ( MaxDegree, 'MaxDegree' )
+    call PH % GetParameter ( PoissonSolverType, 'PoissonSolverType' )
     end associate !-- PH
 
     allocate ( DD % Poisson )
     associate ( P => DD % Poisson )
     call P % Initialize &
-           ( A, SolverType = 'MULTIPOLE_OLD', MaxDegreeOption = MaxDegree, &
+           ( A, SolverType = PoissonSolverType, MaxDegreeOption = MaxDegree, &
              nEquationsOption = DD % N_Equations )
     call P % InitializeTimers ( BaseLevel = 0 )
     end associate !-- P

@@ -18,7 +18,7 @@ program HomogeneousSpheroid
     Eccentricity
 
   allocate ( PROGRAM_HEADER )
-  call PROGRAM_HEADER % Initialize ( 'HomogeneousSphereoid_Test' )
+  call PROGRAM_HEADER % Initialize ( 'HomogeneousSpheroid_Test' )
 
   if ( trim ( PROGRAM_HEADER % Dimensionality ) == '1D' ) then
     call Show ( 'This program must be run in 2D or 3D', CONSOLE % ERROR )

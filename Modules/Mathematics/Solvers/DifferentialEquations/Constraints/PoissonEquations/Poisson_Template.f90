@@ -3,6 +3,7 @@ module Poisson_Template
   use Basics
   use Manifolds
   use LaplacianMultipoleOld_Template
+  use LaplacianMultipole_Template
 
   implicit none
   private
@@ -22,6 +23,8 @@ module Poisson_Template
       SolverType = ''
     class ( LaplacianMultipoleOldTemplate ), allocatable :: &
       LaplacianMultipoleOld
+    class ( LaplacianMultipoleTemplate ), allocatable :: &
+      LaplacianMultipole
   contains
     procedure, public, pass :: &
       InitializeTemplate
@@ -100,9 +103,9 @@ contains
 
     if ( allocated ( P % LaplacianMultipoleOld ) ) then
 
-      associate ( LM => P % LaplacianMultipoleOld )
-      call LM % InitializeTimers ( BaseLevel + 1 )
-      end associate !-- LM
+      associate ( L => P % LaplacianMultipoleOld )
+      call L % InitializeTimers ( BaseLevel + 1 )
+      end associate !-- L
 
       call PROGRAM_HEADER % AddTimer &
              ( 'SolveCells', P % iTimerSolveCells, Level = BaseLevel + 1 )
@@ -122,6 +125,8 @@ contains
     class ( PoissonTemplate ), intent ( inout ) :: &
       P
 
+    if ( allocated ( P % LaplacianMultipole ) ) &
+      deallocate ( P % LaplacianMultipole )
     if ( allocated ( P % LaplacianMultipoleOld ) ) &
       deallocate ( P % LaplacianMultipoleOld )
 
