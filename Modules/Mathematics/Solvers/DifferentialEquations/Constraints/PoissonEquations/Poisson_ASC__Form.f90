@@ -4,8 +4,8 @@ module Poisson_ASC__Form
 
   use Basics
   use Manifolds
-  use LaplacianMultipole_Template
-  use LaplacianMultipole_ASC__Form
+  use LaplacianMultipoleOld_Template
+  use LaplacianMultipoleOld_ASC__Form
   use Poisson_Template
 
   implicit none
@@ -122,10 +122,10 @@ contains
     P % Atlas => A
 
     select case ( trim ( P % SolverType ) )
-    case ( 'MULTIPOLE' )
-      allocate ( LaplacianMultipole_ASC_Form :: P % LaplacianMultipole )
-      select type ( L => P % LaplacianMultipole )
-      class is ( LaplacianMultipole_ASC_Form )
+    case ( 'MULTIPOLE_OLD' )
+      allocate ( LaplacianMultipoleOld_ASC_Form :: P % LaplacianMultipoleOld )
+      select type ( L => P % LaplacianMultipoleOld )
+      class is ( LaplacianMultipoleOld_ASC_Form )
         call L % Initialize ( A, P % MaxDegree, P % nEquations )
       end select !-- L
     case default
@@ -166,7 +166,7 @@ contains
     Solution_S => Solution % Storage ( )
 
     select case ( trim ( P % SolverType ) )
-    case ( 'MULTIPOLE' )
+    case ( 'MULTIPOLE_OLD' )
       select type ( C => P % Atlas % Chart )
       class is ( Chart_SLD_Form )
         call SolveMultipole_CSL ( P, C, Solution_S, Source_S )
@@ -229,7 +229,7 @@ contains
     call Show ( 'Poisson solve, multipole', P % IGNORABILITY + 2 )
     call Show ( P % Name, 'Name', P % IGNORABILITY + 2 )
 
-    associate ( L  =>  P % LaplacianMultipole )
+    associate ( L  =>  P % LaplacianMultipoleOld )
 
     call L % ComputeMoments ( Source )
 

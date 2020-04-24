@@ -1,48 +1,48 @@
-LaplacianMultipole_Template.o: \
+LaplacianMultipoleOld_Template.o: \
   Basics.o \
   Manifolds.o \
-  LaplacianMultipole_Template.f90 
+  LaplacianMultipoleOld_Template.f90 
 
-LaplacianMultipole_Kernel.o: \
+LaplacianMultipoleOld_Kernel.o: \
   Basics.o \
-  LaplacianMultipole_Template.o \
-  LaplacianMultipole_Kernel.f90
+  LaplacianMultipoleOld_Template.o \
+  LaplacianMultipoleOld_Kernel.f90
 
-LaplacianMultipole_ASC__Form.o: \
+LaplacianMultipoleOld_ASC__Form.o: \
   Basics.o \
   Manifolds.o \
-  LaplacianMultipole_Template.o \
-  LaplacianMultipole_ASC__Form.f90 
+  LaplacianMultipoleOld_Template.o \
+  LaplacianMultipoleOld_ASC__Form.f90 
 
-LaplacianMultipole_ASC__Kernel.o: \
+LaplacianMultipoleOld_ASC__Kernel.o: \
   Basics.o \
-  LaplacianMultipole_Template.o \
-  LaplacianMultipole_ASC__Form.o \
-  LaplacianMultipole_ASC__Kernel.f90
+  LaplacianMultipoleOld_Template.o \
+  LaplacianMultipoleOld_ASC__Form.o \
+  LaplacianMultipoleOld_ASC__Kernel.f90
 
 Poisson_Template.o: \
   Basics.o \
   Manifolds.o \
-  LaplacianMultipole_Template.o \
+  LaplacianMultipoleOld_Template.o \
   Poisson_Template.f90
 
 Poisson_ASC__Form.o: \
   Basics.o \
   Manifolds.o \
-  LaplacianMultipole_Template.o \
-  LaplacianMultipole_ASC__Form.o \
+  LaplacianMultipoleOld_Template.o \
+  LaplacianMultipoleOld_ASC__Form.o \
   Poisson_Template.o \
   Poisson_ASC__Form.f90
 
 Poisson_ASC__Kernel.o: \
   Basics.o \
-  LaplacianMultipole_Template.o \
+  LaplacianMultipoleOld_Template.o \
   Poisson_ASC__Form.o \
   Poisson_ASC__Kernel.f90
 
 PoissonEquations.o: \
-  LaplacianMultipole_Template.o \
-  LaplacianMultipole_ASC__Form.o \
+  LaplacianMultipoleOld_Template.o \
+  LaplacianMultipoleOld_ASC__Form.o \
   Poisson_Template.o \
   Poisson_ASC__Form.o \
   PoissonEquations.f90

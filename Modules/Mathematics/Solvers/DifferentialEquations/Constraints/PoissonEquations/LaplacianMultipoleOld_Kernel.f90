@@ -1,6 +1,6 @@
 #include "Preprocessor"
 
-submodule ( LaplacianMultipole_Template ) LaplacianMultipole_Kernel
+submodule ( LaplacianMultipoleOld_Template ) LaplacianMultipoleOld_Kernel
 
   use Basics
 
@@ -112,7 +112,7 @@ contains
       !             CONSOLE % ERROR )
       ! call Show ( 'ComputeSolidHarmonicsKernel', 'subroutine', &
       !             CONSOLE % ERROR )
-      ! call Show ( 'LaplacianMultipole_Kernel', 'submodule', CONSOLE % ERROR )
+      ! call Show ( 'LaplacianMultipoleOld_Kernel', 'submodule', CONSOLE % ERROR )
       GridError = .true.
     end if
 
@@ -269,4 +269,4 @@ contains
   end procedure ComputeSolidHarmonics_C_S_Kernel
 
 
-end submodule LaplacianMultipole_Kernel
+end submodule LaplacianMultipoleOld_Kernel

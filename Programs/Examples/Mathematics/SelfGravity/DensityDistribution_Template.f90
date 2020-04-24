@@ -93,7 +93,7 @@ contains
     allocate ( DD % Poisson )
     associate ( P => DD % Poisson )
     call P % Initialize &
-           ( A, SolverType = 'MULTIPOLE', MaxDegreeOption = MaxDegree, &
+           ( A, SolverType = 'MULTIPOLE_OLD', MaxDegreeOption = MaxDegree, &
              nEquationsOption = DD % N_Equations )
     call P % InitializeTimers ( BaseLevel = 0 )
     end associate !-- P

@@ -1,16 +1,16 @@
-module LaplacianMultipole_ASC__Form
+module LaplacianMultipoleOld_ASC__Form
 
-  !-- LaplacianMultipole_AtlasSingleChart__Form
+  !-- LaplacianMultipoleOld_AtlasSingleChart__Form
 
   use Basics
   use Manifolds
-  use LaplacianMultipole_Template
+  use LaplacianMultipoleOld_Template
 
   implicit none
   private
 
-  type, public, extends ( LaplacianMultipoleTemplate ) :: &
-    LaplacianMultipole_ASC_Form
+  type, public, extends ( LaplacianMultipoleOldTemplate ) :: &
+    LaplacianMultipoleOld_ASC_Form
       class ( ChartTemplate ), pointer :: &
         Chart => null ( )
   contains
@@ -22,7 +22,7 @@ module LaplacianMultipole_ASC__Form
       Finalize
     procedure, private, pass :: &
       ComputeMomentsLocal
-  end type LaplacianMultipole_ASC_Form
+  end type LaplacianMultipoleOld_ASC_Form
 
     private :: &
       SetRadialEdgeSpherical
@@ -83,7 +83,7 @@ contains
 
   subroutine Initialize ( LM, A, MaxDegree, nEquations )
 
-    class ( LaplacianMultipole_ASC_Form ), intent ( inout ) :: &
+    class ( LaplacianMultipoleOld_ASC_Form ), intent ( inout ) :: &
       LM
     class ( Atlas_SC_Form ), intent ( in ), target :: &
       A
@@ -92,7 +92,7 @@ contains
       nEquations
 
     if ( LM % Type == '' ) &
-      LM % Type = 'a LaplacianMultipole_ASC' 
+      LM % Type = 'a LaplacianMultipoleOld_ASC' 
 
     call LM % InitializeTemplate ( A, MaxDegree, nEquations )
 
@@ -105,7 +105,7 @@ contains
       call Show ( A % Chart % CoordinateSystem, 'CoordinateSystem', &
                   CONSOLE % ERROR )
       call Show ( 'Initialize', 'subroutine', CONSOLE % ERROR )
-      call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'LaplacianMultipoleOld_ASC__Form', 'module', CONSOLE % ERROR )
     end select !-- CoordinateSystem
 
   end subroutine Initialize
@@ -113,7 +113,7 @@ contains
 
   impure elemental subroutine Finalize ( LM )
 
-    type ( LaplacianMultipole_ASC_Form ), intent ( inout ) :: &
+    type ( LaplacianMultipoleOld_ASC_Form ), intent ( inout ) :: &
       LM
 
     nullify ( LM % Chart )
@@ -125,7 +125,7 @@ contains
 
   subroutine SetParameters ( LM, A, MaxDegree, nEquations )
 
-    class ( LaplacianMultipole_ASC_Form ), intent ( inout ) :: &
+    class ( LaplacianMultipoleOld_ASC_Form ), intent ( inout ) :: &
       LM
     class ( AtlasHeaderForm ), intent ( in ), target :: &
       A
@@ -166,13 +166,13 @@ contains
       call Show ( 'CoordinateSystem not supported', CONSOLE % ERROR )
       call Show ( C % CoordinateSystem, 'CoordinateSystem', CONSOLE % ERROR )
       call Show ( 'SetParameters', 'subroutine', CONSOLE % ERROR )
-      call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'LaplacianMultipoleOld_ASC__Form', 'module', CONSOLE % ERROR )
     end select !-- CoordinateSystem
 
     class default
       call Show ( 'Chart type not supported', CONSOLE % ERROR )
       call Show ( 'SetParameters', 'subroutine', CONSOLE % ERROR )
-      call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'LaplacianMultipoleOld_ASC__Form', 'module', CONSOLE % ERROR )
     end select !-- C
     
     associate &
@@ -200,7 +200,7 @@ contains
 
   subroutine ComputeMomentsLocal ( LM, Source )
 
-    class ( LaplacianMultipole_ASC_Form ), intent ( inout ) :: &
+    class ( LaplacianMultipoleOld_ASC_Form ), intent ( inout ) :: &
       LM
     type ( StorageForm ), intent ( in ) :: &
       Source !-- array over levels    
@@ -239,14 +239,14 @@ contains
       ! call Show ( RadialEdge ( size ( RadialEdge ) ), 'R_Max', &
       !             CONSOLE % ERROR )
         call Show ( 'ComputeMomentsLocal', 'subroutine', CONSOLE % ERROR )
-        call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'LaplacianMultipoleOld_ASC__Form', 'module', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end if
 
     class default
       call Show ( 'Chart type not supported', CONSOLE % ERROR )
       call Show ( 'ComputeMomentsLocal', 'subroutine', CONSOLE % ERROR )
-      call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'LaplacianMultipoleOld_ASC__Form', 'module', CONSOLE % ERROR )
     end select !-- C
     
     nullify ( G )
@@ -256,7 +256,7 @@ contains
 
   subroutine SetRadialEdgeSpherical ( LM )
 
-    class ( LaplacianMultipole_ASC_Form ), intent ( inout ) :: &
+    class ( LaplacianMultipoleOld_ASC_Form ), intent ( inout ) :: &
       LM
 
     integer ( KDI ) :: &
@@ -289,10 +289,10 @@ contains
     class default
       call Show ( 'Chart type not supported', CONSOLE % ERROR )
       call Show ( 'SetRadialEdgeSpherical', 'subroutine', CONSOLE % ERROR )
-      call Show ( 'LaplacianMultipole_ASC_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'LaplacianMultipoleOld_ASC_Form', 'module', CONSOLE % ERROR )
     end select !-- C
 
   end subroutine SetRadialEdgeSpherical
 
 
-end module LaplacianMultipole_ASC__Form
+end module LaplacianMultipoleOld_ASC__Form
