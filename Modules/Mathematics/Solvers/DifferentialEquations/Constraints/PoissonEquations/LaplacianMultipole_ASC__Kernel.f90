@@ -28,6 +28,7 @@ contains
     if ( UseDevice ) then
 
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP  num_teams ( 4 ) thread_limit ( 16 ) &
       !$OMP& schedule ( OMP_SCHEDULE_TARGET ) &
       !$OMP& private ( iC, iE, iR, R, SH_RC, SH_IC, SH_RS, SH_IS ) &
       !$OMP& reduction ( + : MyM_RC ) &
