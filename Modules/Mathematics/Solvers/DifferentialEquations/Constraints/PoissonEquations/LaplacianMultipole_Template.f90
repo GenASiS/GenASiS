@@ -10,7 +10,7 @@ module LaplacianMultipole_Template
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
       nRadialCells = 0, &
-      nAngularMomentCells = 0, &
+      nAngularMoments = 0, &
       nEquations = 0, &
       MaxDegree = 0, &  !-- Max L
       MaxOrder  = 0     !-- Max M
@@ -40,8 +40,10 @@ module LaplacianMultipole_Template
   contains
     procedure, public, pass :: &
       InitializeTemplate
-    procedure ( SP ), private, pass, deferred :: &
+    procedure, private, pass :: &
       SetParameters
+    procedure ( SPA ), private, pass, deferred :: &
+      SetParametersAtlas
     procedure ( ASH ), private, pass, deferred :: &
       AllocateSolidHarmonics
     procedure, public, pass :: &
@@ -51,8 +53,7 @@ module LaplacianMultipole_Template
 
   abstract interface
 
-    subroutine SP ( L, A, MaxDegree, nEquations )
-      use Basics
+    subroutine SPA ( L, A )
       use Manifolds
       import LaplacianMultipoleTemplate
       implicit none
@@ -60,10 +61,7 @@ module LaplacianMultipole_Template
         L
       class ( AtlasHeaderForm ), intent ( in ), target :: &
         A
-      integer ( KDI ), intent ( in ) :: &
-        MaxDegree, &
-        nEquations
-    end subroutine SP
+    end subroutine SPA
 
     subroutine ASH ( L )
       import LaplacianMultipoleTemplate
@@ -74,9 +72,6 @@ module LaplacianMultipole_Template
 
   end interface
 
-
-    private :: &
-      SetSolidHarmonicStorage
 
 contains
 
@@ -112,6 +107,49 @@ call PROGRAM_HEADER % Abort ( )
   end subroutine InitializeTemplate
 
 
+  subroutine SetParameters ( L, A, MaxDegree, nEquations )
+
+    class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+      L
+    class ( AtlasHeaderForm ), intent ( in ), target :: &
+      A
+    integer ( KDI ), intent ( in ) :: &
+      MaxDegree, &
+      nEquations
+
+    integer ( KDI ) :: &
+      iL, &
+      iM
+
+    L % MaxDegree  =  MaxDegree
+    L % MaxOrder   =  MaxDegree
+
+    call L % SetParametersAtlas ( A )
+
+    associate &
+      (  L  =>  L % MaxDegree, &
+         M  =>  L % MaxOrder, &
+        nA  =>  L % nAngularMoments )
+    nA = 0
+    do iM  =  0, M
+      do iL  =  iM, L
+        nA  =  nA + 1
+      end do
+    end do
+    end associate !-- L, etc.
+
+    L % nEquations  =  nEquations
+
+    call Show ( L % MaxDegree, 'MaxDegree (l)', L % IGNORABILITY )
+    call Show ( L % MaxOrder, 'MaxOrder (m)', L % IGNORABILITY )
+    call Show ( L % nRadialCells, 'nRadialCells', L % IGNORABILITY )
+    call Show ( L % nAngularMoments, 'nAngularMoments', L % IGNORABILITY )
+    call Show ( L % nEquations, 'nEquations', L % IGNORABILITY )
+    call Show ( L % UseDevice, 'UseDevice', L % IGNORABILITY )
+
+  end subroutine SetParameters
+
+
   impure elemental subroutine FinalizeTemplate ( L )
 
     class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
@@ -131,14 +169,6 @@ call PROGRAM_HEADER % Abort ( )
     call Show ( L % Name, 'Name', L % IGNORABILITY )
     
   end subroutine FinalizeTemplate
-
-
-  subroutine SetSolidHarmonicStorage ( L )
-
-    class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
-      L
-
-  end subroutine SetSolidHarmonicStorage
 
 
 end module LaplacianMultipole_Template

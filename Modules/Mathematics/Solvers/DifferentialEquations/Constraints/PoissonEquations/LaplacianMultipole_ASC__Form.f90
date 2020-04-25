@@ -17,7 +17,7 @@ module LaplacianMultipole_ASC__Form
     procedure, public, pass :: &
       Initialize
     procedure, private, pass :: &
-      SetParameters
+      SetParametersAtlas
     procedure, private, pass :: &
       AllocateSolidHarmonics
     final :: &
@@ -52,33 +52,28 @@ call PROGRAM_HEADER % Abort ( )
   end subroutine Initialize
 
 
-  subroutine SetParameters ( L, A, MaxDegree, nEquations )
+  subroutine SetParametersAtlas ( L, A )
 
     class ( LaplacianMultipole_ASC_Form ), intent ( inout ) :: &
       L
     class ( AtlasHeaderForm ), intent ( in ), target :: &
       A
-    integer ( KDI ), intent ( in ) :: &
-      MaxDegree, &
-      nEquations
 
-    integer ( KDI ) :: &
-      iL, &
-      iM
     class ( GeometryFlatForm ), pointer :: &
       G
-
-    L % nEquations  =   nEquations
-    L % MaxDegree   =   MaxDegree
-    L % MaxOrder    =   MaxDegree
 
     select type ( A )
     class is ( Atlas_SC_Form )
 
-      L % Chart  =>  A % Chart
+      if ( A % nDimensions  <  3 ) &
+        L % MaxOrder  =  0
+      if ( A % nDimensions  <  2 ) &
+        L % MaxDegree  =  0
 
-      G => A % Geometry ( )
-      L % UseDevice = G % AllocatedDevice
+      G  =>  A % Geometry ( )
+      L % UseDevice  =  G % AllocatedDevice
+
+      L % Chart  =>  A % Chart
 
     end select !-- A
 
@@ -87,10 +82,7 @@ call PROGRAM_HEADER % Abort ( )
 
     select case ( trim ( C % CoordinateSystem ) )
     case ( 'SPHERICAL' )
-       if ( C % nDimensions  <  3 ) &
-         L % MaxOrder  =  0
-       if ( C % nDimensions  <  2 ) &
-         L % MaxDegree  =  0
+       L % nRadialCells  =  C % nCells ( 1 )
     case default
       call Show ( 'CoordinateSystem not supported', CONSOLE % ERROR )
       call Show ( C % CoordinateSystem, 'CoordinateSystem', CONSOLE % ERROR )
@@ -106,27 +98,9 @@ call PROGRAM_HEADER % Abort ( )
       call PROGRAM_HEADER % Abort ( )
     end select !-- C
     
-    associate &
-      ( L   => L % MaxDegree, &
-        M   => L % MaxOrder, &
-        nAM => L % nAngularMomentCells )
-    nAM = 0
-    do iM = 0, M
-      do iL = iM, L
-        nAM = nAM + 1
-      end do
-    end do
-    end associate !-- L, etc.
-
-    call Show ( L % MaxDegree, 'MaxDegree (l)', L % IGNORABILITY )
-    call Show ( L % MaxOrder, 'MaxOrder (m)', L % IGNORABILITY )
-    call Show ( L % nAngularMomentCells, 'nAngularMomentCells', &
-                L % IGNORABILITY )
-    call Show ( L % UseDevice, 'UseDevice', L % IGNORABILITY )
-
     nullify ( G )
 
-  end subroutine SetParameters
+  end subroutine SetParametersAtlas
 
 
   subroutine AllocateSolidHarmonics ( L )
