@@ -25,8 +25,6 @@ module LaplacianMultipole_Template
       iSolidHarmonics_P2
     real ( KDR ), dimension ( 3 ) :: &
       Origin = 0.0_KDR
-    real ( KDR ), dimension ( :, :, : ), allocatable :: &
-      MyMoment_iA
     logical ( KDL ) :: &
       UseDevice = .false.
     character ( LDF ) :: &
@@ -137,9 +135,6 @@ contains
     if ( allocated ( L % Moments ) ) &
       deallocate ( L % Moments )
 
-    if ( allocated ( L % MyMoment_iA ) ) &
-      deallocate ( L % MyMoment_iA )
-
     if ( L % Name == '' ) return
 
     call Show ( 'Finalizing ' // trim ( L % Type ), L % IGNORABILITY )
@@ -211,16 +206,10 @@ contains
                nE  =>  L % nEquations )
 
     call   M % Initialize ( [ nA * nR * nE, 4 ] )
-    call MyM % Initialize ( [ nA * nR * nE, 4 ] )
+    call MyM % Initialize ( [ nA * nR * nE, 4 ], PinnedOption = .true. )
       !-- 4: RegularCos, IrregularCos, RegularSin, IrregularSin
 
     call AllocateReduction ( L, M % Value, MyM % Value )
-
-    if ( allocated ( L % MyMoment_iA ) ) &
-      deallocate ( L % MyMoment_iA )
-
-    allocate ( L % MyMoment_iA ( nR, nE, 4 ) )
-      !-- 4: RegularCos, IrregularCos, RegularSin, IrregularSin
 
     end associate !-- M, etc.
 
