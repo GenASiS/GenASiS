@@ -25,11 +25,16 @@ module LaplacianMultipole_Template
       iSolidHarmonics_P2
     real ( KDR ), dimension ( 3 ) :: &
       Origin = 0.0_KDR
+    real ( KDR ), dimension ( :, :, : ), allocatable :: &
+      MyMoment_iA
     logical ( KDL ) :: &
       UseDevice = .false.
     character ( LDF ) :: &
       Type = '', &
       Name = ''
+    type ( StorageForm ), allocatable :: &
+        Moments, &
+      MyMoments
     type ( StorageForm ), pointer :: &
       SolidHarmonics    => null ( ), &
       SolidHarmonics_P1 => null ( ), &  !-- Previous_1
@@ -37,17 +42,21 @@ module LaplacianMultipole_Template
       SolidHarmonics_PD => null ( )     !-- PreviousDiagonal
     type ( StorageForm ), dimension ( : ), allocatable :: &
       SolidHarmonics_1D
+    type ( CollectiveOperation_R_Form ), allocatable :: &
+      ReductionMoments
   contains
     procedure, public, pass :: &
       InitializeTemplate
+    procedure, public, pass :: &
+      FinalizeTemplate
     procedure, private, pass :: &
       SetParameters
     procedure ( SPA ), private, pass, deferred :: &
       SetParametersAtlas
     procedure ( ASH ), private, pass, deferred :: &
       AllocateSolidHarmonics
-    procedure, public, pass :: &
-      FinalizeTemplate
+    procedure, private, pass :: &
+      AllocateMoments
   end type LaplacianMultipoleTemplate
 
 
@@ -71,6 +80,10 @@ module LaplacianMultipole_Template
     end subroutine ASH
 
   end interface
+
+
+    private :: &
+      AllocateReduction
 
 
 contains
@@ -98,13 +111,41 @@ contains
 
     call L % SetParameters ( A, MaxDegree, nEquations )
     call L % AllocateSolidHarmonics ( )
-
-call Show ( '>>> Aborting during development', CONSOLE % ERROR )
-call Show ( 'LaplacianMultipole_Template', 'module', CONSOLE % ERROR )
-call Show ( 'InitializeTemplate', 'subroutine', CONSOLE % ERROR )
-call PROGRAM_HEADER % Abort ( )
+    call L % AllocateMoments ( )
 
   end subroutine InitializeTemplate
+
+
+  impure elemental subroutine FinalizeTemplate ( L )
+
+    class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+      L
+
+    if ( allocated ( L % ReductionMoments ) ) &
+      deallocate ( L % ReductionMoments )
+
+    if ( allocated ( L % SolidHarmonics_1D ) ) &
+      deallocate ( L % SolidHarmonics_1D )
+
+    nullify ( L % SolidHarmonics_PD )
+    nullify ( L % SolidHarmonics_P2 )
+    nullify ( L % SolidHarmonics_P1 )
+    nullify ( L % SolidHarmonics )
+
+    if ( allocated ( L % MyMoments ) ) &
+      deallocate ( L % MyMoments )
+    if ( allocated ( L % Moments ) ) &
+      deallocate ( L % Moments )
+
+    if ( allocated ( L % MyMoment_iA ) ) &
+      deallocate ( L % MyMoment_iA )
+
+    if ( L % Name == '' ) return
+
+    call Show ( 'Finalizing ' // trim ( L % Type ), L % IGNORABILITY )
+    call Show ( L % Name, 'Name', L % IGNORABILITY )
+    
+  end subroutine FinalizeTemplate
 
 
   subroutine SetParameters ( L, A, MaxDegree, nEquations )
@@ -150,25 +191,70 @@ call PROGRAM_HEADER % Abort ( )
   end subroutine SetParameters
 
 
-  impure elemental subroutine FinalizeTemplate ( L )
+  subroutine AllocateMoments ( L )
 
     class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
       L
 
-    if ( allocated ( L % SolidHarmonics_1D ) ) &
-      deallocate ( L % SolidHarmonics_1D )
+    if ( allocated ( L % Moments ) ) &
+      deallocate ( L % Moments )
+    if ( allocated ( L % MyMoments ) ) &
+      deallocate ( L % MyMoments )
 
-    nullify ( L % SolidHarmonics_PD )
-    nullify ( L % SolidHarmonics_P2 )
-    nullify ( L % SolidHarmonics_P1 )
-    nullify ( L % SolidHarmonics )
+    allocate ( L % Moments )
+    allocate ( L % MyMoments )
+    associate &
+      (         M  =>  L % Moments, &
+              MyM  =>  L % MyMoments, &
+               nA  =>  L % nAngularMoments, &
+               nR  =>  L % nRadialCells, &
+               nE  =>  L % nEquations )
 
-    if ( L % Name == '' ) return
+    call   M % Initialize ( [ nA * nR * nE, 4 ] )
+    call MyM % Initialize ( [ nA * nR * nE, 4 ] )
+      !-- 4: RegularCos, IrregularCos, RegularSin, IrregularSin
 
-    call Show ( 'Finalizing ' // trim ( L % Type ), L % IGNORABILITY )
-    call Show ( L % Name, 'Name', L % IGNORABILITY )
-    
-  end subroutine FinalizeTemplate
+    call AllocateReduction ( L, M % Value, MyM % Value )
+
+    if ( allocated ( L % MyMoment_iA ) ) &
+      deallocate ( L % MyMoment_iA )
+
+    allocate ( L % MyMoment_iA ( nR, nE, 4 ) )
+      !-- 4: RegularCos, IrregularCos, RegularSin, IrregularSin
+
+    end associate !-- M, etc.
+
+  end subroutine AllocateMoments
+
+
+  subroutine AllocateReduction ( L, M_Value, MyM_Value )
+
+    class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+      L
+    real ( KDR ), dimension ( :, : ), intent ( in ), target, contiguous :: &
+        M_Value, &
+      MyM_Value
+
+    real ( KDR ), dimension ( : ), pointer :: &
+        Moment_1D, &
+      MyMoment_1D
+
+      Moment_1D ( 1 : size (   M_Value ) )  =>    M_Value
+    MyMoment_1D ( 1 : size ( MyM_Value ) )  =>  MyM_Value
+
+    if ( allocated ( L % ReductionMoments ) ) &
+      deallocate ( L % ReductionMoments )
+    allocate ( L % ReductionMoments )
+    associate &
+      (  RM  =>  L % ReductionMoments, &
+        PHC  =>  PROGRAM_HEADER % Communicator )
+      call RM % Initialize &
+             ( PHC, OutgoingValue = MyMoment_1D, IncomingValue = Moment_1D )
+    end associate !-- RM, etc.
+
+    nullify ( Moment_1D, MyMoment_1D )
+
+  end subroutine AllocateReduction
 
 
 end module LaplacianMultipole_Template

@@ -16,12 +16,12 @@ module LaplacianMultipole_ASC__Form
   contains
     procedure, public, pass :: &
       Initialize
+    final :: &
+      Finalize
     procedure, private, pass :: &
       SetParametersAtlas
     procedure, private, pass :: &
       AllocateSolidHarmonics
-    final :: &
-      Finalize
   end type LaplacianMultipole_ASC_Form
 
 contains
@@ -42,14 +42,19 @@ contains
 
     call L % InitializeTemplate ( A, MaxDegree, nEquations )
 
-call Show ( '>>> Aborting during development', CONSOLE % ERROR )
-call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
-call Show ( 'Initialize', 'subroutine', CONSOLE % ERROR )
-call PROGRAM_HEADER % Abort ( )
-
-!    call L % SetMomentStorage ( )
-
   end subroutine Initialize
+
+
+  impure elemental subroutine Finalize ( L )
+
+    type ( LaplacianMultipole_ASC_Form ), intent ( inout ) :: &
+      L
+
+    nullify ( L % Chart )
+
+    call L % FinalizeTemplate ( )
+
+  end subroutine Finalize
 
 
   subroutine SetParametersAtlas ( L, A )
@@ -112,7 +117,7 @@ call PROGRAM_HEADER % Abort ( )
       iSH
 
     allocate ( L % SolidHarmonics_1D ( 4 ) )
-      !-- Current, Previous_1, Previous_2, PreviousDiagonal
+      !-- 4: Current, Previous_1, Previous_2, PreviousDiagonal
 
     do iSH = 1, size ( L % SolidHarmonics_1D )
 
@@ -123,7 +128,7 @@ call PROGRAM_HEADER % Abort ( )
 
         associate ( nC => product ( C % nCells ) )
         call SH % Initialize ( [ nC, 4 ] )
-               !-- RegularCos, IrregularCos, RegularSin, IrregularSin
+               !-- 4: RegularCos, IrregularCos, RegularSin, IrregularSin
         if ( L % UseDevice ) &
           call SH % AllocateDevice ( )
         end associate !-- nC
@@ -140,18 +145,6 @@ call PROGRAM_HEADER % Abort ( )
     end do !-- iSH
 
   end subroutine AllocateSolidHarmonics
-
-
-  impure elemental subroutine Finalize ( L )
-
-    type ( LaplacianMultipole_ASC_Form ), intent ( inout ) :: &
-      L
-
-    nullify ( L % Chart )
-
-    call L % FinalizeTemplate ( )
-
-  end subroutine Finalize
 
 
 end module LaplacianMultipole_ASC__Form
