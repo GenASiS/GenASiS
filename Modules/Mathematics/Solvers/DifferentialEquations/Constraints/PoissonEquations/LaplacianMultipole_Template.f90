@@ -65,6 +65,8 @@ module LaplacianMultipole_Template
       AllocateSolidHarmonics
     procedure, private, pass :: &
       AllocateMoments
+    procedure ( CML ), private, pass, deferred :: &
+      ComputeMomentsLocal
   end type LaplacianMultipoleTemplate
 
 
@@ -86,6 +88,16 @@ module LaplacianMultipole_Template
       class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
         L
     end subroutine ASH
+
+    subroutine CML ( L, Source )
+      use Basics
+      import LaplacianMultipoleTemplate
+      implicit none
+      class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+        L
+      type ( StorageForm ), intent ( in ) :: &
+        Source  
+    end subroutine CML
 
   end interface
 
@@ -160,12 +172,34 @@ contains
       Timer_RM, &
       Timer_AM
 
+    Timer     =>  PROGRAM_HEADER % TimerPointer ( L % iTimerMoments )
+    Timer_CM  =>  PROGRAM_HEADER % TimerPointer ( L % iTimerClearMoments )
+    Timer_LM  =>  PROGRAM_HEADER % TimerPointer ( L % iTimerLocalMoments )
+    Timer_RM  =>  PROGRAM_HEADER % TimerPointer ( L % iTimerReduceMoments )
+    Timer_AM  =>  PROGRAM_HEADER % TimerPointer ( L % iTimerAddMoments )
+
     if ( associated ( Timer ) ) call Timer % Start ( )
 
     call Show ( 'Computing Moments', L % IGNORABILITY + 2 )
 
     associate ( MyM  =>  L % MyMoments )
 
+    if ( associated ( Timer_CM ) ) call Timer_CM % Start ( )
+      call Clear ( MyM % Value, UseDeviceOption = MyM % AllocatedDevice )
+    if ( associated ( Timer_CM ) ) call Timer_CM % Stop ( )
+
+    if ( associated ( Timer_LM ) ) call Timer_LM % Start ( )
+    call L % ComputeMomentsLocal ( Source )
+    if ( associated ( Timer_LM ) ) call Timer_LM % Stop ( )
+
+    if ( associated ( Timer_RM ) ) call Timer_RM % Start ( )
+    call MyM % UpdateHost ( )
+    call L % ReductionMoments % Reduce ( REDUCTION % SUM )
+    if ( associated ( Timer_RM ) ) call Timer_RM % Stop ( )
+
+call PROGRAM_HEADER % ShowStatistics &
+       ( CONSOLE % INFO_1, &
+         CommunicatorOption = PROGRAM_HEADER % Communicator )
 call Show ( '>>> Aborting during development' )
 call Show ( 'LaplacianMultipole_Template', 'module', CONSOLE % ERROR )
 call Show ( 'ComputeMoments', 'subroutine', CONSOLE % ERROR )
@@ -272,6 +306,10 @@ call PROGRAM_HEADER % Abort ( )
     call   M % Initialize ( [ nA * nR * nE, 4 ] )
     call MyM % Initialize ( [ nA * nR * nE, 4 ], PinnedOption = .true. )
       !-- 4: RegularCos, IrregularCos, RegularSin, IrregularSin
+    if ( L % UseDevice ) then
+      call   M % AllocateDevice ( )
+      call MyM % AllocateDevice ( )
+    end if
 
     call AllocateReduction ( L, M % Value, MyM % Value )
 

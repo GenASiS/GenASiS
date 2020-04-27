@@ -312,6 +312,9 @@ contains
 
     call L % ComputeMoments ( Source )
 
+call PROGRAM_HEADER % ShowStatistics &
+       ( CONSOLE % INFO_1, &
+         CommunicatorOption = PROGRAM_HEADER % Communicator )
 call Show ( '>>> Aborting during development' )
 call Show ( 'Poisson_ASC__Form', 'module', CONSOLE % ERROR )
 call Show ( 'SolveMultipole_CSL', 'subroutine', CONSOLE % ERROR )

@@ -22,6 +22,8 @@ module LaplacianMultipole_ASC__Form
       SetParametersAtlas
     procedure, private, pass :: &
       AllocateSolidHarmonics
+    procedure, private, pass :: &
+      ComputeMomentsLocal
   end type LaplacianMultipole_ASC_Form
 
 contains
@@ -145,6 +147,16 @@ contains
     end do !-- iSH
 
   end subroutine AllocateSolidHarmonics
+
+
+  subroutine ComputeMomentsLocal ( L, Source )
+
+    class ( LaplacianMultipole_ASC_Form ), intent ( inout ) :: &
+      L
+    type ( StorageForm ), intent ( in ) :: &
+      Source !-- array over levels    
+
+  end subroutine ComputeMomentsLocal
 
 
 end module LaplacianMultipole_ASC__Form
