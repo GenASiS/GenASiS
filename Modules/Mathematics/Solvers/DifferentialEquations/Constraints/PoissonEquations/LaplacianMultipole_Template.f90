@@ -15,6 +15,12 @@ module LaplacianMultipole_Template
       MaxDegree = 0, &  !-- Max L
       MaxOrder  = 0     !-- Max M
     integer ( KDI ) :: &
+      iTimerMoments = 0, &
+      iTimerClearMoments = 0, &
+      iTimerLocalMoments = 0, &
+      iTimerReduceMoments = 0, &
+      iTimerAddMoments = 0
+    integer ( KDI ) :: &
       REGULAR_COSINE    = 1, &
       IRREGULAR_COSINE  = 2, &
       REGULAR_SINE      = 3, &
@@ -45,6 +51,10 @@ module LaplacianMultipole_Template
   contains
     procedure, public, pass :: &
       InitializeTemplate
+    procedure, public, pass :: &
+      InitializeTimers
+    procedure, public, pass :: &
+      ComputeMoments
     procedure, public, pass :: &
       FinalizeTemplate
     procedure, private, pass :: &
@@ -112,6 +122,60 @@ contains
     call L % AllocateMoments ( )
 
   end subroutine InitializeTemplate
+
+
+  subroutine InitializeTimers ( L, BaseLevel )
+
+    class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+      L
+    integer ( KDI ), intent ( in ) :: &
+      BaseLevel
+
+    call PROGRAM_HEADER % AddTimer &
+           ( 'Moments', L % iTimerMoments, Level = BaseLevel )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'ClearMoments', L % iTimerClearMoments, Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'LocalMoments', L % iTimerLocalMoments, Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'ReduceMoments', L % iTimerReduceMoments, &
+               Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'AddMoments', L % iTimerAddMoments, Level = BaseLevel + 1 )
+
+  end subroutine InitializeTimers
+
+
+  subroutine ComputeMoments ( L, Source )
+
+    class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+      L
+    type ( StorageForm ), intent ( in ) :: &
+      Source !-- array over levels    
+
+    type ( TimerForm ), pointer :: &
+      Timer, &
+      Timer_CM, &
+      Timer_LM, &
+      Timer_RM, &
+      Timer_AM
+
+    if ( associated ( Timer ) ) call Timer % Start ( )
+
+    call Show ( 'Computing Moments', L % IGNORABILITY + 2 )
+
+    associate ( MyM  =>  L % MyMoments )
+
+call Show ( '>>> Aborting during development' )
+call Show ( 'LaplacianMultipole_Template', 'module', CONSOLE % ERROR )
+call Show ( 'ComputeMoments', 'subroutine', CONSOLE % ERROR )
+call PROGRAM_HEADER % Abort ( )
+
+    end associate !-- MyM
+
+    if ( associated ( Timer ) ) call Timer % Stop ( )
+
+  end subroutine ComputeMoments
 
 
   impure elemental subroutine FinalizeTemplate ( L )

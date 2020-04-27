@@ -12,7 +12,7 @@ module Poisson_Template
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
       iTimerSolve = 0, &
-      iTimerSolveCells = 0, &
+      iTimerAssembleSolution = 0, &
       iTimerExchangeSolution = 0, &
       iTimerBoundarySolution = 0, &
       nEquations = 0, &
@@ -102,21 +102,27 @@ contains
            ( 'PoissonSolve', P % iTimerSolve, Level = BaseLevel )
 
     if ( allocated ( P % LaplacianMultipoleOld ) ) then
-
       associate ( L => P % LaplacianMultipoleOld )
       call L % InitializeTimers ( BaseLevel + 1 )
       end associate !-- L
-
-      call PROGRAM_HEADER % AddTimer &
-             ( 'SolveCells', P % iTimerSolveCells, Level = BaseLevel + 1 )
-      call PROGRAM_HEADER % AddTimer &
-             ( 'ExchangeSolution', P % iTimerExchangeSolution, &
-               Level = BaseLevel + 1 )
-      call PROGRAM_HEADER % AddTimer &
-             ( 'BoundarySolution', P % iTimerBoundarySolution, &
-               Level = BaseLevel + 1 )
-
     end if
+
+    if ( allocated ( P % LaplacianMultipole ) ) then
+      associate ( L => P % LaplacianMultipole )
+      call L % InitializeTimers ( BaseLevel + 1 )
+      end associate !-- L
+    end if
+
+    call PROGRAM_HEADER % AddTimer &
+           ( 'AssembleSolution', P % iTimerAssembleSolution, &
+             Level = BaseLevel + 1 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'ExchangeSolution', P % iTimerExchangeSolution, &
+             Level = BaseLevel + 1 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'BoundarySolution', P % iTimerBoundarySolution, &
+             Level = BaseLevel + 1 )
+
   end subroutine InitializeTimers
 
 

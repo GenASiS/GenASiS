@@ -25,6 +25,7 @@ module Poisson_ASC__Form
   end type Poisson_ASC_Form
 
     private :: &
+      SolveMultipole_CSL_Old, &
       SolveMultipole_CSL
 
 !-- FIXME: With GCC 6.1.0, must be public to trigger .smod generation
@@ -176,6 +177,16 @@ contains
     case ( 'MULTIPOLE_OLD' )
       select type ( C => P % Atlas % Chart )
       class is ( Chart_SLD_Form )
+        call SolveMultipole_CSL_Old ( P, C, Solution_S, Source_S )
+      class default
+        call Show ( 'Chart type not supported', CONSOLE % ERROR )
+        call Show ( 'Solve', 'subroutine', CONSOLE % ERROR )
+        call Show ( 'Poisson_ASC__Form', 'module', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end select !-- C
+    case ( 'MULTIPOLE' )
+      select type ( C => P % Atlas % Chart )
+      class is ( Chart_SLD_Form )
         call SolveMultipole_CSL ( P, C, Solution_S, Source_S )
       class default
         call Show ( 'Chart type not supported', CONSOLE % ERROR )
@@ -209,7 +220,7 @@ contains
   end subroutine Finalize
 
 
-  subroutine SolveMultipole_CSL ( P, C, Solution, Source )
+  subroutine SolveMultipole_CSL_Old ( P, C, Solution, Source )
  
     type ( Poisson_ASC_Form ), intent ( inout ) :: &
       P
@@ -223,17 +234,17 @@ contains
     logical ( KDL ) :: &
       GridError
     type ( TimerForm ), pointer :: &
-      Timer_SC, &
+      Timer_AS, &
       Timer_ES, &
       Timer_BS
     class ( GeometryFlatForm ), pointer :: &
       G
 
-    Timer_SC  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerSolveCells )
+    Timer_AS  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerAssembleSolution )
     Timer_ES  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerExchangeSolution )
     Timer_BS  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerBoundarySolution )
 
-    call Show ( 'Poisson solve, multipole', P % IGNORABILITY + 2 )
+    call Show ( 'Poisson solve, multipole old', P % IGNORABILITY + 2 )
     call Show ( P % Name, 'Name', P % IGNORABILITY + 2 )
 
     associate ( L  =>  P % LaplacianMultipoleOld )
@@ -242,7 +253,7 @@ contains
 
     G => C % Geometry ( )
 
-    if ( associated ( Timer_SC ) ) call Timer_SC % Start ( )
+    if ( associated ( Timer_AS ) ) call Timer_AS % Start ( )
      call SolveCells_CSL_Kernel &
             ( Solution % Value, C % CoordinateSystem, C % IsProperCell, &
               L % M_RC, L % M_IC, L % M_RS, L % M_IS, &
@@ -255,7 +266,7 @@ contains
               L % SolidHarmonic_RS, L % SolidHarmonic_IS )
      if ( GridError ) &
        call PROGRAM_HEADER % Abort ( )
-    if ( associated ( Timer_SC ) ) call Timer_SC % Stop ( )
+    if ( associated ( Timer_AS ) ) call Timer_AS % Stop ( )
 
     if ( associated ( Timer_ES ) ) call Timer_ES % Start ( )
     call C % ExchangeGhostData ( Solution )
@@ -264,6 +275,47 @@ contains
     if ( associated ( Timer_BS ) ) call Timer_BS % Start ( )
     call P % Atlas % ApplyBoundaryConditionsFaces ( Solution )
     if ( associated ( Timer_BS ) ) call Timer_BS % Stop ( )
+
+    end associate !-- L
+
+    nullify ( G )
+
+  end subroutine SolveMultipole_CSL_Old
+
+
+  subroutine SolveMultipole_CSL ( P, C, Solution, Source )
+ 
+    type ( Poisson_ASC_Form ), intent ( inout ) :: &
+      P
+    class ( Chart_SLD_Form ), intent ( inout ) :: &
+      C
+    class ( StorageForm ), intent ( inout ) :: &
+      Solution
+    class ( StorageForm ), intent ( in ) :: &
+      Source
+
+    type ( TimerForm ), pointer :: &
+      Timer_AS, &
+      Timer_ES, &
+      Timer_BS
+    class ( GeometryFlatForm ), pointer :: &
+      G
+
+    Timer_AS  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerAssembleSolution )
+    Timer_ES  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerExchangeSolution )
+    Timer_BS  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerBoundarySolution )
+
+    call Show ( 'Poisson solve, multipole', P % IGNORABILITY + 2 )
+    call Show ( P % Name, 'Name', P % IGNORABILITY + 2 )
+
+    associate ( L  =>  P % LaplacianMultipole )
+
+    call L % ComputeMoments ( Source )
+
+call Show ( '>>> Aborting during development' )
+call Show ( 'Poisson_ASC__Form', 'module', CONSOLE % ERROR )
+call Show ( 'SolveMultipole_CSL', 'subroutine', CONSOLE % ERROR )
+call PROGRAM_HEADER % Abort ( )
 
     end associate !-- L
 

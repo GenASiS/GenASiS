@@ -321,9 +321,6 @@ contains
     type ( StorageForm ), intent ( in ) :: &
       Source !-- array over levels    
     
-    ! integer ( KDI ) :: &
-    !   iL, &  !-- iLevel
-    !   iC     !-- iCell
     type ( TimerForm ), pointer :: &
       Timer, &
       Timer_CM, &
