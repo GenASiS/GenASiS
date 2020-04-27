@@ -112,7 +112,7 @@ module LaplacianMultipoleOld_Template
 !-- FIXME: With GCC 6.1.0, must be public to trigger .smod generation
 !    private :: &
     public :: &
-      ComputeMomentContributionsKernel, &
+      ComputeMomentContributionsOldKernel, &
       AddMomentShellsKernel, &
       ComputeSolidHarmonicsKernel
 
@@ -125,7 +125,7 @@ module LaplacianMultipoleOld_Template
 
     interface 
 
-      module subroutine ComputeMomentContributionsKernel &
+      module subroutine ComputeMomentContributionsOldKernel &
                           ( MyM_RC, MyM_IC, MyM_RS, MyM_IS, &
                             SH_RC, SH_IC, SH_RS, SH_IS, &
                             Source, Volume, iaSource, M, nE, nA, iR )
@@ -147,7 +147,7 @@ module LaplacianMultipoleOld_Template
           nE, &  !-- nEquations
           nA, &  !-- nAngular
           iR     !-- iRadius
-      end subroutine ComputeMomentContributionsKernel
+      end subroutine ComputeMomentContributionsOldKernel
 
       module subroutine AddMomentShellsKernel ( MR, MI, nE, nR, nA )
         use Basics

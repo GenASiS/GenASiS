@@ -23,9 +23,35 @@ module LaplacianMultipole_ASC__Form
     procedure, private, pass :: &
       AllocateSolidHarmonics
     procedure, private, pass :: &
-      ComputeMomentsLocal
+      ComputeMomentContributions
   end type LaplacianMultipole_ASC_Form
 
+!-- FIXME: With GCC 6.1.0, must be public to trigger .smod generation
+!    private :: &
+    public :: &
+      ComputeMomentContributions_CSL_Kernel
+
+
+    interface
+
+      module subroutine ComputeMomentContributions_CSL_Kernel &
+                          ( MyM_RC, MyM_RS, MyM_IC, MyM_IS, L, M, &
+                            UseDeviceOption )
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
+          MyM_RC, MyM_IC, &  !--MyMoments
+          MyM_RS, MyM_IS
+        integer ( KDI ), intent ( in ) :: &
+          L, &
+          M
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine ComputeMomentContributions_CSL_Kernel
+
+    end interface
+
+    
 contains
 
 
@@ -149,14 +175,19 @@ contains
   end subroutine AllocateSolidHarmonics
 
 
-  subroutine ComputeMomentsLocal ( L, Source )
+  subroutine ComputeMomentContributions ( L, Source )
 
     class ( LaplacianMultipole_ASC_Form ), intent ( inout ) :: &
       L
     type ( StorageForm ), intent ( in ) :: &
       Source !-- array over levels    
 
-  end subroutine ComputeMomentsLocal
+    call ComputeMomentContributions_CSL_Kernel &
+           ( L % MyM_RC, L % MyM_IC, L % MyM_RS, L % MyM_IS, &
+             L % MaxDegree, L % MaxOrder, &
+             UseDeviceOption = L % UseDevice )
+
+  end subroutine ComputeMomentContributions
 
 
 end module LaplacianMultipole_ASC__Form

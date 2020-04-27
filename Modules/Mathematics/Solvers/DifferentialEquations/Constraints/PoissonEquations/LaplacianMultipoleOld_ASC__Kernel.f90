@@ -10,7 +10,7 @@ submodule ( LaplacianMultipoleOld_ASC__Form ) LaplacianMultipoleOld_ASC__Kernel
 contains
 
 
-  module procedure ComputeMomentsLocal_CSL_Kernel
+  module procedure ComputeMomentsLocalOld_CSL_Kernel
 
     integer ( KDI ) :: &
       iC, &  !-- iCell
@@ -46,7 +46,7 @@ contains
                  Origin, RadialEdge, MaxDegree, nDimensions, GridError, &
                  SH_RC, SH_IC, SH_RS, SH_IS, R, iR )
 
-        call ComputeMomentContributionsKernel &
+        call ComputeMomentContributionsOldKernel &
                ( MyM_RC, MyM_IC, MyM_RS, MyM_IS, SH_RC, SH_IC, SH_RS, SH_IS, &
                  Source ( iC, : ), Volume ( iC ), iaSource, MaxOrder, &
                  nEquations, nAngularMomentCells, iR )
@@ -74,7 +74,7 @@ contains
                  Origin, RadialEdge, MaxDegree, nDimensions, GridError, &
                  SH_RC, SH_IC, SH_RS, SH_IS, R, iR )
 
-        call ComputeMomentContributionsKernel &
+        call ComputeMomentContributionsOldKernel &
                ( MyM_RC, MyM_IC, MyM_RS, MyM_IS, SH_RC, SH_IC, SH_RS, SH_IS, &
                  Source ( iC, : ), Volume ( iC ), iaSource, MaxOrder, &
                  nEquations, nAngularMomentCells, iR )
@@ -84,7 +84,7 @@ contains
 
     end if !-- UseDevice
 
-  end procedure ComputeMomentsLocal_CSL_Kernel
+  end procedure ComputeMomentsLocalOld_CSL_Kernel
 
 
 end submodule LaplacianMultipoleOld_ASC__Kernel

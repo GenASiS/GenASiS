@@ -9,7 +9,7 @@ submodule ( LaplacianMultipoleOld_Template ) LaplacianMultipoleOld_Kernel
 contains
 
   
-  module procedure ComputeMomentContributionsKernel
+  module procedure ComputeMomentContributionsOldKernel
 
     !$OMP declare target
 
@@ -28,7 +28,7 @@ contains
       call ComputeMomentContributions_MR_MI_Kernel &
              ( MyM_RS, MyM_IS, SH_RS, SH_IS, Source_dV, nE, nA, iR )
 
-  end procedure ComputeMomentContributionsKernel
+  end procedure ComputeMomentContributionsOldKernel
 
 
   module procedure AddMomentShellsKernel

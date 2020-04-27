@@ -21,16 +21,21 @@ module LaplacianMultipole_Template
       iTimerReduceMoments = 0, &
       iTimerAddMoments = 0
     integer ( KDI ) :: &
-      REGULAR_COSINE    = 1, &
-      IRREGULAR_COSINE  = 2, &
-      REGULAR_SINE      = 3, &
-      IRREGULAR_SINE    = 4
+        REGULAR_COS = 1, &
+      IRREGULAR_COS = 2, &
+        REGULAR_SIN = 3, &
+      IRREGULAR_SIN = 4
     integer ( KDI ) :: &
       iSolidHarmonics, &
       iSolidHarmonics_P1, &
       iSolidHarmonics_P2
     real ( KDR ), dimension ( 3 ) :: &
       Origin = 0.0_KDR
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+        M_RC => null ( ),   M_IC => null ( ), &
+        M_RS => null ( ),   M_IS => null ( ), &
+      MyM_RC => null ( ), MyM_IC => null ( ), &
+      MyM_RS => null ( ), MyM_IS => null ( )
     logical ( KDL ) :: &
       UseDevice = .false.
     character ( LDF ) :: &
@@ -39,11 +44,6 @@ module LaplacianMultipole_Template
     type ( StorageForm ), allocatable :: &
         Moments, &
       MyMoments
-    type ( StorageForm ), pointer :: &
-      SolidHarmonics    => null ( ), &
-      SolidHarmonics_P1 => null ( ), &  !-- Previous_1
-      SolidHarmonics_P2 => null ( ), &  !-- Previous_2
-      SolidHarmonics_PD => null ( )     !-- PreviousDiagonal
     type ( StorageForm ), dimension ( : ), allocatable :: &
       SolidHarmonics_1D
     type ( CollectiveOperation_R_Form ), allocatable :: &
@@ -66,7 +66,7 @@ module LaplacianMultipole_Template
     procedure, private, pass :: &
       AllocateMoments
     procedure ( CML ), private, pass, deferred :: &
-      ComputeMomentsLocal
+      ComputeMomentContributions
   end type LaplacianMultipoleTemplate
 
 
@@ -103,7 +103,8 @@ module LaplacianMultipole_Template
 
 
     private :: &
-      AllocateReduction
+      AllocateReduction, &
+      AssignMomentPointers
 
 
 contains
@@ -189,7 +190,7 @@ contains
     if ( associated ( Timer_CM ) ) call Timer_CM % Stop ( )
 
     if ( associated ( Timer_LM ) ) call Timer_LM % Start ( )
-    call L % ComputeMomentsLocal ( Source )
+    call L % ComputeMomentContributions ( Source )
     if ( associated ( Timer_LM ) ) call Timer_LM % Stop ( )
 
     if ( associated ( Timer_RM ) ) call Timer_RM % Start ( )
@@ -197,10 +198,12 @@ contains
     call L % ReductionMoments % Reduce ( REDUCTION % SUM )
     if ( associated ( Timer_RM ) ) call Timer_RM % Stop ( )
 
+call Show ( L % M_RC, '>>> L % M_RC' )
+
 call PROGRAM_HEADER % ShowStatistics &
        ( CONSOLE % INFO_1, &
          CommunicatorOption = PROGRAM_HEADER % Communicator )
-call Show ( '>>> Aborting during development' )
+call Show ( '>>> Aborting during development', CONSOLE % ERROR )
 call Show ( 'LaplacianMultipole_Template', 'module', CONSOLE % ERROR )
 call Show ( 'ComputeMoments', 'subroutine', CONSOLE % ERROR )
 call PROGRAM_HEADER % Abort ( )
@@ -223,15 +226,19 @@ call PROGRAM_HEADER % Abort ( )
     if ( allocated ( L % SolidHarmonics_1D ) ) &
       deallocate ( L % SolidHarmonics_1D )
 
-    nullify ( L % SolidHarmonics_PD )
-    nullify ( L % SolidHarmonics_P2 )
-    nullify ( L % SolidHarmonics_P1 )
-    nullify ( L % SolidHarmonics )
-
     if ( allocated ( L % MyMoments ) ) &
       deallocate ( L % MyMoments )
     if ( allocated ( L % Moments ) ) &
       deallocate ( L % Moments )
+
+    nullify ( L % MyM_IS )
+    nullify ( L % MyM_RS )
+    nullify ( L % MyM_IC )
+    nullify ( L % MyM_RC )
+    nullify ( L % M_IS )
+    nullify ( L % M_RS )
+    nullify ( L % M_IC )
+    nullify ( L % M_RC )
 
     if ( L % Name == '' ) return
 
@@ -313,6 +320,18 @@ call PROGRAM_HEADER % Abort ( )
 
     call AllocateReduction ( L, M % Value, MyM % Value )
 
+    call AssignMomentPointers &
+           ( L, L %   Moments % Value ( :, L %   REGULAR_COS ), &
+                L %   Moments % Value ( :, L % IRREGULAR_COS ), &
+                L %   Moments % Value ( :, L %   REGULAR_SIN ), &
+                L %   Moments % Value ( :, L % IRREGULAR_SIN ), &
+                L % MyMoments % Value ( :, L %   REGULAR_COS ), &
+                L % MyMoments % Value ( :, L % IRREGULAR_COS ), &
+                L % MyMoments % Value ( :, L %   REGULAR_SIN ), &
+                L % MyMoments % Value ( :, L % IRREGULAR_SIN ), &
+                L %   M_RC, L %   M_IC, L %   M_RS, L %   M_IS, &
+                L % MyM_RC, L % MyM_IC, L % MyM_RS, L % MyM_IS )
+
     end associate !-- M, etc.
 
   end subroutine AllocateMoments
@@ -346,6 +365,44 @@ call PROGRAM_HEADER % Abort ( )
     nullify ( Moment_1D, MyMoment_1D )
 
   end subroutine AllocateReduction
+
+
+  subroutine AssignMomentPointers &
+               ( L,   M_RC_1D,   M_IC_1D,   M_RS_1D,   M_IS_1D, &
+                    MyM_RC_1D, MyM_IC_1D, MyM_RS_1D, MyM_IS_1D, &
+                      M_RC_3D,   M_IC_3D,   M_RS_3D,   M_IS_3D, &
+                    MyM_RC_3D, MyM_IC_3D, MyM_RS_3D, MyM_IS_3D )
+
+    class ( LaplacianMultipoleTemplate ), intent ( in ) :: &
+      L
+    real ( KDR ), dimension ( : ), intent ( in ), target :: &
+        M_RC_1D,   M_IC_1D, &
+        M_RS_1D,   M_IS_1D, &
+      MyM_RC_1D, MyM_IC_1D, &
+      MyM_RS_1D, MyM_IS_1D
+    real ( KDR ), dimension ( :, :, : ), intent ( out ), pointer :: &
+        M_RC_3D,   M_IC_3D, &
+        M_RS_3D,   M_IS_3D, &
+      MyM_RC_3D, MyM_IC_3D, &
+      MyM_RS_3D, MyM_IS_3D
+
+    associate &
+      ( nE => L % nEquations, &
+        nR => L % nRadialCells, &
+        nA => L % nAngularMoments )
+
+      M_RC_3D ( 1 : nA, 1 : nR, 1 : nE )  =>    M_RC_1D
+      M_IC_3D ( 1 : nA, 1 : nR, 1 : nE )  =>    M_IC_1D
+      M_RS_3D ( 1 : nA, 1 : nR, 1 : nE )  =>    M_RS_1D
+      M_IS_3D ( 1 : nA, 1 : nR, 1 : nE )  =>    M_IS_1D
+    MyM_RC_3D ( 1 : nA, 1 : nR, 1 : nE )  =>  MyM_RC_1D
+    MyM_IC_3D ( 1 : nA, 1 : nR, 1 : nE )  =>  MyM_IC_1D
+    MyM_RS_3D ( 1 : nA, 1 : nR, 1 : nE )  =>  MyM_RS_1D
+    MyM_IS_3D ( 1 : nA, 1 : nR, 1 : nE )  =>  MyM_IS_1D
+
+    end associate !-- nR, nA
+
+  end subroutine AssignMomentPointers
 
 
 end module LaplacianMultipole_Template

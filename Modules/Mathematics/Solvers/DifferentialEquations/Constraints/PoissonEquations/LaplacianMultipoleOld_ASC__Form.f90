@@ -30,11 +30,11 @@ module LaplacianMultipoleOld_ASC__Form
 !-- FIXME: With GCC 6.1.0, must be public to trigger .smod generation
 !    private :: &
     public :: &
-      ComputeMomentsLocal_CSL_Kernel
+      ComputeMomentsLocalOld_CSL_Kernel
 
     interface
 
-      module subroutine ComputeMomentsLocal_CSL_Kernel &
+      module subroutine ComputeMomentsLocalOld_CSL_Kernel &
                           ( MyM_RC, MyM_RS, MyM_IC, MyM_IS, &
                             CoordinateSystem, IsProperCell, Source, Origin, &
                             RadialEdge, Center_1, Center_2, Center_3, Volume, &
@@ -74,7 +74,7 @@ module LaplacianMultipoleOld_ASC__Form
           SH_RS, SH_IS  
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
-      end subroutine ComputeMomentsLocal_CSL_Kernel
+      end subroutine ComputeMomentsLocalOld_CSL_Kernel
 
     end interface
 
@@ -220,7 +220,7 @@ contains
 
       G => C % Geometry ( )
 
-      call ComputeMomentsLocal_CSL_Kernel &
+      call ComputeMomentsLocalOld_CSL_Kernel &
              ( LM % MyM_RC, LM % MyM_RS, LM % MyM_IC, LM % MyM_IS, &
                C % CoordinateSystem, C % IsProperCell, &
                Source % Value, LM % Origin, LM % RadialEdge, &
