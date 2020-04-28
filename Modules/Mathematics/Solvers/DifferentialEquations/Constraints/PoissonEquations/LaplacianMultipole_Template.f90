@@ -44,8 +44,6 @@ module LaplacianMultipole_Template
     type ( StorageForm ), allocatable :: &
         Moments, &
       MyMoments
-    type ( StorageForm ), dimension ( : ), allocatable :: &
-      SolidHarmonics_1D
     type ( CollectiveOperation_R_Form ), allocatable :: &
       ReductionMoments
   contains
@@ -61,6 +59,8 @@ module LaplacianMultipole_Template
       SetParameters
     procedure ( SPA ), private, pass, deferred :: &
       SetParametersAtlas
+    procedure ( ARC ), private, pass, deferred :: &
+      AllocateRectangularCoordinates
     procedure ( ASH ), private, pass, deferred :: &
       AllocateSolidHarmonics
     procedure, private, pass :: &
@@ -81,6 +81,13 @@ module LaplacianMultipole_Template
       class ( AtlasHeaderForm ), intent ( in ), target :: &
         A
     end subroutine SPA
+
+    subroutine ARC ( L )
+      import LaplacianMultipoleTemplate
+      implicit none
+      class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+        L
+    end subroutine ARC
 
     subroutine ASH ( L )
       import LaplacianMultipoleTemplate
@@ -131,6 +138,7 @@ contains
     call Show ( L % Name, 'Name', L % IGNORABILITY )
 
     call L % SetParameters ( A, MaxDegree, nEquations )
+    call L % AllocateRectangularCoordinates ( )
     call L % AllocateSolidHarmonics ( )
     call L % AllocateMoments ( )
 
@@ -222,9 +230,6 @@ call PROGRAM_HEADER % Abort ( )
 
     if ( allocated ( L % ReductionMoments ) ) &
       deallocate ( L % ReductionMoments )
-
-    if ( allocated ( L % SolidHarmonics_1D ) ) &
-      deallocate ( L % SolidHarmonics_1D )
 
     if ( allocated ( L % MyMoments ) ) &
       deallocate ( L % MyMoments )

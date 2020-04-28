@@ -11,6 +11,18 @@ module LaplacianMultipole_ASC__Form
 
   type, public, extends ( LaplacianMultipoleTemplate ) :: &
     LaplacianMultipole_ASC_Form
+      real ( KDR ), dimension ( :, :, : ), pointer :: &
+        Rectangular_X => null ( ), &
+        Rectangular_Y => null ( ), &
+        Rectangular_Z => null ( )
+      real ( KDR ), dimension ( :, :, :, : ), pointer :: &
+        SolidHarmonic_RC => null ( ), &
+        SolidHarmonic_IC => null ( ), &
+        SolidHarmonic_RS => null ( ), &
+        SolidHarmonic_IS => null ( )
+      type ( StorageForm ), allocatable :: &
+        RectangularCoordinates, &
+        SolidHarmonics
       class ( ChartTemplate ), pointer :: &
         Chart => null ( )
   contains
@@ -20,6 +32,8 @@ module LaplacianMultipole_ASC__Form
       Finalize
     procedure, private, pass :: &
       SetParametersAtlas
+    procedure, private, pass :: &
+      AllocateRectangularCoordinates
     procedure, private, pass :: &
       AllocateSolidHarmonics
     procedure, private, pass :: &
@@ -51,6 +65,10 @@ module LaplacianMultipole_ASC__Form
 
     end interface
 
+
+    private :: &
+      AssignRectangularPointers, &
+      AssignSolidHarmonicPointers
     
 contains
 
@@ -79,6 +97,20 @@ contains
       L
 
     nullify ( L % Chart )
+
+    if ( allocated ( L % SolidHarmonics ) ) &
+      deallocate ( L % SolidHarmonics )
+    if ( allocated ( L % RectangularCoordinates ) ) &
+      deallocate ( L % RectangularCoordinates )
+
+    nullify ( L % SolidHarmonic_IS )
+    nullify ( L % SolidHarmonic_RS )
+    nullify ( L % SolidHarmonic_IC )
+    nullify ( L % SolidHarmonic_RC )
+
+    nullify ( L % Rectangular_Z )
+    nullify ( L % Rectangular_Y )
+    nullify ( L % Rectangular_X )
 
     call L % FinalizeTemplate ( )
 
@@ -136,41 +168,74 @@ contains
   end subroutine SetParametersAtlas
 
 
+  subroutine AllocateRectangularCoordinates ( L )
+
+    class ( LaplacianMultipole_ASC_Form ), intent ( inout ) :: &
+      L
+
+    allocate ( L % RectangularCoordinates )
+    associate ( RC => L % RectangularCoordinates )
+
+    select type ( C => L % Chart )
+    class is ( Chart_SL_Template )
+
+      associate ( nC => product ( C % nCells ) )
+
+      call RC % Initialize ( [ nC, 3 ], ClearOption = .true. )
+             !-- 3: X, Y, Z
+      if ( L % UseDevice ) then
+        call RC % AllocateDevice ( )
+        call RC % UpdateDevice ( )
+      end if
+
+      call AssignRectangularPointers &
+             ( RC % Value ( :, 1 ), RC % Value ( :, 2 ), RC % Value ( :, 3 ), &
+               C % nCells, &
+               L % Rectangular_X, L % Rectangular_Y, L % Rectangular_Z )
+
+      end associate !-- nC
+
+    class default
+      call Show ( 'Chart type not supported', CONSOLE % ERROR )
+      call Show ( 'AllocateRectangularCoordinates', 'subroutine', &
+                  CONSOLE % ERROR )
+      call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- C
+
+    end associate !-- RC
+
+  end subroutine AllocateRectangularCoordinates
+
+
   subroutine AllocateSolidHarmonics ( L )
 
     class ( LaplacianMultipole_ASC_Form ), intent ( inout ) :: &
       L
 
-    integer ( KDI ) :: &
-      iSH
+    allocate ( L % SolidHarmonics )
+    associate ( SH => L % SolidHarmonics )
 
-    allocate ( L % SolidHarmonics_1D ( 4 ) )
-      !-- 4: Current, Previous_1, Previous_2, PreviousDiagonal
+    select type ( C => L % Chart )
+    class is ( Chart_SL_Template )
 
-    do iSH = 1, size ( L % SolidHarmonics_1D )
+      associate ( nC_4 => product ( C % nCells ) )
+      call SH % Initialize ( [ nC_4, 4 ] )
+             !-- nC_4: nCells * ( Current, Previous_1, Previous_2, &
+             !                    PreviousDiagonal )
+             !-- 4: RegularCos, IrregularCos, RegularSin, IrregularSin
+      if ( L % UseDevice ) &
+        call SH % AllocateDevice ( )
+      end associate !-- nC_4
 
-      associate ( SH => L % SolidHarmonics_1D ( iSH ) )
+    class default
+      call Show ( 'Chart type not supported', CONSOLE % ERROR )
+      call Show ( 'AllocateSolidHarmonics', 'subroutine', CONSOLE % ERROR )
+      call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- C
 
-      select type ( C => L % Chart )
-      class is ( Chart_SL_Template )
-
-        associate ( nC => product ( C % nCells ) )
-        call SH % Initialize ( [ nC, 4 ] )
-               !-- 4: RegularCos, IrregularCos, RegularSin, IrregularSin
-        if ( L % UseDevice ) &
-          call SH % AllocateDevice ( )
-        end associate !-- nC
-
-      class default
-        call Show ( 'Chart type not supported', CONSOLE % ERROR )
-        call Show ( 'AllocateSolidHarmonics', 'subroutine', CONSOLE % ERROR )
-        call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
-        call PROGRAM_HEADER % Abort ( )
-      end select !-- C
-
-      end associate !-- SH
-
-    end do !-- iSH
+    end associate !-- SH
 
   end subroutine AllocateSolidHarmonics
 
@@ -188,6 +253,58 @@ contains
              UseDeviceOption = L % UseDevice )
 
   end subroutine ComputeMomentContributions
+
+
+  subroutine AssignRectangularPointers &
+               ( X_1D, Y_1D, Z_1D, nCells, X_3D, Y_3D, Z_3D )
+
+    real ( KDR ), dimension ( : ), intent ( in ), target :: &
+      X_1D, Y_1D, Z_1D
+    integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
+      nCells
+    real ( KDR ), dimension ( :, :, : ), intent ( out ), pointer :: &
+      X_3D, Y_3D, Z_3D
+
+    associate &
+      ( n1  =>  nCells ( 1 ), &
+        n2  =>  nCells ( 2 ), &
+        n3  =>  nCells ( 3 ) )
+
+    X_3D ( 1 : n1, 1 : n2, 1 : n3 )  =>  X_1D
+    Y_3D ( 1 : n1, 1 : n2, 1 : n3 )  =>  Y_1D
+    Z_3D ( 1 : n1, 1 : n2, 1 : n3 )  =>  Z_1D
+
+    end associate !-- n1, etc.
+
+  end subroutine AssignRectangularPointers
+
+
+  subroutine AssignSolidHarmonicPointers &
+               ( SH_RC_1D, SH_IC_1D, SH_RS_1D, SH_IS_1D, nCells, &
+                 SH_RC_4D, SH_IC_4D, SH_RS_4D, SH_IS_4D )
+
+    real ( KDR ), dimension ( : ), intent ( in ), target :: &
+      SH_RC_1D, SH_IC_1D, &
+      SH_RS_1D, SH_IS_1D
+    integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
+      nCells
+    real ( KDR ), dimension ( :, :, :, : ), intent ( out ), pointer :: &
+      SH_RC_4D, SH_IC_4D, &
+      SH_RS_4D, SH_IS_4D
+
+    associate &
+      ( n1  =>  nCells ( 1 ), &
+        n2  =>  nCells ( 2 ), &
+        n3  =>  nCells ( 3 ) )
+
+    SH_RC_4D ( 1 : n1, 1 : n2, 1 : n3, 1 : 4 )  =>  SH_RC_1D
+    SH_IC_4D ( 1 : n1, 1 : n2, 1 : n3, 1 : 4 )  =>  SH_IC_1D
+    SH_RS_4D ( 1 : n1, 1 : n2, 1 : n3, 1 : 4 )  =>  SH_RS_1D
+    SH_IS_4D ( 1 : n1, 1 : n2, 1 : n3, 1 : 4 )  =>  SH_IS_1D
+      !-- 1 : 4 Current, Previous_1, Previous_2, PreviousDiagonal 
+    end associate !-- n1, etc.
+
+  end subroutine AssignSolidHarmonicPointers
 
 
 end module LaplacianMultipole_ASC__Form
