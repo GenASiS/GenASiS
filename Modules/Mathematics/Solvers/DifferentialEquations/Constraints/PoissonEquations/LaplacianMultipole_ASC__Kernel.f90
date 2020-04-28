@@ -10,6 +10,58 @@ submodule ( LaplacianMultipole_ASC__Form ) LaplacianMultipole_ASC__Kernel
 contains
 
 
+  module procedure ComputeRectangularCoordinates_CSL_Kernel
+
+    integer ( KDI ) :: &
+      iC
+    logical ( KDL ) :: &
+      UseDevice
+
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+
+    CoordinateError = .false.
+
+    if ( UseDevice ) then
+     
+        !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+        !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iC )
+        do iC = 1, nC
+          if ( .not. IsProperCell ( iC ) ) &
+            cycle
+          X ( iC )  =  X_1 ( iC )  *  sin ( X_2 ( iC ) )  *  cos ( X_3 ( iC ) )
+          Y ( iC )  =  X_1 ( iC )  *  sin ( X_2 ( iC ) )  *  sin ( X_3 ( iC ) )
+          Z ( iC )  =  X_1 ( iC )  *  cos ( X_2 ( iC ) )
+        end do !-- iC
+        !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+
+    else !-- Host
+
+      select case ( COORDINATE_SYSTEM )
+      case ( SPHERICAL )
+
+        !$OMP  parallel do &
+        !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iC )
+        do iC = 1, nC
+          if ( .not. IsProperCell ( iC ) ) &
+            cycle
+          X ( iC )  =  X_1 ( iC )  *  sin ( X_2 ( iC ) )  *  cos ( X_3 ( iC ) )
+          Y ( iC )  =  X_1 ( iC )  *  sin ( X_2 ( iC ) )  *  sin ( X_3 ( iC ) )
+          Z ( iC )  =  X_1 ( iC )  *  cos ( X_2 ( iC ) )
+        end do !-- iC
+        !$OMP  end parallel do
+        
+      case default
+        CoordinateError = .true.
+        return
+      end select !-- COORDINATE_SYSTEM
+      
+    end if !-- UseDevice
+
+  end procedure ComputeRectangularCoordinates_CSL_Kernel
+
+
   module procedure ComputeMomentContributions_CSL_Kernel
 
     integer ( KDI ) :: &

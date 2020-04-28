@@ -206,7 +206,7 @@ contains
     call L % ReductionMoments % Reduce ( REDUCTION % SUM )
     if ( associated ( Timer_RM ) ) call Timer_RM % Stop ( )
 
-call Show ( L % M_RC, '>>> L % M_RC' )
+!call Show ( L % M_RC, '>>> L % M_RC' )
 
 call PROGRAM_HEADER % ShowStatistics &
        ( CONSOLE % INFO_1, &

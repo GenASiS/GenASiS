@@ -11,6 +11,8 @@ module LaplacianMultipole_ASC__Form
 
   type, public, extends ( LaplacianMultipoleTemplate ) :: &
     LaplacianMultipole_ASC_Form
+      integer ( KDI ) :: &
+        COORDINATE_SYSTEM = 0
       real ( KDR ), dimension ( :, :, : ), pointer :: &
         Rectangular_X => null ( ), &
         Rectangular_Y => null ( ), &
@@ -43,10 +45,32 @@ module LaplacianMultipole_ASC__Form
 !-- FIXME: With GCC 6.1.0, must be public to trigger .smod generation
 !    private :: &
     public :: &
+      ComputeRectangularCoordinates_CSL_Kernel, &
       ComputeMomentContributions_CSL_Kernel
 
 
     interface
+
+      module subroutine ComputeRectangularCoordinates_CSL_Kernel &
+                          ( X, Y, Z, IsProperCell, X_1, X_2, X_3, &
+                            COORDINATE_SYSTEM, nC, CoordinateError, &
+                            UseDeviceOption )
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( : ), intent ( inout ) :: &
+          X, Y, Z
+        logical ( KDL ), dimension ( : ), intent ( in ) :: &
+          IsProperCell
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          X_1, X_2, X_3
+        integer ( KDI ), intent ( in ) :: &
+          COORDINATE_SYSTEM, &
+          nC  !-- nCells
+        logical ( KDL ), intent ( out ) :: &
+          CoordinateError
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine ComputeRectangularCoordinates_CSL_Kernel
 
       module subroutine ComputeMomentContributions_CSL_Kernel &
                           ( MyM_RC, MyM_RS, MyM_IC, MyM_IS, L, M, &
@@ -69,7 +93,12 @@ module LaplacianMultipole_ASC__Form
     private :: &
       AssignRectangularPointers, &
       AssignSolidHarmonicPointers
-    
+
+    integer ( KDI ), private, parameter :: &
+      RECTANGULAR = 1, &
+      CYLINDRICAL = 2, &
+      SPHERICAL   = 3
+
 contains
 
 
@@ -173,6 +202,11 @@ contains
     class ( LaplacianMultipole_ASC_Form ), intent ( inout ) :: &
       L
 
+    logical ( KDL ) :: &
+      CoordinateError
+    class ( GeometryFlatForm ), pointer :: &
+      G
+
     allocate ( L % RectangularCoordinates )
     associate ( RC => L % RectangularCoordinates )
 
@@ -193,13 +227,57 @@ contains
                C % nCells, &
                L % Rectangular_X, L % Rectangular_Y, L % Rectangular_Z )
 
+      select case ( trim ( C % CoordinateSystem ) )
+      case ( 'RECTANGULAR' )
+        L % COORDINATE_SYSTEM  =  RECTANGULAR
+      case ( 'CYLINDRICAL' )
+        L % COORDINATE_SYSTEM  =  CYLINDRICAL
+      case ( 'SPHERICAL' )
+        L % COORDINATE_SYSTEM  =  SPHERICAL
+      end select
+
+      G  =>  C % Geometry ( )
+!      module subroutine ComputeRectangularCoordinates_CSL_Kernel &
+!                          ( X, Y, Z, IsProperCell, X_1, X_2, X_3, &
+!                            COORDINATE_SYSTEM, nC, CoordinateError, &
+!                            UseDeviceOption )
+      call ComputeRectangularCoordinates_CSL_Kernel &
+             ( RC % Value ( :, 1 ), RC % Value ( :, 2 ), RC % Value ( :, 3 ), &
+               C % IsProperCell, &
+               G % Value ( :, G % CENTER_U ( 1 ) ), &
+               G % Value ( :, G % CENTER_U ( 2 ) ), &
+               G % Value ( :, G % CENTER_U ( 3 ) ), &
+               L % COORDINATE_SYSTEM, nC, CoordinateError, &
+               UseDeviceOption = L % UseDevice )
+      if ( CoordinateError ) then
+        call Show ( 'Coordinate system not supported', CONSOLE % ERROR )
+        call Show ( C % CoordinateSystem, 'CoordinateSystem', CONSOLE % ERROR )
+        call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'AllocateRectangularCoordinates', 'subroutine', &
+                    CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+      end if
+
+!call Show ( C % IsProperCell, '>>> IsProperCell' )
+if ( L % UseDevice ) then
+  RC % Value = huge ( 1.0_KDR )
+  call RC % UpdateHost ( )
+end if
+call Show ( G % Value ( 5035 : 5044, G % CENTER_U ( 1 ) ), '>>> R ( 1 : 10 )' )
+call Show ( G % Value ( 5035 : 5044, G % CENTER_U ( 2 ) ), '>>> Theta ( 1 : 10 )' )
+call Show ( G % Value ( 5035 : 5044, G % CENTER_U ( 3 ) ), '>>> Phi ( 1 : 10 )' )
+call Show ( RC % Value ( 5035 : 5044, 1 ), '>>> X ( 1 : 10 )' )
+call Show ( RC % Value ( 5035 : 5044, 2 ), '>>> Y ( 1 : 10 )' )
+call Show ( RC % Value ( 5035 : 5044, 3 ), '>>> Z ( 1 : 10 )' )
+      nullify ( G )
+
       end associate !-- nC
 
     class default
       call Show ( 'Chart type not supported', CONSOLE % ERROR )
+      call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
       call Show ( 'AllocateRectangularCoordinates', 'subroutine', &
                   CONSOLE % ERROR )
-      call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- C
 
