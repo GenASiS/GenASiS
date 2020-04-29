@@ -39,25 +39,23 @@ module LaplacianMultipole_ASC__Form
     procedure, private, pass :: &
       AllocateSolidHarmonics
     procedure, private, pass :: &
-      ComputeMomentContributions
+      ComputeSolidHarmonics_0_0
+    procedure, private, pass :: &
+      ComputeSolidHarmonics_iM_iM
+    procedure, private, pass :: &
+      ComputeSolidHarmonics_iL_iM_1
+    procedure, private, pass :: &
+      ComputeSolidHarmonics_iL_iM_2
   end type LaplacianMultipole_ASC_Form
 
 !-- FIXME: With GCC 6.1.0, must be public to trigger .smod generation
 !    private :: &
     public :: &
       ComputeRectangularCoordinates_CSL_Kernel, &
-      ComputeMomentContributions_CSL_Kernel
-
-!-- FIXME: With GCC 6.1.0, must be public to trigger .smod generation
-!      private :: &
-      public :: &
-        ComputeSolidHarmonics_0_0_CSL_Kernel, &
-        ComputeSolidHarmonics_CSL_Kernel
-
-!-- FIXME: With GCC 6.1.0, must be public to trigger .smod generation
-!        private :: &
-        public :: &
-          Compute_SH_CSL_C_M_0_Kernel
+      ComputeSolidHarmonics_0_0_CSL_Kernel, &
+      ComputeSolidHarmonics_iM_iM_CSL_Kernel, &
+      ComputeSolidHarmonics_iL_iM_1_CSL_Kernel, &
+      ComputeSolidHarmonics_iL_iM_2_CSL_Kernel
 
     interface
 
@@ -82,30 +80,6 @@ module LaplacianMultipole_ASC__Form
           UseDeviceOption
       end subroutine ComputeRectangularCoordinates_CSL_Kernel
 
-      module subroutine ComputeMomentContributions_CSL_Kernel &
-                          ( SH_RC, SH_IC, SH_RS, SH_IS, &
-                            MyM_RC, MyM_RS, MyM_IC, MyM_IS, &
-                            X, Y, Z, nCells, L, M, &
-                            UseDeviceOption )
-        use Basics
-        implicit none
-        real ( KDR ), dimension ( :, :, :, : ), intent ( inout ) :: &
-          SH_RC, SH_IC, &  !-- SolidHarmonics
-          SH_RS, SH_IS
-        real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
-          MyM_RC, MyM_IC, &  !-- MyMoments
-          MyM_RS, MyM_IS
-        real ( KDI ), dimension ( :, :, : ), intent ( in ) :: &
-          X, Y, Z
-        integer ( KDI ), dimension ( : ), intent ( in ) :: &
-          nCells
-        integer ( KDI ), intent ( in ) :: &
-          L, &
-          M
-        logical ( KDL ), intent ( in ), optional :: &
-          UseDeviceOption
-      end subroutine ComputeMomentContributions_CSL_Kernel
-
       module subroutine ComputeSolidHarmonics_0_0_CSL_Kernel &
                           ( R_C, I_C, R_S, I_S, X, Y, Z, &
                             nCells, iSH_0, iSH_PD, &
@@ -115,7 +89,7 @@ module LaplacianMultipole_ASC__Form
         real ( KDR ), dimension ( :, :, :, : ), intent ( inout ) :: &
           R_C, I_C, &
           R_S, I_S
-        real ( KDI ), dimension ( :, :, : ), intent ( in ) :: &
+        real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
           X, Y, Z
         integer ( KDI ), dimension ( : ), intent ( in ) :: &
           nCells
@@ -125,53 +99,65 @@ module LaplacianMultipole_ASC__Form
           UseDeviceOption
       end subroutine ComputeSolidHarmonics_0_0_CSL_Kernel
 
-
-      module subroutine ComputeSolidHarmonics_CSL_Kernel &
-                          ( R_C, I_C, R_S, I_S, IsProperCell, X, Y, Z, &
-                            nCells, nDimensions, &
-                            L, iM, iSH_0, iSH_1, iSH_2, iSH_PD, &
+      module subroutine ComputeSolidHarmonics_iM_iM_CSL_Kernel &
+                          ( R_C, I_C, R_S, I_S, X, Y, Z, &
+                            nCells, iM, iSH_0, iSH_PD, &
                             UseDeviceOption )
         use Basics
         implicit none
         real ( KDR ), dimension ( :, :, :, : ), intent ( inout ) :: &
           R_C, I_C, &
           R_S, I_S
-        logical ( KDL ), dimension ( : ), intent ( in ) :: &
-          IsProperCell
-        real ( KDI ), dimension ( : ), intent ( in ) :: &
+        real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
           X, Y, Z
         integer ( KDI ), dimension ( : ), intent ( in ) :: &
           nCells
         integer ( KDI ), intent ( in ) :: &
-          nDimensions, &
-          L, &
           iM, &
-          iSH_0, iSH_1, iSH_2, iSH_PD
+          iSH_0, iSH_PD
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
-      end subroutine ComputeSolidHarmonics_CSL_Kernel
+      end subroutine ComputeSolidHarmonics_iM_iM_CSL_Kernel
 
-      module subroutine Compute_SH_CSL_C_M_0_Kernel &
-                          ( R_C, I_C, IsProperCell, X, Z, nCells, &
-                            L, iM, iSH_0, iSH_1, iSH_2, iSH_PD, &
+      module subroutine ComputeSolidHarmonics_iL_iM_1_CSL_Kernel &
+                          ( R_C, I_C, R_S, I_S, X, Y, Z, &
+                            nCells, iM, iSH_0, iSH_1, &
                             UseDeviceOption )
         use Basics
         implicit none
         real ( KDR ), dimension ( :, :, :, : ), intent ( inout ) :: &
-          R_C, I_C
-        logical ( KDL ), dimension ( : ), intent ( in ) :: &
-          IsProperCell
-        real ( KDI ), dimension ( : ), intent ( in ) :: &
-          X, Z
+          R_C, I_C, &
+          R_S, I_S
+        real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+          X, Y, Z
         integer ( KDI ), dimension ( : ), intent ( in ) :: &
           nCells
         integer ( KDI ), intent ( in ) :: &
-          L, &
           iM, &
-          iSH_0, iSH_1, iSH_2, iSH_PD
+          iSH_0, iSH_1
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
-      end subroutine Compute_SH_CSL_C_M_0_Kernel
+      end subroutine ComputeSolidHarmonics_iL_iM_1_CSL_Kernel
+
+      module subroutine ComputeSolidHarmonics_iL_iM_2_CSL_Kernel &
+                          ( R_C, I_C, R_S, I_S, X, Y, Z, &
+                            nCells, iL, iM, iSH_0, iSH_1, iSH_2, &
+                            UseDeviceOption )
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( :, :, :, : ), intent ( inout ) :: &
+          R_C, I_C, &
+          R_S, I_S
+        real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+          X, Y, Z
+        integer ( KDI ), dimension ( : ), intent ( in ) :: &
+          nCells
+        integer ( KDI ), intent ( in ) :: &
+          iL, iM, &
+          iSH_0, iSH_1, iSH_2
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine ComputeSolidHarmonics_iL_iM_2_CSL_Kernel
 
     end interface
 
@@ -384,7 +370,7 @@ call Show ( RC % Value ( 9387 : 9396, 3 ), '>>> Z ( 1 : 10 )' )
     select type ( C => L % Chart )
     class is ( Chart_SL_Template )
 
-      associate ( nC_4 => product ( C % nCells ) )
+      associate ( nC_4 => product ( C % nCells ) * 4 )
       call SH % Initialize ( [ nC_4, 4 ], ClearOption = .true. )
              !-- nC_4: nCells * ( Current, Previous_1, Previous_2, &
              !                    PreviousDiagonal )
@@ -394,6 +380,15 @@ call Show ( RC % Value ( 9387 : 9396, 3 ), '>>> Z ( 1 : 10 )' )
         call SH % UpdateDevice ( )
       end if
       end associate !-- nC_4
+
+      call AssignSolidHarmonicPointers &
+             ( SH % Value ( :, L %   REGULAR_COS ), &
+               SH % Value ( :, L % IRREGULAR_COS ), &
+               SH % Value ( :, L %   REGULAR_SIN ), &
+               SH % Value ( :, L % IRREGULAR_SIN ), &
+               C % nCells, &
+               L % SolidHarmonic_RC, L % SolidHarmonic_IC, &
+               L % SolidHarmonic_RS, L % SolidHarmonic_IS )
 
     class default
       call Show ( 'Chart type not supported', CONSOLE % ERROR )
@@ -407,19 +402,119 @@ call Show ( RC % Value ( 9387 : 9396, 3 ), '>>> Z ( 1 : 10 )' )
   end subroutine AllocateSolidHarmonics
 
 
-  subroutine ComputeMomentContributions ( L, Source )
+  subroutine ComputeSolidHarmonics_0_0 ( L, iSH_0, iSH_PD )
 
     class ( LaplacianMultipole_ASC_Form ), intent ( inout ) :: &
       L
-    type ( StorageForm ), intent ( in ) :: &
-      Source !-- array over levels    
+    integer ( KDI ), intent ( in ) :: &
+      iSH_0, iSH_PD
 
-    ! call ComputeMomentContributions_CSL_Kernel &
-    !        ( L % MyM_RC, L % MyM_IC, L % MyM_RS, L % MyM_IS, &
-    !          L % MaxDegree, L % MaxOrder, &
-    !          UseDeviceOption = L % UseDevice )
+    select type ( C => L % Chart )
+    class is ( Chart_SL_Template )
 
-  end subroutine ComputeMomentContributions
+      call ComputeSolidHarmonics_0_0_CSL_Kernel &
+             ( L % SolidHarmonic_RC, L % SolidHarmonic_IC, &
+               L % SolidHarmonic_RS, L % SolidHarmonic_IS, &
+               L % Rectangular_X, L % Rectangular_Y, L % Rectangular_Z, &
+               C % nCells, iSH_0, iSH_PD, &
+               UseDeviceOption = L % UseDevice )
+
+    class default
+      call Show ( 'Chart type not supported', CONSOLE % ERROR )
+      call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'ComputeSolidHarmonics_0_0', 'subroutine', &
+                  CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- C
+
+  end subroutine ComputeSolidHarmonics_0_0
+
+
+  subroutine ComputeSolidHarmonics_iM_iM ( L, iM, iSH_0, iSH_PD )
+
+    class ( LaplacianMultipole_ASC_Form ), intent ( inout ) :: &
+      L
+    integer ( KDI ), intent ( in ) :: &
+      iM, &
+      iSH_0, iSH_PD
+
+    select type ( C => L % Chart )
+    class is ( Chart_SL_Template )
+
+      call ComputeSolidHarmonics_iM_iM_CSL_Kernel &
+             ( L % SolidHarmonic_RC, L % SolidHarmonic_IC, &
+               L % SolidHarmonic_RS, L % SolidHarmonic_IS, &
+               L % Rectangular_X, L % Rectangular_Y, L % Rectangular_Z, &
+               C % nCells, iM, iSH_0, iSH_PD, &
+               UseDeviceOption = L % UseDevice )
+
+    class default
+      call Show ( 'Chart type not supported', CONSOLE % ERROR )
+      call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'ComputeSolidHarmonics_iM_iM', 'subroutine', &
+                  CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- C
+
+  end subroutine ComputeSolidHarmonics_iM_iM
+
+
+  subroutine ComputeSolidHarmonics_iL_iM_1 ( L, iM, iSH_0, iSH_1 )
+
+    class ( LaplacianMultipole_ASC_Form ), intent ( inout ) :: &
+      L
+    integer ( KDI ), intent ( in ) :: &
+      iM, &
+      iSH_0, iSH_1
+
+    select type ( C => L % Chart )
+    class is ( Chart_SL_Template )
+
+      call ComputeSolidHarmonics_iL_iM_1_CSL_Kernel &
+             ( L % SolidHarmonic_RC, L % SolidHarmonic_IC, &
+               L % SolidHarmonic_RS, L % SolidHarmonic_IS, &
+               L % Rectangular_X, L % Rectangular_Y, L % Rectangular_Z, &
+               C % nCells, iM, iSH_0, iSH_1, &
+               UseDeviceOption = L % UseDevice )
+
+    class default
+      call Show ( 'Chart type not supported', CONSOLE % ERROR )
+      call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'ComputeSolidHarmonics_iL_iM_1', 'subroutine', &
+                  CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- C
+
+  end subroutine ComputeSolidHarmonics_iL_iM_1
+
+
+  subroutine ComputeSolidHarmonics_iL_iM_2 ( L, iL, iM, iSH_0, iSH_1, iSH_2 )
+
+    class ( LaplacianMultipole_ASC_Form ), intent ( inout ) :: &
+      L
+    integer ( KDI ), intent ( in ) :: &
+      iL, iM, &
+      iSH_0, iSH_1, iSH_2
+
+    select type ( C => L % Chart )
+    class is ( Chart_SL_Template )
+
+      call ComputeSolidHarmonics_iL_iM_2_CSL_Kernel &
+             ( L % SolidHarmonic_RC, L % SolidHarmonic_IC, &
+               L % SolidHarmonic_RS, L % SolidHarmonic_IS, &
+               L % Rectangular_X, L % Rectangular_Y, L % Rectangular_Z, &
+               C % nCells, iL, iM, iSH_0, iSH_1, iSH_2, &
+               UseDeviceOption = L % UseDevice )
+
+    class default
+      call Show ( 'Chart type not supported', CONSOLE % ERROR )
+      call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'ComputeSolidHarmonics_iL_iM_2', 'subroutine', &
+                  CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- C
+
+  end subroutine ComputeSolidHarmonics_iL_iM_2
 
 
   subroutine AssignRectangularPointers &

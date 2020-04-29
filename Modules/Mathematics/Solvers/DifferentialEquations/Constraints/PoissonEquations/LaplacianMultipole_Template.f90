@@ -65,8 +65,16 @@ module LaplacianMultipole_Template
       AllocateSolidHarmonics
     procedure, private, pass :: &
       AllocateMoments
-    procedure ( CML ), private, pass, deferred :: &
+    procedure, private, pass :: &
       ComputeMomentContributions
+    procedure ( CSH_0_0 ), private, pass, deferred :: &
+      ComputeSolidHarmonics_0_0
+    procedure ( CSH_iM_iM ), private, pass, deferred :: &
+      ComputeSolidHarmonics_iM_iM
+    procedure ( CSH_iL_iM_1 ), private, pass, deferred :: &
+      ComputeSolidHarmonics_iL_iM_1
+    procedure ( CSH_iL_iM_2 ), private, pass, deferred :: &
+      ComputeSolidHarmonics_iL_iM_2
   end type LaplacianMultipoleTemplate
 
 
@@ -96,15 +104,48 @@ module LaplacianMultipole_Template
         L
     end subroutine ASH
 
-    subroutine CML ( L, Source )
+    subroutine CSH_0_0 ( L, iSH_0, iSH_PD )
       use Basics
       import LaplacianMultipoleTemplate
       implicit none
       class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
         L
-      type ( StorageForm ), intent ( in ) :: &
-        Source  
-    end subroutine CML
+      integer ( KDI ), intent ( in ) :: &
+        iSH_0, iSH_PD
+    end subroutine CSH_0_0
+
+    subroutine CSH_iM_iM ( L, iM, iSH_0, iSH_PD )
+      use Basics
+      import LaplacianMultipoleTemplate
+      implicit none
+      class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+        L
+      integer ( KDI ), intent ( in ) :: &
+        iM, &
+        iSH_0, iSH_PD
+    end subroutine CSH_iM_iM
+
+    subroutine CSH_iL_iM_1 ( L, iM, iSH_0, iSH_1 )
+      use Basics
+      import LaplacianMultipoleTemplate
+      implicit none
+      class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+        L
+      integer ( KDI ), intent ( in ) :: &
+        iM, &
+        iSH_0, iSH_1
+    end subroutine CSH_iL_iM_1
+
+    subroutine CSH_iL_iM_2 ( L, iL, iM, iSH_0, iSH_1, iSH_2 )
+      use Basics
+      import LaplacianMultipoleTemplate
+      implicit none
+      class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+        L
+      integer ( KDI ), intent ( in ) :: &
+        iL, iM, &
+        iSH_0, iSH_1, iSH_2
+    end subroutine CSH_iL_iM_2
 
   end interface
 
@@ -340,6 +381,67 @@ call PROGRAM_HEADER % Abort ( )
     end associate !-- M, etc.
 
   end subroutine AllocateMoments
+
+
+  subroutine ComputeMomentContributions ( L, Source )
+
+    class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+      L
+    type ( StorageForm ), intent ( in ) :: &
+      Source  
+
+    integer ( KDI ) :: &
+      iA, &  !-- iAngularMoment
+      iM, &  !-- iOrder
+      iL, &  !-- iDegree
+      iSH_0, &  !-- iSolidHarmonic_Current
+      iSH_1, &  !-- iSolidHarmonic_Previous_1
+      iSH_2, &  !-- iSolidHarmonic_Previous_2
+      iSH_PD    !-- iSolidHarmonic_PreviousDiagonal
+
+          iA  =  1
+       iSH_0  =  1
+       iSH_1  =  2
+       iSH_2  =  3
+      iSH_PD  =  4
+
+      do iM  =  0, L % MaxOrder
+
+        !-- ( L, M ) = ( iM, iM )
+        !-- Note iL = iM
+        if ( iM  ==  0 ) then
+          call L % ComputeSolidHarmonics_0_0 ( iSH_0, iSH_PD )
+        else
+          call L % ComputeSolidHarmonics_iM_iM ( iM, iSH_0, iSH_PD )
+        end if
+
+        do iL  =  iM, L % MaxDegree
+
+          if ( iL  ==  iM + 1 ) then
+            !-- ( L, M ) = ( iM + 1, iM )
+            !-- Note iL = iM + 1
+            call L % ComputeSolidHarmonics_iL_iM_1 &
+                   ( iM, iSH_0, iSH_1 )
+          else if ( iL  >=  iM  +  2 ) then
+            !-- ( L, M ) = ( iL, iM )
+            call L % ComputeSolidHarmonics_iL_iM_2 &
+                   ( iL, iM, iSH_0, iSH_1, iSH_2 )
+          end if
+
+          ! MyM_RC ( iA, :, : )  =  1.0_KDR * iA
+          ! MyM_IC ( iA, :, : )  =  2.0_KDR * iA
+          ! MyM_RS ( iA, :, : )  =  3.0_KDR * iA
+          ! MyM_IS ( iA, :, : )  =  4.0_KDR * iA
+
+             iA  =  iA + 1
+          iSH_0  =  mod ( iSH_0, 3 )  +  1  
+          iSH_1  =  mod ( iSH_1, 3 )  +  1  
+          iSH_2  =  mod ( iSH_2, 3 )  +  1  
+
+        end do !-- iL
+      end do !-- iM
+
+  end subroutine ComputeMomentContributions
 
 
   subroutine AllocateReduction ( L, M_Value, MyM_Value )
