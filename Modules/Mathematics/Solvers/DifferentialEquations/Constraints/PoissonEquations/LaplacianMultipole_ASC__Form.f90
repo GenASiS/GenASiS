@@ -263,12 +263,13 @@ if ( L % UseDevice ) then
   RC % Value = huge ( 1.0_KDR )
   call RC % UpdateHost ( )
 end if
-call Show ( G % Value ( 5035 : 5044, G % CENTER_U ( 1 ) ), '>>> R ( 1 : 10 )' )
-call Show ( G % Value ( 5035 : 5044, G % CENTER_U ( 2 ) ), '>>> Theta ( 1 : 10 )' )
-call Show ( G % Value ( 5035 : 5044, G % CENTER_U ( 3 ) ), '>>> Phi ( 1 : 10 )' )
-call Show ( RC % Value ( 5035 : 5044, 1 ), '>>> X ( 1 : 10 )' )
-call Show ( RC % Value ( 5035 : 5044, 2 ), '>>> Y ( 1 : 10 )' )
-call Show ( RC % Value ( 5035 : 5044, 3 ), '>>> Z ( 1 : 10 )' )
+!call Show ( C % IsProperCell, '>>> IsProperCell' )
+call Show ( G % Value ( 9387 : 9396, G % CENTER_U ( 1 ) ), '>>> R ( 1 : 10 )' )
+call Show ( G % Value ( 9387 : 9396, G % CENTER_U ( 2 ) ), '>>> Theta ( 1 : 10 )' )
+call Show ( G % Value ( 9387 : 9396, G % CENTER_U ( 3 ) ), '>>> Phi ( 1 : 10 )' )
+call Show ( RC % Value ( 9387 : 9396, 1 ), '>>> X ( 1 : 10 )' )
+call Show ( RC % Value ( 9387 : 9396, 2 ), '>>> Y ( 1 : 10 )' )
+call Show ( RC % Value ( 9387 : 9396, 3 ), '>>> Z ( 1 : 10 )' )
       nullify ( G )
 
       end associate !-- nC
