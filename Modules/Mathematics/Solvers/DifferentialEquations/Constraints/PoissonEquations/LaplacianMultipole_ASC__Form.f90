@@ -48,6 +48,16 @@ module LaplacianMultipole_ASC__Form
       ComputeRectangularCoordinates_CSL_Kernel, &
       ComputeMomentContributions_CSL_Kernel
 
+!-- FIXME: With GCC 6.1.0, must be public to trigger .smod generation
+!      private :: &
+      public :: &
+        ComputeSolidHarmonics_0_0_CSL_Kernel, &
+        ComputeSolidHarmonics_CSL_Kernel
+
+!-- FIXME: With GCC 6.1.0, must be public to trigger .smod generation
+!        private :: &
+        public :: &
+          Compute_SH_CSL_C_M_0_Kernel
 
     interface
 
@@ -73,19 +83,95 @@ module LaplacianMultipole_ASC__Form
       end subroutine ComputeRectangularCoordinates_CSL_Kernel
 
       module subroutine ComputeMomentContributions_CSL_Kernel &
-                          ( MyM_RC, MyM_RS, MyM_IC, MyM_IS, L, M, &
+                          ( SH_RC, SH_IC, SH_RS, SH_IS, &
+                            MyM_RC, MyM_RS, MyM_IC, MyM_IS, &
+                            X, Y, Z, nCells, L, M, &
                             UseDeviceOption )
         use Basics
         implicit none
+        real ( KDR ), dimension ( :, :, :, : ), intent ( inout ) :: &
+          SH_RC, SH_IC, &  !-- SolidHarmonics
+          SH_RS, SH_IS
         real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
-          MyM_RC, MyM_IC, &  !--MyMoments
+          MyM_RC, MyM_IC, &  !-- MyMoments
           MyM_RS, MyM_IS
+        real ( KDI ), dimension ( :, :, : ), intent ( in ) :: &
+          X, Y, Z
+        integer ( KDI ), dimension ( : ), intent ( in ) :: &
+          nCells
         integer ( KDI ), intent ( in ) :: &
           L, &
           M
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
       end subroutine ComputeMomentContributions_CSL_Kernel
+
+      module subroutine ComputeSolidHarmonics_0_0_CSL_Kernel &
+                          ( R_C, I_C, R_S, I_S, X, Y, Z, &
+                            nCells, iSH_0, iSH_PD, &
+                            UseDeviceOption )
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( :, :, :, : ), intent ( inout ) :: &
+          R_C, I_C, &
+          R_S, I_S
+        real ( KDI ), dimension ( :, :, : ), intent ( in ) :: &
+          X, Y, Z
+        integer ( KDI ), dimension ( : ), intent ( in ) :: &
+          nCells
+        integer ( KDI ), intent ( in ) :: &
+          iSH_0, iSH_PD
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine ComputeSolidHarmonics_0_0_CSL_Kernel
+
+
+      module subroutine ComputeSolidHarmonics_CSL_Kernel &
+                          ( R_C, I_C, R_S, I_S, IsProperCell, X, Y, Z, &
+                            nCells, nDimensions, &
+                            L, iM, iSH_0, iSH_1, iSH_2, iSH_PD, &
+                            UseDeviceOption )
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( :, :, :, : ), intent ( inout ) :: &
+          R_C, I_C, &
+          R_S, I_S
+        logical ( KDL ), dimension ( : ), intent ( in ) :: &
+          IsProperCell
+        real ( KDI ), dimension ( : ), intent ( in ) :: &
+          X, Y, Z
+        integer ( KDI ), dimension ( : ), intent ( in ) :: &
+          nCells
+        integer ( KDI ), intent ( in ) :: &
+          nDimensions, &
+          L, &
+          iM, &
+          iSH_0, iSH_1, iSH_2, iSH_PD
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine ComputeSolidHarmonics_CSL_Kernel
+
+      module subroutine Compute_SH_CSL_C_M_0_Kernel &
+                          ( R_C, I_C, IsProperCell, X, Z, nCells, &
+                            L, iM, iSH_0, iSH_1, iSH_2, iSH_PD, &
+                            UseDeviceOption )
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( :, :, :, : ), intent ( inout ) :: &
+          R_C, I_C
+        logical ( KDL ), dimension ( : ), intent ( in ) :: &
+          IsProperCell
+        real ( KDI ), dimension ( : ), intent ( in ) :: &
+          X, Z
+        integer ( KDI ), dimension ( : ), intent ( in ) :: &
+          nCells
+        integer ( KDI ), intent ( in ) :: &
+          L, &
+          iM, &
+          iSH_0, iSH_1, iSH_2, iSH_PD
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine Compute_SH_CSL_C_M_0_Kernel
 
     end interface
 
@@ -299,12 +385,14 @@ call Show ( RC % Value ( 9387 : 9396, 3 ), '>>> Z ( 1 : 10 )' )
     class is ( Chart_SL_Template )
 
       associate ( nC_4 => product ( C % nCells ) )
-      call SH % Initialize ( [ nC_4, 4 ] )
+      call SH % Initialize ( [ nC_4, 4 ], ClearOption = .true. )
              !-- nC_4: nCells * ( Current, Previous_1, Previous_2, &
              !                    PreviousDiagonal )
              !-- 4: RegularCos, IrregularCos, RegularSin, IrregularSin
-      if ( L % UseDevice ) &
+      if ( L % UseDevice ) then
         call SH % AllocateDevice ( )
+        call SH % UpdateDevice ( )
+      end if
       end associate !-- nC_4
 
     class default
@@ -326,10 +414,10 @@ call Show ( RC % Value ( 9387 : 9396, 3 ), '>>> Z ( 1 : 10 )' )
     type ( StorageForm ), intent ( in ) :: &
       Source !-- array over levels    
 
-    call ComputeMomentContributions_CSL_Kernel &
-           ( L % MyM_RC, L % MyM_IC, L % MyM_RS, L % MyM_IS, &
-             L % MaxDegree, L % MaxOrder, &
-             UseDeviceOption = L % UseDevice )
+    ! call ComputeMomentContributions_CSL_Kernel &
+    !        ( L % MyM_RC, L % MyM_IC, L % MyM_RS, L % MyM_IS, &
+    !          L % MaxDegree, L % MaxOrder, &
+    !          UseDeviceOption = L % UseDevice )
 
   end subroutine ComputeMomentContributions
 
