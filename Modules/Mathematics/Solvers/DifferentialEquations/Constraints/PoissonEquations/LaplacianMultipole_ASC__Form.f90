@@ -16,7 +16,8 @@ module LaplacianMultipole_ASC__Form
       real ( KDR ), dimension ( :, :, : ), pointer :: &
         Rectangular_X => null ( ), &
         Rectangular_Y => null ( ), &
-        Rectangular_Z => null ( )
+        Rectangular_Z => null ( ), &
+        RadiusSquared => null ( )
       real ( KDR ), dimension ( :, :, :, : ), pointer :: &
         SolidHarmonic_RC => null ( ), &
         SolidHarmonic_IC => null ( ), &
@@ -60,13 +61,13 @@ module LaplacianMultipole_ASC__Form
     interface
 
       module subroutine ComputeRectangularCoordinates_CSL_Kernel &
-                          ( X, Y, Z, IsProperCell, X_1, X_2, X_3, &
+                          ( X, Y, Z, D_2, IsProperCell, X_1, X_2, X_3, &
                             COORDINATE_SYSTEM, nC, CoordinateError, &
                             UseDeviceOption )
         use Basics
         implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
-          X, Y, Z
+          X, Y, Z, D_2
         logical ( KDL ), dimension ( : ), intent ( in ) :: &
           IsProperCell
         real ( KDR ), dimension ( : ), intent ( in ) :: &
@@ -81,7 +82,7 @@ module LaplacianMultipole_ASC__Form
       end subroutine ComputeRectangularCoordinates_CSL_Kernel
 
       module subroutine ComputeSolidHarmonics_0_0_CSL_Kernel &
-                          ( R_C, I_C, R_S, I_S, X, Y, Z, &
+                          ( R_C, I_C, R_S, I_S, X, Y, Z, D_2, &
                             nCells, iSH_0, iSH_PD, &
                             UseDeviceOption )
         use Basics
@@ -90,7 +91,7 @@ module LaplacianMultipole_ASC__Form
           R_C, I_C, &
           R_S, I_S
         real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
-          X, Y, Z
+          X, Y, Z, D_2
         integer ( KDI ), dimension ( : ), intent ( in ) :: &
           nCells
         integer ( KDI ), intent ( in ) :: &
@@ -100,7 +101,7 @@ module LaplacianMultipole_ASC__Form
       end subroutine ComputeSolidHarmonics_0_0_CSL_Kernel
 
       module subroutine ComputeSolidHarmonics_iM_iM_CSL_Kernel &
-                          ( R_C, I_C, R_S, I_S, X, Y, Z, &
+                          ( R_C, I_C, R_S, I_S, X, Y, Z, D_2, &
                             nCells, iM, iSH_0, iSH_PD, &
                             UseDeviceOption )
         use Basics
@@ -109,7 +110,7 @@ module LaplacianMultipole_ASC__Form
           R_C, I_C, &
           R_S, I_S
         real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
-          X, Y, Z
+          X, Y, Z, D_2
         integer ( KDI ), dimension ( : ), intent ( in ) :: &
           nCells
         integer ( KDI ), intent ( in ) :: &
@@ -120,7 +121,7 @@ module LaplacianMultipole_ASC__Form
       end subroutine ComputeSolidHarmonics_iM_iM_CSL_Kernel
 
       module subroutine ComputeSolidHarmonics_iL_iM_1_CSL_Kernel &
-                          ( R_C, I_C, R_S, I_S, X, Y, Z, &
+                          ( R_C, I_C, R_S, I_S, X, Y, Z, D_2, &
                             nCells, iM, iSH_0, iSH_1, &
                             UseDeviceOption )
         use Basics
@@ -129,7 +130,7 @@ module LaplacianMultipole_ASC__Form
           R_C, I_C, &
           R_S, I_S
         real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
-          X, Y, Z
+          X, Y, Z, D_2
         integer ( KDI ), dimension ( : ), intent ( in ) :: &
           nCells
         integer ( KDI ), intent ( in ) :: &
@@ -140,7 +141,7 @@ module LaplacianMultipole_ASC__Form
       end subroutine ComputeSolidHarmonics_iL_iM_1_CSL_Kernel
 
       module subroutine ComputeSolidHarmonics_iL_iM_2_CSL_Kernel &
-                          ( R_C, I_C, R_S, I_S, X, Y, Z, &
+                          ( R_C, I_C, R_S, I_S, X, Y, Z, D_2, &
                             nCells, iL, iM, iSH_0, iSH_1, iSH_2, &
                             UseDeviceOption )
         use Basics
@@ -149,7 +150,7 @@ module LaplacianMultipole_ASC__Form
           R_C, I_C, &
           R_S, I_S
         real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
-          X, Y, Z
+          X, Y, Z, D_2
         integer ( KDI ), dimension ( : ), intent ( in ) :: &
           nCells
         integer ( KDI ), intent ( in ) :: &
@@ -209,6 +210,7 @@ contains
     nullify ( L % SolidHarmonic_IC )
     nullify ( L % SolidHarmonic_RC )
 
+    nullify ( L % RadiusSquared )
     nullify ( L % Rectangular_Z )
     nullify ( L % Rectangular_Y )
     nullify ( L % Rectangular_X )
@@ -287,8 +289,8 @@ contains
 
       associate ( nC => product ( C % nCells ) )
 
-      call RC % Initialize ( [ nC, 3 ], ClearOption = .true. )
-             !-- 3: X, Y, Z
+      call RC % Initialize ( [ nC, 4 ], ClearOption = .true. )
+             !-- 4: X, Y, Z, R ** 2
       if ( L % UseDevice ) then
         call RC % AllocateDevice ( )
         call RC % UpdateDevice ( )
@@ -296,8 +298,9 @@ contains
 
       call AssignRectangularPointers &
              ( RC % Value ( :, 1 ), RC % Value ( :, 2 ), RC % Value ( :, 3 ), &
-               C % nCells, &
-               L % Rectangular_X, L % Rectangular_Y, L % Rectangular_Z )
+               RC % Value ( :, 4 ), C % nCells, &
+               L % Rectangular_X, L % Rectangular_Y, L % Rectangular_Z, &
+               L % RadiusSquared )
 
       select case ( trim ( C % CoordinateSystem ) )
       case ( 'RECTANGULAR' )
@@ -315,7 +318,7 @@ contains
 !                            UseDeviceOption )
       call ComputeRectangularCoordinates_CSL_Kernel &
              ( RC % Value ( :, 1 ), RC % Value ( :, 2 ), RC % Value ( :, 3 ), &
-               C % IsProperCell, &
+               RC % Value ( :, 4 ), C % IsProperCell, &
                G % Value ( :, G % CENTER_U ( 1 ) ), &
                G % Value ( :, G % CENTER_U ( 2 ) ), &
                G % Value ( :, G % CENTER_U ( 3 ) ), &
@@ -416,7 +419,7 @@ call Show ( RC % Value ( 9387 : 9396, 3 ), '>>> Z ( 1 : 10 )' )
              ( L % SolidHarmonic_RC, L % SolidHarmonic_IC, &
                L % SolidHarmonic_RS, L % SolidHarmonic_IS, &
                L % Rectangular_X, L % Rectangular_Y, L % Rectangular_Z, &
-               C % nCells, iSH_0, iSH_PD, &
+               L % RadiusSquared, C % nCells, iSH_0, iSH_PD, &
                UseDeviceOption = L % UseDevice )
 
     class default
@@ -445,7 +448,7 @@ call Show ( RC % Value ( 9387 : 9396, 3 ), '>>> Z ( 1 : 10 )' )
              ( L % SolidHarmonic_RC, L % SolidHarmonic_IC, &
                L % SolidHarmonic_RS, L % SolidHarmonic_IS, &
                L % Rectangular_X, L % Rectangular_Y, L % Rectangular_Z, &
-               C % nCells, iM, iSH_0, iSH_PD, &
+               L % RadiusSquared, C % nCells, iM, iSH_0, iSH_PD, &
                UseDeviceOption = L % UseDevice )
 
     class default
@@ -474,7 +477,7 @@ call Show ( RC % Value ( 9387 : 9396, 3 ), '>>> Z ( 1 : 10 )' )
              ( L % SolidHarmonic_RC, L % SolidHarmonic_IC, &
                L % SolidHarmonic_RS, L % SolidHarmonic_IS, &
                L % Rectangular_X, L % Rectangular_Y, L % Rectangular_Z, &
-               C % nCells, iM, iSH_0, iSH_1, &
+               L % RadiusSquared, C % nCells, iM, iSH_0, iSH_1, &
                UseDeviceOption = L % UseDevice )
 
     class default
@@ -503,7 +506,7 @@ call Show ( RC % Value ( 9387 : 9396, 3 ), '>>> Z ( 1 : 10 )' )
              ( L % SolidHarmonic_RC, L % SolidHarmonic_IC, &
                L % SolidHarmonic_RS, L % SolidHarmonic_IS, &
                L % Rectangular_X, L % Rectangular_Y, L % Rectangular_Z, &
-               C % nCells, iL, iM, iSH_0, iSH_1, iSH_2, &
+               L % RadiusSquared, C % nCells, iL, iM, iSH_0, iSH_1, iSH_2, &
                UseDeviceOption = L % UseDevice )
 
     class default
@@ -518,23 +521,24 @@ call Show ( RC % Value ( 9387 : 9396, 3 ), '>>> Z ( 1 : 10 )' )
 
 
   subroutine AssignRectangularPointers &
-               ( X_1D, Y_1D, Z_1D, nCells, X_3D, Y_3D, Z_3D )
+               ( X_1D, Y_1D, Z_1D, D_2_1D, nCells, X_3D, Y_3D, Z_3D, D_2_3D )
 
     real ( KDR ), dimension ( : ), intent ( in ), target :: &
-      X_1D, Y_1D, Z_1D
+      X_1D, Y_1D, Z_1D, D_2_1D
     integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
       nCells
     real ( KDR ), dimension ( :, :, : ), intent ( out ), pointer :: &
-      X_3D, Y_3D, Z_3D
+      X_3D, Y_3D, Z_3D, D_2_3D
 
     associate &
       ( n1  =>  nCells ( 1 ), &
         n2  =>  nCells ( 2 ), &
         n3  =>  nCells ( 3 ) )
 
-    X_3D ( 1 : n1, 1 : n2, 1 : n3 )  =>  X_1D
-    Y_3D ( 1 : n1, 1 : n2, 1 : n3 )  =>  Y_1D
-    Z_3D ( 1 : n1, 1 : n2, 1 : n3 )  =>  Z_1D
+      X_3D ( 1 : n1, 1 : n2, 1 : n3 )  =>    X_1D
+      Y_3D ( 1 : n1, 1 : n2, 1 : n3 )  =>    Y_1D
+      Z_3D ( 1 : n1, 1 : n2, 1 : n3 )  =>    Z_1D
+    D_2_3D ( 1 : n1, 1 : n2, 1 : n3 )  =>  D_2_1D
 
     end associate !-- n1, etc.
 

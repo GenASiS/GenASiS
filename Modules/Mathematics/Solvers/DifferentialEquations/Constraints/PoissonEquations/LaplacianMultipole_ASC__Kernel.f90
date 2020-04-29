@@ -14,12 +14,16 @@ contains
 
     integer ( KDI ) :: &
       iC
+    real ( KDR ) :: &
+      SqrtTiny
     logical ( KDL ) :: &
       UseDevice
 
     UseDevice  =  .false.
     if ( present ( UseDeviceOption ) ) &
       UseDevice = UseDeviceOption
+
+    SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
 
     CoordinateError  =  .false.
 
@@ -29,13 +33,27 @@ contains
       case ( SPHERICAL )
 
         !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-        !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iC )
+        !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iC ) &
+        !$OMP& firstprivate ( SqrtTiny )
         do iC  =  1, nC
-          if ( .not. IsProperCell ( iC ) ) &
-            cycle
-          X ( iC )  =  X_1 ( iC )  *  sin ( X_2 ( iC ) )  *  cos ( X_3 ( iC ) )
-          Y ( iC )  =  X_1 ( iC )  *  sin ( X_2 ( iC ) )  *  sin ( X_3 ( iC ) )
-          Z ( iC )  =  X_1 ( iC )  *  cos ( X_2 ( iC ) )
+
+          if ( IsProperCell ( iC ) ) then
+            X ( iC )  =  X_1 ( iC )  *  sin ( X_2 ( iC ) )  &
+                                     *  cos ( X_3 ( iC ) )
+            Y ( iC )  =  X_1 ( iC )  *  sin ( X_2 ( iC ) )  &
+                                     *  sin ( X_3 ( iC ) )
+            Z ( iC )  =  X_1 ( iC )  *  cos ( X_2 ( iC ) )
+          else
+            X ( iC )  =  0.0_KDR
+            Y ( iC )  =  0.0_KDR
+            Z ( iC )  =  0.0_KDR
+          end if
+
+          D_2 ( iC )  =  max (     X ( iC )  *  X ( iC )  &
+                               +   Y ( iC )  *  Y ( iC )  &
+                               +   Z ( iC )  *  Z ( iC ),  &
+                               SqrtTiny )
+
         end do !-- iC
         !$OMP  end OMP_TARGET_DIRECTIVE parallel do
 
@@ -50,13 +68,27 @@ contains
       case ( SPHERICAL )
 
         !$OMP  parallel do &
-        !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iC )
+        !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iC ) &
+        !$OMP& firstprivate ( SqrtTiny )
         do iC  =  1, nC
-          if ( .not. IsProperCell ( iC ) ) &
-            cycle
-          X ( iC )  =  X_1 ( iC )  *  sin ( X_2 ( iC ) )  *  cos ( X_3 ( iC ) )
-          Y ( iC )  =  X_1 ( iC )  *  sin ( X_2 ( iC ) )  *  sin ( X_3 ( iC ) )
-          Z ( iC )  =  X_1 ( iC )  *  cos ( X_2 ( iC ) )
+
+          if ( IsProperCell ( iC ) ) then
+            X ( iC )  =  X_1 ( iC )  *  sin ( X_2 ( iC ) )  &
+                                     *  cos ( X_3 ( iC ) )
+            Y ( iC )  =  X_1 ( iC )  *  sin ( X_2 ( iC ) )  &
+                                     *  sin ( X_3 ( iC ) )
+            Z ( iC )  =  X_1 ( iC )  *  cos ( X_2 ( iC ) )
+          else
+            X ( iC )  =  0.0_KDR
+            Y ( iC )  =  0.0_KDR
+            Z ( iC )  =  0.0_KDR
+          end if
+
+          D_2 ( iC )  =  max (     X ( iC )  *  X ( iC )  &
+                               +   Y ( iC )  *  Y ( iC )  &
+                               +   Z ( iC )  *  Z ( iC ),  &
+                               SqrtTiny )
+
         end do !-- iC
         !$OMP  end parallel do
         
@@ -77,9 +109,6 @@ contains
 
     integer ( KDI ) :: &
       iC, jC, kC  !-- iCell, etc.
-    real ( KDR ) :: &
-      SqrtTiny, &
-      D_2
     logical ( KDL ) :: &
       UseDevice
 
@@ -87,24 +116,16 @@ contains
     if ( present ( UseDeviceOption ) ) &
       UseDevice  =  UseDeviceOption
 
-    SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
-
     if ( UseDevice ) then
 
       !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
-      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iC, jC, kC, D_2 ) &
-      !$OMP& firstprivate ( SqrtTiny )
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iC, jC, kC ) 
       do kC  =  1, nCells ( 3 )
         do jC  =  1, nCells ( 2 )
           do iC  =  1, nCells ( 1 )
 
-            D_2  =  max (     X ( iC, jC, kC )  *  X ( iC, jC, kC )  &
-                          +   Y ( iC, jC, kC )  *  Y ( iC, jC, kC )  &
-                          +   Z ( iC, jC, kC )  *  Z ( iC, jC, kC ),  &
-                          SqrtTiny )
-
             R_C ( iC, jC, kC, iSH_0 )  =  1.0_KDR
-            I_C ( iC, jC, kC, iSH_0 )  =  1.0_KDR / sqrt ( D_2 )
+            I_C ( iC, jC, kC, iSH_0 )  =  1.0_KDR / sqrt ( D_2 ( iC, jC, kC ) )
             R_S ( iC, jC, kC, iSH_0 )  =  0.0_KDR
             I_S ( iC, jC, kC, iSH_0 )  =  0.0_KDR
 
@@ -121,19 +142,13 @@ contains
     else !-- use host
 
       !$OMP  parallel do collapse ( 3 ) &
-      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iC, jC, kC, D_2 ) &
-      !$OMP& firstprivate ( SqrtTiny )
+      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iC, jC, kC )
       do kC  =  1, nCells ( 3 )
         do jC  =  1, nCells ( 2 )
           do iC  =  1, nCells ( 1 )
 
-            D_2  =  max (     X ( iC, jC, kC )  *  X ( iC, jC, kC )  &
-                          +   Y ( iC, jC, kC )  *  Y ( iC, jC, kC )  &
-                          +   Z ( iC, jC, kC )  *  Z ( iC, jC, kC ),  &
-                          SqrtTiny )
-
             R_C ( iC, jC, kC, iSH_0 )  =  1.0_KDR
-            I_C ( iC, jC, kC, iSH_0 )  =  1.0_KDR / sqrt ( D_2 )
+            I_C ( iC, jC, kC, iSH_0 )  =  1.0_KDR / sqrt ( D_2 ( iC, jC, kC ) )
             R_S ( iC, jC, kC, iSH_0 )  =  0.0_KDR
             I_S ( iC, jC, kC, iSH_0 )  =  0.0_KDR
 
@@ -159,9 +174,6 @@ contains
 
     integer ( KDI ) :: &
       iC, jC, kC  !-- iCell, etc.
-    real ( KDR ) :: &
-      SqrtTiny, &
-      D_2
     logical ( KDL ) :: &
       UseDevice
 
@@ -169,21 +181,13 @@ contains
     if ( present ( UseDeviceOption ) ) &
       UseDevice = UseDeviceOption
 
-    SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
-
     if ( UseDevice ) then
 
       !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
-      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iC, jC, kC, D_2 ) &
-      !$OMP& firstprivate ( SqrtTiny )
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iC, jC, kC )
       do kC  =  1, nCells ( 3 )
         do jC  =  1, nCells ( 2 )
           do iC  =  1, nCells ( 1 )
-
-            D_2  =  max (     X ( iC, jC, kC )  *  X ( iC, jC, kC )  &
-                          +   Y ( iC, jC, kC )  *  Y ( iC, jC, kC )  &
-                          +   Z ( iC, jC, kC )  *  Z ( iC, jC, kC ),  &
-                          SqrtTiny )
 
             R_C ( iC, jC, kC, iSH_0 )  &
               =  - (    X ( iC, jC, kC )  *  R_C ( iC, jC, kC, iSH_PD )  &
@@ -191,7 +195,7 @@ contains
                    /  ( 2 * iM )
 
             I_C ( iC, jC, kC, iSH_0 )  &
-              =  - ( 2 * iM - 1 )  /  D_2  &
+              =  - ( 2 * iM - 1 )  /  D_2 ( iC, jC, kC )  &
                    *  (    X ( iC, jC, kC )  *  I_C ( iC, jC, kC, iSH_PD )  &
                         -  Y ( iC, jC, kC )  *  I_S ( iC, jC, kC, iSH_PD ) )
 
@@ -201,7 +205,7 @@ contains
                    /  ( 2 * iM )
 
             I_S ( iC, jC, kC, iSH_0 )  &
-              =  - ( 2 * iM - 1 )  /  D_2  &
+              =  - ( 2 * iM - 1 )  /  D_2 ( iC, jC, kC )  &
                    *  (    Y ( iC, jC, kC )  *  I_C ( iC, jC, kC, iSH_PD )  &
                         +  X ( iC, jC, kC )  *  I_S ( iC, jC, kC, iSH_PD ) )
 
@@ -218,16 +222,10 @@ contains
     else !-- use host
 
       !$OMP  parallel do collapse ( 3 ) &
-      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iC, jC, kC, D_2 ) &
-      !$OMP& firstprivate ( SqrtTiny )
+      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iC, jC, kC )
       do kC  =  1, nCells ( 3 )
         do jC  =  1, nCells ( 2 )
           do iC  =  1, nCells ( 1 )
-
-            D_2  =  max (     X ( iC, jC, kC )  *  X ( iC, jC, kC )  &
-                          +   Y ( iC, jC, kC )  *  Y ( iC, jC, kC )  &
-                          +   Z ( iC, jC, kC )  *  Z ( iC, jC, kC ),  &
-                          SqrtTiny )
 
             R_C ( iC, jC, kC, iSH_0 )  &
               =  - (    X ( iC, jC, kC )  *  R_C ( iC, jC, kC, iSH_PD )  &
@@ -235,7 +233,7 @@ contains
                    /  ( 2 * iM )
 
             I_C ( iC, jC, kC, iSH_0 )  &
-              =  - ( 2 * iM - 1 )  /  D_2  &
+              =  - ( 2 * iM - 1 )  /  D_2 ( iC, jC, kC )  &
                    *  (    X ( iC, jC, kC )  *  I_C ( iC, jC, kC, iSH_PD )  &
                         -  Y ( iC, jC, kC )  *  I_S ( iC, jC, kC, iSH_PD ) )
 
@@ -245,7 +243,7 @@ contains
                    /  ( 2 * iM )
 
             I_S ( iC, jC, kC, iSH_0 )  &
-              =  - ( 2 * iM - 1 )  /  D_2  &
+              =  - ( 2 * iM - 1 )  /  D_2 ( iC, jC, kC )  &
                    *  (    Y ( iC, jC, kC )  *  I_C ( iC, jC, kC, iSH_PD )  &
                         +  X ( iC, jC, kC )  *  I_S ( iC, jC, kC, iSH_PD ) )
 
@@ -271,9 +269,6 @@ contains
 
     integer ( KDI ) :: &
       iC, jC, kC  !-- iCell, etc.
-    real ( KDR ) :: &
-      SqrtTiny, &
-      D_2
     logical ( KDL ) :: &
       UseDevice
 
@@ -281,33 +276,26 @@ contains
     if ( present ( UseDeviceOption ) ) &
       UseDevice = UseDeviceOption
 
-    SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
-
     if ( UseDevice ) then
 
       !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
-      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iC, jC, kC, D_2 ) &
-      !$OMP& firstprivate ( SqrtTiny )
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iC, jC, kC )
       do kC  =  1, nCells ( 3 )
         do jC  =  1, nCells ( 2 )
           do iC  =  1, nCells ( 1 )
-
-            D_2  =      X ( iC, jC, kC )  *  X ( iC, jC, kC )  &
-                    +   Y ( iC, jC, kC )  *  Y ( iC, jC, kC )  &
-                    +   Z ( iC, jC, kC )  *  Z ( iC, jC, kC )
 
             R_C ( iC, jC, kC, iSH_0 )  &
               =  Z ( iC, jC, kC )  *  R_C ( iC, jC, kC, iSH_1 )
 
             I_C ( iC, jC, kC, iSH_0 )  &
-              =  ( 2 * ( iM + 1 ) - 1 )  /  D_2  &
+              =  ( 2 * ( iM + 1 ) - 1 )  /  D_2 ( iC, jC, kC )  &
                    *  Z ( iC, jC, kC )  *  I_C ( iC, jC, kC, iSH_1 )
 
             R_S ( iC, jC, kC, iSH_0 )  &
               =  Z ( iC, jC, kC )  *  R_S ( iC, jC, kC, iSH_1 )
 
             I_S ( iC, jC, kC, iSH_0 )  &
-              =  ( 2 * ( iM + 1 ) - 1 )  /  D_2  &
+              =  ( 2 * ( iM + 1 ) - 1 )  /  D_2 ( iC, jC, kC )  &
                    *  Z ( iC, jC, kC )  *  I_S ( iC, jC, kC, iSH_1 )
 
           end do !-- iC
@@ -318,29 +306,23 @@ contains
     else !-- use host
 
       !$OMP  parallel do collapse ( 3 ) &
-      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iC, jC, kC, D_2 ) &
-      !$OMP& firstprivate ( SqrtTiny )
+      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iC, jC, kC )
       do kC  =  1, nCells ( 3 )
         do jC  =  1, nCells ( 2 )
           do iC  =  1, nCells ( 1 )
-
-            D_2  =  max (     X ( iC, jC, kC )  *  X ( iC, jC, kC )  &
-                          +   Y ( iC, jC, kC )  *  Y ( iC, jC, kC )  &
-                          +   Z ( iC, jC, kC )  *  Z ( iC, jC, kC ),  &
-                          SqrtTiny )
 
             R_C ( iC, jC, kC, iSH_0 )  &
               =  Z ( iC, jC, kC )  *  R_C ( iC, jC, kC, iSH_1 )
 
             I_C ( iC, jC, kC, iSH_0 )  &
-              =  ( 2 * ( iM + 1 ) - 1 )  /  D_2  &
+              =  ( 2 * ( iM + 1 ) - 1 )  /  D_2 ( iC, jC, kC )  &
                    *  Z ( iC, jC, kC )  *  I_C ( iC, jC, kC, iSH_1 )
 
             R_S ( iC, jC, kC, iSH_0 )  &
               =  Z ( iC, jC, kC )  *  R_S ( iC, jC, kC, iSH_1 )
 
             I_S ( iC, jC, kC, iSH_0 )  &
-              =  ( 2 * ( iM + 1 ) - 1 )  /  D_2  &
+              =  ( 2 * ( iM + 1 ) - 1 )  /  D_2 ( iC, jC, kC )  &
                    *  Z ( iC, jC, kC )  *  I_S ( iC, jC, kC, iSH_1 )
 
           end do !-- iC
@@ -359,9 +341,6 @@ contains
 
     integer ( KDI ) :: &
       iC, jC, kC  !-- iCell, etc.
-    real ( KDR ) :: &
-      SqrtTiny, &
-      D_2
     logical ( KDL ) :: &
       UseDevice
 
@@ -369,26 +348,18 @@ contains
     if ( present ( UseDeviceOption ) ) &
       UseDevice = UseDeviceOption
 
-    SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
-
     if ( UseDevice ) then
 
       !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
-      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iC, jC, kC, D_2 ) &
-      !$OMP& firstprivate ( SqrtTiny )
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iC, jC, kC )
       do kC  =  1, nCells ( 3 )
         do jC  =  1, nCells ( 2 )
           do iC  =  1, nCells ( 1 )
 
-            D_2  =  max (     X ( iC, jC, kC )  *  X ( iC, jC, kC )  &
-                          +   Y ( iC, jC, kC )  *  Y ( iC, jC, kC )  &
-                          +   Z ( iC, jC, kC )  *  Z ( iC, jC, kC ),  &
-                          SqrtTiny )
-
             R_C ( iC, jC, kC, iSH_0 )  &
               =  ( ( 2 * iL - 1 )  &
                      *  Z ( iC, jC, kC )  *  R_C ( iC, jC, kC, iSH_1 )  &
-                   -  D_2  *  R_C ( iC, jC, kC, iSH_2 ) )  &
+                   -  D_2 ( iC, jC, kC )  *  R_C ( iC, jC, kC, iSH_2 ) )  &
                  /  ( ( iL + iM ) * ( iL - iM ) )
 
             I_C ( iC, jC, kC, iSH_0 )  &
@@ -396,12 +367,12 @@ contains
                      *  Z ( iC, jC, kC )  *  I_C ( iC, jC, kC, iSH_1 )  &
                    -  ( ( iL - 1 ) ** 2 - iM ** 2 )  &
                       *  I_C ( iC, jC, kC, iSH_2 ) )  &
-                 /  D_2
+                 /  D_2 ( iC, jC, kC )
 
             R_S ( iC, jC, kC, iSH_0 )  &
               =  ( ( 2 * iL - 1 )  *  Z ( iC, jC, kC )  &
                                    *  R_S ( iC, jC, kC, iSH_1 )  &
-                   -  D_2  *  R_S ( iC, jC, kC, iSH_2 ) )  &
+                   -  D_2 ( iC, jC, kC )  *  R_S ( iC, jC, kC, iSH_2 ) )  &
                  /  ( ( iL + iM ) * ( iL - iM ) )
 
             I_S ( iC, jC, kC, iSH_0 )  &
@@ -409,7 +380,7 @@ contains
                      *  Z ( iC, jC, kC )  *  I_C ( iC, jC, kC, iSH_1 )  &
                    -  ( ( iL - 1 ) ** 2 - iM ** 2 )  &
                       *  I_S ( iC, jC, kC, iSH_2 ) )  &
-                 /  D_2
+                 /  D_2 ( iC, jC, kC )
 
           end do !-- iC
         end do !-- jC
@@ -419,21 +390,15 @@ contains
     else !-- use host
 
       !$OMP  parallel do collapse ( 3 ) &
-      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iC, jC, kC, D_2 ) &
-      !$OMP& firstprivate ( SqrtTiny )
+      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iC, jC, kC )
       do kC  =  1, nCells ( 3 )
         do jC  =  1, nCells ( 2 )
           do iC  =  1, nCells ( 1 )
 
-            D_2  =  max (     X ( iC, jC, kC )  *  X ( iC, jC, kC )  &
-                          +   Y ( iC, jC, kC )  *  Y ( iC, jC, kC )  &
-                          +   Z ( iC, jC, kC )  *  Z ( iC, jC, kC ),  &
-                          SqrtTiny )
-
             R_C ( iC, jC, kC, iSH_0 )  &
               =  ( ( 2 * iL - 1 )  &
                      *  Z ( iC, jC, kC )  *  R_C ( iC, jC, kC, iSH_1 )  &
-                   -  D_2  *  R_C ( iC, jC, kC, iSH_2 ) )  &
+                   -  D_2 ( iC, jC, kC )  *  R_C ( iC, jC, kC, iSH_2 ) )  &
                  /  ( ( iL + iM ) * ( iL - iM ) )
 
             I_C ( iC, jC, kC, iSH_0 )  &
@@ -441,12 +406,12 @@ contains
                      *  Z ( iC, jC, kC )  *  I_C ( iC, jC, kC, iSH_1 )  &
                    -  ( ( iL - 1 ) ** 2 - iM ** 2 )  &
                       *  I_C ( iC, jC, kC, iSH_2 ) )  &
-                 /  D_2
+                 /  D_2 ( iC, jC, kC )
 
             R_S ( iC, jC, kC, iSH_0 )  &
               =  ( ( 2 * iL - 1 )  *  Z ( iC, jC, kC )  &
                                    *  R_S ( iC, jC, kC, iSH_1 )  &
-                   -  D_2  *  R_S ( iC, jC, kC, iSH_2 ) )  &
+                   -  D_2 ( iC, jC, kC )  *  R_S ( iC, jC, kC, iSH_2 ) )  &
                  /  ( ( iL + iM ) * ( iL - iM ) )
 
             I_S ( iC, jC, kC, iSH_0 )  &
@@ -454,7 +419,7 @@ contains
                      *  Z ( iC, jC, kC )  *  I_C ( iC, jC, kC, iSH_1 )  &
                    -  ( ( iL - 1 ) ** 2 - iM ** 2 )  &
                       *  I_S ( iC, jC, kC, iSH_2 ) )  &
-                 /  D_2
+                 /  D_2 ( iC, jC, kC )
 
           end do !-- iC
         end do !-- jC
