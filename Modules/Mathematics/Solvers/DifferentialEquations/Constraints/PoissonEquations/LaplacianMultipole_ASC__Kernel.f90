@@ -357,27 +357,29 @@ contains
           do iC  =  1, nCells ( 1 )
 
             R_C ( iC, jC, kC, iSH_0 )  &
-              =  ( ( 2 * iL - 1 )  &
-                     *  Z ( iC, jC, kC )  *  R_C ( iC, jC, kC, iSH_1 )  &
-                   -  D_2 ( iC, jC, kC )  *  R_C ( iC, jC, kC, iSH_2 ) )  &
+              =  ( ( 2 * iL - 1 )  *  Z ( iC, jC, kC )  &
+                      *  R_C ( iC, jC, kC, iSH_1 )  &
+                   -  D_2 ( iC, jC, kC )  &
+                      *  R_C ( iC, jC, kC, iSH_2 ) )  &
                  /  ( ( iL + iM ) * ( iL - iM ) )
 
             I_C ( iC, jC, kC, iSH_0 )  &
-              =  ( ( 2 * iL - 1 )  &
-                     *  Z ( iC, jC, kC )  *  I_C ( iC, jC, kC, iSH_1 )  &
+              =  ( ( 2 * iL - 1 )  *  Z ( iC, jC, kC )  &
+                      *  I_C ( iC, jC, kC, iSH_1 )  &
                    -  ( ( iL - 1 ) ** 2 - iM ** 2 )  &
                       *  I_C ( iC, jC, kC, iSH_2 ) )  &
                  /  D_2 ( iC, jC, kC )
 
             R_S ( iC, jC, kC, iSH_0 )  &
               =  ( ( 2 * iL - 1 )  *  Z ( iC, jC, kC )  &
-                                   *  R_S ( iC, jC, kC, iSH_1 )  &
-                   -  D_2 ( iC, jC, kC )  *  R_S ( iC, jC, kC, iSH_2 ) )  &
+                      *  R_S ( iC, jC, kC, iSH_1 )  &
+                   -  D_2 ( iC, jC, kC )  &
+                      *  R_S ( iC, jC, kC, iSH_2 ) )  &
                  /  ( ( iL + iM ) * ( iL - iM ) )
 
             I_S ( iC, jC, kC, iSH_0 )  &
-              =  ( ( 2 * iL - 1 )  &
-                     *  Z ( iC, jC, kC )  *  I_C ( iC, jC, kC, iSH_1 )  &
+              =  ( ( 2 * iL - 1 )  *  Z ( iC, jC, kC )  &
+                      *  I_S ( iC, jC, kC, iSH_1 )  &
                    -  ( ( iL - 1 ) ** 2 - iM ** 2 )  &
                       *  I_S ( iC, jC, kC, iSH_2 ) )  &
                  /  D_2 ( iC, jC, kC )
@@ -396,27 +398,29 @@ contains
           do iC  =  1, nCells ( 1 )
 
             R_C ( iC, jC, kC, iSH_0 )  &
-              =  ( ( 2 * iL - 1 )  &
-                     *  Z ( iC, jC, kC )  *  R_C ( iC, jC, kC, iSH_1 )  &
-                   -  D_2 ( iC, jC, kC )  *  R_C ( iC, jC, kC, iSH_2 ) )  &
+              =  ( ( 2 * iL - 1 )  *  Z ( iC, jC, kC )  &
+                      *  R_C ( iC, jC, kC, iSH_1 )  &
+                   -  D_2 ( iC, jC, kC )  &
+                      *  R_C ( iC, jC, kC, iSH_2 ) )  &
                  /  ( ( iL + iM ) * ( iL - iM ) )
 
             I_C ( iC, jC, kC, iSH_0 )  &
-              =  ( ( 2 * iL - 1 )  &
-                     *  Z ( iC, jC, kC )  *  I_C ( iC, jC, kC, iSH_1 )  &
+              =  ( ( 2 * iL - 1 )  *  Z ( iC, jC, kC )  &
+                      *  I_C ( iC, jC, kC, iSH_1 )  &
                    -  ( ( iL - 1 ) ** 2 - iM ** 2 )  &
                       *  I_C ( iC, jC, kC, iSH_2 ) )  &
                  /  D_2 ( iC, jC, kC )
 
             R_S ( iC, jC, kC, iSH_0 )  &
               =  ( ( 2 * iL - 1 )  *  Z ( iC, jC, kC )  &
-                                   *  R_S ( iC, jC, kC, iSH_1 )  &
-                   -  D_2 ( iC, jC, kC )  *  R_S ( iC, jC, kC, iSH_2 ) )  &
+                      *  R_S ( iC, jC, kC, iSH_1 )  &
+                   -  D_2 ( iC, jC, kC )  &
+                      *  R_S ( iC, jC, kC, iSH_2 ) )  &
                  /  ( ( iL + iM ) * ( iL - iM ) )
 
             I_S ( iC, jC, kC, iSH_0 )  &
-              =  ( ( 2 * iL - 1 )  &
-                     *  Z ( iC, jC, kC )  *  I_C ( iC, jC, kC, iSH_1 )  &
+              =  ( ( 2 * iL - 1 )  *  Z ( iC, jC, kC )  &
+                      *  I_S ( iC, jC, kC, iSH_1 )  &
                    -  ( ( iL - 1 ) ** 2 - iM ** 2 )  &
                       *  I_S ( iC, jC, kC, iSH_2 ) )  &
                  /  D_2 ( iC, jC, kC )
