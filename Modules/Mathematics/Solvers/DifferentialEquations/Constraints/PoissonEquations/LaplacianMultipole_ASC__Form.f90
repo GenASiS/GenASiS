@@ -11,8 +11,6 @@ module LaplacianMultipole_ASC__Form
 
   type, public, extends ( LaplacianMultipoleTemplate ) :: &
     LaplacianMultipole_ASC_Form
-      integer ( KDI ) :: &
-        COORDINATE_SYSTEM = 0
       real ( KDR ), dimension ( :, :, : ), pointer :: &
         Rectangular_X => null ( ), &
         Rectangular_Y => null ( ), &
@@ -52,18 +50,18 @@ module LaplacianMultipole_ASC__Form
 !-- FIXME: With GCC 6.1.0, must be public to trigger .smod generation
 !    private :: &
     public :: &
-      ComputeRectangularCoordinates_CSL_Kernel, &
-      ComputeSolidHarmonics_0_0_CSL_Kernel, &
-      ComputeSolidHarmonics_iM_iM_CSL_Kernel, &
-      ComputeSolidHarmonics_iL_iM_1_CSL_Kernel, &
-      ComputeSolidHarmonics_iL_iM_2_CSL_Kernel
+      Compute_RC_CSL_S_Kernel, &
+      Compute_SH_0_0_CSL_Kernel, &
+      Compute_SH_iM_iM_CSL_Kernel, &
+      Compute_SH_iL_iM_1_CSL_Kernel, &
+      Compute_SH_iL_iM_2_CSL_Kernel, &
+      SumMomentContributions_CSL_SphericalKernel
 
     interface
 
-      module subroutine ComputeRectangularCoordinates_CSL_Kernel &
+      module subroutine Compute_RC_CSL_S_Kernel &
                           ( X, Y, Z, D_2, IsProperCell, X_1, X_2, X_3, &
-                            COORDINATE_SYSTEM, nC, CoordinateError, &
-                            UseDeviceOption )
+                            nC, UseDeviceOption )
         use Basics
         implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -73,15 +71,12 @@ module LaplacianMultipole_ASC__Form
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           X_1, X_2, X_3
         integer ( KDI ), intent ( in ) :: &
-          COORDINATE_SYSTEM, &
           nC  !-- nCells
-        logical ( KDL ), intent ( out ) :: &
-          CoordinateError
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
-      end subroutine ComputeRectangularCoordinates_CSL_Kernel
+      end subroutine Compute_RC_CSL_S_Kernel
 
-      module subroutine ComputeSolidHarmonics_0_0_CSL_Kernel &
+      module subroutine Compute_SH_0_0_CSL_Kernel &
                           ( R_C, I_C, R_S, I_S, X, Y, Z, D_2, &
                             nCells, iSH_0, iSH_PD, &
                             UseDeviceOption )
@@ -98,9 +93,9 @@ module LaplacianMultipole_ASC__Form
           iSH_0, iSH_PD
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
-      end subroutine ComputeSolidHarmonics_0_0_CSL_Kernel
+      end subroutine Compute_SH_0_0_CSL_Kernel
 
-      module subroutine ComputeSolidHarmonics_iM_iM_CSL_Kernel &
+      module subroutine Compute_SH_iM_iM_CSL_Kernel &
                           ( R_C, I_C, R_S, I_S, X, Y, Z, D_2, &
                             nCells, iM, iSH_0, iSH_PD, &
                             UseDeviceOption )
@@ -118,9 +113,9 @@ module LaplacianMultipole_ASC__Form
           iSH_0, iSH_PD
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
-      end subroutine ComputeSolidHarmonics_iM_iM_CSL_Kernel
+      end subroutine Compute_SH_iM_iM_CSL_Kernel
 
-      module subroutine ComputeSolidHarmonics_iL_iM_1_CSL_Kernel &
+      module subroutine Compute_SH_iL_iM_1_CSL_Kernel &
                           ( R_C, I_C, R_S, I_S, X, Y, Z, D_2, &
                             nCells, iM, iSH_0, iSH_1, &
                             UseDeviceOption )
@@ -138,9 +133,9 @@ module LaplacianMultipole_ASC__Form
           iSH_0, iSH_1
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
-      end subroutine ComputeSolidHarmonics_iL_iM_1_CSL_Kernel
+      end subroutine Compute_SH_iL_iM_1_CSL_Kernel
 
-      module subroutine ComputeSolidHarmonics_iL_iM_2_CSL_Kernel &
+      module subroutine Compute_SH_iL_iM_2_CSL_Kernel &
                           ( R_C, I_C, R_S, I_S, X, Y, Z, D_2, &
                             nCells, iL, iM, iSH_0, iSH_1, iSH_2, &
                             UseDeviceOption )
@@ -158,7 +153,13 @@ module LaplacianMultipole_ASC__Form
           iSH_0, iSH_1, iSH_2
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
-      end subroutine ComputeSolidHarmonics_iL_iM_2_CSL_Kernel
+      end subroutine Compute_SH_iL_iM_2_CSL_Kernel
+
+      module subroutine SumMomentContributions_CSL_SphericalKernel &
+                          ( )
+        use Basics
+        implicit none
+      end subroutine SumMomentContributions_CSL_SphericalKernel
 
     end interface
 
@@ -166,11 +167,6 @@ module LaplacianMultipole_ASC__Form
     private :: &
       AssignRectangularPointers, &
       AssignSolidHarmonicPointers
-
-    integer ( KDI ), private, parameter :: &
-      RECTANGULAR = 1, &
-      CYLINDRICAL = 2, &
-      SPHERICAL   = 3
 
 contains
 
@@ -276,8 +272,6 @@ contains
     class ( LaplacianMultipole_ASC_Form ), intent ( inout ) :: &
       L
 
-    logical ( KDL ) :: &
-      CoordinateError
     class ( GeometryFlatForm ), pointer :: &
       G
 
@@ -302,49 +296,26 @@ contains
                L % Rectangular_X, L % Rectangular_Y, L % Rectangular_Z, &
                L % RadiusSquared )
 
-      select case ( trim ( C % CoordinateSystem ) )
-      case ( 'RECTANGULAR' )
-        L % COORDINATE_SYSTEM  =  RECTANGULAR
-      case ( 'CYLINDRICAL' )
-        L % COORDINATE_SYSTEM  =  CYLINDRICAL
-      case ( 'SPHERICAL' )
-        L % COORDINATE_SYSTEM  =  SPHERICAL
-      end select
-
       G  =>  C % Geometry ( )
-!      module subroutine ComputeRectangularCoordinates_CSL_Kernel &
-!                          ( X, Y, Z, IsProperCell, X_1, X_2, X_3, &
-!                            COORDINATE_SYSTEM, nC, CoordinateError, &
-!                            UseDeviceOption )
-      call ComputeRectangularCoordinates_CSL_Kernel &
-             ( RC % Value ( :, 1 ), RC % Value ( :, 2 ), RC % Value ( :, 3 ), &
-               RC % Value ( :, 4 ), C % IsProperCell, &
-               G % Value ( :, G % CENTER_U ( 1 ) ), &
-               G % Value ( :, G % CENTER_U ( 2 ) ), &
-               G % Value ( :, G % CENTER_U ( 3 ) ), &
-               L % COORDINATE_SYSTEM, nC, CoordinateError, &
-               UseDeviceOption = L % UseDevice )
-      if ( CoordinateError ) then
+      select case ( trim ( C % CoordinateSystem ) )
+      case ( 'SPHERICAL' )
+        call Compute_RC_CSL_S_Kernel &
+               ( RC % Value ( :, 1 ), RC % Value ( :, 2 ), &
+                 RC % Value ( :, 3 ), RC % Value ( :, 4 ), &
+                 C % IsProperCell, &
+                 G % Value ( :, G % CENTER_U ( 1 ) ), &
+                 G % Value ( :, G % CENTER_U ( 2 ) ), &
+                 G % Value ( :, G % CENTER_U ( 3 ) ), &
+                 nC, &
+                 UseDeviceOption = L % UseDevice )
+      case default
         call Show ( 'Coordinate system not supported', CONSOLE % ERROR )
         call Show ( C % CoordinateSystem, 'CoordinateSystem', CONSOLE % ERROR )
         call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
         call Show ( 'AllocateRectangularCoordinates', 'subroutine', &
                     CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
-      end if
-
-!call Show ( C % IsProperCell, '>>> IsProperCell' )
-if ( L % UseDevice ) then
-  RC % Value = huge ( 1.0_KDR )
-  call RC % UpdateHost ( )
-end if
-!call Show ( C % IsProperCell, '>>> IsProperCell' )
-call Show ( G % Value ( 9387 : 9396, G % CENTER_U ( 1 ) ), '>>> R ( 1 : 10 )' )
-call Show ( G % Value ( 9387 : 9396, G % CENTER_U ( 2 ) ), '>>> Theta ( 1 : 10 )' )
-call Show ( G % Value ( 9387 : 9396, G % CENTER_U ( 3 ) ), '>>> Phi ( 1 : 10 )' )
-call Show ( RC % Value ( 9387 : 9396, 1 ), '>>> X ( 1 : 10 )' )
-call Show ( RC % Value ( 9387 : 9396, 2 ), '>>> Y ( 1 : 10 )' )
-call Show ( RC % Value ( 9387 : 9396, 3 ), '>>> Z ( 1 : 10 )' )
+      end select
       nullify ( G )
 
       end associate !-- nC
@@ -415,7 +386,7 @@ call Show ( RC % Value ( 9387 : 9396, 3 ), '>>> Z ( 1 : 10 )' )
     select type ( C => L % Chart )
     class is ( Chart_SL_Template )
 
-      call ComputeSolidHarmonics_0_0_CSL_Kernel &
+      call Compute_SH_0_0_CSL_Kernel &
              ( L % SolidHarmonic_RC, L % SolidHarmonic_IC, &
                L % SolidHarmonic_RS, L % SolidHarmonic_IS, &
                L % Rectangular_X, L % Rectangular_Y, L % Rectangular_Z, &
@@ -425,7 +396,7 @@ call Show ( RC % Value ( 9387 : 9396, 3 ), '>>> Z ( 1 : 10 )' )
     class default
       call Show ( 'Chart type not supported', CONSOLE % ERROR )
       call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'ComputeSolidHarmonics_0_0', 'subroutine', &
+      call Show ( 'Compute_SH_0_0', 'subroutine', &
                   CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- C
@@ -444,7 +415,7 @@ call Show ( RC % Value ( 9387 : 9396, 3 ), '>>> Z ( 1 : 10 )' )
     select type ( C => L % Chart )
     class is ( Chart_SL_Template )
 
-      call ComputeSolidHarmonics_iM_iM_CSL_Kernel &
+      call Compute_SH_iM_iM_CSL_Kernel &
              ( L % SolidHarmonic_RC, L % SolidHarmonic_IC, &
                L % SolidHarmonic_RS, L % SolidHarmonic_IS, &
                L % Rectangular_X, L % Rectangular_Y, L % Rectangular_Z, &
@@ -454,7 +425,7 @@ call Show ( RC % Value ( 9387 : 9396, 3 ), '>>> Z ( 1 : 10 )' )
     class default
       call Show ( 'Chart type not supported', CONSOLE % ERROR )
       call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'ComputeSolidHarmonics_iM_iM', 'subroutine', &
+      call Show ( 'Compute_SH_iM_iM', 'subroutine', &
                   CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- C
@@ -473,7 +444,7 @@ call Show ( RC % Value ( 9387 : 9396, 3 ), '>>> Z ( 1 : 10 )' )
     select type ( C => L % Chart )
     class is ( Chart_SL_Template )
 
-      call ComputeSolidHarmonics_iL_iM_1_CSL_Kernel &
+      call Compute_SH_iL_iM_1_CSL_Kernel &
              ( L % SolidHarmonic_RC, L % SolidHarmonic_IC, &
                L % SolidHarmonic_RS, L % SolidHarmonic_IS, &
                L % Rectangular_X, L % Rectangular_Y, L % Rectangular_Z, &
@@ -483,7 +454,7 @@ call Show ( RC % Value ( 9387 : 9396, 3 ), '>>> Z ( 1 : 10 )' )
     class default
       call Show ( 'Chart type not supported', CONSOLE % ERROR )
       call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'ComputeSolidHarmonics_iL_iM_1', 'subroutine', &
+      call Show ( 'Compute_SH_iL_iM_1', 'subroutine', &
                   CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- C
@@ -502,7 +473,7 @@ call Show ( RC % Value ( 9387 : 9396, 3 ), '>>> Z ( 1 : 10 )' )
     select type ( C => L % Chart )
     class is ( Chart_SL_Template )
 
-      call ComputeSolidHarmonics_iL_iM_2_CSL_Kernel &
+      call Compute_SH_iL_iM_2_CSL_Kernel &
              ( L % SolidHarmonic_RC, L % SolidHarmonic_IC, &
                L % SolidHarmonic_RS, L % SolidHarmonic_IS, &
                L % Rectangular_X, L % Rectangular_Y, L % Rectangular_Z, &
@@ -512,7 +483,7 @@ call Show ( RC % Value ( 9387 : 9396, 3 ), '>>> Z ( 1 : 10 )' )
     class default
       call Show ( 'Chart type not supported', CONSOLE % ERROR )
       call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'ComputeSolidHarmonics_iL_iM_2', 'subroutine', &
+      call Show ( 'Compute_SH_iL_iM_2', 'subroutine', &
                   CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- C

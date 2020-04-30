@@ -387,7 +387,7 @@ call PROGRAM_HEADER % Abort ( )
 
     class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
       L
-    type ( StorageForm ), intent ( in ) :: &
+    class ( * ), intent ( in ) :: &
       Source  
 
     integer ( KDI ) :: &
@@ -427,11 +427,6 @@ call PROGRAM_HEADER % Abort ( )
             call L % ComputeSolidHarmonics_iL_iM_2 &
                    ( iL, iM, iSH_0, iSH_1, iSH_2 )
           end if
-
-          ! MyM_RC ( iA, :, : )  =  1.0_KDR * iA
-          ! MyM_IC ( iA, :, : )  =  2.0_KDR * iA
-          ! MyM_RS ( iA, :, : )  =  3.0_KDR * iA
-          ! MyM_IS ( iA, :, : )  =  4.0_KDR * iA
 
              iA  =  iA + 1
           iSH_0  =  mod ( iSH_0, 3 )  +  1  

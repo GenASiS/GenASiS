@@ -10,7 +10,9 @@ submodule ( LaplacianMultipole_ASC__Form ) LaplacianMultipole_ASC__Kernel
 contains
 
 
-  module procedure ComputeRectangularCoordinates_CSL_Kernel
+  module procedure Compute_RC_CSL_S_Kernel
+
+    !-- Compute_RectangularCoordinates_ChartSingleLevel_Spherical_Kernel
 
     integer ( KDI ) :: &
       iC
@@ -25,84 +27,69 @@ contains
 
     SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
 
-    CoordinateError  =  .false.
-
     if ( UseDevice ) then
      
-      select case ( COORDINATE_SYSTEM )
-      case ( SPHERICAL )
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iC ) &
+      !$OMP& firstprivate ( SqrtTiny )
+      do iC  =  1, nC
 
-        !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-        !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iC ) &
-        !$OMP& firstprivate ( SqrtTiny )
-        do iC  =  1, nC
+        if ( IsProperCell ( iC ) ) then
+          X ( iC )  =  X_1 ( iC )  *  sin ( X_2 ( iC ) )  &
+                                   *  cos ( X_3 ( iC ) )
+          Y ( iC )  =  X_1 ( iC )  *  sin ( X_2 ( iC ) )  &
+                                   *  sin ( X_3 ( iC ) )
+          Z ( iC )  =  X_1 ( iC )  *  cos ( X_2 ( iC ) )
+        else
+          X ( iC )  =  0.0_KDR
+          Y ( iC )  =  0.0_KDR
+          Z ( iC )  =  0.0_KDR
+        end if
 
-          if ( IsProperCell ( iC ) ) then
-            X ( iC )  =  X_1 ( iC )  *  sin ( X_2 ( iC ) )  &
-                                     *  cos ( X_3 ( iC ) )
-            Y ( iC )  =  X_1 ( iC )  *  sin ( X_2 ( iC ) )  &
-                                     *  sin ( X_3 ( iC ) )
-            Z ( iC )  =  X_1 ( iC )  *  cos ( X_2 ( iC ) )
-          else
-            X ( iC )  =  0.0_KDR
-            Y ( iC )  =  0.0_KDR
-            Z ( iC )  =  0.0_KDR
-          end if
+        D_2 ( iC )  =  max (     X ( iC )  *  X ( iC )  &
+                             +   Y ( iC )  *  Y ( iC )  &
+                             +   Z ( iC )  *  Z ( iC ),  &
+                             SqrtTiny )
 
-          D_2 ( iC )  =  max (     X ( iC )  *  X ( iC )  &
-                               +   Y ( iC )  *  Y ( iC )  &
-                               +   Z ( iC )  *  Z ( iC ),  &
-                               SqrtTiny )
+      end do !-- iC
+      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
 
-        end do !-- iC
-        !$OMP  end OMP_TARGET_DIRECTIVE parallel do
-
-      case default
-        CoordinateError  =  .true.
-        return
-      end select !-- COORDINATE_SYSTEM
-      
     else !-- use host
 
-      select case ( COORDINATE_SYSTEM )
-      case ( SPHERICAL )
+      !$OMP  parallel do &
+      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iC ) &
+      !$OMP& firstprivate ( SqrtTiny )
+      do iC  =  1, nC
 
-        !$OMP  parallel do &
-        !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iC ) &
-        !$OMP& firstprivate ( SqrtTiny )
-        do iC  =  1, nC
+        if ( IsProperCell ( iC ) ) then
+          X ( iC )  =  X_1 ( iC )  *  sin ( X_2 ( iC ) )  &
+                                   *  cos ( X_3 ( iC ) )
+          Y ( iC )  =  X_1 ( iC )  *  sin ( X_2 ( iC ) )  &
+                                   *  sin ( X_3 ( iC ) )
+          Z ( iC )  =  X_1 ( iC )  *  cos ( X_2 ( iC ) )
+        else
+          X ( iC )  =  0.0_KDR
+          Y ( iC )  =  0.0_KDR
+          Z ( iC )  =  0.0_KDR
+        end if
 
-          if ( IsProperCell ( iC ) ) then
-            X ( iC )  =  X_1 ( iC )  *  sin ( X_2 ( iC ) )  &
-                                     *  cos ( X_3 ( iC ) )
-            Y ( iC )  =  X_1 ( iC )  *  sin ( X_2 ( iC ) )  &
-                                     *  sin ( X_3 ( iC ) )
-            Z ( iC )  =  X_1 ( iC )  *  cos ( X_2 ( iC ) )
-          else
-            X ( iC )  =  0.0_KDR
-            Y ( iC )  =  0.0_KDR
-            Z ( iC )  =  0.0_KDR
-          end if
+        D_2 ( iC )  =  max (     X ( iC )  *  X ( iC )  &
+                             +   Y ( iC )  *  Y ( iC )  &
+                             +   Z ( iC )  *  Z ( iC ),  &
+                             SqrtTiny )
 
-          D_2 ( iC )  =  max (     X ( iC )  *  X ( iC )  &
-                               +   Y ( iC )  *  Y ( iC )  &
-                               +   Z ( iC )  *  Z ( iC ),  &
-                               SqrtTiny )
-
-        end do !-- iC
-        !$OMP  end parallel do
+      end do !-- iC
+      !$OMP  end parallel do
         
-      case default
-        CoordinateError  =  .true.
-        return
-      end select !-- COORDINATE_SYSTEM
-      
     end if !-- UseDevice
 
-  end procedure ComputeRectangularCoordinates_CSL_Kernel
+  end procedure Compute_RC_CSL_S_Kernel
 
 
-  module procedure ComputeSolidHarmonics_0_0_CSL_Kernel
+  module procedure Compute_SH_0_0_CSL_Kernel
+
+    !-- Compute_SolidHarmonics_0_0_ChartSingleLevel_Kernel
+    !-- See Flash 4 User's Guide p. 129
 
     !-- ( L, M ) = ( iM, iM )
     !-- Note iL = iM
@@ -164,10 +151,13 @@ contains
 
     end if !-- UseDevice
 
-  end procedure ComputeSolidHarmonics_0_0_CSL_Kernel
+  end procedure Compute_SH_0_0_CSL_Kernel
 
 
-  module procedure ComputeSolidHarmonics_iM_iM_CSL_Kernel
+  module procedure Compute_SH_iM_iM_CSL_Kernel
+
+    !-- Compute_SolidHarmonics_M_M_ChartSingleLevel_Kernel
+    !-- See Flash 4 User's Guide p. 129
 
     !-- ( L, M ) = ( iM, iM )
     !-- Note iL = iM
@@ -259,10 +249,13 @@ contains
 
     end if !-- UseDevice
 
-  end procedure ComputeSolidHarmonics_iM_iM_CSL_Kernel
+  end procedure Compute_SH_iM_iM_CSL_Kernel
 
 
-  module procedure ComputeSolidHarmonics_iL_iM_1_CSL_Kernel
+  module procedure Compute_SH_iL_iM_1_CSL_Kernel
+
+    !-- Compute_SolidHarmonics_L_M_1_ChartSingleLevel_Kernel
+    !-- See Flash 4 User's Guide p. 129
 
     !-- ( L, M ) = ( iM + 1, iM )
     !-- Note iL = iM + 1
@@ -332,10 +325,13 @@ contains
 
     end if !-- UseDevice
 
-  end procedure ComputeSolidHarmonics_iL_iM_1_CSL_Kernel
+  end procedure Compute_SH_iL_iM_1_CSL_Kernel
 
 
-  module procedure ComputeSolidHarmonics_iL_iM_2_CSL_Kernel
+  module procedure Compute_SH_iL_iM_2_CSL_Kernel
+
+    !-- Compute_SolidHarmonics_L_M_2_ChartSingleLevel_Kernel
+    !-- See Flash 4 User's Guide p. 129
 
     !-- ( L, M ) = ( iL, iM )
 
@@ -432,7 +428,12 @@ contains
 
     end if !-- UseDevice
 
-  end procedure ComputeSolidHarmonics_iL_iM_2_CSL_Kernel
+  end procedure Compute_SH_iL_iM_2_CSL_Kernel
+
+
+  module procedure SumMomentContributions_CSL_SphericalKernel
+
+  end procedure SumMomentContributions_CSL_SphericalKernel
 
 
 end submodule LaplacianMultipole_ASC__Kernel
