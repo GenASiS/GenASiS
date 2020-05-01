@@ -95,9 +95,9 @@ contains
 
       !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
       !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iC, jC, kC ) 
-      do kC  =  oC ( 3 )  +  1, oC ( 3 )  +  nC ( 3 )
-        do jC  =  oC ( 2 )  +  1, oC ( 2 )  +  nC ( 2 )
-          do iC  =  oC ( 1 )  +  1, oC ( 1 )  +  nC ( 1 )
+      do kC  =  oC ( 3 )  +  1,  oC ( 3 )  +  nC ( 3 )
+        do jC  =  oC ( 2 )  +  1,  oC ( 2 )  +  nC ( 2 )
+          do iC  =  oC ( 1 )  +  1,  oC ( 1 )  +  nC ( 1 )
 
             R_C ( iC, jC, kC, iSH_0 )  =  1.0_KDR
             I_C ( iC, jC, kC, iSH_0 )  =  1.0_KDR / sqrt ( D_2 ( iC, jC, kC ) )
@@ -118,9 +118,9 @@ contains
 
       !$OMP  parallel do collapse ( 3 ) &
       !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iC, jC, kC )
-      do kC  =  oC ( 3 )  +  1, oC ( 3 )  +  nC ( 3 )
-        do jC  =  oC ( 2 )  +  1, oC ( 2 )  +  nC ( 2 )
-          do iC  =  oC ( 1 )  +  1, oC ( 1 )  +  nC ( 1 )
+      do kC  =  oC ( 3 )  +  1,  oC ( 3 )  +  nC ( 3 )
+        do jC  =  oC ( 2 )  +  1,  oC ( 2 )  +  nC ( 2 )
+          do iC  =  oC ( 1 )  +  1,  oC ( 1 )  +  nC ( 1 )
 
             R_C ( iC, jC, kC, iSH_0 )  =  1.0_KDR
             I_C ( iC, jC, kC, iSH_0 )  =  1.0_KDR / sqrt ( D_2 ( iC, jC, kC ) )
@@ -163,9 +163,9 @@ contains
 
       !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
       !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iC, jC, kC )
-      do kC  =  oC ( 3 )  +  1, oC ( 3 )  +  nC ( 3 )
-        do jC  =  oC ( 2 )  +  1, oC ( 2 )  +  nC ( 2 )
-          do iC  =  oC ( 1 )  +  1, oC ( 1 )  +  nC ( 1 )
+      do kC  =  oC ( 3 )  +  1,  oC ( 3 )  +  nC ( 3 )
+        do jC  =  oC ( 2 )  +  1,  oC ( 2 )  +  nC ( 2 )
+          do iC  =  oC ( 1 )  +  1,  oC ( 1 )  +  nC ( 1 )
 
             R_C ( iC, jC, kC, iSH_0 )  &
               =  - (    X ( iC, jC, kC )  *  R_C ( iC, jC, kC, iSH_PD )  &
@@ -201,9 +201,9 @@ contains
 
       !$OMP  parallel do collapse ( 3 ) &
       !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iC, jC, kC )
-      do kC  =  oC ( 3 )  +  1, oC ( 3 )  +  nC ( 3 )
-        do jC  =  oC ( 2 )  +  1, oC ( 2 )  +  nC ( 2 )
-          do iC  =  oC ( 1 )  +  1, oC ( 1 )  +  nC ( 1 )
+      do kC  =  oC ( 3 )  +  1,  oC ( 3 )  +  nC ( 3 )
+        do jC  =  oC ( 2 )  +  1,  oC ( 2 )  +  nC ( 2 )
+          do iC  =  oC ( 1 )  +  1,  oC ( 1 )  +  nC ( 1 )
 
             R_C ( iC, jC, kC, iSH_0 )  &
               =  - (    X ( iC, jC, kC )  *  R_C ( iC, jC, kC, iSH_PD )  &
@@ -261,9 +261,9 @@ contains
 
       !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
       !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iC, jC, kC )
-      do kC  =  oC ( 3 )  +  1, oC ( 3 )  +  nC ( 3 )
-        do jC  =  oC ( 2 )  +  1, oC ( 2 )  +  nC ( 2 )
-          do iC  =  oC ( 1 )  +  1, oC ( 1 )  +  nC ( 1 )
+      do kC  =  oC ( 3 )  +  1,  oC ( 3 )  +  nC ( 3 )
+        do jC  =  oC ( 2 )  +  1,  oC ( 2 )  +  nC ( 2 )
+          do iC  =  oC ( 1 )  +  1,  oC ( 1 )  +  nC ( 1 )
 
             R_C ( iC, jC, kC, iSH_0 )  &
               =  Z ( iC, jC, kC )  *  R_C ( iC, jC, kC, iSH_1 )
@@ -288,9 +288,9 @@ contains
 
       !$OMP  parallel do collapse ( 3 ) &
       !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iC, jC, kC )
-      do kC  =  oC ( 3 )  +  1, oC ( 3 )  +  nC ( 3 )
-        do jC  =  oC ( 2 )  +  1, oC ( 2 )  +  nC ( 2 )
-          do iC  =  oC ( 1 )  +  1, oC ( 1 )  +  nC ( 1 )
+      do kC  =  oC ( 3 )  +  1,  oC ( 3 )  +  nC ( 3 )
+        do jC  =  oC ( 2 )  +  1,  oC ( 2 )  +  nC ( 2 )
+          do iC  =  oC ( 1 )  +  1,  oC ( 1 )  +  nC ( 1 )
 
             R_C ( iC, jC, kC, iSH_0 )  &
               =  Z ( iC, jC, kC )  *  R_C ( iC, jC, kC, iSH_1 )
@@ -336,9 +336,9 @@ contains
 
       !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
       !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iC, jC, kC )
-      do kC  =  oC ( 3 )  +  1, oC ( 3 )  +  nC ( 3 )
-        do jC  =  oC ( 2 )  +  1, oC ( 2 )  +  nC ( 2 )
-          do iC  =  oC ( 1 )  +  1, oC ( 1 )  +  nC ( 1 )
+      do kC  =  oC ( 3 )  +  1,  oC ( 3 )  +  nC ( 3 )
+        do jC  =  oC ( 2 )  +  1,  oC ( 2 )  +  nC ( 2 )
+          do iC  =  oC ( 1 )  +  1,  oC ( 1 )  +  nC ( 1 )
 
             R_C ( iC, jC, kC, iSH_0 )  &
               =  ( ( 2 * iL - 1 )  *  Z ( iC, jC, kC )  &
@@ -377,9 +377,9 @@ contains
 
       !$OMP  parallel do collapse ( 3 ) &
       !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iC, jC, kC )
-      do kC  =  oC ( 3 )  +  1, oC ( 3 )  +  nC ( 3 )
-        do jC  =  oC ( 2 )  +  1, oC ( 2 )  +  nC ( 2 )
-          do iC  =  oC ( 1 )  +  1, oC ( 1 )  +  nC ( 1 )
+      do kC  =  oC ( 3 )  +  1,  oC ( 3 )  +  nC ( 3 )
+        do jC  =  oC ( 2 )  +  1,  oC ( 2 )  +  nC ( 2 )
+          do iC  =  oC ( 1 )  +  1,  oC ( 1 )  +  nC ( 1 )
 
             R_C ( iC, jC, kC, iSH_0 )  &
               =  ( ( 2 * iL - 1 )  *  Z ( iC, jC, kC )  &
@@ -438,9 +438,9 @@ contains
       !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 4 ) &
       !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iR, iT, iP, iE )
       do iE  =  1, nE
-        do iP  =  oC ( 3 )  +  1, oC ( 3 )  +  nC ( 3 )
-          do iT  =  oC ( 2 )  +  1, oC ( 2 )  +  nC ( 2 )
-            do iR  =  oC ( 1 )  +  1, oC ( 1 )  +  nC ( 1 )
+        do iP  =  oC ( 3 )  +  1,  oC ( 3 )  +  nC ( 3 )
+          do iT  =  oC ( 2 )  +  1,  oC ( 2 )  +  nC ( 2 )
+            do iR  =  oC ( 1 )  +  1,  oC ( 1 )  +  nC ( 1 )
 
               MyM_RC ( iA, iR - oC ( 1 ), iE )  &
                 =  MyM_RC ( iA, iR - oC ( 1 ), iE )  &
@@ -473,9 +473,9 @@ contains
       !$OMP  parallel do collapse ( 4 ) &
       !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iR, iT, iP, iE )
       do iE  =  1, nE
-        do iP  =  oC ( 3 )  +  1, oC ( 3 )  +  nC ( 3 )
-          do iT  =  oC ( 2 )  +  1, oC ( 2 )  +  nC ( 2 )
-            do iR  =  oC ( 1 )  +  1, oC ( 1 )  +  nC ( 1 )
+        do iP  =  oC ( 3 )  +  1,  oC ( 3 )  +  nC ( 3 )
+          do iT  =  oC ( 2 )  +  1,  oC ( 2 )  +  nC ( 2 )
+            do iR  =  oC ( 1 )  +  1,  oC ( 1 )  +  nC ( 1 )
 
               MyM_RC ( iA, iR - oC ( 1 ), iE )  &
                 =  MyM_RC ( iA, iR - oC ( 1 ), iE )  &

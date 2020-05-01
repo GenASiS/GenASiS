@@ -102,8 +102,6 @@ contains
       call ComputeSolidHarmonics_C_S_Kernel ( X, Y, Z, L, R_C, I_C, R_S, I_S )
     end if
 
-call Show ( R_C, '>>> R_C' )
-call PROGRAM_HEADER % Abort ( )
     R  =  sqrt ( X * X  +  Y * Y  +  Z * Z )
 
     GridError = .false.

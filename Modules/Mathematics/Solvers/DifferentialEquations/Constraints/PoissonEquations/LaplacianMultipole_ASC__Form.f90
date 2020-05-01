@@ -548,8 +548,6 @@ contains
              L % nEquations, iA, iSH_0, &
              UseDeviceOption = L % UseDevice )
 
-call Show ( L % SolidHarmonic_RC ( 3, 3, 3, iSH_0 ), '>>> SH_RC' )
-
     class default
       call Show ( 'Source type not supported', CONSOLE % ERROR )
       call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )

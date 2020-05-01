@@ -411,52 +411,55 @@ call PROGRAM_HEADER % Abort ( )
       Source  
 
     integer ( KDI ) :: &
-      iA, &  !-- iAngularMoment
-      iM, &  !-- iOrder
-      iL, &  !-- iDegree
+      iA, &   !-- iAngularMoment
+      iM, &   !-- iOrder
+      iL, &   !-- iDegree
+      iSH_PD  !-- iSolidHarmonic_PreviousDiagonal
+    integer ( KDI ), pointer :: &
       iSH_0, &  !-- iSolidHarmonic_Current
       iSH_1, &  !-- iSolidHarmonic_Previous_1
-      iSH_2, &  !-- iSolidHarmonic_Previous_2
-      iSH_PD    !-- iSolidHarmonic_PreviousDiagonal
+      iSH_2     !-- iSolidHarmonic_Previous_2
+    integer ( KDI ), dimension ( 3 ), target :: &
+      iSH
 
-          iA  =  1
-       iSH_0  =  1
-       iSH_1  =  2
-       iSH_2  =  3
-      iSH_PD  =  4
+    iSH_0  =>  iSH ( 1 )
+    iSH_1  =>  iSH ( 2 )
+    iSH_2  =>  iSH ( 3 )
 
-      do iM  =  0, L % MaxOrder
+        iA  =  1
+       iSH  =  [ 1, 2, 3 ]
+    iSH_PD  =  4
 
-        !-- ( L, M ) = ( iM, iM )
-        !-- Note iL = iM
-        if ( iM  ==  0 ) then
-          call L % ComputeSolidHarmonics_0_0 ( iSH_0, iSH_PD )
-        else
-          call L % ComputeSolidHarmonics_iM_iM ( iM, iSH_0, iSH_PD )
-        end if
+    do iM  =  0, L % MaxOrder
 
-        do iL  =  iM, L % MaxDegree
+      !-- ( L, M ) = ( iM, iM )
+      !-- Note iL = iM
+      if ( iM  ==  0 ) then
+        call L % ComputeSolidHarmonics_0_0 ( iSH_0, iSH_PD )
+      else
+        call L % ComputeSolidHarmonics_iM_iM ( iM, iSH_0, iSH_PD )
+      end if
 
-          if ( iL  ==  iM + 1 ) then
-            !-- ( L, M ) = ( iM + 1, iM )
-            !-- Note iL = iM + 1
-            call L % ComputeSolidHarmonics_iL_iM_1 &
-                   ( iM, iSH_0, iSH_1 )
-          else if ( iL  >=  iM  +  2 ) then
-            !-- ( L, M ) = ( iL, iM )
-            call L % ComputeSolidHarmonics_iL_iM_2 &
-                   ( iL, iM, iSH_0, iSH_1, iSH_2 )
+      do iL  =  iM, L % MaxDegree
+
+        if ( iL  ==  iM + 1 ) then
+          !-- ( L, M ) = ( iM + 1, iM )
+          !-- Note iL = iM + 1
+          call L % ComputeSolidHarmonics_iL_iM_1 &
+                 ( iM, iSH_0, iSH_1 )
+        else if ( iL  >=  iM  +  2 ) then
+          !-- ( L, M ) = ( iL, iM )
+          call L % ComputeSolidHarmonics_iL_iM_2 &
+                 ( iL, iM, iSH_0, iSH_1, iSH_2 )
           end if
 
-          call L % SumMomentContributions ( Source, iA, iSH_0 )
+        call L % SumMomentContributions ( Source, iA, iSH_0 )
 
-             iA  =  iA + 1
-          iSH_0  =  mod ( iSH_0, 3 )  +  1  
-          iSH_1  =  mod ( iSH_1, 3 )  +  1  
-          iSH_2  =  mod ( iSH_2, 3 )  +  1  
+         iA  =  iA + 1
+        iSH  =  cshift ( iSH, -1 )
 
-        end do !-- iL
-      end do !-- iM
+      end do !-- iL
+    end do !-- iM
 
   end subroutine ComputeMomentContributions
 
