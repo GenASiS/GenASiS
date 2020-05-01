@@ -32,10 +32,10 @@ module LaplacianMultipole_Template
     real ( KDR ), dimension ( 3 ) :: &
       Origin = 0.0_KDR
     real ( KDR ), dimension ( :, :, : ), pointer :: &
-        M_RC => null ( ),   M_IC => null ( ), &
-        M_RS => null ( ),   M_IS => null ( ), &
-      MyM_RC => null ( ), MyM_IC => null ( ), &
-      MyM_RS => null ( ), MyM_IS => null ( )
+        Moment_RC => null ( ),   Moment_IC => null ( ), &
+        Moment_RS => null ( ),   Moment_IS => null ( ), &
+      MyMoment_RC => null ( ), MyMoment_IC => null ( ), &
+      MyMoment_RS => null ( ), MyMoment_IS => null ( )
     logical ( KDL ) :: &
       UseDevice = .false.
     character ( LDF ) :: &
@@ -75,6 +75,8 @@ module LaplacianMultipole_Template
       ComputeSolidHarmonics_iL_iM_1
     procedure ( CSH_iL_iM_2 ), private, pass, deferred :: &
       ComputeSolidHarmonics_iL_iM_2
+    procedure ( SMC ), private, pass, deferred :: &
+      SumMomentContributions
   end type LaplacianMultipoleTemplate
 
 
@@ -146,6 +148,19 @@ module LaplacianMultipole_Template
         iL, iM, &
         iSH_0, iSH_1, iSH_2
     end subroutine CSH_iL_iM_2
+
+    subroutine SMC ( L, Source, iA, iSH_0 )
+      use Basics
+      import LaplacianMultipoleTemplate
+      implicit none
+      class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+        L
+      class ( * ), intent ( in ) :: &
+        Source
+      integer ( KDI ), intent ( in ) :: &
+        iA, &  
+        iSH_0  
+    end subroutine SMC
 
   end interface
 
@@ -232,7 +247,9 @@ contains
 
     call Show ( 'Computing Moments', L % IGNORABILITY + 2 )
 
-    associate ( MyM  =>  L % MyMoments )
+    associate &
+      (   M  =>  L %   Moments, &
+        MyM  =>  L % MyMoments )
 
     if ( associated ( Timer_CM ) ) call Timer_CM % Start ( )
       call Clear ( MyM % Value, UseDeviceOption = MyM % AllocatedDevice )
@@ -245,9 +262,10 @@ contains
     if ( associated ( Timer_RM ) ) call Timer_RM % Start ( )
     call MyM % UpdateHost ( )
     call L % ReductionMoments % Reduce ( REDUCTION % SUM )
+    call M % UpdateDevice ( ) 
     if ( associated ( Timer_RM ) ) call Timer_RM % Stop ( )
 
-!call Show ( L % M_RC, '>>> L % M_RC' )
+call Show ( M % Value ( 1 : 10, 1 ), '>>> M % Value ( 1 : 10, 1 )' )
 
 call PROGRAM_HEADER % ShowStatistics &
        ( CONSOLE % INFO_1, &
@@ -257,7 +275,7 @@ call Show ( 'LaplacianMultipole_Template', 'module', CONSOLE % ERROR )
 call Show ( 'ComputeMoments', 'subroutine', CONSOLE % ERROR )
 call PROGRAM_HEADER % Abort ( )
 
-    end associate !-- MyM
+    end associate !-- M, etc.
 
     if ( associated ( Timer ) ) call Timer % Stop ( )
 
@@ -277,14 +295,14 @@ call PROGRAM_HEADER % Abort ( )
     if ( allocated ( L % Moments ) ) &
       deallocate ( L % Moments )
 
-    nullify ( L % MyM_IS )
-    nullify ( L % MyM_RS )
-    nullify ( L % MyM_IC )
-    nullify ( L % MyM_RC )
-    nullify ( L % M_IS )
-    nullify ( L % M_RS )
-    nullify ( L % M_IC )
-    nullify ( L % M_RC )
+    nullify ( L % MyMoment_IS )
+    nullify ( L % MyMoment_RS )
+    nullify ( L % MyMoment_IC )
+    nullify ( L % MyMoment_RC )
+    nullify ( L % Moment_IS )
+    nullify ( L % Moment_RS )
+    nullify ( L % Moment_IC )
+    nullify ( L % Moment_RC )
 
     if ( L % Name == '' ) return
 
@@ -375,8 +393,10 @@ call PROGRAM_HEADER % Abort ( )
                 L % MyMoments % Value ( :, L % IRREGULAR_COS ), &
                 L % MyMoments % Value ( :, L %   REGULAR_SIN ), &
                 L % MyMoments % Value ( :, L % IRREGULAR_SIN ), &
-                L %   M_RC, L %   M_IC, L %   M_RS, L %   M_IS, &
-                L % MyM_RC, L % MyM_IC, L % MyM_RS, L % MyM_IS )
+                L %   Moment_RC, L %   Moment_IC, &
+                L %   Moment_RS, L %   Moment_IS, &
+                L % MyMoment_RC, L % MyMoment_IC, &
+                L % MyMoment_RS, L % MyMoment_IS )
 
     end associate !-- M, etc.
 
@@ -427,6 +447,8 @@ call PROGRAM_HEADER % Abort ( )
             call L % ComputeSolidHarmonics_iL_iM_2 &
                    ( iL, iM, iSH_0, iSH_1, iSH_2 )
           end if
+
+          call L % SumMomentContributions ( Source, iA, iSH_0 )
 
              iA  =  iA + 1
           iSH_0  =  mod ( iSH_0, 3 )  +  1  

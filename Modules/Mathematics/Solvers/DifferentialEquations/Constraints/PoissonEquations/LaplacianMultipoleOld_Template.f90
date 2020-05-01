@@ -338,7 +338,9 @@ contains
 
     call Show ( 'Computing Moments', CONSOLE % INFO_3 )
 
-    associate ( MyM  =>  LM % MyMoments )
+    associate &
+      (   M  =>  LM %   Moments, &
+        MyM  =>  LM % MyMoments )
 
     if ( associated ( Timer_CM ) ) call Timer_CM % Start ( )
       call Clear ( MyM % Value, UseDeviceOption = MyM % AllocatedDevice )
@@ -353,6 +355,8 @@ contains
     call LM % ReductionMoments % Reduce ( REDUCTION % SUM )
     if ( associated ( Timer_RM ) ) call Timer_RM % Stop ( )
 
+call Show ( M % Value ( 1 : 10, 1 ), '>>> M % Value ( 1 : 10, 1 )' )
+
     if ( associated ( Timer_AM ) ) call Timer_AM % Start ( )
     call AddMomentShellsKernel &
            ( LM % M_RC, LM % M_IC, &
@@ -363,7 +367,7 @@ contains
                LM % nEquations, LM % nRadialCells, LM % nAngularMomentCells )
     if ( associated ( Timer_AM ) ) call Timer_AM % Stop ( )
 
-    end associate !-- MyM
+    end associate !-- M, etc.
 
     if ( associated ( Timer ) ) call Timer % Stop ( )
 

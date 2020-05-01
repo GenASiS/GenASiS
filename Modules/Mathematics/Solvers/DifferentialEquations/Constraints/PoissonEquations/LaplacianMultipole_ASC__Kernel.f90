@@ -16,8 +16,6 @@ contains
 
     integer ( KDI ) :: &
       iC
-    real ( KDR ) :: &
-      SqrtTiny
     logical ( KDL ) :: &
       UseDevice
 
@@ -25,13 +23,10 @@ contains
     if ( present ( UseDeviceOption ) ) &
       UseDevice = UseDeviceOption
 
-    SqrtTiny  =  sqrt ( tiny ( 0.0_KDR ) )
-
     if ( UseDevice ) then
      
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iC ) &
-      !$OMP& firstprivate ( SqrtTiny )
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iC )
       do iC  =  1, nC
 
         if ( IsProperCell ( iC ) ) then
@@ -46,10 +41,7 @@ contains
           Z ( iC )  =  0.0_KDR
         end if
 
-        D_2 ( iC )  =  max (     X ( iC )  *  X ( iC )  &
-                             +   Y ( iC )  *  Y ( iC )  &
-                             +   Z ( iC )  *  Z ( iC ),  &
-                             SqrtTiny )
+        D_2 ( iC )  =  X ( iC ) ** 2  +  Y ( iC ) ** 2  +  Z ( iC ) ** 2
 
       end do !-- iC
       !$OMP  end OMP_TARGET_DIRECTIVE parallel do
@@ -57,8 +49,7 @@ contains
     else !-- use host
 
       !$OMP  parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iC ) &
-      !$OMP& firstprivate ( SqrtTiny )
+      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iC )
       do iC  =  1, nC
 
         if ( IsProperCell ( iC ) ) then
@@ -73,10 +64,7 @@ contains
           Z ( iC )  =  0.0_KDR
         end if
 
-        D_2 ( iC )  =  max (     X ( iC )  *  X ( iC )  &
-                             +   Y ( iC )  *  Y ( iC )  &
-                             +   Z ( iC )  *  Z ( iC ),  &
-                             SqrtTiny )
+        D_2 ( iC )  =  X ( iC ) ** 2  +  Y ( iC ) ** 2  +  Z ( iC ) ** 2
 
       end do !-- iC
       !$OMP  end parallel do
@@ -107,9 +95,9 @@ contains
 
       !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
       !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iC, jC, kC ) 
-      do kC  =  1, nCells ( 3 )
-        do jC  =  1, nCells ( 2 )
-          do iC  =  1, nCells ( 1 )
+      do kC  =  oC ( 3 )  +  1, oC ( 3 )  +  nC ( 3 )
+        do jC  =  oC ( 2 )  +  1, oC ( 2 )  +  nC ( 2 )
+          do iC  =  oC ( 1 )  +  1, oC ( 1 )  +  nC ( 1 )
 
             R_C ( iC, jC, kC, iSH_0 )  =  1.0_KDR
             I_C ( iC, jC, kC, iSH_0 )  =  1.0_KDR / sqrt ( D_2 ( iC, jC, kC ) )
@@ -124,15 +112,15 @@ contains
           end do !-- iC
         end do !-- jC
       end do !-- kC
-      !$OMP  end parallel do
+      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
 
     else !-- use host
 
       !$OMP  parallel do collapse ( 3 ) &
       !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iC, jC, kC )
-      do kC  =  1, nCells ( 3 )
-        do jC  =  1, nCells ( 2 )
-          do iC  =  1, nCells ( 1 )
+      do kC  =  oC ( 3 )  +  1, oC ( 3 )  +  nC ( 3 )
+        do jC  =  oC ( 2 )  +  1, oC ( 2 )  +  nC ( 2 )
+          do iC  =  oC ( 1 )  +  1, oC ( 1 )  +  nC ( 1 )
 
             R_C ( iC, jC, kC, iSH_0 )  =  1.0_KDR
             I_C ( iC, jC, kC, iSH_0 )  =  1.0_KDR / sqrt ( D_2 ( iC, jC, kC ) )
@@ -175,9 +163,9 @@ contains
 
       !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
       !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iC, jC, kC )
-      do kC  =  1, nCells ( 3 )
-        do jC  =  1, nCells ( 2 )
-          do iC  =  1, nCells ( 1 )
+      do kC  =  oC ( 3 )  +  1, oC ( 3 )  +  nC ( 3 )
+        do jC  =  oC ( 2 )  +  1, oC ( 2 )  +  nC ( 2 )
+          do iC  =  oC ( 1 )  +  1, oC ( 1 )  +  nC ( 1 )
 
             R_C ( iC, jC, kC, iSH_0 )  &
               =  - (    X ( iC, jC, kC )  *  R_C ( iC, jC, kC, iSH_PD )  &
@@ -207,15 +195,15 @@ contains
           end do !-- iC
         end do !-- jC
       end do !-- kC
-      !$OMP  end parallel do
+      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
 
     else !-- use host
 
       !$OMP  parallel do collapse ( 3 ) &
       !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iC, jC, kC )
-      do kC  =  1, nCells ( 3 )
-        do jC  =  1, nCells ( 2 )
-          do iC  =  1, nCells ( 1 )
+      do kC  =  oC ( 3 )  +  1, oC ( 3 )  +  nC ( 3 )
+        do jC  =  oC ( 2 )  +  1, oC ( 2 )  +  nC ( 2 )
+          do iC  =  oC ( 1 )  +  1, oC ( 1 )  +  nC ( 1 )
 
             R_C ( iC, jC, kC, iSH_0 )  &
               =  - (    X ( iC, jC, kC )  *  R_C ( iC, jC, kC, iSH_PD )  &
@@ -273,9 +261,9 @@ contains
 
       !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
       !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iC, jC, kC )
-      do kC  =  1, nCells ( 3 )
-        do jC  =  1, nCells ( 2 )
-          do iC  =  1, nCells ( 1 )
+      do kC  =  oC ( 3 )  +  1, oC ( 3 )  +  nC ( 3 )
+        do jC  =  oC ( 2 )  +  1, oC ( 2 )  +  nC ( 2 )
+          do iC  =  oC ( 1 )  +  1, oC ( 1 )  +  nC ( 1 )
 
             R_C ( iC, jC, kC, iSH_0 )  &
               =  Z ( iC, jC, kC )  *  R_C ( iC, jC, kC, iSH_1 )
@@ -294,15 +282,15 @@ contains
           end do !-- iC
         end do !-- jC
       end do !-- kC
-      !$OMP  end parallel do
+      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
 
     else !-- use host
 
       !$OMP  parallel do collapse ( 3 ) &
       !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iC, jC, kC )
-      do kC  =  1, nCells ( 3 )
-        do jC  =  1, nCells ( 2 )
-          do iC  =  1, nCells ( 1 )
+      do kC  =  oC ( 3 )  +  1, oC ( 3 )  +  nC ( 3 )
+        do jC  =  oC ( 2 )  +  1, oC ( 2 )  +  nC ( 2 )
+          do iC  =  oC ( 1 )  +  1, oC ( 1 )  +  nC ( 1 )
 
             R_C ( iC, jC, kC, iSH_0 )  &
               =  Z ( iC, jC, kC )  *  R_C ( iC, jC, kC, iSH_1 )
@@ -348,9 +336,9 @@ contains
 
       !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
       !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iC, jC, kC )
-      do kC  =  1, nCells ( 3 )
-        do jC  =  1, nCells ( 2 )
-          do iC  =  1, nCells ( 1 )
+      do kC  =  oC ( 3 )  +  1, oC ( 3 )  +  nC ( 3 )
+        do jC  =  oC ( 2 )  +  1, oC ( 2 )  +  nC ( 2 )
+          do iC  =  oC ( 1 )  +  1, oC ( 1 )  +  nC ( 1 )
 
             R_C ( iC, jC, kC, iSH_0 )  &
               =  ( ( 2 * iL - 1 )  *  Z ( iC, jC, kC )  &
@@ -383,15 +371,15 @@ contains
           end do !-- iC
         end do !-- jC
       end do !-- kC
-      !$OMP  end parallel do
+      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
 
     else !-- use host
 
       !$OMP  parallel do collapse ( 3 ) &
       !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iC, jC, kC )
-      do kC  =  1, nCells ( 3 )
-        do jC  =  1, nCells ( 2 )
-          do iC  =  1, nCells ( 1 )
+      do kC  =  oC ( 3 )  +  1, oC ( 3 )  +  nC ( 3 )
+        do jC  =  oC ( 2 )  +  1, oC ( 2 )  +  nC ( 2 )
+          do iC  =  oC ( 1 )  +  1, oC ( 1 )  +  nC ( 1 )
 
             R_C ( iC, jC, kC, iSH_0 )  &
               =  ( ( 2 * iL - 1 )  *  Z ( iC, jC, kC )  &
@@ -431,9 +419,93 @@ contains
   end procedure Compute_SH_iL_iM_2_CSL_Kernel
 
 
-  module procedure SumMomentContributions_CSL_SphericalKernel
+  module procedure Sum_MC_CSL_S_Kernel
 
-  end procedure SumMomentContributions_CSL_SphericalKernel
+    !-- Sum_MomentContribtions_ChartSingleLevel_Spherical_Kernel
+
+    integer ( KDI ) :: &
+      iR, iT, iP, &  !-- iRadius, iTheta, iPhi
+      iE  !-- iEquation
+    logical ( KDL ) :: &
+      UseDevice
+
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+
+    if ( UseDevice ) then
+
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 4 ) &
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iR, iT, iP, iE )
+      do iE  =  1, nE
+        do iP  =  oC ( 3 )  +  1, oC ( 3 )  +  nC ( 3 )
+          do iT  =  oC ( 2 )  +  1, oC ( 2 )  +  nC ( 2 )
+            do iR  =  oC ( 1 )  +  1, oC ( 1 )  +  nC ( 1 )
+
+              MyM_RC ( iA, iR - oC ( 1 ), iE )  &
+                =  MyM_RC ( iA, iR - oC ( 1 ), iE )  &
+                   +  SH_RC ( iR, iT, iP, iSH_0 )  *  S ( iR, iT, iP, iE )  &
+                      *  dV ( iR, iT, iP )
+
+              MyM_IC ( iA, iR - oC ( 1 ), iE )  &
+                =  MyM_IC ( iA, iR - oC ( 1 ), iE )  &
+                   +  SH_IC ( iR, iT, iP, iSH_0 )  *  S ( iR, iT, iP, iE )  &
+                      *  dV ( iR, iT, iP )
+
+              MyM_RS ( iA, iR - oC ( 1 ), iE )  &
+                =  MyM_RS ( iA, iR - oC ( 1 ), iE )  &
+                   +  SH_RS ( iR, iT, iP, iSH_0 )  *  S ( iR, iT, iP, iE )  &
+                      *  dV ( iR, iT, iP )
+
+              MyM_IS ( iA, iR - oC ( 1 ), iE )  &
+                =  MyM_IS ( iA, iR - oC ( 1 ), iE )  &
+                   +  SH_IS ( iR, iT, iP, iSH_0 )  *  S ( iR, iT, iP, iE )  &
+                      *  dV ( iR, iT, iP )
+
+            end do !-- iR
+          end do !-- iT
+        end do !-- iP
+      end do !-- iE
+      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+
+    else !-- use host
+
+      !$OMP  parallel do collapse ( 4 ) &
+      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iR, iT, iP, iE )
+      do iE  =  1, nE
+        do iP  =  oC ( 3 )  +  1, oC ( 3 )  +  nC ( 3 )
+          do iT  =  oC ( 2 )  +  1, oC ( 2 )  +  nC ( 2 )
+            do iR  =  oC ( 1 )  +  1, oC ( 1 )  +  nC ( 1 )
+
+              MyM_RC ( iA, iR - oC ( 1 ), iE )  &
+                =  MyM_RC ( iA, iR - oC ( 1 ), iE )  &
+                   +  SH_RC ( iR, iT, iP, iSH_0 )  *  S ( iR, iT, iP, iE )  &
+                      *  dV ( iR, iT, iP )
+
+              MyM_IC ( iA, iR - oC ( 1 ), iE )  &
+                =  MyM_IC ( iA, iR - oC ( 1 ), iE )  &
+                   +  SH_IC ( iR, iT, iP, iSH_0 )  *  S ( iR, iT, iP, iE )  &
+                      *  dV ( iR, iT, iP )
+
+              MyM_RS ( iA, iR - oC ( 1 ), iE )  &
+                =  MyM_RS ( iA, iR - oC ( 1 ), iE )  &
+                   +  SH_RS ( iR, iT, iP, iSH_0 )  *  S ( iR, iT, iP, iE )  &
+                      *  dV ( iR, iT, iP )
+
+              MyM_IS ( iA, iR - oC ( 1 ), iE )  &
+                =  MyM_IS ( iA, iR - oC ( 1 ), iE )  &
+                   +  SH_IS ( iR, iT, iP, iSH_0 )  *  S ( iR, iT, iP, iE )  &
+                      *  dV ( iR, iT, iP )
+
+            end do !-- iR
+          end do !-- iT
+        end do !-- iP
+      end do !-- iE
+      !$OMP  end parallel do
+
+    end if !-- UseDevice
+
+  end procedure Sum_MC_CSL_S_Kernel
 
 
 end submodule LaplacianMultipole_ASC__Kernel
