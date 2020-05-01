@@ -49,8 +49,11 @@ c
 
       double precision dx,dy,dz,dxi,dyi,dzi,dxyi,dxzi,dyzi,dxyzi
       integer n,ix,iy,iz
+#ifdef ENABLE_OMP_OFFLOAD
+      !$OMP declare target
+#endif
 
-      IF (kt .GT. ktx)  STOP'***KTX**'
+      !IF (kt .GT. ktx)  STOP'***KTX**'
 c
 c
 c------  determine spacing parameters of (equidistant!!!) table

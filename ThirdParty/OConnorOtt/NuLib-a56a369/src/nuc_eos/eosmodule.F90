@@ -21,7 +21,9 @@
    real*8 :: t_max_hack = 240.0d0
 
 ! basics
+   
    integer :: nvars = 19
+   
    real*8,allocatable :: alltables(:,:,:,:)
   ! index variable mapping:
   !  1 -> logpress
@@ -59,6 +61,9 @@
    real*8,save :: kb_erg = 1.380658d-16
    real*8,save :: kb_mev = 8.61738568d-11   
 
+#ifdef ENABLE_OMP_OFFLOAD   
+   !$OMP declare target ( nvars, nrho, ntemp, nye, logrho, logtemp, ye, alltables )
+#endif
 
  end module eosmodule
 

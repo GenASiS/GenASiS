@@ -42,8 +42,12 @@
 
       real*8 dx,dy,dz,dxi,dyi,dzi,dxyi,dxzi,dyzi,dxyzi
       integer n,ix,iy,iz
+#ifdef ENABLE_OMP_OFFLOAD
+      !$OMP declare target
+#endif
 
-      IF (kt .GT. ktx)  STOP '***KTX**'
+      !-- FIXME: commented this out since STOP is not supported on device 
+      !IF (kt .GT. ktx)  STOP '***KTX**'
 !
 !
 !------  determine spacing parameters of (equidistant!!!) table

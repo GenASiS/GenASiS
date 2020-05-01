@@ -229,6 +229,10 @@ subroutine readtable(eos_filename)
   eos_tempmin = 10.0d0**logtemp(1)
   eos_tempmax = 10.0d0**logtemp(ntemp)
 
+#ifdef ENABLE_OMP_OFFLOAD  
+  !$OMP target update to (alltables)
+#endif
+
   write(6,*) "Done reading eos tables"
 
 

@@ -351,9 +351,13 @@ end subroutine nuc_eos_one
 
 subroutine findthis(lr,lt,y,value,array,d1,d2,d3)
 
-  use eosmodule
+  use eosmodule, only: nvars, nrho, ntemp, nye, logrho, logtemp, ye, alltables
 
   implicit none
+  
+#ifdef ENABLE_OMP_OFFLOAD
+  !$OMP declare target
+#endif
 
   integer rip,rim
   integer tip,tim
@@ -365,15 +369,18 @@ subroutine findthis(lr,lt,y,value,array,d1,d2,d3)
 ! Ewald's interpolator           
   call intp3d(lr,lt,y,value,1,array,nrho,ntemp,nye,logrho,logtemp,ye,d1,d2,d3)
 
-
 end subroutine findthis
 
 
 subroutine findall(lr,lt,y,ff)
 
-  use eosmodule
+  use eosmodule, only: nvars, nrho, ntemp, nye, logrho, logtemp, ye, alltables
   implicit none
 
+#ifdef ENABLE_OMP_OFFLOAD  
+  !$OMP declare target
+#endif
+  
   real*8 ff(nvars)
   real*8 ffx(nvars,1)
   real*8 lr,lt,y
@@ -383,7 +390,6 @@ subroutine findall(lr,lt,y,ff)
   call intp3d_many(lr,lt,y,ffx,1,alltables,&
        nrho,ntemp,nye,nvars,logrho,logtemp,ye)
   ff(:) = ffx(:,1)
-
 
 end subroutine findall
 
