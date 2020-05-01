@@ -183,7 +183,8 @@ contains
              CentralMassOption = CentralMassOption, &
              nCellsPolarOption = nCellsPolarOption )
     call FC % InitializeFluid &
-           ( FluidType, FluidUseDeviceOption = FluidUseDeviceOption, &
+           ( FluidType, &
+             FluidUseDeviceOption = FluidUseDeviceOption, &
              LimiterParameterOption = LimiterParameterOption, &
              ShockThresholdOption = ShockThresholdOption )
     call FC % InitializeStep &
