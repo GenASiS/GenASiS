@@ -158,26 +158,23 @@ module LaplacianMultipole_ASC__Form
       end subroutine Compute_SH_iL_iM_2_CSL_Kernel
 
       module subroutine Sum_MC_CSL_S_Kernel &
-                          ( MyM_RC, MyM_IC, MyM_RS, MyM_IS, &
-                             SH_RC,  SH_IC,  SH_RS,  SH_IS, S, dV, &
-                            nC, oC, nE, oR, iA, iSH_0, &
-                            UseDeviceOption )
+                          ( MyM_RC, MyM_IC, MyM_RS, MyM_IS, S, &
+                             SH_RC,  SH_IC,  SH_RS,  SH_IS, dV, &
+                            nC, oC, nE, oR, UseDeviceOption )
         use Basics
         implicit none
-        real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
+        real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
           MyM_RC, MyM_IC, MyM_RS, MyM_IS  !-- MyMoments
         real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
-          SH_RC, SH_IC, SH_RS, SH_IS, &  !-- SolidHarmonics
           S  !-- Source
         real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+          SH_RC, SH_IC, SH_RS, SH_IS, &  !-- SolidHarmonics
           dV
         integer ( KDI ), dimension ( : ), intent ( in ) :: &
           nC, oC
         integer ( KDI ), intent ( in ) :: &
           nE, &  !-- nEquations
-          oR, &  !-- oRadius
-          iA, &  !-- iAngularMoment
-          iSH_0  !-- iSolidHarmonic_Current
+          oR     !-- oRadius
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
       end subroutine Sum_MC_CSL_S_Kernel
@@ -541,14 +538,16 @@ contains
              L % nEquations, L % Source )
 
     call Sum_MC_CSL_S_Kernel &
-           ( L % MyMoment_RC, L % MyMoment_IC, &
-             L % MyMoment_RS, L % MyMoment_IS, &
-             L % SolidHarmonic_RC, L % SolidHarmonic_IC,  &
-             L % SolidHarmonic_RS, L % SolidHarmonic_IS, &
-             L % Source, L % Volume, C % nCellsBrick, C % nGhostLayers, &
-             L % nEquations, &
+           ( L % MyMoment_RC ( :, :, iA ), L % MyMoment_IC ( :, :, iA ), &
+             L % MyMoment_RS ( :, :, iA ), L % MyMoment_IS ( :, :, iA ), &
+             L % Source, &
+             L % SolidHarmonic_RC ( :, :, :, iSH_0 ), &
+             L % SolidHarmonic_IC ( :, :, :, iSH_0 ), &
+             L % SolidHarmonic_RS ( :, :, :, iSH_0 ), &
+             L % SolidHarmonic_IS ( :, :, :, iSH_0 ), &
+             L % Volume, &
+             C % nCellsBrick, C % nGhostLayers, L % nEquations, &
              oR = ( C % iaBrick ( 1 ) - 1 ) * C % nCellsBrick ( 1 ), &
-             iA = iA, iSH_0 = iSH_0, &
              UseDeviceOption = L % UseDevice )
 
     class default

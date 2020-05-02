@@ -516,18 +516,18 @@ call PROGRAM_HEADER % Abort ( )
       MyM_RS_3D, MyM_IS_3D
 
     associate &
-      ( nE => L % nEquations, &
-        nR => L % nRadialCells, &
-        nA => L % nAngularMoments )
+      ( nA => L % nAngularMoments, &
+        nE => L % nEquations, &
+        nR => L % nRadialCells )
 
-      M_RC_3D ( 1 : nA, 1 : nR, 1 : nE )  =>    M_RC_1D
-      M_IC_3D ( 1 : nA, 1 : nR, 1 : nE )  =>    M_IC_1D
-      M_RS_3D ( 1 : nA, 1 : nR, 1 : nE )  =>    M_RS_1D
-      M_IS_3D ( 1 : nA, 1 : nR, 1 : nE )  =>    M_IS_1D
-    MyM_RC_3D ( 1 : nA, 1 : nR, 1 : nE )  =>  MyM_RC_1D
-    MyM_IC_3D ( 1 : nA, 1 : nR, 1 : nE )  =>  MyM_IC_1D
-    MyM_RS_3D ( 1 : nA, 1 : nR, 1 : nE )  =>  MyM_RS_1D
-    MyM_IS_3D ( 1 : nA, 1 : nR, 1 : nE )  =>  MyM_IS_1D
+      M_RC_3D ( 1 : nR, 1 : nE, 1 : nA )  =>    M_RC_1D
+      M_IC_3D ( 1 : nR, 1 : nE, 1 : nA )  =>    M_IC_1D
+      M_RS_3D ( 1 : nR, 1 : nE, 1 : nA )  =>    M_RS_1D
+      M_IS_3D ( 1 : nR, 1 : nE, 1 : nA )  =>    M_IS_1D
+    MyM_RC_3D ( 1 : nR, 1 : nE, 1 : nA )  =>  MyM_RC_1D
+    MyM_IC_3D ( 1 : nR, 1 : nE, 1 : nA )  =>  MyM_IC_1D
+    MyM_RS_3D ( 1 : nR, 1 : nE, 1 : nA )  =>  MyM_RS_1D
+    MyM_IS_3D ( 1 : nR, 1 : nE, 1 : nA )  =>  MyM_IS_1D
 
     end associate !-- nR, nA
 

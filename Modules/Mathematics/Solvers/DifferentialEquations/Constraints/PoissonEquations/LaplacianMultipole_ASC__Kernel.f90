@@ -436,7 +436,7 @@ contains
     if ( UseDevice ) then
 
       !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 4 ) &
-      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iR, iT, iP, iE )
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iR, iT, iP, iE ) &
       !$OMP& reduction ( + : MyM_RC ) &
       !$OMP& reduction ( + : MyM_IC ) &
       !$OMP& reduction ( + : MyM_RS ) &
@@ -446,24 +446,24 @@ contains
           do iT  =  oC ( 2 )  +  1,  oC ( 2 )  +  nC ( 2 )
             do iR  =  oC ( 1 )  +  1,  oC ( 1 )  +  nC ( 1 )
 
-              MyM_RC ( iA, oR - oC ( 1 ) + iR, iE )  &
-                =  MyM_RC ( iA, oR - oC ( 1 ) + iR, iE )  &
-                   +  SH_RC ( iR, iT, iP, iSH_0 )  *  S ( iR, iT, iP, iE )  &
+              MyM_RC ( oR - oC ( 1 ) + iR, iE )  &
+                =  MyM_RC ( oR - oC ( 1 ) + iR, iE )  &
+                   +  SH_RC ( iR, iT, iP )  *  S ( iR, iT, iP, iE )  &
                       *  dV ( iR, iT, iP )
 
-              MyM_IC ( iA, oR - oC ( 1 ) + iR, iE )  &
-                =  MyM_IC ( iA, oR - oC ( 1 ) + iR, iE )  &
-                   +  SH_IC ( iR, iT, iP, iSH_0 )  *  S ( iR, iT, iP, iE )  &
+              MyM_IC ( oR - oC ( 1 ) + iR, iE )  &
+                =  MyM_IC ( oR - oC ( 1 ) + iR, iE )  &
+                   +  SH_IC ( iR, iT, iP )  *  S ( iR, iT, iP, iE )  &
                       *  dV ( iR, iT, iP )
 
-              MyM_RS ( iA, oR - oC ( 1 ) + iR, iE )  &
-                =  MyM_RS ( iA, oR - oC ( 1 ) + iR, iE )  &
-                   +  SH_RS ( iR, iT, iP, iSH_0 )  *  S ( iR, iT, iP, iE )  &
+              MyM_RS ( oR - oC ( 1 ) + iR, iE )  &
+                =  MyM_RS ( oR - oC ( 1 ) + iR, iE )  &
+                   +  SH_RS ( iR, iT, iP )  *  S ( iR, iT, iP, iE )  &
                       *  dV ( iR, iT, iP )
 
-              MyM_IS ( iA, oR - oC ( 1 ) + iR, iE )  &
-                =  MyM_IS ( iA, oR - oC ( 1 ) + iR, iE )  &
-                   +  SH_IS ( iR, iT, iP, iSH_0 )  *  S ( iR, iT, iP, iE )  &
+              MyM_IS ( oR - oC ( 1 ) + iR, iE )  &
+                =  MyM_IS ( oR - oC ( 1 ) + iR, iE )  &
+                   +  SH_IS ( iR, iT, iP )  *  S ( iR, iT, iP, iE )  &
                       *  dV ( iR, iT, iP )
 
             end do !-- iR
@@ -485,24 +485,24 @@ contains
           do iT  =  oC ( 2 )  +  1,  oC ( 2 )  +  nC ( 2 )
             do iR  =  oC ( 1 )  +  1,  oC ( 1 )  +  nC ( 1 )
 
-              MyM_RC ( iA, oR - oC ( 1 ) + iR, iE )  &
-                =  MyM_RC ( iA, oR - oC ( 1 ) + iR, iE )  &
-                   +  SH_RC ( iR, iT, iP, iSH_0 )  *  S ( iR, iT, iP, iE )  &
+              MyM_RC ( oR - oC ( 1 ) + iR, iE )  &
+                =  MyM_RC ( oR - oC ( 1 ) + iR, iE )  &
+                   +  SH_RC ( iR, iT, iP )  *  S ( iR, iT, iP, iE )  &
                       *  dV ( iR, iT, iP )
 
-              MyM_IC ( iA, oR - oC ( 1 ) + iR, iE )  &
-                =  MyM_IC ( iA, oR - oC ( 1 ) + iR, iE )  &
-                   +  SH_IC ( iR, iT, iP, iSH_0 )  *  S ( iR, iT, iP, iE )  &
+              MyM_IC ( oR - oC ( 1 ) + iR, iE )  &
+                =  MyM_IC ( oR - oC ( 1 ) + iR, iE )  &
+                   +  SH_IC ( iR, iT, iP )  *  S ( iR, iT, iP, iE )  &
                       *  dV ( iR, iT, iP )
 
-              MyM_RS ( iA, oR - oC ( 1 ) + iR, iE )  &
-                =  MyM_RS ( iA, oR - oC ( 1 ) + iR, iE )  &
-                   +  SH_RS ( iR, iT, iP, iSH_0 )  *  S ( iR, iT, iP, iE )  &
+              MyM_RS ( oR - oC ( 1 ) + iR, iE )  &
+                =  MyM_RS ( oR - oC ( 1 ) + iR, iE )  &
+                   +  SH_RS ( iR, iT, iP )  *  S ( iR, iT, iP, iE )  &
                       *  dV ( iR, iT, iP )
 
-              MyM_IS ( iA, oR - oC ( 1 ) + iR, iE )  &
-                =  MyM_IS ( iA, oR - oC ( 1 ) + iR, iE )  &
-                   +  SH_IS ( iR, iT, iP, iSH_0 )  *  S ( iR, iT, iP, iE )  &
+              MyM_IS ( oR - oC ( 1 ) + iR, iE )  &
+                =  MyM_IS ( oR - oC ( 1 ) + iR, iE )  &
+                   +  SH_IS ( iR, iT, iP )  *  S ( iR, iT, iP, iE )  &
                       *  dV ( iR, iT, iP )
 
             end do !-- iR
