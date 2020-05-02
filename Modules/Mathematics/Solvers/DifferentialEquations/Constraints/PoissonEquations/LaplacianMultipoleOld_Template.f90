@@ -350,6 +350,8 @@ contains
     call LM % ComputeMomentsLocal ( Source )
     if ( associated ( Timer_LM ) ) call Timer_LM % Stop ( )
 
+call Show ( MyM % Value ( 1 : 10, 1 ), '>>> MyM % Value ( 1 : 10, 1 )' )
+
     if ( associated ( Timer_RM ) ) call Timer_RM % Start ( )
     call MyM % UpdateHost ( )
     call LM % ReductionMoments % Reduce ( REDUCTION % SUM )

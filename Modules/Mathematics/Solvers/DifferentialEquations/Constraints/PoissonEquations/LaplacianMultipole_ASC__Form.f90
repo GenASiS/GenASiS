@@ -160,7 +160,7 @@ module LaplacianMultipole_ASC__Form
       module subroutine Sum_MC_CSL_S_Kernel &
                           ( MyM_RC, MyM_IC, MyM_RS, MyM_IS, &
                              SH_RC,  SH_IC,  SH_RS,  SH_IS, S, dV, &
-                            nC, oC, nE, iA, iSH_0, &
+                            nC, oC, nE, oR, iA, iSH_0, &
                             UseDeviceOption )
         use Basics
         implicit none
@@ -175,6 +175,7 @@ module LaplacianMultipole_ASC__Form
           nC, oC
         integer ( KDI ), intent ( in ) :: &
           nE, &  !-- nEquations
+          oR, &  !-- oRadius
           iA, &  !-- iAngularMoment
           iSH_0  !-- iSolidHarmonic_Current
         logical ( KDL ), intent ( in ), optional :: &
@@ -536,8 +537,8 @@ contains
     class is ( StorageForm )
 
     call AssignSourcePointer &
-           ( Source % Value, C % nCellsBrick, C % nGhostLayers, L % nEquations, &
-             L % Source )
+           ( Source % Value, C % nCellsBrick, C % nGhostLayers, &
+             L % nEquations, L % Source )
 
     call Sum_MC_CSL_S_Kernel &
            ( L % MyMoment_RC, L % MyMoment_IC, &
@@ -545,7 +546,9 @@ contains
              L % SolidHarmonic_RC, L % SolidHarmonic_IC,  &
              L % SolidHarmonic_RS, L % SolidHarmonic_IS, &
              L % Source, L % Volume, C % nCellsBrick, C % nGhostLayers, &
-             L % nEquations, iA, iSH_0, &
+             L % nEquations, &
+             oR = ( C % iaBrick ( 1 ) - 1 ) * C % nCellsBrick ( 1 ), &
+             iA = iA, iSH_0 = iSH_0, &
              UseDeviceOption = L % UseDevice )
 
     class default

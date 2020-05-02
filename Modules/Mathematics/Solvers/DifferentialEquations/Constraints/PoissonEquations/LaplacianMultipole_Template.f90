@@ -259,6 +259,8 @@ contains
     call L % ComputeMomentContributions ( Source )
     if ( associated ( Timer_LM ) ) call Timer_LM % Stop ( )
 
+call Show ( MyM % Value ( 1 : 10, 1 ), '>>> MyM % Value ( 1 : 10, 1 )' )
+
     if ( associated ( Timer_RM ) ) call Timer_RM % Start ( )
     call MyM % UpdateHost ( )
     call L % ReductionMoments % Reduce ( REDUCTION % SUM )
@@ -374,7 +376,7 @@ call PROGRAM_HEADER % Abort ( )
                nR  =>  L % nRadialCells, &
                nE  =>  L % nEquations )
 
-    call   M % Initialize ( [ nA * nR * nE, 4 ] )
+    call   M % Initialize ( [ nA * nR * nE, 4 ], PinnedOption = .true. )
     call MyM % Initialize ( [ nA * nR * nE, 4 ], PinnedOption = .true. )
       !-- 4: RegularCos, IrregularCos, RegularSin, IrregularSin
     if ( L % UseDevice ) then
