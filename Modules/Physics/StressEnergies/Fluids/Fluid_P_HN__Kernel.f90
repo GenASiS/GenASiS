@@ -117,6 +117,12 @@ contains
       T_Temp, &
 !      cs2, dedt, dpderho, dpdrhoe, munu
       cs2, dedt, dpderho, dpdrhoe, mu_n, mu_p
+    logical ( KDL ) :: &
+      UseDevice
+           
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
 
     nValues = size ( P )
 
@@ -125,45 +131,104 @@ contains
     rfeps = 1.0e-9_KDR
     keytemp = 1_KDI
 
-    !$OMP parallel do private ( iV ) 
-    do iV = 1, nValues
-      if ( N ( iV ) == 0.0_KDR ) cycle 
-      Rho_Temp = M ( iV ) * N ( iV ) / MassDensity_CGS
-      T_Temp   = T ( iV ) / MeV
-      E ( iV ) = ( E ( iV ) / ( M ( iV ) * N ( iV ) )  -  OR_Shift ) &
-                 / SpecificEnergy_CGS
-      P ( iV ) = P ( iV ) / Pressure_CGS
-      ! call nuc_eos_short &
-      !        ( N_Temp, T_Temp, YE ( iV ), E ( iV ), P ( iV ), SB ( iV ), &
-      !          cs2, dedt, dpderho, dpdrhoe, munu, &
-      !          keytemp, keyerr, rfeps )
-      call nuc_eos_full &
-             ( Rho_Temp, T_Temp, YE ( iV ), E ( iV ), P ( iV ), SB ( iV ), &
-               cs2, dedt, dpderho, dpdrhoe, X_He ( iV ), X_A ( iV ), &
-               X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), Mu_E ( iV ), &
-               mu_n, mu_p, Mu_NP ( iV ), keytemp, keyerr, rfeps )
-      if ( keyerr /= 0 ) then
-        Rank = PROGRAM_HEADER % Communicator % Rank
-        call Show ( 'EOS error', CONSOLE % WARNING, &
-                    DisplayRankOption = Rank )
-        call Show ( 'Fluid_P_HN__Form', 'module', CONSOLE % WARNING, &
-                    DisplayRankOption = Rank )
-        call Show ( 'Apply_EOS_HN_T_Kernel', 'subroutine', &
-                    CONSOLE % WARNING, DisplayRankOption = Rank )
-        call Show ( Rank, 'Rank', DisplayRankOption = Rank )
-        call Show ( iV, 'iV', CONSOLE % WARNING, &
-                    DisplayRankOption = Rank )
-      end if
-!      call nuc_eos_one ( Rho_Temp, T_Temp, YE ( iV ), Gamma ( iV ), 19 )
-      P ( iV )      =  P ( iV ) * Pressure_CGS
-      E ( iV )      =  E ( iV ) * SpecificEnergy_CGS  +  OR_Shift
-      E ( iV )      =  E ( iV ) * M ( iV ) * N ( iV )
-      CS ( iV )     =  sqrt ( cs2 ) * Speed_CGS
-      Mu_NP ( iV )  =  Mu_NP ( iV ) * MeV
-      Mu_E  ( iV )  =  Mu_E ( iV ) * MeV
-    end do
-    !$OMP end parallel do
+    if ( UseDevice ) then
     
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) &
+      !$OMP& private ( iV, keyerr, Rho_Temp, T_Temp, &
+      !$OMP&           cs2, dedt, dpderho, dpdrhoe, mu_n, mu_p ) &
+      !$OMP& firstprivate ( rfeps, keytemp, nValues )
+      do iV = 1, nValues
+        
+        if ( N ( iV ) == 0.0_KDR ) cycle 
+        
+        Rho_Temp = M ( iV ) * N ( iV ) / MassDensity_CGS
+        T_Temp   = T ( iV ) / MeV
+        E ( iV ) = ( E ( iV ) / ( M ( iV ) * N ( iV ) )  -  OR_Shift ) &
+                   / SpecificEnergy_CGS
+        P ( iV ) = P ( iV ) / Pressure_CGS
+        ! call nuc_eos_short &
+        !        ( N_Temp, T_Temp, YE ( iV ), E ( iV ), P ( iV ), SB ( iV ), &
+        !          cs2, dedt, dpderho, dpdrhoe, munu, &
+        !          keytemp, keyerr, rfeps )
+        call nuc_eos_full &
+               ( Rho_Temp, T_Temp, YE ( iV ), E ( iV ), P ( iV ), SB ( iV ), &
+                 cs2, dedt, dpderho, dpdrhoe, X_He ( iV ), X_A ( iV ), &
+                 X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), Mu_E ( iV ), &
+                 mu_n, mu_p, Mu_NP ( iV ), keytemp, keyerr, rfeps )
+
+        !if ( keyerr /= 0 ) then
+        !  Rank = PROGRAM_HEADER % Communicator % Rank
+        !  call Show ( 'EOS error', CONSOLE % WARNING, &
+        !              DisplayRankOption = Rank )
+        !  call Show ( 'Fluid_P_HN__Form', 'module', CONSOLE % WARNING, &
+        !              DisplayRankOption = Rank )
+        !  call Show ( 'Apply_EOS_HN_T_Kernel', 'subroutine', &
+        !              CONSOLE % WARNING, DisplayRankOption = Rank )
+        !  call Show ( Rank, 'Rank', DisplayRankOption = Rank )
+        !  call Show ( iV, 'iV', CONSOLE % WARNING, &
+        !              DisplayRankOption = Rank )
+        !end if
+  !      call nuc_eos_one ( Rho_Temp, T_Temp, YE ( iV ), Gamma ( iV ), 19 )
+        P ( iV )      =  P ( iV ) * Pressure_CGS
+        E ( iV )      =  E ( iV ) * SpecificEnergy_CGS  +  OR_Shift
+        E ( iV )      =  E ( iV ) * M ( iV ) * N ( iV )
+        CS ( iV )     =  sqrt ( cs2 ) * Speed_CGS
+        Mu_NP ( iV )  =  Mu_NP ( iV ) * MeV
+        Mu_E  ( iV )  =  Mu_E ( iV ) * MeV
+        
+      end do
+      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+      
+    else
+    
+      !$OMP  parallel do &
+      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV ) &
+      !$OMP& firstprivate ( rfeps, keytemp, nValues )
+      do iV = 1, nValues
+        
+        if ( N ( iV ) == 0.0_KDR ) cycle 
+        
+        Rho_Temp = M ( iV ) * N ( iV ) / MassDensity_CGS
+        T_Temp   = T ( iV ) / MeV
+        E ( iV ) = ( E ( iV ) / ( M ( iV ) * N ( iV ) )  -  OR_Shift ) &
+                   / SpecificEnergy_CGS
+        P ( iV ) = P ( iV ) / Pressure_CGS
+        ! call nuc_eos_short &
+        !        ( N_Temp, T_Temp, YE ( iV ), E ( iV ), P ( iV ), SB ( iV ), &
+        !          cs2, dedt, dpderho, dpdrhoe, munu, &
+        !          keytemp, keyerr, rfeps )
+        call nuc_eos_full &
+               ( Rho_Temp, T_Temp, YE ( iV ), E ( iV ), P ( iV ), SB ( iV ), &
+                 cs2, dedt, dpderho, dpdrhoe, X_He ( iV ), X_A ( iV ), &
+                 X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), Mu_E ( iV ), &
+                 mu_n, mu_p, Mu_NP ( iV ), keytemp, keyerr, rfeps )
+
+        !if ( keyerr /= 0 ) then
+        !  Rank = PROGRAM_HEADER % Communicator % Rank
+        !  call Show ( 'EOS error', CONSOLE % WARNING, &
+        !              DisplayRankOption = Rank )
+        !  call Show ( 'Fluid_P_HN__Form', 'module', CONSOLE % WARNING, &
+        !              DisplayRankOption = Rank )
+        !  call Show ( 'Apply_EOS_HN_T_Kernel', 'subroutine', &
+        !              CONSOLE % WARNING, DisplayRankOption = Rank )
+        !  call Show ( Rank, 'Rank', DisplayRankOption = Rank )
+        !  call Show ( iV, 'iV', CONSOLE % WARNING, &
+        !              DisplayRankOption = Rank )
+        !end if
+  !      call nuc_eos_one ( Rho_Temp, T_Temp, YE ( iV ), Gamma ( iV ), 19 )
+        P ( iV )      =  P ( iV ) * Pressure_CGS
+        E ( iV )      =  E ( iV ) * SpecificEnergy_CGS  +  OR_Shift
+        E ( iV )      =  E ( iV ) * M ( iV ) * N ( iV )
+        CS ( iV )     =  sqrt ( cs2 ) * Speed_CGS
+        Mu_NP ( iV )  =  Mu_NP ( iV ) * MeV
+        Mu_E  ( iV )  =  Mu_E ( iV ) * MeV
+        
+      end do
+      !$OMP  end parallel do
+    
+    end if
+      
   end procedure Apply_EOS_HN_T_Kernel
   
 

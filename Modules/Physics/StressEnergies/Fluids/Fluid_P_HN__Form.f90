@@ -577,9 +577,11 @@ contains
     call C % Compute_M_Kernel &
            ( M, C % BaryonMassReference, &
              UseDeviceOption = C % AllocatedDevice )
+    call Show ( 'Apply_EOS_HN_T_Kernel' )
     call C % Apply_EOS_HN_T_Kernel &
            ( P, E, CS, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
              M, N, T, YE, UseDeviceOption = C % AllocatedDevice )
+    call Show ( 'End Apply_EOS_HN_T_Kernel' )
     call C % Compute_D_S_G_Kernel &
            ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33, &
              UseDeviceOption = C % AllocatedDevice )
