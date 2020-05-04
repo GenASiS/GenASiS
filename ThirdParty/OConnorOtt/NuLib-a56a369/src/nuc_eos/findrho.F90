@@ -4,6 +4,12 @@ subroutine findrho_press(lr0,lt,y,lpressin,keyerrr,tol)
   use eosmodule
 
   implicit none
+  
+#ifdef ENABLE_OMP_OFFLOAD  
+  external :: bisection_rho
+  !$OMP declare target
+  !$OMP declare target ( bisection_rho )
+#endif 
 
   !given initial guess of density
   real*8 :: lr0
@@ -56,9 +62,13 @@ subroutine findrho_press(lr0,lt,y,lpressin,keyerrr,tol)
 !     write(*,*) i,lr,d1,lpressin-lpress_of_guess
      ldr= (lpressin-lpress_of_guess)/d1 
      if (abs(ldr).gt.5.0d0) then
+#ifndef ENABLE_OMP_OFFLOAD
         write(*,*) i,ldr,d1,lr,lr_new
+#endif
         keyerrr = 473
+#ifndef ENABLE_OMP_OFFLOAD
         write(*,*) "dpdrho very small"
+#endif
         return
      endif
      lr_new = lr+ldr
@@ -97,11 +107,13 @@ subroutine findrho_press(lr0,lt,y,lpressin,keyerrr,tol)
      if(keyerrr.eq.667) then
         ! total failure
         call findthis(lr,lt,y,lpress_of_guess,alltables(:,:,:,1),d1,d2,d3)
+#ifndef ENABLE_OMP_OFFLOAD
         write(*,*) "EOS: Did not converge in findrho_press!"
         write(*,*) "iteration,logrho0,logtemp,ye,lpressin,lpress_first,rhoreturn,press_of_rhoreturn"
         write(*,"(i4,1P10E19.10)") i,lr0,lt,y,lpressin,first_lpress,lr,lpress_of_guess
         write(*,*) "Tried calling bisection... didn't help... :-/"
         write(*,*) "Bisection error: ",keyerrr
+#endif        
      endif
   endif
     

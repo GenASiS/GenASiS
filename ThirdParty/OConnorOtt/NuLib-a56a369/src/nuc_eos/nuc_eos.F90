@@ -34,6 +34,13 @@ subroutine nuc_eos_full(xrho,xtemp,xye,xenr,xprs,xent,xcs2,xdedt,&
   integer, intent(in)   :: keytemp
   integer, intent(out)  :: keyerr
 
+#ifdef ENABLE_OMP_OFFLOAD
+  external :: findtemp, findtemp_entropy, findrho_press
+  !$OMP declare target
+  !$OMP declare target ( findtemp )
+  !$OMP declare target ( findtemp_entropy )
+  !$OMP declare target ( findrho_press )
+#endif
 
   ! local variables
   real*8 :: lr,lt,y,xx,xeps,leps,xs,xpressure
@@ -356,7 +363,9 @@ subroutine findthis(lr,lt,y,value,array,d1,d2,d3)
   implicit none
   
 #ifdef ENABLE_OMP_OFFLOAD
+  external :: intp3d
   !$OMP declare target
+  !$OMP declare target ( intp3d )
 #endif
 
   integer rip,rim
@@ -378,7 +387,9 @@ subroutine findall(lr,lt,y,ff)
   implicit none
 
 #ifdef ENABLE_OMP_OFFLOAD  
+  external :: intp3d_many
   !$OMP declare target
+  !$OMP declare target ( intp3d_many )
 #endif
   
   real*8 ff(nvars)

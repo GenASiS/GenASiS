@@ -4,6 +4,12 @@ subroutine findtemp(lr,lt0,y,epsin,keyerrt,rfeps)
 
   implicit none
 
+#ifdef ENABLE_OMP_OFFLOAD  
+  external :: bisection
+  !$OMP declare target
+  !$OMP declare target ( bisection )
+#endif 
+
   real*8 lr,lt0,y,epsin
   real*8 eps,lt,ldt
   real*8 tol
@@ -96,11 +102,13 @@ subroutine findtemp(lr,lt0,y,epsin,keyerrt,rfeps)
           goto 12
        else
           ! total failure
+#ifndef ENABLE_OMP_OFFLOAD
           write(*,*) "EOS: Did not converge in findtemp!"
           write(*,*) "rl,logrho,logtemp0,ye,lt,eps,eps0,abs(eps-eps0)/eps0"
           write(*,"(i4,i4,1P10E19.10)") i,rl,lr,lt0,y,lt,eps,eps0,abs(eps-eps0)/eps0
           write(*,*) "Tried calling bisection... didn't help... :-/"
           write(*,*) "Bisection error: ",keyerrt
+#endif
        endif
     endif
     
@@ -123,6 +131,10 @@ subroutine findtemp_entropy(lr,lt0,y,sin,keyerrt,rfeps)
   use eosmodule
 
   implicit none
+
+#ifdef ENABLE_OMP_OFFLOAD  
+  !$OMP declare target
+#endif 
 
   real*8 lr,lt0,y,sin
   real*8 s,lt,ldt
@@ -189,11 +201,13 @@ subroutine findtemp_entropy(lr,lt0,y,sin,keyerrt,rfeps)
     keyerrt=667
    call bisection(lr,lt0,y,s0,lt,alltables(:,:,:,3),keyerrt,2)
     if(keyerrt.eq.667) then
+#ifndef ENABLE_OMP_OFFLOAD
           write(*,*) "EOS: Did not converge in findtemp_entropy!"
           write(*,*) "rl,logrho,logtemp0,ye,lt,s,s0,abs(s-s0)/s0"
           write(*,"(i4,i4,1P10E19.10)") i,rl,lr,lt0,y,lt,s,s0,abs(s-s0)/s0
           write(*,*) "Tried calling bisection... didn't help... :-/"
           write(*,*) "Bisection error: ",keyerrt
+#endif
     endif
     
     lt0=lt

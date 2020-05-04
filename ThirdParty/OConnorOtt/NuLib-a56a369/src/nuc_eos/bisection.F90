@@ -4,6 +4,10 @@ subroutine bisection(lr,lt0,y,eps0,lt,bivar,keyerrt,keybisect)
 
   implicit none
 
+#ifdef ENABLE_OMP_OFFLOAD    
+  !$OMP declare target
+#endif     
+  
   real*8 lr,lt0,y,eps0,lt
   integer keyerrt
 
@@ -86,6 +90,10 @@ subroutine bisection_rho(lr0,lt,y,lpressin,lr,bivar,keyerrr,keybisect)
   use eosmodule
 
   implicit none
+
+#ifdef ENABLE_OMP_OFFLOAD    
+  !$OMP declare target
+#endif     
 
   real*8 lr,lr0,y,lpressin,lt
   integer keyerrr

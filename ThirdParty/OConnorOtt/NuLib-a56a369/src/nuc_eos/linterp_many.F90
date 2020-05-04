@@ -27,6 +27,10 @@
 !
 !---------------------------------------------------------------------
 
+#ifdef ENABLE_OMP_OFFLOAD
+      !$OMP declare target
+#endif
+
       integer kt,nx,ny,nz,iv,nvars
       real*8 :: ft(nx,ny,nz,nvars)
 
@@ -42,9 +46,6 @@
 
       real*8 dx,dy,dz,dxi,dyi,dzi,dxyi,dxzi,dyzi,dxyzi
       integer n,ix,iy,iz
-#ifdef ENABLE_OMP_OFFLOAD
-      !$OMP declare target
-#endif
 
       !-- FIXME: commented this out since STOP is not supported on device 
       !IF (kt .GT. ktx)  STOP '***KTX**'
@@ -69,7 +70,7 @@
 !
 !------- loop over all points to be interpolated
 !
-      dO  n = 1, kt                                            
+      do  n = 1, kt                                            
 !
 !------- determine location in (equidistant!!!) table 
 !                                                                  
