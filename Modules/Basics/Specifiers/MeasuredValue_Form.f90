@@ -756,9 +756,10 @@ contains
       Q_MV_MV
     
     !-- FIXME: Workaround for GCC 5.1 bug 66257
-    P_MV_I  = Divisor ** ( -1 )
+    !P_MV_I  = Divisor ** ( -1 )
     
-    Q_MV_MV = Dividend * P_MV_I
+    !Q_MV_MV = Dividend * P_MV_I
+    Q_MV_MV = Dividend * Divisor ** ( -1 )
 
   end function Quotient_MV_MV
   
