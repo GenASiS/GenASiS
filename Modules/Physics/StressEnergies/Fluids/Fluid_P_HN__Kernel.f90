@@ -2,6 +2,7 @@
 
 submodule ( Fluid_P_HN__Form ) Fluid_P_HN__Kernel
 
+  use NUC_EOS
   use Basics
   
   implicit none
@@ -155,7 +156,8 @@ contains
                ( Rho_Temp, T_Temp, YE ( iV ), E ( iV ), P ( iV ), SB ( iV ), &
                  cs2, dedt, dpderho, dpdrhoe, X_He ( iV ), X_A ( iV ), &
                  X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), Mu_E ( iV ), &
-                 mu_n, mu_p, Mu_NP ( iV ), keytemp, keyerr, rfeps )
+                 mu_n, mu_p, Mu_NP ( iV ), keytemp, keyerr, rfeps, T_L_D, &
+                 T_L_T, T_YE, T_EOS )
 
         !if ( keyerr /= 0 ) then
         !  Rank = PROGRAM_HEADER % Communicator % Rank
@@ -202,7 +204,8 @@ contains
                ( Rho_Temp, T_Temp, YE ( iV ), E ( iV ), P ( iV ), SB ( iV ), &
                  cs2, dedt, dpderho, dpdrhoe, X_He ( iV ), X_A ( iV ), &
                  X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), Mu_E ( iV ), &
-                 mu_n, mu_p, Mu_NP ( iV ), keytemp, keyerr, rfeps )
+                 mu_n, mu_p, Mu_NP ( iV ), keytemp, keyerr, rfeps, T_L_D, &
+                 T_L_T, T_YE, T_EOS )
 
         !if ( keyerr /= 0 ) then
         !  Rank = PROGRAM_HEADER % Communicator % Rank
@@ -273,7 +276,8 @@ contains
                  SB ( iV ), cs2, dedt, dpderho, dpdrhoe, X_He ( iV ), &
                  X_A ( iV ), X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), &
                  Mu_E ( iV ), mu_n, mu_p, Mu_NP ( iV ), &
-                 keytemp_e, keyerr, rfeps )
+                 keytemp_e, keyerr, rfeps, T_L_D, &
+                 T_L_T, T_YE, T_EOS )
       else !-- not Shock
         ! call nuc_eos_short &
         !        ( N_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), SB ( iV ), &
@@ -284,7 +288,7 @@ contains
                  SB ( iV ), cs2, dedt, dpderho, dpdrhoe, X_He ( iV ), &
                  X_A ( iV ), X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), &
                  Mu_E ( iV ), mu_n, mu_p, Mu_NP ( iV ), &
-                 keytemp_s, keyerr, rfeps )
+                 keytemp_s, keyerr, rfeps, T_L_D, T_L_T, T_YE, T_EOS )
       end if !-- Shock
       if ( keyerr /= 0 ) then
         Rank = PROGRAM_HEADER % Communicator % Rank
@@ -350,7 +354,7 @@ contains
                SB ( iV ), cs2, dedt, dpderho, dpdrhoe, X_He ( iV ), &
                X_A ( iV ), X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), &
                Mu_E ( iV ), mu_n, mu_p, Mu_NP ( iV ), &
-               keytemp_e, keyerr, rfeps )
+               keytemp_e, keyerr, rfeps, T_L_D, T_L_T, T_YE, T_EOS )
       if ( keyerr /= 0 ) then
         Rank = PROGRAM_HEADER % Communicator % Rank
         call Show ( 'EOS error', CONSOLE % WARNING, &
@@ -416,7 +420,7 @@ contains
                SB ( iV ), cs2, dedt, dpderho, dpdrhoe, X_He ( iV ), &
                X_A ( iV ), X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), &
                Mu_E ( iV ), mu_n, mu_p, Mu_NP ( iV ), &
-               keytemp_s, keyerr, rfeps )
+               keytemp_s, keyerr, rfeps, T_L_D, T_L_T, T_YE, T_EOS )
       if ( keyerr /= 0 ) then
         Rank = PROGRAM_HEADER % Communicator % Rank
         call Show ( 'EOS error', CONSOLE % WARNING, &

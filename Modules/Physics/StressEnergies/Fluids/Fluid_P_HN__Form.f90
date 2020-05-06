@@ -1,7 +1,9 @@
 module Fluid_P_HN__Form
 
   !-- Fluid_Perfect_RepresentativeHeavyNucleus__Form
-
+  
+  use EOSMODULE 
+  use NUC_EOS
   use Basics
   use Mathematics
   use StressEnergyBasics
@@ -37,9 +39,17 @@ module Fluid_P_HN__Form
         !   measured with respect to m_n.)
       CHEMICAL_POTENTIAL_E      = 0     
         !-- Includes m_e.
+    real ( KDR ), dimension ( : ), allocatable :: &
+      TableLogDensity, &
+      TableLogTemperature, &
+      TableElectronFraction
+    real ( KDR ), dimension ( :, :, :, : ), allocatable :: &
+      Table_EOS
   contains
     procedure, public, pass :: &
       Initialize_P_HN
+    procedure, public, pass :: &
+      AllocateDevice => AllocateDevice_P_HN
     procedure, public, pass :: &
       SetPrimitiveConserved
     procedure, public, pass :: &
@@ -114,7 +124,7 @@ module Fluid_P_HN__Form
     
     module subroutine Apply_EOS_HN_T_Kernel &
              ( P, E, CS, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-               M, N, T, YE, UseDeviceOption )
+               T_EOS, M, N, T, YE, T_L_D, T_L_T, T_YE, UseDeviceOption )
       use Basics
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         P, &
@@ -124,11 +134,16 @@ module Fluid_P_HN__Form
         X_P, X_N, X_He, X_A, &
         Z, A, &
         Mu_NP, Mu_E
+      real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
+        T_EOS
       real ( KDR ), dimension ( : ), intent ( in ) :: &
         M, &
         N, &
         T, &
-        YE
+        YE, &
+        T_L_D, &  !-- TableLogDensity
+        T_L_T, &  !-- TableLogTemperature
+        T_YE      !-- TableElectronFraction
       logical ( KDL ), intent ( in ), optional :: &
         UseDeviceOption
     end subroutine Apply_EOS_HN_T_Kernel
@@ -136,7 +151,7 @@ module Fluid_P_HN__Form
 
     module subroutine Apply_EOS_HN_SB_E_Kernel &
              ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-               M, N, YE, Shock, UseDeviceOption ) 
+               T_EOS, M, N, YE, Shock, T_L_D, T_L_T, T_YE, UseDeviceOption ) 
       use Basics
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         P, &
@@ -147,11 +162,16 @@ module Fluid_P_HN__Form
         X_P, X_N, X_He, X_A, &
         Z, A, &
         Mu_NP, Mu_E
+      real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
+        T_EOS
       real ( KDR ), dimension ( : ), intent ( in ) :: &
         M, &
         N, &
         YE, &
-        Shock
+        Shock, &
+        T_L_D, &  !-- TableLogDensity
+        T_L_T, &  !-- TableLogTemperature
+        T_YE      !-- TableElectronFraction
       logical ( KDL ), intent ( in ), optional :: &
         UseDeviceOption
     end subroutine Apply_EOS_HN_SB_E_Kernel
@@ -159,7 +179,7 @@ module Fluid_P_HN__Form
 
     module subroutine Apply_EOS_HN_E_Kernel &
              ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-               M, N, YE, UseDeviceOption )
+               T_EOS, M, N, YE, T_L_D, T_L_T, T_YE, UseDeviceOption )
       use Basics
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         P, &
@@ -170,10 +190,15 @@ module Fluid_P_HN__Form
         X_P, X_N, X_He, X_A, &
         Z, A, &
         Mu_NP, Mu_E
+      real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
+        T_EOS
       real ( KDR ), dimension ( : ), intent ( in ) :: &
         M, &
         N, &
-        YE
+        YE, &
+        T_L_D, &  !-- TableLogDensity
+        T_L_T, &  !-- TableLogTemperature
+        T_YE      !-- TableElectronFraction
       logical ( KDL ), intent ( in ), optional :: &
         UseDeviceOption
     end subroutine Apply_EOS_HN_E_Kernel
@@ -181,7 +206,7 @@ module Fluid_P_HN__Form
 
     module subroutine Apply_EOS_HN_SB_Kernel &
              ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-               M, N, YE, UseDeviceOption )
+               T_EOS, M, N, YE, T_L_D, T_L_T, T_YE, UseDeviceOption )
       use Basics
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         P, &
@@ -192,10 +217,15 @@ module Fluid_P_HN__Form
         X_P, X_N, X_He, X_A, &
         Z, A, &
         Mu_NP, Mu_E
+      real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
+        T_EOS
       real ( KDR ), dimension ( : ), intent ( in ) :: &
         M, &
         N, &
-        YE
+        YE, &
+        T_L_D, &  !-- TableLogDensity
+        T_L_T, &  !-- TableLogTemperature
+        T_YE      !-- TableElectronFraction
       logical ( KDL ), intent ( in ), optional :: &
         UseDeviceOption
     end subroutine Apply_EOS_HN_SB_Kernel
@@ -300,6 +330,11 @@ contains
 !    call READTABLE &
 !           ( '../Parameters/Hempel_SFHoEOS_rho222_temp180_ye60_version_1.1' &
 !             // '_20120817.h5' )
+    
+    allocate ( F % TableLogDensity, source = logrho )
+    allocate ( F % TableLogTemperature, source = logtemp )
+    allocate ( F % TableElectronFraction, source = ye )
+    allocate ( F % Table_EOS, source = alltables )
 
     !-- Historical Oak Ridge Shift, accounting for nuclear binding energy
     OR_Shift = 8.9_KDR * UNIT % MEGA_ELECTRON_VOLT &
@@ -314,6 +349,36 @@ contains
     TableInitialized  =  .true.
 
   end subroutine Initialize_P_HN
+  
+  
+  subroutine AllocateDevice_P_HN ( S ) 
+    
+    class ( Fluid_P_HN_Form ), intent ( inout ) :: &
+      S
+      
+    type ( c_ptr ) :: &
+      D_P  !-- Device Pointer
+   
+    call Show ( '<<<<< AllocateDevice_P_HN >>>>>' ) 
+    call AllocateDevice ( S % Table_EOS, D_P )
+    call AssociateHost  ( D_P, S % Table_EOS )
+    call UpdateDevice   ( S % Table_EOS, D_P )
+    
+    call AllocateDevice ( S % TableLogDensity, D_P )
+    call AssociateHost  ( D_P, S % TableLogDensity ) 
+    call UpdateDevice   ( S % TableLogDensity, D_P )
+    
+    call AllocateDevice ( S % TableLogTemperature, D_P )
+    call AssociateHost  ( D_P, S % TableLogTemperature )
+    call UpdateDevice   ( S % TableLogTemperature, D_P )
+    
+    call AllocateDevice ( S % TableElectronFraction, D_P )
+    call AssociateHost  ( D_P, S % TableElectronFraction )
+    call UpdateDevice   ( S % TableElectronFraction, D_P )
+    
+    call S % StorageForm % AllocateDevice ( )
+      
+  end subroutine AllocateDevice_P_HN
 
 
   subroutine SetPrimitiveConserved ( C )
@@ -573,6 +638,11 @@ contains
         A     => FV ( oV + 1 : oV + nV, C % MASS_NUMBER_HEAVY ), &
         Mu_NP => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_N_P ), &
         Mu_E  => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_E ) )
+    associate &
+      ( T_EOS => C % Table_EOS, &
+        T_L_D => C % TableLogDensity, &
+        T_L_T => C % TableLogTemperature, &
+        T_YE  => C % TableElectronFraction )
 
     call C % Compute_M_Kernel &
            ( M, C % BaryonMassReference, &
@@ -580,7 +650,8 @@ contains
     call Show ( 'Apply_EOS_HN_T_Kernel' )
     call C % Apply_EOS_HN_T_Kernel &
            ( P, E, CS, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-             M, N, T, YE, UseDeviceOption = C % AllocatedDevice )
+             T_EOS, M, N, T, YE, T_L_D, T_L_T, T_YE, &
+             UseDeviceOption = C % AllocatedDevice )
     call Show ( 'End Apply_EOS_HN_T_Kernel' )
     call C % Compute_D_S_G_Kernel &
            ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33, &
@@ -597,6 +668,7 @@ contains
              V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
              UseDeviceOption = C % AllocatedDevice )
 
+    end associate !-- T_EOS, etc.
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
     end associate !-- FV, etc.
@@ -679,6 +751,11 @@ contains
         A     => FV ( oV + 1 : oV + nV, C % MASS_NUMBER_HEAVY ), &
         Mu_NP => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_N_P ), &
         Mu_E  => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_E ) )
+    associate &
+      ( T_EOS => C % Table_EOS, &
+        T_L_D => C % TableLogDensity, &
+        T_L_T => C % TableLogTemperature, &
+        T_YE  => C % TableElectronFraction )
 
     associate &
       ( T_CFP => PROGRAM_HEADER % Timer ( C % iTimerComputeFromPrimitive ), &
@@ -702,7 +779,8 @@ contains
 !             M, N, T, YE )
     call C % Apply_EOS_HN_E_Kernel &
            ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-             M, N, YE, UseDeviceOption = C % AllocatedDevice )
+             T_EOS, M, N, YE, T_L_D, T_L_T, T_YE, &
+             UseDeviceOption = C % AllocatedDevice )
 !    call C % Apply_EOS_HN_SB_Kernel &
 !           ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
 !             M, N, YE )
@@ -729,7 +807,8 @@ contains
     call T_CE % Stop ( )
     
     end associate !-- T_CFP, etc.
-
+    
+    end associate !-- T_EOS, etc
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
     end associate !-- FV, etc.
@@ -821,6 +900,11 @@ contains
         Mu_NP => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_N_P ), &
         Mu_E  => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_E ), &
         Shock => FF % Value ( oV + 1 : oV + nV, FF % SHOCK ) )
+    associate &
+      ( T_EOS => C % Table_EOS, &
+        T_L_D => C % TableLogDensity, &
+        T_L_T => C % TableLogTemperature, &
+        T_YE  => C % TableElectronFraction )
 
     associate &
       ( T_CFP => PROGRAM_HEADER % Timer ( C % iTimerComputeFromPrimitive ), &
@@ -850,14 +934,16 @@ contains
              ( SB, DS, N, UseDeviceOption = C % AllocatedDevice )
       call C % Apply_EOS_HN_SB_E_Kernel &
              ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-               M, N, YE, Shock, UseDeviceOption = C % AllocatedDevice )
+               T_EOS, M, N, YE, Shock, T_L_D, T_L_T, T_YE, &
+               UseDeviceOption = C % AllocatedDevice )
       call C % Compute_G_G_Kernel &
              ( GE, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E, &
                UseDeviceOption = C % AllocatedDevice )
     else
       call C % Apply_EOS_HN_E_Kernel &
              ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-               M, N, YE, UseDeviceOption = C % AllocatedDevice )
+               T_EOS, M, N, YE, T_L_D, T_L_T, T_YE, &
+               UseDeviceOption = C % AllocatedDevice )
     end if
     call C % Compute_DS_G_Kernel &
            ( DS, N, SB, UseDeviceOption = C % AllocatedDevice )
@@ -876,7 +962,8 @@ contains
     call T_CE % Stop ( )
     
     end associate !-- T_CFP, etc.
-
+    
+    end associate !-- T_EOS, etc.
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
     end select !-- FF
