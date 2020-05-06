@@ -1,6 +1,6 @@
 include ./make.inc
 
-SOURCES=eosmodule.F90 readtable.F90 nuc_eos.F90 bisection.F90 findtemp.F90 findrho.F90 linterp_many.F90
+SOURCES=linterp_many.F90 eosmodule.F90 readtable.F90 nuc_eos.F90 bisection.F90 findtemp.F90 findrho.F90 
 FSOURCES=linterp.f
 
 CLEANSTUFF=rm -rf *.o *.mod *.a onezone driver

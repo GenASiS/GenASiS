@@ -1,3 +1,19 @@
+module nuc_eos
+
+  use eosmodule, only : &
+    eos_rhomax, eos_rhomin, &
+    eos_yemax, eos_yemin, &
+    eos_tempmax, eos_tempmin, &
+    nvars, energy_shift, &
+    nrho, ntemp, nye, nvars
+  use linterp, only : &
+    intp3d_many
+
+  implicit none
+  public
+
+contains
+
 ! #########################################################
 !
 ! Copyright C. D. Ott and Evan O'Connor, July 2009
@@ -20,10 +36,14 @@
 !
 subroutine nuc_eos_full(xrho,xtemp,xye,xenr,xprs,xent,xcs2,xdedt,&
      xdpderho,xdpdrhoe,xxa,xxh,xxn,xxp,xabar,xzbar,xmu_e,xmu_n,xmu_p, &
-     xmuhat,keytemp,keyerr,rfeps)
+     xmuhat,keytemp,keyerr,rfeps, logrho, logtemp, ye, eos_table )
 
-  use eosmodule
-  implicit none
+!  use eosmodule, only : &
+!    eos_rhomax, eos_rhomin, &
+!    eos_yemax, eos_yemin, &
+!    eos_tempmax, eos_tempmin, &
+!    nvars, energy_shift
+!  implicit none
 
   real*8, intent(in)    :: xye
   real*8, intent(inout) :: xrho,xtemp,xenr,xent
@@ -33,6 +53,11 @@ subroutine nuc_eos_full(xrho,xtemp,xye,xenr,xprs,xent,xcs2,xdedt,&
   real*8, intent(in)    :: rfeps
   integer, intent(in)   :: keytemp
   integer, intent(out)  :: keyerr
+  
+  real*8, dimension ( : ), intent ( in ) :: &
+    logrho, logtemp, ye
+  real*8, dimension ( :, :, :, : ), intent ( in ) :: &
+    eos_table
 
 #ifdef ENABLE_OMP_OFFLOAD
   external :: findtemp, findtemp_entropy, findrho_press
@@ -114,7 +139,7 @@ subroutine nuc_eos_full(xrho,xtemp,xye,xenr,xprs,xent,xcs2,xdedt,&
   endif
 
   ! have rho,T,ye; proceed:
-  call findall(lr,lt,y,ff)
+  call findall(lr,lt,y,ff,logrho,logtemp,ye,eos_table)
 
   !unless we want xprs to be constant (keytemp==3), reset xprs
   if(.not.keytemp.eq.3) then
@@ -162,8 +187,8 @@ subroutine nuc_eos_full(xrho,xtemp,xye,xenr,xprs,xent,xcs2,xdedt,&
 
   xzbar = ff(18)
 
-
 end subroutine nuc_eos_full
+
 
 subroutine nuc_low_eos(xrho,xenr,xprs,xcs2,xdpderho,xdpdrhoe,keytemp)
 
@@ -192,8 +217,8 @@ end subroutine nuc_low_eos
 subroutine nuc_eos_short(xrho,xtemp,xye,xenr,xprs,xent,xcs2,xdedt,&
      xdpderho,xdpdrhoe,xmunu,keytemp,keyerr,rfeps)
 
-  use eosmodule
-  implicit none
+!  use eosmodule
+!  implicit none
 
   real*8, intent(in)    :: xye
   real*8, intent(inout) :: xrho,xtemp,xenr,xent
@@ -310,8 +335,8 @@ end subroutine nuc_eos_short
 
 subroutine nuc_eos_one(xrho,xtemp,xye,xvalue,index)
 
-  use eosmodule
-  implicit none
+!  use eosmodule
+!  implicit none
 
   real*8, intent(in)    :: xye,xrho,xtemp
   real*8, intent(out)   :: xvalue
@@ -358,9 +383,9 @@ end subroutine nuc_eos_one
 
 subroutine findthis(lr,lt,y,value,array,d1,d2,d3)
 
-  use eosmodule, only: nvars, nrho, ntemp, nye, logrho, logtemp, ye, alltables
+!  use eosmodule, only: nvars, nrho, ntemp, nye, logrho, logtemp, ye, alltables
 
-  implicit none
+!  implicit none
   
 #ifdef ENABLE_OMP_OFFLOAD
   external :: intp3d
@@ -376,39 +401,51 @@ subroutine findthis(lr,lt,y,value,array,d1,d2,d3)
   real*8 array(*)
 
 ! Ewald's interpolator           
-  call intp3d(lr,lt,y,value,1,array,nrho,ntemp,nye,logrho,logtemp,ye,d1,d2,d3)
+!-- FIXME: need to pass logrho, logtemp, ye as args
+!  call intp3d(lr,lt,y,value,1,array,nrho,ntemp,nye,logrho,logtemp,ye,d1,d2,d3)
 
 end subroutine findthis
 
 
-subroutine findall(lr,lt,y,ff)
+subroutine findall(lr, lt, y, ff, logrho, logtemp, ye, eos_table)
 
-  use eosmodule, only: nvars, nrho, ntemp, nye, logrho, logtemp, ye, alltables
-  implicit none
+!  use eosmodule, only: &
+!    nvars, nrho, ntemp, nye
+!  use linterp, only: intp3d_many
+!  implicit none
 
 #ifdef ENABLE_OMP_OFFLOAD  
-  external :: intp3d_many
   !$OMP declare target
-  !$OMP declare target ( intp3d_many )
 #endif
   
   real*8 ff(nvars)
-  real*8 ffx(nvars,1)
+  real*8 ffx(1,nvars)
   real*8 lr,lt,y
+  real*8, dimension ( : ), intent(in) :: &
+    logrho, logtemp, ye
+  real*8, dimension( :, :, :, : ), intent ( in ) :: &
+    eos_table
   integer i
-
+  
+  real*8, dimension ( 1 ) :: &
+    lr_in, lt_in, y_in
+  
+  lr_in ( 1 ) = lr
+  lt_in ( 1 ) = lt
+  y_in  ( 1 ) = y
+  
 ! Ewald's interpolator           
-  call intp3d_many(lr,lt,y,ffx,1,alltables,&
+  call intp3d_many(lr_in, lt_in, y_in, ffx , 1, eos_table, &
        nrho,ntemp,nye,nvars,logrho,logtemp,ye)
-  ff(:) = ffx(:,1)
-
+  ff(:) = ffx(1,:)
+  
 end subroutine findall
 
 
 subroutine findall_short(lr,lt,y,ff)
 
-  use eosmodule
-  implicit none
+!  use eosmodule
+!  implicit none
 
   real*8 ffx(8,1)
   real*8 ff(8)
@@ -418,16 +455,16 @@ subroutine findall_short(lr,lt,y,ff)
 
 
 ! Ewald's interpolator           
-  call intp3d_many(lr,lt,y,ffx,1,alltables(:,:,:,1:8), &
-       nrho,ntemp,nye,nvarsx,logrho,logtemp,ye)
-  ff(:) = ffx(:,1)
+!  call intp3d_many(lr,lt,y,ffx,1,alltables(:,:,:,1:8), &
+!       nrho,ntemp,nye,nvarsx,logrho,logtemp,ye)
+!  ff(:) = ffx(:,1)
 
 end subroutine findall_short
 
 subroutine findone(lr,lt,y,ff,index)
 
-  use eosmodule
-  implicit none
+!  use eosmodule
+!  implicit none
 
   real*8 ffx(1,1)
   real*8 ff(1)
@@ -436,8 +473,10 @@ subroutine findone(lr,lt,y,ff,index)
   
 
 ! Ewald's interpolator           
-  call intp3d_many(lr,lt,y,ffx,1,alltables(:,:,:,index), &
-       nrho,ntemp,nye,1,logrho,logtemp,ye)
-  ff(:) = ffx(:,1)
+!  call intp3d_many(lr,lt,y,ffx,1,alltables(:,:,:,index), &
+!       nrho,ntemp,nye,1,logrho,logtemp,ye)
+!  ff(:) = ffx(:,1)
 
 end subroutine findone
+
+end module nuc_eos

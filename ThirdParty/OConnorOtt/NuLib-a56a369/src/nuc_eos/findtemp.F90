@@ -1,6 +1,7 @@
 subroutine findtemp(lr,lt0,y,epsin,keyerrt,rfeps)
 
   use eosmodule
+  use nuc_eos
 
   implicit none
 
@@ -129,6 +130,7 @@ subroutine findtemp_entropy(lr,lt0,y,sin,keyerrt,rfeps)
 ! on rho, Y_e, entropy
 
   use eosmodule
+  use nuc_eos
 
   implicit none
 

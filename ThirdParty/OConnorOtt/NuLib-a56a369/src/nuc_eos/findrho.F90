@@ -2,6 +2,7 @@
 subroutine findrho_press(lr0,lt,y,lpressin,keyerrr,tol)
 
   use eosmodule
+  use nuc_eos
 
   implicit none
   

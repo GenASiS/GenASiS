@@ -1,6 +1,11 @@
+module linterp
+
+  implicit none
+
+contains
+
       SUBROUTINE intp3d_many ( x, y, z, f, kt, ft, nx, ny, nz, nvars, xt, yt, zt)
 !
-      implicit none
 !                                                          
 !---------------------------------------------------------------------
 !
@@ -27,22 +32,30 @@
 !
 !---------------------------------------------------------------------
 
+
+      integer, intent ( in ) :: &
+         kt,nx,ny,nz,nvars
+      real*8, intent ( in ), dimension ( :, :, :, : ) :: &
+        ft
+
+      real*8, intent ( in ), dimension ( : ) :: &
+         x, y, z, xt, yt, zt
+      real*8, intent ( out ), dimension ( :, : ) :: &
+        f
+
 #ifdef ENABLE_OMP_OFFLOAD
       !$OMP declare target
 #endif
-
-      integer kt,nx,ny,nz,iv,nvars
-      real*8 :: ft(nx,ny,nz,nvars)
-
-      real*8 x(kt),y(kt),z(kt),f(kt,nvars)
-      real*8 xt(nx),yt(ny),zt(nz)
+      
+      integer :: iv      
       real*8 d1,d2,d3
 !
 !
-      integer,parameter :: ktx = 1
-      real*8  fh(ktx,8,nvars), delx(ktx), dely(ktx), delz(ktx), &
-           a1(ktx,nvars), a2(ktx,nvars), a3(ktx,nvars), a4(ktx,nvars), &
-           a5(ktx,nvars), a6(ktx,nvars), a7(ktx,nvars), a8(ktx,nvars)
+!      integer,parameter :: ktx = 1
+
+      real*8  fh(kt,8,nvars), delx(kt), dely(kt), delz(kt), &
+           a1(kt,nvars), a2(kt,nvars), a3(kt,nvars), a4(kt,nvars), &
+           a5(kt,nvars), a6(kt,nvars), a7(kt,nvars), a8(kt,nvars)
 
       real*8 dx,dy,dz,dxi,dyi,dzi,dxyi,dxzi,dyzi,dxyzi
       integer n,ix,iy,iz
@@ -128,3 +141,4 @@
       
     end SUBROUTINE intp3d_many
  
+end module linterp

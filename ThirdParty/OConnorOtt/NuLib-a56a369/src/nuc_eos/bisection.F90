@@ -1,6 +1,7 @@
 subroutine bisection(lr,lt0,y,eps0,lt,bivar,keyerrt,keybisect)
 
   use eosmodule
+  use nuc_eos
 
   implicit none
 
@@ -37,9 +38,10 @@ subroutine bisection(lr,lt0,y,eps0,lt,bivar,keyerrt,keybisect)
   lt = lt0
   lt1 = dlog10(min(10.0d0**ltmax,1.10d0*(10.0d0**lt0)))
   lt2 = dlog10(max(10.0d0**ltmin,0.90d0*(10.0d0**lt0)))
-
-  call findthis(lr,lt1,y,f1a,bivar,d1,d2,d3)
-  call findthis(lr,lt2,y,f2a,bivar,d1,d2,d3)
+  
+  !-- FIXME: Need to resolved argument mismatch
+  !call findthis(lr,lt1,y,f1a,bivar,d1,d2,d3)
+  !call findthis(lr,lt2,y,f2a,bivar,d1,d2,d3)
 
   f1=f1a-eps0
   f2=f2a-eps0
@@ -51,8 +53,9 @@ subroutine bisection(lr,lt0,y,eps0,lt,bivar,keyerrt,keybisect)
      bcount=bcount+1
      lt1=dlog10(min(10.0d0**ltmax,1.2d0*(10.0d0**lt1)))
      lt2=dlog10(max(10.0d0**ltmin,0.8d0*(10.0d0**lt2)))
-     call findthis(lr,lt1,y,f1a,bivar,d1,d2,d3)
-     call findthis(lr,lt2,y,f2a,bivar,d1,d2,d3)
+     !-- FIXME: Need to resolved argument mismatch
+     !call findthis(lr,lt1,y,f1a,bivar,d1,d2,d3)
+     !call findthis(lr,lt2,y,f2a,bivar,d1,d2,d3)
      f1=f1a-eps0
      f2=f2a-eps0
      if(bcount.ge.maxbcount) then
@@ -72,7 +75,8 @@ subroutine bisection(lr,lt0,y,eps0,lt,bivar,keyerrt,keybisect)
   do i=1,itmax
      dlt=dlog10((10.0d0**dlt)*0.5d0)
      ltmid=dlog10(10.0d0**lt+10.0d0**dlt)
-     call findthis(lr,ltmid,y,f2a,bivar,d1,d2,d3)
+     !-- FIXME: Need to resolved argument mismatch
+     !call findthis(lr,ltmid,y,f2a,bivar,d1,d2,d3)
      fmid=f2a-eps0
      if(fmid.le.0.0d0) lt=ltmid
      if(abs(1.0d0-f2a/eps0).lt.tol) then
@@ -88,6 +92,7 @@ end subroutine bisection
 subroutine bisection_rho(lr0,lt,y,lpressin,lr,bivar,keyerrr,keybisect)
 
   use eosmodule
+  use nuc_eos
 
   implicit none
 
@@ -124,8 +129,9 @@ subroutine bisection_rho(lr0,lt,y,lpressin,lr,bivar,keyerrr,keybisect)
   lr1 = dlog10(min(10.0d0**lrmax,1.10d0*(10.0d0**lr0)))
   lr2 = dlog10(max(10.0d0**lrmin,0.90d0*(10.0d0**lr0)))
 
-  call findthis(lr1,lt,y,f1a,bivar,d1,d2,d3)
-  call findthis(lr2,lt,y,f2a,bivar,d1,d2,d3)
+  !-- FIXME: Need to resolved argument mismatch
+  !call findthis(lr1,lt,y,f1a,bivar,d1,d2,d3)
+  !call findthis(lr2,lt,y,f2a,bivar,d1,d2,d3)
 
   f1=f1a-lpressin
   f2=f2a-lpressin
@@ -136,8 +142,9 @@ subroutine bisection_rho(lr0,lt,y,lpressin,lr,bivar,keyerrr,keybisect)
      bcount=bcount+1
      lr1=dlog10(min(10.0d0**lrmax,1.2d0*(10.0d0**lr1)))
      lr2=dlog10(max(10.0d0**lrmin,0.8d0*(10.0d0**lr2)))
-     call findthis(lr1,lt,y,f1a,bivar,d1,d2,d3)
-     call findthis(lr2,lt,y,f2a,bivar,d1,d2,d3)
+     !-- FIXME: Need to resolved argument mismatch
+     !call findthis(lr1,lt,y,f1a,bivar,d1,d2,d3)
+     !call findthis(lr2,lt,y,f2a,bivar,d1,d2,d3)
      f1=f1a-lpressin
      f2=f2a-lpressin
      if(bcount.ge.maxbcount) then
@@ -157,7 +164,8 @@ subroutine bisection_rho(lr0,lt,y,lpressin,lr,bivar,keyerrr,keybisect)
   do i=1,itmax
      dlr=dlog10((10.0d0**dlr)*0.5d0)
      lrmid=dlog10(10.0d0**lr+10.0d0**dlr)
-     call findthis(lrmid,lt,y,f2a,bivar,d1,d2,d3)
+     !-- FIXME: Need to resolved argument mismatch
+     !call findthis(lrmid,lt,y,f2a,bivar,d1,d2,d3)
      fmid=f2a-lpressin
      if(fmid.le.0.0d0) lr=lrmid
      if(abs(1.0d0-f2a/lpressin).lt.tol) then
