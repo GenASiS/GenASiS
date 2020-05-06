@@ -14,6 +14,7 @@ module AssociateHost_Command
     module procedure AssociateHost_KDR_1D
     module procedure AssociateHost_KDR_2D
     module procedure AssociateHost_KDR_3D
+    module procedure AssociateHost_KDR_4D
   end interface AssociateHost
   
 contains
@@ -94,6 +95,30 @@ contains
       ErrorOption = Error
 
   end subroutine AssociateHost_KDR_3D
+
+
+  subroutine AssociateHost_KDR_4D ( Device, Value, ErrorOption )
+  
+    type ( c_ptr ), intent ( in ) :: &
+      Device
+    real ( KDR ), dimension ( :, :, :, : ), intent ( in ), target :: &
+      Value
+    integer ( KDI ), intent ( out ), optional :: &
+      ErrorOption
+    
+    integer ( c_int ) :: &
+      oValue, &
+      Error
+    
+    oValue = 0
+          
+    Error = AssociateTargetDouble &
+              ( c_loc ( Value ), Device, size ( Value ), oValue )
+    
+    if ( present ( ErrorOption ) ) &
+      ErrorOption = Error
+
+  end subroutine AssociateHost_KDR_4D
 
 
 end module AssociateHost_Command
