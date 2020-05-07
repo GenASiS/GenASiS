@@ -231,11 +231,11 @@ subroutine readtable(eos_filename)
   
   write(6,*) "Updating values on GPU"
 #ifdef ENABLE_OMP_OFFLOAD  
-  !--$OMP  target enter data map ( to: alltables, logrho, logtemp, ye )
   !$OMP  target update &
-  !$OMP&   to ( nrho, ntemp, nye, eos_rhomin, eos_rhomax, eos_yemin, &
-  !$OMP&        eos_yemax, eos_tempmin, eos_tempmax, alltables, logrho, &
-  !$OMP&        logtemp, ye )
+  !$OMP& to ( nrho, ntemp, nye, warn_from, energy_shift, precision, &
+  !$OMP&      eos_rhomin, eos_rhomax, eos_yemin, eos_yemax, eos_tempmin, &
+  !$OMP&      eos_tempmax, t_max_hack, nvars, mev_to_erg, amu_cgs, amu_mev, &
+  !$OMP&      pi, ggrav, temp_mev_to_kelvin, clight, kb_erg, kb_mev )
 #endif
   write(6,*) "Done reading eos tables"
 
