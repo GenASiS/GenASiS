@@ -6,9 +6,11 @@ module nuc_eos
     eos_tempmax, eos_tempmin, &
     nvars, energy_shift, &
     nrho, ntemp, nye, nvars
-  use linterp, only : &
-    intp3d_many
-
+  use nuc_eos_find, only : &
+    findall
+  use nuc_eos_findtemp, only : &
+    findtemp, findtemp_entropy
+    
   implicit none
   public
 
@@ -60,11 +62,7 @@ subroutine nuc_eos_full(xrho,xtemp,xye,xenr,xprs,xent,xcs2,xdedt,&
     eos_table
 
 #ifdef ENABLE_OMP_OFFLOAD
-  external :: findtemp, findtemp_entropy, findrho_press
   !$OMP declare target
-  !$OMP declare target ( findtemp )
-  !$OMP declare target ( findtemp_entropy )
-  !$OMP declare target ( findrho_press )
 #endif
 
   ! local variables
@@ -111,7 +109,8 @@ subroutine nuc_eos_full(xrho,xtemp,xye,xenr,xprs,xent,xcs2,xdedt,&
 
   if(keytemp.eq.0) then
      !need to find temperature based on xeps
-     call findtemp(lr,lt,y,leps,keyerrt,rfeps)
+     call findtemp(lr,lt,y,leps,keyerrt,rfeps, &
+                   logrho, logtemp, ye, eos_table)
      if(keyerrt.ne.0) then
 !        stop "Did not find temperature"
        keyerr = keyerrt
@@ -122,19 +121,24 @@ subroutine nuc_eos_full(xrho,xtemp,xye,xenr,xprs,xent,xcs2,xdedt,&
   elseif(keytemp.eq.2) then
      !need to find temperature based on xent
      xs = xent
-     call findtemp_entropy(lr,lt,y,xs,keyerrt,rfeps)
+     call findtemp_entropy(lr,lt,y,xs,keyerrt,rfeps, &
+                           logrho, logtemp, ye, eos_table )
      xtemp = 10.0d0**lt
 
   elseif(keytemp.eq.3) then
      !need to find rho based on xprs
      xpressure = log10(xprs)
-     call findrho_press(lr,lt,y,xpressure,keyerrr,rfeps)
-     if(keyerrr.ne.0) then
-        write(*,*) "Problem in findrho_press:", keyerr
-        keyerr = keyerrr
-	return
-     endif
-     xrho = 10.0d0**lr
+     !-- FIXME: solving for Rho is disabled for now
+     !call findrho_press(lr,lt,y,xpressure,keyerrr,rfeps)
+     !if(keyerrr.ne.0) then
+     !   write(*,*) "Problem in findrho_press:", keyerr
+     !   keyerr = keyerrr
+     !
+     !  return
+     !endif
+     keyerr = 2
+     return
+     !xrho = 10.0d0**lr
 
   endif
 
@@ -214,269 +218,174 @@ subroutine nuc_low_eos(xrho,xenr,xprs,xcs2,xdpderho,xdpdrhoe,keytemp)
 
 end subroutine nuc_low_eos
 
-subroutine nuc_eos_short(xrho,xtemp,xye,xenr,xprs,xent,xcs2,xdedt,&
-     xdpderho,xdpdrhoe,xmunu,keytemp,keyerr,rfeps)
+!-- FIXME: Commented out the next two subroutines nuc_eos_short and nuc_eos_one 
+!          since they are unused so far
 
-!  use eosmodule
-!  implicit none
-
-  real*8, intent(in)    :: xye
-  real*8, intent(inout) :: xrho,xtemp,xenr,xent
-  real*8, intent(in)    :: rfeps
-  real*8, intent(out)   :: xprs,xmunu,xcs2,xdedt
-  real*8, intent(out)   :: xdpderho,xdpdrhoe
-  integer, intent(in)   :: keytemp
-  integer, intent(out)  :: keyerr
-
-  ! local variables
-  real*8 :: lr,lt,y,xx,xeps,leps,xs,xpressure
-  real*8 :: d1,d2,d3,ff(8)
-  integer :: keyerrt = 0
-  integer :: keyerrr = 0
-
-  if(xrho.gt.eos_rhomax) then
-     stop "nuc_eos: rho > rhomax"
-  endif
-
-  if(xrho.lt.eos_rhomin*1.2d0) then
-     call nuc_low_eos(xrho,xenr,xprs,xcs2,xdpderho,xdpdrhoe,keytemp)
-     xent = 4.0d0
-     return
-  endif
-
-  if(xye.gt.eos_yemax) then
-     stop "nuc_eos: ye > yemax"
-  endif
-
-  if(xye.lt.eos_yemin) then
-     stop "nuc_eos: ye < yemin"
-  endif
-
-  if(keytemp.eq.1) then
-     if(xtemp.gt.eos_tempmax) then
-        stop "nuc_eos: temp > tempmax"
-     endif
-     
-     if(xtemp.lt.eos_tempmin) then
-        call nuc_low_eos(xrho,xenr,xprs,xcs2,xdpderho,xdpdrhoe,keytemp)
-        xent = 4.0d0
-        return
-     endif
-  endif
-
-  lr = log10(xrho)
-  lt = log10(xtemp)
-  y = xye
-  xeps = xenr + energy_shift
-  leps = log10(max(xeps,1.0d0))
-
-  keyerr = 0
-
-  if(keytemp.eq.0) then
-     !need to find temperature based on xeps
-     call findtemp(lr,lt,y,leps,keyerrt,rfeps)
-     if(keyerrt.ne.0) then
-        keyerr = keyerrt
-        return
-     endif
-     xtemp = 10.0d0**lt
-
-  elseif(keytemp.eq.2) then
-     !need to find temperature based on xent
-     xs = xent
-     call findtemp_entropy(lr,lt,y,xs,keyerrt,rfeps)
-     if(keyerrt.ne.0) then
-        keyerr = keyerrt
-        return
-     endif
-     xtemp = 10.0d0**lt
-
-  elseif(keytemp.eq.3) then
-     !need to find rho based on xprs
-     xpressure = log10(xprs)
-     call findrho_press(lr,lt,y,xpressure,keyerrr,rfeps)
-     if (keyerrr.ne.0) then
-        keyerr = keyerrr
-        write(*,*) "Problem in findrho_press:", keyerr
-        return
-     endif
-     xrho = 10.0d0**lr
-  endif
-
-  ! have rho,temp,ye; proceed:
-  call findall_short(lr,lt,y,ff)
-
-  !unless we want xprs to be constant (keytemp==3), reset xprs
-  if(.not.keytemp.eq.3) then
-     xprs = 10.0d0**ff(1)
-  endif
-
-  !unless we want xenr to be constant (keytemp==0), reset xenr
-  if(.not.keytemp.eq.0) then
-     xenr = 10.0d0**ff(2) - energy_shift
-  endif
-
-  !unless we want xent to be constant (keytemp==2), reset xent
-  if(.not.keytemp.eq.2) then
-     xent = ff(3)
-  endif
-
-  xmunu = ff(4)
-
-  xcs2 = ff(5)
-
-  xdedt = ff(6)
-
-  xdpdrhoe = ff(7)
-
-  xdpderho = ff(8)
-
-end subroutine nuc_eos_short
-
-subroutine nuc_eos_one(xrho,xtemp,xye,xvalue,index)
-
-!  use eosmodule
-!  implicit none
-
-  real*8, intent(in)    :: xye,xrho,xtemp
-  real*8, intent(out)   :: xvalue
-  integer, intent(in)    :: index
-
-  ! local variables
-  real*8 :: lr,lt,y
-  real*8 :: ff(1)
-
-  if(xrho.gt.eos_rhomax) then
-     stop "nuc_eos: rho > rhomax"
-  endif
-
-  if(xrho.lt.eos_rhomin) then
-     stop "nuc_eos: rho < rhomin"
-  endif
-
-  if(xye.gt.eos_yemax) then
-     stop "nuc_eos: ye > yemax"
-  endif
-
-  if(xye.lt.eos_yemin) then
-     stop "nuc_eos: ye < yemin"
-  endif
-
-  if(xtemp.gt.eos_tempmax) then
-     stop "nuc_eos: temp > tempmax"
-  endif
-
-  if(xtemp.lt.eos_tempmin) then
-     stop "nuc_eos: temp < tempmin"
-  endif
-
-  lr = log10(xrho)
-  lt = log10(xtemp)
-  y = xye
-
-  ! have rho,temp,ye; proceed:
-  call findone(lr,lt,y,ff,index)
-
-  xvalue = ff(1)
-
-end subroutine nuc_eos_one
-
-subroutine findthis(lr,lt,y,value,array,d1,d2,d3)
-
-!  use eosmodule, only: nvars, nrho, ntemp, nye, logrho, logtemp, ye, alltables
-
-!  implicit none
-  
-#ifdef ENABLE_OMP_OFFLOAD
-  external :: intp3d
-  !$OMP declare target
-  !$OMP declare target ( intp3d )
-#endif
-
-  integer rip,rim
-  integer tip,tim
-  integer yip,yim
-
-  real*8 lr,lt,y,value,d1,d2,d3
-  real*8 array(*)
-
-! Ewald's interpolator           
-!-- FIXME: need to pass logrho, logtemp, ye as args
-!  call intp3d(lr,lt,y,value,1,array,nrho,ntemp,nye,logrho,logtemp,ye,d1,d2,d3)
-
-end subroutine findthis
-
-
-subroutine findall(lr, lt, y, ff, logrho, logtemp, ye, eos_table)
-
-!  use eosmodule, only: &
-!    nvars, nrho, ntemp, nye
-!  use linterp, only: intp3d_many
-!  implicit none
-
-#ifdef ENABLE_OMP_OFFLOAD  
-  !$OMP declare target
-#endif
-  
-  real*8 ff(nvars)
-  real*8 ffx(1,nvars)
-  real*8 lr,lt,y
-  real*8, dimension ( : ), intent(in) :: &
-    logrho, logtemp, ye
-  real*8, dimension( :, :, :, : ), intent ( in ) :: &
-    eos_table
-  integer i
-  
-  real*8, dimension ( 1 ) :: &
-    lr_in, lt_in, y_in
-  
-  lr_in ( 1 ) = lr
-  lt_in ( 1 ) = lt
-  y_in  ( 1 ) = y
-  
-! Ewald's interpolator           
-  call intp3d_many(lr_in, lt_in, y_in, ffx , 1, eos_table, &
-       nrho,ntemp,nye,nvars,logrho,logtemp,ye)
-  ff(:) = ffx(1,:)
-  
-end subroutine findall
-
-
-subroutine findall_short(lr,lt,y,ff)
-
-!  use eosmodule
-!  implicit none
-
-  real*8 ffx(8,1)
-  real*8 ff(8)
-  real*8 lr,lt,y
-  integer i
-  integer :: nvarsx = 8
-
-
-! Ewald's interpolator           
-!  call intp3d_many(lr,lt,y,ffx,1,alltables(:,:,:,1:8), &
-!       nrho,ntemp,nye,nvarsx,logrho,logtemp,ye)
-!  ff(:) = ffx(:,1)
-
-end subroutine findall_short
-
-subroutine findone(lr,lt,y,ff,index)
-
-!  use eosmodule
-!  implicit none
-
-  real*8 ffx(1,1)
-  real*8 ff(1)
-  real*8 lr,lt,y
-  integer index
-  
-
-! Ewald's interpolator           
-!  call intp3d_many(lr,lt,y,ffx,1,alltables(:,:,:,index), &
-!       nrho,ntemp,nye,1,logrho,logtemp,ye)
-!  ff(:) = ffx(:,1)
-
-end subroutine findone
+!## subroutine nuc_eos_short(xrho,xtemp,xye,xenr,xprs,xent,xcs2,xdedt,&
+!##      xdpderho,xdpdrhoe,xmunu,keytemp,keyerr,rfeps)
+!## 
+!## !  use eosmodule
+!## !  implicit none
+!## 
+!##   real*8, intent(in)    :: xye
+!##   real*8, intent(inout) :: xrho,xtemp,xenr,xent
+!##   real*8, intent(in)    :: rfeps
+!##   real*8, intent(out)   :: xprs,xmunu,xcs2,xdedt
+!##   real*8, intent(out)   :: xdpderho,xdpdrhoe
+!##   integer, intent(in)   :: keytemp
+!##   integer, intent(out)  :: keyerr
+!## 
+!##   ! local variables
+!##   real*8 :: lr,lt,y,xx,xeps,leps,xs,xpressure
+!##   real*8 :: d1,d2,d3,ff(8)
+!##   integer :: keyerrt = 0
+!##   integer :: keyerrr = 0
+!## 
+!##   if(xrho.gt.eos_rhomax) then
+!##      stop "nuc_eos: rho > rhomax"
+!##   endif
+!## 
+!##   if(xrho.lt.eos_rhomin*1.2d0) then
+!##      call nuc_low_eos(xrho,xenr,xprs,xcs2,xdpderho,xdpdrhoe,keytemp)
+!##      xent = 4.0d0
+!##      return
+!##   endif
+!## 
+!##   if(xye.gt.eos_yemax) then
+!##      stop "nuc_eos: ye > yemax"
+!##   endif
+!## 
+!##   if(xye.lt.eos_yemin) then
+!##      stop "nuc_eos: ye < yemin"
+!##   endif
+!## 
+!##   if(keytemp.eq.1) then
+!##      if(xtemp.gt.eos_tempmax) then
+!##         stop "nuc_eos: temp > tempmax"
+!##      endif
+!##      
+!##      if(xtemp.lt.eos_tempmin) then
+!##         call nuc_low_eos(xrho,xenr,xprs,xcs2,xdpderho,xdpdrhoe,keytemp)
+!##         xent = 4.0d0
+!##         return
+!##      endif
+!##   endif
+!## 
+!##   lr = log10(xrho)
+!##   lt = log10(xtemp)
+!##   y = xye
+!##   xeps = xenr + energy_shift
+!##   leps = log10(max(xeps,1.0d0))
+!## 
+!##   keyerr = 0
+!## 
+!##   if(keytemp.eq.0) then
+!##      !need to find temperature based on xeps
+!##      call findtemp(lr,lt,y,leps,keyerrt,rfeps)
+!##      if(keyerrt.ne.0) then
+!##         keyerr = keyerrt
+!##         return
+!##      endif
+!##      xtemp = 10.0d0**lt
+!## 
+!##   elseif(keytemp.eq.2) then
+!##      !need to find temperature based on xent
+!##      xs = xent
+!##      call findtemp_entropy(lr,lt,y,xs,keyerrt,rfeps)
+!##      if(keyerrt.ne.0) then
+!##         keyerr = keyerrt
+!##         return
+!##      endif
+!##      xtemp = 10.0d0**lt
+!## 
+!##   elseif(keytemp.eq.3) then
+!##      !need to find rho based on xprs
+!##      xpressure = log10(xprs)
+!##      call findrho_press(lr,lt,y,xpressure,keyerrr,rfeps)
+!##      if (keyerrr.ne.0) then
+!##         keyerr = keyerrr
+!##         write(*,*) "Problem in findrho_press:", keyerr
+!##         return
+!##      endif
+!##      xrho = 10.0d0**lr
+!##   endif
+!## 
+!##   ! have rho,temp,ye; proceed:
+!##   call findall_short(lr,lt,y,ff)
+!## 
+!##   !unless we want xprs to be constant (keytemp==3), reset xprs
+!##   if(.not.keytemp.eq.3) then
+!##      xprs = 10.0d0**ff(1)
+!##   endif
+!## 
+!##   !unless we want xenr to be constant (keytemp==0), reset xenr
+!##   if(.not.keytemp.eq.0) then
+!##      xenr = 10.0d0**ff(2) - energy_shift
+!##   endif
+!## 
+!##   !unless we want xent to be constant (keytemp==2), reset xent
+!##   if(.not.keytemp.eq.2) then
+!##      xent = ff(3)
+!##   endif
+!## 
+!##   xmunu = ff(4)
+!## 
+!##   xcs2 = ff(5)
+!## 
+!##   xdedt = ff(6)
+!## 
+!##   xdpdrhoe = ff(7)
+!## 
+!##   xdpderho = ff(8)
+!## 
+!## end subroutine nuc_eos_short
+!## 
+!## subroutine nuc_eos_one(xrho,xtemp,xye,xvalue,index)
+!## 
+!## !  use eosmodule
+!## !  implicit none
+!## 
+!##   real*8, intent(in)    :: xye,xrho,xtemp
+!##   real*8, intent(out)   :: xvalue
+!##   integer, intent(in)    :: index
+!## 
+!##   ! local variables
+!##   real*8 :: lr,lt,y
+!##   real*8 :: ff(1)
+!## 
+!##   if(xrho.gt.eos_rhomax) then
+!##      stop "nuc_eos: rho > rhomax"
+!##   endif
+!## 
+!##   if(xrho.lt.eos_rhomin) then
+!##      stop "nuc_eos: rho < rhomin"
+!##   endif
+!## 
+!##   if(xye.gt.eos_yemax) then
+!##      stop "nuc_eos: ye > yemax"
+!##   endif
+!## 
+!##   if(xye.lt.eos_yemin) then
+!##      stop "nuc_eos: ye < yemin"
+!##   endif
+!## 
+!##   if(xtemp.gt.eos_tempmax) then
+!##      stop "nuc_eos: temp > tempmax"
+!##   endif
+!## 
+!##   if(xtemp.lt.eos_tempmin) then
+!##      stop "nuc_eos: temp < tempmin"
+!##   endif
+!## 
+!##   lr = log10(xrho)
+!##   lt = log10(xtemp)
+!##   y = xye
+!## 
+!##   ! have rho,temp,ye; proceed:
+!##   call findone(lr,lt,y,ff,index)
+!## 
+!##   xvalue = ff(1)
+!## 
+!## end subroutine nuc_eos_one
 
 end module nuc_eos

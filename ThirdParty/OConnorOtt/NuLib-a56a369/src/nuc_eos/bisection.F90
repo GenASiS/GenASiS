@@ -1,9 +1,16 @@
-subroutine bisection(lr,lt0,y,eps0,lt,bivar,keyerrt,keybisect)
+module nuc_eos_bisection
 
-  use eosmodule
-  use nuc_eos
+  use eosmodule, &
+    only: nvars, nrho, ntemp, nye, nvars
+  use nuc_eos_find, &
+    only: findthis
+    
+implicit none
 
-  implicit none
+contains
+
+subroutine bisection(lr,lt0,y,eps0,lt,bivar,iVar,keyerrt,keybisect, &
+                     logrho,logtemp,ye) 
 
 #ifdef ENABLE_OMP_OFFLOAD    
   !$OMP declare target
@@ -24,7 +31,12 @@ subroutine bisection(lr,lt0,y,eps0,lt,bivar,keyerrt,keybisect)
 
   integer bcount,i,itmax,maxbcount
 
-  real*8 bivar
+  real*8, dimension ( :, :, :, : ), intent ( in ) :: &
+    bivar
+  integer, intent ( in ) :: &
+    iVar
+  real*8, dimension ( : ), intent(in) :: &
+    logrho, logtemp, ye
 
   bcount = 0
   maxbcount = 80
@@ -39,9 +51,11 @@ subroutine bisection(lr,lt0,y,eps0,lt,bivar,keyerrt,keybisect)
   lt1 = dlog10(min(10.0d0**ltmax,1.10d0*(10.0d0**lt0)))
   lt2 = dlog10(max(10.0d0**ltmin,0.90d0*(10.0d0**lt0)))
   
-  !-- FIXME: Need to resolved argument mismatch
-  !call findthis(lr,lt1,y,f1a,bivar,d1,d2,d3)
-  !call findthis(lr,lt2,y,f2a,bivar,d1,d2,d3)
+  
+  call findthis(lr,lt1,y,f1a,bivar,iVar, d1,d2,d3, &
+                logrho, logtemp, ye ) 
+  call findthis(lr,lt2,y,f2a,bivar,iVar, d1,d2,d3, &
+                logrho, logtemp, ye )
 
   f1=f1a-eps0
   f2=f2a-eps0
@@ -53,9 +67,10 @@ subroutine bisection(lr,lt0,y,eps0,lt,bivar,keyerrt,keybisect)
      bcount=bcount+1
      lt1=dlog10(min(10.0d0**ltmax,1.2d0*(10.0d0**lt1)))
      lt2=dlog10(max(10.0d0**ltmin,0.8d0*(10.0d0**lt2)))
-     !-- FIXME: Need to resolved argument mismatch
-     !call findthis(lr,lt1,y,f1a,bivar,d1,d2,d3)
-     !call findthis(lr,lt2,y,f2a,bivar,d1,d2,d3)
+     call findthis(lr,lt1,y,f1a,bivar,iVar, d1,d2,d3, &
+                   logrho, logtemp, ye )
+     call findthis(lr,lt2,y,f2a,bivar,iVar, d1,d2,d3, &
+                   logrho, logtemp, ye )
      f1=f1a-eps0
      f2=f2a-eps0
      if(bcount.ge.maxbcount) then
@@ -75,8 +90,8 @@ subroutine bisection(lr,lt0,y,eps0,lt,bivar,keyerrt,keybisect)
   do i=1,itmax
      dlt=dlog10((10.0d0**dlt)*0.5d0)
      ltmid=dlog10(10.0d0**lt+10.0d0**dlt)
-     !-- FIXME: Need to resolved argument mismatch
-     !call findthis(lr,ltmid,y,f2a,bivar,d1,d2,d3)
+     call findthis(lr,ltmid,y,f2a,bivar,iVar,d1,d2,d3, &
+                   logrho, logtemp, ye )
      fmid=f2a-eps0
      if(fmid.le.0.0d0) lt=ltmid
      if(abs(1.0d0-f2a/eps0).lt.tol) then
@@ -85,16 +100,11 @@ subroutine bisection(lr,lt0,y,eps0,lt,bivar,keyerrt,keybisect)
      endif
   enddo
 
-
-
 end subroutine bisection
 
-subroutine bisection_rho(lr0,lt,y,lpressin,lr,bivar,keyerrr,keybisect)
 
-  use eosmodule
-  use nuc_eos
-
-  implicit none
+subroutine bisection_rho(lr0,lt,y,lpressin,lr,bivar,iVar,keyerrr,keybisect, &
+                         logrho, logtemp, ye )
 
 #ifdef ENABLE_OMP_OFFLOAD    
   !$OMP declare target
@@ -114,7 +124,12 @@ subroutine bisection_rho(lr0,lt,y,lpressin,lr,bivar,keyerrr,keybisect)
 
   integer bcount,i,itmax,maxbcount
 
-  real*8 bivar
+  real*8, dimension ( :, :, :, : ), intent ( in ) :: &
+    bivar
+  integer, intent ( in ) :: &
+    iVar
+  real*8, dimension ( : ), intent(in) :: &
+    logrho, logtemp, ye
 
   bcount = 0
   maxbcount = 80
@@ -174,6 +189,6 @@ subroutine bisection_rho(lr0,lt,y,lpressin,lr,bivar,keyerrr,keybisect)
      endif
   enddo
 
-
-
 end subroutine bisection_rho
+
+end module nuc_eos_bisection

@@ -1,14 +1,24 @@
-subroutine findtemp(lr,lt0,y,epsin,keyerrt,rfeps)
+module nuc_eos_findtemp
 
-  use eosmodule
-  use nuc_eos
+  use eosmodule, &
+    only: nvars, nrho, ntemp, nye, nvars, t_max_hack
+  use linterp, &
+    only : intp3d_many, intp3d
+  use nuc_eos_find, &
+    only: findthis, findall
+  use nuc_eos_bisection, &
+    only : bisection
 
   implicit none
+  public
+  
+contains
+
+subroutine findtemp(lr,lt0,y,epsin,keyerrt,rfeps, &
+                    logrho, logtemp, ye, eos_table)
 
 #ifdef ENABLE_OMP_OFFLOAD  
-  external :: bisection
   !$OMP declare target
-  !$OMP declare target ( bisection )
 #endif 
 
   real*8 lr,lt0,y,epsin
@@ -19,8 +29,13 @@ subroutine findtemp(lr,lt0,y,epsin,keyerrt,rfeps)
 
   real*8 ltn,ltmax,ltmin
   real*8 tinput,rfeps
+  
+  real*8, dimension ( : ), intent(in) :: &
+    logrho, logtemp, ye
+  real*8, dimension( :, :, :, : ), intent ( in ) :: &
+    eos_table
 
-  integer :: rl = 0
+  integer :: rl = 0, iTableVar
   integer itmax,i,keyerrt
   integer ii,jj,kk
   
@@ -38,11 +53,13 @@ subroutine findtemp(lr,lt0,y,epsin,keyerrt,rfeps)
 
   ltmax=logtemp(ntemp)
   ltmin=logtemp(1)
+  
+  iTableVar = 2
 
   ! Note: We are using Ewald's Lagrangian interpolator here!
 
   !preconditioning 1: do we already have the right temperature?
-  call findthis(lr,lt,y,eps,alltables(:,:,:,2),d1,d2,d3)
+  call findthis(lr,lt,y,eps,eos_table,iTableVar, d1,d2,d3, logrho, logtemp, ye)
   if (abs(eps-eps0).lt.tol*abs(eps0)) then
      return
   endif
@@ -64,7 +81,8 @@ subroutine findtemp(lr,lt0,y,epsin,keyerrt,rfeps)
      lt=ltn
      eps1=eps
 !     write(*,"(i4,1P12E19.10)") i,lr,lt0,y,lt,eps,eps0,abs(eps-eps0)/eps0,d2,ldt
-     call findthis(lr,lt,y,eps,alltables(:,:,:,2),d1,d2,d3)
+     call findthis(lr,lt,y,eps,eos_table,iTableVar, d1,d2,d3, &
+                   logrho, logtemp, ye)
 !     call findthis(lr,lt,y,eps,epst,d1,d2,d3)
      if (abs(eps - eps0).lt.tol*abs(eps0)) then
 !        write(*,"(1P12E19.10)") tol,abs(eps-eps0)/eps0
@@ -90,7 +108,8 @@ subroutine findtemp(lr,lt0,y,epsin,keyerrt,rfeps)
 
  if(i.ge.itmax) then
     keyerrt=667
-    call bisection(lr,lt0,y,eps0,lt,alltables(:,:,:,2),keyerrt,1)
+    call bisection(lr,lt0,y,eps0,lt,eos_table, iTableVar, keyerrt,1, &
+                   logrho, logtemp, ye )
     if(keyerrt.eq.667) then
        if(lt.ge.log10(t_max_hack)) then
           ! handling for too high temperatures
@@ -124,15 +143,12 @@ subroutine findtemp(lr,lt0,y,epsin,keyerrt,rfeps)
 
 end subroutine findtemp
 
-subroutine findtemp_entropy(lr,lt0,y,sin,keyerrt,rfeps)
+
+subroutine findtemp_entropy(lr,lt0,y,sin,keyerrt,rfeps, &
+                            logrho, logtemp, ye, eos_table)
 
 ! This routine finds the new temperature based
 ! on rho, Y_e, entropy
-
-  use eosmodule
-  use nuc_eos
-
-  implicit none
 
 #ifdef ENABLE_OMP_OFFLOAD  
   !$OMP declare target
@@ -146,8 +162,13 @@ subroutine findtemp_entropy(lr,lt0,y,sin,keyerrt,rfeps)
 
   real*8 ltn,ltmax,ltmin
   real*8 tinput,rfeps
+  
+  real*8, dimension ( : ), intent(in) :: &
+    logrho, logtemp, ye
+  real*8, dimension( :, :, :, : ), intent ( in ) :: &
+    eos_table
 
-  integer :: rl = 0
+  integer :: rl = 0, iTableVar
   integer itmax,i,keyerrt
   integer ii,jj,kk
 
@@ -164,9 +185,12 @@ subroutine findtemp_entropy(lr,lt0,y,sin,keyerrt,rfeps)
 
   ltmax=logtemp(ntemp)
   ltmin=logtemp(1)
+  
+  iTableVar = 3
 
   !preconditioning 1: do we already have the right temperature?
-  call findthis(lr,lt,y,s,alltables(:,:,:,3),d1,d2,d3)
+  call findthis(lr,lt,y,s,eos_table,iTableVar,d1,d2,d3, &
+                logrho,logtemp, ye)
   if (abs(s-s0).lt.tol*abs(s0)) then
      return
   endif
@@ -183,7 +207,8 @@ subroutine findtemp_entropy(lr,lt0,y,sin,keyerrt,rfeps)
      lt1=lt
      lt=ltn
      s1=s
-     call findthis(lr,lt,y,s,alltables(:,:,:,3),d1,d2,d3)
+     call findthis(lr,lt,y,s,eos_table,iTableVar, d1,d2,d3, &
+                   logrho, logtemp, ye)
      if (abs(s - s0).lt.tol*abs(s0)) then
        exit
      endif
@@ -201,7 +226,8 @@ subroutine findtemp_entropy(lr,lt0,y,sin,keyerrt,rfeps)
 
  if(i.ge.itmax) then
     keyerrt=667
-   call bisection(lr,lt0,y,s0,lt,alltables(:,:,:,3),keyerrt,2)
+   call bisection(lr,lt0,y,s0,lt,eos_table,iTableVar,keyerrt,2,&
+                  logrho, logtemp, ye )
     if(keyerrt.eq.667) then
 #ifndef ENABLE_OMP_OFFLOAD
           write(*,*) "EOS: Did not converge in findtemp_entropy!"
@@ -219,5 +245,6 @@ subroutine findtemp_entropy(lr,lt0,y,sin,keyerrt,rfeps)
 
   lt0=lt
 
-
 end subroutine findtemp_entropy
+
+end module nuc_eos_findtemp
