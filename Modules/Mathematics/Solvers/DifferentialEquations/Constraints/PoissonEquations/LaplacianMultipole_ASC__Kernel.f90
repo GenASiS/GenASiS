@@ -426,6 +426,8 @@ contains
     integer ( KDI ) :: &
       iR, iT, iP, &  !-- iRadius, iTheta, iPhi
       iE  !-- iEquation
+    real ( KDR ) :: &
+      S_RC, S_IC, S_RS, S_IS
     logical ( KDL ) :: &
       UseDevice
 
@@ -435,42 +437,54 @@ contains
 
     if ( UseDevice ) then
 
-      !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 4 ) &
-      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iR, iT, iP, iE ) &
-      !$OMP& reduction ( + : MyM_RC ) &
-      !$OMP& reduction ( + : MyM_IC ) &
-      !$OMP& reduction ( + : MyM_RS ) &
-      !$OMP& reduction ( + : MyM_IS )
+      !$OMP  OMP_TARGET_DISTRIBUTE_DIRECTIVE collapse ( 2 ) &
+      !$OMP& OMP_TARGET_DISTRIBUTE_SCHEDULE &  
+      !$OMP& private ( iR, iE, S_RC, S_IC, S_RS, S_IS )
       do iE  =  1, nE
-        do iP  =  oC ( 3 )  +  1,  oC ( 3 )  +  nC ( 3 )
-          do iT  =  oC ( 2 )  +  1,  oC ( 2 )  +  nC ( 2 )
-            do iR  =  oC ( 1 )  +  1,  oC ( 1 )  +  nC ( 1 )
+        do iR  =  oC ( 1 )  +  1,  oC ( 1 )  +  nC ( 1 )
 
-              MyM_RC ( oR - oC ( 1 ) + iR, iE )  &
-                =  MyM_RC ( oR - oC ( 1 ) + iR, iE )  &
-                   +  SH_RC ( iR, iT, iP )  *  S ( iR, iT, iP, iE )  &
-                      *  dV ( iR, iT, iP )
+          S_RC  =  0.0_KDR
+          S_IC  =  0.0_KDR
+          S_RS  =  0.0_KDR
+          S_IS  =  0.0_KDR
 
-              MyM_IC ( oR - oC ( 1 ) + iR, iE )  &
-                =  MyM_IC ( oR - oC ( 1 ) + iR, iE )  &
-                   +  SH_IC ( iR, iT, iP )  *  S ( iR, iT, iP, iE )  &
-                      *  dV ( iR, iT, iP )
+          !$OMP  parallel do collapse ( 2 ) &
+          !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iT, iP ) &
+          !$OMP& reduction ( + : S_RC ) &
+          !$OMP& reduction ( + : S_IC ) &
+          !$OMP& reduction ( + : S_RS ) &
+          !$OMP& reduction ( + : S_IS )
+          do iP  =  oC ( 3 )  +  1,  oC ( 3 )  +  nC ( 3 )
+            do iT  =  oC ( 2 )  +  1,  oC ( 2 )  +  nC ( 2 )
 
-              MyM_RS ( oR - oC ( 1 ) + iR, iE )  &
-                =  MyM_RS ( oR - oC ( 1 ) + iR, iE )  &
-                   +  SH_RS ( iR, iT, iP )  *  S ( iR, iT, iP, iE )  &
-                      *  dV ( iR, iT, iP )
+              S_RC  =  S_RC  &
+                       +  SH_RC ( iR, iT, iP )  *  S ( iR, iT, iP, iE )  &
+                          *  dV ( iR, iT, iP )
 
-              MyM_IS ( oR - oC ( 1 ) + iR, iE )  &
-                =  MyM_IS ( oR - oC ( 1 ) + iR, iE )  &
-                   +  SH_IS ( iR, iT, iP )  *  S ( iR, iT, iP, iE )  &
-                      *  dV ( iR, iT, iP )
+              S_IC  =  S_IC  &
+                       +  SH_IC ( iR, iT, iP )  *  S ( iR, iT, iP, iE )  &
+                          *  dV ( iR, iT, iP )
 
-            end do !-- iR
-          end do !-- iT
-        end do !-- iP
+              S_RS  =  S_RS  &
+                       +  SH_RS ( iR, iT, iP )  *  S ( iR, iT, iP, iE )  &
+                          *  dV ( iR, iT, iP )
+
+              S_IS  =  S_IS  &
+                       +  SH_IS ( iR, iT, iP )  *  S ( iR, iT, iP, iE )  &
+                          *  dV ( iR, iT, iP )
+
+            end do !-- iT
+          end do !-- iP
+          !$OMP  end parallel do
+
+          MyM_RC ( oR - oC ( 1 ) + iR, iE )  =  S_RC
+          MyM_IC ( oR - oC ( 1 ) + iR, iE )  =  S_IC
+          MyM_RS ( oR - oC ( 1 ) + iR, iE )  =  S_RS
+          MyM_IS ( oR - oC ( 1 ) + iR, iE )  =  S_IS
+
+        end do !-- iR
       end do !-- iE
-      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+      !$OMP  end OMP_TARGET_DISTRIBUTE_DIRECTIVE  
 
     else !-- use host
 
