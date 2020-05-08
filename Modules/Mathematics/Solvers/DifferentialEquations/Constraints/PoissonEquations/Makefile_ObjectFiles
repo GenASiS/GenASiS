@@ -4,6 +4,7 @@ POISSON_EQUATIONS = \
   Poisson_Template.o \
   LaplacianMultipole_ASC__Kernel.o \
   LaplacianMultipole_ASC__Form.o \
+  LaplacianMultipole_Kernel.o \
   LaplacianMultipole_Template.o \
   LaplacianMultipoleOld_ASC__Kernel.o \
   LaplacianMultipoleOld_ASC__Form.o \

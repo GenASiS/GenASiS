@@ -3,7 +3,6 @@
 submodule ( LaplacianMultipole_ASC__Form ) LaplacianMultipole_ASC__Kernel
 
   use Basics
-  use LaplacianMultipole_Template
 
   implicit none
 
@@ -427,7 +426,7 @@ contains
       iR, iT, iP, &  !-- iRadius, iTheta, iPhi
       iE  !-- iEquation
     real ( KDR ) :: &
-      S_RC, S_IC, S_RS, S_IS
+      M_RC, M_IC, M_RS, M_IS
     logical ( KDL ) :: &
       UseDevice
 
@@ -439,37 +438,37 @@ contains
 
       !$OMP  OMP_TARGET_DISTRIBUTE_DIRECTIVE collapse ( 2 ) &
       !$OMP& OMP_TARGET_DISTRIBUTE_SCHEDULE &  
-      !$OMP& private ( iR, iE, S_RC, S_IC, S_RS, S_IS )
+      !$OMP& private ( iR, iE, M_RC, M_IC, M_RS, M_IS )
       do iE  =  1, nE
         do iR  =  oC ( 1 )  +  1,  oC ( 1 )  +  nC ( 1 )
 
-          S_RC  =  0.0_KDR
-          S_IC  =  0.0_KDR
-          S_RS  =  0.0_KDR
-          S_IS  =  0.0_KDR
+          M_RC  =  0.0_KDR
+          M_IC  =  0.0_KDR
+          M_RS  =  0.0_KDR
+          M_IS  =  0.0_KDR
 
           !$OMP  parallel do collapse ( 2 ) &
           !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iT, iP ) &
-          !$OMP& reduction ( + : S_RC ) &
-          !$OMP& reduction ( + : S_IC ) &
-          !$OMP& reduction ( + : S_RS ) &
-          !$OMP& reduction ( + : S_IS )
+          !$OMP& reduction ( + : M_RC ) &
+          !$OMP& reduction ( + : M_IC ) &
+          !$OMP& reduction ( + : M_RS ) &
+          !$OMP& reduction ( + : M_IS )
           do iP  =  oC ( 3 )  +  1,  oC ( 3 )  +  nC ( 3 )
             do iT  =  oC ( 2 )  +  1,  oC ( 2 )  +  nC ( 2 )
 
-              S_RC  =  S_RC  &
+              M_RC  =  M_RC  &
                        +  SH_RC ( iR, iT, iP )  *  S ( iR, iT, iP, iE )  &
                           *  dV ( iR, iT, iP )
 
-              S_IC  =  S_IC  &
+              M_IC  =  M_IC  &
                        +  SH_IC ( iR, iT, iP )  *  S ( iR, iT, iP, iE )  &
                           *  dV ( iR, iT, iP )
 
-              S_RS  =  S_RS  &
+              M_RS  =  M_RS  &
                        +  SH_RS ( iR, iT, iP )  *  S ( iR, iT, iP, iE )  &
                           *  dV ( iR, iT, iP )
 
-              S_IS  =  S_IS  &
+              M_IS  =  M_IS  &
                        +  SH_IS ( iR, iT, iP )  *  S ( iR, iT, iP, iE )  &
                           *  dV ( iR, iT, iP )
 
@@ -477,10 +476,10 @@ contains
           end do !-- iP
           !$OMP  end parallel do
 
-          MyM_RC ( oR - oC ( 1 ) + iR, iE )  =  S_RC
-          MyM_IC ( oR - oC ( 1 ) + iR, iE )  =  S_IC
-          MyM_RS ( oR - oC ( 1 ) + iR, iE )  =  S_RS
-          MyM_IS ( oR - oC ( 1 ) + iR, iE )  =  S_IS
+          MyM_RC ( oR - oC ( 1 ) + iR, iE )  =  M_RC
+          MyM_IC ( oR - oC ( 1 ) + iR, iE )  =  M_IC
+          MyM_RS ( oR - oC ( 1 ) + iR, iE )  =  M_RS
+          MyM_IS ( oR - oC ( 1 ) + iR, iE )  =  M_IS
 
         end do !-- iR
       end do !-- iE

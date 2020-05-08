@@ -25,6 +25,11 @@ LaplacianMultipole_Template.o: \
   Manifolds.o \
   LaplacianMultipole_Template.f90 
 
+LaplacianMultipole_Kernel.o: \
+  Basics.o \
+  LaplacianMultipole_Template.o \
+  LaplacianMultipole_Kernel.f90
+
 LaplacianMultipole_ASC__Form.o: \
   Basics.o \
   Manifolds.o \
@@ -33,7 +38,6 @@ LaplacianMultipole_ASC__Form.o: \
 
 LaplacianMultipole_ASC__Kernel.o: \
   Basics.o \
-  LaplacianMultipole_Template.o \
   LaplacianMultipole_ASC__Form.o \
   LaplacianMultipole_ASC__Kernel.f90
 

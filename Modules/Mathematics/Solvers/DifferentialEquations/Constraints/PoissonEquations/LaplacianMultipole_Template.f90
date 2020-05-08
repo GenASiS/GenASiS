@@ -164,6 +164,28 @@ module LaplacianMultipole_Template
 
   end interface
 
+!-- FIXME: With GCC 6.1.0, must be public to trigger .smod generation
+!    private :: &
+    public :: &
+      AddMomentShellsKernel
+
+    interface
+
+      module subroutine AddMomentShellsKernel &
+                          ( M_RC, M_IC, M_RS, M_IS, nA, nE, nR, &
+                            UseDeviceOption )
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( :, :, : ) :: &
+          M_RC, M_IC, M_RS, M_IS
+        integer ( KDI ), intent ( in ) :: &
+          nA, nE, nR
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine AddMomentShellsKernel
+
+    end interface
+
 
     private :: &
       AllocateReduction, &
@@ -259,24 +281,19 @@ contains
     call L % ComputeMomentContributions ( Source )
     if ( associated ( Timer_LM ) ) call Timer_LM % Stop ( )
 
-call Show ( MyM % Value ( 1 : 10, 1 ), '>>> MyM % Value ( 1 : 10, 1 )' )
-
     if ( associated ( Timer_RM ) ) call Timer_RM % Start ( )
     call MyM % UpdateHost ( )
     call L % ReductionMoments % Reduce ( REDUCTION % SUM )
     call M % UpdateDevice ( ) 
     if ( associated ( Timer_RM ) ) call Timer_RM % Stop ( )
 
-call Show ( M % Value ( 1 : 10, 1 ), '>>> M % Value ( 1 : 10, 1 )' )
-
-call PROGRAM_HEADER % ShowStatistics &
-       ( CONSOLE % INFO_1, &
-         CommunicatorOption = PROGRAM_HEADER % Communicator )
-call Show ( '>>> Aborting during development', CONSOLE % ERROR )
-call Show ( 'LaplacianMultipole_Template', 'module', CONSOLE % ERROR )
-call Show ( 'ComputeMoments', 'subroutine', CONSOLE % ERROR )
-call PROGRAM_HEADER % Abort ( )
-
+    if ( associated ( Timer_AM ) ) call Timer_AM % Start ( )
+      call AddMomentShellsKernel &
+             ( L % Moment_RC, L % Moment_IC, L % Moment_RS, L % Moment_IS, &
+               L % nAngularMoments, L % nEquations, L % nRadialCells, &
+               UseDeviceOption = L % UseDevice )
+    if ( associated ( Timer_AM ) ) call Timer_AM % Stop ( )
+    
     end associate !-- M, etc.
 
     if ( associated ( Timer ) ) call Timer % Stop ( )
