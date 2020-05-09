@@ -19,6 +19,19 @@ module Fluid_P_HN__Form
       N_CONSERVED_HEAVY_NUCLEUS = 1, &
       N_FIELDS_HEAVY_NUCLEUS    = 10, &
       N_VECTORS_HEAVY_NUCLEUS   = 0
+    
+    type, private :: EOS_HN_Type
+      real ( KDR ), dimension ( : ), allocatable :: &
+        LogDensity, &
+        LogTemperature, &
+        ElectronFraction
+      real ( KDR ), dimension ( :, :, :, : ), allocatable :: &
+        Table
+    contains
+      final :: &
+        EOS_HN_Final
+    end type EOS_HN_Type
+
 
   type, public, extends ( Fluid_P_Template ) :: Fluid_P_HN_Form
     integer ( KDI ) :: &
@@ -39,12 +52,8 @@ module Fluid_P_HN__Form
         !   measured with respect to m_n.)
       CHEMICAL_POTENTIAL_E      = 0     
         !-- Includes m_e.
-    real ( KDR ), dimension ( : ), allocatable :: &
-      TableLogDensity, &
-      TableLogTemperature, &
-      TableElectronFraction
-    real ( KDR ), dimension ( :, :, :, : ), allocatable :: &
-      Table_EOS
+    type ( EOS_HN_Type ), private, pointer :: &
+      EOS => null ( )
   contains
     procedure, public, pass :: &
       Initialize_P_HN
@@ -78,6 +87,7 @@ module Fluid_P_HN__Form
       Apply_EOS_HN_SB_Kernel
   end type Fluid_P_HN_Form
 
+  
     private :: &
       InitializeBasics, &
       SetUnits, &
@@ -94,6 +104,8 @@ module Fluid_P_HN__Form
       MeV
     logical ( KDL ), private, protected :: &
       TableInitialized = .false.
+    type ( EOS_HN_Type ), pointer, private, protected :: &
+      EOS_Pointer
       
   interface 
   
@@ -318,8 +330,10 @@ contains
              UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndicesOption )
 
-    if ( TableInitialized ) &
+    if ( TableInitialized ) then
+      F % EOS => EOS_Pointer
       return
+    end if
 
     call DelayFileAccess ( PROGRAM_HEADER % Communicator % Rank )
     call READTABLE &
@@ -330,11 +344,12 @@ contains
 !    call READTABLE &
 !           ( '../Parameters/Hempel_SFHoEOS_rho222_temp180_ye60_version_1.1' &
 !             // '_20120817.h5' )
-    
-    allocate ( F % TableLogDensity, source = logrho )
-    allocate ( F % TableLogTemperature, source = logtemp )
-    allocate ( F % TableElectronFraction, source = ye )
-    allocate ( F % Table_EOS, source = alltables )
+    allocate ( F % EOS )
+    allocate ( F % EOS % LogDensity, source = logrho )
+    allocate ( F % EOS % LogTemperature, source = logtemp )
+    allocate ( F % EOS % ElectronFraction, source = ye )
+    allocate ( F % EOS % Table, source = alltables )
+    EOS_Pointer => F % EOS
 
     !-- Historical Oak Ridge Shift, accounting for nuclear binding energy
     OR_Shift = 8.9_KDR * UNIT % MEGA_ELECTRON_VOLT &
@@ -360,21 +375,21 @@ contains
       D_P  !-- Device Pointer
    
     call Show ( '<<<<< AllocateDevice_P_HN >>>>>' ) 
-    call AllocateDevice ( S % Table_EOS, D_P )
-    call AssociateHost  ( D_P, S % Table_EOS )
-    call UpdateDevice   ( S % Table_EOS, D_P )
+    call AllocateDevice ( S % EOS % Table, D_P )
+    call AssociateHost  ( D_P, S % EOS % Table )
+    call UpdateDevice   ( S % EOS % Table, D_P )
     
-    call AllocateDevice ( S % TableLogDensity, D_P )
-    call AssociateHost  ( D_P, S % TableLogDensity ) 
-    call UpdateDevice   ( S % TableLogDensity, D_P )
+    call AllocateDevice ( S % EOS % LogDensity, D_P )
+    call AssociateHost  ( D_P, S % EOS % LogDensity ) 
+    call UpdateDevice   ( S % EOS % LogDensity, D_P )
     
-    call AllocateDevice ( S % TableLogTemperature, D_P )
-    call AssociateHost  ( D_P, S % TableLogTemperature )
-    call UpdateDevice   ( S % TableLogTemperature, D_P )
+    call AllocateDevice ( S % EOS % LogTemperature, D_P )
+    call AssociateHost  ( D_P, S % EOS % LogTemperature )
+    call UpdateDevice   ( S % EOS % LogTemperature, D_P )
     
-    call AllocateDevice ( S % TableElectronFraction, D_P )
-    call AssociateHost  ( D_P, S % TableElectronFraction )
-    call UpdateDevice   ( S % TableElectronFraction, D_P )
+    call AllocateDevice ( S % EOS % ElectronFraction, D_P )
+    call AssociateHost  ( D_P, S % EOS % ElectronFraction )
+    call UpdateDevice   ( S % EOS % ElectronFraction, D_P )
     
     call S % StorageForm % AllocateDevice ( )
       
@@ -639,10 +654,10 @@ contains
         Mu_NP => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_N_P ), &
         Mu_E  => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_E ) )
     associate &
-      ( T_EOS => C % Table_EOS, &
-        T_L_D => C % TableLogDensity, &
-        T_L_T => C % TableLogTemperature, &
-        T_YE  => C % TableElectronFraction )
+      ( T_EOS => C % EOS % Table, &
+        T_L_D => C % EOS % LogDensity, &
+        T_L_T => C % EOS % LogTemperature, &
+        T_YE  => C % EOS % ElectronFraction )
 
     call C % Compute_M_Kernel &
            ( M, C % BaryonMassReference, &
@@ -752,10 +767,10 @@ contains
         Mu_NP => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_N_P ), &
         Mu_E  => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_E ) )
     associate &
-      ( T_EOS => C % Table_EOS, &
-        T_L_D => C % TableLogDensity, &
-        T_L_T => C % TableLogTemperature, &
-        T_YE  => C % TableElectronFraction )
+      ( T_EOS => C % EOS % Table, &
+        T_L_D => C % EOS % LogDensity, &
+        T_L_T => C % EOS % LogTemperature, &
+        T_YE  => C % EOS % ElectronFraction )
 
     associate &
       ( T_CFP => PROGRAM_HEADER % Timer ( C % iTimerComputeFromPrimitive ), &
@@ -784,6 +799,9 @@ contains
 !    call C % Apply_EOS_HN_SB_Kernel &
 !           ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
 !             M, N, YE )
+    call Storage_C % UpdateHost ( )
+    call Show ( P, 'Pressure' )
+    call Show ( T, 'Temperature' )
     call T_AE % Stop ( )
     
     call T_CFP % Start ( )
@@ -901,10 +919,15 @@ contains
         Mu_E  => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_E ), &
         Shock => FF % Value ( oV + 1 : oV + nV, FF % SHOCK ) )
     associate &
-      ( T_EOS => C % Table_EOS, &
-        T_L_D => C % TableLogDensity, &
-        T_L_T => C % TableLogTemperature, &
-        T_YE  => C % TableElectronFraction )
+      ( T_EOS => C % EOS % Table, &
+        T_L_D => C % EOS % LogDensity, &
+        T_L_T => C % EOS % LogTemperature, &
+        T_YE  => C % EOS % ElectronFraction )
+    
+    !call Show ( allocated ( C % EOS % Table ),  '<<<< EOS Table' )
+    !call Show ( C % EOS % LogDensity ( 1 : 5 ), 'EOS Log Density' )
+    !call Show ( C % EOS % LogTemperature ( 1 : 5 ), 'EOS Log Temperature' )
+    !call Show ( C % EOS % ElectronFraction ( 1 : 5 ), 'EOS ElectronFraction' )
 
     associate &
       ( T_CFP => PROGRAM_HEADER % Timer ( C % iTimerComputeFromPrimitive ), &
@@ -936,6 +959,9 @@ contains
              ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
                T_EOS, M, N, YE, Shock, T_L_D, T_L_T, T_YE, &
                UseDeviceOption = C % AllocatedDevice )
+      call Storage_C % UpdateHost ( )
+      call Show ( P, 'Pressure' )
+      call Show ( T, 'Temperature' )
       call C % Compute_G_G_Kernel &
              ( GE, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E, &
                UseDeviceOption = C % AllocatedDevice )
@@ -944,6 +970,9 @@ contains
              ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
                T_EOS, M, N, YE, T_L_D, T_L_T, T_YE, &
                UseDeviceOption = C % AllocatedDevice )
+      call Storage_C % UpdateHost ( )
+      call Show ( P, 'Pressure' )
+      call Show ( T, 'Temperature' )
     end if
     call C % Compute_DS_G_Kernel &
            ( DS, N, SB, UseDeviceOption = C % AllocatedDevice )
@@ -1144,6 +1173,15 @@ contains
   !   end select !-- Grid
 
   ! end subroutine InterpolateSoundSpeed
+  
+  
+  subroutine EOS_HN_Final ( E )
+    type ( EOS_HN_Type ) &
+      :: E
+      
+    call Show ( ' <<<<< EOS_HN TABLE IS FINALIZED ' )
+    
+  end subroutine EOS_HN_Final
 
 
 end module Fluid_P_HN__Form
