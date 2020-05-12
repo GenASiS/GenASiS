@@ -40,7 +40,8 @@ contains
           Z ( iC )  =  0.0_KDR
         end if
 
-        D_2 ( iC )  =  X ( iC ) ** 2  +  Y ( iC ) ** 2  +  Z ( iC ) ** 2
+        D   ( iC )  =  X_1 ( iC )
+        D_2 ( iC )  =  X_1 ( iC ) ** 2
 
       end do !-- iC
       !$OMP  end OMP_TARGET_DIRECTIVE parallel do
@@ -63,7 +64,8 @@ contains
           Z ( iC )  =  0.0_KDR
         end if
 
-        D_2 ( iC )  =  X ( iC ) ** 2  +  Y ( iC ) ** 2  +  Z ( iC ) ** 2
+        D   ( iC )  =  X_1 ( iC )
+        D_2 ( iC )  =  X_1 ( iC ) ** 2
 
       end do !-- iC
       !$OMP  end parallel do

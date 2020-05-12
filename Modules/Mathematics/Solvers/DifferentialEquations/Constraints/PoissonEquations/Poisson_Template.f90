@@ -34,6 +34,10 @@ module Poisson_Template
       Solve
     procedure, public, pass :: &
       FinalizeTemplate
+    procedure, public, pass :: &
+      AssembleSolution
+    procedure ( ASC ), private, pass, deferred :: &
+      AssembleSolutionContributions
   end type PoissonTemplate
 
   abstract interface 
@@ -49,6 +53,21 @@ module Poisson_Template
       class ( FieldAtlasTemplate ), intent ( in ) :: &
         Source
     end subroutine S
+
+    subroutine ASC ( P, Solution, Delta_M_FourPi, iA, iSH_0 )
+      use Basics
+      import PoissonTemplate
+      implicit none
+      class ( PoissonTemplate ), intent ( inout ) :: &
+        P
+      class ( * ), intent ( inout ) :: &
+        Solution
+      real ( KDR ), intent ( in ) :: &
+        Delta_M_FourPi
+      integer ( KDI ), intent ( in ) :: &
+        iA, &  
+        iSH_0  
+    end subroutine ASC
 
   end interface
 
@@ -142,6 +161,90 @@ contains
     call Show ( P % Name, 'Name', P % IGNORABILITY )
     
   end subroutine FinalizeTemplate
+
+
+  subroutine AssembleSolution ( P, Solution )
+
+    class ( PoissonTemplate ), intent ( inout ) :: &
+      P
+    class ( * ), intent ( inout ) :: &
+      Solution
+
+    integer ( KDI ) :: &
+      iA, &   !-- iAngularMoment
+      iM, &   !-- iOrder
+      iL, &   !-- iDegree
+      iSH_PD  !-- iSolidHarmonic_PreviousDiagonal
+    integer ( KDI ), pointer :: &
+      iSH_0, &  !-- iSolidHarmonic_Current
+      iSH_1, &  !-- iSolidHarmonic_Previous_1
+      iSH_2     !-- iSolidHarmonic_Previous_2
+    integer ( KDI ), dimension ( 3 ), target :: &
+      iSH
+    real ( KDR ) :: &
+      Delta_M_FourPi
+    type ( TimerForm ), pointer :: &
+      Timer
+
+    if ( .not. allocated ( P % LaplacianMultipole) ) then
+      call Show ( 'LaplacianMultipole not allocated', CONSOLE % ERROR )
+      call Show ( 'Poisson_Template', 'module', CONSOLE % ERROR )
+      call Show ( 'AssembleSolution', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end if
+
+    Timer  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerAssembleSolution )
+    if ( associated ( Timer ) ) call Timer % Start ( )
+
+    associate ( L => P % LaplacianMultipole )
+
+    iSH_0  =>  iSH ( 1 )
+    iSH_1  =>  iSH ( 2 )
+    iSH_2  =>  iSH ( 3 )
+
+        iA  =  1
+       iSH  =  [ 1, 2, 3 ]
+    iSH_PD  =  4
+
+    do iM  =  0, L % MaxOrder
+
+      !-- ( L, M ) = ( iM, iM )
+      !-- Note iL = iM
+      if ( iM  ==  0 ) then
+        Delta_M_FourPi  =  - 1.0_KDR / ( 4.0_KDR  *  CONSTANT % PI )
+        call L % ComputeSolidHarmonics_0_0 ( iSH_0, iSH_PD )
+      else
+        Delta_M_FourPi  =  - 2.0_KDR / ( 4.0_KDR  *  CONSTANT % PI )
+        call L % ComputeSolidHarmonics_iM_iM ( iM, iSH_0, iSH_PD )
+      end if
+
+      do iL  =  iM, L % MaxDegree
+
+        if ( iL  ==  iM + 1 ) then
+          !-- ( L, M ) = ( iM + 1, iM )
+          !-- Note iL = iM + 1
+          call L % ComputeSolidHarmonics_iL_iM_1 &
+                 ( iM, iSH_0, iSH_1 )
+        else if ( iL  >=  iM  +  2 ) then
+          !-- ( L, M ) = ( iL, iM )
+          call L % ComputeSolidHarmonics_iL_iM_2 &
+                 ( iL, iM, iSH_0, iSH_1, iSH_2 )
+        end if
+
+        call P % AssembleSolutionContributions &
+               ( Solution, Delta_M_FourPi, iA, iSH_0 )
+
+         iA  =  iA + 1
+        iSH  =  cshift ( iSH, -1 )
+
+      end do !-- iL
+    end do !-- iM
+
+    end associate !-- L
+
+    if ( associated ( Timer ) ) call Timer % Stop ( )
+
+  end subroutine AssembleSolution
 
 
 end module Poisson_Template

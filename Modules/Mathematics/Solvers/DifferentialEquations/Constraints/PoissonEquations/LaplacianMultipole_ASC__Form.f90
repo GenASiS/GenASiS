@@ -15,6 +15,7 @@ module LaplacianMultipole_ASC__Form
         Rectangular_X => null ( ), &
         Rectangular_Y => null ( ), &
         Rectangular_Z => null ( ), &
+        Radius        => null ( ), &
         RadiusSquared => null ( ), &
         Volume => null ( )
       real ( KDR ), dimension ( :, :, :, : ), pointer :: &
@@ -39,15 +40,15 @@ module LaplacianMultipole_ASC__Form
       AllocateRectangularCoordinates
     procedure, private, pass :: &
       AllocateSolidHarmonics
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       ComputeSolidHarmonics_0_0
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       ComputeSolidHarmonics_iM_iM
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       ComputeSolidHarmonics_iL_iM_1
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       ComputeSolidHarmonics_iL_iM_2
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       SumMomentContributions
   end type LaplacianMultipole_ASC_Form
 
@@ -64,12 +65,12 @@ module LaplacianMultipole_ASC__Form
     interface
 
       module subroutine Compute_RC_CSL_S_Kernel &
-                          ( X, Y, Z, D_2, IsProperCell, X_1, X_2, X_3, &
+                          ( X, Y, Z, D, D_2, IsProperCell, X_1, X_2, X_3, &
                             nC, UseDeviceOption )
         use Basics
         implicit none
         real ( KDR ), dimension ( : ), intent ( inout ) :: &
-          X, Y, Z, D_2
+          X, Y, Z, D, D_2
         logical ( KDL ), dimension ( : ), intent ( in ) :: &
           IsProperCell
         real ( KDR ), dimension ( : ), intent ( in ) :: &
@@ -220,12 +221,15 @@ contains
     if ( allocated ( L % RectangularCoordinates ) ) &
       deallocate ( L % RectangularCoordinates )
 
+    nullify ( L % Source )
     nullify ( L % SolidHarmonic_IS )
     nullify ( L % SolidHarmonic_RS )
     nullify ( L % SolidHarmonic_IC )
     nullify ( L % SolidHarmonic_RC )
 
+    nullify ( L % Volume )
     nullify ( L % RadiusSquared )
+    nullify ( L % Radius )
     nullify ( L % Rectangular_Z )
     nullify ( L % Rectangular_Y )
     nullify ( L % Rectangular_X )
@@ -302,8 +306,8 @@ contains
 
       associate ( nC => product ( C % nCellsBrick  +  2 * C % nGhostLayers ) )
 
-      call RC % Initialize ( [ nC, 4 ], ClearOption = .true. )
-             !-- 4: X, Y, Z, R ** 2
+      call RC % Initialize ( [ nC, 5 ], ClearOption = .true. )
+             !-- 5: X, Y, Z, R, R ** 2
       if ( L % UseDevice ) then
         call RC % AllocateDevice ( )
         call RC % UpdateDevice ( )
@@ -314,15 +318,17 @@ contains
       call AssignRectangularPointers &
              ( RC % Value ( :, 1 ), RC % Value ( :, 2 ), &
                RC % Value ( :, 3 ), RC % Value ( :, 4 ), &
-               G % Value ( :, G % VOLUME ), C % nCellsBrick, C % nGhostLayers, &
+               RC % Value ( :, 5 ), G % Value ( :, G % VOLUME ), &
+               C % nCellsBrick, C % nGhostLayers, &
                L % Rectangular_X, L % Rectangular_Y, L % Rectangular_Z, &
-               L % RadiusSquared, L % Volume )
+               L % Radius, L % RadiusSquared, L % Volume )
 
       select case ( trim ( C % CoordinateSystem ) )
       case ( 'SPHERICAL' )
         call Compute_RC_CSL_S_Kernel &
                ( RC % Value ( :, 1 ), RC % Value ( :, 2 ), &
                  RC % Value ( :, 3 ), RC % Value ( :, 4 ), &
+                 RC % Value ( :, 5 ), &
                  C % IsProperCell, &
                  G % Value ( :, G % CENTER_U ( 1 ) ), &
                  G % Value ( :, G % CENTER_U ( 2 ) ), &
@@ -537,18 +543,28 @@ contains
            ( Source % Value, C % nCellsBrick, C % nGhostLayers, &
              L % nEquations, L % Source )
 
-    call Sum_MC_CSL_S_Kernel &
-           ( L % MyMoment_RC ( :, :, iA ), L % MyMoment_IC ( :, :, iA ), &
-             L % MyMoment_RS ( :, :, iA ), L % MyMoment_IS ( :, :, iA ), &
-             L % Source, &
-             L % SolidHarmonic_RC ( :, :, :, iSH_0 ), &
-             L % SolidHarmonic_IC ( :, :, :, iSH_0 ), &
-             L % SolidHarmonic_RS ( :, :, :, iSH_0 ), &
-             L % SolidHarmonic_IS ( :, :, :, iSH_0 ), &
-             L % Volume, &
-             C % nCellsBrick, C % nGhostLayers, L % nEquations, &
-             oR = ( C % iaBrick ( 1 ) - 1 ) * C % nCellsBrick ( 1 ), &
-             UseDeviceOption = L % UseDevice )
+    select case ( trim ( C % CoordinateSystem ) )
+    case ( 'SPHERICAL' )
+      call Sum_MC_CSL_S_Kernel &
+             ( L % MyMoment_RC ( :, :, iA ), L % MyMoment_IC ( :, :, iA ), &
+               L % MyMoment_RS ( :, :, iA ), L % MyMoment_IS ( :, :, iA ), &
+               L % Source, &
+               L % SolidHarmonic_RC ( :, :, :, iSH_0 ), &
+               L % SolidHarmonic_IC ( :, :, :, iSH_0 ), &
+               L % SolidHarmonic_RS ( :, :, :, iSH_0 ), &
+               L % SolidHarmonic_IS ( :, :, :, iSH_0 ), &
+               L % Volume, &
+               C % nCellsBrick, C % nGhostLayers, L % nEquations, &
+               oR = ( C % iaBrick ( 1 ) - 1 ) * C % nCellsBrick ( 1 ), &
+               UseDeviceOption = L % UseDevice )
+    case default
+      call Show ( 'Coordinate system not supported', CONSOLE % ERROR )
+      call Show ( C % CoordinateSystem, 'CoordinateSystem', CONSOLE % ERROR )
+      call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'SumMomentContributions', 'subroutine', &
+                  CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select
 
     class default
       call Show ( 'Source type not supported', CONSOLE % ERROR )
@@ -570,19 +586,19 @@ contains
 
 
   subroutine AssignRectangularPointers &
-               ( X_1D, Y_1D, Z_1D, D_2_1D, dV_1D, nC, nG, &
-                 X_3D, Y_3D, Z_3D, D_2_3D, dV_3D )
+               ( X_1D, Y_1D, Z_1D, D_1D, D_2_1D, dV_1D, nC, nG, &
+                 X_3D, Y_3D, Z_3D, D_3D, D_2_3D, dV_3D )
 
     real ( KDR ), dimension ( : ), intent ( in ), target :: &
       X_1D, Y_1D, Z_1D, &
-      D_2_1D, &
+      D_1D, D_2_1D, &
       dV_1D
     integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
       nC, &  !-- nCellsBrick
       nG     !-- nGhostLayers
     real ( KDR ), dimension ( :, :, : ), intent ( out ), pointer :: &
       X_3D, Y_3D, Z_3D, &
-      D_2_3D, &
+      D_3D, D_2_3D, &
       dV_3D
 
     associate &
@@ -593,6 +609,7 @@ contains
       X_3D ( 1 : n1, 1 : n2, 1 : n3 )  =>    X_1D
       Y_3D ( 1 : n1, 1 : n2, 1 : n3 )  =>    Y_1D
       Z_3D ( 1 : n1, 1 : n2, 1 : n3 )  =>    Z_1D
+      D_3D ( 1 : n1, 1 : n2, 1 : n3 )  =>    D_1D
     D_2_3D ( 1 : n1, 1 : n2, 1 : n3 )  =>  D_2_1D
      dV_3D ( 1 : n1, 1 : n2, 1 : n3 )  =>   dV_1D
 

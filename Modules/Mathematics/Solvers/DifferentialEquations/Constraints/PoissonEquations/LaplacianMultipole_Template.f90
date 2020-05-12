@@ -53,6 +53,14 @@ module LaplacianMultipole_Template
       InitializeTimers
     procedure, public, pass :: &
       ComputeMoments
+    procedure ( CSH_0_0 ), public, pass, deferred :: &
+      ComputeSolidHarmonics_0_0
+    procedure ( CSH_iM_iM ), public, pass, deferred :: &
+      ComputeSolidHarmonics_iM_iM
+    procedure ( CSH_iL_iM_1 ), public, pass, deferred :: &
+      ComputeSolidHarmonics_iL_iM_1
+    procedure ( CSH_iL_iM_2 ), public, pass, deferred :: &
+      ComputeSolidHarmonics_iL_iM_2
     procedure, public, pass :: &
       FinalizeTemplate
     procedure, private, pass :: &
@@ -67,44 +75,12 @@ module LaplacianMultipole_Template
       AllocateMoments
     procedure, private, pass :: &
       ComputeMomentContributions
-    procedure ( CSH_0_0 ), private, pass, deferred :: &
-      ComputeSolidHarmonics_0_0
-    procedure ( CSH_iM_iM ), private, pass, deferred :: &
-      ComputeSolidHarmonics_iM_iM
-    procedure ( CSH_iL_iM_1 ), private, pass, deferred :: &
-      ComputeSolidHarmonics_iL_iM_1
-    procedure ( CSH_iL_iM_2 ), private, pass, deferred :: &
-      ComputeSolidHarmonics_iL_iM_2
     procedure ( SMC ), private, pass, deferred :: &
       SumMomentContributions
   end type LaplacianMultipoleTemplate
 
 
   abstract interface
-
-    subroutine SPA ( L, A )
-      use Manifolds
-      import LaplacianMultipoleTemplate
-      implicit none
-      class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
-        L
-      class ( AtlasHeaderForm ), intent ( in ), target :: &
-        A
-    end subroutine SPA
-
-    subroutine ARC ( L )
-      import LaplacianMultipoleTemplate
-      implicit none
-      class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
-        L
-    end subroutine ARC
-
-    subroutine ASH ( L )
-      import LaplacianMultipoleTemplate
-      implicit none
-      class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
-        L
-    end subroutine ASH
 
     subroutine CSH_0_0 ( L, iSH_0, iSH_PD )
       use Basics
@@ -148,6 +124,30 @@ module LaplacianMultipole_Template
         iL, iM, &
         iSH_0, iSH_1, iSH_2
     end subroutine CSH_iL_iM_2
+
+    subroutine SPA ( L, A )
+      use Manifolds
+      import LaplacianMultipoleTemplate
+      implicit none
+      class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+        L
+      class ( AtlasHeaderForm ), intent ( in ), target :: &
+        A
+    end subroutine SPA
+
+    subroutine ARC ( L )
+      import LaplacianMultipoleTemplate
+      implicit none
+      class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+        L
+    end subroutine ARC
+
+    subroutine ASH ( L )
+      import LaplacianMultipoleTemplate
+      implicit none
+      class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+        L
+    end subroutine ASH
 
     subroutine SMC ( L, Source, iA, iSH_0 )
       use Basics
@@ -250,7 +250,7 @@ contains
     class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
       L
     type ( StorageForm ), intent ( in ) :: &
-      Source !-- array over levels    
+      Source
 
     type ( TimerForm ), pointer :: &
       Timer, &
@@ -274,7 +274,7 @@ contains
         MyM  =>  L % MyMoments )
 
     if ( associated ( Timer_CM ) ) call Timer_CM % Start ( )
-      call Clear ( MyM % Value, UseDeviceOption = MyM % AllocatedDevice )
+    call Clear ( MyM % Value, UseDeviceOption = L % UseDevice )
     if ( associated ( Timer_CM ) ) call Timer_CM % Stop ( )
 
     if ( associated ( Timer_LM ) ) call Timer_LM % Start ( )
@@ -470,7 +470,7 @@ contains
           !-- ( L, M ) = ( iL, iM )
           call L % ComputeSolidHarmonics_iL_iM_2 &
                  ( iL, iM, iSH_0, iSH_1, iSH_2 )
-          end if
+        end if
 
         call L % SumMomentContributions ( Source, iA, iSH_0 )
 

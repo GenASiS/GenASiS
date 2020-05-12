@@ -13,6 +13,8 @@ module Poisson_ASC__Form
   private
 
   type, public, extends ( PoissonTemplate ) :: Poisson_ASC_Form
+    real ( KDR ), dimension ( :, :, :, : ), pointer :: &
+      Solution => null ( )
     class ( Atlas_SC_Form ), pointer :: &
       Atlas => null ( )
   contains
@@ -22,6 +24,8 @@ module Poisson_ASC__Form
       Solve
     final :: &
       Finalize
+    procedure, public, pass :: &
+      AssembleSolutionContributions
   end type Poisson_ASC_Form
 
     private :: &
@@ -31,10 +35,37 @@ module Poisson_ASC__Form
 !-- FIXME: With GCC 6.1.0, must be public to trigger .smod generation
 !    private :: &
     public :: &
+      Assemble_SC_CSL_S_Kernel, &
       SolveCells_CSL_Kernel, &
       AssembleSolutionKernel
 
     interface
+
+      module subroutine Assemble_SC_CSL_S_Kernel &
+                          ( S, SH_RC, SH_IC, SH_RS, SH_IS, R_C, &
+                            M_RC,  M_IC,  M_RS,  M_IS, R_I, Delta_M_FourPi, &
+                            nC, oC, nE, oR, UseDeviceOption )
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( :, :, :, : ), intent ( inout ) :: &
+          S  !-- Solution
+        real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+          SH_RC, SH_IC, SH_RS, SH_IS, &  !-- SolidHarmonics
+          R_C
+        real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+          M_RC, M_IC, M_RS, M_IS  !-- MyMoments
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          R_I
+        real ( KDR ), intent ( in ) :: &
+          Delta_M_FourPi
+        integer ( KDI ), dimension ( : ), intent ( in ) :: &
+          nC, oC
+        integer ( KDI ), intent ( in ) :: &
+          nE, &  !-- nEquations
+          oR     !-- oRadius
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine
 
       module subroutine SolveCells_CSL_Kernel &
                           ( Solution, CoordinateSystem, IsProperCell, &
@@ -98,6 +129,10 @@ module Poisson_ASC__Form
       end subroutine AssembleSolutionKernel
       
     end interface
+
+
+    private :: &
+      AssignSolutionPointer
 
 contains
 
@@ -215,6 +250,9 @@ contains
     type ( Poisson_ASC_Form ), intent ( inout ) :: &
       P
 
+    nullify ( P % Atlas )
+    nullify ( P % Solution )
+
     call P % FinalizeTemplate ( )
 
   end subroutine Finalize
@@ -295,13 +333,11 @@ contains
       Source
 
     type ( TimerForm ), pointer :: &
-      Timer_AS, &
       Timer_ES, &
       Timer_BS
     class ( GeometryFlatForm ), pointer :: &
       G
 
-    Timer_AS  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerAssembleSolution )
     Timer_ES  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerExchangeSolution )
     Timer_BS  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerBoundarySolution )
 
@@ -312,19 +348,137 @@ contains
 
     call L % ComputeMoments ( Source )
 
-call PROGRAM_HEADER % ShowStatistics &
-       ( CONSOLE % INFO_1, &
-         CommunicatorOption = PROGRAM_HEADER % Communicator )
-call Show ( '>>> Aborting during development' )
-call Show ( 'Poisson_ASC__Form', 'module', CONSOLE % ERROR )
-call Show ( 'SolveMultipole_CSL', 'subroutine', CONSOLE % ERROR )
-call PROGRAM_HEADER % Abort ( )
+    call Clear ( Solution % Value, UseDeviceOption = L % UseDevice )
+    call P % AssembleSolution ( Solution )
 
     end associate !-- L
 
     nullify ( G )
 
   end subroutine SolveMultipole_CSL
+
+
+  subroutine AssembleSolutionContributions &
+               ( P, Solution, Delta_M_FourPi, iA, iSH_0 )
+
+    class ( Poisson_ASC_Form ), intent ( inout ) :: &
+      P
+    class ( * ), intent ( inout ) :: &
+      Solution
+    real ( KDR ), intent ( in ) :: &
+      Delta_M_FourPi
+    integer ( KDI ), intent ( in ) :: &
+      iA, &  
+      iSH_0  
+
+    select type ( L => P % LaplacianMultipole )
+    class is ( LaplacianMultipole_ASC_Form )
+
+    select type ( C => L % Chart )
+    class is ( Chart_SL_Template )
+
+    select type ( Solution )
+    class is ( StorageForm )
+
+    associate &
+      (  nV => Solution % nVariables, &
+        iaS => Solution % iaSelected )
+ 
+    if ( nV /= L % nEquations ) then
+      call Show ( 'Wrong number of variables in Solution', CONSOLE % ERROR )
+      call Show ( 'Poisson_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'AssembleSolutionContributions', 'subroutine', &
+                  CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end if
+
+    if ( iaS ( nV ) - iaS ( 1 ) + 1  /=  nV ) then
+      call Show ( 'Solution variables must be contiguous', CONSOLE % ERROR )
+      call Show ( 'Poisson_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'AssembleSolutionContributions', 'subroutine', &
+                  CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end if
+
+    call AssignSolutionPointer &
+           ( Solution % Value ( :, iaS ( 1 ) : iaS ( nV ) ), &
+             C % nCellsBrick, C % nGhostLayers, L % nEquations, P % Solution )
+
+    end associate !-- nV, etc.
+
+    select case ( trim ( C % CoordinateSystem ) )
+    case ( 'SPHERICAL' )
+      call Assemble_SC_CSL_S_Kernel &
+             ( P % Solution, &
+               L % SolidHarmonic_RC ( :, :, :, iSH_0 ), &
+               L % SolidHarmonic_IC ( :, :, :, iSH_0 ), &
+               L % SolidHarmonic_RS ( :, :, :, iSH_0 ), &
+               L % SolidHarmonic_IS ( :, :, :, iSH_0 ), &
+               L % Radius, &
+               L % Moment_RC ( :, :, iA ), L % Moment_IC ( :, :, iA ), &
+               L % Moment_RS ( :, :, iA ), L % Moment_IS ( :, :, iA ), &
+               C % Edge ( 1 ) % Value, Delta_M_FourPi, &
+               C % nCellsBrick, C % nGhostLayers, L % nEquations, &
+               oR = ( C % iaBrick ( 1 ) - 1 ) * C % nCellsBrick ( 1 ), &
+               UseDeviceOption = L % UseDevice )
+    case default
+      call Show ( 'Coordinate system not supported', CONSOLE % ERROR )
+      call Show ( C % CoordinateSystem, 'CoordinateSystem', CONSOLE % ERROR )
+      call Show ( 'Poisson_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'AssembleSolutionContributions', 'subroutine', &
+                  CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select
+
+    class default
+      call Show ( 'Source type not supported', CONSOLE % ERROR )
+      call Show ( 'Poisson_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'AssembleSolutionContributions', 'subroutine', &
+                  CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- Source
+
+    class default
+      call Show ( 'Chart type not supported', CONSOLE % ERROR )
+      call Show ( 'Poisson_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'AssembleSolutionContributions', 'subroutine', &
+                  CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- C
+
+    class default 
+      call Show ( 'Laplacian type not supported', CONSOLE % ERROR )
+      call Show ( 'Poisson_ASC_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'AssembleSolutionContributions', 'subroutine', &
+                  CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- L
+
+  end subroutine AssembleSolutionContributions
+
+
+  subroutine AssignSolutionPointer ( S_2D, nC, nG, nE, S_4D )
+
+    real ( KDR ), dimension ( :, : ), intent ( in ), target, contiguous :: &
+      S_2D
+    integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
+      nC, &  !-- nCellsBrick
+      nG     !-- nGhostLayers
+    integer ( KDI ), intent ( in ) :: &
+      nE  !-- nEquations
+    real ( KDR ), dimension ( :, :, :, : ), intent ( out ), pointer :: &
+      S_4D
+
+    associate &
+      ( n1  =>  nC ( 1 )  +  2 * nG ( 1 ), &
+        n2  =>  nC ( 2 )  +  2 * nG ( 2 ), &
+        n3  =>  nC ( 3 )  +  2 * nG ( 3 ) )
+
+    S_4D ( 1 : n1, 1 : n2, 1 : n3, 1 : nE )  =>  S_2D
+
+    end associate !-- n1, etc.
+
+  end subroutine AssignSolutionPointer
 
 
 end module Poisson_ASC__Form
