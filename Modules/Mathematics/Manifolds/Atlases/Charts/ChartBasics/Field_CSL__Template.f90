@@ -22,6 +22,8 @@ module Field_CSL__Template
       InitializeTemplate_CSL
     procedure, public, pass :: &
       AllocateDevice => AllocateDevice_CSL
+    procedure, private, pass :: &
+      Clear_FC
     procedure, public, pass :: &
       FinalizeTemplate_CSL
     !-- FIXME: This should be automatically inherited from FieldChartTemplate
@@ -81,7 +83,17 @@ contains
   
   end subroutine AllocateDevice_CSL
   
-  
+
+  subroutine Clear_FC ( FC )
+
+    class ( Field_CSL_Template ), intent ( inout ) :: &
+      FC
+
+    call FC % Field % Clear ( )
+
+  end subroutine Clear_FC
+
+
   impure elemental subroutine FinalizeTemplate_CSL ( FC )
 
     class ( Field_CSL_Template ), intent ( inout ) :: &

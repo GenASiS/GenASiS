@@ -22,6 +22,10 @@ module FieldChart_Template
   contains
     procedure, public, pass :: &
       InitializeTemplate
+    procedure ( C ), private, pass, deferred :: &
+      Clear_FC
+    generic, public :: &
+      Clear => Clear_FC
     procedure, public, pass :: &
       FinalizeTemplate
     procedure ( SF ), private, pass, deferred :: &
@@ -29,11 +33,19 @@ module FieldChart_Template
   end type FieldChartTemplate
 
     abstract interface 
+
+      subroutine C ( FC )
+        import FieldChartTemplate
+        class ( FieldChartTemplate ), intent ( inout ) :: &
+          FC
+      end subroutine C
+
       subroutine SF ( FC )
         import FieldChartTemplate
         class ( FieldChartTemplate ), intent ( inout ) :: &
           FC
-      end subroutine
+      end subroutine SF
+
     end interface
 
   type, public :: FieldChartPointer
