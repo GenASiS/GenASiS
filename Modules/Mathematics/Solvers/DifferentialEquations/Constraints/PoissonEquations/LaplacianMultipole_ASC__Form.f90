@@ -40,6 +40,8 @@ module LaplacianMultipole_ASC__Form
       AllocateRectangularCoordinates
     procedure, private, pass :: &
       AllocateSolidHarmonics
+    procedure, private, pass ( L ) :: &
+      ClearUnlimitedPolymorphic
     procedure, public, pass :: &
       ComputeSolidHarmonics_0_0
     procedure, public, pass :: &
@@ -403,6 +405,26 @@ contains
     end associate !-- SH
 
   end subroutine AllocateSolidHarmonics
+
+
+  subroutine ClearUnlimitedPolymorphic ( Variable, L )
+
+    class ( * ), intent ( inout ) :: &
+      Variable
+    class ( LaplacianMultipole_ASC_Form ), intent ( in ) :: &
+      L
+
+    select type ( V => Variable )
+    class is ( StorageForm )
+      call Clear ( V % Value, UseDeviceOption = L % UseDevice )
+    class default
+      call Show ( 'Variable type not supported', CONSOLE % ERROR )
+      call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'ClearUnlimitedPolymorphic', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- V
+
+  end subroutine ClearUnlimitedPolymorphic
 
 
   subroutine ComputeSolidHarmonics_0_0 ( L, iSH_0, iSH_PD )

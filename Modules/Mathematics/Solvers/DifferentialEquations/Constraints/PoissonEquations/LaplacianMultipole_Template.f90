@@ -53,6 +53,10 @@ module LaplacianMultipole_Template
       InitializeTimers
     procedure, public, pass :: &
       ComputeMoments
+    procedure ( CUP ), private, pass ( L ), deferred :: &
+      ClearUnlimitedPolymorphic
+    generic, public :: &
+      Clear => ClearUnlimitedPolymorphic
     procedure ( CSH_0_0 ), public, pass, deferred :: &
       ComputeSolidHarmonics_0_0
     procedure ( CSH_iM_iM ), public, pass, deferred :: &
@@ -81,6 +85,15 @@ module LaplacianMultipole_Template
 
 
   abstract interface
+
+    subroutine CUP ( Variable, L )
+      import LaplacianMultipoleTemplate
+      implicit none
+      class ( * ), intent ( inout ) :: &
+        Variable
+      class ( LaplacianMultipoleTemplate ), intent ( in ) :: &
+        L
+    end subroutine CUP
 
     subroutine CSH_0_0 ( L, iSH_0, iSH_PD )
       use Basics
@@ -274,7 +287,7 @@ contains
         MyM  =>  L % MyMoments )
 
     if ( associated ( Timer_CM ) ) call Timer_CM % Start ( )
-    call Clear ( MyM % Value, UseDeviceOption = L % UseDevice )
+    call L % Clear ( MyM )
     if ( associated ( Timer_CM ) ) call Timer_CM % Stop ( )
 
     if ( associated ( Timer_LM ) ) call Timer_LM % Start ( )

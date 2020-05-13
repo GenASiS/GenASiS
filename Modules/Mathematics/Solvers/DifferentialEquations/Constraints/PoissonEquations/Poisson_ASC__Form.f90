@@ -335,8 +335,6 @@ contains
     type ( TimerForm ), pointer :: &
       Timer_ES, &
       Timer_BS
-    class ( GeometryFlatForm ), pointer :: &
-      G
 
     Timer_ES  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerExchangeSolution )
     Timer_BS  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerBoundarySolution )
@@ -348,12 +346,9 @@ contains
 
     call L % ComputeMoments ( Source )
 
-    call Clear ( Solution % Value, UseDeviceOption = L % UseDevice )
     call P % AssembleSolution ( Solution )
 
     end associate !-- L
-
-    nullify ( G )
 
   end subroutine SolveMultipole_CSL
 

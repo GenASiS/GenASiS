@@ -206,6 +206,8 @@ contains
        iSH  =  [ 1, 2, 3 ]
     iSH_PD  =  4
 
+    call L % Clear ( Solution )
+
     do iM  =  0, L % MaxOrder
 
       !-- ( L, M ) = ( iM, iM )
