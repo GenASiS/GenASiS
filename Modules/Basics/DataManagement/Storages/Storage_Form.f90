@@ -59,6 +59,8 @@ module Storage_Form
       Initialize => InitializeAllocate, InitializeClone
     procedure, public, pass :: &
       AllocateDevice => AllocateDevice_S
+    procedure, public, pass :: &
+      Clear => Clear_S
     procedure, private, pass :: &
       UpdateDeviceAll
     procedure, private, pass :: &
@@ -362,7 +364,17 @@ contains
   
   end subroutine AllocateDevice_S
   
-  
+
+  subroutine Clear_S ( S )
+
+    class ( StorageForm ), intent ( inout ) :: &
+      S
+
+    call Clear ( S % Value, UseDeviceOption = S % AllocatedDevice )
+
+  end subroutine Clear_S
+
+
   subroutine UpdateDeviceAll ( S )
   
     class ( StorageForm ), intent ( inout ) :: &
