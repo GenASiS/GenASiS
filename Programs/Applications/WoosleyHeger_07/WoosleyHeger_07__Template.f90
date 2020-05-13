@@ -109,16 +109,11 @@ contains
       call PS % ApplyBoundaryConditions ( F, iD, iaO )
       end associate !-- iaI, etc.
     end do !-- iD
-
+    
     call Show ( '<<< ComputeFromTemperature' )
     call F % ComputeFromTemperature ( F, G, G )
     
-    call Show ( F % Value ( :, F % PRESSURE ), 'P Before Host' )
-    call Show ( F % Value ( :, F % INTERNAL_ENERGY ), 'E Before Host' )
-    call Show ( '<<< UpdateHost' )
     call F % UpdateHost ( )
-    call Show ( F % Value ( :, F % PRESSURE ), 'P After Host' )
-    call Show ( F % Value ( :, F % INTERNAL_ENERGY ), 'E After Host' )
 
     end associate !-- N, etc.
     end select !-- PSC

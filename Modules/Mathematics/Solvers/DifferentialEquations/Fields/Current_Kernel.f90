@@ -90,6 +90,8 @@ contains
     integer ( KDI ) :: &
       iV, &
       nV
+    real ( KDR ) :: &
+      RealTiny
     logical ( KDL ) :: &
       UseDevice
 
@@ -98,33 +100,37 @@ contains
       UseDevice = UseDeviceOption
      
     nV = size ( F_I )
+    RealTiny = tiny ( 0.0_KDR )
     
     if ( UseDevice ) then
     
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV )
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV ) &
+      !$OMP& firstprivate ( RealTiny )
       do iV = 1, nV
         F_I ( iV ) &
           =  (    AP_I ( iV ) * F_IL ( iV ) &
                +  AM_I ( iV ) * F_IR ( iV ) &
                -  DF_I ( iV ) * AP_I ( iV ) * AM_I ( iV ) &
                   * ( U_IR ( iV ) - U_IL ( iV ) ) ) &
-             /  max ( AP_I ( iV ) + AM_I ( iV ), tiny ( 0.0_KDR ) )
+             /  max ( AP_I ( iV ) + AM_I ( iV ), RealTiny )
       end do
       !$OMP  end OMP_TARGET_DIRECTIVE parallel do
     
     else
 
-      !$OMP parallel do private ( iV )
+      !$OMP  parallel do &
+      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV ) &
+      !$OMP& firstprivate ( RealTiny )
       do iV = 1, nV
         F_I ( iV ) &
           =  (    AP_I ( iV ) * F_IL ( iV ) &
                +  AM_I ( iV ) * F_IR ( iV ) &
                -  DF_I ( iV ) * AP_I ( iV ) * AM_I ( iV ) &
                   * ( U_IR ( iV ) - U_IL ( iV ) ) ) &
-             /  max ( AP_I ( iV ) + AM_I ( iV ), tiny ( 0.0_KDR ) )
+             /  max ( AP_I ( iV ) + AM_I ( iV ), RealTiny )
       end do
-      !$OMP end parallel do
+      !$OMP  end parallel do
     
     end if
 

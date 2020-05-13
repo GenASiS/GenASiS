@@ -865,8 +865,11 @@ contains
     call Current % ComputeFromConserved &
            ( G, DetectFeaturesOption = DetectFeatures )
 
-    if ( associated ( S % ComputeConstraints % Pointer ) ) &
+    if ( associated ( S % ComputeConstraints % Pointer ) ) then
+      !-- FIXME: Temporary call to C % UpdateHost ( ) 
+      call Current % UpdateHost ( )
       call S % ComputeConstraints % Pointer ( S )
+    end if
 
     nullify ( G )
     
@@ -1138,7 +1141,7 @@ contains
       TimerGhost, &
       Timer_DTD, &
       Timer_DTH
-
+    
     !-- Divergence
     if ( associated ( S % ApplyDivergence_C ) ) then
       TimerDivergence => PROGRAM_HEADER % TimerPointer ( S % iTimerDivergence )
@@ -1147,6 +1150,11 @@ contains
       if ( associated ( TimerDivergence ) ) call TimerDivergence % Stop ( )
     end if
 
+    !-- FIXME: Temporary since ApplySources is still done on the Host
+    call K % UpdateHost ( )
+    call S % dLogVolumeJacobian_dX ( 1 ) % UpdateHost ( )
+    call S % dLogVolumeJacobian_dX ( 2 ) % UpdateHost ( )
+    
     !-- Other explicit sources
     if ( associated ( S % ApplySources_C ) ) then
       TimerSources => PROGRAM_HEADER % TimerPointer ( S % iTimerSources )
@@ -1154,7 +1162,7 @@ contains
       call S % ApplySources_C ( C % Sources, K, C, TimeStep, iStage )
       if ( associated ( TimerSources ) ) call TimerSources % Stop ( )
     end if
-
+    
     !-- Relaxation
     if ( associated ( S % ApplyRelaxation_C ) ) then
       TimerRelaxation => PROGRAM_HEADER % TimerPointer ( S % iTimerRelaxation )
@@ -1164,6 +1172,9 @@ contains
                iStrgeometryValueOption )
       if ( associated ( TimerRelaxation ) ) call TimerRelaxation % Stop ( )
     end if
+    
+    !-- FIXME: Temporary since ApplySources is still done on the Host
+    call K % UpdateDevice ( )
     
     Timer_DTH => PROGRAM_HEADER % TimerPointer ( S % iTimerStepDataToHost )
     
@@ -1197,7 +1208,7 @@ contains
     if ( K % AllocatedDevice ) &
       call K % UpdateDevice ( )
     call Timer_DTD % Stop ( )
-
+    
   end subroutine ComputeStage_C
 
 
@@ -1516,6 +1527,8 @@ contains
                UseDeviceOption = C % Sources % AllocatedDevice )
 
     do iC = 1, C % N_CONSERVED
+      !-- FIXME: Temporarily do this on the Host
+      call Increment % UpdateHost ( )
       call RecordDivergenceKernel &
              ( C % Sources % Value ( :, iC ), Increment % Value ( :, iC ), &
                TimeStep, Weight_RK = S % B ( iStage ), &
