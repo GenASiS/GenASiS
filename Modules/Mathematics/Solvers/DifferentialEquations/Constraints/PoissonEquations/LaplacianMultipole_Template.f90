@@ -43,7 +43,8 @@ module LaplacianMultipole_Template
       Name = ''
     type ( StorageForm ), allocatable :: &
         Moments, &
-      MyMoments
+      MyMoments, &
+      RadialEdges
     type ( CollectiveOperation_R_Form ), allocatable :: &
       ReductionMoments
   contains
@@ -310,6 +311,8 @@ contains
     if ( allocated ( L % ReductionMoments ) ) &
       deallocate ( L % ReductionMoments )
 
+    if ( allocated ( L % RadialEdges ) ) &
+      deallocate ( L % RadialEdges )
     if ( allocated ( L % MyMoments ) ) &
       deallocate ( L % MyMoments )
     if ( allocated ( L % Moments ) ) &

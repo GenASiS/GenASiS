@@ -368,7 +368,7 @@ contains
                L % Radius, &
                L % Moment_RC ( :, :, iA ), L % Moment_IC ( :, :, iA ), &
                L % Moment_RS ( :, :, iA ), L % Moment_IS ( :, :, iA ), &
-               C % Edge ( 1 ) % Value, IsFirstShell, IsLastShell, &
+               L % RadialEdges % Value ( :, 1 ), IsFirstShell, IsLastShell, &
                Delta_M_FourPi, C % nCellsBrick, C % nGhostLayers, &
                L % nEquations, &
                oR = ( C % iaBrick ( 1 ) - 1 ) * C % nCellsBrick ( 1 ), &

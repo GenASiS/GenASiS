@@ -269,7 +269,21 @@ contains
 
     select case ( trim ( C % CoordinateSystem ) )
     case ( 'SPHERICAL' )
-       L % nRadialCells  =  C % nCells ( 1 )
+
+      L % nRadialCells  =  C % nCells ( 1 )
+
+      allocate ( L % RadialEdges )
+      associate &
+        (  RE  =>  L % RadialEdges, &
+          nRC  =>  L % nRadialCells )
+
+      call RE % Initialize ( [ nRC + 1, 1 ] )
+      call RE % AllocateDevice ( )
+
+      RE % Value ( :, 1 )  =  C % Edge ( 1 ) % Value
+      call RE % UpdateDevice ( )
+
+      end associate !-- RE, etc. 
     case default
       call Show ( 'CoordinateSystem not supported', CONSOLE % ERROR )
       call Show ( C % CoordinateSystem, 'CoordinateSystem', CONSOLE % ERROR )
