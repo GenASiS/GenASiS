@@ -31,7 +31,7 @@ contains
   end procedure ComputeMomentContributionsOldKernel
 
 
-  module procedure AddMomentShellsKernel
+  module procedure AddMomentShellsOldKernel
 
     integer ( KDI ) :: &
       iA, &  !-- angular index
@@ -57,7 +57,7 @@ contains
       end do
     end do
 
-  end procedure AddMomentShellsKernel
+  end procedure AddMomentShellsOldKernel
 
 
   module procedure ComputeSolidHarmonicsKernel

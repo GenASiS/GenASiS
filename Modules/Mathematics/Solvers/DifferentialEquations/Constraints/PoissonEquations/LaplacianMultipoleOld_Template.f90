@@ -113,7 +113,7 @@ module LaplacianMultipoleOld_Template
 !    private :: &
     public :: &
       ComputeMomentContributionsOldKernel, &
-      AddMomentShellsKernel, &
+      AddMomentShellsOldKernel, &
       ComputeSolidHarmonicsKernel
 
 !-- FIXME: With GCC 6.1.0, must be public to trigger .smod generation
@@ -149,14 +149,14 @@ module LaplacianMultipoleOld_Template
           iR     !-- iRadius
       end subroutine ComputeMomentContributionsOldKernel
 
-      module subroutine AddMomentShellsKernel ( MR, MI, nE, nR, nA )
+      module subroutine AddMomentShellsOldKernel ( MR, MI, nE, nR, nA )
         use Basics
         implicit none
         real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
           MR, MI
         integer ( KDI ), intent ( in ) :: &
           nE, nR, nA
-      end subroutine AddMomentShellsKernel
+      end subroutine AddMomentShellsOldKernel
         
       module subroutine ComputeSolidHarmonicsKernel &
                           ( CoordinateSystem, Position, Origin, RadialEdge, &
@@ -356,11 +356,11 @@ contains
     if ( associated ( Timer_RM ) ) call Timer_RM % Stop ( )
 
     if ( associated ( Timer_AM ) ) call Timer_AM % Start ( )
-    call AddMomentShellsKernel &
+    call AddMomentShellsOldKernel &
            ( LM % M_RC, LM % M_IC, &
              LM % nEquations, LM % nRadialCells, LM % nAngularMomentCells )
     if ( LM % MaxOrder > 0 ) &
-      call AddMomentShellsKernel &
+      call AddMomentShellsOldKernel &
              ( LM % M_RS, LM % M_IS, &
                LM % nEquations, LM % nRadialCells, LM % nAngularMomentCells )
     if ( associated ( Timer_AM ) ) call Timer_AM % Stop ( )

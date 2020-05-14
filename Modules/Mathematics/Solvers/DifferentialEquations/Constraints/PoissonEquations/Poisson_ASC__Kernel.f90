@@ -35,6 +35,134 @@ contains
 
     if ( UseDevice ) then
 
+      if ( IsFirstShell ) then
+
+        iFirst  =  iFirst + 1
+
+        !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
+        !$OMP& schedule ( OMP_SCHEDULE_TARGET ) &
+        !$OMP& private ( iT, iP, iE, F, M_RC_C, M_IC_C, M_RS_C, M_IS_C )
+        do iE  =  1, nE
+          do iP  =  oC ( 3 )  +  1,  oC ( 3 )  +  nC ( 3 )
+            do iT  =  oC ( 2 )  +  1,  oC ( 2 )  +  nC ( 2 )
+
+              !-- first radial shell
+
+                iR  =  oC ( 1 )  +  1
+              iR_G  =  oR  -  oC ( 1 )  +  iR
+  
+                 F  =    ( R_C ( iR, iT, iP )  -  R_I ( iR_G ) )  &
+                       / ( R_I ( iR_G + 1 )  -  R_I ( iR_G ) )
+  
+              M_RC_C  =                  F    *  0.0_KDR  &
+                         +   ( 1.0_KDR - F )  *  M_RC ( iR_G,     iE )
+  
+              M_IC_C  =                  F    *  M_IC ( iR_G,     iE )  &
+                         +   ( 1.0_KDR - F )  *  M_IC ( iR_G + 1, iE )
+  
+              M_RS_C  =                  F    *  0.0_KDR  &
+                         +   ( 1.0_KDR - F )  *  M_RS ( iR_G    , iE )
+  
+              M_IS_C  =                  F    *  M_IS ( iR_G,     iE )  &
+                         +   ( 1.0_KDR - F )  *  M_IS ( iR_G + 1, iE )
+
+              S ( iR, iT, iP, iE )  &
+                =  S ( iR, iT, iP, iE )  &
+                   +  Delta_M_FourPi  *  (    M_RC_C  *  SH_IC ( iR, iT, iP )  &
+                                           +  M_IC_C  *  SH_RC ( iR, iT, iP )  &
+                                           +  M_RS_C  *  SH_IS ( iR, iT, iP )  &
+                                           +  M_IS_C  *  SH_RS ( iR, iT, iP ) )
+
+            end do !-- iT
+          end do !-- iP
+        end do !-- iE
+        !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+
+      end if !-- IsFirstShell
+
+
+      if ( IsLastShell ) then
+
+        iLast  =  iLast - 1
+
+        !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
+        !$OMP& schedule ( OMP_SCHEDULE_TARGET ) &
+        !$OMP& private ( iT, iP, iE, F, M_RC_C, M_IC_C, M_RS_C, M_IS_C )
+        do iE  =  1, nE
+          do iP  =  oC ( 3 )  +  1,  oC ( 3 )  +  nC ( 3 )
+            do iT  =  oC ( 2 )  +  1,  oC ( 2 )  +  nC ( 2 )
+
+              !-- last radial shell
+  
+                iR  =  oC ( 1 )  +  nC ( 1 )
+              iR_G  =  oR  -  oC ( 1 )  +  iR
+
+                 F  =    ( R_C ( iR, iT, iP )  -  R_I ( iR_G ) )  &
+                       / ( R_I ( iR_G + 1 )  -  R_I ( iR_G ) )
+
+              M_RC_C  =                  F    *  M_RC ( iR_G - 1, iE )  &
+                         +   ( 1.0_KDR - F )  *  M_RC ( iR_G    , iE )
+
+              M_IC_C  =                  F    *  M_IC ( iR_G   ,  iE )  &
+                         +   ( 1.0_KDR - F )  *  0.0_KDR
+
+              M_RS_C  =                  F    *  M_RS ( iR_G - 1, iE )  &
+                         +   ( 1.0_KDR - F )  *  M_RS ( iR_G    , iE )
+
+              M_IS_C  =                  F    *  M_IS ( iR_G    , iE )  &
+                         +   ( 1.0_KDR - F )  *  0.0_KDR
+
+              S ( iR, iT, iP, iE )  &
+                =  S ( iR, iT, iP, iE )  &
+                   +  Delta_M_FourPi  *  (    M_RC_C  *  SH_IC ( iR, iT, iP )  &
+                                           +  M_IC_C  *  SH_RC ( iR, iT, iP )  &
+                                           +  M_RS_C  *  SH_IS ( iR, iT, iP )  &
+                                           +  M_IS_C  *  SH_RS ( iR, iT, iP ) )
+
+            end do !-- iT
+          end do !-- iP
+        end do !-- iE
+        !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+      end if !-- IsLastShell
+
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 4 ) &
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) &
+      !$OMP& private ( iR, iT, iP, iE, F, M_RC_C, M_IC_C, M_RS_C, M_IS_C )
+      do iE  =  1, nE
+        do iP  =  oC ( 3 )  +  1,  oC ( 3 )  +  nC ( 3 )
+          do iT  =  oC ( 2 )  +  1,  oC ( 2 )  +  nC ( 2 )
+            do iR  =  oC ( 1 )  +  iFirst,  oC ( 1 )  +  iLast
+
+              iR_G  =  oR  -  oC ( 1 )  +  iR
+
+                 F  =    ( R_C ( iR, iT, iP )  -  R_I ( iR_G ) )  &
+                       / ( R_I ( iR_G + 1 )  -  R_I ( iR_G ) )
+
+              M_RC_C  =                  F    *  M_RC ( iR_G - 1, iE )  &
+                         +   ( 1.0_KDR - F )  *  M_RC ( iR_G    , iE )
+
+              M_IC_C  =                  F    *  M_IC ( iR_G,     iE )  &
+                         +   ( 1.0_KDR - F )  *  M_IC ( iR_G + 1, iE )
+
+              M_RS_C  =                  F    *  M_RS ( iR_G - 1, iE )  &
+                         +   ( 1.0_KDR - F )  *  M_RS ( iR_G    , iE )
+
+              M_IS_C  =                  F    *  M_IS ( iR_G,     iE )  &
+                         +   ( 1.0_KDR - F )  *  M_IS ( iR_G + 1, iE )
+
+              S ( iR, iT, iP, iE )  &
+                =  S ( iR, iT, iP, iE )  &
+                   +  Delta_M_FourPi  *  (    M_RC_C  *  SH_IC ( iR, iT, iP )  &
+                                           +  M_IC_C  *  SH_RC ( iR, iT, iP )  &
+                                           +  M_RS_C  *  SH_IS ( iR, iT, iP )  &
+                                           +  M_IS_C  *  SH_RS ( iR, iT, iP ) )
+
+            end do !-- iR
+          end do !-- iT
+        end do !-- iP
+      end do !-- iE
+      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+
     else !-- use host
 
       if ( IsFirstShell ) then

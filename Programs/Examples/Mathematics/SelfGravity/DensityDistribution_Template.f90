@@ -131,7 +131,7 @@ contains
              VariableOption = DD % Variable, &
              WriteOption = .true., &
              UsePinnedMemoryOption = .true. )
-    call SA % AllocateDevice ( )
+    call SA % AllocateDevice ( AssociateVariablesOption = .false. )
     end associate !-- SA
 
     allocate ( DD % Difference)
