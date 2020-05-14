@@ -40,8 +40,6 @@ module LaplacianMultipole_ASC__Form
       AllocateRectangularCoordinates
     procedure, private, pass :: &
       AllocateSolidHarmonics
-    procedure, private, pass ( L ) :: &
-      ClearUnlimitedPolymorphic
     procedure, public, pass :: &
       ComputeSolidHarmonics_0_0
     procedure, public, pass :: &
@@ -51,7 +49,7 @@ module LaplacianMultipole_ASC__Form
     procedure, public, pass :: &
       ComputeSolidHarmonics_iL_iM_2
     procedure, public, pass :: &
-      SumMomentContributions
+      ComputeMomentLocalAtlas
   end type LaplacianMultipole_ASC_Form
 
 !-- FIXME: With GCC 6.1.0, must be public to trigger .smod generation
@@ -62,7 +60,7 @@ module LaplacianMultipole_ASC__Form
       Compute_SH_iM_iM_CSL_Kernel, &
       Compute_SH_iL_iM_1_CSL_Kernel, &
       Compute_SH_iL_iM_2_CSL_Kernel, &
-      Sum_MC_CSL_S_Kernel
+      ComputeMomentLocal_CSL_S_Kernel
 
     interface
 
@@ -160,7 +158,7 @@ module LaplacianMultipole_ASC__Form
           UseDeviceOption
       end subroutine Compute_SH_iL_iM_2_CSL_Kernel
 
-      module subroutine Sum_MC_CSL_S_Kernel &
+      module subroutine ComputeMomentLocal_CSL_S_Kernel &
                           ( MyM_RC, MyM_IC, MyM_RS, MyM_IS, S, &
                              SH_RC,  SH_IC,  SH_RS,  SH_IS, dV, &
                             nC, oC, nE, oR, UseDeviceOption )
@@ -180,7 +178,7 @@ module LaplacianMultipole_ASC__Form
           oR     !-- oRadius
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
-      end subroutine Sum_MC_CSL_S_Kernel
+      end subroutine ComputeMomentLocal_CSL_S_Kernel
 
     end interface
 
@@ -407,26 +405,6 @@ contains
   end subroutine AllocateSolidHarmonics
 
 
-  subroutine ClearUnlimitedPolymorphic ( Variable, L )
-
-    class ( * ), intent ( inout ) :: &
-      Variable
-    class ( LaplacianMultipole_ASC_Form ), intent ( in ) :: &
-      L
-
-    select type ( V => Variable )
-    class is ( StorageForm )
-      call Clear ( V % Value, UseDeviceOption = L % UseDevice )
-    class default
-      call Show ( 'Variable type not supported', CONSOLE % ERROR )
-      call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'ClearUnlimitedPolymorphic', 'subroutine', CONSOLE % ERROR )
-      call PROGRAM_HEADER % Abort ( )
-    end select !-- V
-
-  end subroutine ClearUnlimitedPolymorphic
-
-
   subroutine ComputeSolidHarmonics_0_0 ( L, iSH_0, iSH_PD )
 
     class ( LaplacianMultipole_ASC_Form ), intent ( inout ) :: &
@@ -545,29 +523,33 @@ contains
   end subroutine ComputeSolidHarmonics_iL_iM_2
 
 
-  subroutine SumMomentContributions ( L, Source, iA, iSH_0 )
+  subroutine ComputeMomentLocalAtlas ( L, Source, iA, iSH_0 )
 
     class ( LaplacianMultipole_ASC_Form ), intent ( inout ) :: &
       L
-    class ( * ), intent ( in ) :: &
+    class ( FieldAtlasTemplate ), intent ( in ) :: &
       Source
     integer ( KDI ), intent ( in ) :: &
       iA, &  
       iSH_0  
 
+    class ( StorageForm ), pointer :: &
+      Source_S
+
     select type ( C => L % Chart )
     class is ( Chart_SL_Template )
 
     select type ( Source )
-    class is ( StorageForm )
+    class is ( Storage_ASC_Form )
 
+    Source_S => Source % Storage ( )
     call AssignSourcePointer &
-           ( Source % Value, C % nCellsBrick, C % nGhostLayers, &
+           ( Source_S % Value, C % nCellsBrick, C % nGhostLayers, &
              L % nEquations, L % Source )
 
     select case ( trim ( C % CoordinateSystem ) )
     case ( 'SPHERICAL' )
-      call Sum_MC_CSL_S_Kernel &
+      call ComputeMomentLocal_CSL_S_Kernel &
              ( L % MyMoment_RC ( :, :, iA ), L % MyMoment_IC ( :, :, iA ), &
                L % MyMoment_RS ( :, :, iA ), L % MyMoment_IS ( :, :, iA ), &
                L % Source, &
@@ -583,7 +565,7 @@ contains
       call Show ( 'Coordinate system not supported', CONSOLE % ERROR )
       call Show ( C % CoordinateSystem, 'CoordinateSystem', CONSOLE % ERROR )
       call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'SumMomentContributions', 'subroutine', &
+      call Show ( 'ComputeMomentAtlas', 'subroutine', &
                   CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select
@@ -591,7 +573,7 @@ contains
     class default
       call Show ( 'Source type not supported', CONSOLE % ERROR )
       call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'SumMomentContributions', 'subroutine', &
+      call Show ( 'ComputeMomentAtlas', 'subroutine', &
                   CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- Source
@@ -599,12 +581,14 @@ contains
     class default
       call Show ( 'Chart type not supported', CONSOLE % ERROR )
       call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'SumMomentContributions', 'subroutine', &
+      call Show ( 'ComputeMomentAtlas', 'subroutine', &
                   CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- C
 
-  end subroutine SumMomentContributions
+    nullify ( Source_S )
+
+  end subroutine ComputeMomentLocalAtlas
 
 
   subroutine AssignRectangularPointers &

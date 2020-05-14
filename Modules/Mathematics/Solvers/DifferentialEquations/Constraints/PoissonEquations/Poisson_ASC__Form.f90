@@ -20,30 +20,34 @@ module Poisson_ASC__Form
   contains
     procedure, public, pass :: &
       Initialize
-    procedure, public, pass :: &
-      Solve
     final :: &
       Finalize
-    procedure, public, pass :: &
-      AssembleSolutionContributions
+    procedure, private, pass :: &
+      SolveOld
+    procedure, private, pass :: &
+      CombineMomentAtlas
+    procedure, private, pass :: &
+      ExchangeSolution
+    procedure, private, pass :: &
+      ApplyBoundarySolution
   end type Poisson_ASC_Form
 
     private :: &
-      SolveMultipole_CSL_Old, &
-      SolveMultipole_CSL
+      SolveMultipole_CSL_Old
 
 !-- FIXME: With GCC 6.1.0, must be public to trigger .smod generation
 !    private :: &
     public :: &
-      Assemble_SC_CSL_S_Kernel, &
+      CombineMoment_CSL_S_Kernel, &
       SolveCells_CSL_Kernel, &
       AssembleSolutionKernel
 
     interface
 
-      module subroutine Assemble_SC_CSL_S_Kernel &
+      module subroutine CombineMoment_CSL_S_Kernel &
                           ( S, SH_RC, SH_IC, SH_RS, SH_IS, R_C, &
-                            M_RC,  M_IC,  M_RS,  M_IS, R_I, Delta_M_FourPi, &
+                            M_RC,  M_IC,  M_RS,  M_IS, R_I, &
+                            IsFirstShell, IsLastShell, Delta_M_FourPi, &
                             nC, oC, nE, oR, UseDeviceOption )
         use Basics
         implicit none
@@ -56,6 +60,8 @@ module Poisson_ASC__Form
           M_RC, M_IC, M_RS, M_IS  !-- MyMoments
         real ( KDR ), dimension ( : ), intent ( in ) :: &
           R_I
+        logical ( KDL ), intent ( in ) :: &
+          IsFirstShell, IsLastShell
         real ( KDR ), intent ( in ) :: &
           Delta_M_FourPi
         integer ( KDI ), dimension ( : ), intent ( in ) :: &
@@ -182,69 +188,6 @@ contains
   end subroutine Initialize
 
 
-  subroutine Solve ( P, Solution, Source )
-
-    class ( Poisson_ASC_Form ), intent ( inout ) :: &
-      P
-    class ( FieldAtlasTemplate ), intent ( inout ) :: &
-      Solution
-    class ( FieldAtlasTemplate ), intent ( in ) :: &
-      Source
-
-    class ( StorageForm ), pointer :: &
-      Source_S, &
-      Solution_S
-    type ( TimerForm ), pointer :: &
-      Timer
-
-    Timer  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerSolve )
-    if ( associated ( Timer ) ) call Timer % Start ( )
-
-    select type ( Source )
-    class is ( Storage_ASC_Form )
-    Source_S => Source % Storage ( )
-
-    select type ( Solution )
-    class is ( Storage_ASC_Form )
-    Solution_S => Solution % Storage ( )
-
-    select case ( trim ( P % SolverType ) )
-    case ( 'MULTIPOLE_OLD' )
-      select type ( C => P % Atlas % Chart )
-      class is ( Chart_SLD_Form )
-        call SolveMultipole_CSL_Old ( P, C, Solution_S, Source_S )
-      class default
-        call Show ( 'Chart type not supported', CONSOLE % ERROR )
-        call Show ( 'Solve', 'subroutine', CONSOLE % ERROR )
-        call Show ( 'Poisson_ASC__Form', 'module', CONSOLE % ERROR )
-        call PROGRAM_HEADER % Abort ( )
-      end select !-- C
-    case ( 'MULTIPOLE' )
-      select type ( C => P % Atlas % Chart )
-      class is ( Chart_SLD_Form )
-        call SolveMultipole_CSL ( P, C, Solution_S, Source_S )
-      class default
-        call Show ( 'Chart type not supported', CONSOLE % ERROR )
-        call Show ( 'Solve', 'subroutine', CONSOLE % ERROR )
-        call Show ( 'Poisson_ASC__Form', 'module', CONSOLE % ERROR )
-        call PROGRAM_HEADER % Abort ( )
-      end select !-- C
-    case default
-      call Show ( 'Solver type not supported', CONSOLE % ERROR )
-      call Show ( P % SolverType, 'Type', CONSOLE % ERROR )
-      call Show ( 'Solve', 'subroutine', CONSOLE % ERROR )
-      call Show ( 'Poisson_ASC__Form', 'module', CONSOLE % ERROR )
-      call PROGRAM_HEADER % Abort ( )
-    end select !-- SolverType
-
-    end select !-- Solution
-    end select !-- Source
-
-    if ( associated ( Timer ) ) call Timer % Stop ( )
-
-  end subroutine Solve
-
-
   impure elemental subroutine Finalize ( P )
 
     type ( Poisson_ASC_Form ), intent ( inout ) :: &
@@ -256,6 +199,43 @@ contains
     call P % FinalizeTemplate ( )
 
   end subroutine Finalize
+
+
+  subroutine SolveOld ( P, Solution, Source )
+
+    class ( Poisson_ASC_Form ), intent ( inout ) :: &
+      P
+    class ( FieldAtlasTemplate ), intent ( inout ) :: &
+      Solution
+    class ( FieldAtlasTemplate ), intent ( in ) :: &
+      Source
+
+    class ( StorageForm ), pointer :: &
+      Source_S, &
+      Solution_S
+
+    select type ( Source )
+    class is ( Storage_ASC_Form )
+    Source_S => Source % Storage ( )
+
+    select type ( Solution )
+    class is ( Storage_ASC_Form )
+    Solution_S => Solution % Storage ( )
+
+    select type ( C => P % Atlas % Chart )
+    class is ( Chart_SLD_Form )
+      call SolveMultipole_CSL_Old ( P, C, Solution_S, Source_S )
+    class default
+      call Show ( 'Chart type not supported', CONSOLE % ERROR )
+      call Show ( 'Solve', 'subroutine', CONSOLE % ERROR )
+      call Show ( 'Poisson_ASC__Form', 'module', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- C
+
+    end select !-- Solution
+    end select !-- Source
+
+  end subroutine SolveOld
 
 
   subroutine SolveMultipole_CSL_Old ( P, C, Solution, Source )
@@ -272,13 +252,13 @@ contains
     logical ( KDL ) :: &
       GridError
     type ( TimerForm ), pointer :: &
-      Timer_AS, &
+      Timer_CM, &
       Timer_ES, &
       Timer_BS
     class ( GeometryFlatForm ), pointer :: &
       G
 
-    Timer_AS  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerAssembleSolution )
+    Timer_CM  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerCombineMoments )
     Timer_ES  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerExchangeSolution )
     Timer_BS  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerBoundarySolution )
 
@@ -291,7 +271,7 @@ contains
 
     G => C % Geometry ( )
 
-    if ( associated ( Timer_AS ) ) call Timer_AS % Start ( )
+    if ( associated ( Timer_CM ) ) call Timer_CM % Start ( )
      call SolveCells_CSL_Kernel &
             ( Solution % Value, C % CoordinateSystem, C % IsProperCell, &
               L % M_RC, L % M_IC, L % M_RS, L % M_IS, &
@@ -304,7 +284,7 @@ contains
               L % SolidHarmonic_RS, L % SolidHarmonic_IS )
      if ( GridError ) &
        call PROGRAM_HEADER % Abort ( )
-    if ( associated ( Timer_AS ) ) call Timer_AS % Stop ( )
+    if ( associated ( Timer_CM ) ) call Timer_CM % Stop ( )
 
     if ( associated ( Timer_ES ) ) call Timer_ES % Start ( )
     call C % ExchangeGhostData ( Solution )
@@ -321,50 +301,23 @@ contains
   end subroutine SolveMultipole_CSL_Old
 
 
-  subroutine SolveMultipole_CSL ( P, C, Solution, Source )
- 
-    type ( Poisson_ASC_Form ), intent ( inout ) :: &
-      P
-    class ( Chart_SLD_Form ), intent ( inout ) :: &
-      C
-    class ( StorageForm ), intent ( inout ) :: &
-      Solution
-    class ( StorageForm ), intent ( in ) :: &
-      Source
-
-    type ( TimerForm ), pointer :: &
-      Timer_ES, &
-      Timer_BS
-
-    Timer_ES  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerExchangeSolution )
-    Timer_BS  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerBoundarySolution )
-
-    call Show ( 'Poisson solve, multipole', P % IGNORABILITY + 2 )
-    call Show ( P % Name, 'Name', P % IGNORABILITY + 2 )
-
-    associate ( L  =>  P % LaplacianMultipole )
-
-    call L % ComputeMoments ( Source )
-
-    call P % AssembleSolution ( Solution )
-
-    end associate !-- L
-
-  end subroutine SolveMultipole_CSL
-
-
-  subroutine AssembleSolutionContributions &
+  subroutine CombineMomentAtlas &
                ( P, Solution, Delta_M_FourPi, iA, iSH_0 )
 
     class ( Poisson_ASC_Form ), intent ( inout ) :: &
       P
-    class ( * ), intent ( inout ) :: &
+    class ( FieldAtlasTemplate ), intent ( inout ) :: &
       Solution
     real ( KDR ), intent ( in ) :: &
       Delta_M_FourPi
     integer ( KDI ), intent ( in ) :: &
       iA, &  
       iSH_0  
+
+    logical ( KDL ) :: &
+      IsFirstShell, IsLastShell
+    class ( StorageForm ), pointer :: &
+      Solution_S
 
     select type ( L => P % LaplacianMultipole )
     class is ( LaplacianMultipole_ASC_Form )
@@ -373,16 +326,17 @@ contains
     class is ( Chart_SL_Template )
 
     select type ( Solution )
-    class is ( StorageForm )
+    class is ( Storage_ASC_Form )
+    Solution_S => Solution % Storage ( )
 
     associate &
-      (  nV => Solution % nVariables, &
-        iaS => Solution % iaSelected )
+      (  nV => Solution_S % nVariables, &
+        iaS => Solution_S % iaSelected )
  
     if ( nV /= L % nEquations ) then
       call Show ( 'Wrong number of variables in Solution', CONSOLE % ERROR )
       call Show ( 'Poisson_ASC__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'AssembleSolutionContributions', 'subroutine', &
+      call Show ( 'CombineMomentAtlas', 'subroutine', &
                   CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end if
@@ -390,20 +344,22 @@ contains
     if ( iaS ( nV ) - iaS ( 1 ) + 1  /=  nV ) then
       call Show ( 'Solution variables must be contiguous', CONSOLE % ERROR )
       call Show ( 'Poisson_ASC__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'AssembleSolutionContributions', 'subroutine', &
+      call Show ( 'CombineMomentAtlas', 'subroutine', &
                   CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end if
 
     call AssignSolutionPointer &
-           ( Solution % Value ( :, iaS ( 1 ) : iaS ( nV ) ), &
+           ( Solution_S % Value ( :, iaS ( 1 ) : iaS ( nV ) ), &
              C % nCellsBrick, C % nGhostLayers, L % nEquations, P % Solution )
 
     end associate !-- nV, etc.
 
     select case ( trim ( C % CoordinateSystem ) )
     case ( 'SPHERICAL' )
-      call Assemble_SC_CSL_S_Kernel &
+      IsFirstShell  =  ( C % iaBrick ( 1 )  ==  1 )
+      IsLastShell  =  ( C % iaBrick ( 1 )  ==  C % nBricks ( 1 ) )
+      call CombineMoment_CSL_S_Kernel &
              ( P % Solution, &
                L % SolidHarmonic_RC ( :, :, :, iSH_0 ), &
                L % SolidHarmonic_IC ( :, :, :, iSH_0 ), &
@@ -412,23 +368,24 @@ contains
                L % Radius, &
                L % Moment_RC ( :, :, iA ), L % Moment_IC ( :, :, iA ), &
                L % Moment_RS ( :, :, iA ), L % Moment_IS ( :, :, iA ), &
-               C % Edge ( 1 ) % Value, Delta_M_FourPi, &
-               C % nCellsBrick, C % nGhostLayers, L % nEquations, &
+               C % Edge ( 1 ) % Value, IsFirstShell, IsLastShell, &
+               Delta_M_FourPi, C % nCellsBrick, C % nGhostLayers, &
+               L % nEquations, &
                oR = ( C % iaBrick ( 1 ) - 1 ) * C % nCellsBrick ( 1 ), &
                UseDeviceOption = L % UseDevice )
     case default
       call Show ( 'Coordinate system not supported', CONSOLE % ERROR )
       call Show ( C % CoordinateSystem, 'CoordinateSystem', CONSOLE % ERROR )
       call Show ( 'Poisson_ASC__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'AssembleSolutionContributions', 'subroutine', &
+      call Show ( 'CombineMomentAtlas', 'subroutine', &
                   CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select
 
     class default
-      call Show ( 'Source type not supported', CONSOLE % ERROR )
+      call Show ( 'Solution type not supported', CONSOLE % ERROR )
       call Show ( 'Poisson_ASC__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'AssembleSolutionContributions', 'subroutine', &
+      call Show ( 'CombineMomentAtlas', 'subroutine', &
                   CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- Source
@@ -436,7 +393,7 @@ contains
     class default
       call Show ( 'Chart type not supported', CONSOLE % ERROR )
       call Show ( 'Poisson_ASC__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'AssembleSolutionContributions', 'subroutine', &
+      call Show ( 'CombineMomentAtlas', 'subroutine', &
                   CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- C
@@ -444,12 +401,82 @@ contains
     class default 
       call Show ( 'Laplacian type not supported', CONSOLE % ERROR )
       call Show ( 'Poisson_ASC_Form', 'module', CONSOLE % ERROR )
-      call Show ( 'AssembleSolutionContributions', 'subroutine', &
+      call Show ( 'CombineMomentAtlas', 'subroutine', &
                   CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- L
 
-  end subroutine AssembleSolutionContributions
+    nullify ( Solution_S )
+
+  end subroutine CombineMomentAtlas
+
+
+  subroutine ExchangeSolution ( P, Solution )
+
+    class ( Poisson_ASC_Form ), intent ( inout ) :: &
+      P
+    class ( FieldAtlasTemplate ), intent ( inout ) :: &
+      Solution
+
+    class ( StorageForm ), pointer :: &
+      Solution_S
+
+    select type ( Solution )
+    class is ( Storage_ASC_Form )
+    Solution_S => Solution % Storage ( )
+
+    select type ( C => P % Atlas % Chart )
+    class is ( Chart_SLD_Form )
+      call Solution_S % UpdateHost ( )
+      call C % ExchangeGhostData ( Solution_S )
+      call Solution_S % UpdateDevice ( )
+    class default
+      call Show ( 'Chart type not supported', CONSOLE % ERROR )
+      call Show ( 'Poisson_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'ExchangeSolution', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- C
+
+    class default
+      call Show ( 'Solution type not supported', CONSOLE % ERROR )
+      call Show ( 'Poisson_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'ExchangeSolution', 'subroutine', &
+                  CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- Source
+
+    nullify ( Solution_S )
+    
+  end subroutine ExchangeSolution
+
+
+  subroutine ApplyBoundarySolution ( P, Solution )
+
+    class ( Poisson_ASC_Form ), intent ( inout ) :: &
+      P
+    class ( FieldAtlasTemplate ), intent ( inout ) :: &
+      Solution
+
+    class ( StorageForm ), pointer :: &
+      Solution_S
+
+    select type ( Solution )
+    class is ( Storage_ASC_Form )
+    Solution_S => Solution % Storage ( )
+
+    call P % Atlas % ApplyBoundaryConditionsFaces ( Solution_S )
+
+    class default
+      call Show ( 'Solution type not supported', CONSOLE % ERROR )
+      call Show ( 'Poisson_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'ExchangeSolution', 'subroutine', &
+                  CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- Source
+
+    nullify ( Solution_S )
+    
+  end subroutine ApplyBoundarySolution
 
 
   subroutine AssignSolutionPointer ( S_2D, nC, nG, nE, S_4D )

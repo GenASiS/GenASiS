@@ -420,9 +420,9 @@ contains
   end procedure Compute_SH_iL_iM_2_CSL_Kernel
 
 
-  module procedure Sum_MC_CSL_S_Kernel
+  module procedure ComputeMomentLocal_CSL_S_Kernel
 
-    !-- Sum_MomentContribtions_ChartSingleLevel_Spherical_Kernel
+    !-- ComputeMomentLocal_ChartSingleLevel_Spherical_Kernel
 
     integer ( KDI ) :: &
       iR, iT, iP, &  !-- iRadius, iTheta, iPhi
@@ -528,7 +528,7 @@ contains
 
     end if !-- UseDevice
 
-  end procedure Sum_MC_CSL_S_Kernel
+  end procedure ComputeMomentLocal_CSL_S_Kernel
 
 
 end submodule LaplacianMultipole_ASC__Kernel

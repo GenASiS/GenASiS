@@ -370,7 +370,13 @@ contains
     class ( StorageForm ), intent ( inout ) :: &
       S
 
-    call Clear ( S % Value, UseDeviceOption = S % AllocatedDevice )
+    integer ( KDI ) :: &
+      iS  !-- iSelected
+
+    do iS = 1, S % nVariables
+      call Clear ( S % Value ( :, S % iaSelected ( iS ) ), &
+                   UseDeviceOption = S % AllocatedDevice )
+    end do !-- iS
 
   end subroutine Clear_S
 

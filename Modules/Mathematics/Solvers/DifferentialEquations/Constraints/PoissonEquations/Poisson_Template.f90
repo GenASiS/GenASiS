@@ -12,7 +12,9 @@ module Poisson_Template
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
       iTimerSolve = 0, &
-      iTimerAssembleSolution = 0, &
+      iTimerCombineMoments = 0, &
+      iTimerClearSolution = 0, &
+      iTimerLocalSolution = 0, &
       iTimerExchangeSolution = 0, &
       iTimerBoundarySolution = 0, &
       nEquations = 0, &
@@ -30,44 +32,75 @@ module Poisson_Template
       InitializeTemplate
     procedure, public, pass :: &
       InitializeTimers
-    procedure ( S ), public, pass, deferred :: &
+    procedure, public, pass :: &
       Solve
     procedure, public, pass :: &
       FinalizeTemplate
-    procedure, public, pass :: &
-      AssembleSolution
-    procedure ( ASC ), private, pass, deferred :: &
-      AssembleSolutionContributions
+    procedure ( SO ), private, pass, deferred :: &
+      SolveOld
+    procedure, private, pass :: &
+      SolveMultipole
+    procedure, private, pass :: &
+      CombineMoments
+    procedure, private, pass :: &
+      CombineMomentsLocal
+    procedure ( CMA ), private, pass, deferred :: &
+      CombineMomentAtlas
+    procedure ( ES ), private, pass, deferred :: &
+      ExchangeSolution
+    procedure ( ABS ), private, pass, deferred :: &
+      ApplyBoundarySolution
   end type PoissonTemplate
 
   abstract interface 
 
-    subroutine S ( P, Solution, Source )
-      use Basics
+    subroutine SO ( P, Solution, Source )
       use Manifolds
       import PoissonTemplate
+      implicit none
       class ( PoissonTemplate ), intent ( inout ) :: &
         P
       class ( FieldAtlasTemplate ), intent ( inout ) :: &
         Solution
       class ( FieldAtlasTemplate ), intent ( in ) :: &
         Source
-    end subroutine S
+    end subroutine SO
 
-    subroutine ASC ( P, Solution, Delta_M_FourPi, iA, iSH_0 )
+    subroutine CMA ( P, Solution, Delta_M_FourPi, iA, iSH_0 )
       use Basics
+      use Manifolds
       import PoissonTemplate
       implicit none
       class ( PoissonTemplate ), intent ( inout ) :: &
         P
-      class ( * ), intent ( inout ) :: &
+      class ( FieldAtlasTemplate ), intent ( inout ) :: &
         Solution
       real ( KDR ), intent ( in ) :: &
         Delta_M_FourPi
       integer ( KDI ), intent ( in ) :: &
         iA, &  
         iSH_0  
-    end subroutine ASC
+    end subroutine CMA
+
+    subroutine ES ( P, Solution )
+      use Manifolds
+      import PoissonTemplate
+      implicit none
+      class ( PoissonTemplate ), intent ( inout ) :: &
+        P
+      class ( FieldAtlasTemplate ), intent ( inout ) :: &
+        Solution
+    end subroutine ES
+
+    subroutine ABS ( P, Solution )
+      use Manifolds
+      import PoissonTemplate
+      implicit none
+      class ( PoissonTemplate ), intent ( inout ) :: &
+        P
+      class ( FieldAtlasTemplate ), intent ( inout ) :: &
+        Solution
+    end subroutine ABS
 
   end interface
 
@@ -133,16 +166,55 @@ contains
     end if
 
     call PROGRAM_HEADER % AddTimer &
-           ( 'AssembleSolution', P % iTimerAssembleSolution, &
+           ( 'CombineMoments', P % iTimerCombineMoments, &
              Level = BaseLevel + 1 )
-    call PROGRAM_HEADER % AddTimer &
-           ( 'ExchangeSolution', P % iTimerExchangeSolution, &
-             Level = BaseLevel + 1 )
-    call PROGRAM_HEADER % AddTimer &
-           ( 'BoundarySolution', P % iTimerBoundarySolution, &
-             Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'ClearSolution', P % iTimerClearSolution, &
+               Level = BaseLevel + 2 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'LocalSolution', P % iTimerLocalSolution, &
+               Level = BaseLevel + 2 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'ExchangeSolution', P % iTimerExchangeSolution, &
+               Level = BaseLevel + 2 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'BoundarySolution', P % iTimerBoundarySolution, &
+               Level = BaseLevel + 2 )
 
   end subroutine InitializeTimers
+
+
+  subroutine Solve ( P, Solution, Source )
+
+    class ( PoissonTemplate ), intent ( inout ) :: &
+      P
+    class ( FieldAtlasTemplate ), intent ( inout ) :: &
+      Solution
+    class ( FieldAtlasTemplate ), intent ( in ) :: &
+      Source
+
+    type ( TimerForm ), pointer :: &
+      Timer
+
+    Timer  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerSolve )
+    if ( associated ( Timer ) ) call Timer % Start ( )
+
+    select case ( trim ( P % SolverType ) )
+    case ( 'MULTIPOLE_OLD', 'MULTIPOLE' )
+
+      call P % SolveMultipole ( Solution, Source )
+
+    case default
+      call Show ( 'Solver type not supported', CONSOLE % ERROR )
+      call Show ( P % SolverType, 'Type', CONSOLE % ERROR )
+      call Show ( 'Solve', 'subroutine', CONSOLE % ERROR )
+      call Show ( 'Poisson_Template', 'module', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- SolverType
+
+    if ( associated ( Timer ) ) call Timer % Stop ( )
+
+  end subroutine Solve
 
 
   impure elemental subroutine FinalizeTemplate ( P )
@@ -163,11 +235,90 @@ contains
   end subroutine FinalizeTemplate
 
 
-  subroutine AssembleSolution ( P, Solution )
+  subroutine SolveMultipole ( P, Solution, Source )
 
     class ( PoissonTemplate ), intent ( inout ) :: &
       P
-    class ( * ), intent ( inout ) :: &
+    class ( FieldAtlasTemplate ), intent ( inout ) :: &
+      Solution
+    class ( FieldAtlasTemplate ), intent ( in ) :: &
+      Source
+
+    call Show ( 'Poisson solve, multipole', P % IGNORABILITY + 2 )
+    call Show ( P % Name, 'Name', P % IGNORABILITY + 2 )
+
+    if ( allocated ( P % LaplacianMultipoleOld ) ) then
+      call P % SolveOld ( Solution, Source )
+    else if ( allocated ( P % LaplacianMultipole ) ) then
+      associate ( L  =>  P % LaplacianMultipole )
+        call L % ComputeMoments ( Source )
+        call P % CombineMoments ( Solution )
+      end associate !-- L
+    else
+      call Show ( 'LaplacianMultipole not allocated', CONSOLE % ERROR )
+      call Show ( 'Poisson_Template', 'module', CONSOLE % ERROR )
+      call Show ( 'SolveMultipole', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end if
+
+  end subroutine SolveMultipole
+
+
+  subroutine CombineMoments ( P, Solution )
+
+    class ( PoissonTemplate ), intent ( inout ) :: &
+      P
+    class ( FieldAtlasTemplate ), intent ( inout ) :: &
+      Solution
+
+    type ( TimerForm ), pointer :: &
+      Timer, &
+      Timer_CS, &
+      Timer_LS, &
+      Timer_ES, &
+      Timer_BS
+
+    if ( .not. allocated ( P % LaplacianMultipole) ) then
+      call Show ( 'LaplacianMultipole not allocated', CONSOLE % ERROR )
+      call Show ( 'Poisson_Template', 'module', CONSOLE % ERROR )
+      call Show ( 'CombineMoments', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end if
+
+    Timer     =>  PROGRAM_HEADER % TimerPointer ( P % iTimerCombineMoments )
+    Timer_CS  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerClearSolution )
+    Timer_LS  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerLocalSolution )
+    Timer_ES  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerExchangeSolution )
+    Timer_BS  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerBoundarySolution )
+
+    if ( associated ( Timer ) ) call Timer % Start ( )
+
+    if ( associated ( Timer_CS ) ) call Timer_CS % Start ( )
+    call Solution % Clear ( )
+    if ( associated ( Timer_CS ) ) call Timer_CS % Stop ( )
+
+    if ( associated ( Timer_LS ) ) call Timer_LS % Start ( )
+    call P % CombineMomentsLocal ( Solution )
+    if ( associated ( Timer_LS ) ) call Timer_LS % Stop ( )
+
+    if ( associated ( Timer_ES ) ) call Timer_ES % Start ( )
+    call P % ExchangeSolution ( Solution )
+    if ( associated ( Timer_ES ) ) call Timer_ES % Stop ( )
+
+    if ( associated ( Timer_BS ) ) call Timer_BS % Start ( )
+    call P % ApplyBoundarySolution ( Solution )
+    if ( associated ( Timer_BS ) ) call Timer_BS % Stop ( )
+
+    if ( associated ( Timer ) ) call Timer % Stop ( )
+
+  end subroutine CombineMoments
+
+
+  subroutine CombineMomentsLocal ( P, Solution )
+
+    class ( PoissonTemplate ), intent ( inout ) :: &
+      P
+    class ( FieldAtlasTemplate ), intent ( inout ) :: &
       Solution
 
     integer ( KDI ) :: &
@@ -183,18 +334,6 @@ contains
       iSH
     real ( KDR ) :: &
       Delta_M_FourPi
-    type ( TimerForm ), pointer :: &
-      Timer
-
-    if ( .not. allocated ( P % LaplacianMultipole) ) then
-      call Show ( 'LaplacianMultipole not allocated', CONSOLE % ERROR )
-      call Show ( 'Poisson_Template', 'module', CONSOLE % ERROR )
-      call Show ( 'AssembleSolution', 'subroutine', CONSOLE % ERROR )
-      call PROGRAM_HEADER % Abort ( )
-    end if
-
-    Timer  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerAssembleSolution )
-    if ( associated ( Timer ) ) call Timer % Start ( )
 
     associate ( L => P % LaplacianMultipole )
 
@@ -205,8 +344,6 @@ contains
         iA  =  1
        iSH  =  [ 1, 2, 3 ]
     iSH_PD  =  4
-
-    call L % Clear ( Solution )
 
     do iM  =  0, L % MaxOrder
 
@@ -233,7 +370,7 @@ contains
                  ( iL, iM, iSH_0, iSH_1, iSH_2 )
         end if
 
-        call P % AssembleSolutionContributions &
+        call P % CombineMomentAtlas &
                ( Solution, Delta_M_FourPi, iA, iSH_0 )
 
          iA  =  iA + 1
@@ -244,9 +381,7 @@ contains
 
     end associate !-- L
 
-    if ( associated ( Timer ) ) call Timer % Stop ( )
-
-  end subroutine AssembleSolution
+  end subroutine CombineMomentsLocal
 
 
 end module Poisson_Template

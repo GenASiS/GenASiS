@@ -10,14 +10,15 @@ submodule ( Poisson_ASC__Form ) Poisson_ASC__Kernel
 contains
 
 
-  module procedure Assemble_SC_CSL_S_Kernel
+  module procedure CombineMoment_CSL_S_Kernel
 
-    !-- Assemble_SolutionContributions_ChartSingleLevel_Spherical_Kernel
+    !-- CombineMoment_ChartSingleLevel_Spherical_Kernel
 
     integer ( KDI ) :: &
       iR, iT, iP, &  !-- iRadius, iTheta, iPhi
-      iE, &  !-- iEquation
-      iR_oC  !-- iR - oC ( 1 )
+      iE, &          !-- iEquation
+      iR_G, &        !-- iR_Global
+      iFirst, iLast
     real ( KDR ) :: &
       F, &  !-- Fraction
       M_RC_C, M_IC_C, &  !-- M_RC_Center, etc.
@@ -29,79 +30,102 @@ contains
     if ( present ( UseDeviceOption ) ) &
       UseDevice = UseDeviceOption
 
+    iFirst  =  1
+    iLast   =  nC ( 1 )
+
     if ( UseDevice ) then
 
     else !-- use host
 
-      !$OMP  parallel do collapse ( 3 ) &
-      !$OMP& schedule ( OMP_SCHEDULE_HOST ) &
-      !$OMP& private ( iT, iP, iE, F, M_RC_C, M_IC_C, M_RS_C, M_IS_C )
-      do iE  =  1, nE
-        do iP  =  oC ( 3 )  +  1,  oC ( 3 )  +  nC ( 3 )
-          do iT  =  oC ( 2 )  +  1,  oC ( 2 )  +  nC ( 2 )
+      if ( IsFirstShell ) then
 
-            !-- first radial shell
+        iFirst  =  iFirst + 1
 
-               iR  =  oC ( 1 )  +  1
-            iR_oC  =  iR  -  oC ( 1 )
+        !$OMP  parallel do collapse ( 3 ) &
+        !$OMP& schedule ( OMP_SCHEDULE_HOST ) &
+        !$OMP& private ( iT, iP, iE, F, M_RC_C, M_IC_C, M_RS_C, M_IS_C )
+        do iE  =  1, nE
+          do iP  =  oC ( 3 )  +  1,  oC ( 3 )  +  nC ( 3 )
+            do iT  =  oC ( 2 )  +  1,  oC ( 2 )  +  nC ( 2 )
 
-                F  =    ( R_C ( iR, iT, iP )  &
-                          -  R_I ( oR + iR_oC ) )  &
-                      / ( R_I ( oR + iR_oC + 1 )  &
-                          -  R_I ( oR + iR_oC ) )
+              !-- first radial shell
 
-            M_RC_C  =                  F    *  0.0_KDR  &
-                       +   ( 1.0_KDR - F )  *  M_RC ( iR_oC,     iE )
+                iR  =  oC ( 1 )  +  1
+              iR_G  =  oR  -  oC ( 1 )  +  iR
+  
+                 F  =    ( R_C ( iR, iT, iP )  -  R_I ( iR_G ) )  &
+                       / ( R_I ( iR_G + 1 )  -  R_I ( iR_G ) )
+  
+              M_RC_C  =                  F    *  0.0_KDR  &
+                         +   ( 1.0_KDR - F )  *  M_RC ( iR_G,     iE )
+  
+              M_IC_C  =                  F    *  M_IC ( iR_G,     iE )  &
+                         +   ( 1.0_KDR - F )  *  M_IC ( iR_G + 1, iE )
+  
+              M_RS_C  =                  F    *  0.0_KDR  &
+                         +   ( 1.0_KDR - F )  *  M_RS ( iR_G    , iE )
+  
+              M_IS_C  =                  F    *  M_IS ( iR_G,     iE )  &
+                         +   ( 1.0_KDR - F )  *  M_IS ( iR_G + 1, iE )
 
-            M_IC_C  =                  F    *  M_IC ( iR_oC,     iE )  &
-                       +   ( 1.0_KDR - F )  *  M_IC ( iR_oC + 1, iE )
+              S ( iR, iT, iP, iE )  &
+                =  S ( iR, iT, iP, iE )  &
+                   +  Delta_M_FourPi  *  (    M_RC_C  *  SH_IC ( iR, iT, iP )  &
+                                           +  M_IC_C  *  SH_RC ( iR, iT, iP )  &
+                                           +  M_RS_C  *  SH_IS ( iR, iT, iP )  &
+                                           +  M_IS_C  *  SH_RS ( iR, iT, iP ) )
 
-            M_RS_C  =                  F    *  0.0_KDR  &
-                       +   ( 1.0_KDR - F )  *  M_RS ( iR_oC    , iE )
+            end do !-- iT
+          end do !-- iP
+        end do !-- iE
+        !$OMP  end parallel do
 
-            M_IS_C  =                  F    *  M_IS ( iR_oC,     iE )  &
-                       +   ( 1.0_KDR - F )  *  M_IS ( iR_oC + 1, iE )
+      end if !-- IsFirstShell
 
-            S ( iR, iT, iP, iE )  &
-              =  S ( iR, iT, iP, iE )  &
-                 +  Delta_M_FourPi  *  (    M_RC_C  *  SH_IC ( iR, iT, iP )  &
-                                         +  M_IC_C  *  SH_RC ( iR, iT, iP )  &
-                                         +  M_RS_C  *  SH_IS ( iR, iT, iP )  &
-                                         +  M_IS_C  *  SH_RS ( iR, iT, iP ) )
- 
-            !-- last radial shell
 
-               iR  =  oC ( 1 )  +  nC ( 1 )
-            iR_oC  =  iR  -  oC ( 1 )
+      if ( IsLastShell ) then
 
-                F  =    ( R_C ( iR, iT, iP )  &
-                          -  R_I ( oR + iR_oC ) )  &
-                      / ( R_I ( oR + iR_oC + 1 )  &
-                          -  R_I ( oR + iR_oC ) )
+        iLast  =  iLast - 1
 
-            M_RC_C  =                  F    *  M_RC ( iR_oC - 1, iE )  &
-                       +   ( 1.0_KDR - F )  *  M_RC ( iR_oC    , iE )
+        !$OMP  parallel do collapse ( 3 ) &
+        !$OMP& schedule ( OMP_SCHEDULE_HOST ) &
+        !$OMP& private ( iT, iP, iE, F, M_RC_C, M_IC_C, M_RS_C, M_IS_C )
+        do iE  =  1, nE
+          do iP  =  oC ( 3 )  +  1,  oC ( 3 )  +  nC ( 3 )
+            do iT  =  oC ( 2 )  +  1,  oC ( 2 )  +  nC ( 2 )
 
-            M_IC_C  =                  F    *  M_IC ( iR_oC   ,  iE )  &
-                       +   ( 1.0_KDR - F )  *  0.0_KDR
+              !-- last radial shell
+  
+                iR  =  oC ( 1 )  +  nC ( 1 )
+              iR_G  =  oR  -  oC ( 1 )  +  iR
 
-            M_RS_C  =                  F    *  M_RS ( iR_oC - 1, iE )  &
-                       +   ( 1.0_KDR - F )  *  M_RS ( iR_oC    , iE )
+                 F  =    ( R_C ( iR, iT, iP )  -  R_I ( iR_G ) )  &
+                       / ( R_I ( iR_G + 1 )  -  R_I ( iR_G ) )
 
-            M_IS_C  =                  F    *  M_IS ( iR_oC    , iE )  &
-                       +   ( 1.0_KDR - F )  *  0.0_KDR
+              M_RC_C  =                  F    *  M_RC ( iR_G - 1, iE )  &
+                         +   ( 1.0_KDR - F )  *  M_RC ( iR_G    , iE )
 
-            S ( iR, iT, iP, iE )  &
-              =  S ( iR, iT, iP, iE )  &
-                 +  Delta_M_FourPi  *  (    M_RC_C  *  SH_IC ( iR, iT, iP )  &
-                                         +  M_IC_C  *  SH_RC ( iR, iT, iP )  &
-                                         +  M_RS_C  *  SH_IS ( iR, iT, iP )  &
-                                         +  M_IS_C  *  SH_RS ( iR, iT, iP ) )
+              M_IC_C  =                  F    *  M_IC ( iR_G   ,  iE )  &
+                         +   ( 1.0_KDR - F )  *  0.0_KDR
 
-          end do !-- iT
-        end do !-- iP
-      end do !-- iE
-      !$OMP  end parallel do
+              M_RS_C  =                  F    *  M_RS ( iR_G - 1, iE )  &
+                         +   ( 1.0_KDR - F )  *  M_RS ( iR_G    , iE )
+
+              M_IS_C  =                  F    *  M_IS ( iR_G    , iE )  &
+                         +   ( 1.0_KDR - F )  *  0.0_KDR
+
+              S ( iR, iT, iP, iE )  &
+                =  S ( iR, iT, iP, iE )  &
+                   +  Delta_M_FourPi  *  (    M_RC_C  *  SH_IC ( iR, iT, iP )  &
+                                           +  M_IC_C  *  SH_RC ( iR, iT, iP )  &
+                                           +  M_RS_C  *  SH_IS ( iR, iT, iP )  &
+                                           +  M_IS_C  *  SH_RS ( iR, iT, iP ) )
+
+            end do !-- iT
+          end do !-- iP
+        end do !-- iE
+        !$OMP  end parallel do
+      end if !-- IsLastShell
 
       !$OMP  parallel do collapse ( 4 ) &
       !$OMP& schedule ( OMP_SCHEDULE_HOST ) &
@@ -109,26 +133,24 @@ contains
       do iE  =  1, nE
         do iP  =  oC ( 3 )  +  1,  oC ( 3 )  +  nC ( 3 )
           do iT  =  oC ( 2 )  +  1,  oC ( 2 )  +  nC ( 2 )
-            do iR  =  oC ( 1 )  +  2,  oC ( 1 )  +  nC ( 1 )  -  1
+            do iR  =  oC ( 1 )  +  iFirst,  oC ( 1 )  +  iLast
 
-              iR_oC  =  iR  -  oC ( 1 )
+              iR_G  =  oR  -  oC ( 1 )  +  iR
 
-                  F  =    ( R_C ( iR, iT, iP )  &
-                            -  R_I ( oR + iR_oC ) )  &
-                        / ( R_I ( oR + iR_oC + 1 )  &
-                            -  R_I ( oR + iR_oC ) )
+                 F  =    ( R_C ( iR, iT, iP )  -  R_I ( iR_G ) )  &
+                       / ( R_I ( iR_G + 1 )  -  R_I ( iR_G ) )
 
-              M_RC_C  =                  F    *  M_RC ( iR_oC - 1, iE )  &
-                         +   ( 1.0_KDR - F )  *  M_RC ( iR_oC    , iE )
+              M_RC_C  =                  F    *  M_RC ( iR_G - 1, iE )  &
+                         +   ( 1.0_KDR - F )  *  M_RC ( iR_G    , iE )
 
-              M_IC_C  =                  F    *  M_IC ( iR_oC,     iE )  &
-                         +   ( 1.0_KDR - F )  *  M_IC ( iR_oC + 1, iE )
+              M_IC_C  =                  F    *  M_IC ( iR_G,     iE )  &
+                         +   ( 1.0_KDR - F )  *  M_IC ( iR_G + 1, iE )
 
-              M_RS_C  =                  F    *  M_RS ( iR_oC - 1, iE )  &
-                         +   ( 1.0_KDR - F )  *  M_RS ( iR_oC    , iE )
+              M_RS_C  =                  F    *  M_RS ( iR_G - 1, iE )  &
+                         +   ( 1.0_KDR - F )  *  M_RS ( iR_G    , iE )
 
-              M_IS_C  =                  F    *  M_IS ( iR_oC,     iE )  &
-                         +   ( 1.0_KDR - F )  *  M_IS ( iR_oC + 1, iE )
+              M_IS_C  =                  F    *  M_IS ( iR_G,     iE )  &
+                         +   ( 1.0_KDR - F )  *  M_IS ( iR_G + 1, iE )
 
               S ( iR, iT, iP, iE )  &
                 =  S ( iR, iT, iP, iE )  &
@@ -145,7 +167,7 @@ contains
 
     end if !-- UseDevice
 
-  end procedure Assemble_SC_CSL_S_Kernel
+  end procedure CombineMoment_CSL_S_Kernel
 
 
   module procedure SolveCells_CSL_Kernel

@@ -15,7 +15,7 @@ module LaplacianMultipole_Template
       MaxDegree = 0, &  !-- Max L
       MaxOrder  = 0     !-- Max M
     integer ( KDI ) :: &
-      iTimerMoments = 0, &
+      iTimerComputeMoments = 0, &
       iTimerClearMoments = 0, &
       iTimerLocalMoments = 0, &
       iTimerReduceMoments = 0, &
@@ -53,10 +53,6 @@ module LaplacianMultipole_Template
       InitializeTimers
     procedure, public, pass :: &
       ComputeMoments
-    procedure ( CUP ), private, pass ( L ), deferred :: &
-      ClearUnlimitedPolymorphic
-    generic, public :: &
-      Clear => ClearUnlimitedPolymorphic
     procedure ( CSH_0_0 ), public, pass, deferred :: &
       ComputeSolidHarmonics_0_0
     procedure ( CSH_iM_iM ), public, pass, deferred :: &
@@ -78,22 +74,13 @@ module LaplacianMultipole_Template
     procedure, private, pass :: &
       AllocateMoments
     procedure, private, pass :: &
-      ComputeMomentContributions
-    procedure ( SMC ), private, pass, deferred :: &
-      SumMomentContributions
+      ComputeMomentsLocal
+    procedure ( CMLA ), private, pass, deferred :: &
+      ComputeMomentLocalAtlas
   end type LaplacianMultipoleTemplate
 
 
   abstract interface
-
-    subroutine CUP ( Variable, L )
-      import LaplacianMultipoleTemplate
-      implicit none
-      class ( * ), intent ( inout ) :: &
-        Variable
-      class ( LaplacianMultipoleTemplate ), intent ( in ) :: &
-        L
-    end subroutine CUP
 
     subroutine CSH_0_0 ( L, iSH_0, iSH_PD )
       use Basics
@@ -162,18 +149,19 @@ module LaplacianMultipole_Template
         L
     end subroutine ASH
 
-    subroutine SMC ( L, Source, iA, iSH_0 )
+    subroutine CMLA ( L, Source, iA, iSH_0 )
       use Basics
+      use Manifolds
       import LaplacianMultipoleTemplate
       implicit none
       class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
         L
-      class ( * ), intent ( in ) :: &
+      class ( FieldAtlasTemplate ), intent ( in ) :: &
         Source
       integer ( KDI ), intent ( in ) :: &
         iA, &  
         iSH_0  
-    end subroutine SMC
+    end subroutine CMLA
 
   end interface
 
@@ -244,7 +232,7 @@ contains
       BaseLevel
 
     call PROGRAM_HEADER % AddTimer &
-           ( 'Moments', L % iTimerMoments, Level = BaseLevel )
+           ( 'ComputeMoments', L % iTimerComputeMoments, Level = BaseLevel )
       call PROGRAM_HEADER % AddTimer &
              ( 'ClearMoments', L % iTimerClearMoments, Level = BaseLevel + 1 )
       call PROGRAM_HEADER % AddTimer &
@@ -262,7 +250,7 @@ contains
 
     class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
       L
-    type ( StorageForm ), intent ( in ) :: &
+    class ( FieldAtlasTemplate ), intent ( in ) :: &
       Source
 
     type ( TimerForm ), pointer :: &
@@ -272,7 +260,7 @@ contains
       Timer_RM, &
       Timer_AM
 
-    Timer     =>  PROGRAM_HEADER % TimerPointer ( L % iTimerMoments )
+    Timer     =>  PROGRAM_HEADER % TimerPointer ( L % iTimerComputeMoments )
     Timer_CM  =>  PROGRAM_HEADER % TimerPointer ( L % iTimerClearMoments )
     Timer_LM  =>  PROGRAM_HEADER % TimerPointer ( L % iTimerLocalMoments )
     Timer_RM  =>  PROGRAM_HEADER % TimerPointer ( L % iTimerReduceMoments )
@@ -287,11 +275,11 @@ contains
         MyM  =>  L % MyMoments )
 
     if ( associated ( Timer_CM ) ) call Timer_CM % Start ( )
-    call L % Clear ( MyM )
+    call MyM % Clear ( )
     if ( associated ( Timer_CM ) ) call Timer_CM % Stop ( )
 
     if ( associated ( Timer_LM ) ) call Timer_LM % Start ( )
-    call L % ComputeMomentContributions ( Source )
+    call L % ComputeMomentsLocal ( Source )
     if ( associated ( Timer_LM ) ) call Timer_LM % Stop ( )
 
     if ( associated ( Timer_RM ) ) call Timer_RM % Start ( )
@@ -435,11 +423,11 @@ contains
   end subroutine AllocateMoments
 
 
-  subroutine ComputeMomentContributions ( L, Source )
+  subroutine ComputeMomentsLocal ( L, Source )
 
     class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
       L
-    class ( * ), intent ( in ) :: &
+    class ( FieldAtlasTemplate ), intent ( in ) :: &
       Source  
 
     integer ( KDI ) :: &
@@ -485,7 +473,7 @@ contains
                  ( iL, iM, iSH_0, iSH_1, iSH_2 )
         end if
 
-        call L % SumMomentContributions ( Source, iA, iSH_0 )
+        call L % ComputeMomentLocalAtlas ( Source, iA, iSH_0 )
 
          iA  =  iA + 1
         iSH  =  cshift ( iSH, -1 )
@@ -493,7 +481,7 @@ contains
       end do !-- iL
     end do !-- iM
 
-  end subroutine ComputeMomentContributions
+  end subroutine ComputeMomentsLocal
 
 
   subroutine AllocateReduction ( L, M_Value, MyM_Value )
