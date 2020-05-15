@@ -2,7 +2,7 @@ include ./make.inc
 
 SOURCES=linterp_many.F90 eosmodule.F90 nuc_eos_find.F90 \
         bisection.F90 findtemp.F90 \
-        readtable.F90 nuc_eos.F90  findrho.F90
+        readtable.F90 nuc_eos.F90  #findrho.F90
        
 #FSOURCES=linterp.f
 

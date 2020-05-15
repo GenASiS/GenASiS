@@ -67,8 +67,6 @@
    !$OMP&      eos_rhomin, eos_rhomax, eos_yemin, eos_yemax, eos_tempmin, &
    !$OMP&      eos_tempmax, t_max_hack, nvars, mev_to_erg, amu_cgs, amu_mev, &
    !$OMP&      pi, ggrav, temp_mev_to_kelvin, clight, kb_erg, kb_mev )
-   
-   !$OMP  declare target link ( alltables, logrho, logtemp, ye )
 #endif
 
  end module eosmodule
