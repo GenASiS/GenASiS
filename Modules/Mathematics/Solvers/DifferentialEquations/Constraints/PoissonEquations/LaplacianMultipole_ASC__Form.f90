@@ -280,7 +280,8 @@ contains
       call RE % Initialize ( [ nRC + 1, 1 ] )
       call RE % AllocateDevice ( )
 
-      RE % Value ( :, 1 )  =  C % Edge ( 1 ) % Value
+      !--- Note indexing of Edge value begins at -1 with ghost cells
+      RE % Value ( :, 1 )  =  C % Edge ( 1 ) % Value ( 1 : nRC + 1 )
       call RE % UpdateDevice ( )
 
       end associate !-- RE, etc. 
