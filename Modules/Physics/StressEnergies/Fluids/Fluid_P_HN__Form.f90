@@ -27,9 +27,6 @@ module Fluid_P_HN__Form
         ElectronFraction
       real ( KDR ), dimension ( :, :, :, : ), allocatable :: &
         Table
-    contains
-      final :: &
-        EOS_HN_Final
     end type EOS_HN_Type
 
 
@@ -374,7 +371,6 @@ contains
     type ( c_ptr ) :: &
       D_P  !-- Device Pointer
    
-    call Show ( '<<<<< AllocateDevice_P_HN >>>>>' ) 
     call AllocateDevice ( S % EOS % Table, D_P )
     call AssociateHost  ( D_P, S % EOS % Table )
     call UpdateDevice   ( S % EOS % Table, D_P )
@@ -662,12 +658,10 @@ contains
     call C % Compute_M_Kernel &
            ( M, C % BaryonMassReference, &
              UseDeviceOption = C % AllocatedDevice )
-    call Show ( 'Apply_EOS_HN_T_Kernel' )
     call C % Apply_EOS_HN_T_Kernel &
            ( P, E, CS, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
              T_EOS, M, N, T, YE, T_L_D, T_L_T, T_YE, &
              UseDeviceOption = C % AllocatedDevice )
-    call Show ( 'End Apply_EOS_HN_T_Kernel' )
     call C % Compute_D_S_G_Kernel &
            ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33, &
              UseDeviceOption = C % AllocatedDevice )
@@ -799,9 +793,6 @@ contains
 !    call C % Apply_EOS_HN_SB_Kernel &
 !           ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
 !             M, N, YE )
-    call Storage_C % UpdateHost ( )
-    call Show ( P, 'Pressure' )
-    call Show ( T, 'Temperature' )
     call T_AE % Stop ( )
     
     call T_CFP % Start ( )
@@ -924,11 +915,6 @@ contains
         T_L_T => C % EOS % LogTemperature, &
         T_YE  => C % EOS % ElectronFraction )
     
-    !call Show ( allocated ( C % EOS % Table ),  '<<<< EOS Table' )
-    !call Show ( C % EOS % LogDensity ( 1 : 5 ), 'EOS Log Density' )
-    !call Show ( C % EOS % LogTemperature ( 1 : 5 ), 'EOS Log Temperature' )
-    !call Show ( C % EOS % ElectronFraction ( 1 : 5 ), 'EOS ElectronFraction' )
-
     associate &
       ( T_CFP => PROGRAM_HEADER % Timer ( C % iTimerComputeFromPrimitive ), &
         T_CE  => PROGRAM_HEADER % Timer ( C % iTimerComputeEigenspeed ), &
@@ -959,9 +945,6 @@ contains
              ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
                T_EOS, M, N, YE, Shock, T_L_D, T_L_T, T_YE, &
                UseDeviceOption = C % AllocatedDevice )
-      call Storage_C % UpdateHost ( )
-      call Show ( P, 'Pressure' )
-      call Show ( T, 'Temperature' )
       call C % Compute_G_G_Kernel &
              ( GE, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E, &
                UseDeviceOption = C % AllocatedDevice )
@@ -970,9 +953,6 @@ contains
              ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
                T_EOS, M, N, YE, T_L_D, T_L_T, T_YE, &
                UseDeviceOption = C % AllocatedDevice )
-      call Storage_C % UpdateHost ( )
-      call Show ( P, 'Pressure' )
-      call Show ( T, 'Temperature' )
     end if
     call C % Compute_DS_G_Kernel &
            ( DS, N, SB, UseDeviceOption = C % AllocatedDevice )
@@ -1175,13 +1155,4 @@ contains
   ! end subroutine InterpolateSoundSpeed
   
   
-  subroutine EOS_HN_Final ( E )
-    type ( EOS_HN_Type ) &
-      :: E
-      
-    call Show ( ' <<<<< EOS_HN TABLE IS FINALIZED ' )
-    
-  end subroutine EOS_HN_Final
-
-
 end module Fluid_P_HN__Form

@@ -110,7 +110,6 @@ contains
       end associate !-- iaI, etc.
     end do !-- iD
     
-    call Show ( '<<< ComputeFromTemperature' )
     call F % ComputeFromTemperature ( F, G, G )
     
     call F % UpdateHost ( )
