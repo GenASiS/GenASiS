@@ -172,17 +172,27 @@ contains
     real ( KDR ), intent ( in ), optional :: &
       CentralMassOption
 
+    character ( LDL ) :: &
+      GravitySolverType
+
+    GravitySolverType  =  'MULTIPOLE'
+    !-- FIXME: XL 16.1.1-5 does not work without association.
+    associate ( PH => PROGRAM_HEADER )
+!    call PROGRAM_HEADER % GetParameter ( MaxDegree, 'MaxDegree' )
+    call PH % GetParameter ( GravitySolverType, 'GravitySolverType' )
+    end associate !-- PH    
+
     if ( FC % Dimensionless ) then
       call GA % Initialize &
              ( PS, GeometryType, & 
                UsePinnedMemoryOption = UsePinnedMemoryOption, &
-               GravitySolverTypeOption = 'MULTIPOLE', &
+               GravitySolverTypeOption = GravitySolverType, &
                GravitationalConstantOption = 1.0_KDR )
     else
       call GA % Initialize &
              ( PS, GeometryType, &
                UsePinnedMemoryOption = UsePinnedMemoryOption, &
-               GravitySolverTypeOption = 'MULTIPOLE' )
+               GravitySolverTypeOption = GravitySolverType )
     end if !-- Dimensionless
 
   end subroutine InitializeGeometry

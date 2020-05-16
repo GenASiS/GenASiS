@@ -556,11 +556,33 @@ contains
 
     select type ( Source )
     class is ( Storage_ASC_Form )
-
     Source_S => Source % Storage ( )
+
+    associate &
+      (  nV => Source_S % nVariables, &
+        iaS => Source_S % iaSelected )
+ 
+    if ( nV /= L % nEquations ) then
+      call Show ( 'Wrong number of variables in Solution', CONSOLE % ERROR )
+      call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'ComputeMomentLocalAtlas', 'subroutine', &
+                  CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end if
+
+    if ( iaS ( nV ) - iaS ( 1 ) + 1  /=  nV ) then
+      call Show ( 'Solution variables must be contiguous', CONSOLE % ERROR )
+      call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'ComputeMomentLocalAtlas', 'subroutine', &
+                  CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end if
+
     call AssignSourcePointer &
-           ( Source_S % Value, C % nCellsBrick, C % nGhostLayers, &
-             L % nEquations, L % Source )
+           ( Source_S % Value ( :, iaS ( 1 ) : iaS ( nV ) ), &
+             C % nCellsBrick, C % nGhostLayers, L % nEquations, L % Source )
+
+    end associate !-- nV, etc.
 
     select case ( trim ( C % CoordinateSystem ) )
     case ( 'SPHERICAL' )
