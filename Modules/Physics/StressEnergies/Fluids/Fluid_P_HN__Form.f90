@@ -17,18 +17,22 @@ module Fluid_P_HN__Form
     integer ( KDI ), private, parameter :: &
       N_PRIMITIVE_HEAVY_NUCLEUS = 1, &
       N_CONSERVED_HEAVY_NUCLEUS = 1, &
-      N_FIELDS_HEAVY_NUCLEUS    = 10, &
+      N_FIELDS_HEAVY_NUCLEUS    = 11, &
       N_VECTORS_HEAVY_NUCLEUS   = 0
     
-    type, private :: EOS_HN_Type
-      real ( KDR ), dimension ( : ), allocatable :: &
-        LogDensity, &
-        LogTemperature, &
-        ElectronFraction
-      real ( KDR ), dimension ( :, :, :, : ), allocatable :: &
-        Table
-    end type EOS_HN_Type
-
+  type, private :: Table_EOS_HN_Form
+    integer ( KDI ), dimension ( : ), allocatable :: &
+      Error
+    real ( KDR ), dimension ( : ), allocatable :: &
+      LogDensity, &
+      LogTemperature, &
+      ElectronFraction
+    real ( KDR ), dimension ( :, :, :, : ), allocatable :: &
+      Table
+  contains
+    final :: &
+      FinalizeTable_EOS
+  end type Table_EOS_HN_Form
 
   type, public, extends ( Fluid_P_Template ) :: Fluid_P_HN_Form
     integer ( KDI ) :: &
@@ -47,9 +51,12 @@ module Fluid_P_HN__Form
       CHEMICAL_POTENTIAL_N_P      = 0, &  
         !-- a.k.a. mu_hat. Includes m_n - m_p. (mu_n and mu_p both
         !   measured with respect to m_n.)
-      CHEMICAL_POTENTIAL_E      = 0     
+      CHEMICAL_POTENTIAL_E        = 0, &
+      UNUSED_VARIABLE             = 0
         !-- Includes m_e.
-    type ( EOS_HN_Type ), private, pointer :: &
+    logical ( KDL ), private :: &
+      Allocated_EOS = .false.
+    type ( Table_EOS_HN_Form ), private, pointer :: &
       EOS => null ( )
   contains
     procedure, public, pass :: &
@@ -60,6 +67,8 @@ module Fluid_P_HN__Form
       SetPrimitiveConserved
     procedure, public, pass :: &
       SetOutput
+    final :: &
+      Finalize
     procedure, public, pass ( C ) :: &
       ComputeFromTemperature
     procedure, public, pass ( C ) :: &
@@ -99,9 +108,15 @@ module Fluid_P_HN__Form
       Pressure_CGS, &
       Speed_CGS, &
       MeV
+    
+    !-- OConnorOtt NucEOS-specific variables
+    real ( KDR ), private, protected :: &
+      EOS_RF_Accuracy     !-- EOS_RootFinding_Accuracy
+    integer ( KDI ), private, parameter :: &
+      EOS_Apply_EOS_HN_T = 1_KDI
     logical ( KDL ), private, protected :: &
       TableInitialized = .false.
-    type ( EOS_HN_Type ), pointer, private, protected :: &
+    type ( Table_EOS_HN_Form ), pointer, private, protected :: &
       EOS_Pointer
       
   interface 
@@ -132,27 +147,30 @@ module Fluid_P_HN__Form
     
     
     module subroutine Apply_EOS_HN_T_Kernel &
-             ( P, E, CS, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-               T_EOS, M, N, T, YE, T_L_D, T_L_T, T_YE, UseDeviceOption )
+             ( N, T, P, E, CS, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
+               U_V, T_EOS, M, YE, T_L_D, T_L_T, T_YE, Error, UseDeviceOption )
       use Basics
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        N, &
+        T, &
         P, &
         E, &
         CS, &
         SB, &
         X_P, X_N, X_He, X_A, &
         Z, A, &
-        Mu_NP, Mu_E
+        Mu_NP, Mu_E, &
+        U_V             !-- Dummy storage for Unused Variable
       real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
         T_EOS
       real ( KDR ), dimension ( : ), intent ( in ) :: &
         M, &
-        N, &
-        T, &
         YE, &
         T_L_D, &  !-- TableLogDensity
         T_L_T, &  !-- TableLogTemperature
         T_YE      !-- TableElectronFraction
+      integer ( KDI ), dimension ( : ), intent ( out ) :: &
+        Error
       logical ( KDL ), intent ( in ), optional :: &
         UseDeviceOption
     end subroutine Apply_EOS_HN_T_Kernel
@@ -342,10 +360,12 @@ contains
 !           ( '../Parameters/Hempel_SFHoEOS_rho222_temp180_ye60_version_1.1' &
 !             // '_20120817.h5' )
     allocate ( F % EOS )
+    allocate ( F % EOS % Error ( nValues ) )
     allocate ( F % EOS % LogDensity, source = logrho )
     allocate ( F % EOS % LogTemperature, source = logtemp )
     allocate ( F % EOS % ElectronFraction, source = ye )
     allocate ( F % EOS % Table, source = alltables )
+    F % Allocated_EOS = .true.
     EOS_Pointer => F % EOS
 
     !-- Historical Oak Ridge Shift, accounting for nuclear binding energy
@@ -357,6 +377,7 @@ contains
     Pressure_CGS        =  UNIT % BARYE
     Speed_CGS           =  UNIT % CENTIMETER  /  UNIT % SECOND
     MeV                 =  UNIT % MEGA_ELECTRON_VOLT
+    EOS_RF_Accuracy     =  1.0e-9_KDR
 
     TableInitialized  =  .true.
 
@@ -371,6 +392,9 @@ contains
     type ( c_ptr ) :: &
       D_P  !-- Device Pointer
    
+    call AllocateDevice ( S % EOS % Error, D_P )
+    call AssociateHost ( D_P, S % EOS % Error )
+    
     call AllocateDevice ( S % EOS % Table, D_P )
     call AssociateHost  ( D_P, S % EOS % Table )
     call UpdateDevice   ( S % EOS % Table, D_P )
@@ -483,6 +507,7 @@ contains
     F % MASS_NUMBER_HEAVY           =  oF +  8
     F % CHEMICAL_POTENTIAL_N_P      =  oF +  9
     F % CHEMICAL_POTENTIAL_E        =  oF + 10
+    F % UNUSED_VARIABLE             =  of + 11
 
     !-- variable names 
 
@@ -504,7 +529,8 @@ contains
           'AtomicNumberHeavy       ', &
           'MassNumberHeavy         ', &
           'ChemicalPotential_N_P   ', &
-          'ChemicalPotential_E     ' ]
+          'ChemicalPotential_E     ', &
+          'UnusedVariable          ' ]
     
     !-- units
 
@@ -574,6 +600,43 @@ contains
   end subroutine SetOutput
   
   
+  impure elemental subroutine Finalize ( F )
+    
+    type ( Fluid_P_HN_Form ), intent ( inout ) :: &
+      F
+    
+    if ( F % Allocated_EOS ) then
+      if ( associated ( EOS_Pointer, F % EOS ) ) &
+        nullify ( EOS_Pointer )
+      deallocate ( F % EOS )
+      !-- FIXME: Need to deallocate device memory for EOS
+    else
+      nullify ( F % EOS )
+    end if
+    
+    nullify ( F % EOS )
+    
+  end subroutine Finalize 
+  
+  
+  impure elemental subroutine FinalizeTable_EOS ( T )
+    
+    type ( Table_EOS_HN_Form ), intent ( inout ), target :: &
+      T
+    
+    if ( allocated ( T % Table ) ) &
+      deallocate ( T % Table )
+  
+    if ( allocated ( T % ElectronFraction ) ) &
+      deallocate ( T % ElectronFraction )
+    if ( allocated ( T % LogTemperature ) ) &
+      deallocate ( T % LogTemperature )
+    if ( allocated ( T % LogDensity ) ) &
+      deallocate ( T % LogDensity )
+  
+  end subroutine FinalizeTable_EOS
+  
+
   subroutine ComputeFromTemperature &
                ( Storage_C, C, G, Storage_G, nValuesOption, oValueOption )
 
@@ -648,19 +711,21 @@ contains
         Z     => FV ( oV + 1 : oV + nV, C % ATOMIC_NUMBER_HEAVY ), &
         A     => FV ( oV + 1 : oV + nV, C % MASS_NUMBER_HEAVY ), &
         Mu_NP => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_N_P ), &
-        Mu_E  => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_E ) )
+        Mu_E  => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_E ), &
+        U_V   => FV ( oV + 1 : oV + nV, C % UNUSED_VARIABLE ) )
     associate &
       ( T_EOS => C % EOS % Table, &
         T_L_D => C % EOS % LogDensity, &
         T_L_T => C % EOS % LogTemperature, &
-        T_YE  => C % EOS % ElectronFraction )
+        T_YE  => C % EOS % ElectronFraction, &
+        Error => C % EOS % Error )
 
     call C % Compute_M_Kernel &
            ( M, C % BaryonMassReference, &
              UseDeviceOption = C % AllocatedDevice )
     call C % Apply_EOS_HN_T_Kernel &
-           ( P, E, CS, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-             T_EOS, M, N, T, YE, T_L_D, T_L_T, T_YE, &
+           ( N, T, P, E, CS, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, U_V, &
+             T_EOS, M, YE, T_L_D, T_L_T, T_YE, Error, &
              UseDeviceOption = C % AllocatedDevice )
     call C % Compute_D_S_G_Kernel &
            ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33, &
