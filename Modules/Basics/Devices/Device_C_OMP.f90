@@ -7,7 +7,9 @@ module Device_C
   
   public :: &
     OnTarget, &
+    AllocateTargetInteger, &
     AllocateTargetDouble, &
+    AssociateTargetInteger, &
     AssociateTargetDouble, &
     DeallocateTarget, &
     DisassociateTarget, &
@@ -29,6 +31,15 @@ module Device_C
     end function OnTarget
 
 
+    type ( c_ptr ) function AllocateTargetInteger ( nValues ) &
+                              bind ( c, name = 'AllocateTargetInteger_OMP' )
+      use iso_c_binding
+      implicit none
+      integer ( c_int ), value :: &
+        nValues
+    end function AllocateTargetInteger
+    
+    
     type ( c_ptr ) function AllocateTargetDouble ( nValues ) &
                               bind ( c, name = 'AllocateTargetDouble_OMP' )
       use iso_c_binding
@@ -36,6 +47,21 @@ module Device_C
       integer ( c_int ), value :: &
         nValues
     end function AllocateTargetDouble
+    
+    
+    integer ( c_int ) function AssociateTargetInteger &
+                        ( Host, Device, nValues, oValue ) &
+                        bind ( c, name = 'AssociateTargetInteger_OMP' )
+    
+      use iso_c_binding
+      implicit none
+      type ( c_ptr ), value :: &
+        Host, &
+        Device
+      integer ( c_int ), value :: &
+        nValues, &
+        oValue
+    end function AssociateTargetInteger
     
     
     integer ( c_int ) function AssociateTargetDouble &
