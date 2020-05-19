@@ -355,7 +355,9 @@ contains
              VY = F % Value ( :, F % VELOCITY_U ( 2 ) ), &
              VZ = F % Value ( :, F % VELOCITY_U ( 3 ) ) )
 
+    call F % UpdateDevice ( )
     call F % ComputeFromPrimitive ( G )
+    call F % UpdateHost ( )
 
   end subroutine SetFluid
 
