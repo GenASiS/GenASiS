@@ -53,9 +53,9 @@ contains
 !
 !      integer,parameter :: ktx = 1
 
-      real*8  fh(kt,8,nvars), delx(kt), dely(kt), delz(kt), &
-           a1(kt,nvars), a2(kt,nvars), a3(kt,nvars), a4(kt,nvars), &
-           a5(kt,nvars), a6(kt,nvars), a7(kt,nvars), a8(kt,nvars)
+      real*8  fh(8), delx, dely, delz, &
+           a1, a2, a3, a4, &
+           a5, a6, a7, a8
 
       real*8 dx,dy,dz,dxi,dyi,dzi,dxyi,dxzi,dyzi,dxyzi
       integer n,ix,iy,iz
@@ -99,40 +99,40 @@ contains
 !
 !------- set-up auxiliary arrays for Lagrange interpolation
 !                                                                 
-         delx(n) = xt(ix) - x(n)
-         dely(n) = yt(iy) - y(n)
-         delz(n) = zt(iz) - z(n)
+         delx = xt(ix) - x(n)
+         dely = yt(iy) - y(n)
+         delz = zt(iz) - z(n)
 !      
          do iv = 1, nvars
-            fh(n,1,iv) = ft(ix  , iy  , iz, iv  )                             
-            fh(n,2,iv) = ft(ix-1, iy  , iz, iv  )                             
-            fh(n,3,iv) = ft(ix  , iy-1, iz, iv  )                             
-            fh(n,4,iv) = ft(ix  , iy  , iz-1, iv)                             
-            fh(n,5,iv) = ft(ix-1, iy-1, iz, iv  )                             
-            fh(n,6,iv) = ft(ix-1, iy  , iz-1, iv)                             
-            fh(n,7,iv) = ft(ix  , iy-1, iz-1, iv)                             
-            fh(n,8,iv) = ft(ix-1, iy-1, iz-1, iv)                             
+            fh(1) = ft(ix  , iy  , iz, iv  )                             
+            fh(2) = ft(ix-1, iy  , iz, iv  )                             
+            fh(3) = ft(ix  , iy-1, iz, iv  )                             
+            fh(4) = ft(ix  , iy  , iz-1, iv)                             
+            fh(5) = ft(ix-1, iy-1, iz, iv  )                             
+            fh(6) = ft(ix-1, iy  , iz-1, iv)                             
+            fh(7) = ft(ix  , iy-1, iz-1, iv)                             
+            fh(8) = ft(ix-1, iy-1, iz-1, iv)                             
 !              
 !------ set up coefficients of the interpolation polynomial and 
 !       evaluate function values 
             !                                                    
-            a1(n,iv) = fh(n,1,iv)                             
-            a2(n,iv) = dxi   * ( fh(n,2,iv) - fh(n,1,iv) )       
-            a3(n,iv) = dyi   * ( fh(n,3,iv) - fh(n,1,iv) )       
-            a4(n,iv) = dzi   * ( fh(n,4,iv) - fh(n,1,iv) )       
-            a5(n,iv) = dxyi  * ( fh(n,5,iv) - fh(n,2,iv) - fh(n,3,iv) + fh(n,1,iv) )
-            a6(n,iv) = dxzi  * ( fh(n,6,iv) - fh(n,2,iv) - fh(n,4,iv) + fh(n,1,iv) )
-            a7(n,iv) = dyzi  * ( fh(n,7,iv) - fh(n,3,iv) - fh(n,4,iv) + fh(n,1,iv) )
-            a8(n,iv) = dxyzi * ( fh(n,8,iv) - fh(n,1,iv) + fh(n,2,iv) + fh(n,3,iv) + &
-                 fh(n,4,iv) - fh(n,5,iv) - fh(n,6,iv) - fh(n,7,iv) )
+            a1 = fh(1)                             
+            a2 = dxi   * ( fh(2) - fh(1) )       
+            a3 = dyi   * ( fh(3) - fh(1) )       
+            a4 = dzi   * ( fh(4) - fh(1) )       
+            a5 = dxyi  * ( fh(5) - fh(2) - fh(3) + fh(1) )
+            a6 = dxzi  * ( fh(6) - fh(2) - fh(4) + fh(1) )
+            a7 = dyzi  * ( fh(7) - fh(3) - fh(4) + fh(1) )
+            a8 = dxyzi * ( fh(8) - fh(1) + fh(2) + fh(3) + &
+                 fh(4) - fh(5) - fh(6) - fh(7) )
 !
-            f(n,iv)  = a1(n,iv) +  a2(n,iv) * delx(n)                         &
-                 +  a3(n,iv) * dely(n)                         &
-                 +  a4(n,iv) * delz(n)                         &
-                 +  a5(n,iv) * delx(n) * dely(n)               &
-                 +  a6(n,iv) * delx(n) * delz(n)               &
-                 +  a7(n,iv) * dely(n) * delz(n)               &
-                 +  a8(n,iv) * delx(n) * dely(n) * delz(n)     
+            f(n, iv)  = a1 +  a2 * delx               &
+                 +  a3 * dely                      &
+                 +  a4 * delz                      &
+                 +  a5 * delx * dely               &
+                 +  a6 * delx * delz               &
+                 +  a7 * dely * delz               &
+                 +  a8 * delx * dely * delz     
 !
          enddo
 
