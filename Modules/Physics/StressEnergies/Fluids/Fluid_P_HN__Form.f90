@@ -56,7 +56,7 @@ module Fluid_P_HN__Form
         !-- Includes m_e.
     logical ( KDL ), private :: &
       Allocated_EOS = .false.
-    type ( Table_EOS_HN_Form ), private, pointer :: &
+    type ( Table_EOS_HN_Form ), public, pointer :: &
       EOS => null ( )
   contains
     procedure, public, pass :: &
@@ -110,9 +110,9 @@ module Fluid_P_HN__Form
       MeV
     
     !-- OConnorOtt NucEOS-specific variables
-    real ( KDR ), private, protected :: &
+    real ( KDR ), public, protected :: &
       EOS_RF_Accuracy     !-- EOS_RootFinding_Accuracy
-    integer ( KDI ), private, parameter :: &
+    integer ( KDI ), public, parameter :: &
       EOS_Apply_EOS_HN_T = 1_KDI
     logical ( KDL ), private, protected :: &
       TableInitialized = .false.

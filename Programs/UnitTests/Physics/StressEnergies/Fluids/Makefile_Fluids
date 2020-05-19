@@ -37,6 +37,8 @@ Fluid_P_HN__Form_Test: ThirdParty.a Basics.a Mathematics.a \
           -o Fluid_P_HN__Form_Test_$(MACHINE) \
           Fluid_P_HN__Form_Test.o Fluid_P_HN__Form.o FluidFeatures_P__Form.o \
           Fluid_P__Template.o Fluid_D__Form.o FluidFeatures_Template.o \
+          Fluid_P_HN__Kernel.o Fluid_P__Kernel.o Fluid_D__Kernel.o \
+          FluidFeatures_P__Kernel.o Spaces.a StressEnergyUnits_Form.o \
           Mathematics.a Basics.a ThirdParty.a $(LIBRARIES)
 
 Tally_F_D__Form_Test: ThirdParty.a Basics.a Mathematics.a Spaces.a \
@@ -138,6 +140,7 @@ include $(PATH_THIRD_PARTY)/Makefile_Dependencies
 include $(PATH_BASICS)/Makefile_Dependencies
 include $(PATH_MATHEMATICS)/Makefile_Dependencies
 include $(PATH_SPACES)/Makefile_Dependencies
+include $(PATH_STRESS_ENERGY_BASICS)/Makefile_Dependencies
 include $(PATH_FLUIDS)/Makefile_Dependencies
 
 Fluid_D__Form_Test.o: \
@@ -159,7 +162,14 @@ Fluid_P_I__Form_Test.o: \
 
 Fluid_P_HN__Form_Test.o: \
   Basics.o \
+  Spaces.a \
+  StressEnergyUnits_Form.o \
+  Fluid_D__Kernel.o \
+  Fluid_P__Kernel.o \
+  Fluid_P_HN__Kernel.o \
   Fluid_P_HN__Form.o \
+  FluidFeatures_P__Form.o \
+  FluidFeatures_P__Kernel.o \
   Fluid_P_HN__Form_Test.f90
 
 Tally_F_D__Form_Test.o: \
