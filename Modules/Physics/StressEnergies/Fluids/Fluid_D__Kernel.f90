@@ -65,14 +65,9 @@ contains
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
       !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV )
       do iV = 1, nValues
+
         if ( N ( iV )  <  0.0_KDR ) &
           N ( iV )  =  0.0_KDR
-      end do !-- iV
-      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
-
-      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV )
-      do iV = 1, nValues
 
         D ( iV ) = N ( iV ) 	 	 
        
@@ -88,14 +83,9 @@ contains
       !$OMP  parallel do &
       !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV )
       do iV = 1, nValues
+
         if ( N ( iV )  <  0.0_KDR ) &
           N ( iV )  =  0.0_KDR
-      end do !-- iV
-      !$OMP  end parallel do
-
-      !$OMP  parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV )
-      do iV = 1, nValues
 
         D ( iV ) = N ( iV ) 	 	 
        
