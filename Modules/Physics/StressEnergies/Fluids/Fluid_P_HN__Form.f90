@@ -113,7 +113,9 @@ module Fluid_P_HN__Form
     real ( KDR ), public, protected :: &
       EOS_RF_Accuracy     !-- EOS_RootFinding_Accuracy
     integer ( KDI ), public, parameter :: &
-      EOS_Apply_EOS_HN_T = 1_KDI
+      EOS_Apply_EOS_HN_T = 1_KDI, &   !-- T input
+      EOS_Apply_EOS_HN_E = 0_KDI, &   !-- E input, solve for T
+      EOS_Apply_EOS_HN_S = 2_KDI      !-- S input, solve for T
     logical ( KDL ), private, protected :: &
       TableInitialized = .false.
     type ( Table_EOS_HN_Form ), pointer, private, protected :: &
@@ -177,10 +179,12 @@ module Fluid_P_HN__Form
     
 
     module subroutine Apply_EOS_HN_SB_E_Kernel &
-             ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-               T_EOS, M, N, YE, Shock, T_L_D, T_L_T, T_YE, UseDeviceOption ) 
+             ( N, P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
+               U_V, T_EOS, M, YE, Shock, T_L_D, T_L_T, T_YE, Error, &
+               UseDeviceOption ) 
       use Basics
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        N, &
         P, &
         T, &
         CS, &
@@ -188,17 +192,19 @@ module Fluid_P_HN__Form
         SB, &
         X_P, X_N, X_He, X_A, &
         Z, A, &
-        Mu_NP, Mu_E
+        Mu_NP, Mu_E, &
+        U_V             !-- Dummy storage for Unused Variable
       real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
         T_EOS
       real ( KDR ), dimension ( : ), intent ( in ) :: &
         M, &
-        N, &
         YE, &
         Shock, &
         T_L_D, &  !-- TableLogDensity
         T_L_T, &  !-- TableLogTemperature
         T_YE      !-- TableElectronFraction
+      integer ( KDI ), dimension ( : ), intent ( out ) :: &
+        Error
       logical ( KDL ), intent ( in ), optional :: &
         UseDeviceOption
     end subroutine Apply_EOS_HN_SB_E_Kernel
@@ -973,12 +979,14 @@ contains
         A     => FV ( oV + 1 : oV + nV, C % MASS_NUMBER_HEAVY ), &
         Mu_NP => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_N_P ), &
         Mu_E  => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_E ), &
+        U_V   => FV ( oV + 1 : oV + nV, C % UNUSED_VARIABLE ), &
         Shock => FF % Value ( oV + 1 : oV + nV, FF % SHOCK ) )
     associate &
       ( T_EOS => C % EOS % Table, &
         T_L_D => C % EOS % LogDensity, &
         T_L_T => C % EOS % LogTemperature, &
-        T_YE  => C % EOS % ElectronFraction )
+        T_YE  => C % EOS % ElectronFraction, &
+        Error => C % EOS % Error )
     
     associate &
       ( T_CFP => PROGRAM_HEADER % Timer ( C % iTimerComputeFromPrimitive ), &
@@ -1007,8 +1015,8 @@ contains
       call C % Compute_SB_G_Kernel &
              ( SB, DS, N, UseDeviceOption = C % AllocatedDevice )
       call C % Apply_EOS_HN_SB_E_Kernel &
-             ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-               T_EOS, M, N, YE, Shock, T_L_D, T_L_T, T_YE, &
+             ( N, P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
+               U_V, T_EOS, M, YE, Shock, T_L_D, T_L_T, T_YE, Error, &
                UseDeviceOption = C % AllocatedDevice )
       call C % Compute_G_G_Kernel &
              ( GE, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E, &
