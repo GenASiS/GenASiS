@@ -253,6 +253,8 @@ contains
         CS ( iV )     =  sqrt ( CS ( iV ) ) * Speed_CGS
         Mu_NP ( iV )  =  Mu_NP ( iV ) * MeV
         Mu_E  ( iV )  =  Mu_E ( iV ) * MeV
+        
+        Error_A ( iV )  = Error_A ( iV ) + Error ( iV ) * 1.0_KDR
 
       end do
       !$OMP end OMP_TARGET_DIRECTIVE parallel do
@@ -298,6 +300,8 @@ contains
         CS ( iV )     =  sqrt ( CS ( iV ) ) * Speed_CGS
         Mu_NP ( iV )  =  Mu_NP ( iV ) * MeV
         Mu_E  ( iV )  =  Mu_E ( iV ) * MeV
+        
+        Error_A ( iV )  = Error_A ( iV ) + Error ( iV ) * 1.0_KDR
 
       end do
       !$OMP end parallel do
@@ -355,6 +359,8 @@ contains
         Mu_NP ( iV )  =  Mu_NP ( iV ) * MeV
         Mu_E  ( iV )  =  Mu_E ( iV ) * MeV
         
+        Error_A ( iV )  = Error_A ( iV ) + Error ( iV ) * 1.0_KDR
+        
       end do
       !$OMP  end OMP_TARGET_DIRECTIVE parallel do
     
@@ -389,6 +395,8 @@ contains
         CS ( iV )     =  sqrt ( CS ( iV ) ) * Speed_CGS
         Mu_NP ( iV )  =  Mu_NP ( iV ) * MeV
         Mu_E  ( iV )  =  Mu_E ( iV ) * MeV
+        
+        Error_A ( iV )  = Error_A ( iV ) + Error ( iV ) * 1.0_KDR
         
       end do
       !$OMP  end OMP_TARGET_DIRECTIVE parallel do

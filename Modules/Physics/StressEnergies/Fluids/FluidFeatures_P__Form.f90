@@ -11,14 +11,15 @@ module FluidFeatures_P__Form
   private
 
     integer ( KDI ), private, parameter :: &
-      N_FIELDS_PERFECT  = 4, &
+      N_FIELDS_PERFECT  = 5, &
       N_VECTORS_PERFECT = 0
 
   type, public, extends ( FluidFeaturesTemplate ) :: FluidFeatures_P_Form
     integer ( KDI ) :: &
       N_FIELDS_PERFECT  = N_FIELDS_PERFECT, &
       N_VECTORS_PERFECT = N_VECTORS_PERFECT, &
-      SHOCK = 0
+      EOS_ERROR = 0, &
+      SHOCK     = 0
     integer ( KDI ), dimension ( 3 ) :: &
       SHOCK_I = 0
     integer ( KDI ) :: &
@@ -236,8 +237,9 @@ contains
     if ( FF % N_FIELDS == 0 ) &
       FF % N_FIELDS = oF + FF % N_FIELDS_PERFECT
 
-    FF % SHOCK    =  oF + 1
-    FF % SHOCK_I  =  oF + [ 2, 3, 4 ]
+    FF % EOS_ERROR  =  oF + 1
+    FF % SHOCK      =  oF + 2
+    FF % SHOCK_I    =  oF + [ 3, 4, 5 ]
 
     !-- variable names 
 
@@ -250,7 +252,8 @@ contains
     end if
 
     Variable ( oF + 1 : oF + FF % N_FIELDS_PERFECT ) &
-      = [ 'Shock              ', &
+      = [ 'EOS_Error          ', &
+          'Shock              ', &
           'Shock_I_1          ', &
           'Shock_I_2          ', &
           'Shock_I_3          ' ]

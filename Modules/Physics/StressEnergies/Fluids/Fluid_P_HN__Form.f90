@@ -180,8 +180,8 @@ module Fluid_P_HN__Form
 
     module subroutine Apply_EOS_HN_SB_E_Kernel &
              ( N, P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-               U_V, T_EOS, M, YE, Shock, T_L_D, T_L_T, T_YE, Error, &
-               UseDeviceOption ) 
+               U_V, Error_A, T_EOS, M, YE, Shock, T_L_D, T_L_T, T_YE, & 
+               Error, UseDeviceOption ) 
       use Basics
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         N, &
@@ -193,7 +193,8 @@ module Fluid_P_HN__Form
         X_P, X_N, X_He, X_A, &
         Z, A, &
         Mu_NP, Mu_E, &
-        U_V             !-- Dummy storage for Unused Variable
+        U_V, &          !-- Dummy storage for Unused Variable
+        Error_A 
       real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
         T_EOS
       real ( KDR ), dimension ( : ), intent ( in ) :: &
@@ -212,7 +213,8 @@ module Fluid_P_HN__Form
 
     module subroutine Apply_EOS_HN_E_Kernel &
              ( N, P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-               U_V, T_EOS, M, YE, T_L_D, T_L_T, T_YE, Error, UseDeviceOption )
+               U_V, Error_A, T_EOS, M, YE, T_L_D, T_L_T, T_YE, Error, &
+               UseDeviceOption )
       use Basics
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         N, &
@@ -224,7 +226,8 @@ module Fluid_P_HN__Form
         X_P, X_N, X_He, X_A, &
         Z, A, &
         Mu_NP, Mu_E, &
-        U_V
+        U_V, &
+        Error_A
       real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
         T_EOS
       real ( KDR ), dimension ( : ), intent ( in ) :: &
@@ -797,6 +800,9 @@ contains
     else
       nV = size ( FV, dim = 1 )
     end if
+    
+    select type ( FF => C % Features )
+    class is ( FluidFeatures_P_Form )
 
     associate &
       ( M_DD_22 => GV ( oV + 1 : oV + nV, G % METRIC_DD_22 ), &
@@ -838,7 +844,8 @@ contains
         A     => FV ( oV + 1 : oV + nV, C % MASS_NUMBER_HEAVY ), &
         Mu_NP => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_N_P ), &
         Mu_E  => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_E ), &
-        U_V   => FV ( oV + 1 : oV + nV, C % UNUSED_VARIABLE ) )
+        U_V   => FV ( oV + 1 : oV + nV, C % UNUSED_VARIABLE ), &
+        Error_A => FF % Value ( oV + 1 : oV + nV, FF % EOS_ERROR ) )
     associate &
       ( T_EOS => C % EOS % Table, &
         T_L_D => C % EOS % LogDensity, &
@@ -868,7 +875,7 @@ contains
 !             M, N, T, YE )
     call C % Apply_EOS_HN_E_Kernel &
            ( N, P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-             U_V, T_EOS, M, YE, T_L_D, T_L_T, T_YE, Error, &
+             U_V, Error_A, T_EOS, M, YE, T_L_D, T_L_T, T_YE, Error, &
              UseDeviceOption = C % AllocatedDevice )
 !    call C % Apply_EOS_HN_SB_Kernel &
 !           ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
@@ -900,6 +907,7 @@ contains
     end associate !-- T_EOS, etc
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
+    end select !-- FF
     end associate !-- FV, etc.
     
   end subroutine ComputeFromPrimitiveCommon
@@ -989,7 +997,8 @@ contains
         Mu_NP => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_N_P ), &
         Mu_E  => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_E ), &
         U_V   => FV ( oV + 1 : oV + nV, C % UNUSED_VARIABLE ), &
-        Shock => FF % Value ( oV + 1 : oV + nV, FF % SHOCK ) )
+        Shock => FF % Value ( oV + 1 : oV + nV, FF % SHOCK ), &
+        Error_A => FF % Value ( oV + 1 : oV + nV, FF % EOS_ERROR ) )
     associate &
       ( T_EOS => C % EOS % Table, &
         T_L_D => C % EOS % LogDensity, &
@@ -1025,7 +1034,7 @@ contains
              ( SB, DS, N, UseDeviceOption = C % AllocatedDevice )
       call C % Apply_EOS_HN_SB_E_Kernel &
              ( N, P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-               U_V, T_EOS, M, YE, Shock, T_L_D, T_L_T, T_YE, Error, &
+               U_V, Error_A, T_EOS, M, YE, Shock, T_L_D, T_L_T, T_YE, Error, &
                UseDeviceOption = C % AllocatedDevice )
       call C % Compute_G_G_Kernel &
              ( GE, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E, &
@@ -1033,7 +1042,7 @@ contains
     else
       call C % Apply_EOS_HN_E_Kernel &
              ( N, P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-               U_V, T_EOS, M, YE, T_L_D, T_L_T, T_YE, Error, &
+               U_V, Error_A, T_EOS, M, YE, T_L_D, T_L_T, T_YE, Error, &
                UseDeviceOption = C % AllocatedDevice )
     end if
     call C % Compute_DS_G_Kernel &
