@@ -89,8 +89,8 @@ module Fluid_P_HN__Form
       Apply_EOS_HN_SB_E_Kernel
     procedure, public, nopass :: &
       Apply_EOS_HN_E_Kernel
-    procedure, public, nopass :: &
-      Apply_EOS_HN_SB_Kernel
+!    procedure, public, nopass :: &
+!      Apply_EOS_HN_SB_Kernel
   end type Fluid_P_HN_Form
 
   
@@ -211,10 +211,11 @@ module Fluid_P_HN__Form
 
 
     module subroutine Apply_EOS_HN_E_Kernel &
-             ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-               T_EOS, M, N, YE, T_L_D, T_L_T, T_YE, UseDeviceOption )
+             ( N, P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
+               U_V, T_EOS, M, YE, T_L_D, T_L_T, T_YE, Error, UseDeviceOption )
       use Basics
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        N, &
         P, &
         T, &
         CS, &
@@ -222,46 +223,52 @@ module Fluid_P_HN__Form
         SB, &
         X_P, X_N, X_He, X_A, &
         Z, A, &
-        Mu_NP, Mu_E
+        Mu_NP, Mu_E, &
+        U_V
       real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
         T_EOS
       real ( KDR ), dimension ( : ), intent ( in ) :: &
         M, &
-        N, &
         YE, &
         T_L_D, &  !-- TableLogDensity
         T_L_T, &  !-- TableLogTemperature
         T_YE      !-- TableElectronFraction
+      integer ( KDI ), dimension ( : ), intent ( out ) :: &
+        Error
       logical ( KDL ), intent ( in ), optional :: &
         UseDeviceOption
     end subroutine Apply_EOS_HN_E_Kernel
 
 
-    module subroutine Apply_EOS_HN_SB_Kernel &
-             ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-               T_EOS, M, N, YE, T_L_D, T_L_T, T_YE, UseDeviceOption )
-      use Basics
-      real ( KDR ), dimension ( : ), intent ( inout ) :: &
-        P, &
-        T, &
-        CS, &
-        E, &
-        SB, &
-        X_P, X_N, X_He, X_A, &
-        Z, A, &
-        Mu_NP, Mu_E
-      real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
-        T_EOS
-      real ( KDR ), dimension ( : ), intent ( in ) :: &
-        M, &
-        N, &
-        YE, &
-        T_L_D, &  !-- TableLogDensity
-        T_L_T, &  !-- TableLogTemperature
-        T_YE      !-- TableElectronFraction
-      logical ( KDL ), intent ( in ), optional :: &
-        UseDeviceOption
-    end subroutine Apply_EOS_HN_SB_Kernel
+!    module subroutine Apply_EOS_HN_SB_Kernel &
+!             ( N, P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
+!               U_V, T_EOS, M, N, YE, T_L_D, T_L_T, T_YE, Error, &
+!               UseDeviceOption )
+!      use Basics
+!      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+!        N, &
+!        P, &
+!        T, &
+!        CS, &
+!        E, &
+!        SB, &
+!        X_P, X_N, X_He, X_A, &
+!        Z, A, &
+!        Mu_NP, Mu_E, &
+!        U_V
+!      real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
+!        T_EOS
+!      real ( KDR ), dimension ( : ), intent ( in ) :: &
+!        M, &
+!        YE, &
+!        T_L_D, &  !-- TableLogDensity
+!        T_L_T, &  !-- TableLogTemperature
+!        T_YE      !-- TableElectronFraction
+!      integer ( KDI ), dimension ( : ), intent ( out ) :: &
+!        Error
+!      logical ( KDL ), intent ( in ), optional :: &
+!        UseDeviceOption
+!    end subroutine Apply_EOS_HN_SB_Kernel
 
 
     module subroutine ComputeRawFluxesKernel &
@@ -830,12 +837,14 @@ contains
         Z     => FV ( oV + 1 : oV + nV, C % ATOMIC_NUMBER_HEAVY ), &
         A     => FV ( oV + 1 : oV + nV, C % MASS_NUMBER_HEAVY ), &
         Mu_NP => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_N_P ), &
-        Mu_E  => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_E ) )
+        Mu_E  => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_E ), &
+        U_V   => FV ( oV + 1 : oV + nV, C % UNUSED_VARIABLE ) )
     associate &
       ( T_EOS => C % EOS % Table, &
         T_L_D => C % EOS % LogDensity, &
         T_L_T => C % EOS % LogTemperature, &
-        T_YE  => C % EOS % ElectronFraction )
+        T_YE  => C % EOS % ElectronFraction, &
+        Error => C % EOS % Error )
 
     associate &
       ( T_CFP => PROGRAM_HEADER % Timer ( C % iTimerComputeFromPrimitive ), &
@@ -858,8 +867,8 @@ contains
 !           ( P, E, CS, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
 !             M, N, T, YE )
     call C % Apply_EOS_HN_E_Kernel &
-           ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-             T_EOS, M, N, YE, T_L_D, T_L_T, T_YE, &
+           ( N, P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
+             U_V, T_EOS, M, YE, T_L_D, T_L_T, T_YE, Error, &
              UseDeviceOption = C % AllocatedDevice )
 !    call C % Apply_EOS_HN_SB_Kernel &
 !           ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
@@ -1023,8 +1032,8 @@ contains
                UseDeviceOption = C % AllocatedDevice )
     else
       call C % Apply_EOS_HN_E_Kernel &
-             ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-               T_EOS, M, N, YE, T_L_D, T_L_T, T_YE, &
+             ( N, P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
+               U_V, T_EOS, M, YE, T_L_D, T_L_T, T_YE, Error, &
                UseDeviceOption = C % AllocatedDevice )
     end if
     call C % Compute_DS_G_Kernel &
