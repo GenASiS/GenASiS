@@ -98,6 +98,8 @@ contains
     V_3 = 0.0_KDR
 
     call PSC % ExchangeGhostData ( F )
+    
+    call F % UpdateDevice ( )
 
     do iD = 1, PS % nDimensions
       associate &
@@ -107,8 +109,10 @@ contains
       call PS % ApplyBoundaryConditions ( F, iD, iaO )
       end associate !-- iaI, etc.
     end do !-- iD
-
+    
     call F % ComputeFromTemperature ( F, G, G )
+    
+    call F % UpdateHost ( )
 
     end associate !-- N, etc.
     end select !-- PSC
@@ -249,15 +253,22 @@ contains
     call Show ( Profile ( 1 : 5, iELECTRON_FRACTION_TS ), &
                 'ElectronFractionTable' )
     call Show ( ElectronFraction ( 1 : 5 ), 'ElectronFractionEdge' )
-
-    Radius          =  Radius          *  UNIT % CENTIMETER
-    RadialVelocity  =  RadialVelocity  *  UNIT % CENTIMETER / UNIT % SECOND
-    Density         =  Density         *  UNIT % MASS_DENSITY_CGS
-    Temperature     =  Temperature     *  UNIT % KELVIN
-    SpecificEnergy  =  SpecificEnergy  *  UNIT % ERG / UNIT % GRAM
+    
+    call Show ( UNIT % CENTIMETER, 'UNIT % CENTIMETER' )
+    call Show ( UNIT % SECOND    , 'UNIT % SECOND ' )
+    call Show ( UNIT % CENTIMETER / UNIT % SECOND, 'Centimeter per second' )
+    
+    Radius         =  Radius          *  UNIT % CENTIMETER
+    Density        =  Density         *  UNIT % MASS_DENSITY_CGS
+    Temperature    =  Temperature     *  UNIT % KELVIN
+    !-- FIXME: Extraneous parenthesis needed to avoid segfault with XL
+    SpecificEnergy =  SpecificEnergy  *  ( UNIT % ERG / UNIT % GRAM )
+    RadialVelocity =  RadialVelocity  *  ( UNIT % CENTIMETER / UNIT % SECOND )
 
     !-- SplineInterpolation initialization
-
+    
+    call Show ( 'Initializing Spline Interpolation', CONSOLE % INFO_5 )
+    
     call SI ( iRADIAL_VELOCITY_SI ) % Initialize &
            ( Radius, RadialVelocity, VerbosityOption = CONSOLE % INFO_3 )
     call SI ( iDENSITY_SI ) % Initialize &

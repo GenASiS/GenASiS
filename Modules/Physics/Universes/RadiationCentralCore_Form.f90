@@ -61,7 +61,9 @@ contains
 
   subroutine Initialize_RCC &
                ( RCC, RadiationName, RadiationType, MomentsType, FluidType, &
-                 GeometryType, Name, EnergySpacingOption, FinishTimeOption, &
+                 GeometryType, Name, EnergySpacingOption, &
+                 RadiationUseDeviceOption, FluidUseDeviceOption, &
+                 GeometryUseDeviceOption, FinishTimeOption, &
                  CourantFactorOption, GravityFactorOption, &
                  LimiterParameterOption, ShockThresholdOption, &
                  MinEnergyOption, MaxEnergyOption, MinWidthEnergyOption, &
@@ -82,6 +84,10 @@ contains
       Name
     character ( * ), intent ( in ), optional :: &
       EnergySpacingOption
+    logical ( KDL ), intent ( in ) , optional :: &
+      RadiationUseDeviceOption, &
+      FluidUseDeviceOption, &
+      GeometryUseDeviceOption
     real ( KDR ), intent ( in ), optional :: &
       FinishTimeOption, &
       CourantFactorOption, &
@@ -117,7 +123,9 @@ contains
     call RCC % AllocateIntegrator &
            ( RadiationName )
     call RCC % InitializePositionSpace &
-           ( GeometryType, RadiusMaxOption = RadiusMaxOption, &
+           ( GeometryType, &
+             GeometryUseDeviceOption = GeometryUseDeviceOption, &
+             RadiusMaxOption = RadiusMaxOption, &
              RadiusCoreOption = RadiusCoreOption, &
              RadialRatioOption = RadialRatioOption, &
              nCellsPolarOption = nCellsPolarOption )
@@ -129,7 +137,9 @@ contains
              EnergyScaleOption = EnergyScaleOption, &
              nCellsEnergyOption = nCellsEnergyOption )
     call RCC % InitializeFluid &
-           ( FluidType, LimiterParameterOption = LimiterParameterOption, &
+           ( FluidType, &
+             FluidUseDeviceOption = FluidUseDeviceOption, &
+             LimiterParameterOption = LimiterParameterOption, &
              ShockThresholdOption = ShockThresholdOption )
     call RCC % InitializeRadiation &
            ( RadiationName, RadiationType )

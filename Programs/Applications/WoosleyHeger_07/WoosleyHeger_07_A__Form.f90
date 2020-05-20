@@ -56,17 +56,25 @@ contains
     character ( * ), intent ( in )  :: &
       Name
 
+    logical ( KDL ) :: &
+      UseDevice
     character ( LDL ) :: &
       GeometryType
 
     GeometryType = 'NEWTONIAN'
     call PROGRAM_HEADER % GetParameter ( GeometryType, 'GeometryType' )
+    
+    UseDevice = ( OffloadEnabled ( ) .and. GetNumberOfDevices ( ) >= 1 )
+    call PROGRAM_HEADER % GetParameter ( UseDevice, 'UseDevice' )
 
     call WH % Initialize &
            ( RadiationName = [ 'None' ], RadiationType = [ 'NONE' ], &
              MomentsType = 'NONE', FluidType = 'HEAVY_NUCLEUS', &
              GeometryType = GeometryType, Name = Name, &
-             ShockThresholdOption = 1.0_KDR, nWriteOption = 30 )
+             ShockThresholdOption = 1.0_KDR, nWriteOption = 30,  &
+             RadiationUseDeviceOption = UseDevice, &
+             FluidUseDeviceOption = UseDevice, &
+             GeometryUseDeviceOption = UseDevice )
 
   end subroutine InitializeRadiationCentralCore
 

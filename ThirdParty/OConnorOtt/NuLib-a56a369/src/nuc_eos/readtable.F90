@@ -228,7 +228,15 @@ subroutine readtable(eos_filename)
 
   eos_tempmin = 10.0d0**logtemp(1)
   eos_tempmax = 10.0d0**logtemp(ntemp)
-
+  
+  write(6,*) "Updating values on GPU"
+#ifdef ENABLE_OMP_OFFLOAD  
+  !$OMP  target update &
+  !$OMP& to ( nrho, ntemp, nye, warn_from, energy_shift, precision, &
+  !$OMP&      eos_rhomin, eos_rhomax, eos_yemin, eos_yemax, eos_tempmin, &
+  !$OMP&      eos_tempmax, t_max_hack, nvars, mev_to_erg, amu_cgs, amu_mev, &
+  !$OMP&      pi, ggrav, temp_mev_to_kelvin, clight, kb_erg, kb_mev )
+#endif
   write(6,*) "Done reading eos tables"
 
 

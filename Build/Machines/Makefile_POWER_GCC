@@ -4,13 +4,13 @@ FORTRAN_COMPILE      = mpif90 -c -cpp
 FORTRAN_BOUND_CHECK  = -fbounds-check
 FORTRAN_DEBUG        = -g -ffpe-trap=invalid,zero,overflow #-Wall
 FORTRAN_OPTIMIZE     = -Ofast
-FORTRAN_PROFILE      = 
+FORTRAN_PROFILE      = -O2 -g
 
 CC_COMPILE           = mpicc -c
 CC_DEBUG             = -g
 CC_OPTIMIZE          = $(FORTRAN_OPTIMIZE)
 
-LINK = mpif90 -fopenmp
+LINK = mpif90
 
 #-- Silo library include and link line flag and location
 SILO_DIR=/sw/peak/caascade/silo/4.10.2/gcc8.1.0

@@ -2,8 +2,15 @@
 subroutine findrho_press(lr0,lt,y,lpressin,keyerrr,tol)
 
   use eosmodule
+  use nuc_eos
+  use nuc_eos_bisection
+  use nuc_eos_find
 
   implicit none
+  
+#ifdef ENABLE_OMP_OFFLOAD  
+  !$OMP declare target
+#endif 
 
   !given initial guess of density
   real*8 :: lr0
@@ -38,7 +45,8 @@ subroutine findrho_press(lr0,lt,y,lpressin,keyerrr,tol)
   !Note: We are using Ewald's Lagrangian interpolator here!
 
   !first use initial guess to estimate derivatives
-  call findthis(lr,lt,y,lpress_of_guess,alltables(:,:,:,1),d1,d2,d3)
+  !-- FIXME: findrho_press: need to adjust to new interface
+  !call findthis(lr,lt,y,lpress_of_guess,alltables(:,:,:,1),d1,d2,d3)
   
   first_lpress = lpress_of_guess
 
@@ -56,9 +64,13 @@ subroutine findrho_press(lr0,lt,y,lpressin,keyerrr,tol)
 !     write(*,*) i,lr,d1,lpressin-lpress_of_guess
      ldr= (lpressin-lpress_of_guess)/d1 
      if (abs(ldr).gt.5.0d0) then
+#ifndef ENABLE_OMP_OFFLOAD
         write(*,*) i,ldr,d1,lr,lr_new
+#endif
         keyerrr = 473
+#ifndef ENABLE_OMP_OFFLOAD
         write(*,*) "dpdrho very small"
+#endif
         return
      endif
      lr_new = lr+ldr
@@ -73,7 +85,8 @@ subroutine findrho_press(lr0,lt,y,lpressin,keyerrr,tol)
      
      !use to get next iteration of NR
      lr = lr_new     
-     call findthis(lr,lt,y,lpress_of_guess,alltables(:,:,:,1),d1,d2,d3)
+     !-- FIXME: findrho_press: need to adjust to new interface
+     !call findthis(lr,lt,y,lpress_of_guess,alltables(:,:,:,1),d1,d2,d3)
      if (abs(lpressin - lpress_of_guess).lt.tol*abs(lpressin)) then
         !yes, we got it!
         lr0 = lr
@@ -93,15 +106,19 @@ subroutine findrho_press(lr0,lt,y,lpressin,keyerrr,tol)
   !we may fail in the NR, after itmax reached.  Then we revert to the bisection method.
   if(i.ge.itmax) then
      keyerrr=667
-     call bisection_rho(lr0,lt,y,lpressin,lr,alltables(:,:,:,1),keyerrr,3)
+     !-- FIXME: findrho_press: need to adjust to new interface
+     !call bisection_rho(lr0,lt,y,lpressin,lr,alltables(:,:,:,1),keyerrr,3)
      if(keyerrr.eq.667) then
         ! total failure
-        call findthis(lr,lt,y,lpress_of_guess,alltables(:,:,:,1),d1,d2,d3)
+        !-- FIXME: findrho_press: need to adjust to new interface
+        !call findthis(lr,lt,y,lpress_of_guess,alltables(:,:,:,1),d1,d2,d3)
+#ifndef ENABLE_OMP_OFFLOAD
         write(*,*) "EOS: Did not converge in findrho_press!"
         write(*,*) "iteration,logrho0,logtemp,ye,lpressin,lpress_first,rhoreturn,press_of_rhoreturn"
         write(*,"(i4,1P10E19.10)") i,lr0,lt,y,lpressin,first_lpress,lr,lpress_of_guess
         write(*,*) "Tried calling bisection... didn't help... :-/"
         write(*,*) "Bisection error: ",keyerrr
+#endif        
      endif
   endif
     

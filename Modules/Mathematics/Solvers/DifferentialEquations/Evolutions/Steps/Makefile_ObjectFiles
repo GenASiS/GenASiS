@@ -7,5 +7,6 @@ STEPS = \
   Step_RK_C_BSLL_ASC_CSLD_1D__Template.o \
   Step_RK_C_BSLL_ASC_CSLD__Template.o \
   Step_RK_C_ASC_1D__Template.o \
+  Step_RK_C_ASC__Kernel.o \
   Step_RK_C_ASC__Template.o \
   Step_RK__Template.o

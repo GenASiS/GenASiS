@@ -1,5 +1,5 @@
 ThirdParty.a: OConnorOtt Timmes
-	cp -f $(PATH_OCONNOR_OTT)/*.mod . 
+	find $(PATH_OCONNOR_OTT) -name '*.mod' -exec cp '{}' . \;
 	mkdir -p ThirdPartyObjects
 	cd ThirdPartyObjects && ar x ../$(PATH_OCONNOR_OTT)/nulib.a
 	cd ThirdPartyObjects && cp ../$(PATH_TIMMES)/*.o .

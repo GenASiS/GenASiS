@@ -1,7 +1,9 @@
 module Fluid_P_HN__Form
 
   !-- Fluid_Perfect_RepresentativeHeavyNucleus__Form
-
+  
+  use EOSMODULE 
+  use NUC_EOS
   use Basics
   use Mathematics
   use StressEnergyBasics
@@ -15,8 +17,22 @@ module Fluid_P_HN__Form
     integer ( KDI ), private, parameter :: &
       N_PRIMITIVE_HEAVY_NUCLEUS = 1, &
       N_CONSERVED_HEAVY_NUCLEUS = 1, &
-      N_FIELDS_HEAVY_NUCLEUS    = 10, &
+      N_FIELDS_HEAVY_NUCLEUS    = 11, &
       N_VECTORS_HEAVY_NUCLEUS   = 0
+    
+  type, private :: Table_EOS_HN_Form
+    integer ( KDI ), dimension ( : ), allocatable :: &
+      Error
+    real ( KDR ), dimension ( : ), allocatable :: &
+      LogDensity, &
+      LogTemperature, &
+      ElectronFraction
+    real ( KDR ), dimension ( :, :, :, : ), allocatable :: &
+      Table
+  contains
+    final :: &
+      FinalizeTable_EOS
+  end type Table_EOS_HN_Form
 
   type, public, extends ( Fluid_P_Template ) :: Fluid_P_HN_Form
     integer ( KDI ) :: &
@@ -35,15 +51,24 @@ module Fluid_P_HN__Form
       CHEMICAL_POTENTIAL_N_P      = 0, &  
         !-- a.k.a. mu_hat. Includes m_n - m_p. (mu_n and mu_p both
         !   measured with respect to m_n.)
-      CHEMICAL_POTENTIAL_E      = 0     
+      CHEMICAL_POTENTIAL_E        = 0, &
+      UNUSED_VARIABLE             = 0
         !-- Includes m_e.
+    logical ( KDL ), private :: &
+      Allocated_EOS = .false.
+    type ( Table_EOS_HN_Form ), public, pointer :: &
+      EOS => null ( )
   contains
     procedure, public, pass :: &
       Initialize_P_HN
     procedure, public, pass :: &
+      AllocateDevice => AllocateDevice_P_HN
+    procedure, public, pass :: &
       SetPrimitiveConserved
     procedure, public, pass :: &
       SetOutput
+    final :: &
+      Finalize
     procedure, public, pass ( C ) :: &
       ComputeFromTemperature
     procedure, public, pass ( C ) :: &
@@ -64,10 +89,11 @@ module Fluid_P_HN__Form
       Apply_EOS_HN_SB_E_Kernel
     procedure, public, nopass :: &
       Apply_EOS_HN_E_Kernel
-    procedure, public, nopass :: &
-      Apply_EOS_HN_SB_Kernel
+!    procedure, public, nopass :: &
+!      Apply_EOS_HN_SB_Kernel
   end type Fluid_P_HN_Form
 
+  
     private :: &
       InitializeBasics, &
       SetUnits, &
@@ -82,8 +108,202 @@ module Fluid_P_HN__Form
       Pressure_CGS, &
       Speed_CGS, &
       MeV
+    
+    !-- OConnorOtt NucEOS-specific variables
+    real ( KDR ), public, protected :: &
+      EOS_RF_Accuracy     !-- EOS_RootFinding_Accuracy
+    integer ( KDI ), public, parameter :: &
+      EOS_Apply_EOS_HN_T = 1_KDI, &   !-- T input
+      EOS_Apply_EOS_HN_E = 0_KDI, &   !-- E input, solve for T
+      EOS_Apply_EOS_HN_S = 2_KDI      !-- S input, solve for T
     logical ( KDL ), private, protected :: &
       TableInitialized = .false.
+    type ( Table_EOS_HN_Form ), pointer, private, protected :: &
+      EOS_Pointer
+      
+  interface 
+  
+    module subroutine Compute_DE_G_Kernel ( DE, N, YE, UseDeviceOption )
+     use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: & 	 	 
+        DE
+      real ( KDR ), dimension ( : ), intent ( in ) :: & 	 	 
+        N, &
+        YE
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine Compute_DE_G_Kernel
+
+
+    module subroutine Compute_YE_G_Kernel ( YE, DE, N, UseDeviceOption )
+      !-- Compute_ProtonFraction_Galilean_Kernel
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        YE, &
+        DE
+      real ( KDR ), dimension ( : ), intent ( in ) :: & 	 	 
+        N 	 	 
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine Compute_YE_G_Kernel
+    
+    
+    module subroutine Apply_EOS_HN_T_Kernel &
+             ( N, T, P, E, CS, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
+               U_V, T_EOS, M, YE, T_L_D, T_L_T, T_YE, Error, UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        N, &
+        T, &
+        P, &
+        E, &
+        CS, &
+        SB, &
+        X_P, X_N, X_He, X_A, &
+        Z, A, &
+        Mu_NP, Mu_E, &
+        U_V             !-- Dummy storage for Unused Variable
+      real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
+        T_EOS
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        M, &
+        YE, &
+        T_L_D, &  !-- TableLogDensity
+        T_L_T, &  !-- TableLogTemperature
+        T_YE      !-- TableElectronFraction
+      integer ( KDI ), dimension ( : ), intent ( out ) :: &
+        Error
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine Apply_EOS_HN_T_Kernel
+    
+
+    module subroutine Apply_EOS_HN_SB_E_Kernel &
+             ( N, P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
+               U_V, Error_A, T_EOS, M, YE, Shock, T_L_D, T_L_T, T_YE, & 
+               Error, UseDeviceOption ) 
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        N, &
+        P, &
+        T, &
+        CS, &
+        E, &
+        SB, &
+        X_P, X_N, X_He, X_A, &
+        Z, A, &
+        Mu_NP, Mu_E, &
+        U_V, &          !-- Dummy storage for Unused Variable
+        Error_A 
+      real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
+        T_EOS
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        M, &
+        YE, &
+        Shock, &
+        T_L_D, &  !-- TableLogDensity
+        T_L_T, &  !-- TableLogTemperature
+        T_YE      !-- TableElectronFraction
+      integer ( KDI ), dimension ( : ), intent ( out ) :: &
+        Error
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine Apply_EOS_HN_SB_E_Kernel
+
+
+    module subroutine Apply_EOS_HN_E_Kernel &
+             ( N, P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
+               U_V, Error_A, T_EOS, M, YE, T_L_D, T_L_T, T_YE, Error, &
+               UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        N, &
+        P, &
+        T, &
+        CS, &
+        E, &
+        SB, &
+        X_P, X_N, X_He, X_A, &
+        Z, A, &
+        Mu_NP, Mu_E, &
+        U_V, &
+        Error_A
+      real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
+        T_EOS
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        M, &
+        YE, &
+        T_L_D, &  !-- TableLogDensity
+        T_L_T, &  !-- TableLogTemperature
+        T_YE      !-- TableElectronFraction
+      integer ( KDI ), dimension ( : ), intent ( out ) :: &
+        Error
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine Apply_EOS_HN_E_Kernel
+
+
+!    module subroutine Apply_EOS_HN_SB_Kernel &
+!             ( N, P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
+!               U_V, T_EOS, M, N, YE, T_L_D, T_L_T, T_YE, Error, &
+!               UseDeviceOption )
+!      use Basics
+!      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+!        N, &
+!        P, &
+!        T, &
+!        CS, &
+!        E, &
+!        SB, &
+!        X_P, X_N, X_He, X_A, &
+!        Z, A, &
+!        Mu_NP, Mu_E, &
+!        U_V
+!      real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
+!        T_EOS
+!      real ( KDR ), dimension ( : ), intent ( in ) :: &
+!        M, &
+!        YE, &
+!        T_L_D, &  !-- TableLogDensity
+!        T_L_T, &  !-- TableLogTemperature
+!        T_YE      !-- TableElectronFraction
+!      integer ( KDI ), dimension ( : ), intent ( out ) :: &
+!        Error
+!      logical ( KDL ), intent ( in ), optional :: &
+!        UseDeviceOption
+!    end subroutine Apply_EOS_HN_SB_Kernel
+
+
+    module subroutine ComputeRawFluxesKernel &
+             ( F_DE, DE, V_Dim, UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        F_DE
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        DE, &
+        V_Dim
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine ComputeRawFluxesKernel
+
+
+    module subroutine ComputeCenterStatesKernel &
+             ( DE_ICL, DE_ICR, DE_IL, DE_IR, V_Dim_IL, V_Dim_IR, &
+               AP_I, AM_I, AC_I, UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        DE_ICL, DE_ICR
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        DE_IL, DE_IR, &
+        V_Dim_IL, V_Dim_IR, &
+        AP_I, &
+        AM_I, &
+        AC_I
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine ComputeCenterStatesKernel
+
+  end interface
 
 contains
 
@@ -141,8 +361,10 @@ contains
              UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndicesOption )
 
-    if ( TableInitialized ) &
+    if ( TableInitialized ) then
+      F % EOS => EOS_Pointer
       return
+    end if
 
     call DelayFileAccess ( PROGRAM_HEADER % Communicator % Rank )
     call READTABLE &
@@ -153,6 +375,14 @@ contains
 !    call READTABLE &
 !           ( '../Parameters/Hempel_SFHoEOS_rho222_temp180_ye60_version_1.1' &
 !             // '_20120817.h5' )
+    allocate ( F % EOS )
+    allocate ( F % EOS % Error ( nValues ) )
+    allocate ( F % EOS % LogDensity, source = logrho )
+    allocate ( F % EOS % LogTemperature, source = logtemp )
+    allocate ( F % EOS % ElectronFraction, source = ye )
+    allocate ( F % EOS % Table, source = alltables )
+    F % Allocated_EOS = .true.
+    EOS_Pointer => F % EOS
 
     !-- Historical Oak Ridge Shift, accounting for nuclear binding energy
     OR_Shift = 8.9_KDR * UNIT % MEGA_ELECTRON_VOLT &
@@ -163,10 +393,43 @@ contains
     Pressure_CGS        =  UNIT % BARYE
     Speed_CGS           =  UNIT % CENTIMETER  /  UNIT % SECOND
     MeV                 =  UNIT % MEGA_ELECTRON_VOLT
+    EOS_RF_Accuracy     =  1.0e-9_KDR
 
     TableInitialized  =  .true.
 
   end subroutine Initialize_P_HN
+  
+  
+  subroutine AllocateDevice_P_HN ( S ) 
+    
+    class ( Fluid_P_HN_Form ), intent ( inout ) :: &
+      S
+      
+    type ( c_ptr ) :: &
+      D_P  !-- Device Pointer
+   
+    call AllocateDevice ( S % EOS % Error, D_P )
+    call AssociateHost ( D_P, S % EOS % Error )
+    
+    call AllocateDevice ( S % EOS % Table, D_P )
+    call AssociateHost  ( D_P, S % EOS % Table )
+    call UpdateDevice   ( S % EOS % Table, D_P )
+    
+    call AllocateDevice ( S % EOS % LogDensity, D_P )
+    call AssociateHost  ( D_P, S % EOS % LogDensity ) 
+    call UpdateDevice   ( S % EOS % LogDensity, D_P )
+    
+    call AllocateDevice ( S % EOS % LogTemperature, D_P )
+    call AssociateHost  ( D_P, S % EOS % LogTemperature )
+    call UpdateDevice   ( S % EOS % LogTemperature, D_P )
+    
+    call AllocateDevice ( S % EOS % ElectronFraction, D_P )
+    call AssociateHost  ( D_P, S % EOS % ElectronFraction )
+    call UpdateDevice   ( S % EOS % ElectronFraction, D_P )
+    
+    call S % StorageForm % AllocateDevice ( )
+      
+  end subroutine AllocateDevice_P_HN
 
 
   subroutine SetPrimitiveConserved ( C )
@@ -260,6 +523,7 @@ contains
     F % MASS_NUMBER_HEAVY           =  oF +  8
     F % CHEMICAL_POTENTIAL_N_P      =  oF +  9
     F % CHEMICAL_POTENTIAL_E        =  oF + 10
+    F % UNUSED_VARIABLE             =  of + 11
 
     !-- variable names 
 
@@ -281,7 +545,8 @@ contains
           'AtomicNumberHeavy       ', &
           'MassNumberHeavy         ', &
           'ChemicalPotential_N_P   ', &
-          'ChemicalPotential_E     ' ]
+          'ChemicalPotential_E     ', &
+          'UnusedVariable          ' ]
     
     !-- units
 
@@ -351,6 +616,43 @@ contains
   end subroutine SetOutput
   
   
+  impure elemental subroutine Finalize ( F )
+    
+    type ( Fluid_P_HN_Form ), intent ( inout ) :: &
+      F
+    
+    if ( F % Allocated_EOS ) then
+      if ( associated ( EOS_Pointer, F % EOS ) ) &
+        nullify ( EOS_Pointer )
+      deallocate ( F % EOS )
+      !-- FIXME: Need to deallocate device memory for EOS
+    else
+      nullify ( F % EOS )
+    end if
+    
+    nullify ( F % EOS )
+    
+  end subroutine Finalize 
+  
+  
+  impure elemental subroutine FinalizeTable_EOS ( T )
+    
+    type ( Table_EOS_HN_Form ), intent ( inout ), target :: &
+      T
+    
+    if ( allocated ( T % Table ) ) &
+      deallocate ( T % Table )
+  
+    if ( allocated ( T % ElectronFraction ) ) &
+      deallocate ( T % ElectronFraction )
+    if ( allocated ( T % LogTemperature ) ) &
+      deallocate ( T % LogTemperature )
+    if ( allocated ( T % LogDensity ) ) &
+      deallocate ( T % LogDensity )
+  
+  end subroutine FinalizeTable_EOS
+  
+
   subroutine ComputeFromTemperature &
                ( Storage_C, C, G, Storage_G, nValuesOption, oValueOption )
 
@@ -425,24 +727,38 @@ contains
         Z     => FV ( oV + 1 : oV + nV, C % ATOMIC_NUMBER_HEAVY ), &
         A     => FV ( oV + 1 : oV + nV, C % MASS_NUMBER_HEAVY ), &
         Mu_NP => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_N_P ), &
-        Mu_E  => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_E ) )
+        Mu_E  => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_E ), &
+        U_V   => FV ( oV + 1 : oV + nV, C % UNUSED_VARIABLE ) )
+    associate &
+      ( T_EOS => C % EOS % Table, &
+        T_L_D => C % EOS % LogDensity, &
+        T_L_T => C % EOS % LogTemperature, &
+        T_YE  => C % EOS % ElectronFraction, &
+        Error => C % EOS % Error )
 
-    call C % Compute_M_Kernel ( M, C % BaryonMassReference )
+    call C % Compute_M_Kernel &
+           ( M, C % BaryonMassReference, &
+             UseDeviceOption = C % AllocatedDevice )
     call C % Apply_EOS_HN_T_Kernel &
-           ( P, E, CS, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-             M, N, T, YE )
+           ( N, T, P, E, CS, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, U_V, &
+             T_EOS, M, YE, T_L_D, T_L_T, T_YE, Error, &
+             UseDeviceOption = C % AllocatedDevice )
     call C % Compute_D_S_G_Kernel &
-           ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
+           ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33, &
+             UseDeviceOption = C % AllocatedDevice )
     call C % Compute_G_G_Kernel &
-           ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
+           ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E, &
+             UseDeviceOption = C % AllocatedDevice )
     call C % Compute_DS_G_Kernel &
-           ( DS, N, SB )
+           ( DS, N, SB, UseDeviceOption = C % AllocatedDevice )
     call C % Compute_DE_G_Kernel &
-           ( DE, N, YE )
+           ( DE, N, YE, UseDeviceOption = C % AllocatedDevice )
     call C % Compute_FE_P_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
-             V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33 )
+             V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
+             UseDeviceOption = C % AllocatedDevice )
 
+    end associate !-- T_EOS, etc.
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
     end associate !-- FV, etc.
@@ -484,6 +800,9 @@ contains
     else
       nV = size ( FV, dim = 1 )
     end if
+    
+    select type ( FF => C % Features )
+    class is ( FluidFeatures_P_Form )
 
     associate &
       ( M_DD_22 => GV ( oV + 1 : oV + nV, G % METRIC_DD_22 ), &
@@ -524,35 +843,71 @@ contains
         Z     => FV ( oV + 1 : oV + nV, C % ATOMIC_NUMBER_HEAVY ), &
         A     => FV ( oV + 1 : oV + nV, C % MASS_NUMBER_HEAVY ), &
         Mu_NP => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_N_P ), &
-        Mu_E  => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_E ) )
+        Mu_E  => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_E ), &
+        U_V   => FV ( oV + 1 : oV + nV, C % UNUSED_VARIABLE ), &
+        Error_A => FF % Value ( oV + 1 : oV + nV, FF % EOS_ERROR ) )
+    associate &
+      ( T_EOS => C % EOS % Table, &
+        T_L_D => C % EOS % LogDensity, &
+        T_L_T => C % EOS % LogTemperature, &
+        T_YE  => C % EOS % ElectronFraction, &
+        Error => C % EOS % Error )
 
-    call Copy ( C % Value ( :, C % PRESSURE ), P )
-    call Copy ( C % Value ( :, C % TEMPERATURE ), T )
+    associate &
+      ( T_CFP => PROGRAM_HEADER % Timer ( C % iTimerComputeFromPrimitive ), &
+        T_CE  => PROGRAM_HEADER % Timer ( C % iTimerComputeEigenspeed ), &
+        T_AE  => PROGRAM_HEADER % Timer ( C % iTimerApply_EOS ) )
 
-    call C % Compute_M_Kernel ( M, C % BaryonMassReference )
+    call T_CFP % Start ( )
+    call Copy ( C % Value ( :, C % PRESSURE ), P, &
+                UseDeviceOption = C % AllocatedDevice )
+    call Copy ( C % Value ( :, C % TEMPERATURE ), T, &
+                UseDeviceOption = C % AllocatedDevice )
+
+    call C % Compute_M_Kernel &
+           ( M, C % BaryonMassReference, &
+             UseDeviceOption = C % AllocatedDevice )
+    call T_CFP % Stop ( )
+    
+    call T_AE % Start ( )
 !    call C % Apply_EOS_HN_T_Kernel &
 !           ( P, E, CS, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
 !             M, N, T, YE )
     call C % Apply_EOS_HN_E_Kernel &
-           ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-             M, N, YE )
+           ( N, P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
+             U_V, Error_A, T_EOS, M, YE, T_L_D, T_L_T, T_YE, Error, &
+             UseDeviceOption = C % AllocatedDevice )
 !    call C % Apply_EOS_HN_SB_Kernel &
 !           ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
 !             M, N, YE )
+    call T_AE % Stop ( )
+    
+    call T_CFP % Start ( )
     call C % Compute_D_S_G_Kernel &
-           ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33 )
+           ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33, &
+             UseDeviceOption = C % AllocatedDevice )
     call C % Compute_G_G_Kernel &
-           ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
+           ( G, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E, &
+             UseDeviceOption = C % AllocatedDevice )
     call C % Compute_DS_G_Kernel &
-           ( DS, N, SB )
+           ( DS, N, SB, UseDeviceOption = C % AllocatedDevice )
     call C % Compute_DE_G_Kernel &
-           ( DE, N, YE )
+           ( DE, N, YE, UseDeviceOption = C % AllocatedDevice )
+    call T_CFP % Stop ( )
+    
+    call T_CE % Start ( )
     call C % Compute_FE_P_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
-             V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33 )
-
+             V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
+             UseDeviceOption = C % AllocatedDevice )
+    call T_CE % Stop ( )
+    
+    end associate !-- T_CFP, etc.
+    
+    end associate !-- T_EOS, etc
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
+    end select !-- FF
     end associate !-- FV, etc.
     
   end subroutine ComputeFromPrimitiveCommon
@@ -641,41 +996,74 @@ contains
         A     => FV ( oV + 1 : oV + nV, C % MASS_NUMBER_HEAVY ), &
         Mu_NP => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_N_P ), &
         Mu_E  => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_E ), &
-        Shock => FF % Value ( oV + 1 : oV + nV, FF % SHOCK ) )
+        U_V   => FV ( oV + 1 : oV + nV, C % UNUSED_VARIABLE ), &
+        Shock => FF % Value ( oV + 1 : oV + nV, FF % SHOCK ), &
+        Error_A => FF % Value ( oV + 1 : oV + nV, FF % EOS_ERROR ) )
+    associate &
+      ( T_EOS => C % EOS % Table, &
+        T_L_D => C % EOS % LogDensity, &
+        T_L_T => C % EOS % LogTemperature, &
+        T_YE  => C % EOS % ElectronFraction, &
+        Error => C % EOS % Error )
+    
+    associate &
+      ( T_CFP => PROGRAM_HEADER % Timer ( C % iTimerComputeFromPrimitive ), &
+        T_CE  => PROGRAM_HEADER % Timer ( C % iTimerComputeEigenspeed ), &
+        T_AE  => PROGRAM_HEADER % Timer ( C % iTimerApply_EOS ) )
+    
+    call T_CFP % Start ( )
+    call Copy ( C % Value ( :, C % PRESSURE ), P, &
+                UseDeviceOption = C % AllocatedDevice )
+    call Copy ( C % Value ( :, C % TEMPERATURE ), T, &
+                UseDeviceOption = C % AllocatedDevice )
 
-    call Copy ( C % Value ( :, C % PRESSURE ), P )
-    call Copy ( C % Value ( :, C % TEMPERATURE ), T )
-
-    call C % Compute_M_Kernel ( M, C % BaryonMassReference )
+    call C % Compute_M_Kernel &
+           ( M, C % BaryonMassReference, &
+             UseDeviceOption = C % AllocatedDevice )
     call C % Compute_N_V_E_G_Kernel &
                ( N, V_1, V_2, V_3, E, D, S_1, S_2, S_3, GE, M, &
-                 M_UU_22, M_UU_33, C % BaryonDensityMin )
+                 M_UU_22, M_UU_33, C % BaryonDensityMin, &
+                 UseDeviceOption = C % AllocatedDevice )
     call C % Compute_YE_G_Kernel &
-           ( YE, DE, N )
+           ( YE, DE, N, UseDeviceOption = C % AllocatedDevice )
+    call T_CFP % Stop ( )
+    
+    call T_AE % Start ( )
     if ( C % UseEntropy ) then
       call C % Compute_SB_G_Kernel &
-             ( SB, DS, N )
+             ( SB, DS, N, UseDeviceOption = C % AllocatedDevice )
       call C % Apply_EOS_HN_SB_E_Kernel &
-             ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-               M, N, YE, Shock )
+             ( N, P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
+               U_V, Error_A, T_EOS, M, YE, Shock, T_L_D, T_L_T, T_YE, Error, &
+               UseDeviceOption = C % AllocatedDevice )
       call C % Compute_G_G_Kernel &
-             ( GE, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E )
+             ( GE, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E, &
+               UseDeviceOption = C % AllocatedDevice )
     else
       call C % Apply_EOS_HN_E_Kernel &
-             ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-               M, N, YE )
+             ( N, P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
+               U_V, Error_A, T_EOS, M, YE, T_L_D, T_L_T, T_YE, Error, &
+               UseDeviceOption = C % AllocatedDevice )
     end if
     call C % Compute_DS_G_Kernel &
-           ( DS, N, SB )
+           ( DS, N, SB, UseDeviceOption = C % AllocatedDevice )
+    call T_AE % Stop ( )
 
 !    if ( associated ( C % Value, Value_C ) ) &
 !      call InterpolateSoundSpeed &
 !             ( CS, P, C % Features, &
 !               GV ( oV + 1 : oV + nV, G % CENTER_U ( 1 ) ) )
+
+    call T_CE % Start ( )
     call C % Compute_FE_P_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
-             V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33 )
-
+             V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
+             UseDeviceOption = C % AllocatedDevice )
+    call T_CE % Stop ( )
+    
+    end associate !-- T_CFP, etc.
+    
+    end associate !-- T_EOS, etc.
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
     end select !-- FF
@@ -713,6 +1101,9 @@ contains
       iElectron, &
       oV, &  !-- oValue
       nV     !-- nValues
+      
+    associate &
+      ( T_CRF => PROGRAM_HEADER % Timer ( C % iTimerComputeRawFluxes ) )
 
     call C % ComputeRawFluxesTemplate_P &
            ( RawFlux, G, Storage_C, Storage_G, iDimension, nValuesOption, &
@@ -730,6 +1121,8 @@ contains
       nV = size ( Storage_C % Value, dim = 1 )
     end if
 
+    call T_CRF % Start ( )
+
     call Search ( C % iaConserved, C % CONSERVED_ELECTRON_DENSITY, iElectron )
 
     associate &
@@ -739,9 +1132,14 @@ contains
         V_Dim => Storage_C % Value ( oV + 1 : oV + nV, &
                                      C % VELOCITY_U ( iDimension ) ) )
 
-    call ComputeRawFluxesKernel ( F_DE, DE, V_Dim )
+    call ComputeRawFluxesKernel &
+           ( F_DE, DE, V_Dim, UseDeviceOption = C % AllocatedDevice )
 
     end associate !-- F_DE, etc.
+    
+    call T_CRF % Stop ( )
+    
+    end associate !-- T_CRF, etc. 
 
   end subroutine ComputeRawFluxes
 
@@ -761,9 +1159,13 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iD
 
+    associate &
+      ( T_CCS => PROGRAM_HEADER % Timer ( C % iTimerComputeCenterStates ) )
+
     call C % ComputeCenterStatesTemplate_P &
            ( C_ICL, C_ICR, C_IL, C_IR, SS_I, M_DD_22, M_DD_33, iD )
 
+    call T_CCS % Start ( )
     call ComputeCenterStatesKernel &
            ( C_ICL % Value ( :, C % CONSERVED_ELECTRON_DENSITY ), &
              C_ICR % Value ( :, C % CONSERVED_ELECTRON_DENSITY ), &
@@ -773,487 +1175,13 @@ contains
              C_IR % Value ( :, C % VELOCITY_U ( iD ) ), &
              SS_I % Value ( :, C % ALPHA_PLUS ), &
              SS_I % Value ( :, C % ALPHA_MINUS ), &
-             SS_I % Value ( :, C % ALPHA_CENTER ) )
+             SS_I % Value ( :, C % ALPHA_CENTER ), &
+             UseDeviceOption = C % AllocatedDevice )
+    call T_CCS % Stop ( )
+    
+    end associate
 
   end subroutine ComputeCenterStates
-
-
-  subroutine Compute_DE_G_Kernel ( DE, N, YE )
- 	 
-    real ( KDR ), dimension ( : ), intent ( inout ) :: & 	 	 
-      DE
-    real ( KDR ), dimension ( : ), intent ( in ) :: & 	 	 
-      N, &
-      YE 	 	 
- 	 	 
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-
-    nValues = size ( DE )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-      DE ( iV )  =  YE ( iV )  *  N ( iV )
-    end do !-- iV
-    !$OMP end parallel do
-
-  end subroutine Compute_DE_G_Kernel
-
-
-  subroutine Compute_YE_G_Kernel ( YE, DE, N )
- 	 
-    !-- Compute_ProtonFraction_Galilean_Kernel
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      YE, &
-      DE
-    real ( KDR ), dimension ( : ), intent ( in ) :: & 	 	 
-      N 	 	 
- 	 	 
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-
-    nValues = size ( YE )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-      if ( DE ( iV ) < 0.0_KDR ) &
-        DE ( iV )  =  0.0_KDR
-    end do !-- iV
-    !$OMP end parallel do
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-      if ( N ( iV ) > 0.0_KDR ) then
-        YE ( iV ) = DE ( iV ) / N ( iV )
-      else
-        YE ( iV ) = 0.0_KDR
-      end if
-    end do !-- iV
-    !$OMP end parallel do
-
-  end subroutine Compute_YE_G_Kernel
-  
-  
-  subroutine Apply_EOS_HN_T_Kernel &
-               ( P, E, CS, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-                 M, N, T, YE )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      P, &
-      E, &
-      CS, &
-      SB, &
-      X_P, X_N, X_He, X_A, &
-      Z, A, &
-      Mu_NP, Mu_E
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      M, &
-      N, &
-      T, &
-      YE
-
-    integer ( KDI ) :: &
-      iV, &
-      nValues, &
-      keytemp, &
-      keyerr, &
-      Rank
-    real ( KDR ) :: &
-      rfeps, &
-      Rho_Temp, &
-      T_Temp, &
-!      cs2, dedt, dpderho, dpdrhoe, munu
-      cs2, dedt, dpderho, dpdrhoe, mu_n, mu_p
-
-    nValues = size ( P )
-
-    !-- Compute P, E, Gamma, SB from N, T, YE
-
-    rfeps = 1.0e-9_KDR
-    keytemp = 1_KDI
-
-    !$OMP parallel do private ( iV ) 
-    do iV = 1, nValues
-      if ( N ( iV ) == 0.0_KDR ) cycle 
-      Rho_Temp = M ( iV ) * N ( iV ) / MassDensity_CGS
-      T_Temp   = T ( iV ) / MeV
-      E ( iV ) = ( E ( iV ) / ( M ( iV ) * N ( iV ) )  -  OR_Shift ) &
-                 / SpecificEnergy_CGS
-      P ( iV ) = P ( iV ) / Pressure_CGS
-      ! call nuc_eos_short &
-      !        ( N_Temp, T_Temp, YE ( iV ), E ( iV ), P ( iV ), SB ( iV ), &
-      !          cs2, dedt, dpderho, dpdrhoe, munu, &
-      !          keytemp, keyerr, rfeps )
-      call nuc_eos_full &
-             ( Rho_Temp, T_Temp, YE ( iV ), E ( iV ), P ( iV ), SB ( iV ), &
-               cs2, dedt, dpderho, dpdrhoe, X_He ( iV ), X_A ( iV ), &
-               X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), Mu_E ( iV ), &
-               mu_n, mu_p, Mu_NP ( iV ), keytemp, keyerr, rfeps )
-      if ( keyerr /= 0 ) then
-        Rank = PROGRAM_HEADER % Communicator % Rank
-        call Show ( 'EOS error', CONSOLE % WARNING, &
-                    DisplayRankOption = Rank )
-        call Show ( 'Fluid_P_HN__Form', 'module', CONSOLE % WARNING, &
-                    DisplayRankOption = Rank )
-        call Show ( 'Apply_EOS_HN_T_Kernel', 'subroutine', &
-                    CONSOLE % WARNING, DisplayRankOption = Rank )
-        call Show ( Rank, 'Rank', DisplayRankOption = Rank )
-        call Show ( iV, 'iV', CONSOLE % WARNING, &
-                    DisplayRankOption = Rank )
-      end if
-!      call nuc_eos_one ( Rho_Temp, T_Temp, YE ( iV ), Gamma ( iV ), 19 )
-      P ( iV )      =  P ( iV ) * Pressure_CGS
-      E ( iV )      =  E ( iV ) * SpecificEnergy_CGS  +  OR_Shift
-      E ( iV )      =  E ( iV ) * M ( iV ) * N ( iV )
-      CS ( iV )     =  sqrt ( cs2 ) * Speed_CGS
-      Mu_NP ( iV )  =  Mu_NP ( iV ) * MeV
-      Mu_E  ( iV )  =  Mu_E ( iV ) * MeV
-    end do
-    !$OMP end parallel do
-    
-  end subroutine Apply_EOS_HN_T_Kernel
-  
-
-  subroutine Apply_EOS_HN_SB_E_Kernel &
-               ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-                 M, N, YE, Shock )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      P, &
-      T, &
-      CS, &
-      E, &
-      SB, &
-      X_P, X_N, X_He, X_A, &
-      Z, A, &
-      Mu_NP, Mu_E
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      M, &
-      N, &
-      YE, &
-      Shock
-
-    integer ( KDI ) :: &
-      iV, &
-      nValues, &
-      keytemp_e, &
-      keytemp_s, &
-      keyerr, &
-      Rank
-    real ( KDR ) :: &
-      rfeps, &
-      Rho_Temp, &
-!      cs2, dedt, dpderho, dpdrhoe, munu
-      cs2, dedt, dpderho, dpdrhoe, mu_n, mu_p
-
-    nValues = size ( P )
-
-    !-- Compute P, T, Gamma, SB from N, E, YE
-
-    rfeps = 1.0e-9_KDR
-    keytemp_e = 0_KDI
-    keytemp_s = 2_KDI
-
-    !$OMP parallel do private ( iV ) 
-    do iV = 1, nValues
-      if ( N ( iV ) == 0.0_KDR ) cycle 
-      Rho_Temp   = M ( iV ) * N ( iV ) / MassDensity_CGS
-      E ( iV ) = ( E ( iV ) / ( M ( iV ) * N ( iV ) )  -  OR_Shift ) &
-                 / SpecificEnergy_CGS
-      P ( iV ) = P ( iV ) / Pressure_CGS
-      T ( iV ) = T ( iV ) / MeV
-      if ( Shock ( iV ) > 0.0_KDR ) then
-        ! call nuc_eos_short &
-        !        ( N_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), SB ( iV ), &
-        !          cs2, dedt, dpderho, dpdrhoe, munu, &
-        !          keytemp_e, keyerr, rfeps )
-        call nuc_eos_full &
-               ( Rho_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), &
-                 SB ( iV ), cs2, dedt, dpderho, dpdrhoe, X_He ( iV ), &
-                 X_A ( iV ), X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), &
-                 Mu_E ( iV ), mu_n, mu_p, Mu_NP ( iV ), &
-                 keytemp_e, keyerr, rfeps )
-      else !-- not Shock
-        ! call nuc_eos_short &
-        !        ( N_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), SB ( iV ), &
-        !         cs2, dedt, dpderho, dpdrhoe, munu, &
-        !         keytemp_s, keyerr, rfeps )
-        call nuc_eos_full &
-               ( Rho_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), &
-                 SB ( iV ), cs2, dedt, dpderho, dpdrhoe, X_He ( iV ), &
-                 X_A ( iV ), X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), &
-                 Mu_E ( iV ), mu_n, mu_p, Mu_NP ( iV ), &
-                 keytemp_s, keyerr, rfeps )
-      end if !-- Shock
-      if ( keyerr /= 0 ) then
-        Rank = PROGRAM_HEADER % Communicator % Rank
-        call Show ( 'EOS error', CONSOLE % WARNING, &
-                    DisplayRankOption = Rank )
-        call Show ( 'Fluid_P_HN__Form', 'module', CONSOLE % WARNING, &
-                    DisplayRankOption = Rank )
-        call Show ( 'Apply_EOS_HN_SB_E_Kernel', 'subroutine', &
-                    CONSOLE % WARNING, DisplayRankOption = Rank )
-        call Show ( Rank, 'Rank', DisplayRankOption = Rank )
-        call Show ( iV, 'iV', CONSOLE % WARNING, &
-                    DisplayRankOption = Rank )
-      end if
-!       call nuc_eos_one ( N_Temp, T ( iV ), YE ( iV ), Gamma ( iV ), 19 )
-      E ( iV )      =  E ( iV ) * SpecificEnergy_CGS  +  OR_Shift
-      E ( iV )      =  E ( iV ) * M ( iV ) * N ( iV )
-      P ( iV )      =  P ( iV ) * Pressure_CGS
-      CS ( iV )     =  sqrt ( cs2 ) * Speed_CGS
-      T ( iV )      =  T ( iV ) * MeV
-      Mu_NP ( iV )  =  Mu_NP ( iV ) * MeV
-      Mu_E  ( iV )  =  Mu_E ( iV ) * MeV
-    end do
-    !$OMP end parallel do
-    
-  end subroutine Apply_EOS_HN_SB_E_Kernel
-
-
-  subroutine Apply_EOS_HN_E_Kernel &
-               ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-                 M, N, YE )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      P, &
-      T, &
-      CS, &
-      E, &
-      SB, &
-      X_P, X_N, X_He, X_A, &
-      Z, A, &
-      Mu_NP, Mu_E
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      M, &
-      N, &
-      YE
-
-    integer ( KDI ) :: &
-      iV, &
-      nValues, &
-      keytemp_e, &
-      keyerr, &
-      Rank
-    real ( KDR ) :: &
-      rfeps, &
-      Rho_Temp, &
-!      cs2, dedt, dpderho, dpdrhoe, munu
-      cs2, dedt, dpderho, dpdrhoe, mu_n, mu_p
-
-    nValues = size ( P )
-
-    !-- Compute P, T, Gamma, SB from N, E, YE
-
-    rfeps = 1.0e-9_KDR
-    keytemp_e = 0_KDI
-
-    !$OMP parallel do private ( iV ) 
-    do iV = 1, nValues
-      if ( N ( iV ) == 0.0_KDR ) cycle 
-      Rho_Temp   = M ( iV ) * N ( iV ) / MassDensity_CGS
-      E ( iV ) = ( E ( iV ) / ( M ( iV ) * N ( iV ) )  -  OR_Shift ) &
-                 / SpecificEnergy_CGS
-      P ( iV ) = P ( iV ) / Pressure_CGS
-      T ( iV ) = T ( iV ) / MeV
-      ! call nuc_eos_short &
-      !        ( N_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), SB ( iV ), &
-      !          cs2, dedt, dpderho, dpdrhoe, munu, &
-      !          keytemp_e, keyerr, rfeps )
-      call nuc_eos_full &
-             ( Rho_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), &
-               SB ( iV ), cs2, dedt, dpderho, dpdrhoe, X_He ( iV ), &
-               X_A ( iV ), X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), &
-               Mu_E ( iV ), mu_n, mu_p, Mu_NP ( iV ), &
-               keytemp_e, keyerr, rfeps )
-      if ( keyerr /= 0 ) then
-        Rank = PROGRAM_HEADER % Communicator % Rank
-        call Show ( 'EOS error', CONSOLE % WARNING, &
-                    DisplayRankOption = Rank )
-        call Show ( 'Fluid_P_HN__Form', 'module', CONSOLE % WARNING, &
-                    DisplayRankOption = Rank )
-        call Show ( 'Apply_EOS_HN_SB_E_Kernel', 'subroutine', &
-                    CONSOLE % WARNING, DisplayRankOption = Rank )
-        call Show ( Rank, 'Rank', DisplayRankOption = Rank )
-        call Show ( iV, 'iV', CONSOLE % WARNING, &
-                    DisplayRankOption = Rank )
-      end if
-!       call nuc_eos_one ( N_Temp, T ( iV ), YE ( iV ), Gamma ( iV ), 19 )
-      E ( iV )      =  E ( iV ) * SpecificEnergy_CGS  +  OR_Shift
-      E ( iV )      =  E ( iV ) * M ( iV ) * N ( iV )
-      P ( iV )      =  P ( iV ) * Pressure_CGS
-      CS ( iV )     =  sqrt ( cs2 ) * Speed_CGS
-!      CS ( iV )     =  sqrt ( 2.0_KDR * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
-      T ( iV )      =  T ( iV ) * MeV
-      Mu_NP ( iV )  =  Mu_NP ( iV ) * MeV
-      Mu_E  ( iV )  =  Mu_E ( iV ) * MeV
-    end do
-    !$OMP end parallel do
-    
-  end subroutine Apply_EOS_HN_E_Kernel
-
-
-  subroutine Apply_EOS_HN_SB_Kernel &
-               ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-                 M, N, YE )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      P, &
-      T, &
-      CS, &
-      E, &
-      SB, &
-      X_P, X_N, X_He, X_A, &
-      Z, A, &
-      Mu_NP, Mu_E
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      M, &
-      N, &
-      YE
-
-    integer ( KDI ) :: &
-      iV, &
-      nValues, &
-      keytemp_s, &
-      keyerr, &
-      Rank
-    real ( KDR ) :: &
-      rfeps, &
-      Rho_Temp, &
-!      cs2, dedt, dpderho, dpdrhoe, munu
-      cs2, dedt, dpderho, dpdrhoe, mu_n, mu_p
-
-    nValues = size ( P )
-
-    !-- Compute P, T, Gamma, SB from N, E, YE
-
-    rfeps = 1.0e-9_KDR
-    keytemp_s = 2_KDI
-
-    !$OMP parallel do private ( iV ) 
-    do iV = 1, nValues
-      if ( N ( iV ) == 0.0_KDR ) cycle 
-      Rho_Temp   = M ( iV ) * N ( iV ) / MassDensity_CGS
-      E ( iV ) = ( E ( iV ) / ( M ( iV ) * N ( iV ) )  -  OR_Shift ) &
-                 / SpecificEnergy_CGS
-      P ( iV ) = P ( iV ) / Pressure_CGS
-      T ( iV ) = T ( iV ) / MeV
-      ! call nuc_eos_short &
-      !        ( N_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), SB ( iV ), &
-      !         cs2, dedt, dpderho, dpdrhoe, munu, &
-      !         keytemp_s, keyerr, rfeps )
-      call nuc_eos_full &
-             ( Rho_Temp, T ( iV ), YE ( iV ), E ( iV ), P ( iV ), &
-               SB ( iV ), cs2, dedt, dpderho, dpdrhoe, X_He ( iV ), &
-               X_A ( iV ), X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), &
-               Mu_E ( iV ), mu_n, mu_p, Mu_NP ( iV ), &
-               keytemp_s, keyerr, rfeps )
-      if ( keyerr /= 0 ) then
-        Rank = PROGRAM_HEADER % Communicator % Rank
-        call Show ( 'EOS error', CONSOLE % WARNING, &
-                    DisplayRankOption = Rank )
-        call Show ( 'Fluid_P_HN__Form', 'module', CONSOLE % WARNING, &
-                    DisplayRankOption = Rank )
-        call Show ( 'Apply_EOS_HN_SB_E_Kernel', 'subroutine', &
-                    CONSOLE % WARNING, DisplayRankOption = Rank )
-        call Show ( Rank, 'Rank', DisplayRankOption = Rank )
-        call Show ( iV, 'iV', CONSOLE % WARNING, &
-                    DisplayRankOption = Rank )
-      end if
-!       call nuc_eos_one ( N_Temp, T ( iV ), YE ( iV ), Gamma ( iV ), 19 )
-      E ( iV )      =  E ( iV ) * SpecificEnergy_CGS  +  OR_Shift
-      E ( iV )      =  E ( iV ) * M ( iV ) * N ( iV )
-      P ( iV )      =  P ( iV ) * Pressure_CGS
-      CS ( iV )     =  sqrt ( cs2 ) * Speed_CGS
-!      CS ( iV )     =  sqrt ( 2.0_KDR * P ( iV ) / ( M ( iV ) * N ( iV ) ) )
-      T ( iV )      =  T ( iV ) * MeV
-      Mu_NP ( iV )  =  Mu_NP ( iV ) * MeV
-      Mu_E  ( iV )  =  Mu_E ( iV ) * MeV
-    end do
-    !$OMP end parallel do
-    
-  end subroutine Apply_EOS_HN_SB_Kernel
-
-
-  subroutine ComputeRawFluxesKernel ( F_DE, DE, V_Dim )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      F_DE
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      DE, &
-      V_Dim
-    
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-
-    nValues = size ( F_DE )
-
-    !$OMP parallel do private ( iV ) 
-    do iV = 1, nValues
-      F_DE ( iV )  =  DE ( iV )  *  V_Dim ( iV ) 
-    end do !-- iV
-    !$OMP end parallel do
-
-  end subroutine ComputeRawFluxesKernel
-
-
-  subroutine ComputeCenterStatesKernel &
-               ( DE_ICL, DE_ICR, DE_IL, DE_IR, V_Dim_IL, V_Dim_IR, &
-                 AP_I, AM_I, AC_I )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      DE_ICL, DE_ICR
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      DE_IL, DE_IR, &
-      V_Dim_IL, V_Dim_IR, &
-      AP_I, &
-      AM_I, &
-      AC_I
-
-    integer ( KDI ) :: &
-      iV, &
-      nValues
-    real ( KDR ) :: &
-      AM_VL, &
-      AM_AC, &
-      AM_AC_Inv, &
-      AP_VR, &
-      AP_AC, &
-      AP_AC_Inv, &
-      SqrtTiny
-
-    nValues = size ( AC_I )
-
-    SqrtTiny = sqrt ( tiny ( 0.0_KDR ) )
-
-    !$OMP parallel do private ( iV ) 
-    do iV = 1, nValues
-
-      AM_VL     =  AM_I ( iV )  +  V_Dim_IL ( iV )
-      AM_AC     =  AM_I ( iV )  +  AC_I ( iV )
-!      AM_AC_Inv =  1.0_KDR &
-!                   / sign ( max ( abs ( AM_AC ), SqrtTiny ), AM_AC )
-      AM_AC_Inv =  1.0_KDR &
-                   / max ( abs ( AM_AC ), SqrtTiny )
-
-      AP_VR     =  AP_I ( iV )  -  V_Dim_IR ( iV )
-      AP_AC     =  AP_I ( iV )  -  AC_I ( iV )
-!      AP_AC_Inv =  1.0_KDR &
-!                   / sign ( max ( abs ( AP_AC ), SqrtTiny ), AP_AC )
-      AP_AC_Inv =  1.0_KDR &
-                   / max ( abs ( AP_AC ), SqrtTiny )
-
-      DE_ICL ( iV )  =  DE_IL ( iV ) * AM_VL * AM_AC_Inv
-      DE_ICR ( iV )  =  DE_IR ( iV ) * AP_VR * AP_AC_Inv
-
-    end do !-- iV
-    !$OMP end parallel do
-
-  end subroutine ComputeCenterStatesKernel
 
 
   ! subroutine InterpolateSoundSpeed ( CS, P, FF, R )
@@ -1316,6 +1244,6 @@ contains
   !   end select !-- Grid
 
   ! end subroutine InterpolateSoundSpeed
-
-
+  
+  
 end module Fluid_P_HN__Form

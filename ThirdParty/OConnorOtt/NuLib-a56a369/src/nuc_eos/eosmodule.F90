@@ -21,7 +21,9 @@
    real*8 :: t_max_hack = 240.0d0
 
 ! basics
+   
    integer :: nvars = 19
+   
    real*8,allocatable :: alltables(:,:,:,:)
   ! index variable mapping:
   !  1 -> logpress
@@ -59,6 +61,12 @@
    real*8,save :: kb_erg = 1.380658d-16
    real*8,save :: kb_mev = 8.61738568d-11   
 
+#ifdef ENABLE_OMP_OFFLOAD   
+   !$OMP  declare target &
+   !$OMP& to ( nrho, ntemp, nye, warn_from, energy_shift, precision, &
+   !$OMP&      eos_rhomin, eos_rhomax, eos_yemin, eos_yemax, eos_tempmin, &
+   !$OMP&      eos_tempmax, t_max_hack, nvars, mev_to_erg, amu_cgs, amu_mev, &
+   !$OMP&      pi, ggrav, temp_mev_to_kelvin, clight, kb_erg, kb_mev )
+#endif
 
  end module eosmodule
-
