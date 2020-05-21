@@ -400,10 +400,12 @@ contains
   end subroutine Initialize_P_HN
   
   
-  subroutine AllocateDevice_P_HN ( S ) 
+  subroutine AllocateDevice_P_HN ( S, AssociateVariablesOption ) 
     
     class ( Fluid_P_HN_Form ), intent ( inout ) :: &
       S
+    logical ( KDL ), intent ( in ), optional :: &
+      AssociateVariablesOption
       
     type ( c_ptr ) :: &
       D_P  !-- Device Pointer
