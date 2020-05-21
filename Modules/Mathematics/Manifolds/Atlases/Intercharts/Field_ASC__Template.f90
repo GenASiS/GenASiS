@@ -22,6 +22,8 @@ module Field_ASC__Template
       AllocateDevice_ASC_Template
     procedure, public, pass :: &
       AllocateDevice => AllocateDevice_ASC_Template
+    procedure, private, pass :: &
+      Clear_FA
     procedure, public, pass :: &
       FinalizeTemplate_ASC
     !-- FIXME: This should be automatically inherited from FieldAtlasTemplate
@@ -65,14 +67,16 @@ contains
   end subroutine InitializeTemplate_ASC
   
   
-  subroutine AllocateDevice_ASC_Template ( FA )
+  subroutine AllocateDevice_ASC_Template ( FA, AssociateVariablesOption )
     
     class ( Field_ASC_Template ), intent ( inout ) :: &
       FA
+    logical ( KDL ), intent ( in ), optional :: &
+      AssociateVariablesOption
     
     select type ( FC => FA % Chart ) 
     class is ( Field_CSL_Template )
-      call FC % AllocateDevice ( )
+      call FC % AllocateDevice ( AssociateVariablesOption )
     class default
       call Show ( 'Field type not implemented', CONSOLE % ERROR )
       call Show ( 'AllocateDevice_ASC', 'subroutine',  CONSOLE % ERROR )
@@ -81,6 +85,16 @@ contains
     end select
   
   end subroutine AllocateDevice_ASC_Template
+
+
+  subroutine Clear_FA ( FA )
+
+    class ( Field_ASC_Template ), intent ( inout ) :: &
+      FA
+
+    call FA % Chart % Clear ( )
+
+  end subroutine Clear_FA
 
 
   impure elemental subroutine FinalizeTemplate_ASC ( FA )

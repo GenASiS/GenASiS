@@ -21,7 +21,9 @@ module Search_Command
 contains
 
 
-  pure subroutine Search ( A, Value, iValue ) 
+  subroutine Search ( A, Value, iValue ) 
+
+    !$OMP declare target
 
     class ( * ), dimension ( : ), intent ( in )  :: &
       A

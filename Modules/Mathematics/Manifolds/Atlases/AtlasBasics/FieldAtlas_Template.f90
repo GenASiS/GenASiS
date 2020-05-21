@@ -22,6 +22,10 @@ module FieldAtlas_Template
   contains
     procedure, public, pass :: &
       InitializeTemplate
+    procedure ( C ), private, pass, deferred :: &
+      Clear_FA
+    generic, public :: &
+      Clear => Clear_FA
     procedure, public, pass :: &
       FinalizeTemplate
     procedure ( SF ), private, pass, deferred :: &
@@ -29,11 +33,19 @@ module FieldAtlas_Template
   end type FieldAtlasTemplate
 
     abstract interface 
+
+      subroutine C ( FA )
+        import FieldAtlasTemplate
+        class ( FieldAtlasTemplate ), intent ( inout ) :: &
+          FA
+      end subroutine C
+
       subroutine SF ( FA )
         import FieldAtlasTemplate
         class ( FieldAtlasTemplate ), intent ( inout ) :: &
           FA
-      end subroutine
+      end subroutine SF
+
     end interface
 
   type, public :: FieldAtlasPointer

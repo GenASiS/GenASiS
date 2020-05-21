@@ -310,12 +310,14 @@ contains
   end subroutine Initialize
 
 
-  subroutine AllocateDevice_F_ASC ( FA )
+  subroutine AllocateDevice_F_ASC ( FA, AssociateVariablesOption )
   
     class ( Fluid_ASC_Form ), intent ( inout ) :: &
       FA
+    logical ( KDL ), intent ( in ), optional :: &
+      AssociateVariablesOption
     
-    call FA % AllocateDevice_ASC_Template ( )
+    call FA % AllocateDevice_ASC_Template ( AssociateVariablesOption )
 
     if ( allocated ( FA % Sources_ASC ) ) &
       call FA % Sources_ASC % AllocateDevice ( )

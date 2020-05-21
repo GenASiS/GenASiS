@@ -2,8 +2,12 @@
 #define OMP_TARGET_DIRECTIVE target teams distribute
 #define OMP_SCHEDULE_TARGET static, 1
 #define OMP_SCHEDULE_HOST runtime
+#define OMP_TARGET_DISTRIBUTE_DIRECTIVE target teams distribute 
+#define OMP_TARGET_DISTRIBUTE_SCHEDULE dist_schedule ( static, 1 )
 #else
 #define OMP_TARGET_DIRECTIVE
 #define OMP_SCHEDULE_TARGET runtime
 #define OMP_SCHEDULE_HOST runtime
+#define OMP_TARGET_DISTRIBUTE_DIRECTIVE parallel do 
+#define OMP_TARGET_DISTRIBUTE_SCHEDULE schedule ( runtime )
 #endif

@@ -177,17 +177,27 @@ contains
     real ( KDR ), intent ( in ), optional :: &
       CentralMassOption
 
+    character ( LDL ) :: &
+      GravitySolverType
+
+    GravitySolverType  =  'MULTIPOLE'
+    !-- FIXME: XL 16.1.1-5 does not work without association.
+    associate ( PH => PROGRAM_HEADER )
+!    call PROGRAM_HEADER % GetParameter ( MaxDegree, 'MaxDegree' )
+    call PH % GetParameter ( GravitySolverType, 'GravitySolverType' )
+    end associate !-- PH    
+
     if ( FC % Dimensionless ) then
       call GA % Initialize &
              ( PS, GeometryType, & 
                UsePinnedMemoryOption = UsePinnedMemoryOption, &
-               GravitySolverTypeOption = 'MULTIPOLE', &
+               GravitySolverTypeOption = GravitySolverType, &
                GravitationalConstantOption = 1.0_KDR )
     else
       call GA % Initialize &
              ( PS, GeometryType, &
                UsePinnedMemoryOption = UsePinnedMemoryOption, &
-               GravitySolverTypeOption = 'MULTIPOLE' )
+               GravitySolverTypeOption = GravitySolverType )
     end if !-- Dimensionless
 
   end subroutine InitializeGeometry
@@ -315,111 +325,84 @@ contains
       I
 
     integer ( KDI ) :: &
-      iProcess, &
       iRadius
     real ( KDR ) :: &
+      GravitationalConstant, &
+      BaryonMass, &
       VelocityMax, &
       VelocityMaxRadius, &
-      DensityAve, &
-      TimeScaleDensityAve, &
-      TimeScaleVelocityMax
-    type ( MeasuredValueForm ) :: &
-      DensityUnit
+      NumberDensityMax, &
+      TimeScaleVelocityMax, &
+      TimeScaleDensityMax
     type ( CollectiveOperation_R_Form ), allocatable :: &
       CO
     class ( GeometryFlatForm ), pointer :: &
-      G
+      G_SA
     class ( Fluid_D_Form ), pointer :: &
-      F
+      F_SA
 
-    select type ( I )
-    class is ( Integrator_C_PS_Form )
-
-    select type ( FA => I % Current_ASC )
-    class is ( Fluid_ASC_Form )
-    F => FA % Fluid_D ( )
-
-    select type ( PS => I % PositionSpace )
-    class is ( Atlas_SC_Form )
-
-    select type ( GA => PS % Geometry_ASC )
-    class is ( Geometry_ASC_Form )
-
-    G => PS % Geometry ( )
-
-    select type ( Chart => PS % Chart )
-    class is ( Chart_SL_Template )
-
-    associate ( C => PS % Communicator ) 
-
-    !-- Find max velocity
-    allocate ( CO )
-    call CO % Initialize ( C, nOutgoing = [ 1 ], nIncoming = [ C % Size ] )
-    CO % Outgoing % Value ( 1 ) &
-      =  LocalMax ( Chart % IsProperCell, &
-                    abs ( F % Value ( :, F % VELOCITY_U ( 1 ) ) ) ) 
-    call CO % Gather ( )
-    VelocityMax  =  maxval ( CO % Incoming % Value )
-    iProcess     =  maxloc ( CO % Incoming % Value, dim = 1 )  -  1
-    deallocate ( CO )
-
-    if ( VelocityMax == 0.0_KDR ) &
-      return
-
-    !-- Find radius of max velocity
-    allocate ( CO )
-    call CO % Initialize &
-           ( C, nOutgoing = [ 1 ], nIncoming = [ 1 ], RootOption = iProcess )
-    if ( C % Rank == iProcess ) then
-      iRadius  =  maxloc ( abs ( F % Value ( :, F % VELOCITY_U ( 1 ) ) ), &
-                           dim = 1, mask = Chart % IsProperCell )
-      CO % Outgoing % Value ( 1 )  =  G % Value ( iRadius, G % CENTER_U ( 1 ) )
-    end if
-    call CO % Broadcast ( )
-    VelocityMaxRadius = CO % Incoming % Value ( 1 )
-    deallocate ( CO )
-
-    !-- Compute average density
-    select type ( TI => FA % TallyInterior )
-    class is ( Tally_F_D_Form )
-    DensityAve  =  F % BaryonMassReference &
-                   * TI % Value ( TI % BARYON_NUMBER ) &
-                   / ( 4.0 / 3.0  *  CONSTANT % PI  *  VelocityMaxRadius ** 3 )
     select type ( FC => I % Universe )
-    class is ( FluidCentralTemplate )
-      DensityUnit  =  FC % Units % MassDensity
-    end select
+    class is ( FluidCentralCoreForm )
 
-    !-- Time scales
+    GravitationalConstant  =  CONSTANT % GRAVITATIONAL
+               BaryonMass  =  CONSTANT % ATOMIC_MASS_UNIT 
+    if ( FC % Dimensionless ) then
+      GravitationalConstant  =  1.0_KDR
+                 BaryonMass  =  1.0_KDR
+    end if
+
+    G_SA  =>  FC % PositionSpace_SA % Geometry ( )
+    F_SA  =>  FC % Fluid_ASC_SA % Fluid_D ( )
+
+    iRadius &
+      =  maxloc ( abs ( F_SA % Value ( :,  F_SA % VELOCITY_U ( 1 ) ) ), &
+                  dim = 1 )
+    VelocityMaxRadius &
+      =  G_SA % Value ( iRadius, G_SA % CENTER_U ( 1 ) )
+    VelocityMax  &
+      =  max ( maxval ( abs ( F_SA % Value ( :, F_SA % VELOCITY_U ( 1 ) ) ) ), &
+               sqrt ( tiny ( 0.0_KDR ) ) )  
+    NumberDensityMax  &
+      =  max ( maxval ( F_SA % Value ( :, F_SA % COMOVING_BARYON_DENSITY ) ), &
+               sqrt ( tiny ( 0.0_KDR ) ) )
+
     TimeScaleVelocityMax &
       =  VelocityMaxRadius  /  VelocityMax
-    TimeScaleDensityAve &
-      =  ( GA % GravitationalConstant  *  DensityAve ) ** ( -0.5_KDR )
-
-    I % CheckpointTimeInterval  &
-      =  min ( TimeScaleDensityAve, TimeScaleVelocityMax )  /  I % nWrite
+    TimeScaleDensityMax &
+      =  ( GravitationalConstant * BaryonMass * NumberDensityMax ) &
+         ** ( -0.5_KDR )
 
     call Show ( 'Time Scales', I % IGNORABILITY )
-    call Show ( VelocityMax, ( Chart % CoordinateUnit ( 1 ) / I % TimeUnit ), &
-                'VelocityMax', I % IGNORABILITY )
-    call Show ( VelocityMaxRadius, Chart % CoordinateUnit ( 1 ), &
+    call Show ( VelocityMaxRadius, FC % Units % Coordinate_PS ( 1 ), &
                 'VelocityMaxRadius', I % IGNORABILITY )
-    call Show ( DensityAve, DensityUnit, 'DensityAve', &
-                I % IGNORABILITY )
-    call Show ( TimeScaleDensityAve, I % TimeUnit, 'TimeScaleDensityAve', &
-                I % IGNORABILITY )
-    call Show ( TimeScaleVelocityMax, I % TimeUnit, 'TimeScaleVelocityMax', &
-                I % IGNORABILITY )
+    call Show ( VelocityMax, FC % Units % Velocity_U ( 1 ), &
+                'VelocityMax', I % IGNORABILITY )
+    call Show ( NumberDensityMax, FC % Units % NumberDensity, &
+                'NumberDensityMax', I % IGNORABILITY )
+    call Show ( BaryonMass * NumberDensityMax, FC % Units % MassDensity, &
+                'MassDensityMax', I % IGNORABILITY )
+    call Show ( TimeScaleVelocityMax, I % TimeUnit, &
+                'TimeScaleVelocityMax', I % IGNORABILITY )
+    call Show ( TimeScaleDensityMax, I % TimeUnit, &
+                'TimeScaleDensityMax', I % IGNORABILITY )
 
-    !-- Cleanup
-    end select !-- TI
+    allocate ( CO )
+    associate ( C => I % PositionSpace % Communicator ) 
+    call CO % Initialize &
+           ( C, nOutgoing = [ 1 ], nIncoming = [ 1 ], &
+             RootOption = CONSOLE % DisplayRank )
     end associate !-- C
-    end select !-- Chart
-    end select !-- GA
-    end select !-- PS
-    end select !-- FA
-    end select !-- I
-    nullify ( G, F )
+
+    CO % Outgoing % Value ( 1 )  &
+      =  min ( TimeScaleVelocityMax, TimeScaleDensityMax )  /  I % nWrite
+
+    call CO % Broadcast ( )
+
+    I % CheckpointTimeInterval  =  CO % Incoming % Value ( 1 )
+
+    end select !-- FC
+
+    nullify ( G_SA, F_SA )
 
   end subroutine SetCheckpointTimeInterval
 

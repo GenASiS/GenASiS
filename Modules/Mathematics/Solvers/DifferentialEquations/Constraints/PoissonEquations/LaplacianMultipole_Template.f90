@@ -10,672 +10,549 @@ module LaplacianMultipole_Template
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
       nRadialCells = 0, &
-      nAngularMomentCells = 0, &
+      nAngularMoments = 0, &
       nEquations = 0, &
       MaxDegree = 0, &  !-- Max L
       MaxOrder  = 0     !-- Max M
+    integer ( KDI ) :: &
+      iTimerComputeMoments = 0, &
+      iTimerClearMoments = 0, &
+      iTimerLocalMoments = 0, &
+      iTimerReduceMoments = 0, &
+      iTimerAddMoments = 0
+    integer ( KDI ) :: &
+        REGULAR_COS = 1, &
+      IRREGULAR_COS = 2, &
+        REGULAR_SIN = 3, &
+      IRREGULAR_SIN = 4
+    integer ( KDI ) :: &
+      iSolidHarmonics, &
+      iSolidHarmonics_P1, &
+      iSolidHarmonics_P2
     real ( KDR ), dimension ( 3 ) :: &
       Origin = 0.0_KDR
-    real ( KDR ), dimension ( : ), allocatable :: &
-      RadialEdge, &
-      Delta
-    real ( KDR ), dimension ( : ), pointer :: &
-      SolidHarmonic_RC => null ( ), &  !-- Regular Cos
-      SolidHarmonic_IC => null ( ), &  !-- Irregular Cos
-      SolidHarmonic_RS => null ( ), &  !-- Regular Sin
-      SolidHarmonic_IS => null ( ), &  !-- Irregular Sin
-      MyMoment_RC_1D   => null ( ), &
-      MyMoment_IC_1D   => null ( ), &
-      MyMoment_RS_1D   => null ( ), &
-      MyMoment_IS_1D   => null ( ), &
-      Moment_RC_1D     => null ( ), &    
-      Moment_IC_1D     => null ( ), &
-      Moment_RS_1D     => null ( ), &
-      Moment_IS_1D     => null ( )
     real ( KDR ), dimension ( :, :, : ), pointer :: &
-      MyM_RC => null ( ), MyM_IC => null ( ), &
-      MyM_RS => null ( ), MyM_IS => null ( ), &
-      M_RC   => null ( ), M_IC   => null ( ), &
-      M_RS   => null ( ), M_IS   => null ( )
+        Moment_RC => null ( ),   Moment_IC => null ( ), &
+        Moment_RS => null ( ),   Moment_IS => null ( ), &
+      MyMoment_RC => null ( ), MyMoment_IC => null ( ), &
+      MyMoment_RS => null ( ), MyMoment_IS => null ( )
+    logical ( KDL ) :: &
+      UseDevice = .false.
     character ( LDF ) :: &
       Type = '', &
       Name = ''
+    type ( StorageForm ), allocatable :: &
+        Moments, &
+      MyMoments, &
+      RadialEdges
     type ( CollectiveOperation_R_Form ), allocatable :: &
-      Reduction_RC, Reduction_IC, &
-      Reduction_RS, Reduction_IS
+      ReductionMoments
   contains
     procedure, public, pass :: &
       InitializeTemplate
-    procedure ( SP ), private, pass, deferred :: &
-      SetParameters   
     procedure, public, pass :: &
-      ComputeSolidHarmonics
+      InitializeTimers
     procedure, public, pass :: &
       ComputeMoments
+    procedure ( CSH_0_0 ), public, pass, deferred :: &
+      ComputeSolidHarmonics_0_0
+    procedure ( CSH_iM_iM ), public, pass, deferred :: &
+      ComputeSolidHarmonics_iM_iM
+    procedure ( CSH_iL_iM_1 ), public, pass, deferred :: &
+      ComputeSolidHarmonics_iL_iM_1
+    procedure ( CSH_iL_iM_2 ), public, pass, deferred :: &
+      ComputeSolidHarmonics_iL_iM_2
     procedure, public, pass :: &
       FinalizeTemplate
-    procedure, public, pass :: &
-      SetMomentStorage
-    procedure ( CML ), private, pass, deferred :: &
+    procedure, private, pass :: &
+      SetParameters
+    procedure ( SPA ), private, pass, deferred :: &
+      SetParametersAtlas
+    procedure ( ARC ), private, pass, deferred :: &
+      AllocateRectangularCoordinates
+    procedure ( ASH ), private, pass, deferred :: &
+      AllocateSolidHarmonics
+    procedure, private, pass :: &
+      AllocateMoments
+    procedure, private, pass :: &
       ComputeMomentsLocal
-    procedure, public, pass :: &
-      ComputeMomentContributions
+    procedure ( CMLA ), private, pass, deferred :: &
+      ComputeMomentLocalAtlas
   end type LaplacianMultipoleTemplate
+
 
   abstract interface
 
-    subroutine SP ( LM, A, MaxDegree, nEquations )
+    subroutine CSH_0_0 ( L, iSH_0, iSH_PD )
+      use Basics
+      import LaplacianMultipoleTemplate
+      implicit none
+      class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+        L
+      integer ( KDI ), intent ( in ) :: &
+        iSH_0, iSH_PD
+    end subroutine CSH_0_0
+
+    subroutine CSH_iM_iM ( L, iM, iSH_0, iSH_PD )
+      use Basics
+      import LaplacianMultipoleTemplate
+      implicit none
+      class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+        L
+      integer ( KDI ), intent ( in ) :: &
+        iM, &
+        iSH_0, iSH_PD
+    end subroutine CSH_iM_iM
+
+    subroutine CSH_iL_iM_1 ( L, iM, iSH_0, iSH_1 )
+      use Basics
+      import LaplacianMultipoleTemplate
+      implicit none
+      class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+        L
+      integer ( KDI ), intent ( in ) :: &
+        iM, &
+        iSH_0, iSH_1
+    end subroutine CSH_iL_iM_1
+
+    subroutine CSH_iL_iM_2 ( L, iL, iM, iSH_0, iSH_1, iSH_2 )
+      use Basics
+      import LaplacianMultipoleTemplate
+      implicit none
+      class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+        L
+      integer ( KDI ), intent ( in ) :: &
+        iL, iM, &
+        iSH_0, iSH_1, iSH_2
+    end subroutine CSH_iL_iM_2
+
+    subroutine SPA ( L, A )
+      use Manifolds
+      import LaplacianMultipoleTemplate
+      implicit none
+      class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+        L
+      class ( AtlasHeaderForm ), intent ( in ), target :: &
+        A
+    end subroutine SPA
+
+    subroutine ARC ( L )
+      import LaplacianMultipoleTemplate
+      implicit none
+      class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+        L
+    end subroutine ARC
+
+    subroutine ASH ( L )
+      import LaplacianMultipoleTemplate
+      implicit none
+      class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+        L
+    end subroutine ASH
+
+    subroutine CMLA ( L, Source, iA, iSH_0 )
       use Basics
       use Manifolds
       import LaplacianMultipoleTemplate
+      implicit none
       class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
-        LM
-      class ( AtlasHeaderForm ), intent ( in ), target :: &
-        A
+        L
+      class ( FieldAtlasTemplate ), intent ( in ) :: &
+        Source
       integer ( KDI ), intent ( in ) :: &
-        MaxDegree, &
-        nEquations
-    end subroutine SP
+        iA, &  
+        iSH_0  
+    end subroutine CMLA
 
-    subroutine CML ( LM, Source )
-      use Basics
-      import LaplacianMultipoleTemplate
-      class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
-        LM
-      type ( StorageForm ), intent ( in ) :: &
-        Source  
-    end subroutine CML
   end interface
 
+!-- FIXME: With GCC 6.1.0, must be public to trigger .smod generation
+!    private :: &
+    public :: &
+      AddMomentShellsKernel
+
+    interface
+
+      module subroutine AddMomentShellsKernel &
+                          ( M_RC, M_IC, M_RS, M_IS, nA, nE, nR, &
+                            UseDeviceOption )
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( :, :, : ) :: &
+          M_RC, M_IC, M_RS, M_IS
+        integer ( KDI ), intent ( in ) :: &
+          nA, nE, nR
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine AddMomentShellsKernel
+
+    end interface
+
+
     private :: &
-      AssignPointers, &
-      ComputeSolidHarmonicsKernel_C_M_0, &
-      ComputeSolidHarmonicsKernel_C_S, &
-      AddMomentShells, &
-      ComputeMomentContributionsKernel
+      AllocateReduction, &
+      AssignMomentPointers
+
 
 contains
 
 
-  subroutine InitializeTemplate ( LM, A, MaxDegree, nEquations )
+  subroutine InitializeTemplate ( L, A, MaxDegree, nEquations )
 
     class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
-      LM
+      L
     class ( AtlasHeaderForm ), intent ( in ) :: &
       A
     integer ( KDI ), intent ( in ) :: &
       MaxDegree, &
       nEquations
 
-    integer ( KDI ) :: &
-      iV, &  !-- iValue
-      iL, &
-      iM
+    L % IGNORABILITY = A % IGNORABILITY
 
-    LM % IGNORABILITY = A % IGNORABILITY
+    if ( L % Type == '' ) &
+      L % Type = 'a LaplacianMultipole' 
 
-    if ( LM % Type == '' ) &
-      LM % Type = 'a LaplacianMultipole' 
+    L % Name = 'Laplacian_' // trim ( A % Name )
 
-    LM % Name = 'Laplacian_' // trim ( A % Name )
+    call Show ( 'Initializing ' // trim ( L % Type ), L % IGNORABILITY )
+    call Show ( L % Name, 'Name', L % IGNORABILITY )
 
-    call Show ( 'Initializing ' // trim ( LM % Type ), LM % IGNORABILITY )
-    call Show ( LM % Name, 'Name', LM % IGNORABILITY )
-
-    call LM % SetParameters ( A, MaxDegree, nEquations )
-
-    allocate ( LM % SolidHarmonic_RC ( LM % nAngularMomentCells ) )
-    allocate ( LM % SolidHarmonic_IC ( LM % nAngularMomentCells ) )
-
-    if ( LM % MaxOrder > 0 ) then
-      allocate ( LM % SolidHarmonic_RS ( LM % nAngularMomentCells ) )
-      allocate ( LM % SolidHarmonic_IS ( LM % nAngularMomentCells ) )
-    end if
-
-    allocate ( LM % Delta ( LM % nAngularMomentCells ) )
-    associate &
-      ( L => LM % MaxDegree, &
-        M => LM % MaxOrder )
-    iV = 0
-    do iM = 0, M
-      do iL = iM, L
-        iV = iV + 1
-        if ( iM == 0 ) then
-          LM % Delta ( iV ) = 1.0_KDR
-        else
-          LM % Delta ( iV ) = 2.0_KDR
-        end if
-      end do
-    end do
-    end associate !-- L, etc.
+    call L % SetParameters ( A, MaxDegree, nEquations )
+    call L % AllocateRectangularCoordinates ( )
+    call L % AllocateSolidHarmonics ( )
+    call L % AllocateMoments ( )
 
   end subroutine InitializeTemplate
 
 
-  subroutine ComputeSolidHarmonics &
-               ( LM, CoordinateSystem, Position, nDimensions, R, iR )
+  subroutine InitializeTimers ( L, BaseLevel )
 
     class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
-      LM
-    character ( * ), intent ( in ) :: &
-      CoordinateSystem
-    real ( KDR ), dimension ( 3 ), intent ( in ) :: &
-      Position
-    integer ( KDI ), intent ( in ) :: &
-      nDimensions
-    real ( KDR ), intent ( out ) :: &
-      R
-    integer ( KDI ), intent ( out ) :: &
-      iR
-
-    integer ( KDI ) :: &
       L
-    real ( KDR ) :: &
-      X, Y, Z
-    real ( KDR ), dimension ( : ), pointer :: &
-      R_C, I_C, &
-      R_S, I_S
+    integer ( KDI ), intent ( in ) :: &
+      BaseLevel
 
-    L  =  LM % MaxDegree
+    call PROGRAM_HEADER % AddTimer &
+           ( 'ComputeMoments', L % iTimerComputeMoments, Level = BaseLevel )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'ClearMoments', L % iTimerClearMoments, Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'LocalMoments', L % iTimerLocalMoments, Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'ReduceMoments', L % iTimerReduceMoments, &
+               Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'AddMoments', L % iTimerAddMoments, Level = BaseLevel + 1 )
 
-    R_C  =>  LM % SolidHarmonic_RC ( : )
-    I_C  =>  LM % SolidHarmonic_IC ( : )
-    R_S  =>  LM % SolidHarmonic_RS ( : )
-    I_S  =>  LM % SolidHarmonic_IS ( : )
-
-    select case ( trim ( CoordinateSystem ) )
-    case ( 'RECTANGULAR' )
-      X  =  Position ( 1 )  -  LM % Origin ( 1 )
-      Y  =  Position ( 2 )  -  LM % Origin ( 2 )
-      Z  =  Position ( 3 )  -  LM % Origin ( 3 )
-    case ( 'CYLINDRICAL' )
-      if ( nDimensions < 3 ) then
-        X  =  Position ( 1 )
-        Y  =  0.0_KDR
-      else
-        X  =  Position ( 1 )  *  cos ( Position ( 3 ) )
-        Y  =  Position ( 1 )  *  sin ( Position ( 3 ) )
-      end if
-      Z  =  Position ( 2 )  -  LM % Origin ( 2 )
-    case ( 'SPHERICAL' )
-      if ( nDimensions < 3 ) then
-        X  =  Position ( 1 )  *  sin ( Position ( 2 ) )
-        Y  =  0.0_KDR
-      else
-        X  =  Position ( 1 )  *  sin ( Position ( 2 ) )  &
-                              *  cos ( Position ( 3 ) )
-        Y  =  Position ( 1 )  *  sin ( Position ( 2 ) )  &
-                              *  sin ( Position ( 3 ) )
-      end if
-      Z  =  Position ( 1 )  *  cos ( Position ( 2 ) )
-    end select !-- CoordinateSystem
-
-    if ( nDimensions < 3 ) then
-      call ComputeSolidHarmonicsKernel_C_M_0 ( X, Z, L, R_C, I_C )
-    else
-      call ComputeSolidHarmonicsKernel_C_S ( X, Y, Z, L, R_C, I_C, R_S, I_S )
-    end if
-
-    R  =  sqrt ( X * X  +  Y * Y  +  Z * Z )
-
-    if ( R > LM % RadialEdge ( size ( LM % RadialEdge ) ) ) then
-      call Show ( 'Radial grid not large enough', CONSOLE % ERROR )
-      call Show ( R, 'R', CONSOLE % ERROR )
-      call Show ( LM % RadialEdge ( size ( LM % RadialEdge ) ), 'R_Max', &
-                  CONSOLE % ERROR )
-      call Show ( 'ComputeMomentContributions', 'subroutine', &
-                  CONSOLE % ERROR )
-      call Show ( 'LaplacianMultipole_Template', 'module', CONSOLE % ERROR )
-      call PROGRAM_HEADER % Abort ( )
-    end if
-
-    call Search ( LM % RadialEdge, R, iR ) 
-!call Show ( R, 'R', nLeadingLinesOption = 1 )
-!call Show ( iR, 'iR' )
-!call Show ( LM % RadialEdge ( iR ), 'R_in' )
-!call Show ( LM % RadialEdge ( iR + 1 ), 'R_out' )
-
-    nullify ( R_C, I_C, R_S, I_S )
-
-  end subroutine ComputeSolidHarmonics
+  end subroutine InitializeTimers
 
 
-  subroutine ComputeMoments ( LM, Source )
+  subroutine ComputeMoments ( L, Source )
 
     class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
-      LM
-    type ( StorageForm ), intent ( in ) :: &
-      Source !-- array over levels    
+      L
+    class ( FieldAtlasTemplate ), intent ( in ) :: &
+      Source
+
+    type ( TimerForm ), pointer :: &
+      Timer, &
+      Timer_CM, &
+      Timer_LM, &
+      Timer_RM, &
+      Timer_AM
+
+    Timer     =>  PROGRAM_HEADER % TimerPointer ( L % iTimerComputeMoments )
+    Timer_CM  =>  PROGRAM_HEADER % TimerPointer ( L % iTimerClearMoments )
+    Timer_LM  =>  PROGRAM_HEADER % TimerPointer ( L % iTimerLocalMoments )
+    Timer_RM  =>  PROGRAM_HEADER % TimerPointer ( L % iTimerReduceMoments )
+    Timer_AM  =>  PROGRAM_HEADER % TimerPointer ( L % iTimerAddMoments )
+
+    if ( associated ( Timer ) ) call Timer % Start ( )
+
+    call Show ( 'Computing Moments', L % IGNORABILITY + 2 )
+
+    associate &
+      (   M  =>  L %   Moments, &
+        MyM  =>  L % MyMoments )
+
+    if ( associated ( Timer_CM ) ) call Timer_CM % Start ( )
+    call MyM % Clear ( )
+    if ( associated ( Timer_CM ) ) call Timer_CM % Stop ( )
+
+    if ( associated ( Timer_LM ) ) call Timer_LM % Start ( )
+    call L % ComputeMomentsLocal ( Source )
+    if ( associated ( Timer_LM ) ) call Timer_LM % Stop ( )
+
+    if ( associated ( Timer_RM ) ) call Timer_RM % Start ( )
+    call MyM % UpdateHost ( )
+    call L % ReductionMoments % Reduce ( REDUCTION % SUM )
+    call M % UpdateDevice ( ) 
+    if ( associated ( Timer_RM ) ) call Timer_RM % Stop ( )
+
+    if ( associated ( Timer_AM ) ) call Timer_AM % Start ( )
+      call AddMomentShellsKernel &
+             ( L % Moment_RC, L % Moment_IC, L % Moment_RS, L % Moment_IS, &
+               L % nAngularMoments, L % nEquations, L % nRadialCells, &
+               UseDeviceOption = L % UseDevice )
+    if ( associated ( Timer_AM ) ) call Timer_AM % Stop ( )
     
-    ! integer ( KDI ) :: &
-    !   iL, &  !-- iLevel
-    !   iC     !-- iCell
+    end associate !-- M, etc.
 
-    call Show ( 'Computing Moments', CONSOLE % INFO_3 )
-
-    call Clear ( LM % MyM_RC )
-    call Clear ( LM % MyM_IC )
-    if ( LM % MaxOrder > 0 ) then
-      call Clear ( LM % MyM_RS )
-      call Clear ( LM % MyM_IS )
-    end if
-
-    call LM % ComputeMomentsLocal ( Source )
-
-    call LM % Reduction_RC % Reduce ( REDUCTION % SUM )
-    call LM % Reduction_IC % Reduce ( REDUCTION % SUM )
-    if ( LM % MaxOrder > 0 ) then
-      call LM % Reduction_RS % Reduce ( REDUCTION % SUM )
-      call LM % Reduction_IS % Reduce ( REDUCTION % SUM )
-    end if
-
-    call AddMomentShells &
-           ( LM % M_RC, LM % M_IC, &
-             LM % nEquations, LM % nRadialCells, LM % nAngularMomentCells )
-    if ( LM % MaxOrder > 0 ) &
-      call AddMomentShells &
-             ( LM % M_RS, LM % M_IS, &
-               LM % nEquations, LM % nRadialCells, LM % nAngularMomentCells )
+    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine ComputeMoments
 
 
-  impure elemental subroutine FinalizeTemplate ( LM )
+  impure elemental subroutine FinalizeTemplate ( L )
 
     class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
-      LM
+      L
 
-    if ( allocated ( LM % Reduction_RC ) ) deallocate ( LM % Reduction_RC )
-    if ( allocated ( LM % Reduction_RS ) ) deallocate ( LM % Reduction_RS )
-    if ( allocated ( LM % Reduction_IC ) ) deallocate ( LM % Reduction_IC )
-    if ( allocated ( LM % Reduction_IS ) ) deallocate ( LM % Reduction_IS )
+    if ( allocated ( L % ReductionMoments ) ) &
+      deallocate ( L % ReductionMoments )
 
-    nullify ( LM % M_IS )
-    nullify ( LM % M_RS )
-    nullify ( LM % M_IC )
-    nullify ( LM % M_RC )
-    nullify ( LM % MyM_IS )
-    nullify ( LM % MyM_RS )
-    nullify ( LM % MyM_IC )
-    nullify ( LM % MyM_RC )
+    if ( allocated ( L % RadialEdges ) ) &
+      deallocate ( L % RadialEdges )
+    if ( allocated ( L % MyMoments ) ) &
+      deallocate ( L % MyMoments )
+    if ( allocated ( L % Moments ) ) &
+      deallocate ( L % Moments )
 
-    if ( associated ( LM % Moment_IS_1D ) ) &
-       deallocate ( LM % Moment_IS_1D )
-    if ( associated ( LM % Moment_IC_1D ) ) &
-       deallocate ( LM % Moment_IC_1D )
-    if ( associated ( LM % Moment_RS_1D ) ) &
-       deallocate ( LM % Moment_RS_1D )
-    if ( associated ( LM % Moment_RC_1D ) ) &
-       deallocate ( LM % Moment_RC_1D )
-    if ( associated ( LM % MyMoment_IS_1D ) ) &
-       deallocate ( LM % MyMoment_IS_1D )
-    if ( associated ( LM % MyMoment_IC_1D ) ) &
-       deallocate ( LM % MyMoment_IC_1D )
-    if ( associated ( LM % MyMoment_RS_1D ) ) &
-       deallocate ( LM % MyMoment_RS_1D )
-    if ( associated ( LM % MyMoment_RC_1D ) ) &
-       deallocate ( LM % MyMoment_RC_1D )
-    if ( associated ( LM % SolidHarmonic_IS ) ) &
-      deallocate ( LM % SolidHarmonic_IS )
-    if ( associated ( LM % SolidHarmonic_RS ) ) &
-      deallocate ( LM % SolidHarmonic_RS )
-    if ( associated ( LM % SolidHarmonic_IC ) ) &
-      deallocate ( LM % SolidHarmonic_IC )
-    if ( associated ( LM % SolidHarmonic_RC ) ) &
-      deallocate ( LM % SolidHarmonic_RC )
+    nullify ( L % MyMoment_IS )
+    nullify ( L % MyMoment_RS )
+    nullify ( L % MyMoment_IC )
+    nullify ( L % MyMoment_RC )
+    nullify ( L % Moment_IS )
+    nullify ( L % Moment_RS )
+    nullify ( L % Moment_IC )
+    nullify ( L % Moment_RC )
 
-    if ( allocated ( LM % Delta ) ) &
-      deallocate ( LM % Delta )
-    if ( allocated ( LM % RadialEdge ) ) &
-      deallocate ( LM % RadialEdge )
+    if ( L % Name == '' ) return
 
-    if ( LM % Name == '' ) return
-
-    call Show ( 'Finalizing ' // trim ( LM % Type ), LM % IGNORABILITY )
-    call Show ( LM % Name, 'Name', LM % IGNORABILITY )
+    call Show ( 'Finalizing ' // trim ( L % Type ), L % IGNORABILITY )
+    call Show ( L % Name, 'Name', L % IGNORABILITY )
     
   end subroutine FinalizeTemplate
 
 
-  subroutine SetMomentStorage ( LM )
+  subroutine SetParameters ( L, A, MaxDegree, nEquations )
 
     class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
-      LM
+      L
+    class ( AtlasHeaderForm ), intent ( in ), target :: &
+      A
+    integer ( KDI ), intent ( in ) :: &
+      MaxDegree, &
+      nEquations
 
-    if ( associated ( LM % Moment_IS_1D ) ) &
-       deallocate ( LM % Moment_IS_1D )
-    if ( associated ( LM % Moment_IC_1D ) ) &
-       deallocate ( LM % Moment_IC_1D )
-    if ( associated ( LM % Moment_RS_1D ) ) &
-       deallocate ( LM % Moment_RS_1D )
-    if ( associated ( LM % Moment_RC_1D ) ) &
-       deallocate ( LM % Moment_RC_1D )
-    if ( associated ( LM % MyMoment_IS_1D ) ) &
-       deallocate ( LM % MyMoment_IS_1D )
-    if ( associated ( LM % MyMoment_IC_1D ) ) &
-       deallocate ( LM % MyMoment_IC_1D )
-    if ( associated ( LM % MyMoment_RS_1D ) ) &
-       deallocate ( LM % MyMoment_RS_1D )
-    if ( associated ( LM % MyMoment_RC_1D ) ) &
-       deallocate ( LM % MyMoment_RC_1D )
+    integer ( KDI ) :: &
+      iL, &
+      iM
+
+    L % MaxDegree  =  MaxDegree
+    L % MaxOrder   =  MaxDegree
+
+    call L % SetParametersAtlas ( A )
 
     associate &
-      ( nR_nA_nE => LM % nRadialCells * LM % nAngularMomentCells &
-                    * LM % nEquations )
-    allocate ( LM % MyMoment_RC_1D ( nR_nA_nE ) )
-    allocate ( LM % MyMoment_IC_1D ( nR_nA_nE ) )
-    allocate ( LM % Moment_RC_1D ( nR_nA_nE ) )
-    allocate ( LM % Moment_IC_1D ( nR_nA_nE ) )
-    if ( LM % MaxOrder > 0 ) then
-      allocate ( LM % MyMoment_RS_1D ( nR_nA_nE ) )
-      allocate ( LM % MyMoment_IS_1D ( nR_nA_nE ) )
-      allocate ( LM % Moment_RS_1D ( nR_nA_nE ) )
-      allocate ( LM % Moment_IS_1D ( nR_nA_nE ) )
-    end if
-    end associate !-- nR_nA_nE
+      (  L  =>  L % MaxDegree, &
+         M  =>  L % MaxOrder, &
+        nA  =>  L % nAngularMoments )
+    nA = 0
+    do iM  =  0, M
+      do iL  =  iM, L
+        nA  =  nA + 1
+      end do
+    end do
+    end associate !-- L, etc.
 
-    !-- FIXME: NAG has trouble with pointer rank reassignment when the 
-    !          left-hand side is a member
-    call AssignPointers &
-           ( LM, LM % MyM_RC, LM % MyM_IC, LM % MyM_RS, LM % MyM_IS, &
-             LM % M_RC, LM % M_IC, LM % M_RS, LM % M_IS )
+    L % nEquations  =  nEquations
 
-    if ( allocated ( LM % Reduction_RC ) ) deallocate ( LM % Reduction_RC )
-    if ( allocated ( LM % Reduction_IC ) ) deallocate ( LM % Reduction_IC )
-    if ( allocated ( LM % Reduction_RS ) ) deallocate ( LM % Reduction_RS )
-    if ( allocated ( LM % Reduction_IS ) ) deallocate ( LM % Reduction_IS )
+    call Show ( L % MaxDegree, 'MaxDegree (l)', L % IGNORABILITY )
+    call Show ( L % MaxOrder, 'MaxOrder (m)', L % IGNORABILITY )
+    call Show ( L % nRadialCells, 'nRadialCells', L % IGNORABILITY )
+    call Show ( L % nAngularMoments, 'nAngularMoments', L % IGNORABILITY )
+    call Show ( L % nEquations, 'nEquations', L % IGNORABILITY )
+    call Show ( L % UseDevice, 'UseDevice', L % IGNORABILITY )
 
-    associate ( PHC => PROGRAM_HEADER % Communicator )
-    allocate ( LM % Reduction_RC )
-    allocate ( LM % Reduction_IC )
-    call LM % Reduction_RC % Initialize &
-           ( PHC, OutgoingValue = LM % MyMoment_RC_1D, &
-             IncomingValue = LM % Moment_RC_1D )
-    call LM % Reduction_IC % Initialize &
-           ( PHC, OutgoingValue = LM % MyMoment_IC_1D, &
-             IncomingValue = LM % Moment_IC_1D )
-    if ( LM % MaxOrder > 0 ) then
-      allocate ( LM % Reduction_RS )
-      allocate ( LM % Reduction_IS )
-      call LM % Reduction_RS % Initialize &
-             ( PHC, OutgoingValue = LM % MyMoment_RS_1D, &
-               IncomingValue = LM % Moment_RS_1D )
-      call LM % Reduction_IS % Initialize &
-             ( PHC, OutgoingValue = LM % MyMoment_IS_1D, &
-               IncomingValue = LM % Moment_IS_1D )
-    end if
-    end associate !-- PHC
-
-  end subroutine SetMomentStorage
+  end subroutine SetParameters
 
 
-  subroutine ComputeMomentContributions ( LM, Source, Volume, iaSource, iR )
+  subroutine AllocateMoments ( L )
 
     class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
-      LM
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      Source
-    real ( KDR ), intent ( in ) :: &
-      Volume
-    integer ( KDI ), dimension ( : ), intent ( in ) :: &
-      iaSource
-    integer ( KDI ) :: &
-      iR  !-- iRadius
+      L
 
-    integer ( KDI ) :: &
-      iE  !-- iEquation
-    real ( KDR ), dimension ( LM % nEquations ) :: &
-      Source_dV
+    if ( allocated ( L % Moments ) ) &
+      deallocate ( L % Moments )
+    if ( allocated ( L % MyMoments ) ) &
+      deallocate ( L % MyMoments )
 
-    Source_dV  =  [ ( Source ( iaSource ( iE ) )  *  Volume, &
-                      iE = 1, LM % nEquations ) ] 
-!call Show ( Source_dV, 'Source_dV' )
-
-    call ComputeMomentContributionsKernel &
-           ( LM % MyM_RC, LM % MyM_IC, &
-             LM % SolidHarmonic_RC, LM % SolidHarmonic_IC, &
-             Source_dV, LM % nEquations, LM % nAngularMomentCells, iR )
-    if ( LM % MaxOrder > 0 ) &
-      call ComputeMomentContributionsKernel &
-             ( LM % MyM_RS, LM % MyM_IS, &
-               LM % SolidHarmonic_RS, LM % SolidHarmonic_IS, &
-               Source_dV, LM % nEquations, LM % nAngularMomentCells, iR )
-
-  end subroutine ComputeMomentContributions
-
-
-  subroutine AssignPointers &
-               ( LM, MyM_RC, MyM_IC, MyM_RS, MyM_IS, M_RC, M_IC, M_RS, M_IS )
-
-    class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
-      LM
-    real ( KDR ), dimension ( :, :, : ), pointer, intent ( out ) :: &
-      MyM_RC, MyM_IC, &
-      MyM_RS, MyM_IS, &
-      M_RC, M_IC, &
-      M_RS, M_IS
-
+    allocate ( L % Moments )
+    allocate ( L % MyMoments )
     associate &
-      ( nE => LM % nEquations, &
-        nR => LM % nRadialCells, &
-        nA => LM % nAngularMomentCells )
+      (         M  =>  L % Moments, &
+              MyM  =>  L % MyMoments, &
+               nA  =>  L % nAngularMoments, &
+               nR  =>  L % nRadialCells, &
+               nE  =>  L % nEquations )
 
-    MyM_RC ( 1 : nA, 1 : nR, 1 : nE ) => LM % MyMoment_RC_1D
-    MyM_IC ( 1 : nA, 1 : nR, 1 : nE ) => LM % MyMoment_IC_1D
-      M_RC ( 1 : nA, 1 : nR, 1 : nE ) => LM % Moment_RC_1D
-      M_IC ( 1 : nA, 1 : nR, 1 : nE ) => LM % Moment_IC_1D
-
-    if ( LM % MaxOrder > 0 ) then
-      MyM_RS ( 1 : nA, 1 : nR, 1 : nE ) => LM % MyMoment_RS_1D
-      MyM_IS ( 1 : nA, 1 : nR, 1 : nE ) => LM % MyMoment_IS_1D
-        M_RS ( 1 : nA, 1 : nR, 1 : nE ) => LM % Moment_RS_1D
-        M_IS ( 1 : nA, 1 : nR, 1 : nE ) => LM % Moment_IS_1D
+    call   M % Initialize ( [ nA * nR * nE, 4 ], PinnedOption = .true. )
+    call MyM % Initialize ( [ nA * nR * nE, 4 ], PinnedOption = .true. )
+      !-- 4: RegularCos, IrregularCos, RegularSin, IrregularSin
+    if ( L % UseDevice ) then
+      call   M % AllocateDevice ( )
+      call MyM % AllocateDevice ( )
     end if
 
-    end associate !-- nR, nA
+    call AllocateReduction ( L, M % Value, MyM % Value )
 
-  end subroutine AssignPointers
+    call AssignMomentPointers &
+           ( L, L %   Moments % Value ( :, L %   REGULAR_COS ), &
+                L %   Moments % Value ( :, L % IRREGULAR_COS ), &
+                L %   Moments % Value ( :, L %   REGULAR_SIN ), &
+                L %   Moments % Value ( :, L % IRREGULAR_SIN ), &
+                L % MyMoments % Value ( :, L %   REGULAR_COS ), &
+                L % MyMoments % Value ( :, L % IRREGULAR_COS ), &
+                L % MyMoments % Value ( :, L %   REGULAR_SIN ), &
+                L % MyMoments % Value ( :, L % IRREGULAR_SIN ), &
+                L %   Moment_RC, L %   Moment_IC, &
+                L %   Moment_RS, L %   Moment_IS, &
+                L % MyMoment_RC, L % MyMoment_IC, &
+                L % MyMoment_RS, L % MyMoment_IS )
+
+    end associate !-- M, etc.
+
+  end subroutine AllocateMoments
 
 
-  subroutine ComputeSolidHarmonicsKernel_C_M_0 ( X, Z, L, R_C, I_C )
+  subroutine ComputeMomentsLocal ( L, Source )
 
-    real ( KDR ), intent ( in ) :: &
-      X, Z
-    integer ( KDI ), intent ( in ) :: &
+    class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
       L
-    real ( KDR ), dimension ( : ), intent ( out ) :: &
-      R_C, I_C
+    class ( FieldAtlasTemplate ), intent ( in ) :: &
+      Source  
 
     integer ( KDI ) :: &
-      iV, &  !-- iValue
-      iL, &
-      iM, &
-      iPD   !-- iPreviousDiagonal
-    real ( KDR ) :: &
-      D_2
+      iA, &   !-- iAngularMoment
+      iM, &   !-- iOrder
+      iL, &   !-- iDegree
+      iSH_PD  !-- iSolidHarmonic_PreviousDiagonal
+    integer ( KDI ), pointer :: &
+      iSH_0, &  !-- iSolidHarmonic_Current
+      iSH_1, &  !-- iSolidHarmonic_Previous_1
+      iSH_2     !-- iSolidHarmonic_Previous_2
+    integer ( KDI ), dimension ( 3 ), target :: &
+      iSH
 
-    D_2  =  X * X  +  Z * Z 
+    iSH_0  =>  iSH ( 1 )
+    iSH_1  =>  iSH ( 2 )
+    iSH_2  =>  iSH ( 3 )
 
-    iV = 0
-    iM = 0
+        iA  =  1
+       iSH  =  [ 1, 2, 3 ]
+    iSH_PD  =  4
 
-    !-- ( L, M ) = ( iM, iM )
-    !-- Note iL = iM
-    iV = iV + 1
-    if ( iM == 0 ) then
-      iV = 1
-      R_C ( iV ) = 1.0_KDR
-      I_C ( iV ) = 1.0_KDR / sqrt ( D_2 )
-    else
-      R_C ( iV ) = - ( X * R_C ( iPD ) ) / ( 2 * iM )
-      I_C ( iV ) = - ( 2 * iM - 1 ) &
-                     * ( X * I_C ( iPD ) ) / D_2
-    end if
-    iPD = iV
-
-    if ( iM == L ) return
-
-    !-- ( L, M ) = ( iM + 1, iM )
-    !-- Note iL = iM + 1
-    iV = iV + 1
-    R_C ( iV ) = Z * R_C ( iV - 1 )  
-    I_C ( iV ) = ( 2 * ( iM + 1 ) - 1 ) * Z * I_C ( iV - 1 ) / D_2  
-
-    do iL = iM + 2, L
-      !-- ( L, M ) = ( iL, iM )
-      iV = iV + 1
-      R_C ( iV ) &
-        = ( ( 2 * iL - 1 ) * Z * R_C ( iV - 1 )  -  D_2 * R_C ( iV - 2 ) ) &
-          / ( ( iL + iM ) * ( iL - iM ) )
-      I_C ( iV ) &
-        = ( ( 2 * iL - 1 ) * Z * I_C ( iV - 1 )  &
-            -  ( ( iL - 1 )**2 - iM**2 ) * I_C ( iV - 2 ) ) &
-          / D_2
-    end do !-- iL
-
-  end subroutine ComputeSolidHarmonicsKernel_C_M_0
-
-
-  subroutine ComputeSolidHarmonicsKernel_C_S &
-               ( X, Y, Z, L, R_C, I_C, R_S, I_S )
-
-    real ( KDR ), intent ( in ) :: &
-      X, Y, Z
-    integer ( KDI ), intent ( in ) :: &
-      L
-    real ( KDR ), dimension ( : ), intent ( out ) :: &
-      R_C, I_C, &
-      R_S, I_S
-
-    integer ( KDI ) :: &
-      iV, &  !-- iValue
-      iL, &
-      iM, &
-      iPD   !-- iPreviousDiagonal
-    real ( KDR ) :: &
-      D_2
-
-    D_2  =  X * X  +  Y * Y  +  Z * Z 
-
-    iV = 0
-    do iM = 0, L
+    do iM  =  0, L % MaxOrder
 
       !-- ( L, M ) = ( iM, iM )
       !-- Note iL = iM
-      iV = iV + 1
-      if ( iM == 0 ) then
-        iV = 1
-        R_C ( iV ) = 1.0_KDR
-        R_S ( iV ) = 0.0_KDR
-        I_C ( iV ) = 1.0_KDR / sqrt ( D_2 )
-        I_S ( iV ) = 0.0_KDR
+      if ( iM  ==  0 ) then
+        call L % ComputeSolidHarmonics_0_0 ( iSH_0, iSH_PD )
       else
-        R_C ( iV ) = - ( X * R_C ( iPD ) - Y * R_S ( iPD ) ) / ( 2 * iM )
-        R_S ( iV ) = - ( Y * R_C ( iPD ) + X * R_S ( iPD ) ) / ( 2 * iM )
-        I_C ( iV ) = - ( 2 * iM - 1 ) &
-                       * ( X * I_C ( iPD ) - Y * I_S ( iPD ) ) / D_2
-        I_S ( iV ) = - ( 2 * iM - 1 ) &
-                       * ( Y * I_C ( iPD ) + X * I_S ( iPD ) ) / D_2
+        call L % ComputeSolidHarmonics_iM_iM ( iM, iSH_0, iSH_PD )
       end if
-      iPD = iV
 
-      if ( iM == L ) exit
+      do iL  =  iM, L % MaxDegree
 
-      !-- ( L, M ) = ( iM + 1, iM )
-      !-- Note iL = iM + 1
-      iV = iV + 1
-      R_C ( iV ) = Z * R_C ( iV - 1 )  
-      R_S ( iV ) = Z * R_S ( iV - 1 )  
-      I_C ( iV ) = ( 2 * ( iM + 1 ) - 1 ) * Z * I_C ( iV - 1 ) / D_2  
-      I_S ( iV ) = ( 2 * ( iM + 1 ) - 1 ) * Z * I_S ( iV - 1 ) / D_2 
+        if ( iL  ==  iM + 1 ) then
+          !-- ( L, M ) = ( iM + 1, iM )
+          !-- Note iL = iM + 1
+          call L % ComputeSolidHarmonics_iL_iM_1 &
+                 ( iM, iSH_0, iSH_1 )
+        else if ( iL  >=  iM  +  2 ) then
+          !-- ( L, M ) = ( iL, iM )
+          call L % ComputeSolidHarmonics_iL_iM_2 &
+                 ( iL, iM, iSH_0, iSH_1, iSH_2 )
+        end if
 
-      do iL = iM + 2, L
-        !-- (L,M) = (iL,iM)
-        iV = iV + 1
-        R_C ( iV ) &
-          = ( ( 2 * iL - 1 ) * Z * R_C ( iV - 1 )  -  D_2 * R_C ( iV - 2 ) )&
-            / ( ( iL + iM ) * ( iL - iM ) )
-        R_S ( iV ) &
-          = ( ( 2 * iL - 1 ) * Z * R_S ( iV - 1 )  -  D_2 * R_S ( iV - 2 ) )&
-            / ( ( iL + iM ) * ( iL - iM ) )
-        I_C ( iV ) &
-          = ( ( 2 * iL - 1 ) * Z * I_C ( iV - 1 )  &
-              -  ( ( iL - 1 )**2 - iM**2 ) * I_C ( iV - 2 ) ) &
-            / D_2
-        I_S ( iV ) &
-          = ( ( 2 * iL - 1 ) * Z * I_S ( iV - 1 )  &
-              -  ( ( iL - 1 )**2 - iM**2 ) * I_S ( iV - 2 ) ) &
-            / D_2
+        call L % ComputeMomentLocalAtlas ( Source, iA, iSH_0 )
+
+         iA  =  iA + 1
+        iSH  =  cshift ( iSH, -1 )
+
       end do !-- iL
-
     end do !-- iM
 
-  end subroutine ComputeSolidHarmonicsKernel_C_S
+  end subroutine ComputeMomentsLocal
 
 
-  subroutine AddMomentShells ( MR, MI, nE, nR, nA )
+  subroutine AllocateReduction ( L, M_Value, MyM_Value )
 
-    real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
-      MR, MI
-    integer ( KDI ), intent ( in ) :: &
-      nE, nR, nA
+    class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+      L
+    real ( KDR ), dimension ( :, : ), intent ( in ), target, contiguous :: &
+        M_Value, &
+      MyM_Value
 
-    integer ( KDI ) :: &
-      iA, &  !-- angular index
-      iR, &  !-- radial index
-      iE     !-- equation index
+    real ( KDR ), dimension ( : ), pointer :: &
+        Moment_1D, &
+      MyMoment_1D
 
-    do iE = 1, nE
-      !$OMP parallel do private ( iR, iA )
-      do iR = 2, nR
-        do iA = 1, nA
-          MR ( iA, iR, iE )  =  MR ( iA, iR - 1, iE )  +  MR ( iA, iR, iE )
-        end do
-      end do
-      !$OMP end parallel do
-    end do
+      Moment_1D ( 1 : size (   M_Value ) )  =>    M_Value
+    MyMoment_1D ( 1 : size ( MyM_Value ) )  =>  MyM_Value
 
-    do iE = 1, nE
-      !$OMP parallel do private ( iR, iA )
-      do iR = nR - 1, 1, -1
-        do iA = 1, nA
-          MI ( iA, iR, iE )  =  MI ( iA, iR + 1, iE )  +  MI ( iA, iR, iE )
-        end do
-      end do
-      !$OMP end parallel do
-    end do
+    if ( allocated ( L % ReductionMoments ) ) &
+      deallocate ( L % ReductionMoments )
+    allocate ( L % ReductionMoments )
+    associate &
+      (  RM  =>  L % ReductionMoments, &
+        PHC  =>  PROGRAM_HEADER % Communicator )
+      call RM % Initialize &
+             ( PHC, OutgoingValue = MyMoment_1D, IncomingValue = Moment_1D )
+    end associate !-- RM, etc.
 
-  end subroutine AddMomentShells
+    nullify ( Moment_1D, MyMoment_1D )
+
+  end subroutine AllocateReduction
 
 
-  subroutine ComputeMomentContributionsKernel &
-               ( MyMR, MyMI, SH_R, SH_I, Source_dV, nE, nA, iRS )
+  subroutine AssignMomentPointers &
+               ( L,   M_RC_1D,   M_IC_1D,   M_RS_1D,   M_IS_1D, &
+                    MyM_RC_1D, MyM_IC_1D, MyM_RS_1D, MyM_IS_1D, &
+                      M_RC_3D,   M_IC_3D,   M_RS_3D,   M_IS_3D, &
+                    MyM_RC_3D, MyM_IC_3D, MyM_RS_3D, MyM_IS_3D )
 
-    real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
-      MyMR, MyMI
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      SH_R, SH_I
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      Source_dV
-    integer ( KDI ), intent ( in ) :: &
-      nE, &
-      nA, &
-      iRS
+    class ( LaplacianMultipoleTemplate ), intent ( in ) :: &
+      L
+    real ( KDR ), dimension ( : ), intent ( in ), target :: &
+        M_RC_1D,   M_IC_1D, &
+        M_RS_1D,   M_IS_1D, &
+      MyM_RC_1D, MyM_IC_1D, &
+      MyM_RS_1D, MyM_IS_1D
+    real ( KDR ), dimension ( :, :, : ), intent ( out ), pointer :: &
+        M_RC_3D,   M_IC_3D, &
+        M_RS_3D,   M_IS_3D, &
+      MyM_RC_3D, MyM_IC_3D, &
+      MyM_RS_3D, MyM_IS_3D
 
-    integer ( KDI ) :: &
-      iA, &  !-- iAngular
-      iE     !-- iEquation   
+    associate &
+      ( nA => L % nAngularMoments, &
+        nE => L % nEquations, &
+        nR => L % nRadialCells )
 
-    do iE = 1, nE
-      do iA = 1, nA
-        MyMR ( iA, iRS, iE )  &
-          =  MyMR ( iA, iRS, iE )  +  SH_R ( iA )  *  Source_dV ( iE ) 
-        MyMI ( iA, iRS, iE )  &
-          =  MyMI ( iA, iRS, iE )  +  SH_I ( iA )  *  Source_dV ( iE )
-      end do
-    end do
+      M_RC_3D ( 1 : nR, 1 : nE, 1 : nA )  =>    M_RC_1D
+      M_IC_3D ( 1 : nR, 1 : nE, 1 : nA )  =>    M_IC_1D
+      M_RS_3D ( 1 : nR, 1 : nE, 1 : nA )  =>    M_RS_1D
+      M_IS_3D ( 1 : nR, 1 : nE, 1 : nA )  =>    M_IS_1D
+    MyM_RC_3D ( 1 : nR, 1 : nE, 1 : nA )  =>  MyM_RC_1D
+    MyM_IC_3D ( 1 : nR, 1 : nE, 1 : nA )  =>  MyM_IC_1D
+    MyM_RS_3D ( 1 : nR, 1 : nE, 1 : nA )  =>  MyM_RS_1D
+    MyM_IS_3D ( 1 : nR, 1 : nE, 1 : nA )  =>  MyM_IS_1D
 
-  end subroutine ComputeMomentContributionsKernel
+    end associate !-- nR, nA
+
+  end subroutine AssignMomentPointers
 
 
 end module LaplacianMultipole_Template

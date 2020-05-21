@@ -89,6 +89,8 @@ contains
       nCellsAzimuthal
     integer ( KDI ), dimension ( 3 ) :: &
       nCells
+    real ( KDR ) :: &
+      Pi
     real ( KDR ), dimension ( 3 ) :: &
       MinCoordinate, &
       MaxCoordinate, &
@@ -101,6 +103,8 @@ contains
     character ( LDL ), dimension ( 3 ) :: &
       Spacing
 
+    Pi  =  CONSTANT % PI
+
     CoordinateSystem = 'SPHERICAL'
 
     Spacing        =  'EQUAL'
@@ -109,10 +113,8 @@ contains
     IsPeriodic = .false.
     IsPeriodic ( 3 ) = .true.
 
-    associate ( Pi => CONSTANT % PI )
     MinCoordinate = [ RadiusMin,     0.0_KDR,      0.0_KDR ]
     MaxCoordinate = [ C % RadiusMax,      Pi, 2.0_KDR * Pi ]
-    end associate !-- Pi
 
     C % nCellsPolar = 128
     if ( present ( nCellsPolarOption ) ) &
@@ -130,7 +132,7 @@ contains
     nCellsPolar      =  C % nCellsPolar
     nCellsAzimuthal  =  2 * nCellsPolar
  
-    C % MinWidth  =  C % RadiusScale  *  CONSTANT % PI / nCellsPolar
+    C % MinWidth  =  C % RadiusScale  *  Pi / nCellsPolar
 
     nCells = [ nCellsRadial, 1, 1 ]
     if ( Atlas % nDimensions > 1 ) &
@@ -139,7 +141,7 @@ contains
       nCells ( 3 ) = nCellsAzimuthal
 
     Ratio        =  0.0_KDR
-    Ratio ( 1 )  =  CONSTANT % PI / nCellsPolar  !-- dTheta
+    Ratio ( 1 )  =  Pi / nCellsPolar  !-- dTheta
 
     Scale        =  0.0_KDR
     Scale ( 1 )  =  C % RadiusScale
@@ -215,8 +217,12 @@ contains
       nPillars_2
     integer ( KDI ), dimension ( :, : ), allocatable :: &
       nPillarsTransverse_2
+    real ( KDR ) :: &
+      Pi
     class ( GeometryFlatForm ), pointer :: &
       G
+
+    Pi  =  CONSTANT % PI
 
     G => C % Geometry ( )
 
@@ -232,7 +238,7 @@ contains
 
     associate &
       (    R_G => C % Center ( 1 ) % Value, &  !-- R_Global
-        dTheta => CONSTANT % PI / C % nCellsPolar, &
+        dTheta => Pi / C % nCellsPolar, &
              R => G % Value ( :, G % CENTER_U ( 1 ) ), &
         Crsn_2 => G % Value ( :, G % COARSENING ( 2 ) ) )
 
@@ -378,8 +384,12 @@ contains
       nPillars_3
     integer ( KDI ), dimension ( :, : ), allocatable :: &
       nPillarsTransverse_3
+    real ( KDR ) :: &
+      Pi
     class ( GeometryFlatForm ), pointer :: &
       G
+
+    Pi  =  CONSTANT % PI
 
     G => C % Geometry ( )
 
@@ -396,7 +406,7 @@ contains
     associate &
       (     R_G => C % Center ( 1 ) % Value, &  !-- R_Global
         Theta_G => C % Center ( 2 ) % Value, &  !-- Theta_Global
-           dPhi => 2 * CONSTANT % PI / ( 2 * C % nCellsPolar ), &
+           dPhi => 2 * Pi / ( 2 * C % nCellsPolar ), &
               R => G % Value ( :, G % CENTER_U ( 1 ) ), &
           Theta => G % Value ( :, G % CENTER_U ( 2 ) ), &
          Crsn_3 => G % Value ( :, G % COARSENING ( 3 ) ) )

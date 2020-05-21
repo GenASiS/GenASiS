@@ -158,7 +158,7 @@ contains
           call PROGRAM_HEADER % Abort ( )
         end if
 
-      case ( 'MULTIPOLE' )
+      case ( 'MULTIPOLE', 'MULTIPOLE_OLD' )
 
         G => GA % Geometry_N ( )
 
@@ -177,6 +177,8 @@ contains
 
       case default
         call Show ( 'GravitySolverType not recognized', CONSOLE % ERROR )
+        call Show ( GA % GravitySolverType, 'GravitySolverType', &
+                    CONSOLE % ERROR ) 
         call Show ( 'Geometry_ASC__Form', 'module', CONSOLE % ERROR )
         call Show ( 'Initialize', 'subroutine', CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
@@ -247,10 +249,12 @@ contains
       call ComputeGravityUniform ( GA )
     case ( 'CENTRAL_MASS' )
       call ComputeGravityCentralMass ( GA )
-    case ( 'MULTIPOLE' )
+    case ( 'MULTIPOLE', 'MULTIPOLE_OLD' )
       call ComputeGravityMultipole ( GA, FA, iBaryonMass, iBaryonDensity )
     case default
       call Show ( 'GravitySolverType not recognized', CONSOLE % ERROR )
+      call Show ( GA % GravitySolverType, 'GravitySolverType', &
+                  CONSOLE % ERROR ) 
       call Show ( 'Geometry_ASC__Form', 'module', CONSOLE % ERROR )
       call Show ( 'ComputeGravity', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )

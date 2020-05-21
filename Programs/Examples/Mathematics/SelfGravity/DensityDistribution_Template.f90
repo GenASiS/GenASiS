@@ -38,6 +38,7 @@ contains
 
 
   subroutine Initialize ( DD, Name, N_Eq, Variable, RadiusMaxOption )
+
     class ( DensityDistributionTemplate ) :: &
       DD
     character ( * ), intent ( in ) :: &
@@ -50,7 +51,7 @@ contains
       RadiusMaxOption
     
     integer ( KDI ) :: &
-      iE, & !iEquation
+      iE, &  !-- iEquation
       MaxDegree
     real ( KDR ) :: &
       Density, &
@@ -60,6 +61,10 @@ contains
       Eccentricity, &
       SemiMajor, &
       SemiMinor
+    character ( LDL ) :: &
+      PoissonSolverType
+    class ( GeometryFlatForm ), pointer :: &
+      G
 
     DD % N_Equations = N_eq
     DD % Variable = Variable
@@ -71,19 +76,30 @@ contains
     
     allocate ( DD % Atlas )
     associate ( A => DD % Atlas )
-    call A % Initialize ( Name, PROGRAM_HEADER % Communicator )
+    call A % Initialize ( 'PositionSpace', PROGRAM_HEADER % Communicator )
     call A % CreateChart_CC ( RadiusMaxOption = RadiusMax )
-    call A % SetGeometry ( )
+    call A % SetGeometry ( UsePinnedMemoryOption = .true. )
+    call A % Geometry_ASC % AllocateDevice ( )
+    G => A % Geometry ( )
+    call G % UpdateDevice ( )
 
     !-- Poisson
+
     MaxDegree = 10
-    call PROGRAM_HEADER % GetParameter ( MaxDegree, 'MaxDegree' )
+    PoissonSolverType = 'MULTIPOLE_OLD'
+    !-- FIXME: XL 16.1.1-5 does not work without association.
+    associate ( PH => PROGRAM_HEADER )
+!    call PROGRAM_HEADER % GetParameter ( MaxDegree, 'MaxDegree' )
+    call PH % GetParameter ( MaxDegree, 'MaxDegree' )
+    call PH % GetParameter ( PoissonSolverType, 'PoissonSolverType' )
+    end associate !-- PH
 
     allocate ( DD % Poisson )
     associate ( P => DD % Poisson )
     call P % Initialize &
-           ( A, SolverType = 'MULTIPOLE', MaxDegreeOption = MaxDegree, &
+           ( A, SolverType = PoissonSolverType, MaxDegreeOption = MaxDegree, &
              nEquationsOption = DD % N_Equations )
+    call P % InitializeTimers ( BaseLevel = 0 )
     end associate !-- P
 
     !-- Source, Reference
@@ -93,7 +109,10 @@ contains
     call SA % Initialize &
            ( A, 'Source', DD % N_Equations, &
              VariableOption = DD % Variable, &
-             WriteOption = .true. )
+             WriteOption = .true., &
+             UsePinnedMemoryOption = .true. )
+    call SA % AllocateDevice ( AssociateVariablesOption = .false. )
+    end associate !-- SA
 
     allocate ( DD % Reference )
     associate ( RA => DD % Reference )
@@ -101,8 +120,6 @@ contains
            ( A, 'Reference', DD % N_Equations, &
              VariableOption = DD % Variable, &
              WriteOption = .true. )
-
-    end associate !-- SA
     end associate !-- RA
 
     !-- Solution, Difference
@@ -112,7 +129,9 @@ contains
     call SA % Initialize &
            ( A, 'Solution', DD % N_Equations, &
              VariableOption = DD % Variable, &
-             WriteOption = .true. )
+             WriteOption = .true., &
+             UsePinnedMemoryOption = .true. )
+    call SA % AllocateDevice ( AssociateVariablesOption = .false. )
     end associate !-- SA
 
     allocate ( DD % Difference)
@@ -125,15 +144,21 @@ contains
 
     end associate !-- A
   
+    nullify ( G )
+
   end subroutine Initialize 
 
 
   subroutine Compute ( DD, ShiftSolutionOption )
+
     class ( DensityDistributionTemplate ), intent ( inout ) :: &
       DD
     logical ( KDL ), optional :: &
       ShiftSolutionOption
 
+    integer ( KDI ) :: &
+      iS, &  !-- iSolve
+      nSolve
     logical ( KDL ) :: &
       ShiftSolution, &
       NormalizeSolution
@@ -145,16 +170,34 @@ contains
 
     associate ( P => DD % Poisson )
 
-    call P % Solve ( DD % Solution, DD % Source )
+    nSolve = 1
+    !-- FIXME: XL 16.1.1-5 does not work without association.
+    associate ( PH => PROGRAM_HEADER )
+!    call PROGRAM_HEADER % GetParameter ( nSolve, 'nSolve' )
+    call PH % GetParameter ( nSolve, 'nSolve' )
+    end associate !-- PH
+
+    call Show ( 'Solving Poisson equation' )
+    call Show ( nSolve, 'nSolve' )
+    do iS = 1, nSolve
+      call Show ( iS, 'iS' )
+      call P % Solve ( DD % Solution, DD % Source )
+    end do !-- iS
 
     if ( present ( ShiftSolutionOption )  ) &
       ShiftSolution = ShiftSolutionOption
     if ( ShiftSolution ) call ShiftSolutionKernel ( DD )
 
+    call Show ( 'Computing error' )
     call ComputeError ( DD, NormalizeSolution ) 
+
+    call PROGRAM_HEADER % ShowStatistics &
+           ( CONSOLE % INFO_1, &
+             CommunicatorOption = PROGRAM_HEADER % Communicator )
 
     !-- Write
 
+    call Show ( 'Writing results' )
     allocate ( DD % Stream )
     call DD % Stream % Initialize &
            ( A % Name, CommunicatorOption = PROGRAM_HEADER % Communicator )    
@@ -177,6 +220,7 @@ contains
 
 
   subroutine Finalize ( DD )
+
     type ( DensityDistributionTemplate ) :: &
       DD
 
@@ -269,7 +313,7 @@ contains
       Difference % Value ( iV, iE) &
         = abs ( Difference % Value ( iV, iE) ) &
                   / max ( abs ( Reference % Value ( iV, iE ) ), &
-                          sqrt ( tiny ( 0.0 ) ) )
+                          sqrt ( tiny ( 0.0_KDR ) ) )
       end do
     end do
 
@@ -323,5 +367,6 @@ contains
     nullify ( Solution, Reference )
 
   end subroutine ShiftSolutionKernel
+
 
 end module DensityDistribution_Template
