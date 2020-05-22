@@ -57,6 +57,59 @@ module Geometry_ASC__Form
         ComputeGravityUniformKernel, &
         ComputeGravityCentralMassKernel, &
         ComputeGravitySource
+  
+  interface
+  
+    module subroutine ComputeGravityUniformKernel &
+             ( Phi, GradPhi_1, GradPhi_2, GradPhi_3, X, Y, Z, &
+               Acceleration, nDimensions, UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        Phi, &
+        GradPhi_1, GradPhi_2, GradPhi_3
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        X, Y, Z
+      real ( KDR ), intent ( in ) :: &
+        Acceleration
+      integer ( KDI ), intent ( in ) :: &
+        nDimensions
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine ComputeGravityUniformKernel
+
+
+    module subroutine ComputeGravityCentralMassKernel &
+             ( Phi, GradPhi_1, GradPhi_2, GradPhi_3, X_1, X_2, X_3, G, M, &
+               UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        Phi, &
+        GradPhi_1, GradPhi_2, GradPhi_3
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        X_1, X_2, X_3
+      real ( KDR ), intent ( in ) :: &
+        G, &
+        M
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine ComputeGravityCentralMassKernel
+
+
+    module subroutine ComputeGravitySource &
+             ( M, N, G, S, UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        M, &
+        N
+      real ( KDR ), intent ( in ) :: &
+        G
+      real ( KDR ), dimension ( : ), intent ( out ) :: &
+        S
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine ComputeGravitySource
+
+  end interface
 
 contains
 
@@ -173,6 +226,8 @@ contains
         associate ( Grad => GA % Gradient )
         call Grad % Initialize &
                ( 'GeometryGradient', [ G % nValues, 1 ] )
+        if ( G % AllocatedDevice ) &
+          call Grad % AllocateDevice ( )
         end associate !-- Grad
 
       case default
@@ -329,7 +384,8 @@ contains
              G % Value ( :, G % CENTER_U ( 1 ) ), &
              G % Value ( :, G % CENTER_U ( 2 ) ), &
              G % Value ( :, G % CENTER_U ( 3 ) ), &
-             GA % UniformAcceleration, A % nDimensions )
+             GA % UniformAcceleration, A % nDimensions, &
+             UseDeviceOption = G % AllocatedDevice )
 
     end select !-- A
     nullify ( G )
@@ -349,17 +405,31 @@ contains
     class is ( Atlas_SC_Form )
 
     G  =>  GA % Geometry_N ( )
+    
+    select case ( trim ( G % CoordinateSystem ) )
+    case ( 'SPHERICAL' )
 
-    call ComputeGravityCentralMassKernel &
-           ( G % Value ( :, G % POTENTIAL ), & 
-             G % Value ( :, G % POTENTIAL_GRADIENT_D ( 1 ) ), &
-             G % Value ( :, G % POTENTIAL_GRADIENT_D ( 2 ) ), &
-             G % Value ( :, G % POTENTIAL_GRADIENT_D ( 3 ) ), &
-             G % Value ( :, G % CENTER_U ( 1 ) ), &
-             G % Value ( :, G % CENTER_U ( 2 ) ), &
-             G % Value ( :, G % CENTER_U ( 3 ) ), &
-             GA % GravitationalConstant, GA % CentralMass, &
-             G % CoordinateSystem )
+      call ComputeGravityCentralMassKernel &
+             ( G % Value ( :, G % POTENTIAL ), & 
+               G % Value ( :, G % POTENTIAL_GRADIENT_D ( 1 ) ), &
+               G % Value ( :, G % POTENTIAL_GRADIENT_D ( 2 ) ), &
+               G % Value ( :, G % POTENTIAL_GRADIENT_D ( 3 ) ), &
+               G % Value ( :, G % CENTER_U ( 1 ) ), &
+               G % Value ( :, G % CENTER_U ( 2 ) ), &
+               G % Value ( :, G % CENTER_U ( 3 ) ), &
+               GA % GravitationalConstant, GA % CentralMass, &
+               UseDeviceOption = G % AllocatedDevice )
+    
+    case default
+      call Show ( 'CoordinateSystem not implemented', CONSOLE % ERROR )
+      call Show ( G % CoordinateSystem, 'CoordinateSystem', &
+                  CONSOLE % ERROR )
+      call Show ( 'Geometry_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'ComputeGravityCentralMassKernel', 'subroutine', &
+                   CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    
+    end select !-- CoordinateSystem  
 
     end select !-- A
     nullify ( G )
@@ -422,150 +492,24 @@ contains
            ( F % Value ( :, iBaryonMass ), &
              F % Value ( :, iBaryonDensity ), &
              GA % GravitationalConstant, &
-             S % Value ( :, S % iaSelected ( 1 ) ) )
+             S % Value ( :, S % iaSelected ( 1 ) ), &
+             UseDeviceOption = F % AllocatedDevice )
 
     call PA % Solve ( SA, SA )
 
     do iD = 1, C % nDimensions
       call GA % Gradient % Compute ( C, S, iDimension = iD )
       call Copy ( GA % Gradient % Output % Value ( :, 1 ), &
-                  G % Value ( :, G % POTENTIAL_GRADIENT_D ( iD ) ) )
+                  G % Value ( :, G % POTENTIAL_GRADIENT_D ( iD ) ), &
+                  UseDeviceOption = G % AllocatedDevice )
     end do !-- iD
 
-    end associate !-- PA, etc.
+    end associate !-- PA, etc.v
     end select !-- C
     end select !-- A
     nullify ( S, G, F )
 
   end subroutine ComputeGravityMultipole
-
-
-  subroutine ComputeGravityUniformKernel &
-               ( Phi, GradPhi_1, GradPhi_2, GradPhi_3, X, Y, Z, &
-                 Acceleration, nDimensions )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      Phi, &
-      GradPhi_1, GradPhi_2, GradPhi_3
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      X, Y, Z
-    real ( KDR ), intent ( in ) :: &
-      Acceleration
-    integer ( KDI ), intent ( in ) :: &
-      nDimensions
-
-    integer ( KDI ) :: &
-      iV, &  !-- iValue
-      nValues
-
-    nValues = size ( Phi )
-
-    select case ( nDimensions )
-    case ( 1 )
-
-      !$OMP parallel do private ( iV )
-      do iV = 1, nValues
-        Phi ( iV )        =  Acceleration  *  X ( iV )
-        GradPhi_1 ( iV )  =  Acceleration
-      end do
-      !$OMP end parallel do
-
-    case ( 2 )
-
-      !$OMP parallel do private ( iV )
-      do iV = 1, nValues
-        Phi ( iV )        =  Acceleration  *  Y ( iV )
-        GradPhi_1 ( iV )  =  0.0_KDR
-        GradPhi_2 ( iV )  =  Acceleration
-      end do
-      !$OMP end parallel do
-
-    case ( 3 )
-
-      !$OMP parallel do private ( iV )
-      do iV = 1, nValues
-        Phi ( iV )        =  Acceleration  *  Z ( iV )
-        GradPhi_1 ( iV )  =  0.0_KDR
-        GradPhi_2 ( iV )  =  0.0_KDR
-        GradPhi_3 ( iV )  =  Acceleration
-      end do
-      !$OMP end parallel do
-
-    end select !-- nDimensions
-
-  end subroutine ComputeGravityUniformKernel
-
-
-  subroutine ComputeGravityCentralMassKernel &
-               ( Phi, GradPhi_1, GradPhi_2, GradPhi_3, X_1, X_2, X_3, G, M, &
-                 CoordinateSystem )
-
-    real ( KDR ), dimension ( : ), intent ( inout ) :: &
-      Phi, &
-      GradPhi_1, GradPhi_2, GradPhi_3
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      X_1, X_2, X_3
-    real ( KDR ), intent ( in ) :: &
-      G, &
-      M
-    character ( * ), intent ( in ) :: &
-      CoordinateSystem
-
-    integer ( KDI ) :: &
-      iV, &  !-- iValue
-      nValues
-
-    nValues = size ( Phi )
-
-    select case ( trim ( CoordinateSystem ) )
-    case ( 'SPHERICAL' )
-
-      !$OMP parallel do private ( iV )
-      do iV = 1, nValues
-        Phi ( iV )        =  - G * M  /  X_1 ( iV )
-        GradPhi_1 ( iV )  =  G * M  /  X_1 ( iV ) ** 2
-      end do
-      !$OMP end parallel do
-
-    case default
-      call Show ( 'CoordinateSystem not implemented', CONSOLE % ERROR )
-      call Show ( CoordinateSystem, 'CoordinateSystem', CONSOLE % ERROR )
-      call Show ( 'Geometry_ASC__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'ComputeGravityCentralMassKernel', 'subroutine', &
-                  CONSOLE % ERROR )
-      call PROGRAM_HEADER % Abort ( )
-    end select !-- CoordinateSystem
-
-  end subroutine ComputeGravityCentralMassKernel
-
-
-  subroutine ComputeGravitySource ( M, N, G, S )
-
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      M, &
-      N
-    real ( KDR ), intent ( in ) :: &
-      G
-    real ( KDR ), dimension ( : ), intent ( out ) :: &
-      S
-
-    integer ( KDI ) :: &
-      iV, &  !-- iValue
-      nValues
-    real ( KDR ) :: &
-      FourPi_G
-
-    FourPi_G  =  4.0_KDR  *  CONSTANT % PI  *  G
-
-    nValues = size ( S )
-
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-      S ( iV )  =  FourPi_G  *  M ( iV )  *  N ( iV )
-    end do
-    !$OMP end parallel do
-
-  end subroutine ComputeGravitySource
 
 
 end module Geometry_ASC__Form

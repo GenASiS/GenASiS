@@ -1,5 +1,6 @@
 SPACES = \
   Spaces.o \
+  Geometry_ASC__Kernel.o \
   Geometry_ASC__Form.o \
   Geometry_CSL__Form.o \
   Geometry_N_S__Form.o \
