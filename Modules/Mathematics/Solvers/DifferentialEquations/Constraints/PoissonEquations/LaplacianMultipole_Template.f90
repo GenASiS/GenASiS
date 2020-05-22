@@ -397,8 +397,10 @@ contains
                nR  =>  L % nRadialCells, &
                nE  =>  L % nEquations )
 
-    call   M % Initialize ( [ nA * nR * nE, 4 ], PinnedOption = .true. )
-    call MyM % Initialize ( [ nA * nR * nE, 4 ], PinnedOption = .true. )
+    call   M % Initialize &
+             ( [ nA * nR * nE, 4 ], PinnedOption = L % UseDevice )
+    call MyM % Initialize &
+             ( [ nA * nR * nE, 4 ], PinnedOption = L % UseDevice )
       !-- 4: RegularCos, IrregularCos, RegularSin, IrregularSin
     if ( L % UseDevice ) then
       call   M % AllocateDevice ( )
