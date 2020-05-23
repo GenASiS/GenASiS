@@ -180,7 +180,7 @@ contains
       iS  !-- iSelected
     real ( KDR ), dimension ( T % nSelected ) :: &
       Integral
-    type ( Real_1D_Form ), dimension ( T % nSelected ) :: &
+    type ( Real_1D_Form ), dimension ( : ), allocatable :: &
       Integrand
     class ( GeometryFlatForm ), pointer :: &
       G
@@ -192,6 +192,8 @@ contains
 
     select type ( CSL => FC % Chart )
     class is ( Chart_SL_Template )
+
+    allocate ( Integrand ( T % nSelected ) )
 
     do iS = 1, T % nSelected
       call Integrand ( iS ) % Initialize ( C % nValues, ClearOption = .true. )
