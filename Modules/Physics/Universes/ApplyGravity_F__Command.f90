@@ -1,3 +1,5 @@
+#include "Preprocessor"
+
 module ApplyGravity_F__Command
 
   use Basics
@@ -75,7 +77,8 @@ contains
                  F % Value ( :, F % BARYON_MASS ), &
                  F % Value ( :, F % CONSERVED_BARYON_DENSITY ), &
                  G % Value ( :, G % POTENTIAL_GRADIENT_D ( iD ) ), &
-                 TimeStep, S % B ( iStage ) )
+                 TimeStep, S % B ( iStage ), &
+                 UseDeviceOption = Increment % AllocatedDevice )
       end do !-- iD
     end if
 
@@ -99,7 +102,8 @@ contains
                  G % Value ( :, G % POTENTIAL_GRADIENT_D ( 1 ) ), &
                  G % Value ( :, G % POTENTIAL_GRADIENT_D ( 2 ) ), &
                  G % Value ( :, G % POTENTIAL_GRADIENT_D ( 3 ) ), &
-                 TimeStep, S % B ( iStage ) )
+                 TimeStep, S % B ( iStage ), &
+                 UseDeviceOption = Increment % AllocatedDevice )
       end select !-- F_P
     end if
 
@@ -116,7 +120,8 @@ contains
 
 
   subroutine ApplyGravityMomentum &
-               ( K, S, IsProperCell, M, N, GradPhi, dt, Weight_RK )
+               ( K, S, IsProperCell, M, N, GradPhi, dt, Weight_RK, &
+                 UseDeviceOption )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       K, &
@@ -127,26 +132,54 @@ contains
       M, &
       N, &
       GradPhi
-    real ( KDR ) :: &
+    real ( KDR ), intent ( in ) :: &
       dt, &
       Weight_RK
-
+    logical ( KDL ), intent ( in ), optional :: &
+      UseDeviceOption
+      
     integer ( KDI ) :: &
       iV, &  !-- iValue
       nValues
+    logical ( KDL ) :: &
+      UseDevice
+
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
 
     nValues = size ( K )
 
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-      if ( .not. IsProperCell ( iV ) ) &
-        cycle
-      K ( iV )  =  K ( iV )  -  M ( iV )  *  N ( iV )  *  GradPhi ( iV )  &
-                                *  dt
-      S ( iV )  =  S ( iV )  -  M ( iV )  *  N ( iV )  *  GradPhi ( iV )  &
-                                *  Weight_RK
-    end do
-    !$OMP end parallel do
+    if ( UseDevice ) then
+    
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP  schedule ( OMP_SCHEDULE_TARGET )
+      do iV = 1, nValues
+        if ( .not. IsProperCell ( iV ) ) &
+          cycle
+        K ( iV )  =  K ( iV )  -  M ( iV )  *  N ( iV )  *  GradPhi ( iV )  &
+                                  *  dt
+        S ( iV )  =  S ( iV )  -  M ( iV )  *  N ( iV )  *  GradPhi ( iV )  &
+                                  *  Weight_RK
+      end do
+      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+    
+    
+    else
+
+      !$OMP  parallel do &
+      !$OMP  schedule ( OMP_SCHEDULE_HOST )
+      do iV = 1, nValues
+        if ( .not. IsProperCell ( iV ) ) &
+          cycle
+        K ( iV )  =  K ( iV )  -  M ( iV )  *  N ( iV )  *  GradPhi ( iV )  &
+                                  *  dt
+        S ( iV )  =  S ( iV )  -  M ( iV )  *  N ( iV )  *  GradPhi ( iV )  &
+                                  *  Weight_RK
+      end do
+      !$OMP  end parallel do
+      
+    end if
 
   end subroutine ApplyGravityMomentum
 
@@ -154,7 +187,7 @@ contains
   subroutine ApplyGravityEnergy &
                ( K, S, IsProperCell, M, N, V_1, V_2, V_3, &
                  GradPhi_1, GradPhi_2, GradPhi_3, &
-                 dt, Weight_RK )
+                 dt, Weight_RK, UseDeviceOption )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       K, &
@@ -166,32 +199,65 @@ contains
       N, &
       V_1, V_2, V_3, &
       GradPhi_1, GradPhi_2, GradPhi_3
-    real ( KDR ) :: &
+    real ( KDR ), intent ( in ) :: &
       dt, &
       Weight_RK
+    logical ( KDL ), intent ( in ), optional :: &
+      UseDeviceOption
 
     integer ( KDI ) :: &
       iV, &  !-- iValue
       nValues
+    logical ( KDL ) :: &
+      UseDevice
+
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
 
     nValues = size ( K )
+    
+    if ( UseDevice ) then
+      
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP  schedule ( OMP_SCHEDULE_TARGET )
+      do iV = 1, nValues
+        if ( .not. IsProperCell ( iV ) ) &
+          cycle
+        K ( iV )  =  K ( iV )  -  M ( iV )  *  N ( iV )  &
+                                  *  (    V_1 ( iV )  *  GradPhi_1 ( iV )  &
+                                       +  V_2 ( iV )  *  GradPhi_2 ( iV )  &
+                                       +  V_3 ( iV )  *  GradPhi_3 ( iV ) ) &
+                                  *  dt
+        S ( iV )  =  S ( iV )  -  M ( iV )  *  N ( iV )  &
+                                  *  (    V_1 ( iV )  *  GradPhi_1 ( iV )  &
+                                       +  V_2 ( iV )  *  GradPhi_2 ( iV )  &
+                                       +  V_3 ( iV )  *  GradPhi_3 ( iV ) ) &
+                                  *  Weight_RK
+      end do
+      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+    
+    else
 
-    !$OMP parallel do private ( iV )
-    do iV = 1, nValues
-      if ( .not. IsProperCell ( iV ) ) &
-        cycle
-      K ( iV )  =  K ( iV )  -  M ( iV )  *  N ( iV )  &
-                                *  (    V_1 ( iV )  *  GradPhi_1 ( iV )  &
-                                     +  V_2 ( iV )  *  GradPhi_2 ( iV )  &
-                                     +  V_3 ( iV )  *  GradPhi_3 ( iV ) ) &
-                                *  dt
-      S ( iV )  =  S ( iV )  -  M ( iV )  *  N ( iV )  &
-                                *  (    V_1 ( iV )  *  GradPhi_1 ( iV )  &
-                                     +  V_2 ( iV )  *  GradPhi_2 ( iV )  &
-                                     +  V_3 ( iV )  *  GradPhi_3 ( iV ) ) &
-                                *  Weight_RK
-    end do
-    !$OMP end parallel do
+      !$OMP  parallel do &
+      !$OMP  schedule ( OMP_SCHEDULE_HOST )
+      do iV = 1, nValues
+        if ( .not. IsProperCell ( iV ) ) &
+          cycle
+        K ( iV )  =  K ( iV )  -  M ( iV )  *  N ( iV )  &
+                                  *  (    V_1 ( iV )  *  GradPhi_1 ( iV )  &
+                                       +  V_2 ( iV )  *  GradPhi_2 ( iV )  &
+                                       +  V_3 ( iV )  *  GradPhi_3 ( iV ) ) &
+                                  *  dt
+        S ( iV )  =  S ( iV )  -  M ( iV )  *  N ( iV )  &
+                                  *  (    V_1 ( iV )  *  GradPhi_1 ( iV )  &
+                                       +  V_2 ( iV )  *  GradPhi_2 ( iV )  &
+                                       +  V_3 ( iV )  *  GradPhi_3 ( iV ) ) &
+                                  *  Weight_RK
+      end do
+      !$OMP  end parallel do
+      
+    end if
 
   end subroutine ApplyGravityEnergy
 
