@@ -222,9 +222,18 @@ contains
       YL
     character ( * ), intent ( in )  :: &
       Name
+    
+    logical ( KDL ) :: &
+      UseDevice
+      
+    UseDevice = ( OffloadEnabled ( ) .and. GetNumberOfDevices ( ) >= 1 )
+    call PROGRAM_HEADER % GetParameter ( UseDevice, 'UseDevice' )
 
     call YL % Initialize &
-           ( FluidType = 'IDEAL', GeometryType = 'NEWTONIAN', Name = Name )
+           ( FluidType = 'IDEAL', GeometryType = 'NEWTONIAN', &
+             Name = Name, FluidUseDeviceOption = UseDevice, &
+             GeometryUseDeviceOption = UseDevice )
+             
     YL % Integrator % SetReference => SetReference
 
   end subroutine InitializeFluidCentralCore
@@ -418,8 +427,12 @@ contains
                     Kappa = YL % PolytropicConstant, &
                         G = CONSTANT % GRAVITATIONAL, &
                       amu = CONSTANT % ATOMIC_MASS_UNIT )
-
+    
+    
+    call F % UpdateDevice ( )
     call F % ComputeFromPrimitive ( G )
+    call F % UpdateHost ( )
+    
     call PSC % ExchangeGhostData ( F )
 
   end subroutine SetFluid
