@@ -160,7 +160,7 @@ contains
         S ( iV )  =  FourPi_G  *  M ( iV )  *  N ( iV )
       end do
       !$OMP  end OMP_TARGET_DIRECTIVE parallel do
-    
+      
     else
     
       !$OMP  parallel do &

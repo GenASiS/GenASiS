@@ -32,6 +32,8 @@ module Geometry_ASC__Form
   contains
     procedure, public, pass :: &
       Initialize
+    procedure, public, pass :: &
+      AllocateDevice => AllocateDevice_G_ASC 
     procedure, private, pass :: &
       Geometry_G_CSL
     generic, public :: &
@@ -214,7 +216,7 @@ contains
       case ( 'MULTIPOLE', 'MULTIPOLE_OLD' )
 
         G => GA % Geometry_N ( )
-
+        
         allocate ( GA % Storage_ASC )
         associate ( SA => GA % Storage_ASC )
         call SA % Initialize &
@@ -226,8 +228,6 @@ contains
         associate ( Grad => GA % Gradient )
         call Grad % Initialize &
                ( 'GeometryGradient', [ G % nValues, 1 ] )
-        if ( G % AllocatedDevice ) &
-          call Grad % AllocateDevice ( )
         end associate !-- Grad
 
       case default
@@ -244,6 +244,24 @@ contains
     end select !-- GeometryType
 
   end subroutine Initialize
+  
+  
+  subroutine AllocateDevice_G_ASC ( FA, AssociateVariablesOption )
+  
+    class ( Geometry_ASC_Form ), intent ( inout ) :: &
+      FA
+    logical ( KDL ), intent ( in ), optional :: &
+      AssociateVariablesOption
+    
+    call FA % AllocateDevice_ASC_Template ( AssociateVariablesOption )
+    
+    if ( allocated ( FA % Storage_ASC ) ) &
+      call FA % Storage_ASC % AllocateDevice ( )
+    
+    if ( allocated ( FA % Gradient ) ) &
+      call FA % Gradient % AllocateDevice ( )
+    
+  end subroutine AllocateDevice_G_ASC 
 
 
   function Geometry_G_CSL ( GA ) result ( G )
@@ -494,16 +512,16 @@ contains
              GA % GravitationalConstant, &
              S % Value ( :, S % iaSelected ( 1 ) ), &
              UseDeviceOption = F % AllocatedDevice )
-
+    
     call PA % Solve ( SA, SA )
-
+    
     do iD = 1, C % nDimensions
       call GA % Gradient % Compute ( C, S, iDimension = iD )
       call Copy ( GA % Gradient % Output % Value ( :, 1 ), &
                   G % Value ( :, G % POTENTIAL_GRADIENT_D ( iD ) ), &
                   UseDeviceOption = G % AllocatedDevice )
     end do !-- iD
-
+    
     end associate !-- PA, etc.v
     end select !-- C
     end select !-- A
