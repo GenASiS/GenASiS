@@ -23,7 +23,9 @@ contains
 
   subroutine Search ( A, Value, iValue ) 
 
+#ifdef ENABLE_OMP_OFFLOAD
     !$OMP declare target
+#endif
 
     class ( * ), dimension ( : ), intent ( in )  :: &
       A

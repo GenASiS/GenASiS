@@ -866,14 +866,8 @@ contains
     call Current % ComputeFromConserved &
            ( G, DetectFeaturesOption = DetectFeatures )
 
-    if ( associated ( S % ComputeConstraints % Pointer ) ) then
-      !-- FIXME: Temporary for ComputeConstraints on the host
-      Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerConstraints )
-      if ( associated ( Timer ) ) call Timer % Start ( )
-      call Current % UpdateHost ( )
-      if ( associated ( Timer ) ) call Timer % Stop ( )
+    if ( associated ( S % ComputeConstraints % Pointer ) ) &
       call S % ComputeConstraints % Pointer ( S )
-    end if
 
     nullify ( G )
     
@@ -1137,8 +1131,7 @@ contains
       iStrgeometryValueOption
 
     logical ( KDL ) :: &
-      GhostExchange, &
-      IncrementHostUpdated
+      GhostExchange
     type ( TimerForm ), pointer :: &
       TimerDivergence, &
       TimerSources, &
@@ -1146,8 +1139,6 @@ contains
       TimerGhost, &
       Timer_DTD, &
       Timer_DTH
-    
-    IncrementHostUpdated = .false.
     
     !-- Divergence
     if ( associated ( S % ApplyDivergence_C ) ) then
@@ -1159,27 +1150,10 @@ contains
 
     !-- Other explicit sources
     if ( associated ( S % ApplySources_C ) ) then
-      
-      !-- FIXME: Temporary since ApplySources is still done on the Host
-      call K % UpdateHost ( )
-      IncrementHostUpdated = .true.
-      
       TimerSources => PROGRAM_HEADER % TimerPointer ( S % iTimerSources )
       if ( associated ( TimerSources ) ) call TimerSources % Start ( )
-      
-      !-- FIXME: Temporary since ApplySources is still done on the Host
-      select type ( Chart => S % Chart )
-      class is ( Chart_SL_Template )
-      if ( trim ( Chart % CoordinateSystem ) /= 'RECTANGULAR' ) then
-        call S % dLogVolumeJacobian_dX ( 1 ) % UpdateHost ( )
-        call S % dLogVolumeJacobian_dX ( 2 ) % UpdateHost ( )
-      end if
-      end select
-      !-- FIXME: end
-      
       call S % ApplySources_C ( C % Sources, K, C, TimeStep, iStage )
       if ( associated ( TimerSources ) ) call TimerSources % Stop ( )
-      
     end if
     
     !-- Relaxation
@@ -1196,7 +1170,7 @@ contains
     
     call Timer_DTH % Start ( )
     
-    if ( K % AllocatedDevice .and. .not. IncrementHostUpdated ) &
+    if ( K % AllocatedDevice ) &
       call K % UpdateHost ( )
     
     call Timer_DTH % Stop ( )
@@ -1542,13 +1516,7 @@ contains
              ( C % Sources % Value ( :, : C % N_CONSERVED ), &
                UseDeviceOption = C % Sources % AllocatedDevice )
 
-    
-      
     do iC = 1, C % N_CONSERVED
-      !-- FIXME: Temporarily do this on the Host
-      if ( .not. C % Sources % AllocatedDevice  ) &
-        call Increment % UpdateHost ( iC )
-      
       call RecordDivergenceKernel &
              ( C % Sources % Value ( :, iC ), Increment % Value ( :, iC ), &
                TimeStep, Weight_RK = S % B ( iStage ), &
