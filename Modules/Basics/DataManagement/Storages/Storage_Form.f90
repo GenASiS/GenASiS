@@ -78,7 +78,8 @@ module Storage_Form
   end type StorageForm
 
     private :: &
-      InitializeOptionalMembers
+      InitializeOptionalMembers, &
+      AdjustNonPrimary_D_Selected
 
 contains
 
@@ -280,17 +281,7 @@ contains
     if ( .not. present ( iaSelectedOption ) ) then
       S_Target % D_Selected = S_Source % D_Selected
     else
-      S_Target % D_Selected = c_null_ptr
-      do iS_T = 1, S_Target % nVariables
-        iV = S_Target % iaSelected ( iS_T )
-        do iS_S = 1, S_Target % Primary % nVariables
-          if ( iV == S_Target % Primary % iaSelected ( iS_S ) ) then
-            S_Target % D_Selected ( iS_T ) &
-              = S_Target % Primary % D_Selected ( iS_S )
-            exit
-          end if
-        end do
-      end do
+      call AdjustNonPrimary_D_Selected ( S_Target )
     end if
     
     call InitializeOptionalMembers &
@@ -308,7 +299,9 @@ contains
       AssociateVariablesOption
       
     integer ( KDI ) :: &
-      iV
+      iV, &
+      iS_T, &
+      iS_S
     real ( KDR ), dimension ( : ), pointer :: &
       Variable
     real ( KDR ), dimension ( :, : ), pointer :: &
@@ -351,16 +344,20 @@ contains
         !-- Associate S % Value (as an entire block) on host to the head
         !   location on the device
 
-        call AssociateHost ( S % D_Selected ( 1 ), S % Value )        
+        call AssociateHost ( S % D_Selected ( 1 ), S % Value )
 
-      end if
+      end if !-- AssociateVariables
 
       S % AllocatedDevice = .true.
       
       if ( S % ClearRequested ) &
         call Clear ( S % Value, UseDeviceOption = .true. )
-    
-    end if
+      
+    else
+      
+      call AdjustNonPrimary_D_Selected ( S )
+      
+    end if !-- S % AllocatedValue
   
   end subroutine AllocateDevice_S
   
@@ -586,6 +583,38 @@ contains
     if ( present ( UnitOption ) ) S % Unit = UnitOption
     
   end subroutine InitializeOptionalMembers
+  
+  
+  subroutine AdjustNonPrimary_D_Selected ( S )
+  
+    class ( StorageForm ), intent ( inout ) :: &
+      S
+    
+    integer ( KDI ) :: &
+      iS_T, iS_S, &
+      iV
+    
+    if ( .not. associated ( S % Primary ) ) &
+      return
+    
+    S % AllocatedDevice = S % Primary % AllocatedDevice
+    
+    if ( .not. S % AllocatedDevice ) &
+      return 
+    
+    S % D_Selected = c_null_ptr
+    do iS_T = 1, S % nVariables
+      iV = S % iaSelected ( iS_T )
+      do iS_S = 1, S % Primary % nVariables
+        if ( iV == S % Primary % iaSelected ( iS_S ) ) then
+          S % D_Selected ( iS_T ) &
+            = S % Primary % D_Selected ( iS_S )
+          exit
+        end if
+      end do
+    end do
+  
+  end subroutine AdjustNonPrimary_D_Selected
 
 
 end module Storage_Form
