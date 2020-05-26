@@ -73,6 +73,11 @@ FluidCentralCore_Form.o: \
   FluidCentral_Template.o \
   FluidCentralCore_Form.f90
 
+FluidCentralCore_Kernel.o: \
+  Basics.o \
+  FluidCentralCore_Form.o \
+  FluidCentralCore_Kernel.f90
+
 RadiationBox_Form.o: \
   Basics.o \
   Mathematics.o \
