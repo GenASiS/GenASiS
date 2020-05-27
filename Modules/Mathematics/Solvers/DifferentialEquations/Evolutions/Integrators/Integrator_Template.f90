@@ -386,6 +386,9 @@ contains
                ( 'Tally', I % iTimerTally, &
                  Level = BaseLevel + 2 )
         call PROGRAM_HEADER % AddTimer &
+               ( 'Reference', I % iTimerReference, &
+                 Level = BaseLevel + 2 )
+        call PROGRAM_HEADER % AddTimer &
                ( 'Write', I % iTimerWrite, &
                  Level = BaseLevel + 2 )
         call PROGRAM_HEADER % AddTimer &

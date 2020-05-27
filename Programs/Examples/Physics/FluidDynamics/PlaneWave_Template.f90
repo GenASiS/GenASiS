@@ -143,6 +143,11 @@ contains
       F, &
       F_R, &  !-- F_Reference
       F_D     !-- F_Difference
+    type ( TimerForm ), pointer :: &
+      Timer
+    
+    Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerReference )
+    if ( associated ( Timer ) ) call Timer % Start ( )   
 
     select type ( I )
     class is ( Integrator_C_PS_Form )
@@ -173,6 +178,8 @@ contains
     end select !-- PW
     end select !-- I
     nullify ( G, F, F_R, F_D )
+
+    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine SetReference
 
