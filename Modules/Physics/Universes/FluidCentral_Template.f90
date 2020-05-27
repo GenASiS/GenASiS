@@ -291,9 +291,6 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       nCellsPolarOption
     
-    class ( StorageForm ), pointer :: &
-      Storage_G
-
     if ( .not. FC % Dimensionless ) then
       FC % Units % Time &
         =  UNIT % SECOND
@@ -325,11 +322,8 @@ contains
     call PS % SetGeometry ( GA )
     
     if ( present ( GeometryUseDeviceOption ) ) then
-      if ( GeometryUseDeviceOption ) then
+      if ( GeometryUseDeviceOption ) &
         call GA % AllocateDevice ( )
-        Storage_G => PS % Geometry ( )
-        call Storage_G % UpdateDevice ( )
-      end if
     end if
 
     FC % UseCoarsening = .true.

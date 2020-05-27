@@ -330,12 +330,6 @@ contains
              V = PW % Speed, &
              T = PW % Integrator % Time )
 
-    call F % UpdateDevice ( )
-    call F % ComputeFromPrimitive ( G )
-    call F % UpdateHost ( )
-    call PSC % ExchangeGhostData ( F )
-    call F % UpdateDevice ( )
-
   end subroutine SetFluid
 
 

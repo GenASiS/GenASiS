@@ -42,10 +42,8 @@ module Integrator_Template
       OpenManifoldStreamsTemplate
     procedure, public, pass :: &  !-- 2
       InitializeTimers
-    procedure ( UD ), private, pass, deferred :: &
-      UpdateDevice
-    procedure, private, pass :: &  !-- 2
-      ComputeConstraints
+    procedure ( PE ), private, pass, deferred :: &  !-- 2
+      PrepareEvolution
     procedure, private, pass :: &  !-- 2
       AdministerCheckpoint
 !-- FIXME: Intel compiler fails to recognize concrete overriding in
@@ -121,11 +119,11 @@ module Integrator_Template
         I
     end subroutine SR
     
-    subroutine UD ( I )
+    subroutine PE ( I )
       import IntegratorTemplate
       class ( IntegratorTemplate ), intent ( inout ) :: &
         I
-    end subroutine UD
+    end subroutine PE
 
 !-- See FIXME above
 !    subroutine CC ( I )
@@ -229,17 +227,16 @@ contains
 
     call I % OpenManifoldStreams ( )
     call I % InitializeTimers ( )
-    call I % UpdateDevice ( )
 
     Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerEvolve )
     if ( associated ( Timer ) ) call Timer % Start ( )   
 
+    I % Time = I % StartTime
+    call I % PrepareEvolution ( )
+    call I % AdministerCheckpoint ( ComputeChangeOption = .false. )
+
     call Show ( 'Starting evolution', I % IGNORABILITY )
     call Show ( I % Name, 'Name', I % IGNORABILITY )
-
-    I % Time = I % StartTime
-    call I % ComputeConstraints ( )
-    call I % AdministerCheckpoint ( ComputeChangeOption = .false. )
 
     do while ( I % Time < I % FinishTime .and. I % iCycle < I % FinishCycle )
       call Show ( 'Computing a cycle', I % IGNORABILITY + 1 )
@@ -396,14 +393,6 @@ contains
                  Level = BaseLevel + 2 )
 
   end subroutine InitializeTimers
-
-
-  subroutine ComputeConstraints ( I )
-
-    class ( IntegratorTemplate ), intent ( inout ) :: &
-      I
-
-  end subroutine ComputeConstraints
 
 
   subroutine AdministerCheckpoint ( I, ComputeChangeOption )

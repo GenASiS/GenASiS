@@ -140,10 +140,6 @@ contains
 
     integer ( KDI ) :: &
       iD  !-- iDimension
-    logical ( KDL ) :: &
-      GeometryUseDevice
-    class ( StorageForm ), pointer :: &
-      Storage_G
       
     associate ( I => FB % Integrator )
 
@@ -178,11 +174,8 @@ contains
     call PS % SetGeometry ( GA )
     
     if ( present ( GeometryUseDeviceOption ) ) then
-      if ( GeometryUseDeviceOption ) then
+      if ( GeometryUseDeviceOption ) &
         call GA % AllocateDevice ( )
-        Storage_G => PS % Geometry ( )
-        call Storage_G % UpdateDevice ( )
-      end if
     end if
 
     end select !-- GA

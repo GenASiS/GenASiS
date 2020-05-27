@@ -31,13 +31,13 @@ module Integrator_C_PS__Form
     final :: &  !-- 1
       Finalize
     procedure, private, pass :: &  !-- 2
-      UpdateDevice => UpdateDevice_I
-    procedure, private, pass :: &  !-- 2
-      ComputeConstraints
+      PrepareEvolution
     procedure, private, pass :: &  !-- 2
       ComputeCycle
     procedure, private, pass :: &  !-- 3
       InitializeStepTimers
+    procedure, private, pass :: &  !-- 3
+      ComputeConstraints
     procedure, private, pass :: &  !-- 3
       UpdateHost => UpdateHost_I
     procedure, private, pass :: &  !-- 3
@@ -173,43 +173,88 @@ contains
   end subroutine Finalize
   
   
-  subroutine UpdateDevice_I ( I )
+  subroutine PrepareEvolution ( I )
 
     class ( Integrator_C_PS_Form ), intent ( inout ) :: &
       I
-    
-    class ( CurrentTemplate ), pointer :: &
-      C
+
     class ( GeometryFlatForm ), pointer :: &
       G
+    class ( CurrentTemplate ), pointer :: &
+      C
 
-    if ( .not. allocated ( I % Current_ASC ) ) &
-      return
-
-    associate ( CA => I % Current_ASC )
-    
-    C => CA % Current ( )
-    call C % UpdateDevice ( ) 
-    nullify ( C )
-    
-    end associate !-- CA
-    
     select type ( PS => I % PositionSpace )
     class is ( Atlas_SC_Form )
 
     select type ( CSL => PS % Chart )
-    class is ( Chart_SL_Template )
+    class is ( Chart_SLD_Form )
 
     G => CSL % Geometry ( )
-    call G % UpdateDevice ( )
-    
-    nullify ( G )
-    
-    end select !-- CSL
-    end select !-- PS
-    
+    call G % UpdateDevice ( )    
 
-  end subroutine UpdateDevice_I
+    if ( .not. allocated ( I % Current_ASC ) ) &
+      return
+
+    C => I % Current_ASC % Current ( )
+    call C % UpdateDevice ( ) 
+    call C % ComputeFromInitial ( G )
+    call C % UpdateHost ( )
+    call CSL % ExchangeGhostData ( C )
+    call C % UpdateDevice ( )
+
+    class default
+      call Show ( 'Chart type type not recognized', CONSOLE % ERROR )
+      call Show ( 'Integrator_C_PS__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'PrepareEvolution', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- CSL
+
+    class default
+      call Show ( 'PositionSpace type not recognized', CONSOLE % ERROR )
+      call Show ( 'Integrator_C_PS__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'PrepareEvolution', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- PS
+
+    call I % ComputeConstraints ( )
+
+    nullify ( C, G )
+
+  end subroutine PrepareEvolution
+
+
+  subroutine ComputeCycle ( I )
+
+    class ( Integrator_C_PS_Form ), intent ( inout ) :: &
+      I
+
+    type ( TimerForm ), pointer :: &
+      Timer
+
+    Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerCycle )
+    if ( associated ( Timer ) ) call Timer % Start ( )
+
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
+      call I % ComputeCycle_ASC ( PS )
+    end select
+
+    if ( associated ( Timer ) ) call Timer % Stop ( )
+
+  end subroutine ComputeCycle
+
+
+  subroutine InitializeStepTimers ( I, BaseLevel )
+
+    class ( Integrator_C_PS_Form ), intent ( inout ) :: &
+      I
+    integer ( KDI ), intent ( in ) :: &
+      BaseLevel
+
+    if ( allocated ( I % Step ) ) &
+      call I % Step % InitializeTimers ( BaseLevel )
+
+  end subroutine InitializeStepTimers
 
 
   subroutine ComputeConstraints ( I )
@@ -251,40 +296,6 @@ contains
     end if
 
   end subroutine UpdateHost_I
-
-
-  subroutine ComputeCycle ( I )
-
-    class ( Integrator_C_PS_Form ), intent ( inout ) :: &
-      I
-
-    type ( TimerForm ), pointer :: &
-      Timer
-
-    Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerCycle )
-    if ( associated ( Timer ) ) call Timer % Start ( )
-
-    select type ( PS => I % PositionSpace )
-    class is ( Atlas_SC_Form )
-      call I % ComputeCycle_ASC ( PS )
-    end select
-
-    if ( associated ( Timer ) ) call Timer % Stop ( )
-
-  end subroutine ComputeCycle
-
-
-  subroutine InitializeStepTimers ( I, BaseLevel )
-
-    class ( Integrator_C_PS_Form ), intent ( inout ) :: &
-      I
-    integer ( KDI ), intent ( in ) :: &
-      BaseLevel
-
-    if ( allocated ( I % Step ) ) &
-      call I % Step % InitializeTimers ( BaseLevel )
-
-  end subroutine InitializeStepTimers
 
 
   subroutine ComputeTally ( I, ComputeChangeOption, IgnorabilityOption )
