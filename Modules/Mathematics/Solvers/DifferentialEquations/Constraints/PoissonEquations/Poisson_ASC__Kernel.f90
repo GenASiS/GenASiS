@@ -41,7 +41,8 @@ contains
 
         !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
         !$OMP& schedule ( OMP_SCHEDULE_TARGET ) &
-        !$OMP& private ( iT, iP, iE, F, M_RC_C, M_IC_C, M_RS_C, M_IS_C )
+        !$OMP& private ( iR, iT, iP, iE, iR_G, F, &
+        !$OMP&           M_RC_C, M_IC_C, M_RS_C, M_IS_C )
         do iE  =  1, nE
           do iP  =  oC ( 3 )  +  1,  oC ( 3 )  +  nC ( 3 )
             do iT  =  oC ( 2 )  +  1,  oC ( 2 )  +  nC ( 2 )
@@ -87,7 +88,8 @@ contains
 
         !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
         !$OMP& schedule ( OMP_SCHEDULE_TARGET ) &
-        !$OMP& private ( iT, iP, iE, F, M_RC_C, M_IC_C, M_RS_C, M_IS_C )
+        !$OMP& private ( iR, iT, iP, iE, iR_G, F, &
+        !$OMP&           M_RC_C, M_IC_C, M_RS_C, M_IS_C )
         do iE  =  1, nE
           do iP  =  oC ( 3 )  +  1,  oC ( 3 )  +  nC ( 3 )
             do iT  =  oC ( 2 )  +  1,  oC ( 2 )  +  nC ( 2 )
@@ -127,7 +129,9 @@ contains
 
       !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 4 ) &
       !$OMP& schedule ( OMP_SCHEDULE_TARGET ) &
-      !$OMP& private ( iR, iT, iP, iE, F, M_RC_C, M_IC_C, M_RS_C, M_IS_C )
+      !$OMP& private ( iR, iT, iP, iE, iR_G, F, &
+      !$OMP&           M_RC_C, M_IC_C, M_RS_C, M_IS_C ) &
+      !$OMP& firstprivate ( iFirst, iLast )
       do iE  =  1, nE
         do iP  =  oC ( 3 )  +  1,  oC ( 3 )  +  nC ( 3 )
           do iT  =  oC ( 2 )  +  1,  oC ( 2 )  +  nC ( 2 )
@@ -171,7 +175,8 @@ contains
 
         !$OMP  parallel do collapse ( 3 ) &
         !$OMP& schedule ( OMP_SCHEDULE_HOST ) &
-        !$OMP& private ( iT, iP, iE, F, M_RC_C, M_IC_C, M_RS_C, M_IS_C )
+        !$OMP& private ( iR, iT, iP, iE, iR_G, F, &
+        !$OMP&           M_RC_C, M_IC_C, M_RS_C, M_IS_C )
         do iE  =  1, nE
           do iP  =  oC ( 3 )  +  1,  oC ( 3 )  +  nC ( 3 )
             do iT  =  oC ( 2 )  +  1,  oC ( 2 )  +  nC ( 2 )
@@ -217,7 +222,8 @@ contains
 
         !$OMP  parallel do collapse ( 3 ) &
         !$OMP& schedule ( OMP_SCHEDULE_HOST ) &
-        !$OMP& private ( iT, iP, iE, F, M_RC_C, M_IC_C, M_RS_C, M_IS_C )
+        !$OMP& private ( iR, iT, iP, iE, iR_G, F, &
+        !$OMP&           M_RC_C, M_IC_C, M_RS_C, M_IS_C )
         do iE  =  1, nE
           do iP  =  oC ( 3 )  +  1,  oC ( 3 )  +  nC ( 3 )
             do iT  =  oC ( 2 )  +  1,  oC ( 2 )  +  nC ( 2 )
@@ -257,7 +263,9 @@ contains
 
       !$OMP  parallel do collapse ( 4 ) &
       !$OMP& schedule ( OMP_SCHEDULE_HOST ) &
-      !$OMP& private ( iR, iT, iP, iE, F, M_RC_C, M_IC_C, M_RS_C, M_IS_C )
+      !$OMP& private ( iR, iT, iP, iE, iR_G, F, &
+      !$OMP&           M_RC_C, M_IC_C, M_RS_C, M_IS_C ) &
+      !$OMP& firstprivate ( iFirst, iLast )
       do iE  =  1, nE
         do iP  =  oC ( 3 )  +  1,  oC ( 3 )  +  nC ( 3 )
           do iT  =  oC ( 2 )  +  1,  oC ( 2 )  +  nC ( 2 )
