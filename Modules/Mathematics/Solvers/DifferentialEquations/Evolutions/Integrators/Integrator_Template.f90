@@ -56,6 +56,8 @@ module Integrator_Template
       ComputeCycle
     procedure, private, pass :: &  !-- 3
       InitializeStepTimers
+    procedure ( UH ), private, pass, deferred :: &  !-- 3
+      UpdateHost
 !-- See FIXME above
 !    procedure ( CT ), private, pass, deferred :: &  !-- 3
 !      ComputeTally
@@ -131,6 +133,12 @@ module Integrator_Template
 !      class ( IntegratorTemplate ), intent ( inout ) :: &
 !        I
 !    end subroutine CC
+
+    subroutine UH ( I )
+      import IntegratorTemplate
+      class ( IntegratorTemplate ), intent ( inout ) :: &
+        I
+    end subroutine UH
 
 !-- See FIXME above
 !    subroutine CT ( I, ComputeChangeOption, IgnorabilityOption )
@@ -427,6 +435,8 @@ contains
                     I % IGNORABILITY )
       end do !-- iTSC
     end if
+
+    call I % UpdateHost ( )
 
     if ( I % Time > I % StartTime .and. I % Time < I % FinishTime &
          .and. mod ( I % iCheckpoint, I % CheckpointDisplayInterval ) > 0 ) &

@@ -39,6 +39,8 @@ module Integrator_C_PS__Form
     procedure, private, pass :: &  !-- 3
       InitializeStepTimers
     procedure, private, pass :: &  !-- 3
+      UpdateHost => UpdateHost_I
+    procedure, private, pass :: &  !-- 3
       ComputeTally
     procedure, private, pass :: &
       ComputeCycle_ASC
@@ -229,6 +231,28 @@ contains
   end subroutine ComputeConstraints
 
 
+  subroutine UpdateHost_I ( I )
+
+    class ( Integrator_C_PS_Form ), intent ( inout ) :: &
+      I
+
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
+      call PS % Geometry_ASC % UpdateHost ( )
+    class default
+      call Show ( 'PositionSpace type not recognized', CONSOLE % ERROR )
+      call Show ( 'Integrator_C_PS__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'UpdateHost_I', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- PS
+
+    if ( allocated ( I % Current_ASC ) ) then
+      call I % Current_ASC % UpdateHost ( )
+    end if
+
+  end subroutine UpdateHost_I
+
+
   subroutine ComputeCycle ( I )
 
     class ( Integrator_C_PS_Form ), intent ( inout ) :: &
@@ -285,7 +309,6 @@ contains
 
     associate ( CA => I % Current_ASC )
     C => CA % Current ( )
-    call C % UpdateHost ( ) 
     call CA % ComputeTally &
            ( ComputeChangeOption = ComputeChangeOption, &
              IgnorabilityOption = IgnorabilityOption )
