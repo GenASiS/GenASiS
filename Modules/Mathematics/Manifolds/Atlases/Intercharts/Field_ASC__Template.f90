@@ -22,6 +22,10 @@ module Field_ASC__Template
       AllocateDevice_ASC_Template
     procedure, public, pass :: &
       AllocateDevice => AllocateDevice_ASC_Template
+    procedure, public, pass :: &
+      UpdateHost_ASC_Template
+    procedure, public, pass :: &
+      UpdateHost => UpdateHost_ASC_Template
     procedure, private, pass :: &
       Clear_FA
     procedure, public, pass :: &
@@ -79,12 +83,30 @@ contains
       call FC % AllocateDevice ( AssociateVariablesOption )
     class default
       call Show ( 'Field type not implemented', CONSOLE % ERROR )
-      call Show ( 'AllocateDevice_ASC', 'subroutine',  CONSOLE % ERROR )
+      call Show ( 'AllocateDevice_ASC_Template', 'subroutine', CONSOLE % ERROR )
       call Show ( 'Field_ASC_Template', 'module',  CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select
   
   end subroutine AllocateDevice_ASC_Template
+
+
+  subroutine UpdateHost_ASC_Template ( FA )
+    
+    class ( Field_ASC_Template ), intent ( inout ) :: &
+      FA
+    
+    select type ( FC => FA % Chart ) 
+    class is ( Field_CSL_Template )
+      call FC % UpdateHost ( )
+    class default
+      call Show ( 'Field type not implemented', CONSOLE % ERROR )
+      call Show ( 'UpdateHost_ASC_Template', 'subroutine',  CONSOLE % ERROR )
+      call Show ( 'Field_ASC_Template', 'module',  CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select
+  
+  end subroutine UpdateHost_ASC_Template
 
 
   subroutine Clear_FA ( FA )

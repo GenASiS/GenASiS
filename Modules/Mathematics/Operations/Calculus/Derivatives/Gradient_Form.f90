@@ -27,6 +27,8 @@ module Gradient_Form
       Initialize
     procedure, public, pass :: &
       AllocateDevice => AllocateDevice_G
+    procedure, public, pass :: &
+      UpdateHost => UpdateHost_G
     procedure, private, pass :: &
       ComputeChart_SL_G
     generic, public :: &
@@ -108,6 +110,18 @@ contains
     call G % VariableDifference % AllocateDevice ( )
   
   end subroutine AllocateDevice_G
+
+
+  subroutine UpdateHost_G ( G )
+    
+    class ( GradientForm ), intent ( inout ) :: &
+      G
+    
+    call G % Output % UpdateHost ( )
+    call G % CoordinateDifference % UpdateHost ( )
+    call G % VariableDifference % UpdateHost ( )
+  
+  end subroutine UpdateHost_G
 
 
   subroutine ComputeChart_SL_G &

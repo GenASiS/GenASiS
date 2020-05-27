@@ -34,6 +34,8 @@ module Geometry_ASC__Form
       Initialize
     procedure, public, pass :: &
       AllocateDevice => AllocateDevice_G_ASC 
+    procedure, public, pass :: &
+      UpdateHost => UpdateHost_G_ASC 
     procedure, private, pass :: &
       Geometry_G_CSL
     generic, public :: &
@@ -262,6 +264,22 @@ contains
       call FA % Gradient % AllocateDevice ( )
     
   end subroutine AllocateDevice_G_ASC 
+
+
+  subroutine UpdateHost_G_ASC ( FA )
+  
+    class ( Geometry_ASC_Form ), intent ( inout ) :: &
+      FA
+    
+    call FA % UpdateHost_ASC_Template ( )
+    
+    if ( allocated ( FA % Storage_ASC ) ) &
+      call FA % Storage_ASC % UpdateHost ( )
+    
+    if ( allocated ( FA % Gradient ) ) &
+      call FA % Gradient % UpdateHost ( )
+    
+  end subroutine UpdateHost_G_ASC
 
 
   function Geometry_G_CSL ( GA ) result ( G )

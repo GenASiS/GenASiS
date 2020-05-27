@@ -23,6 +23,8 @@ module Difference_Form
       Initialize
     procedure, public, pass :: &
       AllocateDevice => AllocateDevice_D
+    procedure, public, pass :: &
+      UpdateHost => UpdateHost_D
     procedure, private, pass :: &
       ComputeChart_SL_D
     generic, public :: &
@@ -89,6 +91,16 @@ contains
     call D % OutputInner % AllocateDevice ( )
     
   end subroutine AllocateDevice_D
+
+
+  subroutine UpdateHost_D ( D )
+  
+    class ( DifferenceForm ), intent ( inout ) :: &
+      D
+      
+    call D % OutputInner % UpdateHost ( )
+    
+  end subroutine UpdateHost_D
 
 
   subroutine ComputeChart_SL_D ( D, CSL, Input, iDimension )

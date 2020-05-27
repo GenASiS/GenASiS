@@ -43,6 +43,8 @@ module Fluid_ASC__Form
       Initialize
     procedure, public, pass :: &   
       AllocateDevice => AllocateDevice_F_ASC
+    procedure, public, pass :: &   
+      UpdateHost => UpdateHost_F_ASC
     procedure, private, pass :: &
       Fluid_D_CSL
     generic, public :: &
@@ -326,6 +328,22 @@ contains
       call FA % Features_ASC % AllocateDevice ( )
   
   end subroutine AllocateDevice_F_ASC
+
+
+  subroutine UpdateHost_F_ASC ( FA )
+  
+    class ( Fluid_ASC_Form ), intent ( inout ) :: &
+      FA
+    
+    call FA % UpdateHost_ASC_Template ( )
+
+    if ( allocated ( FA % Sources_ASC ) ) &
+      call FA % Sources_ASC % UpdateHost ( )
+    
+    if ( allocated ( FA % Features_ASC ) ) &
+      call FA % Features_ASC % UpdateHost ( )
+  
+  end subroutine UpdateHost_F_ASC
 
 
   function Fluid_D_CSL ( FA ) result ( F )

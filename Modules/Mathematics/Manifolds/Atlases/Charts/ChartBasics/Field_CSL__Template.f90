@@ -22,6 +22,8 @@ module Field_CSL__Template
       InitializeTemplate_CSL
     procedure, public, pass :: &
       AllocateDevice => AllocateDevice_CSL
+    procedure, public, pass :: &
+      UpdateHost => UpdateHost_CSL
     procedure, private, pass :: &
       Clear_FC
     procedure, public, pass :: &
@@ -83,6 +85,16 @@ contains
   
   end subroutine AllocateDevice_CSL
   
+
+  subroutine UpdateHost_CSL ( FC )
+
+    class ( Field_CSL_Template ), intent ( inout ) :: &
+      FC
+
+    call FC % Field % UpdateHost ( )
+
+  end subroutine UpdateHost_CSL
+
 
   subroutine Clear_FC ( FC )
 
