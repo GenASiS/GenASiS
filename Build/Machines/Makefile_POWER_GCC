@@ -30,11 +30,11 @@ LIBRARY_CUDA =
 INCLUDE_PREPROCESSOR = -I$(PATH_GENASIS)/Build
 
 #-- Enable unicode
-USE_ISO_10646 = 1
+USE_ISO_10646 = 
 
 #-- Enable OpenMP by default
 ifneq ($(ENABLE_OMP), 0)
-  DEFINES = -fopenmp
+  DEFINES = -fopenmp -foffload=disable
 endif
 
 #-- Enable offload if requested
