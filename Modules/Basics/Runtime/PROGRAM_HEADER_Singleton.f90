@@ -1077,12 +1077,23 @@ contains
         CO % Outgoing % Value ( iT ) = PH % Timer ( iT ) % TotalTime
       end do !-- iT
 
-      call Show ( 'Max timers', Ignorability + 1 )
+      call Show ( 'Max timers', Ignorability )
       call CO % Reduce ( REDUCTION % MAX )
       do iT = 1, PH % nTimers
         call MaxTimer ( iT ) % TotalTime % Initialize &
                ( 's', CO % Incoming % Value ( iT ) )
-        call MaxTimer ( iT ) % ShowTotal ( Ignorability + 1 )
+        if ( iT == 1 ) &
+          ExecutionTime = MaxTimer ( iT ) % TotalTime
+        if ( MaxTimer ( iT ) % Level  &
+               <=  min ( PH % TimerMinLevel, PH % TimerMaxLevel ) &
+             .or. ( MaxTimer ( iT ) % Level  <=  PH % TimerMaxLevel &
+                    .and. MaxTimer ( iT ) % TotalTime / ExecutionTime &
+                           >=  PH % TimerDisplayFraction ) ) &
+        then
+          call MaxTimer ( iT ) % ShowTotal ( Ignorability )
+        else
+          call MaxTimer ( iT ) % ShowTotal ( Ignorability + 1 )
+        end if
         if ( present ( MaxTimeOption ) ) &
           MaxTimeOption ( iT ) = MaxTimer ( iT ) % TotalTime
       end do !-- iT
@@ -1097,24 +1108,13 @@ contains
           MinTimeOption ( iT ) = MinTimer ( iT ) % TotalTime
       end do !-- iT
       
-      call Show ( 'Mean timers', Ignorability )
+      call Show ( 'Mean timers', Ignorability + 1 )
       call CO % Reduce ( REDUCTION % SUM )
       do iT = 1, PH % nTimers
         call MeanTimer ( iT ) % TotalTime % Initialize &
                ( 's', CO % Incoming % Value ( iT ) &
                       / CommunicatorOption % Size )
-        if ( iT == 1 ) &
-          ExecutionTime = MeanTimer ( iT ) % TotalTime
-        if ( MeanTimer ( iT ) % Level  &
-               <=  min ( PH % TimerMinLevel, PH % TimerMaxLevel ) &
-             .or. ( MeanTimer ( iT ) % Level  <=  PH % TimerMaxLevel &
-                    .and. MeanTimer ( iT ) % TotalTime / ExecutionTime &
-                           >=  PH % TimerDisplayFraction ) ) &
-        then
-          call MeanTimer ( iT ) % ShowTotal ( Ignorability )
-        else
-          call MeanTimer ( iT ) % ShowTotal ( Ignorability + 1 )
-        end if
+        call MeanTimer ( iT ) % ShowTotal ( Ignorability + 1 )
         if ( present ( MeanTimeOption ) ) &
           MeanTimeOption ( iT ) = MeanTimer ( iT ) % TotalTime
       end do !-- iT
