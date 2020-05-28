@@ -64,7 +64,8 @@ contains
       I
 
     integer ( KDI ) :: &
-      iT  !-- iTimer
+      iT, &  !-- iTimer
+      nTimes
     type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
       SeriesUnit
     character ( LDL ), dimension ( : ), allocatable :: &
@@ -81,7 +82,7 @@ contains
     call Show ( TS % Name, 'Name', TS % IGNORABILITY )
 
     !-- Safe margin for cases where nWrite is only an estimate
-    associate ( nTimes => 50 * I % nWrite )
+    nTimes = max ( 50 * I % nWrite, 1000 )
 
     !-- SeriesBasic
 
@@ -209,7 +210,6 @@ contains
 
     end associate !-- SB
     end associate !-- ST_Max, etc.
-    end associate !-- nTimes
 
   end subroutine InitializeBasic
 
