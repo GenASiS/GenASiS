@@ -18,13 +18,15 @@ module Integrator_Template
       class ( TimeSeriesForm ), allocatable :: &
         TimeSeries
       procedure ( OGIS ), pointer :: &
-        OpenGridImageStreams => null ( )
+        OpenGridImageStreams => OpenGridImageStreamsTemplate
       procedure ( OMS ), pointer :: &
-        OpenManifoldStreams => null ( )
+        OpenManifoldStreams => OpenManifoldStreamsTemplate
+      procedure ( A ), pointer:: &
+        Analyze => AnalyzeTemplate
       procedure ( W ), pointer:: &
-        Write => null ( )
+        Write => WriteTemplate
       procedure ( SWTI ), pointer :: &
-        SetCheckpointTimeInterval => null ( )
+        SetCheckpointTimeInterval => SetCheckpointTimeInterval
       procedure ( CTSL ), pointer :: &
         ComputeTimeStepLocal => null ( )
       procedure ( SR ), pointer :: &
@@ -62,6 +64,8 @@ module Integrator_Template
     procedure, private, pass :: &  !-- 3
       ComputeTally
     procedure, public, pass :: &  !-- 3
+      AnalyzeTemplate
+    procedure, public, pass :: &  !-- 3
       WriteTemplate
     procedure, private, pass :: &  !-- 3
       RecordTimeSeries
@@ -91,6 +95,12 @@ module Integrator_Template
       logical ( KDL ), intent ( in ), optional :: &
         VerboseStreamOption
     end subroutine OMS
+
+    subroutine A ( I )
+      import IntegratorTemplate
+      class ( IntegratorTemplate ), intent ( inout ) :: &
+        I
+    end subroutine A
 
     subroutine W ( I )
       import IntegratorTemplate
@@ -153,9 +163,6 @@ module Integrator_Template
   end interface
 
     private :: &
-      OpenGridImageStreams, &
-      OpenManifoldStreams, &
-      Write, &
       SetCheckpointTimeInterval
 
 contains
@@ -194,17 +201,7 @@ contains
       I % Communicator => I % PositionSpace % Communicator
     end if
 
-    if ( .not. associated ( I % OpenGridImageStreams ) ) &
-      I % OpenGridImageStreams => OpenGridImageStreams
-    if ( .not. associated ( I % OpenManifoldStreams ) ) &
-      I % OpenManifoldStreams => OpenManifoldStreams
-    if ( .not. associated ( I % Write ) ) &
-      I % Write => Write
-
     call I % OpenGridImageStreams ( )
-
-    if ( .not. associated ( I % SetCheckpointTimeInterval ) ) &
-      I % SetCheckpointTimeInterval => SetCheckpointTimeInterval
 
     !-- if allocated above, initialize
     select type ( TS => I % TimeSeries )
@@ -444,8 +441,8 @@ contains
            ( ComputeChangeOption = ComputeChangeOption, &
              IgnorabilityOption  = TallyIgnorability )
 
-    if ( associated ( I % SetReference ) ) &
-      call I % SetReference ( )
+    call I % Analyze ( )
+
     if ( .not. I % NoWrite ) &
       call I % Write ( )
     call PROGRAM_HEADER % ShowStatistics &
@@ -504,6 +501,17 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
   end subroutine ComputeTally
+
+
+  subroutine AnalyzeTemplate ( I )
+
+    class ( IntegratorTemplate ), intent ( inout ) :: &
+      I
+
+    if ( associated ( I % SetReference ) ) &
+      call I % SetReference ( )
+
+  end subroutine AnalyzeTemplate
 
 
   subroutine WriteTemplate ( I )
@@ -714,38 +722,6 @@ contains
     end if
 
   end subroutine ComputeTimeStep
-
-
-  subroutine OpenGridImageStreams ( I )
-
-    class ( IntegratorTemplate ), intent ( inout ) :: &
-      I
-
-    call I % OpenGridImageStreamsTemplate ( )
-
-  end subroutine OpenGridImageStreams
-
-
-  subroutine OpenManifoldStreams ( I, VerboseStreamOption )
-
-    class ( IntegratorTemplate ), intent ( inout ) :: &
-      I
-    logical ( KDL ), intent ( in ), optional :: &
-      VerboseStreamOption
-
-    call I % OpenManifoldStreamsTemplate ( VerboseStreamOption )
-
-  end subroutine OpenManifoldStreams
-
-
-  subroutine Write ( I )
-
-    class ( IntegratorTemplate ), intent ( inout ) :: &
-      I
-
-    call I % WriteTemplate ( )
-
-  end subroutine Write
 
 
   subroutine SetCheckpointTimeInterval ( I )

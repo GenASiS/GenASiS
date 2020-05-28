@@ -115,6 +115,7 @@ module FluidCentral_Template
     private :: &
       OpenGridImageStreams, &
       OpenManifoldStreams, &
+      Analyze, &
       Write, &
       ComputeSphericalAverage, &
       ComputeEnclosedBaryons, &
@@ -574,6 +575,7 @@ contains
 
       I % OpenGridImageStreams  =>  OpenGridImageStreams
       I % OpenManifoldStreams   =>  OpenManifoldStreams
+      I % Analyze               =>  Analyze
       I % Write                 =>  Write
 
     end select !-- I
@@ -778,6 +780,24 @@ contains
   end subroutine OpenManifoldStreams
 
 
+  subroutine Analyze ( I )
+
+    class ( IntegratorTemplate ), intent ( inout ) :: &
+      I
+
+    call I % AnalyzeTemplate ( )
+
+    select type ( FC => I % Universe )
+    class is ( FluidCentralTemplate )
+
+    call ComputeSphericalAverage ( FC )
+    call ComputeEnclosedBaryons ( FC )
+
+    end select !-- FC
+
+  end subroutine Analyze
+
+
   subroutine Write ( I )
 
     class ( IntegratorTemplate ), intent ( inout ) :: &
@@ -787,9 +807,6 @@ contains
 
     select type ( FC => I % Universe )
     class is ( FluidCentralTemplate )
-
-    call ComputeSphericalAverage ( FC )
-    call ComputeEnclosedBaryons ( FC )
 
     if ( I % PositionSpace % Communicator % Rank /= CONSOLE % DisplayRank ) &
       return
