@@ -27,14 +27,14 @@ contains
 
     if ( UseDevice ) then
 
-      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-!--      !$OMP  num_teams ( 4 ) thread_limit ( 16 ) &
-      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) &
-      !$OMP& private ( iC, iE, iR, R, SH_RC, SH_IC, SH_RS, SH_IS ) &
-      !$OMP& reduction ( + : MyM_RC ) &
-      !$OMP& reduction ( + : MyM_IC ) &
-      !$OMP& reduction ( + : MyM_RS ) &
-      !$OMP& reduction ( + : MyM_IS ) 
+!      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+!!--      !$OMP  num_teams ( 4 ) thread_limit ( 16 ) &
+!      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) &
+!      !$OMP& private ( iC, iE, iR, R, SH_RC, SH_IC, SH_RS, SH_IS ) &
+!      !$OMP& reduction ( + : MyM_RC ) &
+!      !$OMP& reduction ( + : MyM_IC ) &
+!      !$OMP& reduction ( + : MyM_RS ) &
+!      !$OMP& reduction ( + : MyM_IS ) 
       do iC = 1, nCells
 
         if ( .not. IsProperCell ( iC ) ) &
@@ -52,7 +52,7 @@ contains
                  nEquations, nAngularMomentCells, iR )
 
       end do !-- iC
-      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+!      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
 
     else
 
