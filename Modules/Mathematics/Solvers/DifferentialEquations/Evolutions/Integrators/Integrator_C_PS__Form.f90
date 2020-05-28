@@ -307,16 +307,11 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
-    type ( TimerForm ), pointer :: &
-      Timer
     class ( CurrentTemplate ), pointer :: &
       C
 
     if ( .not. allocated ( I % Current_ASC ) ) &
       return
-
-    Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerTally )
-    if ( associated ( Timer ) ) call Timer % Start ( )
 
     associate ( CA => I % Current_ASC )
     C => CA % Current ( )
@@ -325,8 +320,6 @@ contains
              IgnorabilityOption = IgnorabilityOption )
     nullify ( C )
     end associate !-- CA
-
-    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine ComputeTally
 

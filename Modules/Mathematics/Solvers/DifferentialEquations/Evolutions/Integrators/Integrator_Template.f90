@@ -380,7 +380,7 @@ contains
                ( 'Tally', I % iTimerTally, &
                  Level = BaseLevel + 2 )
         call PROGRAM_HEADER % AddTimer &
-               ( 'Reference', I % iTimerReference, &
+               ( 'Analyze', I % iTimerAnalyze, &
                  Level = BaseLevel + 2 )
         call PROGRAM_HEADER % AddTimer &
                ( 'Write', I % iTimerWrite, &
@@ -408,9 +408,18 @@ contains
       MinTime, &
       MeanTime
     type ( TimerForm ), pointer :: &
-      Timer
+      Timer, &
+      Timer_T, &
+      Timer_A, &
+      Timer_W, &
+      Timer_WS
     
-    Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerCheckpoint )
+    Timer    => PROGRAM_HEADER % TimerPointer ( I % iTimerCheckpoint )
+    Timer_T  => PROGRAM_HEADER % TimerPointer ( I % iTimerTally )
+    Timer_A  => PROGRAM_HEADER % TimerPointer ( I % iTimerAnalyze )
+    Timer_W  => PROGRAM_HEADER % TimerPointer ( I % iTimerWrite )
+    Timer_WS => PROGRAM_HEADER % TimerPointer ( I % iTimerWriteSeries )
+
     if ( associated ( Timer ) ) call Timer % Start ( )   
 
     call Show ( 'Checkpoint reached', I % IGNORABILITY )
@@ -437,22 +446,33 @@ contains
       StatisticsIgnorability = CONSOLE % INFO_1
     end if
 
+    if ( associated ( Timer_T ) ) call Timer_T % Start ( )   
     call I % ComputeTally &
            ( ComputeChangeOption = ComputeChangeOption, &
              IgnorabilityOption  = TallyIgnorability )
+    if ( associated ( Timer_T ) ) call Timer_T % Stop ( )   
 
+    if ( associated ( Timer_A ) ) call Timer_A % Start ( )   
     call I % Analyze ( )
+    if ( associated ( Timer_A ) ) call Timer_A % Stop ( )   
 
+    if ( associated ( Timer_W ) ) call Timer_W % Start ( )   
     if ( .not. I % NoWrite ) &
       call I % Write ( )
+    if ( associated ( Timer_W ) ) call Timer_W % Stop ( )   
+
     call PROGRAM_HEADER % ShowStatistics &
            ( StatisticsIgnorability, &
              CommunicatorOption = PROGRAM_HEADER % Communicator, &
              MaxTimeOption = MaxTime, MinTimeOption = MinTime, &
              MeanTimeOption = MeanTime )
+
     call I % RecordTimeSeries ( MaxTime, MinTime, MeanTime )
+
+    if ( associated ( Timer_WS ) ) call Timer_WS % Start ( )   
     if ( .not. I % NoWrite ) &
       call I % WriteTimeSeries ( )
+    if ( associated ( Timer_WS ) ) call Timer_WS % Stop ( )   
 
     I % IsCheckpointTime = .false.
     if ( I % Time < I % FinishTime ) then
@@ -519,12 +539,6 @@ contains
     class ( IntegratorTemplate ), intent ( inout ) :: &
       I
 
-    type ( TimerForm ), pointer :: &
-      Timer
-
-    Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerWrite )
-    if ( associated ( Timer ) ) call Timer % Start ( )
-
     if ( allocated ( I % MomentumSpace ) ) then
       select type ( MS => I % MomentumSpace )
       class is ( Bundle_SLL_ASC_CSLD_Form )
@@ -567,8 +581,6 @@ contains
     end if !-- MomentumSpace
 
     end associate !-- GIS, etc.
-
-    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine WriteTemplate
 
