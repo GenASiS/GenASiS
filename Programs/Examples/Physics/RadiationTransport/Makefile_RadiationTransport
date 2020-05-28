@@ -17,42 +17,42 @@ INTERACTIONS_EXAMPLES = \
 include $(PATH_GENASIS)/Build/Makefile_Build
 
 SineWaveStreaming_G: ThirdParty.a GenASiS.a SineWaveStreaming_G.o
-	$(LINK) $(FFLAGS) \
+	$(LINK) $(FLAGS) \
           -o SineWaveStreaming_G_$(MACHINE) \
           SineWaveStreaming_G.o SineWaveStreaming_Form.o \
           PlaneWaveStreaming_Template.o \
           GenASiS.a ThirdParty.a $(LIBRARIES)
 
 SineWaveStreaming_S: ThirdParty.a GenASiS.a SineWaveStreaming_S.o
-	$(LINK) $(FFLAGS) \
+	$(LINK) $(FLAGS) \
           -o SineWaveStreaming_S_$(MACHINE) \
           SineWaveStreaming_S.o SineWaveStreaming_Form.o \
           PlaneWaveStreaming_Template.o \
           GenASiS.a ThirdParty.a $(LIBRARIES)
 
 Thermalization_G_G: ThirdParty.a GenASiS.a Thermalization_G_G.o
-	$(LINK) $(FFLAGS) \
+	$(LINK) $(FLAGS) \
           -o Thermalization_G_G_$(MACHINE) \
           Thermalization_G_G.o Thermalization_G__Form.o \
           $(INTERACTIONS_EXAMPLES) \
           GenASiS.a ThirdParty.a $(LIBRARIES)
 
 Thermalization_G_S: ThirdParty.a GenASiS.a Thermalization_G_S.o
-	$(LINK) $(FFLAGS) \
+	$(LINK) $(FLAGS) \
           -o Thermalization_G_S_$(MACHINE) \
           Thermalization_G_S.o Thermalization_G__Form.o \
           $(INTERACTIONS_EXAMPLES) \
           GenASiS.a ThirdParty.a $(LIBRARIES)
 
 MarshakWave_G: ThirdParty.a GenASiS.a MarshakWave_G.o
-	$(LINK) $(FFLAGS) \
+	$(LINK) $(FLAGS) \
           -o MarshakWave_G_$(MACHINE) \
           MarshakWave_G.o MarshakWave_Form.o \
           $(INTERACTIONS_EXAMPLES) \
           GenASiS.a ThirdParty.a $(LIBRARIES)
 
 MarshakWave_S: ThirdParty.a GenASiS.a MarshakWave_S.o
-	$(LINK) $(FFLAGS) \
+	$(LINK) $(FLAGS) \
           -o MarshakWave_S_$(MACHINE) \
           MarshakWave_S.o MarshakWave_Form.o \
           $(INTERACTIONS_EXAMPLES) \

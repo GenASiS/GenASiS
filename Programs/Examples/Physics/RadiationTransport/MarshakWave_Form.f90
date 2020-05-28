@@ -419,7 +419,7 @@ contains
     V_2  =  0.0_KDR
     V_3  =  0.0_KDR
 
-    call F % ComputeFromTemperature ( F % Value, G, G % Value )
+    call F % ComputeFromTemperature ( F, G, G )
 
     MW % SoundSpeed = maxval ( C_S )
 
