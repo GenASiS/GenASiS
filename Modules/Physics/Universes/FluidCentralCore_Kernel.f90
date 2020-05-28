@@ -38,7 +38,7 @@ contains
         !$OMP& schedule ( OMP_SCHEDULE_TARGET ) &
         !$OMP& reduction ( max : TimeStepInverse )
         do iV = 1, nV 
-          if ( IsProperCell ( iV ) ) &
+          if ( .not. IsProperCell ( iV ) ) &
             cycle
           TimeStepInverse &
             = max ( TimeStepInverse, &
@@ -51,7 +51,7 @@ contains
         !$OMP& schedule ( OMP_SCHEDULE_HOST ) &
         !$OMP& reduction ( max : TimeStepInverse )
         do iV = 1, nV 
-          if ( IsProperCell ( iV ) ) &
+          if ( .not. IsProperCell ( iV ) ) &
             cycle
           TimeStepInverse &
             = max ( TimeStepInverse, &
