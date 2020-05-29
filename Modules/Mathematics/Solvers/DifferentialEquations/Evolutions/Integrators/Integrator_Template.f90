@@ -407,6 +407,8 @@ contains
       MaxTime, &
       MinTime, &
       MeanTime
+    logical ( KDL ) :: &
+      WriteSeries
     type ( TimerForm ), pointer :: &
       Timer, &
       Timer_T, &
@@ -439,11 +441,13 @@ contains
     if ( I % Time > I % StartTime .and. I % Time < I % FinishTime &
          .and. mod ( I % iCheckpoint, I % CheckpointDisplayInterval ) > 0 ) &
     then
-      TallyIgnorability      = I % IGNORABILITY + 2
-      StatisticsIgnorability = I % IGNORABILITY + 2
+      TallyIgnorability       =  I % IGNORABILITY + 2
+      StatisticsIgnorability  =  I % IGNORABILITY + 2
+      WriteSeries = .false.
     else
-      TallyIgnorability      = CONSOLE % INFO_1
-      StatisticsIgnorability = CONSOLE % INFO_1
+      TallyIgnorability       =  CONSOLE % INFO_1
+      StatisticsIgnorability  =  CONSOLE % INFO_1
+      WriteSeries = .true.
     end if
 
     if ( associated ( Timer_T ) ) call Timer_T % Start ( )   
@@ -470,7 +474,7 @@ contains
     call I % RecordTimeSeries ( MaxTime, MinTime, MeanTime )
 
     if ( associated ( Timer_WS ) ) call Timer_WS % Start ( )   
-    if ( .not. I % NoWrite ) &
+    if ( WriteSeries .and. .not. I % NoWrite ) &
       call I % WriteTimeSeries ( )
     if ( associated ( Timer_WS ) ) call Timer_WS % Stop ( )   
 
