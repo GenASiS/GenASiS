@@ -29,6 +29,7 @@ module Fluid_ASC__Form
       Units => null ( )
     logical ( KDL ) :: &
       UseLimiter, &
+      UseInitialTemperature, &
       UseEntropy
     character ( LDF ) :: &
       FluidType         = '', &
@@ -71,9 +72,10 @@ contains
   subroutine Initialize &
                ( FA, A, FluidType, Units, NameShortOption, &
                  RiemannSolverTypeOption, ReconstructedTypeOption, &
-                 UseEntropyOption, UseLimiterOption, UsePinnedMemoryOption, &
-                 AllocateTallyOption, AllocateSourcesOption, &
-                 LimiterParameterOption, ShockThresholdOption, IgnorabilityOption )
+                 UseEntropyOption, UseInitialTemperatureOption, &
+                 UseLimiterOption, UsePinnedMemoryOption, AllocateTallyOption, &
+                 AllocateSourcesOption, LimiterParameterOption, &
+                 ShockThresholdOption, IgnorabilityOption )
 
     class ( Fluid_ASC_Form ), intent ( inout ) :: &
       FA
@@ -89,6 +91,7 @@ contains
       ReconstructedTypeOption
     logical ( KDL ), intent ( in ), optional :: &
       UseEntropyOption, &
+      UseInitialTemperatureOption, &
       UseLimiterOption, &
       UsePinnedMemoryOption, &
       AllocateTallyOption, &
@@ -132,12 +135,18 @@ contains
 
     select case ( trim ( FA % FluidType ) )
     case ( 'HEAVY_NUCLEUS' )
-      FA % UseEntropy = .true.
+      FA % UseInitialTemperature = .true.
+                 FA % UseEntropy = .true.
     case default
-      FA % UseEntropy = .false.
+      FA % UseInitialTemperature = .false.
+                 FA % UseEntropy = .false.
     end select
+    if ( present ( UseInitialTemperatureOption ) ) &
+      FA % UseInitialTemperature = UseInitialTemperatureOption
     if ( present ( UseEntropyOption ) ) &
       FA % UseEntropy = UseEntropyOption
+    call PROGRAM_HEADER % GetParameter &
+           ( FA % UseInitialTemperature, 'UseInitialTemperature' )
     call PROGRAM_HEADER % GetParameter &
            ( FA % UseEntropy, 'UseEntropy' )
 
@@ -455,7 +464,8 @@ contains
     class is ( Fluid_CSL_Form )
       call FC % Initialize &
              ( C, FA % NameShort, FA % FluidType, FA % RiemannSolverType, &
-               FA % ReconstructedType, FA % UseEntropy, FA % UseLimiter, &
+               FA % ReconstructedType, FA % UseEntropy, &
+               FA % UseInitialTemperature, FA % UseLimiter, &
                FA % UsePinnedMemory, FA % Units, FA % BaryonMassReference, &
                FA % LimiterParameter, nValues, &
                IgnorabilityOption = FA % IGNORABILITY )

@@ -310,9 +310,10 @@ contains
 
   subroutine Initialize_P_HN &
                ( F, FluidType, RiemannSolverType, ReconstructedType, &
-                 UseEntropy, UseLimiter, Units, BaryonMassReference, &
-                 LimiterParameter, nValues, VariableOption, VectorOption, &
-                 NameOption, ClearOption, UnitOption, VectorIndicesOption )
+                 UseEntropy, UseInitialTemperature, UseLimiter, Units, &
+                 BaryonMassReference, LimiterParameter, nValues, &
+                 VariableOption, VectorOption, NameOption, ClearOption, &
+                 UnitOption, VectorIndicesOption )
 
     class ( Fluid_P_HN_Form ), intent ( inout ) :: &
       F
@@ -322,6 +323,7 @@ contains
       ReconstructedType
     logical ( KDL ), intent ( in ) :: &
       UseEntropy, &
+      UseInitialTemperature, &
       UseLimiter
     class ( StressEnergyUnitsForm ), intent ( in ) :: &
       Units
@@ -355,10 +357,10 @@ contains
 
     call F % InitializeTemplate_P &
            ( FluidType, RiemannSolverType, ReconstructedType, UseEntropy, &
-             UseLimiter, Units, BaryonMassReference, LimiterParameter, &
-             nValues, VariableOption = Variable, VectorOption = VectorOption, &
-             NameOption = NameOption, ClearOption = ClearOption, &
-             UnitOption = VariableUnit, &
+             UseInitialTemperature, UseLimiter, Units, BaryonMassReference, &
+             LimiterParameter, nValues, VariableOption = Variable, &
+             VectorOption = VectorOption, NameOption = NameOption, &
+             ClearOption = ClearOption, UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndicesOption )
 
     if ( TableInitialized ) then
