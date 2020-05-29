@@ -36,12 +36,15 @@ module Fluid_P__Template
       iTimerComputeCenterStates, &
       iTimerComputeCenterSpeed      
     logical ( KDL ) :: &
+      UseInitialTemperature, &
       UseEntropy
   contains
     procedure, public, pass :: &
       InitializeTemplate_P
     procedure, public, pass :: &
       SetPrimitiveConservedTemplate_P
+    procedure, public, pass :: &
+      ComputeFromInitial
     procedure ( CFT ), public, pass ( C ), deferred :: &
       ComputeFromTemperature
     procedure, public, pass ( C ) :: &
@@ -276,9 +279,10 @@ contains
 
   subroutine InitializeTemplate_P &
                ( F, FluidType, RiemannSolverType, ReconstructedType, &
-                 UseEntropy, UseLimiter, Units, BaryonMassReference, &
-                 LimiterParameter, nValues, VariableOption, VectorOption, &
-                 NameOption, ClearOption, UnitOption, VectorIndicesOption )
+                 UseEntropy, UseInitialTemperature, UseLimiter, Units, &
+                 BaryonMassReference, LimiterParameter, nValues, &
+                 VariableOption, VectorOption, NameOption, ClearOption, &
+                 UnitOption, VectorIndicesOption )
 
     class ( Fluid_P_Template ), intent ( inout ) :: &
       F
@@ -288,6 +292,7 @@ contains
       ReconstructedType
     logical ( KDL ), intent ( in ) :: &
       UseEntropy, &
+      UseInitialTemperature, &
       UseLimiter
     class ( StressEnergyUnitsForm ), intent ( in ) :: &
       Units
@@ -327,7 +332,8 @@ contains
              UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndicesOption )
 
-    F % UseEntropy  =  UseEntropy
+    F % UseInitialTemperature  =  UseInitialTemperature
+               F % UseEntropy  =  UseEntropy
 
     call PROGRAM_HEADER % AddTimer &
            ( 'ComputeFluxes_HLCC', F % iTimerComputeFluxes_HLLC, &
@@ -387,6 +393,22 @@ contains
     call C % Fluid_D_Form % SetPrimitiveConserved ( )
 
   end subroutine SetPrimitiveConservedTemplate_P
+
+
+  subroutine ComputeFromInitial ( C, G )
+
+    class ( Fluid_P_Template ), intent ( inout ) :: &
+      C
+    class ( GeometryFlatForm ), intent ( in ) :: &
+      G
+
+    if ( C % UseInitialTemperature ) then
+      call C % ComputeFromTemperature ( C, G, G )
+    else
+      call C % ComputeFromPrimitive ( G )
+    end if
+
+  end subroutine ComputeFromInitial
 
 
   subroutine ComputeFluxes &

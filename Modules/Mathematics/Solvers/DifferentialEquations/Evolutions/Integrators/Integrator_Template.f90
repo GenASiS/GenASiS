@@ -18,13 +18,15 @@ module Integrator_Template
       class ( TimeSeriesForm ), allocatable :: &
         TimeSeries
       procedure ( OGIS ), pointer :: &
-        OpenGridImageStreams => null ( )
+        OpenGridImageStreams => OpenGridImageStreamsTemplate
       procedure ( OMS ), pointer :: &
-        OpenManifoldStreams => null ( )
+        OpenManifoldStreams => OpenManifoldStreamsTemplate
+      procedure ( A ), pointer:: &
+        Analyze => AnalyzeTemplate
       procedure ( W ), pointer:: &
-        Write => null ( )
+        Write => WriteTemplate
       procedure ( SWTI ), pointer :: &
-        SetCheckpointTimeInterval => null ( )
+        SetCheckpointTimeInterval => SetCheckpointTimeInterval
       procedure ( CTSL ), pointer :: &
         ComputeTimeStepLocal => null ( )
       procedure ( SR ), pointer :: &
@@ -42,10 +44,8 @@ module Integrator_Template
       OpenManifoldStreamsTemplate
     procedure, public, pass :: &  !-- 2
       InitializeTimers
-    procedure ( UD ), private, pass, deferred :: &
-      UpdateDevice
-    procedure, private, pass :: &  !-- 2
-      ComputeConstraints
+    procedure ( PE ), private, pass, deferred :: &  !-- 2
+      PrepareEvolution
     procedure, private, pass :: &  !-- 2
       AdministerCheckpoint
 !-- FIXME: Intel compiler fails to recognize concrete overriding in
@@ -56,11 +56,15 @@ module Integrator_Template
       ComputeCycle
     procedure, private, pass :: &  !-- 3
       InitializeStepTimers
+    procedure ( UH ), private, pass, deferred :: &  !-- 3
+      UpdateHost
 !-- See FIXME above
 !    procedure ( CT ), private, pass, deferred :: &  !-- 3
 !      ComputeTally
     procedure, private, pass :: &  !-- 3
       ComputeTally
+    procedure, public, pass :: &  !-- 3
+      AnalyzeTemplate
     procedure, public, pass :: &  !-- 3
       WriteTemplate
     procedure, private, pass :: &  !-- 3
@@ -92,6 +96,12 @@ module Integrator_Template
         VerboseStreamOption
     end subroutine OMS
 
+    subroutine A ( I )
+      import IntegratorTemplate
+      class ( IntegratorTemplate ), intent ( inout ) :: &
+        I
+    end subroutine A
+
     subroutine W ( I )
       import IntegratorTemplate
       class ( IntegratorTemplate ), intent ( inout ) :: &
@@ -119,11 +129,11 @@ module Integrator_Template
         I
     end subroutine SR
     
-    subroutine UD ( I )
+    subroutine PE ( I )
       import IntegratorTemplate
       class ( IntegratorTemplate ), intent ( inout ) :: &
         I
-    end subroutine UD
+    end subroutine PE
 
 !-- See FIXME above
 !    subroutine CC ( I )
@@ -131,6 +141,12 @@ module Integrator_Template
 !      class ( IntegratorTemplate ), intent ( inout ) :: &
 !        I
 !    end subroutine CC
+
+    subroutine UH ( I )
+      import IntegratorTemplate
+      class ( IntegratorTemplate ), intent ( inout ) :: &
+        I
+    end subroutine UH
 
 !-- See FIXME above
 !    subroutine CT ( I, ComputeChangeOption, IgnorabilityOption )
@@ -147,9 +163,6 @@ module Integrator_Template
   end interface
 
     private :: &
-      OpenGridImageStreams, &
-      OpenManifoldStreams, &
-      Write, &
       SetCheckpointTimeInterval
 
 contains
@@ -188,17 +201,7 @@ contains
       I % Communicator => I % PositionSpace % Communicator
     end if
 
-    if ( .not. associated ( I % OpenGridImageStreams ) ) &
-      I % OpenGridImageStreams => OpenGridImageStreams
-    if ( .not. associated ( I % OpenManifoldStreams ) ) &
-      I % OpenManifoldStreams => OpenManifoldStreams
-    if ( .not. associated ( I % Write ) ) &
-      I % Write => Write
-
     call I % OpenGridImageStreams ( )
-
-    if ( .not. associated ( I % SetCheckpointTimeInterval ) ) &
-      I % SetCheckpointTimeInterval => SetCheckpointTimeInterval
 
     !-- if allocated above, initialize
     select type ( TS => I % TimeSeries )
@@ -221,17 +224,16 @@ contains
 
     call I % OpenManifoldStreams ( )
     call I % InitializeTimers ( )
-    call I % UpdateDevice ( )
 
     Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerEvolve )
     if ( associated ( Timer ) ) call Timer % Start ( )   
 
+    I % Time = I % StartTime
+    call I % PrepareEvolution ( )
+    call I % AdministerCheckpoint ( ComputeChangeOption = .false. )
+
     call Show ( 'Starting evolution', I % IGNORABILITY )
     call Show ( I % Name, 'Name', I % IGNORABILITY )
-
-    I % Time = I % StartTime
-    call I % ComputeConstraints ( )
-    call I % AdministerCheckpoint ( ComputeChangeOption = .false. )
 
     do while ( I % Time < I % FinishTime .and. I % iCycle < I % FinishCycle )
       call Show ( 'Computing a cycle', I % IGNORABILITY + 1 )
@@ -378,6 +380,9 @@ contains
                ( 'Tally', I % iTimerTally, &
                  Level = BaseLevel + 2 )
         call PROGRAM_HEADER % AddTimer &
+               ( 'Analyze', I % iTimerAnalyze, &
+                 Level = BaseLevel + 2 )
+        call PROGRAM_HEADER % AddTimer &
                ( 'Write', I % iTimerWrite, &
                  Level = BaseLevel + 2 )
         call PROGRAM_HEADER % AddTimer &
@@ -385,14 +390,6 @@ contains
                  Level = BaseLevel + 2 )
 
   end subroutine InitializeTimers
-
-
-  subroutine ComputeConstraints ( I )
-
-    class ( IntegratorTemplate ), intent ( inout ) :: &
-      I
-
-  end subroutine ComputeConstraints
 
 
   subroutine AdministerCheckpoint ( I, ComputeChangeOption )
@@ -410,10 +407,21 @@ contains
       MaxTime, &
       MinTime, &
       MeanTime
+    logical ( KDL ) :: &
+      WriteSeries
     type ( TimerForm ), pointer :: &
-      Timer
+      Timer, &
+      Timer_T, &
+      Timer_A, &
+      Timer_W, &
+      Timer_WS
     
-    Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerCheckpoint )
+    Timer    => PROGRAM_HEADER % TimerPointer ( I % iTimerCheckpoint )
+    Timer_T  => PROGRAM_HEADER % TimerPointer ( I % iTimerTally )
+    Timer_A  => PROGRAM_HEADER % TimerPointer ( I % iTimerAnalyze )
+    Timer_W  => PROGRAM_HEADER % TimerPointer ( I % iTimerWrite )
+    Timer_WS => PROGRAM_HEADER % TimerPointer ( I % iTimerWriteSeries )
+
     if ( associated ( Timer ) ) call Timer % Start ( )   
 
     call Show ( 'Checkpoint reached', I % IGNORABILITY )
@@ -428,32 +436,47 @@ contains
       end do !-- iTSC
     end if
 
+    call I % UpdateHost ( )
+
     if ( I % Time > I % StartTime .and. I % Time < I % FinishTime &
          .and. mod ( I % iCheckpoint, I % CheckpointDisplayInterval ) > 0 ) &
     then
-      TallyIgnorability      = I % IGNORABILITY + 2
-      StatisticsIgnorability = I % IGNORABILITY + 2
+      TallyIgnorability       =  I % IGNORABILITY + 2
+      StatisticsIgnorability  =  I % IGNORABILITY + 2
+      WriteSeries = .false.
     else
-      TallyIgnorability      = CONSOLE % INFO_1
-      StatisticsIgnorability = CONSOLE % INFO_1
+      TallyIgnorability       =  CONSOLE % INFO_1
+      StatisticsIgnorability  =  CONSOLE % INFO_1
+      WriteSeries = .true.
     end if
 
+    if ( associated ( Timer_T ) ) call Timer_T % Start ( )   
     call I % ComputeTally &
            ( ComputeChangeOption = ComputeChangeOption, &
              IgnorabilityOption  = TallyIgnorability )
+    if ( associated ( Timer_T ) ) call Timer_T % Stop ( )   
 
-    if ( associated ( I % SetReference ) ) &
-      call I % SetReference ( )
+    if ( associated ( Timer_A ) ) call Timer_A % Start ( )   
+    call I % Analyze ( )
+    if ( associated ( Timer_A ) ) call Timer_A % Stop ( )   
+
+    if ( associated ( Timer_W ) ) call Timer_W % Start ( )   
     if ( .not. I % NoWrite ) &
       call I % Write ( )
+    if ( associated ( Timer_W ) ) call Timer_W % Stop ( )   
+
     call PROGRAM_HEADER % ShowStatistics &
            ( StatisticsIgnorability, &
              CommunicatorOption = PROGRAM_HEADER % Communicator, &
              MaxTimeOption = MaxTime, MinTimeOption = MinTime, &
              MeanTimeOption = MeanTime )
+
     call I % RecordTimeSeries ( MaxTime, MinTime, MeanTime )
-    if ( .not. I % NoWrite ) &
+
+    if ( associated ( Timer_WS ) ) call Timer_WS % Start ( )   
+    if ( WriteSeries .and. .not. I % NoWrite ) &
       call I % WriteTimeSeries ( )
+    if ( associated ( Timer_WS ) ) call Timer_WS % Stop ( )   
 
     I % IsCheckpointTime = .false.
     if ( I % Time < I % FinishTime ) then
@@ -504,16 +527,21 @@ contains
   end subroutine ComputeTally
 
 
-  subroutine WriteTemplate ( I )
+  subroutine AnalyzeTemplate ( I )
 
     class ( IntegratorTemplate ), intent ( inout ) :: &
       I
 
-    type ( TimerForm ), pointer :: &
-      Timer
+    if ( associated ( I % SetReference ) ) &
+      call I % SetReference ( )
 
-    Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerWrite )
-    if ( associated ( Timer ) ) call Timer % Start ( )
+  end subroutine AnalyzeTemplate
+
+
+  subroutine WriteTemplate ( I )
+
+    class ( IntegratorTemplate ), intent ( inout ) :: &
+      I
 
     if ( allocated ( I % MomentumSpace ) ) then
       select type ( MS => I % MomentumSpace )
@@ -557,8 +585,6 @@ contains
     end if !-- MomentumSpace
 
     end associate !-- GIS, etc.
-
-    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine WriteTemplate
 
@@ -712,38 +738,6 @@ contains
     end if
 
   end subroutine ComputeTimeStep
-
-
-  subroutine OpenGridImageStreams ( I )
-
-    class ( IntegratorTemplate ), intent ( inout ) :: &
-      I
-
-    call I % OpenGridImageStreamsTemplate ( )
-
-  end subroutine OpenGridImageStreams
-
-
-  subroutine OpenManifoldStreams ( I, VerboseStreamOption )
-
-    class ( IntegratorTemplate ), intent ( inout ) :: &
-      I
-    logical ( KDL ), intent ( in ), optional :: &
-      VerboseStreamOption
-
-    call I % OpenManifoldStreamsTemplate ( VerboseStreamOption )
-
-  end subroutine OpenManifoldStreams
-
-
-  subroutine Write ( I )
-
-    class ( IntegratorTemplate ), intent ( inout ) :: &
-      I
-
-    call I % WriteTemplate ( )
-
-  end subroutine Write
 
 
   subroutine SetCheckpointTimeInterval ( I )

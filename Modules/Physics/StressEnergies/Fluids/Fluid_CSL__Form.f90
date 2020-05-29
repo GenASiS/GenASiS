@@ -24,6 +24,7 @@ module Fluid_CSL__Form
       Units => null ( )
     logical ( KDL ) :: &
       UseLimiter, &
+      UseInitialTemperature, &
       UseEntropy
     character ( LDF ) :: &
       FluidType = '', &
@@ -57,9 +58,9 @@ contains
 
   subroutine Initialize &
                ( FC, C, NameShort, FluidType, RiemannSolverType, &
-                 ReconstructedType, UseEntropy, UseLimiter, UsePinnedMemory, &
-                 Units, BaryonMassReference, LimiterParameter, nValues, &
-                 IgnorabilityOption )
+                 ReconstructedType, UseEntropy, UseInitialTemperature, &
+                 UseLimiter, UsePinnedMemory, Units, BaryonMassReference, &
+                 LimiterParameter, nValues, IgnorabilityOption )
 
     class ( Fluid_CSL_Form ), intent ( inout ) :: &
       FC
@@ -72,6 +73,7 @@ contains
       ReconstructedType
     logical ( KDL ), intent ( in ) :: &
       UseEntropy, &
+      UseInitialTemperature, &
       UseLimiter, &
       UsePinnedMemory
     class ( StressEnergyUnitsForm ), intent ( in ), target :: &
@@ -86,13 +88,14 @@ contains
 
     if ( FC % Type == '' ) &
       FC % Type = 'a Fluid_CSL'
-    FC % FluidType           = FluidType
-    FC % ReconstructedType   = ReconstructedType
-    FC % RiemannSolverType   = RiemannSolverType
-    FC % UseLimiter          = UseLimiter
-    FC % UseEntropy          = UseEntropy
-    FC % LimiterParameter    = LimiterParameter
-    FC % BaryonMassReference = BaryonMassReference
+    FC % FluidType              = FluidType
+    FC % ReconstructedType      = ReconstructedType
+    FC % RiemannSolverType      = RiemannSolverType
+    FC % UseLimiter             = UseLimiter
+    FC % UseInitialTemperature  =  UseInitialTemperature
+    FC % UseEntropy             = UseEntropy
+    FC % LimiterParameter       = LimiterParameter
+    FC % BaryonMassReference    = BaryonMassReference
 
     FC % Units => Units
 
@@ -260,7 +263,8 @@ contains
       type is ( Fluid_P_I_Form )
         call F % Initialize_P_I &
                ( FC % FluidType, FC % RiemannSolverType, &
-                 FC % ReconstructedType, FC % UseEntropy, FC % UseLimiter, &
+                 FC % ReconstructedType, FC % UseEntropy, &
+                 FC % UseInitialTemperature, FC % UseLimiter, &
                  FC % Units, FC % BaryonMassReference, FC % LimiterParameter, &
                  FC % nValues, NameOption = FC % NameShort )
         call F % SetPrimitiveConserved ( )
@@ -273,7 +277,8 @@ contains
       type is ( Fluid_P_HN_Form )
         call F % Initialize_P_HN &
                ( FC % FluidType, FC % RiemannSolverType, &
-                 FC % ReconstructedType, FC % UseEntropy, FC % UseLimiter, &
+                 FC % ReconstructedType, FC % UseEntropy, &
+                 FC % UseInitialTemperature, FC % UseLimiter, &
                  FC % Units, FC % BaryonMassReference, FC % LimiterParameter, &
                  FC % nValues, NameOption = FC % NameShort )
         call F % SetPrimitiveConserved ( )

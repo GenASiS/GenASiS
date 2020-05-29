@@ -115,6 +115,7 @@ module FluidCentral_Template
     private :: &
       OpenGridImageStreams, &
       OpenManifoldStreams, &
+      Analyze, &
       Write, &
       ComputeSphericalAverage, &
       ComputeEnclosedBaryons, &
@@ -291,9 +292,6 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       nCellsPolarOption
     
-    class ( StorageForm ), pointer :: &
-      Storage_G
-
     if ( .not. FC % Dimensionless ) then
       FC % Units % Time &
         =  UNIT % SECOND
@@ -325,11 +323,8 @@ contains
     call PS % SetGeometry ( GA )
     
     if ( present ( GeometryUseDeviceOption ) ) then
-      if ( GeometryUseDeviceOption ) then
+      if ( GeometryUseDeviceOption ) &
         call GA % AllocateDevice ( )
-        Storage_G => PS % Geometry ( )
-        call Storage_G % UpdateDevice ( )
-      end if
     end if
 
     FC % UseCoarsening = .true.
@@ -441,7 +436,7 @@ contains
     select type ( S => I % Step )
     class is ( Step_RK2_C_ASC_Form )
 
-    call S % Initialize ( I, FA, Name )
+    call S % Initialize ( I, FA, NameSuffix = 'Fluid' )
     S % ComputeConstraints % Pointer => ComputeGravity
     S % ApplySources % Pointer => ApplySources
 
@@ -580,6 +575,7 @@ contains
 
       I % OpenGridImageStreams  =>  OpenGridImageStreams
       I % OpenManifoldStreams   =>  OpenManifoldStreams
+      I % Analyze               =>  Analyze
       I % Write                 =>  Write
 
     end select !-- I
@@ -784,6 +780,24 @@ contains
   end subroutine OpenManifoldStreams
 
 
+  subroutine Analyze ( I )
+
+    class ( IntegratorTemplate ), intent ( inout ) :: &
+      I
+
+    call I % AnalyzeTemplate ( )
+
+    select type ( FC => I % Universe )
+    class is ( FluidCentralTemplate )
+
+    call ComputeSphericalAverage ( FC )
+    call ComputeEnclosedBaryons ( FC )
+
+    end select !-- FC
+
+  end subroutine Analyze
+
+
   subroutine Write ( I )
 
     class ( IntegratorTemplate ), intent ( inout ) :: &
@@ -793,9 +807,6 @@ contains
 
     select type ( FC => I % Universe )
     class is ( FluidCentralTemplate )
-
-    call ComputeSphericalAverage ( FC )
-    call ComputeEnclosedBaryons ( FC )
 
     if ( I % PositionSpace % Communicator % Rank /= CONSOLE % DisplayRank ) &
       return

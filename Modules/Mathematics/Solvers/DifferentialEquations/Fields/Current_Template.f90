@@ -70,6 +70,8 @@ module Current_Template
       ShowPrimitiveConserved
     procedure, public, pass :: &
       SetSources
+    procedure, public, pass :: &
+      ComputeFromInitial
     procedure, private, pass :: &
       ComputeFromPrimitiveSelf
     procedure, private, pass ( C ) :: &
@@ -411,6 +413,18 @@ contains
     C % Sources => Sources
 
   end subroutine SetSources
+
+
+  subroutine ComputeFromInitial ( C, G )
+
+    class ( CurrentTemplate ), intent ( inout ) :: &
+      C
+    class ( GeometryFlatForm ), intent ( in ) :: &
+      G
+
+    call C % ComputeFromPrimitive ( G )
+
+  end subroutine ComputeFromInitial
 
 
   subroutine ComputeFromPrimitiveSelf ( C, G, nValuesOption, oValueOption )

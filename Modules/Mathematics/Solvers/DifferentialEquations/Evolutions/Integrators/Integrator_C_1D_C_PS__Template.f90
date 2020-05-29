@@ -208,11 +208,6 @@ contains
     integer ( KDI ) :: &
       iV, &
       iS
-    type ( TimerForm ), pointer :: &
-      Timer
-
-    Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerTally )
-    if ( associated ( Timer ) ) call Timer % Start ( )
 
     call I % ComputeTally_1D &
            ( ComputeChangeOption = ComputeChangeOption, &
@@ -236,8 +231,6 @@ contains
       end do !-- iV
       end associate !-- SCGT, etc.
     end if
-
-    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine ComputeTally
 

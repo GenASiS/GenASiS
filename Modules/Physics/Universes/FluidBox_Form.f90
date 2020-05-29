@@ -140,10 +140,6 @@ contains
 
     integer ( KDI ) :: &
       iD  !-- iDimension
-    logical ( KDL ) :: &
-      GeometryUseDevice
-    class ( StorageForm ), pointer :: &
-      Storage_G
       
     associate ( I => FB % Integrator )
 
@@ -178,11 +174,8 @@ contains
     call PS % SetGeometry ( GA )
     
     if ( present ( GeometryUseDeviceOption ) ) then
-      if ( GeometryUseDeviceOption ) then
+      if ( GeometryUseDeviceOption ) &
         call GA % AllocateDevice ( )
-        Storage_G => PS % Geometry ( )
-        call Storage_G % UpdateDevice ( )
-      end if
     end if
 
     end select !-- GA
@@ -241,7 +234,7 @@ contains
     allocate ( Step_RK2_C_ASC_Form :: I % Step )
     select type ( S => I % Step )
     class is ( Step_RK2_C_ASC_Form )
-    call S % Initialize ( I, I % Current_ASC, Name )
+    call S % Initialize ( I, I % Current_ASC, NameSuffix = 'Fluid' )
     if ( present ( GravitySolverTypeOption ) ) &   
       S % ComputeConstraints % Pointer => ComputeGravity
       S % ApplySources % Pointer => ApplyGravity_F

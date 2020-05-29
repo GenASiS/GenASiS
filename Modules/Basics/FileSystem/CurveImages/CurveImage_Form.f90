@@ -216,8 +216,6 @@ contains
         call Show ( iStrg, 'iStorage', CONSOLE % INFO_5 )
         call Show ( S % Name, 'Name', CONSOLE % INFO_5 )
 
-        call S % UpdateHost ( )
-        
         call GI % Stream % MakeDirectory ( S % Name )
         
         do iS = 1, S % nVariables
@@ -334,8 +332,6 @@ contains
         call Show ( iStrg, 'iStorage', CONSOLE % INFO_5 )
         call Show ( S % Name, 'Name', CONSOLE % INFO_5 )
 
-        call S % UpdateHost ( )
-        
         call GI % Stream % MakeDirectory ( S % Name )
         
         do iS = 1 , S % nVariables

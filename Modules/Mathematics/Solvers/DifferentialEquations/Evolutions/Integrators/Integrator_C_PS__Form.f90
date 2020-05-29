@@ -31,13 +31,15 @@ module Integrator_C_PS__Form
     final :: &  !-- 1
       Finalize
     procedure, private, pass :: &  !-- 2
-      UpdateDevice => UpdateDevice_I
-    procedure, private, pass :: &  !-- 2
-      ComputeConstraints
+      PrepareEvolution
     procedure, private, pass :: &  !-- 2
       ComputeCycle
     procedure, private, pass :: &  !-- 3
       InitializeStepTimers
+    procedure, private, pass :: &  !-- 3
+      ComputeConstraints
+    procedure, private, pass :: &  !-- 3
+      UpdateHost => UpdateHost_I
     procedure, private, pass :: &  !-- 3
       ComputeTally
     procedure, private, pass :: &
@@ -171,62 +173,54 @@ contains
   end subroutine Finalize
   
   
-  subroutine UpdateDevice_I ( I )
+  subroutine PrepareEvolution ( I )
 
     class ( Integrator_C_PS_Form ), intent ( inout ) :: &
       I
-    
-    class ( CurrentTemplate ), pointer :: &
-      C
+
     class ( GeometryFlatForm ), pointer :: &
       G
+    class ( CurrentTemplate ), pointer :: &
+      C
 
-    if ( .not. allocated ( I % Current_ASC ) ) &
-      return
-
-    associate ( CA => I % Current_ASC )
-    
-    C => CA % Current ( )
-    call C % UpdateDevice ( ) 
-    nullify ( C )
-    
-    end associate !-- CA
-    
     select type ( PS => I % PositionSpace )
     class is ( Atlas_SC_Form )
 
     select type ( CSL => PS % Chart )
-    class is ( Chart_SL_Template )
+    class is ( Chart_SLD_Form )
 
     G => CSL % Geometry ( )
-    call G % UpdateDevice ( )
-    
-    nullify ( G )
-    
-    end select !-- CSL
-    end select !-- PS
-    
+    call G % UpdateDevice ( )    
 
-  end subroutine UpdateDevice_I
-
-
-  subroutine ComputeConstraints ( I )
-
-    class ( Integrator_C_PS_Form ), intent ( inout ) :: &
-      I
-
-    if ( .not. allocated ( I % Step ) ) &
+    if ( .not. allocated ( I % Current_ASC ) ) &
       return
 
-    select type ( S => I % Step )
-    class is ( Step_RK_C_ASC_Template )
+    C => I % Current_ASC % Current ( )
+    call C % UpdateDevice ( ) 
+    call C % ComputeFromInitial ( G )
+    call C % UpdateHost ( )
+    call CSL % ExchangeGhostData ( C )
+    call C % UpdateDevice ( )
 
-    if ( associated ( S % ComputeConstraints % Pointer ) ) &
-      call S % ComputeConstraints % Pointer ( S )
+    class default
+      call Show ( 'Chart type type not recognized', CONSOLE % ERROR )
+      call Show ( 'Integrator_C_PS__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'PrepareEvolution', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- CSL
 
-    end select !-- S
+    class default
+      call Show ( 'PositionSpace type not recognized', CONSOLE % ERROR )
+      call Show ( 'Integrator_C_PS__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'PrepareEvolution', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- PS
 
-  end subroutine ComputeConstraints
+    call I % ComputeConstraints ( )
+
+    nullify ( C, G )
+
+  end subroutine PrepareEvolution
 
 
   subroutine ComputeCycle ( I )
@@ -263,6 +257,47 @@ contains
   end subroutine InitializeStepTimers
 
 
+  subroutine ComputeConstraints ( I )
+
+    class ( Integrator_C_PS_Form ), intent ( inout ) :: &
+      I
+
+    if ( .not. allocated ( I % Step ) ) &
+      return
+
+    select type ( S => I % Step )
+    class is ( Step_RK_C_ASC_Template )
+
+    if ( associated ( S % ComputeConstraints % Pointer ) ) &
+      call S % ComputeConstraints % Pointer ( S )
+
+    end select !-- S
+
+  end subroutine ComputeConstraints
+
+
+  subroutine UpdateHost_I ( I )
+
+    class ( Integrator_C_PS_Form ), intent ( inout ) :: &
+      I
+
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
+      call PS % Geometry_ASC % UpdateHost ( )
+    class default
+      call Show ( 'PositionSpace type not recognized', CONSOLE % ERROR )
+      call Show ( 'Integrator_C_PS__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'UpdateHost_I', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- PS
+
+    if ( allocated ( I % Current_ASC ) ) then
+      call I % Current_ASC % UpdateHost ( )
+    end if
+
+  end subroutine UpdateHost_I
+
+
   subroutine ComputeTally ( I, ComputeChangeOption, IgnorabilityOption )
 
     class ( Integrator_C_PS_Form ), intent ( inout ) :: &
@@ -272,27 +307,19 @@ contains
     integer ( KDI ), intent ( in ), optional :: &
       IgnorabilityOption
 
-    type ( TimerForm ), pointer :: &
-      Timer
     class ( CurrentTemplate ), pointer :: &
       C
 
     if ( .not. allocated ( I % Current_ASC ) ) &
       return
 
-    Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerTally )
-    if ( associated ( Timer ) ) call Timer % Start ( )
-
     associate ( CA => I % Current_ASC )
     C => CA % Current ( )
-    call C % UpdateHost ( ) 
     call CA % ComputeTally &
            ( ComputeChangeOption = ComputeChangeOption, &
              IgnorabilityOption = IgnorabilityOption )
     nullify ( C )
     end associate !-- CA
-
-    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine ComputeTally
 

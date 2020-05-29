@@ -357,15 +357,22 @@ contains
       BaryonMass, &
       VelocityMax, &
       VelocityMaxRadius, &
+      NumberDensityAve, &
       NumberDensityMax, &
       TimeScaleVelocityMax, &
-      TimeScaleDensityMax
+      TimeScaleDensityAve
     type ( CollectiveOperation_R_Form ), allocatable :: &
       CO
     class ( GeometryFlatForm ), pointer :: &
       G_SA
     class ( Fluid_D_Form ), pointer :: &
       F_SA
+
+    select type ( I )
+    class is ( Integrator_C_PS_Form )
+
+    select type ( FA => I % Current_ASC )
+    class is ( Fluid_ASC_Form )
 
     select type ( FC => I % Universe )
     class is ( FluidCentralCoreForm )
@@ -380,6 +387,8 @@ contains
     G_SA  =>  FC % PositionSpace_SA % Geometry ( )
     F_SA  =>  FC % Fluid_ASC_SA % Fluid_D ( )
 
+    !-- Velocity
+
     iRadius &
       =  maxloc ( abs ( F_SA % Value ( :,  F_SA % VELOCITY_U ( 1 ) ) ), &
                   dim = 1 )
@@ -388,29 +397,27 @@ contains
     VelocityMax  &
       =  max ( maxval ( abs ( F_SA % Value ( :, F_SA % VELOCITY_U ( 1 ) ) ) ), &
                sqrt ( tiny ( 0.0_KDR ) ) )  
+
+    !-- Density
+
+    select type ( TI => FA % TallyInterior )
+    class is ( Tally_F_D_Form )
+      NumberDensityAve  =  TI % Value ( TI % BARYON_NUMBER ) &
+                     / ( 4.0_KDR / 3.0_KDR  *  CONSTANT % PI  &
+                         *  VelocityMaxRadius ** 3 )
+    end select !-- TI
+
     NumberDensityMax  &
       =  max ( maxval ( F_SA % Value ( :, F_SA % COMOVING_BARYON_DENSITY ) ), &
                sqrt ( tiny ( 0.0_KDR ) ) )
 
+    !-- Time scales and CheckpointTimeInterval
+
     TimeScaleVelocityMax &
       =  VelocityMaxRadius  /  VelocityMax
-    TimeScaleDensityMax &
-      =  ( GravitationalConstant * BaryonMass * NumberDensityMax ) &
+    TimeScaleDensityAve &
+      =  ( GravitationalConstant * BaryonMass * NumberDensityAve ) &
          ** ( -0.5_KDR )
-
-    call Show ( 'Time Scales', I % IGNORABILITY )
-    call Show ( VelocityMaxRadius, FC % Units % Coordinate_PS ( 1 ), &
-                'VelocityMaxRadius', I % IGNORABILITY )
-    call Show ( VelocityMax, FC % Units % Velocity_U ( 1 ), &
-                'VelocityMax', I % IGNORABILITY )
-    call Show ( NumberDensityMax, FC % Units % NumberDensity, &
-                'NumberDensityMax', I % IGNORABILITY )
-    call Show ( BaryonMass * NumberDensityMax, FC % Units % MassDensity, &
-                'MassDensityMax', I % IGNORABILITY )
-    call Show ( TimeScaleVelocityMax, I % TimeUnit, &
-                'TimeScaleVelocityMax', I % IGNORABILITY )
-    call Show ( TimeScaleDensityMax, I % TimeUnit, &
-                'TimeScaleDensityMax', I % IGNORABILITY )
 
     allocate ( CO )
     associate ( C => I % PositionSpace % Communicator ) 
@@ -420,13 +427,37 @@ contains
     end associate !-- C
 
     CO % Outgoing % Value ( 1 )  &
-      =  min ( TimeScaleVelocityMax, TimeScaleDensityMax )  /  I % nWrite
+      =  min ( TimeScaleVelocityMax, TimeScaleDensityAve )  /  I % nWrite
 
     call CO % Broadcast ( )
 
     I % CheckpointTimeInterval  =  CO % Incoming % Value ( 1 )
 
+    !-- Display
+
+    call Show ( 'Time Scales', I % IGNORABILITY )
+    call Show ( VelocityMaxRadius, FC % Units % Coordinate_PS ( 1 ), &
+                'VelocityMaxRadius', I % IGNORABILITY )
+    call Show ( VelocityMax, FC % Units % Velocity_U ( 1 ), &
+                'VelocityMax', I % IGNORABILITY )
+    call Show ( NumberDensityAve, FC % Units % NumberDensity, &
+                'NumberDensityAve', I % IGNORABILITY )
+    call Show ( NumberDensityMax, FC % Units % NumberDensity, &
+                'NumberDensityMax', I % IGNORABILITY )
+    call Show ( BaryonMass * NumberDensityAve, FC % Units % MassDensity, &
+                'MassDensityAve', I % IGNORABILITY )
+    call Show ( BaryonMass * NumberDensityMax, FC % Units % MassDensity, &
+                'MassDensityMax', I % IGNORABILITY )
+    call Show ( TimeScaleVelocityMax, I % TimeUnit, &
+                'TimeScaleVelocityMax', I % IGNORABILITY )
+    call Show ( TimeScaleDensityAve, I % TimeUnit, &
+                'TimeScaleDensityAve', I % IGNORABILITY )
+
+    !-- Cleanup
+
     end select !-- FC
+    end select !-- FA
+    end select !-- I
 
     nullify ( G_SA, F_SA )
 
