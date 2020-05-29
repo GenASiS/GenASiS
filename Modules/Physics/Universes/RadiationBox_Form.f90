@@ -589,7 +589,7 @@ contains
       allocate ( Step_RK2_C_ASC_Form :: I % Step )
       select type ( S => I % Step )
       class is ( Step_RK2_C_ASC_Form )
-        call S % Initialize ( I, I % Current_ASC, 'Fluid' )
+        call S % Initialize ( I, I % Current_ASC, NameSuffix = 'Fluid' )
         if ( RB % ApplyInteractions ) &
           S % ApplySources % Pointer  =>  ApplySources_Fluid
       end select !-- S

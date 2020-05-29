@@ -234,7 +234,7 @@ contains
     allocate ( Step_RK2_C_ASC_Form :: I % Step )
     select type ( S => I % Step )
     class is ( Step_RK2_C_ASC_Form )
-    call S % Initialize ( I, I % Current_ASC, Name )
+    call S % Initialize ( I, I % Current_ASC, NameSuffix = 'Fluid' )
     if ( present ( GravitySolverTypeOption ) ) &   
       S % ComputeConstraints % Pointer => ComputeGravity
       S % ApplySources % Pointer => ApplyGravity_F

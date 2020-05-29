@@ -436,7 +436,7 @@ contains
     select type ( S => I % Step )
     class is ( Step_RK2_C_ASC_Form )
 
-    call S % Initialize ( I, FA, Name )
+    call S % Initialize ( I, FA, NameSuffix = 'Fluid' )
     S % ComputeConstraints % Pointer => ComputeGravity
     S % ApplySources % Pointer => ApplySources
 
