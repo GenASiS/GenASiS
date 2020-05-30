@@ -31,7 +31,7 @@ program Fluid_P_HN__Form_Test
   call PROGRAM_HEADER % Initialize &
          ( ProgramName, AppendDimensionalityOption = .false. )
   
-  nCells = 1
+  nCells = 32
   call PROGRAM_HEADER % GetParameter ( nCells, 'nCells' )
 
   call CONSOLE % SetVerbosity ( 'INFO_4' )

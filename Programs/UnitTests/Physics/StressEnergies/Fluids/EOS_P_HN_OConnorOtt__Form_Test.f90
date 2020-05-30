@@ -54,7 +54,7 @@ program EOS_P_HN_OConnorOtt__Form_Test
            LimiterParameter = 1.4_KDR, &
            nValues = nV )
   
-  call F % AllocateDevice ( )
+  call F % AllocateDevice ( AssociateVariablesOption = .false. )
   
   associate ( FV => F % Value )
   associate &
@@ -132,6 +132,8 @@ program EOS_P_HN_OConnorOtt__Form_Test
   call Show ( iaFluidOutput, 'iaFluidOutput' )
   call Show ( iaSelected_EOS, 'iaSelected_EOS' )
   call EOS % SelectVariables ( iaFluidOutput, iaSelected_EOS )
+  
+  call EOS % AllocateDevice ( )
    
   associate &
     ( T_EOS   => EOS % Table, &
@@ -155,9 +157,12 @@ program EOS_P_HN_OConnorOtt__Form_Test
   call Show ( 'Input' )
   call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ) ], 'N, T, YE' )
   
+  call Timer % Start ( )
   call EOS % ComputeFromTemperature &
         ( F, iaFluidInput = [ F % COMOVING_BARYON_DENSITY, &
                               F % TEMPERATURE, F % ELECTRON_FRACTION ] )
+  call Timer % Stop ( )
+  call Timer % ShowInterval (  )
   
   call Show ( 'Output' )
   call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ) ], 'N, T, YE' )

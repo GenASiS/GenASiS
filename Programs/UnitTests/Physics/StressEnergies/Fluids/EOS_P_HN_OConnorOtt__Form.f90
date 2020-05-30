@@ -45,9 +45,13 @@ module EOS_P_HN_OConnorOtt__Form
       ElectronFraction
     real ( KDR ), dimension ( :, :, :, : ), allocatable :: &
       Table
+    logical ( KDL ) :: &
+      AllocatedDevice
   contains
     procedure, public, pass :: &
       Initialize
+    procedure, public, pass :: &
+      AllocateDevice => AllocateDevice_EOS_P_HN
     procedure, public, pass :: &
       SelectVariables
     procedure, public, pass :: &
@@ -55,6 +59,9 @@ module EOS_P_HN_OConnorOtt__Form
     final :: &
       Finalize
   end type EOS_P_HN_OConnorOtt_Form
+  
+    private :: &
+      Interpolate_3D_Kernel
   
   real ( KDR ), parameter :: &
     T_MAX_HACK          = 240.0_KDR, &
@@ -69,8 +76,35 @@ module EOS_P_HN_OConnorOtt__Form
     kb_mev              = 8.61738568e-1_KDR
 
 
+  interface
+  
+    module subroutine Interpolate_3D_Kernel &
+                 ( F, T, XT, YT, ZT, E_Shift, ia_F_I, ia_F_O, ia_E, &
+                   UseDeviceOption )
+      use Basics      
+      real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+        F
+      real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
+        T
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        XT, &      !-- LogDensity (typically)
+        YT, &      !-- LogTemperature (typically)
+        ZT         !-- ElectronFraction  (typically)
+      real ( KDR ), intent ( in ) :: &
+        E_Shift
+      integer ( KDI ), dimension ( : ), intent ( in ) :: &
+        ia_F_I, &  !-- iaFluidInput
+        ia_F_O, &  !-- iaFluidOutput
+        ia_E       !-- iaEOS
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine Interpolate_3D_Kernel
+  
+  end interface
+
 contains
 
+  
   subroutine Initialize ( E )
   
     class ( EOS_P_HN_OConnorOtt_Form ), intent ( inout ) :: &
@@ -118,10 +152,6 @@ contains
     call h5dopen_f(file_id, "pointsye", dset_id, error)
     call h5dread_f(dset_id, H5T_NATIVE_INTEGER, nye, dims1, error)
     call h5dclose_f(dset_id,error)
-
-    if(error.ne.0) then
-       stop "Could not read EOS table file"
-    endif
 
     call Show ( Filename, 'Reading Equation of State' )
     call Show ( [ E % nDensity, E % nTemperature, E % nElectronFraction ], &
@@ -268,6 +298,38 @@ contains
     allocate ( E % iaSelected, source = ( iaSelected ) )
   
   end subroutine SelectVariables
+  
+  
+  subroutine AllocateDevice_EOS_P_HN( E )
+  
+    class ( EOS_P_HN_OConnorOtt_Form ), intent ( inout ) :: &
+      E
+      
+    type ( c_ptr ) :: &
+      D_P  !-- Device Pointer
+
+    call AllocateDevice ( E % Error, D_P )
+    call AssociateHost  ( D_P, E % Error )
+
+    call AllocateDevice ( E % Table, D_P )
+    call AssociateHost  ( D_P, E % Table )
+    call UpdateDevice   ( E % Table, D_P )
+
+    call AllocateDevice ( E % LogDensity, D_P )
+    call AssociateHost  ( D_P, E % LogDensity )
+    call UpdateDevice   ( E % LogDensity, D_P )
+
+    call AllocateDevice ( E % LogTemperature, D_P )
+    call AssociateHost  ( D_P, E % LogTemperature )
+    call UpdateDevice   ( E % LogTemperature, D_P )
+
+    call AllocateDevice ( E % ElectronFraction, D_P )
+    call AssociateHost  ( D_P, E % ElectronFraction )
+    call UpdateDevice   ( E % ElectronFraction, D_P )
+    
+    E % AllocatedDevice = .true.
+
+  end subroutine AllocateDevice_EOS_P_HN
 
   
   subroutine ComputeFromTemperature ( E, Fluid, iaFluidInput )
@@ -279,10 +341,14 @@ contains
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
       iaFluidInput
     
+    logical ( KDL ) :: &
+      UseDevice 
+      
     call Interpolate_3D_Kernel &
            ( Fluid % Value, E % Table, E % LogDensity, E % LogTemperature, &
              E % ElectronFraction, E % EnergyShift, iaFluidInput, &
-             E % iaFluidOutput, E % iaSelected )
+             E % iaFluidOutput, E % iaSelected, &
+             UseDeviceOption = UseDevice )
   
   end subroutine ComputeFromTemperature
   
@@ -291,143 +357,29 @@ contains
   
     type ( EOS_P_HN_OConnorOtt_Form ), intent ( inout ) :: &
       E
-  
+    
+    if ( allocated ( E % Table ) ) &
+      deallocate ( E % Table )
+   
+    if ( allocated ( E % ElectronFraction ) ) &
+      deallocate ( E % ElectronFraction )
+    
+    if ( allocated ( E % LogTemperature ) ) &
+      deallocate ( E % LogTemperature ) 
+    
+    if ( allocated ( E % LogDensity ) ) &
+      deallocate ( E % LogDensity )
+    
+    if ( allocated ( E % Error ) ) &
+      deallocate ( E % Error )
+      
+    if ( allocated ( E % iaSelected ) ) &
+      deallocate ( E % iaSelected )
+    
+    if ( allocated ( E % iaFluidOutput ) ) &
+      deallocate ( E % iaFluidOutput )
   
   end subroutine Finalize
   
   
-  
-  subroutine Interpolate_3D_Kernel &
-               ( F, T, XT, YT, ZT, E_Shift, ia_F_I, ia_F_O, ia_E )
-    
-    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
-      F
-    real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
-      T
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      XT, &      !-- LogDensity (typically)
-      YT, &      !-- LogTemperature (typically)
-      ZT         !-- ElectronFraction  (typically)
-    real ( KDR ), intent ( in ) :: &
-      E_Shift
-    integer ( KDI ), dimension ( : ), intent ( in ) :: &
-      ia_F_I, &  !-- iaFluidInput
-      ia_F_O, &  !-- iaFluidOutput
-      ia_E       !-- iaEOS
-    
-    integer ( KDI ) :: &
-      iValue, &
-      iV, &  !-- iVariable
-      iS, &  !-- iSelected
-      iF, &  !-- iFluid
-      nx,ny,nz,nvars, &
-      nValues, &
-      ix,iy,iz
-    real ( KDR ) :: &
-      L_x, &
-      L_y, &
-      delx, dely, delz, &
-      dx,dy,dz,dxi,dyi,dzi,dxyi,dxzi,dyzi,dxyzi,&
-      a1, a2, a3, a4, a5, a6, a7, a8 
-    real ( KDR ), dimension ( 8 ) :: &
-      fh
-
-    call Show ( 'Interpolate_3D' )
-    
-    nx = size ( XT )
-    ny = size ( YT )
-    nz = size ( ZT )
-    nvars = size ( T, dim = 4 )
-    nValues = size ( F, dim = 1 )
-
-    !--  determine spacing parameters of (equidistant!!!) table
-    dx    = (xt(nx) - xt(1)) / real(nx-1, kind=KDR)
-    dy    = (yt(ny) - yt(1)) / real(ny-1, kind=KDR)
-    dz    = (zt(nz) - zt(1)) / real(nz-1, kind=KDR)
-
-    dxi   = 1. / dx
-    dyi   = 1. / dy
-    dzi   = 1. / dz
-
-    dxyi  = dxi * dyi
-    dxzi  = dxi * dzi
-    dyzi  = dyi * dzi
-
-    dxyzi = dxi * dyi * dzi
-    
-    associate ( ft => T )
-    
-    do  iValue = 1, nValues
-      
-      !-- Convert to log space for the x and y
-      L_x = log10 ( F ( iValue, ia_F_I ( 1 ) ) )
-      L_y = log10 ( F ( iValue, ia_F_I ( 2 ) ) )
-      
-      !-- determine location in (equidistant!!!) table 
-      ix = 2 + INT( (L_x - xt(1) - 1.e-10_KDR) * dxi )
-      iy = 2 + INT( (L_y - yt(1) - 1.e-10_KDR) * dyi )
-      iz = 2 + INT( ( F ( iValue, ia_F_I ( 3 ) ) - zt(1) - 1.e-10_KDR) * dzi )
-                                                 
-      ix = MAX( 2, MIN( ix, nx ) )
-      iy = MAX( 2, MIN( iy, ny ) )   
-      iz = MAX( 2, MIN( iz, nz ) )
-
-      !-- set-up auxiliary arrays for Lagrange interpolation
-                                                             
-      delx = xt(ix) - L_x
-      dely = yt(iy) - L_y
-      delz = zt(iz) - F ( iValue, ia_F_I ( 3 ) )
-  
-      do iS = 1, size ( ia_E )
-        
-        iV = ia_E ( iS )
-        iF = ia_F_O ( iS )
-        
-        fh(1) = ft(ix  , iy  , iz,   iv)
-        fh(2) = ft(ix-1, iy  , iz,   iv)   
-        fh(3) = ft(ix  , iy-1, iz,   iv)   
-        fh(4) = ft(ix  , iy  , iz-1, iv)
-        fh(5) = ft(ix-1, iy-1, iz,   iv)
-        fh(6) = ft(ix-1, iy  , iz-1, iv)
-        fh(7) = ft(ix  , iy-1, iz-1, iv)
-        fh(8) = ft(ix-1, iy-1, iz-1, iv)
-        
-        !-- set up coefficients of the interpolation polynomial and 
-        !   evaluate function values 
-        a1 = fh(1)
-        a2 = dxi   * ( fh(2) - fh(1) )
-        a3 = dyi   * ( fh(3) - fh(1) )
-        a4 = dzi   * ( fh(4) - fh(1) )
-        a5 = dxyi  * ( fh(5) - fh(2) - fh(3) + fh(1) )
-        a6 = dxzi  * ( fh(6) - fh(2) - fh(4) + fh(1) )
-        a7 = dyzi  * ( fh(7) - fh(3) - fh(4) + fh(1) )
-        a8 = dxyzi * ( fh(8) - fh(1) + fh(2) + fh(3) + &
-             fh(4) - fh(5) - fh(6) - fh(7) )
-
-        f(iValue, iF)  &
-          = a1 +  a2 * delx               &
-             +  a3 * dely                      &  
-             +  a4 * delz                      &  
-             +  a5 * delx * dely               &  
-             +  a6 * delx * delz               &
-             +  a7 * dely * delz               &
-             +  a8 * delx * dely * delz
-        
-        !-- T ( :, :, :, 1 ) and T ( :, :, :, 2 ) is in log space
-        if ( iV == 1 .or. iV == 2 ) then
-          f ( iValue, iF ) = 10.0e0_KDR ** f ( iValue, iF )
-        end if
-        if ( iV == 2 ) then
-          f ( iValue, iF ) = f ( iValue, iF ) - E_Shift
-        end if
-                  
-      enddo
-      
-    enddo
-                      
-    end associate
-  
-  end subroutine Interpolate_3D_Kernel
-
-
 end module EOS_P_HN_OConnorOtt__Form

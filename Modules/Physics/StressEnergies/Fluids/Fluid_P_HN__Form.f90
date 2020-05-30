@@ -429,7 +429,7 @@ contains
     call AssociateHost  ( D_P, S % EOS % ElectronFraction )
     call UpdateDevice   ( S % EOS % ElectronFraction, D_P )
     
-    call S % StorageForm % AllocateDevice ( )
+    call S % StorageForm % AllocateDevice ( AssociateVariablesOption )
       
   end subroutine AllocateDevice_P_HN
 
