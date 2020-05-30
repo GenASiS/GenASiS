@@ -354,7 +354,8 @@ contains
     
     Abs_K = sqrt ( dot_product ( K, K ) )
 
-    !$OMP parallel do private ( iV )
+    !$OMP  parallel do &
+    !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV )
     do iV = 1, nValues
 
       if ( .not. IsProperCell ( iV ) ) &

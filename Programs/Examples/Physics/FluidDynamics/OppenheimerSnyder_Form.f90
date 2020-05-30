@@ -151,12 +151,16 @@ contains
     class is ( Atlas_SC_Form )
     G => PS % Geometry ( )
 
+    select type ( PSC => PS % Chart )
+    class is ( Chart_SLD_Form )
+
     F_R => OS % Reference % Fluid_D ( )
-    call SetFluid ( OS, F_R, G )
+    call SetFluid ( OS, F_R, PSC, G )
 
     F_D => OS % Difference % Fluid_D ( )
     call MultiplyAdd ( F % Value, F_R % Value, -1.0_KDR, F_D % Value )
 
+    end select !-- PSC
     end select !-- PS
     end select !-- FA
     end select !-- OS
@@ -285,10 +289,14 @@ contains
     call RF % Initialize ( OS )
     RF % EvaluateZero  =>  EvaluateZeroEta
 
+    select type ( PSC => PS % Chart )
+    class is ( Chart_SLD_Form )
+
     G => PS % Geometry ( )
     F => FA % Fluid_D ( )
-    call SetFluid ( OS, F, G )
+    call SetFluid ( OS, F, PSC, G )
 
+    end select !-- PSC
     end associate !-- RF
     end associate !-- D0, etc.
     end select !-- PS
@@ -323,12 +331,14 @@ contains
   end subroutine EvaluateZeroEta
 
 
-  subroutine SetFluid ( OS, F, G )
+  subroutine SetFluid ( OS, F, PSC, G )
 
     class ( OppenheimerSnyderForm ), intent ( inout ) :: &
       OS
     class ( Fluid_D_Form ), intent ( inout ) :: &
       F
+    class ( Chart_SLD_Form ), intent ( inout ) :: &
+      PSC
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
     
@@ -351,56 +361,71 @@ contains
     Density  =  D_0 * ( R_0 / Radius ) ** 3
 
     end associate !-- RF, etc.
-  
+
     call SetFluidKernel &
-           (    R = G % Value ( :, G % CENTER_U ( 1 ) ), &
+           (    N = F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
+               VX = F % Value ( :, F % VELOCITY_U ( 1 ) ), &
+               VY = F % Value ( :, F % VELOCITY_U ( 2 ) ), &
+               VZ = F % Value ( :, F % VELOCITY_U ( 3 ) ), &
+                R = G % Value ( :, G % CENTER_U ( 1 ) ), &
              dR_L = G % Value ( :, G % WIDTH_LEFT_U ( 1 ) ), &
              dR_R = G % Value ( :, G % WIDTH_RIGHT_U ( 1 ) ), &
+             IsProperCell = PSC % IsProperCell, &
              Density = Density, &
-             RadiusDensity = Radius, &
-              N = F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
-             VX = F % Value ( :, F % VELOCITY_U ( 1 ) ), &
-             VY = F % Value ( :, F % VELOCITY_U ( 2 ) ), &
-             VZ = F % Value ( :, F % VELOCITY_U ( 3 ) ) )
+             RadiusDensity = Radius )
 
   end subroutine SetFluid
 
 
   subroutine SetFluidKernel &
-               ( R, dR_L, dR_R, Density, RadiusDensity, N, VX, VY, VZ )
+               ( N, VX, VY, VZ, R, dR_L, dR_R, &
+                 IsProperCell, Density, RadiusDensity )
 
+    real ( KDR ), dimension ( : ), intent ( inout ) :: &
+      N, &
+      VX, VY, VZ
     real ( KDR ), dimension ( : ), intent ( in ) :: &
       R, &
       dR_L, &
       dR_R
+    logical ( KDL ), dimension ( : ), intent ( in ) :: &
+      IsProperCell
     real ( KDR ), intent ( in ) :: &
       Density, &
       RadiusDensity
-    real ( KDR ), dimension ( : ), intent ( out ) :: &
-      N, &
-      VX, VY, VZ
 
-    N  = 0.0_KDR
-    VX = 0.0_KDR
-    VY = 0.0_KDR
-    VZ = 0.0_KDR
+    integer ( KDI ) :: &
+      iV, &  !-- iValue
+      nValues
+    real ( KDR ) :: &
+      R_In, R_Out
 
-    associate &
-      ( R_In  => R - dR_L, &
-        R_Out => R + dR_R )
+    nValues = size ( R )
 
-    where ( R_Out <= RadiusDensity )
-      N = Density
-    end where
-    where ( R_In < RadiusDensity .and. R_Out > RadiusDensity )
-      N = Density * ( RadiusDensity ** 3  -  R_In ** 3 ) &
-                    / ( R_Out ** 3  -  R_In ** 3 )
-    end where
+    !$OMP  parallel do &
+    !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV, R_In, R_Out )
+    do iV = 1, nValues
 
-!    N = Density / ( 1 + exp ( ( R - RadiusDensity ) &
-!                              / ( 3 * ( dR_L + dR_R ) ) ) ) 
- 
-    end associate !-- R_In, etc.
+      if ( .not. IsProperCell ( iV ) ) &
+        cycle
+
+      N  ( iV )  =  0.0_KDR
+      VX ( iV )  =  0.0_KDR
+      VY ( iV )  =  0.0_KDR
+      VZ ( iV )  =  0.0_KDR
+
+      R_In   =  R ( iV )  -  dR_L ( iV )
+      R_Out  =  R ( iV )  +  dR_R ( iV )
+
+      if ( R_Out  <  RadiusDensity ) &
+        N ( iV )  =  Density
+
+      if ( R_In < RadiusDensity .and. R_Out > RadiusDensity ) &
+        N ( iV )  =  Density * ( RadiusDensity ** 3  -  R_In ** 3 ) &
+                     / ( R_Out ** 3  -  R_In ** 3 )
+
+    end do !-- iV
+    !$OMP end parallel do
 
   end subroutine SetFluidKernel
 

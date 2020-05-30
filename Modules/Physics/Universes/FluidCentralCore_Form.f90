@@ -359,8 +359,8 @@ contains
       VelocityMaxRadius, &
       NumberDensityAve, &
       NumberDensityMax, &
-      TimeScaleVelocityMax, &
-      TimeScaleDensityAve
+      TimeScaleVelocity, &
+      TimeScaleDensity
     type ( CollectiveOperation_R_Form ), allocatable :: &
       CO
     class ( GeometryFlatForm ), pointer :: &
@@ -413,10 +413,11 @@ contains
 
     !-- Time scales and CheckpointTimeInterval
 
-    TimeScaleVelocityMax &
+    TimeScaleVelocity &
       =  VelocityMaxRadius  /  VelocityMax
-    TimeScaleDensityAve &
-      =  ( GravitationalConstant * BaryonMass * NumberDensityAve ) &
+    TimeScaleDensity &
+      =  ( GravitationalConstant * BaryonMass &
+           * min ( NumberDensityAve, NumberDensityMax ) ) &
          ** ( -0.5_KDR )
 
     allocate ( CO )
@@ -427,7 +428,7 @@ contains
     end associate !-- C
 
     CO % Outgoing % Value ( 1 )  &
-      =  min ( TimeScaleVelocityMax, TimeScaleDensityAve )  /  I % nWrite
+      =  min ( TimeScaleVelocity, TimeScaleDensity )  /  I % nWrite
 
     call CO % Broadcast ( )
 
@@ -448,10 +449,10 @@ contains
                 'MassDensityAve', I % IGNORABILITY )
     call Show ( BaryonMass * NumberDensityMax, FC % Units % MassDensity, &
                 'MassDensityMax', I % IGNORABILITY )
-    call Show ( TimeScaleVelocityMax, I % TimeUnit, &
-                'TimeScaleVelocityMax', I % IGNORABILITY )
-    call Show ( TimeScaleDensityAve, I % TimeUnit, &
-                'TimeScaleDensityAve', I % IGNORABILITY )
+    call Show ( TimeScaleVelocity, I % TimeUnit, &
+                'TimeScaleVelocity', I % IGNORABILITY )
+    call Show ( TimeScaleDensity, I % TimeUnit, &
+                'TimeScaleDensity', I % IGNORABILITY )
 
     !-- Cleanup
 
