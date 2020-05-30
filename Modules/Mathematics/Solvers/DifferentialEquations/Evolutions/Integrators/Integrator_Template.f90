@@ -18,15 +18,15 @@ module Integrator_Template
       class ( TimeSeriesForm ), allocatable :: &
         TimeSeries
       procedure ( OGIS ), pointer :: &
-        OpenGridImageStreams => OpenGridImageStreamsTemplate
+        OpenGridImageStreams => null ( )
       procedure ( OMS ), pointer :: &
-        OpenManifoldStreams => OpenManifoldStreamsTemplate
+        OpenManifoldStreams => null ( )
       procedure ( A ), pointer:: &
-        Analyze => AnalyzeTemplate
+        Analyze => null ( )
       procedure ( W ), pointer:: &
-        Write => WriteTemplate
+        Write => null ( )
       procedure ( SWTI ), pointer :: &
-        SetCheckpointTimeInterval => SetCheckpointTimeInterval
+        SetCheckpointTimeInterval => null ( )
       procedure ( CTSL ), pointer :: &
         ComputeTimeStepLocal => null ( )
       procedure ( SR ), pointer :: &
@@ -200,6 +200,17 @@ contains
     else
       I % Communicator => I % PositionSpace % Communicator
     end if
+
+    if ( .not. associated ( I % OpenGridImageStreams ) ) &
+      I % OpenGridImageStreams => OpenGridImageStreamsTemplate
+    if ( .not. associated ( I % OpenManifoldStreams ) ) &
+      I % OpenManifoldStreams => OpenManifoldStreamsTemplate
+    if ( .not. associated ( I % Analyze ) ) &
+      I % Analyze => AnalyzeTemplate
+    if ( .not. associated ( I % Write ) ) &
+      I % Write => WriteTemplate
+    if ( .not. associated ( I % SetCheckpointTimeInterval ) ) &
+      I % SetCheckpointTimeInterval => SetCheckpointTimeInterval
 
     call I % OpenGridImageStreams ( )
 
