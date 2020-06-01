@@ -33,7 +33,7 @@ program EOS_P_HN_OConnorOtt__Form_Test
   call PROGRAM_HEADER % Initialize &
          ( ProgramName, AppendDimensionalityOption = .false. )
   
-  nCells = 32
+  nCells = 1
   call PROGRAM_HEADER % GetParameter ( nCells, 'nCells' )
 
   call CONSOLE % SetVerbosity ( 'INFO_4' )
@@ -157,10 +157,32 @@ program EOS_P_HN_OConnorOtt__Form_Test
   call Show ( 'Input' )
   call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ) ], 'N, T, YE' )
   
+  call Show ( 'ComputeFromTemperature' )
   call Timer % Start ( )
   call EOS % ComputeFromTemperature &
         ( F, iaFluidInput = [ F % COMOVING_BARYON_DENSITY, &
                               F % TEMPERATURE, F % ELECTRON_FRACTION ] )
+  call Timer % Stop ( )
+  call Timer % ShowInterval (  )
+  
+  call Show ( 'Output' )
+  call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ) ], 'N, T, YE' )
+  call Show ( [ P ( 1 ), E ( 1 ), CS ( 1 ) ], 'P, E, CS' )
+  call Show ( [ X_P ( 1 ), X_N ( 1 ), X_He ( 1 ) ] , 'X_P, X_N, X_He' )
+  
+  !-- Change temperature by 10%
+  T = 1.10 * T 
+  
+  call Show ( 'ComputeFromEnergy' )
+  
+  call Show ( 'Input' )
+  call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ) ], 'N, T, YE' )
+  
+  call Timer % Start ( )
+  call EOS % ComputeFromEnergy &
+        ( F, iaFluidInput = [ F % COMOVING_BARYON_DENSITY, &
+                              F % TEMPERATURE, F % ELECTRON_FRACTION ], &
+          iSolve = F % INTERNAL_ENERGY )
   call Timer % Stop ( )
   call Timer % ShowInterval (  )
   

@@ -31,7 +31,7 @@ program Fluid_P_HN__Form_Test
   call PROGRAM_HEADER % Initialize &
          ( ProgramName, AppendDimensionalityOption = .false. )
   
-  nCells = 32
+  nCells = 1
   call PROGRAM_HEADER % GetParameter ( nCells, 'nCells' )
 
   call CONSOLE % SetVerbosity ( 'INFO_4' )
@@ -158,6 +158,27 @@ program Fluid_P_HN__Form_Test
   call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ) ], 'N, T, YE' )
   call Show ( [ P ( 1 ), E ( 1 ), CS ( 1 ) ], 'P, E, CS' )
   call Show ( [ X_P ( 1 ), X_N ( 1 ), X_He ( 1 ) ] , 'X_P, X_N, X_He' )
+  
+  
+  !-- Change temperature by 10%
+  T = 1.10 * T 
+  
+  call Show ( 'Input' )
+  call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ) ], 'N, T, YE' )
+  
+  do iV = 1, nV
+    call NUC_EOS_FULL &
+         ( N ( iV ), T ( iV ), YE ( iV ), E ( iV ), &
+           P ( iV ), SB ( iV ), CS ( iV ), U_V ( iV ), &
+           U_V ( iV ), U_V ( iV ), X_He ( iV ), X_A ( iV ), &
+           X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), Mu_E ( iV ), &
+           U_V ( iV ), U_V ( iV ), Mu_NP ( iV ), EOS_Apply_EOS_HN_E, &
+           Error ( iV ), EOS_RF_Accuracy, T_L_D, T_L_T, T_YE, T_EOS )
+  end do
+  call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ) ], 'N, T, YE' )
+  call Show ( [ P ( 1 ), E ( 1 ), CS ( 1 ) ], 'P, E, CS' )
+  
+
   
   call CONSOLE % Mute ( )
 
