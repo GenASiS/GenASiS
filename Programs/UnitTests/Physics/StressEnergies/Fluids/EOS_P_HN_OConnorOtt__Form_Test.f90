@@ -169,12 +169,13 @@ program EOS_P_HN_OConnorOtt__Form_Test
   call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ) ], 'N, T, YE' )
   call Show ( [ P ( 1 ), E ( 1 ), CS ( 1 ) ], 'P, E, CS' )
   call Show ( [ X_P ( 1 ), X_N ( 1 ), X_He ( 1 ) ] , 'X_P, X_N, X_He' )
+  call Show ( [ SB ( 1 ) ] , 'SB' )
   
   !-- Change temperature by 10%
-  T = 1.10 * T 
+  T  = 1.10_KDR * T
+  SB = 0.0_KDR
   
   call Show ( 'ComputeFromEnergy' )
-  
   call Show ( 'Input' )
   call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ) ], 'N, T, YE' )
   
@@ -190,6 +191,29 @@ program EOS_P_HN_OConnorOtt__Form_Test
   call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ) ], 'N, T, YE' )
   call Show ( [ P ( 1 ), E ( 1 ), CS ( 1 ) ], 'P, E, CS' )
   call Show ( [ X_P ( 1 ), X_N ( 1 ), X_He ( 1 ) ] , 'X_P, X_N, X_He' )
+  call Show ( [ SB ( 1 ) ] , 'SB' )
+  
+  !-- Change temperature by 10%
+  T  = 0.90_KDR * T
+  E  = 0.0_KDR
+  
+  call Show ( 'ComputeFromEntropy' )
+  call Show ( 'Input' )
+  call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ) ], 'N, T, YE' )
+  
+  call Timer % Start ( )
+  call EOS % ComputeFromEntropy &
+        ( F, iaFluidInput = [ F % COMOVING_BARYON_DENSITY, &
+                              F % TEMPERATURE, F % ELECTRON_FRACTION ], &
+          iSolve = F % ENTROPY_PER_BARYON )
+  call Timer % Stop ( )
+  call Timer % ShowInterval (  )
+  
+  call Show ( 'Output' )
+  call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ) ], 'N, T, YE' )
+  call Show ( [ P ( 1 ), E ( 1 ), CS ( 1 ) ], 'P, E, CS' )
+  call Show ( [ X_P ( 1 ), X_N ( 1 ), X_He ( 1 ) ] , 'X_P, X_N, X_He' )
+  call Show ( [ SB ( 1 ) ] , 'SB' )
   
   call CONSOLE % Mute ( )
   call Show ( 'Fluid_P_HN Variables', F % IGNORABILITY )

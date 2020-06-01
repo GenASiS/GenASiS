@@ -56,7 +56,8 @@ module EOS_P_HN_OConnorOtt__Form
       SelectVariables
     procedure, public, pass :: &
       ComputeFromTemperature, &
-      ComputeFromEnergy
+      ComputeFromEnergy, &
+      ComputeFromEntropy
     final :: &
       Finalize
   end type EOS_P_HN_OConnorOtt_Form
@@ -382,6 +383,32 @@ contains
   end subroutine ComputeFromEnergy
     
   
+  subroutine ComputeFromEntropy ( E, Fluid, iaFluidInput, iSolve )
+  
+    class ( EOS_P_HN_OConnorOtt_Form ), intent ( inout ) :: &
+      E
+    class ( StorageForm ), intent ( inout ) :: &
+      Fluid
+    integer ( KDI ), dimension ( : ), intent ( in ) :: &
+      iaFluidInput
+    integer ( KDI ), intent ( in ) :: &
+      iSolve
+    
+    integer ( KDI ) :: &
+      iSelected
+    
+    call Search ( E % iaFluidOutput, iSolve, iSelected )
+    
+    call FindTemperatureKernel &
+           ( Fluid % Value, E % Table, E % LogDensity, E % LogTemperature, &
+             E % ElectronFraction, iaFluidInput, iSolve, &
+             E % iaSelected ( iSelected ) )
+    
+    call E % ComputeFromTemperature ( Fluid, iaFluidInput )
+    
+  end subroutine ComputeFromEntropy
+    
+  
   subroutine Finalize ( E )
   
     type ( EOS_P_HN_OConnorOtt_Form ), intent ( inout ) :: &
@@ -456,7 +483,6 @@ contains
       D1, D3
     logical ( KDL ) :: &
       LogScale
-    
     
     Shift = 0.0_KDR
     if ( present ( ShiftOption ) ) &
