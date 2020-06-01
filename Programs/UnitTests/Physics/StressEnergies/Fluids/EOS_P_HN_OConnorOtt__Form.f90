@@ -64,6 +64,7 @@ module EOS_P_HN_OConnorOtt__Form
   
     private :: &
       Interpolate_3D_Kernel, &
+      FindTemperatureKernel, &
       InterpolateTableKernel
   
   real ( KDR ), parameter :: &
@@ -102,6 +103,53 @@ module EOS_P_HN_OConnorOtt__Form
       logical ( KDL ), intent ( in ), optional :: &
         UseDeviceOption
     end subroutine Interpolate_3D_Kernel
+    
+    module subroutine FindTemperatureKernel &
+               ( F, T, T_L_N, T_L_T, T_Ye, ia_F_I, i_SF, i_ST, &
+                 LogScaleOption, UseDeviceOption, ShiftOption, &
+                 ToleranceOption, nIterationsOption )
+      use Basics
+      real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+        F
+      real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
+        T
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        T_L_N, &      !-- TableLogDensity
+        T_L_T, &      !-- TableLogTemperature
+        T_Ye          !-- TableElectronFraction
+      integer ( KDI ), dimension ( : ), intent ( in ) :: &
+        ia_F_I        !-- iaFluidInput
+      integer ( KDI ), intent ( in ) :: & 
+        i_SF, &       !-- index of Fluid to solve from
+        i_ST          !-- index of the corresponding quantity in EOS table 
+      logical ( KDL ), intent ( in ), optional :: &
+        LogScaleOption, &
+        UseDeviceOption
+      real ( KDR ), intent ( in ), optional :: &
+        ShiftOption, &
+        ToleranceOption
+      integer ( KDI ), intent ( in ), optional :: &
+        nIterationsOption
+    end subroutine FindTemperatureKernel
+  
+    module subroutine InterpolateTableKernel &
+                 ( X, Y, Z, T, XT, YT, ZT, i_ST, &
+                   SV_R, D2 )
+      use Basics
+      real ( KDR ), intent ( in ) :: &
+        X, Y, Z
+      real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
+        T
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        XT, &      !-- TableLogDensity
+        YT, &      !-- TableLogTemperature
+        ZT         !-- TableElectronFraction
+      integer ( KDI ), intent ( in ) :: &
+        i_ST          !-- index of table variable
+      real ( KDR ), intent ( out ) :: &
+        SV_R, &
+        D2
+    end subroutine InterpolateTableKernel
   
   end interface
 
@@ -346,7 +394,9 @@ contains
     
     logical ( KDL ) :: &
       UseDevice 
-      
+    
+    UseDevice = ( E % AllocatedDevice .and. Fluid % AllocatedDevice )
+    
     call Interpolate_3D_Kernel &
            ( Fluid % Value, E % Table, E % LogDensity, E % LogTemperature, &
              E % ElectronFraction, E % EnergyShift, iaFluidInput, &
@@ -369,6 +419,10 @@ contains
     
     integer ( KDI ) :: &
       iSelected
+    logical ( KDL ) :: &
+      UseDevice 
+    
+    UseDevice = ( E % AllocatedDevice .and. Fluid % AllocatedDevice )
     
     call Search ( E % iaFluidOutput, iSolve, iSelected )
     
@@ -376,7 +430,7 @@ contains
            ( Fluid % Value, E % Table, E % LogDensity, E % LogTemperature, &
              E % ElectronFraction, iaFluidInput, iSolve, &
              E % iaSelected ( iSelected ), ShiftOption = E % EnergyShift, &
-             LogScaleOption = .true. )
+             LogScaleOption = .true., UseDeviceOption = UseDevice )
     
     call E % ComputeFromTemperature ( Fluid, iaFluidInput )
     
@@ -396,13 +450,17 @@ contains
     
     integer ( KDI ) :: &
       iSelected
+    logical ( KDL ) :: &
+      UseDevice 
+    
+    UseDevice = ( E % AllocatedDevice .and. Fluid % AllocatedDevice )
     
     call Search ( E % iaFluidOutput, iSolve, iSelected )
     
     call FindTemperatureKernel &
            ( Fluid % Value, E % Table, E % LogDensity, E % LogTemperature, &
              E % ElectronFraction, iaFluidInput, iSolve, &
-             E % iaSelected ( iSelected ) )
+             E % iaSelected ( iSelected ), UseDeviceOption = UseDevice )
     
     call E % ComputeFromTemperature ( Fluid, iaFluidInput )
     
@@ -436,235 +494,6 @@ contains
       deallocate ( E % iaFluidOutput )
   
   end subroutine Finalize
-  
-  
-  subroutine FindTemperatureKernel &
-               ( F, T, T_L_N, T_L_T, T_Ye, ia_F_I, i_SF, i_ST, &
-                 ToleranceOption, nIterationsOption, ShiftOption, &
-                 LogScaleOption )
-  
-    real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
-      F
-    real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
-      T
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      T_L_N, &      !-- TableLogDensity
-      T_L_T, &      !-- TableLogTemperature
-      T_Ye          !-- TableElectronFraction
-    integer ( KDI ), dimension ( : ), intent ( in ) :: &
-      ia_F_I        !-- iaFluidInput
-    integer ( KDI ), intent ( in ) :: & 
-      i_SF, &       !-- index of Fluid to solve from
-      i_ST          !-- index of the corresponding quantity in EOS table 
-    logical ( KDL ), intent ( in ), optional :: &
-      LogScaleOption
-    real ( KDR ), intent ( in ), optional :: &
-      ShiftOption, &
-      ToleranceOption
-    integer ( KDI ), intent ( in ), optional :: &
-      nIterationsOption
-    
-    integer ( KDI ) :: &
-      iV, &
-      iI, &   !-- iIteration
-      nValues, &
-      nIterations
-    real ( KDR ) :: &
-      Shift, &
-      Tolerance, &
-      T_L_T_Max, T_L_T_Min, &
-      L_N, Ye, &
-      SV_R, D2, &
-      L_T, L_T_1, &   !-- LogTemperature (from Fluid input)
-      SV_0, SV_1, &
-      L_DT
-    !-- FIXME: temporary
-    real ( KDR ) :: &
-      D1, D3
-    logical ( KDL ) :: &
-      LogScale
-    
-    Shift = 0.0_KDR
-    if ( present ( ShiftOption ) ) &
-      Shift = ShiftOption
-    
-    nIterations = 20
-    if ( present ( nIterationsOption ) ) &
-      nIterations = nIterationsOption
-    
-    Tolerance = 1e-10_KDR
-    if ( present ( ToleranceOption ) ) &
-      Tolerance = ToleranceOption
-      
-    LogScale = .false.
-    if ( present ( LogScaleOption ) ) &
-      LogScale = .true.
-    
-    nValues = size ( F, dim = 1 )
-    
-    T_L_T_Max = T_L_T ( size ( T_L_T ) )
-    T_L_T_Min = T_L_T ( 1 )
-    
-    !call Show ( [ T_L_T_Max, T_L_T_Min ], 'T_L_T_Max, T_L_T_Min' )
-    !call Show ( i_ST , 'i_ST' )
-    
-    Value: do iV = 1, nValues
-      
-      L_N   = log10 ( F ( iV, ia_F_I ( 1 ) ) )
-      L_T   = log10 ( F ( iV, ia_F_I ( 2 ) ) )
-      Ye    = F ( iV, ia_F_I ( 3 )  )
-      
-      L_T_1 = L_T
-      
-      if ( LogScale ) then
-        SV_0 = log10 ( max ( ( F ( iV, i_SF ) + Shift ), 1.0_KDR ) )
-      else
-        SV_0 = F ( iV, i_SF ) + Shift
-      end if 
-      SV_1 = SV_0
-      
-      call InterpolateTableKernel &
-             ( L_N, L_T, Ye, T, T_L_N, T_L_T, T_Ye, i_ST, SV_R, D2 )
-      
-      if ( abs ( SV_R - SV_0 ) < Tolerance * abs ( SV_0 ) ) then
-        cycle Value
-      end if
-      
-      do iI = 1, nIterations
-        !call Show ( iI, 'iIteration' )
-        
-        L_DT  = - ( SV_R - SV_0 ) / D2
-        L_T_1 = L_T
-        L_T   = max ( min ( ( L_T + L_DT ), T_L_T_Max ), T_L_T_Min )
-        SV_1  = SV_R
-        
-        !call Show ( [ D2, L_DT, L_T ], 'D2, L_DT, L_T' )
-        !call Show ( [ D2, L_DT, L_T ], 'D2, L_DT, L_T' )
-        
-        call InterpolateTableKernel &
-               ( L_N, L_T, Ye, T, T_L_N, T_L_T, T_Ye, i_ST, SV_R, D2 )
-      
-        if ( abs ( SV_R - SV_0 )  <  Tolerance * abs ( SV_0 ) ) then
-          !call Show ( 'SUCCESS: Tolerance satisfied' )
-          F ( iV, ia_F_I ( 2 ) ) = 10.0_KDR ** L_T
-          cycle Value
-        endif 
-        
-        ! if we are closer than 10^-2  to the 
-        ! root (eps-eps0)=0, we are switching to 
-        ! the secant method, since the table is rather coarse and the
-        ! derivatives may be garbage.
-
-        if ( abs ( SV_R - SV_0 )  <  1e-3_KDR * abs ( SV_0 ) ) then
-          !call Show ( 'Switching to Secand Method' )          
-          D2 = ( SV_R - SV_1 ) / ( L_T - L_T_1 )
-        end if
-      
-        if ( iI == nIterations ) &
-          call Show ( 'Error, Max iteration reached' )
-      end do 
-
-    end do Value
-    
-  end subroutine FindTemperatureKernel
-  
-  
-  subroutine InterpolateTableKernel &
-               ( X, Y, Z, T, XT, YT, ZT, i_ST, &
-                 SV_R, D2 )
-    
-    real ( KDR ), intent ( in ) :: &
-      X, Y, Z
-    real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
-      T
-    real ( KDR ), dimension ( : ), intent ( in ) :: &
-      XT, &      !-- TableLogDensity
-      YT, &      !-- TableLogTemperature
-      ZT         !-- TableElectronFraction
-    integer ( KDI ), intent ( in ) :: &
-      i_ST          !-- index of table variable
-    real ( KDR ), intent ( out ) :: &
-      SV_R, &
-      D2
-    
-    integer ( KDI ) :: &
-      iValue, &
-      nx,ny,nz,nvars, &
-      ix,iy,iz
-    real ( KDR ) :: &
-      delx, dely, delz, &
-      dx,dy,dz,dxi,dyi,dzi,dxyi,dxzi,dyzi,dxyzi, &
-      a1, a2, a3, a4, a5, a6, a7, a8  
-    real ( KDR ), dimension ( 8 ) :: &
-      fh
-
-    nx = size ( XT )
-    ny = size ( YT )
-    nz = size ( ZT )
-    nvars = size ( T, dim = 4 )  
-
-    !--  determine spacing parameters of (equidistant!!!) table
-    dx    = (xt(nx) - xt(1)) / real(nx-1, kind=KDR)
-    dy    = (yt(ny) - yt(1)) / real(ny-1, kind=KDR)
-    dz    = (zt(nz) - zt(1)) / real(nz-1, kind=KDR)
-
-    dxi   = 1. / dx
-    dyi   = 1. / dy
-    dzi   = 1. / dz
-
-    dxyi  = dxi * dyi
-    dxzi  = dxi * dzi
-    dyzi  = dyi * dzi
-
-    dxyzi = dxi * dyi * dzi
-      
-    !-- determine location in (equidistant!!!) table 
-    ix = 2 + INT( (X - xt(1) - 1.e-10_KDR) * dxi ) 
-    iy = 2 + INT( (Y - yt(1) - 1.e-10_KDR) * dyi ) 
-    iz = 2 + INT( (Z - zt(1) - 1.e-10_KDR) * dzi )
-                                               
-    ix = MAX( 2, MIN( ix, nx ) )               
-    iy = MAX( 2, MIN( iy, ny ) )               
-    iz = MAX( 2, MIN( iz, nz ) )               
-
-    !-- set-up auxiliary arrays for Lagrange interpolation
-                                                          
-    delx = xt(ix) - X                                   
-    dely = yt(iy) - Y
-    delz = zt(iz) - Z
-
-    fh(1) = T(ix  , iy  , iz,   i_ST)
-    fh(2) = T(ix-1, iy  , iz,   i_ST)
-    fh(3) = T(ix  , iy-1, iz,   i_ST)
-    fh(4) = T(ix  , iy  , iz-1, i_ST)
-    fh(5) = T(ix-1, iy-1, iz,   i_ST)
-    fh(6) = T(ix-1, iy  , iz-1, i_ST)
-    fh(7) = T(ix  , iy-1, iz-1, i_ST)
-    fh(8) = T(ix-1, iy-1, iz-1, i_ST)
-
-    !-- set up coefficients of the interpolation polynomial and 
-    !   evaluate function values 
-    a1 = fh(1)
-    a2 = dxi   * ( fh(2) - fh(1) )
-    a3 = dyi   * ( fh(3) - fh(1) )
-    a4 = dzi   * ( fh(4) - fh(1) )
-    a5 = dxyi  * ( fh(5) - fh(2) - fh(3) + fh(1) )
-    a6 = dxzi  * ( fh(6) - fh(2) - fh(4) + fh(1) )
-    a7 = dyzi  * ( fh(7) - fh(3) - fh(4) + fh(1) )
-    a8 = dxyzi * ( fh(8) - fh(1) + fh(2) + fh(3) + &
-         fh(4) - fh(5) - fh(6) - fh(7) )
-
-    D2 = -a3
-    SV_R  &
-      = a1 +  a2 * delx               &
-         +  a3 * dely                      &
-         +  a4 * delz                      &
-         +  a5 * delx * dely               &
-         +  a6 * delx * delz               &
-         +  a7 * dely * delz               &
-         +  a8 * delx * dely * delz
-
-  end subroutine InterpolateTableKernel
   
   
 end module EOS_P_HN_OConnorOtt__Form

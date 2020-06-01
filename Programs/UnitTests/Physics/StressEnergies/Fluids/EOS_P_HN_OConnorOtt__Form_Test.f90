@@ -33,7 +33,7 @@ program EOS_P_HN_OConnorOtt__Form_Test
   call PROGRAM_HEADER % Initialize &
          ( ProgramName, AppendDimensionalityOption = .false. )
   
-  nCells = 1
+  nCells = 32
   call PROGRAM_HEADER % GetParameter ( nCells, 'nCells' )
 
   call CONSOLE % SetVerbosity ( 'INFO_4' )
@@ -150,34 +150,37 @@ program EOS_P_HN_OConnorOtt__Form_Test
   T  = 0.61009347651875323_KDR
   P  = 0.0_KDR
   YE = 0.43110487829424210
+  call F % UpdateDevice ( )
   call Timer % Stop ( )
   
   call Timer % ShowInterval (  )
   
+  call Show ( 'ComputeFromTemperature' )
+  
   call Show ( 'Input' )
   call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ) ], 'N, T, YE' )
   
-  call Show ( 'ComputeFromTemperature' )
   call Timer % Start ( )
   call EOS % ComputeFromTemperature &
         ( F, iaFluidInput = [ F % COMOVING_BARYON_DENSITY, &
                               F % TEMPERATURE, F % ELECTRON_FRACTION ] )
   call Timer % Stop ( )
-  call Timer % ShowInterval (  )
-  
   call Show ( 'Output' )
+  call F % UpdateHost ( )
   call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ) ], 'N, T, YE' )
   call Show ( [ P ( 1 ), E ( 1 ), CS ( 1 ) ], 'P, E, CS' )
   call Show ( [ X_P ( 1 ), X_N ( 1 ), X_He ( 1 ) ] , 'X_P, X_N, X_He' )
   call Show ( [ SB ( 1 ) ] , 'SB' )
+  call Timer % ShowInterval (  )
   
   !-- Change temperature by 10%
   T  = 1.10_KDR * T
   SB = 0.0_KDR
+  call F % UpdateDevice ( )
   
   call Show ( 'ComputeFromEnergy' )
   call Show ( 'Input' )
-  call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ) ], 'N, T, YE' )
+  call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ), E ( 1 ) ], 'N, T, YE, E' )
   
   call Timer % Start ( )
   call EOS % ComputeFromEnergy &
@@ -185,21 +188,25 @@ program EOS_P_HN_OConnorOtt__Form_Test
                               F % TEMPERATURE, F % ELECTRON_FRACTION ], &
           iSolve = F % INTERNAL_ENERGY )
   call Timer % Stop ( )
-  call Timer % ShowInterval (  )
+  
   
   call Show ( 'Output' )
+  call F % UpdateHost ( )
   call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ) ], 'N, T, YE' )
   call Show ( [ P ( 1 ), E ( 1 ), CS ( 1 ) ], 'P, E, CS' )
   call Show ( [ X_P ( 1 ), X_N ( 1 ), X_He ( 1 ) ] , 'X_P, X_N, X_He' )
   call Show ( [ SB ( 1 ) ] , 'SB' )
   
+  call Timer % ShowInterval (  )
+  
   !-- Change temperature by 10%
   T  = 0.90_KDR * T
   E  = 0.0_KDR
+  call F % UpdateDevice ( )
   
   call Show ( 'ComputeFromEntropy' )
   call Show ( 'Input' )
-  call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ) ], 'N, T, YE' )
+  call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ), SB ( 1 ) ], 'N, T, YE, SB' )
   
   call Timer % Start ( )
   call EOS % ComputeFromEntropy &
@@ -207,13 +214,15 @@ program EOS_P_HN_OConnorOtt__Form_Test
                               F % TEMPERATURE, F % ELECTRON_FRACTION ], &
           iSolve = F % ENTROPY_PER_BARYON )
   call Timer % Stop ( )
-  call Timer % ShowInterval (  )
   
   call Show ( 'Output' )
+  call F % UpdateHost ( )
   call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ) ], 'N, T, YE' )
   call Show ( [ P ( 1 ), E ( 1 ), CS ( 1 ) ], 'P, E, CS' )
   call Show ( [ X_P ( 1 ), X_N ( 1 ), X_He ( 1 ) ] , 'X_P, X_N, X_He' )
   call Show ( [ SB ( 1 ) ] , 'SB' )
+  
+  call Timer % ShowInterval (  )
   
   call CONSOLE % Mute ( )
   call Show ( 'Fluid_P_HN Variables', F % IGNORABILITY )
