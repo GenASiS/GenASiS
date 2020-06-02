@@ -351,7 +351,7 @@ contains
   end subroutine SelectVariables
   
   
-  subroutine AllocateDevice_EOS_P_HN( E )
+  subroutine AllocateDevice_EOS_P_HN ( E )
   
     class ( EOS_P_HN_OConnorOtt_Form ), intent ( inout ) :: &
       E

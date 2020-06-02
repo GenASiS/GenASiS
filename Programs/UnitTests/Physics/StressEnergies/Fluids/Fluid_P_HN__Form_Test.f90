@@ -1,13 +1,10 @@
-#include "Preprocessor"
-
 program Fluid_P_HN__Form_Test
 
   use Basics
+  use Mathematics
   use StressEnergyUnits_Form
   use Fluid_P_HN__Form
   
-  use NUC_EOS
-
   implicit none
 
   character ( LDF ) :: &
@@ -22,6 +19,10 @@ program Fluid_P_HN__Form_Test
     nCells
   type ( TimerForm ) :: &
     Timer
+  type ( MeasuredValueForm ), dimension ( 3 ) :: &
+    CoordinateUnit
+  type ( GeometryFlatForm ) :: &
+    Dummy_G
   type ( StressEnergyUnitsForm ) :: &
     SU
   type ( Fluid_P_HN_Form ), allocatable :: &
@@ -51,6 +52,8 @@ program Fluid_P_HN__Form_Test
            BaryonMassReference = 1.0_KDR, &
            LimiterParameter = 1.4_KDR, &
            nValues = nV )
+           
+  call Dummy_G % Initialize ( 'RECTANGULAR', CoordinateUnit, nV )
   
   call F % AllocateDevice ( )
   
@@ -92,13 +95,6 @@ program Fluid_P_HN__Form_Test
       Mu_E  => FV ( oV + 1 : oV + nV, F % CHEMICAL_POTENTIAL_E ), &
       U_V   => FV ( oV + 1 : oV + nV, F % UNUSED_VARIABLE ) )
   
-  associate &
-    ( T_EOS   => F % EOS % Table, &
-      T_L_D   => F % EOS % LogDensity, &
-      T_L_T   => F % EOS % LogTemperature, &
-      T_YE    => F % EOS % ElectronFraction, &
-      Error   => F % EOS % Error )
-  
   call Timer % Start ( )
   call Show ( 'Setting Initial Values' )
   E  = -8.5871946287513969E+018_KDR
@@ -115,77 +111,90 @@ program Fluid_P_HN__Form_Test
   call Timer % Stop ( )
   call Show ( 'Update Device' )
   call Timer % ShowInterval (  )
-
-  
-  call Timer % Start ( )
-  call Show ( 'Offload OpenMP NUC_EOS' )
-  !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-  !$OMP& schedule ( OMP_SCHEDULE_TARGET ) &
-  !$OMP& private ( iV )
-  do iV = 1, nV
-    call NUC_EOS_FULL &
-         ( N ( iV ), T ( iV ), YE ( iV ), E ( iV ), &
-           P ( iV ), SB ( iV ), CS ( iV ), U_V ( iV ), &
-           U_V ( iV ), U_V ( iV ), X_He ( iV ), X_A ( iV ), &
-           X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), Mu_E ( iV ), &
-           U_V ( iV ), U_V ( iV ), Mu_NP ( iV ), EOS_Apply_EOS_HN_T, &
-           Error ( iV ), EOS_RF_Accuracy, T_L_D, T_L_T, T_YE, T_EOS )
-  end do
-  call Timer % Stop ( )
-  call Timer % ShowInterval (  )
-
-  call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ) ], 'N, T, YE' )
-  call Show ( [ P ( 1 ), E ( 1 ), CS ( 1 ) ], 'P, E, CS' )
-  call Show ( [ X_P ( 1 ), X_N ( 1 ), X_He ( 1 ) ] , 'X_P, X_N, X_He' )
-  
-  call Timer % Start ( )
-  call Show ( 'CPU OpenMP NUC_EOS' )
-  !$OMP  parallel do &
-  !$OMP& schedule ( OMP_SCHEDULE_HOST ) &
-  !$OMP& private ( iV )
-  do iV = 1, nV
-    call NUC_EOS_FULL &
-         ( N ( iV ), T ( iV ), YE ( iV ), E ( iV ), &
-           P ( iV ), SB ( iV ), CS ( iV ), U_V ( iV ), &
-           U_V ( iV ), U_V ( iV ), X_He ( iV ), X_A ( iV ), &
-           X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), Mu_E ( iV ), &
-           U_V ( iV ), U_V ( iV ), Mu_NP ( iV ), EOS_Apply_EOS_HN_T, &
-           Error ( iV ), EOS_RF_Accuracy, T_L_D, T_L_T, T_YE, T_EOS )
-  end do
-  call Timer % Stop ( )
-  call Timer % ShowInterval (  )
-  
-  call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ) ], 'N, T, YE' )
-  call Show ( [ P ( 1 ), E ( 1 ), CS ( 1 ) ], 'P, E, CS' )
-  call Show ( [ X_P ( 1 ), X_N ( 1 ), X_He ( 1 ) ] , 'X_P, X_N, X_He' )
   
   
-  !-- Change temperature by 10%
-  T = 1.10 * T 
-  
+  call Show ( 'UpdateFromTemperature' )
   call Show ( 'Input' )
-  call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ) ], 'N, T, YE' )
+  call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ) ], 'Input N, T, YE' )
   
-  do iV = 1, nV
-    call NUC_EOS_FULL &
-         ( N ( iV ), T ( iV ), YE ( iV ), E ( iV ), &
-           P ( iV ), SB ( iV ), CS ( iV ), U_V ( iV ), &
-           U_V ( iV ), U_V ( iV ), X_He ( iV ), X_A ( iV ), &
-           X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), Mu_E ( iV ), &
-           U_V ( iV ), U_V ( iV ), Mu_NP ( iV ), EOS_Apply_EOS_HN_E, &
-           Error ( iV ), EOS_RF_Accuracy, T_L_D, T_L_T, T_YE, T_EOS )
-  end do
+  call Timer % Start ( )
+  call F % ComputeFromTemperature ( F % StorageForm, Dummy_G, Dummy_G )  
+  call Timer % Stop ( )
+  
+  call F % UpdateHost ( )
+  call Show ( 'Output' )
   call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ) ], 'N, T, YE' )
   call Show ( [ P ( 1 ), E ( 1 ), CS ( 1 ) ], 'P, E, CS' )
-  
+  call Show ( [ X_P ( 1 ), X_N ( 1 ), X_He ( 1 ) ] , 'X_P, X_N, X_He' )
+  call Timer % ShowInterval (  )
 
   
+!  call Timer % Start ( )
+!  call Show ( 'Offload OpenMP NUC_EOS' )
+!  !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+!  !$OMP& schedule ( OMP_SCHEDULE_TARGET ) &
+!  !$OMP& private ( iV )
+!  do iV = 1, nV
+!    call NUC_EOS_FULL &
+!         ( N ( iV ), T ( iV ), YE ( iV ), E ( iV ), &
+!           P ( iV ), SB ( iV ), CS ( iV ), U_V ( iV ), &
+!           U_V ( iV ), U_V ( iV ), X_He ( iV ), X_A ( iV ), &
+!           X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), Mu_E ( iV ), &
+!           U_V ( iV ), U_V ( iV ), Mu_NP ( iV ), EOS_Apply_EOS_HN_T, &
+!           Error ( iV ), EOS_RF_Accuracy, T_L_D, T_L_T, T_YE, T_EOS )
+!  end do
+!  call Timer % Stop ( )
+!  call Timer % ShowInterval (  )
+!
+!  call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ) ], 'N, T, YE' )
+!  call Show ( [ P ( 1 ), E ( 1 ), CS ( 1 ) ], 'P, E, CS' )
+!  call Show ( [ X_P ( 1 ), X_N ( 1 ), X_He ( 1 ) ] , 'X_P, X_N, X_He' )
+!  
+!  call Timer % Start ( )
+!  call Show ( 'CPU OpenMP NUC_EOS' )
+!  !$OMP  parallel do &
+!  !$OMP& schedule ( OMP_SCHEDULE_HOST ) &
+!  !$OMP& private ( iV )
+!  do iV = 1, nV
+!    call NUC_EOS_FULL &
+!         ( N ( iV ), T ( iV ), YE ( iV ), E ( iV ), &
+!           P ( iV ), SB ( iV ), CS ( iV ), U_V ( iV ), &
+!           U_V ( iV ), U_V ( iV ), X_He ( iV ), X_A ( iV ), &
+!           X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), Mu_E ( iV ), &
+!           U_V ( iV ), U_V ( iV ), Mu_NP ( iV ), EOS_Apply_EOS_HN_T, &
+!           Error ( iV ), EOS_RF_Accuracy, T_L_D, T_L_T, T_YE, T_EOS )
+!  end do
+!  call Timer % Stop ( )
+!  call Timer % ShowInterval (  )
+!  
+!  call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ) ], 'N, T, YE' )
+!  call Show ( [ P ( 1 ), E ( 1 ), CS ( 1 ) ], 'P, E, CS' )
+!  call Show ( [ X_P ( 1 ), X_N ( 1 ), X_He ( 1 ) ] , 'X_P, X_N, X_He' )
+!  
+!  
+!  !-- Change temperature by 10%
+!  T = 1.10 * T 
+!  
+!  call Show ( 'Input' )
+!  call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ) ], 'N, T, YE' )
+  
+!  do iV = 1, nV
+!    call NUC_EOS_FULL &
+!         ( N ( iV ), T ( iV ), YE ( iV ), E ( iV ), &
+!           P ( iV ), SB ( iV ), CS ( iV ), U_V ( iV ), &
+!           U_V ( iV ), U_V ( iV ), X_He ( iV ), X_A ( iV ), &
+!           X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), Mu_E ( iV ), &
+!           U_V ( iV ), U_V ( iV ), Mu_NP ( iV ), EOS_Apply_EOS_HN_E, &
+!           Error ( iV ), EOS_RF_Accuracy, T_L_D, T_L_T, T_YE, T_EOS )
+!  end do
+!  call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ) ], 'N, T, YE' )
+!  call Show ( [ P ( 1 ), E ( 1 ), CS ( 1 ) ], 'P, E, CS' )
+!  
   call CONSOLE % Mute ( )
 
   call Show ( 'Fluid_P_HN Variables', F % IGNORABILITY )
   call Show ( F % Variable, 'Variable', F % IGNORABILITY )
   
-  end associate
   end associate
   end associate
 
