@@ -64,9 +64,12 @@ contains
       !$OMP&           a1, a2, a3, a4, a5, a6, a7, a8 ) &
       !$OMP& shared ( nx, ny, nz, nvars, nvalues, dx, dy, dz, &
       !$OMP&          dxi, dyi, dzi, dxyi, dxzi, dyzi, dxyzi, E_Shift )
-      do  iValue = 1, nValues
+      do iValue = 1, nValues
         do iS = 1, size ( ia_E )
-
+          
+          if ( F ( iValue, ia_F_I ( 1 ) ) == 0.0_KDR ) &
+            cycle
+        
           !-- Convert to log space for the x and y
           L_x = log10 ( F ( iValue, ia_F_I ( 1 ) ) )
           L_y = log10 ( F ( iValue, ia_F_I ( 2 ) ) )
@@ -127,9 +130,9 @@ contains
             f ( iValue, iF ) = f ( iValue, iF ) - E_Shift
           end if
                     
-        enddo
+        end do
         
-      enddo
+      end do
       !$OMP  end OMP_TARGET_DIRECTIVE parallel do
     
     else
@@ -143,7 +146,10 @@ contains
       !$OMP&          dxi, dyi, dzi, dxyi, dxzi, dyzi, dxyzi, E_Shift )
       do  iValue = 1, nValues
         do iS = 1, size ( ia_E )
-
+          
+          if ( F ( iValue, ia_F_I ( 1 ) ) == 0.0_KDR ) &
+            cycle
+          
           !-- Convert to log space for the x and y
           L_x = log10 ( F ( iValue, ia_F_I ( 1 ) ) )
           L_y = log10 ( F ( iValue, ia_F_I ( 2 ) ) )
@@ -204,9 +210,9 @@ contains
             f ( iValue, iF ) = f ( iValue, iF ) - E_Shift
           end if
                     
-        enddo
+        end do
         
-      enddo
+      end do
       !$OMP  end parallel do
       
     end if !-- Use device
@@ -267,6 +273,9 @@ contains
       !$OMP& shared ( Shift, Tolerance, T_L_T_Max, T_L_T_Min, LogScale ), &
       !$OMP& private ( L_N, Ye, SV_R, D2, L_T, L_T_1, SV_0, SV_1, L_DT )
       Value_Device: do iV = 1, nValues
+      
+        if ( F ( iV, ia_F_I ( 1 ) ) == 0.0_KDR ) &
+          cycle Value_Device
         
         L_N   = log10 ( F ( iV, ia_F_I ( 1 ) ) )
         L_T   = log10 ( F ( iV, ia_F_I ( 2 ) ) )
@@ -328,6 +337,9 @@ contains
       !$OMP& shared ( Shift, Tolerance, T_L_T_Max, T_L_T_Min, LogScale ), &
       !$OMP& private ( L_N, Ye, SV_R, D2, L_T, L_T_1, SV_0, SV_1, L_DT )
       Value_Host: do iV = 1, nValues
+        
+        if ( F ( iV, ia_F_I ( 1 ) ) == 0.0_KDR ) &
+          cycle Value_Host
         
         L_N   = log10 ( F ( iV, ia_F_I ( 1 ) ) )
         L_T   = log10 ( F ( iV, ia_F_I ( 2 ) ) )
