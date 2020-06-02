@@ -1,5 +1,6 @@
 module Fluids
 
+  use EOS_P_HN_OConnorOtt__Form
   use FluidFeatures_Template
   use Fluid_D__Form
   use Fluid_P__Template

@@ -119,19 +119,17 @@ Fluid_ASC__Form_Test: ThirdParty.a Basics.a Mathematics.a Spaces.a \
           Fluid_P__Template.o Fluid_D__Form.o FluidFeatures_Template.o \
           Spaces.a Mathematics.a Basics.a ThirdParty.a $(LIBRARIES)
 
-
-EOS_P_HN_OConnorOtt__Form_Test: ThirdParty.a Basics.a Mathematics.a Spaces.a \
-  StressEnergyUnits_Form.o Fluid_P_HN__Form.o EOS_P_HN_OConnorOtt__Form.o \
-  EOS_P_HN_OConnorOtt__Kernel.o EOS_P_HN_OConnorOtt__Form_Test.o
+EOS_P_HN_OConnorOtt__Form_Test: ThirdParty.a Basics.a Mathematics.a \
+  EOS_P_HN_OConnorOtt__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o EOS_P_HN_OConnorOtt__Form_Test_$(MACHINE) \
-          EOS_P_HN_OConnorOtt__Form_Test.o \
-          Fluid_P_HN__Form.o FluidFeatures_P__Form.o \
+          EOS_P_HN_OConnorOtt__Form_Test.o Fluid_P_HN__Form.o FluidFeatures_P__Form.o \
           Fluid_P__Template.o Fluid_D__Form.o FluidFeatures_Template.o \
           Fluid_P_HN__Kernel.o Fluid_P__Kernel.o Fluid_D__Kernel.o \
-          FluidFeatures_P__Kernel.o StressEnergyUnits_Form.o \
-          EOS_P_HN_OConnorOtt__Form.o EOS_P_HN_OConnorOtt__Kernel.o \
-          Spaces.a Mathematics.a Basics.a ThirdParty.a $(LIBRARIES)
+          FluidFeatures_P__Kernel.o  EOS_P_HN_OConnorOtt__Form.o \
+          EOS_P_HN_OConnorOtt__Kernel.o Spaces.a StressEnergyUnits_Form.o \
+          Mathematics.a Basics.a ThirdParty.a $(LIBRARIES)
+
 
 clean: clean_ThirdParty
 	rm -f *.o *.a *.mod *.ld *.smod
@@ -149,6 +147,7 @@ clobber: clean
 	rm -f Sources_F_CSL__Form_Test_*
 	rm -f FluidFeatures_CSL__Form_Test_*
 	rm -f Fluid_ASC__Form_Test_*
+	rm -f Fluid_P_HN__Form_Test_*
 
 include $(PATH_THIRD_PARTY)/Makefile_Dependencies
 include $(PATH_BASICS)/Makefile_Dependencies
@@ -243,20 +242,16 @@ Fluid_ASC__Form_Test.o: \
   Fluid_ASC__Form.o \
   Fluid_ASC__Form_Test.f90
 
-EOS_P_HN_OConnorOtt__Form.o: \
+EOS_P_HN_OConnorOtt__Form_Test.o: \
   Basics.o \
+  Spaces.a \
   StressEnergyUnits_Form.o \
+  EOS_P_HN_OConnorOtt__Kernel.o \
+  EOS_P_HN_OConnorOtt__Form.o \
   Fluid_D__Kernel.o \
   Fluid_P__Kernel.o \
   Fluid_P_HN__Kernel.o \
   Fluid_P_HN__Form.o \
   FluidFeatures_P__Form.o \
   FluidFeatures_P__Kernel.o \
-  EOS_P_HN_OConnorOtt__Form.f90
-
-EOS_P_HN_OConnorOtt__Kernel.o: \
-  Basics.o \
-  EOS_P_HN_OConnorOtt__Form.o \
-  EOS_P_HN_OConnorOtt__Kernel.f90
-
-
+  EOS_P_HN_OConnorOtt__Form_Test.f90

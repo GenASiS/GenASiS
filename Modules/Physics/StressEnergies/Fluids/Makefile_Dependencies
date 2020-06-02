@@ -1,3 +1,12 @@
+EOS_P_HN_OConnorOtt__Form.o: \
+  Basics.o \
+  EOS_P_HN_OConnorOtt__Form.f90
+
+EOS_P_HN_OConnorOtt__Kernel.o: \
+  Basics.o \
+  EOS_P_HN_OConnorOtt__Form.o \
+  EOS_P_HN_OConnorOtt__Kernel.f90
+
 FluidFeatures_Template.o: \
   Basics.o \
   Mathematics.o \
@@ -166,6 +175,7 @@ ApplyCurvilinear_F__Command.o: \
   ApplyCurvilinear_F__Command.f90
 
 Fluids.o: \
+  EOS_P_HN_OConnorOtt__Form.o \
   FluidFeatures_Template.o \
   Fluid_D__Form.o \
   Fluid_P__Template.o \
