@@ -414,6 +414,7 @@ contains
 
     call SetFluidKernel &
            (    N = F % Value ( :, F % COMOVING_BARYON_DENSITY ), &
+                P = F % Value ( :, F % PRESSURE ), &
                 E = F % Value ( :, F % INTERNAL_ENERGY ), &
               V_1 = F % Value ( :, F % VELOCITY_U ( 1 ) ), &
               V_2 = F % Value ( :, F % VELOCITY_U ( 2 ) ), &
@@ -428,22 +429,16 @@ contains
                         G = CONSTANT % GRAVITATIONAL, &
                       amu = CONSTANT % ATOMIC_MASS_UNIT )
     
-    
-    call F % UpdateDevice ( )
-    call F % ComputeFromPrimitive ( G )
-    call F % UpdateHost ( )
-    
-    call PSC % ExchangeGhostData ( F )
-
   end subroutine SetFluid
 
 
   subroutine SetFluidKernel &
-               ( N, E, V_1, V_2, V_3, SI_D, SI_V, IsProperCell, R, &
+               ( N, P, E, V_1, V_2, V_3, SI_D, SI_V, IsProperCell, R, &
                  Minus_t_YL, Gamma, Kappa, G, amu )
 
     real ( KDR ), dimension ( : ), intent ( inout ) :: &
       N, &
+      P, &
       E, &
       V_1, V_2, V_3
     type ( SplineInterpolationForm ), intent ( in ) :: &
@@ -470,7 +465,8 @@ contains
 
     nValues = size ( N )
       
-    !$OMP parallel do private ( iV )
+    !$OMP parallel do &
+    !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iV )
     do iV = 1, nValues
 
       if ( .not. IsProperCell ( iV ) ) &
@@ -484,8 +480,9 @@ contains
 
       N ( iV )  =  D / ( amu  *  G  *  Minus_t_YL ** 2 )
 
-      E ( iV )  =  ( Kappa  *  ( amu * N ( iV ) ) ** Gamma )  &
-                   /  ( Gamma - 1.0_KDR )
+      P ( iV )  =  Kappa  *  ( amu * N ( iV ) ) ** Gamma
+
+      E ( iV )  =  P ( iV )  /  ( Gamma - 1.0_KDR )
 
       V_1 ( iV )  =  V  *  Kappa ** ( 0.5_KDR )  &
                      *  G ** ( ( 1.0_KDR - Gamma ) / 2.0_KDR )  &

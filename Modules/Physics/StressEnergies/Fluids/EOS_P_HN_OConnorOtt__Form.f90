@@ -1,5 +1,6 @@
 module EOS_P_HN_OConnorOtt__Form
 
+  use iso_c_binding
   use HDF5
   use Basics
   
@@ -63,7 +64,9 @@ module EOS_P_HN_OConnorOtt__Form
       Finalize
   end type EOS_P_HN_OConnorOtt_Form
   
-    private :: &
+!-- FIXME: With GCC 6.1.0, must be public to trigger .smod generation
+!    private :: &
+    public :: &
       Interpolate_3D_Kernel, &
       FindTemperatureKernel, &
       InterpolateTableKernel
