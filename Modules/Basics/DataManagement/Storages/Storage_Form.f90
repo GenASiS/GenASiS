@@ -344,7 +344,7 @@ contains
     
     logical ( KDL ) :: &
       AssociateVariables
-    class ( StorageForm ), intent ( inout ), pointer :: &
+    class ( StorageForm ), pointer :: &
       S_Primary
       
     if ( .not. S % AllocatedDevice ) &
