@@ -2,12 +2,11 @@ module Fluid_P_HN__Form
 
   !-- Fluid_Perfect_RepresentativeHeavyNucleus__Form
   
-  use EOSMODULE 
-  use NUC_EOS
   use Basics
   use Mathematics
   use StressEnergyBasics
 !  use FluidFeatures_Template
+  use EOS_P_HN_OConnorOtt__Form
   use Fluid_P__Template
   use FluidFeatures_P__Form
   
@@ -20,20 +19,6 @@ module Fluid_P_HN__Form
       N_FIELDS_HEAVY_NUCLEUS    = 11, &
       N_VECTORS_HEAVY_NUCLEUS   = 0
     
-  type, private :: Table_EOS_HN_Form
-    integer ( KDI ), dimension ( : ), allocatable :: &
-      Error
-    real ( KDR ), dimension ( : ), allocatable :: &
-      LogDensity, &
-      LogTemperature, &
-      ElectronFraction
-    real ( KDR ), dimension ( :, :, :, : ), allocatable :: &
-      Table
-  contains
-    final :: &
-      FinalizeTable_EOS
-  end type Table_EOS_HN_Form
-
   type, public, extends ( Fluid_P_Template ) :: Fluid_P_HN_Form
     integer ( KDI ) :: &
       N_PRIMITIVE_HEAVY_NUCLEUS   = N_PRIMITIVE_HEAVY_NUCLEUS, &
@@ -56,7 +41,7 @@ module Fluid_P_HN__Form
         !-- Includes m_e.
     logical ( KDL ), private :: &
       Allocated_EOS = .false.
-    type ( Table_EOS_HN_Form ), public, pointer :: &
+    type ( EOS_P_HN_OConnorOtt_Form ), public, pointer :: &
       EOS => null ( )
   contains
     procedure, public, pass :: &
@@ -89,6 +74,10 @@ module Fluid_P_HN__Form
       Apply_EOS_HN_SB_E_Kernel
     procedure, public, nopass :: &
       Apply_EOS_HN_E_Kernel
+    procedure, private, nopass :: &
+      Apply_EOS_PrologueKernel
+    procedure, private, nopass :: &
+      Apply_EOS_EpilogueKernel
 !    procedure, public, nopass :: &
 !      Apply_EOS_HN_SB_Kernel
   end type Fluid_P_HN_Form
@@ -117,8 +106,8 @@ module Fluid_P_HN__Form
       EOS_Apply_EOS_HN_E = 0_KDI, &   !-- E input, solve for T
       EOS_Apply_EOS_HN_S = 2_KDI      !-- S input, solve for T
     logical ( KDL ), private, protected :: &
-      TableInitialized = .false.
-    type ( Table_EOS_HN_Form ), pointer, private, protected :: &
+      EOS_Initialized = .false.
+    type ( EOS_P_HN_OConnorOtt_Form ), pointer, private, protected :: &
       EOS_Pointer
       
   interface 
@@ -209,8 +198,8 @@ module Fluid_P_HN__Form
       logical ( KDL ), intent ( in ), optional :: &
         UseDeviceOption
     end subroutine Apply_EOS_HN_SB_E_Kernel
-
-
+    
+    
     module subroutine Apply_EOS_HN_E_Kernel &
              ( N, P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
                U_V, Error_A, T_EOS, M, YE, T_L_D, T_L_T, T_YE, Error, &
@@ -241,6 +230,39 @@ module Fluid_P_HN__Form
       logical ( KDL ), intent ( in ), optional :: &
         UseDeviceOption
     end subroutine Apply_EOS_HN_E_Kernel
+
+
+    module subroutine Apply_EOS_PrologueKernel &
+             ( N, P, T, E, M, UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        N, &
+        P, &
+        T, &
+        E
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        M
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine Apply_EOS_PrologueKernel
+    
+    
+    module subroutine Apply_EOS_EpilogueKernel &
+             ( N, P, T, CS, E, Mu_NP, Mu_E, M, UseDeviceOption )
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        N, &
+        P, &
+        T, &
+        CS, &
+        E, &
+        Mu_NP, &
+        Mu_E
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        M
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+    end subroutine Apply_EOS_EpilogueKernel
 
 
 !    module subroutine Apply_EOS_HN_SB_Kernel &
@@ -345,6 +367,9 @@ contains
       optional :: &
         VectorIndicesOption
 
+    integer ( KDI ), dimension ( : ), allocatable :: &
+      iaFluidOutput, &
+      iaSelected_EOS
     character ( LDL ), dimension ( : ), allocatable :: &
       Variable
     type ( MeasuredValueForm ), dimension ( : ), allocatable :: &
@@ -362,27 +387,51 @@ contains
              VectorOption = VectorOption, NameOption = NameOption, &
              ClearOption = ClearOption, UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndicesOption )
-
-    if ( TableInitialized ) then
+    
+    if ( EOS_Initialized ) then
       F % EOS => EOS_Pointer
       return
     end if
 
-    call DelayFileAccess ( PROGRAM_HEADER % Communicator % Rank )
-    call READTABLE &
-           ( '../Parameters/LS220_234r_136t_50y_analmu_20091212_SVNr26.h5' )
-!    call READTABLE &
-!           ( '../Parameters/HShenEOS_rho220_temp180_ye65_version_1.1' &
-!             // '_20120817.h5' )
-!    call READTABLE &
-!           ( '../Parameters/Hempel_SFHoEOS_rho222_temp180_ye60_version_1.1' &
-!             // '_20120817.h5' )
     allocate ( F % EOS )
-    allocate ( F % EOS % Error ( nValues ) )
-    allocate ( F % EOS % LogDensity, source = logrho )
-    allocate ( F % EOS % LogTemperature, source = logtemp )
-    allocate ( F % EOS % ElectronFraction, source = ye )
-    allocate ( F % EOS % Table, source = alltables )
+    
+    call DelayFileAccess ( PROGRAM_HEADER % Communicator % Rank )
+    
+    call F % EOS % Initialize ( )
+    
+    allocate ( iaFluidOutput ( 12 ) )
+    allocate ( iaSelected_EOS ( 12 ) )
+    
+    iaFluidOutput &
+      = [ F % INTERNAL_ENERGY, &
+          F % PRESSURE, &
+          F % ENTROPY_PER_BARYON, &
+          F % SOUND_SPEED, &
+          F % MASS_FRACTION_ALPHA, &
+          F % MASS_FRACTION_HEAVY, &
+          F % MASS_FRACTION_NEUTRON, &
+          F % MASS_FRACTION_PROTON, &
+          F % MASS_NUMBER_HEAVY, &
+          F % ATOMIC_NUMBER_HEAVY, &
+          F % CHEMICAL_POTENTIAL_E, &
+          F % CHEMICAL_POTENTIAL_N_P ]
+
+    iaSelected_EOS &
+      = [ F % EOS % LOG_ENERGY, &
+          F % EOS % LOG_PRESSURE, &
+          F % EOS % ENTROPY, &
+          F % EOS % SOUND_SPEED_SQUARE, &
+          F % EOS % MASS_FRACTION_A, &
+          F % EOS % MASS_FRACTION_H, &
+          F % EOS % MASS_FRACTION_N, &
+          F % EOS % MASS_FRACTION_P, &
+          F % EOS % MASS_NUMBER_BAR, &
+          F % EOS % ATOMIC_NUMBER_BAR, &
+          F % EOS % CHEMICAL_POTENTIAL_E, &
+          F % EOS % CHEMICAL_POTENTIAL_HAT ]
+    
+    call F % EOS % SelectVariables ( iaFluidOutput, iaSelected_EOS )
+
     F % Allocated_EOS = .true.
     EOS_Pointer => F % EOS
 
@@ -397,7 +446,7 @@ contains
     MeV                 =  UNIT % MEGA_ELECTRON_VOLT
     EOS_RF_Accuracy     =  1.0e-9_KDR
 
-    TableInitialized  =  .true.
+    EOS_Initialized  =  .true.
 
   end subroutine Initialize_P_HN
   
@@ -412,26 +461,9 @@ contains
     type ( c_ptr ) :: &
       D_P  !-- Device Pointer
    
-    call AllocateDevice ( S % EOS % Error, D_P )
-    call AssociateHost ( D_P, S % EOS % Error )
+    call S % EOS % AllocateDevice ( )
     
-    call AllocateDevice ( S % EOS % Table, D_P )
-    call AssociateHost  ( D_P, S % EOS % Table )
-    call UpdateDevice   ( S % EOS % Table, D_P )
-    
-    call AllocateDevice ( S % EOS % LogDensity, D_P )
-    call AssociateHost  ( D_P, S % EOS % LogDensity ) 
-    call UpdateDevice   ( S % EOS % LogDensity, D_P )
-    
-    call AllocateDevice ( S % EOS % LogTemperature, D_P )
-    call AssociateHost  ( D_P, S % EOS % LogTemperature )
-    call UpdateDevice   ( S % EOS % LogTemperature, D_P )
-    
-    call AllocateDevice ( S % EOS % ElectronFraction, D_P )
-    call AssociateHost  ( D_P, S % EOS % ElectronFraction )
-    call UpdateDevice   ( S % EOS % ElectronFraction, D_P )
-    
-    call S % StorageForm % AllocateDevice ( )
+    call S % StorageForm % AllocateDevice ( AssociateVariablesOption )
       
   end subroutine AllocateDevice_P_HN
 
@@ -639,24 +671,6 @@ contains
   end subroutine Finalize 
   
   
-  impure elemental subroutine FinalizeTable_EOS ( T )
-    
-    type ( Table_EOS_HN_Form ), intent ( inout ), target :: &
-      T
-    
-    if ( allocated ( T % Table ) ) &
-      deallocate ( T % Table )
-  
-    if ( allocated ( T % ElectronFraction ) ) &
-      deallocate ( T % ElectronFraction )
-    if ( allocated ( T % LogTemperature ) ) &
-      deallocate ( T % LogTemperature )
-    if ( allocated ( T % LogDensity ) ) &
-      deallocate ( T % LogDensity )
-  
-  end subroutine FinalizeTable_EOS
-  
-
   subroutine ComputeFromTemperature &
                ( Storage_C, C, G, Storage_G, nValuesOption, oValueOption )
 
@@ -733,20 +747,28 @@ contains
         Mu_NP => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_N_P ), &
         Mu_E  => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_E ), &
         U_V   => FV ( oV + 1 : oV + nV, C % UNUSED_VARIABLE ) )
-    associate &
-      ( T_EOS => C % EOS % Table, &
-        T_L_D => C % EOS % LogDensity, &
-        T_L_T => C % EOS % LogTemperature, &
-        T_YE  => C % EOS % ElectronFraction, &
-        Error => C % EOS % Error )
 
     call C % Compute_M_Kernel &
            ( M, C % BaryonMassReference, &
              UseDeviceOption = C % AllocatedDevice )
-    call C % Apply_EOS_HN_T_Kernel &
-           ( N, T, P, E, CS, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, U_V, &
-             T_EOS, M, YE, T_L_D, T_L_T, T_YE, Error, &
+    !call C % Apply_EOS_HN_T_Kernel &
+    !       ( N, T, P, E, CS, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, U_V, &
+    !         T_EOS, M, YE, T_L_D, T_L_T, T_YE, Error, &
+    !         UseDeviceOption = C % AllocatedDevice )
+    call C % Apply_EOS_PrologueKernel &
+           ( N, P, T, E, M, UseDeviceOption = C % AllocatedDevice )
+    
+    call Storage_C % ReassociateHost ( AssociateVariablesOption = .false. )
+    call C % EOS % ComputeFromTemperature &
+           ( Storage_C, &
+             iaFluidInput = [ C % COMOVING_BARYON_DENSITY, &
+                              C % TEMPERATURE, C % ELECTRON_FRACTION ] )
+    call Storage_C % ReassociateHost ( AssociateVariablesOption = .true. )
+    
+    call C % Apply_EOS_EpilogueKernel &
+           ( N, P, T, CS, E, Mu_NP, Mu_E, M, &
              UseDeviceOption = C % AllocatedDevice )
+        
     call C % Compute_D_S_G_Kernel &
            ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33, &
              UseDeviceOption = C % AllocatedDevice )
@@ -762,7 +784,6 @@ contains
              V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
              UseDeviceOption = C % AllocatedDevice )
 
-    end associate !-- T_EOS, etc.
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
     end associate !-- FV, etc.
@@ -850,12 +871,6 @@ contains
         Mu_E  => FV ( oV + 1 : oV + nV, C % CHEMICAL_POTENTIAL_E ), &
         U_V   => FV ( oV + 1 : oV + nV, C % UNUSED_VARIABLE ), &
         Error_A => FF % Value ( oV + 1 : oV + nV, FF % EOS_ERROR ) )
-    associate &
-      ( T_EOS => C % EOS % Table, &
-        T_L_D => C % EOS % LogDensity, &
-        T_L_T => C % EOS % LogTemperature, &
-        T_YE  => C % EOS % ElectronFraction, &
-        Error => C % EOS % Error )
 
     associate &
       ( T_CFP => PROGRAM_HEADER % Timer ( C % iTimerComputeFromPrimitive ), &
@@ -877,13 +892,29 @@ contains
 !    call C % Apply_EOS_HN_T_Kernel &
 !           ( P, E, CS, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
 !             M, N, T, YE )
-    call C % Apply_EOS_HN_E_Kernel &
-           ( N, P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-             U_V, Error_A, T_EOS, M, YE, T_L_D, T_L_T, T_YE, Error, &
-             UseDeviceOption = C % AllocatedDevice )
+!    call C % Apply_EOS_HN_E_Kernel &
+!           ( N, P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
+!             U_V, Error_A, T_EOS, M, YE, T_L_D, T_L_T, T_YE, Error, &
+!             UseDeviceOption = C % AllocatedDevice )
 !    call C % Apply_EOS_HN_SB_Kernel &
 !           ( P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
 !             M, N, YE )
+
+    call C % Apply_EOS_PrologueKernel &
+           ( N, P, T, E, M, UseDeviceOption = C % AllocatedDevice )
+    
+    call Storage_C % ReassociateHost ( AssociateVariablesOption = .false. )
+    call C % EOS % ComputeFromEnergy &
+           ( Storage_C, &
+             iaFluidInput = [ C % COMOVING_BARYON_DENSITY, &
+                              C % TEMPERATURE, C % ELECTRON_FRACTION ], &
+             iSolve = C % INTERNAL_ENERGY )
+    call Storage_C % ReassociateHost ( AssociateVariablesOption = .true. )
+    
+    call C % Apply_EOS_EpilogueKernel &
+           ( N, P, T, CS, E, Mu_NP, Mu_E, M, &
+             UseDeviceOption = C % AllocatedDevice )
+    
     call T_AE % Stop ( )
     
     call T_CFP % Start ( )
@@ -908,7 +939,6 @@ contains
     
     end associate !-- T_CFP, etc.
     
-    end associate !-- T_EOS, etc
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
     end select !-- FF
@@ -1003,12 +1033,6 @@ contains
         U_V   => FV ( oV + 1 : oV + nV, C % UNUSED_VARIABLE ), &
         Shock => FF % Value ( oV + 1 : oV + nV, FF % SHOCK ), &
         Error_A => FF % Value ( oV + 1 : oV + nV, FF % EOS_ERROR ) )
-    associate &
-      ( T_EOS => C % EOS % Table, &
-        T_L_D => C % EOS % LogDensity, &
-        T_L_T => C % EOS % LogTemperature, &
-        T_YE  => C % EOS % ElectronFraction, &
-        Error => C % EOS % Error )
     
     associate &
       ( T_CFP => PROGRAM_HEADER % Timer ( C % iTimerComputeFromPrimitive ), &
@@ -1036,18 +1060,50 @@ contains
     if ( C % UseEntropy ) then
       call C % Compute_SB_G_Kernel &
              ( SB, DS, N, UseDeviceOption = C % AllocatedDevice )
-      call C % Apply_EOS_HN_SB_E_Kernel &
-             ( N, P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-               U_V, Error_A, T_EOS, M, YE, Shock, T_L_D, T_L_T, T_YE, Error, &
+      !call C % Apply_EOS_HN_SB_E_Kernel &
+      !       ( N, P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
+      !         U_V, Error_A, T_EOS, M, YE, Shock, T_L_D, T_L_T, T_YE, Error, &
+      !         UseDeviceOption = C % AllocatedDevice )
+      
+      call C % Apply_EOS_PrologueKernel &
+           ( N, P, T, E, M, UseDeviceOption = C % AllocatedDevice )
+      
+      call Storage_C % ReassociateHost ( AssociateVariablesOption = .false. )
+      call C % EOS % ComputeFromEnergyEntropy &
+             ( Storage_C, Mask = Shock, Threshold = 0.0_KDR, &
+               iaFluidInput = [ C % COMOVING_BARYON_DENSITY, &
+                                C % TEMPERATURE, C % ELECTRON_FRACTION ], &
+               iEnergy = C % INTERNAL_ENERGY, &
+               iEntropy = C % ENTROPY_PER_BARYON )
+      call Storage_C % ReassociateHost ( AssociateVariablesOption = .true. )
+      
+      call C % Apply_EOS_EpilogueKernel &
+             ( N, P, T, CS, E, Mu_NP, Mu_E, M, &
                UseDeviceOption = C % AllocatedDevice )
+      
       call C % Compute_G_G_Kernel &
              ( GE, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E, &
                UseDeviceOption = C % AllocatedDevice )
     else
-      call C % Apply_EOS_HN_E_Kernel &
-             ( N, P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
-               U_V, Error_A, T_EOS, M, YE, T_L_D, T_L_T, T_YE, Error, &
+!      call C % Apply_EOS_HN_E_Kernel &
+!             ( N, P, T, CS, E, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
+!               U_V, Error_A, T_EOS, M, YE, T_L_D, T_L_T, T_YE, Error, &
+!               UseDeviceOption = C % AllocatedDevice )
+      call C % Apply_EOS_PrologueKernel &
+           ( N, P, T, E, M, UseDeviceOption = C % AllocatedDevice )
+    
+      call Storage_C % ReassociateHost ( AssociateVariablesOption = .false. )
+      call C % EOS % ComputeFromEnergy &
+             ( Storage_C, &
+               iaFluidInput = [ C % COMOVING_BARYON_DENSITY, &
+                                C % TEMPERATURE, C % ELECTRON_FRACTION ], &
+               iSolve = C % INTERNAL_ENERGY )
+      call Storage_C % ReassociateHost ( AssociateVariablesOption = .true. )
+      
+      call C % Apply_EOS_EpilogueKernel &
+             ( N, P, T, CS, E, Mu_NP, Mu_E, M, &
                UseDeviceOption = C % AllocatedDevice )
+
     end if
     call C % Compute_DS_G_Kernel &
            ( DS, N, SB, UseDeviceOption = C % AllocatedDevice )
@@ -1067,7 +1123,6 @@ contains
     
     end associate !-- T_CFP, etc.
     
-    end associate !-- T_EOS, etc.
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
     end select !-- FF

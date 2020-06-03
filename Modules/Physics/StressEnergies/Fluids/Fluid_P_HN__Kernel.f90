@@ -2,7 +2,6 @@
 
 submodule ( Fluid_P_HN__Form ) Fluid_P_HN__Kernel
 
-  use NUC_EOS
   use Basics
   
   implicit none
@@ -137,13 +136,13 @@ contains
         T ( iV ) = T ( iV ) / MeV
         P ( iV ) = P ( iV ) / Pressure_CGS
       
-        call NUC_EOS_FULL &
-               ( N ( iV ), T ( iV ), YE ( iV ), E ( iV ), &
-                 P ( iV ), SB ( iV ), CS ( iV ), U_V ( iV ), &
-                 U_V ( iV ), U_V ( iV ), X_He ( iV ), X_A ( iV ), &
-                 X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), Mu_E ( iV ), &
-                 U_V ( iV ), U_V ( iV ), Mu_NP ( iV ), EOS_Apply_EOS_HN_T, &
-                 Error ( iV ), EOS_RF_Accuracy, T_L_D, T_L_T, T_YE, T_EOS )
+!        call NUC_EOS_FULL &
+!               ( N ( iV ), T ( iV ), YE ( iV ), E ( iV ), &
+!                 P ( iV ), SB ( iV ), CS ( iV ), U_V ( iV ), &
+!                 U_V ( iV ), U_V ( iV ), X_He ( iV ), X_A ( iV ), &
+!                 X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), Mu_E ( iV ), &
+!                 U_V ( iV ), U_V ( iV ), Mu_NP ( iV ), EOS_Apply_EOS_HN_T, &
+!                 Error ( iV ), EOS_RF_Accuracy, T_L_D, T_L_T, T_YE, T_EOS )
 
         P ( iV )      =  P ( iV ) * Pressure_CGS
         T ( iV )      =  T ( iV ) * MeV
@@ -171,13 +170,13 @@ contains
         T ( iV ) = T ( iV ) / MeV
         P ( iV ) = P ( iV ) / Pressure_CGS
 
-        call NUC_EOS_FULL &
-               ( N ( iV ), T ( iV ), YE ( iV ), E ( iV ), &
-                 P ( iV ), SB ( iV ), CS ( iV ), U_V ( iV ), &
-                 U_V ( iV ), U_V ( iV ), X_He ( iV ), X_A ( iV ), &
-                 X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), Mu_E ( iV ), &
-                 U_V ( iV ), U_V ( iV ), Mu_NP ( iV ), EOS_Apply_EOS_HN_T, &
-                 Error ( iV ), EOS_RF_Accuracy, T_L_D, T_L_T, T_YE, T_EOS )
+!        call NUC_EOS_FULL &
+!               ( N ( iV ), T ( iV ), YE ( iV ), E ( iV ), &
+!                 P ( iV ), SB ( iV ), CS ( iV ), U_V ( iV ), &
+!                 U_V ( iV ), U_V ( iV ), X_He ( iV ), X_A ( iV ), &
+!                 X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), Mu_E ( iV ), &
+!                 U_V ( iV ), U_V ( iV ), Mu_NP ( iV ), EOS_Apply_EOS_HN_T, &
+!                 Error ( iV ), EOS_RF_Accuracy, T_L_D, T_L_T, T_YE, T_EOS )
         
         P ( iV )      =  P ( iV ) * Pressure_CGS
         T ( iV )      =  T ( iV ) * MeV
@@ -228,21 +227,21 @@ contains
         P ( iV ) = P ( iV ) / Pressure_CGS
         
         if ( Shock ( iV ) > 0.0_KDR ) then
-          call NUC_EOS_FULL &
-                 ( N ( iV ), T ( iV ), YE ( iV ), E ( iV ), &
-                   P ( iV ), SB ( iV ), CS ( iV ), U_V ( iV ), &
-                   U_V ( iV ), U_V ( iV ), X_He ( iV ), X_A ( iV ), &
-                   X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), Mu_E ( iV ), &
-                   U_V ( iV ), U_V ( iV ), Mu_NP ( iV ), EOS_Apply_EOS_HN_E, &
-                   Error ( iV ), EOS_RF_Accuracy, T_L_D, T_L_T, T_YE, T_EOS )
+!          call NUC_EOS_FULL &
+!                 ( N ( iV ), T ( iV ), YE ( iV ), E ( iV ), &
+!                   P ( iV ), SB ( iV ), CS ( iV ), U_V ( iV ), &
+!                   U_V ( iV ), U_V ( iV ), X_He ( iV ), X_A ( iV ), &
+!                   X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), Mu_E ( iV ), &
+!                   U_V ( iV ), U_V ( iV ), Mu_NP ( iV ), EOS_Apply_EOS_HN_E, &
+!                   Error ( iV ), EOS_RF_Accuracy, T_L_D, T_L_T, T_YE, T_EOS )
         else !-- not Shock
-          call NUC_EOS_FULL &
-                 ( N ( iV ), T ( iV ), YE ( iV ), E ( iV ), &
-                   P ( iV ), SB ( iV ), CS ( iV ), U_V ( iV ), &
-                   U_V ( iV ), U_V ( iV ), X_He ( iV ), X_A ( iV ), &
-                   X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), Mu_E ( iV ), &
-                   U_V ( iV ), U_V ( iV ), Mu_NP ( iV ), EOS_Apply_EOS_HN_S, &
-                   Error ( iV ), EOS_RF_Accuracy, T_L_D, T_L_T, T_YE, T_EOS )
+!          call NUC_EOS_FULL &
+!                 ( N ( iV ), T ( iV ), YE ( iV ), E ( iV ), &
+!                   P ( iV ), SB ( iV ), CS ( iV ), U_V ( iV ), &
+!                   U_V ( iV ), U_V ( iV ), X_He ( iV ), X_A ( iV ), &
+!                   X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), Mu_E ( iV ), &
+!                   U_V ( iV ), U_V ( iV ), Mu_NP ( iV ), EOS_Apply_EOS_HN_S, &
+!                   Error ( iV ), EOS_RF_Accuracy, T_L_D, T_L_T, T_YE, T_EOS )
         end if
         
         P ( iV )      =  P ( iV ) * Pressure_CGS
@@ -275,21 +274,21 @@ contains
         P ( iV ) = P ( iV ) / Pressure_CGS
         
         if ( Shock ( iV ) > 0.0_KDR ) then
-          call NUC_EOS_FULL &
-                 ( N ( iV ), T ( iV ), YE ( iV ), E ( iV ), &
-                   P ( iV ), SB ( iV ), CS ( iV ), U_V ( iV ), &
-                   U_V ( iV ), U_V ( iV ), X_He ( iV ), X_A ( iV ), &
-                   X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), Mu_E ( iV ), &
-                   U_V ( iV ), U_V ( iV ), Mu_NP ( iV ), EOS_Apply_EOS_HN_E, &
-                   Error ( iV ), EOS_RF_Accuracy, T_L_D, T_L_T, T_YE, T_EOS )
+!          call NUC_EOS_FULL &
+!                 ( N ( iV ), T ( iV ), YE ( iV ), E ( iV ), &
+!                   P ( iV ), SB ( iV ), CS ( iV ), U_V ( iV ), &
+!                   U_V ( iV ), U_V ( iV ), X_He ( iV ), X_A ( iV ), &
+!                   X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), Mu_E ( iV ), &
+!                   U_V ( iV ), U_V ( iV ), Mu_NP ( iV ), EOS_Apply_EOS_HN_E, &
+!                   Error ( iV ), EOS_RF_Accuracy, T_L_D, T_L_T, T_YE, T_EOS )
         else !-- not Shock
-          call NUC_EOS_FULL &
-                 ( N ( iV ), T ( iV ), YE ( iV ), E ( iV ), &
-                   P ( iV ), SB ( iV ), CS ( iV ), U_V ( iV ), &
-                   U_V ( iV ), U_V ( iV ), X_He ( iV ), X_A ( iV ), &
-                   X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), Mu_E ( iV ), &
-                   U_V ( iV ), U_V ( iV ), Mu_NP ( iV ), EOS_Apply_EOS_HN_S, &
-                   Error ( iV ), EOS_RF_Accuracy, T_L_D, T_L_T, T_YE, T_EOS )
+!          call NUC_EOS_FULL &
+!                 ( N ( iV ), T ( iV ), YE ( iV ), E ( iV ), &
+!                   P ( iV ), SB ( iV ), CS ( iV ), U_V ( iV ), &
+!                   U_V ( iV ), U_V ( iV ), X_He ( iV ), X_A ( iV ), &
+!                   X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), Mu_E ( iV ), &
+!                   U_V ( iV ), U_V ( iV ), Mu_NP ( iV ), EOS_Apply_EOS_HN_S, &
+!                   Error ( iV ), EOS_RF_Accuracy, T_L_D, T_L_T, T_YE, T_EOS )
         end if
         
         P ( iV )      =  P ( iV ) * Pressure_CGS
@@ -342,13 +341,13 @@ contains
         T ( iV ) = T ( iV ) / MeV
         P ( iV ) = P ( iV ) / Pressure_CGS
 
-        call NUC_EOS_FULL &
-               ( N ( iV ), T ( iV ), YE ( iV ), E ( iV ), &
-                 P ( iV ), SB ( iV ), CS ( iV ), U_V ( iV ), &
-                 U_V ( iV ), U_V ( iV ), X_He ( iV ), X_A ( iV ), &
-                 X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), Mu_E ( iV ), &
-                 U_V ( iV ), U_V ( iV ), Mu_NP ( iV ), EOS_Apply_EOS_HN_E, &
-                 Error ( iV ), EOS_RF_Accuracy, T_L_D, T_L_T, T_YE, T_EOS )
+!        call NUC_EOS_FULL &
+!               ( N ( iV ), T ( iV ), YE ( iV ), E ( iV ), &
+!                 P ( iV ), SB ( iV ), CS ( iV ), U_V ( iV ), &
+!                 U_V ( iV ), U_V ( iV ), X_He ( iV ), X_A ( iV ), &
+!                 X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), Mu_E ( iV ), &
+!                 U_V ( iV ), U_V ( iV ), Mu_NP ( iV ), EOS_Apply_EOS_HN_E, &
+!                 Error ( iV ), EOS_RF_Accuracy, T_L_D, T_L_T, T_YE, T_EOS )
 
         P ( iV )      =  P ( iV ) * Pressure_CGS
         T ( iV )      =  T ( iV ) * MeV
@@ -379,13 +378,13 @@ contains
         T ( iV ) = T ( iV ) / MeV
         P ( iV ) = P ( iV ) / Pressure_CGS
 
-        call NUC_EOS_FULL &
-               ( N ( iV ), T ( iV ), YE ( iV ), E ( iV ), &
-                 P ( iV ), SB ( iV ), CS ( iV ), U_V ( iV ), &
-                 U_V ( iV ), U_V ( iV ), X_He ( iV ), X_A ( iV ), &
-                 X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), Mu_E ( iV ), &
-                 U_V ( iV ), U_V ( iV ), Mu_NP ( iV ), EOS_Apply_EOS_HN_E, &
-                 Error ( iV ), EOS_RF_Accuracy, T_L_D, T_L_T, T_YE, T_EOS )
+!        call NUC_EOS_FULL &
+!               ( N ( iV ), T ( iV ), YE ( iV ), E ( iV ), &
+!                 P ( iV ), SB ( iV ), CS ( iV ), U_V ( iV ), &
+!                 U_V ( iV ), U_V ( iV ), X_He ( iV ), X_A ( iV ), &
+!                 X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), Mu_E ( iV ), &
+!                 U_V ( iV ), U_V ( iV ), Mu_NP ( iV ), EOS_Apply_EOS_HN_E, &
+!                 Error ( iV ), EOS_RF_Accuracy, T_L_D, T_L_T, T_YE, T_EOS )
 
         P ( iV )      =  P ( iV ) * Pressure_CGS
         T ( iV )      =  T ( iV ) * MeV
@@ -532,6 +531,120 @@ contains
 !    end if
 !    
 !  end procedure Apply_EOS_HN_SB_Kernel
+
+
+  module procedure Apply_EOS_PrologueKernel
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+    logical ( KDL ) :: &
+      UseDevice
+           
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+
+    nValues = size ( P )
+
+    if ( UseDevice ) then
+      
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) &
+      !$OMP& private ( iV )
+      do iV = 1, nValues
+        if ( N ( iV ) == 0.0_KDR ) cycle 
+        E ( iV ) = ( E ( iV ) / ( M ( iV ) * N ( iV ) )  -  OR_Shift ) &
+                      / SpecificEnergy_CGS
+        N ( iV ) = M ( iV ) * N ( iV ) / MassDensity_CGS
+        T ( iV ) = T ( iV ) / MeV
+        P ( iV ) = P ( iV ) / Pressure_CGS
+      end do
+      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+    
+    else
+
+      !$OMP  parallel do &
+      !$OMP& schedule ( OMP_SCHEDULE_HOST ) &
+      !$OMP& private ( iV )
+      do iV = 1, nValues
+        if ( N ( iV ) == 0.0_KDR ) cycle 
+        E ( iV ) = ( E ( iV ) / ( M ( iV ) * N ( iV ) )  -  OR_Shift ) &
+                      / SpecificEnergy_CGS
+        N ( iV ) = M ( iV ) * N ( iV ) / MassDensity_CGS
+        T ( iV ) = T ( iV ) / MeV
+        P ( iV ) = P ( iV ) / Pressure_CGS
+      end do
+      !$OMP  end parallel do
+    
+    end if
+    
+  end procedure Apply_EOS_PrologueKernel
+  
+  
+  module procedure Apply_EOS_EpilogueKernel
+
+    integer ( KDI ) :: &
+      iV, &
+      nValues
+    logical ( KDL ) :: &
+      UseDevice
+           
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+
+    nValues = size ( P )
+
+    if ( UseDevice ) then
+      
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) &
+      !$OMP& private ( iV )
+      do iV = 1, nValues
+
+        if ( N ( iV ) == 0.0_KDR ) cycle 
+
+        P ( iV )      =  P ( iV ) * Pressure_CGS
+        T ( iV )      =  T ( iV ) * MeV
+        N ( iV )      =  N ( iV ) / M ( iV ) * MassDensity_CGS
+        E ( iV )      =  ( E ( iV ) * SpecificEnergy_CGS  +  OR_Shift ) &
+                           * M ( iV ) * N ( iV )
+        CS ( iV )     =  sqrt ( CS ( iV ) ) * Speed_CGS
+        Mu_NP ( iV )  =  Mu_NP ( iV ) * MeV
+        Mu_E  ( iV )  =  Mu_E ( iV ) * MeV
+        
+        !Error_A ( iV )  = Error_A ( iV ) + Error ( iV ) * 1.0_KDR
+        
+      end do
+      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+    
+    else
+
+      !$OMP  parallel do &
+      !$OMP& schedule ( OMP_SCHEDULE_HOST ) &
+      !$OMP& private ( iV )
+      do iV = 1, nValues
+
+        if ( N ( iV ) == 0.0_KDR ) cycle 
+
+        P ( iV )      =  P ( iV ) * Pressure_CGS
+        T ( iV )      =  T ( iV ) * MeV
+        N ( iV )      =  N ( iV ) / M ( iV ) * MassDensity_CGS
+        E ( iV )      =  ( E ( iV ) * SpecificEnergy_CGS  +  OR_Shift ) &
+                           * M ( iV ) * N ( iV )
+        CS ( iV )     =  sqrt ( CS ( iV ) ) * Speed_CGS
+        Mu_NP ( iV )  =  Mu_NP ( iV ) * MeV
+        Mu_E  ( iV )  =  Mu_E ( iV ) * MeV
+        
+        !Error_A ( iV )  = Error_A ( iV ) + Error ( iV ) * 1.0_KDR
+        
+      end do
+      !$OMP  end parallel do
+        
+    end if
+    
+  end procedure Apply_EOS_EpilogueKernel
 
 
   module procedure ComputeRawFluxesKernel

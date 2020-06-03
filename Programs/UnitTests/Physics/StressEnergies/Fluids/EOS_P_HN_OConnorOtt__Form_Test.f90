@@ -1,14 +1,14 @@
-program Fluid_P_HN__Form_Test
+program EOS_P_HN_OConnorOtt__Form_Test
 
   use Basics
-  use Mathematics
   use StressEnergyUnits_Form
   use Fluid_P_HN__Form
+  use EOS_P_HN_OConnorOtt__Form
   
   implicit none
-
+  
   character ( LDF ) :: &
-    ProgramName = 'Fluid_P_HN__Form_Test'
+    ProgramName = 'EOS_P_HN_OConnorOtt_Form_Test'
 
   integer ( KDI ) :: &
     iD, &
@@ -17,22 +17,23 @@ program Fluid_P_HN__Form_Test
     nV
   integer ( KDI ), dimension ( 3 ) :: &
     nCells
+  integer ( KDI ), dimension ( : ), allocatable :: &
+    iaFluidOutput, &
+    iaSelected_EOS
   type ( TimerForm ) :: &
     Timer
-  type ( MeasuredValueForm ), dimension ( 3 ) :: &
-    CoordinateUnit
-  type ( GeometryFlatForm ) :: &
-    Dummy_G
   type ( StressEnergyUnitsForm ) :: &
     SU
   type ( Fluid_P_HN_Form ), allocatable :: &
     F
+  type ( EOS_P_HN_OConnorOtt_Form ), allocatable :: &
+    EOS 
 
   allocate ( PROGRAM_HEADER )  
   call PROGRAM_HEADER % Initialize &
          ( ProgramName, AppendDimensionalityOption = .false. )
   
-  nCells = 1
+  nCells = 32
   call PROGRAM_HEADER % GetParameter ( nCells, 'nCells' )
 
   call CONSOLE % SetVerbosity ( 'INFO_4' )
@@ -52,10 +53,8 @@ program Fluid_P_HN__Form_Test
            BaryonMassReference = 1.0_KDR, &
            LimiterParameter = 1.4_KDR, &
            nValues = nV )
-           
-  call Dummy_G % Initialize ( 'RECTANGULAR', CoordinateUnit, nV )
   
-  call F % AllocateDevice ( )
+  call F % AllocateDevice ( AssociateVariablesOption = .false. )
   
   associate ( FV => F % Value )
   associate &
@@ -95,110 +94,147 @@ program Fluid_P_HN__Form_Test
       Mu_E  => FV ( oV + 1 : oV + nV, F % CHEMICAL_POTENTIAL_E ), &
       U_V   => FV ( oV + 1 : oV + nV, F % UNUSED_VARIABLE ) )
   
+  allocate ( EOS )
+  
+  call EOS % Initialize ( )
+  
+  allocate ( iaFluidOutput ( 12 ) )
+  allocate ( iaSelected_EOS ( 12 ) )
+  
+  iaFluidOutput &
+    = [ F % INTERNAL_ENERGY, &
+        F % PRESSURE, &
+        F % ENTROPY_PER_BARYON, &
+        F % SOUND_SPEED, &
+        F % MASS_FRACTION_ALPHA, &
+        F % MASS_FRACTION_HEAVY, &
+        F % MASS_FRACTION_NEUTRON, &
+        F % MASS_FRACTION_PROTON, &
+        F % MASS_NUMBER_HEAVY, &
+        F % ATOMIC_NUMBER_HEAVY, &
+        F % CHEMICAL_POTENTIAL_E, &
+        F % CHEMICAL_POTENTIAL_N_P ]
+  
+  iaSelected_EOS &
+    = [ EOS % LOG_ENERGY, &
+        EOS % LOG_PRESSURE, &
+        EOS % ENTROPY, &
+        EOS % SOUND_SPEED_SQUARE, &
+        EOS % MASS_FRACTION_A, &
+        EOS % MASS_FRACTION_H, &
+        EOS % MASS_FRACTION_N, &
+        EOS % MASS_FRACTION_P, &
+        EOS % MASS_NUMBER_BAR, &
+        EOS % ATOMIC_NUMBER_BAR, &
+        EOS % CHEMICAL_POTENTIAL_E, &
+        EOS % CHEMICAL_POTENTIAL_HAT ]
+  
+  call Show ( iaFluidOutput, 'iaFluidOutput' )
+  call Show ( iaSelected_EOS, 'iaSelected_EOS' )
+  call EOS % SelectVariables ( iaFluidOutput, iaSelected_EOS )
+  
+  call EOS % AllocateDevice ( )
+   
+  associate &
+    ( T_EOS   => EOS % Table, &
+      T_L_D   => EOS % LogDensity, &
+      T_L_T   => EOS % LogTemperature, &
+      T_YE    => EOS % ElectronFraction, &
+      Error   => EOS % Error )
+  
   call Timer % Start ( )
   call Show ( 'Setting Initial Values' )
-  E  = -8.5871946287513969E+018_KDR
+  !E  = -8.5871946287513969E+018_KDR
+  E  = 0.0_KDR
   N  = 12144578686.985090_KDR
   T  = 0.61009347651875323_KDR
   P  = 0.0_KDR
   YE = 0.43110487829424210
-  call Timer % Stop ( )
-  
-  call Timer % ShowInterval (  )
-
-  call Timer % Start ( )
   call F % UpdateDevice ( )
   call Timer % Stop ( )
-  call Show ( 'Update Device' )
+  
   call Timer % ShowInterval (  )
   
-  
   call Show ( 'ComputeFromTemperature' )
+  
   call Show ( 'Input' )
-  call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ) ], 'Input N, T, YE' )
+  call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ) ], 'N, T, YE' )
   
   call Timer % Start ( )
-  call F % ComputeFromTemperature ( F % StorageForm, Dummy_G, Dummy_G )  
+  call EOS % ComputeFromTemperature &
+        ( F, iaFluidInput = [ F % COMOVING_BARYON_DENSITY, &
+                              F % TEMPERATURE, F % ELECTRON_FRACTION ] )
   call Timer % Stop ( )
-  
-  call F % UpdateHost ( )
   call Show ( 'Output' )
+  call F % UpdateHost ( )
   call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ) ], 'N, T, YE' )
   call Show ( [ P ( 1 ), E ( 1 ), CS ( 1 ) ], 'P, E, CS' )
   call Show ( [ X_P ( 1 ), X_N ( 1 ), X_He ( 1 ) ] , 'X_P, X_N, X_He' )
+  call Show ( [ SB ( 1 ) ] , 'SB' )
   call Timer % ShowInterval (  )
-
   
-!  call Timer % Start ( )
-!  call Show ( 'Offload OpenMP NUC_EOS' )
-!  !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-!  !$OMP& schedule ( OMP_SCHEDULE_TARGET ) &
-!  !$OMP& private ( iV )
-!  do iV = 1, nV
-!    call NUC_EOS_FULL &
-!         ( N ( iV ), T ( iV ), YE ( iV ), E ( iV ), &
-!           P ( iV ), SB ( iV ), CS ( iV ), U_V ( iV ), &
-!           U_V ( iV ), U_V ( iV ), X_He ( iV ), X_A ( iV ), &
-!           X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), Mu_E ( iV ), &
-!           U_V ( iV ), U_V ( iV ), Mu_NP ( iV ), EOS_Apply_EOS_HN_T, &
-!           Error ( iV ), EOS_RF_Accuracy, T_L_D, T_L_T, T_YE, T_EOS )
-!  end do
-!  call Timer % Stop ( )
-!  call Timer % ShowInterval (  )
-!
-!  call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ) ], 'N, T, YE' )
-!  call Show ( [ P ( 1 ), E ( 1 ), CS ( 1 ) ], 'P, E, CS' )
-!  call Show ( [ X_P ( 1 ), X_N ( 1 ), X_He ( 1 ) ] , 'X_P, X_N, X_He' )
-!  
-!  call Timer % Start ( )
-!  call Show ( 'CPU OpenMP NUC_EOS' )
-!  !$OMP  parallel do &
-!  !$OMP& schedule ( OMP_SCHEDULE_HOST ) &
-!  !$OMP& private ( iV )
-!  do iV = 1, nV
-!    call NUC_EOS_FULL &
-!         ( N ( iV ), T ( iV ), YE ( iV ), E ( iV ), &
-!           P ( iV ), SB ( iV ), CS ( iV ), U_V ( iV ), &
-!           U_V ( iV ), U_V ( iV ), X_He ( iV ), X_A ( iV ), &
-!           X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), Mu_E ( iV ), &
-!           U_V ( iV ), U_V ( iV ), Mu_NP ( iV ), EOS_Apply_EOS_HN_T, &
-!           Error ( iV ), EOS_RF_Accuracy, T_L_D, T_L_T, T_YE, T_EOS )
-!  end do
-!  call Timer % Stop ( )
-!  call Timer % ShowInterval (  )
-!  
-!  call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ) ], 'N, T, YE' )
-!  call Show ( [ P ( 1 ), E ( 1 ), CS ( 1 ) ], 'P, E, CS' )
-!  call Show ( [ X_P ( 1 ), X_N ( 1 ), X_He ( 1 ) ] , 'X_P, X_N, X_He' )
-!  
-!  
-!  !-- Change temperature by 10%
-!  T = 1.10 * T 
-!  
-!  call Show ( 'Input' )
-!  call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ) ], 'N, T, YE' )
+  !-- Change temperature by 10%
+  T  = 1.10_KDR * T
+  SB = 0.0_KDR
+  call F % UpdateDevice ( )
   
-!  do iV = 1, nV
-!    call NUC_EOS_FULL &
-!         ( N ( iV ), T ( iV ), YE ( iV ), E ( iV ), &
-!           P ( iV ), SB ( iV ), CS ( iV ), U_V ( iV ), &
-!           U_V ( iV ), U_V ( iV ), X_He ( iV ), X_A ( iV ), &
-!           X_N ( iV ), X_P ( iV ), A ( iV ), Z ( iV ), Mu_E ( iV ), &
-!           U_V ( iV ), U_V ( iV ), Mu_NP ( iV ), EOS_Apply_EOS_HN_E, &
-!           Error ( iV ), EOS_RF_Accuracy, T_L_D, T_L_T, T_YE, T_EOS )
-!  end do
-!  call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ) ], 'N, T, YE' )
-!  call Show ( [ P ( 1 ), E ( 1 ), CS ( 1 ) ], 'P, E, CS' )
-!  
+  call Show ( 'ComputeFromEnergy' )
+  call Show ( 'Input' )
+  call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ), E ( 1 ) ], 'N, T, YE, E' )
+  
+  call Timer % Start ( )
+  call EOS % ComputeFromEnergy &
+        ( F, iaFluidInput = [ F % COMOVING_BARYON_DENSITY, &
+                              F % TEMPERATURE, F % ELECTRON_FRACTION ], &
+          iSolve = F % INTERNAL_ENERGY )
+  call Timer % Stop ( )
+  
+  
+  call Show ( 'Output' )
+  call F % UpdateHost ( )
+  call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ) ], 'N, T, YE' )
+  call Show ( [ P ( 1 ), E ( 1 ), CS ( 1 ) ], 'P, E, CS' )
+  call Show ( [ X_P ( 1 ), X_N ( 1 ), X_He ( 1 ) ] , 'X_P, X_N, X_He' )
+  call Show ( [ SB ( 1 ) ] , 'SB' )
+  
+  call Timer % ShowInterval (  )
+  
+  !-- Change temperature by 10%
+  T  = 0.90_KDR * T
+  E  = 0.0_KDR
+  call F % UpdateDevice ( )
+  
+  call Show ( 'ComputeFromEntropy' )
+  call Show ( 'Input' )
+  call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ), SB ( 1 ) ], 'N, T, YE, SB' )
+  
+  call Timer % Start ( )
+  call EOS % ComputeFromEntropy &
+        ( F, iaFluidInput = [ F % COMOVING_BARYON_DENSITY, &
+                              F % TEMPERATURE, F % ELECTRON_FRACTION ], &
+          iSolve = F % ENTROPY_PER_BARYON )
+  call Timer % Stop ( )
+  
+  call Show ( 'Output' )
+  call F % UpdateHost ( )
+  call Show ( [ N ( 1 ), T ( 1 ), YE ( 1 ) ], 'N, T, YE' )
+  call Show ( [ P ( 1 ), E ( 1 ), CS ( 1 ) ], 'P, E, CS' )
+  call Show ( [ X_P ( 1 ), X_N ( 1 ), X_He ( 1 ) ] , 'X_P, X_N, X_He' )
+  call Show ( [ SB ( 1 ) ] , 'SB' )
+  
+  call Timer % ShowInterval (  )
+  
   call CONSOLE % Mute ( )
-
   call Show ( 'Fluid_P_HN Variables', F % IGNORABILITY )
   call Show ( F % Variable, 'Variable', F % IGNORABILITY )
   
+  end associate
+
   end associate
   end associate
 
   deallocate ( F )
   deallocate ( PROGRAM_HEADER )
 
-end program Fluid_P_HN__Form_Test
+
+end program EOS_P_HN_OConnorOtt__Form_Test

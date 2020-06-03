@@ -61,6 +61,8 @@ module Storage_Form
       AllocateDevice => AllocateDevice_S
     procedure, public, pass :: &
       Clear => Clear_S
+    procedure, public, pass :: &
+      ReassociateHost
     procedure, private, pass :: &
       UpdateDeviceAll
     procedure, private, pass :: &
@@ -73,6 +75,10 @@ module Storage_Form
       UpdateHostSingle
     generic :: &
       UpdateHost => UpdateHostAll, UpdateHostSingle
+    procedure, private, pass :: &
+      AssociateHost_S
+    procedure, private, pass :: &
+      DisassociateHost_S
     final :: &
       Finalize
   end type StorageForm
@@ -298,14 +304,6 @@ contains
     logical ( KDL ), intent ( in ), optional :: &
       AssociateVariablesOption
       
-    integer ( KDI ) :: &
-      iV, &
-      iS_T, &
-      iS_S
-    real ( KDR ), dimension ( : ), pointer :: &
-      Variable
-    real ( KDR ), dimension ( :, : ), pointer :: &
-      Scratch
     logical ( KDL ) :: &
       AssociateVariables
     
@@ -321,33 +319,8 @@ contains
       if ( .not. c_associated ( S % D_Selected ( 1 ) ) ) &
         return
       
-      if ( AssociateVariables ) then
-
-        !-- Associate individual variables (columns of S % Value ) on host
-        !   to locations on device
-
-        call c_f_pointer &
-               ( S % D_Selected ( 1 ), Scratch, &
-                 [ S % nValues, S % nVariables ] )
-
-        Variable => S % Value ( :, 1 )
-        call AssociateHost ( S % D_Selected ( 1 ), Variable )
+      call S % AssociateHost_S ( AssociateVariables )
       
-        do iV = 2, S % nVariables
-          S % D_Selected ( iV ) = c_loc ( Scratch ( :, iV ) )
-          Variable => S % Value ( :, iV )
-          call AssociateHost ( S % D_Selected ( iV ), Variable )
-        end do
-
-      else
-
-        !-- Associate S % Value (as an entire block) on host to the head
-        !   location on the device
-
-        call AssociateHost ( S % D_Selected ( 1 ), S % Value )
-
-      end if !-- AssociateVariables
-
       S % AllocatedDevice = .true.
       
       if ( S % ClearRequested ) &
@@ -361,6 +334,38 @@ contains
   
   end subroutine AllocateDevice_S
   
+  
+  subroutine ReassociateHost ( S, AssociateVariablesOption )
+  
+    class ( StorageForm ), intent ( inout ), target :: &
+      S
+    logical ( KDL ), intent ( in ), optional :: &
+      AssociateVariablesOption
+    
+    logical ( KDL ) :: &
+      AssociateVariables
+    class ( StorageForm ), pointer :: &
+      S_Primary
+      
+    if ( .not. S % AllocatedDevice ) &
+      return
+    
+    AssociateVariables = .true.
+    if ( present ( AssociateVariablesOption ) ) &
+      AssociateVariables = AssociateVariablesOption
+    
+    if ( S % AllocatedValue ) then
+      call S % DisassociateHost_S ( )
+      call S % AssociateHost_S ( AssociateVariables )
+    else
+      S_Primary => S % Primary
+      call S_Primary % DisassociateHost_S ( )
+      call S_Primary % AssociateHost_S ( AssociateVariables )
+      call AdjustNonPrimary_D_Selected ( S )
+    end if
+
+  end subroutine ReassociateHost
+
 
   subroutine Clear_S ( S )
 
@@ -615,6 +620,76 @@ contains
     end do
   
   end subroutine AdjustNonPrimary_D_Selected
+  
+  
+  subroutine AssociateHost_S ( S, AssociateVariables )
+    
+    class ( StorageForm ), intent ( inout ) :: &
+      S
+    logical ( KDL ), intent ( in ) :: &
+      AssociateVariables
+      
+    integer ( KDI ) :: &
+      iV
+    real ( KDR ), dimension ( : ), pointer :: &
+      Variable
+    real ( KDR ), dimension ( :, : ), pointer :: &
+      Scratch
+    
+    if ( AssociateVariables ) then
+      
+      !-- Associate individual variables (columns of S % Value ) on host
+      !   to locations on device
+
+      call c_f_pointer &
+             ( S % D_Selected ( 1 ), Scratch, &
+               [ S % nValues, S % nVariables ] )
+
+      Variable => S % Value ( :, 1 )
+      
+      !-- AllocatedDevice not yet set means this is first 
+      !   initialization
+      if ( .not. S % AllocatedDevice ) &
+        call AssociateHost ( S % D_Selected ( 1 ), Variable )
+    
+      do iV = 2, S % nVariables
+        S % D_Selected ( iV ) = c_loc ( Scratch ( :, iV ) )
+        Variable => S % Value ( :, iV )
+        call AssociateHost ( S % D_Selected ( iV ), Variable )
+      end do
+
+    else
+
+      !-- Associate S % Value (as an entire block) on host to the head
+      !   location on the device, however only do this if AllocatedDevice
+      !   is not yet set which means this is first  initialization
+      if ( .not. S % AllocatedDevice ) &
+        call AssociateHost ( S % D_Selected ( 1 ), S % Value )
+
+    end if !-- AssociateVariables
+
+  end subroutine AssociateHost_S
+  
+  
+  subroutine DisassociateHost_S ( S )
+    
+    class ( StorageForm ), intent ( inout ) :: &
+      S
+    
+    integer ( KDI ) :: &
+      iV
+    real ( KDR ), dimension ( : ), pointer :: &
+      Variable
+    
+    do iV = 2, S % nVariables
+      if ( c_associated ( S % D_Selected ( iV ) ) ) then
+        Variable => S % Value ( :, iV )
+        call DisassociateHost ( Variable )
+        S % D_Selected ( iV ) = c_null_ptr
+      end if 
+    end do
+        
+  end subroutine DisassociateHost_S
 
 
 end module Storage_Form

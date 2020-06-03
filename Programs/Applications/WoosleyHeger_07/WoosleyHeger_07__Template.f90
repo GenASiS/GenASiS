@@ -110,10 +110,15 @@ contains
       end associate !-- iaI, etc.
     end do !-- iD
     
+    call Show ( T ( 1 : 10 ), 'Temperature Before' )
+    
     call F % ComputeFromTemperature ( F, G, G )
     
     call F % UpdateHost ( )
-
+    
+    call Show ( E ( 1 : 10 ), 'Internal Energy' )
+    call Show ( T ( 1 : 10 ), 'Temperature After' )
+    
     end associate !-- N, etc.
     end select !-- PSC
     end select !-- PS
