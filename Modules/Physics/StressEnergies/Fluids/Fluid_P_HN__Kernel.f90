@@ -564,8 +564,8 @@ contains
     
     else
 
-      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) &
+      !$OMP  parallel do &
+      !$OMP& schedule ( OMP_SCHEDULE_HOST ) &
       !$OMP& private ( iV )
       do iV = 1, nValues
         if ( N ( iV ) == 0.0_KDR ) cycle 
@@ -575,7 +575,7 @@ contains
         T ( iV ) = T ( iV ) / MeV
         P ( iV ) = P ( iV ) / Pressure_CGS
       end do
-      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+      !$OMP  end parallel do
     
     end if
     
@@ -621,8 +621,8 @@ contains
     
     else
 
-      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) &
+      !$OMP  parallel do &
+      !$OMP& schedule ( OMP_SCHEDULE_HOST ) &
       !$OMP& private ( iV )
       do iV = 1, nValues
 
@@ -640,7 +640,7 @@ contains
         !Error_A ( iV )  = Error_A ( iV ) + Error ( iV ) * 1.0_KDR
         
       end do
-      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+      !$OMP  end parallel do
         
     end if
     

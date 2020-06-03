@@ -337,23 +337,33 @@ contains
   
   subroutine ReassociateHost ( S, AssociateVariablesOption )
   
-    class ( StorageForm ), intent ( inout ) :: &
+    class ( StorageForm ), intent ( inout ), target :: &
       S
     logical ( KDL ), intent ( in ), optional :: &
       AssociateVariablesOption
     
     logical ( KDL ) :: &
       AssociateVariables
+    class ( StorageForm ), intent ( inout ), pointer :: &
+      S_Primary
       
+    if ( .not. S % AllocatedDevice ) &
+      return
+    
     AssociateVariables = .true.
     if ( present ( AssociateVariablesOption ) ) &
       AssociateVariables = AssociateVariablesOption
     
     if ( S % AllocatedValue ) then
       call S % DisassociateHost_S ( )
-      call S % AssociateHost_S ( AssociateVariablesOption )
+      call S % AssociateHost_S ( AssociateVariables )
+    else
+      S_Primary => S % Primary
+      call S_Primary % DisassociateHost_S ( )
+      call S_Primary % AssociateHost_S ( AssociateVariables )
+      call AdjustNonPrimary_D_Selected ( S )
     end if
-      
+
   end subroutine ReassociateHost
 
 
@@ -636,7 +646,11 @@ contains
                [ S % nValues, S % nVariables ] )
 
       Variable => S % Value ( :, 1 )
-      call AssociateHost ( S % D_Selected ( 1 ), Variable )
+      
+      !-- AllocatedDevice not yet set means this is first 
+      !   initialization
+      if ( .not. S % AllocatedDevice ) &
+        call AssociateHost ( S % D_Selected ( 1 ), Variable )
     
       do iV = 2, S % nVariables
         S % D_Selected ( iV ) = c_loc ( Scratch ( :, iV ) )
@@ -647,9 +661,10 @@ contains
     else
 
       !-- Associate S % Value (as an entire block) on host to the head
-      !   location on the device
-
-      call AssociateHost ( S % D_Selected ( 1 ), S % Value )
+      !   location on the device, however only do this if AllocatedDevice
+      !   is not yet set which means this is first  initialization
+      if ( .not. S % AllocatedDevice ) &
+        call AssociateHost ( S % D_Selected ( 1 ), S % Value )
 
     end if !-- AssociateVariables
 
@@ -662,21 +677,19 @@ contains
       S
     
     integer ( KDI ) :: &
-      iS, &
-      iVariable
+      iV
     real ( KDR ), dimension ( : ), pointer :: &
       Variable
     
-    do iS = 1, size ( S % iaSelected )
-      iVariable = S % iaSelected ( iS )
-      if ( c_associated ( S % D_Selected ( iS ) ) ) then
-        Variable => S % Value ( :, iVariable )
+    do iV = 2, S % nVariables
+      if ( c_associated ( S % D_Selected ( iV ) ) ) then
+        Variable => S % Value ( :, iV )
         call DisassociateHost ( Variable )
-        S % D_Selected ( iS ) = c_null_ptr
+        S % D_Selected ( iV ) = c_null_ptr
       end if 
     end do
         
   end subroutine DisassociateHost_S
-  
-  
+
+
 end module Storage_Form

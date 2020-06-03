@@ -121,29 +121,34 @@ program Storage_Form_Test
   print*, 'Device-to-Host Time (s)        :', TotalTime
   print*, 'Device-to-Host Bandwith (GB/s) :', DataSize_GB / TotalTime
   print*, ''
+  call PrintStorage ( S ( 4 ) )
   
+  call S ( 4 ) % ReassociateHost ( AssociateVariablesOption = .false. )
+  call PrintStorage ( S ( 4 ) )
+  call S ( 4 ) % ReassociateHost ( AssociateVariablesOption = .true. )
+  call PrintStorage ( S ( 4 ) )
   
-  !-- Re-initialize S ( 4 )
-  call S ( 6 ) % Initialize &
-         ( ValueShape = [ 4, 2 ], PinnedOption = .true., &
-           NameOption = 'Storage 6', VariableOption = Variable ( 1 : 2 ) )
-  S ( 6 ) % Value = 1.0_KDR
-  call S ( 6 ) % AllocateDevice ( )
-  call S ( 6 ) % UpdateDevice ( )
-  S ( 6 ) % Value = - huge ( 1.0_KDR )
-  
-  call Compute ( S ( 6 ) % Value ( :, 1 ) )
-  
-  print*
-  print*, 'After Compute:', S ( 6 ) % Value
-  
-  !call PrintStorage ( S ( 6 ) )
-  
-  call S ( 6 ) % UpdateHost ( )
-  
-  print*
-  print*, 'After UpdateHost:', S ( 6 ) % Value
-  !call PrintStorage ( S ( 6 ) )
+!  !-- Re-initialize S ( 4 )
+!  call S ( 6 ) % Initialize &
+!         ( ValueShape = [ 4, 2 ], PinnedOption = .true., &
+!           NameOption = 'Storage 6', VariableOption = Variable ( 1 : 2 ) )
+!  S ( 6 ) % Value = 1.0_KDR
+!  call S ( 6 ) % AllocateDevice ( )
+!  call S ( 6 ) % UpdateDevice ( )
+!  S ( 6 ) % Value = - huge ( 1.0_KDR )
+!  
+!  call Compute ( S ( 6 ) % Value ( :, 1 ) )
+!  
+!  print*
+!  print*, 'After Compute:', S ( 6 ) % Value
+!  
+!  call PrintStorage ( S ( 6 ) )
+!  
+!  call S ( 6 ) % UpdateHost ( )
+!  
+!  print*
+!  print*, 'After UpdateHost:', S ( 6 ) % Value
+!  call PrintStorage ( S ( 6 ) )
   
 
 contains

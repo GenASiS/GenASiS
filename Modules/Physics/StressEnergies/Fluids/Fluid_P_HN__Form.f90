@@ -1065,7 +1065,7 @@ contains
       
       call C % Apply_EOS_PrologueKernel &
            ( N, P, T, E, M, UseDeviceOption = C % AllocatedDevice )
-    
+      
       call Storage_C % ReassociateHost ( AssociateVariablesOption = .false. )
       call C % EOS % ComputeFromEntropy &
              ( Storage_C, &
@@ -1077,7 +1077,7 @@ contains
       call C % Apply_EOS_EpilogueKernel &
              ( N, P, T, CS, E, Mu_NP, Mu_E, M, &
                UseDeviceOption = C % AllocatedDevice )
-
+      
       call C % Compute_G_G_Kernel &
              ( GE, M, N, V_1, V_2, V_3, S_1, S_2, S_3, E, &
                UseDeviceOption = C % AllocatedDevice )
