@@ -1067,11 +1067,12 @@ contains
            ( N, P, T, E, M, UseDeviceOption = C % AllocatedDevice )
       
       call Storage_C % ReassociateHost ( AssociateVariablesOption = .false. )
-      call C % EOS % ComputeFromEntropy &
-             ( Storage_C, &
+      call C % EOS % ComputeFromEnergyEntropy &
+             ( Storage_C, Mask = Shock, Threshold = 0.0_KDR, &
                iaFluidInput = [ C % COMOVING_BARYON_DENSITY, &
                                 C % TEMPERATURE, C % ELECTRON_FRACTION ], &
-               iSolve = C % ENTROPY_PER_BARYON  )
+               iEnergy = C % INTERNAL_ENERGY, &
+               iEntropy = C % ENTROPY_PER_BARYON )
       call Storage_C % ReassociateHost ( AssociateVariablesOption = .true. )
       
       call C % Apply_EOS_EpilogueKernel &

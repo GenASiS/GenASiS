@@ -254,17 +254,16 @@ contains
       
     LogScale = .false.
     if ( present ( LogScaleOption ) ) &
-      LogScale = .true.
+      LogScale = LogScaleOption
       
     UseDevice = .false.
     if ( present ( UseDeviceOption ) ) &
-      UseDevice = .true.
+      UseDevice = UseDeviceOption
     
     nValues = size ( F, dim = 1 )
     
     T_L_T_Max = T_L_T ( size ( T_L_T ) )
     T_L_T_Min = T_L_T ( 1 )
-    
     
     if ( UseDevice ) then
     
@@ -397,6 +396,213 @@ contains
     end if
       
   end procedure FindTemperatureKernel
+
+
+  module procedure FindTemperatureEnergyEntropyKernel 
+                 
+    integer ( KDI ) :: &
+      iV, &
+      iI, &   !-- iIteration
+      i_ST_L, &  !-- iST_Local
+      nValues, &
+      nIterations
+    real ( KDR ) :: &
+      Tolerance, &
+      T_L_T_Max, T_L_T_Min, &
+      L_N, Ye, &
+      SV_R, D2, &
+      L_T, L_T_1, &   !-- LogTemperature (from Fluid input)
+      SV_0, SV_1, &
+      L_DT
+    real ( KDR ), dimension ( 2 ) :: &
+      Shift
+    logical ( KDL ) :: &
+      UseDevice
+    logical ( KDL ), dimension ( 2 ) :: &
+      LogScale
+    
+    Shift = 0.0_KDR
+    if ( present ( ShiftOption ) ) &
+      Shift = ShiftOption
+    
+    nIterations = 20
+    if ( present ( nIterationsOption ) ) &
+      nIterations = nIterationsOption
+    
+    Tolerance = 1e-10_KDR
+    if ( present ( ToleranceOption ) ) &
+      Tolerance = ToleranceOption
+      
+    LogScale = .false.
+    if ( present ( LogScaleOption ) ) &
+      LogScale = LogScaleOption
+      
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+    
+    nValues = size ( F, dim = 1 )
+    
+    T_L_T_Max = T_L_T ( size ( T_L_T ) )
+    T_L_T_Min = T_L_T ( 1 )
+    
+    if ( UseDevice ) then
+    
+      !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) &
+      !$OMP& shared ( Shift, Tolerance, T_L_T_Max, T_L_T_Min, LogScale ), &
+      !$OMP& private ( L_N, Ye, SV_R, D2, L_T, L_T_1, SV_0, SV_1, L_DT )
+      Value_Device: do iV = 1, nValues
+      
+        if ( F ( iV, ia_F_I ( 1 ) ) == 0.0_KDR ) &
+          cycle Value_Device
+        
+        L_N   = log10 ( F ( iV, ia_F_I ( 1 ) ) )
+        L_T   = log10 ( F ( iV, ia_F_I ( 2 ) ) )
+        Ye    = F ( iV, ia_F_I ( 3 )  )
+        
+        L_T_1 = L_T
+        
+        if ( Mask ( iV ) > Threshold ) then
+          if ( LogScale ( 2 ) ) then
+            SV_0 = log10 ( max ( ( F ( iV, i_SF ( 2 ) ) &
+                                     + Shift ( 2 ) ), 1.0_KDR ) )
+          else
+            SV_0 = F ( iV, i_SF ( 2 ) ) + Shift ( 2 )
+          end if 
+          i_ST_L = i_ST ( 2 )
+        else 
+          if ( LogScale ( 1 ) ) then
+            SV_0 = log10 ( max ( ( F ( iV, i_SF ( 1 ) ) &
+                                     + Shift ( 1 ) ), 1.0_KDR ) )
+          else
+            SV_0 = F ( iV, i_SF ( 1 ) ) + Shift ( 1 )
+          end if
+          i_ST_L = i_ST ( 1 )
+        end if
+          
+        SV_1 = SV_0
+        
+        call InterpolateTableKernel &
+               ( L_N, L_T, Ye, T, T_L_N, T_L_T, T_Ye, i_ST_L, SV_R, D2 )
+        
+        if ( abs ( SV_R - SV_0 ) < Tolerance * abs ( SV_0 ) ) then
+          cycle Value_Device
+        end if
+        
+        do iI = 1, nIterations
+          
+          L_DT  = - ( SV_R - SV_0 ) / D2
+          L_T_1 = L_T
+          L_T   = max ( min ( ( L_T + L_DT ), T_L_T_Max ), T_L_T_Min )
+          SV_1  = SV_R
+          
+          call InterpolateTableKernel &
+                 ( L_N, L_T, Ye, T, T_L_N, T_L_T, T_Ye, i_ST_L, SV_R, D2 )
+        
+          if ( abs ( SV_R - SV_0 )  <  Tolerance * abs ( SV_0 ) ) then
+            F ( iV, ia_F_I ( 2 ) ) = 10.0_KDR ** L_T
+            cycle Value_Device
+          endif 
+          
+          ! if we are closer than 10^-2  to the 
+          ! root (eps-eps0)=0, we are switching to 
+          ! the secant method, since the table is rather coarse and the
+          ! derivatives may be garbage.
+
+          if ( abs ( SV_R - SV_0 )  <  1e-3_KDR * abs ( SV_0 ) ) then
+            D2 = ( SV_R - SV_1 ) / ( L_T - L_T_1 )
+          end if
+          
+          !-- FIXME: Need error handling
+          !if ( iI == nIterations ) &
+          !  call Show ( 'Error, Max iteration reached' )
+      
+        end do 
+
+      end do Value_Device
+      !$OMP  end OMP_TARGET_DIRECTIVE parallel do
+
+    else
+    
+      !$OMP  parallel do &
+      !$OMP& schedule ( OMP_SCHEDULE_HOST ) &
+      !$OMP& shared ( Shift, Tolerance, T_L_T_Max, T_L_T_Min, LogScale ), &
+      !$OMP& private ( L_N, Ye, SV_R, D2, L_T, L_T_1, SV_0, SV_1, L_DT )
+      Value_Host: do iV = 1, nValues
+        
+        if ( F ( iV, ia_F_I ( 1 ) ) == 0.0_KDR ) &
+          cycle Value_Host
+        
+        L_N   = log10 ( F ( iV, ia_F_I ( 1 ) ) )
+        L_T   = log10 ( F ( iV, ia_F_I ( 2 ) ) )
+        Ye    = F ( iV, ia_F_I ( 3 )  )
+        
+        L_T_1 = L_T
+        
+        if ( Mask ( iV ) > Threshold ) then
+          if ( LogScale ( 2 ) ) then
+            SV_0 = log10 ( max ( ( F ( iV, i_SF ( 2 ) ) &
+                                     + Shift ( 2 ) ), 1.0_KDR ) )
+          else
+            SV_0 = F ( iV, i_SF ( 2 ) ) + Shift ( 2 )
+          end if 
+          i_ST_L = i_ST ( 2 )
+        else 
+          if ( LogScale ( 1 ) ) then
+            SV_0 = log10 ( max ( ( F ( iV, i_SF ( 1 ) ) &
+                                     + Shift ( 1 ) ), 1.0_KDR ) )
+          else
+            SV_0 = F ( iV, i_SF ( 1 ) ) + Shift ( 1 )
+          end if
+          i_ST_L = i_ST ( 1 )
+        end if
+          
+        SV_1 = SV_0
+        
+        call InterpolateTableKernel &
+               ( L_N, L_T, Ye, T, T_L_N, T_L_T, T_Ye, i_ST_L, SV_R, D2 )
+        
+        if ( abs ( SV_R - SV_0 ) < Tolerance * abs ( SV_0 ) ) then
+          cycle Value_Host
+        end if
+        
+        do iI = 1, nIterations
+          
+          L_DT  = - ( SV_R - SV_0 ) / D2
+          L_T_1 = L_T
+          L_T   = max ( min ( ( L_T + L_DT ), T_L_T_Max ), T_L_T_Min )
+          SV_1  = SV_R
+          
+          call InterpolateTableKernel &
+                 ( L_N, L_T, Ye, T, T_L_N, T_L_T, T_Ye, i_ST_L, SV_R, D2 )
+        
+          if ( abs ( SV_R - SV_0 )  <  Tolerance * abs ( SV_0 ) ) then
+            F ( iV, ia_F_I ( 2 ) ) = 10.0_KDR ** L_T
+            cycle Value_Host
+          endif 
+          
+          ! if we are closer than 10^-2  to the 
+          ! root (eps-eps0)=0, we are switching to 
+          ! the secant method, since the table is rather coarse and the
+          ! derivatives may be garbage.
+
+          if ( abs ( SV_R - SV_0 )  <  1e-3_KDR * abs ( SV_0 ) ) then
+            D2 = ( SV_R - SV_1 ) / ( L_T - L_T_1 )
+          end if
+          
+          !-- FIXME: Need error handling
+          !if ( iI == nIterations ) &
+          !  call Show ( 'Error, Max iteration reached' )
+      
+        end do 
+
+      end do Value_Host
+      !$OMP  end parallel do
+    
+    end if
+      
+  end procedure FindTemperatureEnergyEntropyKernel
   
   
   module procedure InterpolateTableKernel 

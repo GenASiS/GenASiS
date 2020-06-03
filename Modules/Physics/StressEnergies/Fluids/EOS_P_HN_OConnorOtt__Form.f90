@@ -57,7 +57,8 @@ module EOS_P_HN_OConnorOtt__Form
     procedure, public, pass :: &
       ComputeFromTemperature, &
       ComputeFromEnergy, &
-      ComputeFromEntropy
+      ComputeFromEntropy, &
+      ComputeFromEnergyEntropy
     final :: &
       Finalize
   end type EOS_P_HN_OConnorOtt_Form
@@ -131,7 +132,41 @@ module EOS_P_HN_OConnorOtt__Form
       integer ( KDI ), intent ( in ), optional :: &
         nIterationsOption
     end subroutine FindTemperatureKernel
+
+
+    module subroutine FindTemperatureEnergyEntropyKernel &
+               ( F, T, T_L_N, T_L_T, T_Ye, Mask, Threshold, &
+                 ia_F_I, i_SF, i_ST, LogScaleOption, UseDeviceOption, &
+                 ShiftOption, ToleranceOption, nIterationsOption )
+      use Basics
+      real ( KDR ), dimension ( :, : ), intent ( inout ) :: &
+        F
+      real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
+        T
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        T_L_N, &      !-- TableLogDensity
+        T_L_T, &      !-- TableLogTemperature
+        T_Ye, &       !-- TableElectronFraction
+        Mask          
+      real ( KDR ), intent ( in ) :: &
+        Threshold
+      integer ( KDI ), dimension ( : ), intent ( in ) :: &
+        ia_F_I, &  !-- iaFluidInput
+        i_SF, &    !-- index of Fluid to solve from
+        i_ST       !-- index of the corresponding quantity in EOS table
+      logical ( KDL ), dimension ( : ), intent ( in ), optional :: &
+        LogScaleOption
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
+      real ( KDR ), dimension ( : ), intent ( in ), optional :: &
+        ShiftOption
+      real ( KDR ), intent ( in ), optional :: &
+        ToleranceOption
+      integer ( KDI ), intent ( in ), optional :: &
+        nIterationsOption
+    end subroutine FindTemperatureEnergyEntropyKernel
   
+    
     module subroutine InterpolateTableKernel &
                  ( X, Y, Z, T, XT, YT, ZT, i_ST, &
                    SV_R, D2 )
@@ -465,8 +500,53 @@ contains
     call E % ComputeFromTemperature ( Fluid, iaFluidInput )
     
   end subroutine ComputeFromEntropy
-    
   
+  
+  subroutine ComputeFromEnergyEntropy &
+               ( E, Fluid, Mask, Threshold, iaFluidInput, iEnergy, &
+                 iEntropy )
+                 
+    class ( EOS_P_HN_OConnorOtt_Form ), intent ( inout ) :: &
+      E
+    class ( StorageForm ), intent ( inout ) :: &
+      Fluid
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      Mask
+    real ( KDR ), intent ( in ) :: &
+      Threshold
+    integer ( KDI ), dimension ( : ), intent ( in ) :: &
+      iaFluidInput
+    integer ( KDI ), intent ( in ) :: &
+      iEnergy, &
+      iEntropy
+    
+    integer ( KDI ) :: &
+      iS_Energy, &
+      iS_Entropy
+    logical ( KDL ) :: &
+      UseDevice 
+    
+    UseDevice = ( E % AllocatedDevice .and. Fluid % AllocatedDevice )
+    
+    call Search ( E % iaFluidOutput, iEnergy, iS_Energy )
+    call Search ( E % iaFluidOutput, iEntropy, iS_Entropy )
+    
+    call FindTemperatureEnergyEntropyKernel &
+           ( Fluid % Value, E % Table, E % LogDensity, E % LogTemperature, &
+             E % ElectronFraction, Mask, Threshold = Threshold, &
+             ia_F_I = iaFluidInput, &
+             i_SF = [ iEntropy,  iEnergy ], &
+             i_ST = [ E % iaSelected ( iS_Entropy ), &
+                      E % iaSelected ( iS_Energy ) ], &
+             LogScaleOption = [ .false., .true. ], &
+             ShiftOption = [ 0.0_KDR, E % EnergyShift ], &
+             UseDeviceOption = UseDevice )
+    
+    call E % ComputeFromTemperature ( Fluid, iaFluidInput )
+  
+  end subroutine ComputeFromEnergyEntropy
+               
+               
   subroutine Finalize ( E )
   
     type ( EOS_P_HN_OConnorOtt_Form ), intent ( inout ) :: &
