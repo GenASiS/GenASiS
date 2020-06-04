@@ -48,6 +48,7 @@ module Step_RK_C_ASC__Template
         iTimerDivergence              = 0, &
         iTimerSources                 = 0, &
         iTimerRelaxation              = 0, &
+        iTimerCoarsen                 = 0, &
         iTimerGhost                   = 0, &
         iTimerBoundaryFluence         = 0, &
         iTimerConstraintsFinal        = 0, &
@@ -605,6 +606,9 @@ contains
                Level = BaseLevel + 1 )
       call PROGRAM_HEADER % AddTimer &
              ( 'ApplyRelaxation', S % iTimerRelaxation, &
+               Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'CoarsenIncrement', S % iTimerCoarsen, &
                Level = BaseLevel + 1 )
       call PROGRAM_HEADER % AddTimer &
              ( 'GhostIncrement', S % iTimerGhost, &
@@ -1165,6 +1169,7 @@ contains
       TimerDivergence, &
       TimerSources, &
       TimerRelaxation, &
+      TimerCoarsen, &
       TimerGhost, &
       Timer_DTD, &
       Timer_DTH
@@ -1204,8 +1209,12 @@ contains
     
     call Timer_DTH % Stop ( )
     
-    if ( associated ( S % CoarsenSingularities ) ) &
+    if ( associated ( S % CoarsenSingularities ) ) then
+      TimerCoarsen => PROGRAM_HEADER % TimerPointer ( S % iTimerCoarsen )
+      if ( associated ( TimerCoarsen ) ) call TimerCoarsen % Start ( )
       call S % CoarsenSingularities ( K )
+      if ( associated ( TimerCoarsen ) ) call TimerCoarsen % Stop ( )
+    end if
 
     GhostExchange = .true.
     if ( present ( GhostExchangeOption ) ) &
