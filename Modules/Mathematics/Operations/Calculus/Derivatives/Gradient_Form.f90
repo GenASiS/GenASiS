@@ -13,8 +13,6 @@ module Gradient_Form
   type, public :: GradientForm
     integer ( KDI ) :: &
       IGNORABILITY = 0
-    integer ( KDI ) :: &
-      iTimerComputeGradient
     character ( LDF ) :: &
       Name = ''
     type ( StorageForm ), allocatable :: &
@@ -93,9 +91,6 @@ contains
            ( 'CoordinateDifference', [ ValueShape ( 1 ), 1 ] )
     call G % VariableDifference % Initialize &
            ( 'VariableDifference', ValueShape )
-           
-    call PROGRAM_HEADER % AddTimer &
-           ( 'ComputeGradient', G % iTimerComputeGradient, Level = 6 )
 
   end subroutine Initialize
   
@@ -179,16 +174,13 @@ contains
     associate &
       ( O    => G  % Output, &
         V_OI => VD % OutputInner, &
-        C_OI => CD % OutputInner, &
-        T_G  => PROGRAM_HEADER % Timer ( G % iTimerComputeGradient ) )
+        C_OI => CD % OutputInner )
         
     call CSL % SetVariablePointer ( C_OI % Value ( :, 1 ), dX_I )
     
     do iV = 1, Input % nVariables
       call CSL % SetVariablePointer ( V_OI % Value ( :, iV ), dV_I )
       call CSL % SetVariablePointer ( O % Value ( :, iV ), dVdX )
-      
-      call T_G % Start ()
       
       if ( present ( UseLimiterOption ) ) then
         call CSL % SetVariablePointer ( UseLimiterOption, UL_Option )
@@ -203,9 +195,6 @@ contains
                  dVdX, ThetaOption = LimiterParameterOption, &
                  UseDeviceOption = G % Output % AllocatedDevice )
       end if
-      
-      call T_G % Stop ()
-      
     end do !-- iV
     
     end associate !-- O, V_OI, etc.

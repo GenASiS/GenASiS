@@ -65,10 +65,10 @@ contains
              ( 'Increment', SD % iTimerIncrement, &
                Level = BaseLevel + 1 )
       call PROGRAM_HEADER % AddTimer &
-             ( 'SD_DataToDevice', SD % iTimerDataToDevice, &
+             ( 'DataToDevice', SD % iTimerDataToDevice, &
                Level = BaseLevel + 1 )
       call PROGRAM_HEADER % AddTimer &
-             ( 'SD_DataToHost', SD % iTimerDataToHost, &
+             ( 'DataToHost', SD % iTimerDataToHost, &
                Level = BaseLevel + 1 )
 
   end subroutine InitializeTimers

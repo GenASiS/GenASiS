@@ -12,8 +12,6 @@ module Difference_Form
   type, public :: DifferenceForm
     integer ( KDI ) :: &
       IGNORABILITY = 0
-    integer ( KDI ) :: &
-      iTimerComputeDifference
     character ( LDF ) :: &
       Name = ''
     type ( StorageForm ), allocatable :: &
@@ -76,9 +74,6 @@ contains
 
     allocate ( D % OutputInner )
     call D % OutputInner % Initialize ( ValueShape, ClearOption = .true. )
-    
-    call PROGRAM_HEADER % AddTimer &
-           ( 'ComputeDifference', D % iTimerComputeDifference, Level = 6 )
 
   end subroutine Initialize
   
@@ -128,11 +123,8 @@ contains
       ( I  => Input, &
         OI => D % OutputInner )
     associate &
-      ( iaS  => I % iaSelected, &
-        T_D  => PROGRAM_HEADER % Timer ( D % iTimerComputeDifference ) )
+      ( iaS  => I % iaSelected )
     
-    call T_D % Start ( )
-
     do iS = 1, I % nVariables
       call CSL % SetVariablePointer ( I % Value ( :, iaS ( iS ) ), V )
       call CSL % SetVariablePointer ( OI % Value ( :, iS ), dV_I )
@@ -140,8 +132,6 @@ contains
              ( V, iDimension, CSL % nGhostLayers ( iDimension ), dV_I, &
                UseDeviceOption = OI % AllocatedDevice )
     end do !-- iS
-    
-    call T_D % Stop ( )
     
     end associate !-- D_I, etc
     end associate !-- I, etc.
