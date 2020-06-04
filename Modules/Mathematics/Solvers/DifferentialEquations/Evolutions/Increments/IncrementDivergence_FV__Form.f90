@@ -24,11 +24,6 @@ module IncrementDivergence_FV__Form
 ! !       iTimerGradient, &
 ! !       iTimerReconstructionKernel, &
       iStream
-    integer ( KDI ), private :: &
-      iTimerReconstructionKernel, &
-      iTimerLogDerivativeKernel, &
-      iTimerIncrementKernel, &
-      iTimerBoundaryFluenceKernel
     real ( KDR ) :: &
       Weight_RK = - huge ( 0.0_KDR ) !-- RungeKutta weight
     real ( KDR ), dimension ( : ), pointer :: &
@@ -218,19 +213,6 @@ contains
     !        ( 'Gradient', I % iTimerGradient )
     ! call PROGRAM_HEADER % AddTimer &
     !        ( 'ReconstructionKernel', I % iTimerReconstructionKernel )
-    
-    call PROGRAM_HEADER % AddTimer &
-           ( 'ReconstructionKernel', I % iTimerReconstructionKernel, &
-              Level = 6 )
-    call PROGRAM_HEADER % AddTimer &
-           ( 'LogDerivativeKernel', I % iTimerLogDerivativeKernel, &
-              Level = 6 )
-    call PROGRAM_HEADER % AddTimer &
-           ( 'IncrementKernel', I % iTimerIncrementKernel, &
-              Level = 6 )
-    call PROGRAM_HEADER % AddTimer &
-           ( 'BoundaryFluenceKernel', I % iTimerBoundaryFluenceKernel, &
-              Level = 6 )
 
     I % UseIncrementStream = .false.
     call PROGRAM_HEADER % GetParameter &
@@ -601,26 +583,19 @@ contains
         C_IR => I % Storage % Current_IR, &
         G_I  => I % Storage % Geometry_I )
 
-!    associate &
-!      ( Timer_G => PROGRAM_HEADER % Timer ( I % iTimerReconstruction_G ) )
-!    call Timer_G % Start ( )
     select type ( CSL => I % Chart )
     class is ( ChartHeader_SL_Form )
     call G % ComputeReconstruction &
            ( G_I, CSL, I % Chart % nDimensions, iDimension )
     end select !-- CSL
-!    call Timer_G % Stop
-!    end associate !-- Timer_G
 
     call Reconstructed % Initialize &
            ( C, iaSelectedOption = C % iaReconstructed )
+
     associate &
       ( iaI => A % Connectivity % iaInner ( iDimension ), &
         iaO => A % Connectivity % iaOuter ( iDimension ) )
 
-!    associate &
-!      ( Timer_B => PROGRAM_HEADER % Timer ( I % iTimerBoundary ) )    
-!    call Timer_B % Start ( )
     select type ( A )
     class is ( Atlas_SC_Template )
       call A % ApplyBoundaryConditions ( Reconstructed, iDimension, iaI )
@@ -630,17 +605,12 @@ contains
       call Show ( 'IncrementDivergence_FV__Form', 'module', CONSOLE % ERROR )
       call Show ( 'ComputeReconstruction', 'subroutine', CONSOLE % ERROR )
     end select !-- A
-!    call Timer_B % Stop
-!    end associate !-- Timer_B
 
     select type ( Chart => I % Chart )
     class is ( Chart_SL_Template )
       call ComputeReconstruction_CSL ( I, Reconstructed, Chart, iDimension )
     end select !-- Grid
 
- !   associate &
- !     ( Timer_FP => PROGRAM_HEADER % Timer ( I % iTimerFromPrimitive ) )
- !   call Timer_FP % Start ( )
     if ( trim ( C % ReconstructedType ) == 'PRIMITIVE' ) then
       call C % ComputeFromPrimitive ( C_IL, G, G_I )
       call C % ComputeFromPrimitive ( C_IR, G, G_I )
@@ -648,8 +618,6 @@ contains
       call C % ComputeFromConserved ( C_IL, G, G_I )
       call C % ComputeFromConserved ( C_IR, G, G_I )
     end if
-!    call Timer_FP % Stop ( )
-!    end associate !-- Timer_FP
 
     end associate !-- iaI, iaO
 
@@ -783,9 +751,9 @@ contains
 
     !-- Reconstruct Current
 
-    associate ( Timer_RK => PROGRAM_HEADER % Timer &
-                              ( I % iTimerReconstructionKernel ) )
-    call Timer_RK % Start ( )
+!    associate ( Timer_RK => PROGRAM_HEADER % Timer &
+!                              ( I % iTimerReconstructionKernel ) )
+!    call Timer_RK % Start ( )
 
     associate ( iaR => C % iaReconstructed )
     do iF = 1, C % N_RECONSTRUCTED
@@ -804,14 +772,10 @@ contains
     end do !-- iF
     end associate !-- iaR
 
-    call Timer_RK % Stop ( )
-    end associate !-- Timer_RK
+!    call Timer_RK % Stop
+!    end associate !-- Timer_RK
 
     !-- VolumeJacobian derivative
-
-    associate ( Timer_LDK => PROGRAM_HEADER % Timer &
-                              ( I % iTimerLogDerivativeKernel ) )
-    call Timer_LDK % Start ( )
 
     if ( associated ( I % dLogVolumeJacobian_dX ) ) then
       if ( size ( I % dLogVolumeJacobian_dX ) >= iDimension ) then
@@ -826,9 +790,6 @@ contains
                  dLVdX, UseDeviceOption = G % AllocatedDevice )
       end if
     end if
-    
-    call Timer_LDK % Stop ( )
-    end associate !-- Timer_LDK
 
     nullify ( dX_L, dX_R, V, dVdX, V_IL, V_IR, A_I, dLVdX )
 
@@ -884,33 +845,21 @@ contains
       call Show ( 'ComputeIncrement_CSL', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end if
-    
-    associate &
-      ( Timer_IK &
-          => PROGRAM_HEADER % Timer ( I % iTimerIncrementKernel ), &
-        Timer_BK & 
-          => PROGRAM_HEADER % Timer ( I % iTimerBoundaryFluenceKernel ) )
-          
+
     do iF = 1, C % N_CONSERVED
       call CSL % SetVariablePointer &
              ( Increment % Value ( :, iF ), dU )
       call CSL % SetVariablePointer &
              ( I % Storage % Flux_I % Value ( :, iF ), F_I )
-      call Timer_IK % Start ( )
       call ComputeIncrement_CSL_Kernel &
              ( dU, F_I, A_I, V, TimeStep, iDimension, &
                CSL % nGhostLayers ( iDimension ), &
                UseDeviceOption = Increment % AllocatedDevice )
-      call Timer_IK % Stop ( )
-      call Timer_BK % Start ( ) 
       if ( associated ( I % BoundaryFluence_CSL ) ) &
         call RecordBoundaryFluence_CSL &
                ( I % BoundaryFluence_CSL, CSL, F_I, I % Weight_RK, &
                  TimeStep, iDimension, iF )
-      call Timer_BK % Stop ( ) 
     end do !-- iF
-    
-    end associate !-- Timer_IK, Timer_BK
 
     end associate !-- C, etc.
     nullify ( dU, F_I, A_I, V )
