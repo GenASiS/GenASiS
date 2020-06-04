@@ -208,10 +208,12 @@ contains
     call OS % Reference % Initialize &
            ( PS, 'DUST', OS % Units, NameShortOption = 'Reference', &
              AllocateSourcesOption = .false., &
+             AllocateFeaturesOption = .false., &
              IgnorabilityOption = CONSOLE % INFO_2 )
     call OS % Difference % Initialize &
            ( PS, 'DUST', OS % Units, NameShortOption = 'Difference', &
              AllocateSourcesOption = .false., &
+             AllocateFeaturesOption = .false., &
              IgnorabilityOption = CONSOLE % INFO_2 )
 
     end select !-- PS

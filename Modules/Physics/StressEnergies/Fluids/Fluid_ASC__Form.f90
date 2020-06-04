@@ -74,8 +74,9 @@ contains
                  RiemannSolverTypeOption, ReconstructedTypeOption, &
                  UseEntropyOption, UseInitialTemperatureOption, &
                  UseLimiterOption, UsePinnedMemoryOption, AllocateTallyOption, &
-                 AllocateSourcesOption, LimiterParameterOption, &
-                 ShockThresholdOption, IgnorabilityOption )
+                 AllocateSourcesOption, AllocateFeaturesOption, &
+                 LimiterParameterOption, ShockThresholdOption, &
+                 IgnorabilityOption )
 
     class ( Fluid_ASC_Form ), intent ( inout ) :: &
       FA
@@ -95,7 +96,8 @@ contains
       UseLimiterOption, &
       UsePinnedMemoryOption, &
       AllocateTallyOption, &
-      AllocateSourcesOption
+      AllocateSourcesOption, &
+      AllocateFeaturesOption
     real ( KDR ), intent ( in ), optional :: &
       LimiterParameterOption, &
       ShockThresholdOption
@@ -108,7 +110,8 @@ contains
       NameShort
     logical ( KDL ) :: &
       AllocateTally, &
-      AllocateSources
+      AllocateSources, &
+      AllocateFeatures
 
     if ( FA % Type == '' ) &
       FA % Type = 'a Fluid_ASC'
@@ -299,7 +302,11 @@ contains
 
     !-- Features
 
-    if ( trim ( FA % FluidType ) /= 'DUST' ) then
+    AllocateFeatures = .true.
+    if ( present ( AllocateFeaturesOption ) ) &
+      AllocateFeatures = AllocateFeaturesOption
+
+    if ( AllocateFeatures .and. trim ( FA % FluidType ) /= 'DUST' ) then
       allocate ( FA % Features_ASC )
       associate ( FFA => FA % Features_ASC )
       call FFA % Initialize &

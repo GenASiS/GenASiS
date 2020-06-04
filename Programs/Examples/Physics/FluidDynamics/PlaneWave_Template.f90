@@ -214,10 +214,12 @@ contains
     call PW % Reference % Initialize &
            ( PS, 'DUST', PW % Units, NameShortOption = 'Reference', &
              AllocateSourcesOption = .false., &
+             AllocateFeaturesOption = .false., &
              IgnorabilityOption = CONSOLE % INFO_2 )
     call PW % Difference % Initialize &
            ( PS, 'DUST', PW % Units, NameShortOption = 'Difference', &
              AllocateSourcesOption = .false., &
+             AllocateFeaturesOption = .false., &
              IgnorabilityOption = CONSOLE % INFO_2 )
 
     end select !-- PS

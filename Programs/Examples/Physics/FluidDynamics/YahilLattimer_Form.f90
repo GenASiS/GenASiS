@@ -252,10 +252,12 @@ contains
     call YL % Reference % Initialize &
            ( PS, 'IDEAL', YL % Units, NameShortOption = 'Reference', &
              AllocateSourcesOption = .false., &
+             AllocateFeaturesOption = .false., &
              IgnorabilityOption = CONSOLE % INFO_2 )
     call YL % Difference % Initialize &
            ( PS, 'IDEAL', YL % Units, NameShortOption = 'Difference', &
              AllocateSourcesOption = .false., &
+             AllocateFeaturesOption = .false., &
              IgnorabilityOption = CONSOLE % INFO_2 )
 
     end select !-- PS
