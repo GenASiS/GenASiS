@@ -48,6 +48,8 @@ module Step_RK__Template
       InitializeTimersTemplate
     procedure, public, pass :: &
       InitializeTimersStage
+    procedure, public, pass :: &
+      InitializeTimersStoreFinal
     procedure ( LS ), private, pass, deferred :: &
       LoadSolution
     procedure ( SS ), private, pass, deferred :: &
@@ -329,9 +331,7 @@ contains
       call PROGRAM_HEADER % AddTimer &
              ( 'IncrementSolution', S % iTimerIncrementSolution, &
                Level = BaseLevel + 1 )
-      call PROGRAM_HEADER % AddTimer &
-             ( 'StoreFinal', S % iTimerStoreFinal, &
-               Level = BaseLevel + 1 )
+      call S % InitializeTimersStoreFinal ( BaseLevel + 1 )
 
   end subroutine InitializeTimersTemplate
 
@@ -348,6 +348,20 @@ contains
              Level = BaseLevel )
 
   end subroutine InitializeTimersStage
+
+
+  subroutine InitializeTimersStoreFinal ( S, BaseLevel )
+
+    class ( Step_RK_Template ), intent ( inout ) :: &
+      S
+    integer ( KDI ), intent ( in ) :: &
+      BaseLevel
+
+    call PROGRAM_HEADER % AddTimer &
+           ( 'StoreFinal', S % iTimerStoreFinal, &
+             Level = BaseLevel )
+
+  end subroutine InitializeTimersStoreFinal
 
 
 end module Step_RK__Template

@@ -299,8 +299,14 @@ contains
     class ( Step_RK_C_ASC_1D_Template ), intent ( inout ) :: &
       S
 
+    type ( TimerForm ), pointer :: &
+      TimerConstraints
+
+    TimerConstraints => PROGRAM_HEADER % TimerPointer &
+                          ( S % iTimerConstraintsFinal )
     call S % StoreSolution_C_1D &
-           ( S % Current_1D, S % Solution_1D, DetectFeatures = .true. )
+           ( S % Current_1D, TimerConstraints, S % Solution_1D, &
+             DetectFeatures = .true. )
 
   end subroutine StoreSolution
 
@@ -364,6 +370,10 @@ contains
 
     integer ( KDI ) :: &
       iC  !-- iCurrent
+    type ( TimerForm ), pointer :: &
+      TimerStore, &
+      TimerConstraints, &
+      TimerClear
 
     do iC = 1, S % nCurrents
       associate &
@@ -372,10 +382,21 @@ contains
           K     => S % K_1D ( iC, iStage ), &
           Y     => S % Y_1D ( iC ) )
 
-      if ( iStage > 1 ) &
-        call S % StoreSolution_C ( C, Y, DetectFeatures = .false. )
+      if ( iStage > 1 ) then
+        TimerStore => PROGRAM_HEADER % TimerPointer &
+                        ( S % iTimerStoreIntermediate )
+        TimerConstraints => PROGRAM_HEADER % TimerPointer &
+                              ( S % iTimerConstraintsIntermediate )
+        if ( associated ( TimerStore ) ) call TimerStore % Start ( )
+        call S % StoreSolution_C &
+               ( C, TimerConstraints, Y, DetectFeatures = .false. )
+      if ( associated ( TimerStore ) ) call TimerStore % Stop ( )
+      end if
 
-      call Clear ( K % Value )
+      TimerClear => PROGRAM_HEADER % TimerPointer ( S % iTimerClearIncrement )
+      if ( associated ( TimerClear ) ) call TimerClear % Start ( )    
+      call Clear ( K % Value, UseDeviceOption = K % AllocatedDevice )
+      if ( associated ( TimerClear ) ) call TimerClear % Start ( )    
 
       S % ApplyDivergence_C  => S % ApplyDivergence_1D  ( iC ) % Pointer
       S % ApplySources_C     => S % ApplySources_1D     ( iC ) % Pointer
@@ -438,10 +459,13 @@ contains
   end subroutine LoadSolution_C_1D
 
 
-  subroutine StoreSolution_C_1D ( Current_1D, S, Solution_1D, DetectFeatures )
+  subroutine StoreSolution_C_1D &
+               ( Current_1D, TimerConstraints, S, Solution_1D, DetectFeatures )
 
     type ( CurrentPointerForm ), dimension ( : ), intent ( in ) :: &
       Current_1D
+    type ( TimerForm ), intent ( inout ), pointer :: &
+      TimerConstraints
     class ( Step_RK_C_ASC_1D_Template ), intent ( in ) :: &
       S
     type ( StorageForm ), dimension ( : ), intent ( inout ) :: &
@@ -454,8 +478,8 @@ contains
 
     do iC = 1, size ( Current_1D )
       call S % StoreSolution_C &
-             ( Current_1D ( iC ) % Pointer, Solution_1D ( iC ), &
-               DetectFeatures )
+             ( Current_1D ( iC ) % Pointer, TimerConstraints, &
+               Solution_1D ( iC ), DetectFeatures )
     end do !-- iC
 
   end subroutine StoreSolution_C_1D

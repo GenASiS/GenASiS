@@ -42,19 +42,20 @@ module Step_RK_C_ASC__Template
   type, public, extends ( Step_RK_Template ), abstract :: &
     Step_RK_C_ASC_Template
       integer ( KDI ) :: &
-        iTimerStoreIntermediate = 0, &
-        iTimerClearIncrement    = 0, &
-        iTimerConstraints       = 0, &
-        iTimerDivergence        = 0, &
-        iTimerSources           = 0, &
-        iTimerRelaxation        = 0, &
-        iTimerGhost             = 0, &
-        iTimerBoundaryFluence   = 0, &
-        iTimerStepDataToDevice  = 0, &
-        iTimerStepDataToHost    = 0, &
-        iTimer_BF_DataToDevice  = 0, &
-        iTimer_BF_DataToHost    = 0, &
-        iTimerRecordDivergence  = 0
+        iTimerStoreIntermediate       = 0, &
+        iTimerConstraintsIntermediate = 0, &
+        iTimerClearIncrement          = 0, &
+        iTimerDivergence              = 0, &
+        iTimerSources                 = 0, &
+        iTimerRelaxation              = 0, &
+        iTimerGhost                   = 0, &
+        iTimerBoundaryFluence         = 0, &
+        iTimerConstraintsFinal        = 0, &
+        iTimerStepDataToDevice        = 0, &
+        iTimerStepDataToHost          = 0, &
+        iTimer_BF_DataToDevice        = 0, &
+        iTimer_BF_DataToHost          = 0, &
+        iTimerRecordDivergence        = 0
 !         iStrgeometryValue
       type ( Real_1D_Form ), dimension ( : ), allocatable :: &
         dLogVolumeJacobian_dX
@@ -112,6 +113,8 @@ module Step_RK_C_ASC__Template
       SetUseLimiter
     procedure, public, pass :: &
       InitializeTimersStage
+    procedure, public, pass :: &
+      InitializeTimersStoreFinal
     procedure, private, pass :: &
       InitializeTimersDivergence
     procedure, private, pass :: &
@@ -586,11 +589,11 @@ contains
       call PROGRAM_HEADER % AddTimer &
              ( 'StoreIntermediate', S % iTimerStoreIntermediate, &
                Level = BaseLevel + 1 )
+        call PROGRAM_HEADER % AddTimer &
+               ( 'ConstraintsIntermediate', S % iTimerConstraintsIntermediate, &
+                 Level = BaseLevel + 2 )
       call PROGRAM_HEADER % AddTimer &
              ( 'ClearIncrement', S % iTimerClearIncrement, &
-               Level = BaseLevel + 1 )
-      call PROGRAM_HEADER % AddTimer &
-             ( 'ComputeConstraints', S % iTimerConstraints, &
                Level = BaseLevel + 1 )
       call PROGRAM_HEADER % AddTimer &
              ( 'ApplyDivergence', S % iTimerDivergence, &
@@ -623,6 +626,23 @@ contains
                Level = 6 )
 
   end subroutine InitializeTimersStage
+
+
+  subroutine InitializeTimersStoreFinal ( S, BaseLevel )
+
+    class ( Step_RK_C_ASC_Template ), intent ( inout ) :: &
+      S
+    integer ( KDI ), intent ( in ) :: &
+      BaseLevel
+
+    call PROGRAM_HEADER % AddTimer &
+           ( 'StoreFinal', S % iTimerStoreFinal, &
+             Level = BaseLevel )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'ConstraintsFinal', S % iTimerConstraintsFinal, &
+               Level = BaseLevel + 1 )
+
+  end subroutine InitializeTimersStoreFinal
 
 
   subroutine InitializeTimersDivergence ( S, BaseLevel )
@@ -670,10 +690,14 @@ contains
       S
       
     type ( TimerForm ), pointer :: &
+      TimerConstraints, &
       Timer_DTH
 
+    TimerConstraints => PROGRAM_HEADER % TimerPointer &
+                          ( S % iTimerConstraintsFinal )
     call S % StoreSolution_C &
-           ( S % Current, S % Solution, DetectFeatures = .true. )
+           ( S % Current, TimerConstraints, S % Solution, &
+             DetectFeatures = .true. )
     
     Timer_DTH => PROGRAM_HEADER % TimerPointer ( S % iTimer_BF_DataToHost )
     
@@ -740,6 +764,7 @@ contains
 
     type ( TimerForm ), pointer :: &
       TimerStore, &
+      TimerConstraints, &
       TimerClear
 
     associate &
@@ -751,16 +776,17 @@ contains
     if ( iStage > 1 ) then
       TimerStore => PROGRAM_HEADER % TimerPointer &
                       ( S % iTimerStoreIntermediate )
+      TimerConstraints => PROGRAM_HEADER % TimerPointer &
+                            ( S % iTimerConstraintsIntermediate )
       if ( associated ( TimerStore ) ) call TimerStore % Start ( )
-      call S % StoreSolution_C ( C, Y, DetectFeatures = .false. )
+      call S % StoreSolution_C &
+             ( C, TimerConstraints, Y, DetectFeatures = .false. )
       if ( associated ( TimerStore ) ) call TimerStore % Stop ( )
     end if
 
     TimerClear => PROGRAM_HEADER % TimerPointer ( S % iTimerClearIncrement )
-    if ( associated ( TimerClear ) ) call TimerClear % Start ( )
-    
+    if ( associated ( TimerClear ) ) call TimerClear % Start ( )    
     call Clear ( K % Value, UseDeviceOption = K % AllocatedDevice )
-
     if ( associated ( TimerClear ) ) call TimerClear % Stop ( )    
 
     S % ApplyDivergence_C => S % ApplyDivergence % Pointer
@@ -822,10 +848,13 @@ contains
   end subroutine LoadSolution_C
 
 
-  subroutine StoreSolution_C ( Current, S, Solution, DetectFeatures )
+  subroutine StoreSolution_C &
+               ( Current, TimerConstraint, S, Solution, DetectFeatures )
 
     class ( CurrentTemplate ), intent ( inout ) :: &
       Current
+    type ( TimerForm ), intent ( inout ), pointer :: &
+      TimerConstraint
     class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
       S
     type ( StorageForm ), intent ( in ) :: &
@@ -835,8 +864,6 @@ contains
 
     integer ( KDI ) :: &
       iF  !-- iField
-    type ( TimerForm ), pointer :: &
-      Timer
     class ( GeometryFlatForm ), pointer :: &
       G
 
@@ -866,8 +893,10 @@ contains
     call Current % ComputeFromConserved &
            ( G, DetectFeaturesOption = DetectFeatures )
 
+    if ( associated ( TimerConstraint ) ) call TimerConstraint % Start ( )
     if ( associated ( S % ComputeConstraints % Pointer ) ) &
       call S % ComputeConstraints % Pointer ( S )
+    if ( associated ( TimerConstraint ) ) call TimerConstraint % Stop ( )    
 
     nullify ( G )
     

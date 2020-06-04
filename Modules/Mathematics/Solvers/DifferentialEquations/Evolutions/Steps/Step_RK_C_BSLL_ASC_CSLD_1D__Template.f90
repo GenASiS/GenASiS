@@ -378,9 +378,14 @@ contains
     class ( Step_RK_C_BSLL_ASC_CSLD_1D_Template ), intent ( inout ) :: &
       S
 
+    type ( TimerForm ), pointer :: &
+      TimerConstraints
+
+    TimerConstraints => PROGRAM_HEADER % TimerPointer &
+                          ( S % iTimerConstraintsFinal )
     call S % StoreSolution_C_BSLL_ASC_CSLD_1D &
-           ( S % Current_BSLL_ASC_CSLD_1D, S % Solution_BSLL_ASC_CSLD_S, &
-             DetectFeatures = .true. )
+           ( S % Current_BSLL_ASC_CSLD_1D, TimerConstraints, &
+             S % Solution_BSLL_ASC_CSLD_S, DetectFeatures = .true. )
 
   end subroutine StoreSolution
 
@@ -476,12 +481,14 @@ contains
 
 
   subroutine StoreSolution_C_BSLL_ASC_CSLD_1D &
-               ( Current_BSLL_ASC_CSLD_1D, S, Solution_BSLL_ASC_CSLD_S, &
-                 DetectFeatures )
+               ( Current_BSLL_ASC_CSLD_1D, TimerConstraints, S, &
+                 Solution_BSLL_ASC_CSLD_S, DetectFeatures )
 
     class ( Current_BSLL_ASC_CSLD_ElementForm ), dimension ( : ), &
       intent ( inout ) :: &
         Current_BSLL_ASC_CSLD_1D
+    type ( TimerForm ), intent ( inout ), pointer :: &
+      TimerConstraints
     class ( Step_RK_C_BSLL_ASC_CSLD_1D_Template ), intent ( in ) :: &
       S
     type ( StorageForm ), dimension ( :, : ), intent ( in ) :: &
@@ -500,7 +507,8 @@ contains
       do iS = 1, S % nSections
         associate ( Solution => Solution_BSLL_ASC_CSLD_S ( iS, iC ) )
         Current  => CB % CurrentSection ( iS )
-        call S % StoreSolution_C ( Current, Solution, DetectFeatures )
+        call S % StoreSolution_C &
+               ( Current, TimerConstraints, Solution, DetectFeatures )
         end associate !-- Solution
       end do !-- iS
       call CB % StoreSections ( )
@@ -591,6 +599,7 @@ contains
       K
     type ( TimerForm ), pointer :: &
       TimerStore, &
+      TimerConstraints, &
       TimerSections, &
       TimerStore_K, &
       TimerFibers, &
@@ -606,9 +615,12 @@ contains
     if ( iStage > 1 ) then
       TimerStore => PROGRAM_HEADER % TimerPointer &
                       ( S % iTimerStoreIntermediate )
+      TimerConstraints => PROGRAM_HEADER % TimerPointer &
+                            ( S % iTimerConstraintsIntermediate )
       if ( associated ( TimerStore ) ) call TimerStore % Start ( )
       call S % StoreSolution_C_BSLL_ASC_CSLD_1D &
-             ( C_BSLL_ASC_CSLD_1D, Y_BSLL_ASC_CSLD_S, DetectFeatures = .false. )
+             ( C_BSLL_ASC_CSLD_1D, TimerConstraints, Y_BSLL_ASC_CSLD_S, &
+               DetectFeatures = .false. )
       if ( associated ( TimerStore ) ) call TimerStore % Stop ( )
     end if
 

@@ -19,17 +19,12 @@ contains
     class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
       S
 
-    type ( TimerForm ), pointer :: &
-      Timer
     type ( StorageForm ) :: &
       GradPhi
     class ( Geometry_N_Form ), pointer :: &
       G
     class ( Fluid_D_Form ), pointer :: &
       F
-
-    Timer => PROGRAM_HEADER % TimerPointer ( S % iTimerConstraints )
-    if ( associated ( Timer ) ) call Timer % Start ( )
 
     select type ( PS => S % Current_ASC % Atlas_SC )
     class is ( Atlas_SC_Form )
@@ -62,8 +57,6 @@ contains
     end select !-- GA
     end select !-- PS
     nullify ( F, G )
-
-    if ( associated ( Timer ) ) call Timer % Stop ( )
 
   end subroutine ComputeGravity
 
