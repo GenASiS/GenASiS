@@ -129,7 +129,6 @@ contains
 
   subroutine InitializeTemplate_FC &
                ( FC, FluidType, GeometryType, Name, DimensionlessOption, &
-                 FluidUseDeviceOption, GeometryUseDeviceOption, &
                  FinishTimeOption, CourantFactorOption, &
                  LimiterParameterOption, ShockThresholdOption, & 
                  RadiusMaxOption, RadiusCoreOption, RadiusMinOption, &
@@ -143,9 +142,7 @@ contains
       GeometryType, &
       Name
     logical ( KDL ), intent ( in ), optional :: &
-      DimensionlessOption, &
-      FluidUseDeviceOption, &
-      GeometryUseDeviceOption
+      DimensionlessOption
     real ( KDR ), intent ( in ), optional :: &
       FinishTimeOption, &
       CourantFactorOption, &
@@ -176,7 +173,7 @@ contains
            ( )
     call FC % InitializePositionSpace &
            ( GeometryType, &
-             GeometryUseDeviceOption = GeometryUseDeviceOption, &
+             GeometryUseDeviceOption = FC % UseDevice, &
              RadiusMaxOption = RadiusMaxOption, &
              RadiusCoreOption = RadiusCoreOption, &
              RadiusMinOption = RadiusMinOption, &
@@ -185,7 +182,7 @@ contains
              nCellsPolarOption = nCellsPolarOption )
     call FC % InitializeFluid &
            ( FluidType, &
-             FluidUseDeviceOption = FluidUseDeviceOption, &
+             FluidUseDeviceOption = FC % UseDevice, &
              LimiterParameterOption = LimiterParameterOption, &
              ShockThresholdOption = ShockThresholdOption )
     call FC % InitializeStep &

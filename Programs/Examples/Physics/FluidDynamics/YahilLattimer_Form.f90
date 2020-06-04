@@ -223,17 +223,8 @@ contains
     character ( * ), intent ( in )  :: &
       Name
     
-    logical ( KDL ) :: &
-      UseDevice
-      
-    UseDevice = ( OffloadEnabled ( ) .and. GetNumberOfDevices ( ) >= 1 )
-    call PROGRAM_HEADER % GetParameter ( UseDevice, 'UseDevice' )
-
     call YL % Initialize &
-           ( FluidType = 'IDEAL', GeometryType = 'NEWTONIAN', &
-             Name = Name, FluidUseDeviceOption = UseDevice, &
-             GeometryUseDeviceOption = UseDevice )
-             
+           ( FluidType = 'IDEAL', GeometryType = 'NEWTONIAN', Name = Name )
     YL % Integrator % SetReference => SetReference
 
   end subroutine InitializeFluidCentralCore

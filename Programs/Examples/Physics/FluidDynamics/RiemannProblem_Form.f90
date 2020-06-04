@@ -71,8 +71,6 @@ contains
 
     integer ( KDI ) :: &
       iD  !-- iDimension
-    logical ( KDL ) :: &
-      UseDevice
 
     allocate ( RP % BoundaryConditionsFace ( 3 ) )
     associate ( BCF => RP % BoundaryConditionsFace )
@@ -81,14 +79,9 @@ contains
     end do
     end associate !-- BCF
     
-    UseDevice = ( OffloadEnabled ( ) .and. GetNumberOfDevices ( ) >= 1 )
-    call PROGRAM_HEADER % GetParameter ( UseDevice, 'UseDevice' )
-    
     call RP % Initialize &
            ( FluidType = 'IDEAL', GeometryType = 'GALILEAN', Name = Name, &
-             nCellsOption = [ 128, 128, 128 ], &
-             FluidUseDeviceOption = UseDevice, &
-             GeometryUseDeviceOption = UseDevice )
+             nCellsOption = [ 128, 128, 128 ] )
 
   end subroutine InitializeFluidBox
 

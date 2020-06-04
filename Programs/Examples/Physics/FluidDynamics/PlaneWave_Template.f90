@@ -184,17 +184,9 @@ contains
     character ( * ), intent ( in )  :: &
       Name
     
-    logical ( KDL ) :: &
-      UseDevice
-      
-    UseDevice = ( OffloadEnabled ( ) .and. GetNumberOfDevices ( ) >= 1 )
-    call PROGRAM_HEADER % GetParameter ( UseDevice, 'UseDevice' )
-
     call PW % Initialize &
            ( FluidType = 'DUST', GeometryType = 'GALILEAN', Name = Name, &
-             nCellsOption = [ 128, 128, 128 ], &
-             FluidUseDeviceOption = UseDevice, &
-             GeometryUseDeviceOption = UseDevice )
+             nCellsOption = [ 128, 128, 128 ] )
              
     PW % Integrator % SetReference => SetReference
 

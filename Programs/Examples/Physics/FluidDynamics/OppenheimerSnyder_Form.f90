@@ -177,17 +177,9 @@ contains
     character ( * ), intent ( in )  :: &
       Name
     
-    logical ( KDL ) :: &
-      UseDevice
-
-    UseDevice = ( OffloadEnabled ( ) .and. GetNumberOfDevices ( ) >= 1 )
-    call PROGRAM_HEADER % GetParameter ( UseDevice, 'UseDevice' )
-    
     call OS % Initialize &
            ( FluidType = 'DUST', GeometryType = 'NEWTONIAN', Name = Name, &
              DimensionlessOption = .true., &
-             FluidUseDeviceOption = UseDevice, &
-             GeometryUseDeviceOption = UseDevice, &
              GravityFactorOption = 0.01_KDR, &
              LimiterParameterOption = 1.0_KDR )
      OS % Integrator % SetReference => SetReference

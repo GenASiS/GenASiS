@@ -70,7 +70,6 @@ contains
 
   subroutine Initialize_FCC &
                ( FCC, FluidType, GeometryType, Name, DimensionlessOption, &
-                 FluidUseDeviceOption, GeometryUseDeviceOption, &
                  FinishTimeOption, CourantFactorOption, GravityFactorOption, &
                  LimiterParameterOption, ShockThresholdOption, &
                  RadiusMaxOption, RadiusCoreOption, RadialRatioOption, &
@@ -83,9 +82,7 @@ contains
       GeometryType, &
       Name
     logical ( KDL ), intent ( in ), optional :: &
-      DimensionlessOption, &
-      FluidUseDeviceOption, &
-      GeometryUseDeviceOption
+      DimensionlessOption
     real ( KDR ), intent ( in ), optional :: &
       FinishTimeOption, &
       CourantFactorOption, &
@@ -114,8 +111,6 @@ contains
     call FCC % InitializeTemplate_FC &
            ( FluidType, GeometryType, Name, &
              DimensionlessOption = DimensionlessOption, &
-             FluidUseDeviceOption = FluidUseDeviceOption, &
-             GeometryUseDeviceOption = GeometryUseDeviceOption, &
              FinishTimeOption = FinishTimeOption, &
              CourantFactorOption = CourantFactorOption, &
              LimiterParameterOption = LimiterParameterOption, &

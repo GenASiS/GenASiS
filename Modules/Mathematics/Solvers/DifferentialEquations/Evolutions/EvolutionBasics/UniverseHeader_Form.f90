@@ -11,6 +11,7 @@ module UniverseHeader_Form
     integer ( KDI ) :: &
       IGNORABILITY = 0
     logical ( KDL ) :: &
+      UseDevice = .false., &
       UseCustomBoundaryInner = .false.
     character ( LDF ) :: &
       Type = '', &
@@ -41,8 +42,12 @@ contains
 
     U % Name = Name
 
+    U % UseDevice = ( OffloadEnabled ( ) .and. GetNumberOfDevices ( ) >= 1 )
+    call PROGRAM_HEADER % GetParameter ( U % UseDevice, 'UseDevice' )
+
     call Show ( 'Initializing ' // trim ( U % Type ), U % IGNORABILITY )
     call Show ( U % Name, 'Name', U % IGNORABILITY )
+    call Show ( U % UseDevice, 'UseDevice', U % IGNORABILITY )
 
   end subroutine InitializeHeader
 

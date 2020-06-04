@@ -36,7 +36,6 @@ contains
 
   subroutine Initialize_FB &
                ( FB, FluidType, GeometryType, Name, GravitySolverTypeOption, &
-                 FluidUseDeviceOption, GeometryUseDeviceOption, &
                  MinCoordinateOption, MaxCoordinateOption, FinishTimeOption, &
                  CourantFactorOption, UniformAccelerationOption, &
                  nCellsOption, nWriteOption )
@@ -49,9 +48,6 @@ contains
       Name
     character ( * ), intent ( in ), optional :: &
       GravitySolverTypeOption
-    logical ( KDL ), intent ( in ), optional :: &
-      FluidUseDeviceOption, &
-      GeometryUseDeviceOption
     real ( KDR ), dimension ( : ), intent ( in ), optional :: &
       MinCoordinateOption, &
       MaxCoordinateOption
@@ -74,13 +70,13 @@ contains
     call FB % InitializePositionSpace &
            ( GeometryType, &
              GravitySolverTypeOption = GravitySolverTypeOption, &
-             GeometryUseDeviceOption = GeometryUseDeviceOption, &
+             GeometryUseDeviceOption = FB % UseDevice, &
              MinCoordinateOption = MinCoordinateOption, &
              MaxCoordinateOption = MaxCoordinateOption, &
              UniformAccelerationOption = UniformAccelerationOption, &
              nCellsOption = nCellsOption )
     call FB % InitializeFluid &
-           ( FluidType, FluidUseDeviceOption = FluidUseDeviceOption )
+           ( FluidType, FluidUseDeviceOption = FB % UseDevice )
     call FB % InitializeStep &
            ( Name, GravitySolverTypeOption = GravitySolverTypeOption )
 

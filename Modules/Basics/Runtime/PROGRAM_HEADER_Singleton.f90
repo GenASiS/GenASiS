@@ -1009,7 +1009,7 @@ contains
     call Show ( 'OpenMP environment', CONSOLE % INFO_1 )
     call Show ( PH % MaxThreads,  'MaxThreads', CONSOLE % INFO_1 )
     call Show ( GetNumberOfDevices ( ), 'nDevices', CONSOLE % INFO_1 )
-    call Show ( OffloadEnabled ( ), 'Offload enabled', CONSOLE % INFO_1 )
+    call Show ( OffloadEnabled ( ), 'OffloadEnabled', CONSOLE % INFO_1 )
     call Show &
            ( adjustl ( adjustr ( OMP_ScheduleLabelPrefix ) &
                     // ' ' // adjustl ( OMP_ScheduleLabel ) ), &
