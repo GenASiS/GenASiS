@@ -872,12 +872,6 @@ contains
         U_V   => FV ( oV + 1 : oV + nV, C % UNUSED_VARIABLE ), &
         Error_A => FF % Value ( oV + 1 : oV + nV, FF % EOS_ERROR ) )
 
-    associate &
-      ( T_CFP => PROGRAM_HEADER % Timer ( C % iTimerComputeFromPrimitive ), &
-        T_CE  => PROGRAM_HEADER % Timer ( C % iTimerComputeEigenspeed ), &
-        T_AE  => PROGRAM_HEADER % Timer ( C % iTimerApply_EOS ) )
-
-    call T_CFP % Start ( )
     call Copy ( C % Value ( :, C % PRESSURE ), P, &
                 UseDeviceOption = C % AllocatedDevice )
     call Copy ( C % Value ( :, C % TEMPERATURE ), T, &
@@ -886,9 +880,7 @@ contains
     call C % Compute_M_Kernel &
            ( M, C % BaryonMassReference, &
              UseDeviceOption = C % AllocatedDevice )
-    call T_CFP % Stop ( )
-    
-    call T_AE % Start ( )
+
 !    call C % Apply_EOS_HN_T_Kernel &
 !           ( P, E, CS, SB, X_P, X_N, X_He, X_A, Z, A, Mu_NP, Mu_E, &
 !             M, N, T, YE )
@@ -915,9 +907,6 @@ contains
            ( N, P, T, CS, E, Mu_NP, Mu_E, M, &
              UseDeviceOption = C % AllocatedDevice )
     
-    call T_AE % Stop ( )
-    
-    call T_CFP % Start ( )
     call C % Compute_D_S_G_Kernel &
            ( D, S_1, S_2, S_3, N, M, V_1, V_2, V_3, M_DD_22, M_DD_33, &
              UseDeviceOption = C % AllocatedDevice )
@@ -928,16 +917,11 @@ contains
            ( DS, N, SB, UseDeviceOption = C % AllocatedDevice )
     call C % Compute_DE_G_Kernel &
            ( DE, N, YE, UseDeviceOption = C % AllocatedDevice )
-    call T_CFP % Stop ( )
-    
-    call T_CE % Start ( )
+
     call C % Compute_FE_P_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
              V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
              UseDeviceOption = C % AllocatedDevice )
-    call T_CE % Stop ( )
-    
-    end associate !-- T_CFP, etc.
     
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
@@ -1034,12 +1018,6 @@ contains
         Shock => FF % Value ( oV + 1 : oV + nV, FF % SHOCK ), &
         Error_A => FF % Value ( oV + 1 : oV + nV, FF % EOS_ERROR ) )
     
-    associate &
-      ( T_CFP => PROGRAM_HEADER % Timer ( C % iTimerComputeFromPrimitive ), &
-        T_CE  => PROGRAM_HEADER % Timer ( C % iTimerComputeEigenspeed ), &
-        T_AE  => PROGRAM_HEADER % Timer ( C % iTimerApply_EOS ) )
-    
-    call T_CFP % Start ( )
     call Copy ( C % Value ( :, C % PRESSURE ), P, &
                 UseDeviceOption = C % AllocatedDevice )
     call Copy ( C % Value ( :, C % TEMPERATURE ), T, &
@@ -1054,9 +1032,7 @@ contains
                  UseDeviceOption = C % AllocatedDevice )
     call C % Compute_YE_G_Kernel &
            ( YE, DE, N, UseDeviceOption = C % AllocatedDevice )
-    call T_CFP % Stop ( )
     
-    call T_AE % Start ( )
     if ( C % UseEntropy ) then
       call C % Compute_SB_G_Kernel &
              ( SB, DS, N, UseDeviceOption = C % AllocatedDevice )
@@ -1107,21 +1083,16 @@ contains
     end if
     call C % Compute_DS_G_Kernel &
            ( DS, N, SB, UseDeviceOption = C % AllocatedDevice )
-    call T_AE % Stop ( )
 
 !    if ( associated ( C % Value, Value_C ) ) &
 !      call InterpolateSoundSpeed &
 !             ( CS, P, C % Features, &
 !               GV ( oV + 1 : oV + nV, G % CENTER_U ( 1 ) ) )
 
-    call T_CE % Start ( )
     call C % Compute_FE_P_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, MN, &
              V_1, V_2, V_3, CS, M_DD_22, M_DD_33, M_UU_22, M_UU_33, &
              UseDeviceOption = C % AllocatedDevice )
-    call T_CE % Stop ( )
-    
-    end associate !-- T_CFP, etc.
     
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
@@ -1161,9 +1132,6 @@ contains
       oV, &  !-- oValue
       nV     !-- nValues
       
-    associate &
-      ( T_CRF => PROGRAM_HEADER % Timer ( C % iTimerComputeRawFluxes ) )
-
     call C % ComputeRawFluxesTemplate_P &
            ( RawFlux, G, Storage_C, Storage_G, iDimension, nValuesOption, &
              oValueOption )
@@ -1180,8 +1148,6 @@ contains
       nV = size ( Storage_C % Value, dim = 1 )
     end if
 
-    call T_CRF % Start ( )
-
     call Search ( C % iaConserved, C % CONSERVED_ELECTRON_DENSITY, iElectron )
 
     associate &
@@ -1196,10 +1162,6 @@ contains
 
     end associate !-- F_DE, etc.
     
-    call T_CRF % Stop ( )
-    
-    end associate !-- T_CRF, etc. 
-
   end subroutine ComputeRawFluxes
 
 
@@ -1218,13 +1180,9 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iD
 
-    associate &
-      ( T_CCS => PROGRAM_HEADER % Timer ( C % iTimerComputeCenterStates ) )
-
     call C % ComputeCenterStatesTemplate_P &
            ( C_ICL, C_ICR, C_IL, C_IR, SS_I, M_DD_22, M_DD_33, iD )
 
-    call T_CCS % Start ( )
     call ComputeCenterStatesKernel &
            ( C_ICL % Value ( :, C % CONSERVED_ELECTRON_DENSITY ), &
              C_ICR % Value ( :, C % CONSERVED_ELECTRON_DENSITY ), &
@@ -1236,9 +1194,6 @@ contains
              SS_I % Value ( :, C % ALPHA_MINUS ), &
              SS_I % Value ( :, C % ALPHA_CENTER ), &
              UseDeviceOption = C % AllocatedDevice )
-    call T_CCS % Stop ( )
-    
-    end associate
 
   end subroutine ComputeCenterStates
 

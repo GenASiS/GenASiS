@@ -406,11 +406,6 @@ contains
         S_2   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 2 ) ), &
         S_3   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 3 ) ) )
     
-    associate &
-      ( T_CFP => PROGRAM_HEADER % Timer ( C % iTimerComputeFromPrimitive ) )
-
-    call T_CFP % Start ( )
-    
     call C % Compute_M_Kernel &
            ( M, C % BaryonMassReference, &
              UseDeviceOption = C % AllocatedDevice )
@@ -421,10 +416,6 @@ contains
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3, &
              UseDeviceOption = C % AllocatedDevice )
     
-    call T_CFP % Stop ( )
-    
-    end associate !-- T_CFP
-
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
     end associate !-- FV, etc.
@@ -490,12 +481,6 @@ contains
         S_2   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 2 ) ), &
         S_3   => FV ( oV + 1 : oV + nV, C % MOMENTUM_DENSITY_D ( 3 ) ) )
 
-    
-    associate &
-      ( T_CFC => PROGRAM_HEADER % Timer ( C % iTimerComputeFromConserved ) )
-      
-    call T_CFC % Start ( )
-    
     call C % Compute_M_Kernel &
            ( M, C % BaryonMassReference, &
              UseDeviceOption = C % AllocatedDevice )
@@ -505,10 +490,6 @@ contains
     call C % Compute_FE_D_G_Kernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, V_1, V_2, V_3, &
              UseDeviceOption = C % AllocatedDevice )
-    
-    call T_CFC % Stop ( )
-    
-    end associate !-- T_CFC 
     
     end associate !-- FEP_1, etc.
     end associate !-- M_UU_22, etc.
@@ -561,11 +542,6 @@ contains
       nV = size ( Value_C, dim = 1 )
     end if
     
-    associate &
-      ( T_CRF => PROGRAM_HEADER % Timer ( C % iTimerComputeRawFluxes ) )
-      
-    call T_CRF % Start ( )
-    
     call Search &
            ( C % iaConserved, C % CONSERVED_BARYON_DENSITY, iDensity )
     call Search &
@@ -611,10 +587,6 @@ contains
     end select
 
     end associate !-- F_D, etc.
-    
-    call T_CRF % Stop ( )
-
-    end associate !- T_CRF
     
     end associate !-- Value_C, etc
 
