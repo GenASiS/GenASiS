@@ -320,18 +320,18 @@ contains
     select type ( PS => FCC % Integrator % PositionSpace )
     class is ( Atlas_SC_CC_Form )
 
-    select case ( mod ( FCC % Integrator % iCycle, 2 ) )
-    case ( 0 )
+!    select case ( mod ( FCC % Integrator % iCycle, 2 ) )
+!    case ( 0 )
       if ( PS % nDimensions > 2 ) &
         call FCC % CoarsenSingularityTemplate ( Increment, iAngular = 3 )
       if ( PS % nDimensions > 1 ) &
         call FCC % CoarsenSingularityTemplate ( Increment, iAngular = 2 )
-    case ( 1 )
-      if ( PS % nDimensions > 1 ) &
-        call FCC % CoarsenSingularityTemplate ( Increment, iAngular = 2 )
-      if ( PS % nDimensions > 2 ) &
-        call FCC % CoarsenSingularityTemplate ( Increment, iAngular = 3 )
-    end select
+!    case ( 1 )
+!      if ( PS % nDimensions > 1 ) &
+!        call FCC % CoarsenSingularityTemplate ( Increment, iAngular = 2 )
+!      if ( PS % nDimensions > 2 ) &
+!        call FCC % CoarsenSingularityTemplate ( Increment, iAngular = 3 )
+!    end select
   
     end select !-- PS
     end select !-- I
