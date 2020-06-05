@@ -79,7 +79,8 @@ contains
     call C % Initialize ( A, IsPeriodic, iChart = 1 )
 
     associate ( nValues => C % nProperCells + C % nGhostCells )
-    call G % InitializeFlat ( C, 'Geometry', nValues )
+    call G % InitializeFlat &
+           ( C, 'Geometry', UsePinnedMemory = .false., nValues = nValues )
     call C % AddField ( G )
     C % iFieldGeometry = C % nFields
     call C % SetGeometry ( G )
@@ -130,7 +131,8 @@ contains
              ScaleOption = Scale, nGhostLayersOption = [ 0, 0, 0 ] )
 
     associate ( nValues => C % nProperCells + C % nGhostCells )
-    call G % InitializeFlat ( C, 'Geometry', nValues )
+    call G % InitializeFlat &
+           ( C, 'Geometry', UsePinnedMemory = .false., nValues = nValues )
     call C % AddField ( G ) 
     C % iFieldGeometry = C % nFields
     call C % SetGeometry ( G )

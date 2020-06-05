@@ -10,7 +10,7 @@ Chart_SLX__Form_Test: Basics.a AtlasBasics.a ChartBasics.a \
 	$(LINK) $(FLAGS) \
           -o Chart_SLX__Form_Test_$(MACHINE) \
           Chart_SLX__Form_Test.o Chart_SLD__Form.o Chart_SLL__Form.o \
-          Chart_SL__Template.o ChartStream_SL__Form.o \
+          Chart_SL__Kernel.o Chart_SL__Template.o ChartStream_SL__Form.o \
           ChartBasics.a AtlasBasics.a Basics.a $(LIBRARIES)
 
 Chart_SLD_SC__Form_Test: Basics.a AtlasBasics.a ChartBasics.a \
@@ -18,7 +18,8 @@ Chart_SLD_SC__Form_Test: Basics.a AtlasBasics.a ChartBasics.a \
 	$(LINK) $(FLAGS) \
           -o Chart_SLD_SC__Form_Test_$(MACHINE) \
           Chart_SLD_SC__Form_Test.o Chart_SLD_SC__Form.o Chart_SLD__Form.o \
-          Chart_SLL__Form.o Chart_SL__Template.o ChartStream_SL__Form.o \
+          Chart_SLL__Form.o Chart_SL__Kernel.o Chart_SL__Template.o \
+          ChartStream_SL__Form.o \
           ChartBasics.a AtlasBasics.a Basics.a $(LIBRARIES)
 
 Chart_SLD_CE__Form_Test: Basics.a AtlasBasics.a ChartBasics.a \
@@ -27,7 +28,7 @@ Chart_SLD_CE__Form_Test: Basics.a AtlasBasics.a ChartBasics.a \
           -o Chart_SLD_CE__Form_Test_$(MACHINE) \
           Chart_SLD_CE__Form_Test.o Chart_SLD_CE__Form.o \
           Chart_SLD_C__Template.o Chart_SLD__Form.o Chart_SLL__Form.o \
-          Chart_SL__Template.o ChartStream_SL__Form.o \
+          Chart_SL__Kernel.o Chart_SL__Template.o ChartStream_SL__Form.o \
           ChartBasics.a AtlasBasics.a Basics.a $(LIBRARIES)
 
 Chart_SLD_CC__Form_Test: Basics.a AtlasBasics.a ChartBasics.a \
@@ -36,7 +37,7 @@ Chart_SLD_CC__Form_Test: Basics.a AtlasBasics.a ChartBasics.a \
           -o Chart_SLD_CC__Form_Test_$(MACHINE) \
           Chart_SLD_CC__Form_Test.o Chart_SLD_CC__Form.o \
           Chart_SLD_C__Template.o Chart_SLD__Form.o Chart_SLL__Form.o \
-          Chart_SL__Template.o ChartStream_SL__Form.o \
+          Chart_SL__Kernel.o Chart_SL__Template.o ChartStream_SL__Form.o \
           ChartBasics.a AtlasBasics.a Basics.a $(LIBRARIES)
 
 clean:
@@ -59,6 +60,7 @@ Chart_SLX__Form_Test.o: \
   ChartBasics.o \
   Chart_SLL__Form.o \
   Chart_SLD__Form.o \
+  Chart_SL__Kernel.o \
   Chart_SLX__Form_Test.f90
 
 Chart_SLD_SC__Form_Test.o: \
@@ -66,6 +68,7 @@ Chart_SLD_SC__Form_Test.o: \
   AtlasBasics.o \
   ChartBasics.o \
   Chart_SLD_SC__Form.o \
+  Chart_SL__Kernel.o \
   Chart_SLD_SC__Form_Test.f90
 
 Chart_SLD_CE__Form_Test.o: \
@@ -73,6 +76,7 @@ Chart_SLD_CE__Form_Test.o: \
   AtlasBasics.o \
   ChartBasics.o \
   Chart_SLD_CE__Form.o \
+  Chart_SL__Kernel.o \
   Chart_SLD_CE__Form_Test.f90
 
 Chart_SLD_CC__Form_Test.o: \
@@ -80,4 +84,5 @@ Chart_SLD_CC__Form_Test.o: \
   AtlasBasics.o \
   ChartBasics.o \
   Chart_SLD_CC__Form.o \
+  Chart_SL__Kernel.o \
   Chart_SLD_CC__Form_Test.f90
