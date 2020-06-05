@@ -1,3 +1,5 @@
+#include "Preprocessor"
+
 module YahilLattimer_Form
 
   !-- Yahil and Lattimer 1982, in Supernovae: A Survey of Current Research,

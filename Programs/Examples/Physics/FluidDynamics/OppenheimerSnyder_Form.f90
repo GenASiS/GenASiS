@@ -1,3 +1,5 @@
+#include "Preprocessor"
+
 module OppenheimerSnyder_Form
 
   !-- For example, Misner, Thorne, Wheeler p. 663, Eqs. (25.28)-(25.29)

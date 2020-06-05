@@ -1,3 +1,5 @@
+#include "Preprocessor"
+
 module PlaneWave_Template
 
   use GenASiS
