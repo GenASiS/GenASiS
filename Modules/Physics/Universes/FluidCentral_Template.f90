@@ -1215,7 +1215,8 @@ contains
       iR, &          !-- iRank
       iPS, &         !-- iPillarSegment
       iP, &          !-- iPillar
-      iMomentum_2
+      iMomentum_2, &
+      iMomentum_3
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       R, &
       Crsn_2, Crsn_3, &
@@ -1234,6 +1235,9 @@ contains
     class is ( Chart_SLD_C_Template )
 
     associate ( nCB => C % nCellsBrick )
+
+    iMomentum_2 = 3  !-- Fluid
+    iMomentum_3 = 4  !-- Fluid
 
     select case ( iAngular )
     case ( 2 )
@@ -1275,8 +1279,6 @@ contains
       call C % SetVariablePointer &
              ( G % Value ( :, G % CENTER_U ( 1 ) ), R )
 
-      iMomentum_2 = 3  !-- Fluid
-
       oI = 0
       do kC = 1, nCB ( 3 )
         do iC = 1, nCB ( 1 )
@@ -1288,7 +1290,7 @@ contains
             SV ( iC, 1 : nCB ( 2 ), kC )  &
               =  Incoming ( oI + 1 : oI + nCB ( 2 ) )
             oI = oI + nCB ( 2 )
-            if ( iS == iMomentum_2 &
+            if ( ( iS == iMomentum_2 .or. iS == iMomentum_3 ) &
                  .and. R ( iC, 1, kC )  <  FC % RadiusPolarMomentum ) &
               SV ( iC, 1 : nCB ( 2 ), kC ) = 0.0_KDR
           end do !-- iS
@@ -1334,6 +1336,8 @@ contains
 
       call C % SetVariablePointer &
              ( G % Value ( :, G % COARSENING ( 3 ) ), Crsn_3 )
+      call C % SetVariablePointer &
+             ( G % Value ( :, G % CENTER_U ( 1 ) ), R )
 
       oI = 0
       do jC = 1, nCB ( 2 )
@@ -1346,6 +1350,9 @@ contains
             SV ( iC, jC, 1 : nCB ( 3 ) )  &
               =  Incoming ( oI + 1 : oI + nCB ( 3 ) )
             oI = oI + nCB ( 3 )
+            if ( ( iS == iMomentum_2 .or. iS == iMomentum_3 ) &
+                 .and. R ( iC, jC, 1 )  <  FC % RadiusPolarMomentum ) &
+              SV ( iC, jC, 1 : nCB ( 3 ) ) = 0.0_KDR
           end do !-- iS
         end do !-- iC
       end do !-- jC
