@@ -40,7 +40,7 @@ Chart_SLD_CC__Form_Test: Basics.a AtlasBasics.a ChartBasics.a \
           ChartBasics.a AtlasBasics.a Basics.a $(LIBRARIES)
 
 clean:
-	rm -f *.o *.a *.mod *.ld
+	rm -f *.o *.a *.mod *.smod *.ld
 
 clobber: clean
 	rm -f Chart_SLX__Form_Test_*
