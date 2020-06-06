@@ -1035,7 +1035,8 @@ contains
           iR = ( iG - 1 ) * C % nBricks ( 2 )  +  iB  -  1
           do iPS = 1, C % nSegmentsFrom_2 ( iR )
             iP = oP + iPS
-            FC % nCoarsen_2 ( iP ) = int ( Incoming ( oI + 1 ) + 0.5_KDR )
+            FC % nCoarsen_2 ( iP ) &
+              = min ( int ( Incoming ( oI + 1 ) + 0.5_KDR ), C % nCells ( 2 ) )
             oI = oI + 1
             associate ( CP => FC % CoarsenPillar_2 ( iP ) )
             do iS = 1, CP % nVariables
@@ -1099,7 +1100,8 @@ contains
           iR = ( iG - 1 ) * C % nBricks ( 3 )  +  iB  -  1
           do iPS = 1, C % nSegmentsFrom_3 ( iR )
             iP = oP + iPS
-            FC % nCoarsen_3 ( iP ) = int ( Incoming ( oI + 1 ) + 0.5_KDR )
+            FC % nCoarsen_3 ( iP ) &
+              = min ( int ( Incoming ( oI + 1 ) + 0.5_KDR ), C % nCells ( 3 ) )
             oI = oI + 1
             associate ( CP => FC % CoarsenPillar_3 ( iP ) )
             do iS = 1, CP % nVariables
