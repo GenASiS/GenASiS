@@ -28,7 +28,7 @@ module Chart_SLD_CC__Form
     procedure, private, pass :: &
       ShowHeader
     procedure, public, pass :: &
-      SetCoarseningOld
+      SetCoarsening
     final :: &
       Finalize
   end type Chart_SLD_CC_Form
@@ -119,7 +119,7 @@ contains
   end subroutine ShowHeader
 
 
-  subroutine SetCoarseningOld ( C )
+  subroutine SetCoarsening ( C )
 
     class ( Chart_SLD_CC_Form ), intent ( inout ) :: &
       C
@@ -127,7 +127,7 @@ contains
     call C % SetCoarseningPolar ( )
     call C % SetCoarseningAzimuthal ( )
 
-  end subroutine SetCoarseningOld
+  end subroutine SetCoarsening
 
 
   impure elemental subroutine Finalize ( C )

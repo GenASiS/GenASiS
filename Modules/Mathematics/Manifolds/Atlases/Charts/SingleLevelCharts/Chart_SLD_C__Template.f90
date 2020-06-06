@@ -38,8 +38,8 @@ module Chart_SLD_C__Template
       SetCoarseningPolar
     procedure, public, pass :: &
       SetCoarseningAzimuthal
-    procedure ( SCO ), public, pass, deferred :: &
-      SetCoarseningOld
+    procedure ( SC ), public, pass, deferred :: &
+      SetCoarsening
     procedure, public, pass :: &
       FinalizeTemplate_C
     procedure, private, pass :: &
@@ -48,11 +48,11 @@ module Chart_SLD_C__Template
 
   abstract interface
     
-    subroutine SCO ( C )
+    subroutine SC ( C )
       import Chart_SLD_C_Template
       class ( Chart_SLD_C_Template ), intent ( inout ) :: &
         C
-    end subroutine SCO
+    end subroutine SC
 
   end interface
 
