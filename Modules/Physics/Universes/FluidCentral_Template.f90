@@ -13,6 +13,12 @@ module FluidCentral_Template
 
   type, public, extends ( UniverseTemplate ), abstract :: &
     FluidCentralTemplate
+      integer ( KDI ) :: &
+        iTimerComposePillar, &
+        iTimerComposeComm, &
+        iTimerCoarsenPillar, &
+        iTimerDecomposePillar, &
+        iTimerDecomposeComm
       integer ( KDI ), dimension ( : ), allocatable :: &
         nCoarsen_2, &
         nCoarsen_3
@@ -206,6 +212,17 @@ contains
                nWriteOption = nWriteOption )
 
     end select !-- I
+    
+    call PROGRAM_HEADER % AddTimer &
+           ( 'ComposePillar', FC % iTimerComposePillar, Level = 1 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'ComposeComm', FC % iTimerComposeComm, Level = 2 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'CoarsenPillar', FC % iTimerCoarsenPillar, Level = 1 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'DecomposePillar', FC % iTimerDecomposePillar, Level = 1 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'DecomposeComm', FC % iTimerDecomposeComm, Level = 2 )
 
   end subroutine InitializeTemplate_FC
 
@@ -701,16 +718,33 @@ contains
       Increment
     integer ( KDI ), intent ( in ) :: &
       iAngular
+      
+    type ( TimerForm ), pointer :: &
+      T_Compose, &
+      T_Coarsen, &
+      T_Decompose
 
     if ( .not. FC % UseCoarsening ) &
       return
 
     call Show ( 'Coarsening Singularity', FC % IGNORABILITY + 2 )
     call Show ( iAngular, 'iAngular', FC % IGNORABILITY + 2 )
-
+    
+    T_Compose   => PROGRAM_HEADER % TimerPointer ( FC % iTimerComposePillar )
+    T_Coarsen   => PROGRAM_HEADER % TimerPointer ( FC % iTimerCoarsenPillar )
+    T_Decompose => PROGRAM_HEADER % TimerPointer ( FC % iTimerDecomposePillar )
+    
+    call T_Compose % Start ( )
     call ComposePillars ( FC, Increment, iAngular )
+    call T_Compose % Stop ( )
+    
+    call T_Coarsen % Start ( )
     call CoarsenPillars ( FC, iAngular )
+    call T_Coarsen % Stop ( )
+    
+    call T_Decompose % Start ( )
     call DecomposePillars ( FC, Increment, iAngular )
+    call T_Decompose % Stop ( )
 
   end subroutine CoarsenSingularityTemplate
 
@@ -973,8 +1007,12 @@ contains
       Crsn_2, Crsn_3, &
       Vol, &
       SV
+    type ( TimerForm ), pointer :: &
+      T_Comm
     class ( GeometryFlatForm ), pointer :: &
       G
+      
+    T_Comm   => PROGRAM_HEADER % TimerPointer ( FC % iTimerComposeComm )
 
     select type ( I => FC % Integrator )
     class is ( Integrator_C_PS_Form )
@@ -1024,8 +1062,10 @@ contains
           end do !-- iS
         end do !-- iC
       end do !-- kC
-
+      
+      call T_Comm % Start ( )
       call CO % AllToAll_V ( )
+      call T_Comm % Stop ( )
 
       oP = 0
       oI = 0
@@ -1089,8 +1129,10 @@ contains
           end do !-- iS
         end do !-- iC
       end do !-- jC
-
+      
+      call T_Comm % Start ( )
       call CO % AllToAll_V ( )
+      call T_Comm % Stop ( )
 
       oP = 0
       oI = 0
@@ -1223,8 +1265,12 @@ contains
       R, &
       Crsn_2, Crsn_3, &
       SV
+    type ( TimerForm ), pointer :: &
+      T_Comm
     class ( GeometryFlatForm ), pointer :: &
       G
+      
+    T_Comm   => PROGRAM_HEADER % TimerPointer ( FC % iTimerDecomposeComm )
 
     select type ( I => FC % Integrator )
     class is ( Integrator_C_PS_Form )
@@ -1273,8 +1319,10 @@ contains
         end do !-- iB
         oP = oP + C % nSegmentsFrom_2 ( iR )
       end do !-- iG
-
+      
+      call T_Comm % Start ( )
       call CO % AllToAll_V ( )
+      call T_Comm % Stop ( )
 
       call C % SetVariablePointer &
              ( G % Value ( :, G % COARSENING ( 2 ) ), Crsn_2 )
@@ -1333,8 +1381,10 @@ contains
         end do !-- iB
         oP = oP + C % nSegmentsFrom_3 ( iR )
       end do !-- iG
-
+      
+      call T_Comm % Start ( )
       call CO % AllToAll_V ( )
+      call T_Comm % Stop ( )
 
       call C % SetVariablePointer &
              ( G % Value ( :, G % COARSENING ( 3 ) ), Crsn_3 )
