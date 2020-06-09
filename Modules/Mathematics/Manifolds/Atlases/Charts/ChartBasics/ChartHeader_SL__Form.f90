@@ -41,9 +41,11 @@ module ChartHeader_SL__Form
       AddField
     procedure, public, pass :: &
       SetVariablePointer_1D_3D, &
+      SetVariablePointer_2D_4D, &
       SetVariablePointer_Any_4D
     generic, public :: &
       SetVariablePointer => SetVariablePointer_1D_3D, &
+                            SetVariablePointer_2D_4D, &
                             SetVariablePointer_Any_4D
     procedure, private, pass :: &
       ShowHeader
@@ -231,6 +233,30 @@ contains
           => Variable_1D
     
   end subroutine SetVariablePointer_1D_3D
+
+  
+  subroutine SetVariablePointer_2D_4D ( C, Variable_2D, Variable_4D )
+
+    class ( ChartHeader_SL_Form ), intent ( in ) :: &
+      C
+    real ( KDR ), dimension ( :, : ), intent ( in ), contiguous, target :: &
+      Variable_2D
+    real ( KDR ), dimension ( :, :, :, : ), intent ( out ), pointer :: &
+      Variable_4D
+      
+    integer ( KDI ) :: &
+      nVariables
+      
+    nVariables = size ( Variable_2D, dim = 2 )
+
+    Variable_4D &
+      ( C % iaFirst ( 1 ) : C % iaLast ( 1 ), &
+        C % iaFirst ( 2 ) : C % iaLast ( 2 ), &
+        C % iaFirst ( 3 ) : C % iaLast ( 3 ), &
+        1 : nVariables ) &
+          => Variable_2D 
+    
+  end subroutine SetVariablePointer_2D_4D
 
 
   subroutine SetVariablePointer_Any_4D ( C, Variable, nValues, Variable_4D )

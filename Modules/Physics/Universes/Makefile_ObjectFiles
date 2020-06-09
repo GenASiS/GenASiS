@@ -5,6 +5,7 @@ UNIVERSES = \
   FluidCentralCore_Kernel.o \
   FluidCentralCore_Form.o \
   FluidCentralExcision_Form.o \
+  FluidCentral_Kernel.o \
   FluidCentral_Template.o \
   FluidSymmetricCurvilinear_Form.o \
   FluidBox_Form.o \

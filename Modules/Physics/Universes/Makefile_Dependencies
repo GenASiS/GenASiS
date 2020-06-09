@@ -58,6 +58,11 @@ FluidCentral_Template.o: \
   Universe_Template.o \
   FluidCentral_Template.f90
 
+FluidCentral_Kernel.o: \
+  Basics.o \
+  FluidCentral_Template.o \
+  FluidCentral_Kernel.f90
+
 FluidCentralExcision_Form.o: \
   Basics.o \
   Mathematics.o \

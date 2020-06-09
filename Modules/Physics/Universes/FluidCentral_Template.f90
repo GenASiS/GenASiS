@@ -128,7 +128,87 @@ module FluidCentral_Template
       ComposePillars, &
       CoarsenPillars, &
       DecomposePillars, &
-      ApplySources
+      ApplySources, &
+      ComposePillarsPack_2_Kernel, &
+      ComposePillarsPack_3_Kernel, &
+      ComposePillarsUnpack_2_Kernel, &
+      ComposePillarsUnpack_3_Kernel
+ 
+  
+  interface
+  
+    module subroutine ComposePillarsPack_2_Kernel &
+             ( Outgoing, SV, Crsn_2, Vol, nCB, iaS )
+      use Basics      
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        Outgoing
+      real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
+        SV
+      real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+        Crsn_2, &
+        Vol
+      integer ( KDI ), dimension ( : ), intent ( in ) :: &
+        nCB, &    !-- nCellsBrick
+        iaS
+    end subroutine ComposePillarsPack_2_Kernel
+    
+    
+    module subroutine ComposePillarsPack_3_Kernel &
+             ( Outgoing, SV, Crsn_3, Vol, nCB, iaS )
+      use Basics      
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        Outgoing
+      real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
+        SV
+      real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+        Crsn_3, &
+        Vol
+      integer ( KDI ), dimension ( : ), intent ( in ) :: &
+        nCB, &    !-- nCellsBrick
+        iaS
+    end subroutine ComposePillarsPack_3_Kernel
+    
+    
+    module subroutine ComposePillarsUnpack_2_Kernel &
+                 ( CoarsenPillar_2, nCoarsen_2, Incoming, nCB, &
+                   nBricks, nCells, nSegmentsFrom_2, nGroups )
+      use Basics      
+      class ( StorageForm ), dimension ( : ), intent ( inout ) :: &
+        CoarsenPillar_2
+      integer ( KDI ), dimension ( : ), intent ( inout ) :: &
+        nCoarsen_2
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        Incoming
+      integer ( KDI ), dimension ( : ), intent ( in ) :: &
+        nCB, &          !-- nCellsBrick
+        nBricks, &
+        nCells, &
+        nSegmentsFrom_2
+      integer ( KDI ), intent ( in ) :: &
+        nGroups
+    end subroutine ComposePillarsUnpack_2_Kernel
+    
+    
+    module subroutine ComposePillarsUnpack_3_Kernel &
+                 ( CoarsenPillar_3, nCoarsen_3, Incoming, nCB, &
+                   nBricks, nCells, nSegmentsFrom_3, nGroups )
+      use Basics      
+      class ( StorageForm ), dimension ( : ), intent ( inout ) :: &
+        CoarsenPillar_3
+      integer ( KDI ), dimension ( : ), intent ( inout ) :: &
+        nCoarsen_3
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        Incoming
+      integer ( KDI ), dimension ( : ), intent ( in ) :: &
+        nCB, &          !-- nCellsBrick
+        nBricks, &
+        nCells, &
+        nSegmentsFrom_3
+      integer ( KDI ), intent ( in ) :: &
+        nGroups
+    end subroutine ComposePillarsUnpack_3_Kernel
+    
+  end interface
 
 contains
 
@@ -1005,7 +1085,8 @@ contains
       iP             !-- iPillar
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       Crsn_2, Crsn_3, &
-      Vol, &
+      Vol
+    real ( KDR ), dimension ( :, :, :, : ), pointer :: &
       SV
     type ( TimerForm ), pointer :: &
       T_Comm
@@ -1042,55 +1123,21 @@ contains
              ( G % Value ( :, G % COARSENING ( 2 ) ), Crsn_2 )
       call C % SetVariablePointer &
              ( G % Value ( :, G % VOLUME ), Vol )
-
-      oO = 0
-      do kC = 1, nCB ( 3 )
-        do iC = 1, nCB ( 1 )
-          if ( Crsn_2 ( iC, 1, kC ) < 2.0_KDR ) &
-            cycle
-          Outgoing ( oO + 1 ) = Crsn_2 ( iC, 1, kC )
-          oO = oO + 1
-          Outgoing ( oO + 1 : oO + nCB ( 2 ) ) &
-            =  Vol ( iC, 1 : nCB ( 2 ), kC )
-          oO = oO + nCB ( 2 )
-          do iS = 1, S % nVariables
-            call C % SetVariablePointer &
-                   ( S % Value ( :, S % iaSelected ( iS ) ), SV )
-            Outgoing ( oO + 1 : oO + nCB ( 2 ) ) &
-              =  SV ( iC, 1 : nCB ( 2 ), kC )
-            oO = oO + nCB ( 2 )
-          end do !-- iS
-        end do !-- iC
-      end do !-- kC
+      
+      call C % SetVariablePointer ( S % Value, SV )
+             
+      call ComposePillarsPack_2_Kernel &
+             ( Outgoing, SV, Crsn_2, Vol, nCB, S % iaSelected )
       
       call T_Comm % Start ( )
       call CO % AllToAll_V ( )
       call T_Comm % Stop ( )
-
-      oP = 0
-      oI = 0
-      do iG = 1, C % Communicator_2 % Size  /  C % nBricks ( 2 )
-        oC = 0
-        do iB = 1, C % nBricks ( 2 )
-          iR = ( iG - 1 ) * C % nBricks ( 2 )  +  iB  -  1
-          do iPS = 1, C % nSegmentsFrom_2 ( iR )
-            iP = oP + iPS
-            FC % nCoarsen_2 ( iP ) &
-              = min ( int ( Incoming ( oI + 1 ) + 0.5_KDR ), C % nCells ( 2 ) )
-            oI = oI + 1
-            associate ( CP => FC % CoarsenPillar_2 ( iP ) )
-            do iS = 1, CP % nVariables
-              CP % Value ( oC + 1 : oC + nCB ( 2 ), iS )  &
-                =  Incoming ( oI + 1 : oI + nCB ( 2 ) )
-              oI = oI + nCB ( 2 )
-            end do !-- iS
-            end associate !-- CP
-          end do !-- iPS
-          oC = oC + nCB ( 2 )
-        end do !-- iB
-        oP = oP + C % nSegmentsFrom_2 ( iR )
-      end do !-- iG
-
+      
+      call ComposePillarsUnpack_2_Kernel &
+             ( FC % CoarsenPillar_2, FC % nCoarsen_2, Incoming, &
+               nCB, C % nBricks, C % nCells, C % nSegmentsFrom_2, &
+               nGroups = C % Communicator_2 % Size  /  C % nBricks ( 2 ) )
+      
       end associate !-- Outgoing, etc.
       end associate !-- CO
 
@@ -1109,54 +1156,20 @@ contains
              ( G % Value ( :, G % COARSENING ( 3 ) ), Crsn_3 )
       call C % SetVariablePointer &
              ( G % Value ( :, G % VOLUME ), Vol )
+      
+      call C % SetVariablePointer ( S % Value, SV )
 
-      oO = 0
-      do jC = 1, nCB ( 2 )
-        do iC = 1, nCB ( 1 )
-          if ( Crsn_3 ( iC, jC, 1 ) < 2.0_KDR ) &
-            cycle
-          Outgoing ( oO + 1 ) = Crsn_3 ( iC, jC, 1 )
-          oO = oO + 1
-          Outgoing ( oO + 1 : oO + nCB ( 3 ) ) &
-            =  Vol ( iC, jC, 1 : nCB ( 3 ) )
-          oO = oO + nCB ( 3 )
-          do iS = 1, S % nVariables
-            call C % SetVariablePointer &
-                   ( S % Value ( :, S % iaSelected ( iS ) ), SV )
-            Outgoing ( oO + 1 : oO + nCB ( 3 ) ) &
-              =  SV ( iC, jC, 1 : nCB ( 3 ) )
-            oO = oO + nCB ( 3 )
-          end do !-- iS
-        end do !-- iC
-      end do !-- jC
+      call ComposePillarsPack_3_Kernel &
+             ( Outgoing, SV, Crsn_3, Vol, nCB, S % iaSelected )
       
       call T_Comm % Start ( )
       call CO % AllToAll_V ( )
       call T_Comm % Stop ( )
-
-      oP = 0
-      oI = 0
-      do iG = 1, C % Communicator_3 % Size  /  C % nBricks ( 3 )
-        oC = 0
-        do iB = 1, C % nBricks ( 3 )
-          iR = ( iG - 1 ) * C % nBricks ( 3 )  +  iB  -  1
-          do iPS = 1, C % nSegmentsFrom_3 ( iR )
-            iP = oP + iPS
-            FC % nCoarsen_3 ( iP ) &
-              = min ( int ( Incoming ( oI + 1 ) + 0.5_KDR ), C % nCells ( 3 ) )
-            oI = oI + 1
-            associate ( CP => FC % CoarsenPillar_3 ( iP ) )
-            do iS = 1, CP % nVariables
-              CP % Value ( oC + 1 : oC + nCB ( 3 ), iS )  &
-                =  Incoming ( oI + 1 : oI + nCB ( 3 ) )
-              oI = oI + nCB ( 3 )
-            end do !-- iS
-            end associate !-- CP
-          end do !-- iPS
-          oC = oC + nCB ( 3 )
-        end do !-- iB
-        oP = oP + C % nSegmentsFrom_3 ( iR )
-      end do !-- iG
+      
+      call ComposePillarsUnpack_3_Kernel &
+             ( FC % CoarsenPillar_3, FC % nCoarsen_3, Incoming, nCB, &
+               C % nBricks, C % nCells, C % nSegmentsFrom_3, &
+               nGroups = C % Communicator_3 % Size  /  C % nBricks ( 3 ) )
 
       end associate !-- Outgoing, etc.
       end associate !-- CO
@@ -1445,6 +1458,6 @@ contains
            ( S, Sources_F, Increment, Fluid, TimeStep, iStage )
 
   end subroutine ApplySources
-
-
+  
+  
 end module FluidCentral_Template
