@@ -182,7 +182,8 @@ module FluidCentral_Template
       integer ( KDI ), dimension ( : ), intent ( in ) :: &
         nCB, &          !-- nCellsBrick
         nBricks, &
-        nCells, &
+        nCells
+      integer ( KDI ), dimension ( 0 : ), intent ( in ) :: &
         nSegmentsFrom_2
       integer ( KDI ), intent ( in ) :: &
         nGroups
@@ -202,7 +203,8 @@ module FluidCentral_Template
       integer ( KDI ), dimension ( : ), intent ( in ) :: &
         nCB, &          !-- nCellsBrick
         nBricks, &
-        nCells, &
+        nCells
+      integer ( KDI ), dimension ( 0 : ), intent ( in ) :: &
         nSegmentsFrom_3
       integer ( KDI ), intent ( in ) :: &
         nGroups
