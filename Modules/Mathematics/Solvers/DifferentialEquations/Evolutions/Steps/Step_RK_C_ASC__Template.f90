@@ -1213,6 +1213,7 @@ contains
       TimerCoarsen => PROGRAM_HEADER % TimerPointer ( S % iTimerCoarsen )
       if ( associated ( TimerCoarsen ) ) call TimerCoarsen % Start ( )
       call S % CoarsenSingularities ( K )
+call Chart % Atlas % Communicator % Synchronize ( )
       if ( associated ( TimerCoarsen ) ) call TimerCoarsen % Stop ( )
     end if
 
