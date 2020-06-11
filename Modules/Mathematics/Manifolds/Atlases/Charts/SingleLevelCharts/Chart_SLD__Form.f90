@@ -13,6 +13,8 @@ module Chart_SLD__Form
   private
 
   type, public, extends ( Chart_SL_Template ) :: Chart_SLD_Form
+    logical ( KDL ) :: &
+      ExchangeGhostUseDevice
     type ( StorageForm ), dimension ( : ), allocatable :: &
       ExchangeStorage
     type ( Storage_1D_Form ), allocatable :: &
@@ -135,80 +137,104 @@ contains
              CoordinateUnitOption, MinCoordinateOption, MaxCoordinateOption, &
              RatioOption, ScaleOption, nCellsOption, nGhostLayersOption, &
              nDimensionsOption, nEqualOption )
+    
+    C % ExchangeGhostUseDevice = .false.
+    
+    call PROGRAM_HEADER % GetParameter &
+           ( C % ExchangeGhostUseDevice, 'ExchangeGhostUseDevice' )
 
     call SetGhostExchangePortals ( C )
 
   end subroutine InitializeBasic
 
 
-  subroutine ExchangeGhostSingle ( C, S )
+  subroutine ExchangeGhostSingle ( C, S, UseDeviceOption )
 
     class ( Chart_SLD_Form ), intent ( inout ) :: &
       C
     class ( StorageForm ), intent ( inout ) :: &
       S
+    logical ( KDL ), intent ( in ), optional :: &
+      UseDeviceOption
 
     allocate ( C % ExchangeStorage ( 1 ) )
     call C % ExchangeStorage ( 1 ) % Initialize ( S )
 
-    call ExchangeGhostMultiple ( C, C % ExchangeStorage )
+    call ExchangeGhostMultiple ( C, C % ExchangeStorage, UseDeviceOption )
     
     deallocate ( C % ExchangeStorage )
 
   end subroutine ExchangeGhostSingle
 
 
-  subroutine ExchangeGhostMultiple ( C, S )
+  subroutine ExchangeGhostMultiple ( C, S, UseDeviceOption )
 
     class ( Chart_SLD_Form ), intent ( inout ) :: &
       C
     type ( StorageForm ), dimension ( : ), intent ( in ) :: &
       S
+    logical ( KDL ), intent ( in ), optional :: &
+      UseDeviceOption
+      
+    logical ( KDL ) :: &
+      UseDevice
+      
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
 
     allocate ( C % Storage_1D )
     call C % Storage_1D % Initialize ( S )
 
     !-- Start faces
     call StartExchangeFace &
-           ( C, C % PortalFace_L_R, TAG_RECEIVE_FACE_L, TAG_SEND_FACE_R, &
+           ( C, C % PortalFace_L_R, UseDevice, &
+             TAG_RECEIVE_FACE_L, TAG_SEND_FACE_R, &
              C % IncomingFace_L_R, C % OutgoingFace_L_R )
     call StartExchangeFace &
-           ( C, C % PortalFace_R_L, TAG_RECEIVE_FACE_R, TAG_SEND_FACE_L, &
+           ( C, C % PortalFace_R_L, UseDevice, &
+             TAG_RECEIVE_FACE_R, TAG_SEND_FACE_L, &
              C % IncomingFace_R_L, C % OutgoingFace_R_L )
 
     !-- Start edges
     call StartExchangeEdge &
-           ( C, C % PortalEdge_LL_RR, TAG_RECEIVE_EDGE_LL, TAG_SEND_EDGE_RR, &
+           ( C, C % PortalEdge_LL_RR, UseDevice, &
+             TAG_RECEIVE_EDGE_LL, TAG_SEND_EDGE_RR, &
              C % IncomingEdge_LL_RR, C % OutgoingEdge_LL_RR )
     call StartExchangeEdge &
-           ( C, C % PortalEdge_RR_LL, TAG_RECEIVE_EDGE_RR, TAG_SEND_EDGE_LL, &
+           ( C, C % PortalEdge_RR_LL, UseDevice, &
+             TAG_RECEIVE_EDGE_RR, TAG_SEND_EDGE_LL, &
              C % IncomingEdge_RR_LL, C % OutgoingEdge_RR_LL )
     call StartExchangeEdge &
-           ( C, C % PortalEdge_LR_RL, TAG_RECEIVE_EDGE_LR, TAG_SEND_EDGE_RL, &
+           ( C, C % PortalEdge_LR_RL, UseDevice, &
+             TAG_RECEIVE_EDGE_LR, TAG_SEND_EDGE_RL, &
              C % IncomingEdge_LR_RL, C % OutgoingEdge_LR_RL )
     call StartExchangeEdge &
-           ( C, C % PortalEdge_RL_LR, TAG_RECEIVE_EDGE_RL, TAG_SEND_EDGE_LR, &
+           ( C, C % PortalEdge_RL_LR, UseDevice, &
+             TAG_RECEIVE_EDGE_RL, TAG_SEND_EDGE_LR, &
              C % IncomingEdge_RL_LR, C % OutgoingEdge_RL_LR )
 
     !-- Finish faces
     call FinishExchangeFace &
-           ( C, C % IncomingFace_L_R, C % OutgoingFace_L_R, TAG_RECEIVE_FACE_L )
+           ( C, C % IncomingFace_L_R, C % OutgoingFace_L_R, &
+             UseDevice, TAG_RECEIVE_FACE_L )
     call FinishExchangeFace &
-           ( C, C % IncomingFace_R_L, C % OutgoingFace_R_L, TAG_RECEIVE_FACE_R )
+           ( C, C % IncomingFace_R_L, C % OutgoingFace_R_L, &
+             UseDevice, TAG_RECEIVE_FACE_R )
 
     !-- Finish edges
     call FinishExchangeEdge &
            ( C, C % IncomingEdge_LL_RR, C % OutgoingEdge_LL_RR, &
-             TAG_RECEIVE_EDGE_LL )
+             UseDevice, TAG_RECEIVE_EDGE_LL )
     call FinishExchangeEdge &
            ( C, C % IncomingEdge_RR_LL, C % OutgoingEdge_RR_LL, &
-             TAG_RECEIVE_EDGE_RR )
+             UseDevice, TAG_RECEIVE_EDGE_RR )
     call FinishExchangeEdge &
            ( C, C % IncomingEdge_LR_RL, C % OutgoingEdge_LR_RL, &
-             TAG_RECEIVE_EDGE_LR )
+             UseDevice, TAG_RECEIVE_EDGE_LR )
     call FinishExchangeEdge &
            ( C, C % IncomingEdge_RL_LR, C % OutgoingEdge_RL_LR, &
-             TAG_RECEIVE_EDGE_RL )
+             UseDevice, TAG_RECEIVE_EDGE_RL )
 
     deallocate ( C % Storage_1D )
 
@@ -569,12 +595,15 @@ contains
 
 
   subroutine StartExchangeFace &
-               ( C, PH, TagReceive, TagSend, IncomingFace, OutgoingFace )
+               ( C, PH, UseDevice, TagReceive, TagSend, &
+                 IncomingFace, OutgoingFace )
 
     class ( Chart_SLD_Form ), intent ( inout ) :: &
       C
     type ( PortalHeaderForm ), intent ( in ) :: &
       PH
+    logical ( KDL ), intent ( in ) :: &
+      UseDevice
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
       TagReceive, &
       TagSend
@@ -604,6 +633,10 @@ contains
     call IncomingFace % Initialize &
            ( Communicator, TagReceive ( : nD ), PH % Source, &
              PH % nChunksFrom * S_1D % nVariablesTotal )
+             
+    if ( UseDevice ) &
+      call IncomingFace % AllocateDevice ( )
+    
     call IncomingFace % Receive ( )
 
     !-- Post Sends
@@ -611,6 +644,9 @@ contains
     call OutgoingFace % Initialize &
            ( Communicator, TagSend ( : nD ), PH % Target, &
              PH % nChunksTo * S_1D % nVariablesTotal )
+    
+    if ( UseDevice ) &
+      call OutgoingFace % AllocateDevice ( )
 
     do iD = 1, nD
 
@@ -630,7 +666,10 @@ contains
         call PROGRAM_HEADER % Abort ( )
       end if !-- TagSend
 
-      call LoadMessage ( C, OutgoingFace % Message ( iD ), S_1D, nSend, oSend )
+      call LoadMessage &
+             ( C, OutgoingFace % Message ( iD ), S_1D, UseDevice, &
+               nSend, oSend )
+      
       call OutgoingFace % Send ( iD )
 
     end do !-- iD
@@ -640,7 +679,8 @@ contains
   end subroutine StartExchangeFace
 
 
-  subroutine FinishExchangeFace ( C, IncomingFace, OutgoingFace, TagReceive )
+  subroutine FinishExchangeFace &
+               ( C, IncomingFace, OutgoingFace, UseDevice, TagReceive )
 
     class ( Chart_SLD_Form ), intent ( inout ) :: &
       C
@@ -648,6 +688,8 @@ contains
       IncomingFace
     type ( MessageOutgoing_1D_R_Form ), intent ( inout ), allocatable :: &
       OutgoingFace
+    logical ( KDL ), intent ( in ) :: &
+      UseDevice
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
       TagReceive
 
@@ -695,7 +737,8 @@ contains
       end if !-- TagReceive
 
       call StoreMessage &
-             ( C, S_1D, IncomingFace % Message ( iD ), nReceive, oReceive )
+             ( C, S_1D, IncomingFace % Message ( iD ), UseDevice, &
+               nReceive, oReceive )
 
     end do
 
@@ -714,12 +757,15 @@ contains
 
 
   subroutine StartExchangeEdge &
-               ( C, PH, TagReceive, TagSend, IncomingEdge, OutgoingEdge )
+               ( C, PH, UseDevice, TagReceive, TagSend, &
+                 IncomingEdge, OutgoingEdge )
 
     class ( Chart_SLD_Form ), intent ( inout ) :: &
       C
     type ( PortalHeaderForm ), intent ( in ) :: &
       PH
+    logical ( KDL ), intent ( in ) :: &
+      UseDevice
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
       TagReceive, &
       TagSend
@@ -761,13 +807,21 @@ contains
     call IncomingEdge % Initialize &
            ( Communicator, pack ( TagReceive, DimensionMask ), PH % Source, &
              PH % nChunksFrom * S_1D % nVariablesTotal )
+    
+    if ( UseDevice ) &
+      call IncomingEdge % AllocateDevice ( )
+    
     call IncomingEdge % Receive ( )
-
+    
+    
     !-- Post Sends
 
     call OutgoingEdge % Initialize &
            ( Communicator, pack ( TagSend, DimensionMask ), PH % Target, &
              PH % nChunksTo * S_1D % nVariablesTotal )
+    
+    if ( UseDevice ) &
+      call OutgoingEdge % AllocateDevice ( )
 
     do kD = 3, 1, -1
 
@@ -808,7 +862,10 @@ contains
         kM = kD
       end select !-- nD
 
-      call LoadMessage ( C, OutgoingEdge % Message ( kM ), S_1D, nSend, oSend )
+      call LoadMessage &
+             ( C, OutgoingEdge % Message ( kM ), S_1D, UseDevice, &
+               nSend, oSend )
+      
       call OutgoingEdge % Send ( kM )
 
     end do !-- kD
@@ -818,7 +875,8 @@ contains
   end subroutine StartExchangeEdge
 
 
-  subroutine FinishExchangeEdge ( C, IncomingEdge, OutgoingEdge, TagReceive )
+  subroutine FinishExchangeEdge &
+               ( C, IncomingEdge, OutgoingEdge, UseDevice, TagReceive )
 
     class ( Chart_SLD_Form ), intent ( inout ) :: &
       C
@@ -826,6 +884,8 @@ contains
       IncomingEdge
     type ( MessageOutgoing_1D_R_Form ), intent ( inout ), allocatable :: &
       OutgoingEdge
+    logical ( KDL ), intent ( in ) :: &
+      UseDevice
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
       TagReceive
 
@@ -912,7 +972,8 @@ contains
       end if !-- TagReceive
 
       call StoreMessage &
-             ( C, S_1D, IncomingEdge % Message ( kM ), nReceive, oReceive )
+             ( C, S_1D, IncomingEdge % Message ( kM ), UseDevice, &
+               nReceive, oReceive )
 
     end do
 
@@ -930,7 +991,7 @@ contains
   end subroutine FinishExchangeEdge
 
 
-  subroutine LoadMessage ( C, OutgoingMessage, S_1D, nSend, oSend )
+  subroutine LoadMessage ( C, OutgoingMessage, S_1D, UseDevice, nSend, oSend )
 
     class ( Chart_SLD_Form ), intent ( inout ) :: &
       C
@@ -938,6 +999,8 @@ contains
       OutgoingMessage
     type ( Storage_1D_Form ), intent ( in ) :: &
       S_1D
+    logical ( KDL ), intent ( in ) :: &
+      UseDevice
     integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
       nSend, &
       oSend
@@ -956,7 +1019,8 @@ contains
         iV = S_1D % Storage ( iStrg ) % iaSelected ( iS )
         call C % SetVariablePointer &
                ( S_1D % Storage ( iStrg ) % Value ( :, iV ), V ) 
-        call Copy ( V, nSend, oSend, oBuffer, OutgoingMessage % Value )
+        call Copy ( V, nSend, oSend, oBuffer, OutgoingMessage % Value, &
+                    UseDeviceOption = UseDevice )
         oBuffer = oBuffer + product ( nSend )
       end do !-- iS
     end do !-- iStrg
@@ -966,7 +1030,8 @@ contains
   end subroutine LoadMessage
 
 
-  subroutine StoreMessage ( C, S_1D, IncomingMessage, nReceive, oReceive )
+  subroutine StoreMessage &
+               ( C, S_1D, IncomingMessage, UseDevice, nReceive, oReceive )
 
     class ( Chart_SLD_Form ), intent ( in ) :: &
       C
@@ -974,6 +1039,8 @@ contains
       S_1D
     type ( MessageIncoming_R_Form ), intent ( in ) :: &
       IncomingMessage
+    logical ( KDL ), intent ( in ) :: &
+      UseDevice
     integer ( KDI ), dimension ( 3 ), intent ( in )  :: &
       nReceive, &
       oReceive
@@ -992,7 +1059,8 @@ contains
         iV = S_1D % Storage ( iStrg ) % iaSelected ( iS )
         call C % SetVariablePointer &
                ( S_1D % Storage ( iStrg ) % Value ( :, iV ), V ) 
-        call Copy ( IncomingMessage % Value, nReceive, oReceive, oBuffer, V )
+        call Copy ( IncomingMessage % Value, nReceive, oReceive, oBuffer, V, &
+                    UseDeviceOption = UseDevice )
         oBuffer = oBuffer + product ( nReceive )
       end do !-- iS
     end do !-- iStrg

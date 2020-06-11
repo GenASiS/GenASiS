@@ -1203,10 +1203,11 @@ contains
     Timer_DTH => PROGRAM_HEADER % TimerPointer ( S % iTimerStepDataToHost )
     
     call Timer_DTH % Start ( )
-    
-    if ( K % AllocatedDevice ) &
+    select type ( Chart )
+    class is ( Chart_SLD_Form )
+    if ( K % AllocatedDevice .and. .not. Chart % ExchangeGhostUseDevice ) &
       call K % UpdateHost ( )
-    
+    end select
     call Timer_DTH % Stop ( )
     
     if ( associated ( S % CoarsenSingularities ) ) then
@@ -1226,7 +1227,8 @@ contains
       class is ( Chart_SLD_Form )
         TimerGhost => PROGRAM_HEADER % TimerPointer ( S % iTimerGhost )
         if ( associated ( TimerGhost ) ) call TimerGhost % Start ( )
-        call Chart % ExchangeGhostData ( K )
+        call Chart % ExchangeGhostData &
+              ( K, UseDeviceOption = Chart % ExchangeGhostUseDevice )
         if ( associated ( TimerGhost ) ) call TimerGhost % Stop ( )
       end select !-- Grid
     end if !-- ApplyDivergence_C
@@ -1234,8 +1236,11 @@ contains
     Timer_DTD => PROGRAM_HEADER % TimerPointer ( S % iTimerStepDataToDevice )
     
     call Timer_DTD % Start ( )
-    if ( K % AllocatedDevice ) &
+    select type ( Chart )
+    class is ( Chart_SLD_Form )
+    if ( K % AllocatedDevice .and. .not. Chart % ExchangeGhostUseDevice ) &
       call K % UpdateDevice ( )
+    end select
     call Timer_DTD % Stop ( )
     
   end subroutine ComputeStage_C
