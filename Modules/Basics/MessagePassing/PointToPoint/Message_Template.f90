@@ -24,7 +24,8 @@ module Message_Template
       Dummy
     logical ( KDL ) :: &
       Initialized = .false., &
-      AllocatedValue = .false.
+      AllocatedValue = .false., &
+      AllocatedDevice = .false.
     type ( c_ptr ) :: &
       D_Value
     type ( CommunicatorForm ), pointer :: &

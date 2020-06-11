@@ -49,8 +49,8 @@ contains
     integer ( KDI ) :: &
       iM    !-- iMessage
     type ( MessageIncoming_R_Form ), pointer :: &
-      M      
-
+      M
+    
     nMessages = size ( Tag )
 
     allocate ( M_1D % Message ( nMessages ) )

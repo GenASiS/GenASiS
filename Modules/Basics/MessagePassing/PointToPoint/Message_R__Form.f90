@@ -78,17 +78,28 @@ contains
       M
     
     call AllocateDevice ( M % Value, M % D_Value )
+    call AssociateHost ( M % D_Value, M % Value )
+    
+    M % AllocatedDevice = .true.
     
   end subroutine AllocateDevice_M
   
   
-  elemental subroutine Finalize ( M )
+  elemental impure subroutine Finalize ( M )
 
     type ( Message_R_Form ), intent ( inout ) :: &
       M 
       
+    if ( M % AllocatedDevice ) then
+      call DisassociateHost ( M % Value )
+      call DeallocateDevice ( M % D_Value )
+      M % AllocatedDevice = .false.
+    end if
+    
     if ( M % AllocatedValue ) then
-      if ( associated ( M % Value ) ) deallocate ( M % Value )
+      if ( associated ( M % Value ) ) &
+        deallocate ( M % Value )
+      M % AllocatedValue = .false.
     end if
     nullify ( M % Value )
 
