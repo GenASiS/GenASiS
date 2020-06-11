@@ -203,4 +203,42 @@ contains
   end procedure CoarsenPillarsKernel
 
 
+  module procedure DecomposePillarsPack_2_Kernel
+    
+    integer ( KDI ) :: &
+      oO, &           !-- oOutgoing
+      oP, &          !-- oPillar
+      oC, &          !-- oCell
+      iS, &          !-- iSelected
+      iG, &          !-- iGroup (of pillars/processes)
+      iB, &          !-- iBrick
+      iR, &          !-- iRank
+      iPS, &         !-- iPillarSegment
+      iP, &          !-- iPillar
+      nVariables
+
+    nVariables  =  size ( CoarsenPillar_2, dim = 2 )
+
+    oP  =  0
+    oO  =  0
+    do iG  =  1, nGroups
+      oC  =  0
+      do iB  =  1, nBricks ( 2 )
+        iR  =  ( iG - 1 ) * nBricks ( 2 )  +  iB  -  1
+        do iPS = 1, nSegmentsFrom_2 ( iR )
+          iP  =  oP + iPS
+          do iS = 2, nVariables
+            Outgoing ( oO + 1 : oO + nCB ( 2 ) )  &
+              =  CoarsenPillar_2 ( oC + 1 : oC + nCB ( 2 ), iS, iP )
+            oO  =  oO + nCB ( 2 )
+          end do !-- iS
+        end do !-- iPS
+        oC  =  oC + nCB ( 2 )
+      end do !-- iB
+      oP  =  oP + nSegmentsFrom_2 ( iR )
+    end do !-- iG
+      
+  end procedure DecomposePillarsPack_2_Kernel
+
+
 end submodule FluidCentral_Kernel

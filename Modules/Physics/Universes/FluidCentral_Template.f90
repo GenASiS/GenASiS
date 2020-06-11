@@ -221,6 +221,23 @@ module FluidCentral_Template
         nCoarsen
     end subroutine CoarsenPillarsKernel
 
+    module subroutine DecomposePillarsPack_2_Kernel &
+                        ( Outgoing, CoarsenPillar_2, nCB, nBricks, &
+                          nSegmentsFrom_2, nGroups )
+      use Basics
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        Outgoing
+      real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+        CoarsenPillar_2
+      integer ( KDI ), dimension ( : ), intent ( in ) :: &
+        nCB, &          !-- nCellsBrick
+        nBricks
+      integer ( KDI ), dimension ( 0 : ), intent ( in ) :: &
+        nSegmentsFrom_2
+      integer ( KDI ), intent ( in ) :: &
+        nGroups
+    end subroutine DecomposePillarsPack_2_Kernel
+
   end interface
 
 contains
@@ -1283,27 +1300,32 @@ contains
         ( Outgoing => CO % Outgoing % Value, &
           Incoming => CO % Incoming % Value )
 
-      nVariables  =  size ( FC % CoarsenPillar_2, dim = 2 )
+!      nVariables  =  size ( FC % CoarsenPillar_2, dim = 2 )
 
-      oP = 0
-      oO = 0
-      do iG = 1, C % Communicator_2 % Size  /  C % nBricks ( 2 )
-        oC = 0
-        do iB = 1, C % nBricks ( 2 )
-          iR = ( iG - 1 ) * C % nBricks ( 2 )  +  iB  -  1
-          do iPS = 1, C % nSegmentsFrom_2 ( iR )
-            iP = oP + iPS
-            do iS = 2, nVariables
-              Outgoing ( oO + 1 : oO + nCB ( 2 ) )  &
-                =  FC % CoarsenPillar_2 ( oC + 1 : oC + nCB ( 2 ), iS, iP )
-              oO = oO + nCB ( 2 )
-            end do !-- iS
-          end do !-- iPS
-          oC = oC + nCB ( 2 )
-        end do !-- iB
-        oP = oP + C % nSegmentsFrom_2 ( iR )
-      end do !-- iG
+      ! oP = 0
+      ! oO = 0
+      ! do iG = 1, C % Communicator_2 % Size  /  C % nBricks ( 2 )
+      !   oC = 0
+      !   do iB = 1, C % nBricks ( 2 )
+      !     iR = ( iG - 1 ) * C % nBricks ( 2 )  +  iB  -  1
+      !     do iPS = 1, C % nSegmentsFrom_2 ( iR )
+      !       iP = oP + iPS
+      !       do iS = 2, nVariables
+      !         Outgoing ( oO + 1 : oO + nCB ( 2 ) )  &
+      !           =  FC % CoarsenPillar_2 ( oC + 1 : oC + nCB ( 2 ), iS, iP )
+      !         oO = oO + nCB ( 2 )
+      !       end do !-- iS
+      !     end do !-- iPS
+      !     oC = oC + nCB ( 2 )
+      !   end do !-- iB
+      !   oP = oP + C % nSegmentsFrom_2 ( iR )
+      ! end do !-- iG
       
+      call DecomposePillarsPack_2_Kernel &
+             ( Outgoing, FC % CoarsenPillar_2, C % nCellsBrick, C % nBricks, &
+               C % nSegmentsFrom_2, &
+               nGroups = C % Communicator_2 % Size  /  C % nBricks ( 2 ) )
+
       call T_Comm % Start ( )
       call CO % AllToAll_V ( )
       call T_Comm % Stop ( )
