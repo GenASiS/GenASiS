@@ -1035,7 +1035,10 @@ contains
     integer ( KDI ) :: &
       iT
     real ( KDR ) :: &
-      ExecutionTime
+      ExecutionTime, &
+      MaxMinusMeanFraction
+    type ( MeasuredValueForm ) :: &
+      MaxMinusMean
     logical ( KDL ), dimension ( MAX_TIMERS ) :: &
       Running
     type ( CollectiveOperation_R_Form ) :: &
@@ -1077,23 +1080,12 @@ contains
         CO % Outgoing % Value ( iT ) = PH % Timer ( iT ) % TotalTime
       end do !-- iT
 
-      call Show ( 'Max timers', Ignorability )
+      call Show ( 'Max timers', Ignorability + 1 )
       call CO % Reduce ( REDUCTION % MAX )
       do iT = 1, PH % nTimers
         call MaxTimer ( iT ) % TotalTime % Initialize &
                ( 's', CO % Incoming % Value ( iT ) )
-        if ( iT == 1 ) &
-          ExecutionTime = MaxTimer ( iT ) % TotalTime
-        if ( MaxTimer ( iT ) % Level  &
-               <=  min ( PH % TimerMinLevel, PH % TimerMaxLevel ) &
-             .or. ( MaxTimer ( iT ) % Level  <=  PH % TimerMaxLevel &
-                    .and. MaxTimer ( iT ) % TotalTime / ExecutionTime &
-                           >=  PH % TimerDisplayFraction ) ) &
-        then
-          call MaxTimer ( iT ) % ShowTotal ( Ignorability )
-        else
-          call MaxTimer ( iT ) % ShowTotal ( Ignorability + 1 )
-        end if
+        call MaxTimer ( iT ) % ShowTotal ( Ignorability + 1 )
         if ( present ( MaxTimeOption ) ) &
           MaxTimeOption ( iT ) = MaxTimer ( iT ) % TotalTime
       end do !-- iT
@@ -1119,6 +1111,38 @@ contains
           MeanTimeOption ( iT ) = MeanTimer ( iT ) % TotalTime
       end do !-- iT
       
+      call Show ( 'Mean Timers, and significant MAX - MEAN', &
+                  Ignorability )
+      do iT = 1, PH % nTimers
+        MaxMinusMean  =  MaxTimer ( iT ) % TotalTime &
+                         -  MeanTimer ( iT ) % TotalTime
+        if ( iT == 1 ) &
+          ExecutionTime = MeanTimer ( iT ) % TotalTime
+        if ( MeanTimer ( iT ) % Level  &
+               <=  min ( PH % TimerMinLevel, PH % TimerMaxLevel ) &
+             .or. ( MeanTimer ( iT ) % Level  <=  PH % TimerMaxLevel &
+                    .and. MeanTimer ( iT ) % TotalTime / ExecutionTime &
+                            >=  PH % TimerDisplayFraction ) ) &
+        then
+          call MeanTimer ( iT ) % ShowTotal ( Ignorability )
+          MaxMinusMeanFraction  &
+            =  abs ( MaxMinusMean % Number ) &
+                    /  max ( MeanTimer ( iT ) % TotalTime % Number, &
+                             sqrt ( tiny ( 0.0_KDR ) ) )
+          if ( MaxMinusMeanFraction  >=  PH % TimerDisplayFraction &
+               .and. MeanTimer ( iT ) % TotalTime / ExecutionTime &
+                       >=  PH % TimerDisplayFraction ) &
+            call Show ( MaxMinusMean, &
+                        'MAX - MEAN ' // MeanTimer ( iT ) % Name, &
+                        Ignorability )
+        else
+          call MeanTimer ( iT ) % ShowTotal ( Ignorability + 1 )
+          call Show ( MaxMinusMean, &
+                      'MAX - MEAN ' // MeanTimer ( iT ) % Name, &
+                      Ignorability + 1 )
+        end if
+      end do !-- iT
+
     end if !-- present ( CommunicatorOption )
 
     do iT = 1, PH % nTimers
