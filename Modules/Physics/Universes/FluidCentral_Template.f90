@@ -138,23 +138,25 @@ module FluidCentral_Template
   interface
   
     module subroutine ComposePillarsPack_2_Kernel &
-             ( Outgoing, SV, Crsn_2, Vol, nCB, iaS )
+             ( Outgoing, SV, Crsn_2, Vol, nCB, nGL, iaS )
       use Basics      
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         Outgoing
-      real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
-        SV
+      real ( KDR ), dimension ( :, :, :, : ), &
+        intent ( in ) :: &
+          SV
       real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
         Crsn_2, &
         Vol
       integer ( KDI ), dimension ( : ), intent ( in ) :: &
         nCB, &    !-- nCellsBrick
+        nGL, &    !-- nGhostLayers
         iaS
     end subroutine ComposePillarsPack_2_Kernel
     
     
     module subroutine ComposePillarsPack_3_Kernel &
-             ( Outgoing, SV, Crsn_3, Vol, nCB, iaS )
+             ( Outgoing, SV, Crsn_3, Vol, nCB, nGL, iaS )
       use Basics      
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         Outgoing
@@ -165,6 +167,7 @@ module FluidCentral_Template
         Vol
       integer ( KDI ), dimension ( : ), intent ( in ) :: &
         nCB, &    !-- nCellsBrick
+        nGL, &    !-- nGhostLayers
         iaS
     end subroutine ComposePillarsPack_3_Kernel
     
@@ -1107,8 +1110,6 @@ contains
     select type ( C => PS % Chart )
     class is ( Chart_SLD_C_Template )
 
-    associate ( nCB => C % nCellsBrick )
-
     select case ( iAngular )
     case ( 2 )
 
@@ -1129,7 +1130,8 @@ contains
       call C % SetVariablePointer ( S % Value, SV )
              
       call ComposePillarsPack_2_Kernel &
-             ( Outgoing, SV, Crsn_2, Vol, nCB, S % iaSelected )
+             ( Outgoing, SV, Crsn_2, Vol, C % nCellsBrick, C % nGhostLayers, &
+               S % iaSelected )
       
       call T_Comm % Start ( )
       call CO % AllToAll_V ( )
@@ -1137,7 +1139,7 @@ contains
       
       call ComposePillarsUnpack_2_Kernel &
              ( FC % CoarsenPillar_2, FC % nCoarsen_2, Incoming, &
-               nCB, C % nBricks, C % nCells, C % nSegmentsFrom_2, &
+               C % nCellsBrick, C % nBricks, C % nCells, C % nSegmentsFrom_2, &
                nGroups = C % Communicator_2 % Size  /  C % nBricks ( 2 ) )
       
       end associate !-- Outgoing, etc.
@@ -1162,22 +1164,22 @@ contains
       call C % SetVariablePointer ( S % Value, SV )
 
       call ComposePillarsPack_3_Kernel &
-             ( Outgoing, SV, Crsn_3, Vol, nCB, S % iaSelected )
+             ( Outgoing, SV, Crsn_3, Vol, C % nCellsBrick, C % nGhostLayers, &
+               S % iaSelected )
       
       call T_Comm % Start ( )
       call CO % AllToAll_V ( )
       call T_Comm % Stop ( )
       
       call ComposePillarsUnpack_3_Kernel &
-             ( FC % CoarsenPillar_3, FC % nCoarsen_3, Incoming, nCB, &
-               C % nBricks, C % nCells, C % nSegmentsFrom_3, &
+             ( FC % CoarsenPillar_3, FC % nCoarsen_3, Incoming, &
+               C % nCellsBrick, C % nBricks, C % nCells, C % nSegmentsFrom_3, &
                nGroups = C % Communicator_3 % Size  /  C % nBricks ( 3 ) )
 
       end associate !-- Outgoing, etc.
       end associate !-- CO
 
     end select !-- iAngular
-    end associate !-- nCB
     end select !-- C
     end select !-- PS
     end select !-- I

@@ -16,23 +16,28 @@ contains
       iC, kC, &  !-- iCell, etc.
       iS, &      !-- iSelected
       nVariables !
-      
-    nVariables = size ( iaS )
-  
-    oO = 0
+    integer ( KDI ), dimension ( 3 ) :: &
+      lC, uC
+
+    nVariables  =  size ( iaS )
+
+    lC  =  nGL + 1
+    uC  =  nGL + nCB
+
+    oO  =  0
     
-    do kC = 1, nCB ( 3 )
-      do iC = 1, nCB ( 1 )
-        if ( Crsn_2 ( iC, 1, kC ) < 2.0_KDR ) &
+    do kC = lC ( 3 ), uC ( 3 )
+      do iC = lC ( 1 ), uC ( 1 )
+        if ( Crsn_2 ( iC, lC ( 2 ), kC ) < 2.0_KDR ) &
           cycle
-        Outgoing ( oO + 1 ) = Crsn_2 ( iC, 1, kC )
+        Outgoing ( oO + 1 ) = Crsn_2 ( iC, lC ( 2 ), kC )
         oO = oO + 1
         Outgoing ( oO + 1 : oO + nCB ( 2 ) ) &
-          =  Vol ( iC, 1 : nCB ( 2 ), kC )
+          =  Vol ( iC, lC ( 2 ) : uC ( 2 ), kC )
         oO = oO + nCB ( 2 )
         do iS = 1, nVariables
           Outgoing ( oO + 1 : oO + nCB ( 2 ) ) &
-            =  SV ( iC, 1 : nCB ( 2 ), kC, iaS ( iS ) )
+            =  SV ( iC, lC ( 2 ) : uC ( 2 ), kC, iaS ( iS ) )
           oO = oO + nCB ( 2 )
         end do !-- iS
       end do !-- iC
@@ -48,23 +53,27 @@ contains
       iC, jC, &  !-- iCell, etc.
       iS, &      !-- iSelected
       nVariables !
+    integer ( KDI ), dimension ( 3 ) :: &
+      lC, uC
       
     nVariables = size ( iaS )
     
+    lC  =  nGL + 1
+    uC  =  nGL + nCB
     
     oO = 0
-    do jC = 1, nCB ( 2 )
-      do iC = 1, nCB ( 1 )
-        if ( Crsn_3 ( iC, jC, 1 ) < 2.0_KDR ) &
+    do jC = lC ( 2 ), uC ( 2 )
+      do iC = lC ( 1 ), uC ( 1 )
+        if ( Crsn_3 ( iC, jC, lC ( 3 ) ) < 2.0_KDR ) &
           cycle
-        Outgoing ( oO + 1 ) = Crsn_3 ( iC, jC, 1 )
+        Outgoing ( oO + 1 ) = Crsn_3 ( iC, jC, lC ( 3 ) )
         oO = oO + 1
         Outgoing ( oO + 1 : oO + nCB ( 3 ) ) &
-          =  Vol ( iC, jC, 1 : nCB ( 3 ) )
+          =  Vol ( iC, jC, lC ( 3 ) : uC ( 3 ) )
         oO = oO + nCB ( 3 )
         do iS = 1, nVariables
           Outgoing ( oO + 1 : oO + nCB ( 3 ) ) &
-            =  SV ( iC, jC, 1 : nCB ( 3 ), iaS ( iS ) )
+            =  SV ( iC, jC, lC ( 3 ) : uC ( 3 ), iaS ( iS ) )
           oO = oO + nCB ( 3 )
         end do !-- iS
       end do !-- iC
