@@ -138,8 +138,9 @@ module FluidCentral_Template
   interface
   
     module subroutine ComposePillarsPack_2_Kernel &
-             ( Outgoing, SV, Crsn_2, Vol, nCB, nGL, iaS )
+                        ( Outgoing, SV, Crsn_2, Vol, nCB, nGL, iaS )
       use Basics      
+      implicit none
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         Outgoing
       real ( KDR ), dimension ( :, :, :, : ), &
@@ -156,8 +157,9 @@ module FluidCentral_Template
     
     
     module subroutine ComposePillarsPack_3_Kernel &
-             ( Outgoing, SV, Crsn_3, Vol, nCB, nGL, iaS )
-      use Basics      
+                        ( Outgoing, SV, Crsn_3, Vol, nCB, nGL, iaS )
+      use Basics
+      implicit none
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         Outgoing
       real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
@@ -173,9 +175,10 @@ module FluidCentral_Template
     
     
     module subroutine ComposePillarsUnpack_2_Kernel &
-                 ( CoarsenPillar_2, nCoarsen_2, Incoming, nCB, &
-                   nBricks, nCells, nSegmentsFrom_2, nGroups )
-      use Basics      
+                        ( CoarsenPillar_2, nCoarsen_2, Incoming, nCB, &
+                          nBricks, nCells, nSegmentsFrom_2, nGroups )
+      use Basics
+      implicit none
       real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
         CoarsenPillar_2
       integer ( KDI ), dimension ( : ), intent ( inout ) :: &
@@ -196,7 +199,8 @@ module FluidCentral_Template
     module subroutine ComposePillarsUnpack_3_Kernel &
                  ( CoarsenPillar_3, nCoarsen_3, Incoming, nCB, &
                    nBricks, nCells, nSegmentsFrom_3, nGroups )
-      use Basics      
+      use Basics
+      implicit none
       real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
         CoarsenPillar_3
       integer ( KDI ), dimension ( : ), intent ( inout ) :: &
@@ -215,6 +219,7 @@ module FluidCentral_Template
 
     module subroutine CoarsenPillarsKernel ( CP, nCoarsen )
       use Basics
+      implicit none
       real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
         CP  !-- CoarsenPillar
       integer ( KDI ), dimension ( : ), intent ( in ) :: &
@@ -225,6 +230,7 @@ module FluidCentral_Template
                         ( Outgoing, CoarsenPillar_2, nCB, nBricks, &
                           nSegmentsFrom_2, nGroups )
       use Basics
+      implicit none
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         Outgoing
       real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
@@ -237,6 +243,24 @@ module FluidCentral_Template
       integer ( KDI ), intent ( in ) :: &
         nGroups
     end subroutine DecomposePillarsPack_2_Kernel
+
+    module subroutine DecomposePillarsPack_3_Kernel &
+                        ( Outgoing, CoarsenPillar_3, nCB, nBricks, &
+                          nSegmentsFrom_3, nGroups )
+      use Basics
+      implicit none
+      real ( KDR ), dimension ( : ), intent ( inout ) :: &
+        Outgoing
+      real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+        CoarsenPillar_3
+      integer ( KDI ), dimension ( : ), intent ( in ) :: &
+        nCB, &          !-- nCellsBrick
+        nBricks
+      integer ( KDI ), dimension ( 0 : ), intent ( in ) :: &
+        nSegmentsFrom_3
+      integer ( KDI ), intent ( in ) :: &
+        nGroups
+    end subroutine DecomposePillarsPack_3_Kernel
 
   end interface
 
@@ -1300,27 +1324,6 @@ contains
         ( Outgoing => CO % Outgoing % Value, &
           Incoming => CO % Incoming % Value )
 
-!      nVariables  =  size ( FC % CoarsenPillar_2, dim = 2 )
-
-      ! oP = 0
-      ! oO = 0
-      ! do iG = 1, C % Communicator_2 % Size  /  C % nBricks ( 2 )
-      !   oC = 0
-      !   do iB = 1, C % nBricks ( 2 )
-      !     iR = ( iG - 1 ) * C % nBricks ( 2 )  +  iB  -  1
-      !     do iPS = 1, C % nSegmentsFrom_2 ( iR )
-      !       iP = oP + iPS
-      !       do iS = 2, nVariables
-      !         Outgoing ( oO + 1 : oO + nCB ( 2 ) )  &
-      !           =  FC % CoarsenPillar_2 ( oC + 1 : oC + nCB ( 2 ), iS, iP )
-      !         oO = oO + nCB ( 2 )
-      !       end do !-- iS
-      !     end do !-- iPS
-      !     oC = oC + nCB ( 2 )
-      !   end do !-- iB
-      !   oP = oP + C % nSegmentsFrom_2 ( iR )
-      ! end do !-- iG
-      
       call DecomposePillarsPack_2_Kernel &
              ( Outgoing, FC % CoarsenPillar_2, C % nCellsBrick, C % nBricks, &
                C % nSegmentsFrom_2, &
@@ -1367,27 +1370,11 @@ contains
         ( Outgoing => CO % Outgoing % Value, &
           Incoming => CO % Incoming % Value )
 
-      nVariables  =  size ( FC % CoarsenPillar_3, dim = 2 )
+      call DecomposePillarsPack_3_Kernel &
+             ( Outgoing, FC % CoarsenPillar_3, C % nCellsBrick, C % nBricks, &
+               C % nSegmentsFrom_3, &
+               nGroups = C % Communicator_3 % Size  /  C % nBricks ( 3 ) )
 
-      oP = 0
-      oO = 0
-      do iG = 1, C % Communicator_3 % Size  /  C % nBricks ( 3 )
-        oC = 0
-        do iB = 1, C % nBricks ( 3 )
-          iR = ( iG - 1 ) * C % nBricks ( 3 )  +  iB  -  1
-          do iPS = 1, C % nSegmentsFrom_3 ( iR )
-            iP = oP + iPS
-            do iS = 2, nVariables
-              Outgoing ( oO + 1 : oO + nCB ( 3 ) )  &
-                =  FC % CoarsenPillar_3 ( oC + 1 : oC + nCB ( 3 ), iS, iP )
-              oO = oO + nCB ( 3 )
-            end do !-- iS
-          end do !-- iPS
-          oC = oC + nCB ( 3 )
-        end do !-- iB
-        oP = oP + C % nSegmentsFrom_3 ( iR )
-      end do !-- iG
-      
       call T_Comm % Start ( )
       call CO % AllToAll_V ( )
       call T_Comm % Stop ( )

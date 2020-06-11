@@ -241,4 +241,42 @@ contains
   end procedure DecomposePillarsPack_2_Kernel
 
 
+  module procedure DecomposePillarsPack_3_Kernel
+    
+    integer ( KDI ) :: &
+      oO, &           !-- oOutgoing
+      oP, &          !-- oPillar
+      oC, &          !-- oCell
+      iS, &          !-- iSelected
+      iG, &          !-- iGroup (of pillars/processes)
+      iB, &          !-- iBrick
+      iR, &          !-- iRank
+      iPS, &         !-- iPillarSegment
+      iP, &          !-- iPillar
+      nVariables
+
+    nVariables  =  size ( CoarsenPillar_3, dim = 2 )
+
+    oP  =  0
+    oO  =  0
+    do iG  =  1, nGroups
+      oC  =  0
+      do iB  =  1, nBricks ( 3 )
+        iR  =  ( iG - 1 ) * nBricks ( 3 )  +  iB  -  1
+        do iPS = 1, nSegmentsFrom_3 ( iR )
+          iP  =  oP + iPS
+          do iS = 2, nVariables
+            Outgoing ( oO + 1 : oO + nCB ( 3 ) )  &
+              =  CoarsenPillar_3 ( oC + 1 : oC + nCB ( 3 ), iS, iP )
+            oO  =  oO + nCB ( 3 )
+          end do !-- iS
+        end do !-- iPS
+        oC  =  oC + nCB ( 3 )
+      end do !-- iB
+      oP  =  oP + nSegmentsFrom_3 ( iR )
+    end do !-- iG
+      
+  end procedure DecomposePillarsPack_3_Kernel
+
+
 end submodule FluidCentral_Kernel
