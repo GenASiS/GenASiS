@@ -262,6 +262,52 @@ module FluidCentral_Template
         nGroups
     end subroutine DecomposePillarsPack_3_Kernel
 
+    module subroutine DecomposePillarsUnpack_2_Kernel &
+                        ( SV, Crsn_2, R, Incoming, RadiusPolarMomentum, &
+                          nCB, nGL, iaS, iMomentum_2, iMomentum_3 )
+      use Basics
+      implicit none
+      real ( KDR ), dimension ( :, :, :, : ), intent ( inout ) :: &
+        SV
+      real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+        Crsn_2, &
+        R
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        Incoming
+      real ( KDR ), intent ( in ) :: &
+        RadiusPolarMomentum
+      integer ( KDI ), dimension ( : ), intent ( in ) :: &
+        nCB, &    !-- nCellsBrick
+        nGL, &    !-- nGhostLayers
+        iaS
+      integer ( KDI ), intent ( in ) :: &
+        iMomentum_2, &
+        iMomentum_3
+    end subroutine DecomposePillarsUnpack_2_Kernel
+
+    module subroutine DecomposePillarsUnpack_3_Kernel &
+                        ( SV, Crsn_3, R, Incoming, RadiusPolarMomentum, &
+                          nCB, nGL, iaS, iMomentum_2, iMomentum_3 )
+      use Basics
+      implicit none
+      real ( KDR ), dimension ( :, :, :, : ), intent ( inout ) :: &
+        SV
+      real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+        Crsn_3, &
+        R
+      real ( KDR ), dimension ( : ), intent ( in ) :: &
+        Incoming
+      real ( KDR ), intent ( in ) :: &
+        RadiusPolarMomentum
+      integer ( KDI ), dimension ( : ), intent ( in ) :: &
+        nCB, &    !-- nCellsBrick
+        nGL, &    !-- nGhostLayers
+        iaS
+      integer ( KDI ), intent ( in ) :: &
+        iMomentum_2, &
+        iMomentum_3
+    end subroutine DecomposePillarsUnpack_3_Kernel
+
   end interface
 
 contains
@@ -1288,7 +1334,8 @@ contains
       nVariables
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       R, &
-      Crsn_2, Crsn_3, &
+      Crsn_2, Crsn_3
+    real ( KDR ), dimension ( :, :, :, : ), pointer :: &
       SV
     type ( TimerForm ), pointer :: &
       T_Comm
@@ -1306,8 +1353,6 @@ contains
 
     select type ( C => PS % Chart )
     class is ( Chart_SLD_C_Template )
-
-    associate ( nCB => C % nCellsBrick )
 
     iMomentum_2 = 3  !-- Fluid
     iMomentum_3 = 4  !-- Fluid
@@ -1338,23 +1383,12 @@ contains
       call C % SetVariablePointer &
              ( G % Value ( :, G % CENTER_U ( 1 ) ), R )
 
-      oI = 0
-      do kC = 1, nCB ( 3 )
-        do iC = 1, nCB ( 1 )
-          if ( Crsn_2 ( iC, 1, kC ) < 2.0_KDR ) &
-            cycle
-          do iS = 1, S % nVariables
-            call C % SetVariablePointer &
-                   ( S % Value ( :, S % iaSelected ( iS ) ), SV )
-            SV ( iC, 1 : nCB ( 2 ), kC )  &
-              =  Incoming ( oI + 1 : oI + nCB ( 2 ) )
-            oI = oI + nCB ( 2 )
-            if ( ( iS == iMomentum_2 .or. iS == iMomentum_3 ) &
-                 .and. R ( iC, 1, kC )  <  FC % RadiusPolarMomentum ) &
-              SV ( iC, 1 : nCB ( 2 ), kC ) = 0.0_KDR
-          end do !-- iS
-        end do !-- iC
-      end do !-- kC
+      call C % SetVariablePointer ( S % Value, SV )
+             
+      call DecomposePillarsUnpack_2_Kernel &
+             ( SV, Crsn_2, R, Incoming, FC % RadiusPolarMomentum, &
+               C % nCellsBrick, C % nGhostLayers, S % iaSelected, &
+               iMomentum_2, iMomentum_3 )
 
       end associate !-- Outgoing, etc.
       end associate !-- CO
@@ -1384,29 +1418,17 @@ contains
       call C % SetVariablePointer &
              ( G % Value ( :, G % CENTER_U ( 1 ) ), R )
 
-      oI = 0
-      do jC = 1, nCB ( 2 )
-        do iC = 1, nCB ( 1 )
-          if ( Crsn_3 ( iC, jC, 1 ) < 2.0_KDR ) &
-            cycle
-          do iS = 1, S % nVariables
-            call C % SetVariablePointer &
-                   ( S % Value ( :, S % iaSelected ( iS ) ), SV )
-            SV ( iC, jC, 1 : nCB ( 3 ) )  &
-              =  Incoming ( oI + 1 : oI + nCB ( 3 ) )
-            oI = oI + nCB ( 3 )
-            if ( ( iS == iMomentum_2 .or. iS == iMomentum_3 ) &
-                 .and. R ( iC, jC, 1 )  <  FC % RadiusPolarMomentum ) &
-              SV ( iC, jC, 1 : nCB ( 3 ) ) = 0.0_KDR
-          end do !-- iS
-        end do !-- iC
-      end do !-- jC
+      call C % SetVariablePointer ( S % Value, SV )
+             
+      call DecomposePillarsUnpack_3_Kernel &
+             ( SV, Crsn_3, R, Incoming, FC % RadiusPolarMomentum, &
+               C % nCellsBrick, C % nGhostLayers, S % iaSelected, &
+               iMomentum_2, iMomentum_3 )
 
       end associate !-- Outgoing, etc.
       end associate !-- CO
 
     end select !-- iAngular
-    end associate !-- nCB
     end select !-- C
     end select !-- PS
     end select !-- I

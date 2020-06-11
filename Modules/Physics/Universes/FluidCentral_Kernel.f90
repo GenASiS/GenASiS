@@ -279,4 +279,72 @@ contains
   end procedure DecomposePillarsPack_3_Kernel
 
 
+  module procedure DecomposePillarsUnpack_2_Kernel
+    
+    integer ( KDI ) :: &
+      oI, &      !-- oIncoming
+      iC, kC, &  !-- iCell, etc.
+      iS, &          !-- iSelected
+      nVariables
+    integer ( KDI ), dimension ( 3 ) :: &
+      lC, uC
+
+    nVariables  =  size ( iaS )
+
+    lC  =  nGL + 1
+    uC  =  nGL + nCB
+
+    oI  =  0
+    do kC  =  lC ( 3 ), uC ( 3 )
+      do iC  =  lC ( 1 ), uC ( 1 )
+          if ( Crsn_2 ( iC, lC ( 2 ), kC ) < 2.0_KDR ) &
+            cycle
+          do iS = 1, nVariables
+            SV ( iC, lC ( 2 ) : uC ( 2 ), kC, iaS ( iS ) )  &
+              =  Incoming ( oI + 1 : oI + nCB ( 2 ) )
+            oI = oI + nCB ( 2 )
+            if ( ( iS == iMomentum_2 .or. iS == iMomentum_3 ) &
+                 .and. R ( iC, lC ( 2 ), kC )  <  RadiusPolarMomentum ) &
+              SV ( iC, lC ( 2 ) : uC ( 2 ), kC, iaS ( iS ) ) = 0.0_KDR
+          end do !-- iS
+      end do !-- iC
+    end do !-- kC
+
+  end procedure DecomposePillarsUnpack_2_Kernel
+
+
+  module procedure DecomposePillarsUnpack_3_Kernel
+    
+    integer ( KDI ) :: &
+      oI, &      !-- oIncoming
+      iC, jC, &  !-- iCell, etc.
+      iS, &          !-- iSelected
+      nVariables
+    integer ( KDI ), dimension ( 3 ) :: &
+      lC, uC
+
+    nVariables  =  size ( iaS )
+
+    lC  =  nGL + 1
+    uC  =  nGL + nCB
+
+    oI  =  0
+    do jC  =  lC ( 2 ), uC ( 2 )
+      do iC  =  lC ( 1 ), uC ( 1 )
+          if ( Crsn_3 ( iC, jC, lC ( 3 ) ) < 2.0_KDR ) &
+            cycle
+          do iS = 1, nVariables
+            SV ( iC, jC, lC ( 3 ) : uC ( 3 ), iaS ( iS ) )  &
+              =  Incoming ( oI + 1 : oI + nCB ( 3 ) )
+            oI = oI + nCB ( 3 )
+            if ( ( iS == iMomentum_2 .or. iS == iMomentum_3 ) &
+                 .and. R ( iC, jC, lC ( 3 ) )  <  RadiusPolarMomentum ) &
+              SV ( iC, jC, lC ( 3 ) : uC ( 3 ), iaS ( iS ) ) = 0.0_KDR
+          end do !-- iS
+      end do !-- iC
+    end do !-- jC
+
+  end procedure DecomposePillarsUnpack_3_Kernel
+
+
 end submodule FluidCentral_Kernel
