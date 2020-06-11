@@ -24,24 +24,27 @@ contains
     lC  =  nGL + 1
     uC  =  nGL + nCB
 
-    oO  =  0
-    
+    !$OMP  parallel do collapse ( 2 ) &
+    !$OMP& schedule ( OMP_SCHEDULE_HOST ) &
+    !$OMP& private ( iC, kC, iS, oO ) firstprivate ( nVariables )  
     do kC = lC ( 3 ), uC ( 3 )
       do iC = lC ( 1 ), uC ( 1 )
         if ( Crsn_2 ( iC, lC ( 2 ), kC ) < 2.0_KDR ) &
           cycle
-        Outgoing ( oO + 1 ) = Crsn_2 ( iC, lC ( 2 ), kC )
-        oO = oO + 1
+        oO  =  oOC_2 ( iC, kC )
+        Outgoing ( oO + 1 )  =  Crsn_2 ( iC, lC ( 2 ), kC )
+        oO  =  oO + 1
         Outgoing ( oO + 1 : oO + nCB ( 2 ) ) &
           =  Vol ( iC, lC ( 2 ) : uC ( 2 ), kC )
-        oO = oO + nCB ( 2 )
+        oO  =  oO + nCB ( 2 )
         do iS = 1, nVariables
           Outgoing ( oO + 1 : oO + nCB ( 2 ) ) &
             =  SV ( iC, lC ( 2 ) : uC ( 2 ), kC, iaS ( iS ) )
-          oO = oO + nCB ( 2 )
+          oO  =  oO + nCB ( 2 )
         end do !-- iS
       end do !-- iC
     end do !-- kC
+    !$OMP  end parallel do
   
   end procedure ComposePillarsPack_2_Kernel
   

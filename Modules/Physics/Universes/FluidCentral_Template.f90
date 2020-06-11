@@ -22,6 +22,8 @@ module FluidCentral_Template
       integer ( KDI ), dimension ( : ), allocatable :: &
         nCoarsen_2, &
         nCoarsen_3
+      integer ( KDI ), dimension ( :, : ), allocatable :: &
+        oOutgoingCompose_2_F
       real ( KDR ) :: &
         RadiusPolarMomentum = 0.0_KDR
       real ( KDR ), dimension ( :, :, : ), allocatable :: &     
@@ -125,6 +127,7 @@ module FluidCentral_Template
       Write, &
       ComputeSphericalAverage, &
       ComputeEnclosedBaryons, &
+      SetOffsetOutgoingCompose_2_F, &
       ComposePillars, &
       CoarsenPillars, &
       DecomposePillars, &
@@ -138,7 +141,7 @@ module FluidCentral_Template
   interface
   
     module subroutine ComposePillarsPack_2_Kernel &
-                        ( Outgoing, SV, Crsn_2, Vol, nCB, nGL, iaS )
+                        ( Outgoing, SV, Crsn_2, Vol, oOC_2, nCB, nGL, iaS )
       use Basics      
       implicit none
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -149,6 +152,8 @@ module FluidCentral_Template
       real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
         Crsn_2, &
         Vol
+      integer ( KDI ), dimension ( :, : ), intent ( in ) :: &
+        oOC_2
       integer ( KDI ), dimension ( : ), intent ( in ) :: &
         nCB, &    !-- nCellsBrick
         nGL, &    !-- nGhostLayers
@@ -438,6 +443,9 @@ contains
       deallocate ( FC % CoarsenPillar_3 )
     if ( allocated ( FC % CoarsenPillar_2 ) ) &
       deallocate ( FC % CoarsenPillar_2 )
+
+    if ( allocated ( FC % oOutgoingCompose_2_F ) ) &
+      deallocate ( FC % oOutgoingCompose_2_F )
 
     if ( allocated ( FC % nCoarsen_3 ) ) &
       deallocate ( FC % nCoarsen_3 )
@@ -796,6 +804,10 @@ contains
     integer ( KDI ) :: &
       nValuesFactor_F_2, nValuesFactor_B_2, &
       nValuesFactor_F_3, nValuesFactor_B_3
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+      Crsn_2, Crsn_3
+    class ( GeometryFlatForm ), pointer :: &
+      G
     class ( Fluid_D_Form ), pointer :: &
       F
 
@@ -808,6 +820,7 @@ contains
 
     select type ( PS => I % PositionSpace )
     class is ( Atlas_SC_Form )
+    G => PS % Geometry ( )
 
     select type ( C => PS % Chart )
     class is ( Chart_SLD_C_Template )
@@ -842,6 +855,12 @@ contains
       allocate ( FC % nCoarsen_2 ( C % nPillars_2 ) )
       allocate ( FC % CoarsenPillar_2 &
                    ( C % nCells ( 2 ), 1 + F % N_CONSERVED, C % nPillars_2 ) )
+
+      call C % SetVariablePointer &
+             ( G % Value ( :, G % COARSENING ( 2 ) ), Crsn_2 )
+      call SetOffsetOutgoingCompose_2_F &
+               ( Crsn_2, C % nCellsBrick, C % nGhostLayers, F % N_CONSERVED, &
+                 FC % oOutgoingCompose_2_F )
 
     case ( 3 )
 
@@ -1156,6 +1175,50 @@ contains
   end subroutine ComputeEnclosedBaryons
 
 
+  subroutine SetOffsetOutgoingCompose_2_F &
+               ( Crsn_2, nCB, nGL, nVariables, oOC_2 )
+
+    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+      Crsn_2
+    integer ( KDI ), dimension ( : ), intent ( in ) :: &
+      nCB, &
+      nGL
+    integer ( KDI ), intent ( in ) :: &
+      nVariables
+    integer ( KDI ), dimension ( :, : ), intent ( out ), allocatable :: &
+      oOC_2
+
+    integer ( KDI ) :: &
+      oO, &      !-- oOutgoing, oIncoming
+      iC, kC     !-- iCell, etc.
+    integer ( KDI ), dimension ( 3 ) :: &
+      lC, uC
+
+    allocate ( oOC_2 ( nCB ( 1 )  +  2 * nGL ( 1 ), &
+                       nCB ( 3 )  +  2 * nGL ( 3 ) ) )
+
+    lC  =  nGL + 1
+    uC  =  nGL + nCB
+
+       oO  =  0
+    oOC_2  =  0
+
+    do kC = lC ( 3 ), uC ( 3 )
+      do iC = lC ( 1 ), uC ( 1 )
+        if ( Crsn_2 ( iC, lC ( 2 ), kC ) < 2.0_KDR ) &
+          cycle
+        oOC_2 ( iC, kC )  =  oO
+        oO  =  oO + 1                       !-- Coarsen value
+        oO  =  oO + nCB ( 2 )               !-- Volume values
+        oO  =  oO + nCB ( 2 ) * nVariables  !-- Coarsened variables
+      end do !-- iC
+    end do !-- kC
+
+!call Show ( oOC_2, '>>> oOC_2' )
+
+  end subroutine SetOffsetOutgoingCompose_2_F
+
+
   subroutine ComposePillars ( FC, S, iAngular )
 
     class ( FluidCentralTemplate ), intent ( inout ) :: &
@@ -1207,8 +1270,8 @@ contains
       call C % SetVariablePointer ( S % Value, SV )
              
       call ComposePillarsPack_2_Kernel &
-             ( Outgoing, SV, Crsn_2, Vol, C % nCellsBrick, C % nGhostLayers, &
-               S % iaSelected )
+             ( Outgoing, SV, Crsn_2, Vol, FC % oOutgoingCompose_2_F, &
+               C % nCellsBrick, C % nGhostLayers, S % iaSelected )
       
       call T_Comm % Start ( )
       call CO % AllToAll_V ( )
