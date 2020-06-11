@@ -23,7 +23,8 @@ module FluidCentral_Template
         nCoarsen_2, &
         nCoarsen_3
       integer ( KDI ), dimension ( :, : ), allocatable :: &
-        oOutgoingCompose_2_F
+        oOutgoingCompose_2_F, &
+        oOutgoingCompose_3_F
       real ( KDR ) :: &
         RadiusPolarMomentum = 0.0_KDR
       real ( KDR ), dimension ( :, :, : ), allocatable :: &     
@@ -128,6 +129,7 @@ module FluidCentral_Template
       ComputeSphericalAverage, &
       ComputeEnclosedBaryons, &
       SetOffsetOutgoingCompose_2_F, &
+      SetOffsetOutgoingCompose_3_F, &
       ComposePillars, &
       CoarsenPillars, &
       DecomposePillars, &
@@ -146,9 +148,8 @@ module FluidCentral_Template
       implicit none
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
         Outgoing
-      real ( KDR ), dimension ( :, :, :, : ), &
-        intent ( in ) :: &
-          SV
+      real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
+        SV
       real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
         Crsn_2, &
         Vol
@@ -162,7 +163,7 @@ module FluidCentral_Template
     
     
     module subroutine ComposePillarsPack_3_Kernel &
-                        ( Outgoing, SV, Crsn_3, Vol, nCB, nGL, iaS )
+                        ( Outgoing, SV, Crsn_3, Vol, oOC_3, nCB, nGL, iaS )
       use Basics
       implicit none
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -172,6 +173,8 @@ module FluidCentral_Template
       real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
         Crsn_3, &
         Vol
+      integer ( KDI ), dimension ( :, : ), intent ( in ) :: &
+        oOC_3
       integer ( KDI ), dimension ( : ), intent ( in ) :: &
         nCB, &    !-- nCellsBrick
         nGL, &    !-- nGhostLayers
@@ -444,6 +447,8 @@ contains
     if ( allocated ( FC % CoarsenPillar_2 ) ) &
       deallocate ( FC % CoarsenPillar_2 )
 
+    if ( allocated ( FC % oOutgoingCompose_3_F ) ) &
+      deallocate ( FC % oOutgoingCompose_3_F )
     if ( allocated ( FC % oOutgoingCompose_2_F ) ) &
       deallocate ( FC % oOutgoingCompose_2_F )
 
@@ -892,6 +897,12 @@ contains
       allocate ( FC % CoarsenPillar_3 &
                    ( C % nCells ( 3 ), 1 + F % N_CONSERVED, C % nPillars_3 ) )
 
+      call C % SetVariablePointer &
+             ( G % Value ( :, G % COARSENING ( 3 ) ), Crsn_3 )
+      call SetOffsetOutgoingCompose_3_F &
+               ( Crsn_3, C % nCellsBrick, C % nGhostLayers, F % N_CONSERVED, &
+                 FC % oOutgoingCompose_3_F )
+
     end select !-- iAngular
     end select !-- C
     end select !-- PS
@@ -1219,6 +1230,50 @@ contains
   end subroutine SetOffsetOutgoingCompose_2_F
 
 
+  subroutine SetOffsetOutgoingCompose_3_F &
+               ( Crsn_3, nCB, nGL, nVariables, oOC_3 )
+
+    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+      Crsn_3
+    integer ( KDI ), dimension ( : ), intent ( in ) :: &
+      nCB, &
+      nGL
+    integer ( KDI ), intent ( in ) :: &
+      nVariables
+    integer ( KDI ), dimension ( :, : ), intent ( out ), allocatable :: &
+      oOC_3
+
+    integer ( KDI ) :: &
+      oO, &      !-- oOutgoing, oIncoming
+      iC, jC     !-- iCell, etc.
+    integer ( KDI ), dimension ( 3 ) :: &
+      lC, uC
+
+    allocate ( oOC_3 ( nCB ( 1 )  +  2 * nGL ( 1 ), &
+                       nCB ( 2 )  +  2 * nGL ( 2 ) ) )
+
+    lC  =  nGL + 1
+    uC  =  nGL + nCB
+
+       oO  =  0
+    oOC_3  =  0
+
+    do jC = lC ( 2 ), uC ( 2 )
+      do iC = lC ( 1 ), uC ( 1 )
+        if ( Crsn_3 ( iC, jC, lC ( 3 ) ) < 2.0_KDR ) &
+          cycle
+        oOC_3 ( iC, jC )  =  oO
+        oO  =  oO + 1                       !-- Coarsen value
+        oO  =  oO + nCB ( 3 )               !-- Volume values
+        oO  =  oO + nCB ( 3 ) * nVariables  !-- Coarsened variables
+      end do !-- iC
+    end do !-- jC
+
+!call Show ( oOC_3, '>>> oOC_3' )
+
+  end subroutine SetOffsetOutgoingCompose_3_F
+
+
   subroutine ComposePillars ( FC, S, iAngular )
 
     class ( FluidCentralTemplate ), intent ( inout ) :: &
@@ -1304,8 +1359,8 @@ contains
       call C % SetVariablePointer ( S % Value, SV )
 
       call ComposePillarsPack_3_Kernel &
-             ( Outgoing, SV, Crsn_3, Vol, C % nCellsBrick, C % nGhostLayers, &
-               S % iaSelected )
+             ( Outgoing, SV, Crsn_3, Vol, FC % oOutgoingCompose_3_F, &
+               C % nCellsBrick, C % nGhostLayers, S % iaSelected )
       
       call T_Comm % Start ( )
       call CO % AllToAll_V ( )

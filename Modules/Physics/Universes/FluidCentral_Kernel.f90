@@ -64,11 +64,14 @@ contains
     lC  =  nGL + 1
     uC  =  nGL + nCB
     
-    oO = 0
+    !$OMP  parallel do collapse ( 2 ) &
+    !$OMP& schedule ( OMP_SCHEDULE_HOST ) &
+    !$OMP& private ( iC, jC, iS, oO ) firstprivate ( nVariables )  
     do jC = lC ( 2 ), uC ( 2 )
       do iC = lC ( 1 ), uC ( 1 )
         if ( Crsn_3 ( iC, jC, lC ( 3 ) ) < 2.0_KDR ) &
           cycle
+        oO  =  oOC_3 ( iC, jC )
         Outgoing ( oO + 1 ) = Crsn_3 ( iC, jC, lC ( 3 ) )
         oO = oO + 1
         Outgoing ( oO + 1 : oO + nCB ( 3 ) ) &
@@ -81,6 +84,7 @@ contains
         end do !-- iS
       end do !-- iC
     end do !-- jC
+    !$OMP  end parallel do
   
   end procedure ComposePillarsPack_3_Kernel
   
