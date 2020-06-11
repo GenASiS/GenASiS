@@ -24,12 +24,12 @@ module FluidCentral_Template
         nCoarsen_3
       real ( KDR ) :: &
         RadiusPolarMomentum = 0.0_KDR
+      real ( KDR ), dimension ( :, :, : ), allocatable :: &     
+        CoarsenPillar_2, &
+        CoarsenPillar_3
       logical ( KDL ) :: &
         Dimensionless, &
         UseCoarsening
-      type ( StorageForm ), dimension ( : ), allocatable :: &
-        CoarsenPillar_2, &
-        CoarsenPillar_3
       type ( CollectiveOperation_R_Form ), allocatable :: &
         CO_CoarsenForward_2, CO_CoarsenBackward_2, &
         CO_CoarsenForward_3, CO_CoarsenBackward_3
@@ -176,7 +176,7 @@ module FluidCentral_Template
                  ( CoarsenPillar_2, nCoarsen_2, Incoming, nCB, &
                    nBricks, nCells, nSegmentsFrom_2, nGroups )
       use Basics      
-      class ( StorageForm ), dimension ( : ), intent ( inout ) :: &
+      real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
         CoarsenPillar_2
       integer ( KDI ), dimension ( : ), intent ( inout ) :: &
         nCoarsen_2
@@ -197,7 +197,7 @@ module FluidCentral_Template
                  ( CoarsenPillar_3, nCoarsen_3, Incoming, nCB, &
                    nBricks, nCells, nSegmentsFrom_3, nGroups )
       use Basics      
-      class ( StorageForm ), dimension ( : ), intent ( inout ) :: &
+      real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
         CoarsenPillar_3
       integer ( KDI ), dimension ( : ), intent ( inout ) :: &
         nCoarsen_3
@@ -212,7 +212,15 @@ module FluidCentral_Template
       integer ( KDI ), intent ( in ) :: &
         nGroups
     end subroutine ComposePillarsUnpack_3_Kernel
-    
+
+    module subroutine CoarsenPillarsKernel ( CP, nCoarsen )
+      use Basics
+      real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
+        CP  !-- CoarsenPillar
+      integer ( KDI ), dimension ( : ), intent ( in ) :: &
+        nCoarsen
+    end subroutine CoarsenPillarsKernel
+
   end interface
 
 contains
@@ -699,7 +707,6 @@ contains
       iAngular
 
     integer ( KDI ) :: &
-      iP, &  !-- iPillar
       nValuesFactor_F_2, nValuesFactor_B_2, &
       nValuesFactor_F_3, nValuesFactor_B_3
     class ( Fluid_D_Form ), pointer :: &
@@ -746,11 +753,8 @@ contains
       end associate !-- CO_F, etc.
 
       allocate ( FC % nCoarsen_2 ( C % nPillars_2 ) )
-      allocate ( FC % CoarsenPillar_2 ( C % nPillars_2 ) )
-      do iP = 1, C % nPillars_2
-        call FC % CoarsenPillar_2 ( iP ) % Initialize &
-               ( [ C % nCells ( 2 ), 1 + F % N_CONSERVED ] )
-      end do  !-- iP
+      allocate ( FC % CoarsenPillar_2 &
+                   ( C % nCells ( 2 ), 1 + F % N_CONSERVED, C % nPillars_2 ) )
 
     case ( 3 )
 
@@ -779,11 +783,8 @@ contains
       end associate !-- CO_F, etc.
 
       allocate ( FC % nCoarsen_3 ( C % nPillars_3 ) )
-      allocate ( FC % CoarsenPillar_3 ( C % nPillars_3 ) )
-      do iP = 1, C % nPillars_3
-        call FC % CoarsenPillar_3 ( iP ) % Initialize &
-               ( [ C % nCells ( 3 ), 1 + F % N_CONSERVED ] )
-      end do  !-- iP
+      allocate ( FC % CoarsenPillar_3 &
+                   ( C % nCells ( 3 ), 1 + F % N_CONSERVED, C % nPillars_3 ) )
 
     end select !-- iAngular
     end select !-- C
@@ -1077,17 +1078,6 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iAngular
 
-    integer ( KDI ) :: &
-      oO, oI, &      !-- oOutgoing, oIncoming
-      oP, &          !-- oPillar
-      oC, &          !-- oCell
-      iC, jC, kC, &  !-- iCell, etc.
-      iS, &          !-- iSelected
-      iG, &          !-- iGroup (of pillars/processes)
-      iB, &          !-- iBrick
-      iR, &          !-- iRank
-      iPS, &         !-- iPillarSegment
-      iP             !-- iPillar
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       Crsn_2, Crsn_3, &
       Vol
@@ -1195,17 +1185,9 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iAngular
 
-    integer ( KDI ) :: &
-      oC, &  !-- oCell
-      iP, &  !-- iPillar
-      iA, &  !-- iAverage
-      iV     !-- iVariable
     integer ( KDI ), dimension ( : ), pointer :: &
       nCoarsen
-    real ( KDR ) :: &
-      Volume_A, &
-      Density_A
-    type ( StorageForm ), dimension ( : ), pointer :: &
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
       CP
 
     select type ( I => FC % Integrator )
@@ -1230,23 +1212,7 @@ contains
       CP => FC % CoarsenPillar_3
     end select !-- iAngular
 
-    do iP = 1, size ( CP )
-      oC = 0
-      associate ( Volume => CP ( iP ) % Value ( :, 1 ) )
-      do iA = 1, CP ( iP ) % nValues / nCoarsen ( iP )
-        Volume_A = sum ( Volume ( oC + 1 : oC + nCoarsen ( iP ) ) )
-        do iV = 2, CP ( iP ) % nVariables
-          associate ( Density => CP ( iP ) % Value ( :, iV ) )
-          Density_A = sum ( Volume ( oC + 1 : oC + nCoarsen ( iP ) ) &
-                            *  Density ( oC + 1 : oC + nCoarsen ( iP ) ) )
-          Density ( oC + 1 : oC + nCoarsen ( iP ) ) &
-            =  Density_A / Volume_A
-          end associate !-- Density
-        end do !-- iV
-        oC = oC + nCoarsen ( iP )
-      end do !-- iA
-      end associate !-- Volume
-    end do !-- iP
+    call CoarsenPillarsKernel ( CP, nCoarsen )
 
     end select !-- C
     end select !-- PS
@@ -1277,7 +1243,8 @@ contains
       iPS, &         !-- iPillarSegment
       iP, &          !-- iPillar
       iMomentum_2, &
-      iMomentum_3
+      iMomentum_3, &
+      nVariables
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       R, &
       Crsn_2, Crsn_3, &
@@ -1316,6 +1283,8 @@ contains
         ( Outgoing => CO % Outgoing % Value, &
           Incoming => CO % Incoming % Value )
 
+      nVariables  =  size ( FC % CoarsenPillar_2, dim = 2 )
+
       oP = 0
       oO = 0
       do iG = 1, C % Communicator_2 % Size  /  C % nBricks ( 2 )
@@ -1324,13 +1293,11 @@ contains
           iR = ( iG - 1 ) * C % nBricks ( 2 )  +  iB  -  1
           do iPS = 1, C % nSegmentsFrom_2 ( iR )
             iP = oP + iPS
-            associate ( CP => FC % CoarsenPillar_2 ( iP ) )
-            do iS = 2, CP % nVariables
+            do iS = 2, nVariables
               Outgoing ( oO + 1 : oO + nCB ( 2 ) )  &
-                =  CP % Value ( oC + 1 : oC + nCB ( 2 ), iS )
+                =  FC % CoarsenPillar_2 ( oC + 1 : oC + nCB ( 2 ), iS, iP )
               oO = oO + nCB ( 2 )
             end do !-- iS
-            end associate !-- CP
           end do !-- iPS
           oC = oC + nCB ( 2 )
         end do !-- iB
@@ -1378,6 +1345,8 @@ contains
         ( Outgoing => CO % Outgoing % Value, &
           Incoming => CO % Incoming % Value )
 
+      nVariables  =  size ( FC % CoarsenPillar_3, dim = 2 )
+
       oP = 0
       oO = 0
       do iG = 1, C % Communicator_3 % Size  /  C % nBricks ( 3 )
@@ -1386,13 +1355,11 @@ contains
           iR = ( iG - 1 ) * C % nBricks ( 3 )  +  iB  -  1
           do iPS = 1, C % nSegmentsFrom_3 ( iR )
             iP = oP + iPS
-            associate ( CP => FC % CoarsenPillar_3 ( iP ) )
-            do iS = 2, CP % nVariables
+            do iS = 2, nVariables
               Outgoing ( oO + 1 : oO + nCB ( 3 ) )  &
-                =  CP % Value ( oC + 1 : oC + nCB ( 3 ), iS )
+                =  FC % CoarsenPillar_3 ( oC + 1 : oC + nCB ( 3 ), iS, iP )
               oO = oO + nCB ( 3 )
             end do !-- iS
-            end associate !-- CP
           end do !-- iPS
           oC = oC + nCB ( 3 )
         end do !-- iB

@@ -94,10 +94,12 @@ contains
       iB, &          !-- iBrick
       iR, &          !-- iRank
       iPS, &         !-- iPillarSegment
-      iP             !-- iPillar
-  
+      iP, &          !-- iPillar
+      nVariables
+
     oP = 0
     oI = 0
+    nVariables = size ( CoarsenPillar_2, dim = 2 )
     do iG = 1, nGroups 
       oC = 0
       do iB = 1, nBricks ( 2 )
@@ -107,8 +109,8 @@ contains
           nCoarsen_2 ( iP ) &
             = min ( int ( Incoming ( oI + 1 ) + 0.5_KDR ), nCells ( 2 ) )
           oI = oI + 1
-          do iS = 1, CoarsenPillar_2 ( iP ) % nVariables
-            CoarsenPillar_2 ( iP ) % Value ( oC + 1 : oC + nCB ( 2 ), iS )  &
+          do iS = 1, nVariables
+            CoarsenPillar_2 ( oC + 1 : oC + nCB ( 2 ), iS, iP )  &
               =  Incoming ( oI + 1 : oI + nCB ( 2 ) )
             oI = oI + nCB ( 2 )
           end do !-- iS
@@ -133,10 +135,12 @@ contains
       iB, &          !-- iBrick
       iR, &          !-- iRank
       iPS, &         !-- iPillarSegment
-      iP             !-- iPillar
-    
+      iP, &          !-- iPillar
+      nVariables
+
     oP = 0
     oI = 0
+    nVariables = size ( CoarsenPillar_3, dim = 2 )
     do iG = 1, nGroups
       oC = 0
       do iB = 1, nBricks ( 3 )
@@ -146,8 +150,8 @@ contains
           nCoarsen_3 ( iP ) &
             = min ( int ( Incoming ( oI + 1 ) + 0.5_KDR ), nCells ( 3 ) )
           oI = oI + 1
-          do iS = 1, CoarsenPillar_3 ( iP ) % nVariables
-            CoarsenPillar_3 ( iP ) % Value ( oC + 1 : oC + nCB ( 3 ), iS )  &
+          do iS = 1, nVariables
+            CoarsenPillar_3 ( oC + 1 : oC + nCB ( 3 ), iS, iP )  &
               =  Incoming ( oI + 1 : oI + nCB ( 3 ) )
             oI = oI + nCB ( 3 )
           end do !-- iS
@@ -159,5 +163,44 @@ contains
 
   end procedure ComposePillarsUnpack_3_Kernel
   
+
+  module procedure CoarsenPillarsKernel
+
+    integer ( KDI ) :: &
+      oC, &  !-- oCell
+      iP, &  !-- iPillar
+      iA, &  !-- iAverage
+      iV, &  !-- iVariable
+      nPillars, &
+      nVariables, &
+      nAverages
+    real ( KDR ) :: &
+      Volume_A, &
+      Density_A
+
+      nPillars  =  size ( CP, dim = 3 ) 
+    nVariables  =  size ( CP, dim = 2 )
+
+    do iP  =  1, nPillars
+      oC  =  0
+      nAverages  =  size ( CP, dim = 1 )  /  nCoarsen ( iP )
+      associate ( Volume => CP ( :, 1, iP ) )
+      do iA  =  1, nAverages
+        Volume_A  =  sum ( Volume ( oC + 1 : oC + nCoarsen ( iP ) ) )
+        do iV = 2, nVariables
+          associate ( Density => CP ( :, iV, iP ) )
+          Density_A = sum ( Volume ( oC + 1 : oC + nCoarsen ( iP ) ) &
+                            *  Density ( oC + 1 : oC + nCoarsen ( iP ) ) )
+          Density ( oC + 1 : oC + nCoarsen ( iP ) ) &
+            =  Density_A / Volume_A
+          end associate !-- Density
+        end do !-- iV
+        oC  =  oC + nCoarsen ( iP )
+      end do !-- iA
+      end associate !-- Volume
+    end do !-- iP
+
+  end procedure CoarsenPillarsKernel
+
 
 end submodule FluidCentral_Kernel
