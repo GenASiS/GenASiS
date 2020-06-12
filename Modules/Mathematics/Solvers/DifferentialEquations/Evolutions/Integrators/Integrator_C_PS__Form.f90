@@ -199,7 +199,9 @@ contains
     call C % UpdateDevice ( ) 
     call C % ComputeFromInitial ( G )
     call C % UpdateHost ( )
-    call CSL % ExchangeGhostData ( C )
+    call CSL % ExchangeGhostData &
+           ( C, UseDeviceOption = ( CSL % ExchangeGhostUseDevice .and. &
+                                    C % AllocatedDevice ) )
     call C % UpdateDevice ( )
 
     class default

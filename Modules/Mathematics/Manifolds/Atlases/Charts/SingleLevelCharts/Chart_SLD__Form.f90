@@ -607,9 +607,9 @@ contains
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
       TagReceive, &
       TagSend
-    type ( MessageIncoming_1D_R_Form ), intent ( out ), allocatable :: &
+    type ( MessageIncoming_1D_R_Form ), intent ( inout ), allocatable :: &
       IncomingFace
-    type ( MessageOutgoing_1D_R_Form ), intent ( out ), allocatable :: &
+    type ( MessageOutgoing_1D_R_Form ), intent ( inout ), allocatable :: &
       OutgoingFace
 
     integer ( KDI ) :: &
@@ -617,10 +617,11 @@ contains
     integer ( KDI ), dimension ( 3 ) :: &
       oSend, &
       nSend
-
-    allocate ( IncomingFace )
-    allocate ( OutgoingFace )
-
+    type ( TimerForm ), pointer :: &
+      T 
+      
+    T => PROGRAM_HEADER % TimerPointer ( C % iTimerGhostCommunication )
+    
     associate &
       ( S_1D  => C % Storage_1D, &
         Communicator => C % Atlas % Communicator, &
@@ -628,25 +629,38 @@ contains
         nGL => C % nGhostLayers, &
         nD  => C % nDimensions )
 
-    !-- Post Receives
-
-    call IncomingFace % Initialize &
-           ( Communicator, TagReceive ( : nD ), PH % Source, &
-             PH % nChunksFrom * S_1D % nVariablesTotal )
-             
-    if ( UseDevice ) &
-      call IncomingFace % AllocateDevice ( )
+    !-- Allocate on first use
+    if ( .not. allocated ( IncomingFace ) &
+         .and. .not. allocated ( OutgoingFace ) ) then
     
-    call IncomingFace % Receive ( )
+      allocate ( IncomingFace )
+      allocate ( OutgoingFace )
 
-    !-- Post Sends
+      
+      !-- Post Receives
 
-    call OutgoingFace % Initialize &
+      call IncomingFace % Initialize &
+             ( Communicator, TagReceive ( : nD ), PH % Source, &
+               PH % nChunksFrom * S_1D % nVariablesTotal )
+               
+        
+      call OutgoingFace % Initialize &
            ( Communicator, TagSend ( : nD ), PH % Target, &
              PH % nChunksTo * S_1D % nVariablesTotal )
     
-    if ( UseDevice ) &
-      call OutgoingFace % AllocateDevice ( )
+      if ( UseDevice ) then
+        call IncomingFace % AllocateDevice ( )
+        call OutgoingFace % AllocateDevice ( )
+      end if 
+    
+    end if
+    
+    call T % Start ( )
+    call IncomingFace % Receive ( )
+    call T % Stop ( )
+
+    !-- Post Sends
+
 
     do iD = 1, nD
 
@@ -670,11 +684,15 @@ contains
              ( C, OutgoingFace % Message ( iD ), S_1D, UseDevice, &
                nSend, oSend )
       
+      call T % Start ( )
       call OutgoingFace % Send ( iD )
+      call T % Stop ( )
 
     end do !-- iD
 
     end associate !-- S_1D, etc.
+    
+    nullify ( T )
 
   end subroutine StartExchangeFace
 
@@ -700,6 +718,10 @@ contains
       nReceive
     logical ( KDL ) :: &
       AllFinished
+    type ( TimerForm ), pointer :: &
+      T 
+      
+    T => PROGRAM_HEADER % TimerPointer ( C % iTimerGhostCommunication )
 
     associate &
       ( S_1D  => C % Storage_1D, &
@@ -710,7 +732,10 @@ contains
 
     do 
 
+      call T % Start ( )
       call IncomingFace % Wait ( AllFinished, iD )
+      call T % Stop ( )
+      
       if ( AllFinished ) exit
 
       nReceive        = nCB
@@ -743,15 +768,18 @@ contains
     end do
 
     !-- Wait for Sends
-
+    call T % Start ( )
     call OutgoingFace % Wait ( )
+    call T % Stop ( )
 
     !-- Cleanup
 
     end associate !-- S_1D, etc.
+    
+    nullify ( T )
 
-    deallocate ( OutgoingFace )
-    deallocate ( IncomingFace )
+    !deallocate ( OutgoingFace )
+    !deallocate ( IncomingFace )
 
   end subroutine FinishExchangeFace
 
@@ -769,9 +797,9 @@ contains
     integer ( KDI ), dimension ( : ), intent ( in ) :: &
       TagReceive, &
       TagSend
-    type ( MessageIncoming_1D_R_Form ), intent ( out ), allocatable :: &
+    type ( MessageIncoming_1D_R_Form ), intent ( inout ), allocatable :: &
       IncomingEdge
-    type ( MessageOutgoing_1D_R_Form ), intent ( out ), allocatable :: &
+    type ( MessageOutgoing_1D_R_Form ), intent ( inout ), allocatable :: &
       OutgoingEdge
 
     integer ( KDI ) :: &
@@ -782,9 +810,10 @@ contains
       nSend
     logical ( KDL ), dimension ( 3 ) :: &
       DimensionMask
-
-    allocate ( IncomingEdge )
-    allocate ( OutgoingEdge )
+    type ( TimerForm ), pointer :: &
+      T 
+      
+    T => PROGRAM_HEADER % TimerPointer ( C % iTimerGhostCommunication )
 
     associate &
       ( S_1D  => C % Storage_1D, &
@@ -792,7 +821,7 @@ contains
         nCB => C % nCellsBrick, &
         nGL => C % nGhostLayers, &
         nD  => C % nDimensions )
-
+        
     select case ( nD )
     case ( 1 ) 
       return
@@ -802,26 +831,36 @@ contains
       DimensionMask = [ .true., .true., .true. ]
     end select !-- nD
 
-    !-- Post Receives
+    !-- Allocate on First use
+    
+    if ( .not. allocated ( IncomingEdge ) &
+         .and. .not. allocated ( OutgoingEdge ) ) then
+    
+      allocate ( IncomingEdge )
+      allocate ( OutgoingEdge )
+      
+      !-- Post Receives
 
-    call IncomingEdge % Initialize &
-           ( Communicator, pack ( TagReceive, DimensionMask ), PH % Source, &
-             PH % nChunksFrom * S_1D % nVariablesTotal )
+      call IncomingEdge % Initialize &
+             ( Communicator, pack ( TagReceive, DimensionMask ), PH % Source, &
+               PH % nChunksFrom * S_1D % nVariablesTotal )
+               
+      call OutgoingEdge % Initialize &
+             ( Communicator, pack ( TagSend, DimensionMask ), PH % Target, &
+               PH % nChunksTo * S_1D % nVariablesTotal )
+      
+      if ( UseDevice ) then
+        call IncomingEdge % AllocateDevice ( )
+        call OutgoingEdge % AllocateDevice ( )
+      end if
     
-    if ( UseDevice ) &
-      call IncomingEdge % AllocateDevice ( )
-    
+    end if
+      
+    call T % Start ( )
     call IncomingEdge % Receive ( )
-    
+    call T % Stop ( )
     
     !-- Post Sends
-
-    call OutgoingEdge % Initialize &
-           ( Communicator, pack ( TagSend, DimensionMask ), PH % Target, &
-             PH % nChunksTo * S_1D % nVariablesTotal )
-    
-    if ( UseDevice ) &
-      call OutgoingEdge % AllocateDevice ( )
 
     do kD = 3, 1, -1
 
@@ -866,11 +905,15 @@ contains
              ( C, OutgoingEdge % Message ( kM ), S_1D, UseDevice, &
                nSend, oSend )
       
+      call T % Start ( )
       call OutgoingEdge % Send ( kM )
+      call T % Stop ( )
 
     end do !-- kD
 
     end associate !-- S_1D, etc.
+    
+    nullify ( T )
 
   end subroutine StartExchangeEdge
 
@@ -897,6 +940,10 @@ contains
       nReceive
     logical ( KDL ) :: &
       AllFinished
+    type ( TimerForm ), pointer :: &
+      T 
+      
+    T => PROGRAM_HEADER % TimerPointer ( C % iTimerGhostCommunication )
 
     associate &
       ( S_1D => C % Storage_1D, &
@@ -911,7 +958,10 @@ contains
 
     do 
 
+      call T % Start ( )
       call IncomingEdge % Wait ( AllFinished, kM )
+      call T % Stop ( )
+      
       if ( AllFinished ) exit
 
       select case ( nD )
@@ -978,15 +1028,18 @@ contains
     end do
 
     !-- Wait for Sends
-
+    call T % Start ( )
     call OutgoingEdge % Wait ( )
+    call T % Stop ( )
 
     !-- Cleanup
 
     end associate !-- S_1D, etc.
+    
+    nullify ( T )
 
-    deallocate ( OutgoingEdge )
-    deallocate ( IncomingEdge )
+    !deallocate ( OutgoingEdge )
+    !deallocate ( IncomingEdge )
 
   end subroutine FinishExchangeEdge
 
@@ -1012,7 +1065,12 @@ contains
       oBuffer
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       V  !-- Variable
-
+    type ( TimerForm ), pointer :: &
+      T
+    T => PROGRAM_HEADER % TimerPointer ( C % iTimerGhostPackUnpack )
+    
+    call T % Start ( )
+    
     oBuffer = 0
     do iStrg = 1, S_1D % nStorages
       do iS = 1, S_1D % nVariables ( iStrg )          
@@ -1024,6 +1082,10 @@ contains
         oBuffer = oBuffer + product ( nSend )
       end do !-- iS
     end do !-- iStrg
+    
+    call T % Stop ( )
+    
+    nullify ( T )
 
     nullify ( V )
 
@@ -1052,7 +1114,13 @@ contains
       oBuffer
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       V  !-- Variable
-
+    type ( TimerForm ), pointer :: &
+      T
+    
+    T => PROGRAM_HEADER % TimerPointer ( C % iTimerGhostPackUnpack )
+    
+    call T % Start ( )
+    
     oBuffer = 0
     do iStrg = 1, S_1D % nStorages
       do iS = 1, S_1D % nVariables ( iStrg )          
@@ -1064,6 +1132,10 @@ contains
         oBuffer = oBuffer + product ( nReceive )
       end do !-- iS
     end do !-- iStrg
+    
+    call T % Stop ( )
+    
+    nullify ( T )
 
     nullify ( V )
 
