@@ -150,14 +150,18 @@ contains
       nVariables
 
     oP = 0
-    oI = 0
     nVariables = size ( CoarsenPillar_3, dim = 2 )
     do iG = 1, nGroups
       oC = 0
       do iB = 1, nBricks ( 3 )
         iR = ( iG - 1 ) * nBricks ( 3 )  +  iB  -  1
+        !$OMP  parallel do &
+        !$OMP& schedule ( OMP_SCHEDULE_HOST ) &
+        !$OMP& private ( oI, iPS, iP, iS ) &
+        !$OMP& firstprivate ( oP, oC, iR, nVariables )  
         do iPS = 1, nSegmentsFrom_3 ( iR )
           iP = oP + iPS
+          oI = oIC_3 ( iPS, iR )
           nCoarsen_3 ( iP ) &
             = min ( int ( Incoming ( oI + 1 ) + 0.5_KDR ), nCells ( 3 ) )
           oI = oI + 1
@@ -167,6 +171,7 @@ contains
             oI = oI + nCB ( 3 )
           end do !-- iS
         end do !-- iPS
+        !$OMP  end parallel do 
         oC = oC + nCB ( 3 )
       end do !-- iB
       oP = oP + nSegmentsFrom_3 ( iR )

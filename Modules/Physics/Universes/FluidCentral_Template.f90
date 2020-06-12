@@ -26,6 +26,7 @@ module FluidCentral_Template
         oOutgoingCompose_2_F, &
         oOutgoingCompose_3_F, &
         oIncomingCompose_2_F, &
+        oIncomingCompose_3_F, &
         oIncomingDecompose_2_F, &
         oIncomingDecompose_3_F
       real ( KDR ) :: &
@@ -134,6 +135,7 @@ module FluidCentral_Template
       SetOffsetOutgoingCompose_2_F, &
       SetOffsetOutgoingCompose_3_F, &
       SetOffsetIncomingCompose_2_F, &
+      SetOffsetIncomingCompose_3_F, &
       SetOffsetIncomingDecompose_2_F, &
       SetOffsetIncomingDecompose_3_F, &
       ComposePillars, &
@@ -213,7 +215,7 @@ module FluidCentral_Template
     
     
     module subroutine ComposePillarsUnpack_3_Kernel &
-                 ( CoarsenPillar_3, nCoarsen_3, Incoming, nCB, &
+                 ( CoarsenPillar_3, nCoarsen_3, Incoming, oIC_3, nCB, &
                    nBricks, nCells, nSegmentsFrom_3, nGroups )
       use Basics
       implicit none
@@ -223,6 +225,8 @@ module FluidCentral_Template
         nCoarsen_3
       real ( KDR ), dimension ( : ), intent ( in ) :: &
         Incoming
+      integer ( KDI ), dimension ( :, 0 : ), intent ( in ) :: &
+        oIC_3
       integer ( KDI ), dimension ( : ), intent ( in ) :: &
         nCB, &          !-- nCellsBrick
         nBricks, &
@@ -464,6 +468,8 @@ contains
     if ( allocated ( FC % oIncomingDecompose_2_F ) ) &
       deallocate ( FC % oIncomingDecompose_2_F )
 
+    if ( allocated ( FC % oIncomingCompose_3_F ) ) &
+      deallocate ( FC % oIncomingCompose_3_F )
     if ( allocated ( FC % oIncomingCompose_2_F ) ) &
       deallocate ( FC % oIncomingCompose_2_F )
     if ( allocated ( FC % oOutgoingCompose_3_F ) ) &
@@ -928,11 +934,17 @@ contains
       call C % SetVariablePointer &
              ( G % Value ( :, G % COARSENING ( 3 ) ), Crsn_3 )
       call SetOffsetOutgoingCompose_3_F &
-               ( Crsn_3, C % nCellsBrick, C % nGhostLayers, F % N_CONSERVED, &
-                 FC % oOutgoingCompose_3_F )
+             ( Crsn_3, C % nCellsBrick, C % nGhostLayers, F % N_CONSERVED, &
+               FC % oOutgoingCompose_3_F )
+      call SetOffsetIncomingCompose_3_F &
+             ( C % nCellsBrick, C % nBricks, C % nSegmentsFrom_3, &
+               nRanks = C % Communicator_3 % Size, &
+               nGroups = C % Communicator_3 % Size  /  C % nBricks ( 3 ), &
+               nVariables = size ( FC % CoarsenPillar_3, dim = 2 ), &
+               oIC_3 = FC % oIncomingCompose_3_F )
       call SetOffsetIncomingDecompose_3_F &
-               ( Crsn_3, C % nCellsBrick, C % nGhostLayers, F % N_CONSERVED, &
-                 FC % oIncomingDecompose_3_F )
+             ( Crsn_3, C % nCellsBrick, C % nGhostLayers, F % N_CONSERVED, &
+               FC % oIncomingDecompose_3_F )
 
     end select !-- iAngular
     end select !-- C
@@ -1347,6 +1359,48 @@ contains
   end subroutine SetOffsetIncomingCompose_2_F
 
 
+  subroutine SetOffsetIncomingCompose_3_F &
+               ( nCB, nBricks, nSegmentsFrom_3, nRanks, nGroups, nVariables, &
+                 oIC_3 )
+
+    integer ( KDI ), dimension ( : ), intent ( in ) :: &
+      nCB, &          !-- nCellsBrick
+      nBricks
+    integer ( KDI ), dimension ( 0 : ), intent ( in ) :: &
+      nSegmentsFrom_3
+    integer ( KDI ), intent ( in ) :: &
+      nRanks, &
+      nGroups, &
+      nVariables
+    integer ( KDI ), dimension ( :, : ), intent ( out ), allocatable :: &
+      oIC_3
+
+    integer ( KDI ) :: &
+      oI, &          !-- oIncoming
+      iG, &          !-- iGroup (of pillars/processes)
+      iB, &          !-- iBrick
+      iR, &          !-- iRank
+      iPS            !-- iPillarSegment
+
+    allocate ( oIC_3 ( maxval ( nSegmentsFrom_3 ), 0 : nRanks - 1 ) )
+
+       oI  =  0
+    oIC_3  =  0
+
+    do iG = 1, nGroups 
+      do iB = 1, nBricks ( 3 )
+        iR = ( iG - 1 ) * nBricks ( 3 )  +  iB  -  1
+        do iPS = 1, nSegmentsFrom_3 ( iR )
+          oIC_3 ( iPS, iR )  =  oI
+          oI  =  oI + 1                       !-- Coarsen value
+          oI  =  oI + nCB ( 3 ) * nVariables  !-- Packed variables
+        end do !-- iPS
+      end do !-- iB
+    end do !-- iG
+
+  end subroutine SetOffsetIncomingCompose_3_F
+
+
   subroutine SetOffsetIncomingDecompose_2_F &
                ( Crsn_2, nCB, nGL, nVariables, oID_2 )
 
@@ -1526,7 +1580,8 @@ contains
       
       call ComposePillarsUnpack_3_Kernel &
              ( FC % CoarsenPillar_3, FC % nCoarsen_3, Incoming, &
-               C % nCellsBrick, C % nBricks, C % nCells, C % nSegmentsFrom_3, &
+               FC % oIncomingCompose_3_F, C % nCellsBrick, C % nBricks, &
+               C % nCells, C % nSegmentsFrom_3, &
                nGroups = C % Communicator_3 % Size  /  C % nBricks ( 3 ) )
 
       end associate !-- Outgoing, etc.
