@@ -12,7 +12,7 @@ contains
   module procedure ComposePillarsPack_2_Kernel
     
     integer ( KDI ) :: &
-      oO, &      !-- oOutgoing, oIncoming
+      oO, &      !-- oOutgoing
       iC, kC, &  !-- iCell, etc.
       iS, &      !-- iSelected
       nVariables !
@@ -52,7 +52,7 @@ contains
   module procedure ComposePillarsPack_3_Kernel
   
     integer ( KDI ) :: &
-      oO, &      !-- oOutgoing, oIncoming
+      oO, &      !-- oOutgoing
       iC, jC, &  !-- iCell, etc.
       iS, &      !-- iSelected
       nVariables !
@@ -92,10 +92,9 @@ contains
   module procedure ComposePillarsUnpack_2_Kernel
     
     integer ( KDI ) :: &
-      oI, &          !-- oOutgoing, oIncoming
+      oI, &          !-- oIncoming
       oP, &          !-- oPillar
       oC, &          !-- oCell
-      iC, jC, kC, &  !-- iCell, etc.
       iS, &          !-- iSelected
       iG, &          !-- iGroup (of pillars/processes)
       iB, &          !-- iBrick
@@ -105,14 +104,18 @@ contains
       nVariables
 
     oP = 0
-    oI = 0
     nVariables = size ( CoarsenPillar_2, dim = 2 )
     do iG = 1, nGroups 
       oC = 0
       do iB = 1, nBricks ( 2 )
         iR = ( iG - 1 ) * nBricks ( 2 )  +  iB  -  1
+        !$OMP  parallel do &
+        !$OMP& schedule ( OMP_SCHEDULE_HOST ) &
+        !$OMP& private ( oI, iPS, iP, iS ) &
+        !$OMP& firstprivate ( oP, oC, iR, nVariables )  
         do iPS = 1, nSegmentsFrom_2 ( iR )
           iP = oP + iPS
+          oI = oIC_2 ( iPS, iR )
           nCoarsen_2 ( iP ) &
             = min ( int ( Incoming ( oI + 1 ) + 0.5_KDR ), nCells ( 2 ) )
           oI = oI + 1
@@ -122,6 +125,7 @@ contains
             oI = oI + nCB ( 2 )
           end do !-- iS
         end do !-- iPS
+        !$OMP  end parallel do 
         oC = oC + nCB ( 2 )
       end do !-- iB
       oP = oP + nSegmentsFrom_2 ( iR )
@@ -133,7 +137,7 @@ contains
   module procedure ComposePillarsUnpack_3_Kernel
     
     integer ( KDI ) :: &
-      oI, &          !-- oOutgoing, oIncoming
+      oI, &          !-- oIncoming
       oP, &          !-- oPillar
       oC, &          !-- oCell
       iC, jC, kC, &  !-- iCell, etc.
@@ -218,7 +222,7 @@ contains
   module procedure DecomposePillarsPack_2_Kernel
     
     integer ( KDI ) :: &
-      oO, &           !-- oOutgoing
+      oO, &          !-- oOutgoing
       oP, &          !-- oPillar
       oC, &          !-- oCell
       iS, &          !-- iSelected
@@ -256,7 +260,7 @@ contains
   module procedure DecomposePillarsPack_3_Kernel
     
     integer ( KDI ) :: &
-      oO, &           !-- oOutgoing
+      oO, &          !-- oOutgoing
       oP, &          !-- oPillar
       oC, &          !-- oCell
       iS, &          !-- iSelected
@@ -296,7 +300,7 @@ contains
     integer ( KDI ) :: &
       oI, &      !-- oIncoming
       iC, kC, &  !-- iCell, etc.
-      iS, &          !-- iSelected
+      iS, &      !-- iSelected
       nVariables
     integer ( KDI ), dimension ( 3 ) :: &
       lC, uC
@@ -334,7 +338,7 @@ contains
     integer ( KDI ) :: &
       oI, &      !-- oIncoming
       iC, jC, &  !-- iCell, etc.
-      iS, &          !-- iSelected
+      iS, &      !-- iSelected
       nVariables
     integer ( KDI ), dimension ( 3 ) :: &
       lC, uC
