@@ -24,7 +24,9 @@ module FluidCentral_Template
         nCoarsen_3
       integer ( KDI ), dimension ( :, : ), allocatable :: &
         oOutgoingCompose_2_F, &
-        oOutgoingCompose_3_F
+        oOutgoingCompose_3_F, &
+        oIncomingDecompose_2_F, &
+        oIncomingDecompose_3_F
       real ( KDR ) :: &
         RadiusPolarMomentum = 0.0_KDR
       real ( KDR ), dimension ( :, :, : ), allocatable :: &     
@@ -130,6 +132,8 @@ module FluidCentral_Template
       ComputeEnclosedBaryons, &
       SetOffsetOutgoingCompose_2_F, &
       SetOffsetOutgoingCompose_3_F, &
+      SetOffsetIncomingDecompose_2_F, &
+      SetOffsetIncomingDecompose_3_F, &
       ComposePillars, &
       CoarsenPillars, &
       DecomposePillars, &
@@ -272,7 +276,7 @@ module FluidCentral_Template
 
     module subroutine DecomposePillarsUnpack_2_Kernel &
                         ( SV, Crsn_2, R, Incoming, RadiusPolarMomentum, &
-                          nCB, nGL, iaS, iMomentum_2, iMomentum_3 )
+                          oID_2, nCB, nGL, iaS, iMomentum_2, iMomentum_3 )
       use Basics
       implicit none
       real ( KDR ), dimension ( :, :, :, : ), intent ( inout ) :: &
@@ -284,6 +288,8 @@ module FluidCentral_Template
         Incoming
       real ( KDR ), intent ( in ) :: &
         RadiusPolarMomentum
+      integer ( KDI ), dimension ( :, : ), intent ( in ) :: &
+        oID_2
       integer ( KDI ), dimension ( : ), intent ( in ) :: &
         nCB, &    !-- nCellsBrick
         nGL, &    !-- nGhostLayers
@@ -295,7 +301,7 @@ module FluidCentral_Template
 
     module subroutine DecomposePillarsUnpack_3_Kernel &
                         ( SV, Crsn_3, R, Incoming, RadiusPolarMomentum, &
-                          nCB, nGL, iaS, iMomentum_2, iMomentum_3 )
+                          oID_3, nCB, nGL, iaS, iMomentum_2, iMomentum_3 )
       use Basics
       implicit none
       real ( KDR ), dimension ( :, :, :, : ), intent ( inout ) :: &
@@ -307,6 +313,8 @@ module FluidCentral_Template
         Incoming
       real ( KDR ), intent ( in ) :: &
         RadiusPolarMomentum
+      integer ( KDI ), dimension ( :, : ), intent ( in ) :: &
+        oID_3
       integer ( KDI ), dimension ( : ), intent ( in ) :: &
         nCB, &    !-- nCellsBrick
         nGL, &    !-- nGhostLayers
@@ -447,6 +455,10 @@ contains
     if ( allocated ( FC % CoarsenPillar_2 ) ) &
       deallocate ( FC % CoarsenPillar_2 )
 
+    if ( allocated ( FC % oIncomingDecompose_3_F ) ) &
+      deallocate ( FC % oIncomingDecompose_3_F )
+    if ( allocated ( FC % oIncomingDecompose_2_F ) ) &
+      deallocate ( FC % oIncomingDecompose_2_F )
     if ( allocated ( FC % oOutgoingCompose_3_F ) ) &
       deallocate ( FC % oOutgoingCompose_3_F )
     if ( allocated ( FC % oOutgoingCompose_2_F ) ) &
@@ -866,6 +878,9 @@ contains
       call SetOffsetOutgoingCompose_2_F &
                ( Crsn_2, C % nCellsBrick, C % nGhostLayers, F % N_CONSERVED, &
                  FC % oOutgoingCompose_2_F )
+      call SetOffsetIncomingDecompose_2_F &
+               ( Crsn_2, C % nCellsBrick, C % nGhostLayers, F % N_CONSERVED, &
+                 FC % oIncomingDecompose_2_F )
 
     case ( 3 )
 
@@ -902,6 +917,9 @@ contains
       call SetOffsetOutgoingCompose_3_F &
                ( Crsn_3, C % nCellsBrick, C % nGhostLayers, F % N_CONSERVED, &
                  FC % oOutgoingCompose_3_F )
+      call SetOffsetIncomingDecompose_3_F &
+               ( Crsn_3, C % nCellsBrick, C % nGhostLayers, F % N_CONSERVED, &
+                 FC % oIncomingDecompose_3_F )
 
     end select !-- iAngular
     end select !-- C
@@ -1200,7 +1218,7 @@ contains
       oOC_2
 
     integer ( KDI ) :: &
-      oO, &      !-- oOutgoing, oIncoming
+      oO, &      !-- oOutgoing
       iC, kC     !-- iCell, etc.
     integer ( KDI ), dimension ( 3 ) :: &
       lC, uC
@@ -1244,7 +1262,7 @@ contains
       oOC_3
 
     integer ( KDI ) :: &
-      oO, &      !-- oOutgoing, oIncoming
+      oO, &      !-- oOutgoing
       iC, jC     !-- iCell, etc.
     integer ( KDI ), dimension ( 3 ) :: &
       lC, uC
@@ -1272,6 +1290,90 @@ contains
 !call Show ( oOC_3, '>>> oOC_3' )
 
   end subroutine SetOffsetOutgoingCompose_3_F
+
+
+  subroutine SetOffsetIncomingDecompose_2_F &
+               ( Crsn_2, nCB, nGL, nVariables, oID_2 )
+
+    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+      Crsn_2
+    integer ( KDI ), dimension ( : ), intent ( in ) :: &
+      nCB, &
+      nGL
+    integer ( KDI ), intent ( in ) :: &
+      nVariables
+    integer ( KDI ), dimension ( :, : ), intent ( out ), allocatable :: &
+      oID_2
+
+    integer ( KDI ) :: &
+      oI, &      !-- oIncoming
+      iC, kC     !-- iCell, etc.
+    integer ( KDI ), dimension ( 3 ) :: &
+      lC, uC
+
+    allocate ( oID_2 ( nCB ( 1 )  +  2 * nGL ( 1 ), &
+                       nCB ( 3 )  +  2 * nGL ( 3 ) ) )
+
+    lC  =  nGL + 1
+    uC  =  nGL + nCB
+
+       oI  =  0
+    oID_2  =  0
+
+    do kC = lC ( 3 ), uC ( 3 )
+      do iC = lC ( 1 ), uC ( 1 )
+        if ( Crsn_2 ( iC, lC ( 2 ), kC ) < 2.0_KDR ) &
+          cycle
+        oID_2 ( iC, kC )  =  oI
+        oI  =  oI + nCB ( 2 ) * nVariables  !-- Coarsened variables
+      end do !-- iC
+    end do !-- kC
+
+!call Show ( oID_2, '>>> oID_2' )
+
+  end subroutine SetOffsetIncomingDecompose_2_F
+
+
+  subroutine SetOffsetIncomingDecompose_3_F &
+               ( Crsn_3, nCB, nGL, nVariables, oID_3 )
+
+    real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+      Crsn_3
+    integer ( KDI ), dimension ( : ), intent ( in ) :: &
+      nCB, &
+      nGL
+    integer ( KDI ), intent ( in ) :: &
+      nVariables
+    integer ( KDI ), dimension ( :, : ), intent ( out ), allocatable :: &
+      oID_3
+
+    integer ( KDI ) :: &
+      oI, &      !-- oIncoming
+      iC, jC     !-- iCell, etc.
+    integer ( KDI ), dimension ( 3 ) :: &
+      lC, uC
+
+    allocate ( oID_3 ( nCB ( 1 )  +  2 * nGL ( 1 ), &
+                       nCB ( 2 )  +  2 * nGL ( 2 ) ) )
+
+    lC  =  nGL + 1
+    uC  =  nGL + nCB
+
+       oI  =  0
+    oID_3  =  0
+
+    do jC = lC ( 2 ), uC ( 2 )
+      do iC = lC ( 1 ), uC ( 1 )
+        if ( Crsn_3 ( iC, jC, lC ( 3 ) ) < 2.0_KDR ) &
+          cycle
+        oID_3 ( iC, jC )  =  oI
+        oI  =  oI + nCB ( 3 ) * nVariables  !-- Coarsened variables
+      end do !-- iC
+    end do !-- jC
+
+!call Show ( oID_3, '>>> oID_3' )
+
+  end subroutine SetOffsetIncomingDecompose_3_F
 
 
   subroutine ComposePillars ( FC, S, iAngular )
@@ -1505,8 +1607,8 @@ contains
              
       call DecomposePillarsUnpack_2_Kernel &
              ( SV, Crsn_2, R, Incoming, FC % RadiusPolarMomentum, &
-               C % nCellsBrick, C % nGhostLayers, S % iaSelected, &
-               iMomentum_2, iMomentum_3 )
+               FC % oIncomingDecompose_2_F, C % nCellsBrick, C % nGhostLayers, &
+               S % iaSelected, iMomentum_2, iMomentum_3 )
 
       end associate !-- Outgoing, etc.
       end associate !-- CO
@@ -1540,8 +1642,8 @@ contains
              
       call DecomposePillarsUnpack_3_Kernel &
              ( SV, Crsn_3, R, Incoming, FC % RadiusPolarMomentum, &
-               C % nCellsBrick, C % nGhostLayers, S % iaSelected, &
-               iMomentum_2, iMomentum_3 )
+               FC % oIncomingDecompose_3_F, C % nCellsBrick, C % nGhostLayers, &
+               S % iaSelected, iMomentum_2, iMomentum_3 )
 
       end associate !-- Outgoing, etc.
       end associate !-- CO

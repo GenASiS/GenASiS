@@ -301,21 +301,25 @@ contains
     lC  =  nGL + 1
     uC  =  nGL + nCB
 
-    oI  =  0
+    !$OMP  parallel do collapse ( 2 ) &
+    !$OMP& schedule ( OMP_SCHEDULE_HOST ) &
+    !$OMP& private ( iC, kC, iS, oI ) firstprivate ( nVariables )  
     do kC  =  lC ( 3 ), uC ( 3 )
       do iC  =  lC ( 1 ), uC ( 1 )
-          if ( Crsn_2 ( iC, lC ( 2 ), kC ) < 2.0_KDR ) &
-            cycle
-          do iS = 1, nVariables
-            SV ( iC, lC ( 2 ) : uC ( 2 ), kC, iaS ( iS ) )  &
-              =  Incoming ( oI + 1 : oI + nCB ( 2 ) )
-            oI = oI + nCB ( 2 )
-            if ( ( iS == iMomentum_2 .or. iS == iMomentum_3 ) &
-                 .and. R ( iC, lC ( 2 ), kC )  <  RadiusPolarMomentum ) &
-              SV ( iC, lC ( 2 ) : uC ( 2 ), kC, iaS ( iS ) ) = 0.0_KDR
-          end do !-- iS
+        if ( Crsn_2 ( iC, lC ( 2 ), kC ) < 2.0_KDR ) &
+          cycle
+        oI  =  oID_2 ( iC, kC )
+        do iS = 1, nVariables
+          SV ( iC, lC ( 2 ) : uC ( 2 ), kC, iaS ( iS ) )  &
+            =  Incoming ( oI + 1 : oI + nCB ( 2 ) )
+          oI = oI + nCB ( 2 )
+          if ( ( iS == iMomentum_2 .or. iS == iMomentum_3 ) &
+               .and. R ( iC, lC ( 2 ), kC )  <  RadiusPolarMomentum ) &
+            SV ( iC, lC ( 2 ) : uC ( 2 ), kC, iaS ( iS ) ) = 0.0_KDR
+        end do !-- iS
       end do !-- iC
     end do !-- kC
+    !$OMP  end parallel do
 
   end procedure DecomposePillarsUnpack_2_Kernel
 
@@ -335,21 +339,25 @@ contains
     lC  =  nGL + 1
     uC  =  nGL + nCB
 
-    oI  =  0
+    !$OMP  parallel do collapse ( 2 ) &
+    !$OMP& schedule ( OMP_SCHEDULE_HOST ) &
+    !$OMP& private ( iC, jC, iS, oI ) firstprivate ( nVariables )  
     do jC  =  lC ( 2 ), uC ( 2 )
       do iC  =  lC ( 1 ), uC ( 1 )
-          if ( Crsn_3 ( iC, jC, lC ( 3 ) ) < 2.0_KDR ) &
-            cycle
-          do iS = 1, nVariables
-            SV ( iC, jC, lC ( 3 ) : uC ( 3 ), iaS ( iS ) )  &
-              =  Incoming ( oI + 1 : oI + nCB ( 3 ) )
-            oI = oI + nCB ( 3 )
-            if ( ( iS == iMomentum_2 .or. iS == iMomentum_3 ) &
-                 .and. R ( iC, jC, lC ( 3 ) )  <  RadiusPolarMomentum ) &
-              SV ( iC, jC, lC ( 3 ) : uC ( 3 ), iaS ( iS ) ) = 0.0_KDR
-          end do !-- iS
+        if ( Crsn_3 ( iC, jC, lC ( 3 ) ) < 2.0_KDR ) &
+          cycle
+        oI  =  oID_3 ( iC, jC )
+        do iS = 1, nVariables
+          SV ( iC, jC, lC ( 3 ) : uC ( 3 ), iaS ( iS ) )  &
+            =  Incoming ( oI + 1 : oI + nCB ( 3 ) )
+          oI = oI + nCB ( 3 )
+          if ( ( iS == iMomentum_2 .or. iS == iMomentum_3 ) &
+               .and. R ( iC, jC, lC ( 3 ) )  <  RadiusPolarMomentum ) &
+            SV ( iC, jC, lC ( 3 ) : uC ( 3 ), iaS ( iS ) ) = 0.0_KDR
+        end do !-- iS
       end do !-- iC
     end do !-- jC
+    !$OMP  end parallel do
 
   end procedure DecomposePillarsUnpack_3_Kernel
 
