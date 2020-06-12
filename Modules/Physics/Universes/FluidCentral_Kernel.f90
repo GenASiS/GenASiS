@@ -188,6 +188,10 @@ contains
       nPillars  =  size ( CP, dim = 3 ) 
     nVariables  =  size ( CP, dim = 2 )
 
+    !$OMP  parallel do &
+    !$OMP& schedule ( OMP_SCHEDULE_HOST ) &
+    !$OMP& private ( iP, iA, iV, oC, nAverages, Volume_A, Density_A ) &
+    !$OMP& firstprivate ( nPillars, nVariables )  
     do iP  =  1, nPillars
       oC  =  0
       nAverages  =  size ( CP, dim = 1 )  /  nCoarsen ( iP )
@@ -195,17 +199,18 @@ contains
       do iA  =  1, nAverages
         Volume_A  =  sum ( Volume ( oC + 1 : oC + nCoarsen ( iP ) ) )
         do iV = 2, nVariables
-          associate ( Density => CP ( :, iV, iP ) )
+          !associate ( Density => CP ( :, iV, iP ) )
           Density_A = sum ( Volume ( oC + 1 : oC + nCoarsen ( iP ) ) &
-                            *  Density ( oC + 1 : oC + nCoarsen ( iP ) ) )
-          Density ( oC + 1 : oC + nCoarsen ( iP ) ) &
+                            *  CP ( oC + 1 : oC + nCoarsen ( iP ), iV, iP ) )
+          CP ( oC + 1 : oC + nCoarsen ( iP ), iV, iP ) &
             =  Density_A / Volume_A
-          end associate !-- Density
+          !end associate !-- Density
         end do !-- iV
         oC  =  oC + nCoarsen ( iP )
       end do !-- iA
       end associate !-- Volume
     end do !-- iP
+    !$OMP  end parallel do 
 
   end procedure CoarsenPillarsKernel
 
