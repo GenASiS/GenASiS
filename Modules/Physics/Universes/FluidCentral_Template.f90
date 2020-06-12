@@ -27,6 +27,8 @@ module FluidCentral_Template
         oOutgoingCompose_3_F, &
         oIncomingCompose_2_F, &
         oIncomingCompose_3_F, &
+        oOutgoingDecompose_2_F, &
+        oOutgoingDecompose_3_F, &
         oIncomingDecompose_2_F, &
         oIncomingDecompose_3_F
       real ( KDR ) :: &
@@ -136,6 +138,8 @@ module FluidCentral_Template
       SetOffsetOutgoingCompose_3_F, &
       SetOffsetIncomingCompose_2_F, &
       SetOffsetIncomingCompose_3_F, &
+      SetOffsetOutgoingDecompose_2_F, &
+      SetOffsetOutgoingDecompose_3_F, &
       SetOffsetIncomingDecompose_2_F, &
       SetOffsetIncomingDecompose_3_F, &
       ComposePillars, &
@@ -247,7 +251,7 @@ module FluidCentral_Template
     end subroutine CoarsenPillarsKernel
 
     module subroutine DecomposePillarsPack_2_Kernel &
-                        ( Outgoing, CoarsenPillar_2, nCB, nBricks, &
+                        ( Outgoing, CoarsenPillar_2, oOD_2, nCB, nBricks, &
                           nSegmentsFrom_2, nGroups )
       use Basics
       implicit none
@@ -255,6 +259,8 @@ module FluidCentral_Template
         Outgoing
       real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
         CoarsenPillar_2
+      integer ( KDI ), dimension ( :, 0 : ), intent ( in ) :: &
+        oOD_2
       integer ( KDI ), dimension ( : ), intent ( in ) :: &
         nCB, &          !-- nCellsBrick
         nBricks
@@ -265,7 +271,7 @@ module FluidCentral_Template
     end subroutine DecomposePillarsPack_2_Kernel
 
     module subroutine DecomposePillarsPack_3_Kernel &
-                        ( Outgoing, CoarsenPillar_3, nCB, nBricks, &
+                        ( Outgoing, CoarsenPillar_3, oOD_3, nCB, nBricks, &
                           nSegmentsFrom_3, nGroups )
       use Basics
       implicit none
@@ -273,6 +279,8 @@ module FluidCentral_Template
         Outgoing
       real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
         CoarsenPillar_3
+      integer ( KDI ), dimension ( :, 0 : ), intent ( in ) :: &
+        oOD_3
       integer ( KDI ), dimension ( : ), intent ( in ) :: &
         nCB, &          !-- nCellsBrick
         nBricks
@@ -467,6 +475,10 @@ contains
       deallocate ( FC % oIncomingDecompose_3_F )
     if ( allocated ( FC % oIncomingDecompose_2_F ) ) &
       deallocate ( FC % oIncomingDecompose_2_F )
+    if ( allocated ( FC % oOutgoingDecompose_3_F ) ) &
+      deallocate ( FC % oOutgoingDecompose_3_F )
+    if ( allocated ( FC % oOutgoingDecompose_2_F ) ) &
+      deallocate ( FC % oOutgoingDecompose_2_F )
 
     if ( allocated ( FC % oIncomingCompose_3_F ) ) &
       deallocate ( FC % oIncomingCompose_3_F )
@@ -897,6 +909,12 @@ contains
                nGroups = C % Communicator_2 % Size  /  C % nBricks ( 2 ), &
                nVariables = size ( FC % CoarsenPillar_2, dim = 2 ), &
                oIC_2 = FC % oIncomingCompose_2_F )
+      call SetOffsetOutgoingDecompose_2_F &
+             ( C % nCellsBrick, C % nBricks, C % nSegmentsFrom_2, &
+               nRanks = C % Communicator_2 % Size, &
+               nGroups = C % Communicator_2 % Size  /  C % nBricks ( 2 ), &
+               nVariables = size ( FC % CoarsenPillar_2, dim = 2 ), &
+               oOD_2 = FC % oOutgoingDecompose_2_F )
       call SetOffsetIncomingDecompose_2_F &
              ( Crsn_2, C % nCellsBrick, C % nGhostLayers, F % N_CONSERVED, &
                FC % oIncomingDecompose_2_F )
@@ -942,6 +960,12 @@ contains
                nGroups = C % Communicator_3 % Size  /  C % nBricks ( 3 ), &
                nVariables = size ( FC % CoarsenPillar_3, dim = 2 ), &
                oIC_3 = FC % oIncomingCompose_3_F )
+      call SetOffsetOutgoingDecompose_3_F &
+             ( C % nCellsBrick, C % nBricks, C % nSegmentsFrom_3, &
+               nRanks = C % Communicator_3 % Size, &
+               nGroups = C % Communicator_3 % Size  /  C % nBricks ( 3 ), &
+               nVariables = size ( FC % CoarsenPillar_3, dim = 2 ), &
+               oOD_3 = FC % oOutgoingDecompose_3_F )
       call SetOffsetIncomingDecompose_3_F &
              ( Crsn_3, C % nCellsBrick, C % nGhostLayers, F % N_CONSERVED, &
                FC % oIncomingDecompose_3_F )
@@ -1401,6 +1425,88 @@ contains
   end subroutine SetOffsetIncomingCompose_3_F
 
 
+  subroutine SetOffsetOutgoingDecompose_2_F &
+               ( nCB, nBricks, nSegmentsTo_2, nRanks, nGroups, nVariables, &
+                 oOD_2 )
+
+    integer ( KDI ), dimension ( : ), intent ( in ) :: &
+      nCB, &          !-- nCellsBrick
+      nBricks
+    integer ( KDI ), dimension ( 0 : ), intent ( in ) :: &
+      nSegmentsTo_2
+    integer ( KDI ), intent ( in ) :: &
+      nRanks, &
+      nGroups, &
+      nVariables
+    integer ( KDI ), dimension ( :, : ), intent ( out ), allocatable :: &
+      oOD_2
+
+    integer ( KDI ) :: &
+      oO, &          !-- oOutgoing
+      iG, &          !-- iGroup (of pillars/processes)
+      iB, &          !-- iBrick
+      iR, &          !-- iRank
+      iPS            !-- iPillarSegment
+
+    allocate ( oOD_2 ( maxval ( nSegmentsTo_2 ), 0 : nRanks - 1 ) )
+
+       oO  =  0
+    oOD_2  =  0
+
+    do iG = 1, nGroups 
+      do iB = 1, nBricks ( 2 )
+        iR = ( iG - 1 ) * nBricks ( 2 )  +  iB  -  1
+        do iPS = 1, nSegmentsTo_2 ( iR )
+          oOD_2 ( iPS, iR )  =  oO
+          oO  =  oO + nCB ( 2 ) * ( nVariables - 1 ) !-- Packed variables
+        end do !-- iPS
+      end do !-- iB
+    end do !-- iG
+
+  end subroutine SetOffsetOutgoingDecompose_2_F
+
+
+  subroutine SetOffsetOutgoingDecompose_3_F &
+               ( nCB, nBricks, nSegmentsTo_3, nRanks, nGroups, nVariables, &
+                 oOD_3 )
+
+    integer ( KDI ), dimension ( : ), intent ( in ) :: &
+      nCB, &          !-- nCellsBrick
+      nBricks
+    integer ( KDI ), dimension ( 0 : ), intent ( in ) :: &
+      nSegmentsTo_3
+    integer ( KDI ), intent ( in ) :: &
+      nRanks, &
+      nGroups, &
+      nVariables
+    integer ( KDI ), dimension ( :, : ), intent ( out ), allocatable :: &
+      oOD_3
+
+    integer ( KDI ) :: &
+      oO, &          !-- oOutgoing
+      iG, &          !-- iGroup (of pillars/processes)
+      iB, &          !-- iBrick
+      iR, &          !-- iRank
+      iPS            !-- iPillarSegment
+
+    allocate ( oOD_3 ( maxval ( nSegmentsTo_3 ), 0 : nRanks - 1 ) )
+
+       oO  =  0
+    oOD_3  =  0
+
+    do iG = 1, nGroups 
+      do iB = 1, nBricks ( 3 )
+        iR = ( iG - 1 ) * nBricks ( 3 )  +  iB  -  1
+        do iPS = 1, nSegmentsTo_3 ( iR )
+          oOD_3 ( iPS, iR )  =  oO
+          oO  =  oO + nCB ( 3 ) * ( nVariables - 1 ) !-- Packed variables
+        end do !-- iPS
+      end do !-- iB
+    end do !-- iG
+
+  end subroutine SetOffsetOutgoingDecompose_3_F
+
+
   subroutine SetOffsetIncomingDecompose_2_F &
                ( Crsn_2, nCB, nGL, nVariables, oID_2 )
 
@@ -1701,8 +1807,8 @@ contains
           Incoming => CO % Incoming % Value )
 
       call DecomposePillarsPack_2_Kernel &
-             ( Outgoing, FC % CoarsenPillar_2, C % nCellsBrick, C % nBricks, &
-               C % nSegmentsFrom_2, &
+             ( Outgoing, FC % CoarsenPillar_2, FC % oOutgoingDecompose_2_F, &
+               C % nCellsBrick, C % nBricks, C % nSegmentsFrom_2, &
                nGroups = C % Communicator_2 % Size  /  C % nBricks ( 2 ) )
 
       call T_Comm % Start ( )
@@ -1736,8 +1842,8 @@ contains
           Incoming => CO % Incoming % Value )
 
       call DecomposePillarsPack_3_Kernel &
-             ( Outgoing, FC % CoarsenPillar_3, C % nCellsBrick, C % nBricks, &
-               C % nSegmentsFrom_3, &
+             ( Outgoing, FC % CoarsenPillar_3, FC % oOutgoingDecompose_3_F, &
+               C % nCellsBrick, C % nBricks, C % nSegmentsFrom_3, &
                nGroups = C % Communicator_3 % Size  /  C % nBricks ( 3 ) )
 
       call T_Comm % Start ( )

@@ -241,19 +241,24 @@ contains
     nVariables  =  size ( CoarsenPillar_2, dim = 2 )
 
     oP  =  0
-    oO  =  0
     do iG  =  1, nGroups
       oC  =  0
       do iB  =  1, nBricks ( 2 )
         iR  =  ( iG - 1 ) * nBricks ( 2 )  +  iB  -  1
+        !$OMP  parallel do &
+        !$OMP& schedule ( OMP_SCHEDULE_HOST ) &
+        !$OMP& private ( oO, iPS, iP, iS ) &
+        !$OMP& firstprivate ( oP, oC, iR, nVariables )  
         do iPS = 1, nSegmentsFrom_2 ( iR )
           iP  =  oP + iPS
+          oO = oOD_2 ( iPS, iR )
           do iS = 2, nVariables
             Outgoing ( oO + 1 : oO + nCB ( 2 ) )  &
               =  CoarsenPillar_2 ( oC + 1 : oC + nCB ( 2 ), iS, iP )
             oO  =  oO + nCB ( 2 )
           end do !-- iS
         end do !-- iPS
+        !$OMP  end parallel do 
         oC  =  oC + nCB ( 2 )
       end do !-- iB
       oP  =  oP + nSegmentsFrom_2 ( iR )
@@ -284,14 +289,20 @@ contains
       oC  =  0
       do iB  =  1, nBricks ( 3 )
         iR  =  ( iG - 1 ) * nBricks ( 3 )  +  iB  -  1
+        !$OMP  parallel do &
+        !$OMP& schedule ( OMP_SCHEDULE_HOST ) &
+        !$OMP& private ( oO, iPS, iP, iS ) &
+        !$OMP& firstprivate ( oP, oC, iR, nVariables )  
         do iPS = 1, nSegmentsFrom_3 ( iR )
           iP  =  oP + iPS
+          oO = oOD_3 ( iPS, iR )
           do iS = 2, nVariables
             Outgoing ( oO + 1 : oO + nCB ( 3 ) )  &
               =  CoarsenPillar_3 ( oC + 1 : oC + nCB ( 3 ), iS, iP )
             oO  =  oO + nCB ( 3 )
           end do !-- iS
         end do !-- iPS
+        !$OMP  end parallel do 
         oC  =  oC + nCB ( 3 )
       end do !-- iB
       oP  =  oP + nSegmentsFrom_3 ( iR )
