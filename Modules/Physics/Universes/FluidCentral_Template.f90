@@ -13,12 +13,12 @@ module FluidCentral_Template
 
   type, public, extends ( UniverseTemplate ), abstract :: &
     FluidCentralTemplate
-      integer ( KDI ) :: &
-        iTimerComposePillar, &
-        iTimerComposeComm, &
-        iTimerCoarsenPillar, &
-        iTimerDecomposePillar, &
-        iTimerDecomposeComm
+      ! integer ( KDI ) :: &
+      !   iTimerComposePillar, &
+      !   iTimerComposeComm, &
+      !   iTimerCoarsenPillar, &
+      !   iTimerDecomposePillar, &
+      !   iTimerDecomposeComm
       integer ( KDI ), dimension ( : ), allocatable :: &
         nCoarsen_2, &
         nCoarsen_3
@@ -425,16 +425,16 @@ contains
 
     end select !-- I
     
-    call PROGRAM_HEADER % AddTimer &
-           ( 'ComposePillar', FC % iTimerComposePillar, Level = 1 )
-    call PROGRAM_HEADER % AddTimer &
-           ( 'ComposeComm', FC % iTimerComposeComm, Level = 2 )
-    call PROGRAM_HEADER % AddTimer &
-           ( 'CoarsenPillar', FC % iTimerCoarsenPillar, Level = 1 )
-    call PROGRAM_HEADER % AddTimer &
-           ( 'DecomposePillar', FC % iTimerDecomposePillar, Level = 1 )
-    call PROGRAM_HEADER % AddTimer &
-           ( 'DecomposeComm', FC % iTimerDecomposeComm, Level = 2 )
+    ! call PROGRAM_HEADER % AddTimer &
+    !        ( 'ComposePillar', FC % iTimerComposePillar, Level = 1 )
+    ! call PROGRAM_HEADER % AddTimer &
+    !        ( 'ComposeComm', FC % iTimerComposeComm, Level = 2 )
+    ! call PROGRAM_HEADER % AddTimer &
+    !        ( 'CoarsenPillar', FC % iTimerCoarsenPillar, Level = 1 )
+    ! call PROGRAM_HEADER % AddTimer &
+    !        ( 'DecomposePillar', FC % iTimerDecomposePillar, Level = 1 )
+    ! call PROGRAM_HEADER % AddTimer &
+    !        ( 'DecomposeComm', FC % iTimerDecomposeComm, Level = 2 )
 
   end subroutine InitializeTemplate_FC
 
@@ -989,10 +989,10 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iAngular
       
-    type ( TimerForm ), pointer :: &
-      T_Compose, &
-      T_Coarsen, &
-      T_Decompose
+    ! type ( TimerForm ), pointer :: &
+    !   T_Compose, &
+    !   T_Coarsen, &
+    !   T_Decompose
 
     if ( .not. FC % UseCoarsening ) &
       return
@@ -1000,21 +1000,21 @@ contains
     call Show ( 'Coarsening Singularity', FC % IGNORABILITY + 2 )
     call Show ( iAngular, 'iAngular', FC % IGNORABILITY + 2 )
     
-    T_Compose   => PROGRAM_HEADER % TimerPointer ( FC % iTimerComposePillar )
-    T_Coarsen   => PROGRAM_HEADER % TimerPointer ( FC % iTimerCoarsenPillar )
-    T_Decompose => PROGRAM_HEADER % TimerPointer ( FC % iTimerDecomposePillar )
+    ! T_Compose   => PROGRAM_HEADER % TimerPointer ( FC % iTimerComposePillar )
+    ! T_Coarsen   => PROGRAM_HEADER % TimerPointer ( FC % iTimerCoarsenPillar )
+    ! T_Decompose => PROGRAM_HEADER % TimerPointer ( FC % iTimerDecomposePillar )
     
-    call T_Compose % Start ( )
+!    call T_Compose % Start ( )
     call ComposePillars ( FC, Increment, iAngular )
-    call T_Compose % Stop ( )
+!    call T_Compose % Stop ( )
     
-    call T_Coarsen % Start ( )
+!    call T_Coarsen % Start ( )
     call CoarsenPillars ( FC, iAngular )
-    call T_Coarsen % Stop ( )
+!    call T_Coarsen % Stop ( )
     
-    call T_Decompose % Start ( )
+!    call T_Decompose % Start ( )
     call DecomposePillars ( FC, Increment, iAngular )
-    call T_Decompose % Stop ( )
+!    call T_Decompose % Stop ( )
 
   end subroutine CoarsenSingularityTemplate
 
@@ -1605,12 +1605,12 @@ contains
       Vol
     real ( KDR ), dimension ( :, :, :, : ), pointer :: &
       SV
-    type ( TimerForm ), pointer :: &
-      T_Comm
+!    type ( TimerForm ), pointer :: &
+!      T_Comm
     class ( GeometryFlatForm ), pointer :: &
       G
       
-    T_Comm   => PROGRAM_HEADER % TimerPointer ( FC % iTimerComposeComm )
+!    T_Comm   => PROGRAM_HEADER % TimerPointer ( FC % iTimerComposeComm )
 
     select type ( I => FC % Integrator )
     class is ( Integrator_C_PS_Form )
@@ -1645,9 +1645,9 @@ contains
              ( Outgoing, SV, Crsn_2, Vol, FC % oOutgoingCompose_2_F, &
                C % nCellsBrick, C % nGhostLayers, S % iaSelected )
       
-      call T_Comm % Start ( )
+!      call T_Comm % Start ( )
       call CO % AllToAll_V ( )
-      call T_Comm % Stop ( )
+!      call T_Comm % Stop ( )
       
       call ComposePillarsUnpack_2_Kernel &
              ( FC % CoarsenPillar_2, FC % nCoarsen_2, Incoming, &
@@ -1680,9 +1680,9 @@ contains
              ( Outgoing, SV, Crsn_3, Vol, FC % oOutgoingCompose_3_F, &
                C % nCellsBrick, C % nGhostLayers, S % iaSelected )
       
-      call T_Comm % Start ( )
+!      call T_Comm % Start ( )
       call CO % AllToAll_V ( )
-      call T_Comm % Stop ( )
+!      call T_Comm % Stop ( )
       
       call ComposePillarsUnpack_3_Kernel &
              ( FC % CoarsenPillar_3, FC % nCoarsen_3, Incoming, &
@@ -1774,12 +1774,12 @@ contains
       Crsn_2, Crsn_3
     real ( KDR ), dimension ( :, :, :, : ), pointer :: &
       SV
-    type ( TimerForm ), pointer :: &
-      T_Comm
+!    type ( TimerForm ), pointer :: &
+!      T_Comm
     class ( GeometryFlatForm ), pointer :: &
       G
       
-    T_Comm   => PROGRAM_HEADER % TimerPointer ( FC % iTimerDecomposeComm )
+!    T_Comm   => PROGRAM_HEADER % TimerPointer ( FC % iTimerDecomposeComm )
 
     select type ( I => FC % Integrator )
     class is ( Integrator_C_PS_Form )
@@ -1811,9 +1811,9 @@ contains
                C % nCellsBrick, C % nBricks, C % nSegmentsFrom_2, &
                nGroups = C % Communicator_2 % Size  /  C % nBricks ( 2 ) )
 
-      call T_Comm % Start ( )
+!      call T_Comm % Start ( )
       call CO % AllToAll_V ( )
-      call T_Comm % Stop ( )
+!      call T_Comm % Stop ( )
 
       call C % SetVariablePointer &
              ( G % Value ( :, G % COARSENING ( 2 ) ), Crsn_2 )
@@ -1846,9 +1846,9 @@ contains
                C % nCellsBrick, C % nBricks, C % nSegmentsFrom_3, &
                nGroups = C % Communicator_3 % Size  /  C % nBricks ( 3 ) )
 
-      call T_Comm % Start ( )
+!      call T_Comm % Start ( )
       call CO % AllToAll_V ( )
-      call T_Comm % Stop ( )
+!      call T_Comm % Stop ( )
 
       call C % SetVariablePointer &
              ( G % Value ( :, G % COARSENING ( 3 ) ), Crsn_3 )
