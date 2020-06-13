@@ -210,21 +210,21 @@ contains
     class ( FieldAtlasTemplate ), intent ( in ) :: &
       Source
 
-    class ( StorageForm ), pointer :: &
-      Source_S, &
-      Solution_S
+    class ( Storage_CSL_Form ), pointer :: &
+      Source_CSL, &
+      Solution_CSL
 
     select type ( Source )
     class is ( Storage_ASC_Form )
-    Source_S => Source % Storage ( )
+    Source_CSL => Source % Storage_CSL ( )
 
     select type ( Solution )
     class is ( Storage_ASC_Form )
-    Solution_S => Solution % Storage ( )
+    Solution_CSL => Solution % Storage_CSL ( )
 
     select type ( C => P % Atlas % Chart )
     class is ( Chart_SLD_Form )
-      call SolveMultipole_CSL_Old ( P, C, Solution_S, Source_S )
+      call SolveMultipole_CSL_Old ( P, C, Solution_CSL, Source_CSL )
     class default
       call Show ( 'Chart type not supported', CONSOLE % ERROR )
       call Show ( 'Solve', 'subroutine', CONSOLE % ERROR )
@@ -238,16 +238,16 @@ contains
   end subroutine SolveOld
 
 
-  subroutine SolveMultipole_CSL_Old ( P, C, Solution, Source )
+  subroutine SolveMultipole_CSL_Old ( P, C, Solution_CSL, Source_CSL )
  
     type ( Poisson_ASC_Form ), intent ( inout ) :: &
       P
     class ( Chart_SLD_Form ), intent ( inout ) :: &
       C
-    class ( StorageForm ), intent ( inout ) :: &
-      Solution
-    class ( StorageForm ), intent ( in ) :: &
-      Source
+    class ( Storage_CSL_Form ), intent ( inout ), target :: &
+      Solution_CSL
+    class ( Storage_CSL_Form ), intent ( in ), target :: &
+      Source_CSL
 
     logical ( KDL ) :: &
       GridError
@@ -257,6 +257,12 @@ contains
       Timer_BS
     class ( GeometryFlatForm ), pointer :: &
       G
+    class ( StorageForm ), pointer :: &
+      Source, &
+      Solution
+    
+    Source    => Source_CSL % Storage ( )
+    Solution  => Source_CSL % Storage ( )
 
     Timer_CM  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerCombineMoments )
     Timer_ES  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerExchangeSolution )
@@ -287,7 +293,7 @@ contains
     if ( associated ( Timer_CM ) ) call Timer_CM % Stop ( )
 
     if ( associated ( Timer_ES ) ) call Timer_ES % Start ( )
-    call C % ExchangeGhostData ( Solution )
+    call C % ExchangeGhostData ( Solution_CSL )
     if ( associated ( Timer_ES ) ) call Timer_ES % Stop ( )
 
     if ( associated ( Timer_BS ) ) call Timer_BS % Start ( )
@@ -420,15 +426,18 @@ contains
 
     class ( StorageForm ), pointer :: &
       Solution_S
+    class ( Storage_CSL_Form ), pointer :: &
+      Solution_CSL
 
     select type ( Solution )
     class is ( Storage_ASC_Form )
-    Solution_S => Solution % Storage ( )
+    Solution_S    => Solution % Storage ( )
+    Solution_CSL  => Solution % Storage_CSL ( )
 
     select type ( C => P % Atlas % Chart )
     class is ( Chart_SLD_Form )
       call Solution_S % UpdateHost ( )
-      call C % ExchangeGhostData ( Solution_S )
+      call C % ExchangeGhostData ( Solution_CSL )
       call Solution_S % UpdateDevice ( )
     class default
       call Show ( 'Chart type not supported', CONSOLE % ERROR )

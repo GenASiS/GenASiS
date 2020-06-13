@@ -148,11 +148,22 @@ contains
       end associate !-- iBC
 
     end do !-- iF
-
+    
     if ( GhostExchange ) then
+
+      select type ( FA => FB % Section % Atlas ( iFC ) % Element )
+      class is ( Field_ASC_Template )
+        
+      select type ( FC => FA % Chart )
+      class is ( Field_CSL_Template )   
+        
       associate ( CB => B % Base_CSLD )
-      call CB % ExchangeGhostData ( FS )
+      call CB % ExchangeGhostData ( FC )
       end associate
+        
+      end select !-- FC
+      end select !-- FA
+      
     end if
 
     end associate !-- B

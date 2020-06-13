@@ -17,6 +17,20 @@ module Field_CSL__Template
     class ( StorageForm ), allocatable :: &
       Field, &
       FieldOutput
+    type ( MessageIncoming_1D_R_Form ), allocatable :: &
+      IncomingFace_L_R, &
+      IncomingFace_R_L, &
+      IncomingEdge_LL_RR, &
+      IncomingEdge_RR_LL, &
+      IncomingEdge_LR_RL, &
+      IncomingEdge_RL_LR
+    type ( MessageOutgoing_1D_R_Form ), allocatable :: &
+      OutgoingFace_L_R, &
+      OutgoingFace_R_L, &
+      OutgoingEdge_LL_RR, &
+      OutgoingEdge_RR_LL, &
+      OutgoingEdge_LR_RL, &
+      OutgoingEdge_RL_LR
   contains
     procedure, public, pass :: &
       InitializeTemplate_CSL
