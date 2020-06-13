@@ -60,8 +60,11 @@ contains
     M % Tag  = Tag
     
     M % Initialized    = .true.
+    
     M % AllocatedValue = .true.
-    if ( present ( AllocatedOption ) ) M % AllocatedValue = AllocatedOption
+    if ( present ( AllocatedOption ) ) &
+      M % AllocatedValue = AllocatedOption
+    
     M % D_Value        =  c_null_ptr
     M % Communicator   => C
 
