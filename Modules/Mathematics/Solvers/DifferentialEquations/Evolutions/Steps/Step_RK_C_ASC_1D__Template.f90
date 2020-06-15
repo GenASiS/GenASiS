@@ -28,7 +28,7 @@ module Step_RK_C_ASC_1D__Template
       type ( StorageForm ), dimension ( : ), allocatable :: &
         Solution_1D, &
         Y_1D
-      type ( StorageForm ), dimension ( :, : ), allocatable :: &
+      type ( Storage_CSL_Form ), dimension ( :, : ), allocatable :: &
         K_1D
       type ( CurrentPointerForm ), dimension ( : ), allocatable :: &
         Current_1D
@@ -350,7 +350,7 @@ contains
     do iC = 1, S % nCurrents
       associate &
         ( YV => S % Y_1D ( iC ) % Value, &
-          KV => S % K_1D ( iC, iK ) % Value )
+          KV => S % K_1D ( iC, iK ) % Field % Value )
       call MultiplyAdd ( YV, KV, A )
       end associate !-- YV, etc.
     end do !-- iC
@@ -374,13 +374,17 @@ contains
       TimerStore, &
       TimerConstraints, &
       TimerClear
-
+    type ( StorageForm ), pointer :: &
+      K_S
+    
     do iC = 1, S % nCurrents
       associate &
         ( C     => S % Current_1D ( iC ) % Pointer, &
           Chart => S % Chart, &
           K     => S % K_1D ( iC, iStage ), &
           Y     => S % Y_1D ( iC ) )
+      
+      K_S => K % Storage ( )
 
       if ( iStage > 1 ) then
         TimerStore => PROGRAM_HEADER % TimerPointer &
@@ -395,7 +399,7 @@ contains
 
       TimerClear => PROGRAM_HEADER % TimerPointer ( S % iTimerClearIncrement )
       if ( associated ( TimerClear ) ) call TimerClear % Start ( )    
-      call Clear ( K % Value, UseDeviceOption = K % AllocatedDevice )
+      call Clear ( K_S % Value, UseDeviceOption = K_S % AllocatedDevice )
       if ( associated ( TimerClear ) ) call TimerClear % Start ( )    
 
       S % ApplyDivergence_C  => S % ApplyDivergence_1D  ( iC ) % Pointer
@@ -409,6 +413,8 @@ contains
       S % ApplyRelaxation_C  => null ( )
       S % ApplySources_C     => null ( )
       S % ApplyDivergence_C  => null ( )
+      
+      nullify ( K_S )
 
       end associate !-- C, etc.
     end do !-- iC
@@ -431,7 +437,7 @@ contains
     do iC = 1, S % nCurrents
       associate &
         ( SV => S % Solution_1D ( iC ) % Value, &
-          KV => S % K_1D ( iC, iS ) % Value )
+          KV => S % K_1D ( iC, iS ) % Field % Value )
       call MultiplyAdd ( SV, KV, B )
       end associate !-- SV, etc.
     end do !-- iC
@@ -498,20 +504,30 @@ contains
     allocate ( S % Solution_1D ( S % nCurrents ) )
     allocate ( S % Y_1D ( S % nCurrents ) )
     allocate ( S % K_1D ( S % nCurrents, S % nStages ) )
+    
+    select type ( C => S % Chart )
+    class is ( Chart_SL_Template)
 
-    do iC = 1, S % nCurrents
-      associate &
-        ( nEquations => S % Current_1D ( iC ) % Pointer % N_CONSERVED, &
-          nValues    => S % Current_1D ( iC ) % Pointer % nValues )
+      do iC = 1, S % nCurrents
+        associate &
+          ( nEquations => S % Current_1D ( iC ) % Pointer % N_CONSERVED, &
+            nValues    => S % Current_1D ( iC ) % Pointer % nValues )
 
-      call S % Solution_1D ( iC ) % Initialize ( [ nValues, nEquations ] )
-      call S % Y_1D ( iC ) % Initialize ( [ nValues, nEquations ] )
-      do iS = 1, S % nStages
-        call S % K_1D ( iC, iS ) % Initialize ( [ nValues, nEquations ] )
-      end do !-- iS
+        call S % Solution_1D ( iC ) % Initialize ( [ nValues, nEquations ] )
+        call S % Y_1D ( iC ) % Initialize ( [ nValues, nEquations ] )
+        do iS = 1, S % nStages
+          call S % K_1D ( iC, iS ) % Initialize &
+                 ( C, NameShort = 'Step K', &
+                   UsePinnedMemory &
+                     = S % Current_1D ( iC ) % Pointer % AllocatedDevice, &
+                   nFields = nEquations, nValues = nValues )
+                   
+        end do !-- iS
 
-      end associate !-- nEquations, etc.
-    end do
+        end associate !-- nEquations, etc.
+      end do
+      
+    end select
 
   end subroutine Allocate_RK_C_1D
 

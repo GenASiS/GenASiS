@@ -67,7 +67,9 @@ module Step_RK_C_ASC__Template
       type ( StorageForm ), allocatable :: &
         Solution, &
         Y
-      type ( StorageForm ), dimension ( : ), allocatable :: &
+!      type ( StorageForm ), dimension ( : ), allocatable :: &
+!        K
+      type ( Storage_CSL_Form ), dimension ( : ), allocatable :: &
         K
 !       class ( GeometryFlatForm ), pointer :: &
 !         Geometry => null ( )
@@ -181,7 +183,6 @@ module Step_RK_C_ASC__Template
       class ( Step_RK_C_ASC_Template ), intent ( in ) :: &
         S
     end subroutine CC
-
     subroutine AS ( S, Sources, Increment, Current, TimeStep, iStage )
       use Basics
       use Fields
@@ -770,12 +771,16 @@ contains
       TimerStore, &
       TimerConstraints, &
       TimerClear
+    type ( StorageForm ), pointer :: &
+      K_S
 
     associate &
       ( C     => S % Current, &
         Chart => S % Chart, &
         K     => S % K ( iStage ), &
         Y     => S % Y )
+        
+    K_S => S % K ( iStage ) % Storage ( )
 
     if ( iStage > 1 ) then
       TimerStore => PROGRAM_HEADER % TimerPointer &
@@ -790,7 +795,7 @@ contains
 
     TimerClear => PROGRAM_HEADER % TimerPointer ( S % iTimerClearIncrement )
     if ( associated ( TimerClear ) ) call TimerClear % Start ( )    
-    call Clear ( K % Value, UseDeviceOption = K % AllocatedDevice )
+    call Clear ( K_S % Value, UseDeviceOption = K_S % AllocatedDevice )
     if ( associated ( TimerClear ) ) call TimerClear % Stop ( )    
 
     S % ApplyDivergence_C => S % ApplyDivergence % Pointer
@@ -803,6 +808,8 @@ contains
     S % ApplyRelaxation_C => null ( )
     S % ApplySources_C    => null ( )
     S % ApplyDivergence_C => null ( )
+    
+    nullify ( K_S )
 
     end associate !-- C, etc.
 
@@ -1129,7 +1136,7 @@ contains
 
     associate &
       ( YV  => S % Y % Value, &
-        KV  => S % K ( iK ) % Value )
+        KV  => S % K ( iK ) % Field % Value )
     
     call MultiplyAdd ( YV, KV, A, UseDeviceOption = S % Y % AllocatedDevice )
     
@@ -1150,7 +1157,7 @@ contains
       C
     class ( ChartTemplate ), intent ( inout ) :: &
       Chart
-    type ( StorageForm ), intent ( inout ) :: &
+    class ( Field_CSL_Template ), intent ( inout ) :: &
       K
     real ( KDR ), intent ( in ) :: &
       TimeStep
@@ -1174,11 +1181,13 @@ contains
       Timer_DTD, &
       Timer_DTH
     
+    associate ( K_S => K % Field )
+    
     !-- Divergence
     if ( associated ( S % ApplyDivergence_C ) ) then
       TimerDivergence => PROGRAM_HEADER % TimerPointer ( S % iTimerDivergence )
       if ( associated ( TimerDivergence ) ) call TimerDivergence % Start ( )
-      call S % ApplyDivergence_C ( ID, K, TimeStep, iStage )
+      call S % ApplyDivergence_C ( ID, K_S, TimeStep, iStage )
       if ( associated ( TimerDivergence ) ) call TimerDivergence % Stop ( )
     end if
 
@@ -1186,7 +1195,7 @@ contains
     if ( associated ( S % ApplySources_C ) ) then
       TimerSources => PROGRAM_HEADER % TimerPointer ( S % iTimerSources )
       if ( associated ( TimerSources ) ) call TimerSources % Start ( )
-      call S % ApplySources_C ( C % Sources, K, C, TimeStep, iStage )
+      call S % ApplySources_C ( C % Sources, K_S, C, TimeStep, iStage )
       if ( associated ( TimerSources ) ) call TimerSources % Stop ( )
     end if
     
@@ -1195,7 +1204,7 @@ contains
       TimerRelaxation => PROGRAM_HEADER % TimerPointer ( S % iTimerRelaxation )
       if ( associated ( TimerRelaxation ) ) call TimerRelaxation % Start ( )
       call S % ApplyRelaxation_C &
-             ( C, C % Sources, K, Chart, TimeStep, iStage, GeometryOption, &
+             ( C, C % Sources, K_S, Chart, TimeStep, iStage, GeometryOption, &
                iStrgeometryValueOption )
       if ( associated ( TimerRelaxation ) ) call TimerRelaxation % Stop ( )
     end if
@@ -1205,15 +1214,15 @@ contains
     call Timer_DTH % Start ( )
     select type ( Chart )
     class is ( Chart_SLD_Form )
-    if ( K % AllocatedDevice .and. .not. Chart % ExchangeGhostUseDevice ) &
-      call K % UpdateHost ( )
+    if ( K_S % AllocatedDevice .and. .not. Chart % ExchangeGhostUseDevice ) &
+      call K_S % UpdateHost ( )
     end select
     call Timer_DTH % Stop ( )
     
     if ( associated ( S % CoarsenSingularities ) ) then
       TimerCoarsen => PROGRAM_HEADER % TimerPointer ( S % iTimerCoarsen )
       if ( associated ( TimerCoarsen ) ) call TimerCoarsen % Start ( )
-      call S % CoarsenSingularities ( K )
+      call S % CoarsenSingularities ( K_S )
 !call Chart % Atlas % Communicator % Synchronize ( )
       if ( associated ( TimerCoarsen ) ) call TimerCoarsen % Stop ( )
     end if
@@ -1238,10 +1247,12 @@ contains
     call Timer_DTD % Start ( )
     select type ( Chart )
     class is ( Chart_SLD_Form )
-    if ( K % AllocatedDevice .and. .not. Chart % ExchangeGhostUseDevice ) &
-      call K % UpdateDevice ( )
+    if ( K_S % AllocatedDevice .and. .not. Chart % ExchangeGhostUseDevice ) &
+      call K_S % UpdateDevice ( )
     end select
     call Timer_DTD % Stop ( )
+    
+    end associate !-- K_S
     
   end subroutine ComputeStage_C
 
@@ -1257,7 +1268,7 @@ contains
 
     associate &
       ( SV  => S % Solution % Value, &
-        KV  => S % K ( iS ) % Value )
+        KV  => S % K ( iS ) % Field % Value )
     
     call MultiplyAdd &
            ( SV, KV, B, UseDeviceOption = S % Solution % AllocatedDevice )
@@ -1291,13 +1302,17 @@ contains
     if ( S % Current % AllocatedDevice ) &
       call S % Y % AllocateDevice ( ) 
     
-    do iS = 1, S % nStages
-      call S % K ( iS ) % Initialize &
-             ( [ nValues, nEquations ], &
-               PinnedOption = S % Current % AllocatedDevice )
-      if ( S % Current % AllocatedDevice ) &
-        call S % K ( iS ) % AllocateDevice ( )
-    end do !-- iS
+    select type ( C => S % Chart )
+    class is ( Chart_SL_Template)
+      do iS = 1, S % nStages
+        call S % K ( iS ) % Initialize &
+               ( C, NameShort = 'Step K', &
+                 UsePinnedMemory = S % Current % AllocatedDevice, &
+                 nFields = nEquations, nValues = nValues )
+        if ( S % Current % AllocatedDevice ) &
+          call S % K ( iS ) % AllocateDevice ( )
+      end do !-- iS
+    end select
 
     end associate !-- nEquations, etc.
 

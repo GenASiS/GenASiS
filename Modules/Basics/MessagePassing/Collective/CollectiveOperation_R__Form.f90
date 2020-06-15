@@ -5,6 +5,7 @@
 module CollectiveOperation_R__Form
 
   use MPI
+  use iso_c_binding
   use Specifiers
   use DataManagement
   use Display

@@ -137,7 +137,7 @@ contains
 
   function Storage_CSL ( SA ) result ( S )
 
-    class ( Storage_ASC_Form ), intent ( in ) :: &
+    class ( Storage_ASC_Form ), intent ( in ), target :: &
       SA
     class ( Storage_CSL_Form ), pointer :: &
       S
