@@ -40,9 +40,9 @@ clean:
 	rm -f *.o *.a *.mod *.ld *.smod
 
 clobber: clean
-	rm -f SineWaveAdvection_*
-	rm -f SawtoothWaveAdvection_*
-	rm -f RiemannProblem_*
+	find . -type f -executable -name 'SineWaveAdvection_*' -exec rm -f '{}' \;
+	find . -type f -executable -name 'SawtoothWaveAdvection_*' -exec rm -f '{}' \;
+	find . -type f -executable -name 'RiemannProblem_*' -exec rm -f '{}' \;
 
 include $(PATH_BASICS)/Makefile_Dependencies
 
