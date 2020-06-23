@@ -2,24 +2,27 @@
 # If PrgEnv-cray is not the default, use "module swap" to PrgEnv-cray
 
 FORTRAN_COMPILE      = ftn -c -eF
-FORTRAN_BOUND_CHECK  = -R bcp
-FORTRAN_DEBUG        = -g -hdevelop -hfp0 -K trap=fp
+FORTRAN_FIXEDFORM    = -ffixed
+FORTRAN_BOUND_CHECK  = #-R bcp #-- FIXME: bound checking causes issue with
+                               #          OpenMP. Reported to Cray.
+FORTRAN_DEBUG        = -g -hdevelop -eF -hfp0 -K trap=fp
 FORTRAN_OPTIMIZE     = #-Oipa2 #-- Default optimization (O2) but with lower ipa
-                       #       #   level (defaupt ipa3 causes issue)
 FORTRAN_PROFILE      = 
 
-CC_COMPILE  = cc -c -eF
-CC_DEBUG    = -g -hdevelop
-CC_OPTIMIZE = $(FORTRAN_OPTIMIZE)
+CC_COMPILE           = cc -c -eF
+CC_DEBUG             = -g -hdevelop
+CC_OPTIMIZE          = $(FORTRAN_OPTIMIZE)
 
-LINK = ftn
+NVCC_COMPILE         = nvcc -c
+
+LINK = ftn -homp
 
 #-- Silo library may be  automatically included & linked by 
 #-- "module load silo" if provided, otherwise, manually put include and 
 #-- link line flag &  location below
-SILO_DIR=/ccs/home/reubendb/projects/swtree/xk7/silo/4.10.2/cle5.2_gnu5.3.0
+SILO_DIR=/home/users/coe0021/localsw/poplar/silo/4.10.2_cce9.1.3
 INCLUDE_SILO = -I${SILO_DIR}/include
-LIBRARY_SILO = -L${SILO_DIR}/lib -lsiloh5 -lz
+LIBRARY_SILO = -L${SILO_DIR}/lib -lsilo
 
 #-- HDF5 library may be  automatically included & linked by 
 #-- "module load hdf5" if provided, otherwise, manually put include and 
@@ -27,13 +30,22 @@ LIBRARY_SILO = -L${SILO_DIR}/lib -lsiloh5 -lz
 INCLUDE_HDF5 = 
 LIBRARY_HDF5 = 
 
+ifeq ($(ENABLE_OMP_OFFLOAD), 1)
+#INCLUDE_CUDA = -I${CUDA_ROOT}/include
+#LIBRARY_CUDA = -L${CUDA_ROOT}/lib64 -lcudart
+#LIBRARY_CUDA = -L${ROCM_PATH}/lib -lhip_hcc
+endif
+
 INCLUDE_PREPROCESSOR = -I$(PATH_GENASIS)/Build
 
 #-- Enable unicode
 USE_ISO_10646 = 
 
+DEFINES_F = -homp
+DEFINES_C = 
 ifdef ENABLE_OMP_OFFLOAD
   ifeq ($(ENABLE_OMP_OFFLOAD), 1)
-    DEFINES = -DENABLE_OMP_OFFLOAD
+    DEFINES_F = -DENABLE_OMP_OFFLOAD -homp
+    DEFINES_C = -DENABLE_OMP_OFFLOAD
   endif
 endif
