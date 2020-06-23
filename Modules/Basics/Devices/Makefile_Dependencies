@@ -1,12 +1,12 @@
 Device_OMP.o: \
   Device_OMP.c
 
-Device_CUDA.o: \
-  Device_CUDA.c
+$(Device_Interface).o: \
+  $(Device_Interface).c
 
 Device_C_OMP.o: \
   Device_OMP.o \
-  Device_CUDA.o \
+  $(Device_Interface).o \
   Device_C_OMP.f90
 
 AllocateDevice_Command.o: \

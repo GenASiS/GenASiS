@@ -13,7 +13,7 @@ CC_COMPILE           = cc -c -eF
 CC_DEBUG             = -g -hdevelop
 CC_OPTIMIZE          = $(FORTRAN_OPTIMIZE)
 
-NVCC_COMPILE         = nvcc -c
+DEVICE_COMPILE       = #-- set below
 
 LINK = ftn -homp
 
@@ -30,22 +30,42 @@ LIBRARY_SILO = -L${SILO_DIR}/lib -lsilo
 INCLUDE_HDF5 = 
 LIBRARY_HDF5 = 
 
-ifeq ($(ENABLE_OMP_OFFLOAD), 1)
-#INCLUDE_CUDA = -I${CUDA_ROOT}/include
-#LIBRARY_CUDA = -L${CUDA_ROOT}/lib64 -lcudart
-#LIBRARY_CUDA = -L${ROCM_PATH}/lib -lhip_hcc
-endif
 
 INCLUDE_PREPROCESSOR = -I$(PATH_GENASIS)/Build
+
+#-- The following stanzas check whether we are building with CUDA or HIP
+ifeq ($(CRAY_ACCEL_TARGET), nvidia70)
+  DEVICE_CUDA    = 1
+  DEVICE_COMPILE = nvcc -c
+
+  INCLUDE_DEVICE = -I${CUDA_ROOT}/include
+  LIBRARY_DEVICE = -L${CUDA_ROOT}/lib64 -lcudart
+endif
+
+ifeq ($(CRAY_ACCEL_TARGET), amd_gfx906)
+  DEVICE_HIP     = 1
+  DEVICE_COMPILE = cc -c -D__HIP_PLATFORM_HCC__
+  
+  INCLUDE_DEVICE = -I${ROCM_PATH}/include
+  LIBRARY_DEVICE = -L${ROCM_PATH}/lib -lhip_hcc
+endif
+
 
 #-- Enable unicode
 USE_ISO_10646 = 
 
-DEFINES_F = -homp
-DEFINES_C = 
+#-- Enable OpenMP by default
+ifneq ($(ENABLE_OMP), 0)
+  FORTAN_COMPILE += -homp
+endif
+
+DEFINES_F      =
+DEFINES_C      = 
+DEFINES_DEVICE = 
 ifdef ENABLE_OMP_OFFLOAD
   ifeq ($(ENABLE_OMP_OFFLOAD), 1)
-    DEFINES_F = -DENABLE_OMP_OFFLOAD -homp
-    DEFINES_C = -DENABLE_OMP_OFFLOAD
+    DEFINES_F       = -DENABLE_OMP_OFFLOAD -homp
+    DEFINES_C       = -DENABLE_OMP_OFFLOAD 
+    DEFINES_DEVICE  = -DENABLE_OMP_OFFLOAD
   endif
 endif

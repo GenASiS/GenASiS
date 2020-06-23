@@ -99,7 +99,7 @@ module Device_C
     
     
     type ( c_ptr ) function AllocateHostDouble ( nValues ) &
-                              bind ( c, name = 'AllocateHostDouble_CUDA' )
+                              bind ( c, name = 'AllocateHostDouble_Device' )
       use iso_c_binding
       implicit none
       integer ( c_int ), value :: &
@@ -107,7 +107,7 @@ module Device_C
     end function AllocateHostDouble
     
     
-    subroutine FreeHost ( Host ) bind ( c, name = 'FreeHost_CUDA' )
+    subroutine FreeHost ( Host ) bind ( c, name = 'FreeHost_Device' )
       use iso_c_binding
       implicit none
       type ( c_ptr ), value :: &
@@ -156,7 +156,7 @@ module Device_C
     
     
     integer ( c_int ) function DeviceMemGetInfo ( Free, Total ) &
-                        bind ( c, name = 'DeviceMemGetInfo_CUDA' )
+                        bind ( c, name = 'DeviceMemGetInfo_Device' )
       use iso_c_binding
       implicit none
       integer ( c_size_t ) :: &
