@@ -30,10 +30,6 @@ module Fluid_P__Template
       MACH_NUMBER         = 0, &
       TEMPERATURE         = 0, &
       ENTROPY_PER_BARYON  = 0
-    integer ( KDI ) :: &
-      iTimerComputeFluxes_HLLC, &
-      iTimerComputeCenterStates, &
-      iTimerComputeCenterSpeed      
   contains
     procedure, public, pass :: &
       InitializeTemplate_P
@@ -274,16 +270,6 @@ contains
              PinnedOption = PinnedOption, UnitOption = VariableUnit, &
              VectorIndicesOption = VectorIndicesOption )
     
-    call PROGRAM_HEADER % AddTimer &
-           ( 'ComputeFluxes_HLCC', F % iTimerComputeFluxes_HLLC, &
-             Level = 6 )
-    call PROGRAM_HEADER % AddTimer &
-           ( 'ComputeCenterStates', F % iTimerComputeCenterStates, &
-             Level = 6 )
-    call PROGRAM_HEADER % AddTimer &
-           ( 'ComputeCenterSpeed', F % iTimerComputeCenterSpeed, &
-             Level = 6 )
-
   end subroutine InitializeTemplate_P
 
 
@@ -412,11 +398,6 @@ contains
       M_DD_22, &
       M_DD_33
     
-    associate &
-      ( T_CFHLL  => PROGRAM_HEADER % Timer ( C % iTimerComputeFluxes_HLL ), &
-        T_CFHLLC => PROGRAM_HEADER % Timer ( C % iTimerComputeFluxes_HLLC ), &
-        T_CCS => PROGRAM_HEADER % Timer ( C % iTimerComputeCenterSpeed ) )
-
     select type ( I => Increment )
     class is ( IncrementDivergence_FV_Form )
     
@@ -451,7 +432,6 @@ contains
       M_DD_22 => G_I % Value ( :, G % METRIC_DD_22 )
       M_DD_33 => G_I % Value ( :, G % METRIC_DD_33 )
       
-      call T_CCS % Start ( )
       call Search &
              ( C % iaConserved, C % CONSERVED_DENSITY, &
                iDensity )
@@ -471,7 +451,6 @@ contains
                SS_I % Value ( :, C % ALPHA_PLUS ), &
                SS_I % Value ( :, C % ALPHA_MINUS ), &
                M_UU, UseDeviceOption = SS_I % AllocatedDevice )
-      call T_CCS % Stop ( )
       associate &
         ( C_ICL => I % Storage % Current_ICL, &
           C_ICR => I % Storage % Current_ICR )
@@ -487,7 +466,6 @@ contains
       
       select type ( FF => C % Features )
       class is ( FluidFeaturesTemplate )
-      call T_CFHLLC % Start ( )
       do iF = 1, C % N_CONSERVED
         call ComputeFluxes_HLLC_Kernel &
                ( F_I  % Value ( :, iF ), &
@@ -499,7 +477,6 @@ contains
                  FF   % Value ( :, FF % DIFFUSIVE_FLUX_I ( iDimension ) ), &
                  UseDeviceOption = F_I % AllocatedDevice )
       end do !-- iF
-      call T_CFHLLC % Stop ( )
       end select !-- FF
       
       end associate !-- C_ICL, etc.
@@ -513,8 +490,6 @@ contains
       call PROGRAM_HEADER % Abort ( )
     end select !-- Increment
     
-    end associate !-- Timers
-
     nullify ( M_UU, M_DD_22, M_DD_33 )
 
   end subroutine ComputeFluxes
@@ -587,11 +562,6 @@ contains
       nV = size ( Value_C, dim = 1 )
     end if
     
-    associate &
-      ( T_CRF => PROGRAM_HEADER % Timer ( C % iTimerComputeRawFluxes ) )
-    
-    call T_CRF % Start ( )
-    
     call Search &
            ( C % iaConserved, C % CONSERVED_DENSITY, iDensity )
     call Search &
@@ -627,10 +597,6 @@ contains
 
     end associate !-- F_S_Dim, etc.
     
-    call T_CRF % Stop ( )
-    
-    end associate !-- T_CRF
-    
     end associate !-- Value_RF
 
   end subroutine ComputeRawFluxesTemplate_P
@@ -650,11 +616,6 @@ contains
       M_DD_22, M_DD_33
     integer ( KDI ), intent ( in ) :: &
       iD
-    
-    associate &
-      ( T_CCS => PROGRAM_HEADER % Timer ( C % iTimerComputeCenterStates ) )
-    
-    call T_CCS % Start ( )
     
     call ComputeCenterStatesKernel &
            ( C_ICL % Value ( :, C % VELOCITY_U ( 1 ) &
@@ -690,10 +651,6 @@ contains
              SS_I % Value ( :, C % ALPHA_CENTER ), &
              M_DD_22, M_DD_33, iD, UseDeviceOption = SS_I % AllocatedDevice )
     
-    call T_CCS % Stop ( )
-    
-    end associate 
-
   end subroutine ComputeCenterStatesTemplate_P
 
 

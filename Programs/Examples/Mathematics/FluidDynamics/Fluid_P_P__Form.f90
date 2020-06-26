@@ -303,19 +303,10 @@ contains
         SB    => FV ( oV + 1 : oV + nV, C % ENTROPY_PER_BARYON ), &
         K     => FV ( oV + 1 : oV + nV, C % POLYTROPIC_PARAMETER ) )
 
-    associate &
-      ( T_CFP => PROGRAM_HEADER % Timer ( C % iTimerComputeFromPrimitive ), &
-        T_CE  => PROGRAM_HEADER % Timer ( C % iTimerComputeEigenspeed ), &
-        T_AE  => PROGRAM_HEADER % Timer ( C % iTimerApply_EOS ) ) 
-
-    call T_AE % Start ( )
     call C % Apply_EOS_P_Kernel &
            ( P, Gamma, SB, K, N, E, C % AdiabaticIndex, &
              C % FiducialPolytropicParameter, &
              UseDeviceOption = C % AllocatedDevice )
-    call T_AE % Stop ( )
-    
-    call T_CFP % Start ( )
     !call C % ComputeBaryonMassKernel &
     !       ( M, UseDeviceOption = C % AllocatedDevice )
     !call C % ComputeDensityMomentumKernel &
@@ -324,16 +315,10 @@ contains
     call C % ComputeFromPrimitiveKernel &
            ( M, D, S_1, S_2, S_3, G, N, V_1, V_2, V_3, E, &
              M_DD_22, M_DD_33, UseDeviceOption = C % AllocatedDevice )
-    call T_CFP % Stop ( )
-    
-    call T_CE % Start ( )
     call C % ComputeEigenspeedsFluidKernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, MN, &
              M, N, V_1, V_2, V_3, S_1, S_2, S_3, P, Gamma, &
              M_UU_22, M_UU_33, UseDeviceOption = C % AllocatedDevice )
-    call T_CE % Stop ( )
-
-    end associate !-- T_CFP, T_CE, T_AE
 
     end associate !-- FEP_1, etc.
     end associate !-- M_DD_22, etc.
@@ -419,12 +404,6 @@ contains
         SB    => FV ( oV + 1 : oV + nV, C % ENTROPY_PER_BARYON ), &
         K     => FV ( oV + 1 : oV + nV, C % POLYTROPIC_PARAMETER ) )
     
-    associate &
-      ( T_CFC => PROGRAM_HEADER % Timer ( C % iTimerComputeFromConserved ), &
-        T_CE  => PROGRAM_HEADER % Timer ( C % iTimerComputeEigenspeed ), &
-        T_AE  => PROGRAM_HEADER % Timer ( C % iTimerApply_EOS ) ) 
-    
-    call T_CFC % Start ( )
     !call C % ComputeBaryonMassKernel & 
     !       ( M, UseDeviceOption = C % AllocatedDevice )
     !call C % ComputeDensityVelocityKernel &
@@ -433,23 +412,14 @@ contains
     call C % ComputeFromConservedKernel &
            ( E, G, M, N, D, V_1, V_2, V_3, S_1, S_2, S_3, &
              M_UU_22, M_UU_33, UseDeviceOption = C % AllocatedDevice )
-    call T_CFC % Stop ( )
-    
-    call T_AE % Start ( )
     call C % Apply_EOS_P_Kernel &
            ( P, Gamma, SB, K, N, E, C % AdiabaticIndex, &
              C % FiducialPolytropicParameter, &
              UseDeviceOption = C % AllocatedDevice )
-    call T_AE % Stop ( )
-    
-    call T_CE % Start ( )
     call C % ComputeEigenspeedsFluidKernel &
            ( FEP_1, FEP_2, FEP_3, FEM_1, FEM_2, FEM_3, CS, MN, &
              M, N, V_1, V_2, V_3, S_1, S_2, S_3, P, Gamma, &
              M_UU_22, M_UU_33, UseDeviceOption = C % AllocatedDevice )
-    call T_CE % Stop ( )
-    
-    end associate !-- T_CFC
 
     end associate !-- FEP_1, etc.
     end associate !-- M_UU_22, etc.
