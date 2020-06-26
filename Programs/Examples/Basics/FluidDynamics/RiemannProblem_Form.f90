@@ -7,7 +7,7 @@ module RiemannProblem_Form
   implicit none
   private
 
-  type, public, extends ( ConservationLawEvolutionTemplate) :: &
+  type, public, extends ( ConservationLawEvolutionTemplate ) :: &
     RiemannProblemForm
   contains
     procedure, private, pass :: &
