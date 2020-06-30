@@ -27,9 +27,9 @@ LIBRARY_SILO = -L${SILO_DIR}/lib -lsilo
 #-- HDF5 library may be  automatically included & linked by 
 #-- "module load hdf5" if provided, otherwise, manually put include and 
 #-- link line flag &  location below
-INCLUDE_HDF5 = 
-LIBRARY_HDF5 = 
-
+HDF5_DIR=/home/users/coe0021/localsw/poplar/hdf5/1.10.12_cce10
+INCLUDE_HDF5 = -I${HDF5_DIR}/include
+LIBRARY_HDF5 = -L${HDF5_DIR}/lib -lhdf5_fortran -lhdf5
 
 INCLUDE_PREPROCESSOR = -I$(PATH_GENASIS)/Build
 
