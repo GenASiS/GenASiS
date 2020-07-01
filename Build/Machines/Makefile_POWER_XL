@@ -11,11 +11,12 @@ CC_COMPILE           = mpicc -c -qsmp=omp
 CC_DEBUG             = -g
 CC_OPTIMIZE          = $(FORTRAN_OPTIMIZE)
 
-NVCC_COMPILE         = nvcc -c
+DEVICE_CUDA          = 1
+DEVICE_COMPILE       = nvcc -c
+DEVICE_DEBUG         = -g
+DEVICE_OPTIMIZE      = -O3
 
 LINK = mpifort
-
-LINK_NVCC = nvcc
 
 #SILO_DIR = /ccs/home/reubendb/projects/swtree/peak/silo/4.10.2/xl2017
 SILO_DIR = /sw/peak/caascade/silo/4.10.2/xl20180502
@@ -29,8 +30,8 @@ LIBRARY_HDF5 = -L${OLCF_HDF5_ROOT}/lib -lhdf5_fortran -lhdf5
 LIBRARY_LAPACK = -L${OLCF_NETLIB_LAPACK_ROOT}/lib -llapack -lblas
 
 ifeq ($(ENABLE_OMP_OFFLOAD), 1)
-INCLUDE_CUDA = -I${OLCF_CUDA_ROOT}/include
-LIBRARY_CUDA = -L${OLCF_CUDA_ROOT}/lib64 -lcudart
+INCLUDE_DEVICE = -I${OLCF_CUDA_ROOT}/include
+LIBRARY_DEVICE = -L${OLCF_CUDA_ROOT}/lib64 -lcudart
 endif
 
 INCLUDE_PREPROCESSOR = -I$(PATH_GENASIS)/Build
