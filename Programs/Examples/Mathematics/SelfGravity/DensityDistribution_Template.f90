@@ -182,6 +182,7 @@ contains
     do iS = 1, nSolve
       call Show ( iS, 'iS' )
       call P % Solve ( DD % Solution, DD % Source )
+      call DD % Solution % UpdateHost ( )
     end do !-- iS
 
     if ( present ( ShiftSolutionOption )  ) &

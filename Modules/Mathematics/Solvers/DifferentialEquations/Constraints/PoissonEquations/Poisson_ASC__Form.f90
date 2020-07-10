@@ -436,9 +436,13 @@ contains
 
     select type ( C => P % Atlas % Chart )
     class is ( Chart_SLD_Form )
-      call Solution_S % UpdateHost ( )
-      call C % ExchangeGhostData ( Solution_CSL )
-      call Solution_S % UpdateDevice ( )
+      if ( C % ExchangeGhostUseDevice ) then
+        call C % ExchangeGhostData ( Solution_CSL, UseDeviceOption = .true. )
+      else
+        call Solution_S % UpdateHost ( )
+        call C % ExchangeGhostData ( Solution_CSL, UseDeviceOption = .false. )
+        call Solution_S % UpdateDevice ( )
+      end if
     class default
       call Show ( 'Chart type not supported', CONSOLE % ERROR )
       call Show ( 'Poisson_ASC__Form', 'module', CONSOLE % ERROR )

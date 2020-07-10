@@ -1222,7 +1222,13 @@ contains
     if ( associated ( S % CoarsenSingularities ) ) then
       TimerCoarsen => PROGRAM_HEADER % TimerPointer ( S % iTimerCoarsen )
       if ( associated ( TimerCoarsen ) ) call TimerCoarsen % Start ( )
-      call S % CoarsenSingularities ( K_S )
+      !-- FIXME: CoarsenSingularities is still done on the host
+      select type ( Chart )
+      class is ( Chart_SLD_Form )
+        if ( Chart % ExchangeGhostUseDevice ) call K_S % UpdateHost ( )
+        call S % CoarsenSingularities ( K_S )
+        if ( Chart % ExchangeGhostUseDevice ) call K_S % UpdateDevice ( )
+      end select
 !call Chart % Atlas % Communicator % Synchronize ( )
       if ( associated ( TimerCoarsen ) ) call TimerCoarsen % Stop ( )
     end if
