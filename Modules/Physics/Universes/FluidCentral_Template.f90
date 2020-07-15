@@ -33,7 +33,7 @@ module FluidCentral_Template
         oIncomingDecompose_3_F
       real ( KDR ) :: &
         RadiusPolarMomentum = 0.0_KDR
-      real ( KDR ), dimension ( :, :, : ), allocatable :: &     
+      type ( Real_3D_Form ), allocatable :: &     
         CoarsenPillar_2, &
         CoarsenPillar_3
       logical ( KDL ) :: &
@@ -155,7 +155,8 @@ module FluidCentral_Template
   interface
   
     module subroutine ComposePillarsPack_2_Kernel &
-                        ( Outgoing, SV, Crsn_2, Vol, oOC_2, nCB, nGL, iaS )
+                        ( Outgoing, SV, Crsn_2, Vol, oOC_2, nCB, nGL, iaS, &
+                          UseDeviceOption )
       use Basics      
       implicit none
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -171,11 +172,14 @@ module FluidCentral_Template
         nCB, &    !-- nCellsBrick
         nGL, &    !-- nGhostLayers
         iaS
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOPtion
     end subroutine ComposePillarsPack_2_Kernel
     
     
     module subroutine ComposePillarsPack_3_Kernel &
-                        ( Outgoing, SV, Crsn_3, Vol, oOC_3, nCB, nGL, iaS )
+                        ( Outgoing, SV, Crsn_3, Vol, oOC_3, nCB, nGL, iaS, &
+                          UseDeviceOption )
       use Basics
       implicit none
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -191,12 +195,15 @@ module FluidCentral_Template
         nCB, &    !-- nCellsBrick
         nGL, &    !-- nGhostLayers
         iaS
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOPtion
     end subroutine ComposePillarsPack_3_Kernel
     
     
     module subroutine ComposePillarsUnpack_2_Kernel &
                         ( CoarsenPillar_2, nCoarsen_2, Incoming, oIC_2, nCB, &
-                          nBricks, nCells, nSegmentsFrom_2, nGroups )
+                          nBricks, nCells, nSegmentsFrom_2, nGroups, &
+                          UseDeviceOption )
       use Basics
       implicit none
       real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
@@ -215,12 +222,15 @@ module FluidCentral_Template
         nSegmentsFrom_2
       integer ( KDI ), intent ( in ) :: &
         nGroups
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOPtion
     end subroutine ComposePillarsUnpack_2_Kernel
     
     
     module subroutine ComposePillarsUnpack_3_Kernel &
                  ( CoarsenPillar_3, nCoarsen_3, Incoming, oIC_3, nCB, &
-                   nBricks, nCells, nSegmentsFrom_3, nGroups )
+                   nBricks, nCells, nSegmentsFrom_3, nGroups, &
+                   UseDeviceOption )
       use Basics
       implicit none
       real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
@@ -239,20 +249,24 @@ module FluidCentral_Template
         nSegmentsFrom_3
       integer ( KDI ), intent ( in ) :: &
         nGroups
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
     end subroutine ComposePillarsUnpack_3_Kernel
 
-    module subroutine CoarsenPillarsKernel ( CP, nCoarsen )
+    module subroutine CoarsenPillarsKernel ( CP, nCoarsen, UseDeviceOption )
       use Basics
       implicit none
       real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
         CP  !-- CoarsenPillar
       integer ( KDI ), dimension ( : ), intent ( in ) :: &
         nCoarsen
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOPtion
     end subroutine CoarsenPillarsKernel
 
     module subroutine DecomposePillarsPack_2_Kernel &
                         ( Outgoing, CoarsenPillar_2, oOD_2, nCB, nBricks, &
-                          nSegmentsFrom_2, nGroups )
+                          nSegmentsFrom_2, nGroups, UseDeviceOption )
       use Basics
       implicit none
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -268,11 +282,13 @@ module FluidCentral_Template
         nSegmentsFrom_2
       integer ( KDI ), intent ( in ) :: &
         nGroups
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
     end subroutine DecomposePillarsPack_2_Kernel
 
     module subroutine DecomposePillarsPack_3_Kernel &
                         ( Outgoing, CoarsenPillar_3, oOD_3, nCB, nBricks, &
-                          nSegmentsFrom_3, nGroups )
+                          nSegmentsFrom_3, nGroups, UseDeviceOption )
       use Basics
       implicit none
       real ( KDR ), dimension ( : ), intent ( inout ) :: &
@@ -288,11 +304,14 @@ module FluidCentral_Template
         nSegmentsFrom_3
       integer ( KDI ), intent ( in ) :: &
         nGroups
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
     end subroutine DecomposePillarsPack_3_Kernel
 
     module subroutine DecomposePillarsUnpack_2_Kernel &
                         ( SV, Crsn_2, R, Incoming, RadiusPolarMomentum, &
-                          oID_2, nCB, nGL, iaS, iMomentum_2, iMomentum_3 )
+                          oID_2, nCB, nGL, iaS, iMomentum_2, iMomentum_3, &
+                          UseDeviceOption )
       use Basics
       implicit none
       real ( KDR ), dimension ( :, :, :, : ), intent ( inout ) :: &
@@ -313,11 +332,14 @@ module FluidCentral_Template
       integer ( KDI ), intent ( in ) :: &
         iMomentum_2, &
         iMomentum_3
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
     end subroutine DecomposePillarsUnpack_2_Kernel
 
     module subroutine DecomposePillarsUnpack_3_Kernel &
                         ( SV, Crsn_3, R, Incoming, RadiusPolarMomentum, &
-                          oID_3, nCB, nGL, iaS, iMomentum_2, iMomentum_3 )
+                          oID_3, nCB, nGL, iaS, iMomentum_2, iMomentum_3, &
+                          UseDeviceOption )
       use Basics
       implicit none
       real ( KDR ), dimension ( :, :, :, : ), intent ( inout ) :: &
@@ -338,6 +360,8 @@ module FluidCentral_Template
       integer ( KDI ), intent ( in ) :: &
         iMomentum_2, &
         iMomentum_3
+      logical ( KDL ), intent ( in ), optional :: &
+        UseDeviceOption
     end subroutine DecomposePillarsUnpack_3_Kernel
 
   end interface
@@ -892,11 +916,10 @@ contains
                nIncoming  =  C % nSegmentsTo_2    *  nValuesFactor_B_2, &
                nOutgoing  =  C % nSegmentsFrom_2  *  nValuesFactor_B_2 )
 
-      end associate !-- CO_F, etc.
-
       allocate ( FC % nCoarsen_2 ( C % nPillars_2 ) )
-      allocate ( FC % CoarsenPillar_2 &
-                   ( C % nCells ( 2 ), 1 + F % N_CONSERVED, C % nPillars_2 ) )
+      allocate ( FC % CoarsenPillar_2 )
+      call FC % CoarsenPillar_2 % Initialize &
+                   ( [ C % nCells ( 2 ), 1 + F % N_CONSERVED, C % nPillars_2 ] )
 
       call C % SetVariablePointer &
              ( G % Value ( :, G % COARSENING ( 2 ) ), Crsn_2 )
@@ -907,17 +930,25 @@ contains
              ( C % nCellsBrick, C % nBricks, C % nSegmentsFrom_2, &
                nRanks = C % Communicator_2 % Size, &
                nGroups = C % Communicator_2 % Size  /  C % nBricks ( 2 ), &
-               nVariables = size ( FC % CoarsenPillar_2, dim = 2 ), &
+               nVariables = size ( FC % CoarsenPillar_2 % Value, dim = 2 ), &
                oIC_2 = FC % oIncomingCompose_2_F )
       call SetOffsetOutgoingDecompose_2_F &
              ( C % nCellsBrick, C % nBricks, C % nSegmentsFrom_2, &
                nRanks = C % Communicator_2 % Size, &
                nGroups = C % Communicator_2 % Size  /  C % nBricks ( 2 ), &
-               nVariables = size ( FC % CoarsenPillar_2, dim = 2 ), &
+               nVariables = size ( FC % CoarsenPillar_2 % Value, dim = 2 ), &
                oOD_2 = FC % oOutgoingDecompose_2_F )
       call SetOffsetIncomingDecompose_2_F &
              ( Crsn_2, C % nCellsBrick, C % nGhostLayers, F % N_CONSERVED, &
                FC % oIncomingDecompose_2_F )
+      
+      if ( C % ExchangeGhostUseDevice ) then
+        call CO_F % AllocateDevice ( )
+        call CO_B % AllocateDevice ( )
+        call FC % CoarsenPillar_2 % AllocateDevice ( )
+      end if
+
+      end associate !-- CO_F, etc.
 
     case ( 3 )
 
@@ -942,12 +973,11 @@ contains
              ( C % Communicator_3, &
                nIncoming  =  C % nSegmentsTo_3    *  nValuesFactor_B_3, &
                nOutgoing  =  C % nSegmentsFrom_3  *  nValuesFactor_B_3 )
-
-      end associate !-- CO_F, etc.
-
+      
       allocate ( FC % nCoarsen_3 ( C % nPillars_3 ) )
-      allocate ( FC % CoarsenPillar_3 &
-                   ( C % nCells ( 3 ), 1 + F % N_CONSERVED, C % nPillars_3 ) )
+      allocate ( FC % CoarsenPillar_3 )
+      call FC % CoarsenPillar_3 % Initialize &
+             ( [ C % nCells ( 3 ), 1 + F % N_CONSERVED, C % nPillars_3 ] )
 
       call C % SetVariablePointer &
              ( G % Value ( :, G % COARSENING ( 3 ) ), Crsn_3 )
@@ -958,17 +988,26 @@ contains
              ( C % nCellsBrick, C % nBricks, C % nSegmentsFrom_3, &
                nRanks = C % Communicator_3 % Size, &
                nGroups = C % Communicator_3 % Size  /  C % nBricks ( 3 ), &
-               nVariables = size ( FC % CoarsenPillar_3, dim = 2 ), &
+               nVariables = size ( FC % CoarsenPillar_3 % Value, dim = 2 ), &
                oIC_3 = FC % oIncomingCompose_3_F )
       call SetOffsetOutgoingDecompose_3_F &
              ( C % nCellsBrick, C % nBricks, C % nSegmentsFrom_3, &
                nRanks = C % Communicator_3 % Size, &
                nGroups = C % Communicator_3 % Size  /  C % nBricks ( 3 ), &
-               nVariables = size ( FC % CoarsenPillar_3, dim = 2 ), &
+               nVariables = size ( FC % CoarsenPillar_3 % Value, dim = 2 ), &
                oOD_3 = FC % oOutgoingDecompose_3_F )
       call SetOffsetIncomingDecompose_3_F &
              ( Crsn_3, C % nCellsBrick, C % nGhostLayers, F % N_CONSERVED, &
                FC % oIncomingDecompose_3_F )
+               
+      if ( C % ExchangeGhostUseDevice ) then
+        call CO_F % AllocateDevice ( )
+        call CO_B % AllocateDevice ( )
+        call FC % CoarsenPillar_3 % AllocateDevice ( )
+      end if
+
+      end associate !-- CO_F, etc.
+
 
     end select !-- iAngular
     end select !-- C
@@ -1004,6 +1043,9 @@ contains
     ! T_Coarsen   => PROGRAM_HEADER % TimerPointer ( FC % iTimerCoarsenPillar )
     ! T_Decompose => PROGRAM_HEADER % TimerPointer ( FC % iTimerDecomposePillar )
     
+    if ( FC % UseDevice ) &
+      call Increment % ReassociateHost ( AssociateVariablesOption = .false. )
+    
 !    call T_Compose % Start ( )
     call ComposePillars ( FC, Increment, iAngular )
 !    call T_Compose % Stop ( )
@@ -1015,6 +1057,9 @@ contains
 !    call T_Decompose % Start ( )
     call DecomposePillars ( FC, Increment, iAngular )
 !    call T_Decompose % Stop ( )
+
+    if ( FC % UseDevice ) &
+      call Increment % ReassociateHost ( AssociateVariablesOption = .true. )
 
   end subroutine CoarsenSingularityTemplate
 
@@ -1643,17 +1688,19 @@ contains
              
       call ComposePillarsPack_2_Kernel &
              ( Outgoing, SV, Crsn_2, Vol, FC % oOutgoingCompose_2_F, &
-               C % nCellsBrick, C % nGhostLayers, S % iaSelected )
+               C % nCellsBrick, C % nGhostLayers, S % iaSelected, &
+               UseDeviceOption = CO % AllocatedDevice )
       
 !      call T_Comm % Start ( )
       call CO % AllToAll_V ( )
 !      call T_Comm % Stop ( )
       
       call ComposePillarsUnpack_2_Kernel &
-             ( FC % CoarsenPillar_2, FC % nCoarsen_2, Incoming, &
+             ( FC % CoarsenPillar_2 % Value, FC % nCoarsen_2, Incoming, &
                FC % oIncomingCompose_2_F, C % nCellsBrick, C % nBricks, &
                C % nCells, C % nSegmentsFrom_2, &
-               nGroups = C % Communicator_2 % Size  /  C % nBricks ( 2 ) )
+               nGroups = C % Communicator_2 % Size  /  C % nBricks ( 2 ), &
+               UseDeviceOption = CO % AllocatedDevice )
       
       end associate !-- Outgoing, etc.
       end associate !-- CO
@@ -1678,17 +1725,19 @@ contains
 
       call ComposePillarsPack_3_Kernel &
              ( Outgoing, SV, Crsn_3, Vol, FC % oOutgoingCompose_3_F, &
-               C % nCellsBrick, C % nGhostLayers, S % iaSelected )
+               C % nCellsBrick, C % nGhostLayers, S % iaSelected, &
+               UseDeviceOption = CO % AllocatedDevice )
       
 !      call T_Comm % Start ( )
       call CO % AllToAll_V ( )
 !      call T_Comm % Stop ( )
       
       call ComposePillarsUnpack_3_Kernel &
-             ( FC % CoarsenPillar_3, FC % nCoarsen_3, Incoming, &
+             ( FC % CoarsenPillar_3 % Value, FC % nCoarsen_3, Incoming, &
                FC % oIncomingCompose_3_F, C % nCellsBrick, C % nBricks, &
                C % nCells, C % nSegmentsFrom_3, &
-               nGroups = C % Communicator_3 % Size  /  C % nBricks ( 3 ) )
+               nGroups = C % Communicator_3 % Size  /  C % nBricks ( 3 ), &
+               UseDeviceOption = CO % AllocatedDevice )
 
       end associate !-- Outgoing, etc.
       end associate !-- CO
@@ -1713,6 +1762,8 @@ contains
       nCoarsen
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       CP
+    logical ( KDL ), pointer :: &
+      AD
 
     select type ( I => FC % Integrator )
     class is ( Integrator_C_PS_Form )
@@ -1728,15 +1779,18 @@ contains
       if ( .not. C % Communicator_2 % Initialized ) &
         return
       nCoarsen => FC % nCoarsen_2
-      CP => FC % CoarsenPillar_2
+      CP => FC % CoarsenPillar_2 % Value
+      AD => FC % CoarsenPillar_2 % AllocatedDevice
     case ( 3 )
       if ( .not. C % Communicator_3 % Initialized ) &
         return
       nCoarsen => FC % nCoarsen_3
-      CP => FC % CoarsenPillar_3
+      CP => FC % CoarsenPillar_3 % Value
+      AD => FC % CoarsenPillar_2 % AllocatedDevice
     end select !-- iAngular
 
-    call CoarsenPillarsKernel ( CP, nCoarsen )
+    call CoarsenPillarsKernel &
+           ( CP, nCoarsen, UseDeviceOption = AD )
 
     end select !-- C
     end select !-- PS
@@ -1807,9 +1861,11 @@ contains
           Incoming => CO % Incoming % Value )
 
       call DecomposePillarsPack_2_Kernel &
-             ( Outgoing, FC % CoarsenPillar_2, FC % oOutgoingDecompose_2_F, &
+             ( Outgoing, FC % CoarsenPillar_2 % Value, &
+               FC % oOutgoingDecompose_2_F, &
                C % nCellsBrick, C % nBricks, C % nSegmentsFrom_2, &
-               nGroups = C % Communicator_2 % Size  /  C % nBricks ( 2 ) )
+               nGroups = C % Communicator_2 % Size  /  C % nBricks ( 2 ), &
+               UseDeviceOption = CO % AllocatedDevice )
 
 !      call T_Comm % Start ( )
       call CO % AllToAll_V ( )
@@ -1825,7 +1881,8 @@ contains
       call DecomposePillarsUnpack_2_Kernel &
              ( SV, Crsn_2, R, Incoming, FC % RadiusPolarMomentum, &
                FC % oIncomingDecompose_2_F, C % nCellsBrick, C % nGhostLayers, &
-               S % iaSelected, iMomentum_2, iMomentum_3 )
+               S % iaSelected, iMomentum_2, iMomentum_3, &
+               UseDeviceOption = CO % AllocatedDevice )
 
       end associate !-- Outgoing, etc.
       end associate !-- CO
@@ -1842,9 +1899,11 @@ contains
           Incoming => CO % Incoming % Value )
 
       call DecomposePillarsPack_3_Kernel &
-             ( Outgoing, FC % CoarsenPillar_3, FC % oOutgoingDecompose_3_F, &
+             ( Outgoing, FC % CoarsenPillar_3 % Value, &
+               FC % oOutgoingDecompose_3_F, &
                C % nCellsBrick, C % nBricks, C % nSegmentsFrom_3, &
-               nGroups = C % Communicator_3 % Size  /  C % nBricks ( 3 ) )
+               nGroups = C % Communicator_3 % Size  /  C % nBricks ( 3 ), &
+               UseDeviceOption = CO % AllocatedDevice )
 
 !      call T_Comm % Start ( )
       call CO % AllToAll_V ( )
@@ -1860,7 +1919,8 @@ contains
       call DecomposePillarsUnpack_3_Kernel &
              ( SV, Crsn_3, R, Incoming, FC % RadiusPolarMomentum, &
                FC % oIncomingDecompose_3_F, C % nCellsBrick, C % nGhostLayers, &
-               S % iaSelected, iMomentum_2, iMomentum_3 )
+               S % iaSelected, iMomentum_2, iMomentum_3, &
+               UseDeviceOption = CO % AllocatedDevice )
 
       end associate !-- Outgoing, etc.
       end associate !-- CO

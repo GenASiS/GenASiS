@@ -104,6 +104,7 @@ contains
 
     call CO % Incoming % AllocateDevice ( )
     call CO % Outgoing % AllocateDevice ( )
+    CO % AllocatedDevice = .true.
     
   end subroutine AllocateDevice_CO
   
