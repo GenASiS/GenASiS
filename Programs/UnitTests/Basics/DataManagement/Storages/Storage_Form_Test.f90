@@ -204,20 +204,20 @@ contains
         'S % VectorIndices (', i, ') = ', S % VectorIndices ( i ) % Value
     end do
     
-    if ( allocated ( S % D_Selected ) ) then
+    ! if ( allocated ( S % D_Selected ) ) then
     
-      print*, 'S % D_Selected: ' 
-      do i = 1, S % nVariables
-        write ( IndexLabel, fmt = '( i7 )' ) i
-        Address = transfer ( S % D_Selected ( i ), 1_KBI )
-        write ( Buffer, fmt = ' ( z64 ) ' ) Address
-        Buffer = '0x' //  adjustl ( Buffer )
-        print &
-          '(a38, a32)', &
-          '( ' // trim ( adjustl ( IndexLabel ) ) // ' ) = ', Buffer
-      end do
+    !   print*, 'S % D_Selected: ' 
+    !   do i = 1, S % nVariables
+    !     write ( IndexLabel, fmt = '( i7 )' ) i
+    !     Address = transfer ( S % D_Selected ( i ), 1_KBI )
+    !     write ( Buffer, fmt = ' ( z64 ) ' ) Address
+    !     Buffer = '0x' //  adjustl ( Buffer )
+    !     print &
+    !       '(a38, a32)', &
+    !       '( ' // trim ( adjustl ( IndexLabel ) ) // ' ) = ', Buffer
+    !   end do
     
-    end if
+    ! end if
 
   end subroutine PrintStorage
   
