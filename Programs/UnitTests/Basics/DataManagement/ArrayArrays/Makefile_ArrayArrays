@@ -3,41 +3,47 @@ PATH_GENASIS = ../../../../../..
 include $(PATH_GENASIS)/Build/Makefile_Build
 
 all: \
-  Integer_1D__Form_Test Integer_2D__Form_Test \
-  Integer_3D__Form_Test Real_1D__Form_Test \
-  Real_2D__Form_Test Real_3D__Form_Test Character_1D__Form_Test
+  Integer_1D__Form_Test Integer_2D__Form_Test Integer_3D__Form_Test \
+  Real_1D__Form_Test Real_2D__Form_Test Real_3D__Form_Test \
+  Character_1D__Form_Test
 
-Integer_1D__Form_Test: Specifiers.a Devices.a ArrayOperations.a Integer_1D__Form_Test.o
+Integer_1D__Form_Test: Specifiers.a Devices.a ArrayOperations.a \
+  Integer_1D__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Integer_1D__Form_Test_$(MACHINE) \
           Integer_1D__Form_Test.o Integer_1D__Form.o \
           ArrayOperations.a Specifiers.a Devices.a 
 
-Integer_2D__Form_Test: Specifiers.a Devices.a ArrayOperations.a Integer_2D__Form_Test.o
+Integer_2D__Form_Test: Specifiers.a Devices.a ArrayOperations.a \
+  Integer_2D__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Integer_2D__Form_Test_$(MACHINE) \
           Integer_2D__Form_Test.o Integer_2D__Form.o \
           ArrayOperations.a Specifiers.a Devices.a 
 
-Integer_3D__Form_Test: Specifiers.a Devices.a ArrayOperations.a Integer_3D__Form_Test.o
+Integer_3D__Form_Test: Specifiers.a Devices.a ArrayOperations.a \
+  Integer_3D__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Integer_3D__Form_Test_$(MACHINE) \
           Integer_3D__Form_Test.o Integer_3D__Form.o \
           ArrayOperations.a Specifiers.a Devices.a 
 
-Real_1D__Form_Test: Specifiers.a Devices.a ArrayOperations.a Real_1D__Form_Test.o
+Real_1D__Form_Test: Specifiers.a Devices.a ArrayOperations.a \
+  Real_1D__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Real_1D__Form_Test_$(MACHINE) \
           Real_1D__Form_Test.o Real_1D__Form.o \
           ArrayOperations.a Specifiers.a Devices.a 
 
-Real_2D__Form_Test: Specifiers.a Devices.a ArrayOperations.a Real_2D__Form_Test.o
+Real_2D__Form_Test: Specifiers.a Devices.a ArrayOperations.a \
+  Real_2D__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Real_2D__Form_Test_$(MACHINE) \
           Real_2D__Form_Test.o Real_2D__Form.o \
           ArrayOperations.a Specifiers.a Devices.a 
 
-Real_3D__Form_Test: Specifiers.a Devices.a ArrayOperations.a Real_3D__Form_Test.o
+Real_3D__Form_Test: Specifiers.a Devices.a ArrayOperations.a \
+  Real_3D__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Real_3D__Form_Test_$(MACHINE) \
           Real_3D__Form_Test.o Real_3D__Form.o \
