@@ -62,6 +62,7 @@ clobber: clean
 	rm -f DeallocateDevice_Command_Test_*
 	rm -f DisassociateHost_Command_Test_*
 	rm -f UpdateDevice_Command_Test_*
+	rm -f AllocateHost_Command_Test_*
 
 include $(PATH_SPECIFIERS)/Makefile_Dependencies
 include $(PATH_DEVICES)/Makefile_Dependencies
