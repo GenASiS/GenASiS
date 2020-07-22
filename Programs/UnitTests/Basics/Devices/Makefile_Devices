@@ -52,6 +52,14 @@ AllocateHost_Command_Test: AllocateHost_Command_Test.o
           AllocateHost_Command.o DeallocateHost_Command.o Device_C_OMP.o \
           Device_CUDA.o Device_OMP.o $(SPECIFIERS) $(LIBRARIES)
 
+DeviceAddress_Function_Test: DeviceAddress_Function_Test.o
+	$(LINK) $(FLAGS) \
+          -o DeviceAddress_Function_Test_$(MACHINE) \
+          DeviceAddress_Function_Test.o \
+          AllocateDevice_Command.o AssociateHost_Command.o \
+          OnDevice_Function.o DeviceAddress_Function.o Device_C_OMP.o \
+          Device_CUDA.o Device_OMP.o $(SPECIFIERS) $(LIBRARIES)
+
 
 clean:
 	rm -f *.o *.mod *.ld
@@ -101,3 +109,9 @@ AllocateHost_Command_Test.o: \
   AllocateHost_Command.o \
   DeallocateHost_Command.o \
   AllocateHost_Command_Test.f90
+
+DeviceAddress_Function_Test.o: \
+  AllocateDevice_Command.o \
+  AssociateHost_Command.o \
+  DeviceAddress_Function.o \
+  DeviceAddress_Function_Test.f90
