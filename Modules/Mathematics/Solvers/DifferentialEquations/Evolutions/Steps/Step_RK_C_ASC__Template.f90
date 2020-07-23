@@ -1222,7 +1222,6 @@ contains
     if ( associated ( S % CoarsenSingularities ) ) then
       TimerCoarsen => PROGRAM_HEADER % TimerPointer ( S % iTimerCoarsen )
       if ( associated ( TimerCoarsen ) ) call TimerCoarsen % Start ( )
-      !-- FIXME: CoarsenSingularities is still done on the host
       select type ( Chart )
       class is ( Chart_SLD_Form )
         call S % CoarsenSingularities ( K_S )
