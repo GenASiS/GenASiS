@@ -259,6 +259,11 @@ contains
 
       G  =>  A % Geometry ( )
       L % UseDevice  =  G % AllocatedDevice
+      
+      select type ( C => A % Chart )
+      class is ( Chart_SLD_Form )
+        L % ReductionUseDevice = C % ExchangeGhostUseDevice
+      end select 
 
       L % Chart  =>  A % Chart
 
