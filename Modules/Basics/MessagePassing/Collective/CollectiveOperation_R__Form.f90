@@ -93,7 +93,7 @@ contains
     
     allocate ( CO % Outgoing )
     call CO % Outgoing % Initialize ( C, OutgoingValue, 0, C % Rank )
-
+    
   end subroutine InitializeAssociate
   
   
