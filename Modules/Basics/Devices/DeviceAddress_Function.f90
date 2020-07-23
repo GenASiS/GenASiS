@@ -1,3 +1,4 @@
+#include "Preprocessor"
 module DeviceAddress_Function
   
   !-- Return the device address of previously OpenMP-associated Host address
@@ -28,9 +29,13 @@ contains
       DA
       
     if ( OnDevice ( Value ) ) then
+#ifdef ENABLE_OMP_OFFLOAD
       !$OMP target data use_device_ptr ( Value )
+#endif
       DA = c_loc ( Value )
+#ifdef ENABLE_OMP_OFFLOAD
       !$OMP end target data
+#endif
     else 
       DA = c_null_ptr
     end if
