@@ -116,10 +116,11 @@ contains
              RatioOption, ScaleOption, nCellsOption, nGhostLayersOption, &
              nDimensionsOption, nEqualOption )
     
-    C % ExchangeGhostUseDevice = .false.
+    C % ExchangeGhostUseDevice = .true.
     
     call PROGRAM_HEADER % GetParameter &
-           ( C % ExchangeGhostUseDevice, 'ExchangeGhostUseDevice' )
+           ( C % ExchangeGhostUseDevice, 'ExchangeGhostUseDevice', &
+             IgnorabilityOption = CONSOLE % INFO_2 )
 
     call SetGhostExchangePortals ( C )
 
