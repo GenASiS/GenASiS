@@ -263,6 +263,9 @@ contains
       select type ( C => A % Chart )
       class is ( Chart_SLD_Form )
         L % ReductionUseDevice = C % ExchangeGhostUseDevice
+        call PROGRAM_HEADER % GetParameter &
+               ( L % ReductionUseDevice, 'LaplacianReductionUseDevice', &
+                 IgnorabilityOption = CONSOLE % INFO_2 )
       end select 
 
       L % Chart  =>  A % Chart
