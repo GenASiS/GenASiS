@@ -261,7 +261,7 @@ module FluidCentral_Template
       integer ( KDI ), dimension ( : ), intent ( in ) :: &
         nCoarsen
       logical ( KDL ), intent ( in ), optional :: &
-        UseDeviceOPtion
+        UseDeviceOption
     end subroutine CoarsenPillarsKernel
 
     module subroutine DecomposePillarsPack_2_Kernel &
@@ -1786,7 +1786,7 @@ contains
         return
       nCoarsen => FC % nCoarsen_3
       CP => FC % CoarsenPillar_3 % Value
-      AD => FC % CoarsenPillar_2 % AllocatedDevice
+      AD => FC % CoarsenPillar_3 % AllocatedDevice
     end select !-- iAngular
 
     call CoarsenPillarsKernel &
