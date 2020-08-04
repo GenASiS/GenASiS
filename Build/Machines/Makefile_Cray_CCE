@@ -43,15 +43,16 @@ ifeq ($(CRAY_ACCEL_TARGET), nvidia70)
 endif
 
 ifeq ($(CRAY_ACCEL_TARGET), amd_gfx906)
+  DEFINES       += -D__HIP_PLATFORM_HCC__
+
   DEVICE_HIP     = 1
-  DEVICE_COMPILE = cc -c -D__HIP_PLATFORM_HCC__
+  DEVICE_COMPILE = hipcc -c -D__HIP_PLATFORM_HCC__
   
   INCLUDE_DEVICE = -I${ROCM_PATH}/include
   LIBRARY_DEVICE = -L${ROCM_PATH}/lib -lhip_hcc
 endif
 
-
-#-- Enable unicode
+#-- Do not enable unicode
 USE_ISO_10646 = 
 
 #-- Enable OpenMP by default
@@ -59,13 +60,11 @@ ifneq ($(ENABLE_OMP), 0)
   FORTAN_COMPILE += -homp
 endif
 
-DEFINES_F      =
-DEFINES_C      = 
-DEFINES_DEVICE = 
+#-- Enable offload by default
+ENABLE_OMP_OFFLOAD = 1
+
 ifdef ENABLE_OMP_OFFLOAD
   ifeq ($(ENABLE_OMP_OFFLOAD), 1)
-    DEFINES_F       = -DENABLE_OMP_OFFLOAD -homp
-    DEFINES_C       = -DENABLE_OMP_OFFLOAD 
-    DEFINES_DEVICE  = -DENABLE_OMP_OFFLOAD
+    DEFINES       += -fopenmp -DENABLE_OMP_OFFLOAD
   endif
 endif
