@@ -22,10 +22,12 @@ INCLUDE_HDF5 = -I${OLCF_HDF5_ROOT}/include
 LIBRARY_HDF5 = -L${OLCF_HDF5_ROOT}/lib -lhdf5_fortran -lhdf5
 
 #-- LAPACK library link line flag and location
-LIBRARY_LAPACK = -L${OLCF_NETLIB_LAPACK_ROOT}/lib -llapack -lblas
+LIBRARY_LAPACK = #-L${OLCF_NETLIB_LAPACK_ROOT}/lib -llapack -lblas
 
-INCLUDE_CUDA = 
-LIBRARY_CUDA = 
+ifeq ($(ENABLE_OMP_OFFLOAD), 1)
+INCLUDE_CUDA = -I${OLCF_CUDA_ROOT}/include
+LIBRARY_CUDA = -L${OLCF_CUDA_ROOT}/lib64 -lcudart
+endif
 
 INCLUDE_PREPROCESSOR = -I$(PATH_GENASIS)/Build
 
@@ -39,5 +41,5 @@ endif
 
 #-- Enable offload if requested
 ifeq ($(ENABLE_OMP_OFFLOAD), 1)
-  DEFINES = -fopenmp -DENABLE_OMP_OFFLOAD
+  DEFINES = -fopenmp -foffload=nvptx-none="-lm -lgfortran" -DENABLE_OMP_OFFLOAD
 endif
