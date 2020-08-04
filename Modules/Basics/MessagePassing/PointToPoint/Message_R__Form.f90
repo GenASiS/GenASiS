@@ -94,7 +94,7 @@ contains
   end subroutine AllocateDevice_M
   
   
-  elemental impure subroutine Finalize ( M )
+  impure elemental subroutine Finalize ( M )
 
     type ( Message_R_Form ), intent ( inout ) :: &
       M 
