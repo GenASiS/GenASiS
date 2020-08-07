@@ -18,7 +18,8 @@ ChartHeader_SL__Form_Test: Basics.a AtlasBasics.a ChartHeader_SL__Form_Test.o
 GeometryFlat_Form_Test: Basics.a AtlasBasics.a GeometryFlat_Form_Test.o
 	$(LINK) $(FLAGS) \
           -o GeometryFlat_Form_Test_$(MACHINE) \
-          GeometryFlat_Form.o GeometryFlat_Form_Test.o Chart_Template.o \
+          GeometryFlat_Kernel.o GeometryFlat_Form.o GeometryFlat_Form_Test.o \
+          Chart_Template.o \
           AtlasBasics.a Basics.a $(LIBRARIES)
 
 clean:
@@ -42,4 +43,5 @@ GeometryFlat_Form_Test.o: \
   Basics.o \
   Chart_Template.o \
   GeometryFlat_Form.o \
+  GeometryFlat_Kernel.o \
   GeometryFlat_Form_Test.f90

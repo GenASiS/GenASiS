@@ -58,9 +58,7 @@ module GeometryFlat_Form
     private :: &
       InitializeBasics, &
       SetCoordinateSystem, &
-      SetUnits!, &
-!    FIXME: required to generate .smod with GCC 6.1.0  
-    public :: &
+      SetUnits, &
       SetFiniteVolumeRectangularKernel, &
       SetFiniteVolumeCylindricalKernel, &
       SetFiniteVolumeSphericalKernel, &
