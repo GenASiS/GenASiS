@@ -13,7 +13,7 @@ Bundle_SLL_ASC_CSLD__Form_Test: Basics.a Atlases.a \
           Atlases.a Basics.a $(LIBRARIES)
 
 clean:
-	rm -f *.o *.a *.mod *.ld
+	rm -f *.o *.a *.mod *.smod *.ld
 
 clobber: clean
 	rm -f Bundle_SLL_ASC_CSLD__Form_Test_*
