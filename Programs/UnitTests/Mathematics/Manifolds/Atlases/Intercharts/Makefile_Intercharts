@@ -40,7 +40,7 @@ Atlas_SC_CC__Form_Test: Basics.a AtlasBasics.a Charts.a \
           Charts.a AtlasBasics.a Basics.a $(LIBRARIES)
 
 clean:
-	rm -f *.o *.a *.mod *.ld
+	rm -f *.o *.a *.mod *.smod *.ld
 
 clobber: clean
 	rm -f Atlas_SC__Form_Test_*
