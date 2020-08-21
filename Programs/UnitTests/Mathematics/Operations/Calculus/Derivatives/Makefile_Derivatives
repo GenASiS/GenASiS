@@ -6,16 +6,17 @@ all: Difference_Form_Test Gradient_Form_Test #Laplacian_Form_Test
 
 Difference_Form_Test: Basics.a Manifolds.a Difference_Form_Test.o
 	$(LINK) $(FLAGS) -o Difference_Form_Test_$(MACHINE) \
-          Difference_Form_Test.o Difference_Form.o Difference_GPU__Form.o \
+          Difference_Form_Test.o Difference_Kernel.o Difference_Form.o \
           Manifolds.a Basics.a $(LIBRARIES)
 
 Gradient_Form_Test: Basics.a Manifolds.a Gradient_Form_Test.o
 	$(LINK) $(FLAGS) -o Gradient_Form_Test_$(MACHINE) \
-          Gradient_Form_Test.o Gradient_Form.o Difference_Form.o \
+          Gradient_Form_Test.o Gradient_Kernel.o Gradient_Form.o \
+          Difference_Kernel.o Difference_Form.o \
           Manifolds.a Basics.a $(LIBRARIES)
 
 clean:
-	rm -f *.o *.a *.mod *.ld
+	rm -f *.o *.a *.mod *.smod *.ld
 
 clobber: clean
 	rm -f Difference_Form_Test_*
@@ -27,16 +28,15 @@ include $(PATH_DERIVATIVES)/Makefile_Dependencies
 
 Difference_Form_Test.o: \
   Basics.o \
-  AllocateMemory_Command.C.o \
-  AllocateMemory_Command.o \
   Manifolds.o \
   Difference_Form.o \
-  Difference_GPU__Form.o \
+  Difference_Kernel.o \
   Difference_Form_Test.f90
 
 Gradient_Form_Test.o: \
   Basics.o \
   Manifolds.o \
   Gradient_Form.o \
+  Gradient_Kernel.o \
   Gradient_Form_Test.f90
 

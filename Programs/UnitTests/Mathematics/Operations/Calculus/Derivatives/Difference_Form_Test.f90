@@ -3,7 +3,6 @@ module Difference_Form_Test__Form
   use Basics
   use Manifolds
   use Difference_Form
-  use Difference_GPU__Form
 
   implicit none
   private
@@ -18,8 +17,6 @@ module Difference_Form_Test__Form
       Atlas
     type ( DifferenceForm ), allocatable :: &
       Difference
-    type ( Difference_GPU_Form ), allocatable :: &
-      Difference_GPU
     type ( TimerForm ) :: &
       T_CPU, &
       T_GPU, &
@@ -122,13 +119,10 @@ contains
     !-- Difference
 
     allocate ( DFT % Difference )
-    allocate ( DFT % Difference_GPU )
     associate &
-      ( D_CPU => DFT % Difference, &
-        D_GPU => DFT % Difference_GPU )
+      ( D_CPU => DFT % Difference )
     
     call D_CPU % Initialize ( 'GaussianDifference', shape ( Gaussian % Value ) )
-    call D_GPU % Initialize ( 'GaussianDifference', shape ( Gaussian % Value ) )
     
     nCompute = 100
     call PROGRAM_HEADER % GetParameter ( nCompute, 'nCompute' )
@@ -146,32 +140,32 @@ contains
     call T_CPU % Stop ( )
     call T_CPU % ShowTotal ( CONSOLE % INFO_1 )
     
-    call Show ( 'Transferring Host Data to Device' )
-    call T_Transfer % Start ( )
-    call D_GPU % SetInput ( C, Gaussian )
-    call T_Transfer % Stop ( )
-    call T_Transfer % ShowTotal ( CONSOLE % INFO_1 )
+    ! call Show ( 'Transferring Host Data to Device' )
+    ! call T_Transfer % Start ( )
+    ! call D_GPU % SetInput ( C, Gaussian )
+    ! call T_Transfer % Stop ( )
+    ! call T_Transfer % ShowTotal ( CONSOLE % INFO_1 )
     
-    call Show ( 'Iterating D_GPU % Compute' )
+    ! call Show ( 'Iterating D_GPU % Compute' )
     
-    call T_GPU % Start ( )
+    ! call T_GPU % Start ( )
     
-    do iC = 1, nCompute
-      if ( mod ( iC, 10 ) == 0 ) call Show ( iC, 'iC' )
-      do iD = 1, C % nDimensions
-        call D_GPU % Compute ( C, iD )
-      end do !-- iD
-    end do !-- iC
+    ! do iC = 1, nCompute
+    !   if ( mod ( iC, 10 ) == 0 ) call Show ( iC, 'iC' )
+    !   do iD = 1, C % nDimensions
+    !     call D_GPU % Compute ( C, iD )
+    !   end do !-- iD
+    ! end do !-- iC
     
-    call T_GPU % Stop ( )
-    call T_GPU % ShowTotal ( CONSOLE % INFO_1 )
+    ! call T_GPU % Stop ( )
+    ! call T_GPU % ShowTotal ( CONSOLE % INFO_1 )
     
-    call Show ( T_CPU % TotalTime / T_GPU % TotalTime, 'GPU SpeedUp Factor' )
-    call Show ( T_GPU % TotalTime / T_CPU % TotalTime, 'CPU SpeedUp Factor' )
+!    call Show ( T_CPU % TotalTime / T_GPU % TotalTime, 'GPU SpeedUp Factor' )
+!    call Show ( T_GPU % TotalTime / T_CPU % TotalTime, 'CPU SpeedUp Factor' )
     
     associate &
-      ( OI_CPU => D_CPU % OutputInner, &
-        OI_GPU => D_GPU % OutputInner )
+      ( OI_CPU => D_CPU % OutputInner )!, &
+!        OI_GPU => D_GPU % OutputInner )
 
     !-- An extra iteration to output to disk
     
@@ -180,37 +174,37 @@ contains
     do iD = 1, C % nDimensions
 
       call D_CPU % Compute ( C, Gaussian, iD )
-      call D_GPU % Compute ( C, iD )
+!      call D_GPU % Compute ( C, iD )
 
       write ( iD_String, fmt = ' ( i1 ) ' ) iD
 
-      associate &
-        ( dGI_CPU => d_Gaussian_Inner_CPU ( iD ), &
-          dGI_GPU => d_Gaussian_Inner_GPU ( iD ) )
+!      associate &
+!        ( dGI_CPU => d_Gaussian_Inner_CPU ( iD ) )!, &
+ !         dGI_GPU => d_Gaussian_Inner_GPU ( iD ) )
       
-      call dGI_CPU % Initialize &
-             ( [ OI_CPU % nValues, OI_CPU % nVariables ], &
-               VariableOption = Gaussian % Variable, &
-               NameOption = 'd_' // trim ( Gaussian % Name ) // '_' &
-                            // iD_String )
-      call Copy ( OI_CPU % Value, dGI_CPU % Value )
+      ! call dGI_CPU % Initialize &
+      !        ( [ OI_CPU % nValues, OI_CPU % nVariables ], &
+      !          VariableOption = Gaussian % Variable, &
+      !          NameOption = 'd_' // trim ( Gaussian % Name ) // '_' &
+      !                       // iD_String )
+      ! call Copy ( OI_CPU % Value, dGI_CPU % Value )
       
-      call dGI_GPU % Initialize &
-             ( [ OI_GPU % nValues, OI_GPU % nVariables ], &
-               VariableOption = Gaussian % Variable, &
-               NameOption = 'd_' // trim ( Gaussian % Name ) // '_' &
-                            // iD_String )
-      call Copy ( OI_GPU % Value, dGI_GPU % Value )
+      ! call dGI_GPU % Initialize &
+      !        ( [ OI_GPU % nValues, OI_GPU % nVariables ], &
+      !          VariableOption = Gaussian % Variable, &
+      !          NameOption = 'd_' // trim ( Gaussian % Name ) // '_' &
+      !                       // iD_String )
+      ! call Copy ( OI_GPU % Value, dGI_GPU % Value )
       
-      L1 ( iD ) &
-        = sum ( abs ( dGI_CPU % Value - dGI_GPU % Value ) ) &
-          / sum ( abs ( dGI_CPU % Value ) )
+      ! L1 ( iD ) &
+      !   = sum ( abs ( dGI_CPU % Value - dGI_GPU % Value ) ) &
+      !     / sum ( abs ( dGI_CPU % Value ) )
           
-      end associate !-- dGI
+!      end associate !-- dGI
 
     end do !-- iD
     
-    call Show ( L1, 'L1 Error CPU - GPU' )
+!    call Show ( L1, 'L1 Error CPU - GPU' )
 
     end associate !-- OI
 
@@ -246,7 +240,7 @@ contains
       DFT
 
     deallocate ( DFT % Difference )
-    deallocate ( DFT % Difference_GPU )
+!    deallocate ( DFT % Difference_GPU )
     deallocate ( DFT % Atlas )
     deallocate ( DFT % GridImageStream )
 

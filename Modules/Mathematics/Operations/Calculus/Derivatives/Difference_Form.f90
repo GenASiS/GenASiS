@@ -31,9 +31,7 @@ module Difference_Form
       Finalize
   end type DifferenceForm
 
-!    FIXME: required to generate .smod with GCC 6.1.0  
-!    private :: &
-    public :: &
+    private :: &
       ComputeChart_SL_D_Kernel
       
     interface
