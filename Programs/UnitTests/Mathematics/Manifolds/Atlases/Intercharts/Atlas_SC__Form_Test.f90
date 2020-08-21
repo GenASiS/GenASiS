@@ -168,7 +168,7 @@ program Atlas_SC__Form_Test
     
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( ProgramName, DimensionalityOption = '3D_1D' )
+         ( ProgramName, DimensionalityOption = '2D_1D' )
 
   allocate ( AFT )
   call AFT % Initialize ( PROGRAM_HEADER % Name )
