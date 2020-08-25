@@ -21,7 +21,7 @@ SphericalAverage_Form_Test: Basics.a Manifolds.a SphericalAverage_Form_Test.o
           Manifolds.a Basics.a $(LIBRARIES)
 
 clean:
-	rm -f *.o *.a *.mod *.ld
+	rm -f *.o *.a *.mod *.smod *.ld
 
 clobber: clean
 	rm -f VolumeIntegral_Form_Test_*
