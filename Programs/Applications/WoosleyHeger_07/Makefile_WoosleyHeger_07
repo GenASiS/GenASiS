@@ -1,6 +1,7 @@
 PATH_GENASIS = ../../../..
 
-all: WoosleyHeger_07_A WoosleyHeger_07_D WoosleyHeger_07_G WoosleyHeger_07_S
+all: WoosleyHeger_07_A WoosleyHeger_07_D WoosleyHeger_07_G WoosleyHeger_07_S \
+  GreyDegeneracySolver_Test
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
@@ -37,6 +38,14 @@ Findall_GPU_Test: ThirdParty.a Findall_GPU_Test.o
            -o Findall_GPU_Test_$(MACHINE) \
            Findall_GPU_Test.o ThirdParty.a $(LIBRARIES)
 
+GreyDegeneracySolver_Test: ThirdParty.a Basics.a NonlinearEquations.a \
+	GreyDegeneracySolver_Test.o
+	$(LINK) $(FLAGS) \
+          -o GreyDegeneracySolver_Test_$(MACHINE) \
+          GreyDegeneracySolver_Test.o \
+	  NonlinearEquations.a Basics.a ThirdParty.a \
+	  $(LIBRARIES)
+
 include $(PATH_GENASIS)/Build/Makefile_Dependencies
 
 clean: clean_ThirdParty
@@ -44,6 +53,7 @@ clean: clean_ThirdParty
 
 clobber: clean
 	rm -f WoosleyHeger_07_*
+	rm -f GreyDegeneracySolver_Test_*
 
 WoosleyHeger_07__Template.o: \
   GenASiS.o \
@@ -86,3 +96,8 @@ WoosleyHeger_07_S.o: \
 
 Findall_GPU_Test.o: \
   Findall_GPU_Test.f90
+
+GreyDegeneracySolver_Test.o: \
+  Basics.o \
+  NonlinearEquations.o \
+  GreyDegeneracySolver_Test.f90

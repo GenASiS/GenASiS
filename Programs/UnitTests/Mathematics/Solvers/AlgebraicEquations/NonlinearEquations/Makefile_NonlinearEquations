@@ -2,7 +2,7 @@ PATH_GENASIS = ../../../../../../..
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-all: RootFinder_Form_Test GreyDegeneracySolver_Test
+all: RootFinder_Form_Test 
 
 RootFinder_Form_Test: Basics.a NonlinearEquations.a RootFinder_Form_Test.o
 	$(LINK) $(FLAGS) \
@@ -10,35 +10,16 @@ RootFinder_Form_Test: Basics.a NonlinearEquations.a RootFinder_Form_Test.o
           RootFinder_Form_Test.o \
 	  NonlinearEquations.a Basics.a $(LIBRARIES)
 
-GreyDegeneracySolver_Test: ThirdParty.a Basics.a NonlinearEquations.a \
-	GreyDegeneracySolver_Test.o
-	$(LINK) $(FLAGS) \
-          -o GreyDegeneracySolver_Test_$(MACHINE) \
-          GreyDegeneracySolver_Test.o \
-	  NonlinearEquations.a Basics.a ThirdParty.a \
-	  $(LIBRARIES)
-
 clean:
 	rm -f *.o *.a *.mod *.ld
 
 clobber: clean
 	rm -f RootFinder_Form_Test_*
-	rm -f GreyDegeneracySolver_Test_*
 
-#include $(PATH_THIRD_PARTY)/Makefile_Dependencies
 include $(PATH_BASICS)/Makefile_Dependencies
-include $(PATH_MANIFOLDS)/Makefile_Dependencies
-include $(PATH_OPERATIONS)/Makefile_Dependencies
-include $(PATH_FIELDS)/Makefile_Dependencies
 include $(PATH_NONLINEAR_EQUATIONS)/Makefile_Dependencies
-#include ../Makefile_Dependencies
 
 RootFinder_Form_Test.o: \
   Basics.o \
   NonlinearEquations.o \
   RootFinder_Form_Test.f90
-
-GreyDegeneracySolver_Test.o: \
-  Basics.o \
-  NonlinearEquations.o \
-  GreyDegeneracySolver_Test.f90
