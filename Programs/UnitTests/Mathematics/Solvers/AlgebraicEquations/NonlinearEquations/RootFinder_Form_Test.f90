@@ -55,7 +55,7 @@ contains
 end module MySinusoidalFunction_Module
 
 
-program RootFinding_Form_Test
+program RootFinder_Form_Test
 
   use Basics
   use NonlinearEquations
@@ -84,20 +84,18 @@ program RootFinding_Form_Test
     FunctionDerivativeEvaluator => null ( )
   type ( Real_1D_Form ) :: &
     Parameters
-  type ( RootFindingForm ) :: &
+  type ( RootFinderForm ) :: &
     RF
 
   allocate ( PROGRAM_HEADER )
   call PROGRAM_HEADER % Initialize &
-         ( 'RootFinding_Form_Test', AppendDimensionalityOption = .false. )
-  
-  FunctionEvaluator => MySinusoidalFunction
-  FunctionDerivativeEvaluator => MySinusoidalDerivativeFunction
+         ( 'RootFinder_Form_Test', AppendDimensionalityOption = .false. )
   
   call Parameters % Initialize ( 10 )
   Parameters % Value = [ ( acos ( -1.0_KDR ) * iValue, iValue = 1, 10 ) ]
   
-  call RF % Initialize ( Parameters, FunctionEvaluator )
+  call RF % Initialize ( Parameters )
+  RF % EvaluateZero => MySinusoidalFunction  
   
   !-- solve with brent method
   call RF % Solve &
@@ -126,8 +124,9 @@ program RootFinding_Form_Test
 
   Root = huge ( 0.0_KDR )
   !-- solve with newton-raphson method
+  RF % EvaluateDerivative => MySinusoidalDerivativeFunction
   call RF % Solve &
-              ( FunctionDerivativeEvaluator, [ 1.5_KDR * acos ( - 1.0_KDR ), &
+              ( [ 1.5_KDR * acos ( - 1.0_KDR ), &
                   2.6_KDR * acos ( - 1.0_KDR ) ], Root )
   
   if ( RF % Success ) then
@@ -139,30 +138,4 @@ program RootFinding_Form_Test
 
   deallocate ( PROGRAM_HEADER )
 
-end program RootFinding_Form_Test
-!contains 
-
-  ! subroutine MySinusoidalFunction ( Parameters, Input, Result )
-
-  !   use Basics
-
-  !   class ( * ), intent ( in ) :: &
-  !     Parameters
-  !   real ( KDR ), intent ( in ) :: &
-  !     Input
-  !   real ( KDR ), intent ( out ) :: &
-  !     Result
-      
-  !   select type ( P => Parameters )
-  !   type is ( ArrayReal_1D_Form )
-  !     call Show ( P % Value, 'Parameters', CONSOLE % INFO_7 )  
-  !   end select
-    
-  !   Result = sin ( Input )
-    
-  !   call Show ( [ Input, Result ], 'sin Input - Result', CONSOLE % INFO_7 )
-  
-  ! end subroutine MySinusoidalFunction
-  
-
-!end program RootFinding_Form_Test
+end program RootFinder_Form_Test
