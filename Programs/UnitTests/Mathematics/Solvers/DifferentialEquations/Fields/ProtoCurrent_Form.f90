@@ -233,7 +233,7 @@ contains
       C
     class ( GeometryFlatForm ), intent ( in ) :: &
       G
-    class ( StorageForm ), intent ( inout ) :: &
+    class ( StorageForm ), intent ( in ) :: &
       Storage_C, &
       Storage_G
     integer ( KDI ), intent ( in ) :: &
@@ -372,7 +372,8 @@ contains
 
 
   subroutine ComputeFromConservedCommon &
-               ( Storage_C, C, G, Storage_G, nValuesOption, oValueOption )
+               ( Storage_C, C, G, Storage_G, DetectFeaturesOption, &
+                 nValuesOption, oValueOption )
 
     class ( StorageForm ), intent ( inout ), target :: &
       Storage_C
@@ -382,6 +383,8 @@ contains
       G
     class ( StorageForm ), intent ( in ) :: &
       Storage_G
+    logical ( KDL ), intent ( in ), optional :: &
+      DetectFeaturesOption
     integer ( KDI ), intent ( in ), optional :: &
       nValuesOption, &
       oValueOption

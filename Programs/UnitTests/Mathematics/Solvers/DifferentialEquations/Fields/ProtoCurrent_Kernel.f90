@@ -21,7 +21,7 @@ contains
      
     if ( UseDevice ) then
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) &
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) &
       !$OMP& private ( iV )
       do iV = 1, size ( N )
         D ( iV ) = N ( iV )
@@ -29,7 +29,7 @@ contains
       !$OMP end OMP_TARGET_DIRECTIVE parallel do
     else
       !$OMP  parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) &
+      !$OMP& schedule ( OMP_SCHEDULE_HOST ) &
       !$OMP& private ( iV )
       do iV = 1, size ( N )
         D ( iV ) = N ( iV )
@@ -53,7 +53,7 @@ contains
      
     if ( UseDevice ) then
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) &
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) &
       !$OMP& private ( iV )
       do iV = 1, size ( N )
         N ( iV ) = D ( iV )
@@ -61,7 +61,7 @@ contains
       !$OMP end OMP_TARGET_DIRECTIVE parallel do
     else
       !$OMP  parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) &
+      !$OMP& schedule ( OMP_SCHEDULE_HOST ) &
       !$OMP& private ( iV )
       do iV = 1, size ( N )
         N ( iV ) = D ( iV )
@@ -86,7 +86,7 @@ contains
     
     if ( UseDevice ) then
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) &
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) &
       !$OMP& private ( iV )
       do iV = 1, size ( FEP_1 )
         FEP_1 ( iV ) = V_1 ( iV )
@@ -99,7 +99,7 @@ contains
       !$OMP end OMP_TARGET_DIRECTIVE parallel do
     else
       !$OMP  parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) &
+      !$OMP& schedule ( OMP_SCHEDULE_HOST ) &
       !$OMP& private ( iV )
       do iV = 1, size ( FEP_1 )
         FEP_1 ( iV ) = V_1 ( iV )
@@ -132,7 +132,7 @@ contains
     
     if ( UseDevice ) then
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) &
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) &
       !$OMP& private ( iV )
       do iV = 1, size ( V_1 )  
         V_1 ( iV ) = V * K ( 1 ) / Abs_K
@@ -142,7 +142,7 @@ contains
       !$OMP end OMP_TARGET_DIRECTIVE parallel do
     else
       !$OMP  parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) &
+      !$OMP& schedule ( OMP_SCHEDULE_HOST ) &
       !$OMP& private ( iV )
       do iV = 1, size ( V_1 )  
         V_1 ( iV ) = V * K ( 1 ) / Abs_K
@@ -170,7 +170,7 @@ contains
       
     if ( UseDevice ) then
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) &
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) &
       !$OMP& private ( iV )
       do iV = 1, size ( F_D )
         F_D ( iV )  =  D ( iV ) * V_Dim ( iV )
@@ -178,7 +178,7 @@ contains
       !$OMP end OMP_TARGET_DIRECTIVE parallel do
     else
       !$OMP  parallel do &
-      !$OMP& schedule ( OMP_SCHEDULE ) &
+      !$OMP& schedule ( OMP_SCHEDULE_HOST ) &
       !$OMP& private ( iV )
       do iV = 1, size ( F_D )
         F_D ( iV )  =  D ( iV ) * V_Dim ( iV )

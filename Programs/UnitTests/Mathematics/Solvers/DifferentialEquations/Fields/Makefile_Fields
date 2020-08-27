@@ -24,7 +24,7 @@ DensityWave_Form_Test: Basics.a Manifolds.a Operations.a \
           Operations.a Manifolds.a Basics.a $(LIBRARIES)
 
 clean:
-	rm -f *.o *.a *.mod *.ld
+	rm -f *.o *.a *.mod *.smod *.ld
 
 clobber: clean
 	rm -f ProtoCurrent_Form_Test_*
