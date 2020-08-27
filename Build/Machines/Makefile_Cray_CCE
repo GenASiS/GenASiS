@@ -57,7 +57,7 @@ USE_ISO_10646 =
 
 #-- Enable OpenMP by default
 ifneq ($(ENABLE_OMP), 0)
-  FORTAN_COMPILE += -homp
+  FORTRAN_COMPILE += -homp
 endif
 
 #-- Enable offload by default
