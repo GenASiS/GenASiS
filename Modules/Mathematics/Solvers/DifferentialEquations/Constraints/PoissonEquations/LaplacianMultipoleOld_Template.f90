@@ -109,16 +109,12 @@ module LaplacianMultipoleOld_Template
 
   end interface
 
-!-- FIXME: With GCC 6.1.0, must be public to trigger .smod generation
-!    private :: &
     public :: &
       ComputeMomentContributionsOldKernel, &
       AddMomentShellsOldKernel, &
       ComputeSolidHarmonicsKernel
 
-!-- FIXME: With GCC 6.1.0, must be public to trigger .smod generation
-!      private :: &
-      public :: &
+      private :: &
         ComputeMomentContributions_MR_MI_Kernel, &
         ComputeSolidHarmonics_C_M_0_Kernel, &
         ComputeSolidHarmonics_C_S_Kernel
