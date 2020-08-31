@@ -9,6 +9,9 @@ module SetHomogeneousSphere_Command
   public :: &
     SetHomogeneousSphere
 
+    private :: &
+      SetDensityKernel
+
 contains
 
 
@@ -26,6 +29,9 @@ contains
     integer ( KDI ), intent ( in ) :: &
       iVariable
 
+    integer ( KDI ) :: &
+      iV, &  !-- iValue
+      nValues
     type ( StorageForm ), pointer :: &
       Source, &
       Reference
@@ -42,25 +48,16 @@ contains
         dR_L => G % Value ( :, G % WIDTH_LEFT_U ( 1 ) ), &
         dR_R => G % Value ( :, G % WIDTH_RIGHT_U ( 1 ) ) )
 
+    nValues  =  size ( R )
+
 
     !-- Source
 
     Source => Source_ASC % Storage ( )
 
-    associate &
-      ( D => Source % Value ( :, iVariable ), &
-        R_In  => R - dR_L, &
-        R_Out => R + dR_R, &
-        RD    => RadiusDensity )
-    D = 0.0_KDR
-    where ( R_Out <= RD )
-      D = Density
-    end where
-    where ( R_In < RD .and. R_Out > RD )
-      D = Density * ( RadiusDensity ** 3  -  R_In ** 3 ) &
-                    / ( R_Out ** 3  -  R_In ** 3 )
-    end where
-    end associate !-- R_In, etc.
+    associate ( D => Source % Value ( :, iVariable ) )
+    call SetDensityKernel ( R, dR_L, dR_R, RadiusDensity, Density, nValues, D )
+    end associate !-- D
 
 
     !-- Reference
@@ -86,6 +83,38 @@ contains
     nullify ( G, Source, Reference )
 
   end subroutine SetHomogeneousSphere
+
+
+  subroutine SetDensityKernel ( R, dR_L, dR_R, RD, Density, nValues, D )
+
+    real ( KDR ), dimension ( : ), intent ( in ) :: &
+      R, &
+      dR_L, dR_R
+    real ( KDR ), intent ( in ) :: &
+      RD, &
+      Density
+    integer ( KDI ), intent ( in ) :: &
+      nValues
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      D
+
+    integer ( KDI ) :: &
+      iV
+    real ( KDR ) :: &
+      R_In, R_Out
+
+    do iV  =  1, nValues
+      R_In   =  R ( iV )  -  dR_L ( iV )
+      R_Out  =  R ( iV )  +  dR_R ( iV )
+      if ( R_Out  <=  RD ) then
+        D ( iV )  =  Density
+      else if ( R_In  <  RD .and. R_Out  >  RD ) then
+        D ( iV )  =  Density * ( RD ** 3  -  R_In ** 3 ) &
+                     / ( R_Out ** 3  -  R_In ** 3 )
+      end if
+    end do !-- iV
+
+  end subroutine SetDensityKernel
 
 
 end module SetHomogeneousSphere_Command

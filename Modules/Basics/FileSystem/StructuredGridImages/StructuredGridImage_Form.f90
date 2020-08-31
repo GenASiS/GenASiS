@@ -821,13 +821,27 @@ contains
                       CONSOLE % INFO_6 )
         end if
 
+        !-- FIXME: GCC 10.1 does not like some array operations
+        do iV = 1, size ( Value )
+          Value ( iV )  =  Value ( iV )  /  S % Unit ( iVrbl ) % Number
+        end do !-- iV
+
+        ! Error = DBPUTQV1 &
+        !           ( SGI % Stream % MeshBlockHandle, &
+        !             trim ( S % Variable ( iVrbl ) ), &
+        !             S % lVariable ( iVrbl ), &
+        !             trim ( MeshDirectory ) // 'Mesh', &
+        !             len_trim ( MeshDirectory ) + 4, &
+        !             Value / S % Unit ( iVrbl ) % Number, SGI % nCells, &
+        !             SGI % nDimensions, DB_F77NULL, 0, DB_DOUBLE, Centering, &
+        !             SiloOptionList, Error )
         Error = DBPUTQV1 &
                   ( SGI % Stream % MeshBlockHandle, &
                     trim ( S % Variable ( iVrbl ) ), &
                     S % lVariable ( iVrbl ), &
                     trim ( MeshDirectory ) // 'Mesh', &
                     len_trim ( MeshDirectory ) + 4, &
-                    Value / S % Unit ( iVrbl ) % Number, SGI % nCells, &
+                    Value, SGI % nCells, &
                     SGI % nDimensions, DB_F77NULL, 0, DB_DOUBLE, Centering, &
                     SiloOptionList, Error )
 
