@@ -7,7 +7,7 @@ FORTRAN_DEBUG        = -g -qsigtrap #-Wall
 FORTRAN_OPTIMIZE     = -Ofast
 FORTRAN_PROFILE      = -O2 -g -qdbgfmt=dwarf4
 
-CC_COMPILE           = mpicc -c -qsmp=omp
+CC_COMPILE           = mpicc -c
 CC_DEBUG             = -g
 CC_OPTIMIZE          = $(FORTRAN_OPTIMIZE)
 
@@ -18,11 +18,18 @@ DEVICE_OPTIMIZE      = -O3
 
 LINK = mpifort
 
-#SILO_DIR = /ccs/home/reubendb/projects/swtree/peak/silo/4.10.2/xl2017
+# Define default switches for this compiler. These can be overwritten at
+# build time with, e.g., 'make ENABLE_OMP_OFFLOAD=0 <target>'
+ENABLE_OMP          ?= 1
+ENABLE_OMP_OFFLOAD  ?= 1
+USE_ISO_10646       ?= 0
+
+#-- Silo library include and link line flag and location
 SILO_DIR = /sw/peak/caascade/silo/4.10.2/xl20180502
 INCLUDE_SILO = -I${SILO_DIR}/include
 LIBRARY_SILO = -L${SILO_DIR}/lib -lsilo
 
+#-- HDF5 library include and link line flag and location
 INCLUDE_HDF5 = -I${OLCF_HDF5_ROOT}/include
 LIBRARY_HDF5 = -L${OLCF_HDF5_ROOT}/lib -lhdf5_fortran -lhdf5
 
@@ -36,16 +43,15 @@ endif
 
 INCLUDE_PREPROCESSOR = -I$(PATH_GENASIS)/Build
 
-#-- Enable unicode
-USE_ISO_10646 = 
-
-#-- Enable OpenMP by default
-ifneq ($(ENABLE_OMP), 0)
-  DEFINES = -qsmp=omp
+ifeq ($(ENABLE_OMP), 1)
+  DEFINES += -qsmp=omp
+else
+  ENABLE_OMP_OFFLOAD = 0
 endif
 
-#-- Enable offload by default
-ifneq ($(ENABLE_OMP_OFFLOAD), 0)
+ifeq ($(ENABLE_OMP_OFFLOAD), 1)
   FORTRAN_DEBUG += -qinfo=omperrtrace
-  DEFINES = -qsmp=omp -qoffload -DENABLE_OMP_OFFLOAD
+  DEFINES       += -qoffload -DENABLE_OMP_OFFLOAD
 endif
+
+DEFINES   += -D$(GENASIS_MACHINE)
