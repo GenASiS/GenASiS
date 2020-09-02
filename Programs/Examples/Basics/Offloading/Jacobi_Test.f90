@@ -26,8 +26,8 @@ module Jacobi_Form
       Compute_CPU
     procedure, public, pass :: &
       Validate
-    final :: &
-      Finalize
+    !final :: &
+    !  Finalize
   end type JacobiForm
   
 
@@ -43,8 +43,6 @@ contains
       Error
     integer ( KDI ), dimension ( 2 ) :: &
       nCells
-    real ( KDR ), dimension ( :, : ), pointer :: &
-      I, O
     
     nCells = [ 1024, 1024 ]
     call PROGRAM_HEADER % GetParameter ( nCells, 'nCells' )
@@ -66,21 +64,14 @@ contains
     call J % Timer_DataTransfer % Start ( )
     
     !-- Update device's J % Input 
-    I => J % Input
-    call AssociateDevice ( J % D_Input, I, ErrorOption = Error )
-    !$OMP target update to ( I )
-    call DisassociateDevice ( I, Error )
+    call AssociateHost    ( J % D_Input, J % Input, ErrorOption = Error )
+    call UpdateDevice     ( J % Input,   J % D_Input, ErrorOption = Error )
     
     !-- Update device's J % Output
-    O => J % Output
-    call AssociateDevice ( J % D_Output, O, ErrorOption = Error )
-    !$OMP target update to ( O )
-    call DisassociateDevice ( O, Error )
+    call AssociateHost    ( J % D_Output, J % Output, ErrorOption = Error )
+    call UpdateDevice     ( J % Output, J % D_Output, ErrorOption = Error )
     
     call J % Timer_DataTransfer % Stop ( )
-    
-    nullify ( O )
-    nullify ( I )
     
   end subroutine Initialize
   
@@ -107,25 +98,18 @@ contains
     nIterations = 1000
     nV = shape ( A_O )
     
-    call AssociateDevice ( J % D_Output, A_U, ErrorOption = Error )
-    call AssociateDevice ( J % D_Input, A_O, ErrorOption = Error )
-    
-!    do iI = 1, nIterations
-!      !$OMP OMP_TARGET_DIRECTIVE parallel do collapse ( 2 ) schedule ( OMP_SCHEDULE )
-!      do jV = 2, nV ( 2 ) - 1
-!        !-- !$OMP parallel do
-!        do iV = 2, nV ( 1 ) - 1
-!          A_U ( iV, jV ) & 
-!            = 0.25_KDR * (   A_O ( iV, jV - 1 ) + A_O ( iV, jV + 1 ) &
-!                           + A_O ( iV - 1, jV ) + A_O ( iV + 1, jV ) )
-!        end do
-!        !-- !$OMP end parallel do
-!      end do
-!      !$OMP end OMP_TARGET_DIRECTIVE parallel do
-!    end do
-    
-    call DisassociateDevice ( A_U, Error )
-    call DisassociateDevice ( A_O, Error )
+    do iI = 1, nIterations
+      !$OMP target teams distribute parallel do collapse ( 2 ) &
+      !$OMP schedule ( static, 1 )
+      do jV = 2, nV ( 2 ) - 1
+        do iV = 2, nV ( 1 ) - 1
+          A_U ( iV, jV ) & 
+            = 0.25_KDR * (   A_O ( iV, jV - 1 ) + A_O ( iV, jV + 1 ) &
+                           + A_O ( iV - 1, jV ) + A_O ( iV + 1, jV ) )
+        end do
+      end do
+      !$OMP end target teams distribute parallel do
+    end do
     
     nullify ( A_U )
     nullify ( A_O )
@@ -156,7 +140,7 @@ contains
     
     do iI = 1, nIterations
       
-      !$OMP parallel do
+      !$OMP parallel do collapse ( 2 )
       do jV = 2, nV ( 2 ) - 1 
         do iV = 2, nV ( 1 ) - 1
           A_U ( iV, jV ) & 
@@ -187,22 +171,24 @@ contains
     
     allocate &
       ( O_Host ( size ( J % Input, dim = 1 ), size ( J % Input, dim = 2 ) ) )
+    O_Host = - huge ( 1.0_KDR )
     
-    !call J % Timer_DataTransfer % Start ( )
+    call J % Timer_DataTransfer % Start ( )
     
     !-- Get data on GPU to host variable O_Host so we can validate
-    call AssociateDevice ( J % D_Output, O_Host, ErrorOption = Error )
-    !$OMP target update from ( O_Host )
-    call DisassociateDevice ( O_Host, Error )
-    
-    !call J % Timer_DataTransfer % Stop ( )
+    call DisassociateHost ( J % Output )
+    call AssociateHost    ( J % D_Output, O_Host, ErrorOption = Error )
+    call UpdateHost       ( J % D_Output, O_Host )
+    call DisassociateHost ( O_Host )
+
+    call J % Timer_DataTransfer % Stop ( )
     
     L1_Error = sum ( abs ( O_Host - J % Output ) ) / sum ( J % Output ) 
     
     call Show ( L1_Error,   'L1_Error' )
-    !call Show ( O_Host,     'O_Host' )
-    !call Show ( J % Input,  'J % Input' )
-    !call Show ( J % Output, 'J % Output' )
+    call Show ( O_Host,     'O_Host', IgnorabilityOption = CONSOLE % INFO_5 )
+    call Show ( J % Input,  'J % Input', IgnorabilityOption = CONSOLE % INFO_5 )
+    call Show ( J % Output, 'J % Output', IgnorabilityOption = CONSOLE % INFO_5 )
   
   end subroutine Validate
   
@@ -212,6 +198,12 @@ contains
     type ( JacobiForm ), intent ( inout ) :: &
       J
       
+    integer ( KDI ) :: &
+      Error
+    
+    call DisassociateHost ( J % Input )
+    call DisassociateHost ( J % Output )
+    
     deallocate ( J % Output ) 
     deallocate ( J % Input ) 
   
@@ -242,13 +234,13 @@ program Difference_Form_Test
     ( T_GPU => J % Timer_GPU, &
       T_CPU => J % Timer_CPU )
         
-  call Show ( 'Calling Jacobi', CONSOLE % INFO_1 )
-  
+  call Show ( 'Calling Jacobi GPU', CONSOLE % INFO_1 )
   
   call T_GPU % Start ( )
   call J % Compute_GPU ( )
   call T_GPU % Stop ( )
   
+  call Show ( 'Calling Jacobi CPU', CONSOLE % INFO_1 )
   call T_CPU % Start ( )
   call J % Compute_CPU ( )
   call T_CPU % Stop ( )
