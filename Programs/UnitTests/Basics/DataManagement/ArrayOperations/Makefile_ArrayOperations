@@ -4,7 +4,7 @@ include $(PATH_GENASIS)/Build/Makefile_Build
 
 all: \
   Clear_Command_Test Copy_Command_Test Sort_Command_Test \
-  Search_Command_Test Copy_3D_Test
+  Search_Command_Test
 
 Clear_Command_Test: Specifiers.a Devices.a Clear_Command_Test.o
 	$(LINK) $(FLAGS) \
