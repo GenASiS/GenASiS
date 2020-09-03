@@ -17,6 +17,12 @@ DEVICE_COMPILE       = #-- set below
 
 LINK = ftn -homp
 
+# Define default switches for this compiler. These can be overwritten at
+# build time with, e.g., 'make ENABLE_OMP_OFFLOAD=0 <target>'
+ENABLE_OMP          ?= 1
+ENABLE_OMP_OFFLOAD  ?= 1
+USE_ISO_10646       ?= 0
+
 #-- Silo library may be  automatically included & linked by 
 #-- "module load silo" if provided, otherwise, manually put include and 
 #-- link line flag &  location below
@@ -52,19 +58,15 @@ ifeq ($(CRAY_ACCEL_TARGET), amd_gfx906)
   LIBRARY_DEVICE = -L${ROCM_PATH}/lib -lhip_hcc
 endif
 
-#-- Do not enable unicode
-USE_ISO_10646 = 
 
-#-- Enable OpenMP by default
-ifneq ($(ENABLE_OMP), 0)
-  FORTRAN_COMPILE += -homp
+ifeq ($(ENABLE_OMP), 1)
+  DEFINES += -fopenmp
+else
+  ENABLE_OMP_OFFLOAD = 0
 endif
 
-#-- Enable offload by default
-ENABLE_OMP_OFFLOAD = 1
-
-ifdef ENABLE_OMP_OFFLOAD
-  ifeq ($(ENABLE_OMP_OFFLOAD), 1)
-    DEFINES       += -fopenmp -DENABLE_OMP_OFFLOAD
-  endif
+ifeq ($(ENABLE_OMP_OFFLOAD), 1)
+  DEFINES       += -DENABLE_OMP_OFFLOAD
 endif
+
+DEFINES   += -D$(GENASIS_MACHINE)
