@@ -16,7 +16,7 @@ DEVICE_COMPILE       = nvcc -c
 DEVICE_DEBUG         = -g
 DEVICE_OPTIMIZE      = -O3
 
-LINK = mpifort
+LINK = mpifort -fopenmp
 
 # Define default switches for this compiler. These can be overwritten at
 # build time with, e.g., 'make ENABLE_OMP_OFFLOAD=0 <target>'
@@ -34,7 +34,7 @@ INCLUDE_HDF5 = -I${OLCF_HDF5_ROOT}/include
 LIBRARY_HDF5 = -L${OLCF_HDF5_ROOT}/lib -lhdf5_fortran -lhdf5
 
 #-- LAPACK library link line flag and location
-LIBRARY_LAPACK = #-L${OLCF_NETLIB_LAPACK_ROOT}/lib -llapack -lblas
+LIBRARY_LAPACK = -L${OLCF_NETLIB_LAPACK_ROOT}/lib -llapack -lblas
 
 ifeq ($(ENABLE_OMP_OFFLOAD), 1)
 INCLUDE_DEVICE = -I${OLCF_CUDA_ROOT}/include
