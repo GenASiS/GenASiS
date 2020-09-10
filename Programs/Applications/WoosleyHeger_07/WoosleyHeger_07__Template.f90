@@ -97,22 +97,14 @@ contains
     V_2 = 0.0_KDR
     V_3 = 0.0_KDR
 
-    !call PSC % ExchangeGhostData ( F_CSL )
-    
-    call F % UpdateDevice ( )
-
-    !do iD = 1, PS % nDimensions
-    !  associate &
-    !    ( iaI => PS % Connectivity % iaInner ( iD ), &
-    !      iaO => PS % Connectivity % iaOuter ( iD ) )
-    !  call PS % ApplyBoundaryConditions ( F, iD, iaI )
-    !  call PS % ApplyBoundaryConditions ( F, iD, iaO )
-    !  end associate !-- iaI, etc.
-    !end do !-- iD
-    
-    call F % ComputeFromTemperature ( F, G, G )
-    
-    call F % UpdateHost ( )
+    do iD = 1, PS % nDimensions
+      associate &
+        ( iaI => PS % Connectivity % iaInner ( iD ), &
+          iaO => PS % Connectivity % iaOuter ( iD ) )
+      call PS % ApplyBoundaryConditions ( F, iD, iaI )
+      call PS % ApplyBoundaryConditions ( F, iD, iaO )
+      end associate !-- iaI, etc.
+    end do !-- iD
     
     end associate !-- N, etc.
     end select !-- PSC
