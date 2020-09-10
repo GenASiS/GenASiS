@@ -199,11 +199,10 @@ contains
 
     C     => I % Current_ASC % Current ( )
     C_CSL => I % Current_ASC % Current_CSL ( )
-    call C % UpdateDevice ( ) 
+    call CSL % ExchangeGhostData ( C_CSL, UseDeviceOption = .false. )
+    call C % UpdateDevice ( )
     call C % ComputeFromInitial ( G )
     call C % UpdateHost ( )
-    call CSL % ExchangeGhostData ( C_CSL )
-    call C % UpdateDevice ( )
 
     class default
       call Show ( 'Chart type type not recognized', CONSOLE % ERROR )
