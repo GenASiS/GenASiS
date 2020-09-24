@@ -41,7 +41,6 @@ include $(PATH_SPECIFIERS)/Makefile_Dependencies
 include $(PATH_DEVICES)/Makefile_Dependencies
 include $(PATH_ARRAY_OPERATIONS)/Makefile_Dependencies
 include $(PATH_ARRAY_ARRAYS)/Makefile_Dependencies
-include $(PATH_DEVICES)/Makefile_Dependencies
 include $(PATH_STORAGES)/Makefile_Dependencies
 
 Storage_Form_Test.o: \
