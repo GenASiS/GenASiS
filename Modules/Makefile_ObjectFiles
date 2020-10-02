@@ -3,6 +3,7 @@ include $(PATH_MATHEMATICS)/Makefile_ObjectFiles
 include $(PATH_BASICS)/Makefile_ObjectFiles
 
 MODULES = \
+  GenASiS.o \
   $(PHYSICS) \
   $(MATHEMATICS) \
   $(BASICS)

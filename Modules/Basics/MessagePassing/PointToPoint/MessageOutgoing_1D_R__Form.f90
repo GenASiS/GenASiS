@@ -111,7 +111,7 @@ contains
   end subroutine SendAll
   
   
-  elemental subroutine Finalize ( M_1D )
+  impure elemental subroutine Finalize ( M_1D )
   
     type ( MessageOutgoing_1D_R_Form ), intent ( inout ) :: &
       M_1D

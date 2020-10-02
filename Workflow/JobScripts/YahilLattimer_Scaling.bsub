@@ -1,0 +1,83 @@
+#! /bin/bash -l
+#BSUB -J YahilLattimer_Scaling
+#BSUB -o YahilLattimer_Scaling.o%J
+#BSUB -e YahilLattimer_Scaling.e%J
+#BSUB -nnodes 8
+#BSUB -q batch-hm
+#BSUB -W 50
+#BSUB -P AST163
+##BSUB -alloc_flags "nvme"
+
+module load xl netlib-lapack hdf5 git cuda
+GIT_REV=$(git rev-parse --short HEAD)
+
+FinishCycle=50
+
+set -o verbose
+
+export OMP_NUM_THREADS=7
+
+#-- Assume that job is submitted from Executable directory. This
+#-- This next gobbledy-gook look for the latest exec in the current dir
+EXEC=$(find -type f -executable -name 'YahilLattimer_*' -printf '%T@ %p\n' \
+        | sort | tail -n 1 | cut -f2- -d " " | xargs basename )
+nCP=64
+nBricks=1,1,1
+echo "Output: ${EXEC}_3D_nCP${nCP}_${LSB_JOBID}_${GIT_REV}"
+
+jsrun -n 1 -g 1 -c 7 --bind packed:7 --smpiargs="-gpu" ./$EXEC \
+nCellsPolar=${nCP} nBricks=${nBricks} \
+Verbosity=INFO_2 FinishCycle=${FinishCycle} NoWrite=T Dimensionality=3D \
+LaplacianReductionUseDevice=F \
+OutputDirectory=../${EXEC}_3D_nCP${nCP}_${LSB_JOBID}_${GIT_REV}/ \
+&> ${EXEC}_3D_nCP${nCP}_${LSB_JOBID}_${GIT_REV}.out
+
+nCP=128
+nBricks=3,1,2
+echo "Output: ${EXEC}_3D_nCP${nCP}_${LSB_JOBID}_${GIT_REV}"
+jsrun -n 6 -g 1 -c 7 --bind packed:7 --smpiargs="-gpu" ./$EXEC \
+nCellsPolar=${nCP} nBricks=${nBricks} \
+Verbosity=INFO_2 FinishCycle=${FinishCycle} NoWrite=T Dimensionality=3D \
+LaplacianReductionUseDevice=F \
+OutputDirectory=../${EXEC}_3D_nCP${nCP}_${LSB_JOBID}_${GIT_REV}/ \
+&> ${EXEC}_3D_nCP${nCP}_${LSB_JOBID}_${GIT_REV}.out
+
+nCP=256
+nBricks=6,2,4
+echo "Output: ${EXEC}_3D_nCP${nCP}_${LSB_JOBID}_${GIT_REV}"
+jsrun -n 48 -g 1 -c 7 --bind packed:7 --smpiargs="-gpu" ./$EXEC \
+nCellsPolar=${nCP} nBricks=${nBricks} \
+Verbosity=INFO_2 FinishCycle=${FinishCycle} NoWrite=T Dimensionality=3D \
+LaplacianReductionUseDevice=F \
+OutputDirectory=../${EXEC}_3D_nCP${nCP}_${LSB_JOBID}_${GIT_REV}/ \
+&> ${EXEC}_3D_nCP${nCP}_${LSB_JOBID}_${GIT_REV}.out
+
+nCP=512
+nBricks=12,4,8
+echo "Output: ${EXEC}_3D_nCP${nCP}_${LSB_JOBID}_${GIT_REV}"
+jsrun -n 384 -g 1 -c 7 --bind packed:7 --smpiargs="-gpu" ./$EXEC \
+nCellsPolar=${nCP} nBricks=${nBricks} \
+Verbosity=INFO_2 FinishCycle=${FinishCycle} NoWrite=T Dimensionality=3D \
+LaplacianReductionUseDevice=F \
+OutputDirectory=../${EXEC}_3D_nCP${nCP}_${LSB_JOBID}_${GIT_REV}/ \
+&> ${EXEC}_3D_nCP${nCP}_${LSB_JOBID}_${GIT_REV}.out
+
+nCP=1024
+nBricks=24,8,16
+echo "Output: ${EXEC}_3D_nCP${nCP}_${LSB_JOBID}_${GIT_REV}"
+jsrun -n 3072 -g 1 -c 7 --bind packed:7 --smpiargs="-gpu" ./$EXEC \
+nCellsPolar=${nCP} nBricks=${nBricks} \
+Verbosity=INFO_2 FinishCycle=${FinishCycle} NoWrite=T Dimensionality=3D \
+LaplacianReductionUseDevice=F \
+OutputDirectory=../${EXEC}_3D_nCP${nCP}_${LSB_JOBID}_${GIT_REV}/ \
+&> ${EXEC}_3D_nCP${nCP}_${LSB_JOBID}_${GIT_REV}.out
+
+nCP=4096
+nBricks=48,16,32
+echo "Output: ${EXEC}_3D_nCP${nCP}_${LSB_JOBID}_${GIT_REV}"
+jsrun -n 24576 -g 1 -c 7 --bind packed:7 --smpiargs="-gpu" ./$EXEC \
+nCellsPolar=${nCP} nBricks=${nBricks} \
+Verbosity=INFO_2 FinishCycle=${FinishCycle} NoWrite=T Dimensionality=3D \
+LaplacianReductionUseDevice=F \
+OutputDirectory=../${EXEC}_3D_nCP${nCP}_${LSB_JOBID}_${GIT_REV}/ \
+&> ${EXEC}_3D_nCP${nCP}_${LSB_JOBID}_${GIT_REV}.out

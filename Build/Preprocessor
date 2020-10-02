@@ -11,3 +11,8 @@
 #define OMP_TARGET_DISTRIBUTE_DIRECTIVE parallel do 
 #define OMP_TARGET_DISTRIBUTE_SCHEDULE schedule ( runtime )
 #endif
+
+#ifdef POWER_XL
+#define simd
+#define SIMD 
+#endif

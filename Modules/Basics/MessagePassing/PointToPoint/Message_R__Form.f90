@@ -3,6 +3,7 @@
 
 module Message_R__Form
 
+  use iso_c_binding
   use MPI
   use Specifiers
   use Devices
@@ -68,7 +69,7 @@ contains
     call M % InitializeTemplate ( C, Tag, Rank, AllocatedOption = .false. )
 
     M % Value => Value
-  
+    
   end subroutine InitializeAssociate
   
   
@@ -77,18 +78,39 @@ contains
     class ( Message_R_Form ), intent ( inout ), target :: &
       M
     
-    call AllocateDevice ( M % Value, M % D_Value )
+    if ( M % AllocatedDevice ) &
+      return
+     
+    if ( M % AllocatedValue ) then
+      call AllocateDevice ( M % Value, M % D_Value )
+      call AssociateHost ( M % D_Value, M % Value )
+    else
+      if ( OnDevice ( M % Value ) ) &
+        M % D_Value = DeviceAddress ( M % Value )
+    end if
+    
+    M % AllocatedDevice = .true.
     
   end subroutine AllocateDevice_M
   
   
-  elemental subroutine Finalize ( M )
+  impure elemental subroutine Finalize ( M )
 
     type ( Message_R_Form ), intent ( inout ) :: &
       M 
       
+    if ( M % AllocatedDevice .and. M % AllocatedValue ) then
+      call DisassociateHost ( M % Value )
+      call DeallocateDevice ( M % D_Value )
+    else 
+      M % D_Value = c_null_ptr
+    end if
+    M % AllocatedDevice = .false.
+    
     if ( M % AllocatedValue ) then
-      if ( associated ( M % Value ) ) deallocate ( M % Value )
+      if ( associated ( M % Value ) ) &
+        deallocate ( M % Value )
+      M % AllocatedValue = .false.
     end if
     nullify ( M % Value )
 

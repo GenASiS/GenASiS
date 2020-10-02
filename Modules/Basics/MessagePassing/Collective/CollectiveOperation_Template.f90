@@ -21,6 +21,8 @@ module CollectiveOperation_Template
     integer ( KDI ), dimension ( : ), allocatable :: &
       nIncoming, &
       nOutgoing
+    logical ( KDL ) :: &
+      AllocatedDevice = .false.
     type ( CommunicatorForm ), pointer :: &
       Communicator => null ( )
   contains

@@ -18,8 +18,11 @@ endif
 %.o : %.f90
 	$(FORTRAN_COMPILE) $(FFLAGS) $(FORTRAN_BOUND_CHECK) $(INCLUDE) $<
 
+%.o : %.cu
+	$(DEVICE_COMPILE) $(DEFINES) $(DEVICE_FLAGS) $(INCLUDE) $<
+
+%.o : %.hip
+	$(DEVICE_COMPILE) $(DEFINES) $(DEVICE_FLAGS) $(INCLUDE) $<
+
 %.o : %.c
 	$(CC_COMPILE) $(DEFINES) $(CFLAGS) $(INCLUDE) $<
-
-%.o : %.cu
-	$(NVCC_COMPILE) $(DEFINES) $(CFLAGS) $(INCLUDE) $<

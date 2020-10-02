@@ -3,7 +3,8 @@ PATH_GENASIS = ../../../../../..
 include $(PATH_GENASIS)/Build/Makefile_Build
 
 all: \
-  Clear_Command_Test Copy_Command_Test Sort_Command_Test Search_Command_Test
+  Clear_Command_Test Copy_Command_Test Sort_Command_Test \
+  Search_Command_Test
 
 Clear_Command_Test: Specifiers.a Devices.a Clear_Command_Test.o
 	$(LINK) $(FLAGS) \
@@ -49,6 +50,7 @@ Clear_Command_Test.o: \
 
 Copy_Command_Test.o: \
   Specifiers.o \
+  Devices.o \
   Clear_Command.o \
   Copy_Command.o \
   Copy_Command_Test.f90

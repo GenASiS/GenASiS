@@ -1,6 +1,7 @@
 # Makefile Summit with GCC compiler
 
-FORTRAN_COMPILE      = mpif90 -c -cpp
+FORTRAN_COMPILE      = mpifort -c -cpp
+FORTRAN_FIXEDFORM    = -ffixed-form
 FORTRAN_BOUND_CHECK  = -fbounds-check
 FORTRAN_DEBUG        = -g -ffpe-trap=invalid,zero,overflow #-Wall
 FORTRAN_OPTIMIZE     = -Ofast
@@ -10,10 +11,21 @@ CC_COMPILE           = mpicc -c
 CC_DEBUG             = -g
 CC_OPTIMIZE          = $(FORTRAN_OPTIMIZE)
 
-LINK = mpif90
+DEVICE_CUDA          = 1
+DEVICE_COMPILE       = nvcc -c
+DEVICE_DEBUG         = -g
+DEVICE_OPTIMIZE      = -O3
+
+LINK = mpifort
+
+# Define default switches for this compiler. These can be overwritten at
+# build time with, e.g., 'make ENABLE_OMP_OFFLOAD=0 <target>'
+ENABLE_OMP          ?= 1
+ENABLE_OMP_OFFLOAD  ?= 0
+USE_ISO_10646       ?= 1
 
 #-- Silo library include and link line flag and location
-SILO_DIR=/sw/peak/caascade/silo/4.10.2/gcc8.1.0
+SILO_DIR = /sw/peak/caascade/silo/4.10.2/gcc8.1.0
 INCLUDE_SILO = -I${SILO_DIR}/include
 LIBRARY_SILO = -L${SILO_DIR}/lib -lsilo
 
@@ -22,22 +34,30 @@ INCLUDE_HDF5 = -I${OLCF_HDF5_ROOT}/include
 LIBRARY_HDF5 = -L${OLCF_HDF5_ROOT}/lib -lhdf5_fortran -lhdf5
 
 #-- LAPACK library link line flag and location
-LIBRARY_LAPACK = -L${OLCF_NETLIB_LAPACK_ROOT}/lib -llapack -lblas
+LIBRARY_LAPACK = #-L${OLCF_NETLIB_LAPACK_ROOT}/lib -llapack -lblas
 
-INCLUDE_CUDA = 
-LIBRARY_CUDA = 
+ifeq ($(ENABLE_OMP_OFFLOAD), 1)
+INCLUDE_DEVICE = -I${OLCF_CUDA_ROOT}/include
+LIBRARY_DEVICE = -L${OLCF_CUDA_ROOT}/lib64 -lcudart
+endif
 
 INCLUDE_PREPROCESSOR = -I$(PATH_GENASIS)/Build
 
-#-- Enable unicode
-USE_ISO_10646 = 
-
-#-- Enable OpenMP by default
-ifneq ($(ENABLE_OMP), 0)
-  DEFINES = -fopenmp -foffload=disable
+ifeq ($(ENABLE_OMP), 1)
+  DEFINES += -fopenmp
+else
+  ENABLE_OMP_OFFLOAD = 0
 endif
 
-#-- Enable offload if requested
 ifeq ($(ENABLE_OMP_OFFLOAD), 1)
-  DEFINES = -fopenmp -DENABLE_OMP_OFFLOAD
+  DEFINES = -fopenmp -foffload=nvptx-none="-lm -lgfortran" -DENABLE_OMP_OFFLOAD
 endif
+
+ifeq ($(ENABLE_OMP_OFFLOAD), 1)
+  DEFINES       += -foffload=nvptx-none="-lm -lgfortran -Ofast" \
+                   -DENABLE_OMP_OFFLOAD
+else
+  DEFINES       += -foffload=disable
+endif
+
+DEFINES   += -D$(GENASIS_MACHINE)

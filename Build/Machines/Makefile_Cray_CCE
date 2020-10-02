@@ -2,38 +2,71 @@
 # If PrgEnv-cray is not the default, use "module swap" to PrgEnv-cray
 
 FORTRAN_COMPILE      = ftn -c -eF
-FORTRAN_BOUND_CHECK  = -R bcp
-FORTRAN_DEBUG        = -g -hdevelop -hfp0 -K trap=fp
+FORTRAN_FIXEDFORM    = -ffixed
+FORTRAN_BOUND_CHECK  = #-R bcp #-- FIXME: bound checking causes issue with
+                               #          OpenMP. Reported to Cray.
+FORTRAN_DEBUG        = -g -hdevelop -eF -hfp0 -K trap=fp
 FORTRAN_OPTIMIZE     = #-Oipa2 #-- Default optimization (O2) but with lower ipa
-                       #       #   level (defaupt ipa3 causes issue)
 FORTRAN_PROFILE      = 
 
-CC_COMPILE  = cc -c -eF
-CC_DEBUG    = -g -hdevelop
-CC_OPTIMIZE = $(FORTRAN_OPTIMIZE)
+CC_COMPILE           = cc -c -eF
+CC_DEBUG             = -g -hdevelop
+CC_OPTIMIZE          = $(FORTRAN_OPTIMIZE)
 
-LINK = ftn
+DEVICE_COMPILE       = #-- set below
+
+LINK = ftn -homp
+
+# Define default switches for this compiler. These can be overwritten at
+# build time with, e.g., 'make ENABLE_OMP_OFFLOAD=0 <target>'
+ENABLE_OMP          ?= 1
+ENABLE_OMP_OFFLOAD  ?= 1
+USE_ISO_10646       ?= 0
 
 #-- Silo library may be  automatically included & linked by 
 #-- "module load silo" if provided, otherwise, manually put include and 
 #-- link line flag &  location below
-SILO_DIR=/ccs/home/reubendb/projects/swtree/xk7/silo/4.10.2/cle5.2_gnu5.3.0
+SILO_DIR=/home/users/coe0021/localsw/poplar/silo/4.10.2_cce9.1.3
 INCLUDE_SILO = -I${SILO_DIR}/include
-LIBRARY_SILO = -L${SILO_DIR}/lib -lsiloh5 -lz
+LIBRARY_SILO = -L${SILO_DIR}/lib -lsilo
 
 #-- HDF5 library may be  automatically included & linked by 
 #-- "module load hdf5" if provided, otherwise, manually put include and 
 #-- link line flag &  location below
-INCLUDE_HDF5 = 
-LIBRARY_HDF5 = 
+HDF5_DIR=/home/users/coe0021/localsw/poplar/hdf5/1.10.12_cce10
+INCLUDE_HDF5 = -I${HDF5_DIR}/include
+LIBRARY_HDF5 = -L${HDF5_DIR}/lib -lhdf5_fortran -lhdf5
 
 INCLUDE_PREPROCESSOR = -I$(PATH_GENASIS)/Build
 
-#-- Enable unicode
-USE_ISO_10646 = 
+#-- The following stanzas check whether we are building with CUDA or HIP
+ifeq ($(CRAY_ACCEL_TARGET), nvidia70)
+  DEVICE_CUDA    = 1
+  DEVICE_COMPILE = nvcc -c
 
-ifdef ENABLE_OMP_OFFLOAD
-  ifeq ($(ENABLE_OMP_OFFLOAD), 1)
-    DEFINES = -DENABLE_OMP_OFFLOAD
-  endif
+  INCLUDE_DEVICE = -I${CUDA_ROOT}/include
+  LIBRARY_DEVICE = -L${CUDA_ROOT}/lib64 -lcudart
 endif
+
+ifeq ($(CRAY_ACCEL_TARGET), amd_gfx906)
+  DEFINES       += -D__HIP_PLATFORM_HCC__
+
+  DEVICE_HIP     = 1
+  DEVICE_COMPILE = hipcc -c -D__HIP_PLATFORM_HCC__
+  
+  INCLUDE_DEVICE = -I${ROCM_PATH}/include
+  LIBRARY_DEVICE = -L${ROCM_PATH}/lib -lhip_hcc
+endif
+
+
+ifeq ($(ENABLE_OMP), 1)
+  DEFINES += -fopenmp
+else
+  ENABLE_OMP_OFFLOAD = 0
+endif
+
+ifeq ($(ENABLE_OMP_OFFLOAD), 1)
+  DEFINES       += -DENABLE_OMP_OFFLOAD
+endif
+
+DEFINES   += -D$(GENASIS_MACHINE)

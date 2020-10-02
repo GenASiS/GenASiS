@@ -85,7 +85,7 @@ contains
       select type ( CB => AB % Chart )
       class is ( Chart_SLD_Form )
 
-        B % Base_CSLD   => CB
+        B % Base_CSLD   => CB  !AB % Chart
         B % nBaseValues =  CB % nProperCells + CB % nGhostCells
         B % nFibers     =  CB % nProperCells
 

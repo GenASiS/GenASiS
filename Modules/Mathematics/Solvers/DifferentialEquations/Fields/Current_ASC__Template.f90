@@ -27,10 +27,10 @@ module Current_ASC__Template
   contains
     procedure, public, pass :: &
       InitializeTemplate_ASC_C
-    procedure, private, pass :: &
+    procedure, public, pass :: &
+      Current
+    procedure, public, pass :: &
       Current_CSL
-    generic, public :: &
-      Current => Current_CSL
     procedure, private, pass :: &
       AccumulateBoundaryTally_CSL
     generic, public :: &
@@ -144,7 +144,7 @@ contains
   end subroutine InitializeTemplate_ASC_C
 
 
-  function Current_CSL ( CA ) result ( C )
+  function Current ( CA ) result ( C )
 
     class ( Current_ASC_Template ), intent ( in ), target :: &
       CA
@@ -164,6 +164,32 @@ contains
       class is ( CurrentTemplate )
         C => F
       end select
+    class default
+      call Show ( 'Current type not recognized', CONSOLE % ERROR )
+      call Show ( 'Current_ASC__Template', 'module', CONSOLE % ERROR )
+      call Show ( 'Current', 'function', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- CC
+
+  end function Current
+
+   
+  function Current_CSL ( CA ) result ( C )
+
+    class ( Current_ASC_Template ), intent ( in ), target :: &
+      CA
+    class ( Field_CSL_Template ), pointer :: &
+      C
+    
+    class ( StorageForm ), pointer :: &
+      F
+    class ( FieldChartTemplate ), pointer :: &
+      CC 
+    
+    CC => CA % Chart
+    select type ( CC )
+    class is ( Field_CSL_Template )
+      C => CC
     class default
       call Show ( 'Current type not recognized', CONSOLE % ERROR )
       call Show ( 'Current_ASC__Template', 'module', CONSOLE % ERROR )

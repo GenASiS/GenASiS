@@ -2,8 +2,7 @@
 #include <stdio.h>
 
 #ifdef ENABLE_OMP_OFFLOAD
-#include <cuda.h>
-#include <cuda_runtime_api.h>
+#include <hip/hip_runtime_api.h>
 #endif
 
 void * AllocateHostDouble_Device ( int nValues )
@@ -11,11 +10,13 @@ void * AllocateHostDouble_Device ( int nValues )
   void * Host;
 
   #ifdef ENABLE_OMP_OFFLOAD
-  cudaError_t Status;
+  hipError_t Status;
+  int Flag;
   
-  Status = cudaHostAlloc ( &Host, sizeof ( double ) * nValues, 
-                           cudaHostAllocPortable );
-  if ( Status != cudaSuccess )
+  Flag = 0;
+  Status = hipHostMalloc ( &Host, sizeof ( double ) * nValues, 
+                           Flag );
+  if ( Status != hipSuccess )
     return NULL;
   #else
   Host = malloc ( sizeof ( double ) * nValues );
@@ -27,9 +28,9 @@ void * AllocateHostDouble_Device ( int nValues )
 void FreeHost_Device ( void * Host )
   {
   #ifdef ENABLE_OMP_OFFLOAD
-  cudaError_t Status;
+  hipError_t Status;
   
-  Status = cudaFreeHost ( Host );
+  Status = hipHostFree ( Host );
   #else
   free ( Host );
   #endif
@@ -40,10 +41,10 @@ int DeviceMemGetInfo_Device ( size_t * Free, size_t * Total )
   {
   #ifdef ENABLE_OMP_OFFLOAD
   
-  cudaError_t Status;
-  Status = cudaMemGetInfo ( Free, Total );
+  hipError_t Status;
+  Status = hipMemGetInfo ( Free, Total );
   
-  if ( Status != cudaSuccess )
+  if ( Status != hipSuccess )
     return (int) Status;
   else
     return 0;

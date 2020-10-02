@@ -1,4 +1,4 @@
-ifdef USE_ISO_10646
+ifeq ($(USE_ISO_10646),1)
   KIND_BIG_Singleton = KIND_BIG_Singleton_ISO_10646
 else
   KIND_BIG_Singleton = KIND_BIG_Singleton_ASCII

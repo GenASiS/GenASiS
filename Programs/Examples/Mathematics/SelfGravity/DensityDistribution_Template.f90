@@ -86,7 +86,8 @@ contains
     !-- Poisson
 
     MaxDegree = 10
-    PoissonSolverType = 'MULTIPOLE_OLD'
+    !PoissonSolverType = 'MULTIPOLE_OLD'
+    PoissonSolverType = 'MULTIPOLE'
     !-- FIXME: XL 16.1.1-5 does not work without association.
     associate ( PH => PROGRAM_HEADER )
 !    call PROGRAM_HEADER % GetParameter ( MaxDegree, 'MaxDegree' )
@@ -182,6 +183,7 @@ contains
     do iS = 1, nSolve
       call Show ( iS, 'iS' )
       call P % Solve ( DD % Solution, DD % Source )
+      call DD % Solution % UpdateHost ( )
     end do !-- iS
 
     if ( present ( ShiftSolutionOption )  ) &

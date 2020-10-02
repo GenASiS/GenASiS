@@ -37,7 +37,8 @@ module LaplacianMultipole_Template
       MyMoment_RC => null ( ), MyMoment_IC => null ( ), &
       MyMoment_RS => null ( ), MyMoment_IS => null ( )
     logical ( KDL ) :: &
-      UseDevice = .false.
+      UseDevice = .false., &
+      ReductionUseDevice = .false.
     character ( LDF ) :: &
       Type = '', &
       Name = ''
@@ -284,9 +285,9 @@ contains
     if ( associated ( Timer_LM ) ) call Timer_LM % Stop ( )
 
     if ( associated ( Timer_RM ) ) call Timer_RM % Start ( )
-    call MyM % UpdateHost ( )
+    if ( .not. L % ReductionUseDevice ) call MyM % UpdateHost ( ) 
     call L % ReductionMoments % Reduce ( REDUCTION % SUM )
-    call M % UpdateDevice ( ) 
+    if ( .not. L % ReductionUseDevice ) call M % UpdateDevice ( ) 
     if ( associated ( Timer_RM ) ) call Timer_RM % Stop ( )
 
     if ( associated ( Timer_AM ) ) call Timer_AM % Start ( )
@@ -374,6 +375,7 @@ contains
     call Show ( L % nAngularMoments, 'nAngularMoments', L % IGNORABILITY )
     call Show ( L % nEquations, 'nEquations', L % IGNORABILITY )
     call Show ( L % UseDevice, 'UseDevice', L % IGNORABILITY )
+    call Show ( L % ReductionUseDevice, 'ReductionUseDevice', L % IGNORABILITY )
 
   end subroutine SetParameters
 
@@ -512,6 +514,8 @@ contains
         PHC  =>  PROGRAM_HEADER % Communicator )
       call RM % Initialize &
              ( PHC, OutgoingValue = MyMoment_1D, IncomingValue = Moment_1D )
+      if ( L % ReductionUseDevice ) &
+        call RM % AllocateDevice ( )
     end associate !-- RM, etc.
 
     nullify ( Moment_1D, MyMoment_1D )

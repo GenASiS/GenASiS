@@ -40,7 +40,11 @@ module Field_BSLL_ASC_CSLD__Template
     procedure, public, pass :: &
       FieldFiber
     procedure, public, pass :: &
+      FieldFiber_CSL
+    procedure, public, pass :: &
       FieldSection
+    procedure, public, pass :: &
+      FieldSection_CSL
     procedure, public, pass :: &
       FinalizeTemplate_BSLL_ASC_CSLD
   end type Field_BSLL_ASC_CSLD_Template
@@ -148,11 +152,22 @@ contains
       end associate !-- iBC
 
     end do !-- iF
-
+    
     if ( GhostExchange ) then
+
+      select type ( FA => FB % Section % Atlas ( iFC ) % Element )
+      class is ( Field_ASC_Template )
+        
+      select type ( FC => FA % Chart )
+      class is ( Field_CSL_Template )   
+        
       associate ( CB => B % Base_CSLD )
-      call CB % ExchangeGhostData ( FS )
+      call CB % ExchangeGhostData ( FC )
       end associate
+        
+      end select !-- FC
+      end select !-- FA
+      
     end if
 
     end associate !-- B
@@ -220,6 +235,30 @@ contains
   end function FieldFiber
 
 
+  function FieldFiber_CSL ( FB, iFiber ) result ( FF )
+
+    class ( Field_BSLL_ASC_CSLD_Template ), intent ( in ), target :: &
+      FB
+    integer ( KDI ), intent ( in ) :: &
+      iFiber
+    class ( Field_CSL_Template ), pointer :: &
+      FF
+    
+    class ( FieldChartTemplate ), pointer :: &
+      FC 
+    
+    select type ( FA => FB % Fiber % Atlas ( iFiber ) % Element )
+    class is ( Field_ASC_Template ) 
+      FC => FA % Chart
+      select type ( FC )
+      class is ( Field_CSL_Template )   
+        FF => FC
+      end select !-- FC
+    end select !-- FA
+
+  end function FieldFiber_CSL
+
+
   function FieldSection ( FB, iSection ) result ( FS )
 
     class ( Field_BSLL_ASC_CSLD_Template ), intent ( in ), target :: &
@@ -242,6 +281,30 @@ contains
     end select !-- FA
 
   end function FieldSection
+
+
+  function FieldSection_CSL ( FB, iSection ) result ( FS )
+
+    class ( Field_BSLL_ASC_CSLD_Template ), intent ( in ), target :: &
+      FB
+    integer ( KDI ), intent ( in ) :: &
+      iSection
+    class ( Field_CSL_Template ), pointer :: &
+      FS
+    
+    class ( FieldChartTemplate ), pointer :: &
+      FC 
+
+    select type ( FA => FB % Section % Atlas ( iSection ) % Element )
+    class is ( Field_ASC_Template )
+      FC => FA % Chart
+      select type ( FC )
+      class is ( Field_CSL_Template )   
+        FS => FC
+      end select !-- FC
+    end select !-- FA
+
+  end function FieldSection_CSL
 
 
   impure elemental subroutine FinalizeTemplate_BSLL_ASC_CSLD ( FB )

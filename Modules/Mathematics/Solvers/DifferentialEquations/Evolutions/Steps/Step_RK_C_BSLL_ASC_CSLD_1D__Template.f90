@@ -596,7 +596,7 @@ contains
       iS, &  !-- iSection
       iC     !-- iCurrent
     type ( StorageForm ), pointer :: &
-      K
+      K_S
     type ( TimerForm ), pointer :: &
       TimerStore, &
       TimerConstraints, &
@@ -605,6 +605,8 @@ contains
       TimerFibers, &
       TimerClear, &
       TimerLoad_K
+    class ( Field_CSL_Template ), pointer :: &
+      K
     class ( GeometryFlatForm ), pointer :: &
       G_Base
     class ( CurrentTemplate ), pointer :: &
@@ -644,9 +646,10 @@ contains
 
       do iS = 1, S % nSections
  
-        K => KB % FieldSection ( iS )
+        K_S => KB % FieldSection ( iS )
+        K   => KB % FieldSection_CSL ( iS )
         if ( associated ( TimerClear ) ) call TimerClear % Start ( )
-        call Clear ( K % Value )
+        call Clear ( K_S % Value )
         if ( associated ( TimerClear ) ) call TimerClear % Stop ( )    
 
         C => CB % CurrentSection ( iS )
@@ -706,7 +709,7 @@ contains
 
       do iF = 1, S % nFibers
 
-        K => KB % FieldFiber ( iF )
+        K => KB % FieldFiber_CSL ( iF )
 
         C => CB % CurrentFiber ( iF )
 

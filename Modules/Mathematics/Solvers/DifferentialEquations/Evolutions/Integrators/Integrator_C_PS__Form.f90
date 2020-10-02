@@ -180,6 +180,8 @@ contains
 
     class ( GeometryFlatForm ), pointer :: &
       G
+    class ( Field_CSL_Template ), pointer :: &
+      C_CSL
     class ( CurrentTemplate ), pointer :: &
       C
 
@@ -195,11 +197,12 @@ contains
     if ( .not. allocated ( I % Current_ASC ) ) &
       return
 
-    C => I % Current_ASC % Current ( )
+    C     => I % Current_ASC % Current ( )
+    C_CSL => I % Current_ASC % Current_CSL ( )
     call C % UpdateDevice ( ) 
     call C % ComputeFromInitial ( G )
     call C % UpdateHost ( )
-    call CSL % ExchangeGhostData ( C )
+    call CSL % ExchangeGhostData ( C_CSL )
     call C % UpdateDevice ( )
 
     class default

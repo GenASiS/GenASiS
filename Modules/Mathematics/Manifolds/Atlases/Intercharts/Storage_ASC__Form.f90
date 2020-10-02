@@ -29,10 +29,10 @@ module Storage_ASC__Form
       InitializeClone
     generic, public :: &
       Initialize => InitializeAllocate, InitializeClone
-    procedure, private, pass :: &
+    procedure, public, pass :: &
       Storage_CSL
-    generic, public :: &
-      Storage => Storage_CSL
+    procedure, public, pass :: &
+      Storage
     final :: &
       Finalize
     procedure, private, pass :: &
@@ -137,6 +137,26 @@ contains
 
   function Storage_CSL ( SA ) result ( S )
 
+    class ( Storage_ASC_Form ), intent ( in ), target :: &
+      SA
+    class ( Storage_CSL_Form ), pointer :: &
+      S
+
+    select type ( SC => SA % Chart )
+    class is ( Storage_CSL_Form )
+      S => SC
+    class default
+      call Show ( 'Storage Chart type not recognized', CONSOLE % ERROR )
+      call Show ( 'Storage_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Storage_CSL', 'function', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- SC
+
+  end function Storage_CSL
+  
+  
+  function Storage ( SA ) result ( S )
+
     class ( Storage_ASC_Form ), intent ( in ) :: &
       SA
     class ( StorageForm ), pointer :: &
@@ -152,7 +172,7 @@ contains
       call PROGRAM_HEADER % Abort ( )
     end select !-- SC
 
-  end function Storage_CSL
+  end function Storage
 
 
   impure elemental subroutine Finalize ( SA )

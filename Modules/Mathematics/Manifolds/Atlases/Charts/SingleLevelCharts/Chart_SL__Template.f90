@@ -15,6 +15,9 @@ module Chart_SL__Template
 
   type, public, extends ( ChartHeader_SL_Form ), abstract :: &
     Chart_SL_Template
+      integer ( KDI ) :: &
+        iTimerGhostPackUnpack = -1, &
+        iTimerGhostCommunication = -1
       class ( GeometryFlat_CSL_Form ), pointer :: &
         Geometry_CSL => null ( )
       type ( ChartStream_SL_ElementForm ), dimension ( : ), allocatable :: &
@@ -214,6 +217,13 @@ contains
     end do !-- iD
 
     call G % SetMetricFixed ( C % nDimensions, G % nValues, oValue = 0 )
+
+    if ( C % iTimerGhostPackUnpack <= 0 ) &
+      call PROGRAM_HEADER % AddTimer &
+             ( 'GhostPackUnpack', C % iTimerGhostPackUnpack, Level = 6 )
+    if ( C % iTimerGhostCommunication <= 0 ) &
+      call PROGRAM_HEADER % AddTimer &
+             ( 'GhostCommunication', C % iTimerGhostCommunication, Level = 6 )
 
     nullify ( G )
     nullify ( Width_R_3D )

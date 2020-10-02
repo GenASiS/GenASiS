@@ -5,6 +5,7 @@
 module CollectiveOperation_R__Form
 
   use MPI
+  use iso_c_binding
   use Specifiers
   use DataManagement
   use Display
@@ -26,6 +27,8 @@ module CollectiveOperation_R__Form
       InitializeAllocate
     procedure, public, pass :: &
       InitializeAssociate
+    procedure, public, pass :: &
+      AllocateDevice => AllocateDevice_CO
     generic :: &
       Initialize => InitializeAllocate, InitializeAssociate
     procedure, public, pass :: &
@@ -90,8 +93,20 @@ contains
     
     allocate ( CO % Outgoing )
     call CO % Outgoing % Initialize ( C, OutgoingValue, 0, C % Rank )
-
+    
   end subroutine InitializeAssociate
+  
+  
+  subroutine AllocateDevice_CO ( CO )
+
+    class ( CollectiveOperation_R_Form ), intent ( inout ) :: &
+      CO
+
+    call CO % Incoming % AllocateDevice ( )
+    call CO % Outgoing % AllocateDevice ( )
+    CO % AllocatedDevice = .true.
+    
+  end subroutine AllocateDevice_CO
   
   
   subroutine Broadcast ( CO )
@@ -102,27 +117,45 @@ contains
     real :: &
       PlainReal
     integer ( KDI ) :: &
+      nIncoming, &
+      nOutgoing, &
       PlainValueSize, &
       ThisValueSize, &
       SizeRatio, &
       SendCount
-
-    associate &
-      ( OV => CO % Outgoing % Value ( : ), &
-        IV => CO % Incoming % Value ( : ) )
+    real ( KDR ), dimension ( : ), pointer :: &
+      OV, &
+      iV
+      
+    nOutgoing = size ( CO % Outgoing % Value )
+    nIncoming = size ( CO % Incoming % Value )
     
-    inquire ( iolength = ThisValueSize ) OV ( 1 )
+    inquire ( iolength = ThisValueSize ) CO % Outgoing % Value ( 1 )
     inquire ( iolength = PlainValueSize ) PlainReal
     SizeRatio = max ( 1, ThisValueSize / PlainValueSize )
-    SendCount = size ( OV ) * SizeRatio
+    SendCount = nOutgoing * SizeRatio
+    
+    if ( CO % Outgoing % AllocatedDevice ) then
+      call c_f_pointer ( CO % Outgoing % D_Value, OV, [ nOutgoing ] )
+    else
+      OV => CO % Outgoing % Value
+    end if
+    
+    if ( CO % Incoming % AllocatedDevice ) then
+      call c_f_pointer ( CO % Incoming % D_Value, IV, [ nIncoming ] )
+    else
+      IV => CO % Incoming % Value
+    end if
     
     call MPI_BCAST &
            ( OV, SendCount, MPI_REAL, &
              CO % Root, CO % Communicator % Handle, CO % Error)
-    call Copy ( OV, IV )
+    
+    call Copy ( OV, IV, UseDeviceOption = CO % Outgoing % AllocatedDevice )
+    
+    nullify ( IV )
+    nullify ( OV )
             
-    end associate
-
   end subroutine Broadcast
       
 
@@ -134,19 +167,35 @@ contains
     real :: &
       PlainReal
     integer ( KDI ) :: &
+      nIncoming, &
+      nOutgoing, &
       PlainValueSize, &
       ThisValueSize, &
       SizeRatio, &
       SendCount
+    real ( KDR ), dimension ( : ), pointer :: &
+      OV, &
+      iV
 
-    associate &
-      ( OV => CO % Outgoing % Value ( : ), &
-        IV => CO % Incoming % Value ( : ) )
-    
-    inquire ( iolength = ThisValueSize ) OV ( 1 )
+    nOutgoing = size ( CO % Outgoing % Value )
+    nIncoming = size ( CO % Incoming % Value )
+        
+    inquire ( iolength = ThisValueSize ) CO % Outgoing % Value ( 1 )
     inquire ( iolength = PlainValueSize ) PlainReal
     SizeRatio = max ( 1, ThisValueSize / PlainValueSize )
-    SendCount = size ( OV ) * SizeRatio
+    SendCount = nOutgoing * SizeRatio
+    
+    if ( CO % Outgoing % AllocatedDevice ) then
+      call c_f_pointer ( CO % Outgoing % D_Value, OV, [ nOutgoing ] )
+    else
+      OV => CO % Outgoing % Value
+    end if
+    
+    if ( CO % Incoming % AllocatedDevice ) then
+      call c_f_pointer ( CO % Incoming % D_Value, IV, [ nIncoming ] )
+    else
+      IV => CO % Incoming % Value
+    end if
     
     if ( CO % Root /= UNSET ) then
       call MPI_GATHER &
@@ -160,8 +209,9 @@ contains
                CO % Communicator % Handle, CO % Error)  
     end if
 
-    end associate
-
+    nullify ( IV )
+    nullify ( OV )
+    
   end subroutine Gather
 
 
@@ -173,26 +223,43 @@ contains
     real :: &
       PlainReal
     integer ( KDI ) :: &
+      nIncoming, &
+      nOutgoing, &
       PlainValueSize, &
       ThisValueSize, &
       SizeRatio, &
       SendCount
+    real ( KDR ), dimension ( : ), pointer :: &
+      OV, &
+      iV
 
-    associate &
-      ( OV => CO % Outgoing % Value ( : ), &
-        IV => CO % Incoming % Value ( : ) )
-    
-    inquire ( iolength = ThisValueSize ) OV ( 1 )
+    nOutgoing = size ( CO % Outgoing % Value )
+    nIncoming = size ( CO % Incoming % Value )
+        
+    inquire ( iolength = ThisValueSize ) CO % Outgoing % Value ( 1 )
     inquire ( iolength = PlainValueSize ) PlainReal
     SizeRatio = max ( 1, ThisValueSize / PlainValueSize )
-    SendCount = ( size ( OV ) / CO % Communicator % Size ) * SizeRatio
+    SendCount = ( nOutgoing / CO % Communicator % Size ) * SizeRatio
+    
+    if ( CO % Outgoing % AllocatedDevice ) then
+      call c_f_pointer ( CO % Outgoing % D_Value, OV, [ nOutgoing ] )
+    else
+      OV => CO % Outgoing % Value
+    end if
+    
+    if ( CO % Incoming % AllocatedDevice ) then
+      call c_f_pointer ( CO % Incoming % D_Value, IV, [ nIncoming ] )
+    else
+      IV => CO % Incoming % Value
+    end if
     
     call MPI_ALLTOALL &
            ( OV, SendCount, MPI_REAL, &
              IV, SendCount, MPI_REAL, &
              CO % Communicator % Handle, CO % Error)  
       
-    end associate
+    nullify ( IV )
+    nullify ( OV )
     
   end subroutine AllToAll
 
@@ -205,6 +272,8 @@ contains
     real :: &
       PlainReal
     integer ( KDI ) :: &
+      nIncoming, &
+      nOutgoing, &
       i, &
       PlainValueSize, &
       ThisValueSize, &
@@ -212,14 +281,28 @@ contains
     integer ( KDI ), dimension ( CO % Communicator % Size ) :: &
       SendCount, ReceiveCount, &
       SendDisplacement, ReceiveDisplacement
+    real ( KDR ), dimension ( : ), pointer :: &
+      OV, &
+      iV
 
-    associate &
-      ( OV => CO % Outgoing % Value ( : ), &
-        IV => CO % Incoming % Value ( : ) )
+    nOutgoing = size ( CO % Outgoing % Value )
+    nIncoming = size ( CO % Incoming % Value )
     
-    inquire ( iolength = ThisValueSize ) OV ( 1 )
+    inquire ( iolength = ThisValueSize ) CO % Outgoing % Value ( 1 )
     inquire ( iolength = PlainValueSize ) PlainReal
     SizeRatio = max ( 1, ThisValueSize / PlainValueSize )
+    
+    if ( CO % Outgoing % AllocatedDevice ) then
+      call c_f_pointer ( CO % Outgoing % D_Value, OV, [ nOutgoing ] )
+    else
+      OV => CO % Outgoing % Value
+    end if
+    
+    if ( CO % Incoming % AllocatedDevice ) then
+      call c_f_pointer ( CO % Incoming % D_Value, IV, [ nIncoming ] )
+    else
+      IV => CO % Incoming % Value
+    end if
 
     SendCount    = CO % nOutgoing * SizeRatio
     ReceiveCount = CO % nIncoming * SizeRatio
@@ -237,9 +320,10 @@ contains
            ( OV, SendCount, SendDisplacement, MPI_REAL, &
              IV, ReceiveCount, ReceiveDisplacement, MPI_REAL, &
              CO % Communicator % Handle, CO % Error )  
+
+    nullify ( IV )
+    nullify ( OV )
       
-    end associate
-    
   end subroutine AllToAll_V
 
 
@@ -253,20 +337,36 @@ contains
     real :: &
       PlainReal
     integer ( KDI ) :: &
+      nIncoming, &
+      nOutgoing, &
       PlainValueSize, &
       ThisValueSize, &
       SizeRatio, &
       SendCount, &
       MPI_Datatype
+    real ( KDR ), dimension ( : ), pointer :: &
+      OV, &
+      iV
     
-  associate &
-    ( OV => CO % Outgoing % Value ( : ), &
-      IV => CO % Incoming % Value ( : ) )
-    
-    inquire ( iolength = ThisValueSize ) OV ( 1 )
+    nOutgoing = size ( CO % Outgoing % Value )
+    nIncoming = size ( CO % Incoming % Value )
+
+    inquire ( iolength = ThisValueSize ) CO % Outgoing % Value ( 1 )
     inquire ( iolength = PlainValueSize ) PlainReal
     SizeRatio = max ( 1, ThisValueSize / PlainValueSize )
-    SendCount = size ( OV )
+    SendCount = nOutgoing
+    
+    if ( CO % Outgoing % AllocatedDevice ) then
+      call c_f_pointer ( CO % Outgoing % D_Value, OV, [ nOutgoing ] )
+    else
+      OV => CO % Outgoing % Value
+    end if
+    
+    if ( CO % Incoming % AllocatedDevice ) then
+      call c_f_pointer ( CO % Incoming % D_Value, IV, [ nIncoming ] )
+    else
+      IV => CO % Incoming % Value
+    end if
     
     select case ( SizeRatio )
     case ( 1 )
@@ -289,7 +389,8 @@ contains
                CO % Communicator % Handle, CO % Error )
     end if
       
-    end associate
+    nullify ( IV )
+    nullify ( OV )
 
   end subroutine Reduce
 

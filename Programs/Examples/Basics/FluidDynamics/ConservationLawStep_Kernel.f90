@@ -34,7 +34,7 @@ contains
     iaS = 0
     iaS ( iD ) = -1
     
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do simd collapse ( 3 ) &
     !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iaVS )
     do kV = lV ( 3 ), uV ( 3 ) 
       do jV = lV ( 2 ), uV ( 2 )
@@ -50,14 +50,14 @@ contains
         end do !-- iV
       end do !-- jV
     end do !-- kV
-    !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do simd
     
 !    dV_Right = cshift ( V, shift = 1, dim = iD ) - V
 
     iaS = 0
     iaS ( iD ) = +1
     
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do simd collapse ( 3 ) &
     !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iaVS )
     do kV = lV ( 3 ), uV ( 3 ) 
       do jV = lV ( 2 ), uV ( 2 )
@@ -73,7 +73,7 @@ contains
         end do !-- iV
       end do !-- jV
     end do !-- kV
-    !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do simd
     
   end procedure ComputeDifferencesKernel
 
@@ -100,7 +100,7 @@ contains
     !V_Inner = V - 0.5_KDR * dV
     !V_Outer = V + 0.5_KDR * dV
     
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do simd &
     !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( dV )
     do iV = 1, size ( V )
       dV = ( sign ( 0.5_KDR, dV_Left ( iV ) ) &
@@ -111,7 +111,7 @@ contains
       V_Inner ( iV ) = V ( iV ) - 0.5_KDR * dV
       V_Outer ( iV ) = V ( iV ) + 0.5_KDR * dV
     end do
-    !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do simd
     
   end procedure ComputeReconstructionKernel
 
@@ -148,7 +148,7 @@ contains
     iaS = 0
     iaS ( iD ) = -1
     
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do simd collapse ( 3 ) &
     !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iaVS )
     do kV = lV ( 3 ), uV ( 3 ) 
       do jV = lV ( 2 ), uV ( 2 )
@@ -172,7 +172,7 @@ contains
         end do
       end do
     end do
-    !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do simd
     
     !where ( AP_O + AM_O > 0.0_KDR )
     !  F_O = ( AP_O * RF_O  +  AM_O * cshift ( RF_I, shift = +1, dim = iD ) &
@@ -185,7 +185,7 @@ contains
     iaS = 0
     iaS ( iD ) = +1
     
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do simd collapse ( 3 ) &
     !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iaVS )
     do kV = lV ( 3 ), uV ( 3 ) 
       do jV = lV ( 2 ), uV ( 2 )
@@ -209,7 +209,7 @@ contains
         end do
       end do
     end do
-    !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do simd
     
   end procedure ComputeFluxesKernel
 
@@ -219,12 +219,12 @@ contains
     integer ( KDI ) :: &
       iV
     
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do simd &
     !$OMP& schedule ( OMP_SCHEDULE_TARGET )
     do iV = 1, size ( dU )
       dU ( iV ) = dU ( iV ) - dT * ( F_O ( iV ) - F_I ( iV ) ) * A / V
     end do
-    !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do simd
     
   end procedure ComputeUpdateKernel
   
@@ -237,12 +237,12 @@ contains
     
     nV = size ( O )
     
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do simd &
     !$OMP& schedule ( OMP_SCHEDULE_TARGET )
     do iV = 1, nV
       C ( iV ) = O ( iV ) + U ( iV )
     end do
-    !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do simd
     
   end procedure AddUpdateKernel
   
@@ -255,12 +255,12 @@ contains
     
     nV = size ( O )
     
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do &
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do simd &
     !$OMP& schedule ( OMP_SCHEDULE_TARGET )
     do iV = 1, nV
       C ( iV ) = 0.5_KDR * ( O ( iV ) + ( C ( iV ) + U ( iV ) ) )
     end do
-    !$OMP end OMP_TARGET_DIRECTIVE parallel do
+    !$OMP end OMP_TARGET_DIRECTIVE parallel do simd
     
   end procedure CombineUpdatesKernel
   
