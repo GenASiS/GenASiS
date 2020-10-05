@@ -1,0 +1,65 @@
+# Makefile for generic with GCC compiler and generic MPI 
+# (e.g. OpenMPI, MPICH, etc. )
+
+FORTRAN_COMPILE      = mpifort -c -cpp
+FORTRAN_FIXEDFORM    = -ffixed-form
+FORTRAN_BOUND_CHECK  = -fbounds-check
+FORTRAN_DEBUG        = -g -ffpe-trap=invalid,zero,overflow #-Wall
+FORTRAN_OPTIMIZE     = -Ofast
+FORTRAN_PROFILE      = -O2 -g
+
+CC_COMPILE           = mpicc -c
+CC_DEBUG             = -g
+CC_OPTIMIZE          = $(FORTRAN_OPTIMIZE)
+
+DEVICE_CUDA          = 1
+DEVICE_COMPILE       = nvcc -c
+DEVICE_DEBUG         = -g
+DEVICE_OPTIMIZE      = -O3
+
+LINK = mpifort
+
+# Define default switches for this compiler. These can be overwritten at
+# build time with, e.g., 'make ENABLE_OMP_OFFLOAD=0 <target>'
+ENABLE_OMP          ?= 1
+ENABLE_OMP_OFFLOAD  ?= 0
+USE_ISO_10646       ?= 1
+
+#-- Silo library include and link line flag and location
+SILO_DIR = /usr/local/silo-4.10.2
+INCLUDE_SILO = -I${SILO_DIR}/include
+LIBRARY_SILO = -L${SILO_DIR}/lib -lsilo
+
+#-- HDF5 library include and link line flag and location
+HDF5_DIR = /usr/local/hdf5-1.8.17
+INCLUDE_HDF5 = -I${HDF5_DIR}/include
+LIBRARY_HDF5 = -L${HDF5_DIR}/lib -lhdf5_fortran -lhdf5
+
+#-- LAPACK library link line flag and location
+LIBRARY_LAPACK = #-L${OLCF_NETLIB_LAPACK_ROOT}/lib -llapack -lblas
+
+ifeq ($(ENABLE_OMP_OFFLOAD), 1)
+INCLUDE_DEVICE = -I${OLCF_CUDA_ROOT}/include
+LIBRARY_DEVICE = -L${OLCF_CUDA_ROOT}/lib64 -lcudart
+endif
+
+INCLUDE_PREPROCESSOR = -I$(PATH_GENASIS)/Build
+
+ifeq ($(ENABLE_OMP), 1)
+  DEFINES += -fopenmp
+else
+  ENABLE_OMP_OFFLOAD = 0
+endif
+
+ifeq ($(ENABLE_OMP_OFFLOAD), 1)
+  DEFINES = -fopenmp -foffload=nvptx-none="-lm -lgfortran" -DENABLE_OMP_OFFLOAD
+endif
+
+ifeq ($(ENABLE_OMP_OFFLOAD), 1)
+  DEFINES       += -foffload=nvptx-none="-lm -lgfortran -Ofast" \
+                   -DENABLE_OMP_OFFLOAD
+else
+  DEFINES       += -foffload=disable
+endif
+
+DEFINES   += -D$(GENASIS_MACHINE)
