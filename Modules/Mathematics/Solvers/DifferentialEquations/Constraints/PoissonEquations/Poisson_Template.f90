@@ -2,7 +2,7 @@ module Poisson_Template
 
   use Basics
   use Manifolds
-  use LaplacianMultipoleOld_Template
+  use LaplacianMultipoleOld_1__Template
   use LaplacianMultipole_Template
 
   implicit none
@@ -23,8 +23,8 @@ module Poisson_Template
       Type = '', &
       Name = '', &
       SolverType = ''
-    class ( LaplacianMultipoleOldTemplate ), allocatable :: &
-      LaplacianMultipoleOld
+    class ( LaplacianMultipoleOld_1_Template ), allocatable :: &
+      LaplacianMultipoleOld_1
     class ( LaplacianMultipoleTemplate ), allocatable :: &
       LaplacianMultipole
   contains
@@ -37,7 +37,7 @@ module Poisson_Template
     procedure, public, pass :: &
       FinalizeTemplate
     procedure ( SO ), private, pass, deferred :: &
-      SolveOld
+      SolveOld_1
     procedure, private, pass :: &
       SolveMultipole
     procedure, private, pass :: &
@@ -153,8 +153,8 @@ contains
     call PROGRAM_HEADER % AddTimer &
            ( 'PoissonSolve', P % iTimerSolve, Level = BaseLevel )
 
-    if ( allocated ( P % LaplacianMultipoleOld ) ) then
-      associate ( L => P % LaplacianMultipoleOld )
+    if ( allocated ( P % LaplacianMultipoleOld_1) ) then
+      associate ( L => P % LaplacianMultipoleOld_1 )
       call L % InitializeTimers ( BaseLevel + 1 )
       end associate !-- L
     end if
@@ -224,8 +224,8 @@ contains
 
     if ( allocated ( P % LaplacianMultipole ) ) &
       deallocate ( P % LaplacianMultipole )
-    if ( allocated ( P % LaplacianMultipoleOld ) ) &
-      deallocate ( P % LaplacianMultipoleOld )
+    if ( allocated ( P % LaplacianMultipoleOld_1 ) ) &
+      deallocate ( P % LaplacianMultipoleOld_1 )
 
     if ( P % Name == '' ) return
 
@@ -247,8 +247,8 @@ contains
     call Show ( 'Poisson solve, multipole', P % IGNORABILITY + 2 )
     call Show ( P % Name, 'Name', P % IGNORABILITY + 2 )
 
-    if ( allocated ( P % LaplacianMultipoleOld ) ) then
-      call P % SolveOld ( Solution, Source )
+    if ( allocated ( P % LaplacianMultipoleOld_1 ) ) then
+      call P % SolveOld_1 ( Solution, Source )
     else if ( allocated ( P % LaplacianMultipole ) ) then
       associate ( L  =>  P % LaplacianMultipole )
         call L % ComputeMoments ( Source )

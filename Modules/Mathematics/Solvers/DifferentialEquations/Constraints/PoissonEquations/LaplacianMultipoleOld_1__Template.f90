@@ -1,4 +1,4 @@
-module LaplacianMultipoleOld_Template
+module LaplacianMultipoleOld_1__Template
 
   use Basics
   use Manifolds
@@ -6,7 +6,7 @@ module LaplacianMultipoleOld_Template
   implicit none
   private
 
-  type, public, abstract :: LaplacianMultipoleOldTemplate
+  type, public, abstract :: LaplacianMultipoleOld_1_Template
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
       iTimerMoments = 0, &
@@ -79,16 +79,16 @@ module LaplacianMultipoleOld_Template
       SetMomentStorage
     procedure ( CML ), private, pass, deferred :: &
       ComputeMomentsLocal
-  end type LaplacianMultipoleOldTemplate
+  end type LaplacianMultipoleOld_1_Template
 
   abstract interface
 
     subroutine SP ( LM, A, MaxDegree, nEquations )
       use Basics
       use Manifolds
-      import LaplacianMultipoleOldTemplate
+      import LaplacianMultipoleOld_1_Template
       implicit none
-      class ( LaplacianMultipoleOldTemplate ), intent ( inout ) :: &
+      class ( LaplacianMultipoleOld_1_Template ), intent ( inout ) :: &
         LM
       class ( AtlasHeaderForm ), intent ( in ), target :: &
         A
@@ -99,9 +99,9 @@ module LaplacianMultipoleOld_Template
 
     subroutine CML ( LM, Source )
       use Basics
-      import LaplacianMultipoleOldTemplate
+      import LaplacianMultipoleOld_1_Template
       implicit none
-      class ( LaplacianMultipoleOldTemplate ), intent ( inout ) :: &
+      class ( LaplacianMultipoleOld_1_Template ), intent ( inout ) :: &
         LM
       type ( StorageForm ), intent ( in ) :: &
         Source  
@@ -110,8 +110,8 @@ module LaplacianMultipoleOld_Template
   end interface
 
     public :: &
-      ComputeMomentContributionsOldKernel, &
-      AddMomentShellsOldKernel, &
+      ComputeMomentContributionsOld_1_Kernel, &
+      AddMomentShellsOld_1_Kernel, &
       ComputeSolidHarmonicsKernel
 
       private :: &
@@ -121,7 +121,7 @@ module LaplacianMultipoleOld_Template
 
     interface 
 
-      module subroutine ComputeMomentContributionsOldKernel &
+      module subroutine ComputeMomentContributionsOld_1_Kernel &
                           ( MyM_RC, MyM_IC, MyM_RS, MyM_IS, &
                             SH_RC, SH_IC, SH_RS, SH_IS, &
                             Source, Volume, iaSource, M, nE, nA, iR )
@@ -143,16 +143,16 @@ module LaplacianMultipoleOld_Template
           nE, &  !-- nEquations
           nA, &  !-- nAngular
           iR     !-- iRadius
-      end subroutine ComputeMomentContributionsOldKernel
+      end subroutine ComputeMomentContributionsOld_1_Kernel
 
-      module subroutine AddMomentShellsOldKernel ( MR, MI, nE, nR, nA )
+      module subroutine AddMomentShellsOld_1_Kernel ( MR, MI, nE, nR, nA )
         use Basics
         implicit none
         real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
           MR, MI
         integer ( KDI ), intent ( in ) :: &
           nE, nR, nA
-      end subroutine AddMomentShellsOldKernel
+      end subroutine AddMomentShellsOld_1_Kernel
         
       module subroutine ComputeSolidHarmonicsKernel &
                           ( CoordinateSystem, Position, Origin, RadialEdge, &
@@ -231,7 +231,7 @@ contains
 
   subroutine InitializeTemplate ( LM, A, MaxDegree, nEquations )
 
-    class ( LaplacianMultipoleOldTemplate ), intent ( inout ) :: &
+    class ( LaplacianMultipoleOld_1_Template ), intent ( inout ) :: &
       LM
     class ( AtlasHeaderForm ), intent ( in ) :: &
       A
@@ -247,7 +247,7 @@ contains
     LM % IGNORABILITY = A % IGNORABILITY
 
     if ( LM % Type == '' ) &
-      LM % Type = 'a LaplacianMultipoleOld' 
+      LM % Type = 'a LaplacianMultipoleOld_1' 
 
     LM % Name = 'Laplacian_' // trim ( A % Name )
 
@@ -290,7 +290,7 @@ contains
 
   subroutine InitializeTimers ( LM, BaseLevel )
 
-    class ( LaplacianMultipoleOldTemplate ), intent ( inout ) :: &
+    class ( LaplacianMultipoleOld_1_Template ), intent ( inout ) :: &
       LM
     integer ( KDI ), intent ( in ) :: &
       BaseLevel
@@ -312,7 +312,7 @@ contains
 
   subroutine ComputeMoments ( LM, Source )
 
-    class ( LaplacianMultipoleOldTemplate ), intent ( inout ) :: &
+    class ( LaplacianMultipoleOld_1_Template ), intent ( inout ) :: &
       LM
     type ( StorageForm ), intent ( in ) :: &
       Source !-- array over levels    
@@ -352,11 +352,11 @@ contains
     if ( associated ( Timer_RM ) ) call Timer_RM % Stop ( )
 
     if ( associated ( Timer_AM ) ) call Timer_AM % Start ( )
-    call AddMomentShellsOldKernel &
+    call AddMomentShellsOld_1_Kernel &
            ( LM % M_RC, LM % M_IC, &
              LM % nEquations, LM % nRadialCells, LM % nAngularMomentCells )
     if ( LM % MaxOrder > 0 ) &
-      call AddMomentShellsOldKernel &
+      call AddMomentShellsOld_1_Kernel &
              ( LM % M_RS, LM % M_IS, &
                LM % nEquations, LM % nRadialCells, LM % nAngularMomentCells )
     if ( associated ( Timer_AM ) ) call Timer_AM % Stop ( )
@@ -370,7 +370,7 @@ contains
 
   impure elemental subroutine FinalizeTemplate ( LM )
 
-    class ( LaplacianMultipoleOldTemplate ), intent ( inout ) :: &
+    class ( LaplacianMultipoleOld_1_Template ), intent ( inout ) :: &
       LM
 
     if ( allocated ( LM % ReductionMoments ) ) &
@@ -417,7 +417,7 @@ contains
 
   subroutine SetMomentStorage ( LM )
 
-    class ( LaplacianMultipoleOldTemplate ), intent ( inout ) :: &
+    class ( LaplacianMultipoleOld_1_Template ), intent ( inout ) :: &
       LM
 
     if ( allocated ( LM % MyMoments ) ) deallocate ( LM % MyMoments )
@@ -464,7 +464,7 @@ contains
 
   subroutine SetReduction ( LM, MyM_Value, M_Value )
 
-    class ( LaplacianMultipoleOldTemplate ), intent ( inout ) :: &
+    class ( LaplacianMultipoleOld_1_Template ), intent ( inout ) :: &
       LM
     real ( KDR ), dimension ( :, : ), intent ( in ), target, contiguous :: &
       MyM_Value, &
@@ -496,7 +496,7 @@ contains
   subroutine AssignPointers &
                ( LM, MyM_RC, MyM_IC, MyM_RS, MyM_IS, M_RC, M_IC, M_RS, M_IS )
 
-    class ( LaplacianMultipoleOldTemplate ), intent ( inout ) :: &
+    class ( LaplacianMultipoleOld_1_Template ), intent ( inout ) :: &
       LM
     real ( KDR ), dimension ( :, :, : ), pointer, intent ( out ) :: &
       MyM_RC, MyM_IC, &
@@ -523,4 +523,4 @@ contains
   end subroutine AssignPointers
 
 
-end module LaplacianMultipoleOld_Template
+end module LaplacianMultipoleOld_1__Template

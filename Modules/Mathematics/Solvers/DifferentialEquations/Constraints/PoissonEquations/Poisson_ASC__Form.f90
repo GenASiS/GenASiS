@@ -4,8 +4,8 @@ module Poisson_ASC__Form
 
   use Basics
   use Manifolds
-  use LaplacianMultipoleOld_Template
-  use LaplacianMultipoleOld_ASC__Form
+  use LaplacianMultipoleOld_1__Template
+  use LaplacianMultipoleOld_1_ASC__Form
   use LaplacianMultipole_ASC__Form
   use Poisson_Template
 
@@ -23,7 +23,7 @@ module Poisson_ASC__Form
     final :: &
       Finalize
     procedure, private, pass :: &
-      SolveOld
+      SolveOld_1
     procedure, private, pass :: &
       CombineMomentAtlas
     procedure, private, pass :: &
@@ -33,7 +33,7 @@ module Poisson_ASC__Form
   end type Poisson_ASC_Form
 
     private :: &
-      SolveMultipole_CSL_Old
+      SolveMultipole_CSL_Old_1
 
 !-- FIXME: With GCC 6.1.0, must be public to trigger .smod generation
 !    private :: &
@@ -165,10 +165,11 @@ contains
     P % Atlas => A
 
     select case ( trim ( P % SolverType ) )
-    case ( 'MULTIPOLE_OLD' )
-      allocate ( LaplacianMultipoleOld_ASC_Form :: P % LaplacianMultipoleOld )
-      select type ( L => P % LaplacianMultipoleOld )
-      class is ( LaplacianMultipoleOld_ASC_Form )
+    case ( 'MULTIPOLE_OLD_1' )
+      allocate ( LaplacianMultipoleOld_1_ASC_Form &
+                   :: P % LaplacianMultipoleOld_1 )
+      select type ( L => P % LaplacianMultipoleOld_1 )
+      class is ( LaplacianMultipoleOld_1_ASC_Form )
         call L % Initialize ( A, P % MaxDegree, P % nEquations )
       end select !-- L
     case ( 'MULTIPOLE' )
@@ -201,7 +202,7 @@ contains
   end subroutine Finalize
 
 
-  subroutine SolveOld ( P, Solution, Source )
+  subroutine SolveOld_1 ( P, Solution, Source )
 
     class ( Poisson_ASC_Form ), intent ( inout ) :: &
       P
@@ -224,7 +225,7 @@ contains
 
     select type ( C => P % Atlas % Chart )
     class is ( Chart_SLD_Form )
-      call SolveMultipole_CSL_Old ( P, C, Solution_CSL, Source_CSL )
+      call SolveMultipole_CSL_Old_1 ( P, C, Solution_CSL, Source_CSL )
     class default
       call Show ( 'Chart type not supported', CONSOLE % ERROR )
       call Show ( 'Solve', 'subroutine', CONSOLE % ERROR )
@@ -235,10 +236,10 @@ contains
     end select !-- Solution
     end select !-- Source
 
-  end subroutine SolveOld
+  end subroutine SolveOld_1
 
 
-  subroutine SolveMultipole_CSL_Old ( P, C, Solution_CSL, Source_CSL )
+  subroutine SolveMultipole_CSL_Old_1 ( P, C, Solution_CSL, Source_CSL )
  
     type ( Poisson_ASC_Form ), intent ( inout ) :: &
       P
@@ -271,7 +272,7 @@ contains
     call Show ( 'Poisson solve, multipole old', P % IGNORABILITY + 2 )
     call Show ( P % Name, 'Name', P % IGNORABILITY + 2 )
 
-    associate ( L  =>  P % LaplacianMultipoleOld )
+    associate ( L  =>  P % LaplacianMultipoleOld_1 )
 
     call L % ComputeMoments ( Source )
 
@@ -304,7 +305,7 @@ contains
 
     nullify ( G )
 
-  end subroutine SolveMultipole_CSL_Old
+  end subroutine SolveMultipole_CSL_Old_1
 
 
   subroutine CombineMomentAtlas &

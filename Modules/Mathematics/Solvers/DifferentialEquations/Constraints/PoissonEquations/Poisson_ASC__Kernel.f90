@@ -3,7 +3,7 @@
 submodule ( Poisson_ASC__Form ) Poisson_ASC__Kernel
 
   use Basics
-  use LaplacianMultipoleOld_Template
+  use LaplacianMultipoleOld_1__Template
   
   implicit none
 

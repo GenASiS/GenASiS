@@ -1,16 +1,16 @@
 #include "Preprocessor"
 
-submodule ( LaplacianMultipoleOld_ASC__Form ) LaplacianMultipoleOld_ASC__Kernel
+submodule ( LaplacianMultipoleOld_1_ASC__Form ) LaplacianMultipoleOld_1_ASC__Kernel
 
   use Basics
-  use LaplacianMultipoleOld_Template
+  use LaplacianMultipoleOld_1__Template
 
   implicit none
 
 contains
 
 
-  module procedure ComputeMomentsLocalOld_CSL_Kernel
+  module procedure ComputeMomentsLocalOld_1_CSL_Kernel
 
     integer ( KDI ) :: &
       iC, &  !-- iCell
@@ -46,7 +46,7 @@ contains
                  Origin, RadialEdge, MaxDegree, nDimensions, GridError, &
                  SH_RC, SH_IC, SH_RS, SH_IS, R, iR )
 
-        call ComputeMomentContributionsOldKernel &
+        call ComputeMomentContributionsOld_1_Kernel &
                ( MyM_RC, MyM_IC, MyM_RS, MyM_IS, SH_RC, SH_IC, SH_RS, SH_IS, &
                  Source ( iC, : ), Volume ( iC ), iaSource, MaxOrder, &
                  nEquations, nAngularMomentCells, iR )
@@ -74,7 +74,7 @@ contains
                  Origin, RadialEdge, MaxDegree, nDimensions, GridError, &
                  SH_RC, SH_IC, SH_RS, SH_IS, R, iR )
 
-        call ComputeMomentContributionsOldKernel &
+        call ComputeMomentContributionsOld_1_Kernel &
                ( MyM_RC, MyM_IC, MyM_RS, MyM_IS, SH_RC, SH_IC, SH_RS, SH_IS, &
                  Source ( iC, : ), Volume ( iC ), iaSource, MaxOrder, &
                  nEquations, nAngularMomentCells, iR )
@@ -84,7 +84,7 @@ contains
 
     end if !-- UseDevice
 
-  end procedure ComputeMomentsLocalOld_CSL_Kernel
+  end procedure ComputeMomentsLocalOld_1_CSL_Kernel
 
 
-end submodule LaplacianMultipoleOld_ASC__Kernel
+end submodule LaplacianMultipoleOld_1_ASC__Kernel
