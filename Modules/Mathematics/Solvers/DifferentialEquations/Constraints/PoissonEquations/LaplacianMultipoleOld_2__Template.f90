@@ -1,4 +1,4 @@
-module LaplacianMultipole_Template
+module LaplacianMultipoleOld_2__Template
 
   use Basics
   use Manifolds
@@ -6,7 +6,7 @@ module LaplacianMultipole_Template
   implicit none
   private
 
-  type, public, abstract :: LaplacianMultipoleTemplate
+  type, public, abstract :: LaplacianMultipoleOld_2_Template
     integer ( KDI ) :: &
       IGNORABILITY = 0, &
       nRadialCells = 0, &
@@ -79,16 +79,16 @@ module LaplacianMultipole_Template
       ComputeMomentsLocal
     procedure ( CMLA ), private, pass, deferred :: &
       ComputeMomentLocalAtlas
-  end type LaplacianMultipoleTemplate
+  end type LaplacianMultipoleOld_2_Template
 
 
   abstract interface
 
     subroutine CSH_0_0 ( L, iSH_0, iSH_PD )
       use Basics
-      import LaplacianMultipoleTemplate
+      import LaplacianMultipoleOld_2_Template
       implicit none
-      class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+      class ( LaplacianMultipoleOld_2_Template ), intent ( inout ) :: &
         L
       integer ( KDI ), intent ( in ) :: &
         iSH_0, iSH_PD
@@ -96,9 +96,9 @@ module LaplacianMultipole_Template
 
     subroutine CSH_iM_iM ( L, iM, iSH_0, iSH_PD )
       use Basics
-      import LaplacianMultipoleTemplate
+      import LaplacianMultipoleOld_2_Template
       implicit none
-      class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+      class ( LaplacianMultipoleOld_2_Template ), intent ( inout ) :: &
         L
       integer ( KDI ), intent ( in ) :: &
         iM, &
@@ -107,9 +107,9 @@ module LaplacianMultipole_Template
 
     subroutine CSH_iL_iM_1 ( L, iM, iSH_0, iSH_1 )
       use Basics
-      import LaplacianMultipoleTemplate
+      import LaplacianMultipoleOld_2_Template
       implicit none
-      class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+      class ( LaplacianMultipoleOld_2_Template ), intent ( inout ) :: &
         L
       integer ( KDI ), intent ( in ) :: &
         iM, &
@@ -118,9 +118,9 @@ module LaplacianMultipole_Template
 
     subroutine CSH_iL_iM_2 ( L, iL, iM, iSH_0, iSH_1, iSH_2 )
       use Basics
-      import LaplacianMultipoleTemplate
+      import LaplacianMultipoleOld_2_Template
       implicit none
-      class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+      class ( LaplacianMultipoleOld_2_Template ), intent ( inout ) :: &
         L
       integer ( KDI ), intent ( in ) :: &
         iL, iM, &
@@ -129,34 +129,34 @@ module LaplacianMultipole_Template
 
     subroutine SPA ( L, A )
       use Manifolds
-      import LaplacianMultipoleTemplate
+      import LaplacianMultipoleOld_2_Template
       implicit none
-      class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+      class ( LaplacianMultipoleOld_2_Template ), intent ( inout ) :: &
         L
       class ( AtlasHeaderForm ), intent ( in ), target :: &
         A
     end subroutine SPA
 
     subroutine ARC ( L )
-      import LaplacianMultipoleTemplate
+      import LaplacianMultipoleOld_2_Template
       implicit none
-      class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+      class ( LaplacianMultipoleOld_2_Template ), intent ( inout ) :: &
         L
     end subroutine ARC
 
     subroutine ASH ( L )
-      import LaplacianMultipoleTemplate
+      import LaplacianMultipoleOld_2_Template
       implicit none
-      class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+      class ( LaplacianMultipoleOld_2_Template ), intent ( inout ) :: &
         L
     end subroutine ASH
 
     subroutine CMLA ( L, Source, iA, iSH_0 )
       use Basics
       use Manifolds
-      import LaplacianMultipoleTemplate
+      import LaplacianMultipoleOld_2_Template
       implicit none
-      class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+      class ( LaplacianMultipoleOld_2_Template ), intent ( inout ) :: &
         L
       class ( FieldAtlasTemplate ), intent ( in ) :: &
         Source
@@ -200,7 +200,7 @@ contains
 
   subroutine InitializeTemplate ( L, A, MaxDegree, nEquations )
 
-    class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+    class ( LaplacianMultipoleOld_2_Template ), intent ( inout ) :: &
       L
     class ( AtlasHeaderForm ), intent ( in ) :: &
       A
@@ -228,7 +228,7 @@ contains
 
   subroutine InitializeTimers ( L, BaseLevel )
 
-    class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+    class ( LaplacianMultipoleOld_2_Template ), intent ( inout ) :: &
       L
     integer ( KDI ), intent ( in ) :: &
       BaseLevel
@@ -250,7 +250,7 @@ contains
 
   subroutine ComputeMoments ( L, Source )
 
-    class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+    class ( LaplacianMultipoleOld_2_Template ), intent ( inout ) :: &
       L
     class ( FieldAtlasTemplate ), intent ( in ) :: &
       Source
@@ -306,7 +306,7 @@ contains
 
   impure elemental subroutine FinalizeTemplate ( L )
 
-    class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+    class ( LaplacianMultipoleOld_2_Template ), intent ( inout ) :: &
       L
 
     if ( allocated ( L % ReductionMoments ) ) &
@@ -338,7 +338,7 @@ contains
 
   subroutine SetParameters ( L, A, MaxDegree, nEquations )
 
-    class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+    class ( LaplacianMultipoleOld_2_Template ), intent ( inout ) :: &
       L
     class ( AtlasHeaderForm ), intent ( in ), target :: &
       A
@@ -382,7 +382,7 @@ contains
 
   subroutine AllocateMoments ( L )
 
-    class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+    class ( LaplacianMultipoleOld_2_Template ), intent ( inout ) :: &
       L
 
     if ( allocated ( L % Moments ) ) &
@@ -432,7 +432,7 @@ contains
 
   subroutine ComputeMomentsLocal ( L, Source )
 
-    class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+    class ( LaplacianMultipoleOld_2_Template ), intent ( inout ) :: &
       L
     class ( FieldAtlasTemplate ), intent ( in ) :: &
       Source  
@@ -493,7 +493,7 @@ contains
 
   subroutine AllocateReduction ( L, M_Value, MyM_Value )
 
-    class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+    class ( LaplacianMultipoleOld_2_Template ), intent ( inout ) :: &
       L
     real ( KDR ), dimension ( :, : ), intent ( in ), target, contiguous :: &
         M_Value, &
@@ -529,7 +529,7 @@ contains
                       M_RC_3D,   M_IC_3D,   M_RS_3D,   M_IS_3D, &
                     MyM_RC_3D, MyM_IC_3D, MyM_RS_3D, MyM_IS_3D )
 
-    class ( LaplacianMultipoleTemplate ), intent ( in ) :: &
+    class ( LaplacianMultipoleOld_2_Template ), intent ( in ) :: &
       L
     real ( KDR ), dimension ( : ), intent ( in ), target :: &
         M_RC_1D,   M_IC_1D, &
@@ -561,4 +561,4 @@ contains
   end subroutine AssignMomentPointers
 
 
-end module LaplacianMultipole_Template
+end module LaplacianMultipoleOld_2__Template

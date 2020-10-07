@@ -3,7 +3,7 @@ module Poisson_Template
   use Basics
   use Manifolds
   use LaplacianMultipoleOld_1__Template
-  use LaplacianMultipole_Template
+  use LaplacianMultipoleOld_2__Template
 
   implicit none
   private
@@ -25,7 +25,7 @@ module Poisson_Template
       SolverType = ''
     class ( LaplacianMultipoleOld_1_Template ), allocatable :: &
       LaplacianMultipoleOld_1
-    class ( LaplacianMultipoleTemplate ), allocatable :: &
+    class ( LaplacianMultipoleOld_2_Template ), allocatable :: &
       LaplacianMultipole
   contains
     procedure, public, pass :: &

@@ -1,6 +1,6 @@
 #include "Preprocessor"
 
-submodule ( LaplacianMultipole_Template ) LaplacianMultipole_Kernel
+submodule ( LaplacianMultipoleOld_2__Template ) LaplacianMultipoleOld_2__Kernel
 
   use Basics
 
@@ -91,4 +91,4 @@ contains
   end procedure AddMomentShellsKernel
 
 
-end submodule LaplacianMultipole_Kernel
+end submodule LaplacianMultipoleOld_2__Kernel

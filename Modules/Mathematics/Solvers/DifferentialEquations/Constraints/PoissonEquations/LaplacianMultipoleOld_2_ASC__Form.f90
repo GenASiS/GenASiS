@@ -1,16 +1,16 @@
-module LaplacianMultipole_ASC__Form
+module LaplacianMultipoleOld_2_ASC__Form
 
   !-- LaplacianMultipole_AtlasSingleChart__Form
 
   use Basics
   use Manifolds
-  use LaplacianMultipole_Template
+  use LaplacianMultipoleOld_2__Template
 
   implicit none
   private
 
-  type, public, extends ( LaplacianMultipoleTemplate ) :: &
-    LaplacianMultipole_ASC_Form
+  type, public, extends ( LaplacianMultipoleOld_2_Template ) :: &
+    LaplacianMultipoleOld_2_ASC_Form
       real ( KDR ), dimension ( :, :, : ), pointer :: &
         Rectangular_X => null ( ), &
         Rectangular_Y => null ( ), &
@@ -50,7 +50,7 @@ module LaplacianMultipole_ASC__Form
       ComputeSolidHarmonics_iL_iM_2
     procedure, public, pass :: &
       ComputeMomentLocalAtlas
-  end type LaplacianMultipole_ASC_Form
+  end type LaplacianMultipoleOld_2_ASC_Form
 
 !-- FIXME: With GCC 6.1.0, must be public to trigger .smod generation
 !    private :: &
@@ -193,7 +193,7 @@ contains
 
   subroutine Initialize ( L, A, MaxDegree, nEquations )
 
-    class ( LaplacianMultipole_ASC_Form ), intent ( inout ) :: &
+    class ( LaplacianMultipoleOld_2_ASC_Form ), intent ( inout ) :: &
       L
     class ( Atlas_SC_Form ), intent ( in ), target :: &
       A
@@ -202,7 +202,7 @@ contains
       nEquations
 
     if ( L % Type == '' ) &
-      L % Type = 'a LaplacianMultipole_ASC' 
+      L % Type = 'a LaplacianMultipoleOld_2_ASC' 
 
     call L % InitializeTemplate ( A, MaxDegree, nEquations )
 
@@ -211,7 +211,7 @@ contains
 
   impure elemental subroutine Finalize ( L )
 
-    type ( LaplacianMultipole_ASC_Form ), intent ( inout ) :: &
+    type ( LaplacianMultipoleOld_2_ASC_Form ), intent ( inout ) :: &
       L
 
     nullify ( L % Chart )
@@ -241,7 +241,7 @@ contains
 
   subroutine SetParametersAtlas ( L, A )
 
-    class ( LaplacianMultipole_ASC_Form ), intent ( inout ) :: &
+    class ( LaplacianMultipoleOld_2_ASC_Form ), intent ( inout ) :: &
       L
     class ( AtlasHeaderForm ), intent ( in ), target :: &
       A
@@ -297,14 +297,14 @@ contains
       call Show ( 'CoordinateSystem not supported', CONSOLE % ERROR )
       call Show ( C % CoordinateSystem, 'CoordinateSystem', CONSOLE % ERROR )
       call Show ( 'SetParameters', 'subroutine', CONSOLE % ERROR )
-      call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'LaplacianMultipoleOld_2_ASC__Form', 'module', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- CoordinateSystem
 
     class default
       call Show ( 'Chart type not supported', CONSOLE % ERROR )
       call Show ( 'SetParameters', 'subroutine', CONSOLE % ERROR )
-      call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'LaplacianMultipoleOld_2_ASC__Form', 'module', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- C
     
@@ -315,7 +315,7 @@ contains
 
   subroutine AllocateRectangularCoordinates ( L )
 
-    class ( LaplacianMultipole_ASC_Form ), intent ( inout ) :: &
+    class ( LaplacianMultipoleOld_2_ASC_Form ), intent ( inout ) :: &
       L
 
     class ( GeometryFlatForm ), pointer :: &
@@ -361,7 +361,7 @@ contains
       case default
         call Show ( 'Coordinate system not supported', CONSOLE % ERROR )
         call Show ( C % CoordinateSystem, 'CoordinateSystem', CONSOLE % ERROR )
-        call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
+        call Show ( 'LaplacianMultipoleOld_2_ASC__Form', 'module', CONSOLE % ERROR )
         call Show ( 'AllocateRectangularCoordinates', 'subroutine', &
                     CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
@@ -373,7 +373,7 @@ contains
 
     class default
       call Show ( 'Chart type not supported', CONSOLE % ERROR )
-      call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'LaplacianMultipoleOld_2_ASC__Form', 'module', CONSOLE % ERROR )
       call Show ( 'AllocateRectangularCoordinates', 'subroutine', &
                   CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
@@ -386,7 +386,7 @@ contains
 
   subroutine AllocateSolidHarmonics ( L )
 
-    class ( LaplacianMultipole_ASC_Form ), intent ( inout ) :: &
+    class ( LaplacianMultipoleOld_2_ASC_Form ), intent ( inout ) :: &
       L
 
     allocate ( L % SolidHarmonics )
@@ -419,7 +419,7 @@ contains
     class default
       call Show ( 'Chart type not supported', CONSOLE % ERROR )
       call Show ( 'AllocateSolidHarmonics', 'subroutine', CONSOLE % ERROR )
-      call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'LaplacianMultipoleOld_2_ASC__Form', 'module', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- C
 
@@ -430,7 +430,7 @@ contains
 
   subroutine ComputeSolidHarmonics_0_0 ( L, iSH_0, iSH_PD )
 
-    class ( LaplacianMultipole_ASC_Form ), intent ( inout ) :: &
+    class ( LaplacianMultipoleOld_2_ASC_Form ), intent ( inout ) :: &
       L
     integer ( KDI ), intent ( in ) :: &
       iSH_0, iSH_PD
@@ -447,7 +447,7 @@ contains
 
     class default
       call Show ( 'Chart type not supported', CONSOLE % ERROR )
-      call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'LaplacianMultipoleOld_2_ASC__Form', 'module', CONSOLE % ERROR )
       call Show ( 'Compute_SH_0_0', 'subroutine', &
                   CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
@@ -458,7 +458,7 @@ contains
 
   subroutine ComputeSolidHarmonics_iM_iM ( L, iM, iSH_0, iSH_PD )
 
-    class ( LaplacianMultipole_ASC_Form ), intent ( inout ) :: &
+    class ( LaplacianMultipoleOld_2_ASC_Form ), intent ( inout ) :: &
       L
     integer ( KDI ), intent ( in ) :: &
       iM, &
@@ -477,7 +477,7 @@ contains
 
     class default
       call Show ( 'Chart type not supported', CONSOLE % ERROR )
-      call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'LaplacianMultipoleOld_2_ASC__Form', 'module', CONSOLE % ERROR )
       call Show ( 'Compute_SH_iM_iM', 'subroutine', &
                   CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
@@ -488,7 +488,7 @@ contains
 
   subroutine ComputeSolidHarmonics_iL_iM_1 ( L, iM, iSH_0, iSH_1 )
 
-    class ( LaplacianMultipole_ASC_Form ), intent ( inout ) :: &
+    class ( LaplacianMultipoleOld_2_ASC_Form ), intent ( inout ) :: &
       L
     integer ( KDI ), intent ( in ) :: &
       iM, &
@@ -507,7 +507,7 @@ contains
 
     class default
       call Show ( 'Chart type not supported', CONSOLE % ERROR )
-      call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'LaplacianMultipoleOld_2_ASC__Form', 'module', CONSOLE % ERROR )
       call Show ( 'Compute_SH_iL_iM_1', 'subroutine', &
                   CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
@@ -518,7 +518,7 @@ contains
 
   subroutine ComputeSolidHarmonics_iL_iM_2 ( L, iL, iM, iSH_0, iSH_1, iSH_2 )
 
-    class ( LaplacianMultipole_ASC_Form ), intent ( inout ) :: &
+    class ( LaplacianMultipoleOld_2_ASC_Form ), intent ( inout ) :: &
       L
     integer ( KDI ), intent ( in ) :: &
       iL, iM, &
@@ -537,7 +537,7 @@ contains
 
     class default
       call Show ( 'Chart type not supported', CONSOLE % ERROR )
-      call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'LaplacianMultipoleOld_2_ASC__Form', 'module', CONSOLE % ERROR )
       call Show ( 'Compute_SH_iL_iM_2', 'subroutine', &
                   CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
@@ -548,7 +548,7 @@ contains
 
   subroutine ComputeMomentLocalAtlas ( L, Source, iA, iSH_0 )
 
-    class ( LaplacianMultipole_ASC_Form ), intent ( inout ) :: &
+    class ( LaplacianMultipoleOld_2_ASC_Form ), intent ( inout ) :: &
       L
     class ( FieldAtlasTemplate ), intent ( in ) :: &
       Source
@@ -572,7 +572,7 @@ contains
  
     if ( nV /= L % nEquations ) then
       call Show ( 'Wrong number of variables in Solution', CONSOLE % ERROR )
-      call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'LaplacianMultipoleOld_2_ASC__Form', 'module', CONSOLE % ERROR )
       call Show ( 'ComputeMomentLocalAtlas', 'subroutine', &
                   CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
@@ -580,7 +580,7 @@ contains
 
     if ( iaS ( nV ) - iaS ( 1 ) + 1  /=  nV ) then
       call Show ( 'Solution variables must be contiguous', CONSOLE % ERROR )
-      call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'LaplacianMultipoleOld_2_ASC__Form', 'module', CONSOLE % ERROR )
       call Show ( 'ComputeMomentLocalAtlas', 'subroutine', &
                   CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
@@ -609,7 +609,7 @@ contains
     case default
       call Show ( 'Coordinate system not supported', CONSOLE % ERROR )
       call Show ( C % CoordinateSystem, 'CoordinateSystem', CONSOLE % ERROR )
-      call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'LaplacianMultipoleOld_2_ASC__Form', 'module', CONSOLE % ERROR )
       call Show ( 'ComputeMomentAtlas', 'subroutine', &
                   CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
@@ -617,7 +617,7 @@ contains
 
     class default
       call Show ( 'Source type not supported', CONSOLE % ERROR )
-      call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'LaplacianMultipoleOld_2_ASC__Form', 'module', CONSOLE % ERROR )
       call Show ( 'ComputeMomentAtlas', 'subroutine', &
                   CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
@@ -625,7 +625,7 @@ contains
 
     class default
       call Show ( 'Chart type not supported', CONSOLE % ERROR )
-      call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'LaplacianMultipoleOld_2_ASC__Form', 'module', CONSOLE % ERROR )
       call Show ( 'ComputeMomentAtlas', 'subroutine', &
                   CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
@@ -723,4 +723,4 @@ contains
   end subroutine AssignSourcePointer
 
 
-end module LaplacianMultipole_ASC__Form
+end module LaplacianMultipoleOld_2_ASC__Form

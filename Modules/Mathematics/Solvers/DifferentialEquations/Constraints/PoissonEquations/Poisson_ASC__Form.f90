@@ -6,7 +6,7 @@ module Poisson_ASC__Form
   use Manifolds
   use LaplacianMultipoleOld_1__Template
   use LaplacianMultipoleOld_1_ASC__Form
-  use LaplacianMultipole_ASC__Form
+  use LaplacianMultipoleOld_2_ASC__Form
   use Poisson_Template
 
   implicit none
@@ -173,9 +173,9 @@ contains
         call L % Initialize ( A, P % MaxDegree, P % nEquations )
       end select !-- L
     case ( 'MULTIPOLE' )
-      allocate ( LaplacianMultipole_ASC_Form :: P % LaplacianMultipole )
+      allocate ( LaplacianMultipoleOld_2_ASC_Form :: P % LaplacianMultipole )
       select type ( L => P % LaplacianMultipole )
-      class is ( LaplacianMultipole_ASC_Form )
+      class is ( LaplacianMultipoleOld_2_ASC_Form )
         call L % Initialize ( A, P % MaxDegree, P % nEquations )
       end select !-- L
     case default
@@ -327,7 +327,7 @@ contains
       Solution_S
 
     select type ( L => P % LaplacianMultipole )
-    class is ( LaplacianMultipole_ASC_Form )
+    class is ( LaplacianMultipoleOld_2_ASC_Form )
 
     select type ( C => L % Chart )
     class is ( Chart_SL_Template )

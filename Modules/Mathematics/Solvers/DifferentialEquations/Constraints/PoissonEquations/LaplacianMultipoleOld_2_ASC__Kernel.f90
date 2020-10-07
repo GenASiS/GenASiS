@@ -1,6 +1,6 @@
 #include "Preprocessor"
 
-submodule ( LaplacianMultipole_ASC__Form ) LaplacianMultipole_ASC__Kernel
+submodule ( LaplacianMultipoleOld_2_ASC__Form ) LaplacianMultipoleOld_2_ASC__Kernel
 
   use Basics
 
@@ -531,4 +531,4 @@ contains
   end procedure ComputeMomentLocal_CSL_S_Kernel
 
 
-end submodule LaplacianMultipole_ASC__Kernel
+end submodule LaplacianMultipoleOld_2_ASC__Kernel
