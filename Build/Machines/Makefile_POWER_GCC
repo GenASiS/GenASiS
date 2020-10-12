@@ -22,7 +22,7 @@ LINK = mpifort -fopenmp
 # build time with, e.g., 'make ENABLE_OMP_OFFLOAD=0 <target>'
 ENABLE_OMP          ?= 1
 ENABLE_OMP_OFFLOAD  ?= 0
-USE_ISO_10646       ?= 1
+USE_ISO_10646       ?= 0
 
 #-- Silo library include and link line flag and location
 SILO_DIR = /sw/peak/caascade/silo/4.10.2/gcc8.1.0
