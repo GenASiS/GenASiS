@@ -451,7 +451,8 @@ contains
       !$OMP  OMP_TARGET_DIRECTIVE parallel do &
       !$OMP& schedule ( OMP_SCHEDULE_TARGET ) &
       !$OMP& shared ( Shift, Tolerance, T_L_T_Max, T_L_T_Min, LogScale ), &
-      !$OMP& private ( L_N, Ye, SV_R, D2, L_T, L_T_1, SV_0, SV_1, L_DT )
+      !$OMP& private ( L_N, Ye, SV_R, D2, L_T, L_T_1, SV_0, SV_1, L_DT, &
+      !$OMP&           i_ST_L )
       Value_Device: do iV = 1, nValues
       
         if ( F ( iV, ia_F_I ( 1 ) ) == 0.0_KDR ) &
@@ -528,7 +529,8 @@ contains
       !$OMP  parallel do &
       !$OMP& schedule ( OMP_SCHEDULE_HOST ) &
       !$OMP& shared ( Shift, Tolerance, T_L_T_Max, T_L_T_Min, LogScale ), &
-      !$OMP& private ( L_N, Ye, SV_R, D2, L_T, L_T_1, SV_0, SV_1, L_DT )
+      !$OMP& private ( L_N, Ye, SV_R, D2, L_T, L_T_1, SV_0, SV_1, L_DT, &
+      !$OMP&           i_ST_L )
       Value_Host: do iV = 1, nValues
         
         if ( F ( iV, ia_F_I ( 1 ) ) == 0.0_KDR ) &
