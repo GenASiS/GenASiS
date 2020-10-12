@@ -211,7 +211,7 @@ contains
     L % IGNORABILITY = A % IGNORABILITY
 
     if ( L % Type == '' ) &
-      L % Type = 'a LaplacianMultipole' 
+      L % Type = 'a LaplacianMultipoleOld_2' 
 
     L % Name = 'Laplacian_' // trim ( A % Name )
 
