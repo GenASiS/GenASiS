@@ -11,11 +11,15 @@ module LaplacianMultipole_ASC__Form
 
   type, public, extends ( LaplacianMultipoleTemplate ) :: &
     LaplacianMultipole_ASC_Form
+      class ( ChartTemplate ), pointer :: &
+        Chart => null ( )
   contains
     procedure, public, pass :: &
       Initialize
     final :: &
       Finalize
+    procedure, private, pass :: &
+      SetParametersAtlas
   end type LaplacianMultipole_ASC_Form
 
 contains
@@ -67,6 +71,81 @@ contains
     call L % FinalizeTemplate ( )
 
   end subroutine Finalize
+
+
+  subroutine SetParametersAtlas ( L, A )
+
+    class ( LaplacianMultipole_ASC_Form ), intent ( inout ) :: &
+      L
+    class ( AtlasHeaderForm ), intent ( in ), target :: &
+      A
+
+    class ( GeometryFlatForm ), pointer :: &
+      G
+
+    select type ( A )
+    class is ( Atlas_SC_Form )
+
+      if ( A % nDimensions  <  3 ) &
+        L % MaxOrder  =  0
+      if ( A % nDimensions  <  2 ) &
+        L % MaxDegree  =  0
+
+      G  =>  A % Geometry ( )
+      L % UseDevice  =  G % AllocatedDevice
+      
+      select type ( C => A % Chart )
+      class is ( Chart_SLD_Form )
+        L % ReductionUseDevice = C % ExchangeGhostUseDevice
+        call PROGRAM_HEADER % GetParameter &
+               ( L % ReductionUseDevice, 'LaplacianReductionUseDevice', &
+                 IgnorabilityOption = CONSOLE % INFO_2 )
+      end select 
+
+      L % Chart  =>  A % Chart
+
+    end select !-- A
+
+    select type ( C => L % Chart )
+    class is ( Chart_SL_Template )
+
+    select case ( trim ( C % CoordinateSystem ) )
+    case ( 'SPHERICAL' )
+
+      L % nRadialCells  =  C % nCells ( 1 )
+
+      allocate ( L % RadialEdges )
+      associate &
+        (  RE  =>  L % RadialEdges, &
+          nRC  =>  L % nRadialCells )
+
+      call RE % Initialize ( [ nRC + 1, 1 ] )
+      call RE % AllocateDevice ( )
+
+      !--- Note indexing of Edge value begins at -1 with ghost cells
+      RE % Value ( :, 1 )  =  C % Edge ( 1 ) % Value ( 1 : nRC + 1 )
+      call RE % UpdateDevice ( )
+
+      end associate !-- RE, etc. 
+
+    case default
+      call Show ( 'CoordinateSystem not supported', CONSOLE % ERROR )
+      call Show ( C % CoordinateSystem, 'CoordinateSystem', CONSOLE % ERROR )
+      call Show ( 'SetParameters', 'subroutine', CONSOLE % ERROR )
+      call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- CoordinateSystem
+
+    class default
+      call Show ( 'Chart type not supported', CONSOLE % ERROR )
+      call Show ( 'SetParameters', 'subroutine', CONSOLE % ERROR )
+      call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- C
+    
+    nullify ( G )
+
+  end subroutine SetParametersAtlas
 
 
 end module LaplacianMultipole_ASC__Form
