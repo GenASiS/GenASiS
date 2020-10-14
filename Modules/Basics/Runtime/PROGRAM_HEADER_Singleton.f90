@@ -11,9 +11,10 @@ module PROGRAM_HEADER_Singleton
   use Display
   use MessagePassing
   use FileSystem
+  use InitializeRandomSeed_Command
   use Timer_Form
-  use GetMemoryUsage_Command
   use CommandLineOptions_Form
+  use GetMemoryUsage_Command
   !  use petsc
 
   implicit none
@@ -145,7 +146,7 @@ contains
       
     allocate ( PH % Communicator )
     call PH % Communicator % Initialize ( )
-    
+
     call UNIT % Initialize ( )
     
     Abort => Abort_PH
@@ -170,6 +171,8 @@ contains
     
     call PrepareAndShow_OMP_Environment ( )
     
+    call InitializeRandomSeed ( PH % Communicator )
+
     if ( AppendDimensionality ) then
       if ( present ( DimensionalityOption ) ) &
         PH % Dimensionality = DimensionalityOption
