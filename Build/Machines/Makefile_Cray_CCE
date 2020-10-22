@@ -26,14 +26,14 @@ USE_ISO_10646       ?= 0
 #-- Silo library may be  automatically included & linked by 
 #-- "module load silo" if provided, otherwise, manually put include and 
 #-- link line flag &  location below
-SILO_DIR=/home/users/coe0021/localsw/poplar/silo/4.10.2_cce9.1.3
+SILO_DIR ?= /home/users/coe0021/localsw/poplar/silo/4.10.2_cce9.1.3
 INCLUDE_SILO = -I${SILO_DIR}/include
 LIBRARY_SILO = -L${SILO_DIR}/lib -lsilo
 
 #-- HDF5 library may be  automatically included & linked by 
 #-- "module load hdf5" if provided, otherwise, manually put include and 
 #-- link line flag &  location below
-HDF5_DIR=/home/users/coe0021/localsw/poplar/hdf5/1.10.12_cce10
+HDF5_DIR ?= /home/users/coe0021/localsw/poplar/hdf5/1.10.12_cce10
 INCLUDE_HDF5 = -I${HDF5_DIR}/include
 LIBRARY_HDF5 = -L${HDF5_DIR}/lib -lhdf5_fortran -lhdf5
 
@@ -48,16 +48,16 @@ ifeq ($(CRAY_ACCEL_TARGET), nvidia70)
   LIBRARY_DEVICE = -L${CUDA_ROOT}/lib64 -lcudart
 endif
 
-ifeq ($(CRAY_ACCEL_TARGET), amd_gfx906)
+ifeq ($(CRAY_ACCEL_TARGET), \
+        $(filter $(CRAY_ACCEL_TARGET), amd_gfx906 amd_gfx908))
   DEFINES       += -D__HIP_PLATFORM_HCC__
 
   DEVICE_HIP     = 1
   DEVICE_COMPILE = hipcc -c -D__HIP_PLATFORM_HCC__
   
   INCLUDE_DEVICE = -I${ROCM_PATH}/include
-  LIBRARY_DEVICE = -L${ROCM_PATH}/lib -lhip_hcc
+  LIBRARY_DEVICE = -L${ROCM_PATH}/lib -lamdhip64
 endif
-
 
 ifeq ($(ENABLE_OMP), 1)
   DEFINES += -fopenmp
