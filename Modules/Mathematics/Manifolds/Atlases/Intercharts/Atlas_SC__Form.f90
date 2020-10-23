@@ -60,14 +60,16 @@ contains
 
 
   subroutine SetGeometry &
-               ( A, GeometryOption, UsePinnedMemoryOption, EdgeOption )
+               ( A, GeometryOption, UsePinnedMemoryOption, AddTimersOption, &
+                 EdgeOption )
 
     class ( Atlas_SC_Form ), intent ( inout ) :: &
       A
     class ( GeometryFlat_ASC_Form ), intent ( in ), target, optional :: &
       GeometryOption
     logical ( KDL ), intent ( in ), optional :: &
-      UsePinnedMemoryOption
+      UsePinnedMemoryOption, &
+      AddTimersOption
     type ( Real_1D_Form ), dimension ( : ), intent ( in ), optional :: &
       EdgeOption
 
@@ -96,7 +98,8 @@ contains
 
       select type ( GC => A % Geometry_ASC % Chart )
       class is ( GeometryFlat_CSL_Form ) 
-      call C % SetGeometry ( GC, EdgeOption )
+      call C % SetGeometry &
+             ( GC, AddTimersOption = AddTimersOption, EdgeOption = EdgeOption )
       end select !-- G_CSL
 
       call A % Show ( )

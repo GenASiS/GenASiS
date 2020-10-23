@@ -123,12 +123,14 @@ module Chart_SL__Template
 contains
 
   
-  subroutine SetGeometry ( C, Geometry, EdgeOption )
+  subroutine SetGeometry ( C, Geometry, AddTimersOption, EdgeOption )
 
     class ( Chart_SL_Template ), intent ( inout ) :: &
       C
     class ( GeometryFlat_CSL_Form ), intent ( in ), target :: &
       Geometry
+    logical ( KDL ), intent ( in ), optional :: &
+      AddTimersOption
     type ( Real_1D_Form ), dimension ( : ), intent ( in ), optional :: &
       EdgeOption
 
@@ -143,8 +145,14 @@ contains
       Center_3D, &
       Width_L_3D, &
       Width_R_3D
+    logical ( KDL ) :: &
+      AddTimers
     class ( GeometryFlatForm ), pointer :: &
       G
+
+    AddTimers  =  .true.
+    if ( present ( AddTimersOption ) ) &
+      AddTimers  =  AddTimersOption
 
     C % Geometry_CSL => Geometry
 
@@ -218,10 +226,10 @@ contains
 
     call G % SetMetricFixed ( C % nDimensions, G % nValues, oValue = 0 )
 
-    if ( C % iTimerGhostPackUnpack <= 0 ) &
+    if ( AddTimers ) &
       call PROGRAM_HEADER % AddTimer &
              ( 'GhostPackUnpack', C % iTimerGhostPackUnpack, Level = 6 )
-    if ( C % iTimerGhostCommunication <= 0 ) &
+    if ( AddTimers ) &
       call PROGRAM_HEADER % AddTimer &
              ( 'GhostCommunication', C % iTimerGhostCommunication, Level = 6 )
 
@@ -240,7 +248,8 @@ contains
     type ( Real_1D_Form ), dimension ( : ), intent ( in ) :: &
       Edge
 
-    call C % SetGeometry ( C % Geometry_CSL, EdgeOption = Edge )
+    call C % SetGeometry &
+           ( C % Geometry_CSL, AddTimersOption = .false., EdgeOption = Edge )
 
   end subroutine ResetGeometry
 
