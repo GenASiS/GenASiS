@@ -1044,6 +1044,8 @@ contains
       MaxMinusMean
     logical ( KDL ), dimension ( MAX_TIMERS ) :: &
       Running
+    type ( CollectiveOperation_I_Form ) :: &
+      CO_nTimers
     type ( CollectiveOperation_R_Form ) :: &
       CO
     type ( TimerForm ), dimension ( MAX_TIMERS ) :: &
@@ -1071,6 +1073,27 @@ contains
     end do !-- iT
 
     if ( present ( CommunicatorOption ) ) then
+
+      !-- nTimers sanity check
+      call CO_nTimers % Initialize &
+             ( CommunicatorOption, nOutgoing = [ 1 ], &
+               nIncoming = [ CommunicatorOption % Size ], &
+               RootOption = CONSOLE % DisplayRank )
+      CO_nTimers % Outgoing % Value  =  PH % nTimers
+      call CO_nTimers % Gather ( )
+      if ( CommunicatorOption % Rank  ==  CONSOLE % DisplayRank ) then
+        if ( any ( CO_nTimers % Incoming % Value &
+                     /=  CO_nTimers % Incoming % Value ( 1 ) ) ) &
+        then
+          call Show ( 'Unequal number of timers across processes', &
+                      CONSOLE % ERROR )
+          call Show ( 'PROGRAM_HEADER_Singleton', 'module', CONSOLE % ERROR )
+          call Show ( 'ReadTimers', 'subroutine', CONSOLE % ERROR )
+          call Show ( CO_nTimers % Incoming % Value, 'nTimers', &
+                      CONSOLE % ERROR )
+          call PROGRAM_HEADER % Abort ( )
+        end if !-- unequal nTimers
+      end if !-- CONSOLE % DisplayRank
 
       call CO % Initialize &
              ( CommunicatorOption, &
