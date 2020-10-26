@@ -83,7 +83,7 @@ contains
                ( A, SpacingOption, CoordinateLabelOption, &
                  CoordinateSystemOption, CoordinateUnitOption, &
                  MinCoordinateOption, MaxCoordinateOption, RatioOption, &
-                 ScaleOption, nCellsOption, nGhostLayersOption, &
+                 ScaleOption, nCellsOption, nBricksOption, nGhostLayersOption, &
                  nDimensionsOption, nEqualOption )
 
     class ( Atlas_SC_SC_Form ), intent ( inout ) :: &
@@ -102,6 +102,7 @@ contains
       ScaleOption
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       nCellsOption, &
+      nBricksOption, &
       nGhostLayersOption
     integer ( KDI ), intent ( in ), optional :: &
       nDimensionsOption, &

@@ -72,8 +72,8 @@ contains
                  CoordinateLabelOption, CoordinateSystemOption, &
                  IsDistributedOption, CoordinateUnitOption, &
                  MinCoordinateOption, MaxCoordinateOption, RatioOption, &
-                 ScaleOption, nCellsOption, nGhostLayersOption, &
-                 nDimensionsOption, nEqualOption )
+                 ScaleOption, nCellsOption, nBricksOption, &
+                 nGhostLayersOption, nDimensionsOption, nEqualOption )
 
     class ( Chart_SLD_Form ), intent ( inout ) :: &
       C
@@ -99,6 +99,7 @@ contains
       ScaleOption
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       nCellsOption, &
+      nBricksOption, &
       nGhostLayersOption
     integer ( KDI ), intent ( in ), optional :: &
       nDimensionsOption, &
@@ -113,8 +114,8 @@ contains
            ( Atlas, IsPeriodic, iChart, SpacingOption, CoordinateLabelOption, &
              CoordinateSystemOption, IsDistributedOption, &
              CoordinateUnitOption, MinCoordinateOption, MaxCoordinateOption, &
-             RatioOption, ScaleOption, nCellsOption, nGhostLayersOption, &
-             nDimensionsOption, nEqualOption )
+             RatioOption, ScaleOption, nCellsOption, nBricksOption, &
+             nGhostLayersOption, nDimensionsOption, nEqualOption )
     
     C % ExchangeGhostUseDevice = .true.
     

@@ -34,7 +34,7 @@ contains
                  CoordinateLabelOption, CoordinateSystemOption, &
                  IsDistributedOption, CoordinateUnitOption, &
                  MinCoordinateOption, MaxCoordinateOption, RatioOption, &
-                 ScaleOption, nCellsOption, nGhostLayersOption, &
+                 ScaleOption, nCellsOption, nBricksOption, nGhostLayersOption, &
                  nDimensionsOption, nEqualOption )
 
     class ( Chart_SLL_Form ), intent ( inout ) :: &
@@ -61,6 +61,7 @@ contains
       ScaleOption
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       nCellsOption, &
+      nBricksOption, &
       nGhostLayersOption
     integer ( KDI ), intent ( in ), optional :: &
       nDimensionsOption, &
@@ -75,8 +76,8 @@ contains
            ( Atlas, IsPeriodic, iChart, SpacingOption, CoordinateLabelOption, &
              CoordinateSystemOption, IsDistributedOption, &
              CoordinateUnitOption, MinCoordinateOption, MaxCoordinateOption, &
-             RatioOption, ScaleOption, nCellsOption, nGhostLayersOption, &
-             nDimensionsOption, nEqualOption )
+             RatioOption, ScaleOption, nCellsOption, nBricksOption, &
+             nGhostLayersOption, nDimensionsOption, nEqualOption )
 
   end subroutine InitializeBasic
 
