@@ -73,7 +73,7 @@ contains
 
     nEquations = 1
 
-    MaxDegree = 2
+    MaxDegree = 3
     call PROGRAM_HEADER % GetParameter ( MaxDegree, 'MaxDegree' )
 
     allocate ( LMFT % Laplacian )
@@ -127,7 +127,8 @@ contains
     NameAngular  =  trim ( Name ) // '_Angular'
 
     allocate ( RankAngular ( A % Communicator % Size  /  C % nBricks ( 1 ) ) )
-    RankAngular  =  [ ( iR, iR = 0, size ( RankAngular ) - 1 ) ]
+    RankAngular  =  [ ( iR  *  C % nBricks ( 1 ), &
+                        iR = 0, size ( RankAngular ) - 1 ) ]
  
     allocate ( CommunicatorAngular )
     call CommunicatorAngular % Initialize &
@@ -140,13 +141,14 @@ contains
       call AA % Initialize &
              ( NameAngular, &
                CommunicatorOption = CommunicatorAngular, &
-               nDimensionsOption = A % nDimensions - 1 )
+               nDimensionsOption = 3 )
       call AA % CreateChart &
-             ( CoordinateLabelOption = [ 'Theta', 'Phi  ' ], &
-               MinCoordinateOption = [ 0.0_KDR, 0.0_KDR ], &
-               MaxCoordinateOption = [ Pi, 2.0_KDR * Pi ], &
-               nCellsOption = [ C % nCells ( 2 : 3 ) ], &
-               nGhostLayersOption = [ 0, 0 ] )  
+             ( CoordinateLabelOption = [ 'r    ', 'Theta', 'Phi  ' ], &
+               MinCoordinateOption = [ 0.0_KDR, 0.0_KDR, 0.0_KDR ], &
+               MaxCoordinateOption = [ 1.0_KDR, Pi, 2.0_KDR * Pi ], &
+               nCellsOption = [ 1, C % nCells ( 2 : 3 ) ], &
+               nBricksOption = [ 1, C % nBricks ( 2 : 3 ) ], &
+               nGhostLayersOption = [ 0, 0, 0 ] )  
       call AA % SetGeometry ( AddTimersOption = .false. )
     
       select type ( CA => AA % Chart )

@@ -166,12 +166,6 @@ contains
 
     integer ( KDI ) :: &
       nAngularCells
-real ( KDR ), dimension ( 100, 3 ), target :: &
-  Test_2D
-real ( KDR ), dimension ( :, :, : ), pointer :: &
-  Test_3D
-type ( StorageForm ) :: &
-  TestStorage
 
     allocate ( L % AngularFunctions )
     associate ( AF => L % AngularFunctions )
@@ -195,46 +189,22 @@ type ( StorageForm ) :: &
                ( AF % Value, C % nCellsBrick, &
                  L % nAngularMoments, L % AngularFunction )
 
+        associate &
+          ( iaB  =>  C % iaBrick, &
+            nCB  =>  C % nCellsBrick, &
+            nGL  =>  C % nGhostLayers )
         call ComputeAngularFunctions &
                (     LM  =  L, &
                   Theta  =  C % Center ( 2 ) % Value, &
                     Phi  =  C % Center ( 3 ) % Value, &
                       L  =  L % MaxDegree, &
                       M  =  L % MaxOrder, &
-                 nTheta  =  C % nCellsBrick ( 2 ), &
-                   nPhi  =  C % nCellsBrick ( 3 ), &
-                 oTheta  =  C % nGhostLayers ( 2 ), &
-                   oPhi  =  C % nGhostLayers ( 3 ), &
+                 nTheta  =  nCB ( 2 ), &
+                   nPhi  =  nCB ( 3 ), &
+                 oTheta  =  nGL ( 2 )  +  ( iaB ( 2 )  -  1 )  *  nCB ( 2 ), &
+                   oPhi  =  nGL ( 3 )  +  ( iaB ( 3 )  -  1 )  *  nCB ( 3 ), &
                      AF  =  L % AngularFunction )
-
-call Show ( size ( L % AngularFunction ), '>>> size AngularFunction' )
-call Show ( size ( AF % Value ), '>>> size AF % Value' )
-call Show ( L % AngularFunction ( :, 1, 1 ), '>>> AF (pointer)' )
-call Show ( AF % Value ( 1 : 100, 1 ), '>>> AF (storage)' )
-
-! Test_3D ( 1 : 10, 1 : 10, 1 : 3 )  =>  Test_2D
-! Test_2D  =  0.0_KDR
-! Test_3D  =  1.0_KDR
-! call Show ( Test_3D ( :, :, 1 ), '>>> Test_3D' )
-! call Show ( Test_2D ( :, 1 ), '>>> Test_2D' )
-
-Test_3D  =>  null ( )
-Test_2D  =   0.0_KDR 
-call TestSetPointer ( Test_2D, Test_3D )
-call TestSetValue ( 2.0_KDR, Test_3D )
-call Show ( size ( Test_3D ), '>>> size Test_3D' )
-call Show ( size ( Test_2D ), '>>> size Test_2D' )
-call Show ( Test_3D ( :, :, 1 ), '>>> Test_3D 2' )
-call Show ( Test_2D ( :, 1 ), '>>> Test_2D 2' )
-
-Test_3D  =>  null ( )
-call TestStorage % Initialize ( [ 100, 3 ] )
-call TestSetPointer ( TestStorage % Value, Test_3D )
-call TestSetValue ( 3.0_KDR, Test_3D )
-call Show ( size ( Test_3D ), '>>> size Test_3D' )
-call Show ( size ( Test_2D ), '>>> size Test_2D' )
-call Show ( Test_3D ( :, :, 1 ), '>>> Test_3D 3' )
-call Show ( TestStorage % Value ( :, 1 ), '>>> Test_2D 3' )
+        end associate !-- iaB, etc.
 
       case default
         call Show ( 'Coordinate system not supported', CONSOLE % ERROR )
@@ -319,30 +289,6 @@ call Show ( TestStorage % Value ( :, 1 ), '>>> Test_2D 3' )
     end do !-- iM
 
   end subroutine ComputeAngularFunctions
-
-
-subroutine TestSetPointer ( T_2D, T_3D )
-
-  real ( KDR ), dimension ( :, : ), intent ( in ), target, contiguous :: &
-    T_2D
-  real ( KDR ), dimension ( :, :, : ), intent ( out ), pointer :: &
-    T_3D
-
-  T_3D ( 1 : 10, 1 : 10, 1 : 3 )  =>  T_2D
-
-end subroutine TestSetPointer
-
-
-subroutine TestSetValue ( A, T_3D )
-
-  real ( KDR ), intent ( in ) :: &
-    A
-  real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
-    T_3D
-
-  T_3D  =  A
-
-end subroutine TestSetValue
 
 
 end module LaplacianMultipole_ASC__Form
