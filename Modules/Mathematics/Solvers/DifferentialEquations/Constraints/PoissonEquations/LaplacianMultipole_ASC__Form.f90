@@ -181,9 +181,6 @@ contains
                ( [ nAngularCells, L % nAngularMoments ], &
                  NameOption = 'AngularFunctions', &
                  VariableOption = L % AngularFunctionName )
-        if ( L % UseDevice ) then
-          call AF % AllocateDevice ( )
-        end if
 
         call AssignAngularFunctionPointers &
                ( AF % Value, C % nCellsBrick, &
@@ -214,6 +211,11 @@ contains
                     CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end select
+
+      if ( L % UseDevice ) then
+        call AF % AllocateDevice ( )
+        call AF % UpdateDevice ( )
+      end if
 
     class default
       call Show ( 'Chart type not supported', CONSOLE % ERROR )

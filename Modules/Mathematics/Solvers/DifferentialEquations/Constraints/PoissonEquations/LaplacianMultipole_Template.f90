@@ -181,7 +181,6 @@ contains
 
     L % nEquations  =  nEquations
 
-
     call Show ( L % MaxDegree, 'MaxDegree (l)', L % IGNORABILITY )
     call Show ( L % MaxOrder, 'MaxOrder (m)', L % IGNORABILITY )
     call Show ( L % nRadialCells, 'nRadialCells', L % IGNORABILITY )
