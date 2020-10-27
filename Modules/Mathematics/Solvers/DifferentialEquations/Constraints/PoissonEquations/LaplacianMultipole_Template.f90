@@ -17,15 +17,21 @@ module LaplacianMultipole_Template
     logical ( KDL ) :: &
       UseDevice = .false., &
       ReductionUseDevice = .false.
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+        Moment_3D => null ( ), &
+      MyMoment_3D => null ( )
     character ( LDF ) :: &
       Type = '', &
       Name = ''
     character ( LDL ), dimension ( : ), allocatable :: &
-      AngularFunctionName
+      AngularFunctionName, &
+      MomentName
     type ( StorageForm ), allocatable :: &
-!        Moments, &
-!      MyMoments, &
+        Moments, &
+      MyMoments, &
       RadialEdges
+    type ( CollectiveOperation_R_Form ), allocatable :: &
+      ReductionMoments
   contains
     procedure, public, pass :: &
       InitializeTemplate
@@ -37,6 +43,8 @@ module LaplacianMultipole_Template
       SetParametersAtlas
     procedure ( SAF ), private, pass, deferred :: &
       SetAngularFunctions
+    procedure, private, pass :: &
+      AllocateMoments
     procedure, public, nopass :: &
       AssociatedLegendre
   end type LaplacianMultipoleTemplate
@@ -63,6 +71,12 @@ module LaplacianMultipole_Template
 
   end interface
 
+
+    private :: &
+      AllocateReduction, &
+      AssignMomentPointers
+
+
 contains
 
 
@@ -88,7 +102,7 @@ contains
 
     call L % SetParameters ( A, MaxDegree, nEquations )
     call L % SetAngularFunctions ( )
-    ! call L % AllocateMoments ( )
+    call L % AllocateMoments ( )
 
   end subroutine InitializeTemplate
 
@@ -98,24 +112,21 @@ contains
     class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
       L
 
-    ! if ( allocated ( L % ReductionMoments ) ) &
-    !   deallocate ( L % ReductionMoments )
+    if ( allocated ( L % ReductionMoments ) ) &
+      deallocate ( L % ReductionMoments )
 
     if ( allocated ( L % RadialEdges ) ) &
       deallocate ( L % RadialEdges )
-    ! if ( allocated ( L % MyMoments ) ) &
-    !   deallocate ( L % MyMoments )
-    ! if ( allocated ( L % Moments ) ) &
-    !   deallocate ( L % Moments )
+    if ( allocated ( L % MyMoments ) ) &
+      deallocate ( L % MyMoments )
+    if ( allocated ( L % Moments ) ) &
+      deallocate ( L % Moments )
 
-    ! nullify ( L % MyMoment_IS )
-    ! nullify ( L % MyMoment_RS )
-    ! nullify ( L % MyMoment_IC )
-    ! nullify ( L % MyMoment_RC )
-    ! nullify ( L % Moment_IS )
-    ! nullify ( L % Moment_RS )
-    ! nullify ( L % Moment_IC )
-    ! nullify ( L % Moment_RC )
+    nullify ( L % MyMoment_3D )
+    nullify ( L % Moment_3D )
+
+    if ( allocated ( L % MomentName ) ) &
+      deallocate ( L % MomentName )
     if ( allocated ( L % AngularFunctionName ) ) &
       deallocate ( L % AngularFunctionName )
 
@@ -138,9 +149,13 @@ contains
       nEquations
 
     integer ( KDI ) :: &
-      iL, &
-      iM, &
-      iA
+      iL, &  !-- iDegree
+      iM, &  !-- iOrder
+      iE, &  !-- iEquation
+      iA, &  !-- iAngular
+      iAE    !-- iAngularEquations  
+    character ( 1 ) :: &
+      iE_Label
     character ( 2 ) :: &
       iL_Label, &
       iM_Label
@@ -153,7 +168,8 @@ contains
     associate &
       (  L_Max  =>  L % MaxDegree, &
          M_Max  =>  L % MaxOrder, &
-            nA  =>  L % nAngularMoments )
+            nA  =>  L % nAngularMoments, &
+            nE  =>  L % nEquations )
 
     nA = 0
     do iM  =  0, M_Max
@@ -169,17 +185,36 @@ contains
       do iL  =  iM, L_Max
         write ( iL_Label, fmt = '(i2.2)' ) iL
         write ( iM_Label, fmt = '(i2.2)' ) iM
-        L % AngularFunctionName ( iA     )  &
+        L % AngularFunctionName ( iA )  &
           =  'AngularFunction_' // iL_Label // '_' // iM_Label // '_Cos'
         L % AngularFunctionName ( iA + 1 )  &
           =  'AngularFunction_' // iL_Label // '_' // iM_Label // '_Sin'
         iA  =  iA + 2
-      end do
-    end do
+      end do  !-- iL
+    end do  !-- iM
 
-    end associate !-- L, etc.
+    nE  =  nEquations
 
-    L % nEquations  =  nEquations
+    allocate ( L % MomentName ( nA * nE ) )
+    iAE = 1
+    do iE  =  1, nE
+      do iM  =  0, M_Max
+        do iL  =  iM, L_Max
+          write ( iL_Label, fmt = '(i2.2)' ) iL
+          write ( iM_Label, fmt = '(i2.2)' ) iM
+          write ( iE_Label, fmt = '(i1.1)' ) iE
+          L % MomentName ( iAE )  &
+            =  'Moment_' // iL_Label // '_' // iM_Label // '_Cos_Eq_' &
+               // iE_Label
+          L % MomentName ( iAE + 1 )  &
+            =  'Moment_' // iL_Label // '_' // iM_Label // '_Sin_Eq_' &
+               // iE_Label
+          iAE  =  iAE + 2
+        end do  !-- iL
+      end do  !-- iM
+    end do  !-- iE
+
+    end associate !-- L_Max, etc.
 
     call Show ( L % MaxDegree, 'MaxDegree (l)', L % IGNORABILITY )
     call Show ( L % MaxOrder, 'MaxOrder (m)', L % IGNORABILITY )
@@ -190,6 +225,51 @@ contains
     call Show ( L % ReductionUseDevice, 'ReductionUseDevice', L % IGNORABILITY )
 
   end subroutine SetParameters
+
+
+  subroutine AllocateMoments ( L )
+
+    class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+      L
+
+    if ( allocated ( L % Moments ) ) &
+      deallocate ( L % Moments )
+    if ( allocated ( L % MyMoments ) ) &
+      deallocate ( L % MyMoments )
+
+    allocate ( L % Moments )
+    allocate ( L % MyMoments )
+    associate &
+      (         M  =>  L % Moments, &
+              MyM  =>  L % MyMoments, &
+               nA  =>  L % nAngularMoments, &
+               nR  =>  L % nRadialCells, &
+               nE  =>  L % nEquations )
+
+    call   M % Initialize &
+             ( [ nR, nA * nE ], &
+               NameOption = 'Moments', &
+               VariableOption = L % MomentName, &
+               PinnedOption = L % UseDevice )
+    call MyM % Initialize &
+             ( [ nR, nA * nE ], &
+               NameOption = 'MyMoments', &
+               VariableOption = L % MomentName, &
+               PinnedOption = L % UseDevice )
+    if ( L % UseDevice ) then
+      call   M % AllocateDevice ( )
+      call MyM % AllocateDevice ( )
+    end if
+
+    call AllocateReduction ( L, M % Value, MyM % Value )
+
+    call AssignMomentPointers &
+           ( L, L % Moments % Value, L % MyMoments % Value, &
+                L % Moment_3D,       L % MyMoment_3D )
+
+    end associate !-- M, etc.
+
+  end subroutine AllocateMoments
 
 
   function AssociatedLegendre ( X, L, M ) result ( P_LM )
@@ -279,6 +359,62 @@ contains
     end if !-- L == M
 
   end function AssociatedLegendre
+
+
+  subroutine AllocateReduction ( L, M_Value, MyM_Value )
+
+    class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+      L
+    real ( KDR ), dimension ( :, : ), intent ( in ), target, contiguous :: &
+        M_Value, &
+      MyM_Value
+
+    real ( KDR ), dimension ( : ), pointer :: &
+        Moment_1D, &
+      MyMoment_1D
+
+      Moment_1D ( 1 : size (   M_Value ) )  =>    M_Value
+    MyMoment_1D ( 1 : size ( MyM_Value ) )  =>  MyM_Value
+
+    if ( allocated ( L % ReductionMoments ) ) &
+      deallocate ( L % ReductionMoments )
+    allocate ( L % ReductionMoments )
+    associate &
+      (  RM  =>  L % ReductionMoments, &
+        PHC  =>  PROGRAM_HEADER % Communicator )
+      call RM % Initialize &
+             ( PHC, OutgoingValue = MyMoment_1D, IncomingValue = Moment_1D )
+      if ( L % ReductionUseDevice ) &
+        call RM % AllocateDevice ( )
+    end associate !-- RM, etc.
+
+    nullify ( Moment_1D, MyMoment_1D )
+
+  end subroutine AllocateReduction
+
+
+  subroutine AssignMomentPointers ( L, M_2D, MyM_2D, M_3D, MyM_3D )
+
+    class ( LaplacianMultipoleTemplate ), intent ( in ) :: &
+      L
+    real ( KDR ), dimension ( :, : ), intent ( in ), target, contiguous :: &
+        M_2D, &
+      MyM_2D
+    real ( KDR ), dimension ( :, :, : ), intent ( out ), pointer :: &
+        M_3D, &
+      MyM_3D
+
+    associate &
+      ( nE => L % nEquations, &
+        nA => L % nAngularMoments, &
+        nR => L % nRadialCells )
+
+      M_3D ( 1 : nR, 1 : nA, 1 : nE )  =>    M_2D
+    MyM_3D ( 1 : nR, 1 : nA, 1 : nE )  =>  MyM_2D
+
+    end associate  !-- nE, nA, nR
+
+  end subroutine AssignMomentPointers
 
 
 end module LaplacianMultipole_Template
