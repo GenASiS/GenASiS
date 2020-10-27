@@ -26,11 +26,28 @@ module LaplacianMultipole_ASC__Form
       SetParametersAtlas
     procedure, private, pass :: &
       SetAngularFunctions
+    procedure, private, pass :: &
+      ComputeMomentsLocal
   end type LaplacianMultipole_ASC_Form
+
+
+    private :: &
+      ComputeMomentsLocal_CSL_S_Kernel
+
+
+    interface
+
+      module subroutine ComputeMomentsLocal_CSL_S_Kernel &
+                          ( )
+      end subroutine ComputeMomentsLocal_CSL_S_Kernel
+
+    end interface
+
 
     private :: &
       AssignAngularFunctionPointers, &
       ComputeAngularFunctions
+
 
 contains
 
@@ -227,6 +244,16 @@ contains
     end associate !-- AF
 
   end subroutine SetAngularFunctions
+
+
+  subroutine ComputeMomentsLocal ( L, Source )
+
+      class ( LaplacianMultipole_ASC_Form ), intent ( inout ) :: &
+        L
+      class ( FieldAtlasTemplate ), intent ( in ) :: &
+        Source
+
+  end subroutine ComputeMomentsLocal
 
 
   subroutine AssignAngularFunctionPointers ( AF_2D, nCB, nAM, AF_3D )

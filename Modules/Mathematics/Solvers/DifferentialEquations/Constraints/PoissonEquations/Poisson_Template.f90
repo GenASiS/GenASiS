@@ -153,8 +153,14 @@ contains
     call PROGRAM_HEADER % AddTimer &
            ( 'PoissonSolve', P % iTimerSolve, Level = BaseLevel )
 
-    if ( allocated ( P % LaplacianMultipoleOld_1) ) then
+    if ( allocated ( P % LaplacianMultipoleOld_1 ) ) then
       associate ( L => P % LaplacianMultipoleOld_1 )
+      call L % InitializeTimers ( BaseLevel + 1 )
+      end associate !-- L
+    end if
+
+    if ( allocated ( P % LaplacianMultipoleOld_2 ) ) then
+      associate ( L => P % LaplacianMultipoleOld_2 )
       call L % InitializeTimers ( BaseLevel + 1 )
       end associate !-- L
     end if

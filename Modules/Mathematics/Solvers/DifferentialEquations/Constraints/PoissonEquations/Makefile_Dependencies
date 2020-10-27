@@ -52,6 +52,11 @@ LaplacianMultipole_ASC__Form.o: \
   LaplacianMultipole_Template.o \
   LaplacianMultipole_ASC__Form.f90 
 
+LaplacianMultipole_ASC__Kernel.o: \
+  Basics.o \
+  LaplacianMultipole_ASC__Form.o \
+  LaplacianMultipole_ASC__Kernel.f90
+
 Poisson_Template.o: \
   Basics.o \
   Manifolds.o \
@@ -80,6 +85,7 @@ PoissonEquations.o: \
   LaplacianMultipoleOld_2__Template.o \
   LaplacianMultipoleOld_2_ASC__Form.o \
   LaplacianMultipole__Template.o \
+  LaplacianMultipole_ASC__Form.o \
   Poisson_Template.o \
   Poisson_ASC__Form.o \
   PoissonEquations.f90

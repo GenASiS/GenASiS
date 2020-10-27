@@ -14,6 +14,12 @@ module LaplacianMultipole_Template
       nEquations = 0, &
       MaxDegree = 0, &  !-- Max L
       MaxOrder  = 0     !-- Max M
+    integer ( KDI ) :: &
+      iTimerComputeMoments = 0, &
+      iTimerClearMoments = 0, &
+      iTimerLocalMoments = 0, &
+      iTimerReduceMoments = 0, &
+      iTimerAddMoments = 0
     logical ( KDL ) :: &
       UseDevice = .false., &
       ReductionUseDevice = .false.
@@ -36,6 +42,10 @@ module LaplacianMultipole_Template
     procedure, public, pass :: &
       InitializeTemplate
     procedure, public, pass :: &
+      InitializeTimers
+    procedure, public, pass :: &
+      ComputeMoments
+    procedure, public, pass :: &
       FinalizeTemplate
     procedure, private, pass :: &
       SetParameters
@@ -45,6 +55,8 @@ module LaplacianMultipole_Template
       SetAngularFunctions
     procedure, private, pass :: &
       AllocateMoments
+    procedure ( CML ), private, pass, deferred :: &
+      ComputeMomentsLocal
     procedure, public, nopass :: &
       AssociatedLegendre
   end type LaplacianMultipoleTemplate
@@ -68,6 +80,16 @@ module LaplacianMultipole_Template
       class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
         L
     end subroutine SAF
+
+    subroutine CML ( L, Source )
+      use Manifolds
+      import LaplacianMultipoleTemplate
+      implicit none
+      class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+        L
+      class ( FieldAtlasTemplate ), intent ( in ) :: &
+        Source
+    end subroutine CML
 
   end interface
 
@@ -105,6 +127,84 @@ contains
     call L % AllocateMoments ( )
 
   end subroutine InitializeTemplate
+
+
+  subroutine InitializeTimers ( L, BaseLevel )
+
+    class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+      L
+    integer ( KDI ), intent ( in ) :: &
+      BaseLevel
+
+    call PROGRAM_HEADER % AddTimer &
+           ( 'ComputeMoments', L % iTimerComputeMoments, Level = BaseLevel )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'ClearMoments', L % iTimerClearMoments, Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'LocalMoments', L % iTimerLocalMoments, Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'ReduceMoments', L % iTimerReduceMoments, &
+               Level = BaseLevel + 1 )
+      call PROGRAM_HEADER % AddTimer &
+             ( 'AddMoments', L % iTimerAddMoments, Level = BaseLevel + 1 )
+
+  end subroutine InitializeTimers
+
+
+  subroutine ComputeMoments ( L, Source )
+
+    class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+      L
+    class ( FieldAtlasTemplate ), intent ( in ) :: &
+      Source
+
+    type ( TimerForm ), pointer :: &
+      Timer, &
+      Timer_CM, &
+      Timer_LM, &
+      Timer_RM, &
+      Timer_AM
+
+    Timer     =>  PROGRAM_HEADER % TimerPointer ( L % iTimerComputeMoments )
+    Timer_CM  =>  PROGRAM_HEADER % TimerPointer ( L % iTimerClearMoments )
+    Timer_LM  =>  PROGRAM_HEADER % TimerPointer ( L % iTimerLocalMoments )
+    Timer_RM  =>  PROGRAM_HEADER % TimerPointer ( L % iTimerReduceMoments )
+    Timer_AM  =>  PROGRAM_HEADER % TimerPointer ( L % iTimerAddMoments )
+
+    if ( associated ( Timer ) ) call Timer % Start ( )
+
+    call Show ( 'Computing Moments', L % IGNORABILITY + 2 )
+
+    associate &
+      (   M  =>  L %   Moments, &
+        MyM  =>  L % MyMoments )
+
+    if ( associated ( Timer_CM ) ) call Timer_CM % Start ( )
+    call MyM % Clear ( )
+    if ( associated ( Timer_CM ) ) call Timer_CM % Stop ( )
+
+    if ( associated ( Timer_LM ) ) call Timer_LM % Start ( )
+    call L % ComputeMomentsLocal ( Source )
+    if ( associated ( Timer_LM ) ) call Timer_LM % Stop ( )
+
+    ! if ( associated ( Timer_RM ) ) call Timer_RM % Start ( )
+    ! if ( .not. L % ReductionUseDevice ) call MyM % UpdateHost ( ) 
+    ! call L % ReductionMoments % Reduce ( REDUCTION % SUM )
+    ! if ( .not. L % ReductionUseDevice ) call M % UpdateDevice ( ) 
+    ! if ( associated ( Timer_RM ) ) call Timer_RM % Stop ( )
+
+    ! if ( associated ( Timer_AM ) ) call Timer_AM % Start ( )
+    !   call AddMomentShellsKernel &
+    !          ( L % Moment_RC, L % Moment_IC, L % Moment_RS, L % Moment_IS, &
+    !            L % nAngularMoments, L % nEquations, L % nRadialCells, &
+    !            UseDeviceOption = L % UseDevice )
+    ! if ( associated ( Timer_AM ) ) call Timer_AM % Stop ( )
+    
+    end associate !-- M, etc.
+
+    if ( associated ( Timer ) ) call Timer % Stop ( )
+
+  end subroutine ComputeMoments
 
 
   impure elemental subroutine FinalizeTemplate ( L )

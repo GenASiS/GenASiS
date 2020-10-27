@@ -79,6 +79,7 @@ contains
     allocate ( LMFT % Laplacian )
     associate ( L => LMFT % Laplacian )
     call L % Initialize ( A, MaxDegree, nEquations )
+    call L % InitializeTimers ( BaseLevel = 1 )
 
     call Show ( L % RadialEdges % Value ( :, 1 ), 'RadialEdge', &
                 CONSOLE % INFO_2 )
