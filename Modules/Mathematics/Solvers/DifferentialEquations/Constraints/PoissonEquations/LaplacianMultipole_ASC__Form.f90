@@ -15,6 +15,8 @@ module LaplacianMultipole_ASC__Form
         SolidAngle => null ( )
       real ( KDR ), dimension ( :, :, : ), pointer :: &
         AngularFunction => null ( )
+      real ( KDR ), dimension ( :, :, :, : ), pointer :: &
+        Source => null ( )
       type ( StorageForm ), allocatable :: &
         SolidAngles, &
         AngularFunctions
@@ -41,9 +43,24 @@ module LaplacianMultipole_ASC__Form
     interface
 
       module subroutine ComputeMomentsLocal_CSL_S_Kernel &
-                          ( UseDeviceOption )
+                          ( MyM, S, AF, dSA, nC, oC, nE, nAM, oR, &
+                            UseDeviceOption )
         use Basics
         implicit none
+        real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
+          MyM  !-- MyMoment_3D
+        real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
+          S  !-- Source
+        real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+          AF  !-- AngularFunction
+        real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+          dSA  !-- dSolidAngle
+        integer ( KDI ), dimension ( : ), intent ( in ) :: &
+          nC, oC  !-- nCells, oCell
+        integer ( KDI ), intent ( in ) :: &
+          nE, &   !-- nEquations
+          nAM, &  !-- nAngularMoments
+          oR      !-- oRadius
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
       end subroutine ComputeMomentsLocal_CSL_S_Kernel
@@ -53,7 +70,8 @@ module LaplacianMultipole_ASC__Form
 
     private :: &
       AssignAngularFunctionPointers, &
-      ComputeAngularFunctions
+      ComputeAngularFunctions, &
+      AssignSourcePointer
 
 
 contains
@@ -89,18 +107,7 @@ contains
     if ( allocated ( L % SolidAngles ) ) &
       deallocate ( L % SolidAngles )
 
-    ! nullify ( L % Source )
-    ! nullify ( L % SolidHarmonic_IS )
-    ! nullify ( L % SolidHarmonic_RS )
-    ! nullify ( L % SolidHarmonic_IC )
-    ! nullify ( L % SolidHarmonic_RC )
-
-    ! nullify ( L % Volume )
-    ! nullify ( L % RadiusSquared )
-    ! nullify ( L % Radius )
-    ! nullify ( L % Rectangular_Z )
-    ! nullify ( L % Rectangular_Y )
-    ! nullify ( L % Rectangular_X )
+    nullify ( L % Source )
     nullify ( L % AngularFunction )
     nullify ( L % SolidAngle )
 
@@ -276,6 +283,77 @@ contains
       class ( FieldAtlasTemplate ), intent ( in ) :: &
         Source
 
+    class ( StorageForm ), pointer :: &
+      Source_S
+
+    select type ( C => L % Chart )
+    class is ( Chart_SL_Template )
+
+    select type ( Source )
+    class is ( Storage_ASC_Form )
+    Source_S => Source % Storage ( )
+
+    associate &
+      (  nV => Source_S % nVariables, &
+        iaS => Source_S % iaSelected )
+ 
+    if ( nV /= L % nEquations ) then
+      call Show ( 'Wrong number of variables in Solution', CONSOLE % ERROR )
+      call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'ComputeMomentsLocal', 'subroutine', &
+                  CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end if
+
+    if ( iaS ( nV ) - iaS ( 1 ) + 1  /=  nV ) then
+      call Show ( 'Solution variables must be contiguous', CONSOLE % ERROR )
+      call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'ComputeMomentsLocal', 'subroutine', &
+                  CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end if
+
+    call AssignSourcePointer &
+           ( Source_S % Value ( :, iaS ( 1 ) : iaS ( nV ) ), &
+             C % nCellsBrick, C % nGhostLayers, L % nEquations, L % Source )
+
+    end associate !-- nV, etc.
+
+    select case ( trim ( C % CoordinateSystem ) )
+    case ( 'SPHERICAL' )
+      call ComputeMomentsLocal_CSL_S_Kernel &
+             ( L % MyMoment_3D, L % Source, L % AngularFunction, &
+               L % SolidAngle, C % nCellsBrick, C % nGhostLayers, &
+               L % nEquations, L % nAngularMoments, &
+               oR = ( C % iaBrick ( 1 ) - 1 ) * C % nCellsBrick ( 1 ), &
+               UseDeviceOption = L % UseDevice )
+    case default
+      call Show ( 'Coordinate system not supported', CONSOLE % ERROR )
+      call Show ( C % CoordinateSystem, 'CoordinateSystem', CONSOLE % ERROR )
+      call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'ComputeMomentAtlas', 'subroutine', &
+                  CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- CoordinateSystem
+
+    class default
+      call Show ( 'Source type not supported', CONSOLE % ERROR )
+      call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'ComputeMomentsLocal', 'subroutine', &
+                  CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- Source
+
+    class default
+      call Show ( 'Chart type not supported', CONSOLE % ERROR )
+      call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'ComputeMomentsLocal', 'subroutine', &
+                  CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- C
+
+    nullify ( Source_S )
+
   end subroutine ComputeMomentsLocal
 
 
@@ -371,6 +449,30 @@ contains
     end do !-- iM
 
   end subroutine ComputeAngularFunctions
+
+
+  subroutine AssignSourcePointer ( S_2D, nC, nG, nE, S_4D )
+
+    real ( KDR ), dimension ( :, : ), intent ( in ), target, contiguous :: &
+      S_2D
+    integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
+      nC, &  !-- nCellsBrick
+      nG     !-- nGhostLayers
+    integer ( KDI ), intent ( in ) :: &
+      nE  !-- nEquations
+    real ( KDR ), dimension ( :, :, :, : ), intent ( out ), pointer :: &
+      S_4D
+
+    associate &
+      ( n1  =>  nC ( 1 )  +  2 * nG ( 1 ), &
+        n2  =>  nC ( 2 )  +  2 * nG ( 2 ), &
+        n3  =>  nC ( 3 )  +  2 * nG ( 3 ) )
+
+    S_4D ( 1 : n1, 1 : n2, 1 : n3, 1 : nE )  =>  S_2D
+
+    end associate !-- n1, etc.
+
+  end subroutine AssignSourcePointer
 
 
 end module LaplacianMultipole_ASC__Form
