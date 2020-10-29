@@ -56,6 +56,8 @@ contains
       NameAngular
     character ( LDL ), dimension ( 1 ) :: &
       Variable
+    type ( StorageForm ), pointer :: &
+      Source
     type ( CommunicatorForm ), allocatable :: &
       CommunicatorAngular
     class ( GeometryFlatForm ), pointer :: &
@@ -194,7 +196,7 @@ contains
            ( A, 'Source', nEquations, &
              VariableOption = Variable, &
              WriteOption = .true. )
-
+    
     allocate ( LMFT % Reference )
     associate ( RA => LMFT % Reference )
     call RA % Initialize &
@@ -211,6 +213,12 @@ contains
     call SetHomogeneousSphere &
            ( SA, RA, A, Density, RadiusDensity, iVariable = 1 )
 
+    if ( L % UseDevice ) then
+      Source => SA % Storage ( )
+      call Source % AllocateDevice ( )
+      call Source % UpdateDevice ( )
+    end if
+
     end associate !-- RA
     end associate !-- SA
 
@@ -226,7 +234,7 @@ contains
     end select !-- C
     end associate !-- A
 
-    nullify ( G )
+    nullify ( G, Source )
 
   end subroutine Initialize
 
