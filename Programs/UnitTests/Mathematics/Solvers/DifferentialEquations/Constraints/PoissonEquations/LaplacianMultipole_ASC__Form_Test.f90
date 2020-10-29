@@ -18,6 +18,9 @@ module LaplacianMultipole_ASC__Form_Test__Form
       Atlas
     type ( Atlas_SC_Form ), allocatable :: &
       AtlasAngular
+    type ( Storage_ASC_Form ), allocatable :: &
+      Source, &
+      Reference
     type ( LaplacianMultipole_ASC_Form ), allocatable :: &
       Laplacian
   contains
@@ -46,9 +49,13 @@ contains
     real ( KDR ) :: &
       X_Random, &
       Cos_X, Sin_X, &
-      Pi
+      Pi, &
+      RadiusDensity, &
+      Density
     character ( LDF ) :: &
       NameAngular
+    character ( LDL ), dimension ( 1 ) :: &
+      Variable
     type ( CommunicatorForm ), allocatable :: &
       CommunicatorAngular
     class ( GeometryFlatForm ), pointer :: &
@@ -83,6 +90,7 @@ contains
 
     call Show ( L % RadialEdges % Value ( :, 1 ), 'RadialEdge', &
                 CONSOLE % INFO_2 )
+
 
     !-- Associated Legendre polynomials
 
@@ -175,15 +183,50 @@ contains
     end if !-- Rank in RankAngular
     deallocate ( CommunicatorAngular )
 
+
+    !-- Homogeneous sphere
+
+    Variable = [ 'HomogeneousSphere' ]
+
+    allocate ( LMFT % Source )
+    associate ( SA => LMFT % Source )
+    call SA % Initialize &
+           ( A, 'Source', nEquations, &
+             VariableOption = Variable, &
+             WriteOption = .true. )
+
+    allocate ( LMFT % Reference )
+    associate ( RA => LMFT % Reference )
+    call RA % Initialize &
+           ( A, 'Reference', nEquations, &
+             VariableOption = Variable, &
+             WriteOption = .true. )
+
+    RadiusDensity = C % MaxCoordinate ( 1 ) / 10.0_KDR
+    call PROGRAM_HEADER % GetParameter ( RadiusDensity, 'RadiusDensity' )
+
+    Density = 1.0_KDR
+    call PROGRAM_HEADER % GetParameter ( Density, 'Density' )
+
+    call SetHomogeneousSphere &
+           ( SA, RA, A, Density, RadiusDensity, iVariable = 1 )
+
+    end associate !-- RA
+    end associate !-- SA
+
+
+    !-- Compute moments
+
+    call L % ComputeMoments ( LMFT % Source )
+
+
     !-- Cleanup
 
     end associate !-- L
     end select !-- C
     end associate !-- A
 
-    nullify ( G )!, Source, SolidHarmonics_RC, SolidHarmonics_IC, &
-!              SolidHarmonics_RS, SolidHarmonics_IS, Solution )
-
+    nullify ( G )
 
   end subroutine Initialize
 
@@ -193,8 +236,10 @@ contains
     type ( LaplacianMultipole_ASC__Form_Test_Form ) :: &
       LMFT
 
-   if ( allocated ( LMFT % Laplacian ) ) &
+    if ( allocated ( LMFT % Laplacian ) ) &
       deallocate ( LMFT % Laplacian )
+    if ( allocated ( LMFT % Source ) ) &
+      deallocate ( LMFT % Source )
     if ( allocated ( LMFT % AtlasAngular ) ) &
       deallocate ( LMFT % AtlasAngular )
     if ( allocated ( LMFT % Atlas ) ) &

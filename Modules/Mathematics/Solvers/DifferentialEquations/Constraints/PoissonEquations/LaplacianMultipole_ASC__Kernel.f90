@@ -33,14 +33,17 @@ contains
       !$OMP& reduction ( + : MyM )
       do iE  =  1, nE
         do iAM  =  1, nAM
-          do iR  =  oC ( 1 )  +  1,  oC ( 1 )  +  nC ( 1 )
-            do iP  =  oC ( 3 )  +  1,  oC ( 3 )  +  nC ( 3 )
-              do iT  =  oC ( 2 )  +  1,  oC ( 2 )  +  nC ( 2 )
+          do iR  =  1,  nC ( 1 )
+            do iP  =  1,  nC ( 3 )
+              do iT  =  1,  nC ( 2 )
 
-                MyM ( oR - oC ( 1 ) + iR, iAM, iE )  &
-                  =  MyM ( oR - oC ( 1 ) + iR, iAM, iE )  &
+                MyM ( oR + iR, iAM, iE )  &
+                  =  MyM ( oR + iR, iAM, iE )  &
                      +  dSA ( iT, iP )  * AF ( iT, iP, iAM )  &
-                        *  S ( iR, iT, iP, iE )
+                        *  S ( oC ( 1 )  +  iR, &
+                               oC ( 2 )  +  iT, &
+                               oC ( 3 )  +  iP, &
+                               iE )
 
               end do !-- iT
             end do !-- iP
