@@ -12,13 +12,13 @@ module LaplacianMultipole_ASC__Form
   type, public, extends ( LaplacianMultipoleTemplate ) :: &
     LaplacianMultipole_ASC_Form
       real ( KDR ), dimension ( :, : ), pointer :: &
-        SolidAngle => null ( )
+        dSolidAngle => null ( )
       real ( KDR ), dimension ( :, :, : ), pointer :: &
         AngularFunction => null ( )
       real ( KDR ), dimension ( :, :, :, : ), pointer :: &
         Source => null ( )
       type ( StorageForm ), allocatable :: &
-        SolidAngles, &
+        dSolidAngles, &
         AngularFunctions
       class ( ChartTemplate ), pointer :: &
         Chart => null ( )
@@ -43,12 +43,12 @@ module LaplacianMultipole_ASC__Form
     interface
 
       module subroutine ComputeMomentsLocal_CSL_S_Kernel &
-                          ( MyM, S, AF, dSA, nC, oC, nE, nAM, oR, &
+                          ( MySM, S, AF, dSA, nC, oC, nE, nAM, oR, &
                             UseDeviceOption )
         use Basics
         implicit none
         real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
-          MyM  !-- MyMoment_3D
+          MySM  !-- MyShellMoment_3D
         real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
           S  !-- Source
         real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
@@ -104,12 +104,12 @@ contains
 
     if ( allocated ( L % AngularFunctions ) ) &
       deallocate ( L % AngularFunctions )
-    if ( allocated ( L % SolidAngles ) ) &
-      deallocate ( L % SolidAngles )
+    if ( allocated ( L % dSolidAngles ) ) &
+      deallocate ( L % dSolidAngles )
 
     nullify ( L % Source )
     nullify ( L % AngularFunction )
-    nullify ( L % SolidAngle )
+    nullify ( L % dSolidAngle )
 
     call L % FinalizeTemplate ( )
 
@@ -199,11 +199,11 @@ contains
     integer ( KDI ) :: &
       nAngularCells
 
-    allocate ( L % SolidAngles )
+    allocate ( L % dSolidAngles )
     allocate ( L % AngularFunctions )
     associate &
-      ( SA  =>  L % SolidAngles, &
-        AF  =>  L % AngularFunctions )
+      ( dSA  =>  L % dSolidAngles, &
+         AF  =>  L % AngularFunctions )
 
     select type ( C => L % Chart )
     class is ( Chart_SL_Template )
@@ -212,7 +212,7 @@ contains
       case ( 'SPHERICAL' )
 
         nAngularCells  =  product ( C % nCellsBrick ( 2 : 3 ) )
-        call SA % Initialize &
+        call dSA % Initialize &
                ( [ nAngularCells, 1 ] )
         call AF % Initialize &
                ( [ nAngularCells, L % nAngularMoments ], &
@@ -220,8 +220,8 @@ contains
                  VariableOption = L % AngularFunctionName )
 
         call AssignAngularFunctionPointers &
-               ( AF % Value, SA % Value ( :, 1 ), C % nCellsBrick, &
-                 L % nAngularMoments, L % AngularFunction, L % SolidAngle )
+               ( AF % Value, dSA % Value ( :, 1 ), C % nCellsBrick, &
+                 L % nAngularMoments, L % AngularFunction, L % dSolidAngle )
 
         associate &
           ( iaB  =>  C % iaBrick, &
@@ -242,7 +242,7 @@ contains
                     oTheta  =  nGL ( 2 )  +  ( iaB ( 2 ) - 1 )  *  nCB ( 2 ), &
                       oPhi  =  nGL ( 3 )  +  ( iaB ( 3 ) - 1 )  *  nCB ( 3 ), &
                         AF  =  L % AngularFunction, &
-                        SA  =  L % SolidAngle )
+                       dSA  =  L % dSolidAngle )
         end associate !-- iaB, etc.
 
       case default
@@ -256,8 +256,8 @@ contains
 
       if ( L % UseDevice ) then
 
-        call SA % AllocateDevice ( )
-        call SA % UpdateDevice ( )
+        call dSA % AllocateDevice ( )
+        call dSA % UpdateDevice ( )
 
         call AF % AllocateDevice ( )
         call AF % UpdateDevice ( )
@@ -271,7 +271,7 @@ contains
       call PROGRAM_HEADER % Abort ( )
     end select !-- C
 
-    end associate !-- SA, etc.
+    end associate !-- dSA, etc.
 
   end subroutine SetAngularFunctions
 
@@ -322,8 +322,8 @@ contains
     select case ( trim ( C % CoordinateSystem ) )
     case ( 'SPHERICAL' )
       call ComputeMomentsLocal_CSL_S_Kernel &
-             ( L % MyMoment_3D, L % Source, L % AngularFunction, &
-               L % SolidAngle, C % nCellsBrick, C % nGhostLayers, &
+             ( L % MyShellMoment_3D, L % Source, L % AngularFunction, &
+               L % dSolidAngle, C % nCellsBrick, C % nGhostLayers, &
                L % nEquations, L % nAngularMoments, &
                oR = ( C % iaBrick ( 1 ) - 1 ) * C % nCellsBrick ( 1 ), &
                UseDeviceOption = L % UseDevice )
@@ -358,12 +358,12 @@ contains
 
 
   subroutine AssignAngularFunctionPointers &
-               ( AF_2D, SA_1D, nCB, nAM, AF_3D, SA_2D )
+               ( AF_2D, dSA_1D, nCB, nAM, AF_3D, dSA_2D )
 
     real ( KDR ), dimension ( :, : ), intent ( in ), target, contiguous :: &
       AF_2D
     real ( KDR ), dimension ( : ), intent ( in ), target :: &
-      SA_1D
+      dSA_1D
     integer ( KDI ), dimension ( 3 ), intent ( in ) :: &
       nCB  !-- nCellsBrick
     integer ( KDI ), intent ( in ) :: &
@@ -371,18 +371,18 @@ contains
     real ( KDR ), dimension ( :, :, : ), intent ( out ), pointer :: &
       AF_3D
     real ( KDR ), dimension ( :, : ), intent ( out ), pointer :: &
-      SA_2D
+      dSA_2D
 
     AF_3D ( 1 : nCB ( 2 ), 1 : nCB ( 3 ), 1 : nAM )  =>  AF_2D
 
-    SA_2D ( 1 : nCB ( 2 ), 1 : nCB ( 3 ) )  =>  SA_1D
+    dSA_2D ( 1 : nCB ( 2 ), 1 : nCB ( 3 ) )  =>  dSA_1D
 
   end subroutine AssignAngularFunctionPointers
 
 
   subroutine ComputeAngularFunctions &
                ( LM, Theta, dTheta_L, dTheta_R, Phi, dPhi_L, dPhi_R, &
-                 nTheta, L, M, nPhi, oTheta, oPhi, AF, SA )
+                 nTheta, L, M, nPhi, oTheta, oPhi, AF, dSA )
 
     class ( LaplacianMultipole_ASC_Form ), intent ( in ) :: &
       LM
@@ -400,7 +400,7 @@ contains
     real ( KDR ), dimension ( :, :, : ), intent ( out ) :: &
       AF
     real ( KDR ), dimension ( :, : ), intent ( out ) :: &
-      SA
+      dSA
 
     integer ( KDI ) :: &
       iL, &
@@ -422,10 +422,10 @@ contains
       if ( nPhi > 1 ) then
         do iPhi  =  1, nPhi
           dPh  =  dPhi_L ( iPhi )  +  dPhi_R ( iPhi )
-          SA ( iTheta, iPhi )  =  dPh * ( cos ( Th_I ) - cos ( Th_O ) )
+          dSA ( iTheta, iPhi )  =  dPh * ( cos ( Th_I ) - cos ( Th_O ) )
         end do !-- iPhi
       else  !-- axisymmetry
-        SA ( iTheta, 1 )  =  2.0_KDR * Pi *  ( cos ( Th_I ) - cos ( Th_O ) )
+        dSA ( iTheta, 1 )  =  2.0_KDR * Pi *  ( cos ( Th_I ) - cos ( Th_O ) )
       end if  !-- nPhi > 1
     end do !-- iTheta
 

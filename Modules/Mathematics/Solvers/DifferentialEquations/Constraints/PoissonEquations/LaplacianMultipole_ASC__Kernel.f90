@@ -30,15 +30,15 @@ contains
 
       !$OMP  parallel do collapse ( 5 ) &
       !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iT, iP, iR, iAM, iE ) &
-      !$OMP& reduction ( + : MyM )
+      !$OMP& reduction ( + : MySM )
       do iE  =  1, nE
         do iAM  =  1, nAM
           do iR  =  1,  nC ( 1 )
             do iP  =  1,  nC ( 3 )
               do iT  =  1,  nC ( 2 )
 
-                MyM ( oR + iR, iAM, iE )  &
-                  =  MyM ( oR + iR, iAM, iE )  &
+                MySM ( oR + iR, iAM, iE )  &
+                  =  MySM ( oR + iR, iAM, iE )  &
                      +  dSA ( iT, iP )  * AF ( iT, iP, iAM )  &
                         *  S ( oC ( 1 )  +  iR, &
                                oC ( 2 )  +  iT, &
