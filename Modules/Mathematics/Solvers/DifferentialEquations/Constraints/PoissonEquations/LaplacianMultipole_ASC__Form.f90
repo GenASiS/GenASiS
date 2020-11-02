@@ -32,17 +32,17 @@ module LaplacianMultipole_ASC__Form
     procedure, private, pass :: &
       SetAngularFunctions
     procedure, private, pass :: &
-      ComputeMomentsLocal
+      ComputeAngularMomentsLocal
   end type LaplacianMultipole_ASC_Form
 
 
     private :: &
-      ComputeMomentsLocal_CSL_S_Kernel
+      ComputeAngularMomentsLocal_CSL_S_Kernel
 
 
     interface
 
-      module subroutine ComputeMomentsLocal_CSL_S_Kernel &
+      module subroutine ComputeAngularMomentsLocal_CSL_S_Kernel &
                           ( MySM, S, AF, dSA, nC, oC, nE, nAM, oR, &
                             UseDeviceOption )
         use Basics
@@ -63,7 +63,7 @@ module LaplacianMultipole_ASC__Form
           oR      !-- oRadius
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
-      end subroutine ComputeMomentsLocal_CSL_S_Kernel
+      end subroutine ComputeAngularMomentsLocal_CSL_S_Kernel
 
     end interface
 
@@ -276,7 +276,7 @@ contains
   end subroutine SetAngularFunctions
 
 
-  subroutine ComputeMomentsLocal ( L, Source )
+  subroutine ComputeAngularMomentsLocal ( L, Source )
 
       class ( LaplacianMultipole_ASC_Form ), intent ( inout ) :: &
         L
@@ -300,7 +300,7 @@ contains
     if ( nV /= L % nEquations ) then
       call Show ( 'Wrong number of variables in Solution', CONSOLE % ERROR )
       call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'ComputeMomentsLocal', 'subroutine', &
+      call Show ( 'ComputeAngularMomentsLocal', 'subroutine', &
                   CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end if
@@ -308,7 +308,7 @@ contains
     if ( iaS ( nV ) - iaS ( 1 ) + 1  /=  nV ) then
       call Show ( 'Solution variables must be contiguous', CONSOLE % ERROR )
       call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'ComputeMomentsLocal', 'subroutine', &
+      call Show ( 'ComputeAngularMomentsLocal', 'subroutine', &
                   CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end if
@@ -321,7 +321,7 @@ contains
 
     select case ( trim ( C % CoordinateSystem ) )
     case ( 'SPHERICAL' )
-      call ComputeMomentsLocal_CSL_S_Kernel &
+      call ComputeAngularMomentsLocal_CSL_S_Kernel &
              ( L % MyShellMoment_3D, L % Source, L % AngularFunction, &
                L % dSolidAngle, C % nCellsBrick, C % nGhostLayers, &
                L % nEquations, L % nAngularMoments, &
@@ -339,7 +339,7 @@ contains
     class default
       call Show ( 'Source type not supported', CONSOLE % ERROR )
       call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'ComputeMomentsLocal', 'subroutine', &
+      call Show ( 'ComputeAngularMomentsLocal', 'subroutine', &
                   CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- Source
@@ -347,14 +347,14 @@ contains
     class default
       call Show ( 'Chart type not supported', CONSOLE % ERROR )
       call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'ComputeMomentsLocal', 'subroutine', &
+      call Show ( 'ComputeAngularMomentsLocal', 'subroutine', &
                   CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- C
 
     nullify ( Source_S )
 
-  end subroutine ComputeMomentsLocal
+  end subroutine ComputeAngularMomentsLocal
 
 
   subroutine AssignAngularFunctionPointers &

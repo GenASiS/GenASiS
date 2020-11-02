@@ -37,7 +37,7 @@ module LaplacianMultipole_Template
       MyShellMoments, &
         ShellMoments
     type ( CollectiveOperation_R_Form ), allocatable :: &
-      ReductionMoments
+      CO_AngularMoments
   contains
     procedure, public, pass :: &
       InitializeTemplate
@@ -55,8 +55,8 @@ module LaplacianMultipole_Template
       SetAngularFunctions
     procedure, private, pass :: &
       AllocateMoments
-    procedure ( CML ), private, pass, deferred :: &
-      ComputeMomentsLocal
+    procedure ( CAML ), private, pass, deferred :: &
+      ComputeAngularMomentsLocal
     procedure, public, nopass :: &
       AssociatedLegendre
   end type LaplacianMultipoleTemplate
@@ -81,7 +81,7 @@ module LaplacianMultipole_Template
         L
     end subroutine SAF
 
-    subroutine CML ( L, Source )
+    subroutine CAML ( L, Source )
       use Manifolds
       import LaplacianMultipoleTemplate
       implicit none
@@ -89,7 +89,7 @@ module LaplacianMultipole_Template
         L
       class ( FieldAtlasTemplate ), intent ( in ) :: &
         Source
-    end subroutine CML
+    end subroutine CAML
 
   end interface
 
@@ -184,12 +184,12 @@ contains
     if ( associated ( Timer_CM ) ) call Timer_CM % Stop ( )
 
     if ( associated ( Timer_LM ) ) call Timer_LM % Start ( )
-    call L % ComputeMomentsLocal ( Source )
+    call L % ComputeAngularMomentsLocal ( Source )
     if ( associated ( Timer_LM ) ) call Timer_LM % Stop ( )
 
     if ( associated ( Timer_RM ) ) call Timer_RM % Start ( )
     if ( .not. L % ReductionUseDevice ) call MySM % UpdateHost ( ) 
-    call L % ReductionMoments % Reduce ( REDUCTION % SUM )
+    call L % CO_AngularMoments % Reduce ( REDUCTION % SUM )
     if ( .not. L % ReductionUseDevice ) call SM % UpdateDevice ( ) 
     if ( associated ( Timer_RM ) ) call Timer_RM % Stop ( )
 
@@ -212,8 +212,8 @@ contains
     class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
       L
 
-    if ( allocated ( L % ReductionMoments ) ) &
-      deallocate ( L % ReductionMoments )
+    if ( allocated ( L % CO_AngularMoments ) ) &
+      deallocate ( L % CO_AngularMoments )
 
     if ( allocated ( L % ShellMoments ) ) &
       deallocate ( L % ShellMoments )
@@ -476,17 +476,17 @@ contains
       ShellMoment_1D ( 1 : size (   SM_Value ) )  =>    SM_Value
     MyShellMoment_1D ( 1 : size ( MySM_Value ) )  =>  MySM_Value
 
-    if ( allocated ( L % ReductionMoments ) ) &
-      deallocate ( L % ReductionMoments )
-    allocate ( L % ReductionMoments )
+    if ( allocated ( L % CO_AngularMoments ) ) &
+      deallocate ( L % CO_AngularMoments )
+    allocate ( L % CO_AngularMoments )
     associate &
-      (  RM  =>  L % ReductionMoments, &
+      (  CO  =>  L % CO_AngularMoments, &
         PHC  =>  PROGRAM_HEADER % Communicator )
-      call RM % Initialize &
+      call CO % Initialize &
              ( PHC, OutgoingValue = MyShellMoment_1D, &
                IncomingValue = ShellMoment_1D )
       if ( L % ReductionUseDevice ) &
-        call RM % AllocateDevice ( )
+        call CO % AllocateDevice ( )
     end associate !-- RM, etc.
 
     nullify ( ShellMoment_1D, MyShellMoment_1D )

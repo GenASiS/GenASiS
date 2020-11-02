@@ -9,9 +9,9 @@ submodule ( LaplacianMultipole_ASC__Form ) LaplacianMultipole_ASC__Kernel
 contains
 
 
-  module procedure ComputeMomentsLocal_CSL_S_Kernel
+  module procedure ComputeAngularMomentsLocal_CSL_S_Kernel
 
-    !-- ComputeMomentsLocal_ChartSingleLevel_Spherical_Kernel
+    !-- ComputeAngularMomentsLocal_ChartSingleLevel_Spherical_Kernel
 
     integer ( KDI ) :: &
       iR, iT, iP, &  !-- iRadius, iTheta, iPhi
@@ -54,7 +54,7 @@ contains
 
     end if  !-- UseDevice
 
-  end procedure ComputeMomentsLocal_CSL_S_Kernel
+  end procedure ComputeAngularMomentsLocal_CSL_S_Kernel
 
 
 end submodule LaplacianMultipole_ASC__Kernel
