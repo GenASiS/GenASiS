@@ -24,8 +24,8 @@ module LaplacianMultipole_Template
       UseDevice = .false., &
       ReductionUseDevice = .false.
     real ( KDR ), dimension ( :, :, : ), pointer :: &
-        ShellMoment_3D => null ( ), &
-      MyShellMoment_3D => null ( )
+      MyShellMoment_3D => null ( ), &
+        ShellMoment_3D => null ( )
     character ( LDF ) :: &
       Type = '', &
       Name = ''
@@ -33,9 +33,9 @@ module LaplacianMultipole_Template
       AngularFunctionName, &
       ShellMomentName
     type ( StorageForm ), allocatable :: &
-        ShellMoments, &
+      RadialEdges, &
       MyShellMoments, &
-      RadialEdges
+        ShellMoments
     type ( CollectiveOperation_R_Form ), allocatable :: &
       ReductionMoments
   contains
@@ -187,11 +187,11 @@ contains
     call L % ComputeMomentsLocal ( Source )
     if ( associated ( Timer_LM ) ) call Timer_LM % Stop ( )
 
-    ! if ( associated ( Timer_RM ) ) call Timer_RM % Start ( )
-    ! if ( .not. L % ReductionUseDevice ) call MyM % UpdateHost ( ) 
-    ! call L % ReductionMoments % Reduce ( REDUCTION % SUM )
-    ! if ( .not. L % ReductionUseDevice ) call M % UpdateDevice ( ) 
-    ! if ( associated ( Timer_RM ) ) call Timer_RM % Stop ( )
+    if ( associated ( Timer_RM ) ) call Timer_RM % Start ( )
+    if ( .not. L % ReductionUseDevice ) call MySM % UpdateHost ( ) 
+    call L % ReductionMoments % Reduce ( REDUCTION % SUM )
+    if ( .not. L % ReductionUseDevice ) call SM % UpdateDevice ( ) 
+    if ( associated ( Timer_RM ) ) call Timer_RM % Stop ( )
 
     ! if ( associated ( Timer_AM ) ) call Timer_AM % Start ( )
     !   call AddMomentShellsKernel &
@@ -215,15 +215,15 @@ contains
     if ( allocated ( L % ReductionMoments ) ) &
       deallocate ( L % ReductionMoments )
 
-    if ( allocated ( L % RadialEdges ) ) &
-      deallocate ( L % RadialEdges )
-    if ( allocated ( L % MyShellMoments ) ) &
-      deallocate ( L % MyShellMoments )
     if ( allocated ( L % ShellMoments ) ) &
       deallocate ( L % ShellMoments )
+    if ( allocated ( L % MyShellMoments ) ) &
+      deallocate ( L % MyShellMoments )
+    if ( allocated ( L % RadialEdges ) ) &
+      deallocate ( L % RadialEdges )
 
-    nullify ( L % MyShellMoment_3D )
     nullify ( L % ShellMoment_3D )
+    nullify ( L % MyShellMoment_3D )
 
     if ( allocated ( L % ShellMomentName ) ) &
       deallocate ( L % ShellMomentName )
