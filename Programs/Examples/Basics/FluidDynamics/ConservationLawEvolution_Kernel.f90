@@ -29,7 +29,7 @@ contains
     
     MaxSpeed = - huge ( 1.0_KDR )
 
-    !$OMP  OMP_TARGET_DIRECTIVE parallel do simd collapse ( 3 ) &
+    !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
     !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV, jV, kV ) &
     !$OMP& reduction ( max : MaxSpeed )
     do kV = lV ( 3 ) , uV ( 3 )
@@ -42,7 +42,7 @@ contains
         end do
       end do
     end do
-    !$OMP  end OMP_TARGET_DIRECTIVE parallel do simd
+    !$OMP  end OMP_TARGET_DIRECTIVE parallel do
     
     TimeStepLocal = minval ( CellWidth ( 1 : nDimensions ) ) / MaxSpeed
 
