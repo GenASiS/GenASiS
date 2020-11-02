@@ -16,7 +16,7 @@ DEVICE_COMPILE       = nvcc -c
 DEVICE_DEBUG         = -g
 DEVICE_OPTIMIZE      = -O3
 
-LINK = mpifort
+LINK = mpifort -fopenmp
 
 # Define default switches for this compiler. These can be overwritten at
 # build time with, e.g., 'make ENABLE_OMP_OFFLOAD=0 <target>'
@@ -47,10 +47,6 @@ ifeq ($(ENABLE_OMP), 1)
   DEFINES += -fopenmp
 else
   ENABLE_OMP_OFFLOAD = 0
-endif
-
-ifeq ($(ENABLE_OMP_OFFLOAD), 1)
-  DEFINES = -fopenmp -foffload=nvptx-none="-lm -lgfortran" -DENABLE_OMP_OFFLOAD
 endif
 
 ifeq ($(ENABLE_OMP_OFFLOAD), 1)

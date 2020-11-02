@@ -16,7 +16,7 @@ DEVICE_COMPILE       = nvcc -c
 DEVICE_DEBUG         = -g
 DEVICE_OPTIMIZE      = -O3
 
-LINK = mpifort
+LINK = mpifort -qsmp=omp
 
 # Define default switches for this compiler. These can be overwritten at
 # build time with, e.g., 'make ENABLE_OMP_OFFLOAD=0 <target>'
