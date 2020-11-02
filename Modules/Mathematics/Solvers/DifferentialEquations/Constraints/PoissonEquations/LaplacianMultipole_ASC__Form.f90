@@ -30,7 +30,7 @@ module LaplacianMultipole_ASC__Form
     procedure, private, pass :: &
       SetParametersAtlas
     procedure, private, pass :: &
-      SetAngularFunctions
+      SetKernelFunctions
     procedure, private, pass :: &
       ComputeAngularMomentsLocal
   end type LaplacianMultipole_ASC_Form
@@ -43,12 +43,12 @@ module LaplacianMultipole_ASC__Form
     interface
 
       module subroutine ComputeAngularMomentsLocal_CSL_S_Kernel &
-                          ( MySM, S, AF, dSA, nC, oC, nE, nAM, oR, &
+                          ( MyAM, S, AF, dSA, nC, oC, nE, nAM, oR, &
                             UseDeviceOption )
         use Basics
         implicit none
         real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
-          MySM  !-- MyShellMoment_3D
+          MyAM  !-- MyAngularMoment_3D
         real ( KDR ), dimension ( :, :, :, : ), intent ( in ) :: &
           S  !-- Source
         real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
@@ -71,6 +71,7 @@ module LaplacianMultipole_ASC__Form
     private :: &
       AssignAngularFunctionPointers, &
       ComputeAngularFunctions, &
+      ComputeRadialFunctions, &
       AssignSourcePointer
 
 
@@ -157,20 +158,6 @@ contains
 
       L % nRadialCells  =  C % nCells ( 1 )
 
-      allocate ( L % RadialEdges )
-      associate &
-        (  RE  =>  L % RadialEdges, &
-          nRC  =>  L % nRadialCells )
-
-      call RE % Initialize ( [ nRC + 1, 1 ] )
-      call RE % AllocateDevice ( )
-
-      !--- Note indexing of Edge value begins at -1 with ghost cells
-      RE % Value ( :, 1 )  =  C % Edge ( 1 ) % Value ( 1 : nRC + 1 )
-      call RE % UpdateDevice ( )
-
-      end associate !-- RE, etc. 
-
     case default
       call Show ( 'CoordinateSystem not supported', CONSOLE % ERROR )
       call Show ( C % CoordinateSystem, 'CoordinateSystem', CONSOLE % ERROR )
@@ -191,7 +178,7 @@ contains
   end subroutine SetParametersAtlas
 
 
-  subroutine SetAngularFunctions ( L )
+  subroutine SetKernelFunctions ( L )
 
     class ( LaplacianMultipole_ASC_Form ), intent ( inout ) :: &
       L
@@ -201,9 +188,15 @@ contains
 
     allocate ( L % dSolidAngles )
     allocate ( L % AngularFunctions )
+    allocate ( L % d_Radius_3_3 )
+    allocate ( L % RadialFunctions_R )
+    allocate ( L % RadialFunctions_I )
     associate &
-      ( dSA  =>  L % dSolidAngles, &
-         AF  =>  L % AngularFunctions )
+      (  dSA  =>  L % dSolidAngles, &
+          AF  =>  L % AngularFunctions, &
+        dR33  =>  L % d_Radius_3_3, &
+        RF_R  =>  L % RadialFunctions_R, &
+        RF_I  =>  L % RadialFunctions_I )
 
     select type ( C => L % Chart )
     class is ( Chart_SL_Template )
@@ -219,6 +212,10 @@ contains
                  NameOption = 'AngularFunctions', &
                  VariableOption = L % AngularFunctionName )
 
+        call dR33 % Initialize ( [ L % nRadialCells, 1 ] )
+        call RF_R % Initialize ( [ L % nRadialCells, L % nAngularMoments ] )
+        call RF_I % Initialize ( [ L % nRadialCells, L % nAngularMoments ] )
+
         call AssignAngularFunctionPointers &
                ( AF % Value, dSA % Value ( :, 1 ), C % nCellsBrick, &
                  L % nAngularMoments, L % AngularFunction, L % dSolidAngle )
@@ -227,6 +224,7 @@ contains
           ( iaB  =>  C % iaBrick, &
             nCB  =>  C % nCellsBrick, &
             nGL  =>  C % nGhostLayers )
+
         call ComputeAngularFunctions &
                (        LM  =  L, &
                      Theta  =  C % Center ( 2 ) % Value, &
@@ -243,37 +241,56 @@ contains
                       oPhi  =  nGL ( 3 )  +  ( iaB ( 3 ) - 1 )  *  nCB ( 3 ), &
                         AF  =  L % AngularFunction, &
                        dSA  =  L % dSolidAngle )
+
+        call ComputeRadialFunctions &
+                (    R  =  C % Center ( 1 ) % Value, &
+                  dR_L  =  C % WidthLeft ( 1 ) % Value, &
+                  dR_R  =  C % WidthRight ( 1 ) % Value, &
+                     L  =  L % MaxDegree, &
+                     M  =  L % MaxOrder, &
+                    nR  =  L % nRadialCells, &
+                    oR  =  nGL ( 1 ), &
+                  dR33  =  L % d_Radius_3_3 % Value, &
+                  RF_R  =  L % RadialFunctions_R % Value, &
+                  RF_I  =  L % RadialFunctions_I % Value )
+
         end associate !-- iaB, etc.
 
       case default
         call Show ( 'Coordinate system not supported', CONSOLE % ERROR )
         call Show ( C % CoordinateSystem, 'CoordinateSystem', CONSOLE % ERROR )
         call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
-        call Show ( 'SetAngularFunctions', 'subroutine', &
+        call Show ( 'SetKernelFunctions', 'subroutine', &
                     CONSOLE % ERROR )
         call PROGRAM_HEADER % Abort ( )
       end select
 
       if ( L % UseDevice ) then
 
-        call dSA % AllocateDevice ( )
-        call dSA % UpdateDevice ( )
+        call  dSA % AllocateDevice ( )
+        call   AF % AllocateDevice ( )
+        call dR33 % AllocateDevice ( )
+        call RF_R % AllocateDevice ( )
+        call RF_I % AllocateDevice ( )
 
-        call AF % AllocateDevice ( )
-        call AF % UpdateDevice ( )
+        call  dSA % UpdateDevice ( )
+        call   AF % UpdateDevice ( )
+        call dR33 % UpdateDevice ( )
+        call RF_R % UpdateDevice ( )
+        call RF_I % UpdateDevice ( )
 
       end if
 
     class default
       call Show ( 'Chart type not supported', CONSOLE % ERROR )
       call Show ( 'LaplacianMultipole_ASC__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'SetAngularFunctions', 'subroutine', CONSOLE % ERROR )
+      call Show ( 'SetKernelFunctions', 'subroutine', CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- C
 
     end associate !-- dSA, etc.
 
-  end subroutine SetAngularFunctions
+  end subroutine SetKernelFunctions
 
 
   subroutine ComputeAngularMomentsLocal ( L, Source )
@@ -322,7 +339,7 @@ contains
     select case ( trim ( C % CoordinateSystem ) )
     case ( 'SPHERICAL' )
       call ComputeAngularMomentsLocal_CSL_S_Kernel &
-             ( L % MyShellMoment_3D, L % Source, L % AngularFunction, &
+             ( L % MyAngularMoment_3D, L % Source, L % AngularFunction, &
                L % dSolidAngle, C % nCellsBrick, C % nGhostLayers, &
                L % nEquations, L % nAngularMoments, &
                oR = ( C % iaBrick ( 1 ) - 1 ) * C % nCellsBrick ( 1 ), &
@@ -449,6 +466,51 @@ contains
     end do !-- iM
 
   end subroutine ComputeAngularFunctions
+
+
+  subroutine ComputeRadialFunctions &
+               ( R, dR_L, dR_R, L, M, nR, oR, dR33, RF_R, RF_I )
+
+    real ( KDR ), dimension ( -oR + 1 : ), intent ( in ) :: &
+      R, &
+      dR_L, dR_R
+    integer ( KDI ), intent ( in ) :: &
+      L, &   !-- MaxDegree
+      M, &   !-- MaxOrder
+      nR, &  !-- nRadial
+      oR     !-- oRadial
+    real ( KDR ), dimension ( :, : ), intent ( out ) :: &
+      dR33, &
+      RF_R, RF_I  !-- RadialFunction_Regular, _Irregular
+
+    integer ( KDI ) :: &
+      iL, &
+      iM, &
+      iA, &
+      iR  !-- iRadial
+    real ( KDR ) :: &
+      R_I, R_O
+
+    do iR  =  1, nR
+      R_I  =  R ( iR )  -  dR_L ( iR )
+      R_O  =  R ( iR )  +  dR_R ( iR )
+      dR33 ( iR, 1 )  =  ( R_O ** 3  -  R_I ** 3 )  /  3.0_KDR
+    end do !-- nRC
+
+    iA  =  1
+    do iM  =  0, M
+      do iL  =  iM, L
+        do iR  =  1, nR
+          RF_R ( iR, iA     )  =  R ( iR ) ** iL
+          RF_R ( iR, iA + 1 )  =  R ( iR ) ** iL
+          RF_I ( iR, iA     )  =  R ( iR ) ** ( - ( iL + 1 ) )
+          RF_I ( iR, iA + 1 )  =  R ( iR ) ** ( - ( iL + 1 ) ) 
+        end do !-- iR
+        iA  =  iA + 2 !-- Cos, Sin
+      end do !-- iL
+    end do !-- iM
+
+  end subroutine ComputeRadialFunctions
 
 
   subroutine AssignSourcePointer ( S_2D, nC, nG, nE, S_4D )
