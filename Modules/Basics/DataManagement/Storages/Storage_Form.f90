@@ -27,7 +27,7 @@ module Storage_Form
       iaSelected, &
       lVariable, &
       lVector
-    real ( KDR ), dimension ( :, : ), pointer :: &
+    real ( KDR ), dimension ( :, : ), pointer, contiguous :: &
       Value => null (  )
     logical ( KDL ) :: &
       AllocatedValue  = .false., &
