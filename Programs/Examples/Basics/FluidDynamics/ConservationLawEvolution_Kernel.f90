@@ -28,10 +28,10 @@ contains
     end where
     
     MaxSpeed = - huge ( 1.0_KDR )
-
+    
     !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 3 ) &
     !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iV, jV, kV ) &
-    !$OMP& reduction ( max : MaxSpeed )
+    !$OMP& reduction ( max : MaxSpeed ) MAP_MAXSPEED
     do kV = lV ( 3 ) , uV ( 3 )
       do jV = lV ( 2 ), uV ( 2 )    
         do iV = lV ( 1 ), uV ( 1 )

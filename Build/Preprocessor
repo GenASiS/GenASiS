@@ -16,3 +16,11 @@
 #define simd
 #define SIMD 
 #endif
+
+#define MAP_MAXSPEED
+#ifdef ENABLE_OMP_OFFLOAD
+#ifdef Cray_CCE
+#define MAP_MAXSPEED map ( tofrom: MaxSpeed )
+#endif
+#else
+#endif
