@@ -52,8 +52,8 @@ clean: clean_ThirdParty
 	rm -f *.o *.a *.mod *.smod *.ld
 
 clobber: clean
-	rm -f WoosleyHeger_07_*
-	rm -f GreyDegeneracySolver_Test_*
+	find . -type f -executable -name 'WoosleyHeger_07_*' -exec rm -f '{}' \;
+	find . -type f -executable -name 'GreyDegeneracySolver_Test_*' -exec rm -f '{}' \;
 
 WoosleyHeger_07__Template.o: \
   GenASiS.o \

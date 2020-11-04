@@ -31,16 +31,18 @@ Fluid_P_I__Form_Test: ThirdParty.a Basics.a Mathematics.a \
           Fluid_P__Template.o Fluid_D__Form.o FluidFeatures_Template.o \
           Mathematics.a Basics.a ThirdParty.a $(LIBRARIES)
 
-Fluid_P_HN__Form_Test: Basics.a Mathematics.a \
-  Fluid_P_HN__Form_Test.o
+Fluid_P_HN__Form_Test: ThirdParty.a Basics.a Mathematics.a \
+  FluidFeatures_P__Kernel.o Fluid_D__Kernel.o Fluid_P__Kernel.o \
+  Fluid_P_HN__Kernel.o EOS_P_HN_OConnorOtt__Kernel.o Fluid_P_HN__Form_Test.o
 	$(LINK) $(FLAGS) \
           -o Fluid_P_HN__Form_Test_$(MACHINE) \
           Fluid_P_HN__Form_Test.o Fluid_P_HN__Form.o FluidFeatures_P__Form.o \
           Fluid_P__Template.o Fluid_D__Form.o FluidFeatures_Template.o \
           Fluid_P_HN__Kernel.o Fluid_P__Kernel.o Fluid_D__Kernel.o \
-          FluidFeatures_P__Kernel.o EOS_P_HN_OConnorOtt__Form.o \
-          EOS_P_HN_OConnorOtt__Kernel.o Spaces.a StressEnergyUnits_Form.o \
-          Mathematics.a Basics.a $(LIBRARIES)
+          FluidFeatures_P__Kernel.o \
+          Spaces.a StressEnergyUnits_Form.o \
+          EOS_P_HN_OConnorOtt__Form.o EOS_P_HN_OConnorOtt__Kernel.o \
+          ThirdParty.a Mathematics.a Basics.a $(LIBRARIES)
 
 Tally_F_D__Form_Test: ThirdParty.a Basics.a Mathematics.a Spaces.a \
   Tally_F_D__Form_Test.o

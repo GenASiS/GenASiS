@@ -49,7 +49,7 @@ contains
       G
     class ( Fluid_P_HN_Form ), pointer :: &
       F
-
+    
     call Show ( 'Setting initial conditions' )
 
     call PrepareInterpolation ( SI )
@@ -59,7 +59,7 @@ contains
 
     select type ( FA => I % Current_ASC )
     class is ( Fluid_ASC_Form )
-    F => FA % Fluid_P_HN ( )
+    F     => FA % Fluid_P_HN ( )
 
     select type ( PS => WH % Integrator % PositionSpace )
     class is ( Atlas_SC_Form )
@@ -97,10 +97,6 @@ contains
     V_2 = 0.0_KDR
     V_3 = 0.0_KDR
 
-    call PSC % ExchangeGhostData ( F )
-    
-    call F % UpdateDevice ( )
-
     do iD = 1, PS % nDimensions
       associate &
         ( iaI => PS % Connectivity % iaInner ( iD ), &
@@ -109,15 +105,6 @@ contains
       call PS % ApplyBoundaryConditions ( F, iD, iaO )
       end associate !-- iaI, etc.
     end do !-- iD
-    
-    call Show ( T ( 1 : 10 ), 'Temperature Before' )
-    
-    call F % ComputeFromTemperature ( F, G, G )
-    
-    call F % UpdateHost ( )
-    
-    call Show ( E ( 1 : 10 ), 'Internal Energy' )
-    call Show ( T ( 1 : 10 ), 'Temperature After' )
     
     end associate !-- N, etc.
     end select !-- PSC

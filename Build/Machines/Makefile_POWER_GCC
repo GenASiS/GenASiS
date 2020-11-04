@@ -22,7 +22,7 @@ LINK = mpifort -fopenmp
 # build time with, e.g., 'make ENABLE_OMP_OFFLOAD=0 <target>'
 ENABLE_OMP          ?= 1
 ENABLE_OMP_OFFLOAD  ?= 0
-USE_ISO_10646       ?= 1
+USE_ISO_10646       ?= 0
 
 #-- Silo library include and link line flag and location
 SILO_DIR = /sw/peak/caascade/silo/4.10.2/gcc8.1.0
@@ -34,7 +34,7 @@ INCLUDE_HDF5 = -I${OLCF_HDF5_ROOT}/include
 LIBRARY_HDF5 = -L${OLCF_HDF5_ROOT}/lib -lhdf5_fortran -lhdf5
 
 #-- LAPACK library link line flag and location
-LIBRARY_LAPACK = #-L${OLCF_NETLIB_LAPACK_ROOT}/lib -llapack -lblas
+LIBRARY_LAPACK = -L${OLCF_NETLIB_LAPACK_ROOT}/lib -llapack -lblas
 
 ifeq ($(ENABLE_OMP_OFFLOAD), 1)
 INCLUDE_DEVICE = -I${OLCF_CUDA_ROOT}/include
