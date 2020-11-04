@@ -578,7 +578,9 @@ contains
              VectorOption = [ 'Velocity                       ' ], &
              VectorIndicesOption = VectorIndices )
 
-    call PF % DistributedMesh % SetImage ( PF % Output, PROGRAM_HEADER % Name )
+    call PF % DistributedMesh % SetImage &
+           ( Output = PF % Output, Checkpoint = PF % Checkpoint, &
+             Name = PROGRAM_HEADER % Name )
 
   end subroutine SetOutputPolytropic
 

@@ -54,12 +54,15 @@ module DistributedMesh_Form
     type ( MessageOutgoing_1D_R_Form ), allocatable :: &
       OutgoingPrevious, &
       OutgoingNext
-    type ( GridImageStreamForm ) :: &
-      GridImageStream
-    type ( CurveImageForm ) :: &
-      CurveImage
-    type ( StructuredGridImageForm ) :: &
-      GridImage
+    type ( GridImageStreamForm ), private :: &
+      GridImageStream, &
+      CheckpointStream
+    type ( CurveImageForm ), private :: &
+      CurveImage, &
+      CheckpointCurveImage
+    type ( StructuredGridImageForm ), private :: &
+      GridImage, &
+      CheckpointGridImage
   contains
     procedure, public, pass :: &
       Initialize
@@ -79,6 +82,8 @@ module DistributedMesh_Form
       SetImage
     procedure, public, pass :: &
       Write
+    procedure, public, pass :: &
+      WriteCheckpoint
     final :: &
       Finalize
   end type DistributedMeshForm
@@ -403,12 +408,13 @@ contains
   end subroutine FinishGhostExchange
 
 
-  subroutine SetImage ( DM, S, Name )
+  subroutine SetImage ( DM, Output, Checkpoint, Name )
 
     class ( DistributedMeshForm ), intent ( inout ) :: &
       DM
     class ( StorageForm ), dimension ( : ), intent ( in ) :: &
-      S
+      Output, &
+      Checkpoint
     character ( * ), intent ( in ) :: &
       Name
 
@@ -426,18 +432,35 @@ contains
     character ( LDF ) :: &
       OutputDirectory
 
-    OutputDirectory = '../Output/'
-    call PROGRAM_HEADER % GetParameter ( OutputDirectory, 'OutputDirectory' )
-    
-    call PROGRAM_HEADER % AddTimer ( 'InputOutput', DM % iTimer_IO, Level = 1 )
+    call PROGRAM_HEADER % AddTimer &
+           ( 'InputOutput', DM % iTimer_IO, Level = 1 )
     
     call PROGRAM_HEADER % Timer ( DM % iTimer_IO ) % Start ( )
 
-    associate ( GIS => DM % GridImageStream )
+    !-- Output
+    OutputDirectory = '../Output/'
+    call PROGRAM_HEADER % GetParameter &
+          ( OutputDirectory, 'OutputDirectory' )
+    
+    associate &
+      ( GIS => DM % GridImageStream, &
+        CS => DM % CheckpointStream )
+           
     call GIS % Initialize &
            ( Name, CommunicatorOption = DM % Communicator, &
              WorkingDirectoryOption = OutputDirectory )
     call GIS % Open ( GIS % ACCESS_SET_GRID )
+
+    !-- Checkpoint
+    OutputDirectory = '../Checkpoint/'
+    call PROGRAM_HEADER % GetParameter &
+           ( OutputDirectory, 'CheckpointDirectory' )
+    
+    call CS % Initialize &
+           ( Name, CommunicatorOption = DM % Communicator, &
+             WorkingDirectoryOption = OutputDirectory )
+    call CS % Open ( CS % ACCESS_SET_GRID )
+    
 
     nGhostInner = DM % nGhostLayers
     nGhostOuter = DM % nGhostLayers
@@ -462,21 +485,37 @@ contains
     end do !-- iD
     
     select case ( DM % nDimensions )
-    case ( 1 ) 
 
+    case ( 1 ) 
+      
+      !-- Setoutput
       associate ( CI => DM % CurveImage )
       call CI % Initialize ( GIS )
       call CI % SetGrid &
              ( 'Curves', Edge ( 1 ), DM % nProperCells, &
                oValue = nGhostInner ( 1 ) + nExteriorInner ( 1 ), &
                CoordinateUnitOption = DM % CoordinateUnit ( 1 ) )
-      do iS = 1, size ( S )
-        call CI % AddStorage ( S ( iS ) )
+      do iS = 1, size ( Output )
+        call CI % AddStorage ( Output ( iS ) )
       end do
       end associate !-- CI
+      
+      !-- Checkpoint
+      associate ( CCI => DM % CheckpointCurveImage )
+      call CCI % Initialize ( CS )
+      call CCI % SetGrid &
+             ( 'Curves', Edge ( 1 ), DM % nProperCells, &
+               oValue = nGhostInner ( 1 ) + nExteriorInner ( 1 ), &
+               CoordinateUnitOption = DM % CoordinateUnit ( 1 ) )
+      do iS = 1, size ( Checkpoint )
+        call CCI % AddStorage ( Checkpoint ( iS ) )
+      end do
+      end associate !-- CI
+      
 
     case default
 
+      !-- Output
       associate ( GI => DM % GridImage )
       call GI % Initialize ( GIS ) 
       call GI % SetGrid &
@@ -484,16 +523,31 @@ contains
                nExteriorInner, nExteriorOuter, DM % nDimensions, &
                DM % nProperCells, DM % nGhostCells, &
                CoordinateUnitOption = DM % CoordinateUnit )
-      do iS = 1, size ( S )
-        call GI % AddStorage ( S ( iS ) )
+      do iS = 1, size ( Output )
+        call GI % AddStorage ( Output ( iS ) )
       end do
       end associate !-- GI
+
+      !-- Checkpoint
+      associate ( CGI => DM % CheckpointGridImage )
+      call CGI % Initialize ( CS ) 
+      call CGI % SetGrid &
+             ( 'Grid', Edge, nCells, nGhostInner, nGhostOuter, &
+               nExteriorInner, nExteriorOuter, DM % nDimensions, &
+               DM % nProperCells, DM % nGhostCells, &
+               CoordinateUnitOption = DM % CoordinateUnit )
+      do iS = 1, size ( Checkpoint )
+        call CGI % AddStorage ( Checkpoint ( iS ) )
+      end do
+      end associate !-- GI
+
 
     end select
 
     call GIS % Close ( )
+    call CS  % Close ( )
 
-    end associate !-- GIS
+    end associate !-- GIS, CS
     
     call PROGRAM_HEADER % Timer ( DM % iTimer_IO ) % Stop ( )
 
@@ -515,8 +569,8 @@ contains
     call PROGRAM_HEADER % Timer ( DM % iTimer_IO ) % Start ( )
     call Show ( 'Writing image', CONSOLE % INFO_1 )
 
+
     associate ( GIS => DM % GridImageStream )
-    
     
     call GIS % Open ( GIS % ACCESS_CREATE )
 
@@ -536,12 +590,60 @@ contains
     end select
 
     call GIS % Close ( )
+
     end associate !-- GIS
     
+
     call Show ( DM % GridImageStream % Number, 'iImage', CONSOLE % INFO_1 )
     call PROGRAM_HEADER % Timer ( DM % iTimer_IO ) % Stop ( )
     
   end subroutine Write
+
+  
+  subroutine WriteCheckpoint ( DM, TimeOption, CycleNumberOption )
+
+    class ( DistributedMeshForm ), intent ( inout ) :: &
+      DM
+    type ( MeasuredValueForm ), intent ( in ), optional :: &
+      TimeOption
+    integer ( KDI ), intent ( in ), optional :: &
+      CycleNumberOption
+      
+    integer ( KDI ) :: &
+      iS
+          
+    call PROGRAM_HEADER % Timer ( DM % iTimer_IO ) % Start ( )
+    call Show ( 'Writing checkpoint', CONSOLE % INFO_1 )
+
+
+    associate ( CS => DM % CheckpointStream )
+    
+    call CS % Open ( CS % ACCESS_CREATE )
+
+    select case ( DM % nDimensions )
+    case ( 1 ) 
+      do iS = 1, size ( DM % CheckpointCurveImage % Storage )
+        call DM % CheckpointCurveImage % Storage ( iS ) % UpdateHost ( )
+      end do
+      call DM % CheckpointCurveImage % Write &
+             ( TimeOption = TimeOption, CycleNumberOption = CycleNumberOption )
+    case default
+      do iS = 1, size ( DM % CheckpointGridImage % Storage )
+        call DM % CheckpointGridImage % Storage ( iS ) % UpdateHost ( )
+      end do
+      call DM % CheckpointGridImage % Write &
+             ( TimeOption = TimeOption, CycleNumberOption = CycleNumberOption )
+    end select
+
+    call CS % Close ( )
+
+    end associate !-- CS
+    
+
+    call Show ( DM % CheckpointStream % Number, 'iCheckpoint', CONSOLE % INFO_1 )
+    call PROGRAM_HEADER % Timer ( DM % iTimer_IO ) % Stop ( )
+    
+  end subroutine WriteCheckpoint
 
 
   subroutine Finalize ( DM )

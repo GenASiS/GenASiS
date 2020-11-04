@@ -32,12 +32,15 @@ module ConservedFields_Template
       character ( LDL ) :: &
         Type = ''
       type ( StorageForm ), dimension ( 1 ) :: &
-        Output
+        Output, &
+        Checkpoint
       type ( DistributedMeshForm ), pointer :: &
         DistributedMesh => null ( )
   contains
     procedure, public, pass :: &
       InitializeTemplate
+    procedure, public, pass :: &
+      SetOutputTemplate
     procedure ( ComputeInterface ), public, pass, deferred :: &
       ComputeConserved
     procedure ( ComputeInterface ), public, pass, deferred :: &
@@ -172,12 +175,11 @@ contains
     class ( ConservedFieldsTemplate ), intent ( inout ) :: &
       CF
 
-    call CF % Output ( 1 ) % Initialize &
-           ( CF, iaSelectedOption = CF % iaPrimitive )
-
+    call CF % Checkpoint ( 1 ) % Initialize ( CF )
+    
   end subroutine SetOutputTemplate
-
-
+  
+  
   subroutine InitializeBasics &
                ( CF, Variable, VariableUnit, VariableOption, NameOption, &
                  VariableUnitOption )
