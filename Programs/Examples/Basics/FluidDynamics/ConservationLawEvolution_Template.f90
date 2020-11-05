@@ -13,7 +13,8 @@ module ConservationLawEvolution_Template
       iCycle, &
       nRampCycles, &
       nWrite, &
-      FinishCycle
+      FinishCycle, &
+      RestartFrom
     integer ( KDI ), private :: &
       iTimerComputation, &
       iTimerTimeStep
@@ -26,7 +27,9 @@ module ConservationLawEvolution_Template
       WriteTime, &
       TimeStep
     type ( MeasuredValueForm ) :: &
-      TimeUnit
+      TimeUnit, &
+      LastCheckpoint, &
+      CheckpointInterval
     character ( LDF ) :: &
       Type = ''
     logical ( KDL ) :: &
@@ -125,7 +128,14 @@ contains
            
     CLE % NoWrite = .false.
     call PROGRAM_HEADER % GetParameter ( CLE % NoWrite, 'NoWrite' )
-           
+    
+    CLE % RestartFrom = - huge ( 1 )
+    call PROGRAM_HEADER % GetParameter ( CLE % RestartFrom, 'RestartFrom' )
+    
+    call CLE % CheckpointInterval % Initialize ( 's', 3600.0_KDR )
+    call PROGRAM_HEADER % GetParameter &
+           ( CLE % CheckpointInterval % Number, 'CheckpointInterval' )
+                      
     !-- Extensions are responsible for initializing CLE % ConservedFields
 
     !-- CLE % ConservationLawStep initialized below in CLE % Evolve
@@ -146,6 +156,11 @@ contains
     call PROGRAM_HEADER % AddTimer &
            ( 'ComputeTimeStep', &
              CLE % iTimerTimeStep, Level = 2 )
+             
+    if ( CLE % RestartFrom > 0 ) then
+    
+    
+    end if
 
     associate &
       ( DM  => CLE % DistributedMesh, &
@@ -166,7 +181,8 @@ contains
 
     call Show ( 'Evolving a Fluid', CONSOLE % INFO_1 )
     
-    call T % Start ( ) 
+    call T % Start ( )
+    CLE % LastCheckpoint = WallTime ( ) 
 
     do while ( CLE % Time < CLE % FinishTime &
                .and. CLE % iCycle < CLE % FinishCycle )
@@ -190,10 +206,11 @@ contains
 
         call T % Stop ( )
         
-        if ( .not. CLE % NoWrite ) &
+        if ( .not. CLE % NoWrite ) then
           call DM % Write &
                  ( TimeOption = CLE % Time / CLE % TimeUnit, &
                    CycleNumberOption = CLE % iCycle )
+        end if
         CLE % WriteTime &
           = min ( CLE % Time + CLE % WriteTimeInterval, CLE % FinishTime )
         
@@ -203,6 +220,22 @@ contains
         call T % Start ( )
         
       end if
+      
+      
+      checkpoint: &
+      if ( ( WallTime ( ) - CLE % LastCheckpoint ) &
+             >= CLE % CheckpointInterval ) then
+        
+        CLE % LastCheckpoint = WallTime ( )
+        if ( CLE % NoWrite ) exit checkpoint
+        
+        call T % Stop ( )
+        call DM % WriteCheckpoint &
+               ( TimeOption = CLE % Time / CLE % TimeUnit, &
+                 CycleNumberOption = CLE % iCycle )
+        call T % Start ( )
+        
+      end if checkpoint
 
     end do
     
