@@ -32,8 +32,7 @@ module ConservedFields_Template
       character ( LDL ) :: &
         Type = ''
       type ( StorageForm ), dimension ( 1 ) :: &
-        Output, &
-        Checkpoint
+        Output
       type ( DistributedMeshForm ), pointer :: &
         DistributedMesh => null ( )
   contains
@@ -175,8 +174,6 @@ contains
     class ( ConservedFieldsTemplate ), intent ( inout ) :: &
       CF
 
-    call CF % Checkpoint ( 1 ) % Initialize ( CF )
-    
   end subroutine SetOutputTemplate
   
   

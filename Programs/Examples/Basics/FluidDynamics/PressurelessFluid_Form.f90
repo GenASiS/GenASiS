@@ -565,8 +565,7 @@ contains
              VectorIndicesOption = VectorIndices )
              
     call PF % DistributedMesh % SetImage &
-         ( Output = PF % Output, Checkpoint = PF % Checkpoint, &
-           Name = PROGRAM_HEADER % Name )
+         ( Output = PF % Output, Name = PROGRAM_HEADER % Name )
 
   end subroutine SetOutputPressureless
 
