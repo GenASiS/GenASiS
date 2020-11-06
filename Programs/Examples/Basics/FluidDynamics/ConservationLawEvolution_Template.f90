@@ -149,6 +149,11 @@ contains
 
     class ( ConservationLawEvolutionTemplate ), intent ( inout ) :: &
       CLE
+    
+    type ( MeasuredValueForm ) :: &
+      StartTime
+    type ( StorageForm ), dimension ( 1 ) :: &
+      Checkpoint
       
     call PROGRAM_HEADER % AddTimer &
            ( 'Computational', &
@@ -157,16 +162,26 @@ contains
            ( 'ComputeTimeStep', &
              CLE % iTimerTimeStep, Level = 2 )
              
-    if ( CLE % RestartFrom > 0 ) then
-    
-    
-    end if
-
     associate &
       ( DM  => CLE % DistributedMesh, &
         CLS => CLE % ConservationLawStep, &
         T => PROGRAM_HEADER % Timer ( CLE % iTimerComputation ) )
+    
+    call Checkpoint ( 1 ) % Initialize ( CLE % ConservedFields )
+    !call Checkpoint ( 2 ) % Initialize &
+    !       ( [ 1, 1 ], NameOption = 'GridImageStream', &
+    !         VariableOption = [ 'Number' ] )
+    
+    call DM % SetCheckpoint ( Checkpoint, PROGRAM_HEADER % Name )
 
+    if ( CLE % RestartFrom >= 0 ) then
+      call DM % ReadCheckpoint &
+               ( iCheckpoint = CLE % RestartFrom, &
+                 TimeOption = StartTime, &
+                 CycleNumberOption = CLE % iCycle )
+      CLE % StartTime = StartTime * CLE % TimeUnit
+    end if
+    
     call CLS % Initialize ( CLE % ConservedFields )
     call CLE % ConservedFields % UpdateDevice ( )
 
