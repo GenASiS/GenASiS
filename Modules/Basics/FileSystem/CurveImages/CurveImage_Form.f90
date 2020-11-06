@@ -420,10 +420,12 @@ contains
   end subroutine Write 
   
   
-  subroutine Read ( GI, TimeOption, CycleNumberOption )
+  subroutine Read ( GI, StorageOnlyOption, TimeOption, CycleNumberOption )
   
     class ( CurveImageForm ), intent ( inout ) :: &
       GI
+    logical ( KDL ), intent ( in ), optional :: &
+      StorageOnlyOption
     type ( MeasuredValueForm ), intent ( out ), optional :: &
       TimeOption
     integer ( KDI ), intent ( out ), optional :: &

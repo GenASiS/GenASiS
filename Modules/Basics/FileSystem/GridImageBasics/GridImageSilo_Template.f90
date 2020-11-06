@@ -73,11 +73,14 @@ module GridImageSilo_Template
         CycleNumberOption
     end subroutine WriteInterface
     
-    subroutine ReadInterface ( GI, TimeOption, CycleNumberOption )
+    subroutine ReadInterface &
+                 ( GI, StorageOnlyOption, TimeOption, CycleNumberOption )
       use Specifiers
       import GridImageSiloTemplate
       class ( GridImageSiloTemplate ), intent ( inout ) :: &
         GI
+      logical ( KDL ), intent ( in ), optional :: &
+        StorageOnlyOption
       type ( MeasuredValueForm ), intent ( out ), optional :: &
         TimeOption
       integer ( KDI ), intent ( out ), optional :: &

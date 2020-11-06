@@ -403,10 +403,12 @@ contains
   end subroutine Write
   
   
-  subroutine Read ( GI, TimeOption, CycleNumberOption ) 
+  subroutine Read ( GI, StorageOnlyOption, TimeOption, CycleNumberOption )
     
     class ( StructuredGridImageForm ), intent ( inout ) :: &
       GI
+    logical ( KDL ), intent ( in ), optional :: &
+      StorageOnlyOption
     type ( MeasuredValueForm ), intent ( out ), optional :: &
       TimeOption
     integer ( KDI ), intent ( out ), optional :: &
@@ -415,11 +417,17 @@ contains
     integer ( KDI ) :: &
       iStrg, &
       nVariables 
+    logical ( KDL ) :: &
+      StorageOnly
     character ( LDL ), dimension ( : ), allocatable :: &
       StorageName, &
       VariableName
     character ( LDF ) :: &
       WorkingDirectory
+      
+    StorageOnly = .false.
+    if ( present ( StorageOnlyOption ) ) &
+      StorageOnly = StorageOnlyOption
       
     if ( .not. GI % Stream % IsReadable ( ) ) return 
     
@@ -429,40 +437,44 @@ contains
     
     call GI % ReadHeader ( TimeOption, CycleNumberOption )
     
-    call GI % ReadMesh ( )
+    if ( .not. StorageOnly ) then
     
-    !-- prepare Storage to read into
-    if ( GI % nStorages == 0 ) then
-      call GI % Stream % ListContents ( ContentTypeOption = 'Directory' )
-      GI % nStorages = size ( GI % Stream % ContentList )
-!-- FIXME: NAG 5.3.1 should support sourced allocation
-!      allocate ( StorageName, source = GI % Stream % ContentList )
-      allocate ( StorageName ( size ( GI % Stream % ContentList ) ) )
-      StorageName = GI % Stream % ContentList
-      do iStrg = 1, GI % nStorages
-        if ( len_trim ( StorageName ( iStrg ) ) > 0 ) &
-          call GI % Stream % ChangeDirectory ( StorageName ( iStrg ) )
-        call GI % Stream % ListContents &
-               ( ContentTypeOption = 'StructuredGridVariable' )
-        if ( allocated ( VariableName ) ) deallocate ( VariableName )
-!        allocate ( VariableName, source = GI % Stream % ContentList )
-        allocate ( VariableName ( size ( GI % Stream % ContentList ) ) )
-        VariableName = GI % Stream % ContentList 
-        nVariables = size ( GI % Stream % ContentList )
-        if ( nVariables == 0 ) then
-          GI % nStorages = 0
-        else
-          call GI % Storage ( iStrg ) % Initialize &
-                 ( [ product ( GI % nNodes ( 1 : GI % nDimensions ) - 1 ), &
-                     nVariables ], &
-                   VariableOption = VariableName, & 
-                   NameOption = StorageName ( iStrg ) )
-        end if
-        if ( len_trim ( StorageName ( iStrg ) ) > 0 ) &
-          call GI % Stream % ChangeDirectory ( '..' )
-      end do
-    end if
+      call GI % ReadMesh ( )
       
+      !-- prepare Storage to read into
+      if ( GI % nStorages == 0 ) then
+        call GI % Stream % ListContents ( ContentTypeOption = 'Directory' )
+        GI % nStorages = size ( GI % Stream % ContentList )
+  !-- FIXME: NAG 5.3.1 should support sourced allocation
+  !      allocate ( StorageName, source = GI % Stream % ContentList )
+        allocate ( StorageName ( size ( GI % Stream % ContentList ) ) )
+        StorageName = GI % Stream % ContentList
+        do iStrg = 1, GI % nStorages
+          if ( len_trim ( StorageName ( iStrg ) ) > 0 ) &
+            call GI % Stream % ChangeDirectory ( StorageName ( iStrg ) )
+          call GI % Stream % ListContents &
+                 ( ContentTypeOption = 'StructuredGridVariable' )
+          if ( allocated ( VariableName ) ) deallocate ( VariableName )
+  !        allocate ( VariableName, source = GI % Stream % ContentList )
+          allocate ( VariableName ( size ( GI % Stream % ContentList ) ) )
+          VariableName = GI % Stream % ContentList 
+          nVariables = size ( GI % Stream % ContentList )
+          if ( nVariables == 0 ) then
+            GI % nStorages = 0
+          else
+            call GI % Storage ( iStrg ) % Initialize &
+                   ( [ product ( GI % nNodes ( 1 : GI % nDimensions ) - 1 ), &
+                       nVariables ], &
+                     VariableOption = VariableName, & 
+                     NameOption = StorageName ( iStrg ) )
+          end if
+          if ( len_trim ( StorageName ( iStrg ) ) > 0 ) &
+            call GI % Stream % ChangeDirectory ( '..' )
+        end do
+      end if
+    
+    end if
+        
     call GI % ReadStorage ( ) 
     
     call GI % Stream % ChangeDirectory ( WorkingDirectory ) 
