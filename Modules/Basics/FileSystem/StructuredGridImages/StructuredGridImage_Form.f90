@@ -744,13 +744,13 @@ contains
       ( nC  => SGI % nCells, &
         oVI => SGI % oValueInner, &
         oVO => SGI % oValueOuter )
-
+    
     if ( allocated ( SGI % PillarHash ) ) then
       allocate ( Value ( size ( SGI % PillarHash ) ) )
     else
       allocate ( Value ( product ( nC ) ) )
     end if
-
+    
     if ( all ( SGI % nNodes == SGI % nCells ) ) then
       Centering = DB_NODECENT
     else
@@ -889,10 +889,12 @@ contains
   end subroutine WriteStorage 
   
   
-  subroutine ReadStorage ( SGI ) 
+  subroutine ReadStorage ( SGI, StorageOnlyOption ) 
 
     class ( StructuredGridImageForm ), intent ( inout ) :: &
       SGI
+    logical ( KDL ), intent ( in ), optional :: &
+      StorageOnlyOption
     
     integer ( KDI ) :: &
       iV, &      !-- iValue
@@ -904,7 +906,11 @@ contains
       nProperCells
     real ( c_double ), dimension ( : ), pointer :: &
       VariableValue
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+      Value_PGF, &  !-- Value_ProperGhostFull
+      Value_PG      !-- Value_ProperGhost
     logical ( KDL ) :: &
+      StorageOnly, &
       SetSizes
     character ( LDF ) :: &
       MeshDirectory
@@ -917,6 +923,15 @@ contains
       ValueArrays
     type ( DB_QuadVariableType ), pointer :: &
       DB_QV
+      
+    StorageOnly = .false.
+    if ( present ( StorageOnlyOption ) ) &
+      StorageOnly = StorageOnlyOption
+
+    associate &
+      ( nC  => SGI % nCells, &
+        oVI => SGI % oValueInner, &
+        oVO => SGI % oValueOuter )
 
     MeshDirectory = SGI % Stream % CurrentDirectory
   
@@ -935,7 +950,7 @@ contains
       DB_File &
         = SGI % Stream % AccessSiloPointer ( SGI % Stream % MeshBlockHandle )
       
-      SetSizes = .true. 
+      SetSizes = .not. StorageOnly
       
       do iS = 1, S % nVariables
       
@@ -972,6 +987,7 @@ contains
           !          the unit directly from Silo file.
           call c_f_pointer &
                  ( ValueArrays ( iA ), VariableValue, [ DB_QV % nElements ] )
+          !call Show ( VariableValue, 'VariableValue' )
           if ( allocated ( SGI % PillarHash ) ) then
             do iV = 1, DB_QV % nElements
               S % Value &
@@ -979,12 +995,16 @@ contains
                 = VariableValue ( oV + iV ) * S % Unit ( iVrbl ) % Number
             end do
           else
+            Value_PGF ( -oVI ( 1 ) + 1 : nC ( 1 ) + oVO ( 1 ), &
+                        -oVI ( 2 ) + 1 : nC ( 2 ) + oVO ( 2 ), &
+                        -oVI ( 3 ) + 1 : nC ( 3 ) + oVO ( 3 ) ) &
+              => S % Value ( SGI % oValue + 1 :, iVrbl )
+            Value_PG ( 1 : nC ( 1 ), 1 : nC ( 2 ), 1 : nC ( 3 ) ) & 
+              => VariableValue 
             call Copy &
-                   ( VariableValue ( oV + 1 : ) &
-                       * S % Unit ( iVrbl ) % Number, &
-                     S % Value ( SGI % oValue + oV + 1 &
-                                  : SGI % oValue + oV + DB_QV % nElements, &
-                                  iVrbl ) )                                
+                   ( Value_PG ( 1 : nC ( 1 ), 1 : nC ( 2 ), 1 : nC ( 3 ) ), &
+                     Value_PGF ( 1 : nC ( 1 ), 1 : nC ( 2 ), 1 : nC ( 3 ) ) )
+            Value_PGF = Value_PGF  /  S % Unit ( iVrbl ) % Number
           end if
         end do
       
@@ -995,9 +1015,11 @@ contains
       if ( len_trim ( S % Name ) > 0 ) &
         call SGI % Stream % ChangeDirectory ( '../' ) 
     
-      end associate 
+      end associate   !-- S, nDims
   
     end do
+    
+    end associate   !-- nC, oVI, oVO
     
     DB_File      = c_null_ptr
     DB_QV_Handle = c_null_ptr
