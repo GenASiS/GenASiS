@@ -176,6 +176,7 @@ contains
                  CycleNumberOption = CLE % iCycle )
       CLE % Time = RestartTime * CLE % TimeUnit
       associate ( CF => CLE % ConservedFields )
+      call CF % ComputeAuxiliary ( CF % Value, UseDeviceOption = .false. )
       call CF % ComputeConserved ( CF % Value, UseDeviceOption = .false. )
       end associate !-- CF
     end if
