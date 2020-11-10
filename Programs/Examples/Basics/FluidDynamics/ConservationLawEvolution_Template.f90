@@ -27,9 +27,7 @@ module ConservationLawEvolution_Template
       WriteTime, &
       TimeStep
     type ( MeasuredValueForm ) :: &
-      TimeUnit, &
-      LastCheckpoint, &
-      CheckpointInterval
+      TimeUnit
     character ( LDF ) :: &
       Type = ''
     logical ( KDL ) :: &
@@ -122,7 +120,8 @@ contains
     CLE % nWrite = 100
     call PROGRAM_HEADER % GetParameter ( CLE % nWrite, 'nWrite' )
 
-    CLE % WriteTimeInterval = ( CLE % FinishTime - CLE % StartTime ) / CLE % nWrite
+    CLE % WriteTimeInterval &
+      = ( CLE % FinishTime - CLE % StartTime ) / CLE % nWrite
     call PROGRAM_HEADER % GetParameter &
            ( CLE % WriteTimeInterval, 'WriteTimeInterval' )
            
@@ -132,10 +131,6 @@ contains
     CLE % RestartFrom = - huge ( 1 )
     call PROGRAM_HEADER % GetParameter ( CLE % RestartFrom, 'RestartFrom' )
     
-    call CLE % CheckpointInterval % Initialize ( 's', 3600.0_KDR )
-    call PROGRAM_HEADER % GetParameter &
-           ( CLE % CheckpointInterval % Number, 'CheckpointInterval' )
-                      
     !-- Extensions are responsible for initializing CLE % ConservedFields
 
     !-- CLE % ConservationLawStep initialized below in CLE % Evolve
@@ -151,9 +146,7 @@ contains
       CLE
     
     type ( MeasuredValueForm ) :: &
-      StartTime
-    type ( StorageForm ), dimension ( 1 ) :: &
-      Checkpoint
+      RestartTime
       
     call PROGRAM_HEADER % AddTimer &
            ( 'Computational', &
@@ -166,38 +159,37 @@ contains
       ( DM  => CLE % DistributedMesh, &
         CLS => CLE % ConservationLawStep, &
         T => PROGRAM_HEADER % Timer ( CLE % iTimerComputation ) )
-    
-    call Checkpoint ( 1 ) % Initialize ( CLE % ConservedFields )
-    !call Checkpoint ( 2 ) % Initialize &
-    !       ( [ 1, 1 ], NameOption = 'GridImageStream', &
-    !         VariableOption = [ 'Number' ] )
-    
-    call DM % SetCheckpoint ( Checkpoint, PROGRAM_HEADER % Name )
 
+    CLE % Time = CLE % StartTime
+    
+    !-- Initial write
+    if ( .not. CLE % NoWrite ) &
+      call DM % Write &
+             ( TimeOption = CLE % Time / CLE % TimeUnit, &
+               CycleNumberOption = CLE % iCycle )
+    
+    !-- Restart 
     if ( CLE % RestartFrom >= 0 ) then
-      call DM % ReadCheckpoint &
-               ( iCheckpoint = CLE % RestartFrom, &
-                 TimeOption = StartTime, &
+      call DM % Read &
+               ( iImage = CLE % RestartFrom, &
+                 TimeOption = RestartTime, &
                  CycleNumberOption = CLE % iCycle )
-      CLE % StartTime = StartTime * CLE % TimeUnit
+      CLE % Time = RestartTime * CLE % TimeUnit
+      associate ( CF => CLE % ConservedFields )
+      call CF % ComputeConserved ( CF % Value, UseDeviceOption = .false. )
+      end associate !-- CF
     end if
     
     call CLS % Initialize ( CLE % ConservedFields )
     call CLE % ConservedFields % UpdateDevice ( )
 
-    CLE % Time = CLE % StartTime
-
-    if ( .not. CLE % NoWrite ) &
-      call DM % Write &
-             ( TimeOption = CLE % Time / CLE % TimeUnit, &
-               CycleNumberOption = CLE % iCycle )
+    
     CLE % WriteTime &
       = min ( CLE % Time + CLE % WriteTimeInterval, CLE % FinishTime )
-
+    
     call Show ( 'Evolving a Fluid', CONSOLE % INFO_1 )
     
     call T % Start ( )
-    CLE % LastCheckpoint = WallTime ( ) 
 
     do while ( CLE % Time < CLE % FinishTime &
                .and. CLE % iCycle < CLE % FinishCycle )
@@ -236,22 +228,6 @@ contains
         
       end if
       
-      
-      checkpoint: &
-      if ( ( WallTime ( ) - CLE % LastCheckpoint ) &
-             >= CLE % CheckpointInterval ) then
-        
-        CLE % LastCheckpoint = WallTime ( )
-        if ( CLE % NoWrite ) exit checkpoint
-        
-        call T % Stop ( )
-        call DM % WriteCheckpoint &
-               ( TimeOption = CLE % Time / CLE % TimeUnit, &
-                 CycleNumberOption = CLE % iCycle )
-        call T % Start ( )
-        
-      end if checkpoint
-
     end do
     
     call T % Stop ( )

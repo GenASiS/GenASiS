@@ -2,7 +2,7 @@ PATH_GENASIS = ../../../../../..
 
 include $(PATH_GENASIS)/Build/Makefile_Build
 
-all: GridImageStream_Form_Test
+all: GridImageStream_Form_Test ArraySilo_Form_Test
 
 GridImageStream_Form_Test: Specifiers.a Devices.a DataManagement.a Display.a \
   MessagePassing.a FileSystemBasics.a GridImageStream_Form_Test.o
@@ -13,11 +13,22 @@ GridImageStream_Form_Test: Specifiers.a Devices.a DataManagement.a Display.a \
           FileSystemBasics.a MessagePassing.a Display.a DataManagement.a \
           Devices.a Specifiers.a $(LIBRARIES)
 
+ArraySilo_Form_Test: Specifiers.a Devices.a DataManagement.a Display.a \
+  MessagePassing.a FileSystemBasics.a GridImageStream_Form.o \
+  ArraySilo_Form_Test.o
+	$(LINK) $(FLAGS) \
+          -o ArraySilo_Form_Test_$(MACHINE) \
+          ArraySilo_Form_Test.o GridImageStream_Form.o \
+          GridImageStream_Template.o DB_TableOfContentsType_Silo_C.o \
+          FileSystemBasics.a MessagePassing.a Display.a DataManagement.a \
+          Devices.a Specifiers.a $(LIBRARIES)
+
 clean:
 	rm -f *.o *.a *.mod *.ld
 
 clobber: clean
-	rm -f GridImageStream_Form_Test_*
+	find . -type f -executable -name 'ArraySilo_Form_Test_*' -exec rm -f '{}' \;
+	find . -type f -executable -name 'GridImageStream_Form_Test_*' -exec rm -f '{}' \;
 
 include $(PATH_SPECIFIERS)/Makefile_Dependencies
 include $(PATH_DEVICES)/Makefile_Dependencies
@@ -35,3 +46,12 @@ GridImageStream_Form_Test.o: \
   GridImageStream_Template.o \
   GridImageStream_Form.o \
   GridImageStream_Form_Test.f90
+
+ArraySilo_Form_Test.o: \
+  Specifiers.o \
+  DataManagement.o \
+  Display.o \
+  MessagePassing.o \
+  GridImageStream_Template.o \
+  GridImageStream_Form.o \
+  ArraySilo_Form_Test.f90
