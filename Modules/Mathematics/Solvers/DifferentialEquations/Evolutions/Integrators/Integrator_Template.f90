@@ -44,6 +44,8 @@ module Integrator_Template
       OpenManifoldStreamsTemplate
     procedure, public, pass :: &  !-- 2
       InitializeTimers
+    procedure, public, pass :: &  !-- 2
+      PrepareInitial
     procedure ( PE ), private, pass, deferred :: &  !-- 2
       PrepareEvolution
     procedure, private, pass :: &  !-- 2
@@ -239,7 +241,7 @@ contains
     Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerEvolve )
     if ( associated ( Timer ) ) call Timer % Start ( )   
 
-    I % Time = I % StartTime
+    call I % PrepareInitial ( )
     call I % PrepareEvolution ( )
     call I % AdministerCheckpoint ( ComputeChangeOption = .false. )
 
@@ -401,6 +403,52 @@ contains
                  Level = BaseLevel + 2 )
 
   end subroutine InitializeTimers
+
+
+  subroutine PrepareInitial ( I )
+
+    class ( IntegratorTemplate ), intent ( inout ) :: &
+      I
+
+    integer ( KDI ) :: &
+      RestartFrom
+    real ( KDR ) :: &
+      RestartTime
+
+    RestartFrom  =  - huge ( 1 )
+    call PROGRAM_HEADER % GetParameter ( RestartFrom, 'RestartFrom' )
+
+    associate ( U  =>  I % Universe )
+ 
+    if ( RestartFrom >= 0 ) then
+
+      if ( associated ( U % ResetInitial ) ) then
+
+        call U % ResetInitial ( RestartFrom, RestartTime )
+
+        I % Time  =  RestartTime
+
+      else
+
+        call Show ( 'ResetInitial not associated', CONSOLE % ERROR )
+        call Show ( RestartFrom, 'RestartFrom', CONSOLE % ERROR )
+        call Show ( 'Integrator_Template', 'module', CONSOLE % ERROR )
+        call Show ( 'PrepareInitial', 'subroutine', CONSOLE % ERROR )
+        call PROGRAM_HEADER % Abort ( )
+
+      end if
+
+    else if ( associated ( U % SetInitial ) ) then
+
+      call U % SetInitial ( )
+
+      I % Time  =  I % StartTime
+
+    end if
+
+    end associate !-- U
+
+  end subroutine PrepareInitial
 
 
   subroutine AdministerCheckpoint ( I, ComputeChangeOption )

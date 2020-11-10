@@ -67,7 +67,9 @@ contains
 
     call InitializeFluidBox ( PW, Name )
     call InitializeDiagnostics ( PW )
-    call SetProblem ( PW )
+
+    PW % SetInitial  =>  SetProblem
+!    call SetProblem ( PW )
 
   end subroutine InitializeTemplate_PW
 
@@ -221,10 +223,10 @@ contains
   end subroutine InitializeDiagnostics
 
 
-  subroutine SetProblem ( PW )
+  subroutine SetProblem ( U )
 
-    class ( PlaneWaveTemplate ), intent ( inout ) :: &
-      PW
+    class ( UniverseHeaderForm ), intent ( inout ) :: &
+      U
 
     integer ( KDI ) :: &
       nPeriods
@@ -236,6 +238,9 @@ contains
       G
     class ( Fluid_D_Form ), pointer :: &
       F
+
+    select type ( PW => U )
+    class is ( PlaneWaveTemplate )
 
     select type ( I => PW % Integrator )
     class is ( Integrator_C_PS_Form )
@@ -289,6 +294,7 @@ contains
     end select !-- PS
     end select !-- FA
     end select !-- I
+    end select !-- PW
     nullify ( G, F )
 
   end subroutine SetProblem

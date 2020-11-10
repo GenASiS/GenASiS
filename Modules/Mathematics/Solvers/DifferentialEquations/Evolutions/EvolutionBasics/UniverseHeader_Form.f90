@@ -18,12 +18,39 @@ module UniverseHeader_Form
       Name = ''
     type ( Character_1D_Form ), dimension ( : ), allocatable :: &
       BoundaryConditionsFace
+    procedure ( SI ), pointer :: &
+      SetInitial => null ( )
+    procedure ( RI ), pointer :: &
+      ResetInitial => null ( )
   contains
     procedure, public, pass :: &
       InitializeHeader
     final :: &
       Finalize
   end type UniverseHeaderForm
+
+  
+  interface
+
+    subroutine SI ( U )
+      import UniverseHeaderForm
+      class ( UniverseHeaderForm ), intent ( inout ) :: &
+        U
+    end subroutine SI
+
+    subroutine RI ( U, RestartFrom, RestartTime )
+      use Basics
+      import UniverseHeaderForm
+      class ( UniverseHeaderForm ), intent ( inout ) :: &
+        U
+      integer ( KDI ), intent ( in ) :: &
+        RestartFrom
+      real ( KDR ), intent ( out ) :: &
+        RestartTime
+    end subroutine RI
+
+  end interface
+
 
 contains
 
