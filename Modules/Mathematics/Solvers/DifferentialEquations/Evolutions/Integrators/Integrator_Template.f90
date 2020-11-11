@@ -420,6 +420,8 @@ contains
 
     associate ( U  =>  I % Universe )
  
+    I % Time  =  I % StartTime
+
     if ( RestartFrom >= 0 ) then
 
       if ( associated ( U % ResetInitial ) ) then
@@ -441,8 +443,6 @@ contains
     else if ( associated ( U % SetInitial ) ) then
 
       call U % SetInitial ( )
-
-      I % Time  =  I % StartTime
 
     end if
 

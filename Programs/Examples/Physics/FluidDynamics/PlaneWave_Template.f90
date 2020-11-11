@@ -69,7 +69,6 @@ contains
     call InitializeDiagnostics ( PW )
 
     PW % SetInitial  =>  SetProblem
-!    call SetProblem ( PW )
 
   end subroutine InitializeTemplate_PW
 
