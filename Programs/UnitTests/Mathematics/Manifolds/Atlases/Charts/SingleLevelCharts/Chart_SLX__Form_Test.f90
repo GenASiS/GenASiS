@@ -56,6 +56,8 @@ contains
       Spacing
     type ( GridImageStreamForm ), allocatable :: &
       GIS_Fiber
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+      GP
 
     !-- Base Atlas 
 
@@ -66,7 +68,7 @@ contains
         CFT % GIS_Base )
     associate &
       ( A => CFT % AtlasHeaderBase, &
-        G => CFT % GeometryBase, &
+        GC => CFT % GeometryBase, &
         C => CFT % ChartBase, &
         GIS => CFT % GIS_Base )
 
@@ -79,11 +81,11 @@ contains
     call C % Initialize ( A, IsPeriodic, iChart = 1 )
 
     associate ( nValues => C % nProperCells + C % nGhostCells )
-    call G % InitializeFlat &
+    call GC % InitializeFlat &
            ( C, 'Geometry', UsePinnedMemory = .false., nValues = nValues )
-    call C % AddField ( G )
+    call C % AddField ( GC )
     C % iFieldGeometry = C % nFields
-    call C % SetGeometry ( G )
+    call C % SetGeometry ( GC )
     end associate !-- nValues
 
     call A % Show ( )
@@ -93,10 +95,27 @@ contains
            ( PROGRAM_HEADER % Name, CommunicatorOption = A % Communicator )
     call C % OpenStream ( GIS, '1', iStream = 1 )
 
+    select type ( G  =>  GC % Field )
+    class is ( GeometryFlatForm )
+
+    call C % SetVariablePointer ( G % Value ( :, G % CENTER_U ( 1 ) ), GP )
+    call Show ( GP ( :, 3, 3 ), 'Center_1 reference' )
+
     call GIS % Open ( GIS % ACCESS_CREATE )
     call C % Write ( iStream = 1 )
     call GIS % Close ( )
 
+    GP ( 1 : C % nCells ( 1 ), 1 : C % nCells ( 2 ), 1 : C % nCells ( 3 ) ) &
+      =  0.0_KDR
+    call Show ( GP ( :, 3, 3 ), 'Center_1 proper cleared before read' )
+
+    call GIS % Open ( GIS % ACCESS_READ, NumberOption = GIS % Number )
+    call C % Read ( iStream = 1 )
+    call GIS % Close ( )
+
+    call Show ( GP ( :, 3, 3 ), 'Center_1 after read' )
+
+    end select !-- G
     end associate !-- A, etc.
 
     !-- Fiber Atlas
@@ -107,7 +126,7 @@ contains
         CFT % ChartFiber )
     associate &
       ( A => CFT % AtlasHeaderFiber, &
-        G => CFT % GeometryFiber, &
+        GC => CFT % GeometryFiber, &
         C => CFT % ChartFiber )
 
     call A % Initialize ( 'Fiber', iDimensionalityOption = 2 )
@@ -131,11 +150,11 @@ contains
              ScaleOption = Scale, nGhostLayersOption = [ 0, 0, 0 ] )
 
     associate ( nValues => C % nProperCells + C % nGhostCells )
-    call G % InitializeFlat &
+    call GC % InitializeFlat &
            ( C, 'Geometry', UsePinnedMemory = .false., nValues = nValues )
-    call C % AddField ( G ) 
+    call C % AddField ( GC ) 
     C % iFieldGeometry = C % nFields
-    call C % SetGeometry ( G )
+    call C % SetGeometry ( GC )
     end associate !-- nValues
 
     call A % Show ( )

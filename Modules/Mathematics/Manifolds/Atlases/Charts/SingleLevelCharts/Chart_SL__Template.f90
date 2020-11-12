@@ -36,6 +36,8 @@ module Chart_SL__Template
     procedure, public, pass :: &
       Write
     procedure, public, pass :: &
+      Read
+    procedure, public, pass :: &
       CloseStreams
     procedure, public, pass ( C ) :: &
       CopyBoundaryTemplate
@@ -351,11 +353,31 @@ contains
       CycleNumberOption
 
     associate ( CS => C % Stream ( iStream ) % Element )
-    call CS % Write &
-           ( DirectoryOption, TimeOption, CycleNumberOption )
+    call CS % Write ( DirectoryOption, TimeOption, CycleNumberOption )
     end associate !-- CS
     
   end subroutine Write
+
+
+  subroutine Read ( C, iStream, DirectoryOption, TimeOption, &
+                    CycleNumberOption )
+
+    class ( Chart_SL_Template ), intent ( inout ), target :: &
+      C
+    integer ( KDI ), intent ( in ) :: &
+      iStream
+    character ( * ), intent ( in ), optional :: &
+      DirectoryOption
+    type ( MeasuredValueForm ), intent ( out ), optional :: &
+      TimeOption
+    integer ( KDI ), intent ( out ), optional :: &
+      CycleNumberOption
+
+    associate ( CS => C % Stream ( iStream ) % Element )
+    call CS % Read ( DirectoryOption, TimeOption, CycleNumberOption )
+    end associate !-- CS
+    
+  end subroutine Read
 
 
   subroutine CloseStreams ( C )
