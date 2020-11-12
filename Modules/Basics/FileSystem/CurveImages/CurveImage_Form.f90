@@ -17,14 +17,14 @@ module CurveImage_Form
   
   type, public, extends ( GridImageSiloTemplate ) :: CurveImageForm
   contains
+    procedure, private, pass :: &
+      SetGridWriteUnigrid
+    procedure, private, pass :: &
+      SetGridWriteRefinable
+    generic, public :: &
+      SetGridWrite => SetGridWriteUnigrid, SetGridWriteRefinable
     procedure, public, pass :: &
-      SetGridUnigrid
-    procedure, public, pass :: &
-      SetGridRefinable
-    generic :: &
-      SetGrid => SetGridUnigrid, SetGridRefinable
-    procedure, public, pass :: &
-      SetReadAttributes
+      SetGridRead
     procedure, public, pass :: &
       Write
     procedure, public, pass :: &
@@ -38,7 +38,7 @@ module CurveImage_Form
 contains
 
     
-  subroutine SetGridUnigrid &
+  subroutine SetGridWriteUnigrid &
                ( CI, Directory, Edge, nProperCells, oValue, &
                  CoordinateLabelOption, CoordinateUnitOption )
                  
@@ -88,10 +88,10 @@ contains
       CI % CoordinateLabel ( 1 ) &
         = CoordinateLabelOption
 
-  end subroutine SetGridUnigrid
+  end subroutine SetGridWriteUnigrid
   
   
-  subroutine SetGridRefinable &
+  subroutine SetGridWriteRefinable &
                ( CI, Directory, NodeCoordinate, nProperCells, oValue, &
                  CoordinateUnitOption, CoordinateLabelOption )
                  
@@ -136,27 +136,27 @@ contains
       CI % CoordinateLabel ( 1 ) &
         = CoordinateLabelOption
 
-  end subroutine SetGridRefinable
+  end subroutine SetGridWriteRefinable
   
   
-  subroutine SetReadAttributes ( GI, Directory, oValue )
-
+  subroutine SetGridRead ( CI, Directory, nProperCells, oValue )
+                 
     class ( CurveImageForm ), intent ( inout ) :: &
-      GI 
+      CI
     character ( * ), intent ( in ) :: &
       Directory
     integer ( KDI ), intent ( in ) :: &
+      nProperCells, &
       oValue
-      
-    GI % oValue      = oValue
-    GI % nGhostCells = 0
+
+    CI % oValue       =  oValue
+    CI % nTotalCells  =  nProperCells
+    CI % nGhostCells  =  0
+    CI % lDirectory   =  len_trim ( Directory )    
+    CI % Directory    =  Directory
     
-    GI % lDirectory  = len_trim ( Directory )
-
-    GI % Directory   = Directory
-
-  end subroutine SetReadAttributes
-   
+  end subroutine SetGridRead
+  
   
   subroutine Write ( GI, TimeOption, CycleNumberOption )
   
@@ -340,7 +340,6 @@ contains
             
           call Show ( 'Writing a Variable (structured)', CONSOLE % INFO_6 )
           call Show ( iS, 'iSelected', CONSOLE % INFO_6 )
-          call Show ( S % Variable ( iVrbl ), 'Name', CONSOLE % INFO_6 )
 
           nSiloOptions &
             = count &

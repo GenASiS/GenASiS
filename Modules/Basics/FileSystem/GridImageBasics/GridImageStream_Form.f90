@@ -531,10 +531,13 @@ contains
   end subroutine OpenForWriting
   
   
-  subroutine OpenForReading ( GIS, NumberOption, BlockNumberOption )
+  subroutine OpenForReading &
+               ( GIS, SeriesOption, NumberOption, BlockNumberOption )
     
     class ( GridImageStreamForm ), intent ( inout ) :: &
       GIS
+    logical ( KDL ), intent ( in ), optional :: &
+      SeriesOption
     integer ( KDI ), intent ( in ), optional :: &
       NumberOption, &
       BlockNumberOption
@@ -542,7 +545,8 @@ contains
     GIS % MeshBlockFileSuffix = '.silo'
     GIS % MultiMeshFileSuffix = '.silo'
     
-    call GIS % OpenForReadingTemplate ( NumberOption, BlockNumberOption )
+    call GIS % OpenForReadingTemplate &
+           ( SeriesOption, NumberOption, BlockNumberOption )
     
     GIS % CurrentDirectory = '/'
     

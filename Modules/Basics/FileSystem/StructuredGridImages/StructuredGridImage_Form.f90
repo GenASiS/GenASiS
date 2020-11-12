@@ -33,14 +33,16 @@ module StructuredGridImage_Form
   contains
     procedure, public, pass :: &
       SetPillarHash
-    procedure, public, pass :: &
-      SetGridUnigrid
-    procedure, public, pass :: &
-      SetGridRefinable
-    generic :: &
-      SetGrid => SetGridUnigrid, SetGridRefinable
-    procedure, public, pass :: &
-      SetReadAttributes
+    procedure, private, pass :: &
+      SetGridWriteUnigrid
+    procedure, private, pass :: &
+      SetGridWriteRefinable
+    generic, public :: &
+      SetGridWrite => SetGridWriteUnigrid, SetGridWriteRefinable
+    procedure, private, pass :: &
+      SetGridReadUnigrid
+    generic, public :: &
+      SetGridRead => SetGridReadUnigrid
     procedure, public, pass :: &
       Write
     procedure, private, pass :: &
@@ -75,7 +77,7 @@ contains
   end subroutine SetPillarHash
 
 
-  subroutine SetGridUnigrid &
+  subroutine SetGridWriteUnigrid &
                ( SGI, Directory, Edge, nCells, nGhostInner, &
                  nGhostOuter, oValueInner, oValueOuter, nDimensions, &
                  nProperCells, nGhostCells, CoordinateLabelOption, &
@@ -162,10 +164,10 @@ contains
       SGI % CoordinateLabel ( 1 : size ( CoordinateLabelOption ) ) &
         = CoordinateLabelOption
         
-  end subroutine SetGridUnigrid
+  end subroutine SetGridWriteUnigrid
 
 
-  subroutine SetGridRefinable &
+  subroutine SetGridWriteRefinable &
                ( SGI, Directory, NodeCoordinate, nCells, nDimensions, &
                  nProperCells, nGhostCells, oValue, &
                  CoordinateUnitOption, CoordinateLabelOption, &
@@ -353,27 +355,50 @@ contains
     nullify ( SN )
     nullify ( NC )
 
-  end subroutine SetGridRefinable
+  end subroutine SetGridWriteRefinable
   
   
-  subroutine SetReadAttributes ( GI, Directory, oValue )
-  
-    class ( StructuredGridImageForm ), intent ( inout ) :: &
-      GI 
+  subroutine SetGridReadUnigrid &
+               ( SGI, Directory, nCells, nGhostInner, nGhostOuter, &
+                 oValueInner, oValueOuter, nDimensions, &
+                 nProperCells, nGhostCells )
+
+    class ( StructuredGridImageForm ), intent ( inout ), target :: &
+      SGI 
     character ( * ), intent ( in ) :: &
       Directory
+    integer ( KDI ), dimension ( : ), intent ( in ) :: &
+      nCells, &
+      nGhostInner, &
+      nGhostOuter, &
+      oValueInner, &
+      oValueOuter
     integer ( KDI ), intent ( in ) :: &
-      oValue
-      
-    GI % oValue      = oValue
+      nDimensions, &
+      nProperCells, &
+      nGhostCells
+
+    SGI % oValue       =  0
+    SGI % nDimensions  =  nDimensions
+    SGI % nTotalCells  =  nProperCells + nGhostCells
+    SGI % nGhostCells  =  nGhostCells
+    SGI % lDirectory   =  len_trim ( Directory )
+
+    SGI % MeshType = SGI % RECTILINEAR
+    SGI % MultiMeshType = DB_QUAD_RECT
+    SGI % MultiVariableType = DB_QUADVAR
+
+    SGI % nCells = reshape ( nCells, shape = [ 3 ], pad = [ 1 ] )
     
-    GI % lDirectory  = len_trim ( Directory )
+    SGI % oValueInner = oValueInner
+    SGI % oValueOuter = oValueOuter
+
+    SGI % Directory = Directory
+    if ( trim ( SGI % Directory ) == '/' ) SGI % Directory = ''
     
-    GI % Directory   = Directory
-    
-  end subroutine SetReadAttributes
-  
-  
+  end subroutine SetGridReadUnigrid
+
+
   subroutine Write ( GI, TimeOption, CycleNumberOption )
   
     class ( StructuredGridImageForm ), intent ( inout ) :: &
@@ -940,7 +965,7 @@ contains
       associate ( S => SGI % Storage ( iStrg ), &
                   nDims => SGI % nDimensions )
   
-      call Show ( 'Reading a Storage', CONSOLE % INFO_5 )
+      call Show ( 'Reading a Storage (structured)', CONSOLE % INFO_5 )
       call Show ( iStrg, 'iStorage', CONSOLE % INFO_5 )
       call Show ( S % Name, 'Name', CONSOLE % INFO_5 )
 
@@ -956,6 +981,23 @@ contains
       
         iVrbl = S % iaSelected ( iS )
         VariableName = trim ( S % Variable ( iVrbl ) ) // c_null_char
+
+        call Show ( 'Reading a Variable (structured)', CONSOLE % INFO_6 )
+        call Show ( iS, 'iSelected', CONSOLE % INFO_6 )
+
+        call Show ( trim ( S % Variable ( iVrbl ) ), 'Variable', &
+                    CONSOLE % INFO_6 )
+        call Show ( S % lVariable ( iVrbl ), 'lVariable', CONSOLE % INFO_6 )
+        call Show ( trim ( MeshDirectory ) // 'Mesh', 'MeshDirectory', &
+                    CONSOLE % INFO_6 )
+        call Show ( len_trim ( MeshDirectory ) + 4, 'lDirectory', &
+                    CONSOLE % INFO_6 )
+        if ( len_trim ( S % Unit ( iVrbl ) % Label ) > 0 ) then
+          call Show ( trim ( S % Unit ( iVrbl ) % Label ), 'Unit', &
+                      CONSOLE % INFO_6 )
+          call Show ( len_trim ( S % Unit ( iVrbl ) % Label ), 'lUnit', &
+                      CONSOLE % INFO_6 )
+        end if
 
         DB_QV_Handle = DB_GetQuadVariable ( DB_File, VariableName )
         call c_f_pointer ( DB_QV_Handle, DB_QV )
@@ -987,7 +1029,6 @@ contains
           !          the unit directly from Silo file.
           call c_f_pointer &
                  ( ValueArrays ( iA ), VariableValue, [ DB_QV % nElements ] )
-          !call Show ( VariableValue, 'VariableValue' )
           if ( allocated ( SGI % PillarHash ) ) then
             do iV = 1, DB_QV % nElements
               S % Value &

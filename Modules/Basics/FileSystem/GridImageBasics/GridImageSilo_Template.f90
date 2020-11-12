@@ -40,8 +40,6 @@ module GridImageSilo_Template
       WriteVectorVariable
     procedure ( WriteInterface ), public, pass, deferred :: &
       Write
-    procedure ( SetReadAttributesInterface ), public, pass, deferred :: &
-      SetReadAttributes
     procedure, public, pass :: &
       ReadHeader
     procedure ( ReadInterface ), public, pass, deferred :: &
@@ -51,17 +49,6 @@ module GridImageSilo_Template
   
   abstract interface 
   
-    subroutine SetReadAttributesInterface ( GI, Directory, oValue )
-      use Specifiers
-      import GridImageSiloTemplate
-      class ( GridImageSiloTemplate ), intent ( inout ) :: &
-        GI  
-      character ( * ), intent ( in ) :: &
-        Directory
-      integer ( KDI ), intent ( in ) :: &
-        oValue
-    end subroutine
-    
     subroutine WriteInterface ( GI, TimeOption, CycleNumberOption )
       use Specifiers
       import GridImageSiloTemplate
