@@ -579,7 +579,8 @@ contains
     select case ( DM % nDimensions )
     case ( 1 ) 
       call DM % CurveImage % Read &
-             ( TimeOption = TimeOption, CycleNumberOption = CycleNumberOption )
+             ( StorageOnlyOption = .true., &
+               TimeOption = TimeOption, CycleNumberOption = CycleNumberOption )
     case default
       call DM % GridImage % Read &
              ( StorageOnlyOption = .true., &

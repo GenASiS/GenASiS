@@ -175,6 +175,8 @@ contains
                  TimeOption = RestartTime, &
                  CycleNumberOption = CLE % iCycle )
       CLE % Time = RestartTime * CLE % TimeUnit
+      call DM % StartGhostExchange ( )
+      call DM % FinishGhostExchange ( )
       associate ( CF => CLE % ConservedFields )
       call CF % ComputeAuxiliary ( CF % Value, UseDeviceOption = .false. )
       call CF % ComputeConserved ( CF % Value, UseDeviceOption = .false. )
@@ -183,7 +185,6 @@ contains
     
     call CLS % Initialize ( CLE % ConservedFields )
     call CLE % ConservedFields % UpdateDevice ( )
-
     
     CLE % WriteTime &
       = min ( CLE % Time + CLE % WriteTimeInterval, CLE % FinishTime )
