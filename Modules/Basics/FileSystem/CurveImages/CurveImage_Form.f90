@@ -197,7 +197,7 @@ contains
                nIncoming &
                  = [ GI % Stream % Communicator % Size * GI % nTotalCells ], &
                RootOption = 0 )
-      
+
       CO_Coordinate % Outgoing % Value = GI % NodeCoordinate_1
       
       call CO_Coordinate % Gather ( )
@@ -494,7 +494,7 @@ contains
                       trim ( VariableName ( 1 ) ), &
                       len_trim ( VariableName ( 1 ) ), 1, &
                       X_Scratch, Y_Scratch, DataType, GI % nTotalCells )
-          
+
           if ( allocated ( GI % NodeCoordinate_1 ) ) &
             deallocate ( GI % NodeCoordinate_1 )
           allocate ( GI % NodeCoordinate_1 ( GI % nTotalCells ) )
@@ -511,11 +511,11 @@ contains
       end do
     end if
     
-          
     do iStrg = 1, GI % nStorages
       associate ( S => GI % Storage ( iStrg ) )
       call GI % Stream % ChangeDirectory ( S % Name )
-      do iVrbl = 1, S % nVariables
+      do iS = 1, S % nVariables
+        iVrbl = S % iaSelected ( iS )
         Error = DBGETCURVE &
                   ( GI % Stream % MeshBlockHandle, &
                     trim ( S % Variable ( iVrbl ) ), &
@@ -525,7 +525,6 @@ contains
                                    : GI % oValue + GI % nTotalCells, &
                                  iVrbl ), &
                     DataType, nTotalCells )
-        
         !-- FIXME: An assumption is made that the unit used to write
         !          and read are the same. A better way would be to read
         !          the unit directly from Silo file.
