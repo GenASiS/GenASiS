@@ -133,6 +133,16 @@ program DirectoryDifference
     end select
     
     select type ( GI_O )
+    
+    type is ( CurveImageForm )
+      select type ( GI_1 )
+      type is ( CurveImageForm )
+        call GI_O % SetGrid &
+                ( Directory = 'Curve', &
+                  NodeCoordinate = GI_1 % NodeCoordinate_1, &
+                  nProperCells = nProperCells ( 1 ), oValue = 0 )
+      end select
+      
     type is ( StructuredGridImageForm )
       select type ( GI_1 )
       type is ( StructuredGridImageForm )
@@ -149,6 +159,7 @@ program DirectoryDifference
                  nGhostCells = GI_1 % nGhostCells, &
                  oValue = 0, nCells = GI_1 % nCells )
       end select 
+    
     end select
       
     !-- Calculate and write the differences  
