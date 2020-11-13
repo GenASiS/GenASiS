@@ -1045,7 +1045,7 @@ contains
             call Copy &
                    ( Value_PG ( 1 : nC ( 1 ), 1 : nC ( 2 ), 1 : nC ( 3 ) ), &
                      Value_PGF ( 1 : nC ( 1 ), 1 : nC ( 2 ), 1 : nC ( 3 ) ) )
-            Value_PGF = Value_PGF  /  S % Unit ( iVrbl ) % Number
+            Value_PGF = Value_PGF  *  S % Unit ( iVrbl ) % Number
           end if
         end do
       
