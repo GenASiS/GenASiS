@@ -11,9 +11,12 @@ program CurveImage_Form_Test
   implicit none
   
   integer ( KDI ) :: &
+    iV, &
     iC, &
     oC_1, &
     DisplayRank = 0
+  real ( KDR ) :: &
+    L1_Error  
   real ( KDR ), dimension ( 20 ) :: &
     NodeCoordinate
   character ( 5 ) :: &
@@ -23,14 +26,16 @@ program CurveImage_Form_Test
   character ( LDL ), dimension ( 1 ) :: &
     VariableName
   type ( StorageForm ) :: &
-    S
+    S, &
+    S_SO
   type ( CommunicatorForm ), allocatable :: &
     C
   type ( GridImageStreamForm ) :: &
     GIS
   type ( CurveImageForm ) :: & 
     CI_Write, &
-    CI_Read
+    CI_Read, &
+    CI_Read_SO  !-- Read_StorageOnly
   
 !-- Runtime error with CCE
 !  if ( KBCH == selected_char_kind ( 'ASCII' ) ) then
@@ -82,17 +87,23 @@ program CurveImage_Form_Test
 
   call GIS % Close ( ) 
   
-  call Clear ( S % Value )
-
+  
+  !-- Test Read
   call GIS % Open ( GIS % ACCESS_READ, NumberOption = 0 )
   
   call CI_Read % Initialize ( GIS )
   
   call CI_Read % SetReadAttributes ( Directory = 'Curves', oValue = 0 )
-  
+
   call CI_Read % Read ( )
   
   !-- Note unit not read!
+  CI_Read % Storage ( 1 ) % Unit = S % Unit
+  do iV = 1, CI_Read % Storage ( 1 ) % nVariables
+    CI_Read % Storage ( 1 ) % Value ( :, iV ) &
+      = CI_Read % Storage ( 1 ) % Value ( :, iV ) &
+          * CI_Read % Storage ( 1 ) % Unit ( iV ) % Number
+  end do
 
   call Show ( CI_Read % NodeCoordinate_1, 'NodeCoordinate_1' )
   call Show ( CI_Read % Storage ( 1 ) % Value ( :, 1 ), &
@@ -101,6 +112,41 @@ program CurveImage_Form_Test
   call Show ( CI_Read % Storage ( 1 ) % Unit, 'Unit' )
   
   call GIS % Close ( )
+
+  associate &
+    ( V_0 => CI_Write % Storage ( 1 ) % Value ( :, 1 ), &
+      V_1 => CI_Read  % Storage ( 1 ) % Value ( :, 1 ) )
+  L1_Error = sum ( abs ( V_1 - V_0 ) ) / sum ( abs ( V_0 ) )
+  call Show ( L1_Error, 'L1_Error Read - Write' )
+  call Show ( L1_Error <= epsilon ( V_0 ( 1 ) ) * 10.0, 'Read == Write ?' )
+  end associate
+  
+  
+  !-- Test Read StorageOnly
+  call GIS % Open ( GIS % ACCESS_READ, NumberOption = 0 )
+  
+  call CI_Read_SO % Initialize ( GIS )
+
+  call S_SO % Initialize &
+         ( shape ( S % Value ), VariableOption = S % Variable, &
+           NameOption = S % Name, UnitOption = S % Unit )
+  call CI_Read_SO % SetReadAttributes ( Directory = 'Curves', oValue = 0 )
+  call CI_Read_SO % AddStorage ( S_SO )
+  call CI_Read_SO % SetGrid &
+         ( Directory = 'Curves', NodeCoordinate = NodeCoordinate, &
+           nProperCells = 20, oValue = 0 )
+
+  call CI_Read_SO % Read ( StorageOnlyOption = .true. )
+
+  call GIS % Close ( )
+
+  associate &
+    ( V_0 => CI_Write % Storage ( 1 ) % Value ( :, 1 ), &
+      V_1 => CI_Read_SO  % Storage ( 1 ) % Value ( :, 1 ) )
+  L1_Error = sum ( abs ( V_1 - V_0 ) ) / sum ( abs ( V_0 ) )
+  call Show ( L1_Error, 'L1_Error Read_SO - Write' )
+  call Show ( L1_Error <= epsilon ( V_0 ( 1 ) ) * 10.0, 'Read_SO == Write ?' )
+  end associate
 
   deallocate ( C )
   

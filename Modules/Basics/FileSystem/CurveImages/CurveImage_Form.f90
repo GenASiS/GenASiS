@@ -443,6 +443,8 @@ contains
     real ( KDR ), dimension ( 1 ) :: &
       X_Scratch, &
       Y_Scratch
+    logical ( KDL ) :: &
+      StorageOnly
     character ( LDL ), dimension ( : ), allocatable :: &
       StorageName, &
       VariableName
@@ -450,6 +452,10 @@ contains
       WorkingDirectory
     
     if ( .not. GI % Stream % IsReadable ( ) ) return
+    
+    StorageOnly = .false.
+    if ( present ( StorageOnlyOption ) ) &
+      StorageOnly = StorageOnlyOption
     
     WorkingDirectory = GI % Stream % CurrentDirectory
     if ( GI % lDirectory > 0 ) &
@@ -460,14 +466,16 @@ contains
     call GI % ReadHeader ( TimeOption, CycleNumberOption )
     
     !-- prepare Storage to read into
-    if ( GI % nStorages == 0 ) then
+    if ( GI % nStorages == 0 .and. .not. StorageOnly ) then
       call GI % Stream % ListContents ( ContentTypeOption = 'Directory' )
       GI % nStorages = size ( GI % Stream % ContentList )
 !-- FIXME: NAG 5.3.1 should support sourced allocation
 !      allocate ( StorageName, source = GI % Stream % ContentList )
       allocate ( StorageName ( size ( GI % Stream % ContentList ) ) )
       StorageName = GI % Stream % ContentList
+      
       do iStrg = 1, GI % nStorages
+      
         if ( len_trim ( StorageName ( iStrg ) ) > 0 ) &
           call GI % Stream % ChangeDirectory ( StorageName ( iStrg ) )
         call GI % Stream % ListContents &
@@ -495,49 +503,50 @@ contains
                  ( [ GI % oValue + GI % nTotalCells, nVariables ], &
                      VariableOption = VariableName, &
                      NameOption = StorageName ( iStrg ) )
-          
-          associate ( S => GI % Storage ( iStrg ) )
-          
-          do iVrbl = 1, nVariables
-            Error = DBGETCURVE &
-                      ( GI % Stream % MeshBlockHandle, &
-                        trim ( VariableName ( iVrbl ) ), &
-                        len_trim ( VariableName ( iVrbl ) ), &
-                        GI % nTotalCells, GI % NodeCoordinate_1, &
-                        S % Value ( GI % oValue + 1 &
-                                       : GI % oValue + GI % nTotalCells, &
-                                     iVrbl ), &
-                        DataType, nTotalCells )
-            
-            !-- FIXME: An assumption is made that the unit used to write
-            !          and read are the same. A better way would be to read
-            !          the unit directly from Silo file.
-            S % Value ( :, iVrbl ) &
-              = S % Value ( :, iVrbl ) * S % Unit ( iVrbl ) % Number
-
-          end do
-          
-          end associate
-        
-        end if
+        end if 
         
         if ( len_trim ( StorageName ( iStrg ) ) > 0 ) &
           call GI % Stream % ChangeDirectory ( '..' )
+          
       end do
     end if
+    
+          
+    do iStrg = 1, GI % nStorages
+      associate ( S => GI % Storage ( iStrg ) )
+      call GI % Stream % ChangeDirectory ( S % Name )
+      do iVrbl = 1, S % nVariables
+        Error = DBGETCURVE &
+                  ( GI % Stream % MeshBlockHandle, &
+                    trim ( S % Variable ( iVrbl ) ), &
+                    len_trim ( S % Variable ( iVrbl ) ), &
+                    GI % nTotalCells, GI % NodeCoordinate_1, &
+                    S % Value ( GI % oValue + 1 &
+                                   : GI % oValue + GI % nTotalCells, &
+                                 iVrbl ), &
+                    DataType, nTotalCells )
+        
+        !-- FIXME: An assumption is made that the unit used to write
+        !          and read are the same. A better way would be to read
+        !          the unit directly from Silo file.
+        S % Value ( :, iVrbl ) &
+          = S % Value ( :, iVrbl ) * S % Unit ( iVrbl ) % Number
+      end do
+      call GI % Stream % ChangeDirectory ( '..' )
+      end associate   !-- S
+    end do
     
     !-- FIXME: Here we make the assumption that the CoordinateUnit for reading 
     !          is the same as the ones used to write. A better way would be to
     !          read the unit directly from Silo attribute. 
-
     GI % NodeCoordinate_1 &
       = GI % NodeCoordinate_1 * GI % CoordinateUnit ( 1 ) % Number
     
-    call GI % Stream % ChangeDirectory ( '../' )
+    call GI % Stream % ChangeDirectory ( WorkingDirectory )
      
   end subroutine Read
-     
-
+  
+  
   subroutine ClearGrid ( CI )
 
     class ( CurveImageForm ), intent ( inout ) :: &
