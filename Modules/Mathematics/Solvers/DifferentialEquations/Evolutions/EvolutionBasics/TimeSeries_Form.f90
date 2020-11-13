@@ -315,7 +315,7 @@ contains
 
     call GIS % Open ( GIS % ACCESS_CREATE, SeriesOption = .false. )
     call CI % ClearGrid ( )
-    call CI % SetGrid  &
+    call CI % SetGridWrite  &
            ( Directory = 'TimeSeries', &
              NodeCoordinate = SB % Value ( 1 : TS % iTime, TS % TIME ), &
              nProperCells = TS % iTime, oValue = 0, &
