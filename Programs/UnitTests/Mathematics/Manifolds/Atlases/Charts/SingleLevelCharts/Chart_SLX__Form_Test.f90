@@ -44,6 +44,8 @@ contains
       Scale
     type ( MeasuredValueForm ), dimension ( 3 ) :: &
       CoordinateUnit
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+      G_3D
     logical ( KDL ), dimension ( 3 ) :: &
       IsPeriodic
     character ( LDN + 1 ) :: &
@@ -56,8 +58,6 @@ contains
       Spacing
     type ( GridImageStreamForm ), allocatable :: &
       GIS_Fiber
-    real ( KDR ), dimension ( :, :, : ), pointer :: &
-      GP
 
     !-- Base Atlas 
 
@@ -98,22 +98,23 @@ contains
     select type ( G  =>  GC % Field )
     class is ( GeometryFlatForm )
 
-    call C % SetVariablePointer ( G % Value ( :, G % CENTER_U ( 1 ) ), GP )
-    call Show ( GP ( :, 3, 3 ), 'Center_1 reference' )
+    call C % SetVariablePointer ( G % Value ( :, G % CENTER_U ( 1 ) ), G_3D )
+    call Show ( G_3D ( :, 3, 3 ), 'Center_1 reference' ) !-- Indexed for 3D
 
     call GIS % Open ( GIS % ACCESS_CREATE )
     call C % Write ( iStream = 1 )
     call GIS % Close ( )
 
-    GP ( 1 : C % nCells ( 1 ), 1 : C % nCells ( 2 ), 1 : C % nCells ( 3 ) ) &
-      =  0.0_KDR
-    call Show ( GP ( :, 3, 3 ), 'Center_1 proper cleared before read' )
+    associate ( nCB => C % nCellsBrick )
+    G_3D ( 1 : nCB ( 1 ), 1 : nCB ( 2 ), 1 : nCB ( 3 ) )  =  0.0_KDR
+    end associate !-- nCB
+    call Show ( G_3D ( :, 3, 3 ), 'Center_1 proper cleared before read' )
 
     call GIS % Open ( GIS % ACCESS_READ, NumberOption = GIS % Number )
     call C % Read ( iStream = 1 )
     call GIS % Close ( )
 
-    call Show ( GP ( :, 3, 3 ), 'Center_1 after read' )
+    call Show ( G_3D ( :, 3, 3 ), 'Center_1 after read' )
 
     end select !-- G
     end associate !-- A, etc.
