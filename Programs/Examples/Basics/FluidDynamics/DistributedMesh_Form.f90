@@ -473,7 +473,7 @@ contains
       
       associate ( CI => DM % CurveImage )
       call CI % Initialize ( GIS )
-      call CI % SetGrid &
+      call CI % SetGridWrite &
              ( 'Curves', Edge ( 1 ), DM % nProperCells, &
                oValue = nGhostInner ( 1 ) + nExteriorInner ( 1 ), &
                CoordinateUnitOption = DM % CoordinateUnit ( 1 ) )
@@ -487,7 +487,7 @@ contains
       !-- Output
       associate ( GI => DM % GridImage )
       call GI % Initialize ( GIS ) 
-      call GI % SetGrid &
+      call GI % SetGridWrite &
              ( 'Grid', Edge, nCells, nGhostInner, nGhostOuter, &
                nExteriorInner, nExteriorOuter, DM % nDimensions, &
                DM % nProperCells, DM % nGhostCells, &
