@@ -31,6 +31,8 @@ module GridImageSilo_Template
     procedure, public, pass :: &
       Initialize
     procedure, public, pass :: &
+      SetDirectory
+    procedure, public, pass :: &
       WriteHeader
     procedure, public, pass :: &
       WriteMultiMesh
@@ -89,6 +91,19 @@ contains
     GI % Stream => S
   
   end subroutine Initialize
+  
+  
+  subroutine SetDirectory ( GI, Directory )
+  
+    class ( GridImageSiloTemplate ), intent ( inout ) :: &
+      GI
+    character ( * ), intent ( in ) :: &
+      Directory
+    
+    GI % lDirectory  = len_trim ( Directory )
+    GI % Directory   = Directory
+  
+  end subroutine SetDirectory
 
   
   subroutine WriteHeader ( GI, TimeOption, CycleNumberOption )

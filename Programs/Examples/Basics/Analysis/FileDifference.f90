@@ -62,8 +62,7 @@ program FileDifference
   end if
   
   call GI_1 % Initialize ( GIS )
-  call GI_1 % SetReadAttributes &
-         ( Directory = trim ( GIS % ContentList ( 1 ) ), oValue = 0 )
+  call GI_1 % SetDirectory ( trim ( GIS % ContentList ( 1 ) ) )
   call GI_1 % Read ( )
   
   call GIS % Close ( )
@@ -72,8 +71,7 @@ program FileDifference
   call GIS % ListContents ( ContentTypeOption = 'Directory' )
   
   call GI_2 % Initialize ( GIS )
-  call GI_2 % SetReadAttributes &
-         ( Directory = trim ( GIS % ContentList ( 1 ) ), oValue = 0 )
+  call GI_2 % SetDirectory ( trim ( GIS % ContentList ( 1 ) ) )
   call GI_2 % Read ( )
   
   call GIS % Close ( )
