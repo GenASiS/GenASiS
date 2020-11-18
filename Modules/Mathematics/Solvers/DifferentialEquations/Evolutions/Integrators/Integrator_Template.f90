@@ -25,6 +25,8 @@ module Integrator_Template
         Analyze => null ( )
       procedure ( W ), pointer:: &
         Write => null ( )
+      procedure ( R ), pointer:: &
+        Read => null ( )
       procedure ( SWTI ), pointer :: &
         SetCheckpointTimeInterval => null ( )
       procedure ( CTSL ), pointer :: &
@@ -73,6 +75,8 @@ module Integrator_Template
       AnalyzeTemplate
     procedure, public, pass :: &  !-- 3
       WriteTemplate
+    procedure, public, pass :: &  !-- 3
+      ReadTemplate
     procedure, private, pass :: &  !-- 3
       RecordTimeSeries
     procedure, private, pass :: &  !-- 3
@@ -113,6 +117,19 @@ module Integrator_Template
       class ( IntegratorTemplate ), intent ( inout ) :: &
         I
     end subroutine W
+
+    subroutine R ( I, ReadFrom, Time, CycleNumber )
+      use Basics
+      import IntegratorTemplate
+      class ( IntegratorTemplate ), intent ( inout ) :: &
+        I
+      integer ( KDI ), intent ( in ) :: &
+        ReadFrom
+      type ( MeasuredValueForm ), intent ( out ) :: &
+        Time
+      integer ( KDI ), intent ( out ) :: &
+        CycleNumber
+    end subroutine R
 
     subroutine SWTI ( I )
       import IntegratorTemplate
@@ -242,6 +259,8 @@ contains
       I % Analyze => AnalyzeTemplate
     if ( .not. associated ( I % Write ) ) &
       I % Write => WriteTemplate
+    if ( .not. associated ( I % Read ) ) &
+      I % Read => ReadTemplate
     if ( .not. associated ( I % ResetInitial ) ) &
       I % ResetInitial => ResetInitial
     if ( .not. associated ( I % SetCheckpointTimeInterval ) ) &
@@ -671,6 +690,64 @@ contains
   end subroutine WriteTemplate
 
 
+  subroutine ReadTemplate ( I, ReadFrom, Time, CycleNumber )
+
+    class ( IntegratorTemplate ), intent ( inout ) :: &
+      I
+    integer ( KDI ), intent ( in ) :: &
+      ReadFrom
+    type ( MeasuredValueForm ), intent ( out ) :: &
+      Time
+    integer ( KDI ), intent ( out ) :: &
+      CycleNumber
+
+    ! if ( allocated ( I % MomentumSpace ) ) then
+    !   select type ( MS => I % MomentumSpace )
+    !   class is ( Bundle_SLL_ASC_CSLD_Form )
+    !     call MS % MarkFibersWritten ( )
+    !   end select !-- MS
+    ! end if !-- MomentumSpace
+
+    associate &
+      ( GIS => I % GridImageStream, &
+        iS  => 1 )  !-- iStream
+    call GIS % Open ( GIS % ACCESS_READ, NumberOption = ReadFrom )
+
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
+      call PS % Read &
+             ( iStream = iS, TimeOption = Time, &
+               CycleNumberOption = CycleNumber )
+      Time  =  Time * I % TimeUnit
+    class default
+      call Show ( 'Atlas type not found', CONSOLE % ERROR )
+      call Show ( 'Integrator_Template', 'module', CONSOLE % ERROR )
+      call Show ( 'Read', 'subroutine', CONSOLE % ERROR ) 
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- PS
+
+    !-- Base's GIS must be closed before call to Bundle % Write ( ).
+    call GIS % Close ( )
+
+    ! if ( allocated ( I % MomentumSpace ) ) then
+    !   select type ( MS => I % MomentumSpace )
+    !   class is ( Bundle_SLL_ASC_CSLD_Form )
+    !     call MS % Write &
+    !            ( iStream = iS, TimeOption = I % Time / I % TimeUnit, &
+    !              CycleNumberOption = I % iCycle )
+    !   class default
+    !     call Show ( 'Bundle type not found', CONSOLE % ERROR )
+    !     call Show ( 'Integrator_Template', 'module', CONSOLE % ERROR )
+    !     call Show ( 'Write', 'subroutine', CONSOLE % ERROR ) 
+    !     call PROGRAM_HEADER % Abort ( )
+    !   end select !-- MS
+    ! end if !-- MomentumSpace
+
+    end associate !-- GIS, etc.
+
+  end subroutine ReadTemplate
+
+
   subroutine RecordTimeSeries ( I, MaxTime, MinTime, MeanTime )
 
     class ( IntegratorTemplate ), intent ( inout ) :: &
@@ -833,36 +910,7 @@ contains
     integer ( KDI ), intent ( out ) :: &
       CycleNumber
 
-    associate ( GIS => I % GridImageStream )
-    associate ( iS => 1 )  !-- iStream
-
-    select type ( PS => I % PositionSpace )
-    class is ( Atlas_SC_Form )
-      call GIS % Open ( GIS % ACCESS_READ, NumberOption = RestartFrom )
-      call PS % Read ( iStream = iS, TimeOption = RestartTime, &
-                       CycleNumberOption = CycleNumber )
-      call GIS % Close ( )
-    class default
-      call Show ( 'Atlas type not found', CONSOLE % ERROR )
-      call Show ( 'Integrator_Template', 'module', CONSOLE % ERROR )
-      call Show ( 'ResetInitial', 'subroutine', CONSOLE % ERROR ) 
-      call PROGRAM_HEADER % Abort ( )
-    end select !-- PS
-
-    ! if ( allocated ( I % MomentumSpace ) ) then
-    !   select type ( MS => I % MomentumSpace )
-    !   class is ( Bundle_SLL_ASC_CSLD_Form )
-    !     call MS % OpenStream ( GIS, iStream = iS )
-    !   class default
-    !     call Show ( 'Bundle type not found', CONSOLE % ERROR )
-    !     call Show ( 'Integrator_Template', 'module', CONSOLE % ERROR )
-    !     call Show ( 'OpenStreams', 'subroutine', CONSOLE % ERROR ) 
-    !     call PROGRAM_HEADER % Abort ( )
-    !   end select !-- MS
-    ! end if !-- MomentumSpace
-
-    end associate !-- iS
-    end associate !-- GIS
+    call I % Read ( RestartFrom, RestartTime, CycleNumber )
 
   end subroutine ResetInitial
 
