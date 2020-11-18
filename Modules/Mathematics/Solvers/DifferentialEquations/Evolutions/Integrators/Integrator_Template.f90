@@ -31,6 +31,10 @@ module Integrator_Template
         ComputeTimeStepLocal => null ( )
       procedure ( SR ), pointer :: &
         SetReference => null ( )
+      procedure ( SI ), public, pointer :: &
+        SetInitial => null ( )
+      procedure ( RI ), public, pointer :: &
+        ResetInitial => null ( )
   contains
     procedure, public, pass :: &  !-- 1
       InitializeTemplate
@@ -164,8 +168,35 @@ module Integrator_Template
 
   end interface
 
+
+  interface
+
+    subroutine SI ( I )
+      import IntegratorTemplate
+      class ( IntegratorTemplate ), intent ( inout ) :: &
+        I
+    end subroutine SI
+
+    subroutine RI ( I, RestartFrom, RestartTime, CycleNumber )
+      use Basics
+      import IntegratorTemplate
+      class ( IntegratorTemplate ), intent ( inout ) :: &
+        I
+      integer ( KDI ), intent ( in ) :: &
+        RestartFrom
+      type ( MeasuredValueForm ), intent ( out ) :: &
+        RestartTime
+      integer ( KDI ), intent ( out ) :: &
+        CycleNumber
+    end subroutine RI
+
+  end interface
+
+
     private :: &
+      ResetInitial, &
       SetCheckpointTimeInterval
+
 
 contains
 
@@ -211,6 +242,8 @@ contains
       I % Analyze => AnalyzeTemplate
     if ( .not. associated ( I % Write ) ) &
       I % Write => WriteTemplate
+    if ( .not. associated ( I % ResetInitial ) ) &
+      I % ResetInitial => ResetInitial
     if ( .not. associated ( I % SetCheckpointTimeInterval ) ) &
       I % SetCheckpointTimeInterval => SetCheckpointTimeInterval
 
@@ -411,42 +444,24 @@ contains
       I
 
     integer ( KDI ) :: &
-      RestartFrom
-    real ( KDR ) :: &
+      RestartFrom, &
+      CycleNumber
+    type ( MeasuredValueForm ) :: &
       RestartTime
+
+    I % Time  =  I % StartTime
 
     RestartFrom  =  - huge ( 1 )
     call PROGRAM_HEADER % GetParameter ( RestartFrom, 'RestartFrom' )
 
-    associate ( U  =>  I % Universe )
- 
-    I % Time  =  I % StartTime
-
     if ( RestartFrom >= 0 ) then
-
-      if ( associated ( U % ResetInitial ) ) then
-
-        call U % ResetInitial ( RestartFrom, RestartTime )
-
-        I % Time  =  RestartTime
-
-      else
-
-        call Show ( 'ResetInitial not associated', CONSOLE % ERROR )
-        call Show ( RestartFrom, 'RestartFrom', CONSOLE % ERROR )
-        call Show ( 'Integrator_Template', 'module', CONSOLE % ERROR )
-        call Show ( 'PrepareInitial', 'subroutine', CONSOLE % ERROR )
-        call PROGRAM_HEADER % Abort ( )
-
-      end if
-
-    else if ( associated ( U % SetInitial ) ) then
-
-      call U % SetInitial ( )
-
+      call I % ResetInitial ( RestartFrom, RestartTime, CycleNumber )
+      I % iCheckpoint  =  RestartFrom
+      I % iCycle       =  CycleNumber
+      I % Time         =  RestartTime
+    else if ( associated ( I % SetInitial ) ) then
+      call I % SetInitial ( )
     end if
-
-    end associate !-- U
 
   end subroutine PrepareInitial
 
@@ -797,6 +812,51 @@ contains
     end if
 
   end subroutine ComputeTimeStep
+
+
+  subroutine ResetInitial ( I, RestartFrom, RestartTime, CycleNumber )
+
+    class ( IntegratorTemplate ), intent ( inout ) :: &
+      I
+    integer ( KDI ), intent ( in ) :: &
+      RestartFrom
+    type ( MeasuredValueForm ), intent ( out ) :: &
+      RestartTime
+    integer ( KDI ), intent ( out ) :: &
+      CycleNumber
+
+    associate ( GIS => I % GridImageStream )
+    associate ( iS => 1 )  !-- iStream
+
+    select type ( PS => I % PositionSpace )
+    class is ( Atlas_SC_Form )
+      call GIS % Open ( GIS % ACCESS_READ, NumberOption = RestartFrom )
+      call PS % Read ( iStream = iS, TimeOption = RestartTime, &
+                       CycleNumberOption = CycleNumber )
+      call GIS % Close ( )
+    class default
+      call Show ( 'Atlas type not found', CONSOLE % ERROR )
+      call Show ( 'Integrator_Template', 'module', CONSOLE % ERROR )
+      call Show ( 'ResetInitial', 'subroutine', CONSOLE % ERROR ) 
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- PS
+
+    ! if ( allocated ( I % MomentumSpace ) ) then
+    !   select type ( MS => I % MomentumSpace )
+    !   class is ( Bundle_SLL_ASC_CSLD_Form )
+    !     call MS % OpenStream ( GIS, iStream = iS )
+    !   class default
+    !     call Show ( 'Bundle type not found', CONSOLE % ERROR )
+    !     call Show ( 'Integrator_Template', 'module', CONSOLE % ERROR )
+    !     call Show ( 'OpenStreams', 'subroutine', CONSOLE % ERROR ) 
+    !     call PROGRAM_HEADER % Abort ( )
+    !   end select !-- MS
+    ! end if !-- MomentumSpace
+
+    end associate !-- iS
+    end associate !-- GIS
+
+  end subroutine ResetInitial
 
 
   subroutine SetCheckpointTimeInterval ( I )
