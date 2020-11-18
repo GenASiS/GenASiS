@@ -449,18 +449,22 @@ contains
     type ( MeasuredValueForm ) :: &
       RestartTime
 
-    I % Time  =  I % StartTime
+    I % Start    =  .true.
+    I % Time     =  I % StartTime
+    if ( associated ( I % SetInitial ) ) &
+      call I % SetInitial ( )
 
+    I % Restart  =  .false.
     RestartFrom  =  - huge ( 1 )
     call PROGRAM_HEADER % GetParameter ( RestartFrom, 'RestartFrom' )
 
     if ( RestartFrom >= 0 ) then
       call I % ResetInitial ( RestartFrom, RestartTime, CycleNumber )
+      I % Start        =  .false.
+      I % Restart      =  .true.
       I % iCheckpoint  =  RestartFrom
       I % iCycle       =  CycleNumber
       I % Time         =  RestartTime
-    else if ( associated ( I % SetInitial ) ) then
-      call I % SetInitial ( )
     end if
 
   end subroutine PrepareInitial
@@ -502,7 +506,7 @@ contains
     call Show ( I % iCheckpoint, 'iCheckpoint', I % IGNORABILITY )
     call Show ( I % iCycle, 'iCycle', I % IGNORABILITY )
     call Show ( I % Time, I % TimeUnit, 'Time', I % IGNORABILITY )
-    if ( I % iCycle > 0 ) then
+    if ( .not. I % Start .and. .not. I % Restart ) then
       do iTSC = 1, I % nTimeStepCandidates
         call Show ( I % TimeStepCandidate ( iTSC ), I % TimeUnit, &
                     trim ( I % TimeStepLabel ( iTSC ) ) // ' TimeStep', &
@@ -512,7 +516,8 @@ contains
 
     call I % UpdateHost ( )
 
-    if ( I % Time > I % StartTime .and. I % Time < I % FinishTime &
+    if ( .not. I % Start .and. .not. I % Restart &
+         .and. I % Time < I % FinishTime &
          .and. mod ( I % iCheckpoint, I % CheckpointDisplayInterval ) > 0 ) &
     then
       TallyIgnorability       =  I % IGNORABILITY + 2
@@ -569,6 +574,9 @@ contains
     end if
 
     I % iCheckpoint = I % iCheckpoint + 1
+    
+    I % Start    =  .false.
+    I % Restart  =  .false.
 
     if ( associated ( Timer ) ) call Timer % Stop ( )
 
