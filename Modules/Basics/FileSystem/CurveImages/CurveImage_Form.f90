@@ -168,12 +168,18 @@ contains
       CycleNumberOption
     
     integer ( KDI ) :: &
+      iV, &      !-- iValue
       iStrg, &     !-- iStorage
       iS, &     !-- iSelected
       iVrbl, &  !-- iVariable
       nSiloOptions, &
       Error, &
       SiloOptionList
+    real ( KDR ), dimension ( : ), allocatable :: &
+      Coordinate, &
+      Value, &
+      Coordinate_MM, &  !-- CoordinateMultiMesh
+      Value_MM          !-- ValueMultiMesh
     character ( LDF ) :: &
       WorkingDirectory
     type ( CollectiveOperation_R_Form ), target :: &
@@ -182,6 +188,9 @@ contains
 
     if ( .not. GI % Stream % IsWritable ( ) ) return
     
+    allocate ( Coordinate ( GI % nTotalCells ) )
+    allocate ( Value ( GI % nTotalCells ) )
+
     WorkingDirectory = GI % Stream % CurrentDirectory
     if ( GI % lDirectory > 0 ) &
       call GI % Stream % MakeDirectory ( GI % Directory )
@@ -208,6 +217,11 @@ contains
                  = [ GI % Stream % Communicator % Size * GI % nTotalCells ], &
                RootOption = 0 )
       
+      if ( GI % Stream % IsWritable ( CheckMultiMeshOption = .true. ) ) then
+        allocate ( Coordinate_MM ( size ( CO_Coordinate % Incoming % Value ) ) )
+        allocate ( Value_MM ( size ( CO_Variable % Incoming % Value ) ) )
+      end if !-- MultiMesh
+
       do iStrg = 1, GI % nStorages
         
         associate ( S => GI % Storage ( iStrg ) )
@@ -222,7 +236,7 @@ contains
 
           iVrbl = S % iaSelected ( iS ) 
             
-          call Show ( 'Writing a Variable (structured)', CONSOLE % INFO_6 )
+          call Show ( 'Writing a Variable (curve)', CONSOLE % INFO_6 )
           call Show ( iS, 'iSelected', CONSOLE % INFO_6 )
           call Show ( S % Variable ( iVrbl ), 'Name', CONSOLE % INFO_6 )
 
@@ -270,36 +284,67 @@ contains
                         CONSOLE % INFO_6 )
           end if
 
+          !-- FIXME: GCC 10.1 does not like some array operations
+          do iV = 1, size ( Value )
+            Coordinate ( iV )  =  GI % NodeCoordinate_1 ( iV ) &
+                                  / GI % CoordinateUnit ( 1 ) % Number
+            Value ( iV )  =  S % Value ( GI % oValue + iV, iVrbl ) &
+                             / S % Unit ( iVrbl ) % Number
+          end do !-- iV
+
+          ! Error = DBPUTCURVE &
+          !           ( GI % Stream % MeshBlockHandle, &
+          !             trim ( S % Variable ( iVrbl ) ), &
+          !             S % lVariable ( iVrbl ), &
+          !             GI % NodeCoordinate_1 &
+          !               / GI % CoordinateUnit ( 1 ) % Number, &
+          !             S % Value ( GI % oValue + 1 &
+          !                            : GI % oValue + GI % nTotalCells, &
+          !                          iVrbl ) &
+          !               / S % Unit ( iVrbl ) % Number, &
+          !             DB_DOUBLE, GI % nTotalCells, SiloOptionList, Error )
           Error = DBPUTCURVE &
                     ( GI % Stream % MeshBlockHandle, &
                       trim ( S % Variable ( iVrbl ) ), &
                       S % lVariable ( iVrbl ), &
-                      GI % NodeCoordinate_1 &
-                        / GI % CoordinateUnit ( 1 ) % Number, &
-                      S % Value ( GI % oValue + 1 &
-                                     : GI % oValue + GI % nTotalCells, &
-                                   iVrbl ) &
-                        / S % Unit ( iVrbl ) % Number, &
+                      Coordinate, Value, &
                       DB_DOUBLE, GI % nTotalCells, SiloOptionList, Error )
           
           if ( GI % Stream % IsWritable ( CheckMultiMeshOption = .true. ) )&
           then
 
-            associate &
-              ( Coordinate    => CO_Coordinate % Incoming % Value, &
-                VariableValue => CO_Variable % Incoming % Value )
+            !-- FIXME: GCC 10.1 does not like some array operations
+            do iV = 1, size ( Value_MM )
+              Coordinate_MM ( iV )  &
+                =  CO_Coordinate % Incoming % Value ( iV )  &
+                   / GI % CoordinateUnit ( 1 ) % Number
+              Value_MM ( iV )  &
+                =  CO_Variable % Incoming % Value ( iV )  & 
+                   / S % Unit ( iVrbl ) % Number
+            end do !-- iV
 
+            ! associate &
+            !   ( Coordinate    => CO_Coordinate % Incoming % Value, &
+            !     VariableValue => CO_Variable % Incoming % Value )
+
+            ! Error = DBPUTCURVE &
+            !           ( GI % Stream % MultiMeshHandle, &
+            !             trim ( S % Variable ( iVrbl ) ), &
+            !             S % lVariable ( iVrbl ), &
+            !             Coordinate / GI % CoordinateUnit ( 1 ) % Number, &
+            !             VariableValue / S % Unit ( iVrbl ) % Number, &
+            !             DB_DOUBLE, size ( VariableValue ), &
+            !             SiloOptionList, Error )
+
+            ! end associate
+            
             Error = DBPUTCURVE &
                       ( GI % Stream % MultiMeshHandle, &
                         trim ( S % Variable ( iVrbl ) ), &
                         S % lVariable ( iVrbl ), &
-                        Coordinate / GI % CoordinateUnit ( 1 ) % Number, &
-                        VariableValue / S % Unit ( iVrbl ) % Number, &
-                        DB_DOUBLE, size ( VariableValue ), &
-                        SiloOptionList, Error )
+                        Coordinate_MM, Value_MM, &
+                        DB_DOUBLE, size ( Value_MM ), SiloOptionList, Error )
 
-            end associate
-            
           end if
             
           if ( SiloOptionList /= DB_F77NULL ) then
@@ -338,7 +383,7 @@ contains
 
           iVrbl = S % iaSelected ( iS )
             
-          call Show ( 'Writing a Variable (structured)', CONSOLE % INFO_6 )
+          call Show ( 'Writing a Variable (curve)', CONSOLE % INFO_6 )
           call Show ( iS, 'iSelected', CONSOLE % INFO_6 )
 
           nSiloOptions &
@@ -380,16 +425,30 @@ contains
                         CONSOLE % INFO_6 )
           end if
 
+          !-- FIXME: GCC 10.1 does not like some array operations
+          do iV = 1, size ( Value )
+            Coordinate ( iV )  =  GI % NodeCoordinate_1 ( iV ) &
+                                  / GI % CoordinateUnit ( 1 ) % Number
+            Value ( iV )  =  S % Value ( GI % oValue + iV, iVrbl ) &
+                             / S % Unit ( iVrbl ) % Number
+          end do !-- iV
+
+          ! Error = DBPUTCURVE &
+          !           ( GI % Stream % MeshBlockHandle, &
+          !             trim ( S % Variable ( iVrbl ) ), &
+          !             S % lVariable ( iVrbl ), &
+          !             GI % NodeCoordinate_1 &
+          !               / GI % CoordinateUnit ( 1 ) % Number, &
+          !             S % Value ( GI % oValue + 1 &
+          !                            : GI % oValue + GI % nTotalCells, &
+          !                          iVrbl ) &
+          !               / S % Unit ( iVrbl ) % Number, &
+          !             DB_DOUBLE, GI % nTotalCells, SiloOptionList, Error )
           Error = DBPUTCURVE &
                     ( GI % Stream % MeshBlockHandle, &
                       trim ( S % Variable ( iVrbl ) ), &
                       S % lVariable ( iVrbl ), &
-                      GI % NodeCoordinate_1 &
-                        / GI % CoordinateUnit ( 1 ) % Number, &
-                      S % Value ( GI % oValue + 1 &
-                                     : GI % oValue + GI % nTotalCells, &
-                                   iVrbl ) &
-                        / S % Unit ( iVrbl ) % Number, &
+                      Coordinate, Value, &
                       DB_DOUBLE, GI % nTotalCells, SiloOptionList, Error )
             
           if ( SiloOptionList /= DB_F77NULL ) then
