@@ -238,7 +238,6 @@ contains
             
           call Show ( 'Writing a Variable (curve)', CONSOLE % INFO_6 )
           call Show ( iS, 'iSelected', CONSOLE % INFO_6 )
-          call Show ( S % Variable ( iVrbl ), 'Name', CONSOLE % INFO_6 )
 
           nSiloOptions &
             = count &
@@ -571,10 +570,25 @@ contains
     end if
     
     do iStrg = 1, GI % nStorages
+
       associate ( S => GI % Storage ( iStrg ) )
+
+      call Show ( 'Reading a Storage (curve)', CONSOLE % INFO_5 )
+      call Show ( iStrg, 'iStorage', CONSOLE % INFO_5 )
+      call Show ( S % Name, 'Name', CONSOLE % INFO_5 )
+
       call GI % Stream % ChangeDirectory ( S % Name )
       do iS = 1, S % nVariables
+
         iVrbl = S % iaSelected ( iS )
+
+        call Show ( 'Reading a Variable (curve)', CONSOLE % INFO_6 )
+        call Show ( iS, 'iSelected', CONSOLE % INFO_6 )
+
+        call Show ( trim ( S % Variable ( iVrbl ) ), 'Variable', &
+                    CONSOLE % INFO_6 )
+        call Show ( S % lVariable ( iVrbl ), 'lVariable', CONSOLE % INFO_6 )
+
         Error = DBGETCURVE &
                   ( GI % Stream % MeshBlockHandle, &
                     trim ( S % Variable ( iVrbl ) ), &
@@ -584,14 +598,19 @@ contains
                                    : GI % oValue + GI % nTotalCells, &
                                  iVrbl ), &
                     DataType, nTotalCells )
+
         !-- FIXME: An assumption is made that the unit used to write
         !          and read are the same. A better way would be to read
         !          the unit directly from Silo file.
         S % Value ( :, iVrbl ) &
           = S % Value ( :, iVrbl ) * S % Unit ( iVrbl ) % Number
+
       end do
+
       call GI % Stream % ChangeDirectory ( '..' )
+
       end associate   !-- S
+
     end do
     
     !-- FIXME: Here we make the assumption that the CoordinateUnit for reading 

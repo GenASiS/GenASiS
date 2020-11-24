@@ -802,7 +802,6 @@ contains
         
         call Show ( 'Writing a Variable (structured)', CONSOLE % INFO_6 )
         call Show ( iS, 'iSelected', CONSOLE % INFO_6 )
-        call Show ( S % Variable ( iVrbl ), 'Name', CONSOLE % INFO_6 )
 
         if ( allocated ( SGI % PillarHash ) ) then
           do iV = 1, size ( SGI % PillarHash )
