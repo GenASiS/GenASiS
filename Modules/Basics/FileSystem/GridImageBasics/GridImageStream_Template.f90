@@ -322,13 +322,14 @@ contains
       PathSuffix, &
       PathName
     
-    if ( AccessMode == ACCESS_MODE_CREATE ) GIS % Number = GIS % Number + 1
-    
-    GIS % AccessMode = AccessMode
-    
     Series = .true.
     if ( present ( SeriesOption ) ) Series = SeriesOption
     if ( present ( NumberOption ) ) GIS % Number = NumberOption
+    
+    if ( AccessMode == ACCESS_MODE_CREATE .and. Series ) &
+      GIS % Number = GIS % Number + 1
+    
+    GIS % AccessMode = AccessMode
     
     if ( Series ) then 
       write ( FileNumberString, fmt = '(a1,i7.7)' ) '_', GIS % Number

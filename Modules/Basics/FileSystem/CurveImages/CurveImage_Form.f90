@@ -154,6 +154,8 @@ contains
     CI % nGhostCells  =  0
     CI % lDirectory   =  len_trim ( Directory )    
     CI % Directory    =  Directory
+
+    allocate ( CI % NodeCoordinate_1 ( nProperCells ) )
     
   end subroutine SetGridRead
   
@@ -522,7 +524,7 @@ contains
     SiloOptionList = DB_F77NULL
     
     call GI % ReadHeader ( TimeOption, CycleNumberOption )
-    
+
     !-- prepare Storage to read into
     if ( GI % nStorages == 0 .and. .not. StorageOnly ) then
       call GI % Stream % ListContents ( ContentTypeOption = 'Directory' )

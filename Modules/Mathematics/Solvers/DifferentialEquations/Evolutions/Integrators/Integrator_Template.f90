@@ -81,6 +81,8 @@ module Integrator_Template
       RecordTimeSeries
     procedure, private, pass :: &  !-- 3
       WriteTimeSeries
+    procedure, private, pass :: &  !-- 3
+      ReadTimeSeries
     procedure, public, pass :: &
       PrepareCycle
     procedure, public, pass :: &  !-- 3
@@ -535,17 +537,19 @@ contains
 
     call I % UpdateHost ( )
 
-    if ( .not. I % Start .and. .not. I % Restart &
+    WriteSeries = .true.
+
+    if ( .not. I % Start & !.and. .not. I % Restart &
          .and. I % Time < I % FinishTime &
          .and. mod ( I % iCheckpoint, I % CheckpointDisplayInterval ) > 0 ) &
     then
       TallyIgnorability       =  I % IGNORABILITY + 2
       StatisticsIgnorability  =  I % IGNORABILITY + 2
-      WriteSeries = .false.
+!      WriteSeries = .false.
     else
       TallyIgnorability       =  CONSOLE % INFO_1
       StatisticsIgnorability  =  CONSOLE % INFO_1
-      WriteSeries = .true.
+!      WriteSeries = .true.
     end if
 
     if ( associated ( Timer_T ) ) call Timer_T % Start ( )   
@@ -559,7 +563,7 @@ contains
     if ( associated ( Timer_A ) ) call Timer_A % Stop ( )   
 
     if ( associated ( Timer_W ) ) call Timer_W % Start ( )   
-    if ( .not. I % NoWrite ) &
+    if ( .not. I % NoWrite .and. .not. I % Restart ) &
       call I % Write ( )
     if ( associated ( Timer_W ) ) call Timer_W % Stop ( )   
 
@@ -569,10 +573,11 @@ contains
              MaxTimeOption = MaxTime, MinTimeOption = MinTime, &
              MeanTimeOption = MeanTime )
 
-    call I % RecordTimeSeries ( MaxTime, MinTime, MeanTime )
+    if ( .not. I % Restart ) &
+      call I % RecordTimeSeries ( MaxTime, MinTime, MeanTime )
 
     if ( associated ( Timer_WS ) ) call Timer_WS % Start ( )   
-    if ( WriteSeries .and. .not. I % NoWrite ) &
+    if ( WriteSeries .and. .not. I % NoWrite .and. .not. I % Restart ) &
       call I % WriteTimeSeries ( )
     if ( associated ( Timer_WS ) ) call Timer_WS % Stop ( )   
 
@@ -791,6 +796,18 @@ contains
   end subroutine WriteTimeSeries
 
 
+  subroutine ReadTimeSeries ( I, nSeries )
+
+    class ( IntegratorTemplate ), intent ( inout ) :: &
+      I
+    integer ( KDI ), intent ( in ) :: &
+      nSeries
+
+    call I % TimeSeries % Read ( nSeries )
+
+  end subroutine ReadTimeSeries
+
+
   subroutine PrepareCycle ( I )
 
     class ( IntegratorTemplate ), intent ( inout ) :: &
@@ -911,6 +928,8 @@ contains
       CycleNumber
 
     call I % Read ( RestartFrom, RestartTime, CycleNumber )
+
+    call I % ReadTimeSeries ( nSeries = RestartFrom + 1 )
 
   end subroutine ResetInitial
 

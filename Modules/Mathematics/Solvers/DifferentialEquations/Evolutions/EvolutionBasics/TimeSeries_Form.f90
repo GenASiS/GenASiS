@@ -49,6 +49,8 @@ module TimeSeries_Form
       Record
     procedure, public, pass :: &
       Write
+    procedure, public, pass :: &
+      Read
     final :: &
       Finalize
   end type TimeSeriesForm
@@ -306,7 +308,7 @@ contains
     if ( .not. allocated ( TS % GridImageStream ) ) &
       return
 
-    call Show ( 'Writing a ConservationLawTimeSeries', TS % IGNORABILITY )
+    call Show ( 'Writing ' // trim ( TS % Type ), TS % IGNORABILITY )
 
     associate &
       ( GIS => TS % GridImageStream, &
@@ -318,7 +320,8 @@ contains
     call CI % SetGridWrite  &
            ( Directory = 'TimeSeries', &
              NodeCoordinate = SB % Value ( 1 : TS % iTime, TS % TIME ), &
-             nProperCells = TS % iTime, oValue = 0, &
+             nProperCells = TS % iTime, &
+             oValue = 0, &
              CoordinateUnitOption = SB % Unit ( TS % TIME ), &
              CoordinateLabelOption = 't' )
     call CI % Write ( )
@@ -327,6 +330,39 @@ contains
     end associate !-- GIS, etc.
 
   end subroutine Write
+
+
+  subroutine Read ( TS, nSeries )
+
+    class ( TimeSeriesForm ), intent ( inout ) :: &
+      TS
+    integer ( KDI ), intent ( in ) :: &
+      nSeries
+
+    if ( .not. allocated ( TS % GridImageStream ) ) &
+      return
+
+    call Show ( 'Reading ' // trim ( TS % Type ), TS % IGNORABILITY )
+
+    associate &
+      ( GIS => TS % GridImageStream, &
+        SB  => TS % SeriesBasic, &
+        CI => TS % CurveImage )
+
+    call GIS % Open ( GIS % ACCESS_READ, SeriesOption = .false. )
+    call CI % ClearGrid ( )
+    call CI % SetGridRead  &
+           ( Directory = 'TimeSeries', &
+             nProperCells = nSeries, &
+             oValue = 0 )
+    call CI % Read ( StorageOnlyOption = .true. )
+    call GIS % Close ( ) 
+
+    TS % iTime  =  nSeries
+
+    end associate !-- GIS, etc.
+
+  end subroutine Read
 
 
   impure elemental subroutine Finalize ( TS )
