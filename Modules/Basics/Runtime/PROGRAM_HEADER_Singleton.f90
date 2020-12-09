@@ -1191,13 +1191,10 @@ contains
    
     PH => PROGRAM_HEADER 
 
-call Show ( '>>> 1' )      
     if ( present ( MeanTimeOption ) ) then
 
-call Show ( '>>> present ( MeanTimeOption )' )
       if ( present ( CommunicatorOption ) ) then
 
-call Show ( '>>> present ( CommunicatorOption )' )
         call CO % Initialize &
                ( CommunicatorOption, &
                  nOutgoing = [ PH % nTimers ], nIncoming = [ PH % nTimers ], &
@@ -1210,8 +1207,6 @@ call Show ( '>>> present ( CommunicatorOption )' )
 
       end if !-- present ( CommunicatorOption )
 
-call Show ( size ( MeanTimeOption ), '>>> size ( MeanTimeOption )' )
-call Show ( PH % nTimers, '>>> nTimers' )
       if ( size ( MeanTimeOption ) /= PH % nTimers ) then
         call Show ( 'Incorrect number of timer values', CONSOLE % ERROR )
         call Show ( size ( MeanTimeOption ), 'size ( MeanTimeOption )', &
@@ -1223,7 +1218,7 @@ call Show ( PH % nTimers, '>>> nTimers' )
       end if
 
       do iT = 1, PH % nTimers
-        call PH % Timer ( iT ) % RestoreTotal ( MeanTimeOption ( iT ) )
+        call PH % Timer ( iT ) % RestoreTotal ( CO % Incoming % Value ( iT ) )
         call PH % Timer ( iT ) % ShowTotal ( Ignorability + 1 )
       end do !-- iT
 

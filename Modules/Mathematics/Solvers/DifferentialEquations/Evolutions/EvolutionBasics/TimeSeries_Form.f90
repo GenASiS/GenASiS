@@ -342,6 +342,8 @@ contains
     integer ( KDI ), intent ( in ) :: &
       nSeries
 
+    TS % iTime  =  nSeries
+
     if ( .not. allocated ( TS % GridImageStream ) ) &
       return
 
@@ -360,8 +362,6 @@ contains
              oValue = 0 )
     call CI % Read ( StorageOnlyOption = .true. )
     call GIS % Close ( ) 
-
-    TS % iTime  =  nSeries
 
     end associate !-- GIS, etc.
 
@@ -396,7 +396,7 @@ contains
       MaxTime  ( iT )  =  STV_Max  ( iV, iT )  *  I % iCycle
       MinTime  ( iT )  =  STV_Min  ( iV, iT )  *  I % iCycle
       MeanTime ( iT )  =  STV_Mean ( iV, iT )  *  I % iCycle
-      call Show ( MaxTime ( iT ), &
+      call Show ( MeanTime ( iT ), &
                   ST_Mean % Unit ( iT ), &
                   trim ( ST_Mean % Variable ( iT ) ) // ' (MeanTime)', &
                   TS % IGNORABILITY )
