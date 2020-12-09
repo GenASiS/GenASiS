@@ -81,6 +81,8 @@ module PROGRAM_HEADER_Singleton
     procedure, public, nopass :: &
       ShowStatistics
     procedure, public, nopass :: &
+      RestoreStatistics
+    procedure, public, nopass :: &
       Abort => Abort_PH  !-- avoids conflict with intrinsic "abort"
     final :: &
       Finalize
@@ -92,7 +94,8 @@ module PROGRAM_HEADER_Singleton
 
     private :: &
       PrepareAndShow_OMP_Environment, &
-      ReadTimers
+      ReadTimers, &
+      RestoreTimers
       
 contains
 
@@ -919,6 +922,23 @@ contains
   end subroutine ShowStatistics 
   
   
+  subroutine RestoreStatistics &
+               ( Ignorability, CommunicatorOption, MeanTimeOption )
+  
+    integer ( KDI ), intent ( in ) :: &
+      Ignorability
+    type ( CommunicatorForm ), intent ( in ), optional :: &
+      CommunicatorOption
+    real ( KDR ), dimension ( : ), intent ( in ), optional :: &
+      MeanTimeOption
+      
+    call Show ( 'Restoring program timing', Ignorability )
+
+    call RestoreTimers ( Ignorability, CommunicatorOption, MeanTimeOption )
+
+  end subroutine RestoreStatistics
+
+
   subroutine Abort_PH ( )
   
     if ( PROGRAM_HEADER % Communicator % Initialized ) then
@@ -1150,6 +1170,66 @@ contains
     end do
 
   end subroutine ReadTimers
+
+
+  subroutine RestoreTimers &
+               ( Ignorability, CommunicatorOption, MeanTimeOption )
+
+    integer ( KDI ), intent ( in ) :: &
+      Ignorability
+    type ( CommunicatorForm ), intent ( in ), optional :: &
+      CommunicatorOption
+    real ( KDR ), dimension ( : ), intent ( in ), optional :: &
+      MeanTimeOption
+
+    integer ( KDI ) :: &
+      iT
+    type ( CollectiveOperation_R_Form ) :: &
+      CO
+    type ( ProgramHeaderSingleton ), pointer :: &
+      PH
+   
+    PH => PROGRAM_HEADER 
+
+call Show ( '>>> 1' )      
+    if ( present ( MeanTimeOption ) ) then
+
+call Show ( '>>> present ( MeanTimeOption )' )
+      if ( present ( CommunicatorOption ) ) then
+
+call Show ( '>>> present ( CommunicatorOption )' )
+        call CO % Initialize &
+               ( CommunicatorOption, &
+                 nOutgoing = [ PH % nTimers ], nIncoming = [ PH % nTimers ], &
+                 RootOption = CONSOLE % DisplayRank )
+
+        if ( CommunicatorOption % Rank  ==  CONSOLE % DisplayRank ) &
+          CO % Outgoing % Value  =  MeanTimeOption
+
+        call CO % Broadcast ( )
+
+      end if !-- present ( CommunicatorOption )
+
+call Show ( size ( MeanTimeOption ), '>>> size ( MeanTimeOption )' )
+call Show ( PH % nTimers, '>>> nTimers' )
+      if ( size ( MeanTimeOption ) /= PH % nTimers ) then
+        call Show ( 'Incorrect number of timer values', CONSOLE % ERROR )
+        call Show ( size ( MeanTimeOption ), 'size ( MeanTimeOption )', &
+                    CONSOLE % ERROR )
+        call Show ( PH % nTimers, 'nTimers', CONSOLE % ERROR )
+        call Show ( 'PROGRAM_HEADER_Singleton', 'module', CONSOLE % ERROR )
+        call Show ( 'RestoreTimers', 'subroutine', CONSOLE % ERROR )
+        call PH % Abort ( )
+      end if
+
+      do iT = 1, PH % nTimers
+        call PH % Timer ( iT ) % RestoreTotal ( MeanTimeOption ( iT ) )
+        call PH % Timer ( iT ) % ShowTotal ( Ignorability + 1 )
+      end do !-- iT
+
+    end if !-- present ( MeanTimeOption )
+
+  end subroutine RestoreTimers
 
 
 end module PROGRAM_HEADER_Singleton

@@ -33,6 +33,8 @@ module Timer_Form
       ShowInterval
     procedure, public, pass :: &
       ShowTotal
+    procedure, public, pass :: &
+      RestoreTotal
   end type TimerForm
 
     character ( 8 ), private, parameter :: &
@@ -153,6 +155,23 @@ contains
                 Ignorability )
 
   end subroutine ShowTotal
+
+
+  subroutine RestoreTotal ( T, TotalTime )
+
+    class ( TimerForm ), intent ( inout ) :: &
+      T
+    real ( KDR ), intent ( in ) :: &
+      TotalTime
+
+    type ( MeasuredValueForm ) :: &
+      TotalTime_MV
+
+    call TotalTime_MV % Initialize ( 's', TotalTime )
+  
+    T % TotalTime  =  TotalTime_MV
+
+  end subroutine RestoreTotal
 
 
 end module Timer_Form
