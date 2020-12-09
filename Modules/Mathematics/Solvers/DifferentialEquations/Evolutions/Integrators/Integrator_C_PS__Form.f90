@@ -51,6 +51,7 @@ module Integrator_C_PS__Form
   end type Integrator_C_PS_Form
 
     private :: &
+      InitializeTimeSeries_C, &
       ComputeTimeStepLocal
       
   interface 
@@ -145,12 +146,10 @@ contains
     if ( .not. associated ( I % ComputeTimeStepLocal ) ) &
       I % ComputeTimeStepLocal  =>  ComputeTimeStepLocal
 
-    !-- if TimeSeries allocated above, initialize
+    !-- if TimeSeries allocated above, set InitializeTimeSeries
     select type ( TS => I % TimeSeries )
     type is ( TimeSeries_C_Form )
-      associate ( CA => I % Current_ASC )
-      call TS % Initialize ( I, CA )
-      end associate !-- CA
+      I % InitializeTimeSeries  =>  InitializeTimeSeries_C
     end select !-- TS
 
   end subroutine Initialize_I
@@ -422,6 +421,24 @@ contains
     nullify ( C, G )
 
   end subroutine ComputeTimeStep_C_ASC
+
+
+  subroutine InitializeTimeSeries_C ( I )
+
+    class ( IntegratorTemplate ), intent ( inout ) :: &
+      I
+
+    select type ( I )
+    class is ( Integrator_C_PS_Form )
+      select type ( TS => I % TimeSeries )
+      type is ( TimeSeries_C_Form )
+        associate ( CA => I % Current_ASC )
+        call TS % Initialize ( I, CA )
+        end associate !-- CA
+      end select !-- TS
+    end select !-- I
+
+  end subroutine InitializeTimeSeries_C
 
 
   subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )

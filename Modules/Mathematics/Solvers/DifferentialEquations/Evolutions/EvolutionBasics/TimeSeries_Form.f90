@@ -51,6 +51,8 @@ module TimeSeries_Form
       Write
     procedure, public, pass :: &
       Read
+    procedure, public, pass :: &
+      Restore
     final :: &
       Finalize
   end type TimeSeriesForm
@@ -287,6 +289,7 @@ contains
         STV_Min  ( iV, iT ) = MinTime  ( iT ) / I % iCycle
         STV_Mean ( iV, iT ) = MeanTime ( iT ) / I % iCycle
         call Show ( STV_Max ( iV, iT ), &
+                    ST_Max % Unit ( iT ), &
                     trim ( ST_Max % Variable ( iT ) ) // ' per cycle', &
                     TS % IGNORABILITY )
       end do !-- iT
@@ -363,6 +366,45 @@ contains
     end associate !-- GIS, etc.
 
   end subroutine Read
+
+
+  subroutine Restore ( TS, MaxTime, MinTime, MeanTime )
+
+    class ( TimeSeriesForm ), intent ( inout ) :: &
+      TS
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      MaxTime, &
+      MinTime, &
+      MeanTime
+
+    integer ( KDI ) :: &
+      iT  !-- iTimer
+
+    associate &
+      ( I   => TS % Integrator, &
+        ST_Mean  => TS % SeriesTimerMean, &
+        STV_Max  => TS % SeriesTimerMax % Value, &
+        STV_Min  => TS % SeriesTimerMin % Value, &
+        STV_Mean => TS % SeriesTimerMean % Value, &
+        iV  => TS % iTime )
+
+    call Show ( 'Restoring TimeSeries data', TS % IGNORABILITY )
+    call Show ( TS % Name, 'Name', TS % IGNORABILITY )
+    call Show ( iV, 'iTime', TS % IGNORABILITY )
+
+    do iT = 1, TS % N_SERIES_TIMER
+      MaxTime  ( iT )  =  STV_Max  ( iV, iT )  *  I % iCycle
+      MinTime  ( iT )  =  STV_Min  ( iV, iT )  *  I % iCycle
+      MeanTime ( iT )  =  STV_Mean ( iV, iT )  *  I % iCycle
+      call Show ( MaxTime ( iT ), &
+                  ST_Mean % Unit ( iT ), &
+                  trim ( ST_Mean % Variable ( iT ) ) // ' (MeanTime)', &
+                  TS % IGNORABILITY )
+    end do !-- iT
+
+    end associate !-- I, etc.
+
+  end subroutine Restore
 
 
   impure elemental subroutine Finalize ( TS )

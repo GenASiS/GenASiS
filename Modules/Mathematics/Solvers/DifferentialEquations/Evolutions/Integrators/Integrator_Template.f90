@@ -21,6 +21,8 @@ module Integrator_Template
         OpenGridImageStreams => null ( )
       procedure ( OMS ), pointer :: &
         OpenManifoldStreams => null ( )
+      procedure ( ITS ), pointer :: &
+        InitializeTimeSeries => null ( )
       procedure ( A ), pointer:: &
         Analyze => null ( )
       procedure ( W ), pointer:: &
@@ -83,6 +85,8 @@ module Integrator_Template
       WriteTimeSeries
     procedure, private, pass :: &  !-- 3
       ReadTimeSeries
+    procedure, private, pass :: &  !-- 3
+      RestoreTimeSeries
     procedure, public, pass :: &
       PrepareCycle
     procedure, public, pass :: &  !-- 3
@@ -107,6 +111,12 @@ module Integrator_Template
       logical ( KDL ), intent ( in ), optional :: &
         VerboseStreamOption
     end subroutine OMS
+
+    subroutine ITS ( I )
+      import IntegratorTemplate  
+      class ( IntegratorTemplate ), intent ( inout ) :: &
+        I
+    end subroutine ITS
 
     subroutine A ( I )
       import IntegratorTemplate
@@ -196,7 +206,7 @@ module Integrator_Template
         I
     end subroutine SI
 
-    subroutine RI ( I, RestartFrom, RestartTime, CycleNumber )
+    subroutine RI ( I, RestartFrom, RestartTime )
       use Basics
       import IntegratorTemplate
       class ( IntegratorTemplate ), intent ( inout ) :: &
@@ -205,16 +215,15 @@ module Integrator_Template
         RestartFrom
       type ( MeasuredValueForm ), intent ( out ) :: &
         RestartTime
-      integer ( KDI ), intent ( out ) :: &
-        CycleNumber
     end subroutine RI
 
   end interface
 
 
     private :: &
-      ResetInitial, &
-      SetCheckpointTimeInterval
+      InitializeTimeSeries, &
+      SetCheckpointTimeInterval, &
+      ResetInitial
 
 
 contains
@@ -270,10 +279,10 @@ contains
 
     call I % OpenGridImageStreams ( )
 
-    !-- if allocated above, initialize
+    !-- if TimeSeries allocated above, set InitializeTimeSeries
     select type ( TS => I % TimeSeries )
     type is ( TimeSeriesForm )
-      call TS % Initialize ( I )
+      I % InitializeTimeSeries  =>  InitializeTimeSeries
     end select !-- TS
 
   end subroutine InitializeTemplate
@@ -291,6 +300,7 @@ contains
 
     call I % OpenManifoldStreams ( )
     call I % InitializeTimers ( )
+    call I % InitializeTimeSeries ( )
 
     Timer => PROGRAM_HEADER % TimerPointer ( I % iTimerEvolve )
     if ( associated ( Timer ) ) call Timer % Start ( )   
@@ -465,8 +475,7 @@ contains
       I
 
     integer ( KDI ) :: &
-      RestartFrom, &
-      CycleNumber
+      RestartFrom
     type ( MeasuredValueForm ) :: &
       RestartTime
 
@@ -480,11 +489,9 @@ contains
     call PROGRAM_HEADER % GetParameter ( RestartFrom, 'RestartFrom' )
 
     if ( RestartFrom >= 0 ) then
-      call I % ResetInitial ( RestartFrom, RestartTime, CycleNumber )
+      call I % ResetInitial ( RestartFrom, RestartTime )
       I % Start        =  .false.
       I % Restart      =  .true.
-      I % iCheckpoint  =  RestartFrom
-      I % iCycle       =  CycleNumber
       I % Time         =  RestartTime
     end if
 
@@ -762,11 +769,6 @@ contains
       MinTime, &
       MeanTime
 
-    integer ( KDI ) :: &
-      iT  !-- iTimer
-    real ( KDR ) :: &
-      ReconstructionImbalance
-
     if ( .not. allocated ( I % TimeSeries ) ) &
       return
 
@@ -806,6 +808,23 @@ contains
     call I % TimeSeries % Read ( nSeries )
 
   end subroutine ReadTimeSeries
+
+
+  subroutine RestoreTimeSeries ( I, MaxTime, MinTime, MeanTime )
+
+    class ( IntegratorTemplate ), intent ( inout ) :: &
+      I
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      MaxTime, &
+      MinTime, &
+      MeanTime
+
+    if ( .not. allocated ( I % TimeSeries ) ) &
+      return
+
+    call I % TimeSeries % Restore ( MaxTime, MinTime, MeanTime )
+
+  end subroutine RestoreTimeSeries
 
 
   subroutine PrepareCycle ( I )
@@ -916,22 +935,17 @@ contains
   end subroutine ComputeTimeStep
 
 
-  subroutine ResetInitial ( I, RestartFrom, RestartTime, CycleNumber )
+  subroutine InitializeTimeSeries ( I )
 
     class ( IntegratorTemplate ), intent ( inout ) :: &
       I
-    integer ( KDI ), intent ( in ) :: &
-      RestartFrom
-    type ( MeasuredValueForm ), intent ( out ) :: &
-      RestartTime
-    integer ( KDI ), intent ( out ) :: &
-      CycleNumber
 
-    call I % Read ( RestartFrom, RestartTime, CycleNumber )
+    select type ( TS => I % TimeSeries )
+    type is ( TimeSeriesForm )
+      call TS % Initialize ( I )
+    end select !-- TS
 
-    call I % ReadTimeSeries ( nSeries = RestartFrom + 1 )
-
-  end subroutine ResetInitial
+  end subroutine InitializeTimeSeries
 
 
   subroutine SetCheckpointTimeInterval ( I )
@@ -943,6 +957,39 @@ contains
       = ( I % FinishTime - I % StartTime ) / I % nWrite
 
   end subroutine SetCheckpointTimeInterval
+
+
+  subroutine ResetInitial ( I, RestartFrom, RestartTime )
+
+    class ( IntegratorTemplate ), intent ( inout ) :: &
+      I
+    integer ( KDI ), intent ( in ) :: &
+      RestartFrom
+    type ( MeasuredValueForm ), intent ( out ) :: &
+      RestartTime
+
+    integer ( KDI ) :: &
+      CycleNumber
+    real ( KDR ), dimension ( PROGRAM_HEADER % nTimers ) :: &
+      MaxTime, &
+      MinTime, &
+      MeanTime
+
+    call I % Read ( RestartFrom, RestartTime, CycleNumber )
+
+    I % iCheckpoint  =  RestartFrom
+    I % iCycle       =  CycleNumber  !-- needed by RestoreTimeSeries
+
+    call I % ReadTimeSeries ( nSeries = RestartFrom + 1 )
+
+    call I % RestoreTimeSeries ( MaxTime, MinTime, MeanTime )
+
+    call PROGRAM_HEADER % RestoreStatistics &
+           ( Ignorability = CONSOLE % INFO_1, &
+             CommunicatorOption = PROGRAM_HEADER % Communicator, &
+             MeanTimeOption = MeanTime )
+ 
+  end subroutine ResetInitial
 
 
 end module Integrator_Template

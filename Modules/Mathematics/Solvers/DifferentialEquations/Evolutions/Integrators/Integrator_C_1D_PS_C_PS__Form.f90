@@ -9,6 +9,7 @@ module Integrator_C_1D_PS_C_PS__Form
   use Basics
   use Fields
   use EvolutionBasics
+  use Integrator_Template
   use TimeSeries_C_1D_C__Form
   use Integrator_C_1D_C_PS__Template
 
@@ -29,6 +30,9 @@ module Integrator_C_1D_PS_C_PS__Form
     procedure, private, pass :: &
       Current_ASC_Pointer   
   end type Integrator_C_1D_PS_C_PS_Form
+
+    private :: &
+      InitializeTimeSeries_C_1D_PS
 
 contains
 
@@ -71,9 +75,7 @@ contains
 
     select type ( TS  =>  I % TimeSeries )
     type is ( TimeSeries_C_1D_C_Form )
-      associate ( CA_1D  =>  I % Current_ASC_1D )
-      call TS % Initialize ( I, CA_1D )
-      end associate !-- CA_1D
+      I % InitializeTimeSeries  =>  InitializeTimeSeries_C_1D_PS
     end select !-- TS
 
   end subroutine Initialize_I
@@ -132,4 +134,22 @@ contains
   end function Current_ASC_Pointer
 
   
+  subroutine InitializeTimeSeries_C_1D_PS ( I )
+
+    class ( IntegratorTemplate ), intent ( inout ) :: &
+      I
+
+    select type ( I )
+    class is ( Integrator_C_1D_PS_C_PS_Form )
+      select type ( TS  =>  I % TimeSeries )
+      type is ( TimeSeries_C_1D_C_Form )
+        associate ( CA_1D  =>  I % Current_ASC_1D )
+        call TS % Initialize ( I, CA_1D )
+        end associate !-- CA_1D
+      end select !-- TS
+    end select !-- I
+
+  end subroutine InitializeTimeSeries_C_1D_PS
+
+
 end module Integrator_C_1D_PS_C_PS__Form
