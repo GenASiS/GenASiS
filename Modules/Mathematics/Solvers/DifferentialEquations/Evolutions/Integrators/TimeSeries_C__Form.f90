@@ -30,6 +30,8 @@ module TimeSeries_C__Form
     generic, public :: &
       Initialize => Initialize_C
     procedure, public, pass :: &
+      Restore
+    procedure, public, pass :: &
       Record
     final :: &
       Finalize
@@ -113,6 +115,58 @@ contains
     end associate !-- TT, etc.
 
   end subroutine Initialize_C
+
+
+  subroutine Restore ( TS, MaxTime, MinTime, MeanTime )
+
+    class ( TimeSeries_C_Form ), intent ( inout ) :: &
+      TS
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      MaxTime, &
+      MinTime, &
+      MeanTime
+
+    integer ( KDI ) :: &
+      iS  !-- iSelected
+
+    call TS % TimeSeriesForm % Restore ( MaxTime, MinTime, MeanTime )
+
+    associate &
+      ( SIV => TS % SeriesInterior % Value, &
+        SBV => TS % SeriesBoundary % Value, &
+        STV => TS % SeriesTotal % Value, &
+        SCV => TS % SeriesChange % Value, &
+        iV  => TS % iTime, &
+        TIV => TS % TallyInterior % Value, &
+        TBV => TS % TallyBoundary % Value, &
+        TTV => TS % TallyTotal % Value, &
+        TCV => TS % TallyChange % Value, &
+        nS  => TS % TallyTotal % nSelected, &
+        iaS => TS % TallyTotal % iaSelected )
+    do iS = 1, nS
+      TIV ( iaS ( iS ) )  =  SIV ( iV, iS ) 
+      TBV ( iaS ( iS ) )  =  SBV ( iV, iS )
+      TTV ( iaS ( iS ) )  =  STV ( iV, iS )
+      TCV ( iaS ( iS ) )  =  SCV ( iV, iS )
+    end do !-- iS
+    end associate !-- STV, etc.
+
+    associate &
+      ( SI => TS % SeriesInterior, &
+        SB => TS % SeriesBoundary, &
+        ST => TS % SeriesTotal, &
+        SC => TS % SeriesChange, &
+        TI => TS % TallyInterior, &
+        TB => TS % TallyBoundary, &
+        TT => TS % TallyTotal, &
+        TC => TS % TallyChange )
+    call TI % Show ( SI % Name, CONSOLE % INFO_1 )
+    call TB % Show ( SB % Name, CONSOLE % INFO_1 )
+    call TT % Show ( ST % Name, CONSOLE % INFO_1 )
+    call TC % Show ( SC % Name, CONSOLE % INFO_1 )
+    end associate !-- SI, etc.
+
+  end subroutine Restore
 
 
   subroutine Record ( TS, MaxTime, MinTime, MeanTime )
