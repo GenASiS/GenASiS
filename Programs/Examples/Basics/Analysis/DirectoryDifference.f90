@@ -95,8 +95,7 @@ program DirectoryDifference
     end if
     
     call GI_1 % Initialize ( GIS_1 )
-    call GI_1 % SetReadAttributes &
-           ( Directory = trim ( GIS_1 % ContentList ( 1 ) ), oValue = 0 )
+    call GI_1 % SetDirectory ( trim ( GIS_1 % ContentList ( 1 ) ) )
     call GI_1 % Read ( )
     
     call GIS_1 % Close ( )
@@ -105,8 +104,7 @@ program DirectoryDifference
     call GIS_2 % ListContents ( ContentTypeOption = 'Directory' )
     
     call GI_2 % Initialize ( GIS_2 )
-    call GI_2 % SetReadAttributes &
-           ( Directory = trim ( GIS_2 % ContentList ( 1 ) ), oValue = 0 )
+    call GI_2 % SetDirectory ( trim ( GIS_2 % ContentList ( 1 ) ) )
     call GI_2 % Read ( )
     
     call GIS_2 % Close ( )
@@ -133,10 +131,20 @@ program DirectoryDifference
     end select
     
     select type ( GI_O )
+    
+    type is ( CurveImageForm )
+      select type ( GI_1 )
+      type is ( CurveImageForm )
+        call GI_O % SetGridWrite &
+                ( Directory = 'Curve', &
+                  NodeCoordinate = GI_1 % NodeCoordinate_1, &
+                  nProperCells = nProperCells ( 1 ), oValue = 0 )
+      end select
+      
     type is ( StructuredGridImageForm )
       select type ( GI_1 )
       type is ( StructuredGridImageForm )
-        call GI_O % SetGrid &
+        call GI_O % SetGridWrite &
                ( Directory = 'Grid', &
                  NodeCoordinate &
                    = reshape ( [ GI_1 % NodeCoordinate_1, &
@@ -149,6 +157,7 @@ program DirectoryDifference
                  nGhostCells = GI_1 % nGhostCells, &
                  oValue = 0, nCells = GI_1 % nCells )
       end select 
+    
     end select
       
     !-- Calculate and write the differences  

@@ -35,6 +35,8 @@ module IntegratorHeader_Form
     real ( KDR ), dimension ( : ), allocatable :: &
       TimeStepCandidate
     logical ( KDL ) :: &
+      Start, &
+      Restart, &
       IsCheckpointTime, &
       NoWrite, &
       CheckpointTimeExact

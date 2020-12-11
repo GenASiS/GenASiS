@@ -12,6 +12,9 @@ module RadiationCentralCore_Form
   private
 
   type, public, extends ( FluidCentralCoreForm ) :: RadiationCentralCoreForm
+    integer ( KDI ) :: &
+      iSpeciesNumberPlus = 0, &
+      iSpeciesNumberMinus = 0
     real ( KDR ) :: &
       InteractionFactor
     character ( LDL ) :: &
@@ -44,6 +47,7 @@ module RadiationCentralCore_Form
   end type RadiationCentralCoreForm
 
     private :: &
+      InitializeTimeSeries_RCC, &
       ComputeTimeStepLocal, &
       PrepareStep, &
       IntegrateSources, &
@@ -173,11 +177,18 @@ contains
                CourantFactorOption = CourantFactorOption, &
                nWriteOption = nWriteOption )
 
-      !-- if TimeSeries allocated above, initialize
+      !-- if TimeSeries allocated above, set InitializeTimeSeries
+
+      if ( present ( iSpeciesNumberPlusOption ) &
+           .and. present ( iSpeciesNumberMinusOption ) ) &
+      then
+        RCC % iSpeciesNumberPlus   =  iSpeciesNumberPlusOption
+        RCC % iSpeciesNumberMinus  =  iSpeciesNumberMinusOption
+      end if
+
       select type ( TS => I % TimeSeries )
       type is ( TimeSeriesRadiationFluidForm )
-        call TS % Initialize &
-               ( RCC, iSpeciesNumberPlusOption, iSpeciesNumberMinusOption )
+        I % InitializeTimeSeries  =>  InitializeTimeSeries_RCC
       end select !-- TS
 
     end select !-- I
@@ -555,6 +566,35 @@ contains
     end select !-- I
 
   end subroutine InitializeSteps
+
+
+  subroutine InitializeTimeSeries_RCC ( I )
+
+    class ( IntegratorTemplate ), intent ( inout ) :: &
+      I
+
+    select type ( RCC => I % Universe )
+    class is ( RadiationCentralCoreForm )
+
+    select type ( I )
+    class is ( Integrator_C_1D_C_PS_Template )
+      select type ( TS => I % TimeSeries )
+      type is ( TimeSeriesRadiationFluidForm )
+        if ( RCC % iSpeciesNumberPlus  >  0  &
+             .and. RCC % iSpeciesNumberMinus  >  0 ) &
+        then
+          call TS % Initialize &
+               ( RCC, iSpeciesNumberPlusOption = RCC % iSpeciesNumberPlus, &
+                 iSpeciesNumberMinusOption = RCC % iSpeciesNumberMinus )
+        else
+          call TS % Initialize ( RCC )
+        end if
+      end select !-- TS
+    end select !-- I
+
+    end select !-- RB
+
+  end subroutine InitializeTimeSeries_RCC
 
 
   subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )

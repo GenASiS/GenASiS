@@ -246,8 +246,10 @@ contains
     
     integer ( KDI ) :: &
       iB  !-- iBoundary
-    real ( KDR ), dimension ( CA % TallyInterior % N_INTEGRALS ) :: &
+    real ( KDR ), dimension ( : ), allocatable :: &
       OldTotal
+    type ( Real_1D_Form ), dimension ( : ), allocatable :: &
+      OldBoundary
     logical ( KDL ) :: &
       ComputeChange
     type ( CollectiveOperation_R_Form ) :: &
@@ -256,12 +258,20 @@ contains
     ComputeChange = .true.
     if ( present ( ComputeChangeOption ) ) ComputeChange = ComputeChangeOption
 
-    OldTotal = CA % TallyTotal % Value
-
     select type ( A => CA % Atlas )
     class is ( Atlas_SC_Form )
 
     associate ( nI => CA % TallyInterior % N_INTEGRALS )
+
+    allocate ( OldTotal ( nI ) )
+    OldTotal  =  CA % TallyTotal % Value
+
+    allocate ( OldBoundary ( A % nBoundaries ) )
+    do iB = 1, A % nBoundaries
+      call OldBoundary ( iB ) % Initialize ( nI )
+      OldBoundary ( iB ) % Value  &
+        =  CA % TallyBoundaryGlobal ( iB ) % Element % Value
+    end do !-- iB
 
     !-- Interior
 
@@ -279,6 +289,7 @@ contains
     do iB = 1, A % nBoundaries
       CO % Outgoing % Value ( ( iB - 1 ) * nI + 1  :  iB * nI ) &
         = CA % TallyBoundaryLocal ( iB ) % Element % Value
+      CA % TallyBoundaryLocal ( iB ) % Element % Value  =  0.0_KDR
     end do !-- iB
     call CO % Reduce ( REDUCTION % SUM )
 
@@ -287,11 +298,15 @@ contains
     CA % TallyTotal % Value = CA % TallyInterior % Value
 
     do iB = 1, A % nBoundaries
+
       CA % TallyBoundaryGlobal ( iB ) % Element % Value &
-        = CO % Incoming % Value ( ( iB - 1 ) * nI + 1  :  iB * nI )
+        =  OldBoundary ( iB ) % Value  &
+           +  CO % Incoming % Value ( ( iB - 1 ) * nI + 1  :  iB * nI )
+
       CA % TallyTotal % Value &
         = CA % TallyTotal % Value  &
           + CA % TallyBoundaryGlobal ( iB ) % Element % Value
+
     end do !-- iB
 
     !-- Change

@@ -49,6 +49,7 @@ module RadiationBox_Form
   end type RadiationBoxForm
 
     private :: &
+      InitializeTimeSeries_RB, &
       ComputeTimeStepLocal, &
       PrepareStep, &
       IntegrateSources, &
@@ -146,10 +147,10 @@ contains
                CourantFactorOption = CourantFactorOption, &
                nWriteOption = nWriteOption )
 
-      !-- if TimeSeries allocated above, initialize
+      !-- if TimeSeries allocated above, set InitializeTimeSeries
       select type ( TS => I % TimeSeries )
       type is ( TimeSeriesRadiationFluidForm )
-        call TS % Initialize ( RB )
+        I % InitializeTimeSeries  =>  InitializeTimeSeries_RB
       end select !-- TS
 
     end select !-- I
@@ -600,6 +601,27 @@ contains
     end if !-- EvolveFluid
 
   end subroutine InitializeSteps
+
+
+  subroutine InitializeTimeSeries_RB ( I )
+
+    class ( IntegratorTemplate ), intent ( inout ) :: &
+      I
+
+    select type ( RB => I % Universe )
+    class is ( RadiationBoxForm )
+
+    select type ( I )
+    class is ( Integrator_C_1D_C_PS_Template )
+      select type ( TS => I % TimeSeries )
+      type is ( TimeSeriesRadiationFluidForm )
+        call TS % Initialize ( RB )
+      end select !-- TS
+    end select !-- I
+
+    end select !-- RB
+
+  end subroutine InitializeTimeSeries_RB
 
 
   subroutine ComputeTimeStepLocal ( I, TimeStepCandidate )

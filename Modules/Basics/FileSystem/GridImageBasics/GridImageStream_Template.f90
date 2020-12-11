@@ -194,7 +194,8 @@ contains
       call GIS % OpenForWriting ( AccessMode, SeriesOption, NumberOption )
       
     if ( AccessMode == ACCESS_MODE_READ ) &
-      call GIS % OpenForReading ( NumberOption, BlockNumberOption )
+      call GIS % OpenForReading &
+             ( SeriesOption, NumberOption, BlockNumberOption )
     
   end subroutine Open
   
@@ -321,13 +322,14 @@ contains
       PathSuffix, &
       PathName
     
-    if ( AccessMode == ACCESS_MODE_CREATE ) GIS % Number = GIS % Number + 1
-    
-    GIS % AccessMode = AccessMode
-    
     Series = .true.
     if ( present ( SeriesOption ) ) Series = SeriesOption
     if ( present ( NumberOption ) ) GIS % Number = NumberOption
+    
+    if ( AccessMode == ACCESS_MODE_CREATE .and. Series ) &
+      GIS % Number = GIS % Number + 1
+    
+    GIS % AccessMode = AccessMode
     
     if ( Series ) then 
       write ( FileNumberString, fmt = '(a1,i7.7)' ) '_', GIS % Number
@@ -452,10 +454,12 @@ contains
   
   
   subroutine OpenForReadingTemplate &
-               ( GIS, NumberOption, BlockNumberOption )
+               ( GIS, SeriesOption, NumberOption, BlockNumberOption )
     
     class ( GridImageStreamTemplate ), intent ( inout ) :: &
       GIS
+    logical ( KDL ), intent ( in ), optional :: &
+      SeriesOption
     integer ( KDI ), intent ( in ), optional :: &
       NumberOption, &
       BlockNumberOption
@@ -464,6 +468,8 @@ contains
       lPathName, &
       BlockNumber, &
       Error
+    logical ( KDL ) :: &
+      Series
     character ( LDF ) :: &
       MeshBlocksPrefix, &
       PathName, &
@@ -477,13 +483,29 @@ contains
       return
       
     if ( GIS % AccessMode == ACCESS_MODE_READ ) call GIS % Close ( )
-    
+
+    Series = .true.
+    if ( present ( SeriesOption ) ) &
+      Series = SeriesOption
+
     FileNumberString = ''
-    if ( present ( NumberOption ) ) then
-      GIS % Number = NumberOption
-      write ( FileNumberString, fmt = '(a1,i7.7)' ) '_', GIS % Number
+    if ( Series ) then
+      if ( present ( NumberOption ) ) then
+        GIS % Number = NumberOption
+        write ( FileNumberString, fmt = '(a1,i7.7)' ) '_', GIS % Number
+      else
+        call Show ( 'Without SeriesOption = .false., ' &
+                    // 'NumberOption is required', CONSOLE % ERROR )
+        call Show ( 'GridImageStream_Template', 'module', CONSOLE % ERROR )
+        call Show ( 'OpenForReadingTemplate', 'subroutine', CONSOLE % ERROR )
+        if ( GIS % Parallel ) then
+          call GIS % Communicator % Abort ( )
+        else
+          stop
+        end if
+      end if
     end if
-    
+
     if ( GIS % Parallel ) then
       BlockNumber = GIS % Communicator % Rank
       if ( present ( BlockNumberOption ) ) BlockNumber = BlockNumberOption

@@ -40,6 +40,8 @@ contains
       Scale
     type ( MeasuredValueForm ), dimension ( 3 ) :: &
       CoordinateUnit
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+      G_3D
     character ( LDN + 1 ) :: &
       FileNumber, &
       BlockNumber
@@ -50,6 +52,8 @@ contains
       Spacing
     type ( GridImageStreamForm ), allocatable :: &
       GIS_Fiber
+    class ( GeometryFlatForm ), pointer :: &
+      G
 
     !-- Base Atlas 
 
@@ -70,10 +74,30 @@ contains
            ( PROGRAM_HEADER % Name, CommunicatorOption = A % Communicator )
     call A % OpenStream ( GIS, '1', iStream = 1 )
 
+    select type ( C => A % Chart )
+    class is ( Chart_SL_Template )
+
+    G  =>  A % Geometry ( )
+ 
+    call C % SetVariablePointer ( G % Value ( :, G % CENTER_U ( 1 ) ), G_3D )
+    call Show ( G_3D ( :, 3, 1 ), 'Center_1 reference' )  !-- Indexed for 2D
+
     call GIS % Open ( GIS % ACCESS_CREATE )
     call A % Write ( iStream = 1 )
     call GIS % Close ( )
 
+    associate ( nCB => C % nCellsBrick )
+    G_3D ( 1 : nCB ( 1 ), 1 : nCB ( 2 ), 1 : nCB ( 3 ) )  =  0.0_KDR
+    end associate !-- nCB
+    call Show ( G_3D ( :, 3, 1 ), 'Center_1 proper cleared before read' )
+
+    call GIS % Open ( GIS % ACCESS_READ, NumberOption = GIS % Number )
+    call A % Read ( iStream = 1 )
+    call GIS % Close ( )
+
+    call Show ( G_3D ( :, 3, 1 ), 'Center_1 after read' )
+
+    end select !-- C
     end associate !-- A, etc.
 
     !-- Fiber Atlas
@@ -83,7 +107,7 @@ contains
         AFT % GeometryFiber )
     associate &
       ( A => AFT % AtlasFiber, &
-        G => AFT % GeometryFiber )
+        GA => AFT % GeometryFiber )
 
     call A % Initialize ( 'Fiber', iDimensionalityOption = 2 )
     call A % SetBoundaryConditionsFace ( [ 'REFLECTING', 'REFLECTING' ], 1 )
@@ -102,8 +126,8 @@ contains
              CoordinateUnitOption = CoordinateUnit, &
              ScaleOption = Scale, nGhostLayersOption = [ 0, 0, 0 ] )
 
-    call G % InitializeFlat ( A )
-    call A % SetGeometry ( GeometryOption = G )
+    call GA % InitializeFlat ( A )
+    call A % SetGeometry ( GeometryOption = GA )
 
     associate ( GIS_Base => AFT % GIS_Base )
 

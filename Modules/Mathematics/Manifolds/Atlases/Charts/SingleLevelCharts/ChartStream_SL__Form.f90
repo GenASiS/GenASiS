@@ -34,6 +34,8 @@ module ChartStream_SL__Form
       ClearFields
     procedure, public, pass :: &
       Write
+    procedure, public, pass :: &
+      Read
     final :: &
       Finalize
   end type ChartStream_SL_Form
@@ -187,7 +189,7 @@ contains
     select case ( C % nDimensions )
     case ( 1 ) 
       associate ( CI => CS % CurveImage )
-      call CI % SetGrid &
+      call CI % SetGridWrite &
              ( Directory, Edge ( 1 ), nProperCells, &
                oValue = nGhostInner ( 1 ) + nExteriorInner ( 1 ), &
                CoordinateLabelOption = C % CoordinateLabel ( 1 ), &
@@ -199,7 +201,7 @@ contains
       end associate !-- CI
     case default
       associate ( GI => CS % GridImage )
-      call GI % SetGrid &
+      call GI % SetGridWrite &
              ( Directory, Edge, nCells, nGhostInner, nGhostOuter, &
                nExteriorInner, nExteriorOuter, C % nDimensions, nProperCells, &
                nGhostCells, CoordinateLabelOption = C % CoordinateLabel, &
@@ -214,6 +216,96 @@ contains
     end associate !-- C
 
   end subroutine Write
+
+
+  subroutine Read ( CS, DirectoryOption, TimeOption, CycleNumberOption )
+
+    class ( ChartStream_SL_Form ), intent ( inout ) :: &
+      CS
+    character ( * ), intent ( in ), optional :: &
+      DirectoryOption
+    type ( MeasuredValueForm ), intent ( out ), optional :: &
+      TimeOption
+    integer ( KDI ), intent ( out ), optional :: &
+      CycleNumberOption
+
+    integer ( KDI ) :: &
+      nProperCells, &
+      nGhostCells
+    integer ( KDI ), dimension ( ATLAS % MAX_DIMENSIONS ) :: &
+      nCells, &
+      nGhostInner, &
+      nGhostOuter, &
+      nExteriorInner, &
+      nExteriorOuter
+    character ( 2 ) :: &
+      ChartNumber
+    character ( LDF ) :: &
+      Directory
+
+    call Show ( 'Reading a ChartStream_SL', CS % IGNORABILITY )
+    call Show ( CS % Name, 'Name', CS % IGNORABILITY )
+
+    associate ( C => CS % Chart )
+
+    if ( C % IsDistributed ) then
+      nProperCells = C % nProperCells
+      nGhostCells  = C % nGhostCells
+      nGhostInner = C % nGhostLayers
+      nGhostOuter = C % nGhostLayers
+      nExteriorInner = 0
+      nExteriorOuter = 0
+      where ( C % iaBrick == 1 )
+        nGhostInner = 0
+        nExteriorInner = C % nGhostLayers
+      end where
+      where ( C % iaBrick == C % nBricks )
+        nGhostOuter = 0
+        nExteriorOuter = C % nGhostLayers
+      end where
+    else  ! .not. IsDistributed
+      nProperCells = C % nProperCells
+      nGhostCells  = 0
+      nGhostInner = 0
+      nGhostOuter = 0
+      nExteriorInner = C % nGhostLayers
+      nExteriorOuter = C % nGhostLayers
+    end if !-- IsDistributed
+
+    write ( ChartNumber, fmt = '(i2.2)' ) C % iChart
+    Directory = 'Chart_' // ChartNumber // '/'
+    if ( present ( DirectoryOption ) ) &
+      Directory = DirectoryOption
+
+    select case ( C % nDimensions )
+    case ( 1 ) 
+      associate ( CI => CS % CurveImage )
+      call CI % SetGridRead &
+             ( Directory, nProperCells, &
+               oValue = nGhostInner ( 1 ) + nExteriorInner ( 1 ) )
+      call CI % Read &
+             ( StorageOnlyOption = .true., &
+               TimeOption = TimeOption, &
+               CycleNumberOption = CycleNumberOption )
+      call CI % ClearGrid ( )
+      end associate !-- CI
+    case default
+      associate ( GI => CS % GridImage )
+      call GI % SetGridRead &
+             ( Directory, nCells, nGhostInner, nGhostOuter, &
+               nExteriorInner, nExteriorOuter, C % nDimensions, nProperCells, &
+               nGhostCells )
+      call GI % Read &
+             ( StorageOnlyOption = .true., &
+               TimeOption = TimeOption, &
+               CycleNumberOption = CycleNumberOption )
+      call GI % ClearGrid ( )
+      end associate !-- GI
+    end select !-- nDimensions
+
+    end associate !-- C
+
+  end subroutine Read
 
 
   impure elemental subroutine Finalize ( CS )

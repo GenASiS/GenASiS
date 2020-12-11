@@ -30,8 +30,8 @@ module Atlas_SC__Form
       OpenStream
     procedure, public, pass :: &
       Write
-  !   procedure, public, pass :: &
-  !     Read
+    procedure, public, pass :: &
+      Read
     procedure, public, pass :: &
       CloseStreams
     final :: &
@@ -209,35 +209,33 @@ contains
   end subroutine Write
 
 
-!   subroutine Read ( A, iStream, TimeOption, CycleNumberOption )
+  subroutine Read ( A, iStream, DirectoryOption, TimeOption, CycleNumberOption )
 
-!     class ( AtlasForm ), intent ( inout ) :: &
-!       A
-!     integer ( KDI ), intent ( in ) :: &
-!       iStream
-!     type ( MeasuredValueForm ), intent ( out ), optional :: &
-!       TimeOption
-!     integer ( KDI ), intent ( out ), optional :: &
-!       CycleNumberOption
+    class ( Atlas_SC_Form ), intent ( inout ) :: &
+      A
+    integer ( KDI ), intent ( in ) :: &
+      iStream
+    character ( * ), intent ( in ), optional :: &
+      DirectoryOption
+    type ( MeasuredValueForm ), intent ( out ), optional :: &
+      TimeOption
+    integer ( KDI ), intent ( out ), optional :: &
+      CycleNumberOption
 
-!     integer ( KDI ) :: &
-!       iC  !-- iChart
+    select type ( C => A % Chart )
+    class is ( Chart_SL_Template )
+      call C % Read &
+             ( iStream, DirectoryOption = DirectoryOption, &
+               TimeOption = TimeOption, &
+               CycleNumberOption = CycleNumberOption )
+    class default
+      call Show ( 'Chart type not recognized', CONSOLE % ERROR )
+      call Show ( 'Atlas_SC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'Read', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- C
 
-!     associate &
-!       ( Timer => PROGRAM_HEADER % Timer ( A % InputOutputTimer ( iStream ) ) )
-!     call Timer % Start ( )
-
-!     do iC = 1, A % nCharts
-!       select type ( C => A % Chart ( iC ) )
-!       class is ( ChartForm )
-!         call C % Read ( iStream, TimeOption, CycleNumberOption )
-!       end select
-!     end do
-
-!     call Timer % Stop ( )
-!     end associate !-- Timer
-
-!   end subroutine Read
+  end subroutine Read
 
 
   subroutine CloseStreams ( A )

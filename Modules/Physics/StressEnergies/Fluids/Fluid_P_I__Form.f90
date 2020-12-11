@@ -405,7 +405,8 @@ contains
     call Output % Initialize &
            ( F, iaSelectedOption &
                   = [ F % COMOVING_BARYON_DENSITY, F % VELOCITY_U, &
-                      F % PRESSURE, F % TEMPERATURE, F % MACH_NUMBER, &
+                      F % INTERNAL_ENERGY, F % PRESSURE, &
+                      F % TEMPERATURE, F % MACH_NUMBER, &
                       F % ENTROPY_PER_BARYON ], &
              VectorOption = [ 'Velocity' ], &
              VectorIndicesOption = VectorIndices )

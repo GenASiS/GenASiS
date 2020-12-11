@@ -33,14 +33,16 @@ module StructuredGridImage_Form
   contains
     procedure, public, pass :: &
       SetPillarHash
-    procedure, public, pass :: &
-      SetGridUnigrid
-    procedure, public, pass :: &
-      SetGridRefinable
-    generic :: &
-      SetGrid => SetGridUnigrid, SetGridRefinable
-    procedure, public, pass :: &
-      SetReadAttributes
+    procedure, private, pass :: &
+      SetGridWriteUnigrid
+    procedure, private, pass :: &
+      SetGridWriteRefinable
+    generic, public :: &
+      SetGridWrite => SetGridWriteUnigrid, SetGridWriteRefinable
+    procedure, private, pass :: &
+      SetGridReadUnigrid
+    generic, public :: &
+      SetGridRead => SetGridReadUnigrid
     procedure, public, pass :: &
       Write
     procedure, private, pass :: &
@@ -75,7 +77,7 @@ contains
   end subroutine SetPillarHash
 
 
-  subroutine SetGridUnigrid &
+  subroutine SetGridWriteUnigrid &
                ( SGI, Directory, Edge, nCells, nGhostInner, &
                  nGhostOuter, oValueInner, oValueOuter, nDimensions, &
                  nProperCells, nGhostCells, CoordinateLabelOption, &
@@ -162,10 +164,10 @@ contains
       SGI % CoordinateLabel ( 1 : size ( CoordinateLabelOption ) ) &
         = CoordinateLabelOption
         
-  end subroutine SetGridUnigrid
+  end subroutine SetGridWriteUnigrid
 
 
-  subroutine SetGridRefinable &
+  subroutine SetGridWriteRefinable &
                ( SGI, Directory, NodeCoordinate, nCells, nDimensions, &
                  nProperCells, nGhostCells, oValue, &
                  CoordinateUnitOption, CoordinateLabelOption, &
@@ -353,27 +355,50 @@ contains
     nullify ( SN )
     nullify ( NC )
 
-  end subroutine SetGridRefinable
+  end subroutine SetGridWriteRefinable
   
   
-  subroutine SetReadAttributes ( GI, Directory, oValue )
-  
-    class ( StructuredGridImageForm ), intent ( inout ) :: &
-      GI 
+  subroutine SetGridReadUnigrid &
+               ( SGI, Directory, nCells, nGhostInner, nGhostOuter, &
+                 oValueInner, oValueOuter, nDimensions, &
+                 nProperCells, nGhostCells )
+
+    class ( StructuredGridImageForm ), intent ( inout ), target :: &
+      SGI 
     character ( * ), intent ( in ) :: &
       Directory
+    integer ( KDI ), dimension ( : ), intent ( in ) :: &
+      nCells, &
+      nGhostInner, &
+      nGhostOuter, &
+      oValueInner, &
+      oValueOuter
     integer ( KDI ), intent ( in ) :: &
-      oValue
-      
-    GI % oValue      = oValue
+      nDimensions, &
+      nProperCells, &
+      nGhostCells
+
+    SGI % oValue       =  0
+    SGI % nDimensions  =  nDimensions
+    SGI % nTotalCells  =  nProperCells + nGhostCells
+    SGI % nGhostCells  =  nGhostCells
+    SGI % lDirectory   =  len_trim ( Directory )
+
+    SGI % MeshType = SGI % RECTILINEAR
+    SGI % MultiMeshType = DB_QUAD_RECT
+    SGI % MultiVariableType = DB_QUADVAR
+
+    SGI % nCells = reshape ( nCells, shape = [ 3 ], pad = [ 1 ] )
     
-    GI % lDirectory  = len_trim ( Directory )
+    SGI % oValueInner = oValueInner
+    SGI % oValueOuter = oValueOuter
+
+    SGI % Directory = Directory
+    if ( trim ( SGI % Directory ) == '/' ) SGI % Directory = ''
     
-    GI % Directory   = Directory
-    
-  end subroutine SetReadAttributes
-  
-  
+  end subroutine SetGridReadUnigrid
+
+
   subroutine Write ( GI, TimeOption, CycleNumberOption )
   
     class ( StructuredGridImageForm ), intent ( inout ) :: &
@@ -403,10 +428,12 @@ contains
   end subroutine Write
   
   
-  subroutine Read ( GI, TimeOption, CycleNumberOption ) 
+  subroutine Read ( GI, StorageOnlyOption, TimeOption, CycleNumberOption )
     
     class ( StructuredGridImageForm ), intent ( inout ) :: &
       GI
+    logical ( KDL ), intent ( in ), optional :: &
+      StorageOnlyOption
     type ( MeasuredValueForm ), intent ( out ), optional :: &
       TimeOption
     integer ( KDI ), intent ( out ), optional :: &
@@ -415,11 +442,17 @@ contains
     integer ( KDI ) :: &
       iStrg, &
       nVariables 
+    logical ( KDL ) :: &
+      StorageOnly
     character ( LDL ), dimension ( : ), allocatable :: &
       StorageName, &
       VariableName
     character ( LDF ) :: &
       WorkingDirectory
+      
+    StorageOnly = .false.
+    if ( present ( StorageOnlyOption ) ) &
+      StorageOnly = StorageOnlyOption
       
     if ( .not. GI % Stream % IsReadable ( ) ) return 
     
@@ -429,40 +462,44 @@ contains
     
     call GI % ReadHeader ( TimeOption, CycleNumberOption )
     
-    call GI % ReadMesh ( )
+    if ( .not. StorageOnly ) then
     
-    !-- prepare Storage to read into
-    if ( GI % nStorages == 0 ) then
-      call GI % Stream % ListContents ( ContentTypeOption = 'Directory' )
-      GI % nStorages = size ( GI % Stream % ContentList )
-!-- FIXME: NAG 5.3.1 should support sourced allocation
-!      allocate ( StorageName, source = GI % Stream % ContentList )
-      allocate ( StorageName ( size ( GI % Stream % ContentList ) ) )
-      StorageName = GI % Stream % ContentList
-      do iStrg = 1, GI % nStorages
-        if ( len_trim ( StorageName ( iStrg ) ) > 0 ) &
-          call GI % Stream % ChangeDirectory ( StorageName ( iStrg ) )
-        call GI % Stream % ListContents &
-               ( ContentTypeOption = 'StructuredGridVariable' )
-        if ( allocated ( VariableName ) ) deallocate ( VariableName )
-!        allocate ( VariableName, source = GI % Stream % ContentList )
-        allocate ( VariableName ( size ( GI % Stream % ContentList ) ) )
-        VariableName = GI % Stream % ContentList 
-        nVariables = size ( GI % Stream % ContentList )
-        if ( nVariables == 0 ) then
-          GI % nStorages = 0
-        else
-          call GI % Storage ( iStrg ) % Initialize &
-                 ( [ product ( GI % nNodes ( 1 : GI % nDimensions ) - 1 ), &
-                     nVariables ], &
-                   VariableOption = VariableName, & 
-                   NameOption = StorageName ( iStrg ) )
-        end if
-        if ( len_trim ( StorageName ( iStrg ) ) > 0 ) &
-          call GI % Stream % ChangeDirectory ( '..' )
-      end do
-    end if
+      call GI % ReadMesh ( )
       
+      !-- prepare Storage to read into
+      if ( GI % nStorages == 0 ) then
+        call GI % Stream % ListContents ( ContentTypeOption = 'Directory' )
+        GI % nStorages = size ( GI % Stream % ContentList )
+  !-- FIXME: NAG 5.3.1 should support sourced allocation
+  !      allocate ( StorageName, source = GI % Stream % ContentList )
+        allocate ( StorageName ( size ( GI % Stream % ContentList ) ) )
+        StorageName = GI % Stream % ContentList
+        do iStrg = 1, GI % nStorages
+          if ( len_trim ( StorageName ( iStrg ) ) > 0 ) &
+            call GI % Stream % ChangeDirectory ( StorageName ( iStrg ) )
+          call GI % Stream % ListContents &
+                 ( ContentTypeOption = 'StructuredGridVariable' )
+          if ( allocated ( VariableName ) ) deallocate ( VariableName )
+  !        allocate ( VariableName, source = GI % Stream % ContentList )
+          allocate ( VariableName ( size ( GI % Stream % ContentList ) ) )
+          VariableName = GI % Stream % ContentList 
+          nVariables = size ( GI % Stream % ContentList )
+          if ( nVariables == 0 ) then
+            GI % nStorages = 0
+          else
+            call GI % Storage ( iStrg ) % Initialize &
+                   ( [ product ( GI % nNodes ( 1 : GI % nDimensions ) - 1 ), &
+                       nVariables ], &
+                     VariableOption = VariableName, & 
+                     NameOption = StorageName ( iStrg ) )
+          end if
+          if ( len_trim ( StorageName ( iStrg ) ) > 0 ) &
+            call GI % Stream % ChangeDirectory ( '..' )
+        end do
+      end if
+    
+    end if
+        
     call GI % ReadStorage ( ) 
     
     call GI % Stream % ChangeDirectory ( WorkingDirectory ) 
@@ -732,13 +769,13 @@ contains
       ( nC  => SGI % nCells, &
         oVI => SGI % oValueInner, &
         oVO => SGI % oValueOuter )
-
+    
     if ( allocated ( SGI % PillarHash ) ) then
       allocate ( Value ( size ( SGI % PillarHash ) ) )
     else
       allocate ( Value ( product ( nC ) ) )
     end if
-
+    
     if ( all ( SGI % nNodes == SGI % nCells ) ) then
       Centering = DB_NODECENT
     else
@@ -765,7 +802,6 @@ contains
         
         call Show ( 'Writing a Variable (structured)', CONSOLE % INFO_6 )
         call Show ( iS, 'iSelected', CONSOLE % INFO_6 )
-        call Show ( S % Variable ( iVrbl ), 'Name', CONSOLE % INFO_6 )
 
         if ( allocated ( SGI % PillarHash ) ) then
           do iV = 1, size ( SGI % PillarHash )
@@ -877,10 +913,12 @@ contains
   end subroutine WriteStorage 
   
   
-  subroutine ReadStorage ( SGI ) 
+  subroutine ReadStorage ( SGI, StorageOnlyOption ) 
 
     class ( StructuredGridImageForm ), intent ( inout ) :: &
       SGI
+    logical ( KDL ), intent ( in ), optional :: &
+      StorageOnlyOption
     
     integer ( KDI ) :: &
       iV, &      !-- iValue
@@ -892,7 +930,11 @@ contains
       nProperCells
     real ( c_double ), dimension ( : ), pointer :: &
       VariableValue
+    real ( KDR ), dimension ( :, :, : ), pointer :: &
+      Value_PGF, &  !-- Value_ProperGhostFull
+      Value_PG      !-- Value_ProperGhost
     logical ( KDL ) :: &
+      StorageOnly, &
       SetSizes
     character ( LDF ) :: &
       MeshDirectory
@@ -905,6 +947,15 @@ contains
       ValueArrays
     type ( DB_QuadVariableType ), pointer :: &
       DB_QV
+      
+    StorageOnly = .false.
+    if ( present ( StorageOnlyOption ) ) &
+      StorageOnly = StorageOnlyOption
+
+    associate &
+      ( nC  => SGI % nCells, &
+        oVI => SGI % oValueInner, &
+        oVO => SGI % oValueOuter )
 
     MeshDirectory = SGI % Stream % CurrentDirectory
   
@@ -913,7 +964,7 @@ contains
       associate ( S => SGI % Storage ( iStrg ), &
                   nDims => SGI % nDimensions )
   
-      call Show ( 'Reading a Storage', CONSOLE % INFO_5 )
+      call Show ( 'Reading a Storage (structured)', CONSOLE % INFO_5 )
       call Show ( iStrg, 'iStorage', CONSOLE % INFO_5 )
       call Show ( S % Name, 'Name', CONSOLE % INFO_5 )
 
@@ -923,12 +974,29 @@ contains
       DB_File &
         = SGI % Stream % AccessSiloPointer ( SGI % Stream % MeshBlockHandle )
       
-      SetSizes = .true. 
+      SetSizes = .not. StorageOnly
       
       do iS = 1, S % nVariables
       
         iVrbl = S % iaSelected ( iS )
         VariableName = trim ( S % Variable ( iVrbl ) ) // c_null_char
+
+        call Show ( 'Reading a Variable (structured)', CONSOLE % INFO_6 )
+        call Show ( iS, 'iSelected', CONSOLE % INFO_6 )
+
+        call Show ( trim ( S % Variable ( iVrbl ) ), 'Variable', &
+                    CONSOLE % INFO_6 )
+        call Show ( S % lVariable ( iVrbl ), 'lVariable', CONSOLE % INFO_6 )
+        call Show ( trim ( MeshDirectory ) // 'Mesh', 'MeshDirectory', &
+                    CONSOLE % INFO_6 )
+        call Show ( len_trim ( MeshDirectory ) + 4, 'lDirectory', &
+                    CONSOLE % INFO_6 )
+        if ( len_trim ( S % Unit ( iVrbl ) % Label ) > 0 ) then
+          call Show ( trim ( S % Unit ( iVrbl ) % Label ), 'Unit', &
+                      CONSOLE % INFO_6 )
+          call Show ( len_trim ( S % Unit ( iVrbl ) % Label ), 'lUnit', &
+                      CONSOLE % INFO_6 )
+        end if
 
         DB_QV_Handle = DB_GetQuadVariable ( DB_File, VariableName )
         call c_f_pointer ( DB_QV_Handle, DB_QV )
@@ -967,12 +1035,16 @@ contains
                 = VariableValue ( oV + iV ) * S % Unit ( iVrbl ) % Number
             end do
           else
+            Value_PGF ( -oVI ( 1 ) + 1 : nC ( 1 ) + oVO ( 1 ), &
+                        -oVI ( 2 ) + 1 : nC ( 2 ) + oVO ( 2 ), &
+                        -oVI ( 3 ) + 1 : nC ( 3 ) + oVO ( 3 ) ) &
+              => S % Value ( SGI % oValue + 1 :, iVrbl )
+            Value_PG ( 1 : nC ( 1 ), 1 : nC ( 2 ), 1 : nC ( 3 ) ) & 
+              => VariableValue 
             call Copy &
-                   ( VariableValue ( oV + 1 : ) &
-                       * S % Unit ( iVrbl ) % Number, &
-                     S % Value ( SGI % oValue + oV + 1 &
-                                  : SGI % oValue + oV + DB_QV % nElements, &
-                                  iVrbl ) )                                
+                   ( Value_PG ( 1 : nC ( 1 ), 1 : nC ( 2 ), 1 : nC ( 3 ) ), &
+                     Value_PGF ( 1 : nC ( 1 ), 1 : nC ( 2 ), 1 : nC ( 3 ) ) )
+            Value_PGF = Value_PGF  *  S % Unit ( iVrbl ) % Number
           end if
         end do
       
@@ -983,9 +1055,11 @@ contains
       if ( len_trim ( S % Name ) > 0 ) &
         call SGI % Stream % ChangeDirectory ( '../' ) 
     
-      end associate 
+      end associate   !-- S, nDims
   
     end do
+    
+    end associate   !-- nC, oVI, oVO
     
     DB_File      = c_null_ptr
     DB_QV_Handle = c_null_ptr

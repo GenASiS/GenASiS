@@ -49,6 +49,7 @@ Integrator_C_1D_PS_C_PS__Form.o: \
   Basics.o \
   Fields.o \
   EvolutionBasics.o \
+  Integrator_Template.o \
   TimeSeries_C_1D_C__Form.o \
   Integrator_C_1D_C_PS__Template.o \
   Integrator_C_1D_PS_C_PS__Form.f90
@@ -56,6 +57,7 @@ Integrator_C_1D_PS_C_PS__Form.o: \
 Integrator_C_1D_MS_C_PS__Form.o: \
   Basics.o \
   Fields.o \
+  EvolutionBasics.o \
   Integrator_Template.o \
   TimeSeries_C_1D_C__Form.o \
   Integrator_C_1D_C_PS__Template.o \

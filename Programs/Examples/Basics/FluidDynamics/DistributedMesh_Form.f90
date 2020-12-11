@@ -54,11 +54,11 @@ module DistributedMesh_Form
     type ( MessageOutgoing_1D_R_Form ), allocatable :: &
       OutgoingPrevious, &
       OutgoingNext
-    type ( GridImageStreamForm ) :: &
+    type ( GridImageStreamForm ), private :: &
       GridImageStream
-    type ( CurveImageForm ) :: &
+    type ( CurveImageForm ), private :: &
       CurveImage
-    type ( StructuredGridImageForm ) :: &
+    type ( StructuredGridImageForm ), private :: &
       GridImage
   contains
     procedure, public, pass :: &
@@ -79,6 +79,8 @@ module DistributedMesh_Form
       SetImage
     procedure, public, pass :: &
       Write
+    procedure, public, pass :: &
+      Read
     final :: &
       Finalize
   end type DistributedMeshForm
@@ -123,6 +125,9 @@ contains
       DM % BoundaryCondition = BoundaryConditionOption
 
     call ShowParameters ( DM )
+    
+    call PROGRAM_HEADER % AddTimer &
+           ( 'InputOutput', DM % iTimer_IO, Level = 1 )
     
   end subroutine Initialize
 
@@ -403,12 +408,12 @@ contains
   end subroutine FinishGhostExchange
 
 
-  subroutine SetImage ( DM, S, Name )
+  subroutine SetImage ( DM, Output, Name )
 
     class ( DistributedMeshForm ), intent ( inout ) :: &
       DM
     class ( StorageForm ), dimension ( : ), intent ( in ) :: &
-      S
+      Output
     character ( * ), intent ( in ) :: &
       Name
 
@@ -426,14 +431,15 @@ contains
     character ( LDF ) :: &
       OutputDirectory
 
-    OutputDirectory = '../Output/'
-    call PROGRAM_HEADER % GetParameter ( OutputDirectory, 'OutputDirectory' )
-    
-    call PROGRAM_HEADER % AddTimer ( 'InputOutput', DM % iTimer_IO, Level = 1 )
-    
     call PROGRAM_HEADER % Timer ( DM % iTimer_IO ) % Start ( )
 
+    !-- Output
+    OutputDirectory = '../Output/'
+    call PROGRAM_HEADER % GetParameter &
+          ( OutputDirectory, 'OutputDirectory' )
+    
     associate ( GIS => DM % GridImageStream )
+           
     call GIS % Initialize &
            ( Name, CommunicatorOption = DM % Communicator, &
              WorkingDirectoryOption = OutputDirectory )
@@ -462,30 +468,32 @@ contains
     end do !-- iD
     
     select case ( DM % nDimensions )
-    case ( 1 ) 
 
+    case ( 1 ) 
+      
       associate ( CI => DM % CurveImage )
       call CI % Initialize ( GIS )
-      call CI % SetGrid &
+      call CI % SetGridWrite &
              ( 'Curves', Edge ( 1 ), DM % nProperCells, &
                oValue = nGhostInner ( 1 ) + nExteriorInner ( 1 ), &
                CoordinateUnitOption = DM % CoordinateUnit ( 1 ) )
-      do iS = 1, size ( S )
-        call CI % AddStorage ( S ( iS ) )
+      do iS = 1, size ( Output )
+        call CI % AddStorage ( Output ( iS ) )
       end do
       end associate !-- CI
-
+      
     case default
 
+      !-- Output
       associate ( GI => DM % GridImage )
       call GI % Initialize ( GIS ) 
-      call GI % SetGrid &
+      call GI % SetGridWrite &
              ( 'Grid', Edge, nCells, nGhostInner, nGhostOuter, &
                nExteriorInner, nExteriorOuter, DM % nDimensions, &
                DM % nProperCells, DM % nGhostCells, &
                CoordinateUnitOption = DM % CoordinateUnit )
-      do iS = 1, size ( S )
-        call GI % AddStorage ( S ( iS ) )
+      do iS = 1, size ( Output )
+        call GI % AddStorage ( Output ( iS ) )
       end do
       end associate !-- GI
 
@@ -493,13 +501,13 @@ contains
 
     call GIS % Close ( )
 
-    end associate !-- GIS
+    end associate !-- GIS, CS
     
     call PROGRAM_HEADER % Timer ( DM % iTimer_IO ) % Stop ( )
 
   end subroutine SetImage
-
-
+  
+  
   subroutine Write ( DM, TimeOption, CycleNumberOption )
 
     class ( DistributedMeshForm ), intent ( inout ) :: &
@@ -515,8 +523,8 @@ contains
     call PROGRAM_HEADER % Timer ( DM % iTimer_IO ) % Start ( )
     call Show ( 'Writing image', CONSOLE % INFO_1 )
 
+
     associate ( GIS => DM % GridImageStream )
-    
     
     call GIS % Open ( GIS % ACCESS_CREATE )
 
@@ -536,12 +544,54 @@ contains
     end select
 
     call GIS % Close ( )
+
     end associate !-- GIS
     
+
     call Show ( DM % GridImageStream % Number, 'iImage', CONSOLE % INFO_1 )
     call PROGRAM_HEADER % Timer ( DM % iTimer_IO ) % Stop ( )
     
   end subroutine Write
+
+  
+  subroutine Read ( DM, iImage, TimeOption, CycleNumberOption )
+
+    class ( DistributedMeshForm ), intent ( inout ) :: &
+      DM
+    integer ( KDI ), intent ( in ) :: &
+      iImage
+    type ( MeasuredValueForm ), intent ( out ), optional :: &
+      TimeOption
+    integer ( KDI ), intent ( out ), optional :: &
+      CycleNumberOption
+      
+    call PROGRAM_HEADER % Timer ( DM % iTimer_IO ) % Start ( )
+    call Show ( 'Reading output', CONSOLE % INFO_1 )
+    
+    call Show ( iImage, 'iImage', CONSOLE % INFO_1 )
+    call PROGRAM_HEADER % Timer ( DM % iTimer_IO ) % Stop ( )
+
+
+    associate ( GI => DM % GridImageStream )
+    
+    call GI % Open ( GI % ACCESS_READ, NumberOption = iImage )
+
+    select case ( DM % nDimensions )
+    case ( 1 ) 
+      call DM % CurveImage % Read &
+             ( StorageOnlyOption = .true., &
+               TimeOption = TimeOption, CycleNumberOption = CycleNumberOption )
+    case default
+      call DM % GridImage % Read &
+             ( StorageOnlyOption = .true., &
+               TimeOption = TimeOption, CycleNumberOption = CycleNumberOption )
+    end select
+
+    call GI % Close ( )
+
+    end associate !-- CS
+    
+  end subroutine Read
 
 
   subroutine Finalize ( DM )

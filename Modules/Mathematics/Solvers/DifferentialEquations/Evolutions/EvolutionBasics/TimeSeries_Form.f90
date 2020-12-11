@@ -49,6 +49,10 @@ module TimeSeries_Form
       Record
     procedure, public, pass :: &
       Write
+    procedure, public, pass :: &
+      Read
+    procedure, public, pass :: &
+      Restore
     final :: &
       Finalize
   end type TimeSeriesForm
@@ -285,6 +289,7 @@ contains
         STV_Min  ( iV, iT ) = MinTime  ( iT ) / I % iCycle
         STV_Mean ( iV, iT ) = MeanTime ( iT ) / I % iCycle
         call Show ( STV_Max ( iV, iT ), &
+                    ST_Max % Unit ( iT ), &
                     trim ( ST_Max % Variable ( iT ) ) // ' per cycle', &
                     TS % IGNORABILITY )
       end do !-- iT
@@ -306,7 +311,7 @@ contains
     if ( .not. allocated ( TS % GridImageStream ) ) &
       return
 
-    call Show ( 'Writing a ConservationLawTimeSeries', TS % IGNORABILITY )
+    call Show ( 'Writing ' // trim ( TS % Type ), TS % IGNORABILITY )
 
     associate &
       ( GIS => TS % GridImageStream, &
@@ -315,10 +320,11 @@ contains
 
     call GIS % Open ( GIS % ACCESS_CREATE, SeriesOption = .false. )
     call CI % ClearGrid ( )
-    call CI % SetGrid  &
+    call CI % SetGridWrite  &
            ( Directory = 'TimeSeries', &
              NodeCoordinate = SB % Value ( 1 : TS % iTime, TS % TIME ), &
-             nProperCells = TS % iTime, oValue = 0, &
+             nProperCells = TS % iTime, &
+             oValue = 0, &
              CoordinateUnitOption = SB % Unit ( TS % TIME ), &
              CoordinateLabelOption = 't' )
     call CI % Write ( )
@@ -327,6 +333,78 @@ contains
     end associate !-- GIS, etc.
 
   end subroutine Write
+
+
+  subroutine Read ( TS, nSeries )
+
+    class ( TimeSeriesForm ), intent ( inout ) :: &
+      TS
+    integer ( KDI ), intent ( in ) :: &
+      nSeries
+
+    TS % iTime  =  nSeries
+
+    if ( .not. allocated ( TS % GridImageStream ) ) &
+      return
+
+    call Show ( 'Reading ' // trim ( TS % Type ), TS % IGNORABILITY )
+
+    associate &
+      ( GIS => TS % GridImageStream, &
+        SB  => TS % SeriesBasic, &
+        CI => TS % CurveImage )
+
+    call GIS % Open ( GIS % ACCESS_READ, SeriesOption = .false. )
+    call CI % ClearGrid ( )
+    call CI % SetGridRead  &
+           ( Directory = 'TimeSeries', &
+             nProperCells = nSeries, &
+             oValue = 0 )
+    call CI % Read ( StorageOnlyOption = .true. )
+    call GIS % Close ( ) 
+
+    end associate !-- GIS, etc.
+
+  end subroutine Read
+
+
+  subroutine Restore ( TS, MaxTime, MinTime, MeanTime )
+
+    class ( TimeSeriesForm ), intent ( inout ) :: &
+      TS
+    real ( KDR ), dimension ( : ), intent ( out ) :: &
+      MaxTime, &
+      MinTime, &
+      MeanTime
+
+    integer ( KDI ) :: &
+      iT  !-- iTimer
+
+    associate &
+      ( I   => TS % Integrator, &
+        ST_Mean  => TS % SeriesTimerMean, &
+        STV_Max  => TS % SeriesTimerMax % Value, &
+        STV_Min  => TS % SeriesTimerMin % Value, &
+        STV_Mean => TS % SeriesTimerMean % Value, &
+        iV  => TS % iTime )
+
+    call Show ( 'Restoring TimeSeries data', TS % IGNORABILITY )
+    call Show ( TS % Name, 'Name', TS % IGNORABILITY )
+    call Show ( iV, 'iTime', TS % IGNORABILITY )
+
+    do iT = 1, TS % N_SERIES_TIMER
+      MaxTime  ( iT )  =  STV_Max  ( iV, iT )  *  I % iCycle
+      MinTime  ( iT )  =  STV_Min  ( iV, iT )  *  I % iCycle
+      MeanTime ( iT )  =  STV_Mean ( iV, iT )  *  I % iCycle
+      call Show ( MeanTime ( iT ), &
+                  ST_Mean % Unit ( iT ), &
+                  trim ( ST_Mean % Variable ( iT ) ) // ' (MeanTime)', &
+                  TS % IGNORABILITY )
+    end do !-- iT
+
+    end associate !-- I, etc.
+
+  end subroutine Restore
 
 
   impure elemental subroutine Finalize ( TS )

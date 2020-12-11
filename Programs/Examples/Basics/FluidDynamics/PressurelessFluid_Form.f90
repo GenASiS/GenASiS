@@ -534,6 +534,8 @@ contains
     logical ( KDL ) :: &
       UnitsOnly
 
+    call PF % SetOutputTemplate ( )
+    
     DensityUnit = UNIT % IDENTITY
     if ( present ( DensityUnitOption ) ) DensityUnit = DensityUnitOption
 
@@ -561,8 +563,9 @@ contains
            ( PF, iaSelectedOption = [ PF % COMOVING_DENSITY, PF % VELOCITY ], &
              VectorOption = [ 'Velocity                       ' ], &
              VectorIndicesOption = VectorIndices )
-
-    call PF % DistributedMesh % SetImage ( PF % Output, PROGRAM_HEADER % Name )
+             
+    call PF % DistributedMesh % SetImage &
+         ( Output = PF % Output, Name = PROGRAM_HEADER % Name )
 
   end subroutine SetOutputPressureless
 

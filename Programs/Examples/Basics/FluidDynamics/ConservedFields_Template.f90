@@ -38,6 +38,8 @@ module ConservedFields_Template
   contains
     procedure, public, pass :: &
       InitializeTemplate
+    procedure, public, pass :: &
+      SetOutputTemplate
     procedure ( ComputeInterface ), public, pass, deferred :: &
       ComputeConserved
     procedure ( ComputeInterface ), public, pass, deferred :: &
@@ -172,12 +174,9 @@ contains
     class ( ConservedFieldsTemplate ), intent ( inout ) :: &
       CF
 
-    call CF % Output ( 1 ) % Initialize &
-           ( CF, iaSelectedOption = CF % iaPrimitive )
-
   end subroutine SetOutputTemplate
-
-
+  
+  
   subroutine InitializeBasics &
                ( CF, Variable, VariableUnit, VariableOption, NameOption, &
                  VariableUnitOption )

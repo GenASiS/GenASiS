@@ -13,7 +13,8 @@ module ConservationLawEvolution_Template
       iCycle, &
       nRampCycles, &
       nWrite, &
-      FinishCycle
+      FinishCycle, &
+      RestartFrom
     integer ( KDI ), private :: &
       iTimerComputation, &
       iTimerTimeStep
@@ -119,13 +120,17 @@ contains
     CLE % nWrite = 100
     call PROGRAM_HEADER % GetParameter ( CLE % nWrite, 'nWrite' )
 
-    CLE % WriteTimeInterval = ( CLE % FinishTime - CLE % StartTime ) / CLE % nWrite
+    CLE % WriteTimeInterval &
+      = ( CLE % FinishTime - CLE % StartTime ) / CLE % nWrite
     call PROGRAM_HEADER % GetParameter &
            ( CLE % WriteTimeInterval, 'WriteTimeInterval' )
            
     CLE % NoWrite = .false.
     call PROGRAM_HEADER % GetParameter ( CLE % NoWrite, 'NoWrite' )
-           
+    
+    CLE % RestartFrom = - huge ( 1 )
+    call PROGRAM_HEADER % GetParameter ( CLE % RestartFrom, 'RestartFrom' )
+    
     !-- Extensions are responsible for initializing CLE % ConservedFields
 
     !-- CLE % ConservationLawStep initialized below in CLE % Evolve
@@ -139,6 +144,9 @@ contains
 
     class ( ConservationLawEvolutionTemplate ), intent ( inout ) :: &
       CLE
+    
+    type ( MeasuredValueForm ) :: &
+      RestartTime
       
     call PROGRAM_HEADER % AddTimer &
            ( 'Computational', &
@@ -146,27 +154,44 @@ contains
     call PROGRAM_HEADER % AddTimer &
            ( 'ComputeTimeStep', &
              CLE % iTimerTimeStep, Level = 2 )
-
+             
     associate &
       ( DM  => CLE % DistributedMesh, &
         CLS => CLE % ConservationLawStep, &
         T => PROGRAM_HEADER % Timer ( CLE % iTimerComputation ) )
 
-    call CLS % Initialize ( CLE % ConservedFields )
-    call CLE % ConservedFields % UpdateDevice ( )
-
     CLE % Time = CLE % StartTime
-
+    
+    !-- Initial write
     if ( .not. CLE % NoWrite ) &
       call DM % Write &
              ( TimeOption = CLE % Time / CLE % TimeUnit, &
                CycleNumberOption = CLE % iCycle )
+    
+    !-- Restart 
+    if ( CLE % RestartFrom >= 0 ) then
+      call DM % Read &
+               ( iImage = CLE % RestartFrom, &
+                 TimeOption = RestartTime, &
+                 CycleNumberOption = CLE % iCycle )
+      CLE % Time = RestartTime * CLE % TimeUnit
+      call DM % StartGhostExchange ( )
+      call DM % FinishGhostExchange ( )
+      associate ( CF => CLE % ConservedFields )
+      call CF % ComputeAuxiliary ( CF % Value, UseDeviceOption = .false. )
+      call CF % ComputeConserved ( CF % Value, UseDeviceOption = .false. )
+      end associate !-- CF
+    end if
+    
+    call CLS % Initialize ( CLE % ConservedFields )
+    call CLE % ConservedFields % UpdateDevice ( )
+    
     CLE % WriteTime &
       = min ( CLE % Time + CLE % WriteTimeInterval, CLE % FinishTime )
-
+    
     call Show ( 'Evolving a Fluid', CONSOLE % INFO_1 )
     
-    call T % Start ( ) 
+    call T % Start ( )
 
     do while ( CLE % Time < CLE % FinishTime &
                .and. CLE % iCycle < CLE % FinishCycle )
@@ -190,10 +215,11 @@ contains
 
         call T % Stop ( )
         
-        if ( .not. CLE % NoWrite ) &
+        if ( .not. CLE % NoWrite ) then
           call DM % Write &
                  ( TimeOption = CLE % Time / CLE % TimeUnit, &
                    CycleNumberOption = CLE % iCycle )
+        end if
         CLE % WriteTime &
           = min ( CLE % Time + CLE % WriteTimeInterval, CLE % FinishTime )
         
@@ -203,7 +229,7 @@ contains
         call T % Start ( )
         
       end if
-
+      
     end do
     
     call T % Stop ( )
