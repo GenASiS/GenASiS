@@ -17,7 +17,7 @@ DEVICE_COMPILE       = nvcc -c
 DEVICE_DEBUG         = -g
 DEVICE_OPTIMIZE      = -O3
 
-LINK = mpifort
+LINK = mpifort -fopenmp
 
 # Define default switches for this compiler. These can be overwritten at
 # build time with, e.g., 'make ENABLE_OMP_OFFLOAD=0 <target>'
@@ -26,17 +26,27 @@ ENABLE_OMP_OFFLOAD  ?= 0
 USE_ISO_10646       ?= 1
 
 #-- Silo library include and link line flag and location
-SILO_DIR = /usr/local/silo/silo/4.10.2
+SILO_DIR    ?= /usr/local/silo/silo/4.10.2
 INCLUDE_SILO = -I${SILO_DIR}/include
 LIBRARY_SILO = -L${SILO_DIR}/lib -lsilo
 
 #-- HDF5 library include and link line flag and location
-HDF5_DIR = /usr/local/hdf5/1.10
+HDF5_DIR    ?= /usr/local/hdf5/1.10
 INCLUDE_HDF5 = -I${HDF5_DIR}/include
 LIBRARY_HDF5 = -L${HDF5_DIR}/lib -lhdf5_fortran -lhdf5
 
+#-- if empty, don't link to HDF5
+ifeq ($(strip $(HDF5_DIR)),)
+  INCLUDE_HDF5 =
+  LIBRARY_HDF5 =
+endif
+
 #-- LAPACK library link line flag and location
-LIBRARY_LAPACK = #-L${OLCF_NETLIB_LAPACK_ROOT}/lib -llapack -lblas
+LAPACK_DIR    ?=
+LIBRARY_LAPACK = -L${LAPACK_DIR}/lib -llapack -lblas
+ifeq ($(strip $(LAPACK_DIR)),)
+  LIBRARY_LAPACK =
+endif
 
 ifeq ($(ENABLE_OMP_OFFLOAD), 1)
 INCLUDE_DEVICE = -I${OLCF_CUDA_ROOT}/include
@@ -49,10 +59,6 @@ ifeq ($(ENABLE_OMP), 1)
   DEFINES += -fopenmp
 else
   ENABLE_OMP_OFFLOAD = 0
-endif
-
-ifeq ($(ENABLE_OMP_OFFLOAD), 1)
-  DEFINES = -fopenmp -foffload=nvptx-none="-lm -lgfortran" -DENABLE_OMP_OFFLOAD
 endif
 
 ifeq ($(ENABLE_OMP_OFFLOAD), 1)
