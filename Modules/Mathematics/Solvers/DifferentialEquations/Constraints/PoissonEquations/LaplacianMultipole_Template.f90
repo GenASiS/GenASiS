@@ -25,19 +25,23 @@ module LaplacianMultipole_Template
       ReductionUseDevice = .false.
     real ( KDR ), dimension ( :, :, : ), pointer :: &
       MyAngularMoment_3D => null ( ), &
-        AngularMoment_3D => null ( )
+        AngularMoment_3D => null ( ), &
+       RadialMoment_R_3D => null ( ), &
+       RadialMoment_I_3D => null ( )
     character ( LDF ) :: &
       Type = '', &
       Name = ''
     character ( LDL ), dimension ( : ), allocatable :: &
       AngularFunctionName, &
-      AngularMomentName
+      Momentname
     type ( StorageForm ), allocatable :: &
       d_Radius_3_3, &
       RadialFunctions_R, &
       RadialFunctions_I, &
       MyAngularMoments, &
-        AngularMoments
+        AngularMoments, &
+      RadialMoments_R, &
+      RadialMoments_I
     type ( CollectiveOperation_R_Form ), allocatable :: &
       CO_AngularMoments
   contains
@@ -59,6 +63,8 @@ module LaplacianMultipole_Template
       AllocateMoments
     procedure ( CAML ), private, pass, deferred :: &
       ComputeAngularMomentsLocal
+    procedure, private, pass :: &
+      ComputeRadialMoments
     procedure, public, nopass :: &
       AssociatedLegendre
   end type LaplacianMultipoleTemplate
@@ -99,6 +105,35 @@ module LaplacianMultipole_Template
     private :: &
       AllocateReduction, &
       AssignMomentPointers
+
+    private :: &
+      ComputeRadialMomentsKernel
+
+
+    interface
+
+      module subroutine ComputeRadialMomentsKernel &
+                          ( RM_R, RM_I, AM, RF_R, RF_I, dR33, nE, nAM, nR, &
+                            UseDeviceOption )
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( :, :, : ), intent ( inout ) :: &
+          RM_R, RM_I  !-- RadialMoment_Regular, _Irregular
+        real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+          AM  !-- AngularMoment
+        real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+          RF_R, RF_I  !-- RadialFunction_Regular, _Irregular
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          dR33  !-- dRadius_3_3
+        integer ( KDI ), intent ( in ) :: &
+          nE, &   !-- nEquations
+          nAM, &  !-- nAngularMoments
+          nR      !-- nRadial
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine
+
+    end interface
 
 
 contains
@@ -195,12 +230,9 @@ contains
     if ( .not. L % ReductionUseDevice ) call AM % UpdateDevice ( ) 
     if ( associated ( Timer_RM ) ) call Timer_RM % Stop ( )
 
-    ! if ( associated ( Timer_AM ) ) call Timer_AM % Start ( )
-    !   call AddMomentShellsKernel &
-    !          ( L % Moment_RC, L % Moment_IC, L % Moment_RS, L % Moment_IS, &
-    !            L % nAngularMoments, L % nEquations, L % nRadialCells, &
-    !            UseDeviceOption = L % UseDevice )
-    ! if ( associated ( Timer_AM ) ) call Timer_AM % Stop ( )
+    if ( associated ( Timer_AM ) ) call Timer_AM % Start ( )
+      call L % ComputeRadialMoments ( )
+    if ( associated ( Timer_AM ) ) call Timer_AM % Stop ( )
     
     end associate !-- M, etc.
 
@@ -217,6 +249,10 @@ contains
     if ( allocated ( L % CO_AngularMoments ) ) &
       deallocate ( L % CO_AngularMoments )
 
+    if ( allocated ( L % RadialMoments_I ) ) &
+      deallocate ( L % RadialMoments_I )
+    if ( allocated ( L % RadialMoments_R ) ) &
+      deallocate ( L % RadialMoments_R )
     if ( allocated ( L % AngularMoments ) ) &
       deallocate ( L % AngularMoments )
     if ( allocated ( L % MyAngularMoments ) ) &
@@ -228,11 +264,13 @@ contains
     if ( allocated ( L % d_Radius_3_3 ) ) &
       deallocate ( L % d_Radius_3_3 )
 
+    nullify ( L % RadialMoment_I_3D )
+    nullify ( L % RadialMoment_R_3D )
     nullify ( L % AngularMoment_3D )
     nullify ( L % MyAngularMoment_3D )
 
-    if ( allocated ( L % AngularMomentName ) ) &
-      deallocate ( L % AngularMomentName )
+    if ( allocated ( L % Momentname ) ) &
+      deallocate ( L % Momentname )
     if ( allocated ( L % AngularFunctionName ) ) &
       deallocate ( L % AngularFunctionName )
 
@@ -301,7 +339,7 @@ contains
 
     nE  =  nEquations
 
-    allocate ( L % AngularMomentName ( nA * nE ) )
+    allocate ( L % Momentname ( nA * nE ) )
     iAE = 1
     do iE  =  1, nE
       do iM  =  0, M_Max
@@ -309,11 +347,11 @@ contains
           write ( iL_Label, fmt = '(i2.2)' ) iL
           write ( iM_Label, fmt = '(i2.2)' ) iM
           write ( iE_Label, fmt = '(i1.1)' ) iE
-          L % AngularMomentName ( iAE )  &
-            =  'AngularMoment_' // iL_Label // '_' // iM_Label // '_Cos_Eq_' &
+          L % Momentname ( iAE )  &
+            =  'Moment_' // iL_Label // '_' // iM_Label // '_Cos_Eq_' &
                // iE_Label
-          L % AngularMomentName ( iAE + 1 )  &
-            =  'AngularMoment_' // iL_Label // '_' // iM_Label // '_Sin_Eq_' &
+          L % Momentname ( iAE + 1 )  &
+            =  'Moment_' // iL_Label // '_' // iM_Label // '_Sin_Eq_' &
                // iE_Label
           iAE  =  iAE + 2
         end do  !-- iL
@@ -345,9 +383,13 @@ contains
 
     allocate ( L % AngularMoments )
     allocate ( L % MyAngularMoments )
+    allocate ( L % RadialMoments_R )
+    allocate ( L % RadialMoments_I )
     associate &
       (         AM  =>  L % AngularMoments, &
               MyAM  =>  L % MyAngularMoments, &
+              RM_R  =>  L % RadialMoments_R, &
+              RM_I  =>  L % RadialMoments_I, &
                nAM  =>  L % nAngularMoments, &
                 nR  =>  L % nRadialCells, &
                 nE  =>  L % nEquations )
@@ -355,27 +397,56 @@ contains
     call   AM % Initialize &
              ( [ nR, nAM * nE ], &
                NameOption = 'AngularMoments', &
-               VariableOption = L % AngularMomentName, &
+               VariableOption = L % Momentname, &
                PinnedOption = L % UseDevice )
     call MyAM % Initialize &
              ( [ nR, nAM * nE ], &
                NameOption = 'MyAngularMoments', &
-               VariableOption = L % AngularMomentName, &
+               VariableOption = L % Momentname, &
+               PinnedOption = L % UseDevice )
+    call RM_R % Initialize &
+             ( [ nR + 1, nAM * nE ], &
+               NameOption = 'RadialMoments_R', &
+               VariableOption = L % Momentname, &
+               PinnedOption = L % UseDevice )
+    call RM_I % Initialize &
+             ( [ nR + 1, nAM * nE ], &
+               NameOption = 'RadialMoments_I', &
+               VariableOption = L % Momentname, &
                PinnedOption = L % UseDevice )
     if ( L % UseDevice ) then
       call   AM % AllocateDevice ( )
       call MyAM % AllocateDevice ( )
+      call RM_R % AllocateDevice ( )
+      call RM_I % AllocateDevice ( )
     end if
 
     call AllocateReduction ( L, AM % Value, MyAM % Value )
 
     call AssignMomentPointers &
-           ( L, L % AngularMoments % Value, L % MyAngularMoments % Value, &
-                L % AngularMoment_3D,       L % MyAngularMoment_3D )
+           ( L, L %  AngularMoments % Value, L % MyAngularMoments % Value, &
+                L % RadialMoments_R % Value, L %  RadialMoments_I % Value, &
+                L % AngularMoment_3D,        L % MyAngularMoment_3D, &
+                L % RadialMoment_R_3D,         L % RadialMoment_I_3D )
 
     end associate !-- M, etc.
 
   end subroutine AllocateMoments
+
+
+  subroutine ComputeRadialMoments ( L )
+
+    class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+      L
+
+    call ComputeRadialMomentsKernel &
+           ( L % RadialMoment_R_3D, L % RadialMoment_I_3D, &
+             L % AngularMoment_3D, L % RadialFunctions_R % Value, &
+             L % RadialFunctions_I % Value, L % d_Radius_3_3 % Value ( :, 1 ), &
+             L % nEquations, L % nAngularMoments, L % nRadialCells, &
+             UseDeviceOption = L % UseDevice )
+
+  end subroutine ComputeRadialMoments
 
 
   function AssociatedLegendre ( X, L, M ) result ( P_LM )
@@ -500,24 +571,32 @@ contains
   end subroutine AllocateReduction
 
 
-  subroutine AssignMomentPointers ( L, AM_2D, MyAM_2D, AM_3D, MyAM_3D )
+  subroutine AssignMomentPointers &
+               ( L, AM_2D, MyAM_2D, RM_R_2D, RM_I_2D, &
+                    AM_3D, MyAM_3D, RM_R_3D, RM_I_3D )
 
     class ( LaplacianMultipoleTemplate ), intent ( in ) :: &
       L
     real ( KDR ), dimension ( :, : ), intent ( in ), target, contiguous :: &
         AM_2D, &
-      MyAM_2D
+      MyAM_2D, &
+      RM_R_2D, &
+      RM_I_2D
     real ( KDR ), dimension ( :, :, : ), intent ( out ), pointer :: &
         AM_3D, &
-      MyAM_3D
+      MyAM_3D, &
+      RM_R_3D, &
+      RM_I_3D
 
     associate &
       (  nE => L % nEquations, &
         nAM => L % nAngularMoments, &
          nR => L % nRadialCells )
 
-      AM_3D ( 1 : nR, 1 : nAM, 1 : nE )  =>    AM_2D
-    MyAM_3D ( 1 : nR, 1 : nAM, 1 : nE )  =>  MyAM_2D
+      AM_3D ( 1 : nR,     1 : nAM, 1 : nE )  =>    AM_2D
+    MyAM_3D ( 1 : nR,     1 : nAM, 1 : nE )  =>  MyAM_2D
+    RM_R_3D ( 1 : nR + 1, 1 : nAM, 1 : nE )  =>  RM_R_2D
+    RM_I_3D ( 1 : nR + 1, 1 : nAM, 1 : nE )  =>  RM_I_2D
 
     end associate  !-- nE, nA, nR
 

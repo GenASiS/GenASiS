@@ -24,6 +24,7 @@ LaplacianMultipole_ASC__Form_Test: Basics.a Manifolds.a \
           LaplacianMultipole_ASC__Form_Test.o \
           LaplacianMultipole_ASC__Kernel.o \
           LaplacianMultipole_ASC__Form.o \
+          LaplacianMultipole_Kernel.o \
           LaplacianMultipole_Template.o \
           SetHomogeneousSphere_Command.o \
           Manifolds.a Basics.a $(LIBRARIES)
@@ -77,6 +78,7 @@ LaplacianMultipole_ASC__Form_Test.o: \
   Basics.o \
   Manifolds.o \
   LaplacianMultipole_Template.o \
+  LaplacianMultipole_Kernel.o \
   LaplacianMultipole_ASC__Form.o \
   LaplacianMultipole_ASC__Kernel.o \
   SetHomogeneousSphere_Command.o \
