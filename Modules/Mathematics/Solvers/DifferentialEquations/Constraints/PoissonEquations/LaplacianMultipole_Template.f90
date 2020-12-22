@@ -33,7 +33,7 @@ module LaplacianMultipole_Template
       Name = ''
     character ( LDL ), dimension ( : ), allocatable :: &
       AngularFunctionName, &
-      Momentname
+      MomentName
     type ( StorageForm ), allocatable :: &
       d_Radius_3_3, &
       RadialFunctions_R, &
@@ -65,6 +65,8 @@ module LaplacianMultipole_Template
       ComputeAngularMomentsLocal
     procedure, private, pass :: &
       ComputeRadialMoments
+    procedure, public, pass :: &
+      ShowMoments
     procedure, public, nopass :: &
       AssociatedLegendre
   end type LaplacianMultipoleTemplate
@@ -269,8 +271,8 @@ contains
     nullify ( L % AngularMoment_3D )
     nullify ( L % MyAngularMoment_3D )
 
-    if ( allocated ( L % Momentname ) ) &
-      deallocate ( L % Momentname )
+    if ( allocated ( L % MomentName ) ) &
+      deallocate ( L % MomentName )
     if ( allocated ( L % AngularFunctionName ) ) &
       deallocate ( L % AngularFunctionName )
 
@@ -339,7 +341,7 @@ contains
 
     nE  =  nEquations
 
-    allocate ( L % Momentname ( nA * nE ) )
+    allocate ( L % MomentName ( nA * nE ) )
     iAE = 1
     do iE  =  1, nE
       do iM  =  0, M_Max
@@ -347,10 +349,10 @@ contains
           write ( iL_Label, fmt = '(i2.2)' ) iL
           write ( iM_Label, fmt = '(i2.2)' ) iM
           write ( iE_Label, fmt = '(i1.1)' ) iE
-          L % Momentname ( iAE )  &
+          L % MomentName ( iAE )  &
             =  'Moment_' // iL_Label // '_' // iM_Label // '_Cos_Eq_' &
                // iE_Label
-          L % Momentname ( iAE + 1 )  &
+          L % MomentName ( iAE + 1 )  &
             =  'Moment_' // iL_Label // '_' // iM_Label // '_Sin_Eq_' &
                // iE_Label
           iAE  =  iAE + 2
@@ -397,22 +399,22 @@ contains
     call   AM % Initialize &
              ( [ nR, nAM * nE ], &
                NameOption = 'AngularMoments', &
-               VariableOption = L % Momentname, &
+               VariableOption = L % MomentName, &
                PinnedOption = L % UseDevice )
     call MyAM % Initialize &
              ( [ nR, nAM * nE ], &
                NameOption = 'MyAngularMoments', &
-               VariableOption = L % Momentname, &
+               VariableOption = L % MomentName, &
                PinnedOption = L % UseDevice )
     call RM_R % Initialize &
              ( [ nR + 1, nAM * nE ], &
                NameOption = 'RadialMoments_R', &
-               VariableOption = L % Momentname, &
+               VariableOption = L % MomentName, &
                PinnedOption = L % UseDevice )
     call RM_I % Initialize &
              ( [ nR + 1, nAM * nE ], &
                NameOption = 'RadialMoments_I', &
-               VariableOption = L % Momentname, &
+               VariableOption = L % MomentName, &
                PinnedOption = L % UseDevice )
     if ( L % UseDevice ) then
       call   AM % AllocateDevice ( )
@@ -420,6 +422,8 @@ contains
       call RM_R % AllocateDevice ( )
       call RM_I % AllocateDevice ( )
     end if
+
+    call Clear ( MyAM % Value, UseDeviceOption = L % UseDevice )
 
     call AllocateReduction ( L, AM % Value, MyAM % Value )
 
@@ -447,6 +451,82 @@ contains
              UseDeviceOption = L % UseDevice )
 
   end subroutine ComputeRadialMoments
+
+
+  subroutine ShowMoments ( L )
+
+    class ( LaplacianMultipoleTemplate ), intent ( inout ) :: &
+      L
+
+    integer ( KDI ) :: &
+      iL, &  !-- iDegree
+      iM, &  !-- iOrder
+      iE, &  !-- iEquation
+      iA, &  !-- iAngular
+      iAE    !-- iAngularEquations  
+
+    associate &
+      (  L_Max  =>  L % MaxDegree, &
+         M_Max  =>  L % MaxOrder, &
+            nE  =>  L % nEquations )
+
+    call Show ( 'Displaying Angular Moments' )
+
+    iAE = 1
+    do iE  =  1, nE
+      iA = 1
+      do iM  =  0, M_Max
+        do iL  =  iM, L_Max
+          !-- Cos and Sin
+          call Show ( L % AngularMoment_3D ( :, iA, iE ), &
+                      L % MomentName ( iAE ) )
+          call Show ( L % AngularMoment_3D ( :, iA + 1, iE ), &
+                      L % MomentName ( iAE + 1) )
+           iA  =   iA + 2
+          iAE  =  iAE + 2
+        end do  !-- iL
+      end do  !-- iM
+    end do  !-- iE
+
+    call Show ( 'Displaying Regular Radial Moments' )
+
+    iAE = 1
+    do iE  =  1, nE
+      iA = 1
+      do iM  =  0, M_Max
+        do iL  =  iM, L_Max
+          !-- Cos and Sin
+          call Show ( L % RadialMoment_R_3D ( :, iA, iE ), &
+                      L % MomentName ( iAE ) )
+          call Show ( L % RadialMoment_R_3D ( :, iA + 1, iE ), &
+                      L % MomentName ( iAE + 1) )
+           iA  =   iA + 2
+          iAE  =  iAE + 2
+        end do  !-- iL
+      end do  !-- iM
+    end do  !-- iE
+
+    call Show ( 'Displaying Irregular Moments' )
+
+    iAE = 1
+    do iE  =  1, nE
+      iA = 1
+      do iM  =  0, M_Max
+        do iL  =  iM, L_Max
+          !-- Cos and Sin
+          call Show ( L % RadialMoment_I_3D ( :, iA, iE ), &
+                      L % MomentName ( iAE ) )
+          call Show ( L % RadialMoment_I_3D ( :, iA + 1, iE ), &
+                      L % MomentName ( iAE + 1) )
+           iA  =   iA + 2
+          iAE  =  iAE + 2
+        end do  !-- iL
+      end do  !-- iM
+    end do  !-- iE
+
+    end associate !-- L_Max, etc.
+
+  end subroutine ShowMoments
 
 
   function AssociatedLegendre ( X, L, M ) result ( P_LM )

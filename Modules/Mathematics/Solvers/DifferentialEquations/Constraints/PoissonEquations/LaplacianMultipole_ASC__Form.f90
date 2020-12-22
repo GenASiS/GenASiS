@@ -433,35 +433,45 @@ contains
 
     Pi  =  CONSTANT % PI
 
-    do iTheta  =  1, nTheta
-      Th_I  =  Theta ( iTheta )  -  dTheta_L ( iTheta )
-      Th_O  =  Theta ( iTheta )  +  dTheta_R ( iTheta )
-      if ( nPhi > 1 ) then
-        do iPhi  =  1, nPhi
-          dPh  =  dPhi_L ( iPhi )  +  dPhi_R ( iPhi )
-          dSA ( iTheta, iPhi )  =  dPh * ( cos ( Th_I ) - cos ( Th_O ) )
-        end do !-- iPhi
-      else  !-- axisymmetry
-        dSA ( iTheta, 1 )  =  2.0_KDR * Pi *  ( cos ( Th_I ) - cos ( Th_O ) )
-      end if  !-- nPhi > 1
-    end do !-- iTheta
+    if ( nTheta > 1 ) then
+      do iTheta  =  1, nTheta
+        Th_I  =  Theta ( iTheta )  -  dTheta_L ( iTheta )
+        Th_O  =  Theta ( iTheta )  +  dTheta_R ( iTheta )
+        if ( nPhi > 1 ) then
+          do iPhi  =  1, nPhi
+            dPh  =  dPhi_L ( iPhi )  +  dPhi_R ( iPhi )
+            dSA ( iTheta, iPhi )  =  dPh * ( cos ( Th_I ) - cos ( Th_O ) )
+          end do !-- iPhi
+        else !-- axisymmetry
+          dSA ( iTheta, 1 )  =  2.0_KDR * Pi *  ( cos ( Th_I ) - cos ( Th_O ) )
+        end if  !-- nPhi > 1
+      end do !-- iTheta
+    else !-- spherical symmetry
+      dSA ( 1, 1 )  =  4.0_KDR * Pi
+    end if
 
     iA  =  1
     do iM  =  0, M
       do iL  =  iM, L
-        do iTheta  =  1, nTheta
-          P  =  LM % AssociatedLegendre ( cos ( Theta ( iTheta ) ), iL, iM )
-          if ( nPhi > 1 ) then
-            do iPhi  =  1, nPhi
-              AF ( iTheta, iPhi, iA     )  =  P * cos ( iM * Phi ( iPhi ) )
-              AF ( iTheta, iPhi, iA + 1 )  =  P * sin ( iM * Phi ( iPhi ) )
-            end do !-- iPhi
-          else  !-- axisymmetry
-            AF ( iTheta, 1, iA     )  =  P
-            AF ( iTheta, 1, iA + 1 )  =  0.0_KDR
-          end if  !-- nPhi > 1
-        end do !-- iTheta
-        iA  =  iA + 2 !-- Cos, Sin
+        if ( nTheta > 1 ) then
+          do iTheta  =  1, nTheta
+            P  =  LM % AssociatedLegendre ( cos ( Theta ( iTheta ) ), iL, iM )
+            if ( nPhi > 1 ) then
+              do iPhi  =  1, nPhi
+                AF ( iTheta, iPhi, iA     )  =  P * cos ( iM * Phi ( iPhi ) )
+                AF ( iTheta, iPhi, iA + 1 )  =  P * sin ( iM * Phi ( iPhi ) )
+              end do !-- iPhi
+            else !-- axisymmetry
+              AF ( iTheta, 1, iA     )  =  P
+              AF ( iTheta, 1, iA + 1 )  =  0.0_KDR
+            end if  !-- nPhi > 1
+          end do !-- iTheta
+        else !-- spherical symmetry
+          P  =  LM % AssociatedLegendre ( cos ( 0.5_KDR * Pi ), iL, iM )
+          AF ( 1, 1, iA     )  =  P
+          AF ( 1, 1, iA + 1 )  =  0.0_KDR
+        end if
+        iA  =  iA + 2 !-- Cos, Sin    
       end do !-- iL
     end do !-- iM
 

@@ -223,6 +223,7 @@ contains
     !-- Compute moments
 
     call L % ComputeMoments ( LMFT % Source )
+    call L % ShowMoments ( )
 
 
     !-- Cleanup

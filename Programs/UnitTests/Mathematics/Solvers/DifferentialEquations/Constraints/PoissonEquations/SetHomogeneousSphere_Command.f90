@@ -111,6 +111,8 @@ contains
       else if ( R_In  <  RD .and. R_Out  >  RD ) then
         D ( iV )  =  Density * ( RD ** 3  -  R_In ** 3 ) &
                      / ( R_Out ** 3  -  R_In ** 3 )
+      else
+        D ( iV )  =  0.0_KDR
       end if
     end do !-- iV
 
