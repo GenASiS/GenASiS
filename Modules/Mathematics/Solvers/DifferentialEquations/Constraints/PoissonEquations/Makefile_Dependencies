@@ -67,6 +67,7 @@ Poisson_Template.o: \
   Manifolds.o \
   LaplacianMultipoleOld_1__Template.o \
   LaplacianMultipoleOld_2__Template.o \
+  LaplacianMultipole_Template.o \
   Poisson_Template.f90
 
 Poisson_ASC__Form.o: \

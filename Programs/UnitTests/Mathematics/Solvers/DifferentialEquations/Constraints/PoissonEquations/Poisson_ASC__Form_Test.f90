@@ -55,6 +55,8 @@ contains
     real ( KDR ), dimension ( N_EQUATIONS ) :: &
       RadiusDensity, &
       Density
+    character ( LDL ) :: &
+      SolverType
 
     !-- Atlas
 
@@ -64,7 +66,11 @@ contains
     call A % CreateChart_CC ( )
     call A % SetGeometry ( )
 
+
     !-- Poisson
+
+    SolverType = 'MULTIPOLE'
+    call PROGRAM_HEADER % GetParameter ( SolverType, 'SolverType' )
 
     MaxDegree = 2
     call PROGRAM_HEADER % GetParameter ( MaxDegree, 'MaxDegree' )
@@ -72,8 +78,9 @@ contains
     allocate ( PFT % Poisson )
     associate ( P => PFT % Poisson )
     call P % Initialize &
-           ( A, SolverType = 'MULTIPOLE', MaxDegreeOption = MaxDegree, &
+           ( A, SolverType = SolverType, MaxDegreeOption = MaxDegree, &
              nEquationsOption = N_EQUATIONS )
+    call P % InitializeTimers ( BaseLevel = 1 )
 
 
     !-- Source, Reference
@@ -84,6 +91,7 @@ contains
            ( A, 'Source', N_EQUATIONS, &
              VariableOption = VARIABLE, &
              WriteOption = .true. )
+    end associate !-- SA
 
     allocate ( PFT % Reference )
     associate ( RA => PFT % Reference )
@@ -91,6 +99,7 @@ contains
            ( A, 'Reference', N_EQUATIONS, &
              VariableOption = VARIABLE, &
              WriteOption = .true. )
+    end associate !-- RA
 
 
     !-- Homogeneous sphere
@@ -105,8 +114,10 @@ contains
 
     do iE = 1, N_EQUATIONS
       call SetHomogeneousSphere &
-             ( SA, RA, A, Density ( iE ), RadiusDensity ( iE ), iE )
+             ( PFT % Source, PFT % Reference, A, Density ( iE ), &
+               RadiusDensity ( iE ), iE )
     end do
+
 
     !-- Solution, Difference
 
@@ -130,6 +141,7 @@ contains
     
     call PFT % ComputeError ( ) 
 
+
     !-- Write
 
     allocate ( PFT % Stream )
@@ -148,8 +160,6 @@ contains
 
     !-- Cleanup
 
-    end associate !-- RA
-    end associate !-- SA
     end associate !-- P
     end associate !-- A
 

@@ -4,6 +4,7 @@ module Poisson_Template
   use Manifolds
   use LaplacianMultipoleOld_1__Template
   use LaplacianMultipoleOld_2__Template
+  use LaplacianMultipole_Template
 
   implicit none
   private
@@ -26,6 +27,8 @@ module Poisson_Template
     class ( LaplacianMultipoleOld_1_Template ), allocatable :: &
       LaplacianMultipoleOld_1
     class ( LaplacianMultipoleOld_2_Template ), allocatable :: &
+      LaplacianMultipoleOld_2
+    class ( LaplacianMultipoleTemplate ), allocatable :: &
       LaplacianMultipole
   contains
     procedure, public, pass :: &
@@ -206,7 +209,7 @@ contains
     if ( associated ( Timer ) ) call Timer % Start ( )
 
     select case ( trim ( P % SolverType ) )
-    case ( 'MULTIPOLE_OLD', 'MULTIPOLE' )
+    case ( 'MULTIPOLE_OLD_1', 'MULTIPOLE_OLD_2' )
 
       call P % SolveMultipole ( Solution, Source )
 
@@ -341,7 +344,7 @@ contains
     real ( KDR ) :: &
       Delta_M_FourPi
 
-    associate ( L => P % LaplacianMultipole )
+    associate ( L => P % LaplacianMultipoleOld_2 )
 
     iSH_0  =>  iSH ( 1 )
     iSH_1  =>  iSH ( 2 )

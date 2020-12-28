@@ -35,6 +35,10 @@ Poisson_ASC__Form_Test: Basics.a Manifolds.a Operations.a \
           -o Poisson_ASC__Form_Test_$(MACHINE) \
           Poisson_ASC__Form_Test.o Poisson_ASC__Kernel.o Poisson_ASC__Form.o \
           Poisson_Template.o \
+          LaplacianMultipole_ASC__Kernel.o \
+          LaplacianMultipole_ASC__Form.o \
+          LaplacianMultipole_Kernel.o \
+          LaplacianMultipole_Template.o \
           LaplacianMultipoleOld_2_ASC__Kernel.o \
           LaplacianMultipoleOld_2_ASC__Form.o \
           LaplacianMultipoleOld_2__Kernel.o \
@@ -92,6 +96,8 @@ Poisson_ASC__Form_Test.o: \
   LaplacianMultipoleOld_1_ASC__Kernel.o \
   LaplacianMultipoleOld_2__Kernel.o \
   LaplacianMultipoleOld_2_ASC__Kernel.o \
+  LaplacianMultipole_Kernel.o \
+  LaplacianMultipole_ASC__Kernel.o \
   Poisson_ASC__Form.o \
   Poisson_ASC__Kernel.o \
   SetHomogeneousSphere_Command.o \

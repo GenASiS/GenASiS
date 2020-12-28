@@ -172,9 +172,10 @@ contains
       class is ( LaplacianMultipoleOld_1_ASC_Form )
         call L % Initialize ( A, P % MaxDegree, P % nEquations )
       end select !-- L
-    case ( 'MULTIPOLE' )
-      allocate ( LaplacianMultipoleOld_2_ASC_Form :: P % LaplacianMultipole )
-      select type ( L => P % LaplacianMultipole )
+    case ( 'MULTIPOLE_OLD_2' )
+      allocate ( LaplacianMultipoleOld_2_ASC_Form &
+                   :: P % LaplacianMultipoleOld_2 )
+      select type ( L => P % LaplacianMultipoleOld_2 )
       class is ( LaplacianMultipoleOld_2_ASC_Form )
         call L % Initialize ( A, P % MaxDegree, P % nEquations )
       end select !-- L
@@ -262,8 +263,8 @@ contains
       Source, &
       Solution
     
-    Source    => Source_CSL % Storage ( )
-    Solution  => Source_CSL % Storage ( )
+    Source    => Source_CSL   % Storage ( )
+    Solution  => Solution_CSL % Storage ( )
 
     Timer_CM  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerCombineMoments )
     Timer_ES  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerExchangeSolution )
@@ -326,7 +327,7 @@ contains
     class ( StorageForm ), pointer :: &
       Solution_S
 
-    select type ( L => P % LaplacianMultipole )
+    select type ( L => P % LaplacianMultipoleOld_2 )
     class is ( LaplacianMultipoleOld_2_ASC_Form )
 
     select type ( C => L % Chart )
