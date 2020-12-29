@@ -46,7 +46,7 @@ module Poisson_Template
     procedure, private, pass :: &
       CombineMoments
     procedure, private, pass :: &
-      CombineMomentsLocal
+      CombineMomentsLocalOld_2
     procedure ( CMA ), private, pass, deferred :: &
       CombineMomentAtlas
     procedure ( ES ), private, pass, deferred :: &
@@ -258,8 +258,8 @@ contains
 
     if ( allocated ( P % LaplacianMultipoleOld_1 ) ) then
       call P % SolveOld_1 ( Solution, Source )
-    else if ( allocated ( P % LaplacianMultipole ) ) then
-      associate ( L  =>  P % LaplacianMultipole )
+    else if ( allocated ( P % LaplacianMultipoleOld_2 ) ) then
+      associate ( L  =>  P % LaplacianMultipoleOld_2 )
         call L % ComputeMoments ( Source )
         call P % CombineMoments ( Solution )
       end associate !-- L
@@ -287,7 +287,7 @@ contains
       Timer_ES, &
       Timer_BS
 
-    if ( .not. allocated ( P % LaplacianMultipole) ) then
+    if ( .not. allocated ( P % LaplacianMultipoleOld_2 ) ) then
       call Show ( 'LaplacianMultipole not allocated', CONSOLE % ERROR )
       call Show ( 'Poisson_Template', 'module', CONSOLE % ERROR )
       call Show ( 'CombineMoments', 'subroutine', CONSOLE % ERROR )
@@ -307,7 +307,7 @@ contains
     if ( associated ( Timer_CS ) ) call Timer_CS % Stop ( )
 
     if ( associated ( Timer_LS ) ) call Timer_LS % Start ( )
-    call P % CombineMomentsLocal ( Solution )
+    call P % CombineMomentsLocalOld_2 ( Solution )
     if ( associated ( Timer_LS ) ) call Timer_LS % Stop ( )
 
     if ( associated ( Timer_ES ) ) call Timer_ES % Start ( )
@@ -323,7 +323,7 @@ contains
   end subroutine CombineMoments
 
 
-  subroutine CombineMomentsLocal ( P, Solution )
+  subroutine CombineMomentsLocalOld_2 ( P, Solution )
 
     class ( PoissonTemplate ), intent ( inout ) :: &
       P
@@ -390,7 +390,7 @@ contains
 
     end associate !-- L
 
-  end subroutine CombineMomentsLocal
+  end subroutine CombineMomentsLocalOld_2
 
 
 end module Poisson_Template
