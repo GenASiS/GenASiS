@@ -29,13 +29,13 @@ contains
     else  !-- use host
 
       !$OMP parallel do collapse ( 5 ) &
-      !$OMP schedule ( OMP_SCHEDULE_HOST ) private ( iT, iP, iR, iAM, iE ) &
+      !$OMP schedule ( OMP_SCHEDULE_HOST ) private ( iR, iT, iP, iAM, iE ) &
       !$OMP reduction ( + : MyAM )
       do iE  =  1, nE
         do iAM  =  1, nAM
-          do iR  =  1,  nC ( 1 )
-            do iP  =  1,  nC ( 3 )
-              do iT  =  1,  nC ( 2 )
+          do iP  =  1,  nC ( 3 )
+            do iT  =  1,  nC ( 2 )
+              do iR  =  1,  nC ( 1 )
 
                 MyAM ( oR + iR, iAM, iE )  &
                   =  MyAM ( oR + iR, iAM, iE )  &
@@ -45,9 +45,9 @@ contains
                                oC ( 3 )  +  iP, &
                                iE )
 
-              end do !-- iT
-            end do !-- iP
-          end do !-- iR
+              end do !-- iR
+            end do !-- iT
+          end do !-- iP
         end do !-- iAM
       end do !-- iE
       !$OMP  end parallel do      

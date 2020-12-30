@@ -31,15 +31,16 @@ contains
 
     else  !-- use host
 
+      !-- The iAM loop at least must be separated to avoid an OMP reduction
       do iE  =  1, nE
         do iAM  =  1, nAM
 
           !$OMP parallel do collapse ( 3 ) &
           !$OMP schedule ( OMP_SCHEDULE_HOST ) &
-          !$OMP private ( iT, iP, iR, RM_R_C, RM_I_C )
-          do iR  =  1,  nC ( 1 )
-            do iP  =  1,  nC ( 3 )
-              do iT  =  1,  nC ( 2 )
+          !$OMP private ( iR, iT, iP, RM_R_C, RM_I_C )
+          do iP  =  1,  nC ( 3 )
+            do iT  =  1,  nC ( 2 )
+              do iR  =  1,  nC ( 1 )
 
                 RM_R_C  =     0.5_KDR  *  RM_R ( oR + iR,     iAM, iE )  &
                            +  0.5_KDR  *  RM_R ( oR + iR + 1, iAM, iE )
@@ -52,9 +53,9 @@ contains
                         *  (    RF_I ( oR + iR, iAM )  *  RM_R_C &
                              +  RF_R ( oR + iR, iAM )  *  RM_I_C )
 
-              end do !-- iT
-            end do !-- iP
-          end do !-- iR
+              end do !-- iR
+            end do !-- iT
+          end do !-- iP
           !$OMP  end parallel do      
 
         end do !-- iAM
