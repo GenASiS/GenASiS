@@ -189,12 +189,14 @@ contains
     allocate ( L % dSolidAngles )
     allocate ( L % AngularFunctions )
     allocate ( L % d_Radius_3_3 )
+    allocate ( L % CellFraction )
     allocate ( L % RadialFunctions_R )
     allocate ( L % RadialFunctions_I )
     associate &
       (  dSA  =>  L % dSolidAngles, &
           AF  =>  L % AngularFunctions, &
         dR33  =>  L % d_Radius_3_3, &
+          CF  =>  L % CellFraction, &
         RF_R  =>  L % RadialFunctions_R, &
         RF_I  =>  L % RadialFunctions_I )
 
@@ -213,6 +215,7 @@ contains
                  VariableOption = L % AngularFunctionName )
 
         call dR33 % Initialize ( [ L % nRadialCells, 1 ] )
+        call   CF % Initialize ( [ L % nRadialCells, 1 ] )
         call RF_R % Initialize ( [ L % nRadialCells, L % nAngularMoments ] )
         call RF_I % Initialize ( [ L % nRadialCells, L % nAngularMoments ] )
 
@@ -251,6 +254,7 @@ contains
                     nR  =  L % nRadialCells, &
                     oR  =  nGL ( 1 ), &
                   dR33  =  L % d_Radius_3_3 % Value, &
+                    CF  =  L % CellFraction % Value, &
                   RF_R  =  L % RadialFunctions_R % Value, &
                   RF_I  =  L % RadialFunctions_I % Value )
 
@@ -479,7 +483,7 @@ contains
 
 
   subroutine ComputeRadialFunctions &
-               ( R, dR_L, dR_R, L, M, nR, oR, dR33, RF_R, RF_I )
+               ( R, dR_L, dR_R, L, M, nR, oR, dR33, CF, RF_R, RF_I )
 
     real ( KDR ), dimension ( -oR + 1 : ), intent ( in ) :: &
       R, &
@@ -491,6 +495,7 @@ contains
       oR     !-- oRadial
     real ( KDR ), dimension ( :, : ), intent ( out ) :: &
       dR33, &
+      CF, &
       RF_R, RF_I  !-- RadialFunction_Regular, _Irregular
 
     integer ( KDI ) :: &
@@ -499,12 +504,15 @@ contains
       iA, &
       iR  !-- iRadial
     real ( KDR ) :: &
+      R_C, &
       R_I, R_O
 
     do iR  =  1, nR
+      R_C  =  R ( iR )
       R_I  =  R ( iR )  -  dR_L ( iR )
       R_O  =  R ( iR )  +  dR_R ( iR )
       dR33 ( iR, 1 )  =  ( R_O ** 3  -  R_I ** 3 )  /  3.0_KDR
+        CF ( iR, 1 )  =  ( R_C - R_I ) / ( R_O - R_I )
     end do !-- nRC
 
     iA  =  1

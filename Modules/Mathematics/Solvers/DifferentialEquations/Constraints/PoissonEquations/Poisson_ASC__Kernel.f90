@@ -42,10 +42,14 @@ contains
             do iT  =  1,  nC ( 2 )
               do iR  =  1,  nC ( 1 )
 
-                RM_R_C  =     0.5_KDR  *  RM_R ( oR + iR,     iAM, iE )  &
-                           +  0.5_KDR  *  RM_R ( oR + iR + 1, iAM, iE )
-                RM_I_C  =     0.5_KDR  *  RM_I ( oR + iR,     iAM, iE )  &
-                           +  0.5_KDR  *  RM_I ( oR + iR + 1, iAM, iE )
+                RM_R_C  =     CF ( oR + iR )  &
+                              *  RM_R ( oR + iR, iAM, iE )  &
+                           +  ( 1.0_KDR - CF ( oR + iR ) )  &
+                              *  RM_R ( oR + iR + 1, iAM, iE )
+                RM_I_C  =     CF ( oR + iR )  &
+                              *  RM_I ( oR + iR, iAM, iE )  &
+                           +  ( 1.0_KDR - CF ( oR + iR ) )  &
+                              *  RM_I ( oR + iR + 1, iAM, iE )
 
                 S ( oC ( 1 ) + iR, oC ( 2 ) + iT, oC ( 3 ) + iP, iE )  &
                   =  S ( oC ( 1 ) + iR, oC ( 2 ) + iT, oC ( 3 ) + iP, iE )  &

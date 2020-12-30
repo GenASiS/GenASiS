@@ -36,6 +36,7 @@ module LaplacianMultipole_Template
       MomentName
     type ( StorageForm ), allocatable :: &
       d_Radius_3_3, &
+      CellFraction, &
       RadialFunctions_R, &
       RadialFunctions_I, &
       MyAngularMoments, &
@@ -266,6 +267,8 @@ contains
       deallocate ( L % RadialFunctions_I )
     if ( allocated ( L % RadialFunctions_R ) ) &
       deallocate ( L % RadialFunctions_R )
+    if ( allocated ( L % CellFraction ) ) &
+      deallocate ( L % CellFraction )
     if ( allocated ( L % d_Radius_3_3 ) ) &
       deallocate ( L % d_Radius_3_3 )
 

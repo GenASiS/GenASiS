@@ -47,7 +47,7 @@ module Poisson_ASC__Form
     interface
 
       module subroutine CombineMoments_CSL_S_Kernel &
-                          ( S, RM_R, RM_I, AF, RF_R, RF_I, DF, &
+                          ( S, RM_R, RM_I, AF, RF_R, RF_I, DF, CF, &
                             nC, oC, nE, nAM, oR, UseDeviceOption )
         use Basics
         implicit none
@@ -59,7 +59,8 @@ module Poisson_ASC__Form
         real ( KDR ), dimension ( :, : ), intent ( in ) :: &
           RF_R, RF_I  !-- RadialFunction_Regular, _Irregular
         real ( KDR ), dimension ( : ), intent ( in ) :: &
-          DF  !-- DeltaFactor
+          DF, &  !-- DeltaFactor
+          CF     !-- CellFraction
         integer ( KDI ), dimension ( : ), intent ( in ) :: &
           nC, oC  !-- nCells, oCell
         integer ( KDI ), intent ( in ) :: &
@@ -413,7 +414,8 @@ contains
              ( P % Solution, L % RadialMoment_R_3D, L % RadialMoment_I_3D, &
                L % AngularFunction, L % RadialFunctions_R % Value, &
                L % RadialFunctions_I % Value, &
-               L % DeltaFactor % Value ( :, 1 ), C % nCellsBrick, &
+               L % DeltaFactor % Value ( :, 1 ), &
+               L % CellFraction % Value ( :, 1 ), C % nCellsBrick, &
                C % nGhostLayers, L % nEquations, L % nAngularMoments, &
                oR = ( C % iaBrick ( 1 ) - 1 ) * C % nCellsBrick ( 1 ), &
                UseDeviceOption = L % UseDevice )
