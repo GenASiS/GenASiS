@@ -10,9 +10,64 @@ submodule ( Poisson_ASC__Form ) Poisson_ASC__Kernel
 contains
 
 
-  module procedure CombineMoment_CSL_S_Kernel
+  module procedure CombineMoments_CSL_S_Kernel
 
-    !-- CombineMoment_ChartSingleLevel_Spherical_Kernel
+    !-- CombineMoments_ChartSingleLevel_Spherical_Kernel
+
+    integer ( KDI ) :: &
+      iR, iT, iP, &  !-- iRadius, iTheta, iPhi
+      iAM, &  !-- iAngularMoment
+      iE     !-- iEquation
+    real ( KDR ) :: &
+      RM_R_C, RM_I_C  !-- RadialMoment_[Regular,Irregular]_Center
+    logical ( KDL ) :: &
+      UseDevice
+
+    UseDevice = .false.
+    if ( present ( UseDeviceOption ) ) &
+      UseDevice = UseDeviceOption
+
+    if ( UseDevice ) then
+
+    else  !-- use host
+
+      do iE  =  1, nE
+        do iAM  =  1, nAM
+
+          !$OMP parallel do collapse ( 3 ) &
+          !$OMP schedule ( OMP_SCHEDULE_HOST ) &
+          !$OMP private ( iT, iP, iR, RM_R_C, RM_I_C )
+          do iR  =  1,  nC ( 1 )
+            do iP  =  1,  nC ( 3 )
+              do iT  =  1,  nC ( 2 )
+
+                RM_R_C  =     0.5_KDR  *  RM_R ( oR + iR,     iAM, iE )  &
+                           +  0.5_KDR  *  RM_R ( oR + iR + 1, iAM, iE )
+                RM_I_C  =     0.5_KDR  *  RM_I ( oR + iR,     iAM, iE )  &
+                           +  0.5_KDR  *  RM_I ( oR + iR + 1, iAM, iE )
+
+                S ( oC ( 1 ) + iR, oC ( 2 ) + iT, oC ( 3 ) + iP, iE )  &
+                  =  S ( oC ( 1 ) + iR, oC ( 2 ) + iT, oC ( 3 ) + iP, iE )  &
+                     -  DF ( iAM )  *  AF ( iT, iP, iAM )  &
+                        *  (    RF_I ( oR + iR, iAM )  *  RM_R_C &
+                             +  RF_R ( oR + iR, iAM )  *  RM_I_C )
+
+              end do !-- iT
+            end do !-- iP
+          end do !-- iR
+          !$OMP  end parallel do      
+
+        end do !-- iAM
+      end do !-- iE
+
+    end if  !-- UseDevice
+
+  end procedure CombineMoments_CSL_S_Kernel
+
+
+  module procedure CombineMoment_CSL_S_Old_2_Kernel
+
+    !-- CombineMoment_ChartSingleLevel_Spherical_Old_2_Kernel
 
     integer ( KDI ) :: &
       iR, iT, iP, &  !-- iRadius, iTheta, iPhi
@@ -303,7 +358,7 @@ contains
 
     end if !-- UseDevice
 
-  end procedure CombineMoment_CSL_S_Kernel
+  end procedure CombineMoment_CSL_S_Old_2_Kernel
 
 
   module procedure SolveCells_CSL_Kernel

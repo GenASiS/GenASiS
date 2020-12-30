@@ -76,6 +76,7 @@ Poisson_ASC__Form.o: \
   LaplacianMultipoleOld_1__Template.o \
   LaplacianMultipoleOld_1_ASC__Form.o \
   LaplacianMultipoleOld_2_ASC__Form.o \
+  LaplacianMultipole_ASC__Form.o \
   Poisson_Template.o \
   Poisson_ASC__Form.f90
 

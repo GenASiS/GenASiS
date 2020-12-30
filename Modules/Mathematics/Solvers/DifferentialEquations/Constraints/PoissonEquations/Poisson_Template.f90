@@ -47,8 +47,10 @@ module Poisson_Template
       CombineMoments
     procedure, private, pass :: &
       CombineMomentsLocalOld_2
+    procedure ( CML ), private, pass, deferred :: &
+      CombineMomentsLocal
     procedure ( CMA ), private, pass, deferred :: &
-      CombineMomentAtlas
+      CombineMomentAtlasOld_2
     procedure ( ES ), private, pass, deferred :: &
       ExchangeSolution
     procedure ( ABS ), private, pass, deferred :: &
@@ -68,6 +70,16 @@ module Poisson_Template
       class ( FieldAtlasTemplate ), intent ( in ) :: &
         Source
     end subroutine SO
+
+    subroutine CML ( P, Solution )
+      use Manifolds
+      import PoissonTemplate
+      implicit none
+      class ( PoissonTemplate ), intent ( inout ) :: &
+        P
+      class ( FieldAtlasTemplate ), intent ( inout ) :: &
+        Solution
+    end subroutine CML
 
     subroutine CMA ( P, Solution, Delta_M_FourPi, iA, iSH_0 )
       use Basics
@@ -209,7 +221,7 @@ contains
     if ( associated ( Timer ) ) call Timer % Start ( )
 
     select case ( trim ( P % SolverType ) )
-    case ( 'MULTIPOLE_OLD_1', 'MULTIPOLE_OLD_2' )
+    case ( 'MULTIPOLE_OLD_1', 'MULTIPOLE_OLD_2', 'MULTIPOLE' )
 
       call P % SolveMultipole ( Solution, Source )
 
@@ -263,6 +275,11 @@ contains
         call L % ComputeMoments ( Source )
         call P % CombineMoments ( Solution )
       end associate !-- L
+    else if ( allocated ( P % LaplacianMultipole ) ) then
+      associate ( L  =>  P % LaplacianMultipole )
+        call L % ComputeMoments ( Source )
+        call P % CombineMoments ( Solution )
+      end associate !-- L
     else
       call Show ( 'LaplacianMultipole not allocated', CONSOLE % ERROR )
       call Show ( 'Poisson_Template', 'module', CONSOLE % ERROR )
@@ -287,7 +304,9 @@ contains
       Timer_ES, &
       Timer_BS
 
-    if ( .not. allocated ( P % LaplacianMultipoleOld_2 ) ) then
+    if (       .not. allocated ( P % LaplacianMultipoleOld_2 ) &
+         .and. .not. allocated ( P % LaplacianMultipole ) ) &
+    then
       call Show ( 'LaplacianMultipole not allocated', CONSOLE % ERROR )
       call Show ( 'Poisson_Template', 'module', CONSOLE % ERROR )
       call Show ( 'CombineMoments', 'subroutine', CONSOLE % ERROR )
@@ -302,12 +321,18 @@ contains
 
     if ( associated ( Timer ) ) call Timer % Start ( )
 
+    call Show ( 'Combining Moments', P % IGNORABILITY + 2 )
+
     if ( associated ( Timer_CS ) ) call Timer_CS % Start ( )
     call Solution % Clear ( )
     if ( associated ( Timer_CS ) ) call Timer_CS % Stop ( )
 
     if ( associated ( Timer_LS ) ) call Timer_LS % Start ( )
-    call P % CombineMomentsLocalOld_2 ( Solution )
+    if ( allocated ( P % LaplacianMultipoleOld_2 ) ) then
+      call P % CombineMomentsLocalOld_2 ( Solution )
+    else if ( allocated ( P % LaplacianMultipole ) ) then
+      call P % CombineMomentsLocal ( Solution )
+    end if
     if ( associated ( Timer_LS ) ) call Timer_LS % Stop ( )
 
     if ( associated ( Timer_ES ) ) call Timer_ES % Start ( )
@@ -379,7 +404,7 @@ contains
                  ( iL, iM, iSH_0, iSH_1, iSH_2 )
         end if
 
-        call P % CombineMomentAtlas &
+        call P % CombineMomentAtlasOld_2 &
                ( Solution, Delta_M_FourPi, iA, iSH_0 )
 
          iA  =  iA + 1

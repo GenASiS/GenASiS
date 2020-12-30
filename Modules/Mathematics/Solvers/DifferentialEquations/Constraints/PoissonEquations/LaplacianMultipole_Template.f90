@@ -41,7 +41,8 @@ module LaplacianMultipole_Template
       MyAngularMoments, &
         AngularMoments, &
       RadialMoments_R, &
-      RadialMoments_I
+      RadialMoments_I, &
+      DeltaFactor
     type ( CollectiveOperation_R_Form ), allocatable :: &
       CO_AngularMoments
   contains
@@ -251,6 +252,8 @@ contains
     if ( allocated ( L % CO_AngularMoments ) ) &
       deallocate ( L % CO_AngularMoments )
 
+    if ( allocated ( L % DeltaFactor ) ) &
+      deallocate ( L % DeltaFactor )
     if ( allocated ( L % RadialMoments_I ) ) &
       deallocate ( L % RadialMoments_I )
     if ( allocated ( L % RadialMoments_R ) ) &
@@ -359,6 +362,28 @@ contains
         end do  !-- iL
       end do  !-- iM
     end do  !-- iE
+
+    allocate ( L % DeltaFactor )
+    associate ( DF => L % DeltaFactor )
+    call DF % Initialize ( [ nA, 1 ] )
+    iA = 1
+    do iM  =  0, M_Max
+      do iL  =  iM, L_Max
+        if ( iM == 0 ) then
+          DF % Value ( iA : iA + 1, 1 )  &
+            =  1.0_KDR / ( 2.0_KDR * iL  +  1.0_KDR )
+        else
+          DF % Value ( iA : iA + 1, 1 )  &
+            =  2.0_KDR / ( 2.0_KDR * iL  +  1.0_KDR )
+        end if
+        iA  =  iA + 2
+      end do  !-- iL
+    end do  !-- iM
+    if ( L % UseDevice ) then
+      call DF % AllocateDevice ( )
+      call DF % UpdateDevice ( )
+    end if
+    end associate !-- DF
 
     end associate !-- L_Max, etc.
 
