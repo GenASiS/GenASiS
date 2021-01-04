@@ -62,7 +62,7 @@ contains
       SemiMajor, &
       SemiMinor
     character ( LDL ) :: &
-      PoissonSolverType
+      SolverType
     class ( GeometryFlatForm ), pointer :: &
       G
 
@@ -87,18 +87,18 @@ contains
 
     MaxDegree = 10
     !PoissonSolverType = 'MULTIPOLE_OLD'
-    PoissonSolverType = 'MULTIPOLE'
+    SolverType = 'MULTIPOLE'
     !-- FIXME: XL 16.1.1-5 does not work without association.
     associate ( PH => PROGRAM_HEADER )
 !    call PROGRAM_HEADER % GetParameter ( MaxDegree, 'MaxDegree' )
     call PH % GetParameter ( MaxDegree, 'MaxDegree' )
-    call PH % GetParameter ( PoissonSolverType, 'PoissonSolverType' )
+    call PH % GetParameter ( SolverType, 'SolverType' )
     end associate !-- PH
 
     allocate ( DD % Poisson )
     associate ( P => DD % Poisson )
     call P % Initialize &
-           ( A, SolverType = PoissonSolverType, MaxDegreeOption = MaxDegree, &
+           ( A, SolverType = SolverType, MaxDegreeOption = MaxDegree, &
              nEquationsOption = DD % N_Equations )
     call P % InitializeTimers ( BaseLevel = 0 )
     end associate !-- P
@@ -163,6 +163,8 @@ contains
     logical ( KDL ) :: &
       ShiftSolution, &
       NormalizeSolution
+    character ( LDF ) :: &
+      OutputDirectory
 
     ShiftSolution = .false.
     NormalizeSolution = .false. 
@@ -200,9 +202,14 @@ contains
     !-- Write
 
     call Show ( 'Writing results' )
+
+    OutputDirectory = '../Output/'
+    call PROGRAM_HEADER % GetParameter ( OutputDirectory, 'OutputDirectory' )
+
     allocate ( DD % Stream )
     call DD % Stream % Initialize &
-           ( A % Name, CommunicatorOption = PROGRAM_HEADER % Communicator )    
+           ( A % Name, CommunicatorOption = PROGRAM_HEADER % Communicator, &
+             WorkingDirectoryOption = OutputDirectory )    
     associate ( GIS => DD % Stream )
 
     call A % OpenStream ( GIS, 'Stream', iStream = 1 )
