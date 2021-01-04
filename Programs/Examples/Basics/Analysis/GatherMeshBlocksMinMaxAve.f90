@@ -67,8 +67,7 @@ program GatherMeshBlocksMinMaxAve
   end if
   
   call GI % Initialize ( GIS )
-  call GI % SetReadAttributes &
-         ( Directory = trim ( GIS % ContentList ( 1 ) ), oValue = 0 )
+  call GI % SetDirectory ( trim ( GIS % ContentList ( 1 ) ) )
   call GI % Read ( )
   
   call GIS % Close ( )

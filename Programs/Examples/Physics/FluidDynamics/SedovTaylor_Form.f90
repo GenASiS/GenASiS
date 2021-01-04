@@ -181,9 +181,6 @@ contains
              V_2 = F % Value ( :, F % VELOCITY_U ( 2 ) ), &
              V_3 = F % Value ( :, F % VELOCITY_U ( 3 ) ) )
 
-    call F % ComputeFromPrimitive ( G )
-    call PSC % ExchangeGhostData ( F )
-
 !     end associate !-- N, etc.
     end select !-- PSC
     end select !-- PS
