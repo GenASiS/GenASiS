@@ -37,7 +37,8 @@ contains
 
           !$OMP parallel do collapse ( 3 ) &
           !$OMP schedule ( OMP_SCHEDULE_HOST ) &
-          !$OMP private ( iR, iT, iP, RM_R_C, RM_I_C )
+          !$OMP private ( iR, iT, iP, RM_R_C, RM_I_C ) &
+          !$OMP firstprivate ( iE, iAM )
           do iP  =  1,  nC ( 3 )
             do iT  =  1,  nC ( 2 )
               do iR  =  1,  nC ( 1 )
