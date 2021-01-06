@@ -630,11 +630,12 @@ contains
         !-- Compute P_lm, l > m + 1
         FactorOld  =  sqrt ( 2.0_KDR * M  +  3.0_KDR )
         do iL  =  M + 2, L
-           Factor  =  sqrt ( ( 4.0_KDR * iL * iL  - 1.0_KDR )  &
-                             /  ( iL * iL  -  M * M ) )
-             P_LL  =  Factor * ( X * P_MP1_M  -  P_MM / FactorOld )
-             P_MM  =  P_MP1_M
-          P_MP1_M  =  P_LL
+              Factor  =  sqrt ( ( 4.0_KDR * iL * iL  - 1.0_KDR )  &
+                                /  ( iL * iL  -  M * M ) )
+                P_LL  =  Factor * ( X * P_MP1_M  -  P_MM / FactorOld )
+           FactorOld  =  Factor
+                P_MM  =  P_MP1_M
+             P_MP1_M  =  P_LL
         end do !-- iL
 
         P_LM  =  P_LL
