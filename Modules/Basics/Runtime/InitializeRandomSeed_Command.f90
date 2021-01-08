@@ -35,6 +35,8 @@ contains
     real ( KDR ) :: &
       TestRandom
       
+    call Show ( 'Initializing random seed', CONSOLE % INFO_1 )
+
     call random_seed ( size = SeedSize )
     allocate ( Seed ( SeedSize ) )
 
@@ -60,7 +62,7 @@ contains
     call random_number ( TestRandom )
     
     call Show ( Seed, 'Random seed', CONSOLE % INFO_4 )
-    call Show ( TestRandom, 'TestRandom', CONSOLE % INFO_4 )
+    call Show ( TestRandom, 'TestRandom', CONSOLE % INFO_1 )
 
   end subroutine InitializeRandomSeed
 

@@ -72,7 +72,7 @@ contains
                  CoordinateLabelOption, CoordinateSystemOption, &
                  IsDistributedOption, CoordinateUnitOption, &
                  MinCoordinateOption, MaxCoordinateOption, RatioOption, &
-                 ScaleOption, nCellsOption, nGhostLayersOption, &
+                 ScaleOption, nCellsOption, nBricksOption, nGhostLayersOption, &
                  nDimensionsOption, nEqualOption )
 
     class ( ChartHeader_SL_Form ), intent ( inout ) :: &
@@ -99,6 +99,7 @@ contains
       ScaleOption
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       nCellsOption, &
+      nBricksOption, &
       nGhostLayersOption
     integer ( KDI ), intent ( in ), optional :: &
       nDimensionsOption, &
@@ -134,7 +135,7 @@ contains
       allocate ( C % nBricks ( MAX_DIMENSIONS ) )
       call C % SetBrick &
              ( C % nCells, Atlas % Communicator, C % nCellsBrick, &
-               C % nBricks, C % iaBrick )
+               C % nBricks, C % iaBrick, nBricksOption = nBricksOption )
       call SetChartFirstLast ( C, C % nCellsBrick )
     else
       call SetChartFirstLast ( C, C % nCells )

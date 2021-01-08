@@ -2,7 +2,8 @@ module Poisson_Template
 
   use Basics
   use Manifolds
-  use LaplacianMultipoleOld_Template
+  use LaplacianMultipoleOld_1__Template
+  use LaplacianMultipoleOld_2__Template
   use LaplacianMultipole_Template
 
   implicit none
@@ -23,8 +24,10 @@ module Poisson_Template
       Type = '', &
       Name = '', &
       SolverType = ''
-    class ( LaplacianMultipoleOldTemplate ), allocatable :: &
-      LaplacianMultipoleOld
+    class ( LaplacianMultipoleOld_1_Template ), allocatable :: &
+      LaplacianMultipoleOld_1
+    class ( LaplacianMultipoleOld_2_Template ), allocatable :: &
+      LaplacianMultipoleOld_2
     class ( LaplacianMultipoleTemplate ), allocatable :: &
       LaplacianMultipole
   contains
@@ -37,15 +40,17 @@ module Poisson_Template
     procedure, public, pass :: &
       FinalizeTemplate
     procedure ( SO ), private, pass, deferred :: &
-      SolveOld
+      SolveOld_1
     procedure, private, pass :: &
       SolveMultipole
     procedure, private, pass :: &
       CombineMoments
     procedure, private, pass :: &
+      CombineMomentsLocalOld_2
+    procedure ( CML ), private, pass, deferred :: &
       CombineMomentsLocal
     procedure ( CMA ), private, pass, deferred :: &
-      CombineMomentAtlas
+      CombineMomentAtlasOld_2
     procedure ( ES ), private, pass, deferred :: &
       ExchangeSolution
     procedure ( ABS ), private, pass, deferred :: &
@@ -65,6 +70,16 @@ module Poisson_Template
       class ( FieldAtlasTemplate ), intent ( in ) :: &
         Source
     end subroutine SO
+
+    subroutine CML ( P, Solution )
+      use Manifolds
+      import PoissonTemplate
+      implicit none
+      class ( PoissonTemplate ), intent ( inout ) :: &
+        P
+      class ( FieldAtlasTemplate ), intent ( inout ) :: &
+        Solution
+    end subroutine CML
 
     subroutine CMA ( P, Solution, Delta_M_FourPi, iA, iSH_0 )
       use Basics
@@ -153,8 +168,14 @@ contains
     call PROGRAM_HEADER % AddTimer &
            ( 'PoissonSolve', P % iTimerSolve, Level = BaseLevel )
 
-    if ( allocated ( P % LaplacianMultipoleOld ) ) then
-      associate ( L => P % LaplacianMultipoleOld )
+    if ( allocated ( P % LaplacianMultipoleOld_1 ) ) then
+      associate ( L => P % LaplacianMultipoleOld_1 )
+      call L % InitializeTimers ( BaseLevel + 1 )
+      end associate !-- L
+    end if
+
+    if ( allocated ( P % LaplacianMultipoleOld_2 ) ) then
+      associate ( L => P % LaplacianMultipoleOld_2 )
       call L % InitializeTimers ( BaseLevel + 1 )
       end associate !-- L
     end if
@@ -200,7 +221,7 @@ contains
     if ( associated ( Timer ) ) call Timer % Start ( )
 
     select case ( trim ( P % SolverType ) )
-    case ( 'MULTIPOLE_OLD', 'MULTIPOLE' )
+    case ( 'MULTIPOLE_OLD_1', 'MULTIPOLE_OLD_2', 'MULTIPOLE' )
 
       call P % SolveMultipole ( Solution, Source )
 
@@ -224,8 +245,8 @@ contains
 
     if ( allocated ( P % LaplacianMultipole ) ) &
       deallocate ( P % LaplacianMultipole )
-    if ( allocated ( P % LaplacianMultipoleOld ) ) &
-      deallocate ( P % LaplacianMultipoleOld )
+    if ( allocated ( P % LaplacianMultipoleOld_1 ) ) &
+      deallocate ( P % LaplacianMultipoleOld_1 )
 
     if ( P % Name == '' ) return
 
@@ -247,8 +268,13 @@ contains
     call Show ( 'Poisson solve, multipole', P % IGNORABILITY + 2 )
     call Show ( P % Name, 'Name', P % IGNORABILITY + 2 )
 
-    if ( allocated ( P % LaplacianMultipoleOld ) ) then
-      call P % SolveOld ( Solution, Source )
+    if ( allocated ( P % LaplacianMultipoleOld_1 ) ) then
+      call P % SolveOld_1 ( Solution, Source )
+    else if ( allocated ( P % LaplacianMultipoleOld_2 ) ) then
+      associate ( L  =>  P % LaplacianMultipoleOld_2 )
+        call L % ComputeMoments ( Source )
+        call P % CombineMoments ( Solution )
+      end associate !-- L
     else if ( allocated ( P % LaplacianMultipole ) ) then
       associate ( L  =>  P % LaplacianMultipole )
         call L % ComputeMoments ( Source )
@@ -278,7 +304,9 @@ contains
       Timer_ES, &
       Timer_BS
 
-    if ( .not. allocated ( P % LaplacianMultipole) ) then
+    if (       .not. allocated ( P % LaplacianMultipoleOld_2 ) &
+         .and. .not. allocated ( P % LaplacianMultipole ) ) &
+    then
       call Show ( 'LaplacianMultipole not allocated', CONSOLE % ERROR )
       call Show ( 'Poisson_Template', 'module', CONSOLE % ERROR )
       call Show ( 'CombineMoments', 'subroutine', CONSOLE % ERROR )
@@ -293,12 +321,18 @@ contains
 
     if ( associated ( Timer ) ) call Timer % Start ( )
 
+    call Show ( 'Combining Moments', P % IGNORABILITY + 2 )
+
     if ( associated ( Timer_CS ) ) call Timer_CS % Start ( )
     call Solution % Clear ( )
     if ( associated ( Timer_CS ) ) call Timer_CS % Stop ( )
 
     if ( associated ( Timer_LS ) ) call Timer_LS % Start ( )
-    call P % CombineMomentsLocal ( Solution )
+    if ( allocated ( P % LaplacianMultipoleOld_2 ) ) then
+      call P % CombineMomentsLocalOld_2 ( Solution )
+    else if ( allocated ( P % LaplacianMultipole ) ) then
+      call P % CombineMomentsLocal ( Solution )
+    end if
     if ( associated ( Timer_LS ) ) call Timer_LS % Stop ( )
 
     if ( associated ( Timer_ES ) ) call Timer_ES % Start ( )
@@ -314,7 +348,7 @@ contains
   end subroutine CombineMoments
 
 
-  subroutine CombineMomentsLocal ( P, Solution )
+  subroutine CombineMomentsLocalOld_2 ( P, Solution )
 
     class ( PoissonTemplate ), intent ( inout ) :: &
       P
@@ -335,7 +369,7 @@ contains
     real ( KDR ) :: &
       Delta_M_FourPi
 
-    associate ( L => P % LaplacianMultipole )
+    associate ( L => P % LaplacianMultipoleOld_2 )
 
     iSH_0  =>  iSH ( 1 )
     iSH_1  =>  iSH ( 2 )
@@ -370,7 +404,7 @@ contains
                  ( iL, iM, iSH_0, iSH_1, iSH_2 )
         end if
 
-        call P % CombineMomentAtlas &
+        call P % CombineMomentAtlasOld_2 &
                ( Solution, Delta_M_FourPi, iA, iSH_0 )
 
          iA  =  iA + 1
@@ -381,7 +415,7 @@ contains
 
     end associate !-- L
 
-  end subroutine CombineMomentsLocal
+  end subroutine CombineMomentsLocalOld_2
 
 
 end module Poisson_Template

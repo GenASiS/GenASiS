@@ -381,7 +381,8 @@ contains
 
 
   subroutine SetBrick &
-               ( nCells, C, Communicator, nCellsBrick, nBricks, iaBrick )
+               ( nCells, C, Communicator, nCellsBrick, nBricks, iaBrick, &
+                 nBricksOption )
 
     integer ( KDI ), dimension ( : ), intent ( inout ) :: &
       nCells
@@ -393,6 +394,8 @@ contains
       nCellsBrick, &
       nBricks, &
       iaBrick
+    integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
+      nBricksOption
 
     integer ( KDI ) :: &
       iD, &  !-- iDimension
@@ -403,6 +406,8 @@ contains
 
     nBricks = 1
     nBricks ( : C % nDimensions ) = CommunicatorSizeRoot
+    if ( present ( nBricksOption ) ) &
+      nBricks  =  nBricksOption 
     call PROGRAM_HEADER % GetParameter &
            ( nBricks ( : C % nDimensions ), 'nBricks' )
     

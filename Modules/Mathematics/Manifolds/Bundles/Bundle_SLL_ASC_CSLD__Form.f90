@@ -123,7 +123,7 @@ contains
                  CoordinateSystemOption, UsePinnedMemoryOption, &
                  CoordinateUnitOption, MinCoordinateOption, &
                  MaxCoordinateOption, RatioOption, ScaleOption, nCellsOption, &
-                 nGhostLayersOption, nDimensionsOption )
+                 nBricksOption, nGhostLayersOption, nDimensionsOption )
 
     class ( Bundle_SLL_ASC_CSLD_Form ), intent ( inout ), target :: &
       B
@@ -143,6 +143,7 @@ contains
       ScaleOption
     integer ( KDI ), dimension ( : ), intent ( in ), optional :: &
       nCellsOption, &
+      nBricksOption, &
       nGhostLayersOption
     integer ( KDI ), intent ( in ), optional :: &
       nDimensionsOption
@@ -160,7 +161,8 @@ contains
            ( SpacingOption, CoordinateLabelOption, CoordinateSystemOption, &
              CoordinateUnitOption, MinCoordinateOption, &
              MaxCoordinateOption, RatioOption, ScaleOption, &
-             nCellsOption, nGhostLayersOption, nDimensionsOption )
+             nCellsOption, nBricksOption, nGhostLayersOption, &
+             nDimensionsOption )
 
     allocate ( B % Geometry )
     associate ( GAF => B % Geometry )

@@ -33,17 +33,18 @@ PROGRAM_HEADER_Singleton.o: \
   Display.o \
   MessagePassing.o \
   FileSystem.o \
+  InitializeRandomSeed_Command.o \
   Timer_Form.o \
-  GetMemoryUsage_Command.o \
   CommandLineOptions_Form.o \
+  GetMemoryUsage_Command.o \
   PROGRAM_HEADER_Singleton.f90
 
 Runtime.o: \
+  InitializeRandomSeed_Command.o \
+  CommandLineOptions_Form.o \
   WallTime_Function.o \
   Timer_Form.o \
   GetMemoryUsage_Command.o \
-  InitializeRandomSeed_Command.o \
-  CommandLineOptions_Form.o \
   PROGRAM_HEADER_Singleton.o \
   Runtime.f90
 

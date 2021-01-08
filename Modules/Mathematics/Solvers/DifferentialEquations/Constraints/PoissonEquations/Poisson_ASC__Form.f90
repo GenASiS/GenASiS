@@ -4,8 +4,9 @@ module Poisson_ASC__Form
 
   use Basics
   use Manifolds
-  use LaplacianMultipoleOld_Template
-  use LaplacianMultipoleOld_ASC__Form
+  use LaplacianMultipoleOld_1__Template
+  use LaplacianMultipoleOld_1_ASC__Form
+  use LaplacianMultipoleOld_2_ASC__Form
   use LaplacianMultipole_ASC__Form
   use Poisson_Template
 
@@ -23,9 +24,11 @@ module Poisson_ASC__Form
     final :: &
       Finalize
     procedure, private, pass :: &
-      SolveOld
+      SolveOld_1
     procedure, private, pass :: &
-      CombineMomentAtlas
+      CombineMomentsLocal
+    procedure, private, pass :: &
+      CombineMomentAtlasOld_2
     procedure, private, pass :: &
       ExchangeSolution
     procedure, private, pass :: &
@@ -33,18 +36,42 @@ module Poisson_ASC__Form
   end type Poisson_ASC_Form
 
     private :: &
-      SolveMultipole_CSL_Old
+      SolveMultipole_CSL_Old_1
 
-!-- FIXME: With GCC 6.1.0, must be public to trigger .smod generation
-!    private :: &
-    public :: &
-      CombineMoment_CSL_S_Kernel, &
+    private :: &
+      CombineMoments_CSL_S_Kernel, &
+      CombineMoment_CSL_S_Old_2_Kernel, &
       SolveCells_CSL_Kernel, &
       AssembleSolutionKernel
 
     interface
 
-      module subroutine CombineMoment_CSL_S_Kernel &
+      module subroutine CombineMoments_CSL_S_Kernel &
+                          ( S, RM_R, RM_I, AF, RF_R, RF_I, DF, CF, &
+                            nC, oC, nE, nAM, oR, UseDeviceOption )
+        use Basics
+        implicit none
+        real ( KDR ), dimension ( :, :, :, : ), intent ( inout ) :: &
+          S  !-- Solution
+        real ( KDR ), dimension ( :, :, : ), intent ( in ) :: &
+          RM_R, RM_I, &  !-- RadialMoment_Regular, _Irregular
+          AF             !-- AngularFunction
+        real ( KDR ), dimension ( :, : ), intent ( in ) :: &
+          RF_R, RF_I  !-- RadialFunction_Regular, _Irregular
+        real ( KDR ), dimension ( : ), intent ( in ) :: &
+          DF, &  !-- DeltaFactor
+          CF     !-- CellFraction
+        integer ( KDI ), dimension ( : ), intent ( in ) :: &
+          nC, oC  !-- nCells, oCell
+        integer ( KDI ), intent ( in ) :: &
+          nE, &   !-- nEquations
+          nAM, &  !-- nAngularMoments
+          oR      !-- oRadius
+        logical ( KDL ), intent ( in ), optional :: &
+          UseDeviceOption
+      end subroutine CombineMoments_CSL_S_Kernel
+
+      module subroutine CombineMoment_CSL_S_Old_2_Kernel &
                           ( S, SH_RC, SH_IC, SH_RS, SH_IS, R_C, &
                             M_RC,  M_IC,  M_RS,  M_IS, R_I, &
                             IsFirstShell, IsLastShell, Delta_M_FourPi, &
@@ -71,7 +98,7 @@ module Poisson_ASC__Form
           oR     !-- oRadius
         logical ( KDL ), intent ( in ), optional :: &
           UseDeviceOption
-      end subroutine
+      end subroutine CombineMoment_CSL_S_Old_2_Kernel
 
       module subroutine SolveCells_CSL_Kernel &
                           ( Solution, CoordinateSystem, IsProperCell, &
@@ -165,14 +192,23 @@ contains
     P % Atlas => A
 
     select case ( trim ( P % SolverType ) )
-    case ( 'MULTIPOLE_OLD' )
-      allocate ( LaplacianMultipoleOld_ASC_Form :: P % LaplacianMultipoleOld )
-      select type ( L => P % LaplacianMultipoleOld )
-      class is ( LaplacianMultipoleOld_ASC_Form )
+    case ( 'MULTIPOLE_OLD_1' )
+      allocate ( LaplacianMultipoleOld_1_ASC_Form &
+                   :: P % LaplacianMultipoleOld_1 )
+      select type ( L => P % LaplacianMultipoleOld_1 )
+      class is ( LaplacianMultipoleOld_1_ASC_Form )
+        call L % Initialize ( A, P % MaxDegree, P % nEquations )
+      end select !-- L
+    case ( 'MULTIPOLE_OLD_2' )
+      allocate ( LaplacianMultipoleOld_2_ASC_Form &
+                   :: P % LaplacianMultipoleOld_2 )
+      select type ( L => P % LaplacianMultipoleOld_2 )
+      class is ( LaplacianMultipoleOld_2_ASC_Form )
         call L % Initialize ( A, P % MaxDegree, P % nEquations )
       end select !-- L
     case ( 'MULTIPOLE' )
-      allocate ( LaplacianMultipole_ASC_Form :: P % LaplacianMultipole )
+      allocate ( LaplacianMultipole_ASC_Form &
+                   :: P % LaplacianMultipole )
       select type ( L => P % LaplacianMultipole )
       class is ( LaplacianMultipole_ASC_Form )
         call L % Initialize ( A, P % MaxDegree, P % nEquations )
@@ -201,7 +237,7 @@ contains
   end subroutine Finalize
 
 
-  subroutine SolveOld ( P, Solution, Source )
+  subroutine SolveOld_1 ( P, Solution, Source )
 
     class ( Poisson_ASC_Form ), intent ( inout ) :: &
       P
@@ -224,7 +260,7 @@ contains
 
     select type ( C => P % Atlas % Chart )
     class is ( Chart_SLD_Form )
-      call SolveMultipole_CSL_Old ( P, C, Solution_CSL, Source_CSL )
+      call SolveMultipole_CSL_Old_1 ( P, C, Solution_CSL, Source_CSL )
     class default
       call Show ( 'Chart type not supported', CONSOLE % ERROR )
       call Show ( 'Solve', 'subroutine', CONSOLE % ERROR )
@@ -235,10 +271,10 @@ contains
     end select !-- Solution
     end select !-- Source
 
-  end subroutine SolveOld
+  end subroutine SolveOld_1
 
 
-  subroutine SolveMultipole_CSL_Old ( P, C, Solution_CSL, Source_CSL )
+  subroutine SolveMultipole_CSL_Old_1 ( P, C, Solution_CSL, Source_CSL )
  
     type ( Poisson_ASC_Form ), intent ( inout ) :: &
       P
@@ -261,8 +297,8 @@ contains
       Source, &
       Solution
     
-    Source    => Source_CSL % Storage ( )
-    Solution  => Source_CSL % Storage ( )
+    Source    => Source_CSL   % Storage ( )
+    Solution  => Solution_CSL % Storage ( )
 
     Timer_CM  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerCombineMoments )
     Timer_ES  =>  PROGRAM_HEADER % TimerPointer ( P % iTimerExchangeSolution )
@@ -271,7 +307,7 @@ contains
     call Show ( 'Poisson solve, multipole old', P % IGNORABILITY + 2 )
     call Show ( P % Name, 'Name', P % IGNORABILITY + 2 )
 
-    associate ( L  =>  P % LaplacianMultipoleOld )
+    associate ( L  =>  P % LaplacianMultipoleOld_1 )
 
     call L % ComputeMoments ( Source )
 
@@ -304,26 +340,20 @@ contains
 
     nullify ( G )
 
-  end subroutine SolveMultipole_CSL_Old
+  end subroutine SolveMultipole_CSL_Old_1
 
 
-  subroutine CombineMomentAtlas &
-               ( P, Solution, Delta_M_FourPi, iA, iSH_0 )
+  subroutine CombineMomentsLocal ( P, Solution )
 
     class ( Poisson_ASC_Form ), intent ( inout ) :: &
       P
     class ( FieldAtlasTemplate ), intent ( inout ) :: &
       Solution
-    real ( KDR ), intent ( in ) :: &
-      Delta_M_FourPi
-    integer ( KDI ), intent ( in ) :: &
-      iA, &  
-      iSH_0  
 
-    logical ( KDL ) :: &
-      IsFirstShell, IsLastShell
     class ( StorageForm ), pointer :: &
       Solution_S
+
+    call Show ( 'Combining Moments Local', P % IGNORABILITY + 3 )
 
     select type ( L => P % LaplacianMultipole )
     class is ( LaplacianMultipole_ASC_Form )
@@ -342,7 +372,127 @@ contains
     if ( nV /= L % nEquations ) then
       call Show ( 'Wrong number of variables in Solution', CONSOLE % ERROR )
       call Show ( 'Poisson_ASC__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'CombineMomentAtlas', 'subroutine', &
+      call Show ( 'CombineMomentsLocal', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end if
+
+    if ( iaS ( nV ) - iaS ( 1 ) + 1  /=  nV ) then
+      call Show ( 'Solution variables must be contiguous', CONSOLE % ERROR )
+      call Show ( 'Poisson_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'CombineMomentsLocal', 'subroutine', CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end if
+
+    call AssignSolutionPointer &
+           ( Solution_S % Value ( :, iaS ( 1 ) : iaS ( nV ) ), &
+             C % nCellsBrick, C % nGhostLayers, L % nEquations, P % Solution )
+
+    end associate !-- nV, etc.
+
+    select case ( trim ( C % CoordinateSystem ) )
+    case ( 'SPHERICAL' )
+      ! IsFirstShell  =  ( C % iaBrick ( 1 )  ==  1 )
+      ! IsLastShell  =  ( C % iaBrick ( 1 )  ==  C % nBricks ( 1 ) )
+      ! call CombineMoment_CSL_S_Old_2_Kernel &
+      !        ( P % Solution, &
+      !          L % SolidHarmonic_RC ( :, :, :, iSH_0 ), &
+      !          L % SolidHarmonic_IC ( :, :, :, iSH_0 ), &
+      !          L % SolidHarmonic_RS ( :, :, :, iSH_0 ), &
+      !          L % SolidHarmonic_IS ( :, :, :, iSH_0 ), &
+      !          L % Radius, &
+      !          L % Moment_RC ( :, :, iA ), L % Moment_IC ( :, :, iA ), &
+      !          L % Moment_RS ( :, :, iA ), L % Moment_IS ( :, :, iA ), &
+      !          L % RadialEdges % Value ( :, 1 ), IsFirstShell, IsLastShell, &
+      !          Delta_M_FourPi, C % nCellsBrick, C % nGhostLayers, &
+      !          L % nEquations, &
+      !          oR = ( C % iaBrick ( 1 ) - 1 ) * C % nCellsBrick ( 1 ), &
+      !          UseDeviceOption = L % UseDevice )
+!      module subroutine CombineMoments_CSL_S_Kernel &
+!                          ( S, RM_R, RM_I, AF, RF_R, RF_I, DF, &
+!                            nC, oC, nE, nAM, oR, UseDeviceOption )
+      call CombineMoments_CSL_S_Kernel &
+             ( P % Solution, L % RadialMoment_R_3D, L % RadialMoment_I_3D, &
+               L % AngularFunction, L % RadialFunctions_R % Value, &
+               L % RadialFunctions_I % Value, &
+               L % DeltaFactor % Value ( :, 1 ), &
+               L % CellFraction % Value ( :, 1 ), C % nCellsBrick, &
+               C % nGhostLayers, L % nEquations, L % nAngularMoments, &
+               oR = ( C % iaBrick ( 1 ) - 1 ) * C % nCellsBrick ( 1 ), &
+               UseDeviceOption = L % UseDevice )
+    case default
+      call Show ( 'Coordinate system not supported', CONSOLE % ERROR )
+      call Show ( C % CoordinateSystem, 'CoordinateSystem', CONSOLE % ERROR )
+      call Show ( 'Poisson_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'CombineMomentsLocal', 'subroutine', &
+                  CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select
+
+    class default
+      call Show ( 'Solution type not supported', CONSOLE % ERROR )
+      call Show ( 'Poisson_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'CombineMomentsLocal', 'subroutine', &
+                  CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- Source
+
+    class default
+      call Show ( 'Chart type not supported', CONSOLE % ERROR )
+      call Show ( 'Poisson_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'CombineMomentsLocal', 'subroutine', &
+                  CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- C
+
+    class default 
+      call Show ( 'Laplacian type not supported', CONSOLE % ERROR )
+      call Show ( 'Poisson_ASC_Form', 'module', CONSOLE % ERROR )
+      call Show ( 'CombineMomentsLocal', 'subroutine', &
+                  CONSOLE % ERROR )
+      call PROGRAM_HEADER % Abort ( )
+    end select !-- L
+
+    nullify ( Solution_S )
+
+  end subroutine CombineMomentsLocal
+
+
+  subroutine CombineMomentAtlasOld_2 &
+               ( P, Solution, Delta_M_FourPi, iA, iSH_0 )
+
+    class ( Poisson_ASC_Form ), intent ( inout ) :: &
+      P
+    class ( FieldAtlasTemplate ), intent ( inout ) :: &
+      Solution
+    real ( KDR ), intent ( in ) :: &
+      Delta_M_FourPi
+    integer ( KDI ), intent ( in ) :: &
+      iA, &  
+      iSH_0  
+
+    logical ( KDL ) :: &
+      IsFirstShell, IsLastShell
+    class ( StorageForm ), pointer :: &
+      Solution_S
+
+    select type ( L => P % LaplacianMultipoleOld_2 )
+    class is ( LaplacianMultipoleOld_2_ASC_Form )
+
+    select type ( C => L % Chart )
+    class is ( Chart_SL_Template )
+
+    select type ( Solution )
+    class is ( Storage_ASC_Form )
+    Solution_S => Solution % Storage ( )
+
+    associate &
+      (  nV => Solution_S % nVariables, &
+        iaS => Solution_S % iaSelected )
+ 
+    if ( nV /= L % nEquations ) then
+      call Show ( 'Wrong number of variables in Solution', CONSOLE % ERROR )
+      call Show ( 'Poisson_ASC__Form', 'module', CONSOLE % ERROR )
+      call Show ( 'CombineMomentAtlasOld_2', 'subroutine', &
                   CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end if
@@ -350,7 +500,7 @@ contains
     if ( iaS ( nV ) - iaS ( 1 ) + 1  /=  nV ) then
       call Show ( 'Solution variables must be contiguous', CONSOLE % ERROR )
       call Show ( 'Poisson_ASC__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'CombineMomentAtlas', 'subroutine', &
+      call Show ( 'CombineMomentAtlasOld_2', 'subroutine', &
                   CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end if
@@ -365,7 +515,7 @@ contains
     case ( 'SPHERICAL' )
       IsFirstShell  =  ( C % iaBrick ( 1 )  ==  1 )
       IsLastShell  =  ( C % iaBrick ( 1 )  ==  C % nBricks ( 1 ) )
-      call CombineMoment_CSL_S_Kernel &
+      call CombineMoment_CSL_S_Old_2_Kernel &
              ( P % Solution, &
                L % SolidHarmonic_RC ( :, :, :, iSH_0 ), &
                L % SolidHarmonic_IC ( :, :, :, iSH_0 ), &
@@ -383,7 +533,7 @@ contains
       call Show ( 'Coordinate system not supported', CONSOLE % ERROR )
       call Show ( C % CoordinateSystem, 'CoordinateSystem', CONSOLE % ERROR )
       call Show ( 'Poisson_ASC__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'CombineMomentAtlas', 'subroutine', &
+      call Show ( 'CombineMomentAtlasOld_2', 'subroutine', &
                   CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select
@@ -391,7 +541,7 @@ contains
     class default
       call Show ( 'Solution type not supported', CONSOLE % ERROR )
       call Show ( 'Poisson_ASC__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'CombineMomentAtlas', 'subroutine', &
+      call Show ( 'CombineMomentAtlasOld_2', 'subroutine', &
                   CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- Source
@@ -399,7 +549,7 @@ contains
     class default
       call Show ( 'Chart type not supported', CONSOLE % ERROR )
       call Show ( 'Poisson_ASC__Form', 'module', CONSOLE % ERROR )
-      call Show ( 'CombineMomentAtlas', 'subroutine', &
+      call Show ( 'CombineMomentAtlasOld_2', 'subroutine', &
                   CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- C
@@ -407,14 +557,14 @@ contains
     class default 
       call Show ( 'Laplacian type not supported', CONSOLE % ERROR )
       call Show ( 'Poisson_ASC_Form', 'module', CONSOLE % ERROR )
-      call Show ( 'CombineMomentAtlas', 'subroutine', &
+      call Show ( 'CombineMomentAtlasOld_2', 'subroutine', &
                   CONSOLE % ERROR )
       call PROGRAM_HEADER % Abort ( )
     end select !-- L
 
     nullify ( Solution_S )
 
-  end subroutine CombineMomentAtlas
+  end subroutine CombineMomentAtlasOld_2
 
 
   subroutine ExchangeSolution ( P, Solution )

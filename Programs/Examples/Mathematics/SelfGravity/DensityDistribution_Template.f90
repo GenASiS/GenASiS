@@ -62,7 +62,7 @@ contains
       SemiMajor, &
       SemiMinor
     character ( LDL ) :: &
-      PoissonSolverType
+      SolverType
     class ( GeometryFlatForm ), pointer :: &
       G
 
@@ -75,7 +75,7 @@ contains
     !-- Atlas
     
     allocate ( DD % Atlas )
-    associate ( A => DD % Atlas )
+    associate ( A  => DD % Atlas )
     call A % Initialize ( 'PositionSpace', PROGRAM_HEADER % Communicator )
     call A % CreateChart_CC ( RadiusMaxOption = RadiusMax )
     call A % SetGeometry ( UsePinnedMemoryOption = .true. )
@@ -87,18 +87,18 @@ contains
 
     MaxDegree = 10
     !PoissonSolverType = 'MULTIPOLE_OLD'
-    PoissonSolverType = 'MULTIPOLE'
+    SolverType = 'MULTIPOLE'
     !-- FIXME: XL 16.1.1-5 does not work without association.
     associate ( PH => PROGRAM_HEADER )
 !    call PROGRAM_HEADER % GetParameter ( MaxDegree, 'MaxDegree' )
     call PH % GetParameter ( MaxDegree, 'MaxDegree' )
-    call PH % GetParameter ( PoissonSolverType, 'PoissonSolverType' )
+    call PH % GetParameter ( SolverType, 'SolverType' )
     end associate !-- PH
 
     allocate ( DD % Poisson )
     associate ( P => DD % Poisson )
     call P % Initialize &
-           ( A, SolverType = PoissonSolverType, MaxDegreeOption = MaxDegree, &
+           ( A, SolverType = SolverType, MaxDegreeOption = MaxDegree, &
              nEquationsOption = DD % N_Equations )
     call P % InitializeTimers ( BaseLevel = 0 )
     end associate !-- P
@@ -163,6 +163,8 @@ contains
     logical ( KDL ) :: &
       ShiftSolution, &
       NormalizeSolution
+    character ( LDF ) :: &
+      OutputDirectory
 
     ShiftSolution = .false.
     NormalizeSolution = .false. 
@@ -176,8 +178,7 @@ contains
     associate ( PH => PROGRAM_HEADER )
 !    call PROGRAM_HEADER % GetParameter ( nSolve, 'nSolve' )
     call PH % GetParameter ( nSolve, 'nSolve' )
-    end associate !-- PH
-
+    
     call Show ( 'Solving Poisson equation' )
     call Show ( nSolve, 'nSolve' )
     do iS = 1, nSolve
@@ -193,16 +194,23 @@ contains
     call Show ( 'Computing error' )
     call ComputeError ( DD, NormalizeSolution ) 
 
-    call PROGRAM_HEADER % ShowStatistics &
+    !call PROGRAM_HEADER % ShowStatistics &
+    call PH % ShowStatistics &
            ( CONSOLE % INFO_1, &
-             CommunicatorOption = PROGRAM_HEADER % Communicator )
+             CommunicatorOption = PH % Communicator )
 
     !-- Write
 
     call Show ( 'Writing results' )
+
+    OutputDirectory = '../Output/'
+    !call PROGRAM_HEADER % GetParameter ( OutputDirectory, 'OutputDirectory' )
+    call PH % GetParameter ( OutputDirectory, 'OutputDirectory' )
+
     allocate ( DD % Stream )
     call DD % Stream % Initialize &
-           ( A % Name, CommunicatorOption = PROGRAM_HEADER % Communicator )    
+           ( A % Name, CommunicatorOption = PH % Communicator, &
+             WorkingDirectoryOption = OutputDirectory )    
     associate ( GIS => DD % Stream )
 
     call A % OpenStream ( GIS, 'Stream', iStream = 1 )
@@ -214,7 +222,8 @@ contains
     end associate !-- GIS
 
     !-- Cleanup
-
+    
+    end associate !-- PH
     end associate !-- P
     end associate !-- A
 

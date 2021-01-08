@@ -6,8 +6,12 @@ POISSON_EQUATIONS = \
   LaplacianMultipole_ASC__Form.o \
   LaplacianMultipole_Kernel.o \
   LaplacianMultipole_Template.o \
-  LaplacianMultipoleOld_ASC__Kernel.o \
-  LaplacianMultipoleOld_ASC__Form.o \
-  LaplacianMultipoleOld_Kernel.o \
-  LaplacianMultipoleOld_Template.o \
+  LaplacianMultipoleOld_2_ASC__Kernel.o \
+  LaplacianMultipoleOld_2_ASC__Form.o \
+  LaplacianMultipoleOld_2__Kernel.o \
+  LaplacianMultipoleOld_2__Template.o \
+  LaplacianMultipoleOld_1_ASC__Kernel.o \
+  LaplacianMultipoleOld_1_ASC__Form.o \
+  LaplacianMultipoleOld_1__Kernel.o \
+  LaplacianMultipoleOld_1__Template.o \
   PoissonEquations.o

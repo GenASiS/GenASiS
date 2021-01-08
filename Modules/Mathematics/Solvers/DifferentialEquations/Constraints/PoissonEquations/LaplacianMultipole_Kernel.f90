@@ -9,12 +9,12 @@ submodule ( LaplacianMultipole_Template ) LaplacianMultipole_Kernel
 contains
 
 
-  module procedure AddMomentShellsKernel
+  module procedure ComputeRadialMomentsKernel
 
     integer ( KDI ) :: &
       iR, &  !-- iRadius
-      iE, &  !-- iEquation
-      iA     !-- iAngularMoment
+      iAM, &  !-- iAngularMoment
+      iE     !-- iEquation
     logical ( KDL ) :: &
       UseDevice
 
@@ -27,68 +27,56 @@ contains
     if ( UseDevice ) then
 
       !$OMP  OMP_TARGET_DIRECTIVE parallel do collapse ( 2 ) &
-      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iR, iE, iA )
-      do iA  =  1, nA
-        do iE  =  1, nE
+      !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iR, iAM, iE )
+      do iE  =  1, nE
+        do iAM  =  1, nAM
 
-          do iR  =  2, nR
-
-            M_RC ( iR, iE, iA )  &
-              =  M_RC ( iR - 1, iE, iA )  +  M_RC ( iR, iE, iA )
-
-            M_RS ( iR, iE, iA )  &
-              =  M_RS ( iR - 1, iE, iA )  +  M_RS ( iR, iE, iA )
-
+          RM_R ( 1, iAM, iE )  =  0.0_KDR
+          do iR  =  1, nR
+            RM_R ( iR + 1, iAM, iE )  &
+              =  RM_R ( iR, iAM, iE )  &
+                 +  dR33 ( iR )  *  RF_R ( iR, iAM )  *  AM ( iR, iAM, iE )
           end do !-- iR
 
-          do iR  =  nR - 1, 1, -1
-
-            M_IC ( iR, iE, iA )  &
-              =  M_IC ( iR + 1, iE, iA )  +  M_IC ( iR, iE, iA )
- 
-            M_IS ( iR, iE, iA )  &
-              =  M_IS ( iR + 1, iE, iA )  +  M_IS ( iR, iE, iA )
-
+          RM_I ( nR + 1, iAM, iE )  =  0.0_KDR
+          do iR  =  nR, 1, -1
+            RM_I ( iR, iAM, iE )  &
+              =  RM_I ( iR + 1, iAM, iE )  &
+                 +  dR33 ( iR )  *  RF_I ( iR, iAM )  *  AM ( iR, iAM, iE )
           end do !-- iR
 
-        end do !-- iE
-      end do !-- iA
+        end do !-- iAM
+      end do !-- iE
       !$OMP  end OMP_TARGET_DIRECTIVE parallel do
 
-    else !-- use host
+    else  !-- use host
 
       !$OMP  parallel do collapse ( 2 ) &
-      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iR, iE, iA )
-      do iA  =  1, nA
-        do iE  =  1, nE
+      !$OMP& schedule ( OMP_SCHEDULE_HOST ) private ( iR, iAM, iE )
+      do iE  =  1, nE
+        do iAM  =  1, nAM
 
-          do iR  =  2, nR
-
-            M_RC ( iR, iE, iA )  &
-              =  M_RC ( iR - 1, iE, iA )  +  M_RC ( iR, iE, iA )
-
-            M_RS ( iR, iE, iA )  &
-              =  M_RS ( iR - 1, iE, iA )  +  M_RS ( iR, iE, iA )
-
+          RM_R ( 1, iAM, iE )  =  0.0_KDR
+          do iR  =  1, nR
+            RM_R ( iR + 1, iAM, iE )  &
+              =  RM_R ( iR, iAM, iE )  &
+                 +  dR33 ( iR )  *  RF_R ( iR, iAM )  *  AM ( iR, iAM, iE )
           end do !-- iR
 
-          do iR  =  nR - 1, 1, -1
-
-            M_IC ( iR, iE, iA )  &
-              =  M_IC ( iR + 1, iE, iA )  +  M_IC ( iR, iE, iA )
- 
-            M_IS ( iR, iE, iA )  &
-              =  M_IS ( iR + 1, iE, iA )  +  M_IS ( iR, iE, iA )
-
+          RM_I ( nR + 1, iAM, iE )  =  0.0_KDR
+          do iR  =  nR, 1, -1
+            RM_I ( iR, iAM, iE )  &
+              =  RM_I ( iR + 1, iAM, iE )  &
+                 +  dR33 ( iR )  *  RF_I ( iR, iAM )  *  AM ( iR, iAM, iE )
           end do !-- iR
 
-        end do !-- iE
-      end do !-- iA
-      !$OMP  end parallel do
+        end do !-- iAM
+      end do !-- iE
+      !$OMP  end parallel do      
 
-    end if !-- UseDevice
+    end if  !-- UseDevice
 
-  end procedure AddMomentShellsKernel
+  end procedure ComputeRadialMomentsKernel
 
 
 end submodule LaplacianMultipole_Kernel

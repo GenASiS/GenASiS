@@ -1,6 +1,6 @@
 #include "Preprocessor"
 
-submodule ( LaplacianMultipoleOld_Template ) LaplacianMultipoleOld_Kernel
+submodule ( LaplacianMultipoleOld_1__Template ) LaplacianMultipoleOld_1__Kernel
 
   use Basics
 
@@ -9,7 +9,7 @@ submodule ( LaplacianMultipoleOld_Template ) LaplacianMultipoleOld_Kernel
 contains
 
   
-  module procedure ComputeMomentContributionsOldKernel
+  module procedure ComputeMomentContributionsOld_1_Kernel
 
     integer ( KDI ) :: &
       iE  !-- iEquation
@@ -26,10 +26,10 @@ contains
       call ComputeMomentContributions_MR_MI_Kernel &
              ( MyM_RS, MyM_IS, SH_RS, SH_IS, Source_dV, nE, nA, iR )
 
-  end procedure ComputeMomentContributionsOldKernel
+  end procedure ComputeMomentContributionsOld_1_Kernel
 
 
-  module procedure AddMomentShellsOldKernel
+  module procedure AddMomentShellsOld_1_Kernel
 
     integer ( KDI ) :: &
       iA, &  !-- angular index
@@ -55,7 +55,7 @@ contains
       end do
     end do
 
-  end procedure AddMomentShellsOldKernel
+  end procedure AddMomentShellsOld_1_Kernel
 
 
   module procedure ComputeSolidHarmonicsKernel
@@ -108,7 +108,7 @@ contains
       !             CONSOLE % ERROR )
       ! call Show ( 'ComputeSolidHarmonicsKernel', 'subroutine', &
       !             CONSOLE % ERROR )
-      ! call Show ( 'LaplacianMultipoleOld_Kernel', 'submodule', CONSOLE % ERROR )
+      ! call Show ( 'LaplacianMultipoleOld_1__Kernel', 'submodule', CONSOLE % ERROR )
       GridError = .true.
     end if
 
@@ -259,4 +259,4 @@ contains
   end procedure ComputeSolidHarmonics_C_S_Kernel
 
 
-end submodule LaplacianMultipoleOld_Kernel
+end submodule LaplacianMultipoleOld_1__Kernel
