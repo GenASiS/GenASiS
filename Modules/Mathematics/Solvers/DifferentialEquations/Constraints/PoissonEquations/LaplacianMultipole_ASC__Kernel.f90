@@ -17,6 +17,8 @@ contains
       iR, iT, iP, &  !-- iRadius, iTheta, iPhi
       iAM, &  !-- iAngularMoment
       iE     !-- iEquation
+    real ( KDR ) :: &
+      MyAME  !-- MyAngularMomentElement
     logical ( KDL ) :: &
       UseDevice
 
@@ -25,6 +27,35 @@ contains
       UseDevice = UseDeviceOption
 
     if ( UseDevice ) then
+
+      !$OMP  OMP_TARGET_DISTRIBUTE_DIRECTIVE collapse ( 3 ) &
+      !$OMP& OMP_TARGET_DISTRIBUTE_SCHEDULE &  
+      !$OMP& private ( iR, iAM, iE, MyAME )
+      do iE  =  1, nE
+        do iAM  =  1, nAM
+          do iR  =  1,  nC ( 1 )
+
+            !$OMP  parallel do collapse ( 2 ) &
+            !$OMP& schedule ( OMP_SCHEDULE_TARGET ) private ( iT, iP ) &
+            !$OMP& reduction ( + : MyAME )
+            do iP  =  1,  nC ( 3 )
+              do iT  =  1,  nC ( 2 )
+
+                MyAME  =  MyAME &
+                          +  dSA ( iT, iP )  * AF ( iT, iP, iAM )  &
+                             *  S ( oC ( 1 )  +  iR, &
+                                    oC ( 2 )  +  iT, &
+                                    oC ( 3 )  +  iP, &
+                                    iE )
+
+              end do !-- iT
+            end do !-- iP
+
+            MyAM ( oR + iR, iAM, iE )  =  MyAME
+
+          end do !-- iR
+        end do !-- iAM
+      end do !-- iE
 
     else  !-- use host
 
